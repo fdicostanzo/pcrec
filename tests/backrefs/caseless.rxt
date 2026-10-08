@@ -64,6 +64,36 @@ m "aa" 0 2
 g 1 0 1
 
 # ====================================================================
+# THE SUBJECT ENDS INSIDE A CASELESS REFERENCE (S670's answer detector)
+# ====================================================================
+
+# ANSWER DETECTOR for sabotage S670 (the kit's in-place caseless MISMATCH row leaving its loop with `break` when the subject runs out). On "aaa" the greedy group takes 3, the reference runs off the end, backtracking gives (0,2): the compare must report the exhaustion as a DIFFERENCE. The plant reports it as EQUAL and answers (0,6), past the subject. No cell here had a caseless reference the subject ends inside, so no answer suite saw S670.
+pattern (?i)(a+)\1
+features backrefs,modifiers
+m "aaa" 0 2
+g 1 0 1
+m "aaaa" 0 4
+g 1 0 2
+m "aAa" 0 2
+g 1 0 1
+m "aAaA" 0 4
+g 1 0 2
+m "Aaa" 0 2
+g 1 0 1
+n "a"
+
+# The length-mismatch neighbour: the subject ends INSIDE the two-byte reference with the case differing ("abA"), so the first byte compares equal under the fold and the second is past n. Plant: (0,4); libpcre2: no match.
+pattern (?i)(ab)\1
+features backrefs,modifiers
+n "aba"
+n "abA"
+m "abAB" 0 4
+g 1 0 2
+n "ab"
+m "aBaB" 0 4
+g 1 0 2
+
+# ====================================================================
 # WHAT FOLDS: exactly the 52 ASCII letters, and nothing else
 # ====================================================================
 
