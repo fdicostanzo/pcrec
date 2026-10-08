@@ -1,0 +1,10 @@
+# [START-TABLE] C5b's DECLARED trace multiplicity (start_table.md §3.3 item 5,
+# "C5b: records whose site is one of its four BOUND readers"): the site keys
+# of the records C5b ADDS, one per BOUND reader (P2's two arms share one).
+# Read by scripts/trace_diff.py / emit_sweep.py --trace-declared when the
+# C5b tip is compared against its parent; every other record must be
+# identical. Each site's record is `BOUND <route> <row> <site>`.
+one-attempt-bound
+first-class-bound
+retry-anchored-bound
+pred-memchr-bound
