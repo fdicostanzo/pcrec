@@ -11,6 +11,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K100 — OPEN (filed 2026-10-08, manager, from lane decfbB1's finding F1) — REFUSAL: the size term's restart leaks the ladder's K, so a restarted attempt never re-runs the ladder
+
+`restart_term` (`src/core/compile.c`; the `prefilter-collapse` and `drop-prefilter` restarts) resets `st_phase` to `ST_DEFAULT` but NOT `defo.unroll_k`, which the ladder trials and the final attempt wrote (`defo.unroll_k = SIZE_TERM_LADDER[st_idx]` / `= st_final_k`). The "restarted" default attempt therefore runs at the leaked K: its size term reads `option` (`defo.unroll_k > 0 && st_phase == ST_DEFAULT`) and the ladder cannot run again (`run` needs `defo.unroll_k == 0`). The restart the code comments promise does not happen.
+
+**Witnesses** (lowered caps; B1's `row_reach` records, `docs/dev/lanes/decfbB1_report.md` Findings F1): `(?:aa|a){8,12}+ab` (the `lowsize` variant's base arm and five more) and `(a{1,3}){65}` (`lowsize --tune=min-size`) are REFUSED. A scratch compiler that resets `defo.unroll_k` to the caller's value on restart COMPILES both (rc 0, `prefilter-collapse > drop-prefilter`).
+
+**Population at shipped limits: 0** in the corpus (no plain-variant intermediate `stwhy option` record); no artifact byte moves. Refactor B ([DEC-FALLBACK]) preserves it as a no-mover, so T4's `option` row fires there too, and `dec_fallback.md` §1.8's attempt bound overstates the restarted ladder's real cost.
+
+**Fix**: reset `defo.unroll_k` to the caller's value in `restart_term`; a MOVER (refusals become compiles), so its own row after B, with the lowered-cap witnesses above as its regression. Scheduled: not before B7.
+
 ## K99 — OPEN (filed 2026-10-08, lane decfbB1, from lane decfbB0a's `alloc_check` W5 finding) — LIBRARY ABORT: `pcrec_emit_facts` calls `abort()` on an allocation failure in its listing renderer
 
 `pcrec_emit_facts` (`src/dump/facts_dump.c`) renders the `--emit-facts` listing into the `FactsRows` buffers (`r.facts`, `r.dec`) and the result buffer `s`, all detached `StrBuf`s with no `cx` (`StrBuf s = { 0 }`; `memset(&r, 0, sizeof r)`). `sb_grow` (`src/core/sb.c:32`) aborts when a detached buffer cannot grow (`/* a detached buffer (syntax_dump.c) has no error channel */`), so an allocation failure while the rows are written kills the CALLER's process instead of returning NULL with a diagnostic: K7's class one surface over, and coding_guide §1.1's rule (every allocation failure routes through `pcrec_ctx_nomem`) broken on the `--emit-facts` path. MEASURED by `tests/core/alloc_check.c`'s W5 (decfbB0a, `docs/dev/lanes/decfbB0a_report.md`): of the 11 single-shot injection points after the force loop (allocation calls 210-220 of 220), 2 are diagnosed (the prefix render, call 210, among them) and **9 die by SIGABRT**. The compile itself and the force loop are clean; only the listing's renderer aborts. W5 reports the 9 as a `NOTE:` and does not assert them, so `make alloc` stays green on the defect. Fix (not scheduled): give the listing's buffers an error channel (a `cx`, or a renderer that checks and returns NULL), then promote W5's NOTE population to an asserted "diagnosed" class. Library-only impact: the CLI exits either way.
