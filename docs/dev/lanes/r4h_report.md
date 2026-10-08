@@ -159,12 +159,12 @@ pre-existing. `inventory_check.py` against the new `call_graph.txt`: 150/150.
   `run_scan_edge_dispatch.sh` FAILS 2 (http-5xx, two-chain: "INCONCLUSIVE
   the table load is not on a cycle (gcc hoisted it)") **identically with
   the pre-edit binary**: pre-existing, not wired into make, not this lane's.
-- G2 `--quick` pinned (`taskset -c 12-15`, `make test-memfn-g2`): see §8
-  item 0 / the handback (log `build/r4hscratch/g2quick.log`).
+- G2 `--quick` pinned (`taskset -c 12-15`, `make test-memfn-g2`): **checks
+  passed 45,229,686, failed 0**, no make error (log
+  `build/r4hscratch/g2quick.log`, gitignored).
 
 ## 8. The slot chain the manager must run
 
-0. (If not reported green in the handback) `make test-memfn-g2`, log above.
 1. Merge `lane/r4h` into the kit branch ALONE; `make -j16 && make strict`.
 2. Identity gate, 0 movers expected on every stream including `--engine=vm`
    (VMSPAN is reached only there) and both comment tiers:
@@ -206,6 +206,6 @@ pre-existing. `inventory_check.py` against the new `call_graph.txt`: 150/150.
 | anchors tsv + call_graph re-derived, m6read check green | DONE |
 | three new rows with reaching witnesses, numbered from the rulings | DONE (S614-S616; S617 unused) |
 | zero movers, 20+ compiles, same -o basename | DONE (38/38) |
-| arms/rows/manifest/forms/stamps green, G2 --quick pinned | DONE except G2: see handback |
+| arms/rows/manifest/forms/stamps green, G2 --quick pinned | DONE (G2 quick 45,229,686/0) |
 | CLAUDE.md: src/gen, memfn/src, tests/memfn | DONE |
 | no abi event | none needed |
