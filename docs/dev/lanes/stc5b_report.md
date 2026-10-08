@@ -242,3 +242,33 @@ justifies any UNDETECTED/UNREACHED row against its own `SAB_EXPECT`.
 - Heavy chain ARMED, NOT RUN: waiter PID 3904935, SID 3904935 (`nohup setsid bash -c 'until [ -f WT/.lift ]; ...; bash WT/build/land/chain.sh'`, confirmed with `ps -o pid,sid,args`); waits for
   `worktrees/stc5b/.lift`, then `build/land/chain.sh`; ends with
   `CHAIN_DONE` in `build/land/verdict.txt`.
+
+## 7. Triage of the UNREACHED S496 / S497 verdicts (2026-10-08)
+
+Both rows read `unreached: 1` in the heavy chain
+(`build/land/verdict.txt`, tip c5c65c3e). Verdict: PRE-EXISTING and DECLARED,
+not caused by C5b. Nothing to fix; no code or row change.
+
+- Base 37462a8e (merge base), each row solo via
+  `bash tests/mech/run_sabotage_matrix.sh S496` / `S497` from a temporary
+  detached worktree: both `== mech run COMPLETE: 1 rows (unexpected: 0,
+  undetected: 0, unreached: 1, anomalies: 0, oracle-skipped: 0)`, rc 0, no
+  FATAL. Logs: `build/land/base_S496.log`, `base_S497.log`.
+- Tip c5c65c3e (chain logs `build/land/mech_S496.log`, `mech_S497.log`):
+  identical trailer, identical row text.
+- Cause: both rows declare `SAB_EXPECT=UNREACHED` with an
+  `SAB_EXPECT_REASON`. The verdict cell reads `UNREACHED (EXPECTED -- ...)`
+  on base and tip alike. The `SAB_REACH` clause (reach:MISSING 1/1) is the
+  deliberate dead-witness probe: S496 compiles `(*COMMIT)(ab)\1` and wants the
+  VM hat (`RX_VM_START_SCAN "first-class"`), but pcrec has no AST node kind for
+  a verb or callout, so V is never asked; S497 compiles a raw continuation byte
+  under `-e utf8`, which the hat never admits (those start sets are all 256
+  bytes and the |S| < 256 conjunct is asked first). The runner counts
+  declared-UNREACHED rows in the `unreached:` tally and still exits 0; the
+  `*** N row(s) reported UNREACHED` banner is printed for them too.
+- Neither row file differs between 37462a8e and the tip (empty diff), so C5b's
+  refactor did not touch the witness or the reach clause. The rows flip to
+  `NOW REACHED` the day a verb/callout node or a continuation-byte start set
+  exists; that is their intended tripwire.
+- Reading note for the landing: the chain's "20 of 22 clean" should be read as
+  22 of 22 with two declared-UNREACHED rows, as on base.
