@@ -2268,6 +2268,11 @@ typedef struct {
      * five fallback values are each "fell back" with a different outcome,
      * which is exactly the distinction `why` cannot carry. */
     unsigned char engine_sel;
+    /* [DEC-FALLBACK] B2: the T2 row (`pf_admits[]`, src/opt/select_engine.c)
+     * the admission took. Written by the trace build's both-derivations
+     * oracle only until B4 makes the table the decision; NULL in the default
+     * build, which has no reader of it yet. */
+    const struct PfAdmit *pf_admit;
 } EngineFit;
 
 /* [OPT-4] `EngineFit.engine_sel` — `<PREFIX>_ENGINE_SEL`'s closed value set.
@@ -2496,6 +2501,102 @@ enum {
     SDR_NO_PREFILTER = 3,
     SDR_MAX         = 3
 };
+
+/* ---- [DEC-FALLBACK] the fallback tables' shared cells (refactor B) ----
+ *
+ * docs/design/dec_fallback.md §1. The ladder table T1 (`fit_rungs[]`,
+ * src/core/compile.c) and the prefilter admission table T2 (`pf_admits[]`,
+ * src/opt/select_engine.c) carry the stamp TOKENS as cells. What lives here
+ * is the part a reader OUTSIDE the table's own file reads: T1's token
+ * payload (`FitCells`, read through the fired record by the attribution walk
+ * and by `VM_PREFILTER_WHY`'s site) and T2's row (read by `ENGINE_SEL` and by
+ * the `--emit-ir` listing).
+ *
+ * B2 BUILT THEM BESIDE THE OLD DERIVATIONS AND SWITCHED NO READER. In the
+ * default build nothing reads a cell yet; the trace build's both-derivations
+ * oracle (`pcrec_fit_oracle_fail`, below) holds every cell to the derivation
+ * it will replace, at every arrival and every token site. B3-B5 switch the
+ * readers, one table per commit.
+ *
+ * PASS and ROLE are NAMED cells, outside every value range they sit beside,
+ * so no cell means "pass" by being 0 (memory `pcrec-no-silent-defaults`).
+ * ROLE is one cell with two spellings, keyed on the latched
+ * `Ctx.dfa_was_engine`: `overflowed-dfa` or `overflowed-prefilter`. */
+enum {
+    ESEL_PASS = ESEL_SIZE_CAP_RETRY + 1,   /* this row attributes nothing here */
+    ESEL_ROLE                              /* the [SEL-1] role: overflowed-dfa/-prefilter */
+};
+enum { PFLW_PASS = PFLW_SIZECAP + 1 };     /* this row sets no collapse language */
+
+/* `FitCells.esel`'s two halves: the cell the attribution walk reads when the
+ * FINAL prefilter survived, and when it did not (§1.2's `{kept, off}`). */
+enum { FIT_KEPT, FIT_OFF };
+
+/* A T1 row's token payload (§1.2): its `ENGINE_SEL` cells, the
+ * `VM_PREFILTER_LANG_WHY` value the collapse it sets builds (T3's `rung` row
+ * projects it), and the `VM_PREFILTER_WHY` format it stamps (NULL: none). */
+typedef struct {
+    unsigned char esel[2];   /* [FIT_KEPT]/[FIT_OFF]: an ESEL_* value, ESEL_PASS or ESEL_ROLE */
+    unsigned char pflw;      /* a PFLW_* value, or PFLW_PASS */
+    const char   *pfwhy;     /* a `"…%llu > %llu"` format over the carried size-cap figures */
+} FitCells;
+
+/* T2's inputs, gathered once by `prefilter_decision` (§1.4). The two
+ * nullability facts are NOT here: a row asks `pcrec_fact_nullable` or
+ * `pcrec_fact_empty_admits` itself, only where today's derivation asks it,
+ * because an ask marks the fact used and `--emit-facts` lists that. */
+typedef struct {
+    Ctx     *cx;
+    unsigned kinds;            /* the E1 kind mask (PF_KIND_*) */
+    bool     would_prefilter;  /* VM chosen and not `--engine=vm` */
+    bool     force_on;         /* `-fprefilter` */
+    bool     force_off;        /* `-fno-prefilter`, the [PF-DROP] rung's OR'd bit included */
+} PfAdmitSel;
+
+/* T2's verdict cell: the row decides the prefilter off or on, or hands the
+ * decision to `would_prefilter` (the default row). 0 is UNSTATED, which the
+ * self-check refuses. */
+typedef enum { PFV_UNSTATED, PFV_OFF, PFV_ON, PFV_DEFAULT } PfVerdict;
+
+/* One row of T2, the prefilter admission (§1.4): the first row that applies
+ * decides `fit.prefilter`, names the `--emit-ir` `prefilter` value and
+ * gives the admission's `ENGINE_SEL` cell. */
+typedef struct PfAdmit {
+    const char *name;
+    bool      (*applies)(const PfAdmitSel *s);
+    PfVerdict   verdict;
+    /* the listing value when the verdict is OFF; a verdict ON lists `yes` /
+     * `yes-collapsed` whatever the row. NULL only on a row whose verdict is
+     * always ON. */
+    const char *list;
+    unsigned char esel;        /* an ESEL_* value, or ESEL_PASS */
+} PfAdmit;
+
+#ifdef PCREC_CAND_TRACE
+/* [DEC-FALLBACK] B2 THE BOTH-DERIVATIONS ORACLE's failure: one `CANDORACLE`
+ * line on stderr naming the check, the new table's answer, today's answer
+ * and the site, then `abort()` (trace build only; [START-TABLE] C2's
+ * shape). Defined in src/core/compile.c. */
+void pcrec_fit_oracle_fail(const char *what, const char *got_new,
+                           const char *got_old, const char *site)
+    __attribute__((noreturn));
+/* The order the oracle asks in: today's derivation first (the default), or
+ * the new table first (`-DPCREC_CAND_NEW_FIRST`), so a predicate's first-ask
+ * side effects land on the new walk. */
+#ifdef PCREC_CAND_NEW_FIRST
+#define PCREC_FIT_NEW_FIRST true
+#else
+#define PCREC_FIT_NEW_FIRST false
+#endif
+/* The oracle's hit counter: one `CANDFIT <site> <row>` line per checked
+ * decision, which docs/design/dec_fallback/oracle_sweep.py counts (the trace
+ * tooling reads `CANDTRACE` lines only). */
+#define PCREC_FIT_HIT(site, row)                                               \
+    (pcrec_cand_trace_quiet ? (void)0                                          \
+     : (void)fprintf(stderr, "CANDFIT\t%s\t%s\n", "" site, (row)))
+/* T2's own structural self-check, run by compile.c's `fit_tables_selfcheck`. */
+void pcrec_pf_admits_selfcheck(Ctx *cx);
+#endif
 
 /* [PATFACTS] the pattern-facts record's CONSUMER header: types and
  * accessors, never a derivation (docs/design/patfacts/design.md §4.2.1). */
@@ -3062,6 +3163,15 @@ struct Ctx {
      * the first attempt wanted. Recorded where it is still true, carried like
      * `dfa_overflow_why` and for the same reason. */
     bool                 dfa_was_engine;
+    /* [DEC-FALLBACK] B2 THE FIRED RECORD (docs/design/dec_fallback.md §1.3):
+     * the token payload of every ATTRIBUTING T1 row fired so far on this
+     * compile, in FIRING order (each fires at most once), seeded by
+     * `compile_driver` from its own record the way `collapse_reason` is. The
+     * attribution walk reads it backwards (§1.7) and `VM_PREFILTER_WHY`'s
+     * site reads the `pfwhy` cell. Written by the trace build's oracle only
+     * until B3 makes the table the dispatch; empty in the default build. */
+    const FitCells *const *fit_seq;
+    int                  fit_nseq;
     bool                 dfa_overflowed;
     char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [LIM-2] N1: true iff THIS overflow is the auto-route work-budget

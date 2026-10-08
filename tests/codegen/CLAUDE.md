@@ -3915,6 +3915,19 @@ read through `tests/lib/spec_extract.sh` (moved there from
   arrival; their witnesses are `alloc_check` W5/W4. Red both ways
   (`docs/dev/lanes/decfbB1_report.md`): a latch plant (S-F8's) and a deleted
   `fb-size` record.
+- **(d) THE BOTH-DERIVATIONS ORACLE** (B2, lane decfbB2): 65 witnesses,
+  each compiled with a default-order trace compiler (`tr<set>`, today's
+  derivation asks first) and a `-DPCREC_CAND_NEW_FIRST` one (`nf<set>`, the
+  new table asks first; six more compilers, `trlowthr` and the five `nf*`).
+  A witness FAILS on a `CANDORACLE` line or a signal (the oracle aborts on
+  a difference), on the two orders disagreeing on rc or stdout, or on its
+  hand-written `CANDFIT <site> <row>` line missing from either order (it
+  stopped reaching the check it is listed for). Sites: every T1 arrival
+  the corpus reaches, T2's verdict and listing cells (every row and
+  reached scope; `--emit-ir`), T3 and T4 every row, the attribution walk's
+  eight `ENGINE_SEL` values, `pfwhy` and the three note rows. ~40 s. B5
+  deletes the oracle and this half. Detects S627-S645
+  (`docs/dev/lanes/decfbB2_report.md`).
 
 Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
 the tree; red on a dropped witness (the floor fires), a value removed from

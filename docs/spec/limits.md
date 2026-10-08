@@ -818,12 +818,15 @@ every VM attempt, so it is tried before any retry), rows 3 and 4 the DFA's.
 The measurements are `docs/dev/lanes/pfdrop_report.md` §2 (Mac, directional;
 a Linux re-measure is the manager's to schedule).
 
-**`--fast-or-fail`** (`PCREC_FAST_OR_FAIL`, `cli.md`) denies every row the
-table marks degrading — today all five — so an artifact over either limit is
+**`--fast-or-fail`** (`PCREC_FAST_OR_FAIL`, `cli.md`) denies every size-cap
+row the table marks degrading — today all five — so an artifact over either limit is
 REFUSED rather than shipped slower, with the ordinary diagnostic quoting the
 caller's own unrescued artifact. It is one predicate on the table's rows, not
 a test inside each rung, and a rung that costs no run time would be marked
-not degrading and stay allowed. A pattern that fits is byte-identical with or
+not degrading and stay allowed. The same table also holds the `[SEL-1]`
+DFA-overflow rows, which are degrading and OUTSIDE the switch's reach (its
+`fof` column): an overflow is answered by `--engine=dfa` or `-fprefilter`,
+not by this switch. A pattern that fits is byte-identical with or
 without it. Each rung's own deny flag still applies on its own.
 
 **What the prefilter drop stamps.** `<PREFIX>_VM_PREFILTER "none"`,

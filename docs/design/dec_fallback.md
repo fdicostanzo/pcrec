@@ -859,6 +859,27 @@ list except S189/S191/S192. Those three are seen only by `--step` at B3, so
 `rerun_at` is computed per commit, as item 9 intends. Eight
 `compile_driver` rows are added at B3+B5.
 
+**B2's outcome (lane decfbB2, 2026-10-08, base main `a29f02dd`; report
+`../dev/lanes/decfbB2_report.md`).** T1's new columns and rows 0-4, T2-T4
+and the attribution walk landed beside the old code with no reader
+switched; `fit_tables_selfcheck`, §1.9's invariants and the both-orders
+oracle run in the trace build only. The gate (`emit_sweep --ref a29f02dd
+--variant all --trace --trace-order fallback=ordered`) is CLEAN: 0 movers in
+all 90 cells, trace CLEAN, no `--trace-declared` needed. Choices the note
+left open or wrote differently, each argued in the report:
+- T2 row 4 carries `!has_var`, so it asks `empty_admits` only where today's
+  derivation does (an ask is visible in `--emit-facts`); equal under E1.
+- FitSel gains `st_phase` for row 2, which edits B3's initializer line at
+  B2 (no anchor names it).
+- The field is `EngineFit.pf_admit`, not `admit` (A's `u.admit` collided in
+  the state census).
+- The fired record is trace-build state until B3; the walk reads it through
+  `Ctx.fit_seq`, T1's cells through the shared `FitCells`.
+- §1.7's legal sequences are asserted as pairwise transitions.
+- A B4 finding: rows 1-2 ask no nullability fact while today's derivation
+  asks one first, so B4 moves `--emit-facts`' `used` column on
+  backreference and linked-call patterns unless it keeps that ask.
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

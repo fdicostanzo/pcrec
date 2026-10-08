@@ -1334,8 +1334,9 @@ echo "== [PF-DROP] the size-cap ladder's last rung, and --fast-or-fail (D135) ==
 # what S420 restores). tests/uprops/run_uprops_tests.sh §5 holds what the
 # rescued artifact MATCHES; this section holds what compiling it does.
 #
-# THE SWITCH. `--fast-or-fail` denies every DEGRADING rung (all of them
-# today, `compile.c`'s `fit_rungs[]`), so each rung's own witness must
+# THE SWITCH. `--fast-or-fail` denies every DEGRADING SIZE-CAP rung (all
+# five today; `compile.c`'s `fit_rungs[]`, whose `fof` column keeps the
+# degrading [SEL-1] rows outside the switch's reach), so each rung's own witness must
 # REFUSE under it on the size cap, and a pattern that fits must be the same
 # artifact with or without it. One witness per rung, each checked to take
 # that rung WITHOUT the switch first, so a witness that stopped reaching its

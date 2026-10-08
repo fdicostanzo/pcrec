@@ -551,6 +551,20 @@ construction (src/ir) and emission (src/gen).
   claims the `--engine=vm` side effect). Tests: tests/vm/run_vm_tests.sh
   §3b, tests/prefilter/ (see its own CLAUDE.md's "[SEL-1]" section).
 
+- **select_engine.c — T2 and the attribution walk, beside the old code**
+  ([DEC-FALLBACK] B2, lane decfbB2, 2026-10-08; `docs/design/
+  dec_fallback.md` §1.4/§1.7; no reader switched, no abi event).
+  `pf_admits[]` is the PREFILTER ADMISSION as ten first-match rows over a
+  `PfAdmitSel` (the kind mask, `would_prefilter`, the two flags), each with
+  a verdict, the `--emit-ir` listing value and an `ENGINE_SEL` cell;
+  `fit_attrib_walk` is `esel_of` as a read of the admission row's cell and
+  then the latest fired ladder row's (`Ctx.fit_seq`). Rows ask
+  `nullable`/`empty_admits` only where today's derivation does (row 4
+  carries `!has_var`), because an ask marks a fact used and `--emit-facts`
+  lists it. Under `-DPCREC_CAND_TRACE` the both-derivations oracle holds
+  the T2 walk to the verdict ternary and the two declined flags (and stores
+  the row in `EngineFit.pf_admit`) and the walk to `esel_of`, in both
+  orders (`-DPCREC_CAND_NEW_FIRST`); B4/B5 switch the readers.
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s

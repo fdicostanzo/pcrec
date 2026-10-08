@@ -9486,6 +9486,14 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * through to a flag arm would print a diagnostic naming a flag the caller
      * did not pass. */
     const char *pf_val, *pf_note;
+#ifdef PCREC_CAND_TRACE
+    /* [DEC-FALLBACK] B2: T2's listing cell beside the chain below (the
+     * oracle): a verdict ON lists the `yes` pair, an OFF one the row's value. */
+    const PfAdmit *pfa = cx->job->fit.pf_admit;
+    const char *pf_new = PCREC_FIT_NEW_FIRST && pfa
+        ? (st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list)
+        : NULL;
+#endif
     if (st->prefilter) {
         /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped being
          * true of every hybrid. On a collapse RUNG (Frank's ruling B: a DFA
@@ -9585,6 +9593,13 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         pf_note = "--engine=vm -- the VM scans from search_from itself"
                   " (R21 E-6)";
     }
+#ifdef PCREC_CAND_TRACE
+    if (!pf_new && pfa)
+        pf_new = st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list;
+    PCREC_FIT_HIT("admit-listing", pfa ? pfa->name : "-");
+    if (!pfa || !pf_new || strcmp(pf_new, pf_val) != 0)
+        pcrec_fit_oracle_fail("admit-listing", pf_new ? pf_new : "-", pf_val, "emit-ir");
+#endif
     vm_row3(o, "prefilter", pf_val, pf_note);
     /* [DD-14.EMPTY] the ROOT MINIMUM WIDTH, listed only when it reached the
      * analysis ceiling -- the debug-listing half of the artifact stamp
@@ -11311,6 +11326,21 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
         pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",
                   "\"size cap retry, hybrid %llu > %llu\"",
                   cx->size_cap_bytes, cx->size_cap_limit);
+#ifdef PCREC_CAND_TRACE
+    {
+        /* [DEC-FALLBACK] B2: the fired row's `pfwhy` cell beside the test
+         * above (the oracle; its format string is the stamp's). */
+        const char *pfwhy = NULL;
+        for (int i = 0; i < cx->fit_nseq; i++)
+            if (cx->fit_seq[i]->pfwhy) pfwhy = cx->fit_seq[i]->pfwhy;
+        PCREC_FIT_HIT("pfwhy", pfwhy ? "stamped" : "-");
+        if ((pfwhy != NULL) != (cx->size_drop_rung == SDR_NO_PREFILTER) ||
+            (pfwhy && strcmp(pfwhy, "\"size cap retry, hybrid %llu > %llu\"") != 0))
+            pcrec_fit_oracle_fail("pfwhy", pfwhy ? pfwhy : "-",
+                                  cx->size_drop_rung == SDR_NO_PREFILTER ? "stamped" : "-",
+                                  "vm_emit_stamps");
+    }
+#endif
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's

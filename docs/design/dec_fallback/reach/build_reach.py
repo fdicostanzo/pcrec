@@ -54,13 +54,15 @@ PATCHES = [
     (CP, "            if (cx.job && cx.job->pf.forcing) {\n",
      "            if (cx.job && cx.job->pf.forcing) {\n"
      "                fprintf(stderr, \"DECFB forcing\\n\");\n"),
-    (CP, "            if (cx.failed_nomem) {\n",
+    # B2 put trace-only (`#ifdef PCREC_CAND_TRACE`, compiled out here) oracle
+    # lines on or beside three anchors; each is pinned to its untraced line.
+    (CP, "            if (cx.failed_nomem) {\n                job_cleanup(&cx);\n",
      "            if (cx.failed_nomem) {\n"
-     "                fprintf(stderr, \"DECFB nomem\\n\");\n"),
-    (CP, "            if (st_phase == ST_LADDER) {\n                int final_k",
+     "                fprintf(stderr, \"DECFB nomem\\n\");\n"
+     "                job_cleanup(&cx);\n"),
+    (CP, "            if (st_phase == ST_LADDER) {\n",
      "            if (st_phase == ST_LADDER) {\n"
-     "                fprintf(stderr, \"DECFB trial\\n\");\n"
-     "                int final_k"),
+     "                fprintf(stderr, \"DECFB trial\\n\");\n"),
     (CP, "            if (retry_collapse || retry_drop) {\n",
      "            if (retry_collapse || retry_drop)\n"
      "                fprintf(stderr, \"DECFB sel1 collapse=%d drop=%d\\n\", (int)retry_collapse, (int)retry_drop);\n"
@@ -74,14 +76,13 @@ PATCHES = [
      "            fprintf(stderr, \"DECFB gate wanted=%d collapse=%d pflw=%d rep=%d nul=%d force=%d\\n\",\n"
      "                    (int)pfc_wanted, (int)collapse, (int)cx.job->fit.prefilter_lang_why,\n"
      "                    (int)pfc_rep, (int)pcrec_fact_nullable(&cx), (int)pfc_force);\n"),
-    (SE, "                   : would_prefilter;\n}\n",
+    (SE, "                   : would_prefilter;\n",
      "                   : would_prefilter;\n"
      "    fprintf(stderr, \"DECFB adm bref=%d call=%d var=%d dd=%d cr=%d nul=%d ea=%d crep=%d fon=%d foff=%d wp=%d pf=%d dnd=%d dn=%d\\n\",\n"
      "            (int)has_bref, (int)has_call, (int)has_var, (int)cx->dfa_disabled, (int)cx->collapse_reason,\n"
      "            (int)pcrec_fact_nullable(cx), (int)pcrec_fact_empty_admits(cx), (int)collapsible_rep,\n"
      "            (int)force_on, (int)force_off, (int)would_prefilter, (int)fit->prefilter,\n"
-     "            (int)fit->prefilter_declined_nullable_default, (int)fit->prefilter_declined_nullable);\n"
-     "}\n"),
+     "            (int)fit->prefilter_declined_nullable_default, (int)fit->prefilter_declined_nullable);\n"),
 ]
 
 def main():

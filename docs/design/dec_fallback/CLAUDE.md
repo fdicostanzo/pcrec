@@ -34,7 +34,10 @@ first edit (the note's §4.1), because main moves under a design note.
   blocks), each source fail-closed on an empty extraction; only the function
   names are declared, existence-checked. 408 lines at `42ab7c25` and at B0's base `6ebe14d7` (same lines, shifted numbers; rev 1's
   hand list: 164). At B1, 31 more: the fallback trace's own readers of the
-  state (trace build only; they move with the state at B2-B5). The note's §2.1 gives the line classes.
+  state (trace build only; they move with the state at B2-B5). At B2, 564
+  (116 more: T1's new rows and cells, T2-T4, the attribution walk and the
+  oracle's readers, compile.c 80, select_engine.c 29, emit_vm.c 6,
+  internal.h 1). The note's §2.1 gives the line classes.
 - `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
   decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
   PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
@@ -62,6 +65,15 @@ first edit (the note's §4.1), because main moves under a design note.
   population and (b) the rev-2 prototype over its population x arms, plus
   (b)'s admit rows (`analyse.t2_row`), gate rows (`t3_row`) and the final
   `attrib` token against `RX_ENGINE_SEL`. Reads `row_reach.py`'s OUT.
+- `oracle_sweep.py` — B2's BOTH-DERIVATIONS ORACLE over the full corpus
+  mirror in BOTH orders: per limit variant, a default-order and a
+  `-DPCREC_CAND_NEW_FIRST` trace compiler of one revision (`git archive`),
+  row_reach's population x the prototype's 14 arms, plus an `--emit-ir`
+  pass (the listing's token site). FAILS on a `CANDORACLE` line or a
+  signal, on the two orders' stdout/rc differing, or (K35) on a checked
+  site with no `CANDFIT` hit in an order; writes `OUT/hits.tsv`. A filter
+  test: the oracle shares its predicates with the tables. Deleted with the
+  oracle at B5.
 - `trace_declared_B1.txt` — B1's declared trace multiplicity (its ten site
   keys) for `emit_sweep.py --trace-declared` against B0; meaningless
   against any later parent.
