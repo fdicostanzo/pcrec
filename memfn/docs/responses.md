@@ -754,3 +754,24 @@ the compiler, and is never adopted silently. Proposed for main to file
   observation only). No C, no pcrec byte, nothing make runs. Report:
   docs/dev/lanes/n2pool_report.md. Also adds the missing lanes index
   entry for r4gfix_report.md.
+- done: 2026-10-08 — **[MEMFN-ROWCON] N4: lane/memfn-n4 @ TIP (the commit
+  carrying this entry; main ad669fb8 merged in).** Report:
+  docs/dev/lanes/n4_report.md (§11 is the slot's validation).
+  - What it adds:
+    - `tests/memfn/rows.tsv` (13 kit rows, closed reach reasons, witness,
+      signature, control);
+    - `row_floors.tsv`;
+    - `make test-memfn-rows` (in TEST_SECTIONS);
+    - the trace's `REACH_DROPPED`;
+    - `n2_report.py --floors/--propose`.
+    No pcrec byte moves and there is no spec hunk.
+  - **Census wall time: 379 s** at JOBS=16 with the one-pool driver.
+    Result: rc 0, would_decline=0, floor_fail=0, reason_stale=0,
+    reach_dropped=0.
+  - The 12 `pcrec_floor` values are pinned from `--propose` (4e081f78), and
+    the re-check reads floor_placeholder=0.
+  - make test on 4e081f78 took 680 s, with one red in test-codegen [K37]:
+    N4's new `run_rows.sh` existence loop. Fixed in e8e3e1d8, after which
+    test-codegen is green and test-memfn-rows is 70/0.
+  - **OWED:** `g2_floor` (PLACEHOLDER) needs G2 to count per row, via a
+    blinded follow-up (n4_report §7).
