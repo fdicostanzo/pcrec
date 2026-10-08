@@ -982,3 +982,12 @@ pointer when a kit change merges to main.
   on this box. CORRECTION to my earlier priority: AVX-512 is NOT filed;
   SSE first stands, and the AVX2/AVX-512 order is argued on evidence. The
   r9 panel was briefed before this, so the consolidation folds it in.
+- 2026-10-08: Frank answered R-9's questions directly to the kit:
+  - Q-R9-1/2/3/5/7/8/9: "I agree" (as recommended).
+  - Q-R9-4: "if that [space] isn't true then it's fastest wins". This
+    matches the recommendation: no named-benefit path for SIMD rows.
+  - Q-R9-6 (the floor rule) is PENDING: he asked what it is, and it was
+    explained (SIMD-on = SIMD-off plus guarded text only; compiled without
+    the feature it IS the scalar code; checked by C18).
+  - Posted to main. Also: lane g2m6 (M6 blinded G2) was stopped by Frank;
+    no relaunch without his word.
