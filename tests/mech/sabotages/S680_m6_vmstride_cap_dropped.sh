@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# S680 ([MEMFN] M6, lane m6) -- THE STRIDED CAP LOST (S616's sibling).
+# span_hi caps ADVANCE's counter in ITERATIONS (RULED Q-R10-5); the VM's
+# bounded strided quantifier states rmax there. The plant drops it at W > 1
+# only (VMSPAN keeps its cap): the kit then counts `it_` but never tests it.
+SAB_ID="S680-m6-vmstride-cap-dropped"
+SAB_FILE="src/gen/emit_vm.c"
+SAB_SUITES="harness"
+SAB_HARNESS_TARGET="TARGET680"
+SAB_DESC='the VM span builder states span_hi UNBOUNDED at stride > 1, so a bounded strided quantifier'"'"'s it_ cap is lost and the strided loop runs past rmax iterations: (ab){2,4} matches more than four blocks'
+SAB_DOC_FIGURE="HAND-MEASURED by lane m6 2026-10-08 (plant applied, tree rebuilt; docs/dev/lanes/m6_report.md section 6): F680. The matrix figure is owed at the slot."
+SAB_REACH='"$PCREC" -p rx -o - --pattern "(ab){2,4}"'
+SAB_REACH_EXPECT='while ((rx_span_cursor + 2 <= subject_length) && it_ < 4ULL && (subject[rx_span_cursor + 0] == 97) && (subject[rx_span_cursor + 1] == 98)) {'
+SAB_EXPECT=DETECTED
+SAB_COUNT=1
+SAB_BEFORE='        .span = a->u.rep.rmax >= 0 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,
+        .indent = "        " };'
+SAB_AFTER='        .span = a->u.rep.rmax >= 0 && stride == 1 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,  /* SABOTAGE S680 */
+        .indent = "        " };'
