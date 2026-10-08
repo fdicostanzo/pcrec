@@ -1,0 +1,18 @@
+# constructed witnesses for dec_fallback.md rev 2 (name<TAB>pattern<TAB>flags<TAB>features<TAB>encoding); features empty = all
+waste-a2	^(?:(?:a|b)*a(?:a|b){20})?$			
+waste-xwd13	^(\p{Xwd}{1,3})?$			utf8
+pfdrop-xwd	(\p{Xwd})			utf8
+pflw-nullable	^(a{2,9})*$			
+var-ab	a${v}b			
+var-anch	^${v}$			
+var-cap	(a)${v}			
+nul-star	(a*)*			
+cap-star	(a)*			
+bref	(a)\1			
+call	(a(?1)?b)			
+plain-cap	(a)b			
+fb3-norep	(x)(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)			
+fb3-norep-dfa	(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)			
+rep-ovf	(x)(?:a|b)*a(?:a|b){11}			
+rep-ovf-dfa	(?:a|b)*a(?:a|b){11}			
+capw	(((?:a{0,2}b)+c){0,20}d){0,20}e			
