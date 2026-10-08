@@ -2272,7 +2272,7 @@ typedef struct {
      * the admission took. Written by the trace build's both-derivations
      * oracle only until B4 makes the table the decision; NULL in the default
      * build, which has no reader of it yet. */
-    const struct PfAdmit *admit;
+    const struct PfAdmit *pf_admit;
 } EngineFit;
 
 /* [OPT-4] `EngineFit.engine_sel` — `<PREFIX>_ENGINE_SEL`'s closed value set.

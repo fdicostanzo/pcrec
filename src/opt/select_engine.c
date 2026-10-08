@@ -638,7 +638,7 @@ static void pf_admit_oracle(EngineFit *fit, const PfAdmitSel *s,
     if (dnd != fit->prefilter_declined_nullable_default ||
         dn != fit->prefilter_declined_nullable)
         pcrec_fit_oracle_fail("admit-declined", row->name, "flags", "prefilter_decision");
-    fit->admit = row;
+    fit->pf_admit = row;
 }
 #endif
 
@@ -1152,7 +1152,7 @@ __attribute__((unused))
 static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
 {
     if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
-    if (fit->admit && fit->admit->esel != ESEL_PASS) return fit->admit->esel;
+    if (fit->pf_admit && fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
     for (int i = cx->fit_nseq; i-- > 0; ) {
         const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
         if (c == ESEL_PASS) continue;

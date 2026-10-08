@@ -9489,7 +9489,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 #ifdef PCREC_CAND_TRACE
     /* [DEC-FALLBACK] B2: T2's listing cell beside the chain below (the
      * oracle): a verdict ON lists the `yes` pair, an OFF one the row's value. */
-    const PfAdmit *pfa = cx->job->fit.admit;
+    const PfAdmit *pfa = cx->job->fit.pf_admit;
     const char *pf_new = PCREC_FIT_NEW_FIRST && pfa
         ? (st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list)
         : NULL;
