@@ -753,9 +753,9 @@ void pcrec_pf_admits_selfcheck(Ctx *cx)
 
 /* Decides whether this artifact runs the VM's hybrid DFA prefilter ahead of
  * the match, and records WHY when it does not. Walks T2 (`pf_admits[]`
- * above) and writes four `EngineFit` fields from the row that fired —
- * `pf_admit` itself, `prefilter` (its verdict) and the two
- * `prefilter_declined_nullable*` attributions — off the E1 pattern facts
+ * above) and writes two `EngineFit` fields from the row that fired —
+ * `pf_admit` itself (whose `esel` cell the attribution walk reads) and
+ * `prefilter` (its verdict) — off the E1 pattern facts
  * (the kind mask, nullability), and REFUSES outright on a
  * `-fprefilter` request this pattern cannot honour, which is why it takes
  * `why_pos`: that offset is only the position its diagnostics report. Reads
@@ -1020,9 +1020,11 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      *     refused" on an artifact that never had a working prefilter to
      *     refuse in the first place.
      *
-     * internal.h's own field comments carry the full argument for each;
-     * the two `prefilter_declined_nullable*` flags are written from the
-     * row that fired, below.
+     * The decline is RECORDED as the row's `esel` cell
+     * (`declined-nullable-default` on rows 3-4, `declined-nullable` on row
+     * 5), which the attribution walk reads through `fit->pf_admit`; the two
+     * values are kept apart because they answer different questions about
+     * different populations (internal.h's `ESEL_*` comments).
      *
      * [NULLABLE-ANCH] "NULLABLE" HERE IS `empty_admits`, NOT BARE
      * NULLABILITY: an empty match whose every path crosses a non-multiline
@@ -1043,7 +1045,7 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
     /* [DEC-FALLBACK] §1.4 (b), asserted BEFORE the walk, so no row asks a
      * fact on the population it argues away. */
     if (has_var && (cx->collapse_reason != CR_NONE || cx->dfa_disabled))
-        pcrec_fit_oracle_fail("admit-has-var", "rung or overflow", "has_var",
+        pcrec_fit_invariant_fail("admit-has-var", "rung or overflow", "has_var",
                               "prefilter_decision");
 #endif
     /* [DEC-FALLBACK] B4 THE ADMISSION'S NULLABILITY FACT IS ASKED UP FRONT,
@@ -1072,91 +1074,82 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
     const PfAdmit *row = pf_admit_walk(&pfas);
     fit->pf_admit = row;
     fit->prefilter = pf_admit_verdict(row, &pfas);
-    fit->prefilter_declined_nullable = row->esel == ESEL_DECLINED_NULLABLE;
-    fit->prefilter_declined_nullable_default = row->esel == ESEL_DECLINED_NULLABLE_DEFAULT;
+}
+
+/* Where the attribution walk's token came from, for the trace's `attrib`
+ * record: an index into the fired record (`Ctx.fit_seq`), or one of these. */
+enum { ESEL_FROM_NONE = -3, ESEL_FROM_FORCED = -2, ESEL_FROM_ADMIT = -1 };
+
+/* [DEC-FALLBACK] THE ATTRIBUTION WALK (docs/design/dec_fallback.md §1.7):
+ * the `<PREFIX>_ENGINE_SEL` token read off the tables' cells. A named engine
+ * is `forced`; else the admission row's cell (T2 rows 3-5); else the LATEST
+ * fired ladder row whose cell for the final prefilter's survival
+ * (`FIT_KEPT`/`FIT_OFF`) is not PASS, ROLE spelled by the latched
+ * `dfa_was_engine`; else `selected`. Reads the fired record
+ * `compile_driver` seeds (`Ctx.fit_seq`) and the admission row the fit
+ * carries; writes the token's source to `*from` when `from` is not NULL.
+ *
+ * THE BACKWARD WALK IS THE GENERAL RULE, not a case for one sequence: "the
+ * latest fired row that has something to say about this outcome". It is why
+ * a size-cap row followed by a [SEL-1] row (critB1 m2), or the reverse, needs
+ * no arm of its own. */
+static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *from)
+{
+    int src_unused;
+    if (!from) from = &src_unused;
+    *from = ESEL_FROM_FORCED;
+    if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
+    *from = ESEL_FROM_ADMIT;
+    if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
+    for (int i = cx->fit_nseq; i-- > 0; ) {
+        const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
+        if (c == ESEL_PASS) continue;
+        *from = i;
+        return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
+                                                    : ESEL_OVERFLOWED_PREFILTER) : c;
+    }
+    *from = ESEL_FROM_NONE;
+    return ESEL_SELECTED;
 }
 
 /* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed
  * `ESEL_*` values records how this artifact's engine came to be chosen.
  *
  * Derived here and nowhere else, because this is the one point where the fit
- * is final AND `compile_driver`'s attempt record is in hand — `dfa_disabled`,
- * `collapse_reason`, `size_drop_rung` and `dfa_was_engine`, all read off `cx`
- * and none of them parameters. `fit->why`'s prose and this token are two
- * readers of ONE decision (D81); neither is parsed from the other. What each
- * value MEANS, which RANGES of them a consumer may test, and the history of
- * the set live on the `ESEL_*` enum in core/internal.h and not here.
+ * is final AND `compile_driver`'s attempt record is in hand — the fired rows
+ * (`fit_seq`), `size_drop_rung`, `dfa_disabled` and `dfa_was_engine`, all
+ * read off `cx` and none of them parameters. `fit->why`'s prose and this
+ * token are two readers of ONE decision (D81); neither is parsed from the
+ * other. What each value MEANS, which RANGES of them a consumer may test,
+ * and the history of the set live on the `ESEL_*` enum in core/internal.h
+ * and not here.
  *
- * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER, so its correctness is a
- * claim about the arms not fighting each other — and this table is the ONE
- * place that claim is made. It replaces the five stacked comment blocks
- * ([OPT-4], [OPT-4.1], [OPT-4.2], [LIM-1], [K53-SELRETRY]) that each amended
- * the previous one; their history is in the plan/decision rows their tags
- * name and in internal.h's value comments. `excludes` means the arms below
- * are DISJOINT by construction and the order is free; `outranks` means they
- * can co-occur and first-wins is the intended answer.
- *
- *  | # | arm (ESEL_)               | fires on                                                       | against the arms below |
- *  |---|---------------------------|----------------------------------------------------------------|---|
- *  | 1 | FORCED                    | `opt->engine != AUTO`                                          | OUTRANKS — note (A) |
- *  | 2 | DECLINED_NULLABLE_DEFAULT | `fit->prefilter_declined_nullable_default`                     | excludes: the field needs `collapse_reason == CR_NONE && !dfa_disabled` and a VM-chosen artifact — note (B) |
- *  | 3 | DECLINED_NULLABLE         | `collapse_reason != CR_NONE && fit->prefilter_declined_nullable` | excludes: a rung ran AND refused its rescue, so the prefilter neither survived (7) nor is this an un-rung compile (2) |
- *  | 4 | SIZE_CAP_RETRY (a)        | `collapse_reason == CR_SIZECAP && fit->prefilter`              | excludes: `CR_SIZECAP` is not `CR_NONE`/`CR_SEL1`, and `dfa_disabled` is never set on this rung — note (C) |
- *  | 5 | SIZE_CAP_RETRY (b)        | `size_drop_rung != SDR_NONE`                                   | excludes 6-9 ONLY under the premise the check below asserts — note (D) |
- *  | 6 | SELECTED                  | `!dfa_disabled`                                                | excludes: every arm below requires `dfa_disabled` |
- *  | 7 | COLLAPSED_PREFILTER       | `collapse_reason == CR_SEL1 && fit->prefilter`                 | excludes: below it no prefilter survived |
- *  | 8 | OVERFLOWED_DFA            | `dfa_was_engine`                                               | last test; its negation is arm 9 |
- *  | 9 | OVERFLOWED_PREFILTER      | otherwise                                                      | — |
- *
- * (A) ARM 1 OUTRANKS, IT DOES NOT EXCLUDE, and the difference is real: a
- *     named engine means `auto` selected nothing, so no selection OUTCOME is
- *     the honest token — but `compile_driver`'s two drop-ladder rungs carry
- *     no `engine == AUTO` conjunct, so `size_drop_rung` CAN be set under
- *     `--engine=dfa` and arm 5 would otherwise fire. First-wins is the
- *     intended answer there; the rung is still legible from the artifact's
- *     own axis stamps (internal.h's `ESEL_SIZE_CAP_RETRY` table).
- * (B) `prefilter_declined_nullable_default` is the one case where
- *     `!dfa_disabled` holds and arm 6's ordinary "selected" would be the
- *     WRONG stamp — which is why it is tested up here rather than after it.
- *     internal.h's placement note explains why the VALUE also sits outside
- *     both fallback ranges. THE THIRD CONJUNCT IS LOAD-BEARING AND WAS
- *     MISSING FROM THE PROSE THIS TABLE REPLACES: [OPT-4.2]'s block argued
- *     non-overlap from `collapse_reason` and `dfa_disabled` alone, which
- *     predates arm 5 and says nothing about `size_drop_rung`. What keeps
- *     arms 2 and 5 apart is that the drop ladder's first two rungs are
- *     DFA-engine (note D) while this field requires a VM-chosen artifact;
- *     the third ([PF-DROP]) is taken only when the refused attempt HAD a
- *     prefilter, so this field was false there, and every input it reads
- *     (`collapse_reason`, `dfa_disabled`, nullability, `-fprefilter`) is the
- *     same on the retry — the rung's own `-fno-prefilter` is not one.
- * (C) The `fit->prefilter` conjunct on arm 4 is not belt-and-braces: a
- *     size-cap-refused VM compile can still end with no prefilter (a
- *     backreference or a linked call drops it), and stamping "a prefilter
- *     survived" would name a decision the artifact did not take. That case
- *     falls to arm 6 deliberately — nothing about its route through a cap is
- *     observable in any other stamp, so it is left alone pending a named
- *     consumer (D77).
- * (D) Arm 5 carries NO `fit->prefilter` conjunct, and that asymmetry with
- *     arm 4 is forced: the drop ladder's first two rungs are DFA-engine
- *     (rung 1 needs `Job.anchored_ok`, rung 2 tests `fit.chosen ==
- *     ENGM_DFA`), a DFA artifact has no prefilter to survive, and the third
- *     ([PF-DROP], D135) is the one that REMOVES a VM hybrid's prefilter, so
- *     requiring one would make the arm unreachable on exactly the population
- *     it exists for. What keeps arm 5 disjoint from arms 6-9 is that no drop
- *     rung is ever taken on a [SEL-1] retry — the first two because an
- *     overflow makes the engine the VM, the third by its own
- *     `!dfa_disabled` conjunct (`fit_prefilter_applies`, compile.c) — see the
- *     check below, which is the first time this file asserts it. */
+ * [DEC-FALLBACK] B5: THE TOKEN IS THE ATTRIBUTION WALK's (`fit_attrib_walk`,
+ * above), a read of the T1/T2 cells. The nine-arm ternary it replaced, and
+ * the arm-by-arm argument that the walk equals it, are dec_fallback.md §1.7;
+ * B2's both-orders oracle held the two equal over the corpus until B5
+ * deleted the ternary. Two facts that ternary's notes argued are now the
+ * walk's SHAPE rather than prose beside it:
+ * - `forced` OUTRANKS, it does not exclude: the drop rows carry no
+ *   `engine == AUTO` conjunct, so a size-cap row can fire under
+ *   `--engine=dfa`, and first-wins is the intended answer (the rung stays
+ *   legible from the artifact's own axis stamps).
+ * - A ladder cell is keyed on the FINAL prefilter. `prefilter-collapse`'s
+ *   `off` cell is PASS: a size-capped VM compile can still end with no
+ *   prefilter (a backreference or a linked call drops it), and stamping "a
+ *   prefilter survived" would name a decision the artifact did not take. The
+ *   three drop rows stamp `size-cap-retry` either way: the first two are
+ *   DFA-engine (no prefilter to survive) and the third REMOVES it. */
 static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
 {
-    /* [TOUR-5] THE ONE PREMISE THIS LADDER RESTED ON WITHOUT ASSERTING
-     * (r61 F2, docs/dev/reviews/2026-09-20-r61-fable-personal-review.md).
-     * Arm 5 is ordered above arms 6-9 on "a drop-ladder rung and a DFA
-     * overflow cannot both have happened to one compile" — plausible, since
-     * the rungs are DFA-engine and an overflow makes the engine the VM, and
-     * argued nowhere. If both ever held, arm 5 would stamp SIZE_CAP_RETRY
-     * and the overflow would be invisible in every stamp the artifact
-     * carries: a silent loss from a closed value set, K35's own shape.
+    /* [TOUR-5] THE ONE PREMISE THE DROP ROWS' CELLS REST ON WITHOUT ASSERTING
+     * (r61 F2, docs/dev/reviews/2026-09-20-r61-fable-personal-review.md):
+     * "a drop-ladder rung and a DFA overflow cannot both have happened to one
+     * compile" — plausible, since the rungs are DFA-engine and an overflow
+     * makes the engine the VM, and argued nowhere. If both ever held, the walk
+     * would stamp whichever row fired LAST and the other would be invisible
+     * in every stamp the artifact carries: a silent loss from a closed value
+     * set, K35's own shape.
      *
      * A REFUSAL, NOT AN `abort()`: pcrec is a library and docs/spec/
      * match_api.md promises the compile path never aborts the caller, so
@@ -1168,43 +1161,7 @@ static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
                  "internal error: an emitted-size drop-ladder rung and a DFA "
                  "overflow fired on the same compile");
 
-    return
-          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
-        : fit->prefilter_declined_nullable_default    ? ESEL_DECLINED_NULLABLE_DEFAULT
-        : (cx->collapse_reason != CR_NONE && fit->prefilter_declined_nullable)
-                                                      ? ESEL_DECLINED_NULLABLE
-        : ((cx->collapse_reason == CR_SIZECAP && fit->prefilter) ||
-           cx->size_drop_rung != SDR_NONE)
-                                                      ? ESEL_SIZE_CAP_RETRY
-        : !cx->dfa_disabled                           ? ESEL_SELECTED
-        : (cx->collapse_reason == CR_SEL1 && fit->prefilter)
-                                                      ? ESEL_COLLAPSED_PREFILTER
-        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
-                                                      : ESEL_OVERFLOWED_PREFILTER;
-}
-
-/* [DEC-FALLBACK] B2 THE ATTRIBUTION WALK (docs/design/dec_fallback.md §1.7):
- * `esel_of`'s nine arms as a read of the tables. A named engine is `forced`;
- * else the admission row's cell (T2 rows 3-5), which precedes every ladder
- * cell as arms 2-3 precede arms 4-9; else the LATEST fired ladder row whose
- * cell for the final prefilter's survival is not PASS, ROLE spelled by the
- * latched `dfa_was_engine`; else `selected`. The backward walk is the general
- * rule for critB1 m2's sequence (a size row after a [SEL-1] row), not a case
- * for it. Reads the fired record `compile_driver` seeds (`Ctx.fit_seq`) and
- * the admission row the fit carries. Built beside `esel_of`; B5 makes it
- * `esel_of`'s body, at the same call site and behind the same premise check. */
-__attribute__((unused))
-static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
-{
-    if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
-    if (fit->pf_admit && fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
-    for (int i = cx->fit_nseq; i-- > 0; ) {
-        const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
-        if (c == ESEL_PASS) continue;
-        return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
-                                                    : ESEL_OVERFLOWED_PREFILTER) : c;
-    }
-    return ESEL_SELECTED;
+    return fit_attrib_walk(cx, fit, NULL);
 }
 
 #ifdef PCREC_CAND_TRACE
@@ -1220,9 +1177,12 @@ static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit)
  * to the derivation it replaced.
  *
  * `attrib`: row = the `ENGINE_SEL` token and the T1 row whose cell gave it
- * (§1.7): `forced`, `admit` (T2 rows 3-5), the latest attributing ladder row
- * (read off the attempt record, which today holds what `fit_seq[]` will), or
- * `none` (`selected` with no cell). */
+ * (§1.7): `forced`, `admit` (T2 rows 3-5), the latest attributing ladder row,
+ * or `none` (`selected` with no cell). Since B5 the source is the
+ * attribution walk's own (`fit_attrib_walk`'s `from`, re-asked here: the
+ * walk asks no fact); until B5 it was read off the attempt record, so the
+ * trace compare against a pre-B5 parent is what held the walk to the
+ * derivation it replaced. */
 static void fit_trace_admit_attrib(Ctx *cx)
 {
     const EngineFit *fit = &cx->job->fit;
@@ -1230,19 +1190,12 @@ static void fit_trace_admit_attrib(Ctx *cx)
     PCREC_CAND_TRACE_RECF("admit", pcrec_cr_trace_name(cr), "admit",
                           "%s pf=%d", fit->pf_admit->name, (int)fit->prefilter);
 
-    const unsigned char e = fit->engine_sel;
-    const char *from =
-          e == ESEL_FORCED                                  ? "forced"
-        : e == ESEL_DECLINED_NULLABLE_DEFAULT ||
-          e == ESEL_DECLINED_NULLABLE                       ? "admit"
-        : e == ESEL_SIZE_CAP_RETRY
-          ? (cx->size_drop_rung == SDR_NO_PREFILTER ? "drop-prefilter"
-           : cx->size_drop_rung == SDR_NO_PREMUL    ? "drop-premul"
-           : cx->size_drop_rung == SDR_NO_ANCHORED  ? "drop-anchored"
-           :                                          "prefilter-collapse")
-        : e == ESEL_SELECTED                                ? "none"
-        : cr == CR_NONE                                     ? "sel1-drop"
-        :                                                     "sel1-collapse";
+    int src;
+    (void)fit_attrib_walk(cx, fit, &src);
+    const char *from = src >= 0                ? pcrec_fit_cells_row_name(cx->fit_seq[src])
+                     : src == ESEL_FROM_FORCED ? "forced"
+                     : src == ESEL_FROM_ADMIT  ? "admit"
+                     :                           "none";
     PCREC_CAND_TRACE_RECF("attrib", "-", "attrib", "%s from=%s",
                           pcrec_engine_sel_name(cx), from);
 }
@@ -1377,22 +1330,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     }
 
     prefilter_decision(cx, &fit, why_pos);
-#ifdef PCREC_CAND_TRACE
-    /* [DEC-FALLBACK] B2: the attribution walk beside `esel_of` (the oracle). */
-    const unsigned char esel_new = PCREC_FIT_NEW_FIRST ? fit_attrib_walk(cx, &fit) : ESEL_PASS;
-#endif
     fit.engine_sel = esel_of(cx, &fit);
-#ifdef PCREC_CAND_TRACE
-    {
-        const unsigned char en = PCREC_FIT_NEW_FIRST ? esel_new : fit_attrib_walk(cx, &fit);
-        char a[8], b[8];
-        snprintf(a, sizeof a, "%u", (unsigned)en);
-        snprintf(b, sizeof b, "%u", (unsigned)fit.engine_sel);
-        PCREC_FIT_HIT("attrib", a);
-        if (en != fit.engine_sel)
-            pcrec_fit_oracle_fail("attrib", a, b, "esel_of");
-    }
-#endif
 
     cx->job->fit = fit;
 #ifdef PCREC_CAND_TRACE

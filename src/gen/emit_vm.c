@@ -11177,26 +11177,16 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * last rung dropped it — the one "none" a caller did not ask for.
      * `_PREFILTER_LANG_WHY`'s shape: the refused artifact's bytes and the
      * cap they exceeded, both carried from `compile_driver`, which decided.
-     * Written only where the rung fired, so no other artifact moves. */
-    if (cx->size_drop_rung == SDR_NO_PREFILTER)
-        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",
-                  "\"size cap retry, hybrid %llu > %llu\"",
+     * Written only where a fired T1 row carries a `pfwhy` cell (the latest
+     * such row; `drop-prefilter` is the one that does), so no other artifact
+     * moves. The cell IS the stamp's format ([DEC-FALLBACK] B5; the
+     * `size_drop_rung` test it replaced is dec_fallback.md §4.2's). */
+    const char *pfwhy = NULL;
+    for (int i = cx->fit_nseq; i-- > 0 && !pfwhy; )
+        pfwhy = cx->fit_seq[i]->pfwhy;
+    if (pfwhy)
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY", pfwhy,
                   cx->size_cap_bytes, cx->size_cap_limit);
-#ifdef PCREC_CAND_TRACE
-    {
-        /* [DEC-FALLBACK] B2: the fired row's `pfwhy` cell beside the test
-         * above (the oracle; its format string is the stamp's). */
-        const char *pfwhy = NULL;
-        for (int i = 0; i < cx->fit_nseq; i++)
-            if (cx->fit_seq[i]->pfwhy) pfwhy = cx->fit_seq[i]->pfwhy;
-        PCREC_FIT_HIT("pfwhy", pfwhy ? "stamped" : "-");
-        if ((pfwhy != NULL) != (cx->size_drop_rung == SDR_NO_PREFILTER) ||
-            (pfwhy && strcmp(pfwhy, "\"size cap retry, hybrid %llu > %llu\"") != 0))
-            pcrec_fit_oracle_fail("pfwhy", pfwhy ? pfwhy : "-",
-                                  cx->size_drop_rung == SDR_NO_PREFILTER ? "stamped" : "-",
-                                  "vm_emit_stamps");
-    }
-#endif
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's

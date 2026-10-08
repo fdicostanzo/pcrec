@@ -2126,68 +2126,6 @@ typedef struct {
      * cannot leave a stamp disagreeing with a live clamp. */
     bool        prefilter_collapsed;
 
-    /* [OPT-4.1] AND THE DECISION IT DROVE: a collapse RUNG asked for the
-     * count-collapsed prefilter and nullability declined it, so this artifact
-     * has NO prefilter. Written from T2's row (`nullable-collapsed`) since
-     * [DEC-FALLBACK] B4. False on every other path, including the two rungs
-     * when the language is not nullable, and including a pattern that simply
-     * has no prefilter for one of the older reasons (a backreference, a linked
-     * call, `-fno-prefilter`).
-     *
-     * IT IS A SEPARATE FIELD FROM THE PREDICATE ABOVE because they answer
-     * different questions. Its one reader since [DEC-FALLBACK] B4 is the
-     * `_ENGINE_SEL` ladder (which stamps `"declined-nullable"` on the [SEL-1]
-     * rung); the `--emit-ir` listing's `; prefilter` line (which would
-     * otherwise name a FLAG the caller did not pass) and the `fit.prefilter`
-     * decision read T2's row instead. A pattern can be nullable and keep an exact
-     * prefilter all day; that is the default and it is not this field. */
-    bool        prefilter_declined_nullable;
-
-    /* [OPT-4.2] THE SAME DECLINE, OFF THE RUNG. `prefilter_declined_nullable`
-     * above only ever fires under `cx->collapse_reason != CR_NONE` — a
-     * ladder rung offering the count-collapsed rescue. Every OTHER hybrid
-     * (the ordinary, un-rung compile: auto routed to the VM, or `--engine=vm`
-     * plus `-fprefilter`) still built the EXACT prefilter unconditionally,
-     * nullable or not, which is the general case [OPT-4.1] left standing —
-     * `(a|b){0,30000}`'s own EXACT language is nullable (it matches the empty
-     * string), the pattern reaches no rung at all since [OPT-5]'s scan edge
-     * (34,522 B, comfortably under every cap), and the shipped hybrid paid the
-     * same 1.2-9.9x loss O-10 measured on the collapsed shape for the
-     * identical reason: a nullable filter admits a zero-length match at every
-     * position and can dismiss none of them.
-     *
-     * ONE PREDICATE, TWO SCOPES: T2's rows 3-4 (`var-nullable`,
-     * `nullable-exact`) are this field's scope and row 5
-     * (`nullable-collapsed`) its rung-scoped sibling's; all three sit below
-     * the backreference and linked-call rows and read `!force_on`, so a
-     * conjunct those rows share is one row position, not two copies. This
-     * field is `collapse_reason == CR_NONE && !dfa_disabled &&` a VM hybrid
-     * `&&` the language's nullability, its sibling above `collapse_reason
-     * != CR_NONE &&` the E1 kind mask's collapsible-repeat bit `&&` the
-     * same. The two are therefore MUTUALLY EXCLUSIVE by construction (one
-     * requires `CR_NONE`, the other its negation) and never both true for
-     * one compile. Written from the row that fired since [DEC-FALLBACK] B4.
-     *
-     * IT NEEDS NO COLLAPSIBLE-REPEAT CONJUNCT, unlike its rung
-     * sibling. That conjunct exists there to tell "a rescue was offered and
-     * refused" from "there was never a distinct rescue to refuse" (no
-     * collapsible repeat means the collapsed lowering IS the exact one). On
-     * this path there is no collapse involved anywhere — the ordinary hybrid
-     * always builds the EXACT prefilter, collapsible repeat or not — so
-     * there is always something concrete for this field to decline.
-     *
-     * ONE READER SINCE [DEC-FALLBACK] B4, the same one
-     * `prefilter_declined_nullable` has (the listing and the decision read
-     * T2's row; they were its other two readers): the
-     * `_ENGINE_SEL` ladder (a NEW value, `ESEL_DECLINED_NULLABLE_DEFAULT` —
-     * `ESEL_DECLINED_NULLABLE` stays rung-scoped and is not reused, since the
-     * two answer different questions about different failure populations and
-     * folding them into one value would be exactly the K35 "closed value set
-     * silently losing a member" shape this project keeps a list of). The
-     * listing's `no-nullable-exact` row prose is worded for the ordinary
-     * path rather than for a declined rung. */
-    bool        prefilter_declined_nullable_default;
-
     /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
      *
      * FRANK'S RULING B (2026-08-29): the DEFAULT builds the EXACT prefilter and
@@ -2518,11 +2456,12 @@ enum {
  * the `--emit-ir` listing).
  *
  * B2 BUILT THEM BESIDE THE OLD DERIVATIONS AND SWITCHED NO READER; B3-B5
- * switch the readers, one table per commit. B3 made T1 the recovery point's
- * dispatch and B4 made T2 the admission and the listing's `prefilter` line.
- * Until B5 the trace build's both-derivations oracle
- * (`pcrec_fit_oracle_fail`, below) holds the remaining token cells to the
- * derivations they will replace.
+ * switched the readers, one table per commit. B3 made T1 the recovery
+ * point's dispatch, B4 made T2 the admission and the listing's `prefilter`
+ * line, and B5 made every token a cell read: `ENGINE_SEL` (the attribution
+ * walk), `VM_PREFILTER_LANG_WHY` (T3), `UNROLL_K_WHY` (T4) and
+ * `VM_PREFILTER_WHY` (the fired row's `pfwhy`). The trace build's
+ * both-derivations oracle went with the last old derivation (B5).
  *
  * PASS and ROLE are NAMED cells, outside every value range they sit beside,
  * so no cell means "pass" by being 0 (memory `pcrec-no-silent-defaults`).
@@ -2584,27 +2523,19 @@ typedef struct PfAdmit {
 } PfAdmit;
 
 #ifdef PCREC_CAND_TRACE
-/* [DEC-FALLBACK] B2 THE BOTH-DERIVATIONS ORACLE's failure: one `CANDORACLE`
- * line on stderr naming the check, the new table's answer, today's answer
- * and the site, then `abort()` (trace build only; [START-TABLE] C2's
- * shape). Defined in src/core/compile.c. */
-void pcrec_fit_oracle_fail(const char *what, const char *got_new,
-                           const char *got_old, const char *site)
+/* [DEC-FALLBACK] a trace-build INVARIANT's failure (§1.9: a `once` row
+ * fired twice, an illegal fired sequence, the attempt bound exceeded, ...):
+ * one `CANDORACLE` line on stderr naming the check, what was found, what
+ * the invariant requires and the site, then `abort()` (trace build only;
+ * the prefix is the one [START-TABLE]'s trace-build checks print). It
+ * carried B2's both-derivations oracle too, until B5 deleted the last old
+ * derivation. Defined in src/core/compile.c. */
+void pcrec_fit_invariant_fail(const char *what, const char *got,
+                              const char *want, const char *site)
     __attribute__((noreturn));
-/* The order the oracle asks in: today's derivation first (the default), or
- * the new table first (`-DPCREC_CAND_NEW_FIRST`), so a predicate's first-ask
- * side effects land on the new walk. */
-#ifdef PCREC_CAND_NEW_FIRST
-#define PCREC_FIT_NEW_FIRST true
-#else
-#define PCREC_FIT_NEW_FIRST false
-#endif
-/* The oracle's hit counter: one `CANDFIT <site> <row>` line per checked
- * decision, which docs/design/dec_fallback/oracle_sweep.py counts (the trace
- * tooling reads `CANDTRACE` lines only). */
-#define PCREC_FIT_HIT(site, row)                                               \
-    (pcrec_cand_trace_quiet ? (void)0                                          \
-     : (void)fprintf(stderr, "CANDFIT\t%s\t%s\n", "" site, (row)))
+/* The NAME of the T1 row whose token payload `c` is (a `Ctx.fit_seq` entry),
+ * for the trace's `attrib` record. Defined in src/core/compile.c. */
+const char *pcrec_fit_cells_row_name(const FitCells *c);
 /* T2's own structural self-check, run by compile.c's `fit_tables_selfcheck`. */
 void pcrec_pf_admits_selfcheck(Ctx *cx);
 #endif
@@ -3179,8 +3110,7 @@ struct Ctx {
      * compile, in FIRING order (each fires at most once), seeded by
      * `compile_driver` from its own record the way `collapse_reason` is. The
      * attribution walk reads it backwards (§1.7) and `VM_PREFILTER_WHY`'s
-     * site reads the `pfwhy` cell. Written by the trace build's oracle only
-     * until B3 makes the table the dispatch; empty in the default build. */
+     * site reads the `pfwhy` cell. Grown by `fit_record` since B3. */
     const FitCells *const *fit_seq;
     int                  fit_nseq;
     bool                 dfa_overflowed;
