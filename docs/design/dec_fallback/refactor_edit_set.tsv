@@ -130,3 +130,18 @@ line	emit_pred_row(sb, &p, 2, "exact", "exact",	B6	row moves into a list column
 # `FIT_TRACE(&cx, rung->name, restart_term, "fb-size");` line (S624's anchor, added at B1 after this
 # file was written) was KEPT verbatim, so S624 is a re-run, not a re-aim. S259's anchor moved to
 # `fit_labels`' NOMEM term and S253's to the notes loop (the report says why).
+def	fit_attrib_walk	B5	rewritten: it is ENGINE_SEL's derivation (no longer unused) and reports the token's source to the trace
+token	pcrec_fit_oracle_fail	B5	renamed pcrec_fit_invariant_fail: only §1.9's invariants call it once the oracle is deleted
+token	PCREC_FIT_NEW_FIRST	B5	the oracle's order switch retires with the oracle
+token	PCREC_FIT_HIT	B5	the oracle's hit counter retires with the oracle
+line	bool collapse = pfc_wanted && (pfc_prefilter_forced ||	B5	the collapse is T3's row's `collapse` cell
+line	!pcrec_fact_nullable(&cx));	B5	T3's pflw_worth asks it
+line	"rung", "rung" }[cx.job->fit.prefilter_lang_why],	B5	the gate record prints T3's row
+line	bool        prefilter_declined_nullable;	B5	deleted: write-only once esel_of's ternary went (the walk reads the row's esel cell)
+line	bool        prefilter_declined_nullable_default;	B5	deleted, as above
+line	fit->prefilter_declined_nullable = row->esel	B5	deleted with the field
+line	fit->prefilter_declined_nullable_default = row->esel	B5	deleted with the field
+line	const unsigned char e = fit->engine_sel;	B5	the attrib record reads the walk's source, not the token
+line	: e == ESEL_DECLINED_NULLABLE_DEFAULT ||	B5	the attrib record's token-to-row derivation is deleted
+line	: cr == CR_NONE                                     ? "sel1-drop"	B5	the attrib record's token-to-row derivation is deleted
+line	pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",	B5	the stamp's format is the pfwhy cell

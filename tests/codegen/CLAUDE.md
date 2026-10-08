@@ -3930,7 +3930,11 @@ read through `tests/lib/spec_extract.sh` (moved there from
   (`docs/dev/lanes/decfbB2_report.md`). **B3 (lane decfbB3) retired its
   T1 `arrival` and `note` sites** (12 + 3 witnesses): the walk is the
   dispatch and the notes read the fired record, so there is no old side
-  left; 50 witnesses remain.
+  left; 50 witnesses remain. **B4 retired its T2 sites** (27 witnesses).
+  **B5 (lane decfbB5) RETIRED THE HALF**: the oracle went with the last
+  old derivations, and the `trlowthr`/`nf*` compilers with it. Its
+  "no `CANDORACLE`, no signal" leg now rides every (a) compile
+  (`trace_sane`), where §1.9's trace-build invariants still abort.
 - **(e) THE DROP NOTES** (B3, lane decfbB3): six default-build witnesses,
   each with the hand-written FULL stderr lines of the size-cap rungs' notes
   it must print, in rung order (anchored; anchored then premul; prefilter),

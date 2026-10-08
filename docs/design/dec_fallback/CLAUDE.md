@@ -76,16 +76,12 @@ first edit (the note's §4.1), because main moves under a design note.
   population and (b) the rev-2 prototype over its population x arms, plus
   (b)'s admit rows (`analyse.t2_row`), gate rows (`t3_row`) and the final
   `attrib` token against `RX_ENGINE_SEL`. Reads `row_reach.py`'s OUT.
-- `oracle_sweep.py` — B2's BOTH-DERIVATIONS ORACLE over the full corpus
-  mirror in BOTH orders: per limit variant, a default-order and a
-  `-DPCREC_CAND_NEW_FIRST` trace compiler of one revision (`git archive`),
-  row_reach's population x the prototype's 14 arms, plus an `--emit-ir`
-  pass (the listing's token site). FAILS on a `CANDORACLE` line or a
-  signal, on the two orders' stdout/rc differing, or (K35) on a checked
-  site with no `CANDFIT` hit in an order; writes `OUT/hits.tsv`. A filter
-  test: the oracle shares its predicates with the tables. Deleted with the
-  oracle at B5. B3 retired its `arrival` and `note` sites and B4 its
-  `admit` and `admit-listing` sites (their old side is gone).
+- (`oracle_sweep.py`, B2's both-derivations oracle over the full corpus
+  mirror in both orders, was DELETED at B5 with the oracle: B3 retired its
+  `arrival`/`note` sites, B4 its `admit`/`admit-listing` sites, and B5
+  deleted the last old derivations its `gate`/`stwhy`/`attrib`/`pfwhy`
+  sites compared against. `git show 54d82727:docs/design/dec_fallback/
+  oracle_sweep.py` is its last text.)
 - `trace_declared_B1.txt` — B1's declared trace multiplicity (its ten site
   keys) for `emit_sweep.py --trace-declared` against B0; meaningless
   against any later parent.

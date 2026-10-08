@@ -27,7 +27,7 @@
 # K35 floors. It is green from B0, before anything moves, so a red at B5 is
 # B's.
 #
-# THREE HALVES (§4.2 B0 item 11), plus B2's (d) and B3's (e):
+# THREE HALVES (§4.2 B0 item 11), plus B3's (e) (B2's (d) retired at B5):
 #   (a) SEQUENCES — each witness's expected fallback-row sequence, read from
 #       the trace build's `fallback` records (`-DPCREC_CAND_TRACE`, B1): one
 #       `row@labels` per arrival, in arrival order, plus the post-row state
@@ -40,18 +40,17 @@
 #       floor, per value), and the OBSERVED set EQUALS the spec's set (both
 #       directions: a value stamped that the spec does not list, and a value
 #       the spec lists that no witness stamps).
-#   (d) THE BOTH-DERIVATIONS ORACLE (B2-B4, dec_fallback.md §4.2 B2): each
-#       witness compiled with the trace build in BOTH orders (today's
-#       derivation first, and `-DPCREC_CAND_NEW_FIRST`); a `CANDORACLE`
-#       line or a signal is a FAIL, the two orders must agree on rc and
-#       stdout, and each witness must REACH the oracle check it is listed
-#       for (a hand-written `CANDFIT <site> <row>` line, [MECH-REACH]).
-#       The full-corpus run in both orders is
-#       docs/design/dec_fallback/oracle_sweep.py; this half is the
-#       in-suite witness set. Landed at B2 (decfbB2); B3 retired its T1
-#       arrival and notes sites and B4 its T2 admit and admit-listing sites
-#       (their old side is gone); B5 deletes the oracle and this half with
-#       it.
+#   (d) RETIRED at B5 (dec_fallback.md §4.2 B5, A's C5 precedent): B2's
+#       both-derivations oracle ran every witness through the trace build in
+#       both orders and failed on a `CANDORACLE` line. B3 retired its T1
+#       arrival and notes sites, B4 its T2 admit and admit-listing sites, and
+#       B5, which deleted the last old derivations (`esel_of`'s ternary, the
+#       PFLW ternary, `cx.size_term_why =`, `VM_PREFILTER_WHY`'s SDR test),
+#       the rest (`gate`, `stwhy`, `attrib`, `pfwhy`) with the oracle. What
+#       holds each token to its old value from B5 on: (a)'s `gate`/`attrib`
+#       records (hand-written) and the trace compare against the parent,
+#       (b)'s ENGINE_SEL/UNROLL_K_WHY witnesses, (c)'s PFLW/PFWHY texts, and
+#       scripts/emit_sweep.py's byte streams against the parent.
 #   (e) THE DROP NOTES (B3): each size-cap rung that fires prints its
 #       stderr note, in rung order, and a compile that drops nothing prints
 #       none. The expected lines are HAND-WRITTEN in full (Frank's
@@ -160,31 +159,6 @@ fi
 REF_trplain="$WORK/pcrec_trplain"; REF_trlowdfa="$WORK/pcrec_trlowdfa"
 REF_trlowsize="$WORK/pcrec_trlowsize"; REF_trlowboth="$WORK/pcrec_trlowboth"
 
-# --- (d)'s NEW-FIRST trace compilers, built once (B2) --------------------------
-# The same five limit sets with `-DPCREC_CAND_NEW_FIRST`, plus the default-order
-# lowthr trace compiler (a)'s keys lack. (d) runs every witness on the
-# `tr<set>` / `nf<set>` pair.
-if [ -n "$lsrcs" ]; then
-    build_ref trlowthr  -DPCREC_CAND_TRACE -DPCREC_SIZE_TERM_THRESHOLD=1000 &
-    build_ref nfplain   -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST &
-    build_ref nflowdfa  -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref nflowsize -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST \
-                        -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
-                        -DPCREC_SIZE_TERM_THRESHOLD=10000 &
-    build_ref nflowboth -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST \
-                        -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
-                        -DPCREC_SIZE_TERM_THRESHOLD=10000 -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
-    build_ref nflowthr  -DPCREC_CAND_TRACE -DPCREC_CAND_NEW_FIRST -DPCREC_SIZE_TERM_THRESHOLD=1000 &
-    wait
-    for n in trlowthr nfplain nflowdfa nflowsize nflowboth nflowthr; do
-        if [ -e "$WORK/ref_$n.fail" ] || [ ! -x "$WORK/pcrec_$n" ]; then
-            bad "the $n trace compiler failed to build: $(head -1 "$WORK/ref_$n.err")"
-        else
-            ok "the $n trace compiler built"
-        fi
-    done
-fi
-
 # compile WITNESS_ID COMPILER-KEY PATTERN [args...] — writes $WORK/ID.c; the
 # pattern is passed via --pattern (never a positional file operand).
 compile() {
@@ -212,6 +186,17 @@ OVFPF="(x)(?:a|b)*a${AB12#(?:a|b)}"
 # =========================================================================
 echo "== (a) sequences: each witness's fallback rows, in arrival order (the B1 trace) =="
 
+# trace_sane LABEL RC TRACE-FILE — a trace-build compile must neither print a
+# `CANDORACLE` line (one of §1.9's invariants failed: pcrec_fit_invariant_fail)
+# nor die by a signal. B2-B4's (d) ran this leg on its own witness set; since
+# B5 it rides every (a) compile, the suite's in-tree check of the invariants.
+trace_sane() {
+    if grep -q '^CANDORACLE' "$3"; then
+        bad "$1: $(grep -m1 '^CANDORACLE' "$3" | tr '\t' ' ')"; return 1
+    fi
+    if [ "$2" -ge 128 ]; then bad "$1: died with rc $2"; return 1; fi
+}
+
 # fseq ID TRACE-KEY RC EXPECTED PATTERN [args...]
 # EXPECTED is the hand-written `row@labels > row@labels ...` sequence of the
 # compile's `CANDTRACE fallback` records ("(none)": no arrival at all), RC
@@ -225,6 +210,7 @@ fseq() {
     pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
         >/dev/null 2>"$WORK/$id.trace"
     rc=$?
+    trace_sane "sequence $id [$key $* '$pat']" "$rc" "$WORK/$id.trace" || return
     got="$(awk -F'\t' '$1 == "CANDTRACE" && $2 == "fallback" { split($4, w, " ");
             s = s (s == "" ? "" : " > ") w[1] "@" $3 } END { print (s == "" ? "(none)" : s) }' \
             "$WORK/$id.trace")"
@@ -292,13 +278,16 @@ fseq seq-nonevm   trplain ok '(none)'                                          "
 # the compile (the final attempt's) reads `route|row-field` == WANT. The
 # other three slots B4/B5 hold to their parent (`admit` = T2's row and
 # verdict, `attrib` = the ENGINE_SEL token and the row whose cell gave it,
-# `gate` = T3's row and PFLW), one witness per row the corpus reaches.
+# `gate` = T3's row and PFLW), one witness per row the corpus reaches. Since
+# B4 (`admit`) and B5 (`attrib`, `gate`) each record prints the WALK's row,
+# so these hand-written rows check the walks directly.
 frec() {
     local id="$1" key="$2" slot="$3" want="$4" pat="$5"; shift 5
     local bin="REF_$key" got
     bin="${!bin}"
     pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
         >/dev/null 2>"$WORK/$id.trace"
+    trace_sane "record $id [$key $slot $* '$pat']" "$?" "$WORK/$id.trace" || return
     got="$(awk -F'\t' -v s="$slot" '$1 == "CANDTRACE" && $2 == s { x = $3 "|" $4 } END { print x }' \
             "$WORK/$id.trace")"
     [ "$got" = "$want" ] && ok "record $id [$key $slot $*]: $want" \
@@ -334,85 +323,6 @@ frec gate-nul     trplain gate 'none|nullable pflw=nullable' '^(a{2,9})*$' -fpre
 frec gate-nulsel1 trplain gate 'sel1|nullable pflw=nullable' "$W_OVF"
 frec gate-exact   trplain gate 'none|exact pflw=exact'       '(a){2,3}b'
 frec gate-norep   trplain gate 'none|no-rep pflw=no-rep'     '(a)b'
-
-# =========================================================================
-# (d) THE BOTH-DERIVATIONS ORACLE, in both orders (B2)
-# =========================================================================
-echo "== (d) the both-derivations oracle: every witness in both orders, each reaching its check =="
-
-# foracle ID SET SITE ROW PATTERN [args...] — compile with tr<SET> (today's
-# derivation first) and nf<SET> (the table first). A leading `--emit-ir`
-# argument asks the listing instead of the artifact. FAIL on a CANDORACLE
-# line, a signal, the two orders disagreeing on rc or stdout, or the
-# hand-written `CANDFIT SITE ROW` line missing from either order (the
-# witness stopped reaching the check it is listed for).
-foracle() {
-    local id="$1" set="$2" site="$3" row="$4" pat="$5"; shift 5
-    local o bin rc rcs="" outs=""
-    for o in tr nf; do
-        bin="REF_$o$set"; bin="${!bin:-$WORK/pcrec_$o$set}"
-        if [ "${1:-}" = --emit-ir ]; then
-            pcrec_run "$bin" -p rx --features all "$@" --pattern "$pat" \
-                >"$WORK/$id.$o.out" 2>"$WORK/$id.$o.err"
-        else
-            pcrec_run "$bin" -p rx --features all "$@" -o - --pattern "$pat" \
-                >"$WORK/$id.$o.out" 2>"$WORK/$id.$o.err"
-        fi
-        rc=$?
-        if grep -q '^CANDORACLE' "$WORK/$id.$o.err"; then
-            bad "oracle $id [$o$set $* '$pat']: $(grep -m1 '^CANDORACLE' "$WORK/$id.$o.err")"; return
-        fi
-        if [ "$rc" -ge 128 ]; then
-            bad "oracle $id [$o$set $* '$pat']: died with rc $rc"; return
-        fi
-        if ! grep -qxF "$(printf 'CANDFIT\t%s\t%s' "$site" "$row")" "$WORK/$id.$o.err"; then
-            bad "oracle $id [$o$set $* '$pat']: no 'CANDFIT $site $row' (the witness stopped reaching its check)"; return
-        fi
-        rcs="$rcs $rc"
-    done
-    if [ "$rcs" != " ${rcs##* } ${rcs##* }" ] || ! cmp -s "$WORK/$id.tr.out" "$WORK/$id.nf.out"; then
-        bad "oracle $id [$set $* '$pat']: the two orders differ (rc$rcs, stdout $(cmp -s "$WORK/$id.tr.out" "$WORK/$id.nf.out" && echo same || echo differs))"; return
-    fi
-    ok "oracle $id [$set $*]: $site $row, both orders"
-}
-REF_trlowthr="$WORK/pcrec_trlowthr"
-
-# (T1's arrival and notes checks retired at B3: the walk IS the dispatch and
-# the notes read the fired record, so there is no old side to compare. Their
-# witnesses are (a)'s sequences and (e)'s notes, both hand-written.)
-# (T2's verdict/declined-flags and listing checks retired at B4: the walk
-# IS the admission and the listing reads the row's cells, so there is no
-# old side to compare. Their witnesses are (a)'s `admit` records and
-# tests/prefilter/run_prefilter_tests.sh §7's hand-written check_ir_value
-# rows, both independent of the table.)
-# T3, every row
-foracle or-g-sel1  plain   gate    rung     "$W_SEL1"
-foracle or-g-szc   plain   gate    rung     '(\p{Xwd}{1,3})' -e utf8
-foracle or-g-forc  plain   gate    forced   '(x)?a{0,4}\Gb' -fprefilter-collapse
-foracle or-g-nul   plain   gate    nullable '^(a{2,9})*$' -fprefilter-collapse
-foracle or-g-exact plain   gate    exact    '(a){2,3}b'
-foracle or-g-norep plain   gate    no-rep   '(a)b'
-# T4, every row
-foracle or-w-opt   plain   stwhy   option              'a(b|c)+d' --unroll=4
-foracle or-w-den   plain   stwhy   denied              'a(b|c)+d' -fno-size-term
-foracle or-w-def   plain   stwhy   default             'a(b|c)+d'
-foracle or-w-sm    plain   stwhy   size-model          "$W_NEST8"
-foracle or-w-cr    lowsize stwhy   cap-rescue          '(?:a\K){0,10}ab'
-foracle or-w-smd   lowsize stwhy   size-model-declined '(?:a\K){0,10}b'
-foracle or-w-cd    lowthr  stwhy   capacity-declined   '(((?:a{0,2}b)+c){0,20}d){0,20}e' --engine=vm
-# the attribution walk against `esel_of`, all eight ENGINE_SEL values (the
-# hit row is the ESEL_* number: internal.h's value table)
-foracle or-e-forc  plain   attrib  0 '(a)b' --engine=vm
-foracle or-e-sel   plain   attrib  1 '(a)b'
-foracle or-e-dnd   plain   attrib  2 '(a)*'
-foracle or-e-odfa  plain   attrib  3 "$W_OVF"
-foracle or-e-opf   lowdfa  attrib  4 "$OVFPF"
-foracle or-e-cpf   plain   attrib  5 "$W_SEL1"
-foracle or-e-dn    plain   attrib  6 '(?:ab){0,16000}'
-foracle or-e-scr   plain   attrib  7 '(\p{Xwd})' -e utf8
-foracle or-e-scpfc lowsize attrib  7 '(\bcat\b)+' -e utf8
-# VM_PREFILTER_WHY's `pfwhy` cell (the fired record's row) against the SDR test
-foracle or-p-why   plain   pfwhy   stamped        '(\p{Xwd})' -e utf8
 
 # =========================================================================
 # (b) THE OBSERVED-STAMP LEG
