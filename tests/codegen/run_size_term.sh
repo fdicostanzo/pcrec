@@ -470,6 +470,20 @@ fi
 # `size-model-declined` (prediction and stamp agree), leaving the in-band
 # below-bar side with one shape. The new member is a corpus pattern at
 # 0.7162, a prefix-chain alternation no other member has.
+# `((a)|ab){0,17}c` JOINED AT abi 66 (lane possbuild, re-pinned by posstri,
+# [ART-POSS-ARMS]): the VM stamp block gained `#define RX_VM_POSS_ARMS 0x0u`,
+# a K-INVARIANT +29 bytes of TOTAL on every VM artifact, which raises every
+# ratio a little again. MEASURED on this block's own reference compiler,
+# abi 65 (main 8cada7b9) against abi 66, no other pool input changing (every
+# member stamps `arms=0x0u`, so it is the stamp line and not the arms):
+# `(?:ab|ba|aa|bb){24}c` 0.7498 -> 0.7500, i.e. it crossed the bar and now
+# stamps `size-model-declined` (prediction and stamp still agree), leaving the
+# in-band below-bar side with one shape (`prefix-chain`) and failing the
+# two-shapes-a-side bracket. The new member is a corpus pattern
+# (tests/counterk/counterk.rxt:475) at 0.7199 (0.7196 at abi 65), `size-model`
+# taken, with the SAME body as `capture-alt` but a bounded {0,17} count where
+# that member is an exact {4000}: it sits below the bar where its sibling sits
+# above, which is the bracket the pool is for. The constant is not adjusted.
 POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (|a){0,12}b	empty-branch
 (?:[ab]a|[ab]){8,12}+b	class-leading
@@ -480,7 +494,8 @@ POOL_PATTERNS='((a)|ab){4000}c	capture-alt
 (?:aa|a){8,12}+b	narrow-aa-a
 (?:[ab]a|[ab]){9,12}+b	class-leading
 (?:ab|a){8,12}+b	narrow-ab-a
-(?:abcd|abc|ab|a){17}z	prefix-chain'
+(?:abcd|abc|ab|a){17}z	prefix-chain
+((a)|ab){0,17}c	capture-alt-bounded'
 BAR=0.75
 BAND=0.05
 
