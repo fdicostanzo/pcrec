@@ -15,6 +15,22 @@ None of them is read by a check.
 
 ## Files
 
+- `call_graph.py --family fallback` ([DEC-FALLBACK] B0 item 9): the same
+  derivation with the refactor-B fallback family's roots (the recovery-point
+  walk, the `fit_*` predicates, `prefilter_decision`, `size_term_choose`,
+  `esel_of`; `compile_driver` holds the T3 gate) and seeds DERIVED by
+  running `../dec_fallback/state_readers.sh` (its `# E/L/R/RQ/S/V/D` header
+  lines; exit 2 on an empty source or a vanished root). The family is the
+  ONE-hop direct readers of those seeds (transitive reach is 761 of 2,084
+  definitions: compile_driver reaches the whole compiler). One-line
+  definitions are parsed in this mode only. `--family start` (default) is
+  byte-identical to the output before the selector. Output:
+  `../dec_fallback/call_graph_fallback.txt`.
+  `sabotage_anchors.py` accepts either family's graph; `--final LABEL`
+  (the single re-run of an untouched owner, default `after-C5b`) and
+  `--edit-names` (also re-run at a commit whose edit-set text names the
+  owner, or that rewrites a `def` the owner's body names) serve the B
+  commits; B0..B7 join the commit order.
 - `call_graph.py` → `call_graph.txt` — method 1 of the derived inventory
   (start_table.md §2.1). Parses every top-level definition under `src/`,
   headers included (functions, tables of any size, initializer/string/scalar

@@ -79,7 +79,15 @@ step's derived rows and a hand list (the rows a lane re-ran by judgment).
 
 Usage: sabotage_anchors.py ROOT CALL_GRAPH_TSV EDIT_SET_TSV
            [--repo REPO] [--step NAME=A..B]... [--reach-hops K]
-           [--compare NAME=S1,S2,...]...
+           [--compare NAME=S1,S2,...]... [--final LABEL] [--edit-names]
+--final LABEL names the single re-run of a RE-RUN row whose owner no commit
+touches (default after-C5b, the start table's last commit; the fallback
+family passes after-B6, dec_fallback.md §4.2 item 9). --edit-names adds, for
+a RE-RUN row, every commit whose edit-set token/line text NAMES the owner
+(`rerun_via` edit-names): the plan-level form of the --step reach hop 0;
+and every commit that REWRITES (edit-set `def`) a definition the owner's
+body names (`calls-rewritten`).
+CALL_GRAPH_TSV may be either family's call_graph.py output.
 Read-only; prints TSV (rowfile, id, site, file, owner, resolution, line,
 count/want, class, commits, rerun_at, reason, reads, rerun_via) and a summary
 on stderr. Without --step the output is byte-identical to the earlier form
@@ -96,6 +104,8 @@ _ap.add_argument("--repo")
 _ap.add_argument("--step", action="append", default=[])
 _ap.add_argument("--reach-hops", type=int, default=2)
 _ap.add_argument("--compare", action="append", default=[])
+_ap.add_argument("--final", default="after-C5b")
+_ap.add_argument("--edit-names", action="store_true")
 _a = _ap.parse_args()
 root, cgp, esp = _a.root, _a.cgp, _a.esp
 defs = collections.defaultdict(list)   # file -> [(start, end, name, kind)]
@@ -232,6 +242,34 @@ def edit_spans(f):
     return _edits[f]
 
 
+def named_in_edits(own):
+    """commits whose edit-set token/line TEXT names `own` as a word: a row
+    that stores or calls it is rewritten there (fit_rungs[]'s rows name each
+    fit_*_applies), so its anchor's behaviour is reached by that commit even
+    though the owner's own body is untouched (--edit-names)."""
+    out = set()
+    rx = re.compile(r'\b' + re.escape(own) + r'\b')
+    for k in ("token", "line"):
+        for v, cws in edit[k].items():
+            if rx.search(v):
+                out |= {c for c, _ in cws}
+    return out
+
+
+def calls_rewritten(f, own):
+    """commits that REWRITE (edit-set `def`) a definition `own`'s body names:
+    the owner's answer now comes from the new body (S40 calls esel_of)."""
+    out = set()
+    if own not in defrange or defrange[own][0] != f:
+        return out
+    _, a, b = defrange[own]
+    ids = set(re.findall(r'[A-Za-z_]\w*', "\n".join(code_of(l) for l in text(f).split("\n")[a - 1:b])))
+    for d, (c, _w) in edit["def"].items():
+        if d != own and d in ids:
+            out.add(c)
+    return out
+
+
 def touched(f, own):
     """commits whose edit set touches definition `own`'s range in f."""
     out = set()
@@ -246,7 +284,8 @@ def touched(f, own):
     return out
 
 
-ORDER = ["C0", "C1", "C2", "C3", "C4", "C5", "C5b", "C6", "C7"]
+ORDER = ["C0", "C1", "C2", "C3", "C4", "C5", "C5b", "C6", "C7",
+         "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7"]
 
 # ---- [admin1008b] STEPS: rerun_at from each commit's actual diff ----------
 kindof = {}
@@ -473,6 +512,11 @@ for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
             cls = "RE-RUN"
             for c in touched(f, own):
                 via[c] = "edit-set"
+            if _a.edit_names:
+                for c in named_in_edits(own):
+                    via.setdefault(c, "edit-names")
+                for c in calls_rewritten(f, own):
+                    via.setdefault(c, "calls-rewritten")
         elif commits:
             cls, why = "RE-AIM", "outside-family " + why
         else:
@@ -490,7 +534,7 @@ for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
         if via:
             rerun = "+".join(sorted(via, key=ckey))
         elif cls == "RE-RUN":
-            rerun = "after-C5b"
+            rerun = _a.final
         rvia = ";".join(f"{c}:{via[c]}" for c in sorted(via, key=ckey))
         rows.append((rfile, rid, site, f, own, res, line, f"{n}/{want}", cls,
                      "+".join(commits), rerun, why, ",".join(reads), rvia))

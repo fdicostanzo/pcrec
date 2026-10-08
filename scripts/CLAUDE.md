@@ -423,8 +423,14 @@ pcrec (the Makefile owns that).
   commit DECLARES (`--declared`; a declaration that filters nothing fails),
   and holds a records-per-arm floor (an empty trace passes no diff).
   `--keys` selects the compared fields. Exit 0 clean / 1 differ / 2 bad
-  input. Self-test: `tests/trace_diff.py.test` (13 planted cases, each
-  paired with its clean twin).
+  input. `--order SLOT=ordered|set` (repeatable; [DEC-FALLBACK] B0 item 7,
+  S-I2's detector) sets ONE slot's compare mode (the slot = the record's
+  first field): `ordered` compares that slot's records as a sequence per
+  (pattern, arm), other slots' records interleaved between them ignored;
+  every unnamed slot follows the default (`--unordered` or ordered) and is
+  compared together as one subsequence. API: `compare(..., order={slot:
+  mode})`. Self-test: `tests/trace_diff.py.test` (30 cases: 17 planted
+  cases + 13 `--order` ones, each paired with its clean twin).
 
 - **cls_identity.py** — [CLS-TREE] S3's BYTE-IDENTITY INSTRUMENT
   (2026-09-29, lane `clsid`, `cls_s3_reader_inventory.md` §7/D-8), the
