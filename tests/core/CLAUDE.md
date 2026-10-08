@@ -308,6 +308,31 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   battery.sh`'s `alloc` stage (D110) — `make test` itself is NOT the home
   for the per-witness pins, only for section 2b's coarser verdict check.
 
+  **W5 — THE FORCE LOOP'S ARM** (lane decfbB0a, 2026-10-08; design
+  `docs/design/dec_fallback.md` §4.2 / B0 deliverable 10, critB1 MAJOR-3):
+  the fifth witness, and the first that drives `pcrec_emit_facts` instead of
+  `pcrec_compile`, because the arm it covers — `compile.c`'s `pf.forcing`
+  test, FIRST in the catch branch, ahead of the K60 nomem arm — is reachable
+  only from the facts listing's force loop. It is NOT a `Witness` row: its
+  property differs (rc 0 + exactly one `decline:force-failed` row, not
+  rc -1 + message) so it has its own `w5_run()`, single-shot only (a
+  sustained sweep would also fail the listing's own rendering, an unasserted
+  population). Pattern `(?:a?){700}`: found by probing — a forced derivation
+  allocates only when `pcrec_kset_walk`'s arena requests open a new block,
+  which is a property of the pattern's arena fill, so the pattern is pinned
+  and a K35 floor (loop length >= 1) trips if it stops reaching. THE LOOP IS
+  LOCATED BY A CONTROL THAT READS NO LISTING TEXT: the site traces
+  (`file:line` per call, `trace_on`) of a hook-less and a hooked
+  `pcrec_compile_driver` pass diverge exactly at the loop's first
+  allocation, and a third `pcrec_emit_facts` pass is cross-checked against
+  the hooked trace. In-loop trials must answer with the row; the 6 calls
+  before it must be diagnosed; the calls AFTER the loop (listing rendering)
+  are reported in a `NOTE:` line, not asserted — today most of them abort
+  (detached `StrBuf`s in `src/dump/facts_dump.c`, `sb.c`'s `abort()`).
+  `make alloc` and `run_resource_tests.sh` §2b both run it (§2b builds
+  `alloc_check.c` as before; its coarse verdict is the binary's rc, so W5
+  rides it with no script change). Report: `docs/dev/lanes/decfbB0a_report.md`.
+
 - `varexp_check.c` — [VAR] M1 (2026-09-23): the expansion grammar
   (`src/core/varexp.c`), checked below any artifact and below any match.
   47 sub-checks: accept rows, refuse rows with their OFFSETS, both limits in
