@@ -328,9 +328,12 @@ static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
  * value, and the `applies` text, which sits beside its row in that table
  * rather than in a hand table here (start_table.md §2.4 D-3: the hand table
  * had drifted from the row it described). This surface therefore cannot
- * state a row the emitter's walk does not have. `kind` is the caller's: the
- * section the axis is reported under. */
-static void emit_cand_axis(StrBuf *sb, const char *axis, const char *kind)
+ * state a row the emitter's walk does not have. Every start axis is a `list`
+ * axis since C7: its rows ARE a candidate list, the table the walk reads
+ * (C6 printed `predicate` for the five that had been hand-stated before
+ * their tables existed, to keep the listing byte-identical through the
+ * fold). */
+static void emit_cand_axis(StrBuf *sb, const char *axis)
 {
     PcrecCandListRow r;
     for (int i = 0; pcrec_cand_list_row(axis, i, &r); i++) {
@@ -340,7 +343,7 @@ static void emit_cand_axis(StrBuf *sb, const char *axis, const char *kind)
         /* A row with no desc prints `desc_of`'s placeholder, which the axis
          * registry check reads as an unauthored candidate, never an empty
          * cell nothing reads. */
-        axis_row(sb, axis, r.order, r.name, kind, r.stamp, r.value,
+        axis_row(sb, axis, r.order, r.name, "list", r.stamp, r.value,
                  deny_macro, deny_bit, "", "", flag,
                  r.desc ? r.desc : desc_of(axis, r.name));
     }
@@ -707,7 +710,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * that emitter derives it from its own machine; the `search-start` axis
      * above is a different question (where the MATCH begins once one is
      * found), not this one (where an ATTEMPT may begin at all). */
-    emit_cand_axis(sb, "vm-anchor-bound", "predicate");
+    emit_cand_axis(sb, "vm-anchor-bound");
     /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW: the
      * WINDOW rows of `cand_rows[]` since [START-TABLE] C6, on BOTH engines.
      *
@@ -719,7 +722,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * declined (which IS a named value, and a consumer buckets on it). The
      * `window` row shows `-fno-end-window`, the `end_window` FACT's deny, as
      * a projection (§3.7). */
-    emit_cand_axis(sb, "end-window", "predicate");
+    emit_cand_axis(sb, "end-window");
     /* [OPT-REQBYTE] req-byte — §2.27. The NECESSARY-BYTE whole-window
      * pre-check, from the `req_byte` fact's one AST-level derivation, on BOTH
      * engines' search entries. `stamp_value` is spelled on the fallback row
@@ -769,12 +772,12 @@ static void emit_predicate_axes(StrBuf *sb)
      * the `desc` beside each row, so this surface cannot state a predicate
      * the emitter does not ask. Its stamp is `RX_REQ_WHY`; `set-leads` is a
      * SHAPE of an emitted pre-check, so it stamps `emitted` too. */
-    emit_cand_axis(sb, "req-admit", "predicate");
+    emit_cand_axis(sb, "req-admit");
     /* [K82] (B) req-use — §2.41. What the body does with an emitted run
      * pre-check's answer: the FIRST rows of `cand_rows[]`, as req-admit's
      * are PRESENCE's. Its stamp is `RX_REQ_HANDOFF`, whose value on the
      * `handoff` row is the artifact's own K, so no row names a fixed value. */
-    emit_cand_axis(sb, "req-use", "predicate");
+    emit_cand_axis(sb, "req-use");
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller
      * startpos, and which one an artifact carries is a contract fact rather
@@ -883,7 +886,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * `pcrec_reseed_rows[]`), projected since C6 with the `desc` beside each
      * row, so this surface cannot state a predicate the emitter does not
      * ask. The row's listed name is the RX_VM_RESEED value it stamps. */
-    emit_cand_axis(sb, "hyb-reseed", "predicate");
+    emit_cand_axis(sb, "hyb-reseed");
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */
     {
@@ -1105,7 +1108,7 @@ char *pcrec_axes_tsv(void)
 
     emit_dfa_list_axis(&sb, "table", "list", pcrec_dfa_axis_table_cands);
     emit_table_composite_rows(&sb);
-    emit_cand_axis(&sb, "prefilter", "list");
+    emit_cand_axis(&sb, "prefilter");
     emit_dfa_list_axis(&sb, "view", "list", pcrec_dfa_axis_view_cands);
     emit_dfa_list_axis(&sb, "seed", "list", pcrec_dfa_axis_seed_cands);
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
@@ -1124,7 +1127,7 @@ char *pcrec_axes_tsv(void)
      * NO composite rows -- unlike `table` and `scan-body`, whose stamps
      * compose a fact across machines, RX_DFA_START names one artifact-level
      * selection and its value set is exactly these two candidates. */
-    emit_cand_axis(&sb, "search-start", "list");
+    emit_cand_axis(&sb, "search-start");
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);

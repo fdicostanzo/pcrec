@@ -121,3 +121,6 @@ line	if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)	C6	
 def	attempt_next_read	C6	NEW: attempt_next_of's selection as a checked read
 def	dfa_pf_read	C6	NEW: dfa_pf_of's selection as a checked read
 def	req_admit_read	C6	NEW: req_admit's selection as a checked read
+# [stc67, 2026-10-08] C7, the DECLARED listing commit (stream 5 only, not an abi event): D-3's stale desc corrected, and every start axis lists as `list` (emit_cand_axis loses its kind argument). The --list-axes movers are declared cell by cell in listing_declared_C7.tsv and checked by listing_diff.py
+token	T = S & E* (E* every seed state's escape set; T == S)	C7	D-3: the DFA hat's desc said T = S & E*; the code scans T = S (pf_dfa_start_set)
+token	emit_cand_axis(	C7	emit_cand_axis takes no kind (every start axis's rows are a candidate list), and its seven call sites lose the argument; a def entry would overwrite C6's (the edit set keeps one commit per def)

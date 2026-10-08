@@ -8199,7 +8199,7 @@ static const CandRow cand_rows[] = {
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-memchr-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "first-memchr-bounded" } },
-      .desc = "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, and T = S & E* (E* every seed state's escape set; T == S) a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved",
+      .desc = "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, scanned as T = S, a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved",
       .u.pf = { .emit = pf_emit_first_memchr_bounded, .reseeds = true,
                 .scan = PF_SCAN_BYTE, .scan_set = pf_dfa_start_set } },
     { .c = { "first-class-bounded", PCREC_NO_START_SET, pf_first_class_bounded_applies },
