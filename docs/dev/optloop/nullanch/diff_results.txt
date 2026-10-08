@@ -1,0 +1,15 @@
+^(([a-z]+)*)+$	[ab!]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	88573 subjects: 88573 identical (2047 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(\s+)*$	[ x]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a|b*)*$	[abc]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	29524 subjects: 29524 identical (1023 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(\s*\w*)*$	[ a!]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	29524 subjects: 29524 identical (1023 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a?)(?1)*$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a{2,4})?$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (4 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(?:(?<g>a?)){0}(?&g)*+$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a*)*$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a*)+$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(x?)*$	[x]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	9 subjects: 9 identical (9 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^((a)|b*)*$	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	2047 subjects: 2047 identical (2047 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+\A(a*)*\z	[ab]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (13 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a*)*$	[a\n]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	8191 subjects: 8191 identical (25 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(\s+)*$	[ \nx]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	88573 subjects: 88573 identical (2047 matches), 0 da-give-up/db-answers, 0 DIFFERENT
+^(a|\n)*$	[a\nb]	da_sel="declined-nullable-default"	db_prefilter="hybrid"	88573 subjects: 88573 identical (2047 matches), 0 da-give-up/db-answers, 0 DIFFERENT
