@@ -935,3 +935,27 @@ the compiler, and is never adopted silently. Proposed for main to file
       operand and exists only at render, so R4h needs a render-time class or
       a pcrec shape promise;
     - the conditional `count` use is caught only by rows check E.
+- done: 2026-10-08 — **R4h's ADVANCE target, FROZEN (main's request before
+  the layout-normalization mover): lane/memfn-next @ TIP (the commit carrying
+  this entry; it merges lane/advtarget 72db7d6c).** Report:
+  docs/dev/lanes/advtarget_report.md.
+  - **The target is the kit's render; pcrec normalizes to it.** Kit
+    decisions, all kept:
+    - `more` and `member` are always parenthesized, and `member` is opaque
+      (so EDGE's render-only `scan_test` shape no longer matters);
+    - the body is always braced, with the counter step on its own line;
+    - the cap is `%llu` + `ULL`;
+    - the counted shapes use count_by_caller = 1.
+  - **Eight shapes**, each pinned in arms.tsv and committed byte for byte in
+    `tests/memfn/pins/r4h_target/<shape>.c` with a trailing
+    `/* pcrec today: */` block: stay-fwd, stay-rev, stay-view,
+    edge-unbounded, edge-counted-fwd, edge-counted-rev, vmspan-it, vmspan.
+  - **The deltas** classify into (a)/(b)/(c)/(d) only; nothing falls outside
+    them.
+  - **run_arm_pins.sh check 8** re-renders each shape and compares it with
+    its file, with a planted-byte control.
+  - **Validation:** arms 221/0 and rows 117/0. Nine witness compiles were
+    byte-identical, and no src/ file changed (zero movers).
+  - **For pcrec's mover and R4h:** the member hook must pass pcrec's own
+    test text (today's `scan_test`/`vm_cls_test` output), never a text
+    rebuilt from the kit's `peek` expression.
