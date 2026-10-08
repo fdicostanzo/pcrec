@@ -145,8 +145,21 @@ static int sustained = 0;
  * compile first had to cope with. */
 static char fail_site[96];
 
+/* [W5] THE ALLOCATION-SITE TRACE, off except in W5's three profiling passes:
+ * every call's `__FILE__`/`__LINE__` in order, so two runs of the same
+ * pattern can be diffed by the SITES of their allocations. `call_n` is the
+ * 1-based index into it. */
+#define TRACE_CAP 4096
+static int trace_on = 0;
+static const char *tr_file[TRACE_CAP];
+static int tr_line[TRACE_CAP];
+
 static int inject_should_fail(const char *file, int line)
 {
+    if (trace_on && call_n >= 1 && call_n <= TRACE_CAP) {
+        tr_file[call_n - 1] = file;
+        tr_line[call_n - 1] = line;
+    }
     if (!fail_at) return 0;
     if (call_n < fail_at) return 0;
     if (!sustained && call_n != fail_at) return 0;
@@ -455,6 +468,240 @@ static void report(const Witness *w, const Tally *t, int sust)
     }
 }
 
+/* ======================================================================
+ * [W5] THE FORCE LOOP'S ARM — `pcrec --emit-facts`, an allocation failure
+ * INSIDE a forced fact derivation (docs/design/dec_fallback.md §4.2, B0
+ * deliverable 10; critB1 MAJOR-3).
+ *
+ * THE PROPERTY. src/core/compile.c's recovery point tests `pf.forcing`
+ * FIRST, ahead of the K60 nomem arm: a failure inside a FORCED ask (one only
+ * the listing made, after the artifact and every stamp exist) becomes
+ * `decline:force-failed` on that one fact and the loop resumes, so
+ * `pcrec_emit_facts` still answers (non-NULL text) with exactly that row. W1-
+ * W4 cannot reach the arm — they drive pcrec_compile(), which never forces —
+ * and no corpus compile does either, so before W5 the arm had no witness.
+ *
+ * WHERE THE FAILING ALLOCATION MUST LAND, AND HOW THIS FILE KNOWS IT DID.
+ * Forced derivations allocate only through the arena (src/facts/kset.c's
+ * `pcrec_kset_walk`, four arena allocations of ~13n bytes), and the arena
+ * only reaches malloc when its current block has no room — so whether a
+ * given pattern's force loop allocates AT ALL is a property of the pattern,
+ * found by probing (the witness pattern below), not of the fact. The loop's
+ * allocations are located WITHOUT reading the output under test, by
+ * DIFFING THE SITE TRACES of two profiling passes of the same pattern:
+ *   (hook-less)  pcrec_compile_driver, facts_hook == NULL: the force loop is
+ *                skipped (compile.c `if (facts_hook) pcrec_facts_force_all`);
+ *   (hooked)     the same call with a no-op recording hook: the force loop
+ *                runs, and the hook's entry gives the allocation count there.
+ * The two traces (file:line of every allocation, in order) are identical up
+ * to the first allocation of the force loop; that index d is the loop's
+ * first call and `hooked_at - hookless_K` is its length L (the render-prefix
+ * allocations after the loop are in both traces, which is why the two total
+ * counts alone cannot place the loop). Trials N in [d, d+L) are IN the loop;
+ * the control shares nothing with the listing text, and a THIRD pass
+ * (pcrec_emit_facts itself) is cross-checked to reproduce the hooked trace
+ * through the loop, so the numbering the trials use is the one measured.
+ *
+ *   in-loop trials   (N in [d, d+L))   must return text carrying EXACTLY ONE
+ *                    `decline:force-failed` row. Anything else is a FAIL: NULL
+ *                    (the arm did not absorb, or sits below the nomem arm —
+ *                    design §4.4 S-F0), text without the row, a signal.
+ *   margin before    (the 6 calls before d: the compile's own last
+ *                    allocations) must be DIAGNOSED (NULL + message): W1-W4's
+ *                    own contract, so a regression that moves the arm's
+ *                    reach upstream reads here.
+ *   after the loop   (render prefix + the listing's own row rendering):
+ *                    NOT asserted — see the NOTE the witness prints: today
+ *                    some of these abort (detached StrBufs in
+ *                    src/dump/facts_dump.c have no error channel,
+ *                    sb.c's `abort()`); the witness reports the count and
+ *                    asserts only that none of them can show a force-failed
+ *                    row (a failure there is not a forced ask).
+ *   FLOOR (K35)      the loop must contain at least W5_MIN_INLOOP calls. L is
+ *                    1 for the pinned pattern (measured), so the floor is
+ *                    the measured value, not half: below 1 there is nothing
+ *                    left to assert. A pattern whose arena usage shifts so
+ *                    the loop no longer opens a block FAILS here, loudly,
+ *                    rather than passing over an empty population.
+ * Single-shot only: SUSTAINED mode would also fail the listing's own
+ * rendering allocations after the loop, which is a different (unasserted)
+ * population.
+ * ====================================================================== */
+
+#define W5_MARGIN     6
+#define W5_MIN_INLOOP 1
+#define W5_MIN_TOTAL  100   /* about half of the measured 220 */
+static const char *const w5_pattern = "(?:a?){700}";
+
+typedef struct { long long n; const char *f[TRACE_CAP]; int l[TRACE_CAP]; } Trace;
+static Trace tr_hookless, tr_hooked, tr_emit;
+static long long hooked_at = -1;
+
+static void w5_hook(Ctx *cx, const char *artifact, size_t len, void *ud)
+{
+    (void)cx; (void)artifact; (void)len; (void)ud;
+    hooked_at = call_n;
+}
+
+static void w5_save(Trace *t)
+{
+    t->n = call_n < TRACE_CAP ? call_n : TRACE_CAP;
+    memcpy(t->f, tr_file, (size_t)t->n * sizeof t->f[0]);
+    memcpy(t->l, tr_line, (size_t)t->n * sizeof t->l[0]);
+}
+
+static int w5_same(const Trace *a, const Trace *b, long long i)
+{
+    return a->l[i] == b->l[i] && !strcmp(a->f[i], b->f[i]);
+}
+
+/* mode 0 = hook-less driver, 1 = hooked driver, 2 = pcrec_emit_facts.
+ * In-process (a profiling pass never fails, so there is nothing to
+ * isolate). Returns the total allocation count, or -1 on any anomaly. */
+static long long w5_profile(int mode, Trace *t)
+{
+    pcrec_options o;
+    pcrec_default_options(&o);
+    o.header_name = NULL;
+    pcrec_error err; memset(&err, 0, sizeof err);
+    fail_at = 0; sustained = 0; call_n = 0; trace_on = 1; hooked_at = -1;
+    int ok_run;
+    if (mode == 2) {
+        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, 0, &err);
+        ok_run = txt != NULL;
+        free(txt);
+    } else {
+        pcrec_output out; memset(&out, 0, sizeof out);
+        ok_run = pcrec_compile_driver(w5_pattern, &o, &out, &err, NULL, NULL, NULL,
+                                      mode == 1 ? w5_hook : NULL, NULL) == 0;
+        if (ok_run) pcrec_output_free(&out);
+    }
+    trace_on = 0;
+    long long total = call_n;
+    if (!ok_run || total <= 0 || total > TRACE_CAP) return -1;
+    w5_save(t);
+    return total;
+}
+
+/* One trial: the Nth allocation of a real pcrec_emit_facts fails.
+ * Child verdicts: 20 = text with exactly one force-failed row,
+ * 21 = text without it, 22 = NULL + message, 23 = NULL, no message. */
+static int w5_trial(long long n, char *site_out, size_t site_cap)
+{
+    int pipefd[2];
+    if (pipe(pipefd) != 0) return -1;
+    pid_t pid = fork();
+    if (pid < 0) { close(pipefd[0]); close(pipefd[1]); return -1; }
+    if (pid == 0) {
+        close(pipefd[0]);
+        fail_at = n; sustained = 0; call_n = 0; fail_site[0] = 0; trace_on = 0;
+        pcrec_options o; pcrec_default_options(&o);
+        pcrec_error err; memset(&err, 0, sizeof err);
+        char *txt = pcrec_emit_facts(w5_pattern, &o, NULL, 0, &err);
+        int code;
+        if (txt) {
+            int rows = 0;
+            for (const char *p = txt; (p = strstr(p, "decline:force-failed")); p++) rows++;
+            code = rows == 1 ? 20 : 21;
+        } else {
+            code = err.msg[0] ? 22 : 23;
+        }
+        ChildReport rep; memset(&rep, 0, sizeof rep);
+        rep.total = code;
+        memcpy(rep.site, fail_site, sizeof rep.site);
+        ssize_t wr = write(pipefd[1], &rep, sizeof rep); (void)wr;
+        _exit(0);
+    }
+    close(pipefd[1]);
+    ChildReport rep; memset(&rep, 0, sizeof rep);
+    ssize_t r = read(pipefd[0], &rep, sizeof rep);
+    close(pipefd[0]);
+    int status;
+    waitpid(pid, &status, 0);
+    if (site_out && site_cap)
+        snprintf(site_out, site_cap, "%s", r == (ssize_t)sizeof rep && rep.site[0] ? rep.site : "(no report)");
+    if (WIFSIGNALED(status)) return 100 + WTERMSIG(status);
+    if (r != (ssize_t)sizeof rep || !WIFEXITED(status)) return -1;
+    return (int)rep.total;
+}
+
+static void w5_run(void)
+{
+    const char *nm = "W5 (force loop, --emit-facts)";
+    long long k_less = w5_profile(0, &tr_hookless);
+    long long k_hook = w5_profile(1, &tr_hooked);
+    long long hooked_n = hooked_at;
+    long long k_emit = w5_profile(2, &tr_emit);
+    if (k_less <= 0 || k_hook <= 0 || k_emit <= 0 || hooked_n <= 0) {
+        bad("%s: a profiling pass did not succeed cleanly (hookless K=%lld, hooked K=%lld, emit K=%lld, hook entry %lld) -- cannot place the loop",
+            nm, k_less, k_hook, k_emit, hooked_n);
+        return;
+    }
+    /* d: 1-based index of the first call where the hooked trace leaves the
+     * hook-less one. L: the loop's length. */
+    long long d = 1;
+    while (d <= tr_hookless.n && d <= tr_hooked.n && w5_same(&tr_hookless, &tr_hooked, d - 1)) d++;
+    long long L = hooked_n - k_less;
+    if (L < W5_MIN_INLOOP) {
+        bad("%s: the force loop allocates %lld time(s) for '%s', floor %d -- this witness stopped reaching the arm (K35): re-probe a pattern whose forced derivation opens an arena block",
+            nm, L, w5_pattern, W5_MIN_INLOOP);
+        return;
+    }
+    /* The numbering cross-check: the emit_facts pass reproduces the hooked
+     * trace through the loop (same pre-loop allocations, same loop). */
+    for (long long i = 0; i < d - 1 + L && i < tr_emit.n; i++)
+        if (!w5_same(&tr_emit, &tr_hooked, i)) {
+            bad("%s: pcrec_emit_facts's allocation trace diverges from the hooked driver's at call %lld -- the loop's numbering cannot be trusted", nm, i + 1);
+            return;
+        }
+    if (k_emit < W5_MIN_TOTAL)
+        bad("%s: the swept POPULATION fell BELOW its floor -- %lld allocations, floor %d (K35)", nm, k_emit, W5_MIN_TOTAL);
+
+    long long lo = d > W5_MARGIN ? d - W5_MARGIN : 1;
+    long long n_in = 0, in_bad = 0, margin_bad = 0, post_total = 0, post_sig = 0,
+              post_diag = 0, post_other = 0, post_forcefail = 0;
+    for (long long n = lo; n <= k_emit; n++) {
+        char site[96];
+        int code = w5_trial(n, site, sizeof site);
+        int in = n >= d && n < d + L;
+        if (in) {
+            n_in++;
+            if (code != 20) {
+                in_bad++;
+                bad("%s: N=%lld is IN the force loop (failing site %s) and the listing %s -- expected rc 0 with exactly one `decline:force-failed` row (code %d)",
+                    nm, n, site,
+                    code == 22 ? "was REFUSED (NULL + message: the forcing arm did not absorb, or sits below the nomem arm)"
+                  : code == 23 ? "failed with an EMPTY message"
+                  : code == 21 ? "answered WITHOUT a force-failed row"
+                  : code >= 100 ? "KILLED THE PROCESS BY SIGNAL" : "had a wait() anomaly",
+                    code);
+            } else if (show_sites) {
+                printf("  SITE %s N=%lld in-loop at %s -> force-failed row\n", nm, n, site);
+            }
+        } else if (n < d) {
+            if (code != 22) {
+                margin_bad++;
+                bad("%s: N=%lld (pre-loop margin, site %s) was not DIAGNOSED (code %d; 22 = NULL + message)", nm, n, site, code);
+            }
+        } else {
+            post_total++;
+            if (code >= 100) post_sig++;
+            else if (code == 22) post_diag++;
+            else if (code == 20) post_forcefail++;
+            else post_other++;
+        }
+    }
+    if (post_forcefail)
+        bad("%s: %lld post-loop trial(s) showed a force-failed row -- a failure outside the loop must never be reported as a forced ask's", nm, post_forcefail);
+    if (!in_bad && !margin_bad && !post_forcefail && n_in >= W5_MIN_INLOOP)
+        ok("%s: of %lld in-loop forced allocation failure(s) (calls %lld..%lld of %lld, pattern '%s'), every one answered rc 0 with exactly one `decline:force-failed` row; %lld pre-loop margin trials diagnosed",
+           nm, n_in, d, d + L - 1, k_emit, w5_pattern, (long long)(d - lo));
+    /* Reported, not asserted (the property above): the listing's own row
+     * rendering, after the loop. */
+    printf("NOTE: %s: the %lld post-loop (render-prefix + listing-rendering) trials: %lld diagnosed, %lld killed by a signal, %lld other -- not asserted by W5\n",
+           nm, post_total, post_diag, post_sig, post_other);
+}
+
 int main(int argc, char **argv)
 {
     int do_single = 1, do_sustained = 0;
@@ -567,6 +814,9 @@ int main(int argc, char **argv)
             printf("%-28s %8lld %14s %14s\n", witnesses[i].name, single[i].total, a, b);
         }
     }
+
+    /* [W5] single-shot only, see its comment block. */
+    if (do_single) w5_run();
 
     printf("\nchecks passed: %d\n", pass_n);
     printf("checks failed: %d\n", fail_n);
