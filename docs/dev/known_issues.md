@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K98 — OPEN (filed 2026-10-08, manager, from lane decfbrev2's finding F-B5) — CLI: `--pattern-esc` is silently ignored by `--emit-ir` and `--emit-facts`
+
+`cli/main.c` returns for `--emit-ir` (:1988) and `--emit-facts` (:2021) BEFORE the `--pattern-esc` decode (:2359). The listing then describes the RAW escaped text with rc 0. Example: `--pattern-esc '\x28a\x29b' --emit-ir` lists `RX_ENGINE "dfa"` (the literal text `\x28a\x29b`), while the .c compile of the decoded `(a)b` is a VM artifact. A caller-observable wrong answer on a listing surface, with no artifact affected. Tooling impact: emit_sweep already passes decoded bytes; refactor B's B0 streams must too. Fix: decode before the listing early-returns (one move), with a CLI test in both directions. Not scheduled.
+
 ## K97 — OPEN (filed 2026-10-08, lane nullanch1; deferred, D77: no measured loss on a bench cell) — PERFORMANCE: the [NULLABLE-ANCH] admission taxes a LONG all-MATCHING subject ~2-3x
 
 Since abi 68 a nullable pattern whose every empty path crosses a non-multiline start AND end anchor keeps its exact hybrid prefilter (`tuning.md` §2.17). On a near-miss that is the point (`^(([a-z]+)*)+$` on 17 letters + `!`: a ~2.3 s `PCREC_ERR_STEPS` give-up becomes a 24 ns `nomatch`). On a subject the pattern MATCHES end to end, the forward DFA pass walks the whole subject and then the VM walks it again, so the hybrid pays both. Repro (scratch tier, one core, `taskset -c 3`, median of 5; `docs/dev/optloop/nullanch/timing1.sh` -> `timing1_results.tsv`, main e6b6c25f vs lane/nullanch1):
