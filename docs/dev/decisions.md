@@ -9254,3 +9254,23 @@ A decision table is an ordered list of rows, each a predicate over facts plus an
 **In the same change (M7's REPLACE commit):** enc.h's "WHY TEXT AND NOT A CALLBACK" paragraph and the third-encoding recipe gain the token and the site data; `src/enc/CLAUDE.md` likewise.
 
 **Revisit when.** A backend needs a delegated site that is not one contiguous statement (then a second token or a structured placeholder is the question), or N7U (utf8's per-character caseless compare) migrates and needs a decode hook.
+
+## D155 — [MEMFN] R-9, the SIMD design pass: Q-R9-1..9 ruled (Frank, 2026-10-08, hundredth session)
+
+Ruled with the kit session (pcrecdev3) on R-9's question list (`memfn/docs/responses.md` at the lane/memfn-m7 tip; design on lane/memfn-r9 @ fbc4a410, panel r9 + follow-up r9fu). The manager relayed it to Frank and he confirmed it 2026-10-08.
+
+1. **Q-R9-1** — resolved by D144 addendum 4 (SIMD verdicts come from pcrec-bench runs on each form's hardware).
+2. **Q-R9-2** — a SIMD level is judged on EVERY bench box that runs it: a loss anywhere blocks the level, and a win somewhere is required. Rows may land first as CANDIDATE behind the OFF switch. This is the reading of D147 addendum 13 (preliminary until now).
+3. **Q-R9-3** — pcrec states plan_pos2.
+4. **Q-R9-4** — "fastest wins": code space is never a SIMD named benefit; the bar is measurably faster only.
+5. **Q-R9-5** — a later SIMD loss never blocks a scalar change.
+6. **Q-R9-6, the FLOOR RULE** — SIMD-on = SIMD-off plus CPU-guarded blocks only; compiled without the feature it is byte-identical scalar; checked by C18. **AMENDMENT (Frank):** no `#if`/`#ifdef` inside function bodies. The SIMD choice lives at FILE SCOPE (per-level `static inline` helpers selected by `#if`), and the body makes one plain call. The SIMD-off artifact routes through the helper too — a one-time, measured byte move and abi event — so the floor rule stays exact. This goes into the next R-9 design revision.
+7. **Q-R9-7** — one deny per (form, width), carried by one `--memfn=` flag.
+8. **Q-R9-8** — a dependency on libgcc's ISA cascade is allowed, guarded and stated in the spec.
+9. **Q-R9-9** — the D84 size caps exclude guarded SIMD bytes; each row carries its own bound instead.
+
+**Facts recorded with it (kit):** every batch-1 site already calls glibc `memchr`, so SIMD batch 1 is narrowed to the fused pair search (fn-pair). gcc 15.2 rebuilds `set1` broadcasts at every function entry, even from a `static const` (r9fu); [MEMFN-ENTRYSINK] is corrected accordingly.
+
+**Filed with it:** [MEMFN-RTDISPATCH] (plan.md, under [MEMFN-ENTRYSINK]), runtime dispatch, not scheduled.
+
+**Revisit when.** The first SIMD batch's bench verdicts arrive (Q-R9-2's every-box rule meets real data), or a hot-loop SIMD form exists while more than one architecture is selected (then [MEMFN-RTDISPATCH]'s trigger).
