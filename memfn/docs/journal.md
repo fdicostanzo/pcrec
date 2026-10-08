@@ -866,3 +866,14 @@ pointer when a kit change merges to main.
 - Session reset (Frank). N4 is queued for a slot; its slot8 script is
   written but not launched. n2pool was delivered and awaits main's merge.
   wake.md is current. No lanes or runs are in flight.
+- 2026-10-08: N4 validated in slot8 and delivered.
+  - Full census: 379 s at JOBS=16, rc 0, 0 would-decline. The 12 pcrec
+    floors are pinned.
+  - make test had one red, test-codegen K37: N4's own `run_rows.sh` loop
+    read as an unbounded compiler site. A sonnet triage found it, the fix
+    is in e8e3e1d8, and test-codegen is green.
+  - The test-codegen re-run (5m43s) overlapped main's possland2 make test.
+    Main had cleared the triage to proceed, but the run was heavier than
+    "light". Next time, ask first.
+  - done: posted.
+  - OWED: g2_floor (blinded, per-row G2 count).
