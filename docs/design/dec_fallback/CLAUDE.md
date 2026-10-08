@@ -17,7 +17,8 @@ first edit (the note's §4.1), because main moves under a design note.
 - `call_graph_fallback.txt` — `../start_table/call_graph.py . --family
   fallback` (decfbB0c, B0 item 9; 53-member family, 14 seeds, regenerated
   by a build lane on its own base; regenerated at B1 with the `def-trace`
-  owner lines).
+  owner lines; at B4 `FB_ROOTS` gains T2's walk `pf_admit_walk`, the family
+  B3's plus that one definition).
 - `sabotage_anchors.tsv`, `sabotage_anchors.summary` — `../start_table/
   sabotage_anchors.py . call_graph_fallback.txt refactor_edit_set.tsv
   --final after-B6 --edit-names` (exit 2 = the pre-existing S571
@@ -41,7 +42,13 @@ first edit (the note's §4.1), because main moves under a design note.
   input function, so the script reads `fit_labels`' body as part of the
   recovery point (R/RQ unchanged), declares `fit_walk` where `fit_select`
   was, and loses the deleted `dropped_*` flags, the five tests and the
-  oracle's arrival/notes code. The note's §2.1 gives the line classes.
+  oracle's arrival/notes code. At B4, 488: `D` names T2's walk
+  (`pf_admit_walk`) where the deleted local `lang_nullable_declinable` was,
+  and the existence check reads CODE lines of `.c`/`.h`/`.def` only (the
+  deleted name survived in comments and CLAUDE.md text, which the old
+  check read as present); the verdict ternary, the listing chain and the
+  admission oracle's lines are gone, T2's walk and row writes are in. The
+  note's §2.1 gives the line classes.
 - `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
   decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
   PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
@@ -77,8 +84,8 @@ first edit (the note's §4.1), because main moves under a design note.
   signal, on the two orders' stdout/rc differing, or (K35) on a checked
   site with no `CANDFIT` hit in an order; writes `OUT/hits.tsv`. A filter
   test: the oracle shares its predicates with the tables. Deleted with the
-  oracle at B5. B3 retired its `arrival` and `note` sites (their
-  old side is gone).
+  oracle at B5. B3 retired its `arrival` and `note` sites and B4 its
+  `admit` and `admit-listing` sites (their old side is gone).
 - `trace_declared_B1.txt` — B1's declared trace multiplicity (its ten site
   keys) for `emit_sweep.py --trace-declared` against B0; meaningless
   against any later parent.
@@ -87,7 +94,9 @@ first edit (the note's §4.1), because main moves under a design note.
   RESTATES the deleted `retry_collapse`/`retry_drop` from their inputs (so it
   stays independent of the walk it watches), the `rung` probe prints every
   row past 0-4. `attempt_hist.py --child-patches` (B3) / `--parent-patches`
-  (B4+) and `cross_record.py` (a) read its PATCHES.
+  (B4+) and `cross_record.py` (a) read its PATCHES. B4 moves none of its
+  anchors (compile.c's dispatch is untouched), so B4's gate passes it as
+  both `--parent-patches` and `--child-patches`.
 - `reach/` — rev 2's row-reach PROTOTYPE (probed scratch compilers over
   decfb0's population x 5 limit variants x 14 flag arms) and its output: the
   witness for every T1-T4 row, the UNREACHED cells, and the checks of the
