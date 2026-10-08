@@ -970,3 +970,8 @@ pointer when a kit change merges to main.
       dev-box-only verdict overstates.
   - These go to R-9's D6 panel as inputs. r9d was briefed before this, so
     there is no addendum to the running lane.
+- 2026-10-08: RULING from Frank (kit session). Short-form unofficial
+  benches can run anywhere and are directional. An OFFICIAL result needs a
+  pcrec-bench run, macOS work included. The bench can run on the dev box
+  too, but it is PLANNED and coordinated through main, which owns the
+  bench inbox. Posted to main.
