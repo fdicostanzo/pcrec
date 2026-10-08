@@ -26687,3 +26687,18 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - Kit disclosure: its test-codegen re-run overlapped possland2's make test. Noted; it asks first from now on.
 - 13 merged lane worktrees pruned (wtprune). The kit's g2u/n2pool were left alone.
 - NEXT: lane stc5b (opus) building C5b off 37462a8e; then C6+C7.
+
+## 2026-10-08 — session 97 (checkpoint ~05:35 EDT): REFACTOR A COMPLETE
+
+- **C5b MERGED** f5d3547d (lane stc5b, opus). P2/N7/R3/N12 read BOUND via `cand_read`, with read edges checked in the trace build; zero movers, no abi.
+  - Its chain was green: make test 652 s, 22 mech rows.
+  - S496/S497 UNREACHED was triaged (lane c5btri): pre-existing and declared by SAB_EXPECT, same on base 37462a8e.
+- **[MEMFN] R4h prep MERGED** bd4e44d7. Kit-only (MF_SITE_ABI 5 count_by_caller, hook classes, Q-G2-5). The kit's slot9 was green: gate 0 movers, G2 173.8M/0, make test 718 s, 17 mech rows.
+- **After-C5b family mech sweep** (lane c5bsweep): 112 rows / 115 sites at f5d3547d, ALL CLEAN. The only non-DETECTED rows declare themselves EXPECTED (S219 S284 S487 S489 S490 undetected; S475 S479 S496 S497 unreached). The lane derived 112 rows against design §3.5's ~53: the post-C5b tsv marks every remaining RE-RUN as after-C5b. Accepted as a superset.
+- **C6+C7 MERGED** cf3ffaac (lane stc67, opus): REFACTOR A COMPLETE, [START-TABLE] STATE:done.
+  - C6: the listing projects `cand_rows[]`, and G1/R4/F1 read through `cand_read` with their edges declared (S607-S610).
+  - C7: the declared `--list-axes` change (18 kind cells predicate->list, the D-3 applies text). Not abi; spec hunk registry.md §6.
+  - Chain green: listing exactly as declared, make test 654 s, 78 mech rows declared-expected only.
+  - Six design corrections accepted. Item 5: fact denies stay explicit listing data until the landmark column has a reader.
+- **Bench inbox I-134** pushed (pcrec-bench 27ee420f): abi 66 + the `--list-axes` change, pin candidate cf3ffaac, no asks.
+- Rows gated on C7, now eligible but NOT started: [START-DENSE] (+ [OPT-HYB-RESEED-POLICY]), [START-D1], [TIE-ALIGN], [DEC-POSDOM], [ENG-TACTICS], [OPTLOOP] round 3. Next in the cleared queue: refactor B [DEC-FALLBACK] (D153), and the kit's R4h layout-normalization pre-commit (Q-R4h-1 (b)), checked against B's scope first.
