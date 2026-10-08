@@ -416,6 +416,22 @@ pcrec (the Makefile owns that).
   a facts mover is explained iff every moved line has a listed head AND, for
   an encoding whose REF listing has `RX_VM_PROGRAM_BYTES`, the REF
   `--engine=vm [-e utf8]` artifact is a census hit.
+  **[DEC-FALLBACK] B0 (lane decfbB0, 2026-10-08)** added refactor B's
+  instruments (`docs/design/dec_fallback.md` §4.2 items 1-4): two TALLY
+  streams, `emit-ir-auto` (`--emit-ir` at the DEFAULT engine, stdout + rc +
+  stderr, refusals included, at the base and at `-fno-prefilter`/
+  `-fprefilter`/`-fno-prefilter-collapse`; the B4 hard gate) and `stderr` (the
+  full stderr and rc of the stream 1-2 compiles), whose per-side tag counts
+  (the listing's `prefilter` token; refusals per engine) are held to per-tag
+  floors with a manifest pattern for every thin tag; and `--variant` (the
+  five limit variants `VARIANTS`, both sides built from `git archive` with
+  the variant's `-D` set, each run at `--bases` byte and utf8 and held to
+  `VARIANT_PINS`, measured at B0's base). A variant's plumbing is checked by
+  `VARIANT_WITNESSES` (`--list-limits` cannot serve: it prints limits.def's
+  literal, not the compiled-in value). `--trace` composes with `--variant`
+  (a trace pair per variant, `--trace-order SLOT=ordered|set` passed to
+  `trace_diff.compare`). `--emit-pins FILE` writes a measurement as the
+  pins' python source. See `docs/dev/lanes/decfbB0_report.md`.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between

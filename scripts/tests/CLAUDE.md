@@ -63,6 +63,11 @@ script's test coverage changes meaningfully.
   recorded in `docs/dev/lanes/stc0_report.md`: with `opt_argv` dropping every
   option, or dropping only `-e utf8`, it goes red. tests/mech's `emitsweep`
   arm runs it, which is where those plants live as sabotage rows.
+  [DEC-FALLBACK] B0 added the tally streams over eight hand-written
+  witnesses (each stream's expected tag line, read from the compiler at
+  B0's base; an arm lost in `emit-ir-auto`'s plumbing, design S-I3, turns
+  three lines red) and the variant plumbing control in both directions on
+  the default build: 14 checks.
 
 - **trace_diff.py.test** — [START-TABLE] C0's failing-direction control for
   `trace_diff.py`: synthetic trace streams with a planted swap, a reorder, a

@@ -16,3 +16,6 @@ trees" survey) and the rows it filed.
   over the whole corpus (0 BYTES_DIFF rows). Report:
   `../../dev/lanes/decfb0_report.md`. Re-run after a compile.c change that
   moves the anchors (build_ref.py fails loudly on a drifted anchor).
+  `build_ref.py` runs its `main()` only as a script, so
+  `../dec_fallback/attempt_hist.py` (refactor B's attempt histogram,
+  parent vs child) imports its PATCHES: one copy of the probes.

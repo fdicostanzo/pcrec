@@ -33,6 +33,17 @@ first edit (the note's §4.1), because main moves under a design note.
   blocks), each source fail-closed on an empty extraction; only the function
   names are declared, existence-checked. 408 lines at `42ab7c25` and at B0's base `6ebe14d7` (same lines, shifted numbers; rev 1's
   hand list: 164). The note's §2.1 gives the line classes.
+- `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
+  decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
+  PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
+  decfb0's `census.py` run per limit variant (emit_sweep's `VARIANTS`) over
+  decfb0's population; compares per compile status, attempt count and the
+  whole probe sequence, parent vs child (never pinned absolute counts).
+  K35: a population floor and at least one multi-attempt compile per
+  variant; the plain probed build byte-identical to the unprobed one.
+  Anchors fail closed; a commit that rewrites one (B3) supplies the child's
+  re-anchored probes with `--child-patches`. A gate instrument the B lanes
+  run, not run by `make`.
 - `reach/` — rev 2's row-reach PROTOTYPE (probed scratch compilers over
   decfb0's population x 5 limit variants x 14 flag arms) and its output: the
   witness for every T1-T4 row, the UNREACHED cells, and the checks of the

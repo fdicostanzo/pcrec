@@ -44,6 +44,26 @@ optional families ([START-TABLE] C0, docs/design/start_table.md §3.2-§3.3):
      predicate ASKED; it is the only stream that sees an ask that changes no
      emitted byte. Both encodings in one call, so `--extra` never reaches it.
      Identity-required.
+  7. emit-ir-auto ([DEC-FALLBACK] B0 item 2, the B4 hard gate): `--emit-ir`
+     at the DEFAULT engine, stdout + rc + stderr compared, refusals included
+     (a DFA-winning pattern refuses the listing), at the base and at each of
+     IR_AUTO_ARMS (`-fno-prefilter`, `-fprefilter`, `-fno-prefilter-
+     collapse`). A TALLY stream: each side counts the listing's `prefilter`
+     token (or `refused`) per pattern, held to per-token floors.
+  8. stderr ([DEC-FALLBACK] B0 item 3): the full stderr and rc of the stream
+     1 and 2 compiles, compared verbatim (notes, warnings, refusal text, the
+     cap a refusal names). A TALLY stream: refusals per engine.
+
+  VARIANTS (`--variant NAME|all|NAME=CFLAGS`, [DEC-FALLBACK] B0 item 1): both
+  sides built from `git archive` with a limit variant's `-D` set (VARIANTS:
+  plain, lowsize, lowdfa, lowboth, lowthr), the argv streams run once per
+  base of `--bases` (default byte,utf8), and each (variant, base) cell held to
+  VARIANT_PINS (reach, tag floors, thin-tag manifests). A variant's own
+  plumbing is checked by VARIANT_WITNESSES (stamps only that variant's limits
+  produce; plain produces none). `--trace` composes: each variant gets its own
+  trace pair (`-DPCREC_CAND_TRACE` + the variant's set), compared with
+  `--trace-order SLOT=ordered|set` per slot. `--emit-pins FILE` writes the
+  measured cells (a measurement for a reviewed re-pin).
 
   ARMS (`--arms start`, or one arm via `--extra`). An arm is (BASE, FLAG): a
   base option set (`byte` = nothing, `utf8` = `-e utf8`) and the flag under
@@ -185,6 +205,17 @@ OPTIONS
                         not gate is printed too, as a diagnostic.
   --build-cflags=FLAGS   CFLAGS for every build this run makes (default: the
                         tree's own Makefile default).
+  --variant V            repeatable: a VARIANTS name, `all`, or NAME=CFLAGS
+                        (ad hoc: no witnesses, no pins). Needs --ref and
+                        --tree-rev. Composition is not run per variant.
+  --bases LIST           the bases each variant runs at (default byte,utf8);
+                        facts and dumps run at the first only.
+  --no-variant-floor     a variant cell without VARIANT_PINS is reported, not
+                        failed (a measurement run).
+  --emit-pins FILE       write the measured VARIANT_PINS cells and per-variant
+                        trace record counts as python source.
+  --trace-order S=M      repeatable: trace_diff's per-slot compare mode
+                        (`fallback=ordered` for refactor B).
 
   When the two sides are the SAME binary (realpath), every argv compile runs
   once and is mirrored: identity is trivial and said so, and the run is a
