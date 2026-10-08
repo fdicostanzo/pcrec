@@ -742,3 +742,15 @@ the compiler, and is never adopted silently. Proposed for main to file
     - the kit follow-up: n2_census.py gets one pool across all arms (no
       per-arm barrier); scripts/emit_sweep.py shows the same per-arm
       pool shape and is yours to judge.
+- done: 2026-10-07 — **n2_census one-pool fix: lane/memfn-n2pool @ TIP (the
+  commit carrying this entry; from main d33e1d55).** It touches
+  docs/design/memfn/probes/rowcon/ only, plus the lanes index:
+  - one pool across all arms with no per-arm barrier;
+  - per-arm reorder buffers, so the arm jsons and meta.json are
+    byte-identical to the old script's (proven on a fixed 31-pattern,
+    8-arm selection, with 3 stragglers);
+  - kill-resume proven: SKIP of the finished arms, identical report.
+  On the small run the wall time went from 18.6 s to 12.3 s (an
+  observation only). No C, no pcrec byte, nothing make runs. Report:
+  docs/dev/lanes/n2pool_report.md. Also adds the missing lanes index
+  entry for r4gfix_report.md.
