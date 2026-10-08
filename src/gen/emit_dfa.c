@@ -314,6 +314,20 @@ static const CandRow *cand_select(CandSlot slot, const struct CandSel *s, uint64
  * beside the table (the row type is complete only there) for the clamp's
  * reader above it, which it records. */
 static bool cand_window_clamps(Ctx *cx);
+/* [START-TABLE] C5b A SELECTION READ: the row slot `slot` selects on
+ * `s->route`, asked by slot `reader`'s predicate through the walk rather
+ * than by restating `slot`'s predicates (start_table.md §1.3). Defined
+ * beside the table. The trace build checks the edge against the slot
+ * graph (`cand_nodes[reader].reads`), prints the record and counts the hit;
+ * `site` must be a string literal, as the trace's. */
+static const CandRow *cand_read(CandSlot reader, CandSlot slot,
+                                const struct CandSel *s, const char *site);
+#define CAND_READ(reader, slot, sel, site) cand_read((reader), (slot), (sel), "" site)
+/* Does BOUND on `sel`'s route admit at most one start position: slot
+ * `reader`'s read of BOUND's row (its `u.bound.one`). */
+#define CAND_BOUND_ONE(reader, sel, site)                                     \
+    (pcrec_cand_bound(CAND_READ((reader), CAND_SLOT_BOUND, (sel), site))->one \
+     != CAND_ONE_NONE)
 #ifdef PCREC_CAND_TRACE
 static void cand_hit(CandSlot slot, const struct CandSel *s, const CandRow *r,
                      const char *site);
@@ -4077,13 +4091,15 @@ static void cand_emit_table(StrBuf *c, const char *p, const char *tag,
  * pcrec_emit_prologue, which has to decide about `#include <string.h>` before
  * any body exists. A second copy of this test in the prologue is how the
  * artifact would end up calling `memchr` without declaring it. */
-static bool attempt_cand(const Dfa *d, CandSet *cs)
+static bool attempt_cand(const CandSel *s, CandSet *cs)
 {
+    const Dfa *d = s->d;
     /* A fully-anchored pattern already runs ONE attempt (`start_max` is the
-     * literal 0), so there is nothing between attempts to skip. */
-    bool anchored = true;
-    for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;
-    if (d->n == 0 || anchored) {
+     * literal 0), so there is nothing between attempts to skip.
+     * [START-TABLE] C5b that is BOUND's row on this route (`s->route` is
+     * CAND_ROUTE_ATTEMPT, N12's), read through the walk: the bound the loop
+     * is emitted from, never a second spelling of it. */
+    if (d->n == 0 || CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "pred-memchr-bound")) {
         PCREC_CAND_TRACE_REC("NEXT", "attempt", "none", "attempt-cand");
         return false;
     }
@@ -6730,9 +6746,10 @@ static void vm_start_assert_starts(Ctx *cx, const StartSet *ss)
  * sabotage row that removes it.
  *   - ROUTE: a VM artifact with no DFA prefilter in front. A hybrid's
  *     prefilter IS a DFA scan, and its start test is the DFA hat's (S493).
- *   - ANCHORING: `start_anchor` unanchored. An anchored or `\G`-start
- *     pattern runs one attempt ([OPT-ANCHOR-VM]), so there is nothing to
- *     skip between attempts (S492).
+ *   - ANCHORING: BOUND's row on the VM route is `all`. An anchored or
+ *     `\G`-start pattern runs one attempt ([OPT-ANCHOR-VM]), so there is
+ *     nothing to skip between attempts (S492). [START-TABLE] C5b it is read
+ *     through the walk (B3/B4 read the `start_anchor` fact), never restated.
  *   - NECESSARY: `S` not nullable (the erased language's own bit, never the
  *     `nullable` fact; review r4 sound-F9) and fewer than 256 members — a
  *     nullable pattern can match at a position whose byte is in no set, and
@@ -6755,7 +6772,7 @@ static bool pf_vm_start_applies(const CandSel *s)
     int n = 0;
     if (s->route != CAND_ROUTE_VM || !ss) return false;
     if (cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter) return false;
-    if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
+    if (CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "first-class-bound")) return false;
     if (ss->nullable) return false;
     for (int b = 0; b < 256; b++) n += ss->bits[b >> 3] >> (b & 7) & 1;
     if (n >= 256) return false;
@@ -7026,7 +7043,13 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
  * interior start state is a miscompile) at the one site that holds both.
  *
  * ENG_UNANCH is never one attempt — it is the scan engine — so it needs no
- * clause; `job->engine` answers for it.
+ * clause; the route (`cand_route_of`) answers for it.
+ *
+ * [START-TABLE] C5b EACH ARM READS BOUND ON ITS OWN ROUTE through the walk
+ * (`CAND_BOUND_ONE`), never restating BOUND's predicates: B1/B2 on
+ * CAND_ROUTE_ATTEMPT (the machine), B3/B4 on CAND_ROUTE_VM (the fact). So
+ * D-2b's split between the two routes is kept exactly, and a changed B row
+ * reaches this rule with no edit here (start_table.md §1.3).
  *
  * [K64] THE VM ARM ALSO ASKS THAT THE ONE ATTEMPT BE LINEAR, because G2's
  * argument ("the attempt reads at most the window the check would scan") is
@@ -7039,12 +7062,17 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
  * check. */
 static bool req_route_one_attempt(Ctx *cx)
 {
-    if (cx->job->fit.chosen == ENGM_VM)
-        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
+    if (cx->job->fit.chosen == ENGM_VM) {
+        CandSel v = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                      .route = CAND_ROUTE_VM };
+        return CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &v, "one-attempt-bound") &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
-    return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
+    }
+    CandSel a = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    return a.route == CAND_ROUTE_ATTEMPT &&
+           CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &a, "one-attempt-bound");
 }
 
 /* Is a pre-check on `q` dominated by the candidate-start scan `cs` the
@@ -7859,19 +7887,29 @@ enum {
     (CAND_ON(CAND_ROUTE_DFA) | CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM))
 
 /* One node of the handoff graph: what it accepts, on which routes a body asks
- * it (§2.3's route-class table; 0 for a non-slot), and where its rows hand
- * to. The structural self-check reads it; no walk does. */
+ * it (§2.3's route-class table; 0 for a non-slot), where its rows hand to,
+ * and ([START-TABLE] C5b) whose SELECTION its rows' predicates read, per
+ * route (§1.3's selection DAG). The structural self-check and the selection
+ * read (`cand_read`) read it; no walk does. */
 typedef struct CandNode {
     const char *name;      /* a slot's trace `slot` field */
     unsigned    accepts;   /* CT_* this node takes from a predecessor */
     unsigned    asks;      /* CAND_ON(route) for each route a body asks it on */
     unsigned    succ;      /* CN(node) for each node its rows hand to */
+    unsigned    reads[CAND_NSLOTS];   /* CAND_ON(route) of each slot read */
 } CandNode;
 
 /* FIRST accepts LOWER as well as §1.2's HIT, because edge E2 hands it the
  * entry's LOWER and its fallback scans from there; RECOVER accepts E2's LOWER
  * (and the match END, which is not a handoff type); the CALLER accepts a
- * PRESENCE or WIDTH VERDICT (NOMATCH is returned to it). */
+ * PRESENCE or WIDTH VERDICT (NOMATCH is returned to it).
+ *
+ * THE BOUND READS ([START-TABLE] C5b, §1.3): PRESENCE's `one-attempt` (P2)
+ * reads BOUND on CAND_ROUTE_ATTEMPT (its DFA arm) and CAND_ROUTE_VM (its VM
+ * arm); NEXT's `pred-memchr` (N12) on CAND_ROUTE_ATTEMPT and `first-class`
+ * (N7) on CAND_ROUTE_VM; RETRY's `anchored` (R3) on CAND_ROUTE_VM. The other
+ * reads §1.3 lists (G1, F1, R4) predate the selection read and are not yet
+ * declared here. */
 __attribute__((unused))   /* read by the trace build's self-check and hit counter */
 static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_WINDOW]   = { "WINDOW",   CT_LOWER, CAND_ALL_ROUTES,
@@ -7879,15 +7917,20 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              CN(CAND_SLOT_FIRST) | CN(CAND_SLOT_NEXT) |
                              CN(CAND_SLOT_RECOVER) },
     [CAND_SLOT_PRESENCE] = { "PRESENCE", CT_LOWER, CAND_ALL_ROUTES,
-                             CN(CAND_SLOT_FIRST) | CN(CAND_NODE_CALLER) },
+                             CN(CAND_SLOT_FIRST) | CN(CAND_NODE_CALLER),
+                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
+                                                            CAND_ON(CAND_ROUTE_VM) } },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
     [CAND_SLOT_FIRST]    = { "FIRST",    CT_HIT | CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_NEXT) },
     [CAND_SLOT_NEXT]     = { "NEXT",     CT_LOWER, CAND_ALL_ROUTES,
-                             CN(CAND_NODE_VERIFIER) },
+                             CN(CAND_NODE_VERIFIER),
+                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
+                                                            CAND_ON(CAND_ROUTE_VM) } },
     [CAND_SLOT_RETRY]    = { "RETRY",    CT_CAND, CAND_ON(CAND_ROUTE_VM),
-                             CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER) },
+                             CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
+                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM) } },
     [CAND_SLOT_BOUND]    = { "BOUND",    0,
                              CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_LOOP) },
@@ -7915,7 +7958,7 @@ static bool cand_ceiling_applies(const CandSel *s)
 static bool cand_pred_memchr_applies(const CandSel *s)
 {
     CandSet cs;
-    return attempt_cand(s->d, s->cand ? s->cand : &cs);
+    return attempt_cand(s, s->cand ? s->cand : &cs);
 }
 
 /* R1-R4: the hybrid retry's four predicates (the tagged arms of the old
@@ -7923,10 +7966,12 @@ static bool cand_pred_memchr_applies(const CandSel *s)
  * only when the walk reaches it, so an exact hybrid never records the ask. */
 static bool cand_rs_exact_applies(const CandSel *s) { return s->vm->mrl_win; }
 static bool cand_rs_clamped_applies(const CandSel *s) { return s->vm->nclamp > 0; }
-/* R3: the fact the VM's `attempt_max` reads (B3/B4), so the row and the bound
- * it relies on are one derivation; `-fno-vm-anchor-bound` empties both. */
+/* R3: BOUND's row on the VM route admits one start position, the row the
+ * VM's `attempt_max` is written from (B3/B4). [START-TABLE] C5b it reads that
+ * row through the walk, so the retry row and the bound it relies on are one
+ * selection; `-fno-vm-anchor-bound` empties the fact under both. */
 static bool cand_rs_anchored_applies(const CandSel *s)
-{ return pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }
+{ return CAND_BOUND_ONE(CAND_SLOT_RETRY, s, "retry-anchored-bound"); }
 static bool cand_rs_dense_applies(const CandSel *s)
 { return (unsigned long long)pcrec_dfa_cand_ppm(s->cx) * s->vm->reseed_gap > 1000000ull; }
 
@@ -8293,9 +8338,31 @@ static void cand_oracle_fail(const char *what, const char *a, const char *b,
  * routed where its slot is never asked, or routed nowhere; an asked
  * (slot, route) whose last routed row is not an undeniable `cand_always`
  * (totality, §1.3); a row that hands a type none of its slot's successors
- * accepts (§1.6); and two rows listed at one (axis, order). */
+ * accepts (§1.6); two rows listed at one (axis, order); and ([START-TABLE]
+ * C5b) a selection read on a route its slot is never asked on, or a cycle
+ * in the selection reads (§1.3: the DAG is acyclic, so no walk re-enters
+ * itself). */
 static void cand_rows_selfcheck(void)
 {
+    unsigned reach[CAND_NSLOTS];
+    for (int sl = 0; sl < CAND_NSLOTS; sl++) {
+        reach[sl] = 0;
+        for (int t = 0; t < CAND_NSLOTS; t++) {
+            unsigned rd = cand_nodes[sl].reads[t];
+            if (!rd) continue;
+            if (rd & ~cand_nodes[t].asks)
+                cand_oracle_fail("table-read-unasked", cand_nodes[sl].name,
+                                 cand_nodes[t].name, "selfcheck");
+            reach[sl] |= CN(t);
+        }
+    }
+    for (int k = 0; k < CAND_NSLOTS; k++)
+        for (int sl = 0; sl < CAND_NSLOTS; sl++)
+            for (int t = 0; t < CAND_NSLOTS; t++)
+                if (reach[sl] & CN(t)) reach[sl] |= reach[t];
+    for (int sl = 0; sl < CAND_NSLOTS; sl++)
+        if (reach[sl] & CN(sl))
+            cand_oracle_fail("table-read-cycle", cand_nodes[sl].name, "-", "selfcheck");
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         const CandNode *n = &cand_nodes[r->slot];
@@ -8385,6 +8452,31 @@ void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
     cand_hit(slot, &s, r, site);
 }
 #endif /* PCREC_CAND_TRACE */
+
+/* [START-TABLE] C5b THE SELECTION READ (forward-declared at the top, with
+ * `CAND_READ`/`CAND_BOUND_ONE`): `slot`'s row on `s->route`, for a predicate
+ * of slot `reader`. In the trace build the edge is CHECKED: a read the slot
+ * graph does not declare on that route aborts (`CANDORACLE undeclared-read`),
+ * then the read prints its trace record (the `site` is the reader's own, so
+ * the C1 trace diff can declare exactly these records) and its hit. */
+static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s,
+                                const char *site)
+{
+    const CandRow *r = cand_select(slot, s, s->cx->opt->flags);
+#ifdef PCREC_CAND_TRACE
+    if (!(cand_nodes[reader].reads[slot] & CAND_ON(s->route)))
+        cand_oracle_fail("undeclared-read", cand_nodes[reader].name,
+                         cand_nodes[slot].name, site);
+    if (!pcrec_cand_trace_quiet && r)
+        fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
+                CAND_ROUTE_NAME(s->route), r->tok, site);
+    cand_hit(slot, s, r, site);
+#else
+    (void)reader;
+    (void)site;
+#endif
+    return r;
+}
 
 /* ---- [START-TABLE] C5 THE INLINE DECISIONS' AND THE VM's READERS --------
  *
