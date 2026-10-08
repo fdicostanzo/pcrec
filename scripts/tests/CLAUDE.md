@@ -69,6 +69,10 @@ script's test coverage changes meaningfully.
   cross-pattern swap (multiset-equal), a row change, an undeclared and a
   declared addition, a stale declaration, and empty streams with and without
   a records floor, each paired with the clean case it was planted into. Pure
-  python, no pcrec. Its first run caught a real hole (an int floor over no
+  python, no pcrec. [DEC-FALLBACK] B0 item 7 added 13 `--order SLOT=ordered|set`
+  cases (a swap inside slot X passes when X is set-compared and fails when
+  ordered; an interleaved reorder caught only for the ordered slot; the
+  `--unordered` default overridden per slot; bad spellings exit 2): 30
+  checks in all. Its first run caught a real hole (an int floor over no
   arms checked nothing), fixed before landing.
 
