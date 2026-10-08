@@ -114,7 +114,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
      * ON_MISS"), so a miss may run on_miss with the result unwritten. G2
      * observes that only where its on_miss text leaves and reads no result
      * (noread: the generator's mode-3 text) */
-    int unwritten_ok = d->handoff == G2_H_ASSIGN && d->noread;    /* lane g2pf: PF cell 1 too */
+    int unwritten_ok = d->handoff == G2_H_ASSIGN && (d->noread || d->leaves);   /* G2pf2: on_miss_leaves 1 => result UNSPECIFIED on a miss (memfn.h) */    /* lane g2pf: PF cell 1 too */
     int miss_res_ok = o->res == missv || (unwritten_ok && o->res == G2_SENT);
 
     if (d->handoff == G2_H_ADVANCE) {
@@ -168,6 +168,8 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
                 want_missed = 1;
             }
         }
+        /* G2pf2: a miss under on_miss_leaves 1 leaves the result UNSPECIFIED (memfn.h) */
+        if (want_missed && d->leaves && !d->noonmiss && o->missed) return 1;
         if (o->res == want_res && (d->noonmiss || o->missed == want_missed)) return 1;
         snprintf(why, whyn, "IN-PLACE lo: kit lo=%zu missed %d, want lo=%zu missed %d (%s)", o->res,
                  o->missed, want_res, d->noonmiss ? 0 : want_missed, nonempty ? "range" : "empty range");

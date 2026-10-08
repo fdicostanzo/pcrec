@@ -35,8 +35,7 @@ and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
   in `G2U_REPORT.md`.
   (g2pf) An UNSTATED (NULL) `note` hook is never poisoned: stating it makes a
   different site (the PF `stated-note` edge). `ret_pred` / `npred+preds` on a
-  PF site MOVE the kit's text today (KIT FINDING, `G2U_REPORT.md` section 9.5),
-  so the poison differential is red until the kit rules on it.
+  PF site moved the kit's text (KIT FINDING 1, `G2U_REPORT.md` section 9.5); fixed in the kit, green since G2pf2.
   Since the G2u2 addendum: a FUNC site's own name is ALWAYS `site.pred.fn_ref`
   (memfn.h K-1 ruling), so on ALL_PRESENT FUNC sites `pred.fn_ref` is never
   poisoned; every other member of `pred` there still is.
@@ -78,6 +77,19 @@ rendered code does not fault (`tabbad`), and a refusal is as lawful as a
 rendering. The in-place reference is `g2_ref.c`'s `inplace` branch (empty NOP
 leaves `lo` as passed; a miss leaves the miss value). PF sites draw from their
 own RNG stream and id range (`pf_enter`/`pf_leave`), so no older site moved.
+
+## The two entry paths (G2pf2, `G2U_REPORT.md` section 10)
+
+They differ BY CONTRACT (memfn.h ROW CONTRACTS). `mf_emit` holds the use hooks at
+selection and picks a serving form; `mf_define` + `mf_use` selects with the define
+hooks and `mf_use`/`mf_call` REFUSE, naming the field, a use the form does not serve.
+For a site with `via` 1/2 the generator tries define+use in a scratch art: a refusal
+at use naming a field is LAWFUL and counted (`USEREFUSE`, `USEREFUSE-TOTAL`, floors
+`FLOOR_USEREFUSE*`, unnamed must be 0); the site is then rendered and answer-checked
+through `mf_emit`. A refusal at `mf_define` of a site `mf_emit` rendered fails.
+Also (amended contract): with `on_miss_leaves` 1 on ASSIGN, `result` is UNSPECIFIED
+on a miss: such sites take an `on_miss` that reads no result and `g2_ref.c` judges the
+miss by `on_miss` having run.
 
 ## Files
 

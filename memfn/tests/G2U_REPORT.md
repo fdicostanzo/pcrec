@@ -700,3 +700,89 @@ runs (taskset 12-15, TMPDIR in the cell's `.scratch/tmp`); probe compiles 7
 (generator x4, driver+batches x3, each one gcc command, `taskset -c 12-15`);
 no timing run, no full run. Scratch: `.scratch/t1`, `.scratch/run1.log`,
 `.scratch/run2.log`.
+
+
+## 10. G2pf2 addendum (the two entry paths judged by their own contracts, 2026-10-07, same cell, D27-blinded)
+
+Source: the kit manager's rulings on section 9.5, memfn.h (ASSIGN handoff, `on_miss_leaves`,
+ROW CONTRACTS block), trace_format.md.
+
+### 10.1 What changed
+
+- **Finding 1 (fixed in the kit)**: nothing G2-side; the poison differential on `ret_pred` /
+  `npred+preds` is green again (8105 sites each, 0 moved).
+- **Finding 3, entry paths differ BY CONTRACT.** `render()` (g2_gen.c) still trial-renders each
+  site with `mf_emit` (the one-call path: use hooks held at selection, a serving form is picked;
+  must render, or be refused naming a field). For a site whose `via` is define+use (1) or
+  define+use+call (2) it now ALSO runs `render_via` in a scratch art (the art's error is sticky).
+  Outcomes: renders (as before); refuses AT `mf_use`/`mf_call` naming a field (`on_miss`,
+  `result_decl`, `miss`, `floor`, `note`, ...): LAWFUL, counted (`USEREFUSE` lines,
+  `USEREFUSE-TOTAL`), and the site is then rendered through `mf_emit` into the batch (`via`
+  becomes 0) and answer-checked, so both paths' promises are tested; refuses at `mf_define`
+  (the define hooks are the use hooks here, and `mf_emit` rendered it), or at use naming no
+  field: FAIL.
+- **Finding 2 (contract amendment): `result` is UNSPECIFIED on a miss when `on_miss_leaves` is 1.**
+  Everywhere, not only the PF family: (a) `render()` forces every ASSIGN site with
+  `on_miss_leaves` 1 and a stated `on_miss` to a text that reads no result (goto text mode 1 ->
+  5, return mode 2 -> 3); (b) `g2_ref.c` accepts an unwritten or any `result` on a miss when
+  `leaves` (ASSIGN generic branch: `unwritten_ok` now `noread || leaves`; the in-place branch:
+  a miss under `leaves` is judged by `on_miss` having run alone). The `leaves` 0 case still
+  requires the miss value written before `on_miss`. First quick run proved the in-place
+  branch needed (b): 16 sites / 1845 checks of the `stated-on_miss` edge read the lo cell.
+  Nothing else G2 asserts depends on `result` after a leaving miss (reviewed the
+  hook texts: modes 1/2 were the only readers).
+
+### 10.2 Quick-run numbers (seed 20261005, gcc-15, taskset 12-15; 2 of 3 runs used, 0 probe compiles)
+
+Final run GREEN: `checks passed 45,229,679, failed 0`; gcc-15 44,819,572 / 0, 11,350 sites
+(`coverage-missing 1` = the quick alignment axis, as before); generator 11,729 sites, 108
+batches, render/refusal/vocab/api fail all 0; K1 377,000/0; libc 108 batches agree. Run 1
+(before the in-place ref fix): failed 1845, all `stated-on_miss` in-place, cause above.
+Before this change the quick run was 314 generator failures (228 on_miss + 74 result_decl render
+fails, 6 api, 1 libc-record batch): all one cause, a refused mf_use sticking the batch art.
+
+Populations:
+- use-time refusals on define+use (lawful): 26 = `on_miss` 11 + `result_decl` 15, unnamed 0
+  (generator count, tier-independent).
+- PF edges (cases = rendered): miss-not-range-end 138, result-not-lo 56, stated-floor 84,
+  stated-note 48, stated-result_decl 44 (was: 44 REFUSED; the one-call path now picks a
+  serving row, so all render), stated-on_miss 48 (was 24 rendered + 24 refused; all render),
+  table-disagrees 48. Class `pf-edge` 418 cases, 0 failed; `ENFORCED-CLASS cases: 1563`
+  (unchanged). Forms: `pf_memchr` 422 / `pf_walk` 449 hard sites; family `pf` 288 sites, unchanged.
+- via emit/define+use/+call (sites as run): 4572/4468/1140 (a use-refused site runs as emit).
+
+### 10.3 Floors (`run_g2.sh`)
+
+Added: `FLOOR_USEREFUSE` 20, `FLOOR_USEREFUSE_ON_MISS` 8, `FLOOR_USEREFUSE_RESULT_DECL` 11 (all
+about 25% under 26/11/15) and a hard check that the unnamed count is 0. MOVED:
+`PF_EDGE_RUN_FLOORS` `stated-on_miss` 20 -> 43 (all 48 now run, previously half refused) and
+a new `stated-result_decl` 39 (44 now run; there was no run floor because they were all
+refused). Unmoved: `FAM_FLOORS`, `PF_EDGE_CASE_FLOORS`, `PF_CELL_FLOORS`, per-form and
+`PF_FAM_FORM_FLOORS`, `FLOOR_CLS_EDGE` 375 (cases tier-independent, same sites).
+
+### 10.4 OWED full-run expectations
+
+`ENFORCED-CLASS cases: 1563`; `class pf-edge: 418 (floor 375)`; `USEREFUSE-TOTAL lawful=26
+on_miss=11 result_decl=15 unnamed=0` (generator, tier-independent); PF edges all rendered
+(`stated-result_decl` and `stated-on_miss` run 44 / 48 sites, floors 39 / 43); forms
+`pf_memchr` 422 and `pf_walk` 449 (floors unchanged, `FULL_FORM_CHECK_FLOORS` per section 9.6
+still DERIVED, confirm or re-pin on the full run); `checks failed 0`; family and cell numbers
+as in section 9.4. The gcc+clang full tier is untried here.
+
+### 10.5 KIT FINDINGS
+
+None new. (Observation, not a defect: no `miss`/`floor`/`note`-named use-time refusal occurs in
+the generated space, because the define hooks equal the use hooks here; only fields the define
+selection cannot see arise. A separate define-hooks-differ-from-use-hooks population would
+exercise them and is NOT built: no measurement asks for it.)
+
+### 10.6 DISCLOSURE
+
+Files outside the cell seen: only the spawn-time auto-injected ones (session-root `CLAUDE.md`,
+memory index, git status snapshot, and the environment block naming another worktree path,
+`worktrees/memfn`, which I did not read or enter). In the cell I read `memfn/tests/CLAUDE.md`,
+`G2U_REPORT.md`, `memfn/include/memfn.h`, `memfn/tests/*`. No `git`, no `make`, no kit source,
+no lane report. One `cd` inside the cell (a Bash subshell, then the cell's tests dir for a
+python edit script); the run launches used absolute paths. Budget: 2 of 3 `--quick` runs, 0
+probe compiles, no timing, no full run. Scratch: `.scratch/run1.log`, `.scratch/run2.log`,
+`.scratch/tmp`.
