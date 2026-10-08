@@ -287,16 +287,20 @@ PINS = {
     # 304 files / 3,938 rows / 3,517 reach to the values below, and every
     # floor here had fallen ~15% behind it. Same margin as the originals
     # (~1% on the argv axes, zero slack on producing files).
-    "composition_files_floor": 360,       # measured 369 (was 300 / 304)
+    # RE-PINNED at [DEC-FALLBACK] B1 (lane decfbB1, 2026-10-08, B0 tip
+    # 6794d272 + B1; one-tree measurement run, all streams): the corpus had
+    # grown to 373 files / 5,423 rows, and the argv/reach floors were ~15%
+    # behind it again. Same margins as C0's re-pin.
+    "composition_files_floor": 365,       # measured 373 (was 360 / 369 at C0)
     # corpus pattern/pattern-esc rows found by --list-source over tests/**/*.rxt.
-    "argv_population_floor": 4550,        # measured 4,606 (was 3,900 / 3,938)
+    "argv_population_floor": 5370,        # measured 5,423 (was 4,550 / 4,606 at C0)
     # rows where BOTH sides compile successfully, per stream (--features all).
-    "reach_default_floor": 4110,          # measured 4,159 (stream 1; was 3,480 / 3,517)
-    "reach_vm_floor": 4110,               # measured 4,160 (stream 2)
-    "reach_ir_floor": 4110,               # measured 4,160 (stream 3)
+    "reach_default_floor": 4920,          # measured 4,972 (stream 1; was 4,110 / 4,159)
+    "reach_vm_floor": 4920,               # measured 4,973 (stream 2; was 4,160)
+    "reach_ir_floor": 4920,               # measured 4,973 (stream 3; was 4,160)
     # [START-TABLE] C0 stream 6 (--emit-facts=byte,utf8): fewer than stream 1
     # because both encodings must compile (a byte-only pattern refuses).
-    "reach_facts_floor": 4070,            # measured 4,119
+    "reach_facts_floor": 4880,            # measured 4,932 (was 4,119)
     # composition files that produce >=1 artifact on both sides. Measured
     # 32 producing / 96 artifacts, matching w2y_report.md's own recorded
     # figure EXACTLY (also claimed at --features all) -- resolved after an
@@ -323,8 +327,8 @@ PINS = {
     # known --features regression costing exactly 3 of these files
     # (32 -> 29), so this one axis needs maximum sensitivity, not a
     # margin -- any drop at all is worth flagging.
-    "composition_producing_floor": 38,    # measured 38 at C0 (was 32)
-    "composition_artifacts_floor": 100,   # measured 108 at C0 (was 88 / 96); an 8-artifact
+    "composition_producing_floor": 38,    # measured 38 at C0 and at B1 (was 32)
+    "composition_artifacts_floor": 100,   # measured 108 at C0 and at B1 (was 88 / 96); an 8-artifact
                                            # margin (one file's worth, at
                                            # this corpus's measured 3.0
                                            # artifacts/producing-file
@@ -1484,7 +1488,11 @@ TRACE_TAG = b"CANDTRACE\t"
 # Records-per-arm floor (a trace arm that prints nothing passes any diff),
 # over the full corpus rows. A --trace run against a build with no hook
 # FAILS here, as it should.
-TRACE_RECORDS_FLOOR = {"c-default": 262901, "c-vm": 64776}
+TRACE_RECORDS_FLOOR = {"c-default": 334904, "c-vm": 120524}
+# [DEC-FALLBACK] B1 re-pin (lane decfbB1): the plain variant's working-side
+# count in the B1 gate run (the same streams, CFLAGS and byte base this
+# non-variant trace run uses), C1's records plus the fallback trace's; it was
+# 262,901 / 64,776, a lower bound from an older, smaller corpus.
 # [START-TABLE] C1 re-pin: the C1 hook's own count over the 4,612 corpus rows
 # (stc1_report.md §5; the C0 prototype's 89,135 / 38,523 were lower bounds).
 # Every declared C1 site key must print at least once on the WORKING side of a
@@ -1496,6 +1504,16 @@ TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd", "form-other",
                "dfa-engine", "entry-gate", "engine-empty", "run-tests",
                "set-rest", "prefix-k", "req-site", "req-gate", "req-handoff",
                "req-from", "ofs-need")
+
+
+# [DEC-FALLBACK] B1: the fallback trace's site keys (src/core/compile.c's
+# FIT_TRACE sites, the gate/stwhy records, src/opt/select_engine.c's
+# admit/attrib), held reached by --variant --trace on a full population.
+# `fb-forcing` and `fb-nomem` are not here: no corpus compile arrives with
+# those labels (dec_fallback.md §4.3a), and docs/design/dec_fallback/
+# row_reach.py declares both cells zero.
+FALLBACK_TRACE_SITES = ("fb-trial", "fb-sel1", "fb-size", "fb-refuse", "admit",
+                        "attrib", "gate", "st-why")
 
 
 def trace_records(err):
@@ -1681,6 +1699,7 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
     vstreams = [s for s in VARIANT_STREAMS if s in args.streams.split(",")]
     all_ok = True
     measured, trace_records = {}, {}
+    fb_seen = set()
     for vname, vflags in variants:
         cf = (DEFAULT_BUILD_CFLAGS + " " + vflags).strip()
         if vflags.strip():
@@ -1772,6 +1791,19 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
                                               unordered=not args.trace_ordered, order=trace_order)
             print(text_t)
             all_ok = all_ok and ok_t
+            fb_seen |= {rec[trace_diff.FIELDS.index("site")] for recs in tb.values()
+                        for rec in recs if len(rec) > trace_diff.FIELDS.index("site")}
+    if args.trace and full_population:
+        # [DEC-FALLBACK] B1: every fallback-trace site key prints on the
+        # WORKING side of at least one variant (K35: a record that stopped
+        # printing would otherwise hide inside the records floor), except the
+        # two whose arrival no corpus compile makes (row_reach's declared
+        # zeros; their witness is alloc_check W4/W5).
+        missing = [k for k in FALLBACK_TRACE_SITES if k not in fb_seen]
+        print(f"-- fallback-trace site keys reached (working, any variant): "
+              f"{len(FALLBACK_TRACE_SITES) - len(missing)}/{len(FALLBACK_TRACE_SITES)}"
+              + (f"; NOT REACHED: {', '.join(missing)}" if missing else ""))
+        all_ok = all_ok and not missing
     with open(os.path.join(out_dir, "variant_tallies.tsv"), "w") as fh:
         fh.write("variant\tbase\tstream\tkey\tfloor\tmanifest\n")
         for (v, b), cell in sorted(measured.items()):
@@ -2455,13 +2487,17 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                          'refused-vm': 421,
                                          'stderr-default': 83,
                                          'stderr-vm': 1}}}}
-# Records per arm of each variant's trace pair (the C1 hook's records today;
-# B1's `fallback`/`admit`/`gate`/`stwhy`/`attrib` slots only add to them).
-TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 342053, 'c-vm': 111874},
- 'lowdfa': {'c-default': 314815, 'c-vm': 105080},
- 'lowsize': {'c-default': 344001, 'c-vm': 111874},
- 'lowthr': {'c-default': 334637, 'c-vm': 111944},
- 'plain': {'c-default': 315269, 'c-vm': 105080}}
+# Records per arm of each variant's trace pair, RE-PINNED at [DEC-FALLBACK]
+# B1 (lane decfbB1, 2026-10-08): the working side of the B1 gate run (B0
+# 6794d272 vs B1, byte base), C1's records plus B1's `fallback`/`admit`/
+# `gate`/`stwhy`/`attrib` slots (B0's C1-only values were 315,269/105,080
+# for plain, ~20k/15k lower in every cell). Measured, no margin: the trace
+# is deterministic and its population only grows with the corpus.
+TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 363673, 'c-vm': 128223},
+ 'lowdfa': {'c-default': 334599, 'c-vm': 120524},
+ 'lowsize': {'c-default': 365663, 'c-vm': 128223},
+ 'lowthr': {'c-default': 355346, 'c-vm': 128252},
+ 'plain': {'c-default': 334904, 'c-vm': 120524}}
 
 
 STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",

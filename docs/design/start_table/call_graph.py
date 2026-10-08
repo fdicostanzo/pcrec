@@ -81,6 +81,12 @@ QUAL = {"static", "const", "inline", "extern", "volatile", "unsigned", "signed",
         "struct", "union", "enum"}
 
 defs = {}   # name -> (file, start_line, end_line, kind)
+# [DEC-FALLBACK] B1: each file-scope `#ifdef PCREC_CAND_TRACE` block's line
+# range, printed as a `def-trace` OWNER line (name `trace@FILE:LINE`) and
+# nothing else: it joins no edge, family or site, but a sabotage anchor in a
+# trace-build helper (S623, S625, S626) resolves to an owner instead of
+# being unresolved (sabotage_anchors.py's owner resolution is total).
+trace_blocks = []   # (file, start_line, end_line)
 texts = {}  # name -> body text (list of (lineno, line))
 elem = {}   # table name -> its element type name (for the row-type closure)
 
@@ -133,6 +139,7 @@ for d in SRC:
                 # in the default build, decides nothing and is no definition
                 # of the census; the `#else` branch is parsed as usual.
                 if re.match(r'^#\s*ifdef\s+PCREC_CAND_TRACE\b', l):
+                    i0 = i
                     depth, i = 0, i + 1
                     while i < len(L):
                         if re.match(r'^#\s*if', L[i]):
@@ -144,6 +151,7 @@ for d in SRC:
                         elif re.match(r'^#\s*else\b', L[i]) and depth == 0:
                             break
                         i += 1
+                    trace_blocks.append((rel, i0 + 1, i + 1))
                     i += 1
                     continue
                 m = re.match(r'^#\s*define\s+([A-Za-z_]\w*)(\()?', l)
@@ -398,6 +406,8 @@ print("kind\tname\tsite\tdetail")
 for x in sorted(defs, key=lambda n: (defs[n][0], defs[n][1])):
     f, a, b, k = defs[x]
     print(f"def-{k}\t{x}\t{f}:{a}-{b}\t")
+for f, a, b in sorted(trace_blocks):
+    print(f"def-trace\ttrace@{f}:{a}\t{f}:{a}-{b}\t")
 for s in sorted(SEEDS):
     print(f"seed\t{s}\t{defs.get(s, ('?', 0))[0]}:{defs.get(s, ('?', 0))[1]}\t")
 for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
@@ -413,7 +423,24 @@ for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
     f = defs[x][0]
     body = []
     trace_depth = 0
+    ifdef_trace = None   # None outside, else the #if nesting depth inside
     for ln, l in texts[x][1:]:
+        # [DEC-FALLBACK] B1: a `#ifdef PCREC_CAND_TRACE` block INSIDE a body
+        # (the fallback trace's conditional records) is the trace build's own
+        # code and decides nothing, the definition pass's rule one level down;
+        # its `#else` branch is read as usual.
+        if ifdef_trace is None:
+            if re.match(r'^\s*#\s*ifdef\s+PCREC_CAND_TRACE\b', l):
+                ifdef_trace = 0
+                continue
+        else:
+            if re.match(r'^\s*#\s*if', l):
+                ifdef_trace += 1
+            elif re.match(r'^\s*#\s*endif\b', l):
+                ifdef_trace = None if ifdef_trace == 0 else ifdef_trace - 1
+            elif ifdef_trace == 0 and re.match(r'^\s*#\s*else\b', l):
+                ifdef_trace = None
+            continue
         code = re.sub(r'"(\\.|[^"\\])*"', '""', l)
         code = re.sub(r'/\*.*?\*/|//.*$', '', code)
         # [START-TABLE] C1: a selection-trace record (`PCREC_CAND_TRACE_REC*`,

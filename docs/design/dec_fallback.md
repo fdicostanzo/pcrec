@@ -773,6 +773,12 @@ classes is an undispositioned member and stops the lane.
    `run_size_term.sh` does. The two UNREACHED cells (row 5 and row 6 at
    SIZECAP) carry their argument as a comment (§4.3a). These rows are the
    hand-written, table-independent control of T2's listing half.
+   **Correction (decfbB0b, recorded at B1):** the `forced-on` SIZECAP
+   witness (`-e utf8 -fprefilter ^(\p{Xwd}{1,3})?$`) stamps
+   `VM_PREFILTER_LANG_WHY "size cap retry, exact N > M"`, not `forced`: on
+   the size rung T3's `rung` row beats the flag (§1.5, "A RUNG BEATS THE
+   FLAG"), so the witness is a T3 `rung` (SIZECAP) witness as §4.3a's table
+   already lists it, and this row pins only its LISTING token.
 7. **Trace tooling** (critB2 M5). `trace_diff.py` gains `--order
    SLOT=ordered|set`, so the `fallback` slot is compared as an ORDERED
    sequence and every other slot as a SET (A's C1 condition was about
@@ -830,6 +836,23 @@ at B1; until then the prototype in `dec_fallback/reach/` stands in, as item
 - W5's post-loop trials are a NOTE, not an assertion: 9 of 11 die by
   SIGABRT in the listing's renderer (a pre-existing abort-on-OOM in
   `pcrec_emit_facts`, recommended as a K-entry).
+
+**B1's outcome (lane decfbB1, 2026-10-08, base `lane/decfbB0` `6794d272`;
+report `../dev/lanes/decfbB1_report.md`).** The fallback trace landed as
+`#ifdef PCREC_CAND_TRACE` text only on C1's `_REC`/`_RECF`: `fallback`
+(route = the label set, row + the post-row tuple `dd cr sdr fo ovw sc latch
+restart`; site keys `fb-forcing`, `fb-nomem`, `fb-trial`, `fb-sel1`,
+`fb-size`, `fb-refuse`), `admit` (route = the CR scope; T2's row read off
+today's derivation in T2's order, plus the verdict), `gate` (T3's row read
+off the PFLW), `stwhy` (the T4 token) and `attrib` (the token and the row
+whose cell gave it: the design's fired-row INDEX is printed as that row's
+NAME, which identifies it because every attributing row fires at most once
+and which needs no `fit_seq[]` before B3). The gate (`emit_sweep --ref B0
+--variant all --trace`, B1's ten site keys declared) is CLEAN; the
+cross-record agrees with decfb0's probes and with the prototype on every
+compile of all five variants (and the prototype's 14 arms); `row_reach.py`
+and `run_fallback_table.sh` (a) landed (items 8 and 11(a)); B0's S-I2/S-I3/
+S-I4 are S620/S621/S622.
 
 `call_graph.py --family fallback`'s computed RE-RUN set reproduces rev 1's
 list except S189/S191/S192. Those three are seen only by `--step` at B3, so

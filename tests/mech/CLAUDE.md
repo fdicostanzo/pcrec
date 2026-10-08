@@ -3496,3 +3496,19 @@ compilers built from the tree's own sources into the row's work dir;
 `PCREC` is the tree's `build/pcrec`) and scores the script's
 `checks passed:`/`checks failed:` summary. Rows aimed at the fallback
 tables (design §4.4's `fbt` detectors) name it in `SAB_SUITES`.
+
+### [DEC-FALLBACK] B1 — rows S620-S626 (lane decfbB1, 2026-10-08)
+
+The range S620-S639 is B1's. Three are B0's drafts, numbered here
+(`docs/design/dec_fallback.md` §4.4): S620 = S-I2 (trace_diff's per-slot
+`ordered` mode compared as a set; arm `emitsweep`), S621 = S-I3
+(`emit_sweep`'s `emit-ir-auto` stream loses its `-fno-prefilter` arm;
+`emitsweep`), S622 = S-I4 (the observed-stamp leg's `overflowed-prefilter`
+witness dropped; `fallbacktable`). Four are the B1 trace's own, each planted
+in TRACE-BUILD text only (the default build is untouched) and detected by
+`run_fallback_table.sh` (a), the first rows `fallbacktable` scores: S623
+(the arrival label set swaps `overflow`/`size`), S624 (the size-cap
+`fallback` record dropped), S625 (the `admit` record swaps T2's
+`var-nullable`/`nullable-exact`), S626 (the `attrib` record swaps the
+[SEL-1] source row). All seven DETECTED at B1 (4/1/1/18/9/2/3 failing
+checks). S627-S639 are unused.

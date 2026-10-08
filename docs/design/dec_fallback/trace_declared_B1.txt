@@ -1,0 +1,17 @@
+# [DEC-FALLBACK] B1's DECLARED trace multiplicity (dec_fallback.md §4.2 B1):
+# the site keys of every record B1 ADDS, the fallback trace's five slots
+# (`fallback`, `admit`, `gate`, `stwhy`, `attrib`). Read by
+# scripts/emit_sweep.py --trace-declared / scripts/trace_diff.py --declared
+# when the B1 tip is compared against its parent (B0); every C1 record must
+# be identical. Meaningless against any later parent: from B2 on these
+# records are COMPARED (`fallback` ordered, the rest as sets), never filtered.
+fb-forcing
+fb-nomem
+fb-trial
+fb-sel1
+fb-size
+fb-refuse
+admit
+gate
+st-why
+attrib

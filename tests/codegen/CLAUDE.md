@@ -3882,8 +3882,9 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 ## `run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)
 
 `docs/design/dec_fallback.md` rev 2 §4.2 B0 item 11. Its own section,
-`make test-fallback-table` (in `TEST_SECTIONS`; ~7 s, it builds three
-reference compilers), and mech arm `fallbacktable`. HAND-WRITTEN from
+`make test-fallback-table` (in `TEST_SECTIONS`; ~17 s since B1, it builds
+three reference compilers and four trace compilers), and mech arm
+`fallbacktable`. HAND-WRITTEN from
 today's behaviour and INDEPENDENT of T1-T4 and of the `--list-axes` dump
 (its header says so): stamps are read from the ARTIFACT, and the only
 outside source is `docs/spec/match_api.md` §6.3's hand-written value sets,
@@ -3903,7 +3904,17 @@ read through `tests/lib/spec_extract.sh` (moved there from
   drop form. The NFA-state form is compared in FULL; the two byte-figure
   forms by SHAPE (`^size cap retry, (exact|hybrid) [0-9]+ > 1000000$`, N >
   cap checked numerically) so an emitted-text abi event does not move them.
-- **(a) SEQUENCES** lands at B1 (needs the fallback trace); a header only.
+- **(a) SEQUENCES** (B1, lane decfbB1): 25 witnesses, each with its
+  hand-written `row@labels > ...` sequence of `CANDTRACE fallback` records
+  (`-DPCREC_CAND_TRACE`, design §4.2 B1) and its expected rc, plus four
+  post-row state fields (`cr`, `latch` twice, `restart`) that sabotage rows
+  target. Every T1 row the corpus reaches is witnessed (rows 2-4, 6-10; row
+  10 under `overflow`, `size` and `other`), and two no-arrival controls.
+  Four TRACE compilers (`trplain`, `trlowdfa`, `trlowsize`, `trlowboth`),
+  kept separate from (b)/(c)'s untraced ones. Rows 0 and 1 have no corpus
+  arrival; their witnesses are `alloc_check` W5/W4. Red both ways
+  (`docs/dev/lanes/decfbB1_report.md`): a latch plant (S-F8's) and a deleted
+  `fb-size` record.
 
 Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
 the tree; red on a dropped witness (the floor fires), a value removed from

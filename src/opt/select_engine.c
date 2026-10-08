@@ -993,6 +993,66 @@ static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
                                                       : ESEL_OVERFLOWED_PREFILTER;
 }
 
+#ifdef PCREC_CAND_TRACE
+/* [DEC-FALLBACK] B1 THE FALLBACK TRACE's `admit` and `attrib` records
+ * (docs/design/dec_fallback.md §4.2 B1), printed once per selection from the
+ * finished fit and the attempt record, both already computed: no fact is
+ * asked here that `prefilter_decision` did not ask first (`kinds` is its
+ * first read).
+ *
+ * `admit`: route = the SCOPE (the collapse reason), row = the T2 row (§1.4)
+ * today's admission took, with the verdict. The row is read off TODAY's
+ * derivation — its two declined-nullable flags and the inputs of its
+ * ternary — in T2's order, so where the two orders differ (`has_var` with
+ * `-fno-prefilter`; an overflow drop under `-fno-prefilter`) the record names
+ * the row T2 will take and the verdict is today's. B4's T2 walk prints its own
+ * row here, and the trace compare is what holds the two to each other.
+ *
+ * `attrib`: row = the `ENGINE_SEL` token and the T1 row whose cell gave it
+ * (§1.7): `forced`, `admit` (T2 rows 3-5), the latest attributing ladder row
+ * (read off the attempt record, which today holds what `fit_seq[]` will), or
+ * `none` (`selected` with no cell). */
+static void fit_trace_admit_attrib(Ctx *cx)
+{
+    const EngineFit *fit = &cx->job->fit;
+    const unsigned kinds = pcrec_fact_kinds(cx);
+    const bool fon  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
+    const bool foff = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+    const bool dd = cx->dfa_disabled;
+    const int cr = cx->collapse_reason;
+    const char *row =
+          (kinds & PF_KIND_BREF)                       ? "backref"
+        : (kinds & PF_KIND_LINKED_CALL)                ? "linked-call"
+        : fit->prefilter_declined_nullable_default     ? ((kinds & PF_KIND_VAR)
+                                                          ? "var-nullable"
+                                                          : "nullable-exact")
+        : fit->prefilter_declined_nullable             ? "nullable-collapsed"
+        : dd && (cr != CR_SEL1 || foff)                ? "overflow-drop"
+        : fon                                          ? "forced-on"
+        : foff                                         ? "forced-off"
+        : (kinds & PF_KIND_VAR)                        ? "var"
+        :                                                "default";
+    PCREC_CAND_TRACE_RECF("admit", pcrec_cr_trace_name(cr), "admit",
+                          "%s pf=%d", row, (int)fit->prefilter);
+
+    const unsigned char e = fit->engine_sel;
+    const char *from =
+          e == ESEL_FORCED                                  ? "forced"
+        : e == ESEL_DECLINED_NULLABLE_DEFAULT ||
+          e == ESEL_DECLINED_NULLABLE                       ? "admit"
+        : e == ESEL_SIZE_CAP_RETRY
+          ? (cx->size_drop_rung == SDR_NO_PREFILTER ? "drop-prefilter"
+           : cx->size_drop_rung == SDR_NO_PREMUL    ? "drop-premul"
+           : cx->size_drop_rung == SDR_NO_ANCHORED  ? "drop-anchored"
+           :                                          "prefilter-collapse")
+        : e == ESEL_SELECTED                                ? "none"
+        : cr == CR_NONE                                     ? "sel1-drop"
+        :                                                     "sel1-collapse";
+    PCREC_CAND_TRACE_RECF("attrib", "-", "attrib", "%s from=%s",
+                          pcrec_engine_sel_name(cx), from);
+}
+#endif
+
 /* Decides which of ENGM_DFA/ENGM_VM this pattern may build, whether the VM's
  * hybrid prefilter runs ahead of it, and which `<PREFIX>_ENGINE_SEL` token
  * records how that came out — then runs the bounded-repeat ladder's two
@@ -1125,6 +1185,9 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     fit.engine_sel = esel_of(cx, &fit);
 
     cx->job->fit = fit;
+#ifdef PCREC_CAND_TRACE
+    fit_trace_admit_attrib(cx);
+#endif
 
     /* [ENG-BREP] the bounded-repeat ladder's analyses, run last and in the
      * ladder's own application order (D47.1), because they are the only steps

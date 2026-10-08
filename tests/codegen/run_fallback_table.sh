@@ -29,8 +29,12 @@
 #
 # THREE HALVES (§4.2 B0 item 11):
 #   (a) SEQUENCES — each witness's expected fallback-row sequence, read from
-#       the trace build. NEEDS THE B1 TRACE (`-DPCREC_CAND_TRACE` fallback
-#       slot); LANDS AT B1. Nothing runs here yet.
+#       the trace build's `fallback` records (`-DPCREC_CAND_TRACE`, B1): one
+#       `row@labels` per arrival, in arrival order, plus the post-row state
+#       field a sabotage row targets on three witnesses; and the final
+#       `admit`/`attrib`/`gate` record of one witness per row the corpus
+#       reaches. Landed at B1 (decfbB1), hand-written from what B1's base
+#       was observed to print.
 #   (b) THE OBSERVED-STAMP LEG — each of the 8 `RX_ENGINE_SEL` and 7
 #       `RX_UNROLL_K_WHY` values is stamped by at least one witness (the K35
 #       floor, per value), and the OBSERVED set EQUALS the spec's set (both
@@ -112,6 +116,32 @@ if [ -n "$lsrcs" ]; then
 fi
 REF_lowdfa="$WORK/pcrec_lowdfa"; REF_lowsize="$WORK/pcrec_lowsize"; REF_lowthr="$WORK/pcrec_lowthr"
 
+# --- (a)'s TRACE compilers, built once (B1) ----------------------------------
+# The same source list and flags as above plus `-DPCREC_CAND_TRACE`, one per
+# limit set (a) reads. Kept SEPARATE from the three reference compilers
+# above: (b)/(c) read artifacts from untraced builds, so a trace build that
+# moved a byte (scripts/emit_sweep.py --trace's own check) could not reach
+# their verdicts.
+if [ -n "$lsrcs" ]; then
+    build_ref trplain   -DPCREC_CAND_TRACE &
+    build_ref trlowdfa  -DPCREC_CAND_TRACE -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
+    build_ref trlowsize -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+                        -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 &
+    build_ref trlowboth -DPCREC_CAND_TRACE -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 \
+                        -DPCREC_MAX_EMIT_BYTES=60000 -DPCREC_SIZE_TERM_THRESHOLD=10000 \
+                        -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
+    wait
+    for n in trplain trlowdfa trlowsize trlowboth; do
+        if [ -e "$WORK/ref_$n.fail" ] || [ ! -x "$WORK/pcrec_$n" ]; then
+            bad "the $n trace compiler failed to build: $(head -1 "$WORK/ref_$n.err")"
+        else
+            ok "the $n trace compiler built"
+        fi
+    done
+fi
+REF_trplain="$WORK/pcrec_trplain"; REF_trlowdfa="$WORK/pcrec_trlowdfa"
+REF_trlowsize="$WORK/pcrec_trlowsize"; REF_trlowboth="$WORK/pcrec_trlowboth"
+
 # compile WITNESS_ID COMPILER-KEY PATTERN [args...] — writes $WORK/ID.c; the
 # pattern is passed via --pattern (never a positional file operand).
 compile() {
@@ -126,10 +156,141 @@ compile() {
     fi
 }
 
+# The overflowed-prefilter witness: an unrolled `(?:a|b)` ladder under a
+# trailing `*` with 12 explicit copies. Under the shipped limits it is
+# `selected`; under lowdfa the auto DFA attempt overflows AND the prefilter
+# pair overflows after it. (Spelled out, not `{11}`: a counted repeat takes
+# the SEL1 collapse route instead and stamps `collapsed-prefilter`.)
+AB12=''; for _i in 1 2 3 4 5 6 7 8 9 10 11 12; do AB12="$AB12(?:a|b)"; done
+OVFPF="(x)(?:a|b)*a${AB12#(?:a|b)}"
+
 # =========================================================================
-# (a) SEQUENCES — lands at B1 (needs the fallback trace build,
-#     `-DPCREC_CAND_TRACE`'s `fallback` slot). Deliberately empty at B0.
+# (a) SEQUENCES — every witness's fallback rows, from the trace build
 # =========================================================================
+echo "== (a) sequences: each witness's fallback rows, in arrival order (the B1 trace) =="
+
+# fseq ID TRACE-KEY RC EXPECTED PATTERN [args...]
+# EXPECTED is the hand-written `row@labels > row@labels ...` sequence of the
+# compile's `CANDTRACE fallback` records ("(none)": no arrival at all), RC
+# `ok` or `refused`. A trace compiler that prints NO fallback record on a
+# witness expected to arrive is a FAIL like any other mismatch: a record
+# site that stopped printing reads as "(none)" and never as a pass.
+fseq() {
+    local id="$1" key="$2" erc="$3" want="$4" pat="$5"; shift 5
+    local bin="REF_$key" rc got
+    bin="${!bin}"
+    pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
+        >/dev/null 2>"$WORK/$id.trace"
+    rc=$?
+    got="$(awk -F'\t' '$1 == "CANDTRACE" && $2 == "fallback" { split($4, w, " ");
+            s = s (s == "" ? "" : " > ") w[1] "@" $3 } END { print (s == "" ? "(none)" : s) }' \
+            "$WORK/$id.trace")"
+    if [ "$erc" = ok ] && [ "$rc" -ne 0 ]; then
+        bad "sequence $id [$key $* '$pat']: refused (rc $rc), expected to compile; rows: $got"; return
+    elif [ "$erc" = refused ] && [ "$rc" -eq 0 ]; then
+        bad "sequence $id [$key $* '$pat']: compiled, expected a refusal; rows: $got"; return
+    fi
+    [ "$got" = "$want" ] && ok "sequence $id [$key $*]: $want" \
+                         || bad "sequence $id [$key $* '$pat']: rows '$got', expected '$want'"
+}
+# fstate ID N FIELD=VALUE — the N-th fallback record (1-based) of witness ID's
+# last fseq run carries the post-row state field FIELD=VALUE.
+fstate() {
+    local id="$1" n="$2" want="$3" got
+    got="$(awk -F'\t' -v n="$n" '$1 == "CANDTRACE" && $2 == "fallback" && ++k == n { print $4 }' \
+            "$WORK/$id.trace")"
+    case " $got " in
+        *" $want "*) ok "sequence $id record $n carries $want" ;;
+        *) bad "sequence $id record $n: '$got' does not carry $want" ;;
+    esac
+}
+
+W_OVF='^(?:(?:a|b)*a(?:a|b){20})?$'          # the DFA overflows, then the prefilter
+W_SEL1='(1{0,30}?[^]abc][^abc]){28,30}0+|a'   # the collapsed prefilter survives
+W_LOOK='x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)'
+W_TOWER='(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
+W_NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
+# T1 rows 3-4 ([SEL-1]), arrival label `overflow`
+fseq seq-sel1c    trplain ok 'sel1-collapse@overflow'                          "$W_SEL1"
+fstate seq-sel1c 1 'cr=1'
+fseq seq-sel1cd   trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_OVF"
+fstate seq-sel1cd 1 'latch=1/0'
+fstate seq-sel1cd 2 'cr=0'
+fstate seq-sel1cd 2 'latch=1/0'
+fseq seq-look     trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_LOOK"
+fseq seq-sel1d    trplain ok 'sel1-drop@overflow'                              "$W_OVF" -fno-prefilter-collapse
+fseq seq-fofsel1  trplain ok 'sel1-collapse@overflow'                          "$W_SEL1" --fast-or-fail
+fseq seq-nopfsel1 trplain ok 'sel1-collapse@overflow'                          "$W_OVF" -fno-prefilter
+fseq seq-ovfpf    trlowdfa ok 'sel1-collapse@overflow > sel1-drop@overflow'    "$OVFPF"
+# T1 rows 6-9 (the size-cap ladder), arrival label `size`
+fseq seq-pfcdrop  trplain ok 'prefilter-collapse@size > drop-prefilter@size'   '(\p{Xwd})' -e utf8
+fstate seq-pfcdrop 2 'restart=1'
+fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8 -fno-prefilter-collapse
+fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
+fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}b'
+fseq seq-pfcbcat  trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b)+' -e utf8
+fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8
+fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8
+fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8
+# T1 row 2 (the size term's trial catch), label `other`
+fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > size-term-trial@other' \
+                  "$W_TOWER" --engine=vm
+fseq seq-trialref trlowsize refused 'size-term-trial@other > size-term-trial@other > refuse@size' "$W_NEST8"
+# T1 row 10 (refuse) under every label it is asked on
+fseq seq-refovf   trplain refused 'refuse@overflow'                            '(?:ab){0,16000}' --engine=dfa
+fseq seq-refsize  trplain refused 'refuse@size'                                '(\p{Xwd})' -e utf8 --fast-or-fail
+fseq seq-refother trplain refused 'refuse@other'                               '\A*'
+fseq seq-refpf    trplain refused 'refuse@other'                               "$W_OVF" -fprefilter
+# no arrival at all
+fseq seq-none     trplain ok '(none)'                                          '(a)b'
+fseq seq-nonevm   trplain ok '(none)'                                          "$W_OVF" --engine=vm
+
+# frec ID TRACE-KEY SLOT WANT PATTERN [args...] — the LAST `SLOT` record of
+# the compile (the final attempt's) reads `route|row-field` == WANT. The
+# other three slots B4/B5 hold to their parent (`admit` = T2's row and
+# verdict, `attrib` = the ENGINE_SEL token and the row whose cell gave it,
+# `gate` = T3's row and PFLW), one witness per row the corpus reaches.
+frec() {
+    local id="$1" key="$2" slot="$3" want="$4" pat="$5"; shift 5
+    local bin="REF_$key" got
+    bin="${!bin}"
+    pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
+        >/dev/null 2>"$WORK/$id.trace"
+    got="$(awk -F'\t' -v s="$slot" '$1 == "CANDTRACE" && $2 == s { x = $3 "|" $4 } END { print x }' \
+            "$WORK/$id.trace")"
+    [ "$got" = "$want" ] && ok "record $id [$key $slot $*]: $want" \
+                         || bad "record $id [$key $slot $* '$pat']: last $slot record '$got', expected '$want'"
+}
+frec adm-default  trplain admit 'none|default pf=1'            '(a)b'
+frec adm-nulex    trplain admit 'none|nullable-exact pf=0'     '(a)*'
+frec adm-varnul   trplain admit 'none|var-nullable pf=0'       '^${v}$'
+frec adm-var      trplain admit 'none|var pf=0'                'a${v}b'
+frec adm-varoff   trplain admit 'none|forced-off pf=0'         'a${v}b' -fno-prefilter
+frec adm-bref     trplain admit 'none|backref pf=0'            '(a)\1'
+frec adm-call     trplain admit 'none|linked-call pf=0'        '(a|b(?1)c)+'
+frec adm-nulcol   trplain admit 'sel1|nullable-collapsed pf=0' '(?:ab){0,16000}'
+frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
+frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVF" -fno-prefilter
+frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
+frec adm-foffsc   trplain admit 'sizecap|forced-off pf=0'      '(\p{Xwd})' -e utf8
+frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
+frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
+frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
+frec att-dnd      trplain attrib '-|declined-nullable-default from=admit'     '(a)*'
+frec att-dn       trplain attrib '-|declined-nullable from=admit'             '(?:ab){0,16000}'
+frec att-cpf      trplain attrib '-|collapsed-prefilter from=sel1-collapse'   "$W_SEL1"
+frec att-ovfdfa   trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_OVF"
+frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$OVFPF"
+frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
+frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8
+frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8
+frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
+frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8
+frec gate-forced  trplain gate 'none|forced pflw=forced'     '(x)?a{0,4}\Gb' -fprefilter-collapse
+frec gate-nul     trplain gate 'none|nullable pflw=nullable' '^(a{2,9})*$' -fprefilter-collapse
+frec gate-nulsel1 trplain gate 'sel1|nullable pflw=nullable' "$W_OVF"
+frec gate-exact   trplain gate 'none|exact pflw=exact'       '(a){2,3}b'
+frec gate-norep   trplain gate 'none|no-rep pflw=no-rep'     '(a)b'
 
 # =========================================================================
 # (b) THE OBSERVED-STAMP LEG
@@ -164,13 +325,6 @@ wit() {
     fi
 }
 
-# The overflowed-prefilter witness: an unrolled `(?:a|b)` ladder under a
-# trailing `*` with 12 explicit copies. Under the shipped limits it is
-# `selected`; under lowdfa the auto DFA attempt overflows AND the prefilter
-# pair overflows after it. (Spelled out, not `{11}`: a counted repeat takes
-# the SEL1 collapse route instead and stamps `collapsed-prefilter`.)
-AB12=''; for _i in 1 2 3 4 5 6 7 8 9 10 11 12; do AB12="$AB12(?:a|b)"; done
-OVFPF="(x)(?:a|b)*a${AB12#(?:a|b)}"
 # NEST8: run_size_term.sh's nested-repeat family, the size term's own witness.
 NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
 
@@ -279,8 +433,6 @@ else
     bad "RX_VM_PREFILTER_WHY appears on a surviving hybrid ('(a)b'), or the witness refused"
 fi
 
-echo
-echo "== (a) SEQUENCES: lands at B1 (needs the fallback trace build); nothing here yet =="
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
