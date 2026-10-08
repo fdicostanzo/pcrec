@@ -904,6 +904,40 @@ is gone. Findings and choices:
 - `sabotage_anchors.py --step B3` derives 34 re-runs; it does not reach rev
   1's S189/S191/S192, which run by judgment.
 
+**B4's outcome (lane decfbB4, 2026-10-08, base `lane/decfbB3` `69ab9650`;
+report `../dev/lanes/decfbB4_report.md`).** `prefilter_decision` walks T2
+after its refusals and writes `fit.pf_admit`, the verdict and the two
+declined-nullable flags from the row; `lang_nullable_declinable`, the
+`has_var` ternary and the verdict ternary are deleted, and row 3 is F1's
+holder. The `--emit-ir` `prefilter` line lists `yes`/`yes-collapsed` on a
+verdict ON and otherwise the row's `list` cell and `note` cell (the chain's
+prose, moved verbatim; `overflow-drop`'s note is a `%s` format over
+`dfa_overflow_why`, `FitCells.pfwhy`'s shape). The oracle's `admit` and
+`admit-listing` checks retired (A's C5 precedent); the trace's `admit`
+record prints the walk's row, so the trace compare against the B3 parent
+is what holds the walk to the derivation it replaced. Choices and findings,
+each argued in the report:
+- B2's finding 7 is wider than rows 1-2: `empty_admits` has no other asker,
+  and the deleted derivation asked it on EVERY compile, so the walk alone
+  would flip `--emit-facts`' `used` column on every backreference, linked
+  call, DFA artifact and `--engine=vm` compile. B4 keeps ONE up-front ask
+  (`has_var ? nullable : empty_admits`, result discarded) ahead of the walk;
+  no mover is declared.
+- The re-aims are S102/S165/S272 (the row's VERDICT cell handed to the
+  default: equivalent mutants of the deleted-disjunct plants, outputs
+  compared on their witnesses), S216 (`pfa_default_scope`), S612 (row 4's
+  predicate), plus three the design did not list: S625 (its trace
+  derivation is gone; the claim moves to row 3's NAME cell), S640 (rows
+  gained the `note` line) and S176 (`--step` derives a re-run, but its old
+  plant pins a local the decision no longer reads, so it would be
+  UNDETECTED; re-aimed to `pfa_call`).
+- `state_readers.sh` and `call_graph.py --family fallback` read the shape:
+  `D` named the deleted local and its existence check passed on COMMENT
+  text (fixed: code lines of `.c`/`.h`/`.def` only, fail-closed verified);
+  `pf_admit_walk` joins `D` and `FB_ROOTS` (the family is B3's plus the
+  walk). The prototype's `adm` probe re-anchors after the row's writes
+  (`reach/build_reach.py`).
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

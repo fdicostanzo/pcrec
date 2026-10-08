@@ -5145,3 +5145,10 @@ witnesses (15) retired with their old side, and six (e) witnesses hold the
 size-cap rungs' stderr notes to hand-written full lines (rung order, or
 none). 191 checks (one more (c) witness: the first-rung `VM_PREFILTER_WHY`), ~35 s on the Linux dev box. `make alloc` (~35 s) joined
 B3's lane gate for rows 0 and 1 (alloc_check W5/W4).
+
+**B4 (lane decfbB4, 2026-10-08): (d) loses T2.** T2 became the admission and
+the `--emit-ir` `prefilter` line reads its row, so (d)'s 27 `admit` and
+`admit-listing` witnesses retired with their old side (the verdict ternary
+and the listing's chain). T2's independent controls are (a)'s hand-written
+`admit` records and `tests/prefilter/run_prefilter_tests.sh` §7's
+`check_ir_value` rows. 164 checks. `oracle_sweep.py` drops the two sites.

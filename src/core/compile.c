@@ -2352,9 +2352,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
             /* [OPT-4.1] READ, NOT RE-CALLED: the E1 kind mask is the one
-             * derivation, and `fit.prefilter_declined_nullable` is built from
-             * the same bit, so the two conjuncts cannot drift (they did —
-             * r47sel finding 1). */
+             * derivation, and T2's `nullable-collapsed` row (src/opt/
+             * select_engine.c) reads the same bit, so the two conjuncts
+             * cannot drift (they did — r47sel finding 1). */
             const bool pfc_rep   =
                 (pcrec_fact_kinds(&cx) & PF_KIND_COLLAPSIBLE_REP) != 0;
             const bool pfc_rung  = cx.collapse_reason != CR_NONE;

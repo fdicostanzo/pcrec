@@ -16,11 +16,15 @@ WHAT IT FAILS ON (exit 1):
   - the two orders' stdout or rc differ on any compile (an ask's side effect
     moved an artifact or a listing; the trace-vs-default byte identity of the
     default order is emit_sweep --trace's, not this script's);
-  - K35: a checked SITE (admit, admit-listing, gate, stwhy, attrib, pfwhy)
-    with no `CANDFIT` hit in an order, or a population below row_reach's
-    floor. B2's `arrival` and `note` sites retired at B3 (decfbB3), which
-    deleted their old side (the five tests and the `dropped_*` flags); a rev
-    before B3 still prints them, and an extra site fails nothing.
+  - K35: a checked SITE (gate, stwhy, attrib, pfwhy) with no `CANDFIT` hit
+    in an order, or a population below row_reach's floor. B2's `arrival` and
+    `note` sites retired at B3 (decfbB3), which deleted their old side (the
+    five tests and the `dropped_*` flags), and its `admit` and
+    `admit-listing` sites at B4 (decfbB4), which deleted theirs (the verdict
+    ternary and the listing's reason chain). A rev before either still
+    prints them, and an extra site fails nothing. The `--emit-ir` runs stay:
+    since B4 they hold no oracle site, but the two orders must still agree
+    on the listing's bytes.
 
 It is a FILTER test: the oracle shares every predicate with its subject (the
 note says so). The hits table (OUT/hits.tsv: order variant arm site row n)
@@ -44,7 +48,7 @@ _spec2 = importlib.util.spec_from_file_location("row_reach", os.path.join(HERE, 
 row_reach = importlib.util.module_from_spec(_spec2); _spec2.loader.exec_module(row_reach)
 
 ORDERS = {"old": "", "new": "-DPCREC_CAND_NEW_FIRST"}
-SITES = ("admit", "admit-listing", "gate", "stwhy", "attrib", "pfwhy")
+SITES = ("gate", "stwhy", "attrib", "pfwhy")
 # arms whose --emit-ir run is skipped: the listing refuses a DFA engine and
 # takes no --emit-facts.
 NO_IR_ARMS = ("dfa", "facts")

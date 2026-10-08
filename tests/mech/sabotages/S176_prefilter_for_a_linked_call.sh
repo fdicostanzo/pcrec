@@ -35,9 +35,17 @@ SAB_COUNT=1
 # live — so the population stays "a LINKED call's prefilter turns on". Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    const bool has_call = (kinds & PF_KIND_LINKED_CALL) != 0;'
-SAB_AFTER='    const bool has_call = false;   /* SABOTAGE S176 */'
 # [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
 # `has_call` reads the E1 kind mask's LINKED_CALL bit instead of
 # calling `pcrec_has_linked_call(root)`; the plant is the same local pinned
 # false, so `fit.prefilter` stops consulting linkage exactly as before.
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# The `has_call` local now feeds only the `-fprefilter` refusal; T2 reads
+# the kind mask's LINKED_CALL bit through its own predicate `pfa_call`. The
+# plant pins THAT predicate false, so the admission stops consulting the
+# call kind, the row's claim: a linked call falls through to the nullability
+# and default rows and gets a prefilter nfa.c refuses. (The old plant also
+# lost the `-fprefilter` refusal's call noun; that half is S64's family and
+# not this row's claim.)
+SAB_BEFORE='static bool pfa_call(const PfAdmitSel *s) { return (s->kinds & PF_KIND_LINKED_CALL) != 0; }'
+SAB_AFTER='static bool pfa_call(const PfAdmitSel *s) { (void)s; return false; }   /* SABOTAGE S176 */'
