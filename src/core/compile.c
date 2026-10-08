@@ -2051,8 +2051,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
           : st_final_k != st_k[0]                       ? "size-model"
           : st_capexcl                                  ? "capacity-declined"
           :                                               "size-model-declined";
-        /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6), which is
-         * the token itself. */
+
+        /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6): the token. */
         PCREC_CAND_TRACE_REC("stwhy", "-", cx.size_term_why, "st-why");
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
