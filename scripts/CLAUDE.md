@@ -412,6 +412,10 @@ pcrec (the Makefile owns that).
   off the REFERENCE artifact's text; the real run then holds MOVERS == the
   REF artifacts that match any of them, 0 off-diagonal in both directions,
   per stream (1-4). The text-census instrument for a declared TEXT mover.
+  `--census-facts-keys KIND:KEY,...` (lane advtri) gives stream 6 its census:
+  a facts mover is explained iff every moved line has a listed head AND, for
+  an encoding whose REF listing has `RX_VM_PROGRAM_BYTES`, the REF
+  `--engine=vm [-e utf8]` artifact is a census hit.
 - **trace_diff.py** — [START-TABLE] C0's selection-trace diff: compares two
   trace streams (`idx arm seq record`, written by `emit_sweep.py --trace`)
   per (pattern, arm) as ORDERED sequences (so neither a swap between
