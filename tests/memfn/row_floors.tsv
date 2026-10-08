@@ -42,7 +42,7 @@ arms	pf_memchr	80268	3306
 arms	pf_memchr_bounded	25484	2842
 arms	pf_walk	608765	3679
 arms	pf_walk_bounded	27462	3366
-arms	pf_memchr_back	PLACEHOLDER	PLACEHOLDER
+arms	pf_memchr_back	PLACEHOLDER	4109
 arms	generic	6868245	171196
 runcmp	words	15408	13870
 runcmp	overlap	108903	7275
