@@ -852,3 +852,9 @@ pointer when a kit change merges to main.
 - G2 quick after the fix: 314 failures, all G2-side (the mf_emit trial vs
   the real define+use path, which now differ by contract). Blinded g2pf2
   makes G2 judge each path by its own contract.
+- R4g validated in one chain (21:16-22:18): census 0/0, identity gate 0
+  movers, full G2 173.8M/0, make test 685 s green, 29 rule-(b) mech rows
+  DETECTED. done: posted.
+- Frank's observation through main: the N2 census runs with a per-arm
+  barrier (stragglers like `((a)|ab){4000}c` leave one compile running).
+  Follow-up: one pool across all arms.

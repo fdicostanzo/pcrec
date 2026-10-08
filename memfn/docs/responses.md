@@ -686,3 +686,59 @@ the compiler, and is never adopted silently. Proposed for main to file
      row 6 ("the kit decides whether testing it pays"). The kit will
      revise that row's text, and any later kit form that wants the choice
      brings it to main as a request.
+- done: 2026-10-07 — **R4g (M2: PF migrates, zero movers): lane/memfn-r4g @
+  TIP (the commit carrying this entry; validated tip cbb7e953, which
+  contains post-C4 main 8cada7b9).**
+  - **What it delivers:**
+    - The kit arm `pffind` (memfn/src/pffind.c, 0BSD; four rows with
+      uses/serves). `pcrec_emit_find` only describes the site (DELEG_SITES
+      row PF), and the manifest's PF row is `delegated`. C12: emit_dfa.c
+      memchr 2→1.
+    - The r4gfix kit fixes:
+      - the PF rows serve ANY for preds/ret_pred;
+      - mf_emit's selection gates the use-phase fields.
+    - The contract amendment: result is UNSPECIFIED on a miss when
+      on_miss_leaves = 1, and on_miss must not read it.
+    - The blinded G2 PF family (G2pf, G2pf2).
+    - integration.md §19 row 6 is revised per your ruling.
+  - **EDIT-SET AMENDMENT (ruled OK):** for the memchr forms, the NULL test
+    and position store moved with the memchr line. pcrec states
+    `return 0;` (as on_miss) and the `len - 1` clamp (as miss) as hooks.
+  - **Conditions:**
+    1. CandPf/CandRow/cand_rows[] are untouched.
+    2. S68, S478 and S524 are re-pinned, each planting the same defect;
+       S186 and S481-S485 are unchanged. All are DETECTED solo.
+       sabotage_anchors.tsv/.total and call_graph.txt were re-derived on
+       the post-C4 merge; S478/S481-S484 keep rerun_at after-C5b; the one
+       unresolved site (S571) is identical on main.
+    3. The edit set was posted.
+  - **Validation** (your slot, 21:16-22:18, one serial chain; logs
+    worktrees/memfn-slot/slot7/, gitignored):
+    1. N2 census on the enforcing build: would-decline 0, no-row 0.
+    2. Identity gate vs 8cada7b9: R4C-GATE PASS, 0 movers on all 6
+       streams.
+    3. Full G2: **173,824,444 passed, 0 failed**. ENFORCED-CLASS is 1,563;
+       pf_memchr 422 and pf_walk 449 hard sites; the W1 witnesses fired.
+    4. make test: rc 0, 685 s, no `*** [test-` lines.
+    5. Mech, selection rule (b) as ruled: the rows whose anchor's owning
+       definition (sabotage_anchors.tsv owner via call_graph.txt)
+       intersects a line R4g changed in src/, plus every row on a
+       memfn/ or tests/memfn/ file, plus the re-pinned rows, plus
+       condition (2)'s list. The changed definitions are PcrecFind,
+       PcrecFindTable, find_site, find_table_name, find_table_tag,
+       pcrec_emit_find, pf_emit_bcls[_bounded], pf_emit_find,
+       pf_emit_first_{class,memchr}_bounded, pf_emit_memchr[_bounded] and
+       pf_vm_emit_first_class. The **29 rows**, all DETECTED (0
+       unexpected/undetected/unreached/anomalies), are: S68 S185 S186 S265
+       S267 S279 S285 S443 S444 S445 S447 S450 S454 S455 S464 S478 S481
+       S482 S483 S484 S485 S512 S522 S523 S524 S525 S526 S570 S573.
+    6. strict 0; arms 138/0; stamps 14/0; anchors all resolve.
+  - Reports: docs/dev/lanes/r4g_report.md, r4gfix_report.md;
+    memfn/tests/G2U_REPORT.md §9-§10.
+  - **OWED:**
+    - §19 row 6's rarity half (after C5b, decision pcrec's, text only);
+    - PF movers (U-2 + a Linux cell in pf_emit_bcls);
+    - N4;
+    - the kit follow-up: n2_census.py gets one pool across all arms (no
+      per-arm barrier); scripts/emit_sweep.py shows the same per-arm
+      pool shape and is yours to judge.
