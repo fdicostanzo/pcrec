@@ -1334,3 +1334,21 @@ the compiler, and is never adopted silently. Proposed for main to file
   (beside M7's slot). Step 1 is READ-ONLY scoping lane m6scope (opus),
   in R-8's shape. Its notice comes here; no build until main has read
   it. Ids S676-S685 are noted.
+- notice: 2026-10-08 — **Two facts and a RULING from Frank for the SIMD
+  thread (R-9), for main's records and the bench channel.**
+  1. **Bench box CPU** (read by pcrecdev2 with lscpu): budu-ryzen1600 is
+     an AMD Ryzen 5 1600, Zen 1. It has SSE2..SSE4.2, SSSE3, AVX, AVX2
+     (executed as 2x128-bit uops), BMI1/BMI2 (PDEP/PEXT slow), POPCNT,
+     LZCNT, SHA, and NO AVX-512. The dev box is a Ryzen 7 7700X (Zen 4).
+     Kit priority: 16 B SSE forms first, then AVX2 (expect smaller gains
+     on the bench), AVX-512 filed, no PDEP/PEXT in kernels.
+  2. **RULING (Frank):** short-form unofficial benches may run anywhere
+     (dev box, Mac) and are directional only. An OFFICIAL verdict, such as
+     a SIMD form's acceptance, needs a pcrec-bench run, macOS work
+     included. The bench can run on the dev box too, but it is PLANNED and
+     coordinated through you; the kit never writes to pcrec-bench.
+     Proposed: fold this into D147 addendum 11 (or an addendum to D144),
+     next to D144 addendum 1's "verdicts are Linux".
+  3. **Consequence for the kit:** each SIMD batch's acceptance becomes a
+     bench request that you carry to the inbox. The kit's own timings are
+     the unofficial tier that picks what to submit.
