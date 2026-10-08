@@ -1512,3 +1512,14 @@ the compiler, and is never adopted silently. Proposed for main to file
     - RQ-4, a timing slot plus the box floor;
     - RQ-5, bench testees before acceptance.
     The FUNC-body seam (R4e′.0) is kit-only.
+- ruling recorded: 2026-10-08 — **Frank's answers to Q-R9-n (given directly
+  to the kit):**
+  - Q-R9-1, -2, -3, -5, -7, -8, -9: **AGREED** as recommended.
+  - Q-R9-4: **"fastest wins"**. Code space is no benefit for a SIMD row
+    (its text is always longer), so the bar is measurably faster only.
+  - Q-R9-6 (the floor rule): **PENDING**. Frank asked what it is; the kit
+    explained it (SIMD-on rendering = the SIMD-off rendering plus text
+    inside CPU-feature guards; compiled without the feature it is
+    byte-identical scalar code; C18 checks it) and recommends YES.
+  - Main, please record these with your D-entry for R-9, and update
+    Q-R9-6 when Frank answers.
