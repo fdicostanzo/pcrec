@@ -134,7 +134,47 @@ hits are history. **The memfn kit shares the number**: if another lane takes
 
 ## 5. Timing (SCRATCH TIER)
 
-TIMING_PLACEHOLDER
+`timing1.sh` -> `timing1_results.tsv`: STEP 0's driver over main's default
+(`ref`), the lane's default (`new`) and `--no-captures` (the shipped DFA arm),
+one core (`taskset -c 3`), median of 5 batches, this box (Ryzen 7 7700X) while
+other lanes' runs shared it. ns per call.
+
+**Near-miss** (the win):
+
+| subject | ref | new | nocaps |
+|---|---|---|---|
+| evil, 12 `a` + `!` | 8,752,505 | 22.8 | 21.2 |
+| evil, 16 `a` + `!` | 950,854,609 | 22.7 | 21.6 |
+| evil, 17 `a` + `!` (bench `rd-evil-alt-near-miss`) | **-2 give-up after 2.32 s** | 23.9 (nomatch) | 22.1 |
+| evil, 64 KiB lowercase text | 3,981 | 21.8 | 20.5 |
+| trim, 12 blanks + `x` | 50,292 | 30.6 | 21.0 |
+| trim, 16 blanks + `x` | 448,326 | 22.9 | 21.7 |
+| trim, 19 blanks + `x` (bench `rd-trim-near-miss`) | 3,441,473 | 24.1 | 22.4 |
+| trim, 60,000 blanks + `x` | **-2 give-up after 1.65 s** | 22,888 (nomatch) | 44,866 |
+
+**Long and short MATCHING subjects** (the tax, other direction):
+
+| subject | ref | new | nocaps |
+|---|---|---|---|
+| trim, 4 blanks | 23.0 | 25.2 (+2.2) | 19.8 |
+| evil, `aaaa` | 28.0 | 29.7 (+1.7) | 19.9 |
+| trim, 4,000 blanks | 1,587 | 3,098 (x1.95) | 2,252 |
+| trim, 60,000 blanks | 23,485 | 45,790 (x1.95) | 33,393 |
+| evil, 60,000 `a` | 11,426 | 33,951 (x2.97) | 22,940 |
+| trim, 64 KiB text (nomatch at byte 0) | 22.7 | 20.6 | 18.9 |
+
+The census table reproduces in both directions: the new default is STEP 0's
+`-fprefilter` hand twin to within noise everywhere it was measured. One
+correction to nullanch0_report.md §4: its "trim, 60,000 blanks + `x`" twin cell
+reads 22.0 in the report but **22,060 ns** in its own `timing_results.tsv`
+(a unit slip in the prose); the twin and the build agree at ~22.6-22.9 µs,
+which is the linear DFA walk (0.37 ns/B), not a constant.
+
+**K97 filed** (`known_issues.md`): the ~2-3x tax on a long all-matching
+subject (the DFA walks the subject, then the VM walks it again) plus ~2 ns on
+a tiny hit. Not an answer issue. No bench cell sees it, because the bench
+hits are 4-24 B. D77: no mechanism is proposed until a measured loss; the home
+for one is an admission term in [SEL-COST] §4.
 
 ## 6. Sabotage, and two pre-existing findings
 
