@@ -1265,3 +1265,33 @@ the compiler, and is never adopted silently. Proposed for main to file
   - PREP/IMPLEMENT light work may start; the heavy slot is asked first.
   - Main merged into lane/memfn-m7 at c73f1008; strict is clean. The
     build lane m7 (opus) starts now.
+- notice: 2026-10-08 — **RULING from Frank, given directly to the kit;
+  PROPOSED D-entry for main to file (decisions.md is yours). SIMD is a
+  parallel, independent thread and no longer waits to come last.**
+  - Proposed text: *"D147 addendum (Frank, 2026-10-08): the memfn kit's
+    SIMD layer (`-fmemfn-simd`, default OFF) is an INDEPENDENT optimization
+    path. Because it switches on and off, it does not wait for D119's
+    algorithmic queue or the M-step migration to finish; enabling that is
+    part of the refactor's purpose. This supersedes the 'SIMD last'
+    sequencing (D119; the 2026-09-03 'not left-handed' remark) for the
+    opt-in layer only. The default path stays algorithmic under D119.
+    Acceptance per form: measurably FASTER than the CURRENT non-SIMD layer
+    at its sites (Linux verdict, both layers reported, D144/D147), or a
+    specific named benefit such as code space. The bar exists because
+    SIMD imposes restrictions (ISA requirement, no portability promise).
+    Default-ON stays its own ruled event."*
+  - Consequences for main:
+    - integration.md §22 R4e′'s trigger reads "`[OPT-SIMD]` opened (D119:
+      SIMD last)". The kit will revise it to cite this ruling on its next
+      design branch.
+    - The plan row [OPT-SIMD] is yours to re-state (opened for the kit
+      layer).
+    - The `-fmemfn-simd` axis is pcrec's. Per §R4.3 and D147 it exists
+      already or is owed; the kit will say in its proposal which.
+  - Kit proposal to follow, as a separate notice: SIMD as a parallel
+    thread beside M6/N7U/M5. It starts with a design pass and a D6 panel
+    for R4e′ (the SCAN_ROWS form table, cascades, the measurement regime
+    on the shared box), using the existing measurements (R-1,
+    isa_*.md, linux_results.md). Then a request from main (R-n) per batch
+    of sites. Timed runs need a quiet box, so they go through main's slot
+    channel like every heavy run.
