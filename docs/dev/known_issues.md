@@ -11,6 +11,20 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K97 — OPEN (filed 2026-10-08, lane nullanch1; deferred, D77: no measured loss on a bench cell) — PERFORMANCE: the [NULLABLE-ANCH] admission taxes a LONG all-MATCHING subject ~2-3x
+
+Since abi 68 a nullable pattern whose every empty path crosses a non-multiline start AND end anchor keeps its exact hybrid prefilter (`tuning.md` §2.17). On a near-miss that is the point (`^(([a-z]+)*)+$` on 17 letters + `!`: a ~2.3 s `PCREC_ERR_STEPS` give-up becomes a 24 ns `nomatch`). On a subject the pattern MATCHES end to end, the forward DFA pass walks the whole subject and then the VM walks it again, so the hybrid pays both. Repro (scratch tier, one core, `taskset -c 3`, median of 5; `docs/dev/optloop/nullanch/timing1.sh` -> `timing1_results.tsv`, main e6b6c25f vs lane/nullanch1):
+
+| pattern, subject (matches) | before (VM only) | after (hybrid) | ratio |
+|---|---|---|---|
+| `^(\s+)*$`, 4,000 blanks | 1,587 ns | 3,098 ns | x1.95 |
+| `^(\s+)*$`, 60,000 blanks | 23,485 ns | 45,790 ns | x1.95 |
+| `^(([a-z]+)*)+$`, 60,000 `a` | 11,426 ns | 33,951 ns | x2.97 |
+| `^(\s+)*$`, 4 blanks | 23.0 ns | 25.2 ns | +2.2 ns |
+| `^(([a-z]+)*)+$`, `aaaa` | 28.0 ns | 29.7 ns | +1.7 ns |
+
+The DFA walk is the latency-bound ~0.37 ns/B chain of [OPT-5]. Population: the five artifacts of `docs/dev/optloop/nullanch/movers_result.txt`; the bench's subjects for the two bench cells are 4-24 B hits and short near-misses, so no bench cell sees the tax (nullanch0_report.md §9 question 1). Not a wrong answer. The place a subject-length-dependent answer would live is an admission term in [SEL-COST] §4; trigger: a measured bench or consumer loss on a long matching subject.
+
 ## K96 — FIXED 2026-10-07 (by [MEMFN] M1b, merged 1c037dce; found by the kit's lane m1bfix triaging M1b's G2 red) — LATENT KIT DEFECT: R4c's ofsskip arm (`memfn/src/ofsskip.c`) accepted search sites it cannot serve
 
 The arm returns its own `n` on a miss and reads only within [pos, n), but it accepted any FIND/FUNC/RETURN site. A site that states a miss other than `n`, or a floor above `lo`, got `n` on every miss and could read below its floor. Witnesses are two synthetic G2 sites: site 1682 (batch 014; SET@2 + RUN@7 len 25, memcmp row, miss `n + 5`, floor stated) and site 2587 (batch 021; SET@1 + RUN@4 len 2, miss `((size_t)-1)`, floor lo+2). Together they gave 5,096 wrong answers + 11 under-read faults on both gcc-15 and gcc-16. **Unreachable from pcrec:** pcrec states neither a floor nor a non-n miss at OFS/PRE, so no pcrec artifact was ever affected (M1b's gates: 0 movers). It sat latent on main since 81bc13de and became reachable by G2 only when M1b retired the run_cmp hook. **Fix:** the arm DECLINES (to the generic row) on a floor or a non-n miss, and the use side refuses loudly on either; 3 arm fixtures pinned (ARMS_ROW_FLOOR 28→34). Report: `docs/dev/lanes/m1bfix_report.md` (§1 ORIGIN). Owed (kit): a blinded G2 extension for the K35 reach gap (words row, precheck/on_miss_leaves).

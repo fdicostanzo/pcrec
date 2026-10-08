@@ -66,3 +66,14 @@ SAB_AFTER='    return !pcrec_nullable(root);   /* SABOTAGE S207 */'
 # `pcrec_nullable(root)` (the one node-nullability function, which agrees with
 # `pcrec_minw(root) == 0` on every kind since K69 moved the call fixpoint).
 # Same line, same one derivation every reader consults; the plant still inverts it.
+# [NULLABLE-ANCH] (lane nullanch1, 2026-10-08) DETECTOR SURFACE CHANGED, INTENT
+# RE-VERIFIED, ANCHOR UNCHANGED: the prefilter declines now read the E1 fact
+# `empty_admits` (src/facts/widths.c), not `nullable`, so this plant no longer
+# reaches them directly. It is caught LOUDER instead: `pf_check_e1` holds the
+# empty-path mask set to bare nullability on every compile (`set != 0` iff
+# nullable), so a moved `nullable` refuses with an internal error, and every
+# nullable (S206) or non-nullable (S207) witness fails to compile; the collapse
+# gate still reads `nullable` too. Solo run 2026-10-08 on lane/nullanch1:
+# DETECTED (S206 pfcollapse:18fail/49pass resource:14fail/28pass
+# corpus:8fail/43pass; S207 pfcollapse:35fail/8pass resource:38fail/1pass
+# corpus:51fail/0pass). The SAB_DOC_FIGURE above predates this.

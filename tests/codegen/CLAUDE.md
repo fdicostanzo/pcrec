@@ -3797,6 +3797,18 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
+  abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to `9a0cf78e`;
+  `run_prefilter_collapse.sh` gains the [anch] section (six both-anchored
+  nullable witnesses that must keep `hybrid`/`selected`/`empty_admits no`,
+  seven one-sided/partial/multiline/unanchored twins that must stay
+  `declined-nullable-default`/`empty_admits yes`); `run_facts_checks.sh`
+  [facts-e1] gains the `empty_admits` column (by hand) and two utf8
+  anchored witnesses. No other pin moves: five artifacts change program
+  (`docs/dev/optloop/nullanch/movers_result.txt`), every other one its abi
+  digits.
 - **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 65 -> 66):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 66 and its ledger message;
   `run_prechecks.sh` 6b's `KEPT_ALWAYS` gains `-fno-poss-ctx-follow` (the

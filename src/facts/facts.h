@@ -268,6 +268,10 @@ typedef struct {
      * and whether the empty string is in the language. Neither has a deny. */
     unsigned  kinds;
     bool      nullable;
+    /* [NULLABLE-ANCH] E1 structural, forced at the seal: the set of anchor
+     * masks the empty paths carry (src/facts/widths.c), nonzero exactly where
+     * `nullable`. No deny. Read as `empty_admits` (`pcrec_fact_empty_admits`). */
+    unsigned  empty_masks;
     /* [OPT-ANCHOR-VM] E2 core: `PCREC_SANCH_*`; `PCREC_SANCH_NONE` under
      * `-fno-vm-anchor-bound`, deliberately indistinguishable from "nothing to
      * bound". The VM bounds its attempt loop on it; the DFA asserts its own,
@@ -336,6 +340,10 @@ void pcrec_facts_seal_e3(Ctx *cx);
 
 unsigned       pcrec_fact_kinds(Ctx *cx);        /* E1: the PF_KIND_* mask */
 bool           pcrec_fact_nullable(Ctx *cx);     /* E1 */
+/* E1: some empty match is not confined to a subject that is empty up to a
+ * final newline — an empty path lacks a non-multiline start or end anchor.
+ * False where the pattern is not nullable. */
+bool           pcrec_fact_empty_admits(Ctx *cx);
 
 int            pcrec_fact_start_anchor(Ctx *cx);
 const StartSet *pcrec_fact_start_set(Ctx *cx);   /* E2 */

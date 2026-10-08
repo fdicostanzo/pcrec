@@ -136,6 +136,16 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   skipped) and spot-checked on libpcre2 10.48; sabotage S278 is its failing
   direction
 - **possess_lazy_guard.rxt** — the 20 D47.6 lazy-possessification guard cells (docs/dev/decisions.md D47 ruling 6): every quantifier `eng_brep_design.md`'s repaired possessification analysis declines under its lazy non-nullable-remainder conjunct, whose "20 false declines" turned out to be a probe defect, not a real cost — `probe_possess.py`'s subject alphabet omitted the prefix byte `z` these 20 patterns are built from, so it could not reach the subjects (`za{1,3}?` on "zaa", `(?:ab){3,}?` on "abababab", …) where all 20 GENUINELY diverge lazy-vs-possessive. The possessification pass now EXISTS (src/opt/possessify.c, merged 2026-08-16), so these cells are live-fire: 79 cases (span + capture-slot) pin the lazy behavior the shipped pass must preserve by declining, oracle-verified three ways (python3 `re`, libpcre2, pcrec's own build). Extended 2026-08-16 (nested-lazy lane follow-up) with the lazy-`$` family — a bare `$` follow makes the remainder nullable REGARDLESS of `(?m)`, so the lazy conjunct declines it even though the greedy twin possessifies under the D47.5 `$` exemption; discriminating subjects end in `\n` (`$` holds before a final newline, so a wrongly-possessified lazy loop swallows it), plus the greedy control pinning the exemption's own soundness on the same subjects
+- **nullable_anch.rxt** — [NULLABLE-ANCH] (lane nullanch1, 2026-10-08): the
+  five movers of the anchor-aware nullability decline (bench
+  `evil-alt-nested`/`trim-nested-star`, corpus `^(a{2,4})?$`,
+  `^(a?)(?1)*$`, `^(?:(?<g>a?)){0}(?&g)*+$`), every cell libpcre2 10.46's
+  answer written by `docs/dev/optloop/nullanch/pcre2_cells.py --rxt`. Two
+  GIVE-UP CELLS (17 letters + `!`, 32 blanks + `x`) are the answer-level
+  detector: before the row the default VM exhausted its step budget there
+  (sabotage S612). They are `# pcre2-only` for python's cost and libpcre2's
+  match limit (U19, U4); their `nomatch` is verified on the language-equal
+  patterns and by python offline (the transcript).
 - **opt41_rung_nullable_decline.rxt** — the [OPT-4.1] `--emit-ir` prefilter
   value `no-nullable-collapsed` REACHABILITY WITNESS (adm71 item 4,
   2026-09-19): `docs/dev/lanes/dd8_report.md` section 4.3 filed that value

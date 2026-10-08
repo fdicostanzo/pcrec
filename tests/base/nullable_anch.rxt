@@ -1,0 +1,112 @@
+# [NULLABLE-ANCH] (lane nullanch1, 2026-10-08): THE FIVE MOVERS of the
+# anchor-aware nullability decline (docs/dev/lanes/nullanch1_report.md;
+# STEP 0 docs/dev/lanes/nullanch0_report.md). Each pattern is nullable, but
+# every empty path crosses a non-multiline `^` AND `$`, so its empty match
+# exists only on a subject that is empty up to a final newline. The
+# `empty_admits` fact (src/facts/widths.c) is false for each, the prefilter
+# decline lifts, and the artifact carries the exact hybrid prefilter
+# (`RX_ENGINE_SEL "selected"`, `RX_VM_PREFILTER "hybrid"` — held by
+# tests/codegen/run_prechecks.sh §11). The answers below do not depend on
+# that: a prefilter is a filter.
+#
+# ORACLE FIRST. Every m/n/g line is libpcre2 10.46's answer, written by
+# docs/dev/optloop/nullanch/pcre2_cells.py --rxt (transcript beside it,
+# pcre2_transcript.txt), never pcrec's. Blocks without `# pcre2-only` are
+# python-verified too. The `# pcre2-only` blocks are the subroutine-call
+# patterns (python `re` has no call) and the two GIVE-UP CELLS: a near-miss
+# long enough that the default VM, before this row, exhausted its step budget
+# (PCREC_ERR_STEPS) where it now answers `nomatch` at once. libpcre2 itself
+# hits its match limit there (-47, upstream_issues.md U4), so those two are
+# verified by libpcre2 on the language-equal `^[a-z]*$` / `^\s*$` and by
+# python `re` run once offline (7.9 s and 108 s, U19) — both in the
+# transcript. With the decline back in place (sabotage S612) each give-up
+# cell reds as a give-up.
+
+# bench capability evil-alt-nested: short hits, a near-miss, the final-newline arm of `$`, and a start past 0
+pattern ^(([a-z]+)*)+$
+m "" 0 0
+g 1 0 0
+g 2 -1 -1
+m "abc" 0 3
+g 1 3 3
+g 2 0 3
+m "abc\n" 0 3
+g 1 3 3
+g 2 0 3
+m "\n" 0 0
+g 1 0 0
+g 2 -1 -1
+n "ab!"
+n "a b"
+n "aaaaaaaa!"
+n "x\ny"
+ns 1 "abc"
+
+# THE GIVE-UP CELL: 17 letters and a non-letter. Before this row the default artifact had no prefilter and its VM gave up (PCREC_ERR_STEPS, ~2.2 s); the exact hybrid prefilter now dismisses it. python's backtracking `re` takes seconds here, hence pcre2-only
+# pcre2-only
+pattern ^(([a-z]+)*)+$
+n "aaaaaaaaaaaaaaaaa!"
+
+# bench capability trim-nested-star
+pattern ^(\s+)*$
+m "" 0 0
+g 1 -1 -1
+m "    " 0 4
+g 1 0 4
+n "  x"
+m "\n" 0 1
+g 1 0 1
+m " \t \n" 0 4
+g 1 0 4
+n "x"
+ns 2 "    "
+
+# THE GIVE-UP CELL: 32 blanks and a non-blank (the default VM gave up before this row); pcre2-only for python's cost
+# pcre2-only
+pattern ^(\s+)*$
+n "                                x"
+
+# corpus d27_edge mover
+pattern ^(a{2,4})?$
+m "" 0 0
+g 1 -1 -1
+m "aa" 0 2
+g 1 0 2
+n "aaaaa"
+m "\n" 0 0
+g 1 -1 -1
+m "aa\n" 0 2
+g 1 0 2
+n "aab"
+ns 1 "aa"
+
+# corpus sr_define/k69/quantified mover (a subroutine call: python has none)
+# pcre2-only
+pattern ^(a?)(?1)*$
+features recursion
+m "" 0 0
+g 1 0 0
+m "aaaa" 0 4
+g 1 0 1
+n "aaab"
+m "\n" 0 0
+g 1 0 0
+m "aa\n" 0 2
+g 1 0 1
+n "b"
+ns 1 "aa"
+
+# corpus quantified mover (a subroutine call under a possessive star)
+# pcre2-only
+pattern ^(?:(?<g>a?)){0}(?&g)*+$
+features recursion,named-groups,atomic-groups
+m "" 0 0
+g 1 -1 -1
+m "aaa" 0 3
+g 1 -1 -1
+n "aab"
+m "\n" 0 0
+g 1 -1 -1
+m "aa\n" 0 2
+g 1 -1 -1
+ns 1 "aa"
