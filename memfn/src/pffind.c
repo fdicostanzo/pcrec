@@ -247,6 +247,7 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
     [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */ \
     [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */ \
     [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_count_by_caller] = MF_ANY,                   /* not read (ADVANCE's; 0 off ADVANCE, site_check) */ \
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_member]          = MF_ANY,                   /* not read: a memchr reads the set's one \
@@ -261,21 +262,21 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 static const gate_use pf_memchr_uses[] = {
     /* pf_memchr_use pastes s, n, lo, result; runs on_miss on a NULL hit */
     { CM(STMT), CM(ASSIGN), MF_PH_USE,
-      FM(s) | FM(n) | FM(lo) | FM(result) | FM(on_miss) },
+      FM(s) | FM(n) | FM(lo) | FM(result) | FM(on_miss), GATE_ALWAYS },
 };
 
 static const gate_use pf_memchr_bounded_uses[] = {
     /* pf_memchr_use pastes s, n, lo, result and the miss after `: ` */
-    { CM(STMT), CM(ASSIGN), MF_PH_DEFINE | MF_PH_USE, FM(miss) },
-    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(result) },
+    { CM(STMT), CM(ASSIGN), MF_PH_DEFINE | MF_PH_USE, FM(miss), GATE_ALWAYS },
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(s) | FM(n) | FM(lo) | FM(result), GATE_ALWAYS },
 };
 
 static const gate_use pf_walk_uses[] = {
     /* walk_applies reads lo, result, miss and table_name at define;
        pf_walk_use pastes s, n, lo and the table's name */
     { CM(STMT), CM(ASSIGN), MF_PH_DEFINE | MF_PH_USE,
-      FM(lo) | FM(result) | FM(miss) | FM(table_name) },
-    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(s) | FM(n) },
+      FM(lo) | FM(result) | FM(miss) | FM(table_name), GATE_ALWAYS },
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(s) | FM(n), GATE_ALWAYS },
 };
 
 static const gate_contract pf_memchr_ct = {

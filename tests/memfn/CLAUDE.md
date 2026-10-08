@@ -163,7 +163,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   or a non-`n` miss at define and at the call) and the rulings it made real
   (F1 non-identifier hooks, an unstated miss, K-1's `fn_ref` 0, the
   pre-check's split by handoff). Their expected outcomes live in
-  run_arm_pins.sh, not here.
+  run_arm_pins.sh, not here. R4h prep added two pinned ADVANCE fixtures
+  through `render_adv` (`adv-kit-count`, `adv-caller-count`: the scan
+  edge's counted loop with the counter owned by the kit and by the caller,
+  MF_SITE_ABI 5's `count_by_caller`) and nineteen gate cases (39 in all):
+  the caller-owned counter's rules (its name required, the fact 0/1 and
+  ADVANCE-only) and thirteen `adv-cls-*` cases whose hook texts classify
+  as the ADVANCE shape classes or as OTHER. `--gate --gate-only CASE` runs
+  one case alone (for rows_check.py's check E).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -172,7 +179,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   R4g added the PF rows (`pf_memchr`, `pf_walk`, one `generic` edge; 48
   rows, `ARMS_ROW_FLOOR` 38 -> 48);
   lane missn added `ofs-miss-token` and `pre-lead-handoff-miss-token`, whose
-  digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text). A
+  digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text);
+  R4h prep added the two `generic` ADVANCE fixtures' four rows (58 rows,
+  `ARMS_ROW_FLOOR` 58), none re-pinned. A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -190,7 +199,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   (`GATE_CASE_FLOOR`) and an exact case count. Validated by a plant that
   turned the gate off (both walks and the use re-check): 19 of the 20
   cases changed outcome (the 20th, `allp-func-fn_ref-7`, is the positive
-  control and must not). Seconds.
+  control and must not). Check 7 (R4h prep) reads the counter's owner off
+  the two ADVANCE fixtures' text: the kit-owned one declares
+  `unsigned long scan_run_length = 1;`, the caller-owned one declares no
+  counter, and both advance and cap it (`GATE_CASE_FLOOR` 39). Seconds.
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
@@ -232,7 +244,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
      (wherever it appears, its row was chosen); every pcrec artifact is
      made by the traced pcrec and build/pcrec, byte-identical;
   D. row_floors.tsv's shape (rows, values); PLACEHOLDER cells print as
-     UNREACHED, never as a pass.
+     UNREACHED, never as a pass;
+  E. (R4h prep) the ADVANCE hooks' shape classes: each `adv-cls-*` gate
+     case (and the two counter cases) runs alone under the traced kit and
+     its `MFTRACE REACH ... field=F class=C` lines must equal
+     `CLASS_EXPECT`, a hand table in rows_check.py (CONJ / POSTFIX /
+     EXPR_STMT or OTHER; `count` a used field of the caller-owned site only),
+     with `CLASS_CASE_FLOOR` (run_rows.sh) and two cases per class.
   The floors themselves are the census's: `n2_report.py --floors`
   (docs/design/memfn/probes/rowcon/). Hand plants:
   `docs/dev/lanes/n4_report.md`.

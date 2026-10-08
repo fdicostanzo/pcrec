@@ -16,7 +16,10 @@
 
 The design of record is `docs/design/memfn/integration.md` (rev 4.8;
 read its §R4.8, then §R4.7, first). §R4.8 is M1b's contract (R-5:
-`stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4).
+`stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4). R4h prep (2026-10-08,
+Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
+counter; it also added the ADVANCE hooks' shape classes (fields.def) and
+recorded Q-G2-5 ruled (memfn.h), all kit-only with no pcrec byte moved.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

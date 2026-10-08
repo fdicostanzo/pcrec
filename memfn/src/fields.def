@@ -40,6 +40,9 @@
  * The text-shape classes [r4, S2-S7]: `s`/`n`/`lo` are IDENT iff the text
  * is a bare C identifier (a LEXICAL check, kit_is_ident); `on_miss` is JUMP
  * iff it is one `return`/`goto` statement, BRACED iff one `{ ... }` block.
+ * The ADVANCE hooks' (G3, R4h prep): `more` is CONJ, `peek` POSTFIX, `step`
+ * EXPR_STMT, each a lexical check in gate.c that proves the text may be
+ * pasted raw where an in-loop row writes it (memfn.h's ADVANCE comment).
  * A row that pastes such text into an operator context serves only IDENT /
  * JUMP; the generic row parenthesizes and braces, so it serves OTHER.
  * `s`/`n`/`lo` are read at DEFINE as well as at USE (N3, ruling F1): a
@@ -103,6 +106,10 @@ MF_CLASS(IDENT,       "a bare C identifier (lexical: [A-Za-z_][A-Za-z0-9_]*)")
 MF_CLASS(MISS_N,      "`miss` is the same hooks' `n`: the MF_MISS_N token, or the text of `n` itself")
 MF_CLASS(JUMP,        "one statement, `return ...;` or `goto label;`")
 MF_CLASS(BRACED,      "one `{ ... }` block")
+/* the ADVANCE hooks' shapes (G3, R4h prep; memfn.h's ADVANCE comment) */
+MF_CLASS(CONJ,        "an `&&` operand unparenthesized: no top-level `||`/`?:`/assignment/comma/call")
+MF_CLASS(POSTFIX,     "a postfix expression: an identifier or `( ... )`, then only `[...]`/`.x`/`->x`, no `++`/`--`")
+MF_CLASS(EXPR_STMT,   "one expression statement `e` or `e;`: no other `;`, no brace, no top-level comma, not keyword-led")
 /* the run compare's term */
 MF_CLASS(EXACT,       "a RUN term with no mask, or every mask byte 0xFF")
 MF_CLASS(MASKED,      "a RUN term with some mask byte not 0xFF, every run byte inside its mask")
@@ -144,6 +151,11 @@ MF_FIELD(guard_by_caller, MF_PH_DEFINE, OBLIG, cl_guard_by_caller,
 MF_FIELD(on_miss_leaves, MF_PH_DEFINE, OBLIG, cl_on_miss_leaves,
          CM(NO) | CM(YES) | CM(OTHER),
          "OBLIG: 0 is `on_miss may fall through`, set by every ON_MISS/ASSIGN builder (Q-G2-18)")
+MF_FIELD(count_by_caller, MF_PH_DEFINE, OBLIG, cl_count_by_caller,
+         CM(NO) | CM(YES) | CM(OTHER),
+         "OBLIG: 0 is `the kit declares the counter`, set by every ADVANCE builder (Q-R4h-1 (a), "
+         "MF_SITE_ABI 5). At YES a row that renders the site USES `count` (a conditional `uses` "
+         "entry), so an unstated `count` declines (R1)")
 MF_FIELD(span_hi, MF_PH_DEFINE, VALUE, cl_span_hi,
          CM(UNBOUNDED) | CM(OTHER),
          "pcrec's proven upper span (OTHER: a bound)")
@@ -188,17 +200,19 @@ MF_FIELD(on_miss, MF_PH_USE, HOOK, cl_on_miss,
          CM(JUMP) | CM(BRACED) | CM(OTHER),
          "pcrec's statement on a miss")
 MF_FIELD(step, MF_PH_USE, HOOK, cl_step,
-         CM(OTHER),
-         "ADVANCE: pcrec's step statement")
+         CM(EXPR_STMT) | CM(OTHER),
+         "ADVANCE: pcrec's step statement (EXPR_STMT: the whole body of a `while`, raw)")
 MF_FIELD(more, MF_PH_USE, HOOK, cl_more,
-         CM(OTHER),
-         "ADVANCE: pcrec's continue condition")
+         CM(CONJ) | CM(OTHER),
+         "ADVANCE: pcrec's continue condition, which IS the range (RULED Q-G2-5; CONJ: an `&&` operand, raw)")
 MF_FIELD(peek, MF_PH_USE, HOOK, cl_peek,
-         CM(OTHER),
-         "ADVANCE: the byte at the cursor")
+         CM(POSTFIX) | CM(OTHER),
+         "ADVANCE: the byte at the cursor (POSTFIX: any operator's operand, raw)")
 MF_FIELD(count, MF_PH_USE, HOOK, cl_count,
          CM(OTHER),
-         "ADVANCE: the run counter's name. EXEMPT (absent offer): NULL means no counter is asked for")
+         "ADVANCE: the run counter's name. EXEMPT (absent offer) while count_by_caller is 0: NULL "
+         "means no counter is asked for. At count_by_caller 1 it names the caller's counter and "
+         "a row USES it (R1)")
 MF_FIELD(count_start, MF_PH_USE, OBLIG, cl_count_start,
          CM(ZERO) | CM(OTHER),
          "OBLIG (NEW): the counter's first value; 0 is a value, set by every ADVANCE builder that names `count`")

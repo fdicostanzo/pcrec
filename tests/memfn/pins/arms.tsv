@@ -99,3 +99,13 @@ pf_walk	pf-walk-preds	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495
 pf_walk	pf-walk-preds	use	98	f7ae369e6c2d6edfcf23924004c778592d40cd5c763258e43691b09982220eac
 generic	pf-emit-result-decl	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	pf-emit-result-decl	use	452	f665093cc99ac9fac9d96256f3a03bbabee821ae9a3d7a87bc2c996bac77bb96
+#
+# r4hprep ADDED (no row re-pinned; MF_SITE_ABI 5, Q-R4h-1 (a)): adv-kit-count
+# and adv-caller-count, the scan edge's counted ADVANCE loop with its counter
+# owned by the kit (declared as its first statement) and by the caller (never
+# declared, only advanced and capped). The generic row renders both until M3
+# (R4h); run_arm_pins.sh check 7 reads the declaration off each.
+generic	adv-kit-count	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-kit-count	use	277	07bdad87e72dc136fb5d255a02e5aa47cfe84d1ee94d50adc12038659035d2b3
+generic	adv-caller-count	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-caller-count	use	238	b0ba17b28900e2fa9e80ce1a84452e90bbdd077cea5086fff5b341b14362452e

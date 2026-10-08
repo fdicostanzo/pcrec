@@ -14,7 +14,8 @@ set -u
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export ROWS_FLOOR=13       # rows of both tables (9 arms + 4 runcmp, N4)
 export KIT_SRC_FLOOR=9     # memfn/src/*.c
-export FIXTURE_FLOOR=27    # tests/memfn/arm_fixtures.c fixtures
+export FIXTURE_FLOOR=29    # tests/memfn/arm_fixtures.c fixtures (+2 ADVANCE, R4h prep)
+export CLASS_CASE_FLOOR=15 # rows_check.py CLASS_EXPECT's cases (R4h prep, check E)
 CC="${CC:-cc}"
 PCREC="$ROOT_DIR/build/pcrec"
 if [ ! -x "$PCREC" ] || [ ! -f "$ROOT_DIR/build/libpcrec.a" ]; then

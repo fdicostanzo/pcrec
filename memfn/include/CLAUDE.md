@@ -1,7 +1,8 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 3 (Q-G2-18, R4c), `MF_VOCAB`
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 5 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a)), `MF_VOCAB`
   2 and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under
   `MF_STANDALONE`); the site description (`mf_site`, `mf_pred`, `mf_term`
   and the form/op/handoff/empty/need enums); the sink (`mf_sink`), the
@@ -17,8 +18,10 @@
   spelling open the header says CHOSEN, and
   `docs/dev/lanes/memfnskel_report.md` lists each choice. Where the kit
   session ruled one of G2's contract questions, the header says RULED
-  Q-G2-n (integration.md §R4.7.0 is the table); OPEN Q-G2-5 is marked
-  at the ADVANCE hooks.
+  Q-G2-n (integration.md §R4.7.0 is the table); Q-G2-5 (ADVANCE's range
+  is `more`, its empty range NOP, no kit empty test) is marked RULED at the
+  ADVANCE hooks (Q-R4h-2, recorded 2026-10-08), with the ADVANCE hooks'
+  text-shape classes (`more` CONJ, `peek` POSTFIX, `step` EXPR_STMT).
 
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a
