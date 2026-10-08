@@ -835,9 +835,26 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      *     refuse in the first place.
      *
      * internal.h's own field comments carry the full argument for each;
-     * this is the ONE site that derives both, off the one local. */
+     * this is the ONE site that derives both, off the one local.
+     *
+     * [NULLABLE-ANCH] "NULLABLE" HERE IS `empty_admits`, NOT BARE
+     * NULLABILITY: an empty match whose every path crosses a non-multiline
+     * `^`/`\A` AND `$`/`\Z`/`\z` exists only on a subject that is empty up
+     * to a final newline, so the exact prefilter still dismisses every other
+     * subject and there is nothing to decline (`^(\s+)*$`). The fact is
+     * invariant under the count collapse (`X{m,n}` -> `X{min(m,1),}` keeps
+     * `rmin == 0` and the OR-closure of the body's masks), so it answers for
+     * the rung scope too. Bare `nullable` stays with its own readers.
+     *
+     * A `${...}` PATTERN KEEPS BARE NULLABILITY, and only for its stamp:
+     * `has_var` turns the prefilter off below whatever this reads, so the
+     * choice moves nothing but `ENGINE_SEL`, which reads
+     * `"declined-nullable-default"` on a nullable variable pattern today
+     * (nullanch0_report.md F1). Whether that token is right is refactor B's
+     * ruling ([DEC-FALLBACK], token identity), not this row's. */
     bool lang_nullable_declinable =
-        pcrec_fact_nullable(cx) && !has_bref && !has_call && !force_on;
+        (has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx)) &&
+        !has_bref && !has_call && !force_on;
     /* [OPT-4.2] "would this compile build a prefilter at all, absent the
      * nullability decline" — the SAME condition the final ternary below
      * falls through to when nothing declines it, read once here so the

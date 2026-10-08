@@ -330,8 +330,11 @@ else
 fi
 
 # 7. the E1 facts. One witness per line, TAB-separated (a pattern holds `|`):
-# E1W, encoding, pattern, kinds, nullable. `kinds` is the listing's
-# comma-joined member list in bit order, or `none`.
+# E1W, encoding, pattern, kinds, nullable, empty_admits. `kinds` is the
+# listing's comma-joined member list in bit order, or `none`. `empty_admits`
+# ([NULLABLE-ANCH]) is `no` where the pattern is not nullable and where every
+# empty path crosses a non-multiline start AND end anchor; the last two rows
+# are that pair on a lowering-rewritten tree.
 #
 # [K69] THE CALL ROWS (the last six) are nullability that runs THROUGH A
 # CALL, so they read `pcrec_nullable`'s `A_CALL` arm, i.e. the call graph's
@@ -347,27 +350,29 @@ fi
 # T3's context node now (no `lookaround` kind — the prefilter reads it
 # exactly), so the witness is two characters wide to stay a lookaround.
 printf '%s\n' \
-    'E1W	byte	abc	none	no' \
-    'E1W	byte	a?(?=bc)	lookaround	yes' \
-    'E1W	utf8	\x{3b1}	none	no' \
-    'E1W	utf8	[\x{3b1}-\x{3c9}]	none	no' \
-    'E1W	utf8	\x{3b1}?	none	yes' \
-    'E1W	utf8	[\x{3b1}\x{3b2}]*	none	yes' \
-    'E1W	utf8	(\x{3b1})\1	bref,live_capture	no' \
-    'E1W	utf8	(a|(?1)\x{3b1})	linked_call,live_capture	no' \
-    'E1W	utf8	x${v}\x{3b1}	var	no' \
-    'E1W	utf8	(?>\x{3b1}|\x{3b1}b)c	atomic	no' \
-    'E1W	utf8	(?=\x{3b1})a*	lookaround	yes' \
-    'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no' \
-    'E1W	byte	(a|(?1))	linked_call,live_capture	no' \
-    'E1W	byte	(a)?(?1)	live_capture	no' \
-    'E1W	byte	(?:(a)|)(?1)	live_capture	no' \
-    'E1W	utf8	(?(DEFINE)(?<g>a))(?&g)	none	no' \
-    'E1W	byte	(?(DEFINE)(?<g>a?))(?&g)	none	yes' \
-    'E1W	utf8	(?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)	none	yes' > "$WORKDIR/e1w"
+    'E1W	byte	abc	none	no	no' \
+    'E1W	byte	a?(?=bc)	lookaround	yes	yes' \
+    'E1W	utf8	\x{3b1}	none	no	no' \
+    'E1W	utf8	[\x{3b1}-\x{3c9}]	none	no	no' \
+    'E1W	utf8	\x{3b1}?	none	yes	yes' \
+    'E1W	utf8	[\x{3b1}\x{3b2}]*	none	yes	yes' \
+    'E1W	utf8	(\x{3b1})\1	bref,live_capture	no	no' \
+    'E1W	utf8	(a|(?1)\x{3b1})	linked_call,live_capture	no	no' \
+    'E1W	utf8	x${v}\x{3b1}	var	no	no' \
+    'E1W	utf8	(?>\x{3b1}|\x{3b1}b)c	atomic	no	no' \
+    'E1W	utf8	(?=\x{3b1})a*	lookaround	yes	yes' \
+    'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no	no' \
+    'E1W	byte	(a|(?1))	linked_call,live_capture	no	no' \
+    'E1W	byte	(a)?(?1)	live_capture	no	no' \
+    'E1W	byte	(?:(a)|)(?1)	live_capture	no	no' \
+    'E1W	utf8	(?(DEFINE)(?<g>a))(?&g)	none	no	no' \
+    'E1W	byte	(?(DEFINE)(?<g>a?))(?&g)	none	yes	yes' \
+    'E1W	utf8	(?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)	none	yes	yes' \
+    'E1W	utf8	^\x{3b1}*$	none	yes	no' \
+    'E1W	utf8	^\x{3b1}*	none	yes	yes' > "$WORKDIR/e1w"
 nwit=0; nlow=0; ebad=""
 : > "$WORKDIR/e1kinds"
-while IFS=$'\t' read -r _ enc pat wkinds wnull; do
+while IFS=$'\t' read -r _ enc pat wkinds wnull wadmit; do
     nwit=$((nwit + 1))
     # A lowering-REWRITTEN tree: -e utf8 and some `\x{H}` above U+007F.
     if [ "$enc" = utf8 ]; then
@@ -383,8 +388,10 @@ while IFS=$'\t' read -r _ enc pat wkinds wnull; do
     sect "$WORKDIR/e1.l" facts > "$WORKDIR/e1.f"
     gk="$(grep -F "$(printf 'fact=kinds\t')" "$WORKDIR/e1.f" | col value)"
     gn="$(grep -F "$(printf 'fact=nullable\t')" "$WORKDIR/e1.f" | col value)"
+    ga="$(grep -F "$(printf 'fact=empty_admits\t')" "$WORKDIR/e1.f" | col value)"
     [ "$gk" = "$wkinds" ] || ebad="$ebad $enc '$pat': kinds [$gk], by hand [$wkinds];"
     [ "$gn" = "$wnull" ]  || ebad="$ebad $enc '$pat': nullable [$gn], by hand [$wnull];"
+    [ "$ga" = "$wadmit" ] || ebad="$ebad $enc '$pat': empty_admits [$ga], by hand [$wadmit];"
 done < "$WORKDIR/e1w"
 nbits="$(grep -cE '^[[:space:]]*PF_KIND_[A-Z_]+[[:space:]]*=' "$HDR")"
 ncov="$(grep -v '^none$' "$WORKDIR/e1kinds" | LC_ALL=C sort -u | wc -l | tr -d ' ')"
@@ -396,7 +403,7 @@ elif [ "$ncov" -ne "$nbits" ]; then
 elif [ -n "$ebad" ]; then
     bad "[facts-e1] the E1 facts disagree with the pattern's structure, or the E1 cross-check refused:$ebad"
 else
-    ok "[facts-e1] $nwit witnesses compile and list the kind mask and nullability written by hand ($nlow on a lowering-rewritten tree; all $nbits kind bits)"
+    ok "[facts-e1] $nwit witnesses compile and list the kind mask, nullability and empty_admits written by hand ($nlow on a lowering-rewritten tree; all $nbits kind bits)"
 fi
 
 # 8. the E3 facts. One witness per line, TAB-separated: E3W, extra flags

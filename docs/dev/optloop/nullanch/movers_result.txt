@@ -1,0 +1,8 @@
+population 4666 distinct; both compile 4262; asymmetric 0
+declined-nullable-default: ref 112 -> new 107
+movers 5:
+^(([a-z]+)*)+$	bench:capability:evil-alt-nested	declined-nullable-default -> selected	none -> hybrid
+^(?:(?<g>a?)){0}(?&g)*+$	corpus:tests/recursion/quantified.rxt	declined-nullable-default -> selected	none -> hybrid
+^(\\s+)*$	bench:capability:trim-nested-star	declined-nullable-default -> selected	none -> hybrid
+^(a?)(?1)*$	corpus:tests/recursion/d27/sr_define.rxt;corpus:tests/recursion/k69.rxt;corpus:tests/recursion/quantified.rxt	declined-nullable-default -> selected	none -> hybrid
+^(a{2,4})?$	corpus:tests/base/d27_edge.rxt	declined-nullable-default -> selected	none -> hybrid

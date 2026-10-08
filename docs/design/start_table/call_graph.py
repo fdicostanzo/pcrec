@@ -15,7 +15,8 @@ a table, a table walked), and then:
      (pcrec_emit_dfa_scan_stamps, vm_emit_stamps) reach it, or only the
      emitter's PLAN (e.g. vm_plan_reseed, decided before either).
   2. SEEDS = the landmark-fact accessors facts.def declares (every
-     pcrec_fact_<name> except the E1 shape facts `kinds`/`nullable`) plus
+     pcrec_fact_<name> except the E1 shape facts `kinds`/`nullable`/
+     `empty_admits`) plus
      `pcrec_artifact_has_dfa_scan` (the route read) -- the question "where can
      a match begin" is by definition a read of a landmark or of the route.
   3. FAMILY = the members of R that reach a SEED (the functions on a path from
@@ -205,7 +206,7 @@ def reach(roots):
 
 facts = [m.group(1).lower() for m in re.finditer(
     r'^PF_FACT\(\s*([A-Z_]+)', open(os.path.join(root, "src/facts/facts.def")).read(), re.M)]
-SEEDS = {f"pcrec_fact_{f}" for f in facts if f not in ("kinds", "nullable")}
+SEEDS = {f"pcrec_fact_{f}" for f in facts if f not in ("kinds", "nullable", "empty_admits")}
 SEEDS.add("pcrec_artifact_has_dfa_scan")
 # The MACHINE landmarks (the row contract's `landmark` column, §1.1: s0
 # escapes, seed liveness, interior deadness, the scanned set's density) have

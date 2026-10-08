@@ -44,6 +44,12 @@ None of them is read by a check.
   its own stack caches that false. Both changes are byte-neutral on main
   `37462a8e` (the output there is identical). Usage:
   `python3 -I call_graph.py ROOT > call_graph.txt`.
+  [NULLABLE-ANCH] (lane nullanch1, 2026-10-08): `empty_admits` joins
+  `kinds`/`nullable` among the E1 shape facts that are NOT seeds (no emitter
+  reads it; its one reader is the prefilter decline), and `call_graph.txt`
+  was regenerated (seeds 15, family 135, unchanged). `sabotage_anchors.py`
+  was NOT regenerated: it exits 2 on main too (`UNRESOLVED
+  S571_deny_map_drops_run_overlap ... src/gen/memfn_sites.c 35`).
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
