@@ -3254,6 +3254,33 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
      * only, beside the definitions that read it. */
     pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
                     cx->lb_max);
+    /* [M7 I1] IMPLEMENT ONLY (deleted at REPLACE): every residual entry the
+     * artifact carries whose backend states site data (PcrecEncSite) has
+     * its compare loop rendered by the kit through a scratch art and
+     * compared byte for byte with the loop the backend still spells: the
+     * text from the line after the function's last `{` before its
+     * `    return (ptrdiff_t)reflen;` to that line. */
+    unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
+    for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
+        const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
+        if (!(m & t->id) || t->inline_def || !es) continue;
+        StrBuf d = { 0 };
+        d.cx = cx;
+        pcrec_enc_emit_text(&d, t->defs, cx->opt->prefix);
+        pcrec_sb_putc(&d, '\0');
+        const char *ret = strstr(d.p, "\n    return (ptrdiff_t)reflen;\n");
+        const char *open = NULL;
+        for (const char *q = d.p; ret && (q = strstr(q, "\n{\n")) && q < ret; q++)
+            open = q;
+        if (!ret || !open)
+            pcrec_ctx_fail(cx, 0, "internal error: [M7 I1] no compare loop in "
+                           "residual entry %u's text", t->id);
+        mf_hooks h;
+        mf_site *s = pcrec_memfn_span_site(cx, es, &h);
+        pcrec_memfn_shadow(cx, DELEG_N7, s, &h, open + 3,
+                           (size_t)(ret + 1 - (open + 3)));
+        pcrec_sb_free(&d);
+    }
     pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 

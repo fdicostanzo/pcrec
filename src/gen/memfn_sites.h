@@ -13,6 +13,7 @@
 #define PCREC_GEN_MEMFN_SITES_H
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "../memfn/include/memfn.h"
 
 /* ---- DELEG_SITES ---------------------------------------------------------- */
@@ -112,6 +113,11 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
+/* [M7 I1] IMPLEMENT ONLY (deleted at REPLACE): renders site `s` with hooks
+ * `h` through a SCRATCH art and fails the compile unless the kit's text
+ * equals `want[0..n)`, the text pcrec spells for the same site. */
+void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
+                        const mf_hooks *h, const char *want, size_t n);
 /* ---- THE FIND: one FIND / STMT / ASSIGN site ([START-SET], [MEMFN] R4g, M4) */
 
 /* [START-SET] (D148; docs/design/startset.md §5, "One spelling") THE FIND:
@@ -188,6 +194,18 @@ typedef struct {
  * at `a->indent`. */
 mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                                   mf_hooks *h);
+
+/* ---- the encoding seam's span compare (N7, [MEMFN] M7) ------------------- */
+
+/* The site and hooks for the compare loop of the residual entry whose
+ * backend site-data row is `es` (src/enc/enc.h PcrecEncSite; D58 addendum
+ * 2): STMT / MISMATCH / ON_DIFF over one REQUIRED REF term, `empty` NOP (an
+ * empty reference is EQUAL), on_miss the backend's `on_diff` (it leaves),
+ * the fold FACT and TEXT from the row (the text's `$` rendered with the
+ * artifact's prefix), every operand the entry's own parameter name
+ * (PCREC_ENC_SPAN_*). The caller renders it through the door
+ * (`pcrec_memfn_emit`). */
+mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h);
 
 /* The word-load helpers the attempt's text has used and not declared, at the
  * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's

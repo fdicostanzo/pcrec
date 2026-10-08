@@ -217,6 +217,52 @@ enum {
     PCREC_ENCE_SPAN_CASELESS_UCP = 1u << 7
 };
 
+/* [MEMFN] M7 (D58 ADDENDUM 2) THE SPAN COMPARE'S SITE DATA. A backend whose
+ * span-compare entry is a BYTE-WISE compare does not spell its compare loop:
+ * the memfn kit renders it (integration.md §15.8, D146/D147), and the
+ * backend states, beside its text, the three facts the loop's description
+ * needs. DATA, not code: `src/gen/` reads the row, describes the site to the
+ * kit, and hands the rendered loop back as a string (enc never calls up and
+ * never includes a gen or kit header). A KEYED SIDE TABLE rather than a
+ * `PcrecEncEntry` column (D58 addendum 2 item 2): the rows that need it are
+ * few and a column would touch every positional row of both backends.
+ *
+ * `fold_kind` is the FACT (which relation `fold` spells): NONE exact, ASCII
+ * the 52 letters, UCP the Unicode simple fold restricted to Latin-1.
+ * `fold` is the fold's TEXT, `@` the one byte operand and `$` the prefix:
+ * either one expression (`$_span_ci_fold(@)`) or statements that fold the
+ * unsigned char lvalue `@` in place; NULL for NONE. `on_diff` is the
+ * statement the loop runs at the first difference, which reads the loop
+ * index (PCREC_ENC_SPAN_I) and leaves the function: the entry's
+ * sign-encoded prefix protocol stays the backend's. A backend whose compare
+ * is not byte-wise (utf8's caseless per-character walk) has NO ROW for it
+ * and spells its own body. */
+typedef enum {
+    PCREC_ENC_FOLD_NONE,
+    PCREC_ENC_FOLD_ASCII,
+    PCREC_ENC_FOLD_UCP
+} PcrecEncFoldKind;
+
+typedef struct {
+    unsigned          id;        /* the PCREC_ENCE_* entry; 0 ends the table */
+    PcrecEncFoldKind  fold_kind;
+    const char       *fold;
+    const char       *on_diff;
+} PcrecEncSite;
+
+/* The span compare's OPERAND SPELLINGS: the residual entry's own parameter
+ * names (DD12a(ii) proves the signature identical across backends, so they
+ * are one spelling here rather than per-backend data), its loop index and
+ * the index's declaration, and the loop's indent inside the function. */
+#define PCREC_ENC_SPAN_S       "s"
+#define PCREC_ENC_SPAN_N       "n"
+#define PCREC_ENC_SPAN_AT      "at"
+#define PCREC_ENC_SPAN_REF     "ref"
+#define PCREC_ENC_SPAN_REFLEN  "reflen"
+#define PCREC_ENC_SPAN_I       "i"
+#define PCREC_ENC_SPAN_I_DECL  "size_t "
+#define PCREC_ENC_SPAN_INDENT  "    "
+
 typedef struct {
     int         id;      /* PCREC_ENC_* (lib/pcrec.h) */
     const char *name;    /* the ONE spelling: CLI value and diagnostics */
@@ -422,6 +468,10 @@ typedef struct {
      * `pcrec_ctx_set_bytes` is the one reader. A third D58 seam scalar,
      * recorded as `max_cp` and `fold` were. */
     unsigned onebyte_max;
+    /* [MEMFN] M7 (D58 addendum 2) THE SITE DATA of the entries whose compare
+     * loop the kit renders (PcrecEncSite above), terminated by a row with
+     * `id == 0`. A D58 seam event recorded as the scalars above were. */
+    const PcrecEncSite *sites;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a
@@ -474,6 +524,10 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
  * string is valid has no row, and "no row" is the answer. */
 bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
 
+
+/* [MEMFN] M7 The site-data row of entry `id` in `e` (PcrecEncSite), or NULL
+ * when the backend spells that entry's whole body itself. */
+const PcrecEncSite *pcrec_enc_site(const PcrecEnc *e, unsigned id);
 
 /* Copy `text` into `sb`, replacing every `$` with `prefix`. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);

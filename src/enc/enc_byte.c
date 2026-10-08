@@ -326,6 +326,25 @@ static const char defs_bref_ci_ucp[] =
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
+/* [MEMFN] M7 (D58 addendum 2) THE SITE DATA of this backend's three
+ * byte-wise span compares (enc.h's PcrecEncSite): the exact compare, the
+ * ASCII fold spelled in place over the byte `@` (A-Z <-> a-z only, no
+ * tolower(): `defs_bref_ci_doc` says why; `pcrec_ascii_fold` is the same
+ * fact, tied by tests/backrefs/fold_agreement_check.c and sabotage row S116),
+ * and the UCP fold as an expression over the fold function this file
+ * defines above the compare. Each failure statement is the entry's
+ * sign-encoded prefix protocol (`decls_bref_doc`). */
+static const char span_on_diff[] = "return -(ptrdiff_t)i - 1;";
+
+static const PcrecEncSite sites_byte[] = {
+    { PCREC_ENCE_SPAN,              PCREC_ENC_FOLD_NONE,  NULL, span_on_diff },
+    { PCREC_ENCE_SPAN_CASELESS,     PCREC_ENC_FOLD_ASCII,
+      "if (@ >= 'A' && @ <= 'Z') @ = (unsigned char)(@ + 32);", span_on_diff },
+    { PCREC_ENCE_SPAN_CASELESS_UCP, PCREC_ENC_FOLD_UCP,
+      "$_span_ci_fold(@)", span_on_diff },
+    { 0, PCREC_ENC_FOLD_NONE, NULL, NULL }
+};
+
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte,
@@ -396,5 +415,6 @@ const PcrecEnc pcrec_enc_backend_byte = {
      * comment). */
     true,
     0u,   /* [UCP] implies no module */
-    0xFFu /* [UCP] U2 every code point is one byte */
+    0xFFu, /* [UCP] U2 every code point is one byte */
+    sites_byte  /* [MEMFN] M7 the span compares' site data */
 };

@@ -204,6 +204,15 @@ const PcrecFold *pcrec_enc_span_fold(const PcrecEnc *e, bool ucp)
         ? &pcrec_fold_latin1 : e->fold;
 }
 
+/* The site-data row of entry `id`, or NULL. */
+const PcrecEncSite *pcrec_enc_site(const PcrecEnc *e, unsigned id)
+{
+    if (!e || !e->sites) return NULL;
+    for (const PcrecEncSite *s = e->sites; s->id; s++)
+        if (s->id == id) return s;
+    return NULL;
+}
+
 /* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE
  * templating rule every backend's decls/defs/advance text shares. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)

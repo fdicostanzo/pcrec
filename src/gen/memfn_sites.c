@@ -209,7 +209,8 @@ static uint32_t pred_kinds(const mf_pred *p)
 {
     uint32_t k = 0;
     for (unsigned i = 0; i < p->nterm && i < MF_MAX_TERM; i++)
-        k |= p->term[i].kind == MF_T_RUN ? MF_TK_RUN : MF_TK_SET;
+        k |= p->term[i].kind == MF_T_RUN ? MF_TK_RUN
+           : p->term[i].kind == MF_T_REF ? MF_TK_REF : MF_TK_SET;
     return k;
 }
 
@@ -294,6 +295,87 @@ void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
     deleg_check(cx, id, s);
     pcrec_memfn_sink(&ps, body);
     kit_check(cx, art, mf_emit(art, s, h, &ps.s, NULL, NULL));
+}
+
+/* [M7 I1] IMPLEMENT ONLY (deleted at REPLACE): R4g's/M4's comparator, reborn
+ * for the span compare. */
+void pcrec_memfn_shadow(Ctx *cx, DelegSite id, const mf_site *s,
+                        const mf_hooks *h, const char *want, size_t n)
+{
+    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
+    ma->u = &cx->arena;
+    ma->alloc = arena_alloc;
+    mf_art *art = mf_art_begin(ma, cx->opt->prefix,
+                               pcrec_memfn_policy(cx->opt->flags),
+                               pcrec_memfn_denies(cx->opt->flags));
+    if (!art) pcrec_ctx_nomem(cx);
+    deleg_check(cx, id, s);
+    StrBuf sb = { 0 };
+    sb.cx = cx;
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, &sb);
+    int rc = mf_emit(art, s, h, &ps.s, NULL, NULL);
+    bool same = !rc && sb.len == n && (n == 0 || !memcmp(sb.p, want, n));
+    kit_check(cx, art, rc);
+    if (!same)
+        pcrec_ctx_fail(cx, 0, "internal error: [M7 I1] the kit's %s text "
+                       "differs from pcrec's: kit (%.*s) pcrec (%.*s)",
+                       pcrec_deleg_sites[id].id, (int)(sb.len < 400 ? sb.len : 400),
+                       sb.p ? sb.p : "", (int)(n < 400 ? n : 400), want);
+    pcrec_sb_free(&sb);
+}
+
+/* ---- the encoding seam's span compare (N7, [MEMFN] M7) ------------------- */
+
+/* The kit's fold FACT for the backend's (one spelling each side: enc's enum
+ * is pcrec's, `mf_fold` the kit's; enc includes no kit header). */
+static uint8_t span_fold_kind(PcrecEncFoldKind k)
+{
+    switch (k) {
+    case PCREC_ENC_FOLD_NONE:  return MF_FOLD_NONE;
+    case PCREC_ENC_FOLD_ASCII: return MF_FOLD_ASCII;
+    case PCREC_ENC_FOLD_UCP:   return MF_FOLD_UCP;
+    }
+    return MF_FOLD_NONE;
+}
+
+mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h)
+{
+    mf_site *s = pcrec_memfn_site(cx, DELEG_N7);
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_MISMATCH;
+    s->handoff = MF_H_ON_DIFF;
+    s->empty = MF_EMPTY_NOP;
+    s->on_miss_leaves = 1;              /* `on_diff` returns */
+    s->use = MF_USE_POSITION;
+    s->consumer = MF_C_ENGINE;
+    s->fold_kind = span_fold_kind(es->fold_kind);
+    s->pred.nterm = 1;
+    s->pred.need = MF_REQUIRED;
+    s->pred.term[0].kind = MF_T_REF;
+    s->pred.term[0].need = MF_REQUIRED;
+    s->pred.term[0].ppm_hi = MF_PPM_FULL;
+    const char *fold = NULL;
+    if (es->fold) {                     /* its `$` is the artifact's prefix */
+        StrBuf fb = { 0 };
+        fb.cx = cx;
+        pcrec_enc_emit_text(&fb, es->fold, cx->opt->prefix);
+        char *t = pcrec_arena_alloc(&cx->arena, fb.len + 1);
+        memcpy(t, fb.p, fb.len);
+        t[fb.len] = '\0';
+        pcrec_sb_free(&fb);
+        fold = t;
+    }
+    PcrecMfU *u = pcrec_arena_alloc(&cx->arena, sizeof *u);
+    *u = (PcrecMfU){ .cx = cx, .site = s, .own = es, .indent = PCREC_ENC_SPAN_INDENT };
+    *h = (mf_hooks){ .s = PCREC_ENC_SPAN_S, .n = PCREC_ENC_SPAN_N,
+                     .lo = PCREC_ENC_SPAN_AT, .ref = PCREC_ENC_SPAN_REF,
+                     .reflen = PCREC_ENC_SPAN_REFLEN, .result = PCREC_ENC_SPAN_I,
+                     .result_decl = PCREC_ENC_SPAN_I_DECL, .on_miss = es->on_diff,
+                     .fold = fold, .indent = PCREC_ENC_SPAN_INDENT,
+                     .comment_tier = PCREC_CMT_NONESSENTIAL, .u = u };
+    pcrec_memfn_check_use(cx, s, true);     /* on_diff reads the index */
+    return s;
 }
 
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */

@@ -75,11 +75,14 @@ static const char *fold_subst(mf_art *art, const char *fold, const char *x)
 
 /* 1 iff `t` is a call: an identifier, then one parenthesized group that ends
  * the text (literals inside it skipped), so it may be any operator's operand
- * as written. */
-static int call_shaped(const char *t)
+ * as written. The art's prefix at the start counts as identifier text: it is
+ * pcrec's placeholder for a C identifier (memfn.h, mf_art_begin), which a
+ * name like `<prefix>_span_ci_fold` begins with. */
+static int call_shaped(const mf_art *art, const char *t)
 {
-    size_t i = 0;
-    if (!t[0] || (t[0] >= '0' && t[0] <= '9')) return 0;
+    size_t i = 0, lp = strlen(art->prefix);
+    if (lp && !strncmp(t, art->prefix, lp)) i = lp;
+    else if (!t[0] || (t[0] >= '0' && t[0] <= '9')) return 0;
     while (t[i] == '_' || (t[i] >= 'a' && t[i] <= 'z') || (t[i] >= 'A' && t[i] <= 'Z') ||
            (t[i] >= '0' && t[i] <= '9'))
         i++;
@@ -154,8 +157,8 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b)
         if (shape == CL_FOLD_EXPR) {
             x = fold_subst(art, h->fold, a.p);
             y = fold_subst(art, h->fold, r.p);
-            if (!call_shaped(x)) x = opnd(art, x);
-            if (!call_shaped(y)) y = opnd(art, y);
+            if (!call_shaped(art, x)) x = opnd(art, x);
+            if (!call_shaped(art, y)) y = opnd(art, y);
         }
         kb_printf(b, "%s    if (%s + %s >= %s || %s != %s)\n", ind, LO, R, N, x, y);
         kb_printf(b, "%s        %s\n", ind, OD);
