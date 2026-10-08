@@ -141,3 +141,18 @@ pcrec source at all. The pcrec side waits for C7.
    narrow class, so nothing moves).
 6. Not lane work: the kit manager writes the responses.md entry and the
    journal line.
+
+## VALIDATION (kit manager's slot9, 2026-10-08, Linux dev box)
+
+Chain `worktrees/memfn-slot/slot9/run.sh`, run on lane/memfn-r4hprep at
+c0b41fb7 (main a3c2f4ef merged in), 01:05-01:49:
+
+| run | result |
+|---|---|
+| N2 census, JOBS=16 | rc 0, would_decline=0, floor_fail=0, floor_placeholder=0, reason_stale=0, reach_dropped=0 |
+| identity gate (`emit_sweep --ref a3c2f4ef`, `memfn_r4c_gate.py --zero-dumps`) | R4C-GATE PASS, 0 movers on all six streams |
+| G2 full (seed 20261005) | 173,824,444 passed / 0 failed; W1 defects 1-3 fire; 1,563 enforced-class cases |
+| `make -k -j16 -Otarget test` | rc 0, 718 s, no red lines |
+| solo mech S68 S185 S265 S267 S279 S285 S443 S444 S445 S447 S450 S454 S455 S464 S526 S570 S573 | 17/17 complete, 0 unexpected/undetected/unreached/anomalies |
+
+The owed list above is discharged.
