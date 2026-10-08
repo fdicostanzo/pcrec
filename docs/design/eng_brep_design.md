@@ -559,6 +559,14 @@ happened here.
 
 ### 2.5 The third refutation: assertions in the follow
 
+> **[ART-POSS-ARMS] (2026-10-07, abi 66): "an assertion in the follow widens
+> FOLLOW to all bytes" stops being true for `A_CTX`** (`\b`, `\B`, a
+> one-character lookaround). A context gate is now valued by the characters
+> it can admit next — context-free for a lookahead-born gate, and by the
+> loop's own LAST polarities for a greedy loop with m >= 1 — under the
+> conjuncts `docs/design/poss_arms.md` rev 2.1 §2 derives. The rule below
+> still holds for every other assertion kind.
+
 MEASURED. Modelling a zero-width assertion as "not in the follow, because it
 consumes nothing" is unsound:
 

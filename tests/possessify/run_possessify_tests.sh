@@ -566,6 +566,276 @@ else
     bad "the K93 discharge witness did not build"
 fi
 
+# ---------------------------------------------------------------------------
+# 9. [ART-POSS-ARMS] THE ARMS' STRUCTURAL CHECKS (docs/design/poss_arms.md
+#    rev 2.1 §5.4, §8.5, §9; D47.3).
+#
+# Arm A (bit 0x1 = A0, the lookahead-born gate; 0x2 = A1, the gate valued by
+# the loop's last polarities; deny -fno-poss-ctx-follow, ENGINE-SELECTING and
+# `kept` in rx_info.flags) and arm B (bit 0x4, a backreference's FIRST; deny
+# -fno-poss-bref-first, answer-identity-preserving and MASKED). The .rxt
+# corpus cannot see any of this: a possessified and a backtracking loop answer
+# alike by construction, so a deny that silently did nothing, or an arm that
+# silently fired on a refutation witness, leaves every answer unchanged.
+# ---------------------------------------------------------------------------
+echo
+echo "== [ART-POSS-ARMS] per-arm stamp, deny bits, route flip =="
+
+# genx <out> <pattern> [args...]: like gen, but WITHOUT forcing the engine --
+# the route checks need the default choice.
+genx() {
+    local out="$1" pat="$2"; shift 2
+    pcrec_run "$PCREC" -p rx --features all "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
+        >/dev/null 2>"$WORKDIR/$out.err"
+}
+arms_of() {   # arms_of <file.c> -> the RX_VM_POSS_ARMS value (decimal), or "none"
+    local v
+    v="$(sed -n 's/^#define RX_VM_POSS_ARMS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    if [ -n "$v" ]; then echo $(( 0x$v )); else echo none; fi
+}
+engine_of() { sed -n 's/^#define RX_ENGINE "\(.*\)"$/\1/p' "$1"; }
+flags_of()  { sed -n 's/^ *\.flags = \([0-9]*\)ULL,$/\1/p' "$1"; }
+
+# (a) The witnesses and the EXACT bits each must stamp, on the default route
+# and on --engine=vm. All are capture-bearing so the default route is the VM
+# too. A refutation witness (the arm must DECLINE) has 0, a claimed shape its
+# arm's bit. FAILING DIRECTION: an arm that fires on a refutation witness (the
+# miscompile) turns its 0 into a bit; an arm that stops firing turns a bit
+# into 0. The doubled-word line pins the COMBINED value (A1 + B = 6) so
+# neither arm can stand in for the other. Format: bits|pattern (the pattern
+# may itself contain '|'). The libpcre2 10.46 answers for these shapes are the
+# possessify.rxt witness blocks.
+ARM_WITNESSES='2|(\w+)\b
+0|((?:a\.)+)\b
+1|(\d+)(?![\d.])
+1|([a-z]+)(?=@)
+4|(a)x+\1
+4|(a)(?>x+)\1
+4|(a)x++\1
+4|(a\2)(b\1)x+\1
+6|\b(\w+)\b\s+\1\b
+0|(a+)a
+0|( )\w?\b
+0|(\w+?(?:\b|))
+0|(\w{1,3}?(?:\b|))
+0|(a+(?:\b|))|b(?1)a
+0|(?:b(?R)a|a+(?:\b|))
+0|((?:a[a.])+)\b
+0|([a .]+)\b
+0|(\w+)\B
+0|(a)A+(?i:\1)
+0|(a?)x+\1x'
+n_w=0; n_wfail=0
+while IFS='|' read -r want pat; do
+    [ -n "$want" ] || continue
+    n_w=$((n_w + 1))
+    if genx w_def "$pat" && genx w_vm "$pat" --engine=vm; then
+        gd="$(arms_of "$WORKDIR/w_def.c")"; gv="$(arms_of "$WORKDIR/w_vm.c")"
+        if [ "$gd" != "$want" ] || [ "$gv" != "$want" ]; then
+            bad "RX_VM_POSS_ARMS for '$pat': default $gd, --engine=vm $gv, expected $want (A0=1 A1=2 B=4)"
+            n_wfail=$((n_wfail + 1))
+        fi
+    else
+        bad "arm witness '$pat' did not compile"; n_wfail=$((n_wfail + 1))
+    fi
+done <<< "$ARM_WITNESSES"
+[ "$n_wfail" -eq 0 ] && ok "RX_VM_POSS_ARMS stamps the exact bits on all $n_w witnesses, default route and --engine=vm"
+
+# (b) D47.3 do-or-die per arm. Under a deny bit THAT ARM's bits must be 0 on
+# the ARTIFACT (not merely on the compiler's internal flag), the OTHER arm's
+# must be what the default build stamps, and under both the stamp is 0x0u.
+# FAILING DIRECTION: a deny wired to the wrong switch, or one that only
+# narrows (fewer marks, not zero), leaves a bit; an arm whose deny also
+# kills the OTHER arm shows as the other arm's bit going missing.
+n_d=0; n_dfail=0
+while IFS='|' read -r want pat; do
+    [ -n "$want" ] || continue
+    [ "$want" -ne 0 ] || continue
+    n_d=$((n_d + 1))
+    if genx d_a "$pat" --engine=vm -fno-poss-ctx-follow \
+       && genx d_b "$pat" --engine=vm -fno-poss-bref-first \
+       && genx d_ab "$pat" --engine=vm -fno-poss-ctx-follow -fno-poss-bref-first; then
+        da="$(arms_of "$WORKDIR/d_a.c")"; db="$(arms_of "$WORKDIR/d_b.c")"; dab="$(arms_of "$WORKDIR/d_ab.c")"
+        wa=$(( want & 4 )); wb=$(( want & 3 ))
+        if [ "$da" != "$wa" ]; then
+            bad "-fno-poss-ctx-follow on '$pat': stamp $da, expected $wa (A bits 0, B bit kept)"; n_dfail=$((n_dfail + 1))
+        fi
+        if [ "$db" != "$wb" ]; then
+            bad "-fno-poss-bref-first on '$pat': stamp $db, expected $wb (B bit 0, A bits kept)"; n_dfail=$((n_dfail + 1))
+        fi
+        if [ "$dab" != "0" ]; then
+            bad "both arm denies on '$pat': stamp $dab, expected 0x0u"; n_dfail=$((n_dfail + 1))
+        fi
+    else
+        bad "deny build of '$pat' did not compile"; n_dfail=$((n_dfail + 1))
+    fi
+done <<< "$ARM_WITNESSES"
+[ "$n_dfail" -eq 0 ] && ok "each arm's deny zeroes exactly that arm's stamp bits on $n_d armed witnesses; both denies stamp 0x0u"
+
+# (c) THE ROUTE FLIP (§5.4/§9). Arm A is ENGINE-SELECTING: these capture-free
+# shapes are DFA-routed only because A0/A1 makes the loop possessive-
+# equivalent, so denying A sends them to the VM, and an explicit
+# --engine=dfa under the deny must REFUSE (naming the VM requirement) while
+# --engine=dfa alone still compiles. FAILING DIRECTION: a deny that changes
+# nothing for routing (stays "dfa") means the bit is not selecting and the
+# `kept` classification in rx_info.flags is a lie; a deny that compiles under
+# --engine=dfa would hand out a DFA artifact for a pattern that needs the VM.
+for rf in '\w++\b' '(?>\w+)\b' '\d++(?![\d.])' '[a-z]++(?=@)'; do
+    if genx r_def "$rf" && genx r_den "$rf" -fno-poss-ctx-follow; then
+        ed="$(engine_of "$WORKDIR/r_def.c")"; en="$(engine_of "$WORKDIR/r_den.c")"
+        if [ "$ed" = "dfa" ] && [ "$en" = "vm" ]; then
+            ok "route flip: '$rf' is dfa by default and vm under -fno-poss-ctx-follow"
+        else
+            bad "route flip: '$rf' engine is '$ed' by default and '$en' under -fno-poss-ctx-follow, expected dfa then vm"
+        fi
+    else
+        bad "route-flip pattern '$rf' did not compile"
+    fi
+    if genx r_fd "$rf" --engine=dfa; then
+        ok "'$rf' compiles under --engine=dfa alone"
+    else
+        bad "'$rf' was refused under --engine=dfa alone"
+    fi
+    if genx r_fdd "$rf" --engine=dfa -fno-poss-ctx-follow; then
+        bad "'$rf' compiled under --engine=dfa -fno-poss-ctx-follow: the deny must refuse (needs the VM)"
+    elif grep -q "requires the VM engine" "$WORKDIR/r_fdd.err"; then
+        ok "'$rf' under --engine=dfa -fno-poss-ctx-follow refuses: requires the VM engine"
+    else
+        bad "'$rf' under --engine=dfa -fno-poss-ctx-follow failed without the 'requires the VM engine' diagnostic: $(head -1 "$WORKDIR/r_fdd.err")"
+    fi
+done
+
+# (d) ARM B NEVER MOVES THE ENGINE (REFUTED as engine-selecting, §9): every
+# A_BREF forces the VM already. FAILING DIRECTION: if B's deny ever changed the
+# route, `-fno-poss-bref-first` would no longer be answer-identity-preserving
+# and its `masked` classification would be wrong; an artifact stamped 0x4u
+# under the deny means the deny is not wired.
+for bp in '(a)x++\1' '(a)(?>x+)\1'; do
+    for nc in "" "--no-captures"; do
+        if genx b_arm "$bp" $nc && genx b_den "$bp" $nc -fno-poss-bref-first; then
+            ea="$(engine_of "$WORKDIR/b_arm.c")"; ed="$(engine_of "$WORKDIR/b_den.c")"
+            aa="$(arms_of "$WORKDIR/b_arm.c")"; ad="$(arms_of "$WORKDIR/b_den.c")"
+            if [ "$ea" = vm ] && [ "$ed" = vm ] && [ "$aa" = 4 ] && [ "$ad" = 0 ]; then
+                ok "arm B never moves the engine: '$bp' ${nc:-(captures)} is vm armed (0x4u) and vm denied (0x0u)"
+            else
+                bad "arm B route: '$bp' ${nc:-(captures)}: armed engine=$ea stamp=$aa, denied engine=$ed stamp=$ad; expected vm/4 then vm/0"
+            fi
+        else
+            bad "arm B route pattern '$bp' ${nc:-(captures)} did not compile"
+        fi
+    done
+done
+
+# (e) rx_info.flags: the KEPT set moves with an ENGINE-SELECTING deny and the
+# MASKED set does not. Capture-bearing witnesses so the engine is vm either
+# way (only the flags word differs). FAILING DIRECTION: a masked
+# classification on A's bit makes two artifacts that route differently claim
+# the same flags; a kept classification on B's bit makes answer-identical
+# artifacts look different to a consumer keying on .flags.
+if genx f_def '(\w+)\b' && genx f_a '(\w+)\b' -fno-poss-ctx-follow \
+   && genx g_def '(a)x+\1' && genx g_b '(a)x+\1' -fno-poss-bref-first; then
+    fd="$(flags_of "$WORKDIR/f_def.c")"; fa="$(flags_of "$WORKDIR/f_a.c")"
+    gd="$(flags_of "$WORKDIR/g_def.c")"; gb="$(flags_of "$WORKDIR/g_b.c")"
+    if [ -n "$fd" ] && [ -n "$gd" ] && [ "$fd" != "$fa" ]; then
+        ok "-fno-poss-ctx-follow is KEPT: rx_info.flags moves ($fd -> $fa)"
+    else
+        bad "-fno-poss-ctx-follow did not move rx_info.flags ('$fd' vs '$fa'): it is engine-selecting and must be in the kept set"
+    fi
+    if [ "$gd" = "$gb" ]; then
+        ok "-fno-poss-bref-first is MASKED: rx_info.flags is unchanged ($gd)"
+    else
+        bad "-fno-poss-bref-first moved rx_info.flags ($gd -> $gb): it is answer-identity-preserving and must be masked"
+    fi
+else
+    bad "the rx_info.flags witnesses did not compile"
+fi
+
+# ---------------------------------------------------------------------------
+# 10. [ART-POSS-ARMS] pcrec_poss_ctx_admits, the EXHAUSTIVE MODEL CHECK
+#     (tests/possessify/ctx_admits_check.c): 16 truth tables x 3 polarity
+#     masks x a set of C, against a direct evaluation written independently;
+#     the A-F3 unit cell (C = {U+0100}, (?=C) -> widen) is named there.
+#     FAILING DIRECTION: the program's header lists the plants; a wrong
+#     sense, a dropped widen or a mis-cut byte tier each flips cells, and its
+#     per-outcome counts must all be non-zero so a vacuous universe fails.
+# ---------------------------------------------------------------------------
+. "$ROOT_DIR/tests/lib/unit_cc.sh"
+if unit_build "$WORKDIR/ctx_admits_check" "$SCRIPT_DIR/ctx_admits_check.c"; then
+    if ca_out="$("$WORKDIR/ctx_admits_check" 2>&1)"; then
+        ok "pcrec_poss_ctx_admits agrees with its model: ${ca_out%%$'\n'*}"
+    else
+        bad "pcrec_poss_ctx_admits disagrees with its model: $ca_out"
+    fi
+else
+    bad "tests/possessify/ctx_admits_check.c did not build"
+fi
+
+# ---------------------------------------------------------------------------
+# 11. [ART-POSS-ARMS] R4SUM / R-5 (poss_arms.md section 8.7): the compiler
+#     CROSS-CHECKS itself. Under --emit-ir it compares A1's memoized
+#     continuation SUMMARY with the plain fold and under a plain compile it
+#     compares A1 with the FOLLOW walk; either disagreement is an INTERNAL
+#     ERROR and a nonzero exit. The only thing a test can add is POPULATION:
+#     run the checks over the shapes the memo was built for (A1alt at small n,
+#     called-group bypasses, an atomic body holding a gate) and over every
+#     pattern the two committed corpora carry, and assert exit 0 with no
+#     "internal error". FAILING DIRECTION: a memo that drifts from the fold
+#     on any member turns that member's compile into exit != 0; a population
+#     that silently shrank (a changed extraction) trips the floor, which is
+#     K35's "populations nobody counts".
+# ---------------------------------------------------------------------------
+echo
+echo "== [ART-POSS-ARMS] R4SUM / R-5 self-check population =="
+r4_pop="$WORKDIR/r4_pop.txt"
+: > "$r4_pop"
+for r4n in 1 2 3 5 8 16 64; do
+    r4p="(?:a+"; r4t=""
+    for ((r4i = 1; r4i < r4n; r4i++)); do r4p+="|a+"; done
+    for ((r4i = 0; r4i < r4n; r4i++)); do r4t+='(?:\b|)'; done
+    printf '%s)%s\n' "$r4p" "$r4t" >> "$r4_pop"        # A1alt: n a+ branches, n gate bypasses
+done
+cat >> "$r4_pop" <<'EOF'
+(a+(?:\b|))|b(?1)a
+(?:b(?R)a|a+(?:\b|))
+(?>\w+\b)
+(?>\w+\b)\s+(?>\w+\b)
+(\w+)(?>\b)
+(?:(?>\w+\b)|x)+
+EOF
+r4_synth="$(wc -l < "$r4_pop" | tr -d ' ')"
+# every pattern of the two committed corpora (one per line, byte order), with
+# its block's `encoding`/`flags` as pcrec options after a TAB: a pattern
+# written for utf8 (`\x{100}`) does not compile under byte, and one that does
+# would be checked under the wrong encoding (lane posswcls)
+awk '
+function flush() { if (p != "") print p "\t" o; p = ""; o = "" }
+/^pattern /  { flush(); p = substr($0, 9); next }
+/^encoding / { o = o " -e " $2; next }
+/^flags /    { if ($2 ~ /i/) o = o " -i"; if ($2 ~ /u/) o = o " --ucp"; next }
+/^$/         { flush() }
+END          { flush() }
+' "$ROOT_DIR/tests/possessify/possessify.rxt" "$ROOT_DIR/tests/recursion/k93.rxt" >> "$r4_pop"
+LC_ALL=C sort -u -o "$r4_pop" "$r4_pop"
+r4_total="$(wc -l < "$r4_pop" | tr -d ' ')"
+if [ "$r4_total" -lt 150 ]; then
+    bad "R4SUM population has only $r4_total patterns (floor 150: two corpora + $r4_synth synthetic) -- the extraction shrank"
+fi
+r4_bad=0
+while IFS=$'\t' read -r r4p r4o; do
+    # three runs: the listing (summary-vs-fold), a plain compile (A1-vs-FOLLOW)
+    # on the default route and on the VM
+    for r4m in "--emit-ir --engine=vm" "-o $WORKDIR/r4.c" "-o $WORKDIR/r4.c --engine=vm"; do
+        # shellcheck disable=SC2086  # $r4o/$r4m are option lists
+        if ! pcrec_run "$PCREC" -p rx --features all $r4o $r4m --pattern "$r4p" \
+                >"$WORKDIR/r4.out" 2>"$WORKDIR/r4.err" \
+           || grep -qi "internal error" "$WORKDIR/r4.out" "$WORKDIR/r4.err"; then
+            bad "'$r4p' [$r4m]: $(head -1 "$WORKDIR/r4.err")"
+            r4_bad=$((r4_bad + 1))
+        fi
+    done
+done < "$r4_pop"
+[ "$r4_bad" -eq 0 ] && ok "R4SUM/R-5: $r4_total patterns x 3 compiles (--emit-ir summary-vs-fold, plain, --engine=vm) exit 0 with no internal error"
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

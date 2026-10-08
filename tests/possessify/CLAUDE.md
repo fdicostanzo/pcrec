@@ -94,6 +94,37 @@ in a specific way.
   `-DDIFF_A_LABEL`/`-DDIFF_B_LABEL`, which default to this suite's own wording,
   so nothing here changed behaviour. Keep it that way: a second copy of this
   comparison would be a second thing to keep in step with the first.
+- **The [ART-POSS-ARMS] section of `run_possdiff.sh`** (poss_arms.md 8.1; lane
+  possbuild-pd). Side A = this build (arms on), side B = `-fno-possessify`,
+  both `--engine=vm`; the default run now also does:
+  - **`arms_core.txt`, `arms_utf8.txt`, `arms_utf8i.txt`, `arms_ucp.txt`,
+    `arms_i.txt`** (the rev-2.1 prototype's `pd_*.txt`, 104 patterns). A
+    file named `arms_*` is swept with **`subjects_exh.py`**, the EXHAUSTIVE
+    generator (every string of length <= 4 over the pattern's case-flip-closed
+    literal alphabet + a word and a non-word representative + `7`, by code
+    point under `-e utf8`; `--alpha`, `--reach S P [flags]`, env `ML`),
+    instead of `subjects_for`'s bespoke families. A `# flags:` header line
+    (`-e utf8`, `--ucp`, `-i`) applies to BOTH sides beside `# features:`;
+    there is no TAB column because a pattern may begin with a space.
+  - **`arms_routeflip.txt`** (`# route: default`): side A compiled on the
+    DEFAULT route, where an arm-discharged atomic group/possessive suffix
+    goes to the DFA; the run FAILS if a row does not land on the DFA, and the
+    answers are compared against the denied VM build.
+  - **`arms_reach.tsv`** (`pattern TAB subject [TAB flags]`, `--reach FILE`):
+    checked BEFORE anything compiles; a witness the sweep cannot generate
+    fails the run.
+  - **`arms_manifest.tsv`** (`--manifest FILE`): the NAMED FLOOR. Each row
+    pins the exact `<PREFIX>_VM_POSS_ARMS` stamp of its armed artifact
+    (`mover/*` = poss_arms.md 5.2's six default-route movers, `fire/*` = a
+    shape per arm, `hold/*` = the 8.2 sabotage witnesses, which must stay
+    silent) and the `--emit-ir` marked count armed vs `-fno-poss-ctx-follow`
+    (moves iff stamp&3) and `-fno-poss-bref-first` (iff stamp&4). A row that
+    stops firing fails by name. Add a row by measuring it, then pinning.
+  Tally lines: `reach k/k`, `manifest k/k`, route-flip count. Wall time of the
+  default run ~85 s on the Linux dev box (~49 s of that is the old
+  patterns.txt + calls.txt).
+  `possdiff_driver.c`'s `describe()` prints every negative return through
+  `tests/harness/outcome_word.h` (it printed `PCREC_ERR_WORK` as "nomatch").
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
   wired into `make test` as `make test-possessify` and into the `make
   ubsan`/`make asan` both-axes batteries. EXECUTION of every generated
@@ -259,3 +290,38 @@ comparison is arithmetic and `[ "" -lt "" ]` is an error, which is false. What
 the wrong read cost was the MESSAGE — a failure reading `( -> )` sends a reader
 to the possessify pass instead of to a macro that changed file.
 - `composition_d27.rxt` (+ `composition_d27_notes.md`) — D27-BLINDED composition corpus (lane posscomp, 2026-10-07, [ART-POSS-ARMS] review R-3a). 676 blocks / 7,412 cases combining \b/\B and zero-width gates, empty-able captures, backrefs (numbered/named/relative, caseless), greedy/lazy/bounded quantifiers with empty-able follows, and subroutine calls/recursion. The oracle is libpcre2 10.46 with NO_AUTO_POSSESS (183 cells replayed through pcre2test, 0 disagreements); default auto-possess agreed in every cell. Written by an author denied src/ and tests/. Shipped main at 92ca17fc passes all 9,002 harness cases. It is the acceptance corpus the arms' prototype must pass before build.
+
+## [ART-POSS-ARMS] the arms' tests (lane possbuild-rx, 2026-10-07)
+
+Arm A (`-fno-poss-ctx-follow`, stamp bits 0x1 A0 / 0x2 A1, ENGINE-SELECTING,
+`kept`) and arm B (`-fno-poss-bref-first`, bit 0x4, masked); design
+`docs/design/poss_arms.md` rev 2.1. What was added, by file:
+
+- `possessify.rxt` (tail, under its own header): 34 witnesses as 68 blocks /
+  446 cells (arm A 290, arm B 142, the doubled-word combined witness 14),
+  each a GREEDY block and its POSSESSIVE-SPELLING block, `# pcre2-only`,
+  `engine vm`. Every expectation is libpcre2 10.46's (ctypes binding), with
+  `PCRE2_NO_AUTO_POSSESS` and the default options agreeing on every cell;
+  subjects are the witness's own plus the shortest ones, found by exhaustive
+  search (length <= 5 over the pattern's alphabet), on which the two
+  spellings disagree. Left out: `(*ACCEPT)` and `(?|` witnesses (modules not
+  built) and Latin-1 byte + `--ucp` caseless-backref cells (K94's).
+  The A-F1 pair also lives in `../recursion/k93.rxt`. Lane posswcls
+  (2026-10-07) appended 24 blocks under their own header: WIDE classes
+  (multi-unit under utf8) in A1's and B's shapes, each block's measured
+  `RX_VM_POSS_ARMS` in its comment, same oracle and pairing.
+- `run_possessify_tests.sh` sections 9-11: (9) per-witness exact
+  `RX_VM_POSS_ARMS` bits on the default route and `--engine=vm`, the D47.3
+  per-arm deny (that arm's bits 0 on the artifact, the other arm's kept, both
+  = 0x0u), the route flip (`\w++\b`, `(?>\w+)\b`, `\d++(?![\d.])`,
+  `[a-z]++(?=@)`: dfa -> vm under the A deny; `--engine=dfa` + deny refuses
+  "requires the VM engine"), arm B never moves the engine (with and without
+  `--no-captures`), and `rx_info.flags` (A kept, B masked); (10) builds and
+  runs `ctx_admits_check.c`; (11) the R4SUM/R-5 population (A1alt at small n,
+  the called-group bypasses, atomic bodies, every pattern of `possessify.rxt`
+  and `k93.rxt`, each under its own block's `encoding`/`flags` since lane
+  posswcls) compiled under `--emit-ir --engine=vm`, plain, and
+  `--engine=vm`, asserting exit 0 and no "internal error".
+- `ctx_admits_check.c` -- exhaustive model check of `pcrec_poss_ctx_admits`
+  (16 truth tables x 3 non-empty P masks x 53 C sets, plus the named A-F3
+  cell); built through `tests/lib/unit_cc.sh`'s `unit_build`.

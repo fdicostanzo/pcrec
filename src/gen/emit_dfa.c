@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 65
+#define PCREC_ARTIFACT_ABI 66
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -3024,8 +3024,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
          *
          * `kept` is the whole of what an artifact's reflection surface still
          * says about a knob, and each member has its own reason:
-         *   - the two ENGINE-SELECTING denials (axes.def's block of that
-         *     name; tuning.md 2.8/2.9): denied, a construct stays in the tree
+         *   - the three ENGINE-SELECTING denials (axes.def's block of that
+         *     name; tuning.md 2.8/2.9/2.44): denied, a construct stays in the tree
          *     and `--engine=dfa` plus the denial REFUSES, so the knob is not
          *     a no-op a caller may ignore;
          *   - the CONTRACT bits (axes.def's block of that name), which select
@@ -3035,6 +3035,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
          * only whether a slower artifact that fits ships or the compile
          * refuses, so an artifact that fits is the same artifact under it. */
         const uint64_t kept = PCREC_NO_ATOMIC_DISCHARGE | PCREC_NO_SPLICE_CALLS |
+                              PCREC_NO_POSS_CTX_FOLLOW |
                               PCREC_NO_STARTPOS_GUARD | PCREC_FORCE_STARTPOS_ALIGN |
                               PCREC_FORCE_UTF_CHECK;
         const uint64_t axis_bits = 0

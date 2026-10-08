@@ -1021,6 +1021,29 @@ reject_engine_dfa_vars() {
     esac
 }
 reject_engine_dfa_vars
+# [ART-POSS-ARMS] R-6 (docs/design/poss_arms.md §8.7, §9): THE
+# BACKREFERENCE-STAYS-VM TRIPWIRE. Arm B's deny bit -fno-poss-bref-first is
+# classified MASKED (answer-identity-preserving, tuning.md §2.45) on ONE
+# premise: a backreference is VM-only, under --no-captures too, so the arm can
+# never move RX_ENGINE. The finite-language expansion ([M6.5]'s follow-up
+# (d)/(f), `(abc)\1` -> `abcabc`, whose customer is --no-captures) would
+# make a backreference DFA-runnable; this cell is what notices. Both arm
+# settings, because the premise is about the construct, not the arm.
+reject_engine_dfa_bref_nocaptures() {
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
+    local out rc deny
+    for deny in "" "-fno-poss-bref-first"; do
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --engine=dfa --no-captures $deny -p rx \
+               -o "$WORKDIR/out.c" --pattern '(a)x+\1' 2>&1 >/dev/null)"; rc=$?
+        case "$rc:$out" in
+            1:*"requires the VM engine, which --engine=dfa excludes"*)
+                ok "--engine=dfa --no-captures ${deny:-(arms on)} on '(a)x+\\1' refuses: a backreference stays VM-only" ;;
+            *) bad "--engine=dfa --no-captures ${deny:-(arms on)} on '(a)x+\\1': exit $rc, message: $out -- arm B's deny bit -fno-poss-bref-first is classified masked because a backreference is VM-only (docs/design/poss_arms.md §9); if this pattern now compiles for the DFA, reclassify the bit as ENGINE-SELECTING (kept) and add a route-flip census for arm B" ;;
+        esac
+    done
+}
+reject_engine_dfa_bref_nocaptures
 
 echo
 echo "== unicode properties, quoting, misc escapes =="

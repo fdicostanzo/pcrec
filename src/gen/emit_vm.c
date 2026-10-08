@@ -11653,6 +11653,12 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * shared block the same way — see that comment. Only the OR'd MASK
      * below stays here. */
     pcrec_sb_stampf(c, v->up, "VM_STRATS", "0x%xu", v->strats);
+    /* [ART-POSS-ARMS] the per-ARM half of the same evidence (§8.5): which
+     * possessify arm a positive verdict needed (`PCREC_POSS_ARM_*`), 0 when
+     * none did. `VM_STRATS`' POSSESSIVE bit cannot serve — it does not
+     * flip per arm — and D47.3's do-or-die is asserted against this value:
+     * a denied arm's bit is 0 on the ARTIFACT. */
+    pcrec_sb_stampf(c, v->up, "VM_POSS_ARMS", "0x%xu", v->cx->poss_arms);
     /* [M4.6d] the PRUNE stamp: the same shape and the same place as the two
      * above, plus one thing neither of them needs — the CEILING FORM, which
      * is a property of the ARTIFACT rather than of a quantifier and is

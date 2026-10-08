@@ -190,8 +190,11 @@ another's, `main`'s `--list-families` block states it in its own comment).
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
 `build/pcrec --list-axes | bash tests/lib/table.sh table-main - | grep -vc '^#'`
-— **131 rows / 44 axes** (the MAIN table only, [MEMFN] R4a: the count never
-includes the kit's `memfn` section below), re-derived
+— **136 rows / 46 axes** (the MAIN table only, [MEMFN] R4a: the count never
+includes the kit's `memfn` section below), re-derived live 2026-10-07 by lane
+possbuild ([ART-POSS-ARMS]: +5 rows and +2 axes, `poss-ctx-follow` (a0, a1,
+widen) and `poss-bref-first` (group-text, widen), bits 50/51, stamp
+`RX_VM_POSS_ARMS` — `tuning.md` §2.44/§2.45). Was 131/44, re-derived
 live 2026-10-06 by lane r4caxis ([MEMFN] R4c: +2 rows and +1 axis,
 `memfn-simd`, the kit's one switch, `-fno-memfn-simd`/`-fmemfn-simd`,
 bits 48/49, INERT — `tuning.md` §2.43). Was 129/43, re-derived

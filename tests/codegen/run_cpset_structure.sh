@@ -374,6 +374,19 @@ fi
 #                    lane triu2 (U2's own population: one-character lookarounds
 #                    reaching this check's corpus sweep for the first time)
 #
+#   opt/possessify.c [ART-POSS-ARMS] A1's `cls_polarity` — a sorted interval
+#                    SWEEP of a class's code-point list against the gate's
+#                    code-point set C, ABOVE the lowering (the pass runs
+#                    before `pcrec_lower_enc`; its A_WCLASS arms are loud), to
+#                    learn whether some member is inside C and some outside.
+#                    A genuine interval-vs-interval question, never a bitmap:
+#                    rendering the class to 32 bytes would answer it wrongly
+#                    for a class reaching past the byte range, which is the
+#                    reason this reads the list. Added 2026-10-07 by lane
+#                    posstri (the arms' own population: the first possessify
+#                    code to read `u.cls` directly, which the check reached on
+#                    its first run over the tree)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -387,12 +400,10 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # nothing else in the file; the rest of the file stays policed. Each entry is
 # held to its own two controls below: the function must exist, and must hold at
 # least one read (an allowance nothing uses is a stale exemption that would
-# silently cover the next read to land in a same-named function). Empty on
-# main; lane posstri's entry is
-#   ALLOW_FN='src/opt/possessify.c:cls_polarity'
-# with `|src/opt/possessify.c` DROPPED from ALLOW (its prose above stays,
-# reworded "the function `cls_polarity`").
-ALLOW_FN=''
+# silently cover the next read to land in a same-named function). The first
+# entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
+# function `cls_polarity`, so that file is NOT on ALLOW.
+ALLOW_FN='src/opt/possessify.c:cls_polarity'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {
@@ -858,6 +869,25 @@ fi
 # VERIFIED BY the R4a′ mover census (tests/memfn/stamp_mover_census.py
 # --ref 57db5152): every corpus artifact differs from main by exactly those
 # two lines (memfnbump_report.md §2).
+#
+# RE-RECORDED 2026-10-07 at [ART-POSS-ARMS] (abi 65 -> 66, lane possbuild;
+# re-pinned by lane posstri): six rows move. Four by exactly +29, the
+# VM-only `#define RX_VM_POSS_ARMS 0x0u` stamp line (`a(b|c)+d`,
+# `(a)(b)(c)`, `(?<=foo)bar`, `(a(?1)?b)`; the abi digit is the same width and
+# the DFA rows carry no VM stamp block, so they do not move). The fifth,
+# `(\w+)\s+\1`, is the one MOVER: arm B (`-fno-poss-bref-first`) folds the
+# referenced group's first set into the `\1` read, so `\w+` (followed by `\s+`,
+# a disjoint class) possessifies, the frames shed one resume and one trail
+# slot, the program turns FRAMELESS and takes the `inline` entry shape:
+# `RX_VM_STRATS` 0x3u -> 0x1u, `RX_VM_FRAMELESS` 0 -> 1, EMITTED_BYTES -446
+# (29085 -> 28640 at `-o -`, 28639 here), stamp `RX_VM_POSS_ARMS 0x4u`.
+# VERIFIED BY DIFFING all five against a scratch build of main 8cada7b9 at
+# `-o -`: the abi digits and the stamp are the whole delta on four of them;
+# on `(\w+)\s+\1` the delta is the frame counts, the entry shape, the
+# possessive span loop and the dropped resume dispatcher, nothing else. The
+# answers are not moved: `run_possdiff.sh` on that pattern alone (it is in
+# arms_core.txt, `# features: all`) reads 1 agreed / 0 diverged over 311
+# pattern-subject-startpos cells with a possessified quantifier.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

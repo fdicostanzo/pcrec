@@ -193,6 +193,17 @@ bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id)
     return false;
 }
 
+/* [ART-POSS-ARMS] The fold relation `e`'s caseless span compare folds by for
+ * a construct with `ucp` in force: the Latin-1 relation when the table
+ * carries the UCP entry (its definitions are generated from it), the
+ * encoding's own otherwise — the entry choice `vm_caseless_entry` makes,
+ * asked for the relation instead of the entry. */
+const PcrecFold *pcrec_enc_span_fold(const PcrecEnc *e, bool ucp)
+{
+    return ucp && pcrec_enc_has_entry(e, PCREC_ENCE_SPAN_CASELESS_UCP)
+        ? &pcrec_fold_latin1 : e->fold;
+}
+
 /* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE
  * templating rule every backend's decls/defs/advance text shares. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)

@@ -1,0 +1,17 @@
+#SUMMARY rows 37546 status [(('computed', 'REFUSED(pcrec)'), 4502), (('computed', 'ok'), 32994), (('hand', 'REFUSED(option)'), 2), (('hand', 'REFUSED(pcrec)'), 4), (('hand', 'ok'), 44)]
+#SUMMARY target-unresolved computed=0 hand=0  base-marked computed=2160 hand=0
+#SUMMARY AB        computed compared 32994  mark!=expect 0  (unsound-direction 0)  extra-flips 662  anomalies 0
+#SUMMARY AB        hand     compared 44  mark!=expect 0  (unsound-direction 0)  extra-flips 2  anomalies 0
+#SUMMARY AB_legacy computed compared 32994  mark!=expect 5  (unsound-direction 5)  extra-flips 657  anomalies 0
+#SUMMARY AB_legacy hand     compared 44  mark!=expect 0  (unsound-direction 0)  extra-flips 2  anomalies 0
+#SUMMARY Aonly     computed compared 32994  mark!=expect 10633  (unsound-direction 0)  extra-flips 485  anomalies 0
+#SUMMARY Aonly     hand     compared 44  mark!=expect 16  (unsound-direction 0)  extra-flips 2  anomalies 0
+#SUMMARY Bonly     computed compared 32994  mark!=expect 6427  (unsound-direction 0)  extra-flips 0  anomalies 0
+#SUMMARY Bonly     hand     compared 44  mark!=expect 3  (unsound-direction 0)  extra-flips 0  anomalies 0
+#SUMMARY legacy-unresolved computed=3459 hand=15  grouped-copies computed=3459 hand=15
+#SUMMARY utf,ucp REFUSED 4502
+Z00144	computed	ok	no_auto_possess	no	0	0		5	grp1+3	unresolved	2	20	1	20	0	(?:[a-z]+(?:(?=\W)[ab])+y)+
+Z06619	computed	ok	no_auto_possess	no	0	0		5	grp1+3	unresolved	2	20	1	20	0	(?:a{2,4}(?:(?=@)[ab])+y)+
+Z07584	computed	ok	no_auto_possess	no	0	0		5	grp1+3	unresolved	2	20	1	20	0	(?:a{2,4}?(?:(?=\W)[ab])+y)+
+Z09504	computed	ok	no_auto_possess	no	0	0		5	grp1+3	unresolved	2	20	1	20	0	(?:(?:(?=[ab])\w){2,4}?(?:(?=\W)[ab])+y)+
+Z09739	computed	ok	no_auto_possess	no	0	0		5	grp1+3	unresolved	2	20	1	20	0	(?:(?:\w(?!\d))+(?:(?=@)[ab])+y)+

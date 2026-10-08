@@ -1346,6 +1346,19 @@ run_one_axis() {
     if [ "$budget" -gt 0 ]; then
         echo "  ($budget case(s) budget-bound — BOTH sides give up/time out, only the boundary moved, never a failure)"
     fi
+    # [ART-POSS-ARMS] §8.6: the FOURTH transition class, GIVEUP(code1) ->
+    # GIVEUP(code2) — both sides give up (driver exit 3) but with DIFFERENT
+    # give-up words, read off the rows stream's BUDGET rows (run_ksweep.sh's
+    # R6 reads the same rows the same way; the row class stays BUDGET so that
+    # reader does not go vacuous). Possessification can turn a STEPS or
+    # FRAMES give-up into a WORK one (tuning.md §2.1; doubled-word's move),
+    # so the class is REPORTED as its own population, never a failure: what a
+    # code change means is the axis's own spec section's to say.
+    local gu2
+    gu2=$(awk -F'\t' '$1=="BUDGET" && $3=="3" && $5=="3" && $4!=$6 {n++} END{print n+0}' "$rowsfile")
+    if [ "$gu2" -gt 0 ]; then
+        echo "  ($gu2 of those give up with a DIFFERENT CODE on the two sides — the GIVEUP(code)->GIVEUP(code) class, reported, not a failure)"
+    fi
     if [ "$giveup1_allowed" -gt 0 ]; then
         echo "  ($giveup1_allowed case(s) one-sided give-up, named in GIVEUP1_ALLOWANCE — a measured population, not a failure)"
     fi
