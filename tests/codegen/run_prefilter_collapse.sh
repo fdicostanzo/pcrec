@@ -403,6 +403,52 @@ declined_default_witness() {  # declined_default_witness PATTERN
 declined_default_witness '((a)|b){0,4000}'
 declined_default_witness '((a)|b){0,3}'
 
+# [NULLABLE-ANCH] (lane nullanch1, 2026-10-08) THE DECLINE READS `empty_admits`,
+# NOT BARE NULLABILITY. A nullable pattern whose EVERY empty path crosses a
+# non-multiline `^`/`\A` AND `$`/`\Z`/`\z` matches empty only on a subject
+# that is empty up to a final newline, so its exact prefilter still dismisses
+# every other subject: the decline must LIFT (`ENGINE_SEL "selected"`, PREFILTER
+# "hybrid"). Each admitted row has a declined twin one anchor away, so a
+# predicate that keyed on "has an anchor" rather than on "every empty path
+# crosses both" turns a pair red from one end: ONE-SIDED (`^` only, `$` only),
+# an anchor on SOME empty paths only (`^(a|$)*`), a MULTILINE anchor (mask 0
+# by definition) and the unanchored form. The listing's own `empty_admits` row
+# is read on every witness too, against the value written here by hand.
+facts_empty_admits() {  # facts_empty_admits PATTERN -> the listing's value
+    pcrec_run "$PCREC" --features all --emit-facts --pattern "$1" 2>/dev/null |
+        awk -F'\t' '$1 == "byte" && $2 == "empty_admits" { print $7 }'
+}
+anch_admit_witness() {  # anch_admit_witness PATTERN
+    local pat="$1" a="$WORK/w_aa.c" vmpf sel ea
+    if ! emit "$a" -- "$pat"; then
+        bad "[anch] '$pat' does not compile at the default — this row has no subject"; return
+    fi
+    vmpf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a"); ea=$(facts_empty_admits "$pat")
+    if [ "$vmpf" != hybrid ] || [ "$sel" != selected ] || [ "$ea" != no ]; then
+        bad "[anch] '$pat' stamps PREFILTER '$vmpf' / SEL '$sel' / empty_admits '$ea', expected 'hybrid' / 'selected' / 'no' — every empty path crosses a non-multiline start AND end anchor, so the nullability decline must not fire"; return
+    fi
+    ok "[anch] '$pat' keeps its exact hybrid prefilter (SEL 'selected', empty_admits 'no') — nullable, but only on a subject empty up to a final newline"
+}
+anch_decline_witness() {  # anch_decline_witness PATTERN
+    local pat="$1" a="$WORK/w_ad.c" vmpf sel ea
+    if ! emit "$a" -- "$pat"; then
+        bad "[anch] '$pat' does not compile at the default — this row has no subject"; return
+    fi
+    vmpf=$(stamp VM_PREFILTER "$a"); sel=$(stamp ENGINE_SEL "$a"); ea=$(facts_empty_admits "$pat")
+    if [ "$vmpf" != none ] || [ "$sel" != declined-nullable-default ] || [ "$ea" != yes ]; then
+        bad "[anch] '$pat' stamps PREFILTER '$vmpf' / SEL '$sel' / empty_admits '$ea', expected 'none' / 'declined-nullable-default' / 'yes' — some empty path lacks a non-multiline start or end anchor, so the decline must still fire"; return
+    fi
+    ok "[anch] '$pat' is still declined (SEL 'declined-nullable-default', empty_admits 'yes') — an empty path escapes one anchor"
+}
+nanch=0
+for p in '^(\s+)*$' '^(([a-z]+)*)+$' '\A(a*)*\z' '^(a{2,4})?$' '^(a|b*)*\Z' '^(a?)(?1)*$'; do
+    anch_admit_witness "$p"; nanch=$((nanch + 1))
+done
+for p in '^(\s+)*' '(\s+)*$' '(\s+)*' '^(a|$)*' '(?m)^(\s+)*$' '^(\s+)*(?m:$)' '^(a?)(?1)*'; do
+    anch_decline_witness "$p"; nanch=$((nanch + 1))
+done
+echo "REACH: $nanch [anch] witnesses (6 admitted, 7 declined)"
+
 # THE CONFLICT PAIR is REFUSED, by name (tuning.md §2.17). The two
 # force/vacuity rows that used to sit here are now `lang_witness`'s own — under
 # ruling B every `count-collapsed` row IS a force row, so keeping separate ones
