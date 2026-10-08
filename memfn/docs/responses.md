@@ -1352,3 +1352,65 @@ the compiler, and is never adopted silently. Proposed for main to file
   3. **Consequence for the kit:** each SIMD batch's acceptance becomes a
      bench request that you carry to the inbox. The kit's own timings are
      the unofficial tier that picks what to submit.
+- notice: 2026-10-08 — **R-10 step 1 DONE: M6 scoping. Report
+  `docs/dev/lanes/m6scope_report.md` (lane m6scope, opus, read-only). No
+  build until main has read this. Q-R10-1 needs FRANK; Q-R10-7 needs main
+  (the manifest).**
+  - **VMSTRIDE:**
+    - Edit set: emit_vm.c lines 4654-5010 only, memfn_sites.{c,h,def},
+      and one explicit `stride = 1` at the two other advance builders in
+      emit_dfa.c.
+    - The kit side is generic.c's `stmt_advance`, plus contract,
+      fixtures and pins. One generalized `vm_span_advance` replaces
+      `vm_stride_loop` for every stride (30 and 32 are seen).
+    - No pcrec abi event, no spec hunk.
+    - Boundary: reads V1-V15 named; rungs, admission, possessify, the
+      MRL bound, the class-test text and stride/row choice stay pcrec's.
+  - **Vocabulary: NO MF_VOCAB bump** (R-10 expected one). VMSTRIDE is the
+    existing generic SKIP/ADVANCE over W SET terms; the probed text
+    matches byte for byte. Contract MF_SITE_ABI 8:
+    - multi-term ADVANCE (Q-G2-9 relaxed);
+    - `MF_MAX_TERM` 8 → 32 with a `_Static_assert`;
+    - `span_hi` restated as an iteration count;
+    - no silent default for the stride field (Q-R10-12).
+  - **Overlap (D153): DISJOINT.**
+    - B4 edits emit_vm.c only at the `--emit-ir` listing (9161-9541)
+      and the epilogue; B5 is esel_of, VM_PREFILTER_WHY and compile.c.
+    - Nothing else touches the span loop, `vm_rev_emit` or
+      `stmt_advance`.
+    - The gate ref is M6's merge-base, re-taken after B merges. The
+      generated line-number maps (start_table, dec_fallback) are
+      regenerated after a merge, never hand-merged.
+  - **Q-R10-1, FOR FRANK: N6's disposition.** `vm_rev_emit`'s backward
+    walk reads, per node, only the VM's one-position engine step,
+    mirrored. §R4.3.4 already excludes "any DFA or VM step", and the
+    forward twin is unlisted as engine. A zero-mover "migration" would
+    hand the kit a pair of parentheses.
+    - **Kit recommends: RETIRE N6 by ruling.** Delete its manifest row,
+      the `walk-back` C17 vocabulary line and its C12 row.
+    - This reverses N6's 'pending' listing under Q54's wider definition
+      ("search or span-compare site"), so it is Frank's, recorded by
+      main.
+  - **Q-R10-7, for main (manifest): a NEW unlisted span loop.** The lazy
+    cursor rung's rmin prefix loop (emit_vm.c:5024-5032) is a span loop
+    at every stride, and C17's vocabulary cannot see it. **Kit
+    recommends:** list it `pending` now (with a vocabulary line) and
+    migrate it later.
+  - **Kit-side rulings** (object if wrong):
+    - Q-R10-2: W SET terms, no new term kind.
+    - Q-R10-3: MF_MAX_TERM 32.
+    - Q-R10-4: kit-owned reads index `s[cursor + i]`.
+    - Q-R10-5: span_hi counts iterations.
+    - Q-R10-6: one builder, a separate VMSTRIDE row.
+    - Q-R10-8: S511 re-aimed by flipping a delegated manifest row to
+      pending.
+    - Q-R10-9: merge-base ref.
+    - Q-R10-11: the utf8 back-step/next-pos loops are recorded as NOT
+      search sites.
+    - Q-R10-12: no silent stride default.
+    - S526 is re-anchored if MF_MAX_TERM moves.
+    - Ids S676-S685 are free everywhere.
+  - **Q-R10-10, a SIMD note:** a SIMD ADVANCE form needs a numeric bound
+    that ADVANCE lacks today. This goes to R-9's panel.
+  - **Proposed order:** M6 = VMSTRIDE alone (zero movers). N6 per Frank's
+    ruling, and the lazy loop plus N7U later as their own requests.
