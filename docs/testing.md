@@ -5117,3 +5117,14 @@ held to hand-written text. Runtime ~7 s (three reference compilers built in
 parallel). `tests/prefilter/run_prefilter_tests.sh` §7b adds the hand-written
 T2 listing rows (50 checks, ~8 s). See `docs/design/dec_fallback.md` §4.2 B0
 items 6 and 11 and `docs/dev/lanes/decfbB0b_report.md`.
+
+**B1 (lane decfbB1, 2026-10-08): section (a), SEQUENCES.** Four TRACE
+compilers (`-DPCREC_CAND_TRACE`: plain, lowdfa, lowsize, lowboth) join the
+three reference compilers, and 25 witnesses hold their `CANDTRACE fallback`
+rows (`row@labels`, arrival order, expected rc) plus 30 final
+`admit`/`attrib`/`gate` records to hand-written values. 128 checks, ~17 s
+on the Linux dev box (all seven builds in parallel, ~5 s each at `-O1`). The
+trace's other gates are lane-run, not `make test`: `scripts/emit_sweep.py
+--variant all --trace` (B1 gate 656 s at `--jobs 6`, the box shared with a
+running chain), `docs/design/dec_fallback/row_reach.py` (the full 60-cell
+mirror ~10 min at 6 jobs) and `cross_record.py` (one-time, ~25 min at 8).
