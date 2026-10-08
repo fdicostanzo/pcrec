@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""scripts/sectiontimes -- per-section wall times of a `make test` run, with no
+change to `make test` itself ([TT-JTUNE]; opt-in, nothing in the Makefile).
+
+Why this works: GNU make's `--debug=j` prints one `Putting child ... (TARGET)`
+line when it launches a target's recipe and one `Removing child ... from
+chain.` line when the target finishes, flushed immediately (make's own
+messages are not held back by -Otarget, which only buffers recipe output).
+The sub-make that `test:` spawns inherits the flag through MAKEFLAGS, so the
+section targets' lines appear. Make prints no clock, so a line filter stamps
+each line with its arrival time.
+
+  make --debug=j -k -j6 -Otarget test 2>&1 | scripts/sectiontimes stamp > run.log
+  scripts/sectiontimes report run.log            # TSV: section start end wall
+  scripts/sectiontimes report run.log --tail     # + low-concurrency stretches
+  ... | scripts/sectiontimes stamp SIDE.tsv > run.log   # debug lines -> SIDE.tsv,
+                                                 # run.log stays byte-identical
+
+`--debug=j` adds lines to the log but changes no verdict line (the section
+verdict is still make's `*** [...test-X] Error`). Arrival time is accurate to
+the pipe latency (ms); the stamp filter flushes per line.
+"""
+import re
+import sys
+import time
+
+PFX = r"^(?:make(?:\[\d+\])?: )?"
+PUT = re.compile(PFX + r"Putting child (0x[0-9a-f]+) \((\S+)\)")
+REM = re.compile(PFX + r"Removing child (0x[0-9a-f]+) PID")
+# every line `--debug=j` adds; none of them is a recipe's or a verdict line
+DBG = re.compile(PFX + r"(Putting child|Live child|Reaping (winning|losing) child|"
+                 r"Removing child|Released token|Obtained token|Need a job token|"
+                 r"Got a SIGCHLD|Pruning file|Releasing|Obtaining|Acquired all)")
+
+
+def stamp(side=None):
+    """No argument: stamp every line (stdout).  With SIDE: lines `--debug=j`
+    added go (stamped) to the file SIDE and are NOT passed on; every other
+    line is passed through byte-for-byte, so the caller's log is exactly what
+    a run without --debug=j writes (scripts/perfrun uses this form)."""
+    out = sys.stdout
+    sf = open(side, "w") if side else None
+    for line in sys.stdin:
+        if sf is None:
+            out.write("%.3f\t%s" % (time.time(), line))
+            out.flush()
+        elif DBG.match(line):
+            sf.write("%.3f\t%s" % (time.time(), line))
+            sf.flush()
+        else:
+            out.write(line)
+            out.flush()
+
+
+def parse(path):
+    """-> list of (name, start, end) in epoch seconds; first/last stamp."""
+    names, start, spans = {}, {}, []
+    first = last = None
+    with open(path, errors="replace") as f:
+        for raw in f:
+            t, _, line = raw.partition("\t")
+            try:
+                ts = float(t)
+            except ValueError:
+                continue
+            first = ts if first is None else first
+            last = ts
+            m = PUT.match(line)
+            if m:
+                names[m.group(1)] = m.group(2)
+                start[m.group(1)] = ts
+                continue
+            m = REM.match(line)
+            if m and m.group(1) in start:
+                spans.append((names[m.group(1)], start[m.group(1)], ts))
+    return spans, first, last
+
+
+def report(path, tail):
+    spans, first, last = parse(path)
+    if not spans:
+        sys.exit("sectiontimes: no `Putting child` lines in %s (was --debug=j on?)" % path)
+    t0 = min(s for _, s, _ in spans)
+    t1 = max(e for _, _, e in spans)
+    print("section\tstart_s\tend_s\twall_s")
+    for name, s, e in sorted(spans, key=lambda x: x[1]):
+        print("%s\t%.1f\t%.1f\t%.1f" % (name, s - t0, e - t0, e - s))
+    print("# sections=%d  first_start->last_end=%.1fs  sum_of_walls=%.1fs"
+          % (len(spans), t1 - t0, sum(e - s for _, s, e in spans)))
+    # concurrency profile: seconds spent with k sections running.
+    ev = sorted([(s, 1) for _, s, _ in spans] + [(e, -1) for _, _, e in spans])
+    hist, cur, prev = {}, 0, t0
+    segs = []
+    for ts, d in ev:
+        hist[cur] = hist.get(cur, 0) + (ts - prev)
+        segs.append((prev, ts, cur))
+        cur += d
+        prev = ts
+    print("# seconds at k sections running: " +
+          " ".join("%d:%.0f" % (k, v) for k, v in sorted(hist.items())))
+    if tail:
+        running = {}
+        for name, s, e in spans:
+            running[name] = (s, e)
+        print("# stretches with <=2 sections running (>=10 s):")
+        for a, b, k in segs:
+            if k <= 2 and b - a >= 10:
+                who = sorted(n for n, (s, e) in running.items() if s <= a and e >= b)
+                print("#   +%.0f..+%.0f (%.0fs) k=%d  %s" % (a - t0, b - t0, b - a, k, ",".join(who)))
+
+
+def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "stamp":
+        stamp(sys.argv[2] if len(sys.argv) > 2 else None)
+    elif len(sys.argv) >= 3 and sys.argv[1] == "report":
+        report(sys.argv[2], "--tail" in sys.argv[3:])
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

@@ -222,3 +222,11 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
   `options.def` (born empty) and its accessor/parser (R4a); the scalar
   arms arrive with the migration steps.
 - `tests/` — G2, the kit's own tests (R4a's blinded lane).
+
+## Slot runs of `make test` ([TT-JTUNE], 2026-10-08)
+The kit's slot runs of the full suite go through `scripts/perfrun --label NAME
+-- LOGFILE` instead of a raw `make -k -jN -Otarget test` (it rotates the
+parallelism shape, records the timing in the shared ledger, and returns make's
+rc unchanged). Read a red with its `LOGFILE.perfrun` note first: K44-ONLY and
+LOAD-SUSPECT reds are re-run solo per section, not charged to the kit. See
+docs/dev/lanes/BOILERPLATE.md and docs/dev/ttune_measurement.md.
