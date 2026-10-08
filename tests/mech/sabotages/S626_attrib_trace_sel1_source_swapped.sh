@@ -20,5 +20,5 @@ SAB_COUNT=1
 # the plant names the FIRST fired row instead of the giving one, so on
 # `sel1-collapse > sel1-drop` (W_OVF, OVFPF) the record names sel1-collapse
 # for sel1-drop's ROLE cell. fbt (a)'s att-ovfdfa / att-ovfpf detect it.
-SAB_BEFORE='    const char *from = src >= 0                ? pcrec_fit_cells_row_name(cx->fit_seq[src])'
-SAB_AFTER='    const char *from = src >= 0                ? pcrec_fit_cells_row_name(cx->fit_seq[0])   /* SABOTAGE S626 */'
+SAB_BEFORE='    const char *from = src >= ESEL_FROM_ROW    ? pcrec_fit_cells_row_name(cx->fit_seq[src - ESEL_FROM_ROW])'
+SAB_AFTER='    const char *from = src >= ESEL_FROM_ROW    ? pcrec_fit_cells_row_name(cx->fit_seq[0])   /* SABOTAGE S626 */'

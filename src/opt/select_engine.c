@@ -1077,8 +1077,9 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
 }
 
 /* Where the attribution walk's token came from, for the trace's `attrib`
- * record: an index into the fired record (`Ctx.fit_seq`), or one of these. */
-enum { ESEL_FROM_NONE = -3, ESEL_FROM_FORCED = -2, ESEL_FROM_ADMIT = -1 };
+ * record: one of the first three, or `ESEL_FROM_ROW + i` for the fired
+ * record's entry `i` (`Ctx.fit_seq`). */
+enum { ESEL_FROM_FORCED, ESEL_FROM_ADMIT, ESEL_FROM_NONE, ESEL_FROM_ROW };
 
 /* [DEC-FALLBACK] THE ATTRIBUTION WALK (docs/design/dec_fallback.md §1.7):
  * the `<PREFIX>_ENGINE_SEL` token read off the tables' cells. A named engine
@@ -1104,7 +1105,7 @@ static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *f
     for (int i = cx->fit_nseq; i-- > 0; ) {
         const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
         if (c == ESEL_PASS) continue;
-        *from = i;
+        *from = ESEL_FROM_ROW + i;
         return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
                                                     : ESEL_OVERFLOWED_PREFILTER) : c;
     }
@@ -1192,7 +1193,7 @@ static void fit_trace_admit_attrib(Ctx *cx)
 
     int src;
     (void)fit_attrib_walk(cx, fit, &src);
-    const char *from = src >= 0                ? pcrec_fit_cells_row_name(cx->fit_seq[src])
+    const char *from = src >= ESEL_FROM_ROW    ? pcrec_fit_cells_row_name(cx->fit_seq[src - ESEL_FROM_ROW])
                      : src == ESEL_FROM_FORCED ? "forced"
                      : src == ESEL_FROM_ADMIT  ? "admit"
                      :                           "none";
