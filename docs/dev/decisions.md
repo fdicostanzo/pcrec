@@ -9113,6 +9113,8 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 - **First step:** R-9, the R4e′ DESIGN pass plus a D6 panel (design only, no pcrec bytes, no slot). Batches of SIMD sites then come as separate requests.
 - **Consequences:** `[OPT-SIMD]` is re-stated as opened for the kit layer; integration.md §22 R4e′'s trigger cites this addendum, revised on the kit's next design branch.
 
+
+**D147 addendum 12 (Frank, 2026-10-08): N6 is RETIRED from the site manifest — it was misfiled (memfn R-10 Q-R10-1).** N6, `vm_rev_emit`'s "backward walk" on the reverse-deterministic rung, was listed `pending` under Q42/Q54 as if it were a search loop. R-10's scoping (docs/dev/lanes/m6scope_report.md §0, §3.2) found that it is the VM's one-position engine step mirrored: `if (pos > floor && test) { pos--; goto L; }` per node, interleaved with labels, dispatch, replication and capture writes. Its forward twin, `scan_position++; goto L;`, was never listed, because §R4.3.4 excludes engine steps. Migrating it would hand the kit pcrec's own test text in parentheses. Frank: "it was misfiled ... it shouldn't be in the kit." The ruling deletes the manifest row, the `walk-back` vocabulary line and its C12 ceiling row. No compiler code or emitted byte changes, and nothing replaces it. A REAL backward scan over a byte range, if pcrec ever grows one, would be a search site and get its own row then.
 ## D150 — [ARTREV]: a bottom-up artifact review, run as a bounded, iterating experiment beside the optimization loop (Frank, 2026-10-05, ninety-second session)
 
 **Decision.** Frank: "generate a bunch of artifacts then have the code be
