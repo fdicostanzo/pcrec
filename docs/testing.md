@@ -5128,3 +5128,13 @@ trace's other gates are lane-run, not `make test`: `scripts/emit_sweep.py
 --variant all --trace` (B1 gate 656 s at `--jobs 6`, the box shared with a
 running chain), `docs/design/dec_fallback/row_reach.py` (the full 60-cell
 mirror ~3 min at 6 jobs) and `cross_record.py` (one-time, ~6 min at 8).
+
+**B2 (lane decfbB2, 2026-10-08): section (d), THE BOTH-DERIVATIONS ORACLE.**
+Six more trace compilers (`trlowthr` and five `-DPCREC_CAND_NEW_FIRST`
+ones), and 65 witnesses compiled in both orders, each FAILING on a
+`CANDORACLE` line, a signal, the orders' rc/stdout differing, or its
+hand-written `CANDFIT <site> <row>` line missing. 199 checks, ~35 s on the
+Linux dev box (thirteen builds in parallel; measured with a lane run sharing
+the box). The full-corpus run in both orders is lane-run:
+`docs/design/dec_fallback/oracle_sweep.py` (every limit variant x the 14
+arms, plus `--emit-ir`). B5 deletes the oracle and section (d).
