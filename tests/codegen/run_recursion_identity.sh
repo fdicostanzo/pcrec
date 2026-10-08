@@ -1183,7 +1183,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # artifact gains `RX_VM_POSS_ARMS`, and an arm mover's program moves (its (A)
 # excuse is the poss-arms bucket). `615eb811` (the merge of main 8cada7b9) is the lane's last src commit;
 # the manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-615eb811}"   # [ART-POSS-ARMS] SELF-PIN (lane possbuild, 2026-10-07), abi 65->66: the lane's merge of main 8cada7b9 (C4, zero-mover), its last src commit
+# [NULLABLE-ANCH] SELF-PIN (lane nullanch1, 2026-10-08), abi 66->67: the
+# nullability decline reads `empty_admits`, so the five movers (two of them
+# call-bearing: `^(a?)(?1)*$`, `^(?:(?<g>a?)){0}(?&g)*+$`) gain the hybrid
+# prefilter and read `ENGINE_SEL "selected"`; every other artifact moves by the
+# abi digit alone. `8c175f58` is the lane's last src commit; the manager
+# re-pins to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8c175f58}"   # [NULLABLE-ANCH] SELF-PIN (lane nullanch1, 2026-10-08), abi 66->67: the lane's last src commit
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
