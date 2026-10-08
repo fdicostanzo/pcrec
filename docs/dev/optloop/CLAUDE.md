@@ -13,6 +13,12 @@ the implementation's own record goes to `docs/dev/lanes/`.
 
 ## Files
 
+- `nullanch/` — **[NULLABLE-ANCH] STEP 0** (2026-10-08, lane nullanch0,
+  measurement only): the compile-side census of anchored nullable VM
+  patterns the [OPT-4.2] decline keeps off the hybrid, the corrected-predicate
+  candidate (empty-path anchor masks), indicative local timing and an answer
+  differential. Own CLAUDE.md; reading in `../lanes/nullanch0_report.md`.
+
 - `cycle1_analysis.md` — **[OPTLOOP.1.analysis], 2026-09-22, lane optrev**,
   on pcrec-bench's `capability@0.1` at pin `25b1984f` (the `pinconfirm` and
   `fullroster` reports of 2026-09-20). All 128 (pattern, regime) cells
