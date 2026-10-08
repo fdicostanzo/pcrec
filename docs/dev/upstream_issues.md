@@ -900,3 +900,19 @@ not a regression; see `tests/rxtsource/run_rxtsource_tests.sh`'s own
   `tests/recursion/k93.rxt`. Which answer pcrec must give is Frank's ruling
   (D26: what a pattern matches is exact, and PCRE2's default is the usual
   source of truth).
+
+## U19 — python `re` (and libpcre2 10.46): a nested-quantifier near-miss is not verifiable in bounded time ([NULLABLE-ANCH], lane nullanch1, 2026-10-08)
+
+- **Status**: not-a-bug (backtracking cost, no divergence); recorded because it
+  is the reason two corpus blocks carry `# pcre2-only` without a semantic
+  divergence behind them.
+- **Repro**: `re.search(r'^(([a-z]+)*)+$', 'a'*17 + '!')` takes 7.9 s and
+  `re.search(r'^(\s+)*$', ' '*32 + 'x')` 107.8 s in python 3.14 on the Linux dev
+  box; both answer `None`. libpcre2 10.46 answers `-47` (match limit, U4) on
+  both, which is not a verdict.
+- **Impact**: `tests/base/nullable_anch.rxt`'s two GIVE-UP CELLS are marked
+  `# pcre2-only` so `verify_rxt.py` (run by `make test-rxtsource`) does not pay
+  that cost on every run. Their `nomatch` is verified instead by libpcre2 on the
+  LANGUAGE-EQUAL patterns `^[a-z]*$` / `^\s*$` and by python run once offline;
+  both are in `docs/dev/optloop/nullanch/pcre2_transcript.txt`, produced by
+  `pcre2_cells.py` beside it.

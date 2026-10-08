@@ -1590,7 +1590,11 @@ never reach a rung at all.
 
 `select_engine.c`'s fit site derives ONE shared local,
 `lang_nullable_declinable` (`nullable && !has_bref &&
-!has_call && !force_on` — the exact conjuncts [OPT-4.1]'s decline above
+!has_call && !force_on` — since [NULLABLE-ANCH] (abi 67) its first conjunct
+is the E1 fact `empty_admits`, not bare nullability, except on a `${...}`
+pattern, which keeps `nullable` so its `ENGINE_SEL` token holds (F1 of
+`docs/dev/lanes/nullanch0_report.md`, refactor B's to decide; S612 plants
+the old read) — the exact conjuncts [OPT-4.1]'s decline above
 already had, minus the collapsible-repeat kind, which is meaningless off
 a rung: the ordinary path never collapses anything, so there is always a
 concrete prefilter to decline), and reads it into BOTH declines:
