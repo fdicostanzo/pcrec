@@ -13,9 +13,11 @@ and self-check ask. It is NOT an abi event.
 
 ## Summary (a fresh agent resumes from here)
 
-**Status.** B2 is built and committed; its light tier is RESULTS-PENDING
-below (see "Light tier"), and the heavy chain is ARMED on
-`worktrees/decfbB2/.lift` (see "Owed").
+**Status.** B2 is built and committed. The B1-shape gate is CLEAN (0
+movers, every variant and base, trace CLEAN); row_reach, the cross-record,
+the full-mirror oracle sweep and the attempt histogram were still running
+at handback (see "Light tier"). The heavy chain is ARMED on
+`worktrees/decfbB2/.lift` and also waits for the light tier to end.
 
 - **T1 `fit_rungs[]`** (`src/core/compile.c`) gains rows 0-4 (`forcing`,
   `nomem`, `size-term-trial`, `sel1-collapse`, `sel1-drop`) ahead of the six
@@ -97,9 +99,37 @@ PF-DROP cells.
 
 ## Light tier
 
-RESULTS-PENDING: filled from `worktrees/decfbB2/build/b2/light/` when the
-light chain (`build/b2/light.sh`) ends; its trailer is
-`build/b2/light/trailer.log` (`== LIGHT DONE`).
+Run by `build/b2/light.sh` (detached, one instrument at a time, `--jobs 8`),
+against `1c345b51` (src identical to the tip). Trailer:
+`worktrees/decfbB2/build/b2/light/trailer.log`, ends `== LIGHT DONE`.
+
+- **The B1 gate shape: CLEAN, 499 s.** `emit_sweep.py --ref a29f02dd
+  --tree-rev HEAD --variant all --trace --trace-order fallback=ordered
+  --jobs 8` (log `build/b2/light/sweep.log`): 90 stream cells (5 variants x
+  2 bases x 9 streams), every one `movers=0 asymmetric=0`, the `stderr`
+  stream included (population 5,423, refusal tags 422/421 both sides);
+  every variant's self-check PASSED and trace CLEAN (the `fallback` slot
+  ORDERED, the rest SET; lowthr 355,346 / 128,252 records per arm, equal
+  both sides); the trace build moved 0 stdout bytes against the default
+  build in every variant; fallback-trace site keys 8/8. No
+  `--trace-declared` was needed: B2 adds no `CANDTRACE` record (its oracle
+  prints `CANDFIT`/`CANDORACLE`, which the trace tooling does not read), and
+  the old-first oracle ran inside every trace compile of the sweep without
+  an abort. **Not an abi event: 0 default-build bytes moved.**
+- **OWED (still running when this report was committed), each with its
+  verdict line:** `row_reach.py --ref a29f02dd --rev HEAD`
+  (`rr_gate.log`, `ROW_REACH: CLEAN`); `row_reach.py --ref HEAD --rev HEAD`
+  (`rr_mirror.log`) feeding `cross_record.py` (`xrec.log`, AGREE);
+  **`oracle_sweep.py` over the full mirror in both orders** (`oracle.log`,
+  `ORACLE_SWEEP: CLEAN`); `attempt_hist.py --ref a29f02dd --rev HEAD`
+  (`hist.log`, exit 0 = identical; its probe anchors may need
+  `--child-patches` if B2's inserted catch-branch lines moved one). All
+  under `build/b2/light/`.
+- Already in hand for the oracle: `run_fallback_table.sh` (d) green in both
+  orders (65 witnesses, every site reached); a stride-40 `oracle_sweep.py`
+  sample (137 cases x plain/lowsize x base/pfc/no-pf, with `--emit-ir`)
+  CLEAN in both orders, 1,644 compiles each, every site hit, the two orders
+  identical.
 
 ## Mech rows (S627-S645), lane check
 
@@ -241,7 +271,8 @@ B3 2 B4 5 B5 2 (B2's two are applied). `scripts/m6read_check_sab_anchors.py`:
   `scripts/perfrun --label decfbB2 --timeout 5400 -- "$L/test.log"`; `make
   strict`; `make alloc`; `make testscripts`; mech `VALIDATE_ONLY=1`; then
   the 50 derived mech rows (S627-S645, S421, S423 and the 29 re-runs).
-- **Waiter:** `build/land/waiter.sh`, a `nohup setsid` loop on
+- **Waiter:** `build/land/waiter.sh`, a `nohup setsid` loop that waits
+  for `== LIGHT DONE` in `build/b2/light/trailer.log` AND
   `worktrees/decfbB2/.lift`.
 - **Verdicts:** `build/land/trailer.log` (one `rc=` per stage, ends `==
   CHAIN DONE`); make test: `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'
