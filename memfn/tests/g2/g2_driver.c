@@ -120,6 +120,13 @@ static long sv_sites[G2_NV], sv_checks[G2_NV], sv_sfail[G2_NV], sv_cls[G2_NV][8]
 /* per form id (the generator's FORMID numbering): sites / checks / failed sites */
 #define NFID 32
 static long fd_sites[NFID], fd_checks[NFID], fd_sfail[NFID];
+/* lane g2pf: the PF shape. Per cell (hard sites): sites / checks / positive;
+ * checks whose lo was PAST n; per edge (the pf-edge class): sites / checks /
+ * positive / failed sites; the table-disagrees sites (a fault is the only
+ * check) */
+static long pf_sites[5], pf_checks[5], pf_pos[5], pf_over[5], pf_fail[5];
+static long pfe_sites[G2_NPFE], pfe_checks[G2_NPFE], pfe_pos[G2_NPFE], pfe_sfail[G2_NPFE];
+static long tb_sites, tb_checks, tb_faults;
 
 static int lab_index(const char *l)
 {
@@ -354,6 +361,15 @@ static int call_on(g2_fn fn, int layout, int align, const uint8_t *subj, size_t 
     return 0;
 }
 
+/* a POSITIVE outcome of a PF site: the range was non-empty and the result is
+ * not the miss value (on_miss is NULL on most PF sites, so `missed` says
+ * nothing) */
+static int pf_positive(const g2_site *d, const struct g2_out *o, size_t n, size_t lo)
+{
+    if (!(lo + d->end_back < n)) return 0;
+    return d->noonmiss ? o->res != g2_missv(d->miss_mode, n) : !o->missed;
+}
+
 static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl, int hit_at)
 {
     static int align_rot;
@@ -372,6 +388,10 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             if (!sig) keep = g2_ref_check(cur, &cur_it, cur_alive, subj, n, lo, fl, &o, why, sizeof why);
             else snprintf(why, sizeof why, "signal %d (a read outside [fl, n))", sig);
             pd_checks[cur->pend]++;
+            if (cur->pfedge < G2_NPFE) {
+                pfe_checks[cur->pfedge]++;
+                if (keep && !sig && cur->pfcell && pf_positive(cur, &o, n, lo)) pfe_pos[cur->pfedge]++;
+            }
             if (keep) { cur_alive = keep; if (g_strict) n_pass++; }
             else {
                 pd_fail[cur->pend]++;
@@ -389,6 +409,20 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
         lab_checks[lab_index(cur->label) >= 0 ? lab_index(cur->label) : 0]++;
         if (cur->fam == G2_FAM_SEM && cur->vfield < G2_NV) sv_checks[cur->vfield]++;
         if (cur->fid < NFID) fd_checks[cur->fid]++;
+        if (cur->tabbad) {
+            /* a table that disagrees with the set is a caller defect: the
+             * answer is undefined (the set bits are "the truth both must
+             * agree with"), so nothing is asserted but that the rendered
+             * code stays inside [fl, n) and the table */
+            tb_checks++;
+            if (sig) {
+                char w[64];
+                snprintf(w, sizeof w, "signal %d (a read outside [fl, n))", sig);
+                report("FAULT", subj, n, lo, fl, layout, w);
+                n_fail++; n_fault++; tb_faults++; cur_fail++;
+            } else n_pass++;
+            continue;
+        }
         if (sig) {
             char w[64];
             snprintf(w, sizeof w, "signal %d (a read outside [fl, n))", sig);
@@ -413,7 +447,8 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
              * per combination so an all-miss population cannot pass
              * unnoticed (K35) */
             int pos;
-            switch (cur->handoff) {
+            if (cur->pfcell) pos = pf_positive(cur, &o, n, lo);
+            else switch (cur->handoff) {
             case G2_H_RETURN:  pos = o.res != g2_missv(cur->miss_mode, n); break;
             case G2_H_BOOL:    pos = o.res == 1; break;
             case G2_H_ON_CAND: pos = o.nlog > 0; break;
@@ -423,6 +458,11 @@ static void check(g2_fn fn, const uint8_t *subj, size_t n, size_t lo, size_t fl,
             int li = lab_index(cur->label);
             if (li >= 0 && cur->npred <= 40) { lab_small[li]++; if (pos) lab_pos[li]++; }
             if (cur->fam < G2_NFAM) { fam_checks[cur->fam]++; fam_pos[cur->fam] += pos; }
+            if (cur->pfcell && cur->pfcell < 5) {
+                pf_checks[cur->pfcell]++;
+                pf_pos[cur->pfcell] += pos;
+                pf_over[cur->pfcell] += lo > n;
+            }
             cur_pos += pos;
             cur_checks++;
             if (cur->miss_mode == 4) { mt_checks++; mt_pos += pos; }
@@ -480,7 +520,7 @@ static int admit(const g2_site *d, size_t n, size_t *lo, size_t *fl)
 
 static void instance(const uint8_t *subj, size_t n, size_t lo, size_t fl, int hit_at)
 {
-    if (lo > n) lo = n;
+    if (lo > n && !cur->lo_over) lo = n;
     if (fl > n) fl = n;
     if (!admit(cur, n, &lo, &fl)) { n_skipped_precond++; return; }
     check(cur->fn, subj, n, lo, fl, hit_at);
@@ -663,15 +703,21 @@ static void run_site(const g2_site *d)
                 if (rn(2) && (long long)n >= hi_end) lo = n - (size_t)hi_end;   /* exactly at the guard */
             }
             instance(subj, n, lo, pick_fl(lo, n), hit_at);
+            /* lo PAST n is legal and means EMPTY (Q-G2-1): the sites that
+             * state it (PF cells 3/4, empty NOP) are also run with it */
+            if (d->lo_over) instance(subj, n, n + 1 + rn(8), pick_fl(n + 1, n), -1);
         }
     }
     if (d->pend) {
+        if (d->pfedge < G2_NPFE) { pfe_sites[d->pfedge]++; pfe_sfail[d->pfedge] += cur_fail > 0; }
         pd_sites[d->pend]++;
         if (cur_fail) pd_sfail[d->pend]++;
         if (g_strict) { n_sites_run += (n_pass + n_fail) > before; n_sites_failed += cur_fail > 0; }
         return;
     }
     n_sites_run += (n_pass + n_fail) > before;
+    if (d->tabbad) tb_sites++;
+    if (d->pfcell && d->pfcell < 5) { pf_sites[d->pfcell]++; pf_fail[d->pfcell] += cur_fail > 0; }
     if (cur_fail) {
         n_sites_failed++;
         int li = lab_index(d->label);
@@ -681,7 +727,7 @@ static void run_site(const g2_site *d)
         if (d->fid < NFID) fd_sfail[d->fid]++;
     }
     if ((n_pass + n_fail) > before) census_site(d, &cur_it);
-    if ((n_pass + n_fail) > before && !cur_pos && !witness_mode && d->op != G2_OP_SKIP) {
+    if ((n_pass + n_fail) > before && !cur_pos && !witness_mode && d->op != G2_OP_SKIP && !d->tabbad) {
         n_sites_nopos++;
         if (unsat_by_construction(d)) n_sites_unsat++;
         else if (has_overlap(d)) n_sites_overlap++;
@@ -931,6 +977,21 @@ int main(int argc, char **argv)
     }
     for (int k = 0; k < NFID; k++)
         if (fd_sites[k]) printf("G2 form %d: sites %ld checks %ld failed-sites %ld\n", k, fd_sites[k], fd_checks[k], fd_sfail[k]);
+    for (int c = 1; c <= 4; c++) {
+        printf("G2 pf cell %d: sites %ld checks %ld positive %ld negative %ld lo-past-n %ld failed-sites %ld\n", c,
+               pf_sites[c], pf_checks[c], pf_pos[c], pf_checks[c] - pf_pos[c], pf_over[c], pf_fail[c]);
+        if (!pf_sites[c] || !pf_pos[c] || pf_checks[c] == pf_pos[c] || (c >= 3 && !pf_over[c])) {
+            printf("G2 coverage MISSING: pf cell %d ran no site, or never both outcomes%s\n", c, c >= 3 ? ", or never lo past n" : "");
+            miss++;
+        }
+    }
+    for (int e = 1; e < G2_NPFE; e++)
+        if (e == G2_PFE_TABBAD)
+            printf("G2 pf edge %s: sites %ld checks %ld faults %ld (answer undefined: only a fault is checked)\n",
+                   g2_pfe_name(e), tb_sites, tb_checks, tb_faults);
+        else
+            printf("G2 pf edge %s: sites %ld checks %ld positive %ld failed-sites %ld\n", g2_pfe_name(e),
+                   pfe_sites[e], pfe_checks[e], pfe_pos[e], pfe_sfail[e]);
     for (int c = 1; c < G2_NPEND; c++)
         printf("G2 pending %s: sites %ld checks %ld failed %ld faults %ld failed-sites %ld (%s)\n", g2_pend_name(c),
                pd_sites[c], pd_checks[c], pd_fail[c], pd_fault[c], pd_sfail[c], g_strict ? "ENFORCED: counted as hard checks" : "G2_STRICT_HOOKS=0 diagnostic: bucket only");

@@ -114,7 +114,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
      * ON_MISS"), so a miss may run on_miss with the result unwritten. G2
      * observes that only where its on_miss text leaves and reads no result
      * (noread: the generator's mode-3 text) */
-    int unwritten_ok = d->op == G2_OP_ALL && d->handoff == G2_H_ASSIGN && d->noread;
+    int unwritten_ok = d->handoff == G2_H_ASSIGN && d->noread;    /* lane g2pf: PF cell 1 too */
     int miss_res_ok = o->res == missv || (unwritten_ok && o->res == G2_SENT);
 
     if (d->handoff == G2_H_ADVANCE) {
@@ -144,6 +144,36 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
         return 1;
     }
 
+    /* lane g2pf: the in-place advance (memfn.h `result`: the lvalue written;
+     * here its text IS `lo`'s). The outcome is lo's value at the end:
+     * empty + NOP leaves lo as it was (lo > n included, nothing written);
+     * empty + MISS, or no candidate, leaves the miss value; a hit leaves the
+     * position (any occurrence under DISCARD). on_miss, when stated, ran
+     * exactly on a miss; with the hook NULL nothing ran. */
+    if (d->inplace) {
+        int nop_ = d->empty == G2_EMPTY_NOP;
+        size_t want_res;
+        int want_missed;
+        if (!nonempty) {
+            want_res = nop_ ? lo : missv;
+            want_missed = !nop_;
+        } else {
+            size_t nc_ = cands(d, it, 0, S, s, n, lo, hi, fl, cv, 256);
+            int discard_ = d->use == G2_USE_DISCARD;
+            if (nc_ && (discard_ ? is_member_of(cv, nc_ < 256 ? nc_ : 256, o->res) : 1)) {
+                want_res = discard_ ? o->res : cv[0];
+                want_missed = 0;
+            } else {
+                want_res = missv;
+                want_missed = 1;
+            }
+        }
+        if (o->res == want_res && (d->noonmiss || o->missed == want_missed)) return 1;
+        snprintf(why, whyn, "IN-PLACE lo: kit lo=%zu missed %d, want lo=%zu missed %d (%s)", o->res,
+                 o->missed, want_res, d->noonmiss ? 0 : want_missed, nonempty ? "range" : "empty range");
+        return 0;
+    }
+
     if (!nonempty) {
         /* §14.4: MISS = as a miss; NOP = nothing written, nothing run */
         int nop = d->empty == G2_EMPTY_NOP;
@@ -155,7 +185,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
             if (o->res == 0) return 1;
             break;
         case G2_H_ASSIGN:
-            if (nop ? (o->res == G2_SENT && !o->missed) : (miss_res_ok && o->missed)) return 1;
+            if (nop ? (o->res == G2_SENT && !o->missed) : (miss_res_ok && (d->noonmiss || o->missed))) return 1;
             break;
         case G2_H_ON_MISS:
             if (o->missed == !nop) return 1;
@@ -216,7 +246,7 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
         snprintf(why, whyn, "BOOL: kit %zu, want %d", o->res, hit);
         return 0;
     case G2_H_ASSIGN:
-        if (hit ? (pos_ok && !o->missed) : (miss_res_ok && o->missed)) return 1;
+        if (hit ? (pos_ok && !o->missed) : (miss_res_ok && (d->noonmiss || o->missed))) return 1;
         snprintf(why, whyn, "ASSIGN: kit %zu missed %d, want %s%zu", o->res, o->missed,
                  hit ? "" : "miss ", hit ? want : missv);
         return 0;

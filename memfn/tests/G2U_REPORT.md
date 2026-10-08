@@ -554,3 +554,149 @@ ones (session-root CLAUDE.md, memory index, git status snapshot). I ran no `git`
 read no kit source, `cd` only inside backgrounded subshells (session cwd unchanged; some
 single-command `cd` into the cell's tests dir for edits). Budget: 3 `--quick` runs (one extra
 launch failed at once for a missing TMPDIR and ran nothing), 0 probe compiles, no timing, no full run.
+
+## 9. G2pf addendum (the PF shape, 2026-10-07, same cell, D27-blinded)
+
+Source: integration.md 15.7 `[R4g]` notes, 14, memfn.h. The kit now serves the
+PF shape through two specialised rows; G2 had no family that generated it, so
+no G2 site reached them.
+
+### 9.1 The family and its cells (family `pf`, `g2_gen.c` `pf_cell`/`pf_edge`)
+
+FIND / STMT / ASSIGN, one REQUIRED SET term at offset 0, forward, use POSITION,
+`result` the position, floor / note NULL. Each cell fills a batch of its own.
+
+| cell | set | end_back / empty | on_miss | miss | result |
+|---|---|---|---|---|---|
+| 1 | one member | 0 / EXCLUDED | leaving (goto or `return`), `on_miss_leaves` 1, reads no result | any (0, 4, 6, 1, 2; NULL is the `miss` edge) | `res` |
+| 2 | one member | 1 / EXCLUDED | none | text `n - 1` | `res` |
+| 3 | multi-member, `table_ref` | 0 / NOP | none | `MF_MISS_N` or `n`'s text | text `lo` (in place) |
+| 4 | multi-member, `table_ref` | 1 / NOP | none | text `n - 1` | text `lo` |
+
+Reference (`g2_ref.c`, new `inplace` branch, from 14.3/14.4 and the header):
+cells 1/2 as the existing ASSIGN rule; cells 3/4: empty NOP leaves `lo` as
+passed (`lo > n` included, which the driver now also runs: `lo_over`), a hit
+leaves the leftmost member of `[lo, n - end_back)`, no member leaves the miss
+value. Cell 1's miss path is judged by `on_miss` having run and NOT by the
+result (see 9.5, finding 2). The tables G2 emits hold 1 for a member, 0
+otherwise, built from the set bits.
+
+### 9.2 Edges (counted populations, outcome: rendered and answer-equal, or refused naming the field)
+
+Class `pf-edge` (the fifth ENFORCED class; `pf_edge_mask` decides from G2's own
+fields, so semantic variants of a PF seed classify the same way):
+`miss-not-range-end` (cells 2-4, plus NULL `miss` on cell 1), `result-not-lo`
+(cells 3/4, result `res`), `stated-floor` (text `fl` and `"0"`), `stated-note`
+(note + note_tag, gate open and closed), `stated-result_decl` (every cell),
+`stated-on_miss` (cells 2-4, leaving and not). Not an assertion of an answer:
+`table-disagrees` (cells 3/4, table bytes flipped against the set). The kit is
+handed only the table's NAME, so it cannot refuse on contents; the answer is
+UNDEFINED by the contract ("the set bits are the truth both must agree
+with"), so G2 asserts only that the rendering compiles and, run on the guarded
+layouts, does not fault (`tabbad`: no reference call). A refusal would also be
+lawful (counted, nothing asserted). A table with TRUTHY values other than 1 is
+not tested: the contract does not say the table is 0/1.
+Also changed: the poison differential no longer poisons an UNSTATED note (a
+NULL note poisoned is a stated note, i.e. the `stated-note` edge).
+
+### 9.3 Floors added (`run_g2.sh`)
+
+`FAM_FLOORS` `pf:260`; `FLOOR_FAM_FORMS` 4 to 6; `FORM_FLOORS` `pf_memchr:380
+pf_walk:400`; `PF_FAM_FORM_FLOORS` `pf_memchr:110 pf_walk:150` (the family's own
+sites per form); `QUICK_FORM_CHECK_FLOORS` `pf_memchr:1300000 pf_walk:2150000`
+and `FULL_FORM_CHECK_FLOORS` `pf_memchr:3200000 pf_walk:5300000` (DERIVED, quick
+x 2.5); `PF_EDGE_CASE_FLOORS` (generator cases per edge), `PF_EDGE_RUN_FLOORS`
+(sites the driver ran), `PF_CELL_FLOORS` (sites / positive / negative /
+lo-past-n per cell), `FLOOR_CLS_EDGE` 375. The libc leg prints and judges
+`MEMFN_LIBC` per cell (`PFBATCH` tags).
+New form ids seen (opaque): `pf_memchr` (cells 1 and 2, 120 family sites) and
+`pf_walk` (cells 3 and 4 and the table that disagrees, 168). Four PF seeds
+(cells 1-4) joined the semantic differential; the poison differential covers
+every hard PF site. PF sites draw from their own RNG stream and id range, so
+no older site moved (fam census, floors, W1/W2 numbers of the older families
+are unchanged).
+
+### 9.4 Quick-run numbers (seed 20261005, gcc-15, taskset 12-15; 2 of 3 runs used)
+
+- checks passed 44,964,871, failed 871: ALL 871 are the poison finding (9.5,
+  finding 1); `answer checks failed 0` (gcc-15 44,555,571 / 0, 11,282 sites,
+  `coverage-missing 1` = the quick alignment axis as before); K1 377,000/0;
+  libc 107 batches agree, 0 unbuilt.
+- family `pf`: 288 sites, 1,052,125 checks (808,736 positive / 243,389
+  negative), failed-sites 0; forms `pf_memchr:120 pf_walk:168`.
+- cells (all families, hard sites): 1: 260 sites, 906,327 checks (883,352 /
+  22,975); 2: 212, 724,626 (707,102 / 17,524); 3: 254, 1,213,830 (785,656 /
+  428,174), lo past n 397,659; 4: 236, 1,117,545 (711,284 / 406,261), lo past n
+  365,701.
+- edges (generator cases; driver sites / checks): miss-not-range-end 138 (all
+  rendered; 138 / 620,481), result-not-lo 56 (56 rendered; 298,240),
+  stated-floor 84 (84 rendered; 393,630), stated-note 48 (48 rendered;
+  224,978), stated-result_decl 44 (44 REFUSED naming `result_decl`),
+  stated-on_miss 48 (24 rendered, 24 refused naming `on_miss`; 112,432),
+  table-disagrees 48 (48 rendered; 255,636 checks, 0 faults).
+- class `pf-edge`: 418 cases (350 rendered, 68 refused naming), 0 failed;
+  `ENFORCED-CLASS cases: 1563` (was 1103). Per-cell libc: cells 1 and 2
+  `memchr`, cells 3 and 4 `none`, each equal to its `nm -u`.
+- W1 fires (26,136 / 1,133,699 / 44,079); W3 as before; W2 mutation 7 reading
+  below the candidate: 600 mutated, 571 killed (floor 550); mutation 5: 3,244
+  of 3,351 killed, mutation 6: 2,686 of 3,351 (floor 65%).
+
+### 9.5 KIT FINDINGS (not G2-side; nothing worked around)
+
+1. **Stated `ret_pred` / `npred`+`preds` on a FIND site move the PF rows' text**
+   (871 poisoned renderings; `pf_memchr`/`pf_walk` become `generic`; every
+   other form leaves the text identical). memfn.h reads those fields only on
+   ALL_PRESENT. Reproducer: cell 3 (`FIND/STMT/ASSIGN`, `pred` one REQUIRED
+   SET {a,b} at 0 with `table_ref`, `empty` NOP, end_back 0, `result` = `lo` =
+   "lo", `miss` MF_MISS_N, `on_miss` NULL, floor/note NULL, policy
+   PORTABLE_ONLY), `ret_pred` 2 (or `npred` 2 + `preds` junk): expected the same
+   text as with `ret_pred` MF_NO_PRED / `npred` 0 (`pf_walk`), got the generic
+   row's text. Cost is the specialised form, not the answer. If the kit rules
+   it by design (rows decline any stated field they do not honour, K96), G2's
+   poison table for those two fields must say so; today it is red.
+2. **Cell 1 leaves the result UNWRITTEN on a miss even with a stated `miss`
+   and a leaving `on_miss` that reads it.** Reproducer: `FIND/STMT/ASSIGN`, SET
+   {0xf4} at 0 REQUIRED, end_back 0, EXCLUDED, `miss` "n", `on_miss` `goto L;`
+   (`on_miss_leaves` 1) with `L:` storing `res`, `result` "res" (caller
+   declares `size_t res = SENTINEL;`), subject "\xea", lo 0, n 1: memfn.h
+   ASSIGN ("`result_decl result = ...;` then, on a miss, `on_miss`"; `miss` =
+   "the value written when no cand exists") says `res` == 1; `pf_memchr` leaves
+   SENTINEL. 15.7 `[R4g]` and the cell definition ("on none, on_miss runs")
+   treat the miss value as unobservable, so G2 models cell 1's `on_miss` as one
+   that reads no result and asserts only that it ran. Needs a ruling: either
+   the contract (memfn.h) says the miss is a wildcard under `on_miss_leaves` 1,
+   or the row must write it. (Also: the row renders with `miss` NULL, which is
+   why a NULL `miss` on cell 1 is the `miss` edge and not the miss-unstated
+   class.)
+3. (Contract note, not a defect) `mf_emit`/`mf_define` select `pf_memchr`
+   although `result_decl` is stated; `mf_use` then refuses it, naming
+   `result_decl` (R2), where the generic row would serve it. G2 treats a
+   stated `result_decl` as an edge (refusal naming it is lawful), but it means
+   a caller that states `result_decl` on a PF site gets a refusal, not the
+   generic row.
+
+### 9.6 OWED full-run expectations
+
+    TMPDIR=<scratch> taskset -c <cores> gnutimeout 7200 bash memfn/tests/run_g2.sh --seed 20261005
+
+`ENFORCED-CLASS cases: 1563` (generator count, tier-independent), the five
+`class X: n (floor F)` lines (`pf-edge` 418, floor 375); `family pf` 288 sites,
+forms `pf_memchr:120,pf_walk:168`; `FORMID` lines `pf_memchr rendered=422`,
+`pf_walk rendered=449`; the PF cell and edge lines above; `FULL_FORM_CHECK_FLOORS`
+for `pf_memchr` 3,200,000 and `pf_walk` 5,300,000 (DERIVED, confirm or re-pin);
+`checks failed` = 871 until finding 1 is ruled, then 0; the older families'
+numbers as in section 8 (unchanged).
+
+### 9.7 DISCLOSURE
+
+Files outside the cell seen: only the spawn-time auto-injected ones (the
+session-root `CLAUDE.md`, the memory index, the git status snapshot) and, read
+by me, nothing else outside the cell. The cell's own `memfn/include/CLAUDE.md`
+was auto-injected when I read `memfn.h`. No `git`, no `make`, no kit source, no
+lane report beyond the cell's own `G2U_REPORT.md`; I did use `cd <cell path> &&`
+in single foreground commands (inside the cell only) and in the backgrounded
+run launches, never outside the cell. Budget: 2 `--quick`
+runs (taskset 12-15, TMPDIR in the cell's `.scratch/tmp`); probe compiles 7
+(generator x4, driver+batches x3, each one gcc command, `taskset -c 12-15`);
+no timing run, no full run. Scratch: `.scratch/t1`, `.scratch/run1.log`,
+`.scratch/run2.log`.
