@@ -321,7 +321,15 @@ typedef struct {
        Anything else is OTHER, which only a row that parenthesizes and braces
        serves (the generic row). A lexical check sees text, not a macro's
        expansion: an identifier that is a macro is pcrec's to keep
-       parenthesized (IDENT's same boundary)                                  */
+       parenthesized (IDENT's same boundary).
+       The `member` hook is OPAQUE here (advtarget, 2026-10-08): pcrec's text
+       (EDGE's `scan_test` exists only at render) is pasted parenthesized,
+       `&& (member)`, so its own shape never matters and no class is claimed
+       for it. R4h's FROZEN TARGET is this render (the caller normalizes TO
+       it): `ind while ((more)[ && count < <span_hi>ULL] && (member)) {`,
+       then `ind     step;`, `ind     count++;` (only with a counter) and
+       `ind }`, the cap an unsigned 64-bit literal; one file per in-loop
+       shape under tests/memfn/pins/r4h_target/, checked byte for byte    */
     const char *cursor;     /* the cursor lvalue                                */
     const char *step;       /* pcrec's step statement (`pos++;`, `pos--;`, …)   */
     const char *more;       /* pcrec's continue condition                       */

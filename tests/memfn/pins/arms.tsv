@@ -109,3 +109,24 @@ generic	adv-kit-count	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495
 generic	adv-kit-count	use	277	07bdad87e72dc136fb5d255a02e5aa47cfe84d1ee94d50adc12038659035d2b3
 generic	adv-caller-count	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	adv-caller-count	use	238	b0ba17b28900e2fa9e80ce1a84452e90bbdd077cea5086fff5b341b14362452e
+# advtarget (2026-10-08): R4h's FROZEN TARGET, one fixture per in-loop ADVANCE
+# shape (STAY fwd/rev/view, EDGE unbounded and counted fwd/rev, VMSPAN with
+# and without `it_`) with the hook texts pcrec writes today, its member text
+# opaque. Each .use is ALSO committed verbatim as pins/r4h_target/<fixture>.c,
+# compared byte for byte by run_arm_pins.sh check 8.
+generic	adv-stay-fwd	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-stay-fwd	use	148	8e571abab638f2eef329c971782d9c16e8ba4b4590e46ac28bafb33076da3e7f
+generic	adv-stay-rev	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-stay-rev	use	167	2fb117813058848f16fb6abb095e0e711c8909307532f9a48d437b01ada1f3a0
+generic	adv-stay-view	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-stay-view	use	152	76dfb8d6fb2061aff81896a9a608bb158578672f2fe8c2c73b9a3fc488e703b8
+generic	adv-edge-unbounded	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-edge-unbounded	use	154	b7cf01ada1fe9e4512fd926297cb3471d21b23826c47a9757690ed354204c25f
+generic	adv-edge-counted-fwd	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-edge-counted-fwd	use	214	c12129646f80a1d5523d0a55eb99edaeaec641a3172b85ced65e58f868c2de16
+generic	adv-edge-counted-rev	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-edge-counted-rev	use	237	0194e4f73a9c2876101f06a4d32815387bb7aa1ef60404cf86672d2622cfbff0
+generic	adv-vmspan-it	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmspan-it	use	180	1d4384809b36b73a2fbbdd9354e5229010c673881f9738fccdba2aa4f521d858
+generic	adv-vmspan	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	adv-vmspan	use	147	5b42d35420f0b32ef300ede24b653020b450782583e17fdfe7ed89fdcdeb8baa
