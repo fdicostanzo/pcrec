@@ -569,6 +569,12 @@ shape pflw-sizecap VM_PREFILTER_LANG_WHY 'size cap retry, exact N > M' exact '(\
 # RX_VM_PREFILTER_WHY: the hybrid DROP form (the size cap refused the hybrid
 # and the retry dropped the prefilter), same shape rule.
 shape pwhy-sizecap VM_PREFILTER_WHY 'size cap retry, hybrid N > M' hybrid '(\p{Xwd})' -e utf8
+# [decfbB3] the same drop with the collapse denied, so drop-prefilter is the
+# FIRST size rung to fire: its own `sets` carry is then the only source of the
+# figures (on the default witness prefilter-collapse carried them first, and a
+# drop row that stopped carrying still printed that earlier attempt's N > M).
+shape pwhy-sizecap-first VM_PREFILTER_WHY 'size cap retry, hybrid N > M (first rung)' hybrid \
+      '(\p{Xwd})' -e utf8 -fno-prefilter-collapse
 
 # RX_VM_PREFILTER_WHY is the DROP form's alone: absent where a prefilter
 # survives (it explains a "none", never a hybrid).
