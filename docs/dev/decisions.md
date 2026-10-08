@@ -9115,6 +9115,17 @@ Frank gave this direction to the kit session (memfn `responses.md` N-1, on the R
 
 
 **D147 addendum 12 (Frank, 2026-10-08): N6 is RETIRED from the site manifest — it was misfiled (memfn R-10 Q-R10-1).** N6, `vm_rev_emit`'s "backward walk" on the reverse-deterministic rung, was listed `pending` under Q42/Q54 as if it were a search loop. R-10's scoping (docs/dev/lanes/m6scope_report.md §0, §3.2) found that it is the VM's one-position engine step mirrored: `if (pos > floor && test) { pos--; goto L; }` per node, interleaved with labels, dispatch, replication and capture writes. Its forward twin, `scan_position++; goto L;`, was never listed, because §R4.3.4 excludes engine steps. Migrating it would hand the kit pcrec's own test text in parentheses. Frank: "it was misfiled ... it shouldn't be in the kit." The ruling deletes the manifest row, the `walk-back` vocabulary line and its C12 ceiling row. No compiler code or emitted byte changes, and nothing replaces it. A REAL backward scan over a byte range, if pcrec ever grows one, would be a search site and get its own row then.
+
+**D147 addendum 13 (Frank, 2026-10-08): what "a SIMD form is faster" means. PRELIMINARY: Frank's words, "preliminary and can be revisited".** The definition: *a SIMD form is faster when, in a same-host, same-window pcrec-bench run against its scalar twin, its target cells' median whole-call time improves beyond the noise band, no other cell regresses beyond the floor, and that holds on each instruction-set tier where the form would be selected.* Its parts:
+- **The baseline is the scalar twin.** The same pattern, compiler and host, built with and without `-fmemfn-simd`. Not other engines, not an older pcrec.
+- **The trap.** Many scalar sites already call glibc `memchr`/`memcmp`, which are SIMD internally on x86. At those sites the bar is "the kit's inline SIMD beats libc's SIMD plus the call". Expect the wins at sites libc cannot serve: byte-set classifiers, fused gate+verify, multi-byte classes.
+- **A declared population, two-sided.** The target cells' median gain clears the noise band, and no other cell regresses beyond the floor. Short-call costs are read as absolute deltas, never percentages (D144 addendum 1). A form that wins long scans but costs short calls is a trade, not a win.
+- **Whole-call, not kernel.** Measured at the matcher call on pcrec-bench (D144 addendum 4); kernel microbenchmarks are directional.
+- **Per instruction-set tier.** A form is judged as same-host ratios on each tier it would be selected for (SSE, AVX2, AVX-512, NEON). It may be accepted on one tier and declined on another (Zen 1 runs AVX2 as 2×128).
+- **Net of costs.** Code-size growth and the portability restriction count. The named-benefit escape (addendum 11) needs that benefit measured.
+- **Default-ON is a stricter, separate bar:** no regression anywhere on the whole bench, plus a portability decision.
+
+**Revisit when:** the first SIMD batch's bench reading shows the definition mis-sorting a form, or R-9's design pass or panel proposes a better measurement regime.
 ## D150 — [ARTREV]: a bottom-up artifact review, run as a bounded, iterating experiment beside the optimization loop (Frank, 2026-10-05, ninety-second session)
 
 **Decision.** Frank: "generate a bunch of artifacts then have the code be
