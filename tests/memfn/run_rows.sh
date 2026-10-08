@@ -16,11 +16,10 @@ export ROWS_FLOOR=13       # rows of both tables (9 arms + 4 runcmp, N4)
 export KIT_SRC_FLOOR=9     # memfn/src/*.c
 export FIXTURE_FLOOR=27    # tests/memfn/arm_fixtures.c fixtures
 CC="${CC:-cc}"
-for f in build/pcrec build/libpcrec.a; do
-    if [ ! -x "$ROOT_DIR/$f" ] && [ ! -f "$ROOT_DIR/$f" ]; then
-        echo "FAIL: $f is absent: run make first"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1
-    fi
-done
+PCREC="$ROOT_DIR/build/pcrec"
+if [ ! -x "$PCREC" ] || [ ! -f "$ROOT_DIR/build/libpcrec.a" ]; then
+    echo "FAIL: build/pcrec or build/libpcrec.a is absent: run make first"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1
+fi
 T="$(mktemp -d "${TMPDIR:-/var/tmp}/memfnrows.XXXXXX")"
 trap 'rm -rf "$T"' EXIT
 python3 "$ROOT_DIR/tests/memfn/rows_check.py" --root "$ROOT_DIR" --cc "$CC" --tmp "$T"
