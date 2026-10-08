@@ -588,9 +588,9 @@ def-const	EM_ANY	src/facts/widths.c:78-78
 def-func	em_cat	src/facts/widths.c:81-89	
 def-func	em_plus	src/facts/widths.c:92-100	
 def-func	em_alt	src/facts/widths.c:105-113	
-def-func	em_set	src/facts/widths.c:116-156	
-def-func	pcrec_pattern_empty_masks	src/facts/widths.c:161-164	
-def-func	pcrec_empty_masks_admit	src/facts/widths.c:167-170	
+def-func	em_set	src/facts/widths.c:116-157	
+def-func	pcrec_pattern_empty_masks	src/facts/widths.c:162-165	
+def-func	pcrec_empty_masks_admit	src/facts/widths.c:168-171	
 def-type	LeafModel	src/gen/clskit.c:58-64	
 def-table	LEAF	src/gen/clskit.c:66-74	
 def-data	Q16	src/gen/clskit.c:152-152	

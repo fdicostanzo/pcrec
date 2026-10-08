@@ -118,7 +118,8 @@ static unsigned em_set(const Ast *a)
     unsigned acc = EM_ANY;
     for (;;) {
         switch (a->k) {
-        case A_WCLASS: case A_CLASS: return 0;
+        case A_WCLASS: return 0;   /* a wide class consumes a character */
+        case A_CLASS: return 0;    /* so does a byte class: no empty path */
         case A_EMPTY: case A_CTX: case A_GSTART: case A_KRESET: case A_LOOK:
         case A_BREF: case A_VAR:
             return acc;
