@@ -2778,6 +2778,7 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - §2.3: fifteen `job->engine` route tests, read through one new `cand_route_of` (C2).
     - C0 owns the trace instrument; the plain utf8 and `-i` DIFFER floors are measured; a 1-in-10 all-flag sample puts `-fno-length-prune` in the deny arms; `reconcile.py`, `assert_reach.py` and `reader_grep.sh` make three prose claims mechanical. Q1 is RULED (D151 addendum 1); the position domain is filed as [DEC-POSDOM].
 - `start_table/` — that note's call graph, disposition file and completeness check, deny-delta census, route-keyed stamp census (with deny arms), edit set, derived sabotage-anchor map, and anchoring-agreement probe (own CLAUDE.md).
+- `decision_families/` — working data for the survey: the raw stamp inventory and `decfb0/`, the [DEC-FALLBACK] STEP 0 attempt/stamp census (scripts + `results.md`; see its CLAUDE.md).
 - `decision_families_survey.md` — **SURVEY, read-only, nothing built** (lane `decsurvey`, 2026-10-06, from main `74379fe0`). It answers Frank's "forest for the trees" question: which DECISION FAMILIES (several sites answering one question through if/else chains, scattered `flag && fact` conjunctions or duplicated comparisons, rather than one first-match row table) are still dispersed.
   - **§0** ranks 13 families, beside the ones already unified.
   - **§3** gives each family: its members (file:line), whether a table would be natural or forced, the no-mover needs, and value/risk.
