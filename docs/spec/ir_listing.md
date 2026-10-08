@@ -110,8 +110,8 @@ pass):
 | `yes-collapsed` | built from the count-collapsed superset ([OPT-4]) |
 | `no-backreference` | a backreference; no flag changes it |
 | `no-linked-call` | a LINKED subroutine call; `-fprefilter` refuses |
-| `no-nullable-collapsed` | a rung offered the collapsed filter and it was declined ([OPT-4.1]) |
-| `no-nullable-exact` | the pattern's own exact language is nullable ([OPT-4.2]) |
+| `no-nullable-collapsed` | a rung offered the collapsed filter and it was declined ([OPT-4.1]; read off `empty_admits` since [NULLABLE-ANCH]) |
+| `no-nullable-exact` | the pattern's own exact language admits an empty match not confined by a non-multiline start AND end anchor ([OPT-4.2]; the `empty_admits` fact since [NULLABLE-ANCH]) |
 | `no-dfa-overflow` | the auto-selected prefilter's DFA build hit a cap ([SEL-1]); the `note` carries the cap text |
 | `no-fno-prefilter` | forced off by `-fno-prefilter` |
 | `no-engine-vm` | the `--engine=vm` side effect (R21 E-6) |

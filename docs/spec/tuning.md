@@ -1284,6 +1284,27 @@ dismiss none of them, whether that filter's language came from the pattern
 directly or from a count-collapse. The bench re-measures its `cls-*` hybrid
 cells after this lands; their prior 1.2-9.9x loss is the predicted win.
 
+**"NULLABLE" HERE MEANS "ADMITS AN UNCONFINED EMPTY MATCH"** ([NULLABLE-ANCH],
+`abi` 67, 2026-10-08). Both scopes of the decline, the rung's and the
+default's, ask the pattern-facts record's `empty_admits` (`facts_listing.md`),
+not bare nullability: the decline fires only where SOME way of matching the
+empty string crosses no non-multiline `^`/`\A` or no non-multiline
+`$`/`\Z`/`\z`. A nullable pattern whose EVERY empty path crosses both
+(`^(\s+)*$`, `^(([a-z]+)*)+$`, `\A(a*)*\z`) matches empty only on a subject
+that is empty up to a final newline, so its exact prefilter dismisses every
+other subject in one linear pass and is KEPT: `<PREFIX>_ENGINE_SEL` reads
+`"selected"` and `<PREFIX>_VM_PREFILTER` `"hybrid"`. Every other zero-width
+construct (lookaround, `\b`, `\G`, `\K`, a multiline anchor, a
+backreference, a variable, a nullable call) counts as always satisfiable, so
+the answer errs only toward declining. One-sided (`^(\s+)*`, `(\s+)*$`) and
+multiline (`(?m)^(\s+)*$`) forms are still declined. A `${...}` pattern keeps
+bare nullability, because `has_var` turns its prefilter off regardless and the
+choice moves only its `ENGINE_SEL` token. No answer moves: the prefilter is a
+filter. MEASURED (scratch tier, `docs/dev/lanes/nullanch1_report.md`): a
+near-miss that used to exhaust the step budget (`PCREC_ERR_STEPS`) now answers
+`nomatch` in ~22 ns; a LONG all-matching subject pays the forward DFA pass on
+top of the VM's walk (~2-3x at 60 KB, K97).
+
 **A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole
 question** (`docs/dev/decisions.md` D77 — build under measurement). Nullability
 is not the only reason a rescue can fail to pay. A WHOLE-SUBJECT-anchored form

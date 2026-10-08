@@ -2315,7 +2315,22 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `66` on every artifact today (lane possbuild bumped it
+- **`rx_info.abi` is `67` on every artifact today (lane nullanch1 bumped it
+  from 66, 2026-10-08: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
+  DECLINE, `tuning.md` §2.17).** Both prefilter declines read the new E1
+  fact `empty_admits` instead of bare nullability, so a nullable pattern whose
+  every empty path crosses a non-multiline `^`/`\A` AND `$`/`\Z`/`\z` keeps
+  its exact hybrid prefilter. On a mover `<PREFIX>_ENGINE_SEL` reads
+  `"selected"` (was `"declined-nullable-default"`), `<PREFIX>_VM_PREFILTER`
+  `"hybrid"` (was `"none"`), and the prefilter's tables, scan and
+  `<PREFIX>_VM_PREFILTER_LANG` appear (measured movers: exactly five of 4,262
+  compiled corpus+bench patterns, `docs/dev/optloop/nullanch/movers_result.txt`
+  — bench `evil-alt-nested` and `trim-nested-star`, corpus `^(a{2,4})?$`,
+  `^(a?)(?1)*$`, `^(?:(?<g>a?)){0}(?&g)*+$`); every other artifact differs
+  from `abi` 66 in its abi digits alone. No stamp is added, no struct offset
+  moves, no `rx_info` member changes and no answer moves (a near-miss that
+  exhausted the step budget now answers `nomatch`, K65's direction).
+- **`rx_info.abi` was `66` (lane possbuild bumped it
   from 65, 2026-10-07: [ART-POSS-ARMS], `docs/design/poss_arms.md` rev 2.1
   §9 — two possessify ARMS).** Arm A values a context gate (`\b`, `\B`, a
   one-character lookaround) in a quantifier's follow by what it can admit
@@ -4425,7 +4440,7 @@ neither is parsed to produce the other.
 |---|---|
 | `"selected"` | `auto` chose on the AST and nothing overflowed. The common case, on both engines |
 | `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
-| `"declined-nullable-default"` | [OPT-4.2] (2026-08-31) `auto` (or forced `--engine=vm` plus `-fprefilter`), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one. No rung is involved and no prefilter survives. The general form of `"declined-nullable"` below, off the rung it is scoped to (`tuning.md` §2.17) |
+| `"declined-nullable-default"` | [OPT-4.2] (2026-08-31) `auto` (or forced `--engine=vm` plus `-fprefilter`), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one. Since `abi` 67 ([NULLABLE-ANCH]) "nullable" is the `empty_admits` fact: a pattern whose every empty match crosses a non-multiline start AND end anchor (`^(\s+)*$`) is not declined and reads `"selected"`. No rung is involved and no prefilter survives. The general form of `"declined-nullable"` below, off the rung it is scoped to (`tuning.md` §2.17) |
 | `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |
