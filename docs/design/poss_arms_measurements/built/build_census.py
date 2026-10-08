@@ -15,12 +15,24 @@ pattern), counted three ways that share no code with the prototype:
 (pop, id, enc): vm_base vs denied, vm_AB vs armed, eng_base/eng_AB. Any
 difference is printed; the caller explains it or it is a defect.
 
-Env: PCREC (the built compiler), ARTREV_GEN (dir holding census.py),
-BENCH, CORPUS, JOBS."""
+Env (census mode): PCREC (the built compiler), ARTREV_GEN (dir holding
+census.py: docs/dev/optloop/artrev/gen), BENCH, CORPUS, JOBS. A missing
+variable is a refusal naming it, never a default. `--diff` reads two TSVs
+and needs none of them."""
 import os, sys, re, subprocess, concurrent.futures as cf
-sys.path.insert(0, os.environ["ARTREV_GEN"])
-import census as C
-B = os.environ["PCREC"]
+
+def need(name):
+    v = os.environ.get(name)
+    if not v:
+        sys.exit("build_census.py: census mode needs env %s (ARTREV_GEN is "
+                 "docs/dev/optloop/artrev/gen; PCREC the built compiler)" % name)
+    return v
+
+DIFF_MODE = len(sys.argv) > 2 and sys.argv[1] == "--diff"
+if not DIFF_MODE:
+    sys.path.insert(0, need("ARTREV_GEN"))
+    import census as C
+    B = need("PCREC")
 DA, DB = "-fno-poss-ctx-follow", "-fno-poss-bref-first"
 
 def run(cmd):
@@ -93,7 +105,7 @@ def diff(mine, proto):
                 print("DIFF\t%s\t%s=%s\t%s=%s" % ("\t".join(k), mk, xv, pk, yv)); nd += 1
     print("diff-rows\t%d" % nd)
 
-if len(sys.argv) > 2 and sys.argv[1] == "--diff":
+if DIFF_MODE:
     diff(sys.argv[2], sys.argv[3])
 else:
     census()

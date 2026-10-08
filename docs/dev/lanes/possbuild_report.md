@@ -223,3 +223,21 @@ Then restore `docs/dev/artifact_size_log.tsv` (the chain does
   re-run.** The rev 2.1 record's generator probes likely ran on 10.48
   (`rev21/CLAUDE.md`), despite `possarms21_report.md`'s 10.46 claim. 5
   compared rows (43 in all) differ, and no verdict moves.
+
+## Addendum 2 (lane possfin, 2026-10-07): the slot chain's final stage table
+
+Chain `build/slot/chain.sh` on 070f29e4 (logs in the possbuild worktree's
+`build/slot/`), dispositioned:
+
+| stage | result | disposition |
+|---|---|---|
+| make test | rc=2, 751 s, 4 check-side reds | fixed on `lane/posstri` aeae1964 (`posstri_report.md`) |
+| mech (10 rows) | rc=1, 1,026 s, 9 DETECTED, 1 unexpected | the unexpected row is S602 UNDETECTED: a declared equivalent mutant, now scored UNDETECTED (EXPECTED) with its argument (`possfin_report.md` section 1) |
+| composition | rc=0, 315 s, 0 divergences, reach 51/676 | clean |
+| census | the TSV was written (rc=0, 16 s); the `--diff` call crashed (`KeyError: ARTREV_GEN`, the module imported it for `--diff` too) | fixed in `build_census.py`; re-run: 0 DIFF over the 4,132 rows in common, 743 ONLY-IN-build (corpus files added since r21), bench movers 6, old-corpus movers 13, 10 new vm->dfa default-route flips (section 2 of the possfin report) |
+| test-axes (2 flags) | rc=0, 456 s | clean |
+
+Correction to the "Deviations" item 2 above: the branching-cycle witness never
+walks its cycle and the dropped guard is not exponential (the CF_DONE memo caps
+it at ~2 x depth); S602 is an equivalent mutant, not a termination row.
+

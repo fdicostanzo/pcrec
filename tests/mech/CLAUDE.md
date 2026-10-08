@@ -3415,8 +3415,10 @@ a `SAB_REACH` reading the witness's own `RX_VM_POSS_ARMS` at HEAD, and a
 dropped — detected as R-5's own internal error on call-bearing verdicts,
 which is that check firing), S603 (lazy admitted, N2). B: S563 (no fold),
 S564 (refs[0] only), S565 (never nullable), S602 (in-progress recomputed — a
-TERMINATION row: with `PCREC_MAX_POSS_REF_DEPTH` still in place a linear
-cycle stays cheap, so its witness is the BRANCHING cycle
-`(a\2\3)(b\1)(c\1)x+\1`, whose compile then explores 2^64 paths), S604 (a
+DECLARED EQUIVALENT mutant, scored UNDETECTED: `PCREC_MAX_POSS_REF_DEPTH` and
+the CF_DONE memo cap the recomputation at ~2 x depth extra `cap_group`
+computations with byte-identical artifacts and census, measured by lane
+possfin; the branching-cycle witness `(a\2\3)(b\1)(c\1)x+\1` never even
+walks its cycle), S604 (a
 group body read with `first_of`'s POSITION answer, N1).
 
