@@ -75,7 +75,7 @@ Both were re-verified with a plant.
 **New mech rows:** S646-S651 (S652-S665 unused).
 
 **Needs a ruling:** none blocking. "Deviations, findings and questions"
-holds four findings and three choices.
+holds five findings (S633's detector gap among them, fixed in-lane) and three choices.
 
 **Next: B4** replaces the admission. Its PARENT is post-B3, so
 `attempt_hist.py` takes `--parent-patches docs/design/dec_fallback/probes_b3.py`.
