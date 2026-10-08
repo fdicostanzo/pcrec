@@ -19,7 +19,7 @@
 # hits its match limit there (-47, upstream_issues.md U4), so those two are
 # verified by libpcre2 on the language-equal `^[a-z]*$` / `^\s*$` and by
 # python `re` run once offline (7.9 s and 108 s, U19) — both in the
-# transcript. With the decline back in place (sabotage S510) each give-up
+# transcript. With the decline back in place (sabotage S612) each give-up
 # cell reds as a give-up.
 
 # bench capability evil-alt-nested: short hits, a near-miss, the final-newline arm of `$`, and a start past 0
