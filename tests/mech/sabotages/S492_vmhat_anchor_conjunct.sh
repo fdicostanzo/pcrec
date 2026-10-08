@@ -14,7 +14,9 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''^(ab)
 SAB_REACH_EXPECT='REACH-ANCHORED-VM'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;
+SAB_BEFORE='    if (CAND_BOUND_ONE(CAND_SLOT_NEXT, s, "first-class-bound")) return false;
     if (ss->nullable) return false;'
 SAB_AFTER='    /* SABOTAGE S492: the unanchored conjunct removed */
     if (ss->nullable) return false;'
+
+# RE-AIMED 2026-10-08 BY [START-TABLE] C5b (lane stc5b), intent re-verified: N7's anchoring conjunct reads BOUND(CR_VM) through the walk where it restated the start_anchor fact; the plant still removes the conjunct.

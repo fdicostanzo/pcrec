@@ -42,23 +42,32 @@ SAB_REACH_EXPECT="REACH-UNANCHORED-VM-EMITS"
 SAB_COUNT=1
 SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
 {
-    if (cx->job->fit.chosen == ENGM_VM)
-        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
+    if (cx->job->fit.chosen == ENGM_VM) {
+        CandSel v = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                      .route = CAND_ROUTE_VM };
+        return CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &v, "one-attempt-bound") &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
-    return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
+    }
+    CandSel a = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    return a.route == CAND_ROUTE_ATTEMPT &&
+           CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &a, "one-attempt-bound");
 }'
 SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
 {
     /* SABOTAGE S276: the VM arm admits EVERY VM route as one-attempt,
-     * dropping the start_anchor conjunct AND K64 fix A'"'"'s linearity
-     * conjunct entirely -- an UNANCHORED route is no longer bounded to one
-     * start position at all. */
+     * dropping the BOUND read AND K64 fix A'"'"'s linearity conjunct
+     * entirely -- an UNANCHORED route is no longer bounded to one start
+     * position at all. */
     if (cx->job->fit.chosen == ENGM_VM)
         return true;
-    return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
+    CandSel a = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    return a.route == CAND_ROUTE_ATTEMPT &&
+           CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &a, "one-attempt-bound");
 }'
 
 # RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `dfa_interior_dead(&cx->job->dfa, ...)`; the plant still admits every VM route.
+
+# RE-AIMED 2026-10-08 BY [START-TABLE] C5b (lane stc5b), intent re-verified: the VM arm's anchor conjunct is BOUND(CR_VM) read through the walk; the plant still admits every VM route, the DFA arm unchanged.
