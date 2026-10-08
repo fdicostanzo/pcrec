@@ -329,3 +329,21 @@ rows and §2's verdicts, and justifies any UNDETECTED (EXPECTED) row.
   full `make test` wall and verdict.
 - §4 items 1, 2 and 6 are open for a ruling; the rest are recommendations to
   accept.
+
+## STATE AT HANDOFF
+
+- Branch `lane/stc5`. The code, the light checks and the docs are committed;
+  this report's own commit is the tip.
+- The light gates are COMPLETE and green (§3): zero movers, the trace is
+  identical, there is no abi event, and no trace difference is declared.
+- The heavy chain is ARMED and has NOT run:
+  - the waiter is `nohup setsid bash build/c5/waitrun.sh`, PID 3024498,
+    started 2026-10-07T20:41:53;
+  - it waits for `worktrees/stc5/.lift`, then runs `build/c5/chain.sh`;
+  - it logs to `build/c5/chain.log`, with the completion lines in §6;
+  - it ends with `build/SLOT_DONE` and `CHAIN_DONE`.
+- The chain takes the tip by `git archive HEAD` at lift time. A fresh agent
+  fills §2's mech verdicts and §3's heavy rows from `chain.log` and the
+  per-step logs under `build/c5/`, and justifies any UNDETECTED (EXPECTED)
+  row.
+- Open for a ruling: §4 items 1, 2 and 6.
