@@ -495,5 +495,17 @@ pcrec (the Makefile owns that).
   included) before this file was deleted — see
   `docs/dev/lanes/findb6_report.md` and `docs/dev/lanes/findb3_report.md`
   (what B3 built) for the history.
+- **perfrun** (+ **perfrun.shapes**, **cpusample.sh**, **sectiontimes**) —
+  [TT-JTUNE]: the drop-in wrapper a heavy chain calls in place of its raw
+  `make -k -jN -Otarget test` (`scripts/perfrun --label L [--shape J,P] --
+  LOG [vars]`). Picks a (make -j, PROCS) shape from `perfrun.shapes`
+  (least-sampled uncontaminated), runs it under `gnutimeout 2700`, log
+  byte-identical, make's rc returned unchanged; `cpusample.sh` samples
+  load/busy/scripts/other-trees every 15 s (and `--probe` for the pre-start
+  contamination read); `sectiontimes` (`stamp SIDE` / `report`) turns
+  `make --debug=j` lines into per-section start/end times without touching the
+  log. Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
+  `perfrun --fold` (in main) appends them to docs/dev/ttune_ledger.tsv. Triage
+  rule and columns: docs/dev/ttune_measurement.md; BOILERPLATE.md.
 
 Maintenance: update this file when scripts are added/removed or change role.
