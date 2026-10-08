@@ -48,9 +48,10 @@ import build_ref                      # noqa: E402  PATCHES (the probes)
 from emit_sweep import VARIANTS       # noqa: E402  the ONE table of variant -D sets
 
 # K35 floors, measured at B0's base (see the lane report decfbB0_report.md).
-# POPULATION_FLOOR: distinct corpus blocks census.py lists (measured 4,815 at
-# B0's base; ~1% margin, PINS' own convention for a population that only grows).
-POPULATION_FLOOR = 4750
+# POPULATION_FLOOR: distinct corpus blocks census.py lists, MEASURED 4,794 on
+# both sides at B0's base (main ab583f6b vs itself, every variant); ~1% margin,
+# emit_sweep PINS' own convention for a population that only grows.
+POPULATION_FLOOR = 4746
 
 
 def log(m):
