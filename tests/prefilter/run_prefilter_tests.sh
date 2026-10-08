@@ -242,6 +242,105 @@ check_ir_value "engine=vm side effect" 'no-engine-vm'     '(a)b' --engine=vm
 check_ir_value "forced back on"        'yes'              '(a)b' --engine=vm -fprefilter
 
 # ---------------------------------------------------------------------------
+# 7b. [decfbB0b / dec_fallback.md rev 2 §4.2 B0 item 6] THE T2 LISTING HALF,
+#     HAND-WRITTEN. One row per T2 row and reached scope.
+#
+#     WHAT THESE ROWS ARE. The hand-written, TABLE-INDEPENDENT control of T2's
+#     listing half, and HALF OF THE B4 HARD GATE (the other half is the B0
+#     `emit-ir-auto` byte stream): the expected token of every row is a
+#     CONSTANT typed here from what today's compiler (42ab7c25 + B0) was
+#     observed to print. It reads no T1-T4 table, no registry dump and no
+#     helper that derives a token, so a table that regroups, reorders or
+#     re-spells a cell cannot take this check with it. A row that moves is a
+#     listing change a human must re-sign.
+#
+#     `--features all` ON EVERY ROW, uniformly: backref/call/vars refuse
+#     without it (`${v}` needs module vars), and a uniform argv keeps the
+#     rows comparable. Rows marked (exists) are the three above, kept as they
+#     are; every other row is NEW. SCOPE is the T2 scope the witness reaches:
+#     NONE (no size-ladder retry), SEL1 (the collapsed-prefilter retry),
+#     SIZECAP (the size-cap hybrid-drop retry).
+# ---------------------------------------------------------------------------
+IRF="--features all"
+# backref | NONE
+check_ir_value "T2 backref/NONE"            'no-backreference'      '(a)\1'                        $IRF
+# linked-call | NONE
+check_ir_value "T2 linked-call/NONE"        'no-linked-call'        '(a|b(?1)c)+'                  $IRF
+# var-nullable | NONE
+check_ir_value "T2 var-nullable/NONE"       'no-nullable-exact'     '^${v}$'                       $IRF
+# nullable-exact | NONE
+check_ir_value "T2 nullable-exact/NONE"     'no-nullable-exact'     '(a*)*'                        $IRF
+# nullable-collapsed | SEL1
+check_ir_value "T2 nullable-collapsed/SEL1" 'no-nullable-collapsed' '(?:ab){0,16000}'              $IRF
+# overflow-drop | NONE, and | SEL1 (the -fno-prefilter arm reaches the retry)
+check_ir_value "T2 overflow-drop/NONE"      'no-dfa-overflow'       '^(?:(?:a|b)*a(?:a|b){20})?$'  $IRF
+check_ir_value "T2 overflow-drop/SEL1"      'no-dfa-overflow'       '^(?:(?:a|b)*a(?:a|b){20})?$'  $IRF -fno-prefilter
+# forced-on | NONE (exists, above) and | SIZECAP
+check_ir_value "T2 forced-on/SIZECAP"       'yes-collapsed'         '^(\p{Xwd}{1,3})?$'            $IRF -e utf8 -fprefilter
+# forced-off | NONE (exists, above) and | SIZECAP (§4.5: the [PF-DROP]
+# artifact's listing names the flag, via the OR'd bit)
+check_ir_value "T2 forced-off/SIZECAP"      'no-fno-prefilter'      '(\p{Xwd})'                    $IRF -e utf8
+# var | NONE (F-B1), and var vs forced-off ORDER (forced-off wins the token)
+check_ir_value "T2 var/NONE"                'no-engine-vm'          'a${v}b'                       $IRF
+check_ir_value "T2 var-vs-forced-off order" 'no-fno-prefilter'      'a${v}b'                       $IRF -fno-prefilter
+# default on | NONE, | SEL1
+check_ir_value "T2 default-on/NONE"          'yes'                  '(a)b'                         $IRF
+check_ir_value "T2 default-on/SEL1"          'yes-collapsed'        '(1{0,30}?[^]abc][^abc]){28,30}0+|a' $IRF
+# default off | NONE: the --engine=vm side effect (exists, above, without
+# --features all); the same argv with it, so the row is uniform
+check_ir_value "T2 default-off/NONE"         'no-engine-vm'         '(a)b'                         $IRF --engine=vm
+# (DFA route): a DFA-winning pattern has no VM program to list, so the
+# listing REFUSES (rc != 0) and the refusal names the DFA engine.
+if pcrec_run "$PCREC" --emit-ir --features all --pattern 'abc' >"$WORKDIR/dfaroute.ir" 2>"$WORKDIR/dfaroute.err"; then
+    bad "T2 DFA route: --emit-ir of 'abc' (a DFA pattern) was ACCEPTED (rc 0); the listing is a VM listing and must refuse"
+elif grep -qi 'dfa' "$WORKDIR/dfaroute.err"; then
+    ok "T2 DFA route: --emit-ir of 'abc' refuses (rc != 0) and the refusal names the DFA engine"
+else
+    bad "T2 DFA route: --emit-ir of 'abc' refused but the refusal does not name the DFA engine: $(head -1 "$WORKDIR/dfaroute.err")"
+fi
+
+# default on | SIZECAP: needs the `lowsize` REFERENCE compiler (no shipped-limit
+# pattern is both a size-cap retry and a collapsible hybrid). Built ONCE here,
+# the way tests/codegen/run_size_term.sh builds its lowered compilers: the
+# source set comes from tests/lib/lib_srcs.sh (never a glob), the three
+# constants are the #ifndef-overridable ones in src/core/limits.h.
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"
+LOWSIZE="$WORKDIR/pcrec_lowsize"
+lsrcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
+if [ -z "$lsrcs" ]; then
+    bad "T2 default-on/SIZECAP: the library source list is EMPTY, the reference compiler cannot be built"
+elif $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+         -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+         -DPCREC_SIZE_TERM_THRESHOLD=10000 \
+         -o "$LOWSIZE" "$ROOT_DIR/cli/main.c" $lsrcs 2>"$WORKDIR/lowsize.err"; then
+    got_ls="$(pcrec_run "$LOWSIZE" --emit-ir --features all --pattern '(?:a\K){2,}b' 2>/dev/null > "$WORKDIR/lowsize.ir" \
+              && table_lookup "$WORKDIR/lowsize.ir" summary fact prefilter value)" || got_ls="<unreadable>"
+    [ "$got_ls" = "yes-collapsed" ] \
+        && ok "T2 default-on/SIZECAP (lowsize reference build): --emit-ir's prefilter value is 'yes-collapsed'" \
+        || bad "T2 default-on/SIZECAP (lowsize reference build): value is '$got_ls', expected 'yes-collapsed'"
+else
+    bad "T2 default-on/SIZECAP: the lowsize reference compiler failed to build: $(head -1 "$WORKDIR/lowsize.err")"
+fi
+
+# THE TWO UNREACHED CELLS (dec_fallback.md §4.3a), declared rather than
+# silently absent, each with its argument:
+#  - T2 row 5 (nullable-collapsed) at SIZECAP: entering the SIZECAP scope
+#    needs `fit.prefilter` on the refused attempt (`fit_collapse_applies`).
+#    At scope NONE an `empty_admits` pattern has no prefilter (rows 3-4); at
+#    SEL1 a collapsible `empty_admits` pattern has none (row 5 at SEL1, the
+#    row above). The only remaining route, SEL1 without a collapsible repeat,
+#    makes row 5's `collapsible_rep` false. `force_on` is excluded by the
+#    row. STRUCTURAL: no pattern reaches it.
+#  - T2 row 6 (overflow-drop) at SIZECAP: needs the sequence
+#    `sel1-collapse` -> `prefilter-collapse` (a collapsed-prefilter overflow
+#    followed by a size-cap retry whose rebuilt prefilter then overflows),
+#    which needs F-B3's state (a [SEL-1] retry whose rebuilt exact prefilter
+#    fits); the rebuild is the same language under the same caps. 0 in 60
+#    variant x arm runs (dec_fallback.md §4.3a, "T1 sequence sel1-collapse
+#    -> prefilter-collapse"). Its SEL1 scope IS reached (the row above).
+
+# ---------------------------------------------------------------------------
 # 8. FUNCTIONAL SANITY: a forced-on and a forced-off build still MATCH. The
 #    force pair changes MECHANISM (S6.1's exactness claim), never the answer
 #    -- checked here on a live subject rather than assumed from the design.
