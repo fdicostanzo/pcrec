@@ -24,6 +24,8 @@ SAB_REACH_EXPECT="REACH-ANCHORED-ROW"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='static bool cand_rs_anchored_applies(const CandSel *s)
-{ return pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }'
+{ return CAND_BOUND_ONE(CAND_SLOT_RETRY, s, "retry-anchored-bound"); }'
 SAB_AFTER='static bool cand_rs_anchored_applies(const CandSel *s)
-{ return 0 && pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }   /* SABOTAGE S441 */'
+{ return 0 && CAND_BOUND_ONE(CAND_SLOT_RETRY, s, "retry-anchored-bound"); }   /* SABOTAGE S441 */'
+
+# RE-AIMED 2026-10-08 BY [START-TABLE] C5b (lane stc5b), intent re-verified: R3 reads BOUND(CR_VM) through the walk where it restated B3/B4's fact read; the plant still makes the row's predicate answer false.

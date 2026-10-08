@@ -64,7 +64,9 @@ or it has no regression net at all.
   call), start_table.md §3.5's rule, and the receiver half adds the C5
   selection functions; validated red by plants on a scratch copy and green
   on a literal-only `strcmp(..., "exact")` (docs/dev/lanes/stc5_report.md);
-  sabotage S605.
+  sabotage S605. **Since C5b** the receiver half also covers the selection
+  read (`cand_read`/`CAND_READ`), red on a scratch copy comparing
+  `CAND_READ(...)->tok` with no literal (docs/dev/lanes/stc5b_report.md).
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
   56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s

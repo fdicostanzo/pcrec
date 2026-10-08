@@ -34,13 +34,22 @@ None of them is read by a check.
   (`TABLE_ROOTS`: the one start table joins the family the commit that builds
   it, before any reader), and the trace build's own code (`#ifdef
   PCREC_CAND_TRACE` to its `#else`/`#endif`) and the oracle hooks
-  (`CAND_ORACLE_*`, `VM_CAND_*`) are skipped like the records. Usage:
+  (`CAND_ORACLE_*`, `VM_CAND_*`) are skipped like the records. Since C5b
+  (lane stc5b) a function-like MACRO's `#define` line is body too, past its
+  parameter list (the selection read's one spelling, `CAND_READ`, is a
+  one-line macro, and skipping that line left the read with no edge), and
+  "reaches a seed" is a FIXPOINT over the graph rather than a memoized DFS:
+  a predicate that reads another slot through the walk makes the graph
+  cyclic through `cand_rows[]`, where a DFS that answers false for a node on
+  its own stack caches that false. Both changes are byte-neutral on main
+  `37462a8e` (the output there is identical). Usage:
   `python3 -I call_graph.py ROOT > call_graph.txt`.
 - `inventory.tsv` — the DISPOSITION of every family member and seed (class:
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (144/144 at C5, `pcrec_reseed_rows`/
+  family+seeds `call_graph.txt` names (147/147 at C5b, `cand_read`,
+  `CAND_READ` and `CAND_BOUND_ONE` in as WALK; 144/144 at C5, `pcrec_reseed_rows`/
   `pcrec_reseed_nrows`/`PcrecReseedRow`/`vm_reseed_holds` out, the four new
   payload types, `cand_window_of`/`cand_window_clamps`,
   `pcrec_cand_select_vm`, `vm_width_row`/`vm_bound_row` and the now
@@ -111,7 +120,13 @@ None of them is read by a check.
   `vm_plan_reseed`; the C5 re-aims S263/S371/S441/S556 now sit outside any
   C5 edit) and C5b 5; on main before C5 the derivation gave re-aim C5 =
   S263, S371, S372, S441, S556 and `rerun_at` C5 = 22 sites
-  (`docs/dev/lanes/stc5_report.md` §2).
+  (`docs/dev/lanes/stc5_report.md` §2). Re-derived at C5b (lane stc5b) on
+  the post-C5b tree: 510 row files / 528 sites, 116 family rows; re-aim C5b
+  left 1 (S606, the new row, which sits in the C5b `def` `cand_nodes` by
+  construction); on main before C5b the derivation gave re-aim C5b = S269,
+  S274, S276, S441, S492, and `--step C5b=37462a8e..` gave `rerun_at` C5b =
+  S491, S493, S496, S497 (hunk), the edit set's own four
+  (`docs/dev/lanes/stc5b_report.md` §2).
   **STEPS ([admin1008b], 2026-10-07; stc4_report.md §4 item 3, stc5_report.md
   §4 item 6):** `--step NAME=A..B` (repeatable, `--repo`, `--reach-hops`,
   `--compare NAME=S1,S2,...`) derives `rerun_at` from the commit's ACTUAL
@@ -132,7 +147,16 @@ None of them is read by a check.
   root (`inventory.tsv` PRED/WALK/INLINE) through call_graph.py's own edges
   (imported), not entering tables, the facts layer (asked facts are listed
   with their owner file's assertions) or the out-of-memory path. Usage:
-  `python3 -I assert_reach.py ROOT inventory.tsv`.
+  `python3 -I assert_reach.py ROOT inventory.tsv`. Regenerated at C5b on
+  the post-C5b tree (it had last been written at revision 2.1): the four
+  BOUND readers' `start_anchor` asks now sit under B3/B4's predicates, whose
+  rows they read through the walk, and no BOUND predicate reaches an
+  assertion.
+- `trace_declared_C5b.txt` — [C5b, lane stc5b] the commit's DECLARED trace
+  multiplicity (start_table.md §3.3 item 5): the four BOUND readers' site
+  keys, the records C5b adds. The `--trace-declared` file of
+  `scripts/emit_sweep.py`/`scripts/trace_diff.py` when the C5b tip is
+  compared against its parent; meaningless against any later parent.
 - `reconcile.py` + `reconcile_map.tsv` — [r2.1 checks] reconciles methods 2
   and 3 against the family mechanically: every moved stamp key and every
   hidden fingerprint maps to an `inventory.tsv` member (or `OUTSIDE:§2.5`),

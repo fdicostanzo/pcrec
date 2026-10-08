@@ -172,7 +172,17 @@ for d in SRC:
 names = set(defs)
 edges = collections.defaultdict(set)
 for n, body in texts.items():
-    for ln, l in body[1:]:
+    lines = body[1:]
+    # a MACRO's expansion starts on its `#define` line: past the name and its
+    # parameter list, that line is body too ([START-TABLE] C5b: a one-line
+    # macro, `CAND_READ`, is the selection read's only spelling, and skipping
+    # its line left the read with no edge to the walk).
+    if defs[n][3] == "macro" and body:
+        ln0, l0 = body[0]
+        m0 = re.match(r'^#\s*define\s+\w+\([^)]*\)(.*)$', l0)
+        if m0:
+            lines = [(ln0, m0.group(1))] + lines
+    for ln, l in lines:
         code = re.sub(r'"(\\.|[^"\\])*"', '""', l)   # strings out
         code = re.sub(r'/\*.*?\*/|//.*$', '', code)
         if code.lstrip().startswith(("*", "/*")):
@@ -228,20 +238,25 @@ TABLE_ROOTS = ["cand_select"]
 R = reach(EMIT_ROOTS + TABLE_ROOTS)
 # FAMILY: members of R from which a SEED is reachable (and the seeds' owners
 # are excluded: the facts layer is core, its derivations are not start rows)
-reaches_seed = {}
+# Does a seed lie in x's reach? A FIXPOINT over the whole graph, not a
+# memoized DFS: since [START-TABLE] C5b a predicate reads another slot
+# through the walk (`cand_read` -> `cand_select` -> `cand_rows` -> the
+# predicate), so the graph has cycles through the table, and a DFS that
+# answers False for a node on its own stack would cache that False for every
+# node of the cycle it was asked through.
+reaches_seed = {x: x in SEEDS for x in names}
+reaches_seed["@field"] = True
+grew = True
+while grew:
+    grew = False
+    for x in names:
+        if not reaches_seed[x] and any(reaches_seed.get(y, False) for y in edges[x]):
+            reaches_seed[x] = True
+            grew = True
 
 
-def rs(x, stack=()):
-    if x in reaches_seed:
-        return reaches_seed[x]
-    if x in SEEDS or x == "@field":
-        reaches_seed[x] = True
-        return True
-    if x in stack:
-        return False
-    v = any(rs(y, stack + (x,)) for y in edges[x])
-    reaches_seed[x] = v
-    return v
+def rs(x):
+    return reaches_seed.get(x, False)
 
 
 FAMILY = {x for x in R if x not in SEEDS and rs(x)

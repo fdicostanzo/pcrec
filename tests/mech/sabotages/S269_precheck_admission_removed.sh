@@ -39,12 +39,17 @@ SAB_REACH_EXPECT="REACH-ADMISSION-DECLINES-ONE-ATTEMPT"
 SAB_COUNT=1
 SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
 {
-    if (cx->job->fit.chosen == ENGM_VM)
-        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
+    if (cx->job->fit.chosen == ENGM_VM) {
+        CandSel v = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                      .route = CAND_ROUTE_VM };
+        return CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &v, "one-attempt-bound") &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
-    return cx->job->engine == PCREC_ENG_ATTEMPT &&
-           dfa_interior_dead(&cx->job->dfa, cx->job->dfa.s1u);
+    }
+    CandSel a = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = cand_route_of(cx) };
+    return a.route == CAND_ROUTE_ATTEMPT &&
+           CAND_BOUND_ONE(CAND_SLOT_PRESENCE, &a, "one-attempt-bound");
 }'
 SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
 {
@@ -53,3 +58,5 @@ SAB_AFTER='static bool req_route_one_attempt(Ctx *cx)
 }'
 
 # RE-AIMED 2026-09-29 BY [UCP] U2 (lane ucpu2), intent re-verified: signature only: `dfa_interior_dead(&cx->job->dfa, ...)` (the seed family is atom-sized); the plant still removes the G2 admission rule.
+
+# RE-AIMED 2026-10-08 BY [START-TABLE] C5b (lane stc5b), intent re-verified: each arm reads BOUND through the walk (CAND_BOUND_ONE) where it restated B1-B4; the plant still removes the G2 admission rule (the predicate always says no).

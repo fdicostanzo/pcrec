@@ -3416,6 +3416,22 @@ emit_dfa.c, B3/B4's `u.bound`), **S371** (the adaptive test reads
 (`candrows`): `vm_plan_reseed` reading the RETRY row's spelling, the K84
 shape `[cand-no-name-strcmp]` forbids on every slot since C5.
 
+**[START-TABLE] C5b (lane stc5b, 2026-10-08)**: the four BOUND restatements
+(P2's two arms, N7's anchoring conjunct, R3, N12's `anchored` loop) read
+BOUND through the selection read `cand_read`/`CAND_BOUND_ONE`. Re-aimed as
+derived (start_table.md §3.5), each plant the same edit with its intent
+re-verified by a plant on a scratch copy: **S269** (`req_route_one_attempt`
+always says no: `^abc$` `one-attempt` -> `emitted`), **S274** (the VM arm
+loses K64's linearity conjunct alone: the framed forced-VM witness
+`emitted` -> `one-attempt`), **S276** (the VM arm admits every VM route: the
+unanchored forced-VM witness `emitted` -> `one-attempt`), **S441** (R3's
+predicate answers false: `^(?>a|ab): (.*)$` `anchored` -> `adaptive-dense`),
+**S492** (N7's anchoring conjunct removed: `^(ab)\1` `VM_START_SCAN` `none`
+-> `first-class`). **S606** is new (`candoracle`): NEXT's VM-route read of
+BOUND dropped from the slot graph's `reads` column, so N7's read is an
+undeclared edge and the trace build aborts (`CANDORACLE undeclared-read`) on
+the `first-class` witness; no default-build byte moves.
+
 ### [ART-POSS-ARMS] — rows S560-S565, S601-S604 (lane possbuild, 2026-10-07)
 
 `docs/design/poss_arms.md` rev 2.1 §8.2's ten plant rows, against

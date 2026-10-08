@@ -1025,7 +1025,7 @@ answers a different question:
 | C3 | **BUILT (lane stc3, 2026-10-07; `../dev/lanes/stc3_report.md`, the C3 outcome paragraph below), pending merge**. **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
 | C4 | **BUILT (lane stc4, 2026-10-07; `../dev/lanes/stc4_report.md`, the C4 outcome paragraph below), pending merge**. **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]`; D148 Q2's `DfaSel` → `CandSel` spelling sweep (ruled "C4 or C7", taken here) | S462, S473; the sweep's S518-S521, S527 |
 | C5 | **BUILT (lane stc5, 2026-10-07; `../dev/lanes/stc5_report.md`, the C5 outcome paragraph below), pending merge**. **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; the start tables' last `DFA_SELECT` callers deleted (`req_admits[]`/`req_uses[]` go at C4; `dfa_select` itself STAYS: the six machine-form axes `dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`, `dfa_matches`, `dfa_edges` walk it and are outside the start table, §2.5; C3 already removed its route plumbing — ruled 2026-10-07, `../dev/lanes/stc3_report.md` §4 item 1) | S169, S263, S371, S372, S441 |
-| C5b | **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
+| C5b | **BUILT (lane stc5b, 2026-10-08; `../dev/lanes/stc5b_report.md`, the C5b outcome paragraph below), pending merge**. **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
 | C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
 | C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
 
@@ -1182,6 +1182,28 @@ calls; amended, with reasons) and its `rs->row` token is `rs->row->`; the
 `rerun_at` rule's gap recurs (rows reached through the new walks re-ran by
 judgment, listed); `[cand-no-name-strcmp]` widened to every slot under §3.5's
 row-name-expression rule, with new sabotage S605.
+
+**C5b's outcome** (lane stc5b, `../dev/lanes/stc5b_report.md`). Built as
+listed, with no emitted byte moved. P2 (both arms), N7's anchoring
+conjunct, R3 and N12 read BOUND through ONE selection read,
+`cand_read(reader, slot, sel, site)` (`CAND_READ`; `CAND_BOUND_ONE` tests
+`u.bound.one`), on their own route: P2's VM arm and N7/R3 on
+CAND_ROUTE_VM, P2's DFA arm on `cand_route_of` (the fifteenth `job->engine`
+test, now gone) and N12 on its own CAND_ROUTE_ATTEMPT selection
+(`attempt_cand` takes the `CandSel`). The slot graph gains §1.3's selection
+DAG as data, `CandNode.reads[]` per route (PRESENCE->BOUND and NEXT->BOUND
+on ATTEMPT and VM, RETRY->BOUND on VM): the trace build aborts on a read the
+graph does not declare (`undeclared-read`, S606), and the self-check on a
+read of an unasked (slot, route) or a cycle in the reads. Each read prints
+its own trace record, at four site keys that are C5b's declared
+multiplicity (`start_table/trace_declared_C5b.txt`); every other record is
+identical in order. Re-aims as derived: S269, S274, S276, S441 and S492,
+each re-verified by a plant. Corrections, all in the report §4: the reads
+G1, F1 and R4 (§1.3's table) are not yet declared in `reads[]` (they predate
+the selection read; their own commit can route them through it); the call
+graph needed two fixes to see the read at all (a one-line macro's
+`#define` line is body, and reaches-seed is a fixpoint once the walk makes
+the graph cyclic), both neutral on main.
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel

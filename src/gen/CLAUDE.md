@@ -1270,6 +1270,25 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `pcrec_cand_oracle_vm_*`, `VM_CAND_PRE/POST`, `CandRow.was`); every reader
   runs the hit counter (`cand_hit`, `VM_CAND_HIT` → `pcrec_cand_hit_vm`;
   WINDOW `cand_hit_every`).
+- **emit_dfa.c — the BOUND readers read BOUND** ([START-TABLE] C5b, lane
+  stc5b, 2026-10-08; `docs/design/start_table.md` §1.3, §3.2 C5b; zero
+  movers, no abi event). Four predicates restated BOUND's predicates and now
+  READ its row: P2 (`req_route_one_attempt`, each arm on its own route:
+  CAND_ROUTE_VM, and CAND_ROUTE_ATTEMPT from `cand_route_of`, the fifteenth
+  `job->engine` test), N7's anchoring conjunct (`pf_vm_start_applies`), R3
+  (`cand_rs_anchored_applies`) and N12 (`attempt_cand`, which now takes
+  N12's `CandSel`). The read is `cand_read(reader, slot, sel, site)`
+  (`CAND_READ`; `CAND_BOUND_ONE` tests `u.bound.one`): a slot's predicate
+  asks another slot's row through `cand_select`, never by restating it.
+  `CandNode.reads[]` is §1.3's selection DAG per route (PRESENCE→BOUND and
+  NEXT→BOUND on ATTEMPT and VM, RETRY→BOUND on VM); in the trace build
+  `cand_read_hit` aborts on a read the graph does not declare
+  (`undeclared-read`, S606), prints the read's own trace record (the four
+  site keys `docs/design/start_table/trace_declared_C5b.txt` declares) and
+  counts the hit, and `cand_rows_selfcheck` also fails a read on an unasked
+  route or a cycle in the reads. The asks it adds are BOUND's own predicates
+  (`dfa_interior_dead` on ATTEMPT, the `start_anchor` fact on VM), neither
+  of which reaches an assertion (`assert_reach.tsv`).
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
