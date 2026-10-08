@@ -8,13 +8,56 @@ only, without the kit's source. The lane's report is `docs/dev/lanes/memfng2_rep
 kit session moves it). Lane g2x extended it to the §15 site shapes (INTERIM,
 `G2X_REPORT.md`, superseded); lane g2u folded that work onto the current G2
 and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
+Lane g2m4 brought G2 to MF_SITE_ABI 6 (R-7, M4): its report is
+**`G2M4_REPORT.md`**.
+
+## The MF_SITE_ABI 6 contract, as G2 tests it (lane g2m4, `G2M4_REPORT.md`)
+
+Written from memfn.h and integration.md (Q-R7-1/2/3) alone.
+
+- **Q-R7-1, the read-bounded range.** `g2_ref.c`'s `g2_ref_range` /
+  `g2_ref_readsbelow` are the ONE statement of the range: a FIND (not
+  ON_CAND) whose every term has offset + len <= 0 (a SET term's len is 1; E
+  the largest) takes candidates c in [lo, n] with c + d <= n, d = max(0,
+  end_back + E), empty iff lo + d > n; every other site keeps [lo, n -
+  end_back). The reference, the driver's `admit()`, its planting windows and
+  the PF positive test all call it. The driver plants hits AT c == n on such
+  sites and puts `lo` at the planted hit's edge (counted: `G2 read-bounded
+  range`). The generator makes the contract's other facts true of such a site
+  (render(): `miss` never `n`/`n - 1`, no span fact). W1 defect 4 is the OLD
+  range in the reference: it must fail.
+- **Q-R7-2, `MF_EMPTY_AT_N`** (`G2_EMPTY_AT_N`). The driver never calls an
+  AT_N site with lo > n (`admit()`, counted) and never with a NULL subject
+  (none of its layouts has one). The outcome on an empty scan is MISS's, so
+  the reference needs no new branch. Reached by family **`mline`**, by the
+  semantic field `empty` (class 3) and by two refusal cases (AT_N on ADVANCE;
+  the value past AT_N out of the enum).
+- **Q-R7-3, LOOP_EXIT** (`g2_site.loopx`, enforced class **`loop-exit`**).
+  `on_miss` exactly `break;`. `wrap_loopx` (g2_gen.c) runs the rendered site
+  inside a `for (;;)` THE WRAPPER owns and reports `missed` iff control did not
+  fall off the end of the site: a break the kit's text pasted inside a loop or
+  switch of its own leaves that one, the statements after it run, and the
+  reference (a miss expected) fails the call. Outcomes: a site is rendered by a
+  non-generic row and answers (rendered, run, hard), or refused naming
+  `on_miss`; the GENERIC row rendering one is a failure (the form id is
+  `generic`, as FORM_FLOORS already names it). W2 mutation 8 wraps the kit's
+  text of every LOOP_EXIT site in a loop of its own: all must be killed. Seven
+  refusal-table shapes (`LCASE`) are LOOP_EXIT sites G2 expects only the generic
+  row to serve.
+- **Family `mline`** (`gen_fam_mline`, own RNG stream and id range 700000):
+  integration.md 15.7 [R-7]'s site, STMT / FIND / ASSIGN, one REQUIRED one-byte
+  SET at -1, end_back 0, empty AT_N, floor the SAME text as lo (`floor_lo`; the
+  driver passes fl == lo), a leaving on_miss (goto / return, or `break;`),
+  no `miss`, no result_decl, no note; plus 14 one-thing-changed variants
+  (`MLV_*`). The rows check (b) is green because this family reaches
+  `arms/pf_memchr_back`; `FLOOR_ROWS` is 14.
 
 ## The row contracts, as G2 tests them (lane g2u)
 
 - **ENFORCED CLASSES** (G2u3; formerly "PENDING-ENFORCE", renamed because
   nothing is pending: the kit's row-contract enforcement is in force; the
   `G2_PEND_*` identifiers and the batch header's `pending N` keep the old
-  spelling). Four classes (a fifth, `pf-edge`, is the PF shape's, below), each a named population with a floor
+  spelling). Four classes (a fifth, `pf-edge`, is the PF shape's, below, and a sixth, `loop-exit`, the LOOP_EXIT sites', above), each a named population with a floor
   (`FLOOR_CLS_*`) and a printed count (`ENFORCED-CLASS cases: N`, `class X: n`,
   generator `PENDBUCKET` lines, driver `G2 pending X:` lines):
   `hook-nonident` (non-identifier `s`/`n`/`lo`/`floor` text: must render and
@@ -117,7 +160,8 @@ miss by `on_miss` having run.
   section, at 52-62 s wall on the Mac (two runs). It runs the same checks,
   judged by the same code, on a smaller population:
   - one compiler (gcc), every generated site, the quick subject tier;
-  - ASan+UBSan and the witnesses W1-W3 on every `QUICK_STRIDE`-th
+  - ASan+UBSan and the witnesses W1-W3 (W2 mutation 8 runs on every pending-only batch,
+    where the LOOP_EXIT sites live) on every `QUICK_STRIDE`-th
     (3rd) batch, through a runner-written `g2_all.c` that lists only
     those batches, all launched concurrently and judged afterwards;
   - the floors that scale are the `QUICK_*` literals beside the others.
@@ -142,7 +186,7 @@ miss by `on_miss` having run.
   the original space (family `base`), the §15 shape families (`ofs`,
   `ofsrun`, `stmt`, `onebyte`, `gate`, `setrest`, `vmrun`, each with and
   without `MF_D_RUN_OVERLAP`, then again with non-identifier hook text as
-  PENDING; and `pf`, the PF shape above), the semantic differential (`sem`,
+  PENDING; and `pf`, the PF shape above, and `mline`, the M4 shape), the semantic differential (`sem`,
   with four PF seeds), and the PENDING queue. The
   original space is:
   - term cells: every SET offset −8..8 × 12 set kinds; every RUN offset
@@ -163,12 +207,12 @@ miss by `on_miss` having run.
     the hook is NAMED, the sticky error, `mf_art_note_libc`, and F2's
     libc-record reproducer.
   It also runs the poison differential on every hard site.
-  `--mutate K` is W2's text mutation.
+  `--mutate K` is W2's text mutation (K 8, lane g2m4: LOOP_EXIT sites only).
 - **g2/g2_ref.c**, **g2/g2_ref.h** — the REFERENCE, the independent
   control: one plain loop per operation, from §14.3-§14.7. It handles
   OPTIONAL terms by answering for every subset and keeping, per site, the
   subsets still consistent ("fixed when the site is emitted"). It calls no
-  kit function, not even `mf_ref_*`. `--ref-defect K` (W1) makes it wrong
+  kit function, not even `mf_ref_*`. `--ref-defect K` (W1; K 4, lane g2m4, is the OLD range for a reads-below FIND) makes it wrong
   on purpose.
 - **g2/g2_driver.c** — the driver. Per site it builds subjects: lengths
   0..129, a planted hit at every offset or at sampled ones, near-misses,

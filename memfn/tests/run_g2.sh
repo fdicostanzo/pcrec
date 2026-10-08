@@ -88,8 +88,9 @@ QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
 # semantic differential (sem). Per family, the HARD sites the kit must
 # RENDER (generator) and that must RUN (each compiler build). Both tiers
 # generate the same sites, so these hold for --quick and the full run alike.
-# Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%.
-FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 sem:1370"
+# Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%;
+# mline measured 2026-10-08 (lane g2m4: 406 rendered and run), less ~10%.
+FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 mline:360 sem:1370"
 # distinct (opaque) form ids the families are rendered through: counted,
 # never parsed (measured: 6 since lane g2pf; the PF shape's two are new)
 FLOOR_FAM_FORMS=6
@@ -140,6 +141,19 @@ PF_EDGE_RUN_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stat
 PF_FAM_FORM_FLOORS="pf_memchr:110 pf_walk:150"
 PF_CELL_FLOORS="1:230:750000:19000:0 2:190:600000:14000:0 3:225:660000:360000:330000 4:210:600000:340000:300000"
 FLOOR_CLS_EDGE=375       # pf-edge class cases (generator); measured 418
+FLOOR_CLS_LOOPX=140      # loop-exit class cases (generator: sites + the 7 refusal-table shapes); measured 161
+FLOOR_LOOPX_MUT=115      # W2 mutation 8: LOOP_EXIT sites mutated (measured 130; every one must be killed)
+# lane g2m4, MF_SITE_ABI 6: the three contract changes, each a counted population
+# (hard sites that RAN; tier-independent site counts, quick check counts, the
+# full tier has more). Measured 2026-10-08, Linux dev box, seed 20261005, less ~10%.
+#   Q-R7-1 read-bounded range: reads-below FIND sites (458), their checks (1.67M),
+#     checks whose planted hit IS the candidate n (304k), answers that ARE a hit at n (125k)
+#   Q-R7-2 AT_N: sites (454), checks (1.65M), checks run with lo == n (67k)
+#   Q-R7-3 LOOP_EXIT: sites (130), checks (467k), checks that took the break (26k) and
+#     that fell through (441k)
+FLOOR_RB_SITES=410;   FLOOR_RB_CHECKS=1500000; FLOOR_RB_PLANT_N=270000; FLOOR_RB_HIT_N=110000
+FLOOR_ATN_SITES=410;  FLOOR_ATN_CHECKS=1480000; FLOOR_ATN_LO_N=60000
+FLOOR_LX_SITES=115;   FLOOR_LX_CHECKS=420000;  FLOOR_LX_BREAK=23000; FLOOR_LX_FALL=390000
 # the semantic differential (g2u item 7): hard variant sites run per field
 # the enforced classes' populations (generator cases, tier-independent):
 FLOOR_CLS_HOOK=600       # hook-nonident; measured 728 (g2u2)
@@ -257,6 +271,10 @@ for fl_ in $FORM_FLOORS; do
     r_=$(grep "^FORMID [0-9]* $fn_ " "$gres" | sed 's/.* rendered=\([0-9]*\).*/\1/')
     [ "${r_:-0}" -ge "$fv_" ] || note_fail 1 "form $fn_: ${r_:-0} hard sites rendered < floor $fv_"
 done
+echo "== LOOP_EXIT (Q-R7-3) rendered sites by form id: $(grep '^LOOPX forms=' "$gres" | sed 's/^LOOPX forms=//')"
+if grep '^LOOPX forms=' "$gres" | grep -q 'generic'; then
+    note_fail 1 "LOOP_EXIT: the generic row rendered a site (Q-R7-3: it serves none)"
+fi
 sfn=$(grep '^SITEFN ' "$gres" | sed 's/.*checked=\([0-9]*\).*/\1/')
 echo "== K-1 name check (ALL_PRESENT FUNC site.pred.fn_ref): variants checked ${sfn:-0}"
 [ "${sfn:-0}" -ge "$FLOOR_SITEFN" ] || note_fail 1 "K-1 name check: ${sfn:-0} variants < floor $FLOOR_SITEFN"
@@ -411,11 +429,16 @@ num() { grep "^G2 $2" "$1" | head -1 | sed 's/.*: *//; s/ .*//'; }
 
 # --quick: GENDIR's every QUICK_STRIDE-th batch, as a generator directory of
 # its own (the batch files linked, g2_all.c rewritten to list only them)
-sample() {  # sample GENDIR OUTDIR
-    local gd=$1 od=$2 i=0 b keep_=""
+sample() {  # sample GENDIR OUTDIR [pend]
+    local gd=$1 od=$2 mode=${3:-stride} i=0 b keep_="" take
     mkdir -p "$od"
     for b in "$gd"/batch_*.c; do
-        if [ $((i % QUICK_STRIDE)) = 0 ]; then
+        # mode pend (lane g2m4, W2 mutation 8): the batches that hold ONLY enforced-class
+        # sites, where the LOOP_EXIT sites live; they are few and every one is wanted
+        take=0
+        if [ "$mode" = pend ]; then is_pending_batch "$b" && take=1
+        else [ $((i % QUICK_STRIDE)) = 0 ] && take=1; fi
+        if [ "$take" = 1 ]; then
             ln -s "$b" "$od/"
             keep_="$keep_ $(basename "$b" .c | sed 's/^batch_//')"
         fi
@@ -456,7 +479,10 @@ w3_launch() {  # w3_launch BUILD
 w2_launch() {  # w2_launch M CC
     local m=$1 gd="$work/mut$1"
     if gen "$gd" --mutate "$m" > "$work/mut$m.gen.log" 2>&1; then
-        if [ "$quick" = 1 ]; then sample "$gd" "$work/mutq$m"; gd="$work/mutq$m"; fi
+        if [ "$quick" = 1 ]; then
+            if [ "$m" = 8 ]; then sample "$gd" "$work/mutq$m" pend; else sample "$gd" "$work/mutq$m"; fi
+            gd="$work/mutq$m"
+        fi
         if build "mut$m" "$2" "$gd"; then
             "$TO" 3600 "$work/build-mut$m/g2_run" --quick --mutants > "$work/mut$m.log" 2>/dev/null
             echo ok > "$work/mut$m.st"
@@ -513,6 +539,13 @@ w2_judge() {  # w2_judge M
         faults=$(echo "$line" | sed 's/.*faults \([0-9]*\).*/\1/')
         if [ "$m" -le 4 ]; then
             [ "${killed:-0}" -ge 1 ] || note_fail 1 "W2 text mutation $m caught no mutated site"
+        elif [ "$m" = 8 ]; then
+            # lane g2m4 (Q-R7-3): every LOOP_EXIT site's kit text wrapped in a loop of ITS OWN, so
+            # the break leaves that loop and not the driver's. A site that misses even once
+            # cannot be an equivalent mutant, so EVERY mutated site must be caught
+            echo "   W2 mutation 8, LOOP_EXIT sites (population floor $FLOOR_LOOPX_MUT): mutated ${mm:-?} killed ${killed:-?}"
+            [ "${mm:-0}" -ge "$FLOOR_LOOPX_MUT" ] || note_fail 1 "W2 mutation 8: ${mm:-0} LOOP_EXIT sites mutated < floor $FLOOR_LOOPX_MUT"
+            [ "${killed:-0}" = "${mm:-x}" ] || note_fail 1 "W2 mutation 8: a kit break inside a loop of its own was caught on ${killed:-0} of ${mm:-0} LOOP_EXIT sites (must be all): the driver-owned-loop check does not see where the break goes"
         else
             if [ "$m" = 7 ]; then
                 # G1 (lane g2u): judged over the sites that read below the
@@ -544,11 +577,11 @@ if [ "$quick" = 1 ]; then
     sample "$work/gen" "$work/genq"
     [ -n "$asan_cc" ] && asan_launch "$work/genq" > "$work/asan.out" 2>&1 &
     { if build wq "$wcc" "$work/genq"; then
-          for k in 1 2 3; do w1_launch wq "$k" & done
+          for k in 1 2 3 4; do w1_launch wq "$k" & done
           w3_launch wq
           wait
       fi; } > "$work/wq.out" 2>&1 &
-    for m in 1 2 3 4 5 6 7; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
+    for m in 1 2 3 4 5 6 7 8; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
 else
     floor_checks=$FLOOR_CHECKS; floor_asan=$FLOOR_ASAN_CHECKS; drv_tier=
     floor_m7neg=$FLOOR_MUT7_NEG; form_check_floors=$FULL_FORM_CHECK_FLOORS
@@ -578,7 +611,7 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|read-bounded\|AT_N\|loop-exit\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
     for fl_ in $FAM_FLOORS; do
         fn_=${fl_%%:*}; fv_=${fl_##*:}
         s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
@@ -641,6 +674,33 @@ EOF_PF
     else
         note_fail 1 "$cc: no 'G2 miss token' census line in $log"
     fi
+    # lane g2m4: the three MF_SITE_ABI 6 populations (driver census lines)
+    set -- $(grep '^G2 read-bounded range (Q-R7-1)' "$log" | sed 's/.*sites \([0-9]*\), checks \([0-9]*\), planted hit at n \([0-9]*\), answers that ARE a hit at n \([0-9]*\)$/\1 \2 \3 \4/')
+    if [ $# = 4 ]; then
+        [ "$1" -ge "$FLOOR_RB_SITES" ]   || note_fail 1 "$cc: read-bounded range: reads-below FIND sites $1 < floor $FLOOR_RB_SITES"
+        [ "$2" -ge "$FLOOR_RB_CHECKS" ]  || note_fail 1 "$cc: read-bounded range: checks $2 < floor $FLOOR_RB_CHECKS"
+        [ "$3" -ge "$FLOOR_RB_PLANT_N" ] || note_fail 1 "$cc: read-bounded range: checks with the planted hit at n $3 < floor $FLOOR_RB_PLANT_N"
+        [ "$4" -ge "$FLOOR_RB_HIT_N" ]   || note_fail 1 "$cc: read-bounded range: answers that ARE a hit at n $4 < floor $FLOOR_RB_HIT_N"
+    else
+        note_fail 1 "$cc: no 'G2 read-bounded range' census line in $log"
+    fi
+    set -- $(grep '^G2 AT_N' "$log" | sed 's/.*sites \([0-9]*\) checks \([0-9]*\) checks with lo == n \([0-9]*\),.*/\1 \2 \3/')
+    if [ $# = 3 ]; then
+        [ "$1" -ge "$FLOOR_ATN_SITES" ]  || note_fail 1 "$cc: AT_N sites $1 < floor $FLOOR_ATN_SITES"
+        [ "$2" -ge "$FLOOR_ATN_CHECKS" ] || note_fail 1 "$cc: AT_N checks $2 < floor $FLOOR_ATN_CHECKS"
+        [ "$3" -ge "$FLOOR_ATN_LO_N" ]   || note_fail 1 "$cc: AT_N checks with lo == n $3 < floor $FLOOR_ATN_LO_N"
+    else
+        note_fail 1 "$cc: no 'G2 AT_N' census line in $log"
+    fi
+    set -- $(grep '^G2 loop-exit' "$log" | sed 's/.*sites \([0-9]*\) checks \([0-9]*\) break-path \([0-9]*\) fall-through \([0-9]*\)$/\1 \2 \3 \4/')
+    if [ $# = 4 ]; then
+        [ "$1" -ge "$FLOOR_LX_SITES" ]  || note_fail 1 "$cc: LOOP_EXIT sites $1 < floor $FLOOR_LX_SITES"
+        [ "$2" -ge "$FLOOR_LX_CHECKS" ] || note_fail 1 "$cc: LOOP_EXIT checks $2 < floor $FLOOR_LX_CHECKS"
+        [ "$3" -ge "$FLOOR_LX_BREAK" ]  || note_fail 1 "$cc: LOOP_EXIT checks that took the break $3 < floor $FLOOR_LX_BREAK"
+        [ "$4" -ge "$FLOOR_LX_FALL" ]   || note_fail 1 "$cc: LOOP_EXIT checks that fell through $4 < floor $FLOOR_LX_FALL"
+    else
+        note_fail 1 "$cc: no 'G2 loop-exit' census line in $log"
+    fi
     grep -c . "$work/build-$cc/warnings.log" | sed "s/^/   compiler diagnostics lines ($cc): /"
 done
 
@@ -660,12 +720,12 @@ if [ "$quick" = 1 ]; then
     [ -x "$work/build-wq/g2_run" ] || note_fail 1 "the sampled witness build failed ($work/wq.out)"
 else
     echo "== witnesses (W1 wrong reference, W2 mutated kit text, W3 planted reads), on $wcc"
-    for k in 1 2 3; do w1_launch "$wcc" "$k"; done
+    for k in 1 2 3 4; do w1_launch "$wcc" "$k"; done
     w3_launch "$wcc"
 fi
-for k in 1 2 3; do w1_judge "$k"; done
+for k in 1 2 3 4; do w1_judge "$k"; done
 w3_judge
-for m in 1 2 3 4 5 6 7; do
+for m in 1 2 3 4 5 6 7 8; do
     [ "$quick" = 1 ] || w2_launch "$m" "$wcc"
     w2_judge "$m"
 done
@@ -676,7 +736,7 @@ done
 # only mf_ref_*, selects nothing and prints no REACH line, so it is not one),
 # linked against libpcrec_mftrace.a. Nothing here reads G2's generator or
 # driver output, and FLOOR_ROWS below is a literal measured once.
-FLOOR_ROWS=13   # distinct (table,row) pairs in the registry
+FLOOR_ROWS=14   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process
@@ -789,6 +849,7 @@ cls_floor miss-unstated "$FLOOR_CLS_MISS"
 cls_floor refusal-unnamed "$FLOOR_CLS_NAME"
 cls_floor fn_ref-unstated "$FLOOR_CLS_FNREF"
 cls_floor pf-edge "$FLOOR_CLS_EDGE"
+cls_floor loop-exit "$FLOOR_CLS_LOOPX"
 echo "checks passed: $passed"
 echo "checks failed: $failed"
 if [ "$failed" -gt 0 ]; then

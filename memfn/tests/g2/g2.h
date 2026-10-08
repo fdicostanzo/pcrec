@@ -21,7 +21,9 @@ enum { G2_FORM_EXPR, G2_FORM_STMT, G2_FORM_FUNC };
 enum { G2_OP_FIND, G2_OP_SKIP, G2_OP_VERIFY, G2_OP_ALL };
 enum { G2_H_RETURN, G2_H_ASSIGN, G2_H_ON_MISS, G2_H_ADVANCE, G2_H_ON_CAND,
        G2_H_BOOL };
-enum { G2_EMPTY_MISS, G2_EMPTY_NOP, G2_EMPTY_EXCLUDED };
+enum { G2_EMPTY_MISS, G2_EMPTY_NOP, G2_EMPTY_EXCLUDED,
+       G2_EMPTY_AT_N };    /* MF_SITE_ABI 6 (Q-R7-2): lo <= n and a non-NULL subject
+                              are PROVEN; the outcome on an empty scan is MISS's */
 enum { G2_REQ, G2_OPT };
 enum { G2_T_SET, G2_T_RUN };
 enum { G2_USE_POSITION, G2_USE_DISCARD };
@@ -106,6 +108,12 @@ typedef struct {
     uint8_t         tabbad;       /* the table disagrees with the set: a caller
                                      defect, the answer is UNDEFINED; only a
                                      fault is checked                            */
+    /* lane g2m4 (MF_SITE_ABI 6) */
+    uint8_t         floor_lo;     /* hooks.floor is the SAME text as hooks.lo: the
+                                     floor is lo itself, so the driver passes fl == lo */
+    uint8_t         loopx;        /* on_miss is exactly `break;` (Q-R7-3 LOOP_EXIT):
+                                     the wrapper runs the site inside a loop the
+                                     DRIVER owns, and a break must leave THAT loop */
 } g2_site;
 
 /* The shape FAMILIES (lane g2x, folded by lane g2u). G2_FAM_BASE is the
@@ -124,13 +132,15 @@ enum {
     G2_FAM_SETREST,   /* §15.4: STMT/ALL_PRESENT/ON_MISS, singleton SETs, EXCLUDED */
     G2_FAM_VMRUN,     /* §15.6, §R4.8.1 item 4: EXPR/VERIFY/BOOL, guard_by_caller */
     G2_FAM_PF,        /* §15.7 [R4g]: STMT/FIND/ASSIGN, one REQUIRED SET at offset 0 */
+    G2_FAM_MLINE,     /* §15.7 [R-7]: STMT/FIND/ASSIGN, one REQUIRED one-byte SET at -1,
+                         empty AT_N, floor == lo, a leaving on_miss (goto/return/break;) */
     G2_FAM_SEM,       /* the semantic differential's variant groups              */
     G2_NFAM
 };
 static inline const char *g2_fam_name(int f)
 {
     static const char *const names[G2_NFAM] = {
-        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "sem",
+        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "mline", "sem",
     };
     return f >= 0 && f < G2_NFAM ? names[f] : "?";
 }
@@ -152,6 +162,10 @@ enum {
     G2_PEND_FNREF,    /* a FUNC site stating no fn_ref (0 = none) (a refusal
                          naming `fn_ref`, R1; on a RETURN site whose `miss` is
                          also unstated, `miss` serves too)                      */
+    G2_PEND_LOOPX,    /* lane g2m4: on_miss is exactly `break;` (Q-R7-3 LOOP_EXIT): the generic
+                         row serves none, so the site is RENDERED by a non-generic row (then
+                         run inside a driver-owned loop the break must leave) or REFUSED
+                         naming `on_miss`                                          */
     G2_PEND_EDGE,     /* lane g2pf: a PF variant that states a field the base cell
                          leaves unstated or in another class: it RENDERS and
                          answers as the reference, or is REFUSED naming that
@@ -160,7 +174,7 @@ enum {
 };
 static inline const char *g2_pend_name(int c)
 {
-    static const char *const names[G2_NPEND] = { "none", "hook-nonident", "miss-unstated", "refusal-unnamed", "fn_ref-unstated", "pf-edge" };
+    static const char *const names[G2_NPEND] = { "none", "hook-nonident", "miss-unstated", "refusal-unnamed", "fn_ref-unstated", "loop-exit", "pf-edge" };
     return c >= 0 && c < G2_NPEND ? names[c] : "?";
 }
 
