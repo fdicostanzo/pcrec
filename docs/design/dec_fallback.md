@@ -66,7 +66,7 @@ deliverable now specified here and not built in this lane.
 | critB1 m1 (row 2 fires many times; "at most once" false) | fixed: rows 0 and 2 repeat, rows 1 and 3-9 fire at most once, row 10 ends the compile; the trace build asserts it (measured: no at-most-once row fired twice in any compile) | §1.3, §1.9 |
 | critB1 m2 (§1.7's "no size row after a [SEL-1] row" argued wrongly) | fixed by MECHANISM, not by argument: `prefilter-collapse`'s `off` cell becomes PASS and the attribution walk goes BACK through the fired rows to the first non-PASS cell, which reproduces today's token on the m2 sequence too. The sequence stays unpopulated (it needs F-B3's state, 0 in every run) and is listed as legal in §1.9 | §1.2, §1.7, §1.9 |
 | critB1 m3 (`fit_fired`/`fit_last` must be volatile; the anchored machine's own fallback) | fixed: the fired record is `volatile` driver state (`fit_seq[]`/`fit_nseq`, plus `fit_fired`); the anchored machine's overflow → search-filter fallback (`compile.c:356-372`) is declared an unhosted sibling | §1.3, §7 |
-| manager: Q1, Q2, Q4(b) | still Frank's | §11 |
+| manager: Q1, Q2, Q4(b) | RULED by Frank 2026-10-08 (all as recommended) | §11 |
 | manager: Q3, Q5, Q6, Q7 | taken as recommended; Q5 reframed by MAJOR-1/2 and moved to [DEC-COLLAPSE-WASTE] | §11 |
 | manager: Q8 | done (this panel) | §11 |
 
@@ -1485,6 +1485,13 @@ B has no data file, calibration or generated table. T1-T4 are code.
 ---
 
 ## 11. Open questions for Frank (each with a recommendation)
+
+**RULINGS (Frank, 2026-10-08):**
+- **Q1 YES.** [DEC-VAR-ATTRIB] is filed in plan.md as one later mover row.
+- **Q2 KEEP.** `fof` stays on the size rows only. B2 carries the limits.md §8 / run_resource_tests.sh:1338 wording fix. A side ruling: the flag's NAME over-promises (it is a size-cap policy, not "fast"), so it is renamed `--size-cap=refuse|degrade` (default `degrade`) as its own later row, [SIZE-CAP-FLAG], NOT folded into B.
+- **Q4(b) YES.** B7 lists T1 and T2 as new `--list-axes` axes, with a registry.md spec hunk and a bench inbox note.
+- The manager takes the recommendations on Q3, Q5 (moved to [DEC-COLLAPSE-WASTE]), Q6, Q7 and Q8 (the panel has run).
+
 
 The manager took Q3, Q5, Q6 and Q7 as recommended (Q5 reframed: its subject
 is now [DEC-COLLAPSE-WASTE], §5.1) and Q8 is done (the panel). Three stay
