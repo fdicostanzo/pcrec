@@ -1145,3 +1145,13 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Ordering:** M6 (N6 + the strided VM span; prerequisite R4h, landed)
     could go first instead. The kit has no preference beyond main's: M7
     first per main's message.
+
+## R-8 — M7, N7 (the encoding seam's span compare) migrates, zero movers
+
+- ack: 2026-10-08 — **R-8 (M7, N7).** Taken now on branch `lane/memfn-m7`,
+  cut from main bec97b31. Step 1 is a READ-ONLY scoping lane (m7scope,
+  opus). It will post a notice here: the edit set; the D58 boundary
+  (which bytes move to the kit and which stay backend text, per
+  encoding); the D153 overlap check against refactor B3+ and any
+  in-flight src/enc/ work; and the MF_VOCAB gap for `mismatch`. No build
+  until main has read that notice. Ids S666-S675 are noted.
