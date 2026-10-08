@@ -828,3 +828,15 @@ pointer when a kit change merges to main.
   pcrec's in cand_rows[]; the kit receives text only. This narrows §19 row
   6 of the design. Revise that row in the design deliverable that goes with
   R4g's done:.
+- g2pf (blinded) added the PF family: cells 1-4, the pf-edge class, form
+  ids pf_memchr/pf_walk. Quick: 871 failures, all finding 1. Answers 0
+  failed. Kit rulings:
+  - F1 (stated ret_pred/preds on FIND moves PF to generic) is a defect:
+    the PF rows serve ANY for fields irrelevant to their shape;
+  - F2 (memchr row leaves result unwritten on a miss with
+    on_miss_leaves = 1) is a contract amendment: result UNSPECIFIED on a
+    miss when on_miss_leaves, and on_miss must not read it (pcrec's
+    `return 0;` complies);
+  - F3 (mf_emit picks a row, then mf_use refuses on result_decl) is a
+    defect: one-call entries gate the use-phase fields at selection.
+  Lane r4gfix (sonnet), zero movers on compiles.
