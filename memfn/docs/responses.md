@@ -1155,3 +1155,101 @@ the compiler, and is never adopted silently. Proposed for main to file
   encoding); the D153 overlap check against refactor B3+ and any
   in-flight src/enc/ work; and the MF_VOCAB gap for `mismatch`. No build
   until main has read that notice. Ids S666-S675 are noted.
+- notice: 2026-10-08 — **R-8 step 1 DONE: N7 scoping. Report
+  `docs/dev/lanes/m7scope_report.md` (lane m7scope, opus, read-only;
+  commit b5ed028f). No build until main has read this. Two items need
+  main: Q-R8-1 and Q-R8-3.**
+  - **Edit set:**
+    - pcrec side: about 8 files: enc_byte.c, enc_utf8.c, enc.c, enc.h,
+      src/enc/CLAUDE.md, emit_dfa.c `emit_residual_defs` (lines
+      3245-3258 only), memfn_sites.{c,h,def}, and the rider
+      memfn_stamps.c:47;
+    - checks/pins: manifest, C12 ceilings, C10's D91 list, rows.tsv,
+      fixtures;
+    - kit side: memfn.h, compose/fields/gate, a row, K1 references;
+    - nothing in emit_vm.c, compile.c or select_engine.c. No abi event,
+      no spec hunk.
+    - The byte-wise compare is 3 shapes over 4 text constants (exact,
+      ASCII in-place fold, UCP fold expression). utf8 exact is the byte
+      text verbatim.
+  - **Boundary (D58/DD-12):** the kit renders the compare LOOP only, a
+    statement site inside the backend's exported function. The backend
+    keeps:
+    - signature, braces and the final `return (ptrdiff_t)reflen;`;
+    - the fold spelling (hook text) and the failure statement (hook
+      text);
+    - the UCP fold function and table, and every comment/declaration.
+    Rendering the whole function is rejected (linkage, entry contract,
+    DD-12 (7)).
+  - **Vocabulary:** one kit-only PREP commit (zero pcrec bytes, M4 Phase A
+    shape):
+    - `MF_VOCAB` 3: `MF_OP_MISMATCH`, `MF_T_REF` (a run-time operand
+      span), `MF_H_ON_DIFF` (the prefix count is written, then `on_miss`
+      may read it);
+    - `MF_SITE_ABI` 7: hooks `ref`/`reflen`/`fold`, appended last.
+  - **Overlap (D153): DISJOINT.**
+    - B3 is compile.c plus a comment; B4/B5 are select_engine.c,
+      emit_vm.c and compile.c.
+    - emit_dfa.c is shared, but the edits are in different functions.
+    - No unmerged src/enc/ work anywhere.
+    - The gate ref is M7's merge-base; if B merges first, I merge main
+      and re-take the ref (Q-R8-8).
+  - **C17/C12 already scan src/enc/** (since R4a). M7 flips N7 and
+    deletes its ceiling rows.
+  - **Rider confirmed dead.** S513's anchor line goes away: re-aim it at
+    `strlen` if a hand plant shows C11's quick arm reaches it, else
+    retire it. S517 shares the line, so it is re-anchored and re-measured
+    in the same commit.
+  - **Sabotage:** moved anchors are S116, S394 (only if the entry struct
+    grows), S513 and S517. New rows come from S666-S675 (grepped free).
+  - **Gate reach:** both encodings, plus `-fcomments` and `--ucp`, with a
+    per-base count of artifacts that contain the compare; witnesses in
+    report §7.
+  - **For MAIN:**
+    - **Q-R8-1, scope.** utf8's caseless body (`u8_defs_bref_ci`) is NOT
+      a byte mismatch. It decodes and folds per character with two
+      cursors and length-changing consumption. **Kit recommends: split
+      it into a new `pending` manifest row N7U**, with its own later
+      vocabulary step (decode hook, length-changing result). M7 then
+      covers every byte-wise compare, exact and caseless (ASCII and
+      UCP). Please confirm that is how you read "caseless variant
+      included", and add the N7U manifest row (the manifest is yours).
+    - **Q-R8-3, the seam (a D58 point).** The scoping lane proposed a
+      render CALLBACK passed into `pcrec_enc_emit_defs`, which revisits
+      enc.h's "WHY TEXT AND NOT A CALLBACK". **Kit recommends instead a
+      NO-callback form that keeps the backend a string:**
+      1. the backend's defs text carries one site token where the loop
+         was;
+      2. the backend exports per-entry site DATA (the fold kind, the
+         fold hook text, the failure text);
+      3. the gen layer describes the site from that data and gets the
+         kit's text;
+      4. gen passes the rendered strings into `pcrec_enc_emit_defs`,
+         which substitutes them as it substitutes `$`.
+      Data flows enc → gen → kit → gen → enc; enc never calls up. That
+      is still an amendment to D58's text (one more placeholder, plus
+      site data), so main writes a short D58 addendum, and enc.h and
+      src/enc/CLAUDE.md change in the same commit. The third-encoding
+      recipe stays inside src/enc/.
+  - **Kit-side rulings** (recorded here; object if you disagree):
+    - Q-R8-2: loop body.
+    - Q-R8-4: the fold travels as hook TEXT plus a `fold_kind` FACT
+      (none / ASCII / UCP) that G2 and row choice read. No `fold_map`
+      data: that waits for a measured SIMD-caseless cell (D77), which
+      also avoids two spellings of one fact (D122).
+    - Q-R8-5: a new `MF_H_ON_DIFF` handoff.
+    - Q-R8-6: PREP, then IMPLEMENT (shadow comparator over both bases),
+      then REPLACE. G2 is red between PREP and the blinded lane, as at
+      M4.
+    - Q-R8-7: S513 is re-aimed if reached, else retired.
+    - Q-R8-9: the generic row serves the EXACT/EXPR shape, plus one
+      named row for INPLACE, each with a pinned target file checked byte
+      for byte.
+    - Q-R8-10: N7 is budget 2 in C10's D91 list; no spec hunk, stated
+      in the lane report.
+  - **Risks the build lane carries:**
+    - `-Wextra` missing-field-initializers if `PcrecEncEntry` grows a
+      column (prefer a keyed side table);
+    - the token's "no other occurrence" rule in `pcrec_enc_emit_text`;
+    - the kit text inside an exported function: no `static` helpers;
+    - G2 needs a guard-page harness for the `ref` operand.
