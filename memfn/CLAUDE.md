@@ -17,11 +17,16 @@
 The design of record is `docs/design/memfn/integration.md` (rev 4.9;
 read its §R4.9, then §R4.8 and §R4.7, first). §R4.9 (R-9, lane r9d,
 2026-10-08) is the SIMD layer's design pass under D147 addendum 11.
-SIMD forms are ROWS of the kit's form tables, with a layer, an ISA level
-(`src/levels.def`, born with batch 1) and their own deny. A SIMD rendering
-is the SIMD-off rendering plus guarded text (the floor rule). The verdict
-regime and the per-row bar are there, with the first batch (`vrun-w32`/
-`vrun-w16`) and Q-R9-1..8 for Frank. §R4.8 is M1b's contract (R-5:
+Revised after the D6 panel r9 (43 findings, §R4.9.12): a zero-mover step
+R4e′.0 first makes the FUNC part PRE and OFS share (`ofs_fn_define`) a
+first-match table `fn_rows[]` with BODY and PREFIX slots; SIMD forms are
+PREFIX rows of it, with a layer, an ISA level (`src/levels.def`, born with
+batch 1) and their own `--memfn=` deny, under one shared walk. A SIMD
+rendering is the SIMD-off rendering plus guarded text (the floor rule).
+Verdicts are two-tier (D144 addendum 4): kit timings are unofficial; an
+official verdict is a pcrec-bench run on each box a level targets,
+requested through the pcrec manager (the kit never writes to the bench).
+The first batch (`vrun-w32`/`vrun-w16`) and Q-R9-2..9 for Frank are there. §R4.8 is M1b's contract (R-5:
 `stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4). R4h prep (2026-10-08,
 Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
 counter; it also added the ADVANCE hooks' shape classes (fields.def) and

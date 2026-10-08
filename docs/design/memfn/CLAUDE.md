@@ -191,6 +191,16 @@ its DESIGN record.**
     ran the scalar path in every cell).
   - Q-R9-1..8 are open for Frank; RQ-1..5 are pcrec-side requests.
 
+  **`[r9]` REVISED AFTER THE D6 PANEL r9** (`../../dev/reviews/
+  2026-10-08-r9-memfn-simd.md`, 43 findings, same lane): a zero-mover
+  seam R4e′.0 (`fn_rows[]`, BODY/PREFIX slots, for the FUNC part PRE and
+  OFS share) precedes batch 1; one shared kit walk and one deny carrier;
+  `policy`/`budget` as row-contract fields; SIMD bytes neutral to pcrec's
+  length decisions by construction (RQ-3); a two-tier regime under D144
+  addendum 4 (official verdicts are pcrec-bench runs on each targeted
+  box; the bench submission is §R4.9.5.1); the record's states
+  (CANDIDATE/ACCEPTED/STALE/REJECTED); Q-R9-1 RESOLVED, Q-R9-9 new;
+  §R4.9.12 maps every finding id to its section.
   Read §R4.9 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
