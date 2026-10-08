@@ -915,8 +915,8 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * it: that flag chooses a LANGUAGE for a prefilter, not whether one
      * exists, and a caller who wants existence has `-fprefilter`. */
     /* [OPT-4.1] `collapsible_rep` IS LOAD-BEARING HERE AND
-     * WAS MISSING (r47sel finding 1). `compile_driver`'s `retry_collapse`
-     * does NOT test it, so the [SEL-1] rung is offered to a pattern with
+     * WAS MISSING (r47sel finding 1). T1's `sel1-collapse` row
+     * (`fit_sel1_collapse_applies`, src/core/compile.c) does NOT test it, so the [SEL-1] rung is offered to a pattern with
      * no collapsible repeat — and for such a pattern the collapsed
      * lowering IS the exact one, so there is no distinct rescue and
      * nothing to refuse. Declining one and stamping `declined-nullable`
