@@ -9208,3 +9208,19 @@ A decision table is an ordered list of rows, each a predicate over facts plus an
 **Revisit when.** [POSS-CALL-COPY]'s trigger fires, or [ART-POSS-ARMS] (which widens the same verdict) needs per-site contexts.
 
 **D154 addendum 1 (Frank, 2026-10-07): `(?R)` follows the SOUND answer.** `(?:b(?R)a|a+)` on `baa` is (0,3), equal to PCRE2 under `NO_AUTO_POSSESS`. PCRE2 10.46's default (1,3) is a PCRE2 bug ("it's a bug"): its auto-possess pass is not call-aware for `(?R)`. This is recorded as U18 and goes upstream through the bench's reporting process (I-133). pcrec builds no mode that reproduces it. Stakes at ruling: 0 corpus and 0 bench rows; only k93.rxt's three cells, which carry PCRE2's default as skipped `under pcre2-auto-possess` lines.
+
+## D58 ADDENDUM 2 (2026-10-08, [MEMFN] R-8 / M7 — the residual text gains ONE kit site token; still no callback)
+
+**Context.** M7 migrates N7, the residual's byte-wise span compare (`<prefix>_span_match[_caseless]`), into the kit (D146/D147). The kit renders code, but the residual is text that `src/enc/` owns (enc.h, "WHY TEXT AND NOT A CALLBACK"). The m7scope lane proposed a render CALLBACK passed into `pcrec_enc_emit_defs`. The kit session recommended a no-callback form instead (responses.md, lane/memfn-m7 a5b017ea, Q-R8-3).
+
+**Decision (manager, under D58 item 3's delegated seam path).** Take the NO-CALLBACK form:
+1. A backend's residual text may carry ONE kit site token where a delegated loop sits. Besides `$`, it is the only special spelling `pcrec_enc_emit_text` recognises. It is spelled so that ordinary C cannot contain it, and its "no other occurrence" rule is checked as `$`'s is.
+2. Beside its text, a backend exports per-entry SITE DATA: the fold kind (none / ASCII / UCP), the fold hook text and the failure statement text. This is data, not code. Prefer a keyed side table to a new `PcrecEncEntry` column (`-Wextra` initializer risk).
+3. The gen layer reads that data, describes the site to the kit, and passes the rendered strings into `pcrec_enc_emit_defs`, which substitutes them as it substitutes `$`. Data flows enc → gen → kit → gen → enc. `src/enc/` never calls up and never includes a kit or gen header.
+4. The backend keeps everything else: the signature and braces, the `return`, the fold function and its table, and every comment and declaration. A backend whose compare is not byte-wise (utf8's caseless per-character walk) simply does not use the token.
+
+**Why.** The backend stays a string plus data, so a backend author still writes C, not emitter code. The third-encoding recipe stays inside `src/enc/`: a new backend adds text, a site-data row, and its table row, all in this directory. A callback would invert the layer order (enc calling into gen/kit) and give a backend a code dependency the seam exists to prevent.
+
+**In the same change (M7's REPLACE commit):** enc.h's "WHY TEXT AND NOT A CALLBACK" paragraph and the third-encoding recipe gain the token and the site data; `src/enc/CLAUDE.md` likewise.
+
+**Revisit when.** A backend needs a delegated site that is not one contiguous statement (then a second token or a structured placeholder is the question), or N7U (utf8's per-character caseless compare) migrates and needs a decode hook.
