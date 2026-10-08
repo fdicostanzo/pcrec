@@ -955,3 +955,18 @@ pointer when a kit change merges to main.
   migration is done, then you're unlocked." Lanes go 2:1, and heavy slots
   go 2:1 when both threads have a run queued. The split lifts at the
   migration's end state (M5′). Posted to main.
+- 2026-10-08: The bench box's CPU, at Frank's prompt ("bench ... runs on a
+  separate Linux box that uses an older CPU"). pcrecdev2 read it with
+  lscpu.
+  - budu-ryzen1600 is an AMD Ryzen 5 1600 (Zen 1). Flags: sse2..sse4_2,
+    ssse3, avx, avx2 (executed as 2x128-bit uops), bmi1/bmi2 (PDEP/PEXT
+    microcoded, so slow), popcnt, abm (lzcnt), sha_ni. NO AVX-512.
+  - The dev box is a Ryzen 7 7700X (Zen 4: full-width AVX2, AVX-512).
+  - For the SIMD thread:
+    - 16 B SSE2/SSE4.2 forms first; AVX2 second, with smaller bench gains
+      expected; AVX-512 filed (no bench evidence possible); no PDEP/PEXT
+      in kernels.
+    - Acceptance is read on the bench CPU, or both CPUs are reported. A
+      dev-box-only verdict overstates.
+  - These go to R-9's D6 panel as inputs. r9d was briefed before this, so
+    there is no addendum to the running lane.
