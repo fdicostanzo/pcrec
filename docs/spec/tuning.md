@@ -2707,7 +2707,8 @@ necessary SET and the one-byte pick are untouched.
 §2.27's and §2.28's pre-check is emitted at all, and in which shape, and it is
 stated in this document because its outcome is caller-observable — one stamp,
 and the presence or absence of a `memchr` in the artifact. Since `abi` 60
-([K82]) it is a first-match table of five rows, in this order, listed live by
+([K82]) it is a first-match table of five rows (since [START-TABLE] C4 the
+PRESENCE rows of the one start table `cand_rows[]`), in this order, listed live by
 `--list-axes` as axis `req-admit`: `none`, `one-attempt` (G2), `dominated`
 (G1), `set-leads` (§2.40) and `emitted`. The first row whose predicate holds
 decides; only `set-leads` has a deny bit (`-fno-req-set-lead`, bit 45), and
@@ -3510,7 +3511,8 @@ digits.
 **[K82] (B), `abi` 61 (`docs/design/litscan_k82h.md`, revision 2 and Frank's
 rulings of 2026-10-05; `docs/dev/lanes/k82hbuild_report.md`).
 ANSWER-IDENTITY-preserving, and GIVE-UP-preserving.** Denies the `handoff`
-row of the pre-check's USE table, axis `req-use` (`--list-axes`): the second
+row of the pre-check's USE table, axis `req-use` (`--list-axes`; since
+[START-TABLE] C4 the FIRST rows of the one start table `cand_rows[]`): the second
 table beside §2.29's admission, deciding what a search body does with an
 emitted run pre-check's answer. Deny-only, MASKED out of `rx_info.flags`
 (`strategy_denials`) for the mask's own reason; the activity record is

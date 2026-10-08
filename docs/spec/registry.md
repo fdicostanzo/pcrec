@@ -273,7 +273,10 @@ machine-form axes and, for `prefilter` and `search-start`, the NEXT and
 RECOVER rows of the one start table `cand_rows[]` that `cand_select`
 walks (since [START-TABLE] C3, `docs/design/start_table.md`), so a new
 candidate landing in one of those arrays appears here with no edit to
-the dump. The
+the dump. The `kind=predicate` axes `req-admit` and `req-use` are read the
+same way: their rows (name, deny, stamp token, description) are the
+PRESENCE and FIRST rows of `cand_rows[]` since [START-TABLE] C4, which
+`req_admit`/`req_use` walk. The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
 `kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`

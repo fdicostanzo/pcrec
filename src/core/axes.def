@@ -206,10 +206,12 @@ PCREC_AXIS(PCREC_NO_REQ_RUN, "-fno-req-run", 0, "", PCREC_AXIS_DEFAULT_ON)
  * bytes only, as before the row. */
 PCREC_AXIS(PCREC_NO_REQ_RUN_FOLD, "-fno-req-run-fold", 0, "", PCREC_AXIS_DEFAULT_ON)
 /* [K82] the pre-check admission's `set-leads` row (src/gen/emit_dfa.c,
- * `req_admits[]`): a rarer necessary-set byte tested before the run. */
+ * `cand_rows[]`'s PRESENCE slot; `req_admits[]` until [START-TABLE] C4): a
+ * rarer necessary-set byte tested before the run. */
 PCREC_AXIS(PCREC_NO_REQ_SET_LEAD, "-fno-req-set-lead", 0, "", PCREC_AXIS_DEFAULT_ON)
 /* [K82] (B) the pre-check use table's `handoff` row (src/gen/emit_dfa.c,
- * `req_uses[]`): the gate's first window hit, less K, as the scan start. */
+ * `cand_rows[]`'s FIRST slot; `req_uses[]` until [START-TABLE] C4): the
+ * gate's first window hit, less K, as the scan start. */
 PCREC_AXIS(PCREC_NO_REQ_HANDOFF, "-fno-req-handoff", 0, "", PCREC_AXIS_DEFAULT_ON)
 /* [START-SET] (D148) the candidate table's start-set rows (src/gen/
  * emit_dfa.c, `dfa_pfs[]`): `first-class`, the VM hat's seek, and

@@ -217,7 +217,8 @@ defect traced to that edge (design §4.2.1, §10).
   core half is `ReqRun.whole_maxoff`; `pcrec_req_window` derives the window's
   `maxoff` (`+ at`), published as the new derived row `req_run_maxoff`
   (`facts.def`, `pcrec_fact_req_run_maxoff`). Its consumer is the handoff
-  (src/gen/emit_dfa.c `req_uses[]`, `tuning.md` §2.41). Sabotage S465 (a wide
+  (src/gen/emit_dfa.c, the FIRST rows of `cand_rows[]` — `req_uses[]` until
+  [START-TABLE] C4 — `tuning.md` §2.41). Sabotage S465 (a wide
   class counted as one byte) and S466 (an alternation's left width) and S474
   (the choice preferring a bounded run) are anchored here.
   **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): A RUN OF

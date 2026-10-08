@@ -40,7 +40,8 @@ None of them is read by a check.
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (141/141 at C2, the table, its walk,
+  family+seeds `call_graph.txt` names (138/138 at C4, `req_admits`/
+  `req_uses` and their row types out, `CandAdmit`/`CandUse` in; 141/141 at C2, the table, its walk,
   nine new predicates and three row types in; 127/127 at C1, re-derived on post-R4c
   main: the kit's migration replaced three pre-check emitters with five,
   `docs/dev/lanes/stc1_report.md` §3; 125/125 at revision 2.1; 114/114 at
