@@ -937,3 +937,16 @@ pointer when a kit change merges to main.
     clean. make test now runs through scripts/perfrun.
   - Posted done: R-7 and a notice with G2's Q-G2M4-1..9 and the redundant
     libc_names memchr entry.
+- 2026-10-08: RULING from Frank, given directly to the kit session. SIMD
+  is an INDEPENDENT, PARALLEL thread and no longer waits to come "last".
+  - It can be switched on and off (`-fmemfn-simd`, default OFF), so it is
+    its own optimization path. It does not wait for the algorithmic queue
+    or the migration to finish; part of the refactor's purpose is to
+    allow exactly this.
+  - Bar: each SIMD form must be faster than the non-SIMD code at its
+    sites, or show a specific named benefit (e.g. code space), because it
+    imposes restrictions.
+  - Default-ON stays its own ruled event (D147).
+  - Posted to main as a proposed D-entry (responses.md).
+  - Meanwhile M7 is merged on lane/memfn-m7; blinded G2 lane g2m7 is
+    running; slot12/run.sh is written.
