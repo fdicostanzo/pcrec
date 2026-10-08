@@ -863,3 +863,6 @@ pointer when a kit change merges to main.
   lane/memfn-n4 (from the n2pool branch), covering the MF_TRACE reach
   counters, rows.tsv, the per-row signatures with controls, the census
   floors (placeholders, pinned in a slot) and the spec literals.
+- Session reset (Frank). N4 is queued for a slot; its slot8 script is
+  written but not launched. n2pool was delivered and awaits main's merge.
+  wake.md is current. No lanes or runs are in flight.

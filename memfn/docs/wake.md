@@ -105,7 +105,10 @@ also remove main's lanes) once they are merged and >120 min idle.
 ## 5. Next actions on wake
 
 1. Cron heartbeat at 17,47. ListAgents: is pcrecdev1 up?
-2. Check whether N4's slot ran (worktrees/memfn-slot/slot8 if launched) and
-   whether n2pool and N4 are merged.
+2. N4's slot script is WRITTEN, NOT LAUNCHED: worktrees/memfn-slot/slot8/run.sh
+   (build, full census with wall time, n2_report --propose). Ask main (pcrecdev1)
+   whether the slot is free (N4 was queued 4th at ~23:00), then launch it detached
+   and watch for `SLOT8_PART1_DONE`. Pin row_floors.tsv from propose.txt, commit,
+   then make test in the same slot. Check whether n2pool has been merged.
 3. Continue from §4's OWED list. Post each R4h-class edit set to main before
    building.
