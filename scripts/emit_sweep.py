@@ -853,7 +853,18 @@ def sha(b):
     return hashlib.sha256(b).hexdigest() if b is not None else None
 
 
-def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout):
+def facts_diff_keys(c_a, c_b):
+    """The `kind\tKEY` heads of the lines that differ between two facts
+    listings (a line-count change is reported as the key `<LINECOUNT>`)."""
+    al = c_a.decode("utf-8", "replace").splitlines()
+    bl = c_b.decode("utf-8", "replace").splitlines()
+    if len(al) != len(bl):
+        return {"<LINECOUNT>"}
+    return {"\t".join(x.split("\t")[:2]) for x, y in zip(al, bl) if x != y}
+
+
+def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
+                     census_fn=None, declared_keys=None):
     """ONE pattern of an argv stream, compared INSIDE the worker so only a
     small tuple (never the artifacts) crosses back to the merge:
     (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b); hunk is None
@@ -866,7 +877,26 @@ def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout):
         ok_b, c_b, e_b = compile_fn(bin_b, pat, timeout)
     key = f"{f}:{kind}:{pat[:60]!r}"
     hunk = first_diff_hunk(c_a, c_b) if ok_a and ok_b and c_a != c_b else None
-    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, (ok_a and census_hit(c_a))
+    if census_fn is None:
+        hit = ok_a and census_hit(c_a)
+    else:
+        # The stream's own listing carries no loop text, so the census is read
+        # off the REF side of a DIFFERENT artifact of the same pattern
+        # (`census_fn`), and a mover only counts as explained when every line
+        # that moved is one of the stream's DECLARED keys.
+        hit = False
+        if ok_a and CENSUS_RES is not None:
+            # per ENCODING: a listing's `utf8` program is the --engine=vm -e utf8
+            # artifact's, not the byte one's
+            for enc in ("byte", "utf8"):
+                if ("%s\tRX_VM_PROGRAM_BYTES\t" % enc).encode() not in c_a:
+                    continue
+                ok_c, c_c, _ = census_fn(bin_a, pat, timeout, enc)
+                hit = hit or (ok_c and census_hit(c_c))
+        if hunk is not None and declared_keys is not None:
+            if not facts_diff_keys(c_a, c_b) <= declared_keys:
+                hit = False
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit
 
 
 def merge_argv_stream(name, rows, mirror):
@@ -1386,6 +1416,12 @@ def main():
     ap.add_argument("--no-real-run", action="store_true")
     ap.add_argument("--only-emit-ir-reach", action="store_true")
     ap.add_argument("--keep", action="store_true")
+    ap.add_argument("--census-facts-keys", metavar="KIND:KEY[,...]",
+                    help="with --census-ref-re: the facts stream's census. A facts "
+                         "mover is explained iff the REF listing has an RX_VM_PROGRAM_BYTES line and the pattern's REF --engine=vm .c is "
+                         "a census hit AND every moved listing line is one of these "
+                         "kind:KEY heads (e.g. byte:RX_VM_PROGRAM_BYTES,"
+                         "utf8:RX_VM_PROGRAM_BYTES)")
     ap.add_argument("--census-ref-re", metavar="FILE",
                     help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
                          "movers == REF artifacts matching any of them, 0 off-diagonal")
@@ -1499,6 +1535,19 @@ def main():
         # its threads). Results are tagged by stream and merged in stream
         # order, so the output is byte-identical to the per-stream form.
         mirror = same_binary(bin_a, bin_b)
+        # [MEMFN] R4h (lane advtri): the facts stream's census. RX_VM_PROGRAM_BYTES
+        # reports the VM program's emitted length (the quantity the entry-shape size
+        # term compares) and is listed only for an artifact that carries a VM program,
+        # so it moves exactly where the REF listing has that line AND the layout
+        # census hits the --engine=vm artifact of that listing's encoding, and NO other fact may move.
+        facts_census = {}
+        if args.census_facts_keys:
+            facts_census["facts"] = dict(
+                census_fn=lambda b, p, t, enc: compile_stream_c(
+                    b, p, t, engine="vm",
+                    extra=list(run_extra) + (["-e", "utf8"] if enc == "utf8" else [])),
+                declared_keys={"\t".join(k.split(":", 1)) for k in
+                               args.census_facts_keys.split(",")})
         tasks = []
         comp_files_run = []
         comp_out = None
@@ -1536,8 +1585,9 @@ def main():
             log(f"[emit_sweep] === {label}: {title} ===")
             spans[name] = (len(tasks), len(patterns))
             for item in patterns:
-                tasks.append((False, lambda item=item, fn=fn: argv_stream_task(
-                    fn, item, bin_a, bin_b, mirror, args.timeout)))
+                tasks.append((False, lambda item=item, fn=fn, name=name: argv_stream_task(
+                    fn, item, bin_a, bin_b, mirror, args.timeout,
+                    **facts_census.get(name, {}))))
         done = run_pooled(tasks, args.jobs, args.comp_jobs)
         # merge in the old per-stream order: argv streams, composition, dumps
         for name, (lo, n) in spans.items():
