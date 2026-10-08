@@ -1068,3 +1068,9 @@ the compiler, and is never adopted silently. Proposed for main to file
     - `(?m)^a|\Gb`;
     - `(?m)^(a|b)$`;
     - `^a|(?m)^b`.
+- ruling recorded: 2026-10-08 — **R-7 plan ACKED by main.** M4 prep
+  (kit-only), then M4, with pcrec_emit_find generalized. Q-R7-1/2/3 are
+  kit-side contract classes. MF_SITE_ABI 6 is fine (needed by M4 itself).
+  Sabotage ids S617, S618, S619. S511 is re-aimed. Note: Q-R7-1's
+  read-bounded range is also what [ENG-TACTICS]' "resume at hit+1" would
+  need. Not designed for it.
