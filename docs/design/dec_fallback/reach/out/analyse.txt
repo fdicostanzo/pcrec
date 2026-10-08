@@ -1,0 +1,43 @@
+variant x arm files: 60
+max attempts observed: 9 (COMPILE_MAX_ATTEMPTS 25)
+non-trial T1 rows fired twice in one compile: none
+mismatches: none
+run-time invariants (rev 2 §1.9):
+  has_var admissions                                         1104
+  has_var with CR!=NONE or dd (must be 0)                    0
+  compiles ending on sel1-drop                               1303
+  ... whose final prefilter survived (must be 0)             0
+  compiles with a [SEL-1] row                                1902
+  ... with a size row before/after it (must be 0 off F-B3)   0
+[DEC-COLLAPSE-WASTE] rung attempts by class, base arm (rung attempt that kept a prefilter, or the designed decline):
+  lowboth  SEL1     (i) no collapsible repeat                63
+  lowboth  SEL1     (ii) nullable, not empty_admits          2
+  lowboth  SEL1     (iii) empty_admits: designed decline     1
+  lowboth  SEL1     collapsed                                119
+  lowboth  SIZECAP  (i) no collapsible repeat                42
+  lowboth  SIZECAP  (ii) nullable, not empty_admits          1
+  lowboth  SIZECAP  collapsed                                41
+  lowdfa   SEL1     (i) no collapsible repeat                63
+  lowdfa   SEL1     (ii) nullable, not empty_admits          2
+  lowdfa   SEL1     (iii) empty_admits: designed decline     1
+  lowdfa   SEL1     collapsed                                29
+  lowsize  SEL1     (i) no collapsible repeat                1
+  lowsize  SEL1     (ii) nullable, not empty_admits          1
+  lowsize  SEL1     (iii) empty_admits: designed decline     1
+  lowsize  SEL1     collapsed                                7
+  lowsize  SIZECAP  (i) no collapsible repeat                48
+  lowsize  SIZECAP  (ii) nullable, not empty_admits          2
+  lowsize  SIZECAP  collapsed                                54
+  lowthr   SEL1     (i) no collapsible repeat                1
+  lowthr   SEL1     (ii) nullable, not empty_admits          1
+  lowthr   SEL1     (iii) empty_admits: designed decline     1
+  lowthr   SEL1     collapsed                                7
+  lowthr   SIZECAP  (i) no collapsible repeat                2
+  lowthr   SIZECAP  (ii) nullable, not empty_admits          1
+  plain    SEL1     (i) no collapsible repeat                1
+  plain    SEL1     (ii) nullable, not empty_admits          1
+  plain    SEL1     (iii) empty_admits: designed decline     1
+  plain    SEL1     collapsed                                1
+  plain    SIZECAP  (i) no collapsible repeat                2
+  plain    SIZECAP  (ii) nullable, not empty_admits          1
+rows never reached in any variant x arm: [('T1', 'forcing'), ('T1', 'nomem'), ('T1', 'unroll-rescue')]

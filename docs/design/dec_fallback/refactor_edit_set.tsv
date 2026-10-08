@@ -1,5 +1,6 @@
-# docs/design/dec_fallback.md §5.2: the text refactor B CHANGES, written once
-# as data, at main 31a9ae4c (abi 68). ../start_table/sabotage_anchors.py reads
+# docs/design/dec_fallback.md §4.1: the text refactor B CHANGES, written once
+# as data, at main 31a9ae4c (abi 68); rev 2 (42ab7c25, src identical) adds
+# the forcing and size-term-trial lines. ../start_table/sabotage_anchors.py reads
 # it (a row is RE-AIM iff its anchor sits in a `def` below or OVERLAPS a
 # `token`/`line` occurrence; NOTE the script matches token/line text in EVERY
 # file, so an entry must be distinctive). GRAIN RULE (stc67_report.md §4 item
@@ -19,7 +20,12 @@ line	(r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);	B2	the fast-or-fail re
 token	ovf_eligible	B3	the [SEL-1] block is deleted into rows sel1-collapse / sel1-drop
 token	retry_collapse	B3	the [SEL-1] block is deleted into rows
 token	retry_drop	B3	the [SEL-1] block is deleted into rows
+line	if (cx.job && cx.job->pf.forcing) {	B3	[rev 2, critB1 MAJOR-3] the forced-ask arrival becomes row 0 (forcing), ahead of nomem
 line	if (cx.failed_nomem) {	B3	the K60 propagation becomes row 1 (nomem)
+# [rev 2] row 2 (size-term-trial) also edits the catch's `if (st_phase == ST_LADDER) {`
+# line; NOT listed, because that text occurs 3 times in src/ and the script
+# matches a line everywhere. No sabotage anchor names any of the three (checked
+# at 42ab7c25), so the omission moves no re-aim.
 line	const FitSel fs = { &cx, defo.flags, collapse_reason,	B3	FitSel gains the arrival's label set and the fired record
 line	size_drop_rung, dfa_disabled };	B3	FitSel initializer
 line	const FitRung *rung = cx.size_cap_refused	B3	the label test moves into the walk

@@ -2802,7 +2802,16 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **Findings.** §4.6 is fixed at B7 with zero artifact movers (one order swap). Four new findings: F-B1 `a${v}b` lists `--engine=vm`; F-B2 a false listing desc; F-B3 `collapsed-prefilter` without a collapse (pop 0); F-B4 label precedence. §4.1 splits: `pfc_rep` is the drift, while the nullable conjunct is [OPT-4.1]'s designed decline and a token mover.
   - **Questions.** Eight for Frank (§11).
   - Instruments: `dec_fallback/`.
-- `dec_fallback/` — that note's edit set, the derived sabotage-anchor map, the call graph it was derived with, and the state-reader census (own CLAUDE.md).
+  - **REVISION 2 (lane `decfbrev2`, 2026-10-08), PROPOSED, panel-addressed: read its §R first.** It applies the light D6 panel (`../dev/reviews/2026-10-08-r-decfallback-panel.md`, every finding accepted, the manager's dispositions binding).
+    - **Row 0 `forcing`** (the `--emit-facts` force-loop arrival) goes ahead of `nomem`, so the ladder is total.
+    - **The attribution walk goes BACK** through the fired rows past PASS cells; `prefilter-collapse`'s `off` cell is PASS. That reproduces today's token on the sequence critB1 m2 found.
+    - **The §4.1 fix LEFT B** as [DEC-COLLAPSE-WASTE], with critB1's three-way split measured and both candidate forms.
+    - **B0/B1 instruments are designed:** an `emit-ir-auto` stream plus hand-written `check_ir_value` rows for every T2 row and scope (a hard gate for B4); a full stderr+rc stream; five limit variants with `-e utf8` bases; floors re-measured in the instrument's own population; `row_reach`; the trace's post-row state and per-slot order; and `run_fallback_table.sh` with the observed-stamp leg the registry legs retire behind at B5.
+    - **A 34-row sabotage plan.**
+    - **Built in the lane:** the derived reader census (408 lines) and a row-reach PROTOTYPE, which found a witness or an UNREACHED argument for every row. Its 60 runs check the tables' content against today's probes, stamps and `--emit-ir` with 0 mismatches.
+    - **New finding F-B5:** `--pattern-esc` is ignored by `--emit-ir`/`--emit-facts`.
+    - **Open for Frank:** Q1, Q2, Q4(b).
+- `dec_fallback/` — that note's edit set, the derived sabotage-anchor map, the call graph it was derived with, the state-reader census (derived from the declarations since rev 2), and `reach/`, rev 2's row-reach prototype and its output (own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
