@@ -5127,4 +5127,4 @@ on the Linux dev box (all seven builds in parallel, ~5 s each at `-O1`). The
 trace's other gates are lane-run, not `make test`: `scripts/emit_sweep.py
 --variant all --trace` (B1 gate 656 s at `--jobs 6`, the box shared with a
 running chain), `docs/design/dec_fallback/row_reach.py` (the full 60-cell
-mirror ~10 min at 6 jobs) and `cross_record.py` (one-time, ~25 min at 8).
+mirror ~3 min at 6 jobs) and `cross_record.py` (one-time, ~6 min at 8).
