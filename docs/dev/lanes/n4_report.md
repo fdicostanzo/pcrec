@@ -251,3 +251,24 @@ Census runs used: 3 of 4.
 | §4 literal floors in docs/spec/: rows per table, witnessed rows | no hunk: not caller-observable except runcmp's rows, whose spec table is now checked (§5, P4) |
 | §5 N4 "pcrec artifact movers: none" | ✓ binary identical; 10/10 compiles; per-run traced-vs-plain identity |
 | wiring + CLAUDE.md | ✓ `make test-memfn-rows` in TEST_SECTIONS; tests/memfn, tests, memfn/src, rowcon CLAUDE.md; docs/testing.md; trace_format.md |
+
+## 11. VALIDATION (kit manager's slot, 2026-10-07/08, Linux dev box)
+
+§8's owed runs, done on lane/memfn-n4 after main ad669fb8 was merged in:
+
+| run | tip | result |
+|---|---|---|
+| full N2 census, JOBS=16 (the one-pool driver) | 4492a0a1 | rc 0, **wall 379 s**, `would_decline=0 floors=floor_fail=0,floor_placeholder=12,reason_stale=0,reach_dropped=0` |
+| `n2_report --propose`, pinned by hand | 4e081f78 | 12 `pcrec_floor` values = floor(0.9 x chosen); the re-run report reads `floor_fail=0 floor_placeholder=0` |
+| `make -k -j16 -Otarget test` | 4e081f78 | 680 s, ONE red: test-codegen [K37] |
+| K37 fix (`run_rows.sh`'s prerequisite test in K37's exempt form) | e8e3e1d8 | `make test-codegen` green (K37: 1,077 sites bounded or allowlisted); `test-memfn-rows` 70/0 |
+
+The K37 red was this lane's own new script. Its `for f in build/pcrec ...`
+existence loop read as an unbounded compiler site. It was a false positive of
+a textual check, and K37 was right to ask for the exempt spelling. The re-run
+covered test-codegen alone: the fix touches one test script that no other
+section reads. A triage lane (read-only) found the cause; `[SABANCHOR]`
+resolved all 498 rows, so no mech row moved.
+
+`g2_floor` stays PLACEHOLDER (§7): OWED to a blinded follow-up that makes G2
+count per row.
