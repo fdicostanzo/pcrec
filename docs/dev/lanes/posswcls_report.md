@@ -89,7 +89,11 @@ subject of length <= 3 on {a, x, é, É, Ā, space, .} (400 subjects).
   Standalone: `run_wclass_census.sh` 17/0, `run_cpset_structure.sh` 28/0.
 - `bash tests/rxtsource/run_rxtsource_tests.sh` after re-pin: 0 failed.
 - `make test-possessify` (run_possdiff.sh, which has the utf8/ucp/utf8i
-  arms files in its default mode, + run_possessify_tests.sh): see STATE.
+  arms files in its default mode, + run_possessify_tests.sh): rc 0,
+  2/2 scripts. possdiff compared 623,938 cells, reach 15/15, manifest
+  35/35. run_possessify_tests.sh read 44 passed / 0 failed, including
+  R4SUM/R-5 over 205 patterns x 3 compiles.
+- `bash tests/harness/run.sh tests/possessify/possessify.rxt`: 3537 / 0.
 
 ## STATE AT HANDOFF
 
