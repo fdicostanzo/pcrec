@@ -3797,8 +3797,9 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
-- **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67):**
-  `run_codegen_tests.sh`'s `ABI_EXPECT` 67 and its ledger message;
+- **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
+  abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;
   `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to `8c175f58`;
   `run_prefilter_collapse.sh` gains the [anch] section (six both-anchored
   nullable witnesses that must keep `hybrid`/`selected`/`empty_admits no`,

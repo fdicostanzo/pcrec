@@ -109,7 +109,7 @@ defect traced to that edge (design §4.2.1, §10).
   one's. The root byte `minw` (E2) joins it when a step moves its reader;
   the node-grain widths stay in `src/opt/mrl.c`. Sabotage S206/S207 anchor
   here.
-  **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 67): THE EMPTY-PATH
+  **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 68): THE EMPTY-PATH
   ANCHOR MASKS** (`pcrec_pattern_empty_masks`, fact `empty_admits`, E1, no
   deny, forced at the E1 seal beside `nullable`). The set of masks the
   empty paths carry, a mask ORing `EM_S` for a non-multiline `^`/`\A` and

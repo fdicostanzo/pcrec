@@ -1285,7 +1285,7 @@ directly or from a count-collapse. The bench re-measures its `cls-*` hybrid
 cells after this lands; their prior 1.2-9.9x loss is the predicted win.
 
 **"NULLABLE" HERE MEANS "ADMITS AN UNCONFINED EMPTY MATCH"** ([NULLABLE-ANCH],
-`abi` 67, 2026-10-08). Both scopes of the decline, the rung's and the
+`abi` 68, 2026-10-08). Both scopes of the decline, the rung's and the
 default's, ask the pattern-facts record's `empty_admits` (`facts_listing.md`),
 not bare nullability: the decline fires only where SOME way of matching the
 empty string crosses no non-multiline `^`/`\A` or no non-multiline

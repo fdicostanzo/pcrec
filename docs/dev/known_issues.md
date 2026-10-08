@@ -13,7 +13,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K97 — OPEN (filed 2026-10-08, lane nullanch1; deferred, D77: no measured loss on a bench cell) — PERFORMANCE: the [NULLABLE-ANCH] admission taxes a LONG all-MATCHING subject ~2-3x
 
-Since abi 67 a nullable pattern whose every empty path crosses a non-multiline start AND end anchor keeps its exact hybrid prefilter (`tuning.md` §2.17). On a near-miss that is the point (`^(([a-z]+)*)+$` on 17 letters + `!`: a ~2.3 s `PCREC_ERR_STEPS` give-up becomes a 24 ns `nomatch`). On a subject the pattern MATCHES end to end, the forward DFA pass walks the whole subject and then the VM walks it again, so the hybrid pays both. Repro (scratch tier, one core, `taskset -c 3`, median of 5; `docs/dev/optloop/nullanch/timing1.sh` -> `timing1_results.tsv`, main e6b6c25f vs lane/nullanch1):
+Since abi 68 a nullable pattern whose every empty path crosses a non-multiline start AND end anchor keeps its exact hybrid prefilter (`tuning.md` §2.17). On a near-miss that is the point (`^(([a-z]+)*)+$` on 17 letters + `!`: a ~2.3 s `PCREC_ERR_STEPS` give-up becomes a 24 ns `nomatch`). On a subject the pattern MATCHES end to end, the forward DFA pass walks the whole subject and then the VM walks it again, so the hybrid pays both. Repro (scratch tier, one core, `taskset -c 3`, median of 5; `docs/dev/optloop/nullanch/timing1.sh` -> `timing1_results.tsv`, main e6b6c25f vs lane/nullanch1):
 
 | pattern, subject (matches) | before (VM only) | after (hybrid) | ratio |
 |---|---|---|---|
