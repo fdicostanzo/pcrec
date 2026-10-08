@@ -1226,7 +1226,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   row's `tok`. `dfa_select` stays for the machine-form axes, without its
   route parameter (`cand_routed`/`DFA_SELECT_ROUTED` deleted). The
   `prefilter`/`search-start` `--list-axes` accessors project the table
-  (`cand_axis_rows`). In the trace build a NEXT/RECOVER reader runs
+  (`cand_axis_rows`; since C6 every start axis is `pcrec_cand_list_row`'s).
+  In the trace build a NEXT/RECOVER reader runs
   `cand_hit` (self-check + `CANDROW`), not the oracle, and the route oracle
   is gone (the dispatch reads `cand_route_of`).
 - **emit_dfa.c — PRESENCE and FIRST read the start table** ([START-TABLE]
@@ -1289,6 +1290,32 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   route or a cycle in the reads. The asks it adds are BOUND's own predicates
   (`dfa_interior_dead` on ATTEMPT, the `start_anchor` fact on VM), neither
   of which reaches an assertion (`assert_reach.tsv`).
+- **emit_dfa.c — the listing reads the table; G1, F1 and R4 read through
+  the walk** ([START-TABLE] C6/C7, lane stc67, 2026-10-08;
+  `docs/design/start_table.md` §3.2 C6/C7; C6 zero movers, C7 the declared
+  `--list-axes` commit; no abi event). Every start axis's `--list-axes`
+  rows are `cand_rows[]`'s rows projected by `list[route]`
+  (`pcrec_cand_list_row`, with `cand_list_stamp`/`cand_list_value`: a row's
+  stamp is its SLOT's on the listed route, its value the stamp writer's
+  spelling), and each listed row carries its one-line `desc` beside it
+  (`CandRow.desc`; the PRESENCE/FIRST/RETRY payloads and `axes_dump.c`'s
+  hand table gave theirs up). `CandList.fact_deny` is a FACT deny the
+  listing SHOWS (bit 28 on the anchored BOUND rows, 29 on `window`), never
+  one the walk reads (§3.7). The self-check also fails a listed row without
+  `desc` (or the reverse) and a listed `order` that is not the row's
+  position among its axis's rows in table order. The per-axis accessors
+  (`pcrec_req_admit_row`/`_use_row`, `pcrec_reseed_row`, the two
+  `pcrec_dfa_axis_*_cands` for prefilter/search-start) and
+  `PcrecAxisCand.stamp` are gone. The three remaining reads of §1.3 are
+  checked edges: G1 (`dominated`) and R4 (`adaptive-dense`) read NEXT
+  through `dfa_cand_scan(cx, reader, ...)` (`dfa_pf_read`,
+  `attempt_next_read`), F1 (`handoff`) reads PRESENCE through
+  `req_admit_read` (plus `cand_every_route`, the entry slots' cross-route
+  half of `cand_hit_every`); `cand_nodes[].reads` declares PRESENCE->NEXT
+  and RETRY->NEXT (CR_DFA, CR_ATTEMPT) and FIRST->PRESENCE (CR_DFA).
+  Sabotage S607-S609 (an edge dropped), S610 (a listed row's desc dropped).
+  C7 corrects D-3 (the DFA hat's desc said `T = S & E*`; the code scans
+  `T = S`) and lists every start axis as `kind=list`.
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter

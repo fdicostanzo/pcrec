@@ -48,7 +48,9 @@ None of them is read by a check.
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (147/147 at C5b, `cand_read`,
+  family+seeds `call_graph.txt` names (150/150 at C6 and C7,
+  `attempt_next_read`, `dfa_pf_read` and `req_admit_read` in as WALK, the
+  three selection reads C6 routes through `cand_read`; 147/147 at C5b, `cand_read`,
   `CAND_READ` and `CAND_BOUND_ONE` in as WALK; 144/144 at C5, `pcrec_reseed_rows`/
   `pcrec_reseed_nrows`/`PcrecReseedRow`/`vm_reseed_holds` out, the four new
   payload types, `cand_window_of`/`cand_window_clamps`,
@@ -126,7 +128,15 @@ None of them is read by a check.
   construction); on main before C5b the derivation gave re-aim C5b = S269,
   S274, S276, S441, S492, and `--step C5b=37462a8e..` gave `rerun_at` C5b =
   S491, S493, S496, S497 (hunk), the edit set's own four
-  (`docs/dev/lanes/stc5b_report.md` §2).
+  (`docs/dev/lanes/stc5b_report.md` §2). Re-derived at C6/C7 (lane stc67)
+  with the edit set's C6/C7 text named BY CHANGED LINE OR TOKEN (a `def` only
+  for a definition deleted, new or rewritten throughout): on main `f5d3547d`
+  re-aim C6 = S606 (in `cand_nodes`, whose PRESENCE and NEXT reads lines are
+  textually identical, so the def names it), C7 none; `--step
+  C6=f5d3547d..dee6f5f9` (ROOT the main tree) gives 63 rows `rerun_at` C6
+  (hunk 20, reach 43) and `--step C7=dee6f5f9..103b07a4` (ROOT the C6
+  tree) 11 (hunk). Post-C7: 514 row files / 532 sites, 120 family rows, all
+  anchors resolve (`docs/dev/lanes/stc67_report.md` §2).
   **STEPS ([admin1008b], 2026-10-07; stc4_report.md §4 item 3, stc5_report.md
   §4 item 6):** `--step NAME=A..B` (repeatable, `--repo`, `--reach-hops`,
   `--compare NAME=S1,S2,...`) derives `rerun_at` from the commit's ACTUAL
@@ -152,6 +162,22 @@ None of them is read by a check.
   BOUND readers' `start_anchor` asks now sit under B3/B4's predicates, whose
   rows they read through the walk, and no BOUND predicate reaches an
   assertion.
+- `trace_declared_C6.txt` — [C6, lane stc67] C6's declared trace
+  multiplicity: one site key, `attempt-next`, the record G1's and R4's
+  ENG_ATTEMPT-route read of NEXT adds (before C6 that selection,
+  `attempt_next_of`, printed none). The DFA-route reads and F1's print the
+  records `dfa_pf_of` and `req_admit` print, so they move none. Meaningless
+  against any parent but C6's.
+- `listing_declared_C7.tsv` + `listing_diff.py` — [C7, lane stc67] C7 is a
+  DECLARED listing commit (stream 5 only): the manifest names every
+  `--list-axes` cell it changes (`axis candidate column old new`; `*` = every
+  row the PARENT lists under the axis: the five start axes' `kind`
+  `predicate` -> `list`, and D-3's `applies` cell), and the script compares
+  the parent's listing with the commit's cell by cell, failing an undeclared
+  change, a declared change that did not happen or happened otherwise, a
+  row/header/section difference, or a `*` that expands to no row (K35).
+  Usage: `python3 -I listing_diff.py REF_TSV NEW_TSV listing_declared_C7.tsv`.
+  At C7: 136/136 rows, 19 declared cells, 19 changed as declared.
 - `trace_declared_C5b.txt` — [C5b, lane stc5b] the commit's DECLARED trace
   multiplicity (start_table.md §3.3 item 5): the four BOUND readers' site
   keys, the records C5b adds. The `--trace-declared` file of

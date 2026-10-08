@@ -3432,6 +3432,24 @@ BOUND dropped from the slot graph's `reads` column, so N7's read is an
 undeclared edge and the trace build aborts (`CANDORACLE undeclared-read`) on
 the `first-class` witness; no default-build byte moves.
 
+**[START-TABLE] C6/C7 (lane stc67, 2026-10-08)**: C6 routes §1.3's three
+remaining selection reads through `cand_read` and declares each edge in
+`cand_nodes[].reads`; the listing reads the table. Derived on main
+`f5d3547d` (start_table.md §3.5, the edit set's C6 text): re-aim C6 =
+**S606** (it sits in `cand_nodes`, which C6 edits; its anchor is unchanged
+and its plant still aborts on the `first-class` witness, re-verified); no
+row anchors in `axes_dump.c`, and C7 re-aims none. New rows, all
+`candoracle`, each verified DETECTED by plant on a scratch copy: **S607**
+(FIRST's read of PRESENCE, F1, dropped: every witness aborts
+`undeclared-read FIRST PRESENCE`), **S608** (PRESENCE's read of NEXT loses
+its ATTEMPT route only: `(?m)^ERROR` aborts; a route-blind edge check would
+pass it), **S609** (RETRY's read of NEXT, R4, dropped: `[a-z](?=the)`
+aborts), **S610** (`candoracle registry`: the `memchr` row keeps its
+listing and loses its `desc`; the self-check aborts
+`table-desc-unlisted` and `--list-axes` prints the unauthored placeholder,
+which the axis registry check fails). No default-build byte moves for any
+of the four.
+
 ### [ART-POSS-ARMS] — rows S560-S565, S601-S604 (lane possbuild, 2026-10-07)
 
 `docs/design/poss_arms.md` rev 2.1 §8.2's ten plant rows, against

@@ -38,7 +38,8 @@
 # A separate section of `make test` (`make test-cand-oracle`), not part of
 # `test-codegen`: it builds the compiler again, and `make smoke` includes
 # `test-codegen` (run_premul_table.sh's measured argument). Mech arm
-# `candoracle` (S594-S600).
+# `candoracle` (S594-S600; the selection reads' edges S606-S609 and a listed
+# row without its desc, S610: [START-TABLE] C5b/C6).
 #
 # Usage: bash tests/codegen/run_cand_oracle.sh [TREE]   (default: this repo)
 # Env:   CC (the compiler the trace build uses; tests/lib/cc_resolve.sh's),

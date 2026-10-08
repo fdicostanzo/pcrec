@@ -1,7 +1,5 @@
-STEP C6 f5d3547d..HEAD: 33 definitions edited, 141 reached, 0 pure-rename hunks ignored
 SITES 532 ROW_FILES 514 DISTINCT_IDS 514 DUP_IDS 0 () FAMILY_ROWS 120 RE_AIM_ROWS 7 RE_RUN_ROWS 113 COUNT_MISMATCH 0 UNRESOLVED_SRC 1 UNRESOLVED_OTHER 0 OTHER_ROWS_NAMING_FAMILY 0
 RESOLUTION datarow 11 def 464 factrow 1 filescope 2 lead 3 outside 50 unresolved 1
 RE_AIM_BY_COMMIT C3 1 C5 2 C6 4
-STEP C6: 71 rows re-run (hunk 15, reach 56)
-RE_RUN_SITES_BY_COMMIT C6 62 after-C5b 54
+RE_RUN_SITES_BY_COMMIT C6 11 after-C5b 105
 UNRESOLVED S571_deny_map_drops_run_overlap 1 src/gen/memfn_sites.c 35

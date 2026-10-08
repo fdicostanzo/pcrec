@@ -15,7 +15,7 @@ S02_body_whole_file	S02	1	tests/codegen/run_codegen_tests.sh	file:tests/codegen/
 S03_attribution_cp	S03	1	tests/codegen/run_codegen_tests.sh	file:tests/codegen/run_codegen_tests.sh	outside	486	1/1	OTHER					
 S04_duplicate_typedef	S04	1	src/gen/emit_dfa.c	emit_rx_abi_types	def	1861	1/1	OTHER					
 S05_no_rename	S05	1	tests/codegen/run_codegen_tests.sh	file:tests/codegen/run_codegen_tests.sh	outside	434	1/1	OTHER					
-S06_ts1_nonconst_table	S06	1	src/gen/emit_dfa.c	emit_u8_table	def	3317	1/1	OTHER		C6			C6:reach(cand_rows)
+S06_ts1_nonconst_table	S06	1	src/gen/emit_dfa.c	emit_u8_table	def	3317	1/1	OTHER					
 S07_ts1_errno	S07	1	src/gen/emit_dfa.c	emit_unanchored	def	9704	1/1	RE-RUN		after-C5b			
 S08_casefold_order	S08	1	src/parse/parse.c	p_class	def	1414	1/1	OTHER					
 S09_casefold_delete	S09	1	src/parse/parse.c	char_node	def	711	1/1	OTHER					
@@ -64,7 +64,7 @@ S135_backstep_clamped_to_startpos	S135	1	src/gen/emit_vm.c	vm_look_behind_branch
 S135_backstep_clamped_to_startpos	S135	2	src/gen/emit_vm.c	vm_look_behind_branch	def	6891	1/1	OTHER					
 S136_width_rule_accepts_variable	S136	1	src/parse/mod_lookaround.c	la_widths	def	310	2/2	OTHER					
 S13_trie_off_shipped	S13	1	src/ir/nfa.c	enum@src/ir/nfa.c:295	def	295	1/1	OTHER					
-S140_look_ceiling_predicate	S140	1	src/gen/emit_vm.c	pcrec_vm_prefilter_window	def	3639	1/1	RE-RUN		C6		prefilter_collapsed	C6:reach(cand_rows)
+S140_look_ceiling_predicate	S140	1	src/gen/emit_vm.c	pcrec_vm_prefilter_window	def	3639	1/1	RE-RUN		after-C5b		prefilter_collapsed	
 S141_look_ceiling_builders	S141	1	src/gen/emit_vm.c	vm_emit_search_body	def	13475	1/1	RE-RUN		after-C5b		mrl_win,nclamp	
 S141_look_ceiling_builders	S141	2	src/gen/emit_vm.c	vm_emit_search_body	def	13343	1/1	RE-RUN		after-C5b		mrl_win	
 S142_alias_family_wrong_module	S142	1	src/parse/registry.c	verb_rows	def	1241	1/1	OTHER					
@@ -121,7 +121,7 @@ S182_trail_guard_keeps_stamped_macro	S182	2	src/gen/emit_vm.c	vm_emit_storage	de
 S183_null_delegation_dropped	S183	1	src/gen/emit_vm.c	vm_emit_entries	def	13711	1/1	RE-RUN		after-C5b			
 S184_frame_size_from_wrong_struct	S184	1	src/gen/emit_vm.c	vm_plan	def	10731	1/1	OTHER					
 S185_ofsskip_resume_off_by_one	S185	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	278	1/1	OTHER					
-S186_ofsskip_no_reseed	S186	1	src/gen/emit_dfa.c	pf_emit_ofs_reseed	def	6475	1/1	OTHER		C6			C6:reach(cand_rows)
+S186_ofsskip_no_reseed	S186	1	src/gen/emit_dfa.c	pf_emit_ofs_reseed	def	6475	1/1	OTHER					
 S187_ofsk_selection_never_fires	S187	1	src/opt/prefix_k.c	pcrec_prefix_ksets	def	279	1/1	RE-RUN		after-C5b			
 S188_ofsk_verify_uses_escape_set	S188	1	src/opt/prefix_k.c	pcrec_prefix_ksets	def	200	1/1	RE-RUN		after-C5b			
 S189_anchored_machine_unpruned	S189	1	src/core/compile.c	build_anchored_dfa	def	365	1/1	OTHER					
@@ -157,17 +157,17 @@ S215_scanedge_selection_cap_dropped	S215	1	src/opt/scanedge.c	pcrec_scanedge_dfa
 S216_opt42_default_decline_neutered	S216	1	src/opt/select_engine.c	prefilter_decision	def	859	1/1	OTHER					
 S217_has_push_npush_estimate_reverts	S217	1	src/gen/emit_vm.c	vm_plan_entry	def	10888	1/1	OTHER					
 S217_has_push_npush_estimate_reverts	S217	2	src/gen/emit_vm.c	vm_count_slots_rep	def	3102	1/1	OTHER					
-S218_pinned_predicate_widened	S218	1	src/gen/emit_dfa.c	start_pinned_applies	def	7826	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S218_pinned_predicate_widened	S218	2	src/gen/emit_dfa.c	start_pinned_applies	def	7828	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S219_pinned_seed_conjunct_dropped	S219	1	src/gen/emit_dfa.c	start_pinned_applies	def	7831	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S218_pinned_predicate_widened	S218	1	src/gen/emit_dfa.c	start_pinned_applies	def	7826	1/1	RE-RUN		after-C5b			
+S218_pinned_predicate_widened	S218	2	src/gen/emit_dfa.c	start_pinned_applies	def	7828	1/1	RE-RUN		after-C5b			
+S219_pinned_seed_conjunct_dropped	S219	1	src/gen/emit_dfa.c	start_pinned_applies	def	7831	1/1	RE-RUN		after-C5b			
 S21_cls_peek_raw	S21	1	src/parse/parse.c	cls_peek_past_dash	def	463	1/1	OTHER					
-S220_pinned_view_clause_dropped	S220	1	src/gen/emit_dfa.c	start_pinned_applies	def	7828	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S220_pinned_view_clause_dropped	S220	1	src/gen/emit_dfa.c	start_pinned_applies	def	7828	1/1	RE-RUN		after-C5b			
 S221_pinned_start_written_as_zero	S221	1	src/gen/emit_dfa.c	emit_unanchored	def	9736	1/1	RE-RUN		after-C5b			
 S222_start_stamp_forked_from_selection	S222	1	src/gen/emit_dfa.c	dfa_search_start_name	def	7863	1/1	RE-AIM	C3		def dfa_search_start_name	dfa_search_start_name,dfa_search_start_of	
 S223_pinned_assert_routing_call_deleted	S223	1	src/gen/emit_dfa.c	emit_unanchored	def	9654	1/1	RE-RUN		after-C5b			
-S224_vm_frameless_stamp_inverted	S224	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		C6			C6:reach(caller of pcrec_cand_listed)
-S225_vm_frameless_stamp_from_npush	S225	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		C6			C6:reach(caller of pcrec_cand_listed)
-S226_vm_frameless_stamp_conditional	S226	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		C6			C6:reach(caller of pcrec_cand_listed)
+S224_vm_frameless_stamp_inverted	S224	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		after-C5b			
+S225_vm_frameless_stamp_from_npush	S225	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		after-C5b			
+S226_vm_frameless_stamp_conditional	S226	1	src/gen/emit_vm.c	vm_emit_stamps	def	11493	1/1	RE-RUN		after-C5b			
 S227_scan_edge_entry_s0_only	S227	1	src/gen/emit_dfa.c	emit_scan_loop	def	9465	1/1	OTHER					
 S228_cls_fold_recognizer_widened	S228	1	src/gen/clskit.c	is_ascii_fold_pair	def	631	1/1	OTHER					
 S229_utf8_retry_advances_one_byte	S229	1	src/enc/enc_utf8.c	advance_utf8	def	535	1/1	OTHER					
@@ -211,45 +211,45 @@ S25_xlevel_counts_not_adjacency	S25	1	src/parse/mod_modifiers.c	pcrec_modport_op
 S260_legend_dist_raw_malloc_silent	S260	1	src/gen/emit_dfa.c	emit_state_legend	def	4751	1/1	OTHER					
 S261_limits_name_invisible_define	S261	1	src/core/compile.c	compile_driver	def	956	1/1	OTHER					
 S262_dfa_invariant_loop_open_inverted	S262	1	src/ir/dfa.c	clo_open	def	859	1/1	OTHER					
-S263_vm_anchor_bound_subject_length	S263	1	src/gen/emit_dfa.c	CAND_VM_BOUND_ONE	def	8079	1/1	OTHER		C6			C6:reach(cand_rows)
-S264_end_window_one_byte_narrow	S264	1	src/gen/emit_dfa.c	pcrec_emit_end_window_clamp	def	999	1/1	RE-RUN		C6			C6:reach(caller of cand_window_clamps)
+S263_vm_anchor_bound_subject_length	S263	1	src/gen/emit_dfa.c	CAND_VM_BOUND_ONE	def	8079	1/1	OTHER					
+S264_end_window_one_byte_narrow	S264	1	src/gen/emit_dfa.c	pcrec_emit_end_window_clamp	def	999	1/1	RE-RUN		after-C5b			
 S265_req_byte_memchr_inverted	S265	1	memfn/src/precheck.c	file:memfn/src/precheck.c	outside	181	1/1	OTHER					
-S266_freqpick_argmax	S266	1	src/core/findings.c	pcrec_find_pick	def	440	1/1	OTHER		C6			C6:reach(cand_rows)
+S266_freqpick_argmax	S266	1	src/core/findings.c	pcrec_find_pick	def	440	1/1	OTHER					
 S267_req_run_memcmp_inverted	S267	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	304	1/1	OTHER					
 S268_req_run_alt_overclaim	S268	1	src/facts/req.c	rr_alt	def	446	1/1	OTHER					
-S269_precheck_admission_removed	S269	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7102	1/1	RE-RUN		C6		CAND_BOUND_ONE,cand_route_of,prefilter_collapsed,req_route_one_attempt	C6:reach(cand_rows)
+S269_precheck_admission_removed	S269	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7102	1/1	RE-RUN		after-C5b		CAND_BOUND_ONE,cand_route_of,prefilter_collapsed,req_route_one_attempt	
 S26_unset_applied_first	S26	1	src/parse/mod_modifiers.c	pcrec_modport_optrun	def	493	1/1	OTHER					
-S270_precheck_dominance_removed	S270	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7143	1/1	RE-RUN		C6		req_byte_dominated_by	C6:reach(cand_rows)
+S270_precheck_dominance_removed	S270	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7143	1/1	RE-RUN		after-C5b		req_byte_dominated_by	
 S271_var_emit_arm_ignores_caseless	S271	1	src/gen/emit_vm.c	vm_var	def	8612	1/1	OTHER					
 S272_prefilter_on_var	S272	1	src/opt/select_engine.c	prefilter_decision	def	862	1/1	OTHER					
 S273_span_match_length_off_by_one	S273	1	src/gen/emit_vm.c	vm_bref	def	8569	1/1	OTHER					
-S274_precheck_g2_vm_linearity_removed	S274	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7107	1/1	RE-RUN		C6		CAND_BOUND_ONE,prefilter_collapsed	C6:reach(cand_rows)
+S274_precheck_g2_vm_linearity_removed	S274	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7107	1/1	RE-RUN		after-C5b		CAND_BOUND_ONE,prefilter_collapsed	
 S275_cls_fold_emitted_constant_shifted	S275	1	src/gen/clskit.c	pcrec_clskit_emit_inline	def	1224	1/1	OTHER					
-S276_precheck_g2_unanchored_admitted	S276	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7102	1/1	RE-RUN		C6		CAND_BOUND_ONE,cand_route_of,prefilter_collapsed,req_route_one_attempt	C6:reach(cand_rows)
+S276_precheck_g2_unanchored_admitted	S276	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7102	1/1	RE-RUN		after-C5b		CAND_BOUND_ONE,cand_route_of,prefilter_collapsed,req_route_one_attempt	
 S277_precheck_whole_set_removed	S277	1	src/gen/emit_dfa.c	req_set_rest_members	def	1362	1/1	RE-RUN		after-C5b		pcrec_artifact_has_dfa_scan	
 S278_precheck_whole_run_removed	S278	1	src/gen/emit_dfa.c	req_run_tests	def	1094	1/1	RE-RUN		after-C5b		pcrec_artifact_has_dfa_scan	
 S279_run_term_offset_plus_one	S279	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	189	1/1	OTHER					
 S27_verb_blame_offset	S27	1	src/parse/mod_verbs.c	verb_answer	def	366	1/1	OTHER					
 S280_run_pin_bytes_ignored	S280	1	src/facts/kset.c	pcrec_run_pin	def	272	1/1	OTHER					
-S281_run_row_clause4_dropped	S281	1	src/gen/emit_dfa.c	pf_run_applies_common	def	6205	1/1	RE-RUN		C6		ofs_test_verifies_run	C6:reach(cand_rows)
+S281_run_row_clause4_dropped	S281	1	src/gen/emit_dfa.c	pf_run_applies_common	def	6205	1/1	RE-RUN		after-C5b		ofs_test_verifies_run	
 S282_deny_field_32bit	S282	1	src/gen/emit_dfa.c	DfaCand	def	3469	1/1	RE-RUN		after-C5b			
-S283_run_rows_offset_skip_bit_dropped	S283	1	src/gen/emit_dfa.c	cand_rows	def	8166	2/2	RE-RUN		C6			C6:hunk
-S284_run_rows_reseeds_false	S284	1	src/gen/emit_dfa.c	cand_rows	def	8173	2/2	RE-RUN		C6			C6:hunk
+S283_run_rows_offset_skip_bit_dropped	S283	1	src/gen/emit_dfa.c	cand_rows	def	8166	2/2	RE-RUN		C6			C6:edit-set
+S284_run_rows_reseeds_false	S284	1	src/gen/emit_dfa.c	cand_rows	def	8173	2/2	RE-RUN		C6			C6:edit-set
 S285_run_term_length_plus_one	S285	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	125	1/1	OTHER					
-S286_g1_verifies_conjunct_dropped	S286	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7147	1/1	RE-RUN		C6		pcrec_fact_req_run	C6:reach(cand_rows)
+S286_g1_verifies_conjunct_dropped	S286	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7147	1/1	RE-RUN		after-C5b		pcrec_fact_req_run	
 S287_ofstest_maxk_not_widened	S287	1	src/gen/emit_dfa.c	ofs_test_of	def	6281	1/1	RE-RUN		after-C5b			
-S288_density_memchr_guard_dropped	S288	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7149	1/1	RE-RUN		C6		pcrec_fact_req_run	C6:reach(cand_rows)
-S289_clause3_dropped	S289	1	src/gen/emit_dfa.c	pf_run_applies_common	def	6196	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S288_density_memchr_guard_dropped	S288	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7149	1/1	RE-RUN		after-C5b		pcrec_fact_req_run	
+S289_clause3_dropped	S289	1	src/gen/emit_dfa.c	pf_run_applies_common	def	6196	1/1	RE-RUN		after-C5b			
 S28_verb_table_case_swap	S28	1	src/parse/mod_verbs.c	pcrec_registry_verb_table	def	266	1/1	OTHER					
 S290_cond_and_first_only	S290	1	src/parse/rxt_source.c	cond_holds	def	1695	1/1	OTHER					
 S291_fragment_bundle_not_propagated	S291	1	src/parse/rxt_source.c	fragment_check	def	2660	1/1	OTHER					
 S293_reqrun_scan_offset_dropped	S293	1	src/gen/emit_dfa.c	ofs_test_run	def	1060	1/1	OTHER					
-S294_reqrun_enc_decline_leftmost	S294	1	src/core/findings.c	pcrec_find_pick	def	440	1/1	OTHER		C6			C6:reach(cand_rows)
+S294_reqrun_enc_decline_leftmost	S294	1	src/core/findings.c	pcrec_find_pick	def	440	1/1	OTHER					
 S295_vm_anchor_bound_flags_leak	S295	1	src/gen/emit_dfa.c	emit_info_def	def	3059	1/1	RE-RUN		after-C5b			
 S296_facts_private_header_included_by_consumer	S296	1	src/gen/emit_vm.c	file:src/gen/emit_vm.c	filescope	68	1/1	OTHER					
 S297_facts_derivation_hand_extern	S297	1	src/gen/emit_vm.c	pcrec_emit_vm	def	14062	1/1	RE-RUN		after-C5b		vm_init	
 S298_facts_listing_row_skipped	S298	1	src/dump/facts_dump.c	fd_hook	def	147	1/1	OTHER					
-S299_facts_deny_column_flipped	S299	1	src/facts/facts.def	pcrec_fact_req_run	factrow	48	1/1	RE-RUN		C6			C6:reach(pcrec_fact_req_run)
+S299_facts_deny_column_flipped	S299	1	src/facts/facts.def	pcrec_fact_req_run	factrow	48	1/1	RE-RUN		after-C5b			
 S29_verb_atstart_drop	S29	1	src/parse/mod_verbs.c	verb_answer	def	450	1/1	OTHER					
 S300_facts_decisions_stamp_dropped	S300	1	src/dump/facts_dump.c	fd_decisions	def	132	1/1	OTHER					
 S301_findings_reader_local_none	S301	1	src/core/findings.c	pcrec_find_set_pick	def	481	1/1	OTHER					
@@ -269,7 +269,7 @@ S313_findings_cli_analysis_overrides	S313	1	cli/main.c	file:cli/main.c	outside	1
 S314_findings_record_outlives_compile	S314	1	src/core/findings.c	pcrec_find_stamp	def	376	1/1	OTHER					
 S315_findings_terminal_by_name	S315	1	src/parse/rxt_find.c	pcrec_find_chain_build	def	316	1/1	OTHER					
 S316_findings_k65_pick_decides_giveup	S316	1	src/gen/emit_dfa.c	req_set_rest_members	def	1362	1/1	RE-RUN		after-C5b		pcrec_artifact_has_dfa_scan	
-S317_findings_g1_elides_without_scan	S317	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7146	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S317_findings_g1_elides_without_scan	S317	1	src/gen/emit_dfa.c	req_byte_dominated_by	def	7146	1/1	RE-RUN		after-C5b			
 S318_call_nullability_greatest	S318	1	src/opt/callgraph.c	cg_minw_publish	def	268	1/1	OTHER					
 S319_call_nullability_never	S319	1	src/opt/callgraph.c	cg_minw_publish	def	268	1/1	OTHER					
 S31_uprops_reflag_class_invalid	S31	1	src/parse/registry.c	esc_rows	def	580	1/1	OTHER					
@@ -307,7 +307,7 @@ S368_unwrapped_match_guard_deleted	S368	1	src/gen/emit_dfa.c	emit_anchored_match
 S36_vm_undo_neutered	S36	1	src/gen/emit_vm.c	vm_emit_search_body	def	13064	1/1	RE-RUN		after-C5b			
 S370_hyb_reseed_probe_never_ends_block	S370	1	src/gen/emit_vm.c	vm_emit_search_body	def	13394	1/1	RE-RUN		after-C5b			
 S371_hyb_reseed_adaptive_text_dropped	S371	1	src/gen/emit_vm.c	vm_emit_search_body	def	13379	1/1	RE-RUN		after-C5b			
-S372_hyb_reseed_calibration_swapped	S372	1	src/gen/emit_vm.c	vm_plan_reseed	def	11147	1/1	RE-AIM	C5	C6	def vm_plan_reseed		C6:reach(caller of pcrec_cand_select_vm)
+S372_hyb_reseed_calibration_swapped	S372	1	src/gen/emit_vm.c	vm_plan_reseed	def	11147	1/1	RE-AIM	C5		def vm_plan_reseed		
 S37_vm_wrong_span	S37	1	src/gen/emit_vm.c	vm_cursor_rep	def	4887	2/2	OTHER					
 S38_vm_empty_exit_fails	S38	1	src/gen/emit_vm.c	vm_star	def	6360	1/1	OTHER					
 S390_decode_accepts_overlong	S390	1	src/enc/enc_utf8.c	u8_defs_decode	def	253	1/1	OTHER					
@@ -336,7 +336,7 @@ S414_align_seeks_one_byte	S414	1	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	de
 S41_ir_label_drift	S41	1	src/gen/emit_vm.c	vm_plan	def	10704	1/1	OTHER					
 S420_prefilter_drop_rung_deleted	S420	1	src/core/compile.c	fit_prefilter_applies	def	714	1/1	OTHER					
 S421_fast_or_fail_inert	S421	1	src/core/compile.c	fit_rung_denied	def	737	1/1	OTHER					
-S422_prefilter_drop_unstamped	S422	1	src/gen/emit_vm.c	vm_emit_stamps	def	11263	1/1	RE-RUN		C6			C6:reach(caller of pcrec_cand_listed)
+S422_prefilter_drop_unstamped	S422	1	src/gen/emit_vm.c	vm_emit_stamps	def	11263	1/1	RE-RUN		after-C5b			
 S423_prefilter_drop_not_degrading	S423	1	src/core/compile.c	fit_rungs	def	728	1/1	OTHER					
 S42_ir_push_unrecorded	S42	1	src/gen/emit_vm.c	vm_push_at	def	3451	1/1	OTHER					
 S430_clss2_byte_kit_wrong_class	S430	1	src/gen/emit_vm.c	vm_emit_search_body	def	12735	1/1	RE-RUN		after-C5b			
@@ -351,7 +351,7 @@ S438_k7980_mixed_abi_fence_off	S438	1	src/gen/emit_dfa.c	emit_rx_abi_types	def	1
 S439_k78_dead_group_fill_at_entry	S439	1	src/gen/emit_dfa.c	emit_search_head	def	1729	1/1	OTHER					
 S43_d45_timeout_removed	S43	1	tests/lib/gen_timeout.sh	file:tests/lib/gen_timeout.sh	outside	415	1/1	OTHER					
 S440_vedge_reverse_takes_end_view	S440	1	src/core/compile.c	compile_driver	def	1910	1/1	OTHER					
-S441_hyb_reseed_anchored_row_never_holds	S441	1	src/gen/emit_dfa.c	cand_rs_anchored_applies	def	8042	1/1	RE-RUN		C6		CAND_BOUND_ONE,cand_rs_anchored_applies	C6:hunk
+S441_hyb_reseed_anchored_row_never_holds	S441	1	src/gen/emit_dfa.c	cand_rs_anchored_applies	def	8042	1/1	RE-RUN		after-C5b		CAND_BOUND_ONE,cand_rs_anchored_applies	
 S442_cls_cube_section_relative	S442	1	src/core/cpset.c	pcrec_cls_cube	def	429	1/1	OTHER					
 S443_run_word_overreads	S443	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	239	1/1	OTHER					
 S444_run_word_last_byte_unchecked	S444	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	239	1/1	OTHER					
@@ -368,51 +368,51 @@ S453_req_pick_takes_pair	S453	1	src/facts/req.c	pcrec_req_pick	def	691	1/1	OTHER
 S454_pair_dispatch_memchr_first	S454	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	257	1/1	OTHER					
 S455_pair_search_above_guard	S455	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	219	1/1	OTHER					
 S456_cube_stores_upper	S456	1	src/facts/req.c	rn_common_head	def	333	1/1	OTHER					
-S457_set_leads_never_applies	S457	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7190	1/1	RE-RUN		C6		req_set_pick	C6:hunk
-S458_set_leads_tie_leads	S458	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7195	1/1	RE-RUN		C6			C6:hunk
+S457_set_leads_never_applies	S457	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7190	1/1	RE-RUN		after-C5b		req_set_pick	
+S458_set_leads_tie_leads	S458	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7195	1/1	RE-RUN		after-C5b			
 S459_set_rest_retests_lead	S459	1	src/gen/emit_dfa.c	req_set_rest_members	def	1372	1/1	RE-RUN		after-C5b		req_lead_byte	
 S45_poss_no_lazy_conjunct	S45	1	src/opt/possessify.c	pss_verdict	def	1664	1/1	OTHER					
 S460_lead_after_run	S460	1	src/gen/emit_dfa.c	req_site_define	def	1515	1/1	RE-RUN		after-C5b			
 S461_pick_none_ignores_size	S461	1	src/core/findings.c	cube_mass	def	425	1/1	OTHER					
-S462_set_lead_deny_ignored	S462	1	src/gen/emit_dfa.c	cand_rows	def	8114	1/1	RE-RUN		C6		req_set_leads_applies	C6:hunk
+S462_set_lead_deny_ignored	S462	1	src/gen/emit_dfa.c	cand_rows	def	8114	1/1	RE-RUN		C6		req_set_leads_applies	C6:edit-set
 S463_handoff_k_minus_one	S463	1	src/gen/emit_dfa.c	emit_req_handoff_rest	def	1230	1/1	RE-RUN		after-C5b		pcrec_fact_req_run_maxoff	
 S464_gate_later_occurrence	S464	1	memfn/src/precheck.c	file:memfn/src/precheck.c	outside	223	1/1	OTHER					
 S465_width_counts_characters	S465	1	src/facts/req.c	rb_walk	def	487	1/1	OTHER					
 S466_alt_width_left	S466	1	src/facts/req.c	rr_alt	def	444	1/1	OTHER					
-S467_unbounded_handed_off	S467	1	src/gen/emit_dfa.c	req_handoff_applies	def	7307	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S467_unbounded_handed_off	S467	1	src/gen/emit_dfa.c	req_handoff_applies	def	7307	1/1	RE-RUN		after-C5b			
 S468_seed_reads_startpos	S468	1	src/gen/emit_dfa.c	seed_emit_seeded	def	5783	1/1	OTHER					
 S469_vm_gstart_moved	S469	1	src/gen/emit_vm.c	vm_emit_search_body	def	13589	1/1	RE-RUN		after-C5b			
 S46_poss_no_unique_iteration	S46	1	src/opt/possessify.c	body_admits_unique_iteration	def	1072	1/1	OTHER					
 S470_no_clamp	S470	1	src/gen/emit_dfa.c	emit_req_handoff_rest	def	1243	1/1	RE-RUN		after-C5b			
 S471_roundup_dropped	S471	1	src/gen/emit_dfa.c	emit_req_handoff_rest	def	1233	1/1	RE-RUN		after-C5b			
 S472_roundup_unbounded	S472	1	src/gen/emit_dfa.c	pcrec_emit_start_zero	def	939	1/1	OTHER					
-S473_deny_ignored	S473	1	src/gen/emit_dfa.c	cand_rows	def	8137	1/1	RE-RUN		C6		req_handoff_applies	C6:hunk
+S473_deny_ignored	S473	1	src/gen/emit_dfa.c	cand_rows	def	8137	1/1	RE-RUN		C6		req_handoff_applies	C6:edit-set
 S474_run_choice_prefers_bounded	S474	1	src/facts/req.c	rn_better	def	310	1/1	OTHER					
-S475_verb_conjunct_dropped	S475	1	src/gen/emit_dfa.c	req_handoff_applies	lead	7287	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S476_dprime_decline_dropped	S476	1	src/gen/emit_dfa.c	req_handoff_applies	def	7309	1/1	RE-RUN		C6		pcrec_vm_prefilter_window	C6:reach(cand_rows)
+S475_verb_conjunct_dropped	S475	1	src/gen/emit_dfa.c	req_handoff_applies	lead	7287	1/1	RE-RUN		after-C5b			
+S476_dprime_decline_dropped	S476	1	src/gen/emit_dfa.c	req_handoff_applies	def	7309	1/1	RE-RUN		after-C5b		pcrec_vm_prefilter_window	
 S477_dd12a_excision_widened	S477	1	tests/codegen/run_encoding_checks.sh	file:tests/codegen/run_encoding_checks.sh	outside	663	1/1	OTHER					
-S478_vmhat_set_drops_member	S478	1	src/gen/emit_dfa.c	pf_vm_emit_first_class	def	6822	1/1	RE-RUN		C6			C6:hunk
+S478_vmhat_set_drops_member	S478	1	src/gen/emit_dfa.c	pf_vm_emit_first_class	def	6822	1/1	RE-RUN		after-C5b			
 S479_vmhat_memchr_seek_late	S479	1	src/gen/emit_dfa.c	pcrec_emit_vm_start_seek	lead	6905	1/1	RE-RUN		after-C5b			
 S47_poss_no_prefix_free	S47	1	src/opt/possessify.c	body_admits_unique_iteration	def	1090	1/1	OTHER					
-S480_dfahat_t_from_s0_escapes	S480	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6647	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S481_dfahat_class_reseed_deleted	S481	1	src/gen/emit_dfa.c	pf_emit_first_class_bounded	def	6731	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S482_dfahat_memchr_hit_reseed_deleted	S482	1	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	def	6717	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S483_dfahat_class_clamp_reseed_deleted	S483	1	src/gen/emit_dfa.c	pf_emit_first_class_bounded	def	6731	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S484_dfahat_memchr_clamp_reseed_deleted	S484	1	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	def	6717	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S485_dfahat_reseed_unconditional	S485	1	src/gen/emit_dfa.c	pf_emit_moved_reseed	def	6675	1/1	OTHER		C6			C6:reach(cand_rows)
-S486_dfahat_t_widened	S486	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6659	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S487_dfahat_seeded_conjunct	S487	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6643	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S488_dfahat_nullable_conjunct	S488	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6644	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S489_dfahat_full_set_conjunct	S489	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6645	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S480_dfahat_t_from_s0_escapes	S480	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6647	1/1	RE-RUN		after-C5b			
+S481_dfahat_class_reseed_deleted	S481	1	src/gen/emit_dfa.c	pf_emit_first_class_bounded	def	6731	1/1	RE-RUN		after-C5b			
+S482_dfahat_memchr_hit_reseed_deleted	S482	1	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	def	6717	1/1	RE-RUN		after-C5b			
+S483_dfahat_class_clamp_reseed_deleted	S483	1	src/gen/emit_dfa.c	pf_emit_first_class_bounded	def	6731	1/1	RE-RUN		after-C5b			
+S484_dfahat_memchr_clamp_reseed_deleted	S484	1	src/gen/emit_dfa.c	pf_emit_first_memchr_bounded	def	6717	1/1	RE-RUN		after-C5b			
+S485_dfahat_reseed_unconditional	S485	1	src/gen/emit_dfa.c	pf_emit_moved_reseed	def	6675	1/1	OTHER					
+S486_dfahat_t_widened	S486	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6659	1/1	RE-RUN		after-C5b			
+S487_dfahat_seeded_conjunct	S487	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6643	1/1	RE-RUN		after-C5b			
+S488_dfahat_nullable_conjunct	S488	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6644	1/1	RE-RUN		after-C5b			
+S489_dfahat_full_set_conjunct	S489	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6645	1/1	RE-RUN		after-C5b			
 S48_poss_no_enclosing_first	S48	1	src/opt/possessify.c	pss_verdict	def	1644	2/2	OTHER					
-S490_dfahat_scan_kind_conjunct	S490	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6642	1/1	RE-RUN		C6		cand_route_of	C6:reach(cand_rows)
-S491_vmhat_nullable_conjunct	S491	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6799	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S492_vmhat_anchor_conjunct	S492	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6798	1/1	RE-RUN		C6		CAND_BOUND_ONE	C6:reach(cand_rows)
-S493_vmhat_prefn_conjunct	S493	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6797	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S494_has_dfa_scan_on_vmhat	S494	1	src/gen/emit_dfa.c	pcrec_artifact_has_dfa_scan	def	439	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S495_cand_ppm_reads_row_name	S495	1	src/gen/emit_dfa.c	pcrec_dfa_cand_ppm	def	7055	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S496_vmhat_verb_conjunct	S496	1	src/gen/emit_dfa.c	pf_vm_start_applies	lead	6780	1/1	RE-RUN		C6			C6:reach(cand_rows)
-S497_vmhat_utf8_assertion	S497	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6802	1/1	RE-RUN		C6			C6:reach(cand_rows)
+S490_dfahat_scan_kind_conjunct	S490	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	6642	1/1	RE-RUN		after-C5b		cand_route_of	
+S491_vmhat_nullable_conjunct	S491	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6799	1/1	RE-RUN		after-C5b			
+S492_vmhat_anchor_conjunct	S492	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6798	1/1	RE-RUN		after-C5b		CAND_BOUND_ONE	
+S493_vmhat_prefn_conjunct	S493	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6797	1/1	RE-RUN		after-C5b			
+S494_has_dfa_scan_on_vmhat	S494	1	src/gen/emit_dfa.c	pcrec_artifact_has_dfa_scan	def	439	1/1	RE-RUN		after-C5b			
+S495_cand_ppm_reads_row_name	S495	1	src/gen/emit_dfa.c	pcrec_dfa_cand_ppm	def	7055	1/1	RE-RUN		after-C5b			
+S496_vmhat_verb_conjunct	S496	1	src/gen/emit_dfa.c	pf_vm_start_applies	lead	6780	1/1	RE-RUN		after-C5b			
+S497_vmhat_utf8_assertion	S497	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6802	1/1	RE-RUN		after-C5b			
 S498_walk_call_drops_bytes	S498	1	src/facts/startset.c	ss_walk	def	132	1/1	OTHER					
 S499_walk_bref_drops_bytes	S499	1	src/facts/startset.c	ss_walk	def	132	1/1	OTHER					
 S49_poss_eol_follow_ignored	S49	1	src/opt/possessify.c	first_of	def	625	1/1	OTHER					
@@ -430,20 +430,20 @@ S515_c11_idiom_exclusion_broken	S515	1	src/gen/memfn_stamps.c	memcpy_is_idiom	de
 S516_c11_family_missing_stamps	S516	1	src/gen/emit_vm.c	vm_emit_epilogue	def	13938	1/1	RE-RUN		after-C5b			
 S516_c11_family_missing_stamps	S516	2	src/gen/memfn_stamps.c	pcrec_memfn_stamps_render	def	247	1/1	OTHER					
 S517_c11_memcmp_dropped	S517	1	src/gen/memfn_stamps.c	libc_names	def	47	1/1	OTHER					
-S518_c4_isa_name_in_emitter	S518	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		C6		req_handoff_applies	C6:reach(cand_rows)
-S519_c4_intrinsic_in_emitter	S519	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		C6		req_handoff_applies	C6:reach(cand_rows)
+S518_c4_isa_name_in_emitter	S518	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		after-C5b		req_handoff_applies	
+S519_c4_intrinsic_in_emitter	S519	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		after-C5b		req_handoff_applies	
 S51_revdet_no_iteration_cut	S51	1	src/gen/emit_vm.c	vm_revdet_rep	def	5675	1/1	OTHER					
-S520_c4_kit_internal_include	S520	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		C6		req_handoff_applies	C6:reach(cand_rows)
-S521_c4_form_id_compare	S521	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		C6		req_handoff_applies	C6:reach(cand_rows)
+S520_c4_kit_internal_include	S520	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		after-C5b		req_handoff_applies	
+S521_c4_form_id_compare	S521	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		after-C5b		req_handoff_applies	
 S522_c4_allowlist_stale	S522	1	tests/memfn/c4_allowlist.tsv	file:tests/memfn/c4_allowlist.tsv	outside	16	1/1	OTHER					
 S523_c4_hex_escape_not_excluded	S523	1	tests/memfn/arch_blind_check.py	file:tests/memfn/arch_blind_check.py	outside	78	1/1	OTHER					
-S524_c12_memchr_returns	S524	1	src/gen/emit_dfa.c	pcrec_emit_find	def	6026	1/1	OTHER		C6			C6:reach(cand_rows)
+S524_c12_memchr_returns	S524	1	src/gen/emit_dfa.c	pcrec_emit_find	def	6026	1/1	OTHER					
 S525_c12_vocab_loses_memchr	S525	1	tests/memfn/search_vocab.tsv	file:tests/memfn/search_vocab.tsv	outside	34	1/1	OTHER					
 S526_c14_max_term_lowered	S526	1	memfn/include/memfn.h	file:memfn/include/memfn.h	outside	48	1/1	OTHER					
 S526_c14_max_term_lowered	S526	2	src/gen/emit_dfa.c	file:src/gen/emit_dfa.c	filescope	1139	1/1	OTHER					
-S527_c13_producer_without_check	S527	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		C6		req_handoff_applies	C6:reach(cand_rows)
+S527_c13_producer_without_check	S527	1	src/gen/emit_dfa.c	req_handoff_applies	def	7297	1/1	RE-RUN		after-C5b		req_handoff_applies	
 S528_c17_kit_call_unlisted	S528	1	src/gen/memfn_stamps.c	pcrec_memfn_stamps_render	def	234	1/1	OTHER					
-S529_reach_hybrid_handoff_lost	S529	1	src/gen/emit_dfa.c	req_handoff_applies	def	7308	1/1	RE-RUN		C6		prefilter_collapsed	C6:reach(cand_rows)
+S529_reach_hybrid_handoff_lost	S529	1	src/gen/emit_dfa.c	req_handoff_applies	def	7308	1/1	RE-RUN		after-C5b		prefilter_collapsed	
 S52_revdet_first_iteration_captures	S52	1	src/gen/emit_vm.c	vm_rev_emit	def	5387	2/2	OTHER					
 S53_counter_untrailed	S53	1	src/gen/emit_vm.c	vm_counter_phase	def	6019	1/1	OTHER					
 S54_counter_no_residue	S54	1	src/gen/emit_vm.c	vm_counter_phase	def	5889	1/1	OTHER					
@@ -474,25 +474,25 @@ S588_poss_call_in_lookaround_ignored	S588	1	src/opt/possessify.c	pss_walk	def	18
 S58_mrl_minw_underreports	S58	1	src/opt/mrl.c	pcrec_minw	def	149	1/1	OTHER					
 S590_ucp_caseless_entry_ignored	S590	1	src/gen/emit_vm.c	vm_caseless_entry	def	8435	1/1	OTHER					
 S591_latin1_rep_ascii_only	S591	1	src/core/fold.c	pcrec_fold_latin1_rep	def	181	1/1	OTHER					
-S594_cand_row_predicate_differs	S594	1	src/gen/emit_dfa.c	cand_rows	def	8225	1/1	RE-RUN		C6		pf_memchr_applies	C6:hunk
-S595_cand_row_route_miskeyed	S595	1	src/gen/emit_dfa.c	cand_rows	def	8248	1/1	RE-RUN		C6			C6:hunk
-S596_cand_row_deny_dropped	S596	1	src/gen/emit_dfa.c	cand_rows	def	8114	1/1	RE-RUN		C6		req_set_leads_applies	C6:hunk
-S597_cand_inline_predicate_flipped	S597	1	src/gen/emit_dfa.c	cand_bound_anchored_vm_applies	def	8066	1/1	RE-RUN		C6		pcrec_fact_start_anchor	C6:reach(cand_rows)
-S598_cand_slot_not_total	S598	1	src/gen/emit_dfa.c	cand_rows	def	8312	1/1	RE-RUN		C6			C6:hunk
-S599_cand_hands_unaccepted	S599	1	src/gen/emit_dfa.c	cand_rows	def	8131	1/1	RE-RUN		C6			C6:hunk
+S594_cand_row_predicate_differs	S594	1	src/gen/emit_dfa.c	cand_rows	def	8225	1/1	RE-RUN		C6		pf_memchr_applies	C6:edit-set
+S595_cand_row_route_miskeyed	S595	1	src/gen/emit_dfa.c	cand_rows	def	8248	1/1	RE-RUN		C6			C6:edit-set
+S596_cand_row_deny_dropped	S596	1	src/gen/emit_dfa.c	cand_rows	def	8114	1/1	RE-RUN		C6		req_set_leads_applies	C6:edit-set
+S597_cand_inline_predicate_flipped	S597	1	src/gen/emit_dfa.c	cand_bound_anchored_vm_applies	def	8066	1/1	RE-RUN		after-C5b		pcrec_fact_start_anchor	
+S598_cand_slot_not_total	S598	1	src/gen/emit_dfa.c	cand_rows	def	8312	1/1	RE-RUN		C6			C6:edit-set
+S599_cand_hands_unaccepted	S599	1	src/gen/emit_dfa.c	cand_rows	def	8131	1/1	RE-RUN		C6			C6:edit-set
 S59_mrl_minw_overreports	S59	1	src/opt/mrl.c	pcrec_minw	def	281	1/1	OTHER					
-S600_cand_entry_row_route_dependent	S600	1	src/gen/emit_dfa.c	cand_rows	def	8120	1/1	RE-RUN		C6			C6:hunk
+S600_cand_entry_row_route_dependent	S600	1	src/gen/emit_dfa.c	cand_rows	def	8120	1/1	RE-RUN		C6			C6:edit-set
 S601_poss_a1_call_join_dropped	S601	1	src/opt/possessify.c	ps_chain	def	1399	1/1	OTHER					
 S602_poss_b_in_progress_recomputed	S602	1	src/opt/possessify.c	cap_group	def	360	1/1	OTHER					
 S603_poss_a1_admits_lazy	S603	1	src/opt/possessify.c	pss_verdict	def	1674	1/1	OTHER					
 S604_poss_b_reads_position_first	S604	1	src/opt/possessify.c	cap_group	def	366	1/1	OTHER					
-S605_cand_retry_row_read_by_name	S605	1	src/gen/emit_vm.c	vm_plan_reseed	def	11155	1/1	RE-AIM	C5	C6	def vm_plan_reseed		C6:reach(caller of pcrec_cand_select_vm)
+S605_cand_retry_row_read_by_name	S605	1	src/gen/emit_vm.c	vm_plan_reseed	def	11155	1/1	RE-AIM	C5		def vm_plan_reseed		
 S606_cand_read_edge_undeclared	S606	1	src/gen/emit_dfa.c	cand_nodes	def	7995	1/1	RE-AIM	C6		def cand_nodes		
 S607_cand_read_f1_edge_undeclared	S607	1	src/gen/emit_dfa.c	cand_nodes	def	7992	1/1	RE-AIM	C6		def cand_nodes		
 S608_cand_read_g1_attempt_edge_undeclared	S608	1	src/gen/emit_dfa.c	cand_nodes	def	7987	1/1	RE-AIM	C6		def cand_nodes		
 S609_cand_read_r4_edge_undeclared	S609	1	src/gen/emit_dfa.c	cand_nodes	def	8000	1/1	RE-AIM	C6		def cand_nodes		
 S60_mrl_clamp_underflow_guard	S60	1	src/gen/emit_vm.c	vm_emit_storage	def	12146	1/1	RE-RUN		after-C5b			
-S610_cand_row_listed_without_desc	S610	1	src/gen/emit_dfa.c	cand_rows	def	8228	1/1	RE-RUN		C6			C6:hunk
+S610_cand_row_listed_without_desc	S610	1	src/gen/emit_dfa.c	cand_rows	def	8228	1/1	RE-RUN		C6			C6:edit-set
 S61_mrl_cursor_clamp_dropped	S61	1	src/gen/emit_vm.c	vm_cursor_rep	def	4953	1/1	OTHER					
 S62_mrl_counter_bound_static	S62	1	src/gen/emit_vm.c	vm_counter_phase	def	5987	1/1	OTHER					
 S63_mrl_stale_window	S63	1	src/gen/emit_vm.c	vm_emit_search_body	def	13331	1/1	RE-RUN		after-C5b		nclamp	
@@ -513,7 +513,7 @@ S77_first_of_ignores_multiline	S77	1	src/opt/possessify.c	first_of	def	649	1/1	O
 S78_skip_decline_removed	S78	1	src/gen/emit_dfa.c	pick_skip_states	def	4608	1/1	OTHER					
 S81_cand_set_hardcoded_newline	S81	1	src/gen/emit_dfa.c	cand_from_live_seeds	def	4082	1/1	RE-RUN		after-C5b			
 S82_prefilter_bound_at_zero	S82	1	src/gen/emit_dfa.c	emit_attempt	def	10339	1/1	RE-RUN		after-C5b			
-S83_gstart_family_unconditional	S83	1	src/gen/emit_dfa.c	dfa_needs_gseed	def	3848	1/1	OTHER		C6			C6:reach(cand_rows)
+S83_gstart_family_unconditional	S83	1	src/gen/emit_dfa.c	dfa_needs_gseed	def	3848	1/1	OTHER					
 S84_gstart_takes_end_exemption	S84	1	src/opt/possessify.c	first_of	def	669	1/1	OTHER					
 S85_kreset_caps_from_prefilter	S85	1	src/gen/emit_vm.c	vm_emit_search_body	def	13137	1/1	RE-RUN		after-C5b			
 S86_kreset_write_untrailed	S86	1	src/gen/emit_vm.c	vm_emit_node	def	8977	1/1	OTHER					
