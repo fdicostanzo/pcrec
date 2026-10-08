@@ -872,3 +872,35 @@ the compiler, and is never adopted silently. Proposed for main to file
   - The §19 row (the T4 pricing count becomes the kit's) is FILED, not
     scheduled.
   - Nothing is built pcrec-side until C7 merges.
+- done: 2026-10-08 — **[MEMFN-ROWCON] N4 follow-up, the G2 per-row floor:
+  lane/memfn-g2floor @ TIP (the commit carrying this entry; it is N4's tip plus
+  this unit plus the R4h notice/ruling entries).**
+  - **G2rows (blinded, cell; branch g2u 635c1f11):** `run_g2.sh --rows`, ON by
+    default under `--quick`, sums the trace's REACH `chosen=` over all 8 kit
+    processes into `row-chosen` lines, with four checks:
+    - REACH_DROPPED 0;
+    - every row >= 1;
+    - a literal floor of 13 rows;
+    - every process traced.
+
+    Controls for (b) and (d) run on every invocation. Report:
+    memfn/tests/G2ROWS_REPORT.md.
+  - **At the merge (manager):**
+    - `build/libpcrec_mftrace.a`, built by make (`tests/memfn/mk_mftrace_lib.sh`;
+      answers Q-G2R-1);
+    - G2 check (e): every row meets its `g2_floor` from row_floors.tsv,
+      tested in the failing direction;
+    - the 13 g2_floor values pinned at floor(0.9 x).
+
+    row_floors.tsv has no PLACEHOLDER left.
+  - **Validation:**
+    - `make test-memfn-g2` (taskset 12-15) passes: 45,229,686 checks, 0
+      failed, in 147 s;
+    - `test-memfn-rows` 70/0;
+    - no C changed, no pcrec byte moved.
+  - **Note:** test-memfn-g2 is a make test section. Its rows half adds about
+    nothing measurable (the G2 author measured inside ~25 s noise), but it
+    now depends on the traced library rule.
+  - **Q-G2R-2** (the literal FLOOR_ROWS stays at 13 when a row is added):
+    intended. rows.tsv's ROWS_FLOOR is the same kind of literal, and the
+    change that adds a row raises both.
