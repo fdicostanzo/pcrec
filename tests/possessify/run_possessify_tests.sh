@@ -803,19 +803,30 @@ cat >> "$r4_pop" <<'EOF'
 (?:(?>\w+\b)|x)+
 EOF
 r4_synth="$(wc -l < "$r4_pop" | tr -d ' ')"
-# every pattern of the two committed corpora (one per line, byte order)
-sed -n 's/^pattern //p' "$ROOT_DIR/tests/possessify/possessify.rxt" "$ROOT_DIR/tests/recursion/k93.rxt" >> "$r4_pop"
+# every pattern of the two committed corpora (one per line, byte order), with
+# its block's `encoding`/`flags` as pcrec options after a TAB: a pattern
+# written for utf8 (`\x{100}`) does not compile under byte, and one that does
+# would be checked under the wrong encoding (lane posswcls)
+awk '
+function flush() { if (p != "") print p "\t" o; p = ""; o = "" }
+/^pattern /  { flush(); p = substr($0, 9); next }
+/^encoding / { o = o " -e " $2; next }
+/^flags /    { if ($2 ~ /i/) o = o " -i"; if ($2 ~ /u/) o = o " --ucp"; next }
+/^$/         { flush() }
+END          { flush() }
+' "$ROOT_DIR/tests/possessify/possessify.rxt" "$ROOT_DIR/tests/recursion/k93.rxt" >> "$r4_pop"
 LC_ALL=C sort -u -o "$r4_pop" "$r4_pop"
 r4_total="$(wc -l < "$r4_pop" | tr -d ' ')"
 if [ "$r4_total" -lt 150 ]; then
     bad "R4SUM population has only $r4_total patterns (floor 150: two corpora + $r4_synth synthetic) -- the extraction shrank"
 fi
 r4_bad=0
-while IFS= read -r r4p; do
+while IFS=$'\t' read -r r4p r4o; do
     # three runs: the listing (summary-vs-fold), a plain compile (A1-vs-FOLLOW)
     # on the default route and on the VM
     for r4m in "--emit-ir --engine=vm" "-o $WORKDIR/r4.c" "-o $WORKDIR/r4.c --engine=vm"; do
-        if ! pcrec_run "$PCREC" -p rx --features all $r4m --pattern "$r4p" \
+        # shellcheck disable=SC2086  # $r4o/$r4m are option lists
+        if ! pcrec_run "$PCREC" -p rx --features all $r4o $r4m --pattern "$r4p" \
                 >"$WORKDIR/r4.out" 2>"$WORKDIR/r4.err" \
            || grep -qi "internal error" "$WORKDIR/r4.out" "$WORKDIR/r4.err"; then
             bad "'$r4p' [$r4m]: $(head -1 "$WORKDIR/r4.err")"

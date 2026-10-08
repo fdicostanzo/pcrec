@@ -4018,3 +4018,689 @@ n "K\xe2\x84\xaa"
 m "kk\xe2\x84\xaak" 0 6
 m "k." 0 1
 m "kK." 0 2
+
+# ======================================================================
+# WIDE CLASSES IN THE ARMS' SHAPES (lane posswcls, 2026-10-07). A class the
+# encoding spells in more than one code unit reaches this pass as an A_CLASS
+# of code points (the A_WCLASS wrapper is made by the encoding lowering,
+# BELOW it); these cells pin the answers where A1 and B decide over one.
+# ======================================================================
+
+# A1-wide-follow (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is a wide literal: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern a+\b\x{e9}
+features all
+encoding utf8
+engine vm
+n "a"
+m "a\xc3\xa9" 0 3
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+
+# A1-wide-follow (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is a wide literal: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern a++\b\x{e9}
+features all
+encoding utf8
+engine vm
+n "a"
+m "a\xc3\xa9" 0 3
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+
+# A1-wide-follow-class (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is a wide class: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern x+\b[\x{e9}a]
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+m "x\xc3\xa9" 0 3
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+
+# A1-wide-follow-class (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is a wide class: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern x++\b[\x{e9}a]
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+m "x\xc3\xa9" 0 3
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+
+# A1-wide-follow-2byte (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is U+0100 (lead byte C4): RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern [a-c]+\b\x{100}
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+m "a\xc4\x80" 0 3
+m "b\xc4\x80" 0 3
+m "c\xc4\x80" 0 3
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+m "ab\xc4\x80" 0 4
+
+# A1-wide-follow-2byte (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the follow is U+0100 (lead byte C4): RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern [a-c]++\b\x{100}
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+m "a\xc4\x80" 0 3
+m "b\xc4\x80" 0 3
+m "c\xc4\x80" 0 3
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+m "ab\xc4\x80" 0 4
+
+# A1-wide-follow-i (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# caseless (folds to U+00C9): RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern a+\b\x{e9}
+features all
+flags i
+encoding utf8
+engine vm
+n "a"
+m "a\xc3\xa9" 0 3
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+m "A\xc3\x89" 0 3
+m "a\xc3\x89" 0 3
+
+# A1-wide-follow-i (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# caseless (folds to U+00C9): RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern a++\b\x{e9}
+features all
+flags i
+encoding utf8
+engine vm
+n "a"
+m "a\xc3\xa9" 0 3
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+n "\xc3\xa9a"
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+m "A\xc3\x89" 0 3
+m "a\xc3\x89" 0 3
+
+# A1-wide-body (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the LOOP BODY is wide, LAST read through it: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern \x{e9}+\b
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+m "\xc3\xa9a" 0 2
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+m "\xc3\xa9x" 0 2
+m "\xc3\xa9\xc3\xa9x" 0 4
+
+# A1-wide-body (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm A1's shape;
+# the LOOP BODY is wide, LAST read through it: RX_VM_POSS_ARMS 0x2u (A1 decides).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern \x{e9}++\b
+features all
+encoding utf8
+engine vm
+n "a"
+n "a\xc3\xa9"
+n "aa \xc3\xa9"
+n "x\xc3\xa9"
+n "x"
+n "xa"
+m "\xc3\xa9a" 0 2
+n "a.\xc3\xa9"
+n "a\xc4\x80"
+n "b\xc4\x80"
+n "c\xc4\x80"
+n "\xc3\xa9\xc3\xa9"
+n "\xc3\xa9."
+n ""
+n "ab\xc4\x80"
+m "\xc3\xa9x" 0 2
+m "\xc3\xa9\xc3\xa9x" 0 4
+
+# B-wide-group (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a wide literal: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x+\1
+features all
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a wide literal: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x++\1
+features all
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-class (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a wide class: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern ([\x{e9}a])x+\1
+features all
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+m "axa" 0 3
+g 1 0 1
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-class (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a wide class: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern ([\x{e9}a])x++\1
+features all
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+m "axa" 0 3
+g 1 0 1
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-range (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a Latin-1-range wide class: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern ([\x{e0}-\x{ff}]+)\s+\1
+features all
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+n "\xc3\xa9xx\xc3\xa9"
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+m "\xc3\xa9 \xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9" 0 9
+g 1 0 4
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+m "\xc3\xa9\xc3\xa9 \xc3\xa9" 2 7
+g 1 2 4
+m "\xc3\xa9  \xc3\xa9" 0 6
+g 1 0 2
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-range (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is a Latin-1-range wide class: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern ([\x{e0}-\x{ff}]+)\s++\1
+features all
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+n "\xc3\xa9xx\xc3\xa9"
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+m "\xc3\xa9 \xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9" 0 9
+g 1 0 4
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+m "\xc3\xa9\xc3\xa9 \xc3\xa9" 2 7
+g 1 2 4
+m "\xc3\xa9  \xc3\xa9" 0 6
+g 1 0 2
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-optional (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is nullable, so \1 is: RX_VM_POSS_ARMS 0x0u (B cannot help; answers only).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9}?)x+\1x
+features all
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+m "\xc3\xa9xx\xc3\xa9" 2 4
+g 1 2 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+m "xx" 0 2
+g 1 0 0
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+m "xxx" 0 3
+g 1 0 0
+m "\xc3\xa9xx\xc3\xa9x" 0 7
+g 1 0 2
+
+# B-wide-group-optional (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# CAP(1) is nullable, so \1 is: RX_VM_POSS_ARMS 0x0u (B cannot help; answers only).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9}?)x++\1x
+features all
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+n "\xc3\xa9xx\xc3\xa9"
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+n "xxx"
+m "\xc3\xa9xx\xc3\xa9x" 0 7
+g 1 0 2
+
+# B-wide-group-ucp (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# under --ucp: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x+\1
+features all
+flags u
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-ucp (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# under --ucp: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x++\1
+features all
+flags u
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-i (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# caseless reference, partners stay in the byte tier: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x+\1
+features all
+flags i
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+m "\xc3\x89x\xc3\x89" 0 5
+g 1 0 2
+m "\xc3\x89x\xc3\xa9" 0 5
+g 1 0 2
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-i (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# caseless reference, partners stay in the byte tier: RX_VM_POSS_ARMS 0x4u (B needed).
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{e9})x++\1
+features all
+flags i
+encoding utf8
+engine vm
+m "\xc3\xa9x\xc3\xa9" 0 5
+g 1 0 2
+m "\xc3\xa9xx\xc3\xa9" 0 6
+g 1 0 2
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+m "\xc3\x89x\xc3\x89" 0 5
+g 1 0 2
+m "\xc3\x89x\xc3\xa9" 0 5
+g 1 0 2
+n "\xc4\x80x\xc4\x81"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+
+# B-wide-group-2byte-i (greedy): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# caseless U+0100 folds to U+0101, outside the byte tier, so B widens: RX_VM_POSS_ARMS 0x0u.
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{100})x+\1
+features all
+flags i
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+n "\xc3\xa9xx\xc3\xa9"
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+m "\xc4\x80x\xc4\x81" 0 5
+g 1 0 2
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+m "\xc4\x80x\xc4\x80" 0 5
+g 1 0 2
+
+# B-wide-group-2byte-i (possessive spelling): posswcls -- a WIDE class (multi-unit under utf8) in arm B's shape;
+# caseless U+0100 folds to U+0101, outside the byte tier, so B widens: RX_VM_POSS_ARMS 0x0u.
+# libpcre2 10.46 2025-08-27, every subject below.
+# pcre2-only
+pattern (\x{100})x++\1
+features all
+flags i
+encoding utf8
+engine vm
+n "\xc3\xa9x\xc3\xa9"
+n "\xc3\xa9xx\xc3\xa9"
+n "\xc3\xa9x"
+n "axa"
+n "ax\xc3\xa9"
+n "\xc3\xa9xa"
+n "\xc3\xa0\xc3\xa0"
+n "\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9\xc3\xa9 \xc3\xa9\xc3\xa9"
+n "xx"
+n "x"
+n ""
+n "\xc3\x89x\xc3\x89"
+n "\xc3\x89x\xc3\xa9"
+m "\xc4\x80x\xc4\x81" 0 5
+g 1 0 2
+n "\xc3\xa9\xc3\xa9 \xc3\xa9"
+n "\xc3\xa9  \xc3\xa9"
+n "x\xc3\xa9 x\xc3\xa9"
+m "\xc4\x80x\xc4\x80" 0 5
+g 1 0 2

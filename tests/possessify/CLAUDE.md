@@ -306,7 +306,10 @@ Arm A (`-fno-poss-ctx-follow`, stamp bits 0x1 A0 / 0x2 A1, ENGINE-SELECTING,
   search (length <= 5 over the pattern's alphabet), on which the two
   spellings disagree. Left out: `(*ACCEPT)` and `(?|` witnesses (modules not
   built) and Latin-1 byte + `--ucp` caseless-backref cells (K94's).
-  The A-F1 pair also lives in `../recursion/k93.rxt`.
+  The A-F1 pair also lives in `../recursion/k93.rxt`. Lane posswcls
+  (2026-10-07) appended 24 blocks under their own header: WIDE classes
+  (multi-unit under utf8) in A1's and B's shapes, each block's measured
+  `RX_VM_POSS_ARMS` in its comment, same oracle and pairing.
 - `run_possessify_tests.sh` sections 9-11: (9) per-witness exact
   `RX_VM_POSS_ARMS` bits on the default route and `--engine=vm`, the D47.3
   per-arm deny (that arm's bits 0 on the artifact, the other arm's kept, both
@@ -316,7 +319,8 @@ Arm A (`-fno-poss-ctx-follow`, stamp bits 0x1 A0 / 0x2 A1, ENGINE-SELECTING,
   `--no-captures`), and `rx_info.flags` (A kept, B masked); (10) builds and
   runs `ctx_admits_check.c`; (11) the R4SUM/R-5 population (A1alt at small n,
   the called-group bypasses, atomic bodies, every pattern of `possessify.rxt`
-  and `k93.rxt`) compiled under `--emit-ir --engine=vm`, plain, and
+  and `k93.rxt`, each under its own block's `encoding`/`flags` since lane
+  posswcls) compiled under `--emit-ir --engine=vm`, plain, and
   `--engine=vm`, asserting exit 0 and no "internal error".
 - `ctx_admits_check.c` -- exhaustive model check of `pcrec_poss_ctx_admits`
   (16 truth tables x 3 non-empty P masks x 53 C sets, plus the named A-F3

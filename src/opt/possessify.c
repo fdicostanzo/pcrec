@@ -311,7 +311,10 @@ static void cap_index(PossCap *F, const Ast *a, bool fill)
         case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;
-        case A_CLASS: case A_WCLASS: case A_EMPTY: case A_BOL: case A_EOL:
+        /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
+        case A_WCLASS:
+            return;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         case A_END: case A_CTX: case A_GSTART: case A_KRESET: case A_BREF:
         case A_VAR:
         /* a call's body is the AST's back edge; its A_CAP is visited at its
@@ -412,7 +415,11 @@ static First text_first(Fq *q, const Ast *a)
         r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
     }
-    case A_CLASS: case A_WCLASS: case A_BREF: case A_CALL: case A_VAR:
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because `first_of`'s class arm would read the set. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(q->cx, "text_first");
+    case A_CLASS: case A_BREF: case A_CALL: case A_VAR:
         return first_of(q, a);
     }
     return first_of(q, a);   /* unreachable: every AKind is listed */
@@ -1328,7 +1335,11 @@ static PSum ps_node(Pss *P, const Ast *a)
         r = ps_node(P, a->l);
         r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
-    case A_CLASS: case A_WCLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because `first_of`'s class arm would read the set. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(P->cx, "ps_node");
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
     case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
         break;
@@ -1501,7 +1512,11 @@ static First item_first(Pss *P, const Ast *a, bool a0)
         r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
     }
-    case A_CLASS: case A_WCLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    /* [CLS-TREE] S3 (D-1): above the encoding lowering, so never
+     * met; LOUD, because `first_of`'s class arm would read the set. */
+    case A_WCLASS:
+        pcrec_wcls_misplaced(P->cx, "item_first");
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
     case A_END: case A_GSTART: case A_KRESET: case A_BREF: case A_LOOK:
     case A_CALL: case A_VAR:
         break;
