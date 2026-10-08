@@ -28,9 +28,19 @@ and D144 addendum 4. It overrides anything below that conflicts.** Read
   predicate is one RUN term and its site's only predicate (PRE window
   with no lead; OFS run-pinned by its own cell). SSE first. Everything
   else is filed with the cell it lacks.
-- **Q-R9-1 is RESOLVED; Q-R9-2..9 are for Frank (§R4.9.10).** Requests
-  RQ-0..5 are for main (§R4.9.11). §R4.9.12 is the 43-id completeness
-  table.
+- ~~Q-R9-1 is RESOLVED; Q-R9-2..9 are for Frank~~ `[D155]` **Q-R9-1..9
+  are RULED (D155, Frank 2026-10-08; §R4.9.10).** Requests RQ-0..6 are for
+  main (§R4.9.11). §R4.9.12 is the 43-id completeness table, plus D155's
+  rows.
+- `[D155]` **No `#if` inside a function body** (Q-R9-6's amendment,
+  §R4.9.2.5). The level choice is made at FILE SCOPE: the FUNC's scalar
+  loop becomes a helper `<fn>__body`, each rendered level adds a guarded
+  helper `<fn>__w<VW>`, and an `#if`/`#elif`/`#else` chain chooses which
+  ONE plain call the FUNC's body makes. SIMD-off routes through
+  `<fn>__body` too: a one-time byte move (+139 B per FUNC, measured) and a
+  pcrec abi event, step R4e′.0b, measured as G1 (§R4.9.2.6). Runtime
+  dispatch stays FILED (`[MEMFN-RTDISPATCH]`); §R4.9.3.1 shows the same
+  helpers serve it. Q-R9-10 and Q-R9-11 are new.
 
 Changed passages carry `[rev4.9]` in place; the panel revision's edits
 carry `[r9 <id>]`. This revision keeps the number 4.9; the kit tip's
@@ -234,6 +244,9 @@ reconciles the two at merge (F-9).
   body a selected first-match table, `fn_rows[]`, with a SLOT column (BODY,
   PREFIX). The scalar bodies are its BODY rows; PREFIX is born empty. SIMD
   rows are PREFIX rows; they never call or wrap the floor row (§R4.9.2.1).
+  `[D155]` They never wrap or splice it. A level helper's entry test
+  CALLS the floor's helper `<fn>__body` by name, as its fall-through
+  (§R4.9.2.5).
 - `SCAN_ROWS` is the kit's form tables: `arms[]`, `rc_row` and now
   `fn_rows[]`, all walked by ONE shared walk (`[r9 F-3]`). SIMD forms are
   rows, each declaring a layer, an ISA level, its instruction classes and
@@ -242,7 +255,11 @@ reconciles the two at merge (F-9).
 - THE FLOOR RULE, unchanged in substance: a SIMD-on rendering is the
   SIMD-off rendering plus text that sits only inside level guards,
   PREPROCESSED-EQUAL off-target and insertion-only on-target (C18, two
-  legs, `[r9 C-6]`).
+  legs, `[r9 C-6]`). `[D155]` Ruled with an amendment: the guarded text
+  is whole file-scope definitions plus a file-scope selector, and no
+  function body holds a directive. On-target, C18's leg (b) now allows
+  exactly ONE replaced line per SIMD FUNC: the selected call
+  (§R4.9.2.5, §R4.9.8).
 - `[r9 C-3]` SIMD bytes are neutral to every pcrec selection BY
   CONSTRUCTION: the kit brackets guarded text and pcrec's length readers
   read the SIMD-off length (RQ-3, now a prerequisite). Whether D84's
@@ -273,6 +290,7 @@ reconciles the two at merge (F-9).
 
 | input | what it says | where it lives now |
 |---|---|---|
+| `[D155]` D155 (main 3b1fd77c, Frank 2026-10-08) | Q-R9-1..9 ruled; Q-R9-6 amended (no `#if` in a function body; file-scope per-level helpers; SIMD-off routes through the helper as a measured abi event); `[MEMFN-RTDISPATCH]` filed with its terms (frequency class per site, per-level copies by target attribute selected once, a non-cascading level set, per-arch artifacts already served) | §R4.9.2.5 (the shape); §R4.9.2.6 (the abi event); §R4.9.3.1 (runtime dispatch, filed); §R4.9.8 (C18); §R4.9.10 (each Q marked RULED); §R4.9.12 (D155 rows) |
 | D147 addendum 11 | SIMD is a parallel path; each form beats the CURRENT scalar layer at its sites or names a benefit; default-ON is ruled separately; 2:1 capacity until M5′ | §R4.9.6 (the bar); §22 R4e′ `[rev4.9]` (trigger, capacity) |
 | `[r9 M-1]` D144 addendum 4 (main 04733583) | SIMD verdicts are pcrec-bench runs on the hardware each form targets; the manager coordinates the boxes; SSE first, the AVX2/AVX-512 order argued on evidence; AVX-512 is NOT filed for lack of hardware | §R4.9.5 (two tiers); §R4.9.5.1 (the submission); §R4.9.7 (the order) |
 | `[r9]` D147 addendum 13 (main 26297b6c, PRELIMINARY) | "faster" = same-host, same-window pcrec-bench run against the scalar twin; target cells' median whole-call time beyond the noise band; no other cell regresses past the floor; per instruction-set tier; net of costs | §R4.9.6 (the bar is written in its terms; its "revisit when R-9's panel proposes a better regime" is answered there) |
@@ -475,18 +493,31 @@ collect" was a decorator over the floor row, which the house rule forbids.
      ARE today's inline branch, moved into the table text-for-text. Both
      are scalar, undeniable (no options.def row: they move no byte), and
      carry `ofs_fn`'s current row contract.
-   - **PREFIX:** what goes in front of the body: helper definitions at
+   - **PREFIX:** ~~what goes in front of the body: helper definitions at
      file scope above the function, and dispatch rungs at the top of its
-     body. Born EMPTY, the way `options.def` was born empty. An empty
-     PREFIX slot renders zero bytes.
-3. **Assembly, fixed order, by the seam:** the chosen PREFIX row's file-
+     body.~~ `[D155]` which guarded per-level helper DEFINITIONS sit at
+     file scope beside the body helper. A PREFIX row renders whole
+     `static inline` function definitions only, never a line inside
+     another function. Born EMPTY, the way `options.def` was born empty.
+     An empty PREFIX slot renders zero bytes.
+3. **Assembly, fixed order, by the seam:** ~~the chosen PREFIX row's file-
    scope part; the function head (`ofs_fn_define`'s existing text); the
-   chosen PREFIX row's dispatch rungs; the chosen BODY row's loop. The
+   chosen PREFIX row's dispatch rungs; the chosen BODY row's loop.~~
+   `[D155]` the chosen BODY row's loop as the helper `<fn>__body`; the
+   chosen PREFIX row's helpers and its named rungs' helpers, one guarded
+   block per level; then the FUNC itself, whose body is ONE call. With a
+   PREFIX row, the FUNC is a selector chain at file scope. §R4.9.2.5 gives
+   the shape. At R4e′.0 itself (zero movers) the BODY row still renders
+   inside the FUNC as today: the move to `<fn>__body` is the separate
+   step R4e′.0b (§R4.9.2.6). The
    walk asks BODY FIRST, so the floor is computed before any SIMD row is
    asked (`[r9 C-2]`), and the PREFIX walk receives the chosen BODY row's
    id. Neither row calls, wraps or splices the other: the seam owns the
    order, and each row writes only its own slot (a PREFIX row's render
-   function has no access to the body).
+   function has no access to the body). `[D155]` A PREFIX row's helper
+   does CALL its fall-through by NAME (`<fn>__body` or the next rung's
+   helper). The seam hands it that name; the row never sees the body's
+   text.
 4. **The gate for the step** (I1's shape): every `emit_sweep` stream
    byte-identical against the parent at both comment tiers and every axis;
    `arms.tsv` pins unchanged; G2 quick unchanged; the trace gains a table
@@ -683,58 +714,80 @@ declaration NAMES in `rungs` (same form stem by construction, top-down),
 each re-asked tests 1-5 by the same walk. A named rung that fails is
 skipped and traced; the floor is the BODY row, always present. So the
 stamp can never name another form's row (the first draft's `vfoo-w16`
-hole is closed by data, not by a stem comparison).
+hole is closed by data, not by a stem comparison). `[D155]` Each rendered
+rung is ONE guarded helper definition. Its fall-through, the next
+rendered rung's helper or `<fn>__body`, is written by the seam from this
+same `rungs` list, as the helper's entry test (§R4.9.2.5). A skipped rung
+therefore just drops out of the chain: the rung above it falls through to
+the one below.
 
-> **THE FLOOR RULE.** The SIMD-on rendering of a site is its SIMD-off
-> rendering, unchanged, plus text that sits ONLY inside `#if <level
-> guard>` blocks. `[r9 C-6]` Stated as two properties C18 checks:
-> (a) PREPROCESSED-EQUAL off-target: with no level macro defined, the
-> SIMD-on and SIMD-off artifacts preprocess to the same text;
-> (b) INSERTION-ONLY on-target: at each live level L, the SIMD-on
-> preprocessed text is the SIMD-off preprocessed text with lines
-> INSERTED, none changed or removed. (b) is what catches guarded text
-> that changes the floor (a guarded `#define memchr my_memchr` leaves (a)
-> green).
+> **THE FLOOR RULE** (`[D155]` RULED, Q-R9-6, with Frank's amendment).
+> The SIMD-on rendering of an artifact is its SIMD-off rendering,
+> unchanged, with text INSERTED, and every inserted byte sits inside a
+> level-guard block. The amendment adds: no preprocessor directive ever
+> sits inside a function body. The level choice is made at FILE SCOPE,
+> and every function body the kit writes is directive-free (§R4.9.2.5).
+> Stated as the properties C18 checks (§R4.9.8):
+> (a) PREPROCESSED-EQUAL off-target: with no level macro defined
+> (`-mgeneral-regs-only`, `-mno-sse2`), the SIMD-on and SIMD-off
+> artifacts preprocess to the same text. This is the exact form of "the
+> SIMD-on artifact compiled without the features IS the SIMD-off
+> artifact". Measured on the probes: EQUAL, 12 of 12 (§R4.9.2.5).
+> (b) `[D155]` ONE REPLACED CALL PER FUNC on-target: at each live level
+> L, the SIMD-on preprocessed text is the SIMD-off preprocessed text with
+> lines INSERTED, plus, for each FUNC that carries a SIMD row, exactly
+> ONE changed line: the selected definition's call
+> `return <fn>__body(<args>);` becomes `return <fn>__w<VW>(<args>);`.
+> Nothing else may change or be removed. ~~(b) INSERTION-ONLY on-target~~:
+> the r9 leg (C-6) assumed rungs INSIDE the FUNC body. Under file-scope
+> selection the FUNC's one call necessarily names a different helper
+> on-target, so pure insertion is impossible by construction. The
+> replaced-call count is checked against the mover census (one per SIMD
+> FUNC), so the leg is no weaker. It still catches guarded text that
+> changes the floor: a guarded `#define memchr my_memchr` rewrites
+> `<fn>__body`'s preprocessed lines and shows as extra changed lines.
+> (c) `[D155]` SOURCE-LEVEL INSERTION-ONLY at every target: the raw
+> SIMD-on text is the raw SIMD-off text with lines inserted and none
+> removed. The scalar `#else` arm IS the SIMD-off FUNC, byte for byte.
+> Measured: 0 deleted lines on 4 of 4 probe renderings. This is what
+> makes RQ-3's `len − simd_guarded` exact (§R4.9.2.4).
+> (d) `[D155]` NO DIRECTIVE IN A BODY: no `#` line occurs between a
+> function's opening `{` and its matching `}` in the SIMD-on text. This is
+> a lint on the raw text.
 
-The FUNC shape batch 1 renders (comments elided; helper names from the
-FUNC's own name, as the word-load helpers' are):
-
-```c
-#if defined(__x86_64__) && !defined(__ILP32__) && defined(__SSE2__)
-#include <emmintrin.h>
-static inline size_t rx_reqrun_w16(const unsigned char *s, size_t n, size_t pos) { … }
-#endif
-#if defined(__x86_64__) && !defined(__ILP32__) && defined(__AVX2__)
-#include <immintrin.h>
-static inline size_t rx_reqrun_w32(const unsigned char *s, size_t n, size_t pos) { … }
-#endif
-static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
-{
-#if defined(__x86_64__) && !defined(__ILP32__) && defined(__AVX2__)
-    if (pos < n && n - pos >= <reach w32>) return rx_reqrun_w32(subject, n, pos);
-#endif
-#if defined(__x86_64__) && !defined(__ILP32__) && defined(__SSE2__)
-    if (pos < n && n - pos >= <reach w16>) return rx_reqrun_w16(subject, n, pos);
-#endif
-    <the BODY row's loop, byte for byte>
-}
-```
+`[D155]` The r9 FUNC shape that stood here put two `#if` rungs at the top
+of the FUNC body (`if (pos < n && n − pos ≥ <reach>) return
+rx_reqrun_w32(…)` under the w32 guard, then the w16 rung, then the BODY's
+loop inline). The amendment WITHDRAWS it. The shape is now §R4.9.2.5's:
+the loop is a helper, each level is a helper, and the FUNC is one call.
 
 The STMT use lines are UNCHANGED: they still call `rx_reqrun`. A
-STMT-only site (a later batch) uses the same slots: its PREFIX is an
-`#if <guard> <vector text> #else` around a BODY it does not write;
-designing it is that batch's.
+STMT-only site (a later batch) uses the same slots. ~~its PREFIX is an
+`#if <guard> <vector text> #else` around a BODY it does not write~~
+`[D155]` A STMT has no function body of its own to keep directive-free.
+If its text sits inside an emitted function (pcrec's `rx_search`), a
+`#if` around it would put a directive inside that body, which the
+amendment forbids. So a STMT-only site takes SIMD only by becoming a
+call to a file-scope helper (a FUNC part). Designing that is that
+batch's.
 
 What the rule buys:
 - **One scalar spelling.** The floor of every ladder IS the BODY row the
-  site gets at SIMD-off.
+  site gets at SIMD-off. `[D155]` It is rendered ONCE per artifact, as
+  `<fn>__body`, and every level's helper falls through to it by name.
 - **Every SIMD-on artifact compiles and runs on any target** (at scalar
   speed off its levels). Addendum 6 does not require this. It costs
   source bytes only, and it is what makes C18 possible (Q-R9-6).
 - **An independent check, C18** (§R4.9.8): the preprocessor, with gcc's
   own macro set, decides which text survives. `-mgeneral-regs-only` was
   verified on this box to empty the x86 vector macros (it keeps only
-  `__x86_64__`), even with `-march=x86-64-v3` added.
+  `__x86_64__`), even with `-march=x86-64-v3` added. `[D155]` So does
+  `-mno-sse2`, and `-mavx2 -mno-sse2` keeps neither `__SSE2__` nor
+  `__AVX2__`: the w32 guard implies the w16 guard under gcc 15.2
+  (`gcc -dM -E`, 2026-10-08).
+- `[D155]` **Function bodies are the same text at every level.** Only
+  WHICH definition of the FUNC is compiled changes. That is what lets
+  runtime dispatch reuse the helpers unchanged (§R4.9.3.1).
 
 **The deny, per row.** Each SIMD row has its own options.def row,
 `MF_OPT("<form>-w<VW>", MF_OPT_DENY, <budget>, MF_L_SIMD, "...")`. Batch 1
@@ -753,7 +806,13 @@ w32 rung that is compiled out, and on a target with no level (the Mac at
 batch 1) the stamp is non-`none` while nothing vector runs. That is
 consistent with addendum 3 (`none` iff byte-identical to the SIMD-off
 compile) and the `match_api.md` §6.3 hunk says it. Consumers still bucket
-on `none`/not-`none` only.
+on `none`/not-`none` only. `[D155]` Under file-scope selection the stamp
+still lists the RENDERED levels: one token per guarded helper block, top
+to bottom of the selector chain. The scalar arm is never listed, because
+every FUNC has it. At SIMD-off, and after R4e′.0b with no SIMD row, the
+value is `none`. R4e′.0b moves no `MEMFN_FORMS` value. `vrun@w32+w16`
+says the selector has a w32 arm and a w16 arm above `#else`, whatever
+the consumer's `-march` compiles.
 
 #### R4.9.2.4 Selection neutrality by construction `[r9 C-3]`
 
@@ -765,7 +824,17 @@ bytes the comment gate dropped, and every length-based decision reads it
   two sink ops appended to `mf_sink`, `simd_open(u, level)` and
   `simd_close(u)`. The kit brackets every byte it writes inside a level
   guard with them, and writes the guard lines themselves inside the
-  bracket.
+  bracket. `[D155]` Guarded bytes are now WHOLE DEFINITIONS plus
+  directives. Bracketed: each level's helper block, from its `#if` line
+  through its `#endif` (the intrinsics `#include` included), and the
+  selector's guarded parts, from `#if <top guard>` through the `#else`
+  line, plus the closing `#endif`. NOT bracketed: the `#else` arm's FUNC
+  definition, because it IS the SIMD-off FUNC byte for byte. Because the
+  SIMD-on source is the SIMD-off source with lines inserted (floor rule
+  (c)), `len(ON) − simd_guarded = len(OFF)` holds exactly, not
+  approximately. Measured on the probes: 84 lines inserted, 0 deleted,
+  for each of `(?i)cat` and `/user|/users` in both selector shapes
+  (§R4.9.2.5).
 - **pcrec side (RQ-3):** pcrec's sink counts bracketed bytes into the
   buffer's `simd_guarded`, and every length DECISION reads
   `len_uncut − simd_guarded`: the VM entry-shape knee, the `fit_rungs[]`
@@ -777,7 +846,15 @@ bytes the comment gate dropped, and every length-based decision reads it
   change a refusal, and to hold the compile bound instead by a per-row
   CONSTANT bound on guarded text (`mf_formdecl.guarded_max`, stated by
   the kit, checked by G2 over the generated site space): at most
-  `nsites × max guarded_max` bytes ride beyond the cap.
+  `nsites × max guarded_max` bytes ride beyond the cap. `[D155]` **RULED
+  (a)** (D155 item 9). Under file-scope selection a row's `guarded_max`
+  bounds its whole guarded footprint per FUNC: its helper definition, its
+  level's `#include` line (written once per artifact per level, so it is
+  at most once per FUNC), its selector arm (the FUNC head plus one call),
+  and its share of the directives. The seam's directive bytes per level
+  are a constant the seam states; the row's bound includes that constant.
+  The guarded bytes are now always whole helper definitions plus
+  directives, never fragments inside the scalar text.
 - **`RUN_WORDS` and `MEMFN_LIBC` under ON, declared:** the kit counts
   `RUN_WORDS` over UNBRACKETED text only, so it is equal ON vs OFF (the
   helpers reuse the floor's run compare row). `MEMFN_LIBC` scans the whole
@@ -807,11 +884,275 @@ and renders as today. The first draft's `over` list named both rows. The
 second row is filed with its cell (§R4.9.7's filed list); adding it later
 is a one-cell `over` edit, not a new row.
 
-A FUNC no PREFIX row takes renders exactly as today. A site whose
+A FUNC no PREFIX row takes renders exactly as today. `[D155]` After
+R4e′.0b, that means the SIMD-off shape: `<fn>__body` plus the FUNC's one
+call, with no directive (§R4.9.2.6). A site whose
 predicate `ofs_fn_applies` declines (e.g. a scanned position that is a
 four-member cube) has no FUNC part at all (the generic row renders it), so
 the seam and its SIMD rows are never reached: the first draft's
 "`kit_fail` or a shape outside C18" hole (`[r9 C-2]`) cannot occur.
+
+#### R4.9.2.5 `[D155]` File-scope selection: the shape
+
+Frank's amendment to Q-R9-6 (D155 item 6): *"no `#if`/`#ifdef` inside
+function bodies. The SIMD choice lives at FILE SCOPE (per-level `static
+inline` helpers selected by `#if`), and the body makes one plain call.
+The SIMD-off artifact routes through the helper too — a one-time,
+measured byte move and abi event — so the floor rule stays exact."*
+
+**SIMD-off, from step R4e′.0b on** (§R4.9.2.6). The BODY row's loop
+becomes a helper, and the FUNC becomes one call:
+
+```c
+static inline size_t rx_reqrun__body(const unsigned char *subject, size_t n, size_t pos)
+{
+    <the BODY row's loop, byte for byte as today>
+}
+
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    return rx_reqrun__body(subject, n, pos);
+}
+```
+
+**SIMD-on, batch 1** (`vrun-w32` chosen, rung `vrun-w16`; comments
+elided; guards abbreviated to their `levels.def` tokens):
+
+```c
+<rx_reqrun__body, exactly as above>
+#if <w16 guard>
+#include <emmintrin.h>
+static inline size_t rx_reqrun__w16(const unsigned char *subject, size_t n, size_t pos)
+{
+    if (pos >= n || n - pos < <reach w16>) return rx_reqrun__body(subject, n, pos);
+    <the w16 block loop>
+}
+#endif
+#if <w32 guard>
+#include <immintrin.h>
+static inline size_t rx_reqrun__w32(const unsigned char *subject, size_t n, size_t pos)
+{
+    if (pos >= n || n - pos < <reach w32>) return rx_reqrun__w16(subject, n, pos);
+    <the w32 block loop>
+}
+#endif
+#if <w32 guard>
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    return rx_reqrun__w32(subject, n, pos);
+}
+#elif <w16 guard>
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    return rx_reqrun__w16(subject, n, pos);
+}
+#else
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    return rx_reqrun__body(subject, n, pos);
+}
+#endif
+```
+
+**The three pieces.**
+1. **`<fn>__body`**, the scalar helper. It is the chosen BODY row's text
+   (`fn-pair` or `fn-memchr`), byte for byte, under a renamed head. It is
+   unguarded and always present, and it is the ONE scalar spelling in the
+   artifact.
+2. **`<fn>__w<VW>`**, one per RENDERED rung, inside that level's guard.
+   Its text is the PREFIX row's. Its first statement is the entry test:
+   the derived reach (§R4.9.3, a correctness bound) falls through to the
+   next rendered rung's helper, or to `<fn>__body`. The seam hands the row
+   that name, taken from the `rungs` data. So the ladder w32 → w16 →
+   scalar is a chain of plain calls in the helpers' entry tests, with no
+   directive, and no vector body ever runs a partial block. Blocks are
+   written in ASCENDING level order, so each helper is defined before the
+   one that falls to it (w32 falls to w16, which is defined above it).
+3. **The selector: the FUNC `<fn>` itself.** It has one definition per
+   rendered level, plus the scalar arm, chosen by ONE
+   `#if`/`#elif`/`#else`/`#endif` chain at file scope. The SEAM writes the
+   chain from `levels.def`'s guard strings, top level first (the
+   preprocessor's first match is the table's first match). A row never
+   spells a guard. Each arm's body is ONE plain call to that level's
+   helper. The scalar arm is the SIMD-off FUNC, byte for byte, which is
+   what makes floor rule (c) hold. With no PREFIX row chosen there is no
+   chain, only the scalar arm.
+
+Every helper has the FUNC's own parameter list, table parameters
+included (`table_params`), so every call forwards the same argument list
+and the STMT use lines do not change. The w32 guard implies the w16 guard
+(gcc 15.2: `-mno-sse2` also removes `__AVX2__`), so w32's fall-through to
+w16 always names a defined function. A rung skipped by the walk (denied,
+or failing its reach at selection) is not rendered: the rung above it
+falls through to the next rendered one, and the selector has no arm for
+it.
+
+**The alternative shape, and the choice.** The FUNC could instead keep
+ONE invariant definition that calls a selected `<fn>__level`, with
+`<fn>__level` defined per level by the chain (shape A). Measured, the two
+shapes give identical assembly at `-O2` (default and `x86-64-v3`, both
+witnesses). Shape A costs 280 B per FUNC at SIMD-off where the shape
+above costs 139 B. The shape above is the design. Shape A is Q-R9-10, in
+case "one plain call" is read as "one invariant FUNC text".
+
+**Where the pieces sit, relative to `fn_rows[]` and the sinks.** The seam
+(`ofs_fn_define`, §R4.9.2.1 item 3) writes all three pieces contiguously,
+at the FUNC's current place: the same file-scope define sink
+(`mf_define`) it writes the FUNC to today, in the order body, helper
+blocks, selector. No new sink is needed, and nothing else in the
+artifact moves relative to the FUNC. The BODY slot supplies piece 1's
+text and the PREFIX slot supplies piece 2's helper texts (the chosen row,
+then its named rungs, each re-walked). The seam writes the heads, the
+entry tests' names, all directives and piece 3. `simd_open`/`simd_close`
+bracket pieces 2 and 3's guarded parts (§R4.9.2.4).
+
+**Several FUNCs in one artifact.** Nothing is shared between FUNCs: each
+FUNC gets its own `<fn>__body`, its own helpers and its own selector,
+because the helper texts carry that FUNC's constants (run bytes, masks,
+offsets, table parameters). Two FUNCs at the same levels repeat the same
+guard strings in their own chains.
+- **Names** are the FUNC's own name plus a fixed suffix: `__body`, or
+  `__` followed by the level's stamp token from `levels.def` (`__w16`,
+  `__w32`; one source for the token).
+- **The names are unique.** Every FUNC name is unique in its artifact
+  and ends in one of pcrec's fixed FUNC suffixes (`_reqrun`,
+  `_reqrun_whole`, `_ofsskip`). So no helper name can equal a FUNC name
+  or another FUNC's helper name.
+- **The double underscore** inside an identifier is legal in C, which
+  reserves a leading `__` only. The helpers never reach the `.h`
+  (`[r9 C-9]`), so a C++ includer never sees them.
+- **Includes.** An intrinsics `#include` is written once per level per
+  artifact, inside the first guarded block at that level (the `mf_art`
+  remembers it, `[r9 C-7]`).
+
+**The stamp.** It reports rendered levels, as before (§R4.9.2.3). One
+token is listed per arm above `#else`, top-down.
+
+**Probe evidence** (scratch, this lane, `gcc 15.2.0`, glibc 2.43, the dev
+box, `taskset -c 12-15`. The transcript is `../../dev/lanes/r9d_report.md`
+"revision D155". The inputs are the kit tip's own emitted witnesses from
+r9fu, re-rendered by a script in each shape. The vector helpers are
+r9fu's hand twin, not kit renders. No timing was taken.)
+- **SIMD-off costs nothing at `-O2`/`-O3`.**
+  - Inputs: twelve witness artifacts, every r9fu artifact with a FUNC
+    (eleven PRE `rx_reqrun`, one OFS `rx_ofsskip`).
+  - Method: each compiled `-S` as today and as both new shapes. The
+    whole-file assembly was compared after renumbering gcc's
+    `.LFB`/`.LFE` per-function counters (one more function shifts every
+    later index).
+  - Result: `-O2` 12/12 IDENTICAL and `-O3` 12/12 IDENTICAL, in both
+    shapes. No `__body` symbol survives.
+  - `-Os`: 9/12 identical.
+    - `(a|b)+xyzzy` and `(?i)(a|b)+cat` differ only in a NAME. At `-Os`
+      gcc already keeps today's FUNC out of line at its two call sites,
+      and that out-of-line copy is now called `rx_reqrun__body`.
+    - `(?i)union.*?select.*?from --engine=vm` differs in one register
+      choice across two instructions.
+  - `-O0`: one more call per FUNC call (1 → 2). `-O0` inlines nothing
+    today either.
+- **Every level combination compiles clean.**
+  - 144 compiles: two witnesses × (two shapes + two controls) × nine
+    flag sets × `-O0`/`-O2`.
+  - Flag sets: `-mgeneral-regs-only`, default x86-64, `x86-64-v2`,
+    `sandybridge`, `x86-64-v3`, `x86-64-v4`, `-mno-sse2`,
+    `-mavx2 -mno-sse2`, `-mgeneral-regs-only -march=x86-64-v3`. All
+    with `-Wall -Wextra`.
+  - Result: 0 errors, and 0 warnings outside one control.
+  - The controls cover the unused-helper case. In the first, w32 falls
+    straight to `__body`, so the w16 helper is defined and UNUSED at
+    v3/v4. As `static inline`, gcc says nothing. In the second, the same
+    helper is declared plain `static`, and it draws `-Wunused-function`
+    at v3 and v4 (8 of 8 such compiles). So the warning is live, and
+    `static inline` on every helper is what keeps a skipped arm silent.
+- **C18 on the new shape.**
+  - (a) EQUAL, 12 of 12 (two witnesses × two shapes × three flag sets).
+  - (b) At default, v3 and v4: exactly ONE deleted line per comparison,
+    the selected call `return <fn>__body(subject, n, pos);`. Inserted:
+    3,236 lines at default (`<emmintrin.h>`), about 45,800 at v3/v4.
+  - (c) The source diff deletes 0 lines (4 of 4).
+- **On-target code.**
+  - At `-O2`, every helper inlines into `rx_search` at every level (no
+    helper symbol remains).
+  - Instruction counts: `(?i)cat` default/v3 336/418, `/user|/users`
+    279/363. r9fu's twin of the WITHDRAWN shape (rungs inside the body)
+    counted 337/423 and 276/356. So the counts are close but not
+    identical: a code-generation difference to keep in mind for F-R9-1's
+    objdump report.
+- **Answers.**
+  - A differential over 15,884,000 calls per build: random subjects of
+    length 0..130 over each pattern's alphabet, every `pos`.
+  - Builds: today, both OFF shapes and both ON shapes, at default, v3, v4
+    and `-mgeneral-regs-only`.
+  - Result: ONE result hash per witness across every build.
+
+#### R4.9.2.6 `[D155]` Step R4e′.0b: the routing byte move, an abi event, and its G1 measurement
+
+**What moves.** Every artifact with a FUNC part, i.e. every
+`ofs_fn_define` call: PRE `<p>_reqrun`, `<p>_reqrun_whole` and OFS
+`<p>_ofsskip`.
+- Each FUNC's loop moves, unchanged, under the head `<fn>__body`, and the
+  FUNC becomes one call (§R4.9.2.5's SIMD-off shape).
+- Nothing else moves, and no comment line is added.
+- Measured on the twelve witnesses: +139 B per FUNC (+141 for
+  `rx_ofsskip`, whose name is two bytes longer).
+
+**Why a step of its own**, between the seam R4e′.0 and batch 1:
+- R4e′.0 stays ZERO-MOVER. The table refactor is checked by identity,
+  and that check is only meaningful while nothing moves.
+- R4e′.0b is the one byte move, checked by its own census.
+- Batch 1 then adds only guarded text (floor rule (c)).
+
+So there is one event per commit, implement-then-replace.
+
+**It is a pcrec abi event, in the kit's commit.**
+- A kit byte move is a pcrec abi event (root CLAUDE.md, D76/D94).
+  pcrec's abi takes "the next number at landing", never a literal.
+- Every reader of the number is found BY GREP, the identity gates are
+  re-pinned, and `make test-codegen` plus the suites that count are run.
+  This is RQ-6.
+- It is not an `MF_SITE_ABI` event: no contract field changes. No
+  `MEMFN_FORMS`, `RUN_WORDS` or `MEMFN_LIBC` value moves.
+- The FUNC and its helper are `static`, so no entry a caller links
+  against changes. D80's spec obligation is the abi number's own spec
+  readers, found by the same grep.
+- **Q49 is amended for this step only.** "No abi bump at SIMD-off, no
+  default byte moves" still holds for batch 1 and every later SIMD row.
+  R4e′.0b is the single exception, the one D155 ordered.
+
+**The measurement plan (G1, both layers).** "`static inline` must cost
+nothing, so measure it":
+1. **The mover census** comes from pcrec, not the kit.
+   - `emit_sweep`'s streams are compared with the parent's.
+   - The movers must be exactly the artifacts with a FUNC part, by id,
+     counted against the seam's `fn` census by customer (K35 floor).
+   - Each mover's text diff must be exactly the routing. A script checks
+     this: rename `<fn>__body` back and drop the forwarder, and the
+     result equals the parent byte for byte. Any other moved byte is red.
+2. **Object identity** is the "costs nothing" claim, stated as a fact.
+   - Every mover is compiled at the bench recipe (`-O2`, default
+     `-march`) and at `-O2 -march=x86-64-v3`.
+   - Its assembly is compared with the parent's, with gcc's function
+     counters renumbered and the helper symbol name normalized.
+   - The probes predict IDENTICAL on every mover at `-O2`. Each
+     non-identical mover is listed with its diff.
+   - `-Os` and `-O0` are reported but do not gate (the probes show one
+     register difference in 12 at `-Os`, and one more call at `-O0`;
+     [GUIDE-OPT-LEVEL] recommends `-O2`).
+3. **Timing applies only where item 2 is not identical.**
+   - A mover with identical code at a recipe runs the same instructions,
+     so the report says so and does not time identical binaries.
+   - Each non-identical mover gets a tier-U pair (RQ-4's slot): parent vs
+     routed, both regimes (§R4.9.5). The identical movers are its null
+     population, and they must read null (that is the control).
+   - A non-null cell goes to the bench (the RQ-5 path) and lands only as
+     a recorded, accepted cost.
+4. **Both layers.**
+   - The reading is taken at `-fno-memfn-simd` and at `-fmemfn-simd`.
+   - At R4e′.0b no SIMD row exists, so the two artifacts are
+     byte-identical (C11's identity half), and the SIMD-on reading IS
+     that identity.
+   - From batch 1 on, the SIMD-on layer is judged against this routed
+     SIMD-off (§R4.9.6), never against the pre-routing text.
 
 ### R4.9.3 Cascades and the short-span path
 
@@ -819,12 +1160,14 @@ the seam and its SIMD rows are never reached: the first draft's
 
 | mode | where the pick happens | text | when |
 |---|---|---|---|
-| compile-time ladder | the consumer's compiler, from predefined macros (`-march`) | §R4.9.2's dispatch prefix | the DEFAULT for every SIMD row; batch 1 |
-| run-time cascade (K-6) | the artifact at each call, `__builtin_cpu_supports` | a separate row (below) | only on its own trigger; FILED |
+| compile-time ladder | the consumer's compiler, from predefined macros (`-march`) | ~~§R4.9.2's dispatch prefix~~ `[D155]` §R4.9.2.5's file-scope selector, plus the helpers' entry tests | the DEFAULT for every SIMD row; batch 1 |
+| run-time cascade (K-6) | the artifact at each call, `__builtin_cpu_supports` | a separate row (below); `[D155]` now `[MEMFN-RTDISPATCH]`'s shape, §R4.9.3.1 | only on its own trigger; FILED |
 | none | — | the floor alone | SIMD off; or no SIMD row applies |
 
 The ladder needs no state, holds no static and costs one compare per
-rung per call. The consumer's `-march` decides what runs: at the
+rung per call. `[D155]` That compare is now each helper's ENTRY TEST, so
+a call that falls through pays one compare per rendered rung and one
+call per rung (inlined at `-O2`, measured, §R4.9.2.5). The consumer's `-march` decides what runs: at the
 bench's recipe (`-O2`, no `-march`), x86-64 defines `__SSE2__` and no
 wider level macro (measured with `gcc -dM -E`), so batch 1's w16 row is
 the live arm and w32 is compiled out. At `-march=x86-64-v3`, w32 is live
@@ -850,12 +1193,13 @@ measurement regime (§R4.9.5 item 4) and of the bench recipe (Q-R9-2).
   row declines at selection (walk test 3) and the FUNC carries no rung.
   `MF_SPAN_UNBOUNDED` passes, so an unbounded site is never falsely
   declined.
-- **Dynamic.** At run time, `n − pos < reach` falls through the prefix
-  to the next rung, and finally to the BODY. So w32 → w16 → scalar, and
+- **Dynamic.** At run time, `n − pos < reach` falls through ~~the prefix~~
+  `[D155]` the helper's entry test to the next rung's helper, and finally
+  to `<fn>__body`. So w32 → w16 → scalar, and
   no vector body ever runs a partial block.
 - **R-1's 16 B finding re-read (F-R9-1).** At 16 B every row falls to
-  the BODY by construction. What remains is the prefix's compare-and-
-  branch plus any code-generation effect, read against the null
+  the BODY by construction. What remains is the ~~prefix's~~ `[D155]`
+  entry tests' compare-and-branch plus any code-generation effect, read against the null
   population (§R4.9.5 item 6).
 - **Performance cut-overs ABOVE the reach are tuning constants**
   (`[r9 M-9]`). Two are swept, not one: w32-over-w16 AND w16-over-scalar,
@@ -870,7 +1214,11 @@ measurement regime (§R4.9.5 item 4) and of the bench recipe (Q-R9-2).
 
 **The run-time cascade (K-6), designed and FILED.** Its one purpose is to
 let a binary built at a LOW `-march` (the bench's recipe, most
-consumers') use a wider level on a CPU that has it.
+consumers') use a wider level on a CPU that has it. `[D155]` Its SHAPE
+below (a prefix rung inside the FUNC body) is WITHDRAWN by the amendment.
+Its guard, its cost, its libgcc dependency (Q-R9-8, RULED) and its bar
+stand, as inputs to `[MEMFN-RTDISPATCH]`, whose terms D155 states and
+whose shape §R4.9.3.1 shows. The text below is kept as the r9 record.
 - `[r9 C-4]` **A separate PREFIX row**, e.g. `vrun-rt`, placed ABOVE
   `vrun-w32` in `fn_rows[]`, naming rungs `vrun-w32`, `vrun-w16`, so it
   renders ABOVE the FULL compile-time ladder: cascade, w32, w16, floor.
@@ -913,6 +1261,113 @@ consumers') use a wider level on a CPU that has it.
   null band in both regimes at a batch-1 cell. Batch 1's lane MAY run
   this probe as measurement only. A met trigger is a later batch's row.
 
+#### R4.9.3.1 `[D155]` Runtime dispatch (`[MEMFN-RTDISPATCH]`, FILED): what the same helpers already serve
+
+D155 FILES runtime dispatch (plan row `[MEMFN-RTDISPATCH]`, not
+scheduled). Its trigger (D77): more than one architecture selected for
+runtime support AND a hot-loop SIMD form exists. No dispatcher is
+designed here. This subsection shows that §R4.9.2.5's shape does not
+preclude the row's terms, and where each term would land.
+
+**1. Each site states a frequency class.**
+- An INFREQUENT site (about once per search call) may choose its level
+  at run time.
+- A FREQUENT site (inside a pcrec-owned loop) never pays a hardware
+  check. It takes a STATIC choice: the lowest common denominator of the
+  selected set, or a named level.
+- The class is a SITE fact, and pcrec states it, because only pcrec knows
+  where it calls the FUNC (D146).
+- **Finding: the class is NOT `MF_P_INLOOP`.**
+  - C10 sets `MF_P_INLOOP` only from D91's budget column, which puts OFS
+    in budget 1, i.e. not in-loop. A budget says how long ONE call may
+    run (an OFS call is a scan).
+  - r9fu measured that the OFS FUNC is CALLED inside the DFA scan loop,
+    on every re-seed (§R4.9.7.2).
+  - So frequency is a second fact, not a reading of the first. That is
+    Q-R9-11.
+
+The first-batch sites, and the filed one, from r9fu's artifact lines:
+
+| site (FUNC) | where pcrec calls it | frequency class | under runtime dispatch |
+|---|---|---|---|
+| PRE window `<p>_reqrun`, DFA route, ASSIGN (batch 1) | once, at `rx_search` entry (`(?i)cat` l.79) | INFREQUENT | may choose its level at run time |
+| PRE window, DFA without handoff, and no-DFA ON_MISS (batch 1) | once (`\d+xyzzy` l.70; `(?i)union…` `--engine=vm` l.312) | INFREQUENT | the same |
+| PRE window, VM hybrid (batch 1) | once, before the prefilter and the attempt loop (`(a\|b)+xyzzy` l.387). The hybrid's re-seed calls `rx_prefilter`, not the FUNC | INFREQUENT | the same |
+| filed `vrun` over `fn-memchr`: OFS `<p>_ofsskip`, run-pinned | INSIDE `rx_search`'s DFA scan `for (;;)`, on every re-seed (`/user\|/users` l.132) | FREQUENT | static choice only |
+
+**2. Per-level copies by target attribute, chosen once.**
+- A level ABOVE the consumer's compile-time level gets a second copy of
+  the SAME helper text. The copy sits under a dispatch guard (the level's
+  macro ABSENT, plus `__SSE2__`, `__x86_64__`, not ILP32, Linux, GNUC:
+  C-4's guard) and carries `__attribute__((target("<level>")))` on its
+  head.
+- The FUNC's selector gains one arm under that guard, for an INFREQUENT
+  site only. The arm's body is still ONE plain call, to a per-FUNC
+  dispatcher helper (`<fn>__rt`, NOT designed here). That helper chooses
+  once, D155's "selected once", and calls a level helper.
+- A FREQUENT site gets no runtime arm. Its selector stays the static
+  chain.
+
+Probe (scratch, `(?i)cat`):
+- The w32 helper under the static guard and its copy under the dispatch
+  guard are the same text except for the attribute.
+- With a stand-in arm (`__builtin_cpu_supports("avx2") ? w32 : w16`,
+  used for the compile only, not the design), the file compiles clean
+  under `-Wall -Wextra` at default, `x86-64-v3` and
+  `-mgeneral-regs-only`.
+- The answers match at default and v3: the same hash as every static
+  build over 15,884,000 calls.
+- At default, gcc does NOT inline the target-attributed helpers into the
+  default-target caller. `rx_reqrun__w16` and `rx_reqrun__w32` stay out of
+  line, so a dispatched site pays a real call per FUNC call. That is
+  acceptable only where the FUNC is called about once per search, which
+  is D155's frequency rule reached from the other side.
+- The floor rule holds for the runtime block, which is guarded text:
+  (a) is EQUAL at `-mgeneral-regs-only` and at `-mno-sse2`, and the
+  source diff deletes 0 lines.
+
+**3. A compile-time level set that need not cascade.**
+- The set is DATA: the rendered rungs, i.e. the chosen row's `rungs`
+  filtered by the walk.
+- Each helper's entry test names the next RENDERED rung, or `<fn>__body`.
+  So "AVX-512 or scalar" renders one wide helper that falls straight to
+  `__body`, with no w32 or w16 between.
+- Probe: the control in which w32 falls straight to `__body` compiles
+  clean at all nine flag sets. The skipped helper is silent because it
+  is `static inline` (§R4.9.2.5).
+- A FREQUENT site's static choice is the same mechanism:
+  - "The lowest common denominator" is the selector compiled at the set's
+    lowest `-march` (the usual runtime-dispatch recipe).
+  - "A named level" is a selector arm that calls that level's helper with
+    no check.
+  - Either one only changes which helper the FUNC's one call names.
+    Choosing between them is the row's ruling, not this design's.
+
+**4. Per-architecture separate artifacts already work.** Compile the same
+SIMD-on artifact once per `-march` (one `lib.so` per `-march`, chosen at
+load): the selector takes the matching arm in each compile, and pcrec
+needs nothing.
+- Measured: the same source at default, v3 and v4 compiles to three
+  different arms (`pcmpeqb` 4/8/8, `ymm` 0/18/18 for `(?i)cat`).
+- The answers are identical.
+
+**What the row inherits from this design, unchanged:**
+- the helper names and texts;
+- the floor rule and C18 (a runtime block is a guarded block);
+- RQ-3's bracket accounting;
+- Q-R9-8's libgcc dependency, RULED (D155 item 8).
+
+What it must design:
+- the dispatcher helper;
+- its once-only choice, without a mutable static in the artifact
+  (`match_api.md` §5.3: TS-1 forbids one, so "chosen once" has to be a
+  resolver the loader runs, or a caller-held choice;
+  `isa_evaluation.md`'s hoisted pick);
+- the frequency-class fact (Q-R9-11).
+
+The mutable-static constraint is RECORDED here as the one hard problem
+the row has. It is not solved here.
+
 ### R4.9.4 The `-fmemfn-simd` axis: BUILT and inert; what pcrec owes
 
 **Built** (R4c lane AXIS, 2026-10-06; read at main 5ddd2f04):
@@ -932,7 +1387,9 @@ pcrec needs NO new axis, no `--isa=`, no `-march` knob and no ISA fact for
 the SIMD layer. The seam (R4e′.0) lands entirely in `memfn/` and
 `tests/memfn/`. Batch 1 lands in `memfn/`, `tests/memfn/` and
 `docs/spec/`, plus RQ-3's pcrec-side length readers (Q49: no abi bump at
-SIMD-off, no default byte moves).
+SIMD-off, no default byte moves). `[D155]` One exception precedes batch 1:
+step R4e′.0b, the routing byte move. It is a pcrec abi event at SIMD-off,
+carried by RQ-6 (§R4.9.2.6).
 
 **Owed by pcrec, as later requests** (named here, not designed;
 §R4.9.11):
@@ -944,6 +1401,9 @@ SIMD-off, no default byte moves).
 - RQ-4, the dev box's slot for the UNOFFICIAL tier (`[r9 M-1]` demoted).
 - RQ-5, the bench SUBMISSION for batch 1's official verdicts
   (`[r9 M-1, M-4]`: before acceptance, not at landing).
+- `[D155]` RQ-6, R4e′.0b's abi event on pcrec's side: the bump, the
+  readers found by grep, the identity re-pin, and the G1 object-identity
+  census (§R4.9.2.6).
 
 ### R4.9.5 The measurement regime: two tiers `[r9 M-1]`
 
@@ -1046,7 +1506,8 @@ says so.
    layout is a single draw, the flags re-align the whole binary including
    the harness, and 64/32 were unlabelled constants. Its job (separating
    placement from a real per-call cost) is the null population's. A
-   below-reach per-call cell measures the dispatch prefix; a median shift
+   below-reach per-call cell measures the dispatch prefix (`[D155]` now the
+   selector's call plus the helpers' entry tests); a median shift
    outside the null band there is a LOSS even if each launch alone sits
    inside it (K81 and K85's +1..+9 ns entry terms were real).
 7. **Regimes** (both, every cell; §21.1):
@@ -1166,7 +1627,8 @@ executes L (§R4.9.5's table), the pre-registered bar holds:
      official box running L;
    - NO cell in the pre-registered population regresses past the floor
      on ANY official box running L (throughput and per-call alike; below
-     reach included, where the loss is the prefix's own cost, see item 6
+     reach included, where the loss is the prefix's own cost (`[D155]`: the
+     entry tests'), see item 6
      of §R4.9.5). A NULL on one box with a win on another is accepted and
      recorded (Zen 1's 2×128 may null w32 per call);
 2. **against DISPLACED at L**, where it displaces a SIMD row: the same
@@ -1213,7 +1675,11 @@ the floor plus guarded text, so it is always longer. The path is open
 only to a row that REPLACES scalar text (none in batch 1), and nobody
 counts it as a second route into acceptance. A row whose benefit is
 measured but which loses time past the floor is a TRADE, ruled by Frank
-per row (Q-R9-4). `INERT:SIZE` is withdrawn (§R4.9.2.3).
+per row (Q-R9-4). `INERT:SIZE` is withdrawn (§R4.9.2.3). `[D155]` **RULED
+"fastest wins"** (D155 item 4). For a SIMD row the bar is measurably
+FASTER only, and code space is never a named benefit. The named-benefit
+path and the TRADE route above are CLOSED for SIMD rows, and this
+paragraph is kept as the record of the recommendation.
 
 **The acceptance record and its lifecycle** (`[r9 M-2, F-11, M-8]`). Each
 SIMD row × level × CPU class is one line of `tests/memfn/simd_accept.tsv`,
@@ -1282,6 +1748,10 @@ kit narrows or removes the row in a follow-up.
 
 **Step R4e′.0 (the seam) precedes batch 1** and is its own kit request:
 §R4.9.2.1, zero movers, no options.def row, no `MF_SITE_ABI` bump.
+`[D155]` **Step R4e′.0b (the routing) follows it, also before batch 1**:
+§R4.9.2.6. It moves every FUNC's loop into `<fn>__body` and makes the FUNC
+one call. It is a pcrec abi event (RQ-6), it has no options.def row, and
+it is measured as G1. Batch 1 then adds only guarded text.
 
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
 site's only predicate; rows `vrun-w32` and `vrun-w16` in `fn_rows[]`.**
@@ -1292,7 +1762,8 @@ run-pinned sites whose k-set is the run alone. They are all `fn-memchr`,
 so they moved to the filed list. The form is R-1's `ffl`, a fused
 pair-filter scan with an in-block verify that goes through the BODY's
 `rc_row` (C-12). Only the FUNC's PREFIX slot is new; the use lines are
-untouched.
+untouched. `[D155]` What the PREFIX slot renders is now the guarded helper
+blocks and, through the seam, the selector arms (§R4.9.2.5).
 
 **The level order, argued (D144 addendum 4: SSE first; the AVX2/AVX-512
 order on evidence).**
@@ -1402,7 +1873,7 @@ policy word lacking `MF_P_PORTABLE_ONLY`:
   swapped; the pair filter accepting a near-miss without the verify; the
   reach one short (C-1), red against the end guard page;
 - per-path EXECUTION floors: a `--coverage` build of the rendered sites
-  counts the prefix rungs, the 2× loop, the 1× loop, the overlapped final
+  counts the entry tests (`[D155]`, formerly the prefix rungs), the 2× loop, the 1× loop, the overlapped final
   block and the in-block verify, each against a floor in
   `row_floors.tsv` (the [MECH-REACH] proof that the space reaches every
   path);
@@ -1413,7 +1884,8 @@ policy word lacking `MF_P_PORTABLE_ONLY`:
   `[r9 M-11]`);
 - per-row CHOSEN floors in `tests/memfn/row_floors.tsv`.
 
-**Born in batch 1's commit** (Q49: no abi bump; no default byte moves):
+**Born in batch 1's commit** (Q49: no abi bump; no default byte moves;
+`[D155]` the routing abi event is R4e′.0b's, before this commit):
 - rows `vrun-w32`/`vrun-w16` in `fn_rows[]` and options.def; the `memfn`
   section's spec floor raised by 2 (born at 2 if R4d has not landed);
 - `levels.def` and `mf_levels()`;
@@ -1550,7 +2022,11 @@ WITHOUT a function-entry setup point, then measure.
 **Nothing in §R4.9 assumes one.** It was checked section by section:
 - the PREFIX row's file-scope part lives at file scope (`mf_define`);
 - its rungs sit at the top of the FUNC body, which is reached from the
-  use point;
+  use point; `[D155]` now each rung is its own helper's entry test, and the
+  FUNC is one call (§R4.9.2.5). That is still no entry-point setup: the
+  helpers inline into `rx_search` at `-O2` (measured), and the broadcast
+  counts equal r9fu's twin of the withdrawn shape (`/user|/users`:
+  `pshufd` 4 at default, `vpbroadcast` 8 at v3, in both);
 - the ladder "holds no static" (§R4.9.3);
 - the cascade reads no cached word.
 
@@ -1613,6 +2089,7 @@ answer sweep IS the `test-axes` arm per level.
 | check | checked against | independent because | population (K35) | witness reaches its site ([MECH-REACH]) |
 |---|---|---|---|---|
 | **C18, the floor rule**, two legs (`[r9 C-6, M-15]`) | (a) `gcc -E -P -mgeneral-regs-only` of ON vs OFF: preprocessed-EQUAL; (b) `gcc -E -P -march=L` of ON vs OFF at each live level: an INSERTION-ONLY diff; plus a lint that every `#if` line in the ON − OFF text diff is a `levels.def` guard string from `mf_levels()` | the PREPROCESSOR, with gcc's own macro set, decides which text survives; the kit's ladder cannot assert it | movers compared, printed, floor = the census count | three plants: one byte of the floor text edited inside a SIMD rendering (red at (a)); a guarded `#define` that changes the floor (green at (a), red at (b)); an UNGUARDED byte added outside the stamp filter (the NEGATIVE control). The comparison's one named filter is the stamp lines (`#define <PREFIX>_…`), which vanish in `-E` anyway |
+| `[D155]` **C18 as amended** (supersedes the row above in legs (b) and adds (c), (d)) | (a) unchanged: `gcc -E -P` at `-mgeneral-regs-only` AND `-mno-sse2`, ON vs OFF, byte-EQUAL; (b) at each live level, `gcc -E -P -march=L`, ON vs OFF: the DELETED lines are exactly one per SIMD FUNC and each matches `^    return <fn>__body\(<args>\);$`, and nothing else is deleted; (c) the RAW ON text vs the RAW OFF text: 0 deleted lines, and every inserted line lies inside a kit bracket (§R4.9.2.4); (d) a brace-depth scan of the raw ON text: no `#` line between a function's `{` and its matching `}`; plus the guard lint (every `#if`/`#elif` line in ON − OFF is a `levels.def` guard string from `mf_levels()`) | (a) and (b): the PREPROCESSOR decides which text survives. (c) and (d) read the kit's own output, so they are structural lints, not independent; the census they are counted against is pcrec's | (b)'s replaced-line count = the SIMD-FUNC count from the mover census (K35); (c) and (d) over every SIMD-on mover | the three r9 plants, plus: a `#if` placed inside `<fn>__body` (red at (d)); a SECOND changed line in the selector arm, e.g. the call's arguments reordered (red at (b)); the `#else` arm's FUNC text edited by one byte (red at (a) AND (c)); a rung arm left unbracketed (red at C-SEL through `simd_guarded`) |
 | **C9-x86** (§17.3 on this box, `[r9 C-8]`) | every mover compiled with the harness `GENCFLAGS` `-Werror` at `x86-64`, `x86-64-v2`, `sandybridge` (AVX without AVX2), `x86-64-v3`, `x86-64-v4` and `-mgeneral-regs-only`; the live-arm count per level from `nm` of an `-O0` object | the compiler, at six macro sets that include each level minus its top feature; the kit-reported count is a second reading only | arms per level against a per-level COLUMN of `row_floors.tsv` (`[r9 F-5]`: no separate `c9_floor` pin file) | a plant guarding the w32 arm with an AVX-only guard compiles at v3 and fails at `sandybridge`; a plant guarding it with the w16 guard fails at `x86-64` |
 | **C-SEL, selection neutrality** (`[r9 C-3, M-15]`) | every stamp except `MEMFN_FORMS`, compared as KEYS with byte and node counts normalised; `RUN_WORDS` exactly; `MEMFN_LIBC` as ON ⊇ OFF with the difference inside the chosen rows' declared sets; the refusal set as keys, never counts; ON vs OFF over the corpus, the bench and the near-cap size witnesses | pcrec's own stamps and its own compile results | artifacts and refusals compared, printed; a LITERAL floor in the script | the near-cap witnesses by NAME (`tests/resource`'s size rows and `tests/utf8/axis12_scripts.rxt`'s 999,925-byte artifact); a plant that drops `simd_guarded` from one length reader is red |
 | **C19, the acceptance record** (`[r9 M-8, F-5]`) | `simd_accept.tsv`'s digests vs each line's transcript header vs the current fixtures + site-population digest | the transcript is written by the timing run, not by the record; the population digest comes from pcrec's mover manifest | `run_rows.sh` checks the record's row set against `rows.tsv`'s `MF_L_SIMD` rows (every SIMD row × level has a line) | a plant editing a line's digest without a transcript is red; a plant moving a fixture flips the line to STALE (printed, not red) |
@@ -1621,6 +2098,7 @@ answer sweep IS the `test-axes` arm per level.
 | G2 per level (the kit's) | the scalar byte loop over a generated space, exact returned position | never another kit output (§4.5) | CHOSEN per row and per-path execution floors in `row_floors.tsv` | the guard-page, poisoning and per-path plants (§R4.9.7) |
 | I2 at `-fno-memfn-simd` (the `parent` projection) | the parent commit's compile | a different commit | movers by id: must be 0 | a plant rendering a SIMD row under `MF_P_PORTABLE_ONLY` is red |
 | the seam's gate (R4e′.0) | every `emit_sweep` stream vs the parent | a different commit | the `fn` census by customer, floors | a plant swapping `fn-pair`/`fn-memchr` order is red on every two-cube FUNC |
+| `[D155]` the routing's gate (R4e′.0b, G1) | every `emit_sweep` stream vs the parent; the text diff un-done (rename `<fn>__body` back, drop the forwarder) must equal the parent byte for byte; the assembly at `-O2` (default and v3) vs the parent's, function counters renumbered | a different commit; the compiler | movers by id = the `fn` census (every FUNC part), floor | a plant that also edits one byte of the loop is red at the un-done diff; the assembly leg's witness is `__attribute__((noinline))` on `<fn>__body` (measured: 349 changed assembly lines on `(?i)cat`). Making `<fn>__body` plain `static` is NOT a witness, because gcc still inlines the single caller (measured: assembly identical), so that plant reads green by design |
 
 **Sabotage rows** (ids at build from the kit manager's range; mech arms
 in `tests/memfn/`): one per check above, plus §17.6's two SIMD rows (the
@@ -1634,7 +2112,7 @@ and where SIMD does or does not go.
 
 | sibling table | question it answers | SIMD rows? | why |
 |---|---|---|---|
-| kit `fn_rows[]` (`ofsskip.c`, NEW at R4e′.0) | which loop is a FUNC's body, and what goes in front of it | YES: batch 1, PREFIX slot | the text batch 1 changes is rendered here and nowhere else (F-1) |
+| kit `fn_rows[]` (`ofsskip.c`, NEW at R4e′.0) | which loop is a FUNC's body, and ~~what goes in front of it~~ `[D155]` which guarded level helpers sit beside it | YES: batch 1, PREFIX slot | the text batch 1 changes is rendered here and nowhere else (F-1) |
 | kit `arms[]` (`compose.c`) | which text renders this site | not in batch 1 | STMT-only and non-FUNC sites; a later batch's PREFIX-style slot |
 | kit `rc_row` (`runcmp.c`) | which text compares this run | later (filed) | takes the SAME `mf_formdecl` when its first SIMD row lands; already shares the ONE walk |
 | kit `options.def` | which kit rows can be denied/forced | one row per SIMD row | THE ONE deny carrier (D144 item 4 inside the kit's namespace); `MF_D_RUN_OVERLAP` the named legacy exception |
@@ -1687,8 +2165,17 @@ pcrec table asks, the kernel exists.
    - **R4e′.0 (the seam):** nothing emitted moves (its gate). The trace
      gains a table and two rows; `rows.tsv`, `row_floors.tsv` and the
      sabotage anchors in `ofsskip.c` move with the text.
+   - `[D155]` **R4e′.0b (the routing):** every artifact with a FUNC part
+     moves (+139 B per FUNC). It is a pcrec ABI EVENT: the abi number's
+     readers are found by grep, the identity gates are re-pinned, and the
+     kit's `arms.tsv` FUNC fixtures re-pin. The assembly is predicted
+     unchanged at `-O2` (§R4.9.2.6). Its `simd_accept.tsv` effect is
+     nil, since no record exists yet.
    - **`levels.def` or a SIMD row's text:** only `-fmemfn-simd` artifacts
-     move. Under Q49 there is no abi bump and no default byte moves. Its
+     move. Under Q49 there is no abi bump and no default byte moves.
+     `[D155]` A `levels.def` GUARD string moves the selector lines of
+     every SIMD-on mover, and still nothing at SIMD-off, because the
+     scalar arm carries no guard. Its
      own pins move (`arms.tsv` SIMD fixtures, the per-level column of
      `row_floors.tsv`), `MEMFN_FORMS` values move on SIMD-on artifacts,
      and every `simd_accept.tsv` line whose comparator or row moved reads
@@ -1709,12 +2196,16 @@ pcrec table asks, the kernel exists.
 
 ### R4.9.10 Questions for Frank (Q-R9-n), each with a recommendation
 
+`[D155]` **Q-R9-1..9 are RULED** (D155, Frank 2026-10-08, recorded on main
+3b1fd77c). Each item below keeps its recommendation as the record, with
+its ruling marked. Q-R9-10 and Q-R9-11 are NEW, raised by this revision.
+
 - **Q-R9-1. Which box gives SIMD verdicts?** `[r9 M-1]` **RESOLVED by
   D144 addendum 4:** an official verdict is a pcrec-bench run on the
   hardware each form targets (ubuntubudu Zen 1, the dev box Zen 4, the Mac
   under addendum 8); every other timing is directional. The first draft's
   recommendation (a), "the dev box is the verdict box", is WITHDRAWN.
-  Nothing to rule.
+  Nothing to rule. `[D155]` **RULED (item 1): resolved by D144 addendum 4.**
 - **Q-R9-2. Acceptance levels, and how two boxes combine.** `[r9 M-3]`
   REVISED.
   - **Recommend:** each row is judged at EACH level it targets (w16 at
@@ -1744,6 +2235,10 @@ pcrec table asks, the kernel exists.
     elsewhere, as a D77 filing and not a question: batch 1's `over`
     narrows to `fn-pair` (§R4.9.2.4, §R4.9.7.1). The ENTRYSINK check
     changed none. No new Q.
+  - `[D155]` **RULED as recommended (item 2):** a level is judged on
+    EVERY bench box that runs it. A loss anywhere blocks the level, and a
+    win somewhere is required. Rows may land first as CANDIDATE behind
+    the OFF switch. This is now the reading of D147 addendum 13.
 - **Q-R9-3. Who picks the fused filter's SECOND position (KB)?**
   - (a) pcrec states it as a fact: `pcrec_find_pick2`, the PICK reader
     §2.3 T7 already named, carried as `mf_pred.plan_pos2`. That is a kit
@@ -1755,6 +2250,7 @@ pcrec table asks, the kernel exists.
   **Recommend (a)** (the panel agreed). Rarity is pcrec's fact (D146's
   boundary), the prior stays ONE table, and R4d's SWAR pair filter needs
   the same fact, so one request serves both layers.
+  `[D155]` **RULED (a) (item 3):** pcrec states `plan_pos2` (RQ-2).
 - **Q-R9-4. A row that is smaller but not faster.** `[r9 M-16]` REVISED.
   - **Recommend:** a measured named benefit with every timing cell NULL
     or better is ACCEPTED; a benefit with a timing loss past the floor is
@@ -1762,6 +2258,9 @@ pcrec table asks, the kernel exists.
   - For SIMD rows of this design the benefit can never be CODE SPACE:
     the floor rule makes their text always longer. The path is open only
     to rows that replace scalar text (none in batch 1).
+  - `[D155]` **RULED "fastest wins" (item 4):** code space is never a
+    SIMD named benefit, and the bar is measurably faster only. The
+    named-benefit and TRADE routes are closed for SIMD rows (§R4.9.6).
 - **Q-R9-5. Does a re-opened SIMD comparison ever block a scalar
   change?**
   - **Recommend NO.** The scalar change lands on its SIMD-off reading
@@ -1770,6 +2269,8 @@ pcrec table asks, the kernel exists.
   - The SIMD row's new loss is filed as an issue row (D144 item 3), and
     the kit narrows or removes the row afterwards.
   - Only a wrong answer is a disaster.
+  - `[D155]` **RULED NO (item 5):** a later SIMD loss never blocks a
+    scalar change.
 - **Q-R9-6. The floor rule.** Every SIMD-on rendering is its SIMD-off
   rendering plus text inside level guards, so a SIMD-on artifact still
   compiles and runs (at scalar speed) on any target.
@@ -1779,6 +2280,12 @@ pcrec table asks, the kernel exists.
   - The alternative, SIMD-on text with no scalar fallback, is smaller
     but untestable off-target. Addendum 6 permits it but does not
     require it.
+  - `[D155]` **RULED YES, AMENDED (item 6):** no `#if`/`#ifdef` inside a
+    function body. The choice is made at file scope, by per-level
+    `static inline` helpers and a selector, and the body makes one plain
+    call. SIMD-off routes through the helper too, as a one-time measured
+    byte move and abi event. Applied in §R4.9.2.3 (the rule restated),
+    §R4.9.2.5 (the shape), §R4.9.2.6 (R4e′.0b) and §R4.9.8 (C18).
 - **Q-R9-7. Deny granularity.**
   - **Recommend ONE deny per (form, width) row** (`vrun-w16`,
     `vrun-w32`), through the ONE carrier (`--memfn=`, options.def;
@@ -1786,6 +2293,8 @@ pcrec table asks, the kernel exists.
     is the umbrella.
   - Per-width denies are what let the w32 rung be measured against the
     w16 rung it displaces at the same `-march`.
+  - `[D155]` **RULED as recommended (item 7):** one deny per (form,
+    width), carried by one `--memfn=` flag (RQ-1).
 - **Q-R9-8. The cascade's dependency, decided before its trigger fires.**
   A run-time cascade reads libgcc's `__cpu_model` through
   `__builtin_cpu_supports`, so a cascade artifact needs libgcc at LINK
@@ -1796,6 +2305,9 @@ pcrec table asks, the kernel exists.
     and `-mno-sse` builds, the kernel and freestanding ones, get the
     floor), with the spec stating the link dependency.
   - The cascade itself stays filed until its probe cell exists.
+  - `[D155]` **RULED (item 8):** the libgcc ISA-cascade dependency is
+    allowed, guarded and stated in the spec. The cascade itself is now
+    `[MEMFN-RTDISPATCH]` (§R4.9.3.1), filed.
 - **Q-R9-9 (NEW). Do D84's emitted-size caps count guarded SIMD bytes?**
   `[r9 C-3]` Selection readers ignore guarded bytes by construction
   (§R4.9.2.4). The two REFUSAL caps (code bytes 500,000, total 1,000,000)
@@ -1811,6 +2323,45 @@ pcrec table asks, the kernel exists.
   for the refusal set too), and the extra compile cost is bounded by
   `nsites × max guarded_max` instead of being unbounded and unchecked.
   `limits.md` states the rule either way.
+  `[D155]` **RULED (a) (item 9):** the D84 caps exclude guarded SIMD
+  bytes, and each row carries its own bound (`guarded_max`, §R4.9.2.4).
+- `[D155]` **Q-R9-10 (NEW). Which file-scope shape does "the body makes
+  one plain call" mean?** Both shapes below obey the amendment, and they
+  compile to IDENTICAL assembly at `-O2` (default and `x86-64-v3`, both
+  probe witnesses, §R4.9.2.5).
+  - (C) **The FUNC itself is the selector.** It has one definition per
+    rendered level plus the scalar arm, in one `#if`/`#elif`/`#else`
+    chain, and each body is one call to that level's helper. SIMD-off
+    costs +139 B per FUNC. On-target, C18 sees exactly one replaced line
+    per FUNC.
+  - (A) **An invariant FUNC.** One definition, whose body always calls
+    `<fn>__level`, while `<fn>__level` is what the chain defines per
+    level. SIMD-off costs +280 B per FUNC (a second forwarder). The
+    FUNC's text is literally identical at every level, and C18 sees one
+    replaced line, in `<fn>__level`.
+
+  **Recommend (C).** It is smaller at SIMD-off, which is what every
+  artifact ships. It has one forwarder fewer at `-O0`. The function
+  bodies (the helpers) are identical across levels either way, so
+  runtime dispatch reuses them under either shape (§R4.9.3.1). Choose (A)
+  only if "one plain call" is meant as one invariant FUNC text.
+- `[D155]` **Q-R9-11 (NEW). Where does a site's FREQUENCY CLASS live?**
+  `[MEMFN-RTDISPATCH]` needs a per-site INFREQUENT/FREQUENT fact. It is
+  not `MF_P_INLOOP`: that bit comes only from D91's budget, which puts
+  OFS in budget 1, while OFS's FUNC is called on every re-seed inside the
+  DFA scan loop (§R4.9.3.1).
+  - (a) **A new column in pcrec's `DELEG_SITES`** (`freq`), set only
+    there and checked like C10. It is crossed into `mf_site` as a stated
+    field in the `MF_SITE_ABI` bump of the row that first reads it.
+  - (b) **Overload `MF_P_INLOOP`.** That would mark OFS in-loop, and a
+    SIMD row DECLINES an `INLOOP` site through `policy` (§R4.9.2.3), so
+    it would silently remove OFS from every SIMD row.
+  - (c) **A kit-side guess.** The kit cannot see where pcrec calls a
+    FUNC (D146).
+
+  **Recommend (a), and build nothing now** (D77: the field is born with
+  `[MEMFN-RTDISPATCH]`'s first design, at its trigger). Until then this
+  revision RECORDS each first-batch site's class (§R4.9.3.1's table).
 
 ### R4.9.11 pcrec-side requests for main (each filed later as its own request; not designed here)
 
@@ -1818,10 +2369,11 @@ pcrec table asks, the kernel exists.
 |---|---|---|---|---|
 | RQ-0 | **none for the seam.** R4e′.0 is kit-side end to end: the kit owns `ofs_fn_define` and its callers. pcrec's role is its identity gates as the control | `[r9 F-1]` | 0 | — |
 | RQ-1 | **the `--memfn=` carrier**: a CLI flag, a config directive and a `pcrec_options` field carrying one opaque string, validated once per compile by `mf_opts_check` (its refusal text shown unchanged, D26), and copied into every site's `opts` (§R4.4.1). `[r9 F-8]` It changes a PUBLIC struct, so it carries the `lib/pcrec.h` hunk and spec hunks in `cli.md` and `registry.md` §6; its cross-source composition rule is stated (a string axis: silent file-wins, option_sets.md §2.5a); at `-fno-memfn-simd` it is accepted and inert, and the spec says so | no kit row has a pcrec-reachable OFF arm today (F-R9-6) | 0 | before batch 1 AND before R4d |
-| RQ-2 | **the second pick** (Q-R9-3 (a)): `pcrec_find_pick2` as §2.3 T7's PICK reader, set by the PRE/OFS builders into `mf_pred.plan_pos2` | the fused filter's KB (§R4.9.5 item 10) | 0 | before batch 1's tier-U sweeps |
+| RQ-2 | `[D155]` (Q-R9-3 RULED (a)) **the second pick** (Q-R9-3 (a)): `pcrec_find_pick2` as §2.3 T7's PICK reader, set by the PRE/OFS builders into `mf_pred.plan_pos2` | the fused filter's KB (§R4.9.5 item 10) | 0 | before batch 1's tier-U sweeps |
 | RQ-3 | **SIMD bytes neutral to every length DECISION** (`[r9 C-3]`, now unconditional): pcrec's sink implements `simd_open`/`simd_close` by counting bracketed bytes into the buffer's `simd_guarded`, and every reader that today reads `pcrec_sb_len_uncut` for a decision (the VM entry-shape knee, the `fit_rungs[]` size measurement, the size-quoting stamps) reads `len_uncut − simd_guarded` through one helper. D84's caps follow Q-R9-9's ruling, with its `limits.md` hunk | F-R9-5: SIMD-on must not move a rung, a ladder step or a stamp value | 0 at SIMD-off | before batch 1 |
 | RQ-4 | **a tier-U timing slot on the dev box** (`[r9 M-1]`, demoted from "the verdict box's slot"): one logical CPU named by main, its sibling idle per `thread_siblings_list`, load1 < 0.5 | §R4.9.5 items 1-2: the sweeps and the veto | 0 | before batch 1's tier-U sweeps |
 | RQ-5 | **the bench submission** (`[r9 M-1, M-4]`): §R4.9.5.1's contents, carried by main to `inbox_from_pcrec.md` (D78), with the bench box facts asked of the bench dev and the span-ladder subbench request; main schedules each box (the dev box through its slot channel) | official verdicts; bench testees BEFORE acceptance | 0 | after batch 1 lands as CANDIDATE; before any line becomes ACCEPTED |
+| RQ-6 | `[D155]` **R4e′.0b's abi event on pcrec's side**: in the kit's routing commit, bump pcrec's abi ("the next number at landing"), find every reader by grep (D94: the `.abi` stamp, test expectations, spec sentences, the gate's pins), re-pin the identity gates, run `make test-codegen` and the suites that count; run the G1 census of §R4.9.2.6: movers by id against the `fn` census, the un-done text diff, assembly identity at `-O2` default and v3, and timing ONLY for a non-identical mover | D155 item 6: SIMD-off routes through the helper, so every FUNC's text moves once | every artifact with a FUNC part (+139 B per FUNC); predicted 0 assembly movers at `-O2` | with R4e′.0b, after R4e′.0 and before batch 1 |
 
 ### R4.9.12 Disposition completeness: every panel id, and where it is applied `[r9]`
 
@@ -1873,6 +2425,23 @@ All 43 finding ids of `../../dev/reviews/2026-10-08-r9-memfn-simd.md`.
 | F-13 | MINOR | ACCEPTED: `mf_levels()` with `test_march`, a literal floor | §R4.9.2.2; §R4.9.8 |
 | F-14 | MINOR | ACCEPTED: [EMIT-ALIGN] and O-69 cited; the governor at launch recorded | §R4.9.5 item 1 |
 | F-15 | MINOR | ACCEPTED: the stamp reports text; the spec hunk says so; Mac movers are text movers | §R4.9.2.3 (stamp); §R4.9.5 item 9 |
+
+`[D155]` **D155's items** (Frank's rulings on Q-R9-1..9, main 3b1fd77c; not
+panel ids, and not counted in the 43):
+
+| D155 item | ruling | applied in |
+|---|---|---|
+| 1 (Q-R9-1) | resolved by D144 addendum 4 | §R4.9.10 |
+| 2 (Q-R9-2) | every box running a level: a loss anywhere blocks, a win somewhere is required; CANDIDATE first | §R4.9.10 |
+| 3 (Q-R9-3) | pcrec states `plan_pos2` | §R4.9.10; §R4.9.11 RQ-2 |
+| 4 (Q-R9-4) | "fastest wins": code space is never a SIMD named benefit | §R4.9.6; §R4.9.10 |
+| 5 (Q-R9-5) | a later SIMD loss never blocks a scalar change | §R4.9.10 |
+| 6 (Q-R9-6) | floor rule YES, AMENDED: no `#if` in a function body; file-scope helpers; SIMD-off routes through the helper, as a measured abi event | the summary; §R4.9 short list; §R4.9.2.1 (slots, assembly); §R4.9.2.3 (the rule restated, the withdrawn shape, the STMT note, the stamp); §R4.9.2.4 (whole-definition accounting); §R4.9.2.5 (the shape, probes); §R4.9.2.6 (R4e′.0b, G1); §R4.9.3 (entry tests); §R4.9.4; §R4.9.7; §R4.9.7.2; §R4.9.8 (C18 amended, the routing gate); §R4.9.9; §R4.9.10; §R4.9.11 RQ-6; §22 |
+| 7 (Q-R9-7) | one deny per (form, width) through `--memfn=` | §R4.9.10 |
+| 8 (Q-R9-8) | the libgcc cascade dependency is allowed, guarded and spec-stated | §R4.9.3; §R4.9.10 |
+| 9 (Q-R9-9) | the D84 caps exclude guarded SIMD bytes; per-row bound | §R4.9.2.4; §R4.9.10 |
+| filed `[MEMFN-RTDISPATCH]` | runtime dispatch, with its terms (frequency class, target-attribute copies chosen once, a non-cascading set, per-arch artifacts already served) | §R4.9.3; §R4.9.3.1; §R4.9.10 Q-R9-11 |
+| facts recorded with D155 | batch 1 narrowed to `fn-pair`; `set1` broadcasts are rebuilt at each entry (r9fu) | already in §R4.9.7.1, §R4.9.7.2 |
 
 Totals: 43 ids (2 BLOCKER, 20 MAJOR, 21 MINOR); 42 applied as
 dispositioned, 1 (F-6) decided NO and applied as that decision. None
@@ -8313,10 +8882,14 @@ text stays opt-in until R4f.
 >     migration lanes, and heavy slots go 2:1 through main, until M5′.
 >   - `[r9 F-1]` **Step R4e′.0, the seam** (§R4.9.2.1): kit-only, zero
 >     movers, its own request. `fn_rows[]` with BODY and PREFIX slots.
+>   - `[D155]` **Step R4e′.0b, the routing** (§R4.9.2.6): the FUNC's loop
+>     becomes `<fn>__body` and the FUNC one call. It is a pcrec abi event
+>     (RQ-6), measured as G1, and lands before batch 1.
 >   - **Batch 1** (§R4.9.7): rows `vrun-w32`/`vrun-w16` in `fn_rows[]`
 >     for a FUNC part whose predicate is one RUN term and its site's only
 >     predicate (PRE window with no lead; OFS run-pinned by its own cell).
->   - **Prerequisites:** R4c, M1b and R4g (landed); R4e′.0; RQ-1
+>   - **Prerequisites:** R4c, M1b and R4g (landed); R4e′.0; `[D155]`
+>     R4e′.0b; RQ-1
 >     (`--memfn=`); RQ-2 (Q-R9-3 (a)); RQ-3 (neutrality, now
 >     unconditional); RQ-4 (a tier-U slot); RQ-5, the bench submission,
 >     before any line is ACCEPTED (`[r9 M-1]`). R4d is NOT a prerequisite:
@@ -8327,6 +8900,7 @@ text stays opt-in until R4f.
 >     last" is superseded.
 >   - **The bar:** §R4.9.6.
 >   - **Q49 applies:** no abi bump at landing and no default byte moves.
+>     `[D155]` The routing's abi event is R4e′.0b's, not the batch's.
 >     Pins, the `simd` sweep arm and its projections (`[r9 F-5]`), C9-x86's
 >     per-level floors, C18, C-SEL, C19, C11's FORMS half, the CANDIDATE
 >     records and the spec hunks are born in the batch's commit; the kit's
