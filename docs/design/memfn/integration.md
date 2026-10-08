@@ -7277,6 +7277,8 @@ comment tiers (BOILERPLATE's darwin timeouts).
 - **A K35 floor on arms compiled.** The arm count per artifact is
   printed and summed. The total must be at least a COMMITTED floor
   (`tests/memfn/pins/c9_floor`), born at the first native arm's landing.
+  `[r9 F-5]` Superseded in form: the floor is a per-level COLUMN of
+  `tests/memfn/row_floors.tsv`, not its own pin file (§R4.9.8).
   Zero arms is a FAIL, not a pass. The kit-reported count (rev 3's
   comparison) is kept as a second reading, but it shares a source with
   the subject, so the floor is the independent half.
