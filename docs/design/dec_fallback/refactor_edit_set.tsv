@@ -1,0 +1,92 @@
+# docs/design/dec_fallback.md §5.2: the text refactor B CHANGES, written once
+# as data, at main 31a9ae4c (abi 68). ../start_table/sabotage_anchors.py reads
+# it (a row is RE-AIM iff its anchor sits in a `def` below or OVERLAPS a
+# `token`/`line` occurrence; NOTE the script matches token/line text in EVERY
+# file, so an entry must be distinctive). GRAIN RULE (stc67_report.md §4 item
+# 2): `def` = a definition deleted, new, or rewritten throughout; everything
+# else names the TOKEN or LINE that changes. Inserted lines are not listed
+# (they move no existing anchor text). B0/B1 change no src text the gate
+# compares (B1 is #ifdef text only) and have no entries.
+# kind	value	commit	why
+line	{ "unroll-rescue",  0,                           true,  NULL,                  FIT_UNROLL_RESCUE  },	B2	fit_rungs[] row gains the on/fof/sets/token columns
+line	{ "prefilter-collapse", PCREC_NO_PREFILTER_COLLAPSE, true, fit_collapse_applies, FIT_COLLAPSE      },	B2	fit_rungs[] row gains columns
+line	{ "drop-anchored",  0,                           true,  fit_anchored_applies,  FIT_DROP_ANCHORED  },	B2	fit_rungs[] row gains columns
+line	{ "drop-premul",    0,                           true,  fit_premul_applies,    FIT_DROP_PREMUL    },	B2	fit_rungs[] row gains columns
+line	{ "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },	B2	fit_rungs[] row gains columns
+line	{ "refuse",         0,                           false, fit_always,            FIT_REFUSE         },	B2	fit_rungs[] row gains columns (on = every label)
+line	if (!r->applies || fit_rung_denied(r, s->flags)) continue;	B2	fit_select filters on the arrival's label set
+line	(r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);	B2	the fast-or-fail reach becomes the row's `fof` cell
+token	ovf_eligible	B3	the [SEL-1] block is deleted into rows sel1-collapse / sel1-drop
+token	retry_collapse	B3	the [SEL-1] block is deleted into rows
+token	retry_drop	B3	the [SEL-1] block is deleted into rows
+line	if (cx.failed_nomem) {	B3	the K60 propagation becomes row 1 (nomem)
+line	const FitSel fs = { &cx, defo.flags, collapse_reason,	B3	FitSel gains the arrival's label set and the fired record
+line	size_drop_rung, dfa_disabled };	B3	FitSel initializer
+line	const FitRung *rung = cx.size_cap_refused	B3	the label test moves into the walk
+line	? fit_select(&fs) : fit_rung_of(FIT_REFUSE);	B3	one walk over every label
+line	collapse_reason = CR_SIZECAP;	B3	a state write becomes the row's `sets` cell
+line	size_drop_rung = SDR_NO_ANCHORED;	B3	a state write becomes the row's `sets` cell
+line	size_drop_rung = SDR_NO_PREMUL;	B3	a state write becomes the row's `sets` cell
+line	size_drop_rung = SDR_NO_PREFILTER;	B3	a state write becomes the row's `sets` cell
+line	defo.flags |= PCREC_NO_PREMUL_TABLE;	B3	a flag OR becomes the row's `sets` cell
+line	defo.flags |= PCREC_NO_PREFILTER;	B3	a flag OR becomes the row's `sets` cell
+token	dropped_anchored	B3	replaced by the fired-row record; the notes become the rows' `note` cells
+token	dropped_premul	B3	replaced by the fired-row record
+token	dropped_prefilter	B3	replaced by the fired-row record
+line	bool lang_nullable_declinable =	B4	the admission ternary becomes pf_admits[] (start_table.md Q8)
+line	(has_var ? pcrec_fact_nullable(cx) : pcrec_fact_empty_admits(cx)) &&	B4	the has_var ternary becomes the F1 holder row
+line	!has_bref && !has_call && !force_on;	B4	admission rows
+line	fit->prefilter_declined_nullable =	B4	written from the admission row that fired
+line	cx->collapse_reason != CR_NONE && lang_nullable_declinable &&	B4	admission row nullable-collapsed
+line	fit->prefilter_declined_nullable_default =	B4	written from the admission row that fired
+line	cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&	B4	admission row nullable-exact
+line	lang_nullable_declinable && would_prefilter;	B4	admission row nullable-exact
+line	fit->prefilter = (has_bref || has_call || has_var ||	B4	the verdict is the admission row's `verdict` cell
+line	(cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||	B4	admission row overflow-drop
+line	fit->prefilter_declined_nullable ||	B4	admission walk
+line	fit->prefilter_declined_nullable_default)	B4	admission walk
+line	: force_on ? true	B4	admission row forced-on
+line	: force_off ? false	B4	admission row forced-off
+line	: would_prefilter;	B4	admission row default
+line	if (st->prefilter) {	B4	the --emit-ir prefilter chain reads the admission row (listing cells)
+line	} else if (st->has_bref) {	B4	listing chain arm -> row cell
+line	} else if (st->has_call) {	B4	listing chain arm -> row cell
+line	} else if (st->prefilter_declined_nullable) {	B4	listing chain arm -> row cell
+line	} else if (st->prefilter_declined_nullable_default) {	B4	listing chain arm -> row cell
+line	} else if (cx->dfa_disabled) {	B4	listing chain arm -> row cell
+line	} else if (cx->opt->flags & PCREC_NO_PREFILTER) {	B4	listing chain arm -> row cell
+token	pf_val  = 	B4	listing value tokens move verbatim into the admission rows
+def	esel_of	B5	rewritten throughout: forced, else the admission row's cell, else the last attributing ladder row's cell, else selected
+line	cx.job->fit.prefilter_lang_why =	B5	the PFLW ternary becomes pflw_rows[]
+line	!collapse                        ? (pfc_wanted ? PFLW_NULLABLE	B5	pflw_rows[]
+line	: pfc_rep    ? PFLW_EXACT	B5	pflw_rows[]
+line	: cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP	B5	the rung row's pflw cell
+line	: cx.collapse_reason == CR_SEL1    ? PFLW_SEL1	B5	the rung row's pflw cell
+line	cx.size_term_why =	B5	the UNROLL_K_WHY ternary becomes st_whys[]
+line	defo.unroll_k > 0 && st_phase == ST_DEFAULT ? "option"	B5	st_whys[]
+line	: (defo.flags & PCREC_NO_SIZE_TERM)           ? "denied"	B5	st_whys[]
+line	: st_phase != ST_FINAL                        ? "default"	B5	st_whys[]
+line	: st_rescue                                   ? "cap-rescue"	B5	st_whys[] (the unroll-rescue row's token)
+line	: st_final_k != st_k[0]                       ? "size-model"	B5	st_whys[]
+line	: st_capexcl                                  ? "capacity-declined"	B5	st_whys[]
+line	if (cx->size_drop_rung == SDR_NO_PREFILTER)	B5	VM_PREFILTER_WHY reads the fired row's pfwhy cell
+token	PredAxis p = { "engine-route"	B6	the listing projects the attribution order (today's order kept verbatim in a list column)
+token	PredAxis p = { "size-term"	B6	the listing projects st_whys[]
+token	PredAxis p = { "prefilter-lang"	B6	the listing projects pflw_rows[]' value rows
+line	emit_pred_row(sb, &p, 1, "forced", "forced",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 2, "declined-nullable-default", "declined-nullable-default",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 3, "collapsed-prefilter", "collapsed-prefilter",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 4, "declined-nullable", "declined-nullable",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 5, "overflowed-dfa", "overflowed-dfa",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 6, "overflowed-prefilter", "overflowed-prefilter",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 7, "size-cap-retry", "size-cap-retry",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 8, "selected", "selected",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 1, "option", "option",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 2, "denied", "denied",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 3, "default", "default",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 4, "cap-rescue", "cap-rescue",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 5, "size-model", "size-model",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 6, "capacity-declined", "capacity-declined",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 7, "size-model-declined", "size-model-declined",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",	B6	row moves into a list column
+line	emit_pred_row(sb, &p, 2, "exact", "exact",	B6	row moves into a list column
