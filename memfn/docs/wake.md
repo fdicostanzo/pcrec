@@ -61,8 +61,10 @@ current state; the history is `journal.md`.
 **On main:** everything through R4h (abi 68 and the frozen ADVANCE target
 included).
 
-**R-7 (M4, MLINE) DELIVERED on lane/memfn-m4 @ c1b037d3. Awaiting main's
-review and merge.** Report: docs/dev/lanes/m4_report.md (§10 is the
+**R-7 (M4, MLINE) DELIVERED and MERGED to main (plan [MEMFN] landing
+d1f2fee5, pushed).** Main will prune worktree m4. Main's ruling: clean the
+redundant libc_names "memchr" entry inside the NEXT request's scope (not a
+K-entry). Cut the next branch from a main that contains R-8. Report: docs/dev/lanes/m4_report.md (§10 is the
 landing).
 - Zero movers, no abi event. MF_SITE_ABI 6 (Q-R7-1/2/3), row
   `pf_memchr_back`, PcrecFind generalized, MLINE delegated.
@@ -76,8 +78,7 @@ landing).
 - A full make test rewrites docs/dev/artifact_size_log.tsv. Never commit
   it from the kit; restore it.
 
-**Open:** main may send review notes on M4 (as a D-n or a message);
-answer them on lane/memfn-m4. Q-G2M4-1..9 are posted as a notice, to be
+**Open:** Q-G2M4-1..9 are posted as a notice, to be
 settled in integration.md §14 at the next contract revision.
 
 **NEXT:** M7 (N7), M6 (N6 + VMSTRIDE), then R4j/M5. Each waits for main to
