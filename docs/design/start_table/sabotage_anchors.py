@@ -53,13 +53,51 @@ scripts/m6read_check_sab_anchors.py enforces in make test-codegen
 [SABANCHOR], the per-commit gate), and every sabotage id shared by two row
 FILES (rows are keyed by file, so a shared id is not merged away).
 
+STEPS (`--step NAME=A..B`, repeatable; [admin1008b], stc4_report.md §4 item
+3 / stc5_report.md §4 item 6). `rerun_at` as derived above reads the PLAN's
+edit set, so it misses (a) a row whose predicate is REACHED differently by a
+commit -- a walk replaced -- and (b) a row in a definition a later commit
+edits that the edit set names only at an earlier commit. Given the steps' git
+ranges, `rerun_at` ALSO takes, per step, from the commit's ACTUAL diff
+(`git diff -U0 A B -- src`, ROOT being the A tree):
+  hunk    the anchor's owner is a definition whose OLD-side range a hunk
+          overlaps (a pure insertion counts when it lands inside the body):
+          commit diff hunks -> enclosing definitions;
+  reach   the walk-reach relation. The anchor's owner is (0) NAMED by a
+          hunk's changed text (either side), (1) stored in a TABLE the
+          REMOVED text names (the walk that was replaced), (2..K) called by
+          what hop 1 reached (`--reach-hops K`, default 2), or a CALLER of a
+          definition whose removed text names a table (its answer now comes
+          from the new walk). A hunk that only renames identifiers
+          (consistently across the whole step) moves no behaviour and is
+          ignored.
+Derived commits are added for EVERY class except a row the same commit
+RE-AIMs (its anchor text moves there; the re-aim re-runs it). The new last
+column `rerun_via` says why, per step: `C4:hunk`, `C4:reach(<via>)`,
+`C4:edit-set`. `--compare NAME=S1,S2,...` prints the difference between a
+step's derived rows and a hand list (the rows a lane re-ran by judgment).
+
 Usage: sabotage_anchors.py ROOT CALL_GRAPH_TSV EDIT_SET_TSV
+           [--repo REPO] [--step NAME=A..B]... [--reach-hops K]
+           [--compare NAME=S1,S2,...]...
 Read-only; prints TSV (rowfile, id, site, file, owner, resolution, line,
-count/want, class, commits, rerun_at, reason, reads) and a summary on stderr.
+count/want, class, commits, rerun_at, reason, reads, rerun_via) and a summary
+on stderr. Without --step the output is byte-identical to the earlier form
+apart from the empty last column.
 """
 import collections, glob, os, re, subprocess, sys
 
-root, cgp, esp = sys.argv[1], sys.argv[2], sys.argv[3]
+import argparse
+_ap = argparse.ArgumentParser(add_help=False)
+_ap.add_argument("root")
+_ap.add_argument("cgp")
+_ap.add_argument("esp")
+_ap.add_argument("--repo")
+_ap.add_argument("--step", action="append", default=[])
+_ap.add_argument("--reach-hops", type=int, default=2)
+_ap.add_argument("--compare", action="append", default=[])
+_a = _ap.parse_args()
+root, cgp, esp = _a.root, _a.cgp, _a.esp
 defs = collections.defaultdict(list)   # file -> [(start, end, name, kind)]
 defrange = {}                          # name -> (file, start, end)
 family, seeds = set(), set()
@@ -209,6 +247,187 @@ def touched(f, own):
 
 
 ORDER = ["C0", "C1", "C2", "C3", "C4", "C5", "C5b", "C6", "C7"]
+
+# ---- [admin1008b] STEPS: rerun_at from each commit's actual diff ----------
+kindof = {}
+for _f, _ds in defs.items():
+    for _a2, _b2, _n2, _k2 in _ds:
+        kindof.setdefault(_n2, _k2)
+IDENT = re.compile(r'\b[A-Za-z_]\w*\b')
+
+
+def code_of(l):
+    l = re.sub(r'"(\\.|[^"\\])*"', '""', l)
+    return re.sub(r'/\*.*?\*/|//.*$', '', l)
+
+
+def parse_diff(repo, a, b):
+    """{file: [(old_start, old_len, [old lines], [new lines])]} of
+    `git diff -U0 --no-renames A B -- src` (the hunks' OLD-side coordinates
+    are the A tree's, which is ROOT's)."""
+    r = subprocess.run(["git", "-C", repo, "diff", "-U0", "--no-renames", "--no-color",
+                        a, b, "--", "src"], capture_output=True, text=True, errors="replace")
+    if r.returncode != 0:
+        sys.exit(f"sabotage_anchors: git diff {a} {b} failed: {r.stderr.strip()}")
+    out, cur, hk = collections.defaultdict(list), None, None
+    for l in r.stdout.split("\n"):
+        if l.startswith("--- "):
+            cur = None if l == "--- /dev/null" else l[6:]
+        elif l.startswith("+++ "):
+            if l != "+++ /dev/null" and cur is None:
+                cur = l[6:]
+        elif l.startswith("@@"):
+            m = re.match(r'@@ -(\d+)(?:,(\d+))? \+\d+(?:,\d+)? @@', l)
+            hk = (int(m.group(1)), 1 if m.group(2) is None else int(m.group(2)), [], [])
+            out[cur].append(hk)
+        elif hk is not None and l[:1] == "-" and not l.startswith("--- "):
+            hk[2].append(l[1:])
+        elif hk is not None and l[:1] == "+" and not l.startswith("+++ "):
+            hk[3].append(l[1:])
+    return out
+
+
+_edgecache = {}
+
+
+def def_edges(n):
+    """Definitions a definition's body names (call_graph.py's edge rule,
+    re-derived from the def ranges: comments and strings out, no self edge)."""
+    if n not in _edgecache:
+        f, a, b = defrange[n]
+        text(f)
+        out = set()
+        for ln in _lines[f][a - 1:b]:
+            if ln.lstrip().startswith(("*", "/*")):
+                continue
+            for t in IDENT.findall(code_of(ln)):
+                if t in defrange and t != n:
+                    out.add(t)
+        _edgecache[n] = out
+    return _edgecache[n]
+
+
+TOK = re.compile(r'[A-Za-z_]\w*|\s+|.', re.S)
+
+
+def rename_pairs(old, new):
+    """{old_ident: new_ident} when `new` is `old` with identifiers substituted
+    (same line count, same tokens everywhere but identifier positions), else
+    None. A pure rename moves no behaviour, so it re-runs no row."""
+    if len(old) != len(new):
+        return None
+    pairs = {}
+    for lo, ln in zip(old, new):
+        to, tn = TOK.findall(lo), TOK.findall(ln)
+        if len(to) != len(tn):
+            return None
+        for x, y in zip(to, tn):
+            if x == y:
+                continue
+            if not (IDENT.fullmatch(x) and IDENT.fullmatch(y)):
+                return None
+            if pairs.setdefault(x, y) != y:
+                return None
+    return pairs
+
+
+def step_sets(repo, a, b, hops):
+    """(touched, reach): touched = definitions of ROOT a hunk's old-side range
+    overlaps; reach = {definition: via} -- named by a hunk's changed text
+    (via itself), stored in a TABLE so named (hop 1), or called by such a
+    stored definition (hop 2+)."""
+    touched, named, walkers, oldnamed = set(), {}, set(), set()
+    diff = parse_diff(repo, a, b)
+    # consistent renames across the WHOLE step: an identifier renamed to two
+    # different names (or by a hunk that changes anything else) is not one
+    ren, bad = {}, set()
+    for hunks in diff.values():
+        for os_, ol, old, new in hunks:
+            pr = rename_pairs(old, new)
+            for x, y in (pr or {}).items():
+                if ren.setdefault(x, y) != y:
+                    bad.add(x)
+    renamed_hunks = 0
+    for f, hunks in diff.items():
+        for os_, ol, old, new in hunks:
+            pr = rename_pairs(old, new)
+            if pr and not (set(pr) & bad):
+                renamed_hunks += 1
+                continue
+            for da, db, dn, dk in defs.get(f, []):
+                if ol > 0:
+                    hit = os_ <= db and os_ + ol - 1 >= da
+                else:
+                    hit = da <= os_ < db    # insertion after line os_, inside the body
+                if hit:
+                    touched.add(dn)
+                    # a WALK REPLACED: the removed text names a table (the old
+                    # walk's `DFA_SELECT(..., req_admits, ...)` spelling)
+                    if any(kindof.get(t) in ("table", "data") and t != dn
+                           for ln in old for t in IDENT.findall(code_of(ln))
+                           if t in defrange) and dk in ("func", "macro"):
+                        walkers.add(dn)
+            for side, lns in ((0, old), (1, new)):
+                for ln in lns:
+                    if ln.lstrip().startswith(("*", "/*")):
+                        continue
+                    for t in IDENT.findall(code_of(ln)):
+                        if t in defrange:
+                            named.setdefault(t, t)
+                            if side == 0:
+                                oldnamed.add(t)
+    reach = dict(named)
+    # level 1: what a TABLE named by the removed text stores; level k+1: what level k calls. Only
+    # what is reached THROUGH a table expands -- a named walker's callees
+    # (the emitter hubs) would reach the world.
+    # (only a table the REMOVED text names: the walk that was replaced)
+    frontier = {y: via for x, via in named.items()
+                if x in oldnamed and kindof.get(x) in ("table", "data")
+                for y in def_edges(x) if kindof.get(y) != "type"}
+    for hop in range(1, hops + 1):
+        for y, via in frontier.items():
+            reach.setdefault(y, via)
+        if hop == hops:
+            break
+        frontier = {z: via for y, via in frontier.items() for z in def_edges(y)
+                    if kindof.get(z) != "type"}
+    # the walk's CONSUMERS: whatever calls a definition whose walk was replaced
+    # now gets its answer from the new walk (one hop of callers).
+    for w in walkers:
+        for c in callers_of(w):
+            reach.setdefault(c, f"caller of {w}")
+    return touched, reach, renamed_hunks
+
+
+_rev = None
+
+
+def callers_of(n):
+    global _rev
+    if _rev is None:
+        _rev = collections.defaultdict(set)
+        for x in defrange:
+            for y in def_edges(x):
+                _rev[y].add(x)
+    return _rev[n]
+
+
+steps = []          # [(name, touched, reach)] in the order given
+for st in _a.step:
+    nm, _, rng = st.partition("=")
+    ra, _, rb = rng.partition("..")
+    if not nm or not ra or not rb:
+        sys.exit(f"sabotage_anchors: --step wants NAME=A..B, got {st!r}")
+    t_, r_, nren = step_sets(_a.repo or root, ra, rb, _a.reach_hops)
+    steps.append((nm, t_, r_))
+    print(f"STEP {nm} {ra}..{rb}: {len(t_)} definitions edited, {len(r_)} reached, "
+          f"{nren} pure-rename hunks ignored", file=sys.stderr)
+stepnames = [n for n, _, _ in steps]
+
+
+def ckey(c):
+    return (ORDER.index(c), 0, "") if c in ORDER else (len(ORDER), stepnames.index(c) if c in stepnames else 0, c)
+
 rows, bad, unresolved = [], 0, []
 ids = collections.defaultdict(list)
 for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
@@ -219,7 +438,7 @@ for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
         if not f or not before:
             continue
         if not os.path.exists(os.path.join(root, f)):
-            rows.append((rfile, rid, site, f, "?", "missing", 0, f"missing/{want}", "STALE", "", "", "", ""))
+            rows.append((rfile, rid, site, f, "?", "missing", 0, f"missing/{want}", "STALE", "", "", "", "", ""))
             bad += 1
             continue
         txt = text(f)
@@ -228,7 +447,7 @@ for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
         if n != want:
             bad += 1
         if not occ:
-            rows.append((rfile, rid, site, f, "?", "absent", 0, f"0/{want}", "STALE", "", "", "", ""))
+            rows.append((rfile, rid, site, f, "?", "absent", 0, f"0/{want}", "STALE", "", "", "", "", ""))
             continue
         line = lineno(f, occ[0][0])
         own, res = resolve(f, line)
@@ -244,21 +463,37 @@ for path in sorted(glob.glob(os.path.join(root, "tests/mech/sabotages/S*.sh"))):
                 if s < b and a < e:
                     hits.append((c, why))
         reads = sorted(set(re.findall(r'\b[A-Za-z_]\w*\b', before)) & (family | SEED_FIELDS))
-        commits = sorted({c for c, _ in hits}, key=ORDER.index)
+        commits = sorted({c for c, _ in hits}, key=ckey)
         why = "; ".join(sorted({w for _, w in hits}))[:120]
         rerun = ""
+        via = {}                       # step -> why it re-runs the row
         if fam and commits:
             cls = "RE-AIM"
         elif fam:
             cls = "RE-RUN"
-            t = sorted(touched(f, own), key=ORDER.index)
-            rerun = "+".join(t) if t else "after-C5b"
+            for c in touched(f, own):
+                via[c] = "edit-set"
         elif commits:
             cls, why = "RE-AIM", "outside-family " + why
         else:
             cls = "OTHER"
+        # [admin1008b] the steps' ACTUAL diffs: a hunk in the owner, or the
+        # owner reached through what the changed text names. A step that
+        # RE-AIMs the row is not also a re-run of it.
+        for nm, t_, r_ in steps:
+            if nm in commits or own not in defrange:
+                continue
+            if own in t_:
+                via[nm] = "hunk" if via.get(nm) in (None, "edit-set") else via[nm]
+            elif own in r_:
+                via.setdefault(nm, f"reach({r_[own]})")
+        if via:
+            rerun = "+".join(sorted(via, key=ckey))
+        elif cls == "RE-RUN":
+            rerun = "after-C5b"
+        rvia = ";".join(f"{c}:{via[c]}" for c in sorted(via, key=ckey))
         rows.append((rfile, rid, site, f, own, res, line, f"{n}/{want}", cls,
-                     "+".join(commits), rerun, why, ",".join(reads)))
+                     "+".join(commits), rerun, why, ",".join(reads), rvia))
 for r in rows:
     print("\t".join(map(str, r)))
 byfile = collections.defaultdict(set)
@@ -279,6 +514,13 @@ for r in rows:
     if r[8] == "RE-RUN":
         for c in r[10].split("+"):
             rr[c] += 1
+# [admin1008b] per-step derived re-run rows (any class), by reason
+step_rows = {nm: collections.defaultdict(set) for nm in stepnames}
+for r in rows:
+    for item in filter(None, r[13].split(";")):
+        c, _, why = item.partition(":")
+        if c in step_rows:
+            step_rows[c][why.split("(")[0]].add(r[0])
 dups = {i: fs for i, fs in ids.items() if len(fs) > 1}
 unres_src = [u for u in unresolved if u[2].startswith("src/")]
 print(f"SITES {len(rows)} ROW_FILES {len(byfile)} DISTINCT_IDS {len(ids)} "
@@ -289,6 +531,20 @@ print(f"SITES {len(rows)} ROW_FILES {len(byfile)} DISTINCT_IDS {len(ids)} "
       f"OTHER_ROWS_NAMING_FAMILY {len(other_reads)}", file=sys.stderr)
 print("RESOLUTION " + " ".join(f"{k} {v}" for k, v in sorted(res_count.items())), file=sys.stderr)
 print("RE_AIM_BY_COMMIT " + " ".join(f"{c} {pc[c]}" for c in ORDER if pc[c]), file=sys.stderr)
+for nm in stepnames:
+    allrows = set().union(*step_rows[nm].values()) if step_rows[nm] else set()
+    print(f"STEP {nm}: {len(allrows)} rows re-run ("
+          + ", ".join(f"{k} {len(v)}" for k, v in sorted(step_rows[nm].items())) + ")",
+          file=sys.stderr)
+for cmp_ in _a.compare:
+    nm, _, lst = cmp_.partition("=")
+    want = {("S" + x.strip().lstrip("S")) for x in lst.split(",") if x.strip()}
+    got = {r[1] for r in rows if nm in [i.split(":")[0] for i in r[13].split(";") if i]}
+    reaimed = {r[1] for r in rows if nm in r[9].split("+")}
+    print(f"COMPARE {nm}: derived {len(got)} judged {len(want)} both {len(got & want)} "
+          f"judged-not-derived {sorted(want - got)} derived-not-judged {len(got - want)}"
+          f" (of the judged-not-derived, re-aimed at {nm}: {sorted((want - got) & reaimed)})",
+          file=sys.stderr)
 print("RE_RUN_SITES_BY_COMMIT " + " ".join(f"{c} {v}" for c, v in
       sorted(rr.items(), key=lambda kv: ORDER.index(kv[0]) if kv[0] in ORDER else 99)),
       file=sys.stderr)

@@ -95,6 +95,9 @@ PCREC_AXIS(PCREC_NO_POSSESSIFY,   "-fno-possessify",   0, "", PCREC_AXIS_DEFAULT
 PCREC_AXIS(PCREC_NO_REVDET,       "-fno-revdet",       0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_COUNTER,      "-fno-counter",      0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_LENGTH_PRUNE, "-fno-length-prune", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [ART-POSS-ARMS] arm B of possessify: VM-only by construction (a
+ * backreference is), so a rung-ladder member rather than an engine axis. */
+PCREC_AXIS(PCREC_NO_POSS_BREF_FIRST, "-fno-poss-bref-first", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- axes that can change WHICH ENGINE a pattern gets ------------------
  * Both leave a construct in the tree that is DFA-excluding, so denying one
@@ -102,6 +105,9 @@ PCREC_AXIS(PCREC_NO_LENGTH_PRUNE, "-fno-length-prune", 0, "", PCREC_AXIS_DEFAULT
  * REFUSE. See lib/pcrec.h at each macro. */
 PCREC_AXIS(PCREC_NO_ATOMIC_DISCHARGE, "-fno-atomic-discharge", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SPLICE_CALLS,     "-fno-splice-calls",     0, "", PCREC_AXIS_DEFAULT_ON)
+/* [ART-POSS-ARMS] arm A widens the free discharge's verdict, so denying it
+ * can keep `\w++\b`'s possessive suffix and its VM route. */
+PCREC_AXIS(PCREC_NO_POSS_CTX_FOLLOW,  "-fno-poss-ctx-follow",  0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the two FORCE PAIRS, and they are pairs for two different reasons -
  * `prefilter` is one verdict for the WHOLE artifact rather than a
@@ -147,7 +153,8 @@ PCREC_AXIS(PCREC_NO_CLS_PACK,      "-fno-cls-pack",      0, "", PCREC_AXIS_DEFAU
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SIZE_TERM,    "-fno-size-term",    0, "", PCREC_AXIS_DEFAULT_ON)
 /* [OPT-HYB-RESEED]: the hybrid's retry, adaptive between stepping and asking
- * the prefilter again (src/gen/emit_vm.c's `pcrec_reseed_rows`). */
+ * the prefilter again (the RETRY rows of src/gen/emit_dfa.c's `cand_rows[]`
+ * since [START-TABLE] C5; src/gen/emit_vm.c's `pcrec_reseed_rows` before). */
 PCREC_AXIS(PCREC_NO_HYB_RESEED,   "-fno-hyb-reseed",   0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5],

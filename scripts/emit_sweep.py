@@ -836,53 +836,51 @@ def sha(b):
     return hashlib.sha256(b).hexdigest() if b is not None else None
 
 
-def sweep_argv_stream(name, compile_fn, patterns, bin_a, bin_b, timeout, jobs):
+def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout):
+    """ONE pattern of an argv stream, compared INSIDE the worker so only a
+    small tuple (never the artifacts) crosses back to the merge:
+    (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b); hunk is None
+    unless both sides compiled and their bytes differ."""
+    f, kind, pat = item
+    ok_a, c_a, e_a = compile_fn(bin_a, pat, timeout)
+    if mirror:
+        ok_b, c_b, e_b = ok_a, c_a, e_a
+    else:
+        ok_b, c_b, e_b = compile_fn(bin_b, pat, timeout)
+    key = f"{f}:{kind}:{pat[:60]!r}"
+    hunk = first_diff_hunk(c_a, c_b) if ok_a and ok_b and c_a != c_b else None
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b
+
+
+def merge_argv_stream(name, rows, mirror):
+    """Fold one stream's per-pattern rows (in pattern order) into a
+    StreamResult -- the same arithmetic the per-stream sweep always did."""
     res = StreamResult(name)
-    res.population = len(patterns)
-    mirror = same_binary(bin_a, bin_b)
+    res.population = len(rows)
     res.mirrored = mirror
-
-    def one(item):
-        f, kind, pat = item
-        ok_a, c_a, e_a = compile_fn(bin_a, pat, timeout)
-        if mirror:
-            ok_b, c_b, e_b = ok_a, c_a, e_a
+    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b) in enumerate(rows):
+        # per-index output hashes: the trace family checks that the trace
+        # build's stdout equals THIS (the default build's) per pattern.
+        res.hash_a[idx], res.hash_b[idx] = h_a, h_b
+        if ok_a and ok_b:
+            res.both_ok += 1
+            if hunk is not None:
+                res.movers.append((key, hunk))
+        elif not ok_a and not ok_b:
+            res.both_refuse += 1
         else:
-            ok_b, c_b, e_b = compile_fn(bin_b, pat, timeout)
-        key = f"{f}:{kind}:{pat[:60]!r}"
-        return key, ok_a, c_a, e_a, ok_b, c_b, e_b
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
-        for idx, (key, ok_a, c_a, e_a, ok_b, c_b, e_b) in enumerate(ex.map(one, patterns)):
-            # per-index output hashes: the trace family checks that the trace
-            # build's stdout equals THIS (the default build's) per pattern.
-            res.hash_a[idx], res.hash_b[idx] = sha(c_a), sha(c_b)
-            if ok_a and ok_b:
-                res.both_ok += 1
-                if c_a != c_b:
-                    res.movers.append((key, first_diff_hunk(c_a, c_b)))
-            elif not ok_a and not ok_b:
-                res.both_refuse += 1
-            else:
-                res.asymmetric.append((key, ok_a, ok_b, e_a, e_b))
+            res.asymmetric.append((key, ok_a, ok_b, e_a, e_b))
     return res
 
 
-def sweep_composition(files, bin_a, bin_b, out_root, timeout, jobs, extra=()):
-    res = StreamResult("composition")
-    res.population = len(files)
-    producing = 0
-    artifact_count = 0
-    deliver_seen = False
-    fixture_produced = {name: False for name in DELIVER_FIXTURES}
-
-    def one(item):
-        idx, f = item
-        tag = f"f{idx}"
-        rc_a, art_a, e_a = run_composition(bin_a, f, os.path.join(out_root, "a"), tag, timeout, extra)
-        rc_b, art_b, e_b = run_composition(bin_b, f, os.path.join(out_root, "b"), tag, timeout, extra)
-        return f, rc_a, art_a, e_a, rc_b, art_b, e_b
-
+def composition_task(item, bin_a, bin_b, out_root, timeout, extra):
+    """ONE composition file, both sides, compared inside the worker. Returns
+    (f, verdict, payload): verdict "asym" (payload = the asymmetric row),
+    "refuse", or "ok" (payload = (base, [(name, hunk-or-None)], deliver_seen))."""
+    idx, f = item
+    tag = f"f{idx}"
+    rc_a, art_a, e_a = run_composition(bin_a, f, os.path.join(out_root, "a"), tag, timeout, extra)
+    rc_b, art_b, e_b = run_composition(bin_b, f, os.path.join(out_root, "b"), tag, timeout, extra)
     # [BSWEEP r1 fix, 2026-09-19] Compare artifacts whenever BOTH sides agree
     # on the artifact NAME SET, regardless of the overall process's rc --
     # NOT gated on `rc == 0`. First cut of this function gated the whole
@@ -899,39 +897,101 @@ def sweep_composition(files, bin_a, bin_b, out_root, timeout, jobs, extra=()):
     # on rc (an rc mismatch is a real asymmetry, caught below) and on the
     # artifact NAME SET (a name-set mismatch is a real structural
     # asymmetry, also caught below) before any byte comparison happens.
-    rows = list(enumerate(files))
-    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
-        for f, rc_a, art_a, e_a, rc_b, art_b, e_b in ex.map(one, rows):
-            base = os.path.basename(f)
-            ok_a = rc_a == 0
-            ok_b = rc_b == 0
-            if ok_a != ok_b:
-                res.asymmetric.append((f, ok_a, ok_b, e_a, e_b))
-                continue
-            names_a = set(art_a.keys())
-            names_b = set(art_b.keys())
-            if names_a != names_b:
-                res.asymmetric.append(
-                    (f, f"artifacts={sorted(names_a)}", f"artifacts={sorted(names_b)}", "", ""))
-                continue
-            if not names_a:
-                res.both_refuse += 1
-                continue
-            producing += 1
-            if base in fixture_produced:
-                fixture_produced[base] = True
-            for nm in sorted(names_a):
-                artifact_count += 1
-                content_a = art_a[nm]
-                content_b = art_b[nm]
-                if nm.endswith(".c") and (deliver_witness(content_a.decode("utf-8", "replace"))
-                                          or deliver_witness(content_b.decode("utf-8", "replace"))):
-                    nonlocal_flag[0] = True
-                if content_a != content_b:
-                    res.movers.append((f"{f}::{nm}", first_diff_hunk(content_a, content_b)))
-            res.both_ok += 1
+    ok_a = rc_a == 0
+    ok_b = rc_b == 0
+    if ok_a != ok_b:
+        return f, "asym", (f, ok_a, ok_b, e_a, e_b)
+    names_a = set(art_a.keys())
+    names_b = set(art_b.keys())
+    if names_a != names_b:
+        return f, "asym", (f, f"artifacts={sorted(names_a)}", f"artifacts={sorted(names_b)}", "", "")
+    if not names_a:
+        return f, "refuse", None
+    deliver = False
+    arts = []
+    for nm in sorted(names_a):
+        content_a = art_a[nm]
+        content_b = art_b[nm]
+        if nm.endswith(".c") and (deliver_witness(content_a.decode("utf-8", "replace"))
+                                  or deliver_witness(content_b.decode("utf-8", "replace"))):
+            deliver = True
+        arts.append((nm, first_diff_hunk(content_a, content_b) if content_a != content_b else None))
+    return f, "ok", (os.path.basename(f), arts, deliver)
 
+
+def merge_composition(files, rows):
+    """Fold the per-file rows (in file order) into the composition
+    StreamResult; sets the sticky deliver flag like the old per-stream sweep."""
+    res = StreamResult("composition")
+    res.population = len(files)
+    producing = 0
+    artifact_count = 0
+    fixture_produced = {name: False for name in DELIVER_FIXTURES}
+    for f, verdict, payload in rows:
+        if verdict == "asym":
+            res.asymmetric.append(payload)
+            continue
+        if verdict == "refuse":
+            res.both_refuse += 1
+            continue
+        base, arts, deliver = payload
+        producing += 1
+        if base in fixture_produced:
+            fixture_produced[base] = True
+        if deliver:
+            nonlocal_flag[0] = True
+        for nm, hunk in arts:
+            artifact_count += 1
+            if hunk is not None:
+                res.movers.append((f"{f}::{nm}", hunk))
+        res.both_ok += 1
     return res, producing, artifact_count, fixture_produced
+
+
+def run_pooled(tasks, jobs, comp_jobs):
+    """ONE pool for every stream's tasks. tasks: [(is_comp, fn)]; returns the
+    results in TASK order (so the merge is deterministic whatever the finish
+    order). Composition tasks (heavy, long-tailed; submitted FIRST so the tail
+    overlaps the cheap argv work) are capped at `comp_jobs` concurrent -- the
+    contention the cap exists for (bsweep_report.md S1.4) is unchanged -- and
+    a worker with no eligible task retires, the running ones carrying on. The
+    first exception, in task order, is re-raised after the pool drains."""
+    import threading
+    from collections import deque
+    results = [None] * len(tasks)
+    errors = [None] * len(tasks)
+    comp = deque(i for i, (c, _) in enumerate(tasks) if c)
+    rest = deque(i for i, (c, _) in enumerate(tasks) if not c)
+    lock = threading.Lock()
+    running_comp = [0]
+
+    def worker():
+        while True:
+            with lock:
+                if comp and running_comp[0] < comp_jobs:
+                    i = comp.popleft()
+                    running_comp[0] += 1
+                elif rest:
+                    i = rest.popleft()
+                else:
+                    return
+            try:
+                results[i] = tasks[i][1]()
+            except BaseException as e:   # re-raised in task order below
+                errors[i] = e
+            if tasks[i][0]:
+                with lock:
+                    running_comp[0] -= 1
+
+    threads = [threading.Thread(target=worker) for _ in range(max(1, jobs))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    for e in errors:
+        if e is not None:
+            raise e
+    return results
 
 
 nonlocal_flag = [False]  # deliver_witness sticky flag, set inside sweep_composition
@@ -1391,38 +1451,60 @@ def main():
              lambda b, p, t: compile_stream_ir(b, p, t, extra=run_extra)),
             ("facts", "stream 6 (--emit-facts=byte,utf8)",
              lambda b, p, t: compile_stream_facts(b, p, t)))
-        for name, title, fn in argv_streams:
-            if (name if name != "emit-ir-vm" else "emit-ir") not in streams:
-                continue
-            log(f"[emit_sweep] === {label}: {title} ===")
-            res[name] = sweep_argv_stream(name, fn, patterns, bin_a, bin_b, args.timeout, args.jobs)
-        producing = artifacts = 0
-        fixtures_hit = {}
+        # ONE pool across every stream (was: a pool per stream, waited out
+        # before the next began, so each stream's slowest compile -- the
+        # composition stream's most of all -- left the box at a fraction of
+        # its threads). Results are tagged by stream and merged in stream
+        # order, so the output is byte-identical to the per-stream form.
+        mirror = same_binary(bin_a, bin_b)
+        tasks = []
+        comp_files_run = []
+        comp_out = None
         if "composition" in streams:
             log(f"[emit_sweep] === {label}: stream 4 (composition) ===")
             comp_out = os.path.join(out_dir, "comp_" + label.replace(" ", "_"))
             if os.path.exists(comp_out):
                 shutil.rmtree(comp_out)
             nonlocal_flag[0] = False
-            # [BSWEEP r1 fix, 2026-09-19] A composition FILE can declare many
-            # targets in one `--source` invocation (measured:
-            # bench_altwide_0_2.rxtin alone is 11 targets / 22 artifacts) --
-            # proportionally more compiling per item than one argv pattern, and
-            # under this stream's own full concurrency (--jobs parallel
-            # composition items, each spawning a multi-target pcrec) that
-            # legitimately needs more wall-clock budget than the single-pattern
-            # streams do. MEASURED: at the argv streams' own --timeout (30s)
-            # and --jobs (12), that one file alone timed out under the
-            # resulting contention every time, silently reading as "2 fewer
-            # producing files, 24 fewer artifacts" -- not a corpus fact, a
-            # self-inflicted contention artifact of this tool's own
-            # concurrency (see docs/dev/lanes/bsweep_report.md S1.4 for the
-            # full diagnosis). `--comp-timeout` (default max(3x --timeout, 90))
-            # and `--comp-jobs` (default min(--jobs, 6), less concurrent
-            # pressure per item) fix it -- confirmed by measurement, not by
-            # raising the numbers until it stopped happening once.
-            res["composition"], producing, artifacts, fixtures_hit = sweep_composition(
-                comp_files, bin_a, bin_b, comp_out, args.comp_timeout, args.comp_jobs, run_extra)
+        # [BSWEEP r1 fix, 2026-09-19] A composition FILE can declare many
+        # targets in one `--source` invocation (measured:
+        # bench_altwide_0_2.rxtin alone is 11 targets / 22 artifacts) --
+        # proportionally more compiling per item than one argv pattern, and
+        # under this stream's own full concurrency (--jobs parallel
+        # composition items, each spawning a multi-target pcrec) that
+        # legitimately needs more wall-clock budget than the single-pattern
+        # streams do. MEASURED: at the argv streams' own --timeout (30s)
+        # and --jobs (12), that one file alone timed out under the
+        # resulting contention every time, silently reading as "2 fewer
+        # producing files, 24 fewer artifacts" -- not a corpus fact, a
+        # self-inflicted contention artifact of this tool's own
+        # concurrency (see docs/dev/lanes/bsweep_report.md S1.4 for the
+        # full diagnosis). `--comp-timeout` (default max(3x --timeout, 90))
+        # and `--comp-jobs` (default min(--jobs, 6), less concurrent
+        # pressure per item) fix it -- confirmed by measurement, not by
+        # raising the numbers until it stopped happening once.
+            comp_files_run = list(enumerate(comp_files))
+            for item in comp_files_run:
+                tasks.append((True, lambda item=item: composition_task(
+                    item, bin_a, bin_b, comp_out, args.comp_timeout, run_extra)))
+        spans = {}
+        for name, title, fn in argv_streams:
+            if (name if name != "emit-ir-vm" else "emit-ir") not in streams:
+                continue
+            log(f"[emit_sweep] === {label}: {title} ===")
+            spans[name] = (len(tasks), len(patterns))
+            for item in patterns:
+                tasks.append((False, lambda item=item, fn=fn: argv_stream_task(
+                    fn, item, bin_a, bin_b, mirror, args.timeout)))
+        done = run_pooled(tasks, args.jobs, args.comp_jobs)
+        # merge in the old per-stream order: argv streams, composition, dumps
+        for name, (lo, n) in spans.items():
+            res[name] = merge_argv_stream(name, done[lo:lo + n], mirror)
+        producing = artifacts = 0
+        fixtures_hit = {}
+        if "composition" in streams:
+            res["composition"], producing, artifacts, fixtures_hit = merge_composition(
+                [f for _, f in comp_files_run], done[:len(comp_files_run)])
         if "dumps" in streams:
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
             res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout)

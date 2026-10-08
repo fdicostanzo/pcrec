@@ -838,6 +838,31 @@ construction (src/ir) and emission (src/gen).
   (byte-identical). Tests: `tests/recursion/k93.rxt`,
   `tests/possessify/calls.txt`; sabotage S586-S588.
 
+  **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 66) TWO ARMS widen
+  FIRST soundly** (`docs/design/poss_arms.md` rev 2.1; the file header lists
+  every conjunct with its witness). ARM A: an `A_CTX` gate is valued by the
+  characters it can admit next — A0 in `first_of` (nothing known on its left,
+  so only a lookahead-born gate narrows), A1 as a re-ask of row 3 over Q's
+  continuation with each gate valued by Q's LAST polarities (greedy, m >= 1).
+  A1 needs the continuation as a SEQUENCE, so `pss_walk` threads a `PCont`
+  chain beside FOLLOW (a marker at each `A_CAP` end, where K93's join is
+  unioned; an atomic body's own end), summarized once per link (`PSum`, the
+  R-4 fix: per Q only the gate groups are evaluated). The summary valued A0
+  must EQUAL the walk's FOLLOW at every verdict, an internal error otherwise
+  (R-5); under `--emit-ir` it is also checked against the plain fold. ARM B:
+  `A_BREF`'s FIRST is the capture fact's union over refs[] of each group's
+  TEXT first (`text_first`, where a gate is (empty, nullable) — N1), folded
+  by the seam's own caseless relation (`pcrec_enc_span_fold`), memoized per
+  group number with in-progress and `PCREC_MAX_POSS_REF_DEPTH` both widening.
+  The per-walk state is `Fq` (on `Pss`), never a static. `Ctx.poss_arms`
+  (the `<PREFIX>_VM_POSS_ARMS` stamp) says which arm a positive verdict
+  NEEDED: A1 directly, A0/B by a SHADOW walk with that arm off (run only when
+  the arm narrowed something). Deny bits `-fno-poss-ctx-follow` (kept,
+  engine-selecting) / `-fno-poss-bref-first` (masked). Tests:
+  tests/possessify/ (the exhaustive arms possdiff, the oracle cells, the
+  stamp/route-flip section, `ctx_admits_check.c`); sabotage S560-S565,
+  S601-S604.
+
   It also EXPORTS its unique-iteration predicate (`pcrec_uniq_scratch` /
   `pcrec_uniq_iteration`, declared in core/internal.h) for revdet.c below, which
   asks the identical question of the REVERSED body. The export exists so that

@@ -1,0 +1,8 @@
+# features: all
+# flags: -e utf8
+\w+\b
+\W+\b
+[a-c]+\b
+\x{e9}+\b
+(?:a\.)+\b
+(\w)x+\1

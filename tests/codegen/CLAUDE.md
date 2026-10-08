@@ -31,6 +31,11 @@ or it has no regression net at all.
   holds for PRESENCE and FIRST (S596's plant moves artifacts too); their
   readers ask on CAND_ROUTE_DFA and the hit also walks every other route the
   slot is asked on, aborting on a different row (`cand_hit_every`, S600).
+  **Since C5** every slot is decided by the table (RETRY, BOUND, WINDOW and
+  WIDTH too; S597's plant moves the VM's bound), no old decision is left to
+  compare, and the script builds the trace compiler ONCE (the new-first
+  build had nothing to go second against; `CAND_ORACLE_BINS` takes one
+  binary, a second word is ignored). WINDOW's reader runs `cand_hit_every`.
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
@@ -51,7 +56,15 @@ or it has no regression net at all.
   route mask (`CAND_ON(s->route)`) before `.applies(` (until C3 `dfa_select`
   and `cand_routed(`). Both validated red by a plant on a scratch copy at
   landing (docs/dev/lanes/ssbuild01_report.md), and the three re-aimed checks
-  again at C3 (docs/dev/lanes/stc3_report.md).
+  again at C3 (docs/dev/lanes/stc3_report.md). **Since [START-TABLE] C5**
+  [cand-no-name-strcmp] covers EVERY slot: the WINDOW/WIDTH/RETRY/BOUND rows'
+  names (ordinary words like `all`, `exact`, `anchored`) fire only where the
+  same call also reads a row-name expression (`->c.name`/`->tok`,
+  `pcrec_cand_tok(`/`pcrec_cand_listed(`/`cand_listed_name(`, a `*_name(`
+  call), start_table.md §3.5's rule, and the receiver half adds the C5
+  selection functions; validated red by plants on a scratch copy and green
+  on a literal-only `strcmp(..., "exact")` (docs/dev/lanes/stc5_report.md);
+  sabotage S605.
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
   56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
@@ -2296,6 +2309,21 @@ alone cannot tell a refactor from a no-op.
   needle that could not tell a quotation from a read would force those
   comments deleted or misspelled — the check's convenience bought with a real
   explanation. Scoped to `*.c`/`*.h` with comment lines filtered.
+- **CHECK 2b's ALLOWLIST IS WHOLE-FILE, WITH A FUNCTION-SCOPED ARM
+  ([admin1008b], 2026-10-07).** A file on `ALLOW` polices nothing in it, so a
+  file whose single legitimate `u.cls.` reader is one function (possessify.c's
+  `cls_polarity`, from lane posstri) goes on `ALLOW_FN` (`FILE:FUNCTION`
+  entries) instead: `cls_scan` exempts reads between that function's column-0
+  definition and its column-0 closing brace, and nothing else in the file. Two
+  controls ride it: an entry whose function is missing or holds no read is
+  `STALE` (an exemption nothing uses would silently cover the next read to land
+  in a same-named function), and CHECK [2b'] runs the mechanism on a two-function
+  fixture every time (2 reads unscoped, 1 scoped, both STALE shapes). A
+  survey of `u.cls.` reads by function: ctxnode.c `lang_charset` (1),
+  altcls.c `altcls_walk_alt` (1), parse.c `p_class` (3), lower_enc.c
+  `lower_class_byte`/`lower_class_utf8`/`subtree_is_identity`/`wclass_of`
+  (14); cpset.c is the representation. Empty on main; the first user is
+  posstri's merge.
 - **CHECK 2's FLOOR COUNTS THE ACCESSOR FAMILY, and the reason is a finding
   against the design's own census.** §8.1.1 words it as six sites calling
   `pcrec_cls_bits`; FIVE want a bitmap and the sixth does not — `emit_vm.c`'s
@@ -3694,7 +3722,8 @@ reseedfix, after the r1 panel): `run_codegen_tests.sh` gains an
 `[OPT-HYB-RESEED]` block** (15 checks: 11 witness rows, the clamped
 recompute, the budget arm's control and its two subjects). It covers:
 
-- `<PREFIX>_VM_RESEED` on one witness per `pcrec_reseed_rows` row, and its
+- `<PREFIX>_VM_RESEED` on one witness per re-seed row (`pcrec_reseed_rows`
+  until [START-TABLE] C5, the RETRY rows of `cand_rows[]` since), and its
   absence on a forced-VM and a DFA artifact (both directions of the IFF).
   The dense row reads the byte-rate PRIOR, so both of its arms are pinned:
   ` (?=the)` is `adaptive-dense` under `-e byte` (the built-in default
@@ -3760,6 +3789,13 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[ART-POSS-ARMS] (lane possbuild, 2026-10-07, abi 65 -> 66):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 66 and its ledger message;
+  `run_prechecks.sh` 6b's `KEPT_ALWAYS` gains `-fno-poss-ctx-follow` (the
+  third engine-selecting denial); `run_recursion_identity.sh` (A) gains the
+  `poss-arms-moved` bucket (stamp-or-deny on `RX_VM_POSS_ARMS`, both
+  directions of the converse, and the `POSS_PATTERNS` manifest of §5.2's three
+  corpus movers) and (B)'s FILEPIN is self-pinned to `615eb811` (the merge of main 8cada7b9).
 - **[FLAGBITS] (lane flagbits, 2026-10-06, abi 64 -> 65, K92):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 65 and its ledger message;
   `run_prechecks.sh` section 6b (every `-f` spelling `--list-axes` carries,

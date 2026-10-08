@@ -190,8 +190,11 @@ another's, `main`'s `--list-families` block states it in its own comment).
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
 `build/pcrec --list-axes | bash tests/lib/table.sh table-main - | grep -vc '^#'`
-— **131 rows / 44 axes** (the MAIN table only, [MEMFN] R4a: the count never
-includes the kit's `memfn` section below), re-derived
+— **136 rows / 46 axes** (the MAIN table only, [MEMFN] R4a: the count never
+includes the kit's `memfn` section below), re-derived live 2026-10-07 by lane
+possbuild ([ART-POSS-ARMS]: +5 rows and +2 axes, `poss-ctx-follow` (a0, a1,
+widen) and `poss-bref-first` (group-text, widen), bits 50/51, stamp
+`RX_VM_POSS_ARMS` — `tuning.md` §2.44/§2.45). Was 131/44, re-derived
 live 2026-10-06 by lane r4caxis ([MEMFN] R4c: +2 rows and +1 axis,
 `memfn-simd`, the kit's one switch, `-fno-memfn-simd`/`-fmemfn-simd`,
 bits 48/49, INERT — `tuning.md` §2.43). Was 129/43, re-derived
@@ -276,7 +279,10 @@ candidate landing in one of those arrays appears here with no edit to
 the dump. The `kind=predicate` axes `req-admit` and `req-use` are read the
 same way: their rows (name, deny, stamp token, description) are the
 PRESENCE and FIRST rows of `cand_rows[]` since [START-TABLE] C4, which
-`req_admit`/`req_use` walk. The
+`req_admit`/`req_use` walk; and so is `hyb-reseed`, whose rows are the
+RETRY rows of `cand_rows[]` since [START-TABLE] C5 (before it the VM
+emitter's own `pcrec_reseed_rows[]`), which the VM hybrid's retry
+planning walks. The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
 `kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`

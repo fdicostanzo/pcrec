@@ -584,3 +584,13 @@ budget/`gu` movers read 0 one-sided give-ups (their give-ups start on S
 bytes), measured file by file.
 
 - **startset_arm.py** — the product arm's mover count (above).
+
+**[ART-POSS-ARMS] (lane possbuild, 2026-10-07): the GIVEUP(code) ->
+GIVEUP(code) class.** `run_axes.sh` reports, per axis, how many of its BUDGET
+rows give up on both sides with DIFFERENT give-up words (read off the rows
+stream, `run_ksweep.sh` R6's own reading; the row class stays BUDGET so that
+reader keeps its population). Reported, never a failure: possessification can
+turn a STEPS/FRAMES give-up into a WORK one (`tuning.md` §2.1). The two arm
+axes (`-fno-poss-ctx-follow`, `-fno-poss-bref-first`) join the sweep through
+`--list-axes`; any one-sided give-up they show needs a GIVEUP1_ALLOWANCE entry
+derived from a run.

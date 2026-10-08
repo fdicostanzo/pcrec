@@ -374,23 +374,118 @@ fi
 #                    lane triu2 (U2's own population: one-character lookarounds
 #                    reaching this check's corpus sweep for the first time)
 #
+#   opt/possessify.c [ART-POSS-ARMS] A1's `cls_polarity` — a sorted interval
+#                    SWEEP of a class's code-point list against the gate's
+#                    code-point set C, ABOVE the lowering (the pass runs
+#                    before `pcrec_lower_enc`; its A_WCLASS arms are loud), to
+#                    learn whether some member is inside C and some outside.
+#                    A genuine interval-vs-interval question, never a bitmap:
+#                    rendering the class to 32 bytes would answer it wrongly
+#                    for a class reaching past the byte range, which is the
+#                    reason this reads the list. Added 2026-10-07 by lane
+#                    posstri (the arms' own population: the first possessify
+#                    code to read `u.cls` directly, which the check reached on
+#                    its first run over the tree)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
 # [CLS-TREE] S3; an `A_WCLASS`'s set is `u.wcls`, read only through
 # `pcrec_wcls_set`).
 ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|src/opt/lower_enc.c|src/parse/ctxnode.c'
-# Run from ROOT_DIR over the relative path `src`, so grep's output prefixes
-# are the relative names the allowlist is written in — matching an absolute
-# path against a relative pattern is how an allowlist silently allows nothing.
-OFFENDERS="$(cd "$ROOT_DIR" && grep -rn --include='*.c' --include='*.h' 'u\.cls\.' src \
-             | grep -vE "^($ALLOW):" \
-             | grep -v '^[^:]*:[0-9]*:[[:space:]]*\(\*\|/\*\|//\)' || true)"
+# FUNCTION-SCOPED allowances, `FILE:FUNCTION` entries separated by spaces
+# ([admin1008b]; the whole-file list above polices nothing in a file once the
+# file is on it). An entry exempts `u.cls.` reads between that function's
+# definition line (column 0, `NAME(`) and its closing `}` at column 0 and
+# nothing else in the file; the rest of the file stays policed. Each entry is
+# held to its own two controls below: the function must exist, and must hold at
+# least one read (an allowance nothing uses is a stale exemption that would
+# silently cover the next read to land in a same-named function). The first
+# entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
+# function `cls_polarity`, so that file is NOT on ALLOW.
+ALLOW_FN='src/opt/possessify.c:cls_polarity'
+
+# fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
+fn_span() {
+    awk -v fn="$2" '
+        !started && /^[A-Za-z_]/ && index($0, fn "(") && $0 !~ /;[[:space:]]*$/ {
+            pre = substr($0, 1, index($0, fn "(") - 1)
+            if (pre ~ /(^|[^A-Za-z0-9_])$/) { start = NR; started = 1; next }
+        }
+        started && /^}/ { print start, NR; exit }
+    ' "$1"
+}
+
+# cls_scan DIR RELPATH ALLOWRE ALLOWFN -> offenders on stdout; stale function
+# allowances as `STALE: ...` lines. Runs from DIR over the relative path, so
+# grep's prefixes are the relative names the allowlists are written in.
+cls_scan() {
+    local dir="$1" rel="$2" allow="$3" afn="$4" out ent f fn span a b n
+    out="$(cd "$dir" && grep -rn --include='*.c' --include='*.h' 'u\.cls\.' "$rel" \
+           | grep -vE "^($allow):" \
+           | grep -v '^[^:]*:[0-9]*:[[:space:]]*\(\*\|/\*\|//\)' || true)"
+    for ent in $afn; do
+        f="${ent%%:*}"; fn="${ent#*:}"
+        span="$(fn_span "$dir/$f" "$fn")"
+        if [ -z "$span" ]; then
+            echo "STALE: $ent — no such function definition in $f"
+            continue
+        fi
+        a="${span% *}"; b="${span#* }"
+        n="$(printf '%s\n' "$out" | awk -F: -v f="$f" -v a="$a" -v b="$b" \
+             '$1==f && $2+0>=a && $2+0<=b {c++} END{print c+0}')"
+        if [ "$n" -eq 0 ]; then
+            echo "STALE: $ent — the function holds no u.cls read; delete the allowance"
+            continue
+        fi
+        out="$(printf '%s\n' "$out" | awk -F: -v f="$f" -v a="$a" -v b="$b" \
+               '!($1==f && $2+0>=a && $2+0<=b)')"
+    done
+    printf '%s\n' "$out" | grep -v '^$' || true
+}
+
+OFFENDERS="$(cls_scan "$ROOT_DIR" src "$ALLOW" "$ALLOW_FN")"
 if [ -n "$OFFENDERS" ]; then
     bad "[2b] a file outside the allowlist reads the A_CLASS payload directly. Rendering a class node is pcrec_cls_bits's job and its assertion is the only thing standing between this tree and r54 E1's recurrence:"
     printf '%s\n' "$OFFENDERS" | head -10 >&2
 else
     ok "[2b] no file outside the allowlist touches u.cls — every other consumer goes through the three accessors"
+fi
+
+# 2b'. THE FUNCTION-SCOPED ALLOWANCE IS CHECKED, not assumed ([K35]: a scope
+# mechanism nothing on this tree exercises is a comment). A fixture with two
+# functions each reading `u.cls.`: an allowance on the first must leave exactly
+# the second's read; one naming a function that is not there, or one holding no
+# read, must say STALE; and no allowance leaves both.
+FX="$WORKDIR/fx2b"
+mkdir -p "$FX/src/opt"
+cat > "$FX/src/opt/fx.c" <<'FXEOF'
+static unsigned allowed_fn(const Ast *x)
+{
+    return x->u.cls.n;
+}
+
+static unsigned policed_fn(const Ast *x)
+{
+    return x->u.cls.n;
+}
+
+static unsigned quiet_fn(const Ast *x)
+{
+    return x->k;
+}
+FXEOF
+fx_none="$(cls_scan "$FX" src nomatch '' | wc -l | tr -d ' ')"
+fx_scoped="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:allowed_fn')"
+fx_missing="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:no_such_fn' | grep -c '^STALE:' || true)"
+fx_quiet="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:quiet_fn' | grep -c '^STALE:' || true)"
+if [ "$fx_none" = "2" ] \
+   && [ "$(printf '%s\n' "$fx_scoped" | wc -l | tr -d ' ')" = "1" ] \
+   && printf '%s\n' "$fx_scoped" | grep -q 'fx\.c:8:' \
+   && [ "$fx_missing" = "1" ] && [ "$fx_quiet" = "1" ]; then
+    ok "[2b'] the function-scoped allowance exempts exactly its function (2 reads -> 1, the other function's), and a missing or read-less function is STALE"
+else
+    bad "[2b'] the function-scoped allowance mechanism misbehaves on its fixture: unscoped=$fx_none reads (want 2), scoped='$fx_scoped' (want only fx.c:8), stale-missing=$fx_missing, stale-quiet=$fx_quiet (want 1, 1)"
 fi
 
 # 2c. THE ASSERTION SHIPS ENABLED (§13 obligation 5: *"an assertion compiled
@@ -774,6 +869,25 @@ fi
 # VERIFIED BY the R4a′ mover census (tests/memfn/stamp_mover_census.py
 # --ref 57db5152): every corpus artifact differs from main by exactly those
 # two lines (memfnbump_report.md §2).
+#
+# RE-RECORDED 2026-10-07 at [ART-POSS-ARMS] (abi 65 -> 66, lane possbuild;
+# re-pinned by lane posstri): six rows move. Four by exactly +29, the
+# VM-only `#define RX_VM_POSS_ARMS 0x0u` stamp line (`a(b|c)+d`,
+# `(a)(b)(c)`, `(?<=foo)bar`, `(a(?1)?b)`; the abi digit is the same width and
+# the DFA rows carry no VM stamp block, so they do not move). The fifth,
+# `(\w+)\s+\1`, is the one MOVER: arm B (`-fno-poss-bref-first`) folds the
+# referenced group's first set into the `\1` read, so `\w+` (followed by `\s+`,
+# a disjoint class) possessifies, the frames shed one resume and one trail
+# slot, the program turns FRAMELESS and takes the `inline` entry shape:
+# `RX_VM_STRATS` 0x3u -> 0x1u, `RX_VM_FRAMELESS` 0 -> 1, EMITTED_BYTES -446
+# (29085 -> 28640 at `-o -`, 28639 here), stamp `RX_VM_POSS_ARMS 0x4u`.
+# VERIFIED BY DIFFING all five against a scratch build of main 8cada7b9 at
+# `-o -`: the abi digits and the stamp are the whole delta on four of them;
+# on `(\w+)\s+\1` the delta is the frame counts, the entry shape, the
+# possessive span loop and the dropped resume dispatcher, nothing else. The
+# answers are not moved: `run_possdiff.sh` on that pattern alone (it is in
+# arms_core.txt, `# features: all`) reads 1 agreed / 0 diverged over 311
+# pattern-subject-startpos cells with a possessified quantifier.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

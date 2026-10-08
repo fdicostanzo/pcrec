@@ -824,7 +824,10 @@ above describes a list that no longer exists:** `strategy_denials` is every
 `src/core/axes.def` bit except the `kept` set (the two engine-selecting
 denials and the two contract axes), plus `PCREC_FAST_OR_FAIL`. A new axis is
 masked on arrival; forgetting one in `kept` is the recoverable direction.
-Bits 18/21 were the last two strategy bits the old list lacked (K92).
+Bits 18/21 were the last two strategy bits the old list lacked (K92). [ART-POSS-ARMS] (abi 66) made the engine-selecting denials three:
+`-fno-poss-ctx-follow` (tuning.md §2.44) joined `kept`, and `emit_vm.c` gained
+the `<PREFIX>_VM_POSS_ARMS` stamp beside `_VM_STRATS`, read off
+`Ctx.poss_arms` (match_api.md §6.3).
 
 ## [DD-13] THE DFA ARTIFACT'S SELECTION STAMPS, and the D46 family's (a)/(b) split ([2026-08-25])
 
@@ -1239,6 +1242,34 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `cand_hit_every` (the hit plus every other asked route choosing the same
   row). D148 Q2's spelling sweep rides this commit: every `DfaSel` is
   `CandSel` and the C2 alias is deleted.
+- **emit_dfa.c / emit_vm.c — RETRY, BOUND, WINDOW and WIDTH read the start
+  table** ([START-TABLE] C5, lane stc5, 2026-10-07; `docs/design/
+  start_table.md` §3.2 C5; zero movers, no abi event). The table now decides
+  EVERY slot. `pcrec_reseed_rows[]` (emit_vm.c), its `VRS_P_*`/`VRS_A_*`/
+  `VRS_S_*` tags and `vm_reseed_holds` are DELETED into the RETRY rows: the
+  payload is `CandReseed` (`u.reseed`: action, start, armed, desc; in
+  `core/internal.h` because emit_vm.c reads it), and `vm_plan_reseed` asks
+  `pcrec_cand_select_vm(RETRY)`; `VmReseed.row` is a `const CandRow *`
+  (opaque in emit_vm.c, read through `pcrec_cand_tok`/`pcrec_cand_reseed`).
+  The inline decisions read their slot's row: the end-window clamp WINDOW's
+  (`cand_window_clamps`, `u.window`), the VM entry's root-minw test WIDTH's
+  (`vm_width_row`, `u.width`), `emit_attempt`'s `start_max` BOUND's on
+  CAND_ROUTE_ATTEMPT and the VM's `attempt_max` BOUND's on the VM route
+  (`vm_bound_row`); `u.bound` carries `one` and each route's text
+  (`start_max`, and the VM's one `attempt_max` line `CAND_VM_BOUND_ONE`,
+  S263's anchor). The stamp and listing readers project the same rows:
+  `<PREFIX>_END_WINDOW` (the window from its fact, or the row's listed
+  `none`), `<PREFIX>_VM_START` (the BOUND row's listed name),
+  `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` (the WIDTH row, the
+  value from `root_minw`). `pcrec_reseed_row` projects the RETRY rows for
+  `--list-axes` (bool, false past the last; `pcrec_reseed_nrows` gone).
+  Each reader re-asks one derivation rather than a stored selection (the
+  RECOVER precedent), and only the body's ask prints its trace record, so
+  the C1 trace is record-for-record unchanged. The C2 both-walks oracle had
+  nothing left to compare and is deleted (`cand_oracle_pre/post*`,
+  `pcrec_cand_oracle_vm_*`, `VM_CAND_PRE/POST`, `CandRow.was`); every reader
+  runs the hit counter (`cand_hit`, `VM_CAND_HIT` → `pcrec_cand_hit_vm`;
+  WINDOW `cand_hit_every`).
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
@@ -3647,16 +3678,17 @@ window recompute). A clamp-free hybrid whose prefilter over-approximates (a
 lookaround or a cut erased, or the count collapse) therefore stepped every
 character to the subject end once one prefilter answer failed.
 
-- **`pcrec_reseed_rows` is ONE first-match table, rows as data** —
+- **The re-seed choice is ONE first-match table, rows as data** —
   `exact` / `clamped` / `anchored` / `adaptive-dense` / `adaptive` /
-  `fixed`. Its
-  predicates are a closed tag set evaluated by one switch,
-  `vm_reseed_holds` (clskit's `ROWS` shape), and an adaptive row's
-  STARTING STATE is two columns (`start`, the calibration column a call's
-  first step budget comes from, and `armed`), so the two adaptive rows
-  differ in data only (r1 panel sem table note). It is exported so
-  `--list-axes` walks the live table (axis `hyb-reseed`,
-  `src/dump/axes_dump.c`), `pcrec_look_rows`' precedent.
+  `fixed`. Since [START-TABLE] C5 (lane stc5) these are the RETRY rows of
+  the one start table `cand_rows[]` (emit_dfa.c); before it they were this
+  file's `pcrec_reseed_rows[]`, whose predicates were a closed tag set
+  evaluated by one switch, `vm_reseed_holds` (clskit's `ROWS` shape). An
+  adaptive row's STARTING STATE is two payload fields (`u.reseed.start`,
+  the calibration column a call's first step budget comes from, and
+  `armed`), so the two adaptive rows differ in data only (r1 panel sem
+  table note). `--list-axes` walks the live rows (axis `hyb-reseed`,
+  `src/dump/axes_dump.c`, through `pcrec_reseed_row`).
 - **`clamped` keeps every clamped hybrid on today's retry** (r1 panel sem
   F1). Past it, an adaptive retry's attempts are a SUBSET of today's
   clamp-free step-everything retry's, so a budget give-up can become an

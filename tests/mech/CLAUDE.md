@@ -3389,6 +3389,7 @@ self-check. All six DETECTED at landing (`docs/dev/lanes/stc2_report.md` §3).
 slot's old walk its oracle hook goes with it, and each of those commits must
 re-home or retire the rows on its slot.
 
+
 **[START-TABLE] C4 (lane stc4, 2026-10-07)**: PRESENCE and FIRST lost their
 old walks (`req_admits[]`/`req_uses[]` are deleted into `cand_rows[]`), so
 S596's plant now moves the artifact and is caught by its witness no longer
@@ -3399,4 +3400,40 @@ their answer does not depend on the route, and the trace build's
 `cand_hit_every` walks every other asked route and aborts on a different
 row; the plant inserts a VM-only total PRESENCE row before `emitted`, which
 moves no default-build byte.
+
+**[START-TABLE] C5 (lane stc5, 2026-10-07)**: RETRY, BOUND, WINDOW and WIDTH
+lost their old decisions too, so the both-walks oracle is gone and
+`run_cand_oracle.sh` builds ONE trace compiler. S597 (B3's predicate tests
+GSTART) and S599 (H1 hands CAND) and S598 (`fixed` deniable) keep their
+anchors; S597's plant now MOVES the VM's bound (the witness no longer reaches
+`vm-anchored`), S598/S599 are still the self-check's. Re-aimed as derived
+(start_table.md §3.5): **S263** (the VM bound text is `CAND_VM_BOUND_ONE` in
+emit_dfa.c, B3/B4's `u.bound`), **S371** (the adaptive test reads
+`pcrec_cand_reseed(rs->row)->action`), **S441** (R3's predicate
+`cand_rs_anchored_applies` in emit_dfa.c; C5b re-aims it again), **S556**
+(the root-minw test reads the WIDTH row); **S372**'s anchor survived in
+`vm_plan_reseed` and its intent was re-verified. **S605** is new
+(`candrows`): `vm_plan_reseed` reading the RETRY row's spelling, the K84
+shape `[cand-no-name-strcmp]` forbids on every slot since C5.
+
+### [ART-POSS-ARMS] — rows S560-S565, S601-S604 (lane possbuild, 2026-10-07)
+
+`docs/design/poss_arms.md` rev 2.1 §8.2's ten plant rows, against
+`src/opt/possessify.c`. S560-S565 are the six ids reserved for the row;
+S600 is lane stc4's, so the remaining four take S601-S604. Every row is
+`SAB_SUITES="harness possdiff"` with `SAB_HARNESS_TARGET=tests/possessify/
+possessify.rxt` (the oracle-side cells, a detector independent of possdiff),
+a `SAB_REACH` reading the witness's own `RX_VM_POSS_ARMS` at HEAD, and a
+`SAB_REACH_POP` that the witness is in the possessify.rxt cells and in
+`tests/possessify/arms_reach.tsv` (§8.1 item 2). A1: S560 (m >= 1), S561
+(polarity from FIRST), S562 (mixed LAST collapsed), S601 (the call-site join
+dropped — detected as R-5's own internal error on call-bearing verdicts,
+which is that check firing), S603 (lazy admitted, N2). B: S563 (no fold),
+S564 (refs[0] only), S565 (never nullable), S602 (in-progress recomputed — a
+DECLARED EQUIVALENT mutant, scored UNDETECTED: `PCREC_MAX_POSS_REF_DEPTH` and
+the CF_DONE memo cap the recomputation at ~2 x depth extra `cap_group`
+computations with byte-identical artifacts and census, measured by lane
+possfin; the branching-cycle witness `(a\2\3)(b\1)(c\1)x+\1` never even
+walks its cycle), S604 (a
+group body read with `first_of`'s POSITION answer, N1).
 

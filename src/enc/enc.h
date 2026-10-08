@@ -428,6 +428,9 @@ typedef struct {
  * value that is not a member at all. */
 const PcrecEnc *pcrec_enc_by_id(int id);
 const PcrecEnc *pcrec_enc_by_name(const char *name);
+/* [ART-POSS-ARMS] The fold relation `e`'s caseless span compare uses under
+ * `ucp` (enc.c); possessify's arm B folds a caseless reference's FIRST by it. */
+const PcrecFold *pcrec_enc_span_fold(const PcrecEnc *e, bool ucp);
 /* Render every member's name, comma-separated, into a CALLER-owned buffer —
  * no static scratch, because pcrec_compile() is called concurrently (TS-3)
  * and a lazily-filled shared buffer would be a data race in a diagnostic. */

@@ -461,6 +461,29 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "backtracking", "PCREC_VM_STRAT_BACKTRACKING",
                      0, 0, "", "always (fallback)");
     }
+    /* [ART-POSS-ARMS] the two possessify ARMS — tuning.md §2.44/§2.45. The
+     * stamp is RX_VM_POSS_ARMS; a row's stamp value is the bit it sets (the
+     * bits are match_api.md §6.3's, not named constants). poss-ctx-follow is
+     * ENGINE-SELECTING (the free discharge asks the same verdict). */
+    {
+        PredAxis p = { "poss-ctx-follow", NULL, "RX_VM_POSS_ARMS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "a0", "0x1",
+                     PCREC_NO_POSS_CTX_FOLLOW, 0, "",
+                     "per A_REP: a lookahead-born context gate in the follow narrows to the characters it admits with nothing known on its left (S(P) at P = {0,1})");
+        emit_pred_row(sb, &p, 2, "a1", "0x2",
+                     PCREC_NO_POSS_CTX_FOLLOW, 0, "",
+                     "per greedy A_REP with m >= 1: row 3 re-asked over the loop's continuation, each gate valued by the polarities of the body's LAST classes");
+        emit_pred_row(sb, &p, 3, "widen", "",
+                     0, 0, "", "always (fallback) — a gate widens the follow to every byte; ENGINE-SELECTING: a possessive suffix the arm would discharge stays, so RX_ENGINE can move to \"vm\"");
+    }
+    {
+        PredAxis p = { "poss-bref-first", NULL, "RX_VM_POSS_ARMS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "group-text", "0x4",
+                     PCREC_NO_POSS_BREF_FIRST, 0, "",
+                     "per A_BREF: FIRST is the union of every referenced group's captured-TEXT first characters, folded when the reference is caseless (in progress or past PCREC_MAX_POSS_REF_DEPTH: widen)");
+        emit_pred_row(sb, &p, 2, "widen", "",
+                     0, 0, "", "always (fallback) — every byte, nullable");
+    }
     /* revdet — §2.2, RX_VM_RUNGS bit PCREC_VM_RUNG_REVDET */
     {
         PredAxis p = { "revdet", NULL, "RX_VM_RUNGS", "", 0, NULL, 0, NULL, NULL, NULL };
@@ -881,16 +904,15 @@ static void emit_predicate_axes(StrBuf *sb)
                          pcrec_look_rows[i].applies_desc);
     }
     /* [OPT-HYB-RESEED] hyb-reseed — §2.35, the VM hybrid's retry re-seed;
-     * its rows WALKED LIVE off `pcrec_reseed_rows` (src/gen/emit_vm.c), so
-     * this surface cannot state a predicate the emitter does not ask. The
-     * row's NAME is the RX_VM_RESEED value it stamps. */
+     * its rows WALKED LIVE off `pcrec_reseed_row` (since [START-TABLE] C5 the
+     * RETRY rows of `cand_rows[]`, src/gen/emit_dfa.c), so this surface
+     * cannot state a predicate the emitter does not ask. The row's NAME is
+     * the RX_VM_RESEED value it stamps. */
     {
         PredAxis p = { "hyb-reseed", NULL, "RX_VM_RESEED", "", 0, NULL, 0, NULL, NULL, NULL };
-        for (int i = 0; i < pcrec_reseed_nrows; i++)
-            emit_pred_row(sb, &p, i + 1, pcrec_reseed_rows[i].name,
-                         pcrec_reseed_rows[i].name,
-                         pcrec_reseed_rows[i].deny, 0, "",
-                         pcrec_reseed_rows[i].applies_desc);
+        PcrecReseedDesc r;
+        for (int i = 0; pcrec_reseed_row(i, &r); i++)
+            emit_pred_row(sb, &p, i + 1, r.name, r.name, r.deny, 0, "", r.desc);
     }
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */

@@ -1136,6 +1136,27 @@ enum {
 #define PCREC_NO_MEMFN_SIMD PCREC_BIT(48)
 #define PCREC_FORCE_MEMFN_SIMD PCREC_BIT(49)
 
+/* [ART-POSS-ARMS] the two possessify ARMS (docs/spec/tuning.md §2.44/§2.45,
+ * docs/design/poss_arms.md §9). Each widens which quantifiers the VM's
+ * possessification (and the free discharge, which asks the same verdict)
+ * proves possessive-equivalent; neither changes an answer, both can move
+ * emitted program text, and `<PREFIX>_VM_POSS_ARMS` records which arm a
+ * verdict needed (a denied arm's bit is 0).
+ *
+ * `-fno-poss-ctx-follow` denies ARM A, a context gate (`\b`, `\B`, a
+ * one-character lookaround) in a quantifier's follow. It is
+ * ENGINE-SELECTING and KEPT in `rx_info.flags`: denying it can keep an
+ * atomic group or possessive suffix in the tree (`\w++\b`), which moves
+ * `RX_ENGINE` to "vm", and `--engine=dfa` plus the denial REFUSES.
+ *
+ * `-fno-poss-bref-first` denies ARM B, a backreference's FIRST read from
+ * its groups. It is answer-identity-preserving and MASKED: a backreference
+ * is VM-only, so the arm can never move `RX_ENGINE` (the tripwire
+ * `reject_engine_dfa_bref_nocaptures`, tests/reject/, guards that premise).
+ * Deny only. A `#define` pair for bit 32's reason. */
+#define PCREC_NO_POSS_CTX_FOLLOW PCREC_BIT(50)
+#define PCREC_NO_POSS_BREF_FIRST PCREC_BIT(51)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

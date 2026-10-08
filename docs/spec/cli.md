@@ -585,7 +585,7 @@ A dozen-odd flags (`-fno-possessify`, `-fno-revdet`, `-fno-counter`,
 `-fno-cls-fold`, `-fno-startpos-guard`, `-fno-ctx-node`, `-fno-hyb-reseed`,
 `-fno-cls-kit`, `-fno-cls-pack`, `-fno-view-edge`, `-fno-run-overlap`,
 `-fno-req-run-fold`, `-fno-req-set-lead`, `-fno-req-handoff`,
-`-fno-start-set`)
+`-fno-start-set`, `-fno-poss-ctx-follow`, `-fno-poss-bref-first`)
 deliberately do **not** appear in `--help` (D47.3:
 these are testing and tuning axes, not user features — `cli/CLAUDE.md`
 states the reasoning per flag). Each denies one optimization strategy
