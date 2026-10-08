@@ -2790,6 +2790,19 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - the `--emit-ir` prefilter reason does not know [PF-DROP];
     - the `ENGINE_SEL` registry order is not `esel_of`'s.
   - **§6** proposes D137-shaped evaluation rows and their order: [AXES-DENY-MASK] addendum, then [DEC-FALLBACK], then the [TIE-ALIGN] re-scope. It also serves as [LIST-TABLES] STEP 0's census input.
+- `dec_fallback.md` — **REFACTOR B, ONE FALLBACK LADDER ([DEC-FALLBACK]), PROPOSED, design only** (lane `decfbdes`, 2026-10-08, from main `31a9ae4c`, abi 68; refactor A's shape, `start_table.md` rev 2.1). A pure no-mover under Frank's token ruling (D151 addendum 2).
+  - **The tables.** Four first-match tables plus one attribution walk:
+    - T1 `fit_rungs[]` is extended to the ONE ladder, keyed by the arrival LABEL SET (`nomem | overflow | size | other`). It gains rows `nomem`, `size-term-trial`, `sel1-collapse` and `sel1-drop`, a `sets` state-write column, token cells, and a `fof` column that makes `--fast-or-fail`'s size-only reach visible.
+    - T2 `pf_admits[]` is the prefilter admission (start_table.md Q8), MERGED with its second derivation (the `--emit-ir` prefilter chain); one order reproduces both.
+    - T3 is the collapse gate with its `VM_PREFILTER_LANG_WHY`; T4 is `UNROLL_K_WHY`.
+    - `esel_of` becomes a read of the admission row, then the last attributing ladder row, then `selected`.
+  - **What is preserved, each a visible row or cell.** F1 is the T2 row `var-nullable`, and the `has_var` ternary is gone. §4.5, §4.1's drift and the token/why fusion are preserved too; each later mover is a one-row/one-column edit (§5).
+  - **What is held.** `COMPILE_MAX_ATTEMPTS` keeps 25 and is checked against the table.
+  - **The plan.** Commits B0-B7 (instrument; fallback trace on C1's macro; implement with a both-derivations oracle; replace dispatch, admission, tokens; listing projection; declared listing commit). The gates are emit_sweep × four limit variants plus a stderr `notes` stream; the ordered trace compare for `fallback` records; and decfb0's attempt histogram as the independent control. Derived re-aims: 11 rows.
+  - **Findings.** §4.6 is fixed at B7 with zero artifact movers (one order swap). Four new findings: F-B1 `a${v}b` lists `--engine=vm`; F-B2 a false listing desc; F-B3 `collapsed-prefilter` without a collapse (pop 0); F-B4 label precedence. §4.1 splits: `pfc_rep` is the drift, while the nullable conjunct is [OPT-4.1]'s designed decline and a token mover.
+  - **Questions.** Eight for Frank (§11).
+  - Instruments: `dec_fallback/`.
+- `dec_fallback/` — that note's edit set, the derived sabotage-anchor map, the call graph it was derived with, and the state-reader census (own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

@@ -172,3 +172,24 @@ channel; one heavy suite at a time); the Mac run is directional.
 **Contract:** ZERO MOVERS. Prove it with `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps` (R4C-GATE PASS, 0 movers on all six streams). No abi event. Where cheap, show the N2 would-decline count at those cells falling to 0.
 
 **Landing bar:** the gate above, `make strict`, the full `make test`, and solo mech for every sabotage row whose anchor file was edited (they must stay DETECTED).
+
+## R-7 (2026-10-08, pcrec manager) — M4, MLINE migrates, zero movers (READ-ONLY scoping first)
+
+**Customer:** `[MEMFN]`, integration.md §15.7 M4: the `(?m)^` candidate scan, a `memchr('\n')` in `emit_attempt` (src/gen/emit_dfa.c). Shape: the same as R4g's FIND.
+
+**Prerequisite:** R4c (met).
+
+**Trigger:** completeness (D147 addendum 5 / Q42, "every search site migrates"). MLINE is one of the four `pending` sites in the checked manifest (with N6, VMSTRIDE, N7). It also finishes the C12 memchr ratchet: 1 -> 0 outside the kit.
+
+**Sequencing:** the kit's order is accepted: M4, then M7 (N7, the span compare in the encoding seam; Q54 ruled YES), then M6 (N6 + VMSTRIDE), then R4j/M5 (the planner goes live; needs a careful overlap check with refactor B). Each step after M4 gets its own request.
+
+**Step 1, READ-ONLY scoping, before any edit.** Post the edit set to me (responses notice), with an OVERLAP CHECK against:
+- refactor B, [DEC-FALLBACK]: docs/design/dec_fallback.md (rev 2 in progress, lane decfbrev2). B edits compile.c's fallback ladder, select_engine.c's admission/esel_of, and the emit_vm.c stamp writers. Its edit set is under docs/design/dec_fallback/.
+- anything else touching `emit_attempt` or the ATTEMPT route: the start table's `cand_rows[]` NEXT/BOUND rows on CAND_ROUTE_ATTEMPT, `attempt_next_read`, `attempt_cand`.
+
+**The boundary (R-4's rule, unchanged):** move the SEARCH TEXT only. Every start decision, row selection, admission and BOUND/route read stays pcrec-side. Name any read the migrating emitter does today.
+
+**Landing bar (same as R-5/R-6):**
+- ZERO MOVERS: `scripts/emit_sweep.py --ref <main sha>` judged by `memfn_r4c_gate.py --zero-dumps`, R4C-GATE PASS with 0 movers on all six streams. No abi event; any byte that moves is a defect, so STOP and report it.
+- `make strict`; the full `make test` on a slot I name; solo mech for every sabotage row whose anchor moves (they must stay DETECTED); [SABANCHOR] green.
+- Sabotage ids come from a block you request from me.
