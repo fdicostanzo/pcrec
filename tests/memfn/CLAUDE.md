@@ -17,7 +17,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   plus companions (moved with the site, spell nothing). Status is exactly
   `pending` or `delegated`. At R4a every row is `pending`, and each
   migration step's REPLACE commit flips its rows. The header documents the
-  columns.
+  columns. R4h (M3) flipped STAY, EDGE and VMSPAN (9 delegated / 4 pending);
+  VMSTRIDE stays pending on `vm_stride_loop`, the strided loop split out of
+  `vm_emit_span_scan`.
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
@@ -99,7 +101,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   memcmp 1 in `runcmp.c`, ...; 20 forms since M1's REPLACE lowered memchr
   8 -> 2; 9 rows / 13 forms since M1b's REPLACE deleted `runcmp.c`'s three
   rows, `C12_CEIL_ROWS_FLOOR` 12 -> 9; 8 rows / 12 forms since M2's REPLACE
-  (R4g) lowered memchr 2 -> 1 and deleted the walk-fmt row, floor 9 -> 8);
+  (R4g) lowered memchr 2 -> 1 and deleted the walk-fmt row, floor 9 -> 8;
+  6 rows / 8 forms since M3's REPLACE (R4h) deleted `emit_dfa.c`'s
+  walk-open and walk-stmt rows, 2 -> 0 each, floor 8 -> 6);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
