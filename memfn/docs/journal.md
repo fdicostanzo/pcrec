@@ -916,3 +916,13 @@ pointer when a kit change merges to main.
   - The census's reason_stale on `generic` was expected: pcrec now selects
     the kit's generic ADVANCE row. Fixed by making generic a pcrec row
     (witness a[^x]*, control abc, plant red); the census re-run gave rc 0.
+- 2026-10-08: R4h MERGED to main. R-7 (M4, MLINE) filed: scoped (no
+  overlap with DEC-FALLBACK; gaps G1-G3 closed kit-side, Q-R7-1/2/3) and
+  acked by main. Ids S617-S619.
+  - Lane m4 BUILT it on lane/memfn-m4 @ 9c7b848e:
+    - MF_SITE_ABI 6, `pf_memchr_back`, PcrecFind generalized, MLINE
+      delegated;
+    - 0 movers (shadow and corpus pairs), C12 clear of memchr.
+  - Blocked on a blinded G2 lane, because G2's oracle predates Q-R7-1.
+  - Session reset at Frank's request; wake.md lists the order of what
+    follows.
