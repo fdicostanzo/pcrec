@@ -4685,32 +4685,18 @@ static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t (*seq)[32
         .indent = "        " };
 }
 
-/* Emits the STRIDED span loop (stride > 1): the cursor advances `stride`
- * bytes while every position's class test (`test`, the ` && (...)` chain)
- * holds, bounded by `bound` and, for a bounded quantifier, by `it_` at rmax.
- * VMSTRIDE in tests/memfn/site_manifest.tsv: pending until the kit's
- * vocabulary has a strided SKIP (M6); the stride-1 loop is the kit's
- * (VMSPAN, `vm_span_advance`). */
-static void vm_stride_loop(Vm *v, const Ast *a, int stride, const char *test,
-                           const char *bound)
-{
-    StrBuf *b = v->b;
-    pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride, bound);
-    if (a->u.rep.rmax >= 0)
-        pcrec_sb_printf(b, " && it_ < %lluULL", (unsigned long long)a->u.rep.rmax);
-    pcrec_sb_printf(b, "%s) {\n            %s_span_cursor += %d;\n", test, v->p, stride);
-    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "            it_++;\n");
-    pcrec_sb_puts(b, "        }\n");
-}
-
-/* Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as `test` holds.
+/* Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as every position's class test holds.
  *
  * [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
  * arms (the possessive one and the greedy one, 140 lines apart, which wrote
  * the same eight lines with no agreement check between them).
  *
  * Produces the `{ … }` block that walks `<prefix>_span_cursor` forward in
- * `stride` steps for as long as `test` holds. `clamp` is the MRL amount when
+ * `stride` steps for as long as each position's test (`members[i]`) holds.
+ * The loop itself is the memfn kit's ([MEMFN] R4h/M6): ONE ADVANCE site,
+ * DELEG_SITES row VMSPAN at stride 1 and VMSTRIDE above (a fact read, not a
+ * cost: Q-R10-6), whose text the kit writes; the block, `it_`, `lim_`, the
+ * cursor init and every member text stay pcrec's. `clamp` is the MRL amount when
  * the bound is the FOLDED window — the block then declares `lim_` itself and
  * bounds on it — or NULL for the unclamped `subject_length` form. The
  * declaration cannot be left to the caller: this helper opens the brace, and
@@ -4720,8 +4706,7 @@ static void vm_stride_loop(Vm *v, const Ast *a, int stride, const char *test,
  * quantifier) and `v->p`/`v->up`; writes only `v->b`.
  */
 static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t (*seq)[32], int stride,
-                              const char *test, const char *const *members,
-                              const char *clamp)
+                              const char *const *members, const char *clamp)
 {
     StrBuf *b = v->b;
     pcrec_sb_puts(b, "    {\n");
@@ -4732,16 +4717,10 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t (*seq)[32], int
     pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
     const char *bound = clamp ? "lim_" : "subject_length";
     PcrecAdvance sa = vm_span_advance(v, a, seq, stride, members, bound);
-    if (stride == 1) {
-        mf_hooks h;
-        mf_site *s = pcrec_memfn_advance_site(v->cx, DELEG_VMSPAN, &sa, &h);
-        pcrec_memfn_emit(v->cx, DELEG_VMSPAN, s, &h, b);
-    } else {
-        size_t at = b->len;
-        vm_stride_loop(v, a, stride, test, bound);
-        /* [M6 I1] IMPLEMENT ONLY: the kit's VMSTRIDE text must equal it */
-        pcrec_memfn_advance_shadow(v->cx, DELEG_VMSTRIDE, &sa, b->p + at, b->len - at);
-    }
+    DelegSite id = stride == 1 ? DELEG_VMSPAN : DELEG_VMSTRIDE;
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(v->cx, id, &sa, &h);
+    pcrec_memfn_emit(v->cx, id, s, &h, b);
     pcrec_sb_puts(b, "    }\n");
 }
 
@@ -4887,7 +4866,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * rmin, publish the groups, take the continuation. Nothing here can
          * be resumed, which is the whole point — the emitted C contains no
          * label the loop could come back to. */
-        vm_emit_span_scan(v, a, seq, stride, test, members, NULL);
+        vm_emit_span_scan(v, a, seq, stride, members, NULL);
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
          * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
          * rmin test. The scan has completed, `pos` is still the loop's entry
@@ -5018,7 +4997,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
-        vm_emit_span_scan(v, a, seq, stride, test, members,
+        vm_emit_span_scan(v, a, seq, stride, members,
                           fold ? vm_mrl_amt(v, mrl) : NULL);
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,
@@ -5040,6 +5019,10 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * on "aa" gives [0,2)/g1=[0,1) under a greedy scan where both oracles
          * give [0,1)/g1=[0,0). */
         pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
+        /* The rmin prefix: a fixed-count verify of rmin span blocks. A span
+         * loop the memfn kit does not render yet: tests/memfn/site_manifest.tsv
+         * row VMLAZY, `pending` (Q-R10-7, M6's REPLACE), its form C17's
+         * `span-count` vocabulary line. */
         if (a->u.rep.rmin > 0) {
             pcrec_sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
             pcrec_sb_printf(b, "        while (it_ < %dUL) {\n", a->u.rep.rmin);

@@ -10,8 +10,6 @@
  * always were, beside the facts they read (src/gen/emit_dfa.c's builders);
  * this file only turns a description into kit calls and checks the
  * description against DELEG_SITES (C10). */
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "gen/memfn_sites.h"
@@ -397,40 +395,6 @@ mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                      .u = u };
     pcrec_memfn_check_use(cx, s, true);     /* the caller reads the cursor */
     return s;
-}
-
-void pcrec_memfn_advance_shadow(Ctx *cx, DelegSite id, const PcrecAdvance *a,
-                                const char *want, size_t n)
-{
-    mf_hooks h;
-    mf_site *s = pcrec_memfn_advance_site(cx, id, a, &h);
-    mf_arena *ma = pcrec_arena_alloc(&cx->arena, sizeof *ma);
-    ma->u = &cx->arena;
-    ma->alloc = arena_alloc;
-    mf_art *art = mf_art_begin(ma, cx->opt->prefix,
-                               pcrec_memfn_policy(cx->opt->flags),
-                               pcrec_memfn_denies(cx->opt->flags));
-    if (!art) pcrec_ctx_nomem(cx);
-    deleg_check(cx, id, s);
-    StrBuf sb = { 0 };
-    sb.cx = cx;
-    PcrecMfSink ps;
-    pcrec_memfn_sink(&ps, &sb);
-    int rc = mf_emit(art, s, &h, &ps.s, NULL, NULL);
-    bool same = !rc && sb.len == n && (n == 0 || !memcmp(sb.p, want, n));
-    if (!same && getenv("PCREC_M6_SHADOW_DUMP"))
-        fprintf(stderr, "M6-SHADOW %s\nKIT:\n%.*s\nPCREC:\n%.*s\n",
-                pcrec_deleg_sites[id].id, (int)sb.len, sb.p ? sb.p : "",
-                (int)n, want);
-    pcrec_sb_free(&sb);
-    kit_check(cx, art, rc);
-    if (!same)
-        pcrec_ctx_fail(cx, 0, "internal error: [M6 I1] the kit's %s text "
-                       "differs from pcrec's (%.*s)",
-                       pcrec_deleg_sites[id].id, (int)(n < 160 ? n : 160), want);
-    if (getenv("PCREC_M6_SHADOW_LOG"))
-        fprintf(stderr, "M6-SHADOW-OK %s stride %d %zu\n", pcrec_deleg_sites[id].id,
-                a->stride, n);
 }
 
 void pcrec_memfn_flush_helpers(Ctx *cx, StrBuf *file)

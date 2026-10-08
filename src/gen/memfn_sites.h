@@ -198,11 +198,6 @@ typedef struct {
  * at `a->indent`. A stride outside 1..MF_MAX_TERM fails the compile. */
 mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                                   mf_hooks *h);
-/* [M6 I1] IMPLEMENT ONLY (deleted at REPLACE): renders ADVANCE `a` through a
- * SCRATCH art and fails the compile unless the kit's text equals want[0..n),
- * pcrec's own strided loop text, byte for byte. */
-void pcrec_memfn_advance_shadow(Ctx *cx, DelegSite id, const PcrecAdvance *a,
-                                const char *want, size_t n);
 
 /* ---- the encoding seam's span compare (N7, [MEMFN] M7) ------------------- */
 
