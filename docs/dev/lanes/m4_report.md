@@ -247,3 +247,42 @@ never chosen. No other family, W1 witness or floor moved. Failure lines:
 | zero movers on 25+ witness compiles, same -o basename, default/utf8/both comment tiers/hybrid | DONE (33/33; corpus 26,268/0) |
 | CLAUDE.md files | DONE (memfn, memfn/include, memfn/src, src/gen, tests/memfn, tests/mech) |
 | no abi event | none needed |
+
+## 10. Landing (kit manager, 2026-10-08)
+
+- **Blinded G2** (lane g2m4, sonnet, D27 cell `worktrees/g2u-cell`):
+  `memfn/tests/G2M4_REPORT.md`; on branch g2u @ f4f74937, fast-forwarded
+  into the kit branch. G2 --quick --rows 47,436,029 / 0 (seed 7: 47,535,635
+  / 0); Q-R7-1 range split, family `mline` (AT_N), class `loop-exit` (W2
+  mutation 8, killed 130/130), FLOOR_ROWS 14, W1 defect 4 (the old range) a
+  permanent witness. Its readings Q-G2M4-1..9 are in its report (posted to
+  main in responses.md). Manager review note: the oracle applies Q-R7-1 to
+  single-predicate FINDs only (`npred != 1` keeps the old range); every
+  generated reads-below site is single-predicate.
+- **Floors:** `pf_memchr_back` g2_floor 4109 (0.9 x 4,566 row-chosen,
+  c1561efd; `make test-memfn-g2` green, (e) PASS); pcrec_floor 3271 (the
+  slot11 census's `--propose`); `make test-memfn-rows` green after the pin.
+- **slot11** (`worktrees/memfn-slot/slot11/`, verdict.txt), tree 32197d74 =
+  kit + main e99ad486, ref e99ad486: BUILD 0; N2 census rc 0,
+  would_decline 0, reason_stale 0, floor_fail 0 (placeholder 1 = this row,
+  then pinned); identity gate R4C-GATE PASS --zero-dumps, 0 movers on every
+  stream; G2 full 182,763,715 / 0, W1 defects 1-4 all red, 1,724
+  enforced-class cases; make test (scripts/perfrun, -j16 PROCS=16) rc 0,
+  670 s, no `*** [test-` lines; mech 36 / 38 clean.
+- **S513 and S525 were UNDETECTED**: equivalent mutants after a3d65a59
+  removed pcrec's last memchr. Triage (read-only lanes s513tri / s525tri):
+  `slot11/S513_triage.md`, `S525_triage.md`. S513: every memchr call is
+  now noted by the kit row itself, so pcrec's recogniser entry is
+  redundant. S525: no C12 ceiling row counts memchr any more. Both
+  re-pinned `SAB_EXPECT=UNDETECTED` (TRIPWIRES; S524 still catches a new
+  pcrec memchr), and re-run solo: see the delivery commit.
+  Solo re-runs after the re-pin (slot11/post.log): S513 and S525 each
+  `unexpected: 0, undetected: 1` (EXPECTED), rc 0; `m6read_check_sab_anchors`
+  green.
+
+| charter item (landing) | state |
+|---|---|
+| G2 FLOOR_ROWS 13 -> 14, reads-below range, AT_N family, LOOP_EXIT | DONE (lane g2m4, blinded) |
+| pf_memchr_back g2_floor / pcrec_floor | DONE (4109 / 3271) |
+| census, identity gate, G2 full, make test, 38 mech rows | DONE (slot11; S513/S525 re-pinned) |
+| responses.md done:, journal line | DONE (kit); pcrec dev_journal + plan.md [MEMFN] M4 state are MAIN's |

@@ -448,6 +448,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   because the one-site plant fails `make all`, which this matrix scores
   ANOMALY), S527 (an `on_cand` token with C13 unbuilt). S524/S525 demand
   `checks failed: 0` on the clean tree too, like S526/S527 (lane r4c2fix).
+  Since M4 ([MEMFN] R-7, 2026-10-08) S525 is an expected-UNDETECTED
+  tripwire: no C12 ceiling row counts memchr once pcrec's last one moved
+  into the kit.
 - `memfnreach` → `tests/memfn/run_handoff_reach.sh` (same lane): the VM
   hybrid handoff route's reach floor. Compiles with the sabotaged tree's own
   `build/pcrec`. Row S529 (the VM engine declined by `req_handoff_applies`;
@@ -483,6 +486,8 @@ is EXPECTED to time out"*, and neither would a separate arm.
   green on it by construction. Rows S513 (a name dropped), S514 (a name
   added), S515 (the idiom-`memcpy` exclusion broken), S516 (the VM family's
   mark dropped), S517 (`memcmp` dropped).
+  Since M4 ([MEMFN] R-7, 2026-10-08) S513 is an expected-UNDETECTED
+  tripwire: every memchr call is now noted by the kit row that emits it.
 - (no new arm) [OPT-VEDGE] row S440 (lane vedge, 2026-10-03) is on
   `harness`, scoped to `tests/assertions`: the reverse machine handed
   `end_is_exit = true` loses matches on view_edge.rxt's direction witness.
