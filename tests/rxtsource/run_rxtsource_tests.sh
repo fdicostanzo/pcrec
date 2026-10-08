@@ -417,8 +417,8 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # libpcre2 agreed on every cell, so both blocks are python-verifiable):
 # 263/4510/38748 -> 263/4512/38756.
 CENSUS_FILES=275  # K94 (lane k94fix, landed by k94tri): +1 file (tests/backrefs/caseless_ucp.rxt, libpcre2 10.46-verified, every block no-python-arm), +10 blocks, +175 case lines. D27 composition corpus (lane rxspin): +1 file (tests/possessify/composition_d27.rxt, libpcre2 10.46 NO_AUTO_POSSESS-verified, every block `# pcre2-only`), +676 blocks, +9,002 expectation lines (7,412 m/n/ms/ns + 1,590 g/gp). K93 (lane k93fix): +1 file (tests/recursion/k93.rxt, libpcre2 10.46-verified, no python arm), +23 blocks, +133 case lines (3 `under` lines are not case lines). [MEMFN] R4c (lane r4cchecks, re-pinned by r4cfix): +0 files, +6 blocks, +278 case lines (tests/litscan/handoff.rxt's three VM-hybrid-handoff witness patterns x {default, engine vm}, all python-verified). [START-SET] stage 3 panel fixes (lane ssfix3): +1 file (tests/startset/dfahat_f1.rxt, the BLOCKER witnesses), +12 blocks, +322 case lines (298 python-verified + 24 pcre2-only, the `flags u` block). [START-SET] stage 3 (lane ssbuild3): +4 files (tests/startset/{dfahat,reseed,hybrid,dfahat_paths}.rxt), +62 blocks, +1769 case lines (1755 libpcre2-generated pcre2-only + 14 python-verified). [START-SET] stage 2 (lane ssbuild2): +4 files (tests/startset/{vmhat,giveup,vmhat_walk}.rxt, tests/vars/startset.rxt), +20 blocks, +480 case lines (415+42+18+5)
-CENSUS_BLOCKS=5321
-CENSUS_LINES=50915
+CENSUS_BLOCKS=5392  # [ART-POSS-ARMS] (lane possbuild, re-pinned by posstri): +0 files, +71 blocks, +590 lines — tests/possessify/possessify.rxt +69 blocks/+568 lines (the arms' witness pairs, every block `# pcre2-only`, libpcre2 10.46 verified with and without NO_AUTO_POSSESS) and tests/recursion/k93.rxt +2 blocks/+22 lines (A-F1 cells, `# pcre2-only`); counted per file with this check's awk at 8cada7b9 vs 070f29e4 (76/2514 -> 145/3082 and 23/133 -> 25/155).
+CENSUS_LINES=51505  # [ART-POSS-ARMS] (lane possbuild, re-pinned by posstri): +0 files, +71 blocks, +590 lines — tests/possessify/possessify.rxt +69 blocks/+568 lines (the arms' witness pairs, every block `# pcre2-only`, libpcre2 10.46 verified with and without NO_AUTO_POSSESS) and tests/recursion/k93.rxt +2 blocks/+22 lines (A-F1 cells, `# pcre2-only`); counted per file with this check's awk at 8cada7b9 vs 070f29e4 (76/2514 -> 145/3082 and 23/133 -> 25/155).
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -544,8 +544,8 @@ CENSUS_LINES=50915
 # 2026-10-07 (lane k94tri, K94) — +1/+10/+175, the SAME delta as CENSUS_* above
 # (tests/backrefs/caseless_ucp.rxt; a plain run.sh directory file).
 RUNSH_FILES=251
-RUNSH_BLOCKS=5321
-RUNSH_LINES=50915
+RUNSH_BLOCKS=5392  # +71 at [ART-POSS-ARMS] (posstri): the SAME delta as CENSUS_* (neither file is under tests/known_fail/).
+RUNSH_LINES=51505  # +590 at [ART-POSS-ARMS] (posstri): the SAME delta as CENSUS_*.
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1722,8 +1722,8 @@ C3_PASS=17235   # +278 at r4cchecks/r4cfix: tests/litscan/handoff.rxt's witness 
 # lines (version-invariant, measured on python 3.9); the 3.14 total is DERIVED.
 # +2 at lane k82fix: reqcube.rxt's two S2c `gu` lines (version-invariant,
 # measured on python 3.9); the 3.14 total is DERIVED.
-C3_SKIP=33594   # +175 at k94tri (tests/backrefs/caseless_ucp.rxt: libpcre2-only answers, python has no UCP-on-bytes); +9002 at rxspin (tests/possessify/composition_d27.rxt: every block `# pcre2-only`); +136 at k93tri (tests/recursion/k93.rxt: 133 no-python-expression + 3 under-convention); +24 at ssfix3: dfahat_f1.rxt's `flags u` block (python has no UCP); +1755 at ssbuild3: dfahat.rxt+reseed.rxt+hybrid.rxt pcre2-only; +462 at ssbuild2: vmhat.rxt+giveup.rxt's 457 pcre2-only, tests/vars/startset.rxt's 5 own-oracle
-C3_SKIP_PCRE2ONLY=16518   # +175 at k94tri (tests/backrefs/caseless_ucp.rxt, libpcre2 10.46's answers; python 3.9 measured, version-invariant); +9002 at rxspin (tests/possessify/composition_d27.rxt, libpcre2 10.46's answers, measured on python 3.9: version-invariant); +24 at ssfix3 (dfahat_f1.rxt's `flags u` block); +1755 at ssbuild3 (tests/startset/{dfahat,reseed,hybrid}.rxt, libpcre2's answers); +457 at ssbuild2 (tests/startset/vmhat.rxt 415 + giveup.rxt 42, libpcre2's answers)
+C3_SKIP=34184  # +590 at [ART-POSS-ARMS] (posstri): possessify.rxt +568 and k93.rxt +22, every block `# pcre2-only`. +175 at k94tri (tests/backrefs/caseless_ucp.rxt: libpcre2-only answers, python has no UCP-on-bytes); +9002 at rxspin (tests/possessify/composition_d27.rxt: every block `# pcre2-only`); +136 at k93tri (tests/recursion/k93.rxt: 133 no-python-expression + 3 under-convention); +24 at ssfix3: dfahat_f1.rxt's `flags u` block (python has no UCP); +1755 at ssbuild3: dfahat.rxt+reseed.rxt+hybrid.rxt pcre2-only; +462 at ssbuild2: vmhat.rxt+giveup.rxt's 457 pcre2-only, tests/vars/startset.rxt's 5 own-oracle
+C3_SKIP_PCRE2ONLY=17108  # +590 at [ART-POSS-ARMS] (posstri), the same cells (python-version-invariant). +175 at k94tri (tests/backrefs/caseless_ucp.rxt, libpcre2 10.46's answers; python 3.9 measured, version-invariant); +9002 at rxspin (tests/possessify/composition_d27.rxt, libpcre2 10.46's answers, measured on python 3.9: version-invariant); +24 at ssfix3 (dfahat_f1.rxt's `flags u` block); +1755 at ssbuild3 (tests/startset/{dfahat,reseed,hybrid}.rxt, libpcre2's answers); +457 at ssbuild2 (tests/startset/vmhat.rxt 415 + giveup.rxt 42, libpcre2's answers)
 C3_SKIP_GIVEUP=35
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=2116   # +133 at k93tri: tests/recursion/k93.rxt, libpcre2 10.46-verified, no python arm (every cell is a subroutine call)
