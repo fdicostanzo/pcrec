@@ -130,3 +130,13 @@ generic	adv-vmspan-it	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495
 generic	adv-vmspan-it	use	180	1d4384809b36b73a2fbbdd9354e5229010c673881f9738fccdba2aa4f521d858
 generic	adv-vmspan	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	adv-vmspan	use	147	5b42d35420f0b32ef300ede24b653020b450782583e17fdfe7ed89fdcdeb8baa
+# M4 prep (R-7, MF_SITE_ABI 6): the reads-below FIND. pf-memchr-back is MLINE's
+# site through its own row pf_memchr_back (form id pf_memchr): the memchr, `if
+# (!q) break;` (LOOP_EXIT, Q-R7-3), the store + 1; empty AT_N (Q-R7-2), floor
+# lo's text. find-back-reaches-n is a G2-style reads-below FIND the row does not
+# take (empty MISS), rendered by generic with its read-bounded loop (Q-R7-1:
+# `<= n`). run_arm_pins.sh check 9 runs both.
+pf_memchr	pf-memchr-back	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_memchr	pf-memchr-back	use	178	20480da00d31b3e3bb0d69d4b95c296dc42ce5f6ed5cb5207a7b6e1f3e8cd05e
+generic	find-back-reaches-n	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	find-back-reaches-n	use	387	b5b36a42fddb9ab59e4f8e8fb27902debdbdbb94827a05910e6986c2e64746c3

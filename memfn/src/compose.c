@@ -124,7 +124,8 @@ void kit_out(mf_sink *o, const char *fmt, ...)
  * they render are the ones pcrec wrote before them, and the identity gates
  * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
  * handoff: precheck.c), each with its own contract; the prefilter find is
- * two renderers as four rows (split by end_back: pffind.c). */
+ * two renderers as five rows (split by end_back and the term's offset:
+ * pffind.c; M4 added pf_memchr_back, R-7). */
 static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
@@ -134,6 +135,7 @@ static const arm *const arms[] = {
     &pf_memchr_bounded_arm,
     &pf_walk_arm,
     &pf_walk_bounded_arm,
+    &pf_memchr_back_arm,
     &generic_arm,
 };
 
@@ -233,7 +235,7 @@ static const char *site_check(const mf_site *s)
     const char *why = NULL;
     uint32_t kinds = 0;
     if (!in_enum(s->form, MF_FORM_FUNC)) return "form outside mf_form";
-    if (!in_enum(s->empty, MF_EMPTY_EXCLUDED)) return "empty outside mf_empty";
+    if (!in_enum(s->empty, MF_EMPTY_AT_N)) return "empty outside mf_empty";
     if (!in_enum(s->use, MF_USE_DISCARD)) return "use outside mf_use_kind";
     if (!in_enum(s->consumer, MF_C_ENGINE)) return "consumer outside mf_consumer";
     if (s->end_back > 1) return "end_back is not 0 or 1";
@@ -271,8 +273,9 @@ static const char *site_check(const mf_site *s)
         return stmt ? "this handoff is a STMT form" : "this handoff is an EXPR or FUNC form";
     if (s->empty == MF_EMPTY_NOP && s->form != MF_FORM_STMT)
         return "an EXPR or FUNC site cannot write nothing on an empty range";
-    if (s->empty == MF_EMPTY_MISS && s->handoff == MF_H_ADVANCE)
-        return "ADVANCE has no miss to give an empty range";
+    if ((s->empty == MF_EMPTY_MISS || s->empty == MF_EMPTY_AT_N) &&
+        s->handoff == MF_H_ADVANCE)
+        return "ADVANCE has no miss to give an empty range (`empty`)";
     if (s->guard_by_caller) {
         if (!(s->op == MF_OP_VERIFY && s->form == MF_FORM_EXPR))
             return "guard_by_caller is for an EXPR VERIFY only";

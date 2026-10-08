@@ -5488,6 +5488,30 @@ never takes it (it passes no mask).
   The contract can say it. Q42 still says not to move it.
   **`[rev4.3]`** Q42 is REVERSED (addendum 5): it migrates, as M4, by
   completeness (§R4.3.4), and C12's `memchr(` count reaches 0.
+  **`[R-7]` M4 prep (kit-only, MF_SITE_ABI 6; memfn/docs/responses.md
+  "R-7 (M4, MLINE): edit set and overlap", rulings Q-R7-1/2/3).** The
+  sketch above is CORRECTED: `X` (`search_from` or `0`) is a start
+  decision and stays in pcrec's guard; the kit's `floor` is `start`, the
+  same text as `lo`. Three contract gaps closed kit-side:
+  - **Q-R7-1, the read-bounded range.** A FIND whose every term reads below
+    its candidate is bounded by its reads, not by the candidate's own byte:
+    c in [lo, n] with every read below n − end_back (memfn.h, MF_OP_FIND),
+    so `(?m)^$` on "a\n" finds 2. No `result_bias` field: the term's offset
+    already says it. ([ENG-TACTICS]' "resume at hit + 1" is the same range;
+    nothing is designed for it.) The generic row's FIND loop moves only for
+    such sites.
+  - **Q-R7-2, `MF_EMPTY_AT_N`.** A proven fact: lo <= n and the subject
+    non-NULL, so the scanned bytes are empty only as lo == n over a valid
+    pointer; a zero-length `memchr` is then defined and misses, so the
+    memchr row writes no empty test. EXCLUDED does not suffice on a
+    read-bounded range (it proves lo <= n only; at n == 0 the subject may be
+    NULL, K27).
+  - **Q-R7-3, LOOP_EXIT.** `on_miss` `break;` is its own class; a row may
+    paste it only where its text opens no loop around it, so the generic
+    row never serves it and a site no other row serves is refused.
+  The row is `pf_memchr_back` (memfn/src/pffind.c): one byte at -1, floor
+  = lo, AT_N, the store `+ 1`. Its fixtures and gate cases:
+  tests/memfn/arm_fixtures.c, run_arm_pins.sh checks 6 and 9.
 
 ---
 

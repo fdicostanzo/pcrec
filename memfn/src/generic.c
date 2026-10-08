@@ -208,19 +208,52 @@ static int pred_test(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
     return reads;
 }
 
+/* RULED Q-R7-1 (MF_SITE_ABI 6): a READS-BELOW FIND (memfn.h's MF_OP_FIND),
+ * one whose every term reads below its candidate, is bounded by its reads:
+ * c <= n and c + d <= n, d = max(0, end_back + E), E the largest
+ * `offset + len`. Returns d for such a site, -1 for every other one (its
+ * range stays [lo, n - end_back)). Only the site's own FIND predicate is
+ * read: ALL_PRESENT's predicates and SKIP keep their range. */
+static int reads_below_d(const mf_site *s)
+{
+    if (s->op != MF_OP_FIND || s->pred.nterm == 0) return -1;
+    long e = 0;
+    for (unsigned t = 0; t < s->pred.nterm; t++) {
+        const mf_term *tm = &s->pred.term[t];
+        long end = tm->offset + (tm->kind == MF_T_SET ? 1 : (long)tm->run_len);
+        if (end > 0) return -1;
+        if (t == 0 || end > e) e = end;
+    }
+    long d = (long)s->end_back + e;
+    return d > 0 ? (int)d : 0;
+}
+
 /* The search loop for predicate `p`: declares `cand` and `found`, leaves
  * `found` 1 with `cand` at the first hit (last, if `rev`), else 0. A SKIP
- * negates the predicate: its hit is the first position NOT in the set. */
+ * negates the predicate: its hit is the first position NOT in the set. A
+ * reads-below FIND's loop runs to `cand + d <= n` (reads_below_d). */
 static void find_loop(rctx *rc, kb *b, const mf_pred *p, unsigned pidx,
                       int rev, int negate, const char *cand, const char *found)
 {
     unsigned eb = rc->s->end_back;
+    int rd = p == &rc->s->pred ? reads_below_d(rc->s) : -1;
     kb test;
     kb_init(&test, rc->art->a);
     pred_test(rc, &test, p, pidx, cand);
     const char *t = test.p ? test.p : "(0)";
     rc->used |= PARAM_N | PARAM_LO;
-    if (!rev) {
+    if (rd >= 0 && !rev) {
+        kb_printf(b, "size_t %s = %s; int %s = 0; ", cand, rc->LO, found);
+        kb_printf(b, "for (; %s%s <= %s; %s++) if (%s%s) { %s = 1; break; } ",
+                  cand, rd ? " + 1" : "", rc->N, cand, negate ? "!" : "", t,
+                  found);
+    } else if (rd >= 0) {
+        kb_printf(b, "size_t %s = %s%s <= %s ? %s%s : %s; int %s = 0; ",
+                  cand, rc->LO, rd ? " + 1" : "", rc->N, rc->N,
+                  rd ? "" : " + 1", rc->LO, found);
+        kb_printf(b, "while (%s > %s) { %s--; if (%s%s) { %s = 1; break; } } ",
+                  cand, rc->LO, cand, negate ? "!" : "", t, found);
+    } else if (!rev) {
         kb_printf(b, "size_t %s = %s; int %s = 0; ", cand, rc->LO, found);
         kb_printf(b, "for (; %s%s < %s; %s++) if (%s%s) { %s = 1; break; } ",
                   cand, eb ? " + 1" : "", rc->N, cand, negate ? "!" : "", t,
@@ -253,7 +286,8 @@ static const char *core(rctx *rc, kb *b, int want_value)
         /* cand == lo must lie in [lo, n - end_back): the test also bounds
          * every read at a negative offset below n. A NOP site's statement
          * already tests it (stmt_value). */
-        if (s->empty == MF_EMPTY_MISS && !s->guard_by_caller) {
+        if ((s->empty == MF_EMPTY_MISS || s->empty == MF_EMPTY_AT_N) &&
+            !s->guard_by_caller) {
             kb_printf(&fin, "(%s%s < %s && ", rc->LO, s->end_back ? " + 1" : "", rc->N);
             rc->used |= PARAM_LO | PARAM_N;
             pred_test(rc, &fin, &s->pred, 0, rc->LO);
@@ -355,9 +389,13 @@ static int stmt_value(rctx *rc, kb *b)
     const mf_hooks *h = rc->h;
     const char *ind = h->indent ? h->indent : "";
     int nop = s->empty == MF_EMPTY_NOP;
+    int rd = reads_below_d(s);
     kb nonempty;
     kb_init(&nonempty, rc->art->a);
-    kb_printf(&nonempty, "(%s)%s < (%s)", h->lo, s->end_back ? " + 1" : "", h->n);
+    if (rd >= 0)    /* Q-R7-1: a reads-below FIND is empty iff lo + d > n */
+        kb_printf(&nonempty, "(%s)%s <= (%s)", h->lo, rd ? " + 1" : "", h->n);
+    else
+        kb_printf(&nonempty, "(%s)%s < (%s)", h->lo, s->end_back ? " + 1" : "", h->n);
 
     if (s->handoff == MF_H_ON_MISS) {
         if (need(rc->art, "ON_MISS", "on_miss", h->on_miss, (char *)NULL)) return -1;
@@ -684,82 +722,87 @@ static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 /* ---- the contract ([MEMFN-ROWCON] N1, row_contracts.md §2) ---------------
  *
  * The generic row SERVES every class of every field (§2): it parenthesizes
- * every hook it pastes into an expression (:293, :304-308, :360, :456,
- * :612), braces every statement (:348), and reads every site field through
+ * every hook it pastes into an expression (:327, :338-342, :398, :494,
+ * :650), braces every statement (:382), and reads every site field through
  * the vocabulary's own cases; a value it cannot serve is a contract refusal.
  * `uses`: the fields the text reads with no reading of its own left
  * unstated. A FUNC call's operands are read only where its definition took
- * them (:608-610), so they are held there rather than declared, `miss` on a
- * RETURN excepted (:574 always takes it). A field with a contract reading
- * when unstated is no use: `floor` ("0", :79), `result_decl` (:384),
- * `on_miss` on an ASSIGN (:386), `count` (:530: no counter, or the kit's
- * own) while count_by_caller is 0, `member` (:131). Nor is `indent` (:356),
- * which only lays text out. At count_by_caller 1 `count` IS a use (:526,
- * :531): the conditional entry below. */
+ * them (:646-648), so they are held there rather than declared, `miss` on a
+ * RETURN excepted (:612 always takes it). A field with a contract reading
+ * when unstated is no use: `floor` ("0", :79), `result_decl` (:422),
+ * `on_miss` on an ASSIGN (:424), `count` (:568: no counter, or the kit's
+ * own) while count_by_caller is 0, `member` (:131). Nor is `indent` (:390),
+ * which only lays text out. At count_by_caller 1 `count` IS a use (:564,
+ * :569): the conditional entry below. */
 static const gate_use generic_uses[] = {
-    /* :643 need_subject: every EXPR/STMT site but ADVANCE */
+    /* :681 need_subject: every EXPR/STMT site but ADVANCE */
     { CM(EXPR) | CM(STMT), CM(RETURN) | CM(BOOL) | CM(ASSIGN) | CM(ON_MISS) | CM(ON_CAND),
       MF_PH_USE, FM(s) | FM(n) | FM(lo), GATE_ALWAYS },
-    /* :646 a valued EXPR's miss */
+    /* :684 a valued EXPR's miss */
     { CM(EXPR), CM(RETURN), MF_PH_USE, FM(miss), GATE_ALWAYS },
-    /* :363 */
+    /* :401 */
     { CM(STMT), CM(ON_MISS), MF_PH_USE, FM(on_miss), GATE_ALWAYS },
-    /* :372 */
+    /* :410 */
     { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss), GATE_ALWAYS },
-    /* :444-446 */
+    /* :482-484 */
     { CM(STMT), CM(ON_CAND), MF_PH_USE, FM(on_cand) | FM(result) | FM(miss), GATE_ALWAYS },
-    /* :525-526 */
+    /* :563-564 */
     { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(step) | FM(more) | FM(peek), GATE_ALWAYS },
-    /* :526, :531: the caller-owned counter is advanced and capped, never
+    /* :564, :569: the caller-owned counter is advanced and capped, never
        declared, so its name is required (Q-R4h-1 (a)) */
     { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(count), GATE_WHEN(CM(YES), count_by_caller) },
-    /* :566-568: the function's name is fn_name(site.pred.fn_ref), for every
+    /* :604-606: the function's name is fn_name(site.pred.fn_ref), for every
        op (K-1); a FUNC site stating fn_ref 0 states no name, so the row
        declines it (R1) and, being the last, the kit refuses it (N3) */
     { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) | FM(fn_ref), GATE_ALWAYS },
-    /* :574, :609-610 */
+    /* :612, :647-648 */
     { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss), GATE_ALWAYS },
 };
 
 static const gate_contract generic_ct = {
     "arms", "generic", generic_uses, sizeof generic_uses / sizeof generic_uses[0], {
-    [FLD_form]            = MF_ANY,     /* :635-656 every form */
-    [FLD_op]              = MF_ANY,     /* :245-281 every op */
-    [FLD_handoff]         = MF_ANY,     /* :639-652 every handoff */
-    [FLD_reverse]         = MF_ANY,     /* :228-234, :496-501 */
-    [FLD_empty]           = MF_ANY,     /* :256, :357, :448 */
-    [FLD_end_back]        = MF_ANY,     /* :217-233, :257, :360, :454 */
+    [FLD_form]            = MF_ANY,     /* :673-694 every form */
+    [FLD_op]              = MF_ANY,     /* :278-315 every op */
+    [FLD_handoff]         = MF_ANY,     /* :677-690 every handoff */
+    [FLD_reverse]         = MF_ANY,     /* :261-267, :534-539 */
+    [FLD_empty]           = MF_ANY,     /* :289, :391, :486 */
+    [FLD_end_back]        = MF_ANY,     /* :238-266, :291, :398, :492 */
     [FLD_pred]            = MF_ANY,     /* :143-209 every term, negative offsets :154-161 */
-    [FLD_preds]           = MF_ANY,     /* :269-277 */
-    [FLD_ret_pred]        = MF_ANY,     /* :270, :275 */
-    [FLD_guard_by_caller] = MF_ANY,     /* :152, :256 */
-    [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :269-277 */
-    [FLD_count_by_caller] = MF_ANY,     /* :531, :533 */
-    [FLD_span_hi]         = MF_ANY,     /* :529, :543 */
+    [FLD_preds]           = MF_ANY,     /* :303-311 */
+    [FLD_ret_pred]        = MF_ANY,     /* :304, :309 */
+    [FLD_guard_by_caller] = MF_ANY,     /* :152, :289 */
+    [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :303-311 */
+    [FLD_count_by_caller] = MF_ANY,     /* :569, :571 */
+    [FLD_span_hi]         = MF_ANY,     /* :567, :581 */
     [FLD_denies]          = MF_ANY,     /* not read: its compares are its own, :189-204 */
-    [FLD_fn_ref]          = MF_ANY,     /* :568 any stated id; 0 is unstated (fields.def) */
+    [FLD_fn_ref]          = MF_ANY,     /* :606 any stated id; 0 is unstated (fields.def) */
     [FLD_table_ref]       = MF_ANY,     /* not read: a set is member or its own test, :131-136 */
-    [FLD_s]               = MF_ANY,     /* :304-305, :487-488 parenthesized */
-    [FLD_n]               = MF_ANY,     /* :306, :360, :456, :489-490 */
-    [FLD_lo]              = MF_ANY,     /* :307, :360, :456, :489-490 */
-    [FLD_floor]           = MF_ANY,     /* :79, :156-166, :308 */
-    [FLD_result]          = MF_ANY,     /* :384, :480, :485 */
-    [FLD_result_decl]     = MF_ANY,     /* :384, :485 */
-    [FLD_miss]            = MF_ANY,     /* :293, :389, :486, :511 parenthesized */
-    [FLD_on_miss]         = MF_ANY,     /* :348 braced */
-    [FLD_step]            = MF_ANY,     /* :545-547 its own line; every class */
-    [FLD_more]            = MF_ANY,     /* :542 parenthesized; every class */
-    [FLD_peek]            = MF_ANY,     /* :539 parenthesized and cast; every class */
-    [FLD_count]           = MF_ANY,     /* :530-532, :548 */
-    [FLD_count_start]     = MF_ANY,     /* :532 */
-    [FLD_on_cand]         = MF_ANY,     /* :475 its text captured and its tokens replaced */
-    [FLD_on_cand_reach]   = MF_ANY,     /* :466-467 */
+    [FLD_s]               = MF_ANY,     /* :338-339, :525-526 parenthesized */
+    [FLD_n]               = MF_ANY,     /* :340, :398, :494, :527-528 */
+    [FLD_lo]              = MF_ANY,     /* :341, :398, :494, :527-528 */
+    [FLD_floor]           = MF_ANY,     /* :79, :156-166, :342 */
+    [FLD_result]          = MF_ANY,     /* :422, :518, :523 */
+    [FLD_result_decl]     = MF_ANY,     /* :422, :523 */
+    [FLD_miss]            = MF_ANY,     /* :327, :427, :524, :549 parenthesized */
+    [FLD_on_miss]         = MF_ANY & ~CM(LOOP_EXIT),
+                                        /* :382 braced. Not LOOP_EXIT (RULED Q-R7-3):
+                                           this row's loops are its own text, never
+                                           a promise that none encloses on_miss, so a
+                                           `break;` site no other row serves is
+                                           refused, naming `on_miss` */
+    [FLD_step]            = MF_ANY,     /* :583-585 its own line; every class */
+    [FLD_more]            = MF_ANY,     /* :580 parenthesized; every class */
+    [FLD_peek]            = MF_ANY,     /* :577 parenthesized and cast; every class */
+    [FLD_count]           = MF_ANY,     /* :568-570, :586 */
+    [FLD_count_start]     = MF_ANY,     /* :570 */
+    [FLD_on_cand]         = MF_ANY,     /* :513 its text captured and its tokens replaced */
+    [FLD_on_cand_reach]   = MF_ANY,     /* :504-505 */
     [FLD_member]          = MF_ANY,     /* :131-133 parenthesized */
     [FLD_table_name]      = MF_ANY,     /* not read (file header) */
-    [FLD_fn_name]         = MF_ANY,     /* :568 */
+    [FLD_fn_name]         = MF_ANY,     /* :606 */
     [FLD_note]            = MF_ANY,     /* not read (file header) */
     [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
-    [FLD_indent]          = MF_ANY,     /* :356, :451, :528 */
+    [FLD_indent]          = MF_ANY,     /* :390, :489, :566 */
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
 }};
 

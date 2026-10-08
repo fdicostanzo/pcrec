@@ -40,6 +40,13 @@
 #   7. THE COUNTER'S OWNER (R4h prep, MF_SITE_ABI 5): adv-kit-count's text
 #      declares its counter, adv-caller-count's never does, and both advance
 #      and cap it.
+#   9. THE READS-BELOW FIND (M4 prep, R-7, MF_SITE_ABI 6): pf-memchr-back
+#      (MLINE's row) and find-back-reaches-n (the generic row) are compiled
+#      into one program and run on fixed subjects against a byte loop that
+#      states the contract (first c in [lo, n] whose predecessor, at or above
+#      lo, is the byte): Q-R7-1's candidate n (`"a\n"` from 0 is 2) and
+#      Q-R7-2's lo == n (a miss, through a zero-length memchr). K35: the case
+#      count is a literal and every case must run.
 #   8. R4h'S FROZEN TARGET (lane advtarget, 2026-10-08): every file under
 #      tests/memfn/pins/r4h_target/ is a 3-line header, the kit's text for
 #      the same-named fixture byte for byte, then a `/* pcrec today:` block
@@ -58,7 +65,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=74
+ARMS_ROW_FLOOR=78
 ARMS_EXPECTED="ofsskip precheck runcmp pf_memchr pf_walk"
 
 pass=0; fail=0
@@ -172,7 +179,7 @@ if grep -q '^BAD' "$T/libc.res"; then
 else ok; fi
 
 # 6: the gate (N3). <case> <RENDER form-id | REFUSE field>
-GATE_CASE_FLOOR=39
+GATE_CASE_FLOOR=48
 GATE_EXPECT='ofs-call-floor REFUSE floor
 ofs-call-miss-other REFUSE miss
 ofs-call-miss-unstated REFUSE miss
@@ -211,7 +218,16 @@ adv-cls-shift RENDER generic
 adv-cls-tern RENDER generic
 adv-cls-call RENDER generic
 adv-cls-comma RENDER generic
-adv-cls-trail RENDER generic'
+adv-cls-trail RENDER generic
+back-at-n-break RENDER pf_memchr
+back-at-n-break-spaced RENDER pf_memchr
+back-at-n-return RENDER pf_memchr
+back-excluded-generic RENDER generic
+back-floor-not-lo-generic RENDER generic
+back-table-generic RENDER generic
+back-excluded-break-refused REFUSE on_miss
+pf-memchr-break-refused REFUSE on_miss
+adv-at-n-refused REFUSE empty'
 "$T/fx" --gate > "$T/gate" 2>"$T/gate.err" || bad "the driver's --gate mode failed (see $T/gate.err)"
 ncase=0
 while read -r name want arg; do
@@ -298,6 +314,68 @@ if [ -f "$R4H_DIR/adv-edge-counted-fwd.c" ]; then
     elif tgt_cmp "$T/planted.c" "$T/out/adv-edge-counted-fwd.use"; then
         bad "the r4h_target comparator accepted a planted byte"
     else ok; fi
+fi
+
+# 9: the reads-below FIND (M4 prep, R-7). The two fixtures' bodies inside
+# two functions, each run on BACK_CASES subjects against `ref`, a plain loop
+# written from memfn.h's MF_OP_FIND (Q-R7-1): the first c in [lo, n] with
+# c - 1 >= lo and s[c - 1] == '\n'. The MLINE row's text ends in `break;`
+# (LOOP_EXIT), so its body sits in pcrec's loop shape: a `for (;;)` that the
+# break leaves. Every subject is non-NULL, which AT_N promises.
+BACK_CASES=10
+cat > "$T/back.c" <<'EOF4'
+#include <stdio.h>
+#include <string.h>
+#define MISS ((size_t)-1)
+static size_t ref(const unsigned char *s, size_t n, size_t lo)
+{
+    for (size_t c = lo + 1; c <= n; c++) if (s[c - 1] == '\n') return c;
+    return MISS;
+}
+static size_t row(const unsigned char *subject, size_t subject_length, size_t start)
+{
+    for (;;) {
+#include "out/pf-memchr-back.use"
+        return start;
+    }
+    return MISS;
+}
+static size_t gen(const unsigned char *subject, size_t subject_length, size_t start)
+{
+    size_t hit;
+#include "out/find-back-reaches-n.use"
+    return hit;
+}
+int main(void)
+{
+    static const struct { const char *s; size_t lo, want; } k[] = {
+        { "a\n", 0, 2 }, { "a\n", 1, 2 }, { "a\n", 2, MISS }, { "ab", 0, MISS },
+        { "\n", 0, 1 }, { "a\nb\n", 2, 4 }, { "\n\n", 0, 1 }, { "\n\n", 1, 2 },
+        { "", 0, MISS }, { "xyz\n", 3, 4 },
+    };
+    int bad = 0, ran = 0;
+    for (size_t i = 0; i < sizeof k / sizeof k[0]; i++) {
+        const unsigned char *s = (const unsigned char *)k[i].s;
+        size_t n = strlen(k[i].s), r = ref(s, n, k[i].lo);
+        size_t a = row(s, n, k[i].lo), b = gen(s, n, k[i].lo);
+        ran++;
+        if (r != k[i].want || a != r || b != r) {
+            printf("BAD case %zu: want %zd ref %zd row %zd generic %zd\n", i,
+                   (ssize_t)k[i].want, (ssize_t)r, (ssize_t)a, (ssize_t)b);
+            bad++;
+        }
+    }
+    printf("RAN %d\n", ran);
+    return bad != 0;
+}
+EOF4
+if "$CC" -std=gnu11 -Wall -Wextra -Werror -I"$T" "$T/back.c" -o "$T/back" 2>"$T/back.err"; then
+    "$T/back" > "$T/back.out"; brc=$?
+    grep '^BAD' "$T/back.out" | sed 's/^BAD/FAIL: reads-below FIND:/'
+    if [ "$brc" -eq 0 ] && grep -qx "RAN $BACK_CASES" "$T/back.out"; then ok
+    else bad "the reads-below FIND answered wrong or ran short ($(tail -1 "$T/back.out"))"; fi
+else
+    cat "$T/back.err"; bad "the reads-below FIND program does not build"
 fi
 
 echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt"

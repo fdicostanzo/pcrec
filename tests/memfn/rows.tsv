@@ -52,6 +52,7 @@ arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - sc
 arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip	(?!x)abc	subject_length - 1 - scan_position)	-	=
 arms	pf_walk	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	while (scan_position < subject_length && !	-fno-offset-skip	abc[0-9]+xyz
 arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	-	=
+arms	pf_memchr_back	pending-site:M4	fixture	-	pf-memchr-back	 - subject) + 1;	-	pf-memchr
 arms	generic	pcrec	pattern	-	a[^x]*	subject_length) && (	-	abc
 runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
 runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=

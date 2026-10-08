@@ -377,22 +377,16 @@ static mf_site pf_site(int bounded, int table)
     return s;
 }
 
-static int render_pf(const char *dir, const char *name, const mf_site *s,
-                     const char *result, const char *decl)
+/* One site through mf_emit with the caller's ONE hook set `h`; its `.def` and
+ * `.use` parts written under `dir`, its form id and libc record printed. */
+static int render_emit(const char *dir, const char *name, const mf_site *s,
+                       const mf_hooks *hp)
 {
-    if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
-    Fx fx = { s, NULL, "    " };
-    int table = s->pred.term[0].table_ref != 0;
-    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "scan_position",
-                   .result = result, .result_decl = decl,
-                   .miss = s->end_back ? "subject_length - 1" : MF_MISS_N,
-                   .on_miss = !table && !s->end_back ? "return 0;" : NULL,
-                   .table_name = table ? h_table_name : NULL,
-                   .indent = "    ", .u = &fx };
+    mf_hooks h = *hp;
     mf_result res = { 0 };
     if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
@@ -419,6 +413,49 @@ static int render_pf(const char *dir, const char *name, const mf_site *s,
     free(def.p);
     free(use.p);
     return 0;
+}
+
+static int render_pf(const char *dir, const char *name, const mf_site *s,
+                     const char *result, const char *decl)
+{
+    if (skip_fixture(name)) return 0;
+    Fx fx = { s, NULL, "    " };
+    int table = s->pred.term[0].table_ref != 0;
+    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "scan_position",
+                   .result = result, .result_decl = decl,
+                   .miss = s->end_back ? "subject_length - 1" : MF_MISS_N,
+                   .on_miss = !table && !s->end_back ? "return 0;" : NULL,
+                   .table_name = table ? h_table_name : NULL,
+                   .indent = "    ", .u = &fx };
+    return render_emit(dir, name, s, &h);
+}
+
+/* ---- the reads-below FIND (M4 prep, R-7: Q-R7-1/2/3) ----------------------
+ *
+ * `(?m)^`'s skip as pcrec's emit_attempt describes it at M4 (integration.md
+ * §15.7): FIND / STMT / ASSIGN over ONE SET term one byte BELOW the
+ * candidate (`\n` at -1), its range bounded by its reads (Q-R7-1: the
+ * candidate reaches n), its floor lo's text, its empty range AT_N (Q-R7-2:
+ * lo == n over a non-NULL subject) and its on_miss `break;` (Q-R7-3,
+ * LOOP_EXIT). `empty`, `floor` and `on_miss` vary per fixture/case. */
+static mf_site back_site(mf_empty empty, int byte)
+{
+    mf_site s = pf_site(0, 0);
+    s.empty = empty;
+    t_byte(&s.pred.term[0], -1, byte);
+    s.pred.term[0].need = MF_REQUIRED;
+    return s;
+}
+
+/* The MLINE hooks: the attempt loop's `start`, both lo and result, `floor`
+ * and `on_miss` per caller, no miss stated (on_miss leaves; under Q-R7-1 the
+ * range's end `n` is a HIT, so MF_MISS_N would be a false statement). */
+static mf_hooks back_hooks(Fx *fx, const char *floor, const char *on_miss)
+{
+    mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "start",
+                   .floor = floor, .result = "start", .on_miss = on_miss,
+                   .indent = "            ", .u = fx };
+    return h;
 }
 
 /* ---- ADVANCE (R4h prep) ---------------------------------------------------- */
@@ -710,6 +747,52 @@ static void gate_cases(void)
         mf_hooks ch = adv_hooks(cls[i].h, &uf);
         gate_case(cls[i].name, &au, &ch, &ch);
     }
+
+    /* M4 prep (R-7, MF_SITE_ABI 6): the reads-below FIND's three classes.
+       POSITIVE: MLINE's own site (AT_N, floor == lo, `break;`) takes
+       pf_memchr_back, also with `break ;` spelled loosely and with a JUMP.
+       DECLINE: the row serves AT_N only (EXCLUDED would not prove s
+       non-NULL on a read-bounded range), its floor must be lo's text, and a
+       table set is not its, so each of those goes to the generic row.
+       REFUSE: a `break;` (LOOP_EXIT, Q-R7-3) only a no-loop row may paste,
+       so a site the back row declines, or an offset-0 memchr site, is
+       refused naming `on_miss`; AT_N on ADVANCE has no miss to give
+       (Q-R7-2: as MISS). */
+    mf_site bk = back_site(MF_EMPTY_AT_N, '\n');
+    Fx bf = { &bk, NULL, "            " };
+    mf_hooks bh = back_hooks(&bf, "start", "break;");
+    gate_case("back-at-n-break", &bk, &bh, &bh);
+    bh = back_hooks(&bf, "start", "  break ;  ");
+    gate_case("back-at-n-break-spaced", &bk, &bh, &bh);
+    bh = back_hooks(&bf, "start", "return 0;");
+    gate_case("back-at-n-return", &bk, &bh, &bh);
+    mf_site bx = back_site(MF_EMPTY_EXCLUDED, '\n');
+    bh = back_hooks(&bf, "start", "return 0;");
+    bh.miss = "((size_t)-1)";
+    gate_case("back-excluded-generic", &bx, &bh, &bh);
+    bh = back_hooks(&bf, "0", "return 0;");
+    bh.miss = "((size_t)-1)";
+    gate_case("back-floor-not-lo-generic", &bk, &bh, &bh);
+    mf_site bt = back_site(MF_EMPTY_AT_N, '\n');
+    t_set(&bt.pred.term[0], -1, "\n\r", 1);
+    bt.pred.term[0].need = MF_REQUIRED;
+    bh = back_hooks(&bf, "start", "return 0;");
+    bh.miss = "((size_t)-1)";
+    bh.table_name = h_table_name;
+    gate_case("back-table-generic", &bt, &bh, &bh);
+    bh = back_hooks(&bf, "start", "break;");
+    bh.miss = "((size_t)-1)";
+    gate_case("back-excluded-break-refused", &bx, &bh, &bh);
+    mf_site p0 = pf_site(0, 0);
+    t_byte(&p0.pred.term[0], 0, 'x');
+    mf_hooks ph = { .s = "subject", .n = "subject_length", .lo = "scan_position",
+                    .result = "scan_position", .miss = MF_MISS_N, .on_miss = "break;",
+                    .indent = "    ", .u = &bf };
+    gate_case("pf-memchr-break-refused", &p0, &ph, &ph);
+    mf_site av = adv_site(0, MF_SPAN_UNBOUNDED);
+    av.empty = MF_EMPTY_AT_N;
+    mf_hooks vh = adv_hooks(cls[0].h, &uf);
+    gate_case("adv-at-n-refused", &av, &vh, &vh);
 }
 
 int main(int argc, char **argv)
@@ -884,6 +967,30 @@ int main(int argc, char **argv)
     s = pf_site(0, 0);
     t_byte(&s.pred.term[0], 0, 'x');
     bad |= render_pf(dir, "pf-emit-result-decl", &s, "scan_position", "size_t ");
+
+    /* M4 prep (R-7): the reads-below FIND, twice. `pf-memchr-back` is MLINE's
+     * site through its own row (pf_memchr_back: the memchr, `if (!q) break;`,
+     * the store + 1); `find-back-reaches-n` is a G2-style reads-below FIND the
+     * row does not take (empty MISS, a stated miss), so the GENERIC row renders
+     * it, its loop read-bounded (Q-R7-1). run_arm_pins.sh check 9 compiles and
+     * runs both: each must answer n on "a\n" from 0. */
+    if (!skip_fixture("pf-memchr-back")) {
+        s = back_site(MF_EMPTY_AT_N, '\n');
+        Fx fb = { &s, NULL, "            " };
+        mf_hooks hb = back_hooks(&fb, "start", "break;");
+        bad |= render_emit(dir, "pf-memchr-back", &s, &hb);
+    }
+    if (!skip_fixture("find-back-reaches-n")) {
+        s = back_site(MF_EMPTY_MISS, '\n');
+        s.on_miss_leaves = 0;
+        Fx fg = { &s, NULL, "    " };
+        mf_hooks hg = back_hooks(&fg, "start", NULL);
+        hg.lo = "start";
+        hg.result = "hit";
+        hg.miss = "((size_t)-1)";
+        hg.indent = "    ";
+        bad |= render_emit(dir, "find-back-reaches-n", &s, &hg);
+    }
 
     /* R4h prep (a): the scan edge's counted loop, its counter owned by the
        kit (declared as the kit's first statement) and by the caller (never

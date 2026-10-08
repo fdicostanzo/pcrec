@@ -39,7 +39,9 @@
  *
  * The text-shape classes [r4, S2-S7]: `s`/`n`/`lo` are IDENT iff the text
  * is a bare C identifier (a LEXICAL check, kit_is_ident); `on_miss` is JUMP
- * iff it is one `return`/`goto` statement, BRACED iff one `{ ... }` block.
+ * iff it is one `return`/`goto` statement, BRACED iff one `{ ... }` block,
+ * LOOP_EXIT iff exactly `break;` (Q-R7-3: pasted only where the form opens
+ * no loop of its own around it, so the generic row does not serve it).
  * The ADVANCE hooks' (G3, R4h prep): `more` is CONJ, `peek` POSTFIX, `step`
  * EXPR_STMT, each a lexical check in gate.c that proves the text may be
  * pasted raw where an in-loop row writes it (memfn.h's ADVANCE comment).
@@ -87,6 +89,7 @@ MF_CLASS(BOOL,        "MF_H_BOOL")
 MF_CLASS(E_MISS,      "MF_EMPTY_MISS")
 MF_CLASS(E_NOP,       "MF_EMPTY_NOP")
 MF_CLASS(E_EXCLUDED,  "MF_EMPTY_EXCLUDED")
+MF_CLASS(E_AT_N,      "MF_EMPTY_AT_N: empty only as lo == n over a non-NULL subject (Q-R7-2)")
 /* flags and small integers */
 MF_CLASS(NO,          "a 0/1 flag at 0")
 MF_CLASS(YES,         "a 0/1 flag at 1")
@@ -106,6 +109,7 @@ MF_CLASS(IDENT,       "a bare C identifier (lexical: [A-Za-z_][A-Za-z0-9_]*)")
 MF_CLASS(MISS_N,      "`miss` is the same hooks' `n`: the MF_MISS_N token, or the text of `n` itself")
 MF_CLASS(JUMP,        "one statement, `return ...;` or `goto label;`")
 MF_CLASS(BRACED,      "one `{ ... }` block")
+MF_CLASS(LOOP_EXIT,   "exactly `break;`: leaves pcrec's loop, so only a form opening no loop around it may paste it (Q-R7-3)")
 /* the ADVANCE hooks' shapes (G3, R4h prep; memfn.h's ADVANCE comment) */
 MF_CLASS(CONJ,        "an `&&` operand unparenthesized: no top-level `||`/`?:`/assignment/comma/call")
 MF_CLASS(POSTFIX,     "a postfix expression: an identifier or `( ... )`, then only `[...]`/`.x`/`->x`, no `++`/`--`")
@@ -131,8 +135,8 @@ MF_FIELD(reverse, MF_PH_DEFINE, OBLIG, cl_reverse,
          CM(NO) | CM(YES) | CM(OTHER),
          "OBLIG: 0 is the forward reading, set by every FIND/SKIP/ON_CAND builder")
 MF_FIELD(empty, MF_PH_DEFINE, VALUE, cl_empty,
-         CM(E_MISS) | CM(E_NOP) | CM(E_EXCLUDED) | CM(OTHER),
-         "an empty range's outcome")
+         CM(E_MISS) | CM(E_NOP) | CM(E_EXCLUDED) | CM(E_AT_N) | CM(OTHER),
+         "an empty range's outcome (E_AT_N: a proven fact, Q-R7-2, MF_SITE_ABI 6)")
 MF_FIELD(end_back, MF_PH_DEFINE, OBLIG, cl_end_back,
          CM(ZERO) | CM(ONE) | CM(OTHER),
          "OBLIG: 0 is hi = n, set by every builder (§14.4)")
@@ -197,8 +201,8 @@ MF_FIELD(miss, MF_PH_DEFINE | MF_PH_USE, HOOK, cl_miss,
          CM(MISS_N) | CM(OTHER),
          "the value written when no candidate exists")
 MF_FIELD(on_miss, MF_PH_USE, HOOK, cl_on_miss,
-         CM(JUMP) | CM(BRACED) | CM(OTHER),
-         "pcrec's statement on a miss")
+         CM(JUMP) | CM(BRACED) | CM(LOOP_EXIT) | CM(OTHER),
+         "pcrec's statement on a miss (LOOP_EXIT: Q-R7-3, MF_SITE_ABI 6)")
 MF_FIELD(step, MF_PH_USE, HOOK, cl_step,
          CM(EXPR_STMT) | CM(OTHER),
          "ADVANCE: pcrec's step statement (EXPR_STMT: the whole body of a `while`, raw)")

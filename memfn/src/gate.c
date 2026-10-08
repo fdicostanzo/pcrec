@@ -80,13 +80,19 @@ static int opaque(const char *p, size_t n)
 
 /* JUMP: `return ...;` or `goto label;`, one statement (its one `;` last, no
  * brace). BRACED: one `{ ... }` block (the opening brace's depth returns to
- * 0 only at the last byte). Anything else, or text a lexical check cannot
- * count, is OTHER. */
+ * 0 only at the last byte). LOOP_EXIT (Q-R7-3): exactly `break;`, white space
+ * inside allowed, nothing else (a `continue;` or a labelled jump is OTHER).
+ * Anything else, or text a lexical check cannot count, is OTHER. */
 static int stmt_shape(const char *text)
 {
     const char *p;
     size_t n = trim(text, &p);
     if (!n || opaque(p, n)) return CL_OTHER;
+    if (n >= 6 && !strncmp(p, "break", 5)) {
+        size_t i = 5;
+        while (i < n && is_space(p[i])) i++;
+        if (i + 1 == n && p[i] == ';') return CL_LOOP_EXIT;
+    }
     if (p[0] == '{' && p[n - 1] == '}') {
         int depth = 0;
         for (size_t i = 0; i < n; i++) {
@@ -330,6 +336,7 @@ static int cl_empty(const gate_in *in)
     case MF_EMPTY_MISS:     return CL_E_MISS;
     case MF_EMPTY_NOP:      return CL_E_NOP;
     case MF_EMPTY_EXCLUDED: return CL_E_EXCLUDED;
+    case MF_EMPTY_AT_N:     return CL_E_AT_N;
     }
     return CL_OTHER;
 }
