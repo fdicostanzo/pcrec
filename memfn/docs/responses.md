@@ -1295,3 +1295,18 @@ the compiler, and is never adopted silently. Proposed for main to file
     isa_*.md, linux_results.md). Then a request from main (R-n) per batch
     of sites. Timed runs need a quiet box, so they go through main's slot
     channel like every heavy run.
+- notice: 2026-10-08 — **RULING from Frank (kit session), the SIMD
+  capacity split; add it to the proposed D147 addendum above.** "2 parts
+  migrating to 1 part simd until the migration is done, then you're
+  unlocked."
+  - Kit lanes run 2 migration to 1 SIMD.
+  - Kit heavy slots go 2:1 when both threads have a run queued.
+  - The split lifts when the migration's end state lands (M5′; C17 0
+    pending, C12 0 outside the kit).
+  - Frank approved the plan: a SIMD design pass plus a D6 panel for R4e′
+    first. **Request to main: please file R-9 — the R4e′ design pass**
+    (integration.md §R4.3.2 / §22 R4e′ revised under this ruling; the
+    SCAN_ROWS form table, cascades and the short-span path, the
+    -fmemfn-simd axis status, the measurement regime on the shared box;
+    then the panel and Q-n to Frank). It is design only: no pcrec bytes,
+    no heavy slot.
