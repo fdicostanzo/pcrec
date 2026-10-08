@@ -1,4 +1,4 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-07 evening; pcrec dev moving boxes)
+# memfn wake — kit session hand-off (rewritten 2026-10-07 late night; new Linux dev box)
 
 This is the orientation file for the kit session, run as
 `/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`;
@@ -10,110 +10,102 @@ current state; the history is `journal.md`.
 ## 1. Who you are and where you work
 
 - You are the pcrec-memory-functions kit manager. The pcrec manager
-  ("main") files requests in `requests.md`; you answer in `responses.md`
-  (you are its only writer).
-- **THE BOX CHANGED (2026-10-07).** Frank moved pcrec development to a new
-  Linux box, `pcrec@192.168.1.17`, with the repo at `~pcrec/projects/pcrec`,
-  cloned from GitHub. ubuntubudu stays the bench's box, and the Mac stays
-  for hardware runs. The kit branches were PUSHED to origin at wind-down
-  (§4). On the new box: create your kit worktree under `worktrees/` from
-  the branch you continue, and re-check the box rules (lock path, timeout
-  binary, whether there is a suite lock at all) in the root CLAUDE.md and
-  docs/testing.md "The boxes". Old Mac paths in this file are history.
-- One branch per delivered unit. Never merge to main yourself. Push only
-  when Frank or main says so; he authorised the wind-down push.
+  ("main", session name `pcrecdev1`) files requests in `requests.md`. You
+  answer in `responses.md` (you are its only writer). This session's name
+  is `pcrecdev3`.
+- **Box:** the Linux dev box `pcrec@192.168.1.17`; the repo is
+  `/home/pcrec/projects/pcrec`. 16 threads, gcc 15.2, libpcre2 10.46, no
+  clang.
+  - Bare `timeout` is uutils: use `gnutimeout`.
+  - No git identity is configured: commit with
+    `git -c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
+- **Kit worktree:** `worktrees/memfn`. One branch per delivered unit, cut
+  from main. Never merge to main, never push, never `cd` into another tree.
+- **Scratch:** `worktrees/memfn-slot/` (gitignored). The session scratchpad
+  can vanish mid-session, so do not rely on it.
 
 ## 2. Read, in this order
 
 1. `memfn/CLAUDE.md`.
-2. `memfn/docs/requests.md`, then `responses.md`. The newest entries there
-   are the ROWCON notices, the R-5 `done:`, and the N2 R-6 list (if posted
-   before wind-down).
+2. `memfn/docs/requests.md`, then `responses.md` (the newest `done:` entries
+   and notices).
 3. The tail of `memfn/docs/journal.md`.
-4. `docs/design/memfn/row_contracts.md` **rev 4.1**: [MEMFN-ROWCON],
-   narrowed by Frank to the K96 generalization. Its §6 HOLDS (engine,
-   snapshot, listing) and their triggers.
-5. Memory notes from today:
-   - `pcrec-kit-row-contracts`;
-   - `pcrec-no-silent-defaults` (refined: a USED default is the bug,
-     unused fields are wildcards);
-   - `pcrec-no-addenda-to-running-lanes`;
-   - `pcrec-taskstop-kills-detached-runs`;
-   - `pcrec-box-concurrency` item 12 (numeric caps on sweeps; lanes
-     still overran them "for timing").
+4. `docs/design/memfn/row_contracts.md` rev 4.1 (§4 floors, §5 steps);
+   `docs/design/memfn/integration.md` §22 (R4g done; R4h next in order) and
+   §19 (row 6 is revised per main's ruling).
+5. BOILERPLATE, coding_guide before C, learnings §3 before a check.
 
-## 3. Rulings today (Frank)
+## 3. Box and slot rules (this box)
 
-- **ROWCON scope:** build ONLY the K96 generalization:
-  - per-row `uses`/`serves`;
-  - one gate (define AND use phases);
-  - decline reasons in the kit's `MF_TRACE`;
-  - reach floors;
-  - R1 (a row uses only STATED values; unstated fields are wildcards);
-  - R2 (a stated value the row does not serve → decline).
-- **HELD, with triggers:** the general table engine (Q-ROW-4's charter
-  widening is ruled, but it is built only when a real table adopts it);
-  the hook SNAPSHOT (Q-ROW-1(c)/Q-ROW-6 ruled; the trigger is a measured
-  risky hook). The hook census found NONE
-  (`probes/rowcon/hook_census.md`). Re-run it at every migration step
-  that adds or changes a hook.
-- Proposed decision entries for all of these are in `responses.md`; main
-  files them in decisions.md.
+- One heavy suite at a time across BOTH sessions. Ask main for every heavy
+  slot (census, identity gate, full G2, make test, mech), and ping main when
+  it ends. Main's lanes queue behind and ahead of you.
+- **Light work needs no slot:** make/strict at -j4, single compiles,
+  test-memfn-{arms,stamps,rows}, G2 --quick pinned to `taskset -c 12-15`.
+- **Landing chain pattern:** one detached script in
+  `worktrees/memfn-slot/slotN/run.sh` (census → identity gate → full G2 →
+  make test → solo mech), watched by Monitor on its log. Read the verdicts
+  from make's `*** [Makefile:N: test-X]` lines.
+- **Mech scope:** main's rule (b) for a src-touching migration: rows
+  anchored in the changed definitions, plus kit-file rows, plus re-pinned
+  rows. A kit-only unit uses rows_for.sh.
+- **Every kit lane** runs `python3 scripts/m6read_check_sab_anchors.py`
+  before delivering (S570 slipped once).
+- **Blinded G2:** the D27 cell is `worktrees/g2u-cell`. Refresh its build/
+  and memfn.h/integration.md from the kit tip before each blinded brief. Diff
+  it back into `worktrees/g2u` (branch g2u), commit there, then merge into
+  the kit branch.
 
-## 4. Current state
+## 4. Current state (2026-10-07, ~23:00)
 
-**Branches pushed to origin at wind-down:**
-- `lane/memfn-rowcon`: ROWCON design rev 4.1, reviews r1-r4, the audits,
-  hook_census; **N1 merged** (fields.def, uses/serves on all 8 rows, the
-  WARN gate at define/use/run, MF_TRACE, trace_format.md, the written
-  exemptions); the N2 driver (`probes/rowcon/n2_census.sh`, `.py`,
-  `n2_report.py`); main merged in at 5fc4b0e5. NOT yet delivered to
-  main: it waits for N2 → R-6 → G2u → N3.
-- `lane/memfn-g2x`: R-5 (M1b) `done:` + journal (M1b is on main as
-  1c037dce).
-- `g2x`: lane g2x's BLINDED G2 reach extension, INTERIM and unreviewed
-  (5be6fe58).
-  - Run 1: 42.76M passed, 138 failed, 0 faults, 0 sites failed.
-  - Report: memfn/tests/G2X_REPORT.md.
-  - Findings, owed to triage:
-    - **F1:** runcmp/precheck paste hook text raw, so batches 077/079
-      fail to compile. G2 uses ternary hook text, which is legal
-      contract input today. ROWCON N3's IDENT class would route it to
-      generic. Confirm F1 is exactly that cell.
-    - **F2:** `MEMFN_LIBC` reads "none" although the kit renders
-      memchr/memcmp (§R4.3.3). It may be G2-path-only, since pcrec's
-      C11 is green. Verify against pcrec artifacts before calling it a
-      pcrec stamp defect.
-    - **G1:** W2 mutation-7's kill rate fell to 53% (G2-side; remedy
-      owed).
-    - **Notes:** N1 (`miss` NULL handled differently per arm: ROWCON's
-      R1 covers it) and N2 (`mf_art_begin` prefix pointer lifetime
-      unstated).
+**On main (all merged and pushed):**
+- [MEMFN-ROWCON] N1, N2, F2 (the kit notes its libc calls), MF_MISS_N, G2u
+  (blinded, with K-1's contract text), N3 (the gate ENFORCES), and G2u3;
+- R-6 (main's: pcrec states MF_MISS_N);
+- R4g (PF migrates; the pffind arm; r4gfix; the G2pf families).
+Main tip at the last merge: d33e1d55.
 
-**N2 (the census):** launched 15:11 on the Mac, holding the lock. Its
-results are in `worktrees/memfn/build/scratch/n2_main_5fc4b0e5/n2_results.md`
-on the MAC (build/ is not in git). The R-6 list from it is posted in
-`responses.md` if N2 finished before wind-down; otherwise re-run N2 on
-the new box, which needs the trace-build path checked there.
+**Delivered, awaiting main's merge:** `lane/memfn-n2pool` (n2_census one
+pool across arms, byte-identical; done: posted).
 
-**ROWCON next steps:**
-1. R-6 (main files it): pcrec states `MF_MISS_N` where the chosen row
-   uses `miss`. Expected: the ofsskip site (define + call) and precheck's
-   ASSIGN use, and whatever else N2 lists.
-2. G2u: the blinded G2 update. Fold g2x's interim work in, plus the
-   explicit values, the poison and SEMANTIC differentials, and per-row
-   floors.
-3. N3: enforce. ENTRY: N2 re-run after R-6 shows zero would-decline at
-   both phases, plus the identity gate.
-4. N4: rows.tsv, signatures, floors.
+**In progress: N4** on `lane/memfn-n4` (from n2pool), merged from lane n4:
+rows.tsv (13 rows), per-row signatures with controls, row_floors.tsv
+(PLACEHOLDERS), REACH_DROPPED, `make test-memfn-rows` (70/0). strict,
+build and arms pass. **Queued 4th for a slot** (main's message, ~1-1.5 h).
+The slot does:
+1. the full census from the repo root:
+   `N2_LOCK=… OUT=… CC=gcc JOBS=16 bash docs/design/memfn/probes/rowcon/n2_census.sh`.
+   Expect `== N2 DONE rc=0 would_decline=0 floors=…floor_placeholder=… ==`.
+   **REPORT ITS WALL TIME in done:** (main asked; it is the first real
+   measurement of the pool fix).
+2. `n2_report.py OUT --floors tests/memfn/row_floors.tsv --propose`, then
+   pin the values by hand and commit;
+3. make test on the pinned tip.
+Then post done:. The G2 per-row column of row_floors.tsv needs G2 to count
+per row (n4_report §7): a blinded follow-up.
 
-**Owed elsewhere:** M7 scope +1 (K94's defs_bref_ci_ucp, N7-pending).
+**Rulings to remember:**
+- K-1: a FUNC site's name is site.pred.fn_ref; fn_ref 0 is refused.
+- on_miss_leaves = 1 → result UNSPECIFIED on a miss.
+- mf_emit gates both phases; mf_define/mf_use do not re-select.
+- §19 row 6's rarity half is deferred after C5b. The decision stays
+  pcrec's; the kit gets text only.
+
+**OWED / next:**
+- After N4: the G2 per-row floor column (blinded).
+- R4h (M3, the scan edge's loop + VMSPAN; check remodel overlap with
+  main's C5+ first: post its edit set like R4g's).
+- PF movers (trigger: U-2 + a Linux cell in pf_emit_bcls).
+- M7 scope +1 (K94).
+
+**Leftover worktrees:** r4gfix, g2u (+ g2u-cell, keep), n2pool, n4. Prune
+with `scripts/wtprune --apply NAME…` (NAMES ONLY: a bare --apply would
+also remove main's lanes) once they are merged and >120 min idle.
 
 ## 5. Next actions on wake
 
-1. Make the kit worktree on the new box from `lane/memfn-rowcon`. Read
-   requests/responses: has main filed R-6?
-2. Triage g2x's F1/F2 with ONE read-only agent (F2 first: is any pcrec
-   artifact's MEMFN_LIBC wrong?).
-3. Continue ROWCON from §4. Every brief carries every ruling, with
-   NUMERIC caps and no timing runs outside the lock.
+1. Cron heartbeat at 17,47. ListAgents: is pcrecdev1 up?
+2. Check whether N4's slot ran (worktrees/memfn-slot/slot8 if launched) and
+   whether n2pool and N4 are merged.
+3. Continue from §4's OWED list. Post each R4h-class edit set to main before
+   building.
