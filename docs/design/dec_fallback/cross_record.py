@@ -5,7 +5,8 @@ gate, its per-compile fallback sequences must equal two instruments that
 share no source with it, on B1's own base, in all five limit variants.
 
   (a) decfb0's PROBED COPY (`../decision_families/decfb0/build_ref.py`'s
-      PATCHES, the attempt histogram's probes; built here by
+      PATCHES as `probes_b3.py` re-anchors them on B3's one dispatch, the
+      attempt histogram's probes; built here by
       `attempt_hist.build_side`), run by decfb0's own `census.py` over its own
       population and argv. From its probes: the row each arrival took
       (`sel1 collapse=`, `rung=`; an arrival with neither is the size term's
@@ -49,6 +50,9 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import attempt_hist                      # noqa: E402  build_side, census, build_ref
 import row_reach                         # noqa: E402  reach (the prototype's population/argv)
 import emit_sweep                        # noqa: E402  VARIANTS
+import runpy                             # noqa: E402
+# HEAD is post-B3: decfb0's probes re-anchored on the one dispatch (probes_b3.py)
+PROBES_B3 = runpy.run_path(os.path.join(HERE, "probes_b3.py"))["PATCHES"]
 
 reach = row_reach.reach
 # the prototype's own analysis; analyse.py ends in an unguarded `main()`
@@ -149,8 +153,7 @@ def trace_compile(cmd):
 def run_a(variants, trace_dir, out, jobs, stride):
     side = os.path.join(out, "decfb0")
     log("[cross_record] (a) building decfb0's probed copies of HEAD ...")
-    tree, probe = attempt_hist.build_side("HEAD", side, attempt_hist.build_ref.PATCHES,
-                                          variants, jobs)
+    tree, probe = attempt_hist.build_side("HEAD", side, PROBES_B3, variants, jobs)
     ok, lines = True, []
     for v in variants:
         tbin = os.path.join(trace_dir, f"src_ref-trace-{v}", "build", "pcrec")

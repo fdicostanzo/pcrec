@@ -18,7 +18,9 @@
 #   R  every `cx.M` member the recovery point (the `if (setjmp(cx.jb))`
 #      block) reads or writes, matched QUALIFIED (`.M` / `->M`), plus every
 #      `cx.job->A.B` there as the qualified pair `A.B` (`pf.forcing`,
-#      `fit.chosen`, ...);
+#      `fit.chosen`, ...). Since B3 the arrival's LABELS are read by the
+#      walk's input function `fit_labels` (`cx->M`), so its body counts as
+#      part of the recovery point;
 #   S  every Ctx member compile_driver seeds from a same-named L local at
 #      the attempt head (`cx.M = M;`), matched QUALIFIED;
 #   V  every value of the four enums the family's state carries, read off
@@ -55,6 +57,10 @@ nonempty CATCH "$CATCH"
 # comment lines dropped; a here-string, never `printf | grep -q` (pipefail +
 # grep -q's early exit SIGPIPEs the printf and drops names silently).
 CATCHC=$(grep -vE '^\s*(\*|/\*|//)' <<<"$CATCH")
+# [decfbB3] the arrival's label set, read by the one dispatch's input function
+LABELS=$(awk '/^static unsigned fit_labels\(/ {on=1} on {print} on && /^\}/ {exit}' "$C" |
+         grep -vE '^\s*(\*|/\*|//)' | sed -E 's/cx->/cx./g')
+nonempty LABELS "$LABELS"
 L=$(sed -n "${DSTART},${LOOP}p" "$C" | grep -E '^    [A-Za-z]' | grep -vE '^\s*(const|return|if|for|memset|\(void\))' |
     grep -E ';\s*(/\*.*)?$' | sed 's,/\*.*,,; s/=[^,;]*//g' |
     sed -E 's/^\s*(volatile\s+)?(unsigned\s+long\s+long|unsigned\s+char|unsigned|long\s+long|[A-Za-z_][A-Za-z0-9_]*)\s+//' |
@@ -63,9 +69,9 @@ L=$(sed -n "${DSTART},${LOOP}p" "$C" | grep -E '^    [A-Za-z]' | grep -vE '^\s*(
 nonempty L "$L"
 
 
-R=$(printf '%s\n' "$CATCH" | grep -vE '^\s*(\*|/\*|//)' | grep -oE 'cx\.[a-z_][a-z0-9_]*' | sed 's/^cx\.//' |
+R=$(printf '%s\n' "$CATCH" "$LABELS" | grep -vE '^\s*(\*|/\*|//)' | grep -oE 'cx\.[a-z_][a-z0-9_]*' | sed 's/^cx\.//' |
     grep -vxE 'job|jb|opt|arena|err' | sort -u | tr '\n' ' ')
-RQ=$(printf '%s\n' "$CATCH" | grep -vE '^\s*(\*|/\*|//)' | grep -oE 'cx\.job->[a-z_]+\.[a-z_]+' | sed 's/^cx\.job->//' |
+RQ=$(printf '%s\n' "$CATCH" "$LABELS" | grep -vE '^\s*(\*|/\*|//)' | grep -oE 'cx\.job->[a-z_]+\.[a-z_]+' | sed 's/^cx\.job->//' |
      sort -u | tr '\n' ' ')
 nonempty R "$R"; nonempty RQ "$RQ"
 
@@ -73,7 +79,7 @@ S=$(sed -n "${DSTART},\$p" "$C" | grep -oE '^\s+cx\.([a-z_][a-z0-9_]*) = \1;' | 
     sort -u | while read -r v; do case " $L " in *" $v "*) echo "$v";; esac; done | tr '\n' ' ')
 nonempty S "$S"
 
-D='esel_of lang_nullable_declinable prefilter_decision fit_rungs fit_select fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name'
+D='esel_of lang_nullable_declinable prefilter_decision fit_rungs fit_walk fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name'
 for d in $D; do grep -rqwE "$d" src || { echo "state_readers.sh: declared name $d no longer occurs in src/" >&2; exit 2; }; done
 V=""
 for anchor in CR_SEL1 SDR_NO_PREMUL PFLW_SEL1 ESEL_SELECTED; do
