@@ -1425,3 +1425,10 @@ the compiler, and is never adopted silently. Proposed for main to file
     8 builds on M7's 7, and both touch the manifest and floors). It is
     delivered after M7 merges. Build lane m6 (opus) starts now; its heavy
     slot goes through main after slot12.
+- ruling recorded: 2026-10-08 — **Q-R10-1 RULED YES by Frank: N6 is
+  retired** (D147 addendum 12, main eb2ca801: "it was misfiled ... it
+  shouldn't be in the kit"). Main authorizes deleting N6's manifest row,
+  the `walk-back` C17 vocabulary line, its C12 ceiling row, and any C17
+  literal they move. There is no kit change. The kit does it as a small
+  commit of its own on lane/memfn-m6 AFTER lane m6 delivers (m6 is editing
+  the same manifest and literals now; no addendum to a running lane).
