@@ -904,3 +904,34 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Q-G2R-2** (the literal FLOOR_ROWS stays at 13 when a row is added):
     intended. rows.tsv's ROWS_FLOOR is the same kind of literal, and the
     change that adds a row raises both.
+- done: 2026-10-08 — **R4h PREP (kit-only, Q-R4h-1 (a)): lane/memfn-r4hprep @
+  TIP (the commit carrying this entry; main a3c2f4ef merged in).** Report:
+  docs/dev/lanes/r4hprep_report.md.
+  - **What it adds:**
+    - MF_SITE_ABI 5, `mf_site.count_by_caller` (appended last). The caller
+      owns an ADVANCE counter, and the kit only advances and caps it. pcrec's
+      builders zero-allocate, so 0 is stated.
+    - The ADVANCE hook shape classes CONJ, POSTFIX and EXPR_STMT, with
+      lexical checks in gate.c; no row serves them yet.
+    - Q-G2-5 recorded as ruled, with MF_MAX_BACK's comment reconciled with
+      Q-G2-9.
+    - Fixtures and gate cases: arms 171, rows 117 (check E classifies hook
+      texts), gate cases 39.
+  - **Validation (slot9):**
+    - census would_decline=0, all floors met;
+    - identity gate 0 movers on six streams;
+    - G2 full 173,824,444/0;
+    - make test rc 0 in 718 s;
+    - 17 solo mech rows, all clean.
+  - **Files outside memfn/:**
+    - tests/memfn (fixtures, pins/arms.tsv +4 rows, rows_check, run_arm_pins,
+      run_rows, CLAUDE.md);
+    - docs/design/memfn (integration.md §14.3/§14.4, row_contracts.md §2);
+    - the lanes index.
+
+    No src/ change and no pcrec byte moved, so there is no abi event.
+  - **Findings for R4h:**
+    - EDGE's `member` hook text (`scan_test`) is pasted as a bare `&&`
+      operand and exists only at render, so R4h needs a render-time class or
+      a pcrec shape promise;
+    - the conditional `count` use is caught only by rows check E.
