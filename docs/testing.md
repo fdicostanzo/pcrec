@@ -5143,5 +5143,5 @@ arms, plus `--emit-ir`). B5 deletes the oracle and section (d).
 The walk became the recovery point's dispatch, so (d)'s T1 arrival and notes
 witnesses (15) retired with their old side, and six (e) witnesses hold the
 size-cap rungs' stderr notes to hand-written full lines (rung order, or
-none). 190 checks, ~35 s on the Linux dev box. `make alloc` (~35 s) joined
+none). 191 checks (one more (c) witness: the first-rung `VM_PREFILTER_WHY`), ~35 s on the Linux dev box. `make alloc` (~35 s) joined
 B3's lane gate for rows 0 and 1 (alloc_check W5/W4).

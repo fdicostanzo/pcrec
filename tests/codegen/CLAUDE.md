@@ -3936,7 +3936,10 @@ read through `tests/lib/spec_extract.sh` (moved there from
   it must print, in rung order (anchored; anchored then premul; prefilter),
   or none (a `-fprefilter` collapse, a [SEL-1] retry, no arrival). Read off
   stderr, never off the table's `note` cells. Detects S637 (a row's note
-  cell emptied) from B3.
+  cell emptied) from B3. B3 also adds one (c) witness, the
+  `VM_PREFILTER_WHY` drop with `-fno-prefilter-collapse` (drop-prefilter
+  as the FIRST size rung: the only witness where its own carry is the
+  figures' source; S633's detector from B3).
 
 Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
 the tree; red on a dropped witness (the floor fires), a value removed from
