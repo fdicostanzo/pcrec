@@ -584,6 +584,19 @@ construction (src/ir) and emission (src/gen).
   `admit`/`admit-listing` checks retired with their old side; §1.4 (b)'s
   `has_var` invariant stays (trace build), and the trace's `admit` record
   prints the walk's row.
+- **select_engine.c — `ENGINE_SEL` IS THE ATTRIBUTION WALK** ([DEC-FALLBACK]
+  B5, lane decfbB5, 2026-10-08; no abi event, zero movers). `esel_of`
+  keeps its call site and its [TOUR-5] premise check and returns
+  `fit_attrib_walk`: `forced`, else the admission row's `esel` cell, else
+  the latest fired T1 row whose cell for the final prefilter is not PASS
+  (ROLE by the latched `dfa_was_engine`), else `selected` (dec_fallback.md
+  §1.7). The nine-arm ternary and its arm table are deleted, and so are
+  `EngineFit.prefilter_declined_nullable{,_default}`, write-only once the
+  ternary went (the walk reads `fit->pf_admit->esel`). The walk also
+  reports where the token came from (an ordinal `ESEL_FROM_*`, or
+  `ESEL_FROM_ROW + i`), which the trace's `attrib` record prints as the
+  row's name, so the trace compare against a pre-B5 parent held the walk to
+  the ternary. The oracle's `attrib` site is gone with the oracle.
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s
