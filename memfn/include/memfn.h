@@ -79,7 +79,10 @@ typedef enum {
 typedef enum {
     MF_H_RETURN,            /* EXPR / FUNC call: the VALUE is the result or `miss` */
     MF_H_ASSIGN,            /* STMT: `result_decl result = …;` then, on a miss,
-                               pcrec's `on_miss`                              */
+                               pcrec's `on_miss`. With `on_miss_leaves` 1 the
+                               value of `result` on a miss is UNSPECIFIED (a
+                               form may write `miss` first or not) and
+                               `on_miss` must not read it                     */
     MF_H_ON_MISS,           /* STMT: a presence gate. On no candidate run
                                `on_miss`; on a hit write nothing              */
     MF_H_ADVANCE,           /* STMT: move `cursor`; maintain `count` (§14.3)  */
@@ -191,7 +194,10 @@ typedef struct {
        RULED Q-G2-18 (MF_SITE_ABI 3): the kit never reads the on_miss TEXT to
        learn this (hooks are opaque); a form that tests a later predicate only
        after an earlier one passed is selected on this fact alone. 0 or 1,
-       and nonzero only on ON_MISS/ASSIGN, else refused                       */
+       and nonzero only on ON_MISS/ASSIGN, else refused. When 1 on ASSIGN,
+       `result` is UNSPECIFIED on a miss (a form may or may not write `miss`
+       before `on_miss` runs) and `on_miss` must not read it; with 0 the
+       miss value is written before `on_miss` runs and it may be read      */
     int             on_miss_leaves;
     /* pcrec's proven facts */
     uint64_t        span_lo, span_hi;          /* proven bytes; MF_SPAN_UNBOUNDED */

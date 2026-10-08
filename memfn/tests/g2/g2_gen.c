@@ -191,6 +191,7 @@ typedef struct {
     uint8_t  generic_seed;        /* a semantic variant of the generic-row seed:
                                      its hook styles are hard, as the base
                                      space's are                              */
+    uint8_t  note_null;           /* lane g2pf: the note / note_tag hooks are NULL */
 } gsite;
 
 static const char *combo_label(int op, int h, int form)
@@ -642,8 +643,9 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->miss = miss_text(g->d.miss_mode);
     switch (g->on_miss_mode) {
     case 0:  snprintf(onmiss, onmiss_n, "missed = 1;"); break;
-    case 1:  snprintf(onmiss, onmiss_n, "goto g2m_%u;", g->d.id); break;
-    case 3:  /* leaves, and reads no result: §15.5's composite writes its
+    case 1:
+    case 5:  snprintf(onmiss, onmiss_n, "goto g2m_%u;", g->d.id); break;   /* 5: the label reports no result */
+    case 3:  /* leaves, and reads no result (lane g2pf: PF cell 1's `return 0;` too): §15.5's composite writes its
                 result only on the returned predicate's line, so another
                 predicate's miss reaches on_miss with `result` unwritten
                 (and, under result_decl, undeclared) */
@@ -652,11 +654,14 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     default:
         if (g->d.handoff == G2_H_ON_MISS)
             snprintf(onmiss, onmiss_n, "{ o->missed = 1; return 0; }");
+        else if (g->d.inplace)      /* the result IS lo: report lo (lane g2pf) */
+            snprintf(onmiss, onmiss_n, "{ o->res = lo; o->missed = 1; return 0; }");
         else
             snprintf(onmiss, onmiss_n, "{ o->res = res; o->missed = 1; return 0; }");
         break;
     }
-    h->on_miss = onmiss;
+    h->on_miss = g->d.noonmiss ? NULL : onmiss;
+    if (g->d.inplace) h->result = "lo";      /* the SAME text as the lo hook (style 0) */
     /* W2 hook mutations: the rendered code then searches the wrong range
      * (lo + 1), reads past the read limit (n + 1), or below the floor
      * (fl - 1), while the reference keeps the true values */
@@ -682,8 +687,8 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->member = h_member;
     h->table_name = h_table_name;
     h->fn_name = h_fn_name;
-    h->note = h_note;
-    h->note_tag = h_note_tag;
+    h->note = g->note_null ? NULL : h_note;
+    h->note_tag = g->note_null ? NULL : h_note_tag;
     h->indent = "    ";
     h->comment_tier = g->cmt ? 2 : 0;
     h->u = g;
@@ -750,6 +755,7 @@ static int mutate(buf *b)
 /* ---- results ---------------------------------------------------------------- */
 
 static FILE *g_res;
+static int g_batch_tag;     /* lane g2pf: the PF cell the batch being filled holds (0 = none) */
 static long n_render_ok, n_render_fail, n_refusal_pass, n_refusal_fail,
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail;
 
@@ -793,12 +799,74 @@ static int names_field(const char *msg, const char *f)
         if ((p == msg || !idch((unsigned char)p[-1])) && !idch((unsigned char)p[k])) return 1;
     return 0;
 }
+/* ---- lane g2pf: which edges a PF variant states (integration.md 15.7 [R4g]) ----
+ *
+ * The base cells 2-4 state: no floor, no note, no result_decl, no on_miss, a
+ * miss that is the range's END (n's text, MF_MISS_N, or the text `n - 1` for
+ * end_back 1), and (cells 3/4) a result that IS lo. A variant that states
+ * anything else is an EDGE: the kit renders it (and it answers as the
+ * reference) or refuses it naming the field (row contracts R1/R2). The mask
+ * has bit G2_PFE_x per edge the site states; computed from G2's own fields. */
+static unsigned pf_edge_mask(const gsite *g)
+{
+    const g2_site *d = &g->d;
+    unsigned m = 0;
+    int ok;
+    if (!d->pfcell || d->tabbad) return 0;
+    /* a result_decl is an edge of EVERY cell: the shape's result is pcrec's own
+     * declared variable (cell 1 included: the row mf_define selects need not
+     * serve a declaration, and mf_use then refuses naming it) */
+    if (g->result_decl) m |= 1u << G2_PFE_DECL;
+    if (d->pfcell == 1 && d->miss_mode == 5) m |= 1u << G2_PFE_MISS;
+    if (d->pfcell < 2) return m;
+    switch (d->miss_mode) {
+    case 5:  ok = 1; break;                                   /* unstated: its own class */
+    case 6:  ok = !d->end_back; break;                        /* the n hook's text       */
+    case 4:  ok = !d->end_back; break;                        /* MF_MISS_N = n           */
+    case 0:  ok = !d->end_back && d->hook_style == 0; break;  /* "n"                     */
+    case 3:  ok = d->end_back && d->hook_style == 0; break;   /* "n - 1"                 */
+    default: ok = 0; break;
+    }
+    if (!ok) m |= 1u << G2_PFE_MISS;
+    if (d->pfcell >= 3 && !d->inplace) m |= 1u << G2_PFE_RESULT;
+    if (!g->floor_null || g->floor_zero) m |= 1u << G2_PFE_FLOOR;
+    if (!g->note_null) m |= 1u << G2_PFE_NOTE;
+    if (!d->noonmiss) m |= 1u << G2_PFE_ONMISS;
+    return m;
+}
+static int pf_edge_first(const gsite *g)
+{
+    if (g->d.tabbad) return G2_PFE_TABBAD;
+    unsigned m = pf_edge_mask(g);
+    for (int e = 1; e < G2_NPFE; e++) if (m >> e & 1) return e;
+    return 0;
+}
+/* does a refusal's text name a field of an edge the site states (or, with
+ * non-identifier hook text, one of the hooks F1 names) */
+static int pf_edge_named(const gsite *g, const char *msg)
+{
+    unsigned m = pf_edge_mask(g);
+    if ((m >> G2_PFE_MISS & 1) && names_field(msg, "miss")) return 1;
+    if ((m >> G2_PFE_RESULT & 1) && names_field(msg, "result")) return 1;
+    if ((m >> G2_PFE_FLOOR & 1) && names_field(msg, "floor")) return 1;
+    if ((m >> G2_PFE_NOTE & 1) && (names_field(msg, "note") || names_field(msg, "note_tag"))) return 1;
+    if ((m >> G2_PFE_DECL & 1) && names_field(msg, "result_decl")) return 1;
+    if ((m >> G2_PFE_ONMISS & 1) && names_field(msg, "on_miss")) return 1;
+    if (g->d.hook_style && (names_field(msg, "s") || names_field(msg, "n") || names_field(msg, "lo") ||
+                            names_field(msg, "floor"))) return 1;
+    return 0;
+}
+/* per edge: cases, rendered, refused naming, refused not naming; and the
+ * table-disagrees edge (rendered / refused: no field is asserted) */
+static long pfe_rendered[G2_NPFE], pfe_named[G2_NPFE], pfe_unnamed[G2_NPFE];
+
 /* the field(s) a PENDING class's refusal must name */
 static int pend_named(int pend, const char *msg)
 {
     if (pend == G2_PEND_HOOK)
         return names_field(msg, "s") || names_field(msg, "n") || names_field(msg, "lo") || names_field(msg, "floor");
     if (pend == G2_PEND_MISS) return names_field(msg, "miss");
+    if (pend == G2_PEND_EDGE) return cur_site && pf_edge_named(cur_site, msg);
     if (pend == G2_PEND_FNREF) {
         /* mf_define names define-time fields; on a RETURN/ASSIGN site whose
          * `miss` is ALSO unstated, `miss` may be a use-time field: either
@@ -832,6 +900,47 @@ static int render_text(const mf_site *s, const mf_hooks *h, int cmt, buf *out, c
     }
     free(b.p); free(f.p);
     return rc;
+}
+
+/* G2pf2: the define + use entry path, in a SCRATCH art (the art's error is
+ * sticky). Returns 0, or the stage that refused: 1 mf_define, 2 mf_use,
+ * 3 mf_call; the error text in err. The two entry paths differ BY CONTRACT
+ * (memfn.h ROW CONTRACTS): mf_emit holds the use hooks at selection time;
+ * mf_define selects with the define hooks and mf_use REFUSES a use the chosen
+ * form does not serve, naming the field, with no re-selection. */
+static int render_via(const mf_site *s, const mf_hooks *h, int via, int cmt, char *err, size_t errn)
+{
+    mf_art *a = mf_art_begin(&g_arena, "g2v", s->policy, s->denies);
+    buf b = { 0 }, f = { 0 }, b2 = { 0 };
+    sinku ub = { &b, cmt, 0, 0 }, uf = { &f, cmt, 0, 0 }, ub2 = { &b2, cmt, 0, 0 };
+    mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), sb2 = mk_sink(&ub2);
+    mf_result r;
+    uint32_t handle = 0;
+    int stage = 0;
+    memset(&r, 0, sizeof r);
+    if (!a) { stage = 1; snprintf(err, errn, "(no art)"); }
+    else if (mf_define(a, s, h, &sf, &handle)) stage = 1;
+    else if (mf_use(a, handle, h, &sb, &r)) stage = 2;
+    else if (via == 2 && mf_call(a, handle, h, &sb2)) stage = 3;
+    if (stage && a) snprintf(err, errn, "%s", mf_art_error(a) ? mf_art_error(a) : "(no text)");
+    free(b.p); free(f.p); free(b2.p);
+    return stage;
+}
+/* the USE-TIME refusal population (G2pf2): the define+use path refused at
+ * mf_use / mf_call a site the one-call path rendered, naming a field. Lawful;
+ * the site is then judged on the one-call path (answer-equal). */
+static long n_userefuse, n_userefuse_unnamed, n_userefuse_by[6];
+static const char *const UR_FIELDS[6] = { "on_miss", "result_decl", "miss", "floor", "note", "other" };
+static int userefuse_field(const char *msg)
+{
+    static const char *const known[] = { "on_miss", "result_decl", "miss", "floor", "note", "note_tag", "result",
+                                         "cursor", "count", "on_cand", "peek", "more", "step", "table_ref", "member" };
+    for (size_t k = 0; k < sizeof known / sizeof known[0]; k++)
+        if (names_field(msg, known[k])) {
+            for (int j = 0; j < 5; j++) if (!strcmp(UR_FIELDS[j], known[k])) return j;
+            return 5;
+        }
+    return -1;
 }
 
 /* ---- the POISON differential (g2u item 6) ------------------------------------
@@ -936,7 +1045,10 @@ static uint32_t pz_applicable(const gsite *g, const mf_site *s)
     if (!any_fn && f != G2_FORM_FUNC) m |= 1u << PZ_FN_NAME;
     if (!any_tab) m |= 1u << PZ_TABLE_NAME;
     if (!any_set) m |= 1u << PZ_MEMBER;
-    if (!g->cmt) m |= 1u << PZ_NOTE | 1u << PZ_NOTE_TAG;
+    /* an UNSTATED (NULL) note hook is not poisonable: stating it is a different
+     * site (lane g2pf's stated-note edge), which the row contracts may serve
+     * through another row */
+    if (!g->cmt && !g->note_null) m |= 1u << PZ_NOTE | 1u << PZ_NOTE_TAG;
     if (f == G2_FORM_EXPR) m |= 1u << PZ_INDENT;
     if (d->op != G2_OP_ALL) m |= 1u << PZ_RET_PRED | 1u << PZ_PREDS;
     else m |= 1u << PZ_PRED;
@@ -1107,7 +1219,13 @@ static void emit_tables(buf *o, const gsite *g)
             const g2_term *T = &g->preds[p].t[t];
             if (T->kind != G2_T_SET) continue;
             bf(o, "static const unsigned char g2tab_%u_%d[256] = {", g->d.id, p * MF_MAX_TERM + t);
-            for (int b = 0; b < 256; b++) bf(o, "%s%d", b ? "," : "", set_has(T->set, (unsigned)b));
+            for (int b = 0; b < 256; b++) {
+                int v = set_has(T->set, (unsigned)b);
+                /* lane g2pf: a table that DISAGREES with the set bits (a caller
+                 * defect): a few bytes flipped each way */
+                if (g->d.tabbad && (b % 7 == 3 || b == 'a' || b == 0)) v = !v;
+                bf(o, "%s%d", b ? "," : "", v);
+            }
             bputs(o, "};\n");
         }
 }
@@ -1140,10 +1258,13 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
         return;
     default: /* ASSIGN, ON_CAND */
         bputs(o, "    int missed = 0;\n");
-        if (!g->result_decl) bputs(o, "    size_t res = G2_SENT;\n");
+        if (!g->result_decl && !d->inplace) bputs(o, "    size_t res = G2_SENT;\n");
         bputs(o, body);
-        bputs(o, "\n    o->res = res; o->missed = missed;\n    return 0;\n");
-        if (g->on_miss_mode == 1) bf(o, "g2m_%u:\n    o->res = res; o->missed = 1;\n    return 0;\n", d->id);
+        bputs(o, d->inplace ? "\n    o->res = lo; o->missed = missed;\n    return 0;\n"
+                            : "\n    o->res = res; o->missed = missed;\n    return 0;\n");
+        if (g->on_miss_mode == 1 || g->on_miss_mode == 5)
+            bf(o, "g2m_%u:\n    %s o->missed = 1;\n    return 0;\n", d->id,
+               g->on_miss_mode == 5 ? "" : d->inplace ? "o->res = lo;" : "o->res = res;");
         bputs(o, "}\n\n");
         return;
     }
@@ -1157,6 +1278,13 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
 {
     cur_site = g;
     g->deny_overlap = g_batch_denies != 0;
+    /* G2pf2 (contract amendment, memfn.h): with on_miss_leaves 1 on ASSIGN,
+     * `result` is UNSPECIFIED on a miss and on_miss must not read it: every
+     * such site takes an on_miss text that reads no result (goto 5, return 3) */
+    if (g->d.leaves && g->d.handoff == G2_H_ASSIGN && !g->d.noonmiss) {
+        if (g->on_miss_mode == 1) g->on_miss_mode = 5;
+        else if (g->on_miss_mode == 2) g->on_miss_mode = 3;
+    }
     int pend = g->d.pend;
     mf_site site;
     mf_pred *pa = g->d.op == G2_OP_ALL ? calloc(g->d.npred, sizeof *pa) : NULL;
@@ -1185,6 +1313,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         if (trc) {
             int named = pend_named(pend, err);
             if (named) pend_refused_named[pend]++; else pend_refused_unnamed[pend]++;
+            if (pend == G2_PEND_EDGE) { if (named) pfe_named[g->d.pfedge]++; else pfe_unnamed[g->d.pfedge]++; }
             fprintf(g_res, "PENDING %s site %u %s fam=%s v=%s: refused (%s the field): %s\n",
                     g2_pend_name(pend), g->d.id, g->d.label, g2_fam_name(g->d.fam),
                     g2_v_name(g->d.vfield), named ? "naming" : "NOT naming", err);
@@ -1196,6 +1325,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
             return;
         }
         pend_rendered[pend]++;
+        if (pend == G2_PEND_EDGE) pfe_rendered[g->d.pfedge]++;
         fprintf(g_res, "PENDING %s site %u %s fam=%s v=%s: rendered\n", g2_pend_name(pend), g->d.id,
                 g->d.label, g2_fam_name(g->d.fam), g2_v_name(g->d.vfield));
         if (g_strict && (pend == G2_PEND_MISS || pend == G2_PEND_FNREF)) {
@@ -1203,6 +1333,15 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
             fprintf(g_res, "FAIL strict site %u %s: rendered with %s UNSTATED (a form used a value the caller did not state)\n",
                     g->d.id, g->d.label, pend == G2_PEND_FNREF ? "`fn_ref`" : "`miss`");
         }
+    } else if (trc && g->d.tabbad) {
+        /* lane g2pf: a table that disagrees with the set is a caller defect;
+         * the kit cannot see the table (it gets a NAME), so a refusal is as
+         * lawful as a rendering. No field is asserted. */
+        pfe_unnamed[G2_PFE_TABBAD]++;
+        fprintf(g_res, "PFEDGE table-disagrees site %u %s: refused (lawful, nothing asserted): %s\n",
+                g->d.id, g->d.label, err);
+        free(clean.p); free(pa);
+        return;
     } else if (trc) {
         n_render_fail++;
         fam_refused[g->d.fam]++;
@@ -1214,6 +1353,38 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     }
     if (!pend && !g_mutate) poison_site(g, &site, pa, &h, &clean);
     free(clean.p);
+
+    /* G2pf2: judge the define+use path by ITS contract. The trial (mf_emit)
+     * rendered the site; the separate path may lawfully refuse AT USE naming
+     * the field a use-time hook states. That refusal is counted, and the site
+     * is then run on the one-call path, so each path's promise is checked. A
+     * refusal at mf_define, or one naming no field, is a failure. */
+    if (g->d.via != 0) {
+        char verr[512];
+        int stg = render_via(&site, &h, g->d.via, g->cmt, verr, sizeof verr);
+        if (stg >= 2) {
+            int uf_ = userefuse_field(verr);
+            if (uf_ >= 0) {
+                n_userefuse++; n_userefuse_by[uf_]++;
+                fprintf(g_res, "USEREFUSE site %u %s fam=%s stage=%s field=%s: %s\n", g->d.id, g->d.label,
+                        g2_fam_name(g->d.fam), stg == 2 ? "use" : "call", UR_FIELDS[uf_], verr);
+                g->d.via = 0;
+            } else {
+                n_userefuse_unnamed++;
+                n_render_fail++; fam_refused[g->d.fam]++;
+                fprintf(g_res, "FAIL render site %u %s: define+use refused at use NOT naming a field: %s\n",
+                        g->d.id, g->d.label, verr);
+                free(pa);
+                return;
+            }
+        } else if (stg == 1) {
+            n_render_fail++; fam_refused[g->d.fam]++;
+            fprintf(g_res, "FAIL render site %u %s: mf_define refused a site mf_emit rendered: %s\n",
+                    g->d.id, g->d.label, verr);
+            free(pa);
+            return;
+        }
+    }
 
     buf body = { 0 }, body2 = { 0 }, file = { 0 };
     sinku ub = { &body, g->cmt, 0, 0 }, ub2 = { &body2, g->cmt, 0, 0 }, uf = { &file, g->cmt, 0, 0 };
@@ -1269,6 +1440,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         n_sitefn_checked++;
     }
     int fid = form_index(res.form_id);
+    if (g->d.tabbad) pfe_rendered[G2_PFE_TABBAD]++;
     if (pend) pend_form[fid]++;
     else { fam_rendered[g->d.fam]++; fam_form[g->d.fam][fid]++; }
     g->d.fid = (uint8_t)fid;
@@ -1278,6 +1450,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     mut |= mutate(&file);
     if (g->d.via == 2) mutate(&body2);
     if (g_mutate >= 5) mut = !(g_mutate == 7 && g->floor_null);
+    if (g->d.tabbad) mut = 0;       /* its answer is undefined: no witness judges it */
     g->d.mutated = (uint8_t)mut;
 
     emit_tables(&B->tables, g);
@@ -1298,8 +1471,9 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
        d->acc_mod, d->miss_mode, d->hook_style, d->mutated, d->via, d->label, d->id);
     if (d->via == 2) bf(&B->reg, "g2t2_%u, ", d->id);
     else bputs(&B->reg, "NULL, ");
-    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves, d->pend,
-       d->vfield, d->vclass, d->fid, g->on_miss_mode == 3);
+    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves, d->pend,
+       d->vfield, d->vclass, d->fid, g->on_miss_mode == 3 || g->on_miss_mode == 5, d->pfcell, d->pfedge, d->inplace,
+       d->noonmiss, d->lo_over, d->tabbad);
     B->nsite++;
     B->npend += d->pend != 0;
     free(body.p); free(body2.p); free(file.p);
@@ -1929,6 +2103,7 @@ static void flush_batch(const char *outdir, int bi, mf_art *art, batchbuf *B, FI
     fprintf(f, "const g2_site g2_batch_%03d[] = {\n%s    { 0 }\n};\n", bi, B->reg.p ? B->reg.p : "");
     fprintf(f, "const size_t g2_batch_%03d_n = %d;\n", bi, B->nsite);
     fclose(f);
+    if (g_batch_tag) fprintf(g_res, "PFBATCH batch_%03d cell=%d\n", bi, g_batch_tag);
     fprintf(all, "extern const g2_site g2_batch_%03d[]; extern const size_t g2_batch_%03d_n;\n", bi, bi);
     free(helpers.p); free(stamps.p);
     bclear(&B->tables); bclear(&B->desc); bclear(&B->defs); bclear(&B->fns); bclear(&B->reg);
@@ -2009,14 +2184,20 @@ static int pend_class(const gsite *g)
     if (fn_ref_unstated(g)) return G2_PEND_FNREF;
     /* an unstated `miss` decides the outcome first: only a refusal naming
      * `miss` serves it, whatever the hook text */
-    if (g->d.miss_mode == 5 && (g->d.handoff == G2_H_RETURN || g->d.handoff == G2_H_ASSIGN))
+    /* PF cell 1 (a leaving on_miss that reads no result) does not use `miss`: it
+     * is a wildcard there, so an unstated one is an EDGE (rendered, or refused
+     * naming `miss`), not the miss-unstated class */
+    if (g->d.miss_mode == 5 && (g->d.handoff == G2_H_RETURN || g->d.handoff == G2_H_ASSIGN) &&
+        !(g->d.pfcell == 1 && g->d.leaves && (g->on_miss_mode == 3 || g->on_miss_mode == 5)))
         return G2_PEND_MISS;
+    if (pf_edge_mask(g)) return G2_PEND_EDGE;
     if (g->d.fam != G2_FAM_BASE && !g->generic_seed && g->d.hook_style != 0) return G2_PEND_HOOK;
     return G2_PEND_NONE;
 }
 
 static void emit_site(gsite *g)
 {
+    g->d.pfedge = (uint8_t)(g->d.pfcell ? pf_edge_first(g) : 0);
     g->d.pend = (uint8_t)pend_class(g);
     if (!g->d.pend) { next_site(g); return; }
     g->pdeny = g_batch_denies;
@@ -2454,6 +2635,159 @@ static void gen_fam_vmrun(void)
         }
 }
 
+
+/* ---- lane g2pf: the PF site shape (integration.md 15.7 [R4g]) ------------------
+ *
+ * FIND / STMT / ASSIGN over ONE REQUIRED SET term at offset 0, forward, the
+ * result the scan position, use POSITION. Four cells:
+ *   1  a one-member set, end_back 0, empty EXCLUDED, on_miss_leaves 1 with a
+ *      leaving on_miss (goto / return), any miss
+ *   2  a one-member set, end_back 1, EXCLUDED, no on_miss, miss the text of
+ *      `n - 1`; result = leftmost hit in [lo, n-1), else n - 1
+ *   3  a multi-member set through table_ref, empty NOP, end_back 0, result the
+ *      SAME text as lo (in place), miss MF_MISS_N or n's text; lo ends at the
+ *      leftmost member in [lo, n) else n; nothing written on an empty range
+ *      (lo >= n; lo > n is legal, Q-G2-1)
+ *   4  as 3 with end_back 1 and miss the text of `n - 1`
+ * Everything here draws from a stream and an id range of its own (pf_enter /
+ * pf_leave), so the sites of every other family are the sites they were. */
+static uint64_t pf_rng = 0x70f1c0de5eed1234ULL, pf_rng2 = 0x1badb002cafef00dULL;
+static uint32_t pf_ids = 600000;
+typedef struct { uint64_t r1, r2; uint32_t id; } pfsave;
+static pfsave pf_enter(void)
+{
+    pfsave sv = { rng_state, rng2_state, next_id };
+    rng_state = pf_rng; rng2_state = pf_rng2; next_id = pf_ids;
+    return sv;
+}
+static void pf_leave(pfsave sv)
+{
+    pf_rng = rng_state; pf_rng2 = rng2_state; pf_ids = next_id;
+    rng_state = sv.r1; rng2_state = sv.r2; next_id = sv.id;
+}
+
+static void pf_cell(gsite *g, int cell, unsigned k)
+{
+    fam_site(g, G2_OP_FIND, G2_H_ASSIGN, G2_FORM_STMT, G2_FAM_PF);
+    g->note_null = 1;
+    alloc_preds(g, 1);
+    g->preds[0].nterm = 1;
+    g->preds[0].need = G2_REQ;
+    g->fnr[0] = 0;
+    g->php[0] = rn(2) ? 0 : MF_NO_PRED;
+    g->ppp[0] = 0;
+    g->d.pfcell = (uint8_t)cell;
+    static const int one[] = { 1, 1, 1, 1, 2, 3 };
+    static const int multi[] = { 4, 5, 5, 6, 6, 7, 8, 8, 9, 10, 11, 11 };
+    gen_term(g, 0, 0, G2_T_SET, 0, 0, -1, G2_REQ, cell <= 2 ? one[rn(6)] : multi[rn(12)], 0);
+    if (cell >= 3) {                       /* multi-member, so table_ref is stated */
+        uint8_t *st = g->preds[0].t[0].set;
+        for (unsigned b = rn(256); set_count(st) < 2; b = (b + 37) & 255) set_add(st, b);
+        g->table_ref_on = 1;
+    }
+    static const int m1[] = { 0, 4, 6, 1, 2 };
+    switch (cell) {
+    case 1:
+        fam_finish(g, G2_EMPTY_EXCLUDED, m1[k % 5]);
+        fam_leaves(g, 1);
+        g->on_miss_mode = rn(2) ? 3 : 5;       /* pcrec's `return 0;` / a goto: neither reads the result */
+        g->result_decl = 0;
+        break;
+    case 2:
+        fam_finish(g, G2_EMPTY_EXCLUDED, 3);
+        g->d.end_back = 1;
+        g->d.miss_mode = 3;
+        g->result_decl = 0;
+        g->d.leaves = 0;
+        g->on_miss_mode = 0;
+        g->d.noonmiss = 1;
+        break;
+    default:
+        fam_finish(g, G2_EMPTY_NOP, cell == 3 ? (k % 2 ? 4 : 6) : 3);
+        g->d.end_back = (uint8_t)(cell == 4);
+        g->d.miss_mode = cell == 3 ? (uint8_t)(k % 2 ? 4 : 6) : 3;
+        g->d.span_lo = 0;
+        g->result_decl = 0;
+        g->d.leaves = 0;
+        g->on_miss_mode = 0;
+        g->d.noonmiss = 1;
+        g->d.inplace = 1;
+        g->d.lo_over = 1;
+        break;
+    }
+}
+
+/* one EDGE of a cell: the base with ONE thing stated that the cell leaves
+ * unstated or in another class. Which edge a site is, is decided from the
+ * site (pf_edge_mask), not from here. */
+static void pf_edge(gsite *g, int cell, int edge, unsigned k)
+{
+    pf_cell(g, cell, k);
+    switch (edge) {
+    case G2_PFE_MISS: {
+        static const int e2[] = { 0, 1, 2 }, e3[] = { 1, 2 };
+        g->d.miss_mode = (uint8_t)(cell == 3 ? e3[k % 2] : e2[k % 3]);
+        break;
+    }
+    case G2_PFE_RESULT: g->d.inplace = 0; break;          /* result `res`, not lo */
+    case G2_PFE_FLOOR:
+        if (k % 2) g->floor_null = 0;                      /* floor text `fl` */
+        else { g->floor_null = 1; g->floor_zero = 1; }     /* floor text "0"  */
+        break;
+    case G2_PFE_NOTE: g->note_null = 0; g->cmt = (uint8_t)(k % 3 == 0); break;
+    case G2_PFE_DECL:
+        if (cell >= 3) { g->d.inplace = 0; g->d.empty = G2_EMPTY_MISS; }
+        g->result_decl = 1;
+        break;
+    case G2_PFE_ONMISS:
+        g->d.noonmiss = 0;
+        g->d.leaves = (uint8_t)(k % 2);
+        g->on_miss_mode = g->d.leaves ? (uint8_t)(1 + rn(2)) : 0;
+        break;
+    }
+}
+
+static void gen_fam_pf(void)
+{
+    gsite g;
+    pfsave sv = pf_enter();
+    /* the base cells, each in a batch of its own (MEMFN_LIBC is judged per
+     * batch, so per cell) */
+    for (int cell = 1; cell <= 4; cell++) {
+        force_batch(0);
+        g_batch_tag = cell;
+        for (unsigned k = 0; k < 60; k++) { pf_cell(&g, cell, k); emit_site(&g); }
+    }
+    /* the table that disagrees with the set (cells 3 and 4): undefined */
+    force_batch(0);
+    g_batch_tag = 5;
+    for (unsigned k = 0; k < 48; k++) { pf_cell(&g, 3 + (int)(k % 2), k); g.d.tabbad = 1; emit_site(&g); }
+    force_batch(0);
+    g_batch_tag = 0;
+    /* the edges (queued: rendered or refused naming the field) */
+    for (unsigned k = 0; k < 12; k++) {
+        pf_edge(&g, 2, G2_PFE_MISS, k); emit_site(&g);
+        pf_edge(&g, 3, G2_PFE_MISS, k); emit_site(&g);
+        pf_edge(&g, 4, G2_PFE_MISS, k); emit_site(&g);
+    }
+    for (unsigned k = 0; k < 16; k++) {
+        pf_edge(&g, 3, G2_PFE_RESULT, k); emit_site(&g);
+        pf_edge(&g, 4, G2_PFE_RESULT, k); emit_site(&g);
+        for (int cell = 2; cell <= 4; cell++) {
+            pf_edge(&g, cell, G2_PFE_FLOOR, k); emit_site(&g);
+            pf_edge(&g, cell, G2_PFE_NOTE, k); emit_site(&g);
+            pf_edge(&g, cell, G2_PFE_ONMISS, k); emit_site(&g);
+        }
+        pf_edge(&g, 2, G2_PFE_DECL, k); emit_site(&g);
+        pf_edge(&g, 1, G2_PFE_DECL, k); emit_site(&g);
+    }
+    for (unsigned k = 0; k < 12; k++) {
+        pf_edge(&g, 3, G2_PFE_DECL, k); emit_site(&g);
+        pf_edge(&g, 4, G2_PFE_DECL, k); emit_site(&g);
+    }
+    pf_leave(sv);
+}
+
 /* ---- the SEMANTIC differential (g2u item 7) ------------------------------------
  *
  * A seed site of a §15 shape (or of the generic row's), cloned once per
@@ -2490,7 +2824,8 @@ static void m_floor(gsite *g, int c)   { g->floor_null = c != 0; g->floor_zero =
 static void m_leaves(gsite *g, int c)
 {
     g->d.leaves = (uint8_t)c;
-    g->on_miss_mode = (uint8_t)(g->d.op == G2_OP_ALL && g->d.handoff == G2_H_ASSIGN ? 3 : 2);
+    g->on_miss_mode = (uint8_t)(g->d.op == G2_OP_ALL && g->d.handoff == G2_H_ASSIGN ? 3
+                              : g->d.pfcell == 1 && c ? 3 : 2);
 }
 static void m_decl(gsite *g, int c)    { g->result_decl = (uint8_t)c; }
 static void m_use(gsite *g, int c)     { g->d.use = (uint8_t)(c ? G2_USE_DISCARD : G2_USE_POSITION); }
@@ -2544,7 +2879,7 @@ static void sem_group(const gsite *s)
         }
     for (int c = 0; c < 3; c++) sem_emit(s, G2_V_STYLE, c, m_style);
     for (int c = 0; c < 3; c++) sem_emit(s, G2_V_FLOOR, c, m_floor);
-    if (d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN)
+    if ((d->handoff == G2_H_ON_MISS || d->handoff == G2_H_ASSIGN) && !d->noonmiss)
         for (int c = 0; c < 2; c++) sem_emit(s, G2_V_LEAVES, c, m_leaves);
     if (d->handoff == G2_H_ASSIGN && d->empty != G2_EMPTY_NOP)
         for (int c = 0; c < 2; c++) sem_emit(s, G2_V_DECL, c, m_decl);
@@ -2616,10 +2951,20 @@ static void gen_semantic(int reps)
 {
     unsigned rot = 0;
     for (int r = 0; r < reps; r++) {
-        for (int shape = 0; shape < 9; shape++) {
+        for (int shape = 0; shape < 13; shape++) {
+            /* shapes 9-12 are lane g2pf's PF cells 1-4, drawn from the PF
+             * stream and id range so every older seed is the seed it was */
+            pfsave pfsv = { 0, 0, 0 };
+            if (shape >= 9) pfsv = pf_enter();
             g_seed_have = 0;
             g_fam_out = seed_capture;
             switch (shape) {
+            case 9: case 10: case 11: case 12: {
+                gsite pg;
+                pf_cell(&pg, shape - 8, (unsigned)r);
+                g_fam_out(&pg);
+                break;
+            }
             case 0: gen_fam_ofs(1, &rot); break;
             case 1: gen_fam_ofsrun_one(&rot); break;
             case 2: gen_fam_stmt_one(0, &rot); break;                                   /* ASSIGN */
@@ -2631,12 +2976,13 @@ static void gen_semantic(int reps)
             default: seed_allfunc(r); break;
             }
             g_fam_out = fam_emit;
-            if (!g_seed_have) continue;
+            if (!g_seed_have) { if (shape >= 9) pf_leave(pfsv); continue; }
             if (pend_class(&g_seed)) {                 /* the seed itself must be a hard site */
                 g_seed.d.miss_mode = g_seed.d.handoff == G2_H_BOOL ? 0 : 6;
             }
             sem_group(&g_seed);
             free_site(&g_seed);
+            if (shape >= 9) pf_leave(pfsv);
         }
     }
 }
@@ -2879,6 +3225,9 @@ int main(int argc, char **argv)
     }
     g_fam_style = 0;
     g_fam_stride = 1;
+    /* (6b) lane g2pf: the PF shape (integration.md 15.7 [R4g]): four cells,
+     *      their edges, and the table that disagrees with the set */
+    gen_fam_pf();
     /* (7) lane g2u: the semantic differential, its groups half without and
      *     half with MF_D_RUN_OVERLAP */
     force_batch(0);
@@ -2908,6 +3257,9 @@ int main(int argc, char **argv)
     for (int c = 1; c < G2_NPEND; c++)
         fprintf(g_res, "PENDBUCKET %s rendered=%ld refused_named=%ld refused_unnamed=%ld\n", g2_pend_name(c),
                 pend_rendered[c], pend_refused_named[c], pend_refused_unnamed[c]);
+    for (int e = 1; e < G2_NPFE; e++)
+        fprintf(g_res, "PFEDGE %s cases=%ld rendered=%ld refused_named=%ld refused_unnamed=%ld\n", g2_pfe_name(e),
+                pfe_rendered[e] + pfe_named[e] + pfe_unnamed[e], pfe_rendered[e], pfe_named[e], pfe_unnamed[e]);
     fprintf(g_res, "POISON sites=%ld identical=%ld refused=%ld differ=%ld control_unstable=%ld\n",
             pz_total, pz_identical, pz_refused, pz_differ, pz_unstable);
     for (int k = 0; k < NPZ; k++)
@@ -2927,6 +3279,9 @@ int main(int argc, char **argv)
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail, n_poison_pass, n_poison_fail,
             n_strict_pass, n_strict_fail, g_strict);
     fprintf(g_res, "SITEFN checked=%ld\n", n_sitefn_checked);
+    fprintf(g_res, "USEREFUSE-TOTAL lawful=%ld unnamed=%ld", n_userefuse, n_userefuse_unnamed);
+    for (int k = 0; k < 6; k++) fprintf(g_res, " %s=%ld", UR_FIELDS[k], n_userefuse_by[k]);
+    fprintf(g_res, "\n");
     fclose(g_res);
     printf("g2_gen: %d sites, %d batches, render fail %ld, refusal fail %ld, vocab fail %ld, api fail %ld\n",
            nsites, bi, n_render_fail, n_refusal_fail, n_vocab_fail, n_api_fail);

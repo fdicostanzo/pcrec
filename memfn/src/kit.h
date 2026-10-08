@@ -200,6 +200,10 @@ typedef struct arm {
 #define precheck_arm        MF_NS(precheck_arm)
 #define precheck_assign_arm MF_NS(precheck_assign_arm)
 #define runcmp_arm          MF_NS(runcmp_arm)
+#define pf_memchr_arm         MF_NS(pf_memchr_arm)
+#define pf_memchr_bounded_arm MF_NS(pf_memchr_bounded_arm)
+#define pf_walk_arm           MF_NS(pf_walk_arm)
+#define pf_walk_bounded_arm   MF_NS(pf_walk_bounded_arm)
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
@@ -210,6 +214,13 @@ extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    *
 extern const arm precheck_arm;          /* ON_MISS                            */
 extern const arm precheck_assign_arm;   /* ASSIGN                             */
 extern const arm runcmp_arm;    /* runcmp.c: the run compare EXPR (§15.6)     */
+/* pffind.c: the prefilter FIND (§15.7, R4g), TWO renderers as FOUR rows
+ * (N3's split, by end_back): `memchr` over a one-byte set, and the in-place
+ * walk over a set pcrec names by table. Form ids `pf_memchr`, `pf_walk`. */
+extern const arm pf_memchr_arm;         /* one byte, end_back 0, on_miss leaves */
+extern const arm pf_memchr_bounded_arm; /* one byte, end_back 1, miss n - 1     */
+extern const arm pf_walk_arm;           /* table, end_back 0, miss n            */
+extern const arm pf_walk_bounded_arm;   /* table, end_back 1, miss n - 1        */
 
 /* ---- writing to a sink --------------------------------------------------- */
 

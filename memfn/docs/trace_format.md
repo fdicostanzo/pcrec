@@ -34,7 +34,9 @@ the chosen one), and one `END`.
 - `site`: the site's handle (`arms`), or `-` (`runcmp`: the run walk has no
   handle).
 - `phase`: `define` (the arm walk in `mf_define`, over the site and the
-  define hooks), `use` (the re-check of the chosen arm in `mf_use`, every
+  define hooks; `mf_emit`'s walk is labelled `define` too, though its gate
+  reads the define AND use fields, since the one-call entry holds both hook
+  sets: r4gfix), `use` (the re-check of the chosen arm in `mf_use`, every
   use and every `mf_call`, over the use hooks), `run` (the run compare's
   walk over one RUN term; it runs inside a define or a use).
 - `<what>` on `SEL`: `form=… op=… handoff=…` (arms; the classes of those
