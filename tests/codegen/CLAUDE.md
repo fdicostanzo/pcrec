@@ -3800,7 +3800,7 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
   abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;
-  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to `8c175f58`;
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to `9a0cf78e`;
   `run_prefilter_collapse.sh` gains the [anch] section (six both-anchored
   nullable witnesses that must keep `hybrid`/`selected`/`empty_admits no`,
   seven one-sided/partial/multiline/unanchored twins that must stay
