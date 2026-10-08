@@ -1,7 +1,10 @@
 # S263 — [OPT-ANCHOR-VM] THE VM'S ATTEMPT-LOOP START BOUND IS EMITTED AS
-# `subject_length` WHERE THE PREDICATE SAYS `search_from` (src/gen/emit_vm.c),
-# so an artifact that has PROVED only one start position can match still walks
-# every one of them.
+# `subject_length` WHERE THE PREDICATE SAYS `search_from` (src/gen/emit_dfa.c
+# since [START-TABLE] C5, lane stc5, 2026-10-07: the bound's text moved from
+# src/gen/emit_vm.c into BOUND's VM rows B3/B4 of `cand_rows[]`, one
+# `CAND_VM_BOUND_ONE` line both rows carry, which `vm_emit_search_body`
+# emits; the plant is the same edit on the same text), so an artifact that
+# has PROVED only one start position can match still walks every one of them.
 #
 # THIS ROW'S DETECTOR IS THE STAMP, AND THAT IS A PROPERTY OF THE MECHANISM
 # RATHER THAN A GAP IN THE SUITE. Every attempt the bound removes is an
@@ -26,12 +29,12 @@
 # failure, and a test of a different claim. The sound-direction plant is the
 # one that measures whether this mechanism has a detector at all.
 SAB_ID="S263-vm-anchor-bound-subject-length"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks harness"
 SAB_DESC="the VM search loop's start bound is emitted as 'attempt_max = subject_length' instead of 'attempt_max = search_from', so an artifact whose every match provably begins at offset 0 (or at the caller's startpos) still runs an attempt at every start position — a pure cost regression with NO answer-level detector anywhere in the tree, which is why this is a STAMP-vs-TEXT row and why a green corpus arm beside a red prechecks arm is the row working"
 SAB_DOC_FIGURE="MEASURED 2026-09-22 (solo mech run, tree be7e8ef366ae238ed6c9c5d8625c0ca039112cdc — the mechanism's own landing commit, where tests/codegen/run_prechecks.sh carried only its §1): DETECTED, unexpected: 0 — reach:ok(1/1), prechecks:4fail/19pass, corpus:0fail/28960pass. The four reds are §1.1b on the four bounded witnesses (^abc, \\Aabc, ^(a|b)+\$, \\Gabc), each reporting 'stamps \"anchored\" but the emitted loop is not bounded by attempt_max'; the three unanchored witnesses stay green because the plant cannot reach them. THE CORPUS ARM'S ZERO IS THE POINT AND NOT A HALF-DETECTION: 28,960 cases, every one unaffected, because the bound removes only attempts that would have run and failed. The prechecks DENOMINATOR grows as the batch's other two sections land (19 pass here, 50 at [OPT-ENDWIN]'s landing, 110 at [OPT-REQBYTE]'s) — the FOUR reds are this row's own figure and do not move with it. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S263."
 SAB_REACH='"$PCREC" --features all --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "^(a)b" && grep -q "^#define RX_VM_START \"anchored\"" "$REACH_TMP/o.c" && grep -q "const size_t attempt_max = search_from;" "$REACH_TMP/o.c" && echo REACH-VM-START-BOUND-EMITTED'
 SAB_REACH_EXPECT="REACH-VM-START-BOUND-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='        pcrec_sb_puts(c, "    const size_t attempt_max = search_from;\n");'
-SAB_AFTER='        pcrec_sb_puts(c, "    const size_t attempt_max = subject_length;\n");   /* SABOTAGE S263: the bound the predicate proved, thrown away */'
+SAB_BEFORE='#define CAND_VM_BOUND_ONE "    const size_t attempt_max = search_from;\n"'
+SAB_AFTER='#define CAND_VM_BOUND_ONE "    const size_t attempt_max = subject_length;\n"   /* SABOTAGE S263: the bound the predicate proved, thrown away */'

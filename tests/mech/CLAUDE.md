@@ -3400,3 +3400,18 @@ their answer does not depend on the route, and the trace build's
 row; the plant inserts a VM-only total PRESENCE row before `emitted`, which
 moves no default-build byte.
 
+**[START-TABLE] C5 (lane stc5, 2026-10-07)**: RETRY, BOUND, WINDOW and WIDTH
+lost their old decisions too, so the both-walks oracle is gone and
+`run_cand_oracle.sh` builds ONE trace compiler. S597 (B3's predicate tests
+GSTART) and S599 (H1 hands CAND) and S598 (`fixed` deniable) keep their
+anchors; S597's plant now MOVES the VM's bound (the witness no longer reaches
+`vm-anchored`), S598/S599 are still the self-check's. Re-aimed as derived
+(start_table.md §3.5): **S263** (the VM bound text is `CAND_VM_BOUND_ONE` in
+emit_dfa.c, B3/B4's `u.bound`), **S371** (the adaptive test reads
+`pcrec_cand_reseed(rs->row)->action`), **S441** (R3's predicate
+`cand_rs_anchored_applies` in emit_dfa.c; C5b re-aims it again), **S556**
+(the root-minw test reads the WIDTH row); **S372**'s anchor survived in
+`vm_plan_reseed` and its intent was re-verified. **S605** is new
+(`candrows`): `vm_plan_reseed` reading the RETRY row's spelling, the K84
+shape `[cand-no-name-strcmp]` forbids on every slot since C5.
+

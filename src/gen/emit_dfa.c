@@ -5023,8 +5023,8 @@ typedef struct CandList {
  * the row's IDENTITY, unique across `cand_rows[]` (the self-check holds it),
  * and is what a check keys on; `tok` is the spelling the code uses for the
  * row TODAY — its old table's name, or for an inline decision the C1 trace
- * record's row field — which the trace prints, the stamps project and the
- * oracle compares, so four rows named `none` and two each of
+ * record's row field — which the trace prints and the stamps project, so
+ * four rows named `none` and two each of
  * `anchored`/`gstart` keep one identity apiece. Defined here, above the
  * emitters, because the forms read a NEXT row's payload through `DfaForm.pf`.
  * `u` is the slot's payload: C3 moved NEXT's (`u.pf`, was `DfaPf`) and

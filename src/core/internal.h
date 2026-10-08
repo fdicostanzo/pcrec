@@ -7090,10 +7090,12 @@ void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
  * `_RECF` formats `row` from `fmt` and its arguments. */
 #ifdef PCREC_CAND_TRACE
 #include <stdio.h>
-/* [START-TABLE] C2 the both-walks oracle's QUIET DEPTH: nonzero while the
- * oracle runs `cand_select` beside an old walk, so a predicate that itself
- * walks (F1 asks PRESENCE, P3 and R4 ask NEXT, N12 is `attempt_cand`) prints
- * no second record and the trace stays record-for-record C1's. Trace build
+/* [START-TABLE] the trace build's QUIET DEPTH: nonzero while a check walks
+ * `cand_select` beside the reader's own ask (since C5 the entry slots'
+ * cross-route check, `cand_hit_every`; until then the C2 both-walks oracle
+ * too), so a predicate that itself walks (F1 asks PRESENCE, P3 and R4 ask
+ * NEXT, N12 is `attempt_cand`) prints no second record and the trace stays
+ * record-for-record C1's. Trace build
  * only; the one mutable file-scope object the library would otherwise not
  * have (coding_guide §1.5), thread-local so concurrent compiles in a trace
  * build stay independent. Defined in src/gen/emit_dfa.c. */

@@ -147,7 +147,8 @@ PCREC_AXIS(PCREC_NO_CLS_PACK,      "-fno-cls-pack",      0, "", PCREC_AXIS_DEFAU
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SIZE_TERM,    "-fno-size-term",    0, "", PCREC_AXIS_DEFAULT_ON)
 /* [OPT-HYB-RESEED]: the hybrid's retry, adaptive between stepping and asking
- * the prefilter again (src/gen/emit_vm.c's `pcrec_reseed_rows`). */
+ * the prefilter again (the RETRY rows of src/gen/emit_dfa.c's `cand_rows[]`
+ * since [START-TABLE] C5; src/gen/emit_vm.c's `pcrec_reseed_rows` before). */
 PCREC_AXIS(PCREC_NO_HYB_RESEED,   "-fno-hyb-reseed",   0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5],

@@ -399,13 +399,15 @@
 #     here scores `corpus:0fail` by design. Registered before its rows.
 #   candoracle — added 2026-10-07 ([START-TABLE] C2, lane stc2); runs
 #     tests/codegen/run_cand_oracle.sh: builds the sabotaged tree's sources
-#     twice with -DPCREC_CAND_TRACE (old decision first, and
-#     -DPCREC_CAND_NEW_FIRST) into the row's work dir and compiles every
-#     witness line with both; a disagreement between `cand_rows[]` and an old
-#     start decision, or a table self-check failure, aborts the compile. Its
-#     own arm because `cand_rows[]` has no reader in a default build until
-#     C3: a plant on it moves no artifact byte and no answer, so a row here
-#     scores `corpus:0fail` by design. Registered before S594-S599.
+#     with -DPCREC_CAND_TRACE into the row's work dir (twice until C5, old
+#     decision first and -DPCREC_CAND_NEW_FIRST, while old decisions were
+#     left to compare against) and compiles every witness line; a witness
+#     that no longer reaches its row, an entry slot choosing differently on
+#     another route, or a table self-check failure fails it. Its own arm
+#     because, at C2, `cand_rows[]` had no reader in a default build: a plant
+#     on it moved no artifact byte and no answer. Since C3-C5 the table
+#     decides each slot, so a row plant also MOVES the artifact; the arm stays
+#     the one that names the row. Registered before S594-S599.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a

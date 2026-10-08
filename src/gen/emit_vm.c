@@ -13274,7 +13274,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * four reach the ceiling -- `^((?1)a)$`, `^(a?(?1)b)$`, the indirect
      * cycle, and mrl.rxt's `^(?:(?<g>a(?&g)b)){0}(?&g)$` -- and every one of
      * them is call-bearing, so no call-free artifact gains a byte.
-     * [START-TABLE] C5 the condition is WIDTH's row (H1 `ceiling`). */
+     * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
     if (pcrec_cand_width(width)->check)
         pcrec_sb_printf(c,
             "    /* The whole pattern's MINIMUM WIDTH is at the analysis\n"

@@ -12,7 +12,7 @@ def	dfa_search_start_name	C3	reads the walk's row (c.name projection)
 def	dfa_search_is_pinned	C3	reads u.recover.pinned, never a row pointer ([r2 sound-m2])
 def	dfa_select	C3	the route plumbing leaves (cand_routed, DFA_SELECT_ROUTED, routes_at); the walk STAYS for the six machine-form axes (stc3 §4 item 1, ruled 2026-10-07)
 def	cand_routed	C3	the route filter moves into cand_select
-def	DFA_SELECT	C5	macro deleted with dfa_select
+def	DFA_SELECT	C5	STAYS ([stc5]; the C3 ruling, stc3_report.md §4 item 1): the six machine-form axes walk dfa_select through it; the start tables' last DFA_SELECT callers went at C4, so C5 deletes no caller
 def	DFA_SELECT_ROUTED	C3	macro deleted with dfa_pfs
 def	req_admits	C4	table deleted into cand_rows[]
 def	req_uses	C4	table deleted into cand_rows[]
@@ -28,7 +28,7 @@ token	DFA_SELECT(DfaSearchStart	C3	walk spelling deleted
 token	DFA_SELECT(ReqAdmitRow	C4	walk spelling deleted
 token	DFA_SELECT(ReqUseRow	C4	walk spelling deleted
 # [stc3, 2026-10-07] `token dfa_search_start_of( C3 function deleted` RETIRED: C3 kept the function as the RECOVER slot's one CandSel builder (its body is cand_select(RECOVER) on cand_route_of), as dfa_pf_of/vm_start_row are NEXT's; see docs/dev/lanes/stc3_report.md §4
-token	rs->row	C5	VmReseed.row becomes a const CandRow *; action/start/armed move into u.reseed
+token	rs->row->	C5	VmReseed.row becomes a const CandRow * (the field keeps its name [stc5]); its reads go through pcrec_cand_tok/pcrec_cand_reseed, action/start/armed in u.reseed
 token	VRS_P_	C5	tag enum deleted
 token	VRS_A_	C5	action enum moves into u.reseed (renamed CAND_RS_A_*)
 token	VRS_S_	C5	start enum moves into u.reseed
@@ -36,7 +36,7 @@ line	bool cpre = attempt_cand(d, &cand);	C3	N12's ATTEMPT reader 1 of 4 -> cand_
 line	cs->byte = attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;	C3	N12's reader 2 of 4 (G1)
 line	attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));	C3	N12's reader 3 of 4 (<string.h>)
 line	return attempt_cand(&cx->job->dfa, &acand) ? "memchr" : "none";	C3	N12's reader 4 of 4 (the stamp)
-line	long long w = pcrec_fact_end_window(cx);	C5	W1's inline predicate -> cand_select(WINDOW)
+# [stc5] `long long w = pcrec_fact_end_window(cx);` is KEPT: since C5 it reads the clamp's VALUE (the landmark) after the WINDOW row decides; the decision was the next line, which is gone
 line	if (w < 0) return;	C5	W1's inline predicate
 line	if (v->root_minw >= PCREC_MINW_MAX)	C5	H1's inline predicate (body, stamp :11419 and listing :9492 all read the row, [r2 sound-m1])
 line	bool a_bot = dfa_interior_dead(d, d->s1u);	C5	B1/B2's inline predicate -> cand_select(BOUND, CR_ATTEMPT)
@@ -49,11 +49,11 @@ line	return cx->job->engine == PCREC_ENG_ATTEMPT &&	C5b	P2's DFA arm reads BOUND
 line	if (pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE) return false;	C5b	N7's anchoring conjunct reads BOUND(CR_VM) ([r2 sound-M5])
 line	for (int u = 0; u < d->natoms; u++) if (d->s1u[u] >= 0) anchored = false;	C5b	attempt_cand re-spells B1 or B2; reads BOUND(CR_ATTEMPT) ([r2 sound-M5])
 # [r2.1 sound-S-N3] C5b's fifth BOUND restatement (R3's predicate, emit_vm.c:11090): S441 is moved by C5 AND C5b
-line	return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;	C5b	R3 `anchored` reads BOUND(CR_VM) ([r2.1 S-N3]; the line sits in vm_reseed_holds, C5's def)
+line	{ return pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }	C5b	R3 `anchored` reads BOUND(CR_VM) ([r2.1 S-N3]; since C5 [stc5] R3's own predicate cand_rs_anchored_applies in emit_dfa.c, the old vm_reseed_holds arm's text moved with S441)
 # [r2.1 sound-S-N3, sound-m1] the stamp and listing readers C5 moves onto the row
-line	pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",	C5	<PREFIX>_END_WINDOW projects W1/W2 (emit_dfa.c:10114)
+# [stc5] the stamp CALL `pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",` is kept (the stamp is still written); its VALUE line below is what changes
 line	pcrec_fact_stamp(cx, PF_END_WINDOW));	C5	the END_WINDOW value's fact read becomes the row's projection
-line	pcrec_sb_stamp_str(c, v->up, "VM_START",	C5	<PREFIX>_VM_START projects B3/B4/B5 (emit_vm.c:11558)
+# [stc5] the stamp CALL `pcrec_sb_stamp_str(c, v->up, "VM_START",` is kept; its VALUE line below is what changes
 line	pcrec_fact_stamp(v->cx, PF_START_ANCHOR));	C5	the VM_START value's fact read becomes the row's projection
 line	if (st->root_minw >= PCREC_MINW_MAX)	C5	--emit-ir's root-minw listing row reads H1 (emit_vm.c:9492; `st->`, not `v->`)
 # [r2.1 sound-S-N2] ONE route derivation: every `job->engine` test that chooses CR_DFA vs CR_ATTEMPT (or EMPTY) reads cand_route_of(cx)

@@ -3190,7 +3190,8 @@ collapse (§2.17). Before `abi` 49 a hybrid re-seeded only where an MRL
 clamp existed and stepped everywhere else. So on a subject where one
 answer failed, it ran a VM attempt at every remaining character. The
 choice is now a first-match table (`pcrec --list-axes`, axis
-`hyb-reseed`):
+`hyb-reseed`; since [START-TABLE] C5 the RETRY rows of the one start table
+`cand_rows[]`, `docs/design/start_table.md`):
 
 | # | row | deny | applies | action |
 |---|---|---|---|---|

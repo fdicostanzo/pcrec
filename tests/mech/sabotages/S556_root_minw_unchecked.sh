@@ -1,6 +1,9 @@
 # S556 (born S169 -- renumbered 2026-10-07 [admin1007], it shared S169 with
 # S169_postresolve_pass_deleted.sh, the older row; [DD-14.EMPTY], wave E; design SS4.4b + SS12 P-12) -- THE ROOT
-# MINIMUM-WIDTH CHECK AT THE SEARCH ENTRY.
+# MINIMUM-WIDTH CHECK AT THE SEARCH ENTRY. Re-aimed at [START-TABLE] C5 (lane
+# stc5, 2026-10-07): the condition is the start table's WIDTH row (H1
+# `ceiling`, whose predicate is the old `root_minw >= PCREC_MINW_MAX` test),
+# and the plant still removes the emission site itself.
 #
 # THE CLAIM. When the whole pattern's `pcrec_minw` is at the analysis ceiling,
 # `<prefix>_search` answers NOMATCH before pushing a single frame. P-12 rules
@@ -43,7 +46,7 @@ SAB_EXPECT=DETECTED
 SAB_DESC="the search entry stops emitting the ROOT minimum-width check, so an empty-language pattern with no quantifier to carry an MRL clamp runs until the resume-frame buffer gives up instead of answering NOMATCH"
 SAB_DOC_FIGURE="PREDICTED: leftrec.rxt's DIRECT cell (^((?1)a)\$ on \"a\") and its INDIRECT cell (the p/q two-node cycle on \"ab\") revert from a ruled NOMATCH to PCREC_ERR_FRAMES -- their wave-B+C expectation, which wave E replaced. The NULLABLE-PREFIX cell (^(a?(?1)b)\$ on \"ab\") stays GREEN under the same sabotage, because its \`a?\` emits an MRL clamp and it never depended on this site. TWO RED, ONE GREEN is the signature; three red means the MRL machinery was cut instead. MEASURED on the landed build: all three roots report pcrec_minw = 1099511627776 (PCREC_MINW_MAX) once pcrec_callgraph_build has run, and exactly four of the corpus's 2,568 distinct patterns reach that ceiling -- all four call-bearing."
 SAB_COUNT=1
-SAB_BEFORE='     * them is call-bearing, so no call-free artifact gains a byte. */
-    if (v->root_minw >= PCREC_MINW_MAX)'
-SAB_AFTER='     * them is call-bearing, so no call-free artifact gains a byte. */
+SAB_BEFORE='     * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
+    if (pcrec_cand_width(width)->check)'
+SAB_AFTER='     * [START-TABLE] C5 the condition is the WIDTH row (H1 `ceiling`). */
     if (0) /* SABOTAGE S556: the root minw check is never emitted */'
