@@ -90,3 +90,102 @@ None applicable: docs only, no build. Every number in §R4.9 was copied
 from the committed R-1 transcripts (`docs/design/memfn/probes/out/twins/
 r4b/linux/readings.gcc.md` and `tb.gcc-*.txt`) or from
 `linux_results.md`. Every box fact was read on 2026-10-08.
+
+## Revision after panel r9 (2026-10-08, same lane)
+
+Input: the D6 panel r9 (`docs/dev/reviews/2026-10-08-r9-memfn-simd.md`,
+critics in `2026-10-08-r9-memfn-simd/`; 43 findings: 2 BLOCKER, 20 MAJOR,
+21 MINOR) with the manager's dispositions, and the rulings that postdate
+the first draft: D144 addendum 4, D147 addenda 11-13 (13 PRELIMINARY,
+read from main 26297b6c), M6 = VMSTRIDE at `MF_SITE_ABI` 8. The kit tip
+(`lane/memfn-m7`) was read READ-ONLY for the facts the base lacked; it was
+not edited. DESIGN ONLY again: the only commands run were reads and one
+`gcc -dM -E` probe (`-mx32` and `-m32 -msse2` both define `__SSE2__`,
+`-mx32` also `__x86_64__`, so the level guards exclude `__ILP32__`).
+
+### What changed
+
+- **§R4.9 rewritten in place**, still revision 4.9, every edit marked
+  `[r9 <id>]` (119 marks). The header, §R4.3.2/§R4.3.3, §2.2, §8.6,
+  §17.3, §22 R4e′/R4f and §23 marks are updated to match.
+- **F-1 (BLOCKER), the seam.** Step R4e′.0, kit-only and zero-mover,
+  makes `ofs_fn_define`'s body a first-match table `fn_rows[]` with a SLOT
+  column: BODY (the two scalar loops, `fn-pair`/`fn-memchr`, which are
+  today's inline `b >= 0` branch moved into rows) and PREFIX (born empty).
+  The seam passes the calling SITE into the walk, asks BODY first, and
+  assembles the slots in a fixed order, so no row calls or wraps another.
+  SIMD rows are PREFIX rows with an `over` column (the BODY rows they may
+  sit over) and a `rungs` list (the same-form rows their dispatch names),
+  so the ladder is data, not a walk-on. Reach: every FUNC part, i.e.
+  `<p>_reqrun` (PRE window, every route), `<p>_reqrun_whole` (PRE whole
+  run, never reached by batch 1) and `<p>_ofsskip` (OFS; `run-pinned`
+  reached when the k-set is the run alone, `offset-set` never). OFS
+  run-pinned, which R-1 never timed, gets its own pre-registered cell
+  (bench run-pinned artifacts exist, `router-prefix-order`'s `/user` the
+  named witness), with a structural exclusion on `op` as the fallback. No
+  pcrec part is needed for the seam: the kit owns the renderer (RQ-0).
+- **M-1 (BLOCKER), reframed by D144 addendum 4.** Two tiers. Tier U
+  (kit probes, lane alphas, dev-box `taskset`, the Mac) is directional and
+  decides triggers, constants to submit and a veto. Tier O is a
+  pcrec-bench run, pre-registered, on EACH box that executes the level
+  (w16 and w32: ubuntubudu AND the dev box; w64: the dev box; aarch64: the
+  Mac under addendum 8). The bench submission (§R4.9.5.1) is requested
+  through the pcrec manager BEFORE acceptance; the kit never writes to
+  pcrec-bench.
+- **The rest, by theme:** T defined once as `max_reach(pred)` with the
+  reach derived from the highest read (C-1); one shared kit walk for
+  `arms[]`, `rc_row` and `fn_rows[]`, `policy`/`budget` as `fields.def`
+  fields with the existing `DECLINED` verdict, one deny carrier with
+  `MF_D_RUN_OVERLAP` the named legacy exception (F-2, F-3, F-12);
+  selection neutrality by construction (`simd_open`/`simd_close` sink ops,
+  pcrec's length readers subtract guarded bytes, RQ-3) and D84's caps as
+  Q-R9-9 (C-3); the cascade guard with `__SSE2__` and above the full
+  ladder (C-4); G2's multi-hit/near-miss/`pos` axes, per-path plants and
+  coverage floors, poisoning (C-5, C-10); C18's insertion-only on-target
+  leg (C-6); intrinsics included inside the guard (C-7, F-10); guards with
+  `__x86_64__`, C9-x86 at six macro sets (C-8); the null population as
+  the noise band, the alignment relink withdrawn (M-5, M-6); bins by
+  cause, no "< 8" exclusion (M-7, C-11); the record's states and C19 as a
+  never-red STALE detector bound to transcripts (M-2, M-8, F-11); one
+  `simd` sweep arm with named projections (F-5); the filed list re-read
+  against the kit tip (F-7) and F-6 recorded as decided NO.
+
+### Questions for Frank (§R4.9.10)
+
+- Q-R9-1 RESOLVED by D144 addendum 4 (nothing to rule).
+- Q-R9-2 (revised): each row at each level it targets, on every bench box
+  running that level; a loss on any blocks the level, a win on one is
+  needed; a row may land as a CANDIDATE before its bench reading.
+  Recommend yes.
+- Q-R9-3: KB as a pcrec fact (`plan_pos2`). Recommend (a).
+- Q-R9-4 (revised): a measured named benefit with no timing loss is
+  accepted; code space is never such a benefit for these SIMD rows.
+- Q-R9-5: a re-opened comparison never blocks a scalar change (C19 →
+  STALE). Recommend no-block.
+- Q-R9-6: the floor rule. Recommend yes.
+- Q-R9-7: one deny per (form, width) through the one carrier. Recommend.
+- Q-R9-8: admit the cascade's libgcc link dependency under SIMD-on,
+  x86-64 Linux/ELF, under C-4's guard, spec-stated. Recommend admit.
+- Q-R9-9 (new): D84's caps EXCLUDE guarded bytes, with a per-row constant
+  bound (`guarded_max`) checked by G2. Recommend exclude.
+
+### Not applied, and why
+
+Nothing. 42 ids applied as dispositioned; F-6 decided NO and applied as
+that decision (§R4.9.12). Two things are left to the manager because this
+lane may not write them: relaying the F-6 decision to the kit's
+`responses.md` as the answer to R-10's Q-R10-10, and reconciling this
+revision's 4.9 with the kit tip's 4.8 `[M7]` text at merge (F-9).
+
+### For whoever resumes
+
+- The seam (R4e′.0) is the next request, kit-only and zero-mover. Its
+  census (an `MF_TRACE` build counting `fn` walks by customer and
+  predicate shape) is what names the OFS run-pinned and VM-hybrid bins'
+  cells.
+- D147 addendum 13 is preliminary and invites R-9's panel to propose a
+  better regime; §R4.9.6 and Q-R9-2 are that proposal.
+
+### Validation
+
+None applicable: docs only, no build, no timed run.
