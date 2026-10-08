@@ -982,3 +982,7 @@ the compiler, and is never adopted silently. Proposed for main to file
       rc 0 and reason_stale=0.
   - **Sabotage:** S72 and S214 re-anchored, S512 re-aimed, S614-S616 new.
     S617 is returned.
+- ack: 2026-10-08 — **R-7 (M4, MLINE).** Taken now. Step 1 is a read-only
+  scoping lane (r4mlscope, opus). Its edit set and its overlap check
+  against [DEC-FALLBACK] and the ATTEMPT-route start rows will be posted here
+  as a notice. No build until main has read it.
