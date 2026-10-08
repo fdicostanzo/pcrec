@@ -1,5 +1,29 @@
 # memory-functions: R1d, THE INTEGRATION MAP AND THE COMPOSITION MODEL
 
+**REVISION 4.9 (lane `r9d`, 2026-10-08, from kit branch `lane/memfn-r9`
+at main 5ddd2f04, design only): THE SIMD LAYER'S DESIGN PASS, request R-9
+under D147 addendum 11 (SIMD is a parallel path; each form beats the
+CURRENT scalar layer at its sites or names a benefit). It overrides
+anything below that conflicts.** Read §R4.9 first. In short:
+- `SCAN_ROWS` is the kit's own form tables (`arms[]`, `rc_row`). SIMD
+  forms are rows beside the scalar arms, each declaring a layer, an ISA
+  level (`memfn/src/levels.def`) and its own deny.
+- THE FLOOR RULE: a SIMD-on rendering is the SIMD-off rendering plus
+  guarded text, so the scalar arm is every ladder's floor (check C18).
+- Short spans fall to the next rung by a DERIVED reach. The run-time
+  cascade is a separate, filed row.
+- The verdict regime fixes the box, the core and its SMT sibling, the
+  consumer's `-march`, one binary per arm, and a placement control.
+- First batch: the pre-check composite's window run with no lead, rows
+  `vrun-w32`/`vrun-w16`, on R-1's union-select and mod-i evidence.
+  Everything else is filed with the cell it lacks.
+- Seven findings in the prior measurements (§R4.9.1), headed by: R-1's
+  16-byte column ran the SCALAR path in every cell.
+- **Q-R9-1..8 are open for Frank (§R4.9.10).** Requests RQ-1..5 are for
+  main (§R4.9.11).
+
+Changed passages carry `[rev4.9]` in place.
+
 **REVISION 4.8 (lane `m1b`, 2026-10-07, from kit branch `lane/memfn-m1b`
 at main 993f8c1d): M1b's CONTRACT, request R-5 (runcmp migrates, zero
 movers). They override anything below that conflicts.** Read §R4.8
@@ -157,6 +181,865 @@ addenda 2-3 (every form choice a `DFA_SELECT`-style row; SIMD later = one
 row; SWAR admitted now), D139 (one class-form table, sites as bits), D144
 item 4 (every optimization its own deny), D145 (generated-output licence
 exception), and the tables themselves (§1).
+
+---
+
+## R4.9. Revision 4.9: the SIMD layer's design pass (R-9) `[rev4.9]`
+
+(Top-level, like §R4.8. It sits first because it replaces §22 R4e′,
+extends §R4.3.2 and §8.6 K-6/K-7, and realizes §2.2's `SCAN_ROWS`
+inside the kit.)
+
+**The input.** Request R-9 (`memfn/docs/requests.md`): the R4e′ design
+pass under D147 addendum 11. SIMD is an independent optimization path
+because it switches on and off (`-fmemfn-simd`, default OFF). Each SIMD
+form must be measurably FASTER than the CURRENT scalar layer at its
+sites, or show a named benefit, because SIMD imposes restrictions (an ISA
+requirement, no portability promise). Default-ON is its own ruled event
+(R4f). Capacity is 2:1 migration:SIMD until M5′. This revision is DESIGN
+ONLY: no source, no emitted byte, no timed run. It was written from kit
+branch `lane/memfn-r9` at main 5ddd2f04 (lane r9d). The facts it states
+about the box were read with `lscpu`, `/proc/cpuinfo` and sysfs on
+2026-10-08, and the macro sets with `gcc -dM -E`.
+
+**What it decides, in short:**
+- `SCAN_ROWS` is the kit's existing form tables (`arms[]`, and `rc_row`
+  for run compares). SIMD forms are ROWS in them, beside the scalar arms,
+  each declaring a layer, an ISA level and its own deny (§R4.9.2). No new
+  table.
+- A SIMD rendering is the site's SIMD-off rendering plus text inside
+  level guards. Deleting the guarded text (the preprocessor does it on a
+  target with no level) gives back the SIMD-off text byte for byte, so the
+  scalar arm is every ladder's floor and its only scalar spelling (§R4.9.2,
+  check C18).
+- Short spans fall to the next row by a DERIVED reach. A run-time cascade
+  is a separate row with its own trigger (§R4.9.3).
+- The verdict regime is pinned down to the core, the `-march`, the span
+  and the comparator build (§R4.9.5).
+- The first batch is ONE site shape at two levels: the pre-check
+  composite with a window run and no lead, at 16-byte and 32-byte width
+  (§R4.9.7). Everything else is filed with the cell it lacks.
+
+### R4.9.0 Each input, and where it now lives
+
+| input | what it says | where it lives now |
+|---|---|---|
+| D147 addendum 11 | SIMD is a parallel path; each form beats the CURRENT scalar layer at its sites or names a benefit; default-ON is ruled separately; 2:1 capacity until M5′ | §R4.9.6 (the bar); §22 R4e′ `[rev4.9]` (trigger, capacity) |
+| D147, addenda 2, 6, 7 | layers; cascades case by case; ONE switch; OFF by default | §R4.9.2 (the layer column); §R4.9.3 (cascades) |
+| D147 addendum 8 (Q43) | aarch64 SIMD-on forms are not accepted without a verdict-grade box | §R4.9.5 item 9; §R4.9.7 filed list |
+| D144 + addenda 1 and 3 | alpha per change on Linux, `taskset`, ≥ ~50 ms loops, absolute deltas against a floor; ASan/UBSan over movers when memory reads change | §R4.9.5 |
+| D149 | every unroll width, block size and cut-over measured, derived or left to the compiler, or labelled | §R4.9.5 item 10 (the batch-1 table) |
+| D77 | build under a measured need | §R4.9.7 (the batch is evidence-only; the rest is filed) |
+| D146, row contracts | the kit owns forms; a row declares `uses`/`serves` | §R4.9.2 |
+| R-1 / R4b (`memfnr4b_report.md` §9; `probes/out/twins/r4b/linux/`) | `ffl` vs `swar` vs `emit`, Zen 1, gcc 15.2 | §R4.9.1 F1-F3; §R4.9.7 |
+| `linux_results.md` | glibc's call term, the AVX2 knee, dispatch costs, T-A, the survey's x86 bars | §R4.9.3; §R4.9.7 filed list |
+| `opt3_dfa_scan_measurement.md` §3-§4 | the DFA candidate skip skips 0 bytes per entry on English text | §R4.9.7 filed list (PF set) |
+| `isa_selection.md`, `isa_evaluation.md`, `requirements.md` N-4/RB-3/RB-4/RB-7 | compile-time selection by predefined macros; no mutable static; a loop-free short path per tier | §R4.9.2, §R4.9.3 |
+
+### R4.9.1 Findings in the prior measurements, read before designing
+
+**F-R9-1. R-1's 16-byte column measured the SCALAR path, at both widths.**
+`f_ffl` (`probes/twins/tb_r4b.c`) returns `f_swar(...)` whenever
+`n − pos < VW + T` (T = run length − 1). At pc16 (n = 16, pos = 0) that
+holds for EVERY cell at BOTH widths: union-select 16 < 21 (w16) and
+< 37 (w32), userpass 16 < 19 / 35, mod-i 16 < 18 / 34, cls-n-uc 16 < 17 /
+33. So in every pc16 row, `ffl` and `swar` ran the same scalar algorithm
+with the same constants. The rows still differ, consistently across
+three launches:
+
+| pc16, ns (ffl − swar, same build) | union-select | userpass | mod-i | cls-n-uc |
+|---|---|---|---|---|
+| SSE2 build, launch 1 | 4.63 − 6.32 = **−1.69** | 6.06 − 6.67 = **−0.61** | 5.41 − 7.08 = **−1.67** | 5.12 − 6.05 = **−0.93** |
+| AVX2 build, median of 3 | 5.78 − 6.34 = **−0.56** | 7.31 − 6.63 = **+0.68** | 6.77 − 7.12 = **−0.35** | 6.42 − 6.01 = **+0.42** |
+
+The "16 B AVX2 losses" (userpass +0.64, cls-n-uc +0.36 in §R4.5) and the
+16 B "wins" are the same effect with two signs. It is per-binary code
+generation and placement of one scalar loop, up to 1.7 ns, not a property
+of any vector form. Two consequences:
+- **R-1's advice still holds, now by construction.** "Short spans belong
+  to the scalar form" is enforced by the derived reach (§R4.9.3). A row
+  never runs its vector body below the span its body needs.
+- **The per-call floor must cover placement.** R-1's floor (`emit` vs
+  `emit2`, one function timed twice in ONE binary) is 0.02-0.18 ns at
+  pc16. The placement effect above is two to thirty-four times the floor
+  at the same cell. §R4.9.5 item 6 adds a placement control.
+
+**F-R9-2. R-1's SIMD-on reading crossed `-march`.** The table's header
+reads "SIMD-on = ffl − swar(sse2)": the AVX2 `ffl` was subtracted from
+`swar` built WITHOUT `-mavx2`. linux_results.md §5 shows that `-march`
+alone moves a scalar artifact by up to 5.7%, and by +34.5% on
+`paren-rec`. So a SIMD-on reading compares builds at the SAME `-march`
+(§R4.9.5 item 4). The cross-build w32-versus-w16 deltas in R-1 are trigger
+evidence only.
+
+**F-R9-3. R-1's SIMD-on comparator was not the current scalar layer at
+every cell.** R-1 compared `ffl` against `swar`. The CURRENT scalar layer
+at main is `emit` (R4d is unbuilt), and on a cell with a lead, R4d's
+designed form is lead first (`swlf`, §15.5). Against those comparators:
+- **userpass (the lead `=` rejects):** every vector form is NULL on
+  throughput (gate 1m: emit 17,610, `ffl` SSE2 17,622, `ffllf` AVX2
+  17,609; floor 23). Every vector form LOSES per call (`ffl` SSE2 vs emit:
+  pc16 +2.16, pc256 +11.76, pc1024 +17.55; `ffllf` AVX2 vs emit: pc16
+  +1.75, pc256 +0.72, pc1024 +0.23; floors 0.01-0.03).
+- **cls-n-uc (the lead `m` never rejects):** `ffl` wins against both emit
+  and swlf (gate 256k: 33.94 vs 76.53 and 108; pc1024: 22.61 vs 72.51 and
+  59.12).
+- **union-select and mod-i (no lead):** `ffl` wins against emit, swar and
+  (vacuously) any lead order, in every throughput row and at pc64 and
+  above.
+
+The kit cannot tell userpass from cls-n-uc: the difference is the
+subject, not the site. By K-1, the lead shape is not in the first batch
+(§R4.9.7).
+
+**F-R9-4. The verdict box changed under the measurements.** R-1 and
+linux_results.md ran on ubuntubudu: Ryzen 5 1600, Zen 1, x86-64-v3 at
+most, AVX2 executed as two 128-bit halves, governor `schedutil`. pcrec's
+Linux box since 2026-10-07 is `pcrec@192.168.1.17`. Read on 2026-10-08:
+- Ryzen 7 7700X (Zen 4), 8 cores / 16 threads, with SMT siblings `N` and
+  `N + 8` (`thread_siblings_list`: 4,12 … 7,15);
+- `avx2`, `avx512f/bw/vl/vbmi`, `gfni` and `vpclmulqdq` present
+  (x86-64-v4; `-march=native` defines `__AVX512VBMI__`);
+- governor `performance`, boost 1, glibc 2.43, gcc 15.2.0, no clang;
+- load average 7.9 at the time of reading.
+
+docs/testing.md "The boxes" records no quiet-box timing floor for it yet.
+So R-1 is TRIGGER-grade evidence (D77: a measured cell justifies
+building). It is not an acceptance verdict on the box that will give
+verdicts (§R4.9.5 item 1, Q-R9-1).
+
+**F-R9-5. SIMD-on text is LONGER, and pcrec reads emitted length.** A
+SIMD rendering is the scalar rendering plus guarded text (§R4.9.2).
+pcrec has selections that compare emitted LENGTH against a threshold:
+- the VM entry-shape knee (`job->vmsb` through `pcrec_sb_len_uncut`,
+  4,096 bytes);
+- the size-cap ladder (`fit_rungs[]`, `PCREC_MAX_EMIT_BYTES`), whose
+  measured size includes the stamp lines (`match_api.md` §6, abi 63).
+
+So `-fmemfn-simd` could move an engine rung, a ladder rung or the
+refusal set. That is [EMIT-VERB] §3a's shape: a render-time gate is
+neutral only if nothing upstream reads the length. The design measures
+before it builds a fix: check C-SEL (§R4.9.8), with request RQ-3 filed
+behind it.
+
+**F-R9-6. pcrec does not carry `--memfn=` yet.** `--list-axes` prints the
+`memfn` section (`src/dump/axes_dump.c`), but no CLI flag, config
+directive or library field carries the string, so `mf_site.opts` is
+always NULL. No kit row can have a reachable OFF arm until pcrec carries
+it: R4d's row and every SIMD row (request RQ-1).
+
+**F-R9-7. A vector skip at the DFA's candidate start has negative
+evidence.** `opt3_dfa_scan_measurement.md` §3-§4: on English text the
+candidate-start skip is entered 190,651 times per MiB and skips 0 bytes,
+because non-candidate runs have length 1. A 7x faster pshufb skip made
+all three bench subjects SLOWER, with a crossover at ~32-byte runs.
+T-A's 4-15x set-classifier wins (linux_results.md §6.1) are on a MISS
+over a whole 64 KiB span, which is the opposite regime.
+
+### R4.9.2 `SCAN_ROWS`: SIMD forms as rows of the kit's form tables
+
+**What `SCAN_ROWS` is now.** Revision 1 (§2.2) designed `SCAN_ROWS` as a
+pcrec table. Revision 3 moved every form choice into the kit (D146).
+Revision 4.9 realizes `SCAN_ROWS` as the kit's two EXISTING first-match
+form tables:
+- the composer's `arms[]` (`memfn/src/compose.c`) for FIND, SKIP,
+  ALL_PRESENT and DENSE;
+- `rc_row` (`memfn/src/runcmp.c`) for VERIFY of one run.
+
+SIMD forms are rows in them, beside the scalar arms they displace. There
+is no third table and no SIMD sub-table. One table answers "which text
+renders this site", whatever layer the text belongs to. That follows
+memory `pcrec-decisions-as-first-match-tables`, and it is why §2.6's "rows,
+not a parallel mechanism" still holds.
+
+**The row declaration.** Every row gains ONE declaration struct, shared
+by both tables (the second customer, `rc_row`, takes it when its first
+SIMD row lands; filed, §R4.9.7). A scalar arm's declaration is the
+default: layer SCALAR, no level, no deny until it moves a byte.
+
+```c
+/* memfn/src/kit.h (DESIGNED, R4e′ batch 1) */
+typedef struct mf_formdecl {
+    mf_layer    layer;   /* MF_L_SCALAR | MF_L_SIMD (options.def's column)        */
+    uint8_t     level;   /* a levels.def token: 0 = none (scalar), else the ISA
+                            level this row's text needs                           */
+    const char *opt;     /* its options.def row: `--memfn=no-<opt>` denies it     */
+    mf_budget   budget;  /* the D91 budgets it was MEASURED at (MF_B_SCAN first)   */
+    uint32_t  (*reach)(const mf_site *s);   /* the derived span the row's vector
+                            body needs (§R4.9.3); NULL for a scalar row           */
+} mf_formdecl;
+
+typedef struct arm {     /* existing fields unchanged */
+    const char *id;  int miss_leaves;
+    int (*applies)(const mf_site *, const mf_hooks *);
+    int (*define)(...);  int (*use)(...);
+    const gate_contract *ct;
+    const mf_formdecl   *decl;   /* [rev4.9] NULL reads as the scalar default */
+} arm;
+```
+
+**The level registry: `memfn/src/levels.def`** (kit-private, born with
+batch 1; pcrec never includes it, so C4 is unaffected). It is an X-macro
+in `options.def`'s idiom:
+
+```
+/* MF_LEVEL(token, family, guard, vw, implies, stamp)
+ *   token    kit-private id
+ *   family   the architecture family (x86-64 | aarch64)
+ *   guard    the preprocessor condition the row's text sits under:
+ *            predefined macros ONLY (RB-3), never a probe or a run-time test
+ *   vw       the register width in bytes, the DERIVED vector width
+ *   implies  the next narrower level of the same family that this guard
+ *            implies (the ladder's next rung); 0 = none
+ *   stamp    the level's token in MEMFN_FORMS (opaque, arch-blind)        */
+MF_LEVEL(LV_X86_W16, x86_64, "defined(__SSE2__)",              16, 0,          "w16")
+MF_LEVEL(LV_X86_W32, x86_64, "defined(__AVX2__) && defined(__SSE2__)", 32, LV_X86_W16, "w32")
+```
+
+A 64-byte (AVX-512) level and every aarch64 level are NOT in batch 1
+(D77; addendum 8). Each is born with its first row, and an aarch64 row
+also needs addendum 8's acceptance.
+
+**The walk, first match** (the existing `select_arm`, with two predicate
+columns added; trace verdicts in `trace_format.md`'s vocabulary). For
+each row in table order:
+
+| # | test | verdict when it fails |
+|---|---|---|
+| 1 | LAYER: an `MF_L_SIMD` row needs `!(policy & MF_P_PORTABLE_ONLY)` | `INERT:PORTABLE` (new trace word) |
+| 2 | LAYER: an `MF_L_SIMD` row needs `!(policy & MF_P_SIZE_LEANING)`, until a row is accepted on a size benefit at those positions (§R4.9.6) | `INERT:SIZE` (new) |
+| 3 | DENY: the site's `opts` does not name `no-<opt>` | `DENIED` (existing) |
+| 4 | CONTRACT: the row's `uses`/`serves` gate (row_contracts.md R1, R2), unchanged | `DECLINED` (existing) |
+| 5 | BUDGET: an `MF_P_INLOOP` site needs a row measured at budget 2 | `PRED_FALSE` |
+| 6 | STATIC REACH: `span_hi ≥ reach(site)`. A site pcrec PROVES shorter than the vector body's reach never gets the ladder | `PRED_FALSE` |
+| 7 | APPLIES: the row's own predicate over the site's facts and hooks | `PRED_FALSE` |
+| 8 | all pass | `CHOSEN` |
+
+Rows 1-2 read the POLICY WORD. Rows 5-7 read the SITE'S FACTS (op,
+handoff, terms, run length, `span_lo`/`span_hi`, budget, consumer). pcrec
+sends no other input: no level, no ISA and no `-march`. pcrec stays
+arch-blind (C4).
+
+**The ladder: what a chosen SIMD row renders.** After a SIMD row is
+CHOSEN, the composer CONTINUES the walk below it. It collects each later
+SIMD row that passes tests 1-7 and whose level is the chosen level's
+`implies` chain. It stops at the first passing SCALAR row, the LADDER
+FLOOR; the generic row guarantees one exists. The rendering obeys one
+rule:
+
+> **THE FLOOR RULE.** The SIMD-on rendering of a site is its SIMD-off
+> rendering, unchanged, plus text that sits ONLY inside `#if <level
+> guard>` blocks. Delete every such block and the SIMD-off rendering
+> remains, byte for byte.
+
+Two shapes satisfy it:
+- **A FUNC part** (the shape of batch 1's site): the scalar function
+  keeps its name, signature and body. A DISPATCH PREFIX is inserted at
+  the top of its body, and each level's helper is defined above it inside
+  its own guard:
+
+  ```c
+  #if <guard w16>
+  static inline size_t rx_reqrun_w16(const unsigned char *s, size_t n, size_t pos) { … }
+  #endif
+  #if <guard w32>
+  static inline size_t rx_reqrun_w32(const unsigned char *s, size_t n, size_t pos) { … }
+  #endif
+  static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+  {
+  #if <guard w32>
+      if (n - pos >= <reach w32>) return rx_reqrun_w32(subject, n, pos);
+  #endif
+  #if <guard w16>
+      if (n - pos >= <reach w16>) return rx_reqrun_w16(subject, n, pos);
+  #endif
+      <the scalar body, byte for byte>
+  }
+  ```
+
+  (Comments elided. The helper names come from the art's stem, as the
+  word-load helpers' do. Each span test is written underflow-safe,
+  `pos < n && n - pos >= reach`.)
+  The STMT use lines are UNCHANGED: they still call `rx_reqrun`.
+- **A STMT-only site** (a later batch): `#if <guard> <vector text>
+  #else <the scalar text> #endif`, nested for a ladder.
+
+What the rule buys:
+- **One scalar spelling.** The floor of every ladder IS the scalar arm
+  the site gets at SIMD-off. The short path, the `#else` and the
+  off-target build are all that one text (§2.5's invariant, now
+  checkable).
+- **Every SIMD-on artifact compiles and runs on any target** (at scalar
+  speed off its levels). Addendum 6 does not require this. It costs
+  source bytes only, and it is what makes C18 possible (Q-R9-6).
+- **An independent check, C18** (§R4.9.8). `gcc -E -P
+  -mgeneral-regs-only` defines no `__SSE2__`. That was verified on this
+  box: `-mgeneral-regs-only` empties the macro set that `-march=x86-64`
+  gives `__SSE2__`. Under it, the SIMD-on and SIMD-off artifacts must
+  preprocess to the same text. gcc's macro set decides which arms
+  survive, not the kit, and `#define` stamp lines vanish in `-E`.
+
+**The deny, per row.** Each SIMD row has its own `options.def` row,
+`MF_OPT("<form>-w<VW>", MF_OPT_DENY, <budget>, MF_L_SIMD, "...")`.
+Batch 1 has two: `vrun-w16` and `vrun-w32`. A width is not an ISA name,
+so the names stay arch-blind, as `options.def` requires. Denying the
+wider row leaves the narrower row as the site's top rung. That is
+exactly the comparison "beats the row it displaces" needs (§R4.9.6). The
+layer switch `-fno-memfn-simd` denies every SIMD row at once, so there
+is no per-form umbrella row (Q-R9-7).
+
+**Row contracts.** A SIMD row declares `uses`/`serves` like any row.
+Because its floor is the scalar arm's text, it must SERVE every hook class
+its floor row serves at that site, or it DECLINES (R2) and the site
+renders the floor alone. A SIMD row never widens a site's contract.
+
+**The stamp.** A chosen SIMD row writes `<id>@<level>+<level>…` in
+`MEMFN_FORMS` (§R4.3.3's grammar), with the levels in the ladder's
+top-down order: `vrun@w32+w16`. A compile-time ladder and a run-time
+cascade both "carry levels". They differ by form id, never by grammar
+(§R4.9.3). Consumers still bucket on `none`/not-`none` only.
+
+**Batch 1's table, in order** (rows 1-2 new; the rest exist):
+
+| # | row | layer / level | site shape (APPLIES) | reach | deny |
+|---|---|---|---|---|---|
+| 1 | `vrun-w32` | SIMD / w32 | PRE composite whose `preds[]` is ONE predicate holding ONE RUN term (the window), run length ≥ 2 (the window term, at most 8 bytes), any mask; ASSIGN or ON_MISS; no lead, no whole run, no set rest | `32 + T` (derived, §R4.9.3) | `--memfn=no-vrun-w32` |
+| 2 | `vrun-w16` | SIMD / w16 | the same | `16 + T` | `--memfn=no-vrun-w16` |
+| 3.. | (R4d's SWAR row, when it lands), `ofsskip`, `precheck`, `precheck_assign`, `runcmp`, `pf_*`, `generic` | SCALAR | unchanged | — | unchanged |
+
+Rows 1-2 sit above the scalar rows they displace, wider level first. A
+site rows 1-2 do not take renders exactly as today.
+
+### R4.9.3 Cascades and the short-span path
+
+**Three ways a level is picked.**
+
+| mode | where the pick happens | text | when |
+|---|---|---|---|
+| compile-time ladder | the consumer's compiler, from predefined macros (`-march`) | §R4.9.2's dispatch prefix | the DEFAULT for every SIMD row; batch 1 |
+| run-time cascade (K-6) | the artifact at each call, `__builtin_cpu_supports` | a separate row (§ below) | only on its own trigger; FILED |
+| none | — | the floor alone | SIMD off; or no SIMD row applies |
+
+The ladder needs no state, holds no static and costs one compare per
+rung per call. The consumer's `-march` decides what runs: at the
+bench's recipe (`-O2`, no `-march`), x86-64 defines `__SSE2__` and no
+wider level macro (measured with `gcc -dM -E`), so batch 1's w16 row is the live arm and
+w32 is compiled out. At `-march=x86-64-v3`, w32 is live and w16 is its
+short path. This is why `-march` is a dimension of the measurement regime
+(§R4.9.5 item 4) and of the bench recipe (Q-R9-2).
+
+**The short-span path is the next rung, by a DERIVED reach.**
+- A row's `reach(site)` is the smallest span its vector body reads one
+  full block of, `VW + T`, where T is the run term's extent beyond the
+  scanned byte. It is DERIVED from the level's width and the site
+  (D149), not tuned.
+- **Static decline.** Where pcrec's facts prove `span_hi < reach`, the
+  row declines at selection (walk test 6) and the site carries no ladder
+  at all. That covers short per-call sites pcrec bounds today.
+- **Dynamic.** At run time, `n − pos < reach` falls through the dispatch
+  prefix to the next rung, and finally to the scalar body. So w32 → w16
+  → scalar, and no vector body ever runs a partial block.
+- **R-1's 16 B finding re-read (F-R9-1).** At 16 B every row falls to
+  the scalar body by construction. What remains is the cost of the
+  prefix's compare-and-branch plus placement. It is measured per cell
+  against the placement control (§R4.9.5 item 6).
+- **A cut-over ABOVE the derived reach is a tuning constant.** Example:
+  w32 only from `2·32 + T`, because mod-i pc64 shows `ffl` AVX2 +0.97 ns
+  against SSE2, across builds. Such a cut-over is adopted only MEASURED:
+  batch 1's alpha sweeps `reach ∈ {VW + T, 2·VW + T, 4·VW + T}` for the
+  w32 row against the w16 row at `-march=x86-64-v3`. Until then the
+  derived minimum ships, and no other number is written (D149).
+- **The loop-free tier below the narrowest vector width** (RB-4: a
+  per-tier short path, two overlapping words for 8..15 bytes) is a
+  SCALAR-layer form. The floor's text provides it if the scalar arm has
+  it. A SIMD row does not carry a private scalar short path (the floor
+  rule).
+
+**The run-time cascade (K-6), designed and FILED.** Its one purpose is to
+let a binary built at a LOW `-march` (the bench's recipe, most
+consumers') use a wider level on a CPU that has it. The compile-time
+ladder cannot do that.
+- **A separate row**, e.g. `vrun-rt`, placed ABOVE the compile-time
+  rows. Its applies test is the compile-time ladder's top level being
+  ABSENT and the cascade's level being available to the toolchain. Its
+  text lives in one guard, `defined(__x86_64__) && defined(__linux__) &&
+  defined(__GNUC__) && !defined(__AVX2__)`:
+  - a helper defined with `__attribute__((target("avx2")))`;
+  - a prefix rung `if (n − pos ≥ reach && __builtin_cpu_supports("avx2"))
+    return helper(...)`.
+
+  It sits above the w16 rung, so the floor rule holds.
+- **Its cost, named in its regime** (K-6): detection 0.44-0.59 ns; per
+  call +0 under gcc and +0.9-1.3 ns under clang over a direct call
+  (linux_results.md §2, Zen 1). Darwin is excluded by the guard:
+  `__builtin_cpu_supports` answers 0 for every feature on Darwin/AArch64
+  (isa_selection.md §0 item 3). Reading a cached word in the artifact is
+  forbidden (`match_api.md` §5.3).
+- **Its dependency.** `__builtin_cpu_supports` reads libgcc's
+  `__cpu_model`, which requirements.md N-4 forbids for the portable
+  forms. Under SIMD-on, whether that dependency is admitted is Q-R9-8.
+- **Its bar.** It must beat the single-level row it displaces (w16 at
+  default `-march`) past the floor in BOTH regimes. The per-call regime
+  is where the dispatch lives. It must also beat the current scalar
+  layer (transitively, through w16's acceptance).
+- **Its stamp.** The row's own id, with its levels in pick order:
+  `vrun-rt@w32+w16`.
+- **Its trigger (D77).** A probe cell: R-1's harness with a `cas`
+  variant, built at the bench's recipe on the verdict box, beating
+  `ffl` SSE2 past the floor in both regimes at a batch-1 cell. Batch 1's
+  lane MAY run this probe as measurement only. A met trigger is a later
+  batch's row.
+
+### R4.9.4 The `-fmemfn-simd` axis: BUILT and inert; what pcrec owes
+
+**Built** (R4c lane AXIS, 2026-10-06; read at main 5ddd2f04):
+- `src/core/axes.def` has `PCREC_AXIS(PCREC_NO_MEMFN_SIMD,
+  "-fno-memfn-simd", PCREC_FORCE_MEMFN_SIMD, "-fmemfn-simd",
+  PCREC_AXIS_DEFAULT_OFF)` (bits 48/49).
+- Both bits are masked out of `rx_info.flags` (`strategy_denials`).
+- `pcrec_memfn_policy(flags)` (`src/gen/memfn_stamps.c`) sets
+  `MF_P_PORTABLE_ONLY` iff the force bit is not in force, and every
+  site's `policy` reads it (`src/gen/memfn_sites.c`).
+- `docs/spec/tuning.md` §2.43 states the meaning and "INERT before
+  R4e′".
+- C11's identity half prints "identical (no SIMD form)".
+- `--list-axes` prints the `memfn` section from `mf_options()`.
+
+pcrec needs NO new axis, no `--isa=`, no `-march` knob and no ISA fact for
+the SIMD layer. Batch 1 lands entirely in `memfn/`, `tests/memfn/` and
+`docs/spec/` (Q49: no abi bump, no default byte moves).
+
+**Owed by pcrec, as later requests** (named here, not designed;
+§R4.9.11):
+- RQ-1, the `--memfn=` carrier (F-R9-6). A prerequisite of batch 1 (its
+  two denies) and of R4d.
+- RQ-2, a second filter position as a pcrec fact. Only if Q-R9-3 is
+  ruled (a).
+- RQ-3, SIMD bytes made size-neutral to pcrec's length decisions. Only if
+  batch 1's C-SEL census finds a moved selection (F-R9-5).
+- RQ-4, the verdict-box timing slot and the box's first quiet-box floor.
+- RQ-5, the bench testees at batch 1's landing (D78), through main.
+
+### R4.9.5 The measurement regime
+
+Every SIMD acceptance reading follows this protocol. It is D144 addenda
+1 and 3, R-1's harness shape and §21.1, specialized to a layer that
+switches.
+
+1. **The box.** The verdict box is the Linux dev box (Q-R9-1), timed
+   inside a quiet-box slot that main grants through its slot channel
+   (one heavy suite at a time; the SIMD thread's slots are its 1 of 2:1).
+   ubuntubudu, where R-1 ran, stays the batch gate's second box through
+   the bench's wide reading. A disagreement past its floor becomes an
+   issue row (D144 item 3). The transcript header records the CPU model,
+   governor, boost, glibc, gcc, pcrec and kit commits, `-march`, load1 at
+   start and before each launch (wait for < 0.5, as R-1 did), and the
+   pinned CPU's `thread_siblings_list`.
+2. **Pinning.** `taskset -c C` on one logical CPU, with its SMT sibling
+   (`C ± 8` on this box) held IDLE for the run. Never a CPU that lanes
+   pin compiles to (`12-15` and their siblings `4-7` in today's briefs).
+   Main names `C` with the slot (RQ-4). An idle sibling is part of
+   "quiet": a lane's compile on the other hyper-thread shares the core's
+   load ports.
+3. **Programs.** Each arm is its OWN driver binary built from the
+   pcrec-emitted artifact (the `alpha_k82.sh` shape). Variants are never
+   co-linked in one binary for a verdict: F-R9-1 shows a co-linked
+   variant's placement moves a scalar loop by up to 1.7 ns. R-1's
+   co-linked harness stays the probe and trigger instrument.
+4. **Arms, at each `-march` level L the row is live at** (batch 1: L ∈
+   {default x86-64, x86-64-v3}; v4 reported, not acceptance-bearing until
+   a w64 row exists):
+   - OFF = the `-fno-memfn-simd` artifact built at L (the CURRENT scalar
+     layer at that commit and that `-march`, F-R9-2);
+   - ON = `-fmemfn-simd` at L;
+   - DENY = `-fmemfn-simd --memfn=no-<row>` at L. For a lone row its text
+     is asserted byte-identical to OFF before any timing, and it is the
+     FLOOR arm;
+   - for a row that displaces a SIMD row (w32 over w16), DISPLACED =
+     `-fmemfn-simd --memfn=no-vrun-w32` at L.
+5. **The floor.** `|DENY − OFF|`: the same text, two binaries, measured
+   the same way (D144 addendum 1).
+6. **The placement control** (new, F-R9-1). OFF is relinked a second
+   time with function and loop alignment raised (`-falign-functions=64
+   -falign-loops=32`), and `|OFF − OFF′|` per cell is the PLACEMENT BAND.
+   A per-call delta inside `max(floor, band)` is NULL. Throughput cells
+   use the floor alone (their deltas are microseconds).
+7. **Regimes** (both, every cell; §21.1):
+   - THROUGHPUT: gate (one call from 0) and sweep (find-all), at 64 KiB
+     and 1 MiB, on the bench subjects that are hit-sparse and hit-dense
+     for the cell;
+   - PER-CALL: `short75` and pc16/pc64/pc256/pc1024. Each per-call row
+     is marked BELOW or ABOVE the row's reach. A row below reach measures
+     the dispatch prefix, not the vector body (§R4.9.3).
+8. **Loops and statistic.** Each timed loop ≥ ~50 ms, min of 3 loops per
+   launch, median of 3 launches (R-1's). Absolute ns. A ratio is given
+   only for throughput cells well above the timer floor.
+9. **Both layers** (D147).
+   - The SIMD-OFF reading of a SIMD batch is ZERO MOVERS: I2 at
+     `-fno-memfn-simd` against the parent commit, every axis and both
+     comment tiers (§17.1), plus OFF's timings unchanged. A SIMD-off
+     mover in a SIMD batch is a defect, not a reading.
+   - The SIMD-ON reading is the verdict below.
+   - aarch64 (addendum 8): batch 1 has no aarch64 level, so a Mac build
+     of a SIMD-on artifact compiles to the floor. Mac runs check SIMD-off
+     text answers only, and are directional.
+   - clang: compile correctness where installed (ubuntubudu, the Mac);
+     never a timing verdict. The dev box has no clang.
+10. **D149: every constant in batch 1's form, and its status.**
+
+| constant | in R-1's `ffl` | batch 1 |
+|---|---|---|
+| vector width VW | 16 / 32 | DERIVED: the level's register width (`levels.def`) |
+| T | run length − 1 | DERIVED from the site |
+| reach (short path) | `n − pos < VW + T` → `swar` | DERIVED: `VW + T`, the smallest span the body reads one full block of |
+| w32-over-w16 cut-over above reach | none (separate builds) | MEASURED in the alpha: `{VW + T, 2·VW + T, 4·VW + T}` at `-march=x86-64-v3`; the derived minimum until then |
+| main-loop unroll (2·VW per iteration) | inherited from T-B, unmeasured (N-1's first label) | MEASURED in the alpha at 1×, 2×, 4× per level, or the plain 1× loop shipped as LEFT TO THE COMPILER, labelled. Never 2× silently |
+| scan position KA | pcrec's pick | DERIVED: `plan_hint`/`plan_pos` (§14.9), pcrec's fact |
+| second filter position KB | hand-picked per cell (C/c@4 with T@5; C/c@0 with T@2) | OPEN: Q-R9-3. If (c) is ruled, `UNMEASURED DEFAULT:` at the constant |
+| lead order | lead first / run first | not applicable: batch 1 has no lead |
+| density cut-over | none | none: batch 1 makes no density decision. It wins on mod-i's dense sweep (6,030 hits per MiB) as well as union-select's sparse one |
+
+### R4.9.6 The acceptance bar per row, and what re-opens it
+
+**The bar.** A SIMD row is ACCEPTED iff, on the verdict box, at every
+`-march` level L where its arm is live:
+1. **against OFF at L** (the CURRENT scalar layer, same `-march`):
+   - no THROUGHPUT cell is a LOSS past the floor;
+   - at least one cell of the row's evidence bin is a WIN past it;
+   - no PER-CALL cell at or above the row's reach is a LOSS past
+     `max(floor, band)`;
+   - no per-call cell BELOW reach is a LOSS past `max(floor, band)`
+     either. A loss there is the dispatch prefix's own cost. The row
+     then either declines statically on sites whose `span_hi` is below a
+     measured bound, or is not accepted;
+2. **against DISPLACED at L**, where it displaces a SIMD row: the same
+   tests. A wider level must beat the narrower one it pre-empts, not
+   merely the scalar layer. That is first-match's own meaning: a row
+   must beat the row it displaces;
+3. **G1's population** (§17.2, pcrec-side): the movers are the pcrec-side
+   text diff `-fmemfn-simd` vs `-fno-memfn-simd` over the corpus and the
+   bench's patterns, printed with their count, never the kit's `moved`.
+   Bins are (handoff, masked or exact run, run length). A bin with fewer
+   than 8 timed movers prints `UNREACHED (n < 8)`, and the row's APPLIES
+   predicate EXCLUDES that bin until it is reached. A row is never
+   accepted on a bin it was not timed on;
+4. **correctness**:
+   - `make test` green;
+   - the answer sweep at `-fmemfn-simd`, at every acceptance level
+     (`GENCFLAGS` carrying `-march=L`), with a planted wrong arm red at
+     its own level and green at the levels where the arm is compiled out
+     (the [MECH-REACH] proof that the sweep reaches the arm);
+   - ASan/UBSan over the movers at each level (D144 addendum 3: the
+     change alters how emitted code reads memory);
+   - G2 at each level (§R4.9.7).
+
+**The named-benefit alternative** (D147 addendum 11). A row that is not
+faster may be accepted on a SPECIFIC benefit, such as code space:
+- the benefit is measured by a pcrec-side instrument that shares no
+  source with the kit: the site's object bytes from a same-basename
+  compile, `size` of `.text` + `.rodata`, at each level;
+- every timing cell must be NULL or a WIN. A row that is smaller but
+  slower past the floor is a TRADE, and a trade is Frank's ruling for
+  that row, not the bar's (Q-R9-4);
+- under `MF_P_SIZE_LEANING` (walk test 2), only a row accepted on a SIZE
+  benefit may apply.
+
+**The acceptance record.** Each accepted row × level is one line of
+`tests/memfn/simd_accept.tsv`, born with batch 1. Its columns:
+- the row and its level;
+- the bins it was accepted on;
+- the verdict box and its CPU model;
+- glibc and gcc versions;
+- the pcrec and kit commits;
+- the COMPARATOR: the floor row's id and its `arms.tsv` digest(s) for
+  the row's fixtures;
+- the regimes, `-march` levels, floors and placement bands;
+- the deltas and the verdict;
+- the transcript path under `docs/design/memfn/probes/out/`.
+
+**What re-opens a comparison**, and how each is caught:
+
+| event | why it re-opens | how it is caught |
+|---|---|---|
+| a scalar-layer change at the row's sites (D147: "a scalar improvement re-opens the comparison") | the comparator moved | **C19**: a record whose comparator digest no longer equals `arms.tsv`'s current digest is RED. The scalar change's own G1 already reads BOTH layers on its movers (D147), so it re-measures the SIMD row and re-pins the record in the same delivery |
+| R4d landing (the first scalar mover at batch 1's site) | the same, and the first instance | C19, as above; R4d's alpha includes the `-fmemfn-simd` arms |
+| a kit change to the SIMD row's own text | its own G1 | its own alpha (§17.2 cadence) |
+| the verdict box's glibc or gcc major version changes | the scalar layer's libc calls (`memchr`) and both layers' code generation move | C19 compares the record's versions with the box's, when run on that box (a box-dependent half, printed) |
+| the verdict box itself changes (Q-R9-1) | a different microarchitecture | every record re-measured; the records name their box |
+| the bench's batch-gate reading disagrees past its floor | a second box, a second regime | an issue row (D144 item 3), not a revert |
+| a new `-march` level admitted for acceptance | a new live arm | the new level's arms re-measured |
+| a WRONG ANSWER anywhere | correctness never waits | a DISASTER (D144 item 3): the row is removed from the table or its predicate emptied at once, in the kit, with its own commit |
+
+**A re-opened comparison never blocks the scalar change** (Q-R9-5). The
+scalar layer is accepted on SIMD-off measurements alone (D147). If the
+re-read SIMD row now loses past the floor, the scalar change still lands.
+The SIMD row's loss is recorded in its record and filed as an issue row,
+and the kit narrows or removes the row in a follow-up. SIMD-on is opt-in,
+so an opt-in speed loss is not a disaster. A wrong answer is.
+
+### R4.9.7 The first batch, with its evidence, and the filed list
+
+**Batch 1: the pre-check composite's window run, no lead; rows
+`vrun-w32` and `vrun-w16`.** The site is §15.5's composite when its
+`preds[]` is one predicate holding one RUN term (the window): no lead,
+no whole run, no set rest. It covers both handoffs: ASSIGN (DFA route,
+the handoff) and ON_MISS (no handoff). The form is R-1's `ffl`, a fused
+pair-filter scan with an in-block verify. Only its FUNC part changes
+(`rx_reqrun`'s body gains the dispatch prefix); the use lines are
+untouched.
+
+**Evidence** (R-1, `readings.gcc.md`; ubuntubudu, Zen 1, gcc 15.2,
+`taskset -c 2`; ns; trigger-grade, F-R9-4):
+
+| cell (route, handoff) | regime | emit (current scalar) | swar (R4d's candidate) | ffl SSE2 (w16) | ffl AVX2 (w32) | floor |
+|---|---|---|---|---|---|---|
+| union-select (`SELECT`, masked, L = 6; no-DFA, ON_MISS) | gate 1m | 364,078 | 187,022 | 48,844 | 38,988 | 1,073 |
+| | sweep 64k | 16,580 | 11,422 | 3,037 | 2,421 | 106 |
+| | pc64 / pc256 / pc1024 | 26.58 / 78.66 / 272 | 15.39 / 49.53 / 195 | 4.75 / 13.62 / 57.05 | 4.46 / 11.12 / 39.76 | 0.38 / 1.83 / 6.30 |
+| mod-i (`CAT`, masked, L = 3; DFA, ASSIGN) | sweep 1m (6,030 hits) | 724,503 | 267,480 | 142,800 | 128,456 | 5,989 |
+| | gate 1m (hit at 404) / 64k (hit at 90) | 73.35 / 46.24 | 75.75 / 20.25 | 21.84 / 7.09 | 17.41 / 7.08 | 0.52 / 0.35 |
+| | pc64 / pc256 / pc1024 | 33.20 / 61.73 / 63.85 | 15.46 / 31.56 / 38.71 | 6.98 / 10.07 / 11.33 | 7.95 / 8.57 / 9.89 | 1.19 / 1.20 / 2.16 |
+
+- **w16:** a WIN against emit AND swar in every throughput row and every
+  per-call row above reach, at both cells. Whichever scalar layer is
+  current at landing (emit, or R4d's form if it lands first), the
+  trigger holds.
+- **w32:** a WIN over w16 on throughput (union-select gate 1m −9,856;
+  mod-i sweep 1m −14,344). Per call it is MIXED across builds: mod-i
+  pc64 +0.97 and `short75` +0.99, union-select pc64 −0.29. Its cut-over
+  above reach is the alpha's measurement (§R4.9.3). Its trigger is met
+  on throughput only, which is what admits it to the batch. Its
+  acceptance is open.
+- **Not in the evidence:** an EXACT (unmasked) window with no lead (both
+  cells are caseless), and the VM hybrid route's window (no witness,
+  §15.5). By §R4.9.6 item 3, those bins are excluded unless the alpha
+  reaches them.
+
+**Prerequisites:**
+- R4c, M1b and R4g are landed (the PRE site is delegated).
+- RQ-1 (`--memfn=`) is landed, for the two denies.
+- RQ-2, if Q-R9-3 is ruled (a).
+- RQ-4: the box's floor and slot.
+
+R4d is NOT a prerequisite. Whichever lands second re-reads the other's
+layer (C19, §R4.9.6).
+
+**G1 alpha, both layers** (§R4.9.5; at default `-march` and
+`-march=x86-64-v3`):
+- the pcrec-side mover census with its count and a K35 floor;
+- per-bin timing of OFF, ON, DENY and DISPLACED;
+- the w32 reach sweep;
+- the unroll measurement;
+- the placement control;
+- the SIMD-off zero-mover I2;
+- C-SEL;
+- the answer sweep per level;
+- ASan/UBSan per level.
+
+The reading goes to the pcrec manager as two tables, SIMD-off and SIMD-on,
+with an UNREACHED list.
+
+**G2, the kit's own** (blinded as before, D27). The generated site space
+for the composite shape is rendered with the policy word lacking
+`MF_P_PORTABLE_ONLY`:
+- masks, run lengths 2..8, both handoffs, `use` both ways;
+- compiled at `-march=x86-64`, `-march=x86-64-v3` and `-march=x86-64-v4`
+  (the dev box executes all three);
+- each checked against the scalar byte loop over lengths 0 to
+  `2·(2·32 + 7) + 16`, alignments 0..31, a hit at every offset and none,
+  guard pages at both ends, and ASan/UBSan;
+- no aligned-down load. survey.md found guard pages cannot see one, so
+  the rule is checked by ASan and stated in the form's header;
+- a planted wrong arm per level;
+- per-row CHOSEN floors in `tests/memfn/row_floors.tsv`.
+
+**Born in batch 1's commit** (Q49: no abi bump; no default byte moves):
+- rows `vrun-w32`/`vrun-w16` in `options.def`; the `memfn` section's
+  spec floor raised by 2 (born at 2 if R4d has not landed);
+- `levels.def`;
+- the `rows.tsv` lines (witness compiled with `-fmemfn-simd`, control
+  with `-fno-memfn-simd`, signature absent);
+- `arms.tsv` pins for the new fixtures;
+- `simd_accept.tsv`;
+- the checks C18, C9-x86, C-SEL and C19, and C11's FORMS half made LIVE;
+- the `test-axes` arm per level;
+- the spec hunks (D80):
+  - `tuning.md` §2.43 loses "INERT" and states what the switch renders
+    and that `-march` picks the live level;
+  - `match_api.md` §6.3 gets the carried-levels grammar;
+  - §10.6's limits name the verdict box, its glibc, and aarch64 as
+    unmeasured;
+- the bench note (RQ-5).
+
+**FILED, each needing a cell** (do not build, D77):
+
+| site / form | why not batch 1 | the cell or fact that would trigger it |
+|---|---|---|
+| PRE composite WITH a lead (userpass, cls-n-uc) | F-R9-3: vector forms lose per call where the lead rejects (userpass) and win where it never rejects (cls-n-uc); the kit cannot tell which | the filed "lead can reject" fact (§15.5 item 2), OR a lead-first vector form measured NULL-or-better than the current scalar at userpass-like cells in both regimes |
+| PRE composite, no-DFA route with whole run or set rest; VM hybrid route | no cell; no witness for the hybrid route (§15.5) | a timed mover in that bin (G1's floor of 8) |
+| OFS (the offset-skip FUNC, which shares the renderer with PRE's FUNC part) | no OFS cell timed; R-1's cells are PRE sites | an offset-set or run-pinned prefilter cell with a fused form beating its current scalar arm |
+| PF one byte (`pf_memchr`), MLINE | glibc's AVX2 `memchr` is the x86 bar (55 ns at 4 KiB, ~60 B/ns); nothing surveyed beats it (linux_results.md §7). The scalar layer already calls it | a cell where an inline form beats glibc in its regime (short per-call spans below n*, 64-256 B, are the only candidates; F = 3.24 ns) |
+| PF byte set (`pf_walk`) | T-A wins only on a MISS over a whole span (4-15x); the DFA candidate skip skips 0 bytes per entry on real text and a 7x faster skip made bench subjects slower (F-R9-7); find-first vector forms lose on dense text | an artifact cell whose non-candidate runs are long (≥ ~32 B, the measured crossover) with the dense regime answered (R4e's iterate-in-place, or a measured density cut-over) |
+| SETREST fused ALL_PRESENT | no cell | §22's filed fused N4 arm's trigger |
+| STAY, EDGE, VMSPAN (budget 2) | in-loop, short spans; AVX2 without a 16 B tier costs 8-16 ns at 16 B (§6.1) | U-3 and a Linux cell dominated by class runs (§22 R4h's mover trigger) |
+| VERIFY / VMRUN masked run (`vec-masked`, L ≥ 16) | no cell; gcc already lowers a constant exact `memcmp` at L ≥ 16 to a vector compare in portable C | a run-compare-bound cell |
+| N6, VMSTRIDE, N7 | not yet delegated (M6, M7) | migration first, then a cell |
+| a 64-byte level (AVX-512) | no evidence; the dev box can measure it | a probe at `-march=x86-64-v4` showing a w64 arm beats w32 past the floor at a batch-1 cell |
+| aarch64 levels (NEON) | addendum 8 | Frank admits Mac verdicts for the cells, or an aarch64 Linux box exists |
+| the run-time cascade `vrun-rt` | no cascade cell | §R4.9.3's probe |
+
+### R4.9.8 Checks, their independence, and the sibling family
+
+| check | checked against | independent because | population (K35) | witness reaches its site ([MECH-REACH]) |
+|---|---|---|---|---|
+| **C18, the floor rule** (new) | `gcc -E -P -mgeneral-regs-only` of the `-fmemfn-simd` artifact vs the same of the `-fno-memfn-simd` artifact, per mover | the PREPROCESSOR, with gcc's own macro set, decides which text survives; the kit's ladder cannot assert it | movers compared, printed, floor = the G1 census count | a plant that edits one byte of the floor text inside a SIMD rendering is red |
+| **C9-x86** (§17.3 on this box) | every mover compiled with the harness `GENCFLAGS` `-Werror` at `-march=x86-64`, `x86-64-v3` and `x86-64-v4`; the live-arm count per level from `nm` of an `-O0` object (the level helpers are local symbols there) | the compiler, at three macro sets; the kit-reported arm count is a second reading only | arms per level summed against a committed floor (`tests/memfn/pins/c9_floor`) | a plant guarding the w32 arm with the w16 guard fails the `x86-64` compile (an intrinsic's target mismatch) |
+| **C-SEL, selection neutrality** (new, F-R9-5) | every stamp except `MEMFN_FORMS`, and the refusal set (compared as keys, never counts), between `-fmemfn-simd` and `-fno-memfn-simd`, over the corpus, the bench and the near-cap size witnesses (`tests/resource`) | pcrec's own stamps and its own compile results | artifacts and refusals compared, printed | the near-cap witness family is in the population by name |
+| **C19, the acceptance record** (new) | `simd_accept.tsv`'s comparator digests vs `arms.tsv`'s current digests; on the verdict box, also its glibc/gcc versions | `arms.tsv` is recorded from pcrec's renderings (§17.4), not from the record | records vs `MF_L_SIMD` rows in `rows.tsv`: every SIMD row × level has a record, or it is red | a plant re-pinning a floor row's `arms.tsv` line without touching the record is red |
+| C11 FORMS half (§18.2), made LIVE | the pcrec-side text diff ON vs OFF | the kit's `moved` is not read | non-`none` count = the mover count | `MEMFN_FORMS` forced `none` on a mover is red (§17.6's row, now reachable) |
+| the answer sweep per level | the corpus oracles at `-fmemfn-simd`, `GENCFLAGS -march=L` | the oracles are python `re`/libpcre2 | cases per level printed | a planted wrong w32 arm is red at v3 and green at x86-64 |
+| G2 per level (the kit's) | the scalar byte loop over a generated space | never another kit output (§4.5) | CHOSEN per row in `row_floors.tsv` | the guard-page and planted-arm fixtures |
+| I2 at `-fno-memfn-simd` | the parent commit's compile | a different commit | movers by id: must be 0 | a plant rendering a SIMD row under `MF_P_PORTABLE_ONLY` is red |
+
+**Sabotage rows** (ids at build from the kit manager's range; mech arms
+in `tests/memfn/`): one per new check above, plus §17.6's two SIMD rows
+(the stamp row and "a SIMD arm emitting one intrinsic under default"),
+which become reachable at batch 1. Each row states its `SAB_REACH` as the
+mover census being non-empty.
+
+**The sibling family** (the forest lens, memory
+`pcrec-forest-for-trees`): every first-match table near this decision,
+and where SIMD does or does not go.
+
+| sibling table | question it answers | SIMD rows? | why |
+|---|---|---|---|
+| kit `arms[]` (`compose.c`) | which text renders this site | YES: batch 1 | this IS `SCAN_ROWS`'s FIND/SKIP/ALL_PRESENT half |
+| kit `rc_row` (`runcmp.c`) | which text compares this run | later (filed) | `SCAN_ROWS`'s VERIFY half. It takes the SAME `mf_formdecl` when its first SIMD row lands. Two tables sharing one declaration from birth, not a third declaration later |
+| kit `options.def` | which kit rows can be denied/forced | one row per SIMD row | D144 item 4 inside the kit's namespace |
+| kit `levels.def` (new) | which ISA levels exist and how they are guarded | n/a | the one place a level is named. Rows reference a level; they never spell a guard |
+| pcrec `cand_rows[]` ([START-TABLE]) | WHERE and WHAT to search | NO | D146: pcrec decides what is searched; the kit decides how |
+| pcrec clskit `ROWS`/`TAB_ROWS` (D131/D139) | one-position class membership; table storage | NO | one position is not a search; a vector classifier is the kit's composition, fed by the site's set (§2.3 T4) |
+| pcrec `fit_rungs[]` ([DEC-FALLBACK]) | the size-cap ladder | NO, but it READS emitted size | F-R9-5: C-SEL keeps the SIMD switch from moving it |
+| pcrec `req_admits[]`/`req_uses[]` (now in `cand_rows[]`) | whether a pre-check exists, how its answer is used | NO | admission is a placement fact (§2.3 T2) |
+| option_sets.md family `memfn` (`auto`/`simd`/`no-simd`) | which switch value a set names | n/a | unchanged; `--memfn=` stays one opaque value (§R4.4.1) |
+
+No sibling answers the same question as a SIMD row. The one shared
+STRUCTURE, the declaration shared by `arms[]` and `rc_row`, is unified
+from the start.
+
+### R4.9.9 The three standing design questions
+
+1. **The measurement regime: RELEVANT.** It is this revision's core,
+   §R4.9.5. Every number above names its box (Zen 1, F-R9-4), compiler
+   (gcc 15.2), libc (glibc 2.43), pinning and regime. Five things can
+   flip a verdict, and each is now an explicit dimension:
+   - the consumer's `-march` (F-R9-2);
+   - the span against the row's reach (F-R9-1);
+   - whether a lead rejects (F-R9-3: K-1 keeps the lead shape out);
+   - the box's microarchitecture (Q-R9-1);
+   - glibc's `memchr`, which is part of the scalar layer.
+2. **The independent control: RELEVANT.** See the §R4.9.8 table.
+   - Its two new controls share no source with the kit: the preprocessor
+     (C18) and pcrec's stamps (C-SEL).
+   - Populations come from pcrec-side diffs, with floors. Each witness
+     is proven to reach its arm by a plant that is red only at the level
+     where the arm is live.
+   - The one control that shares a source is C19's: `arms.tsv` and the
+     record are both committed files. It is stated as a staleness
+     detector, not a timing check.
+3. **What moves when data is regenerated: RELEVANT.**
+   - **`levels.def` or a SIMD row's text:** only `-fmemfn-simd`
+     artifacts move. Under Q49 there is no abi bump and no default byte
+     moves. Its own pins move (`arms.tsv` SIMD fixtures, `c9_floor`,
+     `row_floors.tsv`), `MEMFN_FORMS` values move on SIMD-on artifacts,
+     and C19 records whose row moved must be re-measured.
+   - **`simd_accept.tsv`:** no emitted byte moves. It is re-pinned by
+     every re-measure.
+   - **An `options.def` row:** the `memfn` section, its spec floor and
+     the arm counts move (§21.3's last row).
+   - **The spec:** batch 1 changes `tuning.md` §2.43 (D80). R4f, the
+     default flip, is the abi event (§22).
+
+### R4.9.10 Questions for Frank (Q-R9-n), each with a recommendation
+
+- **Q-R9-1. Which box gives SIMD verdicts?**
+  - (a) The Linux dev box (7700X, Zen 4, x86-64-v4): pinned to one core
+    with its SMT sibling idle, in a quiet slot through main;
+  - (b) ubuntubudu (Zen 1, R-1's box), through the bench's night
+    window;
+  - (c) both, both required.
+
+  **Recommend (a)**, with ubuntubudu's bench reading as the batch gate's
+  second box (a disagreement becomes an issue row). Reasons: (a) is
+  pcrec's box, needs no bench window, and can execute every x86 level
+  from SSE2 to AVX-512. Zen 1 executes AVX2 in halves and cannot run
+  AVX-512, so a verdict there understates the wide levels and cannot
+  test w64 at all (linux_results.md's own caveat). Acceptance records
+  name their box, so a later box change re-opens them explicitly.
+- **Q-R9-2. Which consumer `-march` levels bear acceptance, and what
+  does the bench build?**
+  - **Recommend:** each row is accepted at the levels where it is live
+    (w16 at the default x86-64; w32 at x86-64-v3), always against
+    SIMD-off at the same `-march`; v4 is reported only.
+  - The bench gets two testees through D78: `pcrec[simd]` at its default
+    recipe (`-O2`, where only w16 is live) and `pcrec[simd-v3]` at
+    `-march=x86-64-v3`. Each recipe records its `-march`.
+  - Otherwise the bench's default recipe never exercises a w32 arm.
+- **Q-R9-3. Who picks the fused filter's SECOND position (KB)?**
+  - (a) pcrec states it as a fact: `pcrec_find_pick2`, the PICK reader
+    §2.3 T7 already named, carried as `mf_pred.plan_pos2`. That is a
+    kit `MF_SITE_ABI` bump and zero pcrec movers;
+  - (b) the kit carries its own byte-rank table;
+  - (c) a fixed positional rule, labelled `UNMEASURED DEFAULT`.
+
+  **Recommend (a).** Rarity is pcrec's fact (D146's boundary), the
+  prior stays ONE table (no second frequency prior inside the kit), and
+  R4d's SWAR pair filter needs the same fact, so one request serves
+  both layers.
+- **Q-R9-4. A row that is smaller but not faster.**
+  - **Recommend:** a measured named benefit with every timing cell NULL
+    or better is ACCEPTED by the bar.
+  - A named benefit with a timing LOSS past the floor is a TRADE that
+    comes to you per row.
+- **Q-R9-5. Does a re-opened SIMD comparison ever block a scalar
+  change?**
+  - **Recommend NO.** The scalar change lands on its SIMD-off reading
+    (D147).
+  - The SIMD row's new loss is recorded and filed as an issue row (D144
+    item 3), and the kit narrows or removes the row afterwards.
+  - Only a wrong answer is a disaster.
+- **Q-R9-6. The floor rule.** Every SIMD-on rendering is its SIMD-off
+  rendering plus text inside level guards, so a SIMD-on artifact still
+  compiles and runs (at scalar speed) on any target.
+  - **Recommend YES.** It costs only source bytes. It gives one scalar
+    spelling and makes C18 possible, an independent check that needs no
+    timing.
+  - The alternative, SIMD-on text with no scalar fallback, is smaller
+    but untestable off-target. Addendum 6 permits it but does not
+    require it.
+- **Q-R9-7. Deny granularity.**
+  - **Recommend ONE deny per (form, width) row** (`vrun-w16`,
+    `vrun-w32`) and no per-form umbrella row, because the layer switch
+    is the umbrella.
+  - Per-width rows are what let the w32 arm be measured against the w16
+    arm it displaces at the same `-march`.
+- **Q-R9-8. The cascade's dependency, decided before its trigger fires.**
+  A run-time cascade reads libgcc's `__cpu_model` through
+  `__builtin_cpu_supports`. requirements.md N-4 forbids that for the
+  portable forms.
+  - **Recommend:** ADMIT it under SIMD-on only, x86-64 Linux/ELF only
+    (Darwin excluded by the guard), with the spec stating it.
+  - The cascade itself stays filed until its probe cell exists.
+
+### R4.9.11 pcrec-side requests for main (each filed later as its own request; not designed here)
+
+| id | what | why | movers | when |
+|---|---|---|---|---|
+| RQ-1 | **the `--memfn=` carrier**: a CLI flag, a config directive and a `pcrec_options` field carrying one opaque string, validated once per compile by `mf_opts_check` (its refusal text shown unchanged, D26), and copied into every site's `opts` (§R4.4.1). Spec hunks in `cli.md` and `registry.md` §6 | no kit row has a reachable OFF arm today (F-R9-6) | 0 | before batch 1 AND before R4d |
+| RQ-2 | **the second pick** (iff Q-R9-3 (a)): `pcrec_find_pick2` as §2.3 T7's PICK reader, set by the PRE/OFS builders into `mf_pred.plan_pos2` | the fused filter's KB (§R4.9.5 item 10) | 0 | before batch 1's alpha |
+| RQ-3 | **SIMD bytes size-neutral** to every length decision, the sibling of `pcrec_sb_len_uncut`'s one-reader rule | only if C-SEL's census finds a moved stamp or refusal (F-R9-5); built then, under its measurement (D77) | 0 at SIMD-off | after batch 1's census, if needed |
+| RQ-4 | **a verdict-box timing slot**: one physical core named by main, its sibling idle, load1 < 0.5; plus the box's first quiet-box floor recorded in docs/testing.md "The boxes" | §R4.9.5 items 1-2; none taken yet | 0 | before batch 1's alpha |
+| RQ-5 | **the bench testees** (D78 inbox, through main): `pcrec[simd]`, and `pcrec[simd-v3]` per Q-R9-2, recipes recording `-march` | the batch gate's wide reading | 0 | at batch 1's landing |
 
 ---
 
