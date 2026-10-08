@@ -26725,3 +26725,21 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - Bench inbox I-134 (abi 66 + list-axes) and I-135 (abi 67/68, pin candidate 02db3811).
 - Kit: R4h BUILT zero-mover (lane/memfn-r4h; S614-S616, S617 returned); its slot10 heavy run granted at 02db3811.
 - Lesson: two lanes running in parallel each took the next abi number. Assign the abi number in the brief whenever two movers are in flight.
+
+## 2026-10-08 — session 97 (close-out entry, ~11:00 EDT; reset at Frank's request, context 47%)
+
+- **R4h/M3 MERGED** 33186bc0. The kit delegates STAY/EDGE/VMSPAN to its generic ADVANCE: zero movers, slot10 green, generic made a pcrec row.
+- **[NULLABLE-ANCH] MERGED** 02db3811 (abi 68): after nullanch2's renumber and natri's re-pins.
+- **Refactor B design:**
+  - rev 1 (decfbdes);
+  - light D6 panel: critB1 (soundness; 0 BLOCKING, 3 MAJOR) and critB2 (checks; 1 BLOCKING, 7 MAJOR). Record: docs/dev/reviews/2026-10-08-r-decfallback-panel.md;
+  - rev 2 (decfbrev2) addresses all of it: forcing row 0, the emit-ir-auto + check_ir_value hard gate for B4, a row_reach prototype with 0 mismatches over 60 runs, a 34-row sabotage plan, a derived reader census.
+  - [DEC-COLLAPSE-WASTE] filed (the §4.1 fix left B: it is a stamp-value mover).
+- **Frank's rulings:** Q1 YES ([DEC-VAR-ATTRIB] filed); Q2 KEEP; Q4(b) YES; `--fast-or-fail` -> `--size-cap=refuse|degrade` as [SIZE-CAP-FLAG] (a filed row, not in B).
+- Frank clarified that refactor B is its OWN tables, not a fold into the start table. Earlier phrasing of mine suggested otherwise.
+- **K98 filed:** `--pattern-esc` is silently ignored by --emit-ir/--emit-facts (decfbrev2 F-B5).
+- **Bench:**
+  - Frank APPROVED capability@0.2 ([B125]/O-87) with three general-purpose additions: a mixed-run real-text subject (K81), an end-anchored tail family on prose ([OPT-REVEND]), and `\b[0-9a-f]{8}\b` on prose (K91 I3). Sent as I-136.
+  - Everything else from lane capsurvey's sweep went into the new docs/dev/bench_wishlist.md (Frank: "stuff you want to see in bench but we're too afraid to ask").
+- **Kit:** R-7 filed (M4 MLINE). Scoping acked; it is disjoint from B. S617-S619 assigned.
+- In flight at close: lane decfbB0 (B step B0 instruments). wake.md carries the resume instructions.

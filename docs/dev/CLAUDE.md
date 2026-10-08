@@ -5,6 +5,8 @@ Append-only where noted; the restart/status-recovery record for the project.
 
 ## Files
 
+- `bench_wishlist.md` — pcrec-side list of bench cells we want but have not asked for (started 2026-10-08 at Frank's request); pull from it deliberately when a bench set opens or a decision stalls on a measurement.
+
 - `plan.md` — the ACTIVE milestone/step tracker mirroring APPROACH §9;
   STATE:completed rows do not live here. Machine-greppable step states
   (`STATE:not-started|started|completed|blocked|deferred`); format and grep
