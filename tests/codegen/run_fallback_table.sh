@@ -31,8 +31,10 @@
 #   (a) SEQUENCES — each witness's expected fallback-row sequence, read from
 #       the trace build's `fallback` records (`-DPCREC_CAND_TRACE`, B1): one
 #       `row@labels` per arrival, in arrival order, plus the post-row state
-#       field a sabotage row targets on three witnesses. Landed at B1
-#       (decfbB1), hand-written from what B1's base was observed to print.
+#       field a sabotage row targets on three witnesses; and the final
+#       `admit`/`attrib`/`gate` record of one witness per row the corpus
+#       reaches. Landed at B1 (decfbB1), hand-written from what B1's base
+#       was observed to print.
 #   (b) THE OBSERVED-STAMP LEG — each of the 8 `RX_ENGINE_SEL` and 7
 #       `RX_UNROLL_K_WHY` values is stamped by at least one witness (the K35
 #       floor, per value), and the OBSERVED set EQUALS the spec's set (both
@@ -242,6 +244,53 @@ fseq seq-refpf    trplain refused 'refuse@other'                               "
 # no arrival at all
 fseq seq-none     trplain ok '(none)'                                          '(a)b'
 fseq seq-nonevm   trplain ok '(none)'                                          "$W_OVF" --engine=vm
+
+# frec ID TRACE-KEY SLOT WANT PATTERN [args...] — the LAST `SLOT` record of
+# the compile (the final attempt's) reads `route|row-field` == WANT. The
+# other three slots B4/B5 hold to their parent (`admit` = T2's row and
+# verdict, `attrib` = the ENGINE_SEL token and the row whose cell gave it,
+# `gate` = T3's row and PFLW), one witness per row the corpus reaches.
+frec() {
+    local id="$1" key="$2" slot="$3" want="$4" pat="$5"; shift 5
+    local bin="REF_$key" got
+    bin="${!bin}"
+    pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
+        >/dev/null 2>"$WORK/$id.trace"
+    got="$(awk -F'\t' -v s="$slot" '$1 == "CANDTRACE" && $2 == s { x = $3 "|" $4 } END { print x }' \
+            "$WORK/$id.trace")"
+    [ "$got" = "$want" ] && ok "record $id [$key $slot $*]: $want" \
+                         || bad "record $id [$key $slot $* '$pat']: last $slot record '$got', expected '$want'"
+}
+frec adm-default  trplain admit 'none|default pf=1'            '(a)b'
+frec adm-nulex    trplain admit 'none|nullable-exact pf=0'     '(a)*'
+frec adm-varnul   trplain admit 'none|var-nullable pf=0'       '^${v}$'
+frec adm-var      trplain admit 'none|var pf=0'                'a${v}b'
+frec adm-varoff   trplain admit 'none|forced-off pf=0'         'a${v}b' -fno-prefilter
+frec adm-bref     trplain admit 'none|backref pf=0'            '(a)\1'
+frec adm-call     trplain admit 'none|linked-call pf=0'        '(a|b(?1)c)+'
+frec adm-nulcol   trplain admit 'sel1|nullable-collapsed pf=0' '(?:ab){0,16000}'
+frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
+frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVF" -fno-prefilter
+frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
+frec adm-foffsc   trplain admit 'sizecap|forced-off pf=0'      '(\p{Xwd})' -e utf8
+frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
+frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
+frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
+frec att-dnd      trplain attrib '-|declined-nullable-default from=admit'     '(a)*'
+frec att-dn       trplain attrib '-|declined-nullable from=admit'             '(?:ab){0,16000}'
+frec att-cpf      trplain attrib '-|collapsed-prefilter from=sel1-collapse'   "$W_SEL1"
+frec att-ovfdfa   trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_OVF"
+frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$OVFPF"
+frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
+frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8
+frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8
+frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
+frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8
+frec gate-forced  trplain gate 'none|forced pflw=forced'     '(x)?a{0,4}\Gb' -fprefilter-collapse
+frec gate-nul     trplain gate 'none|nullable pflw=nullable' '^(a{2,9})*$' -fprefilter-collapse
+frec gate-nulsel1 trplain gate 'sel1|nullable pflw=nullable' "$W_OVF"
+frec gate-exact   trplain gate 'none|exact pflw=exact'       '(a){2,3}b'
+frec gate-norep   trplain gate 'none|no-rep pflw=no-rep'     '(a)b'
 
 # =========================================================================
 # (b) THE OBSERVED-STAMP LEG
