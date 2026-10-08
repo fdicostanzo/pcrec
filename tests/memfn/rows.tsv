@@ -1,0 +1,59 @@
+# tests/memfn/rows.tsv — THE KIT'S ROW MANIFEST ([MEMFN-ROWCON] N4,
+# docs/design/memfn/row_contracts.md rev 4.1 §4). HAND-MAINTAINED: one line
+# per row of each of the kit's selection tables (the composer's arms,
+# memfn/src/compose.c `arms[]`, and the run compare's rows,
+# memfn/src/runcmp.c). It is NOT derived from fields.def or from the kit's
+# sources: run_rows.sh derives the kit's actual row set independently (an
+# MF_TRACE build of the kit prints every row of both tables at exit) and
+# fails if the two disagree in EITHER direction.
+#
+# A row added to the kit adds its line here in the same commit (or the
+# check is red); a row deleted deletes its line.
+#
+# Columns (TAB-separated; `-` is empty):
+#   table      `arms` or `runcmp` (the trace's table names)
+#   row        the row's name (the trace's `row=`)
+#   reach      WHY the row exists, from a CLOSED set:
+#                pcrec                    pcrec's corpus reaches it (the census
+#                                         floor in row_floors.tsv holds it)
+#                total-fallback           the table's last row: chosen only when
+#                                         no other row serves a site
+#                pending-site:<trigger>   built ahead of the pcrec site that
+#                                         will reach it; <trigger> names it
+#                contract-reach:<family>  reached only by the kit's contract
+#                                         tests; <family> is a G2 family
+#                                         (memfn/tests/run_g2.sh FAM_FLOORS)
+#              Anything else is refused: a row with no reason is deleted (D77).
+#   wkind      `pattern` (a pcrec compile; required for reach=pcrec) or
+#              `fixture` (a tests/memfn/arm_fixtures.c fixture; required for
+#              every other reach)
+#   wflags     pcrec flags for the witness compile (pattern only), space-
+#              separated, after `-p rx --features all`
+#   witness    the pattern text, or the fixture name
+#   signature  a short literal of the ROW'S rendering: it must be in the
+#              witness's artifact, and the trace must show the row chosen
+#              there. `\n`, `\t` and `\\` are escapes.
+#   cflags     pcrec flags for the control compile (pattern only)
+#   control    the control: `=` (the witness pattern again, under cflags),
+#              another pattern, or another fixture. In the control artifact
+#              the row must NOT be chosen and the signature must be ABSENT.
+#
+# The control is what makes a signature mean something (learnings §3): a
+# literal that also appears where the row is not chosen proves nothing.
+# run_rows.sh also holds every signature to EVERY artifact it compiled and
+# every fixture: wherever the signature appears, the trace must show its row.
+#
+# table	row	reach	wkind	wflags	witness	signature	cflags	control
+arms	ofsskip	pcrec	pattern	-	abc[0-9]+xyz	rx_ofsskip(const unsigned char *subject, size_t n,	-fno-offset-skip	=
+arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
+arms	precheck_assign	pcrec	pattern	-	(ab)c?userpass	 = rx_reqrun(	-fno-req-handoff	=
+arms	runcmp	pcrec	pattern	--engine=vm	abc[0-9]+xyz	rx_w2(subject + scan_position)	--engine=vm -fno-lit-run	=
+arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - scan_position);	-	=
+arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip	(?!x)abc	subject_length - 1 - scan_position)	-	=
+arms	pf_walk	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	while (scan_position < subject_length && !	-fno-offset-skip	abc[0-9]+xyz
+arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	-	=
+arms	generic	total-fallback	fixture	-	ofs-decline-miss	_f = 0; for (	-	ofs-miss-n
+runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
+runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=
+runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
+runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz

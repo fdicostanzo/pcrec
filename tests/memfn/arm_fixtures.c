@@ -18,6 +18,7 @@
  * since [MEMFN-ROWCON] N3 a row that uses an unstated `miss` declines (R1).
  *
  *   arm_fixtures OUTDIR [--perturb]
+ *   arm_fixtures OUTDIR --only FIXTURE
  *   arm_fixtures --gate
  *
  * writes OUTDIR/<fixture>.def and OUTDIR/<fixture>.use and prints one line
@@ -26,7 +27,10 @@
  * script's witness that a pinned digest sees a change in what it pins.
  * The line's third column is the art's MEMFN_LIBC stamp (run_arm_pins.sh
  * checks it against a scan of the rendered text).
- * Exit 1 on any kit refusal.
+ * Exit 1 on any kit refusal. --only renders the one named fixture and
+ * nothing else (exit 2 if no fixture has that name): run_rows.sh
+ * ([MEMFN-ROWCON] N4) runs each fixture alone under an MF_TRACE kit, so the
+ * trace's rows are that fixture's own.
  *
  * --gate ([MEMFN-ROWCON] N3) runs the GATE CASES instead and writes nothing:
  * sites built to be DECLINED at define (the walk moves on: the form id that
@@ -267,9 +271,23 @@ static void p_run(mf_pred *p, const char *run, const uint8_t *mask, int pos,
  * fixture but the decline fixtures (lane m1bfix) */
 typedef struct { const char *n, *miss, *floor; } Bounds;
 
+/* --only: render this fixture alone (NULL: every fixture); only_seen counts
+ * the fixtures that matched it. */
+static const char *only;
+static int only_seen;
+
+static int skip_fixture(const char *name)
+{
+    if (!only) return 0;
+    if (strcmp(name, only)) return 1;
+    only_seen++;
+    return 0;
+}
+
 static int render_h(const char *dir, const char *name, const mf_site *s,
                     const char *fn1, Bounds b)
 {
+    if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
@@ -354,6 +372,7 @@ static mf_site pf_site(int bounded, int table)
 static int render_pf(const char *dir, const char *name, const mf_site *s,
                      const char *result, const char *decl)
 {
+    if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
@@ -531,6 +550,7 @@ int main(int argc, char **argv)
     }
     const char *dir = argv[1];
     int perturb = argc > 2 && !strcmp(argv[2], "--perturb");
+    if (argc > 3 && !strcmp(argv[2], "--only")) only = argv[3];
     static const uint8_t ci3[] = { 0xDF, 0xDF, 0xDF };           /* caseless letters */
     static const uint8_t ci3b[] = { 0xFF, 0xDF, 0xFF };          /* one cube, mid   */
     int bad = 0;
@@ -689,5 +709,9 @@ int main(int argc, char **argv)
     t_byte(&s.pred.term[0], 0, 'x');
     bad |= render_pf(dir, "pf-emit-result-decl", &s, "scan_position", "size_t ");
 
+    if (only && only_seen != 1) {
+        fprintf(stderr, "arm_fixtures: --only %s matched %d fixtures\n", only, only_seen);
+        return 2;
+    }
     return bad;
 }

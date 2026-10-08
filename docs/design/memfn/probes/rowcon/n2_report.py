@@ -7,9 +7,16 @@ Library (n2_census.py imports it):
   Agg                                    counters; add(), merge(), save(), load()
   render(agg, meta) -> markdown
 
-CLI:  n2_report.py RESULTS_DIR [-o n2_results.md]
+CLI:  n2_report.py RESULTS_DIR [-o n2_results.md] [--floors ROW_FLOORS.tsv [--propose]]
       merges RESULTS_DIR/arm_*.json (one Agg per arm, written by the driver)
       and writes the tables. Prints `would_decline=K` on its last line.
+      --floors (N4) also holds every row's CHOSEN count to its pcrec_floor
+      (tests/memfn/row_floors.tsv) and every non-`pcrec` row of rows.tsv (read
+      beside it) to 0, and prints `floor_fail=F floor_placeholder=P
+      reason_stale=R reach_dropped=D` before the last line. Floors apply only
+      to a FULL census (no --limit, no --pattern, every arm run); anything
+      less prints `floors=NOT-APPLIED`. --propose prints, per row, the
+      floor(0.9 x chosen) a human copies into the floor file.
 
 A would-decline is an END record with would_decline=1 (the WARN gate declined
 the CHOSEN row). A "pcrec site" is one selection: (table, phase, chosen row,
@@ -288,11 +295,75 @@ def render(agg, meta=None):
     return "\n".join(L) + "\n"
 
 
+def read_tsv(path, ncol):
+    """Data lines of a `#`-commented TAB-separated file, each exactly ncol
+    columns (a short or long line is an error, never padded)."""
+    rows = []
+    with open(path) as f:
+        for i, ln in enumerate(f, 1):
+            ln = ln.rstrip("\n")
+            if not ln or ln.startswith("#"):
+                continue
+            c = ln.split("\t")
+            if len(c) != ncol:
+                sys.exit("n2_report: %s:%d has %d columns, not %d" % (path, i, len(c), ncol))
+            rows.append(c)
+    return rows
+
+
+def floors_verdict(agg, meta, floors_path, propose):
+    """N4: the per-row CHOSEN floors (pcrec column) and the closed-reason
+    rows' zero. Returns the markdown lines and the summary line."""
+    rows = read_tsv(os.path.join(os.path.dirname(floors_path), "rows.tsv"), 9)
+    reach = {(r[0], r[1]): r[2] for r in rows}
+    fl = {(r[0], r[1]): r[2] for r in read_tsv(floors_path, 4)}
+    full = (meta.get("limit", 0) == 0 and meta.get("explicit patterns", 0) == 0
+            and meta.get("arms run") == meta.get("arms in table"))
+    L = ["", "## 7. Floors (N4): per-row CHOSEN against tests/memfn/row_floors.tsv", ""]
+    if not full:
+        L += ["NOT APPLIED: a partial census (limit %s, explicit patterns %s, arms run %s of %s)."
+              % (meta.get("limit"), meta.get("explicit patterns"), meta.get("arms run"),
+                 meta.get("arms in table")), ""]
+    fail = ph = stale = 0
+    out = []
+    for k in sorted(set(fl) | set(reach) | set(agg.reach_chosen)):
+        n = agg.reach_chosen.get(k, 0)
+        f, why = fl.get(k), reach.get(k)
+        if why is None or f is None:
+            v = "NOT IN %s" % ("rows.tsv" if why is None else "row_floors.tsv")
+            fail += 1
+        elif why != "pcrec":
+            v = "ok (0, %s)" % why if n == 0 else "STALE REASON: %s, chosen %d" % (why, n)
+            stale += n != 0
+        elif n == 0:
+            v = "UNREACHED: reach is pcrec, chosen 0"
+            fail += 1
+        elif f == "PLACEHOLDER":
+            v = "PLACEHOLDER"
+            ph += 1
+        elif not f.isdigit():
+            v = "BAD FLOOR %r" % f
+            fail += 1
+        else:
+            v = "ok" if n >= int(f) else "BELOW FLOOR"
+            fail += n < int(f)
+        prop = max(1, n * 9 // 10) if why == "pcrec" and n else "-"
+        out.append([k[0], k[1], why or "-", n, f or "-", prop, v])
+        if propose:
+            print("propose\t%s\t%s\t%s" % (k[0], k[1], prop))
+    L += _md(out, ["table", "row", "reach", "chosen", "floor", "floor(0.9 x chosen)", "verdict"])
+    if not full:
+        return L, "floors=NOT-APPLIED reason_stale=%d reach_dropped=%d" % (stale, agg.reach_dropped)
+    return L, ("floor_fail=%d floor_placeholder=%d reason_stale=%d reach_dropped=%d"
+               % (fail, ph, stale, agg.reach_dropped))
+
+
 def main(argv):
     if not argv:
         sys.exit(__doc__)
     d = argv[0]
     out = argv[argv.index("-o") + 1] if "-o" in argv else os.path.join(d, "n2_results.md")
+    floors = argv[argv.index("--floors") + 1] if "--floors" in argv else None
     agg = Agg()
     n = 0
     for fn in sorted(os.listdir(d)):
@@ -305,9 +376,16 @@ def main(argv):
     mp = os.path.join(d, "meta.json")
     if os.path.exists(mp):
         meta.update(json.load(open(mp)))
+    text = render(agg, meta)
+    summary = None
+    if floors:
+        lines, summary = floors_verdict(agg, meta, floors, "--propose" in argv)
+        text += "\n".join(lines) + "\n"
     with open(out, "w") as f:
-        f.write(render(agg, meta))
+        f.write(text)
     print("n2_report: wrote %s" % out)
+    if summary:
+        print(summary)
     print("would_decline=%d" % agg.would_decline_total())
 
 
