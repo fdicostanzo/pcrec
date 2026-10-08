@@ -120,6 +120,24 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   anchors are copied from `git show HEAD:<path>`; a re-anchor needs its
   intent re-verified.
 
+## Heavy-chain template: `make test` goes through `scripts/perfrun` ([TT-JTUNE])
+A chain's (or slot's) full-suite line is NOT a raw `make -k -jN -Otarget test`:
+
+    scripts/perfrun --label NAME -- "$L/test.log" [MAKEVAR=val ...]
+    log "make test rc=$?"        # perfrun returns make's rc unchanged
+
+It picks a rotated parallelism shape, writes make's output to the log
+byte-identically (the verdict is still `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`),
+samples CPU, and records a ledger row (docs/dev/ttune_measurement.md).
+`--shape J,P` pins a shape when a run must be comparable to an earlier one.
+The chain's log line may append `$(cat "$L/test.log.perfrun")`'s last lines.
+TRIAGE RULE: a red section list is read WITH the perfrun note. `class=K44-ONLY`
+(red only in test-corpus/counterk/resource/cli on the counterk.rxt:1807 or
+resource CPU-cap cells) and `class=LOAD-SUSPECT` are the SHAPE's finding, not
+the lane's failure: re-run the named sections solo (`make test-X`); green solo
+= green-by-diagnosis (known_issues K44). `RED-REAL` is the lane's. Do not
+re-run the whole suite at another shape to "check"; the rotation owns shapes.
+
 ## Lifecycle (Frank's ruling 2026-09-06 — replaces all keepalive guidance)
 - NO self-keepalive crons. Subagent caches are 5-minute TTL; periodic ticks
   buy nothing and pay a full context rewrite each time. (The MAIN session's

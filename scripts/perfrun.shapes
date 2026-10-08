@@ -1,0 +1,9 @@
+# J P  -- rotation of (make -jJ, PROCS=P) shapes for scripts/perfrun; one per line, # comments.
+# perfrun picks the shape with the fewest UNCONTAMINATED ledger rows, ties in file order.
+16 16
+16 1
+8 2
+4 4
+4 3
+2 8
+6 16
