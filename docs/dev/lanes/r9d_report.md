@@ -189,3 +189,90 @@ revision's 4.9 with the kit tip's 4.8 `[M7]` text at merge (F-9).
 ### Validation
 
 None applicable: docs only, no build, no timed run.
+
+## Follow-up r9fu (2026-10-08): the glibc-inside trap per site, and [MEMFN-ENTRYSINK]
+
+Two narrow gaps the manager named after the r9 revision. Each edit is
+marked `[r9fu]` in `docs/design/memfn/integration.md`. They are listed in
+§R4.9.12 as follow-up rows r9fu-1 and r9fu-2. The new text is §R4.9.7.1
+and §R4.9.7.2, plus F-R9-8 and pointed edits in §R4.9.2.1, §R4.9.2.4,
+§R4.9.5.1, §R4.9.6, §R4.9.7 and Q-R9-2. DESIGN ONLY: no source edits and
+no timed runs.
+
+### Commands
+
+The binary is the kit tip's, read-only: `worktrees/memfn/build/pcrec`,
+`lane/memfn-m7` at 01772107. Scratch is `worktrees/r9d/build/r9fu/`
+(gitignored). The box is the dev box: gcc 15.2.0, glibc 2.43.
+
+    P=…/worktrees/memfn/build/pcrec
+    gnutimeout 60 $P -p rx -o wN.c [--engine=vm] --pattern 'PAT'
+    grep -E '^#define RX_(ENGINE|DFA_PREFILTER|REQ_RUN|REQ_HANDOFF|VM_PREFILTER) ' wN.c
+    awk '/static inline size_t rx_(reqrun|ofsskip)\(/,/^}/' wN.c | grep -c 'memchr('
+    gnutimeout 60 gcc -O2 -I. -c -o wN.o wN.c && nm -u wN.o
+    gnutimeout 60 gcc -O2 -S -o - wN.c | grep -cE 'call\s+memchr'
+    # R-1's emit vs today's FUNC text:
+    diff <(awk '/rx_reqrun\(/,/^}/' w1.c) <(awk '/rx_reqrun\(/,/^}/' docs/design/memfn/probes/twins/gates_d4d9ed90/mi_def.inc)   # identical
+    diff <(awk '/rx_reqrun\(/,/^}/' w2.c) <(awk '/rx_reqrun\(/,/^}/' …/us_def.inc)                                               # identical
+    # ENTRYSINK hand twin (tw/): prefix.h = R-1's ffl block loop, no lead,
+    # literal constants, as file-scope rfx_w16/rfx_w32 under level guards;
+    # splice.py puts the rungs at the top of the FUNC (§R4.9.2.1's order)
+    python3 -I tw/splice.py w3.c rx_ofsskip '<defs>' '<run eq>' 4 tw/t3.c   # and w1.c -> t1.c
+    gnutimeout 60 gcc -O2 [-march=x86-64-v3] -I.. -S tw/tN.c
+    # file-scope `static const __v16qi` variant: tw/prefix_fs.h -> t3fs.c
+
+### Witnesses and findings
+
+| witness | site (stamps) | BODY | memchr streams | `nm -u` |
+|---|---|---|---|---|
+| `(?i)cat` | PRE masked, DFA ASSIGN | fn-pair | 2 | memchr |
+| `(?i)union.*?select.*?from` (+ `--engine=vm`) | PRE masked, DFA / no-DFA | fn-pair | 2 | memchr (+ `__stack_chk_fail`) |
+| `(?i)\d+cat` `--engine=vm` | PRE masked, no-DFA | fn-pair | 2 | memchr |
+| `(?i)(a\|b)+cat` | PRE masked, VM hybrid | fn-pair | 2 | memchr, `__stack_chk_fail` |
+| `xyzzy`, `\d+xyzzy`, `[a-z]*select[a-z]*` | PRE exact, DFA | fn-memchr | 1 | memchr |
+| `\d+xyzzy` `--engine=vm`, `(a\|b)+xyzzy` | PRE exact, no-DFA / hybrid | fn-memchr | 1 | memchr |
+| `(?i)\d+ab/cd`, `(?i)\d+qz#x` | PRE MASKED, non-letter pick | fn-memchr | 1 | memchr |
+| `/user\|/users` | OFS run-pinned | fn-memchr | 1 | memchr |
+
+- **Glibc inside, every site.** Every batch-1 FUNC calls glibc `memchr`.
+  The run verify is inline word loads, with no memcmp, memrchr or strlen.
+- **R-1 and `fn-pair`.** R-1's `emit` column is byte-identical to today's
+  `fn-pair` text, so R-1 DID compare against the glibc-backed twin for
+  `fn-pair`. Its printed SIMD-on column (`ffl − swar`) used SWAR, which
+  is the weaker statement.
+- **Sparse picks are not covered.** Both R-1 cells pick a dense letter
+  (C/c). A rough calculation (two glibc streams at about 30 B/ns, against
+  w16 at about 21 B/ns on union-select) leaves a sparse-pick `fn-pair`
+  cell's sign open. The bench must add that cell.
+- **R-1 and `fn-memchr`.** There is no same-function cell. The cls-n-uc
+  `nosl` columns are glibc-backed, but they set ffl's lead function, at
+  AVX2 only, on a dense `i`. That makes them TRIGGER-GRADE.
+  - Decision: `over` = `fn-pair` only. `vrun` over `fn-memchr` is filed
+    with five cells: rare-pick exact, dense-pick exact, OFS
+    `router-prefix-order`, masked non-letter pick, exact VM hybrid.
+  - OFS run-pinned (exact-only pin, so always `fn-memchr`) and the exact
+    bin leave batch 1.
+- **No entry point is assumed.** §R4.9 assumes no function-entry point.
+- **Broadcasts in the hand twin (measured).**
+  - Literal `set1` becomes `mov imm; movd; pshufd` (SSE2) or `vmovd;
+    vpbroadcastd` (v3). It is re-done at each rung entry and again for
+    the final block. It is never a `.rodata` load and never hoisted.
+  - A file-scope `static const` vector is constant-propagated back to the
+    same immediates: 8 / 16 such instructions remain.
+  - So plan.md's [MEMFN-ENTRYSINK] sentence "pattern-constant setup needs
+    neither: gcc hoists it or it is a constant" does not hold for gcc
+    15.2. That row lives in main's plan.md, so correcting it is the
+    manager's job.
+- **ENTRYSINK candidates.**
+  - None in batch 1: every PRE FUNC is called once per `rx_search`, at
+    lines 79, 70, 312 and 387 of the witnesses.
+  - The ONE candidate is the filed `vrun` over OFS run-pinned. Its
+    `rx_ofsskip` runs inside the DFA scan `for (;;)` on every re-seed
+    (`/user|/users` l.132).
+- **Q list.** Q-R9-2 is refined (the twin's glibc tier is the CPU's, not
+  `-march`'s), with the same recommendation. There is no new Q.
+
+### Validation
+
+Docs only. Compiles and `nm`/`-S` reads on scratch artifacts only; no
+timed run, no `make`.

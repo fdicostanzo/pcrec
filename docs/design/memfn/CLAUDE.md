@@ -201,6 +201,12 @@ its DESIGN record.**
   box; the bench submission is §R4.9.5.1); the record's states
   (CANDIDATE/ACCEPTED/STALE/REJECTED); Q-R9-1 RESOLVED, Q-R9-9 new;
   §R4.9.12 maps every finding id to its section.
+  `[r9fu]` A follow-up (same lane) measured the glibc-inside trap per
+  site: both FUNC BODY rows call glibc `memchr`, so batch 1's rows sit
+  over `fn-pair` only and `vrun` over `fn-memchr` is filed with five
+  cells (§R4.9.7.1). It also checked `[MEMFN-ENTRYSINK]`: no entry point
+  is assumed, and the one candidate is the filed OFS run-pinned form
+  (§R4.9.7.2).
   Read §R4.9 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set

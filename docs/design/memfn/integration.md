@@ -259,6 +259,15 @@ reconciles the two at merge (F-9).
   predicate is one RUN term and is its site's only predicate, at 16-byte
   and 32-byte width. SSE (w16) first, by D144 addendum 4. Everything else
   is filed with the cell it lacks (§R4.9.7).
+- `[r9fu]` **The scalar twin at every batch-1 site already calls glibc
+  `memchr`** (measured, §R4.9.7.1): both BODY rows are glibc-backed. So
+  batch 1's rows sit over `fn-pair` ONLY, where R-1 timed them against
+  that glibc-backed body. `vrun` over `fn-memchr` is filed with its cell.
+  That takes OFS run-pinned (always exact, so always `fn-memchr`) and the
+  exact-window bin out of batch 1. No part of §R4.9 assumes a
+  function-entry setup point (`[MEMFN-ENTRYSINK]`). The one form whose
+  assembly shows per-call setup re-done inside a pcrec-owned outer loop is
+  the filed `vrun` over OFS run-pinned (§R4.9.7.2).
 
 ### R4.9.0 Each input, and where it now lives
 
@@ -395,6 +404,21 @@ all three bench subjects SLOWER, with a crossover at ~32-byte runs.
 T-A's 4-15x set-classifier wins (linux_results.md §6.1) are on a MISS
 over a whole 64 KiB span, which is the opposite regime.
 
+**F-R9-8 `[r9fu]`. Every batch-1 FUNC body already calls glibc `memchr`,
+and R-1 timed the vector form against that body for `fn-pair` only.**
+Measured on witness patterns at the kit tip (§R4.9.7.1). Both BODY rows
+call `memchr` (one stream for `fn-memchr`, two for `fn-pair`), the run
+verify is inline word loads (no `memcmp`), and `nm -u` on every artifact
+lists `memchr`. R-1's `emit` column is byte-identical to today's
+`fn-pair` FUNC text for union-select and mod-i. So for `fn-pair` R-1
+already compared against the glibc-backed twin, and the SIMD-on verdict
+column it printed (`ffl − swar`) understates the margin. R-1 has no cell
+where the vector form and the glibc-backed `fn-memchr` body compute the
+same function. glibc's ifunc picks its `memchr` by CPU at load time, not
+by the consumer's `-march`, so at the default recipe a w16 (SSE2) row
+competes there with a scalar twin whose `memchr` already runs at the
+CPU's top tier.
+
 ### R4.9.2 `SCAN_ROWS`: the FUNC-body seam, and SIMD forms as rows
 
 **What `SCAN_ROWS` is now.** Revision 1 (§2.2) designed `SCAN_ROWS` as a
@@ -478,11 +502,15 @@ emitted FUNC part. They have three pcrec customers (names from
 
 | FUNC part (pcrec's name) | delegated site | handoff | pcrec route (stamps) | reached by batch 1's rows? |
 |---|---|---|---|---|
-| `<p>_reqrun` (`fn_ref` 1, the window run) | PRE composite | ASSIGN on a DFA-scan route; ON_MISS on a no-DFA route; the VM-hybrid handoff route (rev 4.6) | DFA-scan, no-DFA, VM hybrid | YES when the window run is the site's ONLY predicate (no lead, no set rest, no whole run) |
+| `<p>_reqrun` (`fn_ref` 1, the window run) | PRE composite | ASSIGN on a DFA-scan route; ON_MISS on a no-DFA route; the VM-hybrid handoff route (rev 4.6) | DFA-scan, no-DFA, VM hybrid | YES when the window run is the site's ONLY predicate (no lead, no set rest, no whole run) AND `[r9fu]` its BODY row is `fn-pair` (the scanned position is a two-member cube); a window whose scanned position is one byte (every exact run; a masked run whose pick is a non-letter, e.g. `(?i)\d+ab/cd` scans `/`) is `fn-memchr`, NO in batch 1 (§R4.9.7.1) |
 | `<p>_reqrun_whole` (`fn_ref` 2, [K66]'s whole run) | PRE composite, no-DFA routes only | ON_MISS | no-DFA | NO: such a site also holds the window predicate, so the run is never the site's only predicate |
-| `<p>_ofsskip` | OFS (FIND/RETURN), selected by `cand_rows[]`' `offset-set`, `offset-set-bounded`, `run-pinned`, `run-pinned-bounded` rows | RETURN | DFA prefilter | `run-pinned[-bounded]`: YES when the pinned k-set is the run alone. `offset-set[-bounded]`: NO (set terms only, no run) |
+| `<p>_ofsskip` | OFS (FIND/RETURN), selected by `cand_rows[]`' `offset-set`, `offset-set-bounded`, `run-pinned`, `run-pinned-bounded` rows | RETURN | DFA prefilter | `run-pinned[-bounded]`: YES when the pinned k-set is the run alone. `[r9fu]` NO in batch 1: the run-pin is exact-only, so every such FUNC's BODY is `fn-memchr` (witness `/user\|/users`, the bench's `router-prefix-order`); it moves to the filed `vrun` over `fn-memchr` row (§R4.9.7.1). `offset-set[-bounded]`: NO (set terms only, no run) |
 
-**OFS run-pinned, which R-1 never timed.** R-1's cells are PRE sites. The
+**OFS run-pinned, which R-1 never timed.** `[r9fu]` Under §R4.9.7.1 this
+bin is no longer batch 1's: every run-pinned FUNC is `fn-memchr`, and
+batch 1's rows sit over `fn-pair` only. What follows now binds the filed
+`vrun` over `fn-memchr` row, unchanged, and that row's trigger cell
+includes this bin. R-1's cells are PRE sites. The
 shape-keyed predicate reaches OFS run-pinned sites whose k-set is the run
 alone, and the panel ruled that those need their own cell or a structural
 exclusion before a SIMD row may apply to them. The design takes the CELL:
@@ -765,10 +793,19 @@ R4e′.0):
 
 | # | row | slot / layer / level | APPLIES (over `(site, pred, hooks)`) | reach | over | rungs | deny |
 |---|---|---|---|---|---|---|---|
-| 1 | `vrun-w32` | PREFIX / SIMD / w32 | `pred` is ONE term, a RUN of length ≥ 2 holding the scanned position, any mask; `pred` is the site's ONLY predicate (no lead, no set rest, no whole run); any handoff | `32 + T` | `fn-memchr`, `fn-pair` | `vrun-w16` | `--memfn=no-vrun-w32` |
-| 2 | `vrun-w16` | PREFIX / SIMD / w16 | the same | `16 + T` | `fn-memchr`, `fn-pair` | — | `--memfn=no-vrun-w16` |
-| 3 | `fn-pair` | BODY / SCALAR | the scanned position is a two-member cube (today's `b >= 0`) | — | — | — | none (moves no byte) |
-| 4 | `fn-memchr` | BODY / SCALAR | otherwise | — | — | — | none |
+| 1 | `vrun-w32` | PREFIX / SIMD / w32 | `pred` is ONE term, a RUN of length ≥ 2 holding the scanned position, any mask; `pred` is the site's ONLY predicate (no lead, no set rest, no whole run); any handoff | `32 + T` | `fn-pair` `[r9fu]` | `vrun-w16` | `--memfn=no-vrun-w32` |
+| 2 | `vrun-w16` | PREFIX / SIMD / w16 | the same | `16 + T` | `fn-pair` `[r9fu]` | — | `--memfn=no-vrun-w16` |
+| 3 | `fn-pair` | BODY / SCALAR | the scanned position is a two-member cube (today's `b >= 0`); TWO glibc `memchr` streams | — | — | — | none (moves no byte) |
+| 4 | `fn-memchr` | BODY / SCALAR | otherwise; ONE glibc `memchr` stream | — | — | — | none |
+
+`[r9fu]` **Why `over` is `fn-pair` alone.** Both BODY rows are glibc-backed
+(§R4.9.7.1), so each row's bar is "beat glibc's `memchr` plus the call"
+(D147 addendum 13's trap). R-1 cleared that bar for `fn-pair` (its `emit`
+column IS today's `fn-pair` text) and has no cell for `fn-memchr`. A
+`fn-memchr` site therefore falls through walk test 4 (OVER, `PRED_FALSE`)
+and renders as today. The first draft's `over` list named both rows. The
+second row is filed with its cell (§R4.9.7's filed list); adding it later
+is a one-cell `over` edit, not a new row.
 
 A FUNC no PREFIX row takes renders exactly as today. A site whose
 predicate `ofs_fn_applies` declines (e.g. a scanned position that is a
@@ -1074,11 +1111,17 @@ the boxes. It is written and committed BEFORE the run and carries:
    route, §R4.3.3).
 3. **Cells:** the FULL mover set of the pre-registered population (not
    proposer-chosen evidence cells), the two evidence cells (union-select,
-   mod-i), one cell per bin (§R4.9.6), the exact-window bin, the OFS
-   run-pinned bin and the VM-hybrid bin (bench patterns where the census
-   finds them, else synthetic witnesses from the capability subbench, the
-   capability-subbench-first rule), the density ladder, and the NON-MOVER
-   artifacts as the null population.
+   mod-i), one cell per bin (§R4.9.6), the no-DFA (ON_MISS) bin and the
+   VM-hybrid bin (bench patterns where the census finds them, else
+   synthetic witnesses from the capability subbench, the
+   capability-subbench-first rule; `(?i)\d+cat` at `--engine=vm` and
+   `(?i)(a|b)+cat` are this lane's measured `fn-pair` witnesses for the
+   two), the density ladder, and the NON-MOVER artifacts as the null
+   population. `[r9fu]` The exact-window bin and the OFS run-pinned bin
+   left batch 1 with `fn-memchr` (§R4.9.7.1). The submission MAY carry
+   them as the filed `vrun` over `fn-memchr` row's trigger cells (that
+   row's cell list is in §R4.9.7.1). If it does, they are marked
+   non-target and the row is not accepted from them.
 4. **A span-ladder subbench request**: the same patterns at 16/32/64/256/
    1024-byte subjects, so the per-call regime has an official instrument.
 5. **The pre-registration** (the house prediction-table shape): predicted
@@ -1108,7 +1151,14 @@ stamp line is built only if it says no.
 **The bar** (D147 addenda 11 and 13, `[r9 M-3, M-5]`). A SIMD row is
 ACCEPTED at level L iff, in a tier-O reading on EVERY official box that
 executes L (§R4.9.5's table), the pre-registered bar holds:
-1. **against OFF at L** (the CURRENT scalar layer, same `-march`):
+1. **against OFF at L** (the CURRENT scalar layer, same `-march`).
+   `[r9fu]` At every site a FUNC PREFIX row reaches, OFF is a
+   GLIBC-BACKED body: the BODY row the PREFIX sits over calls `memchr`
+   (§R4.9.7.1). glibc picks that `memchr` by CPU, not by `-march`, so
+   "same `-march`" fixes the row's level and never the twin's. The twin
+   runs at the CPU's own tier on every box. The pre-registration names
+   the twin as "`<BODY row>` + glibc `memchr` (the box's reported glibc)",
+   never as "scalar".
    - the row's TARGET cells (named in the pre-registration) improve their
      median whole-call time beyond the null band, by at least a stated
      minimum effect (`UNMEASURED DEFAULT:` an absolute ns or ns/B figure
@@ -1129,7 +1179,8 @@ executes L (§R4.9.5's table), the pre-registered bar holds:
    DISTINCT SITE SHAPES (not patterns), printed with their count and a K35
    floor. Bins are what the cost model reads: (FUNC customer, handoff,
    pcrec route from the stamps, the `rc_row` the verify uses, masked or
-   exact). There is no "fewer than 8 movers" exclusion: every bin the row
+   exact, and `[r9fu]` the BODY row the PREFIX sits over, which names the
+   glibc-backed twin). There is no "fewer than 8 movers" exclusion: every bin the row
    reaches needs at least one official cell (a bench pattern, or a
    synthetic witness), fixed in the pre-registration before the numbers
    exist. A bin with no cell is UNREACHED; the UNREACHED list is printed
@@ -1235,8 +1286,10 @@ kit narrows or removes the row in a follow-up.
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
 site's only predicate; rows `vrun-w32` and `vrun-w16` in `fn_rows[]`.**
 The site population is §R4.9.2.1's table: PRE `<p>_reqrun` with no lead,
-set rest or whole run, on every route, and OFS `<p>_ofsskip` run-pinned
-sites whose k-set is the run alone. The form is R-1's `ffl`, a fused
+set rest or whole run, on every route, whose BODY row is `fn-pair`
+(`[r9fu]`, §R4.9.7.1). The first draft also listed OFS `<p>_ofsskip`
+run-pinned sites whose k-set is the run alone. They are all `fn-memchr`,
+so they moved to the filed list. The form is R-1's `ffl`, a fused
 pair-filter scan with an in-block verify that goes through the BODY's
 `rc_row` (C-12). Only the FUNC's PREFIX slot is new; the use lines are
 untouched.
@@ -1274,15 +1327,26 @@ order on evidence).**
 
 - Whichever scalar layer is current at landing (emit, or R4d's form if it
   lands first), the w16 trigger holds.
+- `[r9fu]` **The `emit` column IS the glibc-backed `fn-pair` twin.** It is
+  byte-identical to today's FUNC text for both cells, with two `memchr`
+  streams, re-checked at the kit tip (§R4.9.7.1). So the trap of D147
+  addendum 13 was already priced at these cells: `ffl` SSE2 beats glibc's
+  `memchr` plus its restart churn in every row, by 3-7x on throughput.
+  The SIMD-on verdict column R-1 PRINTED (`ffl − swar`) used a pure-SWAR
+  comparator, so it is the weaker statement. The table above restates it
+  against `emit`. Both cells are tier U on Zen 1 only, and Zen 4's glibc
+  `memchr` is a different ifunc arm, so the dev-box cell is still owed in
+  tier O (§R4.9.5's table).
 - `[r9 M-10]` mod-i's 6,030 hits per MiB is one hit per ~174 bytes:
   SPARSE for a vector restart regime, not dense. The first draft's "it
   wins on mod-i's dense sweep" is withdrawn; the density ladder (§R4.9.5
   item 7) is what bounds batch 1's density claim.
-- **Not in the evidence**, each with its handling: an EXACT (unmasked)
-  window (both cells are caseless; the submission adds the exact bin's
-  cell); OFS run-pinned (the seam's census and its own cell, §R4.9.2.1);
-  the VM-hybrid route's window (its own bin; `handoff.rxt`'s hybrid
-  witnesses from R4c are the synthetic cell if the bench reaches none).
+- **Not in the evidence**, each with its handling: `[r9fu]` an EXACT
+  (unmasked) window and OFS run-pinned are both `fn-memchr`, so they are
+  out of batch 1 and filed with their cells (§R4.9.7.1; the first draft
+  added the exact bin's cell to batch 1's submission); the VM-hybrid
+  route's window (its own bin; `handoff.rxt`'s hybrid witnesses from R4c
+  are the synthetic cell if the bench reaches none).
 
 **Prerequisites:**
 - R4e′.0 (the seam) landed;
@@ -1311,7 +1375,11 @@ marked TIER U, with the UNREACHED list, and with the bench submission
 The generated site space for the batch-1 shape is rendered with the
 policy word lacking `MF_P_PORTABLE_ONLY`:
 - masks, run lengths 2..8, run offsets, both handoffs, `use` both ways,
-  both BODY rows under each PREFIX row;
+  both BODY rows under each PREFIX row. `[r9fu]` A PREFIX row renders over
+  `fn-pair` only, and the `fn-memchr` sites in the space are the OVER
+  test's negative control: their text is byte-identical to the SIMD-off
+  rendering, and a plant that puts `fn-memchr` back in `over` is red
+  there;
 - compiled at every `mf_levels()` level's `test_march` plus
   `-mgeneral-regs-only` (w16's compiled-out level) and `-march=x86-64-v4`
   (the dev box executes all of them);
@@ -1376,6 +1444,7 @@ re-read against the kit tip):
 | site / form | why not batch 1 | the cell or fact that would trigger it |
 |---|---|---|
 | PRE composite WITH a lead (userpass, cls-n-uc) | F-R9-3: vector forms lose per call where the lead rejects (userpass) and win where it never rejects (cls-n-uc); the kit cannot tell which | the filed "lead can reject" fact (§15.5 item 2), OR a lead-first vector form measured NULL-or-better than the current scalar at userpass-like cells in both regimes |
+| `[r9fu]` `vrun` over `fn-memchr`: every exact window, a masked window whose pick is a non-letter, and OFS run-pinned | the twin is ONE glibc `memchr` stream, which glibc's ifunc runs at the CPU's own tier. R-1 has no same-function cell (§R4.9.7.1). pcrec's pick favours a RARE byte, which is glibc's best regime | §R4.9.7.1's five cells, on both official x86 boxes, at the same `-march`, both regimes. Landing = add `fn-memchr` to the two rows' `over` |
 | PRE composite with a whole run or set rest (`<p>_reqrun_whole`) | no cell | a timed mover in that bin |
 | OFS `offset-set[-bounded]` (set terms only) | no cell; a set-only k-set is a different vector body (no run verify) | an offset-set cell with a fused form beating its current scalar arm |
 | PF one byte (`pf_memchr`, `pf_memchr_bounded`) and MLINE (`pf_memchr_back`, delegated at M4) | glibc's AVX2 `memchr` is the x86 bar (55 ns at 4 KiB, ~60 B/ns); nothing surveyed beats it (linux_results.md §7). The scalar layer already calls it. D147 addendum 13's trap names exactly this | a cell where an inline form beats glibc in its regime (short per-call spans below n*, 64-256 B, are the only candidates; F = 3.24 ns) |
@@ -1389,6 +1458,144 @@ re-read against the kit tip):
 | a 64-byte level (AVX-512) | no CELL (the hardware exists: the dev box) | a tier-U probe at `-march=x86-64-v4` showing a w64 rung beats w32 past the null band at a batch-1 cell |
 | aarch64 levels (NEON) | addendum 8 | Frank admits Mac verdicts for the cells, or an aarch64 Linux box exists |
 | the run-time cascade `vrun-rt` | no cascade cell | §R4.9.3's probe |
+
+#### R4.9.7.1 `[r9fu]` The glibc-inside trap, per site
+
+D147 addendum 13 names the trap: a scalar site that calls glibc's
+`memchr` is already SIMD inside. The first revision stated it only for
+the PF/MLINE sites. This subsection settles it for every site class batch
+1 reaches and for both BODY rows a SIMD row may sit over, BY MEASUREMENT.
+
+**Method.** The kit tip's binary (`lane/memfn-m7` 01772107,
+`build/pcrec`) emitted witness artifacts
+(`pcrec -p rx -o wN.c --pattern P [--engine=vm]`). Each FUNC's body was
+cut out of the `.c`, the artifact compiled `gcc -O2 -c` (gcc 15.2.0,
+glibc 2.43, dev box) and read with `nm -u`, and the `.s` was read with
+`gcc -O2 -S`. The full transcript is `../../dev/lanes/r9d_report.md`
+"follow-up r9fu".
+
+| witness | site class (stamps) | BODY row | `memchr` streams in the FUNC | `nm -u` | R-1 cell against this twin? |
+|---|---|---|---|---|---|
+| `(?i)cat` | PRE window, masked; DFA, ASSIGN (`REQ_HANDOFF "0"`) | `fn-pair` | 2 | `memchr` | YES: mod-i, `emit` byte-identical to this FUNC |
+| `(?i)union.*?select.*?from` (and at `--engine=vm`: no-DFA, `VM_PREFILTER "none"`) | PRE window, masked | `fn-pair` | 2 | `memchr` (`__stack_chk_fail` on the VM arm) | YES: union-select, `emit` byte-identical |
+| `(?i)\d+cat` `--engine=vm` | PRE window, masked; no-DFA, ON_MISS | `fn-pair` | 2 | `memchr` | no (the bin's witness) |
+| `(?i)(a\|b)+cat` | PRE window, masked; VM hybrid | `fn-pair` | 2 | `memchr`, `__stack_chk_fail` | no (the VM-hybrid bin's witness) |
+| `xyzzy`, `\d+xyzzy`, `[a-z]*select[a-z]*` | PRE window, exact; DFA (ASSIGN and none) | `fn-memchr` | 1 | `memchr` | NO |
+| `\d+xyzzy` `--engine=vm`; `(a\|b)+xyzzy` | PRE window, exact; no-DFA; VM hybrid | `fn-memchr` | 1 | `memchr` | NO |
+| `(?i)\d+ab/cd`, `(?i)\d+qz#x` | PRE window, MASKED, pick a non-letter (`/`, `#`) | `fn-memchr` | 1 | `memchr` | NO |
+| `/user\|/users` (`router-prefix-order`) | OFS `run-pinned`, DFA prefilter, RETURN | `fn-memchr` | 1 | `memchr` | NO |
+
+Every FUNC verifies its run with inline word loads (`rx_w2`/`rx_w4`
+through `memcpy`), with no `memcmp`, `memrchr` or `strlen`. Its only libc
+call on the hot path is `memchr`, one call per candidate restart (per
+stream). **Verdict: at every batch-1 site class, the scalar twin is
+glibc-backed.** The twin for a PREFIX row is "its BODY row + glibc
+`memchr`", and the bar (§R4.9.6 item 1) says so. glibc chooses its
+`memchr` arm at load time from the CPU (its multiarch ifunc; the arm was
+not identified on this box), whatever the consumer's `-march` is.
+
+**`fn-pair`: R-1 compared against the glibc twin.** The `emit` column of
+R-1's table IS today's `fn-pair` text, so batch 1's evidence stands as
+tier U against the right twin. Its regime is narrower than the table
+suggests: both cells pick `C`/`c`, a DENSE letter, and the twin's cost
+there is restart churn. R-1 has no `fn-pair` cell whose two picked bytes
+are RARE. A rough calculation from the cited numbers (no new timing)
+leaves the sign open there. Two glibc streams with almost no restarts run
+at about half glibc's ~60 B/ns (linux_results.md §7), so about 30 B/ns.
+R-1's w16 rate on union-select is about 21 B/ns (1 MiB in 48,844 ns,
+with verify work included). So **the bench run must add a sparse-pick
+`fn-pair` cell** (a caseless run whose prior-picked letter pair is rare,
+e.g. a `(?i)…zq…`-shaped bench or synthetic pattern) as a TARGET-or-floor
+cell. The pre-registration bins `fn-pair` movers by the pick's band in
+pcrec's prior. A loss there blocks the level (§R4.9.6 item 3: the kit
+cannot see density, so the fix is a pcrec-stated fact, a request).
+
+**`fn-memchr`: no same-function cell, so the evidence is trigger-grade.**
+R-1's only glibc-backed `fn-memchr` text is cls-n-uc's `nosl` arm (the
+`-fno-req-set-lead` gate: `memchr('i')` plus the run compare). The table
+shows `ffl` AVX2 under it (gate 1m 4.72 vs 10.34 ns, sweep 1m 97,527 vs
+403,594, pc1024 13.88 vs 72.79). But that `ffl` computes the LEAD
+function, the comparison is AVX2 only, and `i` is a dense letter. pcrec's
+pick prefers the RAREST byte (`xyzzy` scans `z` at offset 3, `/user`
+scans `/`). That is glibc's best regime, and at the default recipe it
+pits a w16 (SSE2) row against a glibc arm at the CPU's top tier.
+
+**Decision: `over` excludes `fn-memchr` in batch 1** (§R4.9.2.4's row
+table). The alternative was to keep it and require a win over glibc
+there. It is rejected because no cell exists to judge it, and D77 files
+a form until its cell does. Batch 1 is then the `fn-pair` PRE window on
+every route. The exact-window and OFS run-pinned bins leave batch 1, and
+with them the OFS cell obligation of §R4.9.2.1 and the only
+ENTRYSINK-candidate site (§R4.9.7.2).
+
+**The filed row's trigger cells** (tier U first, then the bench, same
+`-march` per arm, both official x86 boxes, both regimes; the twin is
+`fn-memchr` + the box's glibc):
+1. an exact window with a RARE pick (`\d+xyzzy`-shaped);
+2. an exact window with a DENSE pick (cls-n-uc's `it` under
+   `-fno-req-set-lead`);
+3. OFS run-pinned (`router-prefix-order`, `/user|/users`);
+4. a masked window with a non-letter pick (`(?i)\d+ab/cd`);
+5. the exact VM-hybrid window (`(a|b)+xyzzy`).
+
+The likely outcome to test is a win at (2) and a null or loss at (1) and
+(3). If so, the row needs pcrec's pick-frequency band as a site fact,
+like the filed lead fact. That is a request, not a kit guess.
+
+#### R4.9.7.2 `[r9fu]` [MEMFN-ENTRYSINK]: nothing assumes an entry point; the candidates
+
+Frank's rule for `[MEMFN-ENTRYSINK]` (plan.md, filed): build SIMD forms
+WITHOUT a function-entry setup point, then measure.
+
+**Nothing in §R4.9 assumes one.** It was checked section by section:
+- the PREFIX row's file-scope part lives at file scope (`mf_define`);
+- its rungs sit at the top of the FUNC body, which is reached from the
+  use point;
+- the ladder "holds no static" (§R4.9.3);
+- the cascade reads no cached word.
+
+How the vector constants are made was never stated, so it is stated
+here, as measured.
+
+**How a w16/w32 form makes its broadcast constants (measured).** A hand
+twin was built in the rendering order §R4.9.2.1 fixes:
+- the file-scope helpers `rfx_w16`/`rfx_w32`, under level guards: R-1's
+  `ffl` block loop without the lead, with constants as literals;
+- the rungs at the top of the FUNC;
+- spliced into the kit tip's emitted artifacts for `/user|/users` (OFS
+  run-pinned) and `(?i)cat` (PRE, ASSIGN).
+
+It was compiled with `gcc -O2 -S` and with `-O2 -march=x86-64-v3 -S`.
+- gcc inlines the helper and the FUNC into `rx_search`.
+- Each `set1` of a literal becomes `mov $imm32; movd; pshufd $0` (SSE2) or
+  `vmovd; vpbroadcastd` (v3). gcc emits these at the rung's entry, after
+  the reach compare, and emits them AGAIN for the overlapped final block.
+- gcc never uses a `.rodata` load and never hoists these out of an
+  enclosing loop.
+- A file-scope `static const` vector is the only other scope the kit
+  has, and gcc constant-propagates it back to the same immediates (8 such
+  instructions remain in `rx_search` at SSE2, 16 at v3).
+- The scalar invariants (`n − T − VW`, the reach compare) are likewise
+  recomputed at each entry.
+
+So the plan row's "pattern-constant setup needs neither: gcc hoists it or
+it is a constant" does NOT hold for gcc 15.2 here. The setup is about 3
+instructions per vector constant, done at each entry. Whether that costs
+anything measurable is the trigger's hand-twin question. No timing was
+taken.
+
+**Per form, against the trigger's assembly test** (per-call setup re-done
+inside a pcrec-OWNED outer loop):
+
+| form / site | where the FUNC is called (artifact line) | candidate? |
+|---|---|---|
+| `vrun-w16`/`-w32` over `fn-pair`, PRE window, DFA ASSIGN | once, at `rx_search` entry, before the scan (`(?i)cat` l.79) | NO: the setup runs once per matcher call; the only outer loop is the CALLER's find-all |
+| the same, DFA no handoff / no-DFA ON_MISS | once (`if (rx_reqrun(…) >= n) return 0;`, `\d+xyzzy` l.70, `(?i)union…` `--engine=vm` l.312) | NO, same reason |
+| the same, VM hybrid | once, before the prefilter and the attempt loop (`(a\|b)+xyzzy` l.387); the hybrid's re-seed calls `rx_prefilter`, not the FUNC | NO |
+| filed `vrun` over `fn-memchr`, OFS run-pinned (`<p>_ofsskip`) | INSIDE `rx_search`'s DFA scan `for (;;)`, on every re-seed (`forward_state == 0`, no accept; `/user\|/users` l.132); the assembly shows the broadcasts on that path | **YES: the one CANDIDATE.** It is out of batch 1 (§R4.9.7.1), so it is the filed row's to measure |
+
+**Batch 1 therefore has no ENTRYSINK candidate.** The design does not
+change for the row: no sink is designed here, and none is assumed.
 
 ### R4.9.8 Checks, their independence, and the sibling family
 
@@ -1527,6 +1734,16 @@ pcrec table asks, the kernel exists.
     "on each official box running the tier, no loss; on at least one, a
     win". Addendum 13 is preliminary; this is the panel's proposal for its
     revisit.
+  - `[r9fu]` **Refined, same recommendation.** "Against SIMD-off at the
+    same `-march`" fixes the ROW's tier, never the twin's. At every
+    batch-1 site the twin is glibc-backed, and glibc picks its `memchr`
+    arm by CPU (§R4.9.7.1). So "per instruction-set tier" means the row's
+    level against a twin running the box's own glibc tier. The
+    pre-registration names the twin as "BODY row + glibc", with the
+    glibc each box reports. The follow-up changed one recommendation
+    elsewhere, as a D77 filing and not a question: batch 1's `over`
+    narrows to `fn-pair` (§R4.9.2.4, §R4.9.7.1). The ENTRYSINK check
+    changed none. No new Q.
 - **Q-R9-3. Who picks the fused filter's SECOND position (KB)?**
   - (a) pcrec states it as a fact: `pcrec_find_pick2`, the PICK reader
     §2.3 T7 already named, carried as `mf_pred.plan_pos2`. That is a kit
@@ -1660,6 +1877,14 @@ All 43 finding ids of `../../dev/reviews/2026-10-08-r9-memfn-simd.md`.
 Totals: 43 ids (2 BLOCKER, 20 MAJOR, 21 MINOR); 42 applied as
 dispositioned, 1 (F-6) decided NO and applied as that decision. None
 could not be applied.
+
+**Follow-up rows `[r9fu]`** (the manager's two narrow gaps after the
+revision; not panel ids, and not counted in the 43):
+
+| id | gap | disposition | applied in |
+|---|---|---|---|
+| r9fu-1 | the glibc-inside trap (D147 addendum 13), stated only for PF/MLINE; is each batch-1 site's scalar twin glibc-backed, and did R-1 compare against it? | MEASURED: every batch-1 site class's FUNC calls glibc `memchr` (`fn-pair` 2 streams, `fn-memchr` 1), with no other libc call on the hot path. R-1's `emit` IS the glibc-backed `fn-pair` twin, so the evidence stands at tier U for dense picks. A sparse-pick `fn-pair` cell is owed to the bench. `fn-memchr` has no same-function cell, so it is trigger-grade. `over` narrows to `fn-pair`, and `vrun` over `fn-memchr` is filed with five cells. OFS run-pinned and the exact bin leave batch 1. The bar names the twin as "BODY + glibc". Q-R9-2 is refined | §R4.9 summary; §R4.9.1 F-R9-8; §R4.9.2.1 (table, OFS para); §R4.9.2.4 (row table); §R4.9.5.1 item 3; §R4.9.6 items 1, 3; §R4.9.7 (population, evidence, G2, filed list); §R4.9.7.1; §R4.9.10 Q-R9-2 |
+| r9fu-2 | `[MEMFN-ENTRYSINK]`: does §R4.9 assume a function-entry setup point, and which first-batch form is a trigger candidate? | CHECKED: nothing assumes one. MEASURED (hand twin, gcc 15.2): literal broadcasts are rematerialized from immediates at each rung entry and never hoisted, and a file-scope `static const` does not change that. So the plan row's "gcc hoists it or it is a constant" fails here; plan.md's row text is the manager's to correct. Candidates: none in batch 1 (every PRE FUNC is called once per matcher call). The filed `vrun` over OFS run-pinned is the one candidate (its FUNC runs inside the DFA scan loop on every re-seed). No sink designed | §R4.9 summary; §R4.9.7.2 |
 
 ---
 
