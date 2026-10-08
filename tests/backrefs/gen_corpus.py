@@ -724,6 +724,24 @@ CASELESS_CELLS = [
                "the first test plan calling this file python-verifiable."),
         B(r"^(?i)(a)(?-i)\1$", [("aA",), ("aa",)], BRM, groups=1),
     ]),
+    ("THE SUBJECT ENDS INSIDE A CASELESS REFERENCE (S670's answer detector)", [
+        B(r"(?i)(a+)\1", [("aaa",), ("aaaa",), ("aAa",), ("aAaA",), ("Aaa",), ("a",)],
+          BRM, groups=1,
+          note="ANSWER DETECTOR for sabotage S670 (the kit's in-place caseless "
+               "MISMATCH row leaving its loop with `break` when the subject "
+               "runs out). On \"aaa\" the greedy group takes 3, the reference "
+               "runs off the end, backtracking gives (0,2): the compare must "
+               "report the exhaustion as a DIFFERENCE. The plant reports it "
+               "as EQUAL and answers (0,6), past the subject. No cell here "
+               "had a caseless reference the subject ends inside, so no "
+               "answer suite saw S670."),
+        B(r"(?i)(ab)\1", [("aba",), ("abA",), ("abAB",), ("ab",), ("aBaB",)],
+          BRM, groups=1,
+          note="The length-mismatch neighbour: the subject ends INSIDE the "
+               "two-byte reference with the case differing (\"abA\"), so the "
+               "first byte compares equal under the fold and the second is "
+               "past n. Plant: (0,4); libpcre2: no match."),
+    ]),
     ("WHAT FOLDS: exactly the 52 ASCII letters, and nothing else", [
         B(r"^(\xdf)\1$", [("\xdf\xdf",)], BRM, caseless=True,
           note="AXIS A, measured over all 256 bytes against libpcre2's 8-bit "
