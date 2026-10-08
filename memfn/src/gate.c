@@ -441,6 +441,7 @@ enum { REACH_ROWS = 16 };
 static const gate_contract *reach_row[REACH_ROWS];
 static unsigned long reach_chosen[REACH_ROWS];
 static unsigned long reach_cell[REACH_ROWS][FLD_N][CL_N + 1];   /* CL_N: unstated */
+static unsigned long reach_dropped;  /* ENDs whose row found no slot (N4: K35) */
 static unsigned trace_arts;
 static int reach_armed;
 
@@ -490,6 +491,9 @@ static void reach_print(void)
                                 reach_cell[slot][f][k]);
         }
     }
+    /* Always printed: a full registry would otherwise list a chosen row as
+       `chosen=0`, a population nobody counted (N4). The census requires 0. */
+    fprintf(stderr, "MFTRACE REACH_DROPPED n=%lu\n", reach_dropped);
 }
 
 /* The counters' slot for row `c`, registered on first sight; REACH_ROWS
@@ -576,7 +580,10 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
     fputs("\n", stderr);
 
     unsigned slot = reach_slot(c);
-    if (slot == REACH_ROWS) return;
+    if (slot == REACH_ROWS) {
+        reach_dropped++;
+        return;
+    }
     if (t->phase != MF_PH_USE) reach_chosen[slot]++;   /* a use re-checks, never selects */
     uint64_t uses = uses_at(c, t->phase, t->in);
     for (unsigned f = 0; f < FLD_N; f++) {

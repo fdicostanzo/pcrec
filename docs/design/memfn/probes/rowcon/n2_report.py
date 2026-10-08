@@ -31,6 +31,8 @@ class Trace:
         self.ends = []
         self.reach_chosen = collections.Counter()
         self.reach_cell = collections.Counter()
+        self.chosen_rows = []      # (table, row) chosen at define/run, first-seen order
+        self.reach_dropped = 0     # REACH_DROPPED: selections the counters could not hold
 
 
 def _kv(tokens):
@@ -72,10 +74,16 @@ def parse_trace(err):
                 shape = "form=%s op=%s handoff=%s" % (what["form"], what["op"], what["handoff"])
             else:
                 shape = "run=%s" % what["run"]
+            if d.get("chosen", "-") != "-" and d.get("phase") != "use":
+                k = (d.get("table", "?"), d["chosen"])
+                if k not in tr.chosen_rows:
+                    tr.chosen_rows.append(k)
             tr.ends.append({
                 "table": d.get("table", "?"), "phase": d.get("phase", "?"),
                 "chosen": d.get("chosen", "-"), "wd": d.get("would_decline", "-"),
                 "shape": shape, "fields": parse_fields(d.get("fields", "-"))})
+        elif kind == "REACH_DROPPED":
+            tr.reach_dropped += int(d.get("n", "0"))
         elif kind == "REACH":
             if "field" in d:
                 tr.reach_cell[(d["table"], d["row"], d["field"], d["class"])] += int(d["n"])
@@ -98,6 +106,8 @@ class Agg:
         self.wd_wit = collections.defaultdict(list)                  # same key -> [witness]
         self.reach_chosen = collections.Counter()  # (table, row)
         self.reach_cell = collections.Counter()    # (table, row, field, class)
+        self.reach_wit = collections.defaultdict(list)  # (table, row) -> [witness] (N4)
+        self.reach_dropped = 0                     # REACH_DROPPED totals (N4: must be 0)
 
     def add(self, arm, stream, src, pattern, tr):
         for e in tr.ends:
@@ -117,6 +127,13 @@ class Agg:
                     del lst[WITNESS_N:]
         self.reach_chosen.update(tr.reach_chosen)
         self.reach_cell.update(tr.reach_cell)
+        self.reach_dropped += tr.reach_dropped
+        for k in tr.chosen_rows:
+            lst = self.reach_wit[k]
+            if len(lst) < WITNESS_N:
+                w = [arm, stream, src, str(pattern)[:120]]
+                if w not in lst:
+                    lst.append(w)
 
     def count(self, arm, what, n=1):
         self.compiles[(arm, what)] += n
@@ -137,6 +154,14 @@ class Agg:
             del lst[WITNESS_N:]
         self.reach_chosen.update(o.reach_chosen)
         self.reach_cell.update(o.reach_cell)
+        self.reach_dropped += o.reach_dropped
+        for k, ws in o.reach_wit.items():
+            lst = self.reach_wit[k]
+            for w in ws:
+                if w not in lst:
+                    lst.append(w)
+            lst.sort()
+            del lst[WITNESS_N:]
 
     def would_decline_total(self):
         return sum(self.wd.values())
@@ -147,7 +172,9 @@ class Agg:
              "noend": self.noend,
              "wd": [[SEP.join(k), v, dict(self.wd_arms[k]), self.wd_wit[k]] for k, v in self.wd.items()],
              "reach_chosen": [[SEP.join(k), v] for k, v in self.reach_chosen.items()],
-             "reach_cell": [[SEP.join(k), v] for k, v in self.reach_cell.items()]}
+             "reach_cell": [[SEP.join(k), v] for k, v in self.reach_cell.items()],
+             "reach_wit": [[SEP.join(k), v] for k, v in self.reach_wit.items()],
+             "reach_dropped": self.reach_dropped}
         tmp = path + ".tmp"
         with open(tmp, "w") as f:
             json.dump(j, f)
@@ -172,6 +199,9 @@ class Agg:
             a.reach_chosen[tuple(k.split(SEP))] = v
         for k, v in j["reach_cell"]:
             a.reach_cell[tuple(k.split(SEP))] = v
+        for k, v in j.get("reach_wit", []):        # absent in pre-N4 arm files
+            a.reach_wit[tuple(k.split(SEP))] = v
+        a.reach_dropped = j.get("reach_dropped", 0)
         return a
 
 
@@ -208,7 +238,9 @@ def render(agg, meta=None):
               ["timeouts", tot["timeout"]],
               ["sites traced (END with a chosen row)", sites],
               ["selections with no row (kit refused the site)", agg.noend],
-              ["would-decline selections", wdn]], ["quantity", "count"])
+              ["would-decline selections", wdn],
+              ["selections the reach counters dropped (REACH_DROPPED; must be 0)", agg.reach_dropped]],
+             ["quantity", "count"])
     L += ["", "Sites traced by table, phase and chosen row:", ""]
     L += _md([[t, p, r, n] for (t, p, r), n in sorted(agg.ends.items())],
              ["table", "phase", "chosen row", "selections"])
@@ -240,9 +272,10 @@ def render(agg, meta=None):
     L += _md(rows, ["table", "row", "site shape", "field", "rule", "observed class",
                     "phases", "count", "R-6 obligation"])
 
-    L += ["", "## 4. Reach: selections per chosen row (define + run phases)", ""]
-    L += _md([[t, r, n] for (t, r), n in sorted(agg.reach_chosen.items())],
-             ["table", "row", "chosen"])
+    L += ["", "## 4. Reach: selections per chosen row (define + run phases), with witnesses", ""]
+    L += _md([[t, r, n, "; ".join("[%s] %s %s: `%s`" % tuple(w) for w in sorted(agg.reach_wit.get((t, r), [])))]
+              for (t, r), n in sorted(agg.reach_chosen.items())],
+             ["table", "row", "chosen", "witnesses [arm] stream src: pattern"])
     L += ["", "## 5. Reach: per row x field x class (nonzero cells)", ""]
     L += _md([[t, r, f, c, n] for (t, r, f, c), n in sorted(agg.reach_cell.items())],
              ["table", "row", "field", "class", "n"])
