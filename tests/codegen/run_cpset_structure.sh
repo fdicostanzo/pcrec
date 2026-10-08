@@ -380,17 +380,101 @@ fi
 # [CLS-TREE] S3; an `A_WCLASS`'s set is `u.wcls`, read only through
 # `pcrec_wcls_set`).
 ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|src/opt/lower_enc.c|src/parse/ctxnode.c'
-# Run from ROOT_DIR over the relative path `src`, so grep's output prefixes
-# are the relative names the allowlist is written in — matching an absolute
-# path against a relative pattern is how an allowlist silently allows nothing.
-OFFENDERS="$(cd "$ROOT_DIR" && grep -rn --include='*.c' --include='*.h' 'u\.cls\.' src \
-             | grep -vE "^($ALLOW):" \
-             | grep -v '^[^:]*:[0-9]*:[[:space:]]*\(\*\|/\*\|//\)' || true)"
+# FUNCTION-SCOPED allowances, `FILE:FUNCTION` entries separated by spaces
+# ([admin1008b]; the whole-file list above polices nothing in a file once the
+# file is on it). An entry exempts `u.cls.` reads between that function's
+# definition line (column 0, `NAME(`) and its closing `}` at column 0 and
+# nothing else in the file; the rest of the file stays policed. Each entry is
+# held to its own two controls below: the function must exist, and must hold at
+# least one read (an allowance nothing uses is a stale exemption that would
+# silently cover the next read to land in a same-named function). Empty on
+# main; lane posstri's entry is
+#   ALLOW_FN='src/opt/possessify.c:cls_polarity'
+# with `|src/opt/possessify.c` DROPPED from ALLOW (its prose above stays,
+# reworded "the function `cls_polarity`").
+ALLOW_FN=''
+
+# fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
+fn_span() {
+    awk -v fn="$2" '
+        !started && /^[A-Za-z_]/ && index($0, fn "(") && $0 !~ /;[[:space:]]*$/ {
+            pre = substr($0, 1, index($0, fn "(") - 1)
+            if (pre ~ /(^|[^A-Za-z0-9_])$/) { start = NR; started = 1; next }
+        }
+        started && /^}/ { print start, NR; exit }
+    ' "$1"
+}
+
+# cls_scan DIR RELPATH ALLOWRE ALLOWFN -> offenders on stdout; stale function
+# allowances as `STALE: ...` lines. Runs from DIR over the relative path, so
+# grep's prefixes are the relative names the allowlists are written in.
+cls_scan() {
+    local dir="$1" rel="$2" allow="$3" afn="$4" out ent f fn span a b n
+    out="$(cd "$dir" && grep -rn --include='*.c' --include='*.h' 'u\.cls\.' "$rel" \
+           | grep -vE "^($allow):" \
+           | grep -v '^[^:]*:[0-9]*:[[:space:]]*\(\*\|/\*\|//\)' || true)"
+    for ent in $afn; do
+        f="${ent%%:*}"; fn="${ent#*:}"
+        span="$(fn_span "$dir/$f" "$fn")"
+        if [ -z "$span" ]; then
+            echo "STALE: $ent — no such function definition in $f"
+            continue
+        fi
+        a="${span% *}"; b="${span#* }"
+        n="$(printf '%s\n' "$out" | awk -F: -v f="$f" -v a="$a" -v b="$b" \
+             '$1==f && $2+0>=a && $2+0<=b {c++} END{print c+0}')"
+        if [ "$n" -eq 0 ]; then
+            echo "STALE: $ent — the function holds no u.cls read; delete the allowance"
+            continue
+        fi
+        out="$(printf '%s\n' "$out" | awk -F: -v f="$f" -v a="$a" -v b="$b" \
+               '!($1==f && $2+0>=a && $2+0<=b)')"
+    done
+    printf '%s\n' "$out" | grep -v '^$' || true
+}
+
+OFFENDERS="$(cls_scan "$ROOT_DIR" src "$ALLOW" "$ALLOW_FN")"
 if [ -n "$OFFENDERS" ]; then
     bad "[2b] a file outside the allowlist reads the A_CLASS payload directly. Rendering a class node is pcrec_cls_bits's job and its assertion is the only thing standing between this tree and r54 E1's recurrence:"
     printf '%s\n' "$OFFENDERS" | head -10 >&2
 else
     ok "[2b] no file outside the allowlist touches u.cls — every other consumer goes through the three accessors"
+fi
+
+# 2b'. THE FUNCTION-SCOPED ALLOWANCE IS CHECKED, not assumed ([K35]: a scope
+# mechanism nothing on this tree exercises is a comment). A fixture with two
+# functions each reading `u.cls.`: an allowance on the first must leave exactly
+# the second's read; one naming a function that is not there, or one holding no
+# read, must say STALE; and no allowance leaves both.
+FX="$WORKDIR/fx2b"
+mkdir -p "$FX/src/opt"
+cat > "$FX/src/opt/fx.c" <<'FXEOF'
+static unsigned allowed_fn(const Ast *x)
+{
+    return x->u.cls.n;
+}
+
+static unsigned policed_fn(const Ast *x)
+{
+    return x->u.cls.n;
+}
+
+static unsigned quiet_fn(const Ast *x)
+{
+    return x->k;
+}
+FXEOF
+fx_none="$(cls_scan "$FX" src nomatch '' | wc -l | tr -d ' ')"
+fx_scoped="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:allowed_fn')"
+fx_missing="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:no_such_fn' | grep -c '^STALE:' || true)"
+fx_quiet="$(cls_scan "$FX" src nomatch 'src/opt/fx.c:quiet_fn' | grep -c '^STALE:' || true)"
+if [ "$fx_none" = "2" ] \
+   && [ "$(printf '%s\n' "$fx_scoped" | wc -l | tr -d ' ')" = "1" ] \
+   && printf '%s\n' "$fx_scoped" | grep -q 'fx\.c:8:' \
+   && [ "$fx_missing" = "1" ] && [ "$fx_quiet" = "1" ]; then
+    ok "[2b'] the function-scoped allowance exempts exactly its function (2 reads -> 1, the other function's), and a missing or read-less function is STALE"
+else
+    bad "[2b'] the function-scoped allowance mechanism misbehaves on its fixture: unscoped=$fx_none reads (want 2), scoped='$fx_scoped' (want only fx.c:8), stale-missing=$fx_missing, stale-quiet=$fx_quiet (want 1, 1)"
 fi
 
 # 2c. THE ASSERTION SHIPS ENABLED (§13 obligation 5: *"an assertion compiled

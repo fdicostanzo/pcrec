@@ -18,16 +18,18 @@
 # lowered the emit_dfa.c memchr row 8 -> 2 (R4c, lane r4cfix: pcrec_emit_find
 # and emit_attempt stay until M2/M4; the six M1 spellings are the kit's);
 # M1b's REPLACE deleted src/gen/runcmp.c's three rows (memcmp 1, runcmp-bytes
-# 2, runcmp-words 4: the run compare is the kit's, memfn/src/runcmp.c).
+# 2, runcmp-words 4: the run compare is the kit's, memfn/src/runcmp.c);
+# M2's REPLACE (R4g) lowered the emit_dfa.c memchr row 2 -> 1 and deleted its
+# walk-fmt row (1 -> 0): pcrec_emit_find's two forms are the kit's
+# (memfn/src/pffind.c).
 # A RAISE is never routine: it needs a ruling, named in the commit.
 #
-# The row count (9) and the total (13 forms; 20 before M1b, 26 before M1) are echoed by the check; the
+# The row count (8) and the total (12 forms; 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/gen/emit_dfa.c	libc-call	memchr	2	M2/M4: pcrec_emit_find, emit_attempt (M1's six went to the kit at R4c REPLACE: emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2; at 90d396fd the design counted 9, one went with the START-SET stage)
-src/gen/emit_dfa.c	walk-fmt	-	1	pcrec_emit_find's table form (START-SET stage 1; M2/M5)
+src/gen/emit_dfa.c	libc-call	memchr	1	M4: emit_attempt (pcrec_emit_find's went to the kit at M2's REPLACE, R4g; M1's six at R4c REPLACE: emit_req_one_byte, emit_req_set_rest, ofs_test_emit_fn x2, ofs_test_emit_pair x2; at 90d396fd the design counted 9, one went with the START-SET stage)
 src/gen/emit_dfa.c	walk-open	-	2	class-run and span loops whose byte test another call splices in (M3/M4)
 src/gen/emit_dfa.c	walk-stmt	-	2	one-statement cursor walks over a table (M2/M5)
 src/gen/emit_vm.c	walk-back	-	1	the VM's backward step chained by a jump (M2)

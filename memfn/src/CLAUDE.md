@@ -5,7 +5,8 @@ Built into `libpcrec.a` by pcrec's Makefile (`KITSRCS`, compiled with
 file includes its headers by relative path. From R4c pcrec's emitters render
 two sites through the kit (src/gen/memfn_sites.c, DELEG_SITES): the
 offset-skip block and the pre-check composite, by the scalar arms below;
-from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
+from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c); from
+R4g (M2), a fourth, the prefilter find (PF, pffind.c).
 
 - **kit.h** — the INTERNAL header: `kb` (growable text over the caller's
   `mf_arena`), the `mf_art` struct and its per-site records, the arm
@@ -23,7 +24,8 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   rules outside the vocabulary are REFUSED loudly) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
   `precheck_assign` (one renderer, two rows: N3's split by handoff),
-  `runcmp`, then the generic row; each arm's `ct` is its contract, which
+  `runcmp`, the four PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
+  `pf_walk_bounded`: R4g), then the generic row; each arm's `ct` is its contract, which
   the gate reads before the arm's predicate and, since [MEMFN-ROWCON] N3,
   ENFORCES: a failing row is declined and the walk moves on, a site no row
   serves is refused naming the fields, and `mf_use` re-checks the chosen
@@ -32,8 +34,8 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   whose `denies` differ is refused, Q-M1b-1), the `mf_includes` query, and
   the stamps: `mf_art_note_libc` (the libc record's writer, a sorted
   distinct name list on the art; every arm that renders a libc call notes
-  it at the render, beside its `includes` bit: `memchr` in `ofs_fn_define`
-  and `precheck_use`, `memcmp` in `run_cmp_render`; the word-load helper's
+  it at the render, beside its `includes` bit: `memchr` in `ofs_fn_define`,
+  `precheck_use` and `pf_memchr_use`, `memcmp` in `run_cmp_render`; the word-load helper's
   constant `memcpy` is the record's exclusion and is not noted) and `mf_stamps` (M1b: `RUN_WORDS`, the run
   compare's words count, through `sink->stamp_int`; R4a′: `MEMFN_FORMS
   "none"`, constant until R4f, then `MEMFN_LIBC`, the noted names
@@ -75,6 +77,20 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   records the widths used/declared and the words count `mf_stamps` writes
   as `RUN_WORDS`); `mf_run_rows` is the rows' accessor (`--list-axes`).
   The overlap lengths and the width rule are DERIVED (D149).
+- **pffind.c** — a SCALAR ARM, born at R4g (M2; integration.md §15.7;
+  transcribed from pcrec's `pcrec_emit_find` and the memchr forms' NULL
+  test and store): THE PREFILTER FIND, one FIND / STMT / ASSIGN statement
+  over one SET term at offset 0 moving a scan position to the next byte a
+  match can begin with. TWO renderers as FOUR rows (N3's split, by
+  `end_back`): `pf_memchr_arm` / `pf_memchr_bounded_arm` (a one-byte set:
+  `memchr`, then on the unbounded row pcrec's `on_miss` on a NULL hit, which
+  must leave, and the store; on the bounded row one store of the hit or
+  pcrec's `miss`, `n - 1`), form id `pf_memchr`; `pf_walk_arm` /
+  `pf_walk_bounded_arm` (a set pcrec names by table: the in-place walk
+  `while (lo < n && !T[s[lo]]) lo++;`, `result` IS `lo`, miss the range's
+  end), form id `pf_walk`. The guards around the statement stay pcrec's
+  (the memchr rows' empty range is EXCLUDED; the walk's NOP). No tuning
+  constant (D149).
 - **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
   find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's
@@ -104,7 +120,7 @@ from M1b, a third, the VM's literal-run compare (VMRUN, runcmp.c).
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
-  that row's own file (ofsskip.c, precheck.c, runcmp.c, generic.c).
+  that row's own file (ofsskip.c, precheck.c, runcmp.c, pffind.c, generic.c).
 - **options.def** — the kit's option registry, an X-macro
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). BORN EMPTY:
   each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in

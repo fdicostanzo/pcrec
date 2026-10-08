@@ -98,8 +98,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   only descend (12 rows, 26 forms at birth: memchr 8 in `emit_dfa.c`,
   memcmp 1 in `runcmp.c`, ...; 20 forms since M1's REPLACE lowered memchr
   8 -> 2; 9 rows / 13 forms since M1b's REPLACE deleted `runcmp.c`'s three
-  rows, `C12_CEIL_ROWS_FLOOR` 12 -> 9); REPLACE edits the one number on the
-  row.
+  rows, `C12_CEIL_ROWS_FLOOR` 12 -> 9; 8 rows / 12 forms since M2's REPLACE
+  (R4g) lowered memchr 2 -> 1 and deleted the walk-fmt row, floor 9 -> 8);
+  REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
   exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
@@ -145,7 +146,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   masked window with a whole run and a set rest, a lone handoff window; and
   since M1b six run-compare shapes, one per row and the deny: overlap at
   L 3 and L 13, `memcmp` at L 8, masked `words`, masked under
-  `MF_D_RUN_OVERLAP` (`bytes`), exact under it (`memcmp`)) rendered through
+  `MF_D_RUN_OVERLAP` (`bytes`), exact under it (`memcmp`); and since R4g
+  five PF-find shapes through `render_pf`, pcrec's `find_site` hooks: the
+  four pffind rows and a walk whose result is not its lo, the generic
+  row's) rendered through
   the kit's public entry points with its OWN hooks and sink (a marker
   comment per note, pcrec_sb_cstr's string escape), so a pin moves only
   with an ARM, never with pcrec's scaffolding. Each fixture's art flushes
@@ -165,6 +169,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   I1 shadow comparator proved the kit's rendering equal to pcrec's
   pre-migration text over the corpus sweep; re-pinned for the run-bearing
   fixtures and extended by the `runcmp` rows at M1b's REPLACE (28 rows);
+  R4g added the PF rows (`pf_memchr`, `pf_walk`, one `generic` edge; 48
+  rows, `ARMS_ROW_FLOOR` 38 -> 48);
   lane missn added `ofs-miss-token` and `pre-lead-handoff-miss-token`, whose
   digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text). A
   CHANGE DETECTOR: a kit change

@@ -817,3 +817,44 @@ pointer when a kit change merges to main.
   cases), make test 747 s green, 16 mech rows DETECTED. done: posted.
 - R4g edit set posted. Main cleared it: start after N3 delivers, land
   after C4, conditions recorded in responses.md.
+- N3 merged to main (5e9ec93c). R4g started: kit branch lane/memfn-r4g
+  from main; opus lane r4g in worktrees/r4g. Main's conditions are in the
+  brief: no CandPf/CandRow change, the anchored rows re-pinned + solo in
+  R4g's commit, sabotage_anchors.tsv re-derived, zero movers (shown on
+  ≤ 60 compiles against a pre-edit reference binary). It lands on
+  post-C4 main via a slot.
+- Main ruled: the R4g memchr widening is accepted (an edit-set amendment in
+  done:). §19 row 6's rarity half is deferred after C5b; the decision stays
+  pcrec's in cand_rows[]; the kit receives text only. This narrows §19 row
+  6 of the design. Revise that row in the design deliverable that goes with
+  R4g's done:.
+- g2pf (blinded) added the PF family: cells 1-4, the pf-edge class, form
+  ids pf_memchr/pf_walk. Quick: 871 failures, all finding 1. Answers 0
+  failed. Kit rulings:
+  - F1 (stated ret_pred/preds on FIND moves PF to generic) is a defect:
+    the PF rows serve ANY for fields irrelevant to their shape;
+  - F2 (memchr row leaves result unwritten on a miss with
+    on_miss_leaves = 1) is a contract amendment: result UNSPECIFIED on a
+    miss when on_miss_leaves, and on_miss must not read it (pcrec's
+    `return 0;` complies);
+  - F3 (mf_emit picks a row, then mf_use refuses on result_decl) is a
+    defect: one-call entries gate the use-phase fields at selection.
+  Lane r4gfix (sonnet), zero movers on compiles.
+- r4gfix merged:
+  - F1: the PF rows serve ANY for preds/ret_pred; on_miss_leaves stays a
+    decline, with the reason commented;
+  - F2: memfn.h comments say result is UNSPECIFIED on a miss when
+    on_miss_leaves = 1;
+  - F3: mf_emit selects over define|use, mf_define over define only.
+  arms 138/0, stamps 14/0. Its compile identity ran before a final revert
+  and missed the bounded forms; the slot's identity gate is the real
+  check.
+- G2 quick after the fix: 314 failures, all G2-side (the mf_emit trial vs
+  the real define+use path, which now differ by contract). Blinded g2pf2
+  makes G2 judge each path by its own contract.
+- R4g validated in one chain (21:16-22:18): census 0/0, identity gate 0
+  movers, full G2 173.8M/0, make test 685 s green, 29 rule-(b) mech rows
+  DETECTED. done: posted.
+- Frank's observation through main: the N2 census runs with a per-arm
+  barrier (stragglers like `((a)|ab){4000}c` leave one compile running).
+  Follow-up: one pool across all arms.
