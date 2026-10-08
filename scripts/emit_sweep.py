@@ -480,35 +480,42 @@ VARIANT_STREAMS = ("c-default", "c-vm", "emit-ir", "emit-ir-auto", "stderr", "fa
 BASELESS_STREAMS = ("facts", "dumps")
 
 
-def variant_defs(cflags):
-    """{NAME: VALUE} of a variant's `-DNAME=VALUE` words."""
-    out = {}
-    for w in shlex.split(cflags):
-        if w.startswith("-D") and "=" in w:
-            k, v = w[2:].split("=", 1)
-            out[k] = v
-    return out
+# THE VARIANT'S OWN PLUMBING CONTROL. A variant whose `-D` set never reached
+# the build IS the plain build and passes every identity check, so each
+# variant names witnesses whose stamp only that variant's limits produce, and
+# the plain variant must produce NONE of them (both directions in one table).
+# `--list-limits` cannot serve: it prints limits.def's literal, not the
+# compiled-in value (measured: a -DPCREC_MAX_AUTO_DFA_ELEMS=3000 build lists
+# 30000000). Hand-written, probed at B0's base; each is a design §4.3a witness.
+_W_LOWSIZE = (("--pattern", "(?:a\\K){0,10}ab"), "RX_UNROLL_K_WHY", "cap-rescue")
+_W_LOWDFA = (("--pattern", "(?:a|b)*a(?:a|b){11}"), "RX_ENGINE_SEL", "collapsed-prefilter")
+_W_LOWTHR = (("--engine=vm", "--pattern", "(((?:a{0,2}b)+c){0,20}d){0,20}e"),
+             "RX_UNROLL_K_WHY", "capacity-declined")
+VARIANT_WITNESSES = {
+    "lowsize": (_W_LOWSIZE,),
+    "lowdfa": (_W_LOWDFA,),
+    "lowboth": (_W_LOWSIZE, _W_LOWDFA),
+    "lowthr": (_W_LOWTHR,),
+}
 
 
-def variant_plumbing(pcrec_bin, cflags, timeout):
-    """THE VARIANT'S OWN PLUMBING CONTROL: every `-DNAME=VALUE` of the variant
-    must read back as NAME's value in the binary's own `--list-limits`, which
-    prints the compiled-in default (src/core/limits.def). A variant whose `-D`
-    set never reached the build is otherwise the plain build and passes every
-    identity check. Returns a list of problems (empty = ok)."""
-    defs = variant_defs(cflags)
-    if not defs:
-        return []
-    rc, out, _ = run([pcrec_bin, "--list-limits"], timeout)
-    if rc != 0:
-        return [f"--list-limits refused (rc={rc})"]
-    seen = {}
-    for ln in out.decode("utf-8", "replace").splitlines():
-        f = ln.split("\t")
-        if len(f) > 1 and not ln.startswith("#"):
-            seen[f[0]] = f[1]
-    return [f"{k}: --list-limits reads {seen.get(k)!r}, the variant built {v!r}"
-            for k, v in defs.items() if seen.get(k) != v]
+def variant_plumbing(pcrec_bin, vname, timeout):
+    """Problems (empty = ok) with VARIANT_WITNESSES on one binary: a named
+    variant's witnesses must stamp their value; `plain` must stamp none of any
+    variant's values. An ad-hoc NAME=CFLAGS variant has no witness."""
+    if vname == "plain":
+        checks = [(w, False) for ws in VARIANT_WITNESSES.values() for w in ws]
+    else:
+        checks = [(w, True) for w in VARIANT_WITNESSES.get(vname, ())]
+    probs = []
+    for (argv, macro, value), want in checks:
+        rc, out, _ = run([pcrec_bin, "-p", "rx", "--features", "all", "-o", "-"] + list(argv), timeout)
+        m = re.search(rb'^#define ' + macro.encode() + rb' "([^"]*)"', out or b"", re.M)
+        got = m.group(1).decode() if m and rc == 0 else f"<rc={rc}>"
+        if (got == value) != want:
+            probs.append(f"{' '.join(argv)}: {macro} reads {got!r}, "
+                         + ("expected" if want else "must not read") + f" {value!r}")
+    return probs
 
 
 # ---------------------------------------------------------------------------
@@ -1652,15 +1659,16 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
             vref, vtree = plain_ref, plain_tree
         print(f"\n===== VARIANT {vname} ({vflags or 'shipped limits'}): {args.ref} vs {args.tree_rev} =====")
         probs = [f"side {s}: {p}" for s, b in (("a", vref), ("b", vtree))
-                 for p in variant_plumbing(b, vflags, args.timeout)]
+                 for p in variant_plumbing(b, vname, args.timeout)]
         for p in probs:
             print(f"  VARIANT PLUMBING: {p}")
         if probs:
             all_ok = False
             continue
-        if vflags.strip():
-            print(f"  plumbing: every -D of the variant reads back in --list-limits on both sides "
-                  f"({len(variant_defs(vflags))} limits)")
+        nwit = (sum(len(w) for w in VARIANT_WITNESSES.values()) if vname == "plain"
+                else len(VARIANT_WITNESSES.get(vname, ())))
+        print(f"  plumbing: {nwit} variant witness(es) read as this variant's limits predict, "
+              f"both sides" + ("" if nwit else " (an ad-hoc variant: NO plumbing control)"))
         first_extra = list(ARM_BASES[bases[0]]) + flag_args
         if not args.no_self_check:
             vref2, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref2-{vname}", cflags=cf)
