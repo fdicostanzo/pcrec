@@ -26,12 +26,21 @@ re-aimed at C3, start_table.md §3.5)
           whose name ends in `pf` (`pf->c.name`, `f->pf->tok`; this half
           covers `"none"`) or through one of the selection functions
           (`dfa_pf_of(...)`, `vm_start_row`, `attempt_next_of`,
-          `dfa_search_start_of`, `cand_select`).
-    The other slots' rows join the population as C5 moves their readers
-    onto the table (their names are still read off their old tables' own
-    spellings until then, and several -- `all`, `exact`, `window`,
-    `fixed` -- are ordinary words; §3.5's row-name-expression rule is the
-    shape that widening takes).
+          `dfa_search_start_of`, `cand_select`, and since C5
+          `cand_window_of`, `pcrec_cand_select_vm`, `vm_width_row`,
+          `vm_bound_row`), or is `pcrec_cand_tok(...)`/
+          `pcrec_cand_listed(...)` (the VM emitter's name accessors).
+    SINCE C5 the other four slots (WINDOW, WIDTH, RETRY, BOUND) join: their
+    readers ask the table, and their rows' names and spellings are read off
+    it too. Several of them -- `all`, `exact`, `window`, `fixed`,
+    `anchored` -- are ordinary words that unrelated comparisons use
+    (`strcmp(spec, "all")`), so for THEIR names the literal half (a) fires
+    only where the same call also reads a row-name EXPRESSION (`->c.name`,
+    `->tok`, `pcrec_cand_tok(`, `pcrec_cand_listed(`, `cand_listed_name(`,
+    or any `*_name(` projection call): §3.5's row-name-expression rule. The
+    receiver half (b) also covers the C5 selection functions
+    (`cand_window_of`, `pcrec_cand_select_vm`, `vm_width_row`,
+    `vm_bound_row`) and the two VM accessors that return a name.
     WHAT IT CANNOT SEE: a row name copied into a differently named local and
     compared to another such local (no literal, no `pf` receiver), and a
     name-keyed lookup that is not a comparison call (a hash, a switch on a
@@ -144,18 +153,25 @@ def main():
         bad("[cand-no-name-strcmp] cannot read %s: %s" % (EMIT, e))
         return
     block = table_block(src, "static const CandRow cand_rows[] = {")
-    names = []
+    names, wnames = [], []
     for row in re.split(r"\n    \{ ", block or "")[1:]:
-        if not re.search(r"\.slot\s*=\s*CAND_SLOT_(?:NEXT|RECOVER|PRESENCE|FIRST)\b", row):
+        if re.search(r"\.slot\s*=\s*CAND_SLOT_(?:NEXT|RECOVER|PRESENCE|FIRST)\b", row):
+            dst = names
+        elif re.search(r"\.slot\s*=\s*CAND_SLOT_(?:WINDOW|WIDTH|RETRY|BOUND)\b", row):
+            dst = wnames
+        else:
             continue
-        names += re.findall(r'\.c\s*=\s*\{\s*"([^"]+)"', row)
-        names += re.findall(r'\.tok\s*=\s*"([^"]+)"', row)
+        dst += re.findall(r'\.c\s*=\s*\{\s*"([^"]+)"', row)
+        dst += re.findall(r'\.tok\s*=\s*"([^"]+)"', row)
     names = sorted(set(names))
+    wnames = sorted(set(wnames) - set(names))
     print("REACH: cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names read off the table: %d (%s)" % (len(names), ", ".join(names)))
-    if not names:
-        bad("[cand-no-name-strcmp] no cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row name found in %s -- the literal half is vacuous" % EMIT)
+    print("REACH: cand_rows[] WINDOW/WIDTH/RETRY/BOUND row names (row-name-expression rule): %d (%s)" % (len(wnames), ", ".join(wnames)))
+    if not names or not wnames:
+        bad("[cand-no-name-strcmp] a slot group read no row name from %s -- the literal half is vacuous" % EMIT)
         return
     lits = {'"%s"' % n for n in names if n != "none"}
+    wlits = {'"%s"' % n for n in wnames if n != "none"}
     hits, ncalls, nfiles = [], 0, 0
     for root in ("src", "cli", "lib"):
         for d, _sub, files in os.walk(os.path.join(TREE, root)):
@@ -170,9 +186,14 @@ def main():
                     args = call_args(text, m.end() - 1)
                     strs = set(re.findall(r'"(?:[^"\\]|\\.)*"', args))
                     why = sorted(strs & lits)
+                    if re.search(r"->\s*(?:c\s*\.\s*name|tok)\b|\bpcrec_cand_(?:tok|listed)\s*\(|"
+                                 r"\bcand_listed_name\s*\(|\w_name\s*\(", args):
+                        why += sorted(strs & wlits)
                     if re.search(r"\w*pf\s*->\s*(?:c\s*\.\s*name|tok)\b|"
-                                 r"(?:dfa_pf_of|vm_start_row|attempt_next_of|dfa_search_start_of|cand_select)"
-                                 r"\s*\([^;]*\)\s*->\s*(?:c\s*\.\s*name|tok)\b", args):
+                                 r"(?:dfa_pf_of|vm_start_row|attempt_next_of|dfa_search_start_of|cand_select|"
+                                 r"cand_window_of|pcrec_cand_select_vm|vm_width_row|vm_bound_row)"
+                                 r"\s*\([^;]*\)\s*->\s*(?:c\s*\.\s*name|tok)\b|"
+                                 r"\bpcrec_cand_(?:tok|listed)\s*\(", args):
                         why.append("a selected row's c.name/tok")
                     if why:
                         line = text.count("\n", 0, m.start()) + 1
@@ -182,9 +203,9 @@ def main():
     if ncalls == 0:
         bad("[cand-no-name-strcmp] no comparison call found under src/ cli/ lib/ -- the scan reads nothing")
     elif hits:
-        bad("[cand-no-name-strcmp] a comparison reads a cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row NAME (K84): " + "; ".join(hits))
+        bad("[cand-no-name-strcmp] a comparison reads a cand_rows[] row NAME (K84): " + "; ".join(hits))
     else:
-        ok("[cand-no-name-strcmp] no comparison call reads any of the %d cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names" % len(names))
+        ok("[cand-no-name-strcmp] no comparison call reads any of the %d + %d cand_rows[] row names" % (len(names), len(wnames)))
 
 
 def route_checks():

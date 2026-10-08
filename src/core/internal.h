@@ -6754,25 +6754,19 @@ bool pcrec_artifact_has_dfa_scan(Ctx *cx);
  * when it tests none). src/gen/emit_dfa.c. */
 unsigned pcrec_dfa_cand_ppm(Ctx *cx);
 
-/* [OPT-HYB-RESEED] the VM hybrid's retry re-seed decision
- * (src/gen/emit_vm.c, docs/design/hyb_reseed.md §4): the ordered first-match
- * rows as DATA — the name `<PREFIX>_VM_RESEED` carries, the deny flag, a
- * one-line predicate, the closed predicate/action tags the emitter's walk
- * reads, and an adaptive row's STARTING STATE — so `--list-axes` walks the
- * live table and no row's behaviour lives in emitter code. */
+/* [OPT-HYB-RESEED] the VM hybrid's retry re-seed rows (src/gen/emit_dfa.c;
+ * since [START-TABLE] C5 the RETRY rows of the one start table `cand_rows[]`,
+ * was `pcrec_reseed_rows[]` in src/gen/emit_vm.c; axis `hyb-reseed`,
+ * docs/design/hyb_reseed.md §4), row `i` as DATA for `--list-axes`: the
+ * row's listed name (the `<PREFIX>_VM_RESEED` value it stamps), its deny bit
+ * and its predicate in one line. False, and `out` untouched, past the last
+ * row. */
 typedef struct {
-    const char   *name;
-    uint64_t      deny;
-    const char   *applies_desc;
-    unsigned char pred;     /* emit_vm.c's VRS_P_* */
-    unsigned char action;   /* emit_vm.c's VRS_A_* */
-    unsigned char start;    /* emit_vm.c's VRS_S_*: the calibration column a
-                             * call's first step budget is read from */
-    bool          armed;    /* the call starts with the step block ARMED, so
-                             * its first short re-seed gap starts a block */
-} PcrecReseedRow;
-extern const PcrecReseedRow pcrec_reseed_rows[];
-extern const int pcrec_reseed_nrows;
+    const char *name;
+    uint64_t    deny;
+    const char *desc;
+} PcrecReseedDesc;
+bool pcrec_reseed_row(int i, PcrecReseedDesc *out);
 
 /* [OPT-PRECHECK-ADMIT] [K82] the whole-window pre-check's admission rows
  * (src/gen/emit_dfa.c; since [START-TABLE] C4 the PRESENCE rows of the one
@@ -7051,17 +7045,68 @@ typedef struct CandVmFacts {
     unsigned  reseed_gap;
 } CandVmFacts;
 
+/* [START-TABLE] C5 THE VM EMITTER's VIEW OF THE START TABLE. `cand_rows[]`
+ * and its row type live in src/gen/emit_dfa.c; the VM emitter asks the three
+ * slots it owns (RETRY, WIDTH and BOUND on the VM route) through
+ * `pcrec_cand_select_vm` and reads the chosen row through the accessors
+ * below, each typed to one slot's payload, so a `CandRow` is opaque here. */
+typedef struct CandRow CandRow;
+
+/* THE RETRY SLOT's PAYLOAD, `CandRow.u.reseed` (was `PcrecReseedRow`'s
+ * action/start/armed columns and its description): what the hybrid's retry
+ * does after a failed attempt, and where a call's adaptive state starts. */
+typedef enum { CAND_RS_A_FIXED, CAND_RS_A_ADAPT } CandRsAction;
+typedef enum { CAND_RS_S_NONE, CAND_RS_S_FIRST, CAND_RS_S_CAP } CandRsStart;
+typedef struct CandReseed {
+    unsigned char action;   /* CAND_RS_A_*: today's retry, or the adaptive tail */
+    unsigned char start;    /* CAND_RS_S_*: the calibration column a call's
+                             * first step budget is read from */
+    bool          armed;    /* the call starts with the step block ARMED, so
+                             * its first short re-seed gap starts a block */
+    const char   *desc;     /* the predicate in one line (`--list-axes`) */
+} CandReseed;
+
+/* THE BOUND SLOT's PAYLOAD, `CandRow.u.bound`: which start positions can
+ * match, and the text each route's loop header spells it with. A row routed
+ * on both routes (`all`) carries both texts. */
+typedef enum {
+    CAND_ONE_NONE,   /* any position: the loop runs to the subject's end */
+    CAND_ONE_ZERO,   /* every match begins at offset 0 */
+    CAND_ONE_FROM    /* every match begins at the caller's startpos */
+} CandOne;
+typedef struct CandBound {
+    unsigned char one;          /* CAND_ONE_* */
+    const char   *start_max;    /* CR_ATTEMPT: `start_max`'s initializer */
+    const char   *attempt_max;  /* CR_VM: the bound's declaration line, or
+                                 * NULL where the loop runs to `subject_length` */
+} CandBound;
+
+/* THE WIDTH SLOT's PAYLOAD, `CandRow.u.width`: whether the VM entry emits
+ * the root minimum-width check (and its stamp and listing row). */
+typedef struct CandWidth {
+    bool check;
+} CandWidth;
+
+/* The first row of `slot` routed on the VM route that the compile's deny
+ * mask leaves and whose predicate holds, over the `Vm` facts `vm`. Never
+ * NULL on the three slots the VM asks (each ends in an undeniable fallback). */
+const CandRow *pcrec_cand_select_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm);
+/* The row's spelling today: the trace record's `row` and the stamp value
+ * `<PREFIX>_VM_RESEED` carries. */
+const char *pcrec_cand_tok(const CandRow *r);
+/* The row's `--list-axes` name on `route`, or NULL where it has none. */
+const char *pcrec_cand_listed(const CandRow *r, CandRoute route);
+/* The chosen row's payload, one accessor per slot payload the VM reads. */
+const CandReseed *pcrec_cand_reseed(const CandRow *r);
+const CandBound *pcrec_cand_bound(const CandRow *r);
+const CandWidth *pcrec_cand_width(const CandRow *r);
+
 #ifdef PCREC_CAND_TRACE
-/* [START-TABLE] C2 the both-walks oracle's VM-route entry points
- * (src/gen/emit_dfa.c): `_pre` runs `cand_select` FIRST where the build asks
- * for that order (-DPCREC_CAND_NEW_FIRST) and returns its row, else NULL;
- * `_post` runs it now if `_pre` did not and aborts unless it chose the row
- * the old decision did — `old_row` by pointer where the old decision is a
- * table row, else `old_tok` by its trace spelling. */
-const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm);
-void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
-                               const CandVmFacts *vm, const void *old_row,
-                               const char *old_tok, const char *site);
+/* [START-TABLE] the trace build's HIT COUNTER at a VM reader (emit_dfa.c's
+ * `cand_hit`): the table's structural self-check and one `CANDROW` line naming
+ * the row `r` the reader used. */
+void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
+                       const CandRow *r, const char *site);
 #endif
 
 /* [START-TABLE] C1 THE SELECTION TRACE: one stderr record per start decision,
@@ -7083,10 +7128,12 @@ void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
  * `_RECF` formats `row` from `fmt` and its arguments. */
 #ifdef PCREC_CAND_TRACE
 #include <stdio.h>
-/* [START-TABLE] C2 the both-walks oracle's QUIET DEPTH: nonzero while the
- * oracle runs `cand_select` beside an old walk, so a predicate that itself
- * walks (F1 asks PRESENCE, P3 and R4 ask NEXT, N12 is `attempt_cand`) prints
- * no second record and the trace stays record-for-record C1's. Trace build
+/* [START-TABLE] the trace build's QUIET DEPTH: nonzero while a check walks
+ * `cand_select` beside the reader's own ask (since C5 the entry slots'
+ * cross-route check, `cand_hit_every`; until then the C2 both-walks oracle
+ * too), so a predicate that itself walks (F1 asks PRESENCE, P3 and R4 ask
+ * NEXT, N12 is `attempt_cand`) prints no second record and the trace stays
+ * record-for-record C1's. Trace build
  * only; the one mutable file-scope object the library would otherwise not
  * have (coding_guide §1.5), thread-local so concurrent compiles in a trace
  * build stay independent. Defined in src/gen/emit_dfa.c. */

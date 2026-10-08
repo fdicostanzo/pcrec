@@ -1,5 +1,7 @@
 # S371 — [OPT-HYB-RESEED] THE ADAPTIVE TEXT NEVER EMITTED (src/gen/emit_vm.c,
-# `vm_emit_search_body`): the table still selects an adaptive row and the
+# `vm_emit_search_body`; re-aimed at [START-TABLE] C5, lane stc5, 2026-10-07:
+# the row's action is read from the RETRY row's `u.reseed`, the plant
+# unchanged in intent): the table still selects an adaptive row and the
 # artifact still stamps RX_VM_RESEED "adaptive", but the retry is the
 # pre-abi-49 one — a clamp-free over-approximating hybrid steps every
 # position after its first failed attempt. The stamp-vs-text lie D46 exists
@@ -21,5 +23,5 @@ SAB_REACH='"$PCREC" --features all -p rx -e utf8 -o "$REACH_TMP/o.c" --pattern "
 SAB_REACH_EXPECT="REACH-ADAPTIVE-TEXT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (rs->row && rs->row->action != VRS_A_FIXED) {'
-SAB_AFTER='    if (0 && rs->row && rs->row->action != VRS_A_FIXED) {   /* SABOTAGE S371 */'
+SAB_BEFORE='    if (rs->row && pcrec_cand_reseed(rs->row)->action != CAND_RS_A_FIXED) {'
+SAB_AFTER='    if (0 && rs->row && pcrec_cand_reseed(rs->row)->action != CAND_RS_A_FIXED) {   /* SABOTAGE S371 */'

@@ -279,7 +279,10 @@ candidate landing in one of those arrays appears here with no edit to
 the dump. The `kind=predicate` axes `req-admit` and `req-use` are read the
 same way: their rows (name, deny, stamp token, description) are the
 PRESENCE and FIRST rows of `cand_rows[]` since [START-TABLE] C4, which
-`req_admit`/`req_use` walk. The
+`req_admit`/`req_use` walk; and so is `hyb-reseed`, whose rows are the
+RETRY rows of `cand_rows[]` since [START-TABLE] C5 (before it the VM
+emitter's own `pcrec_reseed_rows[]`), which the VM hybrid's retry
+planning walks. The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
 `kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`

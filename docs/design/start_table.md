@@ -1024,7 +1024,7 @@ answers a different question:
 | C2 | **BUILT (lane stc2, 2026-10-07; `../dev/lanes/stc2_report.md`, the C2 outcome paragraph below), pending merge**. **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
 | C3 | **BUILT (lane stc3, 2026-10-07; `../dev/lanes/stc3_report.md`, the C3 outcome paragraph below), pending merge**. **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
 | C4 | **BUILT (lane stc4, 2026-10-07; `../dev/lanes/stc4_report.md`, the C4 outcome paragraph below), pending merge**. **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]`; D148 Q2's `DfaSel` → `CandSel` spelling sweep (ruled "C4 or C7", taken here) | S462, S473; the sweep's S518-S521, S527 |
-| C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; the start tables' last `DFA_SELECT` callers deleted (`req_admits[]`/`req_uses[]` go at C4; `dfa_select` itself STAYS: the six machine-form axes `dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`, `dfa_matches`, `dfa_edges` walk it and are outside the start table, §2.5; C3 already removed its route plumbing — ruled 2026-10-07, `../dev/lanes/stc3_report.md` §4 item 1) | S169, S263, S371, S372, S441 |
+| C5 | **BUILT (lane stc5, 2026-10-07; `../dev/lanes/stc5_report.md`, the C5 outcome paragraph below), pending merge**. **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; the start tables' last `DFA_SELECT` callers deleted (`req_admits[]`/`req_uses[]` go at C4; `dfa_select` itself STAYS: the six machine-form axes `dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`, `dfa_matches`, `dfa_edges` walk it and are outside the start table, §2.5; C3 already removed its route plumbing — ruled 2026-10-07, `../dev/lanes/stc3_report.md` §4 item 1) | S169, S263, S371, S372, S441 |
 | C5b | **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
 | C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
 | C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
@@ -1150,6 +1150,38 @@ The `rerun_at` column names NO row at C4 (no anchor sits in a C4 owner's
 body; the two re-aims are S462/S473); the lane re-ran the walk-reached
 predicate rows by judgment ([MECH-REACH]). The `DfaSel` sweep rode C4 (the
 edit set's new `token DfaSel`), re-aiming S518-S521 and S527.
+
+**C5's outcome** (lane stc5, `../dev/lanes/stc5_report.md`). Built as
+listed, with no emitted byte moved and the C1 trace record-for-record
+unchanged on the light gates (the report's §3; the heavy chain is its §6):
+`pcrec_reseed_rows[]`, its `VRS_*` tags and `vm_reseed_holds` are deleted
+into the RETRY rows (payload `CandReseed`, `u.reseed`: action, start, armed,
+desc; in `core/internal.h`, since `emit_vm.c` reads it), `vm_plan_reseed`
+asks `pcrec_cand_select_vm(RETRY)`, and `pcrec_reseed_row` projects the rows
+for `--list-axes` (C4's bool-accessor shape; `pcrec_reseed_nrows` gone). The
+inline decisions read their slot's row: WINDOW (`u.window.clamp`) through
+`cand_window_clamps` on CAND_ROUTE_DFA (C4's entry rule) with
+`cand_hit_every`; WIDTH (`u.width.check`) through `vm_width_row`; BOUND on
+CAND_ROUTE_ATTEMPT in `emit_attempt` and on the VM route through
+`vm_bound_row`, `u.bound` carrying `one` and each route's text (`start_max`;
+the VM's one `attempt_max` line, `CAND_VM_BOUND_ONE`, S263's new anchor).
+The stamps and the listing row project the same rows: `<PREFIX>_END_WINDOW`
+(the fact's window where the row clamps, the row's listed `none` where not),
+`<PREFIX>_VM_START` (the BOUND row's listed name, which is the stamp's
+vocabulary), `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` (the WIDTH
+row; the value from `root_minw`). `dfa_select` STAYS (the C3 ruling; the
+edit set's `def DFA_SELECT` is annotated). The C2 both-walks oracle had
+nothing left to compare and is deleted (`CandRow.was` with it);
+`run_cand_oracle.sh` builds one trace compiler. Corrections and choices, all
+in the report §4: each stamp and listing reader RE-ASKS the one derivation
+its body asks (the RECOVER precedent) rather than reading a selection stored
+before the stamps, because §1.3's "no eager plan" and §3.6's "one selection"
+meet in the VM's phase order and the trace's ordering decides it; the edit
+set named four lines that C5 keeps (a landmark value read and two stamp
+calls; amended, with reasons) and its `rs->row` token is `rs->row->`; the
+`rerun_at` rule's gap recurs (rows reached through the new walks re-ran by
+judgment, listed); `[cand-no-name-strcmp]` widened to every slot under §3.5's
+row-name-expression rule, with new sabotage S605.
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel

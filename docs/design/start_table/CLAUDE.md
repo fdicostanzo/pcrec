@@ -40,7 +40,11 @@ None of them is read by a check.
   TABLE / WALK / PRED / EMIT / INLINE / READER / PROJ / ROUTE / BODY / LANDMARK /
   PLAN / NOTSTART / TYPE, slot/rows, note). Hand-written, but checked:
 - `inventory_check.py` — fails unless `inventory.tsv` dispositions exactly the
-  family+seeds `call_graph.txt` names (138/138 at C4, `req_admits`/
+  family+seeds `call_graph.txt` names (144/144 at C5, `pcrec_reseed_rows`/
+  `pcrec_reseed_nrows`/`PcrecReseedRow`/`vm_reseed_holds` out, the four new
+  payload types, `cand_window_of`/`cand_window_clamps`,
+  `pcrec_cand_select_vm`, `vm_width_row`/`vm_bound_row` and the now
+  unconditional `vm_cand_facts` in; 138/138 at C4, `req_admits`/
   `req_uses` and their row types out, `CandAdmit`/`CandUse` in; 141/141 at C2, the table, its walk,
   nine new predicates and three row types in; 127/127 at C1, re-derived on post-R4c
   main: the kit's migration replaced three pre-check emitters with five,
@@ -102,6 +106,12 @@ None of them is read by a check.
   edit-set token/line and lists EVERY commit that moves it, re-run rows carry
   `rerun_at` (the commits touching their owner), rows are keyed by FILE (S169
   is shared by two), and `reads` lists the family identifiers an anchor names.
+  Re-derived at C5 (lane stc5) on the post-C5 tree: 498 row files / 516
+  sites, 114 family rows, re-aim C5 left 1 (S372, whose anchor survived in
+  `vm_plan_reseed`; the C5 re-aims S263/S371/S441/S556 now sit outside any
+  C5 edit) and C5b 5; on main before C5 the derivation gave re-aim C5 =
+  S263, S371, S372, S441, S556 and `rerun_at` C5 = 22 sites
+  (`docs/dev/lanes/stc5_report.md` §2).
   **STEPS ([admin1008b], 2026-10-07; stc4_report.md §4 item 3, stc5_report.md
   §4 item 6):** `--step NAME=A..B` (repeatable, `--repo`, `--reach-hops`,
   `--compare NAME=S1,S2,...`) derives `rerun_at` from the commit's ACTUAL

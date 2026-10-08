@@ -107,9 +107,7 @@ pcrec_emit_dfa	PLAN
 pcrec_vm_prefilter_window	READER	NEXT->RETRY/VM	the WINDOW handoff: the prefilter's span end handed to the VM as a ceiling (mrl_win)
 vm_render_listing	PROJ	WIDTH H1, RETRY	--emit-ir root-minw / prefilter rows (reads the fact today; reads the row after C5, [r2 sound-m1])
 vm_init	LANDMARK	WIDTH, RETRY	computes root_minw, mrl_win, nclamp: the VM program properties rows read
-pcrec_reseed_rows	TABLE	RETRY R1-R6
-vm_reseed_holds	PRED	RETRY R1-R5	the tag switch; each arm becomes a predicate (R3 re-spells BOUND: C5b)
-vm_plan_reseed	WALK	RETRY (CR_VM)
+vm_plan_reseed	WALK	RETRY (CR_VM)	[C5] cand_select(RETRY) on CAND_ROUTE_VM through pcrec_cand_select_vm (pcrec_reseed_rows[] deleted into cand_rows[]); the row and its u.reseed state into VmReseed
 vm_emit_stamps	PROJ	WIDTH, RETRY, BOUND, NEXT	VM_ROOT_MINW / VM_RESEED / VM_START / VM_START_SCAN
 vm_emit_storage	NOTSTART	MRL storage	nclamp's window_end storage (the RETRY recompute reads it; not a choice)
 vm_emit_search_body	BODY	VM-ONLY, HYB-*	holds H1 and B3/B4 inline; the prefilter call and the retry are the handoff sites (§1.6)
@@ -139,11 +137,9 @@ DfaCand	TYPE	every slot	the common leading member: c.name / c.deny / c.applies (
 PfScan	TYPE	NEXT	the scan-kind enum DfaPf embeds -> the `scan` column (§1.1)
 ReqAdmit	TYPE	PRESENCE	the verdict enum CandAdmit embeds (ReqAdmitRow's until C4)
 ReqUse	TYPE	FIRST	the use enum CandUse embeds (ReqUseRow's until C4)
-PcrecReseedRow	TYPE	RETRY	-> CandRow.u.reseed (C5)
 DfaMatch	NOTSTART	match axis	dfa_matches[]'s row type; the match-here entry stays outside (§2.5)
-pcrec_reseed_nrows	PROJ	RETRY	the reseed table's row count, read by vm_plan_reseed's walk and the listing; kept as an accessor until C7 (§3.5)
 cand_rows	TABLE	every slot (37 rows)	[C2] THE one start table, built beside the old tables; no reader until C3 (call_graph.py's TABLE_ROOTS puts it in the family the commit that builds it)
-cand_select	WALK	every slot	[C2] THE one walk, cand_select(slot, sel, flags); [C3] decides NEXT and RECOVER
+cand_select	WALK	every slot	[C2] THE one walk, cand_select(slot, sel, flags); [C3] decides NEXT and RECOVER; [C4] PRESENCE and FIRST; [C5] every slot
 CandRow	TYPE	every slot	[C2] the row contract (§1.1): c, slot, routes, tok, map, giveup, hands, list[route], was (the oracle's link, deleted with the old tables); [C3] u (u.pf, u.recover)
 CandPf	TYPE	NEXT	[C3] DfaPf's fields, CandRow.u.pf (the emit hooks, reseeds, run_term, scan, emit_vm, scan_set)
 CandRecover	TYPE	RECOVER	[C3] CandRow.u.recover (pinned), dfa_search_is_pinned's property
@@ -154,9 +150,19 @@ CandSlot	TYPE	every slot	[C2] the slot enum (core/internal.h; §1.2)
 cand_window_applies	PRED	WINDOW W1	[C2] the `w < 0` inline test as a predicate
 cand_ceiling_applies	PRED	WIDTH H1	[C2] the root-minw inline test as a predicate (reads CandSel.vm)
 cand_pred_memchr_applies	PRED	NEXT N12	[C2] attempt_cand by call, its CandSet discarded
-cand_rs_anchored_applies	PRED	RETRY R3	[C2] vm_reseed_holds' VRS_P_ANCHORED arm; restates BOUND(CR_VM) until C5b
-cand_rs_dense_applies	PRED	RETRY R4	[C2] vm_reseed_holds' VRS_P_DENSE arm (reads CandSel.vm's gap)
+cand_rs_anchored_applies	PRED	RETRY R3	[C2] the old vm_reseed_holds' VRS_P_ANCHORED arm, its only definition since C5; restates BOUND(CR_VM) until C5b
+cand_rs_dense_applies	PRED	RETRY R4	[C2] the old vm_reseed_holds' VRS_P_DENSE arm, its only definition since C5 (reads CandSel.vm's gap)
 cand_bound_bot_applies	PRED	BOUND B1	[C2] emit_attempt's `anchored` (a_bot && a_gst, the PCREC_NO_GSTART fold)
 cand_bound_gstart_attempt_applies	PRED	BOUND B2	[C2] emit_attempt's `a_bot`
 cand_bound_anchored_vm_applies	PRED	BOUND B3	[C2] the VM entry's start_anchor == BOT
 cand_bound_gstart_vm_applies	PRED	BOUND B4	[C2] the VM entry's start_anchor == GSTART
+CandReseed	TYPE	RETRY	[C5] PcrecReseedRow's action/start/armed/desc, CandRow.u.reseed (core/internal.h: the VM emitter reads it)
+CandBound	TYPE	BOUND	[C5] CandRow.u.bound: which starts can match (one) and each route's bound text (start_max, attempt_max)
+CandWidth	TYPE	WIDTH	[C5] CandRow.u.width: whether the root-minw check is emitted
+CandWindow	TYPE	WINDOW	[C5] CandRow.u.window: whether the entry clamps to the end window
+cand_window_of	WALK	WINDOW	[C5] cand_select(WINDOW) on CAND_ROUTE_DFA, no record: the one selection the clamp and <PREFIX>_END_WINDOW read
+cand_window_clamps	WALK	WINDOW	[C5] the clamp's ask: cand_window_of, recorded (end-window) and hit-counted (cand_hit_every); returns u.window.clamp
+pcrec_cand_select_vm	WALK	RETRY, WIDTH, BOUND (CR_VM)	[C5] the VM emitter's walk: cand_select on CAND_ROUTE_VM over CandVmFacts
+vm_width_row	WALK	WIDTH (CR_VM)	[C5] WIDTH's row, read by the root-minw test, <PREFIX>_VM_ROOT_MINW and --emit-ir's root-minw row
+vm_bound_row	WALK	BOUND (CR_VM)	[C5] BOUND's VM row, read by attempt_max and <PREFIX>_VM_START
+vm_cand_facts	PLAN	RETRY, WIDTH, BOUND (CR_VM)	[C2 trace-only; C5 unconditional] the Vm fields the VM rows read, as CandVmFacts

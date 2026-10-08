@@ -304,8 +304,9 @@ for x in sorted(FAMILY, key=lambda n: (defs[n][0], defs[n][1])):
         # [START-TABLE] C1: a selection-trace record (`PCREC_CAND_TRACE_REC*`,
         # possibly continued over lines) PRINTS a decision made elsewhere and
         # decides nothing, so its ternaries are not sites. C2's both-walks
-        # oracle hooks (`CAND_ORACLE_*`, `VM_CAND_*`) CHECK one and decide
-        # nothing either.
+        # oracle hooks (`CAND_ORACLE_*`, `VM_CAND_*`; since C5 only the hit
+        # counter `VM_CAND_HIT` is left of them) CHECK one and decide nothing
+        # either.
         if trace_depth or re.search(r'\b(PCREC_CAND_TRACE_REC|CAND_ORACLE_|VM_CAND_)', code):
             trace_depth += code.count("(") - code.count(")")
             continue

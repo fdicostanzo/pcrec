@@ -31,6 +31,11 @@ or it has no regression net at all.
   holds for PRESENCE and FIRST (S596's plant moves artifacts too); their
   readers ask on CAND_ROUTE_DFA and the hit also walks every other route the
   slot is asked on, aborting on a different row (`cand_hit_every`, S600).
+  **Since C5** every slot is decided by the table (RETRY, BOUND, WINDOW and
+  WIDTH too; S597's plant moves the VM's bound), no old decision is left to
+  compare, and the script builds the trace compiler ONCE (the new-first
+  build had nothing to go second against; `CAND_ORACLE_BINS` takes one
+  binary, a second word is ignored). WINDOW's reader runs `cand_hit_every`.
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
@@ -51,7 +56,15 @@ or it has no regression net at all.
   route mask (`CAND_ON(s->route)`) before `.applies(` (until C3 `dfa_select`
   and `cand_routed(`). Both validated red by a plant on a scratch copy at
   landing (docs/dev/lanes/ssbuild01_report.md), and the three re-aimed checks
-  again at C3 (docs/dev/lanes/stc3_report.md).
+  again at C3 (docs/dev/lanes/stc3_report.md). **Since [START-TABLE] C5**
+  [cand-no-name-strcmp] covers EVERY slot: the WINDOW/WIDTH/RETRY/BOUND rows'
+  names (ordinary words like `all`, `exact`, `anchored`) fire only where the
+  same call also reads a row-name expression (`->c.name`/`->tok`,
+  `pcrec_cand_tok(`/`pcrec_cand_listed(`/`cand_listed_name(`, a `*_name(`
+  call), start_table.md §3.5's rule, and the receiver half adds the C5
+  selection functions; validated red by plants on a scratch copy and green
+  on a literal-only `strcmp(..., "exact")` (docs/dev/lanes/stc5_report.md);
+  sabotage S605.
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
   56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s
@@ -3709,7 +3722,8 @@ reseedfix, after the r1 panel): `run_codegen_tests.sh` gains an
 `[OPT-HYB-RESEED]` block** (15 checks: 11 witness rows, the clamped
 recompute, the budget arm's control and its two subjects). It covers:
 
-- `<PREFIX>_VM_RESEED` on one witness per `pcrec_reseed_rows` row, and its
+- `<PREFIX>_VM_RESEED` on one witness per re-seed row (`pcrec_reseed_rows`
+  until [START-TABLE] C5, the RETRY rows of `cand_rows[]` since), and its
   absence on a forced-VM and a DFA artifact (both directions of the IFF).
   The dense row reads the byte-rate PRIOR, so both of its arms are pinned:
   ` (?=the)` is `adaptive-dense` under `-e byte` (the built-in default

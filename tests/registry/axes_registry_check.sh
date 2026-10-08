@@ -784,8 +784,9 @@ check_value_set "RX_UNROLL_K_WHY (compile.c cx.size_term_why derivation)" \
 
 # [OPT-HYB-RESEED] `RX_VM_RESEED`, 2026-09-30 (lane reseedfix, r1 panel chk
 # F6.3): dump-vs-DOCS for the hybrid retry's row names. ONE leg, not two: the
-# dump walks `pcrec_reseed_rows` live and the emitter stamps
-# `rs->row->name` off the SAME array, so a dump-vs-emitter-source leg would
+# dump walks the RETRY rows live (`pcrec_reseed_row`; `cand_rows[]` since
+# [START-TABLE] C5, `pcrec_reseed_rows` before) and the emitter stamps the
+# chosen row's spelling off the SAME rows, so a dump-vs-emitter-source leg would
 # be a control sharing its source with what it controls. The independent
 # source is the hand-written §6.3 table; tests/codegen's [OPT-HYB-RESEED]
 # witnesses stamp each of the five values once, which is the emitter half.
