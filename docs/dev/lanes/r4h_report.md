@@ -209,3 +209,28 @@ pre-existing. `inventory_check.py` against the new `call_graph.txt`: 150/150.
 | arms/rows/manifest/forms/stamps green, G2 --quick pinned | DONE (G2 quick 45,229,686/0) |
 | CLAUDE.md: src/gen, memfn/src, tests/memfn | DONE |
 | no abi event | none needed |
+
+## VALIDATION (kit manager's slot10, 2026-10-08, Linux dev box)
+
+Chain `worktrees/memfn-slot/slot10/run.sh` on lane/memfn-r4h at 5dffd295
+(main 02db3811, abi 68, merged in), 08:40-09:20:
+
+| run | result |
+|---|---|
+| N2 census, JOBS=16 | rc 4: would_decline 0, floors met, **reason_stale 1**: `generic`, chosen 7,631,384 by pcrec (expected; see below) |
+| identity gate (`emit_sweep` vs main tip, `memfn_r4c_gate.py --zero-dumps`) | R4C-GATE PASS, 0 movers on all six streams |
+| G2 full | 173,824,444 / 0; W1 defects fire |
+| `make -k -j16 -Otarget test` | rc 0, 655 s, no red lines |
+| solo mech S72 S214 S512 S614 S615 S616 S433 S61 S39 S37 S57 S571 S510 S511 S524 S525 S526 S527 | 18/18 clean (0 unexpected/undetected/unreached/anomalies) |
+
+**The stale reason.** STAY, EDGE and VMSPAN render through the kit's
+generic ADVANCE row, so pcrec now chooses `generic`. The manager made it a
+`pcrec` row in rows.tsv:
+- witness `a[^x]*`;
+- signature `subject_length) && (`;
+- control `abc`.
+
+A plant that made the control the witness went red twice. The pcrec_floor
+is 6,868,245 = floor(0.9 x 7,631,384). test-memfn-rows is 117/0. The census
+re-run (main's short slot) gave rc 0, reason_stale=0, 847 s (the box was
+shared).
