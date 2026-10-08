@@ -337,8 +337,12 @@ static void emit_cand_axis(StrBuf *sb, const char *axis, const char *kind)
         char deny_macro[64], deny_bit[8], flag[96];
         deny_cols(r.deny, deny_macro, sizeof deny_macro, deny_bit, sizeof deny_bit);
         axis_cli_flag(r.deny, 0, flag, sizeof flag);
+        /* A row with no desc prints `desc_of`'s placeholder, which the axis
+         * registry check reads as an unauthored candidate, never an empty
+         * cell nothing reads. */
         axis_row(sb, axis, r.order, r.name, kind, r.stamp, r.value,
-                 deny_macro, deny_bit, "", "", flag, r.desc);
+                 deny_macro, deny_bit, "", "", flag,
+                 r.desc ? r.desc : desc_of(axis, r.name));
     }
 }
 

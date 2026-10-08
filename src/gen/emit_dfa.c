@@ -336,9 +336,14 @@ static void cand_hit_every(CandSlot slot, const struct CandSel *s, const CandRow
                            const char *site);
 #define CAND_HIT_EVERY(slot, sel, row, site)                                  \
     cand_hit_every((slot), (sel), (row), "" site)
+static void cand_every_route(CandSlot slot, const struct CandSel *s, const CandRow *r,
+                             const char *site);
+#define CAND_EVERY_ROUTE(slot, sel, row, site)                                \
+    cand_every_route((slot), (sel), (row), "" site)
 #else
 #define CAND_HIT(slot, sel, row, site) ((void)sizeof("" site))
 #define CAND_HIT_EVERY(slot, sel, row, site) ((void)sizeof("" site))
+#define CAND_EVERY_ROUTE(slot, sel, row, site) ((void)sizeof("" site))
 #endif
 
 /* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
@@ -4140,6 +4145,17 @@ static const CandRow *attempt_next_of(Ctx *cx, CandSet *cs)
     return r;
 }
 
+/* [START-TABLE] C6 the same ENG_ATTEMPT NEXT selection READ by another
+ * slot's predicate, `reader` (G1's dominance, R4's density, both through
+ * `dfa_cand_scan`): asked through `cand_read`, so the trace build checks the
+ * edge against the slot graph and prints the read's own record. */
+static const CandRow *attempt_next_read(Ctx *cx, CandSlot reader, CandSet *cs)
+{
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_ATTEMPT, .cand = cs };
+    return CAND_READ(reader, CAND_SLOT_NEXT, &s, "attempt-next");
+}
+
 /* ---- [DD-13] THE UNANCHORED ENGINE'S START ANALYSIS: one derivation -------
  *
  * WHY IT IS A FUNCTION NOW. Everything below used to be the first forty lines
@@ -6832,6 +6848,17 @@ static const CandRow *dfa_pf_of(Ctx *cx, const UnanchStart *us)
     return pf;
 }
 
+/* [START-TABLE] C6 `dfa_pf_of`'s selection READ by another slot's predicate,
+ * `reader` (G1, R4): asked through `cand_read`, whose trace record is the
+ * one `dfa_pf_of` prints (site `pf-of`), so routing the read moves no
+ * record; the edge is checked against the slot graph. */
+static const CandRow *dfa_pf_read(Ctx *cx, CandSlot reader, const UnanchStart *us)
+{
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = us, .forward = true, .st = -1,
+                  .route = cand_route_of(cx), .ss = pcrec_fact_start_set(cx) };
+    return CAND_READ(reader, CAND_SLOT_NEXT, &s, "pf-of");
+}
+
 /* [START-SET] The byte set row `pf` SCANS on the forward machine `d` of `us`:
  * the row's own `scan_set` where it has one (the DFA hat's `T`), the start
  * state's escape set otherwise. The ONE place a reader of the scanned set
@@ -6953,14 +6980,18 @@ void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
  * THE FIRST TWO LINES ARE THE GUARD AND MUST STAY FIRST (litscan_s1.md
  * R3-1): with no DFA scan at all there is no `Job.dfa` to derive from, and
  * those routes (a backreference declines the hybrid) are exactly the K65/K66
- * routes where the pre-check is the only linear no-match proof. */
+ * routes where the pre-check is the only linear no-match proof.
+ *
+ * [START-TABLE] C6 `reader` is the slot whose predicate asks (PRESENCE for
+ * G1, RETRY for R4): NEXT's selection is READ through `cand_read` on that
+ * slot's declared edge, never re-derived here. */
 typedef struct {
     int  byte;          /* the scanned byte, or -1: no single-byte scan */
     bool memchr_form;   /* a memchr row (or ENG_ATTEMPT's memchr) */
     bool run_verified;  /* its test refuses every window lacking the run */
 } CandScan;
 
-static void dfa_cand_scan(Ctx *cx, CandScan *cs)
+static void dfa_cand_scan(Ctx *cx, CandSlot reader, CandScan *cs)
 {
     memset(cs, 0, sizeof *cs);
     cs->byte = -1;
@@ -6970,7 +7001,8 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
         /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
          * a true answer already means a single-byte scan. */
         cs->memchr_form = true;
-        cs->byte = attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE ? acand.byte : -1;
+        cs->byte = attempt_next_read(cx, reader, &acand)->u.pf.scan == PF_SCAN_BYTE
+                   ? acand.byte : -1;
         return;
     }
     {
@@ -6978,7 +7010,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
         const CandRow *pf;
         OfsTest t;
         unanch_start(cx, &us);
-        pf = dfa_pf_of(cx, &us);
+        pf = dfa_pf_read(cx, reader, &us);
         /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset
          * rows sit between the two, so an artifact whose `kind` is
          * DFA_PF_MEMCHR may still have had another form selected over it. */
@@ -7003,14 +7035,14 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
  * artifact does not carry: a single-byte scan (memchr, or an offset/run row's
  * scan byte) is that byte, a byte-class row is its candidate set. The prior's
  * NONE is answered inside the MASS primitive (cardinality), never here
- * (D126 Q4). The VM hybrid's re-seed table (src/gen/emit_vm.c) is the one
- * reader. */
+ * (D126 Q4). Its one reader is RETRY's `adaptive-dense` row (R4), so its
+ * selection reads are RETRY's ([START-TABLE] C6, `cand_nodes`). */
 unsigned pcrec_dfa_cand_ppm(Ctx *cx)
 {
     uint8_t set[256];
     CandScan cs;
     memset(set, 0, sizeof set);
-    dfa_cand_scan(cx, &cs);
+    dfa_cand_scan(cx, CAND_SLOT_RETRY, &cs);
     if (cs.byte >= 0) {
         set[cs.byte] = 1;
     } else {
@@ -7019,7 +7051,7 @@ unsigned pcrec_dfa_cand_ppm(Ctx *cx)
         if (!pcrec_artifact_has_dfa_scan(cx) || cand_route_of(cx) == CAND_ROUTE_ATTEMPT)
             return 1000000u;
         unanch_start(cx, &us);
-        pf = dfa_pf_of(cx, &us);
+        pf = dfa_pf_read(cx, CAND_SLOT_RETRY, &us);
         if (pf->u.pf.scan != PF_SCAN_SET)
             return 1000000u;
         {
@@ -7141,7 +7173,7 @@ static bool req_one_attempt_applies(const CandSel *s)
 static bool req_dominated_applies(const CandSel *s)
 {
     CandScan cs;
-    dfa_cand_scan(s->cx, &cs);
+    dfa_cand_scan(s->cx, CAND_SLOT_PRESENCE, &cs);
     return req_byte_dominated_by(s->cx, &cs, pcrec_fact_req_byte(s->cx));
 }
 /* [K82] (A) Is the necessary set's pick RARER than the run's scan member?
@@ -7190,6 +7222,21 @@ static ReqAdmit req_admit(Ctx *cx)
     const CandRow *r = cand_select(CAND_SLOT_PRESENCE, &s, cx->opt->flags);
     PCREC_CAND_TRACE_REC("PRESENCE", CAND_ROUTE_NAME(s.route), r->tok, "req-admit");
     CAND_HIT_EVERY(CAND_SLOT_PRESENCE, &s, r, "req-admit");
+    return r->u.admit.verdict;
+}
+
+/* [START-TABLE] C6 the admission READ by another slot's predicate, `reader`
+ * (F1, FIRST's `handoff`): `req_admit`'s selection asked through
+ * `cand_read`, whose trace record is the one `req_admit` prints (site
+ * `req-admit`), so routing the read moves no record; the edge is checked
+ * against the slot graph, and the entry slot's cross-route rule still
+ * holds the row. */
+static ReqAdmit req_admit_read(Ctx *cx, CandSlot reader)
+{
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA };
+    const CandRow *r = CAND_READ(reader, CAND_SLOT_PRESENCE, &s, "req-admit");
+    CAND_EVERY_ROUTE(CAND_SLOT_PRESENCE, &s, r, "req-admit");
     return r->u.admit.verdict;
 }
 
@@ -7251,7 +7298,8 @@ static bool req_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     long long k;
-    if (!req_admit_emits(req_admit(cx)) || pcrec_fact_req_run(cx)->len < 2)
+    if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)) ||
+        pcrec_fact_req_run(cx)->len < 2)
         return false;
     if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))
         return false;
@@ -7916,9 +7964,16 @@ typedef struct CandNode {
  * THE BOUND READS ([START-TABLE] C5b, §1.3): PRESENCE's `one-attempt` (P2)
  * reads BOUND on CAND_ROUTE_ATTEMPT (its DFA arm) and CAND_ROUTE_VM (its VM
  * arm); NEXT's `pred-memchr` (N12) on CAND_ROUTE_ATTEMPT and `first-class`
- * (N7) on CAND_ROUTE_VM; RETRY's `anchored` (R3) on CAND_ROUTE_VM. The other
- * reads §1.3 lists (G1, F1, R4) predate the selection read and are not yet
- * declared here. */
+ * (N7) on CAND_ROUTE_VM; RETRY's `anchored` (R3) on CAND_ROUTE_VM.
+ *
+ * THE OTHER THREE READS §1.3 LISTS ([START-TABLE] C6), each routed through
+ * `cand_read` in the commit that declares it, so no edge here is unchecked:
+ * PRESENCE's `dominated` (G1) reads NEXT on the forward body's route,
+ * CAND_ROUTE_DFA or CAND_ROUTE_ATTEMPT (`dfa_cand_scan`); FIRST's `handoff`
+ * (F1) reads PRESENCE on CAND_ROUTE_DFA (`req_admit_read`, the entry slots'
+ * C4 route); RETRY's `adaptive-dense` (R4) reads NEXT's scanned set on the
+ * hybrid prefilter's route, CAND_ROUTE_DFA or CAND_ROUTE_ATTEMPT
+ * (`pcrec_dfa_cand_ppm`). */
 __attribute__((unused))   /* read by the trace build's self-check and hit counter */
 static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_WINDOW]   = { "WINDOW",   CT_LOWER, CAND_ALL_ROUTES,
@@ -7928,18 +7983,23 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_PRESENCE] = { "PRESENCE", CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_FIRST) | CN(CAND_NODE_CALLER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
-                                                            CAND_ON(CAND_ROUTE_VM) } },
+                                                            CAND_ON(CAND_ROUTE_VM),
+                                        [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA) |
+                                                            CAND_ON(CAND_ROUTE_ATTEMPT) } },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
     [CAND_SLOT_FIRST]    = { "FIRST",    CT_HIT | CT_LOWER, CAND_ALL_ROUTES,
-                             CN(CAND_SLOT_NEXT) },
+                             CN(CAND_SLOT_NEXT),
+                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA) } },
     [CAND_SLOT_NEXT]     = { "NEXT",     CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
                                                             CAND_ON(CAND_ROUTE_VM) } },
     [CAND_SLOT_RETRY]    = { "RETRY",    CT_CAND, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
-                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM) } },
+                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),
+                                        [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA) |
+                                                            CAND_ON(CAND_ROUTE_ATTEMPT) } },
     [CAND_SLOT_BOUND]    = { "BOUND",    0,
                              CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_LOOP) },
@@ -8477,6 +8537,14 @@ static void cand_hit_every(CandSlot slot, const CandSel *s, const CandRow *r,
                            const char *site)
 {
     cand_hit(slot, s, r, site);
+    cand_every_route(slot, s, r, site);
+}
+
+/* `cand_hit_every`'s cross-route half alone, for an entry slot's row a
+ * SELECTION READ already counted (`cand_read`, [START-TABLE] C6's F1). */
+static void cand_every_route(CandSlot slot, const CandSel *s, const CandRow *r,
+                             const char *site)
+{
     if (pcrec_cand_trace_quiet) return;
     for (int rt = 0; rt < 3; rt++) {
         CandSel o = *s;
