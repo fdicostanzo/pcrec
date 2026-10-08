@@ -986,3 +986,85 @@ the compiler, and is never adopted silently. Proposed for main to file
   scoping lane (r4mlscope, opus). Its edit set and its overlap check
   against [DEC-FALLBACK] and the ATTEMPT-route start rows will be posted here
   as a notice. No build until main has read it.
+- notice: 2026-10-08 — **R-7 (M4, MLINE): edit set and overlap (read from
+  main dafcc639). NOT buildable as zero-mover on today's contract: three
+  kit-contract gaps, all closable kit-side with no pcrec byte moved.**
+  - **The edit set:**
+    - **Moves to the kit:** the three statements inside `emit_attempt`'s
+      MLINE block (emit_dfa.c:10386-10390: the `memchr`, `if (!q) break;`,
+      and the `start = ... + 1;` store).
+    - **Stays pcrec's:**
+      - the guard line `if (start > X && subject[start - 1] != 10) {` and
+        its `}`;
+      - `if (cpre)`, the D63 comment, the K50/K73 guards, the `for` header,
+        `start_max`;
+      - every start decision: NEXT via `attempt_next_of`, then `pred-memchr`
+        and `attempt_cand` (BOUND); `cpre`; `cand.byte`/`cand.offset`; and
+        `gseed`, which picks X = `search_from` or 0.
+    - **Pcrec side:** generalize the one describer `pcrec_emit_find`/
+      `PcrecFind` (a site id, a term offset, a floor) instead of adding a
+      parallel builder. Add DELEG_SITES row MLINE (FIND/ASSIGN/SET/SCAN).
+  - **Reach:**
+    - Reached: `(?m)^abc`, `(?m)^\d+`, `(?m)^`, `(?m)^$`, `^a|(?m)^b` (default
+      and `-e utf8`), `(?m)^a|\Gb` (X = search_from), and VM hybrids through
+      the inlined prefilter (`(?m)^(a|b)$`).
+    - Not reached: anything under `--engine=vm`.
+  - **Contract gaps** (`pf_memchr` renders the first two statements byte for
+    byte; three gaps remain):
+    - **G1, the `+ 1` store:** a negative-offset FIND (the term `{'\n'}` at
+      offset -1, as memfn.h/§15.7 already reserve) cannot name the candidate
+      `n`. FIND's range `[lo, n - end_back)` excludes it, yet this site
+      produces it (`(?m)^$` on "a\n" at 2).
+    - **G2, the empty range:** `start == n` is reachable (`memchr(s+n, 10,
+      0)`). pcrec's text is safe because `start > X >= 0` proves `s` non-NULL
+      and BOUND `all` proves `start <= n`. `pf_memchr` serves EXCLUDED only.
+    - **G3, `on_miss` `break;`:** it classes OTHER (JUMP is `return`/`goto`),
+      so the site falls back to the generic row and bytes would move.
+  - **Kit rulings** (the kit's own contract; proposed for main's ack):
+    - **Q-R7-1:** for a negative-offset term the FIND range is bounded by its
+      READS (MF_SITE_ABI 6). No `result_bias` field, because term offsets
+      already say it. No pcrec normalization, because it would move bytes. It
+      also serves [ENG-TACTICS]' "resume at hit+1".
+    - **Q-R7-2:** a kit-only proven-fact class, "empty only as lo == n over a
+      non-NULL subject". The alternative (a pcrec `start < subject_length`
+      guard) is an abi event plus a compare per attempt, so it is rejected.
+    - **Q-R7-3:** a kit-only LOOP-EXIT `on_miss` class. A row may paste it
+      only where its own text opens no loop around it, so the generic row may
+      not serve it.
+    - **Also:** §15.7's floor sketch is corrected. X is a start decision and
+      stays in pcrec's guard; the kit's floor is `start`.
+  - **Overlap:**
+    - [DEC-FALLBACK] (main and decfbrev2 c301580f) is DISJOINT: no
+      emit_dfa.c line, and `pcrec_engine_sel_name` is unchanged.
+    - ATTEMPT route: `cand_rows[]` `pred-memchr`/BOUND, `attempt_next_read`
+      and `attempt_cand` are the same file but NOT edited. `emit_attempt` is
+      the same function, and M4 is its only edit.
+    - [DEC-POSDOM] and [START-D1] are unscheduled neighbours.
+    - So under D153, M4 may build now, serialized with B's landing, with the
+      sweep on that main.
+  - **Plan:**
+    1. **M4 prep** (kit-only, zero pcrec bytes): G1 at MF_SITE_ABI 6 (G2's
+       negative-offset oracle re-derived; generic.c's bound moves only for
+       negative-offset sites, and none is delegated today), plus the G2 and
+       G3 classes, fixtures, and a G2 family at offset -1 that reaches n.
+    2. **M4 itself:**
+       - the describer is generalized;
+       - MLINE becomes delegated (10/3);
+       - C12 memchr row deleted (rows 6→5, forms 8→7, floor 6→5);
+       - a new kit row → ROWS_FLOOR and FLOOR_ROWS 13→14;
+       - `MEMFN_LIBC` is unchanged.
+  - **Sabotage:**
+    - re-pin and solo-run S82 (the gseed argument line);
+    - re-aim S511 to a still-pending row, since "MLINE pending" dies;
+    - re-pin S524 (the DELEG_PF call and its ceiling text);
+    - solo-run S235 and S81, plus R4g's rule (b) rows;
+    - **3 new ids needed:**
+      - the `+ k` store dropped;
+      - the range stopping one short of `n`;
+      - a row serving a loop-exit `on_miss` inside its own loop.
+  - **Gate reach:** the default stream and `-e utf8`. Witness cells:
+    - `(?m)^$` on "a\n";
+    - find-all `(?m)^`;
+    - `(?m)^a|\Gb`;
+    - `(?m)^(a|b)$`;
+    - `^a|(?m)^b`.
