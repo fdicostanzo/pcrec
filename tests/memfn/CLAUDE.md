@@ -302,6 +302,12 @@ VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
   its site's existing row, and raise the floor if you added a row.
 - **A respelled form the vocabulary no longer sees:** rule 4 says so. Teach
   `search_vocab.tsv` the new shape; never delete the row to get green.
+  Worked example (lane advtri, 2026-10-08, abi 67): [MEMFN] R4h's layout
+  normalization respelled the five ADVANCE loops in the kit's layout
+  (parenthesised `more` and member, braced body, step on its own line), and
+  `walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
+  ceilings). Both regexes were widened to the new shape, not the rows or
+  ceilings touched: C12 reads the same 12 forms in the same ceilings.
 - **A migration step's REPLACE commit:** flip its rows to `delegated`.
   From then on, rule 3 holds pcrec to spelling none of them.
 - `c4_populations/` — C4's COMMITTED compiler populations (`gcc -dM -E` dumps
