@@ -4,7 +4,9 @@
 #
 # memfn/tests/run_g2.sh — G2, the kit's own tests, in one command.
 #
-#   memfn/tests/run_g2.sh [--quick] [--seed N] [--keep]
+#   memfn/tests/run_g2.sh [--quick] [--rows|--no-rows] [--seed N] [--keep]
+#
+# --rows: per-ROW floor from the kit's MFTRACE REACH lines (section 4b)
 #
 # Generates sites over the kit's vocabulary, renders them through the kit
 # (linked from build/libpcrec.a with only -I memfn/include), compiles the
@@ -42,9 +44,13 @@ inc="$root/memfn/include"
 seed=20261005
 keep=0
 quick=0
+rows=0
+norows=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --quick) quick=1; shift ;;
+        --rows) rows=1; shift ;;
+        --no-rows) norows=1; shift ;;
         --seed) seed=$2; shift 2 ;;
         --keep) keep=1; shift ;;
         *) echo "run_g2.sh: unknown option $1" >&2; exit 2 ;;
@@ -172,6 +178,14 @@ done
 [ -n "$cc_list" ] || { echo "run_g2.sh: no gcc or clang" >&2; exit 2; }
 asan_cc=""
 command -v clang >/dev/null 2>&1 && asan_cc=clang
+# --quick includes the rows half (measured cost: none, see G2ROWS_REPORT.md);
+# --no-rows leaves it out
+[ "$quick" = 1 ] && [ "$norows" = 0 ] && rows=1
+# --rows (N4 follow-up, the per-ROW floor): every process that calls the kit
+# links the MF_TRACE build instead; the REACH lines it writes at exit are
+# summed in section 4b. The plain library is kept for the (d) control.
+plainlib="$lib"
+[ "$rows" = 1 ] && lib="$root/build/libpcrec_mftrace.a"
 [ -f "$lib" ] || { echo "run_g2.sh: $lib missing (build pcrec first)" >&2; exit 2; }
 
 : "${TMPDIR:?run_g2.sh: set TMPDIR to a scratch directory}"
@@ -190,8 +204,17 @@ gencc=${cc_list%% *}
 "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" "$g2/g2_gen.c" "$lib" -o "$work/g2_gen" \
     || { echo "run_g2.sh: the generator does not build" >&2; exit 2; }
 
+mkdir -p "$work/reach"
 gen() {  # gen OUTDIR [--mutate K]
     mkdir -p "$1"
+    if [ "$rows" = 1 ]; then
+        # stderr to a file of its own (one per generator process); the
+        # non-trace lines are passed on as before
+        local rf="$work/reach/gen-$(basename "$1").err" rc_
+        "$TO" 600 "$work/g2_gen" "$@" --seed "$seed" 2> "$rf"; rc_=$?
+        grep -v '^MFTRACE ' "$rf" >&2
+        return $rc_
+    fi
     "$TO" 600 "$work/g2_gen" "$@" --seed "$seed"
 }
 gen "$work/gen" > "$work/gen.log" 2>&1 || { cat "$work/gen.log"; echo "run_g2.sh: generator failed" >&2; exit 2; }
@@ -646,6 +669,79 @@ for m in 1 2 3 4 5 6 7; do
     [ "$quick" = 1 ] || w2_launch "$m" "$wcc"
     w2_judge "$m"
 done
+
+# --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
+# Sources: the `MFTRACE REACH table=T row=R chosen=N` lines of every G2
+# process that SELECTS rows (the generator, once per W2 mutation; K1 calls
+# only mf_ref_*, selects nothing and prints no REACH line, so it is not one),
+# linked against libpcrec_mftrace.a. Nothing here reads G2's generator or
+# driver output, and FLOOR_ROWS below is a literal measured once.
+FLOOR_ROWS=13   # distinct (table,row) pairs in the registry
+reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
+reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
+# reach_lines FILE: the chosen-lines of one process
+reach_lines() { grep -E '^MFTRACE REACH table=[^ ]+ row=[^ ]+ chosen=[0-9]+$' "$1"; }
+# (d) as a function: reach_has_lines FILE -> 0 when the process printed any
+reach_has_lines() { [ -n "$(reach_lines "$1" | head -1)" ]; }
+# rows_zero FILE: the rows of a row-chosen file with n == 0
+rows_zero() { awk '$4 == 0 {printf "%s/%s ", $2, $3}' "$1"; }
+if [ "$rows" = 1 ]; then
+    echo "== rows: kit selection-table rows chosen over the whole tier (MFTRACE REACH, summed)"
+    nproc_files=0; noreach=""
+    for f in "$work"/reach/*.err; do
+        nproc_files=$((nproc_files + 1))
+        reach_has_lines "$f" || noreach="$noreach $(basename "$f")"
+    done
+    if [ -z "$noreach" ] && [ "$nproc_files" -gt 0 ]; then
+        reach_pass "(d) all $nproc_files G2 kit processes printed REACH lines"
+    else
+        reach_fail "(d) G2 kit process(es) printed no REACH line (wrong library linked?):${noreach:- none found at all}"
+    fi
+    # control: the generator linked against the PLAIN library must
+    # trip the same (d) test
+    ctl="$work/reach-control"; mkdir -p "$ctl"
+    if "$TO" 300 "$gencc" -std=gnu11 -O1 -I "$inc" "$g2/g2_gen.c" "$plainlib" -o "$ctl/gen_plain_lib" \
+       && mkdir -p "$ctl/out" && "$TO" 600 "$ctl/gen_plain_lib" "$ctl/out" --seed "$seed" > /dev/null 2> "$ctl/out.err"; then
+        if reach_has_lines "$ctl/out.err"; then
+            reach_fail "(d) control: a generator linked against the plain library printed REACH lines (the test cannot tell)"
+        else
+            reach_pass "(d) control: a generator linked against the plain library printed no REACH line, so (d) is red for it"
+        fi
+    else
+        reach_fail "(d) control program did not build or run ($ctl)"
+    fi
+    for f in "$work"/reach/*.err; do reach_lines "$f"; done \
+      | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+      | awk '{ k = $1 " " $2; s[k] += $3 } END { for (k in s) print "row-chosen " k " " s[k] }' \
+      | LC_ALL=C sort > "$work/row-chosen.txt"
+    cat "$work/row-chosen.txt"
+    dropped=$(cat "$work"/reach/*.err | sed -n 's/^MFTRACE REACH_DROPPED n=\([0-9]*\)$/\1/p' | awk '{t += $1} END {print t + 0}')
+    ndrop=$(cat "$work"/reach/*.err | grep -c '^MFTRACE REACH_DROPPED n=')
+    if [ "$dropped" = 0 ] && [ "$ndrop" -ge "$nproc_files" ]; then
+        reach_pass "(a) every REACH_DROPPED is 0 ($ndrop lines)"
+    else
+        reach_fail "(a) REACH_DROPPED total $dropped over $ndrop lines ($nproc_files processes)"
+    fi
+    zero=$(rows_zero "$work/row-chosen.txt")
+    if [ -z "$zero" ]; then
+        reach_pass "(b) every row chosen >= 1 over the tier"
+    else
+        reach_fail "(b) rows never chosen: $zero"
+    fi
+    # control: a row-chosen file with one row zeroed must make (b) red
+    awk 'NR == 1 {$4 = 0} {print}' "$work/row-chosen.txt" > "$work/row-chosen.ctl"
+    if [ -n "$(rows_zero "$work/row-chosen.ctl")" ]; then
+        reach_pass "(b) control: a file with row $(rows_zero "$work/row-chosen.ctl")zeroed is red for (b)"
+    else
+        reach_fail "(b) control: a zeroed row was not named"
+    fi
+    nrows=$(wc -l < "$work/row-chosen.txt" | tr -d ' ')
+    if [ "$nrows" -ge "$FLOOR_ROWS" ]; then
+        reach_pass "(c) $nrows distinct (table,row) pairs >= floor $FLOOR_ROWS"
+    else
+        reach_fail "(c) $nrows distinct (table,row) pairs < floor $FLOOR_ROWS"
+    fi
+fi
 
 # --- 5. the verdict ------------------------------------------------------------
 echo "population: generator sites $(field sites_generated) in $(field batches) batches;" \
