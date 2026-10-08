@@ -29,7 +29,7 @@ req_site_note	EMIT	PRESENCE P4/P5 payload	[C1 re-derivation, post-R4c] the kit s
 req_set_rest_members	EMIT	PRESENCE P5 payload + K65	[C1 re-derivation, post-R4c] was emit_req_set_rest: its `pcrec_artifact_has_dfa_scan` return is K65 set-rest (route-keyed payload), and it reads P4's lead; kit boundary B7 (route), B8 (membership)
 pcrec_emit_req_byte_check	READER	FIRST	[C1 re-derivation, post-R4c] now only the USE point of the kit site req_site_define described: reads FIRST (`req_use`) under the run-form guard (kit B5', B19) for the expression the body's start reads
 emit_info_def	PROJ	NEXT, RECOVER	rx_info.prefilter / rx_info.search_form mirrors
-attempt_cand	PRED	NEXT N12	ATTEMPT route's predicate + CandSet; its `anchored` loop re-spells BOUND (C5b reads BOUND)
+attempt_cand	PRED	NEXT N12	ATTEMPT route's predicate + CandSet; [C5b] its `anchored` loop is gone: it reads BOUND(CR_ATTEMPT) through CAND_BOUND_ONE on its own CandSel
 attempt_next_of	WALK	NEXT (CR_ATTEMPT)	[C3] N12's four readers' walk: cand_select(NEXT) on CAND_ROUTE_ATTEMPT, the candidate set left in CandSel.cand
 dfa_engine_is_empty	ROUTE	EMPTY	the empty-machine distinction re-tested inside F1/S1 (n4)
 dfa_table_name	NOTSTART	(reads RECOVER)	machine census for the table stamp; reads dfa_search_is_pinned only to know whether a reverse machine exists
@@ -62,7 +62,7 @@ pf_first_memchr_bounded_applies	PRED	NEXT N5
 pf_tables_first	EMIT	NEXT N5/N6
 pf_emit_first_memchr_bounded	EMIT	NEXT N5
 pf_emit_first_class_bounded	EMIT	NEXT N6
-pf_vm_start_applies	PRED	NEXT N7	its anchoring conjunct re-spells BOUND(CR_VM) (C5b reads BOUND)
+pf_vm_start_applies	PRED	NEXT N7	[C5b] its anchoring conjunct reads BOUND(CR_VM) through CAND_BOUND_ONE (it re-spelled the start_anchor fact)
 pf_vm_emit_first_class	EMIT	NEXT N7
 dfa_pf_of	WALK	NEXT (CR_DFA)
 pf_scan_set_of	READER	NEXT	reads the row's scan_set hook (u.pf)
@@ -70,7 +70,7 @@ vm_start_row	WALK	NEXT (CR_VM)	asked on EVERY artifact for the VM_START_SCAN sta
 pcrec_vm_start_scan_name	PROJ	NEXT (CR_VM)	RX_VM_START_SCAN
 pcrec_emit_vm_start_seek	EMIT	NEXT N7	gated by the route read (has_dfa_scan): the VM hat runs only VM-ONLY
 dfa_cand_scan	READER	PRESENCE->NEXT	G1's read of NEXT's choice (route-dispatched; reads N12 on ATTEMPT: D-1)
-req_route_one_attempt	PRED	PRESENCE P2	re-spells BOUND on both routes (C5b reads BOUND)
+req_route_one_attempt	PRED	PRESENCE P2	[C5b] reads BOUND on each arm's own route through CAND_BOUND_ONE (CR_VM; CR_ATTEMPT from cand_route_of), where it re-spelled B1-B4
 req_byte_dominated_by	PRED	PRESENCE P3
 req_set_pick	PRED	PRESENCE P4 helper	the set pick (a pick inside a row)
 req_none_applies	PRED	PRESENCE P1
@@ -150,7 +150,7 @@ CandSlot	TYPE	every slot	[C2] the slot enum (core/internal.h; §1.2)
 cand_window_applies	PRED	WINDOW W1	[C2] the `w < 0` inline test as a predicate
 cand_ceiling_applies	PRED	WIDTH H1	[C2] the root-minw inline test as a predicate (reads CandSel.vm)
 cand_pred_memchr_applies	PRED	NEXT N12	[C2] attempt_cand by call, its CandSet discarded
-cand_rs_anchored_applies	PRED	RETRY R3	[C2] the old vm_reseed_holds' VRS_P_ANCHORED arm, its only definition since C5; restates BOUND(CR_VM) until C5b
+cand_rs_anchored_applies	PRED	RETRY R3	[C2] the old vm_reseed_holds' VRS_P_ANCHORED arm, its only definition since C5; [C5b] reads BOUND(CR_VM) through CAND_BOUND_ONE
 cand_rs_dense_applies	PRED	RETRY R4	[C2] the old vm_reseed_holds' VRS_P_DENSE arm, its only definition since C5 (reads CandSel.vm's gap)
 cand_bound_bot_applies	PRED	BOUND B1	[C2] emit_attempt's `anchored` (a_bot && a_gst, the PCREC_NO_GSTART fold)
 cand_bound_gstart_attempt_applies	PRED	BOUND B2	[C2] emit_attempt's `a_bot`
@@ -165,4 +165,7 @@ cand_window_clamps	WALK	WINDOW	[C5] the clamp's ask: cand_window_of, recorded (e
 pcrec_cand_select_vm	WALK	RETRY, WIDTH, BOUND (CR_VM)	[C5] the VM emitter's walk: cand_select on CAND_ROUTE_VM over CandVmFacts
 vm_width_row	WALK	WIDTH (CR_VM)	[C5] WIDTH's row, read by the root-minw test, <PREFIX>_VM_ROOT_MINW and --emit-ir's root-minw row
 vm_bound_row	WALK	BOUND (CR_VM)	[C5] BOUND's VM row, read by attempt_max and <PREFIX>_VM_START
+cand_read	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] THE SELECTION READ: a predicate of one slot asks another slot's row through cand_select, the edge checked against cand_nodes[].reads in the trace build; read by P2 (both arms), N7, R3 and N12 for BOUND
+CAND_READ	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] cand_read's spelling (the site a string literal)
+CAND_BOUND_ONE	WALK	BOUND (CR_ATTEMPT, CR_VM)	[C5b] BOUND's row admits one start position (u.bound.one != CAND_ONE_NONE), through CAND_READ: what P2, N7, R3 and N12 read where they restated B1-B4
 vm_cand_facts	PLAN	RETRY, WIDTH, BOUND (CR_VM)	[C2 trace-only; C5 unconditional] the Vm fields the VM rows read, as CandVmFacts

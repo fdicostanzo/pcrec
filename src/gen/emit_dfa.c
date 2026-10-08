@@ -8451,19 +8451,15 @@ void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
                   .route = CAND_ROUTE_VM, .vm = vm };
     cand_hit(slot, &s, r, site);
 }
-#endif /* PCREC_CAND_TRACE */
 
-/* [START-TABLE] C5b THE SELECTION READ (forward-declared at the top, with
- * `CAND_READ`/`CAND_BOUND_ONE`): `slot`'s row on `s->route`, for a predicate
- * of slot `reader`. In the trace build the edge is CHECKED: a read the slot
- * graph does not declare on that route aborts (`CANDORACLE undeclared-read`),
- * then the read prints its trace record (the `site` is the reader's own, so
- * the C1 trace diff can declare exactly these records) and its hit. */
-static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s,
-                                const char *site)
+/* [START-TABLE] C5b the selection read's CHECKED EDGE (`cand_read`, below):
+ * a read the slot graph does not declare on the read's route aborts
+ * (`CANDORACLE undeclared-read`); then the read prints its trace record
+ * (PCREC_CAND_TRACE_REC's format; the `site` is the reader's own, so the C1
+ * trace diff can declare exactly these records) and its hit. */
+static void cand_read_hit(CandSlot reader, CandSlot slot, const CandSel *s,
+                          const CandRow *r, const char *site)
 {
-    const CandRow *r = cand_select(slot, s, s->cx->opt->flags);
-#ifdef PCREC_CAND_TRACE
     if (!(cand_nodes[reader].reads[slot] & CAND_ON(s->route)))
         cand_oracle_fail("undeclared-read", cand_nodes[reader].name,
                          cand_nodes[slot].name, site);
@@ -8471,10 +8467,21 @@ static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s
         fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
                 CAND_ROUTE_NAME(s->route), r->tok, site);
     cand_hit(slot, s, r, site);
+}
+#define CAND_READ_HIT(reader, slot, sel, row, site)                           \
+    cand_read_hit((reader), (slot), (sel), (row), (site))
 #else
-    (void)reader;
-    (void)site;
-#endif
+#define CAND_READ_HIT(reader, slot, sel, row, site) ((void)(reader), (void)(site))
+#endif /* PCREC_CAND_TRACE */
+
+/* [START-TABLE] C5b THE SELECTION READ (forward-declared at the top, with
+ * `CAND_READ`/`CAND_BOUND_ONE`): `slot`'s row on `s->route`, for a predicate
+ * of slot `reader`; the trace build checks the edge (`cand_read_hit`). */
+static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s,
+                                const char *site)
+{
+    const CandRow *r = cand_select(slot, s, s->cx->opt->flags);
+    CAND_READ_HIT(reader, slot, s, r, site);
     return r;
 }
 

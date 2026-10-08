@@ -71,3 +71,9 @@ line	return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";	C3	
 line	if (cx->job->engine == PCREC_ENG_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }	C3	dfa_prefilter_offsets :10483 reads cand_route_of
 # [stc4, 2026-10-07] D148 Q2 SPELLING SWEEP rides C4 (ruled "C4 or C7", stc3_report.md §4 item 4): every `DfaSel` spelling in src/gen/emit_dfa.c (69) becomes `CandSel` and the C2 alias `typedef CandSel DfaSel` is deleted; C4 owns `req_handoff_applies`, whose signature S518-S521/S527 anchor on, so those five re-aims land with the commit that moves them (docs/dev/lanes/stc4_report.md §4)
 token	DfaSel	C4	D148 Q2 spelling sweep; the C2 alias deleted
+# [stc5b, 2026-10-08] C5b's own definitions, re-derived on the commit's diff (stc5_report.md §4 item 5's rule: name the text that CHANGES): the selection read, the slot graph's `reads` column and its self-check, and N12's predicate taking its CandSel (it reads BOUND on its own route); the five `line` rows above are C5b's restatements, all gone from src/
+def	cand_read	C5b	NEW: the selection read (a slot's predicate asks another slot's row through cand_select; the edge checked in the trace build), with CAND_READ/CAND_BOUND_ONE
+def	CandNode	C5b	gains `reads[]`, the per-route selection DAG of §1.3
+def	cand_nodes	C5b	declares PRESENCE->BOUND (CR_ATTEMPT, CR_VM), NEXT->BOUND (CR_ATTEMPT, CR_VM), RETRY->BOUND (CR_VM)
+def	cand_rows_selfcheck	C5b	also fails a read on a route its slot is never asked on, and a cycle in the reads
+def	attempt_cand	C5b	takes N12's CandSel (was the Dfa) so it reads BOUND(CR_ATTEMPT) on that selection
