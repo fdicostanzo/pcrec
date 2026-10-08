@@ -1896,6 +1896,15 @@ for the site.
 - pcrec stays arch-blind. No level name reaches `src/` (C4), and the
   only place a level is visible is the stamp's carried levels (§R4.3.3).
 
+**`[rev4.9]`** §R4.9.3 extends this section. A cascade is a SEPARATE
+row of the kit's form table, placed above the compile-time ladder's rows
+and guarded to x86-64 Linux/ELF with GNU C, where the compile-time top
+level is absent. It must beat the single-level row it displaces at the
+same `-march`, in both regimes. Its libgcc `__cpu_model` dependency is
+Q-R9-8. The compile-time LADDER (levels picked by predefined macros, no
+run-time test, no state) is the default way a SIMD row carries several
+levels. The first cascade is FILED with a probe as its trigger.
+
 ### R4.3.3 The stamp: Q39 as ruled, plus the libc record (addenda 3 and 6)
 
 **`<PREFIX>_MEMFN_FORMS`, on every artifact of both engines.**
@@ -1913,6 +1922,11 @@ for the site.
 - Because SIMD is off by default, every DEFAULT artifact reads `none`
   until R4f. Only `-fmemfn-simd` artifacts carry ids. M1 and every
   migration step remain zero stamp movers, as §18.3 intended.
+- **`[rev4.9]`** A compile-time ladder carries levels too, written the
+  same way and top-down (`vrun@w32+w16`, §R4.9.2). A ladder and a
+  cascade differ by form id (`vrun` vs `vrun-rt`), never by grammar.
+  Level tokens are the kit's `levels.def` stamp column: `w16`, `w32`,
+  widths rather than ISA names.
 
 **`<PREFIX>_MEMFN_LIBC`, the libc record (addendum 6), on every
 artifact.**
@@ -2981,6 +2995,15 @@ Two notes on the rows (revision 1's numbering):
   lifts (D122 addendum 3: "SWAR is fine"). It is also the first honest
   customer of the table, so the table is not built ahead of need (D77). A
   SWAR row needs a measured cell, like any optimization (D119).
+
+**`[rev4.9]`** Under delegation `SCAN_ROWS` is the kit's own form
+tables, `arms[]` and `rc_row`. SIMD forms are rows there, beside the
+scalar arms they displace. Each declares its layer, its ISA level
+(`memfn/src/levels.def`) and its own `--memfn=no-<row>` deny (§R4.9.2).
+pcrec keeps no form row for a delegated site (rev 3), so none of the
+rows above are pcrec's. Revision 1's `vec-verify` is batch 1's `vrun`
+rows (§R4.9.7). §2.5's "the fallback is the next row" survives as
+§R4.9.2's FLOOR RULE.
 
 ### 2.3 Per table: what joins, where, and what its emitter needs
 
@@ -4554,6 +4577,18 @@ obligations, carried into the kit's own design note at R4a:
   `ffl`'s 2xVW shape and not measured against 1x or 4x
   (`probes/twins/tb_r4b.c`). A label is a measurement's trigger, not a
   build order (D77).
+
+- **`[rev4.9]` K-6 and K-7, made concrete for the SIMD layer** (§R4.9).
+  - K-6: a cascade is a separate row, filed, with its trigger probe
+    (§R4.9.3).
+  - K-4/K-5: a SIMD row's acceptance is pcrec's G1 on the verdict box at
+    each live `-march` level, against the SIMD-off compile at the same
+    `-march` AND against the row it displaces (§R4.9.6). Each acceptance
+    is recorded in `tests/memfn/simd_accept.tsv`, and C19 turns a scalar
+    change into a re-read of the SIMD rows it touches.
+  - K-7: a SIMD form's vector width and short-path reach are DERIVED
+    (`levels.def`, `VW + T`). Its unroll and any cut-over above the reach
+    are measured in its alpha or left to the compiler (§R4.9.5 item 10).
 
 None of this reaches pcrec. pcrec's view of all of it is: the code came
 back, and its identity gates and bench say what changed.
@@ -6621,6 +6656,16 @@ comment tiers (BOILERPLATE's darwin timeouts).
   about execution. A cascading site (§R4.3.2) contributes one arm per
   carried level.
 
+- **`[rev4.9]`** The Linux dev box has no clang, so the `--target`
+  cross check above runs only where clang is installed. On the dev box,
+  C9 for the x86 levels is C9-x86 (§R4.9.8): every mover compiled by gcc
+  with the harness's `-Werror` at `-march=x86-64`, `x86-64-v3` and
+  `x86-64-v4`, with the live-arm count per level taken from `nm` of an
+  `-O0` object and held to `c9_floor`. Batch 1 has no aarch64 level
+  (addendum 8), so nothing needs an aarch64 target yet. C18 checks the
+  no-level target: the preprocessed text at `-mgeneral-regs-only` equals
+  the SIMD-off text.
+
 ### 17.4 Pins live under `tests/`, per arm (r3 F12, G-F8)
 
 - **C5's baseline pin is per ARM, not per artifact.** It lives at
@@ -7401,6 +7446,29 @@ text stays opt-in until R4f.
 >   **Prerequisites:** R4c (sites migrated); R4d where its sites are
 >   concerned (SIMD is measured against the current scalar).
 >   **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
+>
+>   **`[rev4.9]` R4e′ is REPLACED by §R4.9** (D147 addendum 11, request
+>   R-9). It now reads:
+>   - **What it is.** The SIMD layer as a PARALLEL path, delivered in
+>     BATCHES, each its own request. Capacity is 1 SIMD lane to 2
+>     migration lanes, and heavy slots go 2:1 through main, until M5′.
+>   - **Batch 1** (§R4.9.7): rows `vrun-w32`/`vrun-w16` for the
+>     pre-check composite's window run with no lead.
+>   - **Prerequisites:** R4c, M1b and R4g (landed); RQ-1 (`--memfn=`,
+>     pcrec-side); RQ-2 if Q-R9-3 is ruled (a); RQ-4 (the box's timing
+>     slot and floor). R4d is NOT a prerequisite: whichever of R4d and a
+>     SIMD batch lands second re-reads the other's layer (C19).
+>   - **Trigger:** D147 addendum 11, plus each batch's own evidence cell
+>     (batch 1: R-1 on union-select and mod-i). The old trigger "SIMD
+>     last" is superseded.
+>   - **The bar:** §R4.9.6.
+>   - **Q49 applies:** no abi bump at landing and no default byte moves.
+>     Pins, `test-axes` arms per level, C9-x86's floor, C18, C-SEL, C19,
+>     C11's FORMS half and the spec hunks are born in the batch's commit.
+>   - **The 16 B note above is re-read by §R4.9.1 F-R9-1.** At 16 B every
+>     R-1 `ffl` cell ran the scalar path, so its ±0.4-1.7 ns are
+>     placement, not AVX2. Short spans fall to the scalar floor by the
+>     derived reach (§R4.9.3).
 > - **R4f, the SIMD default flip** (`memfn-simd` `default_state` OFF →
 >   ON). Its OWN ruled abi event (addendum 7, D112 shape). After it, the
 >   DEFAULT artifact no longer promises to run on any target, and the
@@ -7408,6 +7476,11 @@ text stays opt-in until R4f.
 >   SIMD hold (D91/D119) lifted. **Trigger:** Frank's ruling. Its
 >   evidence is a Linux alpha in which SIMD-on beats the current scalar
 >   layer past the floor on mover cells, in both regimes.
+>   **`[rev4.9]`** Addendum 11 lifts the SIMD hold for the OPT-IN layer
+>   only. The default flip stays its own ruled event, so "the SIMD hold
+>   lifted" reads as "Frank rules the flip". Its evidence is the
+>   accepted rows' records (§R4.9.6) at the bench's DEFAULT recipe, where
+>   only the levels the default `-march` enables are live (Q-R9-2).
 > - **R4i, declared tokens (`--isa=`): WITHDRAWN as a pcrec axis**
 >   (addendum 6). A target level is a kit form question. Re-opened only
 >   by a ruling.
@@ -7473,6 +7546,10 @@ text stays opt-in until R4f.
 Renumbered from Q35. Revision 3's Q24-Q34 were never ruled, and each is
 re-derived below against the panel's findings rather than carried. §23.1
 maps them. Each question has a recommendation.
+
+> **`[rev4.9]`** Q-R9-1..8 (the SIMD layer's design pass) are OPEN. They
+> are listed with their recommendations in §R4.9.10, beside the
+> revision they belong to.
 
 > **`[rev4.2]` RULINGS (Frank, 2026-10-05, recorded with D147):**
 > - **Q35 RULED YES.** §8 as extended by §14 is the design of record,

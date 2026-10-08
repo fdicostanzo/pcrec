@@ -14,8 +14,14 @@
   refined form; N7 `pending`; `MEMFN_FORMS` attributed outside the
   artifact).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.8;
-read its §R4.8, then §R4.7, first). §R4.8 is M1b's contract (R-5:
+The design of record is `docs/design/memfn/integration.md` (rev 4.9;
+read its §R4.9, then §R4.8 and §R4.7, first). §R4.9 (R-9, lane r9d,
+2026-10-08) is the SIMD layer's design pass under D147 addendum 11.
+SIMD forms are ROWS of the kit's form tables, with a layer, an ISA level
+(`src/levels.def`, born with batch 1) and their own deny. A SIMD rendering
+is the SIMD-off rendering plus guarded text (the floor rule). The verdict
+regime and the per-row bar are there, with the first batch (`vrun-w32`/
+`vrun-w16`) and Q-R9-1..8 for Frank. §R4.8 is M1b's contract (R-5:
 `stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4). R4h prep (2026-10-08,
 Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
 counter; it also added the ADVANCE hooks' shape classes (fields.def) and

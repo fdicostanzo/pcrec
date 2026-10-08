@@ -172,6 +172,26 @@ its DESIGN record.**
   `MF_SITE_ABI` 3 → 4 bump; bit 43 crosses through one pcrec map table
   into every site's and the art's `denies`; the run-compare rows are the
   kit's (`mf_run_rows`). Read §R4.8, then §R4.7, first.
+  **REVISION 4.9 (lane r9d, 2026-10-08), the SIMD layer's design pass
+  (request R-9, D147 addendum 11)**:
+  - `SCAN_ROWS` is the kit's own form tables (`arms[]`, `rc_row`), and
+    SIMD forms are rows with a layer, an ISA level (`memfn/src/levels.def`)
+    and their own deny.
+  - THE FLOOR RULE: a SIMD-on rendering is the SIMD-off rendering plus
+    guarded text (check C18, by the preprocessor at `-mgeneral-regs-only`).
+  - Short spans fall to the next rung by a derived reach; the run-time
+    cascade is a separate, filed row.
+  - The verdict regime covers the box, the core and its SMT sibling, the
+    consumer's `-march`, one binary per arm, and a placement control.
+  - The acceptance bar is per row and per live level, against the SIMD-off
+    compile at the same `-march` and against the row it displaces. Records
+    go in `tests/memfn/simd_accept.tsv`, and C19 re-opens them.
+  - First batch: the pre-check composite's window run with no lead.
+  - Seven findings in R-1 and the box facts (F-R9-1: R-1's 16 B column
+    ran the scalar path in every cell).
+  - Q-R9-1..8 are open for Frank; RQ-1..5 are pcrec-side requests.
+
+  Read §R4.9 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify
