@@ -881,16 +881,15 @@ static void emit_predicate_axes(StrBuf *sb)
                          pcrec_look_rows[i].applies_desc);
     }
     /* [OPT-HYB-RESEED] hyb-reseed — §2.35, the VM hybrid's retry re-seed;
-     * its rows WALKED LIVE off `pcrec_reseed_rows` (src/gen/emit_vm.c), so
-     * this surface cannot state a predicate the emitter does not ask. The
-     * row's NAME is the RX_VM_RESEED value it stamps. */
+     * its rows WALKED LIVE off `pcrec_reseed_row` (since [START-TABLE] C5 the
+     * RETRY rows of `cand_rows[]`, src/gen/emit_dfa.c), so this surface
+     * cannot state a predicate the emitter does not ask. The row's NAME is
+     * the RX_VM_RESEED value it stamps. */
     {
         PredAxis p = { "hyb-reseed", NULL, "RX_VM_RESEED", "", 0, NULL, 0, NULL, NULL, NULL };
-        for (int i = 0; i < pcrec_reseed_nrows; i++)
-            emit_pred_row(sb, &p, i + 1, pcrec_reseed_rows[i].name,
-                         pcrec_reseed_rows[i].name,
-                         pcrec_reseed_rows[i].deny, 0, "",
-                         pcrec_reseed_rows[i].applies_desc);
+        PcrecReseedDesc r;
+        for (int i = 0; pcrec_reseed_row(i, &r); i++)
+            emit_pred_row(sb, &p, i + 1, r.name, r.name, r.deny, 0, "", r.desc);
     }
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */

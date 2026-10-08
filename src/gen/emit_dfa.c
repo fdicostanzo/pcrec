@@ -295,42 +295,26 @@ static const char *dfa_search_start_name(Ctx *cx);
  * `strcmp(name, "pinned")` grows anywhere as a second reading. */
 static bool dfa_search_is_pinned(Ctx *cx);
 
-/* [START-TABLE] C2 the both-walks ORACLE's two halves (defined beside
- * `cand_rows[]`, far below), forward-declared because the old decisions they
- * check sit above it. Trace build only: in the default build each hook is
- * `(void)0` and evaluates nothing (start_table.md §3.3 item 6). `_PRE`
- * declares `var` and, in a -DPCREC_CAND_NEW_FIRST build, walks first; `_POST`
- * walks (if `_PRE` did not) and aborts unless the walk chose what the old
- * decision did. The `_IN` pair is for an INLINE decision, which has no
- * `CandSel` of its own; `site` must be a string literal, as the trace's.
- * `CAND_HIT` (C3) is the hit counter alone, at a reader whose slot's old
- * walk is gone; `CAND_HIT_EVERY` (C4) also holds the row to be the one every
- * other route the slot is asked on chooses (the entry slots, asked on one). */
-typedef struct CandRow CandRow;
+/* [START-TABLE] the trace build's HIT COUNTER at a start-table reader
+ * (defined beside `cand_rows[]`, far below), forward-declared because the
+ * readers sit above it. Trace build only: in the default build each hook is
+ * `(void)0` and evaluates nothing (start_table.md §3.3 item 6). `CAND_HIT`
+ * (C3) runs the table's structural self-check and prints a `CANDROW` line
+ * naming the row the reader used; `CAND_HIT_EVERY` (C4) also holds the row to
+ * be the one every other route the slot is asked on chooses (the entry slots,
+ * asked on one). `site` must be a string literal, as the trace's. Since C5
+ * every slot's readers ask the table and nothing else, so the C2 both-walks
+ * ORACLE's halves, which compared the table with an old decision, are gone
+ * with the last old decision. */
 struct CandSel;
 /* [START-TABLE] C3 THE WALK over `cand_rows[]` (defined beside the table,
- * far below), forward-declared because its NEXT and RECOVER readers sit
- * above it. */
+ * far below), forward-declared because its readers sit above it. */
 static const CandRow *cand_select(CandSlot slot, const struct CandSel *s, uint64_t flags);
+/* [START-TABLE] C5 does the end-window clamp apply: WINDOW's selection, made
+ * beside the table (the row type is complete only there) for the clamp's
+ * reader above it, which it records. */
+static bool cand_window_clamps(Ctx *cx);
 #ifdef PCREC_CAND_TRACE
-static const CandRow *cand_oracle_pre(CandSlot slot, const struct CandSel *s);
-static void cand_oracle_post(const CandRow *pre, CandSlot slot, const struct CandSel *s,
-                             const void *old_row, const char *old_tok,
-                             const char *site, bool every);
-static const CandRow *cand_oracle_pre_in(CandSlot slot, Ctx *cx, int route,
-                                         const Dfa *d, const CandVmFacts *vm);
-static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int route,
-                                const Dfa *d, const CandVmFacts *vm,
-                                const char *old_tok, const char *site, bool every);
-#define CAND_ORACLE_PRE(var, slot, sel)                                       \
-    const CandRow *var = cand_oracle_pre((slot), (sel))
-#define CAND_ORACLE_POST(var, slot, sel, old_row, old_tok, site)              \
-    cand_oracle_post((var), (slot), (sel), (old_row), (old_tok), "" site, false)
-#define CAND_ORACLE_PRE_IN(var, slot, cx, route, d)                           \
-    const CandRow *var = cand_oracle_pre_in((slot), (cx), (route), (d), NULL)
-#define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
-    cand_oracle_post_in((var), (slot), (cx), (route), (d), NULL, (old_tok),   \
-                        "" site, (every))
 static void cand_hit(CandSlot slot, const struct CandSel *s, const CandRow *r,
                      const char *site);
 #define CAND_HIT(slot, sel, row, site) cand_hit((slot), (sel), (row), "" site)
@@ -339,11 +323,6 @@ static void cand_hit_every(CandSlot slot, const struct CandSel *s, const CandRow
 #define CAND_HIT_EVERY(slot, sel, row, site)                                  \
     cand_hit_every((slot), (sel), (row), "" site)
 #else
-#define CAND_ORACLE_PRE(var, slot, sel) ((void)0)
-#define CAND_ORACLE_POST(var, slot, sel, old_row, old_tok, site) ((void)sizeof("" site))
-#define CAND_ORACLE_PRE_IN(var, slot, cx, route, d) ((void)0)
-#define CAND_ORACLE_POST_IN(var, slot, cx, route, d, old_tok, site, every)    \
-    ((void)sizeof("" site))
 #define CAND_HIT(slot, sel, row, site) ((void)sizeof("" site))
 #define CAND_HIT_EVERY(slot, sel, row, site) ((void)sizeof("" site))
 #endif
@@ -989,12 +968,8 @@ void pcrec_emit_start_zero(Ctx *cx, StrBuf *c, const char *indent,
 void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar)
 {
-    CAND_ORACLE_PRE_IN(ck, CAND_SLOT_WINDOW, cx, CAND_ROUTE_DFA, NULL);
+    if (!cand_window_clamps(cx)) return;
     long long w = pcrec_fact_end_window(cx);
-    PCREC_CAND_TRACE_REC("WINDOW", "-", w < 0 ? "none" : "window", "end-window");
-    CAND_ORACLE_POST_IN(ck, CAND_SLOT_WINDOW, cx, CAND_ROUTE_DFA, NULL,
-                        w < 0 ? "none" : "window", "end-window", true);
-    if (w < 0) return;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
         "%s/* [OPT-ENDWIN] every match of this pattern ends at the subject's\n"
@@ -5009,6 +4984,13 @@ typedef struct CandRecover {
     bool pinned;
 } CandRecover;
 
+/* [START-TABLE] C5 THE WINDOW SLOT's PAYLOAD, `CandRow.u.window`: whether
+ * the entry raises the start to the end window's bound. The bound's VALUE is
+ * the `end_window` fact's (the landmark); the row says whether it is used. */
+typedef struct CandWindow {
+    bool clamp;
+} CandWindow;
+
 /* [START-TABLE] C4 THE PRESENCE SLOT's PAYLOAD, `CandRow.u.admit` (was
  * `ReqAdmitRow`'s fields): the admission verdict the row answers, which
  * `req_why_name` renders as `<PREFIX>_REQ_WHY`, and the row's predicate in
@@ -5047,8 +5029,10 @@ typedef struct CandList {
  * emitters, because the forms read a NEXT row's payload through `DfaForm.pf`.
  * `u` is the slot's payload: C3 moved NEXT's (`u.pf`, was `DfaPf`) and
  * RECOVER's (`u.recover`) in, C4 PRESENCE's (`u.admit`, was `ReqAdmitRow`)
- * and FIRST's (`u.use`, was `ReqUseRow`); C5 moves the others' as it deletes
- * their tables. */
+ * and FIRST's (`u.use`, was `ReqUseRow`), C5 RETRY's (`u.reseed`, was
+ * `PcrecReseedRow`), and the inline decisions' as rows read by their readers:
+ * WINDOW's (`u.window`), WIDTH's (`u.width`) and BOUND's (`u.bound`, the
+ * `start_max`/`attempt_max` texts). */
 struct CandRow {
     DfaCand        c;          /* identity, deny bits, predicate */
     CandSlot       slot;       /* the question this row answers */
@@ -5059,16 +5043,15 @@ struct CandRow {
     unsigned       hands;      /* CT_* handed to the slot's successors */
     CandList       list[3];    /* indexed by CandRoute */
     union {
+        CandWindow  window;    /* WINDOW */
         CandAdmit   admit;     /* PRESENCE */
+        CandWidth   width;     /* WIDTH */
         CandUse     use;       /* FIRST */
         CandPf      pf;        /* NEXT */
+        CandReseed  reseed;    /* RETRY */
+        CandBound   bound;     /* BOUND */
         CandRecover recover;   /* RECOVER */
     } u;
-    /* THE ORACLE's link to today's table row this row restates, compared by
-     * POINTER; NULL for an inline decision and for the slots whose old table
-     * is gone (NEXT and RECOVER since C3, PRESENCE and FIRST since C4).
-     * Deleted with the last old table (C5). */
-    const void    *was;
 };
 
 /* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
@@ -7764,23 +7747,23 @@ static bool dfa_search_is_pinned(Ctx *cx)
  * Since C4 it decides PRESENCE and FIRST too: `req_admits[]` and
  * `req_uses[]` are deleted into it (`u.admit`/`u.use`), `req_admit` and
  * `req_use` walk it, and `pcrec_req_admit_row`/`pcrec_req_use_row` project
- * it for `--list-axes`. The last old table (`pcrec_reseed_rows[]`) and the
- * inline decisions still decide their slots; C5 switches those readers and
- * deletes what it replaces. Until then the trace build (-DPCREC_CAND_TRACE)
- * asks `cand_select` beside every remaining old decision and aborts where
- * the two choose differently (the both-walks oracle at the end of this
- * section, §3.3 item 6); at a reader whose old decision is gone, where
- * nothing is left to compare, it runs the table self-check and counts the
- * hit (`cand_hit`). A walked row's predicate IS the old row's
- * function, by pointer, so the oracle tests the FILTER: slot, route mask,
- * deny order, first match. An inline decision has no old function, and its
- * row's predicate is the inline condition written once as a function (§2.3
- * item 1); there the oracle also tests that.
+ * it for `--list-axes`. Since C5 IT DECIDES EVERY SLOT: the last old table,
+ * `pcrec_reseed_rows[]` (src/gen/emit_vm.c), is deleted into the RETRY rows
+ * (`u.reseed`; `pcrec_reseed_row` projects them), and the inline decisions
+ * read their slot's row — the end-window clamp WINDOW's, the VM entry's
+ * root-minw test WIDTH's, `emit_attempt`'s `start_max` and the VM's
+ * `attempt_max` BOUND's (`u.bound` carries their text) — and so do their
+ * stamps and listing rows (`<PREFIX>_END_WINDOW`, `_VM_START`,
+ * `_VM_ROOT_MINW`, `--emit-ir`'s `root-minw`). An inline decision's row
+ * predicate is the inline condition written once as a function (§2.3 item
+ * 1). The C2 both-walks oracle had nothing left to compare and is gone; the
+ * trace build (-DPCREC_CAND_TRACE) runs the table's structural self-check
+ * and counts the hit at every reader (`cand_hit`, §3.4).
  *
- * NOT YET HERE, each with the commit that brings it: the other slots' payload
- * `u` (C4-C5, as each old table's own fields move in), the `--list-axes`
- * `desc` (C6), and the `landmark`/`scan`/`hat`/`stamp` columns, which no check
- * or reader asks for before C6. */
+ * NOT YET HERE, each with the commit that brings it: the `--list-axes`
+ * `desc` as one column (C6; the payloads that had one carry it until then),
+ * and the `landmark`/`scan`/`hat`/`stamp` columns, which no check or reader
+ * asks for before C6. */
 
 /* What a row HANDS the next slot and what a node ACCEPTS (§1.6), one bit per
  * handoff type so both are sets. */
@@ -7881,9 +7864,13 @@ static bool cand_pred_memchr_applies(const CandSel *s)
     return attempt_cand(s->d, s->cand ? s->cand : &cs);
 }
 
-/* R1-R4: `vm_reseed_holds`' four tagged arms, each as its own predicate. */
+/* R1-R4: the hybrid retry's four predicates (the tagged arms of the old
+ * `vm_reseed_holds` switch, one function each). R4 asks the candidate rate
+ * only when the walk reaches it, so an exact hybrid never records the ask. */
 static bool cand_rs_exact_applies(const CandSel *s) { return s->vm->mrl_win; }
 static bool cand_rs_clamped_applies(const CandSel *s) { return s->vm->nclamp > 0; }
+/* R3: the fact the VM's `attempt_max` reads (B3/B4), so the row and the bound
+ * it relies on are one derivation; `-fno-vm-anchor-bound` empties both. */
 static bool cand_rs_anchored_applies(const CandSel *s)
 { return pcrec_fact_start_anchor(s->cx) != PCREC_SANCH_NONE; }
 static bool cand_rs_dense_applies(const CandSel *s)
@@ -7916,16 +7903,24 @@ static bool cand_bound_gstart_vm_applies(const CandSel *s)
 #define CR_ATTEMPT CAND_ON(CAND_ROUTE_ATTEMPT)
 #define CR_VM      CAND_ON(CAND_ROUTE_VM)
 
+/* B3, B4: the VM attempt loop's bound declaration, ONE line for both anchored
+ * values ([OPT-ANCHOR-VM]): `anchored` means every match begins at offset 0
+ * and `gstart` at `search_from`, and either way at most one start position can
+ * match and the loop has tried it by the time its test runs. The stamp
+ * (`<PREFIX>_VM_START`) is what tells the two apart. */
+#define CAND_VM_BOUND_ONE "    const size_t attempt_max = search_from;\n"
+
 /* THE TABLE: the 37 rows of §2.2 in first-match order, one block per slot in
  * `CandSlot` order. Within a block the rows keep their old table's (or old
  * if/else chain's) order, so the first match is today's on every route
- * (§2.3 item 2). `was` indexes the old tables by position: a reorder there
- * that is not mirrored here is an oracle abort, which is the point. */
+ * (§2.3 item 2). */
 static const CandRow cand_rows[] = {
-    /* WINDOW (§2.2; today `pcrec_emit_end_window_clamp`) */
+    /* WINDOW (§2.2; read by `pcrec_emit_end_window_clamp` and the
+     * `<PREFIX>_END_WINDOW` stamp) */
     { .c = { "window", 0, cand_window_applies }, .slot = CAND_SLOT_WINDOW,
       .routes = CAND_ALL_ROUTES, .tok = "window", .map = CM_WINDOWLO, .hands = CT_LOWER,
-      .list = { [CAND_ROUTE_DFA] = { "end-window", 1, "window" } } },
+      .list = { [CAND_ROUTE_DFA] = { "end-window", 1, "window" } },
+      .u.window = { .clamp = true } },
     { .c = { "window-none", 0, cand_always }, .slot = CAND_SLOT_WINDOW,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "end-window", 2, "none" } } },
@@ -7959,8 +7954,10 @@ static const CandRow cand_rows[] = {
       .u.admit = { REQ_ADMIT_EMITTED,
                    "always (fallback): the pre-check on the req_byte fact, or the run search where a run shipped" } },
 
-    /* WIDTH (today the VM entry's root-minw test; no listing) */
+    /* WIDTH (read by the VM entry's root-minw test, its `<PREFIX>_VM_ROOT_MINW`
+     * stamp and `--emit-ir`'s `root-minw` row; no `--list-axes` listing) */
     { .c = { "ceiling", 0, cand_ceiling_applies }, .slot = CAND_SLOT_WIDTH,
+      .u.width = { .check = true },
       .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,
       .hands = CT_VERDICT },
     { .c = { "width-none", 0, cand_always }, .slot = CAND_SLOT_WIDTH,
@@ -8074,52 +8071,95 @@ static const CandRow cand_rows[] = {
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "none" } },
       .u.pf = { .scan = PF_SCAN_NONE } },
 
-    /* RETRY (today `pcrec_reseed_rows[]`, asked only behind a prefilter) */
+    /* RETRY (`pcrec_reseed_rows[]` until C5; asked only behind a prefilter,
+     * by `vm_plan_reseed`). `exact` stays first and undeniable because nothing
+     * may make an exact-language hybrid's retry adaptive: its clamped form's
+     * window END is live (D51 ruling 2) and a step would carry it stale.
+     * `clamped` is undeniable for the CONTRACT's sake: past it, an adaptive
+     * retry runs a subset of the attempts today's retry runs, so a give-up can
+     * become an answer and never the reverse; on a clamped hybrid today's
+     * retry already re-seeds after every failure, a step block would ADD
+     * attempts, and the measured gain was mixed (r1 panel sem F1,
+     * docs/dev/reseed/clamped.md). `anchored` is undeniable for `exact`'s
+     * reason, the choice does not exist: under a `start_anchor` fact the
+     * attempt loop's bound (`attempt_max`, [OPT-ANCHOR-VM]) returns after the
+     * first failed attempt, so the retry is never reached and an adaptive tail
+     * would be dead text that gcc cannot prove dead — the seed comes from the
+     * prefilter ([OPT-HYB-RESEED-FORM] A1, docs/design/xcall.md §4). The two
+     * adaptive rows run ONE machine and differ only in the starting state
+     * their payload names: `adaptive-dense` starts inside a capped step block
+     * that is armed, `adaptive` starts with the class's `first` probation,
+     * unarmed. */
     { .c = { "exact", 0, cand_rs_exact_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "exact", .map = CM_STEP, .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 1, "exact" } },
-      .was = &pcrec_reseed_rows[0] },
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
+                    "the prefilter answers for the pattern's own language (no cut, no "
+                    "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
+                    "today's retry, the clamp recompute where an MRL clamp exists, else a step" } },
     { .c = { "clamped", 0, cand_rs_clamped_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "clamped", .map = CM_RESEED, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 2, "clamped" } },
-      .was = &pcrec_reseed_rows[1] },
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
+                    "an MRL clamp exists, so today's retry already re-seeds after every "
+                    "failed attempt: kept, because a step block would add attempts it "
+                    "skips (an answer could become a give-up) for a gain measured mixed" } },
     { .c = { "retry-anchored", 0, cand_rs_anchored_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 3, "anchored" } },
-      .was = &pcrec_reseed_rows[2] },
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
+                    "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
+                    "fact), so the attempt loop stops after its first attempt and no "
+                    "retry runs: today's retry, whose text is never reached" } },
     { .c = { "adaptive-dense", PCREC_NO_HYB_RESEED, cand_rs_dense_applies },
       .slot = CAND_SLOT_RETRY, .routes = CR_VM, .tok = "adaptive-dense", .map = CM_ADAPT,
       .giveup = CG_ONE_WAY, .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 4, "adaptive-dense" } },
-      .was = &pcrec_reseed_rows[3] },
+      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_CAP, true,
+                    "the compile's byte-rate prior (the built-in default under -e byte, "
+                    "cardinality where the prior is NONE) puts the candidate scan's byte "
+                    "set at a mean gap under the class's calibrated crossover: adaptive, "
+                    "starting inside an armed step block" } },
     { .c = { "adaptive", PCREC_NO_HYB_RESEED, cand_always }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT, .giveup = CG_ONE_WAY,
       .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 5, "adaptive" } },
-      .was = &pcrec_reseed_rows[4] },
+      .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_FIRST, false,
+                    "always, on an over-approximating prefilter: adaptive, starting with a "
+                    "short step probation, then re-seed mode" } },
     { .c = { "fixed", 0, cand_always }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "fixed", .map = CM_STEP, .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 6, "fixed" } },
-      .was = &pcrec_reseed_rows[5] },
+      .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false,
+                    "always (fallback, the deny's landing row): today's retry" } },
 
-    /* BOUND (today `emit_attempt`'s `start_max` and the VM's `attempt_max`;
-     * an ATTEMPT hybrid asks it on BOTH routes, D-2b) */
+    /* BOUND (read by `emit_attempt`'s `start_max` on the ATTEMPT route and the
+     * VM entry's `attempt_max` and `<PREFIX>_VM_START` on the VM route; an
+     * ATTEMPT hybrid asks it on BOTH routes, D-2b). The VM's two anchored rows
+     * share ONE emitted bound: the attempt this search already began is the
+     * only one that can match, so the loop stops after it. */
     { .c = { "bot", 0, cand_bound_bot_applies }, .slot = CAND_SLOT_BOUND,
-      .routes = CR_ATTEMPT, .tok = "bot", .map = CM_ONE, .hands = CT_UPPER },
+      .routes = CR_ATTEMPT, .tok = "bot", .map = CM_ONE, .hands = CT_UPPER,
+      .u.bound = { .one = CAND_ONE_ZERO, .start_max = "0 /* fully ^-anchored */" } },
     { .c = { "attempt-gstart", 0, cand_bound_gstart_attempt_applies },
       .slot = CAND_SLOT_BOUND, .routes = CR_ATTEMPT, .tok = "gstart", .map = CM_ONE,
-      .hands = CT_UPPER },
+      .hands = CT_UPPER,
+      .u.bound = { .one = CAND_ONE_FROM,
+                   .start_max = "search_from /* fully \\G-anchored */" } },
     { .c = { "vm-anchored", 0, cand_bound_anchored_vm_applies }, .slot = CAND_SLOT_BOUND,
       .routes = CR_VM, .tok = "anchored", .map = CM_ONE, .giveup = CG_ONE_WAY,
       .hands = CT_UPPER,
-      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 1, "anchored" } } },
+      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 1, "anchored" } },
+      .u.bound = { .one = CAND_ONE_ZERO, .attempt_max = CAND_VM_BOUND_ONE } },
     { .c = { "vm-gstart", 0, cand_bound_gstart_vm_applies }, .slot = CAND_SLOT_BOUND,
       .routes = CR_VM, .tok = "gstart", .map = CM_ONE, .giveup = CG_ONE_WAY,
       .hands = CT_UPPER,
-      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 2, "gstart" } } },
+      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 2, "gstart" } },
+      .u.bound = { .one = CAND_ONE_FROM, .attempt_max = CAND_VM_BOUND_ONE } },
     { .c = { "all", 0, cand_always }, .slot = CAND_SLOT_BOUND,
       .routes = CR_ATTEMPT | CR_VM, .tok = "all", .map = CM_NONE, .hands = CT_UPPER,
-      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 3, "unanchored" } } },
+      .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 3, "unanchored" } },
+      .u.bound = { .one = CAND_ONE_NONE, .start_max = "subject_length" } },
 
     /* RECOVER (`dfa_search_starts[]` until C3). `-fno-start-pinned` is a
      * `deny` FIELD on the first row, D82's shape: the flag REMOVES the row and
@@ -8140,9 +8180,8 @@ static const CandRow cand_rows[] = {
  * that is routed for `s->route`, and whose predicate holds. The route is
  * `s->route` alone, never a second parameter that could disagree with it.
  * Every (slot, asked route) ends in an undeniable `cand_always` row, so NULL
- * is unreachable (the trace build's self-check holds it). Since C3 it decides
- * NEXT and RECOVER; the other slots' readers still walk their old tables
- * (C4-C5), with this walk beside them under the trace build's oracle. */
+ * is unreachable (the trace build's self-check holds it). Since C5 it is the
+ * only start decision: every slot's readers ask it and nothing else. */
 static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flags)
 {
     for (size_t i = 0; i < CAND_NROWS; i++) {
@@ -8156,24 +8195,25 @@ static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flag
 }
 
 #ifdef PCREC_CAND_TRACE
-/* ---- [START-TABLE] C2 THE BOTH-WALKS ORACLE (trace build only) ----------
+/* ---- [START-TABLE] THE HIT COUNTER (trace build only) ------------------
  *
- * At every old start decision the trace build ALSO asks `cand_select` for the
- * same (slot, route) and aborts unless it chose the same row: the old row by
- * POINTER where the decision is a table walk, and the trace spelling `tok`
- * always. It runs in BOTH ORDERS (§3.3 item 6), because a predicate's first
- * ask has side effects (the byte-rate prior records it, a fact marks itself
- * used) that the second walk then sees cached: the default trace build asks
- * the old decision first, -DPCREC_CAND_NEW_FIRST asks `cand_select` first.
+ * C2 built a both-walks ORACLE here: at every old start decision the trace
+ * build also asked `cand_select` and aborted where the two chose
+ * differently, in both orders (-DPCREC_CAND_NEW_FIRST). C3-C5 deleted the old
+ * decisions one slot at a time, and since C5 nothing is left to compare, so
+ * what stays is the table's STRUCTURAL SELF-CHECK and the per-row HIT
+ * COUNTER at every reader (`cand_hit`), plus the entry slots' cross-route
+ * check (`cand_hit_every`). A checked reader prints one extra stderr line,
+ * `CANDROW <slot> <route> <identity> <site>` (§3.4), which the trace tooling
+ * ignores (it reads `CANDTRACE` lines only) and
+ * `tests/codegen/run_cand_oracle.sh` reads to hold every row REACHED by its
+ * witness.
  *
- * The oracle's walk runs QUIET (`pcrec_cand_trace_quiet`), so a predicate
- * that walks prints no extra record and is not itself re-checked; the record
- * stream stays C1's. A checked decision prints one extra stderr line,
- * `CANDROW <slot> <route> <identity> <site>`, the per-row hit counter (§3.4),
- * which the trace tooling ignores (it reads `CANDTRACE` lines only). A
+ * The cross-route walks run QUIET (`pcrec_cand_trace_quiet`), so a predicate
+ * that walks prints no extra record and the record stream stays C1's. A
  * predicate that longjmps inside a quiet walk leaves the depth raised; that
- * ends the compile in both orders alike, and a later compile in the same
- * process would print no records, which the trace floor catches. */
+ * ends the compile, and a later compile in the same process would print no
+ * records, which the trace floor catches. */
 _Thread_local int pcrec_cand_trace_quiet;
 
 /* `cand_select` with records suppressed and the compile's own deny mask. */
@@ -8241,76 +8281,11 @@ static void cand_rows_selfcheck(void)
         }
 }
 
-/* The oracle's FIRST half, asked before the old decision: in a
- * -DPCREC_CAND_NEW_FIRST build, `cand_select`'s row (so its predicates ask
- * first); otherwise NULL and the second half walks. */
-static const CandRow *cand_oracle_pre(CandSlot slot, const CandSel *s)
-{
-#ifdef PCREC_CAND_NEW_FIRST
-    if (!pcrec_cand_trace_quiet) return cand_select_quiet(slot, s);
-#endif
-    (void)slot;
-    (void)s;
-    return NULL;
-}
-
-/* The oracle's SECOND half, after the old decision chose `old_row` (a table
- * row, or NULL for an inline decision) spelled `old_tok`: aborts unless
- * `cand_select` chose the same, then prints the hit-counter line. `every`
- * also checks every OTHER route the slot is asked on (a decision shared by
- * the routes, WINDOW's). A nested ask inside a quiet walk checks nothing. */
-static void cand_oracle_post(const CandRow *pre, CandSlot slot, const CandSel *s,
-                             const void *old_row, const char *old_tok,
-                             const char *site, bool every)
-{
-    if (pcrec_cand_trace_quiet) return;
-    cand_rows_selfcheck();
-    const CandRow *nw = pre ? pre : cand_select_quiet(slot, s);
-    if (!nw)
-        cand_oracle_fail("no-row", cand_nodes[slot].name, old_tok, site);
-    if (strcmp(nw->tok, old_tok) || (old_row && nw->was != old_row))
-        cand_oracle_fail("row-differs", old_tok, nw->c.name, site);
-    fprintf(stderr, "CANDROW\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
-            CAND_ROUTE_NAME(s->route), nw->c.name, site);
-    if (!every) return;
-    for (int rt = 0; rt < 3; rt++) {
-        CandSel o = *s;
-        if (rt == s->route || !(cand_nodes[slot].asks & CAND_ON(rt))) continue;
-        o.route = rt;
-        nw = cand_select_quiet(slot, &o);
-        if (!nw || strcmp(nw->tok, old_tok))
-            cand_oracle_fail("row-differs-on-route", old_tok,
-                             nw ? nw->c.name : "(none)", site);
-    }
-}
-
-/* The oracle's halves for an INLINE decision, which holds no `CandSel`:
- * built here from the machine `d` (ENG_ATTEMPT's) and the VM facts `vm`,
- * either NULL where its slot's predicates read neither. A NULL `cx` (N12's
- * site, `attempt_cand`, which has none) walks with no deny bits, exact for
- * the two rows that route there, neither of which carries one. */
-static const CandRow *cand_oracle_pre_in(CandSlot slot, Ctx *cx, int route,
-                                         const Dfa *d, const CandVmFacts *vm)
-{
-    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
-                 .route = route, .vm = vm };
-    return cand_oracle_pre(slot, &s);
-}
-
-static void cand_oracle_post_in(const CandRow *pre, CandSlot slot, Ctx *cx, int route,
-                                const Dfa *d, const CandVmFacts *vm,
-                                const char *old_tok, const char *site, bool every)
-{
-    CandSel s = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
-                 .route = route, .vm = vm };
-    cand_oracle_post(pre, slot, &s, NULL, old_tok, site, every);
-}
-
-/* [START-TABLE] C3 THE HIT COUNTER where a slot's old walk is gone (NEXT and
- * RECOVER): nothing is left to compare against, so the check is the table's
- * structural self-check plus the `CANDROW` line naming the row the reader
- * used, which `tests/codegen/run_cand_oracle.sh` reads to hold every row
- * REACHED by its witness. Silent inside a quiet walk, as the oracle is. */
+/* [START-TABLE] C3 THE HIT COUNTER at a reader whose slot has no old walk
+ * (every slot since C5): the table's structural self-check plus the
+ * `CANDROW` line naming the row the reader used, which
+ * `tests/codegen/run_cand_oracle.sh` reads to hold every row REACHED by its
+ * witness. Silent inside a quiet walk. */
 static void cand_hit(CandSlot slot, const CandSel *s, const CandRow *r, const char *site)
 {
     if (pcrec_cand_trace_quiet) return;
@@ -8321,12 +8296,13 @@ static void cand_hit(CandSlot slot, const CandSel *s, const CandRow *r, const ch
             CAND_ROUTE_NAME(s->route), r->c.name, site);
 }
 
-/* [START-TABLE] C4 the hit counter at an ENTRY slot's reader (PRESENCE,
- * FIRST): the body asks once, on CAND_ROUTE_DFA (the route the C1 trace
- * records), though the slot is asked on every route (§2.3's route classes).
- * That is honest only while the slot's choice does not depend on the route,
- * so this also walks every other asked route, quietly, and aborts on a
- * different row: WINDOW's `every`, kept now that the old walk is gone. */
+/* [START-TABLE] C4 the hit counter at an ENTRY slot's reader (WINDOW since
+ * C5, PRESENCE, FIRST): the body asks once, on CAND_ROUTE_DFA (the route the
+ * C1 trace records), though the slot is asked on every route (§2.3's route
+ * classes). That is honest only while the slot's choice does not depend on
+ * the route, so this also walks every other asked route, quietly, and aborts
+ * on a different row (the C2 oracle's `every` check on WINDOW, kept as the
+ * entry slots' rule). */
 static void cand_hit_every(CandSlot slot, const CandSel *s, const CandRow *r,
                            const char *site)
 {
@@ -8344,20 +8320,67 @@ static void cand_hit_every(CandSlot slot, const CandSel *s, const CandRow *r,
     }
 }
 
-const void *pcrec_cand_oracle_vm_pre(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
-{
-    return cand_oracle_pre_in(slot, cx, CAND_ROUTE_VM, NULL, vm);
-}
-
-void pcrec_cand_oracle_vm_post(Ctx *cx, const void *pre, CandSlot slot,
-                               const CandVmFacts *vm, const void *old_row,
-                               const char *old_tok, const char *site)
+/* `cand_hit` for a VM-route reader in src/gen/emit_vm.c, which holds no
+ * `CandSel`: built here from the VM facts `vm`, as `pcrec_cand_select_vm`
+ * builds the selection itself. */
+void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
+                       const CandRow *r, const char *site)
 {
     CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
-                 .route = CAND_ROUTE_VM, .vm = vm };
-    cand_oracle_post(pre, slot, &s, old_row, old_tok, site, false);
+                  .route = CAND_ROUTE_VM, .vm = vm };
+    cand_hit(slot, &s, r, site);
 }
 #endif /* PCREC_CAND_TRACE */
+
+/* ---- [START-TABLE] C5 THE INLINE DECISIONS' AND THE VM's READERS --------
+ *
+ * WINDOW is asked on CAND_ROUTE_DFA, the route the C1 trace records, for
+ * C4's reason (stc4_report.md §4 item 1): the entry is asked on every route,
+ * and `cand_route_of` cannot derive the VM's. Every WINDOW row is routed on
+ * all three, and the trace build holds the choice route-independent
+ * (`cand_hit_every`). */
+
+/* WINDOW's row for this compile, with no trace record: the one selection the
+ * clamp (through `cand_window_clamps`) and the `<PREFIX>_END_WINDOW` stamp
+ * read. */
+static const CandRow *cand_window_of(Ctx *cx, CandSel *s)
+{
+    *s = (CandSel){ .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                    .route = CAND_ROUTE_DFA };
+    return cand_select(CAND_SLOT_WINDOW, s, cx->opt->flags);
+}
+
+/* Does the entry clamp its start to the end window: WINDOW's row, recorded
+ * (the C1 trace's `end-window` record, and the hit). */
+static bool cand_window_clamps(Ctx *cx)
+{
+    CandSel s;
+    const CandRow *r = cand_window_of(cx, &s);
+    PCREC_CAND_TRACE_REC("WINDOW", "-", r->tok, "end-window");
+    CAND_HIT_EVERY(CAND_SLOT_WINDOW, &s, r, "end-window");
+    return r->u.window.clamp;
+}
+
+/* The VM emitter's walk: `cand_select` on the VM route over the `Vm` facts
+ * it holds (core/internal.h). */
+const CandRow *pcrec_cand_select_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm)
+{
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_VM, .vm = vm };
+    return cand_select(slot, &s, cx->opt->flags);
+}
+
+/* The row's spelling (trace record, `<PREFIX>_VM_RESEED`). */
+const char *pcrec_cand_tok(const CandRow *r) { return r->tok; }
+
+/* The row's `--list-axes` name on `route`, NULL where it has none. */
+const char *pcrec_cand_listed(const CandRow *r, CandRoute route)
+{ return r->list[route].axis ? r->list[route].name : NULL; }
+
+/* The RETRY, BOUND and WIDTH payloads, for the VM emitter's readers. */
+const CandReseed *pcrec_cand_reseed(const CandRow *r) { return &r->u.reseed; }
+const CandBound *pcrec_cand_bound(const CandRow *r) { return &r->u.bound; }
+const CandWidth *pcrec_cand_width(const CandRow *r) { return &r->u.width; }
 
 /* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
  *
@@ -8469,6 +8492,19 @@ bool pcrec_req_use_row(int i, PcrecReqUseDesc *out)
     out->deny  = r->c.deny;
     out->stamp = r->u.use.use == REQ_USE_HANDOFF ? "" : "none";
     out->desc  = r->u.use.desc;
+    return true;
+}
+
+/* [START-TABLE] C5 the `hyb-reseed` axis's rows are `cand_rows[]`'s RETRY
+ * rows, as `pcrec_req_admit_row`'s are PRESENCE's; the listed name is the
+ * `<PREFIX>_VM_RESEED` value the row stamps. False past the last. */
+bool pcrec_reseed_row(int i, PcrecReseedDesc *out)
+{
+    const CandRow *r = cand_listed_row(CAND_SLOT_RETRY, i);
+    if (!r) return false;
+    out->name = cand_listed_name(r);
+    out->deny = r->c.deny;
+    out->desc = r->u.reseed.desc;
     return true;
 }
 
@@ -9874,14 +9910,16 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * On a `\G`-free machine `s1g[] == s1u[]` entry for entry, so the middle
      * row is unreachable and the two surviving rows are the pre-wave
      * `anchored ? "0" : "n"` character for character. */
-    CAND_ORACLE_PRE_IN(ck, CAND_SLOT_BOUND, cx, CAND_ROUTE_ATTEMPT, d);
-    bool a_bot = dfa_interior_dead(d, d->s1u);
-    bool a_gst = dfa_interior_dead(d, d->s1g);
-#ifdef PCREC_NO_GSTART
-    a_gst = a_bot;   /* the reference build's third `start_max` string is
-                      * unreachable — see the knob's comment above */
-#endif
-    bool anchored = a_bot && a_gst;
+    /* [START-TABLE] C5 the three rows are BOUND's on CAND_ROUTE_ATTEMPT (B1
+     * `bot`, B2 `gstart`, B5 `all`), in the chain's order; B1's predicate
+     * carries the PCREC_NO_GSTART reference build's fold, so there the
+     * middle row is unreachable as before. `a_bot` (s1u dead) holds on the
+     * first two rows, `anchored` on the first: the row's `u.bound.one`. */
+    CandSel bsel = { .cx = cx, .d = d, .us = NULL, .forward = true, .st = -1,
+                     .route = CAND_ROUTE_ATTEMPT };
+    const CandRow *bound = cand_select(CAND_SLOT_BOUND, &bsel, cx->opt->flags);
+    bool a_bot = bound->u.bound.one != CAND_ONE_NONE;
+    bool anchored = bound->u.bound.one == CAND_ONE_ZERO;
 
     /* [OPT-ANCHOR-VM] THE AGREEMENT ASSERTION, and it runs in ONE DIRECTION
      * BY DESIGN. The `start_anchor` fact (src/facts/startanch.c) is the AST-level
@@ -9909,14 +9947,10 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             "the caller's startpos, but this machine has a live interior "
             "start state");
 
-    PCREC_CAND_TRACE_REC("BOUND", "attempt", anchored ? "bot" : a_bot ? "gstart" : "all",
-                         "attempt-bound");
-    CAND_ORACLE_POST_IN(ck, CAND_SLOT_BOUND, cx, CAND_ROUTE_ATTEMPT, d,
-                        anchored ? "bot" : a_bot ? "gstart" : "all", "attempt-bound", false);
+    PCREC_CAND_TRACE_REC("BOUND", CAND_ROUTE_NAME(bsel.route), bound->tok, "attempt-bound");
+    CAND_HIT(CAND_SLOT_BOUND, &bsel, bound, "attempt-bound");
     pcrec_sb_printf(c, "    size_t start;\n"
-                 "    const size_t start_max = %s;\n",
-              anchored ? "0 /* fully ^-anchored */"
-                       : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
+                 "    const size_t start_max = %s;\n", bound->u.bound.start_max);
     pcrec_sb_printf(c, "    for (start = %s; start <= start_max; start++) {\n", first);
 
     /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the
@@ -10643,9 +10677,17 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * absence, and absence here would mean "declined" and "built by a pcrec
      * too old to have the analysis" identically. */
     /* [PATFACTS] the value is the `end_window` fact's ONE renderer
-     * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
-    pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",
-                       pcrec_fact_stamp(cx, PF_END_WINDOW));
+     * (src/facts/facts.c), the spelling `--emit-facts` prints too.
+     * [START-TABLE] C5 the stamp PROJECTS WINDOW's row, the selection the
+     * clamp reads: the window (from its landmark) where the row clamps, the
+     * row's listed name (`none`) where it does not. */
+    {
+        CandSel ws;
+        const CandRow *wr = cand_window_of(cx, &ws);
+        pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",
+                           wr->u.window.clamp ? pcrec_fact_stamp(cx, PF_END_WINDOW)
+                                              : cand_listed_name(wr));
+    }
     /* [OPT-REQBYTE] `<PREFIX>_REQ_BYTE` — THE BYTE EVERY MATCH MUST CONTAIN.
      * A §6.3 family-(a) SELECTION FACT for `<PREFIX>_END_WINDOW`'s reason,
      * in the same place and the same shape: a string with a `"none"` member,

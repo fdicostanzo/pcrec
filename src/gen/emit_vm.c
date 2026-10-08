@@ -9324,6 +9324,10 @@ static void vm_prow(StrBuf *o, const char *label, const char *op,
     pcrec_sb_row(o, cells, 5);
 }
 
+/* [START-TABLE] C5 WIDTH's row, read by the listing below and by the search
+ * entry's test and stamp (defined beside the reseed calibration, far below). */
+static const CandRow *vm_width_row(const Vm *v);
+
 /* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
  * from the emitted `.c`, so byte-identity gates over the artifact say
  * nothing about this function and it has its own arm
@@ -9539,8 +9543,10 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * analysis ceiling -- the debug-listing half of the artifact stamp
      * `<PREFIX>_VM_ROOT_MINW`, off the SAME `root_minw` value the emitted
      * guard is built from. Below the ceiling there is nothing to report that
-     * the `pruning` section does not already say per quantifier. */
-    if (st->root_minw >= PCREC_MINW_MAX)
+     * the `pruning` section does not already say per quantifier.
+     * [START-TABLE] C5 listed where WIDTH's row (H1 `ceiling`) is, the
+     * selection the guard and the stamp read. */
+    if (pcrec_cand_width(vm_width_row(v))->check)
         vm_row3(o, "root-minw", vm_rolef(v, "%lld", st->root_minw),
                 "unbounded -- matches nothing: the search entry answers NOMATCH"
                 " before any frame is pushed (SS4.4b's fixpoint, SS12 P-12)");
@@ -11033,63 +11039,13 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
  * (~25 ns on the Mac, about constant), stepping costs one failed VM attempt
  * per character (1.6 ns frameless to 8.6 ns framed, measured).
  *
- * The predicates are a CLOSED tag set evaluated by one exhaustive switch
- * (`vm_reseed_holds`), clskit's `ROWS` shape; the actions likewise. */
-enum { VRS_P_EXACT, VRS_P_CLAMPED, VRS_P_ANCHORED, VRS_P_DENSE, VRS_P_TRUE };
-enum { VRS_A_FIXED, VRS_A_ADAPT };
-enum { VRS_S_NONE, VRS_S_FIRST, VRS_S_CAP };
-
-/* The first-match table. The walk skips a row whose deny bit is set or whose
- * predicate fails; the last row is undeniable and always holds. `exact`
- * stays first and undeniable because nothing may make an exact-language
- * hybrid's retry adaptive: its clamped form's window END is live (D51
- * ruling 2) and a step would carry it stale. `clamped` is undeniable for
- * the CONTRACT's sake: past it, an adaptive retry runs a subset of the
- * attempts today's retry runs, so a give-up can become an answer and never
- * the reverse; on a clamped hybrid today's retry already re-seeds after
- * every failure, a step block would ADD attempts, and the measured gain was
- * mixed (r1 panel sem F1, docs/dev/reseed/clamped.md). `anchored` is
- * undeniable for `exact`'s reason, the choice does not exist: under a
- * `start_anchor` fact the attempt loop's bound (`attempt_max`,
- * [OPT-ANCHOR-VM]) returns after the first failed attempt, so the retry is
- * never reached and an adaptive tail would be dead text that gcc cannot
- * prove dead — the seed comes from the prefilter ([OPT-HYB-RESEED-FORM]
- * A1, docs/design/xcall.md §4). The two adaptive rows run ONE
- * machine and differ only in the starting state their last two columns
- * name: `adaptive-dense` starts inside a capped step block that is armed,
- * `adaptive` starts with the class's `first` probation, unarmed. */
-const PcrecReseedRow pcrec_reseed_rows[] = {
-    { "exact", 0,
-      "the prefilter answers for the pattern's own language (no cut, no "
-      "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
-      "today's retry, the clamp recompute where an MRL clamp exists, else a step",
-      VRS_P_EXACT, VRS_A_FIXED, VRS_S_NONE, false },
-    { "clamped", 0,
-      "an MRL clamp exists, so today's retry already re-seeds after every "
-      "failed attempt: kept, because a step block would add attempts it "
-      "skips (an answer could become a give-up) for a gain measured mixed",
-      VRS_P_CLAMPED, VRS_A_FIXED, VRS_S_NONE, false },
-    { "anchored", 0,
-      "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
-      "fact), so the attempt loop stops after its first attempt and no "
-      "retry runs: today's retry, whose text is never reached",
-      VRS_P_ANCHORED, VRS_A_FIXED, VRS_S_NONE, false },
-    { "adaptive-dense", PCREC_NO_HYB_RESEED,
-      "the compile's byte-rate prior (the built-in default under -e byte, "
-      "cardinality where the prior is NONE) puts the candidate scan's byte "
-      "set at a mean gap under the class's calibrated crossover: adaptive, "
-      "starting inside an armed step block",
-      VRS_P_DENSE, VRS_A_ADAPT, VRS_S_CAP, true },
-    { "adaptive", PCREC_NO_HYB_RESEED,
-      "always, on an over-approximating prefilter: adaptive, starting with a "
-      "short step probation, then re-seed mode",
-      VRS_P_TRUE, VRS_A_ADAPT, VRS_S_FIRST, false },
-    { "fixed", 0,
-      "always (fallback, the deny's landing row): today's retry",
-      VRS_P_TRUE, VRS_A_FIXED, VRS_S_NONE, false },
-};
-const int pcrec_reseed_nrows =
-    (int)(sizeof pcrec_reseed_rows / sizeof pcrec_reseed_rows[0]);
+ * The choice is the RETRY rows of the one start table `cand_rows[]`
+ * (src/gen/emit_dfa.c, since [START-TABLE] C5; before it this file's
+ * `pcrec_reseed_rows[]`, whose predicates were a closed tag set read by an
+ * exhaustive switch): `exact`, `clamped`, `anchored`, `adaptive-dense`,
+ * `adaptive`, `fixed`, in first-match order, each row's action and starting
+ * state in its `u.reseed` (core/internal.h `CandReseed`). The table carries
+ * each row's reason; `vm_plan_reseed` asks it. */
 
 /* The measured calibration, one row per program class (hyb_reseed.md §3),
  * indexed by `has_push`. `gap` and `first` (frameless) are measured
@@ -11121,14 +11077,11 @@ static const VmReseedCal vm_reseed_cal[2] = {
     {  4, 16,   64,  2 },  /* framed: a slot write, a trail entry, a push, a pop */
 };
 
-/* [START-TABLE] C2 the both-walks oracle's hooks at this file's three start
- * decisions (RETRY, WIDTH, BOUND on the VM route; src/gen/emit_dfa.c's
- * `cand_oracle_post` is the check). Trace build only: in the default build
- * each is `(void)0` and evaluates nothing. `VM_CAND_PRE` declares `var` and
- * the `Vm` facts the rows read; `VM_CAND_POST` aborts unless `cand_select`
- * chose what the old decision did — `old_row` by pointer (a
- * `pcrec_reseed_rows[]` row) or NULL, and `old_tok` by its trace spelling. */
-#ifdef PCREC_CAND_TRACE
+/* [START-TABLE] C5 THE START TABLE's VM-ROUTE QUESTIONS. This file asks
+ * three slots of `cand_rows[]` (src/gen/emit_dfa.c) on the VM route — RETRY
+ * (`vm_plan_reseed`), WIDTH (`vm_width_row`) and BOUND (`vm_bound_row`) —
+ * over the `Vm` facts their rows read. */
+
 /* The `CandVmFacts` of `v`: the fields H1, R1, R2 and R4 read. */
 static CandVmFacts vm_cand_facts(const Vm *v)
 {
@@ -11136,47 +11089,53 @@ static CandVmFacts vm_cand_facts(const Vm *v)
                           .nclamp = v->nclamp, .has_push = v->has_push,
                           .reseed_gap = vm_reseed_cal[v->has_push].gap };
 }
-#define VM_CAND_PRE(var, v, slot)                                             \
-    CandVmFacts var##_vm = vm_cand_facts(v);                                  \
-    const void *var = pcrec_cand_oracle_vm_pre((v)->cx, (slot), &var##_vm)
-#define VM_CAND_POST(var, v, slot, old_row, old_tok, site)                    \
-    pcrec_cand_oracle_vm_post((v)->cx, var, (slot), &var##_vm, (old_row),     \
-                              (old_tok), "" site)
+
+/* The trace build's hit counter at a VM reader (emit_dfa.c's `cand_hit`); in
+ * the default build `(void)0`, evaluating nothing. */
+#ifdef PCREC_CAND_TRACE
+#define VM_CAND_HIT(v, slot, row, site)                                       \
+    do {                                                                      \
+        CandVmFacts hit_vm_ = vm_cand_facts(v);                               \
+        pcrec_cand_hit_vm((v)->cx, (slot), &hit_vm_, (row), "" site);         \
+    } while (0)
 #else
-#define VM_CAND_PRE(var, v, slot) ((void)0)
-#define VM_CAND_POST(var, v, slot, old_row, old_tok, site) ((void)sizeof("" site))
+#define VM_CAND_HIT(v, slot, row, site) ((void)sizeof("" site))
 #endif
+
+/* WIDTH's row for this program (H1 `ceiling` where the root minimum width is
+ * at the analysis ceiling, else H2): the one selection the search entry's
+ * root-minw test, the `<PREFIX>_VM_ROOT_MINW` stamp and the `--emit-ir`
+ * listing's `root-minw` row read. No trace record (the test's site prints
+ * it). */
+static const CandRow *vm_width_row(const Vm *v)
+{
+    CandVmFacts f = vm_cand_facts(v);
+    return pcrec_cand_select_vm(v->cx, CAND_SLOT_WIDTH, &f);
+}
+
+/* BOUND's row on the VM route (B3 `anchored`, B4 `gstart` under the
+ * `start_anchor` fact, else B5 `all`): the one selection the attempt loop's
+ * `attempt_max` and the `<PREFIX>_VM_START` stamp read. No trace record (the
+ * loop's site prints it). */
+static const CandRow *vm_bound_row(const Vm *v)
+{
+    CandVmFacts f = vm_cand_facts(v);
+    return pcrec_cand_select_vm(v->cx, CAND_SLOT_BOUND, &f);
+}
 
 /* The decision `vm_plan_reseed` hands the stamp and the search body. */
 typedef struct {
-    const PcrecReseedRow *row;          /* NULL: no prefilter, nothing to decide */
+    const CandRow *row;                 /* NULL: no prefilter, nothing to decide */
     VmReseedCal cal;                    /* the class calibration the text spells */
     unsigned steps0, block0;            /* the row's starting state, resolved */
 } VmReseed;
 
-/* Does predicate `p` hold for this hybrid? The candidate rate is asked only
- * when a row reaches it, so an exact hybrid never records the ask. */
-static bool vm_reseed_holds(const Vm *v, const VmReseed *rs, unsigned char p)
-{
-    switch (p) {
-    case VRS_P_EXACT: return v->mrl_win;
-    case VRS_P_CLAMPED: return v->nclamp > 0;
-    /* The fact `att_max` reads, so the row and the bound it relies on are
-     * one derivation; `-fno-vm-anchor-bound` empties both together. */
-    case VRS_P_ANCHORED:
-        return pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE;
-    case VRS_P_DENSE:
-        return (unsigned long long)pcrec_dfa_cand_ppm(v->cx) * rs->cal.gap > 1000000ull;
-    case VRS_P_TRUE:  return true;
-    }
-    return false;
-}
-
-/* Chooses the hybrid retry's re-seed row and its calibration into `rs`.
+/* Chooses the hybrid retry's re-seed row (RETRY's, on the VM route) and its
+ * calibration into `rs`.
  *
  * READS `job->fit.prefilter` (the flag `prefn` is built from), `v->mrl_win`,
- * `v->has_push` and the deny mask; the dense row asks the candidate scan's
- * rate. Emits nothing.
+ * `v->nclamp`, `v->has_push` and the deny mask; the dense row asks the
+ * candidate scan's rate. Emits nothing.
  *
  * THE INVARIANT A CALLER MUST NOT BREAK: it runs after `vm_plan_entry`
  * (`has_push` is final there) and before the first stamp, because
@@ -11186,19 +11145,14 @@ static void vm_plan_reseed(Vm *v, VmReseed *rs)
     memset(rs, 0, sizeof *rs);
     if (!v->cx->job->fit.prefilter) return;
     rs->cal = vm_reseed_cal[v->has_push];
-    VM_CAND_PRE(ck, v, CAND_SLOT_RETRY);
-    for (int i = 0; i < pcrec_reseed_nrows; i++) {
-        const PcrecReseedRow *r = &pcrec_reseed_rows[i];
-        if (r->deny & v->cx->opt->flags) continue;
-        if (!vm_reseed_holds(v, rs, r->pred)) continue;
-        rs->row = r;
-        PCREC_CAND_TRACE_REC("RETRY", "vm", r->name, "reseed");
-        VM_CAND_POST(ck, v, CAND_SLOT_RETRY, r, r->name, "reseed");
-        rs->steps0 = r->start == VRS_S_CAP ? rs->cal.cap
-                   : r->start == VRS_S_FIRST ? rs->cal.first : 0;
-        rs->block0 = r->armed ? rs->cal.block : 0;
-        return;
-    }
+    CandVmFacts f = vm_cand_facts(v);
+    rs->row = pcrec_cand_select_vm(v->cx, CAND_SLOT_RETRY, &f);
+    const CandReseed *u = pcrec_cand_reseed(rs->row);
+    PCREC_CAND_TRACE_REC("RETRY", "vm", pcrec_cand_tok(rs->row), "reseed");
+    VM_CAND_HIT(v, CAND_SLOT_RETRY, rs->row, "reseed");
+    rs->steps0 = u->start == CAND_RS_S_CAP ? rs->cal.cap
+               : u->start == CAND_RS_S_FIRST ? rs->cal.first : 0;
+    rs->block0 = u->armed ? rs->cal.block : 0;
 }
 
 /* Writes the artifact's STAMPS: the `#define <PREFIX>_…` block a consumer, a
@@ -11405,11 +11359,12 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
             pcrec_sb_stamp_str(c, v->up, "VM_PREFILTER_LANG_WHY", "exact");
             break;
         }
-        /* [OPT-HYB-RESEED] AND WHAT THE RETRY DOES WITH IT: the name of the
-         * `pcrec_reseed_rows` row that fired, decided once in
-         * `vm_plan_reseed`. Gated with its two neighbours for their reason —
-         * with no prefilter there is nothing for a retry to re-ask. */
-        pcrec_sb_stamp_str(c, v->up, "VM_RESEED", rs->row->name);
+        /* [OPT-HYB-RESEED] AND WHAT THE RETRY DOES WITH IT: the spelling of
+         * the RETRY row that fired (`cand_rows[]`, src/gen/emit_dfa.c),
+         * decided once in `vm_plan_reseed`. Gated with its two neighbours for
+         * their reason — with no prefilter there is nothing for a retry to
+         * re-ask. */
+        pcrec_sb_stamp_str(c, v->up, "VM_RESEED", pcrec_cand_tok(rs->row));
     }
     /* [DD-13c] (r37 #6) A HYBRID ALSO STAMPS THE SCAN IT INLINES, and this is
      * the finding stated as code: `RX_VM_PREFILTER "hybrid"` says a DFA scan is
@@ -11495,8 +11450,10 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * rather than a string because the emitted guard READS it: a stamp the
      * artifact only talks about can drift from the artifact's behaviour,
      * and this one cannot. The accompanying comment is the SR-8-shaped
-     * sentence a reader greps for ("matches nothing"). */
-    if (v->root_minw >= PCREC_MINW_MAX) {
+     * sentence a reader greps for ("matches nothing"). [START-TABLE] C5 the
+     * condition is WIDTH's row, the selection the test reads; the value
+     * stays its landmark's (`root_minw`). */
+    if (pcrec_cand_width(vm_width_row(v))->check) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
@@ -11634,9 +11591,12 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * attempts the artifact would have run and FAILED cannot change an
      * answer, so no differential, no oracle and no corpus cell can see a
      * plant that emits the unbounded form. The stamp and the emitted bound
-     * come from one variable three lines apart for exactly that reason. */
+     * read one selection for exactly that reason: [START-TABLE] C5 BOUND's
+     * row on the VM route (`vm_bound_row`), whose listed name IS this
+     * vocabulary (`anchored`, `gstart`, `unanchored`, the `start_anchor`
+     * fact's spelling on the two anchored rows). */
     pcrec_sb_stamp_str(c, v->up, "VM_START",
-                       pcrec_fact_stamp(v->cx, PF_START_ANCHOR));
+                       pcrec_cand_listed(vm_bound_row(v), CAND_ROUTE_VM));
     pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)en->program_bytes);
@@ -13268,11 +13228,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * `attempt_position` (litscan_k82h.md Claim 2'). */
     const char *first = pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from",
                                                   "subject", "subject_length");
-    VM_CAND_PRE(ckw, v, CAND_SLOT_WIDTH);
-    PCREC_CAND_TRACE_REC("WIDTH", "vm", v->root_minw >= PCREC_MINW_MAX ? "ceiling" : "none",
-                         "root-minw");
-    VM_CAND_POST(ckw, v, CAND_SLOT_WIDTH, NULL,
-                 v->root_minw >= PCREC_MINW_MAX ? "ceiling" : "none", "root-minw");
+    const CandRow *width = vm_width_row(v);
+    PCREC_CAND_TRACE_REC("WIDTH", "vm", pcrec_cand_tok(width), "root-minw");
+    VM_CAND_HIT(v, CAND_SLOT_WIDTH, width, "root-minw");
 
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
@@ -13315,8 +13273,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * MEASURED: of the 2,568 distinct `pattern` lines under tests/, exactly
      * four reach the ceiling -- `^((?1)a)$`, `^(a?(?1)b)$`, the indirect
      * cycle, and mrl.rxt's `^(?:(?<g>a(?&g)b)){0}(?&g)$` -- and every one of
-     * them is call-bearing, so no call-free artifact gains a byte. */
-    if (v->root_minw >= PCREC_MINW_MAX)
+     * them is call-bearing, so no call-free artifact gains a byte.
+     * [START-TABLE] C5 the condition is WIDTH's row (H1 `ceiling`). */
+    if (pcrec_cand_width(width)->check)
         pcrec_sb_printf(c,
             "    /* The whole pattern's MINIMUM WIDTH is at the analysis\n"
             "     * ceiling (%s_VM_ROOT_MINW). Where the remaining subject\n"
@@ -13411,7 +13370,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * the attempts it runs are a subset of the ones today's step runs. */
     const char *retry_seed = retry_win;
     const char *reseed_decl = "";
-    if (rs->row && rs->row->action != VRS_A_FIXED) {
+    if (rs->row && pcrec_cand_reseed(rs->row)->action != CAND_RS_A_FIXED) {
         if (v->nclamp > 0)
             pcrec_ctx_fail(v->cx, 0, "internal error: an adaptive re-seed row "
                            "fired on a clamped hybrid, which the table keeps "
@@ -13553,16 +13512,14 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * before this mechanism, which is what makes `-fno-vm-anchor-bound`'s
      * sweep a real control rather than a comparison of two new shapes. */
     const char *att_max = "subject_length";
-    VM_CAND_PRE(ckb, v, CAND_SLOT_BOUND);
-    PCREC_CAND_TRACE_REC("BOUND", "vm",
-                         pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_BOT ? "anchored"
-                         : pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_GSTART ? "gstart"
-                         : "all", "vm-bound");
-    VM_CAND_POST(ckb, v, CAND_SLOT_BOUND, NULL,
-                 pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_BOT ? "anchored"
-                 : pcrec_fact_start_anchor(v->cx) == PCREC_SANCH_GSTART ? "gstart"
-                 : "all", "vm-bound");
-    if (pcrec_fact_start_anchor(v->cx) != PCREC_SANCH_NONE) {
+    /* [START-TABLE] C5 BOUND's row on the VM route decides; the bound's
+     * declaration line is the row's (`u.bound.attempt_max`, one text for
+     * B3 and B4), and the comment names the fact's value (the landmark). */
+    const CandRow *bound = vm_bound_row(v);
+    const CandBound *ub = pcrec_cand_bound(bound);
+    PCREC_CAND_TRACE_REC("BOUND", "vm", pcrec_cand_tok(bound), "vm-bound");
+    VM_CAND_HIT(v, CAND_SLOT_BOUND, bound, "vm-bound");
+    if (ub->attempt_max) {
         att_max = "attempt_max";
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
@@ -13570,7 +13527,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             "     * position can match, so there is no second attempt. */\n",
             pcrec_start_anchor_name(pcrec_fact_start_anchor(v->cx)));
         pcrec_sb_cmt_close(c);
-        pcrec_sb_puts(c, "    const size_t attempt_max = search_from;\n");
+        pcrec_sb_puts(c, ub->attempt_max);
     }
 
     pcrec_sb_printf(c,
