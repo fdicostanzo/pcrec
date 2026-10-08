@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# perfrun — run `make ... test` under a MEASURED parallelism shape ([TT-JTUNE]).
+# A heavy chain calls this in place of its raw `make -k -jN -Otarget test` line:
+#
+#   scripts/perfrun --label decfbB1 -- "$L/test.log" [MAKEVAR=val ...]
+#
+# It (1) picks a shape (J = make -j, P = PROCS) from scripts/perfrun.shapes —
+# the least-sampled one in the ledger — or takes --shape J,P; (2) runs
+# `gnutimeout 2700 make -k -jJ -Otarget [vars] test` with PROCS=P, output to
+# LOG, BYTE-IDENTICAL to a run without the measurement; (3) samples CPU
+# utilisation and per-section start/end beside it; (4) records ONE ledger row;
+# (5) prints a short verdict note (also in LOG.perfrun) and EXITS WITH MAKE'S rc
+# UNCHANGED — the chain's verdict is exactly what the raw line would have given.
+#
+# Options (before the `--`):  --label L (required)  --shape J,P  --timeout S
+#   (default 2700)  --target T (default test; one word)
+# Other modes:  scripts/perfrun --fold    (in the MAIN tree: move new per-run
+#   files from build/perf/ttune/ into docs/dev/ttune_ledger.tsv + ttune_ledger.d/)
+#   scripts/perfrun --next    (print the shape the rotation would pick, run nothing)
+#
+# WHERE THE DATA GOES (no merge conflicts between lanes): every run writes
+# per-run files <main tree>/build/perf/ttune/<run_id>.{row.tsv,samples.tsv,
+# sections.tsv} — an ABSOLUTE path in the main tree's gitignored build/, found
+# from any worktree via `git rev-parse --git-common-dir`; it survives the lane's
+# worktree being pruned. The manager runs `scripts/perfrun --fold` in main to
+# commit them. docs/dev/ttune_measurement.md has the triage rule and the columns.
+set -u
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(git rev-parse --show-toplevel) || exit 125
+main=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)
+store=$main/build/perf/ttune
+ledger=$main/docs/dev/ttune_ledger.tsv
+HDR='run_id	date	tree	label	J	P	wall_s	cpu_s	rc	sect_err	k44_1807	k44_cpucap	load1_start	contam	red_class	mean_busy	nproc'
+
+# ---- ledger reading: count UNCONTAMINATED rows per "J P" (rows from the committed
+# ledger + the not-yet-folded per-run files, de-duplicated by run_id) ----
+shape_counts() {
+    { [ -f "$ledger" ] && grep -v '^run_id' "$ledger"
+      cat "$store"/*.row.tsv 2>/dev/null; } | awk -F'\t' '!seen[$1]++ && $14=="no" {c[$5" "$6]++} END {for (k in c) print k, c[k]}'
+}
+pick_shape() {
+    local counts line j p n best="" bestn=999999
+    counts=$(shape_counts)
+    while read -r j p _; do
+        case "$j" in ''|'#'*) continue ;; esac
+        n=$(awk -v k="$j $p" '$1" "$2==k {print $3}' <<<"$counts"); n=${n:-0}
+        if [ "$n" -lt "$bestn" ]; then best="$j,$p"; bestn=$n; fi
+    done < "$here/perfrun.shapes"
+    echo "$best"
+}
+
+if [ "${1:-}" = "--next" ]; then pick_shape; exit 0; fi
+
+if [ "${1:-}" = "--fold" ]; then
+    [ "$root" = "$main" ] || { echo "perfrun --fold: run it in the MAIN tree ($main)" >&2; exit 2; }
+    mkdir -p "$root/docs/dev/ttune_ledger.d"
+    [ -f "$ledger" ] || printf '%s\n' "$HDR" > "$ledger"
+    n=0
+    for r in "$store"/*.row.tsv; do
+        [ -e "$r" ] || continue
+        id=$(cut -f1 "$r")
+        grep -q "^$id	" "$ledger" && continue
+        cat "$r" >> "$ledger"; n=$((n+1))
+        for ext in samples.tsv sections.tsv; do
+            [ -f "$store/$id.$ext" ] && cp "$store/$id.$ext" "$root/docs/dev/ttune_ledger.d/"
+        done
+    done
+    echo "perfrun --fold: $n row(s) appended to docs/dev/ttune_ledger.tsv; per-run files in docs/dev/ttune_ledger.d/ (git add them)"
+    exit 0
+fi
+
+label="" shape="" tmo=2700 target=test
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --label) label=$2; shift 2 ;;
+        --shape) shape=$2; shift 2 ;;
+        --timeout) tmo=$2; shift 2 ;;
+        --target) target=$2; shift 2 ;;
+        --) shift; break ;;
+        *) echo "perfrun: unknown option $1 (usage: perfrun --label L [--shape J,P] -- LOG [make vars])" >&2; exit 125 ;;
+    esac
+done
+[ -n "$label" ] && [ $# -ge 1 ] || { echo "usage: perfrun --label L [--shape J,P] [--timeout S] -- LOG [make vars]" >&2; exit 125; }
+log=$1; shift
+how=override
+if [ -z "$shape" ]; then shape=$(pick_shape); how="rotation (least-sampled uncontaminated)"; fi
+J=${shape%,*} P=${shape#*,}
+case "$J$P" in *[!0-9]*|'') echo "perfrun: bad shape '$shape' (want J,P)" >&2; exit 125 ;; esac
+
+mkdir -p "$store"
+nproc_=$(nproc)
+tree=$(git rev-parse --short=8 HEAD)$(git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null || echo +dirty)
+id=$(date +%Y%m%dT%H%M%S)_${label}_j${J}p${P}
+samples=$store/$id.samples.tsv sections=$store/$id.sections.tsv stopf=$store/$id.stop
+load1=$(cut -d' ' -f1 /proc/loadavg)
+probe=$(PERF_ROOT=$root "$here/cpusample.sh" --probe 2)
+pre_busy=${probe%%	*} pre_other=${probe#*	}
+say() { printf '%s\n' "$*" | tee -a "$log.perfrun"; }
+: > "$log.perfrun"
+say "perfrun: $label  shape make -j$J PROCS=$P  [$how]  tree $tree  nproc $nproc_  load1 $load1  pre-busy ${pre_busy}%  other-trees $pre_other"
+
+rm -f "$stopf"
+PERF_ROOT=$root "$here/cpusample.sh" "$samples" "$stopf" 15 &
+spid=$!
+t0=$(date +%s.%N)
+PROCS=$P gnutimeout "$tmo" make --debug=j -k -j"$J" -Otarget "$@" $target 2>&1 \
+    | python3 "$here/sectiontimes" stamp "$sections.raw" > "$log"
+rc=${PIPESTATUS[0]}
+t1=$(date +%s.%N)
+times > "$store/$id.times"   # in-shell redirect: `times | x` would run in a subshell and read 0
+cpu=$(tail -1 "$store/$id.times" | awk '{split($1,a,"[ms]"); split($2,b,"[ms]"); printf "%.0f", a[1]*60+a[2]+b[1]*60+b[2]}')
+: > "$stopf"; wait "$spid" 2>/dev/null; rm -f "$stopf"
+wall=$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.0f", b-a}')
+
+# section start/end TSV (cheap: parse the side file only)
+python3 "$here/sectiontimes" report "$sections.raw" > "$sections" 2>/dev/null; rm -f "$sections.raw"
+
+# ---- classify ----
+secerr=$(grep -cE '\*\*\* \[(Makefile:[0-9]+: )?test-' "$log")
+errnames=$(grep -oE '\*\*\* \[(Makefile:[0-9]+: )?test-[^]]*' "$log" | sed -E 's/.*(test-[^]]*)/\1/' | sort -u | tr '\n' ' ')
+k1807=ok; grep -E 'FAIL|TIMED OUT|exit 124|timed out|diverged|REGRESS' "$log" | grep -q 'counterk\.rxt:1807' && k1807=RED
+kcap=ok;  grep -q 'CPU limit exceeded' "$log" && kcap=RED
+loadsus=$(grep -cE 'TIMED OUT|INCONCLUSIVE|CPU limit exceeded|exit 12[34]' "$log")
+mean_busy=$(awk -F'\t' 'NR>1 && $3 ~ /^[0-9]+$/ {s+=$3; n++} END {if (n) printf "%.0f", s/n; else print "-"}' "$samples")
+contam=no
+[ "${pre_busy:-0}" -gt 25 ] && contam=YES
+[ "$pre_other" != "-" ] && contam=YES
+awk -F'\t' 'NR>1 && $6!="" && $6!="-" {f=1} END {exit !f}' "$samples" && contam=YES
+
+if [ "$rc" -eq 0 ]; then cls=green
+elif [ "$rc" -eq 124 ]; then cls=WALL-TIMEOUT
+else
+    only_k44=1
+    for s in $errnames; do case "$s" in test-corpus|test-counterk|test-resource|test-cli) ;; *) only_k44=0 ;; esac; done
+    if [ "$only_k44" = 1 ] && { [ "$k1807" = RED ] || [ "$kcap" = RED ]; }; then cls=K44-ONLY
+    elif [ "$loadsus" -gt 0 ] && [ "$contam" = YES ]; then cls=LOAD-SUSPECT
+    else cls=RED-REAL; fi
+fi
+
+row="$id	$(date +%F)	$tree	$label	$J	$P	$wall	$cpu	$rc	$secerr	$k1807	$kcap	$load1	$contam	$cls	$mean_busy	$nproc_"
+printf '%s\n' "$row" > "$store/$id.row.tsv"
+say "perfrun: DONE rc=$rc wall ${wall}s cpu ${cpu}s mean-busy ${mean_busy}% section-errors=$secerr  class=$cls  contaminated=$contam"
+case "$cls" in
+    K44-ONLY)    say "perfrun: NOTE the only red section(s) ($errnames) carry the K44 load-marginal cell (counterk.rxt:1807 / resource CPU cap) at shape -j$J PROCS=$P. A RED SHAPE IS NOT THE LANE'S FAILURE: re-run the red section(s) solo (make $errnames) before calling it a regression; green solo = GREEN-BY-DIAGNOSIS (known_issues K44)." ;;
+    LOAD-SUSPECT) say "perfrun: NOTE red with timing/CPU-cap messages on a contaminated box (other trees: $pre_other). Treat as load-suspect: re-run the red section(s) solo ($errnames) before blaming the change." ;;
+    RED-REAL)    say "perfrun: red sections: $errnames— not a K44/load signature; treat as a real red." ;;
+    WALL-TIMEOUT) say "perfrun: the ${tmo}s wall cap fired at this shape — a datum about the SHAPE (too serial?), not necessarily the change; sections that finished are in the log." ;;
+esac
+say "perfrun: row $store/$id.row.tsv (samples/sections beside it; scripts/perfrun --fold in main commits them)"
+exit "$rc"
