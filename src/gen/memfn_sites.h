@@ -129,16 +129,14 @@ typedef struct {
     uint64_t       span;
     const char    *indent;
 } PcrecAdvance;
-/* The ADVANCE site for `a` under DELEG_SITES row `id`, written into `body`
- * through the door (the kit renders the loop: `while ((more)[ && count <
- * <span>ULL] && (member)) { step; [count++;] }` at `a->indent`). */
-void pcrec_memfn_advance(Ctx *cx, DelegSite id, const PcrecAdvance *a, StrBuf *body);
-/* [R4h IMPLEMENT] I1, THE SHADOW COMPARATOR: renders ADVANCE `a` through a
- * SCRATCH art and fails the compile unless the kit's text equals
- * want[0..n), the span pcrec just wrote for the same site. REPLACE deletes
- * it with pcrec's spelling. */
-void pcrec_memfn_advance_shadow(Ctx *cx, DelegSite id, const PcrecAdvance *a,
-                                const char *want, size_t n);
+/* The site and hooks for ADVANCE `a` under DELEG_SITES row `id`: STMT /
+ * SKIP / ADVANCE over one SET term at offset 0, `empty` NOP (the range IS
+ * `more`, Q-G2-5), the cursor read afterwards as a position. The caller
+ * renders it through the door (`pcrec_memfn_emit`); the kit writes
+ * `while ((more)[ && count < <span>ULL] && (member)) { step; [count++;] }`
+ * at `a->indent`. */
+mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
+                                  mf_hooks *h);
 
 /* The word-load helpers the attempt's text has used and not declared, at the
  * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's

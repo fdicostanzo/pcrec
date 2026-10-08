@@ -7438,15 +7438,11 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
      * `dir->c.name`), so a hardcoded "forward" here emitted a reference to a
      * table that does not exist in that function. Byte-for-byte unchanged on
      * the forward machine, whose `c.name` IS "forward". */
-    size_t at = c->len;
-    pcrec_sb_printf(c, "%s    while ((scan_position %s subject_length) &&"
-                 " (%s_%s_stay%d[subject[scan_position]])) {\n"
-                 "%s        scan_position++;\n"
-                 "%s    }\n",
-              ind, f->views ? "+ 1 <" : "<", f->p, f->dir->c.name, K, ind, ind);
     PcrecAdvance sa = stay_advance(f, K, dfa_fragf(f->cx, "scan_position %s subject_length",
                                                    f->views ? "+ 1 <" : "<"));
-    pcrec_memfn_advance_shadow(f->cx, DELEG_STAY, &sa, c->p + at, c->len - at);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     /* With the accept check ahead of us (the non-view order) the skipped
      * run's final position would otherwise go unrecorded; under a view the
      * check runs after the skip and already covers it. */
@@ -7471,14 +7467,10 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
      * but the reverse machine reaches this emitter today, so the text is
      * unchanged; spelling it from `dir->c.name` is what stops the next
      * direction re-learning [ENG-ABS]'s lesson. */
-    size_t at = c->len;
-    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
-                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
-                 "%s        rewind_position--;\n"
-                 "%s    }\n",
-              ind, f->p, f->dir->c.name, K, ind, ind);
     PcrecAdvance sa = stay_advance(f, K, f->dir->scan_more);
-    pcrec_memfn_advance_shadow(f->cx, DELEG_STAY, &sa, c->p + at, c->len - at);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
+    pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
         pcrec_sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
     pcrec_sb_printf(c, "%s}\n", ind);
@@ -9156,17 +9148,14 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
     pcrec_sb_puts(c, test);
     pcrec_sb_puts(c, ") {\n");
     PcrecAdvance ea = edge_advance(f, head, test, span);
+    mf_hooks h;
+    mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_EDGE, &ea, &h);
 
     if (span < 0) {
         /* UNBOUNDED (`*` / `+`): no counter, and the state does not move —
          * the run's every position IS this state. */
         pcrec_sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
-        size_t at = c->len;
-        pcrec_sb_printf(c, "%s    while ((%s) && (", ind, f->dir->scan_more);
-        pcrec_sb_puts(c, test);
-        pcrec_sb_printf(c, ")) {\n%s        %s;\n%s    }\n", ind,
-                  f->dir->advance, ind);
-        pcrec_memfn_advance_shadow(f->cx, DELEG_EDGE, &ea, c->p + at, c->len - at);
+        pcrec_memfn_emit(f->cx, DELEG_EDGE, s, &h, c);
         if (acc)
             pcrec_sb_printf(c, "%s    %s = %s;   // every position the run passed accepts\n",
                       ind, f->dir->recv, f->dir->posv);
@@ -9176,13 +9165,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 
     pcrec_sb_printf(c, "%s    unsigned long scan_run_length = 1;\n", ind);
     pcrec_sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
-    size_t at = c->len;
-    pcrec_sb_printf(c, "%s    while ((%s) && scan_run_length < %lluULL && (",
-              ind, f->dir->scan_more, (unsigned long long)span);
-    pcrec_sb_puts(c, test);
-    pcrec_sb_printf(c, ")) {\n%s        %s;\n%s        scan_run_length++;\n%s    }\n",
-              ind, f->dir->advance, ind, ind);
-    pcrec_memfn_advance_shadow(f->cx, DELEG_EDGE, &ea, c->p + at, c->len - at);
+    pcrec_memfn_emit(f->cx, DELEG_EDGE, s, &h, c);
     pcrec_sb_printf(c, "%s    if (scan_run_length == %dUL) {\n", ind, span);
     /* THE BOUND WAS REACHED, so the position now holds the FALL-THROUGH
      * state. Its accept bit is recorded from its own bit; the run's bit

@@ -4673,6 +4673,24 @@ static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t *set0,
         .indent = "        " };
 }
 
+/* Emits the STRIDED span loop (stride > 1): the cursor advances `stride`
+ * bytes while every position's class test (`test`, the ` && (...)` chain)
+ * holds, bounded by `bound` and, for a bounded quantifier, by `it_` at rmax.
+ * VMSTRIDE in tests/memfn/site_manifest.tsv: pending until the kit's
+ * vocabulary has a strided SKIP (M6); the stride-1 loop is the kit's
+ * (VMSPAN, `vm_span_advance`). */
+static void vm_stride_loop(Vm *v, const Ast *a, int stride, const char *test,
+                           const char *bound)
+{
+    StrBuf *b = v->b;
+    pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride, bound);
+    if (a->u.rep.rmax >= 0)
+        pcrec_sb_printf(b, " && it_ < %lluULL", (unsigned long long)a->u.rep.rmax);
+    pcrec_sb_printf(b, "%s) {\n            %s_span_cursor += %d;\n", test, v->p, stride);
+    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "            it_++;\n");
+    pcrec_sb_puts(b, "        }\n");
+}
+
 /* Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as `test` holds.
  *
  * [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
@@ -4699,17 +4717,14 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t *set0, int stri
         pcrec_sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
                   v->up, clamp, stride);
     pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-    size_t at = b->len;
-    pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride,
-              clamp ? "lim_" : "subject_length");
-    if (a->u.rep.rmax >= 0)
-        pcrec_sb_printf(b, " && it_ < %lluULL", (unsigned long long)a->u.rep.rmax);
-    pcrec_sb_printf(b, "%s) {\n            %s_span_cursor += %d;\n", test, v->p, stride);
-    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "            it_++;\n");
-    pcrec_sb_puts(b, "        }\n");
+    const char *bound = clamp ? "lim_" : "subject_length";
     if (stride == 1) {
-        PcrecAdvance sa = vm_span_advance(v, a, set0, member, clamp ? "lim_" : "subject_length");
-        pcrec_memfn_advance_shadow(v->cx, DELEG_VMSPAN, &sa, b->p + at, b->len - at);
+        PcrecAdvance sa = vm_span_advance(v, a, set0, member, bound);
+        mf_hooks h;
+        mf_site *s = pcrec_memfn_advance_site(v->cx, DELEG_VMSPAN, &sa, &h);
+        pcrec_memfn_emit(v->cx, DELEG_VMSPAN, s, &h, b);
+    } else {
+        vm_stride_loop(v, a, stride, test, bound);
     }
     pcrec_sb_puts(b, "    }\n");
 }
