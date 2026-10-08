@@ -4648,6 +4648,18 @@ forms, `MF_EMPTY_NOP`).
     post-loop fact pcrec reads, and the contract states it;
   - the cursor ends at the first non-member, at the cap, or where `more`
     fails, whichever comes first.
+
+  **`[R4h-prep]`** (Q-R4h-1 (a), ruled 2026-10-08; `MF_SITE_ABI` 5) The
+  declaration above is the KIT-owned case. `mf_site.count_by_caller` = 1
+  states that the CALLER declares the counter before the site, with its
+  own text in between (the scan edge's peeled step, the VM span scan's
+  `lim_` and cursor init), and reads it after the loop. The kit's text then
+  only advances and caps it, and never declares it. `count` is required
+  (a conditional `uses` entry: unstated, R1 declines, so the last row
+  refuses naming `count`), and `count_start` keeps its meaning (the value
+  at the kit's first statement). It is a semantic fact (shared state), not
+  layout: the layout variants (G2 of the R4h notice) are the pcrec-side
+  normalization pre-commit's (Q-R4h-1 (b)), after C7.
 - **`peek` (F2).** The kit's membership test of the cursor's byte calls
   `member(term, peek)`, never `s[cursor]` of its own: the direction owns
   how the cursor reads (`subject[scan_position]` forward,
@@ -4714,6 +4726,13 @@ forms, `MF_EMPTY_NOP`).
     (`more` as `cur > floor`) would move the cursor, while the rule
     above says an empty range leaves it. Unruled; no customer before
     M3.
+    **`[R4h-prep]` RULED (Q-R4h-2, recorded by the pcrec manager
+    2026-10-08):** ADVANCE's range IS `more`. Its empty range is NOP, and
+    the kit adds no empty test: its text reads neither `lo`, `n` nor
+    `floor`, and a `more` that fails at the start leaves the cursor and
+    `count` where they were. The reverse case is whatever pcrec's `more`
+    says. memfn.h records it at the ADVANCE hooks, with the hooks' shape
+    classes (`more` CONJ, `peek` POSTFIX, `step` EXPR_STMT; fields.def).
 
 ### 14.5 REQUIRED and OPTIONAL terms; the result's promise (r3 F7)
 

@@ -101,15 +101,22 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   absent, classify, classes, doc)` (every site/hook/run-term field a row
   reads: where the gate reads it, what an absent value is, including the
   written per-kind OBLIGATION exemptions, its classify function and its
-  closed class set, with the text-shape classes IDENT / JUMP / BRACED;
+  closed class set, with the text-shape classes IDENT / JUMP / BRACED and,
+  since R4h prep, the ADVANCE hooks' CONJ (`more`), POSTFIX (`peek`) and
+  EXPR_STMT (`step`); and `count_by_caller`, the caller-owned counter
+  (MF_SITE_ABI 5, OBLIG);
   `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`). Since N3
   `fn_ref` is a hook ID (0 UNSTATED, so a FUNC site stating 0 is refused,
   K-1) rather than an OBLIG exemption, and `s`/`n`/`lo` are read at define
   as well as use (ruling F1).
-- **gate.c** — THE ROW-CONTRACT GATE: also DEFINES the exported `MF_MISS_N`
+- **gate.c** — THE ROW-CONTRACT GATE (its `uses` entries may be CONDITIONAL
+  since R4h prep: `GATE_WHEN(cls, field)` applies an entry only where a site
+  field has that class, so `count_by_caller` YES makes `count` a use; kit.h
+  `gate_use`): also DEFINES the exported `MF_MISS_N`
   sentinel (`mf_miss_n`, memfn.h; `kit.h`'s `kit_miss(h)` resolves it to the
   `n` hook's text, and every reader of `miss` goes through that). fields.def's classify functions
-  (`kit_is_ident`, the one lexical identifier check, lives here), the
+  (`kit_is_ident`, the one lexical identifier check, lives here, beside
+  the ADVANCE hooks' `conj_shape`/`postfix_shape`/`expr_stmt_shape`), the
   per-field rules (R1 used-and-unstated, R2 stated-and-not-served) as
   `gate_check`, ENFORCED since N3 at define, use and the run walk (the
   callers decline a failing row, or refuse), `gate_describe` (the text
