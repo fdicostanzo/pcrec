@@ -1432,3 +1432,16 @@ the compiler, and is never adopted silently. Proposed for main to file
   literal they move. There is no kit change. The kit does it as a small
   commit of its own on lane/memfn-m6 AFTER lane m6 delivers (m6 is editing
   the same manifest and literals now; no addendum to a running lane).
+- ruling recorded: 2026-10-08 — **D147 addendum 13 (Frank, PRELIMINARY,
+  revisitable): what "a SIMD form is faster" means.**
+  - A same-host, same-window pcrec-bench run against the scalar twin.
+  - The target cells' median whole-call gain must exceed the noise band,
+    with no other cell beyond the floor.
+  - Judged per instruction-set tier where the form would be selected, net
+    of size and portability.
+  - The trap it names: scalar sites that call glibc memchr/memcmp are
+    already SIMD inside.
+  - Kit plan: the R-9 revision lane r9rev was briefed before this, so no
+    addendum goes to a running lane. A fresh follow-up lane reconciles the
+    revised regime with addendum 13 (and may propose amendments, since it
+    is preliminary) before the Q-R9-n go to Frank.
