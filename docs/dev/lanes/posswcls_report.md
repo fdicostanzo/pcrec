@@ -105,3 +105,34 @@ holds make's `*** [test-X]` lines (empty = green). The chain restores
 `docs/dev/artifact_size_log.tsv` and then touches `build/wcls/DONE`. A
 separate `run_possdiff.sh` step is not in the chain: its utf modes run
 inside `test-possessify` within `make test`.
+
+## Addendum: startset manifests re-pinned (lane possmani, 2026-10-07)
+
+posswcls's full `make test` (`build/wcls/maketest.log`) had ONE red, `test-startset`,
+the same shape posstri item 4 fixed one step earlier. Read from the log: only the two
+`[vm-movers]` checks failed ("24 not in the manifest, 0 manifest rows not movers", auto
+and forced); the other 20+ checks in the section passed, including `[vm-iff]`,
+`[vm-route]`, `[vm-deny]`, `[vm-table]` and the every-startpos differential. All 24
+unlisted movers are `tests/possessify/possessify.rxt:4033-4681`, lines `git blame`
+attributes to f87a3d73 (posswcls's wide-class cells).
+
+Regenerated with the manifests' own generator (`docs/design/startset/s1/census_s1.py`, its
+`-fno-start-set` arm, BENCH pointed read-only at pcrec-bench) on the 5afc7e51 build and
+diffed against the committed manifests with `LC_ALL=C`:
+
+| manifest | added | gone | changed hex |
+|---|---|---|---|
+| s2_vm_auto | 24 | 0 | 0 |
+| s2_vm_forced | 24 | 0 | 0 |
+| s3_dfa | 0 | 0 | 0 |
+
+The 24 rows were appended to the two VM manifests under a dated comment line (e39c74b3).
+Nothing else differed, so nothing else was touched.
+
+Validation: `make -k -j16 -Otarget test-startset` on the possmani tree reads no
+`*** [... test-` line; `[vm-movers]` now PASSes (auto 386 rows, forced 3168 rows,
+0 off-diagonal). Log: `worktrees/possmani/build/mani/startset.log`.
+
+OWED: the full `make test`, armed detached (waits for `worktrees/possmani/.lift`).
+Verdict: `worktrees/possmani/build/verdict.txt` once `build/DONE` exists (empty verdict
+= green); log `build/mt.log`.
