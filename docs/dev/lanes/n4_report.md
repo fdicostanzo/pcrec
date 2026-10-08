@@ -140,7 +140,7 @@ Read against what a caller can observe:
    The committed N2 census (`n2_results_5fc4b0e5.md`, Mac) predates N3's
    split and R4g's PF rows, so its reach table lacks `precheck_assign` and
    the four `pf_*` rows. The manager's full census re-measures it (§8).
-5. **Disclosure:** early in the lane, five commands began with `cd <worktree> &&`.
+5. **Disclosure:** early in the lane, several commands (about ten: edits, the first runs and one commit) began with `cd <worktree> &&`.
    The brief forbids `cd`. Each Bash call starts in a fresh cwd, so
    nothing moved, but the rule was broken; later commands use `git -C` and
    absolute paths only.
