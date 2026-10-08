@@ -902,6 +902,47 @@ static int render_text(const mf_site *s, const mf_hooks *h, int cmt, buf *out, c
     return rc;
 }
 
+/* G2pf2: the define + use entry path, in a SCRATCH art (the art's error is
+ * sticky). Returns 0, or the stage that refused: 1 mf_define, 2 mf_use,
+ * 3 mf_call; the error text in err. The two entry paths differ BY CONTRACT
+ * (memfn.h ROW CONTRACTS): mf_emit holds the use hooks at selection time;
+ * mf_define selects with the define hooks and mf_use REFUSES a use the chosen
+ * form does not serve, naming the field, with no re-selection. */
+static int render_via(const mf_site *s, const mf_hooks *h, int via, int cmt, char *err, size_t errn)
+{
+    mf_art *a = mf_art_begin(&g_arena, "g2v", s->policy, s->denies);
+    buf b = { 0 }, f = { 0 }, b2 = { 0 };
+    sinku ub = { &b, cmt, 0, 0 }, uf = { &f, cmt, 0, 0 }, ub2 = { &b2, cmt, 0, 0 };
+    mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf), sb2 = mk_sink(&ub2);
+    mf_result r;
+    uint32_t handle = 0;
+    int stage = 0;
+    memset(&r, 0, sizeof r);
+    if (!a) { stage = 1; snprintf(err, errn, "(no art)"); }
+    else if (mf_define(a, s, h, &sf, &handle)) stage = 1;
+    else if (mf_use(a, handle, h, &sb, &r)) stage = 2;
+    else if (via == 2 && mf_call(a, handle, h, &sb2)) stage = 3;
+    if (stage && a) snprintf(err, errn, "%s", mf_art_error(a) ? mf_art_error(a) : "(no text)");
+    free(b.p); free(f.p); free(b2.p);
+    return stage;
+}
+/* the USE-TIME refusal population (G2pf2): the define+use path refused at
+ * mf_use / mf_call a site the one-call path rendered, naming a field. Lawful;
+ * the site is then judged on the one-call path (answer-equal). */
+static long n_userefuse, n_userefuse_unnamed, n_userefuse_by[6];
+static const char *const UR_FIELDS[6] = { "on_miss", "result_decl", "miss", "floor", "note", "other" };
+static int userefuse_field(const char *msg)
+{
+    static const char *const known[] = { "on_miss", "result_decl", "miss", "floor", "note", "note_tag", "result",
+                                         "cursor", "count", "on_cand", "peek", "more", "step", "table_ref", "member" };
+    for (size_t k = 0; k < sizeof known / sizeof known[0]; k++)
+        if (names_field(msg, known[k])) {
+            for (int j = 0; j < 5; j++) if (!strcmp(UR_FIELDS[j], known[k])) return j;
+            return 5;
+        }
+    return -1;
+}
+
 /* ---- the POISON differential (g2u item 6) ------------------------------------
  *
  * For each generated site, every field the CONTRACT says that site's form,
@@ -1237,6 +1278,13 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
 {
     cur_site = g;
     g->deny_overlap = g_batch_denies != 0;
+    /* G2pf2 (contract amendment, memfn.h): with on_miss_leaves 1 on ASSIGN,
+     * `result` is UNSPECIFIED on a miss and on_miss must not read it: every
+     * such site takes an on_miss text that reads no result (goto 5, return 3) */
+    if (g->d.leaves && g->d.handoff == G2_H_ASSIGN && !g->d.noonmiss) {
+        if (g->on_miss_mode == 1) g->on_miss_mode = 5;
+        else if (g->on_miss_mode == 2) g->on_miss_mode = 3;
+    }
     int pend = g->d.pend;
     mf_site site;
     mf_pred *pa = g->d.op == G2_OP_ALL ? calloc(g->d.npred, sizeof *pa) : NULL;
@@ -1305,6 +1353,38 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     }
     if (!pend && !g_mutate) poison_site(g, &site, pa, &h, &clean);
     free(clean.p);
+
+    /* G2pf2: judge the define+use path by ITS contract. The trial (mf_emit)
+     * rendered the site; the separate path may lawfully refuse AT USE naming
+     * the field a use-time hook states. That refusal is counted, and the site
+     * is then run on the one-call path, so each path's promise is checked. A
+     * refusal at mf_define, or one naming no field, is a failure. */
+    if (g->d.via != 0) {
+        char verr[512];
+        int stg = render_via(&site, &h, g->d.via, g->cmt, verr, sizeof verr);
+        if (stg >= 2) {
+            int uf_ = userefuse_field(verr);
+            if (uf_ >= 0) {
+                n_userefuse++; n_userefuse_by[uf_]++;
+                fprintf(g_res, "USEREFUSE site %u %s fam=%s stage=%s field=%s: %s\n", g->d.id, g->d.label,
+                        g2_fam_name(g->d.fam), stg == 2 ? "use" : "call", UR_FIELDS[uf_], verr);
+                g->d.via = 0;
+            } else {
+                n_userefuse_unnamed++;
+                n_render_fail++; fam_refused[g->d.fam]++;
+                fprintf(g_res, "FAIL render site %u %s: define+use refused at use NOT naming a field: %s\n",
+                        g->d.id, g->d.label, verr);
+                free(pa);
+                return;
+            }
+        } else if (stg == 1) {
+            n_render_fail++; fam_refused[g->d.fam]++;
+            fprintf(g_res, "FAIL render site %u %s: mf_define refused a site mf_emit rendered: %s\n",
+                    g->d.id, g->d.label, verr);
+            free(pa);
+            return;
+        }
+    }
 
     buf body = { 0 }, body2 = { 0 }, file = { 0 };
     sinku ub = { &body, g->cmt, 0, 0 }, ub2 = { &body2, g->cmt, 0, 0 }, uf = { &file, g->cmt, 0, 0 };
@@ -3199,6 +3279,9 @@ int main(int argc, char **argv)
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail, n_poison_pass, n_poison_fail,
             n_strict_pass, n_strict_fail, g_strict);
     fprintf(g_res, "SITEFN checked=%ld\n", n_sitefn_checked);
+    fprintf(g_res, "USEREFUSE-TOTAL lawful=%ld unnamed=%ld", n_userefuse, n_userefuse_unnamed);
+    for (int k = 0; k < 6; k++) fprintf(g_res, " %s=%ld", UR_FIELDS[k], n_userefuse_by[k]);
+    fprintf(g_res, "\n");
     fclose(g_res);
     printf("g2_gen: %d sites, %d batches, render fail %ld, refusal fail %ld, vocab fail %ld, api fail %ld\n",
            nsites, bi, n_render_fail, n_refusal_fail, n_vocab_fail, n_api_fail);

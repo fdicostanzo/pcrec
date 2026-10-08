@@ -106,6 +106,19 @@ FLOOR_POISON_FIELD_SITES=90
 # rendered names were checked against fn_name(fn_ref); DERIVED (3 value
 # classes x >= 5 hard seeds), owed a measurement
 FLOOR_SITEFN=15
+# G2pf2: the USE-TIME refusal population. The two entry paths differ BY CONTRACT
+# (memfn.h ROW CONTRACTS): mf_emit holds the use hooks at selection and picks a
+# serving form; mf_define + mf_use selects with the define hooks and REFUSES, at
+# mf_use / mf_call, a use the chosen form does not serve, naming the field. For
+# each hard site the generator trial-renders mf_emit, tries define+use in a
+# scratch art, counts a field-naming refusal at use as LAWFUL (USEREFUSE) and
+# then judges the site, answer for answer, on the one-call path. A refusal at
+# mf_define of a site mf_emit rendered, or one at use naming no field, FAILS.
+# Measured quick 2026-10-07 (seed 20261005; generator count, tier-independent):
+# lawful 26 = on_miss 11 + result_decl 15, unnamed 0; floors ~25% under.
+FLOOR_USEREFUSE=20
+FLOOR_USEREFUSE_ON_MISS=8
+FLOOR_USEREFUSE_RESULT_DECL=11
 # lane g2pf, the PF shape (integration.md 15.7 [R4g]). Per EDGE: generator
 # cases (rendered + refused naming + refused not naming, sem variants included),
 # and the sites of it the driver RAN (rendered ones; a refused-only edge runs
@@ -114,7 +127,7 @@ FLOOR_SITEFN=15
 # whose lo was PAST n. Measured quick 2026-10-07 (Linux, seed 20261005) less
 # ~10-15%; both tiers run the same sites and the full tier has more checks.
 PF_EDGE_CASE_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stated-note:43 stated-result_decl:39 stated-on_miss:43 table-disagrees:43"
-PF_EDGE_RUN_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stated-note:43 stated-on_miss:20 table-disagrees:43"
+PF_EDGE_RUN_FLOORS="miss-not-range-end:120 result-not-lo:50 stated-floor:75 stated-note:43 stated-result_decl:39 stated-on_miss:43 table-disagrees:43"
 # the PF family's own hard sites per form id (the cells reach the kit's PF rows:
 # measured pf_memchr 120 (cells 1+2), pf_walk 168 (cells 3+4 and the table that
 # disagrees); K35: a cell that fell back to the generic row would drop here)
@@ -224,6 +237,16 @@ done
 sfn=$(grep '^SITEFN ' "$gres" | sed 's/.*checked=\([0-9]*\).*/\1/')
 echo "== K-1 name check (ALL_PRESENT FUNC site.pred.fn_ref): variants checked ${sfn:-0}"
 [ "${sfn:-0}" -ge "$FLOOR_SITEFN" ] || note_fail 1 "K-1 name check: ${sfn:-0} variants < floor $FLOOR_SITEFN"
+ur_=$(grep '^USEREFUSE-TOTAL' "$gres")
+echo "== use-time refusals on the define+use path (lawful; G2pf2): ${ur_#USEREFUSE-TOTAL }"
+ur_n=$(echo "$ur_" | sed 's/.* lawful=\([0-9]*\).*/\1/')
+ur_u=$(echo "$ur_" | sed 's/.* unnamed=\([0-9]*\).*/\1/')
+ur_m=$(echo "$ur_" | sed 's/.* on_miss=\([0-9]*\).*/\1/')
+ur_d=$(echo "$ur_" | sed 's/.* result_decl=\([0-9]*\).*/\1/')
+[ "${ur_n:-0}" -ge "$FLOOR_USEREFUSE" ] || note_fail 1 "use-time refusals: ${ur_n:-0} < floor $FLOOR_USEREFUSE"
+[ "${ur_m:-0}" -ge "$FLOOR_USEREFUSE_ON_MISS" ] || note_fail 1 "use-time refusals naming on_miss: ${ur_m:-0} < floor $FLOOR_USEREFUSE_ON_MISS"
+[ "${ur_d:-0}" -ge "$FLOOR_USEREFUSE_RESULT_DECL" ] || note_fail 1 "use-time refusals naming result_decl: ${ur_d:-0} < floor $FLOOR_USEREFUSE_RESULT_DECL"
+[ "${ur_u:-0}" -eq 0 ] || note_fail 1 "use-time refusals naming no field: ${ur_u}"
 echo "== poison differential (fields the contract says a site does not use, set to junk)"
 grep '^POISON ' "$gres" | sed 's/^/   /'
 pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')
