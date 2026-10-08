@@ -2,3 +2,5 @@ run_id	date	tree	label	J	P	wall_s	cpu_s	rc	sect_err	k44_1807	k44_cpucap	load1_st
 20261008T115456_memfn-m4_j16p16	2026-10-08	32197d74	memfn-m4	16	16	667	9766	0	0	ok	ok	3.98	no	green	95	16
 20261008T123158_decfbB1_j16p1	2026-10-08	cd303d33	decfbB1	16	1	908	8426	2	1	ok	ok	2.77	YES	RED-REAL	66	16
 20261008T130117_main-b1m4_j16p1	2026-10-08	1d42d9c5	main-b1m4	16	1	851	8362	0	0	ok	ok	1.33	no	green	63	16
+20261008T144135_decfbB2_j8p2	2026-10-08	51ac0ab6	decfbB2	8	2	725	8773	2	1	ok	ok	0.50	no	RED-REAL	79	16
+20261008T163515_decfbB3_j4p4	2026-10-08	69ab9650	decfbB3	4	4	917	7879	0	0	ok	ok	4.98	YES	green	65	16
