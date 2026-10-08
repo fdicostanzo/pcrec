@@ -20,7 +20,7 @@
 
 set -u
 
-C12_CEIL_ROWS_FLOOR=3
+C12_CEIL_ROWS_FLOOR=2   # D147 add. 12: the walk-back row deleted with N6 (not a search site), 3 -> 2
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

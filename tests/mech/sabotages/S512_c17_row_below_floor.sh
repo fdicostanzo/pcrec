@@ -5,7 +5,11 @@
 # named by the VMSPAN row, so rules 1 and 4 stay green on purpose: the only
 # instrument that can be red is the K35 row-count floor, C17_ROW_FLOOR in
 # tests/memfn/run_site_manifest.sh (a literal sharing no source with the
-# TSV). SAB_REACH_POP asserts the row exists and the floor is still 13.
+# TSV). SAB_REACH_POP asserts the row exists and the floor is still 14.
+# RE-ANCHORED 2026-10-08 (D147 add. 12, lane m6): N6 retired, so the manifest
+# holds 14 rows and C17_ROW_FLOOR is 14 (the POP had read 13 since the M7/M6
+# floor raises; it now matches the live literal, `=14` then a comment). The
+# SETREST plant leaves 13 rows, below 14: same defect, same detector.
 # RE-ANCHORED 2026-10-08 ([MEMFN] R4h, lane r4h): VMSPAN went `delegated` and
 # VMSTRIDE's emitter became `vm_stride_loop`, which no other row names, so
 # deleting VMSTRIDE now ALSO trips rule 1 (an unlisted form). The row deleted
@@ -19,7 +23,7 @@ SAB_SUITES="memfnmanifest"
 SAB_DESC='the SETREST row is deleted from the site manifest (its emitter stays listed by PRE and VERIFY), taking the row count below its K35 floor'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/memfnmanifest_report.md §4); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S512.'
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^SETREST[[:space:]]+req_site_define[[:space:]]|1
-tests/memfn/run_site_manifest.sh|^C17_ROW_FLOOR=13$|1'
+tests/memfn/run_site_manifest.sh|^C17_ROW_FLOOR=14[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 # The row's head is commented out, which deletes the row for every reader.

@@ -289,3 +289,40 @@ Phase A). Needs, in CONTRACT terms only (memfn.h is the source):
 | no docs/spec hunk | DONE: none needed (nothing caller-observable moved) |
 | memfn/tests untouched; G2's needs listed | DONE (§7) |
 | identity gate, make test, G2 full, mech rows | OWED to the slot (§8) |
+
+## 11. N6 retirement (D147 add. 12)
+
+Frank ruled (D147 addendum 12) that N6 (`vm_rev_emit`'s backward walk) is
+not a search site: a mirrored one-position VM step, which integration.md
+§R4.3.4 already excludes. No change to src/ or the kit's code.
+
+**Deleted:** the N6 row of tests/memfn/site_manifest.tsv; the `walk-back`
+line of tests/memfn/search_vocab.tsv; the `src/gen/emit_vm.c walk-back` row
+of tests/memfn/c12_ceilings.tsv.
+
+**Literals moved (each commented, citing D147 add. 12):**
+`C17_ROW_FLOOR` 15 -> 14 (run_site_manifest.sh); `C12_CEIL_ROWS_FLOOR`
+3 -> 2 (run_form_checks.sh); the c12_ceilings.tsv header's row/total echo
+(3 -> 2 forms). C17 now reads 12 delegated / 2 pending (N7U, VMLAZY).
+
+**Sabotage rows touched** (none retired; no other row anchors on N6, the
+`walk-back` line or its C12 row; S160's `vm_rev_emit` default: and S490's
+N5/N6 are the unrelated cand_rows/engine N6, untouched):
+- S512 (row below floor): REACH_POP re-anchored `^C17_ROW_FLOOR=13$` ->
+  `^C17_ROW_FLOOR=14[[:space:]]` (it had read the stale 13 since the M7/M6
+  floor raises, and the live literal carries a trailing comment). Hand
+  measure, plant applied to the tree and reverted: clean 12 passed / 0
+  failed; plant (SETREST commented out) `FAIL: the manifest holds 13 rows,
+  below its K35 floor of 14`, 11 passed / 1 failed.
+- S511 (stale pending row): comment note and figure updated only. Hand
+  measure: clean 12/0; plant (VMSTRIDE flipped to pending) 2 failed (rule 4
+  on vm_emit_span_scan and vm_span_advance) / 12 passed.
+- S525, S685 (vocabulary rows): read, unaffected (S685 plants `span-count`,
+  S525 `memchr`; neither touches walk-back). Not re-measured.
+
+**Commands:** `bash tests/memfn/run_site_manifest.sh` (12/0 clean),
+`bash tests/memfn/run_form_checks.sh` (C12 "2 forms in 2 groups", 5/0),
+`python3 scripts/m6read_check_sab_anchors.py` (all anchors resolve),
+`make -j4 strict` (clean), all under `taskset -c 12-15`. Docs updated:
+tests/memfn/CLAUDE.md, integration.md (§8.5 inventory, §R4.3.4 lists, §22 M6,
+end-state notes, in place). mech matrix NOT run: manager's slot, rows S511 S512.

@@ -12,7 +12,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **site_manifest.tsv** — THE CHECKED SITE MANIFEST (integration.md
   §R4.3.4, D147 addendum 5): one row per search or span-compare site pcrec
   emits (13 at R4a: PF, PRE, OFS, SETREST, VERIFY, VMRUN, STAY, EDGE,
-  VMSPAN, MLINE, N6, VMSTRIDE, N7). Each row has its emitters (the functions
+  VMSPAN, MLINE, N6, VMSTRIDE, N7; N6 RETIRED since, D147 add. 12). Each row has its emitters (the functions
   that SPELL the form), op/handoff, D91 budget, migration step and status,
   plus companions (moved with the site, spell nothing). Status is exactly
   `pending` or `delegated`. At R4a every row is `pending`, and each
@@ -39,6 +39,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   after M6 + that vocabulary step"), which spells the new `span-count`
   line (rule 4): 12 delegated / 3 pending (N6, N7U, VMLAZY), 15 rows,
   `C17_ROW_FLOOR` 15.
+  **N6 RETIRED (D147 add. 12):** `vm_rev_emit`'s backward walk is a mirrored
+  one-position VM step, not a search site; its row, the `walk-back`
+  vocabulary line and its C12 row are deleted: 12 delegated / 2 pending
+  (N7U, VMLAZY), 14 rows, `C17_ROW_FLOOR` 14, C12 2 rows
+  (`C12_CEIL_ROWS_FLOOR` 2).
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the

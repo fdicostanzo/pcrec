@@ -12,6 +12,8 @@
 # RE-AIMED 2026-10-08 ([MEMFN] M6 REPLACE, lane m6; RULED Q-R10-8): M6 deleted
 # `vm_stride_loop` (its anchor) and flipped VMSTRIDE to `delegated`, and the
 # pending rows left (N6, N7U, VMLAZY) are each one migration from leaving too.
+# NOTE 2026-10-08 (D147 add. 12, lane m6): N6 was RETIRED (not a search site);
+# the pending rows are now N7U and VMLAZY. The plant (VMSTRIDE) is unaffected.
 # So the plant moves to the MANIFEST: the delegated VMSTRIDE row is flipped
 # back to `pending`. Its emitters (vm_span_advance, vm_emit_span_scan) spell
 # no form, the kit renders the loop, so rule 4 fires. Intent unchanged: a
@@ -22,7 +24,7 @@
 SAB_ID="S511-c17-stale-pending-row"
 SAB_FILE='tests/memfn/site_manifest.tsv'
 SAB_SUITES="memfnmanifest"
-SAB_DOC_FIGURE='HAND-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied; docs/dev/lanes/m6_report.md section 6): memfnmanifest 2 failed / 13 passed (rule 4 on vm_span_advance and vm_emit_span_scan, pending VMSTRIDE). Earlier figures: docs/dev/lanes/memfnmanifest_report.md section 4, m4_report.md section 6. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
+SAB_DOC_FIGURE='RE-MEASURED 2026-10-08 after D147 add. 12 (N6 retired; lane m6): 2 failed / 12 passed. HAND-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied; docs/dev/lanes/m6_report.md section 6): memfnmanifest 2 failed / 13 passed (rule 4 on vm_span_advance and vm_emit_span_scan, pending VMSTRIDE). Earlier figures: docs/dev/lanes/memfnmanifest_report.md section 4, m4_report.md section 6. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_span_advance,vm_emit_span_scan[[:space:]].*[[:space:]]delegated[[:space:]]|1'
