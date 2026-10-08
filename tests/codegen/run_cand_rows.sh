@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# tests/codegen/run_cand_rows.sh — the candidate table's structural checks
-# (`src/gen/emit_dfa.c`'s `dfa_pfs[]`; D148, docs/design/startset.md §8).
+# tests/codegen/run_cand_rows.sh — the start table's structural checks
+# (`src/gen/emit_dfa.c`'s `cand_rows[]`, `dfa_pfs[]` until [START-TABLE] C3;
+# D148, docs/design/startset.md §8, docs/design/start_table.md §3.5).
 # The checks themselves, their populations and what they cannot see are in
 # `cand_rows_check.py`'s header; this wrapper resolves the tree and forwards
 # the PASS/FAIL lines and the trailers.

@@ -22,25 +22,36 @@ or it has no regression net at all.
   row ([MECH-REACH]); every row identity read off the table's own source
   must have a line (K35). Its own section, `make test-cand-oracle` (two
   builds, ~50 s; not in `test-codegen`, for `make smoke`'s budget); mech arm
-  `candoracle`, sabotage S594-S599 (all DETECTED at landing). It tests the
+  `candoracle`, sabotage S594-S600 (all DETECTED at landing). It tests the
   FILTER; the corpus-wide both-orders run is the lane's gate, not this file.
+  **Since [START-TABLE] C3** NEXT and RECOVER have no old walk left, so their
+  readers print the `CANDROW` hit (and run the self-check) without a
+  comparison (`cand_hit`); S594/S595's plants now move artifacts and are
+  caught by the witness no longer reaching its row. **Since C4** the same
+  holds for PRESENCE and FIRST (S596's plant moves artifacts too); their
+  readers ask on CAND_ROUTE_DFA and the hit also walks every other route the
+  slot is asked on, aborting on a different row (`cand_hit_every`, S600).
 - **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
-  `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`)
-  structural checks, in `make test-codegen` (well under a second; mech arm
+  `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
+  [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
   `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
   (`strcmp`/`strncmp`/`strcasecmp`/`strncasecmp`/`memcmp`) under `src/`
-  `cli/` `lib/` takes a `dfa_pfs[]` row name as a literal (read off the
-  table's own text, `"none"` excepted as every axis's fallback word) or reads
-  `c.name` through a `pf` receiver / `dfa_pf_of(...)`. Comments are blanked
+  `cli/` `lib/` takes a NEXT/RECOVER row's (since [START-TABLE] C4 also a
+  PRESENCE/FIRST row's) identity or spelling (`c.name`,
+  `tok`) as a literal (read off `cand_rows[]`'s own text, `"none"` excepted as
+  every axis's fallback word) or reads `c.name`/`tok` through a `pf` receiver
+  or a selection function (`dfa_pf_of(...)`, `cand_select(...)`, ...). Comments are blanked
   first, calls are matched with their full argument text, and an empty
   row-name population fails (K35). What it cannot see is stated in the
   script's header. Red on the branch point (`35c8ed45`, the four K84
   `strcmp` sites); sabotage S495. **[cand-route-init]** (stage 1,
-  checks-F6): every `DfaSel NAME = {...}` initializer names `.route`
-  (population counted; a designated initializer that omits it would
-  zero-fill silently). **[cand-route-walk]**: `dfa_select` asks
-  `cand_routed(` before `->applies(`. Both validated red by a plant on a
-  scratch copy at landing (docs/dev/lanes/ssbuild01_report.md).
+  checks-F6): every `DfaSel`/`CandSel NAME = {...}` initializer names
+  `.route` (population counted; a designated initializer that omits it would
+  zero-fill silently). **[cand-route-walk]**: `cand_select` tests the row's
+  route mask (`CAND_ON(s->route)`) before `.applies(` (until C3 `dfa_select`
+  and `cand_routed(`). Both validated red by a plant on a scratch copy at
+  landing (docs/dev/lanes/ssbuild01_report.md), and the three re-aimed checks
+  again at C3 (docs/dev/lanes/stc3_report.md).
 - **runcmp_check.py** — [OPT-LITSCAN] S4 C1 (lane s4build, 2026-10-03, abi
   56): the RUN COMPARE's structural checks (`memfn/src/runcmp.c` since [MEMFN] M1b, before it `src/gen/runcmp.c`;
   `docs/design/litscan_s4.md` §5.4), run by `run_codegen_tests.sh`'s

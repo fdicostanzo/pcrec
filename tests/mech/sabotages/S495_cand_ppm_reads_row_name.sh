@@ -23,7 +23,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern '\''[a-z]
 SAB_REACH_EXPECT="REACH-HYBRID-RESEED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (pf->scan != PF_SCAN_SET)
+# RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3): the row is a
+# `cand_rows[]` NEXT row since C3 and its scan kind is its payload's
+# (`pf->u.pf.scan`, was `DfaPf.scan`); the plant is unchanged (the two
+# byte-class rows recognised by `strcmp` on their identity, which C3 kept).
+SAB_BEFORE='        if (pf->u.pf.scan != PF_SCAN_SET)
             return 1000000u;'
 SAB_AFTER='        if (strcmp(pf->c.name, "byte-class") && strcmp(pf->c.name, "byte-class-bounded"))   /* SABOTAGE S495 */
             return 1000000u;'

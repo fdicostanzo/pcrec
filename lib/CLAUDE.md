@@ -419,7 +419,7 @@ under `byte`. `PCREC_ERR_UTF` (-9) is an EMITTED constant (the artifact's
 ## [START-SET] `PCREC_NO_START_SET` (bit 47, 2026-10-05, D148)
 
 A `#define` deny bit, `-fno-start-set`: the candidate table's start-set rows
-(`src/gen/emit_dfa.c`, `dfa_pfs[]`; at stage 2 the VM hat's `first-class`,
+(`src/gen/emit_dfa.c`, `dfa_pfs[]`, `cand_rows[]` since [START-TABLE] C3; at stage 2 the VM hat's `first-class`,
 `docs/spec/tuning.md` §2.42). Deny-only by D148 Q3. MASKED out of
 `rx_info.flags` like the rest of the strategy-denial family: it moves no
 answer. It CAN move the GIVE-UP surface, in one direction (a skipped

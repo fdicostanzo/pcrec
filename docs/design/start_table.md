@@ -1022,9 +1022,9 @@ answers a different question:
 | C0 | **DONE (lane stc0, 2026-10-06; `../dev/lanes/stc0_report.md`, the C0 outcome paragraph below)**. **instrument** (no `src/`): `emit_sweep.py` gains `--extra ARG` (repeatable, appended to streams 1-4 on BOTH sides, before `--pattern`), a sixth stream `--emit-facts` (streams 1/2's patterns, `--emit-facts=byte,utf8`, identity required), `--patterns-file` (constructed witnesses into streams 1-3) [r2 checks-m7], and per-arm DIFFER floors (§3.3 item 2) [r2 checks-M2]; every existing floor re-pinned to the measured reach (today 3,480 against a reach near 4,100; composition 32 against 38) [r2 checks-m4]; the census scripts move per Q7. **And the TRACE instrument** [r2.1 C-N2], so that C1 has something to run: (i) a seventh stream `--trace` that builds both sides with `-DPCREC_CAND_TRACE` — `build_from_rev` (`scripts/emit_sweep.py:327`, whose `:344` runs plain `make -j4 CC=…`) gains a `CFLAGS` pass-through, used on BOTH sides; (ii) the trace's stderr captured per compile, never mixed into the artifact on stdout; (iii) each record tagged with its pattern index and arm by the sweep, not by the compiler; (iv) a trace-DIFF tool that compares per-pattern ORDERED sequences and applies the commit's declared-multiplicity filter (C5b: records whose `site` is one of its BOUND readers, and nothing else); (v) a records-per-arm FLOOR (a trace arm that prints nothing passes any diff); (vi) a FAILING-DIRECTION control: a planted swap of two records and a planted reorder within one pattern, each of which the diff must report, run at C0 and kept as a sabotage row on the diff tool (S-id next free on main at build); also the full all-flag deny sweep (§3.3 item 4, ≈54 min at 6 jobs) | nothing in `src/` |
 | C1 | **BUILT (lane stc1, 2026-10-07; `../dev/lanes/stc1_report.md`, the C1 outcome paragraph below)**. **selection trace** under `-DPCREC_CAND_TRACE` (a compile-time knob, `OPTK_DEBUG`'s precedent `emit_dfa.c:4320`; scratch builds only): every decision site `inventory.tsv` classes WALK or INLINE, the two ROUTE dispatches, K65/K66's decisions (`:1041`, `:1267`) and `prefix_k`'s admission outcome (`nsel`) print one record (§3.3 item 5). C1 byte-sweeps the trace build's stdout against the default build (the trace must move no emitted byte) | nothing in the default build (`#ifdef` text only) |
 | C2 | **BUILT (lane stc2, 2026-10-07; `../dev/lanes/stc2_report.md`, the C2 outcome paragraph below), pending merge**. **implement**: `CandRow`, `CandSlot`, `CandSel` (`DfaSel` + `vm` + `route`, typedef'd to the old name), `cand_select`, `cand_route_of(cx)` (the ONE route derivation, §2.3 item 3 [r2.1 S-N2]), and `cand_rows[]` holding all 37 rows with today's predicates and the `hands`/`accepts`/`list[route]` columns. No reader switched. Under `PCREC_CAND_TRACE` each old walk ALSO runs `cand_select` and aborts on a different row (the both-walks FILTER oracle, run in both orders, §3.3 item 6) | nothing |
-| C3 | **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
-| C4 | **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]` | S462, S473 |
-| C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; `dfa_select` and its macros deleted with their last caller | S169, S263, S371, S372, S441 |
+| C3 | **BUILT (lane stc3, 2026-10-07; `../dev/lanes/stc3_report.md`, the C3 outcome paragraph below), pending merge**. **replace NEXT + RECOVER**: `dfa_pf_of`, `vm_start_row`, `pf_scan_set_of`'s callers, `pcrec_dfa_scan_state_written`, `dfa_form_derive`, `dfa_search_start_of` and N12's four `attempt_cand` readers read `cand_select`, each body building its `CandSel` route from `cand_route_of(cx)`, and the fifteen `job->engine` tests (§2.3 item 3) reading it too [r2.1 S-N2]; `dfa_search_is_pinned` reads `u.recover.pinned`; `dfa_pfs[]`/`dfa_search_starts[]` deleted; D148 Q2's rename; `cand_rows_check.py` re-aimed (§3.5); the SPEC hunk: `registry.md:267`, and the readers `reader_grep.sh` finds outside `src/` [r2.1 C-N4] — `docs/spec/match_api.md:2348`, `:2441` and `docs/spec/tuning.md:2530` name `dfa_pfs[]`; `lib/CLAUDE.md:421`, `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`, `tests/mech/run_sabotage_matrix.sh:2579`, `tests/codegen/run_cand_rows.sh:3` and the `Makefile:517` comment name retiring identifiers and move in the commit that retires them (C3's `dfa_pfs`/`dfa_select`, C4's `req_admit`, C5's `pcrec_reseed_rows` readers at C7) | re-aims (derived): S222, S283, S284, S490 |
+| C4 | **BUILT (lane stc4, 2026-10-07; `../dev/lanes/stc4_report.md`, the C4 outcome paragraph below), pending merge**. **replace PRESENCE + FIRST**: `req_admit`/`req_use` read `cand_select`; `req_admits[]`/`req_uses[]` deleted; `pcrec_req_admit_row`/`pcrec_req_use_row` become projections of `cand_rows[]`; D148 Q2's `DfaSel` → `CandSel` spelling sweep (ruled "C4 or C7", taken here) | S462, S473; the sweep's S518-S521, S527 |
+| C5 | **replace RETRY + BOUND + WINDOW + WIDTH**: `vm_plan_reseed`'s loop → `cand_select`; the `VRS_P_*` tag and `vm_reseed_holds` deleted; the inline bound strings (into `u.bound`), the end-window test and the root-minw test read their slot's row; AND their stamp and listing readers do too: `<PREFIX>_END_WINDOW`, `<PREFIX>_VM_START`, `<PREFIX>_VM_ROOT_MINW` and `--emit-ir`'s `root-minw` row project the row (the value still from its landmark) [r2 sound-m1]; the start tables' last `DFA_SELECT` callers deleted (`req_admits[]`/`req_uses[]` go at C4; `dfa_select` itself STAYS: the six machine-form axes `dfa_reprs`, `dfa_views`, `dfa_seeds`, `dfa_accs`, `dfa_matches`, `dfa_edges` walk it and are outside the start table, §2.5; C3 already removed its route plumbing — ruled 2026-10-07, `../dev/lanes/stc3_report.md` §4 item 1) | S169, S263, S371, S372, S441 |
 | C5b | **BOUND readers** [r2 sound-M5]: P2 (both arms), N7's anchoring conjunct, R3 and `attempt_cand`'s `anchored` loop call `cand_select(BOUND, route)` instead of restating it. Byte-identical because each restatement equals its route's B rows today (§1.3); the ask set grows only by `dfa_interior_dead` on `CR_ATTEMPT` (§2.3 item 4), declared to the trace diff | S269, S274, S276, S492, and S441 again (R3's line, `emit_vm.c:11090`, which C5 also moves) [r2.1 S-N3] |
 | C6 | **the listing reads the table**: `axes_dump.c`'s `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`, `end-window` sections project `cand_rows[]` by `list[route]` (NOT `match`: `dfa_matches[]` stays outside, §2.5 [r2 sound-m3]), printing today's `kind`, order, listed name and `desc` text byte for byte; N12 has no listing; `AXIS_DESC`'s start rows deleted | nothing (stream 5 identical) |
 | C7 | **declared listing commit, stream 5 only, NOT an abi event**: D-3's stale desc corrected; `kind` becomes `list` for the start axes that ARE lists now; spec hunk in `docs/spec/registry.md`; `tests/registry/` pins re-read | `--list-axes` text only |
@@ -1107,6 +1107,49 @@ HIT | LOWER) and gives VERDICT no consumer (the CALLER accepts it);
 which move each old table's fields in. The full-corpus both-orders run, the
 byte sweep against main, `make test-codegen` and `make test` are OWED in the
 lane's detached chain (report §6).
+
+**C3's outcome** (lane stc3, `../dev/lanes/stc3_report.md`). Built as
+listed, with no emitted byte moved (the report's §3 carries the sweep):
+`dfa_pfs[]` and `dfa_search_starts[]` are deleted into `cand_rows[]`
+(`DfaPf` is the NEXT payload `CandPf`, `CandRow.u.pf`; RECOVER's is
+`CandRecover`, `u.recover.pinned`, which `dfa_search_is_pinned` returns);
+every NEXT and RECOVER reader asks `cand_select` with its route from
+`cand_route_of`, N12's four readers through `attempt_next_of` on
+`CAND_ROUTE_ATTEMPT` (the candidate set rides `CandSel.cand`); fourteen of
+the fifteen `job->engine` tests read `cand_route_of` (the fifteenth,
+`req_route_one_attempt`'s, is C5b's line in the edit set and anchors S269
+and S276); `prefilter`/`search-start` `--list-axes` rows project the table;
+re-aims S222/S283/S284/S490 as derived, plus S495 (its anchor read
+`pf->scan`, now `pf->u.pf.scan`), with S490's equivalence re-verified under
+the moved premise; S594/S595 re-homed onto the hit counter (`cand_hit`).
+Corrections to this note, all in the report §4: `dfa_select` is NOT deleted
+at C5 (six machine-form axes keep it; C3 drops its route parameter and
+`cand_routed`/`DFA_SELECT_ROUTED`); `dfa_search_start_of` is kept as the
+RECOVER slot's one `CandSel` builder (the edit set's "function deleted"
+token is retired, `dfa_pf_of`/`vm_start_row` being kept the same way);
+RECOVER asked on `cand_route_of` moves the C1 trace record's ROUTE field
+from `dfa` to `attempt` on ENG_ATTEMPT artifacts (row unchanged, no byte),
+a declared trace difference; the `DfaSel` spelling sweep is held (78 sites,
+five memfn-arch anchors on `req_handoff_applies(const DfaSel *s)`).
+
+**C4's outcome** (lane stc4, `../dev/lanes/stc4_report.md`). Built as
+listed, with no emitted byte moved on the light gates (the heavy chain is the
+report's §6): `req_admits[]`/`req_uses[]` are deleted into `cand_rows[]`
+(their fields are the PRESENCE payload `CandAdmit`, `u.admit`: verdict and
+description, and the FIRST payload `CandUse`, `u.use`); `req_admit` and
+`req_use` walk the table and print the row's `tok`;
+`pcrec_req_admit_row`/`pcrec_req_use_row` project the listed rows and return
+false past the last (the `nrows` externs are gone, `axes_dump.c` loops on the
+return). Corrections and choices, all in the report §4: the entry slots are
+asked on `CAND_ROUTE_DFA`, the C1 trace's route, NOT on `cand_route_of`,
+because §2.3's entry route on the VM route classes is `CR_VM`, which
+`cand_route_of` cannot derive (it reads `job->engine`); the trace build
+instead holds every other asked route to the same row (`cand_hit_every`,
+sabotage S600), so the choice is honest until the filed route-class change.
+The `rerun_at` column names NO row at C4 (no anchor sits in a C4 owner's
+body; the two re-aims are S462/S473); the lane re-ran the walk-reached
+predicate rows by judgment ([MECH-REACH]). The `DfaSel` sweep rode C4 (the
+edit set's new `token DfaSel`), re-aiming S518-S521 and S527.
 
 **Sequencing against the kit's R4c** [Frank 2026-10-06, R-Q5; §6]: R4c (`memfn/docs/requests.md`
 R-4, main `05c33ce0`) lands BEFORE C1-C7, and C0 (no `src/`) runs in parallel
@@ -1397,6 +1440,7 @@ graph's own parse with the total resolution of §2.1 method 3 (0 unresolved
   | C3 | S283, S284 | `dfa_pfs[]`'s run rows (deny, `reseeds`) |
   | C3 | S490 [r2.1 S-N2] | its anchor is `pf_dfa_start_set`'s route conjunct (`:6656`), one of the fifteen `job->engine` tests that read `cand_route_of`; the EQUIVALENCE argument is re-verified in the same re-aim (sound-n5: its premise moves from "ATTEMPT callers never call `dfa_pf_of`" to "the `routes` column excludes ATTEMPT from N5/N6") |
   | C4 | S462, S473 | `req_admits[]`'s `set-leads` deny; `req_uses[]`'s `handoff` deny |
+  | C4 | S518-S521, S527 [stc4] | D148 Q2's `DfaSel` spelling sweep: `req_handoff_applies`' signature |
   | C5 | S169 | the root-minw `if` H1 becomes a row read |
   | C5 | S263 | B3/B4's shared literal moves into `u.bound` (§2.2 wins over revision 1's §3.5) |
   | C5 | S371 | `rs->row->action` → `u.reseed` |

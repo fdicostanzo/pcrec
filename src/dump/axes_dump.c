@@ -4,9 +4,10 @@
  * WHAT THIS PROVES AND WHAT IT DOES NOT (docs/dev/plan.md [CHK-2]'s own
  * boundary, restated at the one place a reader will actually see it): this
  * dump shares its source with the emitter — it reads the SAME candidate-list
- * arrays `src/gen/emit_dfa.c`'s `dfa_select` walks (via the accessors
- * declared in internal.h), and hand-states the rest from `lib/pcrec.h`'s own
- * enum symbols. It proves what the compiler THINKS its options are. It is
+ * arrays `src/gen/emit_dfa.c`'s selection walks read (`dfa_select`'s lists;
+ * `cand_rows[]` for `prefilter` and `search-start` since [START-TABLE] C3),
+ * via the accessors declared in internal.h, and hand-states the rest from
+ * `lib/pcrec.h`'s own enum symbols. It proves what the compiler THINKS its options are. It is
  * NOT independent evidence that a stamp or a flag actually behaves as
  * described — the checks that read an EMITTED ARTIFACT (tests/codegen/
  * run_dfa_stamps.sh, the tuning.md differentials) are the independent side of
@@ -777,29 +778,27 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — single bytes only, the pre-row walk, ranked by length; the deny flag");
     }
     /* [OPT-PRECHECK-ADMIT] [K82] req-admit — §2.29/§2.40. The whole-window
-     * pre-check's admission table, WALKED LIVE off `pcrec_req_admit_row`
-     * (src/gen/emit_dfa.c), so this surface cannot state a predicate the
+     * pre-check's admission rows, WALKED LIVE off `pcrec_req_admit_row`
+     * (src/gen/emit_dfa.c: the PRESENCE rows of `cand_rows[]` since
+     * [START-TABLE] C4), so this surface cannot state a predicate the
      * emitter does not ask. Its stamp is `RX_REQ_WHY`; `set-leads` is a
      * SHAPE of an emitted pre-check, so it stamps `emitted` too. */
     {
         PredAxis p = { "req-admit", NULL, "RX_REQ_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
-        for (int i = 0; i < pcrec_req_admit_nrows; i++) {
-            PcrecReqAdmitDesc r;
-            pcrec_req_admit_row(i, &r);
+        PcrecReqAdmitDesc r;
+        for (int i = 0; pcrec_req_admit_row(i, &r); i++)
             emit_pred_row(sb, &p, i + 1, r.name, r.why, r.deny, 0, "", r.desc);
-        }
     }
     /* [K82] (B) req-use — §2.41. What the body does with an emitted run
-     * pre-check's answer, WALKED LIVE off `pcrec_req_use_row` for the
-     * admission's reason. Its stamp is `RX_REQ_HANDOFF`, whose value on the
+     * pre-check's answer, WALKED LIVE off `pcrec_req_use_row` (the FIRST
+     * rows of `cand_rows[]` since [START-TABLE] C4) for the admission's
+     * reason. Its stamp is `RX_REQ_HANDOFF`, whose value on the
      * `handoff` row is the artifact's own K, so no row names a fixed value. */
     {
         PredAxis p = { "req-use", NULL, "RX_REQ_HANDOFF", "", 0, NULL, 0, NULL, NULL, NULL };
-        for (int i = 0; i < pcrec_req_use_nrows; i++) {
-            PcrecReqUseDesc r;
-            pcrec_req_use_row(i, &r);
+        PcrecReqUseDesc r;
+        for (int i = 0; pcrec_req_use_row(i, &r); i++)
             emit_pred_row(sb, &p, i + 1, r.name, r.stamp, r.deny, 0, "", r.desc);
-        }
     }
     /* [K50] startpos-guard — §2.23. A CONTRACT AXIS, NOT ANSWER-IDENTICAL:
      * each row describes a real semantics for a mid-character caller

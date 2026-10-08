@@ -3308,7 +3308,13 @@ DETECTED at landing, `reach:ok(1/1),candrows:1fail/0pass`. Its stage-3
 answer-level detector (the hybrid re-seed row on a narrowed SET row) is the
 design's (startset.md §6.3) and does not exist yet. **S284** was re-anchored
 in the same change (the `dfa_pfs[]` rows took designated initializers); its
-intent and expected verdict (UNDETECTED) are unchanged.
+intent and expected verdict (UNDETECTED) are unchanged. **[START-TABLE] C3**
+(lane stc3, 2026-10-07) deleted `dfa_pfs[]` into `cand_rows[]`: S283, S284,
+S222 and S490 are re-aimed at the table's text (the derived C3 list,
+`start_table.md` §3.5), S495 too (its anchor read `pf->scan`, now
+`pf->u.pf.scan`), and S594/S595 re-homed (their plants now move artifacts;
+the `candoracle` hit counter still catches them). Intents unchanged; see
+`docs/dev/lanes/stc3_report.md`.
 
 ## [START-SET] stage 2 — `vmhat`, and S478-S500 (lane ssbuild2, 2026-10-05)
 
@@ -3384,6 +3390,17 @@ slot's old walk its oracle hook goes with it, and each of those commits must
 re-home or retire the rows on its slot.
 
 
+**[START-TABLE] C4 (lane stc4, 2026-10-07)**: PRESENCE and FIRST lost their
+old walks (`req_admits[]`/`req_uses[]` are deleted into `cand_rows[]`), so
+S596's plant now moves the artifact and is caught by its witness no longer
+reaching `emitted` (C3's S594/S595 shape); it is the same edit as the
+re-aimed S462 (whose detector is the pre-check suite). **S600** is new: the
+entry slots are asked on CAND_ROUTE_DFA alone, which is honest only while
+their answer does not depend on the route, and the trace build's
+`cand_hit_every` walks every other asked route and aborts on a different
+row; the plant inserts a VM-only total PRESENCE row before `emitted`, which
+moves no default-build byte.
+
 ### [ART-POSS-ARMS] — rows S560-S565, S601-S604 (lane possbuild, 2026-10-07)
 
 `docs/design/poss_arms.md` rev 2.1 §8.2's ten plant rows, against
@@ -3402,3 +3419,4 @@ TERMINATION row: with `PCREC_MAX_POSS_REF_DEPTH` still in place a linear
 cycle stays cheap, so its witness is the BRANCHING cycle
 `(a\2\3)(b\1)(c\1)x+\1`, whose compile then explores 2^64 paths), S604 (a
 group body read with `first_of`'s POSITION answer, N1).
+

@@ -569,3 +569,71 @@ the compiler, and is never adopted silently. Proposed for main to file
   fields), SEMANTIC differential ✓, per-form floors ✓; plus g2x folded ✓
   and G1 ✓. N3's acceptance = `G2_STRICT_HOOKS=1` over the bucket. OWED:
   N3 (after R-6 and the N2 re-run), then N4.
+- done: 2026-10-07 — **[MEMFN-ROWCON] N3: lane/memfn-n3 @ TIP (the commit
+  carrying this entry; validated tip b3dcb927 = N3 + G2u3 + main 42771cb8
+  with R-6).** The row-contract gate ENFORCES at define and at use:
+  - a failing row declines; a site no row serves is refused, naming the
+    fields; an unserved use is refused (no re-selection);
+  - F1: non-identifier s/n/lo text goes only to generic;
+  - miss unstated → decline/refuse;
+  - K-1: fn_ref is a hook id, and a FUNC site with 0 is refused;
+  - the pre-check is split by handoff into two rows with one form id;
+  - ofsskip's K96 ad hoc checks are deleted and replaced by the gate
+    (20 --gate arm fixtures);
+  - G2 enforces by default (G2u3, blinded).
+  No pcrec byte moves and no abi event. memfn.h changed in comments only;
+  no docs/spec/ hunk (no caller observes a change after R-6). Validation
+  (main's slot, 18:37-19:34, one serial chain;
+  logs in worktrees/memfn-slot/slot6/, gitignored):
+  1. **N2 census on the ENFORCING build:** `== N2 DONE rc=0
+     would_decline=0 ==`; would-decline selections 0; selections with no
+     row 0. So zero refusals at both phases on every pcrec site.
+  2. **Identity gate vs main 42771cb8:** R4C-GATE PASS, 0 movers on all 6
+     streams.
+  3. **Full G2** (enforced default): **149,029,184 passed, 0 failed**;
+     ENFORCED-CLASS cases 1,103 (hook-nonident 728 render + compile,
+     miss-unstated 314 refused naming `miss`, refusal-unnamed 12/12,
+     fn_ref-unstated 49 refused naming `fn_ref`); the W1 witnesses fired.
+  4. **Full make test** (`-k -j16 -Otarget`): rc 0, 747 s, no `*** [test-`
+     lines.
+  5. **Mech, solo:** the 16 rows rows_for.sh names, S185 S265 S267 S279
+     S285 S443 S444 S445 S447 S450 S454 S455 S464 S526 S570 S573, all
+     DETECTED, 0 unexpected/undetected/unreached/anomalies.
+  6. make strict rc 0; test-memfn-arms 104/0; test-memfn-stamps 14/0.
+  Reports: docs/dev/lanes/n3_report.md; memfn/tests/G2U_REPORT.md §8.
+  Charter (row_contracts.md §5 N3): enforce both phases ✓, precheck serves
+  a stated miss ✓ (split), shape-dependent row split ✓, K96 ad hoc → gate
+  ✓; ENTRY (census 0 after R-6 + identity gate) ✓. OWED: N4 (rows.tsv,
+  signatures, census floors, docs/spec/ literals).
+- notice: 2026-10-07 — **R4g edit set vs [START-TABLE] C4-C7 (read from main
+  bc8277d4). CLEARED by main** to start after N3 delivers and land after
+  C4 merges.
+  - **The edit set: SEARCH TEXT only, in src/gen/emit_dfa.c:**
+    - pcrec_emit_find (:5911-5925);
+    - pf_emit_find (:5928-5937);
+    - the memchr find line of pf_emit_memchr and its _bounded twin
+      (:5945-5986);
+    - the while-table line of pf_emit_bcls and its _bounded twin
+      (:5992-6016);
+    - the FIND call in pf_vm_emit_first_class (:6713-6731).
+    pf_emit_first_*_bounded (:6605-6632) follow through pf_emit_find with
+    no edit. Also memfn_sites.def, the manifest PF row and C12 3→1.
+  - **Stays pcrec-side:** guards, `return 0`s, clamps, comments, the
+    pf_*_applies predicates, cand_select(NEXT)/dfa_pf_of, unanch_start,
+    pf_scan_set_of, dfa_cand_scan, cand_ppm, the reseed text, and the
+    start_bytes/can_begin_match tables. The K84 strcmp readers are already
+    fixed on main.
+  - **Overlap:**
+    - C4: no shared function (same file and same cand_rows[]
+      initializer, different rows);
+    - C5/C5b: disjoint (the CandRow union is a soft touchpoint, unused);
+    - C6/C7: disjoint.
+  - **Main's conditions:**
+    1. no CandPf/CandRow field change (if one is needed, stop and ask);
+    2. re-pin and solo-run every row anchored in R4g's functions (S68
+       S186 S478 S481-S485 S524) in R4g's own commit, and re-derive
+       docs/design/start_table/sabotage_anchors.tsv so S478/S481-S484's
+       after-C5b rerun_at entries point at R4g's anchors;
+    3. this entry.
+  - Landing: on post-C4 main, with the zero-mover sweep on that tree, and
+    merges serialized through main.

@@ -792,3 +792,28 @@ pointer when a kit change merges to main.
   site's name is site.pred.fn_ref for every op; fn_ref 0 on FUNC is
   refused under N3), and g2u2 (sonnet, blinded) aligned the poison table.
   Full G2 in main's slot: 138,742,037/0. S526 DETECTED. done: posted.
+- G2u merged to main (038ed335). N3 started: kit branch lane/memfn-n3 from
+  main; opus lane n3 in worktrees/n3 (enforce at both phases; F1/miss/K-1
+  fn_ref/refusal naming; the ofsskip K96 ad hoc checks replaced by the
+  gate). Authoring only. The census, identity gate, full G2 (strict) and
+  make test happen in a slot after R-6 lands on main. STOP rule: any pcrec
+  site other than the N2 cells that would be refused.
+- n3 merged into lane/memfn-n3. The gate enforces at define and use; the
+  pre-check is split by handoff (precheck / precheck_assign, one form id);
+  ofsskip's K96 ad hoc checks are replaced by the gate (20 --gate arm
+  fixtures, 19 of them flip with the gate off); fn_ref is a hook id (0 =
+  unstated). Strict, build and arms (104/0) pass.
+- Pre-R-6, test-memfn-stamps fails 2 floors (calls-memcmp 35 < 40, idiom
+  55 < 80), because pcrec now has its N2-cell patterns refused (215
+  refused in the sample). That is expected until R-6; recheck on the
+  main+R-6 merge.
+- Without R-6, n3's 40 compiles show only the N2 cells refused; with a
+  scratch R-6, none. No STOP.
+- G2 is still red, 457 checks, all fn_ref-0 FUNC sites that G2 treats as
+  hard. The blinded follow-up g2u3 (sonnet; the cell is refreshed with
+  N3's build and memfn.h) makes the enforced outcome G2's default.
+- N3 validated in one chain (18:37-19:34): census on the enforcing build
+  0/0, identity gate 0 movers, full G2 149.0M/0 (1,103 enforced-class
+  cases), make test 747 s green, 16 mech rows DETECTED. done: posted.
+- R4g edit set posted. Main cleared it: start after N3 delivers, land
+  after C4, conditions recorded in responses.md.

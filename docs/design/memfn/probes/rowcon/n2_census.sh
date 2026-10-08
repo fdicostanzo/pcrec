@@ -11,14 +11,19 @@
 #
 # Env: OUT (results dir; default <worktree>/build/scratch/n2_<stamp>),
 #      JOBS (8), CC (gcc-16), TRACEBIN (a prebuilt MF_TRACE pcrec: skip build),
-#      SMOKE (1: smoke mode).
+#      SMOKE (1: smoke mode), N2_LOCK (the suite lock dir; default the Mac's.
+#      Off the Mac set it, e.g. to a scratch path: the default's parent does
+#      not exist there and the wait loop would never end).
+# Since N3 (an enforcing kit) the trace's `would_decline` still counts the
+# selections the gate CHANGED (and refused uses); `chosen=-` lines are the
+# define/run refusals ("selections with no row"). Both must be 0 for pcrec.
 # Last line, always: `== N2 DONE rc=N would_decline=K ==`.
 # Results: $OUT/n2_results.md, $OUT/arm_NNN.json, $OUT/census.log. A re-run
 # with the same OUT resumes (finished arms are skipped).
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 TREE=$(git -C "$HERE" rev-parse --show-toplevel)
-LOCK=/Users/fdicostanzo/pcrec/worktrees/.mac-suite.lock
+LOCK=${N2_LOCK:-/Users/fdicostanzo/pcrec/worktrees/.mac-suite.lock}
 STAMP=$(date +%Y%m%d_%H%M%S)
 OUT=${OUT:-$TREE/build/scratch/n2_$STAMP}
 JOBS=${JOBS:-8}

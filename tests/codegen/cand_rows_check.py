@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
-"""tests/codegen/cand_rows_check.py -- the CANDIDATE TABLE's structural checks
-(`src/gen/emit_dfa.c`'s `dfa_pfs[]`, the table docs/design/startset.md calls
-the one candidate-finding table; D148).
+"""tests/codegen/cand_rows_check.py -- the START TABLE's structural checks
+(`src/gen/emit_dfa.c`'s `cand_rows[]`, docs/design/start_table.md; until
+[START-TABLE] C3 the candidate table `dfa_pfs[]`, D148).
 
-[cand-no-name-strcmp] (K84, startset.md §8 stage 0, review r4 checks-F10)
-    No string comparison anywhere under src/ cli/ lib/ reads a `dfa_pfs[]` row
-    NAME. Two readers used to classify the selected prefilter row by
+[cand-no-name-strcmp] (K84, startset.md §8 stage 0, review r4 checks-F10;
+re-aimed at C3, start_table.md §3.5)
+    No string comparison anywhere under src/ cli/ lib/ reads the NAME of a
+    row of the slots `cand_rows[]` decides since C3 (NEXT, the old
+    `dfa_pfs[]`, and RECOVER, the old `dfa_search_starts[]`) and since C4
+    (PRESENCE, the old `req_admits[]`, and FIRST, the old `req_uses[]`;
+    their readers test `u.admit.verdict`/`u.use.use`). Two readers
+    used to classify the selected prefilter row by
     `strcmp(pf->c.name, "memchr")`; a new row with another name then escaped
     G1's dominance and the re-seed price silently. The row's PROPERTY
-    (`DfaPf.scan`) is what a reader tests now. A comparison call (strcmp,
-    strncmp, strcasecmp, strncasecmp, memcmp) fails the check when either
-      (a) one of its arguments is a string literal equal to a row name read
-          off the table itself -- except `"none"`, the total-fallback name
-          EVERY axis's list ends with and an ordinary word in a dozen
-          unrelated comparisons (an encoding list, a stamp fold), so it
-          cannot be keyed on by text -- or
-      (b) one of its arguments reads `c.name` through a receiver whose name
-          (this half covers `"none"`: `strcmp(pf->c.name, "none")` fails here)
-          ends in `pf` (`pf->c.name`, `f->pf->c.name`) or through
-          `dfa_pf_of(...)`.
+    (`CandRow.u.pf.scan`, `u.recover.pinned`) is what a reader tests now. A
+    comparison call (strcmp, strncmp, strcasecmp, strncasecmp, memcmp) fails
+    the check when either
+      (a) one of its arguments is a string literal equal to one of those
+          rows' identities or spellings (`c.name`, `tok`), read off the table
+          itself -- except `"none"`, the total-fallback name EVERY axis's
+          list ends with and an ordinary word in a dozen unrelated
+          comparisons (an encoding list, a stamp fold), so it cannot be
+          keyed on by text -- or
+      (b) one of its arguments reads `c.name` or `tok` through a receiver
+          whose name ends in `pf` (`pf->c.name`, `f->pf->tok`; this half
+          covers `"none"`) or through one of the selection functions
+          (`dfa_pf_of(...)`, `vm_start_row`, `attempt_next_of`,
+          `dfa_search_start_of`, `cand_select`).
+    The other slots' rows join the population as C5 moves their readers
+    onto the table (their names are still read off their old tables' own
+    spellings until then, and several -- `all`, `exact`, `window`,
+    `fixed` -- are ordinary words; §3.5's row-name-expression rule is the
+    shape that widening takes).
     WHAT IT CANNOT SEE: a row name copied into a differently named local and
     compared to another such local (no literal, no `pf` receiver), and a
     name-keyed lookup that is not a comparison call (a hash, a switch on a
@@ -27,17 +40,20 @@ the one candidate-finding table; D148).
     contents, so a new row's name joins it with no edit here.
 
 [cand-route-init] (stage 1, review r4 checks-F6)
-    Every `DfaSel NAME = { ... };` initializer under src/ names `.route`.
+    Every `CandSel NAME = { ... };` initializer under src/ names `.route`
+    (`CandSel` is the type since C2 and the only spelling since C4, D148
+    Q2's sweep; the pattern still accepts the retired `DfaSel`).
     The selection value gained a route whose zero value is the legacy DFA
     route; an initializer that omits it compiles silently (a designated
     initializer zero-fills), so the omission is caught here instead. The
     population is counted and must be non-empty (K35). WHAT IT CANNOT SEE: a
-    `DfaSel` built by assignment after declaration, or copied from another.
+    `CandSel` built by assignment after declaration, or copied from another.
 
-[cand-route-walk] (stage 1, checks-F6)
-    `dfa_select`'s body asks `cand_routed(` BEFORE `->applies(`: the route
-    mask is data the walk tests, so a VM-route selection never reaches a
-    predicate that reads a machine.
+[cand-route-walk] (stage 1, checks-F6; re-aimed at C3)
+    `cand_select`'s body tests the row's route mask (`CAND_ON(s->route)`)
+    BEFORE it calls `.applies(`: the route mask is data the walk tests, so a
+    VM-route selection never reaches a predicate that reads a machine. (Until
+    C3 the walk was `dfa_select` and the test `cand_routed(`.)
 
 The row-name population is read off the table's text and must be non-empty
 (K35): an empty population would make (a) pass vacuously.
@@ -127,11 +143,17 @@ def main():
     except OSError as e:
         bad("[cand-no-name-strcmp] cannot read %s: %s" % (EMIT, e))
         return
-    block = table_block(src, "static const DfaPf dfa_pfs[] = {")
-    names = re.findall(r'\{\s*(?:\.c\s*=\s*)?\{\s*"([^"]+)"', block or "")
-    print("REACH: dfa_pfs[] rows read off the table: %d (%s)" % (len(names), ", ".join(names)))
+    block = table_block(src, "static const CandRow cand_rows[] = {")
+    names = []
+    for row in re.split(r"\n    \{ ", block or "")[1:]:
+        if not re.search(r"\.slot\s*=\s*CAND_SLOT_(?:NEXT|RECOVER|PRESENCE|FIRST)\b", row):
+            continue
+        names += re.findall(r'\.c\s*=\s*\{\s*"([^"]+)"', row)
+        names += re.findall(r'\.tok\s*=\s*"([^"]+)"', row)
+    names = sorted(set(names))
+    print("REACH: cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names read off the table: %d (%s)" % (len(names), ", ".join(names)))
     if not names:
-        bad("[cand-no-name-strcmp] no dfa_pfs[] row name found in %s -- the literal half is vacuous" % EMIT)
+        bad("[cand-no-name-strcmp] no cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row name found in %s -- the literal half is vacuous" % EMIT)
         return
     lits = {'"%s"' % n for n in names if n != "none"}
     hits, ncalls, nfiles = [], 0, 0
@@ -148,8 +170,10 @@ def main():
                     args = call_args(text, m.end() - 1)
                     strs = set(re.findall(r'"(?:[^"\\]|\\.)*"', args))
                     why = sorted(strs & lits)
-                    if re.search(r"\w*pf\s*->\s*c\s*\.\s*name|dfa_pf_of\s*\([^;]*\)\s*->\s*c\s*\.\s*name", args):
-                        why.append("a pf receiver's c.name")
+                    if re.search(r"\w*pf\s*->\s*(?:c\s*\.\s*name|tok)\b|"
+                                 r"(?:dfa_pf_of|vm_start_row|attempt_next_of|dfa_search_start_of|cand_select)"
+                                 r"\s*\([^;]*\)\s*->\s*(?:c\s*\.\s*name|tok)\b", args):
+                        why.append("a selected row's c.name/tok")
                     if why:
                         line = text.count("\n", 0, m.start()) + 1
                         hits.append("%s:%d %s(%s) [%s]" % (os.path.relpath(path, TREE), line,
@@ -158,9 +182,9 @@ def main():
     if ncalls == 0:
         bad("[cand-no-name-strcmp] no comparison call found under src/ cli/ lib/ -- the scan reads nothing")
     elif hits:
-        bad("[cand-no-name-strcmp] a comparison reads a dfa_pfs[] row NAME (K84): " + "; ".join(hits))
+        bad("[cand-no-name-strcmp] a comparison reads a cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row NAME (K84): " + "; ".join(hits))
     else:
-        ok("[cand-no-name-strcmp] no comparison call reads any of the %d dfa_pfs[] row names" % len(names))
+        ok("[cand-no-name-strcmp] no comparison call reads any of the %d cand_rows[] NEXT/RECOVER/PRESENCE/FIRST row names" % len(names))
 
 
 def route_checks():
@@ -171,28 +195,28 @@ def route_checks():
     n, missing = 0, []
     for path in files:
         text = strip_comments(open(path, errors="replace").read())
-        for m in re.finditer(r"\bDfaSel\s+\w+\s*=\s*\{", text):
+        for m in re.finditer(r"\b(?:DfaSel|CandSel)\s+\w+\s*=\s*\{", text):
             n += 1
             body = text[m.end():text.find("};", m.end())]
             if not re.search(r"\.route\s*=", body):
                 missing.append("%s:%d" % (os.path.relpath(path, TREE), text.count("\n", 0, m.start()) + 1))
-    print("REACH: %d DfaSel initializer(s) under src/ cli/ lib/" % n)
+    print("REACH: %d DfaSel/CandSel initializer(s) under src/ cli/ lib/" % n)
     if n == 0:
-        bad("[cand-route-init] no DfaSel initializer found -- the check reads nothing")
+        bad("[cand-route-init] no DfaSel/CandSel initializer found -- the check reads nothing")
     elif missing:
-        bad("[cand-route-init] a DfaSel initializer omits .route: " + ", ".join(missing))
+        bad("[cand-route-init] a DfaSel/CandSel initializer omits .route: " + ", ".join(missing))
     else:
-        ok("[cand-route-init] all %d DfaSel initializers name .route" % n)
+        ok("[cand-route-init] all %d DfaSel/CandSel initializers name .route" % n)
     src = strip_comments(open(EMIT).read())
-    m = re.search(r"static const void \*dfa_select\(", src)
+    m = re.search(r"static const CandRow \*cand_select\(CandSlot slot,[^)]*\)\s*\{", src)
     body = src[m.end():src.find("\n}", m.end())] if m else ""
-    r, a = body.find("cand_routed("), body.find("->applies(")
+    r, a = body.find("CAND_ON(s->route)"), body.find(".applies(")
     if not body or a < 0:
-        bad("[cand-route-walk] dfa_select's body or its applies call not found in %s" % EMIT)
+        bad("[cand-route-walk] cand_select's body or its applies call not found in %s" % EMIT)
     elif r < 0 or r > a:
-        bad("[cand-route-walk] dfa_select does not test the route mask (cand_routed) before applies")
+        bad("[cand-route-walk] cand_select does not test the route mask (CAND_ON(s->route)) before applies")
     else:
-        ok("[cand-route-walk] dfa_select tests the row's route mask before its applies")
+        ok("[cand-route-walk] cand_select tests the row's route mask before its applies")
 
 
 main()

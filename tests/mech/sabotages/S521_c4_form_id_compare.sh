@@ -9,6 +9,8 @@
 # on a box whose clean C4 is red (ubuntubudu at 91f5b607: two plant misses)
 # every memfnarch row reads DETECTED whatever its plant does. Such a box now
 # reads UNREACHED here, which is true: the arm cannot measure there.
+# [START-TABLE] C4 (lane stc4, 2026-10-07) RE-AIMED: D148 Q2's spelling sweep
+# renamed the anchor's parameter type `DfaSel` -> `CandSel`; plant unchanged.
 SAB_ID="S521-c4-form-id-compare"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="memfnarch"
@@ -19,6 +21,6 @@ SAB_REACH_EXPECT='PASS: class 7 (kit-identity)
 checks failed: 0'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='static bool req_handoff_applies(const DfaSel *s)'
+SAB_BEFORE='static bool req_handoff_applies(const CandSel *s)'
 SAB_AFTER='/* SABOTAGE S521: if (strcmp(form->form_id, "swar") == 0) */
-static bool req_handoff_applies(const DfaSel *s)'
+static bool req_handoff_applies(const CandSel *s)'

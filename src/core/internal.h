@@ -6587,9 +6587,10 @@ long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
  * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
  * (or 0) that removes it from the emitter's own selection walk. Populated by
  * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
- * `dfa_select` walks — never a hand-copied restatement of their names and
- * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
- * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
+ * selection walks read (`dfa_select`'s lists, and since [START-TABLE] C3
+ * `cand_rows[]` for `prefilter` and `search-start`) — never a hand-copied
+ * restatement of their names and bits (docs/dev/learnings.md §3) — so a
+ * candidate added to one of those lists appears in the dump with no edit to the walker. `cap` bounds `out`;
  * returns the number written (never more than `cap`). */
 typedef struct {
     const char *name;
@@ -6756,32 +6757,33 @@ typedef struct {
 extern const PcrecReseedRow pcrec_reseed_rows[];
 extern const int pcrec_reseed_nrows;
 
-/* [OPT-PRECHECK-ADMIT] [K82] the whole-window pre-check's admission table
- * (src/gen/emit_dfa.c, `req_admits[]`), row `i` as DATA for `--list-axes`:
- * the row's name, its deny bit, the `<PREFIX>_REQ_WHY` token it stamps and
- * its predicate in one line. 0 <= i < pcrec_req_admit_nrows. */
+/* [OPT-PRECHECK-ADMIT] [K82] the whole-window pre-check's admission rows
+ * (src/gen/emit_dfa.c; since [START-TABLE] C4 the PRESENCE rows of the one
+ * start table `cand_rows[]`, was `req_admits[]`), row `i` as DATA for
+ * `--list-axes`: the row's listed name, its deny bit, the `<PREFIX>_REQ_WHY`
+ * token it stamps and its predicate in one line. False, and `out` untouched,
+ * past the last row. */
 typedef struct {
     const char *name;
     uint64_t    deny;
     const char *why;
     const char *desc;
 } PcrecReqAdmitDesc;
-extern const int pcrec_req_admit_nrows;
-void pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out);
+bool pcrec_req_admit_row(int i, PcrecReqAdmitDesc *out);
 
-/* [K82] the pre-check's USE table (src/gen/emit_dfa.c, `req_uses[]`, axis
- * `req-use`), row `i` as DATA for `--list-axes`: the row's name, its deny
- * bit, the `<PREFIX>_REQ_HANDOFF` value it stamps ("" where that value is the
- * artifact's own K) and its predicate in one line.
- * 0 <= i < pcrec_req_use_nrows. */
+/* [K82] the pre-check's USE rows (src/gen/emit_dfa.c; since [START-TABLE]
+ * C4 the FIRST rows of `cand_rows[]`, was `req_uses[]`; axis `req-use`), row
+ * `i` as DATA for `--list-axes`: the row's listed name, its deny bit, the
+ * `<PREFIX>_REQ_HANDOFF` value it stamps ("" where that value is the
+ * artifact's own K) and its predicate in one line. False, and `out`
+ * untouched, past the last row. */
 typedef struct {
     const char *name;
     uint64_t    deny;
     const char *stamp;
     const char *desc;
 } PcrecReqUseDesc;
-extern const int pcrec_req_use_nrows;
-void pcrec_req_use_row(int i, PcrecReqUseDesc *out);
+bool pcrec_req_use_row(int i, PcrecReqUseDesc *out);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 

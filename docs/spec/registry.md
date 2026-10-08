@@ -270,9 +270,16 @@ candidate of an axis always applies).
 **BOUNDARY, stated once here because it governs every column above**:
 this dump shares its source with the emitter it describes — for the six
 `kind=list`/`both` axes, `candidate`/`deny_macro`/`deny_bit` are read
-live off the SAME arrays `src/gen/emit_dfa.c`'s own `dfa_select` walks
-(`src/dump/axes_dump.c`'s accessor calls), so a new candidate landing
-in one of those arrays appears here with no edit to the dump. The
+live off the SAME arrays `src/gen/emit_dfa.c`'s own selection walks read
+(`src/dump/axes_dump.c`'s accessor calls): `dfa_select`'s lists for the
+machine-form axes and, for `prefilter` and `search-start`, the NEXT and
+RECOVER rows of the one start table `cand_rows[]` that `cand_select`
+walks (since [START-TABLE] C3, `docs/design/start_table.md`), so a new
+candidate landing in one of those arrays appears here with no edit to
+the dump. The `kind=predicate` axes `req-admit` and `req-use` are read the
+same way: their rows (name, deny, stamp token, description) are the
+PRESENCE and FIRST rows of `cand_rows[]` since [START-TABLE] C4, which
+`req_admit`/`req_use` walk. The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
 `kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`

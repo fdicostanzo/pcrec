@@ -66,8 +66,14 @@ SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-STAMP-AGREES-WITH-BODY"
 SAB_REACH_POP="docs/dev/opt5m2_m2_changed_patterns.txt|^\(\?m|12"
 SAB_COUNT=1
+# RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5): the
+# selection is `cand_select(RECOVER)` over `cand_rows[]` since C3 and the
+# stamp projects the chosen row's spelling (`->tok`); `dfa_search_starts[]` is
+# gone. Intent re-verified: the plant still replaces the projection with a
+# forked predicate at the stamp site, and the body is still emitted from the
+# selection (`dfa_search_is_pinned` reads the row's `u.recover.pinned`).
 SAB_BEFORE='static const char *dfa_search_start_name(Ctx *cx)
-{ return dfa_search_start_of(cx)->c.name; }'
+{ return dfa_search_start_of(cx)->tok; }'
 SAB_AFTER='/* SABOTAGE S222: the stamp is a SECOND predicate, forked from the selection
  * the body was emitted through. It reads the WIDENED accept bit AND omits
  * the invariance clause -- both halves, because the widened read ALONE is

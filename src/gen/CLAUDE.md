@@ -115,8 +115,8 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `tests/codegen/run_cand_rows.sh` [cand-no-name-strcmp] fails on a
   comparison reading a row name (S495). The same shape survives on axis C
   (`emit_machine_tables`' `strcmp(f->view->c.name, ...)`), out of K84's scope.
-- **THE ROUTE MASK (checks-F6).** `DfaSel` gained `route` (`CandRoute`,
-  `CAND_ROUTE_DFA` = 0) and a `const StartSet *ss`; every `DfaSel` initializer
+- **THE ROUTE MASK (checks-F6).** `CandSel` gained `route` (`CandRoute`,
+  `CAND_ROUTE_DFA` = 0) and a `const StartSet *ss`; every `CandSel` initializer
   is designated and names `.route` ([cand-route-init]). `DfaPf` gained
   `routes` (a `CAND_ON` mask, 0 = the legacy DFA-only row) and `emit_vm` (the
   VM hat's emitter slot, NULL on every row). `dfa_select` takes the mask's
@@ -143,7 +143,7 @@ order, and a machine's form is the FIRST APPLICABLE entry. Six axes:
 | axis | list | objects (preference order) |
 |---|---|---|
 | A table representation | `dfa_reprs` | `premultiplied`, `indexed` |
-| B prefilter (forward) | `dfa_pfs` | `memchr-bounded`, `memchr`, `byte-class-bounded`, `byte-class`, `none` |
+| B prefilter (forward) | `dfa_pfs` (since [START-TABLE] C3: `cand_rows[]`'s NEXT rows, walked by `cand_select`) | `memchr-bounded`, `memchr`, `byte-class-bounded`, `byte-class`, `none` |
 | C view handling | `dfa_views` | `end+eol`, `end`, `eol`, `none` |
 | D start seed | `dfa_seeds` | `seeded`, `constant` |
 | E accept placement | `dfa_accs` | `by-class`, `scalar-viewed`, `scalar-plain` |
@@ -226,7 +226,7 @@ definition (`pcrec_dfa_axis_table_cands` / `_prefilter_cands` / `_view_cands`
 walk the SAME arrays `dfa_select` walks for candidate name + deny bit,
 rather than a hand-copied restatement (docs/dev/learnings.md §3). They read
 `.name`/`.deny` off each list's common `DfaCand` header and never call
-`applies` — a context-free listing command has no real `DfaSel` to evaluate
+`applies` — a context-free listing command has no real `CandSel` to evaluate
 it against, and axes_dump.c's own header comment states why a fabricated
 one would be worse than none. Purely additive: no existing line in this
 region moved, and `make test-codegen` is unaffected (3/3, byte-identity
@@ -1197,11 +1197,45 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   oracle's `was` link), `cand_nodes[]` (accepts, asked routes, successors),
   `cand_select` and `cand_route_of`, after `dfa_search_is_pinned`. NO READER
   YET: the old tables and inline decisions still decide every byte until
-  C3-C5. `DfaSel` is `CandSel` (+ `vm`, the `CandVmFacts` a VM row reads).
+  C3-C5. The selection value is `CandSel` (+ `vm`, the `CandVmFacts` a VM
+  row reads); D148 Q2's spelling sweep retired its old name at C4.
   Under `-DPCREC_CAND_TRACE` every old start decision (here and in
   `emit_vm.c`'s `VM_CAND_*` hooks) also asks `cand_select` and aborts on a
   different row (`CANDORACLE`), the both-walks oracle; checked by
   `tests/codegen/run_cand_oracle.sh`.
+- **emit_dfa.c — NEXT and RECOVER read the start table** ([START-TABLE] C3,
+  lane stc3, 2026-10-07; `docs/design/start_table.md` §3.2 C3; zero movers,
+  no abi event). `dfa_pfs[]` and `dfa_search_starts[]` are DELETED into
+  `cand_rows[]`: `DfaPf` is the NEXT payload `CandPf` (`CandRow.u.pf`; its
+  `routes` field is the row's own), the RECOVER payload is `CandRecover`
+  (`u.recover.pinned`, which `dfa_search_is_pinned` returns — no row-pointer
+  compare). `CandRow`/`CandList` now sit beside the payload structs, above
+  the emitters, and `DfaForm.pf` is a `const CandRow *`. `dfa_pf_of`,
+  `vm_start_row`, `pcrec_dfa_scan_state_written`, `dfa_form_derive` and
+  `dfa_search_start_of` call `cand_select`; N12's four readers call
+  `attempt_next_of` (`cand_select(NEXT)` on `CAND_ROUTE_ATTEMPT`, the
+  candidate set left in `CandSel.cand`). `cand_route_of` moved up beside
+  `CAND_ROUTE_NAME` and every `job->engine` body test reads it except
+  `req_route_one_attempt`'s (C5b's). Stamps and trace records print the
+  row's `tok`. `dfa_select` stays for the machine-form axes, without its
+  route parameter (`cand_routed`/`DFA_SELECT_ROUTED` deleted). The
+  `prefilter`/`search-start` `--list-axes` accessors project the table
+  (`cand_axis_rows`). In the trace build a NEXT/RECOVER reader runs
+  `cand_hit` (self-check + `CANDROW`), not the oracle, and the route oracle
+  is gone (the dispatch reads `cand_route_of`).
+- **emit_dfa.c — PRESENCE and FIRST read the start table** ([START-TABLE]
+  C4, lane stc4, 2026-10-07; `docs/design/start_table.md` §3.2 C4; zero
+  movers, no abi event). `req_admits[]` and `req_uses[]` are DELETED into
+  `cand_rows[]`: their fields are the payloads `CandAdmit` (`u.admit`:
+  verdict, desc) and `CandUse` (`u.use`: use, desc). `req_admit`/`req_use`
+  call `cand_select` on CAND_ROUTE_DFA (the C1 trace's route; the rows are
+  routed everywhere) and print the row's `tok`. `pcrec_req_admit_row`/
+  `pcrec_req_use_row` project the listed PRESENCE/FIRST rows
+  (`cand_listed_row`) and return false past the last, so the `nrows`
+  externs are gone and `axes_dump.c` loops on the return. Trace build:
+  `cand_hit_every` (the hit plus every other asked route choosing the same
+  row). D148 Q2's spelling sweep rides this commit: every `DfaSel` is
+  `CandSel` and the C2 alias is deleted.
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
@@ -2617,7 +2651,7 @@ reserved and ISA-NEUTRAL by ruling** (R2): a form of the LOOP, never
 described as an x86 slot — the scalar loop is the portable baseline and
 stays the fallback forever.
 
-**BOTH AXES ARE PER-STATE, WHICH IS WHAT `DfaSel.st` EXISTS FOR.** The other
+**BOTH AXES ARE PER-STATE, WHICH IS WHAT `CandSel.st` EXISTS FOR.** The other
 six axes describe a whole machine and never read it; a selection walk that
 could not name the state would have had to be a second, parallel walk. It is
 -1 wherever it is meaningless, `dfa_match_of`'s own reason for passing a NULL
@@ -3455,8 +3489,14 @@ that was already cheaper, or on top of a pass the artifact was already running.
   emitting rows (the token answers whether, not which shape). Cause (B) of
   K82 (low-information runs on match-dense text) is NOT a row here: it waits
   for [FINDINGS.B4]'s run-rarity cost-model reader (`known_issues.md` K82).
+  **[START-TABLE] C4 (2026-10-07): the table is now the PRESENCE slot of
+  `cand_rows[]`** (`docs/design/start_table.md`): `req_admits[]` is deleted
+  into it (the verdict and description are the rows' `u.admit`),
+  `req_admit` walks it with `cand_select`, and `pcrec_req_admit_row` is a
+  projection of its listed rows. Order, predicates and listing unchanged.
 - **[K82] (B) (abi 60 -> 61) THE USE TABLE, `req_uses[]`** (axis `req-use`,
-  `pcrec_req_use_row` for `--list-axes`): what a search body does with an
+  `pcrec_req_use_row` for `--list-axes`; since [START-TABLE] C4 the FIRST
+  slot of `cand_rows[]`, `u.use`, walked by `req_use` with `cand_select`): what a search body does with an
   EMITTED run pre-check's answer. Row `handoff` (`-fno-req-handoff`, bit 46,
   in `strategy_denials`) CALLS `req_admit` and asks a DFA scan in front
   (`pcrec_artifact_has_dfa_scan`, not the empty machine), a finite
@@ -3744,7 +3784,7 @@ candidate table (`dfa_pfs[]`) gains its first row serving the VM route,
 and `none` now serves both routes. Three things to know:
 
 - **ONE SELECTION, THREE READERS.** `vm_start_row` walks `dfa_pfs[]` on the VM
-  route with `DfaSel.ss = pcrec_fact_start_set(cx)`; `pcrec_vm_start_scan_name`
+  route with `CandSel.ss = pcrec_fact_start_set(cx)`; `pcrec_vm_start_scan_name`
   (the every-artifact `<PREFIX>_VM_START_SCAN` stamp, in the shared prologue
   beside `REQ_HANDOFF`) and `pcrec_emit_vm_start_seek` (the entry and retry
   seeks, `emit_vm.c`'s `vm_emit_search_body`) both call it, so the stamp names
@@ -3783,7 +3823,7 @@ and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
   `DfaPf.scan_set` points at it, so `pf_scan_set_of` — the ONE place a reader
   of the scanned set asks (`dfa_form_derive`'s `f->cand`, `dfa_cand_scan`'s
   G1 byte, `pcrec_dfa_cand_ppm`'s re-seed density) — cannot price `E` for a
-  skip that tests `T`. Every DFA-route `DfaSel` that walks `dfa_pfs[]` now
+  skip that tests `T`. Every DFA-route `CandSel` that walks `dfa_pfs[]` now
   carries `.ss = pcrec_fact_start_set(cx)`.
 - **TWO ASSERTIONS, NOT DECLINES.** A seeded machine is a views machine
   (startset.md §6.4.3 item 3), so the DFA hat is `-bounded`-only and an

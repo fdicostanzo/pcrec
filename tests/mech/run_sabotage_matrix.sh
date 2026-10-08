@@ -2710,8 +2710,9 @@ run_one() {
             candrows)
                 # [START-SET] (D148) tests/codegen/run_cand_rows.sh — the
                 # candidate table's structural checks: no comparison reads a
-                # `dfa_pfs[]` row NAME (K84, stage 0) and, from stage 1, every
-                # `DfaSel` initializer names its route. ITS OWN ARM: both are
+                # `dfa_pfs[]` row NAME (K84, stage 0; `cand_rows[]`'s NEXT and
+                # RECOVER rows since [START-TABLE] C3) and, from stage 1, every
+                # `DfaSel`/`CandSel` initializer names its route. ITS OWN ARM: both are
                 # facts about the SOURCE that move no answer, so a row on this
                 # arm scores `corpus:0fail` by design. Registered before S495.
                 PCREC="$pcrec" bash "$tree/tests/codegen/run_cand_rows.sh" "$tree" \
