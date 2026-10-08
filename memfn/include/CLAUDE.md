@@ -21,7 +21,9 @@
   Q-G2-n (integration.md §R4.7.0 is the table); Q-G2-5 (ADVANCE's range
   is `more`, its empty range NOP, no kit empty test) is marked RULED at the
   ADVANCE hooks (Q-R4h-2, recorded 2026-10-08), with the ADVANCE hooks'
-  text-shape classes (`more` CONJ, `peek` POSTFIX, `step` EXPR_STMT).
+  text-shape classes (`more` CONJ, `peek` POSTFIX, `step` EXPR_STMT); the
+  `member` hook is OPAQUE there (pasted parenthesized), and the comment names
+  R4h's frozen target render (tests/memfn/pins/r4h_target/, lane advtarget).
 
 No ISA names appear in it: pcrec must learn no architecture fact from the
 header (C4). An `MF_SITE_ABI` change is a layout or meaning change of a

@@ -40,6 +40,15 @@
 #   7. THE COUNTER'S OWNER (R4h prep, MF_SITE_ABI 5): adv-kit-count's text
 #      declares its counter, adv-caller-count's never does, and both advance
 #      and cap it.
+#   8. R4h'S FROZEN TARGET (lane advtarget, 2026-10-08): every file under
+#      tests/memfn/pins/r4h_target/ is a 3-line header, the kit's text for
+#      the same-named fixture byte for byte, then a `/* pcrec today:` block
+#      to EOF. The middle must equal the fixture's freshly rendered .use
+#      (and its .def be empty), so a kit move that the pins re-pinned still
+#      reads red until the frozen target is re-frozen on purpose. K35: the
+#      R4H_TARGETS shapes each have a file and the files number at least
+#      R4H_TARGET_FLOOR. CONTROL: a copy of one target with one body byte
+#      planted must compare unequal (a comparator that sees nothing is red).
 # WHAT IT DOES NOT SEE: an arm no fixture reaches (each new arm adds its own
 # fixtures and its id to ARMS_EXPECTED in the change that adds it), and a hook
 # pcrec passes that differs from the driver's stand-in (I1 at a migration's
@@ -49,7 +58,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=58
+ARMS_ROW_FLOOR=74
 ARMS_EXPECTED="ofsskip precheck runcmp pf_memchr pf_walk"
 
 pass=0; fail=0
@@ -246,7 +255,52 @@ for want in 'scan_run_length++;' 'scan_run_length < 16ULL'; do
     done
 done
 
-echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase"
+# 8: R4h's frozen target (advtarget). tgt_cmp FILE USE: 0 iff FILE's body
+# (after 3 header lines, before the `/* pcrec today:` line) equals USE's bytes.
+R4H_DIR="$ROOT_DIR/tests/memfn/pins/r4h_target"
+R4H_TARGET_FLOOR=8
+R4H_TARGETS="adv-stay-fwd adv-stay-rev adv-stay-view adv-edge-unbounded adv-edge-counted-fwd adv-edge-counted-rev adv-vmspan-it adv-vmspan"
+tgt_cmp() {
+    python3 - "$1" "$2" <<'EOF3'
+import sys
+t = open(sys.argv[1], 'rb').read().split(b'\n')
+u = open(sys.argv[2], 'rb').read()
+cut = [i for i, l in enumerate(t) if l.startswith(b'/* pcrec today:')]
+if len(t) < 4 or not cut or cut[0] < 4:
+    sys.exit(2)
+body = b'\n'.join(t[3:cut[0]]) + b'\n'
+sys.exit(0 if body == u else 1)
+EOF3
+}
+ntgt=0
+for f in "$R4H_DIR"/*.c; do
+    [ -e "$f" ] || continue
+    ntgt=$((ntgt + 1))
+    fx="$(basename "$f" .c)"
+    if [ ! -f "$T/out/$fx.use" ]; then
+        bad "r4h_target/$fx.c names no rendered fixture"
+    elif [ -s "$T/out/$fx.def" ]; then
+        bad "r4h_target/$fx: the fixture renders a def part (the target is the use only)"
+    elif tgt_cmp "$f" "$T/out/$fx.use"; then ok
+    else bad "r4h_target/$fx.c differs from the kit's render of $fx (re-freeze on purpose, or the kit moved)"; fi
+done
+for fx in $R4H_TARGETS; do
+    if [ -f "$R4H_DIR/$fx.c" ]; then ok; else bad "R4h target shape $fx has no frozen file"; fi
+done
+if [ "$ntgt" -lt "$R4H_TARGET_FLOOR" ]; then
+    bad "only $ntgt R4h target files, floor $R4H_TARGET_FLOOR"
+else ok; fi
+# the control: one planted body byte (line 4's first space becomes a tab)
+if [ -f "$R4H_DIR/adv-edge-counted-fwd.c" ]; then
+    awk 'NR == 4 { sub(/ /, "\t") } { print }' "$R4H_DIR/adv-edge-counted-fwd.c" > "$T/planted.c"
+    if cmp -s "$T/planted.c" "$R4H_DIR/adv-edge-counted-fwd.c"; then
+        bad "the r4h_target plant changed nothing"
+    elif tgt_cmp "$T/planted.c" "$T/out/adv-edge-counted-fwd.use"; then
+        bad "the r4h_target comparator accepted a planted byte"
+    else ok; fi
+fi
+
+echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
