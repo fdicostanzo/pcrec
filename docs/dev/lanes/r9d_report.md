@@ -276,3 +276,135 @@ The binary is the kit tip's, read-only: `worktrees/memfn/build/pcrec`,
 
 Docs only. Compiles and `nm`/`-S` reads on scratch artifacts only; no
 timed run, no `make`.
+
+## Revision D155 (2026-10-08, same lane)
+
+**Input.** D155 records Frank's rulings on Q-R9-1..9 (main 3b1fd77c). Q-R9-6
+is AMENDED: no `#if` inside a function body; per-level `static inline`
+helpers selected at file scope; SIMD-off routes through the helper as a
+measured abi event. `[MEMFN-RTDISPATCH]` is filed with its terms
+(responses.md, `lane/memfn-m7` c9e90c77). DESIGN ONLY: no source edits and
+no timed runs. Every edit in integration.md is marked `[D155]`.
+
+### What changed in §R4.9
+
+- **The shape** (§R4.9.2.5).
+  - The BODY row's loop becomes `<fn>__body`, unguarded, the one scalar
+    spelling.
+  - Each rendered rung is a guarded helper `<fn>__w<VW>`. Its entry test
+    (the derived reach) falls through by name to the next rendered rung
+    or to `__body`.
+  - The FUNC itself is the selector: one `#if`/`#elif`/`#else` chain at
+    file scope, written by the seam from `levels.def`. Each arm's body is
+    ONE call, and the `#else` arm is the SIMD-off FUNC byte for byte.
+  - The PREFIX slot now renders whole helper definitions only.
+  - Names are the FUNC name plus `__body` or `__<stamp token>`. They are
+    unique because every FUNC name ends in a fixed pcrec suffix.
+  - Nothing is shared between FUNCs. The intrinsics include is written
+    once per level per artifact. The stamp is unchanged and lists the
+    rendered arms.
+- **The abi event** (§R4.9.2.6): step R4e′.0b sits between the zero-mover
+  seam and batch 1. It moves +139 B per FUNC, and pcrec's side is RQ-6.
+  G1 has four parts:
+  - a pcrec-side mover census by id;
+  - an un-done text diff that must equal the parent;
+  - assembly identity at `-O2` (default and v3);
+  - timing ONLY for a non-identical mover.
+
+  Both layers are read: ON == OFF at that step by construction. Q49 is
+  amended for this one step.
+- **The floor rule restated** (§R4.9.2.3, §R4.9.8).
+  - (a) Preprocessed-equal off-target: unchanged.
+  - (b) On-target: insertions plus exactly ONE replaced line per SIMD
+    FUNC, the selected call. This replaces C-6's insertion-only leg,
+    which is impossible under file-scope selection. The count is checked
+    against the mover census.
+  - (c) The raw source is insertion-only, which makes RQ-3's
+    `len − simd_guarded` exact.
+  - (d) A brace-depth lint: no directive inside a body.
+  - Guarded bytes are whole definitions plus directives. Q-R9-9 is RULED
+    (a), and `guarded_max` covers the helper, the include share, the
+    selector arm and the directives.
+- **Runtime dispatch** (§R4.9.3.1, filed, no dispatcher designed).
+  - Frequency classes: the PRE window FUNC is INFREQUENT on every
+    batch-1 route; the filed OFS `<p>_ofsskip` is FREQUENT (inside the
+    DFA scan loop).
+  - Target-attribute copies have the same helper text. The selector gains
+    an arm for INFREQUENT sites only.
+  - The set is data, so it need not cascade. Per-arch artifacts already
+    work.
+  - The hard problem left to the row: "chosen once" without a mutable
+    static (TS-1).
+- **Questions.** Q-R9-1..9 are marked RULED in place. NEW:
+  - **Q-R9-10:** the FUNC-as-selector shape (C) vs an invariant FUNC
+    plus `<fn>__level` (A). Recommend C.
+  - **Q-R9-11:** the frequency class is not `MF_P_INLOOP`: D91 puts OFS
+    in budget 1, and overloading the bit would make every SIMD row
+    decline OFS. Recommend a `DELEG_SITES` `freq` column, born with
+    RTDISPATCH (D77).
+
+### Probes (scratch `build/d155/`, gitignored; gcc 15.2.0, glibc 2.43, `taskset -c 12-15`, `gnutimeout 60`)
+
+Inputs: r9fu's twelve kit-tip witness artifacts with a FUNC
+(`build/r9fu/w*.c`: eleven PRE `rx_reqrun`, one OFS `rx_ofsskip`). The
+FUNC is re-rendered by `gen.py SRC FN {offC,offA,onC,onA} OUT [RUNDEFS]`.
+The vector helpers are r9fu's hand twin (R-1's `ffl`, lead removed), with
+the reach test as their entry statement. They are not kit renders.
+
+    ./off_identity.sh && ./norm_cmp.sh   # today vs offC/offA, -O2/-O3/-Os -S, .LFB/.LFE renumbered
+    ./levels.sh                          # 2 witnesses x {onC,onA,onCu,onCs} x 9 flag sets x {-O0,-O2}, -Wall -Wextra
+    ./c18.sh                             # legs (a)/(b) on the new shape
+    gcc ... drv.c                        # answer differential, 15,884,000 calls per build
+
+Results:
+- **SIMD-off assembly vs today.**
+  - `-O2` 24/24 IDENTICAL and `-O3` 24/24 IDENTICAL (12 witnesses × 2
+    shapes); no helper symbol survives.
+  - `-Os`: 18/24.
+    - `w8` (`(a|b)+xyzzy`) and `w17` (`(?i)(a|b)+cat`) differ only in a
+      symbol name, since gcc keeps the FUNC out of line at `-Os` today
+      too.
+    - `w10` (`(?i)union.*?select.*?from`, `--engine=vm`) has one
+      register swap across two instructions.
+  - `-O0`: 1 → 2 calls per FUNC call.
+- **Bytes at SIMD-off.** +139 B per FUNC (+141 for `rx_ofsskip`) in
+  shape C, and +280 / +284 in shape A.
+- **Warnings at every level.** 144 compiles, 0 errors.
+  - Flag sets: `-mgeneral-regs-only`, default, v2, sandybridge, v3, v4,
+    `-mno-sse2`, `-mavx2 -mno-sse2`, `-mgeneral-regs-only -march=v3`.
+  - The only warnings are the planted control: a helper that is unused at
+    v3/v4, declared plain `static`, gives `-Wunused-function` in 8 of 8
+    compiles. The same helper as `static inline` is silent.
+  - `-mavx2 -mno-sse2` defines neither `__SSE2__` nor `__AVX2__`, so the
+    w32 guard implies the w16 guard.
+- **C18.**
+  - (a) EQUAL 12/12.
+  - (b) At default, v3 and v4: exactly 1 deleted line, the selected
+    call. Inserted: 3,236 lines (default) and about 45.8k (v3/v4).
+  - (c) The source diff deletes 0 lines (4/4).
+- **On-target code.**
+  - At `-O2` every helper inlines into `rx_search` at every level.
+  - Instruction counts: `(?i)cat` 336/418 and `/user|/users` 279/363
+    (default/v3). The r9fu twin of the withdrawn shape counted 337/423
+    and 276/356.
+  - Broadcast counts equal r9fu's: `pshufd` 4 at default, `vpbroadcast`
+    8 at v3.
+- **Answers.** One result hash per witness across today, both OFF shapes
+  and both ON shapes, at default, v3, v4 and general-regs.
+- **Runtime-dispatch stand-in** (`w1.rt.c`).
+  - The w32 helper under the dispatch guard plus `target("avx2")` is the
+    same text as the static one apart from the attribute.
+  - It compiles clean at default, v3 and general-regs.
+  - The target-attributed helpers stay OUT OF LINE at default, so a
+    dispatched site pays a call.
+  - Leg (a) is EQUAL, and the answers are equal.
+- **The routing gate's plants** (`plants.txt`).
+  - Making `<fn>__body` plain `static` gives IDENTICAL assembly: not a
+    witness.
+  - `__attribute__((noinline))` gives 349 changed lines: the witness.
+
+### Validation
+
+Docs only. The scratch compiles and greps above are the only runs; no
+timed run and no `make`. Transcripts: `build/d155/{norm_cmp,levels,c18,
+diff_answers,bytes,rt,srcdiff,plants}.txt`.

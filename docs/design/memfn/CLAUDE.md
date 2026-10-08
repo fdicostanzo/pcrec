@@ -207,6 +207,14 @@ its DESIGN record.**
   cells (§R4.9.7.1). It also checked `[MEMFN-ENTRYSINK]`: no entry point
   is assumed, and the one candidate is the filed OFS run-pinned form
   (§R4.9.7.2).
+  `[D155]` Revised for Frank's rulings (same lane): Q-R9-1..9 are RULED.
+  The floor rule is amended so that no function body holds an `#if`. The
+  FUNC's loop becomes `<fn>__body`, each level is a guarded helper, and a
+  file-scope selector picks the ONE call (§R4.9.2.5, probes). SIMD-off
+  routing is step R4e′.0b, a pcrec abi event measured as G1 (§R4.9.2.6).
+  C18's leg (b) allows exactly one replaced call per SIMD FUNC.
+  `[MEMFN-RTDISPATCH]`'s terms are mapped onto the same helpers, with each
+  site's frequency class (§R4.9.3.1). Q-R9-10 and Q-R9-11 are new.
   Read §R4.9 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
