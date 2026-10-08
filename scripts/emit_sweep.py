@@ -824,6 +824,23 @@ class StreamResult:
         self.mirrored = False  # both sides one binary: identity trivial
         self.hash_a = {}       # pattern index -> sha256 of side a's output
         self.hash_b = {}
+        self.census_hits = None  # set of keys whose REF artifact is a census hit (None: no census)
+
+
+# [MEMFN] R4h census (lane advnorm): `--census-ref-re FILE` names a file of
+# regexes (one per line, re.M) read off the REFERENCE side's artifact text. A
+# mover must be a census hit and a census hit must be a mover -- a text census
+# that is independent of the diff (the instrument that says WHICH artifacts a
+# declared text mover may touch), 0 off-diagonal in both directions.
+CENSUS_RES = None
+
+
+def census_hit(text):
+    if CENSUS_RES is None or text is None:
+        return False
+    if isinstance(text, bytes):
+        text = text.decode("utf-8", "replace")
+    return any(r.search(text) for r in CENSUS_RES)
 
 
 def same_binary(bin_a, bin_b):
@@ -836,7 +853,18 @@ def sha(b):
     return hashlib.sha256(b).hexdigest() if b is not None else None
 
 
-def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout):
+def facts_diff_keys(c_a, c_b):
+    """The `kind\tKEY` heads of the lines that differ between two facts
+    listings (a line-count change is reported as the key `<LINECOUNT>`)."""
+    al = c_a.decode("utf-8", "replace").splitlines()
+    bl = c_b.decode("utf-8", "replace").splitlines()
+    if len(al) != len(bl):
+        return {"<LINECOUNT>"}
+    return {"\t".join(x.split("\t")[:2]) for x, y in zip(al, bl) if x != y}
+
+
+def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
+                     census_fn=None, declared_keys=None):
     """ONE pattern of an argv stream, compared INSIDE the worker so only a
     small tuple (never the artifacts) crosses back to the merge:
     (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b); hunk is None
@@ -849,7 +877,26 @@ def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout):
         ok_b, c_b, e_b = compile_fn(bin_b, pat, timeout)
     key = f"{f}:{kind}:{pat[:60]!r}"
     hunk = first_diff_hunk(c_a, c_b) if ok_a and ok_b and c_a != c_b else None
-    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b
+    if census_fn is None:
+        hit = ok_a and census_hit(c_a)
+    else:
+        # The stream's own listing carries no loop text, so the census is read
+        # off the REF side of a DIFFERENT artifact of the same pattern
+        # (`census_fn`), and a mover only counts as explained when every line
+        # that moved is one of the stream's DECLARED keys.
+        hit = False
+        if ok_a and CENSUS_RES is not None:
+            # per ENCODING: a listing's `utf8` program is the --engine=vm -e utf8
+            # artifact's, not the byte one's
+            for enc in ("byte", "utf8"):
+                if ("%s\tRX_VM_PROGRAM_BYTES\t" % enc).encode() not in c_a:
+                    continue
+                ok_c, c_c, _ = census_fn(bin_a, pat, timeout, enc)
+                hit = hit or (ok_c and census_hit(c_c))
+        if hunk is not None and declared_keys is not None:
+            if not facts_diff_keys(c_a, c_b) <= declared_keys:
+                hit = False
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit
 
 
 def merge_argv_stream(name, rows, mirror):
@@ -858,7 +905,11 @@ def merge_argv_stream(name, rows, mirror):
     res = StreamResult(name)
     res.population = len(rows)
     res.mirrored = mirror
-    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b) in enumerate(rows):
+    if CENSUS_RES is not None:
+        res.census_hits = set()
+    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit) in enumerate(rows):
+        if hit and ok_b:
+            res.census_hits.add(key)
         # per-index output hashes: the trace family checks that the trace
         # build's stdout equals THIS (the default build's) per pattern.
         res.hash_a[idx], res.hash_b[idx] = h_a, h_b
@@ -915,7 +966,8 @@ def composition_task(item, bin_a, bin_b, out_root, timeout, extra):
         if nm.endswith(".c") and (deliver_witness(content_a.decode("utf-8", "replace"))
                                   or deliver_witness(content_b.decode("utf-8", "replace"))):
             deliver = True
-        arts.append((nm, first_diff_hunk(content_a, content_b) if content_a != content_b else None))
+        arts.append((nm, first_diff_hunk(content_a, content_b) if content_a != content_b else None,
+                     nm.endswith(".c") and census_hit(content_a)))
     return f, "ok", (os.path.basename(f), arts, deliver)
 
 
@@ -924,6 +976,8 @@ def merge_composition(files, rows):
     StreamResult; sets the sticky deliver flag like the old per-stream sweep."""
     res = StreamResult("composition")
     res.population = len(files)
+    if CENSUS_RES is not None:
+        res.census_hits = set()
     producing = 0
     artifact_count = 0
     fixture_produced = {name: False for name in DELIVER_FIXTURES}
@@ -940,8 +994,10 @@ def merge_composition(files, rows):
             fixture_produced[base] = True
         if deliver:
             nonlocal_flag[0] = True
-        for nm, hunk in arts:
+        for nm, hunk, hit in arts:
             artifact_count += 1
+            if hit:
+                res.census_hits.add(f"{f}::{nm}")
             if hunk is not None:
                 res.movers.append((f"{f}::{nm}", hunk))
         res.both_ok += 1
@@ -1313,6 +1369,19 @@ def report_stream(res, floor=None, identity_required=False):
             lines.append(f"    {key}:")
             for hl in hunk.splitlines():
                 lines.append(f"      {hl}")
+    if res.census_hits is not None:
+        mk = {k for k, _ in res.movers}
+        off_a = sorted(mk - res.census_hits)       # moved, REF text has no census shape
+        off_b = sorted(res.census_hits - mk)       # REF text has the shape, did not move
+        lines.append(f"  CENSUS: movers={len(mk)} text-census-hits={len(res.census_hits)} "
+                     f"off-diagonal(moved-without-shape)={len(off_a)} "
+                     f"off-diagonal(shape-without-move)={len(off_b)}")
+        for tag, off in (("moved without a REF census shape", off_a),
+                         ("REF census shape but no move", off_b)):
+            if off:
+                ok = False
+                lines.append(f"  CENSUS OFF-DIAGONAL, {tag} ({len(off)}), first 10:")
+                lines.extend(f"    {k}" for k in off[:10])
     if floor is not None and res.both_ok < floor:
         ok = False
         lines.append(f"  REACH FLOOR VIOLATION: {res.both_ok} < floor {floor}")
@@ -1347,6 +1416,15 @@ def main():
     ap.add_argument("--no-real-run", action="store_true")
     ap.add_argument("--only-emit-ir-reach", action="store_true")
     ap.add_argument("--keep", action="store_true")
+    ap.add_argument("--census-facts-keys", metavar="KIND:KEY[,...]",
+                    help="with --census-ref-re: the facts stream's census. A facts "
+                         "mover is explained iff the REF listing has an RX_VM_PROGRAM_BYTES line and the pattern's REF --engine=vm .c is "
+                         "a census hit AND every moved listing line is one of these "
+                         "kind:KEY heads (e.g. byte:RX_VM_PROGRAM_BYTES,"
+                         "utf8:RX_VM_PROGRAM_BYTES)")
+    ap.add_argument("--census-ref-re", metavar="FILE",
+                    help="[MEMFN] R4h: file of regexes (one per line); streams 1-4 hold "
+                         "movers == REF artifacts matching any of them, 0 off-diagonal")
     ap.add_argument("--timeout", type=int, default=30)
     ap.add_argument("--limit", type=int, default=0,
                      help="truncate the argv corpus to the first N rows "
@@ -1457,6 +1535,19 @@ def main():
         # its threads). Results are tagged by stream and merged in stream
         # order, so the output is byte-identical to the per-stream form.
         mirror = same_binary(bin_a, bin_b)
+        # [MEMFN] R4h (lane advtri): the facts stream's census. RX_VM_PROGRAM_BYTES
+        # reports the VM program's emitted length (the quantity the entry-shape size
+        # term compares) and is listed only for an artifact that carries a VM program,
+        # so it moves exactly where the REF listing has that line AND the layout
+        # census hits the --engine=vm artifact of that listing's encoding, and NO other fact may move.
+        facts_census = {}
+        if args.census_facts_keys:
+            facts_census["facts"] = dict(
+                census_fn=lambda b, p, t, enc: compile_stream_c(
+                    b, p, t, engine="vm",
+                    extra=list(run_extra) + (["-e", "utf8"] if enc == "utf8" else [])),
+                declared_keys={"\t".join(k.split(":", 1)) for k in
+                               args.census_facts_keys.split(",")})
         tasks = []
         comp_files_run = []
         comp_out = None
@@ -1494,8 +1585,9 @@ def main():
             log(f"[emit_sweep] === {label}: {title} ===")
             spans[name] = (len(tasks), len(patterns))
             for item in patterns:
-                tasks.append((False, lambda item=item, fn=fn: argv_stream_task(
-                    fn, item, bin_a, bin_b, mirror, args.timeout)))
+                tasks.append((False, lambda item=item, fn=fn, name=name: argv_stream_task(
+                    fn, item, bin_a, bin_b, mirror, args.timeout,
+                    **facts_census.get(name, {}))))
         done = run_pooled(tasks, args.jobs, args.comp_jobs)
         # merge in the old per-stream order: argv streams, composition, dumps
         for name, (lo, n) in spans.items():
@@ -1541,6 +1633,12 @@ def main():
         sys.exit(0 if overall_ok else 1)
 
     # -- the real comparison --
+    if args.census_ref_re:
+        global CENSUS_RES
+        with open(args.census_ref_re) as fh:
+            CENSUS_RES = [re.compile(l.rstrip("\n"), re.M) for l in fh
+                          if l.strip() and not l.startswith("#")]
+        log(f"[emit_sweep] census: {len(CENSUS_RES)} REF-side regexes from {args.census_ref_re}")
     log(f"[emit_sweep] === REAL RUN: {ref_label} vs {tree_label} ===")
     res, producing, artifacts, fixtures_hit, deliver_hit = \
         run_full_sweep(ref_bin, tree_bin, "real")

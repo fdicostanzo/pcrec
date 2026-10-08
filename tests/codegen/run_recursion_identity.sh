@@ -138,6 +138,8 @@ ELIDED_PATTERNS='(a){0}
 # failure) and it must fire NOWHERE under `--no-captures`, where no VM body is
 # emitted and the size term therefore cannot act.
 SIZETERM_TOTAL=0
+ADVNEW_TOTAL=0   # [MEMFN] R4h: new-layout span-scan loops seen in subject regions
+ADVOLD_TOTAL=0   # ... old one-line loops on the subject side (must stay 0)
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
 
@@ -223,6 +225,29 @@ foo(?:username|password|passphrase)bar'
 POSS_PATTERNS='(\b\w+\b)
 \b(\w+)\s+\1\b
 \B(x|ab){1,2}\b'
+#
+# [recidtri] THE SIXTH EXCEPTION'S MANIFEST: arm A is ENGINE-SELECTING
+# (tuning.md §2.44, kept in `rx_info.flags`), so on the default axis it moves
+# some patterns OFF the VM the pre-module pin compiles them for, onto the
+# DFA -- where `RX_VM_POSS_ARMS` does not exist (it is VM-artifacts-only) and
+# the whole program region differs. Ruled intended (possland2, 2026-10-07:
+# "the 10 default-route vm->dfa flips on post-r21 rows are arm A's intended
+# engine-selecting effect"). The excuse is the context node's own shape
+# (`[UCP] U2`, below): the pin is restored iff `-fno-poss-ctx-follow` (and
+# its sibling) is denied on top of the context-node set -- tried ONLY after
+# the set without them failed, so a pattern the older buckets explain is
+# never credited to this one. The population is NAMED, not "at least one":
+# each of these must land in the bucket on the default axis.
+POSS_FLIP_PATTERNS='(?:a\.)++\B
+(?<!a)A+\b
+(?<=\$)\d+(?:\.\d{2})?\b
+(?>\w+)\b
+\b(?=a)\w+\b
+\w++(?:\b|)
+\w++\b
+\w{1,3}+(?:\b|)
+a{1,2}+\b
+k++\b'
 #
 # [recidfix->varland] A FOURTH NAMED EXCEPTION EXISTS, `bref_rename_rewrite()`
 # below (near `prog_region()`), and it is NOT a manifest like the three
@@ -1183,13 +1208,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # artifact gains `RX_VM_POSS_ARMS`, and an arm mover's program moves (its (A)
 # excuse is the poss-arms bucket). `615eb811` (the merge of main 8cada7b9) is the lane's last src commit;
 # the manager re-pins to the merge (the self-pin convention).
-# [NULLABLE-ANCH] SELF-PIN (lane nullanch1, 2026-10-08), abi 66->67: the
+# [NULLABLE-ANCH] SELF-PIN (lane nullanch2, 2026-10-08), abi 67->68: the
 # nullability decline reads `empty_admits`, so the five movers (two of them
 # call-bearing: `^(a?)(?1)*$`, `^(?:(?<g>a?)){0}(?&g)*+$`) gain the hybrid
 # prefilter and read `ENGINE_SEL "selected"`; every other artifact moves by the
 # abi digit alone. `8c175f58` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8c175f58}"   # [NULLABLE-ANCH] SELF-PIN (lane nullanch1, 2026-10-08), abi 66->67: the lane's last src commit
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8c175f58}"   # [NULLABLE-ANCH] SELF-PIN (lane nullanch2, 2026-10-08), abi 67->68: the lane's last src commit
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1387,7 +1412,11 @@ gen_deny() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 $3 -o - --pat
 # dead-capture elision's four patterns still show up as differing here: on the
 # pre-module reference they were VM-selected and HAVE a region, and today they
 # are DFA-selected and do not.
-prog_region() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+prog_region_raw() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+# [MEMFN] R4h: EVERY region this file extracts, from the subject, the pin and
+# every deny-axis build alike, passes the seventh exception's canonicalizer
+# (adv_layout_canon, below) so it composes with every excuse bucket.
+prog_region() { prog_region_raw | adv_layout_canon; }
 # The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
 # artifact only. Counted, never stripped.
 FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
@@ -1431,6 +1460,57 @@ bref_rename_rewrite() {
         }
         { print }
     '
+}
+
+# [MEMFN] R4h (lane advnorm, abi 66 -> 67) THE SEVENTH NAMED EXCEPTION, a
+# TWO-SIDED CANONICALIZER. The layout-normalization pre-commit rewrote the VM
+# span scan (`vm_emit_span_scan`) to the memfn kit's ADVANCE text: where
+# ac4917d wrote the one-line
+#     while (P_span_cursor + S <= LIM[ && it_ < NUL]TEST) { P_span_cursor += S;[ it_++;] }
+# the subject writes
+#     while ((P_span_cursor + S <= LIM)[ && it_ < NULL]TEST) {
+#         P_span_cursor += S;
+#         [it_++;]
+#     }
+# Every cursor-rung artifact moves for that one textual reason, so (like the
+# fourth) the admission is mechanical, not a manifest. Unlike the fourth it is
+# applied to BOTH sides' regions BEFORE any comparison, so it composes with
+# every deny-axis excuse below without a per-bucket rewrite: the canonical
+# form is the OLD one-line text (idempotent on a pre-pin region). Any other
+# difference in the region survives it. Its non-vacuity arm is a census of the
+# subject's raw regions (adv_new_count) held against a floor at the end of
+# the run, and the old one-line form must never appear on the subject side.
+adv_layout_canon() {
+    awk '
+    /^ *while \(\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)/ && /\) \{$/ {
+        head = $0
+        if (getline step > 0 && getline nxt > 0) {
+            tail_it = ""
+            if (nxt ~ /^ *it_\+\+;$/) { tail_it = " it_++;"; getline nxt }
+            if (nxt ~ /^ *\}$/) {
+                if (match(head, /\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)/)) {
+                    inner = substr(head, RSTART + 1, RLENGTH - 2)
+                    head = substr(head, 1, RSTART - 1) inner substr(head, RSTART + RLENGTH)
+                }
+                sub(/ULL/, "UL", head)
+                sub(/^ */, "        ", head)
+                sub(/ *$/, "", step); sub(/^ */, "", step)
+                print head " " step tail_it " }"
+                next
+            }
+            print head; print step; print nxt
+            next
+        }
+        print head; next
+    }
+    { print }
+    '
+}
+adv_new_count() {
+    grep -cE '^ *while \(\([a-z_0-9]*_span_cursor \+ [0-9]+ <= [a-z_]+\)' || true
+}
+adv_old_count() {
+    grep -cE '^ *while \([a-z_0-9]*_span_cursor \+ [0-9]+ <= .*\) \{ [a-z_0-9]*_span_cursor \+= ' || true
 }
 
 # [clss2fix, D139 item 2] THE FIFTH NAMED EXCEPTION, MECHANICAL like the
@@ -1632,7 +1712,7 @@ echo "recursion-identity: corpus $(grep -c . "$PATFILE") patterns; call-bearing:
 # this tree — a 29-pattern gap that reading the actual differing list
 # explained. The BROAD count (union of both spellings) is what the
 # non-vacuity check below compares against.
-python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" "$WORKDIR/ctx_pop" <<'PY'
+python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" "$WORKDIR/ctx_pop" "$WORKDIR/possrc_pop" <<'PY'
 import sys, re
 
 def mask_classes(pat):
@@ -1658,8 +1738,16 @@ NAMED_RE = re.compile(
 # construct is not in — and the bucket's own count is read against this one.
 CTX_RE = re.compile(
     r"\(\?(?:<[=!*]|[=!*])|\(\*(?:pla|plb|nla|nlb|napla|naplb|positive_look|negative_look|non_atomic_positive_look)|\\[bB]")
-src, brefout, varout, ctxout = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-numeric = set(); named = set(); varhits = []; ctxhits = []
+# [recidtri] the SOURCE-POSSESSIVE / ATOMIC census: a pattern that SAYS a
+# possessive quantifier (`x++`, `x*+`, `x?+`, `x{n,m}+`) or an atomic group
+# (`(?>`, `(*atomic:`). Read on the masked text with every escape pair
+# collapsed to one letter first, so `\++` (a greedy plus on a literal plus)
+# is not a possessive. [ART-POSS-ARMS]'s stamp counts a verdict on such a
+# loop, whose only consumer is the free discharge, so the stamped-direction
+# converse below may excuse an unchanged region ONLY for these patterns.
+POSSRC_RE = re.compile(r"[+*?}]\+|\(\?>|\(\*atomic:")
+src, brefout, varout, ctxout, possrcout = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+numeric = set(); named = set(); varhits = []; ctxhits = []; possrchits = []
 for line in open(src, encoding="utf-8", errors="surrogateescape"):
     p = line.rstrip("\n")
     if not p:
@@ -1673,6 +1761,8 @@ for line in open(src, encoding="utf-8", errors="surrogateescape"):
         varhits.append(p)
     if CTX_RE.search(m):
         ctxhits.append(p)
+    if POSSRC_RE.search(re.sub(r"\\.", "E", m)):
+        possrchits.append(p)
 bref_union = numeric | named
 open(brefout, "w", encoding="utf-8", errors="surrogateescape").write(
     "\n".join(sorted(bref_union)) + ("\n" if bref_union else ""))
@@ -1688,10 +1778,16 @@ print("recursion-identity: lookaround/word-boundary population in the call-free 
       "(text census, independent of the artifact): %d" % len(ctxhits))
 print("recursion-identity: ${...} var population in the call-free bucket "
       "(text census, independent of the artifact): %d" % len(varhits))
+open(possrcout, "w", encoding="utf-8", errors="surrogateescape").write(
+    "\n".join(possrchits) + ("\n" if possrchits else ""))
+print("recursion-identity: source-possessive/atomic population in the call-free bucket "
+      "(text census, independent of the artifact): %d" % len(possrchits))
 PY
 NBREF=$(grep -c . "$WORKDIR/bref_pop" || true)
 NVARPOP=$(grep -c . "$WORKDIR/var_pop" || true)
 CTX_POP="$(cat "$WORKDIR/ctx_pop")"
+POSSRC_POP="$(cat "$WORKDIR/possrc_pop")"
+NPOSSSRC=$(grep -c . "$WORKDIR/possrc_pop" || true)
 NCTX=$(grep -c . "$WORKDIR/ctx_pop" || true)
 
 if [ "$nf" -lt 700 ]; then
@@ -1753,7 +1849,7 @@ sweep() { # sweep <label> <extra pcrec args>
     local rlit=0 rlitsame=0 rnolitmoved=0
     local rpack=0 rpacksame=0
     # [ART-POSS-ARMS] the possessify arms' own three, the lit-run shape.
-    local rposs=0 rposssame=0 rnopossmoved=0
+    local rposs=0 rposssame=0 rnopossmoved=0 rpossflip=0 rpossverdict=0
     # [recidfix->varland] the fourth exception's own counter: a region that
     # differs from the pre-module pin for EXACTLY the ruled seam rename,
     # whether that is the whole of the difference or (composed with the fold
@@ -1807,6 +1903,11 @@ sweep() { # sweep <label> <extra pcrec args>
         if [ -n "$r" ]; then
             ra="$(printf '%s\n' "$a" | stamp_strip | prog_region)"
             rb="$(printf '%s\n' "$r" | stamp_strip | prog_region)"
+            # [MEMFN] R4h the seventh exception's non-vacuity census, off the
+            # subject's RAW region (prog_region above already canonicalized).
+            ra_raw="$(printf '%s\n' "$a" | stamp_strip | prog_region_raw)"
+            ADVNEW_TOTAL=$((ADVNEW_TOTAL + $(printf '%s\n' "$ra_raw" | adv_new_count)))
+            ADVOLD_TOTAL=$((ADVOLD_TOTAL + $(printf '%s\n' "$ra_raw" | adv_old_count)))
             case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
             # [ENG-ISL] the artifact's OWN account of what it contains, read
             # from the subject side only: the pre-module reference predates the
@@ -1938,6 +2039,7 @@ sweep() { # sweep <label> <extra pcrec args>
                 # ones) is denied — an unrelated region change inside the
                 # same artifact is not restored and lands in rdiff.
                 ctxhit=0
+                possflip_this=0
                 stamped=0
                 if [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ] || [ "${lit_a:-0}" -gt 0 ] || [ "${pack_a:-0}" -gt 0 ] || [ "${poss_a:-0}" -gt 0 ]; then stamped=1; fi
                 # a pattern that stamps nothing may not be excused by the
@@ -1956,6 +2058,21 @@ sweep() { # sweep <label> <extra pcrec args>
                     # together do not explain.
                     rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny -fno-ctx-node -fno-alt-island -fno-cls-fold")" | stamp_strip | prog_region)"
                     [ "$rn" = "$rb_bref" ] && ctxhit=1
+                    # [recidtri] ...and the possessify arms, SECOND and only
+                    # when the set above did not restore the pin: arm A is
+                    # engine-selecting, so it can be the thing that moved the
+                    # subject off the VM, and then (stamps living on VM
+                    # artifacts only) `poss_a` is empty here, exactly as for
+                    # the context node. Both arms are denied together, the
+                    # stamped bucket's own pair.
+                    if [ "$ctxhit" = 0 ]; then
+                        rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny -fno-ctx-node -fno-alt-island -fno-cls-fold -fno-poss-ctx-follow -fno-poss-bref-first")" | stamp_strip | prog_region)"
+                        if [ "$rn" = "$rb_bref" ]; then
+                            ctxhit=1
+                            possflip_this=1
+                            rpossflip=$((rpossflip + 1))
+                        fi
+                    fi
                 fi
                 if [ "$ctxhit" = 1 ]; then
                     rctx=$((rctx + 1))
@@ -1965,7 +2082,11 @@ sweep() { # sweep <label> <extra pcrec args>
                     [ "${pack_a:-0}" -gt 0 ] && rpack=$((rpack + 1))
                     [ "${poss_a:-0}" -gt 0 ] && rposs=$((rposs + 1))
                     [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
-                    printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                    if [ "$possflip_this" = 1 ]; then
+                        printf 'REGION MOVED (ruled, [ART-POSS-ARMS] arm A selected the DFA; denying%s -fno-ctx-node -fno-poss-ctx-follow -fno-poss-bref-first restores the pinned VM region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                    else
+                        printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                    fi
                 elif [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
                     [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
@@ -2056,8 +2177,25 @@ sweep() { # sweep <label> <extra pcrec args>
             if [ -n "${poss_a:-}" ]; then
                 rn8="$(printf '%s\n' "$(gen_deny "$pat" "$args" "-fno-poss-ctx-follow -fno-poss-bref-first")" | stamp_strip | prog_region)"
                 if [ "$poss_a" -gt 0 ] && [ "$ra" = "$rn8" ]; then
-                    rposssame=$((rposssame + 1))
-                    printf 'POSS ARMS STAMPED BUT DENYING THEM CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    # [recidtri] THE STAMP'S OWN DEFINITION, not a stronger
+                    # one (match_api.md §6.3: an arm NEEDED for some positive
+                    # possessify VERDICT). A verdict on a loop the SOURCE
+                    # already made possessive/atomic marks nothing: its one
+                    # consumer is the free discharge, which can move the
+                    # route only where the route is free, so on a VM-forced
+                    # pattern the stamp is true and the program is the same.
+                    # Excused ONLY for a pattern whose TEXT says a
+                    # possessive/atomic construct (`POSSRC_POP`, derived
+                    # without the artifact); any other pattern's marks are
+                    # the program, and an unchanged region there is the
+                    # stamp lying.
+                    if printf '%s\n' "$POSSRC_POP" | grep -qxF -- "$pat"; then
+                        rpossverdict=$((rpossverdict + 1))
+                        printf 'POSS ARMS STAMPED ON A SOURCE-POSSESSIVE/ATOMIC PATTERN (a verdict that marks nothing; excused) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    else
+                        rposssame=$((rposssame + 1))
+                        printf 'POSS ARMS STAMPED BUT DENYING THEM CHANGES NOTHING %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                    fi
                 elif [ "$poss_a" -eq 0 ] && [ "$ra" != "$rn8" ]; then
                     rnopossmoved=$((rnopossmoved + 1))
                     printf 'NO POSS ARM STAMPED YET DENYING THE ARMS MOVES THE REGION %s\n' "$pat" >> "$WORKDIR/diff.$label"
@@ -2107,7 +2245,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame poss-arms-moved=$rposs poss-arms-stamped-but-deny-is-a-noop=$rposssame unstamped-but-poss-deny-moves=$rnopossmoved call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame poss-arms-moved=$rposs poss-arms-stamped-but-deny-is-a-noop=$rposssame poss-arms-stamped-on-source-possessive=$rpossverdict poss-arm-a-engine-flip-moved=$rpossflip unstamped-but-poss-deny-moves=$rnopossmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -2323,6 +2461,51 @@ $POSS_PATTERNS
 POSS_EOF
     if [ "$poss_manifest_missing" -ne 0 ]; then
         bad "[$label] $poss_manifest_missing of the POSS_PATTERNS manifest (docs/design/poss_arms.md §5.2's corpus movers) no longer stamp a possessify arm. Either an arm narrowed or the stamp broke. Do not silently shorten the list"
+    fi
+    # [recidtri] THE ENGINE-FLIP BUCKET'S NON-VACUITY, named both ways. On the
+    # default axis EVERY manifest pattern must land in it (a listed pattern
+    # that stopped flipping means arm A narrowed, and the list is the record of
+    # what that costs); on --engine=vm none may, the engine being forced on
+    # both sides (the elision list's own sharper half, one axis over).
+    if [ "$label" = "default" ]; then
+        possflip_missing=0
+        while IFS= read -r fpat; do
+            [ -n "$fpat" ] || continue
+            if ! sed -n 's/^REGION MOVED (ruled, \[ART-POSS-ARMS\] arm A selected the DFA;.*restores the pinned VM region) //p' "$WORKDIR/diff.$label" 2>/dev/null | grep -qxF -- "$fpat"; then
+                possflip_missing=$((possflip_missing + 1))
+                [ "$possflip_missing" -le 6 ] && echo "  POSS FLIP MANIFEST[$label]: '$fpat' no longer lands in the arm-A engine-flip bucket" >&2
+            fi
+        done <<FLIP_EOF
+$POSS_FLIP_PATTERNS
+FLIP_EOF
+        if [ "$possflip_missing" -ne 0 ]; then
+            bad "[$label] $possflip_missing of the POSS_FLIP_PATTERNS manifest no longer land in the arm-A engine-flip bucket. Either arm A stopped selecting the DFA for them (narrowed: argue it against this list) or the bucket's restore set broke. Do not silently shorten the list"
+        fi
+        # the strict half of the converse keeps its named witnesses: no
+        # POSS_PATTERNS member may be a source-possessive/atomic pattern, or the
+        # excuse below would reach the very patterns that prove the stamp.
+        while IFS= read -r ppat; do
+            [ -n "$ppat" ] || continue
+            if printf '%s\n' "$POSSRC_POP" | grep -qxF -- "$ppat"; then
+                bad "[$label] POSS_PATTERNS member '$ppat' is a source-possessive/atomic pattern, so the stamped-direction converse would excuse it: the manifest's strict witnesses must be patterns whose arms MARK"
+            fi
+        done <<PSRC_EOF
+$POSS_PATTERNS
+PSRC_EOF
+    fi
+    if [ "$label" = "vm" ] && [ "$rpossflip" -ne 0 ]; then
+        bad "[vm] $rpossflip patterns credited to the arm-A engine-flip bucket on an axis where the engine is FORCED on both sides — arm A cannot select an engine here, so this is a real region change wearing its name"
+    fi
+    # The excuse for a verdict that marks nothing is itself a counted
+    # population (K35): bounded above by its own text census, and floored on
+    # the axis that reaches it most (measured 16 on --engine=vm, 5 on default),
+    # because an excuse nothing uses is a stale excuse -- the day the stamp
+    # becomes consequence-aware this goes red and the excuse is deleted.
+    if [ "$rpossverdict" -gt "$NPOSSSRC" ]; then
+        bad "[$label] (A) $rpossverdict artifacts were excused as 'stamp on a source-possessive/atomic pattern' against a text census of only $NPOSSSRC such call-free patterns -- the excuse is reaching patterns it was not drawn from"
+    fi
+    if [ "$label" = "vm" ] && [ "$rpossverdict" -lt 8 ]; then
+        bad "[vm] only $rpossverdict artifacts used the source-possessive excuse (measured 16 at landing, floor 8): the stamp may have become consequence-aware, in which case delete the excuse; or the population moved. Re-derive, do not lower the floor"
     fi
     if [ "$rposssame" -ne 0 ]; then
         bad "[$label] (A) $rposssame artifacts stamp RX_VM_POSS_ARMS nonzero and yet are BYTE-IDENTICAL to their own both-arms-denied build. The stamp claims an arm the program does not show:"
@@ -2630,6 +2813,17 @@ elision_control
 # size term narrowed, its threshold moved, or someone gated it differently —
 # would otherwise make this gate quietly weaker while every count still read
 # green. Exactly the direction `ELIDED_PATTERNS` asserts for wave G.
+# [MEMFN] R4h the seventh exception's non-vacuity arm: the canonicalizer must
+# have had new-layout loops to rewrite (else it is a filter on nothing), and
+# the subject must never carry the old one-line loop.
+if [ "${ADVNEW_TOTAL:-0}" -lt 1 ]; then
+    bad "[MEMFN] R4h the layout canonicalizer saw no new-layout span-scan loop in any subject region — the seventh exception is vacuous"
+else
+    ok "[MEMFN] R4h the layout canonicalizer was live: $ADVNEW_TOTAL new-layout span-scan loops across the axes' subject regions, canonicalized on both sides"
+fi
+if [ "${ADVOLD_TOTAL:-0}" -ne 0 ]; then
+    bad "[MEMFN] R4h $ADVOLD_TOTAL subject region(s) still carry the OLD one-line span-scan loop — the emitter did not move, or the canonicalizer hides a regression"
+fi
 if [ "${SIZETERM_TOTAL:-0}" -eq 0 ]; then
     bad "[ART-SIZE] SIZE_TERM_REGION_MOVERS fired on NO axis: the two patterns it names no longer move their program region, so the list is stale and this gate is defending a claim that has changed. Re-derive it; do not delete it"
 else

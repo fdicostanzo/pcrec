@@ -888,6 +888,13 @@ fi
 # answers are not moved: `run_possdiff.sh` on that pattern alone (it is in
 # arms_core.txt, `# features: all`) reads 1 agreed / 0 diverged over 311
 # pattern-subject-startpos cells with a possessified quantifier.
+# RE-RECORDED 2026-10-08 at [MEMFN] R4h's layout normalization (abi 66 -> 67,
+# lane advnorm; the digit is one width): four EMITTED_BYTES rows move, and
+# only by the five in-loop ADVANCE sites' new text (parenthesized more/member,
+# a braced multi-line body, a ULL cap): `a(b|c)+d` +22, `[a-z]+@[a-z]+` +116,
+# `(?i)HeLLo` +68, `(\w+)\s+\1` +44. Verified against a ref build of main
+# 77b6b37e with only the abi constant bumped (emit_sweep --ref): the delta is
+# those loops and RX_VM_PROGRAM_BYTES where the VM span scan sits, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

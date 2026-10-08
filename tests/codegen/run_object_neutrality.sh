@@ -41,7 +41,13 @@
 #   bash tests/codegen/run_object_neutrality.sh /tmp/ref/build/pcrec
 #
 # Env: CC, NEUT_N (patterns to sweep; default 0 = every corpus pattern),
-#      NEUT_CFLAGS (default -O2 -g0), KEEP=1
+#      NEUT_CFLAGS (default -O2 -g0), KEEP=1,
+#      NEUT_PCREC_ARGS (extra pcrec argv on BOTH sides, e.g. --engine=vm;
+#      [MEMFN] R4h, so the VM span-scan mover is swept too),
+#      NEUT_ENTRY_FLIPS=1 (an executed-code difference whose two artifacts
+#      carry a DIFFERENT RX_VM_ENTRY_SHAPE stamp is reported as an ENTRY-SHAPE
+#      FLIP, listed by pattern, and not failed: a text mover near the 4096
+#      knee flips the shape by construction; any other difference still fails)
 
 set -u
 
@@ -120,12 +126,13 @@ if [ "$npat" -eq 0 ]; then
     exit 1
 fi
 
-same=0; textdiff=0; symdiff=0; renamed=0; skipped=0; refused=0
-: > "$WORKDIR/failures"
+same=0; entryflip=0; textdiff=0; symdiff=0; renamed=0; skipped=0; refused=0
+: > "$WORKDIR/failures"; : > "$WORKDIR/flips"
 
 emit_and_build() {   # $1=pcrec  $2=outdir  $3=pattern ; same BASENAME both sides
     mkdir -p "$2"
-    "$1" -p rx -o "$2/gen.c" --pattern "$3" >/dev/null 2>&1 || return 1
+    # shellcheck disable=SC2086
+    "$1" -p rx ${NEUT_PCREC_ARGS:-} -o "$2/gen.c" --pattern "$3" >/dev/null 2>&1 || return 1
     $CC $NEUT_CFLAGS -c "$2/gen.c" -o "$2/gen.o" >/dev/null 2>&1 || return 2
     # An artifact with no constant tables has no .rodata at all; objdump says
     # so on stderr. That is a legitimate shape, not a failure — but it must be
@@ -161,6 +168,12 @@ while IFS= read -r pat; do
         diff "$d/ref/gsyms" "$d/cur/gsyms" | head -6 >> "$WORKDIR/failures"
         symdiff=$((symdiff + 1)); rm -rf "$d"; continue
     fi
+    if ! diff -q "$d/ref/bytes" "$d/cur/bytes" >/dev/null 2>&1 \
+       && [ "${NEUT_ENTRY_FLIPS:-0}" = "1" ] \
+       && [ "$(grep -m1 '^#define RX_VM_ENTRY_SHAPE' "$d/ref/gen.c")" != "$(grep -m1 '^#define RX_VM_ENTRY_SHAPE' "$d/cur/gen.c")" ]; then
+        echo "ENTRY-SHAPE FLIP: '$pat' ($(grep -m1 '^#define RX_VM_ENTRY_SHAPE' "$d/ref/gen.c") -> $(grep -m1 '^#define RX_VM_ENTRY_SHAPE' "$d/cur/gen.c"))" >> "$WORKDIR/flips"
+        entryflip=$((entryflip + 1)); rm -rf "$d"; continue
+    fi
     if ! diff -q "$d/ref/bytes" "$d/cur/bytes" >/dev/null 2>&1; then
         echo "EXECUTED CODE DIFFERS: '$pat'" >> "$WORKDIR/failures"
         diff "$d/ref/bytes" "$d/cur/bytes" | head -8 >> "$WORKDIR/failures"
@@ -180,7 +193,9 @@ echo "flags     : $CC $NEUT_CFLAGS"
 echo "population: $npat_all distinct corpus patterns extracted (floor 2630; LC_ALL=C, K35)"
 echo "patterns  : $npat swept ($refused refused by both, $skipped uncompilable)"
 echo "(a) .text + .rodata byte-identical : $same"
-echo "(c) exported symbols identical     : $((same + textdiff)) of $((same + textdiff + symdiff))"
+echo "(a') entry-shape flips (listed)     : $entryflip"
+sed 's/^/    /' "$WORKDIR/flips"
+echo "(c) exported symbols identical     : $((same + textdiff + entryflip)) of $((same + textdiff + entryflip + symdiff))"
 echo "(b) INFO — artifacts whose INTERNAL symbol names changed: $renamed"
 echo "    (expected non-zero after a rename; not executed code, does not survive strip)"
 

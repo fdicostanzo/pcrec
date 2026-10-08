@@ -456,18 +456,43 @@ static mf_hooks adv_hooks(AdvH a, Fx *fx)
     return h;
 }
 
+/* advtarget (the R4h frozen target): the rest of what pcrec passes at an
+ * in-loop site, its own member text, cursor and indent. */
+typedef struct { const char *member, *cursor, *indent; } AdvX;
+
+/* The hooks' user pointer for a target fixture: an Fx first (every other hook
+ * reads it as one), then the member text. */
+typedef struct { Fx fx; const char *member; } AdvFx;
+
+/* pcrec's member hook as R4h will pass it: its own class test, OPAQUE to the
+ * kit (EDGE's `scan_test` text exists only at render, and every site's test
+ * reads pcrec's own `peek`, never the byte expression offered). */
+static const char *h_adv_member(void *u, uint32_t term, const char *byte_expr)
+{
+    (void)term;
+    (void)byte_expr;
+    return ((AdvFx *)u)->member;
+}
+
 static const AdvH ADV_EDGE = { "scan_position < subject_length", "subject[scan_position]",
                                "scan_position++", "scan_run_length", 1 };
 
-static int render_adv(const char *dir, const char *name, const mf_site *s, AdvH ah)
+static int render_adv_x(const char *dir, const char *name, const mf_site *s, AdvH ah,
+                        const AdvX *x)
 {
     if (skip_fixture(name)) return 0;
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
     Text def = { 0 }, use = { 0 };
     mf_sink sd = sink_of(&def), su = sink_of(&use);
-    Fx fx = { s, NULL, "    " };
-    mf_hooks h = adv_hooks(ah, &fx);
+    AdvFx ax = { { s, NULL, "    " }, x ? x->member : NULL };
+    mf_hooks h = adv_hooks(ah, &ax.fx);
+    if (x) {
+        h.u = &ax;
+        h.member = h_adv_member;
+        h.cursor = x->cursor;
+        h.indent = x->indent;
+    }
     mf_result res = { 0 };
     if (mf_emit(art, s, &h, &su, &sd, &res) || mf_art_end(art)) {
         fprintf(stderr, "%s: the kit refused: %s\n", name, mf_art_error(art));
@@ -494,6 +519,11 @@ static int render_adv(const char *dir, const char *name, const mf_site *s, AdvH 
     free(def.p);
     free(use.p);
     return 0;
+}
+
+static int render_adv(const char *dir, const char *name, const mf_site *s, AdvH ah)
+{
+    return render_adv_x(dir, name, s, ah, NULL);
 }
 
 /* ---- the gate cases (--gate, N3) ----------------------------------------- */
@@ -863,6 +893,73 @@ int main(int argc, char **argv)
     bad |= render_adv(dir, "adv-kit-count", &s, ADV_EDGE);
     s = adv_site(1, 16);
     bad |= render_adv(dir, "adv-caller-count", &s, ADV_EDGE);
+
+    /* advtarget (2026-10-08): R4h's FROZEN TARGET, one fixture per in-loop
+       shape, each with the hook texts pcrec's emitters write TODAY at that
+       site (read off build/pcrec's output for the witness named; the
+       sites: dir_fwd_skip/dir_rev_skip, emit_scan_edge, vm_emit_span_scan).
+       Each one's .use is ALSO committed verbatim under pins/r4h_target/
+       (run_arm_pins.sh check 8): the text pcrec's layout normalization
+       must emit, character for character, before R4h migrates the sites at
+       zero movers. The term's set is descriptive only: the member hook is
+       pcrec's own text and the kit pastes it opaque, parenthesized. */
+    static const struct { const char *name; int caller; uint64_t span;
+                          const char *set_not, *set; AdvH h; AdvX x; } tgt[] = {
+        /* a[^x]*: STAY forward (dir_fwd_skip) */
+        { "adv-stay-fwd", 0, MF_SPAN_UNBOUNDED, "x", NULL,
+          { "scan_position < subject_length", "subject[scan_position]", "scan_position++",
+            NULL, 0 },
+          { "rx_forward_stay1[subject[scan_position]]", "scan_position", "            " } },
+        /* a[^x]*: STAY reverse (dir_rev_skip; `peek` owns the -1) */
+        { "adv-stay-rev", 0, MF_SPAN_UNBOUNDED, "x", NULL,
+          { "rewind_position > search_from", "subject[rewind_position - 1]", "rewind_position--",
+            NULL, 0 },
+          { "rx_reverse_stay0[subject[rewind_position - 1]]", "rewind_position",
+            "                " } },
+        /* a[^x]*x$: STAY forward with a view (`+ 1 <` in `more`) */
+        { "adv-stay-view", 0, MF_SPAN_UNBOUNDED, "x", NULL,
+          { "scan_position + 1 < subject_length", "subject[scan_position]", "scan_position++",
+            NULL, 0 },
+          { "rx_forward_stay1[subject[scan_position]]", "scan_position", "            " } },
+        /* [a-z]*: EDGE unbounded (emit_scan_edge, span < 0) */
+        { "adv-edge-unbounded", 0, MF_SPAN_UNBOUNDED, NULL, "abcdefghijklmnopqrstuvwxyz",
+          { "scan_position < subject_length", "subject[scan_position]", "scan_position++",
+            NULL, 0 },
+          { "(unsigned)(subject[scan_position] - 97) <= 25u", "scan_position", "            " } },
+        /* a[0-9]{3,20}x: EDGE bounded, forward (anchored machine), caller's counter */
+        { "adv-edge-counted-fwd", 1, 3, NULL, "0123456789",
+          { "scan_position < subject_length", "subject[scan_position]", "scan_position++",
+            "scan_run_length", 1 },
+          { "(unsigned)(subject[scan_position] - 48) <= 9u", "scan_position", "            " } },
+        /* a[0-9]{3,20}x: EDGE bounded, reverse, caller's counter */
+        { "adv-edge-counted-rev", 1, 3, NULL, "0123456789",
+          { "rewind_position > search_from", "subject[rewind_position - 1]", "rewind_position--",
+            "scan_run_length", 1 },
+          { "(unsigned)(subject[rewind_position - 1] - 48) <= 9u", "rewind_position",
+            "                " } },
+        /* (a)[a-z]{2,9}x --engine=vm: VMSPAN with the caller's `it_` */
+        { "adv-vmspan-it", 1, 9, NULL, "abcdefghijklmnopqrstuvwxyz",
+          { "rx_span_cursor + 1 <= lim_", "subject[rx_span_cursor + 0]", "rx_span_cursor += 1",
+            "it_", 0 },
+          { "(unsigned)(subject[rx_span_cursor + 0] - 97) <= 25u", "rx_span_cursor", "        " } },
+        /* a[a-z]*x --engine=vm: VMSPAN, no counter */
+        { "adv-vmspan", 0, MF_SPAN_UNBOUNDED, NULL, "abcdefghijklmnopqrstuvwxyz",
+          { "rx_span_cursor + 1 <= lim_", "subject[rx_span_cursor + 0]", "rx_span_cursor += 1",
+            NULL, 0 },
+          { "(unsigned)(subject[rx_span_cursor + 0] - 97) <= 25u", "rx_span_cursor", "        " } },
+    };
+    for (size_t i = 0; i < sizeof tgt / sizeof tgt[0]; i++) {
+        s = adv_site(tgt[i].caller, tgt[i].span);
+        mf_term *t = &s.pred.term[0];
+        if (tgt[i].set_not) {                           /* [^c]: every byte but c */
+            t_set(t, 0, tgt[i].set_not, 0);
+            for (size_t k = 0; k < sizeof t->set; k++) t->set[k] = (uint8_t)~t->set[k];
+        } else {
+            t_set(t, 0, tgt[i].set, 0);
+        }
+        t->need = MF_REQUIRED;
+        bad |= render_adv_x(dir, tgt[i].name, &s, tgt[i].h, &tgt[i].x);
+    }
 
     if (only && only_seen != 1) {
         fprintf(stderr, "arm_fixtures: --only %s matched %d fixtures\n", only, only_seen);

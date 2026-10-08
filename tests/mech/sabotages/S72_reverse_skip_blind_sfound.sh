@@ -41,11 +41,18 @@ SAB_COUNT=1
 # CHARACTER-IDENTICAL to the forward object's, so the anchor carries the
 # preceding `while (rewind_position > ...)` line: without it SAB_BEFORE would
 # match twice and the row's SAB_COUNT=1 would fail rather than plant.
-SAB_BEFORE='    pcrec_sb_printf(c, "%s    while (rewind_position > search_from &&"
-                 " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
-              ind, f->p, f->dir->c.name, K);
+# RE-ANCHORED 2026-10-08 ([MEMFN] R4h layout normalization, abi 66 -> 67): the
+# skip's `while` is the kit's ADVANCE layout now (parenthesized more/member, a
+# braced multi-line body), so the anchor carries the new printf; same intent.
+SAB_BEFORE='    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
+                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
+                 "%s        rewind_position--;\n"
+                 "%s    }\n",
+              ind, f->p, f->dir->c.name, K, ind, ind);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)'
-SAB_AFTER='    pcrec_sb_printf(c, "%s    while (rewind_position > search_from &&"
-                 " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
-              ind, f->p, f->dir->c.name, K);
+SAB_AFTER='    pcrec_sb_printf(c, "%s    while ((rewind_position > search_from) &&"
+                 " (%s_%s_stay%d[subject[rewind_position - 1]])) {\n"
+                 "%s        rewind_position--;\n"
+                 "%s    }\n",
+              ind, f->p, f->dir->c.name, K, ind, ind);
     if (f->d->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */'

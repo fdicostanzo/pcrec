@@ -170,7 +170,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   the caller-owned counter's rules (its name required, the fact 0/1 and
   ADVANCE-only) and thirteen `adv-cls-*` cases whose hook texts classify
   as the ADVANCE shape classes or as OTHER. `--gate --gate-only CASE` runs
-  one case alone (for rows_check.py's check E).
+  one case alone (for rows_check.py's check E). Lane advtarget
+  (2026-10-08) added eight more through `render_adv_x` (R4h's FROZEN
+  TARGET, one per in-loop shape: `adv-stay-fwd`/`-rev`/`-view`,
+  `adv-edge-unbounded`, `adv-edge-counted-fwd`/`-rev`, `adv-vmspan-it`,
+  `adv-vmspan`), each with the hook texts pcrec writes today at that site
+  plus its own member text (opaque, through the `AdvFx` member hook),
+  cursor and indent.
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -181,7 +187,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   lane missn added `ofs-miss-token` and `pre-lead-handoff-miss-token`, whose
   digests equal their text-stated twins' (`MF_MISS_N` renders as `n`'s text);
   R4h prep added the two `generic` ADVANCE fixtures' four rows (58 rows,
-  `ARMS_ROW_FLOOR` 58), none re-pinned. A
+  `ARMS_ROW_FLOOR` 58), none re-pinned; advtarget added the eight
+  R4h-target fixtures' sixteen rows (74 rows, `ARMS_ROW_FLOOR` 74). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -202,7 +209,16 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   control and must not). Check 7 (R4h prep) reads the counter's owner off
   the two ADVANCE fixtures' text: the kit-owned one declares
   `unsigned long scan_run_length = 1;`, the caller-owned one declares no
-  counter, and both advance and cap it (`GATE_CASE_FLOOR` 39). Seconds.
+  counter, and both advance and cap it (`GATE_CASE_FLOOR` 39). Check 8
+  (advtarget) compares each `pins/r4h_target/*.c` body byte for byte with
+  its fixture's fresh `.use` (empty `.def`), with a K35 shape list
+  (`R4H_TARGETS`) and floor (`R4H_TARGET_FLOOR` 8) and a planted-byte
+  control that must compare unequal. Seconds.
+- **pins/r4h_target/** — R4h's FROZEN TARGET (lane advtarget, 2026-10-08;
+  its own CLAUDE.md): one `<fixture>.c` per in-loop ADVANCE shape, a
+  3-line header, the kit's text byte for byte, then a `/* pcrec today:`
+  block quoting the same site's current pcrec text. pcrec's layout
+  normalization diffs its emitted lines against these before R4h.
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
@@ -286,6 +302,12 @@ VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
   its site's existing row, and raise the floor if you added a row.
 - **A respelled form the vocabulary no longer sees:** rule 4 says so. Teach
   `search_vocab.tsv` the new shape; never delete the row to get green.
+  Worked example (lane advtri, 2026-10-08, abi 67): [MEMFN] R4h's layout
+  normalization respelled the five ADVANCE loops in the kit's layout
+  (parenthesised `more` and member, braced body, step on its own line), and
+  `walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
+  ceilings). Both regexes were widened to the new shape, not the rows or
+  ceilings touched: C12 reads the same 12 forms in the same ceilings.
 - **A migration step's REPLACE commit:** flip its rows to `delegated`.
   From then on, rule 3 holds pcrec to spelling none of them.
 - `c4_populations/` — C4's COMMITTED compiler populations (`gcc -dM -E` dumps

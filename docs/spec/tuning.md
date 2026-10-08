@@ -1538,9 +1538,10 @@ cursor:
 ```c
 if (forward_state == 0) {
     unsigned long scan_run_length = 0;
-    while (scan_position < subject_length && scan_run_length < 16UL
-           && (unsigned char)(subject[scan_position] - 48) <= 9)
-        { scan_position++; scan_run_length++; }
+    while ((scan_position < subject_length) && scan_run_length < 16ULL && ((unsigned char)(subject[scan_position] - 48) <= 9)) {
+        scan_position++;
+        scan_run_length++;
+    }
     if (scan_run_length == 16UL) { forward_state = 2; last_accept_position = scan_position; }
 }
 ```

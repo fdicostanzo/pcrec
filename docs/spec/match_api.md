@@ -2315,8 +2315,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `67` on every artifact today (lane nullanch1 bumped it
-  from 66, 2026-10-08: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
+- **`rx_info.abi` is `68` on every artifact today (lane nullanch2 bumped it
+  from 67, 2026-10-08, re-landing lane nullanch1's change after R4h's layout
+  normalization took 67: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
   DECLINE, `tuning.md` §2.17).** Both prefilter declines read the new E1
   fact `empty_admits` instead of bare nullability, so a nullable pattern whose
   every empty path crosses a non-multiline `^`/`\A` AND `$`/`\Z`/`\z` keeps
@@ -2327,9 +2328,22 @@ the bump's own commit.**
   compiled corpus+bench patterns, `docs/dev/optloop/nullanch/movers_result.txt`
   — bench `evil-alt-nested` and `trim-nested-star`, corpus `^(a{2,4})?$`,
   `^(a?)(?1)*$`, `^(?:(?<g>a?)){0}(?&g)*+$`); every other artifact differs
-  from `abi` 66 in its abi digits alone. No stamp is added, no struct offset
+  from `abi` 67 in its abi digits alone. No stamp is added, no struct offset
   moves, no `rx_info` member changes and no answer moves (a near-miss that
   exhausted the step budget now answers `nomatch`, K65's direction).
+- **`rx_info.abi` was `67` (lane advnorm bumped it
+  from 66, 2026-10-08: [MEMFN] R4h's layout-normalization pre-commit,
+  Q-R4h-1 (b)).** The five in-loop ADVANCE sites are rewritten, text only,
+  to the memfn kit's ADVANCE layout
+  (`tests/memfn/pins/r4h_target/`): the DFA stay skips (forward and
+  reverse), the scan-edge loops (unbounded and counted, both directions) and
+  the VM span scan now spell `while ((MORE)[ && CNT < NULL] && (MEMBER)) {`
+  with the step (and the counter increment) on their own lines in a braced
+  body, and the cap as `%lluULL` rather than `%dUL`. No stamp, no `rx_info`
+  member, no struct offset, no object byte and no answer moves; an artifact
+  with none of the five loops differs by the abi digits alone. The emitted
+  text is larger by tens of bytes per loop, so a size-cap refusal near its
+  cap and the VM entry-shape knee can flip on a few artifacts.
 - **`rx_info.abi` was `66` (lane possbuild bumped it
   from 65, 2026-10-07: [ART-POSS-ARMS], `docs/design/poss_arms.md` rev 2.1
   §9 — two possessify ARMS).** Arm A values a context gate (`\b`, `\B`, a
