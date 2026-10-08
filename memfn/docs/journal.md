@@ -910,3 +910,9 @@ pointer when a kit change merges to main.
 
   Merged into lane/memfn-r4h. slot10 is QUEUED behind nullanch2 (abi 68).
   On GO: merge the new main FIRST, then run slot10/run.sh.
+- 2026-10-08: R4h DELIVERED (lane/memfn-r4h @ 1428d550).
+  - slot10: identity gate 0 movers, G2 full 173.8M/0, make test 655 s,
+    18 mech rows clean.
+  - The census's reason_stale on `generic` was expected: pcrec now selects
+    the kit's generic ADVANCE row. Fixed by making generic a pcrec row
+    (witness a[^x]*, control abc, plant red); the census re-run gave rc 0.

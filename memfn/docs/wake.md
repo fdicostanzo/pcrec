@@ -56,56 +56,50 @@ current state; the history is `journal.md`.
   it back into `worktrees/g2u` (branch g2u), commit there, then merge into
   the kit branch.
 
-## 4. Current state (2026-10-08, ~01:55)
+## 4. Current state (2026-10-08, ~09:45)
 
-**On main:** N4 + the G2 per-row floors (lane/memfn-g2floor, merged as
-37462a8e, make test 60/60). C5 is merged; C5b is in flight.
+**On main:**
+- N4 + G2 per-row floors (37462a8e);
+- R4h prep (MF_SITE_ABI 5, hook classes);
+- the frozen ADVANCE target;
+- main's layout normalization (c4c37af8, abi 67) and [NULLABLE-ANCH] (abi 68).
 
-**Delivered, awaiting main's merge:** `lane/memfn-r4hprep` @ 5dd86a72. It is
-the kit-only R4h prep: MF_SITE_ABI 5 `count_by_caller`, the
-CONJ/POSTFIX/EXPR_STMT hook classes, Q-G2-5 recorded. slot9 was fully green:
-census 0 would-decline, identity gate 0 movers on 6 streams, G2 full
-173.8M/0, make test 718 s, 17 solo mech rows. The done: entry is posted.
-Do not add commits to that branch; this wake.md lives on lane/memfn-next.
+**Delivered, awaiting main's merge:** `lane/memfn-r4h` @ 1428d550, R4h (M3).
+STAY, EDGE and VMSPAN are delegated; zero movers, no abi event.
+- slot10: identity gate 0 movers, G2 full 173.8M/0, make test 655 s, 18 mech
+  rows clean.
+- The census re-run after `generic` became a `pcrec` row in rows.tsv: rc 0.
 
-**Ruled (main, session 97): Q-R4h-1 (a)+(b).** (b) is ONE pcrec
-layout-normalization mover AFTER C7, briefed by main after checking it
-against refactor B. R4h builds zero-mover on top of it. Build NOTHING
-pcrec-side until C7 merges. The §19 row (T4 pricing count) is FILED. The R4h
-edit set is responses.md's 2026-10-08 notice.
-
-**R4h's open design items:**
-- EDGE's `member` text (`scan_test`) is pasted as a bare `&&` operand and
-  exists only at render, so R4h needs a render-time class or a pcrec shape
-  promise. Ask main when R4h is briefed.
-- The conditional `count` use is caught only by rows check E.
+Do not add commits to that branch; this wake.md is on lane/memfn-post-r4h.
 
 **Rulings to remember:**
-- K-1: fn_ref is a hook id, and 0 is refused.
+- K-1: fn_ref is a hook id, 0 refused.
 - on_miss_leaves = 1 means the result is UNSPECIFIED on a miss.
 - mf_emit gates both phases.
-- §19 row 6's rarity half waits for C5b.
-- A test-codegen re-run is a HEAVY slot: ask first while a make test is live.
-- Heavy slots write a DONE marker plus verdict.txt (main polls them).
+- §19 row 6's rarity half waits for C5b; the §19 T4-count row is FILED.
+- A test-codegen re-run is a HEAVY slot.
+- Heavy slots write DONE + verdict.txt.
+- Merge the new main into a kit branch BEFORE its identity gate (main tells
+  you the sha).
 
-**OWED / next:**
-1. Wait for main to merge lane/memfn-r4hprep. Then cut the next kit branch
-   from main and rebase this wake.md onto it.
-2. After C7 merges and main's normalization mover (b) lands: R4h itself,
-   zero movers. Use the edit set; split vm_emit_span_scan into VMSPAN plus
-   the strided loop; re-pin S214 and S72; solo-run S433, S61 and S39; add
-   kit-side rows for the three unplanted bounds; C12 rows 8->6;
-   STAY/EDGE/VMSPAN delegated.
+**OWED / next** (each needs a request or trigger from main, D77):
+1. Main merges lane/memfn-r4h. Then cut the next kit branch from main.
+2. Per integration.md §22, after R4h:
+   - M4 (MLINE, zero movers, C12 memchr 1 -> 0);
+   - M6 (N6 + VMSTRIDE, needs an MF_VOCAB bump);
+   - R4j/M5 (planner live);
+   - M7 (N7).
+   Wait for main to file the request (R-n). The in-loop MOVERS
+   (U-3 + a class-run Linux cell) stay untriggered.
 3. PF movers (U-2 + a Linux cell in pf_emit_bcls). M7 scope +1 (K94).
 
 **Leftover worktrees:**
-- r4gfix: already gone.
-- r4hprep: merged into the kit branch. Prune it after main merges it.
-- g2u + g2u-cell: keep (blinded G2; the cell has build/libpcrec_mftrace.a).
+- prune with `scripts/wtprune --apply NAME` once merged and idle:
+  r4hprep, advtarget, r4h;
+- keep g2u + g2u-cell.
 
 ## 5. Next actions on wake
 
-1. Set the cron heartbeat at 17,47. Run ListAgents and check whether
-   pcrecdev1 is up and whether it has merged lane/memfn-r4hprep.
-2. If C7 has merged: ask main for the (b) mover's status, then brief R4h.
-3. Otherwise, continue item 3 of §4's OWED list, filed work only (D77).
+1. Cron heartbeat at 17,47. ListAgents; check whether lane/memfn-r4h is merged.
+2. Read requests.md for a new R-n.
+3. Continue §4.
