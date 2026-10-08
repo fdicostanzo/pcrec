@@ -991,3 +991,18 @@ pointer when a kit change merges to main.
     the feature it IS the scalar code; checked by C18).
   - Posted to main. Also: lane g2m6 (M6 blinded G2) was stopped by Frank;
     no relaunch without his word.
+- 2026-10-08: Frank (kit session) on R-9:
+  - Q-R9-6 (floor rule): AGREED.
+  - **No `#if`/`#ifdef` inside function bodies** ("hard to read"). The SIMD
+    choice moves to FILE SCOPE: per-level `static inline` helpers selected
+    by `#if` there, and the function body makes one plain call. The kit's
+    reading: the SIMD-off artifact also calls the helper (scalar body =
+    today's loop). That is a one-time byte move and abi event, so the
+    floor rule stays byte-exact; measured under G1.
+  - **Runtime dispatch is FILED, not current.** The motive: one artifact
+    must not need 4-5 whole copies (500 KB) for different CPUs. So it is
+    per-SITE multiversioning: only the hot helpers get one copy per level
+    (target attribute), selected once at startup from the CPU. The level
+    set is named at compile time and need not cascade (e.g. AVX-512 or
+    scalar). Static (#if) and dynamic (startup choice) share the same
+    file-scope structure.
