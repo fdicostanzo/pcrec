@@ -1498,6 +1498,16 @@ TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd", "form-other",
                "req-from", "ofs-need")
 
 
+# [DEC-FALLBACK] B1: the fallback trace's site keys (src/core/compile.c's
+# FIT_TRACE sites, the gate/stwhy records, src/opt/select_engine.c's
+# admit/attrib), held reached by --variant --trace on a full population.
+# `fb-forcing` and `fb-nomem` are not here: no corpus compile arrives with
+# those labels (dec_fallback.md §4.3a), and docs/design/dec_fallback/
+# row_reach.py declares both cells zero.
+FALLBACK_TRACE_SITES = ("fb-trial", "fb-sel1", "fb-size", "fb-refuse", "admit",
+                        "attrib", "gate", "st-why")
+
+
 def trace_records(err):
     """The CANDTRACE lines of one compile's stderr, in print order, tag
     stripped. The compiler prints no seq and no pattern index: the order IS
@@ -1681,6 +1691,7 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
     vstreams = [s for s in VARIANT_STREAMS if s in args.streams.split(",")]
     all_ok = True
     measured, trace_records = {}, {}
+    fb_seen = set()
     for vname, vflags in variants:
         cf = (DEFAULT_BUILD_CFLAGS + " " + vflags).strip()
         if vflags.strip():
@@ -1772,6 +1783,19 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
                                               unordered=not args.trace_ordered, order=trace_order)
             print(text_t)
             all_ok = all_ok and ok_t
+            fb_seen |= {rec[trace_diff.FIELDS.index("site")] for recs in tb.values()
+                        for rec in recs if len(rec) > trace_diff.FIELDS.index("site")}
+    if args.trace and full_population:
+        # [DEC-FALLBACK] B1: every fallback-trace site key prints on the
+        # WORKING side of at least one variant (K35: a record that stopped
+        # printing would otherwise hide inside the records floor), except the
+        # two whose arrival no corpus compile makes (row_reach's declared
+        # zeros; their witness is alloc_check W4/W5).
+        missing = [k for k in FALLBACK_TRACE_SITES if k not in fb_seen]
+        print(f"-- fallback-trace site keys reached (working, any variant): "
+              f"{len(FALLBACK_TRACE_SITES) - len(missing)}/{len(FALLBACK_TRACE_SITES)}"
+              + (f"; NOT REACHED: {', '.join(missing)}" if missing else ""))
+        all_ok = all_ok and not missing
     with open(os.path.join(out_dir, "variant_tallies.tsv"), "w") as fh:
         fh.write("variant\tbase\tstream\tkey\tfloor\tmanifest\n")
         for (v, b), cell in sorted(measured.items()):
