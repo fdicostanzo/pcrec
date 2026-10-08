@@ -310,7 +310,7 @@ Found by grepping `plan.md` for C7, "the fold", "start-table fold" and
 - The light gates are COMPLETE and green (§3). C6 has zero movers. C7's only
   movement is the declared `--list-axes` cells. The trace is identical apart
   from C6's declared `attempt-next` records. There is no abi event.
-- The heavy chain is ARMED, NOT RUN. The waiter PID/SID are in the handback
-  message. It waits for `worktrees/stc67/.lift`, then runs
+- The heavy chain is ARMED, NOT RUN. The waiter is PID 3855721, SID 3855721
+  (`nohup setsid`, confirmed with `ps -eo pid,sid,args`). It waits for `worktrees/stc67/.lift`, then runs
   `build/land/chain.sh`, and ends with `CHAIN_DONE` in
   `build/land/verdict.txt`.
