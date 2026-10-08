@@ -36,18 +36,24 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 4   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 5   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
-                           retired; `note` no longer carries helpers         */
+                           retired; `note` no longer carries helpers. 5
+                           (R4h prep, Q-R4h-1 (a), 2026-10-08):
+                           mf_site.count_by_caller, appended LAST           */
 #define MF_VOCAB    2   /* the operation vocabulary: op x handoff x term kinds */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
 
 #define MF_MAX_TERM 8                 /* terms in one conjunction (§8.2)       */
 /* The most negative term offset a site may send (§14.6). A SHAPE BOUND, not
- * a tuning constant: today's deepest is -1 (dir_rev_skip's rewind read) and
- * G2's generated space reaches -2; 8 leaves room without a contract change.
- * CHOSEN: the design names the bound but no value. */
+ * a tuning constant; 8 leaves room without a contract change. CHOSEN: the
+ * design names the bound but no value. No delegated site sends a negative
+ * offset today: dir_rev_skip's rewind read (`subject[rewind_position - 1]`)
+ * is NOT one, since SKIP's one SET term sits at offset 0 (RULED Q-G2-9) and
+ * the -1 is the `peek` hook's text (the direction owns how the cursor reads,
+ * §14.3). The first site to send one is M4's `(?m)^` skip (§15.7); G2's
+ * generated space reaches -2. */
 #define MF_MAX_BACK 8
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
@@ -208,6 +214,24 @@ typedef struct {
     uint64_t        denies;         /* MF_D_* in-emitter denies (§14.10)       */
     const char     *opts;           /* --memfn=, passed through UNINTERPRETED
                                        (§R4.4.1); NULL = none                 */
+    /* ADVANCE: the CALLER declares and owns the run counter (RULED Q-R4h-1
+       (a), MF_SITE_ABI 5; appended LAST because initializers are positional).
+       A SEMANTIC site fact, not layout: the counter is state shared with
+       pcrec's text, which declares it before the site with its own text in
+       between (the scan edge's peeled step, the VM's `lim_` and cursor init)
+       and reads it after the site (the cap-reached test, §14.3).
+       0: the kit declares `unsigned long <count> = <count_start>;` as its
+          first statement when `count` is named (§14.3), its own counter
+          when only span_hi needs one, none otherwise;
+       1: the `count` hook names the caller's counter and is REQUIRED (a row
+          that renders this site USES it, so an unstated `count` declines,
+          and with no row left is refused, naming `count`: R1); the kit's
+          text only ADVANCES it (and tests the cap against it) and never
+          declares it. `count_start` keeps its meaning: the counter's value
+          at the kit's first statement, which the caller's text has made so.
+       0 or 1, and nonzero only on an ADVANCE site, else refused. OBLIG: 0 is
+       a stated value, set by every ADVANCE builder                          */
+    uint8_t         count_by_caller;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -273,16 +297,40 @@ typedef struct {
                                site's own `n` hook; NULL leaves it UNSTATED
                                (R1: a row that needs it declines)             */
     const char *on_miss;    /* ON_MISS, ASSIGN, MISS-empty: pcrec's STATEMENT   */
-    /* ADVANCE. RULED Q-G2-14: only `more`, `peek` and `step` are required;
-       a NULL `cursor` is accepted. OPEN Q-G2-5: a reverse ADVANCE at lo == n
-       (pcrec's `more` would move; §14.4 says an empty range leaves the
-       cursor) is unruled; no customer before M3                              */
+    /* ADVANCE. RULED Q-G2-14: only `more`, `peek` and `step` are required
+       (and `count` under site.count_by_caller); a NULL `cursor` is accepted.
+       RULED Q-G2-5 (Q-R4h-2, recorded by the pcrec manager 2026-10-08):
+       ADVANCE's range IS `more`. The kit's text advances while `more`, the
+       cap (span_hi) and membership hold, and tests no other bound: it reads
+       neither `lo`, `n` nor `floor`, and adds no empty test. Its empty range
+       is NOP (EXCLUDED renders the same, since nothing is tested); a range
+       `more` rejects at the start leaves the cursor and `count` where they
+       were. A reverse ADVANCE at lo == n is whatever pcrec's `more` says.
+       The TEXT-SHAPE CLASSES (fields.def; lexical checks in gate.c, so a
+       row may paste a hook raw only where its class proves the text fits):
+         `more` CONJ: an expression usable as an `&&` operand unparenthesized
+           (no top-level `||`, `?:`, assignment or comma; no `;` or brace; no
+           top-level call, whose macro expansion a lexical check cannot see);
+         `peek` POSTFIX: a postfix expression (an identifier or one
+           parenthesized expression, then only `[...]`, `.x` or `->x`;
+           no `++`/`--`), usable as ANY operator's operand unparenthesized;
+         `step` EXPR_STMT: one expression statement, `e` or `e;` (no other
+           `;`, no brace, no top-level comma, not led by a C keyword), so it
+           is the whole controlled statement of a `while` and pastes into
+           `{ e; ... }`.
+       Anything else is OTHER, which only a row that parenthesizes and braces
+       serves (the generic row). A lexical check sees text, not a macro's
+       expansion: an identifier that is a macro is pcrec's to keep
+       parenthesized (IDENT's same boundary)                                  */
     const char *cursor;     /* the cursor lvalue                                */
     const char *step;       /* pcrec's step statement (`pos++;`, `pos--;`, …)   */
     const char *more;       /* pcrec's continue condition                       */
     const char *peek;       /* the byte at the cursor, not consumed             */
-    const char *count;      /* the run counter's name, or NULL (§14.3)          */
-    long        count_start;/* its value at the kit's first statement           */
+    const char *count;      /* the run counter's name, or NULL (§14.3): with
+                               site.count_by_caller 0, NULL asks for no counter;
+                               with 1, the caller's counter, REQUIRED           */
+    long        count_start;/* its value at the kit's first statement (either
+                               owner)                                           */
     /* ON_CAND: pcrec's per-candidate verify, ending in exactly one of the two
        kit tokens MF_TOK_ACCEPT / MF_TOK_REJECT (rule 4, §14.7). RULED Q-G2-8:
        a verify whose token is conditional (`if (x) <token>`) and falls

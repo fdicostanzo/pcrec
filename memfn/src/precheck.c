@@ -276,16 +276,16 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
 static const gate_use precheck_uses[] = {
     /* :238-239 refuses a use without s, n, lo, indent or on_miss */
     { CM(STMT), CM(ON_MISS), MF_PH_USE,
-      FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss) },
+      FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss), GATE_ALWAYS },
 };
 
 static const gate_use precheck_assign_uses[] = {
     /* :238-239, as precheck's */
     { CM(STMT), CM(ASSIGN), MF_PH_USE,
-      FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss) },
+      FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss), GATE_ALWAYS },
     /* :218-219 refuses an ASSIGN without result; :223 tests `result >= n`,
        right only for a miss STATED as `n` (S1; R1 declines an unstated one) */
-    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss) },
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss), GATE_ALWAYS },
 };
 
 /* The two rows' common `serves`: every field but handoff, ret_pred, miss,
@@ -325,6 +325,7 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */ \
     [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */ \
     [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_count_by_caller] = MF_ANY,                   /* not read (ADVANCE's; 0 off ADVANCE, site_check) */ \
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_member]          = MF_ANY,                   /* not read: a byte part is one memchr, \

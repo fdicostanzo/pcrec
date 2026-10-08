@@ -515,22 +515,22 @@ static int stmt_on_cand(rctx *rc, kb *b)
     return 0;
 }
 
-/* STMT ADVANCE: pcrec's cursor moved past the run of members, through
- * pcrec's own `more`, `peek` and `step`, counting into `count` and stopping
- * at span_hi when it is proven (§14.3). */
+/* STMT ADVANCE: the cursor moved past the run of members by pcrec's `more` (the
+ * range: no empty test, Q-G2-5), `peek` and `step`, counting into `count` (never
+ * declared when the caller owns it) and stopping at span_hi when proven (§14.3). */
 static int stmt_advance(rctx *rc, kb *b)
 {
     const mf_site *s = rc->s;
     const mf_hooks *h = rc->h;
     if (need(rc->art, "ADVANCE", "step", h->step, "more", h->more, "peek",
-             h->peek, (char *)NULL))
+             h->peek, "count", s->count_by_caller ? h->count : "", (char *)NULL))
         return -1;
     const char *ind = h->indent ? h->indent : "";
     int capped = s->span_hi != MF_SPAN_UNBOUNDED;
     const char *cnt = h->count ? h->count : (capped ? nm(rc, "_k", 0) : NULL);
-    if (h->count)
+    if (h->count && !s->count_by_caller)   /* a caller-owned counter is not ours */
         kb_printf(b, "%sunsigned long %s = %ld;\n", ind, h->count, h->count_start);
-    else if (capped)
+    else if (capped && !h->count)
         kb_printf(b, "%sunsigned long %s = 0;\n", ind, cnt);
 
     kb byte, test;
@@ -692,28 +692,33 @@ static int generic_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * them (:608-610), so they are held there rather than declared, `miss` on a
  * RETURN excepted (:574 always takes it). A field with a contract reading
  * when unstated is no use: `floor` ("0", :79), `result_decl` (:384),
- * `on_miss` on an ASSIGN (:386), `count` (:530), `member` (:131). Nor is
- * `indent` (:356), which only lays text out. */
+ * `on_miss` on an ASSIGN (:386), `count` (:530: no counter, or the kit's
+ * own) while count_by_caller is 0, `member` (:131). Nor is `indent` (:356),
+ * which only lays text out. At count_by_caller 1 `count` IS a use (:526,
+ * :531): the conditional entry below. */
 static const gate_use generic_uses[] = {
     /* :643 need_subject: every EXPR/STMT site but ADVANCE */
     { CM(EXPR) | CM(STMT), CM(RETURN) | CM(BOOL) | CM(ASSIGN) | CM(ON_MISS) | CM(ON_CAND),
-      MF_PH_USE, FM(s) | FM(n) | FM(lo) },
+      MF_PH_USE, FM(s) | FM(n) | FM(lo), GATE_ALWAYS },
     /* :646 a valued EXPR's miss */
-    { CM(EXPR), CM(RETURN), MF_PH_USE, FM(miss) },
+    { CM(EXPR), CM(RETURN), MF_PH_USE, FM(miss), GATE_ALWAYS },
     /* :363 */
-    { CM(STMT), CM(ON_MISS), MF_PH_USE, FM(on_miss) },
+    { CM(STMT), CM(ON_MISS), MF_PH_USE, FM(on_miss), GATE_ALWAYS },
     /* :372 */
-    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss) },
+    { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss), GATE_ALWAYS },
     /* :444-446 */
-    { CM(STMT), CM(ON_CAND), MF_PH_USE, FM(on_cand) | FM(result) | FM(miss) },
+    { CM(STMT), CM(ON_CAND), MF_PH_USE, FM(on_cand) | FM(result) | FM(miss), GATE_ALWAYS },
     /* :525-526 */
-    { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(step) | FM(more) | FM(peek) },
+    { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(step) | FM(more) | FM(peek), GATE_ALWAYS },
+    /* :526, :531: the caller-owned counter is advanced and capped, never
+       declared, so its name is required (Q-R4h-1 (a)) */
+    { CM(STMT), CM(ADVANCE), MF_PH_USE, FM(count), GATE_WHEN(CM(YES), count_by_caller) },
     /* :566-568: the function's name is fn_name(site.pred.fn_ref), for every
        op (K-1); a FUNC site stating fn_ref 0 states no name, so the row
        declines it (R1) and, being the last, the kit refuses it (N3) */
-    { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) | FM(fn_ref) },
+    { CM(FUNC), MF_ANY, MF_PH_DEFINE, FM(fn_name) | FM(fn_ref), GATE_ALWAYS },
     /* :574, :609-610 */
-    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss) },
+    { CM(FUNC), CM(RETURN), MF_PH_USE, FM(miss), GATE_ALWAYS },
 };
 
 static const gate_contract generic_ct = {
@@ -729,6 +734,7 @@ static const gate_contract generic_ct = {
     [FLD_ret_pred]        = MF_ANY,     /* :270, :275 */
     [FLD_guard_by_caller] = MF_ANY,     /* :152, :256 */
     [FLD_on_miss_leaves]  = MF_ANY,     /* not read: the text tests in order, :269-277 */
+    [FLD_count_by_caller] = MF_ANY,     /* :531, :533 */
     [FLD_span_hi]         = MF_ANY,     /* :529, :543 */
     [FLD_denies]          = MF_ANY,     /* not read: its compares are its own, :189-204 */
     [FLD_fn_ref]          = MF_ANY,     /* :568 any stated id; 0 is unstated (fields.def) */
@@ -741,9 +747,9 @@ static const gate_contract generic_ct = {
     [FLD_result_decl]     = MF_ANY,     /* :384, :485 */
     [FLD_miss]            = MF_ANY,     /* :293, :389, :486, :511 parenthesized */
     [FLD_on_miss]         = MF_ANY,     /* :348 braced */
-    [FLD_step]            = MF_ANY,     /* :545-547 */
-    [FLD_more]            = MF_ANY,     /* :542 parenthesized */
-    [FLD_peek]            = MF_ANY,     /* :539 parenthesized */
+    [FLD_step]            = MF_ANY,     /* :545-547 its own line; every class */
+    [FLD_more]            = MF_ANY,     /* :542 parenthesized; every class */
+    [FLD_peek]            = MF_ANY,     /* :539 parenthesized and cast; every class */
     [FLD_count]           = MF_ANY,     /* :530-532, :548 */
     [FLD_count_start]     = MF_ANY,     /* :532 */
     [FLD_on_cand]         = MF_ANY,     /* :475 its text captured and its tokens replaced */

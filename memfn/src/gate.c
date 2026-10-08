@@ -104,6 +104,154 @@ static int stmt_shape(const char *text)
     return p[n - 1] == ';' ? CL_JUMP : CL_OTHER;
 }
 
+/* The ADVANCE hooks' shapes (G3, R4h prep): CONJ, POSTFIX, EXPR_STMT. Each
+ * is a LEXICAL check over the trimmed text, conservative by construction:
+ * whatever it cannot prove is OTHER. Brackets are ( and [; a brace, a quote
+ * or a comment opener is OTHER everywhere (opaque or a block). */
+
+/* 1 iff p[0..n) is bracket-balanced over ( and [, with no brace and no `;`
+ * anywhere and no closer before its opener. */
+static int balanced(const char *p, size_t n)
+{
+    int depth = 0;
+    for (size_t i = 0; i < n; i++) {
+        char c = p[i];
+        if (c == '{' || c == '}' || c == ';') return 0;
+        if (c == '(' || c == '[') depth++;
+        if (c == ')' || c == ']') depth--;
+        if (depth < 0) return 0;
+    }
+    return depth == 0;
+}
+
+/* 1 iff the `(` at p[i] (depth 0) follows an identifier character, white
+ * space between allowed: a call, or a function-like macro, whose expansion
+ * a lexical check cannot see. */
+static int is_call(const char *p, size_t i)
+{
+    while (i && is_space(p[i - 1])) i--;
+    return i && ident_char(p[i - 1]);
+}
+
+/* CONJ: usable as an `&&` operand with no parentheses. Every top-level
+ * operator binds at least as tightly as `&&` (`&&` itself is associative in
+ * value and order), so: no top-level `||`, `?`, `:`, `,` or assignment
+ * (`=` not in `==`, `!=`, `<=`, `>=`; `<<=`/`>>=` are assignments), no
+ * top-level call, and the text neither starts with a binary-only operator
+ * nor ends with an operator. */
+static int conj_shape(const char *text)
+{
+    const char *p;
+    size_t n = trim(text, &p);
+    if (!n || opaque(p, n) || !balanced(p, n)) return CL_OTHER;
+    if (strchr("|^<>=/%?:.,", p[0]) || (n >= 2 && p[0] == '&' && p[1] == '&'))
+        return CL_OTHER;
+    char last = p[n - 1];
+    if (!ident_char(last) && last != ')' && last != ']') return CL_OTHER;
+    int depth = 0;
+    for (size_t i = 0; i < n; i++) {
+        char c = p[i];
+        if (c == '(' && depth == 0 && is_call(p, i)) return CL_OTHER;
+        if (c == '(' || c == '[') { depth++; continue; }
+        if (c == ')' || c == ']') { depth--; continue; }
+        if (depth) continue;
+        if (c == '?' || c == ':' || c == ',') return CL_OTHER;
+        if (c == '|' && i + 1 < n && p[i + 1] == '|') return CL_OTHER;
+        if (c == '=') {
+            if (i + 1 < n && p[i + 1] == '=') { i++; continue; }   /* == */
+            char b = i ? p[i - 1] : 0;
+            if (b == '!') continue;                                 /* != */
+            if ((b == '<' || b == '>') && !(i >= 2 && p[i - 2] == b))
+                continue;                                           /* <= >= */
+            return CL_OTHER;                                        /* an assignment */
+        }
+    }
+    return CL_CONJ;
+}
+
+/* The end of the bracketed group opening at p[i] (( or [), one past its
+ * closer, or 0 when it does not close inside p[0..n). */
+static size_t group_end(const char *p, size_t n, size_t i)
+{
+    int depth = 0;
+    for (; i < n; i++) {
+        if (p[i] == '(' || p[i] == '[') depth++;
+        if (p[i] == ')' || p[i] == ']') depth--;
+        if (depth == 0) return i + 1;
+    }
+    return 0;
+}
+
+/* POSTFIX: a primary expression (an identifier, or one parenthesized
+ * expression), then only `[...]`, `.ident` and `->ident` suffixes, with no
+ * white space outside the brackets and no `++`/`--` anywhere: usable as any
+ * operator's operand with no parentheses. A call suffix is OTHER (a macro). */
+static int postfix_shape(const char *text)
+{
+    const char *p;
+    size_t n = trim(text, &p);
+    if (!n || opaque(p, n) || !balanced(p, n)) return CL_OTHER;
+    for (size_t i = 0; i + 1 < n; i++)
+        if ((p[i] == '+' || p[i] == '-') && p[i + 1] == p[i]) return CL_OTHER;
+    size_t i = 0;
+    if (p[0] == '(') {
+        if (!(i = group_end(p, n, 0))) return CL_OTHER;
+    } else if (ident_char(p[0]) && !(p[0] >= '0' && p[0] <= '9')) {
+        while (i < n && ident_char(p[i])) i++;
+    } else {
+        return CL_OTHER;
+    }
+    while (i < n) {
+        if (p[i] == '[') {
+            if (!(i = group_end(p, n, i))) return CL_OTHER;
+            continue;
+        }
+        size_t at = p[i] == '.' ? i + 1
+                  : p[i] == '-' && i + 1 < n && p[i + 1] == '>' ? i + 2 : 0;
+        if (!at || at >= n || !ident_char(p[at]) || (p[at] >= '0' && p[at] <= '9'))
+            return CL_OTHER;
+        for (i = at; i < n && ident_char(p[i]); i++) {}
+    }
+    return CL_POSTFIX;
+}
+
+/* The C keywords that lead a statement other than an expression statement,
+ * or a declaration. */
+static const char *const stmt_keywords[] = {
+    "if", "else", "for", "while", "do", "switch", "return", "goto", "break",
+    "continue", "case", "default", "typedef", "static", "extern", "register",
+    "auto", "const", "volatile", "struct", "union", "enum", "void", "char",
+    "short", "int", "long", "float", "double", "signed", "unsigned", "_Bool",
+    "inline", "__attribute__", "asm", "__asm__", NULL,
+};
+
+/* EXPR_STMT: one expression statement, `e` or `e;`: the trimmed text with at
+ * most one trailing `;` is non-empty, balanced, holds no other `;`, no
+ * brace, no top-level `,`, `?` or `:`, and is not led by a keyword. */
+static int expr_stmt_shape(const char *text)
+{
+    const char *p;
+    size_t n = trim(text, &p);
+    if (n && p[n - 1] == ';') {
+        n--;
+        while (n && is_space(p[n - 1])) n--;
+    }
+    if (!n || opaque(p, n) || !balanced(p, n)) return CL_OTHER;
+    size_t w = 0;
+    while (w < n && ident_char(p[w])) w++;
+    for (unsigned k = 0; w && stmt_keywords[k]; k++)
+        if (strlen(stmt_keywords[k]) == w && !strncmp(p, stmt_keywords[k], w))
+            return CL_OTHER;
+    int depth = 0;
+    for (size_t i = 0; i < n; i++) {
+        char c = p[i];
+        if (c == '(' || c == '[') depth++;
+        else if (c == ')' || c == ']') depth--;
+        else if (!depth && (c == ',' || c == '?' || c == ':')) return CL_OTHER;
+    }
+    return CL_EXPR_STMT;
+}
+
 /* ---- the classify functions (fields.def's `classify` column) ------------- *
  *
  * Each returns the class of the field's value in `in`, or -1 where the value
@@ -290,6 +438,27 @@ static int cl_on_miss(const gate_in *in)
     return stmt_shape(in->h->on_miss);
 }
 
+static int cl_count_by_caller(const gate_in *in)
+{
+    return in->s ? flag01(in->s->count_by_caller) : CL_OTHER;
+}
+
+/* The ADVANCE hooks: their shape class, -1 for unstated. */
+static int cl_more(const gate_in *in)
+{
+    return in->h && in->h->more ? conj_shape(in->h->more) : -1;
+}
+
+static int cl_peek(const gate_in *in)
+{
+    return in->h && in->h->peek ? postfix_shape(in->h->peek) : -1;
+}
+
+static int cl_step(const gate_in *in)
+{
+    return in->h && in->h->step ? expr_stmt_shape(in->h->step) : -1;
+}
+
 static int cl_count_start(const gate_in *in)
 {
     if (!in->h) return -1;
@@ -314,9 +483,6 @@ static int cl_comment_tier(const gate_in *in)
     { return in->h && in->h->field ? CL_OTHER : -1; }
 HOOK_STATED(result)
 HOOK_STATED(result_decl)
-HOOK_STATED(step)
-HOOK_STATED(more)
-HOOK_STATED(peek)
 HOOK_STATED(count)
 HOOK_STATED(on_cand)
 HOOK_STATED(member)
@@ -363,20 +529,6 @@ static const field_row fields[FLD_N] = {
 #undef MF_FIELD
 
 
-/* The fields the row USES at `phase` on the site `in` describes: the union
- * of its `uses` entries whose form and handoff hold the site's classes. */
-static uint64_t uses_at(const gate_contract *c, unsigned phase, const gate_in *in)
-{
-    uint64_t f = 0;
-    int form = cl_form(in), handoff = cl_handoff(in);
-    for (unsigned i = 0; i < c->nuses; i++) {
-        const gate_use *u = &c->uses[i];
-        if ((u->phases & phase) && (u->forms >> form & 1) && (u->handoffs >> handoff & 1))
-            f |= u->fields;
-    }
-    return f;
-}
-
 /* The class of field `f` in `in`, closed over the field's set (a classify
  * that returned a class outside it reads OTHER); -1 for unstated. */
 static int class_of(unsigned f, const gate_in *in)
@@ -384,6 +536,26 @@ static int class_of(unsigned f, const gate_in *in)
     int k = fields[f].classify(in);
     if (k >= 0 && !(fields[f].classes >> k & 1)) k = CL_OTHER;
     return k;
+}
+
+/* The fields the row USES at `phase` on the site `in` describes: the union
+ * of its `uses` entries whose form and handoff hold the site's classes and
+ * whose condition, if any, holds (an unstated condition field holds none). */
+static uint64_t uses_at(const gate_contract *c, unsigned phase, const gate_in *in)
+{
+    uint64_t f = 0;
+    int form = cl_form(in), handoff = cl_handoff(in);
+    for (unsigned i = 0; i < c->nuses; i++) {
+        const gate_use *u = &c->uses[i];
+        if (!(u->phases & phase) || !(u->forms >> form & 1) || !(u->handoffs >> handoff & 1))
+            continue;
+        if (u->when_cls) {
+            int k = u->when_fld < FLD_N ? class_of(u->when_fld, in) : -1;
+            if (k < 0 || !(u->when_cls >> k & 1)) continue;
+        }
+        f |= u->fields;
+    }
+    return f;
 }
 
 gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *in)

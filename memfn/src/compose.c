@@ -241,6 +241,9 @@ static const char *site_check(const mf_site *s)
         return "on_miss_leaves is not 0 or 1";
     if (s->on_miss_leaves && s->handoff != MF_H_ON_MISS && s->handoff != MF_H_ASSIGN)
         return "on_miss_leaves is for an ON_MISS/ASSIGN site only";
+    if (s->count_by_caller > 1) return "`count_by_caller` is not 0 or 1";
+    if (s->count_by_caller && s->handoff != MF_H_ADVANCE)
+        return "`count_by_caller` is for an ADVANCE site only (Q-R4h-1 (a))";
     if (s->op == MF_OP_ALL_PRESENT) {
         if (s->npred && !s->preds) return "ALL_PRESENT without preds";
         for (unsigned i = 0; i < s->npred; i++)
