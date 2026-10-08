@@ -815,6 +815,27 @@ classes is an undispositioned member and stops the lane.
     - (c) `VM_PREFILTER_LANG_WHY` (6 forms) and `VM_PREFILTER_WHY` witnesses
       with their hand-written texts.
 
+**B0's outcome (lane decfbB0, 2026-10-08, base main `ab583f6b`; report
+`../dev/lanes/decfbB0_report.md`).** Delivered: items 1-7, 9, 10 and 11(b)/(c).
+Item 8 (`row_reach`) and item 11(a) (sequences) read the B1 trace and land
+at B1; until then the prototype in `dec_fallback/reach/` stands in, as item
+8 says. Choices the list left open, each recorded in the report:
+- `--list-limits` cannot be the variant plumbing control (it prints
+  limits.def's literal). Each variant instead names witness stamps that only
+  its limits produce, and `plain` must produce none of them.
+- Composition is not run per variant. facts and dumps run at the first
+  base only.
+- The two byte-figure `_WHY` forms are held to a SHAPE (`… N > 1000000`);
+  the `nfa N` form is held to its full text.
+- W5's post-loop trials are a NOTE, not an assertion: 9 of 11 die by
+  SIGABRT in the listing's renderer (a pre-existing abort-on-OOM in
+  `pcrec_emit_facts`, recommended as a K-entry).
+
+`call_graph.py --family fallback`'s computed RE-RUN set reproduces rev 1's
+list except S189/S191/S192. Those three are seen only by `--step` at B3, so
+`rerun_at` is computed per commit, as item 9 intends. Eight
+`compile_driver` rows are added at B3+B5.
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

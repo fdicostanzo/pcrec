@@ -1491,3 +1491,14 @@ the dump or the spec had been left behind.
 (`RX_STARTPOS_GUARD`, `RX_UTF_CHECK`, dump vs `match_api.md` §6.3's tables);
 with the two new single-bit triples (bits 39, 40) `run_registry_tests.sh`'s
 pinned count moves 155 -> 165.
+
+## [decfbB0b] the extractors moved to `tests/lib/spec_extract.sh`
+
+`axes_registry_check.sh` no longer defines `extract_md_table_values`,
+`extract_line_values`, `extract_prose_values`, `extract_c_return_values`; it
+sources them from `tests/lib/spec_extract.sh` (moved verbatim with their
+comments), which `tests/codegen/run_fallback_table.sh`'s observed-stamp leg
+also sources. Measured identical before and after: 214 PASS / 0 FAIL, and
+byte-identical output. The two source legs (`pcrec_engine_sel_name`'s
+returns, `cx.size_term_why =`) still run; they retire at B5 of
+`docs/design/dec_fallback.md`, behind that leg.

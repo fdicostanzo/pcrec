@@ -55,6 +55,19 @@ stream "$T/row.tsv" "0 c-default NEXT dfa memchr next" "0 c-default PRESENCE dfa
     "0 c-vm NEXT vm memchr vmstart" "1 c-default NEXT dfa run-pinned next" "1 c-default FIRST dfa handoff first"
 # a DECLARED addition (site bound) and an undeclared one
 stream "$T/added.tsv" $A "1 c-default BOUND dfa bot bound"
+# --order fixtures: slot X records x1,x2 interleaved with slot Y records y1,y2
+O='0 c-default X dfa r x1
+0 c-default Y dfa r y1
+0 c-default X dfa r x2
+0 c-default Y dfa r y2'
+stream "$T/o_ref.tsv" $O
+stream "$T/o_same.tsv" $O
+# swap of the two X records (Y untouched)
+stream "$T/o_xswap.tsv" "0 c-default X dfa r x2" "0 c-default Y dfa r y1" "0 c-default X dfa r x1" "0 c-default Y dfa r y2"
+# swap of the two Y records, X untouched
+stream "$T/o_yswap.tsv" "0 c-default X dfa r x1" "0 c-default Y dfa r y2" "0 c-default X dfa r x2" "0 c-default Y dfa r y1"
+# X ordered pair intact but their interleaving with Y moved
+stream "$T/o_interleave.tsv" "0 c-default Y dfa r y1" "0 c-default X dfa r x1" "0 c-default X dfa r x2" "0 c-default Y dfa r y2"
 unset IFS; set +f
 printf 'bound\n' > "$T/decl"
 printf 'nosuchsite\n' > "$T/decl_stale"
@@ -77,6 +90,21 @@ expect bad-header         2 "$T/decl" "$T/ref.tsv"
 expect unordered-reorder-ok   0 "$T/ref.tsv" "$T/reorder.tsv" --unordered
 expect unordered-row-caught  1 "$T/ref.tsv" "$T/row.tsv" --unordered
 expect unordered-added-caught 1 "$T/ref.tsv" "$T/added.tsv" --unordered
+
+# --order (S-I2's detector): per-slot compare modes
+expect order-clean-twin        0 "$T/o_ref.tsv" "$T/o_same.tsv" --order X=ordered --order Y=set
+expect order-swap-x-set-ok     0 "$T/o_ref.tsv" "$T/o_xswap.tsv" --order X=set --order Y=ordered
+expect order-swap-x-caught     1 "$T/o_ref.tsv" "$T/o_xswap.tsv" --order X=ordered
+expect order-swap-x-caught-y-set 1 "$T/o_ref.tsv" "$T/o_xswap.tsv" --order X=ordered --order Y=set
+expect order-x-ordered-y-swap-ok 0 "$T/o_ref.tsv" "$T/o_yswap.tsv" --order X=ordered --order Y=set
+expect order-y-ordered-y-swap-caught 1 "$T/o_ref.tsv" "$T/o_yswap.tsv" --order Y=ordered
+expect order-x-ordered-ignores-interleave 0 "$T/o_ref.tsv" "$T/o_interleave.tsv" --order X=ordered --order Y=ordered
+expect order-default-sees-interleave 1 "$T/o_ref.tsv" "$T/o_interleave.tsv"
+expect order-overrides-unordered 1 "$T/o_ref.tsv" "$T/o_xswap.tsv" --unordered --order X=ordered
+expect order-unordered-default-ok 0 "$T/o_ref.tsv" "$T/o_xswap.tsv" --unordered
+expect order-bad-mode          2 "$T/o_ref.tsv" "$T/o_same.tsv" --order X=sorted
+expect order-no-equals         2 "$T/o_ref.tsv" "$T/o_same.tsv" --order X
+expect order-empty-slot        2 "$T/o_ref.tsv" "$T/o_same.tsv" --order =set
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"

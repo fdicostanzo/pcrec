@@ -75,4 +75,5 @@ def main():
         subprocess.check_call(cmd)
         print("built", out)
 
-main()
+if __name__ == "__main__":   # dec_fallback/attempt_hist.py imports PATCHES
+    main()

@@ -11,13 +11,19 @@ first edit (the note's §4.1), because main moves under a design note.
   new or rewritten throughout; stc67_report.md §4 item 2). Read by
   `../start_table/sabotage_anchors.py`, which matches `token`/`line` text in
   EVERY file, so an entry must be distinctive.
-- `call_graph.txt` — `../start_table/call_graph.py .` at `31a9ae4c`, the
-  owner map `sabotage_anchors.py` needs. Its "family" is the START family,
-  so this directory reads only the owner column and the RE-AIM class from
-  it; the note's §4.4 derives B's re-run rows from owners.
-- `sabotage_anchors.tsv`, `sabotage_anchors.summary` — that script's output
-  and its stderr summary with this edit set (11 RE-AIM rows: B2 S421/S423,
-  B3 S253/S259, B4 S102/S165/S216/S272/S612, B5 S238/S422).
+- `call_graph.txt` — `../start_table/call_graph.py .` at `31a9ae4c` (the
+  START family): superseded by `call_graph_fallback.txt`, kept as rev 1's
+  record.
+- `call_graph_fallback.txt` — `../start_table/call_graph.py . --family
+  fallback` (decfbB0c, B0 item 9; 53-member family, 14 seeds, regenerated
+  by a build lane on its own base).
+- `sabotage_anchors.tsv`, `sabotage_anchors.summary` — `../start_table/
+  sabotage_anchors.py . call_graph_fallback.txt refactor_edit_set.tsv
+  --final after-B6 --edit-names` (exit 2 = the pre-existing S571
+  unresolved site): 11 RE-AIM rows (B2 S421/S423, B3 S253/S259, B4 S102/
+  S165/S216/S272/S612, B5 S238/S422), `rerun_at` computed per B commit;
+  the reproduction against rev 1's hand list is in
+  `docs/dev/lanes/decfbB0c_report.md`.
 - `state_readers.sh`, `state_readers.txt` — the K35 reader census: every
   CODE line under `src/` that names one of the family's state members or
   token derivations. REVISION 2 (critB2 M6): the member list is DERIVED from
@@ -25,8 +31,19 @@ first edit (the note's §4.1), because main moves under a design note.
   `cx.` members the recovery point names, `pf.forcing` among them; the Ctx
   members seeded from those locals; the four enums' values from their enum
   blocks), each source fail-closed on an empty extraction; only the function
-  names are declared, existence-checked. 408 lines at `42ab7c25` (rev 1's
+  names are declared, existence-checked. 408 lines at `42ab7c25` and at B0's base `6ebe14d7` (same lines, shifted numbers; rev 1's
   hand list: 164). The note's §2.1 gives the line classes.
+- `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
+  decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
+  PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
+  decfb0's `census.py` run per limit variant (emit_sweep's `VARIANTS`) over
+  decfb0's population; compares per compile status, attempt count and the
+  whole probe sequence, parent vs child (never pinned absolute counts).
+  K35: a population floor and at least one multi-attempt compile per
+  variant; the plain probed build byte-identical to the unprobed one.
+  Anchors fail closed; a commit that rewrites one (B3) supplies the child's
+  re-anchored probes with `--child-patches`. A gate instrument the B lanes
+  run, not run by `make`.
 - `reach/` — rev 2's row-reach PROTOTYPE (probed scratch compilers over
   decfb0's population x 5 limit variants x 14 flag arms) and its output: the
   witness for every T1-T4 row, the UNREACHED cells, and the checks of the

@@ -1,4 +1,4 @@
-# state_readers.sh (rev 2, derived) at 42ab7c25; one line per code line
+# state_readers.sh (rev 2, derived) at 6ebe14d7; one line per code line
 # E (EngineFit members, qualified): chosen engines engine_sel prefilter prefilter_collapsed prefilter_declined_nullable prefilter_declined_nullable_default prefilter_lang_why prefilter_nfa_states prefilter_sizecap_bytes prefilter_sizecap_limit why why_pos 
 # L (compile_driver cross-attempt locals, bare): budget_fallback collapse_reason defo dfa_disabled dfa_was_engine dmemo dropped_anchored dropped_prefilter dropped_premul overflow_why size_cap_bytes size_cap_limit size_drop_rung st_capexcl st_code st_fc st_final_k st_idx st_k st_nodes st_ok st_phase st_rescue st_sc st_total st_whylen 
 # R (recovery-point Ctx members, qualified): dfa_overflowed dfa_overflow_is_budget dfa_overflow_why failed_nomem size_cap_bytes size_cap_limit size_cap_refused 
@@ -112,58 +112,58 @@ src/gen/emit_dfa.c:1728	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA)
 src/gen/emit_dfa.c:3121	prefilter	pcrec_sb_printf(c, "    .prefilter = \"%s\",\n", dfa_prefilter_name(cx));
 src/gen/emit_dfa.c:3132	prefilter	pcrec_sb_puts(c, "    .prefilter = \"none\",\n");
 src/gen/emit_dfa.c:3145	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA)
-src/gen/emit_dfa.c:6797	fit.chosen,prefilter	if (cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter) return false;
-src/gen/emit_dfa.c:7104	fit.chosen	if (cx->job->fit.chosen == ENGM_VM) {
-src/gen/emit_dfa.c:7108	prefilter,prefilter_collapsed	((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
-src/gen/emit_dfa.c:7308	prefilter_collapsed	if (cx->job->fit.prefilter_collapsed) return false;
-src/gen/emit_dfa.c:7309	fit.chosen	if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
-src/gen/emit_dfa.c:9673	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
-src/gen/emit_dfa.c:9674	fit.chosen	PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",
-src/gen/emit_dfa.c:9689	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) {
-src/gen/emit_dfa.c:9973	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
-src/gen/emit_dfa.c:9975	fit.chosen	cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");
-src/gen/emit_dfa.c:9988	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) {
-src/gen/emit_dfa.c:10603	fit.chosen	bool vm = job->fit.chosen == ENGM_VM;
-src/gen/emit_dfa.c:10604	prefilter	bool prefilter = job->fit.prefilter;
-src/gen/emit_dfa.c:10818	fit.chosen,prefilter	bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;
-src/gen/emit_dfa.c:11399	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
+src/gen/emit_dfa.c:6805	fit.chosen,prefilter	if (cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter) return false;
+src/gen/emit_dfa.c:7112	fit.chosen	if (cx->job->fit.chosen == ENGM_VM) {
+src/gen/emit_dfa.c:7116	prefilter,prefilter_collapsed	((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
+src/gen/emit_dfa.c:7316	prefilter_collapsed	if (cx->job->fit.prefilter_collapsed) return false;
+src/gen/emit_dfa.c:7317	fit.chosen	if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
+src/gen/emit_dfa.c:9721	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+src/gen/emit_dfa.c:9722	fit.chosen	PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",
+src/gen/emit_dfa.c:9737	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) {
+src/gen/emit_dfa.c:10021	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+src/gen/emit_dfa.c:10023	fit.chosen	cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");
+src/gen/emit_dfa.c:10036	fit.chosen	if (cx->job->fit.chosen == ENGM_DFA) {
+src/gen/emit_dfa.c:10651	fit.chosen	bool vm = job->fit.chosen == ENGM_VM;
+src/gen/emit_dfa.c:10652	prefilter	bool prefilter = job->fit.prefilter;
+src/gen/emit_dfa.c:10866	fit.chosen,prefilter	bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;
+src/gen/emit_dfa.c:11447	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
 src/gen/emit_vm.c:3639	prefilter	return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
 src/gen/emit_vm.c:3641	prefilter_collapsed	&& !cx->job->fit.prefilter_collapsed;
-src/gen/emit_vm.c:9368	dfa_disabled	!cx->dfa_disabled ? NULL
-src/gen/emit_vm.c:9371	dfa_overflow_why	" instead of refusing (SEL-1)", cx->dfa_overflow_why);
-src/gen/emit_vm.c:9428	why	vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
-src/gen/emit_vm.c:9443	prefilter	if (st->prefilter) {
-src/gen/emit_vm.c:9452	prefilter_collapsed	if (st->prefilter_collapsed) {
-src/gen/emit_vm.c:9499	prefilter_declined_nullable	} else if (st->prefilter_declined_nullable) {
-src/gen/emit_vm.c:9516	prefilter_declined_nullable_default	} else if (st->prefilter_declined_nullable_default) {
-src/gen/emit_vm.c:9530	dfa_disabled	} else if (cx->dfa_disabled) {
-src/gen/emit_vm.c:11147	prefilter	if (!v->cx->job->fit.prefilter) return;
-src/gen/emit_vm.c:11208	why	job->fit.why ? job->fit.why : "--engine=vm");
-src/gen/emit_vm.c:11216	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, v->up, "vm", pcrec_engine_sel_name(cx));
-src/gen/emit_vm.c:11219	why	pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
-src/gen/emit_vm.c:11220	why	strlen(job->fit.why ? job->fit.why : "--engine=vm"));
-src/gen/emit_vm.c:11258	prefilter	job->fit.prefilter ? "hybrid" : "none");
-src/gen/emit_vm.c:11264	SDR_NO_PREFILTER,size_drop_rung	if (cx->size_drop_rung == SDR_NO_PREFILTER)
-src/gen/emit_vm.c:11267	size_cap_bytes,size_cap_limit	cx->size_cap_bytes, cx->size_cap_limit);
-src/gen/emit_vm.c:11289	prefilter	if (job->fit.prefilter) {
-src/gen/emit_vm.c:11291	prefilter_collapsed	job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
-src/gen/emit_vm.c:11314	prefilter_lang_why	switch (job->fit.prefilter_lang_why) {
-src/gen/emit_vm.c:11315	PFLW_NO_REP	case PFLW_NO_REP:
-src/gen/emit_vm.c:11323	PFLW_NULLABLE	case PFLW_NULLABLE:
-src/gen/emit_vm.c:11336	PFLW_FORCED	case PFLW_FORCED:
-src/gen/emit_vm.c:11339	PFLW_SEL1	case PFLW_SEL1:
-src/gen/emit_vm.c:11347	prefilter_nfa_states	job->fit.prefilter_nfa_states);
-src/gen/emit_vm.c:11349	PFLW_SIZECAP	case PFLW_SIZECAP:
-src/gen/emit_vm.c:11356	prefilter_sizecap_bytes	job->fit.prefilter_sizecap_bytes,
-src/gen/emit_vm.c:11357	prefilter_sizecap_limit	job->fit.prefilter_sizecap_limit);
-src/gen/emit_vm.c:12775	prefilter	if (job->fit.prefilter) {
-src/gen/emit_vm.c:13942	why	pcrec_emit_info(cx, g, 2, job->fit.why,
-src/gen/emit_vm.c:13965	prefilter	st.prefilter = v->emitted_prefilter;
-src/gen/emit_vm.c:13968	prefilter_collapsed	st.prefilter_collapsed = job->fit.prefilter_collapsed;
-src/gen/emit_vm.c:13971	prefilter_declined_nullable	st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
-src/gen/emit_vm.c:13973	prefilter_declined_nullable_default	st.prefilter_declined_nullable_default =
-src/gen/emit_vm.c:13974	prefilter_declined_nullable_default	job->fit.prefilter_declined_nullable_default;
-src/gen/emit_vm.c:14008	why	st.why = job->fit.why;
+src/gen/emit_vm.c:9414	dfa_disabled	!cx->dfa_disabled ? NULL
+src/gen/emit_vm.c:9417	dfa_overflow_why	" instead of refusing (SEL-1)", cx->dfa_overflow_why);
+src/gen/emit_vm.c:9474	why	vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
+src/gen/emit_vm.c:9489	prefilter	if (st->prefilter) {
+src/gen/emit_vm.c:9498	prefilter_collapsed	if (st->prefilter_collapsed) {
+src/gen/emit_vm.c:9545	prefilter_declined_nullable	} else if (st->prefilter_declined_nullable) {
+src/gen/emit_vm.c:9562	prefilter_declined_nullable_default	} else if (st->prefilter_declined_nullable_default) {
+src/gen/emit_vm.c:9576	dfa_disabled	} else if (cx->dfa_disabled) {
+src/gen/emit_vm.c:11193	prefilter	if (!v->cx->job->fit.prefilter) return;
+src/gen/emit_vm.c:11254	why	job->fit.why ? job->fit.why : "--engine=vm");
+src/gen/emit_vm.c:11262	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, v->up, "vm", pcrec_engine_sel_name(cx));
+src/gen/emit_vm.c:11265	why	pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
+src/gen/emit_vm.c:11266	why	strlen(job->fit.why ? job->fit.why : "--engine=vm"));
+src/gen/emit_vm.c:11304	prefilter	job->fit.prefilter ? "hybrid" : "none");
+src/gen/emit_vm.c:11310	SDR_NO_PREFILTER,size_drop_rung	if (cx->size_drop_rung == SDR_NO_PREFILTER)
+src/gen/emit_vm.c:11313	size_cap_bytes,size_cap_limit	cx->size_cap_bytes, cx->size_cap_limit);
+src/gen/emit_vm.c:11335	prefilter	if (job->fit.prefilter) {
+src/gen/emit_vm.c:11337	prefilter_collapsed	job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+src/gen/emit_vm.c:11360	prefilter_lang_why	switch (job->fit.prefilter_lang_why) {
+src/gen/emit_vm.c:11361	PFLW_NO_REP	case PFLW_NO_REP:
+src/gen/emit_vm.c:11369	PFLW_NULLABLE	case PFLW_NULLABLE:
+src/gen/emit_vm.c:11382	PFLW_FORCED	case PFLW_FORCED:
+src/gen/emit_vm.c:11385	PFLW_SEL1	case PFLW_SEL1:
+src/gen/emit_vm.c:11393	prefilter_nfa_states	job->fit.prefilter_nfa_states);
+src/gen/emit_vm.c:11395	PFLW_SIZECAP	case PFLW_SIZECAP:
+src/gen/emit_vm.c:11402	prefilter_sizecap_bytes	job->fit.prefilter_sizecap_bytes,
+src/gen/emit_vm.c:11403	prefilter_sizecap_limit	job->fit.prefilter_sizecap_limit);
+src/gen/emit_vm.c:12821	prefilter	if (job->fit.prefilter) {
+src/gen/emit_vm.c:13988	why	pcrec_emit_info(cx, g, 2, job->fit.why,
+src/gen/emit_vm.c:14011	prefilter	st.prefilter = v->emitted_prefilter;
+src/gen/emit_vm.c:14014	prefilter_collapsed	st.prefilter_collapsed = job->fit.prefilter_collapsed;
+src/gen/emit_vm.c:14017	prefilter_declined_nullable	st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
+src/gen/emit_vm.c:14019	prefilter_declined_nullable_default	st.prefilter_declined_nullable_default =
+src/gen/emit_vm.c:14020	prefilter_declined_nullable_default	job->fit.prefilter_declined_nullable_default;
+src/gen/emit_vm.c:14054	why	st.why = job->fit.why;
 src/core/compile.c:52	failed_nomem	cx->failed_nomem = true;
 src/core/compile.c:352	fit.chosen	if (cx->job->fit.chosen != ENGM_DFA) return;
 src/core/compile.c:354	SDR_NO_ANCHORED,size_drop_rung	if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;

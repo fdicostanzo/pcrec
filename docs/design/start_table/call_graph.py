@@ -27,11 +27,39 @@ a table, a table walked), and then:
      reader of a row, a projection, or "not a start decision" with a reason).
 
 Output (stdout, TSV): kind, name, file:line, detail. Read-only.
-Usage: call_graph.py ROOT
-"""
-import os, re, sys, collections
+Usage: call_graph.py ROOT [--family start|fallback]
 
-root = sys.argv[1]
+--family fallback ([DEC-FALLBACK] B0 item 9, dec_fallback.md §4.2): the SAME
+derivation (reach from roots; family = the members that reach a seed) with
+the fallback family's roots and seeds. `start` (the default) is unchanged and
+byte-identical to the output before the selector existed.
+  ROOTS  the recovery-point walk and its predicates (compile_driver -- which
+         holds the T3 gate, the PFLW derivation --, fit_select,
+         fit_rung_denied, fit_rung_of, the fit_*_applies and fit_always),
+         prefilter_decision, size_term_choose, esel_of. A root that no longer
+         exists in src/ is an exit-2 error (a renamed root must not shrink
+         the family silently).
+  SEEDS  DERIVED, never listed here: this runs docs/design/dec_fallback/
+         state_readers.sh and reads its `# E/L/R/RQ/S/V/D` header lines (the
+         family's state members, the enum values, the declared token
+         derivations). Function seeds (D) are seed definitions; member seeds
+         are tokens, matched exactly as state_readers.sh matches them (E/R/S/
+         RQ qualified by `.`/`->`, L bare in src/core/compile.c, V bare), so
+         a definition whose body names one reaches the `@field` pseudo-seed.
+         An empty source, or a D name that is no definition, is exit 2.
+"""
+import os, re, subprocess, sys, collections
+
+_args = sys.argv[1:]
+FAMILY_SEL = "start"
+if "--family" in _args:
+    _i = _args.index("--family")
+    FAMILY_SEL = _args[_i + 1] if _i + 1 < len(_args) else ""
+    del _args[_i:_i + 2]
+if len(_args) != 1 or FAMILY_SEL not in ("start", "fallback"):
+    print("usage: call_graph.py ROOT [--family start|fallback]", file=sys.stderr)
+    sys.exit(2)
+root = _args[0]
 SRC = ["src"]
 DEF_RX = re.compile(r'^(?:static\s+)?(?:inline\s+)?(?:const\s+)?[A-Za-z_][\w\s\*]*?\b([A-Za-z_]\w*)\s*\(([^;]*)$')
 # [r2.1 C-N1] a top-level DATA definition: an array of any size (`[]`,
@@ -140,6 +168,18 @@ for d in SRC:
                     add(name, rel, i, k, "type", L)
                     i = k + 1
                     continue
+                if FAMILY_SEL == "fallback":
+                    # --family fallback only: a ONE-LINE definition
+                    # (`static bool fit_always(...) { ...; }`, a fallback
+                    # root; DEF_RX refuses it, its body holds a `;`). The
+                    # start family never parsed these and its output must
+                    # stay byte-identical, so the start parse is untouched.
+                    c1 = code_of(l)
+                    m1 = re.match(r'^(?:static\s+)?(?:inline\s+)?(?:const\s+)?[A-Za-z_][\w\s\*]*?\b([A-Za-z_]\w*)\s*\([^;{]*\)\s*\{', c1)
+                    if m1 and c1.rstrip().endswith("}") and c1.count("{") == c1.count("}"):
+                        add(m1.group(1), rel, i, i, "func", L)
+                        i += 1
+                        continue
                 m = DEF_RX.match(l)
                 if m:
                     # a function: the opening brace at column 0 within 8 lines
@@ -219,8 +259,50 @@ SEED_FIELDS = {"root_minw", "mrl_win", "nclamp", "prefilter_collapsed"}
 EMIT_ROOTS = ["pcrec_emit_dfa", "pcrec_emit_vm"]
 BODY_ROOTS = ["emit_unanchored", "emit_attempt", "vm_emit_search_body"]
 STAMP_ROOTS = ["pcrec_emit_dfa_scan_stamps", "vm_emit_stamps"]
+FB_ROOTS = ["compile_driver", "fit_select", "fit_rung_denied", "fit_rung_of",
+            "fit_collapse_applies", "fit_anchored_applies", "fit_premul_applies",
+            "fit_prefilter_applies", "fit_always", "prefilter_decision",
+            "size_term_choose", "esel_of"]
+FB_PAT = None
+if FAMILY_SEL == "fallback":
+    def die(msg):
+        print(f"call_graph.py --family fallback: {msg}", file=sys.stderr)
+        sys.exit(2)
+    sr = subprocess.run(["bash", os.path.join(root, "docs/design/dec_fallback/state_readers.sh"), root],
+                        capture_output=True, text=True)
+    if sr.returncode != 0:
+        die(f"state_readers.sh failed (rc {sr.returncode}): {sr.stderr.strip()}")
+    src = {}
+    for l in sr.stdout.split("\n"):
+        m = re.match(r'^# ([A-Z]+) \([^)]*\): (.*)$', l)
+        if m:
+            src[m.group(1)] = m.group(2).split()
+    for k in ("E", "L", "R", "RQ", "S", "V", "D"):
+        if not src.get(k):
+            die(f"derived source {k} is empty or missing from state_readers.sh's header (K35)")
+    for r_ in FB_ROOTS:
+        if r_ not in defs:
+            die(f"root {r_} is no definition in src/ (renamed? the family would shrink silently)")
+    # D names are existence-checked by state_readers.sh already; those that
+    # are definitions are the seed DEFINITIONS, the rest (a local such as
+    # select_engine.c's lang_nullable_declinable) are bare member tokens.
+    SEEDS = {d for d in src["D"] if d in defs}
+    src["V"] = src["V"] + [d for d in src["D"] if d not in defs]
+    # member names, for the site column's identifier test only
+    SEED_FIELDS = set(src["E"]) | set(src["R"]) | set(src["S"]) | set(src["L"]) | set(src["V"]) \
+        | {x for q in src["RQ"] for x in q.split(".")}
+    FB_QUAL = re.compile(r'(?:\.|->)(?:' + "|".join(map(re.escape, src["E"] + src["R"] + src["S"]))
+                         + r')\b|\b(?:' + "|".join(re.escape(q).replace(r"\.", r"(?:\.|->)") for q in src["RQ"])
+                         + r')\b|\b(?:' + "|".join(map(re.escape, src["V"])) + r')\b')
+    FB_LOC = re.compile(r'\b(?:' + "|".join(map(re.escape, src["L"])) + r')\b')
 for n, body in texts.items():
     if defs[n][3] == "type":
+        continue
+    if FAMILY_SEL == "fallback":
+        # a member read: qualified/enum tokens anywhere; L locals only in compile.c
+        if any(FB_QUAL.search(code_of(l)) or (defs[n][0] == "src/core/compile.c" and FB_LOC.search(code_of(l)))
+               for _, l in body):
+            edges[n].add("@field")
         continue
     if any(re.search(r'(->|\.)' + f + r'\b', l) for _, l in body for f in SEED_FIELDS):
         edges[n].add("@field")
@@ -229,6 +311,8 @@ for n, body in texts.items():
 for n in list(edges):
     edges[n] = {y for y in edges[n] if y not in defs or defs[y][3] != "type"}
 
+if FAMILY_SEL == "fallback":
+    BODY_ROOTS, STAMP_ROOTS = FB_ROOTS, []
 R_body = reach(BODY_ROOTS)
 R_stamp = reach(STAMP_ROOTS)
 # [START-TABLE] C2: the one start table's walk is a root too. No emitter
@@ -236,7 +320,7 @@ R_stamp = reach(STAMP_ROOTS)
 # replace), yet `cand_rows[]` and every predicate it stores are start-family
 # by construction, so they join the family the commit that builds them.
 TABLE_ROOTS = ["cand_select"]
-R = reach(EMIT_ROOTS + TABLE_ROOTS)
+R = reach(FB_ROOTS) if FAMILY_SEL == "fallback" else reach(EMIT_ROOTS + TABLE_ROOTS)
 # FAMILY: members of R from which a SEED is reachable (and the seeds' owners
 # are excluded: the facts layer is core, its derivations are not start rows)
 # Does a seed lie in x's reach? A FIXPOINT over the whole graph, not a
@@ -262,6 +346,17 @@ def rs(x):
 
 FAMILY = {x for x in R if x not in SEEDS and rs(x)
           and not defs[x][0].startswith("src/facts/")}
+if FAMILY_SEL == "fallback":
+    # the roots are family by definition (several are also seeds: esel_of,
+    # prefilter_decision); the facts layer is NOT excluded here -- no fallback
+    # root lives there and a facts writer of a label is a family reader.
+    # ONE hop, not the start family's transitive reach: compile_driver reaches
+    # 1,498 of 2,084 definitions, so "reaches a seed" holds for 761 of them
+    # (measured, decfbB0c) and says nothing. The family is the DIRECT readers
+    # of the state (a definition whose body names a seed definition or a
+    # member token) plus the roots.
+    FAMILY = {x for x in R if x not in SEEDS and any(y in SEEDS or y == "@field" for y in edges[x])} \
+        | set(FB_ROOTS)
 # a FAMILY table's rows are FAMILY: every predicate and hook a start table
 # stores is a member even where it reads only the selection struct.
 grew = True
@@ -292,7 +387,11 @@ while st:
             st.append(mm.group(1))
 FAMILY |= ROWTYPES
 COND = re.compile(r'^\s*(if|else if|while|return|for)\b|\?|&&|\|\|')
-print("# call_graph.py: roots", ",".join(BODY_ROOTS), "| stamps", ",".join(STAMP_ROOTS))
+if FAMILY_SEL == "fallback":
+    print("# call_graph.py --family fallback: roots", ",".join(FB_ROOTS),
+          "| seeds derived by dec_fallback/state_readers.sh (D defs + member/enum tokens)")
+else:
+    print("# call_graph.py: roots", ",".join(BODY_ROOTS), "| stamps", ",".join(STAMP_ROOTS))
 print(f"# definitions {len(defs)}; reachable from bodies {len(R_body)}, from stamp writers {len(R_stamp)}; "
       f"seeds {len(SEEDS)}; family {len(FAMILY)}")
 print("kind\tname\tsite\tdetail")

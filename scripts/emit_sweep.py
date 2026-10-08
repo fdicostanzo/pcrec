@@ -44,6 +44,26 @@ optional families ([START-TABLE] C0, docs/design/start_table.md §3.2-§3.3):
      predicate ASKED; it is the only stream that sees an ask that changes no
      emitted byte. Both encodings in one call, so `--extra` never reaches it.
      Identity-required.
+  7. emit-ir-auto ([DEC-FALLBACK] B0 item 2, the B4 hard gate): `--emit-ir`
+     at the DEFAULT engine, stdout + rc + stderr compared, refusals included
+     (a DFA-winning pattern refuses the listing), at the base and at each of
+     IR_AUTO_ARMS (`-fno-prefilter`, `-fprefilter`, `-fno-prefilter-
+     collapse`). A TALLY stream: each side counts the listing's `prefilter`
+     token (or `refused`) per pattern, held to per-token floors.
+  8. stderr ([DEC-FALLBACK] B0 item 3): the full stderr and rc of the stream
+     1 and 2 compiles, compared verbatim (notes, warnings, refusal text, the
+     cap a refusal names). A TALLY stream: refusals per engine.
+
+  VARIANTS (`--variant NAME|all|NAME=CFLAGS`, [DEC-FALLBACK] B0 item 1): both
+  sides built from `git archive` with a limit variant's `-D` set (VARIANTS:
+  plain, lowsize, lowdfa, lowboth, lowthr), the argv streams run once per
+  base of `--bases` (default byte,utf8), and each (variant, base) cell held to
+  VARIANT_PINS (reach, tag floors, thin-tag manifests). A variant's own
+  plumbing is checked by VARIANT_WITNESSES (stamps only that variant's limits
+  produce; plain produces none). `--trace` composes: each variant gets its own
+  trace pair (`-DPCREC_CAND_TRACE` + the variant's set), compared with
+  `--trace-order SLOT=ordered|set` per slot. `--emit-pins FILE` writes the
+  measured cells (a measurement for a reviewed re-pin).
 
   ARMS (`--arms start`, or one arm via `--extra`). An arm is (BASE, FLAG): a
   base option set (`byte` = nothing, `utf8` = `-e utf8`) and the flag under
@@ -185,6 +205,17 @@ OPTIONS
                         not gate is printed too, as a diagnostic.
   --build-cflags=FLAGS   CFLAGS for every build this run makes (default: the
                         tree's own Makefile default).
+  --variant V            repeatable: a VARIANTS name, `all`, or NAME=CFLAGS
+                        (ad hoc: no witnesses, no pins). Needs --ref and
+                        --tree-rev. Composition is not run per variant.
+  --bases LIST           the bases each variant runs at (default byte,utf8);
+                        facts and dumps run at the first only.
+  --no-variant-floor     a variant cell without VARIANT_PINS is reported, not
+                        failed (a measurement run).
+  --emit-pins FILE       write the measured VARIANT_PINS cells and per-variant
+                        trace record counts as python source.
+  --trace-order S=M      repeatable: trace_diff's per-slot compare mode
+                        (`fallback=ordered` for refactor B).
 
   When the two sides are the SAME binary (realpath), every argv compile runs
   once and is mirrored: identity is trivial and said so, and the run is a
@@ -195,6 +226,7 @@ requirement and the DELIVER witness holds; 1 otherwise. Report is printed
 to stdout; a full per-row TSV per stream is written under --out.
 """
 import argparse
+import collections
 import concurrent.futures
 import hashlib
 import os
@@ -450,6 +482,152 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
 NULL_ARM = ("byte", "", "c-default")
 
 ARM_STREAMS = {"c-default": None, "c-vm": "vm"}
+
+
+# ---------------------------------------------------------------------------
+# THE LIMIT VARIANTS ([DEC-FALLBACK] B0 item 1; docs/design/dec_fallback.md
+# §4.2). A variant is a `-D` set BOTH sides are built with, so the fallback
+# ladder's rows that the shipped limits never reach get a population: decfb0's
+# four (docs/design/decision_families/decfb0/build_ref.py) plus `lowthr`, the
+# only one where `capacity-declined` has a population (run_size_term.sh §7's
+# reference compiler). Each variant runs at every base of `--bases` (default
+# byte and utf8: the shipped size-rung witnesses are utf8, critB2 M2).
+VARIANTS = {
+    "plain": "",
+    "lowsize": "-DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 "
+               "-DPCREC_SIZE_TERM_THRESHOLD=10000",
+    "lowdfa": "-DPCREC_MAX_AUTO_DFA_ELEMS=3000",
+    "lowboth": "-DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 "
+               "-DPCREC_SIZE_TERM_THRESHOLD=10000 -DPCREC_MAX_AUTO_DFA_ELEMS=3000",
+    "lowthr": "-DPCREC_SIZE_TERM_THRESHOLD=1000",
+}
+# The Makefile's own `CFLAGS ?= -O2 -g`: a variant's `-D` set is APPENDED to it
+# (passing the `-D` set alone as CFLAGS would also drop the optimisation level).
+DEFAULT_BUILD_CFLAGS = "-O2 -g"
+# A variant run's streams: composition is not run per variant (the default
+# run covers it; its files carry their own options), and facts/dumps take no
+# base (facts lists both encodings itself), so they run at the FIRST base only.
+VARIANT_STREAMS = ("c-default", "c-vm", "emit-ir", "emit-ir-auto", "stderr", "facts", "dumps")
+BASELESS_STREAMS = ("facts", "dumps")
+
+
+# THE VARIANT'S OWN PLUMBING CONTROL. A variant whose `-D` set never reached
+# the build IS the plain build and passes every identity check, so each
+# variant names witnesses whose stamp only that variant's limits produce, and
+# the plain variant must produce NONE of them (both directions in one table).
+# `--list-limits` cannot serve: it prints limits.def's literal, not the
+# compiled-in value (measured: a -DPCREC_MAX_AUTO_DFA_ELEMS=3000 build lists
+# 30000000). Hand-written, probed at B0's base; each is a design §4.3a witness.
+_W_LOWSIZE = (("--pattern", "(?:a\\K){0,10}ab"), "RX_UNROLL_K_WHY", "cap-rescue")
+_W_LOWDFA = (("--pattern", "(?:a|b)*a(?:a|b){11}"), "RX_ENGINE_SEL", "collapsed-prefilter")
+_W_LOWTHR = (("--engine=vm", "--pattern", "(((?:a{0,2}b)+c){0,20}d){0,20}e"),
+             "RX_UNROLL_K_WHY", "capacity-declined")
+VARIANT_WITNESSES = {
+    "lowsize": (_W_LOWSIZE,),
+    "lowdfa": (_W_LOWDFA,),
+    "lowboth": (_W_LOWSIZE, _W_LOWDFA),
+    "lowthr": (_W_LOWTHR,),
+}
+
+
+def variant_plumbing(pcrec_bin, vname, timeout):
+    """Problems (empty = ok) with VARIANT_WITNESSES on one binary: a named
+    variant's witnesses must stamp their value; `plain` must stamp none of any
+    variant's values. An ad-hoc NAME=CFLAGS variant has no witness."""
+    if vname == "plain":
+        checks = [(w, False) for ws in VARIANT_WITNESSES.values() for w in ws]
+    else:
+        checks = [(w, True) for w in VARIANT_WITNESSES.get(vname, ())]
+    probs = []
+    for (argv, macro, value), want in checks:
+        rc, out, _ = run([pcrec_bin, "-p", "rx", "--features", "all", "-o", "-"] + list(argv), timeout)
+        m = re.search(rb'^#define ' + macro.encode() + rb' "([^"]*)"', out or b"", re.M)
+        got = m.group(1).decode() if m and rc == 0 else f"<rc={rc}>"
+        if (got == value) != want:
+            probs.append(f"{' '.join(argv)}: {macro} reads {got!r}, "
+                         + ("expected" if want else "must not read") + f" {value!r}")
+    return probs
+
+
+# ---------------------------------------------------------------------------
+# STREAM `emit-ir-auto` ([DEC-FALLBACK] B0 item 2, critB2 B1: the B4 HARD
+# GATE). `--emit-ir` at the DEFAULT engine, where the prefilter admission's
+# listing rows actually fire (stream 3 forces --engine=vm, where
+# `would_prefilter` is false and only `no-engine-vm`/`yes`/`no-fno-prefilter`
+# can print). stdout AND rc AND stderr are compared: a DFA-winning pattern
+# REFUSES the listing, and that refusal is part of the stream. Runs at the base
+# and at each of IR_AUTO_ARMS. The pattern is handed as DECODED bytes, as every
+# stream here is (`--pattern-esc` is ignored by `--emit-ir`, F-B5/K98).
+IR_AUTO_ARMS = ("", "-fno-prefilter", "-fprefilter", "-fno-prefilter-collapse")
+# The listing's `prefilter` value vocabulary (docs/spec/ir_listing.md, hand
+# copied: a token outside it is counted under its own name and has no floor).
+IR_TOKENS = ("yes", "yes-collapsed", "no-backreference", "no-linked-call",
+             "no-nullable-collapsed", "no-nullable-exact", "no-dfa-overflow",
+             "no-fno-prefilter", "no-engine-vm")
+
+
+def ir_auto_stream(arm):
+    return "emit-ir-auto" + (f"[{arm}]" if arm else "")
+
+
+def compile_stream_ir_auto(pcrec_bin, pattern, timeout, extra=()):
+    argv = [pcrec_bin, "--features", "all"] + opt_argv(extra) + ["--emit-ir"]
+    argv += _pattern_argv(pcrec_bin, pattern)
+    rc, out, err = run(argv, timeout)
+    blob = b"rc=%s\n%s\n#stderr\n%s" % (str(rc).encode(), out, err)
+    return rc is not None, (blob if rc is not None else None), ("" if rc is not None else "TIMEOUT")
+
+
+def _rc_of(blob):
+    return blob[3:blob.index(b"\n")].decode() if blob and blob.startswith(b"rc=") else None
+
+
+def ir_auto_tags(blob):
+    """`refused`, or the summary section's `prefilter` value: the listing read
+    by section and row name (docs/spec/table_contract.md), never by line
+    position."""
+    if blob is None:
+        return ("timeout",)
+    if _rc_of(blob) != "0":
+        return ("refused",)
+    insum = False
+    for ln in blob.split(b"\n"):
+        if ln.startswith(b"#section "):
+            insum = ln == b"#section summary"
+        elif insum and ln.startswith(b"prefilter\t"):
+            return (ln.split(b"\t")[1].decode("utf-8", "replace"),)
+    return ("<no-prefilter-row>",)
+
+
+# ---------------------------------------------------------------------------
+# STREAM `stderr` ([DEC-FALLBACK] B0 item 3, critB2 M1; the design's stream 7).
+# The FULL stderr and the rc of the stream-1 and stream-2 compiles (the same
+# argv, recompiled here so streams 1-2 stay as they are), compared verbatim:
+# notes, warnings, the refusal text and which cap a refusal names. Before this
+# stream a refusal was only COUNTED (`both_refuse`); B3 rewrites the exhaustion
+# diagnostic, so a refusal's text is part of the no-mover claim.
+def compile_stream_stderr(pcrec_bin, pattern, timeout, extra=()):
+    parts = []
+    for engine in (None, "vm"):
+        argv = [pcrec_bin, "-p", "rx", "--features", "all"]
+        if engine:
+            argv.append(f"--engine={engine}")
+        argv += opt_argv(extra) + ["-o", "-"] + _pattern_argv(pcrec_bin, pattern)
+        rc, _, err = run(argv, timeout)
+        parts.append(b"%s rc=%s\n%s" % ((engine or "default").encode(), str(rc).encode(), err))
+    return True, b"\n#--\n".join(parts), ""
+
+
+def stderr_tags(blob):
+    tags = []
+    for part in blob.split(b"\n#--\n"):
+        head, _, err = part.partition(b"\n")
+        eng, rc = head.decode().split(" rc=")
+        if rc != "0":
+            tags.append("refused-" + eng)
+        elif err:
+            tags.append("stderr-" + eng)
+    return tuple(tags)
 
 
 def arm_table():
@@ -825,6 +1003,11 @@ class StreamResult:
         self.hash_a = {}       # pattern index -> sha256 of side a's output
         self.hash_b = {}
         self.census_hits = None  # set of keys whose REF artifact is a census hit (None: no census)
+        # [DEC-FALLBACK] B0: per-side tag tallies of a TALLY stream (emit-ir-auto's
+        # listing token, stderr's refusals), and the patterns carrying each tag
+        # (a manifest names one). None: the stream has no tally.
+        self.tags = None         # [Counter side a, Counter side b]
+        self.tag_pats = None     # [{tag: set(pattern)} side a, side b]
 
 
 # [MEMFN] R4h census (lane advnorm): `--census-ref-re FILE` names a file of
@@ -864,11 +1047,13 @@ def facts_diff_keys(c_a, c_b):
 
 
 def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
-                     census_fn=None, declared_keys=None):
+                     census_fn=None, declared_keys=None, tally_fn=None):
     """ONE pattern of an argv stream, compared INSIDE the worker so only a
     small tuple (never the artifacts) crosses back to the merge:
-    (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b); hunk is None
-    unless both sides compiled and their bytes differ."""
+    (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b, hit, tags_a,
+    tags_b, pattern); hunk is None unless both sides compiled and their bytes
+    differ; tags are tally_fn's reading of each side's content (None without
+    one)."""
     f, kind, pat = item
     ok_a, c_a, e_a = compile_fn(bin_a, pat, timeout)
     if mirror:
@@ -896,7 +1081,11 @@ def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
         if hunk is not None and declared_keys is not None:
             if not facts_diff_keys(c_a, c_b) <= declared_keys:
                 hit = False
-    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit
+    tags_a = tags_b = None
+    if tally_fn is not None:
+        tags_a = tally_fn(c_a)
+        tags_b = tags_a if mirror else tally_fn(c_b)
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit, tags_a, tags_b, pat
 
 
 def merge_argv_stream(name, rows, mirror):
@@ -907,7 +1096,15 @@ def merge_argv_stream(name, rows, mirror):
     res.mirrored = mirror
     if CENSUS_RES is not None:
         res.census_hits = set()
-    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit) in enumerate(rows):
+    if rows and rows[0][9] is not None:
+        res.tags = [collections.Counter(), collections.Counter()]
+        res.tag_pats = [collections.defaultdict(set), collections.defaultdict(set)]
+    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit, tags_a, tags_b, pat) in enumerate(rows):
+        if res.tags is not None:
+            for side, tags in ((0, tags_a), (1, tags_b)):
+                for t in tags:
+                    res.tags[side][t] += 1
+                    res.tag_pats[side][t].add(pat)
         if hit and ok_b:
             res.census_hits.add(key)
         # per-index output hashes: the trace family checks that the trace
@@ -1309,21 +1506,23 @@ def trace_records(err):
             for ln in err.split(b"\n") if ln.startswith(TRACE_TAG)]
 
 
-def sweep_trace(patterns, tbin_a, tbin_b, timeout, jobs, out_dir, default_hashes):
+def sweep_trace(patterns, tbin_a, tbin_b, timeout, jobs, out_dir, default_hashes, extra=(),
+                tag=""):
     """Compile streams 1-2 with the TRACE builds; write trace_a.tsv /
     trace_b.tsv (idx, arm, seq, record fields); count the patterns whose
     trace-build stdout differs from the same side's DEFAULT build (the
     trace must move no emitted byte). default_hashes: {stream: (ha, hb)}."""
     mirror = same_binary(tbin_a, tbin_b)
     byte_moves = {s: [0, 0] for s in ARM_STREAMS}
-    paths = (os.path.join(out_dir, "trace_a.tsv"), os.path.join(out_dir, "trace_b.tsv"))
+    paths = (os.path.join(out_dir, f"trace{tag}_a.tsv"), os.path.join(out_dir, f"trace{tag}_b.tsv"))
 
     def job(item):
         idx, (f, kind, pat) = item
         res = []
         for stream, engine in ARM_STREAMS.items():
-            a = compile_stream_c(tbin_a, pat, timeout, engine=engine, want_err=True)
-            b = a if mirror else compile_stream_c(tbin_b, pat, timeout, engine=engine, want_err=True)
+            a = compile_stream_c(tbin_a, pat, timeout, engine=engine, extra=extra, want_err=True)
+            b = a if mirror else compile_stream_c(tbin_b, pat, timeout, engine=engine, extra=extra,
+                                                  want_err=True)
             res.append((stream, a, b))
         return idx, res
 
@@ -1388,7 +1587,885 @@ def report_stream(res, floor=None, identity_required=False):
     return ok, "\n".join(lines)
 
 
-STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts")
+def stream_check(name, identity_required_default):
+    """(floor, identity_required) of a stream the PINS dict does not name: the
+    tally streams are identity-required like streams 1-2 (their floors are the
+    per-tag ones, report_tally)."""
+    return None, identity_required_default
+
+
+# A tag whose measured count is below this is THIN and gets a MANIFEST: one
+# named pattern that must carry it on both sides (a floor answers "did a lot
+# stop", the manifest "did THIS one"; learnings §3).
+THIN_TAG = 100
+
+
+def report_tally(res, cell_pins, full_population):
+    """The per-tag floors and manifests of one tally stream in one (variant,
+    base) cell. cell_pins: VARIANT_PINS[cell] or None. Returns (ok, text)."""
+    if res.tags is None:
+        return True, ""
+    lines = ["  tags (side a / side b): " + " ".join(
+        f"{t}={res.tags[0][t]}/{res.tags[1][t]}" for t in sorted(set(res.tags[0]) | set(res.tags[1])))]
+    ok = True
+    if cell_pins is None:
+        lines.append("  tag floors: NOT APPLIED (no VARIANT_PINS cell for this run)")
+        return ok, "\n".join(lines)
+    floors = cell_pins["tags"].get(res.name, {})
+    if not floors:
+        lines.append(f"  NO TAG FLOORS PINNED for {res.name} (K35: an unpinned tally is not a check)")
+        return False, "\n".join(lines)
+    for tag, fl in sorted(floors.items()):
+        if full_population:
+            for side in (0, 1):
+                if res.tags[side][tag] < fl:
+                    ok = False
+                    lines.append(f"  TAG FLOOR side {'ab'[side]}: {tag} {res.tags[side][tag]} < {fl}")
+    for tag, pat in sorted(cell_pins["manifest"].get(res.name, {}).items()):
+        if not full_population and not any(pat in v for s in (0, 1) for v in res.tag_pats[s].values()):
+            continue   # off the full corpus the manifest may be outside the sample
+        for side in (0, 1):
+            if pat not in res.tag_pats[side].get(tag, ()):
+                ok = False
+                lines.append(f"  MANIFEST side {'ab'[side]}: {pat!r} does not carry {tag}")
+    if ok:
+        lines.append(f"  tag floors: {len(floors)} pinned, all held"
+                     + ("" if full_population else " (partial population: floors NOT applied, manifests are)"))
+    return ok, "\n".join(lines)
+
+
+def measured_cell(res_by_stream):
+    """A VARIANT_PINS cell measured from one run's results: every reach (the
+    smaller side), every tag count (the smaller side) and, for a THIN tag, the
+    shortest pattern carrying it on both sides as its manifest."""
+    cell = {"reach": {}, "tags": {}, "manifest": {}}
+    for name, r in res_by_stream.items():
+        if name in ("c-default", "c-vm", "emit-ir-vm", "facts"):
+            cell["reach"][name] = r.both_ok
+        if r.tags is None:
+            continue
+        tags = set(r.tags[0]) | set(r.tags[1])
+        cell["tags"][name] = {t: min(r.tags[0][t], r.tags[1][t]) for t in sorted(tags)}
+        for t in sorted(tags):
+            if 0 < cell["tags"][name][t] < THIN_TAG:
+                both = r.tag_pats[0][t] & r.tag_pats[1][t]
+                if both:
+                    cell["manifest"].setdefault(name, {})[t] = min(both, key=lambda p: (len(p), p))
+    return cell
+
+
+def write_pins(path, measured, trace_records):
+    """The measured cells as python source for VARIANT_PINS /
+    TRACE_VARIANT_RECORDS_FLOOR (a measurement, pasted in by a reviewed
+    re-pin; never read back by this script)."""
+    with open(path, "w") as fh:
+        fh.write("VARIANT_PINS = {\n")
+        for key in sorted(measured):
+            fh.write(f"    {key!r}: {measured[key]!r},\n")
+        fh.write("}\nTRACE_VARIANT_RECORDS_FLOOR = {\n")
+        for v in sorted(trace_records):
+            fh.write(f"    {v!r}: {trace_records[v]!r},\n")
+        fh.write("}\n")
+
+
+def run_variants(args, variants, bases, patterns, full_population, flag_args, tree, out_dir,
+                 cc, run_full_sweep, trace_order, t0, plain_ref, plain_tree):
+    """[DEC-FALLBACK] B0 item 1: the sweep once per (variant, base) cell, both
+    sides built with the variant's `-D` set from `git archive` (the plain
+    variant reuses the two default builds, whose CFLAGS are the Makefile's).
+    Per cell: identity on every stream, the reach floors and the tally
+    streams' tag floors/manifests from VARIANT_PINS. Per variant: the plumbing
+    control, a self-check (first base) and, under --trace, the variant's own
+    trace pair compared with trace_diff (records floor per variant)."""
+    import trace_diff
+    vstreams = [s for s in VARIANT_STREAMS if s in args.streams.split(",")]
+    all_ok = True
+    measured, trace_records = {}, {}
+    for vname, vflags in variants:
+        cf = (DEFAULT_BUILD_CFLAGS + " " + vflags).strip()
+        if vflags.strip():
+            vref, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref-{vname}", cflags=cf)
+            vtree, _ = build_from_rev(tree, args.tree_rev, out_dir, cc, f"tree-{vname}", cflags=cf)
+        else:
+            vref, vtree = plain_ref, plain_tree
+        print(f"\n===== VARIANT {vname} ({vflags or 'shipped limits'}): {args.ref} vs {args.tree_rev} =====")
+        probs = [f"side {s}: {p}" for s, b in (("a", vref), ("b", vtree))
+                 for p in variant_plumbing(b, vname, args.timeout)]
+        for p in probs:
+            print(f"  VARIANT PLUMBING: {p}")
+        if probs:
+            all_ok = False
+            continue
+        nwit = (sum(len(w) for w in VARIANT_WITNESSES.values()) if vname == "plain"
+                else len(VARIANT_WITNESSES.get(vname, ())))
+        print(f"  plumbing: {nwit} variant witness(es) read as this variant's limits predict, "
+              f"both sides" + ("" if nwit else " (an ad-hoc variant: NO plumbing control)"))
+        first_extra = list(ARM_BASES[bases[0]]) + flag_args
+        if not args.no_self_check:
+            vref2, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref2-{vname}", cflags=cf)
+            res, *_ = run_full_sweep(vref, vref2, f"selfcheck-{vname}", run_extra=first_extra,
+                                     streams=vstreams)
+            sc_ok = True
+            for r in res.values():
+                ok, text = report_stream(r, identity_required=True)
+                if not ok:
+                    print(text)
+                sc_ok = sc_ok and ok
+            print(f"  self-check ({bases[0]}, {vref} vs an independent rebuild): "
+                  f"{'PASSED' if sc_ok else 'FAILED'}")
+            if not sc_ok:
+                all_ok = False
+                continue
+        hashes = None
+        for i, base in enumerate(bases):
+            cell_streams = [s for s in vstreams if i == 0 or s not in BASELESS_STREAMS]
+            extra = list(ARM_BASES[base]) + flag_args
+            res, *_ = run_full_sweep(vref, vtree, f"{vname}-{base}", run_extra=extra,
+                                     streams=cell_streams)
+            if i == 0:
+                hashes = {st: (res[st].hash_a, res[st].hash_b) for st in ARM_STREAMS if st in res}
+            pins = None if flag_args else VARIANT_PINS.get((vname, base))
+            print(f"-- cell {vname}/{base}" + (f" + {' '.join(flag_args)}" if flag_args else "")
+                  + (" (no VARIANT_PINS cell)" if pins is None else "") + " --")
+            if pins is None and not args.no_variant_floor:
+                print("  NO VARIANT_PINS CELL: an unpinned variant cell is not a check "
+                      "(--no-variant-floor waives, for a measurement)")
+                all_ok = False
+            for name, r in res.items():
+                fl = None
+                if name == "dumps":
+                    fl = PINS["dump_surfaces_floor"]
+                elif pins and full_population:
+                    fl = pins["reach"].get(name)
+                ok, text = report_stream(r, floor=fl, identity_required=True)
+                print(text)
+                all_ok = all_ok and ok
+                if r.tags is not None:
+                    ok, text = report_tally(r, pins, full_population)
+                    print(text)
+                    all_ok = all_ok and ok
+            if not flag_args:
+                measured[(vname, base)] = measured_cell(res)
+        if args.trace:
+            tcf = (TRACE_CFLAGS + " " + vflags).strip()
+            tb_a, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref-trace-{vname}", cflags=tcf)
+            tb_b, _ = build_from_rev(tree, args.tree_rev, out_dir, cc, f"tree-trace-{vname}", cflags=tcf)
+            paths, byte_moves, _ = sweep_trace(patterns, tb_a, tb_b, args.timeout, args.jobs,
+                                               out_dir, hashes or {}, extra=first_extra,
+                                               tag=f"_{vname}")
+            print(f"-- variant {vname}: trace ({bases[0]} base, {tcf}) --")
+            for st, (ma, mb) in byte_moves.items():
+                print(f"  trace build vs default build, {st}: stdout differs on {ma} / {mb} (must be 0)")
+                all_ok = all_ok and not (ma or mb)
+            ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
+            trace_records[vname] = {arm: min(sum(len(v) for k, v in ta.items() if k[1] == arm),
+                                             sum(len(v) for k, v in tb.items() if k[1] == arm))
+                                    for arm in ARM_STREAMS}
+            floor = TRACE_VARIANT_RECORDS_FLOOR.get(vname) if full_population else 1
+            if floor is None:
+                print("  NO TRACE RECORDS FLOOR for this variant" +
+                      (" (waived: --no-variant-floor)" if args.no_variant_floor else ""))
+                all_ok = all_ok and args.no_variant_floor
+                floor = 1
+            declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
+            ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
+                                              unordered=not args.trace_ordered, order=trace_order)
+            print(text_t)
+            all_ok = all_ok and ok_t
+    with open(os.path.join(out_dir, "variant_tallies.tsv"), "w") as fh:
+        fh.write("variant\tbase\tstream\tkey\tfloor\tmanifest\n")
+        for (v, b), cell in sorted(measured.items()):
+            for st, n in cell["reach"].items():
+                fh.write(f"{v}\t{b}\t{st}\treach\t{n}\t\n")
+            for st, tags in cell["tags"].items():
+                for t, n in tags.items():
+                    man = cell["manifest"].get(st, {}).get(t)
+                    fh.write(f"{v}\t{b}\t{st}\t{t}\t{n}\t{encode_escape(man) if man else ''}\n")
+    print(f"\nper-cell measurement: {os.path.join(out_dir, 'variant_tallies.tsv')}")
+    if args.emit_pins:
+        write_pins(args.emit_pins, measured, trace_records)
+        print(f"measured pins written: {args.emit_pins}")
+    if not full_population:
+        print("(PARTIAL POPULATION: reach and tag floors NOT applied; identity, plumbing and "
+              "manifests in the population are)")
+    print(f"population: argv={len(patterns)}\nelapsed: {time.time() - t0:.1f}s")
+    print("VARIANTS: " + ("CLEAN" if all_ok else "FAILED"))
+    return 0 if all_ok else 1
+
+
+# MEASURED per (variant, base) cell ([DEC-FALLBACK] B0 item 4: every floor in
+# the instrument's OWN population -- corpus `pattern`/`pattern-esc` rows,
+# `--features all`, 5,423 rows -- never decfb0's). One run, main ab583f6b
+# against itself, both sides built separately from `git archive`, every cell
+# identical (0 movers, 0 asymmetric), `--emit-pins`'s output pasted here:
+#   python3 scripts/emit_sweep.py --ref HEAD --tree-rev HEAD --variant all \
+#       --no-variant-floor --no-self-check --trace --trace-order fallback=ordered \
+#       --emit-pins pins.py
+# Floors sit AT the measured value (the smaller side), DIFFER_PINS' stance: a
+# B commit is a no-mover over one corpus, so a count below it is a corpus
+# change (a reviewed re-pin) or a plumbing loss. `reach` is both_ok per
+# stream; `tags` is the per-tag count of each TALLY stream; `manifest` names,
+# for every tag under THIN_TAG, the shortest pattern carrying it on both
+# sides. A tag absent from a cell had a measured count of 0 and has no floor.
+VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                        b')(?!e)(?!f)(?!g)(?!h'
+                                                                        b')(?!i)(?!j)(?!k)(?!l'
+                                                                        b')(?!m)(?!n)(?!o)(?!p'
+                                                                        b')(?!q)',
+                                                     'no-engine-vm': b'${v}x',
+                                                     'no-fno-prefilter': b'((a)+)+',
+                                                     'no-nullable-collapsed': b'(?:ab){0,160'
+                                                                              b'00}',
+                                                     'yes-collapsed': b'a{500}'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{50'
+                                                                                                 b'0}',
+                                                                              'no-engine-vm': b'${v}'
+                                                                                              b'x',
+                                                                              'no-fno-prefilter': b'((a)'
+                                                                                                  b'+)+'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{50'
+                                                                                        b'0}',
+                                                                     'no-nullable-collapsed': b'(?:a'
+                                                                                              b'b){0'
+                                                                                              b',160'
+                                                                                              b'00}'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3'
+                                                                                   b'}'},
+                                    'stderr': {'stderr-default': b'a{500}'}},
+                       'reach': {'c-default': 4941,
+                                 'c-vm': 4937,
+                                 'emit-ir-vm': 4937,
+                                 'facts': 4817},
+                       'tags': {'emit-ir-auto': {'no-backreference': 484,
+                                                 'no-dfa-overflow': 3,
+                                                 'no-engine-vm': 17,
+                                                 'no-fno-prefilter': 67,
+                                                 'no-linked-call': 122,
+                                                 'no-nullable-collapsed': 1,
+                                                 'no-nullable-exact': 133,
+                                                 'refused': 3254,
+                                                 'yes': 1308,
+                                                 'yes-collapsed': 34},
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 484,
+                                                                          'no-dfa-overflow': 30,
+                                                                          'no-engine-vm': 17,
+                                                                          'no-fno-prefilter': 78,
+                                                                          'no-linked-call': 122,
+                                                                          'no-nullable-exact': 133,
+                                                                          'refused': 3251,
+                                                                          'yes': 1308},
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 484,
+                                                                 'no-dfa-overflow': 7,
+                                                                 'no-fno-prefilter': 1427,
+                                                                 'no-linked-call': 122,
+                                                                 'no-nullable-collapsed': 1,
+                                                                 'no-nullable-exact': 133,
+                                                                 'refused': 3249},
+                                'emit-ir-auto[-fprefilter]': {'refused': 4000,
+                                                              'yes': 1412,
+                                                              'yes-collapsed': 11},
+                                'stderr': {'refused-default': 482,
+                                           'refused-vm': 486,
+                                           'stderr-default': 93}}},
+ ('lowboth', 'utf8'): {'manifest': {'emit-ir-auto': {'no-engine-vm': b'${v}x',
+                                                     'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                     'yes-collapsed': b'a{500}'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-engine-vm': b'${v}'
+                                                                                              b'x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]'
+                                                                                              b'{0,4'
+                                                                                              b'}$'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'a{2,4}+a'}},
+                       'reach': {'c-default': 4886, 'c-vm': 4880, 'emit-ir-vm': 4880},
+                       'tags': {'emit-ir-auto': {'no-backreference': 462,
+                                                 'no-dfa-overflow': 116,
+                                                 'no-engine-vm': 17,
+                                                 'no-fno-prefilter': 271,
+                                                 'no-linked-call': 102,
+                                                 'no-nullable-collapsed': 3,
+                                                 'no-nullable-exact': 130,
+                                                 'refused': 3178,
+                                                 'yes': 1126,
+                                                 'yes-collapsed': 18},
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 462,
+                                                                          'no-dfa-overflow': 143,
+                                                                          'no-engine-vm': 17,
+                                                                          'no-fno-prefilter': 280,
+                                                                          'no-linked-call': 102,
+                                                                          'no-nullable-exact': 130,
+                                                                          'refused': 3163,
+                                                                          'yes': 1126},
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 462,
+                                                                 'no-dfa-overflow': 109,
+                                                                 'no-fno-prefilter': 1457,
+                                                                 'no-linked-call': 102,
+                                                                 'no-nullable-collapsed': 3,
+                                                                 'no-nullable-exact': 130,
+                                                                 'refused': 3160},
+                                'emit-ir-auto[-fprefilter]': {'refused': 4204,
+                                                              'yes': 1210,
+                                                              'yes-collapsed': 9},
+                                'stderr': {'refused-default': 537,
+                                           'refused-vm': 543,
+                                           'stderr-default': 444}}},
+ ('lowdfa', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                       b')(?!e)(?!f)(?!g)(?!h'
+                                                                       b')(?!i)(?!j)(?!k)(?!l'
+                                                                       b')(?!m)(?!n)(?!o)(?!p'
+                                                                       b')(?!q)',
+                                                    'no-engine-vm': b'${v}x',
+                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                    'yes-collapsed': b'a{500}'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{50'
+                                                                                                b'0}',
+                                                                             'no-engine-vm': b'${v}'
+                                                                                             b'x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{50'
+                                                                                       b'0}',
+                                                                    'no-nullable-collapsed': b'(?:a'
+                                                                                             b'b){0'
+                                                                                             b',160'
+                                                                                             b'00}'},
+                                   'stderr': {'stderr-default': b'a{500}'}},
+                      'reach': {'c-default': 4972,
+                                'c-vm': 4973,
+                                'emit-ir-vm': 4973,
+                                'facts': 4932},
+                      'tags': {'emit-ir-auto': {'no-backreference': 492,
+                                                'no-dfa-overflow': 8,
+                                                'no-engine-vm': 17,
+                                                'no-linked-call': 127,
+                                                'no-nullable-collapsed': 1,
+                                                'no-nullable-exact': 138,
+                                                'refused': 3223,
+                                                'yes': 1391,
+                                                'yes-collapsed': 26},
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                                                                         'no-dfa-overflow': 35,
+                                                                         'no-engine-vm': 17,
+                                                                         'no-linked-call': 127,
+                                                                         'no-nullable-exact': 138,
+                                                                         'refused': 3223,
+                                                                         'yes': 1391},
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                                                                'no-dfa-overflow': 12,
+                                                                'no-fno-prefilter': 1430,
+                                                                'no-linked-call': 127,
+                                                                'no-nullable-collapsed': 1,
+                                                                'no-nullable-exact': 138,
+                                                                'refused': 3223},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3925, 'yes': 1498},
+                               'stderr': {'refused-default': 451,
+                                          'refused-vm': 450,
+                                          'stderr-default': 34}}},
+ ('lowdfa', 'utf8'): {'manifest': {'emit-ir-auto': {'no-engine-vm': b'${v}x',
+                                                    'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                    'yes-collapsed': b'a{500}'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-engine-vm': b'${v}'
+                                                                                             b'x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]'
+                                                                                             b'{0,4'
+                                                                                             b'}$'},
+                                   'stderr': {'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
+                                                           b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
+                      'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
+                      'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                                'no-dfa-overflow': 121,
+                                                'no-engine-vm': 17,
+                                                'no-linked-call': 127,
+                                                'no-nullable-collapsed': 3,
+                                                'no-nullable-exact': 143,
+                                                'refused': 3072,
+                                                'yes': 1422,
+                                                'yes-collapsed': 24},
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                                                                         'no-dfa-overflow': 148,
+                                                                         'no-engine-vm': 17,
+                                                                         'no-linked-call': 127,
+                                                                         'no-nullable-exact': 143,
+                                                                         'refused': 3072,
+                                                                         'yes': 1422},
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                                                                'no-dfa-overflow': 114,
+                                                                'no-fno-prefilter': 1470,
+                                                                'no-linked-call': 127,
+                                                                'no-nullable-collapsed': 3,
+                                                                'no-nullable-exact': 143,
+                                                                'refused': 3072},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3892, 'yes': 1531},
+                               'stderr': {'refused-default': 422,
+                                          'refused-vm': 421,
+                                          'stderr-default': 151,
+                                          'stderr-vm': 1}}},
+ ('lowsize', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                        b')(?!e)(?!f)(?!g)(?!h'
+                                                                        b')(?!i)(?!j)(?!k)(?!l'
+                                                                        b')(?!m)(?!n)(?!o)(?!p'
+                                                                        b')(?!q)',
+                                                     'no-engine-vm': b'${v}x',
+                                                     'no-fno-prefilter': b'((a)+)+',
+                                                     'no-nullable-collapsed': b'(?:ab){0,160'
+                                                                              b'00}',
+                                                     'yes-collapsed': b'(a+){2,3}'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                                 b'b){0'
+                                                                                                 b',160'
+                                                                                                 b'00}',
+                                                                              'no-engine-vm': b'${v}'
+                                                                                              b'x',
+                                                                              'no-fno-prefilter': b'((a)'
+                                                                                                  b'+)+'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                        b'a)(?'
+                                                                                        b'!b)('
+                                                                                        b'?!c)'
+                                                                                        b'(?!d'
+                                                                                        b')(?!'
+                                                                                        b'e)(?'
+                                                                                        b'!f)('
+                                                                                        b'?!g)'
+                                                                                        b'(?!h'
+                                                                                        b')(?!'
+                                                                                        b'i)(?'
+                                                                                        b'!j)('
+                                                                                        b'?!k)'
+                                                                                        b'(?!l'
+                                                                                        b')(?!'
+                                                                                        b'm)(?'
+                                                                                        b'!n)('
+                                                                                        b'?!o)'
+                                                                                        b'(?!p'
+                                                                                        b')(?!'
+                                                                                        b'q)',
+                                                                     'no-nullable-collapsed': b'(?:a'
+                                                                                              b'b){0'
+                                                                                              b',160'
+                                                                                              b'00}'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3'
+                                                                                   b'}'},
+                                    'stderr': {'stderr-default': b'((a)+)+'}},
+                       'reach': {'c-default': 4936,
+                                 'c-vm': 4937,
+                                 'emit-ir-vm': 4937,
+                                 'facts': 4740},
+                       'tags': {'emit-ir-auto': {'no-backreference': 484,
+                                                 'no-dfa-overflow': 1,
+                                                 'no-engine-vm': 17,
+                                                 'no-fno-prefilter': 69,
+                                                 'no-linked-call': 122,
+                                                 'no-nullable-collapsed': 1,
+                                                 'no-nullable-exact': 133,
+                                                 'refused': 3270,
+                                                 'yes': 1312,
+                                                 'yes-collapsed': 14},
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 484,
+                                                                          'no-dfa-overflow': 3,
+                                                                          'no-engine-vm': 17,
+                                                                          'no-fno-prefilter': 82,
+                                                                          'no-linked-call': 122,
+                                                                          'no-nullable-exact': 133,
+                                                                          'refused': 3270,
+                                                                          'yes': 1312},
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 484,
+                                                                 'no-dfa-overflow': 1,
+                                                                 'no-fno-prefilter': 1427,
+                                                                 'no-linked-call': 122,
+                                                                 'no-nullable-collapsed': 1,
+                                                                 'no-nullable-exact': 133,
+                                                                 'refused': 3255},
+                                'emit-ir-auto[-fprefilter]': {'refused': 3994,
+                                                              'yes': 1416,
+                                                              'yes-collapsed': 13},
+                                'stderr': {'refused-default': 487,
+                                           'refused-vm': 486,
+                                           'stderr-default': 74}}},
+ ('lowsize', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                        b')(?!e)(?!f)(?!g)(?!h'
+                                                                        b')(?!i)(?!j)(?!k)(?!l'
+                                                                        b')(?!m)(?!n)(?!o)(?!p'
+                                                                        b')(?!q)',
+                                                     'no-engine-vm': b'${v}x',
+                                                     'no-nullable-collapsed': b'(?:ab){0,160'
+                                                                              b'00}',
+                                                     'yes-collapsed': b'a{2,4}+a'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                                 b'b){0'
+                                                                                                 b',160'
+                                                                                                 b'00}',
+                                                                              'no-engine-vm': b'${v}'
+                                                                                              b'x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                        b'a)(?'
+                                                                                        b'!b)('
+                                                                                        b'?!c)'
+                                                                                        b'(?!d'
+                                                                                        b')(?!'
+                                                                                        b'e)(?'
+                                                                                        b'!f)('
+                                                                                        b'?!g)'
+                                                                                        b'(?!h'
+                                                                                        b')(?!'
+                                                                                        b'i)(?'
+                                                                                        b'!j)('
+                                                                                        b'?!k)'
+                                                                                        b'(?!l'
+                                                                                        b')(?!'
+                                                                                        b'm)(?'
+                                                                                        b'!n)('
+                                                                                        b'?!o)'
+                                                                                        b'(?!p'
+                                                                                        b')(?!'
+                                                                                        b'q)',
+                                                                     'no-nullable-collapsed': b'(?:a'
+                                                                                              b'b){0'
+                                                                                              b',160'
+                                                                                              b'00}'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'a{2,4}+a'}},
+                       'reach': {'c-default': 4809, 'c-vm': 4880, 'emit-ir-vm': 4880},
+                       'tags': {'emit-ir-auto': {'no-backreference': 462,
+                                                 'no-dfa-overflow': 1,
+                                                 'no-engine-vm': 17,
+                                                 'no-fno-prefilter': 284,
+                                                 'no-linked-call': 102,
+                                                 'no-nullable-collapsed': 1,
+                                                 'no-nullable-exact': 130,
+                                                 'refused': 3287,
+                                                 'yes': 1129,
+                                                 'yes-collapsed': 10},
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 462,
+                                                                          'no-dfa-overflow': 4,
+                                                                          'no-engine-vm': 17,
+                                                                          'no-fno-prefilter': 294,
+                                                                          'no-linked-call': 102,
+                                                                          'no-nullable-exact': 130,
+                                                                          'refused': 3285,
+                                                                          'yes': 1129},
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 462,
+                                                                 'no-dfa-overflow': 1,
+                                                                 'no-fno-prefilter': 1457,
+                                                                 'no-linked-call': 102,
+                                                                 'no-nullable-collapsed': 1,
+                                                                 'no-nullable-exact': 130,
+                                                                 'refused': 3270},
+                                'emit-ir-auto[-fprefilter]': {'refused': 4200,
+                                                              'yes': 1213,
+                                                              'yes-collapsed': 10},
+                                'stderr': {'refused-default': 614,
+                                           'refused-vm': 543,
+                                           'stderr-default': 356}}},
+ ('lowthr', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                       b')(?!e)(?!f)(?!g)(?!h'
+                                                                       b')(?!i)(?!j)(?!k)(?!l'
+                                                                       b')(?!m)(?!n)(?!o)(?!p'
+                                                                       b')(?!q)',
+                                                    'no-engine-vm': b'${v}x',
+                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
+                                                                     b'28,30}0+|a'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                                b'b){0'
+                                                                                                b',160'
+                                                                                                b'00}',
+                                                                             'no-engine-vm': b'${v}'
+                                                                                             b'x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                       b'a)(?'
+                                                                                       b'!b)('
+                                                                                       b'?!c)'
+                                                                                       b'(?!d'
+                                                                                       b')(?!'
+                                                                                       b'e)(?'
+                                                                                       b'!f)('
+                                                                                       b'?!g)'
+                                                                                       b'(?!h'
+                                                                                       b')(?!'
+                                                                                       b'i)(?'
+                                                                                       b'!j)('
+                                                                                       b'?!k)'
+                                                                                       b'(?!l'
+                                                                                       b')(?!'
+                                                                                       b'm)(?'
+                                                                                       b'!n)('
+                                                                                       b'?!o)'
+                                                                                       b'(?!p'
+                                                                                       b')(?!'
+                                                                                       b'q)',
+                                                                    'no-nullable-collapsed': b'(?:a'
+                                                                                             b'b){0'
+                                                                                             b',160'
+                                                                                             b'00}'},
+                                   'stderr': {'stderr-default': b'((a)|ab){4000}c'}},
+                      'reach': {'c-default': 4972,
+                                'c-vm': 4973,
+                                'emit-ir-vm': 4973,
+                                'facts': 4932},
+                      'tags': {'emit-ir-auto': {'no-backreference': 492,
+                                                'no-dfa-overflow': 1,
+                                                'no-engine-vm': 17,
+                                                'no-linked-call': 127,
+                                                'no-nullable-collapsed': 1,
+                                                'no-nullable-exact': 138,
+                                                'refused': 3234,
+                                                'yes': 1412,
+                                                'yes-collapsed': 1},
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                                                                         'no-dfa-overflow': 3,
+                                                                         'no-engine-vm': 17,
+                                                                         'no-linked-call': 127,
+                                                                         'no-nullable-exact': 138,
+                                                                         'refused': 3234,
+                                                                         'yes': 1412},
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                                                                'no-dfa-overflow': 1,
+                                                                'no-fno-prefilter': 1430,
+                                                                'no-linked-call': 127,
+                                                                'no-nullable-collapsed': 1,
+                                                                'no-nullable-exact': 138,
+                                                                'refused': 3234},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3901, 'yes': 1522},
+                               'stderr': {'refused-default': 451,
+                                          'refused-vm': 450,
+                                          'stderr-default': 5}}},
+ ('lowthr', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                       b')(?!e)(?!f)(?!g)(?!h'
+                                                                       b')(?!i)(?!j)(?!k)(?!l'
+                                                                       b')(?!m)(?!n)(?!o)(?!p'
+                                                                       b')(?!q)',
+                                                    'no-engine-vm': b'${v}x',
+                                                    'no-fno-prefilter': b'(\\p{Xwd})',
+                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
+                                                                     b'8,8}0+|a'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                                b'b){0'
+                                                                                                b',160'
+                                                                                                b'00}',
+                                                                             'no-engine-vm': b'${v}'
+                                                                                             b'x',
+                                                                             'no-fno-prefilter': b'(\\p{'
+                                                                                                 b'Xwd}'
+                                                                                                 b')'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                       b'a)(?'
+                                                                                       b'!b)('
+                                                                                       b'?!c)'
+                                                                                       b'(?!d'
+                                                                                       b')(?!'
+                                                                                       b'e)(?'
+                                                                                       b'!f)('
+                                                                                       b'?!g)'
+                                                                                       b'(?!h'
+                                                                                       b')(?!'
+                                                                                       b'i)(?'
+                                                                                       b'!j)('
+                                                                                       b'?!k)'
+                                                                                       b'(?!l'
+                                                                                       b')(?!'
+                                                                                       b'm)(?'
+                                                                                       b'!n)('
+                                                                                       b'?!o)'
+                                                                                       b'(?!p'
+                                                                                       b')(?!'
+                                                                                       b'q)',
+                                                                    'no-nullable-collapsed': b'(?:a'
+                                                                                             b'b){0'
+                                                                                             b',160'
+                                                                                             b'00}'},
+                                   'stderr': {'stderr-default': b'\\P{C}',
+                                              'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
+                                                           b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
+                      'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
+                      'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                                'no-dfa-overflow': 1,
+                                                'no-engine-vm': 17,
+                                                'no-fno-prefilter': 2,
+                                                'no-linked-call': 127,
+                                                'no-nullable-collapsed': 1,
+                                                'no-nullable-exact': 143,
+                                                'refused': 3187,
+                                                'yes': 1449,
+                                                'yes-collapsed': 2},
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                                                                         'no-dfa-overflow': 4,
+                                                                         'no-engine-vm': 17,
+                                                                         'no-fno-prefilter': 2,
+                                                                         'no-linked-call': 127,
+                                                                         'no-nullable-exact': 143,
+                                                                         'refused': 3187,
+                                                                         'yes': 1449},
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                                                                'no-dfa-overflow': 1,
+                                                                'no-fno-prefilter': 1470,
+                                                                'no-linked-call': 127,
+                                                                'no-nullable-collapsed': 1,
+                                                                'no-nullable-exact': 143,
+                                                                'refused': 3187},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3859, 'yes': 1564},
+                               'stderr': {'refused-default': 422,
+                                          'refused-vm': 421,
+                                          'stderr-default': 83,
+                                          'stderr-vm': 1}}},
+ ('plain', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                      b')(?!e)(?!f)(?!g)(?!h'
+                                                                      b')(?!i)(?!j)(?!k)(?!l'
+                                                                      b')(?!m)(?!n)(?!o)(?!p'
+                                                                      b')(?!q)',
+                                                   'no-engine-vm': b'${v}x',
+                                                   'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
+                                                                    b'28,30}0+|a'},
+                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                               b'b){0'
+                                                                                               b',160'
+                                                                                               b'00}',
+                                                                            'no-engine-vm': b'${v}'
+                                                                                            b'x'},
+                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                      b'a)(?'
+                                                                                      b'!b)('
+                                                                                      b'?!c)'
+                                                                                      b'(?!d'
+                                                                                      b')(?!'
+                                                                                      b'e)(?'
+                                                                                      b'!f)('
+                                                                                      b'?!g)'
+                                                                                      b'(?!h'
+                                                                                      b')(?!'
+                                                                                      b'i)(?'
+                                                                                      b'!j)('
+                                                                                      b'?!k)'
+                                                                                      b'(?!l'
+                                                                                      b')(?!'
+                                                                                      b'm)(?'
+                                                                                      b'!n)('
+                                                                                      b'?!o)'
+                                                                                      b'(?!p'
+                                                                                      b')(?!q)',
+                                                                   'no-nullable-collapsed': b'(?:a'
+                                                                                            b'b){0'
+                                                                                            b',160'
+                                                                                            b'00}'},
+                                  'stderr': {'stderr-default': b'((a)|ab){4000}c'}},
+                     'reach': {'c-default': 4972,
+                               'c-vm': 4973,
+                               'emit-ir-vm': 4973,
+                               'facts': 4932},
+                     'tags': {'emit-ir-auto': {'no-backreference': 492,
+                                               'no-dfa-overflow': 1,
+                                               'no-engine-vm': 17,
+                                               'no-linked-call': 127,
+                                               'no-nullable-collapsed': 1,
+                                               'no-nullable-exact': 138,
+                                               'refused': 3234,
+                                               'yes': 1412,
+                                               'yes-collapsed': 1},
+                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                                                                        'no-dfa-overflow': 3,
+                                                                        'no-engine-vm': 17,
+                                                                        'no-linked-call': 127,
+                                                                        'no-nullable-exact': 138,
+                                                                        'refused': 3234,
+                                                                        'yes': 1412},
+                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                                                               'no-dfa-overflow': 1,
+                                                               'no-fno-prefilter': 1430,
+                                                               'no-linked-call': 127,
+                                                               'no-nullable-collapsed': 1,
+                                                               'no-nullable-exact': 138,
+                                                               'refused': 3234},
+                              'emit-ir-auto[-fprefilter]': {'refused': 3901, 'yes': 1522},
+                              'stderr': {'refused-default': 451,
+                                         'refused-vm': 450,
+                                         'stderr-default': 5}}},
+ ('plain', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
+                                                                      b')(?!e)(?!f)(?!g)(?!h'
+                                                                      b')(?!i)(?!j)(?!k)(?!l'
+                                                                      b')(?!m)(?!n)(?!o)(?!p'
+                                                                      b')(?!q)',
+                                                   'no-engine-vm': b'${v}x',
+                                                   'no-fno-prefilter': b'(\\p{Xwd})',
+                                                   'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
+                                                                    b'8,8}0+|a'},
+                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
+                                                                                               b'b){0'
+                                                                                               b',160'
+                                                                                               b'00}',
+                                                                            'no-engine-vm': b'${v}'
+                                                                                            b'x',
+                                                                            'no-fno-prefilter': b'(\\p{'
+                                                                                                b'Xwd}'
+                                                                                                b')'},
+                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
+                                                                                      b'a)(?'
+                                                                                      b'!b)('
+                                                                                      b'?!c)'
+                                                                                      b'(?!d'
+                                                                                      b')(?!'
+                                                                                      b'e)(?'
+                                                                                      b'!f)('
+                                                                                      b'?!g)'
+                                                                                      b'(?!h'
+                                                                                      b')(?!'
+                                                                                      b'i)(?'
+                                                                                      b'!j)('
+                                                                                      b'?!k)'
+                                                                                      b'(?!l'
+                                                                                      b')(?!'
+                                                                                      b'm)(?'
+                                                                                      b'!n)('
+                                                                                      b'?!o)'
+                                                                                      b'(?!p'
+                                                                                      b')(?!q)',
+                                                                   'no-nullable-collapsed': b'(?:a'
+                                                                                            b'b){0'
+                                                                                            b',160'
+                                                                                            b'00}'},
+                                  'stderr': {'stderr-default': b'\\P{C}',
+                                             'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
+                                                          b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
+                     'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
+                     'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                               'no-dfa-overflow': 1,
+                                               'no-engine-vm': 17,
+                                               'no-fno-prefilter': 2,
+                                               'no-linked-call': 127,
+                                               'no-nullable-collapsed': 1,
+                                               'no-nullable-exact': 143,
+                                               'refused': 3187,
+                                               'yes': 1449,
+                                               'yes-collapsed': 2},
+                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                                                                        'no-dfa-overflow': 4,
+                                                                        'no-engine-vm': 17,
+                                                                        'no-fno-prefilter': 2,
+                                                                        'no-linked-call': 127,
+                                                                        'no-nullable-exact': 143,
+                                                                        'refused': 3187,
+                                                                        'yes': 1449},
+                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                                                               'no-dfa-overflow': 1,
+                                                               'no-fno-prefilter': 1470,
+                                                               'no-linked-call': 127,
+                                                               'no-nullable-collapsed': 1,
+                                                               'no-nullable-exact': 143,
+                                                               'refused': 3187},
+                              'emit-ir-auto[-fprefilter]': {'refused': 3859, 'yes': 1564},
+                              'stderr': {'refused-default': 422,
+                                         'refused-vm': 421,
+                                         'stderr-default': 83,
+                                         'stderr-vm': 1}}}}
+# Records per arm of each variant's trace pair (the C1 hook's records today;
+# B1's `fallback`/`admit`/`gate`/`stwhy`/`attrib` slots only add to them).
+TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 342053, 'c-vm': 111874},
+ 'lowdfa': {'c-default': 314815, 'c-vm': 105080},
+ 'lowsize': {'c-default': 344001, 'c-vm': 111874},
+ 'lowthr': {'c-default': 334637, 'c-vm': 111944},
+ 'plain': {'c-default': 315269, 'c-vm': 105080}}
+
+
+STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
+               "emit-ir-auto", "stderr")
 
 
 def main():
@@ -1444,6 +2521,12 @@ def main():
     ap.add_argument("--trace-declared")
     ap.add_argument("--trace-ordered", action="store_true")
     ap.add_argument("--build-cflags")
+    ap.add_argument("--variant", action="append", default=[],
+                    help="[DEC-FALLBACK] B0: NAME (a VARIANTS entry), `all`, or NAME=CFLAGS")
+    ap.add_argument("--bases", default="byte,utf8")
+    ap.add_argument("--no-variant-floor", action="store_true")
+    ap.add_argument("--emit-pins")
+    ap.add_argument("--trace-order", action="append", default=[])
     args = ap.parse_args()
 
     if not args.ref and not args.ref_bin:
@@ -1460,6 +2543,32 @@ def main():
         ap.error("--no-corpus needs at least one --patterns-file")
     if args.trace and not (args.tree_rev or args.trace_bin):
         ap.error("--trace needs --tree-rev (both sides built traced) or --trace-bin")
+    variants = []
+    for v in args.variant:
+        if v == "all":
+            variants += [(k, c) for k, c in VARIANTS.items() if k not in dict(variants)]
+        elif "=" in v:
+            variants.append(tuple(v.split("=", 1)))
+        elif v in VARIANTS:
+            variants.append((v, VARIANTS[v]))
+        else:
+            ap.error(f"--variant {v}: not in VARIANTS ({','.join(VARIANTS)}) and not NAME=CFLAGS")
+    if variants:
+        if not (args.ref and args.tree_rev):
+            ap.error("--variant builds BOTH sides with its -D set: it needs --ref and --tree-rev")
+        if args.build_cflags or args.extra_base or args.arms or args.only_emit_ir_reach:
+            ap.error("--variant: --build-cflags/--extra-base/--arms/--only-emit-ir-reach do not compose with it")
+        if args.trace and args.trace_bin:
+            ap.error("--variant --trace builds each variant's trace pair itself (no --trace-bin)")
+    bases = [b for b in args.bases.split(",") if b]
+    if any(b not in ARM_BASES for b in bases) or not bases:
+        ap.error(f"--bases: each of {','.join(ARM_BASES)}")
+    trace_order = {}
+    for o in args.trace_order:
+        slot, _, mode = o.partition("=")
+        if not slot or mode not in ("ordered", "set"):
+            ap.error(f"--trace-order wants SLOT=ordered|set, got {o!r}")
+        trace_order[slot] = mode
     base_args = shlex.split(args.extra_base)
     flag_args = [a for e in args.extra for a in shlex.split(e)]
     run_extra = base_args + flag_args   # what streams 1-4 run at, BOTH sides
@@ -1518,9 +2627,9 @@ def main():
     log(f"[emit_sweep] corpus: {corpus_rows} pattern rows (+{len(patterns) - corpus_rows} "
         f"from patterns files), {len(comp_files)} composition files")
 
-    def run_full_sweep(bin_a, bin_b, label):
+    def run_full_sweep(bin_a, bin_b, label, run_extra=run_extra, streams=streams):
         res = {}
-        argv_streams = (
+        argv_streams = [
             ("c-default", "stream 1 (.c default engine)",
              lambda b, p, t: compile_stream_c(b, p, t, engine=None, extra=run_extra)),
             ("c-vm", "stream 2 (.c --engine=vm)",
@@ -1528,7 +2637,21 @@ def main():
             ("emit-ir-vm", "stream 3 (--emit-ir --engine=vm)",
              lambda b, p, t: compile_stream_ir(b, p, t, extra=run_extra)),
             ("facts", "stream 6 (--emit-facts=byte,utf8)",
-             lambda b, p, t: compile_stream_facts(b, p, t)))
+             lambda b, p, t: compile_stream_facts(b, p, t))]
+        # [DEC-FALLBACK] B0 items 2-3: the tally streams (their tags carry the
+        # token and refusal floors). emit-ir-auto runs at the base and per arm.
+        tally = {}
+        if "emit-ir-auto" in streams:
+            for arm in IR_AUTO_ARMS:
+                nm = ir_auto_stream(arm)
+                argv_streams.append((nm, f"stream emit-ir-auto (--emit-ir, default engine) {arm or '<base>'}",
+                                     lambda b, p, t, arm=arm: compile_stream_ir_auto(
+                                         b, p, t, extra=list(run_extra) + shlex.split(arm))))
+                tally[nm] = ir_auto_tags
+        if "stderr" in streams:
+            argv_streams.append(("stderr", "stream stderr (full stderr + rc of streams 1-2)",
+                                 lambda b, p, t: compile_stream_stderr(b, p, t, extra=run_extra)))
+            tally["stderr"] = stderr_tags
         # ONE pool across every stream (was: a pool per stream, waited out
         # before the next began, so each stream's slowest compile -- the
         # composition stream's most of all -- left the box at a fraction of
@@ -1580,14 +2703,14 @@ def main():
                     item, bin_a, bin_b, comp_out, args.comp_timeout, run_extra)))
         spans = {}
         for name, title, fn in argv_streams:
-            if (name if name != "emit-ir-vm" else "emit-ir") not in streams:
+            if (name if name != "emit-ir-vm" else "emit-ir") not in streams and name not in tally:
                 continue
             log(f"[emit_sweep] === {label}: {title} ===")
             spans[name] = (len(tasks), len(patterns))
             for item in patterns:
                 tasks.append((False, lambda item=item, fn=fn, name=name: argv_stream_task(
                     fn, item, bin_a, bin_b, mirror, args.timeout,
-                    **facts_census.get(name, {}))))
+                    tally_fn=tally.get(name), **facts_census.get(name, {}))))
         done = run_pooled(tasks, args.jobs, args.comp_jobs)
         # merge in the old per-stream order: argv streams, composition, dumps
         for name, (lo, n) in spans.items():
@@ -1601,6 +2724,11 @@ def main():
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
             res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout)
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
+
+    if variants:
+        sys.exit(run_variants(args, variants, bases, patterns, full_population, flag_args,
+                              tree, out_dir, cc, run_full_sweep, trace_order, t0,
+                              ref_bin, tree_bin))
 
     # -- self-check: two independent builds of the SAME ref revision --
     if not args.no_self_check:
@@ -1667,11 +2795,22 @@ def main():
         "facts": (floor("reach_facts_floor"), True),
     }
     run_ok = True
+    # the tally streams' floors: the plain variant's cell at this run's base,
+    # when the run's options ARE a base (no --extra flag on top)
+    inv = {tuple(v): k for k, v in ARM_BASES.items()}
+    base_name = inv.get(tuple(run_extra))
+    cell = VARIANT_PINS.get(("plain", base_name)) if base_name else None
     for name, s in res.items():
-        fl, ident = stream_checks[name]
+        fl, ident = stream_checks.get(name) or stream_check(name, identity_required_default)
+        if cell and name in cell["reach"] and name not in stream_checks:
+            fl = cell["reach"][name] if full_population else None
         ok, text = report_stream(s, floor=fl, identity_required=ident)
         print(text)
         run_ok = run_ok and ok
+        if s.tags is not None:
+            ok, text = report_tally(s, cell, full_population)
+            print(text)
+            run_ok = run_ok and ok
 
     # -- population/composition floors --
     if full_population:
@@ -1754,7 +2893,7 @@ def main():
             hashes = {}   # sampled indices no longer line up with the streams'
         log(f"[emit_sweep] === trace: {len(tpats)} patterns x 2 streams ===")
         paths, byte_moves, tmirror = sweep_trace(tpats, tbin_a, tbin_b, args.timeout,
-                                                 args.jobs, out_dir, hashes)
+                                                 args.jobs, out_dir, hashes, extra=run_extra)
         print("-- family: trace (streams 1-2, trace builds) --")
         if hashes:
             for s, (ma, mb) in byte_moves.items():
@@ -1768,7 +2907,7 @@ def main():
         ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
         floor = TRACE_RECORDS_FLOOR if full_population else 1
         ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
-                                          unordered=not args.trace_ordered)
+                                          unordered=not args.trace_ordered, order=trace_order)
         print(f"  GATE ({'ordered' if args.trace_ordered else 'SET'} compare):")
         print(text_t)
         ok_d, text_d = trace_diff.compare(ta, tb, declared=declared, min_records=floor,

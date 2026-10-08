@@ -416,6 +416,15 @@
 #     on it moved no artifact byte and no answer. Since C3-C5 the table
 #     decides each slot, so a row plant also MOVES the artifact; the arm stays
 #     the one that names the row. Registered before S594-S599.
+#   fallbacktable — added 2026-10-08 (decfbB0b, [decfb B0] item 11); runs
+#     tests/codegen/run_fallback_table.sh from the SABOTAGED tree (its
+#     reference compilers are built from the tree's own sources, the
+#     compiler under test is the tree's build/pcrec): the observed-stamp leg
+#     (every ENGINE_SEL / UNROLL_K_WHY value stamped by a witness, held to
+#     match_api.md §6.3's sets) and the VM_PREFILTER_LANG_WHY / _WHY forms.
+#     Its own arm because the fallback tables' stamps move no answer and no
+#     other suite reads them off a witness per value. Registered before its
+#     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2921,6 +2930,17 @@ run_one() {
                 p="$(grep '^checks passed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 f="$(grep '^checks failed:' "$work/emitsweep.log" | grep -oE '[0-9]+' | awk '{s+=$1; n++} END {if (n == 2) print s}')"
                 score_arm "$work/emitsweep.log" "$f" "emitsweep:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            fallbacktable)
+                # [decfb B0] see the vocabulary entry above. The script builds
+                # three reference compilers from "$tree"'s sources into its
+                # own workdir (TMPDIR=$work) and reads $tree/build/pcrec.
+                CC="$CC" PCREC="$tree/build/pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_fallback_table.sh" \
+                    > "$work/fallbacktable.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/fallbacktable.log" | grep -oE '[0-9]+')"
+                score_arm "$work/fallbacktable.log" "$f" "fallbacktable:${f:-ERR}fail/${p:-?}pass"
                 ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit

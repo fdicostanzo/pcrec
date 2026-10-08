@@ -4998,6 +4998,31 @@ the failing-direction transcripts).
     # the no-mover proof of one start-table commit, deny arms included:
     python3 scripts/emit_sweep.py --ref HEAD~1 --tree-rev HEAD --arms start
 
+**[DEC-FALLBACK] B0 (lane decfbB0, 2026-10-08): limit variants and two
+tally streams** (`docs/design/dec_fallback.md` §4.2 items 1-4). Stream
+`emit-ir-auto` is `--emit-ir` at the DEFAULT engine (stdout + rc + stderr,
+refusals compared) at the base and at `-fno-prefilter`/`-fprefilter`/
+`-fno-prefilter-collapse`; stream `stderr` is the full stderr and rc of the
+stream 1-2 compiles. Each side tallies the listing's `prefilter` token (or
+`refused`) and the refusals per engine, held to per-tag floors with a
+manifest pattern for every tag under 100. `--variant all` builds both sides
+with each limit variant's `-D` set (`plain`, `lowsize`, `lowdfa`, `lowboth`,
+`lowthr`), runs every cell at the byte and utf8 bases, and holds it to
+`VARIANT_PINS` (measured at B0's base over emit_sweep's own 5,423-row
+population). A variant's plumbing is checked by witnesses whose stamps only
+its limits produce (`--list-limits` prints the def literal, not the compiled
+value). `--trace` composes: a trace pair per variant, `--trace-order
+fallback=ordered`. Runtime on the Linux dev box at `--jobs 6`, both sides
+built separately: 414 s for all ten cells plus the five trace pairs. The
+attempt histogram, refactor B's independent control, is
+`docs/design/dec_fallback/attempt_hist.py` (parent vs child per variant over
+decfb0's 4,794-block population, ~70 s).
+
+    # refactor B's per-commit gate (B1 onward):
+    python3 scripts/emit_sweep.py --ref HEAD~1 --tree-rev HEAD --variant all \
+        --trace --trace-order fallback=ordered
+    python3 docs/design/dec_fallback/attempt_hist.py --ref HEAD~1 --rev HEAD
+
 ## S3 triple-sweep identity instrument (`scripts/cls_identity.py`, [CLS-TREE] S3, 2026-09-29)
 
 `docs/design/cls_tree_design.md` §6's S3 row promises "byte-identical over
@@ -5079,3 +5104,16 @@ pcrec's abi-37 tree (lane/s1step6 fe233552; ASan on the trial merge
 Box choice consequence (memory `pcrec-cross-platform-verification`): the
 sanitizer pair belongs on Linux — ASan because only Linux completes it
 AND only Linux runs LSan.
+
+## `make test-fallback-table` ([decfb B0], lane decfbB0b, 2026-10-08)
+
+`tests/codegen/run_fallback_table.sh`, a new `TEST_SECTIONS` member (one more
+than the 59 measured at 23111928; the Makefile is the list of record) and mech
+arm `fallbacktable`: the fallback tables' artifact-side check. The
+observed-stamp leg holds every `RX_ENGINE_SEL` (8) and `RX_UNROLL_K_WHY` (7)
+value to at least one witness (K35 floor) and the observed set to
+`docs/spec/match_api.md` §6.3's hand-written set; the `_LANG_WHY` forms are
+held to hand-written text. Runtime ~7 s (three reference compilers built in
+parallel). `tests/prefilter/run_prefilter_tests.sh` §7b adds the hand-written
+T2 listing rows (50 checks, ~8 s). See `docs/design/dec_fallback.md` §4.2 B0
+items 6 and 11 and `docs/dev/lanes/decfbB0b_report.md`.
