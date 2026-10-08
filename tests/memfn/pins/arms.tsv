@@ -84,3 +84,18 @@ pf_walk	pf-walk-bounded	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca4
 pf_walk	pf-walk-bounded	use	102	b73bb61eedf0c21f04d1c2ba3242076e8a6d5b840867fd2940e6cd098cf9ff1a
 pf_walk	pf-walk	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 pf_walk	pf-walk	use	98	f7ae369e6c2d6edfcf23924004c778592d40cd5c763258e43691b09982220eac
+#
+# r4gfix ADDED (no row re-pinned; contract audit of the PF rows, memfn.h reads
+# ret_pred / npred+preds on ALL_PRESENT and DENSE only): pf-memchr-ret-pred
+# (a FIND memchr site stating ret_pred 2) and pf-walk-preds (a FIND walk site
+# stating npred 1 + preds) stay pf_memchr / pf_walk, bytes equal to their
+# unstated twins pf-memchr / pf-walk (finding 1). pf-emit-result-decl: mf_emit
+# on the memchr site with result_decl "size_t " selects the generic row at
+# selection (define|use gate), where it used to pick pf_memchr and be refused
+# at the use (finding 3).
+pf_memchr	pf-memchr-ret-pred	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_memchr	pf-memchr-ret-pred	use	178	c16f7c6383bcf64ce14cd7cbd11854f78bb8f86f562895fce8ca34213e471801
+pf_walk	pf-walk-preds	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_walk	pf-walk-preds	use	98	f7ae369e6c2d6edfcf23924004c778592d40cd5c763258e43691b09982220eac
+generic	pf-emit-result-decl	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pf-emit-result-decl	use	452	f665093cc99ac9fac9d96256f3a03bbabee821ae9a3d7a87bc2c996bac77bb96

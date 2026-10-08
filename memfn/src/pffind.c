@@ -214,16 +214,21 @@ static int pf_walk_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * pf_use_ok at the use): a class cannot say "the text of n, minus 1". */
 
 /* The four rows' common `serves`: every field but end_back, empty, miss,
- * on_miss, on_miss_leaves, table_ref and table_name, which each row states. */
+ * on_miss, on_miss_leaves, table_ref and table_name, which each row states.
+ * The convention (the same as ofsskip's): a field the contract makes
+ * irrelevant to this site shape, or one the text neither reads nor depends
+ * on, is MF_ANY; a field the text would silently drop or misrender when
+ * stated (floor, result_decl, note, on_miss_leaves, and below) keeps its
+ * decline (R2). */
 #define PF_SERVES \
     [FLD_form]            = CM(STMT),                 /* pf_shape */ \
     [FLD_op]              = CM(FIND),                 /* pf_shape */ \
     [FLD_handoff]         = CM(ASSIGN),               /* pf_shape */ \
     [FLD_reverse]         = CM(NO),                   /* pf_shape: the scan is forward */ \
     [FLD_pred]            = CM(NONNEG),               /* pf_shape: one term at offset 0 */ \
-    [FLD_preds]           = CM(NONE),                 /* not read: a FIND reads s->pred, and a \
-                                                         FIND site carries no preds */ \
-    [FLD_ret_pred]        = CM(NONE),                 /* not read (ALL_PRESENT's) */ \
+    [FLD_preds]           = MF_ANY,                   /* not read: memfn.h reads preds/npred on \
+                                                         ALL_PRESENT and DENSE only, as ofsskip */ \
+    [FLD_ret_pred]        = MF_ANY,                   /* not read (ALL_PRESENT's), as ofsskip */ \
     [FLD_guard_by_caller] = CM(NO),                   /* pf_shape */ \
     [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */ \
     [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* not read: no run is rendered */ \
@@ -297,7 +302,13 @@ static const gate_contract pf_memchr_bounded_ct = {
     [FLD_empty]           = CM(E_EXCLUDED),           /* memchr_shape: pcrec's `lo + 1 < n`
                                                          block encloses the site */
     [FLD_end_back]        = CM(ONE),                  /* pf_memchr_bounded_applies */
-    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run */
+    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
+                                                         although moot: it is the DEFINE-time
+                                                         witness of an on_miss the use will
+                                                         state (on_miss itself is use-only), so
+                                                         a leaving ASSIGN goes to the generic
+                                                         row at mf_define instead of being
+                                                         refused at mf_use (r4gfix) */
     [FLD_table_ref]       = CM(NONE),                 /* memchr_shape */
     [FLD_table_name]      = MF_ANY,                   /* not read */
     [FLD_miss]            = CM(OTHER),                /* stored after `: `; miss_is_end holds it
@@ -312,7 +323,13 @@ static const gate_contract pf_walk_ct = {
     PF_SERVES
     [FLD_empty]           = CM(E_NOP),                /* walk_applies: the loop test fails first */
     [FLD_end_back]        = CM(ZERO),                 /* pf_walk_applies */
-    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run */
+    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
+                                                         although moot: it is the DEFINE-time
+                                                         witness of an on_miss the use will
+                                                         state (on_miss itself is use-only), so
+                                                         a leaving ASSIGN goes to the generic
+                                                         row at mf_define instead of being
+                                                         refused at mf_use (r4gfix) */
     [FLD_table_ref]       = CM(REF),                  /* walk_applies: pcrec's table is read */
     [FLD_table_name]      = MF_ANY,                   /* pf_walk_use: any name, as given */
     [FLD_miss]            = CM(MISS_N),               /* a miss leaves the cursor at n */
@@ -325,7 +342,13 @@ static const gate_contract pf_walk_bounded_ct = {
     PF_SERVES
     [FLD_empty]           = CM(E_NOP),                /* walk_applies */
     [FLD_end_back]        = CM(ONE),                  /* pf_walk_bounded_applies */
-    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run */
+    [FLD_on_miss_leaves]  = CM(NO),                   /* no on_miss is run. KEPT as a decline
+                                                         although moot: it is the DEFINE-time
+                                                         witness of an on_miss the use will
+                                                         state (on_miss itself is use-only), so
+                                                         a leaving ASSIGN goes to the generic
+                                                         row at mf_define instead of being
+                                                         refused at mf_use (r4gfix) */
     [FLD_table_ref]       = CM(REF),                  /* walk_applies */
     [FLD_table_name]      = MF_ANY,                   /* pf_walk_use */
     [FLD_miss]            = CM(OTHER),                /* a miss leaves the cursor at n - 1;

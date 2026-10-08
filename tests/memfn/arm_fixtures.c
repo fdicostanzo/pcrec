@@ -352,7 +352,7 @@ static mf_site pf_site(int bounded, int table)
 }
 
 static int render_pf(const char *dir, const char *name, const mf_site *s,
-                     const char *result)
+                     const char *result, const char *decl)
 {
     mf_arena a = { NULL, a_alloc };
     mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s->denies);
@@ -361,7 +361,7 @@ static int render_pf(const char *dir, const char *name, const mf_site *s,
     Fx fx = { s, NULL, "    " };
     int table = s->pred.term[0].table_ref != 0;
     mf_hooks h = { .s = "subject", .n = "subject_length", .lo = "scan_position",
-                   .result = result,
+                   .result = result, .result_decl = decl,
                    .miss = s->end_back ? "subject_length - 1" : MF_MISS_N,
                    .on_miss = !table && !s->end_back ? "return 0;" : NULL,
                    .table_name = table ? h_table_name : NULL,
@@ -647,22 +647,47 @@ int main(int argc, char **argv)
      * in-place edge (a result other than lo is the generic row's) */
     s = pf_site(0, 0);
     t_byte(&s.pred.term[0], 0, 'x');
-    bad |= render_pf(dir, "pf-memchr", &s, "scan_position");
+    bad |= render_pf(dir, "pf-memchr", &s, "scan_position", NULL);
     s = pf_site(1, 0);
     t_byte(&s.pred.term[0], 0, 'x');
-    bad |= render_pf(dir, "pf-memchr-bounded", &s, "scan_position");
+    bad |= render_pf(dir, "pf-memchr-bounded", &s, "scan_position", NULL);
     s = pf_site(0, 1);
     t_set(&s.pred.term[0], 0, "xy", 1);
     s.pred.term[0].need = MF_REQUIRED;
-    bad |= render_pf(dir, "pf-walk", &s, "scan_position");
+    bad |= render_pf(dir, "pf-walk", &s, "scan_position", NULL);
     s = pf_site(1, 1);
     t_set(&s.pred.term[0], 0, "xy", 1);
     s.pred.term[0].need = MF_REQUIRED;
-    bad |= render_pf(dir, "pf-walk-bounded", &s, "scan_position");
+    bad |= render_pf(dir, "pf-walk-bounded", &s, "scan_position", NULL);
     s = pf_site(0, 1);
     t_set(&s.pred.term[0], 0, "xy", 1);
     s.pred.term[0].need = MF_REQUIRED;
-    bad |= render_pf(dir, "pf-decline-not-in-place", &s, "hit_position");
+    bad |= render_pf(dir, "pf-decline-not-in-place", &s, "hit_position", NULL);
+
+    /* r4gfix: the PF rows' contract audit. Fields memfn.h reads only on
+     * ALL_PRESENT / DENSE (ret_pred, npred + preds) are irrelevant to a FIND
+     * site: stating them leaves the PF row chosen, its bytes unmoved
+     * (finding 1). A stated result_decl on a one-call mf_emit is judged at
+     * SELECTION over the use hooks too, so the PF row declines to the generic
+     * row, which declares and renders (finding 3). */
+    s = pf_site(0, 0);
+    t_byte(&s.pred.term[0], 0, 'x');
+    s.ret_pred = 2;
+    bad |= render_pf(dir, "pf-memchr-ret-pred", &s, "scan_position", NULL);
+    {
+        mf_pred pp;
+        memset(&pp, 0, sizeof pp);
+        p_byte(&pp, 'x');
+        s = pf_site(0, 1);
+        t_set(&s.pred.term[0], 0, "xy", 1);
+        s.pred.term[0].need = MF_REQUIRED;
+        s.npred = 1;
+        s.preds = &pp;
+        bad |= render_pf(dir, "pf-walk-preds", &s, "scan_position", NULL);
+    }
+    s = pf_site(0, 0);
+    t_byte(&s.pred.term[0], 0, 'x');
+    bad |= render_pf(dir, "pf-emit-result-decl", &s, "scan_position", "size_t ");
 
     return bad;
 }
