@@ -23,6 +23,15 @@
 # MF_MISS_N token; each pins the SAME digests as its text-stated twin (the
 # token renders as the `n` hook's text, never its own bytes).
 #
+# r4g ADDED (no row re-pinned): the PF find's fixtures (memfn/src/pffind.c,
+# R4g/M2): pf-memchr, pf-memchr-bounded (form id pf_memchr), pf-walk,
+# pf-walk-bounded (pf_walk), each with an EMPTY def part (the statement is
+# the whole site), and pf-decline-not-in-place, pinned to `generic`: the walk
+# is in place, so a site whose result is not its lo is the generic row's.
+# Recorded at R4g's REPLACE commit; the four kit texts are the ones R4g's I1
+# shadow comparator proved equal to pcrec's pre-migration text (IMPLEMENT
+# commit, 7 PF shapes x their compiles, docs/dev/lanes/r4g_report.md).
+#
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
@@ -65,3 +74,13 @@ runcmp	run-overlap13	def	294	107339899d90c6a26baa7d8750af840b2cecf7f57a44bdaba83
 runcmp	run-overlap13	use	113	05dd6178dafb0a04cff9224202d9df005c9df39fccc9928e8494fca7ee548d6b
 runcmp	run-overlap3	def	294	e5dee2a6d07b243eb0ee2058e0ada8121b11aeacd47684862ba99a16ced51ee8
 runcmp	run-overlap3	use	94	ef6195b50ed3a6ec516f47029da25d76510c48516a7263327825e18be2a68cd3
+generic	pf-decline-not-in-place	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pf-decline-not-in-place	use	462	e61770533f87960b83434741a6621bc22f47eae85fa02b8076e221a4c61eaa06
+pf_memchr	pf-memchr-bounded	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_memchr	pf-memchr-bounded	use	207	888d3ffa8853dc8c626b7a5ff8072c54541c3cc7e672b88ec8207506ecf7fd9d
+pf_memchr	pf-memchr	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_memchr	pf-memchr	use	178	c16f7c6383bcf64ce14cd7cbd11854f78bb8f86f562895fce8ca34213e471801
+pf_walk	pf-walk-bounded	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_walk	pf-walk-bounded	use	102	b73bb61eedf0c21f04d1c2ba3242076e8a6d5b840867fd2940e6cd098cf9ff1a
+pf_walk	pf-walk	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+pf_walk	pf-walk	use	98	f7ae369e6c2d6edfcf23924004c778592d40cd5c763258e43691b09982220eac
