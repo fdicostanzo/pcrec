@@ -195,6 +195,7 @@ requirement and the DELIVER witness holds; 1 otherwise. Report is printed
 to stdout; a full per-row TSV per stream is written under --out.
 """
 import argparse
+import collections
 import concurrent.futures
 import hashlib
 import os
@@ -450,6 +451,145 @@ ASSERT_ZERO = {("utf8", "-fno-end-window", "c-default"),
 NULL_ARM = ("byte", "", "c-default")
 
 ARM_STREAMS = {"c-default": None, "c-vm": "vm"}
+
+
+# ---------------------------------------------------------------------------
+# THE LIMIT VARIANTS ([DEC-FALLBACK] B0 item 1; docs/design/dec_fallback.md
+# §4.2). A variant is a `-D` set BOTH sides are built with, so the fallback
+# ladder's rows that the shipped limits never reach get a population: decfb0's
+# four (docs/design/decision_families/decfb0/build_ref.py) plus `lowthr`, the
+# only one where `capacity-declined` has a population (run_size_term.sh §7's
+# reference compiler). Each variant runs at every base of `--bases` (default
+# byte and utf8: the shipped size-rung witnesses are utf8, critB2 M2).
+VARIANTS = {
+    "plain": "",
+    "lowsize": "-DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 "
+               "-DPCREC_SIZE_TERM_THRESHOLD=10000",
+    "lowdfa": "-DPCREC_MAX_AUTO_DFA_ELEMS=3000",
+    "lowboth": "-DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 "
+               "-DPCREC_SIZE_TERM_THRESHOLD=10000 -DPCREC_MAX_AUTO_DFA_ELEMS=3000",
+    "lowthr": "-DPCREC_SIZE_TERM_THRESHOLD=1000",
+}
+# The Makefile's own `CFLAGS ?= -O2 -g`: a variant's `-D` set is APPENDED to it
+# (passing the `-D` set alone as CFLAGS would also drop the optimisation level).
+DEFAULT_BUILD_CFLAGS = "-O2 -g"
+# A variant run's streams: composition is not run per variant (the default
+# run covers it; its files carry their own options), and facts/dumps take no
+# base (facts lists both encodings itself), so they run at the FIRST base only.
+VARIANT_STREAMS = ("c-default", "c-vm", "emit-ir", "emit-ir-auto", "stderr", "facts", "dumps")
+BASELESS_STREAMS = ("facts", "dumps")
+
+
+def variant_defs(cflags):
+    """{NAME: VALUE} of a variant's `-DNAME=VALUE` words."""
+    out = {}
+    for w in shlex.split(cflags):
+        if w.startswith("-D") and "=" in w:
+            k, v = w[2:].split("=", 1)
+            out[k] = v
+    return out
+
+
+def variant_plumbing(pcrec_bin, cflags, timeout):
+    """THE VARIANT'S OWN PLUMBING CONTROL: every `-DNAME=VALUE` of the variant
+    must read back as NAME's value in the binary's own `--list-limits`, which
+    prints the compiled-in default (src/core/limits.def). A variant whose `-D`
+    set never reached the build is otherwise the plain build and passes every
+    identity check. Returns a list of problems (empty = ok)."""
+    defs = variant_defs(cflags)
+    if not defs:
+        return []
+    rc, out, _ = run([pcrec_bin, "--list-limits"], timeout)
+    if rc != 0:
+        return [f"--list-limits refused (rc={rc})"]
+    seen = {}
+    for ln in out.decode("utf-8", "replace").splitlines():
+        f = ln.split("\t")
+        if len(f) > 1 and not ln.startswith("#"):
+            seen[f[0]] = f[1]
+    return [f"{k}: --list-limits reads {seen.get(k)!r}, the variant built {v!r}"
+            for k, v in defs.items() if seen.get(k) != v]
+
+
+# ---------------------------------------------------------------------------
+# STREAM `emit-ir-auto` ([DEC-FALLBACK] B0 item 2, critB2 B1: the B4 HARD
+# GATE). `--emit-ir` at the DEFAULT engine, where the prefilter admission's
+# listing rows actually fire (stream 3 forces --engine=vm, where
+# `would_prefilter` is false and only `no-engine-vm`/`yes`/`no-fno-prefilter`
+# can print). stdout AND rc AND stderr are compared: a DFA-winning pattern
+# REFUSES the listing, and that refusal is part of the stream. Runs at the base
+# and at each of IR_AUTO_ARMS. The pattern is handed as DECODED bytes, as every
+# stream here is (`--pattern-esc` is ignored by `--emit-ir`, F-B5/K98).
+IR_AUTO_ARMS = ("", "-fno-prefilter", "-fprefilter", "-fno-prefilter-collapse")
+# The listing's `prefilter` value vocabulary (docs/spec/ir_listing.md, hand
+# copied: a token outside it is counted under its own name and has no floor).
+IR_TOKENS = ("yes", "yes-collapsed", "no-backreference", "no-linked-call",
+             "no-nullable-collapsed", "no-nullable-exact", "no-dfa-overflow",
+             "no-fno-prefilter", "no-engine-vm")
+
+
+def ir_auto_stream(arm):
+    return "emit-ir-auto" + (f"[{arm}]" if arm else "")
+
+
+def compile_stream_ir_auto(pcrec_bin, pattern, timeout, extra=()):
+    argv = [pcrec_bin, "--features", "all"] + opt_argv(extra) + ["--emit-ir"]
+    argv += _pattern_argv(pcrec_bin, pattern)
+    rc, out, err = run(argv, timeout)
+    blob = b"rc=%s\n%s\n#stderr\n%s" % (str(rc).encode(), out, err)
+    return rc is not None, (blob if rc is not None else None), ("" if rc is not None else "TIMEOUT")
+
+
+def _rc_of(blob):
+    return blob[3:blob.index(b"\n")].decode() if blob and blob.startswith(b"rc=") else None
+
+
+def ir_auto_tags(blob):
+    """`refused`, or the summary section's `prefilter` value: the listing read
+    by section and row name (docs/spec/table_contract.md), never by line
+    position."""
+    if blob is None:
+        return ("timeout",)
+    if _rc_of(blob) != "0":
+        return ("refused",)
+    insum = False
+    for ln in blob.split(b"\n"):
+        if ln.startswith(b"#section "):
+            insum = ln == b"#section summary"
+        elif insum and ln.startswith(b"prefilter\t"):
+            return (ln.split(b"\t")[1].decode("utf-8", "replace"),)
+    return ("<no-prefilter-row>",)
+
+
+# ---------------------------------------------------------------------------
+# STREAM `stderr` ([DEC-FALLBACK] B0 item 3, critB2 M1; the design's stream 7).
+# The FULL stderr and the rc of the stream-1 and stream-2 compiles (the same
+# argv, recompiled here so streams 1-2 stay as they are), compared verbatim:
+# notes, warnings, the refusal text and which cap a refusal names. Before this
+# stream a refusal was only COUNTED (`both_refuse`); B3 rewrites the exhaustion
+# diagnostic, so a refusal's text is part of the no-mover claim.
+def compile_stream_stderr(pcrec_bin, pattern, timeout, extra=()):
+    parts = []
+    for engine in (None, "vm"):
+        argv = [pcrec_bin, "-p", "rx", "--features", "all"]
+        if engine:
+            argv.append(f"--engine={engine}")
+        argv += opt_argv(extra) + ["-o", "-"] + _pattern_argv(pcrec_bin, pattern)
+        rc, _, err = run(argv, timeout)
+        parts.append(b"%s rc=%s\n%s" % ((engine or "default").encode(), str(rc).encode(), err))
+    return True, b"\n#--\n".join(parts), ""
+
+
+def stderr_tags(blob):
+    tags = []
+    for part in blob.split(b"\n#--\n"):
+        head, _, err = part.partition(b"\n")
+        eng, rc = head.decode().split(" rc=")
+        if rc != "0":
+            tags.append("refused-" + eng)
+        elif err:
+            tags.append("stderr-" + eng)
+    return tuple(tags)
 
 
 def arm_table():
@@ -825,6 +965,11 @@ class StreamResult:
         self.hash_a = {}       # pattern index -> sha256 of side a's output
         self.hash_b = {}
         self.census_hits = None  # set of keys whose REF artifact is a census hit (None: no census)
+        # [DEC-FALLBACK] B0: per-side tag tallies of a TALLY stream (emit-ir-auto's
+        # listing token, stderr's refusals), and the patterns carrying each tag
+        # (a manifest names one). None: the stream has no tally.
+        self.tags = None         # [Counter side a, Counter side b]
+        self.tag_pats = None     # [{tag: set(pattern)} side a, side b]
 
 
 # [MEMFN] R4h census (lane advnorm): `--census-ref-re FILE` names a file of
@@ -864,11 +1009,13 @@ def facts_diff_keys(c_a, c_b):
 
 
 def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
-                     census_fn=None, declared_keys=None):
+                     census_fn=None, declared_keys=None, tally_fn=None):
     """ONE pattern of an argv stream, compared INSIDE the worker so only a
     small tuple (never the artifacts) crosses back to the merge:
-    (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b); hunk is None
-    unless both sides compiled and their bytes differ."""
+    (key, ok_a, ok_b, hash_a, hash_b, hunk, err_a, err_b, hit, tags_a,
+    tags_b, pattern); hunk is None unless both sides compiled and their bytes
+    differ; tags are tally_fn's reading of each side's content (None without
+    one)."""
     f, kind, pat = item
     ok_a, c_a, e_a = compile_fn(bin_a, pat, timeout)
     if mirror:
@@ -896,7 +1043,11 @@ def argv_stream_task(compile_fn, item, bin_a, bin_b, mirror, timeout,
         if hunk is not None and declared_keys is not None:
             if not facts_diff_keys(c_a, c_b) <= declared_keys:
                 hit = False
-    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit
+    tags_a = tags_b = None
+    if tally_fn is not None:
+        tags_a = tally_fn(c_a)
+        tags_b = tags_a if mirror else tally_fn(c_b)
+    return key, ok_a, ok_b, sha(c_a), sha(c_b), hunk, e_a, e_b, hit, tags_a, tags_b, pat
 
 
 def merge_argv_stream(name, rows, mirror):
@@ -907,7 +1058,15 @@ def merge_argv_stream(name, rows, mirror):
     res.mirrored = mirror
     if CENSUS_RES is not None:
         res.census_hits = set()
-    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit) in enumerate(rows):
+    if rows and rows[0][9] is not None:
+        res.tags = [collections.Counter(), collections.Counter()]
+        res.tag_pats = [collections.defaultdict(set), collections.defaultdict(set)]
+    for idx, (key, ok_a, ok_b, h_a, h_b, hunk, e_a, e_b, hit, tags_a, tags_b, pat) in enumerate(rows):
+        if res.tags is not None:
+            for side, tags in ((0, tags_a), (1, tags_b)):
+                for t in tags:
+                    res.tags[side][t] += 1
+                    res.tag_pats[side][t].add(pat)
         if hit and ok_b:
             res.census_hits.add(key)
         # per-index output hashes: the trace family checks that the trace
@@ -1309,21 +1468,23 @@ def trace_records(err):
             for ln in err.split(b"\n") if ln.startswith(TRACE_TAG)]
 
 
-def sweep_trace(patterns, tbin_a, tbin_b, timeout, jobs, out_dir, default_hashes):
+def sweep_trace(patterns, tbin_a, tbin_b, timeout, jobs, out_dir, default_hashes, extra=(),
+                tag=""):
     """Compile streams 1-2 with the TRACE builds; write trace_a.tsv /
     trace_b.tsv (idx, arm, seq, record fields); count the patterns whose
     trace-build stdout differs from the same side's DEFAULT build (the
     trace must move no emitted byte). default_hashes: {stream: (ha, hb)}."""
     mirror = same_binary(tbin_a, tbin_b)
     byte_moves = {s: [0, 0] for s in ARM_STREAMS}
-    paths = (os.path.join(out_dir, "trace_a.tsv"), os.path.join(out_dir, "trace_b.tsv"))
+    paths = (os.path.join(out_dir, f"trace{tag}_a.tsv"), os.path.join(out_dir, f"trace{tag}_b.tsv"))
 
     def job(item):
         idx, (f, kind, pat) = item
         res = []
         for stream, engine in ARM_STREAMS.items():
-            a = compile_stream_c(tbin_a, pat, timeout, engine=engine, want_err=True)
-            b = a if mirror else compile_stream_c(tbin_b, pat, timeout, engine=engine, want_err=True)
+            a = compile_stream_c(tbin_a, pat, timeout, engine=engine, extra=extra, want_err=True)
+            b = a if mirror else compile_stream_c(tbin_b, pat, timeout, engine=engine, extra=extra,
+                                                  want_err=True)
             res.append((stream, a, b))
         return idx, res
 
@@ -1388,7 +1549,218 @@ def report_stream(res, floor=None, identity_required=False):
     return ok, "\n".join(lines)
 
 
-STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts")
+def stream_check(name, identity_required_default):
+    """(floor, identity_required) of a stream the PINS dict does not name: the
+    tally streams are identity-required like streams 1-2 (their floors are the
+    per-tag ones, report_tally)."""
+    return None, identity_required_default
+
+
+# A tag whose measured count is below this is THIN and gets a MANIFEST: one
+# named pattern that must carry it on both sides (a floor answers "did a lot
+# stop", the manifest "did THIS one"; learnings §3).
+THIN_TAG = 100
+
+
+def report_tally(res, cell_pins, full_population):
+    """The per-tag floors and manifests of one tally stream in one (variant,
+    base) cell. cell_pins: VARIANT_PINS[cell] or None. Returns (ok, text)."""
+    if res.tags is None:
+        return True, ""
+    lines = ["  tags (side a / side b): " + " ".join(
+        f"{t}={res.tags[0][t]}/{res.tags[1][t]}" for t in sorted(set(res.tags[0]) | set(res.tags[1])))]
+    ok = True
+    if cell_pins is None:
+        lines.append("  tag floors: NOT APPLIED (no VARIANT_PINS cell for this run)")
+        return ok, "\n".join(lines)
+    floors = cell_pins["tags"].get(res.name, {})
+    if not floors:
+        lines.append(f"  NO TAG FLOORS PINNED for {res.name} (K35: an unpinned tally is not a check)")
+        return False, "\n".join(lines)
+    for tag, fl in sorted(floors.items()):
+        if full_population:
+            for side in (0, 1):
+                if res.tags[side][tag] < fl:
+                    ok = False
+                    lines.append(f"  TAG FLOOR side {'ab'[side]}: {tag} {res.tags[side][tag]} < {fl}")
+    for tag, pat in sorted(cell_pins["manifest"].get(res.name, {}).items()):
+        if not full_population and not any(pat in v for s in (0, 1) for v in res.tag_pats[s].values()):
+            continue   # off the full corpus the manifest may be outside the sample
+        for side in (0, 1):
+            if pat not in res.tag_pats[side].get(tag, ()):
+                ok = False
+                lines.append(f"  MANIFEST side {'ab'[side]}: {pat!r} does not carry {tag}")
+    if ok:
+        lines.append(f"  tag floors: {len(floors)} pinned, all held"
+                     + ("" if full_population else " (partial population: floors NOT applied, manifests are)"))
+    return ok, "\n".join(lines)
+
+
+def measured_cell(res_by_stream):
+    """A VARIANT_PINS cell measured from one run's results: every reach (the
+    smaller side), every tag count (the smaller side) and, for a THIN tag, the
+    shortest pattern carrying it on both sides as its manifest."""
+    cell = {"reach": {}, "tags": {}, "manifest": {}}
+    for name, r in res_by_stream.items():
+        if name in ("c-default", "c-vm", "emit-ir-vm", "facts"):
+            cell["reach"][name] = r.both_ok
+        if r.tags is None:
+            continue
+        tags = set(r.tags[0]) | set(r.tags[1])
+        cell["tags"][name] = {t: min(r.tags[0][t], r.tags[1][t]) for t in sorted(tags)}
+        for t in sorted(tags):
+            if 0 < cell["tags"][name][t] < THIN_TAG:
+                both = r.tag_pats[0][t] & r.tag_pats[1][t]
+                if both:
+                    cell["manifest"].setdefault(name, {})[t] = min(both, key=lambda p: (len(p), p))
+    return cell
+
+
+def write_pins(path, measured, trace_records):
+    """The measured cells as python source for VARIANT_PINS /
+    TRACE_VARIANT_RECORDS_FLOOR (a measurement, pasted in by a reviewed
+    re-pin; never read back by this script)."""
+    with open(path, "w") as fh:
+        fh.write("VARIANT_PINS = {\n")
+        for key in sorted(measured):
+            fh.write(f"    {key!r}: {measured[key]!r},\n")
+        fh.write("}\nTRACE_VARIANT_RECORDS_FLOOR = {\n")
+        for v in sorted(trace_records):
+            fh.write(f"    {v!r}: {trace_records[v]!r},\n")
+        fh.write("}\n")
+
+
+def run_variants(args, variants, bases, patterns, full_population, flag_args, tree, out_dir,
+                 cc, run_full_sweep, trace_order, t0, plain_ref, plain_tree):
+    """[DEC-FALLBACK] B0 item 1: the sweep once per (variant, base) cell, both
+    sides built with the variant's `-D` set from `git archive` (the plain
+    variant reuses the two default builds, whose CFLAGS are the Makefile's).
+    Per cell: identity on every stream, the reach floors and the tally
+    streams' tag floors/manifests from VARIANT_PINS. Per variant: the plumbing
+    control, a self-check (first base) and, under --trace, the variant's own
+    trace pair compared with trace_diff (records floor per variant)."""
+    import trace_diff
+    vstreams = [s for s in VARIANT_STREAMS if s in args.streams.split(",")]
+    all_ok = True
+    measured, trace_records = {}, {}
+    for vname, vflags in variants:
+        cf = (DEFAULT_BUILD_CFLAGS + " " + vflags).strip()
+        if vflags.strip():
+            vref, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref-{vname}", cflags=cf)
+            vtree, _ = build_from_rev(tree, args.tree_rev, out_dir, cc, f"tree-{vname}", cflags=cf)
+        else:
+            vref, vtree = plain_ref, plain_tree
+        print(f"\n===== VARIANT {vname} ({vflags or 'shipped limits'}): {args.ref} vs {args.tree_rev} =====")
+        probs = [f"side {s}: {p}" for s, b in (("a", vref), ("b", vtree))
+                 for p in variant_plumbing(b, vflags, args.timeout)]
+        for p in probs:
+            print(f"  VARIANT PLUMBING: {p}")
+        if probs:
+            all_ok = False
+            continue
+        if vflags.strip():
+            print(f"  plumbing: every -D of the variant reads back in --list-limits on both sides "
+                  f"({len(variant_defs(vflags))} limits)")
+        first_extra = list(ARM_BASES[bases[0]]) + flag_args
+        if not args.no_self_check:
+            vref2, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref2-{vname}", cflags=cf)
+            res, *_ = run_full_sweep(vref, vref2, f"selfcheck-{vname}", run_extra=first_extra,
+                                     streams=vstreams)
+            sc_ok = True
+            for r in res.values():
+                ok, text = report_stream(r, identity_required=True)
+                if not ok:
+                    print(text)
+                sc_ok = sc_ok and ok
+            print(f"  self-check ({bases[0]}, {vref} vs an independent rebuild): "
+                  f"{'PASSED' if sc_ok else 'FAILED'}")
+            if not sc_ok:
+                all_ok = False
+                continue
+        hashes = None
+        for i, base in enumerate(bases):
+            cell_streams = [s for s in vstreams if i == 0 or s not in BASELESS_STREAMS]
+            extra = list(ARM_BASES[base]) + flag_args
+            res, *_ = run_full_sweep(vref, vtree, f"{vname}-{base}", run_extra=extra,
+                                     streams=cell_streams)
+            if i == 0:
+                hashes = {st: (res[st].hash_a, res[st].hash_b) for st in ARM_STREAMS if st in res}
+            pins = None if flag_args else VARIANT_PINS.get((vname, base))
+            print(f"-- cell {vname}/{base}" + (f" + {' '.join(flag_args)}" if flag_args else "")
+                  + (" (no VARIANT_PINS cell)" if pins is None else "") + " --")
+            if pins is None and not args.no_variant_floor:
+                print("  NO VARIANT_PINS CELL: an unpinned variant cell is not a check "
+                      "(--no-variant-floor waives, for a measurement)")
+                all_ok = False
+            for name, r in res.items():
+                fl = None
+                if name == "dumps":
+                    fl = PINS["dump_surfaces_floor"]
+                elif pins and full_population:
+                    fl = pins["reach"].get(name)
+                ok, text = report_stream(r, floor=fl, identity_required=True)
+                print(text)
+                all_ok = all_ok and ok
+                if r.tags is not None:
+                    ok, text = report_tally(r, pins, full_population)
+                    print(text)
+                    all_ok = all_ok and ok
+            if not flag_args:
+                measured[(vname, base)] = measured_cell(res)
+        if args.trace:
+            tcf = (TRACE_CFLAGS + " " + vflags).strip()
+            tb_a, _ = build_from_rev(tree, args.ref, out_dir, cc, f"ref-trace-{vname}", cflags=tcf)
+            tb_b, _ = build_from_rev(tree, args.tree_rev, out_dir, cc, f"tree-trace-{vname}", cflags=tcf)
+            paths, byte_moves, _ = sweep_trace(patterns, tb_a, tb_b, args.timeout, args.jobs,
+                                               out_dir, hashes or {}, extra=first_extra,
+                                               tag=f"_{vname}")
+            print(f"-- variant {vname}: trace ({bases[0]} base, {tcf}) --")
+            for st, (ma, mb) in byte_moves.items():
+                print(f"  trace build vs default build, {st}: stdout differs on {ma} / {mb} (must be 0)")
+                all_ok = all_ok and not (ma or mb)
+            ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
+            trace_records[vname] = {arm: min(sum(len(v) for k, v in ta.items() if k[1] == arm),
+                                             sum(len(v) for k, v in tb.items() if k[1] == arm))
+                                    for arm in ARM_STREAMS}
+            floor = TRACE_VARIANT_RECORDS_FLOOR.get(vname) if full_population else 1
+            if floor is None:
+                print("  NO TRACE RECORDS FLOOR for this variant" +
+                      (" (waived: --no-variant-floor)" if args.no_variant_floor else ""))
+                all_ok = all_ok and args.no_variant_floor
+                floor = 1
+            declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
+            ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
+                                              unordered=not args.trace_ordered, order=trace_order)
+            print(text_t)
+            all_ok = all_ok and ok_t
+    with open(os.path.join(out_dir, "variant_tallies.tsv"), "w") as fh:
+        fh.write("variant\tbase\tstream\tkey\tfloor\tmanifest\n")
+        for (v, b), cell in sorted(measured.items()):
+            for st, n in cell["reach"].items():
+                fh.write(f"{v}\t{b}\t{st}\treach\t{n}\t\n")
+            for st, tags in cell["tags"].items():
+                for t, n in tags.items():
+                    man = cell["manifest"].get(st, {}).get(t)
+                    fh.write(f"{v}\t{b}\t{st}\t{t}\t{n}\t{encode_escape(man) if man else ''}\n")
+    print(f"\nper-cell measurement: {os.path.join(out_dir, 'variant_tallies.tsv')}")
+    if args.emit_pins:
+        write_pins(args.emit_pins, measured, trace_records)
+        print(f"measured pins written: {args.emit_pins}")
+    if not full_population:
+        print("(PARTIAL POPULATION: reach and tag floors NOT applied; identity, plumbing and "
+              "manifests in the population are)")
+    print(f"population: argv={len(patterns)}\nelapsed: {time.time() - t0:.1f}s")
+    print("VARIANTS: " + ("CLEAN" if all_ok else "FAILED"))
+    return 0 if all_ok else 1
+
+
+# Measured per (variant, base) cell; see the header comment above VARIANTS.
+VARIANT_PINS = {}
+TRACE_VARIANT_RECORDS_FLOOR = {}
+
+
+STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",
+               "emit-ir-auto", "stderr")
 
 
 def main():
@@ -1444,6 +1816,12 @@ def main():
     ap.add_argument("--trace-declared")
     ap.add_argument("--trace-ordered", action="store_true")
     ap.add_argument("--build-cflags")
+    ap.add_argument("--variant", action="append", default=[],
+                    help="[DEC-FALLBACK] B0: NAME (a VARIANTS entry), `all`, or NAME=CFLAGS")
+    ap.add_argument("--bases", default="byte,utf8")
+    ap.add_argument("--no-variant-floor", action="store_true")
+    ap.add_argument("--emit-pins")
+    ap.add_argument("--trace-order", action="append", default=[])
     args = ap.parse_args()
 
     if not args.ref and not args.ref_bin:
@@ -1460,6 +1838,32 @@ def main():
         ap.error("--no-corpus needs at least one --patterns-file")
     if args.trace and not (args.tree_rev or args.trace_bin):
         ap.error("--trace needs --tree-rev (both sides built traced) or --trace-bin")
+    variants = []
+    for v in args.variant:
+        if v == "all":
+            variants += [(k, c) for k, c in VARIANTS.items() if k not in dict(variants)]
+        elif "=" in v:
+            variants.append(tuple(v.split("=", 1)))
+        elif v in VARIANTS:
+            variants.append((v, VARIANTS[v]))
+        else:
+            ap.error(f"--variant {v}: not in VARIANTS ({','.join(VARIANTS)}) and not NAME=CFLAGS")
+    if variants:
+        if not (args.ref and args.tree_rev):
+            ap.error("--variant builds BOTH sides with its -D set: it needs --ref and --tree-rev")
+        if args.build_cflags or args.extra_base or args.arms or args.only_emit_ir_reach:
+            ap.error("--variant: --build-cflags/--extra-base/--arms/--only-emit-ir-reach do not compose with it")
+        if args.trace and args.trace_bin:
+            ap.error("--variant --trace builds each variant's trace pair itself (no --trace-bin)")
+    bases = [b for b in args.bases.split(",") if b]
+    if any(b not in ARM_BASES for b in bases) or not bases:
+        ap.error(f"--bases: each of {','.join(ARM_BASES)}")
+    trace_order = {}
+    for o in args.trace_order:
+        slot, _, mode = o.partition("=")
+        if not slot or mode not in ("ordered", "set"):
+            ap.error(f"--trace-order wants SLOT=ordered|set, got {o!r}")
+        trace_order[slot] = mode
     base_args = shlex.split(args.extra_base)
     flag_args = [a for e in args.extra for a in shlex.split(e)]
     run_extra = base_args + flag_args   # what streams 1-4 run at, BOTH sides
@@ -1518,9 +1922,9 @@ def main():
     log(f"[emit_sweep] corpus: {corpus_rows} pattern rows (+{len(patterns) - corpus_rows} "
         f"from patterns files), {len(comp_files)} composition files")
 
-    def run_full_sweep(bin_a, bin_b, label):
+    def run_full_sweep(bin_a, bin_b, label, run_extra=run_extra, streams=streams):
         res = {}
-        argv_streams = (
+        argv_streams = [
             ("c-default", "stream 1 (.c default engine)",
              lambda b, p, t: compile_stream_c(b, p, t, engine=None, extra=run_extra)),
             ("c-vm", "stream 2 (.c --engine=vm)",
@@ -1528,7 +1932,21 @@ def main():
             ("emit-ir-vm", "stream 3 (--emit-ir --engine=vm)",
              lambda b, p, t: compile_stream_ir(b, p, t, extra=run_extra)),
             ("facts", "stream 6 (--emit-facts=byte,utf8)",
-             lambda b, p, t: compile_stream_facts(b, p, t)))
+             lambda b, p, t: compile_stream_facts(b, p, t))]
+        # [DEC-FALLBACK] B0 items 2-3: the tally streams (their tags carry the
+        # token and refusal floors). emit-ir-auto runs at the base and per arm.
+        tally = {}
+        if "emit-ir-auto" in streams:
+            for arm in IR_AUTO_ARMS:
+                nm = ir_auto_stream(arm)
+                argv_streams.append((nm, f"stream emit-ir-auto (--emit-ir, default engine) {arm or '<base>'}",
+                                     lambda b, p, t, arm=arm: compile_stream_ir_auto(
+                                         b, p, t, extra=list(run_extra) + shlex.split(arm))))
+                tally[nm] = ir_auto_tags
+        if "stderr" in streams:
+            argv_streams.append(("stderr", "stream stderr (full stderr + rc of streams 1-2)",
+                                 lambda b, p, t: compile_stream_stderr(b, p, t, extra=run_extra)))
+            tally["stderr"] = stderr_tags
         # ONE pool across every stream (was: a pool per stream, waited out
         # before the next began, so each stream's slowest compile -- the
         # composition stream's most of all -- left the box at a fraction of
@@ -1580,14 +1998,14 @@ def main():
                     item, bin_a, bin_b, comp_out, args.comp_timeout, run_extra)))
         spans = {}
         for name, title, fn in argv_streams:
-            if (name if name != "emit-ir-vm" else "emit-ir") not in streams:
+            if (name if name != "emit-ir-vm" else "emit-ir") not in streams and name not in tally:
                 continue
             log(f"[emit_sweep] === {label}: {title} ===")
             spans[name] = (len(tasks), len(patterns))
             for item in patterns:
                 tasks.append((False, lambda item=item, fn=fn, name=name: argv_stream_task(
                     fn, item, bin_a, bin_b, mirror, args.timeout,
-                    **facts_census.get(name, {}))))
+                    tally_fn=tally.get(name), **facts_census.get(name, {}))))
         done = run_pooled(tasks, args.jobs, args.comp_jobs)
         # merge in the old per-stream order: argv streams, composition, dumps
         for name, (lo, n) in spans.items():
@@ -1601,6 +2019,11 @@ def main():
             log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
             res["dumps"] = sweep_dumps(bin_a, bin_b, args.timeout)
         return res, producing, artifacts, fixtures_hit, nonlocal_flag[0]
+
+    if variants:
+        sys.exit(run_variants(args, variants, bases, patterns, full_population, flag_args,
+                              tree, out_dir, cc, run_full_sweep, trace_order, t0,
+                              ref_bin, tree_bin))
 
     # -- self-check: two independent builds of the SAME ref revision --
     if not args.no_self_check:
@@ -1667,11 +2090,22 @@ def main():
         "facts": (floor("reach_facts_floor"), True),
     }
     run_ok = True
+    # the tally streams' floors: the plain variant's cell at this run's base,
+    # when the run's options ARE a base (no --extra flag on top)
+    inv = {tuple(v): k for k, v in ARM_BASES.items()}
+    base_name = inv.get(tuple(run_extra))
+    cell = VARIANT_PINS.get(("plain", base_name)) if base_name else None
     for name, s in res.items():
-        fl, ident = stream_checks[name]
+        fl, ident = stream_checks.get(name) or stream_check(name, identity_required_default)
+        if cell and name in cell["reach"] and name not in stream_checks:
+            fl = cell["reach"][name] if full_population else None
         ok, text = report_stream(s, floor=fl, identity_required=ident)
         print(text)
         run_ok = run_ok and ok
+        if s.tags is not None:
+            ok, text = report_tally(s, cell, full_population)
+            print(text)
+            run_ok = run_ok and ok
 
     # -- population/composition floors --
     if full_population:
@@ -1754,7 +2188,7 @@ def main():
             hashes = {}   # sampled indices no longer line up with the streams'
         log(f"[emit_sweep] === trace: {len(tpats)} patterns x 2 streams ===")
         paths, byte_moves, tmirror = sweep_trace(tpats, tbin_a, tbin_b, args.timeout,
-                                                 args.jobs, out_dir, hashes)
+                                                 args.jobs, out_dir, hashes, extra=run_extra)
         print("-- family: trace (streams 1-2, trace builds) --")
         if hashes:
             for s, (ma, mb) in byte_moves.items():
@@ -1768,7 +2202,7 @@ def main():
         ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
         floor = TRACE_RECORDS_FLOOR if full_population else 1
         ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
-                                          unordered=not args.trace_ordered)
+                                          unordered=not args.trace_ordered, order=trace_order)
         print(f"  GATE ({'ordered' if args.trace_ordered else 'SET'} compare):")
         print(text_t)
         ok_d, text_d = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
