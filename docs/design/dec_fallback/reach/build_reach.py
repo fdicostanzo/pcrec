@@ -19,7 +19,7 @@ limit variant. Probes:
 
 Probes write stderr only; reach.py asserts the plain variant's stdout and rc
 identical to the unprobed build/pcrec. Nothing under src/ is modified.
-usage: build_reach.py SCRATCH_DIR
+usage: build_reach.py SCRATCH_DIR [VARIANT...]   (default: every variant)
 """
 import os, shutil, subprocess, sys
 
@@ -31,6 +31,9 @@ VARIANTS = {
     "lowdfa":  ["-DPCREC_MAX_AUTO_DFA_ELEMS=3000"],
     "lowboth": ["-DPCREC_MAX_VM_EMIT_CODE_BYTES=30000", "-DPCREC_MAX_EMIT_BYTES=60000",
                 "-DPCREC_SIZE_TERM_THRESHOLD=10000", "-DPCREC_MAX_AUTO_DFA_ELEMS=3000"],
+    # the size term's threshold only (run_size_term.sh §7's reference
+    # compiler): the one variant `capacity-declined` has a population in
+    "lowthr":  ["-DPCREC_SIZE_TERM_THRESHOLD=1000"],
 }
 
 CP = "src/core/compile.c"
@@ -102,7 +105,10 @@ def main():
     srcs = subprocess.check_output(
         "find %s/src %s/memfn/src -name '*.c' 2>/dev/null | LC_ALL=C sort" % (tree, tree),
         shell=True, text=True).split()
+    want = sys.argv[2:] or list(VARIANTS)
     for name, defs in VARIANTS.items():
+        if name not in want:
+            continue
         out = os.path.join(scratch, "pcrec_" + name)
         cmd = ["gcc", "-O1", "-std=gnu11", "-I" + tree + "/lib", "-I" + tree + "/src"] + defs + \
               ["-o", out, tree + "/cli/main.c"] + srcs

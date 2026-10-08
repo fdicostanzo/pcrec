@@ -120,6 +120,8 @@ def main():
     maxatt = 0; twice = collections.Counter()
     sequences = collections.Counter()
     variants = set()
+    inv = collections.Counter()           # rev 2 §1.9's run-time invariants
+    waste = collections.Counter()         # [DEC-COLLAPSE-WASTE]'s three-way split
     for path in sorted(glob.glob(os.path.join(scratch, "reach_*_*.jsonl"))):
         v, arm = os.path.basename(path)[6:-6].split("_", 1)
         variants.add((v, arm))
@@ -144,6 +146,18 @@ def main():
                 mism[kind] += 1
                 mism_ex.setdefault(kind, (v, arm, r["src"], r["key"][0][:80], detail))
             for i, a in enumerate(atts):
+                if a["adm"] is not None and a["adm"]["var"]:
+                    inv["has_var admissions"] += 1
+                    inv["has_var with CR!=NONE or dd (must be 0)"] += bool(a["adm"]["cr"] or a["adm"]["dd"])
+                cr = a["hdr"]["cr"]
+                if cr and a["adm"] is not None and a["adm"]["dn"] and arm == "base":
+                    waste[(v, {1: "SEL1", 2: "SIZECAP"}[cr], "(iii) empty_admits: designed decline")] += 1
+                if cr and a["gate"] is not None and a["adm"] is not None and a["adm"]["pf"] and arm == "base":
+                    g = a["gate"]
+                    cls = ("(i) no collapsible repeat" if not g["rep"] else
+                           "(ii) nullable, not empty_admits" if (g["wanted"] and g["nul"] and not g["collapse"]) else
+                           "collapsed")
+                    waste[(v, {1: "SEL1", 2: "SIZECAP"}[cr], cls)] += 1
                 if a["adm"] is not None:
                     gcol = a["gate"]["collapse"] if a["gate"] else 0
                     row, verdict, lst = t2_row(a["adm"], gcol)
@@ -176,6 +190,15 @@ def main():
                     elif f["stph"] == 1: want = "size-term-trial"
                     if want and want != take:
                         miss("T1-walk", (want, take, f))
+            sel = [k for k, t in enumerate(seq) if t in ("sel1-collapse", "sel1-drop")]
+            if sel:
+                around = seq[:sel[0]] + seq[sel[-1] + 1:]
+                inv["compiles with a [SEL-1] row"] += 1
+                inv["... with a size row before/after it (must be 0 off F-B3)"] += any(
+                    t not in ("refuse", "size-term-trial") for t in around)
+            if r["status"] == "ok" and seq and seq[-1] == "sel1-drop":
+                inv["compiles ending on sel1-drop"] += 1
+                inv["... whose final prefilter survived (must be 0)"] += r["st"].get("VM_PREFILTER") == "hybrid"
             for t, n in fired.items():
                 if n > 1:
                     twice[t] += 1
@@ -204,6 +227,14 @@ def main():
     print("max attempts observed:", maxatt, "(COMPILE_MAX_ATTEMPTS 25)")
     print("non-trial T1 rows fired twice in one compile:", dict(twice) or "none")
     print("mismatches:", dict(mism) or "none")
+    print("run-time invariants (rev 2 §1.9):")
+    for k in ("has_var admissions", "has_var with CR!=NONE or dd (must be 0)", "compiles ending on sel1-drop",
+              "... whose final prefilter survived (must be 0)", "compiles with a [SEL-1] row",
+              "... with a size row before/after it (must be 0 off F-B3)"):
+        print("  %-58s %d" % (k, inv[k]))
+    print("[DEC-COLLAPSE-WASTE] rung attempts by class, base arm (rung attempt that kept a prefilter, or the designed decline):")
+    for k in sorted(waste):
+        print("  %-8s %-8s %-40s %d" % (k[0], k[1], k[2], waste[k]))
     for k, e in mism_ex.items():
         print("  first", k, e)
     # rows with zero reach anywhere

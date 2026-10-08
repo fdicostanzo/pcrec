@@ -15,3 +15,4 @@ fb3-norep	(x)(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?
 fb3-norep-dfa	(?:a|b)*a(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)(?:a|b)			
 rep-ovf	(x)(?:a|b)*a(?:a|b){11}			
 rep-ovf-dfa	(?:a|b)*a(?:a|b){11}			
+capw	(((?:a{0,2}b)+c){0,20}d){0,20}e			

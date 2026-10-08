@@ -1,0 +1,360 @@
+variant	arm	sequence	status	n
+lowboth	base	drop-anchored	ok	26
+lowboth	base	drop-anchored > drop-premul	ok	9
+lowboth	base	drop-anchored > drop-premul > refuse	refused	3
+lowboth	base	drop-premul > refuse	refused	1
+lowboth	base	prefilter-collapse	ok	9
+lowboth	base	prefilter-collapse > drop-prefilter	ok	71
+lowboth	base	prefilter-collapse > drop-prefilter > refuse	refused	4
+lowboth	base	refuse	refused	464
+lowboth	base	sel1-collapse	ok	24
+lowboth	base	sel1-collapse > refuse	refused	2
+lowboth	base	sel1-collapse > sel1-drop	ok	65
+lowboth	base	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	base	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	base	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	dfa	drop-anchored	ok	26
+lowboth	dfa	drop-anchored > drop-premul	ok	25
+lowboth	dfa	drop-anchored > drop-premul > refuse	refused	51
+lowboth	dfa	drop-premul > refuse	refused	2
+lowboth	dfa	refuse	refused	2439
+lowboth	fof	refuse	refused	599
+lowboth	fof	sel1-collapse	ok	15
+lowboth	fof	sel1-collapse > refuse	refused	11
+lowboth	fof	sel1-collapse > sel1-drop	ok	65
+lowboth	fof	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	fof	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	fof	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	minsize	drop-anchored	ok	2
+lowboth	minsize	drop-anchored > refuse	refused	3
+lowboth	minsize	prefilter-collapse	ok	9
+lowboth	minsize	prefilter-collapse > drop-prefilter	ok	74
+lowboth	minsize	prefilter-collapse > drop-prefilter > refuse	refused	19
+lowboth	minsize	refuse	refused	465
+lowboth	minsize	sel1-collapse	ok	16
+lowboth	minsize	sel1-collapse > refuse	refused	10
+lowboth	minsize	sel1-collapse > sel1-drop	ok	64
+lowboth	minsize	sel1-collapse > sel1-drop > refuse	refused	5
+lowboth	minsize	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	minsize	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	no-anch	drop-premul	ok	9
+lowboth	no-anch	drop-premul > refuse	refused	4
+lowboth	no-anch	prefilter-collapse	ok	9
+lowboth	no-anch	prefilter-collapse > drop-prefilter	ok	71
+lowboth	no-anch	prefilter-collapse > drop-prefilter > refuse	refused	4
+lowboth	no-anch	refuse	refused	464
+lowboth	no-anch	sel1-collapse	ok	24
+lowboth	no-anch	sel1-collapse > refuse	refused	2
+lowboth	no-anch	sel1-collapse > sel1-drop	ok	65
+lowboth	no-anch	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	no-anch	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	no-anch	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	no-pf	drop-anchored	ok	26
+lowboth	no-pf	drop-anchored > drop-premul	ok	9
+lowboth	no-pf	drop-anchored > drop-premul > refuse	refused	3
+lowboth	no-pf	drop-premul > refuse	refused	1
+lowboth	no-pf	refuse	refused	467
+lowboth	no-pf	sel1-collapse	ok	66
+lowboth	no-pf	sel1-collapse > refuse	refused	4
+lowboth	no-pf	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	no-pf	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	no-pfc	drop-anchored	ok	26
+lowboth	no-pfc	drop-anchored > drop-premul	ok	9
+lowboth	no-pfc	drop-anchored > drop-premul > refuse	refused	3
+lowboth	no-pfc	drop-prefilter	ok	80
+lowboth	no-pfc	drop-prefilter > refuse	refused	4
+lowboth	no-pfc	drop-premul > refuse	refused	1
+lowboth	no-pfc	refuse	refused	464
+lowboth	no-pfc	sel1-drop	ok	91
+lowboth	no-pfc	sel1-drop > refuse	refused	4
+lowboth	no-pfc	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	no-pfc	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	no-premul	drop-anchored	ok	2
+lowboth	no-premul	drop-anchored > refuse	refused	3
+lowboth	no-premul	prefilter-collapse	ok	9
+lowboth	no-premul	prefilter-collapse > drop-prefilter	ok	71
+lowboth	no-premul	prefilter-collapse > drop-prefilter > refuse	refused	4
+lowboth	no-premul	refuse	refused	465
+lowboth	no-premul	sel1-collapse	ok	24
+lowboth	no-premul	sel1-collapse > refuse	refused	2
+lowboth	no-premul	sel1-collapse > sel1-drop	ok	65
+lowboth	no-premul	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	no-premul	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	no-premul	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	no-st	drop-anchored	ok	26
+lowboth	no-st	drop-anchored > drop-premul	ok	9
+lowboth	no-st	drop-anchored > drop-premul > refuse	refused	3
+lowboth	no-st	drop-premul > refuse	refused	1
+lowboth	no-st	prefilter-collapse	ok	9
+lowboth	no-st	prefilter-collapse > drop-prefilter	ok	72
+lowboth	no-st	prefilter-collapse > drop-prefilter > refuse	refused	26
+lowboth	no-st	refuse	refused	465
+lowboth	no-st	sel1-collapse	ok	11
+lowboth	no-st	sel1-collapse > refuse	refused	15
+lowboth	no-st	sel1-collapse > sel1-drop	ok	65
+lowboth	no-st	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	pf	prefilter-collapse	ok	11
+lowboth	pf	prefilter-collapse > refuse	refused	91
+lowboth	pf	refuse	refused	3314
+lowboth	pfc	drop-anchored	ok	26
+lowboth	pfc	drop-anchored > drop-premul	ok	9
+lowboth	pfc	drop-anchored > drop-premul > refuse	refused	3
+lowboth	pfc	drop-prefilter	ok	28
+lowboth	pfc	drop-prefilter > refuse	refused	6
+lowboth	pfc	drop-premul > refuse	refused	1
+lowboth	pfc	prefilter-collapse > drop-prefilter	ok	43
+lowboth	pfc	refuse	refused	464
+lowboth	pfc	sel1-collapse	ok	8
+lowboth	pfc	sel1-collapse > sel1-drop	ok	65
+lowboth	pfc	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	pfc	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	pfc	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowboth	unroll4	drop-anchored	ok	26
+lowboth	unroll4	drop-anchored > drop-premul	ok	9
+lowboth	unroll4	drop-anchored > drop-premul > refuse	refused	3
+lowboth	unroll4	drop-premul > refuse	refused	1
+lowboth	unroll4	prefilter-collapse	ok	11
+lowboth	unroll4	prefilter-collapse > drop-prefilter	ok	79
+lowboth	unroll4	prefilter-collapse > drop-prefilter > refuse	refused	7
+lowboth	unroll4	refuse	refused	465
+lowboth	unroll4	sel1-collapse	ok	13
+lowboth	unroll4	sel1-collapse > refuse	refused	13
+lowboth	unroll4	sel1-collapse > sel1-drop	ok	65
+lowboth	unroll4	sel1-collapse > sel1-drop > refuse	refused	4
+lowboth	vm	refuse	refused	480
+lowboth	vm	size-term-trial > size-term-trial > refuse	refused	1
+lowboth	vm	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	base	refuse	refused	442
+lowdfa	base	sel1-collapse	ok	26
+lowdfa	base	sel1-collapse > sel1-drop	ok	69
+lowdfa	base	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	dfa	drop-anchored	ok	19
+lowdfa	dfa	refuse	refused	2439
+lowdfa	fof	refuse	refused	442
+lowdfa	fof	sel1-collapse	ok	26
+lowdfa	fof	sel1-collapse > sel1-drop	ok	69
+lowdfa	fof	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	minsize	refuse	refused	442
+lowdfa	minsize	sel1-collapse	ok	26
+lowdfa	minsize	sel1-collapse > sel1-drop	ok	69
+lowdfa	minsize	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	no-anch	refuse	refused	442
+lowdfa	no-anch	sel1-collapse	ok	26
+lowdfa	no-anch	sel1-collapse > sel1-drop	ok	69
+lowdfa	no-anch	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	no-pf	refuse	refused	442
+lowdfa	no-pf	sel1-collapse	ok	70
+lowdfa	no-pf	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	no-pfc	refuse	refused	442
+lowdfa	no-pfc	sel1-drop	ok	95
+lowdfa	no-pfc	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	no-premul	refuse	refused	442
+lowdfa	no-premul	sel1-collapse	ok	26
+lowdfa	no-premul	sel1-collapse > sel1-drop	ok	69
+lowdfa	no-premul	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	no-st	refuse	refused	443
+lowdfa	no-st	sel1-collapse	ok	26
+lowdfa	no-st	sel1-collapse > sel1-drop	ok	69
+lowdfa	pf	prefilter-collapse > refuse	refused	2
+lowdfa	pf	refuse	refused	3314
+lowdfa	pfc	refuse	refused	442
+lowdfa	pfc	sel1-collapse	ok	8
+lowdfa	pfc	sel1-collapse > sel1-drop	ok	69
+lowdfa	pfc	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowdfa	unroll4	refuse	refused	443
+lowdfa	unroll4	sel1-collapse	ok	26
+lowdfa	unroll4	sel1-collapse > sel1-drop	ok	69
+lowdfa	vm	refuse	refused	442
+lowdfa	vm	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	base	drop-anchored	ok	26
+lowsize	base	drop-anchored > drop-premul	ok	25
+lowsize	base	drop-anchored > drop-premul > refuse	refused	47
+lowsize	base	drop-premul > refuse	refused	2
+lowsize	base	prefilter-collapse	ok	12
+lowsize	base	prefilter-collapse > drop-prefilter	ok	78
+lowsize	base	prefilter-collapse > drop-prefilter > refuse	refused	11
+lowsize	base	refuse	refused	464
+lowsize	base	sel1-collapse	ok	2
+lowsize	base	sel1-collapse > sel1-drop	ok	2
+lowsize	base	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	base	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	base	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > prefilter-collapse > drop-prefilter > refuse	refused	3
+lowsize	dfa	drop-anchored	ok	26
+lowsize	dfa	drop-anchored > drop-premul	ok	25
+lowsize	dfa	drop-anchored > drop-premul > refuse	refused	51
+lowsize	dfa	drop-premul > refuse	refused	2
+lowsize	dfa	refuse	refused	2439
+lowsize	fof	refuse	refused	679
+lowsize	fof	sel1-collapse	ok	2
+lowsize	fof	sel1-collapse > sel1-drop	ok	2
+lowsize	fof	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	fof	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	fof	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > refuse	refused	3
+lowsize	minsize	drop-anchored	ok	3
+lowsize	minsize	drop-anchored > refuse	refused	47
+lowsize	minsize	prefilter-collapse	ok	11
+lowsize	minsize	prefilter-collapse > drop-prefilter	ok	80
+lowsize	minsize	prefilter-collapse > drop-prefilter > refuse	refused	31
+lowsize	minsize	refuse	refused	466
+lowsize	minsize	sel1-collapse	ok	2
+lowsize	minsize	sel1-collapse > sel1-drop	ok	2
+lowsize	minsize	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	minsize	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	no-anch	drop-premul	ok	25
+lowsize	no-anch	drop-premul > refuse	refused	49
+lowsize	no-anch	prefilter-collapse	ok	12
+lowsize	no-anch	prefilter-collapse > drop-prefilter	ok	78
+lowsize	no-anch	prefilter-collapse > drop-prefilter > refuse	refused	11
+lowsize	no-anch	refuse	refused	464
+lowsize	no-anch	sel1-collapse	ok	2
+lowsize	no-anch	sel1-collapse > sel1-drop	ok	2
+lowsize	no-anch	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	no-anch	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	no-anch	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > prefilter-collapse > drop-prefilter > refuse	refused	3
+lowsize	no-pf	drop-anchored	ok	26
+lowsize	no-pf	drop-anchored > drop-premul	ok	25
+lowsize	no-pf	drop-anchored > drop-premul > refuse	refused	47
+lowsize	no-pf	drop-premul > refuse	refused	2
+lowsize	no-pf	refuse	refused	467
+lowsize	no-pf	sel1-collapse	ok	3
+lowsize	no-pf	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	no-pf	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	no-pfc	drop-anchored	ok	26
+lowsize	no-pfc	drop-anchored > drop-premul	ok	25
+lowsize	no-pfc	drop-anchored > drop-premul > refuse	refused	47
+lowsize	no-pfc	drop-prefilter	ok	90
+lowsize	no-pfc	drop-prefilter > refuse	refused	11
+lowsize	no-pfc	drop-premul > refuse	refused	2
+lowsize	no-pfc	refuse	refused	464
+lowsize	no-pfc	sel1-drop	ok	4
+lowsize	no-pfc	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	no-pfc	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	no-pfc	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > drop-prefilter > refuse	refused	3
+lowsize	no-premul	drop-anchored	ok	3
+lowsize	no-premul	drop-anchored > refuse	refused	47
+lowsize	no-premul	prefilter-collapse	ok	11
+lowsize	no-premul	prefilter-collapse > drop-prefilter	ok	78
+lowsize	no-premul	prefilter-collapse > drop-prefilter > refuse	refused	11
+lowsize	no-premul	refuse	refused	466
+lowsize	no-premul	sel1-collapse	ok	2
+lowsize	no-premul	sel1-collapse > sel1-drop	ok	2
+lowsize	no-premul	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	no-premul	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	no-premul	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > prefilter-collapse > drop-prefilter > refuse	refused	2
+lowsize	no-st	drop-anchored	ok	26
+lowsize	no-st	drop-anchored > drop-premul	ok	25
+lowsize	no-st	drop-anchored > drop-premul > refuse	refused	47
+lowsize	no-st	drop-premul > refuse	refused	2
+lowsize	no-st	prefilter-collapse	ok	12
+lowsize	no-st	prefilter-collapse > drop-prefilter	ok	79
+lowsize	no-st	prefilter-collapse > drop-prefilter > refuse	refused	39
+lowsize	no-st	refuse	refused	465
+lowsize	no-st	sel1-collapse	ok	1
+lowsize	no-st	sel1-collapse > refuse	refused	1
+lowsize	no-st	sel1-collapse > sel1-drop	ok	2
+lowsize	pf	prefilter-collapse	ok	14
+lowsize	pf	prefilter-collapse > refuse	refused	106
+lowsize	pf	refuse	refused	3288
+lowsize	pf	size-term-trial > size-term-trial > size-term-trial > prefilter-collapse > refuse	refused	1
+lowsize	pf	size-term-trial > size-term-trial > size-term-trial > size-term-trial > size-term-trial > prefilter-collapse > refuse	refused	3
+lowsize	pfc	drop-anchored	ok	26
+lowsize	pfc	drop-anchored > drop-premul	ok	25
+lowsize	pfc	drop-anchored > drop-premul > refuse	refused	47
+lowsize	pfc	drop-prefilter	ok	28
+lowsize	pfc	drop-prefilter > refuse	refused	6
+lowsize	pfc	drop-premul > refuse	refused	2
+lowsize	pfc	prefilter-collapse > drop-prefilter	ok	50
+lowsize	pfc	refuse	refused	464
+lowsize	pfc	sel1-collapse	ok	1
+lowsize	pfc	sel1-collapse > sel1-drop	ok	2
+lowsize	pfc	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	pfc	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowsize	unroll4	drop-anchored	ok	26
+lowsize	unroll4	drop-anchored > drop-premul	ok	25
+lowsize	unroll4	drop-anchored > drop-premul > refuse	refused	47
+lowsize	unroll4	drop-premul > refuse	refused	2
+lowsize	unroll4	prefilter-collapse	ok	14
+lowsize	unroll4	prefilter-collapse > drop-prefilter	ok	94
+lowsize	unroll4	prefilter-collapse > drop-prefilter > refuse	refused	11
+lowsize	unroll4	refuse	refused	465
+lowsize	unroll4	sel1-collapse	ok	1
+lowsize	unroll4	sel1-collapse > refuse	refused	1
+lowsize	unroll4	sel1-collapse > sel1-drop	ok	2
+lowsize	vm	refuse	refused	480
+lowsize	vm	size-term-trial > size-term-trial > refuse	refused	1
+lowsize	vm	size-term-trial > size-term-trial > size-term-trial > size-term-trial	ok	1
+lowthr	base	drop-anchored	ok	15
+lowthr	base	prefilter-collapse > drop-prefilter	ok	3
+lowthr	base	refuse	refused	442
+lowthr	base	sel1-collapse	ok	2
+lowthr	base	sel1-collapse > sel1-drop	ok	2
+lowthr	base	size-term-trial > size-term-trial > size-term-trial	ok	1
+lowthr	no-st	drop-anchored	ok	15
+lowthr	no-st	prefilter-collapse > drop-prefilter	ok	3
+lowthr	no-st	refuse	refused	443
+lowthr	no-st	sel1-collapse	ok	2
+lowthr	no-st	sel1-collapse > sel1-drop	ok	2
+lowthr	unroll4	drop-anchored	ok	15
+lowthr	unroll4	prefilter-collapse > drop-prefilter	ok	3
+lowthr	unroll4	refuse	refused	443
+lowthr	unroll4	sel1-collapse	ok	2
+lowthr	unroll4	sel1-collapse > sel1-drop	ok	2
+lowthr	vm	refuse	refused	442
+lowthr	vm	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	base	drop-anchored	ok	15
+plain	base	prefilter-collapse > drop-prefilter	ok	3
+plain	base	refuse	refused	442
+plain	base	sel1-collapse	ok	2
+plain	base	sel1-collapse > sel1-drop	ok	2
+plain	base	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	dfa	drop-anchored	ok	19
+plain	dfa	refuse	refused	2439
+plain	fof	refuse	refused	460
+plain	fof	sel1-collapse	ok	2
+plain	fof	sel1-collapse > sel1-drop	ok	2
+plain	fof	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	minsize	prefilter-collapse > drop-prefilter	ok	1
+plain	minsize	refuse	refused	442
+plain	minsize	sel1-collapse	ok	2
+plain	minsize	sel1-collapse > sel1-drop	ok	2
+plain	minsize	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	no-anch	prefilter-collapse > drop-prefilter	ok	3
+plain	no-anch	refuse	refused	442
+plain	no-anch	sel1-collapse	ok	2
+plain	no-anch	sel1-collapse > sel1-drop	ok	2
+plain	no-anch	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	no-pf	drop-anchored	ok	15
+plain	no-pf	refuse	refused	442
+plain	no-pf	sel1-collapse	ok	3
+plain	no-pf	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	no-pfc	drop-anchored	ok	15
+plain	no-pfc	drop-prefilter	ok	3
+plain	no-pfc	refuse	refused	442
+plain	no-pfc	sel1-drop	ok	4
+plain	no-pfc	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	no-premul	prefilter-collapse > drop-prefilter	ok	1
+plain	no-premul	refuse	refused	442
+plain	no-premul	sel1-collapse	ok	2
+plain	no-premul	sel1-collapse > sel1-drop	ok	2
+plain	no-premul	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	no-st	drop-anchored	ok	15
+plain	no-st	prefilter-collapse > drop-prefilter	ok	3
+plain	no-st	refuse	refused	443
+plain	no-st	sel1-collapse	ok	2
+plain	no-st	sel1-collapse > sel1-drop	ok	2
+plain	pf	prefilter-collapse	ok	1
+plain	pf	prefilter-collapse > refuse	refused	4
+plain	pf	refuse	refused	3288
+plain	pfc	drop-anchored	ok	15
+plain	pfc	prefilter-collapse > drop-prefilter	ok	3
+plain	pfc	refuse	refused	442
+plain	pfc	sel1-collapse	ok	1
+plain	pfc	sel1-collapse > sel1-drop	ok	2
+plain	pfc	size-term-trial > size-term-trial > size-term-trial	ok	1
+plain	unroll4	drop-anchored	ok	15
+plain	unroll4	prefilter-collapse > drop-prefilter	ok	3
+plain	unroll4	refuse	refused	443
+plain	unroll4	sel1-collapse	ok	2
+plain	unroll4	sel1-collapse > sel1-drop	ok	2
+plain	vm	refuse	refused	442
+plain	vm	size-term-trial > size-term-trial > size-term-trial	ok	1
