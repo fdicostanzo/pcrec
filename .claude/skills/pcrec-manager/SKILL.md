@@ -23,6 +23,13 @@ discuss design points, and run everything in between.
    idle gaps — measured at one-line cost per tick over ~24h. MAIN
    SESSION ONLY (lanes are 5-min TTL and never self-keepalive). Crons
    are session-only: create at every session start, delete at close.
+   **Also create the HOURLY PEER CHECK-IN cron** (Frank, 2026-10-08),
+   e.g. `27 * * * *`. Its prompt: ListAgents, then send one short
+   SendMessage to each live peer session (pcrecdev3 kit, pcrecdev2
+   bench) you are WAITING ON. Name what you wait for and ask whether
+   they are waiting on you. If you wait on nobody, reply one line. It
+   exists because main and the kit each waited for the other on R-8
+   until Frank prompted a check-in; requests.md is yours to file.
 1. **Read `docs/dev/wake.md`** — the hand-off brief from the previous session.
    It is deliberately gitignored; on any disagreement, the committed docs win.
 2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom) —
