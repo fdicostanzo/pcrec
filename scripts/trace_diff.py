@@ -28,6 +28,15 @@ which is exactly what the C0 experiment found a selection-neutral commit can
 change (a reader asking once more); a row change still shows as a new member. It is how the C0 brittleness experiment measured
 a `func` field (the C function's name) against the declared `site` tag.
 
+--order SLOT=ordered|set (repeatable; S-I2's detector, dec_fallback §4.2 item 7)
+sets ONE slot's compare mode: SLOT is the record's first field. A slot named
+`ordered` is compared as the ordered sequence of that slot's records per
+(pattern, arm) -- records of other slots interleaved between them do not
+matter; `set` compares that slot's SET. Every slot NOT named follows the
+default (ordered, or set under --unordered), and those are compared together
+as one subsequence, so cross-slot order among them is still held. Python API:
+compare(..., order={slot: "ordered"|"set"}).
+
 Exit 0 when clean, 1 on any difference or floor violation, 2 on a usage or
 input error (an unreadable or header-less file is never an empty stream).
 """
@@ -36,6 +45,7 @@ import collections
 import sys
 
 FIELDS = ("slot", "route", "row", "site", "func")
+ORDER_MODES = ("ordered", "set")
 
 
 def fail_input(msg):
@@ -78,9 +88,15 @@ def site_of(rec):
 
 
 def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5,
-            unordered=False):
+            unordered=False, order=None):
     """Returns (ok, report text). a/b as load() returns them; min_records an
-    int or {arm: int}."""
+    int or {arm: int}. order: optional {slot: "ordered"|"set"} per-slot
+    compare modes (see the module docstring); unnamed slots follow
+    `unordered`."""
+    order = dict(order or {})
+    for slot, mode in order.items():
+        if mode not in ORDER_MODES:
+            raise ValueError(f"order mode for slot {slot!r}: {mode!r} not in {ORDER_MODES}")
     lines = []
     ok = True
     arms = sorted({k[1] for k in a} | {k[1] for k in b})
@@ -107,12 +123,26 @@ def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5,
     movers = []
     for k in sorted(set(a) | set(b)):
         sa, sb = [], []
-        for side, src, dst in ((0, a.get(k, []), sa), (1, b.get(k, []), sb)):
+        slot_a, slot_b = collections.defaultdict(list), collections.defaultdict(list)
+        for side, src, dst, bys in ((0, a.get(k, []), sa, slot_a), (1, b.get(k, []), sb, slot_b)):
             for rec in src:
                 if declared and site_of(rec) in declared:
                     filtered[side] += 1
                     continue
-                dst.append(project(rec, keys))
+                if order and rec and rec[0] in order:
+                    bys[rec[0]].append(project(rec, keys))
+                else:
+                    dst.append(project(rec, keys))
+        for slot in sorted(set(slot_a) | set(slot_b)):
+            xa, xb = slot_a.get(slot, []), slot_b.get(slot, [])
+            if order[slot] == "set":
+                if set(xa) != set(xb):
+                    movers.append((k, f"slot {slot} set", sorted(set(xa) - set(xb))[:1] or None,
+                                   sorted(set(xb) - set(xa))[:1] or None, len(xa), len(xb)))
+            elif xa != xb:
+                pos = next((i for i, (x, y) in enumerate(zip(xa, xb)) if x != y), min(len(xa), len(xb)))
+                movers.append((k, f"slot {slot} #{pos}", xa[pos] if pos < len(xa) else None,
+                               xb[pos] if pos < len(xb) else None, len(xa), len(xb)))
         if unordered:
             if set(sa) != set(sb):
                 movers.append((k, "set", sorted(set(sa) - set(sb))[:1] or None,
@@ -136,7 +166,8 @@ def compare(a, b, declared=frozenset(), min_records=None, keys=None, show=5,
             + " ".join(f"{arm}={t[0]}/{t[1]}" for arm, t in sorted(totals.items()))
             + (f" declared-filtered={filtered[0]}/{filtered[1]}" if declared else "")
             + f" keys={','.join(keys) if keys else 'all'}"
-            + (" compare=SET (order and multiplicity ignored)" if unordered else " compare=ordered"))
+            + (" compare=SET (order and multiplicity ignored)" if unordered else " compare=ordered")
+            + (" order=" + ",".join(f"{s_}={m}" for s_, m in sorted(order.items())) if order else ""))
     return ok, "\n".join([head] + lines + ([f"  trace: {'CLEAN' if ok else 'FAIL'}"]))
 
 
@@ -149,13 +180,20 @@ def main():
     ap.add_argument("--min-records", type=int)
     ap.add_argument("--keys")
     ap.add_argument("--unordered", action="store_true")
+    ap.add_argument("--order", action="append", default=[], metavar="SLOT=ordered|set")
     a = ap.parse_args()
     keys = a.keys.split(",") if a.keys else None
     if keys and any(k not in FIELDS for k in keys):
         ap.error(f"--keys: known fields are {','.join(FIELDS)}")
+    order = {}
+    for spec in a.order:
+        slot, eq, mode = spec.partition("=")
+        if not eq or not slot or mode not in ORDER_MODES:
+            fail_input(f"--order {spec!r}: want SLOT=ordered|set")
+        order[slot] = mode
     declared = read_declared(a.declared) if a.declared else frozenset()
     ok, text = compare(load(a.ref), load(a.working), declared=declared,
-                       min_records=a.min_records, keys=keys, unordered=a.unordered)
+                       min_records=a.min_records, keys=keys, unordered=a.unordered, order=order)
     print(text)
     sys.exit(0 if ok else 1)
 

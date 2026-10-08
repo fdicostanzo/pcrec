@@ -49,6 +49,48 @@ sweep --extra=-fno-scan-edge; rc=$?
 [ "$rc" = 1 ] && grep -q 'NO DIFFER FLOOR PINNED' "$T/log" \
     && ok "an unpinned --extra arm FAILS" || bad "unpinned arm rc=$rc (want 1, NO DIFFER FLOOR PINNED)"
 
+# [DEC-FALLBACK] B0: the tally streams over hand-written witnesses (decoded
+# --list-source escapes). Each line below is the expected tag tally of one
+# stream, read from the compiler at B0's base, so an arm lost in the stream's
+# plumbing (design S-I3: `-fno-prefilter` dropped reads `yes`/`no-engine-vm`
+# where `no-fno-prefilter=2/2` is expected) or a stream that stopped
+# comparing refusals fails here.
+cat > "$T/irw.txt" <<'W'
+(a)b
+(a)\\1
+(a*)*
+abc
+(?:ab){0,16000}
+^(?:(?:a|b)*a(?:a|b){20})?$
+a${v}b
+\\A*
+W
+sweep_t() { "$TIMEOUT_BIN" 300 python3 "$ES" --ref-bin "$PCREC" --bin "$PCREC" --no-self-check \
+    --no-corpus --patterns-file "$T/irw.txt" --streams emit-ir-auto,stderr \
+    --out "$T/out" --jobs 4 > "$T/log" 2>&1; }
+sweep_t; rc=$?
+[ "$rc" = 0 ] && ok "tally streams run clean (one binary)" || bad "tally streams rc=$rc"
+while IFS='|' read -r stream want; do
+    got=$(awk -v s="-- stream: $stream --" '$0 == s {f=1; next} f && /tags/ {sub(/^ *tags \(side a \/ side b\): /, ""); print; exit}' "$T/log")
+    [ "$got" = "$want" ] && ok "$stream tags: $want" || bad "$stream tags: got '$got', want '$want'"
+done <<'E'
+emit-ir-auto|no-backreference=1/1 no-dfa-overflow=1/1 no-engine-vm=1/1 no-nullable-collapsed=1/1 no-nullable-exact=1/1 refused=2/2 yes=1/1
+emit-ir-auto[-fno-prefilter]|no-backreference=1/1 no-dfa-overflow=1/1 no-fno-prefilter=2/2 no-nullable-collapsed=1/1 no-nullable-exact=1/1 refused=2/2
+emit-ir-auto[-fprefilter]|refused=6/6 yes=2/2
+emit-ir-auto[-fno-prefilter-collapse]|no-backreference=1/1 no-dfa-overflow=2/2 no-engine-vm=1/1 no-nullable-exact=1/1 refused=2/2 yes=1/1
+stderr|refused-default=1/1 refused-vm=1/1
+E
+
+# the variant plumbing control, both directions, on the default build: the
+# shipped binary IS `plain` (no variant witness fires), and is NOT `lowdfa`
+# / `lowthr` (their witnesses must read as missing).
+python3 - "$here" "$PCREC" <<'PY' && ok "variant plumbing: plain clean, lowdfa/lowthr red on a plain build" || bad "variant plumbing control"
+import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
+assert es.variant_plumbing(sys.argv[2], "plain", 30) == []
+for v in ("lowdfa", "lowthr", "lowsize", "lowboth"):
+    assert es.variant_plumbing(sys.argv[2], v, 30), v
+PY
+
 python3 - "$here" <<'PY' && ok "encode_escape/decode_escape round-trip" || bad "escape round-trip"
 import sys; sys.path.insert(0, sys.argv[1]); import emit_sweep as es
 for b in (b"a\\b", b"\t\n\r", "é{2}".encode(), bytes(range(256))):

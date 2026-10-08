@@ -465,3 +465,11 @@ state with a sibling script in its group.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+
+- **spec_extract.sh** — [decfbB0b] sourced, never run: the registry check's
+  four hand-written-set extractors (`extract_md_table_values`,
+  `extract_line_values`, `extract_prose_values`, `extract_c_return_values`)
+  over `docs/spec/match_api.md` §6.3 and a C function's `return "..."`
+  literals, moved here verbatim from `tests/registry/axes_registry_check.sh`
+  so it and `tests/codegen/run_fallback_table.sh` read the spec's sets
+  through ONE implementation. Defines functions only.

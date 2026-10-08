@@ -3878,3 +3878,34 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   unchanged). The resource K59-PREMUL pins, `run_size_term.sh`'s pool and the
   size tripwire did not move.
 
+
+## `run_fallback_table.sh` — the fallback tables' artifact-side check ([decfb B0], lane decfbB0b, 2026-10-08)
+
+`docs/design/dec_fallback.md` rev 2 §4.2 B0 item 11. Its own section,
+`make test-fallback-table` (in `TEST_SECTIONS`; ~7 s, it builds three
+reference compilers), and mech arm `fallbacktable`. HAND-WRITTEN from
+today's behaviour and INDEPENDENT of T1-T4 and of the `--list-axes` dump
+(its header says so): stamps are read from the ARTIFACT, and the only
+outside source is `docs/spec/match_api.md` §6.3's hand-written value sets,
+read through `tests/lib/spec_extract.sh` (moved there from
+`tests/registry/axes_registry_check.sh`; one implementation).
+
+- **(b) the OBSERVED-STAMP LEG** (green from B0): 15 witnesses, one or more
+  per `RX_ENGINE_SEL` value (8) and `RX_UNROLL_K_WHY` value (7); per value a
+  K35 floor (>= 1 witness stamped it) and equality of the observed set with
+  the spec's set in both directions; each extraction is fail-closed on its
+  size (8 and 7). Three reference compilers, built once: `lowdfa`
+  (`-DPCREC_MAX_AUTO_DFA_ELEMS=3000`: `overflowed-prefilter`), `lowsize`
+  (`cap-rescue`, `size-model-declined`), `lowthr`
+  (`-DPCREC_SIZE_TERM_THRESHOLD=1000`: `capacity-declined`). This leg is
+  what lets the registry's two source legs retire at B5 (design §4.5).
+- **(c)** `RX_VM_PREFILTER_LANG_WHY`'s six forms and `RX_VM_PREFILTER_WHY`'s
+  drop form. The NFA-state form is compared in FULL; the two byte-figure
+  forms by SHAPE (`^size cap retry, (exact|hybrid) [0-9]+ > 1000000$`, N >
+  cap checked numerically) so an emitted-text abi event does not move them.
+- **(a) SEQUENCES** lands at B1 (needs the fallback trace); a header only.
+
+Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
+the tree; red on a dropped witness (the floor fires), a value removed from
+match_api's set (the equality and the size guard fire), `pcrec_engine_sel_name`
+returning `selected` for `forced`, and a changed PFLW stamp text.

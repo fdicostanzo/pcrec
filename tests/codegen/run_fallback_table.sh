@@ -1,0 +1,288 @@
+#!/usr/bin/env bash
+# tests/codegen/run_fallback_table.sh — the FALLBACK TABLES' ARTIFACT-SIDE
+# CHECK (docs/design/dec_fallback.md rev 2, §4.2 B0 item 11; §4.3a; §4.4;
+# §4.5). Written at B0 (decfbB0b), BEFORE any table exists.
+#
+# =========================================================================
+# INDEPENDENCE (learnings §3: a control must not share a source with what it
+# controls). Every expectation below is HAND-WRITTEN from what today's
+# compiler (42ab7c25 + B0) was observed to stamp, one witness at a time. The
+# script never reads T1-T4, never reads the registry dump (`--list-axes`),
+# and never reads a src/ function to learn a value. The ONE other source it
+# reads is docs/spec/match_api.md §6.3's hand-written value sets, through the
+# registry check's own extractors (tests/lib/spec_extract.sh — one
+# implementation, moved there, not copied). Stamps are read from the
+# ARTIFACT (the generated C), never from a flag or from the compiler's
+# stderr.
+#
+# =========================================================================
+# WHAT THIS DEFENDS. B replaces the fallback ladder's scattered derivations
+# (`esel_of`, the PFLW ternary, `cx.size_term_why =`, `VM_PREFILTER_WHY`)
+# with tables whose cells spell the stamps. The registry check's two SOURCE
+# legs (axes_registry_check.sh: pcrec_engine_sel_name's returns, and the
+# `cx.size_term_why =` chain) retire at B5 because from then on the token
+# comes from a table cell and the leg's two sides would share the spelling
+# function. They may retire ONLY behind the leg in section (b): the stamps
+# every witness ACTUALLY EMITS, held to match_api.md's hand-written sets with
+# K35 floors. It is green from B0, before anything moves, so a red at B5 is
+# B's.
+#
+# THREE HALVES (§4.2 B0 item 11):
+#   (a) SEQUENCES — each witness's expected fallback-row sequence, read from
+#       the trace build. NEEDS THE B1 TRACE (`-DPCREC_CAND_TRACE` fallback
+#       slot); LANDS AT B1. Nothing runs here yet.
+#   (b) THE OBSERVED-STAMP LEG — each of the 8 `RX_ENGINE_SEL` and 7
+#       `RX_UNROLL_K_WHY` values is stamped by at least one witness (the K35
+#       floor, per value), and the OBSERVED set EQUALS the spec's set (both
+#       directions: a value stamped that the spec does not list, and a value
+#       the spec lists that no witness stamps).
+#   (c) `RX_VM_PREFILTER_LANG_WHY`'s six forms and `RX_VM_PREFILTER_WHY`,
+#       each with a witness and its hand-written text. The two forms that
+#       carry a BYTE figure (`size cap retry, exact N > M`, `... hybrid N >
+#       M`) are compared by SHAPE with the cap literal and `N > M` checked
+#       numerically: the byte figure moves on every emitted-text abi event,
+#       and a full-text pin would go red on unrelated work. The NFA-state
+#       form (`dfa overflow retry, exact nfa N`) is compared in FULL: N is
+#       an NFA state count, stable under emitted-text changes.
+#
+# REFERENCE COMPILERS (built ONCE, here, the way run_size_term.sh builds its
+# lowered compilers — source list from tests/lib/lib_srcs.sh, never a glob;
+# hard-fail on an empty list). Three, because three witnesses have a natural
+# population of ZERO at the shipped limits:
+#   lowdfa   -DPCREC_MAX_AUTO_DFA_ELEMS=3000      overflowed-prefilter
+#   lowsize  -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000
+#            -DPCREC_SIZE_TERM_THRESHOLD=10000    cap-rescue,
+#                                                 size-model-declined
+#   lowthr   -DPCREC_SIZE_TERM_THRESHOLD=1000     capacity-declined
+#
+# Usage: bash tests/codegen/run_fallback_table.sh
+# Env:   PCREC (default <root>/build/pcrec), CC (tests/lib/cc_resolve.sh),
+#        KEEP=1 keeps the workdir.
+set -u
+export LC_ALL=C
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+MATCHAPI="${MATCHAPI:-$ROOT_DIR/docs/spec/match_api.md}"
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"     # [K37] pcrec_run: every compile bounded
+. "$ROOT_DIR/tests/lib/cc_resolve.sh"      # [MACPORT] a real GNU gcc (Apple's bare gcc is clang)
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"        # the library's source list
+. "$ROOT_DIR/tests/lib/spec_extract.sh"    # the registry check's extractors, ONE implementation
+export WATCHDOG_SECTION="fallbacktable"
+
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/fallbacktable.XXXXXX")"
+cleanup() { [ -n "${KEEP:-}" ] || rm -rf "$WORK"; }
+trap cleanup EXIT
+
+pass=0; fail=0
+ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
+bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
+
+# stamp NAME FILE — the artifact's `#define RX_NAME "value"`, quotes stripped;
+# empty when the artifact carries no such line. Anchored on the trailing
+# space, so `VM_PREFILTER_WHY` never reads `VM_PREFILTER_LANG_WHY`.
+stamp() { sed -n "s/^#define RX_$1 \"\(.*\)\"\$/\1/p" "$2" | head -1; }
+
+# --- the reference compilers, built once ------------------------------------
+lsrcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
+if [ -z "$lsrcs" ]; then
+    bad "the library source list is EMPTY: no reference compiler can be built (a glob that found nothing must not read as a pass)"
+fi
+build_ref() {   # build_ref NAME CFLAGS...  -> $WORK/pcrec_NAME
+    local n="$1"; shift
+    # shellcheck disable=SC2086
+    $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" "$@" \
+        -o "$WORK/pcrec_$n" "$ROOT_DIR/cli/main.c" $lsrcs 2>"$WORK/ref_$n.err" \
+        || echo "BUILDFAIL" > "$WORK/ref_$n.fail"
+}
+if [ -n "$lsrcs" ]; then
+    build_ref lowdfa  -DPCREC_MAX_AUTO_DFA_ELEMS=3000 &
+    build_ref lowsize -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+                      -DPCREC_SIZE_TERM_THRESHOLD=10000 &
+    build_ref lowthr  -DPCREC_SIZE_TERM_THRESHOLD=1000 &
+    wait
+    for n in lowdfa lowsize lowthr; do
+        if [ -e "$WORK/ref_$n.fail" ] || [ ! -x "$WORK/pcrec_$n" ]; then
+            bad "the $n reference compiler failed to build: $(head -1 "$WORK/ref_$n.err")"
+        else
+            ok "the $n reference compiler built"
+        fi
+    done
+fi
+REF_lowdfa="$WORK/pcrec_lowdfa"; REF_lowsize="$WORK/pcrec_lowsize"; REF_lowthr="$WORK/pcrec_lowthr"
+
+# compile WITNESS_ID COMPILER-KEY PATTERN [args...] — writes $WORK/ID.c; the
+# pattern is passed via --pattern (never a positional file operand).
+compile() {
+    local id="$1" key="$2" pat="$3"; shift 3
+    if [ "$key" = default ]; then
+        pcrec_run "$PCREC" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
+            >/dev/null 2>"$WORK/$id.err"
+    else
+        local bin="REF_$key"; bin="${!bin}"
+        pcrec_run "$bin" -p rx --features all "$@" -o "$WORK/$id.c" --pattern "$pat" \
+            >/dev/null 2>"$WORK/$id.err"
+    fi
+}
+
+# =========================================================================
+# (a) SEQUENCES — lands at B1 (needs the fallback trace build,
+#     `-DPCREC_CAND_TRACE`'s `fallback` slot). Deliberately empty at B0.
+# =========================================================================
+
+# =========================================================================
+# (b) THE OBSERVED-STAMP LEG
+# =========================================================================
+echo "== (b) observed-stamp leg: every ENGINE_SEL and UNROLL_K_WHY value, stamped by a witness =="
+
+# One line per witness: the stamp it ACTUALLY carried (empty = no such line).
+: > "$WORK/obs_sel"; : > "$WORK/obs_why"
+
+# wit ID COMPILER EXPECT_SEL EXPECT_WHY PATTERN [args...]
+# EXPECT_* are HAND-WRITTEN per witness ("-" = this witness does not
+# constrain that macro, e.g. a witness chosen for the other one). A
+# witness's stamps count toward the observed sets whether or not it is
+# constrained, but a witness that does not compile, or whose stamp differs
+# from its hand-written expectation, is a FAIL (the witness stopped reaching
+# its site — [MECH-REACH]).
+wit() {
+    local id="$1" key="$2" esel="$3" ewhy="$4" pat="$5"; shift 5
+    if ! compile "$id" "$key" "$pat" "$@"; then
+        bad "witness $id [$key $* '$pat']: the compile refused, so the path was never reached: $(head -1 "$WORK/$id.err")"
+        return
+    fi
+    local gs gw; gs="$(stamp ENGINE_SEL "$WORK/$id.c")"; gw="$(stamp UNROLL_K_WHY "$WORK/$id.c")"
+    printf '%s\n' "$gs" >> "$WORK/obs_sel"; printf '%s\n' "$gw" >> "$WORK/obs_why"
+    if [ "$esel" != "-" ]; then
+        [ "$gs" = "$esel" ] && ok "witness $id [$key $* '$pat']: ENGINE_SEL is '$esel'" \
+                            || bad "witness $id [$key $* '$pat']: ENGINE_SEL is '$gs', expected '$esel'"
+    fi
+    if [ "$ewhy" != "-" ]; then
+        [ "$gw" = "$ewhy" ] && ok "witness $id [$key $* '$pat']: UNROLL_K_WHY is '$ewhy'" \
+                            || bad "witness $id [$key $* '$pat']: UNROLL_K_WHY is '$gw', expected '$ewhy'"
+    fi
+}
+
+# The overflowed-prefilter witness: an unrolled `(?:a|b)` ladder under a
+# trailing `*` with 12 explicit copies. Under the shipped limits it is
+# `selected`; under lowdfa the auto DFA attempt overflows AND the prefilter
+# pair overflows after it. (Spelled out, not `{11}`: a counted repeat takes
+# the SEL1 collapse route instead and stamps `collapsed-prefilter`.)
+AB12=''; for _i in 1 2 3 4 5 6 7 8 9 10 11 12; do AB12="$AB12(?:a|b)"; done
+OVFPF="(x)(?:a|b)*a${AB12#(?:a|b)}"
+# NEST8: run_size_term.sh's nested-repeat family, the size term's own witness.
+NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
+
+# ENGINE_SEL, eight values (docs: the same decision as a TOKEN)
+wit sel-selected      default 'selected'                  default '(a)b'
+wit sel-forced        default 'forced'                    default '(a)b' --engine=vm
+wit sel-declnulldef   default 'declined-nullable-default' default '(a)*'
+wit sel-ovfdfa        default 'overflowed-dfa'            default '^(?:(?:a|b)*a(?:a|b){20})?$'
+wit sel-collapsedpf   default 'collapsed-prefilter'       default '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
+wit sel-declnull      default 'declined-nullable'         default '(?:ab){0,16000}'
+wit sel-sizecap       default 'size-cap-retry'            default '(\p{Xwd})' -e utf8
+wit sel-ovfpf         lowdfa  'overflowed-prefilter'      default "$OVFPF"
+# UNROLL_K_WHY, seven values (docs: `<PREFIX>_UNROLL_K_WHY`)
+wit why-default       default '-' 'default'               'a(b|c)+d'
+wit why-option        default '-' 'option'                'a(b|c)+d' --unroll=4
+wit why-denied        default '-' 'denied'                'a(b|c)+d' -fno-size-term
+wit why-sizemodel     default '-' 'size-model'            "$NEST8"
+wit why-caprescue     lowsize '-' 'cap-rescue'            '(?:a\K){0,10}ab'
+wit why-sizemodeldecl lowsize '-' 'size-model-declined'   '(?:a\K){0,10}b'
+wit why-capacitydecl  lowthr  '-' 'capacity-declined'     '(((?:a{0,2}b)+c){0,20}d){0,20}e' --engine=vm
+
+# --- the spec's hand-written sets, through the registry's extractors -------
+spec_sel="$(extract_md_table_values "$MATCHAPI" "the same decision as a TOKEN")"
+spec_why="$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')"
+
+# K35 fail-closed: an extraction that found nothing (or the wrong number)
+# must not read as "equal to the empty observation".
+nsel=$(printf '%s\n' "$spec_sel" | grep -c .); nwhy=$(printf '%s\n' "$spec_why" | grep -c .)
+[ "$nsel" -eq 8 ] && ok "K35: match_api.md's ENGINE_SEL set extracted, $nsel values (expected 8)" \
+                  || bad "K35: match_api.md's ENGINE_SEL set has $nsel values, expected 8 (anchor stopped matching, or the spec grew a value: re-derive the witness list)"
+[ "$nwhy" -eq 7 ] && ok "K35: match_api.md's UNROLL_K_WHY set extracted, $nwhy values (expected 7)" \
+                  || bad "K35: match_api.md's UNROLL_K_WHY set has $nwhy values, expected 7 (anchor stopped matching, or the spec grew a value: re-derive the witness list)"
+
+# floor + equality for one macro. $1 macro, $2 spec set, $3 obs file
+check_observed() {
+    local macro="$1" spec="$2" obsf="$3" v n
+    # floor: every spec value has >= 1 witness that stamped it
+    for v in $spec; do
+        n=$(grep -cxF -- "$v" "$obsf")
+        [ "$n" -ge 1 ] && ok "[$macro] floor: '$v' stamped by $n witness(es)" \
+                       || bad "[$macro] floor: NO witness stamps '$v' (the spec lists it; a value nothing reaches is unchecked)"
+    done
+    # the other direction: every observed non-empty value is in the spec
+    for v in $(grep . "$obsf" | sort -u); do
+        grep -qxF -- "$v" <<< "$spec" \
+            && ok "[$macro] observed '$v' is in match_api.md's set" \
+            || bad "[$macro] observed value '$v' is NOT in match_api.md's hand-written set"
+    done
+}
+check_observed RX_ENGINE_SEL    "$spec_sel" "$WORK/obs_sel"
+check_observed RX_UNROLL_K_WHY  "$spec_why" "$WORK/obs_why"
+
+# =========================================================================
+# (c) RX_VM_PREFILTER_LANG_WHY's six forms and RX_VM_PREFILTER_WHY
+# =========================================================================
+echo "== (c) RX_VM_PREFILTER_LANG_WHY (six forms) and RX_VM_PREFILTER_WHY =="
+
+# pflw ID FORM-LABEL EXPECTED-FULL-TEXT PATTERN [args]
+pflw() {
+    local id="$1" label="$2" want="$3" pat="$4"; shift 4
+    if ! compile "$id" default "$pat" "$@"; then
+        bad "PFLW '$label': the compile of '$pat' refused: $(head -1 "$WORK/$id.err")"; return
+    fi
+    local got; got="$(stamp VM_PREFILTER_LANG_WHY "$WORK/$id.c")"
+    [ "$got" = "$want" ] && ok "PFLW '$label': '$pat' $* stamps \"$want\"" \
+                         || bad "PFLW '$label': '$pat' $* stamps \"$got\", expected \"$want\""
+}
+pflw pflw-exact    'exact'                      'exact'                       '(a){2,3}b'
+pflw pflw-norep    'no counted repeat'          'no counted repeat'           '(a)b'
+pflw pflw-nullable 'nullable collapsed language' 'nullable collapsed language' '^(a{2,9})*$' -fprefilter-collapse
+pflw pflw-forced   'forced'                     'forced'                      '(x)?a{0,4}\Gb' -fprefilter-collapse
+# the NFA-state form: FULL text (N is an NFA state count, stable)
+pflw pflw-sel1     'dfa overflow retry, exact nfa N' 'dfa overflow retry, exact nfa 1899' \
+                   '(1{0,30}?[^]abc][^abc]){28,30}0+|a'
+
+# the byte-figure forms: SHAPE, cap literal, and N > cap checked numerically
+# (a full-text pin of N would go red on every emitted-text abi event).
+shape() {   # shape ID MACRO LABEL KIND(exact|hybrid) PATTERN [args]
+    local id="$1" macro="$2" label="$3" kind="$4" pat="$5"; shift 5
+    if ! compile "$id" default "$pat" "$@"; then
+        bad "$macro '$label': the compile of '$pat' refused: $(head -1 "$WORK/$id.err")"; return
+    fi
+    local got n m; got="$(stamp "$macro" "$WORK/$id.c")"
+    if printf '%s\n' "$got" | grep -Eq "^size cap retry, $kind [0-9]+ > 1000000\$"; then
+        n="$(printf '%s\n' "$got" | sed -n "s/^size cap retry, $kind \([0-9]*\) > \([0-9]*\)\$/\1/p")"
+        m="$(printf '%s\n' "$got" | sed -n "s/^size cap retry, $kind \([0-9]*\) > \([0-9]*\)\$/\2/p")"
+        if [ "$n" -gt "$m" ]; then
+            ok "$macro '$label': \"$got\" has the shape, the cap literal 1000000, and N > cap"
+        else
+            bad "$macro '$label': \"$got\": the first figure $n is not greater than the cap $m"
+        fi
+    else
+        bad "$macro '$label': \"$got\" does not match ^size cap retry, $kind [0-9]+ > 1000000\$"
+    fi
+}
+shape pflw-sizecap VM_PREFILTER_LANG_WHY 'size cap retry, exact N > M' exact '(\p{Xwd}{1,3})' -e utf8
+# RX_VM_PREFILTER_WHY: the hybrid DROP form (the size cap refused the hybrid
+# and the retry dropped the prefilter), same shape rule.
+shape pwhy-sizecap VM_PREFILTER_WHY 'size cap retry, hybrid N > M' hybrid '(\p{Xwd})' -e utf8
+
+# RX_VM_PREFILTER_WHY is the DROP form's alone: absent where a prefilter
+# survives (it explains a "none", never a hybrid).
+if compile pwhy-absent default '(a)b' && [ -z "$(stamp VM_PREFILTER_WHY "$WORK/pwhy-absent.c")" ]; then
+    ok "RX_VM_PREFILTER_WHY is absent on a surviving hybrid ('(a)b')"
+else
+    bad "RX_VM_PREFILTER_WHY appears on a surviving hybrid ('(a)b'), or the witness refused"
+fi
+
+echo
+echo "== (a) SEQUENCES: lands at B1 (needs the fallback trace build); nothing here yet =="
+echo
+echo "== Summary =="
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ "$fail" -eq 0 ] || exit 1
