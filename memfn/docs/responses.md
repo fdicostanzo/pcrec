@@ -1414,3 +1414,14 @@ the compiler, and is never adopted silently. Proposed for main to file
     that ADVANCE lacks today. This goes to R-9's panel.
   - **Proposed order:** M6 = VMSTRIDE alone (zero movers). N6 per Frank's
     ruling, and the lazy loop plus N7U later as their own requests.
+- ruling recorded: 2026-10-08 — **R-10 scoping ACKED by main.**
+  - M6 = VMSTRIDE only: the MF_SITE_ABI 8 contract step, zero movers.
+  - Q-R10-7 YES: the lazy cursor rung's rmin prefix loop is added to the
+    manifest as `pending`, named by function, in M6's REPLACE commit
+    (main authorizes the write), with the C17 literals it moves.
+  - Q-R10-1 (retire N6) is with Frank via main; N6's row stays untouched
+    until he rules.
+  - Kit: branch `lane/memfn-m6` is STACKED on lane/memfn-m7 (MF_SITE_ABI
+    8 builds on M7's 7, and both touch the manifest and floors). It is
+    delivered after M7 merges. Build lane m6 (opus) starts now; its heavy
+    slot goes through main after slot12.
