@@ -27,14 +27,16 @@ commit that rewrites an anchor (B3 rewrites the catch branch) makes the build
 of that side stop with "anchor drifted". Re-anchoring the CHILD's probes at the
 equivalent points is the B3 lane's reviewed edit (`--child-patches FILE`, a
 python file defining PATCHES), with the intent re-verified: the new probes
-must print the same lines at the same events.
+must print the same lines at the same events. B3's are `probes_b3.py`; a
+later commit's PARENT is post-B3 and takes them through `--parent-patches`.
 
 The plain variant's probed build is also held byte-identical (stdout + rc) to
 the unprobed build of the same side (census.py's BYTES_DIFF rows), so the
 probes provably move nothing they watch.
 
 usage: attempt_hist.py --ref PARENT --rev CHILD [--variants a,b,..]
-                       [--out DIR] [--stride N] [--child-patches FILE]
+                       [--out DIR] [--stride N] [--parent-patches FILE]
+                       [--child-patches FILE]
 Exit 0 identical, 1 differ or a floor/byte check failed, 2 bad input/build.
 """
 import argparse, ast, collections, os, runpy, shutil, subprocess, sys, tarfile
@@ -137,6 +139,7 @@ def main():
     ap.add_argument("--out", default=os.path.join(ROOT, "build", "attempt_hist"))
     ap.add_argument("--stride", type=int, default=1)
     ap.add_argument("--jobs", type=int, default=6)
+    ap.add_argument("--parent-patches")
     ap.add_argument("--child-patches")
     args = ap.parse_args()
     variants = [v for v in args.variants.split(",") if v]
@@ -145,8 +148,10 @@ def main():
         ap.error(f"--variants: unknown {bad} (known: {','.join(VARIANTS)})")
     child_patches = (runpy.run_path(args.child_patches)["PATCHES"] if args.child_patches
                      else build_ref.PATCHES)
+    parent_patches = (runpy.run_path(args.parent_patches)["PATCHES"] if args.parent_patches
+                      else build_ref.PATCHES)
     sides = {}
-    for side, rev, patches in (("parent", args.ref, build_ref.PATCHES),
+    for side, rev, patches in (("parent", args.ref, parent_patches),
                                ("child", args.rev, child_patches)):
         log(f"[attempt_hist] building {side} {rev} ...")
         sides[side] = build_side(rev, os.path.join(args.out, side), patches, variants, args.jobs)

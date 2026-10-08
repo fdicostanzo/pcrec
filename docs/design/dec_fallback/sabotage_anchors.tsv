@@ -96,12 +96,12 @@ S162_callee_follow_unscoped	S162	2	src/gen/emit_vm.c	vm_region	def	8274	1/1	OTHE
 S163_region_falls_through	S163	1	src/gen/emit_vm.c	vm_region	def	8274	1/1	OTHER					
 S164_region_slots_uncounted	S164	1	src/gen/emit_vm.c	vm_plan	def	10623	1/1	OTHER					
 S165_prefilter_on_call	S165	1	src/opt/select_engine.c	prefilter_decision	def	1021	1/1	RE-AIM	B4		line (cx->dfa_disabled && cx->collapse_reason; line fit->prefilter = (has_bref || has_call |; line fit->prefilter_declin		
-S166_callgraph_binds_early	S166	1	src/core/compile.c	compile_driver	def	2300	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
-S166_callgraph_binds_early	S166	2	src/core/compile.c	compile_driver	def	2265	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S166_callgraph_binds_early	S166	1	src/core/compile.c	compile_driver	def	2169	1/1	RE-RUN		B5			B5:edit-set
+S166_callgraph_binds_early	S166	2	src/core/compile.c	compile_driver	def	2134	1/1	RE-RUN		B5			B5:edit-set
 S167_g_zero_not_root	S167	1	src/parse/mod_recursion.c	pcrec_call_node	def	431	1/1	OTHER					
 S168_return_through_macro	S168	1	src/gen/emit_vm.c	vm_region	def	8306	1/1	OTHER					
 S168_return_through_macro	S168	2	src/gen/emit_vm.c	vm_emit_search_body	def	12685	1/1	RE-RUN		after-B6			
-S169_postresolve_pass_deleted	S169	1	src/core/compile.c	compile_driver	def	2355	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S169_postresolve_pass_deleted	S169	1	src/core/compile.c	compile_driver	def	2224	1/1	RE-RUN		B5			B5:edit-set
 S16_wrong_module_d	S16	1	src/parse/registry.c	esc_rows	def	512	1/1	OTHER					
 S170_deferred_recheck_never_refuses	S170	1	src/parse/mod_lookaround.c	pcrec_lookaround_fix_widths	def	433	1/1	OTHER					
 S171_cwmax_fixpoint_one_round	S171	1	src/opt/callgraph.c	pcrec_callgraph_build	def	879	1/1	OTHER					
@@ -109,9 +109,9 @@ S172_postresolve_walk_order	S172	1	src/opt/postresolve.c	pr_collect	def	111	1/1	
 S173_splice_shares_exit	S173	1	src/gen/emit_vm.c	vm_splice	def	8171	1/1	OTHER					
 S174_elision_marks_live_group_dead	S174	1	src/opt/atomic.c	pcrec_has_live_capture	def	868	1/1	OTHER					
 S175_eligibility_splices_a_cycle	S175	1	src/opt/callgraph.c	cg_eligibility	def	517	1/1	OTHER					
-S176_prefilter_for_a_linked_call	S176	1	src/opt/select_engine.c	prefilter_decision	def	790	1/1	RE-RUN		B3+B4			B3:edit-set;B4:edit-set
+S176_prefilter_for_a_linked_call	S176	1	src/opt/select_engine.c	prefilter_decision	def	790	1/1	RE-RUN		B4			B4:edit-set
 S177_splice_slots_uncounted	S177	1	src/gen/emit_vm.c	vm_count_slots	def	3310	1/1	OTHER					
-S178_root_discharge_dropped	S178	1	src/core/compile.c	compile_driver	def	2281	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S178_root_discharge_dropped	S178	1	src/core/compile.c	compile_driver	def	2150	1/1	RE-RUN		B5			B5:edit-set
 S179_searchin_stamped_capacity	S179	1	src/gen/emit_vm.c	vm_emit_entries	def	13789	1/1	OTHER					
 S17_syntax_mismatch	S17	1	src/parse/registry.c	esc_rows	def	514	1/1	OTHER					
 S180_buffers_capacities_swapped	S180	1	src/gen/emit_vm.c	vm_emit_entries	def	13789	3/3	OTHER					
@@ -129,7 +129,7 @@ S18_tsv_empty	S18	1	src/dump/syntax_dump.c	all_kinds	def	251	1/1	OTHER
 S190_anchored_dead_group_fill_empty	S190	1	src/gen/emit_dfa.c	emit_anchored_match_caps_def	def	9973	1/1	OTHER					
 S191_sizeterm_greedy_descent	S191	1	src/core/compile.c	size_term_choose	def	572	1/1	RE-RUN		after-B6			
 S192_sizeterm_bar_removed	S192	1	src/core/compile.c	size_term_choose	def	580	1/1	RE-RUN		after-B6			
-S193_sizecap_comparison_inverted	S193	1	src/core/compile.c	compile_driver	def	2897	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S193_sizecap_comparison_inverted	S193	1	src/core/compile.c	compile_driver	def	2766	1/1	RE-RUN		B5			B5:edit-set
 S194_rxt_gspec_dropped	S194	1	tests/harness/run.sh	file:tests/harness/run.sh	outside	2934	1/1	OTHER					
 S195_rxt_hex_escape_literal	S195	1	tests/harness/verify_rxt.py	file:tests/harness/verify_rxt.py	outside	87	1/1	OTHER					
 S196_rxt_flags_carry	S196	1	tests/harness/run.sh	file:tests/harness/run.sh	outside	2665	2/2	OTHER					
@@ -179,7 +179,7 @@ S233_startpos_guard_leaks_byte	S233	1	src/enc/enc_byte.c	pcrec_enc_backend_byte	
 S234_startpos_gate_deleted	S234	1	src/ir/nfa.c	pcrec_nfa_wrap_unanchored	def	1174	1/1	OTHER					
 S235_attempt_loop_ungated	S235	1	src/gen/emit_dfa.c	emit_attempt	def	10345	1/1	RE-RUN		after-B6			
 S236_nullgate_omits_on_nullable	S236	1	src/core/internal.h	pcrec_startgate_needed	def	6096	1/1	OTHER					
-S237_size_drop_rung_deleted	S237	1	src/core/compile.c	fit_anchored_applies	def	769	1/1	RE-RUN		B2			B2:edit-names
+S237_size_drop_rung_deleted	S237	1	src/core/compile.c	fit_anchored_applies	def	851	1/1	RE-RUN		B2			B2:edit-names
 S238_size_drop_unstamped	S238	1	src/opt/select_engine.c	esel_of	def	1131	1/1	RE-AIM	B5		def esel_of		
 S239_m_children_config	S239	1	src/parse/rxt_schema.def	row:rxt_schema.def:BLOCK	datarow	210	1/1	OTHER					
 S23_xskip_comment_any_skip_byte	S23	1	src/parse/parse.c	xskip	def	321	1/1	OTHER					
@@ -199,17 +199,17 @@ S249_tune_columns_swapped	S249	2	src/core/tune.c	TUNE_TABLE	def	73	1/1	OTHER
 S24_asub_lookahead_drop	S24	1	src/parse/mod_modifiers.c	pcrec_modport_optrun	def	457	1/1	OTHER					
 S250_tune_wrong_deny_bit	S250	1	src/core/tune.c	TUNE_TABLE	def	67	1/1	OTHER					
 S251_tune_ladder_threshold_dropped	S251	1	src/core/tune.c	TUNE_TABLE	def	67	1/1	OTHER					
-S252_premul_drop_rung_deleted	S252	1	src/core/compile.c	fit_premul_applies	def	777	1/1	RE-RUN		B2			B2:edit-names
-S253_premul_drop_note_unstamped	S253	1	src/core/compile.c	compile_driver	def	2111	1/1	RE-AIM	B3		line defo.flags |= PCREC_NO_PREMUL_TABLE;; line size_drop_rung = SDR_NO_PREMUL;; token dropped_premul		
+S252_premul_drop_rung_deleted	S252	1	src/core/compile.c	fit_premul_applies	def	904	1/1	RE-RUN		B2			B2:edit-names
+S253_premul_drop_note_unstamped	S253	1	src/core/compile.c	compile_driver	def	2830	1/1	RE-RUN		B5		fit_rungs	B5:edit-set
 S254_mrl_sat_mul_boundary_off_by_one	S254	1	src/opt/mrl.c	pcrec_sat_mul	def	136	1/1	OTHER					
 S255_arena_ctx_nomem_neutered	S255	1	src/core/arena.c	pcrec_arena_alloc	def	25	1/1	OTHER				pcrec_ctx_nomem	
 S256_sb_ctx_nomem_neutered	S256	1	src/core/sb.c	sb_grow	def	30	1/1	OTHER				pcrec_ctx_nomem	
-S257_compile_csb_attachment_dropped	S257	1	src/core/compile.c	compile_driver	def	1691	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S257_compile_csb_attachment_dropped	S257	1	src/core/compile.c	compile_driver	def	1786	1/1	RE-RUN		B5			B5:edit-set
 S258_ir_role_text_drift	S258	1	src/gen/emit_vm.c	vm_alt	def	4642	1/1	OTHER					
-S259_failed_nomem_propagation_removed	S259	1	src/core/compile.c	compile_driver	def	1843	1/1	RE-AIM	B3		line if (cx.failed_nomem) {		
+S259_failed_nomem_propagation_removed	S259	1	src/core/compile.c	fit_labels	def	1100	1/1	RE-RUN		after-B6			
 S25_xlevel_counts_not_adjacency	S25	1	src/parse/mod_modifiers.c	pcrec_modport_optrun	def	304	1/1	OTHER					
 S260_legend_dist_raw_malloc_silent	S260	1	src/gen/emit_dfa.c	emit_state_legend	def	4759	1/1	OTHER					
-S261_limits_name_invisible_define	S261	1	src/core/compile.c	compile_driver	def	1560	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S261_limits_name_invisible_define	S261	1	src/core/compile.c	compile_driver	def	1657	1/1	RE-RUN		B5			B5:edit-set
 S262_dfa_invariant_loop_open_inverted	S262	1	src/ir/dfa.c	clo_open	def	859	1/1	OTHER					
 S263_vm_anchor_bound_subject_length	S263	1	src/gen/emit_dfa.c	CAND_VM_BOUND_ONE	def	8128	1/1	OTHER					
 S264_end_window_one_byte_narrow	S264	1	src/gen/emit_dfa.c	pcrec_emit_end_window_clamp	def	999	1/1	OTHER					
@@ -257,7 +257,7 @@ S302_e1_kind_mask_moves_under_lowering	S302	1	src/opt/lower_enc.c	lower_walk	def
 S303_e1_nullability_moves_under_lowering	S303	1	src/opt/lower_enc.c	lower_class_utf8	def	385	1/1	OTHER					
 S304_lit_run_one_byte_too_long	S304	1	src/core/cpset.c	pcrec_lit_run	def	479	1/1	OTHER					
 S305_lit_run_slot_walk_overskips	S305	1	src/gen/emit_vm.c	vm_count_slots	def	3372	1/1	OTHER					
-S306_e3_sealed_on_attempt_route	S306	1	src/core/compile.c	compile_driver	def	2619	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S306_e3_sealed_on_attempt_route	S306	1	src/core/compile.c	compile_driver	def	2488	1/1	RE-RUN		B5			B5:edit-set
 S307_e3_decline_names_wrong_route	S307	1	src/facts/facts.c	pf_enter	def	125	1/1	RE-RUN		after-B6			
 S308_findings_when_ignored	S308	1	src/core/findings.c	pcrec_find_chain_answer	def	271	1/1	OTHER					
 S309_findings_digest_reads_provenance	S309	1	src/parse/rxt_find.c	link_from_source	def	129	1/1	OTHER					
@@ -334,10 +334,10 @@ S412_utf_stepback_one_byte	S412	1	src/enc/enc_utf8.c	u8_defs_valid_upto	def	444	
 S413_utf_lb_lookbehind_not_raised	S413	1	src/parse/mod_lookaround.c	pcrec_laport_group	def	607	1/1	OTHER					
 S414_align_seeks_one_byte	S414	1	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	def	850	1/1	OTHER					
 S41_ir_label_drift	S41	1	src/gen/emit_vm.c	vm_plan	def	10766	1/1	OTHER					
-S420_prefilter_drop_rung_deleted	S420	1	src/core/compile.c	fit_prefilter_applies	def	787	1/1	RE-RUN		B2			B2:edit-names
-S421_fast_or_fail_inert	S421	1	src/core/compile.c	fit_rung_denied	def	914	1/1	RE-RUN		B2			B2:edit-names
+S420_prefilter_drop_rung_deleted	S420	1	src/core/compile.c	fit_prefilter_applies	def	921	1/1	RE-RUN		B2			B2:edit-names
+S421_fast_or_fail_inert	S421	1	src/core/compile.c	fit_rung_denied	def	1084	1/1	RE-RUN		B2			B2:edit-names
 S422_prefilter_drop_unstamped	S422	1	src/gen/emit_vm.c	vm_emit_stamps	def	11325	1/1	RE-AIM	B5		line if (cx->size_drop_rung == SDR_NO_PREFILT		
-S423_prefilter_drop_not_degrading	S423	1	src/core/compile.c	fit_rungs	def	890	1/1	RE-RUN		after-B6			
+S423_prefilter_drop_not_degrading	S423	1	src/core/compile.c	fit_rungs	def	1060	1/1	RE-RUN		after-B6			
 S42_ir_push_unrecorded	S42	1	src/gen/emit_vm.c	vm_push_at	def	3451	1/1	OTHER					
 S430_clss2_byte_kit_wrong_class	S430	1	src/gen/emit_vm.c	vm_emit_search_body	def	12812	1/1	RE-RUN		after-B6			
 S431_clss2_byte_kit_deny_ignored	S431	1	src/gen/clskit.c	DENY_FLAG	def	835	1/1	OTHER					
@@ -346,11 +346,11 @@ S433_clss2fix_scan_site_ignored	S433	1	src/gen/emit_dfa.c	scan_choice	def	8981	1
 S434_clss2fix_range_top_dropped	S434	1	src/gen/clskit.c	pcrec_clskit_emit_inline	def	1228	1/1	OTHER					
 S435_clss2fix_kit_calls_ignored	S435	1	src/gen/clskit.c	kit_smaller	def	655	1/1	OTHER					
 S436_clss2fix_kit_bound_dropped	S436	1	src/gen/clskit.c	emit_bound	def	1108	1/1	OTHER					
-S437_k7980_emitters_see_real_prefix	S437	1	src/core/compile.c	compile_driver	def	1410	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S437_k7980_emitters_see_real_prefix	S437	1	src/core/compile.c	compile_driver	def	1512	1/1	RE-RUN		B5			B5:edit-set
 S438_k7980_mixed_abi_fence_off	S438	1	src/gen/emit_dfa.c	emit_rx_abi_types	def	1857	1/1	RE-RUN		after-B6			
 S439_k78_dead_group_fill_at_entry	S439	1	src/gen/emit_dfa.c	emit_search_head	def	1729	1/1	RE-RUN		after-B6			
 S43_d45_timeout_removed	S43	1	tests/lib/gen_timeout.sh	file:tests/lib/gen_timeout.sh	outside	415	1/1	OTHER					
-S440_vedge_reverse_takes_end_view	S440	1	src/core/compile.c	compile_driver	def	2615	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S440_vedge_reverse_takes_end_view	S440	1	src/core/compile.c	compile_driver	def	2484	1/1	RE-RUN		B5			B5:edit-set
 S441_hyb_reseed_anchored_row_never_holds	S441	1	src/gen/emit_dfa.c	cand_rs_anchored_applies	def	8091	1/1	OTHER					
 S442_cls_cube_section_relative	S442	1	src/core/cpset.c	pcrec_cls_cube	def	429	1/1	OTHER					
 S443_run_word_overreads	S443	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	239	1/1	OTHER					
@@ -505,33 +505,39 @@ S619_m4_loop_exit_inside_row_loop	S619	1	memfn/src/generic.c	file:memfn/src/gene
 S61_mrl_cursor_clamp_dropped	S61	1	src/gen/emit_vm.c	vm_cursor_rep	def	5000	1/1	OTHER					
 S620_trace_fallback_order_set	S620	1	scripts/trace_diff.py	file:scripts/trace_diff.py	outside	138	1/1	OTHER					
 S621_emit_ir_auto_no_prefilter_arm_lost	S621	1	scripts/emit_sweep.py	file:scripts/emit_sweep.py	outside	565	1/1	OTHER					
-S622_fbt_esel_witness_dropped	S622	1	tests/codegen/run_fallback_table.sh	file:tests/codegen/run_fallback_table.sh	outside	490	1/1	OTHER					
-S623_fallback_trace_labels_swapped	S623	1	src/core/compile.c	trace@src/core/compile.c:1321	def	1337	1/1	OTHER					
-S624_fallback_trace_size_record_dropped	S624	1	src/core/compile.c	compile_driver	def	2153	1/1	RE-RUN		B3+B5			B3:edit-set;B5:edit-set
+S622_fbt_esel_witness_dropped	S622	1	tests/codegen/run_fallback_table.sh	file:tests/codegen/run_fallback_table.sh	outside	484	1/1	OTHER					
+S623_fallback_trace_labels_swapped	S623	1	src/core/compile.c	trace@src/core/compile.c:1423	def	1439	1/1	OTHER					
+S624_fallback_trace_size_record_dropped	S624	1	src/core/compile.c	compile_driver	def	2024	1/1	RE-RUN		B5			B5:edit-set
 S625_admit_trace_var_rows_swapped	S625	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:1165	def	1196	1/1	OTHER					
 S626_attrib_trace_sel1_source_swapped	S626	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:1165	def	1218	1/1	OTHER					
-S627_t1_sel1_rows_swapped	S627	1	src/core/compile.c	fit_rungs	def	846	1/1	RE-RUN		after-B6		fit_sel1_collapse_applies,fit_sel1_drop_applies	
-S628_t1_sel1_drop_keeps_dd	S628	1	src/core/compile.c	fit_rungs	def	857	1/1	RE-RUN		after-B6			
-S629_t1_sel1_collapse_no_latch	S629	1	src/core/compile.c	fit_rungs	def	850	1/1	RE-RUN		after-B6			
+S627_t1_sel1_rows_swapped	S627	1	src/core/compile.c	fit_rungs	def	1016	1/1	RE-RUN		after-B6		fit_sel1_collapse_applies,fit_sel1_drop_applies	
+S628_t1_sel1_drop_keeps_dd	S628	1	src/core/compile.c	fit_rungs	def	1027	1/1	RE-RUN		after-B6			
+S629_t1_sel1_collapse_no_latch	S629	1	src/core/compile.c	fit_rungs	def	1020	1/1	RE-RUN		after-B6			
 S62_mrl_counter_bound_static	S62	1	src/gen/emit_vm.c	vm_counter_phase	def	6034	1/1	OTHER					
-S630_t1_drop_prefilter_no_restart	S630	1	src/core/compile.c	fit_rungs	def	893	1/1	RE-RUN		after-B6			
-S631_t1_sel1_in_fast_or_fail_reach	S631	1	src/core/compile.c	fit_rungs	def	846	1/1	RE-RUN		after-B6		fit_sel1_collapse_applies	
-S632_t1_drop_premul_on_overflow	S632	1	src/core/compile.c	fit_rungs	def	881	1/1	RE-RUN		after-B6		fit_premul_applies	
-S633_t1_drop_prefilter_no_carry	S633	1	src/core/compile.c	fit_rungs	def	893	1/1	RE-RUN		after-B6			
-S634_t1_drop_premul_no_flag	S634	1	src/core/compile.c	fit_rungs	def	882	1/1	RE-RUN		after-B6			
-S635_t1_sel1_collapse_writes_sizecap	S635	1	src/core/compile.c	fit_rungs	def	850	1/1	RE-RUN		after-B6			
-S636_t1_drop_anchored_keeps_sdr	S636	1	src/core/compile.c	fit_rungs	def	872	1/1	RE-RUN		after-B6			
-S637_t1_drop_anchored_note_lost	S637	1	src/core/compile.c	fit_rungs	def	875	1/1	RE-RUN		after-B6			
-S638_t1_attempt_bound_drift	S638	1	src/core/compile.c	fit_rungs	def	895	1/1	RE-RUN		after-B6			
+S630_t1_drop_prefilter_no_restart	S630	1	src/core/compile.c	fit_rungs	def	1063	1/1	RE-RUN		after-B6			
+S631_t1_sel1_in_fast_or_fail_reach	S631	1	src/core/compile.c	fit_rungs	def	1016	1/1	RE-RUN		after-B6		fit_sel1_collapse_applies	
+S632_t1_drop_premul_on_overflow	S632	1	src/core/compile.c	fit_rungs	def	1051	1/1	RE-RUN		after-B6		fit_premul_applies	
+S633_t1_drop_prefilter_no_carry	S633	1	src/core/compile.c	fit_rungs	def	1063	1/1	RE-RUN		after-B6			
+S634_t1_drop_premul_no_flag	S634	1	src/core/compile.c	fit_rungs	def	1052	1/1	RE-RUN		after-B6			
+S635_t1_sel1_collapse_writes_sizecap	S635	1	src/core/compile.c	fit_rungs	def	1020	1/1	RE-RUN		after-B6			
+S636_t1_drop_anchored_keeps_sdr	S636	1	src/core/compile.c	fit_rungs	def	1042	1/1	RE-RUN		after-B6			
+S637_t1_drop_anchored_note_lost	S637	1	src/core/compile.c	fit_rungs	def	1045	1/1	RE-RUN		after-B6			
+S638_t1_attempt_bound_drift	S638	1	src/core/compile.c	fit_rungs	def	1065	1/1	RE-RUN		after-B6			
 S639_t2_var_nullable_never	S639	1	src/opt/select_engine.c	pfa_var_nullable	def	546	1/1	RE-RUN		after-B6		pfa_default_scope,pfa_var	
 S63_mrl_stale_window	S63	1	src/gen/emit_vm.c	vm_emit_search_body	def	13408	1/1	RE-RUN		after-B6		nclamp	
 S640_t2_forced_off_var_swapped	S640	1	src/opt/select_engine.c	pf_admits	def	583	1/1	RE-RUN		after-B6		pfa_forced_off,pfa_var	
 S641_t2_overflow_drop_no_force_off	S641	1	src/opt/select_engine.c	pfa_overflow_drop	def	561	1/1	RE-RUN		after-B6			
-S642_t3_rung_forced_swapped	S642	1	src/core/compile.c	pflw_rows	def	1028	1/1	RE-RUN		after-B6		pflw_rung,pflw_worth	
-S643_t3_projection_wrong_reason	S643	1	src/core/compile.c	fit_row_setting_cr	def	987	1/1	RE-RUN		after-B6			
-S644_t4_rescue_model_swapped	S644	1	src/core/compile.c	st_whys	def	1084	1/1	OTHER					
+S642_t3_rung_forced_swapped	S642	1	src/core/compile.c	pflw_rows	def	1183	1/1	RE-RUN		after-B6		pflw_rung,pflw_worth	
+S643_t3_projection_wrong_reason	S643	1	src/core/compile.c	fit_row_setting_cr	def	1142	1/1	RE-RUN		after-B6			
+S644_t4_rescue_model_swapped	S644	1	src/core/compile.c	st_whys	def	1239	1/1	OTHER					
 S645_attrib_cells_swapped	S645	1	src/opt/select_engine.c	fit_attrib_walk	def	1157	1/1	RE-RUN		after-B6			
-S64_prefilter_force_refusal	S64	1	src/opt/select_engine.c	prefilter_decision	def	849	1/1	RE-RUN		B3+B4			B3:edit-set;B4:edit-set
+S646_t1_forcing_below_nomem	S646	1	src/core/compile.c	fit_rungs	def	1000	1/1	RE-RUN		after-B6		fit_always	
+S647_t1_trial_on_drops_other	S647	1	src/core/compile.c	fit_rungs	def	1013	1/1	RE-RUN		after-B6			
+S648_t1_size_collapse_deny_dropped	S648	1	src/core/compile.c	fit_rungs	def	1035	1/1	RE-RUN		after-B6			
+S649_sets_latch_every_overflow	S649	1	src/core/compile.c	compile_driver	def	1991	1/1	RE-RUN		B5			B5:edit-set
+S64_prefilter_force_refusal	S64	1	src/opt/select_engine.c	prefilter_decision	def	849	1/1	RE-RUN		B4			B4:edit-set
+S650_sets_cr_none_maps_sel1	S650	1	src/core/compile.c	fit_cr_of	def	1356	1/1	RE-RUN		after-B6			
+S651_fired_record_not_appended	S651	1	src/core/compile.c	fit_record	def	1403	1/1	RE-RUN		after-B6			
 S65_prefilter_flags_mask	S65	1	src/gen/emit_dfa.c	emit_info_def	def	3059	1/1	RE-RUN		after-B6			
 S66_altcls_merge_drops_union	S66	1	src/opt/altcls.c	altcls_walk_alt	def	348	1/1	OTHER					
 S67_altcls_flags_mask	S67	1	src/gen/emit_dfa.c	emit_info_def	def	3059	1/1	RE-RUN		after-B6			

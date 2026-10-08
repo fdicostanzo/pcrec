@@ -100,3 +100,11 @@ line	emit_pred_row(sb, &p, 6, "capacity-declined", "capacity-declined",	B6	row m
 line	emit_pred_row(sb, &p, 7, "size-model-declined", "size-model-declined",	B6	row moves into a list column
 line	emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",	B6	row moves into a list column
 line	emit_pred_row(sb, &p, 2, "exact", "exact",	B6	row moves into a list column
+# [decfbB3] B3 as built (0f37bfd8..lane/decfbB3): every B3 entry above landed. Also changed, none
+# named by an anchor except as recorded: `fit_select` deleted (its one caller was the size-cap test;
+# call_graph.py's FB_ROOTS and state_readers.sh's D list now name `fit_walk`); B2's oracle arrival/
+# notes functions deleted; the per-rung case comments moved above each row's `applies` predicate;
+# the trial catch's `if (st_phase == ST_LADDER) {` line (noted above, not listed) is gone. The
+# `FIT_TRACE(&cx, rung->name, restart_term, "fb-size");` line (S624's anchor, added at B1 after this
+# file was written) was KEPT verbatim, so S624 is a re-run, not a re-aim. S259's anchor moved to
+# `fit_labels`' NOMEM term and S253's to the notes loop (the report says why).

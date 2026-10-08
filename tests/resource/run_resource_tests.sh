@@ -925,7 +925,7 @@ fi
 
 # [OPT-4.1] `-fprefilter` OVERRIDES THE DECLINE, AND THIS IS THE ONLY PLACE IN
 # THE TREE WHERE THAT IS REACHABLE. On the [SEL-1] rung `-fprefilter` makes
-# `compile_driver`'s `ovf_eligible` false, so that rung is never OFFERED and
+# T1's [SEL-1] rows' `fit_sel1_eligible` false (src/core/compile.c), so that rung is never OFFERED and
 # the decline is never reached (tests/codegen/run_prefilter_collapse.sh §6b(3)
 # says so at its own site). On the SIZE rung it IS reached — and without the
 # override this pattern would REFUSE, because declining the collapse keeps the

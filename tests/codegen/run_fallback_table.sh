@@ -27,7 +27,7 @@
 # K35 floors. It is green from B0, before anything moves, so a red at B5 is
 # B's.
 #
-# THREE HALVES (§4.2 B0 item 11):
+# THREE HALVES (§4.2 B0 item 11), plus B2's (d) and B3's (e):
 #   (a) SEQUENCES — each witness's expected fallback-row sequence, read from
 #       the trace build's `fallback` records (`-DPCREC_CAND_TRACE`, B1): one
 #       `row@labels` per arrival, in arrival order, plus the post-row state
@@ -48,8 +48,15 @@
 #       for (a hand-written `CANDFIT <site> <row>` line, [MECH-REACH]).
 #       The full-corpus run in both orders is
 #       docs/design/dec_fallback/oracle_sweep.py; this half is the
-#       in-suite witness set. Landed at B2 (decfbB2); B5 deletes the oracle
-#       and this half with it.
+#       in-suite witness set. Landed at B2 (decfbB2); B3 retired its T1
+#       arrival and notes sites (their old side is gone); B5 deletes the
+#       oracle and this half with it.
+#   (e) THE DROP NOTES (B3): each size-cap rung that fires prints its
+#       stderr note, in rung order, and a compile that drops nothing prints
+#       none. The expected lines are HAND-WRITTEN in full (Frank's
+#       2026-09-17 ruling's text), read off stderr, never off the table's
+#       `note` cells. Landed at B3 (decfbB3), when the notes became a loop
+#       over the fired record.
 #   (c) `RX_VM_PREFILTER_LANG_WHY`'s six forms and `RX_VM_PREFILTER_WHY`,
 #       each with a witness and its hand-written text. The two forms that
 #       carry a BYTE figure (`size cap retry, exact N > M`, `... hybrid N >
@@ -369,19 +376,9 @@ foracle() {
 }
 REF_trlowthr="$WORK/pcrec_trlowthr"
 
-# T1 at every arrival (`forcing`/`nomem` have no corpus reach: alloc_check W5/W4)
-foracle or-sel1c   plain   arrival sel1-collapse      "$W_SEL1"
-foracle or-sel1d   plain   arrival sel1-drop          "$W_OVF"
-foracle or-sel1d0  plain   arrival sel1-drop          "$W_OVF" -fno-prefilter-collapse
-foracle or-trial   plain   arrival size-term-trial    "$W_TOWER" --engine=vm
-foracle or-pfc     plain   arrival prefilter-collapse '(\p{Xwd})' -e utf8
-foracle or-pfdrop  plain   arrival drop-prefilter     '(\p{Xwd})' -e utf8
-foracle or-anch    plain   arrival drop-anchored      '\p{L}' -e utf8
-foracle or-premul  lowboth arrival drop-premul        '(*UCP)(?i)[\dk]' -e utf8
-foracle or-refoth  plain   arrival refuse             '\A*'
-foracle or-refovf  plain   arrival refuse             '(?:ab){0,16000}' --engine=dfa
-foracle or-refsz   plain   arrival refuse             '(\p{Xwd})' -e utf8 --fast-or-fail
-foracle or-fofsel1 plain   arrival sel1-collapse      "$W_SEL1" --fast-or-fail
+# (T1's arrival and notes checks retired at B3: the walk IS the dispatch and
+# the notes read the fired record, so there is no old side to compare. Their
+# witnesses are (a)'s sequences and (e)'s notes, both hand-written.)
 # T2's verdict and declined flags, one witness per row
 foracle or-a-bref  plain   admit   backref            '(a)\1'
 foracle or-a-call  plain   admit   linked-call        '(a|b(?1)c)+'
@@ -437,11 +434,8 @@ foracle or-e-cpf   plain   attrib  5 "$W_SEL1"
 foracle or-e-dn    plain   attrib  6 '(?:ab){0,16000}'
 foracle or-e-scr   plain   attrib  7 '(\p{Xwd})' -e utf8
 foracle or-e-scpfc lowsize attrib  7 '(\bcat\b)+' -e utf8
-# VM_PREFILTER_WHY's `pfwhy` cell and the three notes' fired rows
+# VM_PREFILTER_WHY's `pfwhy` cell (the fired record's row) against the SDR test
 foracle or-p-why   plain   pfwhy   stamped        '(\p{Xwd})' -e utf8
-foracle or-n-anch  plain   note    drop-anchored  '\p{L}' -e utf8
-foracle or-n-prem  lowboth note    drop-premul    '(*UCP)(?i)[\dk]' -e utf8
-foracle or-n-pf    plain   note    drop-prefilter '(\p{Xwd})' -e utf8
 
 # =========================================================================
 # (b) THE OBSERVED-STAMP LEG
@@ -575,6 +569,12 @@ shape pflw-sizecap VM_PREFILTER_LANG_WHY 'size cap retry, exact N > M' exact '(\
 # RX_VM_PREFILTER_WHY: the hybrid DROP form (the size cap refused the hybrid
 # and the retry dropped the prefilter), same shape rule.
 shape pwhy-sizecap VM_PREFILTER_WHY 'size cap retry, hybrid N > M' hybrid '(\p{Xwd})' -e utf8
+# [decfbB3] the same drop with the collapse denied, so drop-prefilter is the
+# FIRST size rung to fire: its own `sets` carry is then the only source of the
+# figures (on the default witness prefilter-collapse carried them first, and a
+# drop row that stopped carrying still printed that earlier attempt's N > M).
+shape pwhy-sizecap-first VM_PREFILTER_WHY 'size cap retry, hybrid N > M (first rung)' hybrid \
+      '(\p{Xwd})' -e utf8 -fno-prefilter-collapse
 
 # RX_VM_PREFILTER_WHY is the DROP form's alone: absent where a prefilter
 # survives (it explains a "none", never a hybrid).
@@ -583,6 +583,37 @@ if compile pwhy-absent default '(a)b' && [ -z "$(stamp VM_PREFILTER_WHY "$WORK/p
 else
     bad "RX_VM_PREFILTER_WHY appears on a surviving hybrid ('(a)b'), or the witness refused"
 fi
+
+# =========================================================================
+# (e) THE DROP NOTES (B3)
+# =========================================================================
+echo "== (e) the drop notes: each fired size-cap rung's stderr note, in rung order =="
+
+NOTE_HEAD='pcrec: note: the emitted-size cap forced a smaller artifact: dropped'
+NOTE_TAIL='. Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or accept the fit.'
+N_ANCH="$NOTE_HEAD the optional anchored match-here machine -- loses the [OPT-2] fast path -- <prefix>_match falls back to search-and-filter, which the anchored machine exists specifically to avoid (docs/design/anchored_match_unwrapped.md)$NOTE_TAIL"
+N_PREM="$NOTE_HEAD the premultiplied DFA transition table -- slower per-byte scan dispatch, measured ~1.27x on scan-bound subjects (docs/dev/opt3_dfa_scan_measurement.md)$NOTE_TAIL"
+N_PF="$NOTE_HEAD the VM hybrid's prefilter -- the VM tries every start position itself, measured up to ~4x slower where matches are sparse (docs/dev/lanes/pfdrop_report.md)$NOTE_TAIL"
+
+# fnotes ID WANT PATTERN [args...] — the compile (default build) succeeds and
+# its stderr's drop-note lines, in order, are exactly WANT (newline-joined
+# full lines; empty: no drop note at all).
+fnotes() {
+    local id="$1" want="$2" pat="$3"; shift 3
+    if ! compile "$id" default "$pat" "$@"; then
+        bad "notes $id ['$pat' $*]: refused: $(head -1 "$WORK/$id.err")"; return
+    fi
+    local got; got="$(grep -F -- "$NOTE_HEAD" "$WORK/$id.err")"
+    [ "$got" = "$want" ] && ok "notes $id ['$pat' $*]: $(printf '%s\n' "$want" | grep -c . ) drop note(s), as hand-written" \
+                         || bad "notes $id ['$pat' $*]: drop notes differ from the hand-written lines: '$got'"
+}
+fnotes note-anch  "$N_ANCH"            '\p{L}' -e utf8
+fnotes note-premul "$N_ANCH
+$N_PREM"                                '[^\p{C}\p{M}\p{P}]' -e utf8
+fnotes note-pf    "$N_PF"              '(\p{Xwd})' -e utf8
+fnotes note-pfc   ""                   '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
+fnotes note-sel1  ""                   "$W_SEL1"
+fnotes note-none  ""                   '(a)b'
 
 echo
 echo "== Summary =="

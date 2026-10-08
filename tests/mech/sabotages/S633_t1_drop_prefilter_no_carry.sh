@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S633 ([DEC-FALLBACK] B2, lane decfbB2) -- drop-prefilter's sets cell stops carrying the refused attempt's size-cap figures, so VM_PREFILTER_WHY would lose its numbers.
-# S-F10. Detector at B2: the oracle's post-row carry check on (\p{Xwd}) -e utf8 (fbt (a), (d)); from B3 fbt (c)'s VM_PREFILTER_WHY shape.
+# S-F10. Detector at B2: the oracle's post-row carry check on (\p{Xwd}) -e utf8 (fbt (a), (d)); from B3 fbt (c)'s VM_PREFILTER_WHY shape on the FIRST-rung witness (-fno-prefilter-collapse: 'hybrid 0 > 0' under the plant; the default witness's earlier prefilter-collapse carry masks it, decfbB3_report.md finding 8).
 # B2 builds the tables BESIDE the old derivations and switches no reader, so
 # until the reader switches the trace build's both-derivations oracle (abort
 # on a difference, both orders) or fit_tables_selfcheck is the detector;

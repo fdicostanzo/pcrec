@@ -3927,7 +3927,19 @@ read through `tests/lib/spec_extract.sh` (moved there from
   reached scope; `--emit-ir`), T3 and T4 every row, the attribution walk's
   eight `ENGINE_SEL` values, `pfwhy` and the three note rows. ~40 s. B5
   deletes the oracle and this half. Detects S627-S645
-  (`docs/dev/lanes/decfbB2_report.md`).
+  (`docs/dev/lanes/decfbB2_report.md`). **B3 (lane decfbB3) retired its
+  T1 `arrival` and `note` sites** (12 + 3 witnesses): the walk is the
+  dispatch and the notes read the fired record, so there is no old side
+  left; 50 witnesses remain.
+- **(e) THE DROP NOTES** (B3, lane decfbB3): six default-build witnesses,
+  each with the hand-written FULL stderr lines of the size-cap rungs' notes
+  it must print, in rung order (anchored; anchored then premul; prefilter),
+  or none (a `-fprefilter` collapse, a [SEL-1] retry, no arrival). Read off
+  stderr, never off the table's `note` cells. Detects S637 (a row's note
+  cell emptied) from B3. B3 also adds one (c) witness, the
+  `VM_PREFILTER_WHY` drop with `-fno-prefilter-collapse` (drop-prefilter
+  as the FIRST size rung: the only witness where its own carry is the
+  figures' source; S633's detector from B3).
 
 Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
 the tree; red on a dropped witness (the floor fires), a value removed from
