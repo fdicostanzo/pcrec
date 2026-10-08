@@ -112,6 +112,34 @@ void pcrec_memfn_call(Ctx *cx, uint32_t handle, const mf_hooks *h, StrBuf *body)
  * (a row that would write one fails loudly). */
 void pcrec_memfn_emit(Ctx *cx, DelegSite id, const mf_site *s,
                       const mf_hooks *h, StrBuf *body);
+/* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
+
+/* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN;
+ * integration.md §15.7, §14.3): every hook is pcrec's TEXT, and `member` is
+ * pcrec's own class test (T4, rule 6), which the kit pastes opaque. `set` is
+ * the member test's byte set (256 bytes, nonzero = in), descriptive only.
+ * `count` names the caller's counter (declared and read by pcrec's text, so
+ * count_by_caller is 1 where it is named) or is NULL for none; `span` is its
+ * cap, MF_SPAN_UNBOUNDED for none. */
+typedef struct {
+    const uint8_t *set;
+    bool           reverse;
+    const char    *more, *peek, *step, *cursor, *member, *count;
+    long           count_start;
+    uint64_t       span;
+    const char    *indent;
+} PcrecAdvance;
+/* The ADVANCE site for `a` under DELEG_SITES row `id`, written into `body`
+ * through the door (the kit renders the loop: `while ((more)[ && count <
+ * <span>ULL] && (member)) { step; [count++;] }` at `a->indent`). */
+void pcrec_memfn_advance(Ctx *cx, DelegSite id, const PcrecAdvance *a, StrBuf *body);
+/* [R4h IMPLEMENT] I1, THE SHADOW COMPARATOR: renders ADVANCE `a` through a
+ * SCRATCH art and fails the compile unless the kit's text equals
+ * want[0..n), the span pcrec just wrote for the same site. REPLACE deletes
+ * it with pcrec's spelling. */
+void pcrec_memfn_advance_shadow(Ctx *cx, DelegSite id, const PcrecAdvance *a,
+                                const char *want, size_t n);
+
 /* The word-load helpers the attempt's text has used and not declared, at the
  * file-scope point `file`'s end (pcrec's prologue, §14.8): the kit's
  * mf_flush_helpers through a sink over `file`. */
