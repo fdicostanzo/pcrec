@@ -1445,3 +1445,16 @@ the compiler, and is never adopted silently. Proposed for main to file
     addendum goes to a running lane. A fresh follow-up lane reconciles the
     revised regime with addendum 13 (and may propose amendments, since it
     is preliminary) before the Q-R9-n go to Frank.
+- notice: 2026-10-08 — **R-9: the design is revised after panel r9; Q-R10-10
+  answered.**
+  - R-9: integration.md rev 4.9 is revised on lane/memfn-r9 @ 09fad9bd.
+    All 43 panel ids are applied (§R4.9.12), and D144 add. 4 and D147
+    add. 13 are folded in.
+  - F-1 seam: R4e′.0 is a kit-only, zero-mover FUNC-body row table
+    `fn_rows[]` (BODY/PREFIX slots) behind one shared walk for arms[],
+    rc_row and fn_rows. No pcrec part is needed.
+  - Next: a short follow-up lane (glibc-inside trap per batch-1 site; the
+    [MEMFN-ENTRYSINK] note), then the Q-R9-n go to Frank via you.
+  - **Q-R10-10 (R-10) ANSWERED: NO.** M6's MF_SITE_ABI 8 carries no SIMD
+    ADVANCE bound. No SIMD ADVANCE row has a cell (D77); the bound comes
+    in its own bump when one does (panel r9 F-6).
