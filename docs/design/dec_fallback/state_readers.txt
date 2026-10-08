@@ -1,4 +1,4 @@
-# state_readers.sh (rev 2, derived) at 0f3d6865; one line per code line
+# state_readers.sh (rev 2, derived) at a868509e; one line per code line
 # E (EngineFit members, qualified): chosen engines engine_sel pf_admit prefilter prefilter_collapsed prefilter_lang_why prefilter_nfa_states prefilter_sizecap_bytes prefilter_sizecap_limit why why_pos 
 # L (compile_driver cross-attempt locals, bare): budget_fallback collapse_reason defo dfa_disabled dfa_was_engine dmemo fit_fired fit_nseq overflow_why size_cap_bytes size_cap_limit size_drop_rung st_capexcl st_code st_fc st_final_k st_idx st_k st_nodes st_ok st_phase st_rescue st_sc st_total st_whylen 
 # R (recovery-point Ctx members, qualified): dfa_overflowed dfa_overflow_is_budget dfa_overflow_why failed_nomem size_cap_bytes size_cap_limit size_cap_refused 
@@ -31,31 +31,31 @@ src/opt/select_engine.c:1072	fit->chosen	fit->chosen == ENGM_VM && cx->opt->engi
 src/opt/select_engine.c:1074	pf_admit_walk	const PfAdmit *row = pf_admit_walk(&pfas);
 src/opt/select_engine.c:1075	pf_admit	fit->pf_admit = row;
 src/opt/select_engine.c:1076	prefilter	fit->prefilter = pf_admit_verdict(row, &pfas);
-src/opt/select_engine.c:1096	fit_attrib_walk	static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *from)
-src/opt/select_engine.c:1101	ESEL_FORCED	if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
-src/opt/select_engine.c:1103	pf_admit	if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
-src/opt/select_engine.c:1104	fit_nseq	for (int i = cx->fit_nseq; i-- > 0; ) {
-src/opt/select_engine.c:1105	prefilter	const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
-src/opt/select_engine.c:1108	dfa_was_engine,ESEL_OVERFLOWED_DFA	return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
-src/opt/select_engine.c:1109	ESEL_OVERFLOWED_PREFILTER	: ESEL_OVERFLOWED_PREFILTER) : c;
-src/opt/select_engine.c:1112	ESEL_SELECTED	return ESEL_SELECTED;
-src/opt/select_engine.c:1143	esel_of	static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
-src/opt/select_engine.c:1159	dfa_disabled,SDR_NONE,size_drop_rung	if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
-src/opt/select_engine.c:1160	why_pos	pcrec_ctx_fail(cx, fit->why_pos,
-src/opt/select_engine.c:1164	fit_attrib_walk	return fit_attrib_walk(cx, fit, NULL);
-src/opt/select_engine.c:1189	collapse_reason	const int cr = cx->collapse_reason;
-src/opt/select_engine.c:1191	pf_admit,prefilter	"%s pf=%d", fit->pf_admit->name, (int)fit->prefilter);
-src/opt/select_engine.c:1194	fit_attrib_walk	(void)fit_attrib_walk(cx, fit, &src);
-src/opt/select_engine.c:1200	pcrec_engine_sel_name	pcrec_engine_sel_name(cx), from);
-src/opt/select_engine.c:1273	engines	fit.engines = mask;
-src/opt/select_engine.c:1274	why	fit.why = why ? why_text(cx, why, why_pos) : NULL;
-src/opt/select_engine.c:1275	why_pos	fit.why_pos = why_pos;
-src/opt/select_engine.c:1316	fit.chosen	fit.chosen = ENGM_DFA;
-src/opt/select_engine.c:1321	fit.chosen	fit.chosen = ENGM_VM;
-src/opt/select_engine.c:1322	why	if (!fit.why) fit.why = "--engine=vm";
-src/opt/select_engine.c:1328	fit.chosen	fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
-src/opt/select_engine.c:1332	prefilter_decision	prefilter_decision(cx, &fit, why_pos);
-src/opt/select_engine.c:1333	engine_sel,esel_of	fit.engine_sel = esel_of(cx, &fit);
+src/opt/select_engine.c:1097	fit_attrib_walk	static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *from)
+src/opt/select_engine.c:1102	ESEL_FORCED	if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
+src/opt/select_engine.c:1104	pf_admit	if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
+src/opt/select_engine.c:1105	fit_nseq	for (int i = cx->fit_nseq; i-- > 0; ) {
+src/opt/select_engine.c:1106	prefilter	const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
+src/opt/select_engine.c:1109	dfa_was_engine,ESEL_OVERFLOWED_DFA	return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
+src/opt/select_engine.c:1110	ESEL_OVERFLOWED_PREFILTER	: ESEL_OVERFLOWED_PREFILTER) : c;
+src/opt/select_engine.c:1113	ESEL_SELECTED	return ESEL_SELECTED;
+src/opt/select_engine.c:1144	esel_of	static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
+src/opt/select_engine.c:1160	dfa_disabled,SDR_NONE,size_drop_rung	if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
+src/opt/select_engine.c:1161	why_pos	pcrec_ctx_fail(cx, fit->why_pos,
+src/opt/select_engine.c:1165	fit_attrib_walk	return fit_attrib_walk(cx, fit, NULL);
+src/opt/select_engine.c:1190	collapse_reason	const int cr = cx->collapse_reason;
+src/opt/select_engine.c:1192	pf_admit,prefilter	"%s pf=%d", fit->pf_admit->name, (int)fit->prefilter);
+src/opt/select_engine.c:1195	fit_attrib_walk	(void)fit_attrib_walk(cx, fit, &src);
+src/opt/select_engine.c:1201	pcrec_engine_sel_name	pcrec_engine_sel_name(cx), from);
+src/opt/select_engine.c:1274	engines	fit.engines = mask;
+src/opt/select_engine.c:1275	why	fit.why = why ? why_text(cx, why, why_pos) : NULL;
+src/opt/select_engine.c:1276	why_pos	fit.why_pos = why_pos;
+src/opt/select_engine.c:1317	fit.chosen	fit.chosen = ENGM_DFA;
+src/opt/select_engine.c:1322	fit.chosen	fit.chosen = ENGM_VM;
+src/opt/select_engine.c:1323	why	if (!fit.why) fit.why = "--engine=vm";
+src/opt/select_engine.c:1329	fit.chosen	fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
+src/opt/select_engine.c:1333	prefilter_decision	prefilter_decision(cx, &fit, why_pos);
+src/opt/select_engine.c:1334	engine_sel,esel_of	fit.engine_sel = esel_of(cx, &fit);
 src/ir/dfa.c:203	dfa_overflowed	cx->dfa_overflowed = true;
 src/ir/dfa.c:204	dfa_overflow_why	snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
 src/ir/dfa.c:1248	dfa_overflowed	cx->dfa_overflowed = true;

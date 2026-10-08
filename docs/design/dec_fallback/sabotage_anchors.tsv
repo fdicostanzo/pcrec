@@ -327,7 +327,7 @@ S406_clspack_kit_deny_ignored	S406	1	src/gen/clskit.c	pcrec_clskit_tabdeny_of	de
 S407_findall_nonempty_arm_unaligned_c	S407	1	tests/harness/driver.c	file:tests/harness/driver.c	outside	514	1/1	OTHER					
 S408_findall_nonempty_arm_unaligned_py	S408	1	tests/harness/verify_rxt.py	file:tests/harness/verify_rxt.py	outside	390	1/1	OTHER					
 S409_utf_fastpath_skips_window_lead	S409	1	src/enc/enc_utf8.c	u8_defs_valid_upto	def	456	1/1	OTHER					
-S40_vm_capfree_to_vm	S40	1	src/opt/select_engine.c	pcrec_select_engine	def	1328	1/1	RE-RUN		B5			B5:calls-rewritten
+S40_vm_capfree_to_vm	S40	1	src/opt/select_engine.c	pcrec_select_engine	def	1329	1/1	RE-RUN		B5			B5:calls-rewritten
 S410_utf_validator_surrogate_accepted	S410	1	src/enc/enc_utf8.c	u8_defs_valid_upto	def	470	1/1	OTHER					
 S411_utf_check_before_k50_guard	S411	1	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	def	829	1/1	OTHER					
 S412_utf_stepback_one_byte	S412	1	src/enc/enc_utf8.c	u8_defs_valid_upto	def	444	1/1	OTHER					
@@ -509,7 +509,7 @@ S622_fbt_esel_witness_dropped	S622	1	tests/codegen/run_fallback_table.sh	file:te
 S623_fallback_trace_labels_swapped	S623	1	src/core/compile.c	trace@src/core/compile.c:1425	def	1441	1/1	OTHER					
 S624_fallback_trace_size_record_dropped	S624	1	src/core/compile.c	compile_driver	def	2026	1/1	RE-RUN		B5			B5:edit-set
 S625_admit_trace_var_rows_swapped	S625	1	src/opt/select_engine.c	pf_admits	def	666	1/1	RE-AIM	B4		def pf_admits	pfa_var_nullable	
-S626_attrib_trace_sel1_source_swapped	S626	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:1167	def	1195	1/1	OTHER					
+S626_attrib_trace_sel1_source_swapped	S626	1	src/opt/select_engine.c	trace@src/opt/select_engine.c:1168	def	1196	1/1	OTHER					
 S627_t1_sel1_rows_swapped	S627	1	src/core/compile.c	fit_rungs	def	1016	1/1	RE-RUN		after-B6		fit_sel1_collapse_applies,fit_sel1_drop_applies	
 S628_t1_sel1_drop_keeps_dd	S628	1	src/core/compile.c	fit_rungs	def	1027	1/1	RE-RUN		after-B6			
 S629_t1_sel1_collapse_no_latch	S629	1	src/core/compile.c	fit_rungs	def	1020	1/1	RE-RUN		after-B6			
@@ -530,7 +530,7 @@ S641_t2_overflow_drop_no_force_off	S641	1	src/opt/select_engine.c	pfa_overflow_d
 S642_t3_rung_forced_swapped	S642	1	src/core/compile.c	pflw_rows	def	1183	1/1	RE-RUN		after-B6		pflw_rung,pflw_worth	
 S643_t3_projection_wrong_reason	S643	1	src/core/compile.c	fit_row_setting_cr	def	1142	1/1	RE-RUN		after-B6			
 S644_t4_rescue_model_swapped	S644	1	src/core/compile.c	st_whys	def	1236	1/1	RE-RUN		after-B6		stw_moved,stw_rescue	
-S645_attrib_cells_swapped	S645	1	src/opt/select_engine.c	fit_attrib_walk	def	1105	1/1	RE-AIM	B5		def fit_attrib_walk		
+S645_attrib_cells_swapped	S645	1	src/opt/select_engine.c	fit_attrib_walk	def	1106	1/1	RE-AIM	B5		def fit_attrib_walk		
 S646_t1_forcing_below_nomem	S646	1	src/core/compile.c	fit_rungs	def	1000	1/1	RE-RUN		after-B6		fit_always	
 S647_t1_trial_on_drops_other	S647	1	src/core/compile.c	fit_rungs	def	1013	1/1	RE-RUN		after-B6			
 S648_t1_size_collapse_deny_dropped	S648	1	src/core/compile.c	fit_rungs	def	1035	1/1	RE-RUN		after-B6			

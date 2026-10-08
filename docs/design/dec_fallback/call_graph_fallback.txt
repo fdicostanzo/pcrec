@@ -380,12 +380,12 @@ def-func	emit_table_composite_rows	src/dump/axes_dump.c:369-377
 def-func	emit_scan_composite_rows	src/dump/axes_dump.c:394-402	
 def-type	PredAxis	src/dump/axes_dump.c:412-422	
 def-func	emit_pred_row	src/dump/axes_dump.c:436-450	
-def-func	emit_predicate_axes	src/dump/axes_dump.c:461-999	
-def-func	mf_kind_word	src/dump/axes_dump.c:1006-1013	
-def-func	mf_budget_word	src/dump/axes_dump.c:1015-1023	
-def-func	mf_layer_word	src/dump/axes_dump.c:1025-1032	
-def-func	emit_memfn_section	src/dump/axes_dump.c:1041-1066	
-def-func	pcrec_axes_tsv	src/dump/axes_dump.c:1077-1136	
+def-func	emit_predicate_axes	src/dump/axes_dump.c:461-1000	
+def-func	mf_kind_word	src/dump/axes_dump.c:1007-1014	
+def-func	mf_budget_word	src/dump/axes_dump.c:1016-1024	
+def-func	mf_layer_word	src/dump/axes_dump.c:1026-1033	
+def-func	emit_memfn_section	src/dump/axes_dump.c:1042-1067	
+def-func	pcrec_axes_tsv	src/dump/axes_dump.c:1078-1137	
 def-type	FactsRows	src/dump/facts_dump.c:38-41	
 def-table	fd_name	src/dump/facts_dump.c:44-47	
 def-table	fd_epoch	src/dump/facts_dump.c:48-51	
@@ -1676,10 +1676,10 @@ def-table	pf_admits	src/opt/select_engine.c:636-717
 def-func	pf_admit_walk	src/opt/select_engine.c:720-725	
 def-func	pf_admit_verdict	src/opt/select_engine.c:728-731	
 def-func	prefilter_decision	src/opt/select_engine.c:801-1077	
-def-type	enum@src/opt/select_engine.c:1081	src/opt/select_engine.c:1081-1081	
-def-func	fit_attrib_walk	src/opt/select_engine.c:1096-1113	
-def-func	esel_of	src/opt/select_engine.c:1143-1165	
-def-func	pcrec_select_engine	src/opt/select_engine.c:1217-1345	
+def-type	enum@src/opt/select_engine.c:1082	src/opt/select_engine.c:1082-1082	
+def-func	fit_attrib_walk	src/opt/select_engine.c:1097-1114	
+def-func	esel_of	src/opt/select_engine.c:1144-1166	
+def-func	pcrec_select_engine	src/opt/select_engine.c:1218-1346	
 def-func	lang_charset	src/parse/ctxnode.c:46-103	
 def-func	look_fn	src/parse/ctxnode.c:107-111	
 def-func	t3_ctx_applies	src/parse/ctxnode.c:115-122	
@@ -2164,11 +2164,11 @@ def-trace	trace@src/gen/emit_dfa.c:1121	src/gen/emit_dfa.c:1121-1137
 def-trace	trace@src/gen/emit_dfa.c:8433	src/gen/emit_dfa.c:8433-8639	
 def-trace	trace@src/gen/emit_vm.c:11013	src/gen/emit_vm.c:11013-11019	
 def-trace	trace@src/opt/select_engine.c:733	src/opt/select_engine.c:733-752	
-def-trace	trace@src/opt/select_engine.c:1167	src/opt/select_engine.c:1167-1202	
-seed	esel_of	src/opt/select_engine.c:1143	
+def-trace	trace@src/opt/select_engine.c:1168	src/opt/select_engine.c:1168-1203	
+seed	esel_of	src/opt/select_engine.c:1144	
 seed	fit_always	src/core/compile.c:928	
 seed	fit_anchored_applies	src/core/compile.c:849	
-seed	fit_attrib_walk	src/opt/select_engine.c:1096	
+seed	fit_attrib_walk	src/opt/select_engine.c:1097	
 seed	fit_collapse_applies	src/core/compile.c:791	
 seed	fit_prefilter_applies	src/core/compile.c:919	
 seed	fit_rung_denied	src/core/compile.c:1081	
@@ -2277,9 +2277,9 @@ family-func	pfa_always	src/opt/select_engine.c:619	body; names
 family-table	pf_admits	src/opt/select_engine.c:636	body; names pfa_always,pfa_bref,pfa_call,pfa_forced_off,pfa_forced_on,pfa_nullable_collapsed,pfa_nullable_exact,pfa_overflow_drop,pfa_var,pfa_var_nullable,@field
 family-func	pf_admit_walk	src/opt/select_engine.c:720	body; names pf_admits
 family-func	prefilter_decision	src/opt/select_engine.c:801	body; names pf_admit_walk,@field
-family-func	fit_attrib_walk	src/opt/select_engine.c:1096	body; names @field
-family-func	esel_of	src/opt/select_engine.c:1143	body; names fit_attrib_walk,@field
-family-func	pcrec_select_engine	src/opt/select_engine.c:1217	body; names analyses,esel_of,prefilter_decision,run_possessify,run_revdet,@field
+family-func	fit_attrib_walk	src/opt/select_engine.c:1097	body; names @field
+family-func	esel_of	src/opt/select_engine.c:1144	body; names fit_attrib_walk,@field
+family-func	pcrec_select_engine	src/opt/select_engine.c:1218	body; names analyses,esel_of,prefilter_decision,run_possessify,run_revdet,@field
 family-func	pcrec_ast_stamp	src/parse/parse.c:77	body; names @field
 site	build_anchored_dfa	src/core/compile.c:352	chosen,fit | if (cx->job->fit.chosen != ENGM_DFA) return;
 site	build_anchored_dfa	src/core/compile.c:354	SDR_NO_ANCHORED,size_drop_rung | if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;
@@ -2462,21 +2462,21 @@ site	pf_admit_walk	src/opt/select_engine.c:723	pf_admits | while (i + 1 < sizeof
 site	pf_admit_walk	src/opt/select_engine.c:724	pf_admits | return &pf_admits[i];
 site	prefilter_decision	src/opt/select_engine.c:958	chosen,fit | if (force_on && fit->chosen != ENGM_VM)
 site	prefilter_decision	src/opt/select_engine.c:1072	chosen,fit | fit->chosen == ENGM_VM && cx->opt->engine != PCREC_ENGINE_VM,
-site	fit_attrib_walk	src/opt/select_engine.c:1101	ESEL_FORCED | if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
-site	fit_attrib_walk	src/opt/select_engine.c:1103	fit,pf_admit | if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
-site	fit_attrib_walk	src/opt/select_engine.c:1104	fit_nseq via i | for (int i = cx->fit_nseq; i-- > 0; ) {
-site	fit_attrib_walk	src/opt/select_engine.c:1105	fit,prefilter via c,i | const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
-site	fit_attrib_walk	src/opt/select_engine.c:1106	 via c | if (c == ESEL_PASS) continue;
-site	fit_attrib_walk	src/opt/select_engine.c:1108	ESEL_OVERFLOWED_DFA,dfa_was_engine via c | return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
-site	fit_attrib_walk	src/opt/select_engine.c:1112	ESEL_SELECTED | return ESEL_SELECTED;
-site	esel_of	src/opt/select_engine.c:1159	SDR_NONE,dfa_disabled,size_drop_rung | if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
-site	esel_of	src/opt/select_engine.c:1164	fit,fit_attrib_walk | return fit_attrib_walk(cx, fit, NULL);
-site	pcrec_select_engine	src/opt/select_engine.c:1259	analyses | for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
-site	pcrec_select_engine	src/opt/select_engine.c:1263	why,why_pos via m | if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
-site	pcrec_select_engine	src/opt/select_engine.c:1264	analyses via m | if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
-site	pcrec_select_engine	src/opt/select_engine.c:1274	fit,why,why_pos | fit.why = why ? why_text(cx, why, why_pos) : NULL;
-site	pcrec_select_engine	src/opt/select_engine.c:1312	why_pos | pcrec_ctx_fail(cx, node_why ? node_why_pos : why_pos,
-site	pcrec_select_engine	src/opt/select_engine.c:1314	why | node_why ? node_why : why ? why : "");
-site	pcrec_select_engine	src/opt/select_engine.c:1322	fit,why | if (!fit.why) fit.why = "";
-site	pcrec_select_engine	src/opt/select_engine.c:1328	chosen,fit | fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
+site	fit_attrib_walk	src/opt/select_engine.c:1102	ESEL_FORCED | if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
+site	fit_attrib_walk	src/opt/select_engine.c:1104	fit,pf_admit | if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
+site	fit_attrib_walk	src/opt/select_engine.c:1105	fit_nseq via i | for (int i = cx->fit_nseq; i-- > 0; ) {
+site	fit_attrib_walk	src/opt/select_engine.c:1106	fit,prefilter via c,i | const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
+site	fit_attrib_walk	src/opt/select_engine.c:1107	 via c | if (c == ESEL_PASS) continue;
+site	fit_attrib_walk	src/opt/select_engine.c:1109	ESEL_OVERFLOWED_DFA,dfa_was_engine via c | return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
+site	fit_attrib_walk	src/opt/select_engine.c:1113	ESEL_SELECTED | return ESEL_SELECTED;
+site	esel_of	src/opt/select_engine.c:1160	SDR_NONE,dfa_disabled,size_drop_rung | if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
+site	esel_of	src/opt/select_engine.c:1165	fit,fit_attrib_walk | return fit_attrib_walk(cx, fit, NULL);
+site	pcrec_select_engine	src/opt/select_engine.c:1260	analyses | for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
+site	pcrec_select_engine	src/opt/select_engine.c:1264	why,why_pos via m | if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
+site	pcrec_select_engine	src/opt/select_engine.c:1265	analyses via m | if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
+site	pcrec_select_engine	src/opt/select_engine.c:1275	fit,why,why_pos | fit.why = why ? why_text(cx, why, why_pos) : NULL;
+site	pcrec_select_engine	src/opt/select_engine.c:1313	why_pos | pcrec_ctx_fail(cx, node_why ? node_why_pos : why_pos,
+site	pcrec_select_engine	src/opt/select_engine.c:1315	why | node_why ? node_why : why ? why : "");
+site	pcrec_select_engine	src/opt/select_engine.c:1323	fit,why | if (!fit.why) fit.why = "";
+site	pcrec_select_engine	src/opt/select_engine.c:1329	chosen,fit | fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
 site	pcrec_ast_stamp	src/parse/parse.c:83	engines | if (rw && !(rw->engines & ENGM_DFA) && cx->first_vmonly_pos == (size_t)-1)
