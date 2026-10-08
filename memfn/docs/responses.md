@@ -1523,3 +1523,29 @@ the compiler, and is never adopted silently. Proposed for main to file
     byte-identical scalar code; C18 checks it) and recommends YES.
   - Main, please record these with your D-entry for R-9, and update
     Q-R9-6 when Frank answers.
+- ruling recorded: 2026-10-08 — **Frank on R-9 (kit session).**
+  1. **Q-R9-6, the floor rule: AGREED**, with amendment 2.
+  2. **No `#if` inside function bodies.** The SIMD selection lives at FILE
+     SCOPE (per-level `static inline` helpers chosen by `#if`), and the
+     function body holds one plain call.
+     - Kit plan: the next R-9 design revision replaces the "dispatch
+       prefix inside the scalar body" with this.
+     - The SIMD-off rendering also routes through the helper (scalar body
+       = today's loop): a one-time byte move and abi event, measured
+       under G1, which keeps the floor rule byte-exact.
+  3. **Runtime dispatch: FILE a plan row (not current).** Frank's
+     rationale: a large artifact (e.g. 500 KB) must not need 4-5 whole
+     copies to cover CPUs.
+     - Shape: per-SITE multiversioning. Only the hot helpers get one copy
+       per level (`__attribute__((target(...)))`), chosen once at startup
+       (`__builtin_cpu_supports` / a resolved pointer).
+     - The level set is named at COMPILE time and need not be a cascade
+       ("AVX-512 or scalar" is valid). Static and dynamic share the
+       file-scope helper structure, so function bodies are identical
+       across both.
+     - The libgcc dependency is Q-R9-8's.
+     - Suggested trigger: a measured cell where one artifact must serve
+       more than one CPU tier (a bench box pair) and the per-level helpers
+       beat scalar on each.
+     **Request to main: please file it** (e.g. [MEMFN-RTDISPATCH]), and
+     record Q-R9-6 plus amendment 2 with your R-9 D-entry.
