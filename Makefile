@@ -328,7 +328,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
-      test-memfn-rows test-cand-oracle
+      test-memfn-rows test-cand-oracle test-fallback-table
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -705,6 +705,16 @@ test-dfa-uniform-fold: all
 test-prefilter-collapse: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-prefilter-collapse.ran"; fi
 	bash tests/codegen/run_prefilter_collapse.sh
+
+# [decfb B0] the FALLBACK TABLES' artifact-side check (docs/design/
+# dec_fallback.md rev 2 §4.2 item 11): the observed-stamp leg (every
+# ENGINE_SEL / UNROLL_K_WHY value stamped by a witness, held to match_api.md
+# §6.3's hand-written sets), the VM_PREFILTER_LANG_WHY forms, and (from B1)
+# the trace-read fallback sequences. Its OWN section like
+# `test-prefilter-collapse`: it builds three reference compilers (~7 s).
+test-fallback-table: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-fallback-table.ran"; fi
+	bash tests/codegen/run_fallback_table.sh
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the
@@ -1846,7 +1856,7 @@ clean:
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
-        test-spec test-premul-table test-cand-oracle test-anchored-match \
+        test-spec test-premul-table test-cand-oracle test-fallback-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \

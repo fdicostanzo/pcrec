@@ -169,3 +169,15 @@ listing gets its own worded arm (`"NO (nullable exact language)"`, no
 anything).
 
 **NOT YET SABOTAGE-COVERED**, same flag as the [SEL-1] section above.
+
+## §7b — the T2 listing half, hand-written ([decfb B0] item 6, lane decfbB0b, 2026-10-08)
+
+`run_prefilter_tests.sh` §7b adds `check_ir_value` rows for every T2 row and
+reached scope of `docs/design/dec_fallback.md` rev 2 §4.2 B0 item 6 (the
+exists rows of §7 stay): 14 value rows on the shipped build, a DFA-route
+refusal row, and the `lowsize` reference-build row (`(?:a\K){2,}b` ->
+`yes-collapsed`; the reference compiler is built once, the way
+`tests/codegen/run_size_term.sh` builds its lowered compilers). Every new row
+passes `--features all`. The two UNREACHED cells (T2 rows 5 and 6 at SIZECAP)
+carry their argument as a comment. These rows are the hand-written,
+table-independent control of T2's listing half and half of B4's HARD GATE.

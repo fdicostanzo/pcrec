@@ -3471,3 +3471,12 @@ possfin; the branching-cycle witness `(a\2\3)(b\1)(c\1)x+\1` never even
 walks its cycle), S604 (a
 group body read with `first_of`'s POSITION answer, N1).
 
+
+## [decfb B0] `fallbacktable` (lane decfbB0b, 2026-10-08)
+
+New suite word, registered with no rows yet: it runs
+`tests/codegen/run_fallback_table.sh` from the sabotaged tree (reference
+compilers built from the tree's own sources into the row's work dir;
+`PCREC` is the tree's `build/pcrec`) and scores the script's
+`checks passed:`/`checks failed:` summary. Rows aimed at the fallback
+tables (design §4.4's `fbt` detectors) name it in `SAB_SUITES`.

@@ -5079,3 +5079,16 @@ pcrec's abi-37 tree (lane/s1step6 fe233552; ASan on the trial merge
 Box choice consequence (memory `pcrec-cross-platform-verification`): the
 sanitizer pair belongs on Linux — ASan because only Linux completes it
 AND only Linux runs LSan.
+
+## `make test-fallback-table` ([decfb B0], lane decfbB0b, 2026-10-08)
+
+`tests/codegen/run_fallback_table.sh`, a new `TEST_SECTIONS` member (one more
+than the 59 measured at 23111928; the Makefile is the list of record) and mech
+arm `fallbacktable`: the fallback tables' artifact-side check. The
+observed-stamp leg holds every `RX_ENGINE_SEL` (8) and `RX_UNROLL_K_WHY` (7)
+value to at least one witness (K35 floor) and the observed set to
+`docs/spec/match_api.md` §6.3's hand-written set; the `_LANG_WHY` forms are
+held to hand-written text. Runtime ~7 s (three reference compilers built in
+parallel). `tests/prefilter/run_prefilter_tests.sh` §7b adds the hand-written
+T2 listing rows (50 checks, ~8 s). See `docs/design/dec_fallback.md` §4.2 B0
+items 6 and 11 and `docs/dev/lanes/decfbB0b_report.md`.
