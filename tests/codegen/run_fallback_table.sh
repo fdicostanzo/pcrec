@@ -372,6 +372,7 @@ REF_trlowthr="$WORK/pcrec_trlowthr"
 # T1 at every arrival (`forcing`/`nomem` have no corpus reach: alloc_check W5/W4)
 foracle or-sel1c   plain   arrival sel1-collapse      "$W_SEL1"
 foracle or-sel1d   plain   arrival sel1-drop          "$W_OVF"
+foracle or-sel1d0  plain   arrival sel1-drop          "$W_OVF" -fno-prefilter-collapse
 foracle or-trial   plain   arrival size-term-trial    "$W_TOWER" --engine=vm
 foracle or-pfc     plain   arrival prefilter-collapse '(\p{Xwd})' -e utf8
 foracle or-pfdrop  plain   arrival drop-prefilter     '(\p{Xwd})' -e utf8
