@@ -333,8 +333,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   premul rung's shape) — in measured cost order, each with its own caller
   deny bit and a `degrading` column. `fit_select` took the first row that
   applied and was not denied (since B3, `fit_walk`, below).
-  `fit_rung_denied` is the ONE predicate `--fast-or-fail`
-  (`PCREC_FAST_OR_FAIL`) acts through: it denies every degrading row, and
+  `fit_rung_denied` is the ONE predicate `--size-cap=refuse`
+  (`PCREC_SIZE_CAP_REFUSE`) acts through: it denies every degrading row, and
   no rung tests the switch itself. The prefilter drop restarts the size term
   (the collapse rung's reason), so `COMPILE_MAX_ATTEMPTS` gained a third
   ladder run; it is never taken on a [SEL-1] retry (`!dfa_disabled`), which
@@ -346,7 +346,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   §1.3, §1.5-§1.9; no reader switched, no abi event). `fit_rungs[]` gains
   rows 0-4 (`forcing`, `nomem`, `size-term-trial`, `sel1-collapse`,
   `sel1-drop`) ahead of the size rungs and the columns `on` (the arrival
-  LABEL mask), `fof` (inside `--fast-or-fail`'s reach: `fit_rung_denied`
+  LABEL mask), `fof` (inside `--size-cap=refuse`'s reach: `fit_rung_denied`
   denies a degrading row only when it is IN), `sets` (the state the row
   writes, KEEP a named cell), `cells` (`FitCells`, internal.h: the
   `ENGINE_SEL`/PFLW/`VM_PREFILTER_WHY` tokens), `ukw`, `note`, `retries`

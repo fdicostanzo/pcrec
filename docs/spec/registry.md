@@ -295,7 +295,7 @@ written beside the row in `cand_rows[]` since [START-TABLE] C6; for the
 three fallback axes, the row's `axlist` cell beside it in the fallback tables
 (`fit_rungs[]`, `pf_admits[]`, `esel_ends[]`) since [DEC-FALLBACK] B6/B7, and
 for `fallback` and `prefilter-admit` GENERATED from the row's own cells
-(arrival labels, degrading, `--fast-or-fail` reach, attempts added, repeat;
+(arrival labels, degrading, `--size-cap=refuse` reach, attempts added, repeat;
 verdict and `--emit-ir` listing token);
 `tuning.md` §2's prose for the `kind=predicate` rows) — evaluating a real
 candidate's predicate needs a live pattern a

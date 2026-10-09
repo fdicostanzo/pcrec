@@ -235,9 +235,11 @@ static void usage(FILE *f)
           "                 built-in limit is refused. Defaults 500,000 code\n"
           "                 / 1,000,000 total. For a real build put these in\n"
           "                 the pattern source's config block instead\n"
-          "  --fast-or-fail REFUSE an artifact over either limit rather than\n"
-          "                 ship a slower one that fits: denies every size-\n"
-          "                 cap retry that costs run time (docs/spec/limits.md)\n"
+          "  --size-cap=refuse|degrade  what an artifact over either limit\n"
+          "                 gets. refuse: REFUSE it rather than ship a slower\n"
+          "                 one that fits (denies every size-cap retry that\n"
+          "                 costs run time). degrade (default): ship the\n"
+          "                 first smaller form that fits (docs/spec/limits.md)\n"
           "  --max-nfa-states=N, --max-dfa-states-goto=N, --max-subset-elems=N\n"
           "                 [LIM-2] RAISE three compile-time construction\n"
           "                 budgets (NFA states, the computed-goto attempt\n"
@@ -826,7 +828,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--ucp")) opt.flags |= PCREC_UCP;
         /* [PF-DROP] (D135) a size-cap POLICY, not a `-f` axis: it selects
          * no shape (lib/pcrec.h at the bit). */
-        else if (!strcmp(a, "--fast-or-fail")) opt.flags |= PCREC_FAST_OR_FAIL;
+        else if (!strncmp(a, "--size-cap=", 11)) {
+            if (!strcmp(a + 11, "refuse")) opt.flags |= PCREC_SIZE_CAP_REFUSE;
+            else if (!strcmp(a + 11, "degrade")) opt.flags &= ~PCREC_SIZE_CAP_REFUSE;
+            else {
+                cli_err("--size-cap must be refuse or degrade (got '%s')", a + 11);
+                return 1;
+            }
+        }
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the

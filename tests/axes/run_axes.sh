@@ -482,7 +482,7 @@ declare -A REFUSAL_PATTERN=(
     # ineligible, so the size cap refuses with its own text. Verified live
     # with `build/pcrec -p rx -e utf8 --features all --engine=vm -fprefilter
     # --pattern 'x\p{Xwd}y'`, and against lane/pfdrop's compiler, which
-    # refuses identically with and without --fast-or-fail. The substring is
+    # refuses identically with and without --size-cap=refuse. The substring is
     # the emitted-C-source cap's own wording (the code-bytes cap reads
     # "bytes of emitted code", which this axis does not reach), and the
     # existing 12,000 floor is unaffected (K35: 32 cases on one file is not

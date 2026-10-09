@@ -411,15 +411,22 @@ The line it prints names the unroll factor and its reason, the prefilter
 language, and a pointer to `tuning.md` — see `limits.md` for the full text and
 the reasoning.
 
-### `--fast-or-fail` — refuse rather than ship a slower artifact that fits
+### `--size-cap=refuse|degrade` — refuse rather than ship a slower artifact that fits
 
 **[PF-DROP] (D135, 2026-09-30).** When an artifact is over
 `--max-emit-code-bytes`/`--max-emit-bytes`, pcrec normally walks the
 size-cap ladder (`docs/spec/limits.md` §8, "The size-cap ladder") and ships
 the first smaller form that fits, each one slower than the form the cap
-refused. `--fast-or-fail` denies every rung the ladder marks DEGRADING —
+refused. `--size-cap=refuse` denies every rung the ladder marks DEGRADING —
 today all of them — so the compile REFUSES instead, with the ordinary size
-diagnostic. One bit, `PCREC_FAST_OR_FAIL` (bit 41), for library callers.
+diagnostic. `--size-cap=degrade` (the default, today's behaviour) walks the
+ladder; a later `--size-cap=` on the command line wins. Any other value is
+refused. The scope is the size-cap ladder ONLY: the `[SEL-1]` DFA-overflow
+rungs are outside it (an overflow is answered by `--engine=dfa` or
+`-fprefilter`). One bit, `PCREC_SIZE_CAP_REFUSE` (bit 41), for library
+callers; it replaces `PCREC_FAST_OR_FAIL` and the retired spelling
+`--fast-or-fail`, which has NO alias and is now an unknown option (pre-1.0,
+D118's `--source` precedent).
 
 It is a size POLICY, not a `-f` tuning axis: it selects no shape, and an
 artifact that fits is byte-identical with or without it (masked out of
@@ -1262,6 +1269,11 @@ Stated plainly rather than left for a stranger to discover by trial:
   either — see §1.
 
 ## Revision history
+
+- 2026-10-09 ([SIZE-CAP-FLAG], Frank's ruling): §1 `--fast-or-fail` is
+  RENAMED `--size-cap=refuse|degrade` (default `degrade`); the old spelling
+  is retired with no alias; bit 41 is `PCREC_SIZE_CAP_REFUSE`. No artifact
+  byte moves.
 
 - 2026-09-30 ([PF-DROP], D135): §1 gains `--fast-or-fail` (bit 41), the
   switch that denies every degrading rung of the size-cap ladder.

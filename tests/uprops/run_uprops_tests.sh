@@ -326,7 +326,7 @@ echo "== §5 the size-cap ladder's last rung ([PF-DROP], D135) =="
 # the smaller form rather than the ladder choosing it. This section holds
 # what the rescued artifact MATCHES; tests/resource/run_resource_tests.sh's
 # [PF-DROP] section holds what compiling it does (stamps, note, identity with
-# `-fno-prefilter`, and `--fast-or-fail`'s refusal).
+# `-fno-prefilter`, and `--size-cap=refuse`'s refusal).
 # A utf8-arm section (the witness is `utf8`-only, and the sweep is the whole
 # code-point space), so `make test-uprops`'s byte arm skips it and
 # `make test-uprops-utf8` runs it.

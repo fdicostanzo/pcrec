@@ -182,7 +182,7 @@ if emit "$w2" -- "$K41W2"; then
     # is still the control this row needs (the default's hybrid is the
     # collapse row's doing, because denying that row alone moves the artifact
     # to the other rung's stamp), and the REFUSAL the old control read is now
-    # `--fast-or-fail`'s, the switch that denies every degrading row.
+    # `--size-cap=refuse`'s, the switch that denies every degrading row.
     if emit "$WORK/k41w2_deny.c" -fno-prefilter-collapse -- "$K41W2"; then
         d_pf=$(stamp VM_PREFILTER "$WORK/k41w2_deny.c")
         d_why=$(stamp VM_PREFILTER_WHY "$WORK/k41w2_deny.c")
@@ -195,12 +195,12 @@ if emit "$w2" -- "$K41W2"; then
     else
         bad "[K39/default] K41 witness 2 is REFUSED under -fno-prefilter-collapse — the prefilter-drop rung should have taken it: $(head -1 "$WORK/k41w2_deny.c.err")"
     fi
-    if emit "$WORK/k41w2_ff.c" --fast-or-fail -- "$K41W2"; then
-        bad "[K39/default] K41 witness 2 compiles under --fast-or-fail — the switch did not deny the size rungs"
+    if emit "$WORK/k41w2_ff.c" --size-cap=refuse -- "$K41W2"; then
+        bad "[K39/default] K41 witness 2 compiles under --size-cap=refuse — the switch did not deny the size rungs"
     elif grep -q 'bytes of emitted code' "$WORK/k41w2_ff.c.err"; then
-        ok "[K39/default] --fast-or-fail restores the cap's refusal ($(head -1 "$WORK/k41w2_ff.c.err" | cut -c1-64)...)"
+        ok "[K39/default] --size-cap=refuse restores the cap's refusal ($(head -1 "$WORK/k41w2_ff.c.err" | cut -c1-64)...)"
     else
-        bad "[K39/default] under --fast-or-fail K41 witness 2 was refused, but not by a size cap: $(head -1 "$WORK/k41w2_ff.c.err")"
+        bad "[K39/default] under --size-cap=refuse K41 witness 2 was refused, but not by a size cap: $(head -1 "$WORK/k41w2_ff.c.err")"
     fi
 else
     bad "[K39/default] K41 witness 2 does not compile at the default — ruling B's size rung is not rescuing it: $(head -1 "$w2.err")"

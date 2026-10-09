@@ -1033,7 +1033,7 @@ enum {
  * Refused together with `-fno-startpos-guard`, which names a different
  * answer for the same input. A `#define` for bit 32's reason. */
 #define PCREC_FORCE_STARTPOS_ALIGN PCREC_BIT(40)
-/* [PF-DROP] (D135) `--fast-or-fail`: refuse an artifact over an emitted-size
+/* [PF-DROP] (D135) `--size-cap=refuse`: refuse an artifact over an emitted-size
  * cap rather than ship a SLOWER one that fits. Every rung of the size-cap
  * ladder (docs/spec/limits.md §8) is classified degrading or not, and this
  * bit denies every degrading rung at once — the prefilter collapse, the
@@ -1043,7 +1043,7 @@ enum {
  * ACCEPTS, the way a limit does. A pattern that fits is byte-identical with
  * or without it, so it is masked out of `rx_info.flags`. A `#define` for
  * bit 32's reason. */
-#define PCREC_FAST_OR_FAIL PCREC_BIT(41)
+#define PCREC_SIZE_CAP_REFUSE PCREC_BIT(41)
 /* [OPT-VEDGE] `-fno-view-edge` — deny the VIEW-TOLERANT SCAN EDGE
  * (src/opt/scanedge.c; docs/spec/tuning.md §2.37). The scan edge
  * (`PCREC_NO_SCAN_EDGE`) refused any counted chain that touched a `\z`

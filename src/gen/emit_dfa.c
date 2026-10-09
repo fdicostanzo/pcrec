@@ -3050,7 +3050,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
          *   - the CONTRACT bits (axes.def's block of that name), which select
          *     between ruled SEMANTICS: kept, and masked only where `byte`
          *     makes them inert (`startpos_guard_inert`/`utf_check_inert`).
-         * `PCREC_FAST_OR_FAIL` is not an axis row at all (D135): it decides
+         * `PCREC_SIZE_CAP_REFUSE` is not an axis row at all (D135): it decides
          * only whether a slower artifact that fits ships or the compile
          * refuses, so an artifact that fits is the same artifact under it. */
         const uint64_t kept = PCREC_NO_ATOMIC_DISCHARGE | PCREC_NO_SPLICE_CALLS |
@@ -3062,7 +3062,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
 #include "core/axes.def"
             ;
         const uint64_t strategy_denials = startpos_guard_inert | utf_check_inert |
-                                          (axis_bits & ~kept) | PCREC_FAST_OR_FAIL;
+                                          (axis_bits & ~kept) | PCREC_SIZE_CAP_REFUSE;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

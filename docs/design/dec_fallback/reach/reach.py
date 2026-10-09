@@ -38,7 +38,7 @@ ARMS = {
     "pf": ["-fprefilter"],
     "no-pfc": ["-fno-prefilter-collapse"],
     "pfc": ["-fprefilter-collapse"],
-    "fof": ["--fast-or-fail"],
+    "fof": ["--size-cap=refuse"],
     "no-st": ["-fno-size-term"],
     "unroll4": ["--unroll=4"],
     "no-premul": ["-fno-premul-table"],

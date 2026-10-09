@@ -4,7 +4,7 @@
 # cap (1,026,588 B); before D135 it was REFUSED at default settings, and now
 # the rung drops the prefilter and it ships at ~31 KB, answering identically
 # (a prefilter is a filter). tests/uprops/run_uprops_tests.sh §5 checks the
-# stamps, the note, `--fast-or-fail`'s refusal and the whole-code-point
+# stamps, the note, `--size-cap=refuse`'s refusal and the whole-code-point
 # membership; this file checks spans and the capture.
 #
 # Every expectation was verified against libpcre2 10.46 (the reference,

@@ -250,14 +250,14 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         fi
         # [PF-DROP] (D135) THE RESCUE IS A DEGRADING ROW of the size-cap
         # ladder (a smaller K measured ~1.03-1.06x slower, pfdrop_report.md
-        # §2), so `--fast-or-fail` denies it: the same witness under the same
+        # §2), so `--size-cap=refuse` denies it: the same witness under the same
         # reference compiler must REFUSE on the code cap rather than ship K=4.
-        if "$REF" -p rx --features all --fast-or-fail -o "$WORK/ff.c" --pattern "$RESCUE" 2>"$WORK/ff.err"; then
-            bad "--fast-or-fail did not deny the unroll ladder's cap rescue: '$RESCUE' compiled (K=$(stamp UNROLL_K "$WORK/ff.c"))"
+        if "$REF" -p rx --features all --size-cap=refuse -o "$WORK/ff.c" --pattern "$RESCUE" 2>"$WORK/ff.err"; then
+            bad "--size-cap=refuse did not deny the unroll ladder's cap rescue: '$RESCUE' compiled (K=$(stamp UNROLL_K "$WORK/ff.c"))"
         elif grep -q 'bytes of emitted code' "$WORK/ff.err"; then
-            ok "--fast-or-fail denies the cap rescue: the witness refuses on the code cap"
+            ok "--size-cap=refuse denies the cap rescue: the witness refuses on the code cap"
         else
-            bad "--fast-or-fail refused the cap-rescue witness, but not on the code cap: $(head -1 "$WORK/ff.err")"
+            bad "--size-cap=refuse refused the cap-rescue witness, but not on the code cap: $(head -1 "$WORK/ff.err")"
         fi
     else
         bad "the cap-rescue witness '$RESCUE' did not compile under the lowered-cap compiler"
