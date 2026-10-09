@@ -81,7 +81,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   bytes). `ofs_fn_define` is the seam: the BODY walk, then the PREFIX walk
   handed the BODY row, then the text. **Since R4e'.0b (lane r4e0b,
   2026-10-09; D155 item 6, integration.md §R4.9.2.5/§R4.9.2.6, pcrec abi
-  68 -> 70) the text is routed**: the BODY loop under the helper
+  68 -> 69) the text is routed**: the BODY loop under the helper
   `<fn>__body` (`fn_head`, the head every piece shares), then the PREFIX
   row's helpers, then `<fn>` itself, the SELECTOR (`fn_selector`), whose
   whole body is one call `return <fn>__body(subject, n, pos[, tables]);`.

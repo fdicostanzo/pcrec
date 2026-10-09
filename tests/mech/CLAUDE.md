@@ -3634,7 +3634,7 @@ PREFIX slot is empty (the report says so).
 ### [MEMFN] R4e'.0b — the routing: S690-S695 (lane r4e0b, 2026-10-09)
 
 R-11's step R4e'.0b (integration.md §R4.9.2.5/§R4.9.2.6, D155 item 6, pcrec
-abi 68 -> 70) routes every offset-skip/pre-check function through
+abi 68 -> 69) routes every offset-skip/pre-check function through
 `<fn>__body` and makes `<fn>` a selector whose whole body is one call. Its
 rule-level detector is C11's new routing leg (tests/memfn/routing_shape.py,
 arm `memfnstamps`), read from D155 addendum 1's text, not from the renderer;

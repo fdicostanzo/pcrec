@@ -3803,7 +3803,7 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
-- **[MEMFN] R4e'.0b, THE ROUTING (lane r4e0b, 2026-10-09, abi 68 -> 70; 69
+- **[MEMFN] R4e'.0b, THE ROUTING (lane r4e0b, 2026-10-09, abi 68 -> 69; 69
   is another lane's event, the pcrec manager assigned 70):** every
   offset-skip/pre-check function's loop moves under `<fn>__body` and `<fn>`
   becomes one call to it (D155 item 6). `run_codegen_tests.sh`'s
