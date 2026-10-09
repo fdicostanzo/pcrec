@@ -73,10 +73,10 @@ Debug-print evidence: `run=1 code=41599`, then `run=0 code=39445` with every
 other conjunct true. The same holds under `lowboth`. The K entry records the
 correction.
 
-**Sabotage S674** (sizeterm arm) plants K100 back: the routine skips the K
+**Sabotage S696** (sizeterm arm) plants K100 back: the routine skips the K
 write. Its detector is §10, and the expected reading is `sizeterm` 34/1, the
 pre-fix reading. The row is field-validated (`VALIDATE_ONLY`); its solo
-DETECTED is in the heavy chain. **S674 was the next free id on main
+DETECTED is in the heavy chain. **S696 (renumbered by the manager from S674, which sits in the kit R-8 range S666-S675) was the next free id on main
 (S673 highest) at the time of writing; renumber at merge if another lane took
 it.**
 
@@ -167,7 +167,7 @@ per stage.
      S178 is the declared undetected row.
    - the sizeterm arm's own rows, S191 and S192;
    - the cli-anchored row, S313;
-   - the new row, S674.
+   - the new row, S696.
 
 ## 5. Light tier
 
@@ -180,7 +180,7 @@ All runs were pinned to CPUs 0-7, PROCS=8.
 | `make test-registry test-codegen test-cli test-fallback-table` | merged `7a705bb8` | rc 0. test-codegen 15/15 (run_size_term.sh 38/0 incl. §10); tests/cli 0 failed (the nine K98 checks pass); run_fallback_table.sh 135/0 |
 | `bash tests/codegen/run_size_term.sh` | `9b1f78df` (test, no fix) | 34 / 1 (the red proof) |
 | `bash tests/cli/run_cli_tests.sh` with `PCREC=` main's build/pcrec | pre-fix CLI | 6 K98 FAILs (the red proof) |
-| `VALIDATE_ONLY=1 run_sabotage_matrix.sh S674` | `2c3ad1b6` | FIELDS OK |
+| `VALIDATE_ONLY=1 run_sabotage_matrix.sh S696` | `2c3ad1b6` | FIELDS OK |
 | `m6read_check_sab_anchors.py` | `2c3ad1b6` | 563 rows, 581 sites, all resolve |
 
 ## 6. Findings
