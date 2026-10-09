@@ -39,6 +39,8 @@ static unsigned char *ph_bm[MAXPH];
 static uint32_t *mult;
 static unsigned long long scanT;   /* bytes counted through the interposed scanners */
 static long call_hi = -1;          /* highest offset touched in the current call */
+static long ph_hi[MAXPH];          /* the same, per phase */
+static unsigned long long ph_ahead[MAXPH];  /* per phase: bytes read past the call's match end, summed over calls */
 static int unk_ph;
 static uintptr_t unk_pc[64]; static int nunk;
 
@@ -52,11 +54,15 @@ static int phase_of(uintptr_t ra)
     return unk_ph;
 }
 
-static void touch(uintptr_t ra, const unsigned char *p, size_t sz)
+static int up_ph = -1;
+static int phase_of(uintptr_t ra);
+static int ph_needs_up(uintptr_t ra) { return up_ph >= 0 && (const unsigned char *)0 != lo && phase_of(ra) == up_ph; }
+static void touch2(uintptr_t ra, uintptr_t ra1, const unsigned char *p, size_t sz)
 {
     if (p + sz <= lo || p >= hi || sz == 0) return;
     const unsigned char *a = p < lo ? lo : p, *b = p + sz > hi ? hi : p + sz;
     int ph = phase_of(ra);
+    if (ph == up_ph) ph = phase_of(ra1);   /* a load inside a helper: its caller's phase */
     ph_ops[ph]++;
     for (const unsigned char *q = a; q < b; q++) {
         size_t o = (size_t)(q - lo);
@@ -64,10 +70,13 @@ static void touch(uintptr_t ra, const unsigned char *p, size_t sz)
         ph_bm[ph][o >> 3] |= (unsigned char)(1u << (o & 7));
         mult[o]++;
         if ((long)o > call_hi) call_hi = (long)o;
+        if ((long)o > ph_hi[ph]) ph_hi[ph] = (long)o;
     }
 }
 
 #define RA ((uintptr_t)__builtin_return_address(0))
+#define RA1 ((uintptr_t)__builtin_return_address(1))
+#define touch(ra, p, sz) touch2(ra, (ph_needs_up(ra) ? RA1 : 0), p, sz)
 #define H(sz) void __asan_load##sz##_noabort(uintptr_t a) { touch(RA, (const unsigned char *)a, sz); } \
     void __asan_store##sz##_noabort(uintptr_t a) { (void)a; }
 H(1) H(2) H(4) H(8) H(16)
@@ -116,6 +125,12 @@ void *memmem(const void *h, size_t hl, const void *nd, size_t nl)
     scanT += hl; touch(RA, a, hl); return NULL;
 }
 
+static void call_begin(void) { call_hi = -1; for (int p = 0; p < MAXPH; p++) ph_hi[p] = -1; }
+static void call_end(long e)   /* e = the call's match end, or n when it found none */
+{
+    for (int p = 0; p < nph; p++) if (ph_hi[p] + 1 > e) ph_ahead[p] += (unsigned long long)(ph_hi[p] + 1 - e);
+}
+
 static void load_map(const char *path)
 {
     FILE *f = fopen(path, "r");
@@ -126,6 +141,7 @@ static void load_map(const char *path)
     char *t = strtok(line + 8, " \n");
     while (t && nph < MAXPH) { snprintf(phname[nph++], 16, "%s", t); t = strtok(NULL, " \n"); }
     unk_ph = nph - 1;                                    /* last name is unk */
+    for (int k = 0; k < nph; k++) if (!strcmp(phname[k], "up")) up_ph = k;
     unsigned long long a; int p;
     while (fscanf(f, "%llx %d", &a, &p) == 2) {
         if (nmap == cap) { cap *= 2; mapa = realloc(mapa, cap * sizeof *mapa); mapp = realloc(mapp, cap); }
@@ -157,14 +173,14 @@ int main(int argc, char **argv)
     load_map(argv[1]);
     const char *regime = argv[2]; int utf8 = atoi(argv[3]);
     printf("subject\tn\tregime\trc\ts\te\tcalls\tnmatch\tT\tU\tU_before\tU_span\tU_after\tmult2\tmultmax\tunk_pcs\tT_scan\tahead\tspan_sum\tovl");
-    for (int p = 0; p < nph; p++) printf("\tT_%s\tU_%s\tlo_%s\thi_%s", phname[p], phname[p], phname[p], phname[p]);
+    for (int p = 0; p < nph; p++) printf("\tT_%s\tU_%s\tlo_%s\thi_%s\tA_%s", phname[p], phname[p], phname[p], phname[p], phname[p]);
     printf("\n");
     for (int i = 4; i < argc; i++) {
         size_t n; unsigned char *b = slurp(argv[i], &n);
         /* the subject lives in its own exact-size allocation so a load one
          * past it is outside [lo, hi) and never counted */
         lo = b; hi = b + n; subn = n;
-        for (int p = 0; p < nph; p++) { free(ph_bm[p]); ph_bm[p] = calloc(n / 8 + 1, 1); ph_T[p] = ph_ops[p] = 0; }
+        for (int p = 0; p < nph; p++) { free(ph_bm[p]); ph_bm[p] = calloc(n / 8 + 1, 1); ph_T[p] = ph_ops[p] = 0; ph_ahead[p] = 0; }
         free(mult); mult = calloc(n + 1, sizeof *mult); nunk = 0; scanT = 0;
         unsigned long long ahead = 0, span_sum = 0;
         ptrdiff_t caps[RX_NCAPS][2];
@@ -172,21 +188,24 @@ int main(int argc, char **argv)
         if (!strcmp(regime, "match")) {
             rx_ctx ctx; memset(&ctx, 0, sizeof ctx);
             ctx.subject = b; ctx.len = n; ctx.pos = 0;
-            call_hi = -1;
+            call_begin();
             ptrdiff_t r = rx_match_caps(&ctx, caps); calls = 1;
+            call_end(r >= 0 ? (long)r : (long)n);
             if (r >= 0 && call_hi + 1 > (long)r) ahead += (unsigned long long)(call_hi + 1 - r);
             rc = r < -1 ? r : (r >= 0 && (size_t)r == n);
             if (r >= 0) { s = 0; e = (long)r; }
         } else if (!strcmp(regime, "search")) {
-            call_hi = -1;
+            call_begin();
             int r = rx_search(b, n, 0, caps); calls = 1; rc = r;
+            call_end(r == 1 ? (long)caps[0][1] : (long)n);
             if (r == 1) { s = (long)caps[0][0]; e = (long)caps[0][1]; nmatch = 1; span_sum = (unsigned long long)(e - s);
                 if (call_hi + 1 > e) ahead += (unsigned long long)(call_hi + 1 - e); }
         } else {
             size_t pos = 0;
             for (;;) {
-                call_hi = -1;
+                call_begin();
                 int r = rx_search(b, n, pos, caps); calls++;
+                call_end(r == 1 ? (long)caps[0][1] : (long)n);
                 if (r == 0) break;
                 if (r < 0) { rc = r; break; }
                 if (s < 0) { s = (long)caps[0][0]; e = (long)caps[0][1]; rc = 1; }
@@ -219,7 +238,7 @@ int main(int argc, char **argv)
         for (int p = 0; p < nph; p++) {
             long l = -1, h = -1;
             for (size_t o = 0; o < n; o++) if ((ph_bm[p][o >> 3] >> (o & 7)) & 1) { if (l < 0) l = (long)o; h = (long)o; }
-            printf("\t%llu\t%zu\t%ld\t%ld", ph_T[p], popc(ph_bm[p], 0, n), l, h);
+            printf("\t%llu\t%zu\t%ld\t%ld\t%llu", ph_T[p], popc(ph_bm[p], 0, n), l, h, ph_ahead[p]);
         }
         printf("\n");
         if (nunk) { fprintf(stderr, "UNMAPPED %s:", argv[i]); for (int k = 0; k < nunk; k++) fprintf(stderr, " %lx", (unsigned long)unk_pc[k]); fprintf(stderr, "\n"); }

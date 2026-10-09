@@ -54,13 +54,21 @@ def one(job):
     pid, enc, icase, pat, rows = job
     out = []
     pr = probe(enc, (b"(?i)" + pat) if icase else pat)
-    for cfg in CONFIGS:
+    cfgs = list(CONFIGS)
+    if any(r == "match" for r, _ in rows):
+        cfgs.append("anch")
+    for cfg in cfgs:
         args = ["--features", "all"]
         if enc == "utf8": args += ["-e", "utf8"]
         if icase: args.append("-i")
         if cfg == "nocaps": args.append("--no-captures")
-        args += ["--pattern-esc", "--pattern", "\"" + esc(pat) + "\""]
+        # anch: the ANCHORED-ATTEMPT REFERENCE for the match regime -- the
+        # pattern wrapped as \A(?:P), searched at 0; its machine phases'
+        # unique bytes are what an anchored attempt at 0 reads
+        ptxt = (b"\\A(?:" + pat + b")") if cfg == "anch" else pat
+        args += ["--pattern-esc", "--pattern", "\"" + esc(ptxt) + "\""]
         h = hashlib.sha1((cfg + enc + str(icase)).encode() + pat).hexdigest()[:16]
+        myrows = [(r, x) for r, x in rows if r == "match"] if cfg == "anch" else rows
         art = os.path.join(WORK, "art", h)
         b = subprocess.run([sys.executable, os.path.join(HERE, "wsbuild.py"), PCREC, art] + args,
                            capture_output=True, timeout=1800)
@@ -73,8 +81,8 @@ def one(job):
         st = stamps(os.path.join(art, "rx.c"))
         base.update({k: st.get(k, "") for k in STAMPS})
         base.update(facts(args))
-        for regime, subs in rows:
-            mode = {"match": "match", "search_short": "search", "throughput": "findall",
+        for regime, subs in myrows:
+            mode = "search" if cfg == "anch" else {"match": "match", "search_short": "search", "throughput": "findall",
                     "search": "search", "findall": "findall"}[regime]
             lim = "600" if regime in ("throughput", "findall") else "120"
             res = run(art, mode, enc, subs, lim)
@@ -126,9 +134,9 @@ def main():
                     cols = ["pid", "config", "regime", "enc", "rc", "note", "view", "cwmax", "minw",
                             "lead_unb", "gstart"] + STAMPS + FACTS + \
                            ["subject", "n", "s", "e", "calls", "nmatch", "T", "U", "U_before",
-                            "U_span", "U_after", "mult2", "multmax", "unk_pcs"] + \
+                            "U_span", "U_after", "mult2", "multmax", "unk_pcs", "T_scan", "ahead", "span_sum", "ovl"] + \
                            ["%s_%s" % (a, p) for p in ["pre", "skip", "fwd", "rev", "anc", "vm", "endw", "misc", "unk"]
-                            for a in ("T", "U", "lo", "hi")]
+                            for a in ("T", "U", "lo", "hi", "A")]
                     fo.write("\t".join(cols) + "\n")
                 fo.write("\t".join(str(r.get(c, "")) for c in cols) + "\n")
             fo.flush()

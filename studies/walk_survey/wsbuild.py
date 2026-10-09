@@ -19,10 +19,13 @@ no rule claims is phase `unk` and wsdrv reports any load through it.
 """
 import os, re, subprocess, sys
 
-PHASES = ["pre", "skip", "fwd", "rev", "anc", "vm", "endw", "misc", "unk"]
+PHASES = ["pre", "skip", "fwd", "rev", "anc", "vm", "endw", "misc", "up", "unk"]
 HOOK = re.compile(r"call\s+[0-9a-f]+\s+<(__asan_load(?:1|2|4|8|16|N)_noabort|memchr|memrchr|memcmp|memmem)>")
+# every other call out of an emitted function: mapped too, so a load inside a
+# non-inlined helper (-O0) is attributed through ITS caller (phase `up`)
+CALL = re.compile(r"call\s+[0-9a-f]+\s+<(rx_[A-Za-z0-9_.]+)>")
 HERE = os.path.dirname(os.path.abspath(__file__))
-CFLAGS = ["-O2", "-g", "-fno-pie", "-fsanitize=kernel-address",
+CFLAGS = ["-O0", "-g", "-fno-pie", "-fsanitize=kernel-address",
           "--param", "asan-instrumentation-with-call-threshold=0",
           "--param", "asan-stack=0", "--param", "asan-globals=0",
           "-fno-builtin-memchr", "-fno-builtin-memrchr", "-fno-builtin-memcmp",
@@ -53,7 +56,7 @@ def classify(chain, text, callee):
         return "skip"
     if callee in ("memchr", "memrchr", "memmem") and "scan_position" in t:
         return "skip"
-    if "reqrun" in fns or "req_" in inner or "reqbyte" in fns:
+    if "reqrun" in fns or "req_" in inner or "reqbyte" in fns or "reqrun" in t:
         return "pre"
     if "end_window" in t or "_END_WINDOW" in t or "window" in inner:
         return "endw"
@@ -93,7 +96,7 @@ def main():
             infn = m.group(1); continue
         if infn and (infn.startswith("rx_") or infn.startswith("rx.")) or (infn and ".part" in infn):
             pass
-        m = HOOK.search(ln)
+        m = HOOK.search(ln) or CALL.search(ln)
         if not m or infn is None:
             continue
         if not (infn.startswith("rx_") or ".rx_" in infn):
@@ -139,11 +142,23 @@ def main():
             texts = []
             for _fn, loc in rec:
                 texts.append(src_line(loc.split(" (discriminator")[0]))
-            ph = "unk"
-            for d in range(len(rec)):
-                ph = classify(chain[d:], texts[d][1], callee.replace("__asan_", ""))
-                if ph != "unk":
-                    break
+            d = 0
+            if callee.startswith("rx_"):
+                # a CALL SITE of a non-inlined emitted helper: classified by
+                # what the caller's line is doing; used only for loads the
+                # helper itself makes (its own sites map to `up`)
+                ph = classify(chain, texts[0][1] if texts else "", "call")
+            else:
+                ph = "unk"
+                for d in range(len(rec)):
+                    ph = classify(chain[d:], texts[d][1], callee.replace("__asan_", ""))
+                    if ph != "unk":
+                        break
+                # a load inside a small non-inlined helper (-O0: rx_w2,
+                # rx_ofsskip, ...) that no rule claims: its caller decides
+                if ph == "unk" and len(chain) == 1 and chain[0].startswith("rx_") and \
+                        not re.match(r"rx_(search|match|prefilter)", chain[0]):
+                    ph = "up"
             ln, text = texts[min(d, len(texts) - 1)] if texts else (0, "")
             fm.write("%x %d\n" % (a, PHASES.index(ph)))
             fs.write("%x\t%s\t%s\t%d\t%s\t%s\n" % (a, ph, callee, ln, ">".join(chain), text[:160]))
