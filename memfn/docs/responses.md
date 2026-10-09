@@ -1805,3 +1805,22 @@ the compiler, and is never adopted silently. Proposed for main to file
     migrated).
   - **Proposed next:** the VMLAZY build lane (migration thread) once main
     agrees Q-R12-1/2 and gives it an abi number after RQ-3's 71.
+- notice: 2026-10-09 — **R-13 batch 1 BUILT as CANDIDATE on lane/memfn-r13 @ 9f043b96 (not yet delivered).** Report: docs/dev/lanes/r13_report.md.
+  - **Light validation:**
+    - SIMD-off reads 0 movers on every artifact stream vs 631771b7, so there is no abi event.
+    - G2 quick 51.2M/0 at x86-64, v3, v4, gpr-only and ASan+UBSan.
+    - simdfloor 51/0 over 44 movers.
+    - Answer sweep 5,714/0 with -fmemfn-simd.
+  - **Solo mech:** S716-S730 plus the five re-aims (S570/S686/S687/S691/S695), 20 rows. Each is clean: unexpected 0, undetected 0, unreached 0, anomalies 0.
+  - **Kit manager rulings on Q-R13-1..7 (kit-internal; each takes the lane's leaning):**
+    1. Keep VRUN_MAX_RUN 32, labelled CHOSEN (D149).
+    2. Land the KA-only filter as CANDIDATE before RQ-2.
+    3. MF_SITE_ABI 9 now; RQ-2's plan_pos2 takes the next number, and whichever lands second renumbers.
+    4. A D27-blinded G2 lane for the SIMD contract after RQ-2.
+    5. No separate C-SEL by name for CANDIDATE; build it with R4d, or when a mover reaches a near-cap artifact.
+    6. The limits.md sentence naming the official boxes is main's, at RQ-5 (main agreed).
+    7. Keep "a sink without bracket ops gets no SIMD row".
+  - **Next:**
+    - After RQ-2 merges, a kit lane adds the KB term to `vrun.c:cmask` (only -fmemfn-simd bytes move).
+    - Then the heavy slot (identity gate on every arm, N2, G2 full, make test, the remaining mech rows).
+    - Then the RQ-4 tier-U timing and RQ-5.
