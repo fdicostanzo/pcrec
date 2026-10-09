@@ -971,8 +971,11 @@ Checks, sabotage and spec as `revend.md` §9.1 items 1-2.
   (a) the abi NUMBER (`revend.md` §5.3 (a)); (b) the byte-count readers (§5.3 (b));
   (c) the `DFA_SCAN` value readers — `revend.md` §5.3 (d)'s 33 files / 6 sabotage rows
   plus every MACHINE-PROXY reader (`[r2 G10, C8]`: a reader that takes `"unanchored"`
-  to mean "the forward machine / its scan edge / its prefilter is present"; the census
-  is L2's first deliverable, and §5.1 lists the in-tree ones found here);
+  to mean "the forward machine / its scan edge / its prefilter is present". Found by
+  this revision, not exhaustively: the CONTRACT itself defines the value that way
+  (`match_api.md:4731-4733`: `"unanchored"` is "the O(n) forward+reverse table pair"),
+  and so does the bench adapter's enum description (`adapter.py:699-701`); the complete
+  census is L2's first deliverable);
   `pcrec_artifact_has_dfa_scan`'s 12 callers, which remain TRUE on a `rev-end`
   artifact (it has a DFA body; what it lacks is the forward machine); (d) the
   `DFA_START` value readers (19 files, 5 rows) for D-2; (e) **outside the repo
