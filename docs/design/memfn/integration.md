@@ -3587,7 +3587,12 @@ These are NOT search sites, and are not listed:
 > loop at stride > 1, §15.9) and its `walk-open` ceiling is gone from C12;
 > the cursor rung's LAZY rmin prefix, a counted verify of rmin span blocks
 > that no vocabulary line saw, is its own `pending` row VMLAZY (Q-R10-7),
-> spelling the new `span-count` line. N6 stayed `pending` pending Frank's
+> spelling the new `span-count` line. **`[R-12]` BUILT (lane vmlazy,
+> 2026-10-09):** NORMALIZE (pcrec abi 70 -> 72) re-spelled the prefix as the
+> span scan capped at rmin plus the rung's reach test; REPLACE (zero movers)
+> routes it through VMSPAN/VMSTRIDE and DELETES the VMLAZY row (Q-R12-2);
+> `span-count` stays at C12 ceiling 0 (Q-R12-6); `$_valid_upto`'s ASCII SWAR
+> skip is listed `pending` as VALID (Q-R12-5). N6 stayed `pending` pending Frank's
 > Q-R10-1 ruling; **N6 RETIRED (D147 add. 12):** not a search site (a
 > mirrored one-position VM step, §R4.3.4's exclusion); its manifest row, the
 > `walk-back` vocabulary line and its C12 ceiling row are deleted.
@@ -8057,7 +8062,8 @@ spec hunk, NO `MF_VOCAB` move.
   cursor init, the rung, admission, possessify, MRL and every member text
   stay pcrec's (m6scope V1-V15).
 - **Not migrated:** the lazy arm's rmin prefix (VMLAZY, `pending`,
-  Q-R10-7) and N6 (Q-R10-1, Frank's; RETIRED, D147 add. 12: not a search site).
+  Q-R10-7; **`[R-12]` MIGRATED** by re-expression, lane vmlazy 2026-10-09: the
+  same site capped at rmin, VMLAZY deleted) and N6 (Q-R10-1, Frank's; RETIRED, D147 add. 12: not a search site).
 
 ## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
 
@@ -9052,6 +9058,11 @@ text stays opt-in until R4f.
 >   the lazy rmin prefix listed as **VMLAZY** (`pending`, Q-R10-7); C12
 >   3 rows (walk-open out, span-count in); C17 15 rows, 12 delegated / 3
 >   pending (N6, N7U, VMLAZY). N6 waited on Frank (Q-R10-1); **RETIRED (D147 add. 12)**: C17 14 rows, 12 delegated / 2 pending (N7U, VMLAZY), C12 2 rows.
+>   **`[R-12]` BUILT (lane vmlazy, 2026-10-09):** VMLAZY migrated by
+>   re-expression (NORMALIZE abi 72, then a zero-mover REPLACE) and its row
+>   deleted; VALID listed `pending` (Q-R12-5). C17 14 rows, 12 delegated / 2
+>   pending (N7U, VALID), C12 2 rows (span-decode, swar-hibit); N7U HELD for
+>   Frank's ruling (Q-R12-3). `docs/dev/lanes/vmlazy_report.md`.
 >
 >   **End state: C17 reads 0 pending, and C12 reads 0 in every class
 >   outside the kit.**
