@@ -77,8 +77,20 @@ Beyond the panel, this revision adds:
    wrapper), **0 / 78,341 find-all**, and **0 vs libpcre2 10.46** except K74's 55 cells
    (artifact and twin identical). Form C on `-fno-anchored-dfa` artifacts (ties hand `s*`
    to the body): 0 / 339,632. Five planted controls each go red on a named witness.
-   <!-- R2-TIMING-0 -->
-5. **Q1 and Q2 (§10).** <!-- R2-Q-0 -->
+   Timing (§6.3, 7700X, 7 interleaved passes): form C is the fastest arm on EVERY matching
+   cell, unbounded and bounded. On the five bench tail patterns it is 2.2-11.8 ns against
+   today's 48 us-1.54 ms. On revq1's bounded rows it beats W1 on all 50 cells (C/W1
+   0.01-0.89; 0.26-0.63 on the matching ones), where form B lost to W1 on every matching
+   cell (1.4-1.6x, reproduced here). Form C beats form A on every matching cell
+   (C/A 0.22-0.70) and ties it on the one tie cell (11.7 vs 10.9 ns). On a non-matching tail
+   C is 0.2-0.6 ns behind B; that is the unused tie arm, which `nl_last` removes (§2.4,
+   measured: 3.3 -> 2.6 ns).
+5. **Q1 and Q2 (§10) collapse.** Q1 ("does REVEND take the bounded patterns from W1?")
+   was a speed-vs-generality trade under form B; under form C there is no trade: C is
+   faster than W1 on every bounded cell measured, including the six bench do-not-regress
+   cells, so the table's own order (EXACT before WINDOW) costs nothing. Q2 ("form B over
+   form A") is replaced by one question that the numbers do not settle: the downstream
+   search stamps on admitted artifacts (§5.2, §10 Q2).
 6. **Family (§8).** Unchanged in shape: RECOVER's reverse pass, REVEND and D151's
    rev-inner share one parameterized reverse-block helper. Revision 2 adds two obligations
    to it: "a seed may be dead" (X1) and "report which seed(s) reached the minimum".
@@ -501,11 +513,136 @@ a trailing-lookaround shape.
 
 ### 6.3 Timing (`run_r2_timing.sh`; `results/r2_timing.tsv`, `results/r2_table.md`)
 
-<!-- R2-TIMING-6 -->
+- **Regime: scratch tier.** Linux dev box (Ryzen 7 7700X, gcc 15.2 `-O2`, governor
+  `performance`). Core 2 pinned (`taskset`), chosen as the idlest SMT pair over 3 s; its
+  sibling 10's busy fraction is recorded per cell (0 on 483 of 497 cell-runs; > 0.1 on 14,
+  scattered, no cell twice). Each pass waited for load1 <= 2: pass 1 ran at 2.98 after the
+  5-minute cap (the kit's `g2simd` run and the desktop), passes 2-7 at 1.35-2.05.
+- Four arms per cell, interleaved, the arm order rotating each round; each arm's call
+  count calibrated to ~100 us per round; 31 rounds; 7 passes. Values are the median over
+  passes of each pass's median ns/call, [min-max of the pass medians]. Every arm returned
+  the same answer on every cell (0 ANSWER-DIFF). Today's arm (W1) is the default artifact;
+  the twins are built from the `-fno-end-window` artifact.
+- Subjects: `mksubj_r2.py` (the bench manifest's described tails on a 1 MiB body with no
+  `.txt` before the tail, X7) and revq1's `mksubj_q1.py` 1 MiB bodies.
+
+**The bench tail family** (ns per call; today is the default artifact, W1 declines):
+
+| pattern | subject | span | today | **C** | A | B |
+|---|---|---|---:|---:|---:|---:|
+| `\d+$` | t-tail-digits-1m | match | 527,865 | **6.4** [6.4-6.4] | 11.8 | 18.5 |
+| `\d+$` | t-tail-txt-1m | none | 468,924 | **3.1** | 2.9 | 2.5 |
+| `\d+$` | t-tail-space-1m | none | 469,124 | **3.1** | 2.9 | 2.5 |
+| `\d+$` | t-1m (`[20\n`) | match | 483,562 | **5.5** [5.5-5.7] | 8.2 | 10.4 |
+| `\w+\z` | t-tail-digits-1m | match | 1,511,469 | **4.4** [4.4-5.3] | 9.8 | 12.4 |
+| `\w+\z` | t-tail-txt-1m | match | 1,540,533 | **3.5** | 6.4 | 7.8 |
+| `\w+\z` | t-tail-space-1m | none | 1,535,664 | **2.2** | 2.6 | 2.2 |
+| `\s+$` | t-tail-digits-1m | none | 1,411,560 | **3.1** | 2.9 | 2.6 |
+| `\s+$` | t-tail-txt-1m | none | 1,415,468 | **3.1** | 2.9 | 2.6 |
+| `\s+$` | t-tail-space-1m | match | 1,400,650 | **4.9** [4.9-5.0] | 7.7 | 10.3 |
+| `\s+$` | t-trim-nearmiss-16k | none | 17,932 | **3.1** | 2.9 | 2.6 |
+| `\s+$` | t-tail-spacenl-1m (**tie**) | match | 1,448,480 | **11.7** [11.7-11.8] | 10.9 | 14.8 |
+| `[a-z]+\.txt$` | t-tail-digits-1m | none | 48,161 | **3.1** | 3.0 | 2.7 |
+| `[a-z]+\.txt$` | t-tail-txt-1m | match | 2,147,087 | **9.6** [9.6-9.9] | 23.1 | 37.4 |
+| `[a-z]+\.txt$` | t-tail-space-1m | none | 48,040 | **3.1** | 3.0 | 2.7 |
+| `.*\.txt$` | t-tail-digits-1m | none | 48,281 | **3.3** | 3.3 | 3.1 |
+| `.*\.txt$` | t-tail-txt-1m | match | 187,493 | **11.8** [9.5-12.2] | 18.8 | 24.8 |
+| `.*\.txt$` | t-tail-space-1m | none | 48,251 | **3.3** | 3.3 | 3.1 |
+
+- The two `.txt` rows, re-timed with the walk at the head and no early `.txt` (X7): form C
+  is 9.6 / 11.8 ns where revision 1's form B was 68.6 / 32.6 (with the pre-check before
+  the walk). Today's `[a-z]+\.txt$` moved from 48 us (no `.txt` anywhere, the run
+  pre-check answers) to 2.1 ms (a `.txt` at the end, the forward scan runs).
+- **Form C vs form B:** C is 0.25-0.79x of B on every matching cell; on a non-matching tail
+  it is 0.2-0.6 ns behind. That gap is the tie arm the twin always emits (the anchored call
+  makes the function keep a frame). `results/r2_tiearm.txt` measures it directly on
+  `\d+$` (which cannot tie, so T1 emits no arm): 3.3 -> 2.6 ns on t-tail-txt-1m, 7.1 ->
+  6.4 / 6.2 -> 5.5 ns on the matching cells, i.e. C without the arm is B's non-match cost.
+- **The tie cell** (`\s+$` on `"...end of file   \n"`): C 11.7, A 10.9, B 14.8. C walks two
+  seeds and runs the anchored machine; A walks two seeds and always runs it; the extra
+  0.8 ns is the seed record. It is the only cell where C does not lead.
+
+**The bounded rows (revq1's 13; W1 serves them today; 1 MiB bodies; tail kinds as revq1):**
+
+| pattern | tail | W1 (today) | **C** | A | B | C/W1 | B/W1 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `done$` | long / short | 13.7 | **5.7** | 11.6 | 21.5 | 0.42 | 1.57 |
+| `done$` | non | 3.5 | **3.1** | 3.0 | 2.7 | 0.89 | 0.77 |
+| `done$` | nl | 17.6 | **6.7** | 13.1 | 27.0 | 0.38 | 1.53 |
+| `done\z` | long / short | 15.2 | **4.0** | 9.9 | 23.0 | 0.26 | 1.51 |
+| `done\z` | non | 3.6 | **2.0** | 2.6 | 2.2 | 0.56 | 0.61 |
+| `done\Z` | long / short | 13.7 | **5.7** | 11.6 | 21.4 | 0.42 | 1.56 |
+| `done\Z` | nl | 17.6 | **6.6** | 13.1 | 27.0 | 0.37 | 1.53 |
+| `abc$` | long / short | 11.6 | **5.0** | 9.3 | 17.5 | 0.43 | 1.51 |
+| `abc$` | nl | 11.1 | **6.4** | 10.7 | 19.5 | 0.58 | 1.76 |
+| `(?:[a-z]{0,1024})\z` | long (1000) | 682.0 | **301.4** | 1,394 | 994.8 | 0.44 | 1.46 |
+| `(?:[a-z]{0,1024})\z` | short / non | 453.9 / 460.4 | **3.3 / 2.0** | 5.5 / 3.9 | 7.2 / 3.9 | 0.01 / 0.00 | 0.02 / 0.01 |
+| `\d{1,8}$` | long | 15.1 | **6.2** | 12.1 | 18.8 | 0.41 | 1.25 |
+| `[a-z]{0,64}\z` | long | 42.3 | **19.6** | 85.8 | 58.2 | 0.46 | 1.38 |
+| `(?:foo\|barbaz)\.txt$` | long | 27.0 | **9.4** | 23.2 | 41.3 | 0.35 | 1.53 |
+| `\bfoo$` | long | 16.2 | **5.1** | 9.8 | 22.1 | 0.31 | 1.36 |
+| `a{5,10}b{5,10}$` | long | 39.3 | **13.1** | 29.9 | 45.7 | 0.33 | 1.16 |
+| `[^c]{1,3}\z` | long | 5.1 | **3.2** | 6.6 | 7.3 | 0.63 | 1.43 |
+| `ERROR$` | long | 15.2 | **5.9** | 9.7 | 21.1 | 0.39 | 1.39 |
+| `x[a-z]{0,5}\z` | long | 17.8 | **5.3** | 14.0 | 27.9 | 0.30 | 1.57 |
+
+(`results/r2_table.md` has all 50 bounded cells: C/W1 is 0.01-0.89 on every one, and
+0.26-0.63 on every matching one.) Form B reproduces revq1's verdict (1.16-1.76x W1 on
+matching tails) on a quieter box; form C reverses it. W1 scans the whole window forward
+and then the match back; C walks the match back once, so its cost follows the match, not
+the bound.
+
+**The widest bound.** `[a-z]{0,4096}\z` (`8192` already falls back to the VM, §9.1 item 5):
+
+| tail | W1 | **C** | B |
+|---|---:|---:|---:|
+| ~1 KB match | 2,066 | **301.9** | 994.7 |
+| ~4 KB match (4,000 B) | 2,688 | **1,185** | 3,927 |
+| none (empty match at `n`) | 1,926 | **2.0** | 3.8 |
+
+Form A cannot twin it (`_match` is the search-filter wrapper, 4,096 > the anchored
+machine's state cap). `[a-z]{0,60000}\z` is VM-routed, so REVEND declines it; W1 on the
+VM costs 130 us (1 KB match), 34 us (50 KB) and 130 us (none), recorded as context for
+§9.1 item 5.
 
 ## 7. Predicted values for the bench (O-91 ask 2)
 
-<!-- R2-PRED-7 -->
+**Derivation (same transfer terms as revision 1, both UNMEASURED):** the bench point is the
+Linux form-C median x 1.6 + 5 ns, rounded to 5 ns.
+- x 1.6 is the 7700X -> Ryzen 1600 short-call factor (the clock ratio is about 1.5; on long
+  DFA loops the two boxes were within x1.3, revision 1 §6.3). For the one long-walk cell
+  (`letters-bounded-tail-z` with a ~1 KB tail) the long-loop factor x 1.3 is used instead.
+- + 5 ns is the bench's caps-route floor tax (ledger §8 item 4).
+- The twin always emits the tie arm, worth ~0.7 ns here; the built row emits none for
+  `\d+$`, `[a-z]+\.txt$`, `.*\.txt$` (T1). The predictions do not subtract it.
+- The range is [Linux form-C minimum, 2.5 x point]. The falsifiable claims are the ceiling
+  and size independence, not the point.
+
+| pattern | t-tail-digits-1m | t-tail-txt-1m | t-tail-space-1m | today (bench) |
+|---|---:|---:|---:|---:|
+| tail-digits-eol `\d+$` | **15** (6-38), match | **10** (3-25) | **10** (3-25) | 735-737 us |
+| tail-word-eoz `\w+\z` | **10** (4-25), match | **10** (3-25), match | **10** (2-25) | 2.21-2.25 ms |
+| tail-space-eol `\s+$` | **10** (3-25) | **10** (3-25) | **15** (5-38), match | 1.78 ms |
+| tail-ext-lower-txt `[a-z]+\.txt$` | **10** (3-25) | **20** (9-50), match | **10** (3-25) | 2.84-2.85 ms |
+| tail-dotstar-txt `.*\.txt$` | **10** (3-25) | **25** (9-62), match | **10** (3-25) | 210 us |
+
+Plus `\s+$` x t-trim-nearmiss-16k **10 ns** (3-25), today 29.1 us, RE2 95 ns; and `\d+$` x
+t-1m **15 ns** (6-38).
+
+**Do-not-regress cells (class B, today W1):** each predicted to IMPROVE, not merely hold:
+`anc-dollar` (`done$`) **15** (6-38), `anc-z-lc` (`done\z`) **10** (4-25), `anc-z-uc`
+(`done\Z`) **15** (6-38), `ctrl-abc-dollar` / `wild-semdiv-dollar-trailing-newline-pcre2`
+(`abc$`) **15** (5-38); `letters-bounded-tail-z` **395** (301-990) on a ~1 KB tail, **10**
+(3-25) on a short one. The bench's own subjects decide which tail applies; these assume the
+revq1 stand-ins.
+
+- **Ceiling claim:** every one of the 17 acceptance cells is <= 100 ns with the fixed driver
+  ([B133]); <= 150 ns on the grown driver (O-94's 40-50 ns per call). Revision 1 claimed
+  <= 250 ns under form B.
+- **Size-independence claim:** the same pattern and tail on a 64 KiB body reads the same
+  number within noise (revq1 found every 64 KiB ratio within 0.1 of the 1 MiB one).
+- **Against the peers:** every acceptance cell is predicted below RE2's 94-255 ns band and
+  inside or below rust's 22-221 ns and vectorscan's 34-146 ns bands.
 
 ## 8. Family: the seeded reverse walk
 
@@ -611,7 +748,48 @@ As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags ind
 
 ## 10. Questions for Frank (discussion)
 
-<!-- R2-Q-10 -->
+**Q1. Does REVEND take the bounded patterns from W1? (collapses)**
+- **What changed.** Under form B this was a real trade: B was 1.4-1.55x slower than W1 on
+  matching bounded tails (revq1), and putting REVEND first would have moved ~120 corpus
+  artifacts and 6 bench floor cells to a slower form for the sake of one general row. The
+  panel also showed that W1-first needed no width conjunct (table order alone gives
+  "REVEND where W1 declines").
+- **Now.** Form C is faster than W1 on all 50 bounded cells measured, matching or not
+  (C/W1 0.01-0.89), because it walks the match back once where W1 scans the window forward
+  and then walks back. The only place W1 is close is the non-matching `done$` tail (3.5 vs
+  3.1 ns). So the table's own order costs nothing, and the general row is also the fast one.
+- **Leaning: REVEND first** (the table's EXACT-before-WINDOW order), with the 6 bench
+  class B cells kept in the AFTER window as predicted IMPROVERS rather than do-not-regress
+  cells. Unless you see a reason to keep W1 first that is not speed, I would treat Q1 as
+  closed by the numbers.
+
+**Q2. The downstream search stamps on an admitted artifact (replaces "form B over form A")**
+- **Problem.** Form C does not run PRESENCE, FIRST, NEXT or RECOVER on the search path, so on
+  an admitted artifact the stamps that describe them (`RX_DFA_SCAN`, `RX_DFA_PREFILTER`,
+  `_OFFSETS`, `RX_DFA_START`, `RX_REQ_*`) name passes that are not emitted. Revision 1 chose
+  form B partly to keep them truthful.
+- **Forces.** Truthful stamps are a house rule (`start_table.md` §0 lists the opposite as a
+  defect class), and `[OPT-5]` set the precedent of a new `RX_DFA_START` value when a pass
+  went away. Against that, these stamps have many value readers (§5.3 (d): 19-90 files each,
+  many of them sabotage rows on specific witnesses), and the movers are ~150 corpus
+  artifacts. Keeping form B for the stamps' sake would cost 1.2-4x on every matching cell
+  (§6.3), which is the whole point of the row.
+- **Leaning:** form C, with the stamps taking their existing `"none"` values and
+  `RX_DFA_START`/`RX_REQ_WHY`/`rx_info.search_form` reading `"rev-end"`, all in the S2 abi
+  event. The movers census names exactly which readers move. The open part is spelling, the
+  manager's call.
+
+**Q3. The tie arm's anchored dependency.**
+- **Problem.** A tie needs priority, and the walk cannot see priority. T2 runs the anchored
+  machine; T3 (no anchored machine) falls back to the body.
+- **Forces.** T2 is one pass and measured at A's cost; T3 keeps the body emitted (and its
+  stamps true) on exactly the artifacts that can tie and lack `unwrapped`. `nl_last` false
+  removes the arm entirely for most patterns (4 of the bench's 5).
+- **Leaning:** the three-row table as designed. I see no reason to make T3 the only arm.
+
+**Q4. Stage 2 (captures) and the forward-machine-free admission.**
+- Both stay FILED with their triggers (§9.1 items 5-6, D77). Leaning unchanged from
+  revision 1's Q3.
 
 ## 11. Bench-only questions (for the manager to relay)
 
@@ -628,7 +806,16 @@ As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags ind
 ## 12. Standing questions (`docs/design/CLAUDE.md`)
 
 **12.1 The measurement regime — RELEVANT.**
-<!-- R2-REGIME -->
+- Every number here is scratch tier: Linux 7700X, warm repeated calls on one subject, one
+  pinned core with its SMT sibling's busy fraction recorded, load1 1.35-2.98 per pass
+  (another lane's run and the desktop; pass 1 at 2.98).
+- The BEFORE numbers are long-call throughput, which this regime reads correctly. The AFTER
+  numbers are short calls (2-12 ns), where latency, call overhead and the driver dominate;
+  that is why §7 states transfer terms and a ceiling, and why the bench's verdict regime
+  (D144 addendum 4) is the official one.
+- No decision here flips with the regime. Form C vs W1 and vs B differs by 2-4x on every
+  matching cell; the only sub-nanosecond differences (non-matching tails) are explained by
+  the tie arm and are removed by T1.
 
 **12.2 The independent control — RELEVANT.**
 - The twin-vs-artifact compare SHARES its reverse machine and reverse block with the subject
