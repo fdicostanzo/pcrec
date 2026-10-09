@@ -135,9 +135,24 @@ at a time, pinned 12-15, detached chain `.scratch/mech_chain.sh`, logs
 `.scratch/logs/mech_<id>.log`, completion line `ALL_DONE` in
 `.scratch/logs/mech_chain.log`): see §4.1, filled in when the chain ends.
 
-### 4.1 Measured verdicts
+### 4.1 Measured verdicts (all DETECTED, every row 0 unexpected / 0 anomalies)
 
-(PENDING at this write; the handback message carries them.)
+| row | cells | verdict |
+|---|---|---|
+| S686 | reach ok, corpus 78 fail / 209 pass (reqcube), memfnarms 2 / 284 | DETECTED |
+| S687 | reach ok, memfnarms 10 / 276 | DETECTED |
+| S688 | reach ok, memfnarms 96 / 190, corpus 274 / 13 | DETECTED |
+| S689 | reach ok, n2sample 1 / 0 (rc 5) | DETECTED |
+| S454 (re-aimed) | reach ok, corpus 78 / 209, codegen 10 / 320 | DETECTED |
+| S570 (re-aimed) | reach ok, codegen 19 / 311 | DETECTED |
+| S185 (moved body) | corpus 1 / 97, offsetskip 7 / 23 | DETECTED |
+| S450 (moved body) | reach ok, corpus 10 / 277, codegen 8 / 322 | DETECTED |
+| S455 (moved body) | reach ok, codegen 17 / 313 | DETECTED |
+| S279 (verify_chain) | reach ok, corpus 29 / 26, offsetskip 3 / 23 | DETECTED |
+| S447 (ofs_fn_scan) | reach ok, corpus 78 / 209, codegen 8 / 322 | DETECTED |
+
+Trees measured: `1c21ea8b` (S686-S454) and `9effd788` (the rest; the
+difference is docs only).
 
 ## 5. Maps regenerated
 
