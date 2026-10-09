@@ -172,6 +172,55 @@ its DESIGN record.**
   `MF_SITE_ABI` 3 → 4 bump; bit 43 crosses through one pcrec map table
   into every site's and the art's `denies`; the run-compare rows are the
   kit's (`mf_run_rows`). Read §R4.8, then §R4.7, first.
+  **REVISION 4.9 (lane r9d, 2026-10-08), the SIMD layer's design pass
+  (request R-9, D147 addendum 11)**:
+  - `SCAN_ROWS` is the kit's own form tables (`arms[]`, `rc_row`), and
+    SIMD forms are rows with a layer, an ISA level (`memfn/src/levels.def`)
+    and their own deny.
+  - THE FLOOR RULE: a SIMD-on rendering is the SIMD-off rendering plus
+    guarded text (check C18, by the preprocessor at `-mgeneral-regs-only`).
+  - Short spans fall to the next rung by a derived reach; the run-time
+    cascade is a separate, filed row.
+  - The verdict regime covers the box, the core and its SMT sibling, the
+    consumer's `-march`, one binary per arm, and a placement control.
+  - The acceptance bar is per row and per live level, against the SIMD-off
+    compile at the same `-march` and against the row it displaces. Records
+    go in `tests/memfn/simd_accept.tsv`, and C19 re-opens them.
+  - First batch: the pre-check composite's window run with no lead.
+  - Seven findings in R-1 and the box facts (F-R9-1: R-1's 16 B column
+    ran the scalar path in every cell).
+  - Q-R9-1 was RESOLVED by D144 addendum 4 (§R4.9.10), Q-R9-2..8 were open for Frank (now RULED, below); RQ-1..5 are pcrec-side requests.
+
+  **`[r9]` REVISED AFTER THE D6 PANEL r9** (`../../dev/reviews/
+  2026-10-08-r9-memfn-simd.md`, 43 findings, same lane): a zero-mover
+  seam R4e′.0 (`fn_rows[]`, BODY/PREFIX slots, for the FUNC part PRE and
+  OFS share) precedes batch 1; one shared kit walk and one deny carrier;
+  `policy`/`budget` as row-contract fields; SIMD bytes neutral to pcrec's
+  length decisions by construction (RQ-3); a two-tier regime under D144
+  addendum 4 (official verdicts are pcrec-bench runs on each targeted
+  box; the bench submission is §R4.9.5.1); the record's states
+  (CANDIDATE/ACCEPTED/STALE/REJECTED); Q-R9-1 RESOLVED, Q-R9-9 new;
+  §R4.9.12 maps every finding id to its section.
+  `[r9fu]` A follow-up (same lane) measured the glibc-inside trap per
+  site: both FUNC BODY rows call glibc `memchr`, so batch 1's rows sit
+  over `fn-pair` only and `vrun` over `fn-memchr` is filed with five
+  cells (§R4.9.7.1). It also checked `[MEMFN-ENTRYSINK]`: no entry point
+  is assumed, and the one candidate is the filed OFS run-pinned form
+  (§R4.9.7.2).
+  `[D155]` Revised for Frank's rulings (same lane): Q-R9-1..9 are RULED.
+  The floor rule is amended so that no function that does work holds an
+  `#if`. The FUNC's loop becomes `<fn>__body`, each level is a guarded
+  helper, and the FUNC itself, written once, is a selector whose whole
+  body is the `#if` chain, one call per arm (§R4.9.2.5, probes; Q-R9-10
+  shape (c), D155 addendum 1). SIMD-off routing is step R4e′.0b, a pcrec
+  abi event measured as G1 (§R4.9.2.6). C18's leg (b) allows exactly one
+  replaced call per SIMD FUNC, and its leg (d) allows a directive in a
+  body only in that selector shape.
+  `[MEMFN-RTDISPATCH]`'s terms are mapped onto the same helpers, with each
+  site's frequency class (§R4.9.3.1). Q-R9-10 and Q-R9-11 are RULED
+  (D155 addendum 1; Q-R9-11: a `freq` column in `DELEG_SITES`, built at
+  `[MEMFN-RTDISPATCH]`'s trigger).
+  Read §R4.9 first.
 - `twins.md` — R1d (lane memftwin, 2026-10-04), the D77 measurement "does a
   kernel TAILORED to the pattern beat a fixed generic one": T-A set
   classifier per shape vs the generic nibble lookup, T-B a fused scan+verify

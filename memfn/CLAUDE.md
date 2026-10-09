@@ -14,8 +14,19 @@
   refined form; N7 `pending`; `MEMFN_FORMS` attributed outside the
   artifact).
 
-The design of record is `docs/design/memfn/integration.md` (rev 4.8;
-read its §R4.8, then §R4.7, first). §R4.8 is M1b's contract (R-5:
+The design of record is `docs/design/memfn/integration.md` (rev 4.9;
+read its §R4.9, then §R4.8 and §R4.7, first). §R4.9 (R-9, lane r9d,
+2026-10-08) is the SIMD layer's design pass under D147 addendum 11.
+Revised after the D6 panel r9 (43 findings, §R4.9.12): a zero-mover step
+R4e′.0 first makes the FUNC part PRE and OFS share (`ofs_fn_define`) a
+first-match table `fn_rows[]` with BODY and PREFIX slots; SIMD forms are
+PREFIX rows of it, with a layer, an ISA level (`src/levels.def`, born with
+batch 1) and their own `--memfn=` deny, under one shared walk. A SIMD
+rendering is the SIMD-off rendering plus guarded text (the floor rule).
+Verdicts are two-tier (D144 addendum 4): kit timings are unofficial; an
+official verdict is a pcrec-bench run on each box a level targets,
+requested through the pcrec manager (the kit never writes to the bench).
+The first batch (`vrun-w32`/`vrun-w16`) is there, and Q-R9-1..11 are RULED (D155 and addendum 1: a function that does work never contains `#if`; a selector's whole body may be the `#if` chain, one call per arm). §R4.8 is M1b's contract (R-5:
 `stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4). R4h prep (2026-10-08,
 Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
 counter; it also added the ADVANCE hooks' shape classes (fields.def) and
@@ -67,8 +78,8 @@ first; K3 second.
 ## The layers (D147) — binding on every kit change
 
 - **ONE SIMD switch** (D147 addenda 6-7): `-fno-memfn-simd` /
-  `-fmemfn-simd`, axis `memfn-simd`, OFF BY DEFAULT until the SIMD hold
-  (D91/D119) lifts. Turning it on by default is its own ruled event.
+  `-fmemfn-simd`, axis `memfn-simd`, OFF BY DEFAULT; the default flip
+  is R4f, its own ruled event (§R4.9, D147 addendum 11).
   - **OFF:** the artifact is PORTABLE C (plain C, SWAR on ordinary
     integers, libc calls, loop-free forms) and runs on any target.
   - **ON:** the artifact is hardware-optimized for a specific CPU and
@@ -79,7 +90,8 @@ first; K3 second.
     `__builtin_cpu_supports` is 0.4-0.6 ns on Linux x86 and wrong on
     Darwin), and the fallback.
   - pcrec sends one bit (`MF_P_PORTABLE_ONLY` when the switch is off)
-    and nothing else. There is no `portable`/`native`/`baseline`
+    and nothing else (`[r9b]` and, from batch 1, the sink's bracket ops
+    `simd_open`/`simd_close` and `plan_pos2`, RQ-2/RQ-3). There is no `portable`/`native`/`baseline`
     profile and no `--isa=` axis.
 - **The scalar layer** is pcrec's algorithm (what is searched, the plan,
   handoffs, fused predicates) plus the kit's SCALAR ARMS: every form the
@@ -148,7 +160,7 @@ never depend on the kit: what reaches them is TEXT, so self-containment
 holds.
 
 **Every search site migrates here** (Q42 reversed: completeness, a
-ruled D77 exception). Each step is zero-mover. The memchr ratchet
+ruled D77 exception). Each step is zero-mover (R4e′.0b, D155, is the one ordered byte move). The memchr ratchet
 (C12) ends at 0 outside the kit, and C17 at 0 pending. A kit change
 that MOVES bytes still needs its measured trigger and G1 alpha at both
 layers.

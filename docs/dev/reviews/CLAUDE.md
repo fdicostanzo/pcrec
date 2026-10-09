@@ -495,3 +495,19 @@ Maintenance: add a file per checkpoint and list it here.
 - `2026-10-07-r3-memfn-rowcon-spotcheck.md` — the one-critic (opus) soundness spot-check of [MEMFN-ROWCON] rev 3: all r2 blockers resolved but one partly; NEW B1 (`UNSTATED` in serves is inert, and Appendix B's precheck uses would decline every PRE site, a T3a mover). Majors: MF_SELECT lacks scope/rec/opts; rows don't serve every field pcrec states; snapshot of non-value hooks and nested sites; the `_mf` prefix vs `-p`; fit_rungs' NULL means skip; 0-meaningful used fields. All answered by row_contracts.md §8 (rev 3.1); T0 ready.
 - `2026-10-07-r4-memfn-rowcon-light.md` — LIGHT one-critic (opus) re-check of [MEMFN-ROWCON] rev 4, the narrowed K96 generalization. B1: the gate ran at define only, but most hooks are use-time, so N3 would have deleted the call-time half of the K96 fix (now a use-phase re-check). M1: the poison differential misses a row that IGNORES a field (a semantic differential is added). M2: N3 entry re-runs the census after R-6. M3: the UNSTATED layout bump is cut. S2-S8 are closed by the IDENT/JUMP text classes and the generic floor-agreement refusal. Answered in rev 4.1; N1 builds with no further panel.
 - `2026-10-07-r-poss-arms-panel.md` — FULL D6 panel on [ART-POSS-ARMS] (poss_arms.md rev 1): critic A soundness/opus vs 10.46, B checks-tests/sonnet, C contract-staleness/sonnet; read-only, against post-K93 main. Both arms are sound only as revised. BLOCKER A-F1: A1 drops K93's joined call-site contexts, so `(a+(?:\b|))|b(?1)a` on `baa` would be (1,3) vs (0,3). HIGH: the arms flip atomic-discharge routes VM→DFA, an uncounted population that makes the deny bits engine-selecting; A1 needs a P-indexed follow. Check BLOCKERS: possdiff can't reach the plants, no claim-vs-mark check, empty ablation controls. K94 is NOT a prerequisite. The possessify decision family is filed as [POSS-CTX-TABLE]. All ACCEPTED; rev 2 + measurements to lane possarms2. Re-check (critic R): DOES NOT CLEAR — N1 BLOCKER (A0+B miscompile: arm B reads a zero-width gate as captured text), N2 (greedy-only IS load-bearing; the lazy ablation was blind), population shared across all instruments → rev 2.1 + a D27-blinded composition pass.
+- `2026-10-08-r9-memfn-simd.md` (+ `2026-10-08-r9-memfn-simd/`: the three critics' full texts) — D6 panel on the memfn SIMD layer design (R-9, integration.md rev 4.9 §R4.9; correctness/opus, measurement/sonnet, fit/sonnet). 43 findings (2 BLOCKER, 20 MAJOR, 21 MINOR), all dispositioned. BLOCKERs:
+  - F-1: batch 1's row is not reachable through `arms[]`, because PRE's FUNC body is rendered by a direct call. A zero-mover FUNC-body form-table seam comes first, and there is no decorator.
+  - M-1: the verdict box, REFRAMED by D144 addendum 4 (official verdicts are pcrec-bench runs on each targeted hardware: Zen 1 bench box, Zen 4 dev box with AVX-512, Mac).
+
+  Majors:
+  - `T` is defined two ways, one of them over-reading;
+  - the cascade guard survives `-mgeneral-regs-only`;
+  - C-SEL is red on size-quoting stamps (new Q-R9-9: D84 cap vs guarded bytes);
+  - G2 and the answer sweep miss most wrong vector paths;
+  - the acceptance record and bar are underspecified and gameable;
+  - three deny carriers and a cloned walk (one carrier, one walk);
+  - five projections of one paired compile, which should be one sweep arm.
+
+  F-6 (a SIMD ADVANCE bound in M6's ABI 8) was decided NO (D77). The revision follows; Q-R9-n go to Frank after it.
+
+- `2026-10-09-r9b-memfn-simd.md` — LIGHT two-critic (sonnet) re-check of integration.md §R4.9 after D155 and add. 1: contract critic (deliverable after RC-1/RC-2), docs critic (BLOCKER DS-10, C18 still described as two legs); all 21 findings applied, by-id table inside.

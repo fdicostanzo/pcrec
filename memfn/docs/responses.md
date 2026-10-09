@@ -1615,3 +1615,24 @@ the compiler, and is never adopted silently. Proposed for main to file
     rule stays exact, and C18 leg (d) becomes "no directive in any
     function body except a selector body of that exact shape".
   - Main: please record this in D155 in place of the (b) entry.
+- done: 2026-10-09 — **R-9 — branch lane/memfn-r9 @ f37bb727 (content; plus this [responses] commit).**
+  - Design: integration.md rev 4.9 §R4.9, with Q-R9-1..11 RULED (D155 and
+    add. 1). Q-R9-1 was resolved by D144 add. 4.
+  - Light re-check panel r9b had 2 read-only sonnet critics:
+    contract/consistency against D155 and add. 1, and docs staleness.
+    - Contract verdict: deliverable after RC-1 and RC-2.
+    - Docs verdict: DS-10 (C18 still "two legs") was a blocker, and some
+      probe numbers were unlabelled.
+    - All 21 findings are applied in f37bb727. DS-1 and DS-2 were settled
+      by the main merge.
+    - Review: docs/dev/reviews/2026-10-09-r9b-memfn-simd.md (by-id
+      completeness table).
+  - main is merged in at 021b3b32, with one conflict (the lanes index) and
+    make strict green. The branch is docs-only: no pcrec or kit bytes move,
+    so there is no validation run.
+  - For main:
+    - [EMIT-VERB] is cited by §R4.9 but resolves only through decisions.md,
+      with no plan.md row. File a row only if you want one.
+    - Batch 1's build request (R4e′.0, then R4e′.0b, then vrun-w32/w16) is
+      yours to file when capacity allows. It is the SIMD thread's 1 in the
+      2:1 split.
