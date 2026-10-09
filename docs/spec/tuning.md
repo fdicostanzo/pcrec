@@ -3752,11 +3752,13 @@ turned the force flag on.
   arm, so the artifact still compiles and answers everywhere. A span
   shorter than the vector body's reach falls to the next arm, and finally
   to `<fn>__body`. Answers never change. `<PREFIX>_MEMFN_FORMS` names the
-  forms and their RENDERED levels (`vrun@w16`; `match_api.md` §6.3), and
+  forms and their RENDERED levels (`vrun@w32+w16`; `match_api.md` §6.3), and
   `<PREFIX>_SIMD_GUARDED_BYTES` counts the guarded text, which no size
   decision reads (`limits.md`).
 - **Its per-form switches** are the kit's own `--memfn=` namespace
-  (`registry.md` §6): `--memfn=no-vrun-w16` denies the 16-byte row. Given at
+  (`registry.md` §6): `--memfn=no-vrun-w32` denies the 32-byte row (the
+  16-byte one is then the top arm) and `--memfn=no-vrun-w16` the 16-byte
+  row (the 32-byte arm then falls straight to `<fn>__body`). Given at
   the default `-fno-memfn-simd`, a SIMD row's deny is accepted and does
   nothing. C11's identity half (`make test-memfn-stamps`) holds the
   `-fno-memfn-simd` compile byte-identical to the default, and its movers

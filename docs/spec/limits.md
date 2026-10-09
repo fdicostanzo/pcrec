@@ -816,7 +816,7 @@ bounds over the artifact's rendered forms. The stamp reads `0` on every
 artifact compiled at the default `-fno-memfn-simd`. At `-fmemfn-simd` it is
 nonzero exactly where a SIMD row rendered ([MEMFN] R-13, R4e' batch 1: the
 `vrun` rows over a FUNC whose predicate is one run), at most 2,400 bytes per
-such FUNC for `vrun-w16` (`tests/memfn/simd_bounds.tsv` states each row's
+such FUNC for `vrun-w16` and 2,500 for `vrun-w32` (`tests/memfn/simd_bounds.tsv` states each row's
 bound, measured over the kit's own generated site space).
 
 ### The size-cap ladder, and `--size-cap=refuse` ([PF-DROP], D135)

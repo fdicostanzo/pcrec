@@ -343,13 +343,15 @@ typedef struct fn_in {
 
 #define vrun_w16_decl MF_NS(vrun_w16_decl)
 #define vrun_w16_ct   MF_NS(vrun_w16_ct)
+#define vrun_w32_decl MF_NS(vrun_w32_decl)
+#define vrun_w32_ct   MF_NS(vrun_w32_ct)
 #define kit_level     MF_NS(kit_level)
 
 /* vrun.c: the batch-1 rows `vrun-w16`/`vrun-w32` (§R4.9.7): the fused
  * run scan over a FUNC whose predicate is one RUN term and its site's only
  * predicate, sitting over `fn-pair`. */
-extern const mf_formdecl vrun_w16_decl;
-extern const gate_contract vrun_w16_ct;
+extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
+extern const gate_contract vrun_w16_ct, vrun_w32_ct;
 
 /* Level `lv` (LV_*) of levels.def (levels.c). */
 const mf_level *kit_level(unsigned lv);

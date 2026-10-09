@@ -952,7 +952,7 @@ grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
 ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
-FLOOR_ROWS=18   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 18, with fn/vrun-w16, reached by the SIMD family's process below)
+FLOOR_ROWS=19   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process

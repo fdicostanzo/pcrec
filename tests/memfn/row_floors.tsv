@@ -35,6 +35,11 @@
 # r4e0, R4e'.0) are floor(0.9 x) of a Linux `make test-memfn-g2` run on
 # 2026-10-09 (fn-pair 11580, fn-memchr 21091 chosen; docs/dev/lanes/
 # r4e0_report.md §3); their pcrec floors are the slot census's.
+# The SIMD rows `vrun-w16`/`vrun-w32` (lane r13, R-13): g2 floors are
+# floor(0.9 x) of a Linux `make test-memfn-g2` run on 2026-10-09 (826 each,
+# counted by G2's SIMD family's process; a named rung re-asked by kit_ask
+# counts as chosen); pcrec floors PLACEHOLDER until the slot census, whose
+# -fmemfn-simd arm is the only one reaching them.
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
@@ -54,4 +59,5 @@ runcmp	bytes	324	14838
 runcmp	memcmp	87769	32669
 fn	fn-pair	5205	10422
 fn	fn-memchr	117902	18981
-fn	vrun-w16	PLACEHOLDER	505
+fn	vrun-w16	PLACEHOLDER	743
+fn	vrun-w32	PLACEHOLDER	743

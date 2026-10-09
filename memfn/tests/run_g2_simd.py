@@ -58,9 +58,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # The levels each class's FUNC must render (MEMFN_FORMS' token), given the
 # rows that exist: vrun-w32 over vrun-w16, both over fn-pair only.
 CLASS_EXPECT = {
-    'pos': 'vrun@w16',
+    'pos': 'vrun@w32+w16',
     'deny-w32': 'vrun@w16',
-    'deny-w16': 'none',
+    'deny-w16': 'vrun@w32',
     'neg-exact': 'none',
     'neg-short': 'none',
     'neg-portable': 'none',
@@ -77,8 +77,8 @@ PATH_FLOOR = 1000        # executions of each path at a live level
 BUILDS = [
     # name,        flags,                      live levels
     ('x86-64',     ['-march=x86-64'],          {'w16'}),
-    ('x86-64-v3',  ['-march=x86-64-v3'],       {'w16'}),
-    ('x86-64-v4',  ['-march=x86-64-v4'],       {'w16'}),
+    ('x86-64-v3',  ['-march=x86-64-v3'],       {'w16', 'w32'}),
+    ('x86-64-v4',  ['-march=x86-64-v4'],       {'w16', 'w32'}),
     ('gpr-only',   ['-mgeneral-regs-only'],    set()),
 ]
 ASAN_BUILDS = [
@@ -282,8 +282,16 @@ def run(a, root, work):
         for line in f:
             if line.startswith('#'):
                 continue
-            sid, cls, L, off, pp, forms, gb = line.rstrip('\n').split('\t')
+            sid, cls, L, off, pp, forms, gb, a16, a32 = line.rstrip('\n').split('\t')
             gb = int(gb)
+            # each row rendered ALONE against its own bound
+            for row, alone in (('vrun-w16', int(a16)), ('vrun-w32', int(a32))):
+                if alone < 0:
+                    continue
+                maxg['alone:' + row] = max(maxg.get('alone:' + row, 0), alone)
+                if row not in bounds or alone > bounds[row]:
+                    bad('site %s (L=%s): %s alone writes %d guarded bytes > bound %s'
+                        % (sid, L, row, alone, bounds.get(row)))
             counts[cls] = counts.get(cls, 0) + 1
             want = CLASS_EXPECT.get(cls)
             if forms != want:
@@ -312,7 +320,8 @@ def run(a, root, work):
         else:
             ok()
     for tok, g in sorted(maxg.items()):
-        print('guarded bytes: %s max %d (bound %s)' % (tok, g, token_bound(tok, bounds)))
+        lim = bounds.get(tok[6:]) if tok.startswith('alone:') else token_bound(tok, bounds)
+        print('guarded bytes: %s max %d (bound %s)' % (tok, g, lim))
     sites_c = os.path.join(work, 'g2v_sites.c')
     text = open(sites_c).read()
     # every build of sections 3-5, prefetched concurrently (each driver run is

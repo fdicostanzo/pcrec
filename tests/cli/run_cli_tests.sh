@@ -2407,6 +2407,28 @@ if [ -s "$WORKDIR/mfs3.c" ] && ! grep -q '__w16' "$WORKDIR/mfs3.c" \
 else
     fail "--memfn=no-vrun-w16 at -fmemfn-simd did not deny the row"
 fi
+# ... and vrun-w32 above it: rendered with the 16-byte row as its named rung;
+# its own deny leaves the 16-byte row; both denied at -fmemfn-simd is the
+# SIMD-off artifact byte for byte.
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w32 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs4.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w32,no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs5.c"
+if grep -q '^static inline size_t rx_reqrun__w32(' "$WORKDIR/mfs2.c" \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs2.c"; then
+    pass "-fmemfn-simd renders the vrun-w32 helper above vrun-w16 (MEMFN_FORMS vrun@w32+w16)"
+else
+    fail "-fmemfn-simd did not render vrun-w32 above vrun-w16 on (?i)cat"
+fi
+if grep -q '__w16(' "$WORKDIR/mfs4.c" && ! grep -q '__w32' "$WORKDIR/mfs4.c" \
+   && grep -q '__w32(' "$WORKDIR/mfs3.c" && ! grep -q '__w16' "$WORKDIR/mfs3.c"; then
+    pass "each vrun row's own deny removes exactly that row's level"
+else
+    fail "a vrun deny removed the wrong level"
+fi
+if [ -s "$WORKDIR/mfs5.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs5.c"; then
+    pass "both vrun rows denied at -fmemfn-simd is the SIMD-off artifact byte for byte"
+else
+    fail "both vrun rows denied at -fmemfn-simd differs from the SIMD-off artifact"
+fi
 
 echo "cases failed: $total_fail"
 

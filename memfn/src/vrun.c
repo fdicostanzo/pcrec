@@ -108,6 +108,12 @@ static uint32_t reach_w16(const mf_site *s, const mf_pred *p)
     return 16 + vrun_t(p);
 }
 
+static uint32_t reach_w32(const mf_site *s, const mf_pred *p)
+{
+    (void)s;
+    return 32 + vrun_t(p);
+}
+
 /* The site shape both rows take (the module comment's APPLIES). */
 static int vrun_applies(const mf_site *s, const mf_pred *p)
 {
@@ -186,13 +192,16 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
                    MF_I_BROADCAST | MF_I_CTZ)
 
 static const char *const vrun_over[] = { "fn-pair", NULL };
+static const char *const vrun_w32_rungs[] = { "vrun-w16", NULL };
 static const char *const vrun_no_rungs[] = { NULL };
 
 /* MEASURED (G2's SIMD family, memfn/tests/run_g2_simd.py, 2026-10-09, gcc
- * 15.2): the worst case, site 0/1 of g2_simd_gen.c, is 2,383 bytes at w16
- * (a 32-byte run of three-digit masks compared byte by byte under
- * MF_D_RUN_OVERLAP). */
+ * 15.2), each row rendered ALONE (the other denied): the worst case, site 1
+ * of g2_simd_gen.c (a 32-byte run of three-digit masks compared byte by
+ * byte under MF_D_RUN_OVERLAP), is 2,383 bytes at w16 and 2,413 at w32;
+ * both rendered, 4,784. */
 #define VRUN_W16_GUARDED_MAX 2400
+#define VRUN_W32_GUARDED_MAX 2500
 
 /* guarded_max: the bound on the guarded bytes ONE rendering of the row
  * writes per FUNC (Q-R9-9, D155 item 9): its helper block (the `#if` line,
@@ -207,6 +216,13 @@ static const char *const vrun_no_rungs[] = { NULL };
 const mf_formdecl vrun_w16_decl = {
     "vrun-w16", "vrun", LV_X86_W16, vrun_over, vrun_no_rungs, VRUN_INSN,
     reach_w16, VRUN_W16_GUARDED_MAX, vrun_applies, vrun_render,
+};
+
+/* vrun-w32 names vrun-w16 as its rung: where both render, the w32 helper
+ * falls through to the w16 helper (the ladder w32 -> w16 -> scalar). */
+const mf_formdecl vrun_w32_decl = {
+    "vrun-w32", "vrun", LV_X86_W32, vrun_over, vrun_w32_rungs, VRUN_INSN,
+    reach_w32, VRUN_W32_GUARDED_MAX, vrun_applies, vrun_render,
 };
 
 /* ---- the contracts ([MEMFN-ROWCON]; walk test 2) -------------------------
@@ -261,6 +277,11 @@ const mf_formdecl vrun_w16_decl = {
 
 const gate_contract vrun_w16_ct = {
     "fn", "vrun-w16", NULL, 0, {
+    VRUN_SERVES
+}};
+
+const gate_contract vrun_w32_ct = {
+    "fn", "vrun-w32", NULL, 0, {
     VRUN_SERVES
 }};
 

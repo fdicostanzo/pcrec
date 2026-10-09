@@ -63,3 +63,4 @@ runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
 fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold	=
 fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=
 fn	vrun-w16	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w16(const unsigned char	-fmemfn-simd --memfn=no-vrun-w16	=
+fn	vrun-w32	pcrec	pattern	-fmemfn-simd	(?i)cat	rx_reqrun__w32(const unsigned char	-fmemfn-simd --memfn=no-vrun-w32	=

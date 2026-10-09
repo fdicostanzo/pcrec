@@ -27,6 +27,9 @@
  * accepted and inert at -fno-memfn-simd (the layer switch already declines
  * every SIMD row through `policy`).
  */
+MF_OPT("vrun-w32", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
+       "the 32-byte vector run scan (vrun-w16's form a level up; its short spans fall to "
+       "vrun-w16 where both render); -fmemfn-simd only")
 MF_OPT("vrun-w16", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
        "the 16-byte vector run scan (a SIMD helper over a FUNC whose predicate is one run, "
        "sitting over the two-stream pair body); -fmemfn-simd only")

@@ -4125,11 +4125,11 @@ engine-scoped.**
     SIMD is off by default, so the value is `"none"` on every artifact
     compiled at the default (D147 addendum 10, Q55). At `-fmemfn-simd` it
     names the SIMD rows rendered, one token per FUNC they reach, in site
-    order ([MEMFN] R-13, R4e' batch 1: `vrun@w16`). The levels are the
+    order ([MEMFN] R-13, R4e' batch 1: `vrun@w32+w16`). The levels are the
     RENDERED ones, top-down (one per `#if`/`#elif` arm of the FUNC's
     selector), never the live one: the consumer's `-march` decides which
-    arm compiles, so `vrun@w16` built with `-mgeneral-regs-only` runs the
-    scalar arm. A bucket on `none`/not-`none` is the use; the ids and
+    arm compiles, so `vrun@w32+w16` built at the default x86-64 runs the
+    w16 arm and built with `-mgeneral-regs-only` the scalar one. A bucket on `none`/not-`none` is the use; the ids and
     level tokens are opaque. A scalar-layer kit change (one that moves bytes
     at the default build) does NOT change it; such a change is attributed by
     its `abi` event and its `--memfn=no-NAME` deny row, and a consumer that

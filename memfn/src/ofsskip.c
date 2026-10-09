@@ -352,6 +352,7 @@ static const fn_row fn_rows[] = {
     { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },
     /* FN_PREFIX (R4e' batch 1, §R4.9.2.4): the SIMD rows, first match, the
        widest level first; a chosen row's narrower rungs are its NAMED ones */
+    { FN_PREFIX, NULL, NULL, &vrun_w32_ct, &vrun_w32_decl },
     { FN_PREFIX, NULL, NULL, &vrun_w16_ct, &vrun_w16_decl },
 };
 #define NFN (sizeof fn_rows / sizeof fn_rows[0])

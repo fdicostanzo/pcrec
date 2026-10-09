@@ -58,7 +58,7 @@ import routing_shape  # noqa: E402
 
 MOVERS_FLOOR = 39      # (pattern, engine) movers, corpus + named: 44 measured at w16 (R-13), ~90%
 SIMD_FUNC_FLOOR = 39   # SIMD FUNCs over the movers: 44 measured, ~90%
-LEVELS_FLOOR = 1       # mf_levels() rows (w16 at batch 1's first commit)
+LEVELS_FLOOR = 2       # mf_levels() rows: w16, w32 (R-13)
 NAMED = [
     ('mod-i (DFA, ASSIGN)', '(?i)cat', []),
     ('union-select (DFA)', '(?i)union.*?select.*?from', []),
