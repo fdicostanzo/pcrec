@@ -110,3 +110,217 @@ Verdict by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`:
    emit-ir-auto/stderr tallies may move by 1 (§3).
 3. The rest of vmlazy_report §8 (G1 census at the merge, identity gate,
    N2, G2 full, perfrun, mech rows, anchors).
+
+## § recursion-identity bucket (lane vmlrid)
+
+Lane vmlrid (2026-10-09, opus, light), on `lane/vmlmerge` from `395168db`.
+Owed item 1 of §5 above is DONE: comparison (A) of
+`make test-recursion-identity` now admits NORMALIZE's lazy-prefix
+re-spelling on all four axes, through kit manager ruling R1's named
+exception, and admits nothing else. The gate is **GREEN, 18/0**.
+
+### 1. Form: a one-sided mechanical rewrite, `lazy_prefix_rewrite()`
+
+This is the EIGHTH named exception, in `tests/codegen/run_recursion_identity.sh`
+beside `cls_range0_rewrite`. It has the fourth's shape
+(`bref_rename_rewrite`). It rewrites the reference region's nine-line
+pre-NORMALIZE prefix:
+
+- `RX_SET(RX_SLOT_SPAN_LOWk, ...)`;
+- the cursor init, hoisted outside the block;
+- `{ unsigned long it_ = 0; while (it_ < NUL) { if (!(cur + S <= subject_lengthTEST)) goto fail; cur += S; it_++; } }`.
+
+The output is 7106b370's spelling:
+
+- the cursor init, inside the block;
+- `while ((cur + S <= subject_length) && it_ < NULLTEST) { cur += S; it_++; }`;
+- `if ((ptrdiff_t)cur < slot_values[LOW] + N*S) goto fail;`.
+
+Every output string is taken from 7106b370's `emit_vm.c` hunk. TEST is
+copied verbatim: the parent built `test` as the concatenation of
+` && (m_i)` over the same `members[]` that the new loop prints one by one.
+The result then goes through `adv_layout_canon`, because every subject
+region goes through it too.
+
+**Why not a two-sided canonicalizer like `adv_layout_canon`?** The new
+spelling carries strictly more than the old one: the reach test names the
+low-water slot's NUMBER and the offset `N*S`. A canonicalizer would have to
+map new back to old, which means DROPPING the reach test. A dropped line is
+never compared, so a wrong slot or a wrong offset would be admitted.
+Rewriting the old side forward keeps every byte of the reach test compared.
+S711 below is exactly that case.
+
+**It is a regular transform.** R1 item 2's fallback was not needed:
+
+- `N` and `S` are in the old loop's own text.
+- The slot NUMBER is not in the region, because the `RX_SET` line names the
+  macro, `RX_SLOT_SPAN_LOWk`. The same reference artifact carries it in its
+  `#define RX_SLOT_SPAN_LOWk N` table. The gate reads that table off `r`
+  (the full ac4917d artifact) and passes it in as `$1`. The value comes from
+  the old artifact and is never read off the subject.
+
+**Composition.**
+
+- `rb_lazy` is `lazy(rb)`, and the fourth exception's baseline becomes
+  `bref(rb_lazy)`. That one value is what the bref bucket, the D139 range
+  rewrite and every deny-axis restore (island, fold, lit-run, atoms, poss
+  arms, ctx-node, arm A) compare against.
+- A lazy pattern that also needs another bucket is credited to both, and its
+  message carries `+vmlazy-prefix`.
+- The bref credit test became `rb_bref != rb_lazy`, so a lazy-only pattern
+  does not inflate the bref count.
+- Vocabulary: `vmlazy-prefix-moved=` on the (A) line, and
+  `REGION MOVED (ruled, R-12 VMLAZY NORMALIZE lazy rmin prefix: counted verify loop -> capped span scan + reach test)`.
+- The script's header carries the ruling sentence and the citation
+  "kit manager ruling R1, R-12 VMLAZY, 2026-10-09".
+
+### 2. Non-vacuity, and the census
+
+**`lazy_pop` text census.** It is computed from pattern text, independent of
+the artifact. It reads the masked, escape-collapsed text that POSSRC_RE uses
+and counts `+?`, `{n}?`, `{n,}?` and `{n,m}?` with n >= 1, plus `(?…U`
+option groups. Measured: **173** call-free patterns. K35 floor
+`LAZY_CENSUS_FLOOR=150` (one `bad` below it).
+
+**Per-axis assertions:**
+
+- the bucket fires (`rlazy > 0`);
+- it never exceeds the census;
+- the rewrite never FIRES on a pattern outside the census
+  (`rlazyoutside == 0`). This is checked whenever the rewrite fires, not only
+  when the pattern is admitted.
+
+**End of run:** no subject region on any axis still carries the old loop
+head (`LAZYOLD_TOTAL == 0`, one `ok` line).
+
+**Set equality by ID.** "Moved" is the baseline run's REGION DIFFERS set,
+before the bucket existed. "Fires" is an independent grep of each census
+pattern's ac4917d region for the old loop head. "Admitted" is every
+`R-12 VMLAZY` or `+vmlazy-prefix` line in the final run's diff file.
+
+| axis | census | moved (baseline red) | fires in ac4917d | admitted | alone | composed | admitted == moved == fires | rdiff |
+|---|---|---|---|---|---|---|---|---|
+| default | 173 | 53 | 53 | 53 | 33 | 20 | yes, by ID | 0 |
+| vm | 173 | 114 | 114 | 114 | 94 | 20 | yes, by ID | 0 |
+| noprefilter | 173 | 53 | 53 | 53 | 33 | 20 | yes, by ID | 0 |
+| nocaptures | 173 | 28 | 28 | 28 | 8 | 20 | yes, by ID | 0 |
+
+**What the 20 compose with, on every axis:**
+
+- 16 with the ctx-node bucket (`ctx-node-moved` 455 -> 471 on default);
+- 3 with the bref rename alone, plus 1 with a stamped deny-axis restore that
+  also needed the rename. Together these account for `bref-rename-moved`
+  397 -> 401.
+
+**[vm] against vmlazy's `out/movers.tsv`, by ID.** The `c-vm` stream has
+114 unique patterns. 108 of them are call-free and in this gate's corpus;
+the other 6 are call-bearing and excluded by the classifier. All 108 are
+admitted. The bucket admits **6 more**, and each is explained:
+
+- `(a)(?:ab){2,4}?ab`, `(a)(?:ab){2,}?ab`, `(a)(?:ab){2,}?ac` and
+  `(x)(\d{4,}?)\d` live in `tests/base/vm_lazy_rmin_prefix.rxt`. VMLAZY's
+  REPLACE commit 08bda492 added that file. It is absent at NORMALIZE
+  7106b370, where the census population was read. Each is admitted alone.
+- `-+?(?=a)?b` and `[ab]+?(?![ab])` are possessified by [ART-POSS-ARMS]
+  arm A in BOTH builds the census compared (`RX_VM_POSS_ARMS 0x1` at
+  df66a032 and at the tip), so neither is a mover there. ac4917d predates
+  the arms and emits a lazy cursor rung. The gate's ctx-node deny build,
+  which denies `-fno-poss-ctx-follow -fno-poss-bref-first -fno-ctx-node`,
+  restores that rung in the NEW spelling. So they are admitted composed:
+  `[UCP] U2 context node ... +vmlazy-prefix`.
+
+So the bucket's [vm] set is movers.tsv's call-free set plus 6 explained
+patterns, not equal to it. The reasons are a later corpus file and the
+census measuring the default build, not the deny build.
+
+### 3. Why 53 / 114 / 53 / 28
+
+Each count is the number of call-free patterns whose ac4917d program region
+contains a VM lazy cursor rung with rmin >= 1 on that axis (the "fires"
+column, measured independently). Route selection for these patterns is the
+same at ac4917d and at the tip, so every such region moved and nothing else
+did. Measured set relations: default = noprefilter, nocaptures ⊂ default ⊂ vm.
+
+- **[vm] 114:** the engine is forced, so every lazy rmin >= 1 cursor rung
+  is emitted.
+- **[default] 53:** 61 of the 114 are capture-free lazy patterns that the
+  default route sends to the DFA, so neither side has a program region.
+  Examples: `(?:ab){3,}?`, `(?:a+?)+?b`, `(?:\w{1,2}?\b)+`.
+- **[noprefilter] 53, the same set as default:** `-fno-prefilter` changes
+  the hybrid's prefilter, not the engine.
+- **[nocaptures] 28:** 25 of default's 53 are on the VM only because they
+  have capture groups (`(a+?)`, `(ab){2,4}?`, `((a{1,2}?){1,2}){1,2}`, ...).
+  With `--no-captures` they go to the DFA. The 28 that remain carry a
+  construct that forces the VM without captures: a lookaround, a
+  backreference or an atomic group (`(?>a+?)b`, `\w+?(?<=a)`,
+  `(a|b)+?\1`, ...).
+
+### 4. Planted control (by hand, varland's S273 method)
+
+I built three compilers from `git archive` of the branch: the clean tip, a
+CONTROL compiler and the S711 compiler.
+
+- CONTROL: `vm_emit_span_scan(..., a->u.rep.rmin - 1)`, i.e. the cap off by
+  one.
+- S711: `vm_span_reach(v, low, lo_off - 1)`.
+
+I then ran the gate's own `stamp_strip`, `prog_region`, `adv_layout_canon`
+and `lazy_prefix_rewrite`, extracted verbatim from the script, against the
+ac4917d reference over the 108 call-free [vm] movers (`--engine=vm`):
+
+```
+clean tip   admitted=90  not-admitted=18  rewrite-did-not-fire=0
+            (the 18 are backref/lookaround patterns the gate admits composed)
+CONTROL     admitted=0   not-admitted=108 rewrite-did-not-fire=0
+S711        admitted=0   not-admitted=108 rewrite-did-not-fire=0
+
+(?:ab){3,}? --engine=vm, CONTROL vs rewritten reference:
+<   while (rx_span_cursor + 2 <= subject_length && it_ < 3UL && (subject[rx_span_cursor + 0] == 97) && (subject[rx_span_cursor + 1] == 98)) { rx_span_cursor += 2; it_++; }
+>   while (rx_span_cursor + 2 <= subject_length && it_ < 2UL && (subject[rx_span_cursor + 0] == 97) && (subject[rx_span_cursor + 1] == 98)) { rx_span_cursor += 2; it_++; }
+(?:ab){3,}? --engine=vm, S711 vs rewritten reference:
+<   if ((ptrdiff_t)rx_span_cursor < slot_values[2] + 6) goto rx_fail;
+>   if ((ptrdiff_t)rx_span_cursor < slot_values[2] + 5) goto rx_fail;
+```
+
+Neither plant is admitted. Each differs from the rewritten reference by
+exactly the planted token, so both would land in `rdiff`.
+
+### 5. Sabotage S711 (`tests/mech/sabotages/S711_vmlazy_reach_one_byte_short.sh`)
+
+The plant is the reach test one byte short (`lo_off - 1`). Suites are
+`recidentity harness`, with the harness scoped to
+`tests/base/vm_lazy_rmin_prefix.rxt`.
+
+- At stride > 1 the plant is ANSWER-INVISIBLE: the cursor only lands on
+  `entry + k*W`, so the identity gate is the only check that can see it.
+- At stride 1 it is a wrong answer.
+
+Mech cannot score `recidentity` (varland finding 7: the scratch tree has no
+git history), so the row declares that, and the bucket half was validated by
+hand in §4.
+
+Solo run at `ca278766`:
+
+```
+reach:ok(1/1), recidentity:SKIPPED-no-git-history, corpus:1fail/137pass
+DETECTED ( SKIPPED -- no oracle)
+== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at ca278766... ==
+```
+
+I confirmed the one harness failure by hand: `vm_lazy_rmin_prefix.rxt:173`,
+`z(a){3,}?c?` with `engine vm` on "zaac", answers `match 0 4 2 3`, where
+python re says nomatch.
+
+### 6. Verdicts (taskset -c 12-15, gnutimeout; logs in the session scratchpad)
+
+- `make test-recursion-identity` at `6d42f266`: **checks passed: 18, checks
+  failed: 0**. `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` is empty.
+  - (A) `differing=0` on all four axes, with `vmlazy-prefix-moved=53/114/53/28`.
+  - (B) is identical on all four.
+  - The brief expected 16. The script has 17 checks on a green run (the
+    earlier red run's 9 + 4 failing axes, plus the 4 (A) passes those axes
+    did not print). The 18th is this exception's own end-of-run `ok`.
+- `make test-codegen`: run_group 15/15 scripts passed. The verdict grep is
+  empty.
+- Docs updated: `tests/codegen/CLAUDE.md`, in the VMLAZY entry, and
+  `docs/dev/lanes/CLAUDE.md`, in this report's line.
