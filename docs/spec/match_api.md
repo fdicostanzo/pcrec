@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 68
-   #error "pcrec: this artifact (abi 68) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 69
+   #error "pcrec: this artifact (abi 69) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 68
+   #define PCREC_RX_ABI_H 69
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,21 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `68` on every artifact today (lane nullanch2 bumped it
+- **`rx_info.abi` is `69` on every artifact today (lane decattr bumped it
+  from 68, 2026-10-09: [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], one event —
+  `docs/design/dec_fallback.md` §5.1, §5.2, §6.1).** Two stamp VALUES move,
+  no stamp is added. (1) A `${...}` pattern's `<PREFIX>_ENGINE_SEL` reads
+  `"selected"` where a nullable one read `"declined-nullable-default"` (F1:
+  its variable, not a nullability decline, turns the prefilter off). (2) A
+  collapse rung is no longer offered on an attempt the collapse cannot help
+  (no collapsible repeat; nullable but not `empty_admits`), so on a compile
+  that drops the prefilter for size `<PREFIX>_VM_PREFILTER_WHY`'s
+  `size cap retry, hybrid N > CAP` figure is the exact artifact's rather than
+  the wasted retry's (`-e utf8 (\p{Xwd})`: `1028613` -> `1028607`). Every
+  other artifact differs from `abi` 68 in its abi digits alone, and no answer
+  moves. `--emit-ir` (not an artifact) moves too: `no-variable` and
+  `no-size-cap` join the `prefilter` vocabulary (`ir_listing.md`).
+- **`rx_info.abi` was `68` (lane nullanch2 bumped it
   from 67, 2026-10-08, re-landing lane nullanch1's change after R4h's layout
   normalization took 67: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
   DECLINE, `tuning.md` §2.17).** Both prefilter declines read the new E1
