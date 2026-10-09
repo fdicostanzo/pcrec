@@ -2864,6 +2864,38 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   `RX_DFA_SCAN`, no new stamp). §7 six questions, §9 findings F-1..F-6 (W1's
   VM-route posture, a row-pointer compare, RECOVER's declared type on superset
   hybrids). Evidence: `../../studies/locate_finish/`.
+- `encoding_data_layout.md` — **ENCODING DATA LAYOUT: INVENTORY + PROPOSAL, nothing
+  moved** (lane `encinv`, 2026-10-09, from main `57fe04ef`, abi 71; Frank's "organize
+  encoding data around the idea there may be more encodings").
+  - **§1 inventory**: every encoding-keyed data set and table, with file:line
+    consumers and an emitted/spec column. It covers the seam rows, the code-point data
+    from the UCD, the tables outside `src/enc/`, the findings priors, four
+    vocabularies, the oracle captures, and the tests, sweep, stamps, limits and bench.
+  - **§2 diagnosis**: most "encoding data" is CODE-POINT data, and
+    `utf8_fold_pairs.inc` is Unicode content under an encoding name.
+    - There are two per-encoding registries: `lower_ops[]`'s `identity_max`
+      restates `onebyte_max`, so the third-encoding recipe's "nothing outside
+      `src/enc/`" is false.
+    - Five sites infer a capability from `max_cp` thresholds or table presence,
+      which assumes ASCII-compatibility without declaring it.
+    - The two match-time fold tables are made by two mechanisms, one an entry-id
+      special case in the shared `enc.c`.
+    - The encoder sits in the shared file, and `core/findings.c -> enc/enc.h` is a
+      measured layer back-edge.
+    - `latin1` means three things.
+    - A third encoding touches 15 places, 9 of them avoidable.
+  - **§3 proposal**: key data by the most general axis its content depends on
+    (repertoire by source, bytes by encoding, corpus by analysis). Keep one file per
+    encoding, with directories only at a D77 trigger. The `PcrecEnc` row is the
+    manifest (`encode`, `ucp_fold`, ASCII-compatibility checked), backed by a
+    documentation-tier manifest table.
+  - **§4 migration**: eight no-mover steps E0-E8 proven by `emit_sweep.py`. E8 moves
+    a spec/listing name and nothing is an abi event. Fold-table unification and the
+    prior are the abi-moving items, kept separate.
+  - **§5**: [U8-PICK]'s utf8 prior goes in `default.rxt` as a `cpfreq` block. A
+    generated sibling bundle does not work, because the chain terminal does not
+    follow its own `include`.
+  - **§6** answers the standing questions; **§7** has six questions for Frank.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
