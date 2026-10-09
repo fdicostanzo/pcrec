@@ -2286,6 +2286,50 @@ else
     fail "K70: (?aD)\\d under -e utf8 did not compile (rc $wrc)" "$werr"
 fi
 
+# [K98] `--pattern-esc` IS HONOURED BY EVERY MODE THAT READS `--pattern`
+# (docs/dev/known_issues.md K98, found by lane decfbrev2 as F-B5). The decode
+# sat just above the compile, below the early returns of `--emit-ir` and
+# `--emit-facts` (and `--count-groups`, the third pattern-taking query), so
+# each described the RAW escaped text with rc 0: `"\x28a\x29b"` listed as
+# the capture-free DFA pattern `\x28a\x29b`. Each mode is held both ways:
+# the escaped spelling must answer exactly what the decoded one does, and
+# must NOT answer what the raw text does (else the case proves nothing).
+K98_ESC='"\x28a\x29b"'; K98_DEC='(a)b'; K98_RAW='\x28a\x29b'
+for k98m in --emit-ir --emit-facts; do
+    e_out="$(pcrec_run "$PCREC" --pattern-esc "$k98m" --pattern "$K98_ESC" 2>&1)"; e_rc=$?
+    d_out="$(pcrec_run "$PCREC" "$k98m" --pattern "$K98_DEC" 2>&1)"; d_rc=$?
+    r_out="$(pcrec_run "$PCREC" "$k98m" --pattern "$K98_RAW" 2>&1)"; r_rc=$?
+    if [ "$e_rc" -eq 0 ] && [ "$e_rc" = "$d_rc" ] && [ "$e_out" = "$d_out" ]; then
+        pass "K98: --pattern-esc $k98m lists the DECODED pattern ($K98_DEC), byte for byte"
+    else
+        fail "K98: --pattern-esc $k98m does not list the decoded pattern (rc $e_rc vs $d_rc)" "$(printf '%s' "$e_out" | head -3)"
+    fi
+    if [ "$r_rc" != "$d_rc" ] || [ "$r_out" != "$d_out" ]; then
+        pass "K98: $k98m answers differently for the raw text $K98_RAW (the case is not vacuous)"
+    else
+        fail "K98: $k98m answers the same for the raw and the decoded pattern; the witness proves nothing"
+    fi
+done
+# --count-groups, oracle-read: python `re` counts the decoded pattern's groups.
+k98_want="$(python3 -c 'import re; print(re.compile(r"(a)b").groups)')"
+k98_got="$(pcrec_run "$PCREC" --pattern-esc --count-groups --pattern "$K98_ESC" 2>&1)"
+assert_eq "K98: --pattern-esc --count-groups counts the decoded pattern's groups (python re)" "$k98_want" "$k98_got"
+k98_got="$(pcrec_run "$PCREC" --count-groups --pattern "$K98_RAW" 2>&1)"
+if [ "$k98_got" != "$k98_want" ]; then
+    pass "K98: --count-groups counts $k98_got for the raw text (the case is not vacuous)"
+else
+    fail "K98: --count-groups counts the raw text the same as the decoded one"
+fi
+# A value the decoder refuses is refused by every mode, never listed raw.
+for k98m in --emit-ir --emit-facts --count-groups; do
+    k98_err="$(pcrec_run "$PCREC" --pattern-esc "$k98m" --pattern '(a)b' 2>&1 >/dev/null)"; k98_rc=$?
+    if [ "$k98_rc" -eq 1 ] && printf '%s' "$k98_err" | grep -q -- '--pattern-esc:'; then
+        pass "K98: --pattern-esc $k98m refuses an unquoted value with the decoder's diagnostic"
+    else
+        fail "K98: --pattern-esc $k98m on an unquoted value: rc $k98_rc" "$k98_err"
+    fi
+done
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

@@ -1702,8 +1702,11 @@ static int compile_sources(const CliState *cli)
     return rc;
 }
 
-/* Parses the command line via `cli_parse`, then dispatches: a syntax/
- * registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
+static int cli_dispatch(CliState st);
+
+/* Parses the command line via `cli_parse`, refuses the conflicts every mode
+ * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
+ * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
  * — no pattern, no `-o`, each returning before anything else runs), a
  * `.rxt` compile from one or more FILE OPERANDS (`compile_sources`, D118 —
  * one or more targets, pooled across every file given), or an ordinary
@@ -1781,6 +1784,57 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    /* [DD-13b.W23.3] `--pattern-esc`: THE --pattern VALUE IS THE `.rxt`
+     * FORMAT'S QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
+     *
+     * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
+     * exists so a multi-line or high-byte pattern is expressible without
+     * multi-line SYNTAX, which keeps every reader's line-oriented loop
+     * intact — and that only pays if the DECODING has one home. `run.sh`
+     * passes the still-encoded text through with this flag rather than
+     * approximating it with `printf %b`, which would be a SECOND escape
+     * vocabulary drifting from this one by construction;
+     * `verify_rxt.py` decodes with the table it already has for subjects,
+     * which is the same table.
+     *
+     * [K98] HERE, ABOVE EVERY MODE, so every mode that reads `--pattern`
+     * (the compile, `--emit-ir`, `--emit-facts`, `--count-groups`) reads the
+     * DECODED value. It used to sit just above the compile, below the
+     * queries' early returns, and those queries described the raw escaped
+     * text with rc 0. With no `--pattern` the flag has nothing to decode.
+     *
+     * The arena is `main`'s and is freed after `cli_dispatch` returns, on
+     * every path, so the decoded bytes outlive every mode (`pcrec_compile`
+     * copies what it needs into its own arena). */
+    Arena esc = { 0 };
+    if (st.pattern_esc && st.pattern) {
+        char emsg[192];
+        const char *dec = NULL;
+        if (pcrec_rxt_decode_escaped(st.pattern, &esc, &dec, emsg,
+                                     sizeof emsg) != 0) {
+            cli_err("--pattern-esc: %s", emsg);
+            pcrec_arena_free(&esc);
+            free(st.libdirs);
+            free(st.files);
+            return 1;
+        }
+        st.pattern = dec;
+    }
+    {
+        const int rc = cli_dispatch(st);
+        pcrec_arena_free(&esc);
+        return rc;
+    }
+}
+
+/* The modes, after `main` has parsed the command line, refused the
+ * conflicts every mode shares and decoded `--pattern-esc`: a query (each
+ * returning before anything else runs), a file-operand compile, or the
+ * single-pattern compile. `st` is `main`'s state BY VALUE; the pattern it
+ * carries is already decoded and lives until this returns. Returns 0 on
+ * success, 1 on any refusal or compile failure. */
+static int cli_dispatch(CliState st)
+{
     /* Read-only aliases for the modes below, so the query dispatch reads
      * exactly as it did before the parser was factored out. `opt` is a COPY
      * the compile path may still adjust (`header_name`). */
@@ -2339,42 +2393,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    /* [DD-13b.W23.3] `--pattern-esc`: THE --pattern VALUE IS THE `.rxt`
-     * FORMAT'S QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
-     *
-     * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
-     * exists so a multi-line or high-byte pattern is expressible without
-     * multi-line SYNTAX, which keeps every reader's line-oriented loop
-     * intact — and that only pays if the DECODING has one home. `run.sh`
-     * passes the still-encoded text through with this flag rather than
-     * approximating it with `printf %b`, which would be a SECOND escape
-     * vocabulary drifting from this one by construction;
-     * `verify_rxt.py` decodes with the table it already has for subjects,
-     * which is the same table.
-     *
-     * The arena is local and freed on every path out, so the decoded bytes
-     * outlive `pcrec_compile` (which copies what it needs into its own
-     * arena) and nothing outlives this function. */
-    Arena esc = { 0 };
-    if (st.pattern_esc) {
-        char emsg[192];
-        const char *dec = NULL;
-        if (pcrec_rxt_decode_escaped(pattern, &esc, &dec, emsg,
-                                     sizeof emsg) != 0) {
-            cli_err("--pattern-esc: %s", emsg);
-            pcrec_arena_free(&esc);
-            free(st.libdirs);
-            return 1;
-        }
-        pattern = dec;
-    }
-
     int to_stdout = !strcmp(outpath, "-");
     char *hpath = NULL;
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); pcrec_arena_free(&esc); free(st.libdirs); return 1; }
+        if (!hpath) { perror("malloc"); free(st.libdirs); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -2386,7 +2410,6 @@ int main(int argc, char **argv)
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
-        pcrec_arena_free(&esc);
         free(st.libdirs);
         return 1;
     }
@@ -2405,7 +2428,6 @@ int main(int argc, char **argv)
     }
     pcrec_output_free(&out);
     free(hpath);
-    pcrec_arena_free(&esc);
     free(st.libdirs);
     return rc;
 }
