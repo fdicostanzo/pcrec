@@ -1054,3 +1054,10 @@ pointer when a kit change merges to main.
   (subscription 89%, resets 07:00): g2m6 stopped before writing (cell
   clean), held until after the reset; the panel waits too. M7 waits for
   main's slot13 GO (B5's chain still running).
+- 2026-10-08 22:55: slot13 GREEN at 999dd994 (main 84da351b merged; one
+  lanes-index conflict, both lines kept): census would_decline 0, gate 0
+  movers x7 sets, G2 full 185,774,876/0, make test green (perfrun 708 s),
+  mech 14/14 unexpected 0. mismatch_inplace pcrec_floor pinned 2116
+  (6c8288d0); test-memfn-rows 127/0. `done: R-8` posted (33c02ac9), main
+  told. Held for pacing until after 07:00: g2m6, the m7→m6 merge and M6's
+  slot, and R-9's light re-check panel.
