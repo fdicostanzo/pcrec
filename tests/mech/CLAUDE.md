@@ -488,6 +488,14 @@ is EXPECTED to time out"*, and neither would a separate arm.
   re-anchored S116 (the byte backend's site-data fold text) and S517 (the
   rider's line) and re-aimed S513 (`memfnstamps`) from the dead `memchr`
   entry to `strlen`, a live detector again.
+- `n2sample` → `tests/memfn/run_n2_sample.sh` ([MEMFN-ROWCON] N2, lane
+  m7fix, 2026-10-08): the N2 would-decline census's own driver and report on
+  a dozen witness patterns x three arms, with an `-DMF_TRACE` pcrec built
+  from the sabotaged tree; red iff the census rc is nonzero (rc 5). A kit
+  row whose `applies` holds too widely is declined by the contract gate and
+  the walk lands where it would have anyway: no answer, artifact byte or pin
+  moves (M7's 7,726,522 census moves at zero movers). Row S668. Before this
+  arm the census had no mech arm at all; the full census is a slot run.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

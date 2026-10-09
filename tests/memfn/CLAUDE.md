@@ -345,6 +345,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   holds each row to its `g2_floor`). Same recipe as rows_check.py's own swap.
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a
   traced run's rows are that fixture's.
+- **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's
+  zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target;
+  mech arm `n2sample`). Builds an `-DMF_TRACE` pcrec from the tree and runs
+  the census's own `.sh` (driver and report) on the twelve witness patterns
+  (every MISMATCH shape, ADVANCE/SKIP, FIND, pre-check, offset skip) x the
+  `null`/`null+comments`/`null@utf8` arms: red iff the census's rc is
+  nonzero (rc 5: a would-decline or a no-row selection). Floor 8 on the
+  pattern file. The full census stays a slot run.
 
 ## Sabotage rows
 
@@ -377,6 +385,12 @@ work, not answers) on `memfnarms` (checks 10/11; S667/S669/S670 also
 `brefdiff`, S669/S670 the caseless harness), and S673 (a backend spells its
 loop again while N7 is delegated) on `memfnmanifest`/`memfnforms`.
 Hand-measured figures: `docs/dev/lanes/m7_report.md` §6.
+
+M7 fix (lane m7fix) adds S668 on a new arm `n2sample` (run_n2_sample.sh):
+`mismatch_inplace`'s `applies` holds on every site (M7's shipped defect), so
+the gate declines it everywhere and only the N2 census sees it. It re-pins
+S512's REACH_POP to the floor M7 set (`C17_ROW_FLOOR=14`). Hand-measured
+figures: `docs/dev/lanes/m7fix_report.md`.
 
 ## Maintaining it
 

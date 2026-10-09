@@ -9,7 +9,8 @@ Library (n2_census.py imports it):
 
 CLI:  n2_report.py RESULTS_DIR [-o n2_results.md] [--floors ROW_FLOORS.tsv [--propose]]
       merges RESULTS_DIR/arm_*.json (one Agg per arm, written by the driver)
-      and writes the tables. Prints `would_decline=K` on its last line.
+      and writes the tables. Prints `noend=K` then `would_decline=K` on its
+      last two lines (both must be 0 for pcrec; n2_census.sh's rc 5).
       --floors (N4) also holds every row's CHOSEN count to its pcrec_floor
       (tests/memfn/row_floors.tsv) and every non-`pcrec` row of rows.tsv (read
       beside it) to 0, and prints `floor_fail=F floor_placeholder=P
@@ -18,8 +19,12 @@ CLI:  n2_report.py RESULTS_DIR [-o n2_results.md] [--floors ROW_FLOORS.tsv [--pr
       less prints `floors=NOT-APPLIED`. --propose prints, per row, the
       floor(0.9 x chosen) a human copies into the floor file.
 
-A would-decline is an END record with would_decline=1 (the WARN gate declined
-the CHOSEN row). A "pcrec site" is one selection: (table, phase, chosen row,
+A would-decline is an END record with would_decline=1: since N3 the gate
+DECLINED a row whose predicate held and the walk MOVED the selection to the
+CHOSEN row. The END's `moved_from=` names the declined row; the census keeps
+it (the "declined row" column), so a report blames the row that moved, not
+the row that was chosen (lane m7fix: without it, 7.7M of M7's moves read as
+`generic` declining). A "pcrec site" is one selection: (table, phase, chosen row,
 and for the arms table the site's form/op/handoff classes from its SEL line).
 """
 import collections
@@ -88,6 +93,7 @@ def parse_trace(err):
             tr.ends.append({
                 "table": d.get("table", "?"), "phase": d.get("phase", "?"),
                 "chosen": d.get("chosen", "-"), "wd": d.get("would_decline", "-"),
+                "moved_from": d.get("moved_from", "-"),
                 "shape": shape, "fields": parse_fields(d.get("fields", "-"))})
         elif kind == "REACH_DROPPED":
             tr.reach_dropped += int(d.get("n", "0"))
@@ -108,7 +114,7 @@ class Agg:
         self.compiles = collections.Counter()      # (arm, "attempted"|"ok"|"refused"|"timeout")
         self.ends = collections.Counter()          # (table, phase, chosen)  every END with a row
         self.noend = 0                             # END with no chosen row (kit refused the site)
-        self.wd = collections.Counter()            # (table, phase, chosen, shape, fkey)
+        self.wd = collections.Counter()            # (table, phase, chosen, shape, fkey, moved_from)
         self.wd_arms = collections.defaultdict(collections.Counter)   # same key -> arm -> n
         self.wd_wit = collections.defaultdict(list)                  # same key -> [witness]
         self.reach_chosen = collections.Counter()  # (table, row)
@@ -123,7 +129,8 @@ class Agg:
                 continue
             self.ends[(e["table"], e["phase"], e["chosen"])] += 1
             if e["wd"] == "1":
-                k = (e["table"], e["phase"], e["chosen"], e["shape"], fkey(e["fields"]))
+                k = (e["table"], e["phase"], e["chosen"], e["shape"], fkey(e["fields"]),
+                     e.get("moved_from", "-"))
                 self.wd[k] += 1
                 self.wd_arms[k][arm] += 1
                 w = [arm, stream, src, str(pattern)[:120]]
@@ -199,6 +206,8 @@ class Agg:
         a.noend = j["noend"]
         for k, v, arms, wit in j["wd"]:
             k = tuple(k.split(SEP))
+            if len(k) == 5:                        # pre-m7fix arm files: no moved_from
+                k += ("-",)
             a.wd[k] = v
             a.wd_arms[k].update(arms)
             a.wd_wit[k] = wit
@@ -252,31 +261,34 @@ def render(agg, meta=None):
     L += _md([[t, p, r, n] for (t, p, r), n in sorted(agg.ends.items())],
              ["table", "phase", "chosen row", "selections"])
 
-    L += ["", "## 2. Would-decline verdicts, one line per (row, phase, site shape, failing fields)", ""]
+    L += ["", "## 2. Would-decline verdicts, one line per (declined row, chosen row, phase, site shape, failing fields)", "",
+          "The declined row is the one the gate moved the selection OFF (the END's `moved_from`);",
+          "its contract owns the failing fields. The chosen row is where the walk landed.", ""]
     if not agg.wd:
         L += ["NONE.", ""]
     rows = []
     for k, n in sorted(agg.wd.items(), key=lambda kv: (-kv[1], kv[0])):
-        t, ph, row, shape, fk = k
+        t, ph, row, shape, fk, mf = k
         arms_hit = agg.wd_arms[k]
         wit = "; ".join("[%s] %s %s: `%s`" % tuple(w) for w in agg.wd_wit[k])
-        rows.append([t, row, ph, shape, fk, n, "%d/%d" % (len(arms_hit), len(arms)), wit])
-    L += _md(rows, ["table", "row", "phase", "site shape", "failing fields (name:rule:class)",
+        rows.append([t, mf, row, ph, shape, fk, n, "%d/%d" % (len(arms_hit), len(arms)), wit])
+    L += _md(rows, ["table", "declined row", "chosen row", "phase", "site shape",
+                    "failing fields (name:rule:class)",
                     "count", "arms seen", "witnesses [arm] stream src: pattern"])
 
     L += ["", "## 3. R-6 table: per pcrec site kind, the field to state and the class it needs", ""]
     L += ["Rule 1 (R1): the row uses the field and the site left it unstated -> state it.",
           "Rule 2 (R2): the field is stated with a class the row does not serve.", ""]
     r6 = {}
-    for (t, ph, row, shape, fk), n in agg.wd.items():
-        for f in (x.split(":") for x in fk.split(",")):
-            k = (t, row, shape, f[0], f[1], f[2])
+    for (t, ph, row, shape, fk, mf), n in agg.wd.items():
+        for f in (x.split(":") for x in fk.split(",") if x):
+            k = (t, mf if mf != "-" else row, shape, f[0], f[1], f[2])
             r6.setdefault(k, [0, set()])
             r6[k][0] += n
             r6[k][1].add(ph)
     rows = [[t, row, shape, name, rule, cls, "/".join(sorted(phs)), n, _need((name, rule, cls))]
             for (t, row, shape, name, rule, cls), (n, phs) in sorted(r6.items())]
-    L += _md(rows, ["table", "row", "site shape", "field", "rule", "observed class",
+    L += _md(rows, ["table", "declined row", "site shape", "field", "rule", "observed class",
                     "phases", "count", "R-6 obligation"])
 
     L += ["", "## 4. Reach: selections per chosen row (define + run phases), with witnesses", ""]
@@ -386,6 +398,7 @@ def main(argv):
     print("n2_report: wrote %s" % out)
     if summary:
         print(summary)
+    print("noend=%d" % agg.noend)
     print("would_decline=%d" % agg.would_decline_total())
 
 
