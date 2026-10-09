@@ -13,11 +13,18 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   interface K2 selects over (an arm writes STRAIGHT TO THE SINK, in order,
   so a hook that writes and the sink's comment gate act at the point the arm
   reaches them), the sink writers (`kit_out`, `kit_flush`) and the
-  offset-skip function's shared renderer (`ofs_fn_*`), and the row
+  offset-skip function's shared renderer (`ofs_fn_*`; since R4e'.0
+  `ofs_fn_define` takes the calling site's handle), the shared walk's table
+  descriptor `kit_table` and `kit_walk` (R4e'.0), and the row
   contracts' types (`gate_contract`: `uses` per site kind and phase,
   `serves` per field; `CL_*`/`FLD_*` from fields.def) and the MF_TRACE
   record calls. Never included outside this directory.
-- **compose.c** — K2, the composer: `mf_art`, the define/use split
+- **compose.c** — K2, the composer: THE KIT'S ONE SELECTION WALK,
+  `kit_walk` (R4e'.0, integration.md §R4.9.2.3: per row of the asked slot,
+  in table order, the deny, the gate, the row's predicate; first match; a
+  slot holding no row is no selection and records nothing), which the arms
+  (`select_arm`), the run compare (`rc_row_of`) and `fn_rows[]`
+  (`fn_select`) all call; `mf_art`, the define/use split
   (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
   `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
@@ -65,7 +72,18 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   every term holds (one `memchr` stream on the scanned term, or the PAIR
   leapfrog on a two-member cube), its offset legend comment and its call.
   `ofsskip_arm` is the offset-skip site (FIND/FUNC/RETURN); `ofs_fn_*` also
-  render the pre-check's run blocks. Its `miss` (stated as `n`) and `floor`
+  render the pre-check's run blocks. **Since R4e'.0 (lane r4e0,
+  2026-10-09; integration.md §R4.9.2.1, the seam) the function's body is a
+  first-match table, `fn_rows[]`**, with a SLOT column: BODY (`fn-pair`, the
+  pair leapfrog where the scanned position is a two-member cube, above
+  `fn-memchr`, the slot's floor) and PREFIX (born EMPTY: the guarded
+  per-level helpers SIMD rows will add, D155; an empty slot renders zero
+  bytes). `ofs_fn_define` is the seam: the BODY walk, then the PREFIX walk
+  handed the BODY row, then the text (the PREFIX row's helpers, the head,
+  the BODY loop). Both BODY rows are today's inline `b >= 0` branch moved
+  text-for-text, scalar and undeniable (no options.def row); each carries
+  a contract (`fn_pair_ct`/`fn_memchr_ct`, the body's own fields: `denies`,
+  `table_ref`, no `floor`). Trace table `fn`. Its `miss` (stated as `n`) and `floor`
   (none) edge is its CONTRACT's since N3: the ad hoc define and call tests
   (lane m1bfix's K96 fix) are deleted, the gate does both.
 - **precheck.c** — a SCALAR ARM, born at R4c (§15.3-§15.5; transcribed from
@@ -80,7 +98,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
 - **runcmp.c** — a SCALAR ARM, born at M1b (integration.md §15.6, §R4.8;
   transcribed from pcrec's `src/gen/runcmp.c`): THE RUN COMPARE, one
   first-match row table (`words`, `overlap`, `bytes`, `memcmp`; the first
-  two denied by `MF_D_RUN_OVERLAP`) and its writers. `run_cmp_render` is the
+  two denied by `MF_D_RUN_OVERLAP`, read through the table's `deny`
+  accessor by `kit_walk` since R4e'.0) and its writers. `run_cmp_render` is the
   RUN term of the offset-skip function's verify chain and the body of
   `runcmp_arm` (VERIFY/EXPR/BOOL behind the caller's guard: pcrec's VM
   literal runs); `run_cmp_prepare` declares a FUNC definition's word-load
@@ -168,7 +187,7 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `MFTRACE` stderr records and reach counters (format:
   `../docs/trace_format.md`; since N4 the exit lines end with
   `REACH_DROPPED n=N`, the selections a full counter registry could not
-  hold, so an undercount is visible rather than silent; a trace build also asks a declined row's
+  hold (32 rows since R4e'.0, over the three tables), so an undercount is visible rather than silent; a trace build also asks a declined row's
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of

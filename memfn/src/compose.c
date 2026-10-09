@@ -142,55 +142,97 @@ static const arm *const arms[] = {
     &generic_arm,
 };
 
-/* The first row the gate passes AND whose predicate holds. The gate reads
- * each row's contract before its predicate ([MEMFN-ROWCON] N3,
- * row_contracts.md §2): a failing row is DECLINED and its predicate is not
- * asked. NULL when no row serves; `*why` is then the last declined row's
- * verdict (the generic row's, the table's total fallback), whose fields the
- * refusal names. `gphases` is what the gate reads in this walk: MF_PH_DEFINE
- * for mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit),
- * which holds the use hooks at selection time, so a row whose use-time
- * fields the hooks fail to serve is DECLINED here instead of chosen and then
- * refused by mf_use's re-check. The trace still labels the walk `define`. */
+/* ---- the shared walk ------------------------------------------------------
+ *
+ * The kit's one first-match walk (kit.h `kit_walk`; integration.md
+ * §R4.9.2.3), over every table the kit selects from. Per row of the asked
+ * slot, in table order: a denied row is skipped (DENIED); the gate reads the
+ * row's contract before its predicate ([MEMFN-ROWCON] N3, row_contracts.md
+ * §2) and a failing row is DECLINED, its predicate not asked (a trace build
+ * asks it anyway, so the record can say whether the gate MOVED the
+ * selection); a row whose predicate holds is CHOSEN. */
+size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphases,
+                uint64_t denies, const void *x, const gate_tctx *tc,
+                gate_verdict *why)
+{
+    size_t any = 0;
+    for (size_t i = 0; i < t->n && !any; i++)
+        any = !t->slot || t->slot(i) == slot;
+    if (!any) return t->n;              /* nothing to ask: no selection */
+    const gate_contract *mc = NULL;     /* trace only: the row the gate moved off */
+    gate_verdict mv = { 0, 0 };
+    gate_trace_sel(tc);
+    for (size_t i = 0; i < t->n; i++) {
+        if (t->slot && t->slot(i) != slot) continue;
+        const gate_contract *c = t->ct(i);
+        uint64_t d = t->deny ? t->deny(i) : 0;
+        if (d & denies) {
+            gate_trace_row(tc, c, "DENIED", d, NULL);
+            continue;
+        }
+        gate_verdict v = gate_check(c, gphases, in);
+        if (v.r1 | v.r2) {
+            int held = GATE_TRACING && t->holds(i, x);
+            if (held && !mc) { mc = c; mv = v; }
+            gate_trace_row(tc, c, held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
+            *why = v;
+            continue;
+        }
+        if (t->holds(i, x)) {
+            gate_trace_row(tc, c, "CHOSEN", 0, &v);
+            gate_trace_end(tc, c, &v, mc, &mv);
+            return i;
+        }
+        gate_trace_row(tc, c, "PRED_FALSE", 0, &v);
+    }
+    gate_trace_end(tc, NULL, why, mc, &mv);
+    return t->n;
+}
+
 /* Row `a`'s predicate columns over the site and its define hooks. */
 static int arm_holds(const arm *a, const mf_site *s, const mf_hooks *def)
 {
     return (!a->miss_leaves || s->on_miss_leaves) && a->applies(s, def);
 }
 
+#define NARMS (sizeof arms / sizeof arms[0])
+
+static const gate_contract *arm_ct(size_t i)
+{
+    return arms[i]->ct;
+}
+
+/* `x` is the walk's gate_in: the site and its define hooks. */
+static int arm_row_holds(size_t i, const void *x)
+{
+    const gate_in *in = x;
+    return arm_holds(arms[i], in->s, in->h);
+}
+
+static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_holds };
+
+/* The first row the gate passes AND whose predicate holds (kit_walk). NULL
+ * when no row serves; `*why` is then the last declined row's verdict (the
+ * generic row's, the table's total fallback), whose fields the refusal
+ * names. `gphases` is what the gate reads in this walk: MF_PH_DEFINE for
+ * mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit), which
+ * holds the use hooks at selection time, so a row whose use-time fields the
+ * hooks fail to serve is DECLINED here instead of chosen and then refused by
+ * mf_use's re-check. The trace still labels the walk `define`. No arm has a
+ * deny of its own yet (each byte-moving row brings one, D144 item 4). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why)
 {
     gate_in in = { s, def, NULL };
     gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
-    const gate_contract *mc = NULL;     /* trace only: the row the gate moved off */
-    gate_verdict mv = { 0, 0 };
-    gate_trace_sel(&tc);
-    for (size_t i = 0; i < sizeof arms / sizeof arms[0]; i++) {
-        gate_verdict v = gate_check(arms[i]->ct, gphases, &in);
-        if (v.r1 | v.r2) {
-            int held = GATE_TRACING && arm_holds(arms[i], s, def);
-            if (held && !mc) { mc = arms[i]->ct; mv = v; }
-            gate_trace_row(&tc, arms[i]->ct,
-                           held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
-            *why = v;
-            continue;
-        }
-        if (arm_holds(arms[i], s, def)) {
-            gate_trace_row(&tc, arms[i]->ct, "CHOSEN", 0, &v);
-            gate_trace_end(&tc, arms[i]->ct, &v, mc, &mv);
-            return arms[i];
-        }
-        gate_trace_row(&tc, arms[i]->ct, "PRED_FALSE", 0, &v);
-    }
-    gate_trace_end(&tc, NULL, why, mc, &mv);
-    return NULL;
+    size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
+    return i < NARMS ? arms[i] : NULL;
 }
 
 const gate_contract *kit_arm_contract(size_t i)
 {
-    return i < sizeof arms / sizeof arms[0] ? arms[i]->ct : NULL;
+    return i < NARMS ? arms[i]->ct : NULL;
 }
 
 /* ---- the per-site vocabulary rules ----------------------------------------

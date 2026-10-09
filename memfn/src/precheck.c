@@ -165,7 +165,7 @@ static int precheck_define(mf_art *art, uint32_t handle, const mf_hooks *h,
         if (run_cmp_prepare(art, p, o)) return -1;
         if (h->note) h->note(h->u, o, i);
         run_comment(h, p, i, part++ > 0, o);
-        if (ofs_fn_define(art, h, p, r->fns[i], o)) return -1;
+        if (ofs_fn_define(art, handle, h, p, r->fns[i], o)) return -1;
     }
     return 0;
 }

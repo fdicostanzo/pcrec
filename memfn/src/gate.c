@@ -17,10 +17,10 @@
  *      its class:                               DECLINE (R2);
  *   3. otherwise:                               pass.
  * Since N3 it ENFORCES (row_contracts.md §5). Its callers act on the ONE
- * verdict this file computes: the two selection walks (compose.c
- * `select_arm`, runcmp.c `rc_row_of`) DECLINE a failing row before its
- * predicate and move on, and refuse the site, naming the fields, when no row
- * is left; `mf_use` re-checks the chosen row against the use hooks and
+ * verdict this file computes: the kit's one selection walk (compose.c
+ * `kit_walk`, over the arms, the run compare's rows and the offset-skip
+ * function's `fn_rows[]`) DECLINES a failing row before its predicate and
+ * moves on, and the site is refused, naming the fields, when no row is left; `mf_use` re-checks the chosen row against the use hooks and
  * refuses a failing use, naming the fields (it cannot re-select: the
  * definition is written).
  *
@@ -696,7 +696,7 @@ void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in
 
 /* Process-wide on purpose (trace builds only): the reach is summed over
  * every art one process renders, and printed once at exit. */
-enum { REACH_ROWS = 16 };
+enum { REACH_ROWS = 32 };   /* rows of every table (17 at R4e'.0), with room */
 static const gate_contract *reach_row[REACH_ROWS];
 static unsigned long reach_chosen[REACH_ROWS];
 static unsigned long reach_cell[REACH_ROWS][FLD_N][CL_N + 1];   /* CL_N: unstated */
@@ -731,9 +731,10 @@ static void put_fields(const gate_verdict *v, const gate_in *in)
 
 static void reach_print(void)
 {
-    for (int pass = 0; pass < 2; pass++) {
+    for (int pass = 0; pass < 3; pass++) {
         for (size_t i = 0;; i++) {
-            const gate_contract *c = pass == 0 ? kit_arm_contract(i) : rc_row_contract(i);
+            const gate_contract *c = pass == 0 ? kit_arm_contract(i)
+                                   : pass == 1 ? rc_row_contract(i) : fn_row_contract(i);
             if (!c) break;
             unsigned slot = 0;
             while (slot < REACH_ROWS && reach_row[slot] != c) slot++;

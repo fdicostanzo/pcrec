@@ -201,13 +201,52 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
     return first ? kit_fail(art, "ofsskip: an empty verify chain") : 0;
 }
 
-/* The PAIR leapfrog's body: two `memchr` streams, members `a` and `b` of
- * the cube at offset `k`, each holding its one pending hit as an OFFSET
- * (never a pointer, so nothing NULL is compared relationally). `fresh`
- * makes the first iteration search both. */
-static int pair_body(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                     int maxk, int k, int a, int b, mf_sink *o)
+/* ---- THE FUNCTION'S BODY, a selected row table: fn_rows[] -----------------
+ *
+ * integration.md §R4.9.2.1, step R4e'.0 (the seam): the function's text is
+ * ONE first-match table, `fn_rows[]`, walked by the kit's shared walk
+ * (kit_walk) over the calling site, its define hooks and the predicate. Each
+ * row has a SLOT, the question it answers:
+ *   BODY    which scalar loop is the function's body: `fn-pair` (the scanned
+ *           position is a two-member cube: the PAIR leapfrog) above
+ *           `fn-memchr` (otherwise: one `memchr` stream), the slot's floor,
+ *           reached only where `fn-pair` did not hold;
+ *   PREFIX  which guarded per-level helper DEFINITIONS sit at file scope
+ *           beside the body (D155). BORN EMPTY: an empty slot renders zero
+ *           bytes, and SIMD rows arrive as its rows (batch 1).
+ * BODY is asked first, so the floor is known before any PREFIX row is asked,
+ * and the PREFIX walk is handed the chosen BODY row. Neither row calls,
+ * wraps or splices the other: the seam (ofs_fn_define) owns the order, and
+ * each row writes only its own slot. Both BODY rows are scalar and move no
+ * byte, so neither has an options.def deny. */
+
+enum { FN_BODY, FN_PREFIX };
+
+/* The walk's input: the predicate, its loop guard's `maxk` and its scan
+ * (ofs_fn_scan's offset `k`, byte `a` and second member `b`, -1 for none);
+ * for a PREFIX row, the BODY row the seam chose. */
+typedef struct fn_in {
+    const mf_pred *p;
+    int maxk, k, a, b;
+    const struct fn_row *body;
+} fn_in;
+
+/* One row: its slot, its predicate over the input, and the text it writes. */
+typedef struct fn_row {
+    int slot;
+    int (*holds)(const fn_in *x);
+    int (*render)(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o);
+    const gate_contract *ct;
+} fn_row;
+
+/* fn-pair's body: two `memchr` streams, members `a` and `b` of the cube at
+ * offset `k`, each holding its one pending hit as an OFFSET (never a
+ * pointer, so nothing NULL is compared relationally). `fresh` makes the
+ * first iteration search both. */
+static int pair_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
+    const mf_pred *p = x->p;
+    int maxk = x->maxk, k = x->k, a = x->a, b = x->b;
     kb at, len;
     kb_init(&at, art->a);
     kb_init(&len, art->a);
@@ -242,20 +281,11 @@ static int pair_body(mf_art *art, const mf_hooks *h, const mf_pred *p,
     return 0;
 }
 
-int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                  const char *fn, mf_sink *o)
+/* fn-memchr's body: one `memchr` stream on byte `a` at offset `k`. */
+static int memchr_body(mf_art *art, const mf_hooks *h, const fn_in *x, mf_sink *o)
 {
-    int maxk = max_reach(p), k, a, b;
-    ofs_fn_scan(p, &k, &a, &b);
-    art->includes |= MF_INC_STRING_H;   /* memchr */
-    /* both bodies below write `memchr(`; an error from here on is sticky */
-    if (mf_art_note_libc(art, "memchr")) return -1;
-
-    kit_out(o, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", fn);
-    if (table_params(art, h, p, 1, o)) return -1;
-    o->puts(o->u, ")\n{\n");
-    if (b >= 0)
-        return pair_body(art, h, p, maxk, k, a, b, o);
+    const mf_pred *p = x->p;
+    int maxk = x->maxk, k = x->k, a = x->a;
     kit_out(o, "    while (pos + %d < n) {\n", maxk);
     o->puts(o->u,   "        size_t cand;\n");
     /* THE memchr FORM. `pos + maxk < n` above implies `pos + k < n`, so the
@@ -279,6 +309,96 @@ int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
                     "    }\n"
                     "    return n;\n}\n\n");
     return 0;
+}
+
+/* The scanned position is a two-member cube (today's `b >= 0`). */
+static int pair_holds(const fn_in *x)
+{
+    return x->b >= 0;
+}
+
+/* The slot's floor: every predicate ofs_fn_applies admits scans one byte
+ * where fn-pair did not hold (ofs_fn_scan), and first-match order puts this
+ * row below it. */
+static int memchr_holds(const fn_in *x)
+{
+    (void)x;
+    return 1;
+}
+
+static const gate_contract fn_pair_ct, fn_memchr_ct;
+
+static const fn_row fn_rows[] = {
+    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct },
+    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct },
+    /* FN_PREFIX: born empty (integration.md §R4.9.2.1 item 2) */
+};
+#define NFN (sizeof fn_rows / sizeof fn_rows[0])
+
+static const gate_contract *fn_ct(size_t i)
+{
+    return fn_rows[i].ct;
+}
+
+static int fn_slot(size_t i)
+{
+    return fn_rows[i].slot;
+}
+
+static int fn_row_holds(size_t i, const void *x)
+{
+    return fn_rows[i].holds(x);
+}
+
+static const kit_table fn_table = { "fn", NFN, fn_ct, fn_slot, NULL, fn_row_holds };
+
+const gate_contract *fn_row_contract(size_t i)
+{
+    return i < NFN ? fn_rows[i].ct : NULL;
+}
+
+/* The row slot `slot` chooses for predicate `x` of site `handle`, NULL when
+ * none does. A BODY with no row is an error (the slot has a floor); an empty
+ * PREFIX is the ordinary answer, and renders nothing. */
+static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
+                               const fn_in *x, int slot)
+{
+    gate_in in = { &art->sites[handle - 1].site, h, NULL };
+    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in };
+    gate_verdict why = { 0, 0 };
+    size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
+    if (i < NFN) return &fn_rows[i];
+    if (slot == FN_BODY) {
+        char f[200];
+        gate_describe(f, sizeof f, &why, &in);
+        kit_fail(art, "ofsskip: no fn row serves the function's body: %s",
+                 f[0] ? f : "(no row applies; the slot lost its floor)");
+    }
+    return NULL;
+}
+
+/* THE SEAM: the BODY walk, then the PREFIX walk (handed the BODY row), then
+ * the text in its fixed order: the PREFIX row's helpers, the function's
+ * head, the BODY row's loop. */
+int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
+                  const mf_pred *p, const char *fn, mf_sink *o)
+{
+    fn_in x = { p, max_reach(p), 0, 0, 0, NULL };
+    ofs_fn_scan(p, &x.k, &x.a, &x.b);
+    art->includes |= MF_INC_STRING_H;   /* memchr */
+    /* both bodies write `memchr(`; an error from here on is sticky */
+    if (mf_art_note_libc(art, "memchr")) return -1;
+
+    const fn_row *body = fn_select(art, handle, h, &x, FN_BODY);
+    if (!body) return -1;
+    x.body = body;
+    const fn_row *prefix = fn_select(art, handle, h, &x, FN_PREFIX);
+    if (prefix && prefix->render(art, h, &x, o)) return -1;
+
+    kit_out(o, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", fn);
+    if (table_params(art, h, p, 1, o)) return -1;
+    o->puts(o->u, ")\n{\n");
+    return body->render(art, h, &x, o);
 }
 
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
@@ -407,7 +527,7 @@ static int ofsskip_define(mf_art *art, uint32_t handle, const mf_hooks *h,
     if (run_cmp_prepare(art, &r->site.pred, o)) return -1;
     if (h->note) h->note(h->u, o, 0);
     legend(h, &r->site.pred, o);
-    return ofs_fn_define(art, h, &r->site.pred, r->fn, o);
+    return ofs_fn_define(art, handle, h, &r->site.pred, r->fn, o);
 }
 
 static int ofsskip_use(mf_art *art, uint32_t handle, const mf_hooks *h,
@@ -503,3 +623,77 @@ const arm ofsskip_arm = {
     ofsskip_use,
     &ofsskip_ct,
 };
+
+/* ---- fn_rows[]' contracts ------------------------------------------------
+ *
+ * What a BODY row's text reads beyond the predicate the walk hands it. The
+ * site's shape, its name, its miss and its hooks' spelling are the calling
+ * arm's (ofsskip_ct above, precheck.c's two), which the arms walk checked
+ * before this walk runs; the body is the same text under all three, so it
+ * serves every class of a field it does not read (MF_ANY). The predicate is
+ * the walk's input, the site's `pred` (ofsskip) or one of its `preds`
+ * (precheck), held to offset >= 0 by ofs_fn_applies, so the site-level
+ * `pred`/`preds` classes are not the body's to read. The two rows read the
+ * same fields (both end in verify_chain), so they share one `serves`; each
+ * is its own contract only because the trace names the row by it. No row
+ * USES an unstated field: the walk passes the define hooks the calling arm
+ * was given. */
+#define FN_BODY_SERVES \
+    [FLD_form]            = MF_ANY,                   /* the calling arm's */ \
+    [FLD_op]              = MF_ANY,                   /* the calling arm's */ \
+    [FLD_handoff]         = MF_ANY,                   /* the calling arm's: RETURN, ON_MISS or \
+                                                         ASSIGN read the same function */ \
+    [FLD_reverse]         = CM(NO),                   /* the memchr streams are forward */ \
+    [FLD_empty]           = MF_ANY,                   /* an empty range fails the loop guard and \
+                                                         returns n, whatever the caller does with it */ \
+    [FLD_end_back]        = MF_ANY,                   /* the calling arm's: the body reads to n */ \
+    [FLD_pred]            = MF_ANY,                   /* the walk's input (above) */ \
+    [FLD_preds]           = MF_ANY,                   /* the walk's input (above) */ \
+    [FLD_ret_pred]        = MF_ANY,                   /* the calling arm's */ \
+    [FLD_guard_by_caller] = MF_ANY,                   /* the body bounds its own reads */ \
+    [FLD_on_miss_leaves]  = MF_ANY,                   /* the calling arm's */ \
+    [FLD_span_hi]         = MF_ANY,                   /* not read */ \
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* verify_chain renders runs through the \
+                                                         run compare, whose walk reads them with a \
+                                                         fallback per domain (runcmp.c rows[]) */ \
+    [FLD_fn_ref]          = MF_ANY,                   /* the calling arm names the function */ \
+    [FLD_table_ref]       = CM(NONE) | CM(REF),       /* verify_chain: a multi-byte set's table */ \
+    [FLD_s]               = MF_ANY,                   /* the call's (ofs_fn_call); the body reads \
+                                                         its own `subject` */ \
+    [FLD_n]               = MF_ANY,                   /* as s: its own `n` */ \
+    [FLD_lo]              = MF_ANY,                   /* as s: its own `pos` */ \
+    [FLD_floor]           = 0,                        /* the body reads nothing below `pos`: no \
+                                                         stated floor is served (K96's floor half) */ \
+    [FLD_result]          = MF_ANY,                   /* not read */ \
+    [FLD_result_decl]     = MF_ANY,                   /* not read */ \
+    [FLD_miss]            = MF_ANY,                   /* the body returns its `n`; what a caller's \
+                                                         miss means is the calling arm's */ \
+    [FLD_on_miss]         = MF_ANY,                   /* not read */ \
+    [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_more]            = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_peek]            = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_count]           = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_count_start]     = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_count_by_caller] = MF_ANY,                   /* not read (ADVANCE's) */ \
+    [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */ \
+    [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */ \
+    [FLD_member]          = MF_ANY,                   /* not read: a singleton is compared, a wider \
+                                                         set is pcrec's table (verify_chain) */ \
+    [FLD_table_name]      = MF_ANY,                   /* table_of names the table, any name */ \
+    [FLD_fn_name]         = MF_ANY,                   /* the calling arm names the function */ \
+    [FLD_note]            = MF_ANY,                   /* not read: the calling arm's */ \
+    [FLD_note_tag]        = MF_ANY,                   /* not read */ \
+    [FLD_indent]          = MF_ANY,                   /* not read: file scope */ \
+    [FLD_comment_tier]    = MF_ANY,                   /* not read: the body writes no comment */
+
+static const gate_contract fn_pair_ct = {
+    "fn", "fn-pair", NULL, 0, {
+    FN_BODY_SERVES
+}};
+
+static const gate_contract fn_memchr_ct = {
+    "fn", "fn-memchr", NULL, 0, {
+    FN_BODY_SERVES
+}};
+
+#undef FN_BODY_SERVES

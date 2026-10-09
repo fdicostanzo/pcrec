@@ -2,8 +2,11 @@
 
 [MEMFN-ROWCON] N1 (`docs/design/memfn/row_contracts.md` §3-§4); the record
 set below is N3's, where the gate ENFORCES (§5). Written by
-`memfn/src/gate.c`, called from the two selection walks
-(`compose.c` `select_arm` / `mf_use`, `runcmp.c` `rc_row_of`).
+`memfn/src/gate.c`, called from the kit's one selection walk
+(`compose.c` `kit_walk`, R4e'.0, over the composer's arms (`select_arm`),
+the run compare's rows (`runcmp.c` `rc_row_of`) and the offset-skip
+function's `fn_rows[]` (`ofsskip.c` `fn_select`)) and from `mf_use`'s
+re-check.
 
 ## Turning it on
 
@@ -27,20 +30,26 @@ the chosen one), and one `END`.
     MFTRACE ROW table=T art=A site=H phase=P row=R verdict=V gate=G fields=F
     MFTRACE END table=T art=A site=H phase=P chosen=R would_decline=W fields=F [moved_from=M]
 
-- `table`: `arms` (the composer's arm table) or `runcmp` (the run compare's
-  rows).
+- `table`: `arms` (the composer's arm table), `runcmp` (the run compare's
+  rows) or `fn` (the offset-skip function's `fn_rows[]`, R4e'.0: its BODY
+  slot's walk, one per FUNC part the offset-skip and pre-check sites
+  define). A table with SLOTS writes one selection per slot asked; a slot
+  that holds no row is not a selection and writes no record (the PREFIX
+  slot, born empty, writes none until its first row lands).
 - `art`: the art's number in the process (1, 2, … in `mf_art_begin` order;
   pcrec makes one per Job attempt).
-- `site`: the site's handle (`arms`), or `-` (`runcmp`: the run walk has no
-  handle).
+- `site`: the site's handle (`arms`; `fn`: the calling site, the
+  offset-skip site or the pre-check composite), or `-` (`runcmp`: the run
+  walk has no handle).
 - `phase`: `define` (the arm walk in `mf_define`, over the site and the
   define hooks; `mf_emit`'s walk is labelled `define` too, though its gate
   reads the define AND use fields, since the one-call entry holds both hook
-  sets: r4gfix), `use` (the re-check of the chosen arm in `mf_use`, every
+  sets: r4gfix; the `fn` walk, inside a define, over the calling site and
+  its define hooks), `use` (the re-check of the chosen arm in `mf_use`, every
   use and every `mf_call`, over the use hooks), `run` (the run compare's
   walk over one RUN term; it runs inside a define or a use).
-- `<what>` on `SEL`: `form=… op=… handoff=…` (arms; the classes of those
-  fields), or `run=<class> len=<run_len>` (runcmp).
+- `<what>` on `SEL`: `form=… op=… handoff=…` (arms and fn; the classes of
+  those fields of the site), or `run=<class> len=<run_len>` (runcmp).
 - `verdict` on `ROW`, what the walk did with the row:
   - `DENIED:<deny>` — skipped by a deny bit (`MF_D_RUN_OVERLAP`); the gate
     is not asked (`gate=-`);
@@ -96,7 +105,8 @@ line:
   at that phase on that site, by the value's class (`UNSTATED` where the
   field was unstated). Only nonzero cells are printed.
 - `REACH_DROPPED`, always the last line: `MFTRACE REACH_DROPPED n=N`, the
-  selections whose row found no counter slot (the registry holds 16 rows).
+  selections whose row found no counter slot (the registry holds 32 rows;
+  17 exist at R4e'.0).
   N is 0 in a sound trace; a nonzero N means some row's `chosen` above is
   an undercount, and the census (`n2_report.py`) reports it ([MEMFN-ROWCON]
   N4).

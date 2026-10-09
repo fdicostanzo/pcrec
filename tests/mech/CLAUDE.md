@@ -473,6 +473,10 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `memfndeleg` → `tests/memfn/run_deleg_sites.sh` ([MEMFN] M6 follow-up,
+  kit session, 2026-10-09): C10, the DELEG_SITES rows against D91's use
+  ceiling. S683 named it from M6 before the arm existed (slot14 scored it
+  UNKNOWN-SUITE, an anomaly); measured solo DETECTED 2fail/3pass. Seconds.
 - `memfnarms` → `tests/memfn/run_arm_pins.sh` ([MEMFN] M4, lane m4,
   2026-10-08): C5, the kit arms' fixture pins, the row-contract gate cases
   (check 6) and the reads-below FIND run on fixed subjects (check 9).
@@ -3607,3 +3611,22 @@ S626 (the `attrib` record names the first fired row, not the giving one;
 fbt (a) att-ovfdfa/att-ovfpf). S642-S645 and S651, whose B2-B4 detector
 was (d), are detected by fbt (a)/(b)/(c) on the live default-build
 behaviour (`docs/dev/lanes/decfbB5_report.md`). No new S-id.
+
+### [MEMFN] R4e'.0 — the FUNC-body seam: S454/S570 re-aimed, S686-S689 (lane r4e0, 2026-10-09)
+
+R-11's step R4e'.0 (integration.md §R4.9.2.1) makes the offset-skip
+function's body a first-match table, `fn_rows[]` (memfn/src/ofsskip.c: BODY
+`fn-pair` above its floor `fn-memchr`, PREFIX born empty), and walks the
+kit's three selection tables with ONE walk, `kit_walk` (memfn/src/
+compose.c). Zero movers. Re-aimed, intent unchanged: S454 (the pair
+dispatch's `if (b >= 0)` is now fn-pair's predicate; the plant makes it
+never hold, so the floor takes every cube) and S570 (the run compare's deny
+test is now kit_walk's, SAB_FILE compose.c). New, hand-measured solo (lane
+report §4): S686 (fn_rows[]' BODY rows swapped, the design's own seam plant;
+harness reqcube.rxt + memfnarms), S687 (the empty PREFIX slot renders a
+line; memfnarms pins), S688 (kit_walk walks last-first, every table lands on
+its fallback; memfnarms + harness), S689 (kit_walk walks a slot with no
+row, a no-row END per FUNC part in the trace; n2sample only, no byte moves).
+S690-S695 are left for R4e'.0b. Not built, with reason: "BODY asked before
+PREFIX" and "the walk ignores the slot" are equivalent mutants while the
+PREFIX slot is empty (the report says so).

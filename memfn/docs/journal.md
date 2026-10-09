@@ -1096,3 +1096,19 @@ pointer when a kit change merges to main.
   - Q-G2M6-3: `peek` is required at W > 1 although it is unused there.
   - Q-G2M6-4: EXCLUDED on a strided ADVANCE.
 - slot14 (M6) requested from main; script at memfn-slot/slot14/run.sh.
+
+## 2026-10-09 midday — kit session (pcrecdev3)
+
+- R-10 / M6 DONE and merged by main (287133ba). slot14 was green apart from
+  test-resource W5. Triage traced that to M6 moving an arena boundary; it was
+  fixed by lane w5fix, where W5 now measures its pattern instead of pinning it.
+- LESSON: my verdict on slot14's "66/66 unexpected 0" read only the
+  unexpected/undetected columns. Main found anomalies 1: S683 named suite
+  `memfndeleg`, which had no arm (UNKNOWN-SUITE), so the row was never
+  measured. Fixed by adding the arm (1541a7aa). S683 solo: DETECTED, 2fail/3pass.
+  From now on a mech verdict reads the whole COMPLETE trailer, anomalies and
+  unreached included.
+- main merged into lane/memfn-r4e0 (7798c77a). The start/fallback maps were
+  regenerated. Light checks and G2 quick 51,169,258/0 are green.
+- slot15 is scripted (memfn-slot/slot15/run.sh): mech is now ONE `PROCS=4`
+  invocation, per [TT-MECHPAR] on main. It waits for main's GO.
