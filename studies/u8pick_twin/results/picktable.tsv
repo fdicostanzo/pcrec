@@ -1,0 +1,37 @@
+cell	oracle_rarest(byte:stops)	arm	precheck(byte:stops)	prefilter_memchr(byte:stops ...)
+lit-1ch-2b	a9:16721	A	a9:16721	a9:16721 c3:26219
+lit-1ch-2b	a9:16721	B	a9:16721	a9:16721
+lit-1ch-2b	a9:16721	C	a9:16721	a9:16721
+lit-1ch-3b	a5:5627	A	a5:5627	a5:5627 e6:19122
+lit-1ch-3b	a5:5627	B	a5:5627	97:5806 a5:5627
+lit-1ch-3b	a5:5627	C	97:5806	97:5806 e6:19122
+lit-1ch-4b	f0:2631	A	80:14547	80:14547 f0:2631
+lit-1ch-4b	f0:2631	B	80:14547	9f:10113 80:14547
+lit-1ch-4b	f0:2631	C	f0:2631	f0:2631
+lit-anchored-run	9e:1077	A	9e:1077	
+lit-anchored-run	9e:1077	B	9e:1077	
+lit-anchored-run	9e:1077	C	9e:1077	
+lit-cyr-run	9c:6241	A	b0:14470	b0:14470 d0:152404
+lit-cyr-run	9c:6241	B	b0:14470	9c:6241 b0:14470
+lit-cyr-run	9c:6241	C	9c:6241	9c:6241
+lit-mixed-ascii	40:0	A	88:3720	40:0 88:3720
+lit-mixed-ascii	40:0	B	88:3720	73:35271 88:3720
+lit-mixed-ascii	40:0	C	e4:6200	40:0 e4:6200
+lit-nearmiss-run	9e:1077	A	9e:1077	9e:1077 e6:19122
+lit-nearmiss-run	9e:1077	B	9e:1077	97:5806 9e:1077
+lit-nearmiss-run	9e:1077	C	9e:1077	9e:1077 e6:19122
+lit-nfc-pair	66:9765	A	a9:16721	c3:26219 a9:16721
+lit-nfc-pair	66:9765	B	a9:16721	61:44229 a9:16721
+lit-nfc-pair	66:9765	C	a9:16721	a9:16721
+lit-offset-at-head	40:0	A	a9:16721	a9:16721 40:0
+lit-offset-at-head	40:0	B	a9:16721	c3:26219 a9:16721
+lit-offset-at-head	40:0	C	40:0	40:0
+lit-offset-at-tail	40:0	A	a9:16721	a9:16721 c3:26219
+lit-offset-at-tail	40:0	B	40:0	a9:16721 40:0
+lit-offset-at-tail	40:0	C	40:0	a9:16721 40:0
+lit-run-3	9e:1077	A	9e:1077	9e:1077 e6:19122
+lit-run-3	9e:1077	B	9e:1077	97:5806 9e:1077
+lit-run-3	9e:1077	C	9e:1077	9e:1077 e6:19122
+lit-sharp-s	53:2082	A	9f:10113	c3:26219 9f:10113
+lit-sharp-s	53:2082	B	65:83135	74:42439 65:83135
+lit-sharp-s	53:2082	C	9f:10113	9f:10113 53:2082
