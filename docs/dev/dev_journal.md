@@ -26782,3 +26782,22 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 **Lessons.** I `cd`'d into worktrees/memfn once more (searching memfn.h), and caught and reverted it immediately. A relayed "Frank ruling" from a peer was confirmed with Frank before recording, twice; both were real, and both gained detail in the confirmation (the reason, and the multi-host scope). A bench-inbox push was rejected because the bench had pushed meanwhile; I rebased the single inbox commit, kept their I-137 ack line, and pushed.
 
 **Next.** On B4's mech COMPLETE (0 unexpected): merge lane/decfbB4 ALONE, build/strict/findings/registry, perfrun --fold, push, then GO slot12 to the kit. Then brief B5 (the token derivations; carry B4's finding 3). Prune decfbB0/B2/B3 once quiet.
+
+## 2026-10-08 (evening) — hundredth session: B4, B5, B6 and M7 merged; R-9 ruled (D155); paced for the night
+
+**Merged to main (all pushed):**
+- [DEC-FALLBACK] **B4** (ceff0421): T2 replaces the prefilter admission. Light tier green; make test 0 section errors; mech 69 rows, unexpected 0 (S178 is the declared undetected).
+- **B5** (lane decfbB5, opus): the four token derivations read the tables (attribution walk, T3, T4, the fired T1 row's `pfwhy`). The both-derivations oracle, fbt (d) and oracle_sweep.py are deleted. The registry source legs :755/:782 are retired with the pin 214 → 210. Light green; make test green; mech 71/0 unexpected. Finding: deleting (d) removed the only check of the §1.9 invariants, so `trace_sane` was added to every fbt (a) compile.
+- **B6** (lane decfbB6, sonnet): the three fallback `--list-axes` listings project an `axlist` column on T1-T4, and the 17 hand rows are deleted. Output is byte-identical. make test green; mech 24/0. Findings for B7: `forced`/`selected` have no table row; multi-producer values sit on the first producing row. The lane wrote 3 scratch files to /tmp, then deleted them (scope slip, self-reported).
+- **[MEMFN] M7** (kit, R-8, lane/memfn-m7 33c02ac9): zero movers, no abi event. slot12 + slot13 green: census would_decline 0, identity gate 0 movers on 7 option sets, G2 full 185,774,876/0, make test, mech.
+
+**Rulings (Frank):**
+- **D155**: R-9's Q-R9-1..9. The floor rule is amended so the SIMD choice sits at file scope.
+- **D155 addendum 1**: Q-R9-10 shape (c), "a function that does work never contains #if; a selector's whole body may be the #if chain"; Q-R9-11 is a `freq` column.
+- Filed: [MEMFN-RTDISPATCH] (dispatch by frequency class) and [TT-MECHPAR] (mech rows ran ~serial at load 1 on 16 cores; the first lane after the 7am reset).
+- [MEMFN-ENTRYSINK]'s set1-hoist claim corrected (r9fu: gcc 15.2 rebuilds broadcasts per entry).
+- **Process**: Frank prefers DISCUSSION to lettered (a)/(b)/(c) option menus (memory `pcrec-discussion-not-option-menus`, relayed to the kit). Peer-relayed rulings were confirmed with Frank before recording, every time.
+
+**Pacing:** at 89% of the subscription (resets 2026-10-09 7am local) Frank asked to dial back to one lane at a time across sessions. The kit held g2m6 and R-9's re-check panel until after the reset.
+
+**Next (after 7am):** [TT-MECHPAR] lane (sonnet); B7 (the declared listing commit, using B6's findings); the kit's g2m6 → M6 slot (R-10) and R-9's light re-check.
