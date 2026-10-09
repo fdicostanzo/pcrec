@@ -51,9 +51,36 @@ ACCEPTED unless marked otherwise.
 | C11 | LOW | `locate-decides` reads `cand_route_of`, which defaults to DFA when job->engine is unwritten; 275 end-pinned VM-only artifacts would defer to a walk that doesn't exist. | ACCEPT: gate on `pcrec_artifact_has_dfa_scan` |
 | C12 | LOW | CT_WINDOW not reconciled with SPAN; no declared-listing file for the `locate` axis; F1 `nomatch` has no producer on CR_VM. | ACCEPT (with G2) |
 
-## lfcrit1 — exactness / give-up surface
+## lfcrit1 — exactness / give-up surface (LF-E1..E12; 1 HIGH, 4 MED, 3 LOW, 4 UPHELD)
 
-PENDING.
+Probes in the critic's scratchpad: a stage-2 hybrid twin (`mkhyb.py`, form C inside the hybrid's inlined prefilter), a window→captures→libpcre2→find-all checker, a 45-pattern ASan battery, rev-inner and relaxation probes.
+
+| id | sev | finding | disposition |
+|---|---|---|---|
+| E1 | HIGH | §4.6 rev-inner (AND where_to_start.md §2.2 step 1, D151): "CAND per occurrence; a failed verify moves to the NEXT occurrence" is UNSOUND when S back-references a group in P — exactly rev-inner's VM-route population. The verify at s*(j) can fail while a larger s in starts(j) succeeds. `(a+)X\1` on "aaXa": libpcre2 (1,4), the tactic NOMATCH. A second witness returns a LATER match. 82 wrong / 82,903 (1,199 gated cases with a backref in S); the `lowerbound` form 0 wrong. The study's published 0/129,222 reproduces, so its population was too thin (K35). | ACCEPT: precondition G4 (S holds no reference into P's groups, backref or `${}`); otherwise type LOWER(s* of the first non-empty occurrence) and finish with the attempt loop. CORRECT where_to_start.md §2.2 step 1 in the revision |
+| E2 | MED | §1.4 O4: "subsequence, no ceiling looser" admits a TIGHTER ceiling, and a ceiling below the priority end is a WRONG ANSWER, not a posture difference. `(\s+){2}$` on "  \n" gives g1 (1,3) for (2,3); 2,188 + 4,010 wrong / 27,884 under control tien1. | ACCEPT: O4 = a subsequence of (start, ceiling) PAIRS, plus an explicit obligation that the ceiling is ≥ the priority end at s (D51's unsound direction) |
+| E3 | LOW | The named F6 witnesses are greedy, so max(D) IS the priority end and F6 never matters (0 / 27,884). Only LAZY ties exercise it: `(\s+?){2}$` moves the window on 2,188-3,282 cells, with captures equal and the give-up threshold equal (19 budgets × 5 lengths). The give-up hazard is argued, not witnessed. | ACCEPT: keep F6; re-aim the sabotage witness to `(\s+?){2}$` (window compare); mark the hazard unwitnessed |
+| E4 | MED | §4.5's "52-byte cls_casefold set in byte mode" is stale since K94: under `--ucp` byte a caseless reference folds Latin-1. `(\xe9)(?i)\1$` --ucp on "\xe9\xc9" (0,2); the ASCII-closed relaxation rejects it. | ACCEPT: close under the REFERENCE's own compare fold (ascii / latin1 / utf8 simple fold) |
+| E5 | MED | DUPNAMES: A_BREF.refs[] is a SET. `(?J)(?:(?<n>a)\|(?<n>b))\k<n>$` on "xbb" (1,3); relaxing the first member only rejects it. | ACCEPT: relax = UNION over refs[] |
+| E6 | MED | The closure must be taken on the LOWERED positive set: re-lowering the copy under caseless mods folds before negation and SHRINKS negated classes (`([^b])(?i)\1$` on "BB"). | ACCEPT: closure = S ∪ fold(S) on the bitmap/interval set, never a re-parse |
+| E7 | LOW | "Cyclic reference ⇒ Σ*" misses a recursive CALL inside G_N and A_VAR `${v}` (no relax at all). | ACCEPT: A_VAR → Σ* or decline; the cost gate excludes every Σ* source |
+| E8 | LOW | Relocate (F4/F6, "search_from = s") moves `\G`'s reference point. REVEND declines `\G`; rev-inner does not. `(?:\G\|b)(b?)\w*X` on "-bbX": g1 (2,3) from 0, (1,2) relocated. | ACCEPT: relocate hands `lo` and leaves `\G` on the caller's search_from (K82 Claim 2′), or every relocate producer declines `\G` |
+| E9 | UPHELD | Stage 2 NEUTRAL: walk vs shipped prefilter on 48 hybrids (exact, clamped, ties, views, `\K`, `-i`, supersets, collapsed, X1, utf8), every string to length 6-7 at every lo: 0 / 5,199,120 window diffs, 0 capture diffs, 0 / 4,565,716 vs libpcre2, 0 / 719,283 find-all, ASan clean; controls fire. | — (the strongest evidence in the round) |
+| E10 | UPHELD | O8: every ew_walk arm keeps the end pin under each erasure; X1 is load-bearing on stage 2 too (4 lookaround shapes SEGV without the skip). | ACCEPT the rider: the X1 sabotage row gets a hybrid witness |
+| E11 | UPHELD | Tie table T1-T3 / dfa_matches[]: 18 form-C twins, 0 / 1,682,892 cells, 0 vs libpcre2. F-2 confirmed. | — |
+| E12 | UPHELD | §4.5 as a start bound: with the true closure, 0 violations over 3,000 generated patterns (~1.08M checks, byte and UCP); select_engine.c:877's assertion-keeping copy gives 117 violations, so "not that erasure" holds; ONE_WAY is the right direction. | — |
+
+## Verdict
+
+**The frame holds**, and stage 2's NEUTRAL claim is the best-evidenced result of the round (E9).
+
+The note is NOT build-ready. Its type and finisher sets shrink to the general form (G1-G4); FINISH folds in `dfa_matches[]` and the existing graph nodes; totality keys on (locator route, finisher route) (C1); posture splits into a derivable join and a declared contract with a give-up differential as its control (G7/C5). E2 corrects a wrong-answer hole in O4. E1 is a real unsoundness in the filed rev-inner design and in where_to_start.md §2.2.
+
+Next: revision lane `locfin2` (rev 2, a disposition table by id), then a focused re-check by two critics, one of them with the generality/unlocks lens.
+
+## Filed from this panel (candidates with triggers, not builds)
+- G13: the relaxed-backref machine run FORWARD, as a superset prefilter for VM-only acyclic-backref artifacts.
+- G14 (1)-(4): the seed-set reverse walk (`(?m)$`), fixed-width RECOVER (end − W), the forward regular-prefix locator, the subset locator (BOONIES).
 
 ## Frank's §7 questions — status after the panel
 
