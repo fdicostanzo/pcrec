@@ -509,3 +509,5 @@ Maintenance: add a file per checkpoint and list it here.
   - five projections of one paired compile, which should be one sweep arm.
 
   F-6 (a SIMD ADVANCE bound in M6's ABI 8) was decided NO (D77). The revision follows; Q-R9-n go to Frank after it.
+
+- `2026-10-09-r9b-memfn-simd.md` — LIGHT two-critic (sonnet) re-check of integration.md §R4.9 after D155 and add. 1: contract critic (deliverable after RC-1/RC-2), docs critic (BLOCKER DS-10, C18 still described as two legs); all 21 findings applied, by-id table inside.

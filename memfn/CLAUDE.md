@@ -78,8 +78,8 @@ first; K3 second.
 ## The layers (D147) — binding on every kit change
 
 - **ONE SIMD switch** (D147 addenda 6-7): `-fno-memfn-simd` /
-  `-fmemfn-simd`, axis `memfn-simd`, OFF BY DEFAULT until the SIMD hold
-  (D91/D119) lifts. Turning it on by default is its own ruled event.
+  `-fmemfn-simd`, axis `memfn-simd`, OFF BY DEFAULT; the default flip
+  is R4f, its own ruled event (§R4.9, D147 addendum 11).
   - **OFF:** the artifact is PORTABLE C (plain C, SWAR on ordinary
     integers, libc calls, loop-free forms) and runs on any target.
   - **ON:** the artifact is hardware-optimized for a specific CPU and
@@ -90,7 +90,8 @@ first; K3 second.
     `__builtin_cpu_supports` is 0.4-0.6 ns on Linux x86 and wrong on
     Darwin), and the fallback.
   - pcrec sends one bit (`MF_P_PORTABLE_ONLY` when the switch is off)
-    and nothing else. There is no `portable`/`native`/`baseline`
+    and nothing else (`[r9b]` and, from batch 1, the sink's bracket ops
+    `simd_open`/`simd_close` and `plan_pos2`, RQ-2/RQ-3). There is no `portable`/`native`/`baseline`
     profile and no `--isa=` axis.
 - **The scalar layer** is pcrec's algorithm (what is searched, the plan,
   handoffs, fused predicates) plus the kit's SCALAR ARMS: every form the
@@ -159,7 +160,7 @@ never depend on the kit: what reaches them is TEXT, so self-containment
 holds.
 
 **Every search site migrates here** (Q42 reversed: completeness, a
-ruled D77 exception). Each step is zero-mover. The memchr ratchet
+ruled D77 exception). Each step is zero-mover (R4e′.0b, D155, is the one ordered byte move). The memchr ratchet
 (C12) ends at 0 outside the kit, and C17 at 0 pending. A kit change
 that MOVES bytes still needs its measured trigger and G1 alpha at both
 layers.

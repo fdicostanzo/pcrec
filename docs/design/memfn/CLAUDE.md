@@ -189,7 +189,7 @@ its DESIGN record.**
   - First batch: the pre-check composite's window run with no lead.
   - Seven findings in R-1 and the box facts (F-R9-1: R-1's 16 B column
     ran the scalar path in every cell).
-  - Q-R9-1..8 were open for Frank (now RULED, below); RQ-1..5 are pcrec-side requests.
+  - Q-R9-1 was RESOLVED by D144 addendum 4 (§R4.9.10), Q-R9-2..8 were open for Frank (now RULED, below); RQ-1..5 are pcrec-side requests.
 
   **`[r9]` REVISED AFTER THE D6 PANEL r9** (`../../dev/reviews/
   2026-10-08-r9-memfn-simd.md`, 43 findings, same lane): a zero-mover

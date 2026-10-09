@@ -16,7 +16,9 @@ and D144 addendum 4. It overrides anything below that conflicts.** Read
   rows with a layer, an ISA level (`memfn/src/levels.def`) and their own
   deny; `policy`/`budget` are row-contract fields.
 - THE FLOOR RULE: a SIMD-on rendering is the SIMD-off rendering plus
-  guarded text (check C18, two legs). SIMD bytes are neutral to every
+  guarded text (check C18, four legs (a)-(d) `[D155]`; on-target one
+  replaced call per SIMD FUNC; source-level insertion-only at every
+  target). SIMD bytes are neutral to every
   pcrec length decision by construction (RQ-3); D84's caps are Q-R9-9.
 - Short spans fall to the next rung by a derived reach, `VW + T`, T
   defined once. The run-time cascade is a separate, filed row.
@@ -45,9 +47,10 @@ and D144 addendum 4. It overrides anything below that conflicts.** Read
   RULED (D155 addendum 1).
 
 Changed passages carry `[rev4.9]` in place; the panel revision's edits
-carry `[r9 <id>]`. This revision keeps the number 4.9; the kit tip's
-integration.md is at 4.8 with `[M7]` marks, and the manager reconciles
-the two at merge (F-9).
+carry `[r9 <id>]`. This revision keeps the number 4.9. `[r9b]` `[M7]`
+marks merged, text at 4.9 (F-9 is closed: main is merged in). The r9b
+light re-check pass (`../../dev/reviews/2026-10-09-r9b-memfn-simd.md`,
+2 critics) applied its findings in place, each marked `[r9b]`.
 
 **REVISION 4.8 (lane `m1b`, 2026-10-07, from kit branch `lane/memfn-m1b`
 at main 993f8c1d): M1b's CONTRACT, request R-5 (runcmp migrates, zero
@@ -236,9 +239,7 @@ the first draft (D144 addendum 4, D147 addenda 11-13, M6 = VMSTRIDE at
 draft's text is superseded it is replaced, and the mark says by what. The
 kit facts below are read READ-ONLY at the kit tip (`lane/memfn-m7`:
 M4 and M7 landed, `MF_SITE_ABI` 7, `MF_VOCAB` 3, 11 rows in `arms[]`,
-`options.def` still EMPTY). This revision stays numbered 4.9; the kit
-tip's integration.md is at 4.8 with `[M7]` marks, and the manager
-reconciles the two at merge (F-9).
+`options.def` still EMPTY). This revision stays numbered 4.9. `[r9b]` `[M7]` marks merged, text at 4.9.
 
 **What it decides, in short:**
 - `[r9 F-1]` **A zero-mover SEAM comes first.** The FUNC part that PRE and
@@ -256,8 +257,9 @@ reconciles the two at merge (F-9).
   (`[r9 F-2]`). No parallel table.
 - THE FLOOR RULE, unchanged in substance: a SIMD-on rendering is the
   SIMD-off rendering plus text that sits only inside level guards,
-  PREPROCESSED-EQUAL off-target and insertion-only on-target (C18, two
-  legs, `[r9 C-6]`). `[D155]` Ruled with an amendment: the guarded text
+  PREPROCESSED-EQUAL off-target; on-target, insertion plus one replaced
+  call per SIMD FUNC (raw text: insertion-only) (C18, four legs (a)-(d),
+  `[r9 C-6]`, `[r9b]`). `[D155]` Ruled with an amendment: the guarded text
   is whole file-scope helper definitions plus a selector FUNC, and no
   function that does work holds a directive (a selector's whole body may
   be the `#if` chain, one call per arm, and nothing else). On-target, C18's leg (b) now allows
@@ -293,7 +295,7 @@ reconciles the two at merge (F-9).
 
 | input | what it says | where it lives now |
 |---|---|---|
-| `[D155]` D155 (main 3b1fd77c, Frank 2026-10-08) | Q-R9-1..9 ruled; Q-R9-6 amended (no `#if` in a function body; file-scope per-level helpers; SIMD-off routes through the helper as a measured abi event); `[MEMFN-RTDISPATCH]` filed with its terms (frequency class per site, per-level copies by target attribute selected once, a non-cascading level set, per-arch artifacts already served) | §R4.9.2.5 (the shape); §R4.9.2.6 (the abi event); §R4.9.3.1 (runtime dispatch, filed); §R4.9.8 (C18); §R4.9.10 (each Q marked RULED); §R4.9.12 (D155 rows) |
+| `[D155]` D155 (main 3b1fd77c, Frank 2026-10-08) | Q-R9-1..9 ruled; Q-R9-6 amended (no `#if` in a function body (restated by add. 1 / Q-R9-10: a selector's whole body may be the `#if` chain); file-scope per-level helpers; SIMD-off routes through the helper as a measured abi event); `[MEMFN-RTDISPATCH]` filed with its terms (frequency class per site, per-level copies by target attribute selected once, a non-cascading level set, per-arch artifacts already served) | §R4.9.2.5 (the shape); §R4.9.2.6 (the abi event); §R4.9.3.1 (runtime dispatch, filed); §R4.9.8 (C18); §R4.9.10 (each Q marked RULED); §R4.9.12 (D155 rows) |
 | D147 addendum 11 | SIMD is a parallel path; each form beats the CURRENT scalar layer at its sites or names a benefit; default-ON is ruled separately; 2:1 capacity until M5′ | §R4.9.6 (the bar); §22 R4e′ `[rev4.9]` (trigger, capacity) |
 | `[r9 M-1]` D144 addendum 4 (main 04733583) | SIMD verdicts are pcrec-bench runs on the hardware each form targets; the manager coordinates the boxes; SSE first, the AVX2/AVX-512 order argued on evidence; AVX-512 is NOT filed for lack of hardware | §R4.9.5 (two tiers); §R4.9.5.1 (the submission); §R4.9.7 (the order) |
 | `[r9]` D147 addendum 13 (main 26297b6c, PRELIMINARY) | "faster" = same-host, same-window pcrec-bench run against the scalar twin; target cells' median whole-call time beyond the noise band; no other cell regresses past the floor; per instruction-set tier; net of costs | §R4.9.6 (the bar is written in its terms; its "revisit when R-9's panel proposes a better regime" is answered there) |
@@ -737,7 +739,7 @@ the one below.
 > (`-mgeneral-regs-only`, `-mno-sse2`), the SIMD-on and SIMD-off
 > artifacts preprocess to the same text. This is the exact form of "the
 > SIMD-on artifact compiled without the features IS the SIMD-off
-> artifact". Measured on the probes: EQUAL, 12 of 12 (§R4.9.2.5).
+> artifact". Measured on the probes: EQUAL, 12 of 12 (§R4.9.2.5; `[r9b]` taken on the superseded file-scope-definitions rendering).
 > (b) `[D155]` ONE REPLACED CALL PER FUNC on-target: at each live level
 > L, the SIMD-on preprocessed text is the SIMD-off preprocessed text with
 > lines INSERTED, plus, for each FUNC that carries a SIMD row, exactly
@@ -754,7 +756,7 @@ the one below.
 > (c) `[D155]` SOURCE-LEVEL INSERTION-ONLY at every target: the raw
 > SIMD-on text is the raw SIMD-off text with lines inserted and none
 > removed. The scalar `#else` arm IS the SIMD-off FUNC, byte for byte.
-> Measured: 0 deleted lines on 4 of 4 probe renderings. This is what
+> Measured: 0 deleted lines on 4 of 4 probe renderings (`[r9b]` taken on the superseded rendering; re-measured by G1). This is what
 > makes RQ-3's `len − simd_guarded` exact (§R4.9.2.4).
 > (d) `[D155]` NO DIRECTIVE IN A BODY EXCEPT THE SELECTOR'S: a `#` line
 > may occur between a function's opening `{` and its matching `}` in the
@@ -1078,6 +1080,10 @@ r9fu's hand twin, not kit renders. No timing was taken.)
     helper is declared plain `static`, and it draws `-Wunused-function`
     at v3 and v4 (8 of 8 such compiles). So the warning is live, and
     `static inline` on every helper is what keeps a skipped arm silent.
+- `[r9b]` **All figures below were taken on the file-scope-definitions
+  rendering that (c) superseded, unless marked.** This covers the 144
+  compiles, the `-O2` inlining, the instruction counts (336/418,
+  279/363) and the 15,884,000-call differential.
 - **C18 on the new shape.** `[D155]` Measured on the file-scope-definitions
   rendering that Q-R9-10's shape (c) superseded; (c) changes where the
   chain sits (inside the FUNC's body), not the helpers, and is re-measured
@@ -1110,7 +1116,7 @@ r9fu's hand twin, not kit renders. No timing was taken.)
 - Each FUNC's loop moves, unchanged, under the head `<fn>__body`, and the
   FUNC becomes one call (§R4.9.2.5's SIMD-off shape).
 - Nothing else moves, and no comment line is added.
-- Measured on the twelve witnesses: +139 B per FUNC (+141 for
+- Measured on the twelve witnesses (`[r9b]` the pre-(c) rendering; re-measured by G1): +139 B per FUNC (+141 for
   `rx_ofsskip`, whose name is two bytes longer).
 
 **Why a step of its own**, between the seam R4e′.0 and batch 1:
@@ -1153,7 +1159,8 @@ nothing, so measure it":
    - The probes predict IDENTICAL on every mover at `-O2`. Each
      non-identical mover is listed with its diff.
    - `-Os` and `-O0` are reported but do not gate (the probes show one
-     register difference in 12 at `-Os`, and one more call at `-O0`;
+     register difference in 12 at `-Os`, and one more call at `-O0`; `[r9b]` safe:
+     the SIMD-off text is identical in shapes (b) and (c);
      [GUIDE-OPT-LEVEL] recommends `-O2`).
 3. **Timing applies only where item 2 is not identical.**
    - A mover with identical code at a recipe runs the same instructions,
@@ -1184,7 +1191,7 @@ nothing, so measure it":
 The ladder needs no state, holds no static and costs one compare per
 rung per call. `[D155]` That compare is now each helper's ENTRY TEST, so
 a call that falls through pays one compare per rendered rung and one
-call per rung (inlined at `-O2`, measured, §R4.9.2.5). The consumer's `-march` decides what runs: at the
+call per rung (inlined at `-O2`, measured on the superseded rendering, §R4.9.2.5). The consumer's `-march` decides what runs: at the
 bench's recipe (`-O2`, no `-march`), x86-64 defines `__SSE2__` and no
 wider predefined ISA macro (measured with `gcc -dM -E`), so batch 1's w16 row is
 the live arm and w32 is compiled out. At `-march=x86-64-v3`, w32 is live
@@ -1326,7 +1333,9 @@ The first-batch sites, and the filed one, from r9fu's artifact lines:
 - A FREQUENT site gets no runtime arm. Its selector stays the static
   chain.
 
-Probe (scratch, `(?i)cat`):
+Probe (scratch, `(?i)cat`; `[r9b]` ran in the same probe set as the
+static probes, on the superseded file-scope-definitions rendering, per
+r9d_report.md "Probes"; not re-run on shape (c)):
 - The w32 helper under the static guard and its copy under the dispatch
   guard are the same text except for the attribute.
 - With a stand-in arm (`__builtin_cpu_supports("avx2") ? w32 : w16`,
@@ -1365,7 +1374,7 @@ Probe (scratch, `(?i)cat`):
 SIMD-on artifact once per `-march` (one `lib.so` per `-march`, chosen at
 load): the selector takes the matching arm in each compile, and pcrec
 needs nothing.
-- Measured: the same source at default, v3 and v4 compiles to three
+- Measured (`[r9b]` superseded rendering): the same source at default, v3 and v4 compiles to three
   different arms (`pcmpeqb` 4/8/8, `ymm` 0/18/18 for `(?i)cat`).
 - The answers are identical.
 
@@ -1915,7 +1924,7 @@ policy word lacking `MF_P_PORTABLE_ONLY`:
   with `-fno-memfn-simd`, signature absent);
 - `arms.tsv` pins for the new fixtures;
 - `simd_accept.tsv` with CANDIDATE lines per level and CPU class;
-- the `simd` sweep arm with its projections, C18's two legs, C9-x86,
+- the `simd` sweep arm with its projections, C18's four legs (a)-(d) `[r9b]`, C9-x86,
   C-SEL, C19, and C11's FORMS half made LIVE (§R4.9.8);
 - the spec hunks (D80):
   - `tuning.md` §2.43 loses "INERT", states what the switch renders,
@@ -2043,7 +2052,8 @@ WITHOUT a function-entry setup point, then measure.
 - its rungs sit at the top of the FUNC body, which is reached from the
   use point; `[D155]` now each rung is its own helper's entry test, and the
   FUNC is one call (§R4.9.2.5). That is still no entry-point setup: the
-  helpers inline into `rx_search` at `-O2` (measured), and the broadcast
+  helpers inline into `rx_search` at `-O2` (measured on the superseded
+  rendering, `[r9b]`), and the broadcast
   counts equal r9fu's twin of the withdrawn shape (`/user|/users`:
   `pshufd` 4 at default, `vpbroadcast` 8 at v3, in both);
 - the ladder "holds no static" (§R4.9.3);
@@ -2107,7 +2117,7 @@ answer sweep IS the `test-axes` arm per level.
 
 | check | checked against | independent because | population (K35) | witness reaches its site ([MECH-REACH]) |
 |---|---|---|---|---|
-| **C18, the floor rule**, two legs (`[r9 C-6, M-15]`) | (a) `gcc -E -P -mgeneral-regs-only` of ON vs OFF: preprocessed-EQUAL; (b) `gcc -E -P -march=L` of ON vs OFF at each live level: an INSERTION-ONLY diff; plus a lint that every `#if` line in the ON − OFF text diff is a `levels.def` guard string from `mf_levels()` | the PREPROCESSOR, with gcc's own macro set, decides which text survives; the kit's ladder cannot assert it | movers compared, printed, floor = the census count | three plants: one byte of the floor text edited inside a SIMD rendering (red at (a)); a guarded `#define` that changes the floor (green at (a), red at (b)); an UNGUARDED byte added outside the stamp filter (the NEGATIVE control). The comparison's one named filter is the stamp lines (`#define <PREFIX>_…`), which vanish in `-E` anyway |
+| **C18, the floor rule**, two legs (`[r9 C-6, M-15]`; `[r9b]` SUPERSEDED by the next row: four legs) | (a) `gcc -E -P -mgeneral-regs-only` of ON vs OFF: preprocessed-EQUAL; ~~(b) `gcc -E -P -march=L` of ON vs OFF at each live level: an INSERTION-ONLY diff;~~ `[r9b]` struck, see the next row; plus a lint that every `#if` line in the ON − OFF text diff is a `levels.def` guard string from `mf_levels()` | the PREPROCESSOR, with gcc's own macro set, decides which text survives; the kit's ladder cannot assert it | movers compared, printed, floor = the census count | three plants: one byte of the floor text edited inside a SIMD rendering (red at (a)); a guarded `#define` that changes the floor (green at (a), red at (b)); an UNGUARDED byte added outside the stamp filter (the NEGATIVE control). The comparison's one named filter is the stamp lines (`#define <PREFIX>_…`), which vanish in `-E` anyway |
 | `[D155]` **C18 as amended** (supersedes the row above in legs (b) and adds (c), (d)) | (a) unchanged: `gcc -E -P` at `-mgeneral-regs-only` AND `-mno-sse2`, ON vs OFF, byte-EQUAL; (b) at each live level, `gcc -E -P -march=L`, ON vs OFF: the DELETED lines are exactly one per SIMD FUNC and each matches `^    return <fn>__body\(<args>\);$`, and nothing else is deleted; (c) the RAW ON text vs the RAW OFF text: 0 deleted lines, and every inserted line lies inside a kit bracket (§R4.9.2.4); (d) a brace-depth scan of the raw ON text: a `#` line between a function's `{` and its matching `}` is allowed ONLY in the selector shape, i.e. the function's whole body is the `#if`/`#elif`/`#else`/`#endif` chain with one call per arm and nothing else; any other `#` line in a function body is a C18 failure; plus the guard lint (every `#if`/`#elif` line in ON − OFF is a `levels.def` guard string from `mf_levels()`) | (a) and (b): the PREPROCESSOR decides which text survives. (c) and (d) read the kit's own output, so they are structural lints, not independent; the census they are counted against is pcrec's | (b)'s replaced-line count = the SIMD-FUNC count from the mover census (K35); (c) and (d) over every SIMD-on mover | the three r9 plants, plus: a `#if` placed inside `<fn>__body` (red at (d)); a selector arm holding anything beyond its one call, e.g. a second statement (red at (d)); a SECOND changed line in the selector arm, e.g. the call's arguments reordered (red at (b)); the `#else` arm's FUNC text edited by one byte (red at (a) AND (c)); a rung arm left unbracketed (red at C-SEL through `simd_guarded`) |
 | **C9-x86** (§17.3 on this box, `[r9 C-8]`) | every mover compiled with the harness `GENCFLAGS` `-Werror` at `x86-64`, `x86-64-v2`, `sandybridge` (AVX without AVX2), `x86-64-v3`, `x86-64-v4` and `-mgeneral-regs-only`; the live-arm count per level from `nm` of an `-O0` object | the compiler, at six macro sets that include each level minus its top feature; the kit-reported count is a second reading only | arms per level against a per-level COLUMN of `row_floors.tsv` (`[r9 F-5]`: no separate `c9_floor` pin file) | a plant guarding the w32 arm with an AVX-only guard compiles at v3 and fails at `sandybridge`; a plant guarding it with the w16 guard fails at `x86-64` |
 | **C-SEL, selection neutrality** (`[r9 C-3, M-15]`) | every stamp except `MEMFN_FORMS`, compared as KEYS with byte and node counts normalised; `RUN_WORDS` exactly; `MEMFN_LIBC` as ON ⊇ OFF with the difference inside the chosen rows' declared sets; the refusal set as keys, never counts; ON vs OFF over the corpus, the bench and the near-cap size witnesses | pcrec's own stamps and its own compile results | artifacts and refusals compared, printed; a LITERAL floor in the script | the near-cap witnesses by NAME (`tests/resource`'s size rows and `tests/utf8/axis12_scripts.rxt`'s 999,925-byte artifact); a plant that drops `simd_guarded` from one length reader is red |
@@ -2301,7 +2311,8 @@ ruling marked.
     but untestable off-target. Addendum 6 permits it but does not
     require it.
   - `[D155]` **RULED YES, AMENDED (item 6):** no `#if`/`#ifdef` inside a
-    function body. The choice is made at file scope, by per-level
+    function body (restated by add. 1 / Q-R9-10: a selector's whole body
+    may be the `#if` chain, one call per arm). The choice is made at file scope, by per-level
     `static inline` helpers and a selector, and the body makes one plain
     call. SIMD-off routes through the helper too, as a one-time measured
     byte move and abi event. Applied in §R4.9.2.3 (the rule restated),
@@ -2355,7 +2366,8 @@ ruling marked.
   amends item 6's "no `#if` inside function bodies". An intermediate shape
   (b), a file-scope level macro, was ruled and then superseded the same
   day by (c) (D155 addendum 1). SIMD-off costs +139 B per FUNC (the FUNC
-  and `<fn>__body`), and C18 sees exactly one replaced line per SIMD FUNC.
+  and `<fn>__body`; `[r9b]` measured on the pre-(c) rendering, re-measured
+  by G1), and C18 sees exactly one replaced line per SIMD FUNC.
   C18's leg (d) allows ONLY the selector shape (§R4.9.8).
 - `[D155]` **Q-R9-11. Where does a site's FREQUENCY CLASS live?** **RULED**
   (D155 addendum 1; kit-decided): a `freq` column in `DELEG_SITES`, built
@@ -2396,7 +2408,7 @@ All 43 finding ids of `../../dev/reviews/2026-10-08-r9-memfn-simd.md`.
 | C-3 | MAJOR | ACCEPTED in part: stamps as keys, sizes normalised; neutrality by construction (`simd_open`/`simd_close`, RQ-3); RUN_WORDS/MEMFN_LIBC declared; D84 cap → Q-R9-9 | §R4.9.1 F-R9-5; §R4.9.2.4; §R4.9.8 C-SEL; §R4.9.10 Q-R9-9; §R4.9.11 RQ-3 |
 | C-4 | MAJOR | ACCEPTED: `__SSE2__` and `__x86_64__` in the cascade guard; cascade above the full ladder; applies as a row-order fact; libgcc link dependency in Q-R9-8 | §R4.9.3; §R4.9.10 Q-R9-8 |
 | C-5 | MAJOR | ACCEPTED: G2 multi-hit, near-miss, `pos` sweep, exact returned position; plants per path; per-path coverage floors; `-mgeneral-regs-only` as w16's compiled-out level; the sweep is a smoke check | §R4.9.6 item 4; §R4.9.7 G2; §R4.9.8 |
-| C-6 | MINOR | ACCEPTED: C18's insertion-only leg per live level; the `#if` guard lint; "preprocessed-equal" | §R4.9.2.3 (floor rule); §R4.9.8 C18 |
+| C-6 | MINOR | ACCEPTED (`[D155]` leg amended to one replaced call per SIMD FUNC, §R4.9.8): C18's insertion-only leg per live level; the `#if` guard lint; "preprocessed-equal" | §R4.9.2.3 (floor rule); §R4.9.8 C18 |
 | C-7 | MINOR | ACCEPTED: the intrinsic `#include` inside the level guard at file scope, before the helper; no `MF_INC_` bit | §R4.9.2.2 |
 | C-8 | MINOR | ACCEPTED: guards name `__x86_64__` and exclude ILP32; C9-x86 adds x86-64-v2 and sandybridge | §R4.9.2.2 (`levels.def`); §R4.9.8 C9-x86 |
 | C-9 | MINOR | ACCEPTED: the stamp names rendered levels; no level guard in the `.h`; §6.3 hunk | §R4.9.2.3 (stamp); §R4.9.2.2; §R4.9.7 spec hunks |
@@ -2445,7 +2457,7 @@ Q-R9-10/11, D155 addendum 1; not panel ids, and not counted in the 43):
 | 3 (Q-R9-3) | pcrec states `plan_pos2` | §R4.9.10; §R4.9.11 RQ-2 |
 | 4 (Q-R9-4) | "fastest wins": code space is never a SIMD named benefit | §R4.9.6; §R4.9.10 |
 | 5 (Q-R9-5) | a later SIMD loss never blocks a scalar change | §R4.9.10 |
-| 6 (Q-R9-6) | floor rule YES, AMENDED: no `#if` in a function body; file-scope helpers; SIMD-off routes through the helper, as a measured abi event | the summary; §R4.9 short list; §R4.9.2.1 (slots, assembly); §R4.9.2.3 (the rule restated, the withdrawn shape, the STMT note, the stamp); §R4.9.2.4 (whole-definition accounting); §R4.9.2.5 (the shape, probes); §R4.9.2.6 (R4e′.0b, G1); §R4.9.3 (entry tests); §R4.9.4; §R4.9.7; §R4.9.7.2; §R4.9.8 (C18 amended, the routing gate); §R4.9.9; §R4.9.10; §R4.9.11 RQ-6; §22 |
+| 6 (Q-R9-6) | floor rule YES, AMENDED: no `#if` in a function body (restated by add. 1 / Q-R9-10: a selector's whole body may be the `#if` chain); file-scope helpers; SIMD-off routes through the helper, as a measured abi event | the summary; §R4.9 short list; §R4.9.2.1 (slots, assembly); §R4.9.2.3 (the rule restated, the withdrawn shape, the STMT note, the stamp); §R4.9.2.4 (whole-definition accounting); §R4.9.2.5 (the shape, probes); §R4.9.2.6 (R4e′.0b, G1); §R4.9.3 (entry tests); §R4.9.4; §R4.9.7; §R4.9.7.2; §R4.9.8 (C18 amended, the routing gate); §R4.9.9; §R4.9.10; §R4.9.11 RQ-6; §22 |
 | 7 (Q-R9-7) | one deny per (form, width) through `--memfn=` | §R4.9.10 |
 | 8 (Q-R9-8) | the libgcc cascade dependency is allowed, guarded and spec-stated | §R4.9.3; §R4.9.10 |
 | 9 (Q-R9-9) | the D84 caps exclude guarded SIMD bytes; per-row bound | §R4.9.2.4; §R4.9.10 |
@@ -3054,7 +3066,7 @@ Q53-Q55 only.
 | Q46 | RULED YES. Two single-writer files. As built: `memfn/docs/requests.md` (manager only) and `memfn/docs/responses.md` (kit only) | §20.1; `memfn/CLAUDE.md`; §23 |
 | Q47 | REFINED (addendum 9): the kit's OWN option namespace, `--memfn=`, from a kit-owned registry, listed by `--list-axes` as a `memfn` section | §R4.4.1; §14.10, §17.1 rewritten |
 | Q48 | RULED YES. Optional sites: file, don't build. The D77 trigger is a K85-shaped cell that the R4d fused arm does not already cure (`[rev4.5]`: R-1 found one class, the single early-hit gate call on dense text at SIMD-off, which the fused form still loses; whether that is the Q48 cell is the kit session's call) | §19 row 11; §22 "Filed, not scheduled"; §23 |
-| Q49 | RULED YES. An opt-in-only kit arm (R4e′, `-fmemfn-simd`) needs no abi bump at landing. Its pins, its `test-axes` arm and C9's floor are born in that commit, and its spec hunk lands there. The R4f flip is the abi event | §22 R4e′; §23 |
+| Q49 | RULED YES. An opt-in-only kit arm (R4e′, `-fmemfn-simd`) needs no abi bump at landing. Its pins, its `test-axes` arm and C9's floor are born in that commit, and its spec hunk lands there. The R4f flip is the abi event (`[D155]` except R4e′.0b, §R4.9.2.6) | §22 R4e′; §23 |
 | D144 item 4 | met inside the kit's namespace: each kit change's own deny is a registry row | §R4.4.1; §L.3 |
 
 ### R4.4.1 The kit's own option space (Q47 refined)
@@ -3225,7 +3237,7 @@ genuinely new choices go to Frank as Q53-Q55 (§23).
 | Q37 0BSD YES | addendum 1 | the kit's own text is 0BSD; translated Rust `memchr` files carry per-file Unlicense provenance | §20.3; `memfn/LICENSE`; §23 Q37 RULED |
 | Q38 | addendum 2, REPLACED by addendum 6 | addendum 2's off / portable / native profiles are replaced by ONE switch with a meaning | §R4.3.1; §8.5, §14.10, §20.2 annotated; §23 Q38 RULED |
 | the switch's meaning | addendum 6 | OFF = portable C (plain C, SWAR, libc; runs anywhere). ON = hardware-optimized for a specific CPU, may or may not execute elsewhere. What sits inside ON is the kit's per-site choice | §R4.3.1; §8.5; §10.6 |
-| default OFF | addendum 7 | SIMD is off by default until the SIMD hold (D91/D119) lifts; turning it on is its own ruled event (D112 shape) | §R4.3.1; §22 R4f |
+| default OFF | addendum 7 | SIMD is off by default until the SIMD hold (D91/D119) lifts (`[r9b]` `[rev4.9]` the hold is superseded by D147 add. 11; the flip is R4f); turning it on is its own ruled event (D112 shape) | §R4.3.1; §22 R4f |
 | Q39 stamp YES | addendum 3 (+ addendum 6) | `<PREFIX>_MEMFN_FORMS` on every artifact; `none` iff identical to the SIMD-off compile; carried levels if a site cascades; no kit version; its own abi event R4a′; libc-call use recorded | §R4.3.3; §18 annotated; §22 R4a′; §23 Q39 RULED |
 | Q40 YES | addendum 4 | at M5 the planner moves LIVE into the kit; pcrec keeps one semantic row; the reseed becomes unconditional; an abi event | §R4.3.5; §14.9, §19 annotated; §22 R4j/M5′; §23 Q40 RULED |
 | Q41 YES | addendum 5 | M1 = the composite PRE site + the offset-skip trio; runcmp is M1b; M1 after the handoff merge and K85's re-measure; afterwards the migrated emitters are kit work | §16 (unchanged); §22 R4c; §23 Q41 RULED |
@@ -3251,7 +3263,7 @@ genuinely new choices go to Frank as Q53-Q55 (§23).
   Whether a narrower "baseline-ISA" SIMD-on form exists (for example,
   SSE2-only on x86-64) is a kit FORM question, not a pcrec profile.
   pcrec has exactly one bit of SIMD policy: the switch.
-- **Default OFF** until the SIMD hold (D91, D119) lifts. Callers opt in
+- **Default OFF** until the SIMD hold (D91, D119) lifts (`[r9b]` `[rev4.9]` superseded by D147 add. 11; the flip is R4f). Callers opt in
   with the switch. Turning it on by default is its own ruled abi event
   (R4f, D112 shape). After the flip, the DEFAULT artifact no longer
   promises portability, which is why the flip is Frank's ruling rather
@@ -3655,7 +3667,7 @@ as G1's OFF arm, C5's pin, the stamp's reference and the bench's
   native arm)", so that every reading has both columns from the first.
 
 > **`[rev4.3]`** (addenda 6-7, §R4.3.1) One SIMD switch,
-> `-fno-memfn-simd` / `-fmemfn-simd`, default OFF until the SIMD hold
+> `-fno-memfn-simd` / `-fmemfn-simd`, default OFF until the SIMD hold (`[r9b]` superseded, D147 add. 11)
 > lifts. Read the table's `-fno-memfn-native` as `-fno-memfn-simd` and
 > `-fmemfn-native` as `-fmemfn-simd`. Q50 is RULED as the policy line
 > above: SWAR and libc are scalar layer. "Native arms" are the kit's
@@ -5041,7 +5053,7 @@ whose plan-row text replaces them.
 
 Paste under `[MEMFN]`. Each step carries its D77 trigger. Steps that touch
 pcrec's emission open only under `[OPT-SIMD]`'s sequencing (SIMD last,
-D119/D91), except the SWAR row (D122 addendum 3).
+D119/D91; `[rev4.9]` superseded: SIMD is a parallel path, D147 add. 11), except the SWAR row (D122 addendum 3).
 
 > **R1d DELIVERED 2026-10-04 (lane memfnmap): `docs/design/memfn/integration.md`** — the integration map. Nine inventory entries (T1-T9) plus seven table-less scan sites (N1-N7); SIMD joins as rows of ONE new nested scan-form table `SCAN_ROWS` (sites PF/PRE/OFS/STAY/EDGE/VMSPAN/SETREST, D139's shape) rather than as vector twins of every `dfa_pfs[]` row; T6 runcmp gains one `vec-masked` row; T4 ROWS stays scalar and feeds the kit's classifier table. Seven sites do not slot cleanly as built (the ofsskip scan arm's `if`, the stay skip, the scan-edge loop, the VM span scan, two `strcmp`-on-row-name readers, N4's k-memchr loop, and pcrec's architecture-blindness at emit time), each with its implement-then-replace fix. Boundary = (c): kit K1 per-ISA primitives (injectable text) + K2 composition generator (descriptor in, text out, hooks for pcrec's verify and fallback) + K3 CLI/reference functions; pcrec keeps selection, operands, fusion text, injection. Q12-Q17 open to Frank.
 > - **R3** (findings to Frank, rulings Q1-Q17): trigger = this delivery. Owed beside it: `probes/linux_run.sh` (U-1, U-8..U-12), the survey's Linux timing.
@@ -6617,7 +6629,7 @@ the SIMD hold until R4f (D91, D119).
 > - **R4c, M1: OFS / PRE / SETREST / VERIFY migrate, zero movers** (§9.4): the ofsskip blocks, runcmp entire, the pre-check and N4, implement then replace, I1-I5 green; the three deny bits land (baseline == default, so C5 is live and vacuous-by-identity); `DELEG_SITES`, C4, C10, C12. **Prerequisite:** R4a. **Trigger:** R4b shows the PORTABLE fused form beating `emit` past the D144 floor on at least one K82 cell. If only the vector form wins, M1 waits for R4f's trigger instead.
 > - **R4d, the first movers: the kit's portable fused conjunction arm at OFS/PRE**: abi bump, `<PREFIX>_MEMFN[_FORMS]` on movers, the `docs/spec/` hunk with §10.6's limits, C5/C6/C9/C11 live, sabotage §10.7, G1's alpha on the K82 cells; the bench `pcrec[memfn-off]` testee requested (D78 inbox). `MF_P_SIZE_LEANING` on the dial if Q32 rules it. **Prerequisite:** R4c. **Trigger:** R4b's cell (the same measurement: the step that moves bytes is the one it justified).
 > - **R4e, ON_CAND's first customer** (a verify the predicate cannot express, iterated in place): **Trigger:** a measured cell where a candidate's verify is not a byte-set/run conjunction and the restart per hit dominates (twins.md T-A's "iterate in place" lever on a real site). Filed until then.
-> - **R4f, the native default flip** (`-fno-memfn-native` default OFF): its OWN ruled event (r2 R1, Q28), never a side effect of a kit release. **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last) AND a Linux alpha where the native arm beats the portable arm past the floor on a mover cell.
+> - **R4f, the native default flip** (`-fno-memfn-native` default OFF): its OWN ruled event (r2 R1, Q28), never a side effect of a kit release. **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last; `[rev4.9]` superseded, D147 add. 11) AND a Linux alpha where the native arm beats the portable arm past the floor on a mover cell.
 > - **R4g, M2: PF migrates, then PF movers** (`pf_emit_memchr`, `pf_emit_bcls`, the `-bounded` twins; §2.4 e's `strcmp` readers fixed in the M2 commit). **Prerequisite:** R4c. **Trigger:** U-2 (the bench class-shape census, relayed to pcrecdev2) AND a Linux cell whose time is in `pf_emit_bcls` (the WAF `byte-class` cells, compare_stack.md §6.3).
 > - **R4h, M3: in-loop sites migrate, then in-loop movers** (STAY, the scan edge's loop, VMSPAN at stride 1; `MF_P_INLOOP`). **Prerequisite:** R4c. **Trigger:** U-3 (an in-loop probe at a real emitted site, D91 budget 2 re-measured, never inherited) AND a Linux cell dominated by class runs.
 > - **R4i, declared tokens (`--isa=`):** HELD. **Trigger:** isa_evaluation.md L-1/L-2, answered "no customer now" by linux_results.md §5.
@@ -8150,7 +8162,9 @@ comment tiers (BOILERPLATE's darwin timeouts).
   (`[r9 F-5]`). Batch 1 has no aarch64 level (addendum 8), so nothing
   needs an aarch64 target yet. C18 checks the no-level target (the
   preprocessed text at `-mgeneral-regs-only` equals the SIMD-off text) and,
-  `[r9 C-6]`, each live level (an insertion-only diff).
+  `[r9 C-6]`, each live level (`[D155]` `[r9b]` preprocessed-equal
+  off-target; on-target, insertion plus exactly one replaced call per
+  SIMD FUNC, §R4.9.8).
 
 ### 17.4 Pins live under `tests/`, per arm (r3 F12, G-F8)
 
@@ -8718,7 +8732,7 @@ text stays opt-in until R4f.
 >   `MF_P_SIZE_LEANING`, ruled as a D103 diff with the movers census at
 >   those positions) and Q45 (the spec's second limit names whose libc
 >   was measured) are discharged in this step's spec hunk.
-> - **R4e′:** Q49 applies as written. There is no abi bump at landing,
+> - **R4e′:** Q49 applies as written (`[D155]` except R4e′.0b, §R4.9.2.6). There is no abi bump at landing,
 >   and its pins, its `test-axes` arm and C9's floor are born in that
 >   commit. Q43: aarch64 forms are not accepted (§17.2).
 > - **Filed, not scheduled:** OPTIONAL SITES (Q48), as ruled.
@@ -8937,7 +8951,7 @@ text stays opt-in until R4f.
 >
 >   **Prerequisites:** R4c (sites migrated); R4d where its sites are
 >   concerned (SIMD is measured against the current scalar).
->   **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
+>   **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last; `[rev4.9]` superseded, D147 add. 11).
 >
 >   **`[rev4.9]` R4e′ is REPLACED by §R4.9** (D147 addendum 11, request
 >   R-9). It now reads:
@@ -9037,7 +9051,7 @@ text stays opt-in until R4f.
 > - **R4c, M1: the composite PRE site and the offset-skip trio migrate, zero movers** (§16): implement (baseline arms, shadow comparator) then replace; `DELEG_SITES` with its `use` column; the three profile axes (§20.2) in `strategy_denials`; `tests/memfn/pins/{arms,off}.tsv` recorded; C4, C5, C10, C11, C12 (9 → 3), C13, C14; I2 over every axis and both comment tiers. **Prerequisites:** R4a′; `lane/k82hbuild` merged; K85 re-measured on the post-handoff build. **Trigger:** R4b shows the PORTABLE fused form beating `emit` past the floor on at least one K82 cell in its own regime, with no loss past the floor in the other.
 > - **R4d, the first movers: the kit's portable fused composite arm** (lead + window in one pass; K85's general answer): abi event, stamp values on movers, the spec hunk with §10.6's four limits, G1 alpha (both regimes) on the pcrec-side movers, the bench `pcrec[memfn-off]` testee requested through the inbox (D78). **Prerequisite:** R4c. **Trigger:** R4b's cell. **`[rev4.5]` History: "lead + window in one pass" is not K85's general answer; the fused run filter with the lead first is (§15.5).**
 > - **R4e, ON_CAND's first customer.** Filed until a measured cell (twins.md T-A's iterate-in-place lever on a real site); C13 goes live then.
-> - **R4e′, native arms behind `-fmemfn-native`** (default OFF): the kit's ISA arms for the M1 sites; C9 at `-fmemfn-native` with its floor born; `test-axes` and I2 arms for the opt-in; no DEFAULT byte moves (Q49). **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last).
+> - **R4e′, native arms behind `-fmemfn-native`** (default OFF): the kit's ISA arms for the M1 sites; C9 at `-fmemfn-native` with its floor born; `test-axes` and I2 arms for the opt-in; no DEFAULT byte moves (Q49). **Prerequisite:** R4d. **Trigger:** `[OPT-SIMD]` opened (D119: SIMD last; `[rev4.9]` superseded, D147 add. 11).
 > - **R4f, the native default flip** (`memfn-native` default ON): its own ruled abi event. **Prerequisite:** R4e′. **Trigger:** a Linux alpha in which the native arm beats the portable arm past the floor on a mover cell, in both regimes. This is measurable BEFORE the flip, because R4e′ exists: rev 3's circularity, where only the flip could produce the flip's evidence, is gone (r3 G-F11).
 > - **M1b, runcmp migrates** (`pcrec_emit_run_compare` with its three callers; bit 43 crosses, §14.10; `RUN_WORDS` becomes the kit's stamp). **Prerequisite:** R4c. **Trigger:** a measured cell whose time is in a VM literal-run compare or a masked run compare that a kit form would change, or any kit arm that needs to fuse the run verify itself rather than through `run_cmp`.
 > - **R4g, M2: PF migrates, then PF movers** (with K84's `strcmp` readers fixed, §19 row 7, and row 6's rarity half). **Prerequisite:** R4c. **Trigger:** U-2 AND a Linux cell whose time is in `pf_emit_bcls`.

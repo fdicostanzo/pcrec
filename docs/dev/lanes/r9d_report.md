@@ -361,7 +361,9 @@ the reach test as their entry statement. They are not kit renders.
     ./c18.sh                             # legs (a)/(b) on the new shape
     gcc ... drv.c                        # answer differential, 15,884,000 calls per build
 
-Results:
+Results (`[r9b]` this block predates shape (c); it was taken on the
+file-scope-definitions rendering, the caveat is in "Revision c" below.
+`build/d155/` is gitignored scratch; the transcript is the record):
 - **SIMD-off assembly vs today.**
   - `-O2` 24/24 IDENTICAL and `-O3` 24/24 IDENTICAL (12 witnesses × 2
     shapes); no helper symbol survives.
