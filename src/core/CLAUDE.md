@@ -389,6 +389,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   fallback family's build. `pcrec_fit_cells_row_name` (trace build) names
   the T1 row of a `fit_seq` entry for the `attrib` record. The `gate`
   record prints T3's row.
+  **[DEC-FALLBACK] B7 (lane decfbB7, 2026-10-09) THE DECLARED LISTING
+  COMMIT.** Two `engine-route` orders swap (`collapsed-prefilter` 3 -> 4,
+  `declined-nullable` 4 -> 3), the F-B2 and `size-cap-retry` descs are
+  corrected, and `pcrec_fit_table_row` (after `pcrec_fb_list_row`) lists T1 whole
+  for the `fallback` axis, its `desc` generated from the row's cells. Not an abi
+  event: no artifact byte moves.
   **[DEC-FALLBACK] B6 (lane decfbB6, 2026-10-08) THE LISTING READS THE
   TABLES** (§4.2 B6; no abi event, `--list-axes` byte-identical under every
   `--features` set the registry uses). T1, T3 and T4 rows (and T2's, in

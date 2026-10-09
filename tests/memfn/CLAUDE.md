@@ -12,7 +12,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **site_manifest.tsv** — THE CHECKED SITE MANIFEST (integration.md
   §R4.3.4, D147 addendum 5): one row per search or span-compare site pcrec
   emits (13 at R4a: PF, PRE, OFS, SETREST, VERIFY, VMRUN, STAY, EDGE,
-  VMSPAN, MLINE, N6, VMSTRIDE, N7). Each row has its emitters (the functions
+  VMSPAN, MLINE, N6, VMSTRIDE, N7; N6 RETIRED since, D147 add. 12). Each row has its emitters (the functions
   that SPELL the form), op/handoff, D91 budget, migration step and status,
   plus companions (moved with the site, spell nothing). Status is exactly
   `pending` or `delegated`. At R4a every row is `pending`, and each
@@ -31,10 +31,24 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   utf8's caseless decode walk off as **N7U** (`u8_defs_bref_ci`, pending,
   Q-R8-1: trigger "completeness after M7 + a decode-hook vocabulary step"),
   which still spells the `span-decode` line (rule 4).
+  M6 (lane m6, R-10) flipped VMSTRIDE (emitters `vm_span_advance,
+  vm_emit_span_scan`, the ONE VM span builder and the door's caller;
+  companions `vm_cursor_rep,vm_cls_test`) and LISTED the cursor rung's lazy
+  rmin prefix as **VMLAZY** (`vm_cursor_rep`, pending, RULED Q-R10-7: a
+  counted verify of rmin span blocks no line saw; trigger "completeness
+  after M6 + that vocabulary step"), which spells the new `span-count`
+  line (rule 4): 12 delegated / 3 pending (N6, N7U, VMLAZY), 15 rows,
+  `C17_ROW_FLOOR` 15.
+  **N6 RETIRED (D147 add. 12):** `vm_rev_emit`'s backward walk is a mirrored
+  one-position VM step, not a search site; its row, the `walk-back`
+  vocabulary line and its C12 row are deleted: 12 delegated / 2 pending
+  (N7U, VMLAZY), 14 rows, `C17_ROW_FLOOR` 14, C12 2 rows
+  (`C12_CEIL_ROWS_FLOOR` 2).
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
-  encoding seam's span compare. Python regexes are matched against
+  span compares (the encoding seam's two; since M6 `span-count`, a counted
+  span loop, the VM's lazy rmin prefix). Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form
   ratchet, born at R4c) reads THIS file rather than keep a second list.
 - **c17_lex.py** — the emitter reader. It returns every C string literal
@@ -118,14 +132,22 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   since M4's REPLACE deleted `emit_dfa.c`'s memchr row, 1 -> 0, floor 6 -> 5:
   no `memchr(` is spelled outside the kit; 3 rows / 3 forms since M7's
   REPLACE deleted the encoding seam's two span-index rows, enc_byte.c 3 and
-  enc_utf8.c 1, floor 5 -> 3: the `span-decode` row stays for N7U);
+  enc_utf8.c 1, floor 5 -> 3: the `span-decode` row stays for N7U; still 3
+  rows / 3 forms after M6's REPLACE, which deleted `emit_vm.c`'s walk-open
+  row, 1 -> 0, the strided span loop being the kit's VMSTRIDE, and added
+  its `span-count` row at 1, VMLAZY's form seen for the first time by
+  RULING Q-R10-7, not a raise);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
   exists and FAILs the day one does. C14 compiles `_Static_assert(MF_MAX_TERM
   >= PCREC_OFSK_MAX_SET + 1)` and friends against the tree's own
   `core/internal.h` (limits.def's current value) and `memfn.h`, with a
-  control that lowers MF_MAX_TERM and requires the assert to fire.
+  control that lowers MF_MAX_TERM and requires the assert to fire. Since
+  M6 (lane m6) it also asserts `MF_MAX_TERM >= VM_MAX_STRIDE`, the enum
+  READ from `src/gen/emit_vm.c` (hard-fail if absent), with its own control
+  (MF_MAX_TERM lowered to VM_MAX_STRIDE - 1 fires that assert alone): 5
+  checks.
 - **run_handoff_reach.sh** — the VM hybrid handoff route's reach floor
   (`make test-memfn-reach`; arm `memfnreach`): three witness patterns whose
   artifacts must carry `RX_VM_PREFILTER "hybrid"`, their `RX_REQ_HANDOFF`
@@ -217,7 +239,15 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   on_miss, the UCP in-place fold, non-identifier hooks) and eleven REFUSE
   (a `break;`, a fold against fold_kind NONE, an unstated or shapeless
   fold, `on_miss_leaves` 0, `reverse`, a non-NOP `empty`, a second term, a
-  REF term off 0, an unstated `ref`, fold_kind on a FIND).
+  REF term off 0, an unstated `ref`, fold_kind on a FIND). M6 prep (R-10,
+  MF_SITE_ABI 8) added seven STRIDED ADVANCE fixtures (table `STRIDES`,
+  `render_stride`, the VM cursor rung's hook texts with one member per
+  term): `adv-vmstride-it`/`-`/`-lim`/`-u8w3`/`-w32`/`-range` (each frozen
+  under pins/m6_target/) and `adv-vmstride-own` (no member hook: the kit's
+  own s[cursor + i]); and nine `stride-*` gate cases (74 in all): two
+  RENDER (W = 2, W = 32) and seven REFUSE (`reverse` at W > 1, a term off
+  its position, an OPTIONAL term, a RUN term, a strided non-ADVANCE SKIP,
+  an unstated `s`, an unstated `cursor`).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -231,7 +261,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `ARMS_ROW_FLOOR` 58), none re-pinned; advtarget added the eight
   R4h-target fixtures' sixteen rows (74 rows, `ARMS_ROW_FLOOR` 74); M4 prep
   the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
-  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88). A
+  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88); M6
+  prep the seven strided ADVANCE fixtures' fourteen rows (102,
+  `ARMS_ROW_FLOOR` 102). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -271,7 +303,15 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   length 0..3 and every reference inside the subject (aliasing), with NULL
   pointers at length 0, against a byte loop written from memfn.h's
   MF_OP_MISMATCH (about 34M calls; `MM_CALL_FLOOR` 1,000,000;
-  `GATE_CASE_FLOOR` 65). Seconds.
+  `GATE_CASE_FLOOR` 65). Check 12 (M6 prep, R-10) compares each
+  `pins/m6_target/*.c` body byte for byte with its fixture's fresh `.use`,
+  as check 8 does (`M6_TARGETS`, `M6_TARGET_FLOOR` 6, a planted-byte
+  control). Check 13 compiles three strided bodies (`adv-vmstride-it`,
+  `-lim`, `-own`) in the cursor rung's shape and runs them over every
+  subject of length 0..9 on a 3- or 4-letter alphabet, every start, every
+  `lim_`, and a NULL subject at n = 0, against a loop written from
+  memfn.h's strided ADVANCE (cursor and counter; about 5.1M calls,
+  `STRIDE_CALL_FLOOR` 500,000; `GATE_CASE_FLOOR` 74). Seconds.
 - **pins/r4h_target/** — R4h's FROZEN TARGET (lane advtarget, 2026-10-08;
   its own CLAUDE.md): one `<fixture>.c` per in-loop ADVANCE shape, a
   3-line header, the kit's text byte for byte, then a `/* pcrec today:`
@@ -282,12 +322,18 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   the UCP expression fold, the ASCII in-place fold), its body the loop CUT
   from a pre-M7 build/pcrec artifact, so the kit's render must equal
   pcrec's pre-migration text (check 10).
+- **pins/m6_target/** — M6's FROZEN TARGET (lane m6, 2026-10-08; its own
+  CLAUDE.md): one `<fixture>.c` per strided span-loop shape (possessive
+  with/without `it_`, greedy `lim_`, utf8 W = 3, W = 32, range members),
+  its body the loop CUT from a pre-M6 build/pcrec artifact, so the kit's
+  render must equal pcrec's pre-migration text (check 12).
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
   `mf_vocab_has` (a probe linked against `build/libpcrec.a`), `MF_P_INLOOP`
   in code only in `src/gen/memfn_sites.c`, and no by-value `mf_site`/
-  `mf_pred`/`mf_result` under `src/`, with two planted controls. Its
+  `mf_pred`/`mf_result` under `src/`, with two planted controls (VMSTRIDE
+  joined `D91_LOOP` at M6: the strided span loop runs per VM step). Its
   per-instance half is pcrec's own, at compile time
   (`pcrec_memfn_check_use`, `deleg_check` in `src/gen/memfn_sites.c`).
 
@@ -373,7 +419,8 @@ All three are on arm `memfnmanifest`. See
 R4c (lane r4cchecks) adds S518-S529: S518/S519/S520/S521 (C4 classes 1, 3,
 9, 7), S522 (a stale allowlist row), S523 (the hex-escape exclusion removed),
 S524 (a `memchr(` returns, C12), S525 (the vocabulary stops seeing it, C12),
-S526 (`MF_MAX_TERM` lowered, C14), S527 (an `on_cand` token with C13
+S526 (`MF_MAX_TERM` lowered, C14; re-aimed at M6 to the binding bound,
+VM_MAX_STRIDE: 32 -> 31, emit_vm.c's build copy removed), S527 (an `on_cand` token with C13
 unbuilt), S528 (a kit call from an unlisted function, C17 rule 2), S529 (the
 VM hybrid loses its handoff, the reach floor). Arms `memfnarch`,
 `memfnforms`, `memfnreach`. Transcripts: `docs/dev/lanes/r4cchecks_report.md`.

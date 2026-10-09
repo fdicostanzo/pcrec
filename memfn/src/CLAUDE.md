@@ -160,7 +160,10 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (MF_SITE_ABI 7) the MISMATCH's `fold_kind` (F_NONE/F_ASCII/F_UCP, read on
   a MISMATCH site only) and `fold`'s FOLD_EXPR/FOLD_STMT (a lexical check
   that reads through quoted literals; OTHER where fold_kind is NONE), and
-  the `ref`/`reflen` hooks;
+  the `ref`/`reflen` hooks; since M6 prep (MF_SITE_ABI 8) `stride` (ADVANCE's
+  W = pred.nterm, ONE/MANY, read on an ADVANCE site only; at MANY the
+  generic row USES `s` and `cursor`, a conditional `uses` entry) and the
+  `cursor` hook (IDENT/OTHER);
   `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`). Since N3
   `fn_ref` is a hook ID (0 UNSTATED, so a FUNC site stating 0 is refused,
   K-1) rather than an OBLIG exemption, and `s`/`n`/`lo` are read at define

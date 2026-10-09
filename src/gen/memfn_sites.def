@@ -12,6 +12,10 @@
  *                pre-check composite, §15.5). STAY, EDGE and VMSPAN ([MEMFN]
  *                R4h, M3) are the in-loop ADVANCE skips, built by
  *                pcrec_memfn_advance_site from a PcrecAdvance (memfn_sites.h).
+ *                VMSTRIDE ([MEMFN] M6) is VMSPAN's strided sibling, the VM
+ *                cursor rung's span scan at stride W > 1: one ADVANCE over
+ *                W SET terms (MF_SITE_ABI 8), from the same builder; a
+ *                row of its own so each stride class stays countable (Q-R10-6)
  *                MLINE ([MEMFN] M4) is the attempt engine's `(?m)^` skip, a
  *                FIND described by pcrec_emit_find (PcrecFind), as PF is.
  *                N7 ([MEMFN] M7) is the encoding seam's byte-wise span
@@ -45,6 +49,8 @@ DELEG_SITE(STAY, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
 DELEG_SITE(EDGE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
            MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
 DELEG_SITE(VMSPAN, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
+           MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
+DELEG_SITE(VMSTRIDE, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
            MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
 DELEG_SITE(MLINE, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
            MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)

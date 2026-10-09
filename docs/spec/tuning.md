@@ -1134,6 +1134,14 @@ at least 25 % of the bytes. Denying the axis leaves `K` at `--unroll=K`
 or `PCREC_DEFAULT_UNROLL_K`, which is what the compiler emitted before
 [ART-SIZE].
 
+**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]
+B7).** `<PREFIX>_UNROLL_K_WHY` names the FIRST of its seven values, in this
+order, whose condition holds: `option`, `denied`, `default`, `cap-rescue`,
+`size-model`, `capacity-declined`, `size-model-declined`. So an explicit
+`--unroll=K` reads `option` even under `-fno-size-term`, and `-fno-size-term`
+reads `denied` even when the counter rung is not live. This is the order
+`--list-axes` lists the `size-term` axis in, and the table the compiler walks.
+
 **What it does NOT control: the two emitted-size caps.** `-fno-size-term`
 denies the SELECTION and never reaches
 `PCREC_MAX_VM_EMIT_CODE_BYTES`/`PCREC_MAX_EMIT_BYTES` — a safety refusal a
@@ -1204,6 +1212,18 @@ ladder, when the exact machine cannot be built or its artifact cannot ship:
 |---|---|---|
 | [SEL-1] | a DFA STATE cap overflowed, so the alternative is NO prefilter | `dfa overflow retry, exact nfa N` |
 | [OPT-4] | an emitted-size cap REFUSED the exact artifact, so the alternative is a REFUSAL | `size cap retry, exact N > cap` |
+
+**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]
+B7).** The ladder takes the first row, in `--list-axes`' `fallback` axis
+order, that applies to the arrival and is not denied: the two [SEL-1] rows
+for a DFA cap, then the size-cap rows cheapest first. `<PREFIX>_ENGINE_SEL`
+names the LATEST fired row that attributes the outcome, and is listed on
+`engine-route` in the order the attribution walk tests it: `forced`,
+`declined-nullable-default`, `declined-nullable`, `collapsed-prefilter`,
+`overflowed-dfa`, `overflowed-prefilter`, `size-cap-retry`, `selected`.
+`declined-nullable` precedes `collapsed-prefilter` because the admission
+decline is tested before any rung's own attribution; the listing used to
+show these two the other way round.
 
 **[OPT-4.1] (2026-08-30) A RUNG IS DECLINED WHEN THE COLLAPSED LANGUAGE IS
 NULLABLE, and this is the one condition under which neither rung above fires

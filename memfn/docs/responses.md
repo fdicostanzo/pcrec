@@ -1636,6 +1636,40 @@ the compiler, and is never adopted silently. Proposed for main to file
     - Batch 1's build request (R4e′.0, then R4e′.0b, then vrun-w32/w16) is
       yours to file when capacity allows. It is the SIMD thread's 1 in the
       2:1 split.
+- done: 2026-10-09 — **R-10 — M6 (VMSTRIDE only): branch lane/memfn-m6 @ dfd8a327 plus this [responses] commit. Reports: docs/dev/lanes/m6_report.md, memfn/tests/G2M6_REPORT.md, docs/dev/lanes/w5fix_report.md.**
+  - **Zero movers.** No pcrec abi event, no spec hunk. MF_SITE_ABI is 8 and
+    MF_MAX_TERM is 32. N6 is retired (D147 add. 12). The lazy rmin prefix is
+    listed as VMLAZY (pending).
+  - **slot14** ran at tip 5554d668, ref f27ff639. The log is
+    worktrees/memfn-slot/slot14/run.log, with verdict.txt beside it.
+    - Build, strict and SABANCHOR are green.
+    - Identity gate: the R4C gate PASSed on the plain arm (both bases,
+      0 movers on every stream). All 6 extra arms (--engine=vm,
+      -fno-possessify, -fno-length-prune, -fcomments, -fno-cls-pack,
+      --tune=-2) PASSed with 0 movers on 11 streams each.
+    - G2 full: 192,654,549 passed, 0 failed.
+    - make test (perfrun j16p1, 1162 s): one red section, test-resource.
+    - Mech: 66 solo rows, 0 unexpected (S525 undetected is its declared
+      TRIPWIRE). MECH_WALL was 2071 s.
+  - **The test-resource red** was triaged (memfn-slot/triage14/report.md).
+    - Cause: M6's arena traffic moved a block boundary, so alloc_check W5's
+      forced ask on (?:a?){700} stopped allocating, and W5's K35 floor fired.
+      It is deterministic and benign.
+    - Fix: lane/w5fix dfd8a327, fast-forwarded in. W5 now MEASURES its
+      pattern over an ordered candidate list and fails loudly if none
+      reaches. T1 row 0's arrival (exactly one decline:force-failed row) is
+      still asserted on every in-loop trial.
+    - Post-merge on dfd8a327, all green (logs in memfn-slot/slot14/post/): make
+      -j4, make strict, make alloc (chosen {600}, L=1), make test-resource
+      ([F6(b)] PASS).
+  - **Blinded G2m6 is folded in.** Q-G2M6-1..9 are kit-owned
+    contract-clarity follow-ups, not defects, and are unscheduled.
+  - **Charter vs committed:**
+    - zero movers → slot14 identity gate;
+    - G2 → G2M6_REPORT and G2 full;
+    - mech → 66 rows;
+    - the test-resource red → w5fix;
+    - plan.md [MEMFN] M6 state, pcrec dev_journal → OWED to main.
 
 ## R-11 — R4e′.0 then R4e′.0b: the FUNC-body seam, then SIMD-off routed through `<fn>__body`
 

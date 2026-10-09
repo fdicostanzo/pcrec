@@ -1,0 +1,49 @@
+# [DEC-FALLBACK] B7's DECLARED --list-axes movers (dec_fallback.md §4.2 B7,
+# §6.2, §11 Q4(b)): a declared listing commit, stream 5 only, NOT an abi event.
+# Checked by listing_diff.py (this directory) against the parent's listing.
+# Old values are read off the PARENT listing (the C7 convention); new values
+# are written here, not read off the listing under test.
+#
+# 1. The three fallback axes are a candidate list of table rows now: kind
+#    predicate -> list (every row the parent lists; 8 + 7 + 2 = 17 cells).
+engine-route	*	kind	predicate	list
+size-term	*	kind	predicate	list
+prefilter-lang	*	kind	predicate	list
+# 2. §4.6 / §6.2: the listed order becomes the attribution walk's order.
+#    The admission's declined-nullable (T2) precedes the ladder's
+#    collapsed-prefilter (T1): one swap of two orders.
+engine-route	declined-nullable	order	4	3
+engine-route	collapsed-prefilter	order	3	4
+# 3. F-B2: the declined-nullable-default desc claimed "forced --engine=vm plus
+#    -fprefilter" reaches it; that stamps `forced` (PROBED, dec_fallback.md §10).
+#    D-3-like: size-cap-retry's desc named only the [OPT-4] size rung, but the
+#    drop-anchored/drop-premul/drop-prefilter rows stamp it too (T1's cells).
+engine-route	declined-nullable-default	applies	auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door	auto, NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline (an explicit --engine=vm names the engine, so that route reads forced); -fno-prefilter reaches the same artifact by a different door
+engine-route	size-cap-retry	applies	auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)	auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success
+# 4. Q4(b) (ruled YES): T1 and T2 listed whole as two new `list` axes, one row
+#    per table row in table order, no stamp macro. Row names and orders are
+#    dec_fallback.md §1.2's / §1.4's row lists. `applies` is GENERATED from the
+#    row's cells: the declaration pins its leading phrase. Format:
+#    + axis order candidate kind stamp_macro stamp_value deny_macro deny_bit
+#      force_macro force_bit cli_flag applies_prefix
++	fallback	1	forcing	list								resume the --emit-facts force loop
++	fallback	2	nomem	list								propagate the allocation failure
++	fallback	3	size-term-trial	list								the size term's trial catch
++	fallback	4	sel1-collapse	list			PCREC_NO_PREFILTER_COLLAPSE	19			-fno-prefilter-collapse	retry with a prefilter from the count-collapsed language ([SEL-1])
++	fallback	5	sel1-drop	list								retry with the prefilter dropped ([SEL-1])
++	fallback	6	unroll-rescue	list								take the smaller unroll K
++	fallback	7	prefilter-collapse	list			PCREC_NO_PREFILTER_COLLAPSE	19			-fno-prefilter-collapse	retry with a prefilter from the count-collapsed language ([OPT-4] size rung)
++	fallback	8	drop-anchored	list								retry without the optional anchored
++	fallback	9	drop-premul	list								retry without the premultiplied
++	fallback	10	drop-prefilter	list								retry without the VM hybrid's prefilter
++	fallback	11	refuse	list								refuse the compile
++	prefilter-admit	1	backref	list								decides the prefilter off; --emit-ir lists prefilter "no-backreference"
++	prefilter-admit	2	linked-call	list								decides the prefilter off; --emit-ir lists prefilter "no-linked-call"
++	prefilter-admit	3	var-nullable	list								decides the prefilter off; --emit-ir lists prefilter "no-nullable-exact"
++	prefilter-admit	4	nullable-exact	list								decides the prefilter off; --emit-ir lists prefilter "no-nullable-exact"
++	prefilter-admit	5	nullable-collapsed	list								decides the prefilter off; --emit-ir lists prefilter "no-nullable-collapsed"
++	prefilter-admit	6	overflow-drop	list								decides the prefilter off; --emit-ir lists prefilter "no-dfa-overflow"
++	prefilter-admit	7	forced-on	list								decides the prefilter on
++	prefilter-admit	8	forced-off	list								decides the prefilter off; --emit-ir lists prefilter "no-fno-prefilter"
++	prefilter-admit	9	var	list								decides the prefilter off; --emit-ir lists prefilter "no-engine-vm"
++	prefilter-admit	10	default	list								hands the decision to the engine choice; --emit-ir lists prefilter "no-engine-vm"

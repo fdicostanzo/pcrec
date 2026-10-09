@@ -65,7 +65,8 @@ FLOOR_SITES=3900          # sites that ran >= 1 check, per compiler build
 FLOOR_CHECKS=55000000     # answer checks per compiler build
 FLOOR_ASAN_CHECKS=1500000 # checks in the ASan+UBSan (quick) build
 FLOOR_REFUSALS=60         # refusal-table + API cases
-FLOOR_K1_CHECKS=370000    # K1 mf_ref_* checks (deterministic: 377000 measured)
+FLOOR_K1_CHECKS=370000    # K1 mf_ref_* checks (deterministic: 377000 measured before lane g2m6; 411602 with the strided F5 checks)
+FLOOR_K1_SB=31000         # lane g2m6: of them the STRIDED F5 mf_ref_skip_blocks checks (deterministic: 34602 measured)
 FLOOR_COMBOS=20           # (op, form, handoff) combinations
 FLOOR_RUN_CELLS=1644      # RUN (offset x length x mask) cells, all of them
 FLOOR_MT_SITES=500          # MF_MISS_N token sites (miss_mode 4), EXPR/FUNC/STMT, all handoffs
@@ -90,7 +91,7 @@ QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
 # generate the same sites, so these hold for --quick and the full run alike.
 # Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%;
 # mline measured 2026-10-08 (lane g2m4: 406 rendered and run), less ~10%.
-FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 mline:360 mismatch:185 sem:1370"
+FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 mline:360 mismatch:185 stride:700 sem:1370"
 # distinct (opaque) form ids the families are rendered through: counted,
 # never parsed (measured: 6 since lane g2pf; the PF shape's two are new)
 FLOOR_FAM_FORMS=6
@@ -168,6 +169,26 @@ FLOOR_MM_SITES_ASCII=61; FLOOR_MM_SITES_UCP=62; FLOOR_MM_SITES_EXPR=61; FLOOR_MM
 FLOOR_MM_REFUSALS=510   # MISMATCH refusal cases (generator): header-derived + vocabulary-absent
 FLOOR_MM_POISON=185     # REF-term junk-data renderings, every one byte-identical
 FLOOR_MMMUT_SITES=185; FLOOR_MMMUT_FOLD_SITES=61   # W2 9/10 mutated MISMATCH sites; W2 11 the caseless ones
+# lane g2m6, MF_SITE_ABI 8: the STRIDED ADVANCE (R-10, M6): STMT / SKIP / ADVANCE over W in 1..32 REQUIRED
+# SET terms, term i at offset i. G2's reference is its own scalar byte loop over the generated sets
+# (g2_ref_stride); the subjects are built from the sets (every window n - lo from 0 to 130, so the window sits
+# at every multiple of W and one either side; a block that fails at every position; a cap at 0, 1, around the
+# longest run and unbounded); a TIGHT layout puts the guard page at the cursor when `more` stopped the run, so a
+# read of the partial last block faults. Floors: hard sites (generator count, tier-independent) and the driver's
+# populations (quick tier, hard sites; the full tier has more). Measured 2026-10-09, Linux dev box, seed
+# 20261005, quick tier, less ~10-12% (the exact figures are in G2M6_REPORT.md).
+FLOOR_ST_SITES=710;      FLOOR_ST_CHECKS=1560000;  FLOOR_ST_POS=700000;      FLOOR_ST_NEG=860000;     FLOOR_ST_INST=1010000
+FLOOR_ST_END_CAP=265000; FLOOR_ST_END_MORE=170000; FLOOR_ST_END_TERM=580000
+FLOOR_ST_MORE_EXACT=79000; FLOOR_ST_MORE_PARTIAL=91000; FLOOR_ST_MORE_ZERO=24000
+FLOOR_ST_REM_WM1=162000; FLOOR_ST_REM_0=380000;    FLOOR_ST_REM_1=179000
+FLOOR_ST_CAP_ENDED=265000; FLOOR_ST_CAP_ADVANCED=77000; FLOOR_ST_CAP_ZERO=128000; FLOOR_ST_CAP_ROOM=252000; FLOOR_ST_CAP_OVER=620000
+FLOOR_ST_CTR_NONE=35000; FLOOR_ST_CTR_KIT=507000;  FLOOR_ST_CTR_CALLER=253000;  FLOOR_ST_CTR_CAPNOCOUNT=218000
+FLOOR_ST_MEM_ABSENT=343000; FLOOR_ST_MEM_OWN=338000; FLOOR_ST_MEM_BYTEEXPR=331000; FLOOR_ST_CUR_MIN=55000
+FLOOR_ST_STY_COUNTED=53000; FLOOR_ST_STY_TERNARY=52000
+FLOOR_ST_TIGHT=101000;   FLOOR_ST_N0=1530;         FLOOR_ST_EXCL_SITES=350;     FLOOR_ST_W1_SNULL=35;    FLOOR_ST_W1_CNULL=35
+FLOOR_ST_FAILPOS_MIN=3000; FLOOR_ST_WSITES_MIN=69;  FLOOR_ST_WINST_MIN=93000
+FLOOR_ST_REFUSALS=100;   FLOOR_ST_REFUSALS_NAMED=90; FLOOR_ST_NONID=320
+FLOOR_STMUT_SITES="12:285 13:350 14:265 15:370 16:305"     # W2 12-16: mutated strided sites, each must be KILLED (measured 320 391 295 416 340, less ~10%)
 # the semantic differential (g2u item 7): hard variant sites run per field
 # the enforced classes' populations (generator cases, tier-independent):
 FLOOR_CLS_HOOK=600       # hook-nonident; measured 728 (g2u2)
@@ -249,6 +270,8 @@ gen "$work/gen" > "$work/gen.log" 2>&1 || { cat "$work/gen.log"; echo "run_g2.sh
 # lane g2m7: a generator process of its OWN that makes only the MISMATCH sites, so the rows chosen
 # for them are countable apart from every other family's (section 4b prints them)
 [ "$rows" = 1 ] && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
+# lane g2m6: and one of its own for the STRIDED sites, so the rows chosen for them are countable apart too
+[ "$rows" = 1 ] && { gen "$work/stonly" --stride-only 1 > "$work/stonly.log" 2>&1 || { cat "$work/stonly.log"; echo "run_g2.sh: the STRIDE-only generator failed" >&2; exit 2; }; }
 cat "$work/gen.log"
 sum=$(grep '^SUMMARY' "$work/gen/gen_results.txt")
 [ -n "$sum" ] || { echo "run_g2.sh: no generator SUMMARY" >&2; exit 2; }
@@ -313,6 +336,16 @@ mmp_=$(grep '^MMPOISON' "$gres" | sed 's/.*identical=\([0-9]*\) .*/\1/')
 [ "${mmp_:-0}" -ge "$FLOOR_MM_POISON" ] || note_fail 1 "MISMATCH REF-term poison renderings ${mmp_:-0} < floor $FLOOR_MM_POISON"
 [ "$(grep '^MMPOISON' "$gres" | sed 's/.*differ=\([0-9]*\) .*/\1/')" = 0 ] || note_fail 1 "MISMATCH rendering moved with junk in the REF term's unread fields"
 [ "$(grep '^MMPOISON' "$gres" | sed 's/.*control_unstable=\([0-9]*\).*/\1/')" = 0 ] || note_fail 1 "MISMATCH poison control: a clean re-rendering is not byte-identical"
+echo "== STRIDED ADVANCE (lane g2m6): generator populations"
+grep '^STSITES\|^STREFUSE\|^STNONID' "$gres" | sed 's/^/   /'
+str_c=$(grep '^STREFUSE' "$gres" | sed 's/.*cases=\([0-9]*\) .*/\1/')
+str_n=$(grep '^STREFUSE' "$gres" | sed 's/.* named=\([0-9]*\) .*/\1/')
+[ "${str_c:-0}" -ge "$FLOOR_ST_REFUSALS" ] || note_fail 1 "STRIDE refusal cases ${str_c:-0} < floor $FLOOR_ST_REFUSALS"
+[ "${str_n:-0}" -ge "$FLOOR_ST_REFUSALS_NAMED" ] || note_fail 1 "STRIDE refusals that must name their field: ${str_n:-0} < floor $FLOOR_ST_REFUSALS_NAMED"
+stn_r=$(grep '^STNONID' "$gres" | sed 's/.*rendered=\([0-9]*\) .*/\1/')
+stn_f=$(grep '^STNONID' "$gres" | sed 's/.*refused=\([0-9]*\).*/\1/')
+[ "${stn_r:-0}" -ge "$FLOOR_ST_NONID" ] || note_fail 1 "STRIDE sites with a non-identifier s / cursor text that RENDERED: ${stn_r:-0} < floor $FLOOR_ST_NONID"
+[ "${stn_f:-1}" = 0 ] || note_fail 1 "STRIDE: the kit REFUSED ${stn_f} strided site(s) whose s / cursor text is not a bare identifier (the generic row parenthesizes)"
 echo "== poison differential (fields the contract says a site does not use, set to junk)"
 grep '^POISON ' "$gres" | sed 's/^/   /'
 pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')
@@ -387,6 +420,9 @@ k1() {  # k1 NAME CC [flags]
         passed=$((passed + ${p:-0}))
         [ "${f:-1}" = 0 ] || note_fail "${f:-1}" "K1 ($name): mf_ref_* disagrees with G2's loops ($work/k1-$name.log)"
         [ "${p:-0}" -ge "$FLOOR_K1_CHECKS" ] || note_fail 1 "K1 ($name): checks ${p:-0} < floor $FLOOR_K1_CHECKS"
+        sb=$(grep '^G2-K1 skip_blocks checks' "$work/k1-$name.log" | sed 's/.*: *//')
+        echo "   K1 mf_ref_skip_blocks (strided F5, $name): ${sb:-?} checks (floor $FLOOR_K1_SB)"
+        [ "${sb:-0}" -ge "$FLOOR_K1_SB" ] || note_fail 1 "K1 ($name): mf_ref_skip_blocks checks ${sb:-0} < floor $FLOOR_K1_SB"
     else
         note_fail 1 "K1 ($name): did not build or run ($work/k1-$name.log)"
     fi
@@ -552,6 +588,16 @@ w3_judge() {
         wf_=$(grep "overread $w_:" "$work/w3.log" | sed 's/.*faults //')
         [ "${wf_:-0}" -gt 0 ] || note_fail 1 "W3 $w_ did not fault: the guard page for that read is not reached"
     done
+    # lane g2m6: the STRIDED ADVANCE's planted functions. st-partial reads a byte of the partial last block,
+    # which lies INSIDE n: only the tight layout (guard page at the cursor) can fault it
+    for w_ in st-partial st-over st-under; do
+        wf_=$(grep "overread $w_:" "$work/w3.log" | sed 's/.*faults \([0-9]*\).*/\1/')
+        [ "${wf_:-0}" -gt 0 ] || note_fail 1 "W3 $w_ did not fault: the guard page for that strided read is not reached"
+    done
+    wpf_=$(grep 'overread st-partial:' "$work/w3.log" | sed 's/.*partial-faults \([0-9]*\).*/\1/')
+    [ "${wpf_:-0}" -gt 0 ] || note_fail 1 "W3 st-partial: no fault on an instance whose last block is partial: the tight layout does not see a read of the partial last block"
+    wsc_=$(grep 'overread st-clean:' "$work/w3.log" | sed 's/.*failed \([0-9]*\).*/\1/')
+    [ "${wsc_:-1}" = 0 ] || note_fail 1 "W3 st-clean control failed: the strided witness harness itself is wrong"
     wmc_=$(grep 'overread mm-clean:' "$work/w3.log" | sed 's/.*failed \([0-9]*\).*/\1/')
     [ "${wmc_:-1}" = 0 ] || note_fail 1 "W3 mm-clean control failed: the MISMATCH witness harness itself is wrong"
 }
@@ -578,6 +624,16 @@ w2_judge() {  # w2_judge M
             echo "   W2 mutation 8, LOOP_EXIT sites (population floor $FLOOR_LOOPX_MUT): mutated ${mm:-?} killed ${killed:-?}"
             [ "${mm:-0}" -ge "$FLOOR_LOOPX_MUT" ] || note_fail 1 "W2 mutation 8: ${mm:-0} LOOP_EXIT sites mutated < floor $FLOOR_LOOPX_MUT"
             [ "${killed:-0}" = "${mm:-x}" ] || note_fail 1 "W2 mutation 8: a kit break inside a loop of its own was caught on ${killed:-0} of ${mm:-0} LOOP_EXIT sites (must be all): the driver-owned-loop check does not see where the break goes"
+        elif [ "$m" -ge 12 ]; then
+            # lane g2m6 (the STRIDED ADVANCE, MF_SITE_ABI 8): W2 12 forces the LAST term to always hold, 13 the
+            # FIRST, 14 a MIDDLE one, 15 hands the kit a `more` that admits a block one byte short, 16 a cap one
+            # iteration too many. Each is generated only where it is NOT an equivalent mutant (no EMPTY set
+            # anywhere, the term's set not full, the cap not 0, a run long enough to reach the extra iteration),
+            # so a mutated site that survives every instance is a hole: EVERY one must be caught
+            fl_=$(echo "$FLOOR_STMUT_SITES" | tr ' ' '\n' | sed -n "s/^$m://p")
+            echo "   W2 mutation $m, strided sites (population floor $fl_): mutated ${mm:-?} killed ${killed:-?}"
+            [ "${mm:-0}" -ge "${fl_:-1}" ] || note_fail 1 "W2 mutation $m: ${mm:-0} strided sites mutated < floor ${fl_:-1}"
+            [ "${killed:-0}" = "${mm:-x}" ] || note_fail 1 "W2 mutation $m: a strided site given a wrong hook/field was caught on ${killed:-0} of ${mm:-0} sites (must be all)"
         elif [ "$m" -ge 9 ]; then
             # lane g2m7 (MISMATCH, MF_SITE_ABI 7): W2 9 hands the kit reflen + 1, 10 the subject as the
             # reference, 11 a fold that does nothing (caseless sites only). Each changes a hook the answer
@@ -624,11 +680,11 @@ if [ "$quick" = 1 ]; then
     sample "$work/gen" "$work/genq"
     [ -n "$asan_cc" ] && asan_launch "$work/genq" > "$work/asan.out" 2>&1 &
     { if build wq "$wcc" "$work/genq"; then
-          for k in 1 2 3 4 5 6 7; do w1_launch wq "$k" & done
+          for k in 1 2 3 4 5 6 7 8 9 10; do w1_launch wq "$k" & done
           w3_launch wq
           wait
       fi; } > "$work/wq.out" 2>&1 &
-    for m in 1 2 3 4 5 6 7 8 9 10 11; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
+    for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
 else
     floor_checks=$FLOOR_CHECKS; floor_asan=$FLOOR_ASAN_CHECKS; drv_tier=
     floor_m7neg=$FLOOR_MUT7_NEG; form_check_floors=$FULL_FORM_CHECK_FLOORS
@@ -658,7 +714,7 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|read-bounded\|AT_N\|loop-exit\|mismatch\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|read-bounded\|AT_N\|loop-exit\|mismatch\|stride\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
     for fl_ in $FAM_FLOORS; do
         fn_=${fl_%%:*}; fv_=${fl_##*:}
         s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
@@ -788,6 +844,55 @@ EOF_PF
     else
         note_fail 1 "$cc: no 'G2 mismatch operands' census line in $log"
     fi
+    # lane g2m6: the STRIDED ADVANCE populations (the driver's machine line)
+    stl_=$(grep '^G2 stride census:' "$log")
+    if [ -n "$stl_" ]; then
+        stk_() { echo "$stl_" | tr ' ' '\n' | sed -n "s/^$1=\([0-9-]*\)$/\1/p" | head -1; }
+        stchk_() {  # stchk_ LABEL KEY FLOOR
+            local v_; v_=$(stk_ "$2")
+            [ "${v_:-0}" -ge "$3" ] || note_fail 1 "$cc: STRIDE $1 ${v_:-0} < floor $3"
+        }
+        stchk_ "hard sites that ran" sites "$FLOOR_ST_SITES"
+        stchk_ "answer checks" checks "$FLOOR_ST_CHECKS"
+        stchk_ "positive checks (the cursor moved)" positive "$FLOOR_ST_POS"
+        stchk_ "negative checks (it did not)" negative "$FLOOR_ST_NEG"
+        stchk_ "instances" instances "$FLOOR_ST_INST"
+        stchk_ "runs ended by the cap" end_cap "$FLOOR_ST_END_CAP"
+        stchk_ "runs ended by \`more\`" end_more "$FLOOR_ST_END_MORE"
+        stchk_ "runs ended by a failing term" end_term "$FLOOR_ST_END_TERM"
+        stchk_ "exact-fit ends (B - c0 a multiple of W)" more_exact "$FLOOR_ST_MORE_EXACT"
+        stchk_ "partial-last-block ends" more_partial "$FLOOR_ST_MORE_PARTIAL"
+        stchk_ "no-whole-block starts" more_zero "$FLOOR_ST_MORE_ZERO"
+        stchk_ "windows at W-1 modulo W" rem_wm1 "$FLOOR_ST_REM_WM1"
+        stchk_ "windows at 0 modulo W" rem_0 "$FLOOR_ST_REM_0"
+        stchk_ "windows at 1 modulo W" rem_1 "$FLOOR_ST_REM_1"
+        stchk_ "cap-ended runs" cap_ended "$FLOOR_ST_CAP_ENDED"
+        stchk_ "cap-ended runs that advanced" cap_advanced "$FLOOR_ST_CAP_ADVANCED"
+        stchk_ "cap 0 runs" cap_zero "$FLOOR_ST_CAP_ZERO"
+        stchk_ "caps that bound with room for another block" cap_room "$FLOOR_ST_CAP_ROOM"
+        stchk_ "capped runs that ended before the cap" cap_over "$FLOOR_ST_CAP_OVER"
+        stchk_ "instances with no counter and no cap" ctr_none "$FLOOR_ST_CTR_NONE"
+        stchk_ "kit-owned counter instances" ctr_kit "$FLOOR_ST_CTR_KIT"
+        stchk_ "caller-owned (count_by_caller) counter instances" ctr_caller "$FLOOR_ST_CTR_CALLER"
+        stchk_ "cap-without-a-named-counter instances" ctr_capnocount "$FLOOR_ST_CTR_CAPNOCOUNT"
+        stchk_ "member-absent instances" mem_absent "$FLOOR_ST_MEM_ABSENT"
+        stchk_ "own-read member instances" mem_own "$FLOOR_ST_MEM_OWN"
+        stchk_ "byte_expr member instances" mem_byteexpr "$FLOOR_ST_MEM_BYTEEXPR"
+        stchk_ "instances of the least-used cursor spelling" cur_min "$FLOOR_ST_CUR_MIN"
+        stchk_ "counted-s-text instances" sty_counted "$FLOOR_ST_STY_COUNTED"
+        stchk_ "ternary-s-text instances" sty_ternary "$FLOOR_ST_STY_TERNARY"
+        stchk_ "tight-layout (guard page at the cursor) instances" tight "$FLOOR_ST_TIGHT"
+        stchk_ "n == 0 instances" n0 "$FLOOR_ST_N0"
+        stchk_ "EXCLUDED sites" excluded_sites "$FLOOR_ST_EXCL_SITES"
+        stchk_ "W=1 sites with s unstated" w1_snull "$FLOOR_ST_W1_SNULL"
+        stchk_ "W=1 sites with cursor unstated" w1_cnull "$FLOOR_ST_W1_CNULL"
+        stchk_ "instances of the least-hit failing position (every position 0..31)" failpos_min "$FLOOR_ST_FAILPOS_MIN"
+        stchk_ "sites of the least-covered width" wsites_min "$FLOOR_ST_WSITES_MIN"
+        stchk_ "instances of the least-covered width" winst_min "$FLOOR_ST_WINST_MIN"
+        [ "$(stk_ tight_faulted)" = 0 ] || note_fail 1 "$cc: STRIDE: $(stk_ tight_faulted) tight-layout instance(s) faulted: the kit read a byte of a partial last block (or beyond) while \`more\` was false"
+    else
+        note_fail 1 "$cc: no 'G2 stride census' line in $log"
+    fi
     grep -c . "$work/build-$cc/warnings.log" | sed "s/^/   compiler diagnostics lines ($cc): /"
 done
 
@@ -807,12 +912,12 @@ if [ "$quick" = 1 ]; then
     [ -x "$work/build-wq/g2_run" ] || note_fail 1 "the sampled witness build failed ($work/wq.out)"
 else
     echo "== witnesses (W1 wrong reference, W2 mutated kit text, W3 planted reads), on $wcc"
-    for k in 1 2 3 4 5 6 7; do w1_launch "$wcc" "$k"; done
+    for k in 1 2 3 4 5 6 7 8 9 10; do w1_launch "$wcc" "$k"; done
     w3_launch "$wcc"
 fi
-for k in 1 2 3 4 5 6 7; do w1_judge "$k"; done
+for k in 1 2 3 4 5 6 7 8 9 10; do w1_judge "$k"; done
 w3_judge
-for m in 1 2 3 4 5 6 7 8 9 10 11; do
+for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
     [ "$quick" = 1 ] || w2_launch "$m" "$wcc"
     w2_judge "$m"
 done
@@ -824,6 +929,7 @@ done
 # linked against libpcrec_mftrace.a. Nothing here reads G2's generator or
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
+ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
 FLOOR_ROWS=17   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
@@ -872,6 +978,17 @@ if [ "$rows" = 1 ]; then
         c_=$(awk -v t="$t_" -v r="$r_" '$2 == t && $3 == r {print $4}' "$work/row-chosen-mm.txt")
         if [ "${c_:-0}" -ge "$v_" ]; then reach_pass "(f) MISMATCH sites chose $t_/$r_ ${c_:-0} times >= floor $v_"
         else reach_fail "(f) MISMATCH sites chose $t_/$r_ ${c_:-0} times < floor $v_"; fi
+    done
+    # lane g2m6: the rows the STRIDE-only generator process chose. The kit has one row for a strided
+    # ADVANCE today (the generic row); no row is added, FLOOR_ROWS does not move
+    echo "== rows chosen by the STRIDE-only generator process (strided sites alone)"
+    reach_lines "$work/reach/gen-stonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+        | awk '$3 > 0 {print "row-chosen-stride-only " $1 " " $2 " " $3}' | LC_ALL=C sort | tee "$work/row-chosen-st.txt"
+    for fl_ in $ST_ROW_FLOORS; do
+        t_=${fl_%%:*}; r_=${fl_#*:}; r_=${r_%%:*}; v_=${fl_##*:}
+        c_=$(awk -v t="$t_" -v r="$r_" '$2 == t && $3 == r {print $4}' "$work/row-chosen-st.txt")
+        if [ "${c_:-0}" -ge "$v_" ]; then reach_pass "(g) STRIDED sites chose $t_/$r_ ${c_:-0} times >= floor $v_"
+        else reach_fail "(g) STRIDED sites chose $t_/$r_ ${c_:-0} times < floor $v_"; fi
     done
     dropped=$(cat "$work"/reach/*.err | sed -n 's/^MFTRACE REACH_DROPPED n=\([0-9]*\)$/\1/p' | awk '{t += $1} END {print t + 0}')
     ndrop=$(cat "$work"/reach/*.err | grep -c '^MFTRACE REACH_DROPPED n=')

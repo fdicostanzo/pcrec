@@ -522,11 +522,22 @@ static void report(const Witness *w, const Tally *t, int sust)
  *                    asserts only that none of them can show a force-failed
  *                    row (a failure there is not a forced ask).
  *   FLOOR (K35)      the loop must contain at least W5_MIN_INLOOP calls. L is
- *                    1 for the pinned pattern (measured), so the floor is
+ *                    1 for the chosen pattern (measured), so the floor is
  *                    the measured value, not half: below 1 there is nothing
- *                    left to assert. A pattern whose arena usage shifts so
- *                    the loop no longer opens a block FAILS here, loudly,
- *                    rather than passing over an empty population.
+ *                    left to assert. The floor applies to the population
+ *                    actually asserted: if NO candidate reaches, the witness
+ *                    FAILS here, loudly, rather than passing over an empty
+ *                    population.
+ *
+ * WHICH PATTERN. Whether `(?:a?){N}`'s forced loop opens an arena block
+ * depends on where N's arena usage falls against a block boundary, which
+ * every change to the compiler's arena traffic shifts (kit unit M6 moved it:
+ * {700} went from L=1 to L=0 while {600},{750} reached and {650},{690},{710},
+ * {800} did not -- docs/dev/lanes/w5fix_report.md). A constant picked once is
+ * therefore a coin that comes up again at the next shift ([MECH-REACH]). So
+ * the witness MEASURES: w5_pick tries w5_counts in order, profiles each with
+ * the hook-less/hooked pair above, and takes the first with L >= W5_MIN_INLOOP;
+ * only when none reaches does it fail. The chosen pattern is printed.
  * Single-shot only: SUSTAINED mode would also fail the listing's own
  * rendering allocations after the loop, which is a different (unasserted)
  * population.
@@ -534,8 +545,13 @@ static void report(const Witness *w, const Tally *t, int sust)
 
 #define W5_MARGIN     6
 #define W5_MIN_INLOOP 1
-#define W5_MIN_TOTAL  100   /* about half of the measured 220 */
-static const char *const w5_pattern = "(?:a?){700}";
+#define W5_MIN_TOTAL  100   /* about half of the measured 190 ({600}; 220 at {700} before M6) */
+/* The witness pattern is `(?:a?){N}` for the first N in this list whose forced
+ * derivation allocates (see "WHICH PATTERN" above); w5_pattern is set by
+ * w5_run. */
+static const int w5_counts[] = { 700, 600, 750, 500, 900, 1000, 400, 1200, 300, 1500 };
+static char w5_pattern_buf[32];
+static const char *w5_pattern = "(?:a?){700}";
 
 typedef struct { long long n; const char *f[TRACE_CAP]; int l[TRACE_CAP]; } Trace;
 static Trace tr_hookless, tr_hooked, tr_emit;
@@ -632,10 +648,21 @@ static int w5_trial(long long n, char *site_out, size_t site_cap)
 static void w5_run(void)
 {
     const char *nm = "W5 (force loop, --emit-facts)";
-    long long k_less = w5_profile(0, &tr_hookless);
-    long long k_hook = w5_profile(1, &tr_hooked);
-    long long hooked_n = hooked_at;
-    long long k_emit = w5_profile(2, &tr_emit);
+    long long k_less = 0, k_hook = 0, hooked_n = 0, k_emit = 0, L = 0;
+    int tried = 0;
+    for (size_t c = 0; c < sizeof w5_counts / sizeof w5_counts[0]; c++) {
+        snprintf(w5_pattern_buf, sizeof w5_pattern_buf, "(?:a?){%d}", w5_counts[c]);
+        w5_pattern = w5_pattern_buf;
+        k_less = w5_profile(0, &tr_hookless);
+        k_hook = w5_profile(1, &tr_hooked);
+        hooked_n = hooked_at;
+        tried++;
+        L = k_less > 0 && k_hook > 0 && hooked_n > 0 ? hooked_n - k_less : 0;
+        if (L >= W5_MIN_INLOOP) break;
+        printf("NOTE: %s: candidate '%s' does not reach the arm (loop allocates %lld time(s)); trying the next\n",
+               nm, w5_pattern, L);
+    }
+    k_emit = w5_profile(2, &tr_emit);
     if (k_less <= 0 || k_hook <= 0 || k_emit <= 0 || hooked_n <= 0) {
         bad("%s: a profiling pass did not succeed cleanly (hookless K=%lld, hooked K=%lld, emit K=%lld, hook entry %lld) -- cannot place the loop",
             nm, k_less, k_hook, k_emit, hooked_n);
@@ -645,12 +672,13 @@ static void w5_run(void)
      * hook-less one. L: the loop's length. */
     long long d = 1;
     while (d <= tr_hookless.n && d <= tr_hooked.n && w5_same(&tr_hookless, &tr_hooked, d - 1)) d++;
-    long long L = hooked_n - k_less;
     if (L < W5_MIN_INLOOP) {
-        bad("%s: the force loop allocates %lld time(s) for '%s', floor %d -- this witness stopped reaching the arm (K35): re-probe a pattern whose forced derivation opens an arena block",
-            nm, L, w5_pattern, W5_MIN_INLOOP);
+        bad("%s: none of the %d candidate patterns (last '%s') makes the force loop allocate (floor %d) -- this witness stopped reaching the arm (K35): extend w5_counts or find a pattern whose forced derivation opens an arena block",
+            nm, tried, w5_pattern, W5_MIN_INLOOP);
         return;
     }
+    printf("NOTE: %s: using pattern '%s' (candidate %d of %d; loop length L=%lld)\n",
+           nm, w5_pattern, tried, (int)(sizeof w5_counts / sizeof w5_counts[0]), L);
     /* The numbering cross-check: the emit_facts pass reproduces the hooked
      * trace through the loop (same pre-loop allocations, same loop). */
     for (long long i = 0; i < d - 1 + L && i < tr_emit.n; i++)

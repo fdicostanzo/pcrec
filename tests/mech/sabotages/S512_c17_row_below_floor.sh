@@ -11,6 +11,10 @@
 # the POP still read `=13$`, so the row scored UNREACHED. The form is lane
 # m6's (e48cc296). The SETREST plant leaves 13 rows, below 14: same defect,
 # same detector.
+# RE-ANCHORED 2026-10-08 (D147 add. 12, lane m6): N6 retired, so the manifest
+# holds 14 rows and C17_ROW_FLOOR is 14 (the POP had read 13 since the M7/M6
+# floor raises; it now matches the live literal, `=14` then a comment). The
+# SETREST plant leaves 13 rows, below 14: same defect, same detector.
 # RE-ANCHORED 2026-10-08 ([MEMFN] R4h, lane r4h): VMSPAN went `delegated` and
 # VMSTRIDE's emitter became `vm_stride_loop`, which no other row names, so
 # deleting VMSTRIDE now ALSO trips rule 1 (an unlisted form). The row deleted
