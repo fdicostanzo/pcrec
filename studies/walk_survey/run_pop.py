@@ -58,7 +58,7 @@ def one(job):
     if any(r == "match" for r, _ in rows):
         cfgs.append("anch")
     for cfg in cfgs:
-        args = ["--features", "all"]
+        args = ["--features", "all"] + (["--step-budget=" + os.environ["STEP_BUDGET"]] if os.environ.get("STEP_BUDGET") else [])
         if enc == "utf8": args += ["-e", "utf8"]
         if icase: args.append("-i")
         if cfg == "nocaps": args.append("--no-captures")
@@ -86,10 +86,13 @@ def one(job):
                     "search": "search", "findall": "findall"}[regime]
             lim = "600" if regime in ("throughput", "findall") else "120"
             res = run(art, mode, enc, subs, lim)
-            if res is None:   # batch timed out: per subject
-                res = []
+            if res is None:   # batch timed out: per subject, 60 s each, and
+                res = []      # the rest of the batch is TIMEOUT after one
+                dead = False
                 for s in subs:
-                    r1 = run(art, mode, enc, [s], lim)
+                    r1 = None if dead else run(art, mode, enc, [s], "60")
+                    if r1 is None:
+                        dead = True
                     res += r1 if r1 else [dict(subject=os.path.basename(s), rc="TIMEOUT")]
             for r in res:
                 row = dict(base); row.update(r); row["regime"] = regime
@@ -127,8 +130,20 @@ def main():
         g = groups.setdefault(f[0], [f[0], f[2], f[3] == "1", bytes.fromhex(f[4]), []])
         g[4].append((f[5], f[6].split(",")))
     cols = None
-    with open(outp, "w") as fo, cf.ProcessPoolExecutor(jobs) as ex:
-        for i, res in enumerate(ex.map(one, groups.values(), chunksize=1)):
+    done = set()
+    if os.environ.get("RESUME") and os.path.exists(outp):
+        lines = open(outp).read().split("\n")
+        cols = lines[0].split("\t") if lines and lines[0] else None
+        done = {l.split("\t")[0] for l in lines[1:] if l}
+        # the last pid written may be partial: redo it
+        last = lines[-2].split("\t")[0] if len(lines) > 1 and lines[-2] else None
+        if last:
+            done.discard(last)
+            keep = [l for l in lines[1:] if l and l.split("\t")[0] != last]
+            open(outp, "w").write(lines[0] + "\n" + "".join(l + "\n" for l in keep))
+    todo = [g for k, g in groups.items() if k not in done]
+    with open(outp, "a" if done else "w") as fo, cf.ProcessPoolExecutor(jobs) as ex:
+        for i, res in enumerate(ex.map(one, todo, chunksize=1)):
             for r in res:
                 if cols is None:
                     cols = ["pid", "config", "regime", "enc", "rc", "note", "view", "cwmax", "minw",
