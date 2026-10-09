@@ -54,3 +54,4 @@ runcmp	bytes	324	14838
 runcmp	memcmp	87769	32669
 fn	fn-pair	5205	10422
 fn	fn-memchr	117902	18981
+fn	vrun-w16	PLACEHOLDER	505

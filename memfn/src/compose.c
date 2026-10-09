@@ -146,11 +146,45 @@ static const arm *const arms[] = {
  *
  * The kit's one first-match walk (kit.h `kit_walk`; integration.md
  * §R4.9.2.3), over every table the kit selects from. Per row of the asked
- * slot, in table order: a denied row is skipped (DENIED); the gate reads the
- * row's contract before its predicate ([MEMFN-ROWCON] N3, row_contracts.md
- * §2) and a failing row is DECLINED, its predicate not asked (a trace build
- * asks it anyway, so the record can say whether the gate MOVED the
- * selection); a row whose predicate holds is CHOSEN. */
+ * slot, in table order: a denied row is skipped (DENIED: its `MF_D_*` bit in
+ * the art's denies, or, R4e' batch 1, `no-<its options.def name>` in the
+ * site's `--memfn=` string); the gate reads the row's contract before its
+ * predicate ([MEMFN-ROWCON] N3, row_contracts.md §2) and a failing row is
+ * DECLINED, its predicate not asked (a trace build asks it anyway, so the
+ * record can say whether the gate MOVED the selection); a row whose predicate
+ * holds is CHOSEN. `kit_ask` asks ONE named row the same questions (a
+ * PREFIX row's named rungs, §R4.9.2.3 "the ladder"). */
+
+/* One row's verdict: 1 CHOSEN, 0 not (traced either way). `mc`/`mv` record
+ * the first row the gate moved the selection off (trace only). */
+static int walk_row(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
+                    uint64_t denies, const void *x, const gate_tctx *tc,
+                    gate_verdict *why, const gate_contract **mc, gate_verdict *mv)
+{
+    const gate_contract *c = t->ct(i);
+    uint64_t d = t->deny ? t->deny(i) : 0;
+    if ((d & denies) ||
+        (t->opt && in->s && kit_opt_denied(in->s->opts, t->opt(i)))) {
+        gate_trace_row(tc, c, "DENIED", d & denies, NULL);
+        return 0;
+    }
+    gate_verdict v = gate_check(c, gphases, in);
+    if (v.r1 | v.r2) {
+        int held = GATE_TRACING && t->holds(i, x);
+        if (held && !*mc) { *mc = c; *mv = v; }
+        gate_trace_row(tc, c, held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
+        *why = v;
+        return 0;
+    }
+    if (t->holds(i, x)) {
+        gate_trace_row(tc, c, "CHOSEN", 0, &v);
+        gate_trace_end(tc, c, &v, *mc, mv);
+        return 1;
+    }
+    gate_trace_row(tc, c, "PRED_FALSE", 0, &v);
+    return 0;
+}
+
 size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphases,
                 uint64_t denies, const void *x, const gate_tctx *tc,
                 gate_verdict *why)
@@ -164,29 +198,21 @@ size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphase
     gate_trace_sel(tc);
     for (size_t i = 0; i < t->n; i++) {
         if (t->slot && t->slot(i) != slot) continue;
-        const gate_contract *c = t->ct(i);
-        uint64_t d = t->deny ? t->deny(i) : 0;
-        if (d & denies) {
-            gate_trace_row(tc, c, "DENIED", d, NULL);
-            continue;
-        }
-        gate_verdict v = gate_check(c, gphases, in);
-        if (v.r1 | v.r2) {
-            int held = GATE_TRACING && t->holds(i, x);
-            if (held && !mc) { mc = c; mv = v; }
-            gate_trace_row(tc, c, held ? "DECLINED:PRED_HOLDS" : "DECLINED", 0, &v);
-            *why = v;
-            continue;
-        }
-        if (t->holds(i, x)) {
-            gate_trace_row(tc, c, "CHOSEN", 0, &v);
-            gate_trace_end(tc, c, &v, mc, &mv);
-            return i;
-        }
-        gate_trace_row(tc, c, "PRED_FALSE", 0, &v);
+        if (walk_row(t, i, in, gphases, denies, x, tc, why, &mc, &mv)) return i;
     }
     gate_trace_end(tc, NULL, why, mc, &mv);
     return t->n;
+}
+
+int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
+            uint64_t denies, const void *x, const gate_tctx *tc)
+{
+    const gate_contract *mc = NULL;
+    gate_verdict mv = { 0, 0 }, why = { 0, 0 };
+    gate_trace_sel(tc);
+    if (walk_row(t, i, in, gphases, denies, x, tc, &why, &mc, &mv)) return 1;
+    gate_trace_end(tc, NULL, &why, mc, &mv);
+    return 0;
 }
 
 /* Row `a`'s predicate columns over the site and its define hooks. */
@@ -209,7 +235,7 @@ static int arm_row_holds(size_t i, const void *x)
     return arm_holds(arms[i], in->s, in->h);
 }
 
-static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_holds };
+static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_holds, NULL };
 
 /* The first row the gate passes AND whose predicate holds (kit_walk). NULL
  * when no row serves; `*why` is then the last declined row's verdict (the
@@ -225,7 +251,7 @@ static const arm *select_arm(const mf_art *art, const mf_site *s,
                              gate_verdict *why)
 {
     gate_in in = { s, def, NULL };
-    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in };
+    gate_tctx tc = { art, "arms", art->nsites + 1, MF_PH_DEFINE, &in, 0 };
     size_t i = kit_walk(&arm_table, 0, &in, gphases, art->denies, &in, &tc, why);
     return i < NARMS ? arms[i] : NULL;
 }
@@ -392,6 +418,7 @@ mf_art *mf_art_begin(mf_arena *a, const char *prefix, uint32_t policy,
     mf_art *art = a->alloc(a->u, sizeof *art);
     if (!art) return NULL;
     memset(art, 0, sizeof *art);
+    kb_init(&art->forms, a);
     art->a = a;
     art->prefix = prefix ? prefix : "mf";
     art->policy = policy;
@@ -479,7 +506,7 @@ int mf_use(mf_art *art, uint32_t handle, const mf_hooks *use, mf_sink *body,
        definition is written, so a use it does not serve is REFUSED, naming
        the fields; it cannot re-select (N3) */
     gate_in in = { &r->site, use, NULL };
-    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in };
+    gate_tctx tc = { art, "arms", handle, MF_PH_USE, &in, 0 };
     gate_verdict v = gate_check(r->arm->ct, MF_PH_USE, &in);
     gate_trace_sel(&tc);
     gate_trace_row(&tc, r->arm->ct, "RECHECK", 0, &v);
@@ -567,10 +594,12 @@ int mf_art_note_libc(mf_art *art, const char *name)
     return 0;
 }
 
-/* RUN_WORDS is the run compare's count (runcmp.c). MEMFN_FORMS is "none": no
- * arm the table holds renders differently from its SIMD-off self (every arm
- * is a scalar arm), so every artifact equals its SIMD-off compile (Q55; the
- * id list is R4f's). */
+/* RUN_WORDS is the run compare's count (runcmp.c), over UNBRACKETED text
+ * only (a SIMD helper's own compare is not counted, §R4.9.2.4). MEMFN_FORMS
+ * is "none" iff no SIMD row rendered on this art (R4e' batch 1: the forms
+ * the seam recorded, `<form>@<level>+<level>` per FUNC in site order, the
+ * RENDERED levels top-down, [r9 C-9, F-15]); at -fno-memfn-simd no SIMD row
+ * renders, so every SIMD-off artifact says "none" (Q55). */
 int mf_stamps(const mf_art *art, mf_sink *out)
 {
     if (art->err[0]) return -1;
@@ -582,7 +611,8 @@ int mf_stamps(const mf_art *art, mf_sink *out)
         kb_printf(&libc, "%s%s", i ? "," : "", art->libc[i]);
     if (libc.oom) return kit_fail((mf_art *)art, "mf_stamps: out of memory");
     out->stamp_int(out->u, "RUN_WORDS", art->words);
-    out->stamp(out->u, "MEMFN_FORMS", "none");
+    if (art->forms.oom) return kit_fail((mf_art *)art, "mf_stamps: out of memory");
+    out->stamp(out->u, "MEMFN_FORMS", art->forms.len ? art->forms.p : "none");
     out->stamp(out->u, "MEMFN_LIBC", art->nlibc ? libc.p : "none");
     return 0;
 }

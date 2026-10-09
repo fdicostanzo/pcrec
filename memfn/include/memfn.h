@@ -684,6 +684,28 @@ const mf_option *mf_options(size_t *n);
  * unchanged, D26). */
 int mf_opts_check(const char *str, char *err, size_t n);
 
+/* ---- the kit's ISA levels (R4e' batch 1; memfn/src/levels.def) ---------
+ *
+ * The levels a SIMD row's text may sit under, in levels.def's order
+ * (ascending width). pcrec never reads this: it is the enumeration point
+ * the kit's own tests compile against (each level's `test_march`, [r9
+ * F-13]), with a literal floor on its count in the tests (K35). Every
+ * string is DATA: this header names no architecture (C4). */
+#define mf_levels MF_NS(levels)
+typedef struct {
+    const char *token;      /* kit-private id                                 */
+    const char *family;     /* the architecture family                        */
+    const char *guard;      /* the preprocessor condition its text sits under */
+    const char *header;     /* the compiler header included inside the guard  */
+    unsigned    vw;         /* the register width in bytes                    */
+    const char *test_march; /* the -march the tests compile the level at      */
+    uint32_t    forbid;     /* instruction classes its rows may not use (kit) */
+    const char *stamp;      /* its MEMFN_FORMS token                          */
+} mf_level;
+
+/* The levels, in levels.def's order; `*n` gets the count. */
+const mf_level *mf_levels(size_t *n);
+
 /* ---- K1: the primitives' REFERENCE functions (requirements.md §1.3) ------
  *
  * Plain byte loops stating what each primitive answers, kept obviously

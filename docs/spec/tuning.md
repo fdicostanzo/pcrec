@@ -3721,8 +3721,9 @@ VM hybrid's prefilter answers the same windows.
 ### 2.43 `-fno-memfn-simd` / `-fmemfn-simd` — `PCREC_NO_MEMFN_SIMD` (bit 48), `PCREC_FORCE_MEMFN_SIMD` (bit 49)
 
 **[MEMFN] R4c, pcrec's ONE axis for the memory-function kit (D147
-addenda 6-7; `memfn/CLAUDE.md`, "ONE SIMD switch"). INERT today: both
-settings render the same artifact.** A force pair on the
+addenda 6-7; `memfn/CLAUDE.md`, "ONE SIMD switch"). Since R4e' batch 1
+([MEMFN] R-13) `-fmemfn-simd` renders the kit's first SIMD rows; the
+default renders exactly what it rendered before them.** A force pair on the
 `-fno-comments`/`-fcomments` shape (`src/core/axes.def`), **OFF BY DEFAULT**
 until the SIMD hold lifts; turning it on by default is its own ruled event.
 The deny flag states the default and overrides a `config`/target block that
@@ -3737,12 +3738,31 @@ turned the force flag on.
   no profile, no `--isa=` axis and no architecture knowledge, and sends the
   kit ONE bit (`MF_P_PORTABLE_ONLY`, set iff the force flag is not in
   force).
-- **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and
-  `-fno-memfn-simd` produce byte-identical artifacts (checked by C11's
-  identity half, `make test-memfn-stamps`, which compiles each sampled
-  artifact under each flag against the default and prints "identical (no
-  SIMD form)" once per layer). The per-form switches are the kit's own `--memfn=` namespace
-  (`registry.md` §6), not this axis.
+- **What ON renders today (R4e' batch 1, [MEMFN] R-13; CANDIDATE, not yet
+  accepted on a bench reading, so no speed claim is made here).** Each
+  offset-skip/pre-check FUNC whose predicate is ONE run (2 to 32 bytes)
+  scanned at a two-member cube (a caseless letter: the two-stream "pair"
+  body), and which is its site's only predicate, gains guarded per-level
+  helpers beside its scalar helper `<fn>__body`, and the FUNC becomes a
+  selector whose whole body is an `#if`/`#elif`/`#else` chain, one call per
+  arm, the `#else` arm the SIMD-off call. The consumer's own `-march`
+  picks the live arm at compile time: the 16-byte arm needs SSE2 on
+  x86-64 (every x86-64 compile), the 32-byte arm AVX2 (`-march=x86-64-v3`
+  and up); any other target, or `-mgeneral-regs-only`, compiles the scalar
+  arm, so the artifact still compiles and answers everywhere. A span
+  shorter than the vector body's reach falls to the next arm, and finally
+  to `<fn>__body`. Answers never change. `<PREFIX>_MEMFN_FORMS` names the
+  forms and their RENDERED levels (`vrun@w16`; `match_api.md` §6.3), and
+  `<PREFIX>_SIMD_GUARDED_BYTES` counts the guarded text, which no size
+  decision reads (`limits.md`).
+- **Its per-form switches** are the kit's own `--memfn=` namespace
+  (`registry.md` §6): `--memfn=no-vrun-w16` denies the 16-byte row. Given at
+  the default `-fno-memfn-simd`, a SIMD row's deny is accepted and does
+  nothing. C11's identity half (`make test-memfn-stamps`) holds the
+  `-fno-memfn-simd` compile byte-identical to the default, and its movers
+  half holds an ON compile identical to the default exactly where its
+  `MEMFN_FORMS` reads `none`; C18 (`make test-memfn-simdfloor`) holds every
+  ON artifact to the SIMD-off text plus guarded insertions.
 - **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s
   `strategy_denials` mask (`src/gen/emit_dfa.c`; §2's `rx_info.flags`
   rule, which masks force bits too): the axis selects what the kit renders

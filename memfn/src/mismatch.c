@@ -272,6 +272,7 @@ static const gate_contract inplace_ct = {
     [FLD_note_tag]        = MF_ANY,
     [FLD_indent]          = MF_ANY,
     [FLD_comment_tier]    = MF_ANY,
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
     [FLD_ref]             = MF_ANY,
     [FLD_reflen]          = MF_ANY,
     [FLD_fold]            = CM(FOLD_STMT),

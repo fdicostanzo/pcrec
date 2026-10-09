@@ -350,15 +350,18 @@ check read them from this section, never from a list of their own. Each is
 a kit change's own deny (D144 item 4), born with the change that moves an
 emitted byte.
 
-**The section is EMPTY at R4a** — header only, zero rows: the kit moves no
-emitted byte yet, so it has no option. Its independent control is a
-member-count FLOOR pinned here as a literal, sharing no source with the
-kit's registry; it is BORN with the first row ([MEMFN] R4d, the first kit
-change that moves a byte), in the form `` `memfn` section floor: `` followed
-by the number, raised in every change that adds a row. Until then
-`tests/registry/axes_registry_check.sh` reports the floor arm as
-UNREACHED (K35), never as a pass, and FAILS if a row appears with no floor
-pinned.
+**The section was EMPTY at R4a** — header only, zero rows. Its independent
+control is a member-count FLOOR pinned here as a literal, sharing no source
+with the kit's registry, raised in every change that adds a row; with no
+row it was UNREACHED (K35), and `tests/registry/axes_registry_check.sh`
+FAILS a row with no floor pinned. **The floor was BORN with the first rows,
+R4e' batch 1's SIMD rows** ([MEMFN] R-13, 2026-10-09; R4d, which the
+design named as the first, has not landed): `vrun-w16`, a `deny` row of
+layer `simd` and budget `scan` (`--memfn=no-vrun-w16`: the 16-byte vector
+run scan that `-fmemfn-simd` adds to a FUNC whose predicate is one run,
+`tuning.md` §2.43).
+
+`memfn` section floor: 1
 
 **[REG-SV] (2026-08-30) CLOSED A GAP `pcrec-bench` FOUND: two name-valued
 stamps had no `stamp_value` population on this surface at all.** The

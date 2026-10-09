@@ -113,6 +113,9 @@ def sampled(pattern, modulus, salt):
     return int.from_bytes(h.digest()[:4], 'big') % modulus == 0
 
 
+# R-13: SIMD-on movers in the sampled pattern streams (the batch-1 rows reach
+# only a FUNC whose predicate is one caseless-style run): a literal floor
+MOVERS_FLOOR = 1
 STAMP = re.compile(r'^#define (\w+)_(MEMFN_FORMS|MEMFN_LIBC) "([^"]*)"$', re.M)
 ENGINE = re.compile(r'^#define \w+_ENGINE "(\w+)"$', re.M)
 IDENT_LIST = re.compile(r'^[A-Za-z_]\w*(,[A-Za-z_]\w*)*$')
@@ -278,7 +281,9 @@ def main():
         # the FORMS identity half, both layers: the same compile with the
         # SIMD switch stated OFF (a deny of the default) and turned ON must
         # each be byte-equal to the default while no SIMD form exists
-        same = []
+        # (R-13: since the first SIMD rows, the ON half is the MOVERS half:
+        # an ON artifact equals the default iff its FORMS reads "none")
+        same, onforms = [], None
         for flag in ('-fno-memfn-simd', '-fmemfn-simd'):
             try:
                 r2 = subprocess.run(argv[:-4] + [flag] + argv[-4:],
@@ -286,7 +291,11 @@ def main():
             except subprocess.TimeoutExpired:
                 r2 = None
             same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
-        ident.append((sname, p, same[0], same[1]))
+            if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:
+                m = re.search(r'^#define \w+_MEMFN_FORMS "([^"]*)"$',
+                              r2.stdout.decode('utf-8', 'surrogateescape'), re.M)
+                onforms = m.group(1) if m else None
+        ident.append((sname, p, same[0], same[1], onforms))
         with open(cpath, 'wb') as f:
             f.write(r.stdout)
         res = cen.one('%s:%r' % (sname, p[:60]), text, cpath, workdir)
@@ -361,17 +370,33 @@ def main():
             ok('floor %s: %d >= %d' % (name, got, floor))
         else:
             bad('floor %s: %d < %d (a population nobody counted, K35)' % (name, got, floor))
-    for col, flag, layer in ((2, '-fno-memfn-simd', 'SIMD-off'), (3, '-fmemfn-simd', 'SIMD-on')):
-        differ = [(t[0], t[1]) for t in ident if not t[col]]
-        for sn, p in differ[:40]:
-            bad('FORMS identity (%s): %s:%r differs under %s' % (layer, sn, p[:60], flag))
-        if ident and not differ:
-            ok('FORMS identity (%s): identical (no SIMD form) -- %d pattern-stream '
-               'artifacts, default vs %s' % (layer, len(ident), flag))
+    differ = [(t[0], t[1]) for t in ident if not t[2]]
+    for sn, p in differ[:40]:
+        bad('FORMS identity (SIMD-off): %s:%r differs under -fno-memfn-simd' % (sn, p[:60]))
+    if ident and not differ:
+        ok('FORMS identity (SIMD-off): identical -- %d pattern-stream artifacts, default vs '
+           '-fno-memfn-simd' % len(ident))
+    # the MOVERS half (R-13, LIVE since the first SIMD rows): an ON artifact
+    # differs from the default exactly where its FORMS is not "none"
+    movers, wrong = 0, []
+    for t in ident:
+        if t[4] is None:
+            wrong.append((t[0], t[1], 'no FORMS line under -fmemfn-simd'))
+        elif (t[4] == 'none') != t[3]:
+            wrong.append((t[0], t[1], 'FORMS %r but the artifact %s the default'
+                          % (t[4], 'equals' if t[3] else 'differs from')))
+        elif t[4] != 'none':
+            movers += 1
+    for sn, p, why in wrong[:40]:
+        bad('FORMS movers (SIMD-on): %s:%r: %s' % (sn, p[:60], why))
+    if ident and not wrong:
+        ok('FORMS movers (SIMD-on): FORMS is not "none" exactly on the %d movers of %d '
+           'pattern-stream artifacts' % (movers, len(ident)))
+    if movers < MOVERS_FLOOR:
+        bad('FORMS movers: %d SIMD-on movers < floor %d (a population nobody counted, K35)'
+            % (movers, MOVERS_FLOOR))
     if not ident:
         bad('FORMS identity: no artifact was compared (a population nobody counted, K35)')
-    print('UNREACHED: C11 FORMS movers half (-fmemfn-simd against the SIMD-off compile): '
-          'no SIMD form exists before the first SIMD-on form (Q55, R4e\'). Not a pass.')
 
     subprocess.run(['rm', '-rf', workdir])
     print('checks passed: %d' % passed)

@@ -7,8 +7,19 @@
 #
 # form<TAB>guarded_max
 #
+# A MEMFN_FORMS token `FORM@L1+L2...` (a SIMD row's rendered levels, top
+# down) is bounded by the SUM of its rows' bounds, row `FORM-Lk` per level
+# (R4e' batch 1, R-13); a token with no `@` by its own row.
+#
 # rq3-witness: the test-only synthetic block (-DPCREC_SIMD_WITNESS, 60,000
 # pad lines of 27 bytes plus ~190 of guard, comment, table and #endif:
 # 1,620,166 bytes measured). Under 2x the block, so a bracket that counts a
 # block twice exceeds it (S703).
 rq3-witness	1700000
+# vrun-w16 (R4e' batch 1, R-13): one FUNC's w16 helper block, its selector
+# arm and the selector's #else/#endif. MEASURED by G2's SIMD family
+# (memfn/tests/run_g2_simd.py) at pcrec's placeholder prefix and longest FUNC
+# name: worst 2,383 bytes (a 32-byte masked run compared byte by byte under
+# -fno-run-overlap); rounded up to the next 100. The kit states the same
+# (memfn/src/vrun.c VRUN_W16_GUARDED_MAX).
+vrun-w16	2400

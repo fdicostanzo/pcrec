@@ -4122,9 +4122,15 @@ engine-scoped.**
     the forms that make it differ, comma-joined in site order, a site that
     cascades between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and
     level names are OPAQUE: bucket on `none`/not-`none`, never parse an id.
-    SIMD is off by default and no SIMD form exists yet, so the value is
-    `"none"` on every artifact until the kit's first SIMD-on form ships
-    (D147 addendum 10, Q55). A scalar-layer kit change (one that moves bytes
+    SIMD is off by default, so the value is `"none"` on every artifact
+    compiled at the default (D147 addendum 10, Q55). At `-fmemfn-simd` it
+    names the SIMD rows rendered, one token per FUNC they reach, in site
+    order ([MEMFN] R-13, R4e' batch 1: `vrun@w16`). The levels are the
+    RENDERED ones, top-down (one per `#if`/`#elif` arm of the FUNC's
+    selector), never the live one: the consumer's `-march` decides which
+    arm compiles, so `vrun@w16` built with `-mgeneral-regs-only` runs the
+    scalar arm. A bucket on `none`/not-`none` is the use; the ids and
+    level tokens are opaque. A scalar-layer kit change (one that moves bytes
     at the default build) does NOT change it; such a change is attributed by
     its `abi` event and its `--memfn=no-NAME` deny row, and a consumer that
     must tell two same-`abi` builds apart records the build recipe (`abi`,
@@ -4151,8 +4157,9 @@ engine-scoped.**
     constant-size `memcpy` loads. `MEMFN_FORMS`' identity half
     runs from R4c, when the `-fno-memfn-simd`/`-fmemfn-simd` switch exists
     (`tuning.md` §2.43): default against `-fno-memfn-simd`, reported
-    "identical (no SIMD form)" while no SIMD form exists. Its movers half
-    (`-fmemfn-simd` against SIMD-off) stays UNREACHED until one does.
+    "identical (no SIMD form)" while no SIMD form existed. Its movers half
+    (`-fmemfn-simd` against SIMD-off) is LIVE since R-13: an ON compile
+    equals the default exactly where its `MEMFN_FORMS` reads `"none"`.
 
   **[MEMFN] RQ-3, `abi` 71, 2026-10-09 (D155 addendum 2):
   `<PREFIX>_SIMD_GUARDED_BYTES` — HOW MANY BYTES OF THE ARTIFACT SIT UNDER A
@@ -4170,8 +4177,9 @@ engine-scoped.**
   unit every pcrec length decision uses: comment bytes `-fno-comments`
   dropped are included, and the symbol prefix is counted at a fixed width,
   so neither `-fno-comments` nor `-p` changes the value. `0ULL` on every
-  artifact that holds no such block, which is every artifact today: no
-  SIMD form exists and `-fmemfn-simd` is inert (`tuning.md` §2.43).
+  artifact that holds no such block, which is every artifact compiled at the
+  default `-fno-memfn-simd`; at `-fmemfn-simd`, every artifact whose
+  `MEMFN_FORMS` names a SIMD row carries a nonzero count (`tuning.md` §2.43).
   **What a consumer may conclude:** the artifact's size beyond its SIMD-off
   compile. Those bytes are deliberately invisible to every pcrec size
   DECISION — the VM entry-shape knee and `<PREFIX>_VM_PROGRAM_BYTES`, the

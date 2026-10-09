@@ -21,6 +21,12 @@
  * A kit change that moves an emitted byte adds its row HERE in the same
  * commit (D144 item 4): the row is that change's OFF arm, `--memfn=no-NAME`,
  * and the change raises the `memfn` section's floor in docs/spec/registry.md
- * §6. BORN EMPTY at R4a: no kit form moves a byte yet, so there is no row,
- * and the floor check is UNREACHED until the first row (R4d).
+ * §6. BORN EMPTY at R4a; the first rows are R4e' batch 1's SIMD rows
+ * (request R-13, integration.md §R4.9.2.3 "The deny, per row"), one per
+ * (form, width), Q-R9-7: each is its row's OFF arm at -fmemfn-simd, and is
+ * accepted and inert at -fno-memfn-simd (the layer switch already declines
+ * every SIMD row through `policy`).
  */
+MF_OPT("vrun-w16", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
+       "the 16-byte vector run scan (a SIMD helper over a FUNC whose predicate is one run, "
+       "sitting over the two-stream pair body); -fmemfn-simd only")

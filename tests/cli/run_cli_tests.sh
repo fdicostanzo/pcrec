@@ -2380,6 +2380,34 @@ else
     fail "config --memfn= did not win silently (rc $wrc)" "$werr"
 fi
 
+# [MEMFN] R-13 (R4e' batch 1): a SIMD row's own deny, `--memfn=no-vrun-w16`.
+# Inert at the default -fno-memfn-simd (byte-identical); at -fmemfn-simd the
+# row renders its guarded helper on a caseless run, and its deny takes the
+# artifact back to the SIMD-off bytes exactly (a lone row's DENY arm IS the
+# OFF arm, integration.md §R4.9.5 item 4).
+rm -f "$WORKDIR"/mfs*.c
+pcrec_run "$PCREC" -p rx -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs0.c"
+pcrec_run "$PCREC" -p rx --memfn=no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs1.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs2.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-w16 -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs3.c"
+if [ -s "$WORKDIR/mfs0.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs1.c"; then
+    pass "--memfn=no-vrun-w16 at -fno-memfn-simd is accepted and inert"
+else
+    fail "--memfn=no-vrun-w16 at -fno-memfn-simd moved the artifact or did not compile"
+fi
+if grep -q '^static inline size_t rx_reqrun__w16(' "$WORKDIR/mfs2.c" \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@[a-z0-9+]*w16"$' "$WORKDIR/mfs2.c"; then
+    pass "-fmemfn-simd renders the vrun-w16 helper and names it in MEMFN_FORMS"
+else
+    fail "-fmemfn-simd did not render the vrun-w16 helper on (?i)cat"
+fi
+if [ -s "$WORKDIR/mfs3.c" ] && ! grep -q '__w16' "$WORKDIR/mfs3.c" \
+   && ! cmp -s "$WORKDIR/mfs2.c" "$WORKDIR/mfs3.c"; then
+    pass "--memfn=no-vrun-w16 at -fmemfn-simd denies the row"
+else
+    fail "--memfn=no-vrun-w16 at -fmemfn-simd did not deny the row"
+fi
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
