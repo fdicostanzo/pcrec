@@ -279,5 +279,11 @@ re-measure before load-bearing use.
   against the artifact and libpcre2 10.46 (every startpos, find-all), two
   `TWIN_SABOTAGE` controls must fail, `timedrv.c` times both on 1 MiB tails.
   Backs `docs/design/revend.md` §6-§7. See its own CLAUDE.md.
+- `u8pick_twin/` — [U8-PICK] STEP 0 (lane u8pick0, 2026-10-09; measurement only,
+  scratch tier, Linux dev box): the 12 bench `lit-*` utf8 cells compiled `-e byte`
+  vs `-e utf8` (plus a scratch structural UTF-8 prior, the bench pin's compiler as
+  a calibration arm, and memmem / AVX2-pair proxies), timed on the bench's own
+  regenerated subjects, 15 interleaved pinned passes, answer identity 0 diffs.
+  Backs `docs/dev/lanes/u8pick0_report.md`. See its CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

@@ -1,0 +1,49 @@
+cell	arm	enc	REQ_BYTE	REQ_RUN	PREFILTER	OFFSETS	memchr_bytes(k:byte)
+lit-1ch-2b	A	byte	169	c3a9@1	memchr	none	1:a9 0:c3
+lit-1ch-2b	B	utf8	169	c3a9@1	offset-set	0,1*	1:a9
+lit-1ch-2b	C	utf8+u8prior	169	c3a9@1	offset-set	0,1*	1:a9
+lit-1ch-2b	P	utf8@c4c70f2c	169	c3a9@1	offset-set	0,1*	1:a9
+lit-1ch-3b	A	byte	165	e697a5@2	memchr	none	2:a5 0:e6
+lit-1ch-3b	B	utf8	165	e697a5@2	offset-set	0,1*	1:97 2:a5
+lit-1ch-3b	C	utf8+u8prior	151	e697a5@1	memchr	none	1:97 0:e6
+lit-1ch-3b	P	utf8@c4c70f2c	165	e697a5@2	offset-set	0,1*	1:97 2:a5
+lit-1ch-4b	A	byte	128	f09f9880@3	memchr	none	3:80 0:f0
+lit-1ch-4b	B	utf8	128	f09f9880@3	offset-set	0,1*	1:9f 3:80
+lit-1ch-4b	C	utf8+u8prior	240	f09f9880@0	run-pinned	0*,1,2,3	0:f0
+lit-1ch-4b	P	utf8@c4c70f2c	128	f09f9880@3	offset-set	0,1*	1:9f 3:80
+lit-anchored-run	A	byte	158	97a5e69cace8aa9e@7	none	none	
+lit-anchored-run	B	utf8	158	97a5e69cace8aa9e@7	none	none	
+lit-anchored-run	C	utf8+u8prior	158	97a5e69cace8aa9e@7	none	none	
+lit-anchored-run	P	utf8@c4c70f2c	158	97a5e69cace8aa9e@7	none	none	
+lit-cyr-run	A	byte	176	d181d0bad0b2d0b0@7	memchr	none	7:b0 0:d0
+lit-cyr-run	B	utf8	176	d181d0bad0b2d0b0@7	offset-set	0,1*	1:9c 7:b0
+lit-cyr-run	C	utf8+u8prior	156	d09cd0bed181d0ba@1	run-pinned	0,1*,2,3,4,5,6,7	1:9c
+lit-cyr-run	P	utf8@c4c70f2c	176	d181d0bad0b2d0b0@7	offset-set	0,1*	1:9c 7:b0
+lit-mixed-ascii	A	byte	136	7240e4be8be38188@7	offset-set	0,4*	4:40 7:88
+lit-mixed-ascii	B	utf8	136	7240e4be8be38188@7	offset-set	0,1*	1:73 7:88
+lit-mixed-ascii	C	utf8+u8prior	228	7573657240e4be8b@5	offset-set	0,4*	4:40 5:e4
+lit-mixed-ascii	P	utf8@c4c70f2c	136	7240e4be8be38188@7	offset-set	0,1*	1:73 7:88
+lit-nearmiss-run	A	byte	158	97a5e69cace8aa9e@7	memchr	none	7:9e 0:e6
+lit-nearmiss-run	B	utf8	158	97a5e69cace8aa9e@7	offset-set	0,1*	1:97 7:9e
+lit-nearmiss-run	C	utf8+u8prior	158	97a5e69cace8aa9e@7	memchr	none	7:9e 0:e6
+lit-nearmiss-run	P	utf8@c4c70f2c	158	97a5e69cace8aa9e@7	offset-set	0,1*	1:97 7:9e
+lit-nfc-pair	A	byte	169	636166c3a9@4	offset-set	0,3*	3:c3 4:a9
+lit-nfc-pair	B	utf8	169	636166c3a9@4	offset-set	0,1*	1:61 4:a9
+lit-nfc-pair	C	utf8+u8prior	169	636166c3a9@4	run-pinned	0,1,2,3,4*	4:a9
+lit-nfc-pair	P	utf8@c4c70f2c	169	636166c3a9@4	offset-set	0,1*	1:61 4:a9
+lit-offset-at-head	A	byte	169	40c3a9@2	memchr	none	2:a9 0:40
+lit-offset-at-head	B	utf8	169	40c3a9@2	offset-set	0,1*	1:c3 2:a9
+lit-offset-at-head	C	utf8+u8prior	64	40c3a9@0	run-pinned	0*,1,2	0:40
+lit-offset-at-head	P	utf8@c4c70f2c	169	40c3a9@2	offset-set	0,1*	1:c3 2:a9
+lit-offset-at-tail	A	byte	169	c3a940@1	memchr	none	1:a9 0:c3
+lit-offset-at-tail	B	utf8	64	c3a940@2	offset-set	0,1*	1:a9 2:40
+lit-offset-at-tail	C	utf8+u8prior	64	c3a940@2	offset-set	0,1*	1:a9 2:40
+lit-offset-at-tail	P	utf8@c4c70f2c	64	c3a940@2	offset-set	0,1*	1:a9 2:40
+lit-run-3	A	byte	158	97a5e69cace8aa9e@7	memchr	none	7:9e 0:e6
+lit-run-3	B	utf8	158	97a5e69cace8aa9e@7	offset-set	0,1*	1:97 7:9e
+lit-run-3	C	utf8+u8prior	158	97a5e69cace8aa9e@7	memchr	none	7:9e 0:e6
+lit-run-3	P	utf8@c4c70f2c	158	97a5e69cace8aa9e@7	offset-set	0,1*	1:97 7:9e
+lit-sharp-s	A	byte	159	53747261c39f65@5	offset-set	0,4*	4:c3 5:9f
+lit-sharp-s	B	utf8	101	53747261c39f65@6	offset-set	0,1*	1:74 6:65
+lit-sharp-s	C	utf8+u8prior	159	53747261c39f65@5	memchr	none	5:9f 0:53
+lit-sharp-s	P	utf8@c4c70f2c	101	53747261c39f65@6	offset-set	0,1*	1:74 6:65
