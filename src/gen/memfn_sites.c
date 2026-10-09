@@ -317,33 +317,32 @@ static void kit_check(Ctx *cx, mf_art *art, int rc)
 
 #ifdef PCREC_RANK_PROBE
 #include <stdio.h>
-#include "core/findings.h"
 /* [MEMFN] RQ-2 THE RANK PROBE, compiled only into the test build
  * `-DPCREC_RANK_PROBE` (tests/memfn/run_rank.sh): one stderr line per
- * predicate of every defined site whose plan_hint names a RUN term, with the
- * term's bytes and masks, the scanned position and `pcrec_find_run_rank`'s
- * ranking of the term under this compile's byte-rate. The check re-derives
- * the ranking by brute force and compares. */
-static void rank_probe(Ctx *cx, DelegSite id, const mf_site *s)
+ * predicate of every defined site, stating the ranking the kit is handed
+ * (`mf_pred.rank_*`) and, where plan_hint names a RUN term, the term's bytes,
+ * masks and scanned position. The check re-derives the ranking by brute
+ * force and compares. */
+static void rank_probe(DelegSite id, const mf_site *s)
 {
     int np = s->op == MF_OP_ALL_PRESENT ? s->npred : 1;
     for (int i = 0; i < np; i++) {
         const mf_pred *p = s->op == MF_OP_ALL_PRESENT ? &s->preds[i] : &s->pred;
         const mf_term *t = p->plan_hint < p->nterm ? &p->term[p->plan_hint] : NULL;
-        int pos[PCREC_MAX_REQ_RUN_SCAN];
-        uint32_t mass[PCREC_MAX_REQ_RUN_SCAN];
-        int n;
-        if (!t || t->kind != MF_T_RUN) continue;
-        n = (int)t->run_len;
-        pcrec_find_run_rank(pcrec_find_byte_rate(cx), t->run, t->mask, n, pos, mass);
         fprintf(stderr, "RANK\t%s\t%d\t", pcrec_deleg_sites[id].id, i);
-        for (int j = 0; j < n; j++) fprintf(stderr, "%02x", t->run[j]);
+        if (t && t->kind == MF_T_RUN) {
+            for (uint32_t j = 0; j < t->run_len; j++) fprintf(stderr, "%02x", t->run[j]);
+            fprintf(stderr, "\t");
+            for (uint32_t j = 0; j < t->run_len; j++)
+                fprintf(stderr, "%02x", t->mask ? t->mask[j] : 0xFF);
+            fprintf(stderr, "\t%u\t", (unsigned)p->plan_pos);
+        } else {
+            fprintf(stderr, "-\t-\t-\t");
+        }
+        fprintf(stderr, "%u\t", (unsigned)p->rank_n);
+        for (int j = 0; j < p->rank_n; j++) fprintf(stderr, "%s%u", j ? "," : "", (unsigned)p->rank_pos[j]);
         fprintf(stderr, "\t");
-        for (int j = 0; j < n; j++) fprintf(stderr, "%02x", t->mask ? t->mask[j] : 0xFF);
-        fprintf(stderr, "\t%u\t", (unsigned)p->plan_pos);
-        for (int j = 0; j < n; j++) fprintf(stderr, "%s%d", j ? "," : "", pos[j]);
-        fprintf(stderr, "\t");
-        for (int j = 0; j < n; j++) fprintf(stderr, "%s%u", j ? "," : "", (unsigned)mass[j]);
+        for (int j = 0; j < p->rank_n; j++) fprintf(stderr, "%s%u", j ? "," : "", (unsigned)p->rank_ppm[j]);
         fprintf(stderr, "\n");
     }
 }
@@ -357,7 +356,7 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     uint32_t handle = 0;
     deleg_check(cx, id, s);
 #ifdef PCREC_RANK_PROBE
-    rank_probe(cx, id, s);
+    rank_probe(id, s);
 #endif
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));

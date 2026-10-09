@@ -271,10 +271,10 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               const unsigned char *mask, int n);
 
 /* Every position of a run (the same arguments; `mask` NULL where every
- * position is exact) ranked rarest first into `pos[0..n)`, each position's
- * cube mass in `mass[0..n)` (NULL: not wanted). Stable over the order
- * `[n-1, ..., 0]`, so ties go to the rightmost and `pos[0]` equals
- * `pcrec_find_run_scan_index`'s answer. [MEMFN] RQ-2. */
+ * position is exact) ordered by cube mass, lowest first, into `pos[0..n)`,
+ * each position's mass in `mass[0..n)` (NULL: not wanted). Stable over the
+ * order `[n-1, ..., 0]`, so ties go to the rightmost and `pos[0]` equals
+ * `pcrec_find_run_scan_index`'s answer. [MEMFN] RQ-2 (D157). */
 void pcrec_find_run_rank(const uint32_t *rate, const unsigned char *bytes,
                          const unsigned char *mask, int n, int *pos,
                          uint32_t *mass);

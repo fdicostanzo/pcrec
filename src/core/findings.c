@@ -541,17 +541,15 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
     return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
 }
 
-/* Every position of a run, ranked rarest first by the cost PICK uses (the
- * mass of the position's cube), into `pos[0..n)` with each position's mass
- * in `mass[0..n)` (`mass` may be NULL). The ranking is PICK applied
- * repeatedly: a stable order over `pcrec_find_run_scan_index`'s candidate
- * order `[n-1, ..., 0]`, so ties go to the rightmost position under both
- * arms and `pos[0]` is that reader's answer. [MEMFN] RQ-2 (integration.md
- * §2.3 T7, Q-R9-3 (a)): the fact a fused filter's positions are chosen from.
- * Any second-position or distance rule is the reader's, not this list's.
- * The positions are those of whatever run the caller hands over, so under
- * `-e utf8` (byte-rate NONE) the ranking is by cube size and then
- * positional (U8-PICK, u8pick0_report.md). */
+/* Every position of a run, ordered by the cost PICK uses (the mass of the
+ * position's cube), lowest first, into `pos[0..n)` with each position's mass
+ * in `mass[0..n)` (`mass` may be NULL). The order is PICK applied repeatedly:
+ * a stable insertion over `pcrec_find_run_scan_index`'s candidate order
+ * `[n-1, ..., 0]`, so ties go to the rightmost position under both arms and
+ * `pos[0]` is that reader's answer. [MEMFN] RQ-2 (D157): the ranking the
+ * PRE/OFS builders state as `mf_pred.rank_*`. The positions are those of
+ * whatever run the caller hands over, so under `-e utf8` (byte-rate NONE)
+ * the order is by cube size, then positional (U8-PICK, u8pick0_report.md). */
 void pcrec_find_run_rank(const uint32_t *rate, const unsigned char *bytes,
                          const unsigned char *mask, int n, int *pos,
                          uint32_t *mass)
