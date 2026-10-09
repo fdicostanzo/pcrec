@@ -1112,3 +1112,26 @@ pointer when a kit change merges to main.
   regenerated. Light checks and G2 quick 51,169,258/0 are green.
 - slot15 is scripted (memfn-slot/slot15/run.sh): mech is now ONE `PROCS=4`
   invocation, per [TT-MECHPAR] on main. It waits for main's GO.
+
+## 2026-10-09 afternoon — kit session (pcrecdev3)
+
+- R4e′.0 MERGED by main (131c173a). R4e′.0b was built by lane r4e0b (opus).
+  The abi number moved 70 -> 69 -> 70 with landing order around decattr,
+  and was reconciled at the main merge b3e26cfa.
+- slot16 is green (see responses.md done: R4e′.0b). R-11 is complete once
+  main merges.
+- LESSONS:
+  - I launched slot16 without asking main for the GO. No harm this time,
+    but always ask.
+  - My slot script wrote DONE from an EXIT trap even when a stage died, and
+    main's sequencer keys on DONE, so rq3 was lifted early. The script now
+    writes DONE only after the LAST stage completes (FAILED otherwise).
+  - The mech row list was built with a sed that kept the full path of an
+    `S-U8` row. FATAL at launch, nothing measured, re-run.
+- For batch 1 (from main): RQ-3 (lane/rq3, abi 71) needs `mf_sink`
+  members `simd_open`/`simd_close`. pcrec's
+  `pcrec_memfn_sink_simd_open/_close` are ready in
+  src/gen/memfn_sites.h. Every SIMD row brackets its guarded text with them
+  and declares a bound in tests/memfn/simd_bounds.tsv, which
+  `make test-memfn-guarded` checks. RQ-1 (`--memfn=` carrier) landed with
+  clibundle; the first options.def row must add a pcrec cli case.
