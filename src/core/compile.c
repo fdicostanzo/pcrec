@@ -1421,15 +1421,15 @@ static void fit_tables_selfcheck(Ctx *cx)
      * cell and no cell outside them. */
     static const char *const fb_axes[] = { "engine-route", "size-term", "prefilter-lang" };
     for (size_t a = 0; a < sizeof fb_axes / sizeof fb_axes[0]; a++) {
-        int n = 0, total = 0;
-        while (pcrec_fb_list_row(fb_axes[a], n)) n++;
+        int nl = 0, total = 0;
+        while (pcrec_fb_list_row(fb_axes[a], nl)) nl++;
         for (int o = 1; o <= 64; o++) {
             int m = 0;
             (void)fb_find(fb_axes[a], o, &m);
             fit_check(cx, m <= 1, "a listed order is carried by two cells");
             total += m;
         }
-        fit_check(cx, n > 0 && total == n, "a listed axis has a gap or a stray order");
+        fit_check(cx, nl > 0 && total == nl, "a listed axis has a gap or a stray order");
     }
 }
 
