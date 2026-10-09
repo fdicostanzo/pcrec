@@ -1654,7 +1654,7 @@ says so.
 | w32-over-w16 cut-over above reach | performance | the same, at `-march=x86-64-v3` |
 | main-loop unroll | performance | SWEPT in tier U at 1×, 2×, 4× per level, or the plain 1× loop shipped and labelled `UNMEASURED DEFAULT:`. "Left to the compiler" is not available for an intrinsic loop (`[r9 M-9]`). Never 2× silently |
 | scan position KA | site fact | DERIVED: `plan_hint`/`plan_pos` (§14.9), pcrec's fact |
-| second filter position KB | kit rule over a site fact | `[D157]` (amends Q-R9-3 (a)) pcrec states the ranked candidate positions (`rank_pos`/`rank_ppm`, RQ-2); the kit's distance rule chooses KB from them. The rule is OWED to the kit lane after RQ-2 lands and is labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`). CANDIDATE rule to evaluate (from main's rq2 lane, reproducing R-1's four timed cells): KB != KA inside the same run term, rightmost tie. Kit-owned; not a pcrec claim |
+| second filter position KB | kit rule over a site fact | `[D157]` (amends Q-R9-3 (a)) pcrec states the ranked candidate positions (`rank_pos`/`rank_ppm`, RQ-2); the kit's distance rule chooses KB from them. The rule is OWED to the kit lane after RQ-2 lands and is labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`). The kit chooses which ranked positions its vector form reads (1, 2, N or none); pcrec states only the facts |
 | lead order | — | not applicable: batch 1 has no lead |
 | density bound | performance | the spacing ladder's covered range (item 7); no density decision is made in the text |
 | null-band quantile, sibling-busy cut, loops × launches, load1 < 0.5 | regime | `UNMEASURED DEFAULT:` each, labelled in place (`[r9 M-9]`) |
@@ -1938,7 +1938,7 @@ order on evidence).**
 **Prerequisites:**
 - R4e′.0 (the seam) landed;
 - RQ-1 (`--memfn=`) landed, for the two denies;
-- RQ-2 (Q-R9-3 (a), `[D157]` ranked array) landed, for KB. `[D157]` KB is then chosen from `rank_pos` by the kit's own distance rule, OWED to the follow-up kit lane after RQ-2 lands and labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`); the CANDIDATE rule to evaluate is "KB != KA inside the same run term, rightmost tie" (main's rq2 lane; reproduces R-1's four timed cells; kit-owned);
+- RQ-2 (Q-R9-3 (a), `[D157]` ranked array) landed, for KB. `[D157]` KB is then chosen from `rank_pos` by the kit's own distance rule, OWED to the follow-up kit lane after RQ-2 lands and labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`); the kit chooses which ranked positions its vector form reads (1, 2, N or none);
 - RQ-3 (neutrality) landed;
 - the tier-U slot (RQ-4) for the sweeps; the bench submission (RQ-5) is
   sent BEFORE any line moves past CANDIDATE.
