@@ -21,7 +21,7 @@ CONFIGS = os.environ.get("CONFIGS", "default,nocaps").split(",")
 STAMPS = ["ENGINE", "ENGINE_SEL", "DFA_SCAN", "DFA_PREFILTER", "DFA_START", "DFA_MATCH",
           "DFA_SCAN_EDGE", "REQ_BYTE", "REQ_RUN", "REQ_HANDOFF", "END_WINDOW",
           "VM_PREFILTER", "VM_START_SCAN", "MEMFN_LIBC"]
-FACTS = ["start_anchor", "nullable", "end_window", "req_byte", "req_run"]
+FACTS = ["start_anchor", "nullable", "end_window", "req_byte", "req_run", "start_set"]
 
 
 def stamps(c):
@@ -134,7 +134,7 @@ def main():
                     cols = ["pid", "config", "regime", "enc", "rc", "note", "view", "cwmax", "minw",
                             "lead_unb", "gstart"] + STAMPS + FACTS + \
                            ["subject", "n", "s", "e", "calls", "nmatch", "T", "U", "U_before",
-                            "U_span", "U_after", "mult2", "multmax", "unk_pcs", "T_scan", "ahead", "span_sum", "land_rev", "land_calls", "ovl"] + \
+                            "U_span", "U_after", "mult2", "multmax", "unk_pcs", "T_scan", "ahead", "span_sum", "land_rev", "land_calls", "m_gap", "ovl"] + \
                            ["%s_%s" % (a, p) for p in ["pre", "skip", "fwd", "rev", "anc", "vm", "endw", "misc", "unk"]
                             for a in ("T", "U", "lo", "hi", "A")]
                     fo.write("\t".join(cols) + "\n")

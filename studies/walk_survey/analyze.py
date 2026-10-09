@@ -28,12 +28,13 @@ GRATUITOUS-BYTE count G read off the row's per-phase columns:
                            (re-read by the next call), by phase: G = A_pre +
                            A_skip (scans); K5m = A_fwd + A_anc + A_vm + A_rev
                            (machine lookahead) reported apart
-  K6  repeated pre-check   one call's pre-check reading bytes more than once
-                           (k-variant memchr passes, candidate re-checks):
-                           G = T_pre - U_pre (search rows)
+  K6  repeated pre-check   the pre-check reading bytes more than once inside
+                           a call (k-variant memchr streams, one memchr per
+                           required-set byte, candidate re-checks):
+                           G = T_pre - U_pre (- A_pre under find-all)
   K7  pre-check then engine the engine re-reads bytes the pre-check
                            already scanned: G = overlap(pre, skip|fwd|vm|anc)
-                           (search rows; the K82 hand-off's territory)
+                           (the K82 hand-off's territory)
   K8  match-regime overread the anchored question (match regime) reads more
                            than the anchored reference \\A(?:P) needs:
                            G = U - U_machine(anch) on the same subject
@@ -123,9 +124,13 @@ def classify(r, anch):
         m = a["fwd"] + a["anc"] + a["vm"] + a["rev"] + a["endw"]
         if m:
             g["K5m"] = m
-    if search:
-        if t["pre"] > u["pre"]:
-            g["K6"] = t["pre"] - u["pre"]
+    if search or fa:
+        # in-call repeats of the pre-check (k-variant streams, per-byte set
+        # memchrs, candidate re-verification); under find-all the part past
+        # the match end is K5's
+        rep = t["pre"] - u["pre"] - (a["pre"] if fa else 0)
+        if rep > 0:
+            g["K6"] = rep
         o = max(pair(ov, "pre", x) for x in ("skip", "fwd", "vm", "anc", "endw"))
         if o:
             g["K7"] = o

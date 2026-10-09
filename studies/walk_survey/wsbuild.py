@@ -90,7 +90,7 @@ def main():
     if r.returncode != 0:
         print("GCC\t" + r.stderr.decode("utf8", "replace")[:300]); sys.exit(4)
     r = subprocess.run(["gcc", "-O1", "-g", "-no-pie", "-fno-pie", "-I", out,
-                        os.path.join(HERE, "wsdrv.c"), os.path.join(out, "rx.o"), "-o", b],
+                        os.path.join(HERE, os.environ.get("WSDRV", "wsdrv.c")), os.path.join(out, "rx.o"), "-o", b],
                        capture_output=True, timeout=300)
     if r.returncode != 0:
         print("LINK\t" + r.stderr.decode("utf8", "replace")[:300]); sys.exit(4)
