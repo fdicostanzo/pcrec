@@ -794,6 +794,27 @@ defaults to it. No stamp's value is a count of prefixed text: the one stamp
 that counts emitted bytes, `<PREFIX>_VM_PROGRAM_BYTES`, counts them at the
 canonical length. `tests/codegen/run_prefix_invariance.sh` checks this.
 
+### Size limits and SIMD-guarded bytes ([MEMFN] RQ-3, D155 item 9 + addendum 2, `abi` 71)
+
+**Every emitted length pcrec DECIDES on excludes the bytes the search-code
+kit writes under a CPU-level guard.** A SIMD-on form (`-fmemfn-simd`,
+`tuning.md` §2.43) is its SIMD-off text plus whole guarded blocks (`#if
+<level>` … `#endif`), so subtracting those blocks gives the SIMD-off
+length exactly. The two caps above, the size term's trigger and ladder
+(§8a) and its trial bound, and the VM entry-shape knee (`tuning.md` §2.21)
+all read that length, so turning SIMD on cannot rescue or refuse a pattern,
+move a ladder step or move a rung, and every figure a refusal or a
+`--warn-emit-bytes` note quotes is the SIMD-off figure.
+
+**What this means for the caps.** At `-march=L` the guarded text is
+compiled, so an artifact may exceed a cap's number in compiled bytes by its
+guarded total, which `<PREFIX>_SIMD_GUARDED_BYTES` reports (`match_api.md`
+§6.3). There is no aggregate budget on it: SIMD text is a fixed overhead per
+site, not a growth with the pattern, so each SIMD row bounds its own guarded
+bytes instead, and the stamped total is checked against the sum of those
+bounds over the artifact's rendered forms. Today no SIMD form exists and the
+stamp reads `0` on every artifact.
+
 ### The size-cap ladder, and `--size-cap=refuse` ([PF-DROP], D135)
 
 **Before either limit refuses, pcrec tries a smaller form of the same

@@ -374,6 +374,14 @@
 #     `nm -u` libc names. Its own arm because a wrong LIBC value moves no
 #     answer, and every identity gate compares against a tree that carries
 #     the same wrong value. Registered before S513-S517.
+#   simdguarded — added 2026-10-09 ([MEMFN] RQ-3, lane rq3); runs
+#     tests/memfn/run_simd_guarded.sh --every 40: it builds the sabotaged
+#     tree's own WITNESS compiler (-DPCREC_SIMD_WITNESS, a synthetic guarded
+#     block through the sink) and holds its artifacts to the sabotaged
+#     tree's plain build's, blocks and stamp aside, plus the stamp's bound.
+#     Its own arm because the plain build has no guarded byte, so a length
+#     reader that forgets the subtraction moves no artifact, no answer and
+#     no identity gate. Registered before S699-S703.
 #   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
 #     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
 #     against their pins, the row-contract gate cases (check 6) and the
@@ -2941,6 +2949,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnreach.log" "$f" "memfnreach:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            simdguarded)
+                # [MEMFN] RQ-3 tests/memfn/run_simd_guarded.sh — see the
+                # vocabulary entry above. Builds the witness compiler from
+                # "$tree"; the plain side is the sabotaged tree's own pcrec.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_simd_guarded.sh" "$tree" --every 40 \
+                    > "$work/simdguarded.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/simdguarded.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/simdguarded.log" | grep -oE '[0-9]+')"
+                score_arm "$work/simdguarded.log" "$f" "simdguarded:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnstamps)
                 # [MEMFN] C11 tests/memfn/run_libc_census.sh --quick — see the

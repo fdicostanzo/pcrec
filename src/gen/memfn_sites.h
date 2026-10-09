@@ -72,6 +72,10 @@ void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb);
  * `level` is the kit's levels.def token, which pcrec does not read. */
 void pcrec_memfn_sink_simd_open(void *u, int level);
 void pcrec_memfn_sink_simd_close(void *u);
+#ifdef PCREC_SIMD_WITNESS
+/* RQ-3's test-only synthetic guarded block (memfn_sites.c). */
+void pcrec_memfn_simd_witness(StrBuf *sb);
+#endif
 /* The StrBuf behind a sink pcrec_memfn_sink made; an internal error for any
  * other sink (a hook that writes must write where the kit asked it to). */
 StrBuf *pcrec_memfn_sink_sb(Ctx *cx, mf_sink *c);

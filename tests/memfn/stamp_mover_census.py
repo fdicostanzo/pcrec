@@ -28,8 +28,13 @@ and replaces its identical-or-mover verdict with a CLASSIFIER, per artifact:
               be seen in that class exactly once (a stale name fails)
   OTHER       anything else: printed with its first hunk, and the run fails
 
+`--event rq3` ([MEMFN] RQ-3, docs/dev/lanes/rq3_report.md) runs the same
+classes for that event's ONE line, `<UP>_SIMD_GUARDED_BYTES 0x0000000000000000ULL` directly
+after `<UP>_MEMFN_LIBC`, its size-quote growth exactly 52 bytes, its named
+movers in RQ3_SIZE_MOVERS.
+
 Usage:
-  python3 tests/memfn/stamp_mover_census.py --ref BASE [--abi OLD:NEW] [--jobs N]
+  python3 tests/memfn/stamp_mover_census.py --ref BASE [--abi OLD:NEW] [--event r4a2|rq3] [--jobs N]
 The working side is this tree's build/pcrec; scratch goes under
 build-emitsweep/ (gitignored), as emit_sweep's does.
 """
@@ -44,8 +49,21 @@ TREE = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(TREE, 'scripts'))
 import emit_sweep as es  # noqa: E402
 
-STAMP = re.compile(rb'^#define (\w+)_MEMFN_(FORMS|LIBC) "[^"\n]*"$')
-RUN_WORDS = re.compile(rb'^#define \w+_RUN_WORDS ')
+# THE EVENTS this census classifies (`--event`): the stamp lines an event
+# adds, in order, the line they sit directly after, and the growth a
+# size-quote mover's N shows (the event's lines measured into a DISCARDED
+# attempt). r4a2 is R4a-prime's two kit lines; rq3 is [MEMFN] RQ-3's one pcrec
+# line, `<UP>_SIMD_GUARDED_BYTES 0x0000000000000000ULL` (52 bytes at the
+# 2-byte placeholder).
+EVENTS = {
+    'r4a2': (re.compile(rb'^#define (\w+)_MEMFN_(FORMS|LIBC) "[^"\n]*"$'),
+             [b'FORMS', b'LIBC'], re.compile(rb'^#define \w+_RUN_WORDS '),
+             'FORMS, LIBC directly after RUN_WORDS', (59, 120)),
+    'rq3': (re.compile(rb'^#define (\w+)_SIMD_(GUARDED)_BYTES 0x0000000000000000ULL$'),
+            [b'GUARDED'], re.compile(rb'^#define \w+_MEMFN_LIBC '),
+            'SIMD_GUARDED_BYTES directly after MEMFN_LIBC', (52, 52)),
+}
+STAMP, KINDS, ANCHOR, PLACE, GROWTH = EVENTS['r4a2']
 
 
 def digit_only(ol, nl, abi):
@@ -74,7 +92,7 @@ def size_quote_only(ol, nl, abi):
             continue
         ma, mb = SIZE_QUOTE.match(a), SIZE_QUOTE.match(b)
         if not (ma and mb and ma.group(1) == mb.group(1) and ma.group(3) == mb.group(3)
-                and 59 <= int(mb.group(2)) - int(ma.group(2)) <= 120):
+                and GROWTH[0] <= int(mb.group(2)) - int(ma.group(2)) <= GROWTH[1]):
             return False
         seen += 1
     return seen > 0
@@ -90,6 +108,15 @@ SIZE_MOVERS = {
         '(memfnstamp_report.md section 6)',
 }
 
+# [MEMFN] RQ-3's named size-quote movers (filled from the census's own run;
+# see docs/dev/lanes/rq3_report.md).
+RQ3_SIZE_MOVERS = {
+    ('comp-c', 'tests/uprops/size_ladder_prefilter_drop.rxt:rx.c'):
+        'RX_VM_PREFILTER_WHY quotes the DISCARDED hybrid attempt\'s measured '
+        'size, and that attempt now carries the 52-byte SIMD_GUARDED_BYTES '
+        'line: R4a-prime\'s own named mover, one line over',
+}
+
 
 def classify(old, new, abi):
     if old == new:
@@ -98,12 +125,13 @@ def classify(old, new, abi):
     at = [i for i, l in enumerate(nl) if STAMP.match(l)]
     if not at and digit_only(old.split(b'\n'), nl, abi):
         return 'abi', None
-    if len(at) != 2 or at[1] != at[0] + 1:
-        return 'OTHER', '%d stamp lines, not 2 adjacent' % len(at)
+    k = len(KINDS)
+    if len(at) != k or at[-1] != at[0] + k - 1:
+        return 'OTHER', '%d stamp lines, not %d adjacent' % (len(at), k)
     kinds = [STAMP.match(nl[i]).group(2) for i in at]
-    if kinds != [b'FORMS', b'LIBC'] or at[0] == 0 or not RUN_WORDS.match(nl[at[0] - 1]):
-        return 'OTHER', 'stamp lines not FORMS, LIBC directly after RUN_WORDS'
-    rest = nl[:at[0]] + nl[at[1] + 1:]
+    if kinds != KINDS or at[0] == 0 or not ANCHOR.match(nl[at[0] - 1]):
+        return 'OTHER', 'stamp lines not ' + PLACE
+    rest = nl[:at[0]] + nl[at[-1] + 1:]
     ol = old.split(b'\n')
     if rest == ol:
         return 'stamps', None
@@ -118,10 +146,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--ref', required=True)
     ap.add_argument('--abi', help='OLD:NEW, the bump step')
+    ap.add_argument('--event', choices=sorted(EVENTS), default='r4a2')
     ap.add_argument('--jobs', type=int, default=min(8, os.cpu_count() or 4))
     ap.add_argument('--timeout', type=int, default=60)
     a = ap.parse_args()
     abi = tuple(x.encode() for x in a.abi.split(':')) if a.abi else None
+    global STAMP, KINDS, ANCHOR, PLACE, GROWTH
+    STAMP, KINDS, ANCHOR, PLACE, GROWTH = EVENTS[a.event]
+    movers = SIZE_MOVERS if a.event == 'r4a2' else RQ3_SIZE_MOVERS
 
     out = os.path.join(TREE, 'build-emitsweep')
     os.makedirs(out, exist_ok=True)
@@ -129,8 +161,8 @@ def main():
     tree_bin = os.path.join(TREE, 'build', 'pcrec')
     patterns = es.enumerate_corpus(tree_bin, TREE, 30)
     files = es.find_files(TREE, ('.rxt', '.rxtin'))
-    print('== R4a\' mover census: ref %s vs %s; %d pattern rows, %d composition files =='
-          % (a.ref, tree_bin, len(patterns), len(files)))
+    print('== %s mover census: ref %s vs %s; %d pattern rows, %d composition files =='
+          % (a.event, a.ref, tree_bin, len(patterns), len(files)))
 
     table = {}
     others = []
@@ -147,10 +179,10 @@ def main():
             return
         cls, why = classify(c_a, c_b, abi)
         if cls == 'stamps+size':
-            if (stream, key) in SIZE_MOVERS:
+            if (stream, key) in movers:
                 seen_movers[(stream, key)] = seen_movers.get((stream, key), 0) + 1
             else:
-                cls, why = 'OTHER', 'a size-quote mover not named in SIZE_MOVERS'
+                cls, why = 'OTHER', 'a size-quote mover not named for this event'
         row[cls] = row.get(cls, 0) + 1
         if cls == 'OTHER':
             others.append((stream, key, why))
@@ -197,14 +229,14 @@ def main():
     for s in ('c-default', 'c-vm', 'comp-c'):
         still = table.get(s, {}).get('identical', 0) + table.get(s, {}).get('abi', 0)
         if still:
-            bad.append((s, '-', '%d .c artifact(s) without the two lines: a stamp-less artifact'
+            bad.append((s, '-', '%d .c artifact(s) without the event\'s lines: a stamp-less artifact'
                         % still))
     for s in ('emit-ir-vm', 'comp-h'):
         moved = sum(v for k, v in table.get(s, {}).items()
                     if k not in ('identical', 'abi', 'both-refuse'))
         if moved:
             bad.append((s, '-', '%d listing/header(s) moved' % moved))
-    for (s, key), cause in sorted(SIZE_MOVERS.items()):
+    for (s, key), cause in sorted(movers.items()):
         n = seen_movers.get((s, key), 0)
         if n == 1:
             print('named mover: %s %s (stamps+size): %s' % (s, key, cause))

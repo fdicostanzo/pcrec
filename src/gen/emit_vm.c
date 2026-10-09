@@ -10210,6 +10210,9 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
     v->cx = cx;
     v->b = &job->vmsb;   /* Job-owned, so the longjmp cleanup path frees it */
     v->p = cx->opt->prefix;
+#ifdef PCREC_SIMD_WITNESS
+    pcrec_memfn_simd_witness(v->b);   /* [MEMFN] RQ-3: the knee's own block */
+#endif
 
     /* [DD-14.EMPTY] THE ROOT'S MINIMUM WIDTH, READ HERE AND NOT AT ENGINE
      * SELECTION. `pcrec_minw` reads an `A_CALL`'s contribution off
