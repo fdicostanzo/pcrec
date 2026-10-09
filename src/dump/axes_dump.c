@@ -35,6 +35,11 @@
  *   "both"      — axis F, the scan direction: not a candidate list at all
  *                  (emitter_form.md §3's own words) — both objects are
  *                  ALWAYS emitted, once each, per machine.
+ *                  The fallback axes are `list` since [DEC-FALLBACK] B7:
+ *                  `engine-route`, `size-term` and `prefilter-lang` project
+ *                  the fallback tables' `axlist` cells, and `fallback` and
+ *                  `prefilter-admit` list T1 and T2 whole, one row each
+ *                  (`emit_fb_axis`, `emit_fb_table_axis`).
  *   "predicate" — the VM/engine-selection axes (`docs/spec/
  *                  tuning.md` §2.1-2.9, its coarse §2.11 engine axis) have
  *                  no candidate-list-as-data anywhere in the tree yet
@@ -433,7 +438,7 @@ typedef struct {
  * do-or-die. A row never has both: if it carries bits, the spelling is
  * derived, and passing a literal too would be a second spelling of one
  * fact. */
-static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
+static void emit_kind_row(StrBuf *sb, const PredAxis *p, const char *kind, int order,
                           const char *candidate, const char *stamp_value,
                           uint64_t deny_val, uint64_t force_val,
                           const char *cli_flag_lit, const char *applies)
@@ -442,27 +447,51 @@ static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
     if (deny_val) snprintf(db, sizeof db, "%u", bit_of(deny_val));
     if (force_val) snprintf(fb, sizeof fb, "%u", bit_of(force_val));
     axis_cli_flag(deny_val, force_val, flag, sizeof flag);
-    axis_row(sb, p->axis, order, candidate, "predicate",
+    axis_row(sb, p->axis, order, candidate, kind,
              p->stamp_macro, stamp_value,
              deny_val ? axis_macro_name(deny_val) : "", db,
              force_val ? axis_macro_name(force_val) : "", fb,
              (deny_val || force_val) ? flag : cli_flag_lit, applies);
 }
 
-/* [DEC-FALLBACK] B6: the three fallback axes (`engine-route`, `size-term`,
+static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
+                          const char *candidate, const char *stamp_value,
+                          uint64_t deny_val, uint64_t force_val,
+                          const char *cli_flag_lit, const char *applies)
+{
+    emit_kind_row(sb, p, "predicate", order, candidate, stamp_value,
+                  deny_val, force_val, cli_flag_lit, applies);
+}
+
+/* [DEC-FALLBACK] B6/B7: the three fallback axes (`engine-route`, `size-term`,
  * `prefilter-lang`) are projected off the tables' `axlist` columns
  * (`pcrec_fb_list_row`, src/core/compile.c) rather than stated here: name,
  * order, deny/force bits, lever spelling and `desc` sit beside their rows, so
- * this surface cannot list a candidate the walk does not have. The descs are
- * the hand table's, moved verbatim (B7 corrects the wrong ones). `kind` stays
- * `predicate` until B7. `stamp` is the axis's stamp macro, which names the
- * artifact's side of the listing and is not a table fact. */
+ * this surface cannot list a candidate the walk does not have. They are
+ * `kind=list` (B7): a candidate list of rows, in the order the tables walk
+ * them. `stamp` is the axis's stamp macro, which names the artifact's side of
+ * the listing and is not a table fact. */
 static void emit_fb_axis(StrBuf *sb, const char *axis, const char *stamp)
 {
     PredAxis p = { axis, NULL, stamp, "", 0, NULL, 0, NULL, NULL, NULL };
     const FbList *l;
     for (int i = 0; (l = pcrec_fb_list_row(axis, i)); i++)
-        emit_pred_row(sb, &p, l->order, l->name, l->name, l->deny, l->force, l->cli, l->desc);
+        emit_kind_row(sb, &p, "list", l->order, l->name, l->name, l->deny, l->force, l->cli, l->desc);
+}
+
+/* [DEC-FALLBACK] B7 (Q4(b)): T1 and T2 listed WHOLE, one `list` candidate per
+ * table row in walk order, as the `fallback` and `prefilter-admit` axes. A
+ * row's name and caller deny bit are its cells and its `applies` text is
+ * generated from the rest (`pcrec_fit_table_row`, `pcrec_pf_admit_table_row`).
+ * They have no stamp macro: the tokens they feed are listed by the three
+ * axes above, which hold the per-VALUE view of the same tables. */
+static void emit_fb_table_axis(StrBuf *sb, const char *axis,
+                               bool (*row)(int, FbTabRow *))
+{
+    PredAxis p = { axis, NULL, "", "", 0, NULL, 0, NULL, NULL, NULL };
+    FbTabRow r;
+    for (int i = 0; row(i, &r); i++)
+        emit_kind_row(sb, &p, "list", i + 1, r.name, "", r.deny, 0, "", r.desc);
 }
 
 /* `--list-axes`' eleven hand-stated VM/engine-selection axis rows — the
@@ -937,6 +966,8 @@ static void emit_predicate_axes(StrBuf *sb)
     /* [DEC-FALLBACK] B6: the eight routes above are T1's and T2's `axlist` cells (`fit_rungs[]`, src/core/compile.c;
      * `pf_admits[]`, src/opt/select_engine.c) and the attribution walk's two ends (`esel_ends[]`). */
     emit_fb_axis(sb, "engine-route", "RX_ENGINE_SEL");
+    emit_fb_table_axis(sb, "fallback", pcrec_fit_table_row);
+    emit_fb_table_axis(sb, "prefilter-admit", pcrec_pf_admit_table_row);
 }
 
 /* ---- the kit's section ---------------------------------------------------- */

@@ -673,7 +673,7 @@ static const PfAdmit pf_admits[] = {
        * argument), and grouping it with the "auto, a DFA build
        * overflowed" family would misstate what it is. */
       .axlist = { { "engine-route", 2, "declined-nullable-default", 0, 0, "",
-                    "auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door" } } },
+                    "auto, NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline (an explicit --engine=vm names the engine, so that route reads forced); -fno-prefilter reaches the same artifact by a different door" } } },
     { "nullable-exact",     pfa_nullable_exact,     PFV_OFF,     "no-nullable-exact",
       ESEL_DECLINED_NULLABLE_DEFAULT,
       PFA_NOTE_NULLABLE_EXACT, .axlist = FB_NO_LIST },
@@ -697,7 +697,7 @@ static const PfAdmit pf_admits[] = {
       " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
       " it suppresses the rung itself and the compile refuses."
       " -fprefilter-collapse does not override it",
-      .axlist = { { "engine-route", 4, "declined-nullable", 0, 0, "",
+      .axlist = { { "engine-route", 3, "declined-nullable", 0, 0, "",
                     "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither" } } },
     /* [SEL-1] ahead of the two flag rows, for the same reason rows 1-2 are:
      * a route no flag explains must not be reported as one. The note's `%s`
@@ -1151,6 +1151,32 @@ const FbList *pcrec_pf_admits_list_row(const char *axis, int order, int *nmatch)
         if (nmatch) (*nmatch)++;
     }
     return hit;
+}
+
+/* [DEC-FALLBACK] B7: T2 listed whole, one candidate per row (internal.h's
+ * `FbTabRow`), the `desc` built from the row's cells. A row that turns the
+ * prefilter off names the `--emit-ir` `prefilter` value it lists and its
+ * prose (the `%s` of `overflow-drop` is the overflowed cap's name, which a
+ * context-free listing writes as `<cap>`). */
+bool pcrec_pf_admit_table_row(int i, FbTabRow *out)
+{
+    if (i < 0 || (size_t)i >= sizeof pf_admits / sizeof pf_admits[0]) return false;
+    const PfAdmit *r = &pf_admits[i];
+    out->name = r->name;
+    out->deny = 0;
+    int n = snprintf(out->desc, sizeof out->desc, "%s",
+                     r->verdict == PFV_OFF ? "decides the prefilter off"
+                     : r->verdict == PFV_ON ? "decides the prefilter on"
+                     : "hands the decision to the engine choice");
+    if (r->list && n > 0 && (size_t)n < sizeof out->desc) {
+        char note[640] = "";
+        const char *pct = r->note ? strstr(r->note, "%s") : NULL;
+        if (pct) snprintf(note, sizeof note, "%.*s<cap>%s", (int)(pct - r->note), r->note, pct + 2);
+        else if (r->note) snprintf(note, sizeof note, "%s", r->note);
+        n += snprintf(out->desc + n, sizeof out->desc - (size_t)n,
+                      "; --emit-ir lists prefilter \"%s\": %s", r->list, note);
+    }
+    return true;
 }
 
 /* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed

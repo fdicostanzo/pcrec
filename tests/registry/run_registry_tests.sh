@@ -665,16 +665,21 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # `RX_UNROLL_K_WHY` from compile.c's `cx.size_term_why` ternary) retired, 2
 # PASS lines each; their emitter half is tests/codegen/run_fallback_table.sh
 # (b)'s witnesses. Measured: 210 PASS, 0 failed.
-if [ "$axesn" -ne 210 ]; then
+# 210 -> 216 at [DEC-FALLBACK] B7 (lane decfbB7, 2026-10-09): T1 is listed
+# whole as the `fallback` axis, and its two rows that carry a deny bit
+# (`sel1-collapse`, `prefilter-collapse`: PCREC_NO_PREFILTER_COLLAPSE) get 3
+# checks each (macro/bit, cli flag, tuning.md heading). `prefilter-admit`
+# (T2) has no deny bit and adds none. Measured: 216 PASS, 0 failed.
+if [ "$axesn" -ne 216 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 210." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 216." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (210 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (216 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 210 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 216 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
