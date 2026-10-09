@@ -43,3 +43,9 @@ B4's 36 min. Expect ~ (sum of row work)/4 bounded by the slowest row;
 the serial arm may take hours. Commit nothing while it runs.
 A diff between arms in a count-bearing column (e.g. S18's reject shards+1,
 K30) is not a verdict difference; verdicts.sh compares the last column only.
+
+## Acceptance, as run by the manager (2026-10-09)
+
+Frank ruled that the serial arm is not needed. The mech trailer's `unexpected` count is the verdict control, and the timing piggybacks on a serial run that happens anyway. The 71-row chain's parallel arm finished at 1,618 s with unexpected 0 and undetected 1 (S178, as declared). Its serial arm was stopped before it started.
+
+The same-HEAD comparison ran at kit slot14's tip 5554d668. The slot ran its 66 rows SOLO, one invocation each, serially, for a MECH_WALL of 2,071 s. The same 66 rows then ran as ONE `PROCS=4` invocation of this driver in a detached worktree at 5554d668, taking **631 s (3.3x)**. The manager's `make` and `make strict` overlapped its first ~2 minutes, so the 631 s is slightly high. Per-row verdicts are **identical**: 64 DETECTED, 1 UNDETECTED (S525, the declared tripwire) and 1 ANOMALY (S683) in both runs. S683 names a suite arm, `memfndeleg`, that the driver does not have, so it has never been measured in either mode. That is a kit finding, relayed to the kit.
