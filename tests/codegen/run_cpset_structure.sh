@@ -903,6 +903,13 @@ fi
 # +280 (one of each). VERIFIED BY the routing census
 # (docs/design/memfn/probes/r4e0b/routing_census.py --ref 131c173a): every
 # FUNC-bearing artifact un-routes to the parent byte for byte.
+# RE-RECORDED 2026-10-09 at [MEMFN] RQ-3 (lane rq3, landed on R4e'.0b by lane
+# rq3land, abi 70 -> 71): all twelve `EMITTED_BYTES` rows +52, one number:
+# the unconditional `#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL` line
+# (fixed width, so K-, engine- and value-invariant). VERIFIED BY DIFFING
+# `abc`, `\bword\b`, `(?i)HeLLo` and `(a(?1)?b)` against main 82ff9432's
+# compiler at the same `-o` basename: the abi digits and that one line,
+# nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

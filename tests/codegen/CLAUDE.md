@@ -3803,6 +3803,13 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
+- **[MEMFN] RQ-3 (lane rq3, 2026-10-09, abi 70 -> 71; built on 69, landed
+  on the kit's R4e′.0b (70) by lane rq3land):** one stamp line on
+  every artifact, `<PREFIX>_SIMD_GUARDED_BYTES 0x0000000000000000ULL` (52
+  bytes, fixed width); `run_codegen_tests.sh`'s `ABI_EXPECT` 71 and its
+  ledger message; `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to
+  the landing merge (the lane's last src commit); the byte-count readers re-pinned by
+  measurement are listed in `docs/dev/lanes/rq3_report.md`.
 - **[DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE] (lane decattr, 2026-10-09, abi
   68 -> 69, one event; renumber at landing if another event lands first):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 69 and its ledger message;

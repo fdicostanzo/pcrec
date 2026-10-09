@@ -91,6 +91,13 @@ void  pcrec_arena_free(Arena *a);
  * correct with no bound on depth. An ESSENTIAL region nested inside a
  * NON-ESSENTIAL one stays muted, which is the only possible answer — its
  * enclosing `/` `*` is not being written either. */
+/* [ART-SIZE] (D84) the size caps' breakdown of emitted C text: TOTAL bytes
+ * including newlines, PROSE bytes (both comment styles) and TABLE bytes (an
+ * open `static const ...[N] = {` initializer to its closing brace). Measured
+ * by `pcrec_emit_size_measure`, read by the caps through
+ * `pcrec_sb_size_decide`. */
+typedef struct { size_t total, prose, tables; } PcrecEmitSize;
+
 typedef struct {
     char *p; size_t len, cap; Ctx *cx; size_t abort_over;
     bool     cmt_drop;
@@ -113,6 +120,25 @@ typedef struct {
      * at all — stays open with its own measurement instead of being answered
      * as a side effect (D77). */
     size_t   cmt_dropped;
+    /* [MEMFN] RQ-3 (D155 item 9 + addendum 2; docs/design/memfn/
+     * integration.md §R4.9.2.4) THE GUARDED-BYTES RECORD, the SIMD mirror of
+     * `cmt_dropped`. The kit brackets every byte it writes under a CPU-level
+     * guard (`simd_open`/`simd_close` on its sink, pcrec_sb_simd_open/
+     * _close here), and because SIMD-on text is the SIMD-off text with whole
+     * lines inserted, subtracting the bracketed bytes gives the SIMD-off
+     * length EXACTLY. So every length DECISION reads the buffer through
+     * `pcrec_sb_len_decide`/`pcrec_sb_size_decide`, never `len` and never
+     * `pcrec_sb_len_uncut`, and `-fmemfn-simd` can move no rung, no ladder
+     * step, no cap and no stamp value. `simd_guarded` counts UNCUT bytes
+     * (written plus comment-muted, `pcrec_sb_len_uncut`'s unit) so the
+     * subtraction is exact under `-fno-comments` too; `simd_size` is the
+     * WRITTEN bracketed text's breakdown, the caps' unit. `simd_at`/
+     * `simd_at_uncut` are the open bracket's start (text offset, uncut
+     * length) while `simd_open` is true. Brackets never nest. */
+    bool          simd_open;
+    size_t        simd_at, simd_at_uncut;
+    size_t        simd_guarded;
+    PcrecEmitSize simd_size;
 } StrBuf;
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
@@ -144,6 +170,30 @@ void pcrec_sb_cmt_close(StrBuf *sb);
  * written and is what `pcrec_sb_take`, the caps' own comment-excluded scan and
  * every consumer of the finished text read. */
 size_t pcrec_sb_len_uncut(const StrBuf *sb);
+
+/* [MEMFN] RQ-3 the SIMD bracket (see StrBuf.simd_guarded). `open` and `close`
+ * bound one CPU-guarded region; each sits at a line boundary, brackets never
+ * nest, and a violation is an internal-error refusal. `splice` appends one
+ * finished buffer to another WITH its guarded record, the one way a
+ * scratch buffer holding kit text reaches the artifact. */
+void pcrec_sb_simd_open(StrBuf *sb);
+void pcrec_sb_simd_close(StrBuf *sb);
+void pcrec_sb_splice(StrBuf *dst, const StrBuf *src);
+
+/* THE DECISION VIEW, and THE ONE READER RULE that supersedes the one above:
+ * any decision or stamp that compares an emitted LENGTH against a threshold
+ * reads `pcrec_sb_len_decide` (= `pcrec_sb_len_uncut` minus the guarded
+ * bytes, an open bracket's included), and the size caps, which classify the
+ * text, read `pcrec_sb_size_decide` (the text's measure minus the guarded
+ * text's). Both read the ONE record, so neither the comment axis nor the
+ * SIMD switch can move a decision. */
+size_t        pcrec_sb_len_decide(const StrBuf *sb);
+PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb);
+
+/* [ART-SIZE] the caps' text measure (moved from compile.c for RQ-3, so the
+ * bracket can measure its own text in the base tier). `open_out`, when
+ * non-NULL, is set when the text ends inside a comment or a table. */
+PcrecEmitSize pcrec_emit_size_measure(const char *src, size_t len, bool *open_out);
 
 /* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
  * deny, then force, then `src/core/axes.def`'s `default_state`. General over

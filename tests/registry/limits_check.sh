@@ -384,6 +384,13 @@ done <<< "$anchored"
 #     set {mask 0} (`1u << EM_NONE`) that is the identity of `em_cat`'s
 #     set-of-masks product; a bit-set value forced by the representation,
 #     not measured against anything.
+#   A SEVENTH KIND — A TEST-BUILD FIXTURE SIZE:
+#     PCREC_SIMD_WITNESS_PAD (src/gen/memfn_sites.c, [MEMFN] RQ-3): how many
+#     pad lines the synthetic guarded block carries, compiled ONLY under the
+#     test-only `-DPCREC_SIMD_WITNESS` build (tests/memfn/run_simd_guarded.sh).
+#     The shipped compiler never contains it, nothing a caller compiles is
+#     measured against it, and its size is chosen to make every length reader
+#     reachable by the check, not as a policy.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -532,6 +539,7 @@ EW_EOL_SLACK
 SA_BOT
 SA_GSTART
 PCREC_FIND_NTBL
+PCREC_SIMD_WITNESS_PAD
 PCREC_FIND_NBUNDLES
 SCAN_TEST_CALLS
 EM_ANY"

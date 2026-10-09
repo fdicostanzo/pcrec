@@ -332,7 +332,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
-      test-memfn-rows test-cand-oracle test-fallback-table
+      test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1274,6 +1274,16 @@ test-memfn-stamps: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-stamps.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_libc_census.sh
 
+# [MEMFN] RQ-3 (D155 item 9 + addendum 2): every artifact's
+# <PREFIX>_SIMD_GUARDED_BYTES is at most its rendered SIMD rows' declared
+# bounds (tests/memfn/simd_bounds.tsv), and a WITNESS build (this tree with
+# -DPCREC_SIMD_WITNESS, a synthetic guarded block through the sink) emits the
+# plain build's artifacts, blocks and stamp aside: no length decision sees a
+# guarded byte. Builds the witness compiler, then a corpus sample at six arms.
+test-memfn-guarded: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-guarded.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_guarded.sh
+
 # [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
 # scalar arm the kit carries renders its fixed fixture sites
 # (tests/memfn/arm_fixtures.c) to the pinned sha256, with a perturbed-fixture
@@ -1866,7 +1876,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \
