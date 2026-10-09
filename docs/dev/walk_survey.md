@@ -16,8 +16,9 @@ forward and then the match backward; the answer needs the match alone.
 
 ## 0. Answers first
 
-**Yes: there are several other classes. Two are real, bench-sized and unowned, one is a
-latent cliff, and three of the brief's candidates are refuted.** Ranked by bench impact
+**Yes. One large class is unowned (K4, with its fixed-width sibling K3), one latent
+quadratic cliff is unowned (K5), one wide but shallow class is unowned (K5m), and three of
+the brief's candidates are refuted.** Ranked by bench impact
 (§3):
 
 1. **K4, the reverse pass re-deriving a start the forward scan already landed on.** This is
@@ -63,7 +64,7 @@ validated before use (§2):
 - the known gratuitous `\d+$`: 1,048,585 bytes against its REVEND twin's 8;
 - tight cases: 4 and 1 bytes;
 - two planted passes: each seen, at `n` extra;
-- gcov: exact agreement;
+- gcov: the skip count agrees exactly, and the forward count differs by its one end-view load;
 - K4/K5's own measures: they drop to 0 under the twin or arm that removes the walk.
 
 ## 1. Method
@@ -139,7 +140,7 @@ does not count it as a walk.
   `subjects_for()` rule). The patterns are compiled the way the bench's `pcrec-auto` testee
   compiles them: `--features all`, plus `-e utf8` on the utf8 set. The subjects come from
   the set's own generators, run in a `git archive` copy.
-  - Size: 367 patterns, 914 (pattern, regime) rows, 62,868 subject runs.
+  - Size: 367 patterns, 913 (pattern, regime) rows, 62,868 subject runs (default + nocaps).
   - Configs: `default` and `nocaps` (`--no-captures`), plus `anch` (`\A(?:P)`, the
     anchored-attempt reference) where the match regime runs.
 - **CORPUS** (`pop_corpus.py`): every distinct pattern block of every shipped `.rxt`, with
@@ -147,7 +148,8 @@ does not count it as a walk.
   - the block's own inline m/n subjects;
   - three synthesized 16 KiB subjects from a deterministic prose filler: `FILLER+M` (a match
     near the end), `M+FILLER` (a match at the start), `FILLER+N`.
-  - Size: 4,563 pattern blocks (4,171 with a live default-config compile; 371 refused, the rest build failures), 160,377 rows.
+  - Size: 4,563 pattern blocks (4,171 with a live default-config compile; 371 refused by pcrec, 20 failed the instrumented
+  build), 160,377 rows.
 
 The corpus run resumed after a stall on a ReDoS witness. It resumed with a 20M VM step
 budget (`run_rest.sh`): the instrumented VM is about 50x slower, and the corpus's
@@ -171,12 +173,14 @@ exponential witnesses otherwise sit at the time limit. A give-up is a row like a
   round-1 group at `c4c70f2c`; Ryzen 1600). Both pins are older than this survey's, so
   impact is a WEIGHT for ranking, not a prediction. The model assumes a uniform per-byte cost
   across phases. A `memchr` byte is roughly 30x cheaper than a DFA step, so the estimate is an
-  upper estimate for the scan classes (K5-K7). Every top class is therefore re-timed by an
-  answer-checked hand-twin (§3).
+  upper estimate for the scan classes (K5-K7). The top unowned classes are therefore re-timed
+  by answer-checked hand-twins (§4, §5); K1 and K11 carry their own rows' timings.
 
 ## 2. Instrument validation (`results/validation.txt`, `validate.sh`)
 
-The instrument was validated before any population number was read.
+Validated on these cases with the FINAL instrument, the one that produced every number
+quoted here. An earlier exploratory pass was re-run in full after the instrument's last
+change: bench K1-K11 reproduce byte for byte between the two final bench passes.
 
 | case | expectation | measured |
 |---|---|---|
@@ -193,8 +197,8 @@ The instrument was validated before any population number was read.
 Ranked by BENCH IMPACT first. That is `est_ms`: the sum over the auto-caps testee's cells of
 `median × G/T`, an upper estimate for scan classes. Corpus breadth is second. `G/n` is
 gratuitous bytes per subject byte on the representative subjects. "twin" is the
-answer-checked hand-twin timing of §5 (`results/twin_timing.txt`, scratch tier: Ryzen
-7700X, one core, a box at load ~12-24 from other lanes, best of 5).
+answer-checked hand-twin timing of §5 (`results/twin_timing*.txt`, scratch tier: Ryzen
+7700X, one core, a box at load1 11-12 from other lanes, best of 5, two runs).
 
 | rank | class | D156 role | bench cells / patterns (auto-caps) | est_ms (upper) | representative G/n | twin | corpus patterns | owner row |
 |---|---|---|---|---|---|---|---|---|
@@ -237,7 +241,7 @@ offset the `fwd` phase touched; when that offset equals the reported start, the 
 reverse bytes are `land_rev`.
 
 **Population.**
-- Bench: 284 auto-caps cells (570 with nocaps), 177 patterns.
+- Bench: 284 auto-caps cells (570 with nocaps), 176 patterns (`results/counts.txt`).
 - Of the 199 throughput cells that run a reverse pass at all:
   - 79 land on EVERY match;
   - 96 land on at least 90% of matches;
@@ -352,8 +356,8 @@ already owns, the estimate is 15.8 ms. The top cells:
 |---|---|---|---|
 | `loglines/ipv6` throughput | 0.64 | 10.5 ms | 7.5 ms |
 | `altwide/sfx-64` (a shared suffix) | 0.79 | 3.2 ms | 0.85 ms |
-| `altwide/sfx-256` | 0.80 | | |
-| `\S+@\S+` | 1.12 (K7 0.97 on the same bytes) | | |
+| `altwide/sfx-256` | 0.80 | 3.0 ms | 2.3 ms |
+| `\S+@\S+` (`syntax/cls-s-uc`) | 1.12 (K7 0.97 on the same bytes) | 3.0 ms | 2.9 ms |
 
 Corpus: the static census's 118 patterns. The corpus ran without `m_gap`, so its K12 is
 counted statically and not measured.
@@ -459,18 +463,18 @@ The top residual cells (`results/summary.txt`) are:
   before `search_from`, the match, and one byte past it: K5m's re-entry family on its other
   side.
 
-Nothing in the residual is a new subject-scale walk. Every byte-per-byte excess found is one
-of the classes above.
+The residual holds no further class. Its top cells are the VM's own lookbehind decoding and
+the re-entry family above, and below them it falls under 1 B/B.
 
 ## 7. Filing suggestions (SUGGESTIONS ONLY: no plan, decision or known-issues edit here)
 
-- **F1. Two RECOVER rows that know the start without walking (K4, K3).**
+- **F1. ONE row: RECOVER entries that know the start without walking (K4 and K3).**
   - `landing`: start = the forward scan's landing, admitted by the compile-time fact "every
     start-set byte, in its start view, takes the anchored machine to an accepting state".
   - `end-minus-width`: start = end − w for a fixed-width pattern.
   - Both are first-match rows in `dfa_search_starts[]` ahead of `reverse-pass`, both are
-    exact, and both hand START to the CALLER. That they are siblings is the reason to file
-    them as ONE row, not two special cases (memory `pcrec-forest-for-trees`).
+    exact, and both hand START to the CALLER. They are siblings, which is why they are filed
+    as one row and not as two special cases (memory `pcrec-forest-for-trees`).
   - The non-fact form of `landing` (an anchored attempt at each landing) is a selection
     question, to measure separately.
   - The locate × finish design lane D156 charters is the natural owner.
@@ -485,7 +489,7 @@ of the classes above.
     linear again.
   - Owner [OPT-LITSCAN] S4. Its sabotage witness is the lowercase find-all above, bounded
     by a watchdog.
-- **F3. K7/K12's population to [ENG-TACTICS].** The census list (`work/k12_*.tsv`'s k12=1
+- **F3. K7/K12's population to [ENG-TACTICS].** The census list (`results/k12_*.tsv`'s k12=1
   rows) and the bench `m_gap` cells as the row's measured population. No new row.
 - **F4. A BOONIES-tier row for K5m.** Find-all re-entry state and the final-state overstep.
   Trigger: a bench cell where re-entry exceeds 10% of the cell time. Today the top cell is
@@ -504,12 +508,13 @@ of the classes above.
   bytes, at about 1/30 the cost each. The per-phase byte counts are a WALK measure, not a
   time measure. Times come from the twins.
 - **Impact is a weight.** It uses older-pin medians from another machine and a uniform
-  per-byte cost. The ranking of K4 / K1 / K11 / K5m above the rest is robust to a factor of
-  2. The order among the small ones is not.
+  per-byte cost. K4 leads the next class by 1.6x, and the twins confirm it independently of
+  the weight. Below K4 the classes sit within a factor of 2.5 of each other (K1 30.9, K11
+  24.9, K5m 21.7, K12 15.8), so read that order as soft.
 - **The corpus's synthesized subjects** (16 KiB of prose around the block's own subject)
   measure breadth, not cost. The corpus's G/n are not bench numbers.
-- **The corpus resume** ran its last 2,762 patterns with a 20M VM step budget. The first
-  1,800 ran at the default.
+- **The corpus resume** ran the patterns after the first ~1,800 (in population order) with a
+  20M VM step budget. The first ~1,800 ran at the default 500M.
 - **The phase classifier** reads emitted identifiers. A future emitter rename shows up as
   `unk` loads, counted and reported (0.003% bench, 0.09% corpus), never silently
   misattributed.

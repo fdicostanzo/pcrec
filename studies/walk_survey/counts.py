@@ -28,3 +28,20 @@ for name, cells, res in (("bench", sys.argv[1], sys.argv[3]), ("corpus", sys.arg
             pair.add(r["pid"])
     print("K5 cliff population (RX_REQ_RUN folded, the pair arm): %d of %d patterns" % (len(pair), len(allp)))
     print("   " + " ".join(sorted(pair)[:40]))
+
+# K4's landing breakdown over the bench's throughput cells (default config):
+# per pattern, land_calls vs nmatch and land_rev vs T_rev summed over subjects
+agg = collections.defaultdict(lambda: [0, 0, 0, 0])
+for r in csv.DictReader(open(sys.argv[3]), delimiter="\t"):
+    if r["config"] != "default" or r["regime"] != "throughput" or r["rc"] in ("REFUSED", "BUILDFAIL", "TIMEOUT", ""):
+        continue
+    a = agg[r["pid"]]
+    a[0] += int(r.get("land_calls") or 0); a[1] += int(r.get("nmatch") or 0)
+    a[2] += int(r.get("land_rev") or 0); a[3] += int(r.get("T_rev") or 0)
+cells = [a for a in agg.values() if a[1] > 0 and a[3] > 0]
+print("== bench K4 landing breakdown: %d throughput cells (default) run a reverse pass on a match" % len(cells))
+print("   every match lands: %d; >= 90%% land: %d; none lands: %d" % (
+    sum(1 for a in cells if a[0] == a[1]), sum(1 for a in cells if a[0] >= 0.9 * a[1]),
+    sum(1 for a in cells if a[0] == 0)))
+print("   landing-start share of all reverse-pass bytes: %.1f%%" % (
+    100.0 * sum(a[2] for a in cells) / max(1, sum(a[3] for a in cells))))
