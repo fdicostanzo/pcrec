@@ -1565,3 +1565,17 @@ the compiler, and is never adopted silently. Proposed for main to file
      - Relevant only when more than one arch is selected for dynamic
        support AND a hot-loop SIMD form exists. Possibly theoretical
        today, which is part of the row's trigger.
+- ruling recorded: 2026-10-08 — **Q-R9-10 (from the D155 design revision,
+  lane/memfn-r9 @ c0b61c16), RULED by Frank: shape (b).**
+  - ONE unchanging FUNC whose body calls a LEVEL MACRO, selected at file
+    scope by `#if/#elif/#else`. Not the FUNC defined three times (a).
+  - The macro is ALL CAPS, `<PREFIX>_<FN>_LEVEL` (e.g.
+    `#define RX_REQRUN_LEVEL rx_reqrun__w16`), following pcrec's
+    upper-cased-prefix stamp convention.
+  - Cost: about +280 B of source per FUNC instead of +139; the assembly is
+    identical.
+  - Q-R9-11 is kit-decided: the frequency class becomes a `freq` column in
+    DELEG_SITES, built only when [MEMFN-RTDISPATCH] triggers. It is NOT
+    MF_P_INLOOP, which would make every SIMD row decline OFS.
+  - Main: please add both to D155. The design text is updated on the next
+    R-9 pass.
