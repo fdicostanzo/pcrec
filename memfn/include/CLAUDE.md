@@ -1,7 +1,7 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 8 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 9 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
   `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a);
   6: M4 prep, R-7: a reads-below FIND's range bounded by its reads
   (Q-R7-1, at `MF_OP_FIND`), `MF_EMPTY_AT_N` (Q-R7-2) and `on_miss`'s
@@ -11,7 +11,10 @@
   offsets 0..W-1 (Q-G2-9 relaxed on ADVANCE only, Q-R10-2), `MF_MAX_TERM`
   8 -> 32 (`mf_pred.term[]` grows, Q-R10-3), a strided site's kit-owned
   reads at `s[cursor + i]` (Q-R10-4) and ADVANCE's `span_hi` an ITERATION
-  count (Q-R10-5); no MF_VOCAB move), `MF_VOCAB` 3 (M7 prep: `MF_OP_MISMATCH`, F8, the compare loop
+  count (Q-R10-5); no MF_VOCAB move; 9: RQ-2 (pcrec's lane rq2, Q-R9-3
+  RULED (a)): `mf_pred.plan_pos2`, the fused pair filter's second position
+  KB as pcrec's fact, appended last, with `MF_NO_POS`; no kit row reads it
+  yet), `MF_VOCAB` 3 (M7 prep: `MF_OP_MISMATCH`, F8, the compare loop
   of the subject against a run-time reference span; `MF_H_ON_DIFF`, k
   written and then `on_miss`, which may read it; `MF_T_REF`, a term with
   no data; the `mf_fold` fact NONE/ASCII/UCP, Q-R8-4/5) and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under

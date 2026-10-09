@@ -449,6 +449,22 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   script. What it cannot see: a length reader of a buffer the witness never
   writes (hsb, a scratch buffer not spliced).
 
+### The second pick (lane rq2, [MEMFN] RQ-2, Q-R9-3 RULED (a))
+
+- **run_pick2.sh**, **pick2_check.py** — `make test-memfn-pick2` (in
+  TEST_SECTIONS; mech arm `pick2`; about 7 s plus the probe build). Builds
+  the PROBE compiler (`-DPCREC_PICK2_PROBE`: `pcrec_memfn_define` prints one
+  `PICK2` line per predicate of every PRE/OFS site) and runs the corpus's
+  distinct patterns plus named witnesses at three arms (byte, `-e utf8`,
+  `--engine=vm`). A predicate whose plan_hint names a RUN term must carry
+  `plan_pos2` equal to a brute force (every other position's cube mass
+  under the `--list-analysis default` byte-rate, or NONE's member count;
+  the minimum, ties to the rightmost; never KA); every other predicate must
+  carry MF_NO_POS. K35 floors (literal in the checker, applied at
+  `--every 1` only) per site, encoding, masked runs, picks the prior makes
+  off the positional rightmost, and data ties. Blind to whether the kit
+  READS the field (the kit's checks own that).
+
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.

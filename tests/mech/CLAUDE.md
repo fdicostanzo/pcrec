@@ -519,6 +519,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   the walk lands where it would have anyway: no answer, artifact byte or pin
   moves (M7's 7,726,522 census moves at zero movers). Row S668. Before this
   arm the census had no mech arm at all; the full census is a slot run.
+- `pick2` → `tests/memfn/run_pick2.sh` ([MEMFN] RQ-2, lane rq2,
+  2026-10-09): builds the sabotaged tree's `-DPCREC_PICK2_PROBE` compiler
+  and holds every PRE/OFS predicate's `mf_pred.plan_pos2` to a brute-force
+  second pick over the whole corpus at three arms (about 7 s plus the
+  build). No kit row reads the field yet, so a wrong KB moves no artifact,
+  answer or identity gate. Rows: planned in `docs/dev/lanes/rq2_report.md`
+  §5, ids from the manager.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.

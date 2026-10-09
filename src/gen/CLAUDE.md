@@ -1194,6 +1194,17 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `-DPCREC_SIMD_WITNESS` only, `pcrec_memfn_simd_witness` writes one
   synthetic guarded block through them (tests/memfn/run_simd_guarded.sh);
   emit_vm.c's `vm_init` and the memfn mark call it.
+
+  **[MEMFN] RQ-2 (lane rq2, 2026-10-09, MF_SITE_ABI 9, no pcrec abi
+  event):** `mf_pred.plan_pos2`, the fused pair filter's second position
+  KB, is pcrec's fact. `pcrec_memfn_site` and `pcrec_memfn_preds` state it
+  as `MF_NO_POS` on every site and predicate; `ofs_pred_of` (emit_dfa.c),
+  the PRE and OFS sites' one predicate builder, states a real one wherever
+  the scan sits inside the RUN term (`pcrec_find_pick2` over that term's
+  own bytes and masks). No kit row reads it yet, so no emitted byte moves
+  at either SIMD setting. Under `-DPCREC_PICK2_PROBE` only,
+  `pcrec_memfn_define` prints each predicate it hands the kit
+  (tests/memfn/run_pick2.sh).
 - **runcmp.c** — **DELETED at [MEMFN] M1b (lane m1b, 2026-10-07, zero
   movers): THE RUN COMPARE IS THE KIT'S**, `memfn/src/runcmp.c` (see
   `memfn/src/CLAUDE.md`), transcribed with its row table, helpers and

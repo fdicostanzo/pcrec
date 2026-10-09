@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tests/memfn/pick2_check.py -- [MEMFN] RQ-2's check (integration.md
-§R4.9.11 RQ-2, Q-R9-3 RULED (a); docs/spec/match_api.md §6.3's
-`mf_pred.plan_pos2` note). Driven by tests/memfn/run_pick2.sh, which builds
+§R4.9.11 RQ-2, Q-R9-3 RULED (a); memfn/include/memfn.h's
+`mf_pred.plan_pos2`). Driven by tests/memfn/run_pick2.sh, which builds
 the PROBE compiler (`-DPCREC_PICK2_PROBE`: src/gen/memfn_sites.c prints one
 `PICK2` line per predicate of every PRE/OFS site it hands the kit).
 

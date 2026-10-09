@@ -84,6 +84,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (`req_set_leads_applies`, the admission's `set-leads` row) asks it over
   `[the run's scan cube, the set's pick]`.
 
+  **[MEMFN] RQ-2 (lane rq2, 2026-10-09; integration.md §2.3 T7, Q-R9-3
+  RULED (a)): `pcrec_find_pick2`, a fourth PICK reader, not a mechanism.**
+  Given a run and its scanned position KA, it asks `pcrec_find_pick` over
+  the run's OTHER positions in `pcrec_find_run_scan_index`'s order
+  (`[n-1, ..., 0]` without KA), so a data tie and NONE both answer the
+  rightmost other position. The distance rule is `KB != KA` and nothing
+  more, an `UNMEASURED DEFAULT` stated at the definition (the smallest rule
+  that reproduces R-1's four timed cells under NONE; a wider minimum is
+  §R4.9.5 item 10's KB sweep's question). Its one caller is `ofs_pred_of`
+  (src/gen/emit_dfa.c), which states the answer as `mf_pred.plan_pos2`.
+  Under `-e utf8` the byte-rate is NONE, so the pick is positional (U8-PICK).
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,
