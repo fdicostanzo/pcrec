@@ -37,10 +37,13 @@
  * below the next untested candidate masked off.
  *
  * SECOND FILTER POSITION (KB): R-1's form ANDs a second position's compare
- * (`plan_pos2`, pcrec's fact, Q-R9-3 RULED (a), request RQ-2). RQ-2 is NOT
- * built, so no site states one and the filter is KA alone. The kit picks no
- * KB of its own (Q-R9-3's (b)/(c) were rejected): adding it is RQ-2's
- * MF_SITE_ABI bump plus one more `and` in `cmask` below.
+ * (D157, amending Q-R9-3 (a): pcrec states the site's candidate positions
+ * rarest first with their rates, `rank_n`/`rank_pos`/`rank_ppm`, request
+ * RQ-2; the distance rule choosing KB from them is the kit's). RQ-2 is NOT
+ * built, so no site states a ranking and the filter is KA alone. The kit
+ * picks no KB of its own yet (Q-R9-3's (b)/(c) were rejected): adding it is
+ * RQ-2's MF_SITE_ABI bump, a distance rule, and one more `and` in `cmask`
+ * below.
  *
  * OVER-READ / BOUNDARY ARGUMENT (the kit reads only [pos, n)):
  *   - R = VW + T (T = the predicate's highest read, the BODY loop guard's

@@ -59,7 +59,8 @@
                            count (Q-R10-5). No MF_VOCAB move. 9 (R4e'
                            batch 1, R-13, 2026-10-09): mf_sink.simd_open
                            and simd_close, appended LAST (§R4.9.2.4). No
-                           MF_VOCAB move; mf_pred.plan_pos2 (RQ-2) is NOT
+                           MF_VOCAB move; mf_pred's ranked rarity array
+                           (rank_n/rank_pos/rank_ppm, RQ-2, D157) is NOT
                            in this bump: it lands with RQ-2 */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */

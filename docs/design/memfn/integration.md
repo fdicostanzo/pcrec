@@ -297,6 +297,7 @@ M4 and M7 landed, `MF_SITE_ABI` 7, `MF_VOCAB` 3, 11 rows in `arms[]`,
 | input | what it says | where it lives now |
 |---|---|---|
 | `[D155]` D155 (main 3b1fd77c, Frank 2026-10-08) | Q-R9-1..9 ruled; Q-R9-6 amended (no `#if` in a function body (restated by add. 1 / Q-R9-10: a selector's whole body may be the `#if` chain); file-scope per-level helpers; SIMD-off routes through the helper as a measured abi event); `[MEMFN-RTDISPATCH]` filed with its terms (frequency class per site, per-level copies by target attribute selected once, a non-cascading level set, per-arch artifacts already served) | §R4.9.2.5 (the shape); §R4.9.2.6 (the abi event); §R4.9.3.1 (runtime dispatch, filed); §R4.9.8 (C18); §R4.9.10 (each Q marked RULED); §R4.9.12 (D155 rows) |
+| `[D157]` D157 (main 2d19f80d/06ab1eaa, Frank 2026-10-09) | amends D155 item 3: pcrec does NOT send `mf_pred.plan_pos2`; it states the site's candidate positions rarest first with their prior rates (`rank_n`, 0 = no facts; `rank_pos[MF_RANK_MAX]`; `rank_ppm[MF_RANK_MAX]`), appended last in `mf_pred`, one `MF_SITE_ABI` bump. Facts only: which and how many ranked positions a vector filter uses (1, 2, N, or decline) is the KIT's distance rule. Entries past `rank_n` are never read. pcrec's scalar pick KA is unchanged | §R4.9.5 item 10 (KB); §R4.9.7 batch 1; §R4.9.10 Q-R9-3; §R4.9.11 RQ-2 |
 | D147 addendum 11 | SIMD is a parallel path; each form beats the CURRENT scalar layer at its sites or names a benefit; default-ON is ruled separately; 2:1 capacity until M5′ | §R4.9.6 (the bar); §22 R4e′ `[rev4.9]` (trigger, capacity) |
 | `[r9 M-1]` D144 addendum 4 (main 04733583) | SIMD verdicts are pcrec-bench runs on the hardware each form targets; the manager coordinates the boxes; SSE first, the AVX2/AVX-512 order argued on evidence; AVX-512 is NOT filed for lack of hardware | §R4.9.5 (two tiers); §R4.9.5.1 (the submission); §R4.9.7 (the order) |
 | `[r9]` D147 addendum 13 (main 26297b6c, PRELIMINARY) | "faster" = same-host, same-window pcrec-bench run against the scalar twin; target cells' median whole-call time beyond the noise band; no other cell regresses past the floor; per instruction-set tier; net of costs | §R4.9.6 (the bar is written in its terms; its "revisit when R-9's panel proposes a better regime" is answered there) |
@@ -1499,7 +1500,7 @@ carried by RQ-6 (§R4.9.2.6).
 §R4.9.11):
 - RQ-1, the `--memfn=` carrier (F-R9-6). A prerequisite of batch 1 (its
   two denies) and of R4d.
-- RQ-2, a second filter position as a pcrec fact (Q-R9-3 (a)).
+- RQ-2, the site's ranked candidate positions as a pcrec fact (Q-R9-3 (a), `[D157]` amended: a rarity-ranked array, not a second pick).
 - RQ-3, SIMD bytes neutral to pcrec's length decisions (`[r9 C-3]`: now a
   PREREQUISITE of batch 1, no longer conditional on a census).
 - RQ-4, the dev box's slot for the UNOFFICIAL tier (`[r9 M-1]` demoted).
@@ -1653,7 +1654,7 @@ says so.
 | w32-over-w16 cut-over above reach | performance | the same, at `-march=x86-64-v3` |
 | main-loop unroll | performance | SWEPT in tier U at 1×, 2×, 4× per level, or the plain 1× loop shipped and labelled `UNMEASURED DEFAULT:`. "Left to the compiler" is not available for an intrinsic loop (`[r9 M-9]`). Never 2× silently |
 | scan position KA | site fact | DERIVED: `plan_hint`/`plan_pos` (§14.9), pcrec's fact |
-| second filter position KB | site fact | pcrec's fact under Q-R9-3 (a) (`mf_pred.plan_pos2`, RQ-2) |
+| second filter position KB | kit rule over a site fact | `[D157]` (amends Q-R9-3 (a)) pcrec states the ranked candidate positions (`rank_pos`/`rank_ppm`, RQ-2); the kit's distance rule chooses KB from them. The rule is OWED to the kit lane after RQ-2 lands and is labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`). CANDIDATE rule to evaluate (from main's rq2 lane, reproducing R-1's four timed cells): KB != KA inside the same run term, rightmost tie. Kit-owned; not a pcrec claim |
 | lead order | — | not applicable: batch 1 has no lead |
 | density bound | performance | the spacing ladder's covered range (item 7); no density decision is made in the text |
 | null-band quantile, sibling-busy cut, loops × launches, load1 < 0.5 | regime | `UNMEASURED DEFAULT:` each, labelled in place (`[r9 M-9]`) |
@@ -1862,8 +1863,8 @@ it is measured as G1. Batch 1 then adds only guarded text.
 > `fn_rows[]`' PREFIX slot (`memfn/src/vrun.c`, levels in
 > `memfn/src/levels.def`); no pcrec abi event; `-fmemfn-simd` still OFF by
 > default. Deviations, each with its reason in the report §3: the
-> MF_SITE_ABI bump (9) carries the sink ops only (RQ-2's `plan_pos2` is
-> unbuilt), so the filter is KA alone until RQ-2; walk tests 3-4 are the
+> MF_SITE_ABI bump (9) carries the sink ops only (RQ-2's ranked array, `[D157]`
+> (was `plan_pos2`), is unbuilt), so the filter is KA alone until RQ-2; walk tests 3-4 are the
 > PREFIX rows' predicate conjuncts; a `header` column in levels.def; runs
 > capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500
 > measured); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
@@ -1937,7 +1938,7 @@ order on evidence).**
 **Prerequisites:**
 - R4e′.0 (the seam) landed;
 - RQ-1 (`--memfn=`) landed, for the two denies;
-- RQ-2 (Q-R9-3 (a)) landed, for KB;
+- RQ-2 (Q-R9-3 (a), `[D157]` ranked array) landed, for KB. `[D157]` KB is then chosen from `rank_pos` by the kit's own distance rule, OWED to the follow-up kit lane after RQ-2 lands and labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`); the CANDIDATE rule to evaluate is "KB != KA inside the same run term, rightmost tie" (main's rq2 lane; reproduces R-1's four timed cells; kit-owned);
 - RQ-3 (neutrality) landed;
 - the tier-U slot (RQ-4) for the sweeps; the bench submission (RQ-5) is
   sent BEFORE any line moves past CANDIDATE.
@@ -2004,7 +2005,7 @@ policy word lacking `MF_P_PORTABLE_ONLY`:
 - rows `vrun-w32`/`vrun-w16` in `fn_rows[]` and options.def; the `memfn`
   section's spec floor raised by 2 (born at 2 if R4d has not landed);
 - `levels.def` and `mf_levels()`;
-- the `simd_open`/`simd_close` sink ops and `mf_pred.plan_pos2` (Q-R9-3),
+- the `simd_open`/`simd_close` sink ops and `[D157]` the `mf_pred` ranked array (`rank_n`/`rank_pos`/`rank_ppm`; was `plan_pos2`, Q-R9-3),
   in ONE `MF_SITE_ABI` bump ("the next number at landing", never a
   literal: M6 takes 8);
 - the `rows.tsv` lines (witness compiled with `-fmemfn-simd`, control
@@ -2296,7 +2297,7 @@ pcrec table asks, the kernel exists.
      `row_floors.tsv`), `MEMFN_FORMS` values move on SIMD-on artifacts,
      and every `simd_accept.tsv` line whose comparator or row moved reads
      STALE.
-   - **The `MF_SITE_ABI` bump at batch 1** (sink ops, `plan_pos2`): a kit
+   - **The `MF_SITE_ABI` bump at batch 1** (sink ops, `[D157]` ranked array in place of `plan_pos2`; whichever of RQ-2 / R-13 lands first takes the number, the other renumbers): a kit
      contract event; pcrec's call sites re-pin with it; no emitted byte
      moves.
    - **RQ-3:** no default byte moves (SIMD-off has no guarded bytes); the
@@ -2368,6 +2369,15 @@ ruling marked.
   boundary), the prior stays ONE table, and R4d's SWAR pair filter needs
   the same fact, so one request serves both layers.
   `[D155]` **RULED (a) (item 3):** pcrec states `plan_pos2` (RQ-2).
+  `[D157]` **AMENDED (Frank 2026-10-09):** pcrec does NOT state a second
+  pick. It states the candidate positions rarest first with prior rates:
+  `rank_n` (0 = no facts), `rank_pos[MF_RANK_MAX]`, `rank_ppm[MF_RANK_MAX]`,
+  appended last in `mf_pred`, one `MF_SITE_ABI` bump. The DISTANCE RULE
+  (1, 2 or N ranked positions, or decline) is the kit's: a property of the
+  vector form (D146: facts from pcrec, forms from the kit). Entries past
+  `rank_n` are never read. `pcrec_find_pick2` is not built; KA is
+  unchanged. Revisit when a form needs a fact the ranking cannot express
+  (joint pair rates).
 - **Q-R9-4. A row that is smaller but not faster.** `[r9 M-16]` REVISED.
   - **Recommend:** a measured named benefit with every timing cell NULL
     or better is ACCEPTED; a benefit with a timing loss past the floor is
@@ -2477,7 +2487,7 @@ ruling marked.
 |---|---|---|---|---|
 | RQ-0 | **none for the seam.** R4e′.0 is kit-side end to end: the kit owns `ofs_fn_define` and its callers. pcrec's role is its identity gates as the control | `[r9 F-1]` | 0 | — |
 | RQ-1 | **the `--memfn=` carrier**: a CLI flag, a config directive and a `pcrec_options` field carrying one opaque string, validated once per compile by `mf_opts_check` (its refusal text shown unchanged, D26), and copied into every site's `opts` (§R4.4.1). `[r9 F-8]` It changes a PUBLIC struct, so it carries the `lib/pcrec.h` hunk and spec hunks in `cli.md` and `registry.md` §6; its cross-source composition rule is stated (a string axis: silent file-wins, option_sets.md §2.5a); at `-fno-memfn-simd` it is accepted and inert, and the spec says so | no kit row has a pcrec-reachable OFF arm today (F-R9-6) | 0 | before batch 1 AND before R4d |
-| RQ-2 | `[D155]` (Q-R9-3 RULED (a)) **the second pick** (Q-R9-3 (a)): `pcrec_find_pick2` as §2.3 T7's PICK reader, set by the PRE/OFS builders into `mf_pred.plan_pos2` | the fused filter's KB (§R4.9.5 item 10) | 0 | before batch 1's tier-U sweeps |
+| RQ-2 | `[D155]` (Q-R9-3 RULED (a)), `[D157]` AMENDED: **the ranked candidate positions**, not a second pick: the PRE/OFS builders state `rank_n` (0 = no facts), `rank_pos[MF_RANK_MAX]` and `rank_ppm[MF_RANK_MAX]` (rarest first, with prior rates) in `mf_pred`, appended last, one `MF_SITE_ABI` bump (whichever of RQ-2 / R-13 lands first takes the number; the other renumbers). `MF_RANK_MAX` is a declared limit with a stated derivation; entries past `rank_n` are never read. No `plan_pos2`, no `pcrec_find_pick2`; the distance rule is the kit's | the fused filter's KB (§R4.9.5 item 10) | 0 | before batch 1's tier-U sweeps |
 | RQ-3 | **SIMD bytes neutral to every length DECISION** (`[r9 C-3]`, now unconditional): pcrec's sink implements `simd_open`/`simd_close` by counting bracketed bytes into the buffer's `simd_guarded`, and every reader that today reads `pcrec_sb_len_uncut` for a decision (the VM entry-shape knee, the `fit_rungs[]` size measurement, the size-quoting stamps) reads `len_uncut − simd_guarded` through one helper. D84's caps follow Q-R9-9's ruling, with its `limits.md` hunk | F-R9-5: SIMD-on must not move a rung, a ladder step or a stamp value | 0 at SIMD-off | before batch 1 |
 | RQ-4 | **a tier-U timing slot on the dev box** (`[r9 M-1]`, demoted from "the verdict box's slot"): one logical CPU named by main, its sibling idle per `thread_siblings_list`, load1 < 0.5 | §R4.9.5 items 1-2: the sweeps and the veto | 0 | before batch 1's tier-U sweeps |
 | RQ-5 | **the bench submission** (`[r9 M-1, M-4]`): §R4.9.5.1's contents, carried by main to `inbox_from_pcrec.md` (D78), with the bench box facts asked of the bench dev and the span-ladder subbench request; main schedules each box (the dev box through its slot channel) | official verdicts; bench testees BEFORE acceptance | 0 | after batch 1 lands as CANDIDATE; before any line becomes ACCEPTED |
@@ -2541,7 +2551,7 @@ Q-R9-10/11, D155 addendum 1; not panel ids, and not counted in the 43):
 |---|---|---|
 | 1 (Q-R9-1) | resolved by D144 addendum 4 | §R4.9.10 |
 | 2 (Q-R9-2) | every box running a level: a loss anywhere blocks, a win somewhere is required; CANDIDATE first | §R4.9.10 |
-| 3 (Q-R9-3) | pcrec states `plan_pos2` | §R4.9.10; §R4.9.11 RQ-2 |
+| 3 (Q-R9-3) | pcrec states `plan_pos2` (amended by D157: a ranked array, see §R4.9.0) | §R4.9.10; §R4.9.11 RQ-2 |
 | 4 (Q-R9-4) | "fastest wins": code space is never a SIMD named benefit | §R4.9.6; §R4.9.10 |
 | 5 (Q-R9-5) | a later SIMD loss never blocks a scalar change | §R4.9.10 |
 | 6 (Q-R9-6) | floor rule YES, AMENDED: no `#if` in a function body (restated by add. 1 / Q-R9-10: a selector's whole body may be the `#if` chain); file-scope helpers; SIMD-off routes through the helper, as a measured abi event | the summary; §R4.9 short list; §R4.9.2.1 (slots, assembly); §R4.9.2.3 (the rule restated, the withdrawn shape, the STMT note, the stamp); §R4.9.2.4 (whole-definition accounting); §R4.9.2.5 (the shape, probes); §R4.9.2.6 (R4e′.0b, G1); §R4.9.3 (entry tests); §R4.9.4; §R4.9.7; §R4.9.7.2; §R4.9.8 (C18 amended, the routing gate); §R4.9.9; §R4.9.10; §R4.9.11 RQ-6; §22 |
@@ -4564,7 +4574,7 @@ rows (§R4.9.7). §2.5's "the fallback is the next row" survives as
 | T5 `TAB_ROWS` | none. A vector classifier's constants (nibble tables, range immediates) are the kit's own literals | — | — | — | — | **n/a** |
 | T6 `pcrec_runcmp_rows` | **`vec-masked`**: a masked run of L ∈ [16, 2V], one or two overlapping vector loads, `(v & K) == T` as a lane mask, all-ones test | before `words` | masked AND L ≥ 16 AND the kit composes a vector compare at `BASE`/`DECLARED` | `-fno-vec-run` | kit K1's load/and/cmpeq/all-lanes primitives. The caller's P8 guard for L bytes is already emitted | **yes, with a signature change:** `rc_holds(pred, r)` sees only the run. An ISA predicate needs `cx` (`rc_holds(cx, pred, r)`). Exact runs get NO vector row: gcc already lowers constant `memcmp` at L ≥ 16 to a vector compare (D122 addendum: pay for what you use; this record is the reason) |
 | T6, **[rev2]** | `vec-masked` is replaced by the arch-blind `kit` row (op VERIFY_RUN, §7.10). Its comparison side is `words`, priced as `ceil(L/8)·CMP_WORD8` | before `words` | `kit_applies` | the site's budget bit | `mf_emit` | **yes**: `rc_holds` still needs `cx`, now for the token and the prices, not for an ISA |
-| T7 `pcrec_find_pick` | none (a primitive). The packed-pair operand needs a SECOND pick (the rarest other position, with a distance rule): a new reader, `pcrec_find_pick2`, of the same MASS/PICK kinds | — | — | — | — | **yes** (a reader, not a mechanism; D126 Q4's NONE rule holds inside the primitive) |
+| T7 `pcrec_find_pick` | none (a primitive). The packed-pair operand needs a SECOND pick (the rarest other position, with a distance rule): a new reader, `pcrec_find_pick2`, of the same MASS/PICK kinds (amended by D157: pcrec states the ranked array, the kit applies the distance rule; no `pcrec_find_pick2`) | — | — | — | — | **yes** (a reader, not a mechanism; D126 Q4's NONE rule holds inside the primitive) |
 | T8, T9 | excluded (§1.2) | — | — | — | — | — |
 | N1-N4 | rows of `SCAN_ROWS` at sites `STAY`, `VMSPAN`, `PF`, `SETREST` | — | — | — | as T3's | **no, as built (b), (d), (f)**. N3 stays `libc-memchr` (row 4) with no change |
 | N5 | `SCAN_ROWS` site `OFS`: rows 2 (`vec-verify`, which subsumes the K82 pair arm as one fused cube pass, F3), 3, 4, 5, 6 | — | — | — | the verify hook, `maxk`, the guard | **no, as built (a)** |
@@ -4938,7 +4948,7 @@ Every C1/C2 row has a K2 deny bit, and K2 reports `C1-row/C2-row` names
 | `(?i)union…` byte-class prefilter over `{u, U}` | a 256-byte table walk, one load per byte | `cube` (K = 0xDF) × `unrolled` | survey.md §0 item 3: NEON `tbl` bitset 6.7-7.6× a table loop; a cube is cheaper still |
 | scan edge `[a-z]{0,8}` | a byte loop with the T4 test per byte | `range` × `short` (maxw 8 ≤ V): one load, one classify, `first(not(m))`, clipped at 8 | requirements.md §0 item 3: a short span's form is loop-free |
 | VM `[a-z.]+` before `@` (a class run) | the stride-1 span loop | `range`/`lut16` × `skip-width` | simd1 §15: classify + clz, 2-3× over a scalar table loop on mixed run lengths |
-| REQ_RUN `/user` in a 1 MiB subject | `memchr('/')` + `memcmp` per hit, restarting | `pair` (the two rarest positions by `pcrec_find_pick2`) × `iterate`, with the run compare as `on_hit` | Study A (simd1 §12): pinned rare-position filters, adopted. The ofsskip and pre-check share one block, so one composition serves both |
+| REQ_RUN `/user` in a 1 MiB subject | `memchr('/')` + `memcmp` per hit, restarting | `pair` (two ranked positions chosen by the kit's distance rule from pcrec's rarity ranking, `[D157]`) × `iterate`, with the run compare as `on_hit` | Study A (simd1 §12): pinned rare-position filters, adopted. The ofsskip and pre-check share one block, so one composition serves both |
 | N4: three set members all present | three `memchr` passes | `eqN` × ALL-PRESENT, one pass | requirements.md §2.2 item 2 (k streams cost k F's and k passes) |
 
 ### 4.5 The fixed library as the generic-parameter outputs
@@ -9108,7 +9118,7 @@ text stays opt-in until R4f.
 >     predicate (PRE window with no lead; OFS run-pinned by its own cell).
 >   - **Prerequisites:** R4c, M1b and R4g (landed); R4e′.0; `[D155]`
 >     R4e′.0b; RQ-1
->     (`--memfn=`); RQ-2 (Q-R9-3 (a)); RQ-3 (neutrality, now
+>     (`--memfn=`); RQ-2 (Q-R9-3 (a), `[D157]` ranked array); RQ-3 (neutrality, now
 >     unconditional); RQ-4 (a tier-U slot); RQ-5, the bench submission,
 >     before any line is ACCEPTED (`[r9 M-1]`). R4d is NOT a prerequisite:
 >     whichever of R4d and a SIMD batch lands second re-reads the other's
@@ -9122,7 +9132,7 @@ text stays opt-in until R4f.
 >     Pins, the `simd` sweep arm and its projections (`[r9 F-5]`), C9-x86's
 >     per-level floors, C18, C-SEL, C19, C11's FORMS half, the CANDIDATE
 >     records and the spec hunks are born in the batch's commit; the kit's
->     one `MF_SITE_ABI` bump (sink ops, `plan_pos2`) takes the next number
+>     one `MF_SITE_ABI` bump (sink ops, `[D157]` ranked array in place of `plan_pos2`) takes the next number
 >     at landing (M6 takes 8).
 >   - **The 16 B note above is re-read by §R4.9.1 F-R9-1.** At 16 B every
 >     R-1 `ffl` cell ran the scalar path, so its ±0.4-1.7 ns are not AVX2

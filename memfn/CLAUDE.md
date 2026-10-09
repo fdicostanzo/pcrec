@@ -97,7 +97,7 @@ first; K3 second.
     Darwin), and the fallback.
   - pcrec sends one bit (`MF_P_PORTABLE_ONLY` when the switch is off)
     and nothing else (`[r9b]` and, from batch 1, the sink's bracket ops
-    `simd_open`/`simd_close` and `plan_pos2`, RQ-2/RQ-3). There is no `portable`/`native`/`baseline`
+    `simd_open`/`simd_close` and, per D157, the ranked rarity array `rank_n`/`rank_pos`/`rank_ppm` in place of `plan_pos2`, RQ-2/RQ-3). There is no `portable`/`native`/`baseline`
     profile and no `--isa=` axis.
 - **The scalar layer** is pcrec's algorithm (what is searched, the plan,
   handoffs, fused predicates) plus the kit's SCALAR ARMS: every form the
