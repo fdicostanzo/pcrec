@@ -294,14 +294,19 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 ### The row manifest, signatures and floors (lane n4, [MEMFN-ROWCON] N4)
 
 - **rows.tsv** — THE KIT'S ROW MANIFEST (row_contracts.md rev 4.1 §4),
-  HAND-maintained: one line per row of the kit's two selection tables
+  HAND-maintained: one line per row of the kit's selection tables
   (13 at N4: the composer's 9 arms, `precheck`/`precheck_assign` and the
   four `pf_*` rows included, and runcmp's 4 rows; 14 since M4 prep added
   `pf_memchr_back`, ROWS_FLOOR 14; 15 since M7 prep added
   `mismatch_inplace`, reach `pending-site:M7-REPLACE` on its fixture until
   M7's REPLACE made pcrec reach it: now reach `pcrec`, witness `(?i)(ab)\1`,
   control `(ab)\1`, its floors pinned 2026-10-08: g2_floor 2403 by g2m7,
-  pcrec_floor 2116 by slot13's full census at 999dd994). Each line gives the
+  pcrec_floor 2116 by slot13's full census at 999dd994; 17 since R4e'.0,
+  lane r4e0, added the third table `fn`, the offset-skip function's
+  `fn_rows[]`: `fn-pair` (witness `(?i)cat`, control `-fno-req-run-fold`)
+  and `fn-memchr` (witness `abc[0-9]+xyz`, control `-fno-req-run
+  -fno-offset-skip`), g2 floors 10422/18981 measured 2026-10-09, pcrec
+  floors PLACEHOLDER until the slot census). Each line gives the
   row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
   `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
   red, D77), its witness (a pcrec pattern + flags for `pcrec`, an
