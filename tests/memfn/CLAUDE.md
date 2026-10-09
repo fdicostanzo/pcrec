@@ -53,7 +53,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   **R-12 VALID (Q-R12-5):** the utf8 subject validator's ASCII SWAR skip
   (`u8_defs_valid_upto`, a constant in src/enc/) is listed `pending` with its
   own vocabulary line (`swar-hibit`, class `word-skip`) and C12 row: 12 delegated / 2 pending (N7U, VALID), 14 rows,
-  `C17_ROW_FLOOR` 14, C12 2 rows. A re-sweep of every src/gen/ and src/enc/
+  `C17_ROW_FLOOR` 14, C12 2 rows. **R-12 N7U RETIRED (Q-R12-3, D147 add. 14,
+  lane n7uret):** utf8's caseless decode walk is the encoding's, not a kit
+  site; row N7U, the `span-decode` vocabulary line and its C12 row are
+  deleted: 12 delegated / 1 pending (VALID), 13 rows, `C17_ROW_FLOOR` 13,
+  C12 1 row (`C12_CEIL_ROWS_FLOOR` 1). A re-sweep of every src/gen/ and src/enc/
   literal (`docs/design/memfn/probes/vmlazy/vocab_resweep.py`, both the
   since-R4a and the whole population) found no third unlisted site
   (`docs/dev/lanes/vmlazy_report.md` §6). Sabotage S712.
@@ -61,7 +65,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   count as a search form when an emitter spells them. There are five
   classes: libc search calls, table-walk loops, runcmp row texts, the
   word-at-a-time skip (since R-12, `$_valid_upto`'s) and the
-  span compares (the encoding seam's two; since M6 `span-count`, a counted
+  span compares (the encoding seam's span-index, retired with M7's REPLACE; the
+  `span-decode` line went with N7U, D147 add. 14; since M6 `span-count`, a counted
   span loop, the VM's lazy rmin prefix as M6 found it, spelled by nothing
   since R-12 and kept at C12 ceiling 0 as a tripwire). Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form

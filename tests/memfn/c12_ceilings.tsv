@@ -51,10 +51,13 @@
 # row at 1: NOT a raise of an existing form but a form the vocabulary had
 # never seen (`$_valid_upto`'s ASCII SWAR skip, pending VALID), by RULING.
 #
-# The row count (2) and the total (2 forms; 1 before R-12's VALID listing, 2 before R-12's REPLACE; R-12's NORMALIZE swap: span-count 1 out, walk-open 1 in; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
+# R-12's N7U retirement (lane n7uret, Q-R12-3, D147 add. 14) deleted
+# enc_utf8.c's span-decode row (1 -> 0) and its vocabulary line: the caseless
+# per-character decode walk is the encoding's own, not a search form.
+#
+# The row count (1) and the total (1 form; 2 before R-12's N7U retirement, 1 before R-12's VALID listing, 2 before R-12's REPLACE; R-12's NORMALIZE swap: span-count 1 out, walk-open 1 in; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)
 src/enc/enc_utf8.c	swar-hibit	-	1	the utf8 subject validator's ASCII SWAR skip (VALID, pending; Q-R12-5)

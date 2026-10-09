@@ -60,8 +60,9 @@ UCP fold function and its table, every comment and declaration. A keyed
 side table rather than a `PcrecEncEntry` column (D58 addendum 2 item 2: a
 column would touch every positional row of both backends). utf8's CASELESS
 compare is a per-character decode walk, not a byte mismatch, and keeps its
-own body and has no row (manifest row N7U, pending a decode-hook vocabulary
-step; Q-R8-1). The operand spellings the kit pastes are the entry's own
+own body and has no row (not a kit site, D147 add. 14: a walk whose unit is
+the encoding's character belongs to the encoding; its byte-domain sub-loops
+are kit sites). The operand spellings the kit pastes are the entry's own
 parameter names, one spelling in enc.h (`PCREC_ENC_SPAN_*`), since DD12a(ii)
 proves the signature identical across backends. Zero movers: the kit
 renders the loops byte for byte (docs/dev/lanes/m7_report.md).
