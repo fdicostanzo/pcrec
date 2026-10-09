@@ -972,6 +972,34 @@ in the report:
   and `st_whys` (family 86 -> 98; the parent under the same roots is the
   same 98).
 
+**B6's outcome (lane decfbB6, 2026-10-08, base main `84da351b`; report
+`../dev/lanes/decfbB6_report.md`).** The three fallback listings project
+the tables. T1, T3 and T4 rows (`fit_rungs[]`, `pflw_rows[]`, `st_whys[]`)
+and T2's (`pf_admits[]`) carry an `axlist` column of `FbList` cells (axis,
+order, name, deny/force, lever spelling, desc) holding TODAY's text moved
+verbatim from `axes_dump.c`; `pcrec_fb_list_row(axis, i)` returns the cell
+of order `i + 1` over the four tables and `emit_fb_axis` replaces the
+seventeen hand `emit_pred_row` calls. `--list-axes` is byte-identical to
+`84da351b` (default and `--features all/byte/utf8/recursion/backrefs`), the
+five-stream `emit_sweep --every 10` reads 0 movers at full reach, and the
+trace build's `fit_tables_selfcheck` holds each axis to orders 1..n carried
+exactly once (red-tested: a duplicated order fails 56 fbt compiles). Choices
+and findings, each argued in the report:
+- `forced` and `selected` are produced by no row: their cells sit in
+  select_engine.c's `esel_ends[]` beside the attribution walk.
+- Placement rule: a cell sits on the FIRST row, in table order, whose cells
+  produce its value. So `declined-nullable-default` is on `var-nullable`,
+  `overflowed-dfa`/`-prefilter` and `collapsed-prefilter` on `sel1-collapse`
+  (its off cell is ROLE), `size-cap-retry` on `prefilter-collapse`, and
+  T3's `count-collapsed`/`exact` on `rung`/`nullable`. B7 re-places them
+  with the order swap.
+- The listing's lever columns (`--engine=` on `forced`, the deny and force
+  bits on `denied` and `count-collapsed`) are cell fields, verbatim, not
+  derived from T1's `deny`.
+- Re-aims S627 S640 S642 S644 (rows are longer now); `--step` derives 24
+  (the four plus 20 re-runs, S102 S165 S272 S625 being RE-AIM by owner with
+  untouched single-line anchors). The family map is 99 (`FbList` joined).
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).
