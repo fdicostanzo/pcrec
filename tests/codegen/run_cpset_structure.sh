@@ -895,6 +895,12 @@ fi
 # `(?i)HeLLo` +68, `(\w+)\s+\1` +44. Verified against a ref build of main
 # 77b6b37e with only the abi constant bumped (emit_sweep --ref): the delta is
 # those loops and RX_VM_PROGRAM_BYTES where the VM span scan sits, nothing else.
+# RE-RECORDED 2026-10-09 at [MEMFN] RQ-3 (abi 69 -> 71, lane rq3): all twelve
+# `EMITTED_BYTES` rows +52, one number: the unconditional
+# `#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL` line (fixed width, so
+# K-, engine- and value-invariant). VERIFIED BY DIFFING `a`'s artifact against
+# main 9c181041's compiler at `-o -`: the four same-length abi digits and that
+# one line, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
