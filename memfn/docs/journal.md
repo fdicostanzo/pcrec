@@ -1019,3 +1019,11 @@ pointer when a kit change merges to main.
     AND a hot-loop SIMD form, so it may be theoretical. Example classes
     (r9fu): PRE's FUNC runs once per call (infrequent); the filed OFS
     run-pinned vrun re-seeds inside the DFA scan loop (frequent).
+- 2026-10-08: Frank ruled Q-R9-10 (from revision D155): shape (b), one
+  unchanging FUNC that calls a level macro selected at file scope by
+  `#if/#elif/#else`, NOT the FUNC-as-selector shape (a). The macro is ALL
+  CAPS so it reads as a macro: `<PREFIX>_<FN>_LEVEL` (e.g.
+  `RX_REQRUN_LEVEL`), following pcrec's upper-cased-prefix stamp
+  convention; the helpers stay `<p>_<fn>__body` / `__w16` / `__w32`.
+  Q-R9-11 (frequency class): kit-decided, a `freq` column in DELEG_SITES
+  built only when [MEMFN-RTDISPATCH] triggers (not MF_P_INLOOP).
