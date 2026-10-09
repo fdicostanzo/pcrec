@@ -1066,3 +1066,19 @@ pointer when a kit change merges to main.
   priorities (fused byte+cond forms; prioritize by site-category frequency
   x winnable margin; no population census exists yet) — discussion only,
   nothing scheduled. SESSION RESET at Frank's request; wake.md rewritten.
+
+## 2026-10-09 morning — kit session (pcrecdev3) after the 07:00 reset
+
+- Main confirmed the pacing hold lifted (normal capacity, 2:1 migration:SIMD).
+- g2m6 (blinded G2 for M6, sonnet, cell worktrees/g2u-cell) relaunched with
+  m6_report §7 pasted into the brief; running.
+- main merged into lane/memfn-m6 @ 7cae7465: lanes index and mech CLAUDE.md
+  unions, S512 comment keeps both histories (floor 14: N7U +1, N6 -1), the
+  fallback call graph + sabotage anchor maps REGENERATED on the merged tree
+  (family 99, 589 sites, exit 2 = S571). Anchor check, strict,
+  test-memfn-{arms,stamps,rows}, test-codegen green.
+- R-9 light re-check panel r9b (2 sonnet critics) done: contract — deliverable
+  after RC-1/RC-2; docs — DS-10 (C18 "two legs") blocker + unlabelled probe
+  numbers. main merged into lane/memfn-r9 @ 021b3b32 (lanes index conflict
+  only). Fix lane r9fix applying RC-1..7, DS-1..14 + the consolidated review
+  docs/dev/reviews/2026-10-09-r9b-memfn-simd.md.
