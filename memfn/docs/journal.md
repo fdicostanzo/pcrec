@@ -1027,3 +1027,9 @@ pointer when a kit change merges to main.
   convention; the helpers stay `<p>_<fn>__body` / `__w16` / `__w32`.
   Q-R9-11 (frequency class): kit-decided, a `freq` column in DELEG_SITES
   built only when [MEMFN-RTDISPATCH] triggers (not MF_P_INLOOP).
+- 2026-10-08: Frank REVISED Q-R9-10 to shape (c), superseding (b): no
+  level macro. The FUNC is written once, and its whole body is the
+  `#if/#elif/#else` chain with one helper call per arm. The rule's
+  wording, confirmed by Frank: "a function that does work never contains
+  `#if`; a selector function's whole body may be the `#if` chain, one call
+  per arm, and nothing else."
