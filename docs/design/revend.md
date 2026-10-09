@@ -407,6 +407,11 @@ and reverse passes are not emitted on an admitted artifact (except under T3).
 > `RX_DFA_TABLE`/`_UNIFORM_FOLDS`/`_SCAN_EDGE` fold over the machines the artifact
 > emits. The two bullets below that give `END_WINDOW` and `DFA_START` the value
 > `"rev-end"` are the superseded proposal, kept for the record.
+> **And again by `locate_finish.md` revision 2.1 §5.1 (lane locfin21, re-check ids
+> LR-G4, LR-G6):** the `"locator"` token is WITHDRAWN — PRESENCE is asked on a
+> `rev-end` artifact and reads `"dominated"`, so `RX_REQ_WHY` keeps its four tokens —
+> and the off-path stamps are no longer a per-stamp table: one rule, generated from the
+> path derivation (`locate_finish.md` §2.7), gives an un-asked slot its absence value.
 
 - `<PREFIX>_END_WINDOW` gains the value `"rev-end"` (closed vocabulary + 1; it was a number
   or `"none"`).

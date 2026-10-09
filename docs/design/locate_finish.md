@@ -380,8 +380,8 @@ relocate, is `search-from` with the DFA hat — shipped twice already (the K82 h
 ### 1.4 The exactness obligations, on the product `[r2 G2, r2.1 LR-G2]`
 
 - **O1 leftmost-first start.** Under `e` at a point (`I = [s, s]`; revision 2's
-  `p`), `s` is the smallest start ≥ `lo` of any match of the LOCATOR's language; it is the answer's start iff that language is `L`
-  (§1.2's boundary projection). PCRE2 takes the smallest start with any match;
+  `p`), `s` is the smallest start ≥ `lo` of any match of the LOCATOR's language; it
+  is the answer's start iff that language is `L` (§1.2's boundary projection). PCRE2 takes the smallest start with any match;
   priority acts only among ends at that start (`revend.md` §3.1).
 - **O2 end priority.** `D` contains the priority end at `s` (PCRE2's, not the
   longest). `|D| = 1` claims it; a locator that cannot see priority (a reverse walk)
@@ -551,7 +551,7 @@ split the typed-edge check across two arrays.
 
 | slot | the question | asked at | routes | accepts / hands |
 |---|---|---|---|---|
-| `LOCATE` (first) | which walk produces the result? | each DFA-shaped body, once (the entry body AND the hybrid's inlined `<p>_prefilter`, both via `pcrec_emit_dfa_engine`), on the body's route; an artifact with NO DFA body, once, on `CR_VM` (`cand_locate_route`, §2.6) | `CR_DFA`, `CR_ATTEMPT`, `CR_VM` | accepts `LOWER` (E1, and relocate); hands its declared shape set to FINISH across the boundary projection |
+| `LOCATE` (first) | which walk produces the result? | each DFA-shaped body, once (the entry body AND the hybrid's inlined `<p>_prefilter`, both via `pcrec_emit_dfa_engine`), on the body's route; an artifact with NO DFA body, once, on `CR_VM` (`cand_locate_route`, §2.6) | `CR_DFA`, `CR_ATTEMPT`, `CR_VM` | accepts `LOWER` (E1, and relocate); hands its declared `CT_*` masks to FINISH across the boundary projection |
 | `FINISH` (last) | which row, in which hat, finishes this hand? | each caller-facing entry, once per hand its locator can give: `<prefix>_search` (hands from LOCATE), `<prefix>_match`/`_match_caps` (`AT`, or `NOMATCH` where `caller ⊓ body` is empty) | `CR_DFA`, `CR_ATTEMPT` (DFA hat), `CR_VM` (VM hat) | accepts `CT_*` hand masks; hands to the CALLER, relocates to LOCATE |
 
 `CandSel` gains `hand` (the `CT_*` mask being finished) and `point` (the ask is a
@@ -1017,7 +1017,7 @@ T4: 0 / 5,012). The emitted walk is `revend.md` §5.1's text; the helper is §8'
 | T3 `body` (`"search-filter"`) | `FIN4 search-from` on `ENDSET`: relocate (E-FL) to `composite` from `s*`, which puts F and the composite's slots back on the path |
 
 `nl_last` stays as `revend.md` defines it (on the BUILT reverse machine); it decides
-the shape set, so it is a LOCATE-row property, and its sabotage row (revend §9.2 row
+the hand set, so it is a LOCATE-row property, and its sabotage row (revend §9.2 row
 10) is unchanged. E11 upheld this table (18 form-C twins, 0 / 1,682,892 cells, 0 vs
 libpcre2).
 
@@ -1194,7 +1194,7 @@ bench or real-world end-pinned backreference cell that pays the VM's attempt loo
   candidate per occurrence (§8 Q6).
 - **Row:** `rev-inner-bounded` then `rev-inner` (views first), routes `CR_DFA` and
   `CR_VM`, after `rev-end` and before `composite`; predicate G1 ∧ G2 ∧ G3, with G4
-  choosing the shape set; seed = each landmark hit `j`; reverse over the PREFIX
+  choosing the hand set; seed = each landmark hit `j`; reverse over the PREFIX
   machine (`revend.md` §8's helper; a landmark seed is speculative, X1).
 - **Give-up hand-off:** where the forward-verify guard trips (`where_to_start.md`
   §2.7), `FIN4 search-from` relocates `s*` as `lo` to `composite` (the measured

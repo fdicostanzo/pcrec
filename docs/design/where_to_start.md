@@ -240,9 +240,30 @@ if it matches, that is the answer; otherwise continue with the next occurrence
 **Claim.** If (G1) `P` holds no backreference, call, atomic group or possessive
 quantifier, (G2) the split is UNAMBIGUOUS — `P` has fixed byte width, or `P`
 cannot consume every distinct byte of `L` — and **(G4) `S` holds no reference
-into `P`'s groups** (no backreference to a group of `P`, no condition on one; and,
-conservatively, no `${...}` variable) **[r2 E1]**, then tactic (b) returns exactly
-libpcre2's leftmost-first match (span and captures) from `lo`. Without G4 the
+into `P`'s groups** **[r2 E1]**, then tactic (b) returns exactly libpcre2's
+leftmost-first match (span and captures) from `lo`.
+
+**[r2.1 LR-S5] G4 is a CLOSED predicate over node kinds** (lane locfin21, 2026-10-09;
+re-check `../dev/reviews/2026-10-09-r-locfin-panel.md` LR-S5; the same predicate, word
+for word, as `locate_finish.md` §4.6). The first wording ("no backreference to a group
+of `P`") had a natural reading that is wrong under DUPNAMES: in
+`(?J)(?<n>a+)X(?<n>b)?\k<n>` the reference's `refs[]` = {1, 2} names a group of `P`
+(1) AND a group of `S` (2), so a G4 that asks "is the reference into `S`?" passes, and
+the per-occurrence verify answers NOMATCH on `"aaXa"` where libpcre2 answers (1,4).
+G4 is one function, an exhaustive switch over `AKind` with no `default:` (so a kind
+added later is a compile error there, `mrl.c:18-24`'s rule), over every node of `S`,
+with `groups(P)` the capture numbers `P` defines:
+
+- PASS (reads no capture state): `A_CLASS`, `A_WCLASS`, `A_EMPTY`, `A_BOL`, `A_EOL`,
+  `A_END`, `A_CTX`, `A_GSTART`, `A_KRESET`;
+- RECURSE into the children: `A_CAT`, `A_ALT`, `A_REP`, `A_CAP`, `A_ATOMIC`, `A_LOOK`;
+- `A_BREF`: pass iff NO member of `refs[]` is in `groups(P)` (`refs[]` is a SET; every
+  member, never the first);
+- FAIL CLOSED: `A_CALL` (a called body inherits the caller's captures) and `A_VAR`
+  (conservative: a variable names a caller value, never a group);
+- not built today, FAIL CLOSED when built: group conditions and callouts (neither has a
+  node kind yet, so the switch cannot see them until one is added, and then it must
+  say so). Without G4 the
 sound mapping is weaker: `LOWER = s*(j₀)` for the first occurrence `j₀` whose
 `starts` is non-empty, finished by the ordinary attempt loop from there (below).
 
@@ -337,9 +358,12 @@ G1  P is regular-faithful: no A_BREF, no linked call, no atomic/possessive
     DFA's own [ENG-LOOK] boundary)
 G2  fixed_width(P)  ∨  ¬(bytes(L) ⊆ alphabet(P))          [rust's first two]
 G3  the landmark is admitted: ppm(L's scan byte) ≤ ppm(today's key) / F
-G4  S reads no capture state of P: no backreference / group condition naming a
-    group of P (conservatively, no ${...} either) [r2 E1]; where G4 fails the
-    row hands LOWER(s*(j0)) to the attempt loop instead of CAND per occurrence
+G4  S reads no capture state of P [r2 E1], as a CLOSED predicate [r2.1 LR-S5]:
+    an exhaustive AKind switch over S's nodes; A_BREF passes iff no member of
+    refs[] (a SET, DUPNAMES) is a group of P; A_CALL and A_VAR fail closed; a
+    kind added later (conditions, callouts) is a compile error until it says
+    which; where G4 fails the row hands LOWER(s*(j0)) to the attempt loop
+    instead of CAND per occurrence (§2.2)
 ```
 
 G2's "alphabet" is the set of bytes `P` can consume (a byte-set union over `P`'s
