@@ -134,7 +134,7 @@ def main():
                     cols = ["pid", "config", "regime", "enc", "rc", "note", "view", "cwmax", "minw",
                             "lead_unb", "gstart"] + STAMPS + FACTS + \
                            ["subject", "n", "s", "e", "calls", "nmatch", "T", "U", "U_before",
-                            "U_span", "U_after", "mult2", "multmax", "unk_pcs", "T_scan", "ahead", "span_sum", "ovl"] + \
+                            "U_span", "U_after", "mult2", "multmax", "unk_pcs", "T_scan", "ahead", "span_sum", "land_rev", "land_calls", "ovl"] + \
                            ["%s_%s" % (a, p) for p in ["pre", "skip", "fwd", "rev", "anc", "vm", "endw", "misc", "unk"]
                             for a in ("T", "U", "lo", "hi", "A")]
                     fo.write("\t".join(cols) + "\n")

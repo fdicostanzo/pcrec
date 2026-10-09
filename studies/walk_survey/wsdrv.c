@@ -41,6 +41,10 @@ static unsigned long long scanT;   /* bytes counted through the interposed scann
 static long call_hi = -1;          /* highest offset touched in the current call */
 static long ph_hi[MAXPH];          /* the same, per phase */
 static unsigned long long ph_ahead[MAXPH];  /* per phase: bytes read past the call's match end, summed over calls */
+static long ph_lo[MAXPH];          /* lowest offset touched in the current call, per phase */
+static unsigned long long ph_Tc[MAXPH];     /* bytes loaded in the current call, per phase */
+static unsigned long long land_rev, land_calls;  /* reverse bytes of calls whose match began where the forward machine first stepped */
+static int fwd_ph = -1, rev_ph = -1;
 static int unk_ph;
 static uintptr_t unk_pc[64]; static int nunk;
 
@@ -71,6 +75,8 @@ static void touch2(uintptr_t ra, uintptr_t ra1, const unsigned char *p, size_t s
         mult[o]++;
         if ((long)o > call_hi) call_hi = (long)o;
         if ((long)o > ph_hi[ph]) ph_hi[ph] = (long)o;
+        if (ph_lo[ph] < 0 || (long)o < ph_lo[ph]) ph_lo[ph] = (long)o;
+        ph_Tc[ph]++;
     }
 }
 
@@ -125,7 +131,16 @@ void *memmem(const void *h, size_t hl, const void *nd, size_t nl)
     scanT += hl; touch(RA, a, hl); return NULL;
 }
 
-static void call_begin(void) { call_hi = -1; for (int p = 0; p < MAXPH; p++) ph_hi[p] = -1; }
+static void call_begin(void) { call_hi = -1; for (int p = 0; p < MAXPH; p++) { ph_hi[p] = -1; ph_lo[p] = -1; ph_Tc[p] = 0; } }
+/* the LANDING test: a matched call whose match START is the first offset the
+ * forward machine stepped in that call -- the reverse pass then re-derived a
+ * start the forward pass had landed on */
+static void call_land(int matched, long s)
+{
+    if (matched && fwd_ph >= 0 && rev_ph >= 0 && ph_Tc[rev_ph] && ph_lo[fwd_ph] == s) {
+        land_rev += ph_Tc[rev_ph]; land_calls++;
+    }
+}
 static void call_end(long e)   /* e = the call's match end, or n when it found none */
 {
     for (int p = 0; p < nph; p++) if (ph_hi[p] + 1 > e) ph_ahead[p] += (unsigned long long)(ph_hi[p] + 1 - e);
@@ -141,7 +156,11 @@ static void load_map(const char *path)
     char *t = strtok(line + 8, " \n");
     while (t && nph < MAXPH) { snprintf(phname[nph++], 16, "%s", t); t = strtok(NULL, " \n"); }
     unk_ph = nph - 1;                                    /* last name is unk */
-    for (int k = 0; k < nph; k++) if (!strcmp(phname[k], "up")) up_ph = k;
+    for (int k = 0; k < nph; k++) {
+        if (!strcmp(phname[k], "up")) up_ph = k;
+        if (!strcmp(phname[k], "fwd")) fwd_ph = k;
+        if (!strcmp(phname[k], "rev")) rev_ph = k;
+    }
     unsigned long long a; int p;
     while (fscanf(f, "%llx %d", &a, &p) == 2) {
         if (nmap == cap) { cap *= 2; mapa = realloc(mapa, cap * sizeof *mapa); mapp = realloc(mapp, cap); }
@@ -172,7 +191,7 @@ int main(int argc, char **argv)
     if (argc < 5) { fprintf(stderr, "usage: wsdrv MAP REGIME UTF8 SUBJ...\n"); return 2; }
     load_map(argv[1]);
     const char *regime = argv[2]; int utf8 = atoi(argv[3]);
-    printf("subject\tn\tregime\trc\ts\te\tcalls\tnmatch\tT\tU\tU_before\tU_span\tU_after\tmult2\tmultmax\tunk_pcs\tT_scan\tahead\tspan_sum\tovl");
+    printf("subject\tn\tregime\trc\ts\te\tcalls\tnmatch\tT\tU\tU_before\tU_span\tU_after\tmult2\tmultmax\tunk_pcs\tT_scan\tahead\tspan_sum\tland_rev\tland_calls\tovl");
     for (int p = 0; p < nph; p++) printf("\tT_%s\tU_%s\tlo_%s\thi_%s\tA_%s", phname[p], phname[p], phname[p], phname[p], phname[p]);
     printf("\n");
     for (int i = 4; i < argc; i++) {
@@ -181,7 +200,7 @@ int main(int argc, char **argv)
          * past it is outside [lo, hi) and never counted */
         lo = b; hi = b + n; subn = n;
         for (int p = 0; p < nph; p++) { free(ph_bm[p]); ph_bm[p] = calloc(n / 8 + 1, 1); ph_T[p] = ph_ops[p] = 0; ph_ahead[p] = 0; }
-        free(mult); mult = calloc(n + 1, sizeof *mult); nunk = 0; scanT = 0;
+        free(mult); mult = calloc(n + 1, sizeof *mult); nunk = 0; scanT = 0; land_rev = land_calls = 0;
         unsigned long long ahead = 0, span_sum = 0;
         ptrdiff_t caps[RX_NCAPS][2];
         long rc = 0, s = -1, e = -1, calls = 0, nmatch = 0;
@@ -198,6 +217,7 @@ int main(int argc, char **argv)
             call_begin();
             int r = rx_search(b, n, 0, caps); calls = 1; rc = r;
             call_end(r == 1 ? (long)caps[0][1] : (long)n);
+            call_land(r == 1, r == 1 ? (long)caps[0][0] : -1);
             if (r == 1) { s = (long)caps[0][0]; e = (long)caps[0][1]; nmatch = 1; span_sum = (unsigned long long)(e - s);
                 if (call_hi + 1 > e) ahead += (unsigned long long)(call_hi + 1 - e); }
         } else {
@@ -206,6 +226,7 @@ int main(int argc, char **argv)
                 call_begin();
                 int r = rx_search(b, n, pos, caps); calls++;
                 call_end(r == 1 ? (long)caps[0][1] : (long)n);
+                call_land(r == 1, r == 1 ? (long)caps[0][0] : -1);
                 if (r == 0) break;
                 if (r < 0) { rc = r; break; }
                 if (s < 0) { s = (long)caps[0][0]; e = (long)caps[0][1]; rc = 1; }
@@ -225,8 +246,8 @@ int main(int argc, char **argv)
             if (s >= 0 && (long)o < s) ub++; else if (s >= 0 && (long)o < e) us++; else ua++;
         }
         const char *nm = strrchr(argv[i], '/');
-        printf("%s\t%zu\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%llu\t%zu\t%zu\t%zu\t%zu\t%zu\t%u\t%d\t%llu\t%llu\t%llu\t",
-               nm ? nm + 1 : argv[i], n, regime, rc, s, e, calls, nmatch, T, U, ub, us, ua, m2, mm, nunk, scanT, ahead, span_sum);
+        printf("%s\t%zu\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%llu\t%zu\t%zu\t%zu\t%zu\t%zu\t%u\t%d\t%llu\t%llu\t%llu\t%llu\t%llu\t",
+               nm ? nm + 1 : argv[i], n, regime, rc, s, e, calls, nmatch, T, U, ub, us, ua, m2, mm, nunk, scanT, ahead, span_sum, land_rev, land_calls);
         /* pairwise phase overlap: bytes touched by BOTH phases */
         int first = 1;
         for (int p = 0; p < nph; p++) for (int q = p + 1; q < nph; q++) {
