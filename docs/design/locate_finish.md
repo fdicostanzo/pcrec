@@ -54,7 +54,7 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
 |---|---|---|
 | C1 | A | FINISH totality is keyed on (locator route, finisher route): a hybrid's body locates on `CR_DFA`/`CR_ATTEMPT` while its finisher runs on `CR_VM` (§2.3, §2.6). The verify row is SPLIT: `verify-attempt` (`CR_ATTEMPT`, the attempt machine, always built) and `verify-anchored` (`CR_DFA`, gated on `unwrapped`, deny `-fno-anchored-dfa`) (§2.3). F-3 is NOT data-only and the revision says so: exactness is applied at the LOCATE → FINISH boundary by a derivation, `cand_lang_exact(cx)`, which reads `pcrec_vm_prefilter_window(cx)` — the very function `Vm.mrl_win` is assigned from (`emit_vm.c:10368`) and which needs only a `Ctx`, so RECOVER's `CandSel` does not need the `Vm` (§1.2, §2.5). Match-here's type is settled: the CALLER locator hands `[s, s]`, unproven, `D = ⊤` (shape `AT`, §1.2, §3.4). |
 | C2 | A | The VM-route ask of LOCATE is made only by an artifact with no DFA body: `cand_locate_route(cx)` returns `CAND_ROUTE_VM` iff `!pcrec_artifact_has_dfa_scan(cx)` (§2.6), so the composite's VM arm cannot fire on a hybrid. "Next locator in table order" is gone (G6). The self-check gains a PROGRESS check on succ cycles (§2.5). |
-| C3 | A | L0's re-aims are DERIVED by the start_table edit-set method: `studies/locate_finish/l0_edit_set.tsv` (30 entries) through `start_table/sabotage_anchors.py` against a call graph regenerated at this pin: **6 re-aim (S566, S599, S606-S609), 18 re-run at L0, 98 after L0**; S222 is a re-run, not a re-aim (it sits in `dfa_search_start_name`, which L0 does not touch). The `empty` decision inside the two emitters (`emit_unanchored` `:9729`, `emit_attempt` `:10094`) is in the edit set (§5 L0). |
+| C3 | A | L0's re-aims are DERIVED by the start_table edit-set method: `studies/locate_finish/l0_edit_set.tsv` (31 entries) through `start_table/sabotage_anchors.py` against a call graph regenerated at this pin: **6 re-aim (S566, S599, S606-S609), 18 re-run at L0, 98 after L0**; S222 is a re-run, not a re-aim (it sits in `dfa_search_start_name`, which L0 does not touch). The `empty` decision inside the two emitters (`emit_unanchored` `:9729`, `emit_attempt` `:10094`) is in the edit set (§5 L0). |
 | C4 | A | G12 defers every FINISH row with no producer, so L0 ships NO unreached row; `run_cand_oracle.sh` gains a declared-unreached allowance file (one line per row, with its argument and the commit that gives it a producer; a row in the file that IS reached fails), first used by L2's `verify-attempt` (§5 L0, L2). |
 | C5 | A | L0's sabotage plan is rebuilt (§5 L0): no declared-vs-derived posture plant (circular, and the declared column is deleted); new plants for `.hand` dropped (hand mandatory on a FINISH ask; a 0 hand aborts), the verify-anchored / search-from ORDER swapped, and F-2 reverted (a grep row: no row-POINTER compare in `src/gen`). F-3's plant no longer waits on a later landing: the boundary degrade is L0's, witnessed on a superset hybrid. |
 | C6 | A | REQ_WHY gains ONE token, `"locator"` (no pre-check: the selected locator is not the composite); DFA_TABLE / DFA_UNIFORM_FOLDS / DFA_SCAN_EDGE / the orientation block fold over the machines the artifact EMITS, through one membership derivation (L2.0, a no-mover) — under form C the forward machine is absent and they read the reverse (+ anchored) machines; the supersession of `revend.md` §5.2 is recorded in BOTH notes (§5.1; `revend.md` gains a forward pointer). |
@@ -606,7 +606,7 @@ tests `fit.chosen`, `fit.prefilter` or `prefn`: 32 lines. Revision 2 adds the
 | class | lines | what they decide | after L0 |
 |---|---|---|---|
 | **FINISH reads** ("is the finisher a DFA finisher on this entry?") | `emit_dfa.c:1650` (the dead-group fill), `:1728` (the startpos guard on the caller-facing body), `:3145` (`rx_info.match_form`), `:9768`, `:9769` (trace), `:9784` (`emit_unanchored`'s entry gate), `:10068`, `:10070` (trace), `:10083` (`emit_attempt`'s), `:10707` (`vm`, the orientation block) | 10 lines, 6 decisions, one question | read `cand_finish_of` |
-| **"does a DFA body exist"** (`pcrec_artifact_has_dfa_scan`, 12 callers) | `emit_dfa.c:439` (the definition), `:1094`, `:1362`, `:1492`/`:1501`/`:1505` (PRESENCE's gate need and its trace), `:6972`, `:7049`, `:7102`, `:7355`; the `rx_info.scan`/`prefilter` mirror `:3119` and the `search_form` mirror `:3193`; `emit_vm.c:11330` (the hybrid's DFA stamps); plus `:10708` (`prefilter`, which with `:10707` spells `(!vm \|\| prefilter)` = this predicate locally) and `:10922` (`dfa_body`, the same predicate spelled a third way) | the existence of a LOCATE ask on a DFA route | unchanged at L0 except `:10708` and `:10922`, which read the predicate (they are in L0's edit set by text); `cand_locate_route` reads it |
+| **"does a DFA body exist"** (`pcrec_artifact_has_dfa_scan`, 12 callers) | `emit_dfa.c:439` (the definition), `:1094`, `:1362`, `:1492`/`:1501`/`:1505` (PRESENCE's gate need and its trace), `:6972`, `:7049`, `:7102`, `:7355`; the `rx_info.scan`/`prefilter` mirror `:3119` and the `search_form` mirror `:3193`; `emit_vm.c:11330` (the hybrid's DFA stamps); plus `:10708` (`prefilter`, which with `:10707` spells `(!vm \|\| prefilter)` = this predicate locally) and `:10922` (`dfa_body`, the same predicate spelled a third way) | the existence of a LOCATE ask on a DFA route | unchanged at L0 except `:10708`, which reads the predicate in the orientation block's edit; `:10922` is F-9's later tidy; `cand_locate_route` reads it |
 | route-class reads inside predicates (start_table §2.3's third axis) | `:6847` (N7), `:7155`, `:7159` (P2), `:7360` (F1's (d′)) | stay (not FINISH) | unchanged |
 | the VM finisher's locator calls and exactness | `emit_vm.c:3645` (`mrl_win`, the body's language), `:11071`, `:11182`, `:11218` (stamps, the RETRY plan), `:12703-12733` (emit the inlined locator), `:13261-13327` (RETRY's re-locate), `:13393-13404` (the entry's locate call, E6) | **15 lines** (revision 1 said 16) that ARE the VM hat's implementation | unchanged at L0 |
 
@@ -614,7 +614,8 @@ So the finisher choice is one question asked at six decisions in two emitters, a
 "does a body exist" is spelled at least three ways (`pcrec_artifact_has_dfa_scan`,
 `(!vm || prefilter)` at `:10707-10708`, `dfa_body` at `:10922`). L0 gives the first
 ONE derivation, `cand_finish_of(cx)` (the `cand_route_of` precedent), and points the
-two local re-spellings of the second at the shared predicate.
+orientation block's local re-spelling of the second at the shared predicate; the third
+(`:10922`) is F-9.
 
 ### 3.4 The ≥3 rule, and the `dfa_matches[]` fold `[r2 G4, C1]`
 
@@ -863,8 +864,10 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
      emitter, byte-identical or the commit does not land); `dfa_engine_is_empty`
      becomes the reader of LOCATE's selection (its old body is `empty`'s predicate;
      its eight callers do not change); `cand_locate_route`.
-  3. `cand_finish_of(cx)` read by the ten FINISH reads (§3.3); `:10708`/`:10922` read
-     `pcrec_artifact_has_dfa_scan`.
+  3. `cand_finish_of(cx)` read by the ten FINISH reads (§3.3); `:10708`, the other half
+     of the orientation block's `(!vm || prefilter)`, reads `pcrec_artifact_has_dfa_scan`
+     in the same edit. `:10922` (`dfa_body` in `pcrec_emit_prologue`) is NOT in L0
+     (G12's list); it is F-9's later tidy.
   4. The `dfa_matches[]` fold: FINISH rows F3 `verify-anchored` and F5 `search-from`
      taking `AT`; `dfa_match_of` → `cand_select(FINISH, cand_finish_of, hand = AT)`;
      `dfa_match_is_unwrapped` reads `u.finish.act` (F-2); the `match` listing is the
@@ -889,8 +892,8 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
   commit that gives it a producer; a listed row that IS reached fails, so the file
   cannot rot) `[r2 C4]`, EMPTY at L0 because G12 deferred every producer-less row;
   `start_table/call_graph.py` + `inventory_check.py` re-derived.
-- **Re-aims, DERIVED `[r2 C3]`.** `studies/locate_finish/l0_edit_set.tsv` (30
-  entries: 11 `def`, 2 `token`, 17 `line`) through `start_table/sabotage_anchors.py`
+- **Re-aims, DERIVED `[r2 C3]`.** `studies/locate_finish/l0_edit_set.tsv` (31
+  entries: 11 `def`, 2 `token`, 18 `line`) through `start_table/sabotage_anchors.py`
   (ORDER gained `L0`, `L2`) on a call graph regenerated at `7efca415`
   (`results/l0_sabotage_anchors.tsv`, `.summary`): **RE-AIM at L0: 6** — S566
   (`emit_unanchored` `:9767`, the `fit.chosen` req-run line), S599 (the WIDTH `ceiling`
@@ -1251,7 +1254,8 @@ F4 as its mechanism (one `take` bit), measured before it is built (D77).
   references `P`'s groups; corrected in place.
 - **F-9** (new) "Does a DFA body exist" is spelled three ways (`pcrec_artifact_has_dfa_scan`,
   `(!vm || prefilter)` at `emit_dfa.c:10707-10708`, `dfa_body` at `:10922`); L0 points
-  the two local spellings at the predicate.
+  the first local spelling at the predicate; `:10922` is a later one-line tidy (not in
+  G12's L0).
 - **F-10** (new) The machine-membership rule is spelled four times (`dfa_table_name`,
   `dfa_uniform_folds`, `dfa_scan_edge_name`, the orientation block); L2.0 unifies it.
 - **F-11** (new) An ENG_ATTEMPT artifact's `_match` is `search-filter` (a whole search

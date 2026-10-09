@@ -32,3 +32,4 @@ line	bool vm = job->fit.chosen == ENGM_VM;	L0	the orientation block's VM test ->
 line	if (us.empty) {	L0	emit_unanchored's empty arm moves to the LOCATE `empty` row's emitter (:9729)
 line	if (dfa_engine_is_empty(cx)) {	L0	emit_attempt's empty arm moves to the LOCATE `empty` row's emitter (:10094)
 line	if (dfa_match_is_unwrapped(cx)) {	L0	axis G's one dispatch (:11588) reads the FINISH row
+line	bool prefilter = job->fit.prefilter;	L0	the orientation block reads pcrec_artifact_has_dfa_scan (:10708)
