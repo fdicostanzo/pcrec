@@ -197,7 +197,33 @@ typedef struct {
     uint8_t  mm_tab[256];         /* the generated fold map (the identity under NONE) */
     uint8_t  mm_arith;            /* the text spells the map arithmetically, not by table */
     uint8_t  mm_var;              /* the map variant (MMV_*), for the census          */
+    /* lane g2m6 (STRIDED ADVANCE, MF_SITE_ABI 8): the site's own choices. The shape
+     * itself (W = preds[0].nterm, term i at offset i) lives in the predicate. */
+    uint8_t  st_cur;              /* the cursor spelling, ST_CUR_N variants            */
+    uint8_t  st_mem;              /* the member hook: 0 absent, 1 pcrec's own read (ignores
+                                     the byte_expr it is given), 2 the byte_expr form  */
+    uint8_t  st_mvar, st_stvar, st_pkvar;  /* the `more` / `step` / `peek` text variants */
+    uint8_t  st_cbc;              /* mf_site.count_by_caller                           */
+    uint8_t  st_snull, st_cnull;  /* W = 1 only: `s` / `cursor` UNSTATED               */
+    uint8_t  st_spk;              /* the per-position set pattern (census)             */
+    uint8_t  st_capk, st_cntk;    /* the cap / counter configuration (census)          */
+    uint8_t  st_ind;              /* the indent spelling (ST_IND)                      */
 } gsite;
+
+/* lane g2m6: the cursor spellings of the STRIDED family. `hook` is the text of the
+ * `cursor` hook; `lv` the lvalue the other pcrec hooks (more, step, peek, the member)
+ * spell it as; `decl` what the wrapper declares; `res` how it reads the final value. */
+/* the indent pcrec hands the kit: four spellings (a STMT site's text starts every line with it) */
+#define ST_IND_N 4
+static const char *const ST_IND[ST_IND_N] = { "    ", "", "\t\t", "        " };
+#define ST_CUR_N 5
+static const struct { const char *hook, *lv, *decl, *res; } ST_CUR[ST_CUR_N] = {
+    { "cur",      "cur",       "    size_t cur = lo;\n",                                   "cur" },
+    { "(cur)",    "cur",       "    size_t cur = lo;\n",                                   "cur" },
+    { "g2c.pos",  "g2c.pos",   "    struct { size_t pos; } g2c = { lo };\n",               "g2c.pos" },
+    { "g2cv[0]",  "g2cv[0]",   "    size_t g2cv[2] = { lo, 0 };\n",                        "g2cv[0]" },
+    { "*g2cp",    "(*g2cp)",   "    size_t g2c0 = lo; size_t *g2cp = &g2c0;\n",            "g2c0" },
+};
 
 static const char *combo_label(int op, int h, int form)
 {
@@ -470,6 +496,54 @@ static const g2_term *term_of(uint32_t idx, uint32_t *p_out)
 
 static int member_calls_bad;   /* member asked for a term that is not a SET */
 
+static int g_mutate;           /* W2: 1-4 text mutations, 5-7 hook mutations; 9-11 MISMATCH, 12-16 STRIDE */
+/* lane g2m6, W2 12-14: the term a mutation forces to hold ALWAYS (12 the last, 13 the
+ * first, 14 the middle one of W >= 3), or -1 when this site is not mutated by it. A
+ * mutation is only ever counted where it is NOT equivalent: the term's set is not full
+ * and every term before it can hold at all (an EMPTY set earlier ends the run first),
+ * and the cap does not stop the run before it starts. */
+static int st_mut_term(const gsite *g)
+{
+    if (g->d.fam != G2_FAM_STRIDE || g_mutate < 12 || g_mutate > 14) return -1;
+    int W = g->preds[0].nterm;
+    int t = g_mutate == 12 ? W - 1 : g_mutate == 13 ? 0 : W / 2;
+    if (g_mutate == 14 && W < 3) return -1;
+    if (g_mutate == 12 && W < 2) return -1;
+    if (set_count(g->preds[0].t[t].set) == 256) return -1;
+    /* an EMPTY set anywhere ends every block, so no cursor ever moves and no term can be told */
+    for (int j = 0; j < W; j++) if (set_count(g->preds[0].t[j].set) == 0) return -1;
+    if (g->d.span_hi != G2_UNBOUNDED && g->d.span_hi <= g->d.count_start) return -1;
+    return t;
+}
+/* W2 15: `more` admits a block one byte short (cursor + W - 1 <= n); 16: the cap one
+ * iteration too many. Mutated only where a subject of the generator's lengths can tell. */
+static int st_mut15(const gsite *g)
+{
+    if (g->d.fam != G2_FAM_STRIDE || g_mutate != 15) return 0;
+    /* `n - cursor >= W - 1` with the cursor past n wraps to true forever: a mutant that never ends, not a killed one */
+    if (g->st_mvar == 1) return 0;
+    /* an EMPTY set: its member text is `0` and the read of the byte is dead code; no cursor ever moves */
+    for (int j = 0; j < g->preds[0].nterm; j++) if (set_count(g->preds[0].t[j].set) == 0) return 0;
+    /* the mutant is seen only where the run reaches a partial last block of W - 1 bytes with the cap not yet
+     * reached: after j >= 0 blocks (j >= 1 for an EXCLUDED site: the driver skips a window without a whole block) */
+    return !(g->d.span_hi != G2_UNBOUNDED &&
+             g->d.span_hi < (uint64_t)g->d.count_start + 1 + (g->d.empty == G2_EMPTY_EXCLUDED));
+}
+#define ST_REMMAX 130           /* the longest window (n - lo) the strided driver builds */
+static int st_mut16(const gsite *g)
+{
+    if (g->d.fam != G2_FAM_STRIDE || g_mutate != 16) return 0;
+    if (g->d.span_hi == G2_UNBOUNDED) return 0;
+    for (int j = 0; j < g->preds[0].nterm; j++) if (set_count(g->preds[0].t[j].set) == 0) return 0;
+    return (g->d.span_hi + 1) * (uint64_t)g->preds[0].nterm <= ST_REMMAX;
+}
+/* does the current W2 mutation (12-16) change this strided site non-equivalently? */
+static int st_is_mutated(const gsite *g)
+{
+    if (g->d.fam != G2_FAM_STRIDE) return 0;
+    return g_mutate <= 14 ? st_mut_term(g) >= 0 : g_mutate == 15 ? st_mut15(g) : st_mut16(g);
+}
+
 static const char *h_member(void *u, uint32_t term, const char *byte_expr)
 {
     (void)u;
@@ -479,6 +553,20 @@ static const char *h_member(void *u, uint32_t term, const char *byte_expr)
         member_calls_bad++;
         snprintf(out, 1024, "G2_BAD_MEMBER_TERM_%u", term);
         return out;
+    }
+    if (cur_site && cur_site->d.fam == G2_FAM_STRIDE) {
+        /* lane g2m6: pcrec's own member text for a strided term ignores the byte
+         * expression the kit offers and reads the byte it means, s[cursor + i] (st_mem 1);
+         * st_mem 2 uses the offered expression, so the kit must offer the right byte. */
+        if (cur_site->st_mem == 1) {
+            char *own = hookstr();
+            snprintf(own, 1024, "s[%s + %u]", ST_CUR[cur_site->st_cur].lv, term % MF_MAX_TERM);
+            byte_expr = own;
+        }
+        if (st_mut_term(cur_site) == (int)(term % MF_MAX_TERM)) {      /* W2 12-14 */
+            snprintf(out, 1024, "1");
+            return out;
+        }
     }
     int c = set_count(T->set);
     if (c == 1) {
@@ -613,6 +701,8 @@ static void to_mf_pred(const gsite *g, int p, mf_pred *mp)
         m->run = T->run;
         m->mask = T->mask;
         m->run_len = T->len;
+        /* lane g2m6, W2 12-14: the forced-true term holds for the kit's own test too */
+        if (st_mut_term(g) == t) { memset(m->set, 0xFF, 32); m->table_ref = 0; }
         uint32_t a = (g->ppm_seed * 2654435761u + (uint32_t)t) % (MF_PPM_FULL + 1);
         uint32_t b = (g->ppm_seed * 40503u + (uint32_t)t * 7u) % (MF_PPM_FULL + 1);
         m->ppm_lo = a < b ? a : b;
@@ -622,7 +712,6 @@ static void to_mf_pred(const gsite *g, int p, mf_pred *mp)
 
 /* ---- the text pieces G2 hands over as hooks -------------------------------- */
 
-static int g_mutate;           /* W2: 1-4 text mutations, 5-7 hook mutations */
 
 static const char *miss_text(int mode)
 {
@@ -635,6 +724,47 @@ static const char *miss_text(int mode)
     default: return NULL;                 /* 5 NULL (unstated); 6 is the `n`
                                              hook's text, set in fill_hooks */
     }
+}
+
+/* lane g2m6: the hooks of a STRIDED ADVANCE site (memfn.h, the ADVANCE hooks). W is
+ * the predicate's width; the cursor is spelled four ways; `more`, `step` and `peek`
+ * each in four texts, two of them outside the lexical classes CONJ / EXPR_STMT /
+ * POSTFIX (so only a row that parenthesizes and braces serves them). `more` is
+ * pcrec's `cursor + W <= bound`: the W bytes [cursor, cursor + W) are readable. */
+static void fill_stride_hooks(gsite *g, mf_hooks *h)
+{
+    int W = g->preds[0].nterm, v = g->st_cur;
+    const char *lv = ST_CUR[v].lv;
+    char *more = hookstr(), *step = hookstr(), *peek = hookstr();
+    int mw = g_mutate == 15 && st_mut15(g) ? W - 1 : W;          /* W2 15: a block one byte short is "readable" */
+    switch (g->st_mvar) {
+    case 0:  snprintf(more, 1024, "%s + %d <= n", lv, mw); break;
+    case 1:  snprintf(more, 1024, "n - %s >= %d", lv, mw); break;
+    case 2:  snprintf(more, 1024, "(%s + %d <= n)", lv, mw); break;
+    case 3:  snprintf(more, 1024, "G2_EV(%s + %d <= n)", lv, mw); break;
+    default: snprintf(more, 1024, "%s + %d <= n || 0", lv, mw); break;       /* a top-level `||`: pasted raw into `a && more && b` it changes the meaning */
+    }
+    switch (g->st_stvar) {
+    case 0:  snprintf(step, 1024, "%s += %d;", lv, W); break;
+    case 1:  snprintf(step, 1024, "%s += %d", lv, W); break;
+    case 2:  snprintf(step, 1024, "%s = %s + %d;", lv, lv, W); break;
+    case 3:  snprintf(step, 1024, "{ %s += %d; }", lv, W); break;
+    default: snprintf(step, 1024, "%s += %d, (void)0;", lv, W); break;       /* a top-level comma */
+    }
+    switch (g->st_pkvar) {
+    case 0:  snprintf(peek, 1024, "s[%s]", lv); break;
+    case 1:  snprintf(peek, 1024, "(s[%s])", lv); break;
+    case 2:  snprintf(peek, 1024, "*(s + %s)", lv); break;
+    case 3:  snprintf(peek, 1024, "G2_EV(s[%s])", lv); break;
+    default: snprintf(peek, 1024, "s[%s] | 0", lv); break;                     /* not a postfix expression: an operand of `&` or `==` needs it parenthesized */
+    }
+    h->more = more;
+    h->step = step;
+    h->peek = peek;
+    h->cursor = (W == 1 && g->st_cnull) ? NULL : ST_CUR[v].hook;
+    if (W == 1 && g->st_snull) h->s = NULL;
+    h->member = g->st_mem ? h_member : NULL;
+    h->indent = ST_IND[g->st_ind % ST_IND_N];
 }
 
 static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
@@ -726,6 +856,7 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
         if (g_mutate == 10) h->ref = "(const unsigned char *)s";    /* W2 10: the wrong operand */
         if (g_mutate == 11 && g->mm_text) h->fold = g->d.mm_shape ? ";" : "(@)";   /* W2 11: the fold is gone */
     }
+    if (g->d.fam == G2_FAM_STRIDE) fill_stride_hooks(g, h);
 }
 
 static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
@@ -768,6 +899,8 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
     s->on_miss_leaves = g->d.leaves;
     s->opts = (g->ppm_seed & 1) ? "" : NULL;
     s->fold_kind = g->d.mm_fold == G2_FOLD_ASCII ? MF_FOLD_ASCII : g->d.mm_fold == G2_FOLD_UCP ? MF_FOLD_UCP : MF_FOLD_NONE;
+    s->count_by_caller = g->st_cbc;
+    if (st_mut16(g)) s->span_hi = g->d.span_hi + 1;          /* W2 16: the cap one iteration too many */
 }
 
 /* ---- W2: textual mutation of the rendered text ---------------------------- */
@@ -793,6 +926,7 @@ static FILE *g_res;
 static int g_batch_tag;     /* lane g2pf: the PF cell the batch being filled holds (0 = none) */
 static long n_render_ok, n_render_fail, n_refusal_pass, n_refusal_fail,
             n_vocab_pass, n_vocab_fail, n_api_pass, n_api_fail;
+static long st_nonid_rendered, st_nonid_refused;   /* lane g2m6: strided sites with non-identifier s / cursor text */
 
 /* G2_STRICT_HOOKS=1: every PENDING-ENFORCE case is a hard check (the
  * enforcement step's acceptance test). Otherwise its outcome is counted in
@@ -1071,9 +1205,14 @@ static uint32_t pz_applicable(const gsite *g, const mf_site *s)
     if (f != G2_FORM_STMT || h == G2_H_ADVANCE) m |= 1u << PZ_ON_MISS;
     if (h != G2_H_ADVANCE)
         m |= 1u << PZ_STEP | 1u << PZ_MORE | 1u << PZ_PEEK | 1u << PZ_COUNT | 1u << PZ_COUNT_START;
-    m |= 1u << PZ_CURSOR;                       /* Q-G2-14: never used, ADVANCE included */
-    if (h == G2_H_ADVANCE && !d->has_count) m |= 1u << PZ_COUNT_START;
-    if (h == G2_H_ADVANCE && !g->cursor_null) m |= 1u << PZ_CURSOR_NULL;
+    /* lane g2m6: at W > 1 a strided ADVANCE's kit-owned reads are s[cursor + i] (Q-R10-4),
+     * so `cursor` is USED there; at W = 1 it is still never used (Q-G2-14). A cap with no
+     * counter named gives the kit a counter of its own, which starts at count_start */
+    int strided = d->fam == G2_FAM_STRIDE && g->preds[0].nterm > 1;
+    if (!strided) m |= 1u << PZ_CURSOR;         /* Q-G2-14: never used, ADVANCE included */
+    if (h == G2_H_ADVANCE && !d->has_count && !(d->fam == G2_FAM_STRIDE && d->span_hi != G2_UNBOUNDED))
+        m |= 1u << PZ_COUNT_START;
+    if (h == G2_H_ADVANCE && !g->cursor_null && !strided) m |= 1u << PZ_CURSOR_NULL;
     if (h != G2_H_ON_CAND) m |= 1u << PZ_ON_CAND | 1u << PZ_ON_CAND_REACH;
     /* fn_ref 0 = none (memfn.h): an EXPR/STMT site with no fn_ref asks no
      * name. A FUNC site with none still needs one; whether a form may hand
@@ -1294,6 +1433,17 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
         bf(o, "    o->res = (%s) ? 1 : 0;\n    return 0;\n}\n\n", body);
         return;
     case G2_H_ADVANCE:
+        if (d->fam == G2_FAM_STRIDE) {
+            /* lane g2m6: the cursor is spelled per site (ST_CUR); a caller-owned counter
+             * (count_by_caller) is declared HERE, before the kit's text, as pcrec's is */
+            bputs(o, ST_CUR[g->st_cur].decl);
+            if (g->st_cbc) bf(o, "    unsigned long g2_cnt = %luUL;\n", d->count_start);
+            bputs(o, body);
+            bf(o, "\n    o->res = %s;\n", ST_CUR[g->st_cur].res);
+            if (d->has_count) bputs(o, "    o->cnt = g2_cnt;\n");
+            bputs(o, "    return 0;\n}\n\n");
+            return;
+        }
         bputs(o, "    size_t cur = lo;\n");
         bputs(o, body);
         bputs(o, "\n    o->res = cur;\n");
@@ -1585,6 +1735,14 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
             fprintf(g_res, "PENDING %s site %u %s fam=%s v=%s: refused (%s the field): %s\n",
                     g2_pend_name(pend), g->d.id, g->d.label, g2_fam_name(g->d.fam),
                     g2_v_name(g->d.vfield), named ? "naming" : "NOT naming", err);
+            if (g->d.fam == G2_FAM_STRIDE) {
+                /* lane g2m6 (the brief, item 4): non-identifier `s` / `cursor` texts MUST work, since
+                 * the generic row parenthesizes: a refusal here is a failure, whatever it names */
+                st_nonid_refused++;
+                n_render_fail++;
+                fprintf(g_res, "FAIL render site %u %s fam=stride (W=%d, s style %u, cursor spelling %u): the kit REFUSED a strided ADVANCE whose s/cursor text is not a bare identifier (the generic row parenthesizes): %s\n",
+                        g->d.id, g->d.label, g->preds[0].nterm, g->d.hook_style, g->st_cur, err);
+            }
             if (g_strict) {
                 if (named) n_strict_pass++;
                 else { n_strict_fail++; fprintf(g_res, "FAIL strict site %u: refusal does not name the field\n", g->d.id); }
@@ -1593,6 +1751,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
             return;
         }
         pend_rendered[pend]++;
+        if (g->d.fam == G2_FAM_STRIDE) st_nonid_rendered++;
         if (pend == G2_PEND_EDGE) pfe_rendered[g->d.pfedge]++;
         fprintf(g_res, "PENDING %s site %u %s fam=%s v=%s: rendered\n", g2_pend_name(pend), g->d.id,
                 g->d.label, g2_fam_name(g->d.fam), g2_v_name(g->d.vfield));
@@ -1727,9 +1886,13 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     mut |= mutate(&body);
     mut |= mutate(&file);
     if (g->d.via == 2) mutate(&body2);
-    if (g_mutate >= 5 && g_mutate <= 7) mut = !(g_mutate == 7 && g->floor_null);
+    if (g_mutate >= 5 && g_mutate <= 7) mut = !(g_mutate == 7 && g->floor_null) && g->d.fam != G2_FAM_STRIDE;   /* a strided ADVANCE reads neither lo, n nor floor: equivalent */
     /* lane g2m7, W2 9-11 (MISMATCH sites only): a wrong `reflen` (+1), a wrong `ref`, a vanished fold */
-    if (g_mutate >= 9) mut = g->d.op == G2_OP_MISM && (g_mutate != 11 || g->mm_text);
+    if (g_mutate >= 9 && g_mutate <= 11) mut = g->d.op == G2_OP_MISM && (g_mutate != 11 || g->mm_text);
+    /* lane g2m6, W2 12-16 (strided sites only): 12-14 a term that always holds (the last, the first,
+     * the middle one), 15 `more` admits a block one byte short, 16 the cap one iteration too many.
+     * Only where the mutant is NOT equivalent (st_mut_term / st_mut15 / st_mut16) */
+    if (g_mutate >= 12) mut = st_is_mutated(g);
     /* W2 mutation 8 (lane g2m4): the kit's text for a LOOP_EXIT site is wrapped in a
      * loop of ITS OWN, as a row that opened a loop around its on_miss would: the
      * `break;` then leaves that inner loop and the driver's loop never sees it.
@@ -1772,6 +1935,9 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
        d->vfield, d->vclass, d->fid, g->on_miss_mode == 3 || g->on_miss_mode == 5, d->pfcell, d->pfedge, d->inplace,
        d->noonmiss, d->lo_over, d->tabbad, d->floor_lo, d->loopx);
     if (d->op == G2_OP_MISM) bf(&B->reg, ", %u, %u, %u, %u, g2mm_%u, g2mmchk_%u },\n", d->mm_fold, d->mm_shape, d->mm_res, d->mm_goto, d->id, d->id);
+    else if (d->fam == G2_FAM_STRIDE)
+        bf(&B->reg, ", .st_cbc = %u, .st_mem = %u, .st_cur = %u, .st_snull = %u, .st_cnull = %u, .st_cntk = %u, .st_capk = %u, .st_spk = %u },\n",
+           g->st_cbc, g->st_mem, g->st_cur, g->st_snull, g->st_cnull, g->st_cntk, g->st_capk, g->st_spk);
     else bputs(&B->reg, " },\n");
     B->nsite++;
     B->npend += d->pend != 0;
@@ -2534,13 +2700,18 @@ static int pend_class(const gsite *g)
     if (g->d.loopx) return G2_PEND_LOOPX;     /* Q-R7-3: rendered by a non-generic row, or refused naming on_miss */
     if (pf_edge_mask(g)) return G2_PEND_EDGE;
     if (g->d.fam != G2_FAM_BASE && !g->generic_seed && g->d.hook_style != 0) return G2_PEND_HOOK;
+    /* lane g2m6: a strided site's cursor spelled as anything but a bare identifier is the same class */
+    if (g->d.fam == G2_FAM_STRIDE && g->st_cur != 0) return G2_PEND_HOOK;
     return G2_PEND_NONE;
 }
 
 static void emit_site(gsite *g)
 {
+    /* lane g2m6, W2 12-16 run only the mutated strided sites: the others need not be rendered or compiled */
+    if (g_mutate >= 12 && !st_is_mutated(g)) { free_site(g); return; }
     g->d.pfedge = (uint8_t)(g->d.pfcell ? pf_edge_first(g) : 0);
     g->d.pend = (uint8_t)pend_class(g);
+    if (g_mutate >= 12 && g->d.pend) { free_site(g); return; }        /* the witnesses judge the hard population only */
     if (!g->d.pend) { next_site(g); return; }
     g->pdeny = g_batch_denies;
     if (npq == cappq) {
@@ -3571,6 +3742,589 @@ static void mm_refusals(void)
  * value class of ONE field, every other field identical, every variant
  * answer-checked against the reference. A form that IGNORES a field it
  * should read answers one class wrong. */
+/* ---- lane g2m6: the STRIDED ADVANCE (MF_SITE_ABI 8, R-10 / M6) --------------------
+ *
+ * integration.md section 15.9 and memfn.h (the ADVANCE hooks, RULED Q-R10-2..5): a
+ * STMT / SKIP / ADVANCE site over W in 1..MF_MAX_TERM REQUIRED SET terms, term i at
+ * offset i. The cursor advances by W (pcrec's `step`) while `more` (pcrec's
+ * `cursor + W <= bound`), the cap (span_hi, ITERATIONS) and EVERY term hold at the
+ * cursor; term i tests s[cursor + i]. The counter (kit-owned or, under
+ * count_by_caller, the caller's) advances once per iteration.
+ *
+ * The generated space: W in {1,2,3,7,8,9,16,31,32}; per-position sets singleton, range,
+ * sparse, full, EMPTY at one position; the cap 0, 1, around the longest run a window of
+ * ST_REMMAX bytes can hold, and unbounded; the counter none / kit-owned / caller-owned
+ * (and a cap with no counter named: the kit's own); the member hook absent / pcrec's own
+ * read / the byte_expr form; the cursor spelled five ways; `more`, `step`, `peek` in four
+ * texts each (two outside the lexical classes); `s` plain or not; W = 1 with `s` and
+ * `cursor` unstated. The subjects (the driver's run_stride) are built from the sets. */
+static const int ST_W[9] = { 1, 2, 3, 7, 8, 9, 16, 31, 32 };
+static uint64_t st_rng = 0x7374726964650a11ULL, st_rng2 = 0x5354524944455453ULL;
+static uint32_t st_ids = 1000000;
+typedef struct { uint64_t r1, r2; uint32_t id; } stsave;
+static stsave st_enter(void)
+{
+    stsave sv = { rng_state, rng2_state, next_id };
+    rng_state = st_rng; rng2_state = st_rng2; next_id = st_ids;
+    return sv;
+}
+static void st_leave(stsave sv)
+{
+    st_rng = rng_state; st_rng2 = rng2_state; st_ids = next_id;
+    rng_state = sv.r1; rng2_state = sv.r2; next_id = sv.id;
+}
+
+/* census, printed as STSITES */
+static long st_n_sites, st_n_w[9], st_n_spk[8], st_n_mem[3], st_n_cur[ST_CUR_N], st_n_cap[8], st_n_cnt[4],
+            st_n_mvar[5], st_n_stvar[5], st_n_pkvar[5], st_n_ind[ST_IND_N], st_n_spanlo, st_n_style[3], st_n_empty[4], st_n_w1[4],
+            st_n_emptypos, st_n_cbc, st_n_capnocount;
+
+/* a set of the given kind: 0 singleton, 1 range of 2..60, 2 sparse (3..9 bytes), 3 full,
+ * 4 empty, 5 all but one byte */
+static void st_set(uint8_t *set, int kind)
+{
+    memset(set, 0, 32);
+    switch (kind) {
+    case 0: set_add(set, rn(256)); break;
+    case 1: { unsigned a = rn(256), w = 2 + rn(59); for (unsigned b = a; b < 256 && b < a + w; b++) set_add(set, b); break; }
+    case 2: { int k = 3 + (int)rn(7); while (k--) set_add(set, rn(256)); break; }
+    case 3: memset(set, 0xFF, 32); break;
+    case 4: break;
+    default: { unsigned x = rn(256); for (int b = 0; b < 256; b++) if ((unsigned)b != x) set_add(set, (unsigned)b); break; }
+    }
+}
+
+/* the per-position set patterns (spk): 0 singletons, 1 ranges, 2 sparse, 3 all full, 4 mixed
+ * (one of the first five kinds per position), 5 one EMPTY position (emp) among mixed
+ * non-full ones, 6 singletons with one FULL position (emp) */
+static void st_sets(gsite *g, int W, int spk, int emp)
+{
+    for (int i = 0; i < W; i++) {
+        g2_term *T = &g->preds[0].t[i];
+        int kind;
+        switch (spk) {
+        case 0: kind = 0; break;
+        case 1: kind = 1; break;
+        case 2: kind = 2; break;
+        case 3: kind = 3; break;
+        case 4: { static const int km[5] = { 0, 1, 2, 3, 5 }; kind = km[rn(5)]; break; }
+        case 5: { static const int km[4] = { 0, 1, 2, 5 }; kind = i == emp ? 4 : km[rn(4)]; break; }
+        default: kind = i == emp ? 3 : 0; break;
+        }
+        for (int tries = 0; tries < 12; tries++) {
+            st_set(T->set, kind);
+            /* neighbours differ, so a kit that tests term i against another position's set is caught */
+            if (i == 0 || kind == 3 || kind == 4 || memcmp(T->set, g->preds[0].t[i - 1].set, 32)) break;
+        }
+        T->kind = G2_T_SET;
+        T->need = G2_REQ;
+        T->off = i;
+    }
+}
+
+/* the cap: 0 unbounded; 1 zero; 2 one; 3 a middle value; 4 one under the longest run a window
+ * of ST_REMMAX bytes holds (nb = ST_REMMAX / W blocks), 5 that run, 6 one over it; 7 a bounded
+ * cap no run reaches */
+static uint64_t st_cap(int W, int capk)
+{
+    int nb = ST_REMMAX / W;
+    switch (capk) {
+    case 0:  return G2_UNBOUNDED;
+    case 1:  return 0;
+    case 2:  return 1;
+    case 3:  return nb > 3 ? (uint64_t)nb / 2 : 2;
+    case 4:  return (uint64_t)(nb ? nb - 1 : 0);
+    case 5:  return (uint64_t)nb;
+    case 6:  return (uint64_t)nb + 1;
+    default: return 100000;
+    }
+}
+
+/* one strided site. spk/emp the set pattern, capk the cap, cntk the counter (0 none, 1 kit-owned
+ * from 0, 2 kit-owned from 1 or 3, 3 caller-owned), mem the member hook, curv the cursor
+ * spelling, mvar/stvar/pkvar the hook texts, style the s/n/lo/floor text style, empty the
+ * outcome on an empty range (NOP or EXCLUDED), snull/cnull W = 1 only (s / cursor unstated) */
+static void st_site(gsite *g, int W, int spk, int emp, int capk, int cntk, int mem, int curv,
+                    int mvar, int stvar, int pkvar, int style, int empty, int snull, int cnull)
+{
+    base_site(g, ci_of(G2_OP_SKIP, G2_H_ADVANCE, G2_FORM_STMT));
+    g2_site *d = &g->d;
+    d->fam = G2_FAM_STRIDE;
+    d->label = strdup("STRIDE/STMT/ADVANCE");
+    d->reverse = 0;
+    d->end_back = 0;
+    d->empty = (uint8_t)empty;
+    d->hook_style = (uint8_t)style;
+    d->leaves = 0;
+    d->miss_mode = 0;
+    d->ret_pred = 0xFF;
+    d->use = G2_USE_POSITION;
+    d->span_lo = 0;
+    g->floor_null = rn(3) != 0;
+    g->floor_zero = rn(2);
+    g->plan_explicit = 1;
+    g->result_decl = 0;
+    alloc_preds(g, 1);
+    g->preds[0].nterm = (uint8_t)W;
+    g->preds[0].need = G2_REQ;
+    g->php[0] = MF_NO_PRED;
+    g->ppp[0] = 0;
+    g->fnr[0] = 0;
+    st_sets(g, W, spk, emp);
+    /* pcrec's plan_hint (the term its model scans) is a fact the field carries on every site; stated on one in three */
+    if (rn(3) == 0) g->php[0] = (uint8_t)rn((unsigned)W);
+    g->st_ind = (uint8_t)rn(ST_IND_N);
+    /* the counter and the cap */
+    d->span_hi = st_cap(W, capk);
+    d->has_count = cntk != 0;
+    d->count_start = cntk == 2 ? (rn(2) ? 1 : 3) : cntk == 3 ? (rn(2) ? 0 : 2) : 0;
+    /* an EXCLUDED site's range is proven non-empty: the driver runs it only where a whole block fits, so
+     * span_lo = W (the proven bytes) is a true fact there, and is stated on half of them */
+    if (empty == G2_EMPTY_EXCLUDED && rn(2)) { d->span_lo = (uint64_t)W; st_n_spanlo++; }
+    if (d->span_hi == 0) d->count_start = 0;
+    if (d->span_hi != G2_UNBOUNDED && d->span_hi < d->count_start) d->span_hi = d->count_start;
+    g->st_cbc = cntk == 3;
+    g->st_cur = (uint8_t)curv;
+    g->st_mem = (uint8_t)mem;
+    g->st_mvar = (uint8_t)mvar;
+    g->st_stvar = (uint8_t)stvar;
+    g->st_pkvar = (uint8_t)pkvar;
+    g->st_snull = (uint8_t)snull;
+    g->st_cnull = (uint8_t)cnull;
+    g->st_spk = (uint8_t)spk;
+    g->st_capk = (uint8_t)capk;
+    g->st_cntk = (uint8_t)cntk;
+    /* the census */
+    st_n_sites++;
+    for (int i = 0; i < 9; i++) st_n_w[i] += ST_W[i] == W;
+    st_n_spk[spk]++;
+    st_n_mem[mem]++;
+    st_n_cur[curv]++;
+    st_n_cap[capk]++;
+    st_n_cnt[cntk]++;
+    st_n_mvar[mvar]++;
+    st_n_stvar[stvar]++;
+    st_n_pkvar[pkvar]++;
+    st_n_ind[g->st_ind]++;
+    st_n_style[style]++;
+    st_n_empty[empty]++;
+    st_n_emptypos += spk == 5;
+    st_n_cbc += cntk == 3;
+    st_n_capnocount += cntk == 0 && capk != 0;
+    if (W == 1) st_n_w1[snull * 2 + cnull]++;
+}
+
+static void gen_fam_stride(void)
+{
+    stsave sv = st_enter();
+    gsite g;
+    for (int pass = 0; pass < 2; pass++) {
+        force_batch(pass ? MF_D_RUN_OVERLAP : 0);
+        unsigned k = 0, ctr = 0;
+        /* the loops draw the SAME sites in both passes; pass 1 (MF_D_RUN_OVERLAP in the art's denies,
+         * RULED Q-M1b-1) keeps every third one */
+#define STE() do { if (pass && (ctr++ % 3)) free_site(&g); else emit_site(&g); k++; } while (0)
+#define STD_(kk) int spk_ = (int)((kk) % 7), emp_ = 0, mem_ = (int)(((kk) / 7) % 3), \
+        curv_ = ((kk) % 5 == 0) ? 1 + (int)(((kk) / 5) % 4) : 0, \
+        mvar_ = (int)(((kk) / 3) % 5), stvar_ = (int)(((kk) / 5) % 5), pkvar_ = (int)(((kk) / 7) % 5), \
+        style_ = ((kk) % 11 == 10) ? 1 + (int)(((kk) / 11) % 2) : 0, empty_ = ((kk) % 3 == 0) ? G2_EMPTY_EXCLUDED : G2_EMPTY_NOP; \
+        (void)spk_; (void)emp_; (void)mem_; (void)curv_; (void)mvar_; (void)stvar_; (void)pkvar_; (void)style_; (void)empty_
+        for (int wi = 0; wi < 9; wi++) {
+            int W = ST_W[wi];
+            /* A: the cap x the counter */
+            for (int capk = 0; capk < 8; capk++)
+                for (int cntk = 0; cntk < 4; cntk++) {
+                    STD_(k);
+                    emp_ = spk_ >= 5 ? (int)(k % (unsigned)W) : 0;
+                    st_site(&g, W, spk_, emp_, capk, cntk, mem_, curv_, mvar_, stvar_, pkvar_, style_, empty_, 0, 0);
+                    STE();
+                }
+            /* B: the per-position set patterns; an EMPTY set at the first, the last and a middle position */
+            for (int spk = 0; spk < 7; spk++)
+                for (int e = 0; e < (spk >= 5 ? 3 : 1); e++) {
+                    STD_(k);
+                    int emp = e == 0 ? 0 : e == 1 ? W - 1 : W / 2;
+                    st_site(&g, W, spk, emp, (int)(k % 8), (int)((k / 8) % 4), mem_, curv_, mvar_, stvar_, pkvar_, style_, empty_, 0, 0);
+                    STE();
+                }
+            /* C: the member hook x the cursor spelling */
+            for (int mem = 0; mem < 3; mem++)
+                for (int curv = 0; curv < ST_CUR_N; curv++) {
+                    STD_(k);
+                    emp_ = spk_ >= 5 ? (int)(k % (unsigned)W) : 0;
+                    st_site(&g, W, spk_, emp_, (int)(k % 8), (int)((k / 8) % 4), mem, curv, mvar_, stvar_, pkvar_, 0, empty_, 0, 0);
+                    STE();
+                }
+            /* D: the `more` x `step` texts (peek rotates with them) */
+            for (int mvar = 0; mvar < 5; mvar++)
+                for (int stvar = 0; stvar < 5; stvar++) {
+                    STD_(k);
+                    emp_ = spk_ >= 5 ? (int)(k % (unsigned)W) : 0;
+                    st_site(&g, W, spk_, emp_, (int)(k % 8), (int)((k / 8) % 4), mem_, 0, mvar, stvar, (mvar + stvar) % 5, 0, empty_, 0, 0);
+                    STE();
+                }
+            /* E: `s` (and n, lo, floor) spelled as expressions, not identifiers */
+            for (int style = 1; style <= 2; style++)
+                for (int mem = 0; mem < 3; mem++) {
+                    STD_(k);
+                    emp_ = spk_ >= 5 ? (int)(k % (unsigned)W) : 0;
+                    st_site(&g, W, spk_, emp_, (int)(k % 8), (int)((k / 8) % 4), mem, 0, mvar_, stvar_, pkvar_, style, empty_, 0, 0);
+                    STE();
+                }
+            /* F: W = 1 with `s` and `cursor` unstated (neither is required there), each way, per peek text */
+            if (W == 1)
+                for (int sn = 0; sn < 2; sn++)
+                    for (int cn = 0; cn < 2; cn++)
+                        for (int mem = 0; mem < 3; mem++)
+                            for (int pk = 0; pk < 5; pk++) {
+                                STD_(k);
+                                emp_ = 0;
+                                st_site(&g, 1, spk_, emp_, (int)(k % 8), (int)((k / 8) % 4), mem, 0, mvar_, stvar_, pk, 0, empty_, sn, cn);
+                                STE();
+                            }
+        }
+#undef STD_
+#undef STE
+    }
+    st_leave(sv);
+}
+
+/* ---- the refusals of the strided ADVANCE, each from the header's text -------------
+ * `req`: the field(s) the header names (the text must name one of them; "a|b" = either);
+ * `soft`: a field the text plausibly names but the header does not (reported, never
+ * asserted). Probes (st_probe) are cases the header leaves open: reported, never judged. */
+typedef struct { mf_site s; mf_term spare[48]; } st_big;      /* room for an nterm past MF_MAX_TERM to read */
+static long st_ref_cases, st_ref_named, st_ref_soft_yes, st_ref_soft_no, st_ctl_cases, st_probe_rendered, st_probe_refused,
+            st_probe_named;
+static const char *st_ref_member(void *u, uint32_t term, const char *byte_expr)
+{
+    (void)u; (void)byte_expr;
+    char *out = hookstr();
+    snprintf(out, 1024, "(s[cur + %u] == %u)", term % MF_MAX_TERM, 'a' + term % 26);
+    return out;
+}
+static void st_ref_base(st_big *B, mf_hooks *h, int W, int member)
+{
+    memset(B, 0, sizeof *B);
+    mf_site *s = &B->s;
+    s->abi = MF_SITE_ABI;
+    s->form = MF_FORM_STMT;
+    s->op = MF_OP_SKIP;
+    s->handoff = MF_H_ADVANCE;
+    s->empty = MF_EMPTY_NOP;
+    s->span_hi = MF_SPAN_UNBOUNDED;
+    s->consumer = MF_C_RESULT;
+    s->policy = MF_P_PORTABLE_ONLY;
+    s->pred.nterm = (uint8_t)W;
+    s->pred.plan_hint = MF_NO_PRED;
+    for (int i = 0; i < W && i < MF_MAX_TERM; i++) {
+        mf_term *t = &s->pred.term[i];
+        t->kind = MF_T_SET;
+        t->offset = i;
+        t->need = MF_REQUIRED;
+        set_add(t->set, 'a' + (unsigned)i % 26);
+        t->ppm_hi = MF_PPM_FULL;
+    }
+    memset(h, 0, sizeof *h);
+    h->s = "s";
+    h->n = "n";
+    h->lo = "lo";
+    h->cursor = "cur";
+    char *step = hookstr(), *more = hookstr();
+    snprintf(step, 1024, "cur += %d;", W);
+    snprintf(more, 1024, "cur + %d <= n", W);
+    h->step = step;
+    h->more = more;
+    h->peek = "s[cur]";
+    h->member = member ? st_ref_member : NULL;
+    h->table_name = h_table_name;
+    h->fn_name = h_fn_name;
+    h->indent = "    ";
+}
+static int st_names_any(const char *err, const char *req)
+{
+    char buf_[96];
+    snprintf(buf_, sizeof buf_, "%s", req);
+    for (char *t = strtok(buf_, "|"); t; t = strtok(NULL, "|")) if (names_field(err, t)) return 1;
+    return 0;
+}
+static int st_try(const mf_site *s, const mf_hooks *h, char *err, size_t errn, char *form, size_t formn)
+{
+    mf_art *art = mf_art_begin(&g_arena, "g2s", MF_P_PORTABLE_ONLY, 0);
+    buf body = { 0 }, file = { 0 };
+    sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
+    mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
+    mf_result res;
+    memset(&res, 0, sizeof res);
+    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    if (rc) snprintf(err, errn, "%s", mf_art_error(art) && *mf_art_error(art) ? mf_art_error(art) : "(empty)");
+    else { err[0] = 0; if (form) snprintf(form, formn, "%s", res.form_id); }
+    int has_text = body.n > 0;
+    free(body.p); free(file.p);
+    return rc ? 1 : (has_text ? 0 : 2);        /* 1 refused, 0 rendered, 2 rendered nothing */
+}
+static void st_refuse(const char *name, const mf_site *s, const mf_hooks *h, const char *req, const char *soft)
+{
+    char err[512];
+    int r = st_try(s, h, err, sizeof err, NULL, 0);
+    st_ref_cases++;
+    if (r == 1 && err[0] && strcmp(err, "(empty)")) {
+        if (req && !st_names_any(err, req)) {
+            n_refusal_fail++;
+            fprintf(g_res, "FAIL refusal stride: %s: refused (\"%s\") but the text does not name `%s`\n", name, err, req);
+        } else {
+            n_refusal_pass++;
+            if (req) { st_ref_named++; n_strict_pass++; }
+            int sn = soft ? names_field(err, soft) : -1;
+            if (sn == 1) st_ref_soft_yes++;
+            if (sn == 0) st_ref_soft_no++;
+            fprintf(g_res, "PASS refusal stride: %s: \"%s\"%s%s\n", name, err, req ? " [names the field]" : "",
+                    sn == 1 ? " [names the soft field]" : sn == 0 ? " [soft field not named]" : "");
+        }
+    } else {
+        n_refusal_fail++;
+        fprintf(g_res, "FAIL refusal stride: %s: %s for a shape the header refuses\n", name,
+                r == 1 ? "refused with no text" : "the kit RENDERED code");
+    }
+}
+static void st_renders(const char *name, const mf_site *s, const mf_hooks *h)
+{
+    char err[512], form[48] = "?";
+    int r = st_try(s, h, err, sizeof err, form, sizeof form);
+    st_ctl_cases++;
+    if (r == 0) { n_refusal_pass++; fprintf(g_res, "PASS refusal-control stride: %s renders (form %s)\n", name, form); }
+    else { n_refusal_fail++; fprintf(g_res, "FAIL refusal-control stride: %s does not render: %s\n", name, r == 1 ? err : "(no text)"); }
+}
+/* a case the header leaves open: reported, never judged */
+static void st_probe(const char *name, const mf_site *s, const mf_hooks *h, const char *field)
+{
+    char err[512], form[48] = "?";
+    int r = st_try(s, h, err, sizeof err, form, sizeof form);
+    if (r == 0) { st_probe_rendered++; fprintf(g_res, "INFO probe stride: %s: rendered (form %s)\n", name, form); }
+    else { st_probe_refused++; int nm = field && names_field(err, field); st_probe_named += nm;
+           fprintf(g_res, "INFO probe stride: %s: refused%s: %s\n", name, nm ? " (naming the field)" : "", err); }
+}
+
+static void st_refusals(void)
+{
+    st_big B;
+    mf_hooks h;
+    static const int WS[4] = { 2, 3, 9, 32 };
+    /* controls: the shapes below render, so no refusal passes for the wrong reason */
+    for (int member = 0; member < 2; member++)
+        for (int i = 0; i < 4; i++) {
+            char nm[96];
+            st_ref_base(&B, &h, WS[i], member);
+            snprintf(nm, sizeof nm, "W=%d member %s", WS[i], member ? "present" : "absent");
+            st_renders(nm, &B.s, &h);
+        }
+    st_ref_base(&B, &h, 1, 0);
+    st_renders("W=1 member absent", &B.s, &h);
+    st_ref_base(&B, &h, 3, 1);
+    B.s.span_hi = 0;
+    st_renders("W=3 span_hi 0 (a cap that stops the loop at once)", &B.s, &h);
+    st_ref_base(&B, &h, 3, 1);
+    B.s.span_hi = 5; B.s.count_by_caller = 1; h.count = "cnt"; h.count_start = 0;
+    st_renders("W=3 caller-owned counter (count_by_caller 1, count named)", &B.s, &h);
+    st_ref_base(&B, &h, 3, 1);
+    B.s.span_hi = 5; h.count = "cnt"; h.count_start = 2;
+    st_renders("W=3 kit-owned counter from 2", &B.s, &h);
+
+    /* 1. reverse at W > 1 */
+    for (int i = 0; i < 4; i++) {
+        char nm[96];
+        st_ref_base(&B, &h, WS[i], i & 1);
+        B.s.reverse = 1;
+        snprintf(nm, sizeof nm, "reverse 1 at W=%d", WS[i]);
+        st_refuse(nm, &B.s, &h, "reverse", NULL);
+    }
+    st_ref_base(&B, &h, 1, 0);
+    B.s.reverse = 1;
+    h.step = "cur--;"; h.more = "cur > 0"; h.peek = "s[cur - 1]";
+    st_renders("reverse 1 at W=1 (today's reverse ADVANCE)", &B.s, &h);
+
+    /* 2. offsets not 0..W-1, or out of order */
+    {
+        static const struct { int w; int off[4]; const char *what; } OF[] = {
+            { 3, { 1, 2, 3, 0 }, "offsets 1,2,3 (shifted up)" },
+            { 3, { 0, 2, 4, 0 }, "offsets 0,2,4 (stride 2)" },
+            { 3, { 0, 0, 1, 0 }, "offsets 0,0,1 (a repeat)" },
+            { 3, { 1, 0, 2, 0 }, "offsets 1,0,2 (out of order)" },
+            { 3, { 0, 1, -1, 0 }, "offsets 0,1,-1" },
+            { 3, { -1, 0, 1, 0 }, "offsets -1,0,1 (shifted down)" },
+            { 3, { 2, 1, 0, 0 }, "offsets 2,1,0 (reversed)" },
+            { 2, { 0, 2, 0, 0 }, "offsets 0,2 (a gap)" },
+            { 2, { 1, 0, 0, 0 }, "offsets 1,0 (swapped)" },
+            { 2, { 1, 2, 0, 0 }, "offsets 1,2" },
+        };
+        for (size_t c = 0; c < sizeof OF / sizeof OF[0]; c++)
+            for (int member = 0; member < 2; member++) {
+                char nm[128];
+                st_ref_base(&B, &h, OF[c].w, member);
+                for (int i = 0; i < OF[c].w; i++) B.s.pred.term[i].offset = OF[c].off[i];
+                snprintf(nm, sizeof nm, "W=%d %s%s", OF[c].w, OF[c].what, member ? " member" : "");
+                st_refuse(nm, &B.s, &h, "pred", "offset");
+            }
+        for (int pass = 0; pass < 3; pass++) {       /* W=32: the last offset past the end, a swap in the middle, a hole */
+            char nm[96];
+            st_ref_base(&B, &h, 32, pass & 1);
+            if (pass == 0) B.s.pred.term[31].offset = 32;
+            else if (pass == 1) { B.s.pred.term[10].offset = 11; B.s.pred.term[11].offset = 10; }
+            else B.s.pred.term[17].offset = 18;
+            snprintf(nm, sizeof nm, "W=32 offsets, case %d", pass);
+            st_refuse(nm, &B.s, &h, "pred", "offset");
+        }
+    }
+    /* 3. an OPTIONAL term */
+    for (int i = 0; i < 4; i++) {
+        char nm[96];
+        st_ref_base(&B, &h, WS[i], i & 1);
+        B.s.pred.term[i % WS[i]].need = MF_OPTIONAL;
+        B.s.pred.term[WS[i] - 1].need = i == 3 ? MF_OPTIONAL : B.s.pred.term[WS[i] - 1].need;
+        snprintf(nm, sizeof nm, "OPTIONAL term at W=%d", WS[i]);
+        st_refuse(nm, &B.s, &h, "pred", "need");
+    }
+    /* 4. a non-SET term */
+    for (int kind = 0; kind < 2; kind++)
+        for (int i = 0; i < 3; i++) {
+            char nm[96];
+            static const uint8_t run[4] = { 'x', 'y', 'z', 'w' };
+            int w = i == 0 ? 2 : i == 1 ? 3 : 32;
+            st_ref_base(&B, &h, w, i & 1);
+            mf_term *t = &B.s.pred.term[w - 1];
+            if (kind == 0) { t->kind = MF_T_RUN; t->run = run; t->run_len = 1; t->mask = NULL; }
+            else { t->kind = MF_T_REF; }
+            snprintf(nm, sizeof nm, "a %s term at W=%d", kind == 0 ? "RUN" : "REF", w);
+            st_refuse(nm, &B.s, &h, "pred", "kind");
+        }
+    /* 5. nterm past MF_MAX_TERM (the kit must refuse before it reads term[MF_MAX_TERM]) */
+    {
+        static const int NT[3] = { MF_MAX_TERM + 1, MF_MAX_TERM + 2, 255 };
+        for (int i = 0; i < 3; i++) {
+            char nm[96];
+            st_ref_base(&B, &h, MF_MAX_TERM, i & 1);
+            B.s.pred.nterm = (uint8_t)NT[i];
+            snprintf(nm, sizeof nm, "nterm %d > MF_MAX_TERM", NT[i]);
+            st_refuse(nm, &B.s, &h, "pred|nterm", i == 0 ? "nterm" : NULL);
+        }
+    }
+    /* 6. a non-ADVANCE SKIP with nterm > 1 (Q-G2-9 still holds there) */
+    for (int c = 0; c < 4; c++)
+        for (int w = 0; w < 3; w++) {
+            static const int SW[3] = { 2, 3, 32 };
+            char nm[128];
+            static const char *const CN[4] = { "SKIP/STMT/ASSIGN", "SKIP/EXPR/RETURN", "SKIP/FUNC/RETURN", "SKIP/STMT/ASSIGN, result_decl" };
+            st_ref_base(&B, &h, SW[w], c & 1);
+            B.s.handoff = c == 0 || c == 3 ? MF_H_ASSIGN : MF_H_RETURN;
+            B.s.form = c == 0 || c == 3 ? MF_FORM_STMT : c == 1 ? MF_FORM_EXPR : MF_FORM_FUNC;
+            B.s.empty = c == 0 || c == 3 ? MF_EMPTY_NOP : MF_EMPTY_MISS;
+            if (c == 2) B.s.pred.fn_ref = 5;
+            h.result = "res"; h.miss = "n"; h.result_decl = c == 3 ? "size_t " : NULL;
+            h.floor = NULL;
+            snprintf(nm, sizeof nm, "%s with nterm %d", CN[c], SW[w]);
+            st_refuse(nm, &B.s, &h, "pred", "nterm");
+        }
+    /* controls for 6: the same non-ADVANCE shapes with ONE term render */
+    for (int c = 0; c < 3; c++) {
+        st_ref_base(&B, &h, 1, 0);
+        B.s.handoff = c == 0 ? MF_H_ASSIGN : MF_H_RETURN;
+        B.s.form = c == 0 ? MF_FORM_STMT : c == 1 ? MF_FORM_EXPR : MF_FORM_FUNC;
+        B.s.empty = c == 0 ? MF_EMPTY_NOP : MF_EMPTY_MISS;
+        if (c == 2) B.s.pred.fn_ref = 5;
+        h.result = "res"; h.miss = "n"; h.result_decl = NULL; h.floor = NULL;
+        st_renders(c == 0 ? "SKIP/STMT/ASSIGN, one term" : c == 1 ? "SKIP/EXPR/RETURN, one term" : "SKIP/FUNC/RETURN, one term", &B.s, &h);
+    }
+    /* 7. the ABI: the contract changed at 8, an older site layout is refused (never hard-coded: MF_SITE_ABI - 1) */
+    for (int d = -1; d <= 1; d += 2) {
+        char nm[96];
+        st_ref_base(&B, &h, 3, 1);
+        B.s.abi = (uint32_t)((int)MF_SITE_ABI + d);
+        snprintf(nm, sizeof nm, "MF_SITE_ABI %d (the kit is at %d)", (int)MF_SITE_ABI + d, MF_SITE_ABI);
+        st_refuse(nm, &B.s, &h, NULL, "abi");
+    }
+    /* 8. `s` and `cursor` REQUIRED at W > 1, refused naming each when unstated; not required at W = 1 */
+    for (int i = 0; i < 4; i++)
+        for (int member = 0; member < 2; member++) {
+            char nm[128];
+            st_ref_base(&B, &h, WS[i], member);
+            h.s = NULL;
+            snprintf(nm, sizeof nm, "W=%d `s` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "s", NULL);
+            st_ref_base(&B, &h, WS[i], member);
+            h.cursor = NULL;
+            snprintf(nm, sizeof nm, "W=%d `cursor` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "cursor", NULL);
+            st_ref_base(&B, &h, WS[i], member);
+            h.s = NULL; h.cursor = NULL;
+            snprintf(nm, sizeof nm, "W=%d `s` and `cursor` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "s|cursor", NULL);
+        }
+    for (int member = 0; member < 2; member++) {
+        char nm[128];
+        st_ref_base(&B, &h, 1, member);
+        h.s = NULL; h.cursor = NULL;
+        snprintf(nm, sizeof nm, "W=1 `s` and `cursor` unstated, member %s", member ? "present" : "absent");
+        st_renders(nm, &B.s, &h);
+        st_ref_base(&B, &h, 1, member);
+        h.s = NULL;
+        snprintf(nm, sizeof nm, "W=1 `s` unstated, member %s", member ? "present" : "absent");
+        st_renders(nm, &B.s, &h);
+        st_ref_base(&B, &h, 1, member);
+        h.cursor = NULL;
+        snprintf(nm, sizeof nm, "W=1 `cursor` unstated, member %s", member ? "present" : "absent");
+        st_renders(nm, &B.s, &h);
+    }
+    /* 9. the other ADVANCE hooks: more / step / peek (Q-G2-14) are required at W = 1; at W > 1 `peek` is
+     *    not named by the header for the strided case (a probe) */
+    for (int member = 0; member < 2; member++) {
+        char nm[96];
+        st_ref_base(&B, &h, 1, member); h.peek = NULL;
+        snprintf(nm, sizeof nm, "W=1 `peek` unstated, member %s", member ? "present" : "absent");
+        st_refuse(nm, &B.s, &h, "peek", NULL);
+        for (int i = 1; i < 4; i++) {
+            st_ref_base(&B, &h, WS[i], member); h.peek = NULL;
+            snprintf(nm, sizeof nm, "W=%d `peek` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "peek", NULL);
+        }
+        for (int i = 0; i < 4; i++) {
+            st_ref_base(&B, &h, WS[i], member); h.more = NULL;
+            snprintf(nm, sizeof nm, "W=%d `more` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "more", NULL);
+            st_ref_base(&B, &h, WS[i], member); h.step = NULL;
+            snprintf(nm, sizeof nm, "W=%d `step` unstated, member %s", WS[i], member ? "present" : "absent");
+            st_refuse(nm, &B.s, &h, "step", NULL);
+        }
+    }
+    /* 9b. cases the header leaves open (reported, never judged; the report's Q-G2M6 list) */
+    for (int i = 0; i < 4; i++) {
+        char nm[96];
+        st_ref_base(&B, &h, WS[i], 1);
+        B.s.pred.need = MF_OPTIONAL;
+        snprintf(nm, sizeof nm, "W=%d the whole predicate OPTIONAL", WS[i]);
+        st_probe(nm, &B.s, &h, "pred");
+        st_ref_base(&B, &h, WS[i], 1);
+        B.s.end_back = 1;
+        snprintf(nm, sizeof nm, "W=%d end_back 1", WS[i]);
+        st_probe(nm, &B.s, &h, "end_back");
+    }
+    /* 10. count_by_caller names its counter; an empty range is not a miss (Q-G2-4) */
+    for (int i = 0; i < 4; i++) {
+        char nm[96];
+        st_ref_base(&B, &h, WS[i], i & 1);
+        B.s.count_by_caller = 1; h.count = NULL;
+        snprintf(nm, sizeof nm, "W=%d count_by_caller 1 with `count` unstated", WS[i]);
+        st_refuse(nm, &B.s, &h, "count", NULL);
+        st_ref_base(&B, &h, WS[i], i & 1);
+        B.s.empty = MF_EMPTY_MISS;
+        snprintf(nm, sizeof nm, "W=%d empty MISS (ADVANCE has no miss)", WS[i]);
+        st_refuse(nm, &B.s, &h, NULL, "empty");
+        st_ref_base(&B, &h, WS[i], i & 1);
+        B.s.count_by_caller = 2;
+        snprintf(nm, sizeof nm, "W=%d count_by_caller 2", WS[i]);
+        st_refuse(nm, &B.s, &h, NULL, "count_by_caller");
+    }
+}
+
 static gsite g_seed;
 static int g_seed_have;
 static void seed_capture(gsite *g) { g_seed = *g; g_seed_have = 1; }
@@ -3772,17 +4526,21 @@ int main(int argc, char **argv)
     if (argc < 2) { fprintf(stderr, "usage: g2_gen OUTDIR [--seed N] [--batch N] [--mutate K] [--sites N]\n"); return 2; }
     const char *outdir = argv[1];
     uint64_t seed = 20261005;
-    int batch = 120, extra = 1200, mm_only = 0;
+    int batch = 120, extra = 1200, mm_only = 0, stride_only = 0;
     for (int i = 2; i + 1 < argc; i += 2) {
         if (!strcmp(argv[i], "--seed")) seed = strtoull(argv[i + 1], 0, 10);
         else if (!strcmp(argv[i], "--batch")) batch = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--mutate")) g_mutate = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--sites")) extra = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--mm-only")) mm_only = atoi(argv[i + 1]);
+        else if (!strcmp(argv[i], "--stride-only")) stride_only = atoi(argv[i + 1]);
         else { fprintf(stderr, "g2_gen: unknown option %s\n", argv[i]); return 2; }
     }
-    if (g_mutate >= 9) mm_only = 1;     /* lane g2m7: W2 9-11 mutate MISMATCH sites only */
+    if (g_mutate >= 9 && g_mutate <= 11) mm_only = 1;     /* lane g2m7: W2 9-11 mutate MISMATCH sites only */
+    if (g_mutate >= 12) stride_only = 1;                  /* lane g2m6: W2 12-16 mutate STRIDED sites only */
     rng_state ^= seed * 0x2545F4914F6CDD1DULL;
+    st_rng ^= seed * 0xD1B54A32D192ED03ULL;      /* lane g2m6: the strided family draws from a stream of its own, which --seed moves too */
+    st_rng2 ^= seed * 0x9E3779B97F4A7C15ULL;
     /* enforcement is in force: strict is the DEFAULT; G2_STRICT_HOOKS=0 is the
      * diagnostic (legacy bucket-only) mode */
     g_strict = !(getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "0"));
@@ -3799,7 +4557,7 @@ int main(int argc, char **argv)
      * reported, and every declared (op, handoff, kinds) must be one this
      * generator reaches (K35: a declared combination no test reaches is a
      * population nobody counts) */
-    for (int op = 0; op < 4 && !mm_only; op++)
+    for (int op = 0; op < 4 && !mm_only && !stride_only; op++)
         for (int h = 0; h < 6; h++)
             for (uint32_t tk = 1; tk < 4; tk++) {
                 int has = mf_vocab_has(to_mf_op(op), to_mf_h(h), tk);
@@ -3815,7 +4573,8 @@ int main(int argc, char **argv)
                 }
             }
 
-    if (!mm_only) { refusal_table(); mm_refusals(); }
+    if (!mm_only && !stride_only) { refusal_table(); mm_refusals(); }
+    if (!mm_only) st_refusals();
 
     g_outdir = outdir;
     g_all = all;
@@ -3828,7 +4587,7 @@ int main(int argc, char **argv)
     int gcombo[NCOMBO], ngc = 0;
     for (int c = 0; c < NCOMBO; c++) if (COMBOS[c].op != G2_OP_SKIP) gcombo[ngc++] = c;
 
-    if (!mm_only) {
+    if (!mm_only && !stride_only) {
     /* (1) the TERM CELLS, each the focus term of at least one site:
      *     SET: offsets -8..8 x every set kind; RUN: offsets -8..8 x run
      *     lengths 1..33 x masks NULL/0/1/2 free bits (and 8, all-free),
@@ -4014,17 +4773,19 @@ int main(int argc, char **argv)
     /* (6c) lane g2m4: the MLINE shape (integration.md 15.7 [R-7]): the read-bounded
      *      range, MF_EMPTY_AT_N and LOOP_EXIT, in streams of their own */
     gen_fam_mline();
-    }   /* !mm_only */
+    }   /* !mm_only && !stride_only */
     /* (6d) lane g2m7: the MISMATCH shape (integration.md 15.8 [M7]): the span compare */
-    gen_fam_mismatch();
-    if (!mm_only) {
+    if (!stride_only) gen_fam_mismatch();
+    /* (6e) lane g2m6: the STRIDED ADVANCE (integration.md 15.9 [M6]) */
+    if (!mm_only) gen_fam_stride();
+    if (!mm_only && !stride_only) {
     /* (7) lane g2u: the semantic differential, its groups half without and
      *     half with MF_D_RUN_OVERLAP */
     force_batch(0);
     gen_semantic(3);
     force_batch(MF_D_RUN_OVERLAP);
     gen_semantic(3);
-    }   /* !mm_only */
+    }   /* !mm_only && !stride_only */
     /* (8) the PENDING-ENFORCE queue, in pending-only batches */
     flush_pending();
     if (g_B.nsite) { flush_batch(outdir, g_bi, g_art, &g_B, all); g_bi++; }
@@ -4060,6 +4821,23 @@ int main(int argc, char **argv)
             mm_kind_sites[0], mm_kind_sites[1], mm_kind_sites[2], mm_shape_sites[0], mm_shape_sites[1], mm_res_sites[0], mm_res_sites[1],
             mm_res_sites[2], mm_goto_sites, mm_arith_sites, mm_style_sites[0], mm_style_sites[1], mm_style_sites[2], mm_nonidem_sites,
             mm_sp_sites[0], mm_sp_sites[1], mm_sp_sites[2], mm_sp_sites[3]);
+    fprintf(g_res, "STSITES constructed=%ld", st_n_sites);
+    for (int i = 0; i < 9; i++) fprintf(g_res, " w%d=%ld", ST_W[i], st_n_w[i]);
+    for (int i = 0; i < 7; i++) fprintf(g_res, " spk%d=%ld", i, st_n_spk[i]);
+    for (int i = 0; i < 3; i++) fprintf(g_res, " mem%d=%ld", i, st_n_mem[i]);
+    for (int i = 0; i < ST_CUR_N; i++) fprintf(g_res, " cur%d=%ld", i, st_n_cur[i]);
+    for (int i = 0; i < 8; i++) fprintf(g_res, " cap%d=%ld", i, st_n_cap[i]);
+    for (int i = 0; i < 4; i++) fprintf(g_res, " cnt%d=%ld", i, st_n_cnt[i]);
+    for (int i = 0; i < 5; i++) fprintf(g_res, " mvar%d=%ld stvar%d=%ld pkvar%d=%ld", i, st_n_mvar[i], i, st_n_stvar[i], i, st_n_pkvar[i]);
+    for (int i = 0; i < ST_IND_N; i++) fprintf(g_res, " ind%d=%ld", i, st_n_ind[i]);
+    fprintf(g_res, " spanlo=%ld", st_n_spanlo);
+    for (int i = 0; i < 3; i++) fprintf(g_res, " style%d=%ld", i, st_n_style[i]);
+    fprintf(g_res, " excluded=%ld nop=%ld emptyset=%ld cbc=%ld capnocount=%ld w1-s0c0=%ld w1-s0c1=%ld w1-s1c0=%ld w1-s1c1=%ld\n",
+            st_n_empty[G2_EMPTY_EXCLUDED], st_n_empty[G2_EMPTY_NOP], st_n_emptypos, st_n_cbc, st_n_capnocount,
+            st_n_w1[0], st_n_w1[1], st_n_w1[2], st_n_w1[3]);
+    fprintf(g_res, "STREFUSE cases=%ld named=%ld soft_named=%ld soft_unnamed=%ld controls=%ld probe_rendered=%ld probe_refused=%ld probe_named=%ld\n",
+            st_ref_cases, st_ref_named, st_ref_soft_yes, st_ref_soft_no, st_ctl_cases, st_probe_rendered, st_probe_refused, st_probe_named);
+    fprintf(g_res, "STNONID rendered=%ld refused=%ld\n", st_nonid_rendered, st_nonid_refused);
     fprintf(g_res, "MMVARS");
     for (int v = 0; v < MMV_N; v++) fprintf(g_res, " %s=%ld", MMV_NAMES[v], mm_var_sites[v]);
     fprintf(g_res, "\nMMREFUSE cases=%ld named=%ld soft_named=%ld soft_unnamed=%ld\n", mm_ref_cases, mm_ref_named, mm_ref_soft_yes, mm_ref_soft_no);

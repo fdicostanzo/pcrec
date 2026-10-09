@@ -73,12 +73,19 @@ static void layouts_init(void)
 }
 
 static sigjmp_buf jb;
+static volatile sig_atomic_t st_hung;       /* lane g2m6: a strided call ran past its alarm (a loop that does not end) */
 static volatile sig_atomic_t in_call;
 static void on_fault(int sig)
 {
     if (in_call) siglongjmp(jb, sig);
     signal(sig, SIG_DFL);
     raise(sig);
+}
+/* lane g2m6: a strided call that does not return (a kit loop whose step or `more` never ends it) is a
+ * failure, not a hung run: the alarm leaves the call exactly as a fault does; outside a call it is ignored */
+static void on_alarm(int sig)
+{
+    if (in_call) siglongjmp(jb, sig);
 }
 
 /* ---- counts --------------------------------------------------------------- */
@@ -212,6 +219,8 @@ static void census_site(const g2_site *d, const g2_items *it)
 static int set_has(const uint8_t *set, unsigned b) { return set[b >> 3] >> (b & 7) & 1; }
 
 static const g2_site *cur;     /* the site being run */
+static int st_tight = -1;      /* lane g2m6: see run_stride; call_on's layout 0 guard page, inside n */
+static int st_nullok;          /*   a NULL subject on alternate n == 0 calls                       */
 
 typedef struct { uint8_t b[64]; int n; } hotset;
 
@@ -368,9 +377,13 @@ static int call_on(g2_fn fn, int layout, int align, const uint8_t *subj, size_t 
 {
     const unsigned char *s;
     if (layout == 0) {
-        uint8_t *p = G3 - n;
-        memcpy(p, subj, n);
+        /* lane g2m6: st_tight >= 0 puts the guard page at s + st_tight, INSIDE n: the bytes
+         * from there on are not readable (a strided ADVANCE that stopped on `more`) */
+        size_t e = st_tight >= 0 ? (size_t)st_tight : n;
+        uint8_t *p = G3 - e;
+        memcpy(p, subj, e);
         s = p;
+        if (st_nullok && n == 0 && (align & 1)) s = NULL;      /* B = 0: a NULL subject must not be read */
     } else if (layout == 1) {
         memcpy(D1, subj + fl, n - fl);
         s = D1 - fl;
@@ -973,9 +986,266 @@ static void run_mismatch(const g2_site *d)
     if (d->fid < NFID) { fd_sites[d->fid]++; fd_checks[d->fid] += cur_checks; }
 }
 
+/* ---- lane g2m6: the STRIDED ADVANCE (MF_SITE_ABI 8, R-10 / M6) -------------------------
+ *
+ * A site of G2_FAM_STRIDE is W = preds[0].nterm REQUIRED SET terms, term i at offset i
+ * (W in 1..32); the kit's loop advances the cursor by W while the cap, `more` (G2's hook:
+ * cursor + W <= n) and every term hold at the cursor. The REFERENCE is g2_ref.c's
+ * g2_ref_stride (a scalar byte loop over the generated sets). This runner builds the
+ * subjects, from the sets themselves:
+ *
+ *   - the window n - lo ("rem") takes EVERY value 0..ST_REMMAX, so n - lo sits at every
+ *     multiple of W and one either side of it (the partial last block, empty, exact fit);
+ *   - per window: one subject whose every whole block holds, then, for every position
+ *     i < W whose set is not full, one whose block J fails exactly at i (positions before
+ *     i hold, position i does not, the rest are random; blocks after J hold, so a kit that
+ *     ignores the failure runs on), J rotating over 0, the last block, the middle and a
+ *     block at the cap; and random subjects whose bytes mostly hold;
+ *   - the bytes of a partial last block HOLD, and bytes below lo are junk.
+ * Reads. The layouts are the driver's three, with the guard page at s + n (U), under
+ * s + floor (L; floor = lo) and the exact-size heap copy (A), and a fourth, TIGHT: when
+ * the loop must stop because `more` is false (the block at the cursor is not wholly
+ * inside [0, n)), the guard page starts AT THE CURSOR, so reading a byte of a partial
+ * last block, which lies inside n, faults. The contract reads [cursor, cursor + W) only
+ * while `more` holds (memfn.h). When the stop is the cap or a failing term the kit may
+ * read the whole block (and, `more` holding, the next one), so there the guard stays at n.
+ * `s` is NULL on half the n == 0 calls. */
+
+#define ST_REMMAX_D 130          /* the longest window n - lo (the generator's caps are drawn against 130 too) */
+
+/* counts, printed as `G2 stride ...` (K35) */
+static long st_sites_run, st_sites_failed, st_inst, st_inst_skipped, st_chk, st_chk_pos, st_end[3],
+            st_more_exact, st_more_partial, st_more_zero, st_rem_wm1, st_rem_0, st_rem_p1,
+            st_failpos[G2_MAXT], st_cap_hit, st_cap_hit_pos, st_cap_zero, st_capped_inst,
+            st_ctr_none, st_ctr_kit, st_ctr_caller, st_ctr_cap_nocount,
+            st_mem_chk[3], st_cur_chk[5], st_style_chk[3], st_w_sites[G2_MAXT + 1], st_w_chk[G2_MAXT + 1],
+            st_tight_chk, st_tight_faulted, st_partial_faults, st_snull, st_w1_snull, st_w1_cnull,
+            st_excl_sites, st_layout[3], st_cap_over, st_cap_exact;
+
+static int st_member_byte(const uint8_t *set)
+{
+    int c = 0;
+    for (int b = 0; b < 256; b++) c += set_has(set, (unsigned)b);
+    if (!c) return -1;
+    int k = (int)rn((unsigned)c);
+    for (int b = 0; b < 256; b++)
+        if (set_has(set, (unsigned)b) && k-- == 0) return b;
+    return -1;
+}
+static int st_nonmember_byte(const uint8_t *set)
+{
+    int c = 0;
+    for (int b = 0; b < 256; b++) c += !set_has(set, (unsigned)b);
+    if (!c) return -1;
+    int k = (int)rn((unsigned)c);
+    for (int b = 0; b < 256; b++)
+        if (!set_has(set, (unsigned)b) && k-- == 0) return b;
+    return -1;
+}
+
+/* the instance, judged against g2_ref_stride on the layouts */
+static void st_instance(const g2_site *d, const uint8_t *subj, size_t n, size_t lo)
+{
+    size_t W = d->preds[0].nterm;
+    if (d->empty == G2_EMPTY_EXCLUDED && lo + W > n) { st_inst_skipped++; n_skipped_precond++; return; }   /* the range is non-empty: proven */
+    size_t curf;
+    unsigned long cntf;
+    int fp;
+    int why = g2_ref_stride(d, subj, n, lo, &curf, &cntf, &fp);
+    int tight = (curf + W > n && curf < n) ? (int)curf : -1;       /* stopped by `more`, bytes of a partial block lie inside n */
+    int partial = curf + W > n && curf < n;
+    st_inst++;
+    st_end[why]++;
+    size_t rem = n - lo;
+    st_rem_wm1 += W > 1 && rem % W == W - 1;
+    st_rem_0 += rem % W == 0;
+    st_rem_p1 += W > 1 && rem % W == 1;
+    if (why == G2_ST_MORE) {
+        if (curf == n) st_more_exact++;
+        else st_more_partial++;
+        st_more_zero += curf == lo;
+    }
+    if (why == G2_ST_TERM && fp >= 0) st_failpos[fp]++;
+    if (d->span_hi != G2_UNBOUNDED) {
+        st_capped_inst++;
+        if (why == G2_ST_CAP) { st_cap_hit++; st_cap_hit_pos += curf != lo; st_cap_zero += d->span_hi == 0; }
+        if (cntf == d->span_hi && (curf + W <= n)) st_cap_exact++;     /* the cap binds while another block would fit */
+        if (why != G2_ST_CAP) st_cap_over++;                         /* the run ended before the cap */
+    }
+    st_ctr_none += !d->has_count && d->span_hi == G2_UNBOUNDED;
+    st_ctr_kit += d->has_count && !d->st_cbc;
+    st_ctr_caller += d->has_count && d->st_cbc;
+    st_ctr_cap_nocount += !d->has_count && d->span_hi != G2_UNBOUNDED;
+    st_mem_chk[d->st_mem < 3 ? d->st_mem : 0]++;
+    st_cur_chk[d->st_cur < 5 ? d->st_cur : 0]++;
+    st_style_chk[d->hook_style < 3 ? d->hook_style : 0]++;
+    if (n == 0) st_snull++;
+    if (W < G2_MAXT + 1) st_w_chk[W]++;
+    for (int layout = 0; layout < 3; layout++) {
+        static int align_rot;
+        if (st_hung) break;
+        if (quick && layout == 2 && (align_rot & 3)) { align_rot++; continue; }
+        struct g2_out o;
+        uint8_t *heap = NULL;
+        int align = align_rot++ & 15;
+        st_tight = layout == 0 ? tight : -1;
+        st_nullok = 1;
+        alarm(10);
+        int sig = call_on(d->fn, layout, align, subj, n, lo, lo, &o, &heap);
+        alarm(0);
+        st_nullok = 0;
+        st_tight = -1;
+        if (sig == SIGALRM) st_hung = 1;
+        free(heap);
+        char w[300];
+        uint64_t keep = 0;
+        if (!sig) keep = g2_ref_check(d, &cur_it, cur_alive, subj, n, lo, lo, &o, w, sizeof w);
+        else if (sig == SIGALRM) snprintf(w, sizeof w, "the call did not return within 10 s (a kit loop that does not end)");
+        else snprintf(w, sizeof w, "signal %d (a read outside the block(s) the cursor may read%s)", sig,
+                      layout == 0 && tight >= 0 ? ": the guard page began at the cursor, `more` was false" : "");
+        if (layout == 0 && tight >= 0) { st_tight_chk++; if (sig) st_tight_faulted++; }
+        if (sig && partial) st_partial_faults++;
+        st_layout[layout]++;
+        if (d->pend) {
+            pd_checks[d->pend]++;
+            if (keep) { if (g_strict) n_pass++; }
+            else {
+                pd_fail[d->pend]++;
+                if (sig) pd_fault[d->pend]++;
+                report(sig ? "FAULT" : "WRONG", subj, n, lo, lo, layout, w);
+                cur_fail++;
+                if (g_strict) { n_fail++; if (sig) n_fault++; }
+            }
+            continue;
+        }
+        n_layout[layout]++;
+        n_len[n < 130 ? n : 129]++;
+        if (keep) {
+            n_pass++;
+            st_chk++;
+            fam_checks[G2_FAM_STRIDE]++;
+            int pos = curf != lo;
+            st_chk_pos += pos;
+            fam_pos[G2_FAM_STRIDE] += pos;
+            cur_pos += pos;
+            cur_checks++;
+        } else {
+            report(sig ? "FAULT" : "WRONG", subj, n, lo, lo, layout, w);
+            n_fail++;
+            if (sig) n_fault++;
+            cur_fail++;
+        }
+    }
+}
+
+/* one window: n - lo = rem; every scenario the sets allow */
+static void st_window(const g2_site *d, size_t lo, size_t rem, unsigned reps)
+{
+    const g2_pred *P = &d->preds[0];
+    size_t W = P->nterm, n = lo + rem, nb = rem / W, part = rem % W;
+    uint8_t subj[ST_REMMAX_D + 40];
+    int nonmem[G2_MAXT];
+    for (size_t i = 0; i < W; i++) nonmem[i] = st_nonmember_byte(P->t[i].set) >= 0;
+    /* scenario kinds: -2 every block holds; -1 random (bytes mostly hold); i >= 0 a block fails at position i */
+    /* every position fails in the windows of up to 40 bytes and in those at a multiple of W and one either side
+     * of it; elsewhere the first, the last, the one at rem % W and one at random (the cost of every position in
+     * every window was 3x the whole of the rest of the tier) */
+    int allpos = rem <= 40 || rem % W == 0 || rem % W == 1 || rem % W == W - 1;
+    size_t rp_ = rn((unsigned)W);
+    for (int sc = -2; sc < (int)W; sc++) {
+        if (sc >= 0 && (!nb || !nonmem[sc])) continue;
+        if (sc >= 0 && !allpos && (size_t)sc != 0 && (size_t)sc != W - 1 && (size_t)sc != rem % W && (size_t)sc != rp_) continue;
+        for (unsigned rp = 0; rp < (sc < 0 && sc == -1 ? 2u * reps : reps); rp++) {
+            size_t J = 0;
+            if (sc >= 0) {
+                size_t c[4] = { 0, nb - 1, nb / 2, nb - 1 };            /* the first block, the last, the middle, ... */
+                if (d->span_hi != G2_UNBOUNDED && d->span_hi < nb) c[3] = (size_t)d->span_hi;          /* the block the cap lies at */
+                if (d->span_hi != G2_UNBOUNDED && d->span_hi >= 1 && d->span_hi <= nb) c[2] = (size_t)d->span_hi - 1;
+                J = c[((size_t)sc + rem + rp) % 4];
+                if (J >= nb) J = nb - 1;
+            }
+            for (size_t i = 0; i < n; i++) subj[i] = (uint8_t)rnd();
+            for (size_t b = 0; b < nb + (part ? 1 : 0); b++)
+                for (size_t i = 0; i < W; i++) {
+                    size_t pos = lo + b * W + i;
+                    if (pos >= n) break;
+                    int mb = st_member_byte(P->t[i].set);
+                    if (sc == -1 && rn(32) == 0) { subj[pos] = (uint8_t)rnd(); continue; }         /* random: a stray byte */
+                    if (mb >= 0) subj[pos] = (uint8_t)mb;
+                    if (sc >= 0 && b == J) {
+                        /* the block fails at position sc: the bytes before it hold; the ones after it hold too in
+                         * three scenarios of four (a SINGLE failing term: a kit that ignores that one term runs
+                         * on, which a block that fails elsewhere as well would hide), random in the fourth */
+                        if ((int)i == sc) { int nm = st_nonmember_byte(P->t[i].set); if (nm >= 0) subj[pos] = (uint8_t)nm; }
+                        else if ((int)i > sc && ((size_t)sc + rem + rp) % 4 == 3 && rn(2)) subj[pos] = (uint8_t)rnd();
+                    }
+                }
+            st_instance(d, subj, n, lo);
+        }
+    }
+}
+
+static void run_stride(const g2_site *d)
+{
+    cur = d;
+    g2_ref_items(d, &cur_it);
+    cur_alive = 1;
+    cur_fail = 0;
+    cur_pos = 0;
+    cur_checks = 0;
+    size_t W = d->preds[0].nterm;
+    long before = n_pass + n_fail;
+    unsigned reps = quick ? 1 : 2;
+    st_hung = 0;
+    for (size_t rem = 0; rem <= ST_REMMAX_D && !st_hung; rem++) {
+        /* every window up to 40 bytes, and above that the three residues that matter (W-1, 0, 1 modulo W)
+         * and every fifth */
+        if (rem > 40 && rem % W != 0 && rem % W != 1 && rem % W != W - 1 && rem % 5 != 0) continue;
+        st_window(d, 0, rem, reps);
+        if (rem % 2 == 0 || rem <= 8) st_window(d, 1 + rn(20), rem, reps);
+    }
+    if (d->pend) {
+        pd_sites[d->pend]++;
+        if (cur_fail) pd_sfail[d->pend]++;
+        if (g_strict) { n_sites_run += (n_pass + n_fail) > before; n_sites_failed += cur_fail > 0; }
+        return;
+    }
+    n_sites_run += (n_pass + n_fail) > before;
+    st_sites_run++;
+    st_w_sites[W]++;
+    st_excl_sites += d->empty == G2_EMPTY_EXCLUDED;
+    st_w1_snull += W == 1 && d->st_snull;
+    st_w1_cnull += W == 1 && d->st_cnull;
+    fam_sites[G2_FAM_STRIDE]++;
+    if (d->fid < NFID) { fd_sites[d->fid]++; fd_checks[d->fid] += cur_checks; }
+    if (cur_fail) { n_sites_failed++; st_sites_failed++; fam_fail[G2_FAM_STRIDE]++; if (d->fid < NFID) fd_sfail[d->fid]++; }
+}
+
+/* W3: planted functions of one fixed site (W = 3, sets {a},{b},{c}), each reading where it must not.
+ * partial: a byte of the partial last block, which lies INSIDE n (only the tight layout sees it) */
+static void w3s_core(const unsigned char *s, size_t n, size_t lo, struct g2_out *o, int defect)
+{
+    size_t cur_ = lo;
+    while (cur_ + 3 <= n && s[cur_] == 'a' && s[cur_ + 1] == 'b' && s[cur_ + 2] == 'c') cur_ += 3;
+    if (defect == 1 && cur_ + 3 > n && n > cur_) { volatile unsigned char x = s[cur_]; (void)x; }
+    if (defect == 2 && n > 0) { volatile unsigned char x = s[n]; (void)x; }
+    if (defect == 3 && lo > 0) { volatile unsigned char x = s[lo - 1]; (void)x; }
+    o->res = cur_;
+}
+static int w3s_partial(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o) { (void)fl; w3s_core(s, n, lo, o, 1); return 0; }
+static int w3s_over(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o) { (void)fl; w3s_core(s, n, lo, o, 2); return 0; }
+static int w3s_under(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o) { (void)fl; w3s_core(s, n, lo, o, 3); return 0; }
+static int w3s_clean(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o) { (void)fl; w3s_core(s, n, lo, o, 0); return 0; }
+static const g2_pred W3S_PRED = { 3, G2_REQ, {
+    { G2_T_SET, G2_REQ, 0, { [12] = 2 }, 0, NULL, NULL },      /* {'a'} */
+    { G2_T_SET, G2_REQ, 1, { [12] = 4 }, 0, NULL, NULL },      /* {'b'} */
+    { G2_T_SET, G2_REQ, 2, { [12] = 8 }, 0, NULL, NULL },      /* {'c'} */
+} };
+
 static void run_site(const g2_site *d)
 {
     if (d->op == G2_OP_MISM) { run_mismatch(d); return; }
+    if (d->fam == G2_FAM_STRIDE) { run_stride(d); return; }
     cur = d;
     g2_ref_items(d, &cur_it);
     cur_alive = cur_it.nitems >= 6 ? ~0ull : (1ull << (1u << cur_it.nitems)) - 1;
@@ -1229,6 +1499,8 @@ int main(int argc, char **argv)
     sigemptyset(&sa.sa_mask);
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
+    sa.sa_handler = on_alarm;
+    sigaction(SIGALRM, &sa, NULL);
 
     if (witness_mode) {
         static const char *names[] = { "over", "under", "clean" };
@@ -1276,6 +1548,33 @@ int main(int argc, char **argv)
                 run_mismatch(&d);
                 printf("G2 witness-overread %s: checks %ld failed %ld faults %ld\n", mn[w],
                        n_pass + n_fail - c0, n_fail - f0, n_fault - fault0);
+            }
+        }
+        /* lane g2m6: the same for the STRIDED ADVANCE (one W = 3 site, sets {a}, {b}, {c}): a planted function
+         * that reads a byte of the PARTIAL last block (inside n: only the tight layout sees it), one past n,
+         * and one below lo (floor == lo), plus the clean control */
+        {
+            static const char *const sn[4] = { "st-partial", "st-over", "st-under", "st-clean" };
+            g2_fn sf[4] = { w3s_partial, w3s_over, w3s_under, w3s_clean };
+            for (int w = 0; w < 4; w++) {
+                g2_site d;
+                memset(&d, 0, sizeof d);
+                d.id = 900020 + (uint32_t)w;
+                d.form = G2_FORM_STMT;
+                d.op = G2_OP_SKIP;
+                d.handoff = G2_H_ADVANCE;
+                d.empty = G2_EMPTY_NOP;
+                d.ret_pred = 0xFF;
+                d.npred = 1;
+                d.preds = &W3S_PRED;
+                d.fam = G2_FAM_STRIDE;
+                d.span_hi = G2_UNBOUNDED;
+                d.label = "STRIDE/STMT/ADVANCE";
+                d.fn = sf[w];
+                long f0 = n_fail, fault0 = n_fault, c0 = n_pass + n_fail, pf0 = st_partial_faults;
+                run_stride(&d);
+                printf("G2 witness-overread %s: checks %ld failed %ld faults %ld partial-faults %ld\n", sn[w],
+                       n_pass + n_fail - c0, n_fail - f0, n_fault - fault0, st_partial_faults - pf0);
             }
         }
         return 0;
@@ -1439,6 +1738,73 @@ int main(int argc, char **argv)
         !mm_slay[3] || !mm_rlay[0] || !mm_rlay[1] || !mm_rlay[2] || !mm_snull || !mm_rnull) {
         printf("G2 coverage MISSING: MISMATCH cells (both outcomes, difference at 0 / at reflen-1 / at the subject's end, reflen 0, lo >= n, fold-decided answers, near-class decoys, every fold kind, text shape and result lvalue, aliases, every s and ref layout, NULL operands, a clean hook text)\n");
         miss++;
+    }
+    /* lane g2m6 (MF_SITE_ABI 8): the STRIDED ADVANCE, each a counted population */
+    printf("G2 stride (R-10): sites %ld checks %ld positive %ld negative %ld instances %ld excluded-and-skipped %ld\n",
+           st_sites_run, st_chk, st_chk_pos, st_chk - st_chk_pos, st_inst, st_inst_skipped);
+    printf("G2 stride ends: cap %ld more %ld term %ld; more-exact-fit %ld more-partial-block %ld more-zero-blocks %ld; window mod W: W-1 %ld, 0 %ld, 1 %ld\n",
+           st_end[G2_ST_CAP], st_end[G2_ST_MORE], st_end[G2_ST_TERM], st_more_exact, st_more_partial, st_more_zero,
+           st_rem_wm1, st_rem_0, st_rem_p1);
+    printf("G2 stride cap: capped-instances %ld cap-ended %ld cap-ended-advanced %ld cap-zero %ld cap-binds-with-room %ld run-ended-before-cap %ld\n",
+           st_capped_inst, st_cap_hit, st_cap_hit_pos, st_cap_zero, st_cap_exact, st_cap_over);
+    printf("G2 stride counters (instances): none %ld kit-owned %ld caller-owned %ld cap-without-counter %ld\n",
+           st_ctr_none, st_ctr_kit, st_ctr_caller, st_ctr_cap_nocount);
+    printf("G2 stride hooks (instances): member absent %ld own-read %ld byte_expr %ld; cursor spelling %ld/%ld/%ld/%ld/%ld; s style plain/counted/ternary %ld/%ld/%ld\n",
+           st_mem_chk[0], st_mem_chk[1], st_mem_chk[2], st_cur_chk[0], st_cur_chk[1], st_cur_chk[2], st_cur_chk[3], st_cur_chk[4],
+           st_style_chk[0], st_style_chk[1], st_style_chk[2]);
+    printf("G2 stride widths (sites run):");
+    {
+        static const int ws[9] = { 1, 2, 3, 7, 8, 9, 16, 31, 32 };
+        for (int i = 0; i < 9; i++) printf(" W=%d:%ld", ws[i], st_w_sites[ws[i]]);
+        printf("\nG2 stride widths (instances):");
+        for (int i = 0; i < 9; i++) printf(" W=%d:%ld", ws[i], st_w_chk[ws[i]]);
+        printf("\n");
+    }
+    {
+        long fpmin = st_failpos[0], wsmin = -1, wcmin = -1;
+        for (int i = 1; i < G2_MAXT; i++) if (st_failpos[i] < fpmin) fpmin = st_failpos[i];
+        static const int ws[9] = { 1, 2, 3, 7, 8, 9, 16, 31, 32 };
+        for (int i = 0; i < 9; i++) {
+            if (wsmin < 0 || st_w_sites[ws[i]] < wsmin) wsmin = st_w_sites[ws[i]];
+            if (wcmin < 0 || st_w_chk[ws[i]] < wcmin) wcmin = st_w_chk[ws[i]];
+        }
+        long curmin = st_cur_chk[0];
+        for (int i = 1; i < 5; i++) if (st_cur_chk[i] < curmin) curmin = st_cur_chk[i];
+        /* one machine line, key=value, that run_g2.sh holds to its floors */
+        printf("G2 stride census: sites=%ld checks=%ld positive=%ld negative=%ld instances=%ld skipped=%ld end_cap=%ld end_more=%ld end_term=%ld "
+               "more_exact=%ld more_partial=%ld more_zero=%ld rem_wm1=%ld rem_0=%ld rem_1=%ld cap_ended=%ld cap_advanced=%ld cap_zero=%ld cap_room=%ld "
+               "cap_over=%ld ctr_none=%ld ctr_kit=%ld ctr_caller=%ld ctr_capnocount=%ld mem_absent=%ld mem_own=%ld mem_byteexpr=%ld cur_min=%ld "
+               "sty_counted=%ld sty_ternary=%ld tight=%ld tight_faulted=%ld partial_faults=%ld n0=%ld excluded_sites=%ld w1_snull=%ld w1_cnull=%ld "
+               "failpos_min=%ld wsites_min=%ld winst_min=%ld\n",
+               st_sites_run, st_chk, st_chk_pos, st_chk - st_chk_pos, st_inst, st_inst_skipped, st_end[G2_ST_CAP], st_end[G2_ST_MORE],
+               st_end[G2_ST_TERM], st_more_exact, st_more_partial, st_more_zero, st_rem_wm1, st_rem_0, st_rem_p1, st_cap_hit, st_cap_hit_pos,
+               st_cap_zero, st_cap_exact, st_cap_over, st_ctr_none, st_ctr_kit, st_ctr_caller, st_ctr_cap_nocount, st_mem_chk[0], st_mem_chk[1],
+               st_mem_chk[2], curmin, st_style_chk[1], st_style_chk[2], st_tight_chk, st_tight_faulted, st_partial_faults, st_snull,
+               st_excl_sites, st_w1_snull, st_w1_cnull, fpmin, wsmin, wcmin);
+    }
+    printf("G2 stride first-failing-position (instances):");
+    for (int i = 0; i < G2_MAXT; i++) printf(" %d:%ld", i, st_failpos[i]);
+    printf("\n");
+    printf("G2 stride layouts: U %ld L %ld A %ld, tight (guard page at the cursor, inside n) %ld faulted %ld, partial-block faults %ld, "
+           "n==0 instances %ld, EXCLUDED sites %ld, W=1 s-unstated sites %ld cursor-unstated sites %ld\n",
+           st_layout[0], st_layout[1], st_layout[2], st_tight_chk, st_tight_faulted, st_partial_faults, st_snull, st_excl_sites,
+           st_w1_snull, st_w1_cnull);
+    {
+        int bad = !st_sites_run || !st_chk_pos || st_chk == st_chk_pos;
+        for (int k = 0; k < 3; k++) bad |= !st_end[k];
+        bad |= !st_more_exact || !st_more_partial || !st_more_zero || !st_rem_wm1 || !st_rem_0 || !st_rem_p1;
+        for (int i = 0; i < G2_MAXT; i++) bad |= !st_failpos[i];
+        bad |= !st_cap_hit || !st_cap_hit_pos || !st_cap_zero || !st_cap_exact || !st_cap_over;
+        bad |= !st_ctr_none || !st_ctr_kit || !st_ctr_caller || !st_ctr_cap_nocount;
+        for (int i = 0; i < 3; i++) bad |= !st_mem_chk[i] || !st_style_chk[i];
+        for (int i = 0; i < 5; i++) bad |= !st_cur_chk[i];
+        static const int ws[9] = { 1, 2, 3, 7, 8, 9, 16, 31, 32 };
+        for (int i = 0; i < 9; i++) bad |= !st_w_sites[ws[i]] || !st_w_chk[ws[i]];
+        bad |= !st_tight_chk || !st_snull || !st_excl_sites || !st_w1_snull || !st_w1_cnull || !st_layout[0] || !st_layout[1] || !st_layout[2];
+        if (bad) {
+            printf("G2 coverage MISSING: STRIDE cells (positive and negative answers; every end (cap, more, term); an exact-fit end, a partial last block, no whole block; the window at W-1, 0 and 1 modulo W; a first failing term at EVERY position 0..31; a cap that ends the run, advanced, at zero, binding with room, and passed by the run; every counter owner, every member and cursor spelling and s style; every width; the tight layout; n == 0; EXCLUDED; W=1 with s and cursor unstated)\n");
+            miss++;
+        }
     }
     for (int f = 0; f < G2_NFAM; f++) {
         printf("G2 family %s: sites %ld checks %ld positive %ld negative %ld failed-sites %ld\n",

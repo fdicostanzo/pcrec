@@ -21,7 +21,12 @@ extern int g2_ref_defect;      /* W1: 1 ignore end_back, 2 reverse the order,
                                   [lo, n - end_back) for a reads-below FIND (Q-R7-1);
                                   lane g2m7 (MISMATCH): 5 the fold ignored (raw bytes
                                   compared), 6 the compare stops at reflen - 1, 7 the
-                                  result a difference reports is k + 1 (driver side) */
+                                  result a difference reports is k + 1 (driver side);
+                                  lane g2m6 (strided ADVANCE, MF_SITE_ABI 8): 8 the cap
+                                  counted in BYTES (span_hi / W iterations), 9 `more` strict
+                                  (cursor + W < n: the last exactly-fitting block dropped),
+                                  10 the terms tested in the reverse order (term W-1-i at
+                                  offset i) */
 
 void g2_ref_items(const g2_site *d, g2_items *it);
 
@@ -43,6 +48,21 @@ int g2_ref_range(const g2_site *d, size_t n, size_t lo, size_t *hi);
  * only in [lo, n) and ref only in [0, reflen). */
 int g2_ref_mismatch(const uint8_t *map, const uint8_t *s, size_t n, size_t lo,
                     const uint8_t *ref, size_t reflen, size_t *k);
+
+/* lane g2m6, the STRIDED ADVANCE (memfn.h MF_SITE_ABI 8, Q-R10-2..5): W = nterm
+ * REQUIRED SET terms of preds[0], term i at offset i. From the cursor lo the loop is
+ *   while ( (span_hi unbounded || cnt < span_hi)   the cap, ITERATIONS (Q-R10-5)
+ *        && cursor + W <= n                         `more`, pcrec's text (G2's own)
+ *        && for every i < W: s[cursor + i] in set_i )
+ *       { cursor += W; cnt++; }
+ * cnt starts at count_start. Returns why it stopped: G2_ST_CAP, G2_ST_MORE (the block
+ * at the cursor is not wholly inside s[0..n): the first byte the kit may NOT read is
+ * s[cursor]) or G2_ST_TERM (*failpos the first i whose byte is not in its set). It reads
+ * s only in [lo, cursor + W) for the blocks it enters: its own reads never reach a
+ * partial block. */
+enum { G2_ST_CAP, G2_ST_MORE, G2_ST_TERM };
+int g2_ref_stride(const g2_site *d, const uint8_t *s, size_t n, size_t lo, size_t *cursor,
+                  unsigned long *cnt, int *failpos);
 
 /* The subsets S (bit S of the result) among `alive` for which outcome `o`
  * is the contract's answer on (s, n, lo, fl). 0 = no subset explains it; why

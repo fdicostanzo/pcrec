@@ -30,7 +30,8 @@ enum { G2_T_SET, G2_T_RUN, G2_T_REF };   /* REF: MISMATCH's run-time operand, no
 enum { G2_FOLD_NONE, G2_FOLD_ASCII, G2_FOLD_UCP };
 enum { G2_USE_POSITION, G2_USE_DISCARD };
 
-#define G2_MAXT   8           /* terms per predicate (the header's MF_MAX_TERM) */
+#define G2_MAXT   32          /* terms per predicate: the header's MF_MAX_TERM, 32 since MF_SITE_ABI 8
+                                 (lane g2m6, Q-R10-3; it was 8) */
 #define G2_MAXOPT 6           /* OPTIONAL items per site: 2^6 candidate subsets */
 #define G2_LOGMAX 160         /* ON_CAND visits recorded per call               */
 #define G2_SENT   ((size_t)0x5e7f00d5e7f00dULL)  /* "never written" sentinel   */
@@ -127,6 +128,14 @@ typedef struct {
     uint8_t         mm_goto;      /* on_miss is `goto`, not a block that returns   */
     const uint8_t  *mm_map;       /* 256 bytes (the identity under G2_FOLD_NONE)   */
     int           (*mm_chk)(void);/* the hook text realizes mm_map: 0 = yes        */
+    /* lane g2m6 (MF_SITE_ABI 8, the STRIDED ADVANCE, G2_FAM_STRIDE): what the driver counts
+     * (the reference needs none of it: W is preds[0].nterm, the sets are the terms'). Emitted
+     * into the registry as designated initializers, strided sites only. */
+    uint8_t         st_cbc;       /* count_by_caller                                */
+    uint8_t         st_mem;       /* the member hook: 0 absent, 1 own read, 2 byte_expr form */
+    uint8_t         st_cur;       /* the cursor spelling                            */
+    uint8_t         st_snull, st_cnull;  /* W = 1: `s` / `cursor` unstated          */
+    uint8_t         st_cntk, st_capk, st_spk;
 } g2_site;
 
 /* The shape FAMILIES (lane g2x, folded by lane g2u). G2_FAM_BASE is the
@@ -148,13 +157,14 @@ enum {
     G2_FAM_MLINE,     /* §15.7 [R-7]: STMT/FIND/ASSIGN, one REQUIRED one-byte SET at -1,
                          empty AT_N, floor == lo, a leaving on_miss (goto/return/break;) */
     G2_FAM_MISM,      /* [R-8] STMT/MISMATCH/ON_DIFF: the span compare, one REF term */
+    G2_FAM_STRIDE,    /* [R-10] STMT/SKIP/ADVANCE over W in 1..32 REQUIRED SET terms, term i at offset i */
     G2_FAM_SEM,       /* the semantic differential's variant groups              */
     G2_NFAM
 };
 static inline const char *g2_fam_name(int f)
 {
     static const char *const names[G2_NFAM] = {
-        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "mline", "mismatch", "sem",
+        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "mline", "mismatch", "stride", "sem",
     };
     return f >= 0 && f < G2_NFAM ? names[f] : "?";
 }
