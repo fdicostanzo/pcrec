@@ -477,6 +477,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
 - **libc_census.py** (C11): its SIMD-on half is the MOVERS half since R-13:
   an ON compile equals the default exactly where its `MEMFN_FORMS` reads
   `none` (`MOVERS_FLOOR`, a literal).
+- **simd_accept.tsv** — THE SIMD ACCEPTANCE RECORD (integration.md
+  §R4.9.6): one line per SIMD row x level x official CPU class (zen1,
+  zen4), every line CANDIDATE at landing. `rows_check.py` check F (`make
+  test-memfn-rows`) holds the `simd`-layer rows of `--list-axes`' memfn
+  section to a line per level and class, the states to the closed set, and
+  a line past CANDIDATE to a bench tier and an existing transcript; C19's
+  digest half is UNREACHED (printed) until a timing run writes the first
+  transcript.
 - **rows.tsv**/**row_floors.tsv**: the `fn` rows `vrun-w16`/`vrun-w32`
   (witness `(?i)cat` under `-fmemfn-simd`, control the row's own deny);
   their floors PLACEHOLDER until the slot census and a G2 count pin them.

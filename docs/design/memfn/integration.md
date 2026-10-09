@@ -1857,6 +1857,17 @@ kit narrows or removes the row in a follow-up.
 one call. It is a pcrec abi event (RQ-6), it has no options.def row, and
 it is measured as G1. Batch 1 then adds only guarded text.
 
+> **`[R4e′ batch 1]` BUILT as CANDIDATE** (lane r13, 2026-10-09, request
+> R-13; `docs/dev/lanes/r13_report.md`). `vrun-w32` above `vrun-w16` in
+> `fn_rows[]`' PREFIX slot (`memfn/src/vrun.c`, levels in
+> `memfn/src/levels.def`); no pcrec abi event; `-fmemfn-simd` still OFF by
+> default. Deviations, each with its reason in the report §3: the
+> MF_SITE_ABI bump (9) carries the sink ops only (RQ-2's `plan_pos2` is
+> unbuilt), so the filter is KA alone until RQ-2; walk tests 3-4 are the
+> PREFIX rows' predicate conjuncts; a `header` column in levels.def; runs
+> capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500
+> measured); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
+
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
 site's only predicate; rows `vrun-w32` and `vrun-w16` in `fn_rows[]`.**
 The site population is §R4.9.2.1's table: PRE `<p>_reqrun` with no lead,
