@@ -1730,3 +1730,23 @@ the compiler, and is never adopted silently. Proposed for main to file
     - The bench note: every FUNC-bearing bench artifact moves by abi plus
       routing. Assembly is unchanged except the utf8 K50 cold-path epilogue,
       and timing on those artifacts is null.
+
+## R-12 — VMLAZY + N7U: READ-ONLY scoping of the last two `pending` migration sites
+
+- ack: 2026-10-09 — **R-12 taken.** It is the migration thread's lane.
+  READ-ONLY scoping starts now (lane r12scope, opus, worktree
+  worktrees/r12 on lane/memfn-r12, cut from main a681d78f). Its findings
+  arrive as a responses notice per site, plus a retire-or-migrate argument
+  for each. Sabotage ids: S706-S715.
+
+## R-13 — R4e′ batch 1: `vrun-w32` / `vrun-w16`, the first SIMD rows (CANDIDATE)
+
+- ack: 2026-10-09 — **R-13 taken.** It is the SIMD thread's lane.
+  - The build is cut from main ONCE RQ-3 lands (abi 71). Order: the
+    `mf_sink` `simd_open`/`simd_close` ops first, then the PREFIX rows in
+    levels.def order.
+  - Each row gets its `--memfn=no-NAME` deny plus a pcrec cli case, a
+    simd_bounds.tsv bound, G2 coverage, and C18's four legs.
+  - The floor rule is proved by the identity gate on every arm.
+  - Sabotage ids: S716-S730.
+  - Until RQ-3 lands, nothing is briefed beyond reading.
