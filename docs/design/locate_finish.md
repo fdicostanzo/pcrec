@@ -853,18 +853,24 @@ needs A on a route other than `CR_DFA`.
 
 Population: every bench export (367; 343 compile) and every `.rxt` pattern block
 (5,431; 5,012 compile, 4,191 distinct), `src` at `525dec33` (= `7efca415`), each
-compiled as its own testee/block does. **Four controls `[r2 C10]`**, each sharing no
-source with what it checks, the script exiting 1 on any disagreement:
+compiled as its own testee/block does. **Five controls `[r2 C10, r2.1 LR-G4]`**, the
+script exiting 1 on any disagreement; four share no source with what they check, and
+C4 is relabelled PLUMBING (`[r2.1 LR-S2]`):
 
 | control | checks | against | result |
 |---|---|---|---|
 | C1 | the reverse-machine stamp | the emitted text (any `rx_reverse_` identifier) | 0 / 5,355 |
 | C2 | the hybrid stamp | the text (`rx_prefilter(`) | 0 / 5,355 |
 | C3 (two-sided, `[r2 C10]`) | forward: shipped `end_window` numeric ⇒ the borrowed probe (a copy of `ew_walk`) pins; converse: probe pinned ∧ width finite ⇒ shipped numeric | `src/facts/endwin.c` vs the probe | forward 0 / 400 (+ width direction: 262 agree, 138 a DECLARED probe-blind exception — the probe never expands calls, e.g. `^(a\|b)\g<1>$`); converse 0 disagreements outside two DECLARED exceptions that are the shipped fact's own declines: 22 multibyte rows (16 distinct, e.g. `^.{5}$` utf8), 2 `\G` (`\G\z`, `\G$`) |
-| C4 (new, `[r2 C10]`) | the census's exact / superset hybrid classifier (`RX_VM_PREFILTER_LANG` + the `kinds` fact's atomic / lookaround bits) | the independent stamp `RX_VM_RESEED == "exact"` (the RETRY row whose predicate is `Vm.mrl_win`) | 759 exact / 734 superset, 0 disagreements; superset rows stamp `adaptive` 466, `clamped` 173, `anchored` 58, `adaptive-dense` 37; non-exact reasons: language 7, atomic 250, lookaround 515 (both kind spellings live) |
+| C4 (`[r2 C10]`; PLUMBING since `[r2.1 LR-S2, LR-G3]`) | the census's exact / superset hybrid classifier (`RX_VM_PREFILTER_LANG` + the `kinds` fact's atomic / lookaround bits) | the stamp `RX_VM_RESEED == "exact"` (the RETRY row whose predicate is `Vm.mrl_win`) | 759 exact / 734 superset, 0 disagreements; superset rows stamp `adaptive` 466, `clamped` 173, `anchored` 58, `adaptive-dense` 37; non-exact reasons: language 7, atomic 250, lookaround 515. **Not independent**: `Vm.mrl_win` is `pcrec_vm_prefilter_window`, whose conjuncts are the same kinds and collapse facts the classifier's stamps come from, so C4 shows two readers of one derivation agree, not that the derivation is right. The answer-level control is E9's window-identity twin against libpcre2 (§6.2), named before L3 |
+| C5 (new, `[r2.1 LR-G4, LR-S1]`) | the machine-MEMBERSHIP rule the three membership readers spell today ("forward always, reverse unless `pinned`, anchored iff `unwrapped`", nothing on `attempt`/`empty`), read off the stamps | which of `rx_forward_` / `rx_reverse_` / `rx_anchored_` the emitted C carries | **0 / 5,355**: DFA `unanchored` FRA 2,383, FR 42, FA 243, F 3; `attempt` 328 and `empty` 53 with none; hybrids FR 1,231 and none 262 (never A: LR-S1's population); VM-only 810 with none. The membership §2.7's derivation must reproduce |
 
 The re-run (lane locfin2) moved no existing table line; only the control blocks were
-added.
+added. The second re-run (lane locfin21, main `00ddf7d5`, `src` identical) added two
+TEXT columns (`t_fwd`, `t_anch`) and C5; every pre-existing cell of all 5,798 rows is
+byte-identical (compared column by column) and every other summary line is unchanged.
+The pair names below are revision 2's finisher spellings: `report` = `FIN2`,
+`nomatch` = `FIN1`, `verify-vm` = `FIN3` on `CR_VM`, `search-vm` = `FIN4` on `CR_VM`.
 
 | today's pair (T1) | bench | corpus (distinct) |
 |---|---:|---:|
@@ -892,8 +898,8 @@ construction). The census's own column names (`L-candloop × F-anch-dfa`,
 | `pinned` ([OPT-5]) | `search_from` | fwd | exact, whole | `SPAN` (`s = search_from`) | RECOVER S1 | inside `composite` |
 | ENG_ATTEMPT | each candidate ≤ `start_max` | fwd, anchored | exact, whole | `SPAN` (the verify is fused) | the route + N12/B1/B2 | `composite` / ATTEMPT hat |
 | the empty engine | — | — | — | `NOMATCH` | `dfa_engine_is_empty` (inline, twice) | LOCATE `empty` |
-| hybrid prefilter, exact | as above | as above | capture-erased = `L` | `SPAN` | route class + `mrl_win` | `composite` × verify-vm |
-| hybrid prefilter, superset | as above | as above | `L′ ⊋ L` | `SPAN` of `L′`, projected to `LOWER` | route class + `mrl_win` | `composite` × search-vm |
+| hybrid prefilter, exact | as above | as above | capture-erased = `L` | `SPAN` | route class + `mrl_win` | `composite` × `FIN3` (VM hat) |
+| hybrid prefilter, superset | as above | as above | `L′ ⊋ L` (an erasure RECORDED, `[r2.1 LR-G3]`) | `SPAN` of `L′`, projected to `LOWER` | route class + `mrl_win` | `composite` × `FIN4` (VM hat) |
 | K82 handoff | the gate's run hit `c` | arithmetic | — | `LOWER = max(lo, c − K)` | FIRST F1 | inside `composite` |
 | offset-k / run-pinned | the rarest offset's hit | arithmetic | — | `LOWER` (`hit − k`, spelled `CT_CAND`) | NEXT N1-N4 | inside `composite` |
 | START-SET DFA / VM hat | a byte in `S` | — | — | `LOWER` | NEXT N5/N6, N7 | inside `composite` |
@@ -904,69 +910,74 @@ construction). The census's own column names (`L-candloop × F-anch-dfa`,
 | PRESENCE pre-checks, K65/K66 | the landmark scan | fwd | — | `NOMATCH` / pass (+`HIT`) | PRESENCE P1-P5 | inside `composite` |
 | BOUND | — | — | — | the interval's `t` | BOUND B1-B5 | inside `composite` |
 | RECOVER reverse pass | the forward pass's end | rev | exact, whole | `SPAN` given the end | RECOVER S2 | inside `composite` |
-| RETRY | the failed attempt + K49 | — | — | `LOWER` (re-locate or step: policy) | RETRY R1-R6 | search-vm's re-entry |
-| the match-here entry | the caller's position | — | — | `AT` | `dfa_matches[]` (axis G) | `caller` × FINISH F3 / F5 |
+| RETRY | the failed attempt + K49 | — | — | `LOWER` (re-locate or step: policy) | RETRY R1-R6 | `FIN4`/`FIN3` (VM hat)'s re-entry (E-FR, E-VR) |
+| the match-here entry | the caller's position | — | — | `AT` (`NOMATCH` on an `empty` body) | `dfa_matches[]` (axis G) | `caller ⊓ body` × `FIN3` / `FIN4` |
 | [OPT-REVEND] (L2) | `n`, `n − 1` | rev | exact, whole | `SPAN`/`ENDSET`/`NOMATCH` | — | LOCATE `rev-end` |
 | rev-inner (filed) | landmark hits `j` | rev | exact, prefix `P` | `SPAN`/`NOMATCH` under G4, else `LOWER` | — | LOCATE (§4.6) |
 | relaxed reverse (filed) | `n`, `n − 1` | rev | `L′ ⊇ L` (§4.5) | `LOWER`, `NOMATCH` | — | LOCATE (§4.5) |
 
 **Which output is not a point of the product: none.** D156's trigger does not fire.
 
-### 3.3 Where the FINISH decision is spelled today `[r2 C8]`
+### 3.3 Where the FINISH decision is spelled today `[r2 C8, r2.1 LR-G4, LR-S8]`
 
 `studies/locate_finish/finish_sites.sh` lists every CODE line under `src/gen/` that
-tests `fit.chosen`, `fit.prefilter` or `prefn`: 32 lines. Revision 2 adds the
-`pcrec_artifact_has_dfa_scan` callers, which revision 1's grep missed. Dispositioned:
+tests `fit.chosen`, `fit.prefilter` or `prefn`: 32 lines. Revision 2 added the
+`pcrec_artifact_has_dfa_scan` callers; revision 2.1 adds the two `src/core/compile.c`
+spellings the `src/gen/` grep cannot see (`:229`, `:2381`, LR-S8) and dispositions
+every line to a field of §2.7's derivation:
 
 | class | lines | what they decide | after L0 |
 |---|---|---|---|
-| **FINISH reads** ("is the finisher a DFA finisher on this entry?") | `emit_dfa.c:1650` (the dead-group fill), `:1728` (the startpos guard on the caller-facing body), `:3145` (`rx_info.match_form`), `:9768`, `:9769` (trace), `:9784` (`emit_unanchored`'s entry gate), `:10068`, `:10070` (trace), `:10083` (`emit_attempt`'s), `:10707` (`vm`, the orientation block) | 10 lines, 6 decisions, one question | read `cand_finish_of` |
-| **"does a DFA body exist"** (`pcrec_artifact_has_dfa_scan`, 12 callers) | `emit_dfa.c:439` (the definition), `:1094`, `:1362`, `:1492`/`:1501`/`:1505` (PRESENCE's gate need and its trace), `:6972`, `:7049`, `:7102`, `:7355`; the `rx_info.scan`/`prefilter` mirror `:3119` and the `search_form` mirror `:3193`; `emit_vm.c:11330` (the hybrid's DFA stamps); plus `:10708` (`prefilter`, which with `:10707` spells `(!vm \|\| prefilter)` = this predicate locally) and `:10922` (`dfa_body`, the same predicate spelled a third way) | the existence of a LOCATE ask on a DFA route | unchanged at L0 except `:10708`, which reads the predicate in the orientation block's edit; `:10922` is F-9's later tidy; `cand_locate_route` reads it |
+| **FINISH reads** ("is the finisher a DFA finisher on this entry?") | `emit_dfa.c:1650` (the dead-group fill), `:1728` (the startpos guard on the caller-facing body), `:3145` (`rx_info.match_form`), `:9768`, `:9769` (trace), `:9784` (`emit_unanchored`'s entry gate), `:10068`, `:10070` (trace), `:10083` (`emit_attempt`'s), `:10707` (`vm`, the orientation block); `compile.c:229` (whether A is built) | 11 lines, 7 decisions, one question | read `path.finish`; `compile.c:229` reads the NEEDS half (§2.7) |
+| **"does a DFA body exist"** (F-9: `pcrec_artifact_has_dfa_scan` and its 12 callers, plus three local spellings) | `emit_dfa.c:439` (the definition), `:1094`, `:1362`, `:1492`/`:1501`/`:1505` (PRESENCE's gate need and its trace), `:6972`, `:7049`, `:7102`, `:7355`; the `rx_info.scan`/`prefilter` mirror `:3119` and the `search_form` mirror `:3193`; `emit_vm.c:11330` (the hybrid's DFA stamps); the local spellings `emit_dfa.c:10708`/`:10713` (`(!vm \|\| prefilter)`), `:10922` (`dfa_body`) and `compile.c:2381` (the build condition itself) | the existence of a LOCATE ask on a DFA route | every spelling reads `path.body` at L0 (`:10922` and `compile.c:2381` move into L0 with LR-G4); `:7355` reads the member set (§2.7's table) |
+| **machine membership** (F-10) | `dfa_table_name` `:4438`, `dfa_scan_edge_name` `:4510`, `dfa_uniform_folds` `:4568`, the orientation block's table paragraph `:10870` | which machines' tables the stamps and the prose fold over | the member fold (§2.7), never a FINISH selection (LR-S1) |
 | route-class reads inside predicates (start_table §2.3's third axis) | `:6847` (N7), `:7155`, `:7159` (P2), `:7360` (F1's (d′)) | stay (not FINISH) | unchanged |
-| the VM finisher's locator calls and exactness | `emit_vm.c:3645` (`mrl_win`, the body's language), `:11071`, `:11182`, `:11218` (stamps, the RETRY plan), `:12703-12733` (emit the inlined locator), `:13261-13327` (RETRY's re-locate), `:13393-13404` (the entry's locate call, E6) | **15 lines** (revision 1 said 16) that ARE the VM hat's implementation | unchanged at L0 |
+| the VM finisher's locator calls and exactness | `emit_vm.c:3645` (`mrl_win`, the body's language), `:11071`, `:11182`, `:11218` (stamps, the RETRY plan), `:12703-12733` (emit the inlined locator), `:13261-13327` (RETRY's re-locate), `:13393-13404` (the entry's locate call, E6) | **15 lines** that ARE the VM hat's implementation | unchanged at L0, except that `pcrec_vm_prefilter_window` (`:3643`) reads the erasure record (LR-G3) and `Vm.mrl_win`'s assignment (`:10368`) becomes the projection's one site (LR-S2) |
 
-So the finisher choice is one question asked at six decisions in two emitters, and
-"does a body exist" is spelled at least three ways (`pcrec_artifact_has_dfa_scan`,
-`(!vm || prefilter)` at `:10707-10708`, `dfa_body` at `:10922`). L0 gives the first
-ONE derivation, `cand_finish_of(cx)` (the `cand_route_of` precedent), and points the
-orientation block's local re-spelling of the second at the shared predicate; the third
-(`:10922`) is F-9.
+So the finisher choice is one question asked at seven decisions in three files, "does a
+body exist" is spelled four ways, and the membership rule four ways. L0 gives each
+ONE home, a field of one derivation.
 
-### 3.4 The ≥3 rule, and the `dfa_matches[]` fold `[r2 G4, C1]`
+### 3.4 The ≥3 rule, and the `dfa_matches[]` fold `[r2 G4, C1, r2.1 LR-G1, LR-G8]`
 
 FINISH's shipped members (report, nomatch, verify-at in three hats, search-from in
 two) are all dispersed; the house rule (memory `pcrec-forest-for-trees`) asks for the
-unified table at three, and §2.3 is that table. **`dfa_matches[]` is not "read" by
-FINISH (revision 1); it IS FINISH's existing first-match block** and folds in: the
-match-here entry's locator is `caller`, its shape `AT = ([s, s], ¬p, ⊤)`, and its two
-rows are F3 `verify-anchored` (the anchored machine; deny `-fno-anchored-dfa`; its
-predicate `match_unwrapped_applies`, moved verbatim) and F5 `search-from` (the search
-entry from `s`, filtered to `start == s`). Axis J's C3 precedent (`dfa_search_starts[]`
-deleted into RECOVER's rows) is the shape: the table goes, its rows stay, the
-`--list-axes` `match` axis is the rows' `list[route]` projection with identical bytes,
-and `<PREFIX>_DFA_MATCH` / `rx_info.match_form` read the selected row's listed name.
-**F-2 dissolves**: `dfa_match_is_unwrapped` (`emit_dfa.c:7727`) compared the selected
-row's POINTER to `&dfa_matches[0]`, the shape `start_table.md` sound-m2 removed from
-RECOVER; after the fold it reads `u.finish.act == CAND_FIN_VERIFY`, and the table that
-pointer pointed into no longer exists.
+unified table at three, and §2.3 is that table. **`dfa_matches[]` IS FINISH's existing
+first-match block** and folds in: the match-here entry's locator is `caller ⊓ body`,
+its hand `AT = ([s, s], ¬e, ⊤)` (or `NOMATCH` on an `empty` body), and its two rows
+become `FIN3 verify-at` on `CR_DFA` (the anchored machine; available iff A was built;
+`match_unwrapped_applies` loses its `!dfa_engine_is_empty` conjunct, LR-G8, and keeps
+`anchored_ok` as the availability read) and `FIN4 search-from` (the search entry's own
+LOCATE ask from `s`, filtered to `start == s`, E-FC). `-fno-anchored-dfa` is no longer
+a row deny: it removes the anchored BUILD and the listing shows it as `fact_deny`
+(§1.3). Axis J's C3 precedent (`dfa_search_starts[]` deleted into RECOVER's rows) is
+the shape: the table goes, its rows stay, the `--list-axes` `match` axis is the rows'
+`list[route]` projection with identical bytes, and `<PREFIX>_DFA_MATCH` /
+`rx_info.match_form` read the selected row's listed name. **F-2 dissolves**:
+`dfa_match_is_unwrapped` (`emit_dfa.c:7727`) compared the selected row's POINTER to
+`&dfa_matches[0]`; after the fold it reads `u.finish.act == CAND_FIN_VERIFY`, and its
+only remaining caller is the `_match` dispatch (`:11588`).
 
-**Where to attack §3.** (a) C4 says the classifier and `RX_VM_RESEED` agree on every
-hybrid; is there a fourth erasure neither sees (both read `mrl_win`'s inputs
-differently: the classifier the stamps, the stamp the function)? (b) §3.3's
-dispositions: a FINISH read the greps still miss. (c) The fold: does any reader
-compare `dfa_match_name` to a string outside the two stamps?
+**Where to attack §3.** (a) C5 says today's membership rule matches the bytes on
+every artifact; is there a machine a reader folds over that has no identifier family of
+its own (a future representation, as `[CC-DIFF]`'s uniform fold once was for C1)?
+(b) §3.3's dispositions: a FINISH or body read the greps still miss (outside
+`src/gen/` and `compile.c`). (c) The fold: does any reader compare `dfa_match_name` to
+a string outside the two stamps?
 
 ---
 
 ## 4. REVEND in this frame (D156 item (d))
 
-### 4.1 The locator row `[r2 G11]`
+### 4.1 The locator row `[r2 G11, r2.1 LR-G4, LR-G6]`
 
 ```
 { .c = { "rev-end", PCREC_NO_REV_END, cand_rev_end_applies },
   .slot = CAND_SLOT_LOCATE, .routes = CR_DFA, .tok = "rev-end",
   .map = CM_EXACTREV, .hands = CT_START | CT_VERDICT | CT_ENDSET /* ENDSET iff nl_last */,
   .list = { [CAND_ROUTE_DFA] = { "locate", 1, "rev-end", PCREC_NO_REV_END } },
+  .needs = { [CAND_ROUTE_DFA] = { .mach = M_R,
+             .asks = ASK(CAND_SLOT_PRESENCE) | ASK(CAND_SLOT_RECOVER) } },
   .desc = "...end_pin...", .u.locate = { .walk = CAND_WALK_REV_END, .whole = true } }
 
 static bool cand_rev_end_applies(const CandSel *s)
@@ -976,11 +987,24 @@ static bool cand_rev_end_applies(const CandSel *s)
 }
 ```
 
+(`.needs`' spelling is the build lane's; `M_R`/`ASK()` stand for §2.7's machine mask
+and (slot, route) cells.) **`[r2.1 LR-G4]` What `.needs` says here.** The walk runs the
+reverse machine only, so on a form-C artifact (T1/T2) F leaves the member set and the
+three membership readers fold over R (plus A under T2) with no stamp special case;
+RECOVER is ASKED (the walk is RECOVER's reverse block seeded at `n`, `n − 1`,
+`revend.md` §8's helper), so `RX_DFA_START` reads `"reverse-pass"` truthfully through
+the selection; WINDOW, FIRST and NEXT are not asked, so the L2.1 stamp rule gives
+their stamps the absence value. **`[r2.1 LR-G6]` PRESENCE is asked in this stage
+too**: `.whole` makes `req_dominated_applies` select `dominated` (§4.3's disjunct,
+which now lands with this row at L2, not with stage 2), so `RX_REQ_WHY` reads
+`"dominated"` where `REQ_BYTE ≠ "none"` — "the scan already tests it", true of the
+walk — and REQ_WHY stays four tokens.
+
 `revend.md` §2.3's four conjuncts: R1 is the predicate; R2 (`cand_route_of ==
 CAND_ROUTE_DFA`) is the route mask `CR_DFA`; R4 (`!dfa_engine_is_empty`, X11) is row
 order (`empty` precedes `rev-end`); R3 (`fit.chosen == ENGM_DFA`) is the ONE
-remaining conjunct, now a read of `cand_finish_of` (`[r2 G11]`: it is one of the
-reads §3.3 centralizes), and exactly stage 2's switch. X3's assertion (RECOVER never
+remaining conjunct, now a read of `cand_finish_of` = `path.finish` (`[r2 G11, r2.1
+LR-G4]`: it is one of the reads §3.3 centralizes), and exactly stage 2's switch. X3's assertion (RECOVER never
 `pinned` under `end_pin`) stays at the walk's emission and is measured too (census
 T4: 0 / 5,012). The emitted walk is `revend.md` §5.1's text; the helper is §8's.
 
@@ -988,21 +1012,21 @@ T4: 0 / 5,012). The emitted walk is `revend.md` §5.1's text; the helper is §8'
 
 | `revend.md` | here |
 |---|---|
-| T1 `no-tie` (`\z`, or `nl_last` false) | the row's shape set omits `ENDSET`: FINISH is asked for `SPAN`/`NOMATCH` only (F2, F1) and no tie code is emitted |
-| T2 `anchored` (`DFA_MATCH "unwrapped"`) | F3 `verify-anchored` on `ENDSET` — the same row the match-here entry selects, now with a second shape |
-| T3 `body` (`"search-filter"`) | F5 `search-from` on `ENDSET`: relocate to `composite` from `s*` |
+| T1 `no-tie` (`\z`, or `nl_last` false) | the row's hand set omits `ENDSET`: FINISH is asked for `SPAN`/`NOMATCH` only (`FIN2`, `FIN1`) and no tie code is emitted |
+| T2 `anchored` (`DFA_MATCH "unwrapped"`) | `FIN3 verify-at` on `ENDSET` (DFA hat, A) — the same row the match-here entry selects, now with a second hand |
+| T3 `body` (`"search-filter"`) | `FIN4 search-from` on `ENDSET`: relocate (E-FL) to `composite` from `s*`, which puts F and the composite's slots back on the path |
 
 `nl_last` stays as `revend.md` defines it (on the BUILT reverse machine); it decides
 the shape set, so it is a LOCATE-row property, and its sabotage row (revend §9.2 row
 10) is unchanged. E11 upheld this table (18 form-C twins, 0 / 1,682,892 cells, 0 vs
 libpcre2).
 
-### 4.3 Stage 2: the same locator with the VM hat `[r2 G9, C11, E3]`
+### 4.3 Stage 2: the same locator with the VM hat `[r2 G9, C11, E3, r2.1 LR-S3, LR-G6]`
 
 **What it is.** Drop the stage-1 conjunct. The hybrid's inlined `<p>_prefilter` asks
 LOCATE on `CR_DFA` and selects `rev-end` exactly where a DFA-only body would; the VM
-entry asks FINISH on `CR_VM` and gets F6 `verify-vm` (`SPAN`) or F7 `search-vm`
-(`ENDSET`, the projected `LOWER`). The reverse tables are already there (census T2:
+entry asks FINISH on `CR_VM` and gets `FIN3 verify-at` (`SPAN`) or `FIN4 search-from`
+(`ENDSET` — never the VM's verify-at, `[r2.1 LR-S3]` — and the projected `LOWER`). The reverse tables are already there (census T2:
 39 bench / 1,192 corpus `P-fwdrev` hybrids; C1 confirms by text).
 
 **Its classification is NEUTRAL** (correcting `revend.md` §3.9's ONE_WAY), and E9
@@ -1013,11 +1037,13 @@ diffs, 0 / 4,565,716 vs libpcre2, 0 / 719,283 find-all, ASan clean. The argument
 stays: the inlined body is the DFA emitter's output for the capture-erased pattern
 (STRUCTURAL), the walk's span equals that body's on every call (MEASURED), so the
 VM's (start, ceiling) pairs are the same (O4(i) equality), PROVIDED an `ENDSET` on a
-CLAMPED hybrid goes to F7 (whose loop head relocates through the composite for the
-priority end) and not to F6 with `max(D)`: a looser ceiling prunes less (O4(i)
-excludes the pair), while never being wrong (O4(ii) holds for `max(D)`).
+CLAMPED hybrid goes to `FIN4` (whose loop head relocates through the composite for
+the priority end) and not to the VM's verify-at with `max(D)`: a looser ceiling
+prunes less (O4(i) excludes the pair), while never being wrong (O4(ii) holds for
+`max(D)`). Revision 2.1 makes this a TAKE cell, not a rule a predicate must
+remember: `verify-at`'s `take[CR_VM]` has no `ENDSET` (§2.3).
 
-**`[r2 E3]` The F7-not-F6 hazard is ARGUED, not witnessed.** The named witnesses are
+**`[r2 E3]` The search-from-not-verify-at hazard is ARGUED, not witnessed.** The named witnesses are
 greedy, where `max(D)` IS the priority end (0 / 27,884 differ). Only a LAZY tie
 moves the window: `(\s+?){2}$` moves it on 2,188-3,282 cells with captures equal and
 the give-up threshold equal over 19 budgets × 5 lengths. So the L3 sabotage row's
@@ -1025,7 +1051,9 @@ witness is re-aimed to `(\s+?){2}$` and detected by the window-identity twin
 (`window[0][1]` compare), and the give-up hazard is recorded as UNWITNESSED: the
 rule stands on O4(i)'s pair equality, not on an observed give-up.
 
-**PRESENCE defers through `dominated`, not a new row `[r2 G9, C11]`.** On the hybrid
+**PRESENCE defers through `dominated`, not a new row, in BOTH stages `[r2 G9, C11,
+r2.1 LR-G6]`.** The disjunct lands with `rev-end` at L2 (stage 1, §4.1); stage 2 only
+widens where it is read. On the hybrid
 the VM entry runs W1, then the PRESENCE pre-check (an O(n) `memchr`), then FIRST,
 then calls the prefilter (`emit_vm.c:13146`, `:13165`, `:13396`), and the pre-check
 would eat the walk's win (X7's finding). Revision 1 added a row `locate-decides`.
@@ -1097,7 +1125,7 @@ copy: `(\ba)\1` → `(\ba)\ba`); E12 upheld this with the true closure: 0 violat
 over 3,000 generated patterns (~1.08M checks, byte and UCP), while `:877`'s
 assertion-keeping copy gives 117.
 
-**Shape and finisher.** `LOWER = s*′` or `NOMATCH`, to F7 `search-vm` (the VM-only
+**Shape and finisher.** `LOWER = s*′` or `NOMATCH`, to `FIN4 search-from`, VM hat (the VM-only
 attempt loop from `s*′`, its START-SET hat and BOUND unchanged), not one walk per
 failed attempt (each re-walk from `n` costs O(n − lo)).
 
@@ -1115,7 +1143,7 @@ start-anchored; start-unanchored 13 distinct, of which 7 carry a backreference a
 unbounded, all corpus correctness witnesses; bench 0. **FILED (D77)**; trigger: a
 bench or real-world end-pinned backreference cell that pays the VM's attempt loop.
 
-### 4.6 `[ENG-TACTICS]` reverse-inner: a LOCATE row `[r2 E1, E8]`
+### 4.6 `[ENG-TACTICS]` reverse-inner: a LOCATE row `[r2 E1, E8, r2.1 LR-S5]`
 
 - **Slot LOCATE, not NEXT** (correcting `start_table.md` §4.1's placement; F-5). A NEXT
   row hands a candidate into the composite, whose RECOVER walks back for the start;
@@ -1127,13 +1155,38 @@ bench or real-world end-pinned backreference cell that pays the VM's attempt loo
   `s ∈ starts(j)` succeeds. `(a+)X\1` on `"aaXa"`: libpcre2 (1,4), the tactic
   NOMATCH; a second witness returns a LATER match; 82 wrong / 82,903 over the 1,199
   gated cases with a backreference in `S` (lfcrit1), the study's 0 / 129,222 having
-  counted too few of them (K35). So:
-  - **under G4** (`S` holds no backreference or group condition into `P`'s groups;
-    conservatively no `${...}`): the row hands, per occurrence, a proven `SPAN` (DFA
-    hat: F3 `verify-anchored` from `s*`; VM hat: F6 one anchored attempt) or moves on —
+  counted too few of them (K35).
+- **G4 is a CLOSED predicate over node kinds `[r2.1 LR-S5]`.** Revision 2 stated G4 as
+  a list ("no backreference or group condition into `P`'s groups"). lfre1 found the
+  list's natural reading wrong under DUPNAMES: in `(?J)(?<n>a+)X(?<n>b)?\k<n>`
+  (libpcre2 on `"aaXa"`: (1,4)) the reference's `refs[]` = {1, 2} spans `P` (group 1)
+  AND `S` (group 2), so a G4 that asks "is the reference into `S`?" passes and the
+  per-occurrence verify answers NOMATCH. G4 is therefore one function, an EXHAUSTIVE
+  switch over `AKind` with no `default:` (the house rule, `mrl.c:18-24`: a kind added
+  later is a COMPILE ERROR at the switch, which is the alarm a list cannot raise), run
+  over every node of `S`, with `groups(P)` the capture numbers `P` defines:
+  - PASS, reading no capture state: `A_CLASS`, `A_WCLASS`, `A_EMPTY`, `A_BOL`, `A_EOL`,
+    `A_END`, `A_CTX`, `A_GSTART` (`\G`'s own reference point is O7's question, not
+    G4's), `A_KRESET`;
+  - RECURSE into the children: `A_CAT`, `A_ALT`, `A_REP`, `A_CAP` (a group IN `S` is
+    written, not read), `A_ATOMIC`, `A_LOOK`;
+  - `A_BREF`: pass iff NO member of `refs[]` is in `groups(P)` — `refs[]` read as the
+    SET it is (DUPNAMES), every member, never the first;
+  - FAIL CLOSED: `A_CALL` (a called body inherits the caller's captures, so a
+    reference inside it can read `P`'s groups; refinable later by recursing into the
+    callee with a cycle guard, not needed today), `A_VAR` (conservative: a variable
+    names a caller value, never a group, `variables_pattern.md`; kept because it
+    costs nothing);
+  - not built today, and FAIL CLOSED when built: group conditions (`(?(1)...)`) and
+    callouts. Neither has a node kind, so neither reaches the switch; whichever lands
+    adds its `case` there, and the compiler refuses to build until it does.
+  The same predicate, word for word, is `where_to_start.md` §2.2's G4 and §2.4's gate
+  row. So:
+  - **under G4**: the row hands, per occurrence, a proven `SPAN` (DFA hat: `FIN3
+    verify-at` from `s*`; VM hat: `FIN3`'s one anchored attempt) or moves on —
     revision 1's design;
   - **without G4**: the row hands `LOWER(s*(j₀))`, `j₀` the first occurrence with a
-    non-empty `starts`, to F7 `search-vm` / F5 `search-from` — the attempt loop from
+    non-empty `starts`, to `FIN4 search-from` (VM or DFA hat) — the attempt loop from
     there. `starts(j)` depends on `P` alone, so step 2's monotonicity still makes it a
     sound lower bound; the critic's `lowerbound` form measured 0 wrong.
   This is the VM-route population §3 of that note was built for
@@ -1144,7 +1197,7 @@ bench or real-world end-pinned backreference cell that pays the VM's attempt loo
   choosing the shape set; seed = each landmark hit `j`; reverse over the PREFIX
   machine (`revend.md` §8's helper; a landmark seed is speculative, X1).
 - **Give-up hand-off:** where the forward-verify guard trips (`where_to_start.md`
-  §2.7), F5 `search-from` relocates `s*` as `lo` to `composite` (the measured
+  §2.7), `FIN4 search-from` relocates `s*` as `lo` to `composite` (the measured
   `fallback`); `start_table.md`'s FIRST-slot `handoff-rev` row is not needed. **`\G`
   `[r2 E8]`:** rev-inner, unlike REVEND, does not decline `\G`; relocate hands `lo` as a
   scan start and leaves `\G` on the caller's `search_from` (`(?:\G|b)(b?)\w*X` on
@@ -1155,10 +1208,11 @@ bench or real-world end-pinned backreference cell that pays the VM's attempt loo
 
 **Where to attack §4.** (a) The PRESENCE → LOCATE read: does reading the BODY's
 LOCATE from an entry slot keep `cand_hit_every`'s route-independence on an ATTEMPT
-hybrid (two body routes in one artifact, D-2b)? (b) F7-not-F6 on clamped ties, now
-unwitnessed: construct a give-up. (c) §4.5: a fifth Σ* source; a fold the emitted
-compare applies that the relaxation does not. (d) G4's member list: anything else in
-`S` that reads `P`'s capture state (a callout? `(*ACCEPT)` inside `S`?).
+hybrid (two body routes in one artifact, D-2b)? (b) search-from-not-verify-at on
+clamped ties, still unwitnessed: construct a give-up. (c) §4.5: a fifth Σ* source; a
+fold the emitted compare applies that the relaxation does not. (d) G4's PASS list: a
+kind there that reads capture state after all (`A_KRESET` under a future
+`\K`-in-lookaround; a verb kind if `(*ACCEPT)` ever gets a node).
 
 ---
 
