@@ -16,14 +16,22 @@
 # row stays as a TRIPWIRE: it reads DETECTED again the day pcrec spells a
 # memchr call of its own (S524 is the row that catches that text appearing).
 # Triage: worktrees/memfn-slot/slot11/S513_triage.md (lane s513tri).
+#
+# RE-AIMED 2026-10-08 ([MEMFN] M7, lane m7; RULED Q-R8-7): M7's rider deleted
+# the dead "memchr" entry this row planted (its equivalence above), so the row
+# now drops a name pcrec's OWN text still calls: `strlen`, the `${...}`
+# variable resolver's. A hand plant showed C11's quick arm reaches it (its
+# sample compiles `^${v}$` and `^${v:-\xff}$`, whose objects call strlen),
+# so the row is a live detector again, not retired. Intent unchanged: the
+# producer drops one name and MEMFN_LIBC under-reports.
 SAB_ID="S513-c11-libc-name-dropped"
 SAB_FILE="src/gen/memfn_stamps.c"
 SAB_SUITES="memfnstamps"
-SAB_DESC='memchr is dropped from the libc inventory pass: MEMFN_LIBC under-reports (a memchr-only artifact reads "none") while the object still calls memchr'
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/memfnstamp_report.md §5); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S513. MEASURED UNDETECTED 2026-10-08 (slot11, lane/memfn-m4 @ 32197d74, Linux): reach ok 1/1, memfnstamps 0fail/9pass -- an equivalent mutant after M4 (see header); re-pinned UNDETECTED (EXPECTED).'
-SAB_REACH='"$PCREC" -p rx -o - --pattern "a(b|c)+d" | grep -o "RX_MEMFN_LIBC \"memchr\""'
-SAB_REACH_EXPECT='RX_MEMFN_LIBC "memchr"'
-SAB_EXPECT=UNDETECTED
+SAB_DESC='strlen is dropped from the libc inventory pass: MEMFN_LIBC under-reports on a variable artifact while the object still calls strlen'
+SAB_DOC_FIGURE="RE-AIMED and HAND-MEASURED by lane m7 2026-10-08 (plant applied, tree rebuilt): memfnstamps 2 failed / 8 passed (C11 quick: the two vars cells). Before the re-aim: MEASURED UNDETECTED 2026-10-08 (slot11), an equivalent mutant on memchr after M4. The matrix figure is owed at the slot."
+SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "a\${v}b" | grep -o "RX_MEMFN_LIBC \"memchr,memcmp,strlen\""'
+SAB_REACH_EXPECT='RX_MEMFN_LIBC "memchr,memcmp,strlen"'
+SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    "memchr", "memcmp", "memcpy", "memmove", "memset", "strcat", "strchr",'
-SAB_AFTER='    "memcmp", "memcpy", "memmove", "memset", "strcat", "strchr", /* SABOTAGE S513 */'
+SAB_BEFORE='    "strcmp", "strcoll", "strcpy", "strcspn", "strerror", "strlen", "strncat",'
+SAB_AFTER='    "strcmp", "strcoll", "strcpy", "strcspn", "strerror", "strncat", /* SABOTAGE S513 */'

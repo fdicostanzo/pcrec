@@ -41,10 +41,13 @@ void pcrec_emit_memfn_mark(StrBuf *c)
 /* The C library's functions, by the headers that declare them: C17
  * <string.h>, <stdio.h>, <stdlib.h>, <ctype.h>, and the POSIX/GNU string
  * functions a search form may call. A name here is RECOGNISED, not
- * recorded: only a call the text makes is noted. */
+ * recorded: only a call the text makes is noted. `memchr` is not here
+ * ([MEMFN] M7 rider): since M4 no pcrec text spells a `memchr(` call (every
+ * one is a kit row's, and the kit notes it as it renders, mf_art_note_libc),
+ * so the entry recognised nothing (S513's equivalence, slot11). */
 static const char *const libc_names[] = {
     /* <string.h> */
-    "memchr", "memcmp", "memcpy", "memmove", "memset", "strcat", "strchr",
+    "memcmp", "memcpy", "memmove", "memset", "strcat", "strchr",
     "strcmp", "strcoll", "strcpy", "strcspn", "strerror", "strlen", "strncat",
     "strncmp", "strncpy", "strpbrk", "strrchr", "strspn", "strstr", "strtok",
     "strxfrm",

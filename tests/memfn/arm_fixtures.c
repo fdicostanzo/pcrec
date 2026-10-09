@@ -458,6 +458,45 @@ static mf_hooks back_hooks(Fx *fx, const char *floor, const char *on_miss)
     return h;
 }
 
+/* ---- the MISMATCH (M7 prep, R-8: MF_VOCAB 3, MF_SITE_ABI 7) ---------------
+ *
+ * The encoding seam's span compare as pcrec's src/enc backends will describe
+ * it (Q-R8-2/4/5): STMT / MISMATCH / ON_DIFF over ONE REQUIRED REF term at
+ * offset 0, `empty` NOP (an empty reference is EQUAL), `on_miss_leaves` 1,
+ * `fold_kind` the fold's FACT; the hooks are the residual entry's own
+ * parameter names (`s`, `n`, `at`, `ref`, `reflen`), the loop index `i`
+ * declared `size_t `, the sign-encoded failure as on_miss, the fold TEXT
+ * with `@` for the byte. */
+static const char MM_ASCII[] = "if (@ >= 'A' && @ <= 'Z') @ = (unsigned char)(@ + 32);";
+static const char MM_UCP[] = "rx_span_ci_fold(@)";
+static const char MM_ON_DIFF[] = "return -(ptrdiff_t)i - 1;";
+
+static mf_site mm_site(mf_fold fk)
+{
+    mf_site s = base_site();
+    s.form = MF_FORM_STMT;
+    s.op = MF_OP_MISMATCH;
+    s.handoff = MF_H_ON_DIFF;
+    s.use = MF_USE_POSITION;
+    s.empty = MF_EMPTY_NOP;
+    s.on_miss_leaves = 1;
+    s.policy |= MF_P_INLOOP;
+    s.fold_kind = (uint8_t)fk;
+    s.pred.nterm = 1;
+    s.pred.plan_hint = MF_NO_PRED;
+    s.pred.term[0].kind = MF_T_REF;
+    s.pred.term[0].need = MF_REQUIRED;
+    return s;
+}
+
+static mf_hooks mm_hooks(Fx *fx, const char *fold)
+{
+    mf_hooks h = { .s = "s", .n = "n", .lo = "at", .ref = "ref", .reflen = "reflen",
+                   .result = "i", .result_decl = "size_t ", .on_miss = MM_ON_DIFF,
+                   .fold = fold, .indent = "    ", .u = fx };
+    return h;
+}
+
 /* ---- ADVANCE (R4h prep) ---------------------------------------------------- */
 
 /* The in-loop skip's site (integration.md §15.7's STAY skip / scan-edge loop,
@@ -793,6 +832,65 @@ static void gate_cases(void)
     av.empty = MF_EMPTY_AT_N;
     mf_hooks vh = adv_hooks(cls[0].h, &uf);
     gate_case("adv-at-n-refused", &av, &vh, &vh);
+
+    /* M7 prep (R-8, MF_VOCAB 3, MF_SITE_ABI 7): the MISMATCH. POSITIVE: the
+       exact and expression folds take the generic row, the in-place fold
+       (a FOLD_STMT text, under ASCII or UCP) the row mismatch_inplace, which
+       also takes a BRACED on_miss; a non-identifier hook is parenthesized
+       by both. REFUSE: a `break;` (its own loop encloses on_miss, Q-R7-3),
+       a fold stated against fold_kind NONE, a stated fold with no fold
+       text (R1), a fold text with no `@`, an on_miss that may fall through,
+       the vocabulary's shape rules (reverse, a non-NOP empty, a second term,
+       a REF term off 0), an unstated `ref` (R1) and fold_kind on a FIND. */
+    mf_site me = mm_site(MF_FOLD_NONE), mu = mm_site(MF_FOLD_UCP),
+            ma = mm_site(MF_FOLD_ASCII);
+    Fx mf = { &me, NULL, "    " };
+    mf_hooks mh = mm_hooks(&mf, NULL);
+    gate_case("mm-exact", &me, &mh, &mh);
+    mh = mm_hooks(&mf, MM_UCP);
+    gate_case("mm-expr", &mu, &mh, &mh);
+    mh = mm_hooks(&mf, MM_ASCII);
+    gate_case("mm-inplace", &ma, &mh, &mh);
+    mh.on_miss = "{ return -1; }";
+    gate_case("mm-inplace-braced", &ma, &mh, &mh);
+    mh = mm_hooks(&mf, MM_ASCII);
+    gate_case("mm-ucp-inplace", &mu, &mh, &mh);
+    mh = mm_hooks(&mf, "@ | 0x20");
+    mh.s = "(sp + 0)";
+    mh.reflen = "len - 1";
+    gate_case("mm-expr-nonident", &ma, &mh, &mh);
+    mh = mm_hooks(&mf, MM_ASCII);
+    mh.on_miss = "break;";
+    gate_case("mm-loop-exit", &ma, &mh, &mh);
+    mh = mm_hooks(&mf, MM_UCP);
+    gate_case("mm-none-fold", &me, &mh, &mh);
+    mh = mm_hooks(&mf, NULL);
+    gate_case("mm-ascii-nofold", &ma, &mh, &mh);
+    mh = mm_hooks(&mf, "fold(c)");
+    gate_case("mm-fold-noat", &mu, &mh, &mh);
+    mf_site ml = mm_site(MF_FOLD_NONE);
+    ml.on_miss_leaves = 0;
+    mh = mm_hooks(&mf, NULL);
+    gate_case("mm-leaves-0", &ml, &mh, &mh);
+    mf_site mr = mm_site(MF_FOLD_NONE);
+    mr.reverse = 1;
+    gate_case("mm-reverse", &mr, &mh, &mh);
+    mf_site mm = mm_site(MF_FOLD_NONE);
+    mm.empty = MF_EMPTY_MISS;
+    gate_case("mm-empty-miss", &mm, &mh, &mh);
+    mf_site m2 = mm_site(MF_FOLD_NONE);
+    m2.pred.nterm = 2;
+    t_byte(&m2.pred.term[1], 0, 'a');
+    gate_case("mm-two-terms", &m2, &mh, &mh);
+    mf_site m1 = mm_site(MF_FOLD_NONE);
+    m1.pred.term[0].offset = 1;
+    gate_case("mm-ref-off1", &m1, &mh, &mh);
+    mh.ref = NULL;
+    gate_case("mm-ref-unstated", &me, &mh, &mh);
+    mf_site mk = pf_site(0, 0);
+    t_byte(&mk.pred.term[0], 0, 'x');
+    mk.fold_kind = MF_FOLD_ASCII;
+    gate_case("mm-fold-kind-find", &mk, &ph, &ph);
 }
 
 int main(int argc, char **argv)
@@ -990,6 +1088,34 @@ int main(int argc, char **argv)
         hg.miss = "((size_t)-1)";
         hg.indent = "    ";
         bad |= render_emit(dir, "find-back-reaches-n", &s, &hg);
+    }
+
+    /* M7 prep (R-8): the MISMATCH, one fixture per shape the seam's span
+     * compare has (Q-R8-9): exact and the UCP expression fold through the
+     * generic row, the ASCII in-place fold through mismatch_inplace, each
+     * frozen byte for byte under pins/n7_target/ (pcrec's pre-migration loop,
+     * run_arm_pins.sh check 10); plus two edges the frozen shapes do not
+     * reach: non-identifier hooks and a BRACED on_miss (parenthesized and
+     * kept as written) and a hook text naming `y` (the in-place temps
+     * renamed). Check 11 compiles all five and runs them. */
+    static const struct { const char *name; mf_fold fk; const char *fold;
+                          const char *s, *ref, *on_diff; } mmx[] = {
+        { "mm-exact",         MF_FOLD_NONE,  NULL,     "s", "ref", MM_ON_DIFF },
+        { "mm-ucp-expr",      MF_FOLD_UCP,   MM_UCP,   "s", "ref", MM_ON_DIFF },
+        { "mm-ascii-inplace", MF_FOLD_ASCII, MM_ASCII, "s", "ref", MM_ON_DIFF },
+        { "mm-nonident",      MF_FOLD_UCP,   "@ | 0x20", "(sp + 0)", "ref",
+          "{ return -(ptrdiff_t)i - 1; }" },
+        { "mm-inplace-clash", MF_FOLD_ASCII, MM_ASCII, "s", "y", MM_ON_DIFF },
+    };
+    for (size_t i = 0; i < sizeof mmx / sizeof mmx[0]; i++) {
+        if (skip_fixture(mmx[i].name)) continue;
+        s = mm_site(mmx[i].fk);
+        Fx fm = { &s, NULL, "    " };
+        mf_hooks hm = mm_hooks(&fm, mmx[i].fold);
+        hm.s = mmx[i].s;
+        hm.ref = mmx[i].ref;
+        hm.on_miss = mmx[i].on_diff;
+        bad |= render_emit(dir, mmx[i].name, &s, &hm);
     }
 
     /* R4h prep (a): the scan edge's counted loop, its counter owned by the

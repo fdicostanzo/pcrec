@@ -13,7 +13,12 @@
  *                R4h, M3) are the in-loop ADVANCE skips, built by
  *                pcrec_memfn_advance_site from a PcrecAdvance (memfn_sites.h).
  *                MLINE ([MEMFN] M4) is the attempt engine's `(?m)^` skip, a
- *                FIND described by pcrec_emit_find (PcrecFind), as PF is
+ *                FIND described by pcrec_emit_find (PcrecFind), as PF is.
+ *                N7 ([MEMFN] M7) is the encoding seam's byte-wise span
+ *                compare loop, a MISMATCH described by
+ *                pcrec_memfn_span_site from the backend's site data
+ *                (src/enc/enc.h PcrecEncSite, D58 addendum 2): budget 2,
+ *                the compare runs at every VM backreference step (D91)
  *   op           the kit operation every instance has (MF_OP_*)
  *   handoffs     the handoffs an instance may take, as DELEG_H(MF_H_*) bits
  *   kinds        the term kinds an instance may use (MF_TK_*)
@@ -43,3 +48,5 @@ DELEG_SITE(VMSPAN, MF_OP_SKIP, DELEG_H(MF_H_ADVANCE),
            MF_TK_SET, DELEG_LOOP, MF_USE_POSITION)
 DELEG_SITE(MLINE, MF_OP_FIND, DELEG_H(MF_H_ASSIGN),
            MF_TK_SET, DELEG_SCAN, MF_USE_POSITION)
+DELEG_SITE(N7, MF_OP_MISMATCH, DELEG_H(MF_H_ON_DIFF),
+           MF_TK_REF, DELEG_LOOP, MF_USE_POSITION)

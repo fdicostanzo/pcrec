@@ -12,7 +12,7 @@
 # change that adds a kit source file or a fixture may raise the others.
 set -u
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export ROWS_FLOOR=14       # rows of both tables (10 arms + 4 runcmp; M4 prep: pf_memchr_back)
+export ROWS_FLOOR=15       # rows of both tables (11 arms + 4 runcmp; M4 prep: pf_memchr_back; M7 prep: mismatch_inplace)
 export KIT_SRC_FLOOR=9     # memfn/src/*.c
 export FIXTURE_FLOOR=29    # tests/memfn/arm_fixtures.c fixtures (+2 ADVANCE, R4h prep)
 export CLASS_CASE_FLOOR=15 # rows_check.py CLASS_EXPECT's cases (R4h prep, check E)

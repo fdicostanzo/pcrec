@@ -937,3 +937,120 @@ pointer when a kit change merges to main.
     clean. make test now runs through scripts/perfrun.
   - Posted done: R-7 and a notice with G2's Q-G2M4-1..9 and the redundant
     libc_names memchr entry.
+- 2026-10-08: RULING from Frank, given directly to the kit session. SIMD
+  is an INDEPENDENT, PARALLEL thread and no longer waits to come "last".
+  - It can be switched on and off (`-fmemfn-simd`, default OFF), so it is
+    its own optimization path. It does not wait for the algorithmic queue
+    or the migration to finish; part of the refactor's purpose is to
+    allow exactly this.
+  - Bar: each SIMD form must be faster than the non-SIMD code at its
+    sites, or show a specific named benefit (e.g. code space), because it
+    imposes restrictions.
+  - Default-ON stays its own ruled event (D147).
+  - Posted to main as a proposed D-entry (responses.md).
+  - Meanwhile M7 is merged on lane/memfn-m7; blinded G2 lane g2m7 is
+    running; slot12/run.sh is written.
+- 2026-10-08: RULING from Frank (kit session). He approved the SIMD plan
+  with a capacity split: "2 parts migrating to 1 part simd until the
+  migration is done, then you're unlocked." Lanes go 2:1, and heavy slots
+  go 2:1 when both threads have a run queued. The split lifts at the
+  migration's end state (M5′). Posted to main.
+- 2026-10-08: The bench box's CPU, at Frank's prompt ("bench ... runs on a
+  separate Linux box that uses an older CPU"). pcrecdev2 read it with
+  lscpu.
+  - budu-ryzen1600 is an AMD Ryzen 5 1600 (Zen 1). Flags: sse2..sse4_2,
+    ssse3, avx, avx2 (executed as 2x128-bit uops), bmi1/bmi2 (PDEP/PEXT
+    microcoded, so slow), popcnt, abm (lzcnt), sha_ni. NO AVX-512.
+  - The dev box is a Ryzen 7 7700X (Zen 4: full-width AVX2, AVX-512).
+  - For the SIMD thread:
+    - 16 B SSE2/SSE4.2 forms first; AVX2 second, with smaller bench gains
+      expected; AVX-512 filed (no bench evidence possible); no PDEP/PEXT
+      in kernels.
+    - Acceptance is read on the bench CPU, or both CPUs are reported. A
+      dev-box-only verdict overstates.
+  - These go to R-9's D6 panel as inputs. r9d was briefed before this, so
+    there is no addendum to the running lane.
+- 2026-10-08: RULING from Frank (kit session). Short-form unofficial
+  benches can run anywhere and are directional. An OFFICIAL result needs a
+  pcrec-bench run, macOS work included. The bench can run on the dev box
+  too, but it is PLANNED and coordinated through main, which owns the
+  bench inbox. Posted to main.
+- 2026-10-08: D144 addendum 4 (Frank via main, main 04733583). Official
+  SIMD verdicts are pcrec-bench runs on the hardware each form targets.
+  The bench runs on several boxes: ubuntubudu (Zen 1), this dev box
+  (7700X, Zen 4: AVX2 and full AVX-512) and the Mac. Main coordinates runs
+  on this box. CORRECTION to my earlier priority: AVX-512 is NOT filed;
+  SSE first stands, and the AVX2/AVX-512 order is argued on evidence. The
+  r9 panel was briefed before this, so the consolidation folds it in.
+- 2026-10-08: Frank answered R-9's questions directly to the kit:
+  - Q-R9-1/2/3/5/7/8/9: "I agree" (as recommended).
+  - Q-R9-4: "if that [space] isn't true then it's fastest wins". This
+    matches the recommendation: no named-benefit path for SIMD rows.
+  - Q-R9-6 (the floor rule) is PENDING: he asked what it is, and it was
+    explained (SIMD-on = SIMD-off plus guarded text only; compiled without
+    the feature it IS the scalar code; checked by C18).
+  - Posted to main. Also: lane g2m6 (M6 blinded G2) was stopped by Frank;
+    no relaunch without his word.
+- 2026-10-08: Frank (kit session) on R-9:
+  - Q-R9-6 (floor rule): AGREED.
+  - **No `#if`/`#ifdef` inside function bodies** ("hard to read"). The SIMD
+    choice moves to FILE SCOPE: per-level `static inline` helpers selected
+    by `#if` there, and the function body makes one plain call. The kit's
+    reading: the SIMD-off artifact also calls the helper (scalar body =
+    today's loop). That is a one-time byte move and abi event, so the
+    floor rule stays byte-exact; measured under G1.
+  - **Runtime dispatch is FILED, not current.** The motive: one artifact
+    must not need 4-5 whole copies (500 KB) for different CPUs. So it is
+    per-SITE multiversioning: only the hot helpers get one copy per level
+    (target attribute), selected once at startup from the CPU. The level
+    set is named at compile time and need not cascade (e.g. AVX-512 or
+    scalar). Static (#if) and dynamic (startup choice) share the same
+    file-scope structure.
+- 2026-10-08: Frank, refining runtime dispatch (still FILED):
+  - (1) Per-arch separate artifacts selected later (e.g. a chosen lib.so)
+    already work through static selection; nothing is needed from pcrec.
+  - (2) There are two frequency classes:
+    - INFREQUENT sites (precheck, find-start; about once per search call)
+      may be dispatched dynamically per hardware;
+    - FREQUENT / hot-loop sites must not pay a hardware check. They take a
+      STATIC choice: the lowest common denominator of the selected set, or
+      a named most-common level.
+  - This only matters with more than one arch selected for dynamic support
+    AND a hot-loop SIMD form, so it may be theoretical. Example classes
+    (r9fu): PRE's FUNC runs once per call (infrequent); the filed OFS
+    run-pinned vrun re-seeds inside the DFA scan loop (frequent).
+- 2026-10-08: Frank ruled Q-R9-10 (from revision D155): shape (b), one
+  unchanging FUNC that calls a level macro selected at file scope by
+  `#if/#elif/#else`, NOT the FUNC-as-selector shape (a). The macro is ALL
+  CAPS so it reads as a macro: `<PREFIX>_<FN>_LEVEL` (e.g.
+  `RX_REQRUN_LEVEL`), following pcrec's upper-cased-prefix stamp
+  convention; the helpers stay `<p>_<fn>__body` / `__w16` / `__w32`.
+  Q-R9-11 (frequency class): kit-decided, a `freq` column in DELEG_SITES
+  built only when [MEMFN-RTDISPATCH] triggers (not MF_P_INLOOP).
+- 2026-10-08: Frank REVISED Q-R9-10 to shape (c), superseding (b): no
+  level macro. The FUNC is written once, and its whole body is the
+  `#if/#elif/#else` chain with one helper call per arm. The rule's
+  wording, confirmed by Frank: "a function that does work never contains
+  `#if`; a selector function's whole body may be the `#if` chain, one call
+  per arm, and nothing else."
+- 2026-10-08 evening: SESSION RESET at Frank's request. State:
+  - **M7 (R-8)** is BUILT, and its slot12 findings are fixed (m7fix) on
+    lane/memfn-m7. It waits for slot13's re-validation (main GOs it after
+    B5). Then `done: R-8`.
+  - **M6 (R-10, VMSTRIDE only)** is BUILT, and N6 is retired, on
+    lane/memfn-m6 (stacked on an older m7). Still needed: the blinded G2
+    lane g2m6 (stopped for the reset, cell clean), the m7 fixes merged
+    in, then its slot.
+  - **R-9 (SIMD design):** D155 revision on lane/memfn-r9 @ c0b61c16.
+    Q-R9-1..11 are ruled (D155 + addendum 1; Q-R9-10 is shape (c), the
+    selector-body rule). The text still describes Q-R9-10 as open with
+    (a)/(b): update it to (c), then a light re-check panel.
+  - Frank: lettered options are fine, but leave room to bat a question
+    around.
+- 2026-10-08 night (session after reset): r9c (doc-only) updated §R4.9 to
+  Q-R9-10 shape (c) + Q-R9-11 `freq`, Q-R9-1..11 RULED, C18 leg (d)
+  selector-only; lane/memfn-r9 fast-forwarded to 5a9e8c4c. The light
+  re-check panel is still owed before `done: R-9`. Main asked for pacing
+  (subscription 89%, resets 07:00): g2m6 stopped before writing (cell
+  clean), held until after the reset; the panel waits too. M7 waits for
+  main's slot13 GO (B5's chain still running).

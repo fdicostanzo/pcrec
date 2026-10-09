@@ -125,7 +125,7 @@ LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 # directories as LIBSRCS and KITSRCS.
 KITSRCS  := $(wildcard memfn/src/*.c)
 KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
-KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def
+KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze
@@ -200,9 +200,13 @@ $(BUILD_DIR)/obj/memfn/%.o: memfn/src/%.c $(KITHDRS)
 # The pcrec translation units that include the kit's header: the
 # `--list-axes` dump's `memfn` section (mf_options()), and [MEMFN] R4c's
 # site layer (src/gen/memfn_sites.h, with DELEG_SITES' memfn_sites.def)
-# with the emitter and the stamp pass that describe sites through it.
+# with the emitters and the stamp pass that describe sites through it.
+# emit_vm.c is one (VMRUN since M1b, VMSPAN since R4h): its omission here
+# left it compiled against a stale memfn.h after M7 prep grew mf_hooks
+# (`*** stack smashing detected ***` on every backreference compile).
 $(BUILD_DIR)/obj/dump/axes_dump.o: memfn/include/memfn.h
-$(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/memfn_sites.o \
+$(BUILD_DIR)/obj/gen/emit_dfa.o $(BUILD_DIR)/obj/gen/emit_vm.o \
+$(BUILD_DIR)/obj/gen/memfn_sites.o \
 $(BUILD_DIR)/obj/gen/memfn_stamps.o: memfn/include/memfn.h \
     src/gen/memfn_sites.h src/gen/memfn_sites.def
 

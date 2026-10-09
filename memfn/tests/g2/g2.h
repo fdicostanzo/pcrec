@@ -18,14 +18,16 @@
 #include <stdint.h>
 
 enum { G2_FORM_EXPR, G2_FORM_STMT, G2_FORM_FUNC };
-enum { G2_OP_FIND, G2_OP_SKIP, G2_OP_VERIFY, G2_OP_ALL };
+enum { G2_OP_FIND, G2_OP_SKIP, G2_OP_VERIFY, G2_OP_ALL,
+       G2_OP_MISM };       /* MF_SITE_ABI 7 (R-8): the span compare, G2's own value */
 enum { G2_H_RETURN, G2_H_ASSIGN, G2_H_ON_MISS, G2_H_ADVANCE, G2_H_ON_CAND,
-       G2_H_BOOL };
+       G2_H_BOOL, G2_H_ON_DIFF };
 enum { G2_EMPTY_MISS, G2_EMPTY_NOP, G2_EMPTY_EXCLUDED,
        G2_EMPTY_AT_N };    /* MF_SITE_ABI 6 (Q-R7-2): lo <= n and a non-NULL subject
                               are PROVEN; the outcome on an empty scan is MISS's */
 enum { G2_REQ, G2_OPT };
-enum { G2_T_SET, G2_T_RUN };
+enum { G2_T_SET, G2_T_RUN, G2_T_REF };   /* REF: MISMATCH's run-time operand, no data */
+enum { G2_FOLD_NONE, G2_FOLD_ASCII, G2_FOLD_UCP };
 enum { G2_USE_POSITION, G2_USE_DISCARD };
 
 #define G2_MAXT   8           /* terms per predicate (the header's MF_MAX_TERM) */
@@ -114,6 +116,17 @@ typedef struct {
     uint8_t         loopx;        /* on_miss is exactly `break;` (Q-R7-3 LOOP_EXIT):
                                      the wrapper runs the site inside a loop the
                                      DRIVER owns, and a break must leave THAT loop */
+    /* lane g2m7 (MF_SITE_ABI 7, MISMATCH): the fold G2 GENERATED for the site.
+     * mm_map is G2's OWN table (byte -> folded byte): the reference compares
+     * mm_map[a] with mm_map[b] and nothing else; the kit's fold TEXT is
+     * spelled from the same generated table (or checked against it by mm_chk,
+     * which runs the very hook text over all 256 bytes). */
+    uint8_t         mm_fold;      /* G2_FOLD_*: the fold_kind G2 states            */
+    uint8_t         mm_shape;     /* the fold text shape: 0 FOLD_EXPR, 1 FOLD_STMT */
+    uint8_t         mm_res;       /* result lvalue: 0 local size_t, 1 o->res, 2 local ptrdiff_t */
+    uint8_t         mm_goto;      /* on_miss is `goto`, not a block that returns   */
+    const uint8_t  *mm_map;       /* 256 bytes (the identity under G2_FOLD_NONE)   */
+    int           (*mm_chk)(void);/* the hook text realizes mm_map: 0 = yes        */
 } g2_site;
 
 /* The shape FAMILIES (lane g2x, folded by lane g2u). G2_FAM_BASE is the
@@ -134,13 +147,14 @@ enum {
     G2_FAM_PF,        /* §15.7 [R4g]: STMT/FIND/ASSIGN, one REQUIRED SET at offset 0 */
     G2_FAM_MLINE,     /* §15.7 [R-7]: STMT/FIND/ASSIGN, one REQUIRED one-byte SET at -1,
                          empty AT_N, floor == lo, a leaving on_miss (goto/return/break;) */
+    G2_FAM_MISM,      /* [R-8] STMT/MISMATCH/ON_DIFF: the span compare, one REF term */
     G2_FAM_SEM,       /* the semantic differential's variant groups              */
     G2_NFAM
 };
 static inline const char *g2_fam_name(int f)
 {
     static const char *const names[G2_NFAM] = {
-        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "mline", "sem",
+        "base", "ofs", "ofsrun", "stmt", "onebyte", "gate", "setrest", "vmrun", "pf", "mline", "mismatch", "sem",
     };
     return f >= 0 && f < G2_NFAM ? names[f] : "?";
 }
@@ -222,6 +236,11 @@ static inline size_t g2_missv(int mode, size_t n)
     default: return n;         /* 6: exactly the `n` hook's own text         */
     }
 }
+
+/* lane g2m7: a MISMATCH site's run-time operand (its `ref` / `reflen` hooks
+ * are these two names; the driver sets them before every call) */
+extern const unsigned char *g2_mm_ref;
+extern size_t g2_mm_reflen;
 
 /* --- helpers the rendered wrappers call (pcrec's side of the hooks) ------ */
 

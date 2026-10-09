@@ -3,7 +3,8 @@
  *   (memfn/PROVENANCE.md).
  *
  * memfn/src/k1_ref.c — K1's reference functions: one plain byte loop per
- * primitive (requirements.md §1.3's F menu, tier A plus F7's run compare).
+ * primitive (requirements.md §1.3's F menu, tier A plus F7's run compare and,
+ * since M7, F8's mismatch).
  * They define what each primitive answers. They are deliberately the most
  * obvious loop, never an optimized one: G2 uses them as its oracle, and an
  * oracle that shares a trick with what it checks checks nothing.
@@ -69,4 +70,11 @@ int mf_ref_run_verify(const uint8_t *s, size_t n, size_t pos,
         if ((s[pos + j] & m) != run[j]) return 0;
     }
     return 1;
+}
+
+size_t mf_ref_mismatch(const uint8_t *a, const uint8_t *b, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+        if (a[i] != b[i]) return i;
+    return n;
 }

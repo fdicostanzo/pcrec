@@ -10,6 +10,67 @@ kit session moves it). Lane g2x extended it to the §15 site shapes (INTERIM,
 and added the row-contract checks: its report is **`G2U_REPORT.md`** here.
 Lane g2m4 brought G2 to MF_SITE_ABI 6 (R-7, M4): its report is
 **`G2M4_REPORT.md`**.
+Lane g2m7 brought G2 to MF_SITE_ABI 7 / MF_VOCAB 3 (R-8, M7: MF_OP_MISMATCH):
+its report is **`G2M7_REPORT.md`**.
+
+## The MF_SITE_ABI 7 contract, as G2 tests it (lane g2m7, `G2M7_REPORT.md`)
+
+Written from memfn.h, integration.md section 14 and 15.8's contract sentences, and
+the cell's G2 files alone (the kit's source was not read).
+
+- **MISMATCH / ON_DIFF / REF** (`G2_OP_MISM`, `G2_H_ON_DIFF`, `G2_T_REF`; family
+  **`mismatch`**, `gen_fam_mismatch`, own RNG stream and id range 800000). A STMT
+  site inside the wrapper: one REQUIRED REF term at offset 0, `empty` NOP, forward,
+  `end_back` 0, `on_miss_leaves` 1. The run-time operand is two globals
+  (`g2_mm_ref`, `g2_mm_reflen`, g2.h) the driver sets before every call. `result`
+  is a local `size_t`, `o->res`, or a local `ptrdiff_t`; `on_miss` is a returning
+  block or a `goto`, and READS the result into `o->cnt`, so the check sees the value
+  at the moment `on_miss` runs.
+- **The reference** (`g2_ref.c` `g2_ref_mismatch`): k = the least j in [0, reflen)
+  with lo + j >= n or map[s[lo + j]] != map[ref[j]]; EQUAL when none. On EQUAL
+  `on_miss` must not run and the result is not looked at. `lo > n` is a difference
+  at 0 (reflen > 0), `reflen == 0` is EQUAL. W1 defects 5 (the fold ignored), 6 (the
+  loop one byte short) and 7 (the result k + 1) must fail.
+- **The maps are G2's own** (`mm_build`): the identity (fold NONE), and, for the
+  ASCII relation and a Latin-1 relation (UCP: the ASCII pairs plus 0xC0-0xDE <->
+  0xE0-0xFE without 0xD7/0xF7), the lower / upper / per-pair random representative
+  (idempotent) and a random bijection after a representative (NON-idempotent). Each
+  is spelled in BOTH text shapes (FOLD_EXPR, FOLD_STMT) by table, arithmetic, with
+  other punctuation, or with a `'@'` literal that must be left alone. The reference
+  compares `map[a]` with `map[b]` over the generated table; `g2mmchk_<id>` (emitted
+  with the batch, run by the driver) holds the HOOK TEXT to that table over all 256
+  bytes, so the text and the reference cannot drift apart unnoticed.
+- **Read limits, guard pages on BOTH operands** (`run_mismatch`, `mm_instance`):
+  `s` in layouts U (guard after s[n-1]), L (guard below s + lo), A (exact heap),
+  N (lo >= n: s in PROT_NONE memory) and NULL at n == 0; `ref` in its own guard
+  region (RU, RL, RA), NULL or a PROT_NONE pointer at reflen 0. Subject bytes below
+  lo are the complement of the true bytes in U and A. ALIAS instances put ref inside
+  the subject (before lo, at lo, overlapping), over a periodic fill with one planted
+  difference. W3 gains five planted functions (`mm-ref-over`, `mm-ref-under`,
+  `mm-s-over`, `mm-s-under`, `mm-clean`).
+- **Refusals** (`mm_refusals`, generator): the header-derived list (reverse, end_back,
+  each disallowed `empty`, a second or non-REF term, a REF term off 0 or OPTIONAL,
+  `on_miss_leaves` 0 or 2, `on_miss` LOOP_EXIT or unstated, every unstated hook,
+  `fold_kind` outside its enum or on a non-MISMATCH site, `fold` stated under NONE or
+  unstated under ASCII/UCP or without an `@`, a REF term in every other op,
+  MF_SITE_ABI + 1) and every (op, handoff, term kinds) combination `mf_vocab_has`
+  declares absent, in all three forms. A field the header names must be named in the
+  text; others are reported (`[names the soft field]`).
+- **Poison**: a REF term carries no data (set/run/mask/run_len/table_ref are not
+  read); the rendering with junk in them must be byte-identical (`MMPOISON`).
+- **W2 mutations 9-11** (generator `--mutate`, MISMATCH sites only, no other family
+  generated): 9 `reflen + 1` (must fault on the reference's guard page), 10 the subject
+  as the reference, 11 a fold that does nothing (caseless sites). Every mutated site
+  must be killed. `--mm-only 1` generates the MISMATCH family alone (the rows
+  check (f) uses it to count the rows MISMATCH sites choose).
+- **Rows**: `FLOOR_ROWS` 15 (`arms/mismatch_inplace`); check (f) floors
+  `arms/generic` and `arms/mismatch_inplace` over the MISMATCH-only process.
+- **Attribution of the guard-page witnesses**: an ALIAS puts `ref[reflen]` on the SUBJECT's
+  guard page, and a NULL `ref` at reflen 0 faults on any read, so a fault alone does not
+  say the REFERENCE's guard pages work. The W3 `mm-ref-*` witnesses and W2 mutation 9 therefore
+  run without aliases (`mm_noalias`), and W2 9 is judged on `G2 mutants MISMATCH
+  reference-guard faults` (non-alias, reflen > 0). Sabotage: a driver whose reference has no
+  guard page turns W3 `mm-ref-over` / `mm-ref-under` and W2 9 red (`G2M7_REPORT.md`).
 
 ## The MF_SITE_ABI 6 contract, as G2 tests it (lane g2m4, `G2M4_REPORT.md`)
 
@@ -178,6 +239,8 @@ miss by `on_miss` having run.
   only. Checks: (a) REACH_DROPPED 0, (b) every row n >= 1, (c) distinct rows >=
   the literal `FLOOR_ROWS`, (d) every process printed REACH lines; controls for
   (b) and (d) run each time. Cost over plain `--quick` is within noise.
+- **G2M7_REPORT.md** — lane g2m7's report (MISMATCH): commands, totals, rows,
+  sabotage, the Q-G2M7 open questions, disclosure, charter checklist.
 - **g2/g2.h** — G2's own site description (`g2_site`, `g2_pred`,
   `g2_term`), the per-call outcome (`g2_out`), the miss values, and the
   helpers the wrapped text calls (`g2_touch`/`g2_acc` for `on_cand`,
@@ -207,7 +270,8 @@ miss by `on_miss` having run.
     the hook is NAMED, the sticky error, `mf_art_note_libc`, and F2's
     libc-record reproducer.
   It also runs the poison differential on every hard site.
-  `--mutate K` is W2's text mutation (K 8, lane g2m4: LOOP_EXIT sites only).
+  `--mutate K` is W2's text mutation (K 8, lane g2m4: LOOP_EXIT sites only). K 9-11 (lane g2m7) mutate MISMATCH sites' hooks and generate
+  nothing else; `--mm-only 1` generates the MISMATCH family alone.
 - **g2/g2_ref.c**, **g2/g2_ref.h** — the REFERENCE, the independent
   control: one plain loop per operation, from §14.3-§14.7. It handles
   OPTIONAL terms by answering for every subset and keeping, per site, the

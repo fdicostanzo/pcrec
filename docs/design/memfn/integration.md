@@ -1152,6 +1152,11 @@ run-time-operand `mismatch` with a prefix-count return.
 >
 > M7 bumps `MF_VOCAB`. Every "should Q54 rule yes" / "if Q54 rules yes"
 > in this revision now reads as ruled.
+>
+> **`[M7]` As built (2026-10-08):** N7 is `delegated` for the byte-wise
+> compares and its `s[at + i]` ceilings are gone from C12; utf8's caseless
+> decode walk is its own `pending` row N7U (Q-R8-1), still spelling the
+> `span-decode` vocabulary line (§15.8).
 
 These are NOT search sites, and are not listed:
 
@@ -5528,6 +5533,48 @@ never takes it (it passes no mask).
 
 ---
 
+### 15.8 STMT / MISMATCH / ON_DIFF: the encoding seam's span compare (N7) — M7, as built `[M7]`
+
+Built by lane m7 (2026-10-08, R-8; rulings Q-R8-1..10 in
+`memfn/docs/responses.md`, D58 addendum 2; report
+`docs/dev/lanes/m7_report.md`). Zero movers, no abi event, no spec hunk.
+
+- **The site** is the compare LOOP inside the residual entries
+  `<p>_span_match` (byte and utf8) and the byte backend's
+  `<p>_span_match_caseless` (ASCII and UCP): a statement site inside the
+  backend's own exported function (Q-R8-2). The backend keeps the
+  signature, the braces, the final `return (ptrdiff_t)reflen;`, the UCP fold
+  function and table, and every comment and declaration.
+- **The vocabulary** (MF_VOCAB 3): `MF_OP_MISMATCH` (F8: k, the least j in
+  [0, reflen) with lo + j >= n or fold(s[lo + j]) != fold(ref[j]); EQUAL
+  when none), `MF_H_ON_DIFF` (k written to `result`, then `on_miss`, which
+  may read it; `on_miss_leaves` 1 required), `MF_T_REF` (one REQUIRED term
+  at offset 0 with no data). MF_SITE_ABI 7 appends `mf_site.fold_kind` (the
+  FACT: NONE / ASCII / UCP, Q-R8-4) and the hooks `ref`, `reflen`, `fold`
+  (pcrec's fold TEXT, `@` the byte: FOLD_EXPR `f(@)` or FOLD_STMT statements
+  over the lvalue `@`). No fold map travels (D77/D122). `empty` is NOP (an
+  empty reference is EQUAL); `reverse`, `end_back` and any second term are
+  refused.
+- **The rows** (Q-R8-9): one renderer, `memfn/src/mismatch.c` `mm_render`.
+  The generic row renders the exact and FOLD_EXPR shapes (one `if` per byte:
+  `if (at + i >= n || F(s[at + i]) != F(ref[i]))` then the failure on its own
+  line); the row `mismatch_inplace` renders the FOLD_STMT shape (temps `x`,
+  `y`; the subject-end exit, the two loads, the fold pasted per temp, the
+  compare exit). Each shape's text is frozen byte for byte from a pre-M7
+  artifact (`tests/memfn/pins/n7_target/`, C5 check 10) and run against the
+  contract (check 11).
+- **The seam** (D58 addendum 2): the backend's text carries
+  `PCREC_ENC_SITE` where the loop sat and a keyed side table of site data
+  (`PcrecEncSite`: fold kind, fold text, failure statement). The gen layer
+  (`emit_residual_defs`, `pcrec_memfn_span_site`, DELEG_SITES row N7,
+  budget 2) describes each site, renders it through the door
+  `pcrec_memfn_emit`, and passes the strings to `pcrec_enc_emit_defs`, which
+  substitutes them for the tokens. enc never calls up.
+- **Not migrated:** utf8's caseless compare (`u8_defs_bref_ci`) is a
+  per-character decode walk (two cursors, a length-changing result), not a
+  byte mismatch. It keeps its body: manifest row N7U, `pending`, trigger
+  "completeness after M7 + a decode-hook vocabulary step" (Q-R8-1).
+
 ## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
 
 **The trigger's site class.** M1 exists for K82 cause (B): the
@@ -6493,6 +6540,12 @@ text stays opt-in until R4f.
 >   its seam (**`[rev4.7]`** ruled YES, D147 addendum 10). **`[rev4.6]`** (r5 B6) It carries an `MF_VOCAB` bump (a
 >   run-time-operand `mismatch` with a prefix-count return), and C17's
 >   static scope gains `src/enc/` (§R4.3.4).
+>   **`[M7]` BUILT** (lane m7, 2026-10-08; §15.8): N7 `delegated` for the
+>   byte-wise compares (exact under both encodings, the byte backend's ASCII
+>   and UCP caseless), through D58 addendum 2's site token and keyed side
+>   table; utf8's caseless walk split out as **N7U** (`pending`, Q-R8-1);
+>   C12's two span-index rows deleted (5 -> 3 rows); C17 14 rows, 11
+>   delegated / 3 pending (N6, VMSTRIDE, N7U).
 >
 >   **End state: C17 reads 0 pending, and C12 reads 0 in every class
 >   outside the kit.**

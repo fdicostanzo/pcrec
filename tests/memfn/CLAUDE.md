@@ -24,6 +24,13 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `find_site`/`pcrec_emit_find`, so C17 rule 2's reach for MLINE is
   satisfied through that shared function; MLINE's OWN reach is rows.tsv's
   `pf_memchr_back` row (witness `(?m)^abc`, the trace choosing the row).
+  M7 flipped N7 (11 delegated / 3 pending, 14 rows, `C17_ROW_FLOOR` 14):
+  its emitters are the describer `pcrec_memfn_span_site` and the use point
+  `emit_residual_defs` (the door's caller), its companions the backend text
+  constants and site tables it no longer spells a form in; and SPLIT
+  utf8's caseless decode walk off as **N7U** (`u8_defs_bref_ci`, pending,
+  Q-R8-1: trigger "completeness after M7 + a decode-hook vocabulary step"),
+  which still spells the `span-decode` line (rule 4).
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
@@ -109,7 +116,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   6 rows / 8 forms since M3's REPLACE (R4h) deleted `emit_dfa.c`'s
   walk-open and walk-stmt rows, 2 -> 0 each, floor 8 -> 6; 5 rows / 7 forms
   since M4's REPLACE deleted `emit_dfa.c`'s memchr row, 1 -> 0, floor 6 -> 5:
-  no `memchr(` is spelled outside the kit);
+  no `memchr(` is spelled outside the kit; 3 rows / 3 forms since M7's
+  REPLACE deleted the encoding seam's two span-index rows, enc_byte.c 3 and
+  enc_utf8.c 1, floor 5 -> 3: the `span-decode` row stays for N7U);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer
@@ -197,7 +206,18 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   floor must be lo's text, one byte only), `back-excluded-break-refused`
   and `pf-memchr-break-refused` (LOOP_EXIT that no row serves is REFUSED
   naming `on_miss`, Q-R7-3) and `adv-at-n-refused` (AT_N on ADVANCE has no
-  miss).
+  miss). M7 prep (R-8, MF_VOCAB 3, MF_SITE_ABI 7) added five MISMATCH
+  fixtures through `render_emit` (`mm_site`/`mm_hooks`: the encoding seam's
+  span compare with the residual entry's own parameter names): `mm-exact`
+  and `mm-ucp-expr` (the generic row: exact, the expression fold),
+  `mm-ascii-inplace` (row `mismatch_inplace`: the in-place fold), and two
+  edges, `mm-nonident` (non-identifier hooks, a BRACED on_miss) and
+  `mm-inplace-clash` (a hook named `y`: the temps renamed); and seventeen
+  `mm-*` gate cases (65 in all): six RENDER (the three shapes, a BRACED
+  on_miss, the UCP in-place fold, non-identifier hooks) and eleven REFUSE
+  (a `break;`, a fold against fold_kind NONE, an unstated or shapeless
+  fold, `on_miss_leaves` 0, `reverse`, a non-NOP `empty`, a second term, a
+  REF term off 0, an unstated `ref`, fold_kind on a FIND).
 - **pins/arms.tsv** — C5's pins: arm (the kit's form id), fixture, part
   (`def`/`use`), bytes, sha256. Recorded at R4c's IMPLEMENT commit, whose
   I1 shadow comparator proved the kit's rendering equal to pcrec's
@@ -210,7 +230,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   R4h prep added the two `generic` ADVANCE fixtures' four rows (58 rows,
   `ARMS_ROW_FLOOR` 58), none re-pinned; advtarget added the eight
   R4h-target fixtures' sixteen rows (74 rows, `ARMS_ROW_FLOOR` 74); M4 prep
-  the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78). A
+  the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
+  prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -240,12 +261,27 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   and runs `BACK_CASES` (10) subjects against a byte loop written from
   memfn.h's MF_OP_FIND (the first c in [lo, n] whose predecessor, at or
   above lo, is `\n`): the candidate n (Q-R7-1) and lo == n (Q-R7-2) both
-  answer right (`GATE_CASE_FLOOR` 48). Seconds.
+  answer right (`GATE_CASE_FLOOR` 48). Check 10 (M7 prep, R-8; RULED
+  Q-R8-9) compares each `pins/n7_target/*.c` body byte for byte with its
+  fixture's fresh `.use`, as check 8 does (`N7_TARGETS`,
+  `N7_TARGET_FLOOR` 3, a planted-byte control). Check 11 compiles the five
+  `mm-*` bodies, each in a function with the residual entry's signature and
+  return protocol, and runs them over every subject of length 0..4 on a
+  7-byte alphabet, every `at` in [0, n+1], every separate reference of
+  length 0..3 and every reference inside the subject (aliasing), with NULL
+  pointers at length 0, against a byte loop written from memfn.h's
+  MF_OP_MISMATCH (about 34M calls; `MM_CALL_FLOOR` 1,000,000;
+  `GATE_CASE_FLOOR` 65). Seconds.
 - **pins/r4h_target/** — R4h's FROZEN TARGET (lane advtarget, 2026-10-08;
   its own CLAUDE.md): one `<fixture>.c` per in-loop ADVANCE shape, a
   3-line header, the kit's text byte for byte, then a `/* pcrec today:`
   block quoting the same site's current pcrec text. pcrec's layout
   normalization diffs its emitted lines against these before R4h.
+- **pins/n7_target/** — M7's FROZEN TARGET (lane m7, 2026-10-08; its own
+  CLAUDE.md): one `<fixture>.c` per byte-wise span-compare shape (exact,
+  the UCP expression fold, the ASCII in-place fold), its body the loop CUT
+  from a pre-M7 build/pcrec artifact, so the kit's render must equal
+  pcrec's pre-migration text (check 10).
 - **run_deleg_sites.sh** — C10's static half (`make test-memfn-deleg`, in
   TEST_SECTIONS): DELEG_SITES (`src/gen/memfn_sites.def`) against D91's
   budgets (this file's literal), every row's (op, handoff, kinds) through
@@ -261,7 +297,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   HAND-maintained: one line per row of the kit's two selection tables
   (13 at N4: the composer's 9 arms, `precheck`/`precheck_assign` and the
   four `pf_*` rows included, and runcmp's 4 rows; 14 since M4 prep added
-  `pf_memchr_back`, ROWS_FLOOR 14). Each line gives the
+  `pf_memchr_back`, ROWS_FLOOR 14; 15 since M7 prep added
+  `mismatch_inplace`, reach `pending-site:M7-REPLACE` on its fixture until
+  M7's REPLACE made pcrec reach it: now reach `pcrec`, witness `(?i)(ab)\1`,
+  control `(ab)\1`, its floors pinned 2026-10-08: g2_floor 2403 by g2m7,
+  pcrec_floor 2116 by slot13's full census at 999dd994). Each line gives the
   row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
   `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
   red, D77), its witness (a pcrec pattern + flags for `pcrec`, an
@@ -305,6 +345,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   holds each row to its `g2_floor`). Same recipe as rows_check.py's own swap.
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a
   traced run's rows are that fixture's.
+- **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's
+  zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target;
+  mech arm `n2sample`). Builds an `-DMF_TRACE` pcrec from the tree and runs
+  the census's own `.sh` (driver and report) on the twelve witness patterns
+  (every MISMATCH shape, ADVANCE/SKIP, FIND, pre-check, offset skip) x the
+  `null`/`null+comments`/`null@utf8` arms: red iff the census's rc is
+  nonzero (rc 5: a would-decline or a no-row selection). Floor 8 on the
+  pattern file. The full census stays a slot run.
 
 ## Sabotage rows
 
@@ -329,6 +377,20 @@ M4 (lane m4) adds S617-S619 on a new arm `memfnarms` (run_arm_pins.sh):
 pf_memchr_back's `+ k` store dropped (S617), the generic row's read-bounded
 FIND one short of n (S618), the generic row serving LOOP_EXIT (S619).
 Hand-measured figures: `docs/dev/lanes/m4_report.md` §6.
+
+M7 (lane m7) adds the MISMATCH rows: S666 (the subject-end test dropped),
+S667 (the loop bound inclusive), S669 (the in-place fold pasted for one side),
+S670 (subject exhaustion falls out as equal), S671 (on_miss handed k + 1:
+work, not answers) on `memfnarms` (checks 10/11; S667/S669/S670 also
+`brefdiff`, S669/S670 the caseless harness), and S673 (a backend spells its
+loop again while N7 is delegated) on `memfnmanifest`/`memfnforms`.
+Hand-measured figures: `docs/dev/lanes/m7_report.md` §6.
+
+M7 fix (lane m7fix) adds S668 on a new arm `n2sample` (run_n2_sample.sh):
+`mismatch_inplace`'s `applies` holds on every site (M7's shipped defect), so
+the gate declines it everywhere and only the N2 census sees it. It re-pins
+S512's REACH_POP to the floor M7 set (`C17_ROW_FLOOR=14`). Hand-measured
+figures: `docs/dev/lanes/m7fix_report.md`.
 
 ## Maintaining it
 
