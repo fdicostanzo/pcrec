@@ -87,3 +87,34 @@ Next: revision lane `locfin2` (rev 2, a disposition table by id), then a focused
 The critics' judgments are recorded in the findings above. The revision restates the
 questions under the revised model. Q1 (slot vs table) is answered by G4/G5; Q5
 (posture) is reshaped by G7.
+
+---
+
+# RE-CHECK of revision 2 (lane locfin2, merge 1ec2d53b)
+
+Two read-only critics: **lfre1** (opus; soundness + table fit) and **lfre2** (opus; generality, simplicity, family, unlocks).
+
+## lfre2 — generality / family / unlocks (LR-G1..G14)
+
+| id | sev | finding | disposition |
+|---|---|---|---|
+| LR-G1 | MAJOR | G3 landed halfway: FINISH has 7 rows (three verify-at rows, two search-from rows, split by hat and machine) where 4 do (nomatch, report, verify-at, search-from), each with its hat from the finisher route. Row availability becomes a predicate on the route's machines (adfa on CR_DFA iff built; the ATTEMPT machine; the VM). `-fno-anchored-dfa` then denies what it removes (the adfa build). F-11/Q7 is one visible conjunct kept for L0's no-mover proof. Do it at L0, where the fold already happens. | ACCEPT |
+| LR-G2 | MAJOR | The 5-value shape key does not cover the product, and `p` ("a match starts at s") cannot say "a match exists in I" (VMSEED stage 4's window, G14(4)'s EXISTS). Two type vocabularies remain (CT_* inside, shapes at the boundary). | ACCEPT: `(I, e, D)` with e = "some match starts in I"; key FINISH on the existing CT_* bits (names kept as listing aliases); AT = CT_LOWER\|CT_UPPER at a point |
+| LR-G3 | MAJOR (latent) | `cand_lang_exact` / `pcrec_vm_prefilter_window` decide exactness from a LIST of known erasures (atomic, look, collapse) and never test BREF/VAR. G13's relaxed prefilter would read EXACT: the boundary hands SPAN, and mrl_win uses the window end as the ceiling (the atomic-groups 122-cell class). (d′) at emit_dfa.c:7361 reads the same function. Also, C4's "independent RX_VM_RESEED" reads the same function; the independent side is the census's classifier. | ACCEPT: the body's lowering RECORDS its applied erasure set; exact ⇔ empty; all four readers read it; a precondition on G13; fix the C4 wording |
+| LR-G4 | MAJOR (forest) | F-9, F-10, the `empty` off-path conjuncts (8 `dfa_engine_is_empty` callers), has_dfa_scan's 12 callers, the four membership spellings, cand_finish_of and §5.1's per-stamp edits are ONE family: what the selected path USES. `empty` is the first path-changing locator, rev-end the second, [START-LANDING]'s rows the third and fourth. | ACCEPT: each row declares `.needs` (machines F/R/A/ATTEMPT/VM + slots); the path = closure over the selected rows; membership = union of needs ∩ what built; every site reads it; "off-path ⇒ absence" becomes ONE generated stamp rule. Widen L2.0 to build it (form C dropping F is the D77 trigger); write L0's route functions as reads of it |
+| LR-G5 | MINOR | [GIVEUP-DIFF] largely exists: test-axes' GIVEUP1 relation (tests/axes/run_axes.sh:1270-1320) is default vs every deny over the corpus. Missing: direction (the allowance ignores which side gave up), a budget ladder, per-row witnesses. F-1's PRESENCE half is already witnessed (64 -fno-req-byte keys, 22 -fno-start-set); W1's is not. | ACCEPT: make GIVEUP1 direction-checked from the derived classification + a ladder arm; construct W1's witness; no new section |
+| LR-G6 | MINOR | REQ_WHY "locator" re-creates the parallel spelling G9 removed. | ACCEPT: ask PRESENCE in both stages; `u.locate.whole` selects `dominated`; REQ_WHY stays 4 tokens |
+| LR-G7 | MINOR | CandSel.lroute has no reader, and its 0 default means DFA (C11's shape). | ACCEPT: drop it until a predicate needs it |
+| LR-G8 | MINOR | F3's `!dfa_engine_is_empty` exists because `caller` is not composed with the body's static NOMATCH. | ACCEPT: compose them, drop the conjunct; name it as an L0 carve-out (one of LR-G4's off-path conjuncts) |
+| LR-G9 | UPHELD | The posture split is clean: rev-end, relaxed-reverse and rev-inner each fill the classification with no new column. Note: undeniable rows' control is the window-identity twin; stratify by L0's derivations + LR-G3's erasure set. | ACCEPT the notes |
+| LR-G10 | UNLOCK (trigger MET) | [START-LANDING] belongs in the composite's RECOVER slot: `pinned` (0-byte), `landing` (1-byte), `end-minus-width`, then `reverse-pass`. One row each; SPAN to FINISH unchanged; NEUTRAL on hybrids; R drops out of the machine set (LR-G4). G14(2)'s trigger is met by walk_survey K3. utf8 needs a fixed BYTE width. Ranks above REVEND (50.9 vs 30.9 ms). | ACCEPT: fold §7.3 into [START-LANDING] and record its placement |
+| LR-G11 | UNLOCK | K4's fact-less form: a second LOCATE row `candidate-verify` (the ATTEMPT candidate loop with the unwrapped anchored machine verifying). | FILE with its trigger (a fact-less bench cell where reverse bytes dominate and the landing-hit rate clears break-even) |
+| LR-G12 | UNLOCK | Match-here across three routes (F-11, K8's VM-route `_match` scan, the empty / -fno-anchored-dfa fallbacks) is ONE row under LR-G1. | FILE with K8's trigger (a long-subject match cell) |
+| LR-G13 | UNLOCK | The bounded-interval hand (VMSEED stage 4's window, G14(4), a "match starting in [s,t]" entry) is AT with t>s, under search-from's filter. | FILE with VMSEED stage 4's trigger; the entry itself is BOONIES |
+| LR-G14 | BOONIES | On superset hybrids the landing is already a sound LOWER without the reverse pass. | FILE (BOONIES) |
+
+lfre2's §8 judgments are recorded in its message: L0 first, with LR-G1 and LR-G4 adopted there; stage 2 FILED; the stamp rule generated from the path derivation; one tuning.md preamble sentence with per-entry markers; the relaxed locator gets its own deny bit; rev-inner ranks below [START-LANDING] and REVEND, and its twin measures the LOWER form first; ATTEMPT match-here measured as the K8 family.
+
+## lfre1 — soundness / table fit
+
+PENDING.
