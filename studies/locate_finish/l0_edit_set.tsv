@@ -1,0 +1,34 @@
+# locate_finish.md rev 2 §5 L0: the text the no-mover L0 CHANGES, written once as data at main 7efca415
+# (src identical to 525dec33, abi 71). Read by ../../docs/design/start_table/sabotage_anchors.py (a row is
+# RE-AIM iff its anchor sits in a `def` below or OVERLAPS a `token`/`line` occurrence, in EVERY file).
+# kind	value	commit	why
+def	pcrec_emit_dfa_engine	L0	the body dispatch reads LOCATE's row (empty / composite by route) in place of its if/else
+def	dfa_engine_is_empty	L0	becomes the reader of LOCATE's selection (cand_locate_of(cx)->u.locate.walk == CAND_WALK_EMPTY); its old body is the `empty` row's predicate; its eight callers are untouched
+def	DfaMatch	L0	axis G folds into cand_rows[] FINISH rows (the type goes)
+def	match_unwrapped_applies	L0	becomes the FINISH row verify-anchored's predicate (moved, body unchanged)
+def	dfa_matches	L0	table deleted into cand_rows[] (FINISH: verify-anchored, search-from)
+def	dfa_match_of	L0	walk -> cand_select(FINISH, finisher route, hand = BOUNDED)
+def	dfa_match_name	L0	reads the FINISH row's list name
+def	dfa_match_is_unwrapped	L0	reads u.finish.act == CAND_FIN_VERIFY, never a row pointer (F-2)
+def	cand_nodes	L0	LOCATE and FINISH nodes; VERIFIER loses CT_WINDOW; LOCATE->FINISH and FINISH->LOCATE edges with their progress attribute
+def	cand_select	L0	the FINISH walk filters u.finish.take & s->hand (hand mandatory on a FINISH ask)
+def	cand_rows_selfcheck	L0	totality keyed (locator route, finisher route, shape); progress check on succ cycles; hand mandatory
+token	CT_WINDOW	L0	deleted: accepted by VERIFIER, handed by no row (G2/C12)
+token	CG_NEUTRAL = 0	L0	the giveup column splits: declared contract only (CG_FIXED); the classification is derived (G7)
+line	.routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.giveup = CG_FIXED, .hands = CT_LOWER,	L0	.giveup -> .contract = CG_FIXED (K82 Q10)
+line	.giveup = CG_ONE_WAY, .hands = CT_CAND,	L0	declared classification deleted (derived)
+line	.giveup = CG_ONE_WAY, .hands = CT_CAND | CT_LOWER,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "anchored", .map = CM_ONE, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "gstart", .map = CM_ONE, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	if (cx->job->fit.chosen != ENGM_DFA || dfa_artifact_ncaps(cx) <= 1)	L0	FINISH read -> cand_finish_of (the dead-group fill, emit_dfa.c:1650)
+line	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);	L0	FINISH read -> cand_finish_of (:9768, :10068)
+line	PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",	L0	trace record reads cand_finish_of (:9769)
+line	cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");	L0	trace record reads cand_finish_of (:10070)
+line	if (cx->job->fit.chosen == ENGM_DFA) {	L0	FINISH read -> cand_finish_of (:9784, :10083)
+line	if (cx->job->fit.chosen == ENGM_DFA)	L0	FINISH read -> cand_finish_of (:1728, :3145; also matches the two lines above)
+line	bool vm = job->fit.chosen == ENGM_VM;	L0	the orientation block's VM test -> cand_finish_of (:10707)
+line	if (us.empty) {	L0	emit_unanchored's empty arm moves to the LOCATE `empty` row's emitter (:9729)
+line	if (dfa_engine_is_empty(cx)) {	L0	emit_attempt's empty arm moves to the LOCATE `empty` row's emitter (:10094)
+line	if (dfa_match_is_unwrapped(cx)) {	L0	axis G's one dispatch (:11588) reads the FINISH row
