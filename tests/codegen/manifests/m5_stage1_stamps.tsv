@@ -7,7 +7,7 @@ abc	RX_ENGINE	"dfa"
 abc	RX_ENGINE_SEL	"selected"
 abc	RX_DFA_TABLE	"premultiplied"
 abc	RX_DFA_PREFILTER	"run-pinned"
-abc	EMITTED_BYTES	24385
+abc	EMITTED_BYTES	24526
 a(b|c)+d	RX_ENGINE	"vm"
 a(b|c)+d	RX_ENGINE_SEL	"selected"
 a(b|c)+d	RX_DFA_TABLE	"premultiplied"
@@ -25,7 +25,7 @@ a(b|c)+d	EMITTED_BYTES	32392
 (a)(b)(c)	RX_VM_ALT_ISLANDS	0
 (a)(b)(c)	RX_VM_FRAMELESS	1
 (a)(b)(c)	RX_DFA_PREFILTER	"run-pinned"
-(a)(b)(c)	EMITTED_BYTES	32030
+(a)(b)(c)	EMITTED_BYTES	32171
 [a-z]+@[a-z]+	RX_ENGINE	"dfa"
 [a-z]+@[a-z]+	RX_ENGINE_SEL	"selected"
 [a-z]+@[a-z]+	RX_DFA_TABLE	"premultiplied"
@@ -40,12 +40,12 @@ a(b|c)+d	EMITTED_BYTES	32392
 \bword\b	RX_ENGINE_SEL	"selected"
 \bword\b	RX_DFA_TABLE	"premultiplied"
 \bword\b	RX_DFA_PREFILTER	"offset-set-bounded"
-\bword\b	EMITTED_BYTES	28516
+\bword\b	EMITTED_BYTES	28796
 (?i)HeLLo	RX_ENGINE	"dfa"
 (?i)HeLLo	RX_ENGINE_SEL	"selected"
 (?i)HeLLo	RX_DFA_TABLE	"premultiplied"
 (?i)HeLLo	RX_DFA_PREFILTER	"byte-class"
-(?i)HeLLo	EMITTED_BYTES	31513
+(?i)HeLLo	EMITTED_BYTES	31652
 cat|dog|cow|calf|camel	RX_ENGINE	"dfa"
 cat|dog|cow|calf|camel	RX_ENGINE_SEL	"selected"
 cat|dog|cow|calf|camel	RX_DFA_TABLE	"premultiplied"
@@ -66,7 +66,7 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	28381
 (?<=foo)bar	RX_VM_ALT_ISLANDS	0
 (?<=foo)bar	RX_VM_FRAMELESS	1
 (?<=foo)bar	RX_DFA_PREFILTER	"run-pinned"
-(?<=foo)bar	EMITTED_BYTES	32751
+(?<=foo)bar	EMITTED_BYTES	32892
 (a(?1)?b)	RX_ENGINE	"vm"
 (a(?1)?b)	RX_ENGINE_SEL	"selected"
 (a(?1)?b)	RX_VM_RUNGS	0x2u

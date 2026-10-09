@@ -11,7 +11,7 @@
 # rarest member with one `memchr` AT ITS OFFSET, verify the others on each
 # candidate, and resume from a failed candidate one position later:
 #
-#     static inline size_t rx_ofsskip(const unsigned char *subject, size_t n, size_t pos, ...)
+#     static inline size_t rx_ofsskip__body(const unsigned char *subject, size_t n, size_t pos, ...)
 #     {
 #         while (pos + 13 < n) {
 #             size_t cand;
@@ -171,7 +171,7 @@ witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk> [<r
 
     # --- and now the same facts read out of the EMITTED HELPER --------------
     local blk
-    blk="$(sed -n '/^static inline size_t rx_ofsskip(/,/^}$/p' "$f")"
+    blk="$(sed -n '/^static inline size_t rx_ofsskip__body(/,/^}$/p' "$f")"
     if [ -z "$blk" ]; then
         bad "§2 [$lbl] stamps an offset-set value but emits NO rx_ofsskip block — the stamp and the mechanism have come apart, which is the drift this file exists to catch"
         return
@@ -275,7 +275,7 @@ fi
 # (2,8). The corpus rows are in tests/offsetskip §8; this is the emitted line
 # they depend on, and the two are named in each other.
 if emit mc1 '\b\.[0-9]{4}Z'; then
-    blk="$(sed -n '/^static inline size_t rx_ofsskip(/,/^}$/p' "$WORKDIR/mc1.c")"
+    blk="$(sed -n '/^static inline size_t rx_ofsskip__body(/,/^}$/p' "$WORKDIR/mc1.c")"
     if printf '%s\n' "$blk" | grep -q 'rx_can_begin_match'; then
         bad "§2c the offset-k skip helper reads rx_can_begin_match — that is the ESCAPE set (does this byte leave the start state), not the CAN-BEGIN-A-MATCH set, and using it as a verify LOSES MATCHES on every pattern with a leading assertion (MISCOMPILE-1: '\b\.[0-9]{4}Z' on \"ab.1234Z\" answered nomatch against a baseline of (2,8))"
     else

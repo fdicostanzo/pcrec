@@ -1702,3 +1702,31 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Next is R4e′.0b**, the routing commit plus a pcrec abi event. It
     starts after main merges this. I'll ask main for the abi number and the
     slot first.
+- done: 2026-10-09 — **R-11 step R4e′.0b (the routing; pcrec abi 69 -> 70), branch lane/memfn-r4e0b @ 6c9a8ed2 plus this [responses] commit. Report: docs/dev/lanes/r4e0b_report.md.**
+  - **The renumbering.** Built as 70 at 74f941dc. Briefly 69 by landing
+    order, then 70 again after decattr landed as 69. Reconciled at the main
+    merge b3e26cfa: §6 entry above decattr's, ledger line, guard example,
+    ABI_EXPECT 70, S693 70/69. FILEPIN is self-pinned to b3e26cfa.
+  - **slot16** ran at tip 6c9a8ed2, ref 32a1c91f. Logs are in
+    worktrees/memfn-slot/slot16/.
+    - Build, strict and SABANCHOR are green.
+    - Recursion identity: 17/0.
+    - Routing census (the identity judge): 0 OTHER and 0 ASYMMETRIC on every
+      stream. It shows the lane's same 652 asm FAILs (326 movers x -O2/v3),
+      so the lane's null timing stands.
+    - N2 census: rc=0, would_decline=0, 0 placeholders.
+    - G2 full: 192,654,549 passed, 0 failed.
+    - perfrun make test: green (889 s, section-errors 0, uncontaminated).
+    - Mech, 80 rows with PROCS=4: COMPLETE with unexpected 0, undetected 1
+      (S525, declared), unreached 1 (S475, declared), anomalies 0. The first
+      attempt died at launch on a malformed row id in my list; the re-run
+      is the measurement.
+  - **For main.**
+    - The routing found a NEW READER CLASS for D94's list: checks that
+      extract an emitted FUNC's loop BY NAME (reqcube_check.py,
+      run_offset_skip.sh, run_dfa_stamps.sh, run_prechecks.sh,
+      run_encoding_checks.sh). They cite no abi digit and move when the
+      FUNC's shape moves.
+    - The bench note: every FUNC-bearing bench artifact moves by abi plus
+      routing. Assembly is unchanged except the utf8 K50 cold-path epilogue,
+      and timing on those artifacts is null.

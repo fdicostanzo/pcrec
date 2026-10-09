@@ -32,6 +32,15 @@
 # shadow comparator proved equal to pcrec's pre-migration text (IMPLEMENT
 # commit, 7 PF shapes x their compiles, docs/dev/lanes/r4g_report.md).
 #
+# R4e'.0b RE-PINNED (lane r4e0b, 2026-10-09, D155 item 6, the routing; abi
+# 68 -> 70): the ten `def` parts that hold an offset-skip function (six
+# ofsskip, four precheck). Each function's loop moved, byte for byte, under
+# `<fn>__body`, and `<fn>` became one call to it: 121 + 2 x len(<fn>) bytes
+# per function (+139 for `rx_reqrun`), plus each table parameter declared
+# once more and passed once (ofs-set-scan3, ofs-miss-*, ofs-run-pinned:
+# +184); pre-masked-whole-rest holds two functions (+139 +151 = +290). No
+# `use` part and no other arm moved (arms2: 338/0).
+#
 # Columns (tab-separated): arm (the kit's form id), fixture, part (`def` the
 # file-scope text, `use` the entry's), bytes, sha256.
 #
@@ -40,27 +49,27 @@ generic	ofs-decline-floor	def	642	ed275168e781b63a008cdd1bce034bf72356b3f085d4d2
 generic	ofs-decline-floor	use	111	14ffef2e3b7611d36133a6437b321ee1cf881007507ae457442167854f55d4e8
 generic	ofs-decline-miss	def	570	81447566c6f6cb7ddecb932e6df3299e2321fce0f62fe6f2c7006e70285d3b19
 generic	ofs-decline-miss	use	93	b1253e9aaff89caed0a40d8a94f98bfc071a92f0088707f87ad69be4aa7ddc5c
-ofsskip	ofs-miss-n	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
-ofsskip	ofs-miss-token	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
+ofsskip	ofs-miss-n	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea6b273d581c11
+ofsskip	ofs-miss-token	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea6b273d581c11
 ofsskip	ofs-miss-n	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
 ofsskip	ofs-miss-token	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
-ofsskip	ofs-pair	def	2272	c40c58003965031cda493be90fe99ca96a635f9de0c7559384bbe020736cc6ff
+ofsskip	ofs-pair	def	2413	f40a0152e74877a68632bf31709d2b610e668703cd2d9c7983a52d5af6d71201
 ofsskip	ofs-pair	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
-ofsskip	ofs-run-pinned	def	2094	d68c7b8da022d5ef5cc9cf633828c7ad89dec6d7f9bda0bd1ed653e60e353de5
+ofsskip	ofs-run-pinned	def	2278	6aea6326f2fd56859c8824e9d8aa38d8a5d7f4374c4f5dfc4dea6b273d581c11
 ofsskip	ofs-run-pinned	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
-ofsskip	ofs-scan0	def	1373	228d940a1bfb6ff418e7f33134f47ff30824198765b9899e90167b25f804cb3f
+ofsskip	ofs-scan0	def	1514	9a67f6a6a97a22d9ed676aa011cdb74022455ca94858f54e2859973d214c40a9
 ofsskip	ofs-scan0	use	48	036c47e8483d3a3dd5bfb5d47aecf1368467057fffe78531d3c997daa0345beb
-ofsskip	ofs-set-scan3	def	1489	c98c91f32bf15683113cc4278ee549e41c8a625d5b3afaad7bfc00525a193254
+ofsskip	ofs-set-scan3	def	1673	16edb863a0a55c39b703422226edef144288454641fe77ffbf11825856e500be
 ofsskip	ofs-set-scan3	use	59	205a7d97afc136ef5a5e7da467200ec16bb16fbd9a55c580bc539703a814a709
-precheck	pre-lead-handoff	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
-precheck	pre-lead-handoff-miss-token	def	847	df7c9cd5622030b5bef727b73f999406be6f64900adce34a1489f394e2f1e8ed
+precheck	pre-lead-handoff	def	986	1c01c56ecb33522dada63d4f44edda543f521a3c3089f77e556070be0bbe14b5
+precheck	pre-lead-handoff-miss-token	def	986	1c01c56ecb33522dada63d4f44edda543f521a3c3089f77e556070be0bbe14b5
 precheck	pre-lead-handoff	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
 precheck	pre-lead-handoff-miss-token	use	301	719a4b0441f933eba40e938785912aef0074d273b2e22cad40b06df8932c9059
-precheck	pre-masked-whole-rest	def	2870	d9fd84c4be65cdd2c2c1f6ca8c8debc01ef319046688fe95237903470bada471
+precheck	pre-masked-whole-rest	def	3160	4e41cd3b628b60cff706e1fc2919b67a66500a6a47b8afdfa89c07ea2ec0641e
 precheck	pre-masked-whole-rest	use	475	43892fbd22fa6beede06ed1aabcdbfb9c34d7b2fd960239f4e4b8856f30ec2a9
 precheck	pre-onebyte-rest	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 precheck	pre-onebyte-rest	use	415	2b9fd70002386da8cf9182d737b936b68524cfb8b3142f92e0793429ab5de084
-precheck	pre-window-handoff	def	1183	6e9558e549adc15560a8d5c9ec7b7b5d9d5090531ef078f68e526a7034f19c84
+precheck	pre-window-handoff	def	1322	6b20b8b6b5da19300e13a4cf89c9e4f9e302bb08b00ac3a27dfe1e68b66fe0ee
 precheck	pre-window-handoff	use	150	ae8b6ba27cf1ea36d9881cfe91b3c17c182cba17833a9238e88cdc11f4b9ec1e
 runcmp	run-exact-deny	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 runcmp	run-exact-deny	use	40	78df3215f5b5a2100e74c2ebe3b3562af6c0b0c1ba848b58bf8cf23f4d3bf9db

@@ -1,0 +1,25 @@
+== R4e'.0b timing pair: stream c-default, recipe -O2, 10 patterns, core 13, 7 reps, cc gcc ==
+| kind | pattern | regime | parent | routed | routed/parent | spread parent | spread routed | answers |
+|---|---|---|---|---|---|---|---|---|
+| MOVER | `b'a{2,4}+b'` | thr | 0.1924 ns/B | 0.1931 ns/B | 1.004 | 1.019 | 1.007 | same |
+| MOVER | `b'a{2,4}+b'` | call | 11.1496 ns/call | 10.4463 ns/call | 0.937 | 1.144 | 1.156 | same |
+| MOVER | `b'(?:aa|a)+ab'` | thr | 0.1950 ns/B | 0.1937 ns/B | 0.993 | 1.035 | 1.027 | same |
+| MOVER | `b'(?:aa|a)+ab'` | call | 9.6999 ns/call | 9.7599 ns/call | 1.006 | 1.175 | 1.221 | same |
+| MOVER | `b'a{2,4}b'` | thr | 0.1932 ns/B | 0.1929 ns/B | 0.999 | 1.024 | 1.018 | same |
+| MOVER | `b'a{2,4}b'` | call | 10.2749 ns/call | 9.4137 ns/call | 0.916 | 1.234 | 1.266 | same |
+| MOVER | `b'a{2,4}?b'` | thr | 0.1932 ns/B | 0.1929 ns/B | 0.998 | 1.073 | 1.007 | same |
+| MOVER | `b'a{2,4}?b'` | call | 9.8087 ns/call | 10.1591 ns/call | 1.036 | 1.388 | 1.158 | same |
+| MOVER | `b'a{3,5}b'` | thr | 0.1912 ns/B | 0.1903 ns/B | 0.995 | 1.009 | 1.007 | same |
+| MOVER | `b'a{3,5}b'` | call | 9.2494 ns/call | 9.5237 ns/call | 1.030 | 1.124 | 1.169 | same |
+| MOVER | `b'a{3,6}b'` | thr | 0.1924 ns/B | 0.1924 ns/B | 1.000 | 1.014 | 1.010 | same |
+| MOVER | `b'a{3,6}b'` | call | 11.9255 ns/call | 11.4708 ns/call | 0.962 | 1.353 | 1.391 | same |
+| CONTROL | `(?i)cat` | thr | 0.1671 ns/B | 0.1706 ns/B | 1.021 | 1.067 | 1.077 | same |
+| CONTROL | `(?i)cat` | call | 15.8479 ns/call | 16.0234 ns/call | 1.011 | 1.250 | 1.242 | same |
+| CONTROL | `(?i)select` | thr | 0.1805 ns/B | 0.1802 ns/B | 0.998 | 1.042 | 1.068 | same |
+| CONTROL | `(?i)select` | call | 15.2628 ns/call | 15.5063 ns/call | 1.016 | 1.278 | 1.146 | same |
+| CONTROL | `/user|/users` | thr | 0.0274 ns/B | 0.0275 ns/B | 1.004 | 1.022 | 1.068 | same |
+| CONTROL | `/user|/users` | call | 4.8817 ns/call | 5.0946 ns/call | 1.044 | 1.108 | 1.134 | same |
+| CONTROL | `abc[0-9]+xyz` | thr | 0.0163 ns/B | 0.0162 ns/B | 0.995 | 1.132 | 1.047 | same |
+| CONTROL | `abc[0-9]+xyz` | call | 4.5279 ns/call | 4.4810 ns/call | 0.990 | 1.081 | 1.059 | same |
+timing: answers agree
+rc=0

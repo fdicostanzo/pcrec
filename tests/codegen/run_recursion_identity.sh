@@ -1214,9 +1214,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # prefilter and read `ENGINE_SEL "selected"`; every other artifact moves by the
 # abi digit alone. `9a0cf78e` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-# [DEC-VAR-ATTRIB]+[DEC-COLLAPSE-WASTE] SELF-PIN (lane decattr, 2026-10-09),
-# abi 68->69: ef3f7b08 (decland: the merge of main 5761cd03; was 1e9ba027).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-78bf3808}"   # [MEMFN] RQ-3 SELF-PIN (lane rq3, 2026-10-09), abi 69->71: every artifact gains <PREFIX>_SIMD_GUARDED_BYTES; 78bf3808 is the lane's last src commit; the manager re-pins to the merge
+# [MEMFN] R4e'.0b SELF-PIN (lane r4e0b, 2026-10-09), abi 69 -> 70 (69 is
+# decattr's event, landed first): every offset-skip/pre-check function keeps its loop under
+# `<fn>__body` and becomes one call to it; every other artifact moves by the
+# abi digits alone. `74f941dc` is the lane's src commit; the manager re-pins
+# to the merge (the self-pin convention).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b3e26cfa}"   # [MEMFN] R4e'.0b SELF-PIN (2026-10-09), abi 69 -> 70: the reconciliation commit (built as 70 at 74f941dc)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

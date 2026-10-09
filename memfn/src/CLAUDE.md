@@ -79,8 +79,17 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `fn-memchr`, the slot's floor) and PREFIX (born EMPTY: the guarded
   per-level helpers SIMD rows will add, D155; an empty slot renders zero
   bytes). `ofs_fn_define` is the seam: the BODY walk, then the PREFIX walk
-  handed the BODY row, then the text (the PREFIX row's helpers, the head,
-  the BODY loop). Both BODY rows are today's inline `b >= 0` branch moved
+  handed the BODY row, then the text. **Since R4e'.0b (lane r4e0b,
+  2026-10-09; D155 item 6, integration.md §R4.9.2.5/§R4.9.2.6, pcrec abi
+  68 -> 69) the text is routed**: the BODY loop under the helper
+  `<fn>__body` (`fn_head`, the head every piece shares), then the PREFIX
+  row's helpers, then `<fn>` itself, the SELECTOR (`fn_selector`), whose
+  whole body is one call `return <fn>__body(subject, n, pos[, tables]);`.
+  A PREFIX row's levels become `#if` arms above that call, which is then
+  the `#else` arm's line byte for byte; the PREFIX walk is handed the
+  helper's name (`fn_in.body_fn`), its last fall-through. No options.def
+  row: the routing is the floor shape D155 ordered, measured once against
+  its parent (its G1 census), not an arm with an OFF. Both BODY rows are today's inline `b >= 0` branch moved
   text-for-text, scalar and undeniable (no options.def row); each carries
   a contract (`fn_pair_ct`/`fn_memchr_ct`, the body's own fields: `denies`,
   `table_ref`, no `floor`). Trace table `fn`. Its `miss` (stated as `n`) and `floor`

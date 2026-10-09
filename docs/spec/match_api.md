@@ -2316,16 +2316,28 @@ and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
 - **`rx_info.abi` is `71` on every artifact today (lane rq3 bumped it from
-  69, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; `70` is the kit's R4e′.0b,
-  and the manager serializes the two at landing).** ONE stamp line is added
+  70, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; rq3 was built on `69` and
+  re-landed on R4e′.0b's `70`).** ONE stamp line is added
   to every artifact, both engines, directly after `<PREFIX>_MEMFN_LIBC`:
   `<PREFIX>_SIMD_GUARDED_BYTES` (§6.3), the artifact's CPU-guarded byte
   count. It reads `0ULL` on every artifact, since no SIMD form exists and
   `-fmemfn-simd` is inert. No other byte moves: every length decision now
   reads the SIMD-off length (`len_uncut` minus the guarded bytes; the caps'
   measure minus the guarded text's), which equals the old reading wherever
-  nothing is guarded, and the sweep against `abi` 69 reads zero movers
+  nothing is guarded, and the sweep against `abi` 69 read zero movers
   outside the new line. No struct offset moves and no answer moves.
+- **`rx_info.abi` was `70` (lane r4e0b bumped it
+  from 69, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
+  `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
+  offset-skip/pre-check function (`<prefix>_reqrun`, `<prefix>_reqrun_whole`,
+  `<prefix>_ofsskip`) keeps its loop, byte for byte, under the head
+  `<prefix>_<fn>__body`, and the function itself becomes one call to it,
+  `return <prefix>_<fn>__body(subject, n, pos[, tables]);`: the SIMD-off
+  shape that a later CPU-guarded helper adds `#if` arms above (the floor
+  rule). Both are `static inline` in the `.c`, so no symbol a caller links
+  against changes, no stamp is added or changes value, no struct offset or
+  `rx_info` member moves and no answer moves; an artifact with no such
+  function differs from `abi` 69 in its abi digits alone.
 - **`rx_info.abi` was `69` (lane decattr bumped it
   from 68, 2026-10-09: [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], one event —
   `docs/design/dec_fallback.md` §5.1, §5.2, §6.1).** Two stamp VALUES move,

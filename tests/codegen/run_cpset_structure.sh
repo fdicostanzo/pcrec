@@ -895,12 +895,21 @@ fi
 # `(?i)HeLLo` +68, `(\w+)\s+\1` +44. Verified against a ref build of main
 # 77b6b37e with only the abi constant bumped (emit_sweep --ref): the delta is
 # those loops and RX_VM_PROGRAM_BYTES where the VM span scan sits, nothing else.
-# RE-RECORDED 2026-10-09 at [MEMFN] RQ-3 (abi 69 -> 71, lane rq3): all twelve
-# `EMITTED_BYTES` rows +52, one number: the unconditional
-# `#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL` line (fixed width, so
-# K-, engine- and value-invariant). VERIFIED BY DIFFING `a`'s artifact against
-# main 9c181041's compiler at `-o -`: the four same-length abi digits and that
-# one line, nothing else.
+# RE-RECORDED 2026-10-09 at [MEMFN] R4e'.0b, THE ROUTING (abi 69 -> 70, lane
+# r4e0b; the digit is one width): five EMITTED_BYTES rows move, each by its
+# offset-skip/pre-check functions' routing alone (the loop under
+# `<fn>__body`, `<fn>` one call to it): `abc`, `(a)(b)(c)` and `(?<=foo)bar`
+# +141 (one `rx_ofsskip`), `(?i)HeLLo` +139 (one `rx_reqrun`), `\bword\b`
+# +280 (one of each). VERIFIED BY the routing census
+# (docs/design/memfn/probes/r4e0b/routing_census.py --ref 131c173a): every
+# FUNC-bearing artifact un-routes to the parent byte for byte.
+# RE-RECORDED 2026-10-09 at [MEMFN] RQ-3 (lane rq3, landed on R4e'.0b by lane
+# rq3land, abi 70 -> 71): all twelve `EMITTED_BYTES` rows +52, one number:
+# the unconditional `#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL` line
+# (fixed width, so K-, engine- and value-invariant). VERIFIED BY DIFFING
+# `abc`, `\bword\b`, `(?i)HeLLo` and `(a(?1)?b)` against main 82ff9432's
+# compiler at the same `-o` basename: the abi digits and that one line,
+# nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

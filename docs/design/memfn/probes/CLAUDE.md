@@ -39,3 +39,12 @@
 
 Maintenance: update this file when files are added/removed or change roles.
 - `rowcon/` — [MEMFN-ROWCON] audits (kit rows; pcrec tables) behind row_contracts.md.
+- `r4e0b/` — R4e′.0b's G1 instruments (lane r4e0b, 2026-10-09; integration.md
+  §R4.9.2.6): `routing_census.py` (movers by id against the parent's own
+  function count, the un-done text diff, the per-function byte delta, and
+  `-S` assembly identity per recipe with gcc's local labels renumbered and
+  the abi DATA read across; `--nonid-out` lists the non-identical movers),
+  `routing_timing.py` (the parent-vs-routed timing pair for those movers
+  only). Results in `docs/dev/lanes/r4e0b_report.md` §4.
+  `r4e0b/out/` holds the transcripts (the full census, the -Os/-O0 sample,
+  both timing tables) and `nonid_full.tsv`, the non-identical movers.
