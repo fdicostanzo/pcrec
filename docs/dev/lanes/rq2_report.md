@@ -236,3 +236,124 @@ rows are not written: the manager allocates ids.
   memfn/include, memfn.
 - docs/design/memfn/integration.md: the RQ-2 row marked superseded by D157
   and BUILT.
+
+## 7. Addendum: landing prep (lane rq2land, sonnet, 2026-10-09)
+
+Three items for the manager, on `lane/rq2` after df095437. No `src/`
+change; the RQ-2 code is untouched and zero-mover as §4.2 says.
+
+### 7.1 Sabotage rows S731-S737 (arm `rank`)
+
+Ids allocated by the manager (none in the kit's reserved blocks; the
+highest on main and in every worktree was S730). One file each under
+`tests/mech/sabotages/`, anchors copied from `git show HEAD:<path>` (each
+occurs exactly once). All seven are solo **DETECTED** with their reach
+witness live, `unexpected: 0`, about 25 s a row (the arm builds the probe
+compiler and runs `rank_check.py`; log `build/s7/mech_rows.log`, scratch).
+
+| id | file | plant | arm result | reach text it asserts |
+|---|---|---|---|---|
+| S731 | findings.c | `pcrec_find_run_rank` prices with `cube_mass(NULL, ...)`: the rate is ignored | 2 fail / 9 pass | SELECT order `4,2,0,5,3,1` and its masses |
+| S732 | findings.c | candidate order reversed (`i = k`): ties go to the lower offset | 2 / 9 | all-tie utf8 order `5,4,3,2,1,0`, and the real-rate tie in `4,2,0,5,3,1` |
+| S733 | findings.c | the mask ignored (`0xFF`): a cube position priced as one byte | 2 / 9 | `(?i)cat` masses `20286,59579,66067` |
+| S734 | findings.c | `mass` filled with zeros: the order right, the rates dropped | 1 / 10 | SELECT masses |
+| S735 | emit_dfa.c | `ofs_pred_rank(cx, t, p);` never called (`rank_n` 0 everywhere) | 2 / 9 | PRE order and the OFS order `4,5,1,0,7,6,2,3` |
+| S736 | emit_dfa.c | `rank_n = run_len - 1` | 1 / 10 | the same two full position lists |
+| S737 | emit_dfa.c | `rank_ppm[i] = 0` | 1 / 10 | PRE and OFS masses |
+
+How the reach is built: nothing but a `-DPCREC_RANK_PROBE` compiler prints
+the ranking (no artifact, answer or identity gate moves), so each row's
+`SAB_REACH` builds that probe from the CLEAN tree into `$REACH_TMP` (about
+3 s at `-j8`; the arm itself does the same on the sabotaged tree) and runs
+`SELECT`, `(?i)cat` and `abcdefghijklmn` at the byte base plus `SELECT`
+under `-e utf8`. `SAB_REACH_EXPECT` is the exact text that row's plant
+moves ([MECH-REACH]: assert what moves), and `SAB_REACH_POP` holds the
+three named witnesses in `rank_check.py`'s `NAMED` list. `VALIDATE_ONLY`
+reads FIELDS OK for all seven and for the eight-id invocation the chain
+uses. `tests/mech/CLAUDE.md`'s `rank` entry now names the ids.
+
+### 7.2 The stale variant pins, measured
+
+`scripts/emit_sweep.py --variant all` on main printed `VARIANTS: FAILED`
+with 0 movers and identical sides, in the lowsize/lowboth cells only
+(plain, lowdfa and lowthr had no violation; 71 violation lines over the four
+cells in the lane's own run, `build/light/sweep_off.log`). The manager's
+6973d7f5 re-pinned six reach floors and **no tag floor**, so main was
+already red under the tag floors at the abi 70 commit, and RQ-3 moved the
+cells again.
+
+Method: `--variant lowsize --variant lowboth` with each revision against
+itself (`--ref R --tree-rev R --no-self-check --emit-pins`, 146 s a
+revision), then the per-pattern change between two variant binaries with a
+scratch driver over the same corpus (4,387 distinct patterns, both bases:
+c-default, c-vm, emit-ir-vm and the `emit-ir-auto` token).
+
+| revision | what | the cells against the committed pins |
+|---|---|---|
+| c0a0b76a | decland's measurement (bbf3c1d9) | every tag equal to the pin |
+| 32a1c91f, 9c181041 | decattr merge (abi 69), pre-R4e'.0b | identical to c0a0b76a |
+| 82ff9432 | R4e'.0b, abi 70 | reach -2 on six streams, tags moved (byte: no-backreference -2, yes -5, no-size-cap +4) |
+| d33d3899 | main just before RQ-3 | same as 82ff9432 |
+| 631771b7 | RQ-3, abi 71 | reach moves again (lowboth/byte c-default -5, others -2), more tags |
+| 5a8b233e | main now | same as 631771b7 |
+
+**Cause, step 1 (82ff9432).** Each VM FUNC grew by +139..+184 B (the commit
+message's own figure), which moves 9 distinct patterns across the LOWERED
+caps (30000 VM code, 60000 emit): `(x?)([a-z]+)+S\d(?i:s)qz\1` over the
+VM-code cap (30098 B; this is rq3tri's finding), seven `yes` ->
+`no-size-cap` (`(a+)(a+?)`, `(?:aa|a)++ab`, `(?:a|aa)++ab`, `((a)(a))(a)`,
+`(log|login|logout)$`, `(?!(?1))(a\Kb)c`, `(?=(?1))(a\Kb)c`) and `(ab|ac){2,4}?`
+`yes` -> `yes-collapsed`.
+
+**Cause, step 2 (631771b7).** RQ-3 adds `#define RX_SIMD_GUARDED_BYTES
+0x0000000000000000ULL` to every artifact: a constant **+52 bytes**, on all 16
+of 16 measured (pattern, engine, encoding) pairs, and the cap's quoted
+"bytes of emitted code" moves by the same 52 (30098 -> 30150 for the reqcube
+pattern). 18 more patterns cross: `(a{1,3}){64}`, `{65}`, `{66}` (refused at
+c-default), `(\w*)(\W*)\2\1` (utf8), `(?1)a((?2))c(a+)b` (utf8),
+`(?:(?:b?|a+){0,2})+`, `(?:(?:b{0,2}|a+){0,2})+`,
+`^(?(DEFINE)(?<g>a+))(?&g)++ab$` (utf8), and ten `yes` -> `no-size-cap` /
+`yes-collapsed`. Both steps are CAP CROSSINGS on the same text on both
+sides, never movers. Reach counts are rows and the patterns are distinct, so
+one pattern can carry -2 (the corpus lists it twice).
+
+**Observation for the manager, not a ruling.** RQ-3 made the SIMD bytes
+neutral to every length decision (D155 addendum 2) and the stamp it added
+is itself ordinary text the caps count: the 52 B is the stamp line, not a
+SIMD byte. Any future stamp shifts the lowered-cap cells the same way; the
+re-pin is the cost each time, and the ladder this report records is the
+procedure.
+
+**The re-pin** is its own commit (8ec0e97a): the dated comment above
+`VARIANT_PINS` carries the cause and the commands, and the four lowsize/
+lowboth cells were pasted from `--emit-pins` of main 5a8b233e (its emitted
+text is d8c1b489's) against itself, as a textual patch of the values so the
+rest of the pprint-shaped block does not move. One thin-tag manifest left
+(lowsize/byte `-fno-prefilter-collapse`, `no-size-cap` is now 104, above
+THIN_TAG). `TRACE_VARIANT_RECORDS_FLOOR` was not re-measured (no `--trace`
+in the chain). The patched block loads equal to the measured one on reach,
+tags and manifest in all four cells.
+
+**Validation of the re-pin:** `emit_sweep.py --ref d8c1b489 --tree-rev
+8ec0e97a --variant lowsize --variant lowboth --no-self-check --jobs 8`
+(floors applied, this lane's compiler against main): **`VARIANTS: CLEAN`**,
+36 stream lines all `movers=0 asymmetric=0`, 124.5 s, no violation in any
+of the four cells (`build/s7/sw_validate.log`). The chain's own
+`--variant all` (the unchanged plain/lowdfa/lowthr cells) runs after the
+lift.
+
+### 7.3 Re-arm
+
+- The old waiter, pid **762358**, was stopped with `scripts/safekill` before
+  any edit (it was in its 30 s poll, `.lift` absent, `trailer.log` empty) and
+  confirmed gone (`ps -p 762358` empty, no process naming
+  `worktrees/rq2/build/land`).
+- `build/land/chain.sh`: the solo mech list gained `S731 S732 S733 S734
+  S735 S736 S737` (it stays one invocation, `PROCS=4`); everything else is
+  unchanged, and `REV` is still `git rev-parse HEAD` at lift time, so it
+  includes this report and the re-pin.
+- ONE new detached waiter, `nohup setsid bash build/land/waiter.sh`, pid
+  **880614** (pgid 880614), polling `worktrees/rq2/.lift` and then exec'ing
+  `chain.sh`. `.lift` was not touched; the manager lifts after the kit's
+  slot17 finishes. Completion: `build/land/trailer.log`, line `== CHAIN DONE`;
+  the mech verdict is `== mech run COMPLETE` in `build/land/mech.log`.

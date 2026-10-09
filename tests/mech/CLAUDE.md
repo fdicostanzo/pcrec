@@ -524,8 +524,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   compiler and holds every PRE/OFS predicate's `mf_pred.rank_*` to a brute
   force over the whole corpus at three arms (about 7 s plus the build).
   Nothing reads the ranking yet, so a wrong ranking moves no artifact,
-  answer or identity gate. Rows: planned in `docs/dev/lanes/rq2_report.md`
-  §5, ids from the manager.
+  answer or identity gate. Rows S731-S737 (lane rq2land, 2026-10-09; four on
+  `pcrec_find_run_rank` -- rate ignored, candidate order reversed, mask
+  ignored, masses dropped -- three on `ofs_pred_rank`'s builder -- call
+  dropped, `rank_n` one short, no rates), each solo DETECTED in about 25 s,
+  each with a `SAB_REACH` that builds the clean tree's `-DPCREC_RANK_PROBE`
+  compiler and asserts the exact `RANK` text its plant moves
+  (`docs/dev/lanes/rq2_report.md` addendum).
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.
