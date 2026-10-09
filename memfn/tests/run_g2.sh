@@ -922,6 +922,28 @@ for m in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do
     w2_judge "$m"
 done
 
+# --- 4a. G2's SIMD family (R4e' batch 1, request R-13): its own runner ------
+# memfn/tests/run_g2_simd.py: the batch-1 site space rendered with the SIMD
+# layer on, compiled at every level and ASan+UBSan, against G2's own scalar
+# byte loop, with guard pages, per-path floors and plants (its docstring).
+# Its generator links the same library as the others, so under --rows its
+# REACH lines join the per-row sum below (the SIMD rows are reached only
+# there: G2's other sinks offer no bracket ops, so no other process renders
+# a SIMD row).
+echo "== simd: G2's SIMD family (run_g2_simd.py)"
+mkdir -p "$work/reach"
+simd_args=(--root "$root" --lib "$lib")
+[ "$rows" = 1 ] && simd_args+=(--reach-err "$work/reach/gen-simd.err")
+[ "$quick" = 1 ] && simd_args+=(--quick)
+if TMPDIR="$work" "$TO" 3000 python3 "$here/run_g2_simd.py" "${simd_args[@]}" > "$work/simd.log" 2>&1; then
+    passed=$((passed + 1))
+    echo "PASS: SIMD family ($(grep '^checks passed' "$work/simd.log"))"
+else
+    grep -E '^FAIL' "$work/simd.log" | head -20
+    note_fail 1 "SIMD family (run_g2_simd.py): $(grep '^checks failed' "$work/simd.log")"
+fi
+grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
+
 # --- 4b. --rows: the per-ROW floor, from the kit's own REACH trace ----------
 # Sources: the `MFTRACE REACH table=T row=R chosen=N` lines of every G2
 # process that SELECTS rows (the generator, once per W2 mutation; K1 calls
@@ -930,7 +952,7 @@ done
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
 ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
-FLOOR_ROWS=17   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr)
+FLOOR_ROWS=18   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 18, with fn/vrun-w16, reached by the SIMD family's process below)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process
