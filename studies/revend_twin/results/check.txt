@@ -1,0 +1,108 @@
+tail-digits-eol      pool_byte \d+$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=903 findall_diff=0
+tail-digits-eol      long   \d+$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+tail-word-eoz        pool_byte \w+\z                  byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1475 findall_diff=0
+tail-word-eoz        long   \w+\z                  byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=16 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+tail-space-eol       pool_byte \s+$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=931 findall_diff=0
+tail-space-eol       long   \s+$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+tail-ext-lower-txt   pool_byte [a-z]+\.txt$           byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=853 findall_diff=0
+tail-ext-lower-txt   long   [a-z]+\.txt$           byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+tail-dotstar-txt     pool_byte .*\.txt$               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=855 findall_diff=0
+tail-dotstar-txt     long   .*\.txt$               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-0z                 pool_byte [0-9]+z$               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=853 findall_diff=0
+u-0z                 long   [0-9]+z$               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-email              pool_byte [a-z]+@[a-z]+$         byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=858 findall_diff=0
+u-email              long   [a-z]+@[a-z]+$         byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-bwb                pool_byte \b\w+\b$               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1533 findall_diff=0
+u-bwb                long   \b\w+\b$               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-wb                 pool_byte \w+\b$                 byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1533 findall_diff=0
+u-wb                 long   \w+\b$                 byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-az-z               pool_byte [a-z]+\z               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1364 findall_diff=0
+u-az-z               long   [a-z]+\z               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=15 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-bwbz               pool_byte \b\w+\b\z              byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1475 findall_diff=0
+u-bwbz               long   \b\w+\b\z              byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=16 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-bwz                pool_byte \b\w+\z                byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1475 findall_diff=0
+u-bwz                long   \b\w+\z                byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=16 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-eq                 pool_byte .*=.*$                 byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=872 findall_diff=0
+u-eq                 long   .*=.*$                 byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-alazy              pool_byte a+?$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=982 findall_diff=0
+u-alazy              long   a+?$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-aplus              pool_byte a+$                    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=982 findall_diff=0
+u-aplus              long   a+$                    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-adot               pool_byte a.*$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1316 findall_diff=0
+u-adot               long   a.*$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-astarbstar         pool_byte a*b*$                  byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1174 findall_diff=0
+u-astarbstar         long   a*b*$                  byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-astarb             pool_byte a*b$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=969 findall_diff=0
+u-astarb             long   a*b$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+u-nonl               pool_byte [^\n]*$                byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1761 findall_diff=0
+u-nonl               long   [^\n]*$                byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=28 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-dotstar            pool_byte .*$                    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1761 findall_diff=0
+u-dotstar            long   .*$                    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=28 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-astar              pool_byte a*$                    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1053 findall_diff=0
+u-astar              long   a*$                    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-astarZ             pool_byte a*\Z                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1053 findall_diff=0
+u-astarZ             long   a*\Z                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-azstar             pool_byte [a-z]*$                byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1487 findall_diff=0
+u-azstar             long   [a-z]*$                byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=22 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-bstar              pool_byte b*$                    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1040 findall_diff=0
+u-bstar              long   b*$                    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-xstar              pool_byte x*$                    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=975 findall_diff=0
+u-xstar              long   x*$                    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=18 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-dotZ               pool_byte .*\Z                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1761 findall_diff=0
+u-dotZ               long   .*\Z                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=28 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-astarz             pool_byte a*\z                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=975 findall_diff=0
+u-astarz             long   a*\z                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-azstarz            pool_byte [a-z]*\z               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1364 findall_diff=0
+u-azstarz            long   [a-z]*\z               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=15 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+u-dotz               pool_byte .*\z                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1624 findall_diff=0
+u-dotz               long   .*\z                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+x-sstar              pool_byte \s*$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=931 findall_diff=0
+x-sstar              long   \s*$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+x-alt                pool_byte (?:a|ab)(?:c|bcd)*$    byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1070 findall_diff=0
+x-alt                long   (?:a|ab)(?:c|bcd)*$    byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+x-lazyeol            pool_byte a*?$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1053 findall_diff=0
+x-lazyeol            long   a*?$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="none" DFA_START="reverse-pass" 
+x-mixed              pool_byte \d+$|\w+\z             byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1478 findall_diff=0
+x-mixed              long   \d+$|\w+\z             byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=17 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+x-icase              pool_byte (?i)[a-z]+\.TXT$       byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=855 findall_diff=0
+x-icase              long   (?i)[a-z]+\.TXT$       byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+x-nl-in              pool_byte \s+\Z                  byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=931 findall_diff=0
+x-nl-in              long   \s+\Z                  byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+# utf8 rows: SUPERSEDED in check_utf8.txt (this run compiled the oracle with PCRE2_UCP, which pcrec's
+# -e utf8 does not imply for \w/\d/\s; twin_diff was 0 on every utf8 row here too)
+== check rc=0

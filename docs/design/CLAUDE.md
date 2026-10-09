@@ -2812,6 +2812,24 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - **New finding F-B5:** `--pattern-esc` is ignored by `--emit-ir`/`--emit-facts`.
     - **Open for Frank:** Q1, Q2, Q4(b).
 - `dec_fallback/` — that note's edit set, the derived sabotage-anchor map, the call graph it was derived with, the state-reader census (derived from the declarations since rev 2), and `reach/`, rev 2's row-reach prototype and its output (own CLAUDE.md).
+- `revend.md` — **[OPT-REVEND] REVERSE-FROM-END SEARCH, PROPOSED, design + hand-twin**
+  (lane `revdes`, 2026-10-09, from main `de6acf09`, abi 70; trigger: bench O-91 (c),
+  capability@0.2's end-anchored tail family). ONE new WINDOW-slot row `rev-end`
+  ahead of W1, handing `LOWER = s*` (or NOMATCH): the artifact's own reverse machine
+  walks back from `n` (and `n-1` under `$`/`\Z` before a final newline), the smallest
+  accepting position is the leftmost start, and the UNCHANGED body runs over
+  `[s*, n)` (form B; it ties or beats form A, the anchored-entry hand-off, on 15 of 17
+  timed cells and keeps every stamp truthful). Admission: a new fact `end_pin`
+  (`ew_walk`'s view plus the `\G`/multiline declines, no width or encoding
+  conjunct; `end_window` becomes its reader), RECOVER = `reverse-pass`, the
+  caller-facing entry; deny `-fno-rev-end`. Under utf8 the walk discharges K49/K50
+  by construction. Twin: 43 patterns, 0 twin disagreements over 755,385 cells plus
+  find-all, libpcre2 agreeing except K74's known ill-formed-end cells; controls fail.
+  Bench predictions 10-115 ns per cell (today 0.2-2.9 ms; ceiling claim ≤ 250 ns).
+  Family: the seeded reverse walk (RECOVER, REVEND, D151 rev-inner), one
+  parameterized reverse-block helper; REVEND builds first. Abi readers by grep
+  (§5.3), 7 sabotage rows, spec hunks, three questions for Frank (§10). Evidence:
+  `../../studies/revend_twin/`.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

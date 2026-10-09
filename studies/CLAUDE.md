@@ -272,5 +272,12 @@ re-measure before load-bearing use.
   the load/lock gates and the `--remote ubuntubudu` day-only wrapper, and the
   `iterations.tsv` bounds ledger; self-test includes the failing direction.
   Charter: `docs/dev/optloop/artrev/charter.md`. See its own CLAUDE.md.
+- `revend_twin/` — [OPT-REVEND]'s HAND-TWIN (lane revdes, 2026-10-09; scratch tier,
+  Linux dev box): `mktwin.py` rewrites an unmodified artifact's `<p>_search` into
+  the seeded reverse walk (form A: exact start + anchored entry; form B: the walk's
+  `s*` as the unchanged body's `search_from`), `check.c` sweeps answer identity
+  against the artifact and libpcre2 10.46 (every startpos, find-all), two
+  `TWIN_SABOTAGE` controls must fail, `timedrv.c` times both on 1 MiB tails.
+  Backs `docs/design/revend.md` §6-§7. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

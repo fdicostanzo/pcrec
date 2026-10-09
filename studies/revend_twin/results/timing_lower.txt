@@ -1,0 +1,55 @@
+## repeat 1 (form B)
+tail-digits-eol     t-tail-digits-1m     load1=3.50 | n=1048527 rc=1 span=1048519,1048527 | orig min=538884 med=555695 ns (0.5300 ns/B) | twin min=23.1 med=26.6 ns | x20930
+tail-digits-eol     t-tail-txt-1m        load1=3.50 | n=1048532 rc=0 span=-1,-1 | orig min=484126 med=485693 ns (0.4632 ns/B) | twin min=4.5 med=5.0 ns | x97139
+tail-digits-eol     t-tail-space-1m      load1=3.50 | n=1048527 rc=0 span=-1,-1 | orig min=483923 med=486067 ns (0.4636 ns/B) | twin min=4.0 med=6.0 ns | x80342
+tail-digits-eol     t-1m                 load1=3.50 | n=1048517 rc=1 span=1048514,1048516 | orig min=494361 med=500198 ns (0.4771 ns/B) | twin min=12.0 med=15.1 ns | x33236
+tail-word-eoz       t-tail-digits-1m     load1=3.50 | n=1048527 rc=1 span=1048519,1048527 | orig min=1563912 med=1566701 ns (1.4942 ns/B) | twin min=26.1 med=31.1 ns | x50457
+tail-word-eoz       t-tail-txt-1m        load1=3.50 | n=1048532 rc=1 span=1048529,1048532 | orig min=1580472 med=1595217 ns (1.5214 ns/B) | twin min=17.6 med=25.1 ns | x63681
+tail-word-eoz       t-tail-space-1m      load1=3.50 | n=1048527 rc=0 span=-1,-1 | orig min=1585720 med=1602794 ns (1.5286 ns/B) | twin min=7.0 med=17.1 ns | x94006
+tail-space-eol      t-tail-digits-1m     load1=3.50 | n=1048527 rc=0 span=-1,-1 | orig min=1458911 med=1469027 ns (1.4010 ns/B) | twin min=10.5 med=14.0 ns | x104931
+tail-space-eol      t-tail-txt-1m        load1=3.50 | n=1048532 rc=0 span=-1,-1 | orig min=1461760 med=1468955 ns (1.4010 ns/B) | twin min=11.0 med=15.1 ns | x97605
+tail-space-eol      t-tail-space-1m      load1=3.50 | n=1048527 rc=1 span=1048524,1048527 | orig min=1459655 med=1478163 ns (1.4098 ns/B) | twin min=19.6 med=27.1 ns | x54545
+tail-space-eol      t-trim-nearmiss-16k  load1=3.50 | n=16385 rc=0 span=-1,-1 | orig min=18429 med=18646 ns (1.1380 ns/B) | twin min=3.0 med=3.5 ns | x5327
+tail-ext-lower-txt  t-tail-digits-1m     load1=3.50 | n=1048527 rc=0 span=-1,-1 | orig min=1888266 med=1893806 ns (1.8062 ns/B) | twin min=16.1 med=22.5 ns | x84169
+tail-ext-lower-txt  t-tail-txt-1m        load1=3.50 | n=1048532 rc=1 span=1048522,1048532 | orig min=1993957 med=2022137 ns (1.9285 ns/B) | twin min=57.1 med=68.6 ns | x29477
+tail-ext-lower-txt  t-tail-space-1m      load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=1925547 med=1952357 ns (1.8620 ns/B) | twin min=16.6 med=22.6 ns | x86579
+tail-dotstar-txt    t-tail-digits-1m     load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=75265 med=76131 ns (0.0726 ns/B) | twin min=8.5 med=9.0 ns | x8459
+tail-dotstar-txt    t-tail-txt-1m        load1=3.38 | n=1048532 rc=1 span=1048513,1048532 | orig min=75269 med=91548 ns (0.0873 ns/B) | twin min=30.6 med=32.5 ns | x2813
+tail-dotstar-txt    t-tail-space-1m      load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=75157 med=75727 ns (0.0722 ns/B) | twin min=8.5 med=9.0 ns | x8414
+## repeat 2 (form B)
+tail-digits-eol     t-tail-digits-1m     load1=3.38 | n=1048527 rc=1 span=1048519,1048527 | orig min=487293 med=489483 ns (0.4668 ns/B) | twin min=20.6 med=27.6 ns | x17767
+tail-digits-eol     t-tail-txt-1m        load1=3.38 | n=1048532 rc=0 span=-1,-1 | orig min=482585 med=483628 ns (0.4612 ns/B) | twin min=3.5 med=4.0 ns | x120907
+tail-digits-eol     t-tail-space-1m      load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=482846 med=484706 ns (0.4623 ns/B) | twin min=3.5 med=6.5 ns | x74570
+tail-digits-eol     t-1m                 load1=3.38 | n=1048517 rc=1 span=1048514,1048516 | orig min=493792 med=500447 ns (0.4773 ns/B) | twin min=14.5 med=17.0 ns | x29438
+tail-word-eoz       t-tail-digits-1m     load1=3.38 | n=1048527 rc=1 span=1048519,1048527 | orig min=1561089 med=1564264 ns (1.4919 ns/B) | twin min=23.6 med=36.5 ns | x42798
+tail-word-eoz       t-tail-txt-1m        load1=3.38 | n=1048532 rc=1 span=1048529,1048532 | orig min=1571372 med=1597914 ns (1.5240 ns/B) | twin min=19.6 med=28.6 ns | x55969
+tail-word-eoz       t-tail-space-1m      load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=1576170 med=1596619 ns (1.5227 ns/B) | twin min=9.5 med=11.0 ns | x145147
+tail-space-eol      t-tail-digits-1m     load1=3.38 | n=1048527 rc=0 span=-1,-1 | orig min=1461015 med=1472206 ns (1.4041 ns/B) | twin min=3.5 med=10.6 ns | x139546
+tail-space-eol      t-tail-txt-1m        load1=3.38 | n=1048532 rc=0 span=-1,-1 | orig min=1462871 med=1472707 ns (1.4045 ns/B) | twin min=4.0 med=10.1 ns | x146538
+tail-space-eol      t-tail-space-1m      load1=3.38 | n=1048527 rc=1 span=1048524,1048527 | orig min=1461669 med=1467423 ns (1.3995 ns/B) | twin min=16.5 med=24.0 ns | x61143
+tail-space-eol      t-trim-nearmiss-16k  load1=3.38 | n=16385 rc=0 span=-1,-1 | orig min=18338 med=18563 ns (1.1329 ns/B) | twin min=3.0 med=3.5 ns | x5304
+tail-ext-lower-txt  t-tail-digits-1m     load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=1879801 med=1890851 ns (1.8033 ns/B) | twin min=17.1 med=21.6 ns | x87743
+tail-ext-lower-txt  t-tail-txt-1m        load1=3.27 | n=1048532 rc=1 span=1048522,1048532 | orig min=1986840 med=2018606 ns (1.9252 ns/B) | twin min=62.1 med=71.7 ns | x28173
+tail-ext-lower-txt  t-tail-space-1m      load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=1932659 med=1952445 ns (1.8621 ns/B) | twin min=16.6 med=21.6 ns | x90601
+tail-dotstar-txt    t-tail-digits-1m     load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=75168 med=75665 ns (0.0722 ns/B) | twin min=8.5 med=9.1 ns | x8361
+tail-dotstar-txt    t-tail-txt-1m        load1=3.27 | n=1048532 rc=1 span=1048513,1048532 | orig min=92211 med=98055 ns (0.0935 ns/B) | twin min=31.1 med=32.6 ns | x3008
+tail-dotstar-txt    t-tail-space-1m      load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=75803 med=76772 ns (0.0732 ns/B) | twin min=9.0 med=9.6 ns | x8039
+## repeat 3 (form B)
+tail-digits-eol     t-tail-digits-1m     load1=3.27 | n=1048527 rc=1 span=1048519,1048527 | orig min=490504 med=496404 ns (0.4734 ns/B) | twin min=23.6 med=30.6 ns | x16249
+tail-digits-eol     t-tail-txt-1m        load1=3.27 | n=1048532 rc=0 span=-1,-1 | orig min=485139 med=488820 ns (0.4662 ns/B) | twin min=3.5 med=9.0 ns | x54313
+tail-digits-eol     t-tail-space-1m      load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=484947 med=487744 ns (0.4652 ns/B) | twin min=4.0 med=5.5 ns | x87882
+tail-digits-eol     t-1m                 load1=3.27 | n=1048517 rc=1 span=1048514,1048516 | orig min=493903 med=503634 ns (0.4803 ns/B) | twin min=12.0 med=20.1 ns | x25119
+tail-word-eoz       t-tail-digits-1m     load1=3.27 | n=1048527 rc=1 span=1048519,1048527 | orig min=1618000 med=1625138 ns (1.5499 ns/B) | twin min=27.1 med=36.1 ns | x45018
+tail-word-eoz       t-tail-txt-1m        load1=3.27 | n=1048532 rc=1 span=1048529,1048532 | orig min=1592321 med=1613358 ns (1.5387 ns/B) | twin min=21.1 med=33.0 ns | x48816
+tail-word-eoz       t-tail-space-1m      load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=1597494 med=1605620 ns (1.5313 ns/B) | twin min=12.1 med=17.1 ns | x94171
+tail-space-eol      t-tail-digits-1m     load1=3.27 | n=1048527 rc=0 span=-1,-1 | orig min=1463141 med=1470569 ns (1.4025 ns/B) | twin min=11.5 med=15.6 ns | x94570
+tail-space-eol      t-tail-txt-1m        load1=3.27 | n=1048532 rc=0 span=-1,-1 | orig min=1466357 med=1471490 ns (1.4034 ns/B) | twin min=3.5 med=13.0 ns | x113192
+tail-space-eol      t-tail-space-1m      load1=3.16 | n=1048527 rc=1 span=1048524,1048527 | orig min=1460725 med=1468372 ns (1.4004 ns/B) | twin min=15.6 med=28.1 ns | x52348
+tail-space-eol      t-trim-nearmiss-16k  load1=3.16 | n=16385 rc=0 span=-1,-1 | orig min=18262 med=18533 ns (1.1311 ns/B) | twin min=3.0 med=3.5 ns | x5295
+tail-ext-lower-txt  t-tail-digits-1m     load1=3.16 | n=1048527 rc=0 span=-1,-1 | orig min=1885892 med=1894954 ns (1.8073 ns/B) | twin min=12.0 med=20.6 ns | x92212
+tail-ext-lower-txt  t-tail-txt-1m        load1=3.16 | n=1048532 rc=1 span=1048522,1048532 | orig min=2006045 med=2024336 ns (1.9306 ns/B) | twin min=50.1 med=63.6 ns | x31804
+tail-ext-lower-txt  t-tail-space-1m      load1=3.16 | n=1048527 rc=0 span=-1,-1 | orig min=1910387 med=1945294 ns (1.8553 ns/B) | twin min=12.0 med=17.1 ns | x114093
+tail-dotstar-txt    t-tail-digits-1m     load1=3.16 | n=1048527 rc=0 span=-1,-1 | orig min=73913 med=75526 ns (0.0720 ns/B) | twin min=8.5 med=9.1 ns | x8345
+tail-dotstar-txt    t-tail-txt-1m        load1=3.16 | n=1048532 rc=1 span=1048513,1048532 | orig min=96132 med=102076 ns (0.0974 ns/B) | twin min=31.6 med=33.0 ns | x3089
+tail-dotstar-txt    t-tail-space-1m      load1=3.16 | n=1048527 rc=0 span=-1,-1 | orig min=75448 med=76366 ns (0.0728 ns/B) | twin min=8.5 med=8.6 ns | x8932
+== form B COMPLETE 2026-10-09T16:56:15-04:00
