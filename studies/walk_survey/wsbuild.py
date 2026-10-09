@@ -30,26 +30,35 @@ CFLAGS = ["-O2", "-g", "-fno-pie", "-fsanitize=kernel-address",
 
 
 def classify(chain, text, callee):
-    """chain: emitted function names, innermost first; text: the line."""
+    """chain: emitted function names, innermost first; text: the line.
+    First rule that fires wins; the order is the precedence."""
     fns = " ".join(chain)
     t = text
     inner = chain[0] if chain else ""
-    # the anchored match-here machine (the `match` entry and a hybrid's
-    # anchored DFA), before the generic forward/reverse words
-    if "anchored_" in t or inner.endswith("_match") or "_match_dfa" in inner:
-        return "anc"
-    if re.search(r"\brx_L\w+|_match_anchored|_vm_", fns) or re.search(r"\brx_L\d", t):
+    # utf8 boundary bookkeeping (K50 startpos guard, next_pos, valid_upto,
+    # back_step, a hand-off moved to a character boundary)
+    if re.search(r"rx_valid_upto|rx_next_pos|rx_back_step|rx_utf", fns) or \
+       "PCREC_ERR_STARTPOS" in t or re.search(r"& 0xC0u?\) [!=]= 0x80", t):
+        return "misc"
+    # the VM: its labels, span cursors, class atoms/bitmaps, backref compare
+    if "_match_anchored" in fns or re.search(r"\brx_L\d|rx_span_cursor|rx_class_(bitmap|atom)|ref\[i\]|rx_vm_", t):
         return "vm"
+    if "anchored_" in t:
+        return "anc"
     if "reverse" in t or "rewind" in t or "_reverse" in inner:
         return "rev"
-    if "can_begin" in t or "start_byte" in t or "first_byte" in t:
+    # candidate skipping ahead of a machine: start-byte tables, memchr in
+    # the forward search, the offset-skip helper
+    if re.search(r"can_begin|start_bytes|start_set|first_byte|ofsskip", t) or "ofsskip" in fns:
+        return "skip"
+    if callee in ("memchr", "memrchr", "memmem") and "scan_position" in t:
         return "skip"
     if "reqrun" in fns or "req_" in inner or "reqbyte" in fns:
         return "pre"
     if "end_window" in t or "_END_WINDOW" in t or "window" in inner:
         return "endw"
-    if "forward" in t or "scan_position" in t:
-        return "skip" if callee in ("memchr", "memrchr", "memmem") else "fwd"
+    if re.search(r"forward|scan_position|rx_targets|seed_state|goto \*", t):
+        return "fwd"
     if callee in ("memchr", "memrchr", "memmem", "memcmp") and ("_search" in inner or "search_run" in inner):
         return "pre"
     return "unk"
@@ -95,7 +104,20 @@ def main():
             if mm:
                 sites.append((int(mm.group(1), 16), m.group(1).replace("_noabort", "")))
                 break
-    lines = open(c, encoding="utf8", errors="replace").read().split("\n")
+    srcs = {}
+
+    def src_line(loc):
+        m = re.match(r"(.*):(\d+)", loc)
+        if not m:
+            return 0, ""
+        f, ln = m.group(1), int(m.group(2))
+        if f not in srcs:
+            try:
+                srcs[f] = open(f, encoding="utf8", errors="replace").read().split("\n")
+            except OSError:
+                srcs[f] = []
+        L = srcs[f]
+        return ln, (L[ln - 1].strip() if 0 < ln <= len(L) else "")
     a2l = subprocess.run(["addr2line", "-f", "-i", "-a", "-e", b] +
                          ["%x" % (a - 1) for a, _ in sites], capture_output=True,
                          timeout=300).stdout.decode("utf8", "replace").split("\n")
@@ -116,9 +138,7 @@ def main():
             chain = [fn for fn, _ in rec]
             texts = []
             for _fn, loc in rec:
-                m = re.search(r":(\d+)", loc)
-                ln = int(m.group(1)) if m else 0
-                texts.append((ln, lines[ln - 1].strip() if 0 < ln <= len(lines) else ""))
+                texts.append(src_line(loc.split(" (discriminator")[0]))
             ph = "unk"
             for d in range(len(rec)):
                 ph = classify(chain[d:], texts[d][1], callee.replace("__asan_", ""))

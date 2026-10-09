@@ -37,6 +37,8 @@ static uintptr_t *mapa; static unsigned char *mapp; static size_t nmap;
 static unsigned long long ph_T[MAXPH], ph_ops[MAXPH];
 static unsigned char *ph_bm[MAXPH];
 static uint32_t *mult;
+static unsigned long long scanT;   /* bytes counted through the interposed scanners */
+static long call_hi = -1;          /* highest offset touched in the current call */
 static int unk_ph;
 static uintptr_t unk_pc[64]; static int nunk;
 
@@ -61,6 +63,7 @@ static void touch(uintptr_t ra, const unsigned char *p, size_t sz)
         ph_T[ph]++;
         ph_bm[ph][o >> 3] |= (unsigned char)(1u << (o & 7));
         mult[o]++;
+        if ((long)o > call_hi) call_hi = (long)o;
     }
 }
 
@@ -81,21 +84,23 @@ void *(memchr)(const void *s, int c, size_t len)
 {
     const unsigned char *p = s; size_t i = 0;
     for (; i < len; i++) if (p[i] == (unsigned char)c) break;
-    touch(RA, p, i < len ? i + 1 : len);
+    scanT += i < len ? i + 1 : len; touch(RA, p, i < len ? i + 1 : len);
     return i < len ? (void *)(p + i) : NULL;
 }
 void *memrchr(const void *s, int c, size_t len)
 {
     const unsigned char *p = s; size_t i = len;
     while (i > 0 && p[i - 1] != (unsigned char)c) i--;
-    if (i > 0) { touch(RA, p + i - 1, len - (i - 1)); return (void *)(p + i - 1); }
-    touch(RA, p, len); return NULL;
+    if (i > 0) { scanT += len - (i - 1); touch(RA, p + i - 1, len - (i - 1)); return (void *)(p + i - 1); }
+    scanT += len; touch(RA, p, len); return NULL;
 }
 int memcmp(const void *x, const void *y, size_t len)
 {
     const unsigned char *a = x, *b = y; size_t i = 0;
     while (i < len && a[i] == b[i]) i++;
     size_t k = i < len ? i + 1 : len;
+    if ((const unsigned char *)a >= lo && (const unsigned char *)a < hi) scanT += k;
+    if ((const unsigned char *)b >= lo && (const unsigned char *)b < hi) scanT += k;
     touch(RA, a, k); touch(RA, b, k);
     return i < len ? (int)a[i] - (int)b[i] : 0;
 }
@@ -106,9 +111,9 @@ void *memmem(const void *h, size_t hl, const void *nd, size_t nl)
     for (size_t i = 0; i + nl <= hl; i++) {
         size_t j = 0;
         while (j < nl && a[i + j] == b[j]) j++;
-        if (j == nl) { touch(RA, a, i + nl); return (void *)(a + i); }
+        if (j == nl) { scanT += i + nl; touch(RA, a, i + nl); return (void *)(a + i); }
     }
-    touch(RA, a, hl); return NULL;
+    scanT += hl; touch(RA, a, hl); return NULL;
 }
 
 static void load_map(const char *path)
@@ -151,7 +156,7 @@ int main(int argc, char **argv)
     if (argc < 5) { fprintf(stderr, "usage: wsdrv MAP REGIME UTF8 SUBJ...\n"); return 2; }
     load_map(argv[1]);
     const char *regime = argv[2]; int utf8 = atoi(argv[3]);
-    printf("subject\tn\tregime\trc\ts\te\tcalls\tnmatch\tT\tU\tU_before\tU_span\tU_after\tmult2\tmultmax\tunk_pcs");
+    printf("subject\tn\tregime\trc\ts\te\tcalls\tnmatch\tT\tU\tU_before\tU_span\tU_after\tmult2\tmultmax\tunk_pcs\tT_scan\tahead\tspan_sum\tovl");
     for (int p = 0; p < nph; p++) printf("\tT_%s\tU_%s\tlo_%s\thi_%s", phname[p], phname[p], phname[p], phname[p]);
     printf("\n");
     for (int i = 4; i < argc; i++) {
@@ -160,27 +165,35 @@ int main(int argc, char **argv)
          * past it is outside [lo, hi) and never counted */
         lo = b; hi = b + n; subn = n;
         for (int p = 0; p < nph; p++) { free(ph_bm[p]); ph_bm[p] = calloc(n / 8 + 1, 1); ph_T[p] = ph_ops[p] = 0; }
-        free(mult); mult = calloc(n + 1, sizeof *mult); nunk = 0;
+        free(mult); mult = calloc(n + 1, sizeof *mult); nunk = 0; scanT = 0;
+        unsigned long long ahead = 0, span_sum = 0;
         ptrdiff_t caps[RX_NCAPS][2];
         long rc = 0, s = -1, e = -1, calls = 0, nmatch = 0;
         if (!strcmp(regime, "match")) {
             rx_ctx ctx; memset(&ctx, 0, sizeof ctx);
             ctx.subject = b; ctx.len = n; ctx.pos = 0;
+            call_hi = -1;
             ptrdiff_t r = rx_match_caps(&ctx, caps); calls = 1;
+            if (r >= 0 && call_hi + 1 > (long)r) ahead += (unsigned long long)(call_hi + 1 - r);
             rc = r < -1 ? r : (r >= 0 && (size_t)r == n);
             if (r >= 0) { s = 0; e = (long)r; }
         } else if (!strcmp(regime, "search")) {
+            call_hi = -1;
             int r = rx_search(b, n, 0, caps); calls = 1; rc = r;
-            if (r == 1) { s = (long)caps[0][0]; e = (long)caps[0][1]; nmatch = 1; }
+            if (r == 1) { s = (long)caps[0][0]; e = (long)caps[0][1]; nmatch = 1; span_sum = (unsigned long long)(e - s);
+                if (call_hi + 1 > e) ahead += (unsigned long long)(call_hi + 1 - e); }
         } else {
             size_t pos = 0;
             for (;;) {
+                call_hi = -1;
                 int r = rx_search(b, n, pos, caps); calls++;
                 if (r == 0) break;
                 if (r < 0) { rc = r; break; }
                 if (s < 0) { s = (long)caps[0][0]; e = (long)caps[0][1]; rc = 1; }
                 nmatch++;
                 size_t st = (size_t)caps[0][0], en = (size_t)caps[0][1];
+                span_sum += en - st;
+                if (call_hi + 1 > (long)en) ahead += (unsigned long long)(call_hi + 1 - (long)en);
                 if (en > st) pos = en;
                 else { pos = st + 1; if (utf8) while (pos < n && (b[pos] & 0xC0u) == 0x80u) pos++; }
                 if (pos > n) break;
@@ -193,8 +206,16 @@ int main(int argc, char **argv)
             if (s >= 0 && (long)o < s) ub++; else if (s >= 0 && (long)o < e) us++; else ua++;
         }
         const char *nm = strrchr(argv[i], '/');
-        printf("%s\t%zu\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%llu\t%zu\t%zu\t%zu\t%zu\t%zu\t%u\t%d",
-               nm ? nm + 1 : argv[i], n, regime, rc, s, e, calls, nmatch, T, U, ub, us, ua, m2, mm, nunk);
+        printf("%s\t%zu\t%s\t%ld\t%ld\t%ld\t%ld\t%ld\t%llu\t%zu\t%zu\t%zu\t%zu\t%zu\t%u\t%d\t%llu\t%llu\t%llu\t",
+               nm ? nm + 1 : argv[i], n, regime, rc, s, e, calls, nmatch, T, U, ub, us, ua, m2, mm, nunk, scanT, ahead, span_sum);
+        /* pairwise phase overlap: bytes touched by BOTH phases */
+        int first = 1;
+        for (int p = 0; p < nph; p++) for (int q = p + 1; q < nph; q++) {
+            size_t c = 0;
+            for (size_t k = 0; k < n / 8 + 1; k++) c += (size_t)__builtin_popcount(ph_bm[p][k] & ph_bm[q][k]);
+            if (c) { printf("%s%s.%s=%zu", first ? "" : ";", phname[p], phname[q], c); first = 0; }
+        }
+        if (first) printf("-");
         for (int p = 0; p < nph; p++) {
             long l = -1, h = -1;
             for (size_t o = 0; o < n; o++) if ((ph_bm[p][o >> 3] >> (o & 7)) & 1) { if (l < 0) l = (long)o; h = (long)o; }
