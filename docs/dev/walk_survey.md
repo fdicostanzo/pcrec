@@ -16,7 +16,55 @@ forward and then the match backward; the answer needs the match alone.
 
 ## 0. Answers first
 
-@@HEADLINE@@
+**Yes: there are several other classes. Two are real, bench-sized and unowned, one is a
+latent cliff, and three of the brief's candidates are refuted.** Ranked by bench impact
+(§3):
+
+1. **K4, the reverse pass re-deriving a start the forward scan already landed on.** This is
+   the biggest unowned class (FINISHER).
+   - On a token-shaped find-all (`\w+`, utf8 `.`, `\p{L}+`), every match starts where the
+     start-byte skip loop stopped, yet RECOVER's `reverse-pass` row walks each match back to
+     find that start.
+   - Population: 176 of 343 bench patterns (51%) and 1,362 corpus patterns. On bench
+     throughput cells, 85.7% of all reverse-pass bytes are landing starts.
+   - Twin: an answer-identical hand-twin (start = landing) is **20-42% faster** on three
+     bench throughput cells (two runs; 34-42% except one noisy `\w+` reading).
+   - **K3**, the fixed-width sibling (start = end − w; Frank's own D156 point), is
+     **36-37% faster** on a dense literal find-all.
+   - Both are RECOVER-slot rows that know the start without walking (F1).
+2. **K1 (end-pinned, [OPT-REVEND]) and K11 (the attempt scan, [OPT-ATTEMPT-SPLIT])** are
+   real and already owned. This survey adds the byte view: K11 re-reads 2.15 B/B.
+3. **K5m, find-all re-entry.** Each call re-reads its predecessor's lookahead, and a
+   bounded-width pattern steps past a final state. It reaches the most patterns (62% bench,
+   67% corpus) but is about one byte per call. Bench estimate 21.7 ms (upper), concentrated
+   in dense utf8 cells. Unowned; BOONIES (F4).
+4. **K12 (+ K7), the forward machine stepping where a rare inner landmark could be
+   scanned.** 23 bench patterns (`loglines/ipv6`, `altwide/sfx-*`, `\S+@\S+`), est 15.8 ms.
+   This is [ENG-TACTICS]' reverse-inner population, now measured (F3).
+5. **K5, a LATENT QUADRATIC in the caseless required-run gate under find-all.**
+   - The S4 two-stream arm restarts both `memchr` streams on every call. When one case
+     variant is absent from the text (lowercase prose or logs), each call scans to the end.
+   - `(?i)cat` on 1 MiB of lowercase text is **~200x** slower than `-fno-req-run-fold`
+     (190-210 ms vs 0.95-1.02 ms); `(?i)error` on a lowercase log is **23-26x** slower.
+   - The bench's subjects hide it (both variants occur), so its bench weight is small. 11
+     bench and 61 corpus patterns carry the arm. A known-issues entry and a linear fix shape
+     are F2.
+6. **Refuted as populations:**
+   - start-anchored reverse (K2: 0 cells; [OPT-5] STEP 2 covers it);
+   - the match regime re-deriving a known start (K8: real, but microseconds on the bench's
+     ≤ 5 KB match subjects);
+   - the hybrid VM re-walking the DFA-proved span (K9: required for captures, 2.7% of its
+     cells' loads).
+   - K6, multi-stream pre-check scans, is real but `memchr`-cheap.
+   - K10, VM backtracking, is the largest byte count and is the algorithm, not a pass.
+
+The instrument counts every subject load of the compiled artifact by phase (§1). It was
+validated before use (§2):
+- the known gratuitous `\d+$`: 1,048,585 bytes against its REVEND twin's 8;
+- tight cases: 4 and 1 bytes;
+- two planted passes: each seen, at `n` extra;
+- gcov: exact agreement;
+- K4/K5's own measures: they drop to 0 under the twin or arm that removes the walk.
 
 ## 1. Method
 
@@ -148,7 +196,20 @@ gratuitous bytes per subject byte on the representative subjects. "twin" is the
 answer-checked hand-twin timing of §5 (`results/twin_timing.txt`, scratch tier: Ryzen
 7700X, one core, a box at load ~12-24 from other lanes, best of 5).
 
-@@TABLE@@
+| rank | class | D156 role | bench cells / patterns (auto-caps) | est_ms (upper) | representative G/n | twin | corpus patterns | owner row |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **K4** reverse pass re-derives a start the forward scan LANDED on | finisher | 284 / 176 (51% of bench patterns) | 50.9 | utf8 `.` 1.00, `\w+` 1.16, `\p{L}+` 0.81 | **−20..−42%** (3 patterns, 2 runs) | 1,362 (32.7%) | **none**: RECOVER slot / D156 FINISH, F1 |
+| 2 | K1 end-pinned walks the whole subject | locator | 23 / 12 | 30.9 | `t-tail-*` 1.03-1.31 | revend form C: 1,048,585 → 8 bytes | 142 (3.4%) | [OPT-REVEND] (D156) |
+| 3 | K11 DFA attempt scan re-reads overlapping attempts | locator | 24 / 20 (one pattern carries it) | 24.9 | `942360-concat-sqli` 2.15 | the row's own: 8.83 vs re2 1.62 ns/B | 130 (3.1%) | [OPT-ATTEMPT-SPLIT] |
+| 4 | K5m find-all re-entry re-reads the lookahead (K5mb: bounded-width final-state overstep) | locator | 213 / 213 (K5mb 154) | 21.7 (1 byte/call: upper) | utf8 `\B` 1.08, utf8 `.` 0.71 | not twinned | 2,807 (67.3%) | **none**: F4 (BOONIES) |
+| 5 | **K12** the forward machine steps where a rare inner landmark could be scanned (with K7: a pre-check scanned the bytes first) | locator | K12 38 / 23 (static census 24); K7 161 / 92 | 15.8 (K12, excl. K1 overlap) + 6.1 (K7) | `loglines/ipv6` 0.64, `altwide/sfx-*` 0.79, `\S+@\S+` 1.12 | not twinned | K12 118 (static), K7 734 (17.6%) | [ENG-TACTICS] (D151 reverse-inner), F3 |
+| 6 | K6 one call scans the same bytes once per stream | locator gate | 126 / 68 | 4.6 (memchr: upper) | `union-select` 1.12, `ci-ascii-control` 1.03 | — | 293 (7.0%) | [MEMFN] kernels |
+| 7 | **K3** fixed-width reverse: start = end − w | finisher | 130 / 74 | 3.7 | `lit-l2` 0.28, `year4` 0.19 | **−36..−37%** (`abcd`) | 1,002 (24.0%) | D156 rule; [OPT-5-PERIODK] part; F1 |
+| 8 | **K5** the caseless run gate restarts every find-all call: LATENT QUADRATIC | locator gate | 3 / 3 trigger; 11 at risk | 2.7 on the bench | `mod-i` 3.05 | **200x / 23-26x off-bench** | 32 trigger, 61 at risk | [OPT-LITSCAN] S4; F2 (known-issues) |
+| — | K9 hybrid finisher re-walk | finisher | 82 / 55 | 2.7 | 0.1 | — | 1,140 | required for captures |
+| — | K8 match regime re-derives a known start | locator | 20 / 20 | 0.01 | 0.98 on ≤ 5 KB | — | 393 | [ENG-ABS] fallback; no action |
+| — | K2 start-anchored reverse | finisher | 0 | 0 | — | — | 0 | [OPT-5] STEP 2 (shipped) |
+| — | K10 VM backtracking re-reads | both | 97 / 64 | 95.3 | backrefs 5-8 | — | 1,252 | algorithmic: not a gratuitous pass |
 
 The verdicts on the brief's candidate list:
 - CONFIRMED: K4 and K3 (the reverse pass where the start is already known), K5/K6/K7 (the
@@ -192,11 +253,11 @@ reverse bytes are `land_rev`.
 **Twin** (`landtwin.py`: record the skip loop's landing, delete the reverse block, start =
 landing). Answer-identical (span checksum) on the bench's own throughput subjects:
 
-| pattern | today | twin | change |
+| pattern | run 1: today → twin | run 2: today → twin | change |
 |---|---|---|---|
-| `\w+`, syntax `t-1m` | 3.03 ms | 2.00 ms | −34% |
-| utf8 `.`, utf8 `t-1m` | 8.14 ms | 5.28 ms | −35% |
-| utf8 `\p{L}+`, utf8 `t-1m` | 5.36 ms | 3.35 ms | −37% |
+| `\w+`, syntax `t-1m` | 3.02 → 2.43 ms | 3.54 → 2.16 ms | −20% / −39% (the noisiest cell) |
+| utf8 `.`, utf8 `t-1m` | 8.14 → 5.36 ms | 7.95 → 5.17 ms | −34% / −35% |
+| utf8 `\p{L}+`, utf8 `t-1m` | 5.46 → 3.32 ms | 5.49 → 3.18 ms | −39% / −42% |
 
 **What makes it exact.**
 - A landing `L` is the first candidate at or after `search_from`. If any match starts at
@@ -281,10 +342,21 @@ auto-caps cells.
 - `bak-k-named`: 0.83.
 
 **K12: the inner landmark.** `k12_census.py` lists the patterns with a necessary byte or run
-at least 16x narrower than the start set, on the DFA route or a VM hybrid: @@K12_POP@@.
+at least 16x narrower than the start set, on the DFA route or a VM hybrid: 24 of 343 bench patterns and 118 of 4,191 corpus patterns (`results/k12_*.tsv`).
 `m_gap` (`wsdrv5.c`) counts the forward machine's bytes stepped before each call's match
 start. A reverse-inner walk would replace those steps with one `memchr` for the landmark.
-Measured: @@K12_EV@@.
+Measured: 38 auto-caps bench cells on 23 patterns. Excluding the cells K1
+already owns, the estimate is 15.8 ms. The top cells:
+
+| cell | G/n | today | best other |
+|---|---|---|---|
+| `loglines/ipv6` throughput | 0.64 | 10.5 ms | 7.5 ms |
+| `altwide/sfx-64` (a shared suffix) | 0.79 | 3.2 ms | 0.85 ms |
+| `altwide/sfx-256` | 0.80 | | |
+| `\S+@\S+` | 1.12 (K7 0.97 on the same bytes) | | |
+
+Corpus: the static census's 118 patterns. The corpus ran without `m_gap`, so its K12 is
+counted statically and not measured.
 
 **Owner.** [ENG-TACTICS] (D151's reverse-inner, re-scoped 2026-10-06 as one `handoff-rev`
 row after the start-table fold; on the next [OPTLOOP] cycle's candidate list). The K82
@@ -322,14 +394,14 @@ When one variant is ABSENT from the text (the uppercase one in lowercase prose o
 
 **Bench.** Three cells (`mod-i`, `mod-r`, `ci-strasse`), G/n up to 3.05. On the bench's own
 subjects both variants occur often enough that the fold still wins: `(?i)cat` on syntax
-`t-1m` costs 0.53 ns/B against 0.71 with `-fno-req-run-fold`.
+`t-1m` takes 552 / 542 µs against 741 / 695 µs with `-fno-req-run-fold`.
 
 **Off the bench** (`run_twins.sh`, answer-identical):
 
 | pattern, subject | fold (today) | `-fno-req-run-fold` | ratio |
 |---|---|---|---|
-| `(?i)cat`, 1 MiB lowercase (47,663 matches) | 190 ms | 1.0 ms | 191x |
-| `(?i)error`, a 1 MiB lowercase log (3,038 matches) | 12.5 ms | 0.54 ms | 23x |
+| `(?i)cat`, 1 MiB lowercase (47,663 matches) | 190 / 210 ms | 0.95 / 1.02 ms | 200x / 206x |
+| `(?i)error`, a 1 MiB lowercase log (3,038 matches) | 12.5 / 13.5 ms | 0.48 / 0.60 ms | 26x / 23x |
 
 **Population.** Every caseless required run on the pair arm: 11 of 343 bench patterns (three trigger on the bench's own subjects), 61 of 4,171 corpus patterns (32 trigger on the synthesized subjects).
 
@@ -345,7 +417,7 @@ Filing suggestion: §7 F2 (a known-issues entry with a fix shape).
 - Corpus: 1,002 of 4,171 patterns (24.0%).
 
 **Twin** (`landtwin.py --fixed 4`, start = end − 4): `abcd` find-all on `litrun mat-l4`
-goes 342 µs → 215 µs (−37%), answer-identical.
+goes 342 → 215 µs and 335 → 214 µs in the two runs (−36..−37%), answer-identical.
 
 **Owner.** D156 states the rule: "A fixed-width pattern's span is fully determined by the
 end". [OPT-5-PERIODK] carries the counted-repeat special case ("multi-edge reverse-pass
@@ -361,12 +433,17 @@ elision, start = end − SUM(count_i)"). No row carries the general one. Filing 
 | K9 hybrid finisher re-walk | 82 auto-caps cells, 2.7% of their loads | required for captures |
 | K10 VM re-reads | 97 auto-caps cells, the largest bytes: the backreference family (`bak-*`, `doubled-word`, `mod-j-uc`) at T/LB 7-10 | the backtracking algorithm, not a pass a fact removes; recorded |
 
-## 5. The twins (`results/twin_timing.txt`)
+## 5. The twins (`results/twin_timing.txt`, `results/twin_timing_run2.txt`)
 
-Scratch tier: Ryzen 7700X, `taskset` to one core, other lanes loading the box (load1 12-24),
-best of 5 (best of 3 for K5), three interleaved repeats. Every line carries a span checksum,
-and each twin's checksum equals its artifact's. The table in §3 quotes the best repeat; the
-file has all three.
+Scratch tier:
+- Ryzen 7700X, `taskset` to one core;
+- other lanes loading the box (load1 11-12 at the start of each run);
+- best of 5 (best of 3 for K5), three interleaved repeats per run, two runs eleven minutes
+  apart.
+
+Every line carries a span checksum, and each twin's checksum equals its artifact's on every
+line. The tables quote each run's best repeat. The `\w+` cell's two readings (−20% / −39%)
+show the box's noise: quote the range, not a point.
 
 ## 6. The residual: what no class explains
 
@@ -397,10 +474,10 @@ of the classes above.
   - The non-fact form of `landing` (an anchored attempt at each landing) is a selection
     question, to measure separately.
   - The locate × finish design lane D156 charters is the natural owner.
-  - Measured: −34..−37% on the token find-alls, 85.7% of reverse bytes on bench throughput
-    cells.
+  - Measured: −20..−42% on the token find-alls (−36..−37% for `end-minus-width`), and 85.7%
+    of reverse bytes on bench throughput cells.
 - **F2. A known-issues entry for K5** (performance cliff, no wrong answer):
-  - Repro: `(?i)cat` / `(?i)error` find-all on lowercase text, 191x / 23x against
+  - Repro: `(?i)cat` / `(?i)error` find-all on lowercase text, ~200x / 23-26x against
     `-fno-req-run-fold`.
   - Fix shape (unmeasured): bound each stream's search by the other stream's pending hit,
     `memchr(B)` over `[pos, ha)` only, and treat "not found before `ha`" as "no B hit before

@@ -49,6 +49,13 @@ gcc 15.2), pcrec at the lane's main (`5e23b90c`, abi 71); pcrec-bench read only
   `PROBE` (`docs/dev/optloop/revend/revend_probe.c` built against
   `build/libpcrec.a`: end view and widths), `WSDRV`, `CONFIGS`.
 - `run_all.sh` — both populations at -j4 (writes `work/`).
+- `run_rest.sh` — the second half as actually run: the corpus RESUMED (`RESUME=1`,
+  after a ReDoS witness stalled the first pass) with a 20M VM step budget, then the
+  bench again under `wsdrv5.c` into `res_bench5.tsv` (its K1-K11 numbers reproduce
+  the first bench pass exactly; it adds `m_gap`).
+- `k12_census.py PCREC POP` — K12's static population: patterns whose necessary
+  landmark is at least 16x narrower than the start set (DFA route or VM hybrid).
+- `counts.py` -> `results/counts.txt` — the per-class pattern counts the doc quotes.
 - `bench_times.py REPORTS` — the bench's own set-grain pcrec medians per cell
   (newest report per set), used only to weight impact.
 - `analyze.py RES_BENCH RES_CORPUS TIMES OUTDIR` — the classes K1-K12, their
@@ -67,10 +74,13 @@ gcc 15.2), pcrec at the lane's main (`5e23b90c`, abi 71); pcrec-bench read only
 
 ## Results (verbatim)
 
-- `results/validation.txt`, `results/twin_timing.txt`
-- `results/summary.txt`, `results/cells_bench.tsv`, `results/cells_corpus.tsv`
-  — analyze.py's outputs over the committed run (`results/res_*.tsv.gz` are
-  the raw rows).
+- `results/validation.txt`; `results/twin_timing.txt` and `twin_timing_run2.txt`
+  (two runs, eleven minutes apart)
+- `results/summary.txt`, `results/cells_bench.tsv`, `results/cells_corpus.tsv.gz`,
+  `results/counts.txt` — analyze.py's / counts.py's outputs over the committed run.
+  `results/res_bench.tsv.gz` (= `work/res_bench5.tsv`) and `res_corpus.tsv.gz` are
+  the raw rows; `results/k12_*.tsv` the K12 census; `results/bench_times.tsv` the
+  bench medians used as weights.
 
 `work/` (gitignored) holds the artifacts, subjects and raw rows; regenerate
 with `run_all.sh`. Regenerating moves every number in `docs/dev/walk_survey.md`.
