@@ -11,7 +11,7 @@ are: T2 rows for the first, one predicate in T1 rows 3 and 6 for the second.
 |---|---|
 | `3a991688` | [DEC-VAR-ATTRIB] code: T2 `var` becomes construct row 3 (`no-variable`), `var-nullable` deleted, `size-dropped` row added (`no-size-cap`), the up-front ask is `empty_admits` for every pattern |
 | `d4c2b5cb` | [DEC-COLLAPSE-WASTE] code: `fit_collapse_can_help`, asked by `sel1-collapse` and `prefilter-collapse` |
-| `227ac344` | spec hunks (match_api §6.3, ir_listing, tuning §2.17/§4), fbt and prefilter witnesses, row_reach zeros, emit_sweep tokens, the listing manifest, the sabotage re-aims plus S674/S675, the CLAUDE.md files |
+| `227ac344` | spec hunks (match_api §6.3, ir_listing, tuning §2.17/§4), fbt and prefilter witnesses, row_reach zeros, emit_sweep tokens, the listing manifest, the sabotage re-aims plus S697/S698, the CLAUDE.md files |
 | `1e9ba027` | abi 68 -> 69: `PCREC_ARTIFACT_ABI`, `ABI_EXPECT` and its ledger, the match_api guard and §6 change-log entry, the codegen CLAUDE ledger |
 | `365caa6c` | recursion identity (B) FILEPIN self-pinned to `1e9ba027` |
 | `7480aa50` | `docs/design/dec_fallback/collapse_waste/`: the mover manifest, the attempt-count census and the compile timing |
@@ -157,17 +157,17 @@ timed: no -O2 variant binaries were built for them.
 
 ## 6. Sabotage
 
-- **New:** S674 (`size-dropped` never applies) and S675
+- **New:** S697 (`size-dropped` never applies) and S698
   (`fit_collapse_can_help` always true).
 - **Re-anchored:** S272 and S612.
 - **Re-aimed, contract inverted by ruling:** S639 (F1 back: the var row
   gets the decline cell), S640 (var defers to `-fno-prefilter`) and S625 (the
   admit record names `var` as `linked-call`).
 - **Witness moved:** S641.
-- **Solo runs (`run_sabotage_matrix.sh S674 S675 S639 S640 S625`):** 5 rows,
+- **Solo runs (`run_sabotage_matrix.sh S697 S698 S639 S640 S625`):** 5 rows,
   unexpected 0, all DETECTED:
-  - S674: fallbacktable 2 fail, prefilter 1 fail;
-  - S675: fallbacktable 7 fail;
+  - S697: fallbacktable 2 fail, prefilter 1 fail;
+  - S698: fallbacktable 7 fail;
   - S639: 1 fail;
   - S640: 1 fail;
   - S625: 3 fail.
@@ -223,7 +223,7 @@ mech's is its `== mech run COMPLETE` trailer.
   - §4.5: row `size-dropped` lists `no-size-cap` (2 utf8 patterns).
   - Declared movers: `collapse_waste/out/`; listing
     `listing_declared_decattr.tsv`.
-  - S674 new; S639/S640/S625 re-aimed; S272/S612 re-anchored.
+  - S697 new; S639/S640/S625 re-aimed; S272/S612 re-anchored.
 - [DEC-COLLAPSE-WASTE] STATE:done (lane decattr, 2026-10-09, form (a), same
   abi event):
   - `fit_collapse_can_help` on T1 rows 3 and 6; classes (i)/(ii) are no
@@ -234,4 +234,4 @@ mech's is its `== mech run COMPLETE` trailer.
     −31%, lowdfa −9% on the affected population (scratch tier).
   - Movers: `VM_PREFILTER_WHY` figure on 2 shipped-limit utf8 artifacts
     (218 at lowsize); the `-fprefilter` refusal figure on the same 2.
-  - F-B3 is structurally unreachable. S675 is new; S641's witness moved.
+  - F-B3 is structurally unreachable. S698 is new; S641's witness moved.
