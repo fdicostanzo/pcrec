@@ -21,7 +21,7 @@
 # SAB_REACH: on the clean tree the VM's 3-byte literal run is one `memcmp`
 # under the deny, so the plant meets a denied run.
 SAB_ID="S570-kit-runcmp-deny-ignored"
-SAB_FILE="memfn/src/runcmp.c"
+SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="codegen"
 SAB_DESC="the kit's run-compare row walk ignores MF_D_RUN_OVERLAP, so -fno-run-overlap artifacts still carry word compares, their helpers and a non-zero RUN_WORDS"
 SAB_DOC_FIGURE="Validated by plant at landing (docs/dev/lanes/m1b_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S570."
