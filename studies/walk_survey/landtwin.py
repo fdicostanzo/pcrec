@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """walk_survey: the LANDING-START hand-twin (class K4; STUDY, not a build path).
 
-    landtwin.py IN.c OUT.c
+    landtwin.py IN.c OUT.c            K4: start = the skip loop's landing
+    landtwin.py IN.c OUT.c --fixed W  K3: start = end - W (a fixed-width
+                                      pattern, W bytes)
 
 For a DFA artifact (`RX_DFA_SCAN "unanchored"`, `RX_DFA_START "reverse-pass"`,
 prefix rx) whose pattern STARTS A MATCH AT EVERY START-SET BYTE (`\\w+`,
@@ -12,9 +14,16 @@ timed subject (fatime.c prints a span checksum). Every marker is asserted.
 """
 import re, sys
 src = open(sys.argv[1]).read()
+fixed = int(sys.argv[4]) if len(sys.argv) > 4 and sys.argv[3] == "--fixed" else None
 def need(c, m):
     if not c:
         sys.exit("landtwin: " + m)
+if fixed is not None:
+    b0 = src.index("        size_t match_end_position = last_accept_position;\n")
+    b1 = src.index("        if (match_start_position == (size_t)-1) return 0;\n", b0)
+    src = src[:b0] + "        size_t match_end_position = last_accept_position;\n        size_t match_start_position = match_end_position - %d;\n" % fixed + src[b1:]
+    open(sys.argv[2], "w").write(src)
+    sys.exit(0)
 a = "    rx_forward_state forward_state = 0;\n"
 need(src.count(a) == 1, "forward_state init")
 src = src.replace(a, a + "    size_t rx_landing = search_from;\n")
