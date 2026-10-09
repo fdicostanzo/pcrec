@@ -32,7 +32,9 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   byte-identical to a serial run's, and `JOBS` defaults to `tests/lib/
   procs_default.sh`'s count / `PROCS` — [CORPUS-PCAP], the box's own
   performance-core count on darwin, nproc elsewhere — so
-  concurrent tree builds do not oversubscribe. In BOTH modes the summary now
+  concurrent tree builds do not oversubscribe. [TT-MECHPAR 2026-10-09] The row throttle is a slot pool: the next row
+  starts when ANY running row exits (it used to wait on the oldest row's pid,
+  so one slow head row serialised the list; docs/testing.md "[TT-MECHPAR]"). In BOTH modes the summary now
   guards its row count against the number of definitions requested: before
   this, a sabotage whose definition failed validation produced NO row and the
   denominator (`wc -l` of arrived rows) silently shrank — 19/19 reads as

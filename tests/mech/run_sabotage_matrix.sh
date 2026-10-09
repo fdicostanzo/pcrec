@@ -114,6 +114,8 @@
 #                   $MECH_SCRATCH/$SAB_ID tree; in parallel mode each writes
 #                   its matrix row to its own file and the rows are merged in
 #                   sabotages/ listing order, so the matrix stays diffable.
+#                   [TT-MECHPAR] rows are scheduled as a slot pool: the next row
+#                   starts when ANY running row exits.
 #                   In BOTH modes the row count is now guarded against the
 #                   number of sabotage definitions requested: a run that
 #                   produces no row (e.g. a definition failing validation) is
