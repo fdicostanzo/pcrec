@@ -190,7 +190,7 @@ one.
   `engine-route`, `size-term`, `prefilter-lang` are projected the same way**
   (`emit_fb_axis` over `pcrec_fb_list_row`): the fallback tables' `axlist`
   cells carry order, name, deny/force, lever and `desc` verbatim; only the
-  stamp macro stays here. `kind` is still `predicate` (B7 flips it). This file's own header
+  stamp macro stays here. **B7 (lane decfbB7, 2026-10-09): the declared listing commit.** The three axes are `kind=list` now; `engine-route` lists in the attribution walk's order (`declined-nullable` before `collapsed-prefilter`); F-B2's and `size-cap-retry`'s descs are corrected; `emit_fb_table_axis` lists T1 and T2 whole as the new `fallback` and `prefilter-admit` axes (`pcrec_fit_table_row`, `pcrec_pf_admit_table_row`: name, deny bit, a GENERATED desc, no stamp macro). 136 -> 157 rows, 46 -> 48 axes; declared in `docs/design/dec_fallback/listing_declared_B7.tsv`. This file's own header
   comment states in full what the dump proves (what the compiler THINKS
   its axes are) and what it does not (independent evidence that a stamp
   or flag behaves as described — `tests/registry/axes_registry_check.sh`

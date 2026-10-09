@@ -2509,6 +2509,19 @@ typedef struct {
  * last. Defined in src/core/compile.c over T1/T3/T4 and, through
  * `pcrec_pf_admits_list_row`, T2 and the `forced`/`selected` ends. */
 const FbList *pcrec_fb_list_row(const char *axis, int i);
+/* [DEC-FALLBACK] B7: A TABLE ROW AS A LISTED CANDIDATE. T1 (`fit_rungs[]`) and
+ * T2 (`pf_admits[]`) are also listed whole, one candidate per ROW, as the
+ * `fallback` and `prefilter-admit` axes (registry.md §6): `pcrec_fit_table_row`
+ * / `pcrec_pf_admit_table_row` fill the `i`th (from 0) row's name, caller
+ * deny bit and a `desc` GENERATED from the row's own cells (no prose beside
+ * the row to drift), and return false past the last. */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    char        desc[1024];
+} FbTabRow;
+bool pcrec_fit_table_row(int i, FbTabRow *out);
+bool pcrec_pf_admit_table_row(int i, FbTabRow *out);
 /* A row that lists nothing says so (an omitted `axlist` is a compiler
  * warning, not a silent empty cell). */
 #define FB_NO_LIST { { NULL, 0, NULL, 0, 0, NULL, NULL } }

@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 . "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (registry_check.c, pcre2_check.c)
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"  # [K37] "$TIMEOUT_BIN" bounds the B7 --list-axes calls
 KEEP="${KEEP:-0}"
 SANFLAGS="${SANFLAGS:-}"
 
@@ -665,19 +666,45 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # `RX_UNROLL_K_WHY` from compile.c's `cx.size_term_why` ternary) retired, 2
 # PASS lines each; their emitter half is tests/codegen/run_fallback_table.sh
 # (b)'s witnesses. Measured: 210 PASS, 0 failed.
-if [ "$axesn" -ne 210 ]; then
+# 210 -> 216 at [DEC-FALLBACK] B7 (lane decfbB7, 2026-10-09): T1 is listed
+# whole as the `fallback` axis, and its two rows that carry a deny bit
+# (`sel1-collapse`, `prefilter-collapse`: PCREC_NO_PREFILTER_COLLAPSE) get 3
+# checks each (macro/bit, cli flag, tuning.md heading). `prefilter-admit`
+# (T2) has no deny bit and adds none. Measured: 216 PASS, 0 failed.
+if [ "$axesn" -ne 216 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 210." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 216." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (210 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (216 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 210 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 216 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
+
+# ---- [DEC-FALLBACK] B7: the fallback axes' listed order and kind -----------
+#
+# `engine-route` lists in the ATTRIBUTION WALK's order (dec_fallback.md §6.2;
+# tuning.md §2.17's precedence sentence) and the five fallback axes are
+# `kind=list`. The literal order below is the spec sentence's, written here and
+# not read off the dump, so a table edit that reorders the listing fails.
+fbsel="$("$TIMEOUT_BIN" 60 "$PCREC" --list-axes | awk -F'\t' '$1=="engine-route"{printf "%s%s", (n++?",":""), $3}')"
+fbwant="forced,declined-nullable-default,declined-nullable,collapsed-prefilter,overflowed-dfa,overflowed-prefilter,size-cap-retry,selected"
+if [ "$fbsel" != "$fbwant" ]; then
+    echo "registry: engine-route lists '$fbsel', want the attribution order '$fbwant'" >&2
+    rc=1
+fi
+for fbax in engine-route size-term prefilter-lang fallback prefilter-admit; do
+    fbbad="$("$TIMEOUT_BIN" 60 "$PCREC" --list-axes | awk -F'\t' -v a="$fbax" '$1==a && $4!="list"{n++} END{print n+0}')"
+    if [ "$fbbad" -ne 0 ]; then
+        echo "registry: axis $fbax lists $fbbad row(s) whose kind is not 'list' (B7)" >&2
+        rc=1
+    fi
+done
+echo "registry: [DEC-FALLBACK] B7 listed order + kind checked"
 
 # ---- [LIM-1]: the numeric-limits table's own check (D90) -------------------
 #

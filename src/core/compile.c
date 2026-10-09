@@ -1021,7 +1021,7 @@ static const FitRung fit_rungs[] = {
       .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
       .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
       .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
-      .axlist = { { "engine-route", 3, "collapsed-prefilter", 0, 0, "",
+      .axlist = { { "engine-route", 4, "collapsed-prefilter", 0, 0, "",
                     "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)" },
                   { "engine-route", 5, "overflowed-dfa", 0, 0, "",
                     "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)" },
@@ -1050,7 +1050,7 @@ static const FitRung fit_rungs[] = {
        * retry's count-collapsed prefilter shipped and survived) stamped
        * `"selected"` — indistinguishable from a compile that never hit
        * any cap at all. Placed LAST among the "fell back" outcomes rather
-       * than beside `collapsed-prefilter` (order 3): that row's own
+       * than beside `collapsed-prefilter` (order 4 since B7): that row's own
        * `applies` text already reads "auto, a DFA build overflowed" —
        * true only of the [SEL-1] rung — and inserting a SIZE-rung outcome
        * between it and its neighbours would suggest the two rungs share
@@ -1061,7 +1061,7 @@ static const FitRung fit_rungs[] = {
        * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
        * DFA-overflow range at the C level). */
       .axlist = { { "engine-route", 7, "size-cap-retry", 0, 0, "",
-                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)" } } },
+                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false },
@@ -1334,6 +1334,53 @@ static const FbList *fb_find(const char *axis, int order, int *nmatch)
 const FbList *pcrec_fb_list_row(const char *axis, int i)
 {
     return fb_find(axis, i + 1, NULL);
+}
+
+/* [DEC-FALLBACK] B7: T1 listed whole, one candidate per row (internal.h's
+ * `FbTabRow`). The `desc` is built from the row's cells, so the listing
+ * states what the walk does and cannot drift from it. */
+static const char *fit_act_verb(FitAct a)
+{
+    switch (a) {
+    case FIT_FORCE_NEXT:     return "resume the --emit-facts force loop with its next ask";
+    case FIT_PROPAGATE:      return "propagate the allocation failure";
+    case FIT_TERM_NEXT:      return "the size term's trial catch: try the next K";
+    case FIT_SEL1_COLLAPSE:  return "retry with a prefilter from the count-collapsed language ([SEL-1])";
+    case FIT_SEL1_DROP:      return "retry with the prefilter dropped ([SEL-1])";
+    case FIT_UNROLL_RESCUE:  return "take the smaller unroll K the cap allows";
+    case FIT_COLLAPSE:       return "retry with a prefilter from the count-collapsed language ([OPT-4] size rung)";
+    case FIT_DROP_ANCHORED:  return "retry without the optional anchored match-here machine";
+    case FIT_DROP_PREMUL:    return "retry without the premultiplied DFA transition table";
+    case FIT_DROP_PREFILTER: return "retry without the VM hybrid's prefilter";
+    case FIT_REFUSE:         return "refuse the compile";
+    }
+    return "?";
+}
+
+bool pcrec_fit_table_row(int i, FbTabRow *out)
+{
+    if (i < 0 || (size_t)i >= sizeof fit_rungs / sizeof fit_rungs[0]) return false;
+    const FitRung *r = &fit_rungs[i];
+    static const struct { unsigned bit; const char *name; } labels[] = {
+        { FIT_L_SIZE, "size" }, { FIT_L_OVERFLOW, "overflow" }, { FIT_L_NOMEM, "nomem" },
+        { FIT_L_FORCING, "forcing" }, { FIT_L_OTHER, "other" } };
+    char on[64] = "";
+    size_t k = 0;
+    if (r->on == FIT_L_ALL) snprintf(on, sizeof on, "every");
+    else for (size_t l = 0; l < sizeof labels / sizeof labels[0]; l++)
+        if (r->on & labels[l].bit) k += (size_t)snprintf(on + k, sizeof on - k, "%s%s", k ? "," : "", labels[l].name);
+    const char *rep = r->repeat == FIT_REP_ONCE ? "once" : r->repeat == FIT_REP_MANY ? "many" : "final";
+    out->name = r->name;
+    out->deny = r->deny;
+    int n = snprintf(out->desc, sizeof out->desc,
+                     "%s; asked on the arrivals: %s; %s; --fast-or-fail %s; adds %d attempt%s; fires %s",
+                     fit_act_verb(r->act), on,
+                     r->degrading ? "degrading" : "not degrading",
+                     r->fof == FIT_FOF_IN ? "denies it" : "does not reach it",
+                     r->retries, r->retries == 1 ? "" : "s", rep);
+    if (r->note.what && n > 0 && (size_t)n < sizeof out->desc)
+        snprintf(out->desc + n, sizeof out->desc - (size_t)n, "; stderr note: %s", r->note.what);
+    return true;
 }
 
 #ifdef PCREC_CAND_TRACE
