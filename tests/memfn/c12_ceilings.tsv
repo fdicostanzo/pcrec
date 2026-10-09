@@ -31,13 +31,19 @@
 # `(?m)^` skip is the kit's (MLINE, memfn/src/pffind.c's pf_memchr_back), so
 # no memchr( is spelled outside the kit (the ratchet's end, integration.md
 # §R4.3.4).
+# M6's REPLACE (R-10) deleted the emit_vm.c walk-open row (1 -> 0): the
+# strided span loop is the kit's (VMSTRIDE); the same commit added the
+# emit_vm.c span-count row at 1, NOT a raise of an existing form's count
+# but a form the vocabulary had never seen (the cursor rung's lazy rmin
+# prefix, VMLAZY, listed `pending` by RULING Q-R10-7, main 2026-10-08).
 # A RAISE is never routine: it needs a ruling, named in the commit.
 #
-# The row count (3) and the total (3 forms; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
+# D147 add. 12 (N6 retired: vm_rev_emit's backward walk is a mirrored one-position VM step, not a search site) deleted the emit_vm.c walk-back row (1 -> 0) and its vocabulary line.
+#
+# The row count (2) and the total (2 forms; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/gen/emit_vm.c	walk-back	-	1	the VM's backward step chained by a jump (M2)
-src/gen/emit_vm.c	walk-open	-	1	the VM's open while loop (M2/M3)
+src/gen/emit_vm.c	span-count	-	1	the VM cursor rung's lazy rmin prefix, a counted span verify (VMLAZY, pending; Q-R10-7)
 src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)

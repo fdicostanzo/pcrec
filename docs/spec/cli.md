@@ -274,9 +274,13 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
   success. The diagnostic states the lifting trigger
   (`rx_info.pattern_len`) rather than leaving the limit silent.
 - **It composes with everything and changes only how `--pattern`'s VALUE is
-  read.** The artifact's own header comment carries the DECODED pattern.
-  In a mode that takes no `--pattern` at all (a file operand, any listing
-  surface) the flag has nothing to decode and is inert.
+  read.** The value is decoded once, before any mode runs, so every mode
+  that reads `--pattern` reads the DECODED pattern: the compile (the
+  artifact's own header comment carries it), `--emit-ir`, `--emit-facts`
+  and `--count-groups` ([K98]: until 2026-10-09 the three queries read the
+  raw escaped text). A value the decoder refuses is refused in every mode,
+  before any mode-specific check. With no `--pattern` (a file operand, a
+  `--list-*` table) the flag has nothing to decode and is inert.
 - `docs/spec/rxt_format.md`'s `pattern-esc` production is the format half
   and owns the escape table itself.
 
@@ -411,21 +415,56 @@ The line it prints names the unroll factor and its reason, the prefilter
 language, and a pointer to `tuning.md` — see `limits.md` for the full text and
 the reasoning.
 
-### `--fast-or-fail` — refuse rather than ship a slower artifact that fits
+### `--size-cap=refuse|degrade` — refuse rather than ship a slower artifact that fits
 
 **[PF-DROP] (D135, 2026-09-30).** When an artifact is over
 `--max-emit-code-bytes`/`--max-emit-bytes`, pcrec normally walks the
 size-cap ladder (`docs/spec/limits.md` §8, "The size-cap ladder") and ships
 the first smaller form that fits, each one slower than the form the cap
-refused. `--fast-or-fail` denies every rung the ladder marks DEGRADING —
+refused. `--size-cap=refuse` denies every rung the ladder marks DEGRADING —
 today all of them — so the compile REFUSES instead, with the ordinary size
-diagnostic. One bit, `PCREC_FAST_OR_FAIL` (bit 41), for library callers.
+diagnostic. `--size-cap=degrade` (the default, today's behaviour) walks the
+ladder; a later `--size-cap=` on the command line wins. Any other value is
+refused. The scope is the size-cap ladder ONLY: the `[SEL-1]` DFA-overflow
+rungs are outside it (an overflow is answered by `--engine=dfa` or
+`-fprefilter`). One bit, `PCREC_SIZE_CAP_REFUSE` (bit 41), for library
+callers; it replaces `PCREC_FAST_OR_FAIL` and the retired spelling
+`--fast-or-fail`, which has NO alias and is now an unknown option (pre-1.0,
+D118's `--source` precedent).
 
 It is a size POLICY, not a `-f` tuning axis: it selects no shape, and an
 artifact that fits is byte-identical with or without it (masked out of
 `rx_info.flags`). Each rung's own deny flag (`-fno-prefilter-collapse`,
 `-fno-size-term`) still works on its own. Raising a cap remains the way to
 keep the faster form AND compile.
+
+### `--memfn=OPTS` — the search-code kit's option string
+
+**[MEMFN] RQ-1 (2026-10-09).** Carries ONE opaque, comma-separated string to
+pcrec-memory-functions (`memfn/`), the in-tree kit that renders pcrec's
+search sites. A spelling is `no-NAME` (deny row NAME) or, for a row declared
+a pair, bare `NAME` (force it); the rows are the `memfn` section of
+`--list-axes` (`registry.md` §6). pcrec never splits, sorts or looks up an
+option: the kit owns the string's meaning.
+
+- **Validation** is the kit's (`mf_opts_check`), run ONCE per compile before
+  the parse, and its refusal text is shown unchanged after the compile's
+  usual `pcrec: ` lead (D26: the wording is the kit's). An empty string is
+  accepted and means none. Until the kit registers a row (the registry is
+  empty today) every non-empty string is refused as an unknown option.
+- **Carriers.** The `--memfn=OPTS` flag; a config's raw `pcrec --memfn=OPTS`
+  line (the same parser); `pcrec_options.memfn`, a `const char *`
+  (`lib/pcrec.h`), NULL or `""` for none. The string is copied by reference
+  into every delegated site's `opts`.
+- **Composition** (a string value option, `option_sets.md` §2.5a): on the
+  command line the later flag wins; across sources a config's value wins
+  over the command line's, SILENTLY.
+- **Inert where the layer is off.** A row of the kit's `simd` layer is
+  accepted and does nothing at `-fno-memfn-simd` (the default), so one
+  string can be written once for both builds. A scalar-layer row acts at
+  either setting.
+- **No flag bit, no `rx_info.flags` movement, no abi event**: with no
+  registered row the artifact is byte-identical with or without the flag.
 
 ### `--backtrack-frames=N`
 
@@ -1262,6 +1301,15 @@ Stated plainly rather than left for a stranger to discover by trial:
   either — see §1.
 
 ## Revision history
+
+- 2026-10-09 ([MEMFN] RQ-1): §1 gains `--memfn=OPTS` (and
+  `pcrec_options.memfn`), the kit's opaque option string; no artifact byte
+  moves.
+
+- 2026-10-09 ([SIZE-CAP-FLAG], Frank's ruling): §1 `--fast-or-fail` is
+  RENAMED `--size-cap=refuse|degrade` (default `degrade`); the old spelling
+  is retired with no alias; bit 41 is `PCREC_SIZE_CAP_REFUSE`. No artifact
+  byte moves.
 
 - 2026-09-30 ([PF-DROP], D135): §1 gains `--fast-or-fail` (bit 41), the
   switch that denies every degrading rung of the size-cap ladder.

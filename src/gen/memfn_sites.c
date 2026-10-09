@@ -139,6 +139,14 @@ StrBuf *pcrec_memfn_sink_sb(Ctx *cx, mf_sink *c)
 
 /* ---- building a site ------------------------------------------------------ */
 
+/* RQ-1: the kit validates the string, pcrec shows its refusal unchanged (D26). */
+void pcrec_memfn_opts_check(Ctx *cx)
+{
+    char err[256];
+    if (mf_opts_check(cx->opt->memfn, err, sizeof err) != 0)
+        pcrec_ctx_fail(cx, 0, "%s", err);
+}
+
 mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 {
     mf_site *s = pcrec_arena_alloc(&cx->arena, sizeof *s);
@@ -150,7 +158,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
     s->denies = pcrec_memfn_denies(cx->opt->flags);
-    s->opts = NULL;
+    s->opts = cx->opt->memfn;
     return s;
 }
 
@@ -352,18 +360,23 @@ mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h)
 
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
 
-/* The ADVANCE site's member hook: the caller's own class test, as written
- * (the byte expression the kit offers is never read: T4 stays pcrec's). */
+/* The ADVANCE site's member hook: the caller's own class test of position
+ * `term`, as written (the byte expression the kit offers is never read: T4
+ * stays pcrec's). */
 static const char *adv_member(void *u, uint32_t term, const char *byte_expr)
 {
-    (void)term;
     (void)byte_expr;
-    return ((const PcrecAdvance *)((const PcrecMfU *)u)->own)->member;
+    const PcrecAdvance *a = ((const PcrecMfU *)u)->own;
+    return term < (uint32_t)a->stride ? a->member[term] : NULL;
 }
 
 mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                                   mf_hooks *h)
 {
+    if (a->stride < 1 || a->stride > MF_MAX_TERM)
+        pcrec_ctx_fail(cx, 0, "internal error: an ADVANCE site of row %s states "
+                       "stride %d (1..%d; no stride is presumed)",
+                       pcrec_deleg_sites[id].id, a->stride, MF_MAX_TERM);
     mf_site *s = pcrec_memfn_site(cx, id);
     s->form = MF_FORM_STMT;
     s->op = MF_OP_SKIP;
@@ -374,15 +387,17 @@ mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
     s->consumer = MF_C_ENGINE;
     s->span_hi = a->span;
     s->count_by_caller = a->count != NULL;
-    s->pred.nterm = 1;
+    s->pred.nterm = (uint8_t)a->stride;
     s->pred.need = MF_REQUIRED;
-    pcrec_memfn_term_set(&s->pred.term[0], 0, a->set, 0, MF_REQUIRED);
+    for (int i = 0; i < a->stride; i++)
+        pcrec_memfn_term_set(&s->pred.term[i], i, a->set + 256 * (size_t)i, 0,
+                             MF_REQUIRED);
     PcrecAdvance *own = pcrec_arena_alloc(&cx->arena, sizeof *own);
     *own = *a;
     PcrecMfU *u = pcrec_arena_alloc(&cx->arena, sizeof *u);
     *u = (PcrecMfU){ .cx = cx, .site = s, .own = own, .indent = a->indent };
-    *h = (mf_hooks){ .more = a->more, .peek = a->peek, .step = a->step,
-                     .cursor = a->cursor, .count = a->count,
+    *h = (mf_hooks){ .s = a->subject, .more = a->more, .peek = a->peek,
+                     .step = a->step, .cursor = a->cursor, .count = a->count,
                      .count_start = a->count_start, .member = adv_member,
                      .indent = a->indent, .comment_tier = PCREC_CMT_NONESSENTIAL,
                      .u = u };

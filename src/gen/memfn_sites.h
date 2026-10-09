@@ -166,27 +166,36 @@ void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f);
 
 /* ---- an in-loop ADVANCE site ([MEMFN] R4h, M3) ---------------------------- */
 
-/* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN;
- * integration.md §15.7, §14.3): every hook is pcrec's TEXT, and `member` is
- * pcrec's own class test (T4, rule 6), which the kit pastes opaque. `set` is
- * the member test's byte set (256 bytes, nonzero = in), descriptive only.
+/* What an in-loop skip's builder read off its decision (STAY, EDGE, VMSPAN,
+ * VMSTRIDE; integration.md §15.7, §14.3): every hook is pcrec's TEXT, and
+ * each `member[i]` is pcrec's own class test of position i (T4, rule 6),
+ * which the kit pastes opaque. `stride` is W, the positions one step reads
+ * (1 for STAY/EDGE/VMSPAN, the body's width for VMSTRIDE): STATED by every
+ * builder, never presumed (Q-R10-12; 0 is refused). `set` holds W byte sets
+ * of 256 bytes each, position i's at `set + 256 * i` (nonzero = in),
+ * descriptive only; `member` holds W texts. `subject` is the subject's
+ * text, which the kit reads only at W > 1 (its own byte at offset i is
+ * subject[cursor + i], RULED Q-R10-4), NULL where nothing states it.
  * `count` names the caller's counter (declared and read by pcrec's text, so
  * count_by_caller is 1 where it is named) or is NULL for none; `span` is its
- * cap, MF_SPAN_UNBOUNDED for none. */
+ * cap in ITERATIONS (RULED Q-R10-5), MF_SPAN_UNBOUNDED for none. */
 typedef struct {
-    const uint8_t *set;
-    bool           reverse;
-    const char    *more, *peek, *step, *cursor, *member, *count;
-    long           count_start;
-    uint64_t       span;
-    const char    *indent;
+    int                stride;
+    const uint8_t     *set;
+    const char *const *member;
+    bool               reverse;
+    const char        *subject, *more, *peek, *step, *cursor, *count;
+    long               count_start;
+    uint64_t           span;
+    const char        *indent;
 } PcrecAdvance;
 /* The site and hooks for ADVANCE `a` under DELEG_SITES row `id`: STMT /
- * SKIP / ADVANCE over one SET term at offset 0, `empty` NOP (the range IS
- * `more`, Q-G2-5), the cursor read afterwards as a position. The caller
- * renders it through the door (`pcrec_memfn_emit`); the kit writes
- * `while ((more)[ && count < <span>ULL] && (member)) { step; [count++;] }`
- * at `a->indent`. */
+ * SKIP / ADVANCE over `a->stride` SET terms, term i at offset i (one at 0
+ * for every row but VMSTRIDE), `empty` NOP (the range IS `more`, Q-G2-5),
+ * the cursor read afterwards as a position. The caller renders it through
+ * the door (`pcrec_memfn_emit`); the kit writes
+ * `while ((more)[ && count < <span>ULL] && (m0)[ && (m1) ...]) { step; [count++;] }`
+ * at `a->indent`. A stride outside 1..MF_MAX_TERM fails the compile. */
 mf_site *pcrec_memfn_advance_site(Ctx *cx, DelegSite id, const PcrecAdvance *a,
                                   mf_hooks *h);
 

@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 # S511 ([MEMFN] R4a, lane memfnmanifest) -- A STALE PENDING ROW.
 #
-# A pending row's emitter is respelled so its one search form becomes a call
-# the vocabulary does not know (the shape a REPLACE commit has when it moves
-# the search into the kit and forgets to flip the row): the row stays
-# `pending` while its emitter spells nothing. Detector: C17 rule 4.
-# SAB_REACH_POP asserts the VMSTRIDE row is `pending` and names
-# `vm_stride_loop`.
+# A site whose search the kit renders is listed `pending` while its emitter
+# spells no search form (the shape a REPLACE commit has when it moves the
+# search into the kit and forgets to flip the row). Detector: C17 rule 4.
 # RE-AIMED 2026-10-06 ([MEMFN] R4c REPLACE, lane r4ccore): the plant was the
 # PRE row's one-byte pre-check (`emit_req_one_byte`) until PRE went
 # `delegated` at R4c; it moved to MLINE, a still-pending one-form emitter.
 # RE-AIMED 2026-10-08 ([MEMFN] M4 REPLACE, lane m4; ruling R1): MLINE went
-# `delegated` (emit_attempt's `memchr(` is the kit's), so the plant moves to
-# VMSTRIDE, still pending until M6: `vm_stride_loop` (src/gen/emit_vm.c) spells
-# one form, the open strided `while ((` (vocabulary walk-open), which the
-# plant respells as a kit-style call. Intent unchanged: the emitter stops
-# spelling its one form while its row stays pending (rule 4). The plant also
-# lowers C12's emit_vm.c walk-open group below its ceiling; that is arm
-# memfnforms', not this row's.
+# `delegated`, so the plant moved to VMSTRIDE's `vm_stride_loop`.
+# RE-AIMED 2026-10-08 ([MEMFN] M6 REPLACE, lane m6; RULED Q-R10-8): M6 deleted
+# `vm_stride_loop` (its anchor) and flipped VMSTRIDE to `delegated`, and the
+# pending rows left (N6, N7U, VMLAZY) are each one migration from leaving too.
+# NOTE 2026-10-08 (D147 add. 12, lane m6): N6 was RETIRED (not a search site);
+# the pending rows are now N7U and VMLAZY. The plant (VMSTRIDE) is unaffected.
+# So the plant moves to the MANIFEST: the delegated VMSTRIDE row is flipped
+# back to `pending`. Its emitters (vm_span_advance, vm_emit_span_scan) spell
+# no form, the kit renders the loop, so rule 4 fires. Intent unchanged: a
+# pending row whose emitter spells nothing. Durable: it needs only one
+# delegated row whose emitters spell no form, which every REPLACE makes.
+# SAB_REACH_POP asserts the VMSTRIDE row is `delegated` and names
+# `vm_span_advance`.
 SAB_ID="S511-c17-stale-pending-row"
-SAB_FILE='src/gen/emit_vm.c'
+SAB_FILE='tests/memfn/site_manifest.tsv'
 SAB_SUITES="memfnmanifest"
-SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/memfnmanifest_report.md §4; re-aimed docs/dev/lanes/m4_report.md §6); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
+SAB_DOC_FIGURE='RE-MEASURED 2026-10-08 after D147 add. 12 (N6 retired; lane m6): 2 failed / 12 passed. HAND-MEASURED by lane m6 2026-10-08 at the re-aim (plant applied; docs/dev/lanes/m6_report.md section 6): memfnmanifest 2 failed / 13 passed (rule 4 on vm_span_advance and vm_emit_span_scan, pending VMSTRIDE). Earlier figures: docs/dev/lanes/memfnmanifest_report.md section 4, m4_report.md section 6. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S511.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_stride_loop[[:space:]].*[[:space:]]pending[[:space:]]|1'
-SAB_DESC='vm_stride_loop stops spelling its open strided while (( (respelled as a kit-style call) while the VMSTRIDE manifest row stays pending: a stale row'
-SAB_BEFORE='    pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= %s)", v->p, stride, bound);'
-SAB_AFTER='    pcrec_sb_printf(b, "        pcrec_mf_stride((%s_span_cursor + %d <= %s)", v->p, stride, bound);  /* SABOTAGE S511 */'
+SAB_REACH_POP='tests/memfn/site_manifest.tsv|^VMSTRIDE[[:space:]]+vm_span_advance,vm_emit_span_scan[[:space:]].*[[:space:]]delegated[[:space:]]|1'
+SAB_DESC='the VMSTRIDE manifest row is flipped back to pending while its emitters (vm_span_advance, vm_emit_span_scan) spell no search form, the kit rendering the loop: a stale pending row'
+SAB_BEFORE='	M6	delegated	vm_cursor_rep,vm_cls_test	'
+SAB_AFTER='	M6	pending	vm_cursor_rep,vm_cls_test	'

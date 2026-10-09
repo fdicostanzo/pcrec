@@ -1327,14 +1327,14 @@ echo
 # naming the subset construction is what tells a reader which of the two DFA
 # bounds they hit and therefore which direction to shrink in.
 # ---------------------------------------------------------------------------
-echo "== [PF-DROP] the size-cap ladder's last rung, and --fast-or-fail (D135) =="
+echo "== [PF-DROP] the size-cap ladder's last rung, and --size-cap=refuse (D135) =="
 # THE LAST RUNG. `(\p{Xwd})` under `-e utf8` is a VM hybrid whose byte-DFA
 # PREFILTER alone puts it over the total cap; the ladder's last rung drops the
 # prefilter and re-emits. Refused at 736a07f1 (the failing direction, and
 # what S420 restores). tests/uprops/run_uprops_tests.sh §5 holds what the
 # rescued artifact MATCHES; this section holds what compiling it does.
 #
-# THE SWITCH. `--fast-or-fail` denies every DEGRADING SIZE-CAP rung (all
+# THE SWITCH. `--size-cap=refuse` denies every DEGRADING SIZE-CAP rung (all
 # five today; `compile.c`'s `fit_rungs[]`, whose `fof` column keeps the
 # degrading [SEL-1] rows outside the switch's reach), so each rung's own witness must
 # REFUSE under it on the size cap, and a pattern that fits must be the same
@@ -1397,12 +1397,12 @@ pfd_ff() {
         bad "[PF-DROP/ff] $label: compiles at the default without the stamp /$rx/ — the witness no longer reaches its rung"
         return
     fi
-    if pfd_emit "$WORKDIR/pfd/f.c" "$label ff" --fast-or-fail "$@"; then
-        bad "[PF-DROP/ff] $label: COMPILES under --fast-or-fail — the switch did not deny this rung"
+    if pfd_emit "$WORKDIR/pfd/f.c" "$label ff" --size-cap=refuse "$@"; then
+        bad "[PF-DROP/ff] $label: COMPILES under --size-cap=refuse — the switch did not deny this rung"
     elif grep -qF "pattern too large" "$WORKDIR/pfd/f.c.err"; then
-        ok "[PF-DROP/ff] $label: taken at the default, refused on the size cap under --fast-or-fail"
+        ok "[PF-DROP/ff] $label: taken at the default, refused on the size cap under --size-cap=refuse"
     else
-        bad "[PF-DROP/ff] $label: refused under --fast-or-fail, but not by a size cap: $(head -1 "$WORKDIR/pfd/f.c.err")"
+        bad "[PF-DROP/ff] $label: refused under --size-cap=refuse, but not by a size cap: $(head -1 "$WORKDIR/pfd/f.c.err")"
     fi
 }
 pfd_ff "prefilter drop, (\\p{Xwd}) -e utf8" '^#define RX_VM_PREFILTER_WHY "size cap retry' \
@@ -1418,14 +1418,14 @@ pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}] -e utf8" '^#define RX_DFA_TABLE "inde
 # hybrid at 790 KB, close under the cap, so a switch that leaked into
 # selection would have room to show.
 if pfd_emit "$WORKDIR/pfd/y.c" "fits" -e utf8 --pattern '(\p{L})' &&
-   pfd_emit "$WORKDIR/pfn/y.c" "fits ff" -e utf8 --fast-or-fail --pattern '(\p{L})'; then
+   pfd_emit "$WORKDIR/pfn/y.c" "fits ff" -e utf8 --size-cap=refuse --pattern '(\p{L})'; then
     if cmp -s "$WORKDIR/pfn/y.c" "$WORKDIR/pfd/y.c"; then
-        ok "[PF-DROP/ff] a pattern that fits ((\\p{L}) -e utf8) is byte-identical under --fast-or-fail"
+        ok "[PF-DROP/ff] a pattern that fits ((\\p{L}) -e utf8) is byte-identical under --size-cap=refuse"
     else
-        bad "[PF-DROP/ff] (\\p{L}) -e utf8 differs under --fast-or-fail though it fits — the switch leaked into selection or rx_info.flags"
+        bad "[PF-DROP/ff] (\\p{L}) -e utf8 differs under --size-cap=refuse though it fits — the switch leaked into selection or rx_info.flags"
     fi
 else
-    bad "[PF-DROP/ff] (\\p{L}) -e utf8 does not compile with and without --fast-or-fail: $(head -1 "$WORKDIR/pfn/y.c.err")"
+    bad "[PF-DROP/ff] (\\p{L}) -e utf8 does not compile with and without --size-cap=refuse: $(head -1 "$WORKDIR/pfn/y.c.err")"
 fi
 
 echo "== [K7] the refusal's identity =="

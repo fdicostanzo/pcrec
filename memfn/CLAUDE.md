@@ -43,7 +43,13 @@ the handoff `MF_H_ON_DIFF`, the term kind `MF_T_REF`, the fact
 `mf_site.fold_kind` (NONE/ASCII/UCP) and the hooks `ref`/`reflen`/`fold`
 (pcrec's fold TEXT, `@` the byte); one renderer (`src/mismatch.c`) as two
 rows, the generic row (exact and expression folds) and `mismatch_inplace`
-(the in-place fold); kit-only, no pcrec byte moved.
+(the in-place fold); kit-only, no pcrec byte moved. M6 prep (R-10,
+2026-10-08, Q-R10-2..5) made it 8 with NO `MF_VOCAB` move: the STRIDED
+ADVANCE (Q-G2-9 relaxed on ADVANCE only: W REQUIRED SET terms, term i at
+offset i, forward only), `MF_MAX_TERM` 32, a strided site's kit-owned reads
+at `s[cursor + i]`, `span_hi` an iteration count; the generic row renders it
+(`stmt_advance`, one `(member)` per term), K1 `mf_ref_skip_blocks`; kit-only,
+no pcrec byte moved.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the
 subtree.

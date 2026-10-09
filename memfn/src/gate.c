@@ -467,6 +467,18 @@ static int cl_fold_kind(const gate_in *in)
     return CL_OTHER;
 }
 
+/* ADVANCE's step in positions (RULED Q-R10-2, MF_SITE_ABI 8): ONE, or MANY
+ * for a strided site, OTHER for a term count outside 1..MF_MAX_TERM. Off
+ * ADVANCE the term count is no step, so it reads as unstated and no row
+ * need serve it. */
+static int cl_stride(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (in->s->handoff != MF_H_ADVANCE) return -1;
+    unsigned w = in->s->pred.nterm;
+    return w == 1 ? CL_ONE : w >= 2 && w <= MF_MAX_TERM ? CL_MANY : CL_OTHER;
+}
+
 /* `s`, `n`, `lo`: IDENT iff a bare identifier. */
 static int ident_or_other(const char *text)
 {
@@ -479,6 +491,7 @@ static int cl_n(const gate_in *in)  { return ident_or_other(in->h ? in->h->n : N
 static int cl_lo(const gate_in *in) { return ident_or_other(in->h ? in->h->lo : NULL); }
 static int cl_ref(const gate_in *in)    { return ident_or_other(in->h ? in->h->ref : NULL); }
 static int cl_reflen(const gate_in *in) { return ident_or_other(in->h ? in->h->reflen : NULL); }
+static int cl_cursor(const gate_in *in) { return ident_or_other(in->h ? in->h->cursor : NULL); }
 
 /* The fold text: its shape, but OTHER wherever the site's fact says there is
  * no fold (fold_kind NONE, which every non-MISMATCH site has): a fold stated

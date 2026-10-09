@@ -20,7 +20,7 @@ boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
 | PF (R4g, M2: THE FIND statement of the DFA prefilter forms, the DFA hat and the VM hat's seek) | `memfn/src/pffind.c` | `find_site` (the description: the form off `DfaPf.scan`/the VM hat's table, `holdback` -> `end_back`, the set, the caller's `on_miss`), `pcrec_emit_find` (the use point), `find_table_name`; every guard, `return 0`, entry test, re-seed, comment and table in the `pf_emit_*` callers |
 | MLINE (M4: the attempt engine's `(?m)^` skip in `emit_attempt`) | `memfn/src/pffind.c` (row `pf_memchr_back`) | the guard `if (start > X && subject[start - 1] != b) {` and its `}`, X (`gseed`: `search_from` or `0`), `cpre` and every start decision (NEXT via `attempt_next_of`/`attempt_cand`, BOUND, `cand.byte`/`cand.offset`), described through `pcrec_emit_find` with `site` MLINE, the term at `-cand.offset` (-1), `floor` `start`, `on_miss` `break;` |
 | N7 (M7: the encoding seam's byte-wise span compare LOOP inside `<p>_span_match[_caseless]`) | `memfn/src/mismatch.c` (the generic row's exact/expression shapes, row `mismatch_inplace`) | `emit_residual_defs` (reads each backend's site-data row, `pcrec_enc_site`, renders the loop through `pcrec_memfn_emit` and hands the strings to `pcrec_enc_emit_defs`) and `pcrec_memfn_span_site` (the description: MISMATCH / ON_DIFF, the fold kind and text, the failure statement, the operands `PCREC_ENC_SPAN_*`); every other byte of the entries (signature, braces, final return, fold function and table, comments) is the BACKEND's text in `src/enc/` (D58 addendum 2) |
-| STAY, EDGE, VMSPAN (R4h, M3: the in-loop ADVANCE skips: the DFA stay skips, the scan edge's two loops, the VM span loop at stride 1) | `memfn/src/generic.c` (`stmt_advance`) | the builders `stay_advance`/`edge_advance` (emit_dfa.c) and `vm_span_advance` (emit_vm.c), each a `PcrecAdvance` read off its decision (the set, the direction's `more`/`peek`/`step`/cursor, pcrec's own member text, the caller's counter and cap), built by `pcrec_memfn_advance_site` and rendered through `pcrec_memfn_emit` from `dir_fwd_skip`/`dir_rev_skip`/`emit_scan_edge`/`vm_emit_span_scan`; every entry/guard line, the peeled guard and step, `scan_run_length`/`it_`/`lim_` declarations, the cursor init, the accept stores, the fall-through block, the stay/scan tables, the member texts (`scan_test`, the stay-table read, `vm_cls_test`) and comments; the STRIDED span loop stays pcrec's (`vm_stride_loop`, VMSTRIDE, M6) |
+| STAY, EDGE, VMSPAN, VMSTRIDE (R4h, M3: the in-loop ADVANCE skips: the DFA stay skips, the scan edge's two loops, the VM span loop at stride 1; M6: the VM span loop at stride W > 1, one SET term per position) | `memfn/src/generic.c` (`stmt_advance`) | the builders `stay_advance`/`edge_advance` (emit_dfa.c) and `vm_span_advance` (emit_vm.c), each a `PcrecAdvance` read off its decision (the set, the direction's `more`/`peek`/`step`/cursor, pcrec's own member text, the caller's counter and cap), built by `pcrec_memfn_advance_site` and rendered through `pcrec_memfn_emit` from `dir_fwd_skip`/`dir_rev_skip`/`emit_scan_edge`/`vm_emit_span_scan`; every entry/guard line, the peeled guard and step, `scan_run_length`/`it_`/`lim_` declarations, the cursor init, the accept stores, the fall-through block, the stay/scan tables, the member texts (`scan_test`, the stay-table read, `vm_cls_test`, one per position) and comments; `vm_span_advance` is the ONE VM builder for every stride (`vm_stride_loop` deleted at M6) and every `PcrecAdvance` states its `stride` (STAY/EDGE 1); the lazy arm's rmin prefix stays pcrec's (VMLAZY, pending, Q-R10-7) |
 
 The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
 `emit_req_set_rest`'s text, `emit_req_handoff`'s declaration line,
@@ -834,7 +834,7 @@ reason the D47.3 family and the prefilter force pair are both masked out of
 **[FLAGBITS] (2026-10-06, abi 65) THE MASK IS NOW DERIVED, so the sentence
 above describes a list that no longer exists:** `strategy_denials` is every
 `src/core/axes.def` bit except the `kept` set (the two engine-selecting
-denials and the two contract axes), plus `PCREC_FAST_OR_FAIL`. A new axis is
+denials and the two contract axes), plus `PCREC_SIZE_CAP_REFUSE`. `pcrec_memfn_site` copies `pcrec_options.memfn` ([MEMFN] RQ-1) into every site's `opts`; `pcrec_memfn_opts_check` is the once-per-compile kit validation. A new axis is
 masked on arrival; forgetting one in `kept` is the recoverable direction.
 Bits 18/21 were the last two strategy bits the old list lacked (K92). [ART-POSS-ARMS] (abi 66) made the engine-selecting denials three:
 `-fno-poss-ctx-follow` (tuning.md §2.44) joined `kept`, and `emit_vm.c` gained
@@ -1133,7 +1133,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   (`DELEG_SITE(id, op, handoffs, kinds, budget, use_ceiling)`: PRE, the
   pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
   the VM's literal-run compare, M1b; PF, the prefilter find, R4g; STAY,
-  EDGE and VMSPAN, the in-loop ADVANCE skips, R4h; MLINE, the attempt
+  EDGE and VMSPAN, the in-loop ADVANCE skips, R4h; VMSTRIDE, VMSPAN's
+  strided sibling (W SET terms, MF_SITE_ABI 8), M6; MLINE, the attempt
   engine's `(?m)^` skip, M4, described by `pcrec_emit_find` as PF is; N7,
   the encoding seam's byte-wise span compare loop, M7, described by
   `pcrec_memfn_span_site` from the backend's site data), the
@@ -3890,7 +3891,7 @@ SDR_NO_PREFILTER`); `N`/`CAP` are `Ctx.size_cap_bytes`/`size_cap_limit`, the
 refused attempt's figures the driver carried forward. No artifact that
 compiled before the rung existed carries the line, so no emitted byte of an
 existing artifact moved (corpus sweep in `docs/dev/lanes/pfdrop_report.md`).
-`rx_info.flags` masks `PCREC_FAST_OR_FAIL` (`emit_dfa.c`'s strategy mask).
+`rx_info.flags` masks `PCREC_SIZE_CAP_REFUSE` (`emit_dfa.c`'s strategy mask).
 
 ## K79 (abi 54, lane k7980): the emitters see the render PLACEHOLDER, not the caller's prefix
 

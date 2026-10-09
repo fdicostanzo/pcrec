@@ -12,6 +12,71 @@ Lane g2m4 brought G2 to MF_SITE_ABI 6 (R-7, M4): its report is
 **`G2M4_REPORT.md`**.
 Lane g2m7 brought G2 to MF_SITE_ABI 7 / MF_VOCAB 3 (R-8, M7: MF_OP_MISMATCH):
 its report is **`G2M7_REPORT.md`**.
+Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
+its report is **`G2M6_REPORT.md`**.
+
+## The MF_SITE_ABI 8 contract, as G2 tests it (lane g2m6, `G2M6_REPORT.md`)
+
+Written from memfn.h (the ADVANCE hooks, RULED Q-R10-2..5), integration.md section 14 and 15.9's
+contract sentences, and the cell's G2 files alone (the kit's source was not read).
+
+- **The site** (family **`stride`**, `G2_FAM_STRIDE`, `gen_fam_stride`, own RNG stream and id
+  range 1000000): STMT / SKIP / ADVANCE over W in {1,2,3,7,8,9,16,31,32} REQUIRED SET terms, term i
+  at offset i, forward, `end_back` 0, `empty` NOP or EXCLUDED. `G2_MAXT` is 32 (the header's
+  `MF_MAX_TERM`, 32 since ABI 8). The cap (`span_hi`, ITERATIONS) takes 0, 1, a middle value, one
+  under / at / one over the longest run a 130-byte window holds, a bounded value no run reaches, and
+  unbounded; the counter is none / kit-owned from 0 / kit-owned from 1 or 3 / caller-owned
+  (`count_by_caller`), and a cap with no counter named gives the kit a counter of its own. Per-position
+  sets are singletons, ranges, sparse, all full, mixed, one EMPTY position (first, last, middle) or one
+  FULL position; neighbours always differ, so a term tested against another position's set is caught.
+  The member hook is absent, pcrec's own read (`s[cursor + i]`, ignoring the byte expression the kit
+  offers) or the byte_expr form (so the kit must OFFER the right byte). The cursor is spelled five ways
+  (`cur`, `(cur)`, `g2c.pos`, `g2cv[0]`, `*g2cp`), `more` / `step` / `peek` four texts each (two outside
+  the lexical classes CONJ / EXPR_STMT / POSTFIX), `s` plain or not; W = 1 also with `s` and `cursor`
+  unstated. Non-identifier `s` / `cursor` texts are the enforced class **`hook-nonident`** and, unlike
+  the other families, a REFUSAL there is a failure (`STNONID`: the generic row parenthesizes).
+- **The reference** (`g2_ref.c` `g2_ref_stride`, a plain scalar byte loop from the generated sets; it
+  calls no kit function): from the cursor `lo` it advances by W while the cap (counter, starting at
+  `count_start`, < span_hi), `cursor + W <= n` and every `s[cursor + i]` in set_i hold. It returns why it
+  stopped (cap / `more` / failing term and its position). W1 defects 8 (the cap counted in BYTES, span_hi / W
+  iterations), 9 (`more` strict: the last exactly-fitting block dropped) and 10 (the terms in reverse
+  order) must fail.
+- **The subjects** (`g2_driver.c` `run_stride`): the window `n - lo` takes every value 0..130 up to 40
+  and, above that, the residues W-1, 0 and 1 modulo W and every fifth, at `lo` 0 and at a random small
+  `lo`; per window one subject whose every whole block holds, one per position i whose set is not full
+  with a block that fails at exactly i (three in four with every other position holding, so a kit that
+  ignores one term runs on), the failing block rotating over the first, the last, the middle and the one
+  at the cap, and random subjects whose bytes mostly hold. The bytes of a partial last block HOLD. EXCLUDED
+  sites are run only where a whole block fits (the range is non-empty).
+- **Reads** (contract: only `[cursor, cursor + W)` per iteration, only while `more` holds): the driver's three
+  layouts (guard page at `s + n`, under `s + floor` with floor == lo, exact-size heap at alignment 0..15) and a
+  fourth, TIGHT: when the oracle's run ends because `more` is false, the guard page starts AT THE CURSOR
+  (`st_tight`, `call_on`'s layout 0), so a read of a byte of the partial last block, which lies inside n,
+  faults. Where the run ends by the cap or a failing term the kit may read the whole block and the next one
+  (`more` holding), so the guard stays at n. `s` is NULL on alternate n == 0 calls. A call that does not
+  return (a kit loop that does not end) is stopped by a 10 s alarm and is a failure.
+- **Refusals** (`st_refusals`, generator; every one asserted, the field named where the header names it):
+  `reverse` at W > 1; offsets not 0..W-1 or out of order (`pred`); an OPTIONAL term, a RUN term, a REF
+  term (`pred`); nterm 33 / 34 / 255 (`pred` or `nterm`); a non-ADVANCE SKIP with nterm > 1 (`pred`; four
+  forms x W 2, 3, 32); MF_SITE_ABI - 1 and + 1; `s`, `cursor` and both unstated at W 2, 3, 9, 32 with the
+  member hook absent AND present (`s`, `cursor`); `peek`, `more`, `step` unstated; `count_by_caller` with
+  `count` unstated. Controls render (W = 32, W = 1 with `s` / `cursor` unstated, a zero cap, both counter
+  owners, W = 1 reverse). The cases the header leaves open (the whole predicate OPTIONAL, `end_back` 1)
+  are reported (`INFO probe stride`), never judged.
+- **Poison**: the existing differential covers strided sites; at W > 1 `cursor` is not poisoned (it is
+  used), nor is `count_start` under a cap with no counter named.
+- **K1**: `g2_k1.c` checks `mf_ref_skip_blocks` against G2's own loop (every W, a cap as the caller's
+  `min(n, K * w)`, W = 1 against `mf_ref_skip_in_set`, exact-size heap copies).
+- **Witnesses**: W1 8-10 above; W2 **12-16** (generator `--mutate K`, strided sites only, `--stride-only 1`):
+  12 / 13 / 14 force the last / first / middle term to ALWAYS hold (the member hook text and, for the kit's
+  own test, the set), 15 hands the kit a `more` that admits a block one byte short, 16 a cap one iteration
+  too many; a site is mutated only where that is not an equivalent mutant (`st_is_mutated`: no EMPTY set
+  anywhere, the term's set not full, a run long enough, the cap not already stopping the loop), and EVERY
+  mutated site must be killed. W3 `st-partial` / `st-over` / `st-under` / `st-clean`: planted functions
+  of one W = 3 site; `st-partial` reads a byte of the partial last block INSIDE n, which only the tight
+  layout can fault.
+- **Rows**: no new row; `FLOOR_ROWS` stays 15. Check (g) runs a generator process for the strided sites
+  alone (`--stride-only 1`) and holds `arms/generic` to a floor over it.
 
 ## The MF_SITE_ABI 7 contract, as G2 tests it (lane g2m7, `G2M7_REPORT.md`)
 
@@ -238,18 +303,26 @@ miss by `on_miss` having run.
   summed and printed as `row-chosen <table> <row> <n>`, derived from the trace
   only. Checks: (a) REACH_DROPPED 0, (b) every row n >= 1, (c) distinct rows >=
   the literal `FLOOR_ROWS`, (d) every process printed REACH lines; controls for
-  (b) and (d) run each time. Cost over plain `--quick` is within noise.
+  (b) and (d) run each time. Cost over plain `--quick` is within noise. Lane g2m6 adds (g): a generator
+  process for the strided sites alone (`--stride-only 1`), whose `arms/generic` count is held to a floor
+  (`ST_ROW_FLOORS`); `FLOOR_ROWS` did not move. W1 is now defects 1-10, W2 mutations 1-16 (12-16 strided,
+  judged "every mutated site killed"), and W3 gains the `st-*` witnesses.
+- **G2M6_REPORT.md** — lane g2m6's report (the STRIDED ADVANCE): commands, totals, what is covered
+  per charter item, rows, sabotage, the Q-G2M6 open questions, disclosure, charter checklist.
 - **G2M7_REPORT.md** — lane g2m7's report (MISMATCH): commands, totals, rows,
   sabotage, the Q-G2M7 open questions, disclosure, charter checklist.
 - **g2/g2.h** — G2's own site description (`g2_site`, `g2_pred`,
-  `g2_term`), the per-call outcome (`g2_out`), the miss values, and the
+  `g2_term`; `G2_MAXT` 32), the per-call outcome (`g2_out`), the miss values, and the
   helpers the wrapped text calls (`g2_touch`/`g2_acc` for `on_cand`,
   `G2_EV` for the hook-purity style). It does NOT include `memfn.h`.
+  Since lane g2m6: `G2_FAM_STRIDE` and the trailing `st_*` fields of `g2_site`
+  (emitted as designated initializers, strided sites only).
 - **g2/g2_gen.c** — the generator, and G2's only kit caller. It generates
   the original space (family `base`), the §15 shape families (`ofs`,
   `ofsrun`, `stmt`, `onebyte`, `gate`, `setrest`, `vmrun`, each with and
   without `MF_D_RUN_OVERLAP`, then again with non-identifier hook text as
-  PENDING; and `pf`, the PF shape above, and `mline`, the M4 shape), the semantic differential (`sem`,
+  PENDING; and `pf`, the PF shape above, `mline`, the M4 shape, `mismatch`, the M7 shape, and `stride`,
+  the M6 shape above), the semantic differential (`sem`,
   with four PF seeds), and the PENDING queue. The
   original space is:
   - term cells: every SET offset −8..8 × 12 set kinds; every RUN offset
@@ -271,13 +344,16 @@ miss by `on_miss` having run.
     libc-record reproducer.
   It also runs the poison differential on every hard site.
   `--mutate K` is W2's text mutation (K 8, lane g2m4: LOOP_EXIT sites only). K 9-11 (lane g2m7) mutate MISMATCH sites' hooks and generate
-  nothing else; `--mm-only 1` generates the MISMATCH family alone.
+  nothing else; `--mm-only 1` generates the MISMATCH family alone. K 12-16 (lane g2m6) mutate STRIDED sites
+  only (the hard ones that mutation changes non-equivalently); `--stride-only 1` generates the strided family
+  alone (and its refusal table).
 - **g2/g2_ref.c**, **g2/g2_ref.h** — the REFERENCE, the independent
   control: one plain loop per operation, from §14.3-§14.7. It handles
   OPTIONAL terms by answering for every subset and keeping, per site, the
   subsets still consistent ("fixed when the site is emitted"). It calls no
-  kit function, not even `mf_ref_*`. `--ref-defect K` (W1; K 4, lane g2m4, is the OLD range for a reads-below FIND) makes it wrong
-  on purpose.
+  kit function, not even `mf_ref_*`. `--ref-defect K` (W1; K 4, lane g2m4, is the OLD range for a reads-below FIND;
+  K 5-7 MISMATCH; K 8-10, lane g2m6, the strided ADVANCE's cap in bytes / strict `more` / reversed terms) makes it
+  wrong on purpose. `g2_ref_stride` is the strided ADVANCE's oracle.
 - **g2/g2_driver.c** — the driver. Per site it builds subjects: lengths
   0..129, a planted hit at every offset or at sampled ones, near-misses,
   and random subjects, each with two (lo, floor) pairs. It runs each in
@@ -290,14 +366,16 @@ miss by `on_miss` having run.
   lengths, hit offsets and alignments; per family, per semantic field, per
   form id; and the PENDING sites' own counts (never in the census).
   `floor <= lo` holds on every instance (Q-G2-6; clamped, counted). `--witness-overread` (W3) and
-  `--mutants` (W2) are the witness modes.
+  `--mutants` (W2) are the witness modes. A strided site (`G2_FAM_STRIDE`) goes to `run_stride`
+  instead (its own subjects, the fourth TIGHT layout, the `G2 stride ...` census lines and the
+  `G2 stride census:` machine line the runner holds to floors).
 
 - **g2/g2_k1.c** — K1: the kit's `mf_ref_*` reference functions against
   G2's own loops, written from the header's statement of what each
   answers. It covers every length 0..129 and alignment 0..15, with
   exact-size heap copies, so the ASan build sees an over-read. It is the
   only G2 file that links the kit's answers, and G2 never uses `mf_ref_*`
-  as its oracle.
+  as its oracle. Since lane g2m6 it also checks `mf_ref_skip_blocks` (the strided F5).
 
 Triage: `G2_TRACE=<site id>` makes the driver print every call of that
 site (layout U), with the subject.

@@ -308,6 +308,13 @@ Part of `make test` since M2.
   identifier errors K38 describes, while the DFA and 1-char-prefix cells
   stay green — the fix's binary passes all four. See
   docs/dev/known_issues.md K38 for the full mechanism and the buffer list.
+- **K98** (2026-10-09): `--pattern-esc` is decoded once in `main`, above
+  every mode, so `--emit-ir`, `--emit-facts` and `--count-groups` read the
+  DECODED pattern. Each is held both ways on `"\x28a\x29b"`: identical to
+  the decoded `(a)b`'s answer (the group count oracle-read from python
+  `re`), different from the raw `\x28a\x29b`'s (non-vacuity); an unquoted
+  value is refused by all three with the decoder's diagnostic. Six of these
+  fail against a binary built before the fix.
 
 ## Conventions
 
@@ -360,5 +367,9 @@ Note that case 8 SKIPS itself when python3 is absent (it uses python3 only to
 build the 9000-branch pattern string). python3 is therefore not a hard
 dependency of `make test`, but on a box without it this case silently stops
 guarding anything — the skip goes to stderr and the suite still exits 0.
+
+Also covers `--size-cap=refuse|degrade` (default identity, bad value, the
+retired `--fast-or-fail`) and `--memfn=` (empty accepted and identical, the
+kit's refusal text, a config's raw line winning silently).
 
 Maintenance: update this file when cases or covered surfaces change.

@@ -116,7 +116,12 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   scaffolding changes ARE an abi bump + identity re-pin, readers found BY
   GREP. Update the owning directory's CLAUDE.md for file adds/removes/role
   changes. Oracle-verify test expectations.
-- Mech/sabotage: check the highest existing S-id ON MAIN before numbering;
+- Mech/sabotage: take S-ids from the range YOUR BRIEF names. With no range,
+  the highest S-id on main is NOT enough: `memfn/docs/requests.md` reserves
+  ranges for the kit (`grep -n 'Sabotage ids' memfn/docs/requests.md`) and
+  ids inside a reserved range are not free even when unused (k100/decattr
+  took S674/S675 from the kit's S666-S675, 2026-10-09). Then check the
+  highest existing S-id ON MAIN and in worktrees/*/tests/mech before numbering;
   anchors are copied from `git show HEAD:<path>`; a re-anchor needs its
   intent re-verified.
 

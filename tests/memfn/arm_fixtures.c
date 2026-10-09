@@ -602,6 +602,126 @@ static int render_adv(const char *dir, const char *name, const mf_site *s, AdvH 
     return render_adv_x(dir, name, s, ah, NULL);
 }
 
+/* ---- the STRIDED ADVANCE (M6 prep, R-10: MF_SITE_ABI 8) ------------------- */
+
+/* One strided shape: W positions, position i's byte set and pcrec's own
+ * class test of it (NULL members: the kit's own set test, s[cursor + i]). */
+typedef struct {
+    const char *name;
+    int         caller;              /* `it_` is the caller's counter */
+    uint64_t    span;
+    const char *bound;               /* `subject_length` or `lim_` */
+    unsigned    w;
+    const char *lit;                 /* W literal bytes, or NULL: lo/hi ranges */
+    const char *lo, *hi;             /* per position, when lit is NULL */
+    int         own;                 /* 1: no member hook (the kit's own test) */
+} StrideFx;
+
+/* The hooks' user pointer for a strided fixture: an Fx first, then one
+ * member text per term. */
+typedef struct { Fx fx; const char *member[MF_MAX_TERM]; } StrideU;
+
+/* pcrec's member hook at a strided site: term i's own class test, opaque. */
+static const char *h_stride_member(void *u, uint32_t term, const char *byte_expr)
+{
+    (void)byte_expr;
+    return term < MF_MAX_TERM ? ((StrideU *)u)->member[term] : NULL;
+}
+
+/* The strided site: STMT / SKIP / ADVANCE over W REQUIRED SET terms, term i
+ * at offset i (RULED Q-R10-2), span_hi the iteration cap (Q-R10-5). */
+static mf_site stride_site(const StrideFx *x)
+{
+    mf_site s = adv_site(x->caller, x->span);
+    s.pred.nterm = (uint8_t)x->w;
+    for (unsigned i = 0; i < x->w; i++) {
+        mf_term *t = &s.pred.term[i];
+        if (x->lit) {
+            t_byte(t, (int)i, (unsigned char)x->lit[i]);
+        } else {
+            t_byte(t, (int)i, (unsigned char)x->lo[i]);
+            for (int b = (unsigned char)x->lo[i]; b <= (unsigned char)x->hi[i]; b++)
+                t->set[b >> 3] |= (uint8_t)(1u << (b & 7));
+        }
+        t->need = MF_REQUIRED;
+    }
+    return s;
+}
+
+/* Renders strided fixture `x` with the hook texts the VM's cursor rung
+ * writes at the site (vm_emit_span_scan, read off build/pcrec's output). */
+static int render_stride(const char *dir, const StrideFx *x)
+{
+    if (skip_fixture(x->name)) return 0;
+    mf_site s = stride_site(x);
+    char more[96], step[64];
+    snprintf(more, sizeof more, "rx_span_cursor + %u <= %s", x->w, x->bound);
+    snprintf(step, sizeof step, "rx_span_cursor += %u", x->w);
+    StrideU su = { { &s, NULL, "    " }, { NULL } };
+    char mtext[MF_MAX_TERM][96];
+    for (unsigned i = 0; i < x->w; i++) {
+        if (x->lit)
+            snprintf(mtext[i], sizeof mtext[i], "subject[rx_span_cursor + %u] == %d", i,
+                     (unsigned char)x->lit[i]);
+        else
+            snprintf(mtext[i], sizeof mtext[i], "(unsigned)(subject[rx_span_cursor + %u] - %d) <= %du",
+                     i, (unsigned char)x->lo[i], (unsigned char)x->hi[i] - (unsigned char)x->lo[i]);
+        su.member[i] = mtext[i];
+    }
+    mf_arena a = { NULL, a_alloc };
+    mf_art *art = mf_art_begin(&a, "rx", MF_P_PORTABLE_ONLY, s.denies);
+    Text def = { 0 }, use = { 0 };
+    mf_sink sd = sink_of(&def), sk = sink_of(&use);
+    mf_hooks h = { .more = more, .peek = "subject[rx_span_cursor + 0]", .step = step,
+                   .count = x->caller ? "it_" : NULL, .count_start = 0,
+                   .cursor = "rx_span_cursor", .s = "subject",
+                   .member = x->own ? NULL : h_stride_member,
+                   .indent = "        ", .u = &su };
+    mf_result res = { 0 };
+    if (mf_emit(art, &s, &h, &sk, &sd, &res) || mf_art_end(art)) {
+        fprintf(stderr, "%s: the kit refused: %s\n", x->name, mf_art_error(art));
+        return 1;
+    }
+    char path[1024];
+    snprintf(path, sizeof path, "%s/%s.def", dir, x->name);
+    FILE *f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(def.p ? def.p : "", f);
+    fclose(f);
+    snprintf(path, sizeof path, "%s/%s.use", dir, x->name);
+    f = fopen(path, "w");
+    if (!f) { perror(path); return 1; }
+    fputs(use.p ? use.p : "", f);
+    fclose(f);
+    char libc[256] = "?";
+    mf_sink sl = { .u = libc, .stamp = c_stamp, .stamp_int = c_stamp_int };
+    if (mf_stamps(art, &sl)) {
+        fprintf(stderr, "%s: mf_stamps refused: %s\n", x->name, mf_art_error(art));
+        return 1;
+    }
+    printf("%s\t%s\t%s\n", x->name, res.form_id, libc);
+    free(def.p);
+    free(use.p);
+    return 0;
+}
+
+/* The strided shapes (M6 prep): the five pinned under pins/m6_target/ (the
+ * VM's strided span loop today, cut from build/pcrec artifacts: the
+ * possessive arm over subject_length with and without the caller's `it_`,
+ * the greedy arm's MRL-folded `lim_`, utf8's W = 3, and W = 32, the
+ * cursor rung's bound), a range-member body, and one the kit tests itself
+ * (no member hook: its bytes are s[cursor + i], Q-R10-4). */
+static const StrideFx STRIDES[] = {
+    { "adv-vmstride-it",    1, 5, "subject_length", 2, "ab", NULL, NULL, 0 },
+    { "adv-vmstride",       0, MF_SPAN_UNBOUNDED, "subject_length", 2, "ab", NULL, NULL, 0 },
+    { "adv-vmstride-lim",   0, MF_SPAN_UNBOUNDED, "lim_", 2, "ab", NULL, NULL, 0 },
+    { "adv-vmstride-u8w3",  0, MF_SPAN_UNBOUNDED, "subject_length", 3, "a\xc3\xa9", NULL, NULL, 0 },
+    { "adv-vmstride-w32",   0, MF_SPAN_UNBOUNDED, "subject_length", 32,
+      "abcdefghijklmnopqrstuvwxyz012345", NULL, NULL, 0 },
+    { "adv-vmstride-range", 0, MF_SPAN_UNBOUNDED, "subject_length", 2, NULL, "a0", "z9", 0 },
+    { "adv-vmstride-own",   1, 7, "subject_length", 3, "x\xc3y", NULL, NULL, 1 },
+};
+
 /* ---- the gate cases (--gate, N3) ----------------------------------------- */
 
 /* One gate case: define with `hd`, then use (or call, for a FUNC site) with
@@ -891,6 +1011,46 @@ static void gate_cases(void)
     t_byte(&mk.pred.term[0], 0, 'x');
     mk.fold_kind = MF_FOLD_ASCII;
     gate_case("mm-fold-kind-find", &mk, &ph, &ph);
+
+    /* M6 prep (R-10, MF_SITE_ABI 8): the STRIDED ADVANCE. POSITIVE: W = 2
+       and W = MF_MAX_TERM render (the generic row, the only ADVANCE row),
+       with no member hook too (the kit's own s[cursor + i]). REFUSED, each
+       naming its field: `reverse` at W > 1, a term off its position, an
+       OPTIONAL term, a RUN term, a strided non-ADVANCE SKIP (Q-G2-9 holds
+       there), and an unstated `s` or `cursor` (the kit's own reads need
+       both at W > 1, Q-R10-4: R1 at the use). */
+    Fx sf = { NULL, NULL, "    " };
+    mf_hooks sh = { .more = "rx_span_cursor + 2 <= subject_length",
+                    .peek = "subject[rx_span_cursor + 0]", .step = "rx_span_cursor += 2",
+                    .cursor = "rx_span_cursor", .s = "subject", .indent = "        ", .u = &sf };
+    mf_site sw = stride_site(&STRIDES[1]);
+    sf.site = &sw;
+    gate_case("stride-render", &sw, &sh, &sh);
+    mf_site s32 = stride_site(&STRIDES[4]);
+    gate_case("stride-w32", &s32, &sh, &sh);
+    mf_site srv = sw;
+    srv.reverse = 1;
+    gate_case("stride-reverse", &srv, &sh, &sh);
+    mf_site sgap = sw;
+    sgap.pred.term[1].offset = 2;
+    gate_case("stride-gap", &sgap, &sh, &sh);
+    mf_site sopt = sw;
+    sopt.pred.term[1].need = MF_OPTIONAL;
+    gate_case("stride-optional", &sopt, &sh, &sh);
+    mf_site srun = sw;
+    t_run(&srun.pred.term[1], 1, "b", NULL);
+    srun.pred.term[1].need = MF_REQUIRED;
+    gate_case("stride-run-term", &srun, &sh, &sh);
+    mf_site sna = ofs_site();
+    sna.op = MF_OP_SKIP;
+    sna.pred = sw.pred;
+    gate_case("stride-not-advance", &sna, &hd, &hu);
+    mf_hooks shs = sh;
+    shs.s = NULL;
+    gate_case("stride-s-unstated", &sw, &shs, &shs);
+    mf_hooks shc = sh;
+    shc.cursor = NULL;
+    gate_case("stride-cursor-unstated", &sw, &shc, &shc);
 }
 
 int main(int argc, char **argv)
@@ -1193,6 +1353,10 @@ int main(int argc, char **argv)
         t->need = MF_REQUIRED;
         bad |= render_adv_x(dir, tgt[i].name, &s, tgt[i].h, &tgt[i].x);
     }
+
+    /* M6 prep (R-10, MF_SITE_ABI 8): the strided ADVANCE shapes */
+    for (size_t i = 0; i < sizeof STRIDES / sizeof STRIDES[0]; i++)
+        bad |= render_stride(dir, &STRIDES[i]);
 
     if (only && only_seen != 1) {
         fprintf(stderr, "arm_fixtures: --only %s matched %d fixtures\n", only, only_seen);

@@ -130,7 +130,7 @@ KEPT because the reflection surface must still say which one a caller got:
 the three ENGINE-SELECTING denials (§2.8, §2.9, §2.44) and the two CONTRACT axes
 (§2.23's startpos guard with its `align` value, §2.36's `-futf-check`), the
 latter two masked only under the `byte` encoding where they are inert.
-`--fast-or-fail` (D135, `limits.md` §8) is not an axis row and is masked
+`--size-cap=refuse` (D135, `limits.md` §8) is not an axis row and is masked
 too. The mask is derived from the axis table with "masked" as the default, so
 a new axis is masked the day it is added; each axis section below states what
 IT records instead (a stamp). `make test-codegen`'s `run_prechecks.sh`
@@ -382,7 +382,7 @@ stamps `RX_VM_PREFILTER "none"` with `RX_VM_PREFILTER_WHY "size cap retry,
 hybrid N > CAP"` — the one `"none"` that stamp is written beside, since it is
 the one no flag explains. The artifact is otherwise the `-fno-prefilter` one.
 Never under `-fprefilter` (the rung is not offered; the compile refuses), and
-denied with every other slower-to-fit rung by `--fast-or-fail`. Since `abi`
+denied with every other slower-to-fit rung by `--size-cap=refuse`. Since `abi`
 69 ([DEC-VAR-ATTRIB]) `--emit-ir`'s `prefilter` row says so too: its value is
 `no-size-cap`, not `no-fno-prefilter` (the rung drops the prefilter by
 OR-ing that flag into the retry's options, and the listing named the flag
@@ -1381,7 +1381,7 @@ decides.
   (`<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"`), so what
   this flag buys a caller is "never a superset prefilter", not "refuse". A
   caller who would rather be told their pattern is oversize than be handed
-  any slower artifact passes `--fast-or-fail` (`limits.md` §8, "The size-cap
+  any slower artifact passes `--size-cap=refuse` (`limits.md` §8, "The size-cap
   ladder").
 
 **TWO CONJUNCTS ARE CORRECTNESS AND NEITHER FLAG REACHES THEM.** The collapse

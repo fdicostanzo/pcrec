@@ -27,7 +27,7 @@ static uint64_t rnd(void)
     return z ^ (z >> 31);
 }
 
-static long pass, fail;
+static long pass, fail, sb_pass;
 static void check(int ok, const char *what, size_t n, size_t got, size_t want)
 {
     if (ok) { pass++; return; }
@@ -104,7 +104,66 @@ int main(void)
                 check(gv == want, "run_verify", n, (size_t)gv, (size_t)want);
             }
             free(heap);
+
+            /* lane g2m6, F5 STRIDED (MF_SITE_ABI 8): mf_ref_skip_blocks(s, n, sets, w) is j*w for the least j
+             * such that the block [j*w, j*w + w) is not wholly inside s[0..n) or some position i of it has
+             * s[j*w + i] NOT in sets[i]. A multiple of w; a cap of K iterations is the caller's n = min(n, K*w);
+             * w 1 is mf_ref_skip_in_set. The subject is built from the sets (so runs are long); exact-size heap
+             * copies at every alignment, so the ASan build sees an over-read of a partial last block. */
+            {
+                static const int WS[9] = { 1, 2, 3, 7, 8, 9, 16, 31, 32 };
+                size_t wv = (size_t)WS[rnd() % 9];
+                uint8_t sets[32][32];
+                for (size_t i = 0; i < wv; i++) {
+                    memset(sets[i], 0, 32);
+                    switch (rnd() % 6) {
+                    case 0: { unsigned b = (unsigned)(rnd() % 256); sets[i][b >> 3] |= (uint8_t)(1u << (b & 7)); } break;
+                    case 1: for (int k = 0; k < 32; k++) sets[i][k] = (uint8_t)(rnd() & rnd()); break;
+                    case 2: memset(sets[i], 0xFF, 32); break;
+                    case 3: if (rnd() % 8 == 0) break; /* else fall to a letter set */
+                    /* fallthrough */
+                    default: for (unsigned b = 'a'; b < 'a' + 3; b++) sets[i][b >> 3] |= (uint8_t)(1u << (b & 7)); break;
+                    }
+                }
+                uint8_t *hb = malloc(al + n + 1);
+                uint8_t *t = hb + al;
+                for (size_t p = 0; p < n; p++) {
+                    const uint8_t *st = sets[p % wv];
+                    unsigned b = (unsigned)(rnd() % 256);
+                    if (rnd() % 16) for (int tries = 0; tries < 256 && !in(st, b); tries++) b = (b + 1) & 255;     /* mostly a member */
+                    t[p] = (uint8_t)b;
+                }
+                for (int capi = 0; capi < 6; capi++) {
+                    /* capi 0: no cap; 1..5 a cap of K iterations: 0, 1, 2, the run's length, one more */
+                    size_t nn = n, jj = 0;
+                    while ((jj + 1) * wv <= n) {
+                        int okb = 1;
+                        for (size_t i = 0; i < wv && okb; i++) okb = in(sets[i], t[jj * wv + i]);
+                        if (!okb) break;
+                        jj++;
+                    }
+                    size_t K = capi == 1 ? 0 : capi == 2 ? 1 : capi == 3 ? 2 : capi == 4 ? jj : jj + 1;
+                    if (capi && K * wv < nn) nn = K * wv;
+                    size_t j2 = 0;
+                    while ((j2 + 1) * wv <= nn) {
+                        int okb = 1;
+                        for (size_t i = 0; i < wv && okb; i++) okb = in(sets[i], t[j2 * wv + i]);
+                        if (!okb) break;
+                        j2++;
+                    }
+                    size_t g2 = mf_ref_skip_blocks(t, nn, (const uint8_t (*)[32])sets, wv);
+                    check(g2 == j2 * wv, "skip_blocks", nn, g2, j2 * wv);
+                    sb_pass++;
+                    if (wv == 1) {
+                        size_t g1 = mf_ref_skip_in_set(t, nn, sets[0]);
+                        check(g1 == g2, "skip_blocks vs skip_in_set (w 1)", nn, g2, g1);
+                        sb_pass++;
+                    }
+                }
+                free(hb);
+            }
         }
+    printf("G2-K1 skip_blocks checks: %ld\n", sb_pass);
     printf("G2-K1 checks passed: %ld\nG2-K1 checks failed: %ld\n", pass, fail);
     return 0;
 }

@@ -2286,6 +2286,100 @@ else
     fail "K70: (?aD)\\d under -e utf8 did not compile (rc $wrc)" "$werr"
 fi
 
+# [K98] `--pattern-esc` IS HONOURED BY EVERY MODE THAT READS `--pattern`
+# (docs/dev/known_issues.md K98, found by lane decfbrev2 as F-B5). The decode
+# sat just above the compile, below the early returns of `--emit-ir` and
+# `--emit-facts` (and `--count-groups`, the third pattern-taking query), so
+# each described the RAW escaped text with rc 0: `"\x28a\x29b"` listed as
+# the capture-free DFA pattern `\x28a\x29b`. Each mode is held both ways:
+# the escaped spelling must answer exactly what the decoded one does, and
+# must NOT answer what the raw text does (else the case proves nothing).
+K98_ESC='"\x28a\x29b"'; K98_DEC='(a)b'; K98_RAW='\x28a\x29b'
+for k98m in --emit-ir --emit-facts; do
+    e_out="$(pcrec_run "$PCREC" --pattern-esc "$k98m" --pattern "$K98_ESC" 2>&1)"; e_rc=$?
+    d_out="$(pcrec_run "$PCREC" "$k98m" --pattern "$K98_DEC" 2>&1)"; d_rc=$?
+    r_out="$(pcrec_run "$PCREC" "$k98m" --pattern "$K98_RAW" 2>&1)"; r_rc=$?
+    if [ "$e_rc" -eq 0 ] && [ "$e_rc" = "$d_rc" ] && [ "$e_out" = "$d_out" ]; then
+        pass "K98: --pattern-esc $k98m lists the DECODED pattern ($K98_DEC), byte for byte"
+    else
+        fail "K98: --pattern-esc $k98m does not list the decoded pattern (rc $e_rc vs $d_rc)" "$(printf '%s' "$e_out" | head -3)"
+    fi
+    if [ "$r_rc" != "$d_rc" ] || [ "$r_out" != "$d_out" ]; then
+        pass "K98: $k98m answers differently for the raw text $K98_RAW (the case is not vacuous)"
+    else
+        fail "K98: $k98m answers the same for the raw and the decoded pattern; the witness proves nothing"
+    fi
+done
+# --count-groups, oracle-read: python `re` counts the decoded pattern's groups.
+k98_want="$(python3 -c 'import re; print(re.compile(r"(a)b").groups)')"
+k98_got="$(pcrec_run "$PCREC" --pattern-esc --count-groups --pattern "$K98_ESC" 2>&1)"
+assert_eq "K98: --pattern-esc --count-groups counts the decoded pattern's groups (python re)" "$k98_want" "$k98_got"
+k98_got="$(pcrec_run "$PCREC" --count-groups --pattern "$K98_RAW" 2>&1)"
+if [ "$k98_got" != "$k98_want" ]; then
+    pass "K98: --count-groups counts $k98_got for the raw text (the case is not vacuous)"
+else
+    fail "K98: --count-groups counts the raw text the same as the decoded one"
+fi
+# A value the decoder refuses is refused by every mode, never listed raw.
+for k98m in --emit-ir --emit-facts --count-groups; do
+    k98_err="$(pcrec_run "$PCREC" --pattern-esc "$k98m" --pattern '(a)b' 2>&1 >/dev/null)"; k98_rc=$?
+    if [ "$k98_rc" -eq 1 ] && printf '%s' "$k98_err" | grep -q -- '--pattern-esc:'; then
+        pass "K98: --pattern-esc $k98m refuses an unquoted value with the decoder's diagnostic"
+    else
+        fail "K98: --pattern-esc $k98m on an unquoted value: rc $k98_rc" "$k98_err"
+    fi
+done
+# [SIZE-CAP-FLAG] `--size-cap=refuse|degrade` replaced `--fast-or-fail`: the
+# default and `degrade` compile identically, a bad value and the retired
+# spelling are refused (no alias).
+rm -f "$WORKDIR/sc1.c" "$WORKDIR/sc2.c"
+pcrec_run "$PCREC" -p rx -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/sc1.c"
+pcrec_run "$PCREC" -p rx --size-cap=refuse --size-cap=degrade -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/sc2.c"
+if [ -s "$WORKDIR/sc1.c" ] && cmp -s "$WORKDIR/sc1.c" "$WORKDIR/sc2.c"; then
+    pass "--size-cap=degrade (after refuse) is the default: byte-identical"
+else
+    fail "--size-cap=degrade differs from the default or did not compile"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --size-cap=bogus -o "$WORKDIR/sc3.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q 'size-cap must be refuse or degrade'; then
+    pass "--size-cap=bogus is refused, naming the two values"
+else
+    fail "--size-cap=bogus was not refused as expected (rc $wrc)" "$werr"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --fast-or-fail -o "$WORKDIR/sc4.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "unknown option '--fast-or-fail'"; then
+    pass "--fast-or-fail is retired with no alias"
+else
+    fail "--fast-or-fail was not refused as an unknown option (rc $wrc)" "$werr"
+fi
+
+# [MEMFN] RQ-1 `--memfn=` carries ONE opaque string to the kit's validator.
+# Empty is accepted and moves nothing; a string the kit does not know is
+# refused with the KIT's text; a config's raw line wins over the CLI's,
+# silently (a string value option, option_sets.md 2.5a).
+rm -f "$WORKDIR/mf1.c" "$WORKDIR/mf2.c"
+pcrec_run "$PCREC" -p rx -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/mf1.c"
+pcrec_run "$PCREC" -p rx --memfn= -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/mf2.c"
+if [ -s "$WORKDIR/mf1.c" ] && cmp -s "$WORKDIR/mf1.c" "$WORKDIR/mf2.c"; then
+    pass "--memfn= (empty) is accepted and byte-identical to no flag"
+else
+    fail "--memfn= (empty) differs from the default or did not compile"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --memfn=no-nosuchrow -o "$WORKDIR/mf3.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "^pcrec: --memfn=: unknown option 'no-nosuchrow'"; then
+    pass "--memfn=no-nosuchrow is refused with the kit's own text"
+else
+    fail "--memfn=no-nosuchrow was not refused with the kit's text (rc $wrc)" "$werr"
+fi
+printf 'config mf\n  pcrec --memfn=no-fromfile\n\ntarget t = a_run with mf\n\npattern a+\nname a_run\nm "aaa" 0 3\n' > "$WORKDIR/mf.rxt"
+werr="$(pcrec_run "$PCREC" --memfn=no-fromcli -o "$WORKDIR/mf4.c" "$WORKDIR/mf.rxt" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "unknown option 'no-fromfile'" \
+   && ! printf '%s' "$werr" | grep -q "no-fromcli"; then
+    pass "a config's raw --memfn= reaches the kit and wins over the CLI's, silently"
+else
+    fail "config --memfn= did not win silently (rc $wrc)" "$werr"
+fi
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

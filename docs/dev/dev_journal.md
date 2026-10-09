@@ -26801,3 +26801,14 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 **Pacing:** at 89% of the subscription (resets 2026-10-09 7am local) Frank asked to dial back to one lane at a time across sessions. The kit held g2m6 and R-9's re-check panel until after the reset.
 
 **Next (after 7am):** [TT-MECHPAR] lane (sonnet); B7 (the declared listing commit, using B6's findings); the kit's g2m6 → M6 slot (R-10) and R-9's light re-check.
+
+## 2026-10-09 — session 101, morning (Linux dev box; manager)
+
+- Woke at 07:00 (alarm). Merged the kit's docs branches: lane/memfn-m7 tail (f27ff639), R-9 at ad3d9ea4 on lane/r9d (lane/memfn-r9 had been at a stale commit; the kit has tidied it). Filed R-11 (R4e′.0 then R4e′.0b, S686-S695).
+- **Refactor B COMPLETE.** [DEC-FALLBACK] B7 merged (09ce1b36). Its chain was red only on test-codegen's [K37] bare-call guard (B7's own two `--list-axes` calls), fixed by triage lane b7triage. Bench told in I-140. CLAUDE.md's watchdog row corrected: `-m` takes bytes unless suffixed.
+- **[TT-MECHPAR]** (lane mechpar): the cause was the PROCS>1 throttle waiting on the OLDEST row's pid, so one slow row closed every slot. The fix is a slot pool. The 71-row parallel arm took 1,618 s (B5 took 42 min) with unexpected 0. Frank's ruling replaces the serial control: the trailer's unexpected count is the verdict control, and timing piggybacks on the next serial mech run. Slot14 ran its 66 rows SOLO at 5554d668 (MECH_WALL 2,071 s). The same rows are re-running as ONE PROCS=4 slot-pool invocation in worktrees/mptime at that HEAD. The verdict comparison is pending.
+- Frank: "not next week, now" for the post-B queue. The lanes are delivered with heavy chains armed: k100 (K100 + K98 fixed, no abi event), clibundle ([SIZE-CAP-FLAG] `--size-cap=refuse|degrade` + RQ-1 `--memfn=`, 0 movers), decattr ([DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], ONE abi event 68 -> 69 "next at landing", var row moved to construct-row 3 by the backref precedent, accepted).
+- Sabotage ids: k100 and decattr took S674/S675 from the kit's reserved S666-S675. The manager renumbered them to S696-S698 before any chain ran. BOILERPLATE now says lanes take ids from their brief's range and check the reservations in requests.md.
+- [MEMFN] M6 (R-10) merged at 287133ba: zero movers, slot14 green apart from the W5 floor, which the kit's w5fix fixed.
+- Lessons: an auto-lift gate keyed on "no run_sabotage process" also matched the kit's light pinned rows. Key a gate to the owning worktree's artifacts, never to a process name. The manager `cd`'d into worktrees twice; use absolute paths and `git -C` only.
+- NEXT: the timing verdict, then lift chains k100 -> clibundle -> kit slot15 -> decattr (the abi event goes last). RQ-3 is awaiting Frank.

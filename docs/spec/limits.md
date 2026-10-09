@@ -291,7 +291,7 @@ longer REFUSED on the size cap, though**: the size rung is one row of the
 size-cap ladder (§8, "The size-cap ladder"), and with it denied the ladder's
 next row DROPS the prefilter instead — no superset, the same answers, slower.
 A caller who would rather be refused than handed ANY slower artifact passes
-`--fast-or-fail` (§8). The retry never applies where the DFA is the ENGINE,
+`--size-cap=refuse` (§8). The retry never applies where the DFA is the ENGINE,
 where the language must be exact.
 
 **[OPT-4.1] (2026-08-30) AND IT DOES NOT APPLY WHERE THE COLLAPSED LANGUAGE IS
@@ -794,7 +794,7 @@ defaults to it. No stamp's value is a count of prefixed text: the one stamp
 that counts emitted bytes, `<PREFIX>_VM_PROGRAM_BYTES`, counts them at the
 canonical length. `tests/codegen/run_prefix_invariance.sh` checks this.
 
-### The size-cap ladder, and `--fast-or-fail` ([PF-DROP], D135)
+### The size-cap ladder, and `--size-cap=refuse` ([PF-DROP], D135)
 
 **Before either limit refuses, pcrec tries a smaller form of the same
 artifact, one rung at a time, and every rung is listed here.** The rungs are
@@ -818,7 +818,7 @@ every VM attempt, so it is tried before any retry), rows 3 and 4 the DFA's.
 The measurements are `docs/dev/lanes/pfdrop_report.md` §2 (Mac, directional;
 a Linux re-measure is the manager's to schedule).
 
-**`--fast-or-fail`** (`PCREC_FAST_OR_FAIL`, `cli.md`) denies every size-cap
+**`--size-cap=refuse`** (`PCREC_SIZE_CAP_REFUSE`, `cli.md`) denies every size-cap
 row the table marks degrading — today all five — so an artifact over either limit is
 REFUSED rather than shipped slower, with the ordinary diagnostic quoting the
 caller's own unrescued artifact. It is one predicate on the table's rows, not

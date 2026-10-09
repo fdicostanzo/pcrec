@@ -3050,7 +3050,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
          *   - the CONTRACT bits (axes.def's block of that name), which select
          *     between ruled SEMANTICS: kept, and masked only where `byte`
          *     makes them inert (`startpos_guard_inert`/`utf_check_inert`).
-         * `PCREC_FAST_OR_FAIL` is not an axis row at all (D135): it decides
+         * `PCREC_SIZE_CAP_REFUSE` is not an axis row at all (D135): it decides
          * only whether a slower artifact that fits ships or the compile
          * refuses, so an artifact that fits is the same artifact under it. */
         const uint64_t kept = PCREC_NO_ATOMIC_DISCHARGE | PCREC_NO_SPLICE_CALLS |
@@ -3062,7 +3062,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
 #include "core/axes.def"
             ;
         const uint64_t strategy_denials = startpos_guard_inert | utf_check_inert |
-                                          (axis_bits & ~kept) | PCREC_FAST_OR_FAIL;
+                                          (axis_bits & ~kept) | PCREC_SIZE_CAP_REFUSE;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -7451,11 +7451,13 @@ static PcrecAdvance stay_advance(const DfaForm *f, int K, const char *more)
 {
     uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
     stay_set(f->d, K, set);
+    const char **member = pcrec_arena_alloc(&f->cx->arena, sizeof *member);
+    member[0] = dfa_fragf(f->cx, "%s_%s_stay%d[%s]", f->p, f->dir->c.name, K,
+                          f->dir->peek);
     return (PcrecAdvance){
+        .stride = 1, .member = member,
         .set = set, .reverse = f->dir->reverse, .more = more,
         .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
-        .member = dfa_fragf(f->cx, "%s_%s_stay%d[%s]", f->p, f->dir->c.name, K,
-                            f->dir->peek),
         .span = MF_SPAN_UNBOUNDED,
         .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };
 }
@@ -9120,10 +9122,12 @@ static PcrecAdvance edge_advance(const DfaForm *f, int head, const char *test, i
     uint8_t *set = pcrec_arena_alloc(&f->cx->arena, 256);
     int cls = f->d->st[head].scan_cls;
     for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
+    const char **member = pcrec_arena_alloc(&f->cx->arena, sizeof *member);
+    member[0] = test;
     return (PcrecAdvance){
+        .stride = 1, .member = member,
         .set = set, .reverse = f->dir->reverse, .more = f->dir->scan_more,
         .peek = f->dir->peek, .step = f->dir->advance, .cursor = f->dir->posv,
-        .member = test,
         .count = span < 0 ? NULL : "scan_run_length", .count_start = 1,
         .span = span < 0 ? MF_SPAN_UNBOUNDED : (uint64_t)span,
         .indent = dfa_fragf(f->cx, "%s    ", f->dir->bind) };

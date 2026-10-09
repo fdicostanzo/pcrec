@@ -3210,7 +3210,13 @@ against the unchanged `ac4917d`. Demonstrated both directions again — see the
   pattern simply refuses. An anti-vacuity cell asserts the rescue chose a
   DIFFERENT K from the default build, and the NATURAL cap-rescue population is
   pinned at 0 as a CEILING that fires if a real pattern ever lands in the band
-  `docs/design/artifact_size_term.md` §4.2b calls empty.
+  `docs/design/artifact_size_term.md` §4.2b calls empty. **§10 ([K100],
+  2026-10-09)** builds a THIRD reference compiler at emit_sweep's `lowsize`
+  limits and holds B1's witness `(?:aa|a){8,12}+ab` to COMPILE after both
+  restarting rows (`prefilter-collapse`, `drop-prefilter`) at a ladder K
+  (not `option`, not the default 8, which refuses), through a restarting
+  row (`VM_PREFILTER_WHY "size cap retry..."`), answering what python `re`
+  answers on 14 subjects. Red (34/1) on the tree before the fix.
 
 - **run_prefilter_collapse.sh** — [OPT-4]/K39's structural check (2026-08-29).
   The count-collapsed hybrid prefilter, held to the ARTIFACT rather than to its

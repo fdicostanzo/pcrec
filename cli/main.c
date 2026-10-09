@@ -204,6 +204,11 @@ static void usage(FILE *f)
           "                 DFA prefilter, so the VM derives the whole span\n"
           "                 independently -- which is what makes it usable as a\n"
           "                 cross-check against the DFA rather than an echo of it\n"
+          "  --memfn=OPTS   the search-code kit's options, one opaque comma-\n"
+          "                 separated string (e.g. no-NAME denies a kit row);\n"
+          "                 validated by the kit, whose refusal is shown as\n"
+          "                 is. Inert at -fno-memfn-simd for SIMD-layer rows\n"
+          "                 (docs/spec/cli.md). --list-axes lists the rows\n"
           "  --tune=N       the SPEED-VS-SIZE DIAL: -2 | -1 | 0 | 1 | 2, or\n"
           "                 equivalently min-size | size | balanced | speed |\n"
           "                 max-speed (default 0/balanced, today's defaults\n"
@@ -235,9 +240,11 @@ static void usage(FILE *f)
           "                 built-in limit is refused. Defaults 500,000 code\n"
           "                 / 1,000,000 total. For a real build put these in\n"
           "                 the pattern source's config block instead\n"
-          "  --fast-or-fail REFUSE an artifact over either limit rather than\n"
-          "                 ship a slower one that fits: denies every size-\n"
-          "                 cap retry that costs run time (docs/spec/limits.md)\n"
+          "  --size-cap=refuse|degrade  what an artifact over either limit\n"
+          "                 gets. refuse: REFUSE it rather than ship a slower\n"
+          "                 one that fits (denies every size-cap retry that\n"
+          "                 costs run time). degrade (default): ship the\n"
+          "                 first smaller form that fits (docs/spec/limits.md)\n"
           "  --max-nfa-states=N, --max-dfa-states-goto=N, --max-subset-elems=N\n"
           "                 [LIM-2] RAISE three compile-time construction\n"
           "                 budgets (NFA states, the computed-goto attempt\n"
@@ -618,6 +625,20 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_FLAVOUR_APPLIES \
     (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(EXPLAIN))
 
+/* [MEMFN] RQ-1: replaces `*s` with a copy that lives to process exit. The
+ * copies stay reachable from `kept`, so the leak tier does not report them. */
+static char **kept;
+static size_t nkept;
+static int cli_keep_string(const char **s)
+{
+    char **nk = realloc(kept, (nkept + 1) * sizeof *kept);
+    if (!nk) { perror("realloc"); return 1; }
+    kept = nk;
+    if (!(kept[nkept] = strdup(*s))) { perror("strdup"); return 1; }
+    *s = kept[nkept++];
+    return 0;
+}
+
 /* Everything past `opt` is zero — i.e. this invocation asked for compile
  * options and nothing else. The comparison is over the raw bytes of the
  * tail, which is well defined here because every `CliState` in this file is
@@ -826,7 +847,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--ucp")) opt.flags |= PCREC_UCP;
         /* [PF-DROP] (D135) a size-cap POLICY, not a `-f` axis: it selects
          * no shape (lib/pcrec.h at the bit). */
-        else if (!strcmp(a, "--fast-or-fail")) opt.flags |= PCREC_FAST_OR_FAIL;
+        else if (!strncmp(a, "--size-cap=", 11)) {
+            if (!strcmp(a + 11, "refuse")) opt.flags |= PCREC_SIZE_CAP_REFUSE;
+            else if (!strcmp(a + 11, "degrade")) opt.flags &= ~PCREC_SIZE_CAP_REFUSE;
+            else {
+                cli_err("--size-cap must be refuse or degrade (got '%s')", a + 11);
+                return 1;
+            }
+        }
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the
@@ -956,6 +984,10 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strncmp(a, "--encoding=", 11)) {
             if (set_encoding(&opt, a + 11) != 0) return 1;
         }
+        /* [MEMFN] RQ-1 the kit's option string, carried OPAQUE: validated by
+         * the kit inside the compile (pcrec_compile), never parsed here. A
+         * later flag wins (any value option's argv rule). */
+        else if (!strncmp(a, "--memfn=", 8)) opt.memfn = a + 8;
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             int want;
@@ -1256,6 +1288,11 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
         int rc = cli_parse(n, v, &ts, where);
+        /* [MEMFN] RQ-1 `--memfn=` carries a POINTER into the split tokens,
+         * which die just below: a value the raw line set (it differs from
+         * the CLI's own) is kept for the process's life first. */
+        if (rc == 0 && ts.opt.memfn && ts.opt.memfn != cli->opt.memfn &&
+            cli_keep_string(&ts.opt.memfn) != 0) rc = 1;
         free(v); free(buf);
         if (rc != 0) { free(ts.libdirs); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config
@@ -1702,8 +1739,11 @@ static int compile_sources(const CliState *cli)
     return rc;
 }
 
-/* Parses the command line via `cli_parse`, then dispatches: a syntax/
- * registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
+static int cli_dispatch(CliState st);
+
+/* Parses the command line via `cli_parse`, refuses the conflicts every mode
+ * shares, decodes `--pattern-esc` once (K98), then `cli_dispatch`
+ * dispatches: a syntax/registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
  * — no pattern, no `-o`, each returning before anything else runs), a
  * `.rxt` compile from one or more FILE OPERANDS (`compile_sources`, D118 —
  * one or more targets, pooled across every file given), or an ordinary
@@ -1781,6 +1821,57 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    /* [DD-13b.W23.3] `--pattern-esc`: THE --pattern VALUE IS THE `.rxt`
+     * FORMAT'S QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
+     *
+     * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
+     * exists so a multi-line or high-byte pattern is expressible without
+     * multi-line SYNTAX, which keeps every reader's line-oriented loop
+     * intact — and that only pays if the DECODING has one home. `run.sh`
+     * passes the still-encoded text through with this flag rather than
+     * approximating it with `printf %b`, which would be a SECOND escape
+     * vocabulary drifting from this one by construction;
+     * `verify_rxt.py` decodes with the table it already has for subjects,
+     * which is the same table.
+     *
+     * [K98] HERE, ABOVE EVERY MODE, so every mode that reads `--pattern`
+     * (the compile, `--emit-ir`, `--emit-facts`, `--count-groups`) reads the
+     * DECODED value. It used to sit just above the compile, below the
+     * queries' early returns, and those queries described the raw escaped
+     * text with rc 0. With no `--pattern` the flag has nothing to decode.
+     *
+     * The arena is `main`'s and is freed after `cli_dispatch` returns, on
+     * every path, so the decoded bytes outlive every mode (`pcrec_compile`
+     * copies what it needs into its own arena). */
+    Arena esc = { 0 };
+    if (st.pattern_esc && st.pattern) {
+        char emsg[192];
+        const char *dec = NULL;
+        if (pcrec_rxt_decode_escaped(st.pattern, &esc, &dec, emsg,
+                                     sizeof emsg) != 0) {
+            cli_err("--pattern-esc: %s", emsg);
+            pcrec_arena_free(&esc);
+            free(st.libdirs);
+            free(st.files);
+            return 1;
+        }
+        st.pattern = dec;
+    }
+    {
+        const int rc = cli_dispatch(st);
+        pcrec_arena_free(&esc);
+        return rc;
+    }
+}
+
+/* The modes, after `main` has parsed the command line, refused the
+ * conflicts every mode shares and decoded `--pattern-esc`: a query (each
+ * returning before anything else runs), a file-operand compile, or the
+ * single-pattern compile. `st` is `main`'s state BY VALUE; the pattern it
+ * carries is already decoded and lives until this returns. Returns 0 on
+ * success, 1 on any refusal or compile failure. */
+static int cli_dispatch(CliState st)
+{
     /* Read-only aliases for the modes below, so the query dispatch reads
      * exactly as it did before the parser was factored out. `opt` is a COPY
      * the compile path may still adjust (`header_name`). */
@@ -2339,42 +2430,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    /* [DD-13b.W23.3] `--pattern-esc`: THE --pattern VALUE IS THE `.rxt`
-     * FORMAT'S QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
-     *
-     * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
-     * exists so a multi-line or high-byte pattern is expressible without
-     * multi-line SYNTAX, which keeps every reader's line-oriented loop
-     * intact — and that only pays if the DECODING has one home. `run.sh`
-     * passes the still-encoded text through with this flag rather than
-     * approximating it with `printf %b`, which would be a SECOND escape
-     * vocabulary drifting from this one by construction;
-     * `verify_rxt.py` decodes with the table it already has for subjects,
-     * which is the same table.
-     *
-     * The arena is local and freed on every path out, so the decoded bytes
-     * outlive `pcrec_compile` (which copies what it needs into its own
-     * arena) and nothing outlives this function. */
-    Arena esc = { 0 };
-    if (st.pattern_esc) {
-        char emsg[192];
-        const char *dec = NULL;
-        if (pcrec_rxt_decode_escaped(pattern, &esc, &dec, emsg,
-                                     sizeof emsg) != 0) {
-            cli_err("--pattern-esc: %s", emsg);
-            pcrec_arena_free(&esc);
-            free(st.libdirs);
-            return 1;
-        }
-        pattern = dec;
-    }
-
     int to_stdout = !strcmp(outpath, "-");
     char *hpath = NULL;
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); pcrec_arena_free(&esc); free(st.libdirs); return 1; }
+        if (!hpath) { perror("malloc"); free(st.libdirs); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -2386,7 +2447,6 @@ int main(int argc, char **argv)
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
-        pcrec_arena_free(&esc);
         free(st.libdirs);
         return 1;
     }
@@ -2405,7 +2465,6 @@ int main(int argc, char **argv)
     }
     pcrec_output_free(&out);
     free(hpath);
-    pcrec_arena_free(&esc);
     free(st.libdirs);
     return rc;
 }

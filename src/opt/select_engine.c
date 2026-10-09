@@ -749,7 +749,7 @@ static const PfAdmit pf_admits[] = {
       "size-cap ladder -- an emitted-size cap refused the artifact and the"
       " ladder's last rung ([PF-DROP]) dropped the VM hybrid's prefilter;"
       " the refused figures are <PREFIX>_VM_PREFILTER_WHY's."
-      " --fast-or-fail refuses instead", .axlist = FB_NO_LIST },
+      " --size-cap=refuse refuses instead", .axlist = FB_NO_LIST },
     { "forced-on",          pfa_forced_on,          PFV_ON,      NULL,
       ESEL_PASS,
       NULL, .axlist = FB_NO_LIST },
