@@ -437,9 +437,14 @@ L0 is a no-mover, so F4 takes `ENDSET` only; §8 Q7 carries the mover.
 | `CR_DFA` / `CR_ATTEMPT` → `CR_VM` | the hybrid | `SPAN` (exact body), `LOWER` (superset body, projected), `NOMATCH`; `ENDSET` (stage 2) | F6, F7, F1, F7 |
 | `CR_VM` → `CR_VM` | VM-only | `LOWER`, `NOMATCH` (the WIDTH / PRESENCE verdicts inside the composite, `[r2 C12]`) | F7, F1 |
 
+**Totality is checked over the triples whose ASKER exists at that commit.** At L0
+the only FINISH asker is the match-here entry (`caller` → `AT` on `CR_DFA` /
+`CR_ATTEMPT`, last row F5); the search entry's DFA rows join at L2 (when F1/F2 land
+with the first locator that gives FINISH a choice there), the VM entry's at L3. Until
+then RECOVER keeps CALLER as its successor and the search entry asks no FINISH row.
 The self-check's existing totality test ("every asked (slot, route) ends in an
 undeniable `cand_always` row") is extended: for every (locator route, finisher route)
-pair in the table above and every shape some LOCATE row on that locator route hands
+pair in the table above whose asker exists and every shape some LOCATE row on that locator route hands
 (projected where `cand_lang_exact` can be false on that pair), the last FINISH row on
 the finisher route taking that shape is undeniable and `cand_always`. A later LOCATE
 row that hands a shape no FINISH row takes fails the self-check, not the compile.
@@ -474,14 +479,18 @@ case on two); `rev-end` is the first second walk on a route.
   emit, and FINISH's rows NAME them as their action (`u.finish.act` ∈ {REPORT,
   NOMATCH, VERIFY, SEARCH}). VERIFIER's accept set loses `CT_WINDOW`.
 - **E-LF** LOCATE → FINISH, typed by the LOCATE row's shape set, through the boundary
-  projection (§1.2). RECOVER's successor becomes FINISH (the composite's output
-  crosses the boundary there); PRESENCE/WIDTH keep CALLER for the in-composite verdict.
+  projection (§1.2). At L2 RECOVER's successor becomes FINISH (the composite's output
+  crosses the boundary there); at L0 it keeps CALLER and LOCATE's successors are the
+  composite's entry (WINDOW, `LOWER`) and CALLER (`empty`'s `NOMATCH`).
+  PRESENCE/WIDTH keep CALLER for the in-composite verdict.
 - **E-FL** FINISH `search-from` → LOCATE: relocate. Target: the FALLBACK row of the
   finisher's locator route — the last undeniable `cand_always` LOCATE row on it,
   today always `composite` — never "the next row in table order" (`[r2 G6]`: every
   concrete relocate in revision 1 targeted the composite; a fallback ladder inside a
   first-match table would need a second walk `cand_select` cannot do, `[r2 C2]`).
-  `lo := s`; `\G` keeps the caller's `search_from` (`[r2 E8]`).
+  `lo := s`; `\G` keeps the caller's `search_from` (`[r2 E8]`). The edge exists at
+  L0 already: the folded F5 (`search-filter`) IS a relocate from the `caller` locator
+  to `composite`.
 - **E-FR** FINISH `search-vm` → RETRY: a failed attempt; today's E7/E8, renamed.
 - **The progress check `[r2 C2, G6]`.** Each re-entry edge carries a progress class:
   `RANK` (relocate: the target row's rank exceeds the handing row's on the same
@@ -876,15 +885,16 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
      filter.
   6. The data corrections: `.giveup` deleted (F-1; the classification is derived,
      §1.5), `.contract = CG_FIXED` on `handoff`; the boundary projection
-     `cand_lang_exact` (F-3), recorded in the trace (`CANDTRACE FINISH <route>
-     <shape>`), read by nothing that emits.
+     `cand_lang_exact` (F-3), derived at the hybrid's VM entry where the inlined
+     body's result is consumed (`emit_vm.c:13393`) and recorded in the trace build
+     only (`CANDTRACE BOUNDARY vm <shape>`); nothing that emits reads it before L3.
 - **abi:** none. No emitted byte, no stamp, no listing byte moves.
 - **Checks:** `scripts/emit_sweep.py` at 0 movers on every arm (the six streams,
   `-e utf8`, `-i`, the deny arms incl. `-fno-anchored-dfa`, `-fprefilter-collapse`); the
   C1 trace's SET compare (`trace_diff.py --unordered`) with a declared-trace file for
   the new LOCATE/FINISH records (`trace_declared_L0.txt`); `cand_rows_selfcheck`
   extended (totality over the §2.3 triple table, the shape filter, the progress check,
-  `hand` mandatory); `tests/codegen/run_cand_rows.sh`; `run_cand_oracle.sh` with a
+  `hand` mandatory; at L0 over the match-here triples only); `tests/codegen/run_cand_rows.sh`; `run_cand_oracle.sh` with a
   witness per new row — `[^\x00-\xff]` (`empty`), `a` (`composite` DFA, and F3 via its
   `_match`), `^a` (`composite` ATTEMPT, and F5 via its `_match`), `(\w+)\1`
   (`composite` VM), `a` with `-fno-anchored-dfa` (F5 on `CR_DFA`) — and **the new
@@ -908,12 +918,17 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
 - **New sabotage ids: 6** `[r2 C5]`: (1) LOCATE order swap (`empty` after `composite`:
   the empty engine emits a scan; emit sweep); (2) `cand_finish_of` misderives a hybrid
   as a DFA finisher (the inlined body emits W/P/F twice; emit sweep + codegen);
-  (3) the FINISH filter ignores `hand` (F5 selected for a `SPAN`; self-check, and the
-  oracle's F3 witness stops reaching F3); (4) F3/F5 order swapped (every `_match`
+  (3) the match-here ask drops its `hand` (asks with 0): the hand-mandatory check
+  aborts in the trace build (`run_cand_oracle.sh`; a plant that only weakened the
+  `take & hand` filter would be invisible at L0, where every asker asks `AT` and both
+  rows take it — that plant waits for L2's first second shape); (4) F3/F5 order swapped (every `_match`
   becomes `search-filter`; `DFA_MATCH` stamp check + emit sweep); (5) the boundary
-  projection dropped (a superset hybrid's trace records `SPAN` on `CR_VM`; oracle
+  projection dropped (a superset hybrid's trace records `BOUNDARY vm SPAN`; oracle
   witness `\w{1,2}(?:(?=)|)$` must record `LOWER`); (6) a relocate edge whose target is
-  the handing row (self-check `progress`). F-2's revert (a row-pointer compare) changes
+  the handing row is not checkable at L0 (the only relocate's handing locator is
+  `caller`, not a LOCATE row), so plant (6) is instead: the `RAISE` class removed
+  from E5 (RETRY's re-locate), and the self-check must report a cycle with no `RAISE`
+  edge (`progress`). F-2's revert (a row-pointer compare) changes
   no behaviour, so it is a grep row in `make test-codegen` (no `== &cand_rows[` and no
   pointer compare against a FINISH row in `src/gen`), not a plant. Revision 1's plant 5
   (declared vs derived posture) is withdrawn: it was circular, and the declared column
