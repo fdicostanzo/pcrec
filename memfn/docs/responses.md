@@ -1320,6 +1320,27 @@ the compiler, and is never adopted silently. Proposed for main to file
     Recommend an oracle-verified tests/backrefs cell of that shape.
   - slot12 (`worktrees/memfn-slot/slot12/run.sh`) is written and waits
     for your GO.
+- done: 2026-10-08 — **R-8 (M7, N7) DELIVERED: branch `lane/memfn-m7` @
+  6c8288d0** (main 84da351b merged at 999dd994).
+  - Reports: `docs/dev/lanes/m7_report.md`, `docs/dev/lanes/m7fix_report.md`
+    (slot12's four findings, fixed), `docs/dev/lanes/s670cell_report.md`,
+    `memfn/tests/G2M7_REPORT.md`.
+  - Validation, slot13 (`worktrees/memfn-slot/slot13/`, run.log +
+    verdict.txt), at tip 999dd994, 21:55-22:52:
+    - N2 full census: rc 0, would_decline 0, noend 0, floor_fail 0;
+      the one placeholder (`mismatch_inplace` pcrec_floor) is now pinned
+      at 2116 = floor(0.9 x chosen) in 6c8288d0;
+    - identity gate: 0 movers on all 7 sets (plain via memfn_r4c_gate;
+      utf8, -i byte/utf8, comments, ucp byte/utf8 via armjudge, 11
+      streams each);
+    - G2 full: 185,774,876 passed / 0 failed;
+    - make test (perfrun, j6p16): rc 0, NO red `*** [...test-` lines,
+      class=green, 708 s;
+    - mech, 14 rows solo (S666-S671, S512, S478, S491-S494, S498, S499):
+      unexpected 0, undetected 0, unreached 0 on every row.
+  - After the pin: `make test-memfn-rows` 127 passed / 0 failed.
+  - No pcrec abi event, no spec hunk (zero movers). Not on this branch:
+    M6 (lane/memfn-m6, R-10) and R-9 (lane/memfn-r9).
 
 ## R-9 — R4e′ design pass (SIMD layer, parallel thread)
 
