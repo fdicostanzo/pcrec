@@ -9280,3 +9280,9 @@ Ruled with the kit session (pcrecdev3) on R-9's question list (`memfn/docs/respo
 - **Q-R9-11** (kit-decided). The frequency class becomes a `freq` column in `DELEG_SITES`, built only when [MEMFN-RTDISPATCH] triggers, not an `MF_P_INLOOP` policy flag.
 
 Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
+
+**D155 addendum 2 (Frank, 2026-10-09, session 101): SIMD bytes are neutral to SIZE DECISIONS, and REPORTED, but have no aggregate cap.** This reaffirms Q-R9-9 and extends it to RQ-3's scope.
+- **Neutral.** Every reader that takes a SELECTION decision from emitted length reads `len_uncut − simd_guarded` through one helper: the VM entry-shape knee, the `fit_rungs[]` size measurement, the size term, and the size-quoting stamps. Turning SIMD on therefore moves no rung, ladder step, engine or stamp value. A SIMD-on vs SIMD-off comparison measures the SIMD form and nothing else, and the floor rule (SIMD-on = SIMD-off + guarded text) holds by construction.
+- **Reported.** Every artifact stamps its guarded byte count, so the real size is never invisible.
+- **No aggregate budget.** Frank: "simd is generally a fixed overhead unlike e.g. dfa state explosions." The guarded total is at most the per-row bound (Q-R9-9) times the number of SIMD sites, and the kit already bounds the site count (DELEG_SITES' use ceiling). A separate guarded-bytes budget would be an unmeasured tuning constant guarding against a growth law that does not exist. In its place is a CHECK: the stamped total is no more than the sum of the per-row bounds over the rendered sites.
+- **Revisit when** a SIMD form's size grows with the pattern (per-pattern tables, unrolls keyed to a width the pattern sets) rather than per site, since that would break the fixed-overhead premise. Also revisit if gcc compile time on SIMD-on artifacts shows a measured cost.
