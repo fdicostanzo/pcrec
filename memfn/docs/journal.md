@@ -1061,3 +1061,8 @@ pointer when a kit change merges to main.
   (6c8288d0); test-memfn-rows 127/0. `done: R-8` posted (33c02ac9), main
   told. Held for pacing until after 07:00: g2m6, the m7→m6 merge and M6's
   slot, and R-9's light re-check panel.
+- 2026-10-08 ~23:30: M7 MERGED by main (post-merge build/strict/rows/
+  registry green; m7, m7fix, s670cell pruned). Frank discussed SIMD
+  priorities (fused byte+cond forms; prioritize by site-category frequency
+  x winnable margin; no population census exists yet) — discussion only,
+  nothing scheduled. SESSION RESET at Frank's request; wake.md rewritten.

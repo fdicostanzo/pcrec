@@ -1,4 +1,4 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-07 late night; new Linux dev box)
+# memfn wake — kit session hand-off (rewritten 2026-10-08 ~23:30, session reset)
 
 This is the orientation file for the kit session, run as
 `/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`;
@@ -20,127 +20,94 @@ current state; the history is `journal.md`.
   - No git identity is configured: commit with
     `git -c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
 - **Kit worktree:** `worktrees/memfn`. One branch per delivered unit, cut
-  from main. Never merge to main, never push, never `cd` into another tree.
-- **Scratch:** `worktrees/memfn-slot/` (gitignored). The session scratchpad
-  can vanish mid-session, so do not rely on it.
+  from main. Never merge to main, never push, never `cd` into another tree
+  (use `git -C` / absolute paths; a `cd` moves the session cwd).
+- **Scratch:** `worktrees/memfn-slot/` (gitignored).
+- **Pruning:** `scripts/wtprune --apply NAME` prunes ONE worktree by name.
 
 ## 2. Read, in this order
 
 1. `memfn/CLAUDE.md`.
-2. `memfn/docs/requests.md`, then `responses.md` (the newest `done:` entries
+2. `memfn/docs/requests.md`, then `responses.md` (newest `done:` entries
    and notices).
 3. The tail of `memfn/docs/journal.md`.
-4. `docs/design/memfn/row_contracts.md` rev 4.1 (§4 floors, §5 steps);
-   `docs/design/memfn/integration.md` §22 (R4g done; R4h next in order) and
-   §19 (row 6 is revised per main's ruling).
+4. `docs/design/memfn/integration.md` §R4.9 (on lane/memfn-r9) and the
+   M6 report `docs/dev/lanes/m6_report.md` (on lane/memfn-m6).
 5. BOILERPLATE, coding_guide before C, learnings §3 before a check.
 
 ## 3. Box and slot rules (this box)
 
 - One heavy suite at a time across BOTH sessions. Ask main for every heavy
   slot (census, identity gate, full G2, make test, mech), and ping main when
-  it ends. Main's lanes queue behind and ahead of you.
+  it ends.
 - **Light work needs no slot:** make/strict at -j4, single compiles,
   test-memfn-{arms,stamps,rows}, G2 --quick pinned to `taskset -c 12-15`.
-- **Landing chain pattern:** one detached script in
-  `worktrees/memfn-slot/slotN/run.sh` (census → identity gate → full G2 →
-  make test → solo mech), watched by Monitor on its log. Read the verdicts
-  from make's `*** [Makefile:N: test-X]` lines.
-- **Mech scope:** main's rule (b) for a src-touching migration: rows
-  anchored in the changed definitions, plus kit-file rows, plus re-pinned
-  rows. A kit-only unit uses rows_for.sh.
+- **Landing chain pattern:** one detached script
+  `worktrees/memfn-slot/slotN/run.sh` (see slot13/run.sh: census → identity
+  gate x7 sets via armjudge.py → full G2 → make test via scripts/perfrun →
+  solo mech rows), launched with `setsid nohup`, its trap writes
+  `verdict.txt` + `DONE`; wait with a background `until [ -e DONE ]` loop.
+  Verdicts from make's `*** [Makefile:N: test-X]` lines. Restore
+  docs/dev/artifact_size_log.tsv after make test; never commit it.
 - **Every kit lane** runs `python3 scripts/m6read_check_sab_anchors.py`
-  before delivering (S570 slipped once).
-- **Blinded G2:** the D27 cell is `worktrees/g2u-cell`. Refresh its build/
-  and memfn.h/integration.md from the kit tip before each blinded brief. Diff
-  it back into `worktrees/g2u` (branch g2u), commit there, then merge into
-  the kit branch.
+  before delivering.
+- **Blinded G2:** the D27 cell is `worktrees/g2u-cell`; diff it back into
+  `worktrees/g2u` (branch g2u), commit there, merge into the kit branch.
+- **PACING (Frank via main, 2026-10-08 night):** subscription was at 89%,
+  reset 07:00 local. One lane at a time across sessions until the reset.
+  After the reset, normal capacity (2 migration : 1 SIMD, D147 add. 11).
 
-## 4. Current state (2026-10-08 ~21:30, session reset at Frank's request)
+## 4. Current state (2026-10-08 ~23:30)
 
-Main has M4 (R-7) merged. Main's refactor B is at B4 merged, and B5's chain
-owned the box at reset. Rulings since the last wake: D144 add. 4 (official
-SIMD verdicts are pcrec-bench runs on each targeted machine: ubuntubudu
-Zen 1 / this dev box 7700X Zen 4 with AVX-512 / Mac); D147 add. 11 (SIMD
-is a parallel thread, 2:1 behind migration until M5′), 12 (N6 retired),
-13 (what "faster" means, preliminary); D155 + addendum 1 (all R-9
-questions, Q-R9-1..11). Plan rows filed: [MEMFN-ENTRYSINK] and
-[MEMFN-RTDISPATCH] (dispatch by frequency class).
+- **R-8 / M7: DONE and MERGED** into main (kit branch lane/memfn-m7 @
+  5fc36ccf; main merged 33c02ac9+ and pushed). slot13 green on every stage;
+  mismatch_inplace pcrec_floor pinned 2116. Worktrees m7, m7fix, s670cell
+  pruned by main. The kit worktree is still on lane/memfn-m7 (merged):
+  switch it to the next unit's branch before working.
+- **R-10 / M6 (VMSTRIDE only): BUILT** on lane/memfn-m6 @ e48cc296,
+  STACKED on an older m7 (00b1f3da). MF_SITE_ABI 8, MF_MAX_TERM 32; shadow
+  0 mismatches, 62,216 pairs 0 movers; N6 retired (D147 add. 12). Report
+  docs/dev/lanes/m6_report.md (§7 G2 needs, §8 slot chain, 66 mech rows).
+  **NEXT (after 07:00):**
+  1. Relaunch blinded lane **g2m6** (stopped tonight before writing
+     anything; the cell `worktrees/g2u-cell` is refreshed from the m6 tip
+     and clean). The cell has no m6_report, so PASTE m6_report §7 into the
+     brief (this session's brief did: W in {1,2,3,7,8,9,16,31,32}, the
+     strided oracle, guard pages, hooks present/absent, refusals, rows/K1,
+     W1/W2, sabotage a/b/c; deliver memfn/tests/G2M6_REPORT.md; sonnet).
+     Then ff g2u to lane/memfn-m6, diff the cell into worktrees/g2u,
+     commit, merge into lane/memfn-m6.
+  2. Merge **main** (now containing M7) into lane/memfn-m6, ALONE, then
+     strict. Expect conflicts: S512, manifest/floor literals (C17 floor,
+     row_floors), the lanes index, integration.md rev marks.
+  3. Ask main for M6's slot (write slot14/run.sh from slot13's shape +
+     m6_report §8's mech rows).
+- **R-9 (SIMD design): text DONE**, lane/memfn-r9 @ 5a9e8c4c (r9c pass:
+  Q-R9-10 shape (c) selector-body rule, Q-R9-11 `freq` column, Q-R9-1..11
+  RULED, C18 leg (d) selector-only; old probe numbers labelled as taken on
+  the superseded rendering). **NEXT:** a LIGHT re-check panel (2 read-only
+  critics: contract/consistency vs D155+add.1, docs staleness), consolidate
+  into docs/dev/reviews/2026-10-0N-r9b-memfn-simd.md, then `done: R-9`.
+  Rev 4.9 vs the kit tip's rev 4.8 [M7] text must be reconciled at merge.
+  Batch 1's build request comes after main files it.
+- **Frank discussion, 2026-10-08 night (not a directive, nothing
+  scheduled):** a fused "byte x && cond" SIMD form (packed pair, cf. the
+  filed `vrun` over `fn-memchr` row, §R4.9.7.1) wins by avoiding memchr
+  restart churn; the regime is really "restart frequency". Frank also
+  suggested prioritizing SIMD direction by category frequency (memchr /
+  memchr2 / class / caseless). We have no population census of site
+  categories (requirements.md U-2 names the class-shape gap). If asked: a
+  static census of the bench corpus through the MF_TRACE build (cheap),
+  then a time-weighted share from the bench (pcrecdev2); priority =
+  share x winnable margin over the scalar layer.
 
-**Branches (kit worktree `worktrees/memfn` is on lane/memfn-m7):**
-- **lane/memfn-m7 (R-8, M7: N7 span compare → MISMATCH).** BUILT. slot12
-  ran, and its findings are fixed by m7fix (merged, 35c6f628+):
-  - inplace_applies always 1, so would_decline 7.7M; zero movers;
-  - the census rc check plus mech arm n2sample / row S668;
-  - S512 pop re-pinned to 14;
-  - startset VM manifests +8/+8 for s670cell.
-  Also on this branch:
-  - S670 detector cells (s670cell);
-  - g2m7 (G2 MISMATCH, mismatch_inplace g2_floor 2403);
-  - the ledger notices.
-  slot12 itself: G2 full 185.8M/0. The identity gate showed 0 movers on
-  plain, utf8 and both ucp sets (the -i and comments sets never ran:
-  script bug, fixed).
-  **NEXT:** main's GO for slot13 (after B5's CHAIN DONE). Merge main
-  first, then strict, then `worktrees/memfn-slot/slot13/run.sh`:
-  - census (must be would_decline 0);
-  - the identity gate on 7 sets (plain via memfn_r4c_gate, the others via
-    slot13/armjudge.py);
-  - G2 full;
-  - make test via perfrun;
-  - 14 mech rows from mech_rows.txt.
-  Then pin mismatch_inplace's pcrec_floor from `n2_report.py ... --propose`
-  (still PLACEHOLDER), run test-memfn-rows, and post `done: R-8` with the
-  verdict. Restore docs/dev/artifact_size_log.tsv after make test; never
-  commit it.
-- **lane/memfn-m6 (R-10, M6 = VMSTRIDE only).** BUILT @ e48cc296, STACKED
-  on an older lane/memfn-m7 (00b1f3da).
-  - MF_SITE_ABI 8: multi-term ADVANCE, MF_MAX_TERM 32.
-  - Shadow 0 mismatches; 62,216 pairs 0 movers.
-  - Manifest: VMSTRIDE delegated, VMLAZY pending (Q-R10-7).
-  - N6 retired (D147 add. 12): manifest, vocab and C12 rows deleted;
-    S511/S512 touched.
-  - Report docs/dev/lanes/m6_report.md (§7 = G2 needs, §8 = slot chain,
-    66 mech rows).
-  **NEXT:**
-  1. Relaunch the blinded lane **g2m6**. The cell `worktrees/g2u-cell` is
-     already refreshed from the m6 tip and clean (its memfn/tests ==
-     m6's). Same brief as before: m6_report §7, strided ADVANCE oracle,
-     W in {1,2,3,7,8,9,16,31,32}, guard pages, refusals, W1/W2,
-     sabotage a/b/c; deliver G2M6_REPORT.md. Then diff the cell into
-     worktrees/g2u (branch g2u; ff it to lane/memfn-m6 first, since g2u
-     is now at the m7 G2 state) and merge it into lane/memfn-m6.
-  2. Merge lane/memfn-m7 (with m7fix) into lane/memfn-m6, ALONE, then
-     strict. Expect conflicts in S512, manifest/floor literals and the
-     lanes index.
-  3. Ask main for M6's slot (only after M7 is delivered and merged).
-- **lane/memfn-r9 (R-9, SIMD design).** @ c0b61c16: integration.md rev
-  4.9 §R4.9, revised after panel r9 (review
-  docs/dev/reviews/2026-10-08-r9-memfn-simd.md, 43 ids) plus r9fu (glibc
-  trap: batch 1 narrowed to `over: fn-pair`) plus D155 (file-scope helpers,
-  the R4e′.0b routing abi event, C18 restated, frequency classes).
-  **NEXT:**
-  - a short lane to update §R4.9 to Q-R9-10 = shape (c): the FUNC's
-    WHOLE BODY is the #if chain, one helper call per arm. "A function that
-    does work never contains #if; a selector function's whole body may be
-    the #if chain, one call per arm, and nothing else." There is no level
-    macro. Q-R9-11 is a `freq` column, built only when RTDISPATCH
-    triggers. Mark Q-R9-1..11 RULED (D155 + add. 1). C18 leg (d) allows
-    only that selector shape.
-  - Then a LIGHT re-check panel, then deliver R-9 (done:).
-  - The rev number 4.9 must be reconciled with the m7 branch's rev 4.8
-    [M7] text at merge.
-  - Batch 1's build request comes after main files it.
-
-**Capacity:** 2 migration : 1 SIMD lane until M5′ (D147 add. 11).
-**Leftover worktrees** (prune via scripts/wtprune after delivery): m7,
-m7fix, s670cell (after M7 merges), m6 (after M6), r9d (after R-9), r4h
-(its untracked r4h_rulings.md first). Keep g2u and g2u-cell.
+**Worktrees:** memfn (kit home), m6, r9d, r4h (untracked r4h_rulings.md:
+check before pruning), m4, g2u + g2u-cell (keep), memfn-slot (scratch).
+Prune m6 after M6 merges, r9d after R-9.
 
 ## 5. Next actions on wake
 
-1. Create the heartbeat cron at 17,47. Run ListAgents. Read requests.md
-   for anything new.
-2. Relaunch g2m6 (§4, M6 NEXT 1) and the R-9 (c) text lane (§4, R-9 NEXT):
-   both light, no slot needed.
-3. Wait for main's GO, then slot13 (§4, M7 NEXT).
+1. Heartbeat cron at 17,47. ListAgents. Read requests.md for anything new.
+   Confirm with main that the pacing hold has lifted.
+2. Relaunch g2m6 and the R-9 light re-check panel (both light).
+3. After g2m6 lands: merge main into m6, then ask for M6's slot.
