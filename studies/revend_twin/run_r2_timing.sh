@@ -7,9 +7,10 @@
 # DFA-routed bound `[a-z]{0,4096}\z`, `[a-z]{0,60000}\z` (VM-routed, W1
 # only, context), and revq1's 13 bounded rows on mksubj_q1.py's subjects.
 # Quiet-box discipline: CPU is the core whose SMT pair was idlest over 3 s
-# (or $2); load1 is read before EVERY cell and the cell waits (30 s steps,
-# up to 20 min) while load1 > 2; load1 and the SMT sibling's busy fraction
-# during the cell are recorded on every row. Output: work/r2t/timing.tsv.
+# (or $2); each PASS waits (30 s steps, up to WAITS=10, i.e. 5 min) while
+# load1 > 2, then runs; load1 before each cell and the SMT sibling's busy
+# fraction during it are recorded on every row (a contaminated cell is
+# visible, never silent). Output: work/r2t/timing.tsv.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd); : "${PCREC:?}"
 REPEATS=${1:-7}
@@ -58,9 +59,10 @@ done < "$HERE/q1_patterns.tsv"
 # --- time ---
 printf 'pass\tload1\tsib_busy\tcpu\tname\tsubject\tn\trc\tspan\to_med\to_min\to_max\tc_med\tc_min\tc_max\ta_med\ta_min\ta_max\tb_med\tb_min\tb_max\n' > "$W/timing.tsv"
 for pass in $(seq 1 "$REPEATS"); do
+    waited=0
+    while [ "$(awk '{print ($1 > 2)}' /proc/loadavg)" = 1 ] && [ $waited -lt ${WAITS:-10} ]; do sleep 30; waited=$((waited+1)); done
+    echo "# pass $pass start $(date -Is) load1=$(cut -d' ' -f1 /proc/loadavg) waited=${waited}x30s" >> "$W/meta.txt"
     while IFS=$'\t' read -r name sub file; do
-        waited=0
-        while [ "$(awk '{print ($1 > 2)}' /proc/loadavg)" = 1 ] && [ $waited -lt 40 ]; do sleep 30; waited=$((waited+1)); done
         l=$(cut -d' ' -f1 /proc/loadavg); read s0 i0 <<< "$(cpustat $SIB)"
         r=$(taskset -c "$CPU" gnutimeout 600 "$A/$name/timedrv4" "$file" 100000 31)
         read s1 i1 <<< "$(cpustat $SIB)"
