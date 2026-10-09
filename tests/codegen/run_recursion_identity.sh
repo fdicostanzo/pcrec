@@ -1219,7 +1219,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<fn>__body` and becomes one call to it; every other artifact moves by the
 # abi digits alone. `74f941dc` is the lane's src commit; the manager re-pins
 # to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-d49b67ef}"   # [MEMFN] R4e'.0b SELF-PIN (2026-10-09), abi 69 -> 70: the reconciliation commit (built as 70 at 74f941dc)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b3e26cfa}"   # [MEMFN] R4e'.0b SELF-PIN (2026-10-09), abi 69 -> 70: the reconciliation commit (built as 70 at 74f941dc)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
