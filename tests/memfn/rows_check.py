@@ -12,8 +12,9 @@ subject):
      actual rows, which this script derives by BUILDING the kit with
      -DMF_TRACE (every .c under memfn/src, found by `find`, short list
      fatal) and running C5's fixture driver: the trace prints every row of
-     both selection tables at exit (`MFTRACE REACH table=T row=R`, walked
-     off compose.c's `arms[]` and runcmp.c's rows). A row in either and not
+     every selection table at exit (`MFTRACE REACH table=T row=R`, walked
+     off compose.c's `arms[]`, runcmp.c's rows and, since R4e'.0,
+     ofsskip.c's `fn_rows[]`). A row in either and not
      the other is red, as is a duplicate, a REACH_DROPPED count, or fewer
      than ROWS_FLOOR rows (a literal in run_rows.sh). The runcmp rows are
      also held to the two caller-visible statements of them, which share no

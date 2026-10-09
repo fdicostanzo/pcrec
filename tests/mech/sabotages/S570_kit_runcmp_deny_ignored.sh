@@ -13,6 +13,11 @@
 # Re-anchored 2026-10-07 ([MEMFN-ROWCON] N1): the deny skip became a braced
 # block that also writes the gate trace's DENIED line; the plant still kills
 # the deny test itself (the trace call dies with it, as an unreached line).
+# RE-AIMED 2026-10-09 ([MEMFN] R4e'.0, lane r4e0): rc_row_of's loop became
+# the kit's ONE shared walk, kit_walk (memfn/src/compose.c, integration.md
+# §R4.9.2.3); the deny test lives there, read through the table's `deny`
+# accessor. Only runcmp's rows carry a deny, so the plant still kills exactly
+# the run compare's MF_D_RUN_OVERLAP skip. Intent and detector unchanged.
 # SAB_REACH: on the clean tree the VM's 3-byte literal run is one `memcmp`
 # under the deny, so the plant meets a denied run.
 SAB_ID="S570-kit-runcmp-deny-ignored"
@@ -24,5 +29,5 @@ SAB_REACH='"$PCREC" --engine=vm -fno-run-overlap -p rx -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-DENIED-RUN-IS-MEMCMP"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (rows[i].row.deny & art->denies) {'
-SAB_AFTER='        if (0 && (rows[i].row.deny & art->denies)) {   /* SABOTAGE S570 */'
+SAB_BEFORE='        if (d & denies) {'
+SAB_AFTER='        if (0 && (d & denies)) {   /* SABOTAGE S570 */'

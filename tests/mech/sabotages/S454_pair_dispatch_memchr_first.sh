@@ -15,6 +15,12 @@
 # offset-skip function's parameters (no hook takes a term id once the run
 # compare is the kit's), so the anchor's call loses it. Plant and intent
 # unchanged.
+# RE-AIMED 2026-10-09 ([MEMFN] R4e'.0, lane r4e0): the inline `if (b >= 0)`
+# dispatch became the BODY slot of `fn_rows[]` (integration.md §R4.9.2.1):
+# row `fn-pair` (predicate `b >= 0`) above `fn-memchr`, the slot's floor. The
+# plant makes fn-pair's predicate never hold, so the walk falls to the floor:
+# the same defect (a masked scan position takes the one-stream memchr body on
+# T) at its new home. Intent and detectors unchanged.
 SAB_ID="S454-pair-dispatch-memchr-first"
 SAB_FILE='memfn/src/ofsskip.c'
 SAB_SUITES="harness codegen"
@@ -25,7 +31,5 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sele
 SAB_REACH_EXPECT="REACH-PAIR-ARM"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (b >= 0)
-        return pair_body(art, h, p, maxk, k, a, b, o);'
-SAB_AFTER='    if (0 && b >= 0)   /* SABOTAGE S454 */
-        return pair_body(art, h, p, maxk, k, a, b, o);'
+SAB_BEFORE='    return x->b >= 0;'
+SAB_AFTER='    return 0 && x->b >= 0;   /* SABOTAGE S454 */'

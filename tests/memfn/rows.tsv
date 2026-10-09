@@ -1,17 +1,18 @@
 # tests/memfn/rows.tsv — THE KIT'S ROW MANIFEST ([MEMFN-ROWCON] N4,
 # docs/design/memfn/row_contracts.md rev 4.1 §4). HAND-MAINTAINED: one line
 # per row of each of the kit's selection tables (the composer's arms,
-# memfn/src/compose.c `arms[]`, and the run compare's rows,
-# memfn/src/runcmp.c). It is NOT derived from fields.def or from the kit's
+# memfn/src/compose.c `arms[]`, the run compare's rows, memfn/src/runcmp.c,
+# and the offset-skip function's `fn_rows[]`, memfn/src/ofsskip.c, every
+# slot; R4e'.0). It is NOT derived from fields.def or from the kit's
 # sources: run_rows.sh derives the kit's actual row set independently (an
-# MF_TRACE build of the kit prints every row of both tables at exit) and
+# MF_TRACE build of the kit prints every row of every table at exit) and
 # fails if the two disagree in EITHER direction.
 #
 # A row added to the kit adds its line here in the same commit (or the
 # check is red); a row deleted deletes its line.
 #
 # Columns (TAB-separated; `-` is empty):
-#   table      `arms` or `runcmp` (the trace's table names)
+#   table      `arms`, `runcmp` or `fn` (the trace's table names)
 #   row        the row's name (the trace's `row=`)
 #   reach      WHY the row exists, from a CLOSED set:
 #                pcrec                    pcrec's corpus reaches it (the census
@@ -59,3 +60,5 @@ runcmp	words	pcrec	pattern	-	(?i)(cat)s?dog	) & rx_w	-fno-run-overlap	=
 runcmp	overlap	pcrec	pattern	-	abc[0-9]+xyz	") && rx_w2(	-fno-run-overlap	=
 runcmp	bytes	pcrec	pattern	-fno-run-overlap	(?i)(cat)s?dog	& 223) ==	-	=
 runcmp	memcmp	pcrec	pattern	-	(ab)c?userpass	!memcmp(	-	abc[0-9]+xyz
+fn	fn-pair	pcrec	pattern	-	(?i)cat	size_t ha = 0, hb = 0;	-fno-req-run-fold	=
+fn	fn-memchr	pcrec	pattern	-	abc[0-9]+xyz	if (!q) return n;	-fno-req-run -fno-offset-skip	=

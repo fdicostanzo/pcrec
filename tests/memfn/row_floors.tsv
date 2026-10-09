@@ -31,7 +31,10 @@
 # run_g2.sh --rows, linked against build/libpcrec_mftrace.a): the row-chosen
 # lines, floor(0.9 x measured), pinned 2026-10-08 from a Linux run (seed
 # 20261005; memfn/tests/G2ROWS_REPORT.md). `make test-memfn-g2` holds every row
-# to it (check (e), G2_ROW_FLOORS=this file).
+# to it (check (e), G2_ROW_FLOORS=this file). The `fn` rows' g2 floors (lane
+# r4e0, R4e'.0) are floor(0.9 x) of a Linux `make test-memfn-g2` run on
+# 2026-10-09 (fn-pair 11580, fn-memchr 21091 chosen; docs/dev/lanes/
+# r4e0_report.md §3); their pcrec floors are the slot census's.
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
@@ -49,3 +52,5 @@ runcmp	words	15408	13870
 runcmp	overlap	108903	7275
 runcmp	bytes	324	14838
 runcmp	memcmp	87769	32669
+fn	fn-pair	PLACEHOLDER	10422
+fn	fn-memchr	PLACEHOLDER	18981
