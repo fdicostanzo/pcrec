@@ -229,3 +229,119 @@ Exactness rests on two conditions, both checked:
   - **Kit gap.** The `mf_sink` members and `guarded_max` are owed by SIMD
     batch 1, which wires `pcrec_memfn_sink_simd_open/_close` and moves the
     bounds to `guarded_max`.
+
+## Landing merge (rq3land)
+
+Lane rq3land (opus, 2026-10-09) re-landed RQ-3 on main's R4e′.0b (abi 70,
+merge 82ff9432; `git merge main` took main at 47842ee3, whose src is
+identical to 82ff9432's: the two commits after it are kit docs). RQ-3 now
+reads **abi 70 -> 71**.
+
+**Commits.**
+
+| commit | content |
+|---|---|
+| `3b7d7b69` | the merge, conflicts resolved, every pin re-measured |
+| `07a600ec` | FILEPIN self-pinned to `3b7d7b69` (the lane's last src commit) |
+| `c59bf075` | S693 re-anchored to abi 71 |
+
+**Conflicts (8 files), resolved by mechanism.**
+- `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh`
+  `ABI_EXPECT`, `match_api.md` §6's guard example: 71. The codegen
+  ledger message keeps R4e′.0b's `69 -> 70` clause and appends RQ-3's as
+  `70 -> 71`.
+- `match_api.md` §6's ledger: R4e′.0b's entry becomes "was `70`"; RQ-3's
+  "is `71`" entry now says it was built on 69 and re-landed on 70.
+- `m5_stage1_stamps.tsv`, `run_resource_tests.sh`, `run_cpset_structure.sh`,
+  `run_recursion_identity.sh`: main's side taken, then re-measured (below).
+- `docs/dev/lanes/CLAUDE.md`: both entries kept (r4e0b, then rq3).
+- Not a conflict but a reader: `tests/codegen/CLAUDE.md`'s RQ-3 entry
+  re-worded to 70 -> 71. The kit's own docs (`memfn/docs/journal.md`,
+  `wake.md`) already say "abi 71", correctly; single-writer, untouched.
+
+**Re-pins, each measured on the merged build against a reference compiler
+built from `git archive 82ff9432`, at the same `-o` basename.**
+
+| pin | main (abi 70) | now | delta | how verified |
+|---|---|---|---|---|
+| cpset manifest, all 12 `EMITTED_BYTES` rows | e.g. `a` 23528 | 23580 | +52 each | `run_cpset_structure.sh` [3]'s own diff; `abc`, `\bword\b`, `(?i)HeLLo`, `(a(?1)?b)` diffed: abi digits + the one stamp line |
+| resource K59-PREMUL rung (`a{5,25000}`) | 762832 | **762884** | +52 | diffed: abi digits + `#define RX_SIMD_GUARDED_BYTES 0x0000000000000000ULL` |
+| recursion identity (B) FILEPIN | `b3e26cfa` | `3b7d7b69` | | self-pin convention |
+| S693 (`PCREC_ARTIFACT_ABI` plant) | BEFORE 70 / AFTER 69 | BEFORE 71 / AFTER 70 | | `m6read_check_sab_anchors.py`: 589 rows, all resolve |
+
+- **`RQ3_SIZE_MOVERS`** (stamp_mover_census.py) is unchanged: the one named
+  size-quote mover is still `tests/uprops/size_ladder_prefilter_drop.rxt`
+  (comp-c). The census re-run (`--ref 82ff9432 --abi 70:71 --event rq3`)
+  is in the light tier; its verdict is below.
+- **The stamp census.** The resource witness's `--warn-emit-bytes` quote moves
+  771040 -> 771092 (code 14985 -> 15037), +52. This is the stamp line being
+  measured code (as R4a′'s stamps are), not the guarded count leaking (F1).
+- **S693 needed a re-anchor** because the first light-tier `test-codegen`
+  went red on [SABANCHOR]: R4e′.0b's row anchors on `PCREC_ARTIFACT_ABI 70`.
+  It now plants 71 -> 70, which keeps the same intent (the newest event's bump
+  is missing). Its `SAB_DESC` also read "stays 68", stale since r4e0b's
+  renumber; it now reads 70.
+
+**The `<fn>__body` readers and the stamp.**
+- The stamp sits after `MEMFN_LIBC`, outside every FUNC. `routing_shape.py`
+  (C11's routing leg) reads the same FUNC count on the plain and the
+  `-DPCREC_SIMD_WITNESS` artifacts for `abc` (1), `\bword\b` (2) and
+  `(?i)HeLLo` (1), and the witness stamps are blocks × 1,620,166 (DFA
+  `0x18b8c6`, VM `0x31718c`).
+- The FUNC-by-name readers (`run_prechecks.sh`, `run_offset_skip.sh`,
+  `reqcube_check.py`, `run_dfa_stamps.sh`, `run_encoding_checks.sh`,
+  `libc_census.py`) run in the light tier's `test-codegen` and
+  `test-memfn-stamps`.
+- **FINDING F4 (not fixed).** On a VM artifact the witness build's second
+  block sits at the VM program's start, inside `rx_match_anchored`. So
+  `routing_shape.py` reads it as `rx_match_anchored holds a directive: #if
+  defined(PCREC_RQ3_WITNESS_GUARD)`. That violates D155 addendum 1's floor rule
+  ("a function that does work never contains #if").
+  - It is test-only: the witness is never in a product build, and the routing
+    leg runs only on the plain build.
+  - But the VM-program block models a placement the floor rule forbids.
+  - It exists to reach the knee reader (`vmsb`'s length). Once real SIMD forms
+    obey the floor rule, guarded text in `vmsb` can only come through a
+    helper or selector.
+  - The manager should decide whether the witness's VM block should be a
+    selector-shaped `#if` chain (or a guarded helper spliced into `vmsb`) so
+    the witness honours the rule it will one day be checked under.
+
+**Mech list (45 rows).**
+- S699-S703, plus the union of
+  `docs/design/start_table/sabotage_anchors.py ROOT(82ff9432) {start_table,dec_fallback}/call_graph.txt
+  …/refactor_edit_set.tsv --repo . --step rq3land=82ff9432..HEAD`. That is
+  40 rows (39 `hunk`, S164 `reach(vm_init)`). It is 5 more than the
+  pre-merge 35: S41, S164, S184 (dec_fallback's graph), plus S437, S516,
+  S623, S693.
+- The output is in `build/land/sa_{start_table,dec_fallback}.tsv`. rc 2 is
+  the pre-existing unresolved rows (S571 and others).
+
+**Light tier, pinned to CPUs 0-7** (`build/land/light.sh`; verdicts in
+`build/land/light/trailer.log`, codegen re-run in `build/land/light/rerun.log`):
+- `make strict` on the merge: clean.
+- Every section (codegen, resource, cpset-structure, registry, rxtsource,
+  memfn-stamps, memfn-guarded), the recursion identity gate, the census, and
+  the part-1 zero-mover `emit_sweep`.
+- **The part-1 probe.** Part 1's commit `fd98c937` predates the merge, so
+  the probe is the unreferenced commit object `85ab0974a4b15aa430df8488ef8e59da69273cd3`: HEAD `07a600ec` with
+  the stamp line suppressed (`if (0)`) and the abi at 70. It runs
+  `emit_sweep --ref 82ff9432 --tree-rev 85ab0974a4b15aa430df8488ef8e59da69273cd3 --variant all --every 10`; the
+  decision-neutral helpers must read **0 movers** against main.
+- Verdicts: see "Light-tier verdicts" below.
+
+**Heavy chain.** `build/land/chain.sh` was rewritten for refs main 82ff9432:
+the probe `85ab0974a4b15aa430df8488ef8e59da69273cd3` for part 1 at full population, census `--abi 70:71`, and
+the 45 rows above. The aborted 15:11 run's `build.log`/`test.log` were moved
+into `build/land/aborted_1511/`.
+
+The chain is started by **the one waiter**, `build/land/gate2.sh` (pid
+1349594). Once `== LIGHT DONE` and the codegen re-run are logged, it starts
+the chain only if every light verdict is green. The first gate, `gate.sh`,
+was stopped with `scripts/safekill` before it read anything, because it
+would have counted codegen's stale-anchor red.
+- Gate verdict: `build/land/gate.log`.
+- Chain verdicts: `build/land/trailer.log` (`== CHAIN DONE`), `test.log`
+  (grep `\*\*\* \[(Makefile:[0-9]+: )?test-`, empty means green, read with
+  `test.log.perfrun`), `emit_sweep.log` (`VARIANTS: CLEAN`), `census.log`
+  (`census: CLEAN`), `recid.log`, `mech.log` (`== mech run COMPLETE`).
