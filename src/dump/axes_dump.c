@@ -556,6 +556,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * matching `deny_bit`/`force_bit`'s own empty-string convention for a
      * fact this table's columns cannot carry. Rows 3-7 have no lever at
      * all: nothing denies "the ladder chose K by argmin" specifically. */
+    /* [DEC-FALLBACK] B6: the seven rows above are T4's (`st_whys[]`, src/core/compile.c) `axlist` cells. */
     emit_fb_axis(sb, "size-term", "RX_UNROLL_K_WHY");
     /* length-prune — §2.4, RX_VM_PRUNES's own named pair */
     {
@@ -595,6 +596,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * specified in docs/spec/tuning.md §2.17 beside the values below.
      * (`size-term` above is the other shape — there the `_WHY` macro IS the
      * selector, because that axis has no separate value stamp.) */
+    /* [DEC-FALLBACK] B6: the two rows above are T3's (`pflw_rows[]`, src/core/compile.c) `axlist` cells. */
     emit_fb_axis(sb, "prefilter-lang", "RX_VM_PREFILTER_LANG");
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
      * named value — stamp_value left empty on both rows for that reason. */
@@ -932,6 +934,8 @@ static void emit_predicate_axes(StrBuf *sb)
      * the route is an OUTCOME of `--engine=` and of build results, never a
      * thing a bit requests, so the deny/force columns are empty exactly as
      * `engine`'s are. */
+    /* [DEC-FALLBACK] B6: the eight routes above are T1's and T2's `axlist` cells (`fit_rungs[]`, src/core/compile.c;
+     * `pf_admits[]`, src/opt/select_engine.c) and the attribution walk's two ends (`esel_ends[]`). */
     emit_fb_axis(sb, "engine-route", "RX_ENGINE_SEL");
 }
 

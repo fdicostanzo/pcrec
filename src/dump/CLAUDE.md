@@ -186,7 +186,11 @@ one.
   and the `applies` text, which is the row's `desc` beside it in
   `src/gen/emit_dfa.c` (the hand `AXIS_DESC` keeps only the machine-form
   axes; a start row with no desc prints its placeholder, which the axis
-  registry check fails). Since C7 all seven are `kind=list`. This file's own header
+  registry check fails). Since C7 all seven are `kind=list`. **[DEC-FALLBACK] B6 (lane decfbB6, 2026-10-08): the three fallback axes
+  `engine-route`, `size-term`, `prefilter-lang` are projected the same way**
+  (`emit_fb_axis` over `pcrec_fb_list_row`): the fallback tables' `axlist`
+  cells carry order, name, deny/force, lever and `desc` verbatim; only the
+  stamp macro stays here. `kind` is still `predicate` (B7 flips it). This file's own header
   comment states in full what the dump proves (what the compiler THINKS
   its axes are) and what it does not (independent evidence that a stamp
   or flag behaves as described — `tests/registry/axes_registry_check.sh`
