@@ -1047,3 +1047,10 @@ pointer when a kit change merges to main.
     (a)/(b): update it to (c), then a light re-check panel.
   - Frank: lettered options are fine, but leave room to bat a question
     around.
+- 2026-10-08 night (session after reset): r9c (doc-only) updated §R4.9 to
+  Q-R9-10 shape (c) + Q-R9-11 `freq`, Q-R9-1..11 RULED, C18 leg (d)
+  selector-only; lane/memfn-r9 fast-forwarded to 5a9e8c4c. The light
+  re-check panel is still owed before `done: R-9`. Main asked for pacing
+  (subscription 89%, resets 07:00): g2m6 stopped before writing (cell
+  clean), held until after the reset; the panel waits too. M7 waits for
+  main's slot13 GO (B5's chain still running).
