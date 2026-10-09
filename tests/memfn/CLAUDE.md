@@ -300,8 +300,8 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `pf_memchr_back`, ROWS_FLOOR 14; 15 since M7 prep added
   `mismatch_inplace`, reach `pending-site:M7-REPLACE` on its fixture until
   M7's REPLACE made pcrec reach it: now reach `pcrec`, witness `(?i)(ab)\1`,
-  control `(ab)\1`, its floors PLACEHOLDER until the census and G2 pin
-  them). Each line gives the
+  control `(ab)\1`, its floors pinned 2026-10-08: g2_floor 2403 by g2m7,
+  pcrec_floor 2116 by slot13's full census at 999dd994). Each line gives the
   row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
   `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
   red, D77), its witness (a pcrec pattern + flags for `pcrec`, an
