@@ -1227,7 +1227,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 2026-10-09), abi 71 -> 72 (71 is RQ-3's, landed first): the VM cursor
 # rung's lazy rmin prefix is spelled as a span scan capped at rmin plus the
 # reach test; only lazy-cursor-prefix artifacts move beyond the abi digits.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7106b370}"   # [MEMFN] R-12 VMLAZY SELF-PIN (2026-10-09), abi 70 -> 72: the lane's abi commit (the manager re-pins to the merge)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fd295ec0}"   # [MEMFN] R-12 VMLAZY SELF-PIN (2026-10-09), abi 71 -> 72: lane/vmlmerge's landing merge (was 7106b370, the lane's abi commit)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
