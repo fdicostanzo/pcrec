@@ -2840,6 +2840,30 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   C leads on every matching cell bar the tie, and beats W1 on all 47 bounded cells, so Q1
   collapses; the new Q2 is the downstream stamps on admitted artifacts. Readers by grep
   (§5.3), 16 sabotage ids, predictions <= 100 ns per acceptance cell.
+- `locate_finish.md` — **SEARCH IS LOCATE × FINISH (D156), PROPOSED, design only**
+  (lane `locfin`, 2026-10-09, from main `525dec33`, abi 71; a FULL D6 panel reviews
+  it before any `src/` change; every section ends with a "where to attack" note).
+  §1 the model: a locator (seed, direction, slice, exact or superset language)
+  hands one of six types (`SPAN`, `ENDSET`, `CAND`, `LOWER`, `UPPER`, `NOMATCH`;
+  a superset locator degrades to `CAND`), a finisher (report, nomatch, anchored
+  DFA run, relocate, VM window, VM search) consumes it, obligations O1-O10 per
+  pair, and the give-up posture DERIVED from the pair. §2 maps it onto the start
+  table: two new slots in the one `cand_rows[]`, `LOCATE` (first, asked by every
+  DFA-shaped body incl. the hybrid's inlined prefilter) and `FINISH` (last, keyed
+  by (type, route)); `revend.md`'s E13 is withdrawn for the generic LOCATE →
+  FINISH edge. §3 the family survey with a census (every artifact in one of
+  eleven today's pairs; FINISH spelled at ten `fit.chosen` reads; `dfa_matches[]`
+  is REVEND's tie table already); no shipped output falls outside the six types.
+  §4 REVEND as a LOCATE row (R2/R4 dissolve into the table; R3 is stage 2's
+  switch), stage 2 NEUTRAL by window identity (correcting `revend.md` §3.9) but
+  FILED (0 bench / 13 corpus), the backreference relaxed-reverse locator (sound as
+  specified, not the erasure `select_engine.c` measured unsound; 7 corpus / 0
+  bench, FILED), rev-inner as a LOCATE row (not NEXT). §5 build: L0 no-mover
+  (two slots, `cand_finish_of`), L1 = revend S0/S1, L2 rev-end (abi 71 → 72, D-2
+  batched, 17 sabotage ids), L3-L5 filed; §5.1 the stamp rule (the locator on
+  `RX_DFA_SCAN`, no new stamp). §7 six questions, §9 findings F-1..F-6 (W1's
+  VM-route posture, a row-pointer compare, RECOVER's declared type on superset
+  hybrids). Evidence: `../../studies/locate_finish/`.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

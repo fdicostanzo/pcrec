@@ -45,9 +45,9 @@ the shipped code at this pin (`src/gen/emit_dfa.c` `cand_rows` `:8160`,
    block, which is what every start "table" already is. Today's eight slots are
    the INSIDE of the shipped forward+reverse locator and stay as they are.
    `revend.md`'s E13 (WINDOW → CALLER) is withdrawn: REVEND becomes a LOCATE row
-   and its edge is the generic LOCATE → FINISH. Three of its four predicate
+   and its edge is the generic LOCATE → FINISH. Two of its four predicate
    conjuncts dissolve into table structure (R2 into the route mask, R4 into
-   row order, R3 into the one conjunct that IS stage 2).
+   row order), and the third, R3, turns out to be exactly stage 2's switch.
 3. **The family (§3).** Every shipped start mechanism casts as (seed, direction,
    language) → one of the six types; the census puts every compiled artifact in
    exactly one of eleven (locator, finisher) pairs (bench 343, corpus 5,012).
@@ -966,7 +966,8 @@ read on an admitted artifact; D-2 is the same question on ATTEMPT artifacts.
 *Forces:* a new `RX_LOCATE` stamp is the most explicit but moves every artifact's
 bytes; `RX_DFA_SCAN` already carries exactly the locator choice. *Leaning:*
 §5.1's rule (the locator on `DFA_SCAN`, absence values elsewhere, D-2 batched
-into L2). Spellings are mine to settle; the rule is yours.
+into L2). The spellings are the manager's to settle; the rule is the question for
+you.
 
 **Q5. Posture derived from the pair.** *Problem:* §1.5 found W1's VM-route cell
 (and the PRESENCE rows') declared NEUTRAL where the definition says ONE_WAY; no
