@@ -9274,3 +9274,9 @@ Ruled with the kit session (pcrecdev3) on R-9's question list (`memfn/docs/respo
 **Filed with it:** [MEMFN-RTDISPATCH] (plan.md, under [MEMFN-ENTRYSINK]), runtime dispatch, not scheduled.
 
 **Revisit when.** The first SIMD batch's bench verdicts arrive (Q-R9-2's every-box rule meets real data), or a hot-loop SIMD form exists while more than one architecture is selected (then [MEMFN-RTDISPATCH]'s trigger).
+
+**D155 addendum 1 (Frank, 2026-10-08, confirmed to the manager): Q-R9-10 and Q-R9-11.**
+- **Q-R9-10, shape (c)** (raised by the D155 design revision, lane/memfn-r9 @ c0b61c16). A delegated function is written ONCE, and its whole body is the `#if`/`#elif`/`#else` chain, one helper call per arm. An intermediate shape (b), a file-scope ALL-CAPS level macro `<PREFIX>_<FN>_LEVEL`, was ruled and then superseded the same day; it is not the rule. **This amends item 6's "no `#if` inside function bodies" to: "A function that does work never contains `#if`. A selector function's whole body may be the `#if` chain, one call per arm, and nothing else."**
+- **Q-R9-11** (kit-decided). The frequency class becomes a `freq` column in `DELEG_SITES`, built only when [MEMFN-RTDISPATCH] triggers, not an `MF_P_INLOOP` policy flag.
+
+Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
