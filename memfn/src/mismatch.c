@@ -192,11 +192,17 @@ int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b)
 
 /* ---- the row `mismatch_inplace` ------------------------------------------ */
 
+/* The row's predicate states its own shape (N3: the predicate is the
+ * SELECTOR, the gate only CHECKS a selection): a MISMATCH / ON_DIFF
+ * statement site under a stated fold (ASCII or UCP) whose define-time fold
+ * text is a FOLD_STMT. Every other site falls through to the generic row
+ * without a gate move ([MEMFN-ROWCON] N2: zero would-declines on pcrec). */
 static int inplace_applies(const mf_site *s, const mf_hooks *def)
 {
-    (void)s;
-    (void)def;
-    return 1;           /* the gate holds it to its sites: see its contract */
+    return s->form == MF_FORM_STMT && s->op == MF_OP_MISMATCH &&
+           s->handoff == MF_H_ON_DIFF &&
+           (s->fold_kind == MF_FOLD_ASCII || s->fold_kind == MF_FOLD_UCP) &&
+           def && def->fold && kit_fold_shape(def->fold) == CL_FOLD_STMT;
 }
 
 static int inplace_define(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *file)
