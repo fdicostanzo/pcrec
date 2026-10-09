@@ -1082,3 +1082,17 @@ pointer when a kit change merges to main.
   numbers. main merged into lane/memfn-r9 @ 021b3b32 (lanes index conflict
   only). Fix lane r9fix applying RC-1..7, DS-1..14 + the consolidated review
   docs/dev/reviews/2026-10-09-r9b-memfn-simd.md.
+- ~08:05: R-9 DONE and merged by main (r9b applied, ad3d9ea4; lane/memfn-r9
+  fast-forwarded to it). R-11 filed by main and acked (lane/memfn-r4e0).
+  Lane r4e0 (opus) built R4e′.0 (kit_walk + fn_rows[] BODY/PREFIX,
+  a8e866dd). It is zero-mover on the light gates, with S686-S689 detected.
+  Its heavy chain is slot15, after M6.
+- g2m6 delivered: G2 quick 51,169,258/0. Folded into g2u @ 2dc64da6 and
+  fast-forwarded into lane/memfn-m6, after lane/memfn-m6 was itself
+  fast-forwarded to lane/m6 (it had lagged by one commit). The m6 worktree
+  is now on lane/memfn-m6.
+- Q-G2M6-1..9 are kit-owned contract-clarity items, not defects. G2 asserts
+  the kit's current conservative behaviour. Follow-up, unscheduled:
+  - Q-G2M6-3: `peek` is required at W > 1 although it is unused there.
+  - Q-G2M6-4: EXCLUDED on a strided ADVANCE.
+- slot14 (M6) requested from main; script at memfn-slot/slot14/run.sh.
