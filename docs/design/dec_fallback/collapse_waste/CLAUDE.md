@@ -17,3 +17,7 @@
   listing's stamp rows — the first run's 9 `UNDECLARED` facts rows in
   `movers_summary.txt` are those stamp rows), `movers_item2_*.tsv`,
   `attempt_hist_summary.txt`, `cases.tsv`, `timing.tsv`.
+- `out/movers_vs_main_5761cd03*` — lane decland's landing re-derivation:
+  main `5761cd03` (abi 68) against an abi-68 twin of the merged tree, plain
+  (132 movers) and lowboth (898; the ir-only re-run after `refuse:` was
+  added), ALL DECLARED SHAPES (decattr_report.md, "Landing merge (decland)").
