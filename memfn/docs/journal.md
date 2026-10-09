@@ -1135,3 +1135,31 @@ pointer when a kit change merges to main.
   and declares a bound in tests/memfn/simd_bounds.tsv, which
   `make test-memfn-guarded` checks. RQ-1 (`--memfn=` carrier) landed with
   clibundle; the first options.def row must add a pcrec cli case.
+
+## 2026-10-09 ~19:20 — pause for reset (Frank's ask)
+
+- **R-12 VMLAZY.**
+  - RQ-3 landed on main (631771b7, abi 71). Lane vmlmerge merged main into
+    VMLAZY at abi 72; the readers were found by grep, and 12 light suites
+    and S693 are green.
+  - Recursion-identity (A) went red on 114/53/53/28 lazy patterns.
+    Kit ruling R1: an 8th exception, `lazy_prefix_rewrite`, a one-sided
+    mechanical rewrite of the reference. Lane vmlrid built it: matched by ID
+    on every axis, near-miss and S711 plants rejected, gate 18/0.
+  - lane/memfn-vmlazy fast-forwarded to 1bb49dee. slot17 is RUNNING
+    detached under main's GO.
+  - vmlmerge ended without reading R1 (sent while it was busy). Again:
+    rulings go as a file plus a message, and a fresh lane gets the work.
+- **R-13 batch 1.**
+  - Built by lane r13 as CANDIDATE: vrun-w16/w32, KA-only until RQ-2.
+    SIMD-off 0 movers, G2 51.2M/0, solo mech 20/20 clean. Q-R13-1..7 ruled
+    with the lane's leanings.
+- **D157 (Frank, via main).**
+  - RQ-2 states a ranked rarity array, and the distance rule is the kit's.
+    Lane r13doc recorded it in integration.md.
+  - Main's correction (do not presume any rule) went to the lane as ruling
+    R1, and the lane's second commit removed the candidate rule.
+    lane/memfn-r13 is at ae7b6a22.
+- Pruned the stale worktrees r4e0/r4e0b/w5fix/r12.
+- Frank asked when the first SIMD directional reading comes. It comes after
+  RQ-2, then the kit's rank_pos lane, then the RQ-4 timing slot.
