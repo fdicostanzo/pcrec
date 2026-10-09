@@ -20,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 . "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (registry_check.c, pcre2_check.c)
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"  # [K37] "$TIMEOUT_BIN" bounds the B7 --list-axes calls
 KEEP="${KEEP:-0}"
 SANFLAGS="${SANFLAGS:-}"
 
@@ -690,14 +691,14 @@ fi
 # tuning.md §2.17's precedence sentence) and the five fallback axes are
 # `kind=list`. The literal order below is the spec sentence's, written here and
 # not read off the dump, so a table edit that reorders the listing fails.
-fbsel="$("$PCREC" --list-axes | awk -F'\t' '$1=="engine-route"{printf "%s%s", (n++?",":""), $3}')"
+fbsel="$("$TIMEOUT_BIN" 60 "$PCREC" --list-axes | awk -F'\t' '$1=="engine-route"{printf "%s%s", (n++?",":""), $3}')"
 fbwant="forced,declined-nullable-default,declined-nullable,collapsed-prefilter,overflowed-dfa,overflowed-prefilter,size-cap-retry,selected"
 if [ "$fbsel" != "$fbwant" ]; then
     echo "registry: engine-route lists '$fbsel', want the attribution order '$fbwant'" >&2
     rc=1
 fi
 for fbax in engine-route size-term prefilter-lang fallback prefilter-admit; do
-    fbbad="$("$PCREC" --list-axes | awk -F'\t' -v a="$fbax" '$1==a && $4!="list"{n++} END{print n+0}')"
+    fbbad="$("$TIMEOUT_BIN" 60 "$PCREC" --list-axes | awk -F'\t' -v a="$fbax" '$1==a && $4!="list"{n++} END{print n+0}')"
     if [ "$fbbad" -ne 0 ]; then
         echo "registry: axis $fbax lists $fbbad row(s) whose kind is not 'list' (B7)" >&2
         rc=1
