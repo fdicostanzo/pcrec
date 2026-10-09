@@ -9,7 +9,8 @@ and D144 addendum 4. It overrides anything below that conflicts.** Read
 §R4.9 first. In short:
 - `[r9 F-1]` A zero-mover kit step, R4e′.0, first makes the FUNC part
   PRE and OFS share a selected first-match table, `fn_rows[]`, with a
-  BODY slot (the scalar loops) and a PREFIX slot (born empty). SIMD rows
+  BODY slot (the scalar loops) and a PREFIX slot (born empty). **`[R4e′.0]` BUILT**
+  (lane r4e0, 2026-10-09). SIMD rows
   are PREFIX rows; no decorator over the floor.
 - `SCAN_ROWS` is the kit's form tables (`arms[]`, `rc_row`, `fn_rows[]`)
   under ONE shared walk and ONE deny carrier (`--memfn=`). SIMD forms are
@@ -532,6 +533,35 @@ collect" was a decorator over the floor row, which the house rule forbids.
 5. **What is pcrec's:** nothing. The kit owns the renderer, so the seam is
    kit-side end to end. pcrec's identity gates are its control.
 
+> **`[R4e′.0]` BUILT** (lane r4e0, 2026-10-09, request R-11;
+> `docs/dev/lanes/r4e0_report.md`). Kit-only, zero movers, no options.def
+> row, no `MF_SITE_ABI` bump, no abi event. As built:
+> - `fn_rows[]` (`memfn/src/ofsskip.c`) holds `fn-pair` and `fn-memchr`
+>   in the BODY slot; the PREFIX slot is empty. The two bodies are
+>   today's text moved verbatim into `pair_body`/`memchr_body`. `fn-memchr`
+>   is the slot's FLOOR: its predicate always holds, and first-match order
+>   keeps it off a cube (its text is right only where the scanned position
+>   is one byte). Sabotage S686 (the two rows swapped) holds that order.
+> - `ofs_fn_define(art, handle, h, p, fn, o)`: the calling site goes in as
+>   its HANDLE, not an `mf_site *`. The handle gives the site
+>   (`art->sites[handle - 1]`) and numbers the trace record.
+> - Text order: the PREFIX row's helpers (none), the FUNC head, the BODY
+>   loop. That is §R4.9.2.5's order without `<fn>__body`, which R4e′.0b
+>   adds. The PREFIX walk is handed the chosen BODY row (`fn_in.body`).
+> - Contracts `fn_pair_ct`/`fn_memchr_ct`. They read `denies`
+>   (NONE|RUN_OVERLAP), `table_ref` (NONE|REF), `reverse` (NO) and no
+>   `floor`. Every other field is the calling arm's, which the arms walk
+>   checked first, so they serve MF_ANY there. That includes `pred`/
+>   `preds`: the walk's predicate is one of them, and ofs_fn_applies holds
+>   it.
+> - Trace table `fn`, phase `define`, site = the calling site's handle.
+>   The gate's reach registry went from 16 to 32 rows, because 17 rows
+>   would have overflowed it (`REACH_DROPPED`).
+> - The gate's witnesses are in `tests/memfn/rows.tsv` (`fn-pair`:
+>   `(?i)cat`, control `-fno-req-run-fold`; `fn-memchr`: `abc[0-9]+xyz`,
+>   control `-fno-req-run -fno-offset-skip`). G2 floors are measured
+>   (`row_floors.tsv`). The pcrec floors are the slot census's.
+
 **The sites the seam reaches.** Every `ofs_fn_define` call, i.e. every
 emitted FUNC part. They have three pcrec customers (names from
 `emit_dfa.c`):
@@ -656,6 +686,22 @@ extracts their shared prefix ONCE, `kit_walk(table, slot, in, gphases,
 trace)`, and all three tables use it (`fn_rows[]` takes a slot; the other
 two have one). The extraction is part of the zero-mover seam step (its
 text effect is nil; the trace names are unchanged).
+
+> **`[R4e′.0]` BUILT** as `kit_walk(table, slot, in, gphases, denies, x,
+> tc, why)` (`memfn/src/compose.c`). A table is a `kit_table` of accessors
+> (`ct`, `slot`, `deny`, `holds`). `select_arm`, `rc_row_of` and
+> `fn_select` call it. Only tests 1, 2 and 5 are built:
+> - test 1 reads the one `MF_D_*` bit;
+> - test 3 (REACH) and test 4 (OVER) arrive with batch 1's first SIMD row,
+>   since no row reads them today (D77);
+> - reading `--memfn=` in test 1 is RQ-1's.
+>
+> A slot holding no row is not a selection, and records nothing in the
+> trace. **Open for batch 1:** a PREFIX walk that asks rows and chooses
+> none is not a refusal, but today's `END chosen=-` spells a refusal
+> (`trace_format.md`). The trace needs a word for it before the first
+> PREFIX row lands. Sabotage S689 shows the census reads such an END as
+> a refusal.
 
 **The walk, first match, per row in table order:**
 
@@ -1775,7 +1821,7 @@ kit narrows or removes the row in a follow-up.
 ### R4.9.7 The first batch, with its evidence, and the filed list
 
 **Step R4e′.0 (the seam) precedes batch 1** and is its own kit request:
-§R4.9.2.1, zero movers, no options.def row, no `MF_SITE_ABI` bump.
+§R4.9.2.1, zero movers, no options.def row, no `MF_SITE_ABI` bump. **`[R4e′.0]` BUILT** (lane r4e0, 2026-10-09).
 `[D155]` **Step R4e′.0b (the routing) follows it, also before batch 1**:
 §R4.9.2.6. It moves every FUNC's loop into `<fn>__body` and makes the FUNC
 one call. It is a pcrec abi event (RQ-6), it has no options.def row, and
@@ -8960,6 +9006,8 @@ text stays opt-in until R4f.
 >     migration lanes, and heavy slots go 2:1 through main, until M5′.
 >   - `[r9 F-1]` **Step R4e′.0, the seam** (§R4.9.2.1): kit-only, zero
 >     movers, its own request. `fn_rows[]` with BODY and PREFIX slots.
+>     **`[R4e′.0]` BUILT** (lane r4e0, 2026-10-09, R-11; §R4.9.2.1's
+>     as-built block).
 >   - `[D155]` **Step R4e′.0b, the routing** (§R4.9.2.6): the FUNC's loop
 >     becomes `<fn>__body` and the FUNC one call. It is a pcrec abi event
 >     (RQ-6), measured as G1, and lands before batch 1.
