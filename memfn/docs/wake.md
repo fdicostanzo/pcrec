@@ -1,9 +1,12 @@
-# memfn wake — kit session hand-off (rewritten 2026-10-09 ~15:45)
+# memfn wake — kit session hand-off (rewritten 2026-10-09 ~16:50, reset at 53% context)
 
 This is the orientation file for the kit session. Run it as
 `/pcrec-memfn-manager` (`.claude/skills/pcrec-memfn-manager/SKILL.md`;
 its §1 is the wake order). It is rewritten at every pause and holds the
 current state. The history is `journal.md`.
+
+**This copy lives on lane/memfn-vmlazy** (newer than main's). Main's
+`memfn/docs/wake.md` is the R-11 copy.
 
 ---
 
@@ -17,100 +20,99 @@ current state. The history is `journal.md`.
   `/home/pcrec/projects/pcrec`. It has 16 threads, gcc 15.2, libpcre2
   10.46 and no clang.
   - Bare `timeout` is uutils; use `gnutimeout`.
-  - No git identity is configured. Commit with
+  - Commit with
     `git -c user.name="Frank DiCostanzo" -c user.email=frank@dicostanzo.com`.
-- **Unit branches.** There is one branch per delivered unit, cut from main
-  in its own worktree (e.g. `worktrees/r4e0b` on `lane/memfn-r4e0b`).
-  - `worktrees/memfn` is the old kit home, now on `lane/memfn-skill`
-    (merged).
-  - Never merge to main and never push.
-  - Never `cd`. Use `git -C` and absolute paths; a top-level `cd` moves
-    the session cwd.
+- **Unit branches.** There is one worktree and branch per unit, cut from
+  main. Never merge to main, never push, never `cd`. Use `git -C` and
+  absolute paths.
 - **Scratch:** `worktrees/memfn-slot/` (gitignored).
-- **Pruning:** `scripts/wtprune --apply NAME`.
+- **Pruning:** `scripts/wtprune --apply NAME`. It refuses a worktree with
+  untracked `.scratch/` lane logs or a live cwd.
 
 ## 2. Read, in this order
 
 1. `memfn/CLAUDE.md`.
-2. `memfn/docs/requests.md`, then `responses.md` (the newest `done:`
-   entries and notices).
-3. The tail of `memfn/docs/journal.md`.
-4. `docs/design/memfn/integration.md` §R4.9, the SIMD layer's design
-   (rev 4.9, R-9 done).
-5. BOILERPLATE before briefing, coding_guide before C, learnings §3 before
-   a check.
+2. `memfn/docs/requests.md`, then `responses.md` (the newest notices).
+3. The journal tail (this branch).
+4. `docs/dev/lanes/vmlazy_report.md` (§8 is its slot chain) and
+   `r12scope_report.md`.
+5. integration.md §R4.9.7 before R-13.
 
-## 3. Box, slot and cron rules (this box)
+## 3. Box, slot and cron rules
 
-- One heavy suite at a time across BOTH sessions.
-  - **ASK main for the GO before every slot** (2026-10-09: slot16 was
-    launched without one).
-  - Ping main at DONE with the FULL `== mech run COMPLETE` trailer.
-- **Light work needs no slot:**
-  - `make -j4` and `make strict`;
-  - single compiles;
-  - `test-memfn-*` and `test-codegen`, pinned to `taskset -c 12-15`;
-  - G2 `--quick`;
-  - single mech rows.
-- **Slot script pattern:** `worktrees/memfn-slot/slot16/run.sh` is the
-  current template.
-  - Launch it detached with `setsid nohup`.
-  - It writes DONE ONLY after the last stage completes, and FAILED
-    otherwise. Main's sequencer keys on DONE.
-  - Mech is ONE `PROCS=4 run_sabotage_matrix.sh <rows>` ([TT-MECHPAR]).
-  - A verdict reads EVERY column of the COMPLETE trailer (unexpected,
-    undetected, unreached, anomalies) against the rows' declared
-    expectations.
-  - Build row lists from `SAB_ID`-style ids, never from raw paths.
-- Restore `docs/dev/artifact_size_log.tsv` after `make test`, and never
-  commit it.
-- **Heartbeat cron:** `17,47 * * * *`. It doubles as the DEADLOCK CHECK
-  (Frank, 2026-10-09). A tick messages a peer ONLY while you wait on that
-  peer for a specific thing. Never ping a session you aren't waiting on.
-  Recreate it at wake and delete it at close.
+- **Reset rule:** above **35% context**, look for a reset point (Frank,
+  2026-10-09; memory `pcrec-keep-lanes-full`).
+- One heavy suite at a time across both sessions.
+  - **ASK main for the GO before every slot.** Ping at DONE with the FULL
+    `== mech run COMPLETE` trailer.
+- **Light work needs no slot:** `make -j4`, strict, `test-memfn-*` and
+  codegen pinned to `taskset -c 12-15`, G2 `--quick`, and single mech rows.
+- **Slot template:** `worktrees/memfn-slot/slot16/run.sh`.
+  - It writes DONE only after the LAST stage completes, FAILED otherwise.
+    Main's sequencer keys on DONE.
+  - Mech is ONE `PROCS=4` invocation.
+  - A verdict reads EVERY column of the COMPLETE trailer.
+  - Build row lists from ids, never paths.
+- **Heartbeat cron:** `17,47 * * * *`, which doubles as the DEADLOCK CHECK.
+  Message a peer ONLY while you wait on that peer for a specific thing, and
+  never otherwise. Recreate it at wake.
 
-## 4. Current state (2026-10-09 ~15:45)
+## 4. Current state (2026-10-09 ~16:50)
 
-- **Done and merged today:** R-9 (SIMD design), R-10/M6 (VMSTRIDE, plus
-  the W5 alloc-witness fix and the `memfndeleg` mech arm for S683), and
-  R-11 step R4e′.0 (the `fn_rows[]` seam plus one `kit_walk`).
-- **R-11 step R4e′.0b: DONE, awaiting main's merge.** It is on
-  lane/memfn-r4e0b @ 39ed9cca: the routing, pcrec abi 69 -> 70.
-  - slot16 is green: routing census 0 OTHER/ASYMMETRIC, N2 clean, G2 full
-    192.65M/0, make test green, mech 80 rows with 0 unexpected and 0
-    anomalies.
-  - The `done:` is posted in responses.md.
-  - R-11 is COMPLETE when main merges. Then prune worktrees r4e0b and
-    r4e0.
-- **Batch 1** (`vrun-w32`/`vrun-w16`, the first SIMD rows) is NOT filed
-  yet. Main files it after RQ-1..3:
-  - RQ-1 `--memfn=` carrier: LANDED (clibundle). The first options.def row
-    must add a pcrec cli case.
-  - RQ-3: lane/rq3, abi 71, main's. The kit must add
-    `simd_open`/`simd_close` to `mf_sink`, wire them in
-    `pcrec_memfn_sink` (2 lines), bracket every SIMD row's guarded text,
-    and declare per-row bounds in `tests/memfn/simd_bounds.tsv`, which
-    `make test-memfn-guarded` checks.
-  - RQ-2 `pcrec_find_pick2`/`plan_pos2`: main's, status unknown.
-- **Kit follow-ups, unscheduled:** Q-G2M6-1..9 (memfn/tests/G2M6_REPORT.md)
-  are contract-clarity items, not defects. The leading ones are Q-G2M6-3
-  (`peek` required at W > 1 although it is unused) and Q-G2M6-4 (EXCLUDED
-  on a strided ADVANCE).
-- **Open since last night, discussion only:** Frank asked for SIMD
-  priority by site-category frequency × winnable margin. No population
-  census exists yet.
+- **R-9, R-10, R-11 and R-12 step 1: done and merged.**
+- **R-12 VMLAZY: BUILT, awaiting its slot** (lane/memfn-vmlazy @ 36f05045).
+  - Commits: normalize 7106b370 (pcrec abi 70 -> 72; main's number, with
+    RQ-3 = 71 landing first), zero-mover REPLACE 08bda492, VALID pending
+    row + vocab re-sweep df808ef8.
+  - G1: movers = exactly the lazy artifacts; 0 OTHER / ASYMMETRIC / entry
+    shape; timing null over 222 patterns. Light suites green; S706-S710 and
+    S712 DETECTED.
+  - **In flight at pause:** the lane's chain2, DETACHED and reparented, so
+    it survives the reset. G2 quick passed; 6 zero-mover sweep arms
+    remain. Done when `CHAIN2 COMPLETE` appears in
+    `worktrees/vmlazy/.scratch/logs/c2/summary.txt`. Judge
+    `.scratch/logs/sweep/<arm>.log` by `movers=0 asymmetric=0` on every
+    stream.
+  - **TODO on wake, in order:**
+    1. Read chain2's verdict.
+    2. TaskStop lane `vmlazy` if it is still listed. Its chain is
+       reparented, so stopping it is safe.
+    3. Commit **N7U's retirement** on this branch: delete the N7U manifest
+       row (C17 floor literal and its readers by grep, S512's POP), and
+       write D147 addendum 14's rule into integration.md §R4.3.4 beside
+       Q-R10-11. The rule: a walk whose unit is the encoding's character (a
+       decode on either operand) belongs to the encoding; its byte-domain
+       sub-loops are kit sites. The kit is encoding-blind. A sabotage id is
+       available from S711 if one is needed. Then run light checks.
+    4. When RQ-3 has landed (abi 71), merge main ALONE. S693's AFTER
+       becomes 71 and the other readers get re-derived (whichever lands
+       second re-pins). Re-pin FILEPIN.
+    5. Write slot17 from vmlazy_report §8 (template slot16), then ASK main
+       for the GO.
+- **R-13 (batch 1: vrun-w32/w16 CANDIDATE, S716-S730): ACKED, waiting on
+  RQ-3.** Main's NEXT session pings when RQ-3 merges. Build from main after
+  that:
+  - the `mf_sink` `simd_open`/`simd_close` members, wired in
+    `pcrec_memfn_sink` (pcrec's half is `pcrec_memfn_sink_simd_open/_close`);
+  - per-row bounds in `tests/memfn/simd_bounds.tsv`
+    (`make test-memfn-guarded`);
+  - each row's `--memfn=no-NAME` deny plus a pcrec cli case;
+  - C18's four legs;
+  - the identity gate on every arm, with both layers read.
 
-**Worktrees:** r4e0b and r4e0 (prune after main merges), g2u + g2u-cell
-(keep, the D27 cell), memfn (on lane/memfn-skill), w5fix and m6 (merged;
-prune), r4h (untracked r4h_rulings.md: check before pruning), m4, r9d
-(merged; prune).
+  RQ-2 is needed for the sweeps, not the build.
+- **Kit follow-ups, unscheduled:** Q-G2M6-1..9 and [MEMFN-CI-ASCII] (main's
+  filed row).
+
+**Worktrees:** vmlazy (active), g2u + g2u-cell (keep; main re-created g2u at
+2dc64da6), memfn (lane/memfn-skill, merged), memfn-slot (scratch), r4h, m4.
+r4e0, r4e0b, w5fix and r12 hold only `.scratch/` lane logs; delete those
+logs and prune when convenient.
 
 ## 5. Next actions on wake
 
-1. Recreate the heartbeat cron and run ListAgents. Read requests.md for
-   new items (batch 1 may be filed).
-2. Confirm main merged lane/memfn-r4e0b; then prune r4e0b, r4e0, m6, w5fix
-   and r9d with wtprune.
-3. When batch 1 is filed: ack it, then brief per §R4.9.7. The sink ops
-   come first, then the rows, with their deny rows plus cli cases, and
-   both layers read.
+1. Recreate the heartbeat cron and run ListAgents. Read requests.md for new
+   items.
+2. Work §4's VMLAZY TODO list.
+3. When main pings that RQ-3 has merged, start R-13 (opus lane, light runs
+   only), in 2:1 shape alongside the migration thread.
