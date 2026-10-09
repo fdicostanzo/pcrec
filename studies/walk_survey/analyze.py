@@ -27,7 +27,10 @@ GRATUITOUS-BYTE count G read off the row's per-phase columns:
   K5  find-all re-scan     find-all: bytes each call read PAST its match end
                            (re-read by the next call), by phase: G = A_pre +
                            A_skip (scans); K5m = A_fwd + A_anc + A_vm + A_rev
-                           (machine lookahead) reported apart
+                           (machine lookahead) reported apart, and its
+                           BOUNDED-width part K5mb (cwmax known: the machine
+                           stepped past a final state; a subset of K5m, not
+                           summed twice)
   K6  repeated pre-check   the pre-check reading bytes more than once inside
                            a call (k-variant memchr streams, one memchr per
                            required-set byte, candidate re-checks):
@@ -45,6 +48,12 @@ GRATUITOUS-BYTE count G read off the row's per-phase columns:
   K10 VM re-reads          T_vm - U_vm on VM artifacts (backtracking and
                            per-start re-attempts; algorithmic)
   K11 DFA attempt-scan     DFA_SCAN=attempt: G = T_fwd - U_fwd
+  K12 inner landmark      k12_census.py's candidates (a necessary byte/run at
+                           least 16x narrower than the start set, DFA route or
+                           VM hybrid): G = m_gap, the forward machine's bytes
+                           stepped before the call's match start (wsdrv5.c);
+                           where K7 also fires on the cell the two count the
+                           same gap bytes, so the sum takes the larger
   RES residual             T - LB - (the classes above), LB = e - search_from
                            on a match (span+1 under K1; e under K2), n on
                            none; the unexplained excess, ranked to find NEW
@@ -88,6 +97,9 @@ def pair(d, a, b):
     return d.get((a, b), d.get((b, a), 0))
 
 
+K12PIDS = set()
+
+
 def classify(r, anch):
     """-> dict class -> G bytes (only classes that fire)."""
     if r.get("_bad"):
@@ -124,6 +136,11 @@ def classify(r, anch):
         m = a["fwd"] + a["anc"] + a["vm"] + a["rev"] + a["endw"]
         if m:
             g["K5m"] = m
+            # a BOUNDED-width pattern's machine reading past its match end
+            # is the final-state overstep (no live continuation existed);
+            # an unbounded one needed the byte to end the match
+            if r["cwmax"] not in ("-1", "?", ""):
+                g["K5mb"] = m
     if search or fa:
         # in-call repeats of the pre-check (k-variant streams, per-byte set
         # memchrs, candidate re-verification); under find-all the part past
@@ -142,6 +159,8 @@ def classify(r, anch):
         g["K10"] = t["vm"] - u["vm"]
     if r.get("DFA_SCAN") == "attempt" and t["fwd"] > u["fwd"]:
         g["K11"] = t["fwd"] - u["fwd"]
+    if r["pid"] in K12PIDS and (search or fa) and I(r.get("m_gap")) > 0:
+        g["K12"] = I(r["m_gap"])
     return g
 
 
@@ -157,17 +176,17 @@ def lower_bound(r):
     return e if rc == 1 else n
 
 
-CLASSES = ["K1", "K2", "K3", "K4", "K5", "K5m", "K6", "K7", "K8", "K9", "K10", "K11"]
+CLASSES = ["K1", "K2", "K3", "K4", "K5", "K5m", "K5mb", "K6", "K7", "K8", "K9", "K10", "K11", "K12"]
 # K9 (the capture finisher's span walk) and K10 (VM backtracking/re-attempts)
 # are REPORTED but not summed as gratuitous: the first is required wherever
 # captures are delivered, the second is the VM's algorithm, not a pass a
 # compile-time fact removes. K0: at -O0 the skip loop's last test and the
 # forward machine's first step load the SAME landing byte (gcc -O2 keeps it in
 # a register); ovl(skip, fwd) is subtracted from the residual, not a class.
-SUMMED = ["K1", "K2", "K3", "K4", "K5", "K5m", "K6", "K7", "K8", "K11"]
+SUMMED = ["K1", "K2", "K3", "K4", "K5", "K5m", "K6", "K8", "K11"]   # + max(K7, K12)
 LOCFIN = {"K1": "locator", "K2": "finisher", "K3": "finisher", "K4": "finisher", "K5": "locator (gate)",
-          "K5m": "locator", "K6": "locator (gate)", "K7": "locator (gate)", "K8": "locator",
-          "K9": "finisher", "K10": "both", "K11": "locator"}
+          "K5m": "locator", "K5mb": "locator", "K6": "locator (gate)", "K7": "locator (gate)", "K8": "locator",
+          "K9": "finisher", "K10": "both", "K11": "locator", "K12": "locator"}
 
 
 def gsum(gs):
@@ -175,11 +194,16 @@ def gsum(gs):
     pre-check classes on the same cell."""
     if gs.get("K1"):
         return gs["K1"] + gs.get("K11", 0)
-    return sum(gs.get(k, 0) for k in SUMMED)
+    return sum(gs.get(k, 0) for k in SUMMED) + max(gs.get("K7", 0), gs.get("K12", 0))
 
 
 def main():
     rb, rcorp, times, out = sys.argv[1:5]
+    for kf in sys.argv[5:]:
+        for ln in open(kf).read().split("\n")[1:]:
+            x = ln.split("\t")
+            if len(x) >= 9 and x[8] == "1":
+                K12PIDS.add(x[0])
     os.makedirs(out, exist_ok=True)
     pops = {"bench": load(rb), "corpus": load(rcorp)}
     tm = {}

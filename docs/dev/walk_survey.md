@@ -99,7 +99,7 @@ does not count it as a walk.
   - the block's own inline m/n subjects;
   - three synthesized 16 KiB subjects from a deterministic prose filler: `FILLER+M` (a match
     near the end), `M+FILLER` (a match at the start), `FILLER+N`.
-  - Size: @@CORPUS_POP@@.
+  - Size: 4,563 pattern blocks (4,171 with a live default-config compile; 371 refused, the rest build failures), 160,377 rows.
 
 The corpus run resumed after a stall on a ReDoS witness. It resumed with a 20M VM step
 budget (`run_rest.sh`): the instrumented VM is about 50x slower, and the corpus's
@@ -140,4 +140,315 @@ The instrument was validated before any population number was read.
 | 5 INDEPENDENT COUNT: gcov line counts of `\d+$`'s artifact on case 1's subject | skip and forward counts equal | skip-loop line 1,048,572 = instrument skip 1,048,572; forward-step line 5 = instrument fwd 6 − the one end-view load |
 | 6 CLASS MEASURES RESPOND: K4 on `\w+` (artifact vs the landing twin), K5 on `(?i)cat` over lowercase (fold vs `-fno-req-run-fold`) | the twin/arm reads 0 | `land_rev` 73,727 → 0, `T` 172,030 → 98,303; `A_pre` 97,624,809 → 0 |
 
-@@BODY@@
+## 3. The ranked class table
+
+Ranked by BENCH IMPACT first. That is `est_ms`: the sum over the auto-caps testee's cells of
+`median × G/T`, an upper estimate for scan classes. Corpus breadth is second. `G/n` is
+gratuitous bytes per subject byte on the representative subjects. "twin" is the
+answer-checked hand-twin timing of §5 (`results/twin_timing.txt`, scratch tier: Ryzen
+7700X, one core, a box at load ~12-24 from other lanes, best of 5).
+
+@@TABLE@@
+
+The verdicts on the brief's candidate list:
+- CONFIRMED: K4 and K3 (the reverse pass where the start is already known), K5/K6/K7 (the
+  pre-check family), K5m (find-all re-entry), K11, K12.
+- REFUTED as a population today:
+  - K2, start-anchored reverse: zero cells. [OPT-5] STEP 2's `pinned` start covers it.
+  - K8, the match regime re-deriving a known start: real per cell, but on the bench's short
+    subjects it is worth microseconds in total.
+  - K9, the hybrid re-walking the DFA-proved span: required for captures, and 2.7% of the
+    cells' loads.
+- NOT GRATUITOUS: K10, the VM's backtracking re-reads. It is the largest byte count and the
+  largest estimate, but it is the backtracking algorithm on backreference patterns.
+  Recorded, not ranked.
+- `(?:P)\z` whole-subject forms are K1 (end-pinned) or K8 (the match regime) instances, not
+  a class of their own.
+
+## 4. Per-class evidence
+
+### K4: the reverse pass re-derives a start the forward scan landed on (FINISHER)
+
+**What.** RECOVER's `reverse-pass` row walks every match back from its end, but the match
+began at the first byte the forward machine stepped in that call: the start-byte skip loop's
+landing. `wsdrv`'s per-call landing test counts it. For each call it records the lowest
+offset the `fwd` phase touched; when that offset equals the reported start, the call's
+reverse bytes are `land_rev`.
+
+**Population.**
+- Bench: 284 auto-caps cells (570 with nocaps), 177 patterns.
+- Of the 199 throughput cells that run a reverse pass at all:
+  - 79 land on EVERY match;
+  - 96 land on at least 90% of matches;
+  - 36 land on none.
+- **85.7% of all reverse-pass bytes on throughput cells are landing-start bytes.**
+- Corpus: 1,362 of 4,171 patterns (32.7%), on the synthesized subjects.
+
+**Excess.** The dense token find-alls are the bulk:
+- utf8 `.` (`cls-dot`): K4 1.00 B/B, T/LB 4.13;
+- `\p{L}+`: 0.81, T/LB 2.30;
+- `\w+` (`cls-w`, `mod-a`): 1.16, T/LB 2.76.
+
+**Twin** (`landtwin.py`: record the skip loop's landing, delete the reverse block, start =
+landing). Answer-identical (span checksum) on the bench's own throughput subjects:
+
+| pattern | today | twin | change |
+|---|---|---|---|
+| `\w+`, syntax `t-1m` | 3.03 ms | 2.00 ms | −34% |
+| utf8 `.`, utf8 `t-1m` | 8.14 ms | 5.28 ms | −35% |
+| utf8 `\p{L}+`, utf8 `t-1m` | 5.36 ms | 3.35 ms | −37% |
+
+**What makes it exact.**
+- A landing `L` is the first candidate at or after `search_from`. If any match starts at
+  `L`, the leftmost-first match starts at `L`, and the unanchored forward DFA's reported end
+  is that match's end. So "a match starts at `L`" is the whole condition.
+- Two sufficient forms:
+  1. A COMPILE-TIME FACT: the anchored machine's state after any single start-set byte, in
+     the landing's start view, is accepting. This holds for `C+`, `C`, `C{1,n}` and
+     `C+D*`-shaped token patterns, and fails for literals and for a leading assertion.
+  2. Without the fact, run the ANCHORED machine from `L` (the [ENG-ABS] match-here machine
+     most artifacts already carry). If it accepts, the span is exact with no reverse pass.
+     If it dies, continue unanchored from `L`+1. That costs an anchored attempt per false
+     landing, so it is a selection question, not a free win.
+- The 36 throughput cells with no landings show where form 2 would only cost.
+
+**Owner.** No row. The slot is start_table.md's RECOVER ("given a match END, where does it
+start?"), whose rows today are `reverse-pass` and `pinned`. In D156's frame it is a FINISH
+choice: with the typed result "exact span" the finisher is nothing. Filing suggestion: §7 F1.
+
+### K1: end-pinned patterns walk the whole subject (LOCATOR, known)
+
+**Population.**
+- Bench: 23 auto-caps cells, 12 patterns (start-anchored `^...$` excluded: one attempt at 0
+  is already their locator). Five are the `t-tail-*` throughput cells at G/n 1.03-1.31:
+  - `tail-word-eoz` 9.8 ms against a best of 394 ns;
+  - `tail-ext-lower-txt` 8.8 ms;
+  - `tail-space-eol` 7.9 ms;
+  - `tail-digits-eol` 3.7 ms;
+  - `tail-dotstar-txt` 0.86 ms.
+- Corpus: 142 of 4,171 patterns (3.4%) with a measured excess (revend_census.md counts the end-pinned population itself).
+
+**Owner.** [OPT-REVEND] (D156; `docs/design/revend.md` rev 2, form C). This survey adds
+nothing to its design. Its twin, run through this instrument, is validation case 2:
+1,048,585 → 8 bytes.
+
+### K11: the DFA attempt scan re-reads overlapping attempts (LOCATOR)
+
+**Population.**
+- Bench: 24 auto-caps cells. One pattern carries the cost: `wild-waf-crs-942360-concat-sqli`
+  (`^` on some branches, so `RX_DFA_SCAN "attempt"`). Its forward attempts re-read 2.15 B/B
+  over the 4.6 MB throughput set: 36.5 ms against a best of 3.6 ms, and 1.94 B/B on its
+  short-search cells.
+- Corpus: 130 of 4,171 patterns (3.1%).
+
+**Owner.** [OPT-ATTEMPT-SPLIT] (ratified 2026-09-22, not started; its row already names this
+witness at 8.83 ns/B). This survey supplies the byte view: two of every three bytes the
+attempt scan reads are re-reads.
+
+### K5m (and K5mb): find-all re-entry re-reads the machine's lookahead (LOCATOR)
+
+**What.** Each find-all call reads bytes past its match end, and the next call reads them
+again, because the API is stateless:
+- an unbounded pattern reads one byte to end the match (`\w+` sees the space);
+- a BOUNDED-width pattern steps past a final state (K5mb: utf8 `.` reads the next lead
+  byte);
+- a lookbehind pattern re-reads its seed context byte before `search_from` (in the
+  residual, §6).
+
+**Population.**
+- Bench: 213 auto-caps throughput cells, 2.3% of their loads; 154 patterns K5mb.
+- Concentrated where matches are dense:
+  - utf8 `\B` (`asr-b-midchar`, nullable: one call per position): 1.08 B/B, 12.7 ms against
+    a best of 0.9 µs;
+  - utf8 `.` and its siblings: 0.70-0.71 B/B.
+- Corpus: 2,807 of 4,171 patterns (67.3%) on find-all, 1,750 of them K5mb.
+
+**Owner.** None.
+- The cross-call half needs caller-owned state: [OPT-HYB-RESEED-XCALL] is the existing
+  caller-owned cross-call hint row, the nearest precedent.
+- The final-state half is emission-local: test "this accepting state has no live
+  transition" before stepping.
+- Filing suggestion: §7 F4. The estimate is an upper one (one byte per call); measure before
+  building.
+
+### K7 and K12: the forward machine steps bytes a landmark scan already proved or could skip (LOCATOR)
+
+**K7: a pre-check scanned the bytes, then the engine re-stepped them.** Bench: 161
+auto-caps cells.
+- `\S+@\S+` (`cls-s-uc`): the presence `memchr('@')` scans every gap, then the forward DFA
+  steps the same gap, 0.97 B/B.
+- `email/orig` and `email/factored`: 0.28.
+- `bak-k-named`: 0.83.
+
+**K12: the inner landmark.** `k12_census.py` lists the patterns with a necessary byte or run
+at least 16x narrower than the start set, on the DFA route or a VM hybrid: @@K12_POP@@.
+`m_gap` (`wsdrv5.c`) counts the forward machine's bytes stepped before each call's match
+start. A reverse-inner walk would replace those steps with one `memchr` for the landmark.
+Measured: @@K12_EV@@.
+
+**Owner.** [ENG-TACTICS] (D151's reverse-inner, re-scoped 2026-10-06 as one `handoff-rev`
+row after the start-table fold; on the next [OPTLOOP] cycle's candidate list). The K82
+HANDOFF (`RX_REQ_HANDOFF`) is the bounded case already shipped: it starts the body at
+`c − K` when the run's offset is bounded. K7's cells are the unbounded remainder, where the
+gate's work is still discarded.
+
+### K6: one call scans the same bytes once per stream (LOCATOR gate)
+
+**What.** The pre-check runs one `memchr` per case variant (the S4 pair arm) or per
+required-set byte (`rq_set[]` presence), each over the same bytes.
+
+**Population.**
+- Bench: 126 auto-caps cells.
+- `wild-waf-crs-942270-union-select`: 1.12 B/B (2.12 total, no match anywhere).
+- `ci-ascii-control`: 1.03.
+- `bak-k-named`: 0.85.
+- Corpus: 293 of 4,171 patterns (7.0%).
+
+**Cost.** `memchr` bytes: a fraction of a DFA step each. The est_ms of 4.6 is an upper
+bound.
+
+**Owner.** [MEMFN]: a `memchr2`/`memchr3`-shaped kernel is one pass. K85 is the same
+family's per-call term.
+
+### K5: the folded-run gate restarts every find-all call, a LATENT QUADRATIC (LOCATOR gate)
+
+**What.** `litscan_s4.md` §2.3.4's two-stream arm (a caseless required run, e.g.
+`RX_REQ_RUN "434154@0/dfdfdf"` for `(?i)cat`) works as follows:
+- it keeps one pending hit per case variant (`ha`, `hb`);
+- it starts every call with `fresh = 1`, so both streams are searched from `search_from`.
+
+When one variant is ABSENT from the text (the uppercase one in lowercase prose or logs), its
+`memchr` runs to `n` on EVERY call. A find-all is then `O(n × matches)`.
+
+**Bench.** Three cells (`mod-i`, `mod-r`, `ci-strasse`), G/n up to 3.05. On the bench's own
+subjects both variants occur often enough that the fold still wins: `(?i)cat` on syntax
+`t-1m` costs 0.53 ns/B against 0.71 with `-fno-req-run-fold`.
+
+**Off the bench** (`run_twins.sh`, answer-identical):
+
+| pattern, subject | fold (today) | `-fno-req-run-fold` | ratio |
+|---|---|---|---|
+| `(?i)cat`, 1 MiB lowercase (47,663 matches) | 190 ms | 1.0 ms | 191x |
+| `(?i)error`, a 1 MiB lowercase log (3,038 matches) | 12.5 ms | 0.54 ms | 23x |
+
+**Population.** Every caseless required run on the pair arm: 11 of 343 bench patterns (three trigger on the bench's own subjects), 61 of 4,171 corpus patterns (32 trigger on the synthesized subjects).
+
+**Owner.** [OPT-LITSCAN] S4 (C3). K82 (closed) fixed C3's measured regressions through the
+handoff, but this is a different mechanism that the bench's subjects do not trigger.
+Filing suggestion: §7 F2 (a known-issues entry with a fix shape).
+
+### K3: a fixed-width pattern's start follows from its end (FINISHER)
+
+**Population.**
+- Bench: 130 auto-caps cells, 74 patterns. G/n up to 0.30 on dense literal find-alls
+  (`litrun lit-l2..l8`, `year4`).
+- Corpus: 1,002 of 4,171 patterns (24.0%).
+
+**Twin** (`landtwin.py --fixed 4`, start = end − 4): `abcd` find-all on `litrun mat-l4`
+goes 342 µs → 215 µs (−37%), answer-identical.
+
+**Owner.** D156 states the rule: "A fixed-width pattern's span is fully determined by the
+end". [OPT-5-PERIODK] carries the counted-repeat special case ("multi-edge reverse-pass
+elision, start = end − SUM(count_i)"). No row carries the general one. Filing suggestion:
+§7 F1, as K4's sibling RECOVER row.
+
+### Small or refuted
+
+| class | measured | disposition |
+|---|---|---|
+| K2 start-anchored reverse | 0 bench cells; 0 in the corpus | [OPT-5] STEP 2's `pinned` start covers it |
+| K8 match-regime overread | 20 auto-caps cells: 7 `search-filter` DFA `_match`es and VM routes scan for a start the anchored question does not need, G/n up to 0.98. The bench's match subjects are ≤ 5 KB, so est 0.01 ms. Corpus: 393 of 4,171 patterns (9.4%) | the size-cap fallback [ENG-ABS] already documents; no action until a long-subject match cell exists |
+| K9 hybrid finisher re-walk | 82 auto-caps cells, 2.7% of their loads | required for captures |
+| K10 VM re-reads | 97 auto-caps cells, the largest bytes: the backreference family (`bak-*`, `doubled-word`, `mod-j-uc`) at T/LB 7-10 | the backtracking algorithm, not a pass a fact removes; recorded |
+
+## 5. The twins (`results/twin_timing.txt`)
+
+Scratch tier: Ryzen 7700X, `taskset` to one core, other lanes loading the box (load1 12-24),
+best of 5 (best of 3 for K5), three interleaved repeats. Every line carries a span checksum,
+and each twin's checksum equals its artifact's. The table in §3 quotes the best repeat; the
+file has all three.
+
+## 6. The residual: what no class explains
+
+The top residual cells (`results/summary.txt`) are:
+- **bench**:
+  - `utf8/asr-lb-class` (`(?<=[\x{400}-\x{4FF}])\s`, `misc` 2.06 B/B): the VM lookbehind
+    decodes each candidate's previous character, plus the utf8 start-scan's continuation
+    skips;
+  - the backreference family's VM start scan (`skip` ~0.97 B/B, which the find-all lower
+    bound already counts once).
+- **corpus**: dense-match find-alls of lookbehind-context patterns (`(?<!\s) *[a-z]`,
+  `\W*(?<!\W)\w`) at ~2.3 forward loads per byte. Per call they read the lookbehind seed byte
+  before `search_from`, the match, and one byte past it: K5m's re-entry family on its other
+  side.
+
+Nothing in the residual is a new subject-scale walk. Every byte-per-byte excess found is one
+of the classes above.
+
+## 7. Filing suggestions (SUGGESTIONS ONLY: no plan, decision or known-issues edit here)
+
+- **F1. Two RECOVER rows that know the start without walking (K4, K3).**
+  - `landing`: start = the forward scan's landing, admitted by the compile-time fact "every
+    start-set byte, in its start view, takes the anchored machine to an accepting state".
+  - `end-minus-width`: start = end − w for a fixed-width pattern.
+  - Both are first-match rows in `dfa_search_starts[]` ahead of `reverse-pass`, both are
+    exact, and both hand START to the CALLER. That they are siblings is the reason to file
+    them as ONE row, not two special cases (memory `pcrec-forest-for-trees`).
+  - The non-fact form of `landing` (an anchored attempt at each landing) is a selection
+    question, to measure separately.
+  - The locate × finish design lane D156 charters is the natural owner.
+  - Measured: −34..−37% on the token find-alls, 85.7% of reverse bytes on bench throughput
+    cells.
+- **F2. A known-issues entry for K5** (performance cliff, no wrong answer):
+  - Repro: `(?i)cat` / `(?i)error` find-all on lowercase text, 191x / 23x against
+    `-fno-req-run-fold`.
+  - Fix shape (unmeasured): bound each stream's search by the other stream's pending hit,
+    `memchr(B)` over `[pos, ha)` only, and treat "not found before `ha`" as "no B hit before
+    the candidate". Each call's scans then end at the next candidate, and a find-all is
+    linear again.
+  - Owner [OPT-LITSCAN] S4. Its sabotage witness is the lowercase find-all above, bounded
+    by a watchdog.
+- **F3. K7/K12's population to [ENG-TACTICS].** The census list (`work/k12_*.tsv`'s k12=1
+  rows) and the bench `m_gap` cells as the row's measured population. No new row.
+- **F4. A BOONIES-tier row for K5m.** Find-all re-entry state and the final-state overstep.
+  Trigger: a bench cell where re-entry exceeds 10% of the cell time. Today the top cell is
+  `asr-b-midchar` at an UPPER estimate of 37%.
+- **Not filed:**
+  - K11: [OPT-ATTEMPT-SPLIT] exists; this survey's number goes to it.
+  - K1: [OPT-REVEND].
+  - K6: [MEMFN] kernels.
+  - K8, K9, K10, K2: §4.
+
+## 8. Limits
+
+- **Source-level loads at `-O0`.** gcc `-O2` may keep a byte in a register. K0, the one such
+  case found, is subtracted.
+- **Scanner interposers count semantic bytes.** glibc `memchr` reads aligned blocks: more
+  bytes, at about 1/30 the cost each. The per-phase byte counts are a WALK measure, not a
+  time measure. Times come from the twins.
+- **Impact is a weight.** It uses older-pin medians from another machine and a uniform
+  per-byte cost. The ranking of K4 / K1 / K11 / K5m above the rest is robust to a factor of
+  2. The order among the small ones is not.
+- **The corpus's synthesized subjects** (16 KiB of prose around the block's own subject)
+  measure breadth, not cost. The corpus's G/n are not bench numbers.
+- **The corpus resume** ran its last 2,762 patterns with a 20M VM step budget. The first
+  1,800 ran at the default.
+- **The phase classifier** reads emitted identifiers. A future emitter rename shows up as
+  `unk` loads, counted and reported (0.003% bench, 0.09% corpus), never silently
+  misattributed.
+
+## 9. Reproduction
+
+```
+PCREC=$PWD/build/pcrec PROBE=<revend_probe built against build/libpcrec.a> \
+  BENCHCOPY=<git archive of pcrec-bench with its generators run> studies/walk_survey/run_all.sh
+studies/walk_survey/run_rest.sh                        # the corpus resume + bench under wsdrv5
+python3 studies/walk_survey/k12_census.py build/pcrec work/pop_bench.tsv  > work/k12_bench.tsv
+python3 studies/walk_survey/k12_census.py build/pcrec work/pop_corpus.tsv > work/k12_corpus.tsv
+python3 studies/walk_survey/analyze.py work/res_bench5.tsv work/res_corpus.tsv work/bench_times.tsv OUT \
+  work/k12_bench.tsv work/k12_corpus.tsv
+PCREC=build/pcrec ./studies/walk_survey/validate.sh
+PCREC=build/pcrec BENCHCOPY=... ./studies/walk_survey/run_twins.sh
+```
+
+

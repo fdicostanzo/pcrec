@@ -1,0 +1,36 @@
+== bench: 343 patterns with at least one live default-config cell
+class	patterns	share	cells	by regime
+K1	12	3.5%	23	{'search_short': 12, 'throughput': 11}
+K2	0	0.0%	0	{}
+K3	74	21.6%	130	{'search_short': 73, 'throughput': 57}
+K4	176	51.3%	284	{'search_short': 173, 'throughput': 111}
+K5	3	0.9%	3	{'throughput': 3}
+K5m	213	62.1%	213	{'throughput': 213}
+K5mb	154	44.9%	154	{'throughput': 154}
+K6	68	19.8%	126	{'search_short': 68, 'throughput': 58}
+K7	92	26.8%	161	{'search_short': 92, 'throughput': 69}
+K8	20	5.8%	20	{'match': 20}
+K9	55	16.0%	82	{'search_short': 55, 'throughput': 27}
+K10	64	18.7%	97	{'search_short': 63, 'throughput': 34}
+K11	20	5.8%	24	{'search_short': 20, 'throughput': 4}
+K12	23	6.7%	38	{'search_short': 21, 'throughput': 17}
+K5 cliff population (RX_REQ_RUN folded, the pair arm): 11 of 343 patterns
+   capability/wild-secrets-slack-webhook-url capability/wild-secrets-username-password-pair capability/wild-waf-crs-942270-union-select loglines/http-5xx syntax/cls-fold-pair syntax/cls-pair-ctl syntax/mod-i syntax/mod-r utf8/alt-shared-char utf8/ci-ascii-control utf8/ci-strasse
+== corpus: 4171 patterns with at least one live default-config cell
+class	patterns	share	cells	by regime
+K1	142	3.4%	283	{'findall': 141, 'search': 142}
+K2	0	0.0%	0	{}
+K3	1002	24.0%	1980	{'findall': 978, 'search': 1002}
+K4	1362	32.7%	2557	{'findall': 1200, 'search': 1357}
+K5	32	0.8%	32	{'findall': 32}
+K5m	2807	67.3%	2807	{'findall': 2807}
+K5mb	1750	42.0%	1750	{'findall': 1750}
+K6	293	7.0%	584	{'findall': 292, 'search': 292}
+K7	734	17.6%	1446	{'findall': 723, 'search': 723}
+K8	393	9.4%	393	{'match': 393}
+K9	1140	27.3%	2123	{'findall': 983, 'search': 1140}
+K10	1252	30.0%	2362	{'findall': 1138, 'search': 1224}
+K11	130	3.1%	156	{'search': 86, 'findall': 70}
+K12	0	0.0%	0	{}
+K5 cliff population (RX_REQ_RUN folded, the pair arm): 61 of 4171 patterns
+   tests/altcls/altcls.rxt:117 tests/altcls/altcls.rxt:56 tests/assertions/d27/word_boundary.rxt:91 tests/atomic_groups/d27/interactions.rxt:113 tests/base/caseless.rxt:106 tests/base/caseless.rxt:111 tests/base/caseless.rxt:21 tests/base/caseless.rxt:30 tests/base/cls_fold.rxt:81 tests/base/cls_fold.rxt:97 tests/captures/classes_trie_bounded.rxt:61 tests/captures/structure_anchors_misc.rxt:175 tests/captures/structure_anchors_misc.rxt:87 tests/litscan/handoff.rxt:1008 tests/litscan/handoff.rxt:1097 tests/litscan/handoff.rxt:142 tests/litscan/handoff.rxt:2124 tests/litscan/handoff.rxt:22 tests/litscan/handoff.rxt:2253 tests/litscan/handoff.rxt:2391 tests/litscan/handoff.rxt:2773 tests/litscan/handoff.rxt:353 tests/litscan/handoff.rxt:565 tests/litscan/handoff.rxt:709 tests/litscan/handoff.rxt:890 tests/litscan/handoff.rxt:936 tests/litscan/litrun.rxt:120 tests/litscan/litrun.rxt:148 tests/litscan/litrun.rxt:155 tests/litscan/reqcube.rxt:145 tests/litscan/reqcube.rxt:164 tests/litscan/reqcube.rxt:181 tests/litscan/reqcube.rxt:242 tests/litscan/reqcube.rxt:284 tests/litscan/reqcube.rxt:29 tests/litscan/reqcube.rxt:318 tests/litscan/reqcube.rxt:337 tests/litscan/reqcube.rxt:356 tests/litscan/reqcube.rxt:377 tests/litscan/reqcube.rxt:396
