@@ -389,6 +389,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   fallback family's build. `pcrec_fit_cells_row_name` (trace build) names
   the T1 row of a `fit_seq` entry for the `attrib` record. The `gate`
   record prints T3's row.
+  **[DEC-FALLBACK] B6 (lane decfbB6, 2026-10-08) THE LISTING READS THE
+  TABLES** (§4.2 B6; no abi event, `--list-axes` byte-identical under every
+  `--features` set the registry uses). T1, T3 and T4 rows (and T2's, in
+  select_engine.c) carry an `axlist` column of `FbList` cells (internal.h):
+  axis, order, candidate/stamp name, deny/force bits, lever spelling and
+  `desc`, TODAY's text moved verbatim from `axes_dump.c`'s hand calls (the
+  D-3-like and F-B2 descs included: B7's). `pcrec_fb_list_row(axis, i)`
+  returns the cell whose order is `i + 1` over all four tables; the
+  trace-build self-check (`fit_tables_selfcheck`) holds each axis to orders
+  1..n carried once each. A cell sits on the FIRST table row (in table
+  order) whose cells produce its value; `forced` and `selected` produce no
+  row and sit in select_engine.c's `esel_ends[]`. `FB_NO_LIST` says a row
+  lists nothing.
 - **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
   its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
   `docs/design/opt_dial_design.md` the design record, D103 the governance).

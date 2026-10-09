@@ -21,14 +21,14 @@ SAB_COUNT=1
 SAB_BEFORE='    { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
       ESEL_PASS,
       "-fno-prefilter -- forced off; the VM scans from search_from"
-      " itself" },
+      " itself", .axlist = FB_NO_LIST },
     { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
       ESEL_PASS,
-      PFA_NOTE_ENGINE_VM },'
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },'
 SAB_AFTER='    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
       ESEL_PASS,
-      PFA_NOTE_ENGINE_VM },
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },
     { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
       ESEL_PASS,
       "-fno-prefilter -- forced off; the VM scans from search_from"
-      " itself" },   /* SABOTAGE S640 */'
+      " itself", .axlist = FB_NO_LIST },   /* SABOTAGE S640 */'

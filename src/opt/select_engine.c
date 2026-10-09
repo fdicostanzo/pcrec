@@ -647,7 +647,7 @@ static const PfAdmit pf_admits[] = {
     { "backref",            pfa_bref,               PFV_OFF,     "no-backreference",
       ESEL_PASS,
       "the erased approximation is neither a sound superset nor the"
-      " true span (S7); no flag changes this" },
+      " true span (S7); no flag changes this", .axlist = FB_NO_LIST },
     /* [DD-14 wave E] THE SECOND SUCH ROUTE. A SUBROUTINE CALL's erasure is
      * not a loose approximation, it is a different language (design SS8.2),
      * so there is no window to hand the VM under ANY invocation -- and
@@ -658,17 +658,25 @@ static const PfAdmit pf_admits[] = {
       " language, not a superset (S8.2), and a call in a cycle has"
       " no finite inlining either; no flag changes this, and"
       " -fprefilter refuses. A SPLICED call is not a reason: its"
-      " callee is inlined EXACTLY (S8.3, S6.3)" },
+      " callee is inlined EXACTLY (S8.3, S6.3)", .axlist = FB_NO_LIST },
     /* [OPT-4.2] THE RUNGLESS DECLINE, worded DIFFERENTLY from row 5's, not
      * merely generalized, because there is no rung here to say was
      * "offered": this pattern's own EXACT language is nullable on the
      * ORDINARY hybrid path, no ladder attempt involved. */
     { "var-nullable",       pfa_var_nullable,       PFV_OFF,     "no-nullable-exact",
       ESEL_DECLINED_NULLABLE_DEFAULT,
-      PFA_NOTE_NULLABLE_EXACT },
+      PFA_NOTE_NULLABLE_EXACT,
+      /* [OPT-4.2] THE EIGHTH ROUTE, placed right after `forced` rather
+       * than beside its rung-scoped cousin below: it is the ONE route in
+       * this list that is not a fallback of any kind (internal.h's own
+       * placement note on `ESEL_DECLINED_NULLABLE_DEFAULT` has the
+       * argument), and grouping it with the "auto, a DFA build
+       * overflowed" family would misstate what it is. */
+      .axlist = { { "engine-route", 2, "declined-nullable-default", 0, 0, "",
+                    "auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door" } } },
     { "nullable-exact",     pfa_nullable_exact,     PFV_OFF,     "no-nullable-exact",
       ESEL_DECLINED_NULLABLE_DEFAULT,
-      PFA_NOTE_NULLABLE_EXACT },
+      PFA_NOTE_NULLABLE_EXACT, .axlist = FB_NO_LIST },
     /* [OPT-4.1] ahead of the [SEL-1] row and of the two flag rows, for the
      * reason every row above it shares, and it is the more specific fact
      * where both apply. On the [SEL-1] rung `cx->dfa_disabled` is ALSO true,
@@ -688,7 +696,9 @@ static const PfAdmit pf_admits[] = {
       " -fprefilter is do-or-die and is never silently dropped: on"
       " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
       " it suppresses the rung itself and the compile refuses."
-      " -fprefilter-collapse does not override it" },
+      " -fprefilter-collapse does not override it",
+      .axlist = { { "engine-route", 4, "declined-nullable", 0, 0, "",
+                    "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither" } } },
     /* [SEL-1] ahead of the two flag rows, for the same reason rows 1-2 are:
      * a route no flag explains must not be reported as one. The note's `%s`
      * is `cx->dfa_overflow_why` verbatim, the cap NAME a consumer asserts
@@ -700,20 +710,20 @@ static const PfAdmit pf_admits[] = {
       ESEL_PASS,
       "%s -- the auto-selected prefilter's own DFA build hit"
       " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
-      " instead of refusing (SEL-1)" },
+      " instead of refusing (SEL-1)", .axlist = FB_NO_LIST },
     { "forced-on",          pfa_forced_on,          PFV_ON,      NULL,
       ESEL_PASS,
-      NULL },
+      NULL, .axlist = FB_NO_LIST },
     { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
       ESEL_PASS,
       "-fno-prefilter -- forced off; the VM scans from search_from"
-      " itself" },
+      " itself", .axlist = FB_NO_LIST },
     { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
       ESEL_PASS,
-      PFA_NOTE_ENGINE_VM },
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },
     { "default",            pfa_always,             PFV_DEFAULT, "no-engine-vm",
       ESEL_PASS,
-      PFA_NOTE_ENGINE_VM },
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },
 };
 
 /* T2's walk: the first row that applies (the last always does). */
@@ -1111,6 +1121,36 @@ static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *f
     }
     *from = ESEL_FROM_NONE;
     return ESEL_SELECTED;
+}
+
+/* [DEC-FALLBACK] B6: the attribution walk's two ENDS, `forced` before any row
+ * and `selected` after the last, are the `ENGINE_SEL` values no table row
+ * produces, so their `--list-axes` cells sit here beside the walk. */
+static const FbList esel_ends[] = {
+    { "engine-route", 1, "forced", 0, 0, "--engine=vm / --engine=dfa",
+          "the caller named the engine, so auto selected nothing" },
+    { "engine-route", 8, "selected", 0, 0, "",
+          "always (fallback) — auto chose on the AST and nothing overflowed" },
+};
+
+/* T2's half of `pcrec_fb_list_row` (internal.h): the admission rows' cells
+ * and the walk's ends. */
+const FbList *pcrec_pf_admits_list_row(const char *axis, int order, int *nmatch)
+{
+    const FbList *hit = NULL;
+    for (size_t k = 0; k < sizeof pf_admits / sizeof pf_admits[0]; k++) {
+        const FbList *l = &pf_admits[k].axlist[0];
+        if (!l->axis || strcmp(l->axis, axis) || l->order != order) continue;
+        if (!hit) hit = l;
+        if (nmatch) (*nmatch)++;
+    }
+    for (size_t k = 0; k < sizeof esel_ends / sizeof esel_ends[0]; k++) {
+        const FbList *l = &esel_ends[k];
+        if (strcmp(l->axis, axis) || l->order != order) continue;
+        if (!hit) hit = l;
+        if (nmatch) (*nmatch)++;
+    }
+    return hit;
 }
 
 /* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed

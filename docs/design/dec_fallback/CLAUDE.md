@@ -23,7 +23,7 @@ first edit (the note's §4.1), because main moves under a design note.
   `st_why_walk` and T4's table `st_whys` (string cells, so no member token
   pulls it in): family 86 -> 98, the +12 being those roots, T4's seven
   predicates and its row type `StWhy`. The PARENT tree under the same roots
-  has the identical 98, so B5's code moved no member).
+  has the identical 98, so B5's code moved no member; at B6 the family is 99: T1's row type now carries the `FbList` cell type, which joins it, and the listing accessors `fb_pick`/`fb_find`/`pcrec_fb_list_row` are definitions outside it).
 - `sabotage_anchors.tsv`, `sabotage_anchors.summary` — `../start_table/
   sabotage_anchors.py . call_graph_fallback.txt refactor_edit_set.tsv
   --final after-B6 --edit-names` (exit 2 = the pre-existing S571

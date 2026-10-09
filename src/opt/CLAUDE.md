@@ -597,6 +597,12 @@ construction (src/ir) and emission (src/gen).
   `ESEL_FROM_ROW + i`), which the trace's `attrib` record prints as the
   row's name, so the trace compare against a pre-B5 parent held the walk to
   the ternary. The oracle's `attrib` site is gone with the oracle.
+  **B6 ([DEC-FALLBACK], lane decfbB6): T2 rows carry the `--list-axes`
+  `axlist` cell for `declined-nullable-default` (row `var-nullable`) and
+  `declined-nullable` (row `nullable-collapsed`), and `esel_ends[]` holds
+  the cells of the two values no row produces (`forced`, `selected`);
+  `pcrec_pf_admits_list_row` is T2's half of `pcrec_fb_list_row`
+  (src/core/compile.c).**
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s
