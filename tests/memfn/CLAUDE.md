@@ -449,6 +449,38 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   script. What it cannot see: a length reader of a buffer the witness never
   writes (hsb, a scratch buffer not spliced).
 
+### The SIMD floor rule, C9-x86 (lane r13, [MEMFN] R-13, R4e' batch 1)
+
+- **run_simd_floor.sh**, **simd_floor_check.py**, **simd_levels.c** —
+  `make test-memfn-simdfloor` (in TEST_SECTIONS; mech arm `simdfloor`).
+  Every corpus pattern plus five named batch-1 witnesses (one per route
+  bin: DFA ASSIGN, DFA, no-DFA ON_MISS twice, the VM hybrid), at the
+  default engine and `--engine=vm`, compiled at `-fno-memfn-simd` and
+  `-fmemfn-simd`; a MOVER is a cell whose two artifacts differ (pcrec's own
+  compile, never the kit's `moved`). On every mover: C18 (a) the two
+  preprocess byte-equal at `-mgeneral-regs-only` and `-mno-sse2`; (b) at
+  each level's `test_march` (read from `mf_levels()` by `simd_levels.c`)
+  the preprocessed diff deletes exactly one `    return <fn>__body(...);`
+  per SIMD FUNC and nothing else; (c) the raw diff deletes no line but the
+  two stamp lines the switch moves, and the inserted lines' bytes equal
+  the artifact's `<PREFIX>_SIMD_GUARDED_BYTES` exactly; (d)
+  `routing_shape.py` over the ON text; the guard lint (every inserted
+  `#if`/`#elif` a levels.def guard, every `#include` a level header, no
+  other directive); the `.h` never moves; and C9-x86 (compiles `-Werror` at
+  x86-64, x86-64-v2, sandybridge, x86-64-v3, x86-64-v4 and
+  `-mgeneral-regs-only`, and at `-O0` defines exactly the live arms'
+  helpers, by `nm`). Literal floors on movers, SIMD FUNCs and levels.
+- **simd_bounds.tsv** gains each SIMD row's measured bound (`vrun-w16`,
+  `vrun-w32`); a MEMFN_FORMS token `FORM@L1+L2` is bounded by the sum of
+  its rows `FORM-Lk` (simd_guarded_check.py, which also gained a `simd`
+  arm, `-fmemfn-simd`, and the named witness `(?i)union.*?select`).
+- **libc_census.py** (C11): its SIMD-on half is the MOVERS half since R-13:
+  an ON compile equals the default exactly where its `MEMFN_FORMS` reads
+  `none` (`MOVERS_FLOOR`, a literal).
+- **rows.tsv**/**row_floors.tsv**: the `fn` rows `vrun-w16`/`vrun-w32`
+  (witness `(?i)cat` under `-fmemfn-simd`, control the row's own deny);
+  their floors PLACEHOLDER until the slot census and a G2 count pin them.
+
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.
@@ -494,6 +526,9 @@ M7 fix (lane m7fix) adds S668 on a new arm `n2sample` (run_n2_sample.sh):
 the gate declines it everywhere and only the N2 census sees it. It re-pins
 S512's REACH_POP to the floor M7 set (`C17_ROW_FLOOR=14`). Hand-measured
 figures: `docs/dev/lanes/m7fix_report.md`.
+
+R-13 (lane r13) adds the SIMD rows' sabotage, S716-S730 (the table and
+figures: `docs/dev/lanes/r13_report.md`).
 
 RQ-3 (lane rq3) adds S699-S703 on arm `simdguarded`: the knee reads the
 uncut length (S699), the caps' view stops subtracting (S700), the ladder's

@@ -332,7 +332,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-clskit test-encoding-checks test-utfcheck test-startset test-memfn-link \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
-      test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded
+      test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
+      test-memfn-simdfloor
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1284,6 +1285,13 @@ test-memfn-guarded: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-guarded.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_guarded.sh
 
+# [MEMFN] R4e' batch 1 (R-13): C18, the floor rule's four legs and the
+# guard lint, plus C9-x86, over every corpus pattern at -fmemfn-simd against
+# -fno-memfn-simd (tests/memfn/run_simd_floor.sh; integration.md §R4.9.8).
+test-memfn-simdfloor: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-simdfloor.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_floor.sh
+
 # [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
 # scalar arm the kit carries renders its fixed fixture sites
 # (tests/memfn/arm_fixtures.c) to the pinned sha256, with a perturbed-fixture
@@ -1876,7 +1884,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \
