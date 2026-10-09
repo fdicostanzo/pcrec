@@ -75,6 +75,9 @@ need(tail.startswith("        if (capture_spans) { capture_spans[0][0] = (ptrdif
 
 # the reverse block, indented one level deeper inside the seed loop
 rev_in = "".join("    " + l if l.strip() else l for l in rev.splitlines(True))
+# the walk is a COPY of the block; form B keeps the original too, so the
+# copy's label is renamed (the emitted label is `<p>_reverse_scan_views`)
+rev_in = rev_in.replace("%s_reverse_scan_views" % p, "%s_revend_scan_views" % p)
 
 new = (
     "    if (search_from > subject_length) return 0;\n"
