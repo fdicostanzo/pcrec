@@ -1033,3 +1033,17 @@ pointer when a kit change merges to main.
   wording, confirmed by Frank: "a function that does work never contains
   `#if`; a selector function's whole body may be the `#if` chain, one call
   per arm, and nothing else."
+- 2026-10-08 evening: SESSION RESET at Frank's request. State:
+  - **M7 (R-8)** is BUILT, and its slot12 findings are fixed (m7fix) on
+    lane/memfn-m7. It waits for slot13's re-validation (main GOs it after
+    B5). Then `done: R-8`.
+  - **M6 (R-10, VMSTRIDE only)** is BUILT, and N6 is retired, on
+    lane/memfn-m6 (stacked on an older m7). Still needed: the blinded G2
+    lane g2m6 (stopped for the reset, cell clean), the m7 fixes merged
+    in, then its slot.
+  - **R-9 (SIMD design):** D155 revision on lane/memfn-r9 @ c0b61c16.
+    Q-R9-1..11 are ruled (D155 + addendum 1; Q-R9-10 is shape (c), the
+    selector-body rule). The text still describes Q-R9-10 as open with
+    (a)/(b): update it to (c), then a light re-check panel.
+  - Frank: lettered options are fine, but leave room to bat a question
+    around.
