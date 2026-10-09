@@ -3098,21 +3098,20 @@ results_file="$(mktemp "$MECH_SCRATCH/results.XXXXXX")"
 
 if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
     rowdir="$(mktemp -d "$MECH_SCRATCH/rows.XXXXXX")"
-    running=0
-    # [MACPORT] `wait -n` is bash 4.3+ and silently no-ops on this box's
-    # bash 3.2 — FIFO-throttle on tracked pids instead (tests/lib/
-    # run_san_group.sh's own precedent for the identical gap).
-    pids=()
+    # [TT-MECHPAR] a SLOT POOL, not a FIFO: launch the next row the moment ANY
+    # running row exits. The old throttle waited on the OLDEST row's pid, so
+    # one slow row at the head of the list (S159's 12-minute recursion suite)
+    # held every slot closed once its three companions had finished -- one
+    # process busy on a 16-core box (docs/dev/lanes/mechpar_profile.md).
+    # `jobs -pr` (running jobs only) is bash 3.2-safe, where `wait -n` (4.3+)
+    # silently no-ops (the [MACPORT] gap); a short poll replaces the blocking
+    # wait, at 0.2 s against rows that run for tens of seconds to minutes.
     for f in "${sab_files[@]}"; do
+        while [ "$(jobs -pr | wc -l)" -ge "$PROCS" ]; do
+            sleep 0.2
+        done
         echo "-- running $(basename "$f") --" >&2
         run_one "$f" > "$rowdir/$(basename "$f").row" &
-        pids+=("$!")
-        running=$((running + 1))
-        if [ "$running" -ge "$PROCS" ]; then
-            wait "${pids[0]}" 2>/dev/null || true
-            pids=("${pids[@]:1}")
-            running=$((running - 1))
-        fi
     done
     wait
     for f in "${sab_files[@]}"; do
