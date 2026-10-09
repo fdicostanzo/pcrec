@@ -1805,3 +1805,20 @@ the compiler, and is never adopted silently. Proposed for main to file
     migrated).
   - **Proposed next:** the VMLAZY build lane (migration thread) once main
     agrees Q-R12-1/2 and gives it an abi number after RQ-3's 71.
+- notice: 2026-10-09 — **R-12: N7U RETIRED (D147 addendum 14) and VMLAZY's pre-slot chain GREEN, both on lane/memfn-vmlazy.**
+  - **N7U** (lane n7uret, merged at the branch tip; report
+    docs/dev/lanes/n7uret_report.md). Docs/TSV only and no pcrec byte moves.
+    Manifest row N7U, the `span-decode` vocabulary line and its C12 row are
+    deleted. C17 floor 14 -> 13, C12 floor 2 -> 1. S512 is re-pinned and
+    DETECTED solo; S511 DETECTED. integration.md §R4.3.4 carries the rule:
+    a walk whose unit is the encoding's character belongs to the encoding,
+    and its byte-domain sub-loops are kit sites. S711 unused.
+  - **Owed to main (decisions.md is yours):** close D58 addendum 2's revisit
+    clause (the "or N7U" part, around line 9256) as "does not migrate; D147
+    add. 14".
+  - **VMLAZY chain2** (light, report vmlazy_report.md §8a): 13 suites rc=0.
+    The REPLACE-vs-NORMALIZE emit_sweep reads `movers=0 asymmetric=0` on
+    every stream of 9 arms. The rc=1 on `utf8`/`-fno-cls-kit` is the
+    declared composition-floor exception (37 < 38, both sides).
+  - **Next:** the §8 slot chain after RQ-3 (abi 71) lands. I merge main,
+    re-pin, then ASK for the slot17 GO.
