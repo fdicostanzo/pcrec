@@ -380,6 +380,13 @@
 #     another row, or not at all, moves no pcrec answer and no artifact byte
 #     (S617-S619: the `+ k` store, the read-bounded range, LOOP_EXIT).
 #     Links the sabotaged tree's build/libpcrec.a. Registered before S617.
+#   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
+#     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
+#     D91's use ceiling, the vocabulary probe and the planted control. Its own
+#     arm because a delegated site's budget row moves no answer and no
+#     artifact byte. S683 named this suite from M6 (2026-10-08) before the arm
+#     existed and scored UNKNOWN-SUITE (an anomaly) in slot14. Links the
+#     sabotaged tree's build/libpcrec.a. Registered before S683's re-run.
 #   n2sample — added 2026-10-08 ([MEMFN-ROWCON] N2, lane m7fix); runs
 #     tests/memfn/run_n2_sample.sh: the N2 would-decline census
 #     (docs/design/memfn/probes/rowcon/n2_census.sh, its own driver and
@@ -2882,6 +2889,17 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnarms.log" "$f" "memfnarms:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            memfndeleg)
+                # [MEMFN] C10 tests/memfn/run_deleg_sites.sh — see the
+                # vocabulary entry above. Probes the sabotaged tree's own
+                # build/libpcrec.a.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/tests/memfn/run_deleg_sites.sh" \
+                    > "$work/memfndeleg.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/memfndeleg.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/memfndeleg.log" | grep -oE '[0-9]+')"
+                score_arm "$work/memfndeleg.log" "$f" "memfndeleg:${f:-ERR}fail/${p:-?}pass"
                 ;;
             n2sample)
                 # [MEMFN-ROWCON] N2 tests/memfn/run_n2_sample.sh — see the

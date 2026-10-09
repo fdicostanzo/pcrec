@@ -468,6 +468,10 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `memfndeleg` → `tests/memfn/run_deleg_sites.sh` ([MEMFN] M6 follow-up,
+  kit session, 2026-10-09): C10, the DELEG_SITES rows against D91's use
+  ceiling. S683 named it from M6 before the arm existed (slot14 scored it
+  UNKNOWN-SUITE, an anomaly); measured solo DETECTED 2fail/3pass. Seconds.
 - `memfnarms` → `tests/memfn/run_arm_pins.sh` ([MEMFN] M4, lane m4,
   2026-10-08): C5, the kit arms' fixture pins, the row-contract gate cases
   (check 6) and the reads-below FIND run on fixed subjects (check 9).
