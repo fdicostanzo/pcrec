@@ -48,13 +48,24 @@ need(m, "no <p>_search definition")
 body = m.group(0)
 
 # (1) the forward pass: from its first declaration to its no-match return
-fwd_a = body.find("    size_t scan_position = search_from;\n")
+# an artifact with a REQ pre-check/handoff starts its scan at the handoff
+# position (read from search_from at the top of the body, before the tables)
+ho_txt = ("    size_t handoff_position = %s_reqrun(subject, subject_length, search_from);\n"
+          "    if (handoff_position >= subject_length) return 0;\n") % p
+handoff = ho_txt in body
+if handoff:
+    # the req-use handoff's "c - K" back-off block, when emitted, follows it
+    ho_adj = re.search(r"    if \(handoff_position - search_from > \d+\) \{\n        handoff_position -= \d+;\n    \} else\n        handoff_position = search_from;\n", body)
+    if ho_adj and body.find(ho_txt) + len(ho_txt) == ho_adj.start():
+        ho_txt += ho_adj.group(0)
+fwd_a = body.find("    size_t scan_position = %s;\n" % ("handoff_position" if handoff else "search_from"))
 fwd_z_txt = "    if (last_accept_position == (size_t)-1) return 0;\n"
 fwd_z = body.find(fwd_z_txt)
 need(fwd_a >= 0 and fwd_z > fwd_a, "forward-pass markers")
 need(body.count(fwd_z_txt) == 1, "forward no-match return not unique")
 need("if (search_from > subject_length) return 0;\n" in body[fwd_a:fwd_z],
      "forward pass lost its search_from guard")
+need(not handoff or form == "lower", "REQ-handoff artifacts are twinned in form B only")
 
 # (2) the reverse block, verbatim: from its start declaration to the
 #     no-match return that follows it
@@ -115,9 +126,16 @@ if form == "lower":
     # is touched, so the forward pass runs over [s*, n) and the reverse
     # pass recovers s* again.
     head = new[:new.index("    if (revend_start == (size_t)-1) return 0;\n")]
-    body2 = (body[:fwd_a] + head +
+    # with a REQ handoff, the pre-check MOVES to after the walk (design 4.1,
+    # PRESENCE: it scans [s*, n), never [search_from, n))
+    pre = body[:fwd_a]
+    ho = ""
+    if handoff:
+        pre = pre.replace(ho_txt, "")
+        ho = ho_txt
+    body2 = (pre + head +
              "    if (revend_start == (size_t)-1) return 0;\n"
-             "    search_from = revend_start;\n" + body[fwd_a:])
+             "    search_from = revend_start;\n" + ho + body[fwd_a:])
 else:
     body2 = body[:fwd_a] + new
 # the anchored entry must be its own machine, never a call back into _search
