@@ -3645,3 +3645,19 @@ record's wrong name moves to the `var` row). S641's witness moved to the
 non-nullable `^(?:a|b)*a(?:a|b){20}$` (the nullable one no longer takes the
 rung). `docs/dev/lanes/decattr_report.md` carries the solo runs. Renumber
 S697/S698 at landing if another lane took them first.
+
+### [MEMFN] R4e'.0b — the routing: S690-S695 (lane r4e0b, 2026-10-09)
+
+R-11's step R4e'.0b (integration.md §R4.9.2.5/§R4.9.2.6, D155 item 6, pcrec
+abi 69 -> 70) routes every offset-skip/pre-check function through
+`<fn>__body` and makes `<fn>` a selector whose whole body is one call. Its
+rule-level detector is C11's new routing leg (tests/memfn/routing_shape.py,
+arm `memfnstamps`), read from D155 addendum 1's text, not from the renderer;
+C5's pins (arm `memfnarms`) are the change detector beside it. New,
+hand-measured solo (lane report §5): S690 (the selector does work), S691
+(the routing undone, the parent's shape), S692 (an `#if` pair in
+`<fn>__body`), S694 (the selector drops its table arguments), S695 (the
+selector written above its helper), all on memfnstamps + memfnarms; S693
+(PCREC_ARTIFACT_ABI left at 69; codegen's [DD-14.FB] ABI_EXPECT). No row
+re-aimed: S687's and S689's anchors and reach lines still resolve (the
+PREFIX render line kept its text; `rx_ofsskip(` is the selector's head).

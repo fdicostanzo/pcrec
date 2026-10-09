@@ -120,7 +120,7 @@ S182_trail_guard_keeps_stamped_macro	S182	1	src/gen/emit_vm.c	vm_emit_storage	de
 S182_trail_guard_keeps_stamped_macro	S182	2	src/gen/emit_vm.c	vm_emit_storage	def	12101	1/1	OTHER					
 S183_null_delegation_dropped	S183	1	src/gen/emit_vm.c	vm_emit_entries	def	13635	1/1	OTHER					
 S184_frame_size_from_wrong_struct	S184	1	src/gen/emit_vm.c	vm_plan	def	10650	1/1	OTHER					
-S185_ofsskip_resume_off_by_one	S185	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	308	1/1	OTHER					
+S185_ofsskip_resume_off_by_one	S185	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	313	1/1	OTHER					
 S186_ofsskip_no_reseed	S186	1	src/gen/emit_dfa.c	pf_emit_ofs_reseed	def	6525	1/1	OTHER					
 S187_ofsk_selection_never_fires	S187	1	src/opt/prefix_k.c	pcrec_prefix_ksets	def	279	1/1	OTHER					
 S188_ofsk_verify_uses_escape_set	S188	1	src/opt/prefix_k.c	pcrec_prefix_ksets	def	200	1/1	OTHER					
@@ -228,7 +228,7 @@ S275_cls_fold_emitted_constant_shifted	S275	1	src/gen/clskit.c	pcrec_clskit_emit
 S276_precheck_g2_unanchored_admitted	S276	1	src/gen/emit_dfa.c	req_route_one_attempt	def	7153	1/1	RE-RUN		after-B6		prefilter_collapsed,req_route_one_attempt	
 S277_precheck_whole_set_removed	S277	1	src/gen/emit_dfa.c	req_set_rest_members	def	1362	1/1	OTHER				pcrec_artifact_has_dfa_scan	
 S278_precheck_whole_run_removed	S278	1	src/gen/emit_dfa.c	req_run_tests	def	1094	1/1	OTHER				pcrec_artifact_has_dfa_scan	
-S279_run_term_offset_plus_one	S279	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	189	1/1	OTHER					
+S279_run_term_offset_plus_one	S279	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	191	1/1	OTHER					
 S27_verb_blame_offset	S27	1	src/parse/mod_verbs.c	verb_answer	def	366	1/1	OTHER					
 S280_run_pin_bytes_ignored	S280	1	src/facts/kset.c	pcrec_run_pin	def	272	1/1	OTHER					
 S281_run_row_clause4_dropped	S281	1	src/gen/emit_dfa.c	pf_run_applies_common	def	6255	1/1	OTHER					
@@ -357,16 +357,16 @@ S443_run_word_overreads	S443	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outsid
 S444_run_word_last_byte_unchecked	S444	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	235	1/1	OTHER					
 S445_run_word_sense_inverted	S445	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	247	1/1	OTHER					
 S446_req_cube_crosses_repeat	S446	1	src/facts/req.c	rb_walk	def	549	1/1	OTHER					
-S447_pair_scan_one_stream	S447	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	145	1/1	OTHER					
+S447_pair_scan_one_stream	S447	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	147	1/1	OTHER					
 S448_req_pin_takes_masked	S448	1	src/gen/emit_dfa.c	ofs_test_of	def	6305	1/1	OTHER					
 S449_whole_run_unmasked	S449	1	src/gen/emit_dfa.c	req_run_tests	def	1095	1/1	OTHER					
 S44_vm_repeat_cap_off	S44	1	src/core/limits.def	row:limits.def:PCREC_MAX_VM_REPEAT_COPIES	datarow	167	1/1	OTHER					
-S450_pair_research_behind	S450	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	256	1/1	OTHER					
+S450_pair_research_behind	S450	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	261	1/1	OTHER					
 S451_req_hull_keeps_left	S451	1	src/facts/req.c	rn_common_head	def	331	1/1	OTHER					
 S452_set_rest_marks_masked	S452	1	src/gen/emit_dfa.c	req_set_rest_members	def	1369	1/1	OTHER					
 S453_req_pick_takes_pair	S453	1	src/facts/req.c	pcrec_req_pick	def	691	1/1	OTHER					
-S454_pair_dispatch_memchr_first	S454	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	317	1/1	OTHER					
-S455_pair_search_above_guard	S455	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	258	1/1	OTHER					
+S454_pair_dispatch_memchr_first	S454	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	322	1/1	OTHER					
+S455_pair_search_above_guard	S455	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	263	1/1	OTHER					
 S456_cube_stores_upper	S456	1	src/facts/req.c	rn_common_head	def	333	1/1	OTHER					
 S457_set_leads_never_applies	S457	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7241	1/1	OTHER					
 S458_set_leads_tie_leads	S458	1	src/gen/emit_dfa.c	req_set_leads_applies	def	7246	1/1	OTHER					
@@ -390,7 +390,7 @@ S473_deny_ignored	S473	1	src/gen/emit_dfa.c	cand_rows	def	8212	1/1	OTHER				req_
 S474_run_choice_prefers_bounded	S474	1	src/facts/req.c	rn_better	def	310	1/1	OTHER					
 S475_verb_conjunct_dropped	S475	1	src/gen/emit_dfa.c	req_handoff_applies	lead	7338	1/1	RE-RUN		after-B6			
 S476_dprime_decline_dropped	S476	1	src/gen/emit_dfa.c	req_handoff_applies	def	7360	1/1	RE-RUN		after-B6		pcrec_vm_prefilter_window	
-S477_dd12a_excision_widened	S477	1	tests/codegen/run_encoding_checks.sh	file:tests/codegen/run_encoding_checks.sh	outside	663	1/1	OTHER					
+S477_dd12a_excision_widened	S477	1	tests/codegen/run_encoding_checks.sh	file:tests/codegen/run_encoding_checks.sh	outside	666	1/1	OTHER					
 S478_vmhat_set_drops_member	S478	1	src/gen/emit_dfa.c	pf_vm_emit_first_class	def	6873	1/1	OTHER					
 S479_vmhat_memchr_seek_late	S479	1	src/gen/emit_dfa.c	pcrec_emit_vm_start_seek	lead	6956	1/1	OTHER					
 S47_poss_no_prefix_free	S47	1	src/opt/possessify.c	body_admits_unique_iteration	def	1090	1/1	OTHER					
@@ -557,11 +557,17 @@ S682_m6_stride_gap_accepted	S682	1	memfn/src/compose.c	file:memfn/src/compose.c	
 S683_m6_vmstride_budget_scan	S683	1	src/gen/memfn_sites.def	row:memfn_sites.def:VMSTRIDE	datarow	53	1/1	OTHER					
 S684_m6_vm_respells_strided_loop	S684	1	src/gen/emit_vm.c	vm_emit_span_scan	def	4720	1/1	OTHER					
 S685_m6_span_count_vocab_lost	S685	1	tests/memfn/search_vocab.tsv	file:tests/memfn/search_vocab.tsv	outside	42	1/1	OTHER					
-S686_fn_rows_body_order_swapped	S686	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	332	1/1	OTHER					
-S687_fn_prefix_rendered_when_empty	S687	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	396	1/1	OTHER					
+S686_fn_rows_body_order_swapped	S686	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	337	1/1	OTHER					
+S687_fn_prefix_rendered_when_empty	S687	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	440	1/1	OTHER					
 S688_kit_walk_not_first_match	S688	1	memfn/src/compose.c	file:memfn/src/compose.c	outside	165	1/1	OTHER					
 S689_empty_slot_walked	S689	1	memfn/src/compose.c	file:memfn/src/compose.c	outside	161	1/1	OTHER					
 S68_residual_in_hot_loop	S68	1	memfn/src/pffind.c	file:memfn/src/pffind.c	outside	243	1/1	OTHER					
+S690_fn_selector_does_work	S690	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	407	1/1	OTHER					
+S691_fn_unrouted	S691	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	439	1/1	OTHER					
+S692_fn_body_holds_if	S692	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	439	1/1	OTHER					
+S693_abi_not_bumped	S693	1	src/gen/emit_dfa.c	PCREC_ARTIFACT_ABI	def	54	1/1	OTHER					
+S694_fn_selector_drops_tables	S694	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	407	1/1	OTHER					
+S695_fn_helper_below_selector	S695	1	memfn/src/ofsskip.c	file:memfn/src/ofsskip.c	outside	439	1/1	OTHER					
 S696_k100_restart_keeps_leaked_k	S696	1	src/core/compile.c	compile_driver	def	2154	1/1	RE-RUN		B5			B5:edit-set
 S69_endvar_against_base	S69	1	src/ir/dfa.c	make_state	def	1519	1/1	OTHER					
 S70_unbuilt_refusal_removed	S70	1	src/parse/ext.c	esc_answer	def	371	1/1	OTHER					

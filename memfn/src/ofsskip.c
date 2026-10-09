@@ -9,7 +9,9 @@
  * returns the first position >= `pos` at which every term of one predicate
  * holds, or `n`. Two sites render through it: the offset-skip site itself
  * (`ofsskip_arm`, FIND / FUNC / RETURN, pcrec's prefilter block) and the
- * pre-check composite's FUNC parts (precheck.c).
+ * pre-check composite's FUNC parts (precheck.c). Since R4e'.0b (D155 item
+ * 6) the work is the helper `<fn>__body` and the function itself is its
+ * SELECTOR, whose whole body is one call (see THE SEAM below).
  *
  * THE FORM. One `memchr` stream on the scanned term (`plan_hint`, and
  * `plan_pos` inside a RUN term), then at each hit the other terms in array
@@ -215,20 +217,23 @@ static int verify_chain(mf_art *art, const mf_hooks *h, const mf_pred *p,
  *           beside the body (D155). BORN EMPTY: an empty slot renders zero
  *           bytes, and SIMD rows arrive as its rows (batch 1).
  * BODY is asked first, so the floor is known before any PREFIX row is asked,
- * and the PREFIX walk is handed the chosen BODY row. Neither row calls,
- * wraps or splices the other: the seam (ofs_fn_define) owns the order, and
- * each row writes only its own slot. Both BODY rows are scalar and move no
- * byte, so neither has an options.def deny. */
+ * and the PREFIX walk is handed the chosen BODY row and its helper's name.
+ * Neither row calls, wraps or splices the other: the seam (ofs_fn_define)
+ * owns the order, and each row writes only its own slot. Both BODY rows are
+ * scalar and move no byte, so neither has an options.def deny. */
 
 enum { FN_BODY, FN_PREFIX };
 
 /* The walk's input: the predicate, its loop guard's `maxk` and its scan
  * (ofs_fn_scan's offset `k`, byte `a` and second member `b`, -1 for none);
- * for a PREFIX row, the BODY row the seam chose. */
+ * for a PREFIX row, the BODY row the seam chose and the name of the helper
+ * it renders, `<fn>__body`: a PREFIX helper's last fall-through, called by
+ * NAME (D155; the row never sees the body's text). */
 typedef struct fn_in {
     const mf_pred *p;
     int maxk, k, a, b;
     const struct fn_row *body;
+    const char *body_fn;
 } fn_in;
 
 /* One row: its slot, its predicate over the input, and the text it writes. */
@@ -377,28 +382,63 @@ static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
     return NULL;
 }
 
-/* THE SEAM: the BODY walk, then the PREFIX walk (handed the BODY row), then
- * the text in its fixed order: the PREFIX row's helpers, the function's
- * head, the BODY row's loop. */
+/* `static inline size_t <name>(const unsigned char *subject, size_t n,
+ * size_t pos[, tables])` and the opening brace: the one head every piece of
+ * the function shares, so every call forwards the same argument list. */
+static int fn_head(mf_art *art, const mf_hooks *h, const mf_pred *p,
+                   const char *name, mf_sink *o)
+{
+    kit_out(o, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", name);
+    if (table_params(art, h, p, 1, o)) return -1;
+    o->puts(o->u, ")\n{\n");
+    return 0;
+}
+
+/* THE SELECTOR, the function `fn` itself (D155 addendum 1, Q-R9-10 shape
+ * (c)): a function that does work never contains `#if`; the selector's
+ * whole body is the choice, one call per arm and nothing else. With no
+ * PREFIX row rendered that is the one plain call to `callee`, the SIMD-off
+ * FUNC; a PREFIX row's levels become `#if` arms above this call, which is
+ * then the `#else` arm's line byte for byte (floor rule (c), §R4.9.2.5). */
+static int fn_selector(mf_art *art, const mf_hooks *h, const mf_pred *p,
+                       const char *fn, const char *callee, mf_sink *o)
+{
+    if (fn_head(art, h, p, fn, o)) return -1;
+    kit_out(o, "    return %s(subject, n, pos", callee);
+    if (table_params(art, h, p, 0, o)) return -1;
+    o->puts(o->u, ");\n}\n\n");
+    return 0;
+}
+
+/* THE SEAM (integration.md §R4.9.2.5, step R4e'.0b): the BODY walk, then the
+ * PREFIX walk (handed the BODY row and its helper's name), then the text in
+ * its fixed order: the BODY row's loop as the helper `<fn>__body`, the
+ * PREFIX row's helpers, then the selector `<fn>`. The helper keeps the
+ * function's head and loop byte for byte, renamed; the selector forwards
+ * the same arguments. */
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o)
 {
-    fn_in x = { p, max_reach(p), 0, 0, 0, NULL };
+    fn_in x = { p, max_reach(p), 0, 0, 0, NULL, NULL };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     art->includes |= MF_INC_STRING_H;   /* memchr */
     /* both bodies write `memchr(`; an error from here on is sticky */
     if (mf_art_note_libc(art, "memchr")) return -1;
 
+    kb body_fn;
+    kb_init(&body_fn, art->a);
+    kb_printf(&body_fn, "%s__body", fn);
+    if (body_fn.oom) return kit_fail(art, "ofsskip: out of memory");
+    x.body_fn = body_fn.p;
+
     const fn_row *body = fn_select(art, handle, h, &x, FN_BODY);
     if (!body) return -1;
     x.body = body;
     const fn_row *prefix = fn_select(art, handle, h, &x, FN_PREFIX);
-    if (prefix && prefix->render(art, h, &x, o)) return -1;
 
-    kit_out(o, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", fn);
-    if (table_params(art, h, p, 1, o)) return -1;
-    o->puts(o->u, ")\n{\n");
-    return body->render(art, h, &x, o);
+    if (fn_head(art, h, p, x.body_fn, o) || body->render(art, h, &x, o)) return -1;
+    if (prefix && prefix->render(art, h, &x, o)) return -1;
+    return fn_selector(art, h, p, fn, x.body_fn, o);
 }
 
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,

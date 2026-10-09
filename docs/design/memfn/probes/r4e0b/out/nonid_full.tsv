@@ -1,0 +1,653 @@
+# stream	recipe	class	pattern (escape-encoded)	argv
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}+b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}+b	
+c-default	-O2	same instruction multiset (layout/order only)	(?:aa|a)+ab	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	(?:aa|a)+ab	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	
+c-default	-O2	same instruction multiset (layout/order only)	a{3,5}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{3,5}b	
+c-default	-O2	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	
+c-default	-O2	same instruction multiset (layout/order only)	a{3,6}b	
+c-default	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{3,6}b	
+c-utf8	-O2	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2	instructions differ: 1161 vs 1161 instruction lines	(frank)|fred	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1178 vs 1177 instruction lines	(frank)|fred	-e utf8
+c-utf8	-O2	instructions differ: 711 vs 716 instruction lines	\\zabc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 711 vs 716 instruction lines	\\zabc	-e utf8
+c-utf8	-O2	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2	instructions differ: 752 vs 750 instruction lines	(?m)^\\bfoo\\b$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 776 vs 774 instruction lines	(?m)^\\bfoo\\b$	-e utf8
+c-utf8	-O2	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2	instructions differ: 816 vs 823 instruction lines	\\Bcat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 816 vs 823 instruction lines	\\Bcat	-e utf8
+c-utf8	-O2	instructions differ: 827 vs 834 instruction lines	\\bcat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 827 vs 834 instruction lines	\\bcat	-e utf8
+c-utf8	-O2	instructions differ: 816 vs 823 instruction lines	\\Bcat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 816 vs 823 instruction lines	\\Bcat	-e utf8
+c-utf8	-O2	instructions differ: 1682 vs 1682 instruction lines	(\\bcat\\b)+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1693 vs 1693 instruction lines	(\\bcat\\b)+	-e utf8
+c-utf8	-O2	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 761 vs 765 instruction lines	abc\\z	-e utf8
+c-utf8	-O2	instructions differ: 793 vs 800 instruction lines	abc\\Z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 793 vs 800 instruction lines	abc\\Z	-e utf8
+c-utf8	-O2	instructions differ: 808 vs 815 instruction lines	(?m)abc$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 808 vs 815 instruction lines	(?m)abc$	-e utf8
+c-utf8	-O2	instructions differ: 926 vs 933 instruction lines	\\bfoo$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 926 vs 933 instruction lines	\\bfoo$	-e utf8
+c-utf8	-O2	instructions differ: 686 vs 693 instruction lines	foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 686 vs 693 instruction lines	foo	-e utf8
+c-utf8	-O2	instructions differ: 774 vs 772 instruction lines	(?m)^ERROR	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 800 vs 798 instruction lines	(?m)^ERROR	-e utf8
+c-utf8	-O2	instructions differ: 932 vs 932 instruction lines	(?m)ERROR$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 932 vs 932 instruction lines	(?m)ERROR$	-e utf8
+c-utf8	-O2	instructions differ: 782 vs 780 instruction lines	(?m)^ERROR$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 808 vs 806 instruction lines	(?m)^ERROR$	-e utf8
+c-utf8	-O2	instructions differ: 864 vs 878 instruction lines	ERROR$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 864 vs 878 instruction lines	ERROR$	-e utf8
+c-utf8	-O2	instructions differ: 705 vs 710 instruction lines	(?:^|\\b)foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 728 vs 733 instruction lines	(?:^|\\b)foo	-e utf8
+c-utf8	-O2	instructions differ: 775 vs 782 instruction lines	foo\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 775 vs 782 instruction lines	foo\\b	-e utf8
+c-utf8	-O2	instructions differ: 763 vs 777 instruction lines	foo\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 763 vs 777 instruction lines	foo\\B	-e utf8
+c-utf8	-O2	instructions differ: 860 vs 867 instruction lines	\\bfoo\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 860 vs 867 instruction lines	\\bfoo\\b	-e utf8
+c-utf8	-O2	instructions differ: 825 vs 832 instruction lines	\\Bfoo\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 825 vs 832 instruction lines	\\Bfoo\\B	-e utf8
+c-utf8	-O2	instructions differ: 835 vs 842 instruction lines	\\bfoo\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 835 vs 842 instruction lines	\\bfoo\\B	-e utf8
+c-utf8	-O2	instructions differ: 850 vs 857 instruction lines	\\Bfoo\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 850 vs 857 instruction lines	\\Bfoo\\b	-e utf8
+c-utf8	-O2	instructions differ: 926 vs 933 instruction lines	\\bfoo$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 926 vs 933 instruction lines	\\bfoo$	-e utf8
+c-utf8	-O2	instructions differ: 846 vs 853 instruction lines	foo\\b\\z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 846 vs 853 instruction lines	foo\\b\\z	-e utf8
+c-utf8	-O2	instructions differ: 926 vs 933 instruction lines	\\bfoo\\Z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 926 vs 933 instruction lines	\\bfoo\\Z	-e utf8
+c-utf8	-O2	instructions differ: 705 vs 710 instruction lines	(?:^|\\b)foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 728 vs 733 instruction lines	(?:^|\\b)foo	-e utf8
+c-utf8	-O2	instructions differ: 1271 vs 1271 instruction lines	(?>cat|category)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1268 vs 1268 instruction lines	(?>cat|category)	-e utf8
+c-utf8	-O2	instructions differ: 1304 vs 1304 instruction lines	(?>category|cat)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1301 vs 1301 instruction lines	(?>category|cat)	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}+b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}+b	-e utf8
+c-utf8	-O2	instructions differ: 1540 vs 1540 instruction lines	(?>(?:aa|a)+a)ab	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1541 vs 1541 instruction lines	(?>(?:aa|a)+a)ab	-e utf8
+c-utf8	-O2	instructions differ: 1469 vs 1469 instruction lines	\\10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1449 vs 1449 instruction lines	\\10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)	-e utf8
+c-utf8	-O2	instructions differ: 1176 vs 1176 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1160 vs 1160 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10	-e utf8
+c-utf8	-O2	instructions differ: 1095 vs 1095 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)\\8	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1078 vs 1078 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)\\8	-e utf8
+c-utf8	-O2	instructions differ: 1153 vs 1153 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1140 vs 1140 instruction lines	(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9	-e utf8
+c-utf8	-O2	instructions differ: 729 vs 736 instruction lines	foo|foobar	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 729 vs 736 instruction lines	foo|foobar	-e utf8
+c-utf8	-O2	instructions differ: 765 vs 772 instruction lines	foobar|foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 772 instruction lines	foobar|foo	-e utf8
+c-utf8	-O2	instructions differ: 686 vs 693 instruction lines	foo|foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 686 vs 693 instruction lines	foo|foo	-e utf8
+c-utf8	-O2	instructions differ: 736 vs 742 instruction lines	[ab]foo|[cd]foo	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 736 vs 742 instruction lines	[ab]foo|[cd]foo	-e utf8
+c-utf8	-O2	instructions differ: 763 vs 770 instruction lines	(?:foo|foobar)+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 763 vs 770 instruction lines	(?:foo|foobar)+	-e utf8
+c-utf8	-O2	instructions differ: 1308 vs 1308 instruction lines	(log|login|logout)$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1315 vs 1315 instruction lines	(log|login|logout)$	-e utf8
+c-utf8	-O2	instructions differ: 1511 vs 1518 instruction lines	foo.x|foobar|foo.	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1511 vs 1518 instruction lines	foo.x|foobar|foo.	-e utf8
+c-utf8	-O2	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 793 vs 800 instruction lines	abc$	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	a{2	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	a{2	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 651 vs 658 instruction lines	aBc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 651 vs 658 instruction lines	aBc	-e utf8
+c-utf8	-O2	instructions differ: 805 vs 812 instruction lines	log$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 805 vs 812 instruction lines	log$	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 703 vs 709 instruction lines	[=a]x=]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 703 vs 709 instruction lines	[=a]x=]	-e utf8
+c-utf8	-O2	instructions differ: 1350 vs 1356 instruction lines	[a[.b]c]d.]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1350 vs 1356 instruction lines	[a[.b]c]d.]	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	x[\\8]y	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	x[\\8]y	-e utf8
+c-utf8	-O2	instructions differ: 759 vs 766 instruction lines	a\\/\\*!\\*\\/b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 759 vs 766 instruction lines	a\\/\\*!\\*\\/b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	a\\.b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	a\\.b	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	\\x41\\x42\\x43	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	\\x41\\x42\\x43	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	a\\{2\\}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	a\\{2\\}	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	a{,}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	a{,}	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	(?:a(?:b(?:c)))	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	(?:a(?:b(?:c)))	-e utf8
+c-utf8	-O2	instructions differ: 811 vs 818 instruction lines	\\xde\\xad\\xbe\\xef	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 811 vs 818 instruction lines	\\xde\\xad\\xbe\\xef	-e utf8
+c-utf8	-O2	instructions differ: 1393 vs 1393 instruction lines	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1398 vs 1398 instruction lines	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1	-e utf8
+c-utf8	-O2	instructions differ: 1393 vs 1393 instruction lines	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1398 vs 1398 instruction lines	(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 1010 vs 1017 instruction lines	hello world	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1010 vs 1017 instruction lines	hello world	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	123	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	123	-e utf8
+c-utf8	-O2	instructions differ: 596 vs 588 instruction lines	zzz	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 596 vs 588 instruction lines	zzz	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	xyz	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	xyz	-e utf8
+c-utf8	-O2	instructions differ: 675 vs 682 instruction lines	wxyz	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 675 vs 682 instruction lines	wxyz	-e utf8
+c-utf8	-O2	instructions differ: 651 vs 658 instruction lines	a{}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 651 vs 658 instruction lines	a{}	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 838 vs 845 instruction lines	a{2,3,4}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 838 vs 845 instruction lines	a{2,3,4}	-e utf8
+c-utf8	-O2	instructions differ: 651 vs 658 instruction lines	a{}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 651 vs 658 instruction lines	a{}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	a{1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	a{1	-e utf8
+c-utf8	-O2	instructions differ: 804 vs 811 instruction lines	a{65536	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 804 vs 811 instruction lines	a{65536	-e utf8
+c-utf8	-O2	instructions differ: 916 vs 923 instruction lines	a{65536x}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 916 vs 923 instruction lines	a{65536x}	-e utf8
+c-utf8	-O2	instructions differ: 977 vs 984 instruction lines	a{65536,x}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 977 vs 984 instruction lines	a{65536,x}	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	a{\\n1}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	a{\\n1}	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	a{\\r1}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	a{\\r1}	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	a{\\x0b1}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	a{\\x0b1}	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	a{\\f1}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	a{\\f1}	-e utf8
+c-utf8	-O2	instructions differ: 765 vs 772 instruction lines	a{1 2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 772 instruction lines	a{1 2}	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	a{ }	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	a{ }	-e utf8
+c-utf8	-O2	instructions differ: 744 vs 751 instruction lines	a{ , }	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 744 vs 751 instruction lines	a{ , }	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	a{ ,}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	a{ ,}	-e utf8
+c-utf8	-O2	instructions differ: 771 vs 778 instruction lines	a{ 1x}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 771 vs 778 instruction lines	a{ 1x}	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	a{ 1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	a{ 1	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	a{,}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	a{,}	-e utf8
+c-utf8	-O2	instructions differ: 651 vs 658 instruction lines	{,}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 651 vs 658 instruction lines	{,}	-e utf8
+c-utf8	-O2	instructions differ: 1035 vs 1042 instruction lines	abcdefghij|abcdefghik|abcdefghil	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1035 vs 1042 instruction lines	abcdefghij|abcdefghik|abcdefghil	-e utf8
+c-utf8	-O2	instructions differ: 801 vs 808 instruction lines	thin|think|thinker|thinking	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 801 vs 808 instruction lines	thin|think|thinker|thinking	-e utf8
+c-utf8	-O2	instructions differ: 801 vs 805 instruction lines	(?:a|bb)?catdog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 801 vs 805 instruction lines	(?:a|bb)?catdog	-e utf8
+c-utf8	-O2	instructions differ: 801 vs 805 instruction lines	(?:a|bb)?catdog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 801 vs 805 instruction lines	(?:a|bb)?catdog	-e utf8
+c-utf8	-O2	instructions differ: 884 vs 884 instruction lines	(?m)^(?:a|bb)?catdog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 903 vs 903 instruction lines	(?m)^(?:a|bb)?catdog	-e utf8
+c-utf8	-O2	instructions differ: 884 vs 884 instruction lines	(?m)^(?:a|bb)?catdog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 903 vs 903 instruction lines	(?m)^(?:a|bb)?catdog	-e utf8
+c-utf8	-O2	instructions differ: 1370 vs 1370 instruction lines	(?:a|bb)?(cat)dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1391 vs 1391 instruction lines	(?:a|bb)?(cat)dog	-e utf8
+c-utf8	-O2	instructions differ: 1370 vs 1370 instruction lines	(?:a|bb)?(cat)dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1391 vs 1391 instruction lines	(?:a|bb)?(cat)dog	-e utf8
+c-utf8	-O2	instructions differ: 1913 vs 1916 instruction lines	.{3}cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1913 vs 1916 instruction lines	.{3}cat	-e utf8
+c-utf8	-O2	instructions differ: 1913 vs 1916 instruction lines	.{3}cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1913 vs 1916 instruction lines	.{3}cat	-e utf8
+c-utf8	-O2	instructions differ: 765 vs 772 instruction lines	\xc3\xa9{2}cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 772 instruction lines	\xc3\xa9{2}cat	-e utf8
+c-utf8	-O2	instructions differ: 765 vs 772 instruction lines	\xc3\xa9{2}cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 772 instruction lines	\xc3\xa9{2}cat	-e utf8
+c-utf8	-O2	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 841 vs 848 instruction lines	\\bcat\\b	-e utf8
+c-utf8	-O2	instructions differ: 814 vs 821 instruction lines	(?<![a-z])cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 814 vs 821 instruction lines	(?<![a-z])cat	-e utf8
+c-utf8	-O2	instructions differ: 814 vs 821 instruction lines	(?<![a-z])cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 814 vs 821 instruction lines	(?<![a-z])cat	-e utf8
+c-utf8	-O2	instructions differ: 1395 vs 1395 instruction lines	(?<![a-z]{2})cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1402 vs 1402 instruction lines	(?<![a-z]{2})cat	-e utf8
+c-utf8	-O2	instructions differ: 1395 vs 1395 instruction lines	(?<![a-z]{2})cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1402 vs 1402 instruction lines	(?<![a-z]{2})cat	-e utf8
+c-utf8	-O2	instructions differ: 763 vs 761 instruction lines	(?m)^item	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 788 vs 786 instruction lines	(?m)^item	-e utf8
+c-utf8	-O2	instructions differ: 763 vs 761 instruction lines	(?m)^item	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 788 vs 786 instruction lines	(?m)^item	-e utf8
+c-utf8	-O2	instructions differ: 745 vs 746 instruction lines	(?:\\G|x)cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 766 instruction lines	(?:\\G|x)cat	-e utf8
+c-utf8	-O2	instructions differ: 745 vs 746 instruction lines	(?:\\G|x)cat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 765 vs 766 instruction lines	(?:\\G|x)cat	-e utf8
+c-utf8	-O2	instructions differ: 1283 vs 1283 instruction lines	(?:\\Gab|x)(cat)(?=dog)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1295 vs 1296 instruction lines	(?:\\Gab|x)(cat)(?=dog)	-e utf8
+c-utf8	-O2	instructions differ: 1283 vs 1283 instruction lines	(?:\\Gab|x)(cat)(?=dog)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1295 vs 1296 instruction lines	(?:\\Gab|x)(cat)(?=dog)	-e utf8
+c-utf8	-O2	instructions differ: 1283 vs 1283 instruction lines	(?:\\Gab|x)(cat)dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1299 vs 1299 instruction lines	(?:\\Gab|x)(cat)dog	-e utf8
+c-utf8	-O2	instructions differ: 1283 vs 1283 instruction lines	(?:\\Gab|x)(cat)dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1299 vs 1299 instruction lines	(?:\\Gab|x)(cat)dog	-e utf8
+c-utf8	-O2	instructions differ: 732 vs 749 instruction lines	aa(?i:a)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 732 vs 749 instruction lines	aa(?i:a)	-e utf8
+c-utf8	-O2	instructions differ: 732 vs 749 instruction lines	aa(?i:a)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 732 vs 749 instruction lines	aa(?i:a)	-e utf8
+c-utf8	-O2	instructions differ: 1623 vs 1619 instruction lines	ab.*xyzw	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1623 vs 1619 instruction lines	ab.*xyzw	-e utf8
+c-utf8	-O2	instructions differ: 1623 vs 1619 instruction lines	ab.*xyzw	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1623 vs 1619 instruction lines	ab.*xyzw	-e utf8
+c-utf8	-O2	instructions differ: 1458 vs 1456 instruction lines	(?i)(cat)s?dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1474 vs 1472 instruction lines	(?i)(cat)s?dog	-e utf8
+c-utf8	-O2	instructions differ: 1458 vs 1456 instruction lines	(?i)(cat)s?dog	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1474 vs 1472 instruction lines	(?i)(cat)s?dog	-e utf8
+c-utf8	-O2	instructions differ: 744 vs 751 instruction lines	abcdef	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 744 vs 751 instruction lines	abcdef	-e utf8
+c-utf8	-O2	instructions differ: 1114 vs 1114 instruction lines	xyz(a|ab)c	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1127 vs 1128 instruction lines	xyz(a|ab)c	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc	-e utf8
+c-utf8	-O2	instructions differ: 807 vs 814 instruction lines	a\\x22b\\\\c\\?d	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 807 vs 814 instruction lines	a\\x22b\\\\c\\?d	-e utf8
+c-utf8	-O2	instructions differ: 746 vs 753 instruction lines	a\\?\\?=b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 746 vs 753 instruction lines	a\\?\\?=b	-e utf8
+c-utf8	-O2	instructions differ: 762 vs 769 instruction lines	\\x01\\x7f\\x80\\xfe	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 762 vs 769 instruction lines	\\x01\\x7f\\x80\\xfe	-e utf8
+c-utf8	-O2	instructions differ: 639 vs 646 instruction lines	a\\x00b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 639 vs 646 instruction lines	a\\x00b	-e utf8
+c-utf8	-O2	instructions differ: 680 vs 673 instruction lines	a*bcd	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 680 vs 673 instruction lines	a*bcd	-e utf8
+c-utf8	-O2	instructions differ: 672 vs 679 instruction lines	(?:abc)+d	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 672 vs 679 instruction lines	(?:abc)+d	-e utf8
+c-utf8	-O2	instructions differ: 1844 vs 1858 instruction lines	foo(?:username|password|passphrase)bar	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1844 vs 1858 instruction lines	foo(?:username|password|passphrase)bar	-e utf8
+c-utf8	-O2	instructions differ: 782 vs 789 instruction lines	(?:alpha|alps|alp)x	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 782 vs 789 instruction lines	(?:alpha|alps|alp)x	-e utf8
+c-utf8	-O2	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	ABC	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	ABC	-e utf8
+c-utf8	-O2	instructions differ: 698 vs 692 instruction lines	[0-9]+ABC	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 698 vs 692 instruction lines	[0-9]+ABC	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	ABC	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	ABC	-e utf8
+c-utf8	-O2	instructions differ: 675 vs 682 instruction lines	ABCD	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 675 vs 682 instruction lines	ABCD	-e utf8
+c-utf8	-O2	instructions differ: 734 vs 728 instruction lines	[0-9]+ABCD	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 734 vs 728 instruction lines	[0-9]+ABCD	-e utf8
+c-utf8	-O2	instructions differ: 675 vs 682 instruction lines	ABCD	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 675 vs 682 instruction lines	ABCD	-e utf8
+c-utf8	-O2	instructions differ: 705 vs 712 instruction lines	ABCDE	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 705 vs 712 instruction lines	ABCDE	-e utf8
+c-utf8	-O2	instructions differ: 770 vs 764 instruction lines	[0-9]+ABCDE	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 770 vs 764 instruction lines	[0-9]+ABCDE	-e utf8
+c-utf8	-O2	instructions differ: 705 vs 712 instruction lines	ABCDE	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 705 vs 712 instruction lines	ABCDE	-e utf8
+c-utf8	-O2	instructions differ: 744 vs 751 instruction lines	ABCDEF	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 744 vs 751 instruction lines	ABCDEF	-e utf8
+c-utf8	-O2	instructions differ: 815 vs 809 instruction lines	[0-9]+ABCDEF	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 815 vs 809 instruction lines	[0-9]+ABCDEF	-e utf8
+c-utf8	-O2	instructions differ: 744 vs 751 instruction lines	ABCDEF	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 744 vs 751 instruction lines	ABCDEF	-e utf8
+c-utf8	-O2	instructions differ: 789 vs 796 instruction lines	ABCDEFG	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 789 vs 796 instruction lines	ABCDEFG	-e utf8
+c-utf8	-O2	instructions differ: 866 vs 860 instruction lines	[0-9]+ABCDEFG	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 866 vs 860 instruction lines	[0-9]+ABCDEFG	-e utf8
+c-utf8	-O2	instructions differ: 789 vs 796 instruction lines	ABCDEFG	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 789 vs 796 instruction lines	ABCDEFG	-e utf8
+c-utf8	-O2	instructions differ: 844 vs 851 instruction lines	ABCDEFGH	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 844 vs 851 instruction lines	ABCDEFGH	-e utf8
+c-utf8	-O2	instructions differ: 942 vs 935 instruction lines	[0-9]+ABCDEFGH	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 942 vs 935 instruction lines	[0-9]+ABCDEFGH	-e utf8
+c-utf8	-O2	instructions differ: 844 vs 851 instruction lines	ABCDEFGH	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 844 vs 851 instruction lines	ABCDEFGH	-e utf8
+c-utf8	-O2	instructions differ: 904 vs 911 instruction lines	ABCDEFGHI	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 904 vs 911 instruction lines	ABCDEFGHI	-e utf8
+c-utf8	-O2	instructions differ: 1005 vs 998 instruction lines	[0-9]+ABCDEFGHI	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1005 vs 998 instruction lines	[0-9]+ABCDEFGHI	-e utf8
+c-utf8	-O2	instructions differ: 904 vs 911 instruction lines	ABCDEFGHI	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 904 vs 911 instruction lines	ABCDEFGHI	-e utf8
+c-utf8	-O2	instructions differ: 967 vs 974 instruction lines	ABCDEFGHIJ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 967 vs 974 instruction lines	ABCDEFGHIJ	-e utf8
+c-utf8	-O2	instructions differ: 1074 vs 1067 instruction lines	[0-9]+ABCDEFGHIJ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1074 vs 1067 instruction lines	[0-9]+ABCDEFGHIJ	-e utf8
+c-utf8	-O2	instructions differ: 967 vs 974 instruction lines	ABCDEFGHIJ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 967 vs 974 instruction lines	ABCDEFGHIJ	-e utf8
+c-utf8	-O2	instructions differ: 1036 vs 1043 instruction lines	ABCDEFGHIJK	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1036 vs 1043 instruction lines	ABCDEFGHIJK	-e utf8
+c-utf8	-O2	instructions differ: 1149 vs 1142 instruction lines	[0-9]+ABCDEFGHIJK	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1149 vs 1142 instruction lines	[0-9]+ABCDEFGHIJK	-e utf8
+c-utf8	-O2	instructions differ: 1036 vs 1043 instruction lines	ABCDEFGHIJK	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1036 vs 1043 instruction lines	ABCDEFGHIJK	-e utf8
+c-utf8	-O2	instructions differ: 1111 vs 1118 instruction lines	ABCDEFGHIJKL	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1111 vs 1118 instruction lines	ABCDEFGHIJKL	-e utf8
+c-utf8	-O2	instructions differ: 1230 vs 1223 instruction lines	[0-9]+ABCDEFGHIJKL	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1230 vs 1223 instruction lines	[0-9]+ABCDEFGHIJKL	-e utf8
+c-utf8	-O2	instructions differ: 1111 vs 1118 instruction lines	ABCDEFGHIJKL	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1111 vs 1118 instruction lines	ABCDEFGHIJKL	-e utf8
+c-utf8	-O2	instructions differ: 1192 vs 1199 instruction lines	ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1192 vs 1199 instruction lines	ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2	instructions differ: 1317 vs 1310 instruction lines	[0-9]+ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1317 vs 1310 instruction lines	[0-9]+ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2	instructions differ: 1192 vs 1199 instruction lines	ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1192 vs 1199 instruction lines	ABCDEFGHIJKLM	-e utf8
+c-utf8	-O2	instructions differ: 1279 vs 1286 instruction lines	ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1279 vs 1286 instruction lines	ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2	instructions differ: 1413 vs 1406 instruction lines	[0-9]+ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1413 vs 1406 instruction lines	[0-9]+ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2	instructions differ: 1279 vs 1286 instruction lines	ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1279 vs 1286 instruction lines	ABCDEFGHIJKLMN	-e utf8
+c-utf8	-O2	instructions differ: 1375 vs 1382 instruction lines	ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1375 vs 1382 instruction lines	ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2	instructions differ: 1509 vs 1502 instruction lines	[0-9]+ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1509 vs 1502 instruction lines	[0-9]+ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2	instructions differ: 1375 vs 1382 instruction lines	ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1375 vs 1382 instruction lines	ABCDEFGHIJKLMNO	-e utf8
+c-utf8	-O2	instructions differ: 1471 vs 1478 instruction lines	ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1471 vs 1478 instruction lines	ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2	instructions differ: 1614 vs 1607 instruction lines	[0-9]+ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1614 vs 1607 instruction lines	[0-9]+ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2	instructions differ: 1471 vs 1478 instruction lines	ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1471 vs 1478 instruction lines	ABCDEFGHIJKLMNOP	-e utf8
+c-utf8	-O2	instructions differ: 1576 vs 1583 instruction lines	ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1576 vs 1583 instruction lines	ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2	instructions differ: 1725 vs 1718 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1725 vs 1718 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2	instructions differ: 1576 vs 1583 instruction lines	ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1576 vs 1583 instruction lines	ABCDEFGHIJKLMNOPQ	-e utf8
+c-utf8	-O2	instructions differ: 1687 vs 1694 instruction lines	ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1687 vs 1694 instruction lines	ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2	instructions differ: 1842 vs 1835 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1842 vs 1835 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2	instructions differ: 1687 vs 1694 instruction lines	ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1687 vs 1694 instruction lines	ABCDEFGHIJKLMNOPQR	-e utf8
+c-utf8	-O2	instructions differ: 1804 vs 1811 instruction lines	ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1804 vs 1811 instruction lines	ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2	instructions differ: 1965 vs 1958 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1965 vs 1958 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2	instructions differ: 1804 vs 1811 instruction lines	ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1804 vs 1811 instruction lines	ABCDEFGHIJKLMNOPQRS	-e utf8
+c-utf8	-O2	instructions differ: 1927 vs 1934 instruction lines	ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1927 vs 1934 instruction lines	ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2	instructions differ: 2094 vs 2087 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 2094 vs 2087 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2	instructions differ: 1927 vs 1934 instruction lines	ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1927 vs 1934 instruction lines	ABCDEFGHIJKLMNOPQRST	-e utf8
+c-utf8	-O2	instructions differ: 3684 vs 3691 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 3684 vs 3691 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2	instructions differ: 3917 vs 3910 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 3917 vs 3910 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2	instructions differ: 3684 vs 3691 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 3684 vs 3691 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcde	-e utf8
+c-utf8	-O2	instructions differ: 3879 vs 3886 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 3879 vs 3886 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2	instructions differ: 4118 vs 4111 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 4118 vs 4111 instruction lines	[0-9]+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2	instructions differ: 3879 vs 3886 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 3879 vs 3886 instruction lines	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef	-e utf8
+c-utf8	-O2	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 797 vs 800 instruction lines	frank|fred	-e utf8
+c-utf8	-O2	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 683 vs 690 instruction lines	a[bc]de	-e utf8
+c-utf8	-O2	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2	instructions differ: 920 vs 919 instruction lines	(?i)foo-bar	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 920 vs 919 instruction lines	(?i)foo-bar	-e utf8
+c-utf8	-O2	instructions differ: 920 vs 919 instruction lines	(?i)foo-bar	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 920 vs 919 instruction lines	(?i)foo-bar	-e utf8
+c-utf8	-O2	instructions differ: 1109 vs 1106 instruction lines	(?i)group_concat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1109 vs 1106 instruction lines	(?i)group_concat	-e utf8
+c-utf8	-O2	instructions differ: 1109 vs 1106 instruction lines	(?i)group_concat	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1109 vs 1106 instruction lines	(?i)group_concat	-e utf8
+c-utf8	-O2	instructions differ: 1705 vs 1712 instruction lines	(?i)information_schema	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1705 vs 1712 instruction lines	(?i)information_schema	-e utf8
+c-utf8	-O2	instructions differ: 1705 vs 1712 instruction lines	(?i)information_schema	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1705 vs 1712 instruction lines	(?i)information_schema	-e utf8
+c-utf8	-O2	instructions differ: 699 vs 706 instruction lines	(?!x)abc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 699 vs 706 instruction lines	(?!x)abc	-e utf8
+c-utf8	-O2	instructions differ: 1246 vs 1246 instruction lines	(?=a+b)aab	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1258 vs 1258 instruction lines	(?=a+b)aab	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	(?xx)(?^)a b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	(?xx)(?^)a b	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	(?x)a\\ b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	(?x)a\\ b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2	instructions differ: 786 vs 793 instruction lines	(?:abc){2,5}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 786 vs 793 instruction lines	(?:abc){2,5}	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}?b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{3,5}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{3,5}b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{2,4}b	-e utf8
+c-utf8	-O2	same instruction multiset (layout/order only)	a{3,6}b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	same instruction multiset (layout/order only)	a{3,6}b	-e utf8
+c-utf8	-O2	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 962 vs 969 instruction lines	needleXYZW	-e utf8
+c-utf8	-O2	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 867 vs 874 instruction lines	\\bat [a-z]	-e utf8
+c-utf8	-O2	instructions differ: 726 vs 733 instruction lines	/user|/users	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 726 vs 733 instruction lines	/user|/users	-e utf8
+c-utf8	-O2	instructions differ: 899 vs 906 instruction lines	/user$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 899 vs 906 instruction lines	/user$	-e utf8
+c-utf8	-O2	instructions differ: 856 vs 863 instruction lines	/user\\z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 856 vs 863 instruction lines	/user\\z	-e utf8
+c-utf8	-O2	instructions differ: 775 vs 782 instruction lines	foo\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 775 vs 782 instruction lines	foo\\b	-e utf8
+c-utf8	-O2	instructions differ: 763 vs 777 instruction lines	foo\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 763 vs 777 instruction lines	foo\\B	-e utf8
+c-utf8	-O2	instructions differ: 776 vs 782 instruction lines	[ab]/user	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 776 vs 782 instruction lines	[ab]/user	-e utf8
+c-utf8	-O2	instructions differ: 708 vs 715 instruction lines	(?i)/1234	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 708 vs 715 instruction lines	(?i)/1234	-e utf8
+c-utf8	-O2	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 770 vs 777 instruction lines	(?i)x/1234	-e utf8
+c-utf8	-O2	instructions differ: 1023 vs 1030 instruction lines	/abcd[xy]/user	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1023 vs 1030 instruction lines	/abcd[xy]/user	-e utf8
+c-utf8	-O2	instructions differ: 711 vs 718 instruction lines	a\\Qb.c\\Ed	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 711 vs 718 instruction lines	a\\Qb.c\\Ed	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\Qa*b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\Qa*b\\E	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\Qa+b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\Qa+b\\E	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\Qa?b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\Qa?b\\E	-e utf8
+c-utf8	-O2	instructions differ: 810 vs 817 instruction lines	\\Qa{2,3}b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 810 vs 817 instruction lines	\\Qa{2,3}b\\E	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\Q^a$\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\Q^a$\\E	-e utf8
+c-utf8	-O2	instructions differ: 711 vs 718 instruction lines	\\Qa(b)c\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 711 vs 718 instruction lines	\\Qa(b)c\\E	-e utf8
+c-utf8	-O2	instructions differ: 714 vs 721 instruction lines	\\Qa[b]c\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 714 vs 721 instruction lines	\\Qa[b]c\\E	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\Qa|b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\Qa|b\\E	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\Qa\\b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\Qa\\b\\E	-e utf8
+c-utf8	-O2	instructions differ: 801 vs 808 instruction lines	\\Qabc$xyz\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 801 vs 808 instruction lines	\\Qabc$xyz\\E	-e utf8
+c-utf8	-O2	instructions differ: 862 vs 869 instruction lines	\\Qabc\\$xyz\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 862 vs 869 instruction lines	\\Qabc\\$xyz\\E	-e utf8
+c-utf8	-O2	instructions differ: 801 vs 808 instruction lines	\\Qabc\\E\\$\\Qxyz\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 801 vs 808 instruction lines	\\Qabc\\E\\$\\Qxyz\\E	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	\\QA\\B\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	\\QA\\B\\E	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	\\QABC\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	\\QABC\\E	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	\\QABC\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	\\QABC\\E	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	(?x)a\\Q b \\Ec	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	(?x)a\\Q b \\Ec	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	(?x) a b c	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	(?x) a b c	-e utf8
+c-utf8	-O2	instructions differ: 648 vs 655 instruction lines	(?x)\\Qa#b\\E	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 648 vs 655 instruction lines	(?x)\\Qa#b\\E	-e utf8
+c-utf8	-O2	instructions differ: 650 vs 657 instruction lines	(?x)\\Qa#b\\E#trailing comment eaten	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 650 vs 657 instruction lines	(?x)\\Qa#b\\E#trailing comment eaten	-e utf8
+c-utf8	-O2	instructions differ: 720 vs 727 instruction lines	{\\Q1\\E,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 720 vs 727 instruction lines	{\\Q1\\E,2}	-e utf8
+c-utf8	-O2	instructions differ: 711 vs 718 instruction lines	ab\\Qc+d	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 711 vs 718 instruction lines	ab\\Qc+d	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	abc\\Q	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	abc\\Q	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	\\Eabc	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	\\Eabc	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	a\\Eb\\Ec	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	a\\Eb\\Ec	-e utf8
+c-utf8	-O2	instructions differ: 642 vs 649 instruction lines	\\Qab\\E\\Ec	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 642 vs 649 instruction lines	\\Qab\\E\\Ec	-e utf8
+c-utf8	-O2	instructions differ: 675 vs 682 instruction lines	\\Qab\\Ec\\Ed	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 675 vs 682 instruction lines	\\Qab\\Ec\\Ed	-e utf8
+c-utf8	-O2	instructions differ: 810 vs 817 instruction lines	\\Bcat\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 810 vs 817 instruction lines	\\Bcat\\B	-e utf8
+c-utf8	-O2	instructions differ: 782 vs 780 instruction lines	(?m)^ERROR(?:(?=\\n)|\\z)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 808 vs 806 instruction lines	(?m)^ERROR(?:(?=\\n)|\\z)	-e utf8
+c-utf8	-O2	instructions differ: 1251 vs 1251 instruction lines	(?m)(?:\\A|(?<=\\n)(?!\\z))ERROR$	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 1272 vs 1272 instruction lines	(?m)(?:\\A|(?<=\\n)(?!\\z))ERROR$	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\xe2\x82\xac	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\xe2\x82\xac	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	[\xe2\x82\xac]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	[\xe2\x82\xac]	-e utf8
+c-utf8	-O2	instructions differ: 662 vs 669 instruction lines	\xe2\x82\xac+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 662 vs 669 instruction lines	\xe2\x82\xac+	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\x{20ac}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\x{20ac}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	[\\x{20ac}]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	[\\x{20ac}]	-e utf8
+c-utf8	-O2	instructions differ: 662 vs 669 instruction lines	\\x{20ac}+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 662 vs 669 instruction lines	\\x{20ac}+	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	\xe2\x82\xac{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	\xe2\x82\xac{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	[\xe2\x82\xac]{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	[\xe2\x82\xac]{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	\xf0\x9f\x98\x80	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	\xf0\x9f\x98\x80	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	[\xf0\x9f\x98\x80]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	[\xf0\x9f\x98\x80]	-e utf8
+c-utf8	-O2	instructions differ: 709 vs 716 instruction lines	\xf0\x9f\x98\x80+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 709 vs 716 instruction lines	\xf0\x9f\x98\x80+	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	\\x{1f600}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	\\x{1f600}	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	[\\x{1f600}]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	[\\x{1f600}]	-e utf8
+c-utf8	-O2	instructions differ: 709 vs 716 instruction lines	\\x{1f600}+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 709 vs 716 instruction lines	\\x{1f600}+	-e utf8
+c-utf8	-O2	instructions differ: 750 vs 757 instruction lines	\xf0\x9f\x98\x80{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 750 vs 757 instruction lines	\xf0\x9f\x98\x80{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 750 vs 757 instruction lines	[\xf0\x9f\x98\x80]{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 750 vs 757 instruction lines	[\xf0\x9f\x98\x80]{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 706 vs 703 instruction lines	(?:\xf0\x9f\x98\x80|\xf0\x9f\x98\x81)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 706 vs 703 instruction lines	(?:\xf0\x9f\x98\x80|\xf0\x9f\x98\x81)	-e utf8
+c-utf8	-O2	instructions differ: 706 vs 703 instruction lines	[\xf0\x9f\x98\x80\xf0\x9f\x98\x81]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 706 vs 703 instruction lines	[\xf0\x9f\x98\x80\xf0\x9f\x98\x81]	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\xe2\x82\xac	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\xe2\x82\xac	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	[\xe2\x82\xac]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	[\xe2\x82\xac]	-e utf8
+c-utf8	-O2	instructions differ: 662 vs 669 instruction lines	\xe2\x82\xac+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 662 vs 669 instruction lines	\xe2\x82\xac+	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\x{20ac}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\x{20ac}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	[\\x{20ac}]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	[\\x{20ac}]	-e utf8
+c-utf8	-O2	instructions differ: 662 vs 669 instruction lines	\\x{20ac}+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 662 vs 669 instruction lines	\\x{20ac}+	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	\xe2\x82\xac{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	\xe2\x82\xac{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 690 vs 697 instruction lines	[\xe2\x82\xac]{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 690 vs 697 instruction lines	[\xe2\x82\xac]{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	\xf0\x9f\x98\x80	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	\xf0\x9f\x98\x80	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	[\xf0\x9f\x98\x80]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	[\xf0\x9f\x98\x80]	-e utf8
+c-utf8	-O2	instructions differ: 709 vs 716 instruction lines	\xf0\x9f\x98\x80+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 709 vs 716 instruction lines	\xf0\x9f\x98\x80+	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	\\x{1f600}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	\\x{1f600}	-e utf8
+c-utf8	-O2	instructions differ: 693 vs 700 instruction lines	[\\x{1f600}]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 693 vs 700 instruction lines	[\\x{1f600}]	-e utf8
+c-utf8	-O2	instructions differ: 709 vs 716 instruction lines	\\x{1f600}+	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 709 vs 716 instruction lines	\\x{1f600}+	-e utf8
+c-utf8	-O2	instructions differ: 750 vs 757 instruction lines	\xf0\x9f\x98\x80{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 750 vs 757 instruction lines	\xf0\x9f\x98\x80{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 750 vs 757 instruction lines	[\xf0\x9f\x98\x80]{1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 750 vs 757 instruction lines	[\xf0\x9f\x98\x80]{1,2}	-e utf8
+c-utf8	-O2	instructions differ: 706 vs 703 instruction lines	(?:\xf0\x9f\x98\x80|\xf0\x9f\x98\x81)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 706 vs 703 instruction lines	(?:\xf0\x9f\x98\x80|\xf0\x9f\x98\x81)	-e utf8
+c-utf8	-O2	instructions differ: 706 vs 703 instruction lines	[\xf0\x9f\x98\x80\xf0\x9f\x98\x81]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 706 vs 703 instruction lines	[\xf0\x9f\x98\x80\xf0\x9f\x98\x81]	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\p{Zl}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\p{Zl}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\p{Zl}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\p{Zl}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\p{Zp}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\p{Zp}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\\p{Zp}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\\p{Zp}	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	[\\x{212a}]	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	[\\x{212a}]	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\xef\xac\x81	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\xef\xac\x81	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\xef\xac\x83	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\xef\xac\x83	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	\xe1\xba\x96	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	\xe1\xba\x96	-e utf8
+c-utf8	-O2	instructions differ: 654 vs 661 instruction lines	a-z	-e utf8
+c-utf8	-O2 -march=x86-64-v3	instructions differ: 654 vs 661 instruction lines	a-z	-e utf8

@@ -155,6 +155,25 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   AND be patterns of `tests/litscan/handoff.rxt` (oracle-verified rows added
   to `gen_handoff.py`). `HANDOFF_REACH_FLOOR` (3) is a literal.
 
+### C11's routing leg (lane r4e0b, R4e'.0b)
+
+- **routing_shape.py** — C18's ROUTING leg (D155 item 6 and addendum 1):
+  every offset-skip/pre-check function in an artifact (a `static inline
+  size_t` named by pcrec's FUNC suffixes `_reqrun`, `_reqrun_whole`,
+  `_ofsskip`) has its helper `<fn>__body` above it with the same
+  parameters; `<fn>`'s whole body is one call forwarding them (or an `#if`
+  chain, one call per arm, the `#else` arm `<fn>__body`); no other function
+  body holds a conditional directive. The rule is read from the ruling's
+  text, never from `memfn/src/ofsskip.c`, so a pin re-pinned over a
+  work-bearing selector still reads red here. `--selftest` (or no argument)
+  runs ten planted controls (three that must pass, the shape-(c) chain
+  among them, seven that must not); `routing_shape.py FILE...` checks
+  files. Read by `libc_census.py` (C11, `make test-memfn-stamps`, arm
+  `memfnstamps`) over its whole population, with the controls run first
+  and a `funcs` floor (a literal in `run_libc_census.sh`) on the functions
+  seen. Its name filter is the blind spot it states: a FUNC whose name ends
+  otherwise is not seen, which the floor bounds.
+
 ### C15 and C16 (lane memfnskel)
 
 - **run_link_checks.sh** — [MEMFN] R4a: `make test-memfn-link`, a `make
@@ -263,7 +282,10 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
   prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88); M6
   prep the seven strided ADVANCE fixtures' fourteen rows (102,
-  `ARMS_ROW_FLOOR` 102). A
+  `ARMS_ROW_FLOOR` 102); R4e'.0b (lane r4e0b, the routing, abi 69 -> 70)
+  RE-PINNED the ten `def` parts that hold an offset-skip function (six
+  ofsskip, four precheck), no `use` part moved (its header records the
+  deltas). A
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
@@ -437,6 +459,13 @@ work, not answers) on `memfnarms` (checks 10/11; S667/S669/S670 also
 `brefdiff`, S669/S670 the caseless harness), and S673 (a backend spells its
 loop again while N7 is delegated) on `memfnmanifest`/`memfnforms`.
 Hand-measured figures: `docs/dev/lanes/m7_report.md` §6.
+
+R4e'.0b (lane r4e0b) adds S690-S695: the selector does work (S690), the
+routing undone (S691), an `#if` in `<fn>__body` (S692), the selector drops
+its tables (S694), the selector above its helper (S695), all on
+`memfnstamps` (the routing leg) + `memfnarms`; and S693 (the abi left at
+68, arm `codegen`). Hand-measured figures: `docs/dev/lanes/r4e0b_report.md`
+§5.
 
 M7 fix (lane m7fix) adds S668 on a new arm `n2sample` (run_n2_sample.sh):
 `mismatch_inplace`'s `applies` holds on every site (M7's shipped defect), so

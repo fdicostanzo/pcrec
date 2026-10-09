@@ -555,7 +555,10 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # bucket since the day it was added.
 VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
 VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
-REQRUN_FN_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?\(')
+# [R4e'.0b] the run pre-check FUNCTION is two definitions since the routing
+# (D155 item 6): the loop under `rx_reqrun__body`, then the one-call selector
+# `rx_reqrun`; both are the block (excised together, read together).
+REQRUN_FN_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(')
 REQRUN0_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos), (\d+), n - pos\);$')
 REQRUNK_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos) \+ \d+, (\d+), n - pos - \d+\);$')
 REQRUN0_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\));$')
@@ -566,7 +569,7 @@ REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
 REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+((?:/[0-9a-f]+)?")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
 REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ pos(?: \+ \d+)?, (\d+),')
-REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?\(.*?^}$', re.M | re.S)
+REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?(?:__body)?\(.*?^}$', re.M | re.S)
 REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 #
 # (iii) [OPT-PRECHECK-ADMIT]'s G1 DOMINANCE rule (`req_byte_dominated_by`,

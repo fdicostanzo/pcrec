@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 69
-   #error "pcrec: this artifact (abi 69) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 70
+   #error "pcrec: this artifact (abi 70) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 69
+   #define PCREC_RX_ABI_H 70
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,19 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `69` on every artifact today (lane decattr bumped it
+- **`rx_info.abi` is `70` on every artifact today (lane r4e0b bumped it
+  from 69, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
+  `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
+  offset-skip/pre-check function (`<prefix>_reqrun`, `<prefix>_reqrun_whole`,
+  `<prefix>_ofsskip`) keeps its loop, byte for byte, under the head
+  `<prefix>_<fn>__body`, and the function itself becomes one call to it,
+  `return <prefix>_<fn>__body(subject, n, pos[, tables]);`: the SIMD-off
+  shape that a later CPU-guarded helper adds `#if` arms above (the floor
+  rule). Both are `static inline` in the `.c`, so no symbol a caller links
+  against changes, no stamp is added or changes value, no struct offset or
+  `rx_info` member moves and no answer moves; an artifact with no such
+  function differs from `abi` 69 in its abi digits alone.
+- **`rx_info.abi` was `69` (lane decattr bumped it
   from 68, 2026-10-09: [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], one event —
   `docs/design/dec_fallback.md` §5.1, §5.2, §6.1).** Two stamp VALUES move,
   no stamp is added. (1) A `${...}` pattern's `<PREFIX>_ENGINE_SEL` reads

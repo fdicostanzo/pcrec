@@ -6,7 +6,10 @@
 # WHAT IT CHECKS: over a deterministic, corpus-wide sample of artifacts (five
 # streams: default engine, --engine=vm, --emit-main, --trace, and every
 # composition file's artifacts), every artifact carries both
-# `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC`; FORMS reads "none"; and
+# `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC`; FORMS reads "none";
+# every offset-skip/pre-check function is routed (R4e'.0b, D155: its loop
+# under `<fn>__body`, `<fn>` a selector of one call per arm, no `#if` in a
+# function that does work; tests/memfn/routing_shape.py); and
 # the LIBC line's names EQUAL the libc functions the compiled object calls
 # (`nm -u` of `-O0 -fno-builtin -c`, minus constant 1-8 byte `memcpy` loads).
 # FORMS's identity clause compiles each pattern-stream artifact again at
@@ -21,6 +24,9 @@
 #   measured: artifacts 918, dfa 353, vm 565, composition 51, none 344,
 #   idiom 95, calls-memchr 529, calls-memcmp 48, calls-strlen 47,
 #   calls-printf 44, calls-fprintf 96.
+# R4e'.0b (lane r4e0b, 2026-10-09, Linux dev box, gcc 15.2) adds the ROUTING
+# leg (routing_shape.py) and its population `funcs`, the offset-skip/pre-check
+# functions seen: measured 188 (full) / 119 (--quick), floors ~90%.
 # No corpus artifact calls `memcpy` with a non-constant length, so a
 # dropped non-idiom `memcpy` is UNREACHED (integration.md §17.6, declared).
 #
@@ -46,11 +52,11 @@ if [ -n "$quick" ]; then
     # measured: artifacts 533, dfa 293, vm 240, idiom 42, calls-memchr 305,
     # calls-memcmp 26
     FLOORS=(artifacts=480 dfa=260 vm=215 idiom=37 calls-memchr=275
-            calls-memcmp=23)
+            calls-memcmp=23 funcs=107)
 else
     FLOORS=(artifacts=820 dfa=310 vm=500 composition=45 none=300 idiom=80
             calls-memchr=470 calls-memcmp=40 calls-strlen=40 calls-printf=38
-            calls-fprintf=85)
+            calls-fprintf=85 funcs=169)
 fi
 fl=()
 for f in "${FLOORS[@]}"; do fl+=(--floor "$f"); done

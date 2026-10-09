@@ -134,8 +134,10 @@ INTLIT = re.compile(r'rx_w[248]\([^()]*\)\)? (?:==|&) (?:0x|[0-9])')
 
 
 def block(text, name):
-    """The text of `static inline size_t <name>(...)` up to its closing brace."""
-    i = text.find("static inline size_t %s(" % name)
+    """The text of function <name>'s LOOP up to its closing brace: since
+    R4e'.0b (D155 item 6) the loop is the helper `<name>__body` and <name>
+    itself is a one-call selector."""
+    i = text.find("static inline size_t %s__body(" % name)
     if i < 0:
         return None
     j = text.find("\n}\n", i)
