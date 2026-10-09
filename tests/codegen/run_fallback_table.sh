@@ -267,7 +267,12 @@ fseq seq-ovfpf    trlowdfa ok 'sel1-drop@overflow'                             "
 # T1 rows 6-9 (the size-cap ladder), arrival label `size`
 fseq seq-pfcdrop  trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8
 fstate seq-pfcdrop 1 'restart=1'
-fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8 -fno-prefilter-collapse
+# seq-pfdrop holds row 6's deny bit (S648). Since [DEC-COLLAPSE-WASTE]
+# `(\p{Xwd})` has no collapsible repeat, so row 6 is not offered with or
+# without the bit and the old witness read the same either way (dectri,
+# 2026-10-09). `(\p{Xwd}{1,3})` takes prefilter-collapse at shipped limits
+# (gate-sizecap below); the bit must keep it to drop-prefilter alone.
+fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '(\p{Xwd}{1,3})' -e utf8 -fno-prefilter-collapse
 fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}b'
 fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(\bcat\b)+' -e utf8
@@ -333,6 +338,11 @@ frec att-dn       trplain attrib '-|declined-nullable from=admit'             '(
 frec att-cpf      trplain attrib '-|collapsed-prefilter from=sel1-collapse'   "$W_SEL1"
 frec att-ovfdfa   trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_OVF"
 frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$OVFPF"
+# att-ovfcd/att-scpfd: the giving row is the SECOND fired row (S626). Since
+# [DEC-COLLAPSE-WASTE] att-ovfdfa/att-ovfpf fire sel1-drop alone, so the first
+# fired row and the giving row coincide there (dectri, 2026-10-09).
+frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_LOOKR"
+frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-prefilter'     '(\bcat\b){2,}' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8
