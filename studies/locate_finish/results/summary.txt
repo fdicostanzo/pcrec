@@ -126,3 +126,10 @@ T7  bench members of the T4-T6 populations (start-unanchored only)
     syntax/anc-z-uc
   stage 2: 0
   VM-only: 0
+
+T8  D-2's population: RX_DFA_START "reverse-pass" with no reverse machine (ATTEMPT / empty locators)
+  all                                                            bench   37   corpus   606 (  481 distinct)
+     dfa / attempt                                               bench   20   corpus   308 (  237 distinct)
+     dfa / empty                                                 bench    0   corpus    53 (   47 distinct)
+     vm / attempt                                                bench   17   corpus   227 (  181 distinct)
+     vm / empty                                                  bench    0   corpus    18 (   16 distinct)

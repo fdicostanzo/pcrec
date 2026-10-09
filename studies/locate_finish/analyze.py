@@ -181,3 +181,11 @@ for name, pred in (("stage 1", S1), ("stage 2", S2), ("VM-only", V)):
     print(f"  {name}: {len(ids)}")
     for i in ids:
         print(f"    {i}")
+
+print()
+print("T8  D-2's population: RX_DFA_START \"reverse-pass\" with no reverse machine (ATTEMPT / empty locators)")
+D2 = lambda r: bool(r["ENGINE"]) and r["DFA_START"] == "reverse-pass" and r["DFA_SCAN"] in ("attempt", "empty")
+show("all", D2)
+for eng in ("dfa", "vm"):
+    for scan in ("attempt", "empty"):
+        show(f"   {eng} / {scan}", lambda r, e=eng, s=scan: D2(r) and r["ENGINE"] == e and r["DFA_SCAN"] == s)
