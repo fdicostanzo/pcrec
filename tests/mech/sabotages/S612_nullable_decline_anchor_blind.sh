@@ -24,5 +24,8 @@ SAB_COUNT=1
 # plant by row 5 (`nullable-collapsed`, the rung scope), which keeps
 # `empty_admits`; the give-up cells and the [anch] admit rows are all
 # un-rung compiles, row 4's scope.
-SAB_BEFORE='    return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_empty_admits(s->cx);'
-SAB_AFTER='    return pfa_default_scope(s) && !pfa_var(s) && pcrec_fact_nullable(s->cx);   /* SABOTAGE S612 */'
+# [DEC-VAR-ATTRIB] (lane decattr, 2026-10-09) RE-ANCHORED, INTENT RE-VERIFIED:
+# the `!pfa_var(s)` conjunct went with var-nullable (the var row precedes
+# this one), the plant is unchanged.
+SAB_BEFORE='    return pfa_default_scope(s) && pcrec_fact_empty_admits(s->cx);'
+SAB_AFTER='    return pfa_default_scope(s) && pcrec_fact_nullable(s->cx);   /* SABOTAGE S612 */'

@@ -266,23 +266,31 @@ IRF="--features all"
 check_ir_value "T2 backref/NONE"            'no-backreference'      '(a)\1'                        $IRF
 # linked-call | NONE
 check_ir_value "T2 linked-call/NONE"        'no-linked-call'        '(a|b(?1)c)+'                  $IRF
-# var-nullable | NONE
-check_ir_value "T2 var-nullable/NONE"       'no-nullable-exact'     '^${v}$'                       $IRF
 # nullable-exact | NONE
 check_ir_value "T2 nullable-exact/NONE"     'no-nullable-exact'     '(a*)*'                        $IRF
 # nullable-collapsed | SEL1
 check_ir_value "T2 nullable-collapsed/SEL1" 'no-nullable-collapsed' '(?:ab){0,16000}'              $IRF
 # overflow-drop | NONE, and | SEL1 (the -fno-prefilter arm reaches the retry)
 check_ir_value "T2 overflow-drop/NONE"      'no-dfa-overflow'       '^(?:(?:a|b)*a(?:a|b){20})?$'  $IRF
-check_ir_value "T2 overflow-drop/SEL1"      'no-dfa-overflow'       '^(?:(?:a|b)*a(?:a|b){20})?$'  $IRF -fno-prefilter
+# (SEL1: since [DEC-COLLAPSE-WASTE] the nullable witness above skips the
+# rung, class (ii); its non-nullable form still takes it under -fno-prefilter)
+check_ir_value "T2 overflow-drop/SEL1"      'no-dfa-overflow'       '^(?:a|b)*a(?:a|b){20}$'       $IRF -fno-prefilter
 # forced-on | NONE (exists, above) and | SIZECAP
 check_ir_value "T2 forced-on/SIZECAP"       'yes-collapsed'         '^(\p{Xwd}{1,3})?$'            $IRF -e utf8 -fprefilter
-# forced-off | NONE (exists, above) and | SIZECAP (§4.5: the [PF-DROP]
-# artifact's listing names the flag, via the OR'd bit)
-check_ir_value "T2 forced-off/SIZECAP"      'no-fno-prefilter'      '(\p{Xwd})'                    $IRF -e utf8
-# var | NONE (F-B1), and var vs forced-off ORDER (forced-off wins the token)
-check_ir_value "T2 var/NONE"                'no-engine-vm'          'a${v}b'                       $IRF
-check_ir_value "T2 var-vs-forced-off order" 'no-fno-prefilter'      'a${v}b'                       $IRF -fno-prefilter
+# size-dropped | NONE ([DEC-VAR-ATTRIB] §4.5: the [PF-DROP] artifact's
+# listing names the rung, not the flag the rung ORs in; it listed
+# 'no-fno-prefilter' until abi 69). forced-off is NONE only (above): the
+# rung is the only writer of the bit at SIZECAP.
+check_ir_value "T2 size-dropped/NONE"       'no-size-cap'           '(\p{Xwd})'                    $IRF -e utf8
+check_ir_value "T2 forced-off vs rung"      'no-fno-prefilter'      '(\p{Xwd})'                    $IRF -e utf8 -fno-prefilter
+# var | NONE ([DEC-VAR-ATTRIB] F-B1 + F1: a construct row, listing
+# 'no-variable'; until abi 69 'no-engine-vm', 'no-nullable-exact' on a
+# nullable one, and the flag under -fno-prefilter), on a non-nullable and a
+# nullable variable pattern and under each flag that used to win the token
+check_ir_value "T2 var/NONE"                'no-variable'           'a${v}b'                       $IRF
+check_ir_value "T2 var nullable/NONE"       'no-variable'           '^${v}$'                       $IRF
+check_ir_value "T2 var-vs-forced-off order" 'no-variable'           'a${v}b'                       $IRF -fno-prefilter
+check_ir_value "T2 var under --engine=vm"   'no-variable'           'a${v}b'                       $IRF --engine=vm
 # default on | NONE, | SEL1
 check_ir_value "T2 default-on/NONE"          'yes'                  '(a)b'                         $IRF
 check_ir_value "T2 default-on/SEL1"          'yes-collapsed'        '(1{0,30}?[^]abc][^abc]){28,30}0+|a' $IRF

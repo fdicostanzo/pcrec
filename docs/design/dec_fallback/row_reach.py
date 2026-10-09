@@ -82,9 +82,14 @@ DECLARED_ZERO = [
     ("T1", "refuse", "nomem"),          # row 1 takes every nomem arrival first
 ] + [("T1", r, c) for r in SEL1 for c in ("size", "other", "nomem")] \
   + [("T1", r, c) for r in SIZE for c in ("overflow", "other", "nomem")] + [
-    # T2: rows 1-3/9 build no prefilter, so no DFA overflows and no rung applies
-    *[("T2", r, s) for r in ("backref", "linked-call", "var-nullable", "var")
+    # T2: rows 1-3 build no prefilter, so no DFA overflows and no rung applies
+    *[("T2", r, s) for r in ("backref", "linked-call", "var")
       for s in ("sel1", "sizecap")],
+    # [DEC-VAR-ATTRIB] row 7: only the [PF-DROP] rung writes SDR_NO_PREFILTER,
+    # and only on the SIZE ladder (CR is NONE or SIZECAP there, never SEL1)
+    ("T2", "size-dropped", "sel1"),
+    # ... and the bit the rung ORs in no longer reaches `forced-off` at SIZECAP
+    ("T2", "forced-off", "sizecap"),
     ("T2", "nullable-exact", "sel1"), ("T2", "nullable-exact", "sizecap"),   # row 4: CR == NONE
     ("T2", "nullable-collapsed", "none"),     # row 5: CR != NONE
     ("T2", "nullable-collapsed", "sizecap"),  # §4.3a: structural

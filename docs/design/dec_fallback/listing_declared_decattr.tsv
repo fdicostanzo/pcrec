@@ -1,0 +1,18 @@
+# [DEC-VAR-ATTRIB] (lane decattr, 2026-10-09)'s DECLARED --list-axes movers:
+# T2 (`prefilter-admit`) only, stream 5. Checked by listing_diff.py (this
+# directory) against the parent's listing:
+#   python3 listing_diff.py PARENT_AXES.tsv NEW_AXES.tsv listing_declared_decattr.tsv
+# Old values are the parent's; new values are written here from the rows'
+# own cells (dec_fallback.md §5.2, §6.1), never read off the listing under test.
+#
+# 1. F1: the var-nullable row (F1's holder) is deleted.
+-	prefilter-admit	var-nullable
+# 2. F-B1: `var` becomes a CONSTRUCT row, third after backref/linked-call,
+#    listing `no-variable` (was row 9, `no-engine-vm`, naming --engine=vm).
+prefilter-admit	var	order	9	3
+prefilter-admit	var	applies	decides the prefilter off; --emit-ir lists prefilter "no-engine-vm": --engine=vm -- the VM scans from search_from itself (R21 E-6)	decides the prefilter off; --emit-ir lists prefilter "no-variable": ${...} variable -- erasing a variable is not a superset (a${v}b with v = x matches axb, the erased ab does not), and its bytes do not exist until the call; no flag changes this, and -fprefilter refuses
+# 3. §4.5: the size-dropped row, ahead of the two flag rows; the flag rows
+#    move down one place (one row deleted above, one added above them).
++	prefilter-admit	7	size-dropped	list								decides the prefilter off; --emit-ir lists prefilter "no-size-cap": size-cap ladder
+prefilter-admit	forced-on	order	7	8
+prefilter-admit	forced-off	order	8	9

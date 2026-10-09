@@ -1,0 +1,20 @@
+population 4387 distinct patterns; movers 132
+  c     byte                         9  esel:declined-nullable-default->selected
+  c     utf8                         9  esel:declined-nullable-default->selected
+  c     utf8                         1  pfwhy:size cap retry, hybrid 1015708 > 1000000->size cap retry, hybrid 1015702 > 1000000
+  c     utf8                         1  pfwhy:size cap retry, hybrid 1028522 > 1000000->size cap retry, hybrid 1028516 > 1000000
+  facts byte                        18  stamp:ENGINE_SEL:"declined-nullable-default"->"selected"
+  facts byte                         1  stamp:VM_PREFILTER_WHY:"size cap retry, hybrid 1015708 > 1000000"->"size cap retry, hybrid 1015702 > 1000000"
+  facts byte                         1  stamp:VM_PREFILTER_WHY:"size cap retry, hybrid 1028522 > 1000000"->"size cap retry, hybrid 1028516 > 1000000"
+  facts byte                        36  used:empty_admits:no->yes
+  ir    -fno-prefilter               9  tok:no-fno-prefilter->no-variable
+  ir    -fno-prefilter               9  tok:no-nullable-exact->no-variable
+  ir    -fno-prefilter-collapse      9  tok:no-engine-vm->no-variable
+  ir    -fno-prefilter-collapse      9  tok:no-nullable-exact->no-variable
+  ir    byte                         9  tok:no-engine-vm->no-variable
+  ir    byte                         9  tok:no-nullable-exact->no-variable
+  ir    utf8                         9  tok:no-engine-vm->no-variable
+  ir    utf8                         2  tok:no-fno-prefilter->no-size-cap
+  ir    utf8                         9  tok:no-nullable-exact->no-variable
+  irvm  byte                        18  tok:no-engine-vm->no-variable
+MOVERS: ALL DECLARED SHAPES

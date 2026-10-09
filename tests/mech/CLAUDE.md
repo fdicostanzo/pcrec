@@ -3630,3 +3630,18 @@ row, a no-row END per FUNC part in the trace; n2sample only, no byte moves).
 S690-S695 are left for R4e'.0b. Not built, with reason: "BODY asked before
 PREFIX" and "the walk ignores the slot" are equivalent mutants while the
 PREFIX slot is empty (the report says so).
+### [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE] — rows S697-S698, re-aims S272/S612/S625/S639/S640, witness move S641 (lane decattr, 2026-10-09)
+
+New: S697 T2's `size-dropped` row never applies (§4.5's wrong attribution
+back; detectors run_prefilter_tests.sh §7b and fbt (a) adm-sizedrop/
+adm-sizedcol), S698 `fit_collapse_can_help` answers true (the wasted collapse
+attempts back; detectors fbt (a)'s hand-written sequences). Re-anchored,
+plant unchanged: S272 (the var row lists `no-variable`), S612 (the
+`!pfa_var` conjunct went). Re-aimed, the contract inverted by ruling: S639
+(var-nullable is deleted; the plant now gives the `var` row the
+`declined-nullable-default` cell, F1 back), S640 (the var row precedes
+forced-off; the plant makes it defer to `-fno-prefilter`), S625 (the admit
+record's wrong name moves to the `var` row). S641's witness moved to the
+non-nullable `^(?:a|b)*a(?:a|b){20}$` (the nullable one no longer takes the
+rung). `docs/dev/lanes/decattr_report.md` carries the solo runs. Renumber
+S697/S698 at landing if another lane took them first.

@@ -115,6 +115,8 @@ pass):
 | `no-dfa-overflow` | the auto-selected prefilter's DFA build hit a cap ([SEL-1]); the `note` carries the cap text |
 | `no-fno-prefilter` | forced off by `-fno-prefilter` |
 | `no-engine-vm` | the `--engine=vm` side effect (R21 E-6) |
+| `no-variable` | a `${...}` variable; no flag changes it, `-fprefilter` refuses ([DEC-VAR-ATTRIB], `abi` 69; it listed `no-engine-vm`, or the flag under `-fno-prefilter`, before) |
+| `no-size-cap` | the size-cap ladder's last rung dropped the prefilter (`limits.md` §8; [DEC-VAR-ATTRIB], `abi` 69; it listed `no-fno-prefilter` before, the flag the rung ORs in) |
 
 **`prune-ceiling` uses the same three words as the artifact's own
 `<PREFIX>_VM_PRUNE_CEILING` stamp, deliberately.** The two are computed

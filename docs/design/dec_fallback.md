@@ -1363,7 +1363,24 @@ the byte-count reader class included) is ruled when the row is built.
 split per class, plus a compile timing (decfb0 counted attempts and did not
 time them), plus the `VM_PREFILTER_WHY` mover census for form (a).
 
+**BUILT 2026-10-09 (lane decattr, form (a), `docs/dev/lanes/decattr_report.md`).**
+Both collapse rungs ask one predicate, `fit_collapse_can_help` (in
+`src/core/compile.c`, beside rows 3 and 6): the attempt has a collapsible
+repeat, and it is not nullable-but-not-`empty_admits` unless `-fprefilter`
+was passed. It is an edit of each row's `applies` cell, not a new column. The
+stamp-value movers ride `abi` 69 with [DEC-VAR-ATTRIB]. The report carries
+the mover census, the attempt counts and the compile timing.
+
 ### 5.2 F1 and F-B1: one row deleted, one cell changed
+
+**BUILT 2026-10-09 (lane decattr), with one deviation.** `var-nullable` is
+deleted, as recommended. The `var` row lists `no-variable`, and it also MOVES
+to row 3, a construct row beside `backref`/`linked-call`. That move makes
+`-fno-prefilter` and `--engine=vm` list `no-variable` too, as a backreference
+lists `no-backreference` under them. It also removes the `!has_var` conjunct
+from `nullable-exact`, so no row special-cases a variable's nullability.
+`docs/design/dec_fallback/listing_declared_decattr.tsv` declares the T2
+listing move. `abi` 69 (D76/D94, readers by grep).
 
 Recommended as ONE later row (§11 Q1, Frank's):
 - delete T2 row 3 (`var-nullable`): the nine `^${v…}$` rows move
@@ -1418,6 +1435,11 @@ lowered variants (T2 row 8 at SIZECAP: lowsize 92, lowboth 75).
 - It is a LISTING mover: `--emit-ir` streams only, no `.c` byte.
 - It is not in B, so it is filed and recommended together with §5.2's row:
   one listing-vocabulary event, one spec hunk (§11 Q1).
+
+**BUILT 2026-10-09 (lane decattr)** as described: the row is named
+`size-dropped` and keyed on `size_drop_rung == SDR_NO_PREFILTER`, the state
+row 9 writes. It sits after `overflow-drop`, ahead of both flag rows. Its
+note points at `VM_PREFILTER_WHY` for the figures, and it lists `no-size-cap`.
 
 ### 6.2 §4.6: `ENGINE_SEL`'s listed order ≠ evaluated order
 

@@ -9,7 +9,7 @@
 SAB_ID='S625-admit-trace-var-rows-swapped'
 SAB_FILE='src/opt/select_engine.c'
 SAB_SUITES='fallbacktable'
-SAB_DESC="the admit record swaps T2 rows var-nullable and nullable-exact (trace build only)"
+SAB_DESC="the admit record names T2's var row as linked-call (trace build only)"
 SAB_DOC_FIGURE='Read the figure from a run: bash tests/mech/run_sabotage_matrix.sh S625.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
@@ -19,5 +19,9 @@ SAB_COUNT=1
 # The claim, "the trace's admit record names the wrong T2 row", moves to
 # the row's NAME cell: row 3 is named as row 4. fbt (a)'s adm-varnul
 # (`^${v}$`, hand-written `var-nullable`) is the detector.
-SAB_BEFORE='    { "var-nullable",       pfa_var_nullable,       PFV_OFF,     "no-nullable-exact",'
-SAB_AFTER='    { "nullable-exact",     pfa_var_nullable,       PFV_OFF,     "no-nullable-exact",   /* SABOTAGE S625 */'
+# [DEC-VAR-ATTRIB] (lane decattr, 2026-10-09) RE-AIMED, INTENT RE-VERIFIED.
+# var-nullable is deleted; the same claim on the `var` row (now row 3): it
+# is named as `linked-call`. Detectors: fbt (a)'s adm-var/adm-varnul/
+# adm-varoff records (hand-written `var`).
+SAB_BEFORE='    { "var",                pfa_var,                PFV_OFF,     "no-variable",'
+SAB_AFTER='    { "linked-call",        pfa_var,                PFV_OFF,     "no-variable",   /* SABOTAGE S625 */'
