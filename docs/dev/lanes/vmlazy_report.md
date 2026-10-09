@@ -283,6 +283,23 @@ r4e0b §7's shape.
     the plan row, and the bench note that every lazy-cursor-prefix artifact
     moves (object code, timing null).
 
+## 8a. Pre-slot light chain (chain2), read by the kit manager 2026-10-09
+
+`.scratch/chain2.sh` (`taskset -c 14-15`, light), `CHAIN2 COMPLETE`:
+- 13 suites rc=0: test-memfn-{arms,stamps,rows,manifest,deleg,forms,reach,g2},
+  test-cpset-structure, test-codegen, test-registry, test-rxtsource,
+  test-resource.
+- `emit_sweep` REPLACE-vs-NORMALIZE build (`pcrec.step1` vs `pcrec.step2`),
+  9 arms (base, utf8, vm-noposs, `-fno-length-prune`, `--tune=-2`,
+  `-fno-cls-kit`, `-fno-cls-pack`, `-fcomments`, `-fmemfn-simd`):
+  `movers=0 asymmetric=0` on EVERY stream of every arm.
+- rc=1 on `utf8` and `-fno-cls-kit` only, each the single line
+  `COMPOSITION PRODUCING FLOOR VIOLATION: 37 < 38`, on both sides: the two
+  DECLARED exceptions of r4clx_report's judge table (`^base=utf8 ` and
+  `-fno-cls-kit`). Not a mover.
+- Then lane n7uret (N7U retired, D147 add. 14; docs/TSV only) merged on top;
+  strict, test-memfn-manifest, test-memfn-forms green on the merge.
+
 ## 9. Charter vs delivered
 
 | charter item | state |
