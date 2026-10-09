@@ -333,7 +333,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
-      test-memfn-pick2
+      test-memfn-rank
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1285,14 +1285,14 @@ test-memfn-guarded: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-guarded.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_guarded.sh
 
-# [MEMFN] RQ-2: the PROBE build (-DPCREC_PICK2_PROBE: every PRE/OFS predicate
-# pcrec hands the kit, on stderr) over the corpus at three arms: each
-# predicate scanning inside a RUN term carries mf_pred.plan_pos2 equal to a
-# brute-force second pick under the compile's byte-rate; every other carries
-# MF_NO_POS. Seconds, plus the probe build.
-test-memfn-pick2: all
-	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-pick2.ran"; fi
-	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_pick2.sh
+# [MEMFN] RQ-2: the PROBE build (-DPCREC_RANK_PROBE: every RUN-scanning
+# PRE/OFS predicate pcrec hands the kit, with pcrec_find_run_rank's ranking
+# of its run, on stderr) over the corpus at three arms: each ranking equals a
+# brute force under the compile's byte-rate, and a PRE predicate scans
+# rank[0]. Seconds, plus the probe build.
+test-memfn-rank: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rank.sh
 
 # [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
 # scalar arm the kit carries renders its fixed fixture sites
@@ -1886,7 +1886,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-pick2 \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \

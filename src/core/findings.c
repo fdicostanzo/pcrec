@@ -541,36 +541,35 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
     return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
 }
 
-/* The SECOND position a fused pair filter tests beside the scanned one
- * (`ka`): PICK over the run's OTHER positions as cubes, in the order
- * `pcrec_find_run_scan_index` uses (`[n-1, ..., 0]` without `ka`), so a data
- * tie and the NONE answer both go to the rightmost other position.
- * [MEMFN] RQ-2 (integration.md §2.3 T7, Q-R9-3 (a)): the fact the kit's
- * vector filter ANDs as KB, carried in `mf_pred.plan_pos2`.
- *
- * THE DISTANCE RULE is `kb != ka` and nothing more. UNMEASURED DEFAULT: the
- * design names a distance rule without stating one, and this is the
- * smallest rule that reproduces R-1's four timed cells under NONE (SELECT
- * 4/5, USER 0/3, CAT 0/2, it 0/1; memfnr4b_report.md §1). A wider minimum
- * distance (adjacent bytes co-occur, so the product of their rates
- * overstates the pair's rarity) is §R4.9.5 item 10's KB sweep's question.
+/* Every position of a run, ranked rarest first by the cost PICK uses (the
+ * mass of the position's cube), into `pos[0..n)` with each position's mass
+ * in `mass[0..n)` (`mass` may be NULL). The ranking is PICK applied
+ * repeatedly: a stable order over `pcrec_find_run_scan_index`'s candidate
+ * order `[n-1, ..., 0]`, so ties go to the rightmost position under both
+ * arms and `pos[0]` is that reader's answer. [MEMFN] RQ-2 (integration.md
+ * §2.3 T7, Q-R9-3 (a)): the fact a fused filter's positions are chosen from.
+ * Any second-position or distance rule is the reader's, not this list's.
  * The positions are those of whatever run the caller hands over, so under
- * `-e utf8` this inherits the scan pick's positional prior (U8-PICK,
- * u8pick0_report.md). */
-int pcrec_find_pick2(const uint32_t *rate, const unsigned char *bytes,
-                     const unsigned char *mask, int n, int ka)
+ * `-e utf8` (byte-rate NONE) the ranking is by cube size and then
+ * positional (U8-PICK, u8pick0_report.md). */
+void pcrec_find_run_rank(const uint32_t *rate, const unsigned char *bytes,
+                         const unsigned char *mask, int n, int *pos,
+                         uint32_t *mass)
 {
     if (n > PCREC_MAX_REQ_RUN_SCAN) abort();   /* run_scan_index's own guard */
-    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN], care[PCREC_MAX_REQ_RUN_SCAN];
-    int pos[PCREC_MAX_REQ_RUN_SCAN], m = 0;
-    if (n < 2) return -1;
-    for (int i = n - 1; i >= 0; i--) {
-        if (i == ka) continue;
-        cand[m] = bytes[i];
-        care[m] = mask ? mask[i] : 0xFF;
-        pos[m++] = i;
+    uint32_t m[PCREC_MAX_REQ_RUN_SCAN];
+    for (int k = 0; k < n; k++) {            /* insertion: stable, n <= 32 */
+        int i = n - 1 - k, j = k;
+        uint32_t c = cube_mass(rate, bytes[i], mask ? mask[i] : 0xFF);
+        while (j > 0 && m[j - 1] > c) {
+            m[j] = m[j - 1];
+            pos[j] = pos[j - 1];
+            j--;
+        }
+        m[j] = c;
+        pos[j] = i;
     }
-    return pos[pcrec_find_pick(rate, cand, care, m, 0)];
+    if (mass) memcpy(mass, m, (size_t)n * sizeof *mass);
 }
 
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start

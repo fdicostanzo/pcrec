@@ -101,12 +101,9 @@ uint64_t pcrec_memfn_deny_flags(uint64_t mf);
 
 /* A zeroed site for DELEG_SITES row `id`, in the arena: its abi, its policy
  * (MF_P_INLOOP from the row's budget and nowhere else; MF_P_PORTABLE_ONLY
- * while -fmemfn-simd is not given), `opts` NULL (no --memfn= until R4d),
- * and its predicate's plan_hint/plan_pos2 stated as none. */
+ * while -fmemfn-simd is not given), `opts` NULL (no --memfn= until R4d). */
 mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id);
-/* `n` zeroed predicates in the arena, each plan_pos2 stated as none
- * (MF_NO_POS): only `ofs_pred_of` (src/gen/emit_dfa.c) states a second
- * position (RQ-2). */
+/* `n` zeroed predicates in the arena. */
 mf_pred *pcrec_memfn_preds(Ctx *cx, int n);
 /* Fills `t` as a SET term of the one byte `b` at `off`. */
 void pcrec_memfn_term_byte(mf_term *t, int off, int b, mf_need need);

@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-"""tests/memfn/pick2_check.py -- [MEMFN] RQ-2's check (integration.md
-§R4.9.11 RQ-2, Q-R9-3 RULED (a); memfn/include/memfn.h's
-`mf_pred.plan_pos2`). Driven by tests/memfn/run_pick2.sh, which builds
-the PROBE compiler (`-DPCREC_PICK2_PROBE`: src/gen/memfn_sites.c prints one
-`PICK2` line per predicate of every PRE/OFS site it hands the kit).
+"""tests/memfn/rank_check.py -- [MEMFN] RQ-2's check (integration.md
+§R4.9.11 RQ-2, Q-R9-3 RULED (a); src/core/findings.c's
+`pcrec_find_run_rank`). Driven by tests/memfn/run_rank.sh, which builds the
+PROBE compiler (`-DPCREC_RANK_PROBE`: src/gen/memfn_sites.c prints one
+`RANK` line per RUN-scanning predicate of every PRE/OFS site it hands the
+kit, with the reader's ranking of that run under the compile's byte-rate).
 
-THE CLAIM. Every predicate whose plan_hint names a RUN term carries
-`plan_pos2` = KB, the BRUTE-FORCE argmin over the run's other positions of
-the position's cube mass under the compile's byte-rate, ties to the
-rightmost position (the NONE answer: every position's uniform mass, the
-cube's member count). KB != KA (the distance rule). Every other predicate
-carries MF_NO_POS (65535). The brute force shares no code with pcrec: it
+THE CLAIM. The ranking lists every position of the run once, ordered by the
+position's cube mass under the compile's byte-rate (or NONE's member count),
+ties to the rightmost position; the masses printed are those masses. And on
+the PRE site the scanned position IS rank[0] (the pre-check's scan member is
+`pcrec_find_run_scan_index`'s answer, and the window cut cannot change it).
+The OFS site's scan member is the offset selection's, so there only the
+agreement count is reported. The brute force shares no code with pcrec: it
 enumerates each cube's members itself and reads the rate from the
-`--list-analysis default` listing (the byte-rate is NONE wherever the
-listing's resolution row has no digest, `-e utf8` today).
+`--list-analysis default` listing (NONE wherever the listing's resolution
+row has no digest, `-e utf8` today).
 
 NON-VACUITY (K35): floors on the run predicates seen, per site (PRE, OFS),
-per encoding, on masked runs, on predicates where the prior's pick differs
-from the positional rightmost (a positional pick2 is red there), and on
-data ties broken by the rule (a leftmost tie is red there).
+per encoding, on masked runs, on rankings the prior moves off the positional
+order (a positional ranking is red there), and on data ties broken by the
+rule (a leftmost tie is red there).
 
 Prints `checks passed: N` / `checks failed: N`; exit 1 on any failure.
 """
@@ -32,7 +34,6 @@ TREE = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(TREE, 'scripts'))
 import emit_sweep as es  # noqa: E402
 
-NO_POS = 0xFFFF
 ARMS = [
     ('byte', []),
     ('utf8', ['-e', 'utf8']),
@@ -51,11 +52,10 @@ FLOORS = {
     'run-PRE': 1000,       # the pre-check composite's window / whole runs (1,111)
     'run-OFS': 120,        # the offset-skip block's pinned run (137)
     'run-byte': 800,       # a real byte-rate decides, byte and vm arms (879)
-    'run-utf8': 330,       # NONE decides (U8-PICK: positional) (369)
+    'run-utf8': 330,       # NONE decides (U8-PICK: cube size, then positional) (369)
     'masked': 120,         # a cube position with two members (142)
-    'prior-not-rightmost': 320,  # the prior's KB is not the rightmost other (365)
-    'data-tie': 100,       # >= 2 positions share the minimum under a real rate (128)
-    'norun': 4000,         # predicates that must carry MF_NO_POS (4,643)
+    'prior-not-positional': 590,  # the ranking is not [n-1, ..., 0] (653)
+    'data-tie': 225,       # >= 2 positions share a mass under a real rate (252)
 }
 
 
@@ -63,7 +63,7 @@ def load_rate(pcrec):
     """{encoding: [256 ppm] or None} from the listing's own sections."""
     rc, out, _ = es.run([pcrec, '--list-analysis', 'default'], 60)
     if rc != 0:
-        raise SystemExit('pick2_check: --list-analysis default failed')
+        raise SystemExit('rank_check: --list-analysis default failed')
     sec, have, ppm = None, {}, [0] * 256
     for ln in out.decode().splitlines():
         if ln.startswith('#section '):
@@ -86,24 +86,21 @@ def cube_cost(rate, b, m):
     return sum(rate[x] for x in members)
 
 
-def brute_kb(rate, run, mask, ka):
-    """(KB, whether >= 2 positions tie at the minimum, rightmost other)."""
-    others = [i for i in range(len(run)) if i != ka]
-    if not others:
-        return NO_POS, False, NO_POS
-    cost = {i: cube_cost(rate, run[i], mask[i]) for i in others}
-    lo = min(cost.values())
-    best = [i for i in others if cost[i] == lo]
-    return max(best), len(best) > 1, max(others)
+def brute_rank(rate, run, mask):
+    """[(pos, mass)] rarest first, ties to the rightmost."""
+    cost = [(cube_cost(rate, run[i], mask[i]), -i) for i in range(len(run))]
+    return [(-ni, c) for c, ni in sorted(cost)]
 
 
 def parse(stderr):
     recs = []
     for ln in stderr.decode('utf-8', 'replace').splitlines():
-        if not ln.startswith('PICK2\t'):
+        if not ln.startswith('RANK\t'):
             continue
-        _, site, idx, kind, run, mask, ka, kb = ln.split('\t')
-        recs.append((site, kind, run, mask, ka, int(kb)))
+        _, site, idx, run, mask, ka, pos, mass = ln.split('\t')
+        recs.append((site, bytes.fromhex(run), bytes.fromhex(mask), int(ka),
+                     [int(x) for x in pos.split(',')],
+                     [int(x) for x in mass.split(',')]))
     return recs
 
 
@@ -131,7 +128,7 @@ def main():
     corpus = es.enumerate_corpus(a.probe, TREE, 30)
     pats = sorted({p for _, _, p in corpus})
     pats = [p for i, p in enumerate(pats) if i % a.every == 0] + NAMED
-    print('== RQ-2 pick2 check: %d distinct patterns, %d arms ==' % (len(pats), len(ARMS)))
+    print('== RQ-2 rank check: %d distinct patterns, %d arms ==' % (len(pats), len(ARMS)))
 
     def one(job):
         pat, arm, argv = job
@@ -142,33 +139,44 @@ def main():
 
     jobs = [(p, arm, argv) for p in pats for arm, argv in ARMS]
     n = {k: 0 for k in FLOORS}
-    wrong = []
+    n['ofs-ka-rank0'] = 0
+    wrong, ka_wrong = [], []
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as ex:
         for pat, arm, rc, recs in ex.map(one, jobs):
             enc = 'utf8' if arm == 'utf8' else 'byte'
             rate = rates.get(enc)
-            for site, kind, run, mask, ka, kb in recs:
-                if kind != 'run':
-                    n['norun'] += 1
-                    if kb != NO_POS:
-                        wrong.append((pat, arm, site, 'norun', kb, NO_POS))
-                    continue
-                rb, mb, ka = bytes.fromhex(run), bytes.fromhex(mask), int(ka)
-                want, tie, right = brute_kb(rate, rb, mb, ka)
+            for site, run, mask, ka, pos, mass in recs:
+                want = brute_rank(rate, run, mask)
                 n['run-' + site] = n.get('run-' + site, 0) + 1
                 n['run-' + enc] += 1
-                n['masked'] += any(m != 0xFF for m in mb)
-                n['prior-not-rightmost'] += want != right
-                n['data-tie'] += tie and rate is not None
-                if kb != want or (kb != NO_POS and kb == ka):
-                    wrong.append((pat, arm, site, run + '/' + mask + ' ka=%d' % ka, kb, want))
+                n['masked'] += any(m != 0xFF for m in mask)
+                n['prior-not-positional'] += [p for p, _ in want] != \
+                    sorted(range(len(run)), reverse=True)
+                n['data-tie'] += rate is not None and \
+                    len({c for _, c in want}) < len(want)
+                if list(zip(pos, mass)) != want:
+                    wrong.append((pat, arm, site, run.hex() + '/' + mask.hex(),
+                                  pos, [p for p, _ in want]))
+                if site == 'PRE' and pos[0] != ka:
+                    ka_wrong.append((pat, arm, run.hex(), ka, pos[0]))
+                if site == 'OFS':
+                    n['ofs-ka-rank0'] += pos[0] == ka
     for w in wrong[:20]:
-        print('  %r [%s] %s %s: plan_pos2 %s, brute force %s' % w)
+        print('  %r [%s] %s %s: ranked %s, brute force %s' % w)
     if wrong:
-        bad('%d predicates carry a plan_pos2 the brute force does not derive' % len(wrong))
+        bad('%d run rankings differ from the brute force' % len(wrong))
     else:
-        ok('every predicate\'s plan_pos2 equals the brute force (%d run, %d other)'
-           % (n['run-byte'] + n['run-utf8'], n['norun']))
+        ok('every run ranking (positions and masses) equals the brute force '
+           '(%d runs)' % (n['run-byte'] + n['run-utf8']))
+    for w in ka_wrong[:20]:
+        print('  %r [%s] %s: scanned %d, rank[0] %d' % w)
+    if ka_wrong:
+        bad('%d PRE predicates scan a position other than rank[0]' % len(ka_wrong))
+    else:
+        ok('every PRE predicate scans rank[0] (%d)' % n.get('run-PRE', 0))
+    print('NOTE: OFS predicates scanning rank[0]: %d of %d (not asserted: '
+          'the OFS scan member is the offset selection\'s, not the run reader\'s)'
+          % (n['ofs-ka-rank0'], n.get('run-OFS', 0)))
     for k, floor in FLOORS.items():
         got = n.get(k, 0)
         if a.every != 1:

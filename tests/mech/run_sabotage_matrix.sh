@@ -382,12 +382,12 @@
 #     Its own arm because the plain build has no guarded byte, so a length
 #     reader that forgets the subtraction moves no artifact, no answer and
 #     no identity gate. Registered before S699-S703.
-#   pick2 — added 2026-10-09 ([MEMFN] RQ-2, lane rq2); runs
-#     tests/memfn/run_pick2.sh: it builds the sabotaged tree's own PROBE
-#     compiler (-DPCREC_PICK2_PROBE, every PRE/OFS predicate on stderr) and
-#     holds each predicate's mf_pred.plan_pos2 to a brute-force second pick
-#     over the whole corpus (seconds). Its own arm because no kit row reads
-#     plan_pos2 yet, so a wrong KB moves no artifact, no answer and no
+#   rank — added 2026-10-09 ([MEMFN] RQ-2, lane rq2); runs
+#     tests/memfn/run_rank.sh: it builds the sabotaged tree's own PROBE
+#     compiler (-DPCREC_RANK_PROBE, every RUN-scanning PRE/OFS predicate and
+#     its run's ranking on stderr) and holds each ranking to a brute force
+#     over the whole corpus (seconds). Its own arm because nothing consumes
+#     the ranking yet, so a wrong ranking moves no artifact, no answer and no
 #     identity gate.
 #   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
 #     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
@@ -2967,14 +2967,14 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/simdguarded.log" | grep -oE '[0-9]+')"
                 score_arm "$work/simdguarded.log" "$f" "simdguarded:${f:-ERR}fail/${p:-?}pass"
                 ;;
-            pick2)
-                # [MEMFN] RQ-2 tests/memfn/run_pick2.sh — see the vocabulary
+            rank)
+                # [MEMFN] RQ-2 tests/memfn/run_rank.sh — see the vocabulary
                 # entry above. Builds the probe compiler from "$tree".
-                CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_pick2.sh" "$tree" \
-                    > "$work/pick2.log" 2>&1
-                p="$(grep -m1 '^checks passed:' "$work/pick2.log" | grep -oE '[0-9]+')"
-                f="$(grep -m1 '^checks failed:' "$work/pick2.log" | grep -oE '[0-9]+')"
-                score_arm "$work/pick2.log" "$f" "pick2:${f:-ERR}fail/${p:-?}pass"
+                CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_rank.sh" "$tree" \
+                    > "$work/rank.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/rank.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/rank.log" | grep -oE '[0-9]+')"
+                score_arm "$work/rank.log" "$f" "rank:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnstamps)
                 # [MEMFN] C11 tests/memfn/run_libc_census.sh --quick — see the

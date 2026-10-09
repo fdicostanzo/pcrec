@@ -203,7 +203,6 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
     s->pred.plan_hint = MF_NO_PRED;
-    s->pred.plan_pos2 = MF_NO_POS;
     s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
     s->denies = pcrec_memfn_denies(cx->opt->flags);
@@ -213,9 +212,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 
 mf_pred *pcrec_memfn_preds(Ctx *cx, int n)
 {
-    mf_pred *p = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_pred));
-    for (int i = 0; i < n; i++) p[i].plan_pos2 = MF_NO_POS;   /* RQ-2: none */
-    return p;
+    return pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_pred));
 }
 
 /* The density hint's default, "unknown" (§7.6). */
@@ -318,32 +315,36 @@ static void kit_check(Ctx *cx, mf_art *art, int rc)
                        mf_art_error(art) ? mf_art_error(art) : "(no reason)");
 }
 
-#ifdef PCREC_PICK2_PROBE
+#ifdef PCREC_RANK_PROBE
 #include <stdio.h>
-/* [MEMFN] RQ-2 THE PICK2 PROBE, compiled only into the test build
- * `-DPCREC_PICK2_PROBE` (tests/memfn/run_pick2.sh): one stderr line per
- * predicate of every defined site, stating what the kit is handed. A
- * predicate whose plan_hint names a RUN term prints that term's bytes, masks
- * and both positions; any other prints only its plan_pos2. The check
- * re-derives KB from the bytes by brute force and compares. */
-static void pick2_probe(DelegSite id, const mf_site *s)
+#include "core/findings.h"
+/* [MEMFN] RQ-2 THE RANK PROBE, compiled only into the test build
+ * `-DPCREC_RANK_PROBE` (tests/memfn/run_rank.sh): one stderr line per
+ * predicate of every defined site whose plan_hint names a RUN term, with the
+ * term's bytes and masks, the scanned position and `pcrec_find_run_rank`'s
+ * ranking of the term under this compile's byte-rate. The check re-derives
+ * the ranking by brute force and compares. */
+static void rank_probe(Ctx *cx, DelegSite id, const mf_site *s)
 {
     int np = s->op == MF_OP_ALL_PRESENT ? s->npred : 1;
     for (int i = 0; i < np; i++) {
         const mf_pred *p = s->op == MF_OP_ALL_PRESENT ? &s->preds[i] : &s->pred;
         const mf_term *t = p->plan_hint < p->nterm ? &p->term[p->plan_hint] : NULL;
-        fprintf(stderr, "PICK2\t%s\t%d\t", pcrec_deleg_sites[id].id, i);
-        if (t && t->kind == MF_T_RUN) {
-            fprintf(stderr, "run\t");
-            for (uint32_t j = 0; j < t->run_len; j++) fprintf(stderr, "%02x", t->run[j]);
-            fprintf(stderr, "\t");
-            for (uint32_t j = 0; j < t->run_len; j++)
-                fprintf(stderr, "%02x", t->mask ? t->mask[j] : 0xFF);
-            fprintf(stderr, "\t%u", (unsigned)p->plan_pos);
-        } else {
-            fprintf(stderr, "norun\t-\t-\t-");
-        }
-        fprintf(stderr, "\t%u\n", (unsigned)p->plan_pos2);
+        int pos[PCREC_MAX_REQ_RUN_SCAN];
+        uint32_t mass[PCREC_MAX_REQ_RUN_SCAN];
+        int n;
+        if (!t || t->kind != MF_T_RUN) continue;
+        n = (int)t->run_len;
+        pcrec_find_run_rank(pcrec_find_byte_rate(cx), t->run, t->mask, n, pos, mass);
+        fprintf(stderr, "RANK\t%s\t%d\t", pcrec_deleg_sites[id].id, i);
+        for (int j = 0; j < n; j++) fprintf(stderr, "%02x", t->run[j]);
+        fprintf(stderr, "\t");
+        for (int j = 0; j < n; j++) fprintf(stderr, "%02x", t->mask ? t->mask[j] : 0xFF);
+        fprintf(stderr, "\t%u\t", (unsigned)p->plan_pos);
+        for (int j = 0; j < n; j++) fprintf(stderr, "%s%d", j ? "," : "", pos[j]);
+        fprintf(stderr, "\t");
+        for (int j = 0; j < n; j++) fprintf(stderr, "%s%u", j ? "," : "", (unsigned)mass[j]);
+        fprintf(stderr, "\n");
     }
 }
 #endif
@@ -355,8 +356,8 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     PcrecMfSink ps;
     uint32_t handle = 0;
     deleg_check(cx, id, s);
-#ifdef PCREC_PICK2_PROBE
-    pick2_probe(id, s);
+#ifdef PCREC_RANK_PROBE
+    rank_probe(cx, id, s);
 #endif
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
