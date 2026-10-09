@@ -11,6 +11,21 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K101 — OPEN (filed 2026-10-09, manager, from lane walksurvey's class "K5" — docs/dev/walk_survey.md §K5, not to be confused with this file's own K5) — PERFORMANCE CLIFF: the caseless folded-run gate restarts every find-all call, a LATENT QUADRATIC
+
+`[OPT-LITSCAN]` S4's two-stream folded required-run arm (`litscan_s4.md` §2.3.4; e.g. `RX_REQ_RUN "434154@0/dfdfdf"` for `(?i)cat`) keeps one pending hit per case variant but sets `fresh = 1` on every call, so both streams are searched from `search_from`. When one variant is ABSENT from the text (the uppercase variant in lowercase prose or logs), its `memchr` runs to `n` on EVERY call, making a find-all `O(n × matches)`. Answers are unaffected; this is time only.
+
+**Witnesses** (`studies/walk_survey/run_twins.sh`, answer-identical arms, 7700X, scratch tier):
+
+| pattern, subject | fold (today) | with `-fno-req-run-fold` | ratio |
+|---|---|---|---|
+| `(?i)cat`, 1 MiB lowercase text (47,663 matches) | 190-210 ms | 0.95-1.02 ms | ~200x |
+| `(?i)error`, 1 MiB lowercase log (3,038 matches) | 12.5-13.5 ms | 0.48-0.60 ms | 23-26x |
+
+**Population:** every folded required run on the pair arm: 11 of 343 bench patterns (3 trigger on the bench's own subjects, where both variants occur, so the fold still wins: `(?i)cat` on syntax t-1m is 552 µs against 741 µs with the deny), and 61 of 4,171 corpus patterns (32 trigger on synthesized subjects).
+
+**Fix shape (not built):** bound each stream's `memchr` by the other stream's pending hit, so a stream is never searched past a position the gate has already accepted. That makes the find-all linear. It is a mover (abi event); the regression cell is the 1 MiB lowercase `(?i)cat` find-all against its `-fno-req-run-fold` arm. Owner: [OPT-LITSCAN] S4. Scheduled: unscheduled; Frank's call.
+
 ## K100 — FIXED 2026-10-09 (lane k100, commit 7e85d79f on lane/k100, pending merge; filed 2026-10-08, manager, from lane decfbB1's finding F1) — REFUSAL: the size term's restart leaks the ladder's K, so a restarted attempt never re-runs the ladder
 
 `restart_term` (`src/core/compile.c`; the `prefilter-collapse` and `drop-prefilter` restarts) resets `st_phase` to `ST_DEFAULT` but NOT `defo.unroll_k`, which the ladder trials and the final attempt wrote (`defo.unroll_k = SIZE_TERM_LADDER[st_idx]` / `= st_final_k`). The "restarted" default attempt therefore runs at the leaked K: its size term reads `option` (`defo.unroll_k > 0 && st_phase == ST_DEFAULT`) and the ladder cannot run again (`run` needs `defo.unroll_k == 0`). The restart the code comments promise does not happen.
