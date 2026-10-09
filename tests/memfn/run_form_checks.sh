@@ -20,7 +20,7 @@
 
 set -u
 
-C12_CEIL_ROWS_FLOOR=1   # D147 add. 12: the walk-back row deleted with N6 (not a search site), 3 -> 2; R-12 REPLACE: emit_vm.c's walk-open row (VMLAZY's normalized prefix) deleted, 2 -> 1
+C12_CEIL_ROWS_FLOOR=2   # D147 add. 12: the walk-back row deleted with N6 (not a search site), 3 -> 2; R-12 REPLACE: emit_vm.c's walk-open row (VMLAZY's normalized prefix) deleted, 2 -> 1; R-12 (Q-R12-5): enc_utf8.c's swar-hibit row (VALID), 1 -> 2
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

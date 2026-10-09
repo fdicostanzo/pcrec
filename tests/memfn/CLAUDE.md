@@ -50,9 +50,17 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   delegated / 1 pending (N7U), 13 rows, `C17_ROW_FLOOR` 13; C12 1 row
   (`C12_CEIL_ROWS_FLOOR` 1). The `span-count` vocabulary line stays at
   ceiling 0 as the re-spell tripwire (Q-R12-6, sabotage S709).
+  **R-12 VALID (Q-R12-5):** the utf8 subject validator's ASCII SWAR skip
+  (`u8_defs_valid_upto`, a constant in src/enc/) is listed `pending` with its
+  own vocabulary line (`swar-hibit`, class `word-skip`) and C12 row: 12 delegated / 2 pending (N7U, VALID), 14 rows,
+  `C17_ROW_FLOOR` 14, C12 2 rows. A re-sweep of every src/gen/ and src/enc/
+  literal (`docs/design/memfn/probes/vmlazy/vocab_resweep.py`, both the
+  since-R4a and the whole population) found no third unlisted site
+  (`docs/dev/lanes/vmlazy_report.md` §6). Sabotage S712.
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
-  count as a search form when an emitter spells them. There are four
-  classes: libc search calls, table-walk loops, runcmp row texts and the
+  count as a search form when an emitter spells them. There are five
+  classes: libc search calls, table-walk loops, runcmp row texts, the
+  word-at-a-time skip (since R-12, `$_valid_upto`'s) and the
   span compares (the encoding seam's two; since M6 `span-count`, a counted
   span loop, the VM's lazy rmin prefix as M6 found it, spelled by nothing
   since R-12 and kept at C12 ceiling 0 as a tripwire). Python regexes are matched against
