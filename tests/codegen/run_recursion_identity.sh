@@ -1214,7 +1214,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # prefilter and read `ENGINE_SEL "selected"`; every other artifact moves by the
 # abi digit alone. `9a0cf78e` is the lane's last src commit; the manager
 # re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9a0cf78e}"   # [NULLABLE-ANCH] SELF-PIN (lane nullanch2, 2026-10-08), abi 67->68: the lane's last src commit
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-1e9ba027}"   # [DEC-VAR-ATTRIB]+[DEC-COLLAPSE-WASTE] SELF-PIN (lane decattr, 2026-10-09), abi 68->69: the lane's last src commit
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
