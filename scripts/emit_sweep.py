@@ -1844,6 +1844,12 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 # 3270 -> 3255, stderr 487 -> 472) and their reach/`no-size-cap`/`yes-collapsed`
 # counts rose; plain/lowdfa/lowthr unchanged. Same command at c0a0b76a against
 # itself, every cell 0 movers / 0 asymmetric, manifests unchanged.
+# RE-PINNED 2026-10-09 (lane rq3tri, session 102): R4e'.0b (abi 70, 82ff9432)
+# grew each VM FUNC by +139..+184 B, which pushes `(x?)([a-z]+)+S\d(?i:s)qz\1`
+# (tests/litscan/reqcube.rxt:480 and :492) over the LOWERED 30000-byte VM-code
+# cap (30098 B), so it is refused on both sides: reach -2 on six lowsize/lowboth
+# byte streams (c-default, c-vm, emit-ir-vm), never a mover. Reproduced with
+# --ref 9c181041 --tree-rev 82ff9432 --variant lowsize --bases byte.
 # Floors sit AT the measured value (the smaller side), DIFFER_PINS' stance: a
 # B commit is a no-mover over one corpus, so a count below it is a corpus
 # change (a reviewed re-pin) or a plumbing loss. `reach` is both_ok per
@@ -1864,7 +1870,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                      'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3}'},
                                     'stderr': {'stderr-default': b'a{500}'}},
-                       'reach': {'c-default': 4951, 'c-vm': 4945, 'emit-ir-vm': 4945, 'facts': 4819},
+                       'reach': {'c-default': 4949, 'c-vm': 4943, 'emit-ir-vm': 4943, 'facts': 4819},
                        'tags': {'emit-ir-auto': {'no-backreference': 492,
                                                  'no-dfa-overflow': 3,
                                                  'no-linked-call': 122,
@@ -2022,7 +2028,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                      'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3}'},
                                     'stderr': {'stderr-default': b'((a)+)+'}},
-                       'reach': {'c-default': 4959, 'c-vm': 4945, 'emit-ir-vm': 4945, 'facts': 4754},
+                       'reach': {'c-default': 4957, 'c-vm': 4943, 'emit-ir-vm': 4943, 'facts': 4754},
                        'tags': {'emit-ir-auto': {'no-backreference': 492,
                                                  'no-dfa-overflow': 1,
                                                  'no-linked-call': 122,
