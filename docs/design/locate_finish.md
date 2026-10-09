@@ -539,7 +539,7 @@ locators, which REVEND is the first to need, and (ii) the finisher choice, which
 is spread over ten `fit.chosen` reads (§3.3) and one table outside `cand_rows[]`
 (`dfa_matches[]`, §3.4).
 
-### 2.2 Two new slots, in the one array `[r2 G5]`
+### 2.2 Two new slots, in the one array `[r2 G5, r2.1 LR-G2, LR-G7]`
 
 **FINISH is a SLOT BLOCK of `cand_rows[]`** (D151 addendum 3, Q2: "otherwise logic is
 spread around"). The panel answered revision 1's Q1 with G4(b): FINISH already has a
@@ -552,114 +552,162 @@ split the typed-edge check across two arrays.
 | slot | the question | asked at | routes | accepts / hands |
 |---|---|---|---|---|
 | `LOCATE` (first) | which walk produces the result? | each DFA-shaped body, once (the entry body AND the hybrid's inlined `<p>_prefilter`, both via `pcrec_emit_dfa_engine`), on the body's route; an artifact with NO DFA body, once, on `CR_VM` (`cand_locate_route`, §2.6) | `CR_DFA`, `CR_ATTEMPT`, `CR_VM` | accepts `LOWER` (E1, and relocate); hands its declared shape set to FINISH across the boundary projection |
-| `FINISH` (last) | which action, in which hat, finishes this shape? | each caller-facing entry, once per shape its locator can hand: `<prefix>_search` (shapes from LOCATE), `<prefix>_match`/`_match_caps` (shape `AT` from `caller`) | `CR_DFA`, `CR_ATTEMPT` (DFA hat), `CR_VM` (VM hat) | accepts the five shapes; hands to the CALLER, relocates `LOWER` to LOCATE |
+| `FINISH` (last) | which row, in which hat, finishes this hand? | each caller-facing entry, once per hand its locator can give: `<prefix>_search` (hands from LOCATE), `<prefix>_match`/`_match_caps` (`AT`, or `NOMATCH` where `caller ⊓ body` is empty) | `CR_DFA`, `CR_ATTEMPT` (DFA hat), `CR_VM` (VM hat) | accepts `CT_*` hand masks; hands to the CALLER, relocates to LOCATE |
 
-`CandSel` gains `hand` (the shape being finished) and FINISH rows declare
-`u.finish.take`; `cand_select` filters `take & s->hand` on the FINISH slot exactly as
-it filters the route. **`hand` is MANDATORY on a FINISH ask**: a FINISH ask with
-`hand == 0` aborts (a check, not a default), and no other slot reads it (`[r2 C5]`).
-The selection's second key, the LOCATOR's route, is a `CandSel` field too
-(`lroute`), read by predicates only (§2.3).
+`CandSel` gains `hand` (the `CT_*` mask being finished) and `point` (the ask is a
+point request, §1.2), and FINISH rows declare a `take` cell PER ROUTE
+(`u.finish.take[route]`, a set of masks, `.list[route]`'s shape) **`[r2.1 LR-G2,
+LR-S3]`**; `cand_select` keeps a FINISH row on route `r` iff `s->hand` is one of
+`take[r]` (and, for the `AT` mask, iff `s->point`), exactly as it filters the route.
+Per-route take cells are where a hat's limits live as data: `verify-at`'s `CR_VM` cell
+omits `ENDSET` (LR-S3) and its `CR_ATTEMPT` cell omits `AT` (F-11). **`hand` is
+MANDATORY on a FINISH ask**: a FINISH ask with `hand == 0` aborts (a check, not a
+default), and no other slot reads it (`[r2 C5]`). **`[r2.1 LR-G7]`** Revision 2's
+`CandSel.lroute` is dropped: no predicate read it, and its zero value meant
+`CR_DFA`, the shape C11 found in `cand_route_of`'s default.
 
-### 2.3 The FINISH table (design of record), totality on (locator route, finisher route) `[r2 C1, G3, G12]`
+### 2.3 The FINISH table (design of record), totality on (locator route, finisher route) `[r2 C1, r2.1 LR-G1, LR-S1, LR-S3, LR-S13]`
 
-First match per (finisher route, shape). Rows marked L0 exist at L0 (the
-`dfa_matches[]` fold); the others land with the producer that gives them a choice.
+First match per (finisher route, hand). Four rows, ids `FIN1`-`FIN4` (revision 2's
+F1-F7 are retired: they collided with rev 1's F6 and with the findings F-n, LR-S13).
+Rows marked L0 exist at L0 (the `dfa_matches[]` fold); the others land with the
+producer that gives them a choice.
 
-| # | row | action / hat | takes | finisher routes | deny | predicate | lands |
+| # | row | routes | `take[route]` (aliases) | needs[route] (§2.7) | availability | listing | lands |
 |---|---|---|---|---|---|---|---|
-| F1 | `nomatch` | nomatch | `NOMATCH` | all | — | always | L2 |
-| F2 | `report` | report / DFA | `SPAN` | DFA, ATTEMPT | — | always | L2 |
-| F3 | `verify-anchored` | verify-at / DFA (`adfa`) | `ENDSET`, `AT` | DFA | `PCREC_NO_ANCHORED_DFA` | `match_unwrapped_applies` (`anchored_ok ∧ ¬empty`, today's `dfa_matches[0]`) | **L0** (`AT`); `ENDSET` at L2 |
-| F4 | `verify-attempt` | verify-at / DFA (attempt machine) | `ENDSET` | ATTEMPT | — | always (the machine exists on the route) | L2, DECLARED UNREACHED (no ENDSET producer on `CR_ATTEMPT`) |
-| F5 | `search-from` | search-from / DFA | `ENDSET`, `LOWER`, `AT` | DFA, ATTEMPT | — | always | **L0** (`AT`, today's `dfa_matches[1]`); `ENDSET`/`LOWER` at L2 |
-| F6 | `verify-vm` | verify-at / VM | `SPAN`, `AT` | VM | — | always | L3 (`AT` is the VM's own `_match`, not routed through the table until a choice exists) |
-| F7 | `search-vm` | search-from / VM | `ENDSET`, `LOWER` | VM | — | always | L3 |
+| `FIN1` | `nomatch` | all | `NOMATCH` | — | always | — | L2 |
+| `FIN2` | `report` | DFA, ATTEMPT | `SPAN` | — | always | — | L2 |
+| `FIN3` | `verify-at` | DFA, ATTEMPT, VM | DFA: `ENDSET`, `AT`; ATTEMPT: `ENDSET` (F-11 cell); VM: `SPAN`, `AT` (LR-S3) | DFA: A; ATTEMPT: ATT; VM: VM | `needs[route] ⊆ built` (on `CR_DFA`: `anchored_ok`; elsewhere always) | `match` 1 `unwrapped`, `fact_deny` = `PCREC_NO_ANCHORED_DFA` | **L0** (`AT` on DFA); `ENDSET` at L2; VM cells at L3 |
+| `FIN4` | `search-from` | all | `ENDSET`, `LOWER`, `AT` (point or window); at L0 also `NOMATCH` (LR-G8) | the LOCATE cell on the route (§2.5) | always | `match` 2 `search-filter` | **L0** (`AT`, `NOMATCH` on DFA/ATTEMPT); the rest at L2/L3 |
 
-**Why F4 does not take `AT` (and the finding behind it).** On `CR_ATTEMPT` the
-match-here entry is `search-filter` today (`anchored_ok` is never set on ENG_ATTEMPT:
-`build_anchored_dfa` is called only on the ENG_UNANCH branch, `compile.c:2540`), so an
-ATTEMPT artifact's `_match` runs the WHOLE search from `s` and discards a later start
-— O(n) on a failing call where one anchored run of the attempt machine would answer.
-Letting F4 take `AT` is a real improvement and a MOVER (308 corpus / 20 bench
-`DFA_MATCH "search-filter"` artifacts change form; answers identical), which is
-`anchored_match_unwrapped.md` §10's already-filed "ENG_ATTEMPT's own match-here form".
-L0 is a no-mover, so F4 takes `ENDSET` only; §8 Q7 carries the mover.
+The `match` listing is the rows' `.list[CR_DFA]` projection with the descriptions
+moved beside the rows verbatim from `src/dump/axes_dump.c:135-136`, so
+`--list-axes`' two `match` lines are byte-identical, the deny column included
+(`fact_deny`, §1.3).
+
+**Why `FIN3` does not take `AT` on `CR_ATTEMPT` (and the finding behind it).** On
+`CR_ATTEMPT` the match-here entry is `search-filter` today (`anchored_ok` is never set
+on ENG_ATTEMPT: `build_anchored_dfa` is called only on the ENG_UNANCH branch,
+`compile.c:2540`), so an ATTEMPT artifact's `_match` runs the WHOLE search from `s` and
+discards a later start — O(n) on a failing call where one anchored run of the attempt
+machine would answer. Taking `AT` there is a real improvement and a MOVER (308 corpus /
+20 bench `DFA_MATCH "search-filter"` artifacts change form; answers identical), which
+is `anchored_match_unwrapped.md` §10's filed "ENG_ATTEMPT's own match-here form" and,
+with LR-G12, one row across three routes (§7.7). L0 is a no-mover, so the cell omits
+`AT`; §8 Q7 carries the mover.
 
 **Totality** is checked on the triples that occur, not on (route, type):
 
-| locator route → finisher route | who | shapes the locators can hand (after the boundary projection) | last row taking each |
+| locator route → finisher route | who | hands the locators can give (after the boundary projection) | last row taking each |
 |---|---|---|---|
-| `CR_DFA` → `CR_DFA` | DFA artifact, ENG_UNANCH | `SPAN`, `NOMATCH`; `ENDSET` (rev-end, L2) | F2, F1, F5 |
-| `CR_ATTEMPT` → `CR_ATTEMPT` | DFA artifact, ENG_ATTEMPT | `SPAN`, `NOMATCH` | F2, F1 |
-| `caller` → `CR_DFA` / `CR_ATTEMPT` | the match-here entry | `AT` | F5 |
-| `CR_DFA` / `CR_ATTEMPT` → `CR_VM` | the hybrid | `SPAN` (exact body), `LOWER` (superset body, projected), `NOMATCH`; `ENDSET` (stage 2) | F6, F7, F1, F7 |
-| `CR_VM` → `CR_VM` | VM-only | `LOWER`, `NOMATCH` (the WIDTH / PRESENCE verdicts inside the composite, `[r2 C12]`) | F7, F1 |
+| `CR_DFA` → `CR_DFA` | DFA artifact, ENG_UNANCH | `SPAN`, `NOMATCH`; `ENDSET` (rev-end, L2) | `FIN2`, `FIN1`, `FIN4` |
+| `CR_ATTEMPT` → `CR_ATTEMPT` | DFA artifact, ENG_ATTEMPT | `SPAN`, `NOMATCH` | `FIN2`, `FIN1` |
+| `caller ⊓ body` → `CR_DFA` / `CR_ATTEMPT` | the match-here entry | `AT`; `NOMATCH` on an `empty` body (LR-G8) | `FIN4`, `FIN4` at L0 (`FIN1` from L2) |
+| `CR_DFA` / `CR_ATTEMPT` → `CR_VM` | the hybrid | `SPAN` (exact body), `LOWER` (superset body, projected), `NOMATCH`; `ENDSET` (stage 2) | `FIN3`, `FIN4`, `FIN1`, `FIN4` |
+| `CR_VM` → `CR_VM` | VM-only | `LOWER`, `NOMATCH` (the WIDTH / PRESENCE verdicts inside the composite, `[r2 C12]`) | `FIN4`, `FIN1` |
+| `caller` → `CR_VM` (L3) | a VM artifact's match-here | `AT` (`FIN3` selected) | `FIN4` |
 
-**Totality is checked over the triples whose ASKER exists at that commit.** At L0
-the only FINISH asker is the match-here entry (`caller` → `AT` on `CR_DFA` /
-`CR_ATTEMPT`, last row F5); the search entry's DFA rows join at L2 (when F1/F2 land
-with the first locator that gives FINISH a choice there), the VM entry's at L3. Until
-then RECOVER keeps CALLER as its successor and the search entry asks no FINISH row.
-The self-check's existing totality test ("every asked (slot, route) ends in an
-undeniable `cand_always` row") is extended: for every (locator route, finisher route)
-pair in the table above whose asker exists and every shape some LOCATE row on that locator route hands
-(projected where `cand_lang_exact` can be false on that pair), the last FINISH row on
-the finisher route taking that shape is undeniable and `cand_always`. A later LOCATE
-row that hands a shape no FINISH row takes fails the self-check, not the compile.
+The self-check's totality test ("every asked (slot, route) ends in an undeniable
+`cand_always` row") is extended through `.needs` (§2.7): for every (locator route,
+finisher route) pair whose asker exists and every hand some LOCATE row on that locator
+route gives (projected where `cand_lang_exact` can be false on that pair), the last
+FINISH row on the finisher route taking that hand is undeniable and AVAILABLE BY
+CONSTRUCTION there: its `needs[route]` lies inside the machines that route always
+builds (DFA: F, R; ATTEMPT: ATT; VM: VM). `FIN3` on `CR_DFA` is not (A is built only
+under `anchored_ok`), which is why `FIN4` follows it. A later LOCATE row that hands a
+mask no FINISH row takes fails the self-check, not the compile. The declared-unreached
+allowance (`cand_oracle_unreached.tsv`, `[r2 C4]`) is keyed on the (row, route, hand)
+CELL, since rows no longer split by hat: its first entry is (`verify-at`,
+`CR_ATTEMPT`, `ENDSET`), with its argument (no `ENDSET` producer on `CR_ATTEMPT`
+until a reverse machine exists there), at L2.
 
-### 2.4 The LOCATE table `[r2 G8, G12]`
+**The FINISH askers, and which readers are NOT askers `[r2.1 LR-S1]`.** Revision 2
+said "at L0 the only FINISH asker is the match-here entry". That was false: the three
+machine-membership readers (`dfa_table_name` `:4438`, `dfa_scan_edge_name` `:4510`,
+`dfa_uniform_folds` `:4568`) call `dfa_match_is_unwrapped` today, and they run on
+HYBRIDS (through `pcrec_emit_dfa_scan_stamps`, `emit_vm.c:11330`, and the
+orientation block's `emit_dfa.c:10870`, reached through `pcrec_emit_prologue` at
+`emit_vm.c:13964`). Re-keyed to `cand_finish_of`, which is `CR_VM` on a hybrid, they
+would have asked FINISH for `AT` on `CR_VM`, where no row exists at L0: a NO-ROW
+selection on every forward+reverse hybrid (C5: 1,231 artifacts, 39 bench / 1,192
+corpus, e.g. `(a+)b`). Under §2.7 they are not askers at all: they fold over the
+path's MEMBERS. The askers at L0 are exactly:
 
-| # | row | routes | deny | predicate | hands | lands |
-|---|---|---|---|---|---|---|
-| A1 | `empty` | DFA, ATTEMPT | — | `dfa_engine_is_empty`'s old body | `NOMATCH` | **L0** |
-| A2 | `rev-end` | DFA | `PCREC_NO_REV_END` | `end_pin ≠ NONE` ∧ the stage-1 conjunct (§4.1) | `SPAN`, `NOMATCH`, `ENDSET` iff `nl_last` | L2 |
-| — | `rev-inner[-bounded]` | DFA, VM | its own | G1 ∧ G2 ∧ G3, and G4 for `SPAN`-producing hats (§4.6) | `SPAN`/`NOMATCH`, or `LOWER` without G4 | filed (D151) |
-| — | `rev-end-relaxed` | VM | its own | §4.5's gate | `LOWER`, `NOMATCH` | filed |
-| A3 | `composite` | DFA, ATTEMPT, VM | — | always | by route: fwd+rev (`SPAN`/`NOMATCH`), candidate loop with fused verify (`SPAN`/`NOMATCH`), the VM attempt loop's front (`LOWER`/`NOMATCH`) | **L0** |
+- §2.7's derivation, for the match-here entry when `path.finish ≠ CR_VM` (one ask, hand
+  `AT`, or `NOMATCH` on an `empty` body);
+- the `_match` emission (`emit_dfa.c:11588`, `dfa_match_is_unwrapped`) and the
+  `RX_DFA_MATCH` stamp and `rx_info.match_form` (`dfa_match_name`, `:3145`), all three
+  DFA-artifact-only, reading the derivation's recorded selection.
 
+Until L2, RECOVER keeps CALLER as its successor and the search entry asks no FINISH
+row; the VM entry asks at L3.
+
+### 2.4 The LOCATE table `[r2 G8, G12, r2.1 LR-G4]`
+
+| # | row | routes | deny | predicate | hands | needs (§2.7) | lands |
+|---|---|---|---|---|---|---|---|
+| A1 | `empty` | DFA, ATTEMPT | — | `dfa_engine_is_empty`'s old body | `NOMATCH` (static: every `lo`) | no machine; PRESENCE (`.whole`) | **L0** |
+| A2 | `rev-end` | DFA | `PCREC_NO_REV_END` | `end_pin ≠ NONE` ∧ the stage-1 conjunct (§4.1) | `SPAN`, `NOMATCH`, `ENDSET` iff `nl_last` | R; RECOVER (seeded at `n`, `n − 1`); PRESENCE (`.whole`) | L2 |
+| — | `rev-inner[-bounded]` | DFA, VM | its own | G1 ∧ G2 ∧ G3, and G4 for `SPAN`-producing hats (§4.6) | `SPAN`/`NOMATCH`, or `LOWER` without G4 | R of `P`'s prefix machine | filed (D151) |
+| — | `rev-end-relaxed` | VM | its own | §4.5's gate | `LOWER`, `NOMATCH` | the relaxed reverse machine | filed |
+| A3 | `composite` | DFA, ATTEMPT, VM | — | always | by route: fwd+rev (`SPAN`/`NOMATCH`), candidate loop with fused verify (`SPAN`/`NOMATCH`), the VM attempt loop's front (`LOWER`/`NOMATCH`) | DFA: F, NEXT, RECOVER; ATTEMPT: ATT, NEXT, BOUND; VM: VM, NEXT, BOUND; on every route the ENTRY slots where this row runs the entry's front (§2.7) | **L0** |
+
+**`empty` is the first PATH-CHANGING locator `[r2.1 LR-G4]`** (`rev-end` is the
+second, `[START-LANDING]`'s rows the third and fourth, §7.3): selecting it takes F, R
+and the composite's slots off the path, which is what the eight
+`dfa_engine_is_empty` callers have each been spelling by hand (§2.7's reader table).
 `empty` and WIDTH `ceiling` are one "nothing fits → NOMATCH" family (G8): the first is
 a static verdict on the body's language, the second a per-call comparison of the
-remaining subject with the root minimum width. They stay in their slots at L0 (moving
-the WIDTH test into LOCATE would make LOCATE's VM arm a per-call test, which is a
-second shape for the slot); the family is recorded so that a third member is a
-one-row edit, not a third spelling.
+remaining subject with the root minimum width. They stay in their slots at L0; the
+family is recorded so that a third member is a one-row edit, not a third spelling.
 
 **The route is NOT a projection of LOCATE.** The route (`cand_route_of`,
 `job->engine`) says which MACHINES the compile built; LOCATE says which WALK over
-them the search uses. Today each route has one walk (A3's three hats; A1 a special
-case on two); `rev-end` is the first second walk on a route.
+them the search uses, and §2.7 says which of the built machines that walk USES. Today
+each route has one walk (A3's three hats; A1 a special case on two); `rev-end` is the
+first second walk on a route.
 
-### 2.5 What changes in the handoff graph `[r2 G4, G6, C2, C12]`
+### 2.5 What changes in the handoff graph `[r2 G4, G6, C2, C12, r2.1 LR-S4, LR-G8]`
 
 - **Nodes.** `LOCATE` and `FINISH` join `cand_nodes[]`. VERIFIER, LOOP and CALLER
   stay as NODES inside the composite (NEXT → VERIFIER, BOUND → LOOP, PRESENCE/WIDTH
   → CALLER for the in-composite verdict) — they are the same actions FINISH's rows
   emit, and FINISH's rows NAME them as their action (`u.finish.act` ∈ {REPORT,
   NOMATCH, VERIFY, SEARCH}). VERIFIER's accept set loses `CT_WINDOW`.
-- **E-LF** LOCATE → FINISH, typed by the LOCATE row's shape set, through the boundary
+- **E-LF** LOCATE → FINISH, typed by the LOCATE row's hand masks, through the boundary
   projection (§1.2). At L2 RECOVER's successor becomes FINISH (the composite's output
   crosses the boundary there); at L0 it keeps CALLER and LOCATE's successors are the
   composite's entry (WINDOW, `LOWER`) and CALLER (`empty`'s `NOMATCH`).
   PRESENCE/WIDTH keep CALLER for the in-composite verdict.
-- **E-FL** FINISH `search-from` → LOCATE: relocate. Target: the FALLBACK row of the
-  finisher's locator route — the last undeniable `cand_always` LOCATE row on it,
-  today always `composite` — never "the next row in table order" (`[r2 G6]`: every
-  concrete relocate in revision 1 targeted the composite; a fallback ladder inside a
-  first-match table would need a second walk `cand_select` cannot do, `[r2 C2]`).
-  `lo := s`; `\G` keeps the caller's `search_from` (`[r2 E8]`). The edge exists at
-  L0 already: the folded F5 (`search-filter`) IS a relocate from the `caller` locator
-  to `composite`.
-- **E-FR** FINISH `search-vm` → RETRY: a failed attempt; today's E7/E8, renamed.
+- **E-FL** `search-from` → LOCATE, from a LOCATE row's hand: RELOCATE. Target: the
+  FALLBACK row of the finisher's locator route — the last undeniable LOCATE row on it
+  that is available by construction, today always `composite` — never "the next row in
+  table order" (`[r2 G6, C2]`). `lo := s`; `\G` keeps the caller's `search_from`
+  (`[r2 E8]`). Progress class `RANK`.
+- **E-FC `[r2.1 LR-G8]`** `search-from` → LOCATE, from the `caller` locator: the
+  match-here entry's search is the SEARCH ENTRY's own LOCATE ask from `lo = s`,
+  filtered to `start == s` — whatever that ask selects (`composite` today; `rev-end`
+  on an L2 artifact whose anchored machine was not built), not the fallback row.
+  Revision 2 called the folded `search-filter` "a relocate from `caller` to
+  `composite`"; on an `empty` body `_match` wraps the `empty` body, and on a `rev-end`
+  body it would wrap the walk, so the target is the entry's selection. It cannot
+  cycle: `caller` is not a LOCATE row and nothing re-enters it (progress class
+  `ENTRY`, one traversal per call).
+- **E-FR** `search-from` (VM hat) → RETRY: a failed attempt; today's E7/E8, renamed.
+- **E-VR `[r2.1 LR-S4]`** `verify-at` (VM hat) → RETRY: a FAILED verify of a `SPAN`.
+  The shipped code has it (the RETRY slot's `exact` row runs after the hybrid's attempt
+  at `window[0][0]` fails), revision 2's model did not. On an exact hybrid the edge
+  should be unreachable (the window is the match), so L3's window-identity twin counts
+  its traversals and asserts 0 on exact hybrids; a nonzero count is a finding against
+  `cand_lang_exact`, not noise. Progress class `RAISE` (RETRY's re-seed raises `lo`).
 - **The progress check `[r2 C2, G6]`.** Each re-entry edge carries a progress class:
   `RANK` (relocate: the target row's rank exceeds the handing row's on the same
   locator route; a relocate whose handing row IS the fallback row is a self-check
-  failure) or `RAISE` (`lo` strictly increases: E5, E7, E8, E11, find-all). The
-  self-check computes, over the row-level graph (LOCATE rows × FINISH rows × the
-  composite's internal re-entries), that removing every `RAISE` edge leaves the graph
-  ACYCLIC, and that every `RANK` edge satisfies its rank inequality. Revision 1's
-  self-check tested cycles only in the selection-READS graph, so E-FL's cycle was
-  unchecked.
+  failure), `RAISE` (`lo` strictly increases: E5, E7, E8, E11, E-VR, find-all) or
+  `ENTRY` (E-FC). The self-check computes, over the row-level graph (LOCATE rows ×
+  FINISH rows × the composite's internal re-entries), that removing every `RAISE`
+  edge leaves the graph ACYCLIC, and that every `RANK` edge satisfies its rank
+  inequality.
 - **`revend.md`'s E13 (WINDOW → CALLER) stays withdrawn**: REVEND's result travels
   E-LF.
 - **E6** (the hybrid's prefilter → the VM loop) is E-LF on an inlined body:
@@ -667,19 +715,21 @@ case on two); `rev-end` is the first second walk on a route.
   DFA-only artifact's with a different hat — D156's "REVEND with captures is
   reverse-from-end × the same finisher".
 
-### 2.6 Routes, X4, and the hybrid `[r2 C1, C2]`
+### 2.6 Routes, X4, and the hybrid `[r2 C1, C2, r2.1 LR-G4]`
 
-Three route derivations, each ONE function:
+The three route derivations are FIELDS of §2.7's one derivation, not three functions
+with their own reads:
 
 - `cand_route_of(cx)` (shipped): the BODY's route, `CR_ATTEMPT` iff ENG_ATTEMPT, else
-  `CR_DFA`. Meaningful only where a DFA body exists.
-- `cand_locate_route(cx)` (new, L0): `pcrec_artifact_has_dfa_scan(cx) ?
-  cand_route_of(cx) : CAND_ROUTE_VM`. The route LOCATE is asked on by the search
-  entry. It is what keeps `composite`'s VM arm off hybrids (`[r2 C2]`): a hybrid asks
-  LOCATE once, from its inlined body, on the body's route.
-- `cand_finish_of(cx)` (new, L0): `fit.chosen == ENGM_DFA ? cand_route_of(cx) :
-  CAND_ROUTE_VM`. The finisher's route: "is the finisher a DFA finisher on this
-  entry?", the one question the ten reads of §3.3 ask.
+  `CR_DFA`. An INPUT to the derivation (`job->engine`), meaningful only where a DFA
+  body exists.
+- `cand_locate_route(cx)` = `cand_path_of(cx)->locate` (new, L0): the body route where
+  `path.body`, else `CAND_ROUTE_VM`. The route LOCATE is asked on by the search entry.
+  It keeps `composite`'s VM arm off hybrids (`[r2 C2]`): a hybrid asks LOCATE once,
+  from its inlined body, on the body's route.
+- `cand_finish_of(cx)` = `cand_path_of(cx)->finish` (new, L0): the body route where
+  `fit.chosen == ENGM_DFA`, else `CAND_ROUTE_VM`. The finisher's route: "is the
+  finisher a DFA finisher on this entry?", the one question the ten reads of §3.3 ask.
 
 X4 required REVEND's row to be route-independent because WINDOW is an ENTRY slot. As
 a LOCATE row the question changes: LOCATE is a BODY slot, asked once per body on that
@@ -689,14 +739,111 @@ so the inlined prefilter of a hybrid ASKS LOCATE on `CR_DFA` exactly as a DFA-on
 body does, and FINISH, keyed on the finisher route, decides whether the result goes
 to the caller or the VM.
 
+### 2.7 The PATH derivation: what the selected rows use `[r2.1 LR-G4, LR-S1, LR-S8, LR-S9, LR-G8]`
+
+**The finding.** F-9, F-10, the `empty` off-path conjuncts (eight `dfa_engine_is_empty`
+callers), `pcrec_artifact_has_dfa_scan`'s twelve callers, the four spellings of
+"does a DFA body exist", `cand_finish_of`, and §5.1's per-stamp edits are ONE family:
+each asks which machines and which slots the SELECTED path uses. `empty` is the first
+locator that changes the path, `rev-end` the second, `[START-LANDING]`'s rows the third
+and fourth. Revision 2 left the family dispersed and put one piece of it (L2.0's
+`dfa_machines_of`) AFTER the fold; that order is what made LR-S1's blocker possible,
+since the fold re-keys readers that are membership questions to a FINISH selection.
+
+**The declaration.** Every `cand_rows[]` row declares `.needs[route]`, beside
+`.list[route]`: the MACHINES its emitter runs on that route (a mask over F = the
+forward machine `job->dfa`, R = `job->rdfa`, A = `job->adfa`, ATT = the attempt
+machine, VM = the VM program) and the (slot, route) CELLS its emitter asks. A row's
+needs are what its emitter RUNS, not what it might: `reverse-pass` needs R, `pinned`
+needs nothing, `verify-at` needs A on `CR_DFA`, `search-from` needs the LOCATE cell it
+relocates to. The ENTRY slots (WINDOW, PRESENCE, FIRST; WIDTH and BOUND on `CR_VM`)
+are needed by the row that runs the entry's FRONT: on a DFA-finisher artifact the
+selected LOCATE row (`composite` runs all three, `empty` and `rev-end` only PRESENCE,
+which their `.whole` answers), on a VM-finisher artifact the VM hat (`FIN3`/`FIN4` on
+`CR_VM`, the code at `emit_vm.c:13146-13165`) — which is exactly today's entry gate
+(`emit_dfa.c:9784`, `:10083`, "is the body the entry?"), read from here. The L0 build
+lane writes the cells from the emitters as they stand; the controls below hold them.
+
+**The closure.** `cand_path_of(cx)`, one function, memoized per compile (the facts
+layer's shape), computes:
+
+| field | what it is | from |
+|---|---|---|
+| `body` | a DFA-shaped body is emitted | `fit.chosen == ENGM_DFA ∨ fit.prefilter` — the condition `compile.c:2381` builds under, now spelled ONCE |
+| `locate`, `finish` | the two route fields of §2.6 | `body`, `fit.chosen`, `cand_route_of` |
+| `built` | the machines the compile built | `body` (F, R on ENG_UNANCH; ATT on ENG_ATTEMPT), `anchored_ok` (A), `fit.chosen == ENGM_VM` (VM) |
+| `needs`, `asks` | the union of `.needs` over the SELECTED closure | the roots below, then every selected row's cells, each asked on its route, visited once per (slot, route) |
+| members | `needs ∩ built` | — |
+
+The ROOTS are the entries the artifact emits: the search entry's LOCATE ask on
+`locate`; the match-here entry's FINISH ask on `finish` when `finish ≠ CR_VM`, with
+hand `caller ⊓ body` (`AT`, or `NOMATCH` on a body whose selected LOCATE row is
+`empty`, LR-G8); and, where `finish = CR_VM`, the VM's own `_match` (VM), until L3
+routes it through `FIN3`. Because the closure follows `cand_nodes`' finite graph and
+visits each (slot, route) once, it terminates; because it evaluates the same
+`cand_select` the emitters call, it cannot disagree with them about a selection.
+In the trace build `needs ⊆ built` is asserted: a selected row needing an unbuilt
+machine is a defect, never a silent intersection.
+
+**The NEEDS half, before the build.** `compile.c:229` (`build_anchored_dfa`'s
+`fit.chosen != ENGM_DFA` return) decides whether A is built before any selection
+exists. It reads the static half of the same declarations: A is built iff some FINISH
+row routed on `finish` declares A in `needs[finish]` — today only `verify-at` on
+`CR_DFA`, so the answer equals `fit.chosen == ENGM_DFA` on the ENG_UNANCH branch it is
+called from, byte for byte. `-fno-anchored-dfa` stays where it is (`compile.c:230`),
+now its only reader (`[r2.1 LR-G1, LR-S8]`). `compile.c:2381` reads `body`.
+
+**Every reader, and what it reads at L0** (each is in the edit set, §5 L0):
+
+| reader | today | at L0 |
+|---|---|---|
+| `dfa_table_name` `:4438`, `dfa_scan_edge_name` `:4510`, `dfa_uniform_folds` `:4568` (F-10) | "forward always, reverse unless pinned, anchored iff `dfa_match_is_unwrapped`", with `dfa_engine_is_empty` and `CR_ATTEMPT` early returns | fold over members ∩ {F, R, A}; the empty set gives `"none"` / 0, which is what the early returns spelled; NEVER a FINISH selection (LR-S1) |
+| the orientation block (`emit_dfa.c:10704-10713`, its table paragraph `:10870`) (F-10's fourth spelling) | `vm`, `prefilter`, `(!vm \|\| prefilter) && dfa_search_is_pinned` | `finish`, `body`, and RECOVER's selected row where RECOVER is asked; the table paragraph reads `dfa_table_name` |
+| `emit_vm.c:11330` | `pcrec_artifact_has_dfa_scan` gate on the hybrid's DFA stamps | `body` |
+| `pcrec_artifact_has_dfa_scan` `:437` (F-9) and its twelve callers (`:1094`, `:1362`, `:1492`, `:1501`, `:1505`, `:3119`, `:3193`, `:6972`, `:7049`, `:7102`, `:7355`, `emit_vm.c:11330`) | the condition, copied verbatim from `compile.c` (its own comment says so) | the function returns `body`; the callers are untouched. Two of them ask a PATH question under a body spelling (`:7355`'s handoff, `:7049`/`:7102`'s NEXT scan reads): `:7355` moves to "F or ATT is a member" at L0 (same value: it already conjoins `!empty`); the rest keep `body`, and the ones whose answer would differ under a path-changing locator are re-read when `rev-end` lands (L2.2's reader census) |
+| `emit_dfa.c:10922` `dfa_body`, `compile.c:2381` (F-9's third and fourth spellings) | `chosen != VM \|\| prefilter` | `body` |
+| `compile.c:229` | `fit.chosen != ENGM_DFA` | the NEEDS half (above) |
+| the eight `dfa_engine_is_empty` callers | each spells "is the composite on the path?" | `:4440`, `:4512`, `:4573` become the member fold; `:7355` (handoff) the member read; `:7703` (`match_unwrapped_applies`) is DROPPED by LR-G8; `:7895` (`start_pinned_applies`' P4) reads "RECOVER is asked on the path"; `:10094` (`emit_attempt`'s empty arm) moves into the `empty` row's emitter; `:11325` (`dfa_scan_name`) reads the LOCATE row's listed name. `dfa_engine_is_empty` itself becomes "LOCATE selected `empty`" |
+| `cand_finish_of`, `cand_locate_route` | new | fields |
+| the ten FINISH reads of §3.3 | `fit.chosen` | `finish` |
+
+**What it absorbs.** Revision 2's L2.0 (`dfa_machines_of`, a no-mover at L2) is this
+derivation's member fold, moved into L0 ahead of the fold and generalized; L2.0
+disappears (§5). F-9's four spellings become one field; F-10's four become one fold.
+
+**The stamp rule is generated from it, at L2.1 `[r2.1 LR-G4]`.** "A slot's stamp
+reads its slot's selection where the slot is asked on the path, and the slot's ABSENCE
+value where it is not" is ONE function over `cand_list_stamp`'s slot → stamp table
+(`emit_dfa.c:8789`) plus an absence column, reading `asks`. At L0 every stamp keeps
+its current derivation (no mover); L2.1 switches the slot stamps to the generated
+rule, and its first movers are exactly D-2's (`RX_DFA_START` on every artifact whose
+path asks no RECOVER: T8, 37 bench / 606 corpus) plus F-12's (`RX_END_WINDOW` on an
+`empty` body with a finite end window, 0 measured, §10). §5.1.
+
+**The controls.** Neither shares a source with the `.needs` declarations:
+
+- **C5, membership vs the bytes** (census, measured at this pin): the member rule the
+  three readers spell today, read off the stamps, against which machine identifier
+  families (`rx_forward_`, `rx_reverse_`, `rx_anchored_`) the emitted C carries, every
+  compiled artifact, hybrids included: **0 disagreements over 5,355**, with 1,231
+  forward+reverse hybrids carrying F and R and none A (§3.1). At L0 the build lane
+  swaps the stamp side for the derivation's own member set and keeps the text side.
+- **The trace vs `asks`.** The C1 selection trace records every (slot, route) the
+  emitters asked; at L0 it must contain `asks` exactly, plus a DECLARED set of
+  stamp-only asks, written from the L0 trace itself (it holds at least RECOVER on
+  `CR_ATTEMPT` and on `empty` bodies, which today's `RX_DFA_START` asks for its value);
+  L2.1's generated rule empties that set, after which the two are equal.
+
 **Where to attack §2.** (a) Does `cand_select`'s first-match per (slot, route)
-extend to (slot, route, hand) without a second walk? (`take & hand` is a filter like
-the route mask; the predicate reads `lroute`.) (b) The inlined body is called from
-three places (entry, RETRY's recompute, the adaptive re-seed, `emit_vm.c:13261-13327`,
-`:13396`); a walk there must answer the same at every call (§4.3). (c) Totality over
-the triple table: a (locator route, finisher route) pair missing from it. (d) The
-progress check on a relocate from a FUTURE second fallback (a route with two
-undeniable rows).
+extend to (slot, route, hand) without a second walk? (`take[route]` is a filter like
+the route mask.) (b) The inlined body is called from three places (entry, RETRY's
+recompute, the adaptive re-seed, `emit_vm.c:13261-13327`, `:13396`); a walk there must
+answer the same at every call (§4.3). (c) Totality over the triple table: a (locator
+route, finisher route) pair missing from it. (d) The progress check on a relocate
+from a FUTURE second fallback (a route with two undeniable rows). (e) §2.7: a reader
+of "which machines/slots" the table above misses, or a `.needs` cell that is not what
+its emitter runs (the trace control's job). (f) The NEEDS half: a future row that
+needs A on a route other than `CR_DFA`.
 
 ---
 
