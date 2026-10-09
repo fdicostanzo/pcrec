@@ -6,8 +6,36 @@ CONTROL C2  stamp(VM_PREFILTER=hybrid) vs text(rx_prefilter( )
   (False, False): 3862
   (True, True): 1493
   disagreements: 0
-CONTROL C3  shipped end_window numeric => probe view in {$,\z}
+CONTROL C3  forward: shipped end_window numeric => probe view in {$,\z}
   fact-window, probe-pinned: 400
+  disagreements: 0
+CONTROL C3  forward-width: shipped end_window numeric => probe cwmax finite
+  fact-window, probe cwmax finite: 262
+  fact-window, probe cwmax unbounded, pattern calls a group (declared: probe never expands calls): 138
+  declared exception probe-blind-calls: 138 rows, 108 distinct; by population {'corpus': 138}
+    e.g. b'^(a|b)\\g<1>$'
+    e.g. b"^(a|b)\\g'1'$"
+    e.g. b'^(?:(?<g>a|ab)){0}(?&g)c$'
+  disagreements: 0
+CONTROL C3  converse: probe pinned (view 1/2) AND cwmax finite => shipped end_window numeric
+  probe-pinned+finite, fact-declined, declared exception gstart: 2
+  probe-pinned+finite, fact-declined, declared exception multibyte: 22
+  probe-pinned+finite, fact-window: 262
+  declared exception multibyte (shipped reason decline:enc-multibyte): 22 rows, 16 distinct; by population {'bench': 3, 'corpus': 19}
+    e.g. b'\\A\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\\z'
+    e.g. b'^.{5}$'
+    e.g. b'^\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e$'
+  declared exception gstart (shipped reason decline:gstart): 2 rows, 2 distinct; by population {'corpus': 2}
+    e.g. b'\\G\\z'
+    e.g. b'\\G$'
+  disagreements: 0
+CONTROL C4  census classifier (F-vm-span) vs stamp RX_VM_RESEED == "exact", every hybrid
+                                  reseed==exact   reseed!=exact
+  classifier exact (F-vm-span)              759              0
+  classifier superset (F-vm-cand)             0            734
+  superset rows by the stamp they carry: {'adaptive': 466, 'adaptive-dense': 37, 'anchored': 58, 'clamped': 173}
+  hybrids by reason they are not exact (lang!=exact / atomic kind / lookaround kind): 7 / 250 / 515  (kind-name spellings live: both > 0)
+  hybrids with no RX_VM_RESEED stamp: 0; non-hybrids carrying one: 0
   disagreements: 0
 
 POPULATION

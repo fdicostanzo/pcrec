@@ -6,11 +6,12 @@
 
 Every population is printed twice: ROWS (every bench pattern / corpus block)
 and DISTINCT (corpus deduplicated on (pattern bytes, encoding, -i)); the bench
-is already distinct.  The three controls run first and the script exits 1 if
+is already distinct.  The four controls run first and the script exits 1 if
 any of them disagrees, so a summary is never printed over a broken census.
 """
 import collections
 import gzip
+import re
 import sys
 
 rows = []
@@ -74,21 +75,155 @@ for k, v in sorted(c2.items(), key=str):
 print(f"  disagreements: {dis2}")
 bad += dis2 > 0
 
-# ---- CONTROL C3: the borrowed probe's end pin vs the SHIPPED end_window fact.
-# A numeric end_window means the shipped walk found every alternative pinned
-# (and \G absent): the probe must say view 1/2 there.  (The converse is not a
-# disagreement: end_window also needs a finite width.)
-c3 = collections.Counter()
+# ---- CONTROL C3: the borrowed probe's end pin vs the SHIPPED end_window fact,
+# TWO-SIDED (panel LF-C10; the one-sided form let the converse go unread).
+# The probe is a copy of src/facts/endwin.c's walk (the probe's own header
+# says so), so this control is only as independent as that copy is; what it
+# adds is the shipped fact's FULL decline list, read from endwin.c:
+#   (1) cwmax unbounded   (2) multi-byte encoding   (3) \G anywhere
+#   (4) multiline `$`     (+) not end-anchored (the walk itself)
+# FORWARD  shipped end_window numeric => probe view in {$, \z}.
+# CONVERSE probe pinned (view 1/2) AND probe cwmax finite => shipped numeric,
+#   EXCEPT the declared exceptions below.  Each exception is classified from
+#   a column that is NOT the shipped fact's own answer (the row's encoding,
+#   the probe's gstart), in the order endwin.c tests them (encoding before
+#   \G); the shipped decline reason (f_end_window_why) is then read ONLY to
+#   confirm each declared exception is the reason the shipped fact gave.
+#   (1) and (4) and `not end-anchored` cannot arise in the converse's premise
+#   (finite cwmax, view 1/2 excludes ML=3 and none=0), so they are not
+#   exceptions; a row declined for any of them is a disagreement.
+#   A row outside the declared exceptions that the shipped fact declines is a
+#   disagreement; so is a declared exception whose shipped reason differs.
+PINNED = lambda r: r["view"] in ("1", "2")
+FINITE = lambda r: r["cwmax"] != "-1"
+DECL = (("multibyte", lambda r: r["enc"] == "utf8", "decline:enc-multibyte"),
+        ("gstart",    lambda r: r["gstart"] == "1", "decline:gstart"))
+c3f = collections.Counter()
 for r in comp:
     ew = r["f_end_window"]
     if ew and ew != "none":
-        c3["fact-window, probe-pinned" if r["view"] in ("1", "2") else "fact-window, probe-NOT"] += 1
-dis3 = c3["fact-window, probe-NOT"]
-print("CONTROL C3  shipped end_window numeric => probe view in {$,\\z}")
-for k, v in sorted(c3.items()):
+        c3f["fact-window, probe-pinned" if PINNED(r) else "fact-window, probe-NOT"] += 1
+dis3f = c3f["fact-window, probe-NOT"]
+print("CONTROL C3  forward: shipped end_window numeric => probe view in {$,\\z}")
+for k, v in sorted(c3f.items()):
     print(f"  {k}: {v}")
-print(f"  disagreements: {dis3}")
-bad += dis3 > 0
+print(f"  disagreements: {dis3f}")
+
+# FORWARD-WIDTH  shipped end_window numeric => the shipped walk found a FINITE
+# width, so the probe's cwmax must be finite too, EXCEPT where the pattern
+# calls a group: the probe runs parse -> altcls -> discharge_atomic ->
+# lower_enc and never the call expansion/callgraph the compiler runs before
+# its facts (measured: pcrec_cwmax of an unexpanded A_CALL is unbounded), so
+# it reads `^(a|b)\g<1>$` as unbounded where the shipped fact says 3.  The
+# exception is classified from the PATTERN TEXT (a call spelling), not from
+# either instrument's answer.
+CALLRE = re.compile(rb"\(\?(?:&|P>|R\)|[+-]?[0-9]+\))|\\g[<']")
+c3w = collections.Counter()
+c3wx = []
+for r in comp:
+    ew = r["f_end_window"]
+    if not (ew and ew != "none"):
+        continue
+    if FINITE(r):
+        c3w["fact-window, probe cwmax finite"] += 1
+    elif CALLRE.search(bytes.fromhex(r["pattern_hex"])):
+        c3w["fact-window, probe cwmax unbounded, pattern calls a group (declared: probe never expands calls)"] += 1
+        c3wx.append(r)
+    else:
+        c3w["fact-window, probe cwmax unbounded, NO call spelling"] += 1
+print("CONTROL C3  forward-width: shipped end_window numeric => probe cwmax finite")
+for k, v in sorted(c3w.items()):
+    print(f"  {k}: {v}")
+print(f"  declared exception probe-blind-calls: {len(c3wx)} rows, {len({dkey(r) for r in c3wx})} distinct; "
+      f"by population {dict(sorted(collections.Counter(r['pop'] for r in c3wx).items()))}")
+seen = []
+for r in c3wx:
+    pat = bytes.fromhex(r["pattern_hex"])
+    if pat not in seen and len(seen) < 3:
+        seen.append(pat)
+for p in seen:
+    print(f"    e.g. {p[:60]!r}")
+dis3w = c3w["fact-window, probe cwmax unbounded, NO call spelling"]
+print(f"  disagreements: {dis3w}")
+
+c3c = collections.Counter()
+c3x = collections.defaultdict(list)       # exception name -> rows
+dis3c = []
+for r in comp:
+    if not (PINNED(r) and FINITE(r)):
+        continue
+    ew = r["f_end_window"]
+    if ew and ew != "none":
+        c3c["probe-pinned+finite, fact-window"] += 1
+        continue
+    exc = next((n for n, p, _ in DECL if p(r)), None)
+    if exc is None:
+        c3c["probe-pinned+finite, fact-declined, UNDECLARED"] += 1
+        dis3c.append(r)
+        continue
+    want = next(w for n, _, w in DECL if n == exc)
+    if r["f_end_window_why"] != want:
+        c3c["probe-pinned+finite, fact-declined, declared " + exc + " but shipped reason differs"] += 1
+        dis3c.append(r)
+        continue
+    c3c["probe-pinned+finite, fact-declined, declared exception " + exc] += 1
+    c3x[exc].append(r)
+print("CONTROL C3  converse: probe pinned (view 1/2) AND cwmax finite => shipped end_window numeric")
+for k, v in sorted(c3c.items()):
+    print(f"  {k}: {v}")
+for n, _, w in DECL:
+    rs = c3x[n]
+    print(f"  declared exception {n} (shipped reason {w}): {len(rs)} rows, "
+          f"{len({dkey(r) for r in rs})} distinct; by population "
+          f"{dict(sorted(collections.Counter(r['pop'] for r in rs).items()))}")
+    if not rs:
+        print(f"    (zero hits: the exception is declared but nothing reaches it)")
+    seen = []
+    for r in rs:
+        pat = bytes.fromhex(r["pattern_hex"])
+        if pat not in seen and len(seen) < 3:
+            seen.append(pat)
+    for p in seen:
+        print(f"    e.g. {p[:60]!r}")
+for r in dis3c[:10]:
+    print(f"    DISAGREES {r['pop']} {r['id']} enc={r['enc']} view={r['view']} cwmax={r['cwmax']} "
+          f"gstart={r['gstart']} why={r['f_end_window_why']!r} {bytes.fromhex(r['pattern_hex'])[:60]!r}")
+print(f"  disagreements: {len(dis3c)}")
+bad += (dis3f > 0) + (dis3w > 0) + (len(dis3c) > 0)
+
+# ---- CONTROL C4: the census's exact/superset classifier for hybrids (census.py
+# classify(): RX_VM_PREFILTER_LANG == exact, kinds fact without atomic and
+# lookaround => F-vm-span, else F-vm-cand) vs the INDEPENDENT stamp
+# RX_VM_RESEED, which is "exact" iff the RETRY row `exact` fired, whose
+# predicate is Vm.mrl_win = fit.prefilter && !atomic && !look && !collapsed
+# (src/gen/emit_vm.c pcrec_vm_prefilter_window).  The stamp is written in the
+# same gate as RX_VM_PREFILTER_LANG (emit_vm.c, after vm_plan_reseed) and the
+# `exact` row is FIRST in the RETRY slot of cand_rows[] with deny mask 0
+# (src/gen/emit_dfa.c), so an exact hybrid cannot stamp another row and a
+# non-exact one cannot stamp `exact`: NO structural exception is declared.
+# The classifier reads the lang stamp and the kinds fact; the reseed stamp is
+# the retry-row selection's own output, a different consumer of the fit.
+hyb = [r for r in comp if r["VM_PREFILTER"] == "hybrid"]
+c4 = collections.Counter()
+for r in hyb:
+    c4[(r["fin"] == "F-vm-span", r["VM_RESEED"] == "exact")] += 1
+print("CONTROL C4  census classifier (F-vm-span) vs stamp RX_VM_RESEED == \"exact\", every hybrid")
+print("                                  reseed==exact   reseed!=exact")
+for cl, nm in ((True, "classifier exact (F-vm-span)"), (False, "classifier superset (F-vm-cand)")):
+    print(f"  {nm:<32} {c4[(cl, True)]:>12}   {c4[(cl, False)]:>12}")
+dis4 = c4[(True, False)] + c4[(False, True)]
+print(f"  superset rows by the stamp they carry: "
+      f"{dict(sorted(collections.Counter(r['VM_RESEED'] for r in hyb if r['fin'] != 'F-vm-span').items()))}")
+print(f"  hybrids by reason they are not exact (lang!=exact / atomic kind / lookaround kind): "
+      f"{sum(r['VM_PREFILTER_LANG'] != 'exact' for r in hyb)} / "
+      f"{sum('atomic' in kinds(r) for r in hyb)} / {sum('lookaround' in kinds(r) for r in hyb)}"
+      f"  (kind-name spellings live: both > 0)")
+nohyb = sum(1 for r in comp if r["VM_PREFILTER"] != "hybrid" and r["VM_RESEED"])
+print(f"  hybrids with no RX_VM_RESEED stamp: {sum(1 for r in hyb if not r['VM_RESEED'])}; "
+      f"non-hybrids carrying one: {nohyb}")
+dis4 += nohyb + sum(1 for r in hyb if not r["VM_RESEED"])
+print(f"  disagreements: {dis4}")
+bad += dis4 > 0
 if bad:
     print("CONTROLS FAILED — no tables printed")
     sys.exit(1)
