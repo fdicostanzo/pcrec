@@ -78,16 +78,16 @@ Beyond the panel, this revision adds:
    (artifact and twin identical). Form C on `-fno-anchored-dfa` artifacts (ties hand `s*`
    to the body): 0 / 339,632. Five planted controls each go red on a named witness.
    Timing (§6.3, 7700X, 7 interleaved passes): form C is the fastest arm on EVERY matching
-   cell, unbounded and bounded. On the five bench tail patterns it is 2.2-11.8 ns against
-   today's 48 us-1.54 ms. On revq1's bounded rows it beats W1 on all 50 cells (C/W1
-   0.01-0.89; 0.26-0.63 on the matching ones), where form B lost to W1 on every matching
-   cell (1.4-1.6x, reproduced here). Form C beats form A on every matching cell
-   (C/A 0.22-0.70) and ties it on the one tie cell (11.7 vs 10.9 ns). On a non-matching tail
-   C is 0.2-0.6 ns behind B; that is the unused tie arm, which `nl_last` removes (§2.4,
-   measured: 3.3 -> 2.6 ns).
+   cell bar one (the tie cell, where A leads by 0.8 ns). On the five bench tail patterns it is
+   2.2-11.8 ns against today's 17.9 us-2.15 ms. On revq1's 13 bounded rows it beats W1 on
+   all 47 cells (C/W1 0.004-0.89; 0.004-0.71 on the 36 matching ones), where form B loses to
+   W1 on 32 of the 36 matching cells (up to 1.76x, revq1's verdict reproduced). C/A is
+   0.22-0.70 on every other matching cell, C/B 0.17-0.79. On a non-matching tail C is within
+   -0.4..+0.6 ns of B; the positive part is the unused tie arm, which `nl_last` removes
+   (§2.4, measured: 3.3 -> 2.6 ns).
 5. **Q1 and Q2 (§10) collapse.** Q1 ("does REVEND take the bounded patterns from W1?")
    was a speed-vs-generality trade under form B; under form C there is no trade: C is
-   faster than W1 on every bounded cell measured, including the six bench do-not-regress
+   faster than W1 on every bounded cell measured (47 of 47), including the six bench do-not-regress
    cells, so the table's own order (EXACT before WINDOW) costs nothing. Q2 ("form B over
    form A") is replaced by one question that the numbers do not settle: the downstream
    search stamps on admitted artifacts (§5.2, §10 Q2).
@@ -553,8 +553,8 @@ a trailing-lookaround shape.
   is 9.6 / 11.8 ns where revision 1's form B was 68.6 / 32.6 (with the pre-check before
   the walk). Today's `[a-z]+\.txt$` moved from 48 us (no `.txt` anywhere, the run
   pre-check answers) to 2.1 ms (a `.txt` at the end, the forward scan runs).
-- **Form C vs form B:** C is 0.25-0.79x of B on every matching cell; on a non-matching tail
-  it is 0.2-0.6 ns behind. That gap is the tie arm the twin always emits (the anchored call
+- **Form C vs form B:** C is 0.17-0.79x of B on every matching cell (all 47 timed); on a
+  non-matching tail it is within -0.4..+0.6 ns of B. That gap is the tie arm the twin always emits (the anchored call
   makes the function keep a frame). `results/r2_tiearm.txt` measures it directly on
   `\d+$` (which cannot tie, so T1 emits no arm): 3.3 -> 2.6 ns on t-tail-txt-1m, 7.1 ->
   6.4 / 6.2 -> 5.5 ns on the matching cells, i.e. C without the arm is B's non-match cost.
@@ -586,9 +586,10 @@ a trailing-lookaround shape.
 | `ERROR$` | long | 15.2 | **5.9** | 9.7 | 21.1 | 0.39 | 1.39 |
 | `x[a-z]{0,5}\z` | long | 17.8 | **5.3** | 14.0 | 27.9 | 0.30 | 1.57 |
 
-(`results/r2_table.md` has all 50 bounded cells: C/W1 is 0.01-0.89 on every one, and
-0.26-0.63 on every matching one.) Form B reproduces revq1's verdict (1.16-1.76x W1 on
-matching tails) on a quieter box; form C reverses it. W1 scans the whole window forward
+(`results/r2_table.md` has all 47 bounded cells: C/W1 is 0.004-0.89 on every one, and
+0.004-0.71 on the 36 matching ones.) Form B reproduces revq1's verdict on a quieter box: it
+loses to W1 on 32 of the 36 matching cells (up to 1.76x; it wins only where the match is
+short against a wide bound). Form C reverses it. W1 scans the whole window forward
 and then the match back; C walks the match back once, so its cost follows the match, not
 the bound.
 
@@ -754,8 +755,8 @@ As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags ind
   artifacts and 6 bench floor cells to a slower form for the sake of one general row. The
   panel also showed that W1-first needed no width conjunct (table order alone gives
   "REVEND where W1 declines").
-- **Now.** Form C is faster than W1 on all 50 bounded cells measured, matching or not
-  (C/W1 0.01-0.89), because it walks the match back once where W1 scans the window forward
+- **Now.** Form C is faster than W1 on all 47 bounded cells measured, matching or not
+  (C/W1 0.004-0.89), because it walks the match back once where W1 scans the window forward
   and then walks back. The only place W1 is close is the non-matching `done$` tail (3.5 vs
   3.1 ns). So the table's own order costs nothing, and the general row is also the fast one.
 - **Leaning: REVEND first** (the table's EXACT-before-WINDOW order), with the 6 bench
@@ -772,8 +773,8 @@ As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags ind
   defect class), and `[OPT-5]` set the precedent of a new `RX_DFA_START` value when a pass
   went away. Against that, these stamps have many value readers (§5.3 (d): 19-90 files each,
   many of them sabotage rows on specific witnesses), and the movers are ~150 corpus
-  artifacts. Keeping form B for the stamps' sake would cost 1.2-4x on every matching cell
-  (§6.3), which is the whole point of the row.
+  artifacts. Keeping form B for the stamps' sake would cost 1.3-5.8x (B/C) on every matching
+  cell (§6.3), and would lose to W1 on the bounded ones.
 - **Leaning:** form C, with the stamps taking their existing `"none"` values and
   `RX_DFA_START`/`RX_REQ_WHY`/`rx_info.search_form` reading `"rev-end"`, all in the S2 abi
   event. The movers census names exactly which readers move. The open part is spelling, the
@@ -813,8 +814,8 @@ As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags ind
   numbers are short calls (2-12 ns), where latency, call overhead and the driver dominate;
   that is why §7 states transfer terms and a ceiling, and why the bench's verdict regime
   (D144 addendum 4) is the official one.
-- No decision here flips with the regime. Form C vs W1 and vs B differs by 2-4x on every
-  matching cell; the only sub-nanosecond differences (non-matching tails) are explained by
+- No decision here flips with the regime. Form C vs W1 and vs B differs by 1.3x or more on
+  every matching cell (C/B <= 0.79, C/W1 <= 0.71); the only sub-nanosecond differences (non-matching tails) are explained by
   the tie arm and are removed by T1.
 
 **12.2 The independent control — RELEVANT.**
