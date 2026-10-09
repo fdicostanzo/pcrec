@@ -972,6 +972,16 @@ in the report:
   and `st_whys` (family 86 -> 98; the parent under the same roots is the
   same 98).
 
+**B7's outcome (lane decfbB7, 2026-10-09, base main `f27ff639`; report
+`../dev/lanes/decfbB7_report.md`).** The declared listing commit, not an abi
+event. `--list-axes` moves by exactly `dec_fallback/listing_declared_B7.tsv`
+(`dec_fallback/listing_diff.py`: 21 cells, 21 added rows): the three fallback
+axes are `kind=list`, `engine-route` lists `declined-nullable` (3) before
+`collapsed-prefilter` (4), F-B2's and `size-cap-retry`'s descs are corrected,
+and T1/T2 are listed whole as `fallback` (11 rows) and `prefilter-admit` (10)
+(Q4(b)). 136 -> 157 rows, 46 -> 48 axes; `registry.md` §6 and `tuning.md`
+§2.16/§2.17 carry the hunks; the registry pin moves 210 -> 216.
+
 **B6's outcome (lane decfbB6, 2026-10-08, base main `84da351b`; report
 `../dev/lanes/decfbB6_report.md`).** The three fallback listings project
 the tables. T1, T3 and T4 rows (`fit_rungs[]`, `pflw_rows[]`, `st_whys[]`)
