@@ -93,6 +93,13 @@ Numbers are the measured record in docs/testing.md "The boxes" (MEASURED
   commits, ARMS the chain detached (`nohup setsid` waiter polling
   `worktrees/NAME/.lift`, then the chain script; `& disown`), hands back and
   ENDS. The manager lifts; a FRESH agent reads the verdicts.
+  ONE WAITER PER WORKTREE. Before arming in a worktree that has been armed
+  before, find any live waiter or chain (`ps -eo pid,args | grep
+  worktrees/NAME/build/land`) and stop it with `scripts/safekill`. NEVER
+  rewrite a chain.sh that a live waiter may run: bash reads scripts
+  incrementally. On 2026-10-09 decattr's original waiter and decland's new
+  one both fired on one `.lift` and ran interleaved chains over the same
+  logs and scratch, which contaminated every verdict.
 - MECH IDS ARE PASSED WITHOUT A SUFFIX (`S222`, never `S222_...`), and a row's
   verdict is read from its own `== mech run COMPLETE` trailer (C3's chain
   lost 23 rows to `S222_`).
