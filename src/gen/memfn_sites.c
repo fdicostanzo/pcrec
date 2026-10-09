@@ -318,6 +318,36 @@ static void kit_check(Ctx *cx, mf_art *art, int rc)
                        mf_art_error(art) ? mf_art_error(art) : "(no reason)");
 }
 
+#ifdef PCREC_PICK2_PROBE
+#include <stdio.h>
+/* [MEMFN] RQ-2 THE PICK2 PROBE, compiled only into the test build
+ * `-DPCREC_PICK2_PROBE` (tests/memfn/run_pick2.sh): one stderr line per
+ * predicate of every defined site, stating what the kit is handed. A
+ * predicate whose plan_hint names a RUN term prints that term's bytes, masks
+ * and both positions; any other prints only its plan_pos2. The check
+ * re-derives KB from the bytes by brute force and compares. */
+static void pick2_probe(DelegSite id, const mf_site *s)
+{
+    int np = s->op == MF_OP_ALL_PRESENT ? s->npred : 1;
+    for (int i = 0; i < np; i++) {
+        const mf_pred *p = s->op == MF_OP_ALL_PRESENT ? &s->preds[i] : &s->pred;
+        const mf_term *t = p->plan_hint < p->nterm ? &p->term[p->plan_hint] : NULL;
+        fprintf(stderr, "PICK2\t%s\t%d\t", pcrec_deleg_sites[id].id, i);
+        if (t && t->kind == MF_T_RUN) {
+            fprintf(stderr, "run\t");
+            for (uint32_t j = 0; j < t->run_len; j++) fprintf(stderr, "%02x", t->run[j]);
+            fprintf(stderr, "\t");
+            for (uint32_t j = 0; j < t->run_len; j++)
+                fprintf(stderr, "%02x", t->mask ? t->mask[j] : 0xFF);
+            fprintf(stderr, "\t%u", (unsigned)p->plan_pos);
+        } else {
+            fprintf(stderr, "norun\t-\t-\t-");
+        }
+        fprintf(stderr, "\t%u\n", (unsigned)p->plan_pos2);
+    }
+}
+#endif
+
 uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
                             const mf_hooks *h, StrBuf *file)
 {
@@ -325,6 +355,9 @@ uint32_t pcrec_memfn_define(Ctx *cx, DelegSite id, const mf_site *s,
     PcrecMfSink ps;
     uint32_t handle = 0;
     deleg_check(cx, id, s);
+#ifdef PCREC_PICK2_PROBE
+    pick2_probe(id, s);
+#endif
     pcrec_memfn_sink(&ps, file);
     kit_check(cx, art, mf_define(art, s, h, &ps.s, &handle));
     return handle;
