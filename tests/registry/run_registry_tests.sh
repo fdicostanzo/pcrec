@@ -684,6 +684,27 @@ if [ "$axesn" -ne 216 ]; then
     rc=1
 fi
 
+# ---- [DEC-FALLBACK] B7: the fallback axes' listed order and kind -----------
+#
+# `engine-route` lists in the ATTRIBUTION WALK's order (dec_fallback.md §6.2;
+# tuning.md §2.17's precedence sentence) and the five fallback axes are
+# `kind=list`. The literal order below is the spec sentence's, written here and
+# not read off the dump, so a table edit that reorders the listing fails.
+fbsel="$("$PCREC" --list-axes | awk -F'\t' '$1=="engine-route"{printf "%s%s", (n++?",":""), $3}')"
+fbwant="forced,declined-nullable-default,declined-nullable,collapsed-prefilter,overflowed-dfa,overflowed-prefilter,size-cap-retry,selected"
+if [ "$fbsel" != "$fbwant" ]; then
+    echo "registry: engine-route lists '$fbsel', want the attribution order '$fbwant'" >&2
+    rc=1
+fi
+for fbax in engine-route size-term prefilter-lang fallback prefilter-admit; do
+    fbbad="$("$PCREC" --list-axes | awk -F'\t' -v a="$fbax" '$1==a && $4!="list"{n++} END{print n+0}')"
+    if [ "$fbbad" -ne 0 ]; then
+        echo "registry: axis $fbax lists $fbbad row(s) whose kind is not 'list' (B7)" >&2
+        rc=1
+    fi
+done
+echo "registry: [DEC-FALLBACK] B7 listed order + kind checked"
+
 # ---- [LIM-1]: the numeric-limits table's own check (D90) -------------------
 #
 # The SIXTH TSV surface's own independent-side check: `pcrec --list-limits`

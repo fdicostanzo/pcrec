@@ -597,6 +597,10 @@ construction (src/ir) and emission (src/gen).
   `ESEL_FROM_ROW + i`), which the trace's `attrib` record prints as the
   row's name, so the trace compare against a pre-B5 parent held the walk to
   the ternary. The oracle's `attrib` site is gone with the oracle.
+  **B7 ([DEC-FALLBACK], lane decfbB7): `declined-nullable` is order 3 (the
+  T2 cell sits before T1's `collapsed-prefilter`), `declined-nullable-default`'s
+  desc loses the false `--engine=vm` clause (F-B2), and
+  `pcrec_pf_admit_table_row` lists T2 whole as the `prefilter-admit` axis.**
   **B6 ([DEC-FALLBACK], lane decfbB6): T2 rows carry the `--list-axes`
   `axlist` cell for `declined-nullable-default` (row `var-nullable`) and
   `declined-nullable` (row `nullable-collapsed`), and `esel_ends[]` holds

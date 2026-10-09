@@ -1514,4 +1514,4 @@ would share its spelling with what it checks. Their emitter half is
 and 7 `UNROLL_K_WHY` values stamped by a witness (K35 floor per value), the
 observed set equal to `match_api.md` §6.3's. The docs legs stay. The
 script's `COMPILEC` input went with the second leg (its only reader).
-`run_registry_tests.sh`'s pin moves 214 -> 210, measured.
+`run_registry_tests.sh`'s pin moves 214 -> 210, measured. [DEC-FALLBACK] B7: 210 -> 216 (T1's two deny-bit rows on the new `fallback` axis, 3 checks each), plus a literal-order and `kind=list` check on the five fallback axes.
