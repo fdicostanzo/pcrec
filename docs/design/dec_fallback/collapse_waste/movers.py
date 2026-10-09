@@ -13,6 +13,7 @@ line against the declared mover shapes:
   ir      `--emit-ir` at the default engine, arms "", -fno-prefilter,
           -fno-prefilter-collapse (`-fprefilter` cannot reach a moved row)
           tok:<old>-><new>    the `prefilter` row's value      (F1/F-B1/§4.5)
+          refuse:<delta>      a refusal's emitted-size figure  (F1 -17, waste -6)
   irvm    `--emit-ir --engine=vm`, the same `prefilter` row
   facts   `--emit-facts=byte,utf8`
           used:<fact>:<old>-><new>  a fact's `used` column     (the up-front ask)
@@ -66,14 +67,33 @@ def ir_tok(b):
     return None
 
 
+# A refusal whose only change is the emitted-size figure it names: the
+# figure counts the stamps' own text (F1's ENGINE_SEL value is 17 bytes
+# shorter, form (a)'s VM_PREFILTER_WHY figure 6), so a refused compile at a
+# lowered cap moves by that delta (decattr_report.md §3, "stderr"; found as an
+# UNDECLARED row by lane decland's lowboth run, `^(?i)${v}$` -e utf8).
+REFUSE = re.compile(rb'^(pcrec: .*?)(\d+)( bytes of emitted .*)$')
+REFUSE_DELTAS = (-17, -6, -23)     # F1, waste, both; any other delta is UNDECLARED
+
+
 def ir_class(a, b):
     la, lb = lines(a), lines(b)
     if len(la) != len(lb):
         return None
+    out = []
     for x, y in zip(la, lb):
-        if x != y and not (x.startswith(b"prefilter\t") and y.startswith(b"prefilter\t")):
-            return None
-    return [f"tok:{ir_tok(a)}->{ir_tok(b)}"]
+        if x == y:
+            continue
+        if x.startswith(b"prefilter\t") and y.startswith(b"prefilter\t"):
+            out.append(f"tok:{ir_tok(a)}->{ir_tok(b)}")
+            continue
+        mx, my = REFUSE.match(x), REFUSE.match(y)
+        if (mx and my and mx.group(1) == my.group(1) and mx.group(3) == my.group(3)
+                and int(my.group(2)) - int(mx.group(2)) in REFUSE_DELTAS):
+            out.append(f"refuse:{int(my.group(2)) - int(mx.group(2)):+d}")
+            continue
+        return None
+    return out
 
 
 def facts_class(a, b):
