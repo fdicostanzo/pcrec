@@ -38,6 +38,34 @@ pair is a different axis (prose vs. code, one split per blob) and does not
 grow with the entry count; either `_doc` may be NULL, meaning "this half is
 all code", which `advance` already ships.
 
+**[MEMFN] M7 (D58 ADDENDUM 2, 2026-10-08): THE RESIDUAL TEXT GAINED ONE KIT
+SITE TOKEN, AND STILL NO CALLBACK.** The byte-wise span compares
+(`defs_bref`, `defs_bref_ci`, `defs_bref_ci_ucp` here in `enc_byte.c`;
+`u8_defs_bref` in `enc_utf8.c`) no longer spell their compare LOOP: each
+writes `PCREC_ENC_SITE` (a whole line, `@site@`) where the loop sat, and the
+backend states, beside its text, a KEYED SIDE TABLE of SITE DATA
+(`PcrecEncSite` in enc.h, `PcrecEnc.sites`; `sites_byte`/`sites_utf8`): the
+fold KIND (none / ASCII / UCP), the fold TEXT (`@` the byte, `$` the prefix:
+the in-place ASCII fold, or `$_span_ci_fold(@)`) and the FAILURE statement
+(`return -(ptrdiff_t)i - 1;`). `src/gen/emit_dfa.c`'s `emit_residual_defs`
+reads the rows, describes each site to the memfn kit (DELEG_SITES row N7,
+`pcrec_memfn_span_site`), and passes the kit's rendered loops back into
+`pcrec_enc_emit_defs` as STRINGS, which substitutes them for the tokens as it
+substitutes `$` (`pcrec_enc_emit_text`, which also CHECKS the token's rules:
+no other `@`, no token without a rendered loop, no rendered loop without a
+token). Data flows enc -> gen -> kit -> gen -> enc; this directory includes
+no gen or kit header and calls nothing above `core`. The backend keeps every
+other byte: signatures, braces, the final `return (ptrdiff_t)reflen;`, the
+UCP fold function and its table, every comment and declaration. A keyed
+side table rather than a `PcrecEncEntry` column (D58 addendum 2 item 2: a
+column would touch every positional row of both backends). utf8's CASELESS
+compare is a per-character decode walk, not a byte mismatch, and keeps its
+own body and has no row (manifest row N7U, pending a decode-hook vocabulary
+step; Q-R8-1). The operand spellings the kit pastes are the entry's own
+parameter names, one spelling in enc.h (`PCREC_ENC_SPAN_*`), since DD12a(ii)
+proves the signature identical across backends. Zero movers: the kit
+renders the loops byte for byte (docs/dev/lanes/m7_report.md).
+
 ## The rule this directory exists to make structural
 
 DD-12 (7), ruled in as a requirement by Frank: **no encoding conditionals
@@ -388,7 +416,12 @@ One new `enc_<name>.c` here, plus its `extern` in `enc.h` and its row in
 `enc.c`'s table. The row carries the backend's residual ENTRIES, its `max_cp`,
 (since [K49]) its `advance` text, and (since [K50]) its `start_cls` byte set
 and `start_guard` expression — all five in this directory. A backend that
-restricts no position writes NULL for the last two and is complete.
+restricts no position writes NULL for the last two and is complete. Since
+[MEMFN] M7 (D58 addendum 2), a backend whose span compare is BYTE-WISE writes
+`PCREC_ENC_SITE` where the compare loop sits and a site-data row
+(`PcrecEncSite`: fold kind, fold text, failure statement) in its `sites`
+table, also in this directory; a backend whose compare is not byte-wise
+spells its own body and has no row.
 
 Both of those files are in THIS directory; the Makefile
 already globs `src/enc/*.c`. **Nothing in `src/core`, `src/parse`, `src/ir`,
@@ -400,8 +433,12 @@ it to a design decision rather than patching the shared file.
 
 Two constraints on the residual text itself:
 
-- **`$` is the prefix placeholder and the only character substituted**, so
-  residual text must contain no other `$`.
+- **`$` is the prefix placeholder and `@` begins the one site token
+  (`PCREC_ENC_SITE`, M7); those are the only two characters substituted**, so
+  residual text must contain no other `$` and no other `@`
+  (`pcrec_enc_emit_text` refuses a stray `@`). A site-data row's fold text
+  is the one place `@` means something else, the kit's operand
+  (`pcrec_enc_emit_site_text` renders its `$` and leaves its `@`).
 - **Emitted text is ASCII-only**, including inside comments — the artifact
   is source someone else's toolchain compiles (src/gen/CLAUDE.md's standing
   rule).
@@ -414,7 +451,8 @@ artifact and the `.c` of a self-contained one; the definitions ride the
 exported `pcrec_emit_residual`, called by BOTH emitters). Those two
 functions are the entire extent of the emitter's knowledge about encodings:
 look up the backend, copy the text of every entry the artifact's MASK names,
-substitute the prefix.
+substitute the prefix, and (since M7) describe each site-data row's loop to
+the kit and substitute its rendered text for the entry's token.
 
 **THE MASK IS DISCOVERED BY EMITTING, not predicted.** `Job.enc_mask` starts
 at `PCREC_ENCE_NEXT_POS` (promised unconditionally by

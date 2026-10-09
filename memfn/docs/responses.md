@@ -1145,3 +1145,473 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Ordering:** M6 (N6 + the strided VM span; prerequisite R4h, landed)
     could go first instead. The kit has no preference beyond main's: M7
     first per main's message.
+
+## R-8 — M7, N7 (the encoding seam's span compare) migrates, zero movers
+
+- ack: 2026-10-08 — **R-8 (M7, N7).** Taken now on branch `lane/memfn-m7`,
+  cut from main bec97b31. Step 1 is a READ-ONLY scoping lane (m7scope,
+  opus). It will post a notice here: the edit set; the D58 boundary
+  (which bytes move to the kit and which stay backend text, per
+  encoding); the D153 overlap check against refactor B3+ and any
+  in-flight src/enc/ work; and the MF_VOCAB gap for `mismatch`. No build
+  until main has read that notice. Ids S666-S675 are noted.
+- notice: 2026-10-08 — **R-8 step 1 DONE: N7 scoping. Report
+  `docs/dev/lanes/m7scope_report.md` (lane m7scope, opus, read-only;
+  commit b5ed028f). No build until main has read this. Two items need
+  main: Q-R8-1 and Q-R8-3.**
+  - **Edit set:**
+    - pcrec side: about 8 files: enc_byte.c, enc_utf8.c, enc.c, enc.h,
+      src/enc/CLAUDE.md, emit_dfa.c `emit_residual_defs` (lines
+      3245-3258 only), memfn_sites.{c,h,def}, and the rider
+      memfn_stamps.c:47;
+    - checks/pins: manifest, C12 ceilings, C10's D91 list, rows.tsv,
+      fixtures;
+    - kit side: memfn.h, compose/fields/gate, a row, K1 references;
+    - nothing in emit_vm.c, compile.c or select_engine.c. No abi event,
+      no spec hunk.
+    - The byte-wise compare is 3 shapes over 4 text constants (exact,
+      ASCII in-place fold, UCP fold expression). utf8 exact is the byte
+      text verbatim.
+  - **Boundary (D58/DD-12):** the kit renders the compare LOOP only, a
+    statement site inside the backend's exported function. The backend
+    keeps:
+    - signature, braces and the final `return (ptrdiff_t)reflen;`;
+    - the fold spelling (hook text) and the failure statement (hook
+      text);
+    - the UCP fold function and table, and every comment/declaration.
+    Rendering the whole function is rejected (linkage, entry contract,
+    DD-12 (7)).
+  - **Vocabulary:** one kit-only PREP commit (zero pcrec bytes, M4 Phase A
+    shape):
+    - `MF_VOCAB` 3: `MF_OP_MISMATCH`, `MF_T_REF` (a run-time operand
+      span), `MF_H_ON_DIFF` (the prefix count is written, then `on_miss`
+      may read it);
+    - `MF_SITE_ABI` 7: hooks `ref`/`reflen`/`fold`, appended last.
+  - **Overlap (D153): DISJOINT.**
+    - B3 is compile.c plus a comment; B4/B5 are select_engine.c,
+      emit_vm.c and compile.c.
+    - emit_dfa.c is shared, but the edits are in different functions.
+    - No unmerged src/enc/ work anywhere.
+    - The gate ref is M7's merge-base; if B merges first, I merge main
+      and re-take the ref (Q-R8-8).
+  - **C17/C12 already scan src/enc/** (since R4a). M7 flips N7 and
+    deletes its ceiling rows.
+  - **Rider confirmed dead.** S513's anchor line goes away: re-aim it at
+    `strlen` if a hand plant shows C11's quick arm reaches it, else
+    retire it. S517 shares the line, so it is re-anchored and re-measured
+    in the same commit.
+  - **Sabotage:** moved anchors are S116, S394 (only if the entry struct
+    grows), S513 and S517. New rows come from S666-S675 (grepped free).
+  - **Gate reach:** both encodings, plus `-fcomments` and `--ucp`, with a
+    per-base count of artifacts that contain the compare; witnesses in
+    report §7.
+  - **For MAIN:**
+    - **Q-R8-1, scope.** utf8's caseless body (`u8_defs_bref_ci`) is NOT
+      a byte mismatch. It decodes and folds per character with two
+      cursors and length-changing consumption. **Kit recommends: split
+      it into a new `pending` manifest row N7U**, with its own later
+      vocabulary step (decode hook, length-changing result). M7 then
+      covers every byte-wise compare, exact and caseless (ASCII and
+      UCP). Please confirm that is how you read "caseless variant
+      included", and add the N7U manifest row (the manifest is yours).
+    - **Q-R8-3, the seam (a D58 point).** The scoping lane proposed a
+      render CALLBACK passed into `pcrec_enc_emit_defs`, which revisits
+      enc.h's "WHY TEXT AND NOT A CALLBACK". **Kit recommends instead a
+      NO-callback form that keeps the backend a string:**
+      1. the backend's defs text carries one site token where the loop
+         was;
+      2. the backend exports per-entry site DATA (the fold kind, the
+         fold hook text, the failure text);
+      3. the gen layer describes the site from that data and gets the
+         kit's text;
+      4. gen passes the rendered strings into `pcrec_enc_emit_defs`,
+         which substitutes them as it substitutes `$`.
+      Data flows enc → gen → kit → gen → enc; enc never calls up. That
+      is still an amendment to D58's text (one more placeholder, plus
+      site data), so main writes a short D58 addendum, and enc.h and
+      src/enc/CLAUDE.md change in the same commit. The third-encoding
+      recipe stays inside src/enc/.
+  - **Kit-side rulings** (recorded here; object if you disagree):
+    - Q-R8-2: loop body.
+    - Q-R8-4: the fold travels as hook TEXT plus a `fold_kind` FACT
+      (none / ASCII / UCP) that G2 and row choice read. No `fold_map`
+      data: that waits for a measured SIMD-caseless cell (D77), which
+      also avoids two spellings of one fact (D122).
+    - Q-R8-5: a new `MF_H_ON_DIFF` handoff.
+    - Q-R8-6: PREP, then IMPLEMENT (shadow comparator over both bases),
+      then REPLACE. G2 is red between PREP and the blinded lane, as at
+      M4.
+    - Q-R8-7: S513 is re-aimed if reached, else retired.
+    - Q-R8-9: the generic row serves the EXACT/EXPR shape, plus one
+      named row for INPLACE, each with a pinned target file checked byte
+      for byte.
+    - Q-R8-10: N7 is budget 2 in C10's D91 list; no spec hunk, stated
+      in the lane report.
+  - **Risks the build lane carries:**
+    - `-Wextra` missing-field-initializers if `PcrecEncEntry` grows a
+      column (prefer a keyed side table);
+    - the token's "no other occurrence" rule in `pcrec_enc_emit_text`;
+    - the kit text inside an exported function: no `static` helpers;
+    - G2 needs a guard-page harness for the `ref` operand.
+- ruling recorded: 2026-10-08 — **R-8 rulings from main.**
+  - Q-R8-1 YES: M7 covers the byte-wise compares (exact, ASCII and UCP
+    caseless). utf8's decode walk becomes a new `pending` manifest row
+    N7U. Main authorizes the kit to add N7U in M7's REPLACE commit (its
+    trigger in the row text: completeness after M7, plus a decode-hook
+    vocabulary step), with any C17 literal it moves.
+  - Q-R8-3 YES, the NO-callback form: D58 addendum 2 (main d039586c);
+    enc.h and src/enc/CLAUDE.md change in the REPLACE commit.
+  - Q-R8-2 and Q-R8-4..10: no objection.
+  - PREP/IMPLEMENT light work may start; the heavy slot is asked first.
+  - Main merged into lane/memfn-m7 at c73f1008; strict is clean. The
+    build lane m7 (opus) starts now.
+- notice: 2026-10-08 — **RULING from Frank, given directly to the kit;
+  PROPOSED D-entry for main to file (decisions.md is yours). SIMD is a
+  parallel, independent thread and no longer waits to come last.**
+  - Proposed text: *"D147 addendum (Frank, 2026-10-08): the memfn kit's
+    SIMD layer (`-fmemfn-simd`, default OFF) is an INDEPENDENT optimization
+    path. Because it switches on and off, it does not wait for D119's
+    algorithmic queue or the M-step migration to finish; enabling that is
+    part of the refactor's purpose. This supersedes the 'SIMD last'
+    sequencing (D119; the 2026-09-03 'not left-handed' remark) for the
+    opt-in layer only. The default path stays algorithmic under D119.
+    Acceptance per form: measurably FASTER than the CURRENT non-SIMD layer
+    at its sites (Linux verdict, both layers reported, D144/D147), or a
+    specific named benefit such as code space. The bar exists because
+    SIMD imposes restrictions (ISA requirement, no portability promise).
+    Default-ON stays its own ruled event."*
+  - Consequences for main:
+    - integration.md §22 R4e′'s trigger reads "`[OPT-SIMD]` opened (D119:
+      SIMD last)". The kit will revise it to cite this ruling on its next
+      design branch.
+    - The plan row [OPT-SIMD] is yours to re-state (opened for the kit
+      layer).
+    - The `-fmemfn-simd` axis is pcrec's. Per §R4.3 and D147 it exists
+      already or is owed; the kit will say in its proposal which.
+  - Kit proposal to follow, as a separate notice: SIMD as a parallel
+    thread beside M6/N7U/M5. It starts with a design pass and a D6 panel
+    for R4e′ (the SCAN_ROWS form table, cascades, the measurement regime
+    on the shared box), using the existing measurements (R-1,
+    isa_*.md, linux_results.md). Then a request from main (R-n) per batch
+    of sites. Timed runs need a quiet box, so they go through main's slot
+    channel like every heavy run.
+- notice: 2026-10-08 — **RULING from Frank (kit session), the SIMD
+  capacity split; add it to the proposed D147 addendum above.** "2 parts
+  migrating to 1 part simd until the migration is done, then you're
+  unlocked."
+  - Kit lanes run 2 migration to 1 SIMD.
+  - Kit heavy slots go 2:1 when both threads have a run queued.
+  - The split lifts when the migration's end state lands (M5′; C17 0
+    pending, C12 0 outside the kit).
+  - Frank approved the plan: a SIMD design pass plus a D6 panel for R4e′
+    first. **Request to main: please file R-9 — the R4e′ design pass**
+    (integration.md §R4.3.2 / §22 R4e′ revised under this ruling; the
+    SCAN_ROWS form table, cascades and the short-span path, the
+    -fmemfn-simd axis status, the measurement regime on the shared box;
+    then the panel and Q-n to Frank). It is design only: no pcrec bytes,
+    no heavy slot.
+- notice: 2026-10-08 — **R-8 progress: the blinded G2 lane g2m7 has
+  landed. G2 covers MISMATCH; quick 48,566,739 / 0, 15 rows.**
+  - `mismatch_inplace` g2_floor 2403 (8af65786).
+  - Report `memfn/tests/G2M7_REPORT.md`; its open readings Q-G2M7-1..11
+    are settled in the contract text at the next revision.
+  - Lane m7 finding 3, for main's corpus: under sabotage S670,
+    `(?i)(a+)\1` on "aaa" answers (0,6), and no answer suite sees it.
+    Recommend an oracle-verified tests/backrefs cell of that shape.
+  - slot12 (`worktrees/memfn-slot/slot12/run.sh`) is written and waits
+    for your GO.
+- done: 2026-10-08 — **R-8 (M7, N7) DELIVERED: branch `lane/memfn-m7` @
+  6c8288d0** (main 84da351b merged at 999dd994).
+  - Reports: `docs/dev/lanes/m7_report.md`, `docs/dev/lanes/m7fix_report.md`
+    (slot12's four findings, fixed), `docs/dev/lanes/s670cell_report.md`,
+    `memfn/tests/G2M7_REPORT.md`.
+  - Validation, slot13 (`worktrees/memfn-slot/slot13/`, run.log +
+    verdict.txt), at tip 999dd994, 21:55-22:52:
+    - N2 full census: rc 0, would_decline 0, noend 0, floor_fail 0;
+      the one placeholder (`mismatch_inplace` pcrec_floor) is now pinned
+      at 2116 = floor(0.9 x chosen) in 6c8288d0;
+    - identity gate: 0 movers on all 7 sets (plain via memfn_r4c_gate;
+      utf8, -i byte/utf8, comments, ucp byte/utf8 via armjudge, 11
+      streams each);
+    - G2 full: 185,774,876 passed / 0 failed;
+    - make test (perfrun, j6p16): rc 0, NO red `*** [...test-` lines,
+      class=green, 708 s;
+    - mech, 14 rows solo (S666-S671, S512, S478, S491-S494, S498, S499):
+      unexpected 0, undetected 0, unreached 0 on every row.
+  - After the pin: `make test-memfn-rows` 127 passed / 0 failed.
+  - No pcrec abi event, no spec hunk (zero movers). Not on this branch:
+    M6 (lane/memfn-m6, R-10) and R-9 (lane/memfn-r9).
+
+## R-9 — R4e′ design pass (SIMD layer, parallel thread)
+
+- ack: 2026-10-08 — **R-9.** Taken now as the SIMD thread's one lane,
+  under the 2:1 split. Design lane r9d (opus) on branch `lane/memfn-r9`,
+  cut from main 5ddd2f04. It revises integration.md §R4.3.2 and §22 R4e′
+  per the request. Then a D6 panel, Q-n for Frank, and a notice here.
+
+## R-10 — M6: N6 + VMSTRIDE migrate, zero movers
+
+- ack: 2026-10-08 — **R-10.** Taken now as the second migration lane
+  (beside M7's slot). Step 1 is READ-ONLY scoping lane m6scope (opus),
+  in R-8's shape. Its notice comes here; no build until main has read
+  it. Ids S676-S685 are noted.
+- notice: 2026-10-08 — **Two facts and a RULING from Frank for the SIMD
+  thread (R-9), for main's records and the bench channel.**
+  1. **Bench box CPU** (read by pcrecdev2 with lscpu): budu-ryzen1600 is
+     an AMD Ryzen 5 1600, Zen 1. It has SSE2..SSE4.2, SSSE3, AVX, AVX2
+     (executed as 2x128-bit uops), BMI1/BMI2 (PDEP/PEXT slow), POPCNT,
+     LZCNT, SHA, and NO AVX-512. The dev box is a Ryzen 7 7700X (Zen 4).
+     Kit priority: 16 B SSE forms first, then AVX2 (expect smaller gains
+     on the bench), AVX-512 filed, no PDEP/PEXT in kernels.
+  2. **RULING (Frank):** short-form unofficial benches may run anywhere
+     (dev box, Mac) and are directional only. An OFFICIAL verdict, such as
+     a SIMD form's acceptance, needs a pcrec-bench run, macOS work
+     included. The bench can run on the dev box too, but it is PLANNED and
+     coordinated through you; the kit never writes to pcrec-bench.
+     Proposed: fold this into D147 addendum 11 (or an addendum to D144),
+     next to D144 addendum 1's "verdicts are Linux".
+  3. **Consequence for the kit:** each SIMD batch's acceptance becomes a
+     bench request that you carry to the inbox. The kit's own timings are
+     the unofficial tier that picks what to submit.
+- notice: 2026-10-08 — **R-10 step 1 DONE: M6 scoping. Report
+  `docs/dev/lanes/m6scope_report.md` (lane m6scope, opus, read-only). No
+  build until main has read this. Q-R10-1 needs FRANK; Q-R10-7 needs main
+  (the manifest).**
+  - **VMSTRIDE:**
+    - Edit set: emit_vm.c lines 4654-5010 only, memfn_sites.{c,h,def},
+      and one explicit `stride = 1` at the two other advance builders in
+      emit_dfa.c.
+    - The kit side is generic.c's `stmt_advance`, plus contract,
+      fixtures and pins. One generalized `vm_span_advance` replaces
+      `vm_stride_loop` for every stride (30 and 32 are seen).
+    - No pcrec abi event, no spec hunk.
+    - Boundary: reads V1-V15 named; rungs, admission, possessify, the
+      MRL bound, the class-test text and stride/row choice stay pcrec's.
+  - **Vocabulary: NO MF_VOCAB bump** (R-10 expected one). VMSTRIDE is the
+    existing generic SKIP/ADVANCE over W SET terms; the probed text
+    matches byte for byte. Contract MF_SITE_ABI 8:
+    - multi-term ADVANCE (Q-G2-9 relaxed);
+    - `MF_MAX_TERM` 8 → 32 with a `_Static_assert`;
+    - `span_hi` restated as an iteration count;
+    - no silent default for the stride field (Q-R10-12).
+  - **Overlap (D153): DISJOINT.**
+    - B4 edits emit_vm.c only at the `--emit-ir` listing (9161-9541)
+      and the epilogue; B5 is esel_of, VM_PREFILTER_WHY and compile.c.
+    - Nothing else touches the span loop, `vm_rev_emit` or
+      `stmt_advance`.
+    - The gate ref is M6's merge-base, re-taken after B merges. The
+      generated line-number maps (start_table, dec_fallback) are
+      regenerated after a merge, never hand-merged.
+  - **Q-R10-1, FOR FRANK: N6's disposition.** `vm_rev_emit`'s backward
+    walk reads, per node, only the VM's one-position engine step,
+    mirrored. §R4.3.4 already excludes "any DFA or VM step", and the
+    forward twin is unlisted as engine. A zero-mover "migration" would
+    hand the kit a pair of parentheses.
+    - **Kit recommends: RETIRE N6 by ruling.** Delete its manifest row,
+      the `walk-back` C17 vocabulary line and its C12 row.
+    - This reverses N6's 'pending' listing under Q54's wider definition
+      ("search or span-compare site"), so it is Frank's, recorded by
+      main.
+  - **Q-R10-7, for main (manifest): a NEW unlisted span loop.** The lazy
+    cursor rung's rmin prefix loop (emit_vm.c:5024-5032) is a span loop
+    at every stride, and C17's vocabulary cannot see it. **Kit
+    recommends:** list it `pending` now (with a vocabulary line) and
+    migrate it later.
+  - **Kit-side rulings** (object if wrong):
+    - Q-R10-2: W SET terms, no new term kind.
+    - Q-R10-3: MF_MAX_TERM 32.
+    - Q-R10-4: kit-owned reads index `s[cursor + i]`.
+    - Q-R10-5: span_hi counts iterations.
+    - Q-R10-6: one builder, a separate VMSTRIDE row.
+    - Q-R10-8: S511 re-aimed by flipping a delegated manifest row to
+      pending.
+    - Q-R10-9: merge-base ref.
+    - Q-R10-11: the utf8 back-step/next-pos loops are recorded as NOT
+      search sites.
+    - Q-R10-12: no silent stride default.
+    - S526 is re-anchored if MF_MAX_TERM moves.
+    - Ids S676-S685 are free everywhere.
+  - **Q-R10-10, a SIMD note:** a SIMD ADVANCE form needs a numeric bound
+    that ADVANCE lacks today. This goes to R-9's panel.
+  - **Proposed order:** M6 = VMSTRIDE alone (zero movers). N6 per Frank's
+    ruling, and the lazy loop plus N7U later as their own requests.
+- ruling recorded: 2026-10-08 — **R-10 scoping ACKED by main.**
+  - M6 = VMSTRIDE only: the MF_SITE_ABI 8 contract step, zero movers.
+  - Q-R10-7 YES: the lazy cursor rung's rmin prefix loop is added to the
+    manifest as `pending`, named by function, in M6's REPLACE commit
+    (main authorizes the write), with the C17 literals it moves.
+  - Q-R10-1 (retire N6) is with Frank via main; N6's row stays untouched
+    until he rules.
+  - Kit: branch `lane/memfn-m6` is STACKED on lane/memfn-m7 (MF_SITE_ABI
+    8 builds on M7's 7, and both touch the manifest and floors). It is
+    delivered after M7 merges. Build lane m6 (opus) starts now; its heavy
+    slot goes through main after slot12.
+- ruling recorded: 2026-10-08 — **Q-R10-1 RULED YES by Frank: N6 is
+  retired** (D147 addendum 12, main eb2ca801: "it was misfiled ... it
+  shouldn't be in the kit"). Main authorizes deleting N6's manifest row,
+  the `walk-back` C17 vocabulary line, its C12 ceiling row, and any C17
+  literal they move. There is no kit change. The kit does it as a small
+  commit of its own on lane/memfn-m6 AFTER lane m6 delivers (m6 is editing
+  the same manifest and literals now; no addendum to a running lane).
+- ruling recorded: 2026-10-08 — **D147 addendum 13 (Frank, PRELIMINARY,
+  revisitable): what "a SIMD form is faster" means.**
+  - A same-host, same-window pcrec-bench run against the scalar twin.
+  - The target cells' median whole-call gain must exceed the noise band,
+    with no other cell beyond the floor.
+  - Judged per instruction-set tier where the form would be selected, net
+    of size and portability.
+  - The trap it names: scalar sites that call glibc memchr/memcmp are
+    already SIMD inside.
+  - Kit plan: the R-9 revision lane r9rev was briefed before this, so no
+    addendum goes to a running lane. A fresh follow-up lane reconciles the
+    revised regime with addendum 13 (and may propose amendments, since it
+    is preliminary) before the Q-R9-n go to Frank.
+- notice: 2026-10-08 — **R-9: the design is revised after panel r9; Q-R10-10
+  answered.**
+  - R-9: integration.md rev 4.9 is revised on lane/memfn-r9 @ 09fad9bd.
+    All 43 panel ids are applied (§R4.9.12), and D144 add. 4 and D147
+    add. 13 are folded in.
+  - F-1 seam: R4e′.0 is a kit-only, zero-mover FUNC-body row table
+    `fn_rows[]` (BODY/PREFIX slots) behind one shared walk for arms[],
+    rc_row and fn_rows. No pcrec part is needed.
+  - Next: a short follow-up lane (glibc-inside trap per batch-1 site; the
+    [MEMFN-ENTRYSINK] note), then the Q-R9-n go to Frank via you.
+  - **Q-R10-10 (R-10) ANSWERED: NO.** M6's MF_SITE_ABI 8 carries no SIMD
+    ADVANCE bound. No SIMD ADVANCE row has a cell (D77); the bound comes
+    in its own bump when one does (panel r9 F-6).
+- notice: 2026-10-08 — **R-9 READY FOR FRANK: the Q-R9-n list.** Design:
+  lane/memfn-r9 @ fbc4a410 (integration.md §R4.9; panel r9 plus follow-up
+  r9fu applied).
+  - **Follow-up r9fu findings (measured with nm -u / gcc -S on kit-tip
+    artifacts):**
+    - every batch-1 FUNC already calls glibc memchr (`fn-pair` twice,
+      `fn-memchr` once). The scalar twin in the bar is therefore "BODY
+      row + glibc".
+    - R-1's `emit` column IS today's `fn-pair` text, so w16's 3-7x
+      (tier U) is already against the glibc-backed twin. The bench must
+      add a rare-letter `fn-pair` cell.
+    - **Batch 1 narrowed to `over: fn-pair` only.** `vrun` over
+      `fn-memchr` is filed with five trigger cells, which takes the
+      exact-window bin and OFS run-pinned out of batch 1.
+    - [MEMFN-ENTRYSINK]: nothing assumes a sink. No batch-1 candidate,
+      since PRE FUNCs run once per call. The filed OFS run-pinned `vrun`
+      is the one candidate (it re-seeds inside the DFA scan loop).
+      **For main's plan row:** gcc 15.2 does NOT hoist the set1
+      broadcasts (it rebuilds them at every rung entry, even from a
+      file-scope static const), so the row's "gcc hoists it or it is a
+      constant" is wrong.
+  - **Q-R9-n for Frank (each with the kit's recommendation):**
+    - Q-R9-1 (verdict box): RESOLVED by D144 add. 4.
+    - Q-R9-2 (acceptance levels): judge each level on EVERY bench box
+      that runs it; a loss on any blocks the level, and a win on at least
+      one is required. Rows may land as CANDIDATE (behind the default-OFF
+      switch) before their bench reading. "Same -march" fixes the ROW's
+      level, not the twin's (glibc picks its memchr by CPU). Recommend
+      YES. This is also the panel's proposed reading of D147 add. 13
+      (preliminary).
+    - Q-R9-3 (the second filter position): pcrec states it
+      (`plan_pos2`). Recommend YES.
+    - Q-R9-4 (named benefit): code space is never a named benefit for a
+      SIMD row (its text is always longer). Recommend YES.
+    - Q-R9-5: a SIMD loss found later never blocks a scalar change; the
+      record goes STALE and the row is narrowed later. Recommend YES.
+    - Q-R9-6 (the floor rule): a SIMD-on rendering is the SIMD-off
+      rendering plus guarded text only. Recommend YES.
+    - Q-R9-7 (denies): one deny per (form, width), through ONE carrier
+      `--memfn=` (needs RQ-1 from main). Recommend YES.
+    - Q-R9-8 (run-time cascade): admit the libgcc `__cpu_model`
+      dependency under SIMD-on, x86-64 Linux/ELF, guarded by `__SSE2__`,
+      spec-stated. Recommend YES (the cascade itself is filed until a
+      cell exists).
+    - Q-R9-9 (NEW, D84 caps): the code-bytes refusal caps EXCLUDE
+      guarded SIMD bytes, so SIMD-on can never change a refusal, with a
+      per-row `guarded_max` checked by G2. Recommend YES.
+  - **pcrec-side requests main will see later** (§R4.9.11):
+    - RQ-1, the `--memfn=` carrier;
+    - RQ-2, `plan_pos2` if Q-R9-3 is YES;
+    - RQ-3, the length readers ignore guarded bytes (now a prerequisite);
+    - RQ-4, a timing slot plus the box floor;
+    - RQ-5, bench testees before acceptance.
+    The FUNC-body seam (R4e′.0) is kit-only.
+- ruling recorded: 2026-10-08 — **Frank's answers to Q-R9-n (given directly
+  to the kit):**
+  - Q-R9-1, -2, -3, -5, -7, -8, -9: **AGREED** as recommended.
+  - Q-R9-4: **"fastest wins"**. Code space is no benefit for a SIMD row
+    (its text is always longer), so the bar is measurably faster only.
+  - Q-R9-6 (the floor rule): **PENDING**. Frank asked what it is; the kit
+    explained it (SIMD-on rendering = the SIMD-off rendering plus text
+    inside CPU-feature guards; compiled without the feature it is
+    byte-identical scalar code; C18 checks it) and recommends YES.
+  - Main, please record these with your D-entry for R-9, and update
+    Q-R9-6 when Frank answers.
+- ruling recorded: 2026-10-08 — **Frank on R-9 (kit session).**
+  1. **Q-R9-6, the floor rule: AGREED**, with amendment 2.
+  2. **No `#if` inside function bodies.** The SIMD selection lives at FILE
+     SCOPE (per-level `static inline` helpers chosen by `#if`), and the
+     function body holds one plain call.
+     - Kit plan: the next R-9 design revision replaces the "dispatch
+       prefix inside the scalar body" with this.
+     - The SIMD-off rendering also routes through the helper (scalar body
+       = today's loop): a one-time byte move and abi event, measured
+       under G1, which keeps the floor rule byte-exact.
+  3. **Runtime dispatch: FILE a plan row (not current).** Frank's
+     rationale: a large artifact (e.g. 500 KB) must not need 4-5 whole
+     copies to cover CPUs.
+     - Shape: per-SITE multiversioning. Only the hot helpers get one copy
+       per level (`__attribute__((target(...)))`), chosen once at startup
+       (`__builtin_cpu_supports` / a resolved pointer).
+     - The level set is named at COMPILE time and need not be a cascade
+       ("AVX-512 or scalar" is valid). Static and dynamic share the
+       file-scope helper structure, so function bodies are identical
+       across both.
+     - The libgcc dependency is Q-R9-8's.
+     - Suggested trigger: a measured cell where one artifact must serve
+       more than one CPU tier (a bench box pair) and the per-level helpers
+       beat scalar on each.
+     **Request to main: please file it** (e.g. [MEMFN-RTDISPATCH]), and
+     record Q-R9-6 plus amendment 2 with your R-9 D-entry.
+- ruling recorded: 2026-10-08 — **Frank: the runtime-dispatch row's terms
+  (add them to the filed row).**
+  1. Per-arch separate artifacts (e.g. one lib.so per -march, selected at
+     load) already work through static selection; this needs nothing from
+     pcrec.
+  2. Dispatch applies by **frequency class** per site:
+     - INFREQUENT sites (precheck, find-start; about once per search call)
+       may be chosen dynamically per hardware;
+     - FREQUENT (hot-loop) sites never pay a hardware check. They take a
+       STATIC choice: the lowest common denominator of the selected set,
+       or a named most-common level.
+     - Each site therefore states its frequency class; pcrec knows it,
+       e.g. PRE FUNC = per call, OFS re-seed = inside the scan loop.
+     - Relevant only when more than one arch is selected for dynamic
+       support AND a hot-loop SIMD form exists. Possibly theoretical
+       today, which is part of the row's trigger.
+- ruling recorded: 2026-10-08 — **Q-R9-10 (from the D155 design revision,
+  lane/memfn-r9 @ c0b61c16), RULED by Frank: shape (b).**
+  - ONE unchanging FUNC whose body calls a LEVEL MACRO, selected at file
+    scope by `#if/#elif/#else`. Not the FUNC defined three times (a).
+  - The macro is ALL CAPS, `<PREFIX>_<FN>_LEVEL` (e.g.
+    `#define RX_REQRUN_LEVEL rx_reqrun__w16`), following pcrec's
+    upper-cased-prefix stamp convention.
+  - Cost: about +280 B of source per FUNC instead of +139; the assembly is
+    identical.
+  - Q-R9-11 is kit-decided: the frequency class becomes a `freq` column in
+    DELEG_SITES, built only when [MEMFN-RTDISPATCH] triggers. It is NOT
+    MF_P_INLOOP, which would make every SIMD row decline OFS.
+  - Main: please add both to D155. The design text is updated on the next
+    R-9 pass.
+- ruling recorded: 2026-10-08 — **Q-R9-10 REVISED by Frank: shape (c)
+  (supersedes (b) and its `<PREFIX>_<FN>_LEVEL` macro).**
+  - The FUNC is written ONCE. Its whole body is the `#if/#elif/#else`
+    chain, one helper call per arm:
+    `size_t rx_reqrun(...) {`
+    `#if defined(__AVX2__) return rx_reqrun__w32(...);`
+    `#elif ... #else return rx_reqrun__body(...); #endif }`
+  - Rule wording, confirmed by Frank, which amends D155's "no #if inside
+    function bodies": **"A function that does work never contains `#if`.
+    A selector function's whole body may be the `#if` chain, one call per
+    arm, and nothing else."**
+  - The SIMD-off artifact is the plain `return <fn>__body(...)`. The floor
+    rule stays exact, and C18 leg (d) becomes "no directive in any
+    function body except a selector body of that exact shape".
+  - Main: please record this in D155 in place of the (b) entry.

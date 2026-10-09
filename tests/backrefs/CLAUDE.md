@@ -37,11 +37,12 @@ Re-run it after changing a cell list:
 
     python3 tests/backrefs/gen_corpus.py     # rewrites the .rxt files in place
 
-Current census, from that run: **244 cells, 53 blocks python-verified, 65
+Current census, from that run: **255 cells, 55 blocks python-verified, 65
 `# pcre2-only`, 31 `perr`.** `python3 tests/harness/verify_rxt.py
-tests/backrefs/` passes 234/234 on the python-verifiable half; `bash
-tests/harness/run.sh tests/backrefs/*.rxt` passes 455/455 over this
-directory's own cells.
+tests/backrefs/` passes on the python-verifiable half; `bash
+tests/harness/run.sh tests/backrefs/*.rxt` passes 681/681 over this
+directory's own cells (2026-10-08, s670cell; the 455/455 and 234/234 this
+sentence carried predate caseless_ucp.rxt and the S670 cells).
 
 **The two harness figures differ, and the command is why.** `run.sh
 tests/backrefs/` (the DIRECTORY, no glob) also walks `d27/` — the [M6.5.3]
@@ -102,12 +103,23 @@ comment and the row's header.
   (does NOT): the caselessness is the option in force AT THE REFERENCE, not at
   the group, and an implementation reading it at the group passes one and fails
   the other.
+  **S670's ANSWER DETECTOR lives here** (2026-10-08, lane s670cell): the
+  block "THE SUBJECT ENDS INSIDE A CASELESS REFERENCE" — `(?i)(a+)\1` on
+  `aaa` is (0,2), `(?i)(ab)\1` on `abA` does not match. Before it no cell
+  had a caseless reference the subject runs out inside, so a kit mismatch
+  row reading exhaustion as EQUAL (sabotage S670) answered `(0,6)` on `aaa`
+  with every answer suite green. Generated like the rest of the file.
 - **caseless_ucp.rxt** ([K94]) — the caseless compare under `--ucp` in the
   byte encoding: Latin-1 pairs fold (`(\xe9)\1` on `\xe9\xc9`), `\xb5 \xdf \xff`
   and `\xd7/\xf7` do not, no-UCP and no-`(?i)` controls, the scoped `(?i:\1)`
   pair. Hand-assembled from a libpcre2 10.46 sweep of all 65,536 byte pairs.
   `fold_agreement_ucp_check.c` is the exhaustive sibling (brefdiff §9c).
   Sabotage S590 (emitter ignores UCP), S591 (fold rep ASCII-only).
+  **The same exhaustion cells exist in six hand-assembled blocks at the end
+  of this file** (S670: `(*UCP)(?i)(a+)\1`, the Latin-1 `\xe9`/`\xc9` pairs,
+  and `encoding utf8` siblings, all `# pcre2-only`, read from libpcre2 10.46
+  with PCRE2_UCP / PCRE2_UTF set).
+
 - **dupnames.rxt** — `(?J)`'s scoping rule (checked AT EACH DECLARATION against
   the scoped state, which four separating cells establish) and §8.3's
   resolution rule, plus the RE-ENTRY cells over a name run that the first

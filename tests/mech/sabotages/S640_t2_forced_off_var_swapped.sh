@@ -12,11 +12,23 @@ SAB_DESC="T2's forced-off and var rows swapped, so -fno-prefilter a\${v}b would 
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S640. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
+# [DEC-FALLBACK] B4 (lane decfbB4, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# Re-anchored only: T2's rows gained their `note` cell (the listing's
+# prose, moved verbatim from the --emit-ir chain), so each row is now four
+# lines. The plant still swaps the forced-off and var rows. With the
+# oracle's admit sites retired, the detectors are fbt (a)'s adm-varoff
+# record and run_prefilter_tests.sh §7's check_ir_value row.
 SAB_BEFORE='    { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
-      ESEL_PASS },
+      ESEL_PASS,
+      "-fno-prefilter -- forced off; the VM scans from search_from"
+      " itself", .axlist = FB_NO_LIST },
     { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
-      ESEL_PASS },'
+      ESEL_PASS,
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },'
 SAB_AFTER='    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
-      ESEL_PASS },
+      ESEL_PASS,
+      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },
     { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
-      ESEL_PASS },   /* SABOTAGE S640 */'
+      ESEL_PASS,
+      "-fno-prefilter -- forced off; the VM scans from search_from"
+      " itself", .axlist = FB_NO_LIST },   /* SABOTAGE S640 */'

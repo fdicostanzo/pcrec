@@ -192,6 +192,11 @@ typedef struct {
                                      its hook styles are hard, as the base
                                      space's are                              */
     uint8_t  note_null;           /* lane g2pf: the note / note_tag hooks are NULL */
+    /* lane g2m7 (MISMATCH) */
+    char    *mm_text;             /* the `fold` hook text (NULL = none), `@` the operand */
+    uint8_t  mm_tab[256];         /* the generated fold map (the identity under NONE) */
+    uint8_t  mm_arith;            /* the text spells the map arithmetically, not by table */
+    uint8_t  mm_var;              /* the map variant (MMV_*), for the census          */
 } gsite;
 
 static const char *combo_label(int op, int h, int form)
@@ -549,7 +554,7 @@ static mf_form to_mf_form(int f) { return f == G2_FORM_EXPR ? MF_FORM_EXPR : f =
 static mf_op to_mf_op(int o)
 {
     return o == G2_OP_FIND ? MF_OP_FIND : o == G2_OP_SKIP ? MF_OP_SKIP
-         : o == G2_OP_VERIFY ? MF_OP_VERIFY : MF_OP_ALL_PRESENT;
+         : o == G2_OP_VERIFY ? MF_OP_VERIFY : o == G2_OP_MISM ? MF_OP_MISMATCH : MF_OP_ALL_PRESENT;
 }
 static mf_handoff to_mf_h(int h)
 {
@@ -559,6 +564,7 @@ static mf_handoff to_mf_h(int h)
     case G2_H_ON_MISS: return MF_H_ON_MISS;
     case G2_H_ADVANCE: return MF_H_ADVANCE;
     case G2_H_ON_CAND: return MF_H_ON_CAND;
+    case G2_H_ON_DIFF: return MF_H_ON_DIFF;
     default:           return MF_H_BOOL;
     }
 }
@@ -574,7 +580,8 @@ static uint32_t tk_bits(const gsite *g)
     uint32_t b = 0;
     for (int p = 0; p < g->d.npred; p++)
         for (int t = 0; t < g->preds[p].nterm; t++)
-            b |= g->preds[p].t[t].kind == G2_T_SET ? MF_TK_SET : MF_TK_RUN;
+            b |= g->preds[p].t[t].kind == G2_T_SET ? MF_TK_SET
+               : g->preds[p].t[t].kind == G2_T_REF ? MF_TK_REF : MF_TK_RUN;
     return b;
 }
 
@@ -597,7 +604,7 @@ static void to_mf_pred(const gsite *g, int p, mf_pred *mp)
     for (int t = 0; t < P->nterm; t++) {
         const g2_term *T = &P->t[t];
         mf_term *m = &mp->term[t];
-        m->kind = T->kind == G2_T_SET ? MF_T_SET : MF_T_RUN;
+        m->kind = T->kind == G2_T_SET ? MF_T_SET : T->kind == G2_T_REF ? MF_T_REF : MF_T_RUN;
         m->offset = T->off;
         m->need = to_mf_need(T->need);
         memcpy(m->set, T->set, 32);
@@ -699,6 +706,26 @@ static void fill_hooks(gsite *g, mf_hooks *h, char *onmiss, size_t onmiss_n)
     h->indent = "    ";
     h->comment_tier = g->cmt ? 2 : 0;
     h->u = g;
+    if (g->d.op == G2_OP_MISM) {
+        /* lane g2m7: the run-time operand is two globals the driver sets before each call
+         * (side-effect-free expressions, rule 1); `result` is an lvalue the wrapper owns,
+         * and on_miss READS it (ON_DIFF writes k first) into o->cnt, which the driver compares */
+        static const char *R[3] = { "g2_mm_ref", "G2_EV(g2_mm_ref)", "0 ? g2_mm_ref : g2_mm_ref" };
+        static const char *RL[3] = { "g2_mm_reflen", "G2_EV(g2_mm_reflen)", "0 ? g2_mm_reflen : g2_mm_reflen" };
+        h->ref = R[st];
+        h->reflen = RL[st];
+        h->fold = g->mm_text;
+        h->result = g->d.mm_res == 1 ? "o->res" : "res";
+        h->result_decl = NULL;
+        h->miss = NULL;
+        h->floor = NULL;
+        if (g->d.mm_goto) snprintf(onmiss, onmiss_n, "goto g2m_%u;", g->d.id);
+        else snprintf(onmiss, onmiss_n, "{ o->cnt = (unsigned long)(%s); o->missed = 1; return 0; }", h->result);
+        h->on_miss = onmiss;
+        if (g_mutate == 9) h->reflen = "g2_mm_reflen + 1";          /* W2 9: one byte of ref too many */
+        if (g_mutate == 10) h->ref = "(const unsigned char *)s";    /* W2 10: the wrong operand */
+        if (g_mutate == 11 && g->mm_text) h->fold = g->d.mm_shape ? ";" : "(@)";   /* W2 11: the fold is gone */
+    }
 }
 
 static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
@@ -740,6 +767,7 @@ static void fill_site(gsite *g, mf_site *s, mf_pred *pa)
     s->denies = g->deny_overlap ? MF_D_RUN_OVERLAP : 0;
     s->on_miss_leaves = g->d.leaves;
     s->opts = (g->ppm_seed & 1) ? "" : NULL;
+    s->fold_kind = g->d.mm_fold == G2_FOLD_ASCII ? MF_FOLD_ASCII : g->d.mm_fold == G2_FOLD_UCP ? MF_FOLD_UCP : MF_FOLD_NONE;
 }
 
 /* ---- W2: textual mutation of the rendered text ---------------------------- */
@@ -1279,6 +1307,22 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
         if (g->on_miss_mode == 1) bf(o, "g2m_%u:\n    o->missed = 1;\n    return 0;\n", d->id);
         bputs(o, "}\n\n");
         return;
+    case G2_H_ON_DIFF:
+        /* lane g2m7: the site is a statement inside this function. `result` is `res` (a local
+         * the wrapper declares: size_t, or ptrdiff_t) or `o->res`; on a difference the kit writes
+         * k to it and then runs on_miss, which reads it into o->cnt and leaves. On EQUAL on_miss
+         * does not run and the result holds no promised value: the wrapper never reports it. */
+        bputs(o, "    int missed = 0;\n");
+        if (d->mm_res == 0) bputs(o, "    size_t res = G2_SENT;\n");
+        else if (d->mm_res == 2) bputs(o, "    ptrdiff_t res = (ptrdiff_t)-77;\n");
+        else bputs(o, "    o->res = G2_SENT;\n");
+        bputs(o, body);
+        bputs(o, "\n    o->missed = missed;\n    return 0;\n");
+        if (d->mm_goto)
+            bf(o, "g2m_%u:\n    o->cnt = (unsigned long)(%s);\n    o->missed = 1;\n    return 0;\n", d->id,
+               d->mm_res == 1 ? "o->res" : "res");
+        bputs(o, "}\n\n");
+        return;
     default: /* ASSIGN, ON_CAND */
         bputs(o, "    int missed = 0;\n");
         if (!g->result_decl && !d->inplace) bputs(o, "    size_t res = G2_SENT;\n");
@@ -1299,6 +1343,170 @@ static void wrap(buf *o, const gsite *g, const char *fname, const char *body)
         bputs(o, "}\n\n");
         return;
     }
+}
+
+/* ---- lane g2m7: MF_OP_MISMATCH (MF_SITE_ABI 7, R-8) -----------------------------
+ *
+ * The site: a span compare of the subject from `lo` against a RUN-TIME reference
+ * ref[0..reflen), returning k (a prefix count) as `result` before `on_miss` on a
+ * difference. G2 GENERATES the fold map (the contract promises only
+ * map(a) == map(b)): the identity, the ASCII lower / upper / per-pair random
+ * representative, and a bijection applied after a representative (NON-idempotent),
+ * for ASCII and for a Latin-1 relation (UCP). Each map is spelled in BOTH text
+ * shapes (FOLD_EXPR, FOLD_STMT). The reference (g2_ref.c) uses the generated
+ * table `mm_tab`; the kit's text is either that same table or an arithmetic
+ * spelling that mm_chk (run by the driver over all 256 bytes) holds to the table. */
+
+/* the byte relation a fold_kind states (memfn.h mf_fold): ASCII, the 52 letters
+ * A-Z <-> a-z; UCP, those and the Latin-1 pairs 0xC0-0xDE <-> 0xE0-0xFE except the
+ * multiplication / division signs 0xD7 / 0xF7 */
+static int mm_partner(int kind, int b)
+{
+    if (kind == G2_FOLD_NONE) return -1;
+    if (b >= 'A' && b <= 'Z') return b + 32;
+    if (b >= 'a' && b <= 'z') return b - 32;
+    if (kind == G2_FOLD_UCP) {
+        if (b >= 0xC0 && b <= 0xDE && b != 0xD7) return b + 32;
+        if (b >= 0xE0 && b <= 0xFE && b != 0xF7) return b - 32;
+    }
+    return -1;
+}
+enum { MMV_ID, MMV_LOWER, MMV_UPPER, MMV_RAND, MMV_PERM_LOWER, MMV_PERM_RAND, MMV_N };
+static const char *const MMV_NAMES[MMV_N] = { "identity", "lower", "upper", "random-rep", "perm-after-lower", "perm-after-rep" };
+static long mm_var_sites[MMV_N], mm_nonidem_sites, mm_kind_sites[3], mm_shape_sites[2], mm_res_sites[3], mm_goto_sites,
+            mm_arith_sites, mm_style_sites[3], mm_sp_sites[4];
+
+/* a map of variant `var` for fold kind `kind`: map[b] is the folded byte */
+static void mm_build(uint8_t map[256], int kind, int var)
+{
+    uint8_t coin[256], perm[256];
+    for (int b = 0; b < 256; b++) { coin[b] = (uint8_t)rn(2); perm[b] = (uint8_t)b; }
+    int tries = 0;
+    for (;;) {
+        for (int i = 255; i > 0; i--) { int j = (int)rn((unsigned)i + 1); uint8_t t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+        for (int b = 0; b < 256; b++) {
+            int q = mm_partner(kind, b);
+            int hi = q > b ? q : b, lo2 = q > b ? b : q;      /* the lower-case member is the larger byte */
+            int rep;
+            if (q < 0) rep = b;
+            else if (var == MMV_UPPER) rep = lo2;
+            else if (var == MMV_RAND || var == MMV_PERM_RAND) rep = coin[lo2] ? lo2 : hi;
+            else rep = hi;
+            map[b] = (var == MMV_PERM_LOWER || var == MMV_PERM_RAND) ? perm[rep] : (uint8_t)rep;
+        }
+        if (var != MMV_PERM_LOWER && var != MMV_PERM_RAND) return;
+        int idem = 1;                                          /* a permutation map must NOT be idempotent */
+        for (int b = 0; b < 256; b++) idem &= map[map[b]] == map[b];
+        if (!idem || ++tries > 50) return;
+    }
+}
+static int mm_idempotent(const uint8_t *map)
+{
+    for (int b = 0; b < 256; b++) if (map[map[b]] != map[b]) return 0;
+    return 1;
+}
+
+/* `@` -> `with`, except a `@` inside a character literal ('@' is not an operand) */
+static char *mm_subst(const char *t, const char *with)
+{
+    size_t wl = strlen(with), n = strlen(t);
+    char *o = malloc(n * (wl + 1) + 1), *q = o;
+    for (size_t i = 0; i < n; i++) {
+        if (t[i] == '@' && !(i > 0 && t[i - 1] == '\'' && t[i + 1] == '\'')) { memcpy(q, with, wl); q += wl; }
+        else *q++ = t[i];
+    }
+    *q = 0;
+    return o;
+}
+
+/* the fold hook text of site g: table lookups (sp 0 plain, 2 other punctuation,
+ * 3 with a literal '@' that must be left alone) or, for the lower / upper maps, an
+ * arithmetic spelling (sp 1) */
+static void mm_spell(gsite *g, int kind, int shape, int var, int sp)
+{
+    char t[512];
+    unsigned id = g->d.id;
+    int ucp = kind == G2_FOLD_UCP;
+    g->mm_arith = 0;
+    if (kind == G2_FOLD_NONE) { g->mm_text = NULL; return; }
+    if (sp == 1 && (var == MMV_LOWER || var == MMV_UPPER)) {
+        g->mm_arith = 1;
+        int lowr = var == MMV_LOWER;
+        if (!shape) {
+            if (lowr) snprintf(t, sizeof t, ucp ? "(((@) - 'A' < 26u || ((@) - 0xC0 < 31u && (@) != 0xD7)) ? (@) + 32 : (@))"
+                                                : "((@) - 'A' < 26u ? (@) + 32 : (@))");
+            else snprintf(t, sizeof t, ucp ? "(((@) - 'a' < 26u || ((@) - 0xE0 < 31u && (@) != 0xF7)) ? (@) - 32 : (@))"
+                                           : "((@) - 'a' < 26u ? (@) - 32 : (@))");
+        } else {
+            if (lowr) snprintf(t, sizeof t, ucp ? "if ((@) - 'A' < 26u || ((@) - 0xC0 < 31u && (@) != 0xD7)) (@) += 32;"
+                                                : "if ((@) - 'A' < 26u) (@) += 32;");
+            else snprintf(t, sizeof t, ucp ? "if ((@) - 'a' < 26u || ((@) - 0xE0 < 31u && (@) != 0xF7)) (@) -= 32;"
+                                           : "if ((@) - 'a' < 26u) (@) -= 32;");
+        }
+    } else if (!shape) {
+        switch (sp) {
+        case 2:  snprintf(t, sizeof t, "(g2mm_%u[(@) & 255])", id); break;
+        case 3:  snprintf(t, sizeof t, "(g2mm_%u[(unsigned char)(@)] + ('@' - 64))", id); break;
+        default: snprintf(t, sizeof t, "g2mm_%u[(unsigned char)(@)]", id); break;
+        }
+    } else {
+        switch (sp) {
+        case 2:  snprintf(t, sizeof t, "{ unsigned g2c_ = (@); (@) = g2mm_%u[g2c_]; }", id); break;
+        case 3:  snprintf(t, sizeof t, "{ (@) = g2mm_%u[(@)]; if ('@' != 64) (@) = 0; }", id); break;
+        default: snprintf(t, sizeof t, "@ = g2mm_%u[@];", id); break;
+        }
+    }
+    g->mm_text = strdup(t);
+}
+
+/* the generated table, and mm_chk: the very hook text run over all 256 bytes must
+ * produce the table (the text is held to G2's map, not the other way round) */
+static void mm_emit_tables(buf *tab, buf *fns, const gsite *g)
+{
+    unsigned id = g->d.id;
+    bf(tab, "static const uint8_t g2mm_%u[256] = {", id);
+    emit_bytes(tab, g->mm_tab, 256);
+    bputs(tab, "};\n");
+    bf(fns, "static int g2mmchk_%u(void)\n{\n    for (unsigned b = 0; b < 256; b++) {\n        unsigned char x = (unsigned char)b;\n", id);
+    if (!g->mm_text) bputs(fns, "        unsigned r = x;\n");
+    else {
+        char *sub = mm_subst(g->mm_text, "x");
+        if (!g->d.mm_shape) bf(fns, "        unsigned r = (unsigned char)(%s);\n", sub);
+        else bf(fns, "        %s\n        unsigned r = x;\n", sub);
+        free(sub);
+    }
+    bf(fns, "        if (r != g2mm_%u[b]) return (int)b + 1;\n    }\n    return 0;\n}\n\n", id);
+}
+
+/* the poison differential for the one thing the header says a REF term does not
+ * carry: set / run / mask / run_len / table_ref are NOT read, so the rendering
+ * with junk in them must be byte-identical (or the kit must refuse) */
+static long mm_pz_total, mm_pz_same, mm_pz_refused, mm_pz_differ, mm_pz_unstable;
+static void mm_poison(const mf_site *site, const mf_hooks *h, int cmt, const buf *clean)
+{
+    mf_site s2 = *site;
+    mf_term *T = &s2.pred.term[0];
+    for (int i = 0; i < 32; i++) T->set[i] = pz_bytes[i];
+    T->table_ref = 77;
+    T->run = pz_bytes;
+    T->mask = pz_bytes + 8;
+    T->run_len = 32;
+    buf again = { 0 }, junk = { 0 };
+    char err[512];
+    mm_pz_total++;
+    if (render_text(site, h, cmt, &again, err, sizeof err) || strcmp(again.p ? again.p : "", clean->p ? clean->p : "")) mm_pz_unstable++;
+    if (render_text(&s2, h, cmt, &junk, err, sizeof err)) {
+        mm_pz_refused++;
+        fprintf(g_res, "MMPOISON refused site: %s\n", err);
+    } else if (strcmp(junk.p ? junk.p : "", clean->p ? clean->p : "")) {
+        mm_pz_differ++;
+        fprintf(g_res, "FAIL poison: a MISMATCH site's rendering moved with junk in its REF term's set/run/mask/run_len/table_ref\n");
+        n_poison_fail++;
+    } else {
+        mm_pz_same++;
+        n_poison_pass++;
+    }
+    free(again.p); free(junk.p);
 }
 
 /* The batch art's MF_D_* denies (RULED Q-M1b-1: the kit refuses a site whose
@@ -1411,7 +1619,8 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
         free(clean.p); free(pa);
         return;
     }
-    if (!pend && !g_mutate) poison_site(g, &site, pa, &h, &clean);
+    if (!pend && !g_mutate && g->d.op != G2_OP_MISM) poison_site(g, &site, pa, &h, &clean);
+    if (!pend && !g_mutate && g->d.op == G2_OP_MISM) mm_poison(&site, &h, g->cmt, &clean);
     free(clean.p);
 
     /* G2pf2: judge the define+use path by ITS contract. The trial (mf_emit)
@@ -1519,6 +1728,8 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
     mut |= mutate(&file);
     if (g->d.via == 2) mutate(&body2);
     if (g_mutate >= 5 && g_mutate <= 7) mut = !(g_mutate == 7 && g->floor_null);
+    /* lane g2m7, W2 9-11 (MISMATCH sites only): a wrong `reflen` (+1), a wrong `ref`, a vanished fold */
+    if (g_mutate >= 9) mut = g->d.op == G2_OP_MISM && (g_mutate != 11 || g->mm_text);
     /* W2 mutation 8 (lane g2m4): the kit's text for a LOOP_EXIT site is wrapped in a
      * loop of ITS OWN, as a row that opened a loop around its on_miss would: the
      * `break;` then leaves that inner loop and the driver's loop never sees it.
@@ -1540,6 +1751,7 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
 
     emit_tables(&B->tables, g);
     emit_descriptor(&B->desc, g);
+    if (g->d.op == G2_OP_MISM) mm_emit_tables(&B->tables, &B->fns, g);
     if (file.n) { bputs(&B->defs, file.p); bputs(&B->defs, "\n"); }
     char fname[64];
     snprintf(fname, sizeof fname, "g2t_%u", g->d.id);
@@ -1556,9 +1768,11 @@ static void render(mf_art *art, gsite *g, batchbuf *B)
        d->acc_mod, d->miss_mode, d->hook_style, d->mutated, d->via, d->label, d->id);
     if (d->via == 2) bf(&B->reg, "g2t2_%u, ", d->id);
     else bputs(&B->reg, "NULL, ");
-    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u },\n", g->floor_null, d->fam, d->leaves, d->pend,
+    bf(&B->reg, "%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u", g->floor_null, d->fam, d->leaves, d->pend,
        d->vfield, d->vclass, d->fid, g->on_miss_mode == 3 || g->on_miss_mode == 5, d->pfcell, d->pfedge, d->inplace,
        d->noonmiss, d->lo_over, d->tabbad, d->floor_lo, d->loopx);
+    if (d->op == G2_OP_MISM) bf(&B->reg, ", %u, %u, %u, %u, g2mm_%u, g2mmchk_%u },\n", d->mm_fold, d->mm_shape, d->mm_res, d->mm_goto, d->id, d->id);
+    else bputs(&B->reg, " },\n");
     B->nsite++;
     B->npend += d->pend != 0;
     free(body.p); free(body2.p); free(file.p);
@@ -3013,6 +3227,344 @@ static void gen_fam_mline(void)
     ml_leave(sv);
 }
 
+/* ---- lane g2m7: the MISMATCH family and its refusals ------------------------------
+ *
+ * Family `mismatch` (own RNG stream and id range 800000, so every older family's
+ * sites are the sites they were): STMT / MISMATCH / ON_DIFF, ONE REQUIRED REF term at
+ * offset 0, empty NOP, reverse 0, end_back 0, a leaving on_miss (on_miss_leaves 1).
+ * The axes: fold_kind NONE / ASCII / UCP; the fold text shape (EXPR / STMT); the map
+ * variant (MMV_*) and its spelling; the result lvalue (a local size_t, `o->res`, a
+ * local ptrdiff_t); on_miss a returning block or a `goto`; hook text style (0 plain;
+ * 1 and 2 are the enforced class hook-nonident); the entry path; the comment gate;
+ * and MF_D_RUN_OVERLAP in the second pass. */
+static uint64_t mm_rng = 0x6d69736d61746368ULL, mm_rng2 = 0x4d49534d41544348ULL;
+static uint32_t mm_ids = 800000;
+typedef struct { uint64_t r1, r2; uint32_t id; } mmsave;
+static mmsave mm_enter(void)
+{
+    mmsave sv = { rng_state, rng2_state, next_id };
+    rng_state = mm_rng; rng2_state = mm_rng2; next_id = mm_ids;
+    return sv;
+}
+static void mm_leave(mmsave sv)
+{
+    mm_rng = rng_state; mm_rng2 = rng2_state; mm_ids = next_id;
+    rng_state = sv.r1; rng2_state = sv.r2; next_id = sv.id;
+}
+
+static void mm_cell(gsite *g, int kind, int shape, int var, int sp, int res, int gt, int style)
+{
+    base_site(g, 0);                                   /* the random frame: policy, comment gate, entry path... */
+    g2_site *d = &g->d;
+    d->op = G2_OP_MISM;
+    d->handoff = G2_H_ON_DIFF;
+    d->form = G2_FORM_STMT;
+    d->empty = G2_EMPTY_NOP;
+    d->fam = G2_FAM_MISM;
+    d->label = strdup("MISMATCH/STMT/ON_DIFF");
+    d->leaves = 1;
+    d->miss_mode = 5;                                   /* no `miss`: ON_DIFF has none */
+    d->ret_pred = 0xFF;
+    d->use = G2_USE_POSITION;
+    d->via = (uint8_t)rn(2);
+    d->hook_style = (uint8_t)style;
+    d->span_lo = 0;
+    d->span_hi = G2_UNBOUNDED;
+    d->mm_fold = (uint8_t)kind;
+    d->mm_shape = (uint8_t)shape;
+    d->mm_res = (uint8_t)res;
+    d->mm_goto = (uint8_t)gt;
+    g->floor_null = 1;
+    g->floor_zero = 0;
+    g->plan_explicit = 1;
+    alloc_preds(g, 1);
+    g->preds[0].nterm = 1;
+    g->preds[0].need = G2_REQ;
+    g->preds[0].t[0].kind = G2_T_REF;
+    g->preds[0].t[0].need = G2_REQ;
+    g->preds[0].t[0].off = 0;
+    g->php[0] = MF_NO_PRED;
+    g->ppp[0] = 0;
+    g->fnr[0] = 0;
+    g->result_decl = 0;
+    g->mm_var = (uint8_t)var;
+    mm_build(g->mm_tab, kind, var);
+    mm_spell(g, kind, shape, var, sp);
+    mm_var_sites[var]++;
+    mm_nonidem_sites += !mm_idempotent(g->mm_tab);
+    mm_kind_sites[kind]++;
+    if (kind) mm_shape_sites[shape]++;
+    mm_res_sites[res]++;
+    mm_goto_sites += gt;
+    mm_arith_sites += g->mm_arith;
+    mm_style_sites[style]++;
+    mm_sp_sites[sp]++;
+}
+
+static void gen_fam_mismatch(void)
+{
+    gsite g;
+    mmsave sv = mm_enter();
+    unsigned k = 0;
+    for (int pass = 0; pass < 2; pass++) {
+        force_batch(pass ? MF_D_RUN_OVERLAP : 0);
+        for (int rep = 0; rep < (pass ? 1 : 2); rep++) {
+            int cnt = pass ? 12 : 36;
+            for (int i = 0; i < cnt; i++, k++) {                        /* fold_kind NONE: exact */
+                int style = (i % 6 == 5) ? 1 + (i / 6) % 2 : 0;
+                mm_cell(&g, G2_FOLD_NONE, 0, MMV_ID, 0, i % 3, (i / 3) % 2, style);
+                emit_site(&g);
+            }
+            for (int kind = G2_FOLD_ASCII; kind <= G2_FOLD_UCP; kind++)
+                for (int shape = 0; shape < 2; shape++)
+                    for (int var = MMV_LOWER; var < MMV_N; var++)
+                        for (int sp = 0; sp < 4; sp++) {
+                            if (sp == 1 && var != MMV_LOWER && var != MMV_UPPER) continue;   /* arithmetic: lower / upper only */
+                            if (pass && (var + sp + shape + rep) % 3) continue;
+                            int style = k % 7 == 6 ? 1 + (int)(k / 7) % 2 : 0;
+                            mm_cell(&g, kind, shape, var, sp, (int)(k % 3), (int)((k / 3) % 2), style);
+                            k++;
+                            emit_site(&g);
+                        }
+        }
+    }
+    mm_leave(sv);
+}
+
+/* the refusals of MISMATCH, each from the header's text. `req`: the field the
+ * header names (the text must name it); `soft`: a field the text plausibly
+ * names but the header does not (reported, never asserted) */
+static long mm_ref_cases, mm_ref_named, mm_ref_soft_yes, mm_ref_soft_no;
+static void mm_refuse(const char *name, const mf_site *s, const mf_hooks *h, const char *req, const char *soft)
+{
+    mf_art *art = mf_art_begin(&g_arena, "g2q", MF_P_PORTABLE_ONLY, 0);
+    buf body = { 0 }, file = { 0 };
+    sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
+    mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
+    mf_result res;
+    memset(&res, 0, sizeof res);
+    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    const char *err = rc ? mf_art_error(art) : NULL;
+    mm_ref_cases++;
+    if (rc && err && *err) {
+        if (req && !names_field(err, req)) {
+            n_refusal_fail++;
+            fprintf(g_res, "FAIL refusal mm: %s: refused (\"%s\") but the text does not name `%s`\n", name, err, req);
+        } else {
+            n_refusal_pass++;
+            if (req) { mm_ref_named++; n_strict_pass++; }
+            int sn = soft ? names_field(err, soft) : -1;
+            if (sn == 1) mm_ref_soft_yes++;
+            if (sn == 0) mm_ref_soft_no++;
+            fprintf(g_res, "PASS refusal mm: %s: \"%s\"%s%s\n", name, err, req ? " [names the field]" : "",
+                    sn == 1 ? " [names the soft field]" : sn == 0 ? " [soft field not named]" : "");
+        }
+    } else {
+        n_refusal_fail++;
+        fprintf(g_res, "FAIL refusal mm: %s: rc=%d err=%s; the kit returned %s\n", name, rc, err ? (*err ? err : "(empty)") : "(null)",
+                rc ? "an error with no text" : "CODE for a shape the header refuses");
+        if (!rc && body.p) fprintf(g_res, "  rendered: %.300s\n", body.p);
+    }
+    free(body.p); free(file.p);
+}
+
+static int mm_renders(const mf_site *s, const mf_hooks *h, const char *what)
+{
+    mf_art *art = mf_art_begin(&g_arena, "g2c", MF_P_PORTABLE_ONLY, 0);
+    buf body = { 0 }, file = { 0 };
+    sinku ub = { &body, 0, 0, 0 }, uf = { &file, 0, 0, 0 };
+    mf_sink sb = mk_sink(&ub), sf = mk_sink(&uf);
+    mf_result res;
+    memset(&res, 0, sizeof res);
+    int rc = mf_emit(art, s, h, &sb, &sf, &res);
+    int ok = !rc && body.n;
+    if (ok) { n_refusal_pass++; fprintf(g_res, "PASS refusal-control mm: %s renders (form %s)\n", what, res.form_id); }
+    else { n_refusal_fail++; fprintf(g_res, "FAIL refusal-control mm: %s does not render (rc=%d %s)\n", what, rc, rc ? mf_art_error(art) : ""); }
+    free(body.p); free(file.p);
+    return ok;
+}
+
+static void mm_refusals(void)
+{
+    static const uint8_t run4[] = "abcd";
+    mf_site s0;
+    mf_hooks h0;
+    memset(&s0, 0, sizeof s0);
+    s0.abi = MF_SITE_ABI;
+    s0.form = MF_FORM_STMT;
+    s0.op = MF_OP_MISMATCH;
+    s0.handoff = MF_H_ON_DIFF;
+    s0.empty = MF_EMPTY_NOP;
+    s0.pred.nterm = 1;
+    s0.pred.plan_hint = MF_NO_PRED;
+    s0.pred.term[0].kind = MF_T_REF;
+    s0.pred.term[0].need = MF_REQUIRED;
+    s0.pred.term[0].ppm_hi = MF_PPM_FULL;
+    s0.ret_pred = MF_NO_PRED;
+    s0.span_hi = MF_SPAN_UNBOUNDED;
+    s0.cand_ppm_hi = MF_PPM_FULL;
+    s0.policy = MF_P_PORTABLE_ONLY;
+    s0.on_miss_leaves = 1;
+    memset(&h0, 0, sizeof h0);
+    h0.s = "s"; h0.n = "n"; h0.lo = "lo"; h0.result = "res";
+    h0.on_miss = "{ return 0; }";
+    h0.ref = "g2_mm_ref"; h0.reflen = "g2_mm_reflen";
+    h0.indent = "    ";
+    h0.comment_tier = 0;
+    h0.member = h_member; h0.table_name = h_table_name; h0.fn_name = h_fn_name;
+
+    /* controls: the unperturbed baseline, and the caseless baselines, render (else every
+     * case below would "pass" for the wrong reason) */
+    mm_renders(&s0, &h0, "baseline (NONE, exact)");
+    {
+        mf_site s = s0; mf_hooks h = h0;
+        s.fold_kind = MF_FOLD_ASCII; h.fold = "((@) - 'A' < 26u ? (@) + 32 : (@))";
+        mm_renders(&s, &h, "baseline (ASCII, FOLD_EXPR)");
+        h.fold = "if ((@) - 'A' < 26u) (@) += 32;";
+        mm_renders(&s, &h, "baseline (ASCII, FOLD_STMT)");
+        s.fold_kind = MF_FOLD_UCP;
+        mm_renders(&s, &h, "baseline (UCP, FOLD_STMT)");
+    }
+#define MC(name, req, soft, stmt) do { mf_site s = s0; mf_hooks h = h0; stmt; mm_refuse(name, &s, &h, req, soft); } while (0)
+    MC("abi + 1",                       NULL,         NULL,        s.abi = MF_SITE_ABI + 1);
+    MC("reverse 1",                     "reverse",    NULL,        s.reverse = 1);
+    MC("end_back 1",                    "end_back",   NULL,        s.end_back = 1);
+    MC("empty MISS",                    "empty",      NULL,        s.empty = MF_EMPTY_MISS);
+    MC("empty EXCLUDED",                "empty",      NULL,        s.empty = MF_EMPTY_EXCLUDED);
+    MC("empty AT_N",                    "empty",      NULL,        s.empty = MF_EMPTY_AT_N);
+    MC("empty out of enum",             "empty",      NULL,        s.empty = (mf_empty)9);
+    MC("two REF terms",                 NULL,         "nterm",     (s.pred.nterm = 2, s.pred.term[1] = s.pred.term[0]));
+    MC("REF + SET term",                NULL,         "nterm",     (s.pred.nterm = 2, s.pred.term[1] = s.pred.term[0],
+                                                                    s.pred.term[1].kind = MF_T_SET, s.pred.term[1].set['a' >> 3] = 1u << ('a' & 7)));
+    MC("SET term alone",                NULL,         "kind",      (s.pred.term[0].kind = MF_T_SET, s.pred.term[0].set['a' >> 3] = 1u << ('a' & 7)));
+    MC("RUN term alone",                NULL,         "kind",      (s.pred.term[0].kind = MF_T_RUN, s.pred.term[0].run = run4, s.pred.term[0].run_len = 4));
+    MC("REF term at offset 1",          NULL,         "offset",    s.pred.term[0].offset = 1);
+    MC("REF term at offset -1",         NULL,         "offset",    s.pred.term[0].offset = -1);
+    MC("REF term OPTIONAL",             NULL,         "need",      s.pred.term[0].need = MF_OPTIONAL);
+    MC("nterm 0",                       NULL,         "nterm",     s.pred.nterm = 0);
+    MC("on_miss_leaves 0",              "on_miss_leaves", "on_miss", s.on_miss_leaves = 0);
+    MC("on_miss_leaves 2",              "on_miss_leaves", NULL,    s.on_miss_leaves = 2);
+    MC("on_miss LOOP_EXIT (break;)",    "on_miss",    NULL,        h.on_miss = "break;");
+    MC("on_miss unstated",              "on_miss",    NULL,        h.on_miss = NULL);
+    MC("result unstated",               "result",     NULL,        h.result = NULL);
+    MC("ref unstated",                  "ref",        NULL,        h.ref = NULL);
+    MC("reflen unstated",               "reflen",     NULL,        h.reflen = NULL);
+    MC("s unstated",                    "s",          NULL,        h.s = NULL);
+    MC("n unstated",                    "n",          NULL,        h.n = NULL);
+    MC("lo unstated",                   "lo",         NULL,        h.lo = NULL);
+    MC("fold_kind outside its enum (3)","fold_kind",  NULL,        s.fold_kind = 3);
+    MC("fold_kind outside its enum (255)","fold_kind",NULL,        s.fold_kind = 255);
+    MC("fold stated under NONE",        "fold",       "fold_kind", h.fold = "(@)");
+    MC("fold unstated under ASCII",     "fold",       NULL,        s.fold_kind = MF_FOLD_ASCII);
+    MC("fold unstated under UCP",       "fold",       NULL,        s.fold_kind = MF_FOLD_UCP);
+    MC("fold text with no @ (ASCII)",   "fold",       NULL,        (s.fold_kind = MF_FOLD_ASCII, h.fold = "tolower(x)"));
+    MC("fold text with no @ (UCP)",     "fold",       NULL,        (s.fold_kind = MF_FOLD_UCP, h.fold = "g2_fold_byte(c);"));
+    MC("fold text with @ only in a literal", "fold",  NULL,        (s.fold_kind = MF_FOLD_ASCII, h.fold = "'@'"));
+    MC("count_by_caller on MISMATCH",   "count_by_caller", NULL,   s.count_by_caller = 1);
+    MC("guard_by_caller on MISMATCH",   NULL,         "guard_by_caller", s.guard_by_caller = 1);
+    MC("EXPR form",                     NULL,         "form",      s.form = MF_FORM_EXPR);
+    MC("FUNC form",                     NULL,         "form",      s.form = MF_FORM_FUNC);
+    MC("denies not the art's",          NULL,         NULL,        s.denies = MF_D_RUN_OVERLAP);
+    /* fold_kind on a site that is not MISMATCH (header: nonzero only on a MISMATCH site, else refused) */
+    {
+        mf_site f0;
+        mf_hooks fh;
+        memset(&f0, 0, sizeof f0);
+        f0.abi = MF_SITE_ABI;
+        f0.form = MF_FORM_EXPR;
+        f0.op = MF_OP_FIND;
+        f0.handoff = MF_H_RETURN;
+        f0.empty = MF_EMPTY_MISS;
+        f0.pred.nterm = 1;
+        f0.pred.plan_hint = MF_NO_PRED;
+        f0.pred.term[0].kind = MF_T_SET;
+        f0.pred.term[0].set['a' >> 3] = 1u << ('a' & 7);
+        f0.pred.term[0].ppm_hi = MF_PPM_FULL;
+        f0.ret_pred = MF_NO_PRED;
+        f0.span_hi = MF_SPAN_UNBOUNDED;
+        f0.cand_ppm_hi = MF_PPM_FULL;
+        f0.policy = MF_P_PORTABLE_ONLY;
+        memset(&fh, 0, sizeof fh);
+        fh.s = "s"; fh.n = "n"; fh.lo = "lo"; fh.miss = "n"; fh.result = "res"; fh.on_miss = "{ return 0; }";
+        fh.indent = "    ";
+        fh.member = h_member; fh.table_name = h_table_name; fh.fn_name = h_fn_name;
+        mm_renders(&f0, &fh, "FIND baseline for the non-MISMATCH cases");
+        { mf_site s = f0; mf_hooks h = fh; s.fold_kind = MF_FOLD_ASCII; mm_refuse("fold_kind ASCII on FIND/EXPR/RETURN", &s, &h, "fold_kind", NULL); }
+        { mf_site s = f0; mf_hooks h = fh; s.fold_kind = MF_FOLD_UCP; h.fold = "(@)"; mm_refuse("fold_kind UCP + fold on FIND/EXPR/RETURN", &s, &h, "fold_kind", NULL); }
+        { mf_site s = f0; mf_hooks h = fh; s.fold_kind = 3; mm_refuse("fold_kind 3 on FIND", &s, &h, "fold_kind", NULL); }
+        { mf_site s = f0; mf_hooks h = fh; s.op = MF_OP_VERIFY; s.handoff = MF_H_BOOL; s.fold_kind = MF_FOLD_ASCII;
+          mm_refuse("fold_kind ASCII on VERIFY/EXPR/BOOL", &s, &h, "fold_kind", NULL); }
+        { mf_site s = f0; mf_hooks h = fh; s.form = MF_FORM_STMT; s.handoff = MF_H_ON_MISS; s.fold_kind = MF_FOLD_ASCII;
+          mm_refuse("fold_kind ASCII on FIND/STMT/ON_MISS", &s, &h, "fold_kind", NULL); }
+        { mf_site s = f0; mf_hooks h = fh; s.op = MF_OP_SKIP; s.form = MF_FORM_STMT; s.handoff = MF_H_ADVANCE; s.empty = MF_EMPTY_NOP;
+          h.cursor = "cur"; h.more = "cur < n"; h.peek = "s[cur]"; h.step = "cur++;"; s.fold_kind = MF_FOLD_ASCII;
+          mm_refuse("fold_kind ASCII on SKIP/STMT/ADVANCE", &s, &h, "fold_kind", NULL); }
+        /* a REF term in every other op (header: MISMATCH only) */
+        static const int ops[4] = { MF_OP_FIND, MF_OP_SKIP, MF_OP_VERIFY, MF_OP_ALL_PRESENT };
+        static const char *const opn[4] = { "FIND", "SKIP", "VERIFY", "ALL_PRESENT" };
+        for (int o = 0; o < 4; o++) {
+            static mf_pred two[2];
+            mf_site s = f0; mf_hooks h = fh; char nm[96];
+            s.op = (mf_op)ops[o];
+            s.pred.term[0].kind = MF_T_REF;
+            h.ref = "g2_mm_ref"; h.reflen = "g2_mm_reflen";
+            if (o == 1) { s.form = MF_FORM_EXPR; }
+            if (o == 2) { s.handoff = MF_H_BOOL; }
+            if (o == 3) { two[0] = s.pred; two[1] = s.pred; s.npred = 2; s.preds = two; s.handoff = MF_H_BOOL; }
+            snprintf(nm, sizeof nm, "REF term in %s", opn[o]);
+            mm_refuse(nm, &s, &h, NULL, "kind");
+        }
+        /* a REF term mixed with a SET term in FIND (a conjunction the vocabulary does not hold) */
+        { mf_site s = f0; mf_hooks h = fh; s.pred.nterm = 2; s.pred.term[1] = s.pred.term[0]; s.pred.term[1].kind = MF_T_REF; s.pred.term[1].offset = 1;
+          mm_refuse("SET + REF terms in FIND", &s, &h, NULL, "kind"); }
+    }
+#undef MC
+    /* the vocabulary the header declares: MISMATCH / ON_DIFF / REF only. mf_vocab_has agrees
+     * for every MISMATCH combination and for every older op with a REF term or ON_DIFF
+     * (the older ops' own combinations are judged by main's loop) ... */
+    {
+        long ok = 0, bad = 0;
+        for (int op = 0; op <= G2_OP_MISM; op++)
+            for (int hh = 0; hh <= G2_H_ON_DIFF; hh++)
+                for (uint32_t tk = 1; tk < 8; tk++) {
+                    int newish = op == G2_OP_MISM || (tk & MF_TK_REF) || hh == G2_H_ON_DIFF;
+                    if (!newish) continue;
+                    int want = op == G2_OP_MISM && hh == G2_H_ON_DIFF && tk == MF_TK_REF;
+                    int has = mf_vocab_has(to_mf_op(op), to_mf_h(hh), tk) ? 1 : 0;
+                    if (has == want) ok++;
+                    else { bad++; fprintf(g_res, "FAIL vocab mm: mf_vocab_has(%d,%d,%u) = %d, the header says %d\n", op, hh, tk, has, want); }
+                }
+        n_vocab_pass += ok; n_vocab_fail += bad;
+        fprintf(g_res, "INFO vocab mm: %ld agree, %ld disagree\n", ok, bad);
+    }
+    /* ... and every combination it declares absent is refused, in every form */
+    {
+        static const uint8_t runx[] = "xy";
+        long cases = 0;
+        for (int op = 0; op <= G2_OP_MISM; op++)
+            for (int hh = 0; hh <= G2_H_ON_DIFF; hh++)
+                for (uint32_t tk = 1; tk < 8; tk++) {
+                    int newish = op == G2_OP_MISM || (tk & MF_TK_REF) || hh == G2_H_ON_DIFF;
+                    if (!newish || mf_vocab_has(to_mf_op(op), to_mf_h(hh), tk)) continue;
+                    for (int f = 0; f < 3; f++) {
+                        mf_site s = s0; mf_hooks h = h0; static mf_pred vp[2]; char name[96];
+                        s.op = to_mf_op(op); s.handoff = to_mf_h(hh); s.form = to_mf_form(f);
+                        s.pred.nterm = 0;
+                        if (tk & MF_TK_SET) { mf_term *t = &s.pred.term[s.pred.nterm++]; memset(t, 0, sizeof *t); t->kind = MF_T_SET; t->set['a' >> 3] = 1u << ('a' & 7); t->ppm_hi = MF_PPM_FULL; }
+                        if (tk & MF_TK_RUN) { mf_term *t = &s.pred.term[s.pred.nterm++]; memset(t, 0, sizeof *t); t->kind = MF_T_RUN; t->run = runx; t->run_len = 2; t->ppm_hi = MF_PPM_FULL; }
+                        if (tk & MF_TK_REF) { mf_term *t = &s.pred.term[s.pred.nterm++]; memset(t, 0, sizeof *t); t->kind = MF_T_REF; t->ppm_hi = MF_PPM_FULL; }
+                        if (op == G2_OP_ALL) { vp[0] = s.pred; vp[1] = s.pred; s.npred = 2; s.preds = vp; if (hh == G2_H_RETURN || hh == G2_H_ASSIGN) s.ret_pred = 0; }
+                        h.on_cand = h_on_cand; h.miss = "n"; h.cursor = "cur"; h.more = "cur < n"; h.peek = "s[cur]"; h.step = "cur++;";
+                        if (op != G2_OP_MISM) { s.empty = MF_EMPTY_MISS; s.on_miss_leaves = 0; }
+                        snprintf(name, sizeof name, "vocab-absent mm op=%d h=%d f=%d tk=%u", op, hh, f, tk);
+                        mm_refuse(name, &s, &h, NULL, NULL);
+                        cases++;
+                    }
+                }
+        fprintf(g_res, "INFO vocab-absent mm cases: %ld\n", cases);
+    }
+}
+
 /* ---- the SEMANTIC differential (g2u item 7) ------------------------------------
  *
  * A seed site of a §15 shape (or of the generic row's), cloned once per
@@ -3220,14 +3772,16 @@ int main(int argc, char **argv)
     if (argc < 2) { fprintf(stderr, "usage: g2_gen OUTDIR [--seed N] [--batch N] [--mutate K] [--sites N]\n"); return 2; }
     const char *outdir = argv[1];
     uint64_t seed = 20261005;
-    int batch = 120, extra = 1200;
+    int batch = 120, extra = 1200, mm_only = 0;
     for (int i = 2; i + 1 < argc; i += 2) {
         if (!strcmp(argv[i], "--seed")) seed = strtoull(argv[i + 1], 0, 10);
         else if (!strcmp(argv[i], "--batch")) batch = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--mutate")) g_mutate = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--sites")) extra = atoi(argv[i + 1]);
+        else if (!strcmp(argv[i], "--mm-only")) mm_only = atoi(argv[i + 1]);
         else { fprintf(stderr, "g2_gen: unknown option %s\n", argv[i]); return 2; }
     }
+    if (g_mutate >= 9) mm_only = 1;     /* lane g2m7: W2 9-11 mutate MISMATCH sites only */
     rng_state ^= seed * 0x2545F4914F6CDD1DULL;
     /* enforcement is in force: strict is the DEFAULT; G2_STRICT_HOOKS=0 is the
      * diagnostic (legacy bucket-only) mode */
@@ -3245,7 +3799,7 @@ int main(int argc, char **argv)
      * reported, and every declared (op, handoff, kinds) must be one this
      * generator reaches (K35: a declared combination no test reaches is a
      * population nobody counts) */
-    for (int op = 0; op < 4; op++)
+    for (int op = 0; op < 4 && !mm_only; op++)
         for (int h = 0; h < 6; h++)
             for (uint32_t tk = 1; tk < 4; tk++) {
                 int has = mf_vocab_has(to_mf_op(op), to_mf_h(h), tk);
@@ -3261,7 +3815,7 @@ int main(int argc, char **argv)
                 }
             }
 
-    refusal_table();
+    if (!mm_only) { refusal_table(); mm_refusals(); }
 
     g_outdir = outdir;
     g_all = all;
@@ -3274,6 +3828,7 @@ int main(int argc, char **argv)
     int gcombo[NCOMBO], ngc = 0;
     for (int c = 0; c < NCOMBO; c++) if (COMBOS[c].op != G2_OP_SKIP) gcombo[ngc++] = c;
 
+    if (!mm_only) {
     /* (1) the TERM CELLS, each the focus term of at least one site:
      *     SET: offsets -8..8 x every set kind; RUN: offsets -8..8 x run
      *     lengths 1..33 x masks NULL/0/1/2 free bits (and 8, all-free),
@@ -3459,12 +4014,17 @@ int main(int argc, char **argv)
     /* (6c) lane g2m4: the MLINE shape (integration.md 15.7 [R-7]): the read-bounded
      *      range, MF_EMPTY_AT_N and LOOP_EXIT, in streams of their own */
     gen_fam_mline();
+    }   /* !mm_only */
+    /* (6d) lane g2m7: the MISMATCH shape (integration.md 15.8 [M7]): the span compare */
+    gen_fam_mismatch();
+    if (!mm_only) {
     /* (7) lane g2u: the semantic differential, its groups half without and
      *     half with MF_D_RUN_OVERLAP */
     force_batch(0);
     gen_semantic(3);
     force_batch(MF_D_RUN_OVERLAP);
     gen_semantic(3);
+    }   /* !mm_only */
     /* (8) the PENDING-ENFORCE queue, in pending-only batches */
     flush_pending();
     if (g_B.nsite) { flush_batch(outdir, g_bi, g_art, &g_B, all); g_bi++; }
@@ -3495,6 +4055,15 @@ int main(int argc, char **argv)
     for (int c = 1; c < G2_NPEND; c++)
         fprintf(g_res, "PENDBUCKET %s rendered=%ld refused_named=%ld refused_unnamed=%ld\n", g2_pend_name(c),
                 pend_rendered[c], pend_refused_named[c], pend_refused_unnamed[c]);
+    fprintf(g_res, "MMSITES kind none=%ld ascii=%ld ucp=%ld shape expr=%ld stmt=%ld res local=%ld o-res=%ld ptrdiff=%ld goto=%ld arith=%ld "
+            "style plain=%ld counted=%ld ternary=%ld nonidem=%ld spelling plain=%ld arith=%ld punct=%ld literal=%ld\n",
+            mm_kind_sites[0], mm_kind_sites[1], mm_kind_sites[2], mm_shape_sites[0], mm_shape_sites[1], mm_res_sites[0], mm_res_sites[1],
+            mm_res_sites[2], mm_goto_sites, mm_arith_sites, mm_style_sites[0], mm_style_sites[1], mm_style_sites[2], mm_nonidem_sites,
+            mm_sp_sites[0], mm_sp_sites[1], mm_sp_sites[2], mm_sp_sites[3]);
+    fprintf(g_res, "MMVARS");
+    for (int v = 0; v < MMV_N; v++) fprintf(g_res, " %s=%ld", MMV_NAMES[v], mm_var_sites[v]);
+    fprintf(g_res, "\nMMREFUSE cases=%ld named=%ld soft_named=%ld soft_unnamed=%ld\n", mm_ref_cases, mm_ref_named, mm_ref_soft_yes, mm_ref_soft_no);
+    fprintf(g_res, "MMPOISON sites=%ld identical=%ld refused=%ld differ=%ld control_unstable=%ld\n", mm_pz_total, mm_pz_same, mm_pz_refused, mm_pz_differ, mm_pz_unstable);
     for (int e = 1; e < G2_NPFE; e++)
         fprintf(g_res, "PFEDGE %s cases=%ld rendered=%ld refused_named=%ld refused_unnamed=%ld\n", g2_pfe_name(e),
                 pfe_rendered[e] + pfe_named[e] + pfe_unnamed[e], pfe_rendered[e], pfe_named[e], pfe_unnamed[e]);

@@ -25,7 +25,9 @@ LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 CC="${CC:-cc}"
 DEF="$ROOT_DIR/src/gen/memfn_sites.def"
 D91_SCAN="PF PRE OFS SETREST VERIFY MLINE"
-D91_LOOP="STAY EDGE VMSPAN VMRUN"
+# N7 ([MEMFN] M7, RULED Q-R8-10): the encoding seam's span compare runs at
+# every VM backreference / variable step, so it is D91's budget 2.
+D91_LOOP="STAY EDGE VMSPAN VMRUN N7"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }

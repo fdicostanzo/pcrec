@@ -328,3 +328,22 @@ uint64_t g2_ref_check(const g2_site *d, const g2_items *it, uint64_t alive,
     }
     return keep;
 }
+
+/* lane g2m7, MF_OP_MISMATCH (memfn.h): k is the least j in [0, reflen) with
+ * lo + j >= n (the subject ended: lo > n included) or fold(s[lo + j]) !=
+ * fold(ref[j]); no such j = EQUAL. The only thing asked of the fold is
+ * map(a) == map(b), and `map` is the table G2 generated. W1 defects: 5 the
+ * fold ignored, 6 the loop stops one byte short of reflen. */
+int g2_ref_mismatch(const uint8_t *map, const uint8_t *s, size_t n, size_t lo,
+                    const uint8_t *ref, size_t reflen, size_t *k)
+{
+    size_t stop = reflen;
+    if (g2_ref_defect == 6 && stop) stop--;                      /* W1-6 */
+    for (size_t j = 0; j < stop; j++) {
+        if (lo >= n || j >= n - lo) { *k = j; return 1; }
+        uint8_t a = s[lo + j], b = ref[j];
+        if (g2_ref_defect != 5) { a = map[a]; b = map[b]; }      /* W1-5: no fold */
+        if (a != b) { *k = j; return 1; }
+    }
+    return 0;
+}

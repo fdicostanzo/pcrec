@@ -20,7 +20,7 @@
 
 set -u
 
-C12_CEIL_ROWS_FLOOR=5
+C12_CEIL_ROWS_FLOOR=3
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

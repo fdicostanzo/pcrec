@@ -1,11 +1,11 @@
-# state_readers.sh (rev 2, derived) at 0f37bfd8; one line per code line
-# E (EngineFit members, qualified): chosen engines engine_sel pf_admit prefilter prefilter_collapsed prefilter_declined_nullable prefilter_declined_nullable_default prefilter_lang_why prefilter_nfa_states prefilter_sizecap_bytes prefilter_sizecap_limit why why_pos 
+# state_readers.sh (rev 2, derived) at cecc3c1f; one line per code line
+# E (EngineFit members, qualified): chosen engines engine_sel pf_admit prefilter prefilter_collapsed prefilter_lang_why prefilter_nfa_states prefilter_sizecap_bytes prefilter_sizecap_limit why why_pos 
 # L (compile_driver cross-attempt locals, bare): budget_fallback collapse_reason defo dfa_disabled dfa_was_engine dmemo fit_fired fit_nseq overflow_why size_cap_bytes size_cap_limit size_drop_rung st_capexcl st_code st_fc st_final_k st_idx st_k st_nodes st_ok st_phase st_rescue st_sc st_total st_whylen 
 # R (recovery-point Ctx members, qualified): dfa_overflowed dfa_overflow_is_budget dfa_overflow_why failed_nomem size_cap_bytes size_cap_limit size_cap_refused 
 # RQ (recovery-point cx.job-> pairs): fit.chosen pf.forcing 
 # S (Ctx members seeded at the attempt head, qualified): collapse_reason dfa_disabled dfa_was_engine fit_nseq size_cap_bytes size_cap_limit size_drop_rung 
 # V (enum values, from their enum blocks): CR_NONE CR_SEL1 CR_SIZECAP SDR_MAX SDR_NO_ANCHORED SDR_NONE SDR_NO_PREFILTER SDR_NO_PREMUL PFLW_EXACT PFLW_FORCED PFLW_NO_REP PFLW_NULLABLE PFLW_SEL1 PFLW_SIZECAP ESEL_COLLAPSED_PREFILTER ESEL_DECLINED_NULLABLE ESEL_DECLINED_NULLABLE_DEFAULT ESEL_FORCED ESEL_OVERFLOWED_DFA ESEL_OVERFLOWED_PREFILTER ESEL_SELECTED 
-# D (declared derivations, existence-checked): esel_of lang_nullable_declinable prefilter_decision fit_rungs fit_walk fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name
+# D (declared derivations, existence-checked): esel_of fit_attrib_walk pflw_walk st_why_walk pf_admit_walk prefilter_decision fit_rungs fit_walk fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name
 # file:line<TAB>names<TAB>text
 src/opt/select_engine.c:239	engines	if (a->reg && !(a->reg->engines & ENGM_DFA)) return a->reg;
 src/opt/select_engine.c:354	engines	return r->engines;
@@ -14,87 +14,48 @@ src/opt/select_engine.c:392	dfa_disabled	if (!cx->dfa_disabled) return ENGM_DFA 
 src/opt/select_engine.c:428	forces_dfa_overflow	{ "dfa_overflow", forces_dfa_overflow, false },
 src/opt/select_engine.c:488	fit->chosen	if (fit->chosen != ENGM_VM) return;
 src/opt/select_engine.c:510	fit->chosen	if (fit->chosen != ENGM_VM) return;
-src/opt/select_engine.c:541	collapse_reason,CR_NONE,dfa_disabled	return s->cx->collapse_reason == CR_NONE && !s->cx->dfa_disabled &&
-src/opt/select_engine.c:554	collapse_reason,CR_NONE	return s->cx->collapse_reason != CR_NONE &&
-src/opt/select_engine.c:560	dfa_disabled	return s->cx->dfa_disabled &&
-src/opt/select_engine.c:561	collapse_reason,CR_SEL1	(s->cx->collapse_reason != CR_SEL1 || s->force_off);
-src/opt/select_engine.c:574	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT },
-src/opt/select_engine.c:576	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT },
-src/opt/select_engine.c:578	ESEL_DECLINED_NULLABLE	ESEL_DECLINED_NULLABLE },
-src/opt/select_engine.c:616	ESEL_FORCED	if (r->verdict == PFV_UNSTATED || r->esel == ESEL_FORCED ||
-src/opt/select_engine.c:633	ESEL_DECLINED_NULLABLE_DEFAULT	const bool dnd = row->esel == ESEL_DECLINED_NULLABLE_DEFAULT;
-src/opt/select_engine.c:634	ESEL_DECLINED_NULLABLE	const bool dn = row->esel == ESEL_DECLINED_NULLABLE;
-src/opt/select_engine.c:635	prefilter	if (pf_admit_verdict(row, s) != fit->prefilter)
-src/opt/select_engine.c:637	prefilter,prefilter_decision	fit->prefilter ? "on" : "off", "prefilter_decision");
-src/opt/select_engine.c:638	prefilter_declined_nullable_default	if (dnd != fit->prefilter_declined_nullable_default ||
-src/opt/select_engine.c:639	prefilter_declined_nullable	dn != fit->prefilter_declined_nullable)
-src/opt/select_engine.c:640	prefilter_decision	pcrec_fit_oracle_fail("admit-declined", row->name, "flags", "prefilter_decision");
-src/opt/select_engine.c:641	pf_admit	fit->pf_admit = row;
-src/opt/select_engine.c:691	prefilter_decision	static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
-src/opt/select_engine.c:849	fit->chosen	if (force_on && fit->chosen != ENGM_VM)
-src/opt/select_engine.c:989	collapse_reason,CR_NONE,dfa_disabled	if (has_var && (cx->collapse_reason != CR_NONE || cx->dfa_disabled))
-src/opt/select_engine.c:991	prefilter_decision	"prefilter_decision");
-src/opt/select_engine.c:993	fit->chosen	fit->chosen == ENGM_VM && cx->opt->engine != PCREC_ENGINE_VM,
-src/opt/select_engine.c:997	lang_nullable_declinable	bool lang_nullable_declinable =
-src/opt/select_engine.c:1013	fit->chosen	bool would_prefilter = (fit->chosen == ENGM_VM) &&
-src/opt/select_engine.c:1015	prefilter_declined_nullable	fit->prefilter_declined_nullable =
-src/opt/select_engine.c:1016	collapse_reason,CR_NONE,lang_nullable_declinable	cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
-src/opt/select_engine.c:1018	prefilter_declined_nullable_default	fit->prefilter_declined_nullable_default =
-src/opt/select_engine.c:1019	collapse_reason,CR_NONE,dfa_disabled	cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
-src/opt/select_engine.c:1020	lang_nullable_declinable	lang_nullable_declinable && would_prefilter;
-src/opt/select_engine.c:1021	prefilter	fit->prefilter = (has_bref || has_call || has_var ||
-src/opt/select_engine.c:1022	collapse_reason,CR_SEL1,dfa_disabled	(cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-src/opt/select_engine.c:1023	prefilter_declined_nullable	fit->prefilter_declined_nullable ||
-src/opt/select_engine.c:1024	prefilter_declined_nullable_default	fit->prefilter_declined_nullable_default)
-src/opt/select_engine.c:1105	esel_of	static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
-src/opt/select_engine.c:1121	dfa_disabled,SDR_NONE,size_drop_rung	if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
-src/opt/select_engine.c:1122	why_pos	pcrec_ctx_fail(cx, fit->why_pos,
-src/opt/select_engine.c:1127	ESEL_FORCED	cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
-src/opt/select_engine.c:1128	ESEL_DECLINED_NULLABLE_DEFAULT,prefilter_declined_nullable_default	: fit->prefilter_declined_nullable_default    ? ESEL_DECLINED_NULLABLE_DEFAULT
-src/opt/select_engine.c:1129	collapse_reason,CR_NONE,prefilter_declined_nullable	: (cx->collapse_reason != CR_NONE && fit->prefilter_declined_nullable)
-src/opt/select_engine.c:1130	ESEL_DECLINED_NULLABLE	? ESEL_DECLINED_NULLABLE
-src/opt/select_engine.c:1131	collapse_reason,CR_SIZECAP,prefilter	: ((cx->collapse_reason == CR_SIZECAP && fit->prefilter) ||
-src/opt/select_engine.c:1132	SDR_NONE,size_drop_rung	cx->size_drop_rung != SDR_NONE)
-src/opt/select_engine.c:1134	dfa_disabled,ESEL_SELECTED	: !cx->dfa_disabled                           ? ESEL_SELECTED
-src/opt/select_engine.c:1135	collapse_reason,CR_SEL1,prefilter	: (cx->collapse_reason == CR_SEL1 && fit->prefilter)
-src/opt/select_engine.c:1136	ESEL_COLLAPSED_PREFILTER	? ESEL_COLLAPSED_PREFILTER
-src/opt/select_engine.c:1137	dfa_was_engine,ESEL_OVERFLOWED_DFA	: cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
-src/opt/select_engine.c:1138	ESEL_OVERFLOWED_PREFILTER	: ESEL_OVERFLOWED_PREFILTER;
-src/opt/select_engine.c:1154	ESEL_FORCED	if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
-src/opt/select_engine.c:1155	pf_admit	if (fit->pf_admit && fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
-src/opt/select_engine.c:1156	fit_nseq	for (int i = cx->fit_nseq; i-- > 0; ) {
-src/opt/select_engine.c:1157	prefilter	const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
-src/opt/select_engine.c:1159	dfa_was_engine,ESEL_OVERFLOWED_DFA	return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
-src/opt/select_engine.c:1160	ESEL_OVERFLOWED_PREFILTER	: ESEL_OVERFLOWED_PREFILTER) : c;
-src/opt/select_engine.c:1162	ESEL_SELECTED	return ESEL_SELECTED;
-src/opt/select_engine.c:1190	dfa_disabled	const bool dd = cx->dfa_disabled;
-src/opt/select_engine.c:1191	collapse_reason	const int cr = cx->collapse_reason;
-src/opt/select_engine.c:1195	prefilter_declined_nullable_default	: fit->prefilter_declined_nullable_default     ? ((kinds & PF_KIND_VAR)
-src/opt/select_engine.c:1198	prefilter_declined_nullable	: fit->prefilter_declined_nullable             ? "nullable-collapsed"
-src/opt/select_engine.c:1199	CR_SEL1	: dd && (cr != CR_SEL1 || foff)                ? "overflow-drop"
-src/opt/select_engine.c:1205	prefilter	"%s pf=%d", row, (int)fit->prefilter);
-src/opt/select_engine.c:1207	engine_sel	const unsigned char e = fit->engine_sel;
-src/opt/select_engine.c:1209	ESEL_FORCED	e == ESEL_FORCED                                  ? "forced"
-src/opt/select_engine.c:1210	ESEL_DECLINED_NULLABLE_DEFAULT	: e == ESEL_DECLINED_NULLABLE_DEFAULT ||
-src/opt/select_engine.c:1211	ESEL_DECLINED_NULLABLE	e == ESEL_DECLINED_NULLABLE                       ? "admit"
-src/opt/select_engine.c:1213	SDR_NO_PREFILTER,size_drop_rung	? (cx->size_drop_rung == SDR_NO_PREFILTER ? "drop-prefilter"
-src/opt/select_engine.c:1214	SDR_NO_PREMUL,size_drop_rung	: cx->size_drop_rung == SDR_NO_PREMUL    ? "drop-premul"
-src/opt/select_engine.c:1215	SDR_NO_ANCHORED,size_drop_rung	: cx->size_drop_rung == SDR_NO_ANCHORED  ? "drop-anchored"
-src/opt/select_engine.c:1217	ESEL_SELECTED	: e == ESEL_SELECTED                                ? "none"
-src/opt/select_engine.c:1218	CR_NONE	: cr == CR_NONE                                     ? "sel1-drop"
-src/opt/select_engine.c:1221	pcrec_engine_sel_name	pcrec_engine_sel_name(cx), from);
-src/opt/select_engine.c:1294	engines	fit.engines = mask;
-src/opt/select_engine.c:1295	why	fit.why = why ? why_text(cx, why, why_pos) : NULL;
-src/opt/select_engine.c:1296	why_pos	fit.why_pos = why_pos;
-src/opt/select_engine.c:1337	fit.chosen	fit.chosen = ENGM_DFA;
-src/opt/select_engine.c:1342	fit.chosen	fit.chosen = ENGM_VM;
-src/opt/select_engine.c:1343	why	if (!fit.why) fit.why = "--engine=vm";
-src/opt/select_engine.c:1349	fit.chosen	fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
-src/opt/select_engine.c:1353	prefilter_decision	prefilter_decision(cx, &fit, why_pos);
-src/opt/select_engine.c:1358	engine_sel,esel_of	fit.engine_sel = esel_of(cx, &fit);
-src/opt/select_engine.c:1364	engine_sel	snprintf(b, sizeof b, "%u", (unsigned)fit.engine_sel);
-src/opt/select_engine.c:1366	engine_sel	if (en != fit.engine_sel)
-src/opt/select_engine.c:1367	esel_of	pcrec_fit_oracle_fail("attrib", a, b, "esel_of");
+src/opt/select_engine.c:550	collapse_reason,CR_NONE,dfa_disabled	return s->cx->collapse_reason == CR_NONE && !s->cx->dfa_disabled &&
+src/opt/select_engine.c:581	collapse_reason,CR_NONE	return s->cx->collapse_reason != CR_NONE &&
+src/opt/select_engine.c:614	dfa_disabled	return s->cx->dfa_disabled &&
+src/opt/select_engine.c:615	collapse_reason,CR_SEL1	(s->cx->collapse_reason != CR_SEL1 || s->force_off);
+src/opt/select_engine.c:667	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT,
+src/opt/select_engine.c:678	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT,
+src/opt/select_engine.c:689	ESEL_DECLINED_NULLABLE	ESEL_DECLINED_NULLABLE,
+src/opt/select_engine.c:730	pf_admit_walk	static const PfAdmit *pf_admit_walk(const PfAdmitSel *s)
+src/opt/select_engine.c:753	ESEL_FORCED	if (r->verdict == PFV_UNSTATED || r->esel == ESEL_FORCED ||
+src/opt/select_engine.c:811	prefilter_decision	static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
+src/opt/select_engine.c:968	fit->chosen	if (force_on && fit->chosen != ENGM_VM)
+src/opt/select_engine.c:1057	collapse_reason,CR_NONE,dfa_disabled	if (has_var && (cx->collapse_reason != CR_NONE || cx->dfa_disabled))
+src/opt/select_engine.c:1059	prefilter_decision	"prefilter_decision");
+src/opt/select_engine.c:1082	fit->chosen	fit->chosen == ENGM_VM && cx->opt->engine != PCREC_ENGINE_VM,
+src/opt/select_engine.c:1084	pf_admit_walk	const PfAdmit *row = pf_admit_walk(&pfas);
+src/opt/select_engine.c:1085	pf_admit	fit->pf_admit = row;
+src/opt/select_engine.c:1086	prefilter	fit->prefilter = pf_admit_verdict(row, &pfas);
+src/opt/select_engine.c:1107	fit_attrib_walk	static unsigned char fit_attrib_walk(const Ctx *cx, const EngineFit *fit, int *from)
+src/opt/select_engine.c:1112	ESEL_FORCED	if (cx->opt->engine != PCREC_ENGINE_AUTO) return ESEL_FORCED;
+src/opt/select_engine.c:1114	pf_admit	if (fit->pf_admit->esel != ESEL_PASS) return fit->pf_admit->esel;
+src/opt/select_engine.c:1115	fit_nseq	for (int i = cx->fit_nseq; i-- > 0; ) {
+src/opt/select_engine.c:1116	prefilter	const unsigned char c = cx->fit_seq[i]->esel[fit->prefilter ? FIT_KEPT : FIT_OFF];
+src/opt/select_engine.c:1119	dfa_was_engine,ESEL_OVERFLOWED_DFA	return c == ESEL_ROLE ? (cx->dfa_was_engine ? ESEL_OVERFLOWED_DFA
+src/opt/select_engine.c:1120	ESEL_OVERFLOWED_PREFILTER	: ESEL_OVERFLOWED_PREFILTER) : c;
+src/opt/select_engine.c:1123	ESEL_SELECTED	return ESEL_SELECTED;
+src/opt/select_engine.c:1184	esel_of	static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
+src/opt/select_engine.c:1200	dfa_disabled,SDR_NONE,size_drop_rung	if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
+src/opt/select_engine.c:1201	why_pos	pcrec_ctx_fail(cx, fit->why_pos,
+src/opt/select_engine.c:1205	fit_attrib_walk	return fit_attrib_walk(cx, fit, NULL);
+src/opt/select_engine.c:1230	collapse_reason	const int cr = cx->collapse_reason;
+src/opt/select_engine.c:1232	pf_admit,prefilter	"%s pf=%d", fit->pf_admit->name, (int)fit->prefilter);
+src/opt/select_engine.c:1235	fit_attrib_walk	(void)fit_attrib_walk(cx, fit, &src);
+src/opt/select_engine.c:1241	pcrec_engine_sel_name	pcrec_engine_sel_name(cx), from);
+src/opt/select_engine.c:1314	engines	fit.engines = mask;
+src/opt/select_engine.c:1315	why	fit.why = why ? why_text(cx, why, why_pos) : NULL;
+src/opt/select_engine.c:1316	why_pos	fit.why_pos = why_pos;
+src/opt/select_engine.c:1357	fit.chosen	fit.chosen = ENGM_DFA;
+src/opt/select_engine.c:1362	fit.chosen	fit.chosen = ENGM_VM;
+src/opt/select_engine.c:1363	why	if (!fit.why) fit.why = "--engine=vm";
+src/opt/select_engine.c:1369	fit.chosen	fit.chosen = (mask & ENGM_DFA) ? ENGM_DFA : ENGM_VM;
+src/opt/select_engine.c:1373	prefilter_decision	prefilter_decision(cx, &fit, why_pos);
+src/opt/select_engine.c:1374	engine_sel,esel_of	fit.engine_sel = esel_of(cx, &fit);
 src/ir/dfa.c:203	dfa_overflowed	cx->dfa_overflowed = true;
 src/ir/dfa.c:204	dfa_overflow_why	snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
 src/ir/dfa.c:1248	dfa_overflowed	cx->dfa_overflowed = true;
@@ -113,32 +74,32 @@ src/dump/facts_dump.c:153	why	cells[4] = fd_status(&pf->why[f]);
 src/dump/facts_dump.c:157	why	cells[6] = pf->why[f].status == PF_ST_ABSENT ||
 src/dump/facts_dump.c:158	why	pf->why[f].status == PF_ST_UNASKED
 src/dump/facts_dump.c:160	why	cells[7] = fd_why(cx, &pf->why[f], enc);
-src/core/internal.h:2310	ESEL_FORCED	ESEL_FORCED                    = 0,  /* the caller named --engine=vm/dfa */
-src/core/internal.h:2311	ESEL_SELECTED	ESEL_SELECTED                  = 1,  /* auto chose on the AST; nothing overflowed */
-src/core/internal.h:2316	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT = 2,
-src/core/internal.h:2318	ESEL_OVERFLOWED_DFA	ESEL_OVERFLOWED_DFA       = 3,  /* the DFA was to be the ENGINE; no prefilter survives */
-src/core/internal.h:2319	ESEL_OVERFLOWED_PREFILTER	ESEL_OVERFLOWED_PREFILTER = 4,  /* the VM was already chosen; its prefilter was dropped */
-src/core/internal.h:2320	ESEL_COLLAPSED_PREFILTER	ESEL_COLLAPSED_PREFILTER  = 5,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
-src/core/internal.h:2340	ESEL_DECLINED_NULLABLE	ESEL_DECLINED_NULLABLE    = 6,
-src/core/internal.h:2397	PFLW_EXACT	PFLW_EXACT    = 0,
-src/core/internal.h:2398	PFLW_NO_REP	PFLW_NO_REP   = 1,
-src/core/internal.h:2403	PFLW_NULLABLE	PFLW_NULLABLE = 2,
-src/core/internal.h:2405	PFLW_FORCED	PFLW_FORCED   = 3,
-src/core/internal.h:2406	PFLW_SEL1	PFLW_SEL1     = 4,
-src/core/internal.h:2407	PFLW_SIZECAP	PFLW_SIZECAP  = 5
-src/core/internal.h:2415	CR_NONE	CR_NONE    = 0,
-src/core/internal.h:2416	CR_SEL1	CR_SEL1    = 1,   /* a DFA state cap overflowed ([SEL-1]'s rung) */
-src/core/internal.h:2417	CR_SIZECAP	CR_SIZECAP = 2    /* an emitted-size cap refused the exact artifact */
-src/core/internal.h:2468	SDR_NONE	SDR_NONE        = 0,
-src/core/internal.h:2473	SDR_NO_ANCHORED	SDR_NO_ANCHORED = 1,
-src/core/internal.h:2489	SDR_NO_PREMUL	SDR_NO_PREMUL   = 2,
-src/core/internal.h:2501	SDR_NO_PREFILTER	SDR_NO_PREFILTER = 3,
-src/core/internal.h:2502	SDR_MAX	SDR_MAX         = 3
-src/core/internal.h:2529	PFLW_SIZECAP	enum { PFLW_PASS = PFLW_SIZECAP + 1 };     /* this row sets no collapse language */
-src/core/internal.h:4601	engines	return a->reg ? a->reg->engines : (ENGM_DFA | ENGM_VM);
-src/core/internal.h:6799	pcrec_engine_sel_name	const char *pcrec_engine_sel_name(Ctx *cx);
-src/core/internal.h:7197	CR_NONE,CR_SEL1	return cr == CR_NONE ? "none" : cr == CR_SEL1 ? "sel1"
-src/core/internal.h:7198	CR_SIZECAP	: cr == CR_SIZECAP ? "sizecap" : "?";
+src/core/internal.h:2253	ESEL_FORCED	ESEL_FORCED                    = 0,  /* the caller named --engine=vm/dfa */
+src/core/internal.h:2254	ESEL_SELECTED	ESEL_SELECTED                  = 1,  /* auto chose on the AST; nothing overflowed */
+src/core/internal.h:2259	ESEL_DECLINED_NULLABLE_DEFAULT	ESEL_DECLINED_NULLABLE_DEFAULT = 2,
+src/core/internal.h:2261	ESEL_OVERFLOWED_DFA	ESEL_OVERFLOWED_DFA       = 3,  /* the DFA was to be the ENGINE; no prefilter survives */
+src/core/internal.h:2262	ESEL_OVERFLOWED_PREFILTER	ESEL_OVERFLOWED_PREFILTER = 4,  /* the VM was already chosen; its prefilter was dropped */
+src/core/internal.h:2263	ESEL_COLLAPSED_PREFILTER	ESEL_COLLAPSED_PREFILTER  = 5,  /* [SEL-1]'s rung: a prefilter SURVIVED, count-collapsed */
+src/core/internal.h:2283	ESEL_DECLINED_NULLABLE	ESEL_DECLINED_NULLABLE    = 6,
+src/core/internal.h:2340	PFLW_EXACT	PFLW_EXACT    = 0,
+src/core/internal.h:2341	PFLW_NO_REP	PFLW_NO_REP   = 1,
+src/core/internal.h:2346	PFLW_NULLABLE	PFLW_NULLABLE = 2,
+src/core/internal.h:2348	PFLW_FORCED	PFLW_FORCED   = 3,
+src/core/internal.h:2349	PFLW_SEL1	PFLW_SEL1     = 4,
+src/core/internal.h:2350	PFLW_SIZECAP	PFLW_SIZECAP  = 5
+src/core/internal.h:2358	CR_NONE	CR_NONE    = 0,
+src/core/internal.h:2359	CR_SEL1	CR_SEL1    = 1,   /* a DFA state cap overflowed ([SEL-1]'s rung) */
+src/core/internal.h:2360	CR_SIZECAP	CR_SIZECAP = 2    /* an emitted-size cap refused the exact artifact */
+src/core/internal.h:2411	SDR_NONE	SDR_NONE        = 0,
+src/core/internal.h:2416	SDR_NO_ANCHORED	SDR_NO_ANCHORED = 1,
+src/core/internal.h:2432	SDR_NO_PREMUL	SDR_NO_PREMUL   = 2,
+src/core/internal.h:2444	SDR_NO_PREFILTER	SDR_NO_PREFILTER = 3,
+src/core/internal.h:2445	SDR_MAX	SDR_MAX         = 3
+src/core/internal.h:2474	PFLW_SIZECAP	enum { PFLW_PASS = PFLW_SIZECAP + 1 };     /* this row sets no collapse language */
+src/core/internal.h:4575	engines	return a->reg ? a->reg->engines : (ENGM_DFA | ENGM_VM);
+src/core/internal.h:6773	pcrec_engine_sel_name	const char *pcrec_engine_sel_name(Ctx *cx);
+src/core/internal.h:7171	CR_NONE,CR_SEL1	return cr == CR_NONE ? "none" : cr == CR_SEL1 ? "sel1"
+src/core/internal.h:7172	CR_SIZECAP	: cr == CR_SIZECAP ? "sizecap" : "?";
 src/facts/facts.c:124	why	pf->why[f] = (PfWhy){ PF_ST_ABSENT,
 src/facts/facts.c:137	why	pf->why[f] = (PfWhy){ PF_ST_DENIED, PF_WHY_DENY, d & (~d + 1) };
 src/facts/facts.c:147	why	pf->why[f] = (PfWhy){ PF_ST_DERIVED, PF_WHY_NONE, 0 };
@@ -177,47 +138,35 @@ src/gen/emit_dfa.c:10894	fit.chosen,prefilter	bool dfa_body = cx->job->fit.chose
 src/gen/emit_dfa.c:11475	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
 src/gen/emit_vm.c:3639	prefilter	return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
 src/gen/emit_vm.c:3641	prefilter_collapsed	&& !cx->job->fit.prefilter_collapsed;
-src/gen/emit_vm.c:9414	dfa_disabled	!cx->dfa_disabled ? NULL
-src/gen/emit_vm.c:9417	dfa_overflow_why	" instead of refusing (SEL-1)", cx->dfa_overflow_why);
-src/gen/emit_vm.c:9474	why	vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
-src/gen/emit_vm.c:9492	pf_admit	const PfAdmit *pfa = cx->job->fit.pf_admit;
-src/gen/emit_vm.c:9494	prefilter,prefilter_collapsed	? (st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list)
-src/gen/emit_vm.c:9497	prefilter	if (st->prefilter) {
-src/gen/emit_vm.c:9506	prefilter_collapsed	if (st->prefilter_collapsed) {
-src/gen/emit_vm.c:9553	prefilter_declined_nullable	} else if (st->prefilter_declined_nullable) {
-src/gen/emit_vm.c:9570	prefilter_declined_nullable_default	} else if (st->prefilter_declined_nullable_default) {
-src/gen/emit_vm.c:9584	dfa_disabled	} else if (cx->dfa_disabled) {
-src/gen/emit_vm.c:9598	prefilter,prefilter_collapsed	pf_new = st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list;
-src/gen/emit_vm.c:11208	prefilter	if (!v->cx->job->fit.prefilter) return;
-src/gen/emit_vm.c:11269	why	job->fit.why ? job->fit.why : "--engine=vm");
-src/gen/emit_vm.c:11277	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, v->up, "vm", pcrec_engine_sel_name(cx));
-src/gen/emit_vm.c:11280	why	pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
-src/gen/emit_vm.c:11281	why	strlen(job->fit.why ? job->fit.why : "--engine=vm"));
-src/gen/emit_vm.c:11319	prefilter	job->fit.prefilter ? "hybrid" : "none");
-src/gen/emit_vm.c:11325	SDR_NO_PREFILTER,size_drop_rung	if (cx->size_drop_rung == SDR_NO_PREFILTER)
-src/gen/emit_vm.c:11328	size_cap_bytes,size_cap_limit	cx->size_cap_bytes, cx->size_cap_limit);
-src/gen/emit_vm.c:11334	fit_nseq	for (int i = 0; i < cx->fit_nseq; i++)
-src/gen/emit_vm.c:11337	SDR_NO_PREFILTER,size_drop_rung	if ((pfwhy != NULL) != (cx->size_drop_rung == SDR_NO_PREFILTER) ||
-src/gen/emit_vm.c:11340	SDR_NO_PREFILTER,size_drop_rung	cx->size_drop_rung == SDR_NO_PREFILTER ? "stamped" : "-",
-src/gen/emit_vm.c:11365	prefilter	if (job->fit.prefilter) {
-src/gen/emit_vm.c:11367	prefilter_collapsed	job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
-src/gen/emit_vm.c:11390	prefilter_lang_why	switch (job->fit.prefilter_lang_why) {
-src/gen/emit_vm.c:11391	PFLW_NO_REP	case PFLW_NO_REP:
-src/gen/emit_vm.c:11399	PFLW_NULLABLE	case PFLW_NULLABLE:
-src/gen/emit_vm.c:11412	PFLW_FORCED	case PFLW_FORCED:
-src/gen/emit_vm.c:11415	PFLW_SEL1	case PFLW_SEL1:
-src/gen/emit_vm.c:11423	prefilter_nfa_states	job->fit.prefilter_nfa_states);
-src/gen/emit_vm.c:11425	PFLW_SIZECAP	case PFLW_SIZECAP:
-src/gen/emit_vm.c:11432	prefilter_sizecap_bytes	job->fit.prefilter_sizecap_bytes,
-src/gen/emit_vm.c:11433	prefilter_sizecap_limit	job->fit.prefilter_sizecap_limit);
-src/gen/emit_vm.c:12851	prefilter	if (job->fit.prefilter) {
-src/gen/emit_vm.c:14018	why	pcrec_emit_info(cx, g, 2, job->fit.why,
-src/gen/emit_vm.c:14041	prefilter	st.prefilter = v->emitted_prefilter;
-src/gen/emit_vm.c:14044	prefilter_collapsed	st.prefilter_collapsed = job->fit.prefilter_collapsed;
-src/gen/emit_vm.c:14047	prefilter_declined_nullable	st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
-src/gen/emit_vm.c:14049	prefilter_declined_nullable_default	st.prefilter_declined_nullable_default =
-src/gen/emit_vm.c:14050	prefilter_declined_nullable_default	job->fit.prefilter_declined_nullable_default;
-src/gen/emit_vm.c:14084	why	st.why = job->fit.why;
+src/gen/emit_vm.c:9414	why	vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
+src/gen/emit_vm.c:9432	prefilter	if (st->prefilter) {
+src/gen/emit_vm.c:9441	prefilter_collapsed	if (st->prefilter_collapsed) {
+src/gen/emit_vm.c:9455	pf_admit	const PfAdmit *pfa = cx->job->fit.pf_admit;
+src/gen/emit_vm.c:9457	dfa_overflow_why	pf_note = vm_rolef(v, pfa->note, cx->dfa_overflow_why);
+src/gen/emit_vm.c:11064	prefilter	if (!v->cx->job->fit.prefilter) return;
+src/gen/emit_vm.c:11125	why	job->fit.why ? job->fit.why : "--engine=vm");
+src/gen/emit_vm.c:11133	pcrec_engine_sel_name	pcrec_emit_engine_stamp(c, v->up, "vm", pcrec_engine_sel_name(cx));
+src/gen/emit_vm.c:11136	why	pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
+src/gen/emit_vm.c:11137	why	strlen(job->fit.why ? job->fit.why : "--engine=vm"));
+src/gen/emit_vm.c:11175	prefilter	job->fit.prefilter ? "hybrid" : "none");
+src/gen/emit_vm.c:11185	fit_nseq	for (int i = cx->fit_nseq; i-- > 0 && !pfwhy; )
+src/gen/emit_vm.c:11189	size_cap_bytes,size_cap_limit	cx->size_cap_bytes, cx->size_cap_limit);
+src/gen/emit_vm.c:11211	prefilter	if (job->fit.prefilter) {
+src/gen/emit_vm.c:11213	prefilter_collapsed	job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+src/gen/emit_vm.c:11236	prefilter_lang_why	switch (job->fit.prefilter_lang_why) {
+src/gen/emit_vm.c:11237	PFLW_NO_REP	case PFLW_NO_REP:
+src/gen/emit_vm.c:11245	PFLW_NULLABLE	case PFLW_NULLABLE:
+src/gen/emit_vm.c:11258	PFLW_FORCED	case PFLW_FORCED:
+src/gen/emit_vm.c:11261	PFLW_SEL1	case PFLW_SEL1:
+src/gen/emit_vm.c:11269	prefilter_nfa_states	job->fit.prefilter_nfa_states);
+src/gen/emit_vm.c:11271	PFLW_SIZECAP	case PFLW_SIZECAP:
+src/gen/emit_vm.c:11278	prefilter_sizecap_bytes	job->fit.prefilter_sizecap_bytes,
+src/gen/emit_vm.c:11279	prefilter_sizecap_limit	job->fit.prefilter_sizecap_limit);
+src/gen/emit_vm.c:12697	prefilter	if (job->fit.prefilter) {
+src/gen/emit_vm.c:13864	why	pcrec_emit_info(cx, g, 2, job->fit.why,
+src/gen/emit_vm.c:13887	prefilter	st.prefilter = v->emitted_prefilter;
+src/gen/emit_vm.c:13890	prefilter_collapsed	st.prefilter_collapsed = job->fit.prefilter_collapsed;
+src/gen/emit_vm.c:13892	why	st.why = job->fit.why;
 src/core/compile.c:52	failed_nomem	cx->failed_nomem = true;
 src/core/compile.c:352	fit.chosen	if (cx->job->fit.chosen != ENGM_DFA) return;
 src/core/compile.c:354	SDR_NO_ANCHORED,size_drop_rung	if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;
@@ -233,282 +182,277 @@ src/core/compile.c:662	collapse_reason	unsigned char collapse_reason;  /* the re
 src/core/compile.c:663	size_drop_rung	unsigned char size_drop_rung;
 src/core/compile.c:664	dfa_disabled	bool          dfa_disabled;
 src/core/compile.c:665	st_phase	SizeTermPhase st_phase;         /* [DEC-FALLBACK] row 2's `applies` reads it */
-src/core/compile.c:791	fit_collapse_applies	static bool fit_collapse_applies(const FitSel *s)
-src/core/compile.c:794	collapse_reason,CR_SIZECAP	return s->collapse_reason != CR_SIZECAP &&
-src/core/compile.c:795	fit.chosen	j && j->fit.chosen != ENGM_DFA &&
-src/core/compile.c:796	prefilter	j->fit.prefilter &&
-src/core/compile.c:797	prefilter_collapsed	!j->fit.prefilter_collapsed;
-src/core/compile.c:849	fit_anchored_applies	static bool fit_anchored_applies(const FitSel *s)
-src/core/compile.c:851	SDR_NONE,size_drop_rung	return s->size_drop_rung == SDR_NONE &&
-src/core/compile.c:904	SDR_NO_PREMUL,size_drop_rung	return s->size_drop_rung < SDR_NO_PREMUL &&
-src/core/compile.c:905	fit.chosen	s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
-src/core/compile.c:919	fit_prefilter_applies	static bool fit_prefilter_applies(const FitSel *s)
-src/core/compile.c:921	dfa_disabled,SDR_NO_PREFILTER,size_drop_rung	return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&
-src/core/compile.c:922	fit.chosen	s->cx->job && s->cx->job->fit.chosen != ENGM_DFA &&
-src/core/compile.c:923	prefilter	s->cx->job->fit.prefilter &&
-src/core/compile.c:928	fit_always	static bool fit_always(const FitSel *s) { (void)s; return true; }
-src/core/compile.c:932	st_phase	static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER; }
-src/core/compile.c:982	dfa_disabled	return fit_sel1_eligible(s) && !s->dfa_disabled;
-src/core/compile.c:990	collapse_reason,CR_SEL1,dfa_disabled	(!s->dfa_disabled || s->collapse_reason == CR_SEL1);
-src/core/compile.c:999	fit_rungs	static const FitRung fit_rungs[] = {
-src/core/compile.c:1001	fit_always	{ .name = "forcing", .deny = 0, .degrading = false, .applies = fit_always,
-src/core/compile.c:1006	fit_always	{ .name = "nomem", .deny = 0, .degrading = false, .applies = fit_always,
-src/core/compile.c:1021	ESEL_COLLAPSED_PREFILTER,PFLW_SEL1	.cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
-src/core/compile.c:1036	fit_collapse_applies	.fof = FIT_FOF_IN, .applies = fit_collapse_applies, .act = FIT_COLLAPSE, .on = FIT_L_SIZE,
-src/core/compile.c:1038	PFLW_SIZECAP	.cells = { { ESEL_SIZE_CAP_RETRY, ESEL_PASS }, PFLW_SIZECAP, NULL },
-src/core/compile.c:1041	fit_anchored_applies	.applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
-src/core/compile.c:1061	fit_prefilter_applies	.applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
-src/core/compile.c:1072	fit_always	.applies = fit_always, .act = FIT_REFUSE, .on = FIT_L_ALL,
-src/core/compile.c:1081	fit_rung_denied	static bool fit_rung_denied(const FitRung *r, uint64_t flags)
-src/core/compile.c:1088	fit_rung_of	static const FitRung *fit_rung_of(FitAct act)
-src/core/compile.c:1090	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
-src/core/compile.c:1091	fit_rungs	if (fit_rungs[i].act == act) return &fit_rungs[i];
-src/core/compile.c:1092	fit_rungs	return &fit_rungs[sizeof fit_rungs / sizeof fit_rungs[0] - 1];
-src/core/compile.c:1099	pf.forcing	const unsigned l = (cx->job && cx->job->pf.forcing ? FIT_L_FORCING : 0u) |
-src/core/compile.c:1100	failed_nomem	(cx->failed_nomem ? FIT_L_NOMEM : 0u) |
-src/core/compile.c:1101	dfa_overflowed	(cx->dfa_overflowed ? FIT_L_OVERFLOW : 0u) |
-src/core/compile.c:1102	size_cap_refused	(cx->size_cap_refused ? FIT_L_SIZE : 0u);
-src/core/compile.c:1111	fit_walk	static const FitRung *fit_walk(const FitSel *s, unsigned labels)
-src/core/compile.c:1113	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
-src/core/compile.c:1114	fit_rungs	const FitRung *r = &fit_rungs[i];
-src/core/compile.c:1115	fit_rung_denied	if (!(r->on & labels) || !r->applies || fit_rung_denied(r, s->flags)) continue;
-src/core/compile.c:1118	fit_rung_of	return fit_rung_of(FIT_REFUSE);
-src/core/compile.c:1129	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
-src/core/compile.c:1130	fit_rungs	retries += fit_rungs[i].retries;
-src/core/compile.c:1131	fit_rungs	restarts += fit_rungs[i].sets.restart;
-src/core/compile.c:1142	CR_SEL1	const FitCrCell want = cr == CR_SEL1 ? FIT_CR_TO_SEL1
-src/core/compile.c:1143	CR_SIZECAP	: cr == CR_SIZECAP ? FIT_CR_TO_SIZECAP : FIT_CR_UNSTATED;
-src/core/compile.c:1144	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
-src/core/compile.c:1145	fit_rungs	if (want != FIT_CR_UNSTATED && fit_rungs[i].sets.cr == want) return &fit_rungs[i];
-src/core/compile.c:1146	fit_rung_of	return fit_rung_of(FIT_REFUSE);
-src/core/compile.c:1175	CR_NONE	static bool pflw_rung(const PflwSel *s)   { return s->cr != CR_NONE && pflw_worth(s); }
-src/core/compile.c:1184	PFLW_FORCED	{ "forced",   pflw_worth,  true,  PFLW_FORCED   },
-src/core/compile.c:1185	PFLW_NULLABLE	{ "nullable", pflw_wanted, false, PFLW_NULLABLE },
-src/core/compile.c:1186	PFLW_EXACT	{ "exact",    pflw_rep,    false, PFLW_EXACT    },
-src/core/compile.c:1187	PFLW_NO_REP	{ "no-rep",   pflw_always, false, PFLW_NO_REP   },
-src/core/compile.c:1212	defo	int           unroll_k;    /* the K the attempt ran at (`defo.unroll_k`) */
-src/core/compile.c:1248	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
-src/core/compile.c:1249	fit_rungs	if (fit_rungs[i].ukw) return &fit_rungs[i];
-src/core/compile.c:1250	fit_rung_of	return fit_rung_of(FIT_REFUSE);
-src/core/compile.c:1303	fit_rungs	const size_t n = sizeof fit_rungs / sizeof fit_rungs[0];
-src/core/compile.c:1307	fit_rungs	const FitRung *r = &fit_rungs[i];
-src/core/compile.c:1308	fit_always	total |= (r->on & l) && r->applies == fit_always && !r->deny &&
-src/core/compile.c:1315	fit_rungs	const FitRung *r = &fit_rungs[i];
-src/core/compile.c:1321	ESEL_FORCED	fit_check(cx, r->cells.esel[FIT_KEPT] != ESEL_FORCED &&
-src/core/compile.c:1322	ESEL_FORCED	r->cells.esel[FIT_OFF] != ESEL_FORCED, "a row's esel cell is unstated");
-src/core/compile.c:1323	PFLW_EXACT	fit_check(cx, r->cells.pflw != PFLW_EXACT, "a row's pflw cell is unstated");
-src/core/compile.c:1356	CR_NONE	case FIT_CR_TO_NONE:    return CR_NONE;
-src/core/compile.c:1357	CR_SEL1	case FIT_CR_TO_SEL1:    return CR_SEL1;
-src/core/compile.c:1358	CR_SIZECAP	case FIT_CR_TO_SIZECAP: return CR_SIZECAP;
-src/core/compile.c:1367	SDR_NO_ANCHORED	case FIT_SDR_TO_ANCHORED:  return SDR_NO_ANCHORED;
-src/core/compile.c:1368	SDR_NO_PREMUL	case FIT_SDR_TO_PREMUL:    return SDR_NO_PREMUL;
-src/core/compile.c:1369	SDR_NO_PREFILTER	case FIT_SDR_TO_PREFILTER: return SDR_NO_PREFILTER;
-src/core/compile.c:1385	fit_rungs	const unsigned bit = 1u << (unsigned)(r - fit_rungs);
-src/core/compile.c:1437	pf.forcing	return fit_trace_label_names[(cx->job && cx->job->pf.forcing ? 8u : 0u) |
-src/core/compile.c:1438	failed_nomem	(cx->failed_nomem    ? 4u : 0u) |
-src/core/compile.c:1439	dfa_overflowed	(cx->dfa_overflowed  ? 2u : 0u) |
-src/core/compile.c:1440	size_cap_refused	(cx->size_cap_refused ? 1u : 0u)];
-src/core/compile.c:1446	collapse_reason,dfa_disabled	"restart=%d", (row), (int)dfa_disabled, (int)collapse_reason,          \
-src/core/compile.c:1447	size_drop_rung	(int)size_drop_rung,                                                   \
-src/core/compile.c:1448	defo	(unsigned long long)(defo.flags &                                      \
-src/core/compile.c:1450	dfa_disabled,overflow_why,size_cap_bytes,size_cap_limit	dfa_disabled ? overflow_why : "-", size_cap_bytes, size_cap_limit,     \
-src/core/compile.c:1451	budget_fallback,dfa_was_engine	(int)dfa_was_engine, (int)budget_fallback, (int)(restart))
-src/core/compile.c:1474	defo	pcrec_options defo;
-src/core/compile.c:1475	defo	pcrec_default_options(&defo);
-src/core/compile.c:1476	defo	if (opt) defo = *opt;   /* local copy: keeps params setjmp-safe */
-src/core/compile.c:1496	defo	if (!pcrec_tune_valid(defo.tune)) {
-src/core/compile.c:1499	defo	"invalid tune position %d (the dial is -2..2)", defo.tune);
-src/core/compile.c:1502	defo	defo.flags |= pcrec_tune_deny_flags(defo.tune);
-src/core/compile.c:1511	defo	const char *const user_prefix = defo.prefix;
-src/core/compile.c:1512	defo	defo.prefix = PCREC_PREFIX_PLACEHOLDER;
-src/core/compile.c:1558	defo	if (defo.features) {
-src/core/compile.c:1560	defo	if (pcrec_enabled_resolve_spec(defo.features, &feat_mask, feat_label,
-src/core/compile.c:1575	defo	const PcrecEnc *fe = pcrec_enc_by_id(defo.encoding);
-src/core/compile.c:1593	dfa_disabled	volatile bool dfa_disabled = false;
-src/core/compile.c:1596	collapse_reason,CR_NONE	volatile unsigned char collapse_reason = CR_NONE;
-src/core/compile.c:1600	SDR_NONE,size_drop_rung	volatile unsigned char size_drop_rung = SDR_NONE;
-src/core/compile.c:1604	size_cap_bytes,size_cap_limit	volatile unsigned long long size_cap_bytes = 0, size_cap_limit = 0;
-src/core/compile.c:1607	dfa_was_engine	volatile bool dfa_was_engine = false;
-src/core/compile.c:1613	budget_fallback	volatile bool budget_fallback = false;
-src/core/compile.c:1625	fit_rungs	const FitRung  *fit_seq_rows[sizeof fit_rungs / sizeof fit_rungs[0]];
-src/core/compile.c:1626	fit_rungs	const FitCells *fit_seq_cells[sizeof fit_rungs / sizeof fit_rungs[0]];
-src/core/compile.c:1627	fit_nseq	volatile int      fit_nseq = 0;
-src/core/compile.c:1628	fit_fired	volatile unsigned fit_fired = 0;
-src/core/compile.c:1629	overflow_why	char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
-src/core/compile.c:1636	dmemo	DfaMemo dmemo;
-src/core/compile.c:1637	dmemo	memset(&dmemo, 0, sizeof dmemo);
-src/core/compile.c:1656	defo	const int bar0 = pcrec_tune_size_term_bar(defo.tune);
-src/core/compile.c:1658	defo	const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
-src/core/compile.c:1664	defo,fit_rung_denied,fit_rung_of	!fit_rung_denied(fit_rung_of(FIT_UNROLL_RESCUE), defo.flags);
-src/core/compile.c:1666	st_phase	volatile SizeTermPhase st_phase = ST_DEFAULT;
-src/core/compile.c:1667	st_idx	volatile int  st_idx = 0;          /* next ladder rung to try */
-src/core/compile.c:1668	st_final_k	volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
-src/core/compile.c:1669	st_rescue	volatile bool st_rescue = false;   /* the bar declined it; a cap took it */
-src/core/compile.c:1675	st_capexcl	volatile bool st_capexcl = false;
-src/core/compile.c:1676	st_k	int    st_k[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1677	st_ok	bool   st_ok[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1678	st_code,st_total	size_t st_code[SIZE_TERM_LADDER_N + 1], st_total[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1679	st_nodes	size_t st_nodes[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1682	st_fc,st_sc	long long st_fc[SIZE_TERM_LADDER_N + 1], st_sc[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1690	st_whylen	size_t st_whylen[SIZE_TERM_LADDER_N + 1];
-src/core/compile.c:1691	st_k	memset(st_k, 0, sizeof st_k);
-src/core/compile.c:1692	st_ok	memset(st_ok, 0, sizeof st_ok);
-src/core/compile.c:1693	st_code	memset(st_code, 0, sizeof st_code);
-src/core/compile.c:1694	st_total	memset(st_total, 0, sizeof st_total);
-src/core/compile.c:1695	st_nodes	memset(st_nodes, 0, sizeof st_nodes);
-src/core/compile.c:1696	st_whylen	memset(st_whylen, 0, sizeof st_whylen);
-src/core/compile.c:1704	defo	cx.opt = &defo;
-src/core/compile.c:1729	defo	cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
-src/core/compile.c:1758	dfa_disabled	cx.dfa_disabled = dfa_disabled;
-src/core/compile.c:1762	collapse_reason	cx.collapse_reason = collapse_reason;
-src/core/compile.c:1767	size_drop_rung	cx.size_drop_rung = size_drop_rung;
-src/core/compile.c:1768	size_cap_bytes	cx.size_cap_bytes = size_cap_bytes;
-src/core/compile.c:1769	size_cap_limit	cx.size_cap_limit = size_cap_limit;
-src/core/compile.c:1770	dfa_was_engine	cx.dfa_was_engine = dfa_was_engine;
-src/core/compile.c:1772	fit_nseq	cx.fit_nseq = fit_nseq;
-src/core/compile.c:1773	dmemo	cx.dfa_memo = &dmemo;
-src/core/compile.c:1774	dfa_disabled	if (dfa_disabled)
-src/core/compile.c:1775	dfa_overflow_why,overflow_why	memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
-src/core/compile.c:1803	defo	const bool cmt = pcrec_axis_on(defo.flags, PCREC_NO_COMMENTS,
-src/core/compile.c:1814	dmemo	pcrec_dfa_memo_free(&dmemo);
-src/core/compile.c:1833	st_phase	if (st_phase == ST_LADDER) {
-src/core/compile.c:1834	defo,st_idx	defo.unroll_k = SIZE_TERM_LADDER[st_idx];
-src/core/compile.c:1844	defo	const uint64_t st_cap = defo.max_emit_bytes
-src/core/compile.c:1845	defo	? defo.max_emit_bytes
-src/core/compile.c:1866	st_phase	} else if (st_phase == ST_FINAL) {
-src/core/compile.c:1867	defo,st_final_k	defo.unroll_k = st_final_k;
-src/core/compile.c:1883	defo	const FitSel fs = { .cx = &cx, .flags = defo.flags,
-src/core/compile.c:1884	collapse_reason	.collapse_reason = collapse_reason,
-src/core/compile.c:1885	size_drop_rung	.size_drop_rung = size_drop_rung,
-src/core/compile.c:1886	dfa_disabled,st_phase	.dfa_disabled = dfa_disabled, .st_phase = st_phase };
-src/core/compile.c:1887	fit_walk	const FitRung *rung = fit_walk(&fs, fit_labels(&cx));
-src/core/compile.c:1927	dmemo	pcrec_dfa_memo_free(&dmemo);
-src/core/compile.c:1944	st_idx,st_ok	st_ok[st_idx + 1] = false;
-src/core/compile.c:1945	st_idx,st_k	st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
-src/core/compile.c:1946	st_idx	st_idx++;
-src/core/compile.c:1949	st_idx	if (st_idx >= SIZE_TERM_LADDER_N) {
-src/core/compile.c:1950	size_term_choose,st_code,st_k,st_nodes,st_ok,st_total	size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
-src/core/compile.c:1951	st_fc,st_sc	st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
-src/core/compile.c:1952	defo	defo.max_emit_code_bytes ? defo.max_emit_code_bytes
-src/core/compile.c:1954	defo	defo.max_emit_bytes ? defo.max_emit_bytes
-src/core/compile.c:1958	st_capexcl,st_final_k,st_rescue	st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
-src/core/compile.c:1959	st_phase	st_phase = ST_FINAL;
-src/core/compile.c:1964	size_term_choose	case FIT_UNROLL_RESCUE:   /* chosen inside `size_term_choose`, never by an arrival */
-src/core/compile.c:1968	dmemo	pcrec_dfa_memo_free(&dmemo);
-src/core/compile.c:1980	dfa_overflow_why,overflow_why	memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
-src/core/compile.c:1982	size_cap_bytes	size_cap_bytes = cx.size_cap_bytes;
-src/core/compile.c:1983	size_cap_limit	size_cap_limit = cx.size_cap_limit;
-src/core/compile.c:1991	dfa_disabled	if (w->latch && !dfa_disabled) {
-src/core/compile.c:1992	dfa_was_engine,fit.chosen	if (cx.job) dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
-src/core/compile.c:1993	budget_fallback,dfa_overflow_is_budget	budget_fallback = cx.dfa_overflow_is_budget;
-src/core/compile.c:1996	dfa_disabled	if (w->dd == FIT_DD_SET) dfa_disabled = true;
-src/core/compile.c:1997	collapse_reason	collapse_reason = fit_cr_of(w->cr, collapse_reason);
-src/core/compile.c:1998	size_drop_rung	size_drop_rung = fit_sdr_of(w->sdr, size_drop_rung);
-src/core/compile.c:1999	defo	defo.flags |= w->flags_or;
-src/core/compile.c:2001	fit_fired,fit_nseq	fit_record(rung, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired);
-src/core/compile.c:2003	st_final_k,st_idx,st_phase	st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
-src/core/compile.c:2004	st_capexcl,st_rescue	st_rescue = false; st_capexcl = false;
-src/core/compile.c:2005	st_k	memset(st_k, 0, sizeof st_k);
-src/core/compile.c:2006	st_ok	memset(st_ok, 0, sizeof st_ok);
-src/core/compile.c:2007	st_code	memset(st_code, 0, sizeof st_code);
-src/core/compile.c:2008	st_total	memset(st_total, 0, sizeof st_total);
-src/core/compile.c:2009	st_nodes	memset(st_nodes, 0, sizeof st_nodes);
-src/core/compile.c:2010	st_whylen	memset(st_whylen, 0, sizeof st_whylen);
-src/core/compile.c:2068	defo	const PcrecEnc *enc = pcrec_enc_by_id(defo.encoding);
-src/core/compile.c:2088	defo	if ((defo.flags & PCREC_NO_STARTPOS_GUARD) &&
-src/core/compile.c:2089	defo	(defo.flags & PCREC_FORCE_STARTPOS_ALIGN))
-src/core/compile.c:2210	fit_nseq	if (fit_nseq > 0 && fit_seq_rows[fit_nseq - 1]->act == FIT_SEL1_DROP &&
-src/core/compile.c:2211	prefilter	cx.job->fit.prefilter)
-src/core/compile.c:2311	fit.chosen,prefilter	if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
-src/core/compile.c:2360	collapse_reason,CR_NONE	const bool pfc_rung  = cx.collapse_reason != CR_NONE;
-src/core/compile.c:2375	fit.chosen	const bool pfc_wanted = cx.job->fit.chosen != ENGM_DFA
-src/core/compile.c:2396	collapse_reason	cx.collapse_reason };
-src/core/compile.c:2418	prefilter_nfa_states	cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
-src/core/compile.c:2419	prefilter_sizecap_bytes,size_cap_bytes	cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
-src/core/compile.c:2420	prefilter_sizecap_limit,size_cap_limit	cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
-src/core/compile.c:2421	prefilter_lang_why	cx.job->fit.prefilter_lang_why =
-src/core/compile.c:2422	PFLW_NULLABLE	!collapse                        ? (pfc_wanted ? PFLW_NULLABLE
-src/core/compile.c:2423	PFLW_EXACT	: pfc_rep    ? PFLW_EXACT
-src/core/compile.c:2424	PFLW_NO_REP	: PFLW_NO_REP)
-src/core/compile.c:2425	collapse_reason,CR_SIZECAP,PFLW_SIZECAP	: cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
-src/core/compile.c:2426	collapse_reason,CR_SEL1,PFLW_SEL1	: cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
-src/core/compile.c:2427	PFLW_FORCED	: PFLW_FORCED;
-src/core/compile.c:2432	collapse_reason	pcrec_cr_trace_name(cx.collapse_reason), "gate", "%s pflw=%s",
-src/core/compile.c:2434	prefilter_lang_why	"rung", "rung" }[cx.job->fit.prefilter_lang_why],
-src/core/compile.c:2436	prefilter_lang_why	"sel1", "sizecap" }[cx.job->fit.prefilter_lang_why]);
-src/core/compile.c:2441	collapse_reason,prefilter_lang_why	pflw_value(pflw_new, cx.collapse_reason) != cx.job->fit.prefilter_lang_why)
-src/core/compile.c:2447	prefilter_collapsed	cx.job->fit.prefilter_collapsed = collapse;
-src/core/compile.c:2495	defo	unsigned long long v = defo.max_dfa_states_goto
-src/core/compile.c:2496	defo	? defo.max_dfa_states_goto
-src/core/compile.c:2535	fit.chosen	if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
-src/core/compile.c:2548	defo,st_phase,st_rescue	const StWhySel stws = { defo.unroll_k, st_phase, defo.flags, st_rescue,
-src/core/compile.c:2549	st_capexcl,st_final_k,st_k	st_final_k != st_k[0], st_capexcl };
-src/core/compile.c:2558	defo,st_phase	defo.unroll_k > 0 && st_phase == ST_DEFAULT ? "option"
-src/core/compile.c:2559	defo	: (defo.flags & PCREC_NO_SIZE_TERM)           ? "denied"
-src/core/compile.c:2560	st_phase	: st_phase != ST_FINAL                        ? "default"
-src/core/compile.c:2561	st_rescue	: st_rescue                                   ? "cap-rescue"
-src/core/compile.c:2562	st_final_k,st_k	: st_final_k != st_k[0]                       ? "size-model"
-src/core/compile.c:2563	st_capexcl	: st_capexcl                                  ? "capacity-declined"
-src/core/compile.c:2575	fit.chosen	if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
-src/core/compile.c:2610	defo	if (defo.header_name && cx.job->hsb.len) {
-src/core/compile.c:2617	defo	const unsigned long long cap_code = defo.max_emit_code_bytes
-src/core/compile.c:2618	defo	? defo.max_emit_code_bytes
-src/core/compile.c:2620	defo	const unsigned long long cap_tot  = defo.max_emit_bytes
-src/core/compile.c:2621	defo	? defo.max_emit_bytes
-src/core/compile.c:2624	st_phase	if (st_phase == ST_DEFAULT) {
-src/core/compile.c:2625	defo,st_k	st_k[0] = defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K;
-src/core/compile.c:2626	st_code,st_ok,st_total	st_ok[0] = true; st_code[0] = emit_code; st_total[0] = emit_tot;
-src/core/compile.c:2627	st_nodes	st_nodes[0] = cx.job->vm_emitted_nodes;
-src/core/compile.c:2628	st_fc	st_fc[0] = cx.job->vm_frame_capacity;
-src/core/compile.c:2629	st_sc	st_sc[0] = cx.job->vm_subject_ceiling;
-src/core/compile.c:2630	st_whylen	st_whylen[0] = strlen(cx.size_term_why);
-src/core/compile.c:2664	fit.chosen	bool run = cx.job->fit.chosen == ENGM_VM &&
-src/core/compile.c:2665	defo	defo.unroll_k == 0 &&
-src/core/compile.c:2666	defo	!(defo.flags & PCREC_NO_SIZE_TERM) &&
-src/core/compile.c:2670	st_idx,st_phase	st_phase = ST_LADDER; st_idx = 0;
-src/core/compile.c:2674	st_final_k,st_k	st_final_k = st_k[0];
-src/core/compile.c:2675	st_phase	} else if (st_phase == ST_LADDER) {
-src/core/compile.c:2676	st_idx,st_k	st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
-src/core/compile.c:2677	st_idx,st_ok	st_ok[st_idx + 1] = true;
-src/core/compile.c:2678	st_code,st_idx,st_total	st_code[st_idx + 1] = emit_code; st_total[st_idx + 1] = emit_tot;
-src/core/compile.c:2679	st_idx,st_nodes	st_nodes[st_idx + 1] = cx.job->vm_emitted_nodes;
-src/core/compile.c:2680	st_fc,st_idx	st_fc[st_idx + 1] = cx.job->vm_frame_capacity;
-src/core/compile.c:2681	st_idx,st_sc	st_sc[st_idx + 1] = cx.job->vm_subject_ceiling;
-src/core/compile.c:2682	st_idx,st_whylen	st_whylen[st_idx + 1] = strlen(cx.size_term_why);
-src/core/compile.c:2683	st_idx	st_idx++;
-src/core/compile.c:2684	st_idx	if (st_idx < SIZE_TERM_LADDER_N) { job_cleanup(&cx); continue; }
-src/core/compile.c:2687	size_term_choose,st_code,st_k,st_nodes,st_ok,st_total	size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
-src/core/compile.c:2688	st_fc,st_sc	st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
-src/core/compile.c:2691	st_capexcl,st_final_k,st_rescue	st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
-src/core/compile.c:2693	st_phase	st_phase = ST_FINAL;
-src/core/compile.c:2708	st_final_k,st_k,st_ok	if (!st_ok[i] || st_k[i] != st_final_k) continue;
-src/core/compile.c:2719	st_nodes	if (st_nodes[i] != (size_t)cx.job->vm_emitted_nodes ||
-src/core/compile.c:2720	st_code,st_whylen	st_code[i] - st_whylen[i] != emit_code - wl ||
-src/core/compile.c:2721	st_total,st_whylen	st_total[i] - st_whylen[i] != emit_tot - wl)
-src/core/compile.c:2726	st_final_k	st_final_k, (size_t)cx.job->vm_emitted_nodes,
-src/core/compile.c:2728	st_code,st_nodes,st_whylen	st_nodes[i], st_code[i] - st_whylen[i],
-src/core/compile.c:2729	st_total,st_whylen	st_total[i] - st_whylen[i]);
-src/core/compile.c:2746	size_cap_refused	cx.size_cap_refused = true;
-src/core/compile.c:2747	size_cap_bytes	cx.size_cap_bytes = emit_code > cap_code
-src/core/compile.c:2750	size_cap_limit	cx.size_cap_limit = emit_code > cap_code ? cap_code : cap_tot;
-src/core/compile.c:2790	defo	if (defo.warn_emit_bytes && emit_tot > defo.warn_emit_bytes) {
-src/core/compile.c:2793	prefilter	if (cx.job->fit.prefilter)
-src/core/compile.c:2794	prefilter_collapsed	lwhy = cx.job->fit.prefilter_collapsed
-src/core/compile.c:2803	defo	(unsigned long long)defo.warn_emit_bytes,
-src/core/compile.c:2804	defo	defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K,
-src/core/compile.c:2816	budget_fallback	if (budget_fallback)
-src/core/compile.c:2829	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
-src/core/compile.c:2830	fit_fired,fit_rungs	if (fit_rungs[i].note.what && (fit_fired >> i & 1u))
-src/core/compile.c:2831	fit_rungs,size_drop_note	size_drop_note(fit_rungs[i].note.what, fit_rungs[i].note.cost);
-src/core/compile.c:2854	defo	hopt = defo;
-src/core/compile.c:2861	defo	cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
-src/core/compile.c:2867	dmemo	pcrec_dfa_memo_free(&dmemo);
-src/core/compile.c:2885	dmemo	pcrec_dfa_memo_free(&dmemo);
-src/core/compile.c:2927	defo	pcrec_options defo;
-src/core/compile.c:2931	defo	pcrec_default_options(&defo);
-src/core/compile.c:2932	defo	if (opt) defo = *opt;
-src/core/compile.c:2934	defo	defo.header_name = NULL;
-src/core/compile.c:2936	defo	if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-src/core/compile.c:2957	defo	pcrec_options defo;
-src/core/compile.c:2958	defo	pcrec_default_options(&defo);
-src/core/compile.c:2966	defo	cx.opt = &defo;
+src/core/compile.c:792	fit_collapse_applies	static bool fit_collapse_applies(const FitSel *s)
+src/core/compile.c:795	collapse_reason,CR_SIZECAP	return s->collapse_reason != CR_SIZECAP &&
+src/core/compile.c:796	fit.chosen	j && j->fit.chosen != ENGM_DFA &&
+src/core/compile.c:797	prefilter	j->fit.prefilter &&
+src/core/compile.c:798	prefilter_collapsed	!j->fit.prefilter_collapsed;
+src/core/compile.c:850	fit_anchored_applies	static bool fit_anchored_applies(const FitSel *s)
+src/core/compile.c:852	SDR_NONE,size_drop_rung	return s->size_drop_rung == SDR_NONE &&
+src/core/compile.c:905	SDR_NO_PREMUL,size_drop_rung	return s->size_drop_rung < SDR_NO_PREMUL &&
+src/core/compile.c:906	fit.chosen	s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
+src/core/compile.c:920	fit_prefilter_applies	static bool fit_prefilter_applies(const FitSel *s)
+src/core/compile.c:922	dfa_disabled,SDR_NO_PREFILTER,size_drop_rung	return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&
+src/core/compile.c:923	fit.chosen	s->cx->job && s->cx->job->fit.chosen != ENGM_DFA &&
+src/core/compile.c:924	prefilter	s->cx->job->fit.prefilter &&
+src/core/compile.c:929	fit_always	static bool fit_always(const FitSel *s) { (void)s; return true; }
+src/core/compile.c:933	st_phase	static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER; }
+src/core/compile.c:983	dfa_disabled	return fit_sel1_eligible(s) && !s->dfa_disabled;
+src/core/compile.c:991	collapse_reason,CR_SEL1,dfa_disabled	(!s->dfa_disabled || s->collapse_reason == CR_SEL1);
+src/core/compile.c:1000	fit_rungs	static const FitRung fit_rungs[] = {
+src/core/compile.c:1002	fit_always	{ .name = "forcing", .deny = 0, .degrading = false, .applies = fit_always,
+src/core/compile.c:1007	fit_always	{ .name = "nomem", .deny = 0, .degrading = false, .applies = fit_always,
+src/core/compile.c:1022	ESEL_COLLAPSED_PREFILTER,PFLW_SEL1	.cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
+src/core/compile.c:1043	fit_collapse_applies	.fof = FIT_FOF_IN, .applies = fit_collapse_applies, .act = FIT_COLLAPSE, .on = FIT_L_SIZE,
+src/core/compile.c:1045	PFLW_SIZECAP	.cells = { { ESEL_SIZE_CAP_RETRY, ESEL_PASS }, PFLW_SIZECAP, NULL },
+src/core/compile.c:1066	fit_anchored_applies	.applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
+src/core/compile.c:1086	fit_prefilter_applies	.applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
+src/core/compile.c:1097	fit_always	.applies = fit_always, .act = FIT_REFUSE, .on = FIT_L_ALL,
+src/core/compile.c:1106	fit_rung_denied	static bool fit_rung_denied(const FitRung *r, uint64_t flags)
+src/core/compile.c:1113	fit_rung_of	static const FitRung *fit_rung_of(FitAct act)
+src/core/compile.c:1115	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+src/core/compile.c:1116	fit_rungs	if (fit_rungs[i].act == act) return &fit_rungs[i];
+src/core/compile.c:1117	fit_rungs	return &fit_rungs[sizeof fit_rungs / sizeof fit_rungs[0] - 1];
+src/core/compile.c:1124	pf.forcing	const unsigned l = (cx->job && cx->job->pf.forcing ? FIT_L_FORCING : 0u) |
+src/core/compile.c:1125	failed_nomem	(cx->failed_nomem ? FIT_L_NOMEM : 0u) |
+src/core/compile.c:1126	dfa_overflowed	(cx->dfa_overflowed ? FIT_L_OVERFLOW : 0u) |
+src/core/compile.c:1127	size_cap_refused	(cx->size_cap_refused ? FIT_L_SIZE : 0u);
+src/core/compile.c:1136	fit_walk	static const FitRung *fit_walk(const FitSel *s, unsigned labels)
+src/core/compile.c:1138	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+src/core/compile.c:1139	fit_rungs	const FitRung *r = &fit_rungs[i];
+src/core/compile.c:1140	fit_rung_denied	if (!(r->on & labels) || !r->applies || fit_rung_denied(r, s->flags)) continue;
+src/core/compile.c:1143	fit_rung_of	return fit_rung_of(FIT_REFUSE);
+src/core/compile.c:1154	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++) {
+src/core/compile.c:1155	fit_rungs	retries += fit_rungs[i].retries;
+src/core/compile.c:1156	fit_rungs	restarts += fit_rungs[i].sets.restart;
+src/core/compile.c:1167	CR_SEL1	const FitCrCell want = cr == CR_SEL1 ? FIT_CR_TO_SEL1
+src/core/compile.c:1168	CR_SIZECAP	: cr == CR_SIZECAP ? FIT_CR_TO_SIZECAP : FIT_CR_UNSTATED;
+src/core/compile.c:1169	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+src/core/compile.c:1170	fit_rungs	if (want != FIT_CR_UNSTATED && fit_rungs[i].sets.cr == want) return &fit_rungs[i];
+src/core/compile.c:1171	fit_rung_of	return fit_rung_of(FIT_REFUSE);
+src/core/compile.c:1202	CR_NONE	static bool pflw_rung(const PflwSel *s)   { return s->cr != CR_NONE && pflw_worth(s); }
+src/core/compile.c:1212	PFLW_FORCED	{ "forced",   pflw_worth,  true,  PFLW_FORCED, .axlist = FB_NO_LIST },
+src/core/compile.c:1213	PFLW_NULLABLE	{ "nullable", pflw_wanted, false, PFLW_NULLABLE,
+src/core/compile.c:1216	PFLW_EXACT	{ "exact",    pflw_rep,    false, PFLW_EXACT, .axlist = FB_NO_LIST },
+src/core/compile.c:1217	PFLW_NO_REP	{ "no-rep",   pflw_always, false, PFLW_NO_REP,   .axlist = FB_NO_LIST },
+src/core/compile.c:1221	pflw_walk	static const PflwRow *pflw_walk(const PflwSel *s)
+src/core/compile.c:1240	defo	int           unroll_k;    /* the K the attempt ran at (`defo.unroll_k`) */
+src/core/compile.c:1266	defo,st_phase	"an explicit --unroll=K on the command line: the term never runs (compile.c: defo.unroll_k > 0 && st_phase == 
+src/core/compile.c:1290	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+src/core/compile.c:1291	fit_rungs	if (fit_rungs[i].ukw) return &fit_rungs[i];
+src/core/compile.c:1292	fit_rung_of	return fit_rung_of(FIT_REFUSE);
+src/core/compile.c:1296	st_why_walk	static const char *st_why_walk(const StWhySel *s)
+src/core/compile.c:1322	fit_rungs	for (size_t r = 0; r < sizeof fit_rungs / sizeof fit_rungs[0]; r++)
+src/core/compile.c:1323	fit_rungs	if ((h = fb_pick(fit_rungs[r].axlist, sizeof fit_rungs[r].axlist / sizeof fit_rungs[r].axlist[0],
+src/core/compile.c:1361	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+src/core/compile.c:1362	fit_rungs	if (&fit_rungs[i].cells == c) return fit_rungs[i].name;
+src/core/compile.c:1386	fit_rungs	const size_t n = sizeof fit_rungs / sizeof fit_rungs[0];
+src/core/compile.c:1390	fit_rungs	const FitRung *r = &fit_rungs[i];
+src/core/compile.c:1391	fit_always	total |= (r->on & l) && r->applies == fit_always && !r->deny &&
+src/core/compile.c:1398	fit_rungs	const FitRung *r = &fit_rungs[i];
+src/core/compile.c:1404	ESEL_FORCED	fit_check(cx, r->cells.esel[FIT_KEPT] != ESEL_FORCED &&
+src/core/compile.c:1405	ESEL_FORCED	r->cells.esel[FIT_OFF] != ESEL_FORCED, "a row's esel cell is unstated");
+src/core/compile.c:1406	PFLW_EXACT	fit_check(cx, r->cells.pflw != PFLW_EXACT, "a row's pflw cell is unstated");
+src/core/compile.c:1453	CR_NONE	case FIT_CR_TO_NONE:    return CR_NONE;
+src/core/compile.c:1454	CR_SEL1	case FIT_CR_TO_SEL1:    return CR_SEL1;
+src/core/compile.c:1455	CR_SIZECAP	case FIT_CR_TO_SIZECAP: return CR_SIZECAP;
+src/core/compile.c:1464	SDR_NO_ANCHORED	case FIT_SDR_TO_ANCHORED:  return SDR_NO_ANCHORED;
+src/core/compile.c:1465	SDR_NO_PREMUL	case FIT_SDR_TO_PREMUL:    return SDR_NO_PREMUL;
+src/core/compile.c:1466	SDR_NO_PREFILTER	case FIT_SDR_TO_PREFILTER: return SDR_NO_PREFILTER;
+src/core/compile.c:1482	fit_rungs	const unsigned bit = 1u << (unsigned)(r - fit_rungs);
+src/core/compile.c:1534	pf.forcing	return fit_trace_label_names[(cx->job && cx->job->pf.forcing ? 8u : 0u) |
+src/core/compile.c:1535	failed_nomem	(cx->failed_nomem    ? 4u : 0u) |
+src/core/compile.c:1536	dfa_overflowed	(cx->dfa_overflowed  ? 2u : 0u) |
+src/core/compile.c:1537	size_cap_refused	(cx->size_cap_refused ? 1u : 0u)];
+src/core/compile.c:1543	collapse_reason,dfa_disabled	"restart=%d", (row), (int)dfa_disabled, (int)collapse_reason,          \
+src/core/compile.c:1544	size_drop_rung	(int)size_drop_rung,                                                   \
+src/core/compile.c:1545	defo	(unsigned long long)(defo.flags &                                      \
+src/core/compile.c:1547	dfa_disabled,overflow_why,size_cap_bytes,size_cap_limit	dfa_disabled ? overflow_why : "-", size_cap_bytes, size_cap_limit,     \
+src/core/compile.c:1548	budget_fallback,dfa_was_engine	(int)dfa_was_engine, (int)budget_fallback, (int)(restart))
+src/core/compile.c:1571	defo	pcrec_options defo;
+src/core/compile.c:1572	defo	pcrec_default_options(&defo);
+src/core/compile.c:1573	defo	if (opt) defo = *opt;   /* local copy: keeps params setjmp-safe */
+src/core/compile.c:1593	defo	if (!pcrec_tune_valid(defo.tune)) {
+src/core/compile.c:1596	defo	"invalid tune position %d (the dial is -2..2)", defo.tune);
+src/core/compile.c:1599	defo	defo.flags |= pcrec_tune_deny_flags(defo.tune);
+src/core/compile.c:1608	defo	const char *const user_prefix = defo.prefix;
+src/core/compile.c:1609	defo	defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+src/core/compile.c:1655	defo	if (defo.features) {
+src/core/compile.c:1657	defo	if (pcrec_enabled_resolve_spec(defo.features, &feat_mask, feat_label,
+src/core/compile.c:1672	defo	const PcrecEnc *fe = pcrec_enc_by_id(defo.encoding);
+src/core/compile.c:1690	dfa_disabled	volatile bool dfa_disabled = false;
+src/core/compile.c:1693	collapse_reason,CR_NONE	volatile unsigned char collapse_reason = CR_NONE;
+src/core/compile.c:1697	SDR_NONE,size_drop_rung	volatile unsigned char size_drop_rung = SDR_NONE;
+src/core/compile.c:1701	size_cap_bytes,size_cap_limit	volatile unsigned long long size_cap_bytes = 0, size_cap_limit = 0;
+src/core/compile.c:1704	dfa_was_engine	volatile bool dfa_was_engine = false;
+src/core/compile.c:1710	budget_fallback	volatile bool budget_fallback = false;
+src/core/compile.c:1722	fit_rungs	const FitRung  *fit_seq_rows[sizeof fit_rungs / sizeof fit_rungs[0]];
+src/core/compile.c:1723	fit_rungs	const FitCells *fit_seq_cells[sizeof fit_rungs / sizeof fit_rungs[0]];
+src/core/compile.c:1724	fit_nseq	volatile int      fit_nseq = 0;
+src/core/compile.c:1725	fit_fired	volatile unsigned fit_fired = 0;
+src/core/compile.c:1726	overflow_why	char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
+src/core/compile.c:1733	dmemo	DfaMemo dmemo;
+src/core/compile.c:1734	dmemo	memset(&dmemo, 0, sizeof dmemo);
+src/core/compile.c:1753	defo	const int bar0 = pcrec_tune_size_term_bar(defo.tune);
+src/core/compile.c:1755	defo	const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
+src/core/compile.c:1761	defo,fit_rung_denied,fit_rung_of	!fit_rung_denied(fit_rung_of(FIT_UNROLL_RESCUE), defo.flags);
+src/core/compile.c:1763	st_phase	volatile SizeTermPhase st_phase = ST_DEFAULT;
+src/core/compile.c:1764	st_idx	volatile int  st_idx = 0;          /* next ladder rung to try */
+src/core/compile.c:1765	st_final_k	volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
+src/core/compile.c:1766	st_rescue	volatile bool st_rescue = false;   /* the bar declined it; a cap took it */
+src/core/compile.c:1772	st_capexcl	volatile bool st_capexcl = false;
+src/core/compile.c:1773	st_k	int    st_k[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1774	st_ok	bool   st_ok[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1775	st_code,st_total	size_t st_code[SIZE_TERM_LADDER_N + 1], st_total[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1776	st_nodes	size_t st_nodes[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1779	st_fc,st_sc	long long st_fc[SIZE_TERM_LADDER_N + 1], st_sc[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1787	st_whylen	size_t st_whylen[SIZE_TERM_LADDER_N + 1];
+src/core/compile.c:1788	st_k	memset(st_k, 0, sizeof st_k);
+src/core/compile.c:1789	st_ok	memset(st_ok, 0, sizeof st_ok);
+src/core/compile.c:1790	st_code	memset(st_code, 0, sizeof st_code);
+src/core/compile.c:1791	st_total	memset(st_total, 0, sizeof st_total);
+src/core/compile.c:1792	st_nodes	memset(st_nodes, 0, sizeof st_nodes);
+src/core/compile.c:1793	st_whylen	memset(st_whylen, 0, sizeof st_whylen);
+src/core/compile.c:1801	defo	cx.opt = &defo;
+src/core/compile.c:1826	defo	cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
+src/core/compile.c:1855	dfa_disabled	cx.dfa_disabled = dfa_disabled;
+src/core/compile.c:1859	collapse_reason	cx.collapse_reason = collapse_reason;
+src/core/compile.c:1864	size_drop_rung	cx.size_drop_rung = size_drop_rung;
+src/core/compile.c:1865	size_cap_bytes	cx.size_cap_bytes = size_cap_bytes;
+src/core/compile.c:1866	size_cap_limit	cx.size_cap_limit = size_cap_limit;
+src/core/compile.c:1867	dfa_was_engine	cx.dfa_was_engine = dfa_was_engine;
+src/core/compile.c:1869	fit_nseq	cx.fit_nseq = fit_nseq;
+src/core/compile.c:1870	dmemo	cx.dfa_memo = &dmemo;
+src/core/compile.c:1871	dfa_disabled	if (dfa_disabled)
+src/core/compile.c:1872	dfa_overflow_why,overflow_why	memcpy(cx.dfa_overflow_why, overflow_why, sizeof overflow_why);
+src/core/compile.c:1900	defo	const bool cmt = pcrec_axis_on(defo.flags, PCREC_NO_COMMENTS,
+src/core/compile.c:1911	dmemo	pcrec_dfa_memo_free(&dmemo);
+src/core/compile.c:1930	st_phase	if (st_phase == ST_LADDER) {
+src/core/compile.c:1931	defo,st_idx	defo.unroll_k = SIZE_TERM_LADDER[st_idx];
+src/core/compile.c:1941	defo	const uint64_t st_cap = defo.max_emit_bytes
+src/core/compile.c:1942	defo	? defo.max_emit_bytes
+src/core/compile.c:1963	st_phase	} else if (st_phase == ST_FINAL) {
+src/core/compile.c:1964	defo,st_final_k	defo.unroll_k = st_final_k;
+src/core/compile.c:1980	defo	const FitSel fs = { .cx = &cx, .flags = defo.flags,
+src/core/compile.c:1981	collapse_reason	.collapse_reason = collapse_reason,
+src/core/compile.c:1982	size_drop_rung	.size_drop_rung = size_drop_rung,
+src/core/compile.c:1983	dfa_disabled,st_phase	.dfa_disabled = dfa_disabled, .st_phase = st_phase };
+src/core/compile.c:1984	fit_walk	const FitRung *rung = fit_walk(&fs, fit_labels(&cx));
+src/core/compile.c:2024	dmemo	pcrec_dfa_memo_free(&dmemo);
+src/core/compile.c:2041	st_idx,st_ok	st_ok[st_idx + 1] = false;
+src/core/compile.c:2042	st_idx,st_k	st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
+src/core/compile.c:2043	st_idx	st_idx++;
+src/core/compile.c:2046	st_idx	if (st_idx >= SIZE_TERM_LADDER_N) {
+src/core/compile.c:2047	size_term_choose,st_code,st_k,st_nodes,st_ok,st_total	size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
+src/core/compile.c:2048	st_fc,st_sc	st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
+src/core/compile.c:2049	defo	defo.max_emit_code_bytes ? defo.max_emit_code_bytes
+src/core/compile.c:2051	defo	defo.max_emit_bytes ? defo.max_emit_bytes
+src/core/compile.c:2055	st_capexcl,st_final_k,st_rescue	st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
+src/core/compile.c:2056	st_phase	st_phase = ST_FINAL;
+src/core/compile.c:2061	size_term_choose	case FIT_UNROLL_RESCUE:   /* chosen inside `size_term_choose`, never by an arrival */
+src/core/compile.c:2065	dmemo	pcrec_dfa_memo_free(&dmemo);
+src/core/compile.c:2077	dfa_overflow_why,overflow_why	memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
+src/core/compile.c:2079	size_cap_bytes	size_cap_bytes = cx.size_cap_bytes;
+src/core/compile.c:2080	size_cap_limit	size_cap_limit = cx.size_cap_limit;
+src/core/compile.c:2088	dfa_disabled	if (w->latch && !dfa_disabled) {
+src/core/compile.c:2089	dfa_was_engine,fit.chosen	if (cx.job) dfa_was_engine = cx.job->fit.chosen == ENGM_DFA;
+src/core/compile.c:2090	budget_fallback,dfa_overflow_is_budget	budget_fallback = cx.dfa_overflow_is_budget;
+src/core/compile.c:2093	dfa_disabled	if (w->dd == FIT_DD_SET) dfa_disabled = true;
+src/core/compile.c:2094	collapse_reason	collapse_reason = fit_cr_of(w->cr, collapse_reason);
+src/core/compile.c:2095	size_drop_rung	size_drop_rung = fit_sdr_of(w->sdr, size_drop_rung);
+src/core/compile.c:2096	defo	defo.flags |= w->flags_or;
+src/core/compile.c:2098	fit_fired,fit_nseq	fit_record(rung, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired);
+src/core/compile.c:2100	st_final_k,st_idx,st_phase	st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
+src/core/compile.c:2101	st_capexcl,st_rescue	st_rescue = false; st_capexcl = false;
+src/core/compile.c:2102	st_k	memset(st_k, 0, sizeof st_k);
+src/core/compile.c:2103	st_ok	memset(st_ok, 0, sizeof st_ok);
+src/core/compile.c:2104	st_code	memset(st_code, 0, sizeof st_code);
+src/core/compile.c:2105	st_total	memset(st_total, 0, sizeof st_total);
+src/core/compile.c:2106	st_nodes	memset(st_nodes, 0, sizeof st_nodes);
+src/core/compile.c:2107	st_whylen	memset(st_whylen, 0, sizeof st_whylen);
+src/core/compile.c:2165	defo	const PcrecEnc *enc = pcrec_enc_by_id(defo.encoding);
+src/core/compile.c:2185	defo	if ((defo.flags & PCREC_NO_STARTPOS_GUARD) &&
+src/core/compile.c:2186	defo	(defo.flags & PCREC_FORCE_STARTPOS_ALIGN))
+src/core/compile.c:2307	fit_nseq	if (fit_nseq > 0 && fit_seq_rows[fit_nseq - 1]->act == FIT_SEL1_DROP &&
+src/core/compile.c:2308	prefilter	cx.job->fit.prefilter)
+src/core/compile.c:2408	fit.chosen,prefilter	if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
+src/core/compile.c:2457	collapse_reason,CR_NONE	const bool pfc_rung  = cx.collapse_reason != CR_NONE;
+src/core/compile.c:2472	fit.chosen	const bool pfc_wanted = cx.job->fit.chosen != ENGM_DFA
+src/core/compile.c:2510	collapse_reason	cx.collapse_reason };
+src/core/compile.c:2511	pflw_walk	const PflwRow *pflw = pflw_walk(&pfls);
+src/core/compile.c:2513	prefilter_nfa_states	cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
+src/core/compile.c:2514	prefilter_sizecap_bytes,size_cap_bytes	cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
+src/core/compile.c:2515	prefilter_sizecap_limit,size_cap_limit	cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
+src/core/compile.c:2516	collapse_reason,prefilter_lang_why	cx.job->fit.prefilter_lang_why = pflw_value(pflw, cx.collapse_reason);
+src/core/compile.c:2522	collapse_reason	pcrec_cr_trace_name(cx.collapse_reason), "gate", "%s pflw=%s",
+src/core/compile.c:2525	prefilter_lang_why	"sel1", "sizecap" }[cx.job->fit.prefilter_lang_why]);
+src/core/compile.c:2528	prefilter_collapsed	cx.job->fit.prefilter_collapsed = collapse;
+src/core/compile.c:2576	defo	unsigned long long v = defo.max_dfa_states_goto
+src/core/compile.c:2577	defo	? defo.max_dfa_states_goto
+src/core/compile.c:2616	fit.chosen	if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
+src/core/compile.c:2634	defo,st_phase,st_rescue	const StWhySel stws = { defo.unroll_k, st_phase, defo.flags, st_rescue,
+src/core/compile.c:2635	st_capexcl,st_final_k,st_k	st_final_k != st_k[0], st_capexcl };
+src/core/compile.c:2636	st_why_walk	cx.size_term_why = st_why_walk(&stws);
+src/core/compile.c:2641	fit.chosen	if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
+src/core/compile.c:2676	defo	if (defo.header_name && cx.job->hsb.len) {
+src/core/compile.c:2683	defo	const unsigned long long cap_code = defo.max_emit_code_bytes
+src/core/compile.c:2684	defo	? defo.max_emit_code_bytes
+src/core/compile.c:2686	defo	const unsigned long long cap_tot  = defo.max_emit_bytes
+src/core/compile.c:2687	defo	? defo.max_emit_bytes
+src/core/compile.c:2690	st_phase	if (st_phase == ST_DEFAULT) {
+src/core/compile.c:2691	defo,st_k	st_k[0] = defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K;
+src/core/compile.c:2692	st_code,st_ok,st_total	st_ok[0] = true; st_code[0] = emit_code; st_total[0] = emit_tot;
+src/core/compile.c:2693	st_nodes	st_nodes[0] = cx.job->vm_emitted_nodes;
+src/core/compile.c:2694	st_fc	st_fc[0] = cx.job->vm_frame_capacity;
+src/core/compile.c:2695	st_sc	st_sc[0] = cx.job->vm_subject_ceiling;
+src/core/compile.c:2696	st_whylen	st_whylen[0] = strlen(cx.size_term_why);
+src/core/compile.c:2730	fit.chosen	bool run = cx.job->fit.chosen == ENGM_VM &&
+src/core/compile.c:2731	defo	defo.unroll_k == 0 &&
+src/core/compile.c:2732	defo	!(defo.flags & PCREC_NO_SIZE_TERM) &&
+src/core/compile.c:2736	st_idx,st_phase	st_phase = ST_LADDER; st_idx = 0;
+src/core/compile.c:2740	st_final_k,st_k	st_final_k = st_k[0];
+src/core/compile.c:2741	st_phase	} else if (st_phase == ST_LADDER) {
+src/core/compile.c:2742	st_idx,st_k	st_k[st_idx + 1] = SIZE_TERM_LADDER[st_idx];
+src/core/compile.c:2743	st_idx,st_ok	st_ok[st_idx + 1] = true;
+src/core/compile.c:2744	st_code,st_idx,st_total	st_code[st_idx + 1] = emit_code; st_total[st_idx + 1] = emit_tot;
+src/core/compile.c:2745	st_idx,st_nodes	st_nodes[st_idx + 1] = cx.job->vm_emitted_nodes;
+src/core/compile.c:2746	st_fc,st_idx	st_fc[st_idx + 1] = cx.job->vm_frame_capacity;
+src/core/compile.c:2747	st_idx,st_sc	st_sc[st_idx + 1] = cx.job->vm_subject_ceiling;
+src/core/compile.c:2748	st_idx,st_whylen	st_whylen[st_idx + 1] = strlen(cx.size_term_why);
+src/core/compile.c:2749	st_idx	st_idx++;
+src/core/compile.c:2750	st_idx	if (st_idx < SIZE_TERM_LADDER_N) { job_cleanup(&cx); continue; }
+src/core/compile.c:2753	size_term_choose,st_code,st_k,st_nodes,st_ok,st_total	size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
+src/core/compile.c:2754	st_fc,st_sc	st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
+src/core/compile.c:2757	st_capexcl,st_final_k,st_rescue	st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
+src/core/compile.c:2759	st_phase	st_phase = ST_FINAL;
+src/core/compile.c:2774	st_final_k,st_k,st_ok	if (!st_ok[i] || st_k[i] != st_final_k) continue;
+src/core/compile.c:2785	st_nodes	if (st_nodes[i] != (size_t)cx.job->vm_emitted_nodes ||
+src/core/compile.c:2786	st_code,st_whylen	st_code[i] - st_whylen[i] != emit_code - wl ||
+src/core/compile.c:2787	st_total,st_whylen	st_total[i] - st_whylen[i] != emit_tot - wl)
+src/core/compile.c:2792	st_final_k	st_final_k, (size_t)cx.job->vm_emitted_nodes,
+src/core/compile.c:2794	st_code,st_nodes,st_whylen	st_nodes[i], st_code[i] - st_whylen[i],
+src/core/compile.c:2795	st_total,st_whylen	st_total[i] - st_whylen[i]);
+src/core/compile.c:2812	size_cap_refused	cx.size_cap_refused = true;
+src/core/compile.c:2813	size_cap_bytes	cx.size_cap_bytes = emit_code > cap_code
+src/core/compile.c:2816	size_cap_limit	cx.size_cap_limit = emit_code > cap_code ? cap_code : cap_tot;
+src/core/compile.c:2856	defo	if (defo.warn_emit_bytes && emit_tot > defo.warn_emit_bytes) {
+src/core/compile.c:2859	prefilter	if (cx.job->fit.prefilter)
+src/core/compile.c:2860	prefilter_collapsed	lwhy = cx.job->fit.prefilter_collapsed
+src/core/compile.c:2869	defo	(unsigned long long)defo.warn_emit_bytes,
+src/core/compile.c:2870	defo	defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K,
+src/core/compile.c:2882	budget_fallback	if (budget_fallback)
+src/core/compile.c:2895	fit_rungs	for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+src/core/compile.c:2896	fit_fired,fit_rungs	if (fit_rungs[i].note.what && (fit_fired >> i & 1u))
+src/core/compile.c:2897	fit_rungs,size_drop_note	size_drop_note(fit_rungs[i].note.what, fit_rungs[i].note.cost);
+src/core/compile.c:2920	defo	hopt = defo;
+src/core/compile.c:2927	defo	cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
+src/core/compile.c:2933	dmemo	pcrec_dfa_memo_free(&dmemo);
+src/core/compile.c:2951	dmemo	pcrec_dfa_memo_free(&dmemo);
+src/core/compile.c:2993	defo	pcrec_options defo;
+src/core/compile.c:2997	defo	pcrec_default_options(&defo);
+src/core/compile.c:2998	defo	if (opt) defo = *opt;
+src/core/compile.c:3000	defo	defo.header_name = NULL;
+src/core/compile.c:3002	defo	if (compile_driver(pattern, &defo, &out, err, &text, NULL,
+src/core/compile.c:3023	defo	pcrec_options defo;
+src/core/compile.c:3024	defo	pcrec_default_options(&defo);
+src/core/compile.c:3032	defo	cx.opt = &defo;

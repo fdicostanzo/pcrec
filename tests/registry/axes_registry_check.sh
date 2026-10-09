@@ -69,6 +69,10 @@
 # values are already a live read and need no third leg): the dump against
 # the DERIVATION ITSELF, using `extract_prose_values`/`extract_c_return_
 # values` (own headers below) rather than the docs.
+# [DEC-FALLBACK] B5 RETIRED `RX_UNROLL_K_WHY`'s leg and `RX_ENGINE_SEL`'s
+# ([OPT-4.1]'s, the same shape): both tokens became table cells, and
+# tests/codegen/run_fallback_table.sh (b)'s witnesses are their emitter
+# half (see each retirement note at its old site). `RX_DFA_TABLE`'s stays.
 #
 # Usage: bash tests/registry/axes_registry_check.sh
 # Env: PCREC (default build/pcrec), TUNING (default docs/spec/tuning.md —
@@ -93,7 +97,6 @@ TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
 CLIMAIN="${CLIMAIN:-$ROOT_DIR/cli/main.c}"
 MATCHAPI="${MATCHAPI:-$ROOT_DIR/docs/spec/match_api.md}"
 EMITDFA="${EMITDFA:-$ROOT_DIR/src/gen/emit_dfa.c}"
-COMPILEC="${COMPILEC:-$ROOT_DIR/src/core/compile.c}"   # [REG-SV] the size-term derivation's own source — see the emitter-source leg below
 KEEP="${KEEP:-0}"
 
 if [ ! -x "$PCREC" ]; then
@@ -114,10 +117,6 @@ if [ ! -f "$MATCHAPI" ]; then
 fi
 if [ ! -f "$EMITDFA" ]; then
     echo "axes_registry: FATAL: $EMITDFA not found" >&2
-    exit 1
-fi
-if [ ! -f "$COMPILEC" ]; then
-    echo "axes_registry: FATAL: $COMPILEC not found" >&2
     exit 1
 fi
 
@@ -656,18 +655,16 @@ check_value_set "RX_ENGINE_SEL" \
     "$(dump_stamp_vals RX_ENGINE_SEL)" \
     ""
 
-# [OPT-4.1] THE EMITTER-SOURCE LEG, the same shape `RX_DFA_TABLE`'s and
-# `RX_UNROLL_K_WHY`'s already have: the check above is dump-vs-DOCS, both
-# hand-written, so a value added to `pcrec_engine_sel_name` and forgotten in
-# BOTH would pass it. This is dump-vs-CODE — the function that actually decides
-# the macro's value, read through its own `return "..."` statements. Its
-# `default:` arm returns `"selected"`, so the extraction covers the whole set
-# including the fallback and needs no exception.
-check_value_set "RX_ENGINE_SEL (pcrec_engine_sel_name)" \
-    "$(extract_c_return_values "$EMITDFA" 'const char *pcrec_engine_sel_name')" \
-    "$(dump_stamp_vals RX_ENGINE_SEL)" \
-    "" \
-    "src/gen/emit_dfa.c's pcrec_engine_sel_name()"
+# [OPT-4.1] THE EMITTER-SOURCE LEG for `RX_ENGINE_SEL` (dump-vs-CODE,
+# `pcrec_engine_sel_name`'s `return "..."` statements) RETIRED at
+# [DEC-FALLBACK] B5 (dec_fallback.md §4.5, critB2 M7): since B5 the token is
+# a table CELL read by the attribution walk and spelled by that same
+# function, so the leg's code side would share its spelling with what it
+# checks. The emitter half moved to WITNESSES: tests/codegen/
+# run_fallback_table.sh (b), the stamps eight witnesses actually emit, held
+# to match_api.md's hand-written set with a K35 floor per value (green since
+# B0). `RX_VM_RESEED`'s shape below is the precedent: docs leg kept, source
+# leg retired, emitter half in witnesses.
 
 # [REG-SV], 2026-08-30: `RX_UNROLL_K_WHY`'s seven-value set, previously
 # uncovered by this direction entirely (no call at all — the gap the
@@ -680,21 +677,12 @@ check_value_set "RX_UNROLL_K_WHY" \
     "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
     ""
 
-# [REG-SV] THE EMITTER-SOURCE LEG, 2026-08-30 (team-lead review): the check
-# above is dump-vs-DOCS, both hand-written — a value added to
-# src/core/compile.c's own `cx.size_term_why = ...` derivation and forgotten
-# in BOTH the dump and match_api.md would still pass it. This is dump-vs-
-# CODE: the seven literals of that derivation chain itself, independent of
-# both. `extract_prose_values` (above) works unmodified here — the anchor
-# is the assignment's own unique text, and the chain runs to the next blank
-# line exactly as the match_api.md bullet does, with no comment interleaved
-# to filter out (unlike RX_DFA_TABLE's leg above, this one needs no
-# `return`-scoping: the whole seven-line ternary IS the seven literals).
-check_value_set "RX_UNROLL_K_WHY (compile.c cx.size_term_why derivation)" \
-    "$(extract_prose_values "$COMPILEC" 'cx.size_term_why =')" \
-    "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
-    "" \
-    "src/core/compile.c's cx.size_term_why derivation"
+# [REG-SV] THE EMITTER-SOURCE LEG for `RX_UNROLL_K_WHY` (dump-vs-CODE, the
+# literals of compile.c's `cx.size_term_why = ...` ternary) RETIRED at
+# [DEC-FALLBACK] B5 with the ternary it read: the token is T4's cell
+# (`st_whys[]`), and fbt (b)'s seven witnesses (K35 floor per value, the
+# observed set equal to match_api.md's) are the emitter half, as for
+# `RX_ENGINE_SEL` above.
 
 # [OPT-HYB-RESEED] `RX_VM_RESEED`, 2026-09-30 (lane reseedfix, r1 panel chk
 # F6.3): dump-vs-DOCS for the hybrid retry's row names. ONE leg, not two: the

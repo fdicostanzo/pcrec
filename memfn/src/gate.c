@@ -258,6 +258,44 @@ static int expr_stmt_shape(const char *text)
     return CL_EXPR_STMT;
 }
 
+/* The MISMATCH fold text's shape (M7, MF_SITE_ABI 7): FOLD_EXPR or FOLD_STMT,
+ * else OTHER. Unlike the shapes above it reads THROUGH quoted literals (an
+ * ASCII fold compares with 'A' and 'Z'), skipping each one, escapes included,
+ * and treats a comment opener as OTHER. Outside the literals the text must
+ * hold `@`, be balanced over ( [ { and close no group before opening it.
+ * FOLD_EXPR: no `;`, `{` or `}` outside a literal (one expression). FOLD_STMT:
+ * its last byte outside white space is `;` or `}` (statements). An
+ * unterminated literal is OTHER. */
+static int fold_shape(const char *text)
+{
+    const char *p;
+    size_t n = trim(text, &p);
+    int depth = 0, at = 0, semi = 0, brace = 0;
+    for (size_t i = 0; i < n; i++) {
+        char c = p[i];
+        if (c == '\'' || c == '"') {
+            size_t j = i + 1;
+            while (j < n && p[j] != c) j += p[j] == '\\' ? 2 : 1;
+            if (j >= n) return CL_OTHER;
+            i = j;
+            continue;
+        }
+        if (c == '/' && i + 1 < n && (p[i + 1] == '*' || p[i + 1] == '/')) return CL_OTHER;
+        if (c == '@') at = 1;
+        if (c == ';') semi = 1;
+        if (c == '{' || c == '}') brace = 1;
+        if (c == '(' || c == '[' || c == '{') depth++;
+        if (c == ')' || c == ']' || c == '}') depth--;
+        if (depth < 0) return CL_OTHER;
+    }
+    if (!n || !at || depth) return CL_OTHER;
+    if (!semi && !brace) return CL_FOLD_EXPR;
+    return p[n - 1] == ';' || p[n - 1] == '}' ? CL_FOLD_STMT : CL_OTHER;
+}
+
+int kit_stmt_shape(const char *text) { return stmt_shape(text); }
+int kit_fold_shape(const char *text) { return fold_shape(text); }
+
 /* ---- the classify functions (fields.def's `classify` column) ------------- *
  *
  * Each returns the class of the field's value in `in`, or -1 where the value
@@ -306,6 +344,7 @@ static int cl_op(const gate_in *in)
     case MF_OP_SKIP:        return CL_SKIP;
     case MF_OP_VERIFY:      return CL_VERIFY;
     case MF_OP_ALL_PRESENT: return CL_ALL_PRESENT;
+    case MF_OP_MISMATCH:    return CL_MISMATCH;
     }
     return CL_OTHER;
 }
@@ -320,6 +359,7 @@ static int cl_handoff(const gate_in *in)
     case MF_H_ADVANCE: return CL_ADVANCE;
     case MF_H_ON_CAND: return CL_ON_CAND;
     case MF_H_BOOL:    return CL_BOOL;
+    case MF_H_ON_DIFF: return CL_ON_DIFF;
     }
     return CL_OTHER;
 }
@@ -412,6 +452,21 @@ static int cl_table_ref(const gate_in *in)
     return CL_NONE;
 }
 
+/* A MISMATCH's fold fact (M7): its class there; on any other site it is no
+ * field of the site's (site_check refuses a nonzero one), so it reads as
+ * unstated and no row need serve it. */
+static int cl_fold_kind(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (in->s->op != MF_OP_MISMATCH) return -1;
+    switch (in->s->fold_kind) {
+    case MF_FOLD_NONE:  return CL_F_NONE;
+    case MF_FOLD_ASCII: return CL_F_ASCII;
+    case MF_FOLD_UCP:   return CL_F_UCP;
+    }
+    return CL_OTHER;
+}
+
 /* `s`, `n`, `lo`: IDENT iff a bare identifier. */
 static int ident_or_other(const char *text)
 {
@@ -422,6 +477,18 @@ static int ident_or_other(const char *text)
 static int cl_s(const gate_in *in)  { return ident_or_other(in->h ? in->h->s : NULL); }
 static int cl_n(const gate_in *in)  { return ident_or_other(in->h ? in->h->n : NULL); }
 static int cl_lo(const gate_in *in) { return ident_or_other(in->h ? in->h->lo : NULL); }
+static int cl_ref(const gate_in *in)    { return ident_or_other(in->h ? in->h->ref : NULL); }
+static int cl_reflen(const gate_in *in) { return ident_or_other(in->h ? in->h->reflen : NULL); }
+
+/* The fold text: its shape, but OTHER wherever the site's fact says there is
+ * no fold (fold_kind NONE, which every non-MISMATCH site has): a fold stated
+ * against the fact is a value no row serves, so it is refused, naming it. */
+static int cl_fold(const gate_in *in)
+{
+    if (!in->h || !in->h->fold) return -1;
+    if (!in->s || in->s->fold_kind == MF_FOLD_NONE) return CL_OTHER;
+    return fold_shape(in->h->fold);
+}
 
 static int cl_floor(const gate_in *in)
 {

@@ -20,7 +20,11 @@ SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource [PF-DROP] WHY cell
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})" 2>/dev/null | grep -o "VM_PREFILTER_WHY" | head -1'
 SAB_REACH_EXPECT='VM_PREFILTER_WHY'
-SAB_BEFORE='    if (cx->size_drop_rung == SDR_NO_PREFILTER)
-        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",'
-SAB_AFTER='    if (cx->size_drop_rung == SDR_NO_PREFILTER && 0)   /* SABOTAGE S422 */
-        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",'
+# [DEC-FALLBACK] B5 (lane decfbB5, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
+# The stamp's `size_drop_rung` test is gone: it is written where a fired T1
+# row carries a `pfwhy` cell, and that cell is its format. The plant keeps
+# the rung and silences the stamp, the same one-condition kill.
+SAB_BEFORE='    if (pfwhy)
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY", pfwhy,'
+SAB_AFTER='    if (pfwhy && 0)   /* SABOTAGE S422 */
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY", pfwhy,'

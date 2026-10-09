@@ -25,7 +25,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
   `precheck_assign` (one renderer, two rows: N3's split by handoff),
   `runcmp`, the five PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
-  `pf_walk_bounded`: R4g; `pf_memchr_back`: M4 prep), then the generic row; each arm's `ct` is its contract, which
+  `pf_walk_bounded`: R4g; `pf_memchr_back`: M4 prep), `mismatch_inplace`
+  (M7 prep), then the generic row; each arm's `ct` is its contract, which
   the gate reads before the arm's predicate and, since [MEMFN-ROWCON] N3,
   ENFORCES: a failing row is declined and the walk moves on, a site no row
   serves is refused naming the fields, and `mf_use` re-checks the chosen
@@ -106,9 +107,25 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (Q-R7-2), `on_miss` JUMP/BRACED or LOOP_EXIT (`break;`, Q-R7-3), and the
   store adds the 1 back; its range is read-bounded (Q-R7-1). No tuning
   constant (D149).
+- **mismatch.c** — F8, THE MISMATCH, born at M7 prep (R-8, MF_VOCAB 3;
+  integration.md §15.8; transcribed from pcrec's encoding seam,
+  `src/enc/enc_byte.c`/`enc_utf8.c`'s span-compare loops): the compare
+  LOOP of the subject from `lo` against a run-time reference span, a STMT
+  site inside pcrec's own residual function (RULED Q-R8-2: the signature,
+  the full-match return and the meaning of a difference stay pcrec's).
+  ONE renderer (`mm_render`) as TWO rows (RULED Q-R8-9): the generic row
+  renders the exact and FOLD_EXPR shapes (one `if` per byte, the fold text
+  pasted around each operand), `mismatch_inplace_arm` the FOLD_STMT shape
+  (two byte temps, `x`/`y` unless a hook names one, the fold statements
+  pasted per temp, the subject-end test and the compare as two exits).
+  ON_DIFF: the loop index IS `result`, so k is written before `on_miss`
+  runs. Operands are pasted raw when identifiers, parenthesized otherwise;
+  `on_miss` raw when JUMP/BRACED, braced otherwise, never LOOP_EXIT (its
+  own loop encloses it). No tuning constant (D149).
 - **k1_ref.c** — K1's REFERENCE functions (`mf_ref_*`): one obviously-
   correct byte loop per primitive (F1 find_byte, F2 find_any2/3, F4
-  find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify). G2's
+  find_in_set, F5 skip_in_set, F9 find_literal, F7 run_verify, F8
+  mismatch since M7 prep). G2's
   oracle side; never artifact text.
 - **fields.def** — THE FIELD TABLE of the row contracts ([MEMFN-ROWCON]
   N1, docs/design/memfn/row_contracts.md §2), two X-macros: `MF_CLASS(name,
@@ -120,7 +137,11 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   since R4h prep, the ADVANCE hooks' CONJ (`more`), POSTFIX (`peek`) and
   EXPR_STMT (`step`); and `count_by_caller`, the caller-owned counter
   (MF_SITE_ABI 5, OBLIG); since M4 prep (MF_SITE_ABI 6) `empty`'s E_AT_N
-  (Q-R7-2) and `on_miss`'s LOOP_EXIT (`break;`, Q-R7-3);
+  (Q-R7-2) and `on_miss`'s LOOP_EXIT (`break;`, Q-R7-3); since M7 prep
+  (MF_SITE_ABI 7) the MISMATCH's `fold_kind` (F_NONE/F_ASCII/F_UCP, read on
+  a MISMATCH site only) and `fold`'s FOLD_EXPR/FOLD_STMT (a lexical check
+  that reads through quoted literals; OTHER where fold_kind is NONE), and
+  the `ref`/`reflen` hooks;
   `miss`'s MISS_N is the `MF_MISS_N` token or the text of `n`). Since N3
   `fn_ref` is a hook ID (0 UNSTATED, so a FUNC site stating 0 is refused,
   K-1) rather than an OBLIG exemption, and `s`/`n`/`lo` are read at define
@@ -133,7 +154,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   sentinel (`mf_miss_n`, memfn.h; `kit.h`'s `kit_miss(h)` resolves it to the
   `n` hook's text, and every reader of `miss` goes through that). fields.def's classify functions
   (`kit_is_ident`, the one lexical identifier check, lives here, beside
-  the ADVANCE hooks' `conj_shape`/`postfix_shape`/`expr_stmt_shape`), the
+  the ADVANCE hooks' `conj_shape`/`postfix_shape`/`expr_stmt_shape` and the
+  MISMATCH fold's `fold_shape`; `kit_stmt_shape`/`kit_fold_shape` export
+  two of them to a renderer that pastes the text), the
   per-field rules (R1 used-and-unstated, R2 stated-and-not-served) as
   `gate_check`, ENFORCED since N3 at define, use and the run walk (the
   callers decline a failing row, or refuse), `gate_describe` (the text
@@ -146,7 +169,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   predicate, so `would_decline` still means "the gate moved this
   selection"). Each
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
-  that row's own file (ofsskip.c, precheck.c, runcmp.c, pffind.c, generic.c).
+  that row's own file (ofsskip.c, precheck.c, runcmp.c, pffind.c, mismatch.c,
+  generic.c).
 - **options.def** — the kit's option registry, an X-macro
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). BORN EMPTY:
   each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in

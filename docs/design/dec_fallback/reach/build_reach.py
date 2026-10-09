@@ -88,13 +88,22 @@ PATCHES = [
      "            fprintf(stderr, \"DECFB gate wanted=%d collapse=%d pflw=%d rep=%d nul=%d force=%d\\n\",\n"
      "                    (int)pfc_wanted, (int)collapse, (int)cx.job->fit.prefilter_lang_why,\n"
      "                    (int)pfc_rep, (int)pcrec_fact_nullable(&cx), (int)pfc_force);\n"),
-    (SE, "                   : would_prefilter;\n",
-     "                   : would_prefilter;\n"
+    # B4 (decfbB4) made T2's walk the admission: the probe sits after the
+    # row's writes and prints the walk's INPUTS (the refusal's locals, the
+    # selector's `would_prefilter`, the kind mask's collapsible-repeat bit)
+    # and its outputs, never the row, so analyse.py's T2 stays computed
+    # from the inputs alone.
+    # B5 (decfbB5) deleted the two declined-nullable flags (write-only once
+    # `esel_of`'s ternary went): the probe anchors on the verdict's write and
+    # prints dnd/dn off the row's `esel` cell, the value the flags held.
+    (SE, "    fit->prefilter = pf_admit_verdict(row, &pfas);\n",
+     "    fit->prefilter = pf_admit_verdict(row, &pfas);\n"
      "    fprintf(stderr, \"DECFB adm bref=%d call=%d var=%d dd=%d cr=%d nul=%d ea=%d crep=%d fon=%d foff=%d wp=%d pf=%d dnd=%d dn=%d\\n\",\n"
      "            (int)has_bref, (int)has_call, (int)has_var, (int)cx->dfa_disabled, (int)cx->collapse_reason,\n"
-     "            (int)pcrec_fact_nullable(cx), (int)pcrec_fact_empty_admits(cx), (int)collapsible_rep,\n"
-     "            (int)force_on, (int)force_off, (int)would_prefilter, (int)fit->prefilter,\n"
-     "            (int)fit->prefilter_declined_nullable_default, (int)fit->prefilter_declined_nullable);\n"),
+     "            (int)pcrec_fact_nullable(cx), (int)pcrec_fact_empty_admits(cx),\n"
+     "            (int)((kinds & PF_KIND_COLLAPSIBLE_REP) != 0),\n"
+     "            (int)force_on, (int)force_off, (int)pfas.would_prefilter, (int)fit->prefilter,\n"
+     "            (int)(row->esel == ESEL_DECLINED_NULLABLE_DEFAULT), (int)(row->esel == ESEL_DECLINED_NULLABLE));\n"),
 ]
 
 def main():

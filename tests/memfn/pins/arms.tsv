@@ -140,3 +140,21 @@ pf_memchr	pf-memchr-back	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca
 pf_memchr	pf-memchr-back	use	178	20480da00d31b3e3bb0d69d4b95c296dc42ce5f6ed5cb5207a7b6e1f3e8cd05e
 generic	find-back-reaches-n	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	find-back-reaches-n	use	387	b5b36a42fddb9ab59e4f8e8fb27902debdbdbb94827a05910e6986c2e64746c3
+# M7 prep (R-8, MF_VOCAB 3, MF_SITE_ABI 7): the MISMATCH (F8), the encoding
+# seam's span compare loop. mm-exact and mm-ucp-expr through the generic row
+# (exact; the expression fold `rx_span_ci_fold(@)`), mm-ascii-inplace through
+# mismatch_inplace (the ASCII fold of statements over `x`/`y`): the three
+# shapes, each ALSO frozen as pins/n7_target/<fixture>.c (pcrec's pre-migration
+# loop, run_arm_pins.sh check 10). mm-nonident (non-identifier hooks, a BRACED
+# on_miss) and mm-inplace-clash (a hook naming `y`: the temps renamed) are the
+# edges. Check 11 compiles and runs all five. No row re-pinned.
+generic	mm-exact	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	mm-exact	use	141	a5849fc8d1220342bcbcf28847c58096a6065e70c5453965da2bc1db85a9399b
+generic	mm-ucp-expr	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	mm-ucp-expr	use	175	6ab95960090c4eb6846a1c5a7ad9e33f1cdac1fe339e061a520498c1c3c2efab
+mismatch_inplace	mm-ascii-inplace	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+mismatch_inplace	mm-ascii-inplace	use	349	c7746a13ea30a2c46f61fd787defa43a6f3a8f34dfda49af33694f03be9129ff
+generic	mm-nonident	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	mm-nonident	use	172	3b8fbf8c641f8f0e21e3a6b946a40a466e1c4a19b1db4c7f6649e46d6ae3f61d
+mismatch_inplace	mm-inplace-clash	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+mismatch_inplace	mm-inplace-clash	use	445	d04980752f72566c099d49716284b34ab33a61b6462f758ea5da24fb45065738

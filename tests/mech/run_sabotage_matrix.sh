@@ -380,6 +380,17 @@
 #     another row, or not at all, moves no pcrec answer and no artifact byte
 #     (S617-S619: the `+ k` store, the read-bounded range, LOOP_EXIT).
 #     Links the sabotaged tree's build/libpcrec.a. Registered before S617.
+#   n2sample — added 2026-10-08 ([MEMFN-ROWCON] N2, lane m7fix); runs
+#     tests/memfn/run_n2_sample.sh: the N2 would-decline census
+#     (docs/design/memfn/probes/rowcon/n2_census.sh, its own driver and
+#     report) on a dozen witness patterns x 3 arms, with an -DMF_TRACE pcrec
+#     built from the sabotaged tree. Red iff the census's rc is nonzero (rc 5:
+#     a would-decline or a no-row selection). Its own arm because a kit row
+#     whose `applies` holds too widely is DECLINED by the contract gate and
+#     the walk lands on the row it would have chosen anyway: no answer, no
+#     artifact byte and no pin moves (M7's inplace_applies moved 7,726,522
+#     census selections at zero movers). The full census is a slot run; this
+#     sample is not it. Registered before S668.
 #   memfnarch — added 2026-10-06 ([MEMFN] R4c, lane r4cchecks); runs
 #     tests/memfn/run_arch_blind.sh, C4: the arch-blindness detector
 #     (integration.md §10.4) over the sabotaged tree's src/, cli/, lib/ and
@@ -2871,6 +2882,17 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnarms.log" "$f" "memfnarms:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            n2sample)
+                # [MEMFN-ROWCON] N2 tests/memfn/run_n2_sample.sh — see the
+                # vocabulary entry above. Builds its own -DMF_TRACE pcrec
+                # from the sabotaged tree (N2_TREE = the tree, never git's).
+                CC="$CC" TMPDIR="$work" JOBS="$JOBS" \
+                    bash "$tree/tests/memfn/run_n2_sample.sh" "$tree" \
+                    > "$work/n2sample.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/n2sample.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/n2sample.log" | grep -oE '[0-9]+')"
+                score_arm "$work/n2sample.log" "$f" "n2sample:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnarch)
                 # [MEMFN] C4 tests/memfn/run_arch_blind.sh — see the

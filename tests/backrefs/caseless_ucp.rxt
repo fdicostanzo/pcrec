@@ -253,3 +253,75 @@ flags u
 features backrefs,modifiers,ucp
 m "\xe9\xc9" 0 2
 m "\xe9x" 0 2
+
+# THE SUBJECT ENDS INSIDE A CASELESS REFERENCE (S670's answer detector, UCP + utf8 siblings of caseless.rxt's block).
+# Expectations READ FROM libpcre2 10.46 (ctypes binding, PCRE2_UCP / PCRE2_UTF option bits, pattern text as written here).
+# The in-place caseless MISMATCH row that reads "subject exhausted" as EQUAL answers (0,6) on "aaa" and (0,4) on "\xe9\xe0\xc9".
+# UCP, byte: the ASCII witness
+# pcre2-only
+pattern (*UCP)(?i)(a+)\1
+encoding byte
+features backrefs,modifiers,ucp
+m "aaa" 0 2
+g 1 0 1
+m "aAa" 0 2
+g 1 0 1
+m "aAaA" 0 4
+g 1 0 2
+
+# UCP, byte: Latin-1 folds, the subject ending inside the span
+# pcre2-only
+pattern (*UCP)(?i)(\xe9+)\1
+encoding byte
+features backrefs,modifiers,ucp
+m "\xe9\xe9\xe9" 0 2
+g 1 0 1
+m "\xe9\xc9\xe9" 0 2
+g 1 0 1
+m "\xe9\xc9\xe9\xc9" 0 4
+g 1 0 2
+m "\xc9\xe9\xe9" 0 2
+g 1 0 1
+
+# UCP, byte: a two-byte reference the subject ends inside (first byte folds equal, second is past n)
+# pcre2-only
+pattern (*UCP)(?i)(\xe9\xe0)\1
+encoding byte
+features backrefs,modifiers,ucp
+n "\xe9\xe0\xc9"
+n "\xe9\xe0\xe9"
+m "\xe9\xe0\xc9\xc0" 0 4
+g 1 0 2
+
+# utf8: the ASCII witness
+# pcre2-only
+pattern (?i)(a+)\1
+encoding utf8
+features backrefs,modifiers
+m "aaa" 0 2
+g 1 0 1
+m "aAa" 0 2
+g 1 0 1
+m "aAaA" 0 4
+g 1 0 2
+
+# utf8: a two-byte character folds (U+00E9 / U+00C9), the subject ending after the first or inside the reference
+# pcre2-only
+pattern (?i)(\xe9+)\1
+encoding utf8
+features backrefs,modifiers
+m "\xc3\xa9\xc3\xa9\xc3\xa9" 0 4
+g 1 0 2
+m "\xc3\xa9\xc3\x89\xc3\xa9" 0 4
+g 1 0 2
+m "\xc3\xa9\xc3\x89\xc3\xa9\xc3\x89" 0 8
+g 1 0 4
+
+# utf8: two-character reference, subject ends inside it with case differing
+# pcre2-only
+pattern (?i)(\xe9\xe0)\1
+encoding utf8
+features backrefs,modifiers
+n "\xc3\xa9\xc3\xa0\xc3\x89"
+m "\xc3\xa9\xc3\xa0\xc3\x89\xc3\x80" 0 8
+g 1 0 4

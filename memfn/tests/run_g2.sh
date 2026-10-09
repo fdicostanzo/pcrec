@@ -90,7 +90,7 @@ QUICK_FLOOR_ASAN_CHECKS=1500000  # ASan+UBSan checks on the sample
 # generate the same sites, so these hold for --quick and the full run alike.
 # Measured 2026-10-07 (Linux dev box, seed 20261005, lane g2u), less ~10%;
 # mline measured 2026-10-08 (lane g2m4: 406 rendered and run), less ~10%.
-FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 mline:360 sem:1370"
+FAM_FLOORS="ofs:370 ofsrun:1230 stmt:330 onebyte:70 gate:260 setrest:54 vmrun:790 pf:260 mline:360 mismatch:185 sem:1370"
 # distinct (opaque) form ids the families are rendered through: counted,
 # never parsed (measured: 6 since lane g2pf; the PF shape's two are new)
 FLOOR_FAM_FORMS=6
@@ -101,9 +101,9 @@ FLOOR_FAM_FORMS=6
 # the FULL check floors are DERIVED (quick x 2.5, the original
 # FLOOR_CHECKS/QUICK_FLOOR_CHECKS ratio being 3.9) and are owed a
 # confirmation by the manager's first full run.
-FORM_FLOORS="generic:5800 ofsskip:1120 precheck:270 runcmp:910 pf_memchr:380 pf_walk:400"
-QUICK_FORM_CHECK_FLOORS="generic:22900000 ofsskip:5200000 precheck:960000 runcmp:2480000 pf_memchr:1300000 pf_walk:2150000"
-FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcmp:6200000 pf_memchr:3200000 pf_walk:5300000"
+FORM_FLOORS="generic:5800 ofsskip:1120 precheck:270 runcmp:910 pf_memchr:380 pf_walk:400 mismatch_inplace:62"
+QUICK_FORM_CHECK_FLOORS="generic:22900000 ofsskip:5200000 precheck:960000 runcmp:2480000 pf_memchr:1300000 pf_walk:2150000 mismatch_inplace:290000"
+FULL_FORM_CHECK_FLOORS="generic:57250000 ofsskip:13000000 precheck:2400000 runcmp:6200000 pf_memchr:3200000 pf_walk:5300000 mismatch_inplace:725000"
 # the POISON differential (g2u item 6): sites poisoned, and per field the
 # sites that field was poisoned on (a field whose count falls to 0 is a
 # contract clause no longer exercised)
@@ -154,6 +154,20 @@ FLOOR_LOOPX_MUT=115      # W2 mutation 8: LOOP_EXIT sites mutated (measured 130;
 FLOOR_RB_SITES=410;   FLOOR_RB_CHECKS=1500000; FLOOR_RB_PLANT_N=270000; FLOOR_RB_HIT_N=110000
 FLOOR_ATN_SITES=410;  FLOOR_ATN_CHECKS=1480000; FLOOR_ATN_LO_N=60000
 FLOOR_LX_SITES=115;   FLOOR_LX_CHECKS=420000;  FLOOR_LX_BREAK=23000; FLOOR_LX_FALL=390000
+# lane g2m7, MF_SITE_ABI 7: MF_OP_MISMATCH (R-8, M7). G2 GENERATES the fold maps (identity, ASCII /
+# Latin-1 lower, upper, per-pair random representative, and a bijection after a representative: the
+# last two NON-idempotent), spells each in both text shapes, and holds the spelled text to the map
+# (mm_chk). Floors: hard sites that RAN (tier-independent), their answer checks (quick), and the
+# populations that make the answers mean something. Measured 2026-10-08, Linux dev box, seed
+# 20261005, quick tier, less ~10%.
+FLOOR_MM_SITES=185;      FLOOR_MM_CHECKS=870000
+FLOOR_MM_EQ=395000;        FLOOR_MM_DIFF=470000;     FLOOR_MM_DIFF0=225000;   FLOOR_MM_DIFFLAST=150000;  FLOOR_MM_ENDED=208000
+FLOOR_MM_RL0=170000;       FLOOR_MM_LOGEN=195000;    FLOOR_MM_FOLDDEC=195000; FLOOR_MM_DECOY=70000
+FLOOR_MM_NONIDEM=42;   FLOOR_MM_ALIAS=41000;    FLOOR_MM_SNULL=5500;   FLOOR_MM_RNULL=83000
+FLOOR_MM_SITES_ASCII=61; FLOOR_MM_SITES_UCP=62; FLOOR_MM_SITES_EXPR=61; FLOOR_MM_SITES_STMT=62
+FLOOR_MM_REFUSALS=510   # MISMATCH refusal cases (generator): header-derived + vocabulary-absent
+FLOOR_MM_POISON=185     # REF-term junk-data renderings, every one byte-identical
+FLOOR_MMMUT_SITES=185; FLOOR_MMMUT_FOLD_SITES=61   # W2 9/10 mutated MISMATCH sites; W2 11 the caseless ones
 # the semantic differential (g2u item 7): hard variant sites run per field
 # the enforced classes' populations (generator cases, tier-independent):
 FLOOR_CLS_HOOK=600       # hook-nonident; measured 728 (g2u2)
@@ -232,6 +246,9 @@ gen() {  # gen OUTDIR [--mutate K]
     "$TO" 600 "$work/g2_gen" "$@" --seed "$seed"
 }
 gen "$work/gen" > "$work/gen.log" 2>&1 || { cat "$work/gen.log"; echo "run_g2.sh: generator failed" >&2; exit 2; }
+# lane g2m7: a generator process of its OWN that makes only the MISMATCH sites, so the rows chosen
+# for them are countable apart from every other family's (section 4b prints them)
+[ "$rows" = 1 ] && { gen "$work/mmonly" --mm-only 1 > "$work/mmonly.log" 2>&1 || { cat "$work/mmonly.log"; echo "run_g2.sh: the MISMATCH-only generator failed" >&2; exit 2; }; }
 cat "$work/gen.log"
 sum=$(grep '^SUMMARY' "$work/gen/gen_results.txt")
 [ -n "$sum" ] || { echo "run_g2.sh: no generator SUMMARY" >&2; exit 2; }
@@ -288,6 +305,14 @@ ur_d=$(echo "$ur_" | sed 's/.* result_decl=\([0-9]*\).*/\1/')
 [ "${ur_m:-0}" -ge "$FLOOR_USEREFUSE_ON_MISS" ] || note_fail 1 "use-time refusals naming on_miss: ${ur_m:-0} < floor $FLOOR_USEREFUSE_ON_MISS"
 [ "${ur_d:-0}" -ge "$FLOOR_USEREFUSE_RESULT_DECL" ] || note_fail 1 "use-time refusals naming result_decl: ${ur_d:-0} < floor $FLOOR_USEREFUSE_RESULT_DECL"
 [ "${ur_u:-0}" -eq 0 ] || note_fail 1 "use-time refusals naming no field: ${ur_u}"
+echo "== MISMATCH (lane g2m7): generator populations"
+grep '^MMSITES\|^MMVARS\|^MMREFUSE\|^MMPOISON\|^INFO vocab.* mm' "$gres" | sed 's/^/   /'
+mmr_=$(grep '^MMREFUSE' "$gres" | sed 's/.*cases=\([0-9]*\) .*/\1/')
+[ "${mmr_:-0}" -ge "$FLOOR_MM_REFUSALS" ] || note_fail 1 "MISMATCH refusal cases ${mmr_:-0} < floor $FLOOR_MM_REFUSALS"
+mmp_=$(grep '^MMPOISON' "$gres" | sed 's/.*identical=\([0-9]*\) .*/\1/')
+[ "${mmp_:-0}" -ge "$FLOOR_MM_POISON" ] || note_fail 1 "MISMATCH REF-term poison renderings ${mmp_:-0} < floor $FLOOR_MM_POISON"
+[ "$(grep '^MMPOISON' "$gres" | sed 's/.*differ=\([0-9]*\) .*/\1/')" = 0 ] || note_fail 1 "MISMATCH rendering moved with junk in the REF term's unread fields"
+[ "$(grep '^MMPOISON' "$gres" | sed 's/.*control_unstable=\([0-9]*\).*/\1/')" = 0 ] || note_fail 1 "MISMATCH poison control: a clean re-rendering is not byte-identical"
 echo "== poison differential (fields the contract says a site does not use, set to junk)"
 grep '^POISON ' "$gres" | sed 's/^/   /'
 pzs=$(grep '^POISON ' "$gres" | sed 's/.* sites=\([0-9]*\).*/\1/')
@@ -480,8 +505,8 @@ w2_launch() {  # w2_launch M CC
     local m=$1 gd="$work/mut$1"
     if gen "$gd" --mutate "$m" > "$work/mut$m.gen.log" 2>&1; then
         if [ "$quick" = 1 ]; then
-            if [ "$m" = 8 ]; then sample "$gd" "$work/mutq$m" pend; else sample "$gd" "$work/mutq$m"; fi
-            gd="$work/mutq$m"
+            if [ "$m" = 8 ]; then sample "$gd" "$work/mutq$m" pend; elif [ "$m" -lt 9 ]; then sample "$gd" "$work/mutq$m"; fi
+            [ "$m" -ge 9 ] || gd="$work/mutq$m"
         fi
         if build "mut$m" "$2" "$gd"; then
             "$TO" 3600 "$work/build-mut$m/g2_run" --quick --mutants > "$work/mut$m.log" 2>/dev/null
@@ -522,6 +547,13 @@ w3_judge() {
     [ "${wo:-0}" -gt 0 ] || note_fail 1 "W3 over-read did not fault: the upper guard page is not reached"
     [ "${wu:-0}" -gt 0 ] || note_fail 1 "W3 under-read did not fault: the lower guard page is not reached"
     [ "${wc_:-1}" = 0 ] || note_fail 1 "W3 clean control failed: the witness harness itself is wrong"
+    # lane g2m7: MISMATCH's two operands each have a guard page on both sides
+    for w_ in mm-ref-over mm-ref-under mm-s-over mm-s-under; do
+        wf_=$(grep "overread $w_:" "$work/w3.log" | sed 's/.*faults //')
+        [ "${wf_:-0}" -gt 0 ] || note_fail 1 "W3 $w_ did not fault: the guard page for that read is not reached"
+    done
+    wmc_=$(grep 'overread mm-clean:' "$work/w3.log" | sed 's/.*failed \([0-9]*\).*/\1/')
+    [ "${wmc_:-1}" = 0 ] || note_fail 1 "W3 mm-clean control failed: the MISMATCH witness harness itself is wrong"
 }
 # W2: mutations 1-4 corrupt the kit's TEXT at a first textual match; many
 # such mutants are equivalent (the kit's per-term read guards make a
@@ -546,6 +578,14 @@ w2_judge() {  # w2_judge M
             echo "   W2 mutation 8, LOOP_EXIT sites (population floor $FLOOR_LOOPX_MUT): mutated ${mm:-?} killed ${killed:-?}"
             [ "${mm:-0}" -ge "$FLOOR_LOOPX_MUT" ] || note_fail 1 "W2 mutation 8: ${mm:-0} LOOP_EXIT sites mutated < floor $FLOOR_LOOPX_MUT"
             [ "${killed:-0}" = "${mm:-x}" ] || note_fail 1 "W2 mutation 8: a kit break inside a loop of its own was caught on ${killed:-0} of ${mm:-0} LOOP_EXIT sites (must be all): the driver-owned-loop check does not see where the break goes"
+        elif [ "$m" -ge 9 ]; then
+            # lane g2m7 (MISMATCH, MF_SITE_ABI 7): W2 9 hands the kit reflen + 1, 10 the subject as the
+            # reference, 11 a fold that does nothing (caseless sites only). Each changes a hook the answer
+            # depends on, so a mutated site that survives every instance is a hole: EVERY one must be caught
+            echo "   W2 mutation $m, MISMATCH sites (population floor $FLOOR_MMMUT_SITES): mutated ${mm:-?} killed ${killed:-?}"
+            fl_=$FLOOR_MMMUT_SITES; [ "$m" = 11 ] && fl_=$FLOOR_MMMUT_FOLD_SITES
+            [ "${mm:-0}" -ge "$fl_" ] || note_fail 1 "W2 mutation $m: ${mm:-0} MISMATCH sites mutated < floor $fl_"
+            [ "${killed:-0}" = "${mm:-x}" ] || note_fail 1 "W2 mutation $m: a MISMATCH site given a wrong hook was caught on ${killed:-0} of ${mm:-0} sites (must be all)"
         else
             if [ "$m" = 7 ]; then
                 # G1 (lane g2u): judged over the sites that read below the
@@ -560,6 +600,13 @@ w2_judge() {  # w2_judge M
                 || note_fail 1 "W2 hook mutation $m caught ${killed:-0} of ${mm:-0} (< $FLOOR_HOOK_KILL_PCT%)"
         fi
         [ "$m" = 6 ] && { [ "${faults:-0}" -gt 0 ] || note_fail 1 "W2 mutation 6 (n + 1) never faulted: the upper guard page missed a kit over-read"; }
+        if [ "$m" = 9 ]; then
+            # the fault must come from the REFERENCE's own guard page (a non-alias instance with reflen > 0), not from
+            # a NULL reference at reflen 0 or from the subject's guard through an alias
+            rg_=$(grep '^G2 mutants MISMATCH reference-guard faults' "$work/mut$m.log" | sed 's/.*: *//')
+            echo "   W2 mutation 9, faults on the reference's guard pages (non-alias, reflen > 0): ${rg_:-?} (must be > 0)"
+            [ "${rg_:-0}" -gt 0 ] || note_fail 1 "W2 mutation 9 (reflen + 1) never faulted on the reference's guard page: a kit over-read of ref[reflen] goes unseen"
+        fi
         [ "$m" = 7 ] && { [ "${faults:-0}" -gt 0 ] || note_fail 1 "W2 mutation 7 (fl - 1) never faulted: the lower guard page missed a kit under-read"; }
     else
         nb=$(grep -c COMPILE-FAIL "$work/build-mut$m/compile.log" 2>/dev/null || echo 0)
@@ -577,11 +624,11 @@ if [ "$quick" = 1 ]; then
     sample "$work/gen" "$work/genq"
     [ -n "$asan_cc" ] && asan_launch "$work/genq" > "$work/asan.out" 2>&1 &
     { if build wq "$wcc" "$work/genq"; then
-          for k in 1 2 3 4; do w1_launch wq "$k" & done
+          for k in 1 2 3 4 5 6 7; do w1_launch wq "$k" & done
           w3_launch wq
           wait
       fi; } > "$work/wq.out" 2>&1 &
-    for m in 1 2 3 4 5 6 7 8; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
+    for m in 1 2 3 4 5 6 7 8 9 10 11; do w2_launch "$m" "$wcc" > "$work/mut$m.out" 2>&1 & done
 else
     floor_checks=$FLOOR_CHECKS; floor_asan=$FLOOR_ASAN_CHECKS; drv_tier=
     floor_m7neg=$FLOOR_MUT7_NEG; form_check_floors=$FULL_FORM_CHECK_FLOORS
@@ -611,7 +658,7 @@ for cc in $cc_list; do
     p=$(num "$log" "checks passed"); f=$(num "$log" "checks failed")
     s=$(num "$log" "sites run"); miss=$(num "$log" "coverage cells missing")
     echo "== $cc${drv_tier:+ (quick subjects)}: passed ${p:-?} failed ${f:-?} sites ${s:-?} coverage-missing ${miss:-?}"
-    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|read-bounded\|AT_N\|loop-exit\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
+    grep '^G2 \(faults\|sites failed\|layout\|cells\|subjects\|site features\|miss token\|instances\|sites with no\|on_miss_leaves\|read-bounded\|AT_N\|loop-exit\|mismatch\|family\|semantic\|form\|pending\|pf\)' "$log" | sed 's/^/   /'
     for fl_ in $FAM_FLOORS; do
         fn_=${fl_%%:*}; fv_=${fl_##*:}
         s_=$(grep "^G2 family $fn_:" "$log" | sed 's/.*: sites \([0-9]*\) .*/\1/')
@@ -701,6 +748,46 @@ EOF_PF
     else
         note_fail 1 "$cc: no 'G2 loop-exit' census line in $log"
     fi
+    # lane g2m7: the MISMATCH populations (driver census lines)
+    mml_=$(grep '^G2 mismatch (R-8):' "$log")
+    mmv_() { echo "$mml_" | sed -n "s/.*$1 \([0-9]*\).*/\1/p" | head -1; }
+    if [ -n "$mml_" ]; then
+        mmchk_() {  # mmchk_ LABEL VALUE FLOOR
+            [ "${2:-0}" -ge "$3" ] || note_fail 1 "$cc: MISMATCH $1 ${2:-0} < floor $3"
+        }
+        mmchk_ sites "$(mmv_ sites)" "$FLOOR_MM_SITES"
+        mmchk_ checks "$(mmv_ checks)" "$FLOOR_MM_CHECKS"
+        mmchk_ "equal outcomes" "$(mmv_ equal)" "$FLOOR_MM_EQ"
+        mmchk_ "difference outcomes" "$(mmv_ diff)" "$FLOOR_MM_DIFF"
+        mmchk_ "differences at 0" "$(mmv_ diff-at-0)" "$FLOOR_MM_DIFF0"
+        mmchk_ "differences at reflen-1" "$(mmv_ diff-at-reflen-1)" "$FLOOR_MM_DIFFLAST"
+        mmchk_ "ended by the subject" "$(mmv_ ended-by-subject)" "$FLOOR_MM_ENDED"
+        mmchk_ "reflen 0" "$(mmv_ reflen-0)" "$FLOOR_MM_RL0"
+        mmchk_ "lo >= n" "$(mmv_ lo-ge-n)" "$FLOOR_MM_LOGEN"
+        mmchk_ "fold-decided answers" "$(mmv_ fold-decided)" "$FLOOR_MM_FOLDDEC"
+        mmchk_ "near-class decoys" "$(mmv_ near-class-decoys)" "$FLOOR_MM_DECOY"
+    else
+        note_fail 1 "$cc: no 'G2 mismatch (R-8)' census line in $log"
+    fi
+    mms_=$(grep '^G2 mismatch sites:' "$log")
+    if [ -n "$mms_" ]; then
+        mmchk_ "ASCII sites" "$(echo "$mms_" | sed -n 's/.*ascii \([0-9]*\).*/\1/p')" "$FLOOR_MM_SITES_ASCII"
+        mmchk_ "UCP sites" "$(echo "$mms_" | sed -n 's/.*ucp \([0-9]*\).*/\1/p')" "$FLOOR_MM_SITES_UCP"
+        mmchk_ "FOLD_EXPR sites" "$(echo "$mms_" | sed -n 's/.*expr \([0-9]*\).*/\1/p')" "$FLOOR_MM_SITES_EXPR"
+        mmchk_ "FOLD_STMT sites" "$(echo "$mms_" | sed -n 's/.*stmt \([0-9]*\).*/\1/p')" "$FLOOR_MM_SITES_STMT"
+        mmchk_ "non-idempotent-map sites" "$(echo "$mms_" | sed -n 's/.*non-idempotent maps \([0-9]*\).*/\1/p')" "$FLOOR_MM_NONIDEM"
+        [ "$(echo "$mms_" | sed -n 's/.*hook-text checks ok [0-9]* bad \([0-9]*\).*/\1/p')" = 0 ] || note_fail 1 "$cc: a generated fold text does not realize its generated map"
+    else
+        note_fail 1 "$cc: no 'G2 mismatch sites' census line in $log"
+    fi
+    mmo_=$(grep '^G2 mismatch operands:' "$log")
+    if [ -n "$mmo_" ]; then
+        mmchk_ "aliased reference checks" "$(echo "$mmo_" | sed -n 's/.*alias before-lo \([0-9]*\) at-lo \([0-9]*\) overlapping \([0-9]*\),.*/\1 \2 \3/p' | awk '{print ($1<$2?($1<$3?$1:$3):($2<$3?$2:$3))}')" "$FLOOR_MM_ALIAS"
+        mmchk_ "NULL subject checks" "$(echo "$mmo_" | sed -n 's/.*s NULL \([0-9]*\).*/\1/p')" "$FLOOR_MM_SNULL"
+        mmchk_ "NULL reference checks" "$(echo "$mmo_" | sed -n 's/.*ref NULL \([0-9]*\)$/\1/p')" "$FLOOR_MM_RNULL"
+    else
+        note_fail 1 "$cc: no 'G2 mismatch operands' census line in $log"
+    fi
     grep -c . "$work/build-$cc/warnings.log" | sed "s/^/   compiler diagnostics lines ($cc): /"
 done
 
@@ -720,12 +807,12 @@ if [ "$quick" = 1 ]; then
     [ -x "$work/build-wq/g2_run" ] || note_fail 1 "the sampled witness build failed ($work/wq.out)"
 else
     echo "== witnesses (W1 wrong reference, W2 mutated kit text, W3 planted reads), on $wcc"
-    for k in 1 2 3 4; do w1_launch "$wcc" "$k"; done
+    for k in 1 2 3 4 5 6 7; do w1_launch "$wcc" "$k"; done
     w3_launch "$wcc"
 fi
-for k in 1 2 3 4; do w1_judge "$k"; done
+for k in 1 2 3 4 5 6 7; do w1_judge "$k"; done
 w3_judge
-for m in 1 2 3 4 5 6 7 8; do
+for m in 1 2 3 4 5 6 7 8 9 10 11; do
     [ "$quick" = 1 ] || w2_launch "$m" "$wcc"
     w2_judge "$m"
 done
@@ -736,7 +823,8 @@ done
 # only mf_ref_*, selects nothing and prints no REACH line, so it is not one),
 # linked against libpcrec_mftrace.a. Nothing here reads G2's generator or
 # driver output, and FLOOR_ROWS below is a literal measured once.
-FLOOR_ROWS=14   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back)
+MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
+FLOOR_ROWS=15   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process
@@ -775,6 +863,16 @@ if [ "$rows" = 1 ]; then
       | awk '{ k = $1 " " $2; s[k] += $3 } END { for (k in s) print "row-chosen " k " " s[k] }' \
       | LC_ALL=C sort > "$work/row-chosen.txt"
     cat "$work/row-chosen.txt"
+    # lane g2m7: the rows the MISMATCH-only generator process chose (its own REACH lines), apart from the tier sum
+    echo "== rows chosen by the MISMATCH-only generator process (MISMATCH sites alone)"
+    reach_lines "$work/reach/gen-mmonly.err" | sed 's/^MFTRACE REACH table=\([^ ]*\) row=\([^ ]*\) chosen=\([0-9]*\)$/\1 \2 \3/' \
+        | awk '$3 > 0 {print "row-chosen-mismatch-only " $1 " " $2 " " $3}' | LC_ALL=C sort | tee "$work/row-chosen-mm.txt"
+    for fl_ in $MM_ROW_FLOORS; do
+        t_=${fl_%%:*}; r_=${fl_#*:}; r_=${r_%%:*}; v_=${fl_##*:}
+        c_=$(awk -v t="$t_" -v r="$r_" '$2 == t && $3 == r {print $4}' "$work/row-chosen-mm.txt")
+        if [ "${c_:-0}" -ge "$v_" ]; then reach_pass "(f) MISMATCH sites chose $t_/$r_ ${c_:-0} times >= floor $v_"
+        else reach_fail "(f) MISMATCH sites chose $t_/$r_ ${c_:-0} times < floor $v_"; fi
+    done
     dropped=$(cat "$work"/reach/*.err | sed -n 's/^MFTRACE REACH_DROPPED n=\([0-9]*\)$/\1/p' | awk '{t += $1} END {print t + 0}')
     ndrop=$(cat "$work"/reach/*.err | grep -c '^MFTRACE REACH_DROPPED n=')
     if [ "$dropped" = 0 ] && [ "$ndrop" -ge "$nproc_files" ]; then

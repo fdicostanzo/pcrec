@@ -115,6 +115,8 @@ typedef struct {
 #define gate_check    MF_NS(gate_check)
 #define gate_describe MF_NS(gate_describe)
 #define kit_is_ident  MF_NS(kit_is_ident)
+#define kit_stmt_shape MF_NS(kit_stmt_shape)
+#define kit_fold_shape MF_NS(kit_fold_shape)
 
 /* Row `c`'s verdict at `phase` over `in`: the ONE verdict both selection
  * walks and the use re-check act on (N3, ENFORCING: the callers decline a
@@ -125,6 +127,11 @@ gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *i
 void gate_describe(char *buf, size_t n, const gate_verdict *v, const gate_in *in);
 /* 1 iff `s` is a bare C identifier (a lexical check). */
 int kit_is_ident(const char *s);
+/* The `on_miss` text classes (JUMP, BRACED, LOOP_EXIT or OTHER) and the
+ * MISMATCH `fold` text's (FOLD_EXPR, FOLD_STMT or OTHER), as CL_* values:
+ * the gate's own lexical checks, for a renderer that pastes the text. */
+int kit_stmt_shape(const char *text);
+int kit_fold_shape(const char *text);
 
 /* The text of the site's `miss` with the MF_MISS_N token resolved to the `n`
  * hook's text (NULL when unstated, or when the token's `n` is). Every reader
@@ -214,6 +221,7 @@ typedef struct arm {
 #define pf_walk_arm           MF_NS(pf_walk_arm)
 #define pf_walk_bounded_arm   MF_NS(pf_walk_bounded_arm)
 #define pf_memchr_back_arm    MF_NS(pf_memchr_back_arm)
+#define mismatch_inplace_arm  MF_NS(mismatch_inplace_arm)
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
@@ -235,6 +243,15 @@ extern const arm pf_walk_arm;           /* table, end_back 0, miss n            
 extern const arm pf_walk_bounded_arm;   /* table, end_back 1, miss n - 1        */
 extern const arm pf_memchr_back_arm;    /* one byte at -1, AT_N, floor == lo,
                                            the store + 1 (M4)                   */
+/* mismatch.c: F8, THE MISMATCH (MF_VOCAB 3, M7; §15.8): the compare loop of
+ * the subject against a run-time reference span, ONE renderer as TWO rows
+ * (RULED Q-R8-9): the generic row renders its exact and expression-fold
+ * shapes through `mm_render`; `mismatch_inplace` its in-place-fold shape. */
+extern const arm mismatch_inplace_arm;  /* MISMATCH, a FOLD_STMT fold        */
+#define mm_render MF_NS(mm_render)
+/* Writes MISMATCH site `handle`'s loop with the use hooks `h` into `b`: the
+ * shape is the site's fold_kind and the `fold` text's class. */
+int mm_render(mf_art *art, uint32_t handle, const mf_hooks *h, kb *b);
 
 /* ---- writing to a sink --------------------------------------------------- */
 

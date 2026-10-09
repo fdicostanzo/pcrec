@@ -19,6 +19,7 @@ boundary with pcrec"), rendered through `memfn_sites.c` (DELEG_SITES):
 | OFS (the `<p>_ofsskip` block, its comment, its calls; the run pre-check's `<p>_reqrun[_whole]` functions) | `memfn/src/ofsskip.c` | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (the k-set selection), `ofs_pred_of` (the description), `ofs_site_define`, `pf_ofs_call`, the tables (`pf_tables_ofs`), the reseed, the call statements around the expression |
 | PF (R4g, M2: THE FIND statement of the DFA prefilter forms, the DFA hat and the VM hat's seek) | `memfn/src/pffind.c` | `find_site` (the description: the form off `DfaPf.scan`/the VM hat's table, `holdback` -> `end_back`, the set, the caller's `on_miss`), `pcrec_emit_find` (the use point), `find_table_name`; every guard, `return 0`, entry test, re-seed, comment and table in the `pf_emit_*` callers |
 | MLINE (M4: the attempt engine's `(?m)^` skip in `emit_attempt`) | `memfn/src/pffind.c` (row `pf_memchr_back`) | the guard `if (start > X && subject[start - 1] != b) {` and its `}`, X (`gseed`: `search_from` or `0`), `cpre` and every start decision (NEXT via `attempt_next_of`/`attempt_cand`, BOUND, `cand.byte`/`cand.offset`), described through `pcrec_emit_find` with `site` MLINE, the term at `-cand.offset` (-1), `floor` `start`, `on_miss` `break;` |
+| N7 (M7: the encoding seam's byte-wise span compare LOOP inside `<p>_span_match[_caseless]`) | `memfn/src/mismatch.c` (the generic row's exact/expression shapes, row `mismatch_inplace`) | `emit_residual_defs` (reads each backend's site-data row, `pcrec_enc_site`, renders the loop through `pcrec_memfn_emit` and hands the strings to `pcrec_enc_emit_defs`) and `pcrec_memfn_span_site` (the description: MISMATCH / ON_DIFF, the fold kind and text, the failure statement, the operands `PCREC_ENC_SPAN_*`); every other byte of the entries (signature, braces, final return, fold function and table, comments) is the BACKEND's text in `src/enc/` (D58 addendum 2) |
 | STAY, EDGE, VMSPAN (R4h, M3: the in-loop ADVANCE skips: the DFA stay skips, the scan edge's two loops, the VM span loop at stride 1) | `memfn/src/generic.c` (`stmt_advance`) | the builders `stay_advance`/`edge_advance` (emit_dfa.c) and `vm_span_advance` (emit_vm.c), each a `PcrecAdvance` read off its decision (the set, the direction's `more`/`peek`/`step`/cursor, pcrec's own member text, the caller's counter and cap), built by `pcrec_memfn_advance_site` and rendered through `pcrec_memfn_emit` from `dir_fwd_skip`/`dir_rev_skip`/`emit_scan_edge`/`vm_emit_span_scan`; every entry/guard line, the peeled guard and step, `scan_run_length`/`it_`/`lim_` declarations, the cursor init, the accept stores, the fall-through block, the stay/scan tables, the member texts (`scan_test`, the stay-table read, `vm_cls_test`) and comments; the STRIDED span loop stays pcrec's (`vm_stride_loop`, VMSTRIDE, M6) |
 
 The retired emitters (`emit_req_one_byte`, `emit_req_run_check`,
@@ -1133,7 +1134,9 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   pre-check composite with the set rest; OFS, the offset-skip block; VMRUN,
   the VM's literal-run compare, M1b; PF, the prefilter find, R4g; STAY,
   EDGE and VMSPAN, the in-loop ADVANCE skips, R4h; MLINE, the attempt
-  engine's `(?m)^` skip, M4, described by `pcrec_emit_find` as PF is), the
+  engine's `(?m)^` skip, M4, described by `pcrec_emit_find` as PF is; N7,
+  the encoding seam's byte-wise span compare loop, M7, described by
+  `pcrec_memfn_span_site` from the backend's site data), the
   one source of `MF_P_INLOOP` (its budget column) and of each site's `use`
   CEILING. `memfn_sites.c`: the attempt's `mf_art` (`Job.mf`, begun at first
   ask), the SINK over a StrBuf (the comment gate stays pcrec's write-time
@@ -1156,7 +1159,14 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   named); the builders that fill a `PcrecAdvance` (`stay_advance`,
   `edge_advance`, `vm_span_advance`) stay beside their decisions. R4h's I1
   shadow comparator lived here in its IMPLEMENT commit (991b5c49) and was
-  deleted by REPLACE. It holds NO decision: the builders that read the start
+  deleted by REPLACE. **[MEMFN] M7 (lane m7, 2026-10-08):**
+  `pcrec_memfn_span_site`, the span compare's description (MISMATCH / STMT /
+  ON_DIFF over one REF term, `empty` NOP, `on_miss_leaves` 1, the fold FACT
+  and TEXT off the backend's `PcrecEncSite`, the text's `$` rendered by
+  `pcrec_enc_emit_site_text`, the operands the entry's parameter names
+  `PCREC_ENC_SPAN_*`); its caller is `emit_residual_defs` (emit_dfa.c).
+  M7's I1 shadow comparator lived here in its IMPLEMENT commit (610c1580)
+  and was deleted by REPLACE. It holds NO decision: the builders that read the start
   decisions stay in `emit_dfa.c` beside them (`req_site_define`,
   `ofs_site_define`, `ofs_pred_of`). `memfn_sites.h` is the one pcrec header
   that includes the kit's (`memfn/include/memfn.h`). Checks: C10
@@ -1240,6 +1250,22 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `yes-collapsed`, OFF the row's `list` cell), and `VM_PREFILTER_WHY`'s
   test to the fired row's `pfwhy` cell (`Ctx.fit_seq`); a difference aborts
   (`CANDORACLE`). B4/B5 make the cells the readers.
+- **emit_vm.c — the `--emit-ir` `prefilter` line reads T2's row**
+  ([DEC-FALLBACK] B4, lane decfbB4, 2026-10-08; no emitted byte, listing
+  byte-identical). A verdict ON still lists `yes`/`yes-collapsed` here (the
+  collapse is T3's); an OFF verdict lists the row's `list` cell and formats
+  its `note` cell over `cx->dfa_overflow_why`. The seven-arm chain,
+  `sel1_prefilter_reason` and `VmStamp`'s four reason fields
+  (`has_bref`, `has_call`, `prefilter_declined_nullable*`) are deleted; the
+  arms' prose moved verbatim into the rows. The B2 `admit-listing` oracle
+  site retired with the chain.
+- **emit_vm.c — `VM_PREFILTER_WHY` reads the fired row's `pfwhy` cell**
+  ([DEC-FALLBACK] B5, lane decfbB5, 2026-10-08; no emitted byte). The stamp
+  is written where the latest fired T1 row carries a `pfwhy` cell
+  (`Ctx.fit_seq`; `drop-prefilter` is the one), with the cell as its
+  format over the carried size-cap figures. The `size_drop_rung ==
+  SDR_NO_PREFILTER` test and the oracle's `pfwhy` site are deleted. S422
+  plants the new test.
 - **emit_dfa.c — NEXT and RECOVER read the start table** ([START-TABLE] C3,
   lane stc3, 2026-10-07; `docs/design/start_table.md` §3.2 C3; zero movers,
   no abi event). `dfa_pfs[]` and `dfa_search_starts[]` are DELETED into

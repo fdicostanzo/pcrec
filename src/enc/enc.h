@@ -28,15 +28,33 @@
  * own `name` rather than a hand-written literal.
  *
  * WHY TEXT AND NOT A CALLBACK. The residual is emitted verbatim except for
- * the artifact's `--prefix`, so a backend is a string and a backend author
- * writes C, not emitter code. `$` is the prefix placeholder and the ONLY
- * character `pcrec_enc_emit_text` treats specially; residual text must
- * therefore contain no other `$`.
+ * the artifact's `--prefix` and, since [MEMFN] M7 (D58 ADDENDUM 2), ONE kit
+ * site token, so a backend is a string and a backend author writes C, not
+ * emitter code. `$` is the prefix placeholder and `@` begins the site token
+ * PCREC_ENC_SITE (a whole line, `@site@`, which ordinary C cannot contain);
+ * those are the ONLY two characters `pcrec_enc_emit_text` treats specially,
+ * and both rules are checked: residual text contains no other `$`, and a `@`
+ * anywhere but a definition's one token, a token in an entry with no site
+ * data, a second token, or a site-data row whose definition carries no token
+ * is an internal error. Where a delegated loop sat, the backend writes the
+ * token and, beside its text, a SITE-DATA row (PcrecEncSite below: the fold
+ * kind, the fold's text, the failure statement). The gen layer reads that
+ * row, describes the site to the memfn kit, and passes the kit's rendered
+ * loop back into `pcrec_enc_emit_defs` as a STRING, which substitutes it as
+ * it substitutes `$`. Data flows enc -> gen -> kit -> gen -> enc: this
+ * directory never calls up and never includes a gen or kit header, which is
+ * why it is a string and a data row and not a callback (a callback would
+ * invert the layer order and give a backend the code dependency this seam
+ * exists to prevent).
  *
  * THE THIRD-ENCODING RECIPE (DD-12 (7)'s own derailment test). Adding an
  * encoding backend is: one new `enc_<name>.c` in this directory, plus its
  * `extern` below and its row in `enc.c`'s table. Both of those are files in
- * THIS directory. Nothing in src/core, src/parse, src/ir, src/opt, src/gen,
+ * THIS directory. A backend whose span compare is BYTE-WISE writes
+ * PCREC_ENC_SITE where the compare loop sits and a site-data row
+ * (PcrecEncSite) in the same file instead of spelling the loop; a backend
+ * whose compare is not (utf8's caseless per-character walk) spells its own
+ * body and has no row. Nothing in src/core, src/parse, src/ir, src/opt, src/gen,
  * cli/ or lib/ is touched, and if a future backend ever needs one of them
  * touched, that is the design-stop signal DD-12 names rather than a patch to
  * write. (The list grew with the move: as `src/gen/enc/` the sentence could
@@ -216,6 +234,65 @@ enum {
      * generates from fold.c, so there is one Latin-1 fold definition. */
     PCREC_ENCE_SPAN_CASELESS_UCP = 1u << 7
 };
+
+/* [MEMFN] M7 (D58 ADDENDUM 2) THE SPAN COMPARE'S SITE DATA. A backend whose
+ * span-compare entry is a BYTE-WISE compare does not spell its compare loop:
+ * the memfn kit renders it (integration.md §15.8, D146/D147), and the
+ * backend states, beside its text, the three facts the loop's description
+ * needs. DATA, not code: `src/gen/` reads the row, describes the site to the
+ * kit, and hands the rendered loop back as a string (enc never calls up and
+ * never includes a gen or kit header). A KEYED SIDE TABLE rather than a
+ * `PcrecEncEntry` column (D58 addendum 2 item 2): the rows that need it are
+ * few and a column would touch every positional row of both backends.
+ *
+ * `fold_kind` is the FACT (which relation `fold` spells): NONE exact, ASCII
+ * the 52 letters, UCP the Unicode simple fold restricted to Latin-1.
+ * `fold` is the fold's TEXT, `@` the one byte operand and `$` the prefix:
+ * either one expression (`$_span_ci_fold(@)`) or statements that fold the
+ * unsigned char lvalue `@` in place; NULL for NONE. `on_diff` is the
+ * statement the loop runs at the first difference, which reads the loop
+ * index (PCREC_ENC_SPAN_I) and leaves the function: the entry's
+ * sign-encoded prefix protocol stays the backend's. A backend whose compare
+ * is not byte-wise (utf8's caseless per-character walk) has NO ROW for it
+ * and spells its own body. */
+typedef enum {
+    PCREC_ENC_FOLD_NONE,
+    PCREC_ENC_FOLD_ASCII,
+    PCREC_ENC_FOLD_UCP
+} PcrecEncFoldKind;
+
+typedef struct {
+    unsigned          id;        /* the PCREC_ENCE_* entry; 0 ends the table */
+    PcrecEncFoldKind  fold_kind;
+    const char       *fold;
+    const char       *on_diff;
+} PcrecEncSite;
+
+/* THE SITE TOKEN (D58 addendum 2): one whole line of a definition's text,
+ * where the kit's rendered loop goes. `@` appears nowhere else in residual
+ * text. */
+#define PCREC_ENC_SITE "@site@\n"
+
+/* One rendered site, handed back to `pcrec_enc_emit_defs` by the gen layer:
+ * the entry whose definition carries the token, and the kit's text for it
+ * (pasted verbatim: its prefix is already rendered). */
+typedef struct {
+    unsigned    id;
+    const char *text;
+} PcrecEncSiteText;
+
+/* The span compare's OPERAND SPELLINGS: the residual entry's own parameter
+ * names (DD12a(ii) proves the signature identical across backends, so they
+ * are one spelling here rather than per-backend data), its loop index and
+ * the index's declaration, and the loop's indent inside the function. */
+#define PCREC_ENC_SPAN_S       "s"
+#define PCREC_ENC_SPAN_N       "n"
+#define PCREC_ENC_SPAN_AT      "at"
+#define PCREC_ENC_SPAN_REF     "ref"
+#define PCREC_ENC_SPAN_REFLEN  "reflen"
+#define PCREC_ENC_SPAN_I       "i"
+#define PCREC_ENC_SPAN_I_DECL  "size_t "
+#define PCREC_ENC_SPAN_INDENT  "    "
 
 typedef struct {
     int         id;      /* PCREC_ENC_* (lib/pcrec.h) */
@@ -422,6 +499,10 @@ typedef struct {
      * `pcrec_ctx_set_bytes` is the one reader. A third D58 seam scalar,
      * recorded as `max_cp` and `fold` were. */
     unsigned onebyte_max;
+    /* [MEMFN] M7 (D58 addendum 2) THE SITE DATA of the entries whose compare
+     * loop the kit renders (PcrecEncSite above), terminated by a row with
+     * `id == 0`. A D58 seam event recorded as the scalars above were. */
+    const PcrecEncSite *sites;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a
@@ -452,8 +533,14 @@ static inline int pcrec_enc_ready(const PcrecEnc *e)
  * the second and third entries existed. */
 void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix);
+/* [MEMFN] M7 (D58 addendum 2): `sites[0..nsites)` are the kit's rendered
+ * loops for the entries whose definitions carry PCREC_ENC_SITE; each is
+ * substituted for its entry's token. A token with no text, a text whose
+ * entry has no token, or any other `@`, is an internal error through the
+ * buffer's Ctx (`pcrec_ctx_fail`). */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                         const char *prefix);
+                         const char *prefix, const PcrecEncSiteText *sites,
+                         size_t nsites);
 /* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
  * ahead of the engine bodies; `pcrec_enc_emit_defs` emits the rest. Both,
  * and `pcrec_enc_emit_decls`, close `mask` over `requires` first. */
@@ -475,8 +562,20 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
 bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
 
 
-/* Copy `text` into `sb`, replacing every `$` with `prefix`. */
-void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);
+/* [MEMFN] M7 The site-data row of entry `id` in `e` (PcrecEncSite), or NULL
+ * when the backend spells that entry's whole body itself. */
+const PcrecEncSite *pcrec_enc_site(const PcrecEnc *e, unsigned id);
+
+/* Copy `text` into `sb`, replacing every `$` with `prefix` and the one
+ * PCREC_ENC_SITE token with `site` (NULL: the text must carry no `@` at
+ * all; non-NULL: exactly one token, and no other `@`). A broken rule is an
+ * internal error through `sb`'s Ctx. */
+void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix,
+                         const char *site);
+/* [MEMFN] M7 A site-data row's text (PcrecEncSite's `fold`): `$` replaced
+ * as above, every `@` left in place (it is the kit's operand placeholder,
+ * the memfn `fold` hook's, not the site token). */
+void pcrec_enc_emit_site_text(StrBuf *sb, const char *text, const char *prefix);
 
 /* [K49] Render this backend's `advance` text into a CALLER-owned buffer, with
  * `@P`/`@S`/`@N` replaced by the three variable names and every line prefixed

@@ -1,12 +1,16 @@
 # memfn/include/ — the kit's one public header
 
 - **memfn.h** — the ONLY file pcrec's sources include from the kit (R4a,
-  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 6 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
+  integration.md §8.2/§8.3/§14.0). It carries `MF_SITE_ABI` 7 (3: Q-G2-18, R4c; 4: M1b; 5: R4h prep,
   `mf_site.count_by_caller`, the caller-owned ADVANCE counter, Q-R4h-1 (a);
   6: M4 prep, R-7: a reads-below FIND's range bounded by its reads
   (Q-R7-1, at `MF_OP_FIND`), `MF_EMPTY_AT_N` (Q-R7-2) and `on_miss`'s
-  LOOP_EXIT class (Q-R7-3), no layout moved), `MF_VOCAB`
-  2 and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under
+  LOOP_EXIT class (Q-R7-3), no layout moved; 7: M7 prep, R-8:
+  `mf_site.fold_kind` and `mf_hooks.ref`/`reflen`/`fold`, each appended
+  last), `MF_VOCAB` 3 (M7 prep: `MF_OP_MISMATCH`, F8, the compare loop
+  of the subject against a run-time reference span; `MF_H_ON_DIFF`, k
+  written and then `on_miss`, which may read it; `MF_T_REF`, a term with
+  no data; the `mf_fold` fact NONE/ASCII/UCP, Q-R8-4/5) and `MF_NS(name)` (→ `pcrec_mf_name` in-tree, `mf_name` under
   `MF_STANDALONE`); the site description (`mf_site`, `mf_pred`, `mf_term`
   and the form/op/handoff/empty/need enums); the sink (`mf_sink`), the
   arena (`mf_arena`) and the hooks (`mf_hooks`); the result and the
@@ -16,7 +20,7 @@
   `mf_vocab_has`; the option registry's view (`mf_option`, `mf_options()`,
   which `--list-axes` prints as its `memfn` section, and `mf_opts_check()`,
   which validates the opaque `--memfn=` string); and K1's reference
-  functions (`mf_ref_*`). Every entry-point name is a `#define` onto its
+  functions (`mf_ref_*`; `mf_ref_mismatch`, F8, since M7 prep). Every entry-point name is a `#define` onto its
   `MF_NS` symbol, so callers write `mf_emit`. Where the design left a
   spelling open the header says CHOSEN, and
   `docs/dev/lanes/memfnskel_report.md` lists each choice. Where the kit

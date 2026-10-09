@@ -153,11 +153,7 @@ static const char defs_bref[] =
 "ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
 "                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || s[at + i] != ref[i])\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
@@ -185,16 +181,7 @@ static const char defs_bref_ci[] =
 "                                const unsigned char *ref, size_t reflen,\n"
 "                                size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        unsigned char x, y;\n"
-"        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
-"        x = s[at + i];\n"
-"        y = ref[i];\n"
-"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
-"        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
-"        if (x != y) return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
@@ -318,13 +305,28 @@ static const char defs_bref_ci_ucp[] =
 "                                const unsigned char *ref, size_t reflen,\n"
 "                                size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || $_span_ci_fold(s[at + i]) != $_span_ci_fold(ref[i]))\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
+
+/* [MEMFN] M7 (D58 addendum 2) THE SITE DATA of this backend's three
+ * byte-wise span compares (enc.h's PcrecEncSite): the exact compare, the
+ * ASCII fold spelled in place over the byte `@` (A-Z <-> a-z only, no
+ * tolower(): `defs_bref_ci_doc` says why; `pcrec_ascii_fold` is the same
+ * fact, tied by tests/backrefs/fold_agreement_check.c and sabotage row S116),
+ * and the UCP fold as an expression over the fold function this file
+ * defines above the compare. Each failure statement is the entry's
+ * sign-encoded prefix protocol (`decls_bref_doc`). */
+static const char span_on_diff[] = "return -(ptrdiff_t)i - 1;";
+
+static const PcrecEncSite sites_byte[] = {
+    { PCREC_ENCE_SPAN,              PCREC_ENC_FOLD_NONE,  NULL, span_on_diff },
+    { PCREC_ENCE_SPAN_CASELESS,     PCREC_ENC_FOLD_ASCII,
+      "if (@ >= 'A' && @ <= 'Z') @ = (unsigned char)(@ + 32);", span_on_diff },
+    { PCREC_ENCE_SPAN_CASELESS_UCP, PCREC_ENC_FOLD_UCP,
+      "$_span_ci_fold(@)", span_on_diff },
+    { 0, PCREC_ENC_FOLD_NONE, NULL, NULL }
+};
 
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
@@ -396,5 +398,6 @@ const PcrecEnc pcrec_enc_backend_byte = {
      * comment). */
     true,
     0u,   /* [UCP] implies no module */
-    0xFFu /* [UCP] U2 every code point is one byte */
+    0xFFu, /* [UCP] U2 every code point is one byte */
+    sites_byte  /* [MEMFN] M7 the span compares' site data */
 };

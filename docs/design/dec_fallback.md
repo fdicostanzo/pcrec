@@ -904,6 +904,102 @@ is gone. Findings and choices:
 - `sabotage_anchors.py --step B3` derives 34 re-runs; it does not reach rev
   1's S189/S191/S192, which run by judgment.
 
+**B4's outcome (lane decfbB4, 2026-10-08, base `lane/decfbB3` `69ab9650`;
+report `../dev/lanes/decfbB4_report.md`).** `prefilter_decision` walks T2
+after its refusals and writes `fit.pf_admit`, the verdict and the two
+declined-nullable flags from the row; `lang_nullable_declinable`, the
+`has_var` ternary and the verdict ternary are deleted, and row 3 is F1's
+holder. The `--emit-ir` `prefilter` line lists `yes`/`yes-collapsed` on a
+verdict ON and otherwise the row's `list` cell and `note` cell (the chain's
+prose, moved verbatim; `overflow-drop`'s note is a `%s` format over
+`dfa_overflow_why`, `FitCells.pfwhy`'s shape). The oracle's `admit` and
+`admit-listing` checks retired (A's C5 precedent); the trace's `admit`
+record prints the walk's row, so the trace compare against the B3 parent
+is what holds the walk to the derivation it replaced. Choices and findings,
+each argued in the report:
+- B2's finding 7 is wider than rows 1-2: `empty_admits` has no other asker,
+  and the deleted derivation asked it on EVERY compile, so the walk alone
+  would flip `--emit-facts`' `used` column on every backreference, linked
+  call, DFA artifact and `--engine=vm` compile. B4 keeps ONE up-front ask
+  (`has_var ? nullable : empty_admits`, result discarded) ahead of the walk;
+  no mover is declared.
+- The re-aims are S102/S165/S272 (the row's VERDICT cell handed to the
+  default: equivalent mutants of the deleted-disjunct plants, outputs
+  compared on their witnesses), S216 (`pfa_default_scope`), S612 (row 4's
+  predicate), plus three the design did not list: S625 (its trace
+  derivation is gone; the claim moves to row 3's NAME cell), S640 (rows
+  gained the `note` line) and S176 (`--step` derives a re-run, but its old
+  plant pins a local the decision no longer reads, so it would be
+  UNDETECTED; re-aimed to `pfa_call`).
+- `state_readers.sh` and `call_graph.py --family fallback` read the shape:
+  `D` named the deleted local and its existence check passed on COMMENT
+  text (fixed: code lines of `.c`/`.h`/`.def` only, fail-closed verified);
+  `pf_admit_walk` joins `D` and `FB_ROOTS` (the family is B3's plus the
+  walk). The prototype's `adm` probe re-anchors after the row's writes
+  (`reach/build_reach.py`).
+
+**B5's outcome (lane decfbB5, 2026-10-08, base main `54d82727`; report
+`../dev/lanes/decfbB5_report.md`).** Every token is a table read:
+`esel_of` returns the attribution walk (`fit_attrib_walk`, §1.7) behind its
+kept premise check; the collapse gate walks T3 (`pflw_walk`/`pflw_value`
+give `collapse` and `VM_PREFILTER_LANG_WHY` from one row); `UNROLL_K_WHY`
+is T4's (`st_why_walk`); `VM_PREFILTER_WHY` is written where the latest
+fired T1 row carries a `pfwhy` cell, with the cell as its format. The four
+old derivations are deleted, and so is the both-derivations oracle (A's C5
+precedent), with fbt (d) and `oracle_sweep.py`; the registry's two source
+legs retired in the same commit as the `cx.size_term_why =` ternary
+(`run_registry_tests.sh` 214 -> 210, measured), behind fbt (b). Spot
+identity against `54d82727` (44 witnesses x `-o -`/`--emit-ir`/
+`--emit-facts=byte`, stdout+stderr+rc) is 132/132, and the TRACE builds'
+records are identical on the same 132. Choices and findings, each argued
+in the report:
+- `EngineFit.prefilter_declined_nullable{,_default}` are deleted: once the
+  ternary went they were written and never read (the walk reads the
+  admission row's `esel` cell).
+- The trace's `attrib` record prints the walk's own source (the fired
+  row's name) and `gate` prints T3's row, B4's `admit` shape: the trace
+  compare against the B4 parent is what held the walks to the ternaries.
+- `pcrec_fit_oracle_fail` is renamed `pcrec_fit_invariant_fail`: only
+  §1.9's invariants call it now, and fbt (a)'s compiles fail on its
+  `CANDORACLE` line or a signal (`trace_sane`, red-tested).
+- Re-aims S238 (the two optional-contributor drop rows' cells planted
+  PASS), S422 (the `pfwhy` test) and S626 (derived: its record derivation
+  is gone; the plant names the first fired row). S645 is derived as a
+  re-aim but its anchor text is kept (a re-run). `--step` derives 34
+  re-runs; none plants a local the rewritten decisions stopped reading
+  (B4 finding 3's check).
+- `call_graph.py`'s `FB_ROOTS` gains the three token walks, `pflw_value`
+  and `st_whys` (family 86 -> 98; the parent under the same roots is the
+  same 98).
+
+**B6's outcome (lane decfbB6, 2026-10-08, base main `84da351b`; report
+`../dev/lanes/decfbB6_report.md`).** The three fallback listings project
+the tables. T1, T3 and T4 rows (`fit_rungs[]`, `pflw_rows[]`, `st_whys[]`)
+and T2's (`pf_admits[]`) carry an `axlist` column of `FbList` cells (axis,
+order, name, deny/force, lever spelling, desc) holding TODAY's text moved
+verbatim from `axes_dump.c`; `pcrec_fb_list_row(axis, i)` returns the cell
+of order `i + 1` over the four tables and `emit_fb_axis` replaces the
+seventeen hand `emit_pred_row` calls. `--list-axes` is byte-identical to
+`84da351b` (default and `--features all/byte/utf8/recursion/backrefs`), the
+five-stream `emit_sweep --every 10` reads 0 movers at full reach, and the
+trace build's `fit_tables_selfcheck` holds each axis to orders 1..n carried
+exactly once (red-tested: a duplicated order fails 56 fbt compiles). Choices
+and findings, each argued in the report:
+- `forced` and `selected` are produced by no row: their cells sit in
+  select_engine.c's `esel_ends[]` beside the attribution walk.
+- Placement rule: a cell sits on the FIRST row, in table order, whose cells
+  produce its value. So `declined-nullable-default` is on `var-nullable`,
+  `overflowed-dfa`/`-prefilter` and `collapsed-prefilter` on `sel1-collapse`
+  (its off cell is ROLE), `size-cap-retry` on `prefilter-collapse`, and
+  T3's `count-collapsed`/`exact` on `rung`/`nullable`. B7 re-places them
+  with the order swap.
+- The listing's lever columns (`--engine=` on `forced`, the deny and force
+  bits on `denied` and `count-collapsed`) are cell fields, verbatim, not
+  derived from T1's `deny`.
+- Re-aims S627 S640 S642 S644 (rows are longer now); `--step` derives 24
+  (the four plus 20 re-runs, S102 S165 S272 S625 being RE-AIM by owner with
+  untouched single-line anchors). The family map is 99 (`FbList` joined).
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

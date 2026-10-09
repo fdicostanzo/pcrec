@@ -126,11 +126,7 @@ static const char u8_defs_bref[] =
 "ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
 "                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t i;\n"
-"    for (i = 0; i < reflen; i++) {\n"
-"        if (at + i >= n || s[at + i] != ref[i])\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
+PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_utf8) */
 "    return (ptrdiff_t)reflen;\n"
 "}\n";
 
@@ -474,6 +470,16 @@ static const char u8_defs_valid_upto[] =
 "    return n;\n"
 "}\n";
 
+/* [MEMFN] M7 (D58 addendum 2) THE SITE DATA of this backend's one byte-wise
+ * span compare, the exact one (enc.h's PcrecEncSite). The caseless compare
+ * walks characters (decode, fold, length-changing consumption), is not a
+ * byte mismatch, and has NO ROW: `u8_defs_bref_ci` spells its own body
+ * (manifest row N7U, pending its own vocabulary step). */
+static const PcrecEncSite sites_utf8[] = {
+    { PCREC_ENCE_SPAN, PCREC_ENC_FOLD_NONE, NULL, "return -(ptrdiff_t)i - 1;" },
+    { 0, PCREC_ENC_FOLD_NONE, NULL, NULL }
+};
+
 static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       u8_decls_next_pos_doc,  u8_decls_next_pos,
@@ -615,5 +621,6 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
     /* [UCP] U2 ASCII is one byte; every other character is a lead byte plus
      * continuation bytes, so a context set with a member above 0x7F is not
      * byte-expressible (enc.h's field comment). */
-    0x7Fu
+    0x7Fu,
+    sites_utf8  /* [MEMFN] M7 the exact span compare's site data */
 };

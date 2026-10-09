@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 6   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 7   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -45,8 +45,13 @@
                            range is bounded by its READS (Q-R7-1, at
                            MF_OP_FIND); mf_empty gains MF_EMPTY_AT_N
                            (Q-R7-2); `on_miss` gains the LOOP_EXIT class
-                           (Q-R7-3, at mf_hooks.on_miss). No layout moved */
-#define MF_VOCAB    2   /* the operation vocabulary: op x handoff x term kinds */
+                           (Q-R7-3, at mf_hooks.on_miss). No layout moved.
+                           7 (M7 prep, R-8, 2026-10-08): MF_OP_MISMATCH,
+                           MF_H_ON_DIFF and MF_T_REF (MF_VOCAB 3);
+                           mf_site.fold_kind and mf_hooks.ref/reflen/fold,
+                           each appended LAST (Q-R8-4/5) */
+#define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
+                           3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
 
@@ -98,9 +103,25 @@ typedef enum {
     MF_OP_VERIFY,           /* does the predicate hold at cand == lo; lo must
                                lie in [lo,hi), so an empty range takes the
                                site's `empty` outcome (RULED Q-G2-17, F1)     */
-    MF_OP_ALL_PRESENT       /* does EVERY one of npred predicates hold
+    MF_OP_ALL_PRESENT,      /* does EVERY one of npred predicates hold
                                somewhere in [lo,hi); `reverse` is refused
                                (RULED Q-G2-12)                                */
+    /* RULED Q-R8-2/4/5 (MF_VOCAB 3, M7): F8, the compare of the subject from
+       `lo` against a RUN-TIME reference span ref[0..reflen) (the hooks `ref`
+       and `reflen`: run-time C expressions, not data). Its value is k, the
+       least j in [0, reflen) with lo + j >= n, or with
+       fold(s[lo + j]) != fold(ref[j]); when no such j exists the spans are
+       EQUAL. `fold` is the site's `fold` hook under its `fold_kind` (none:
+       the bytes themselves). The text reads `s` only in [lo, n) and `ref`
+       only in [0, reflen), and nothing at all when reflen is 0 (EQUAL, so
+       `empty` is NOP), never forms `s + lo`, and assumes nothing about
+       aliasing: `ref` may point into `s`, even into the window. Exactly one
+       REQUIRED REF term at offset 0 (it carries no data: its operands are
+       hooks); STMT / ON_DIFF only; `reverse` 0, `end_back` 0. The kit
+       renders the compare LOOP only, a statement site inside the caller's
+       own function (Q-R8-2): the caller keeps the signature, every return
+       after the loop and what a difference means                           */
+    MF_OP_MISMATCH
 } mf_op;
 
 typedef enum {
@@ -114,7 +135,16 @@ typedef enum {
                                `on_miss`; on a hit write nothing              */
     MF_H_ADVANCE,           /* STMT: move `cursor`; maintain `count` (§14.3)  */
     MF_H_ON_CAND,           /* STMT: per candidate, ascending (§14.3)         */
-    MF_H_BOOL               /* EXPR / FUNC call: true iff the predicate holds */
+    MF_H_BOOL,              /* EXPR / FUNC call: true iff the predicate holds */
+    MF_H_ON_DIFF            /* STMT, MISMATCH only (RULED Q-R8-5, MF_VOCAB 3):
+                               on a difference at k, `result` = k is written
+                               and THEN pcrec's `on_miss` runs and MAY read it
+                               (ON_MISS writes nothing; ASSIGN with a leaving
+                               on_miss forbids the read, so neither fits). On
+                               EQUAL `on_miss` does not run and `result` holds
+                               no promised value (a form may have written it).
+                               `on_miss` must leave (`on_miss_leaves` 1, else
+                               refused) and may be pasted more than once     */
 } mf_handoff;
 
 typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
@@ -125,7 +155,10 @@ typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
                                Refused on ADVANCE, which has no miss (Q-G2-4) */
     MF_EMPTY_NOP,           /* nothing written, nothing run (no ON_CAND visit).
                                STMT forms only: refused on EXPR/FUNC, whose
-                               value must be something (Q-G2-3)               */
+                               value must be something (Q-G2-3). A MISMATCH's
+                               empty reference (reflen 0) is EQUAL, so its
+                               `empty` must be NOP: on_miss does not run and
+                               `result` holds no promised value (ON_DIFF)    */
     MF_EMPTY_EXCLUDED,      /* pcrec's text has already proven lo < hi; the
                                kit emits no empty test                        */
     MF_EMPTY_AT_N           /* RULED Q-R7-2 (MF_SITE_ABI 6), a proven fact:
@@ -143,11 +176,28 @@ typedef enum {              /* an EMPTY range's outcome (§14.4). The range is
 typedef enum { MF_REQUIRED, MF_OPTIONAL } mf_need;      /* §14.5; any other
                                                            value refused (F3) */
 
-typedef enum { MF_T_SET, MF_T_RUN } mf_term_kind;
+/* MF_T_REF (MF_VOCAB 3, M7): a RUN-TIME operand span, the reference of a
+ * MISMATCH. It carries no data (set/run/mask/run_len are not read): its
+ * pointer and length are the `ref`/`reflen` hooks. MISMATCH only. */
+typedef enum { MF_T_SET, MF_T_RUN, MF_T_REF } mf_term_kind;
 
 /* term_kinds bits for mf_vocab_has */
 #define MF_TK_SET (1u << MF_T_SET)
 #define MF_TK_RUN (1u << MF_T_RUN)
+#define MF_TK_REF (1u << MF_T_REF)
+
+/* A MISMATCH's fold, a FACT pcrec STATES (RULED Q-R8-4, MF_SITE_ABI 7): which
+ * relation its `fold` hook text spells. The text is pcrec's and opaque; the
+ * fact is what G2's oracle and row choice read, and no fold MAP travels (a
+ * map waits for a measured SIMD-caseless cell, D77, and would be a second
+ * spelling of one fact, D122).
+ *   MF_FOLD_NONE   exact: no `fold` (a stated one is refused)
+ *   MF_FOLD_ASCII  the 52 ASCII letters fold A-Z <-> a-z, nothing else
+ *   MF_FOLD_UCP    pcrec's Unicode simple fold restricted to single bytes
+ *                  (Latin-1): a byte relation the kit never spells
+ * Under ASCII/UCP the `fold` hook is REQUIRED (an unstated one is refused).
+ * Nonzero only on a MISMATCH site, else refused. */
+typedef enum { MF_FOLD_NONE, MF_FOLD_ASCII, MF_FOLD_UCP } mf_fold;
 
 typedef enum { MF_C_RESULT, MF_C_ENGINE } mf_consumer;  /* §8.2 `consumer` */
 typedef enum { MF_USE_POSITION, MF_USE_DISCARD } mf_use_kind; /* §14.5 */
@@ -231,10 +281,12 @@ typedef struct {
        RULED Q-G2-18 (MF_SITE_ABI 3): the kit never reads the on_miss TEXT to
        learn this (hooks are opaque); a form that tests a later predicate only
        after an earlier one passed is selected on this fact alone. 0 or 1,
-       and nonzero only on ON_MISS/ASSIGN, else refused. When 1 on ASSIGN,
+       and nonzero only on ON_MISS/ASSIGN/ON_DIFF, else refused. When 1 on ASSIGN,
        `result` is UNSPECIFIED on a miss (a form may or may not write `miss`
        before `on_miss` runs) and `on_miss` must not read it; with 0 the
-       miss value is written before `on_miss` runs and it may be read      */
+       miss value is written before `on_miss` runs and it may be read.
+       ON_DIFF (MF_SITE_ABI 7) REQUIRES 1: the kit's loop goes on unless
+       on_miss leaves it                                                    */
     int             on_miss_leaves;
     /* pcrec's proven facts */
     uint64_t        span_lo, span_hi;          /* proven bytes; MF_SPAN_UNBOUNDED */
@@ -263,6 +315,11 @@ typedef struct {
        0 or 1, and nonzero only on an ADVANCE site, else refused. OBLIG: 0 is
        a stated value, set by every ADVANCE builder                          */
     uint8_t         count_by_caller;
+    /* MISMATCH: the fold the `fold` hook spells (mf_fold; RULED Q-R8-4,
+       MF_SITE_ABI 7, appended LAST because initializers are positional).
+       OBLIG: MF_FOLD_NONE is a stated value (exact), set by every MISMATCH
+       builder; on every other site it must be 0                            */
+    uint8_t         fold_kind;
 } mf_site;
 
 /* ---- the sink, the arena, the hooks (§8.3, §14.0, §14.2) ----------------- */
@@ -401,6 +458,19 @@ typedef struct {
     const char *indent;     /* STMT / FUNC body: pcrec's current indent         */
     int comment_tier;       /* PCREC_CMT_* passes through                       */
     void *u;
+    /* MISMATCH (MF_SITE_ABI 7, M7; appended LAST): the reference span, each
+       a side-effect-free C expression (rule 1): `ref` the pointer (it may
+       alias `s`), `reflen` its length. `fold` is pcrec's fold TEXT with `@`
+       for the one byte operand, of one of two shapes (fields.def's lexical
+       classes): FOLD_EXPR, an expression whose value is the folded byte
+       (`f(@)`), pasted once per operand; FOLD_STMT, one or more statements
+       that fold the unsigned char LVALUE `@` in place, pasted once per
+       operand on its own line. A `@` inside a quoted literal is not one.
+       NULL is no fold (MF_FOLD_NONE). The kit never reads the text to learn
+       WHICH relation it spells: `fold_kind` says                            */
+    const char *ref;
+    const char *reflen;
+    const char *fold;
 } mf_hooks;
 
 /* The `miss` token: pass MF_MISS_N as mf_hooks.miss to STATE "the miss value
@@ -575,6 +645,7 @@ int mf_opts_check(const char *str, char *err, size_t n);
 #define mf_ref_skip_in_set  MF_NS(ref_skip_in_set)
 #define mf_ref_find_literal MF_NS(ref_find_literal)
 #define mf_ref_run_verify   MF_NS(ref_run_verify)
+#define mf_ref_mismatch     MF_NS(ref_mismatch)
 
 /* F1: the first i with s[i] == c */
 size_t mf_ref_find_byte(const uint8_t *s, size_t n, uint8_t c);
@@ -595,5 +666,11 @@ size_t mf_ref_find_literal(const uint8_t *s, size_t n, const uint8_t *lit,
  * mask NULL = exact */
 int mf_ref_run_verify(const uint8_t *s, size_t n, size_t pos,
                       const uint8_t *run, const uint8_t *mask, size_t len);
+/* F8 (MF_VOCAB 3, M7): the length of the common prefix of a[0..n) and
+ * b[0..n): the first i with a[i] != b[i], or n when they are equal. A
+ * MISMATCH site's k over a window of m = n_subject - lo bytes is this over
+ * min(m, reflen) folded bytes, or min(m, reflen) itself when that is short
+ * of reflen. Exact: a fold is the caller's, applied before. */
+size_t mf_ref_mismatch(const uint8_t *a, const uint8_t *b, size_t n);
 
 #endif /* MEMFN_H */

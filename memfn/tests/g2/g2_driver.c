@@ -656,8 +656,326 @@ static int unsat_by_construction(const g2_site *d)
     return 0;
 }
 
+/* ---- lane g2m7: MF_OP_MISMATCH (MF_SITE_ABI 7, R-8) ---------------------------------
+ *
+ * The site compares the subject from `lo` against a run-time reference
+ * ref[0..reflen) and, on a difference at k, writes k to `result` and runs a
+ * leaving on_miss (which reads it). The REFERENCE is g2_ref.c's g2_ref_mismatch
+ * over the fold map G2 generated for the site (d->mm_map): k is the least j in
+ * [0, reflen) with lo + j >= n or map[s[lo + j]] != map[ref[j]].
+ *
+ * Read limits, enforced by guard pages on BOTH operands: `s` is read only in
+ * [lo, n) and `ref` only in [0, reflen).
+ *   s layouts   U s ends at a PROT_NONE page (s[n] faults);
+ *               L s + lo starts right after one (s[lo - 1] faults);
+ *               A an exact-size heap copy at alignment 0..15 (ASan sees an over-read);
+ *               N lo >= n: s points into PROT_NONE memory (NOTHING may be read),
+ *                 and at n == 0 s is NULL on half the instances;
+ *   ref layouts the same three, in a region of their own (RU, RL, RA), and at
+ *               reflen == 0 ref is NULL or a pointer into PROT_NONE memory.
+ * Bytes of the subject below lo are filled with the complement of the true bytes
+ * in the U and A layouts, so a compare that starts at the wrong place answers wrongly.
+ * ALIAS instances put ref INSIDE the subject (before lo, at lo, overlapping the
+ * window), over bytes laid out periodically (period = the distance between ref
+ * and lo) with one planted difference, so long equal runs are compared. */
+const unsigned char *g2_mm_ref;
+size_t g2_mm_reflen;
+
+static uint8_t *RG0, *RD1, *RG3;          /* [RG0 none][RD1 RD2 data][RG3 none] */
+static uint8_t mm_idtab[256];
+
+static void mm_layouts_init(void)
+{
+    uint8_t *m = mmap(NULL, 4 * pg, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+    if (m == MAP_FAILED) { perror("mmap"); exit(2); }
+    RG0 = m;
+    RD1 = m + pg;
+    RG3 = m + 3 * pg;
+    if (mprotect(RG0, pg, PROT_NONE) || mprotect(RG3, pg, PROT_NONE)) { perror("mprotect"); exit(2); }
+    for (int i = 0; i < 256; i++) mm_idtab[i] = (uint8_t)i;
+}
+
+/* counted from the hard sites that RAN (the ON_DIFF check's populations) */
+static long mm_sites, mm_checks, mm_eq, mm_df, mm_df0, mm_dflast, mm_dfend, mm_rl0, mm_lo_ge_n, mm_fold_decided, mm_decoy,
+            mm_al[3], mm_slay[4], mm_rlay[4], mm_snull, mm_rnull, mm_rl_gt_w, mm_chk_ok, mm_chk_bad,
+            mm_kind_r[3], mm_shape_r[2], mm_res_r[3], mm_goto_r, mm_nonidem_r;
+static long mm_ctr;
+static long mm_fault_refguard;   /* faults of non-alias instances with reflen > 0: the reference's own guard pages (or its NULL) */
+static int mm_noalias;       /* no ALIAS instances: the W3 reference witnesses and W2 9 must be answered by the reference's OWN guard pages */
+static int mm_idem(const uint8_t *map)
+{
+    for (int b = 0; b < 256; b++) if (map[map[b]] != map[b]) return 0;
+    return 1;
+}
+
+/* class members of each byte under the site's map (the planting's own tool; the
+ * reference never uses it) */
+typedef struct { int n[256]; uint8_t m[256][8]; } mmcls;
+static void mm_classes(const uint8_t *map, mmcls *c)
+{
+    for (int b = 0; b < 256; b++) {
+        c->n[b] = 0;
+        for (int x = 0; x < 256 && c->n[b] < 8; x++)
+            if (map[x] == map[b]) c->m[b][c->n[b]++] = (uint8_t)x;
+    }
+}
+static uint8_t mm_variant(const mmcls *c, uint8_t b) { return c->m[b][rn((unsigned)c->n[b])]; }
+static uint8_t mm_other(const uint8_t *map, uint8_t b)
+{
+    uint8_t cand[7] = { (uint8_t)(b ^ 0x20), (uint8_t)(b ^ 0x80), (uint8_t)(b ^ 1), (uint8_t)(b + 1), (uint8_t)(b - 1),
+                        (uint8_t)(b ^ 0xA0), (uint8_t)(b ^ 0x40) };
+    unsigned s0 = rn(7);
+    for (unsigned i = 0; i < 7; i++)
+        if (rn(3)) { uint8_t x = cand[(s0 + i) % 7]; if (map[x] != map[b]) return x; }
+    for (;;) { uint8_t x = (uint8_t)rnd(); if (map[x] != map[b]) return x; }
+}
+/* a subject byte: letters of both cases, digits and the punctuation either side of
+ * the letters ('@', '[', '`', '{'), Latin-1 letters and the signs among them, 0x80 and
+ * 0xFF, NUL, anything */
+static uint8_t mm_byte(void)
+{
+    static const uint8_t spec[] = { '@', '[', '`', '{', '_', '0', '9', ' ', 0xB5, 0xDF, 0xD7, 0xF7, 0xFF, 0x80, 0x00, 0xC0, 0xDE, 0xE0, 0xFE, 0xAA };
+    unsigned r = rn(20);
+    if (r < 8) return (uint8_t)(rn(2) ? 'a' + rn(26) : 'A' + rn(26));
+    if (r < 12) return spec[rn(sizeof spec)];
+    if (r < 15) return (uint8_t)(0xC0 + rn(64));
+    return (uint8_t)rnd();
+}
+
+static int mm_call(g2_fn fn, const unsigned char *s, size_t n, size_t lo, const unsigned char *ref, size_t reflen, struct g2_out *o)
+{
+    memset(o, 0, sizeof *o);
+    o->res = G2_SENT;
+    o->cnt = 0xdeadUL;
+    g2_mm_ref = ref;
+    g2_mm_reflen = reflen;
+    int sig = sigsetjmp(jb, 1);
+    if (sig) { in_call = 0; return sig; }
+    in_call = 1;
+    fn(s, n, lo, lo, o);
+    in_call = 0;
+    return 0;
+}
+
+static void mm_tally(const g2_site *d, int ok, int sig)
+{
+    if (d->pend) {
+        pd_checks[d->pend]++;
+        if (ok) { if (g_strict) n_pass++; }
+        else {
+            pd_fail[d->pend]++;
+            if (sig) pd_fault[d->pend]++;
+            if (g_strict) { n_fail++; if (sig) n_fault++; }
+        }
+        return;
+    }
+    if (ok) n_pass++;
+    else { n_fail++; if (sig) n_fault++; }
+}
+
+/* one instance: the TRUE subject subj[0..n), the TRUE reference refsrc[0..reflen)
+ * (alias_p >= 0: refsrc == subj + alias_p), run in three (s, ref) layout pairs */
+static void mm_instance(const g2_site *d, const uint8_t *subj, size_t n, size_t lo, const uint8_t *refsrc, size_t reflen, int alias_p)
+{
+    size_t k = 0;
+    int diff = g2_ref_mismatch(d->mm_map, subj, n, lo, refsrc, reflen, &k);
+    size_t w = lo < n ? n - lo : 0, m = reflen < w ? reflen : w;
+    for (int q = 0; q < 3; q++) {
+        int sl = q;
+        /* the N layout (nothing readable) replaces L when lo >= n, on alternate instances; an alias
+         * before lo cannot use L (the bytes below lo must exist) */
+        if (alias_p < 0 && lo >= n && (mm_ctr & 1) && q == 1) sl = 3;
+        if (alias_p >= 0 && (size_t)alias_p < lo && sl == 1) sl = 2;
+        if (alias_p >= 0 && sl == 3) sl = 0;
+        int align = (int)((mm_ctr + q) & 15), ralign = (int)((mm_ctr * 7 + q) & 15);
+        uint8_t *sheap = NULL, *rheap = NULL;
+        const unsigned char *s;
+        const unsigned char *refp = NULL;
+        int rl = alias_p >= 0 ? 4 : (int)((mm_ctr + q) % 3);
+        if (sl == 0) {
+            uint8_t *p = G3 - n;
+            memcpy(p, subj, n);
+            if (alias_p < 0) for (size_t i = 0; i < n && i < lo; i++) p[i] = (uint8_t)~subj[i];
+            s = (n == 0 && (mm_ctr & 2)) ? NULL : (n == 0 ? G3 : p);
+        } else if (sl == 1) {
+            if (lo < n) memcpy(D1, subj + lo, n - lo);
+            s = D1 - lo;
+        } else if (sl == 2) {
+            sheap = malloc((size_t)align + n + (n == 0));
+            memcpy(sheap + align, subj, n);
+            if (alias_p < 0) for (size_t i = 0; i < n && i < lo; i++) sheap[align + i] = (uint8_t)~subj[i];
+            s = n == 0 && (mm_ctr & 2) ? NULL : sheap + align;
+        } else {
+            s = (n == 0 && (mm_ctr & 2)) ? NULL : G3;
+        }
+        if (alias_p >= 0) refp = s + alias_p;
+        else if (reflen == 0) { refp = (mm_ctr + q) & 1 ? NULL : RG3; rl = refp ? 3 : 4; }
+        else if (rl == 0) { uint8_t *p = RG3 - reflen; memcpy(p, refsrc, reflen); refp = p; }
+        else if (rl == 1) { memcpy(RD1, refsrc, reflen); refp = RD1; }
+        else { rheap = malloc((size_t)ralign + reflen); memcpy(rheap + ralign, refsrc, reflen); refp = rheap + ralign; }
+        struct g2_out o;
+        int sig = mm_call(d->fn, s, n, lo, refp, reflen, &o);
+        free(sheap);
+        free(rheap);
+        char why[300];
+        int ok = !sig;
+        if (sig) snprintf(why, sizeof why, "signal %d (a read outside s[lo, n) or ref[0, reflen)): s layout %c ref layout %s", sig,
+                          "ULAN"[sl], rl == 0 ? "U" : rl == 1 ? "L" : rl == 2 ? "A" : rl == 3 ? "NULL" : "guard/alias");
+        else if (diff && !o.missed) { ok = 0; snprintf(why, sizeof why, "ON_DIFF: no difference reported, want k=%zu (reflen %zu, window %zu)", k, reflen, w); }
+        else if (diff && o.cnt != (unsigned long)(k + (g2_ref_defect == 7))) {
+            ok = 0;
+            snprintf(why, sizeof why, "ON_DIFF: on_miss saw result %lu, want k=%zu (reflen %zu, window %zu)", o.cnt, k + (g2_ref_defect == 7), reflen, w);
+        } else if (!diff && o.missed) { ok = 0; snprintf(why, sizeof why, "EQUAL: on_miss ran (result %lu), want no difference (reflen %zu, window %zu)", o.cnt, reflen, w); }
+        if (sig && reflen > 0 && alias_p < 0) mm_fault_refguard++;
+        mm_tally(d, ok, sig);
+        if (!ok) { report(sig ? "FAULT" : "WRONG", subj, n, lo, lo, sl == 3 ? 0 : sl, why); cur_fail++; continue; }
+        if (d->pend) continue;
+        /* the populations (hard sites only) */
+        cur_checks++;
+        cur_pos += diff;
+        fam_checks[G2_FAM_MISM]++;
+        fam_pos[G2_FAM_MISM] += diff;
+        mm_checks++;
+        mm_eq += !diff;
+        mm_df += diff;
+        mm_df0 += diff && k == 0;
+        mm_dflast += diff && reflen && k + 1 == reflen;
+        mm_dfend += diff && k == w && k < reflen;            /* ended by the subject's end */
+        mm_rl0 += reflen == 0;
+        mm_lo_ge_n += lo >= n;
+        mm_rl_gt_w += reflen > w;
+        mm_slay[sl]++;
+        mm_rlay[rl < 4 ? rl : 3] += alias_p < 0;
+        mm_snull += s == NULL;
+        mm_rnull += refp == NULL;
+        if (alias_p >= 0) mm_al[alias_p < (int)lo ? 0 : (size_t)alias_p == lo ? 1 : 2]++;
+        {
+            size_t kraw = 0;
+            int draw = g2_ref_mismatch(mm_idtab, subj, n, lo, refsrc, reflen, &kraw);
+            mm_fold_decided += draw != diff || (draw && diff && kraw != k);
+            if (diff && k < m && ((subj[lo + k] ^ refsrc[k]) == 0x20 || (subj[lo + k] ^ refsrc[k]) == 0x80)) mm_decoy++;
+        }
+    }
+    mm_ctr++;
+}
+
+/* build one case into subj / refb and run it */
+static void mm_case(const g2_site *d, const mmcls *cl, uint8_t *subj, uint8_t *refb, size_t n, size_t lo, size_t reflen, int dk)
+{
+    size_t w = lo < n ? n - lo : 0, m = reflen < w ? reflen : w;
+    for (size_t i = 0; i < n; i++) subj[i] = mm_byte();
+    size_t dj = (size_t)-1;
+    if (dk && m) {
+        switch (rn(4)) { case 0: dj = 0; break; case 1: dj = m - 1; break; default: dj = rn((unsigned)m); break; }
+    }
+    for (size_t j = 0; j < reflen; j++) {
+        if (j >= m) { refb[j] = mm_byte(); continue; }
+        uint8_t sb = subj[lo + j];
+        if (j == dj) refb[j] = mm_other(d->mm_map, sb);
+        else refb[j] = rn(2) ? sb : mm_variant(cl, sb);
+    }
+    mm_instance(d, subj, n, lo, refb, reflen, -1);
+}
+
+/* an ALIAS case: ref points INTO the subject */
+static void mm_alias(const g2_site *d, const mmcls *cl, uint8_t *subj, size_t n)
+{
+    if (n < 2) return;
+    int kind = (int)rn(3);
+    size_t lo, p;
+    if (kind == 0) { lo = 1 + rn((unsigned)n); p = rn((unsigned)lo); }
+    else if (kind == 1) { lo = rn((unsigned)n); p = lo; }
+    else { if (n < 2) return; lo = rn((unsigned)n - 1); p = lo + 1 + rn((unsigned)(n - lo - 1)); }
+    if (lo > n) lo = n;
+    size_t mx = n - p, reflen = rn(5) == 0 ? rn((unsigned)mx + 1) : rn(8) == 0 ? 0 : mx;
+    size_t dist = lo > p ? lo - p : p - lo, m0 = lo < p ? lo : p;
+    uint8_t base[130];
+    for (size_t i = 0; i < n; i++) base[i] = mm_byte();
+    for (size_t i = 0; i < m0; i++) subj[i] = mm_byte();
+    for (size_t i = m0; i < n; i++) subj[i] = dist ? mm_variant(cl, base[(i - m0) % dist]) : base[i];
+    if (rn(2) && n > m0) { size_t q = m0 + rn((unsigned)(n - m0)); subj[q] = mm_other(d->mm_map, subj[q]); }
+    if (reflen == 0) { mm_instance(d, subj, n, lo, subj + p, 0, -1); return; }
+    mm_instance(d, subj, n, lo, subj + p, reflen, (int)p);
+}
+
+static void run_mismatch(const g2_site *d)
+{
+    cur = d;
+    cur_fail = 0;
+    cur_pos = 0;
+    cur_checks = 0;
+    mmcls *cl = malloc(sizeof *cl);
+    mm_classes(d->mm_map, cl);
+    /* the hook text realizes the generated map (the very text the kit was handed, run over all 256 bytes) */
+    int bad = d->mm_chk ? d->mm_chk() : 0;
+    if (bad) {
+        char w[120];
+        snprintf(w, sizeof w, "the fold hook text does not produce the generated map at byte %d", bad - 1);
+        report("WRONG", (const uint8_t *)"", 0, 0, 0, 0, w);
+        mm_tally(d, 0, 0);
+        cur_fail++;
+        mm_chk_bad++;
+    } else mm_chk_ok++;
+    uint8_t subj[260], refb[400];
+    int per = quick ? 10 : 30;
+    for (size_t n = 0; n <= 129; n++) {
+        if (n <= 4)
+            for (size_t lo = 0; lo <= n + 1; lo++)
+                for (size_t rlen = 0; rlen <= n + 3; rlen++)
+                    for (int dk = 0; dk < 2; dk++) mm_case(d, cl, subj, refb, n, lo, rlen, dk);
+        for (int it = 0; it < per; it++) {
+            if (it % 4 == 3) { if (!mm_noalias) mm_alias(d, cl, subj, n); continue; }
+            size_t lo;
+            switch (rn(10)) {
+            case 0: lo = 0; break;
+            case 1: lo = n ? 1 : 0; break;
+            case 2: lo = n / 2; break;
+            case 3: lo = n ? n - 1 : 0; break;
+            case 4: lo = n; break;
+            case 5: lo = n + 1 + rn(8); break;
+            default: lo = rn((unsigned)n + 1); break;
+            }
+            size_t w = lo < n ? n - lo : 0, reflen;
+            switch (rn(12)) {
+            case 0: reflen = 0; break;
+            case 1: reflen = 1; break;
+            case 2: case 3: reflen = w; break;
+            case 4: reflen = w ? w - 1 : 0; break;
+            case 5: reflen = w + 1; break;
+            case 6: reflen = w + 1 + rn(6); break;
+            case 7: case 8: reflen = rn((unsigned)w + 1); break;
+            case 9: reflen = rn((unsigned)w + 9); break;
+            case 10: reflen = w + rn(3); break;
+            default: reflen = rn(8) == 0 ? 130 + rn(60) : w; break;
+            }
+            mm_case(d, cl, subj, refb, n, lo, reflen, (int)rn(2));
+        }
+    }
+    free(cl);
+    if (d->pend) {
+        pd_sites[d->pend]++;
+        if (cur_fail) pd_sfail[d->pend]++;
+        return;
+    }
+    n_sites_run++;
+    mm_sites++;
+    mm_kind_r[d->mm_fold]++;
+    mm_shape_r[d->mm_fold ? d->mm_shape : 0] += d->mm_fold != 0;
+    mm_res_r[d->mm_res]++;
+    mm_goto_r += d->mm_goto;
+    mm_nonidem_r += !mm_idem(d->mm_map);
+    if (cur_fail) {
+        n_sites_failed++;
+        fam_fail[G2_FAM_MISM]++;
+        if (d->fid < NFID) fd_sfail[d->fid]++;
+    }
+    fam_sites[G2_FAM_MISM]++;
+    if (d->fid < NFID) { fd_sites[d->fid]++; fd_checks[d->fid] += cur_checks; }
+}
+
 static void run_site(const g2_site *d)
 {
+    if (d->op == G2_OP_MISM) { run_mismatch(d); return; }
     cur = d;
     g2_ref_items(d, &cur_it);
     cur_alive = cur_it.nitems >= 6 ? ~0ull : (1ull << (1u << cur_it.nitems)) - 1;
@@ -857,6 +1175,39 @@ static int w3_clean(const unsigned char *s, size_t n, size_t lo, size_t fl, stru
     return 0;
 }
 
+/* lane g2m7: planted MISMATCH functions (identity fold) for the guard pages of BOTH operands */
+static void mm_plain(const unsigned char *s, size_t n, size_t lo, struct g2_out *o)
+{
+    for (size_t j = 0; j < g2_mm_reflen; j++)
+        if (lo >= n || j >= n - lo || s[lo + j] != g2_mm_ref[j]) { o->cnt = j; o->missed = 1; return; }
+}
+static int w3m_clean(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o)
+{
+    (void)fl;
+    mm_plain(s, n, lo, o);
+    return 0;
+}
+static int w3m_rover(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o)
+{
+    if (g2_mm_reflen) { volatile unsigned char x = g2_mm_ref[g2_mm_reflen]; (void)x; }   /* one past ref[0, reflen) */
+    return w3m_clean(s, n, lo, fl, o);
+}
+static int w3m_runder(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o)
+{
+    if (g2_mm_reflen) { volatile unsigned char x = g2_mm_ref[-1]; (void)x; }             /* one below ref[0] */
+    return w3m_clean(s, n, lo, fl, o);
+}
+static int w3m_sover(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o)
+{
+    if (n) { volatile unsigned char x = s[n]; (void)x; }                                  /* one past s[lo, n) */
+    return w3m_clean(s, n, lo, fl, o);
+}
+static int w3m_sunder(const unsigned char *s, size_t n, size_t lo, size_t fl, struct g2_out *o)
+{
+    if (lo > 0 && lo <= n) { volatile unsigned char x = s[lo - 1]; (void)x; }             /* one below s[lo, n) */
+    return w3m_clean(s, n, lo, fl, o);
+}
+
 /* ---- main ------------------------------------------------------------------------ */
 
 int main(int argc, char **argv)
@@ -871,6 +1222,7 @@ int main(int argc, char **argv)
     g_strict = !(getenv("G2_STRICT_HOOKS") && !strcmp(getenv("G2_STRICT_HOOKS"), "0"));   /* enforced by default */
     if (getenv("G2_TRACE")) trace_id = (uint32_t)strtoul(getenv("G2_TRACE"), NULL, 10);
     layouts_init();
+    mm_layouts_init();
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
     sa.sa_handler = on_fault;
@@ -899,9 +1251,37 @@ int main(int argc, char **argv)
             printf("G2 witness-overread %s: checks %ld failed %ld faults %ld\n", names[w],
                    n_pass + n_fail - c0, n_fail - f0, n_fault - fault0);
         }
+        /* lane g2m7: the same for MISMATCH's two operands. A planted function reads one byte past
+         * ref[reflen) / one byte below ref[0] / s[n] / s[lo - 1] (never at reflen 0, n 0, lo 0:
+         * a NULL read would fault for the wrong reason); the clean control must pass */
+        {
+            static const char *const mn[5] = { "mm-ref-over", "mm-ref-under", "mm-s-over", "mm-s-under", "mm-clean" };
+            g2_fn mf[5] = { w3m_rover, w3m_runder, w3m_sover, w3m_sunder, w3m_clean };
+            for (int w = 0; w < 5; w++) {
+                g2_site d;
+                memset(&d, 0, sizeof d);
+                d.id = 900010 + (uint32_t)w;
+                d.form = G2_FORM_STMT;
+                d.op = G2_OP_MISM;
+                d.handoff = G2_H_ON_DIFF;
+                d.empty = G2_EMPTY_NOP;
+                d.ret_pred = 0xFF;
+                d.fam = G2_FAM_MISM;
+                d.span_hi = G2_UNBOUNDED;
+                d.label = "MISMATCH/STMT/ON_DIFF";
+                d.mm_map = mm_idtab;
+                d.fn = mf[w];
+                long f0 = n_fail, fault0 = n_fault, c0 = n_pass + n_fail;
+                mm_noalias = w < 2;     /* an alias puts ref[reflen] on the SUBJECT's guard page: the reference witnesses run without them */
+                run_mismatch(&d);
+                printf("G2 witness-overread %s: checks %ld failed %ld faults %ld\n", mn[w],
+                       n_pass + n_fail - c0, n_fail - f0, n_fault - fault0);
+            }
+        }
         return 0;
     }
 
+    mm_noalias = mutants_mode;   /* W2 9's fault must come from the reference's guard, not the subject's through an alias */
     long n_mut = 0, n_killed = 0, n_surv_pos = 0, n_mut_neg = 0, n_killed_neg = 0;
     for (size_t b = 0; b < g2_nbatches; b++)
         for (size_t i = 0; i < *g2_batch_ns[b]; i++) {
@@ -940,6 +1320,7 @@ int main(int argc, char **argv)
          * only sites where a floor lowered by one (W2 mutation 7) is never
          * an equivalent mutant, since floor <= lo (Q-G2-6) */
         printf("G2 mutants reading below the candidate: mutated %ld killed %ld\n", n_mut_neg, n_killed_neg);
+        printf("G2 mutants MISMATCH reference-guard faults (non-alias, reflen > 0): %ld\n", mm_fault_refguard);
         return 0;
     }
 
@@ -1042,6 +1423,23 @@ int main(int argc, char **argv)
     if (!atn_sites || !atn_lo_n) { printf("G2 coverage MISSING: AT_N sites, or none run with lo == n\n"); miss++; }
     printf("G2 loop-exit (Q-R7-3): sites %ld checks %ld break-path %ld fall-through %ld\n", lx_sites, lx_checks, lx_break, lx_fall);
     if (!lx_sites || !lx_break || !lx_fall) { printf("G2 coverage MISSING: LOOP_EXIT sites, or never both the break path and the fall-through\n"); miss++; }
+    /* lane g2m7 (MF_SITE_ABI 7): MISMATCH, each a counted population */
+    printf("G2 mismatch (R-8): sites %ld checks %ld equal %ld diff %ld diff-at-0 %ld diff-at-reflen-1 %ld ended-by-subject %ld "
+           "reflen-0 %ld lo-ge-n %ld reflen-gt-window %ld fold-decided %ld near-class-decoys %ld\n",
+           mm_sites, mm_checks, mm_eq, mm_df, mm_df0, mm_dflast, mm_dfend, mm_rl0, mm_lo_ge_n, mm_rl_gt_w, mm_fold_decided, mm_decoy);
+    printf("G2 mismatch sites: fold none %ld ascii %ld ucp %ld, text expr %ld stmt %ld, result local %ld o->res %ld ptrdiff %ld, goto %ld, "
+           "non-idempotent maps %ld, hook-text checks ok %ld bad %ld\n",
+           mm_kind_r[0], mm_kind_r[1], mm_kind_r[2], mm_shape_r[0], mm_shape_r[1], mm_res_r[0], mm_res_r[1], mm_res_r[2], mm_goto_r,
+           mm_nonidem_r, mm_chk_ok, mm_chk_bad);
+    printf("G2 mismatch operands: alias before-lo %ld at-lo %ld overlapping %ld, s layouts U %ld L %ld A %ld N %ld, ref layouts U %ld L %ld A %ld NULL-or-guard %ld, s NULL %ld, ref NULL %ld\n",
+           mm_al[0], mm_al[1], mm_al[2], mm_slay[0], mm_slay[1], mm_slay[2], mm_slay[3], mm_rlay[0], mm_rlay[1], mm_rlay[2], mm_rlay[3], mm_snull, mm_rnull);
+    if (!mm_sites || !mm_eq || !mm_df || !mm_df0 || !mm_dflast || !mm_dfend || !mm_rl0 || !mm_lo_ge_n || !mm_fold_decided || !mm_decoy ||
+        !mm_kind_r[0] || !mm_kind_r[1] || !mm_kind_r[2] || !mm_shape_r[0] || !mm_shape_r[1] || !mm_res_r[0] || !mm_res_r[1] || !mm_res_r[2] ||
+        !mm_goto_r || !mm_nonidem_r || mm_chk_bad || !mm_al[0] || !mm_al[1] || !mm_al[2] || !mm_slay[0] || !mm_slay[1] || !mm_slay[2] ||
+        !mm_slay[3] || !mm_rlay[0] || !mm_rlay[1] || !mm_rlay[2] || !mm_snull || !mm_rnull) {
+        printf("G2 coverage MISSING: MISMATCH cells (both outcomes, difference at 0 / at reflen-1 / at the subject's end, reflen 0, lo >= n, fold-decided answers, near-class decoys, every fold kind, text shape and result lvalue, aliases, every s and ref layout, NULL operands, a clean hook text)\n");
+        miss++;
+    }
     for (int f = 0; f < G2_NFAM; f++) {
         printf("G2 family %s: sites %ld checks %ld positive %ld negative %ld failed-sites %ld\n",
                g2_fam_name(f), fam_sites[f], fam_checks[f], fam_pos[f], fam_checks[f] - fam_pos[f], fam_fail[f]);
