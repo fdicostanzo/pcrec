@@ -517,10 +517,11 @@ static void emit_predicate_axes(StrBuf *sb)
      * OUTCOMES the artifact reports (why the ladder ran and what it landed
      * on) rather than candidates this registry's usual deny-bit mechanism
      * denies one at a time. The seven rows are written in the SAME priority
-     * order `src/core/compile.c`'s own derivation tests them in (the
-     * `cx.size_term_why = ... ? ... : ...` chain right before
-     * `pcrec_emit_vm`/`pcrec_emit_dfa`) — one derivation, two readers, never
-     * re-decided here — so row 7 is the chain's own unconditional fallthrough
+     * order `src/core/compile.c`'s own derivation tests them in (T4,
+     * `st_whys[]`, walked right before `pcrec_emit_vm`/`pcrec_emit_dfa`;
+     * [DEC-FALLBACK] B5 replaced the ternary chain that held this order) — one
+     * derivation, two readers, never re-decided here — so row 7 is T4's own
+     * unconditional last row
      * and the axis's own "last entry always applies" rule holds for this
      * predicate axis too, not only for the `list`-kind ones.
      *

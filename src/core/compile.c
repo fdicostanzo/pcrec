@@ -1148,10 +1148,11 @@ static const FitRung *fit_row_setting_cr(unsigned char cr)
 
 /* [DEC-FALLBACK] T3 `pflw_rows[]` (§1.5): THE COLLAPSE GATE AND ITS REASON as
  * rows, each writing the collapse decision and `VM_PREFILTER_LANG_WHY`
- * together (D81). Built beside the gate's own ternary in `compile_driver`;
- * B5 makes it the decision. The inputs are the gate's own conjuncts; a row
- * asks `nullable` only where the gate does (`wanted` and no `-fprefilter`),
- * so the oracle marks no fact the gate did not. */
+ * together (D81). `compile_driver`'s collapse gate walks it (B5; B2 built it
+ * beside the gate's six-way ternary, which B5 deleted). The inputs are the
+ * gate's conjuncts; a row asks `nullable` only where the old gate did
+ * (`wanted` and no `-fprefilter`), so `--emit-facts`' `used` column did not
+ * move. */
 typedef struct {
     Ctx          *cx;
     bool          wanted;      /* `pfc_wanted`: VM, not denied, a collapsible repeat, force or rung */
@@ -1178,7 +1179,6 @@ static bool pflw_rep(const PflwSel *s)    { return s->rep; }
 static bool pflw_always(const PflwSel *s) { (void)s; return true; }
 
 /* A RUNG BEATS THE FLAG (the gate's own comment): row 1 before row 2. */
-__attribute__((unused))
 static const PflwRow pflw_rows[] = {
     { "rung",     pflw_rung,   true,  PFLW_PASS     },
     { "forced",   pflw_worth,  true,  PFLW_FORCED   },
@@ -1188,7 +1188,6 @@ static const PflwRow pflw_rows[] = {
 };
 
 /* T3's walk: the first row that applies (the last always does). */
-__attribute__((unused))
 static const PflwRow *pflw_walk(const PflwSel *s)
 {
     size_t i = 0;
@@ -1197,7 +1196,6 @@ static const PflwRow *pflw_walk(const PflwSel *s)
 }
 
 /* The `VM_PREFILTER_LANG_WHY` value row `r` writes under rung reason `cr`. */
-__attribute__((unused))
 static unsigned char pflw_value(const PflwRow *r, unsigned char cr)
 {
     return r->pflw == PFLW_PASS ? fit_row_setting_cr(cr)->cells.pflw : r->pflw;
@@ -1206,8 +1204,8 @@ static unsigned char pflw_value(const PflwRow *r, unsigned char cr)
 /* [DEC-FALLBACK] T4 `st_whys[]` (§1.6): `UNROLL_K_WHY`, seven rows in the
  * ternary's own order (`compile_driver`, after the size term decided), which
  * the `size-term` listing already prints in. `cap-rescue`'s token is the T1
- * `unroll-rescue` row's `ukw` cell, projected (`ladder_cell`). Built beside
- * the ternary; B5 makes it the derivation. */
+ * `unroll-rescue` row's `ukw` cell, projected (`ladder_cell`). B2 built it
+ * beside the seven-arm ternary; since B5 it is the derivation. */
 typedef struct {
     int           unroll_k;    /* the K the attempt ran at (`defo.unroll_k`) */
     SizeTermPhase phase;
@@ -1231,7 +1229,6 @@ static bool stw_moved(const StWhySel *s)   { return s->moved; }
 static bool stw_capexcl(const StWhySel *s) { return s->capexcl; }
 static bool stw_always(const StWhySel *s)  { (void)s; return true; }
 
-__attribute__((unused))
 static const StWhy st_whys[] = {
     { "option",              stw_option,  false },
     { "denied",              stw_denied,  false },
@@ -1251,7 +1248,6 @@ static const FitRung *fit_ukw_row(void)
 }
 
 /* T4's walk: the token of the first row that applies (the last always does). */
-__attribute__((unused))
 static const char *st_why_walk(const StWhySel *s)
 {
     size_t i = 0;
@@ -1260,24 +1256,30 @@ static const char *st_why_walk(const StWhySel *s)
 }
 
 #ifdef PCREC_CAND_TRACE
-/* ---- [DEC-FALLBACK] B2 THE BOTH-DERIVATIONS ORACLE (trace build only) ----
+/* ---- [DEC-FALLBACK] THE TRACE BUILD'S INVARIANTS (§1.9) ----------------
  *
- * dec_fallback.md §4.2 B2 / §4.3 item 5, [START-TABLE] C2's shape. At every
- * token site the trace build reads the new table and aborts unless the token
- * equals the old derivation's. (B2's arrival and notes checks retired at B3,
- * which deleted the old dispatch and the `dropped_*` flags: with the walk and
- * the `sets` cell the only derivation left, there is nothing to compare them
- * with. §1.9's invariants stay, at the fired record and the attempt loop.) Both
- * orders: by default the old code decides first; `-DPCREC_CAND_NEW_FIRST`
- * asks the table first, so a predicate's first-ask side effects land on the
- * new walk. The new and old code share every predicate by pointer, so this
- * is a FILTER test (A's C2 caveat): the bytes, the attempt histogram and the
- * hand-written witness rows are the independent controls. B5 deletes it. */
-void pcrec_fit_oracle_fail(const char *what, const char *got_new,
-                           const char *got_old, const char *site)
+ * B2 built a both-derivations ORACLE here ([START-TABLE] C2's shape): at
+ * every token site the trace build also read the new table and aborted
+ * where it disagreed with the old derivation, in both orders
+ * (`-DPCREC_CAND_NEW_FIRST`). B3-B5 deleted the old derivations one table at
+ * a time, and since B5 nothing is left to compare, so what stays is the
+ * tables' SELF-CHECK below and §1.9's invariants at the fired record, the
+ * attempt loop and the admission. Their independent controls are the
+ * bytes and the trace against the parent, the attempt histogram and the
+ * hand-written witness rows (tests/codegen/run_fallback_table.sh). */
+void pcrec_fit_invariant_fail(const char *what, const char *got,
+                              const char *want, const char *site)
 {
-    fprintf(stderr, "CANDORACLE\t%s\t%s\t%s\t%s\n", what, got_new, got_old, site);
+    fprintf(stderr, "CANDORACLE\t%s\t%s\t%s\t%s\n", what, got, want, site);
     abort();
+}
+
+/* The name of the T1 row whose `cells` member `c` points at. */
+const char *pcrec_fit_cells_row_name(const FitCells *c)
+{
+    for (size_t i = 0; i < sizeof fit_rungs / sizeof fit_rungs[0]; i++)
+        if (&fit_rungs[i].cells == c) return fit_rungs[i].name;
+    return "?";
 }
 
 /* A REFUSAL, not an abort (§1.9, `esel_of`'s rule): a self-check failure is
@@ -1385,7 +1387,7 @@ static void fit_record(const FitRung *r, const FitRung **rows,
     const unsigned bit = 1u << (unsigned)(r - fit_rungs);
     if (r->repeat == FIT_REP_ONCE) {
 #ifdef PCREC_CAND_TRACE
-        if (*fired & bit) pcrec_fit_oracle_fail("fit-once", r->name, "fired twice", "compile_driver");
+        if (*fired & bit) pcrec_fit_invariant_fail("fit-once", r->name, "fired twice", "compile_driver");
 #endif
         *fired |= bit;
     }
@@ -1397,7 +1399,7 @@ static void fit_record(const FitRung *r, const FitRung **rows,
         for (size_t i = 0; i < sizeof fit_seq_legal / sizeof fit_seq_legal[0]; i++)
             legal |= fit_seq_legal[i].prev == prev && fit_seq_legal[i].next == r->act;
         if (!legal)
-            pcrec_fit_oracle_fail("fit-sequence", r->name, rows[*nseq - 1]->name, "compile_driver");
+            pcrec_fit_invariant_fail("fit-sequence", r->name, rows[*nseq - 1]->name, "compile_driver");
     }
 #endif
     rows[*nseq] = r;
@@ -2034,7 +2036,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * independent half of the bound check). */
         if (attempt == 0) fit_tables_selfcheck(&cx);
         if (attempt >= fit_attempt_bound())
-            pcrec_fit_oracle_fail("fit-attempts", "bound", "exceeded", "compile_driver");
+            pcrec_fit_invariant_fail("fit-attempts", "bound", "exceeded", "compile_driver");
 #endif
 
         if (!valid_prefix(user_prefix))
@@ -2209,7 +2211,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * `sel1-drop` has no surviving prefilter (§1.2, its `kept` cell). */
         if (fit_nseq > 0 && fit_seq_rows[fit_nseq - 1]->act == FIT_SEL1_DROP &&
             cx.job->fit.prefilter)
-            pcrec_fit_oracle_fail("fit-sel1-drop", "prefilter", "survived", "compile_driver");
+            pcrec_fit_invariant_fail("fit-sel1-drop", "prefilter", "survived", "compile_driver");
 #endif
 
         /* [DD-14.LB] THE POST-RESOLUTION CHECKS, and their position is the whole
@@ -2390,58 +2392,42 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * silently answered with a refusal. */
             const bool pfc_prefilter_forced =
                 (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
-#ifdef PCREC_CAND_TRACE
-            /* [DEC-FALLBACK] B2: T3 beside the gate (the oracle, §4.2 B2). */
-            const PflwSel pfls = { &cx, pfc_wanted, pfc_prefilter_forced, pfc_rep,
-                                   cx.collapse_reason };
-            const PflwRow *pflw_new = PCREC_FIT_NEW_FIRST ? pflw_walk(&pfls) : NULL;
-#endif
-            bool collapse = pfc_wanted && (pfc_prefilter_forced ||
-                                           !pcrec_fact_nullable(&cx));
-            /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
-             * from the SAME conjuncts (D81). The ladder branches on the
-             * DECISION rather than re-walking them, which is what makes
-             * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed` a
-             * structural fact and covers the `chosen != ENGM_DFA` conjunct for
-             * free: a DFA artifact takes no VM prefilter decision, emits no
-             * stamp, and lands in the non-collapsing half.
+            /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, from
+             * ONE row of T3 (`pflw_rows[]`, [DEC-FALLBACK] §1.5, D81's
+             * "decision and reason together" as a table): the row that
+             * applies gives both the collapse and `VM_PREFILTER_LANG_WHY`,
+             * which is what makes `prefilter_lang_why >= PFLW_FORCED` iff
+             * `prefilter_collapsed` a structural fact. It covers the
+             * `chosen != ENGM_DFA` conjunct for free: a DFA artifact takes no
+             * VM prefilter decision, emits no stamp, and lands in the
+             * non-collapsing rows.
              *
-             * A RUNG BEATS THE FLAG when both apply, because the rung is the
-             * more specific fact: a caller who passed `-fprefilter-collapse`
-             * AND hit the size cap is better served by "the cap refused the
-             * exact artifact" than by "you asked for it".
+             * A RUNG BEATS THE FLAG when both apply (T3's row 1 before row 2),
+             * because the rung is the more specific fact: a caller who passed
+             * `-fprefilter-collapse` AND hit the size cap is better served by
+             * "the cap refused the exact artifact" than by "you asked for it".
              *
              * The exact NFA size is recorded on every path, including the ones
              * that never consult it, because a stamp that omits the number
              * where it did not fire cannot be told from one where the
              * measurement never happened. */
+            const PflwSel pfls = { &cx, pfc_wanted, pfc_prefilter_forced, pfc_rep,
+                                   cx.collapse_reason };
+            const PflwRow *pflw = pflw_walk(&pfls);
+            const bool collapse = pflw->collapse;
             cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
             cx.job->fit.prefilter_sizecap_bytes = cx.size_cap_bytes;
             cx.job->fit.prefilter_sizecap_limit = cx.size_cap_limit;
-            cx.job->fit.prefilter_lang_why =
-                  !collapse                        ? (pfc_wanted ? PFLW_NULLABLE
-                                                    : pfc_rep    ? PFLW_EXACT
-                                                                 : PFLW_NO_REP)
-                : cx.collapse_reason == CR_SIZECAP ? PFLW_SIZECAP
-                : cx.collapse_reason == CR_SEL1    ? PFLW_SEL1
-                                                   : PFLW_FORCED;
-            /* [DEC-FALLBACK] B1: the `gate` record, T3's row (§1.5) read off
-             * the PFLW just written — `rung` for the two rung values — and
-             * the PFLW itself; route = the collapse reason. */
+            cx.job->fit.prefilter_lang_why = pflw_value(pflw, cx.collapse_reason);
+            /* [DEC-FALLBACK] B1: the `gate` record, T3's row (§1.5) and the
+             * PFLW it wrote; route = the collapse reason. Until B5 the row
+             * was read off the PFLW, so the trace compare against a pre-B5
+             * parent is what held T3 to the ternary it replaced. */
             PCREC_CAND_TRACE_RECF("gate",
                 pcrec_cr_trace_name(cx.collapse_reason), "gate", "%s pflw=%s",
-                (const char *const[]){ "exact", "no-rep", "nullable", "forced",
-                                       "rung", "rung" }[cx.job->fit.prefilter_lang_why],
+                pflw->name,
                 (const char *const[]){ "exact", "no-rep", "nullable", "forced",
                                        "sel1", "sizecap" }[cx.job->fit.prefilter_lang_why]);
-#ifdef PCREC_CAND_TRACE
-            if (!pflw_new) pflw_new = pflw_walk(&pfls);
-            PCREC_FIT_HIT("gate", pflw_new->name);
-            if (pflw_new->collapse != collapse ||
-                pflw_value(pflw_new, cx.collapse_reason) != cx.job->fit.prefilter_lang_why)
-                pcrec_fit_oracle_fail("pflw", pflw_new->name,
-                                      collapse ? "collapse" : "no-collapse", "gate");
-#endif
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
@@ -2543,34 +2529,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "permanently UNSET (under a zero-count repeat, or reached "
                      "only through a call). Pass --engine=vm for the VM program");
 
-#ifdef PCREC_CAND_TRACE
-        /* [DEC-FALLBACK] B2: T4 beside the ternary below (the oracle). */
-        const StWhySel stws = { defo.unroll_k, st_phase, defo.flags, st_rescue,
-                                st_final_k != st_k[0], st_capexcl };
-        const char *stwhy_new = PCREC_FIT_NEW_FIRST ? st_why_walk(&stws) : NULL;
-#endif
         /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
-         * (D81). SIX values, because the first design's three hid four
+         * (D81). SEVEN values, because the first design's three hid four
          * reachable states behind "default" and a check could not tell "the
          * term was denied" from "it ran and the artifact was below the
-         * threshold" from "it ran and the bar declined its K" (r40 S9, R5). */
-        cx.size_term_why =
-            defo.unroll_k > 0 && st_phase == ST_DEFAULT ? "option"
-          : (defo.flags & PCREC_NO_SIZE_TERM)           ? "denied"
-          : st_phase != ST_FINAL                        ? "default"
-          : st_rescue                                   ? "cap-rescue"
-          : st_final_k != st_k[0]                       ? "size-model"
-          : st_capexcl                                  ? "capacity-declined"
-          :                                               "size-model-declined";
+         * threshold" from "it ran and the bar declined its K" (r40 S9, R5).
+         * Read off T4 (`st_whys[]`, [DEC-FALLBACK] §1.6), whose row order is
+         * the precedence; `cap-rescue` is T1's `unroll-rescue` cell. */
+        const StWhySel stws = { defo.unroll_k, st_phase, defo.flags, st_rescue,
+                                st_final_k != st_k[0], st_capexcl };
+        cx.size_term_why = st_why_walk(&stws);
 
         /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6): the token. */
         PCREC_CAND_TRACE_REC("stwhy", "-", cx.size_term_why, "st-why");
-#ifdef PCREC_CAND_TRACE
-        if (!stwhy_new) stwhy_new = st_why_walk(&stws);
-        PCREC_FIT_HIT("stwhy", stwhy_new);
-        if (strcmp(stwhy_new, cx.size_term_why) != 0)
-            pcrec_fit_oracle_fail("stwhy", stwhy_new, cx.size_term_why, "size-term");
-#endif
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);

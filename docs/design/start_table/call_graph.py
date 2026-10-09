@@ -270,10 +270,17 @@ STAMP_ROOTS = ["pcrec_emit_dfa_scan_stamps", "vm_emit_stamps"]
 # [decfbB4] `pf_admit_walk` is T2's walk, the admission's root as `fit_walk`
 # is T1's; `pf_admits[]` joins the family through its ESEL cells and pulls its
 # predicates in by the table closure below.
+# [decfbB5] the token derivations became walks: `fit_attrib_walk` (ENGINE_SEL),
+# `pflw_walk` with its projection `pflw_value` (T3, VM_PREFILTER_LANG_WHY) and `st_why_walk` (T4,
+# UNROLL_K_WHY) are roots as `pf_admit_walk` is. `st_whys[]` is a root too:
+# its cells are strings, so no member/enum token pulls it in (`pflw_rows[]`'s
+# PFLW_* cells do), and without it the table closure never reaches T4's
+# predicates.
 FB_ROOTS = ["compile_driver", "fit_walk", "fit_rung_denied", "fit_rung_of",
             "fit_collapse_applies", "fit_anchored_applies", "fit_premul_applies",
             "fit_prefilter_applies", "fit_always", "prefilter_decision",
-            "pf_admit_walk", "size_term_choose", "esel_of"]
+            "pf_admit_walk", "size_term_choose", "esel_of",
+            "fit_attrib_walk", "pflw_walk", "pflw_value", "st_why_walk", "st_whys"]
 FB_PAT = None
 if FAMILY_SEL == "fallback":
     def die(msg):
