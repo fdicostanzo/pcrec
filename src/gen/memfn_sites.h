@@ -61,6 +61,17 @@ typedef struct {
     StrBuf *sb;
 } PcrecMfSink;
 void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb);
+/* [MEMFN] RQ-3 pcrec's half of the kit's two DESIGNED sink ops
+ * (docs/design/memfn/integration.md §R4.9.2.4; D155 addendum 2):
+ * `simd_open(u, level)` and `simd_close(u)` bracket every byte the kit writes
+ * under a CPU-level guard, and pcrec counts the bracketed bytes into the
+ * buffer's guarded record (pcrec_sb_simd_open/_close), which every length
+ * decision subtracts. KIT GAP: `mf_sink` has no such members yet (they are
+ * born in SIMD batch 1's MF_SITE_ABI bump), so pcrec_memfn_sink cannot wire
+ * them; these are the functions it will wire, at the declared signatures.
+ * `level` is the kit's levels.def token, which pcrec does not read. */
+void pcrec_memfn_sink_simd_open(void *u, int level);
+void pcrec_memfn_sink_simd_close(void *u);
 /* The StrBuf behind a sink pcrec_memfn_sink made; an internal error for any
  * other sink (a hook that writes must write where the kit asked it to). */
 StrBuf *pcrec_memfn_sink_sb(Ctx *cx, mf_sink *c);

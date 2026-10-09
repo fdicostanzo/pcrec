@@ -116,6 +116,17 @@ static void sink_legend_byte(void *u, uint8_t byte)
     pcrec_emit_legend_byte(((PcrecMfSink *)u)->sb, byte);
 }
 
+void pcrec_memfn_sink_simd_open(void *u, int level)
+{
+    (void)level;
+    pcrec_sb_simd_open(((PcrecMfSink *)u)->sb);
+}
+
+void pcrec_memfn_sink_simd_close(void *u)
+{
+    pcrec_sb_simd_close(((PcrecMfSink *)u)->sb);
+}
+
 void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb)
 {
     memset(ps, 0, sizeof *ps);
