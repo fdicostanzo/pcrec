@@ -308,6 +308,13 @@ Part of `make test` since M2.
   identifier errors K38 describes, while the DFA and 1-char-prefix cells
   stay green — the fix's binary passes all four. See
   docs/dev/known_issues.md K38 for the full mechanism and the buffer list.
+- **K98** (2026-10-09): `--pattern-esc` is decoded once in `main`, above
+  every mode, so `--emit-ir`, `--emit-facts` and `--count-groups` read the
+  DECODED pattern. Each is held both ways on `"\x28a\x29b"`: identical to
+  the decoded `(a)b`'s answer (the group count oracle-read from python
+  `re`), different from the raw `\x28a\x29b`'s (non-vacuity); an unquoted
+  value is refused by all three with the decoder's diagnostic. Six of these
+  fail against a binary built before the fix.
 
 ## Conventions
 

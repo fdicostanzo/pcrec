@@ -719,7 +719,7 @@ typedef struct {
     uint64_t   flags_or;
     unsigned   carry;       /* FIT_CARRY_* */
     bool       latch;
-    bool       restart;
+    bool       restart;     /* the term's phase, record AND the K it wrote (K100) */
 } FitSets;
 
 /* `fof`: inside `--fast-or-fail`'s reach (§1.2). The switch denies a row only
@@ -1654,6 +1654,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * first `setjmp`, and never written again. */
     const char *const user_prefix = defo.prefix;
     defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+    /* [K100] the caller's `--unroll=K` (0: none), which the size term's
+     * ladder and FINAL attempts overwrite in `defo.unroll_k` and a
+     * restarting row's `sets` routine puts back. */
+    const int user_unroll_k = defo.unroll_k;
     pcrec_options hopt;   /* the facts hook's real-prefix view, filled there */
 
     /* [REL-1.11] THE ENABLED FEATURE SET, RESOLVED ONCE, HERE — before the
@@ -2144,6 +2148,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool restart_term = w->restart;
             fit_record(rung, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired);
             if (restart_term) {
+                /* [K100] the restart includes the K the ladder wrote: left
+                 * in place, the "default" attempt ran at the leaked K, its
+                 * term read `option` and the ladder never ran again. */
+                defo.unroll_k = user_unroll_k;
                 st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
                 st_rescue = false; st_capexcl = false;
                 memset(st_k, 0, sizeof st_k);

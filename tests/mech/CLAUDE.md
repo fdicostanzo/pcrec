@@ -258,6 +258,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   ([ENG-ABS]'s precedent), because `cap-rescue`'s natural population is zero
   and the CLI overrides are raise-only — that cell is the tree's ONLY witness
   to the materiality bar declining at all, which is what S192 scores against.
+  Its §10 ([K100], 2026-10-09) builds a THIRD compiler at emit_sweep's
+  `lowsize` limits, the only witness that a restarting fallback row re-runs
+  the ladder from the caller's K; S696 scores against it.
 - `pfcollapse` → `tests/codegen/run_prefilter_collapse.sh`, [OPT-4]'s
   count-collapsed hybrid prefilter and [OPT-4.1]'s nullability gate on its
   rescue, held to the ARTIFACT. **ITS OWN ARM, and with the strongest form of

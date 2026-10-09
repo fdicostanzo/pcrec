@@ -594,5 +594,72 @@ else
     bad "the materiality pool needs §7's threshold-1000 reference compiler and it is not built"
 fi
 
+# --- 10. [K100] a RESTARTING row re-runs the ladder from the caller's K ------
+# `prefilter-collapse` and `drop-prefilter` restart the size term (their
+# `sets.restart` cell): the artifact the ladder chose K for no longer exists.
+# The restart reset the term's phase and record but NOT `defo.unroll_k`, which
+# the ladder's trials and FINAL attempt had written, so the "restarted" default
+# attempt ran at the leaked K, its term read `option` and the ladder never ran
+# again (known_issues.md K100, decfbB1_report.md F1). Only a lowered-cap build
+# reaches it (natural population 0 at the shipped caps), so this is the
+# emit_sweep `lowsize` variant's `-D` set. The witness is B1's: under the leak
+# it REFUSES after both restarts; restarted for real, the ladder runs after
+# each and the cap takes a smaller K on the prefilter-dropped artifact.
+K100W='(?:aa|a){8,12}+ab'
+REF3="$WORK/pcrec_lowsize"
+# shellcheck disable=SC2086
+if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000 -DPCREC_MAX_EMIT_BYTES=60000 \
+       -DPCREC_SIZE_TERM_THRESHOLD=10000 \
+       -o "$REF3" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref3.err"; then
+    ok "reference compiler built with emit_sweep's lowsize limits (code 30000, total 60000, threshold 10000)"
+    # Non-vacuity: the default K and every K above the cap's REFUSE here, so
+    # a compile can only come from a ladder that ran after the restarts.
+    if "$REF3" -p rx --features all --unroll=8 -o "$WORK/k100d.c" --pattern "$K100W" 2>/dev/null; then
+        bad "[K100] '$K100W' compiles at --unroll=8 under the lowsize compiler: the witness no longer needs the ladder, so this cell proves nothing"
+    else
+        ok "[K100] the witness refuses at the default K (8) under the lowsize compiler"
+    fi
+    if "$REF3" -p rx --features all -o "$WORK/k100.c" --pattern "$K100W" 2>"$WORK/k100.err"; then
+        ok "[K100] '$K100W' compiles: the restarted term ran its ladder"
+        why="$(stamp UNROLL_K_WHY "$WORK/k100.c" | tr -d '"')"
+        k="$(stamp UNROLL_K "$WORK/k100.c")"
+        pfw="$(stamp VM_PREFILTER_WHY "$WORK/k100.c" | tr -d '"')"
+        case "$why/$k" in
+            option/*) bad "[K100] UNROLL_K_WHY is 'option' with no --unroll: the restart leaked the ladder's K" ;;
+            */8|*/)   bad "[K100] the artifact is at K='$k' (why '$why'); the default K does not fit, so the ladder did not run" ;;
+            *)        ok "[K100] the ladder chose K=$k after the restart (UNROLL_K_WHY '$why')" ;;
+        esac
+        case "$pfw" in
+            "size cap retry"*) ok "[K100] a restarting row fired (VM_PREFILTER_WHY '$pfw')" ;;
+            *) bad "[K100] VM_PREFILTER_WHY is '$pfw': the compile no longer goes through a restarting row, so it does not witness the restart" ;;
+        esac
+        # Oracle (python 3.11+ `re`, possessive quantifiers): the shipped
+        # artifact must answer what the pattern means.
+        if "$REF3" -p rx --features all --emit-main -o "$WORK/k100m.c" --pattern "$K100W" 2>/dev/null \
+           && $CC -O1 -o "$WORK/k100m" "$WORK/k100m.c" 2>/dev/null; then
+            nd=0; nc=0
+            for n in 9 10 24 25 26 27 31; do
+                for subj in "$(printf 'a%.0s' $(seq 1 "$n"))b" "x$(printf 'a%.0s' $(seq 1 "$n"))bab"; do
+                    got="$("$WORK/k100m" "$subj" 2>/dev/null)"
+                    want="$(python3 -c 'import re,sys
+m=re.search(r"(?:aa|a){8,12}+ab", sys.argv[1])
+print("match %d %d" % m.span() if m else "nomatch")' "$subj")"
+                    nc=$((nc+1))
+                    [ "$got" = "$want" ] || { nd=$((nd+1)); printf '  K100 subject %s: artifact %s, python %s\n' "$subj" "$got" "$want"; }
+                done
+            done
+            [ "$nd" -eq 0 ] && ok "[K100] the rescued artifact agrees with python re on $nc subjects" \
+                            || bad "[K100] the rescued artifact disagrees with python re on $nd of $nc subjects"
+        else
+            bad "[K100] could not build the witness's --emit-main matcher"
+        fi
+    else
+        bad "[K100] '$K100W' REFUSED under the lowsize compiler ($(head -1 "$WORK/k100.err" | cut -c1-120)): a restarting row did not re-run the size term's ladder (known_issues.md K100)"
+    fi
+else
+    bad "could not build the lowsize reference compiler: $(head -2 "$WORK/ref3.err")"
+fi
+
 printf '\nchecks passed: %d\nchecks failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

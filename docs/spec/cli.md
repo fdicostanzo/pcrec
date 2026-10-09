@@ -274,9 +274,13 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
   success. The diagnostic states the lifting trigger
   (`rx_info.pattern_len`) rather than leaving the limit silent.
 - **It composes with everything and changes only how `--pattern`'s VALUE is
-  read.** The artifact's own header comment carries the DECODED pattern.
-  In a mode that takes no `--pattern` at all (a file operand, any listing
-  surface) the flag has nothing to decode and is inert.
+  read.** The value is decoded once, before any mode runs, so every mode
+  that reads `--pattern` reads the DECODED pattern: the compile (the
+  artifact's own header comment carries it), `--emit-ir`, `--emit-facts`
+  and `--count-groups` ([K98]: until 2026-10-09 the three queries read the
+  raw escaped text). A value the decoder refuses is refused in every mode,
+  before any mode-specific check. With no `--pattern` (a file operand, a
+  `--list-*` table) the flag has nothing to decode and is inert.
 - `docs/spec/rxt_format.md`'s `pattern-esc` production is the format half
   and owns the escape table itself.
 
