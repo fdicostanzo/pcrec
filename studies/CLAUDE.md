@@ -285,5 +285,12 @@ re-measure before load-bearing use.
   a calibration arm, and memmem / AVX2-pair proxies), timed on the bench's own
   regenerated subjects, 15 interleaved pinned passes, answer identity 0 diffs.
   Backs `docs/dev/lanes/u8pick0_report.md`. See its CLAUDE.md.
+- `locate_finish/` — D156's LOCATE × FINISH census (lane locfin, 2026-10-09;
+  compile-side, Linux dev box): every corpus/bench artifact's locator and finisher
+  today, the stage-1/stage-2/relaxed-reverse populations, D-2's population, and the
+  `fit.chosen` grep behind the FINISH decision; three controls (stamp vs emitted
+  text twice, the borrowed end-pin probe vs the shipped fact) gate the tables.
+  Borrows `docs/dev/optloop/revend/`'s population and probe. Backs
+  `docs/design/locate_finish.md` §3-§4. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

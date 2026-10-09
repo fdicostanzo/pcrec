@@ -1,0 +1,32 @@
+src/gen/emit_dfa.c:439	return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter;
+src/gen/emit_dfa.c:1650	if (cx->job->fit.chosen != ENGM_DFA || dfa_artifact_ncaps(cx) <= 1)
+src/gen/emit_dfa.c:1728	if (cx->job->fit.chosen == ENGM_DFA)
+src/gen/emit_dfa.c:3145	if (cx->job->fit.chosen == ENGM_DFA)
+src/gen/emit_dfa.c:6847	if (cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter) return false;
+src/gen/emit_dfa.c:7155	if (cx->job->fit.chosen == ENGM_VM) {
+src/gen/emit_dfa.c:7159	((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
+src/gen/emit_dfa.c:7360	if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
+src/gen/emit_dfa.c:9768	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+src/gen/emit_dfa.c:9769	PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",
+src/gen/emit_dfa.c:9784	if (cx->job->fit.chosen == ENGM_DFA) {
+src/gen/emit_dfa.c:10068	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
+src/gen/emit_dfa.c:10070	cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");
+src/gen/emit_dfa.c:10083	if (cx->job->fit.chosen == ENGM_DFA) {
+src/gen/emit_dfa.c:10707	bool vm = job->fit.chosen == ENGM_VM;
+src/gen/emit_dfa.c:10708	bool prefilter = job->fit.prefilter;
+src/gen/emit_dfa.c:10922	bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;
+src/gen/emit_vm.c:3645	return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
+src/gen/emit_vm.c:11071	if (!v->cx->job->fit.prefilter) return;
+src/gen/emit_vm.c:11182	job->fit.prefilter ? "hybrid" : "none");
+src/gen/emit_vm.c:11218	if (job->fit.prefilter) {
+src/gen/emit_vm.c:12703	const char *prefn = NULL;
+src/gen/emit_vm.c:12704	if (job->fit.prefilter) {
+src/gen/emit_vm.c:12708	prefn = pf;
+src/gen/emit_vm.c:12725	pcrec_emit_dfa_engine(cx, prefn, "static ");
+src/gen/emit_vm.c:12733	v->emitted_prefilter = (prefn != NULL);
+src/gen/emit_vm.c:13261	if (v->nclamp > 0 && prefn)
+src/gen/emit_vm.c:13273	prefn,
+src/gen/emit_vm.c:13327	prefn, rs->cal.gap, rs->cal.block, rs->cal.cap);
+src/gen/emit_vm.c:13393	if (!prefn && strcmp(first, "search_from") != 0)
+src/gen/emit_vm.c:13396	if (prefn) {
+src/gen/emit_vm.c:13404	prefn, first,
