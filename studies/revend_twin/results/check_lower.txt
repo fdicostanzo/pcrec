@@ -1,0 +1,101 @@
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-digits-eol/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-digits-eol/t.c:205:11: error: duplicate label ‘t_reverse_scan_views’
+  205 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-digits-eol/t.c:154:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  154 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+tail-digits-eol CCFAIL
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-word-eoz/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-word-eoz/t.c:271:11: error: duplicate label ‘t_reverse_scan_views’
+  271 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-word-eoz/t.c:209:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  209 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+tail-word-eoz CCFAIL
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-space-eol/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-space-eol/t.c:223:11: error: duplicate label ‘t_reverse_scan_views’
+  223 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/tail-space-eol/t.c:172:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  172 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+tail-space-eol CCFAIL
+tail-ext-lower-txt   pool_byte [a-z]+\.txt$           byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=853 findall_diff=0
+tail-ext-lower-txt   long   [a-z]+\.txt$           byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+tail-dotstar-txt     pool_byte .*\.txt$               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=855 findall_diff=0
+tail-dotstar-txt     long   .*\.txt$               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=14 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-0z/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-0z/t.c:208:11: error: duplicate label ‘t_reverse_scan_views’
+  208 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-0z/t.c:157:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  157 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-0z CCFAIL
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-email/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-email/t.c:210:11: error: duplicate label ‘t_reverse_scan_views’
+  210 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-email/t.c:159:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  159 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-email CCFAIL
+u-bwb                pool_byte \b\w+\b$               byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1533 findall_diff=0
+u-bwb                long   \b\w+\b$               byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-wb/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-wb/t.c:238:11: error: duplicate label ‘t_reverse_scan_views’
+  238 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-wb/t.c:180:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  180 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-wb CCFAIL
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-az-z/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-az-z/t.c:217:11: error: duplicate label ‘t_reverse_scan_views’
+  217 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-az-z/t.c:155:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  155 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-az-z CCFAIL
+u-bwbz               pool_byte \b\w+\b\z              byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1475 findall_diff=0
+u-bwbz               long   \b\w+\b\z              byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=16 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-bwz                pool_byte \b\w+\z                byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1475 findall_diff=0
+u-bwz                long   \b\w+\z                byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=16 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="byte-class-bounded" DFA_START="reverse-pass" 
+u-eq                 pool_byte .*=.*$                 byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=872 findall_diff=0
+u-eq                 long   .*=.*$                 byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=12 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-alazy/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-alazy/t.c:191:11: error: duplicate label ‘t_reverse_scan_views’
+  191 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-alazy/t.c:136:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  136 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-alazy CCFAIL
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-aplus/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-aplus/t.c:191:11: error: duplicate label ‘t_reverse_scan_views’
+  191 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-aplus/t.c:136:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  136 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-aplus CCFAIL
+u-adot               pool_byte a.*$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=1316 findall_diff=0
+u-adot               long   a.*$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0
+    stamps: END_WINDOW="none" ENGINE="dfa" DFA_PREFILTER="memchr-bounded" DFA_START="reverse-pass" 
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-astarbstar/t.c: In function ‘t_search’:
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-astarbstar/t.c:193:11: error: duplicate label ‘t_reverse_scan_views’
+  193 |           t_reverse_scan_views:;
+      |           ^~~~~~~~~~~~~~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/revdes/studies/revend_twin/work/art-lower/u-astarbstar/t.c:138:15: note: previous definition of ‘t_reverse_scan_views’ with type ‘void’
+  138 |               t_reverse_scan_views:;
+      |               ^~~~~~~~~~~~~~~~~~~~
+u-astarbstar CCFAIL

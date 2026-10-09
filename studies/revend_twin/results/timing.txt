@@ -1,0 +1,57 @@
+# 2026-10-09T16:52:03-04:00 frank-desktop gcc 15.2.0 cpu:  AMD Ryzen 7 7700X 8-Core Processor
+# governor: performance
+## repeat 1
+tail-digits-eol     t-tail-digits-1m     load1=4.08 | n=1048527 rc=1 span=1048519,1048527 | orig min=643926 med=697811 ns (0.6655 ns/B) | twin min=26.1 med=36.5 ns | x19092
+tail-digits-eol     t-tail-txt-1m        load1=4.08 | n=1048532 rc=0 span=-1,-1 | orig min=624717 med=637785 ns (0.6083 ns/B) | twin min=11.0 med=15.6 ns | x41015
+tail-digits-eol     t-tail-space-1m      load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=589360 med=642457 ns (0.6127 ns/B) | twin min=9.0 med=16.1 ns | x40029
+tail-digits-eol     t-1m                 load1=4.08 | n=1048517 rc=1 span=1048514,1048516 | orig min=621564 med=651003 ns (0.6209 ns/B) | twin min=19.6 med=30.6 ns | x21309
+tail-word-eoz       t-tail-digits-1m     load1=4.08 | n=1048527 rc=1 span=1048519,1048527 | orig min=1958311 med=2038777 ns (1.9444 ns/B) | twin min=23.0 med=32.0 ns | x63612
+tail-word-eoz       t-tail-txt-1m        load1=4.08 | n=1048532 rc=1 span=1048529,1048532 | orig min=2032452 med=2071964 ns (1.9761 ns/B) | twin min=21.6 med=28.1 ns | x73867
+tail-word-eoz       t-tail-space-1m      load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=1820286 med=2050377 ns (1.9555 ns/B) | twin min=12.5 med=17.1 ns | x120257
+tail-space-eol      t-tail-digits-1m     load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=1979215 med=2049539 ns (1.9547 ns/B) | twin min=12.0 med=16.1 ns | x127697
+tail-space-eol      t-tail-txt-1m        load1=4.08 | n=1048532 rc=0 span=-1,-1 | orig min=1956373 med=2022761 ns (1.9291 ns/B) | twin min=12.1 med=16.6 ns | x122221
+tail-space-eol      t-tail-space-1m      load1=4.08 | n=1048527 rc=1 span=1048524,1048527 | orig min=1758704 med=2000950 ns (1.9083 ns/B) | twin min=28.6 med=31.6 ns | x63422
+tail-space-eol      t-trim-nearmiss-16k  load1=4.08 | n=16385 rc=0 span=-1,-1 | orig min=20955 med=21275 ns (1.2984 ns/B) | twin min=7.0 med=7.5 ns | x2837
+tail-ext-lower-txt  t-tail-digits-1m     load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=2173891 med=2202430 ns (2.1005 ns/B) | twin min=18.5 med=28.1 ns | x78518
+tail-ext-lower-txt  t-tail-txt-1m        load1=4.08 | n=1048532 rc=1 span=1048522,1048532 | orig min=2270633 med=2293951 ns (2.1878 ns/B) | twin min=46.5 med=62.6 ns | x36645
+tail-ext-lower-txt  t-tail-space-1m      load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=2210838 med=2279428 ns (2.1739 ns/B) | twin min=19.5 med=24.1 ns | x94779
+tail-dotstar-txt    t-tail-digits-1m     load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=87861 med=96034 ns (0.0916 ns/B) | twin min=14.5 med=21.1 ns | x4562
+tail-dotstar-txt    t-tail-txt-1m        load1=4.08 | n=1048532 rc=1 span=1048513,1048532 | orig min=91223 med=102015 ns (0.0973 ns/B) | twin min=46.0 med=67.1 ns | x1520
+tail-dotstar-txt    t-tail-space-1m      load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=91038 med=101946 ns (0.0972 ns/B) | twin min=15.5 med=22.1 ns | x4623
+## repeat 2
+tail-digits-eol     t-tail-digits-1m     load1=4.08 | n=1048527 rc=1 span=1048519,1048527 | orig min=657119 med=694257 ns (0.6621 ns/B) | twin min=21.1 med=32.5 ns | x21329
+tail-digits-eol     t-tail-txt-1m        load1=4.08 | n=1048532 rc=0 span=-1,-1 | orig min=599751 med=646125 ns (0.6162 ns/B) | twin min=9.0 med=12.5 ns | x51690
+tail-digits-eol     t-tail-space-1m      load1=4.08 | n=1048527 rc=0 span=-1,-1 | orig min=645171 med=733305 ns (0.6994 ns/B) | twin min=9.1 med=16.6 ns | x44308
+tail-digits-eol     t-1m                 load1=4.08 | n=1048517 rc=1 span=1048514,1048516 | orig min=638688 med=765549 ns (0.7301 ns/B) | twin min=20.5 med=26.6 ns | x28834
+tail-word-eoz       t-tail-digits-1m     load1=4.08 | n=1048527 rc=1 span=1048519,1048527 | orig min=1899771 med=2117908 ns (2.0199 ns/B) | twin min=23.1 med=34.0 ns | x62200
+tail-word-eoz       t-tail-txt-1m        load1=4.07 | n=1048532 rc=1 span=1048529,1048532 | orig min=2359702 med=2417621 ns (2.3057 ns/B) | twin min=21.5 med=24.1 ns | x100525
+tail-word-eoz       t-tail-space-1m      load1=4.07 | n=1048527 rc=0 span=-1,-1 | orig min=2255732 med=2315833 ns (2.2087 ns/B) | twin min=10.1 med=14.5 ns | x159713
+tail-space-eol      t-tail-digits-1m     load1=4.07 | n=1048527 rc=0 span=-1,-1 | orig min=1811955 med=2048744 ns (1.9539 ns/B) | twin min=11.5 med=12.1 ns | x170020
+tail-space-eol      t-tail-txt-1m        load1=4.07 | n=1048532 rc=0 span=-1,-1 | orig min=1701671 med=1736415 ns (1.6560 ns/B) | twin min=13.0 med=20.1 ns | x86604
+tail-space-eol      t-tail-space-1m      load1=4.07 | n=1048527 rc=1 span=1048524,1048527 | orig min=1722411 med=1750948 ns (1.6699 ns/B) | twin min=19.5 med=31.1 ns | x56391
+tail-space-eol      t-trim-nearmiss-16k  load1=4.07 | n=16385 rc=0 span=-1,-1 | orig min=18618 med=19379 ns (1.1827 ns/B) | twin min=4.5 med=8.5 ns | x2280
+tail-ext-lower-txt  t-tail-digits-1m     load1=4.07 | n=1048527 rc=0 span=-1,-1 | orig min=2156404 med=2183942 ns (2.0829 ns/B) | twin min=18.6 med=28.1 ns | x77859
+tail-ext-lower-txt  t-tail-txt-1m        load1=4.07 | n=1048532 rc=1 span=1048522,1048532 | orig min=2300837 med=2320859 ns (2.2134 ns/B) | twin min=51.1 med=63.1 ns | x36781
+tail-ext-lower-txt  t-tail-space-1m      load1=4.07 | n=1048527 rc=0 span=-1,-1 | orig min=2218693 med=2312377 ns (2.2054 ns/B) | twin min=16.6 med=27.1 ns | x85485
+tail-dotstar-txt    t-tail-digits-1m     load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=87715 med=95687 ns (0.0913 ns/B) | twin min=15.6 med=22.1 ns | x4340
+tail-dotstar-txt    t-tail-txt-1m        load1=3.98 | n=1048532 rc=1 span=1048513,1048532 | orig min=92150 med=105791 ns (0.1009 ns/B) | twin min=45.5 med=64.6 ns | x1638
+tail-dotstar-txt    t-tail-space-1m      load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=86482 med=97624 ns (0.0931 ns/B) | twin min=17.0 med=23.0 ns | x4245
+## repeat 3
+tail-digits-eol     t-tail-digits-1m     load1=3.98 | n=1048527 rc=1 span=1048519,1048527 | orig min=664940 med=707996 ns (0.6752 ns/B) | twin min=21.6 med=32.5 ns | x21751
+tail-digits-eol     t-tail-txt-1m        load1=3.98 | n=1048532 rc=0 span=-1,-1 | orig min=629420 med=704962 ns (0.6723 ns/B) | twin min=7.5 med=12.5 ns | x56397
+tail-digits-eol     t-tail-space-1m      load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=623126 med=651569 ns (0.6214 ns/B) | twin min=9.1 med=16.0 ns | x40723
+tail-digits-eol     t-1m                 load1=3.98 | n=1048517 rc=1 span=1048514,1048516 | orig min=638498 med=711958 ns (0.6790 ns/B) | twin min=21.1 med=30.1 ns | x23692
+tail-word-eoz       t-tail-digits-1m     load1=3.98 | n=1048527 rc=1 span=1048519,1048527 | orig min=2030283 med=2074348 ns (1.9783 ns/B) | twin min=21.1 med=34.5 ns | x60039
+tail-word-eoz       t-tail-txt-1m        load1=3.98 | n=1048532 rc=1 span=1048529,1048532 | orig min=2090148 med=2429122 ns (2.3167 ns/B) | twin min=23.1 med=24.6 ns | x98946
+tail-word-eoz       t-tail-space-1m      load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=2330999 med=2417097 ns (2.3052 ns/B) | twin min=9.6 med=10.5 ns | x230200
+tail-space-eol      t-tail-digits-1m     load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=1966060 med=2055053 ns (1.9599 ns/B) | twin min=11.0 med=12.1 ns | x170544
+tail-space-eol      t-tail-txt-1m        load1=3.98 | n=1048532 rc=0 span=-1,-1 | orig min=2047198 med=2082939 ns (1.9865 ns/B) | twin min=11.5 med=16.0 ns | x130184
+tail-space-eol      t-tail-space-1m      load1=3.98 | n=1048527 rc=1 span=1048524,1048527 | orig min=1740053 med=1784637 ns (1.7020 ns/B) | twin min=27.6 med=36.0 ns | x49504
+tail-space-eol      t-trim-nearmiss-16k  load1=3.98 | n=16385 rc=0 span=-1,-1 | orig min=18880 med=19397 ns (1.1838 ns/B) | twin min=4.0 med=8.5 ns | x2282
+tail-ext-lower-txt  t-tail-digits-1m     load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=2133290 med=2174838 ns (2.0742 ns/B) | twin min=20.1 med=26.1 ns | x83487
+tail-ext-lower-txt  t-tail-txt-1m        load1=3.98 | n=1048532 rc=1 span=1048522,1048532 | orig min=2280101 med=2312568 ns (2.2055 ns/B) | twin min=51.6 med=65.6 ns | x35253
+tail-ext-lower-txt  t-tail-space-1m      load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=2226689 med=2304332 ns (2.1977 ns/B) | twin min=20.5 med=28.1 ns | x82151
+tail-dotstar-txt    t-tail-digits-1m     load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=87572 med=97268 ns (0.0928 ns/B) | twin min=16.0 med=24.6 ns | x3962
+tail-dotstar-txt    t-tail-txt-1m        load1=3.98 | n=1048532 rc=1 span=1048513,1048532 | orig min=92633 med=103100 ns (0.0983 ns/B) | twin min=44.1 med=64.6 ns | x1596
+tail-dotstar-txt    t-tail-space-1m      load1=3.98 | n=1048527 rc=0 span=-1,-1 | orig min=89121 med=94852 ns (0.0905 ns/B) | twin min=15.5 med=21.5 ns | x4412
+== run_all COMPLETE 2026-10-09T16:52:25-04:00
