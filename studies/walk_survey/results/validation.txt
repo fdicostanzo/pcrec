@@ -9,6 +9,11 @@
 == 4 planted controls on ^abc (must each show ~n extra bytes)
   abc_start  n=1048576 rc=1 span=[0,3) T=1048580 U=1048576 T_scan=0 ahead=1048573 | fwd=4/4 unk=1048576/1048576
   abc_start  n=1048576 rc=1 span=[0,3) T=1048580 U=1048576 T_scan=0 ahead=1048573 | fwd=4/4 unk=1048576/1048576
+== 6 class measures respond (K4 land_rev, K5 A_pre): artifact vs the twin/arm that removes the walk
+  wo  \w+ findall words n=65536 nmatch=10923 T=172030 T_rev=73727 land_rev=73727 land_calls=10923
+  wt  \w+ findall words n=65536 nmatch=10923 T=98303 T_rev=0 land_rev=0 land_calls=0
+  fold   (?i)cat findall catlow n=65536 nmatch=2979 T=97788650 T_pre=97761839 A_pre=97624809
+  nofold (?i)cat findall catlow n=65536 nmatch=2979 T=83410 T_pre=0 A_pre=0
 == 5 independent count: gcov line counts vs the instrument (\d+$, end_digits)
   gcov: forward-step line executions=5  skip-loop line executions=1048572  reverse-step line executions=2
   (a skip-loop line execution is one loop test: one subject load per test that reaches the load)
