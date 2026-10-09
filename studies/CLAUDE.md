@@ -293,4 +293,11 @@ re-measure before load-bearing use.
   Borrows `docs/dev/optloop/revend/`'s population and probe. Backs
   `docs/design/locate_finish.md` §3-§4. See its own CLAUDE.md.
 
+- `walk_survey/` — the GRATUITOUS-WALK SURVEY (lane walksurvey, 2026-10-09;
+  survey + measurement only): a per-phase subject-load instrument (the
+  artifact compiled with KASAN-style call hooks, loads attributed to phases by
+  the emitted line), run over every bench cell and every corpus pattern block,
+  classes K1-K12 with gratuitous-byte counts, and answer-checked hand-twins
+  for the top classes. Backs `docs/dev/walk_survey.md`. See its own CLAUDE.md.
+
 Maintenance: update this file when studies are added/removed.

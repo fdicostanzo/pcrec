@@ -1,0 +1,88 @@
+== population bench: 69859 rows, 62868 live (config default/nocaps), 367 patterns; not run: {('anch', 'REFUSED'): 32, ('default', 'REFUSED'): 24, ('nocaps', 'REFUSED'): 23}
+   loads through an UNCLASSIFIED site: 50872 of 1579887968 (0.00322%)
+-- bench: per class. cells = (pattern, config, regime) cells where G > 0; G/n = gratuitous bytes per subject byte over the cell's subjects; est_ms = sum over bench cells of pcrec median_ns x G/T (assumes a uniform per-byte cost across phases; scan phases are cheaper, so an upper estimate for K5/K6/K7)
+class	locfin	cells	patterns	G_bytes	G/T_of_cells	median_G/n	max_G/n	est_ms(bench)	top cells (G/n)
+K1	locator	46	12	52468556	0.995	0.233	1.31	61.761	capability/tail-word-eoz[no,throug]=1.31; capability/tail-word-eoz[de,throug]=1.31; capability/tail-ext-lower-txt[no,throug]=1.10; capability/tail-ext-lower-txt[de,throug]=1.10; capability/tail-space-eol[de,throug]=1.14; capability/tail-space-eol[no,throug]=1.14
+K2	finisher	0
+K3	finisher	260	74	8890836	0.037	0.024	0.30	4.182	litrun/lit-l2[de,throug]=0.28; litrun/floor[de,throug]=0.23; litrun/lit-l3[de,throug]=0.26; litrun/lit-l4[de,throug]=0.22; litrun/lit-l7[de,throug]=0.24; litrun/lit-l8[de,throug]=0.18
+K4	finisher	570	177	59077864	0.115	0.020	1.16	101.476	utf8/prp-l[no,throug]=0.81; utf8/prp-l[de,throug]=0.81; utf8/cls-dot[de,throug]=1.00; utf8/cls-dot[no,throug]=1.00; utf8/cls-neg-single[no,throug]=0.98; utf8/ci-neg-fold[no,throug]=0.98
+K5	locator (gate)	6	3	17443056	0.509	3.050	3.05	5.434	syntax/mod-r[de,throug]=3.05; syntax/mod-r[no,throug]=3.05; syntax/mod-i[de,throug]=3.05; syntax/mod-i[no,throug]=3.05; utf8/ci-strasse[no,throug]=0.20; utf8/ci-strasse[de,throug]=0.20
+K5m	locator	427	214	24025217	0.023	0.006	1.08	43.894	utf8/asr-b-midchar[no,throug]=1.08; utf8/asr-b-midchar[de,throug]=1.08; capability/wild-datetime-datefinder-alternation[no,throug]=0.21; utf8/cls-dot[de,throug]=0.71; utf8/cls-dot[no,throug]=0.71; utf8/cls-neg-single[no,throug]=0.70
+K5mb	locator	308	154	15007288	0.027	0.005	1.08	26.675	utf8/asr-b-midchar[no,throug]=1.08; utf8/asr-b-midchar[de,throug]=1.08; utf8/cls-dot[de,throug]=0.71; utf8/cls-dot[no,throug]=0.71; utf8/cls-neg-single[no,throug]=0.70; utf8/ci-neg-fold[no,throug]=0.70
+K6	locator (gate)	252	68	30141310	0.105	0.024	1.12	8.658	capability/wild-waf-crs-942270-union-select[no,throug]=1.12; capability/wild-waf-crs-942270-union-select[de,throug]=1.12; utf8/ci-ascii-control[de,throug]=1.03; utf8/ci-ascii-control[no,throug]=1.03; syntax/bak-k-named[de,throug]=0.85; syntax/mod-r[de,throug]=1.07
+K7	locator (gate)	322	92	21258692	0.050	0.023	0.97	9.260	email/orig[de,throug]=0.28; email/factored[de,throug]=0.28; syntax/cls-s-uc[de,throug]=0.97; syntax/cls-s-uc[no,throug]=0.97; syntax/bak-k-named[de,throug]=0.83; syntax/bak-k-named[no,throug]=0.83
+K8	locator	36	20	60630	0.849	0.064	0.98	0.010	altwide/w-384[de,match]=0.85; altwide/wb-256[de,match]=0.90; altwide/clsd-256[de,match]=0.98; altwide/pfx3-512[de,match]=0.97; altwide/sh1-512[de,match]=0.97; altwide/sfx-512[de,match]=0.95
+K9	finisher	125	55	2790030	0.027	0.023	0.93	3.952	capability/wild-semdiv-empty-alt-repeat-pcre2[de,throug]=0.10; capability/wild-logparse-base10num-grok[de,throug]=0.13; capability/wild-logparse-base10num-grok[no,throug]=0.13; utf8/asr-lb-class[no,throug]=0.07; utf8/asr-lb-class[de,throug]=0.07; capability/pwd-strength-chain[de,throug]=0.02
+K10	both	169	64	143518450	0.450	0.039	7.97	189.705	syntax/mod-j-uc[no,throug]=7.97; syntax/mod-j-uc[de,throug]=7.97; capability/doubled-word[de,throug]=5.45; capability/doubled-word[no,throug]=5.45; syntax/bak-1[no,throug]=6.47; syntax/bak-py[no,throug]=6.47
+K11	locator	48	20	20096040	0.649	0.004	2.15	49.750	capability/wild-waf-crs-942360-concat-sqli[no,throug]=2.15; capability/wild-waf-crs-942360-concat-sqli[de,throug]=2.15; capability/wild-waf-crs-942360-concat-sqli[no,search]=1.94; capability/wild-waf-crs-942360-concat-sqli[de,search]=1.94; capability/pwd-strength-chain[no,search]=0.04; capability/pwd-strength-chain[de,search]=0.04
+K12	locator	76	23	24611196	0.219	0.096	1.12	27.504	loglines/ipv6[de,throug]=0.64; capability/tail-ext-lower-txt[no,throug]=0.58; capability/tail-ext-lower-txt[de,throug]=0.58; altwide/sfx-64[de,throug]=0.79; altwide/sfx-256[de,throug]=0.80; altwide/sfx-512[de,throug]=0.48
+-- bench: top RESIDUAL cells (T - LB - classes - K0, per subject byte): excess no class explains
+  utf8/asr-lb-class                                default throughput   res/n=2.09 T/LB=3.36 skip=0.37 fwd=0.07 rev=0.07 vm=0.78 misc=2.06 | vm unanchored reverse-pass hybrid
+  utf8/asr-lb-class                                nocaps  throughput   res/n=2.09 T/LB=3.36 skip=0.37 fwd=0.07 rev=0.07 vm=0.78 misc=2.06 | vm unanchored reverse-pass hybrid
+  syntax/bak-2                                     default throughput   res/n=0.96 T/LB=5.20 skip=1.00 vm=4.20 | vm   none
+  syntax/bak-2                                     nocaps  throughput   res/n=0.96 T/LB=5.20 skip=1.00 vm=4.20 | vm   none
+  capability/doubled-word                          default search_short res/n=0.96 T/LB=6.78 skip=0.99 vm=5.75 | vm   none
+  capability/doubled-word                          nocaps  search_short res/n=0.96 T/LB=6.78 skip=0.99 vm=5.75 | vm   none
+  capability/doubled-word                          default throughput   res/n=0.94 T/LB=7.39 skip=0.97 vm=6.43 | vm   none
+  capability/doubled-word                          nocaps  throughput   res/n=0.94 T/LB=7.39 skip=0.97 vm=6.43 | vm   none
+  syntax/bak-1                                     default throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/bak-1                                     nocaps  throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/bak-g-rel                                 default throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/bak-g-rel                                 nocaps  throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/bak-py                                    default throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/bak-py                                    nocaps  throughput   res/n=0.94 T/LB=8.43 pre=0.02 skip=0.97 vm=7.44 | vm   none
+  syntax/mod-j-uc                                  default throughput   res/n=0.94 T/LB=9.93 pre=0.02 skip=0.97 vm=8.93 | vm   none
+  syntax/mod-j-uc                                  nocaps  throughput   res/n=0.94 T/LB=9.93 pre=0.02 skip=0.97 vm=8.93 | vm   none
+  syntax/bak-2                                     default search_short res/n=0.84 T/LB=4.74 skip=0.92 vm=3.48 | vm   none
+  syntax/bak-2                                     nocaps  search_short res/n=0.84 T/LB=4.74 skip=0.92 vm=3.48 | vm   none
+  utf8/asr-b-midchar                               default throughput   res/n=0.81 T/LB=2.90 fwd=1.27 rev=1.08 misc=0.54 | dfa unanchored reverse-pass 
+  utf8/asr-b-midchar                               nocaps  throughput   res/n=0.81 T/LB=2.90 fwd=1.27 rev=1.08 misc=0.54 | dfa unanchored reverse-pass 
+  capability/pwd-strength-chain                    default search_short res/n=0.76 T/LB=29.85 fwd=1.03 vm=6.01 | vm attempt reverse-pass hybrid
+  capability/pwd-strength-chain                    nocaps  search_short res/n=0.76 T/LB=29.85 fwd=1.03 vm=6.01 | vm attempt reverse-pass hybrid
+  utf8/ci-neg-fold                                 default throughput   res/n=0.72 T/LB=4.11 skip=0.71 fwd=1.70 rev=0.99 misc=0.70 | dfa unanchored reverse-pass 
+  utf8/ci-neg-fold                                 nocaps  throughput   res/n=0.72 T/LB=4.11 skip=0.71 fwd=1.70 rev=0.99 misc=0.70 | dfa unanchored reverse-pass 
+  utf8/cls-neg-single                              default throughput   res/n=0.72 T/LB=4.11 skip=0.71 fwd=1.70 rev=0.99 misc=0.70 | dfa unanchored reverse-pass 
+== population corpus: 160377 rows, 141500 live (config default/nocaps), 4563 patterns; not run: {('default', 'REFUSED'): 371, ('nocaps', 'REFUSED'): 371, ('anch', 'REFUSED'): 474, ('default', 'BUILDFAIL'): 20, ('nocaps', 'BUILDFAIL'): 20, ('anch', 'BUILDFAIL'): 20}
+   loads through an UNCLASSIFIED site: 937939 of 1090948676 (0.08597%)
+-- corpus: per class. cells = (pattern, config, regime) cells where G > 0; G/n = gratuitous bytes per subject byte over the cell's subjects; est_ms = sum over bench cells of pcrec median_ns x G/T (assumes a uniform per-byte cost across phases; scan phases are cheaper, so an upper estimate for K5/K6/K7)
+class	locfin	cells	patterns	G_bytes	G/T_of_cells	median_G/n	max_G/n	est_ms(bench)	top cells (G/n)
+K1	locator	566	142	12259953	0.999	0.001	2.19	0.000	tests/lookaround/d27/spellings.rxt:115[de,search]=2.19; tests/lookaround/d27/spellings.rxt:115[no,search]=2.19; tests/lookaround/alpha_spellings.rxt:244[de,search]=2.19; tests/lookaround/alpha_spellings.rxt:244[no,search]=2.19; tests/lookaround/alpha_spellings.rxt:257[de,search]=2.19; tests/lookaround/alpha_spellings.rxt:257[no,search]=2.19
+K2	finisher	0
+K3	finisher	3960	1002	8238516	0.051	0.000	1.28	0.000	tests/assertions/wordb_basic.rxt:975[de,findal]=1.28; tests/assertions/wordb_basic.rxt:975[no,findal]=1.28; tests/possessify/composition_d27.rxt:10943[de,findal]=1.23; tests/possessify/composition_d27.rxt:10943[no,findal]=1.23; tests/base/dot.rxt:3[de,findal]=1.00; tests/base/dot.rxt:3[no,findal]=1.00
+K4	finisher	5135	1374	25131788	0.102	0.000	1.37	0.000	tests/possessify/composition_d27.rxt:8809[de,findal]=1.37; tests/possessify/composition_d27.rxt:8809[no,findal]=1.37; tests/possessify/composition_d27.rxt:9060[de,findal]=1.37; tests/possessify/composition_d27.rxt:9060[no,findal]=1.37; tests/possessify/composition_d27.rxt:8782[no,findal]=1.37; tests/possessify/composition_d27.rxt:8782[no,search]=1.37
+K5	locator (gate)	64	32	125578	0.002	0.020	0.33	0.000	tests/litscan/reqcube.rxt:242[de,findal]=0.33; tests/litscan/reqcube.rxt:242[no,findal]=0.33; tests/litscan/handoff.rxt:22[de,findal]=0.13; tests/litscan/handoff.rxt:22[no,findal]=0.13; tests/litscan/handoff.rxt:709[de,findal]=0.13; tests/litscan/handoff.rxt:709[no,findal]=0.13
+K5m	locator	5626	2819	55055082	0.104	0.014	4.36	0.000	tests/possessify/composition_d27.rxt:6481[de,findal]=4.36; tests/possessify/composition_d27.rxt:6481[no,findal]=4.36; tests/atomic_groups/d27/possessive_spellings.rxt:187[de,findal]=1.98; tests/atomic_groups/d27/possessive_spellings.rxt:187[no,findal]=1.98; tests/possessify/composition_d27.rxt:3053[de,findal]=1.94; tests/possessify/composition_d27.rxt:3053[no,findal]=1.94
+K5mb	locator	3509	1759	23965116	0.095	0.002	1.88	0.000	tests/ucp/ctxnode.rxt:246[de,findal]=1.88; tests/ucp/ctxnode.rxt:246[no,findal]=1.88; tests/lookaround/lookahead.rxt:202[de,findal]=1.88; tests/lookaround/lookahead.rxt:202[no,findal]=1.88; tests/possessify/composition_d27.rxt:3728[de,findal]=1.29; tests/possessify/composition_d27.rxt:3728[no,findal]=1.29
+K6	locator (gate)	1166	293	7900862	0.030	0.002	2.02	0.000	tests/litscan/reqcube.rxt:242[de,findal]=2.02; tests/litscan/reqcube.rxt:242[no,findal]=2.02; tests/litscan/reqcube.rxt:242[de,search]=1.68; tests/litscan/reqcube.rxt:242[no,search]=1.68; tests/litscan/reqcube.rxt:457[de,findal]=1.49; tests/litscan/reqcube.rxt:457[no,findal]=1.49
+K7	locator (gate)	2894	735	22936110	0.058	0.006	1.00	0.000	tests/possessify/composition_d27.rxt:4849[de,findal]=1.00; tests/possessify/composition_d27.rxt:4849[no,findal]=1.00; tests/backrefs/d27/numeric.rxt:73[de,findal]=1.00; tests/backrefs/d27/numeric.rxt:73[no,findal]=1.00; tests/possessify/possessify.rxt:3494[de,findal]=1.00; tests/possessify/possessify.rxt:3494[no,findal]=1.00
+K8	locator	718	419	1254504	0.858	0.000	1.00	0.000	tests/assertions/d27/anchors_abs.rxt:51[de,match]=1.00; tests/assertions/d27/anchors_abs.rxt:51[no,match]=1.00; tests/assertions/d27/multiline.rxt:72[de,match]=1.00; tests/assertions/d27/multiline.rxt:72[no,match]=1.00; tests/assertions/d27/multiline.rxt:78[de,match]=1.00; tests/assertions/d27/multiline.rxt:78[no,match]=1.00
+K9	finisher	3311	1140	3661048	0.018	0.000	1.00	0.000	tests/assertions/wordb_vm.rxt:339[de,findal]=1.00; tests/possessify/composition_d27.rxt:2108[de,findal]=1.00; tests/possessify/composition_d27.rxt:2108[no,findal]=1.00; tests/possessify/composition_d27.rxt:2228[de,findal]=1.00; tests/possessify/composition_d27.rxt:2228[no,findal]=1.00; tests/possessify/composition_d27.rxt:8697[de,findal]=1.00
+K10	both	4172	1252	441965874	0.740	0.001	559.62	0.000	tests/litscan/reqcube.rxt:434[de,findal]=559.62; tests/litscan/reqcube.rxt:434[no,findal]=559.62; tests/litscan/reqcube.rxt:434[de,search]=558.26; tests/litscan/reqcube.rxt:434[no,search]=558.26; tests/litscan/reqcube.rxt:480[de,findal]=202.78; tests/litscan/reqcube.rxt:480[no,findal]=202.78
+K11	locator	313	133	2240881	0.256	0.000	2.37	0.000	tests/possessify/composition_d27.rxt:1658[de,findal]=2.37; tests/possessify/composition_d27.rxt:1658[no,findal]=2.37; tests/possessify/composition_d27.rxt:2258[de,findal]=1.96; tests/possessify/composition_d27.rxt:2258[no,findal]=1.96; tests/possessify/composition_d27.rxt:2858[de,findal]=1.96; tests/possessify/composition_d27.rxt:2858[no,findal]=1.96
+K12	locator	0
+-- corpus: top RESIDUAL cells (T - LB - classes - K0, per subject byte): excess no class explains
+  tests/recursion/d27/sr_depth.rxt:60              default match        res/n=9.23 T/LB=190.22 vm=9.27 | vm   none
+  tests/recursion/d27/sr_depth.rxt:60              nocaps  match        res/n=9.23 T/LB=190.22 vm=9.27 | vm   none
+  tests/possessify/composition_d27.rxt:2813        default findall      res/n=4.56 T/LB=17.05 skip=0.63 fwd=3.41 rev=2.14 vm=10.87 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2813        nocaps  findall      res/n=4.56 T/LB=17.05 skip=0.63 fwd=3.41 rev=2.14 vm=10.87 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2813        default search       res/n=4.56 T/LB=17.04 skip=0.63 fwd=3.41 rev=2.14 vm=10.87 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2813        nocaps  search       res/n=4.56 T/LB=17.04 skip=0.63 fwd=3.41 rev=2.14 vm=10.87 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:8782        default findall      res/n=3.74 T/LB=5.00 skip=0.00 fwd=2.00 rev=2.74 vm=0.26 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:8782        default search       res/n=3.74 T/LB=5.00 skip=0.00 fwd=2.00 rev=2.74 vm=0.26 | vm unanchored reverse-pass hybrid
+  tests/utf8/axis09_nextpos_findall.rxt:260        default findall      res/n=3.00 T/LB=4.00 vm=1.00 misc=3.00 | vm   none
+  tests/utf8/axis09_nextpos_findall.rxt:260        nocaps  findall      res/n=3.00 T/LB=4.00 vm=1.00 misc=3.00 | vm   none
+  tests/possessify/composition_d27.rxt:2108        default findall      res/n=2.46 T/LB=70.94 skip=1.22 fwd=2.00 rev=1.22 vm=66.50 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2108        nocaps  findall      res/n=2.46 T/LB=70.94 skip=1.22 fwd=2.00 rev=1.22 vm=66.50 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2228        default findall      res/n=2.46 T/LB=50.95 skip=1.22 fwd=2.00 rev=1.22 vm=46.51 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2228        nocaps  findall      res/n=2.46 T/LB=50.95 skip=1.22 fwd=2.00 rev=1.22 vm=46.51 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2228        default search       res/n=2.46 T/LB=50.93 skip=1.22 fwd=2.00 rev=1.22 vm=46.49 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2228        nocaps  search       res/n=2.46 T/LB=50.93 skip=1.22 fwd=2.00 rev=1.22 vm=46.49 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2108        default search       res/n=2.46 T/LB=70.90 skip=1.22 fwd=2.00 rev=1.22 vm=66.46 | vm unanchored reverse-pass hybrid
+  tests/possessify/composition_d27.rxt:2108        nocaps  search       res/n=2.46 T/LB=70.90 skip=1.22 fwd=2.00 rev=1.22 vm=66.46 | vm unanchored reverse-pass hybrid
+  tests/startset/dfahat_f1.rxt:140                 default findall      res/n=2.23 T/LB=4.91 skip=0.99 fwd=2.27 rev=1.65 | dfa unanchored reverse-pass 
+  tests/startset/dfahat_f1.rxt:140                 nocaps  findall      res/n=2.23 T/LB=4.91 skip=0.99 fwd=2.27 rev=1.65 | dfa unanchored reverse-pass 
+  tests/possessify/composition_d27.rxt:2243        default findall      res/n=2.12 T/LB=4.75 skip=0.94 fwd=2.33 rev=1.47 | dfa unanchored reverse-pass 
+  tests/possessify/composition_d27.rxt:2243        nocaps  findall      res/n=2.12 T/LB=4.75 skip=0.94 fwd=2.33 rev=1.47 | dfa unanchored reverse-pass 
+  tests/possessify/composition_d27.rxt:3023        default findall      res/n=2.08 T/LB=4.67 skip=0.92 fwd=2.29 rev=1.46 | dfa unanchored reverse-pass 
+  tests/possessify/composition_d27.rxt:3023        nocaps  findall      res/n=2.08 T/LB=4.67 skip=0.92 fwd=2.29 rev=1.46 | dfa unanchored reverse-pass 
+  tests/possessify/composition_d27.rxt:11680       default findall      res/n=2.02 T/LB=3.64 fwd=2.41 rev=1.23 | dfa unanchored reverse-pass 
