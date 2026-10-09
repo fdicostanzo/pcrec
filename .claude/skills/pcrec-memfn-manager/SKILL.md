@@ -86,6 +86,14 @@ share its main.
    task notification / in-flight completion / a message from main,
    otherwise reply ONE line; no new work, no re-reads. Main session
    only — lanes never self-keepalive. Delete it at close (§6).
+   **The same cron is the DEADLOCK CHECK** (Frank, 2026-10-09; memory
+   `pcrec-hourly-peer-checkin`): ONLY while you are waiting on a specific
+   peer session for a specific thing (a merge, an abi number, a slot GO,
+   a ruling), a tick sends that ONE session one short message naming what
+   you wait for and asking whether it waits on you. There is no separate
+   check-in cron. NEVER message a session you are not waiting on: it may
+   be idle, and a ping costs it a full turn. Never chase your own lanes
+   this way; scripts watch them.
 1. **Read `memfn/docs/wake.md`** — your previous session's hand-off (on
    main it may still be the TEMPLATE; your branch's copy is newer if one
    exists — check `git -C worktrees/memfn log -1 -- memfn/docs/wake.md`).
