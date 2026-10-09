@@ -657,7 +657,9 @@ static void size_drop_note(const char *what, const char *cost)
  * a row too, though its choice is made inside `size_term_choose` rather than
  * by this walk (`applies` NULL). */
 typedef struct {
-    const Ctx    *cx;               /* the attempt a size cap just refused */
+    Ctx          *cx;               /* the attempt that just failed (not const:
+                                     * a row may ask a pattern fact, and an
+                                     * ask marks it used on that attempt) */
     uint64_t      flags;            /* the options it ran under */
     unsigned char collapse_reason;  /* the retry state it ran under */
     unsigned char size_drop_rung;
@@ -786,16 +788,50 @@ typedef struct {
  * (the row's deny bit) — that caller gets the refusal, which is
  * the only thing `-fno-prefilter-collapse` still buys them under
  * ruling B. */
+/* [DEC-COLLAPSE-WASTE] (abi next at landing; docs/design/dec_fallback.md
+ * §5.1, critB1's three-way split) WHETHER A COLLAPSE RUNG CAN HELP THIS
+ * ATTEMPT, asked by both collapse rungs (rows 3 and 6). Until this row a
+ * rung was offered on every attempt its scope admitted, and two of the three
+ * classes of attempt it bought could not succeed:
+ *   (i)   no collapsible repeat: the collapsed lowering IS the exact one
+ *         (T3's `exact`/`no-rep` rows build it), so the rebuilt machine is
+ *         the one that just failed, and fails again;
+ *   (ii)  nullable but NOT `empty_admits`: T2 keeps the prefilter (its
+ *         nullable rows read `empty_admits`) while T3 declines the COLLAPSE
+ *         (its `rung` row reads bare `nullable`), so again the exact machine
+ *         is rebuilt and fails again.
+ * The third class, (iii) `empty_admits`, is [OPT-4.1]'s DESIGNED outcome (T2
+ * `nullable-collapsed` declines the prefilter, `declined-nullable`) and is
+ * kept. `-fprefilter` keeps every rung it reaches: T3's `rung` row builds the
+ * collapse under it whatever the nullability. When the rung is skipped the
+ * next row fires on the same arrival (`sel1-drop`, `drop-prefilter`, ...),
+ * the row the wasted attempt led to, so every final token holds; what goes
+ * is one failed attempt, and with it the byte figure `VM_PREFILTER_WHY`
+ * carried from that attempt (the stamp-value mover the row declares). F-B3
+ * (a [SEL-1] retry stamping `collapsed-prefilter` beside an uncollapsed
+ * prefilter) needs class (i), so it is unreachable from here on.
+ *
+ * The facts are E1's, sealed before any machine is built, so this reads
+ * them on the failed attempt's own record. */
+static bool fit_collapse_can_help(const FitSel *s)
+{
+    Ctx *cx = s->cx;
+    if (!cx->job || !(pcrec_fact_kinds(cx) & PF_KIND_COLLAPSIBLE_REP)) return false;
+    return (s->flags & PCREC_FORCE_PREFILTER) != 0 ||
+           !pcrec_fact_nullable(cx) || pcrec_fact_empty_admits(cx);
+}
+
 /* [OPT-4] the count-collapsed prefilter: a VM hybrid whose prefilter was
  * built from the exact language (a DFA artifact's language must stay
- * exact). */
+ * exact), on an attempt the collapse can help. */
 static bool fit_collapse_applies(const FitSel *s)
 {
     const Job *j = s->cx->job;
     return s->collapse_reason != CR_SIZECAP &&
            j && j->fit.chosen != ENGM_DFA &&
            j->fit.prefilter &&
-           !j->fit.prefilter_collapsed;
+           !j->fit.prefilter_collapsed &&
+           fit_collapse_can_help(s);
 }
 
 /* [K53-SELRETRY] THE OPTIONAL-CONTRIBUTOR DROP RUNG — the same
@@ -977,10 +1013,11 @@ static bool fit_sel1_eligible(const FitSel *s)
 }
 
 /* [OPT-4] the [SEL-1] rung that keeps a count-collapsed prefilter: offered
- * on the FIRST overflow only. */
+ * on the FIRST overflow only, and only where the collapse can help
+ * ([DEC-COLLAPSE-WASTE]); otherwise `sel1-drop` takes the same arrival. */
 static bool fit_sel1_collapse_applies(const FitSel *s)
 {
-    return fit_sel1_eligible(s) && !s->dfa_disabled;
+    return fit_sel1_eligible(s) && !s->dfa_disabled && fit_collapse_can_help(s);
 }
 
 /* [SEL-1] the rung that drops the prefilter: the first overflow when the

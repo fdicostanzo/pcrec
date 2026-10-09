@@ -565,11 +565,14 @@ static bool pfa_nullable_exact(const PfAdmitSel *s)
     return pfa_default_scope(s) && pcrec_fact_empty_admits(s->cx);
 }
 /* [OPT-4.1] THE RUNG SCOPE's decline. Its collapsible-repeat conjunct IS
- * LOAD-BEARING AND WAS MISSING (r47sel finding 1). T1's `sel1-collapse` row
- * (`fit_sel1_collapse_applies`, src/core/compile.c) does NOT test it, so the
- * [SEL-1] rung is offered to a pattern with no collapsible repeat — and for
- * such a pattern the collapsed lowering IS the exact one, so there is no
- * distinct rescue and nothing to refuse. Declining one and stamping
+ * LOAD-BEARING AND WAS MISSING (r47sel finding 1). Until [DEC-COLLAPSE-WASTE]
+ * T1's `sel1-collapse` row (`fit_sel1_collapse_applies`, src/core/compile.c)
+ * did NOT test it, so the [SEL-1] rung was offered to a pattern with no
+ * collapsible repeat — and for such a pattern the collapsed lowering IS the
+ * exact one, so there is no distinct rescue and nothing to refuse. Both
+ * collapse rungs now ask `fit_collapse_can_help`, which implies the bit, so
+ * on this tree the conjunct below restates a fact the rung already
+ * guarantees; it stays so this row does not depend on T1's predicate. Declining one and stamping
  * `declined-nullable` would report a REFUSED rescue where none was ever
  * available, which is the inversion `match_api.md`'s value table warns
  * about and which the bench buckets on. Without the conjunct the fallback
