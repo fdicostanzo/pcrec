@@ -11,14 +11,22 @@ concurrent chain. Never built or run by pcrec's `make`.
 
 - `mktwin.py IN.c OUT.c PREFIX EOL`: the twin generator. Asserts every
   marker in the artifact's text and refuses rather than half-transforming.
+  Since revision 2 (lane revrev) the walk sits at the HEAD of the search (the
+  K50/K75 entry guards stay first; a PRESENCE pre-check is deleted under forms
+  A/C and moved after the walk under form B) and a DEAD seed is skipped (X1).
   Forms (`TWIN_FORM`):
   - `exact` (form A, default): no forward pass; `<p>_match` from `s*` gives
     the end;
-  - `lower` (form B, the design's choice): the walk sets `search_from = s*`
-    and the body is untouched.
+  - `lower` (form B, revision 1's choice): the walk sets `search_from = s*`
+    and the body is untouched;
+  - `walk` (form C, revision 2's primary): no forward pass; the seed that
+    reaches `s*` is the end; a tie (both seeds) runs `<p>_match` once, or,
+    where `_match` is the `search-filter` wrapper, hands `s*` to the body.
 
   Controls (`TWIN_SABOTAGE`): `noeol` drops the `n-1` seed; `firstseed`
-  keeps the first accepting seed instead of the minimum.
+  keeps the first accepting seed instead of the minimum; `nodead` drops the
+  dead-seed check (run under ASan); `tien`/`tien1` (form C) take end `n` /
+  `n-1` on a tie without the anchored run.
 - `check.c`: answer-identity driver. It links artifact (`o`), twin (`t`) and
   libpcre2-8.
   - It covers every `search_from` in `[0, n+1]` on subjects ≤ 512 B. Longer
@@ -68,3 +76,30 @@ Backs `docs/design/revend.md` section 10 Q1. Verdict and table: `q1_bounded.md`.
 - `mktwin.py` (form B) now also twins artifacts that carry a REQ handoff: the
   `<p>_reqrun` pre-check (and its `c - K` back-off block) moves to after the walk.
 - `results/q1_timing.tsv`, `q1_identity.txt`, `q1_table.md`: the verbatim outputs.
+
+## Revision 2 (lane revrev, 2026-10-09): form C (walk-only), the panel fixes, four-arm timing
+
+Backs `docs/design/revend.md` revision 2 (§6). Scratch tier, Linux dev box.
+
+- `r2_patterns.tsv`: 18 new rows: six X1 trailing-lookaround shapes, eleven
+  tie witnesses (one utf8), and `[a-z]{0,4096}\z` (the widest DFA-routed
+  bound; 8192 falls back to the VM).
+- `controls_r2.tsv`: the 9 patterns the five form-C controls run on.
+- `run_r2_check.sh`: identity of forms C/A/B (and form C on
+  `-fno-anchored-dfa` artifacts, label `walkNA`) over patterns.tsv +
+  r2_patterns.tsv + q1_patterns.tsv (74), against the artifact and libpcre2;
+  then the controls. Parallel (`P=`), per-job result files.
+- `mksubj_r2.py OUTDIR`: the bench tail stand-ins on a body with NO `.txt`
+  before the tail (X7), plus the `\s+$` tie cell, the `[a-z]{0,4096}\z`
+  and `[a-z]{0,60000}\z` tails.
+- `timedrv4.c`: four-arm (W1-today `o`, C `c`, A `a`, B `b`) interleaved
+  timing; per-arm call count calibrated to ~100 us per round; the arm order
+  rotates per round; answer assert across arms.
+- `run_r2_timing.sh [REPEATS] [CPU]`: builds the arms (twins from the
+  `-fno-end-window` artifact), picks the idlest SMT core pair, and runs
+  REPEATS passes; each pass waits up to 5 min for load1 <= 2, and every row
+  records load1 and the SMT sibling's busy fraction.
+- `r2_table.py TIMING.tsv`: the markdown table (median of pass medians,
+  [min-max of pass medians], C/W1, C/B, C/A).
+- `results/r2_identity.txt`, `r2_controls.txt`, `r2_timing.tsv`,
+  `r2_table.md`, `r2_meta.txt`: the verbatim outputs.

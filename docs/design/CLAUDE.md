@@ -2830,6 +2830,16 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   parameterized reverse-block helper; REVEND builds first. Abi readers by grep
   (§5.3), 7 sabotage rows, spec hunks, three questions for Frank (§10). Evidence:
   `../../studies/revend_twin/`.
+  **REVISION 2 (lane `revrev`, 2026-10-09) applies the light D6 panel
+  (`../dev/reviews/2026-10-09-r-revend-panel.md`, X1-X13, read its §R2 first) and makes
+  Frank's FORM C ("walk-only") the primary design:** no forward pass; the walk records which
+  seed reaches `s*`; one seed is the end, a TIE (both seeds) is decided by one anchored run
+  (or, with no anchored machine, by the body), via a three-row tie table and the fact
+  `nl_last`. It hands `START`/`VERDICT` to the CALLER over a new edge E13 (X2). Identity
+  0 twin diffs over 1.39M cells per form, 74 patterns; five controls red. Four-arm timing:
+  C leads on every matching cell bar the tie, and beats W1 on all 47 bounded cells, so Q1
+  collapses; the new Q2 is the downstream stamps on admitted artifacts. Readers by grep
+  (§5.3), 16 sabotage ids, predictions <= 100 ns per acceptance cell.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
