@@ -12,7 +12,15 @@ SAB_DESC="T4's cap-rescue and size-model rows swapped, so a cap rescue that also
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S644. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { NULL,                  stw_rescue,  true  },
-    { "size-model",          stw_moved,   false },'
-SAB_AFTER='    { "size-model",          stw_moved,   false },
-    { NULL,                  stw_rescue,  true  },   /* SABOTAGE S644 */'
+SAB_BEFORE='    { NULL,                  stw_rescue,  true,
+      .axlist = { { "size-term", 4, "cap-rescue", 0, 0, "",
+                    "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build" } } },
+    { "size-model",          stw_moved,   false,
+      .axlist = { { "size-term", 5, "size-model", 0, 0, "",
+                    "the ladder ran and its argmin K saved at least 25% of the default K'\''s bytes, so the materiality bar took it" } } },'
+SAB_AFTER='    { "size-model",          stw_moved,   false,
+      .axlist = { { "size-term", 5, "size-model", 0, 0, "",
+                    "the ladder ran and its argmin K saved at least 25% of the default K'\''s bytes, so the materiality bar took it" } } },
+    { NULL,                  stw_rescue,  true,
+      .axlist = { { "size-term", 4, "cap-rescue", 0, 0, "",
+                    "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build" } } },   /* SABOTAGE S644 */'

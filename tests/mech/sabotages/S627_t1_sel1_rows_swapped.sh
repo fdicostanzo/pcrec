@@ -18,7 +18,13 @@ SAB_BEFORE='    /* 3 [SEL-1]/[OPT-4] the collapsed-prefilter rung */
       .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
       .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
       .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
-      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
+      .axlist = { { "engine-route", 3, "collapsed-prefilter", 0, 0, "",
+                    "auto, a DFA build overflowed a cap, and compile_driver'\''s retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)" },
+                  { "engine-route", 5, "overflowed-dfa", 0, 0, "",
+                    "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)" },
+                  { "engine-route", 6, "overflowed-prefilter", 0, 0, "",
+                    "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER'\''s DFA overflowed, so the prefilter was dropped" } } },
     /* 4 [SEL-1] the prefilter-drop rung */
     { .name = "sel1-drop", .deny = 0, .degrading = true,
       .applies = fit_sel1_drop_applies, .act = FIT_SEL1_DROP,
@@ -40,6 +46,12 @@ SAB_AFTER='    /* 4 [SEL-1] the prefilter-drop rung */
       .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
       .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
       .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
-      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
+      .axlist = { { "engine-route", 3, "collapsed-prefilter", 0, 0, "",
+                    "auto, a DFA build overflowed a cap, and compile_driver'\''s retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)" },
+                  { "engine-route", 5, "overflowed-dfa", 0, 0, "",
+                    "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)" },
+                  { "engine-route", 6, "overflowed-prefilter", 0, 0, "",
+                    "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER'\''s DFA overflowed, so the prefilter was dropped" } } },
     /* SABOTAGE S627 */
 '
