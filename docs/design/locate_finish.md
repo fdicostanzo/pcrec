@@ -1,25 +1,81 @@
 # Search is LOCATE × FINISH — the model, the table, the family, and [OPT-REVEND] in it
 
-**DESIGN NOTE, PROPOSED, REVISION 2, nothing built.** Revision 1: lane `locfin`,
-2026-10-09, from main `525dec33` (abi 71). **Revision 2: lane `locfin2`, 2026-10-09,
+**DESIGN NOTE, PROPOSED, REVISION 2.1, nothing built.** Revision 1: lane `locfin`,
+2026-10-09, from main `525dec33` (abi 71). Revision 2: lane `locfin2`, 2026-10-09,
 from main `7efca415` (`src/` identical to `525dec33`, abi 71), applying the FULL D6
-panel `../dev/reviews/2026-10-09-r-locfin-panel.md` (38 ids, every ACCEPT binding).
-Read §R2 first**: it is the disposition table, one row per id, saying what changed
-and where; every in-place edit carries an `[r2 <id>]` mark. Charter: D156 (Frank,
+panel `../dev/reviews/2026-10-09-r-locfin-panel.md` (38 ids, every ACCEPT binding);
+§R2 is its disposition table and `[r2 <id>]` marks its edits. **Revision 2.1: lane
+`locfin21`, 2026-10-09, from main `00ddf7d5` (`src/` identical, abi 71), applying
+that review's "RE-CHECK of revision 2" (27 ids, LR-G1..G14 from lfre2 and LR-S1..S13
+from lfre1, every disposition binding). Read §R2.1 first**: one row per id, and every
+in-place edit carries an `[r2.1 <id>]` mark. The central change, where both critics
+converge, is §2.7: the MACHINE/PATH derivation (each row declares `.needs`, the
+selected path is the closure over the selected rows, membership = needs ∩ what was
+built) moves INTO L0, ahead of the `dfa_matches[]` fold, and every reader of "which
+machines and slots does this artifact use" reads it. Charter: D156 (Frank,
 2026-10-09): *"look for the general rule to expand. We have dfa prefilter then vm
 now. This is the same but the prefilter is reverse."* Nothing under `src/`, `cli/`,
 `lib/`, `tests/` or `docs/spec/` changes. Evidence: `../../studies/locate_finish/`
-(own CLAUDE.md; a compile-side census with FOUR controls since revision 2, the L0
-edit set and its derived sabotage re-aims). A focused re-check by two critics (one
-with the generality/unlocks lens) reviews this revision before any `src/` change.
+(own CLAUDE.md; a compile-side census with FIVE controls since revision 2.1, the L0
+edit set and its derived sabotage re-aims). No further panel (lfre1's
+recommendation, accepted): the manager checks each fix directly.
 
 Read before writing: D156; `where_to_start.md` §1-§3 (§2.2 step 1 is CORRECTED in
-place by this revision, `[r2 E1]`); `start_table.md` rev 2.1 (§1.2-§1.6);
+place, `[r2 E1]`, and its G4 is the closed predicate of §4.6 here, `[r2.1 LR-S5]`);
+`start_table.md` rev 2.1 (§1.2-§1.6, §3.7's `fact_deny`);
 the shipped code at this pin (`src/gen/emit_dfa.c` `cand_rows` `:8160`,
 `cand_nodes` `:8053`, `cand_select` `:8447`, `cand_read` `:323`, `dfa_matches`
-`:7706`, `pcrec_emit_dfa_engine` `:11212`; `src/gen/emit_vm.c`'s hybrid entry
-`:12703-12733`, `:13146-13426`); `revend.md` revision 2 (§R2, §0, §5.2 — superseded
-here, §5.1); `litscan_k82h.md` (§1.1a, §3.1a, the rulings); `pf_know.md` §0-§3.
+`:7706`, the three membership readers `:4438`/`:4510`/`:4568`,
+`pcrec_artifact_has_dfa_scan` `:437`, `pcrec_emit_dfa_engine` `:11212`;
+`src/gen/emit_vm.c`'s hybrid entry `:12703-12733`, `:13146-13426`;
+`src/core/compile.c` `:227-231`, `:2381`); `revend.md` revision 2 (§R2, §0, §5.2 —
+superseded here, §5.1); `litscan_k82h.md` (§1.1a, §3.1a, the rulings); `pf_know.md`
+§0-§3; `../dev/walk_survey.md` K3/K4 (§7.3 here).
+
+---
+
+## §R2.1. What revision 2.1 changed, by re-check id
+
+Status column: **A** = applied as the disposition reads; **A′** = applied in the
+closest sound version, the reason and the evidence in the row; **F** = filed (a
+candidate with a trigger, §7). Section numbers are this revision's.
+
+### lfre2 — generality / family / unlocks
+
+| id | status | what changed, and where |
+|---|---|---|
+| LR-G1 | A | FINISH is FOUR rows, `FIN1 nomatch`, `FIN2 report`, `FIN3 verify-at`, `FIN4 search-from`, each with its hat from the finisher route and its AVAILABILITY a predicate on that route's machines (`needs[route] ⊆ built`, §2.7): `verify-at` needs the anchored machine on `CR_DFA`, the attempt machine on `CR_ATTEMPT`, the VM on `CR_VM`. Rev 2's seven rows (three verify-at, two search-from) are gone. `-fno-anchored-dfa` now denies only what it removes, the anchored BUILD (`compile.c:230`, its one reader), and the `match` listing shows it on `verify-at` as a `CandList.fact_deny` (`start_table.md` §3.7's precedent, already used by `vm-anchor-bound` and `end-window`), so the listing bytes stay identical. F-11/Q7 is ONE visible cell kept for L0's no-mover proof: `verify-at`'s `take[CR_ATTEMPT]` omits `AT`. Done at L0 with the fold (§1.3, §2.3, §3.4, §5 L0). |
+| LR-G2 | A | The result is `(I, e, D)`, `e` = "some match starts in `I`" (§1.2). FINISH is keyed on the existing `CT_*` bits; `NOMATCH`/`SPAN`/`ENDSET`/`LOWER`/`AT` stay as LISTING ALIASES of masks; `AT` = `CT_LOWER\|CT_UPPER` at a point, a REQUEST filter that is never degraded (§1.2, §2.2). One vocabulary inside and at the boundary. |
+| LR-G3 | A′ | The body's lowering RECORDS its applied erasure set on the machine it built (`Nfa.erased`: look, atomic, count today; backref/var/Σ*-call when §7.1 adds those arms); for a body in front of a VM finisher, exact ⇔ the set is empty (§1.2). `pcrec_vm_prefilter_window`, `cand_lang_exact` and (d′) (`emit_dfa.c:7361`, through the first) read it at L0, closing the latent hole (BREF/VAR were never tested); it is a stated precondition on §7.1. **Why A′:** `RX_VM_PREFILTER_LANG` reads the record's COUNT member only at L0, byte-identically. Reading the whole set would move the stamp on the 727 superset hybrids that stamp `"exact"` today (19 bench / 708 corpus, census); that blind spot is filed as F-13, a vocabulary mover for a later abi event. The C4 wording is fixed (LR-S2). |
+| LR-G4 | A | §2.7 is new: every row declares `.needs[route]` (machines F/R/A/ATT/VM and the (slot, route) cells it runs); the selected PATH is the closure over the selected rows; MEMBERSHIP = needs ∩ built (`anchored_ok` stays an input). Every reader of "which machines/slots are used" reads it (§2.7's reader table): LR-S1's three readers, the orientation block, `emit_vm.c:11330`, the eight `dfa_engine_is_empty` callers, `pcrec_artifact_has_dfa_scan`'s twelve callers, the F-9/F-10 spellings, `compile.c:229`/`:2381`, `emit_dfa.c:10713`, `cand_finish_of`, `cand_locate_route`. "Off the path ⇒ absence" is ONE generated stamp rule (§5.1), landing at L2.1, whose first absence cell IS D-2. L0's route functions are fields of the derivation; rev 2's L2.0 is absorbed into L0 and disappears. Census control C5 holds today's membership rule against the bytes: 0 / 5,355 (§3.1). |
+| LR-G5 | A | `[GIVEUP-DIFF]` is no new section: `make test-axes`' GIVEUP1 relation (`tests/axes/run_axes.sh:1270-1320`, default vs each deny, an exact-key allowance) becomes DIRECTION-CHECKED from the derived classification, gains a budget-ladder arm, and gets W1's constructed witness, measured here (§1.5, §5). |
+| LR-G6 | A | No REQ_WHY `"locator"`: PRESENCE is asked in BOTH stages and `u.locate.whole` selects `dominated`; REQ_WHY stays four tokens. The `dominated` disjunct and its PRESENCE → LOCATE read move from L3 to L2 (§4.3, §5 L2, §5.1). |
+| LR-G7 | A | `CandSel.lroute` is dropped (no reader; its 0 default meant DFA, C11's shape) (§2.2). |
+| LR-G8 | A | The match-here locator is `caller ⊓ body`: the meet, in the product, of the caller's point request and the body's STATIC verdict. On an `empty` body the meet is `∅`, so the ask is `NOMATCH`, `verify-at` is never asked, and `match_unwrapped_applies`' `!dfa_engine_is_empty` conjunct is dropped. The L0 carve-out: FIN1 lands at L2, so at L0 `search-from` (sound on every shape) takes that `NOMATCH`, today's bytes; at L2 FIN1 takes it, a named mover (53 corpus / 0 bench, §5 L2) (§1.2, §2.3, §2.7). |
+| LR-G9 | A | Notes recorded: the posture split fits rev-end, relaxed-reverse and rev-inner with no new column; an UNDENIABLE row's control is the window-identity twin, its population stratified by L0's derivations and LR-G3's erasure set (§1.5, §6.2). |
+| LR-G10 | A | `[START-LANDING]`'s placement is written up as a filed section that folds §7.3 in: RECOVER rows `pinned` (zero bytes of evidence), `landing` (one), `end-minus-width`, then `reverse-pass`; each hands `SPAN` to FINISH unchanged, NEUTRAL on hybrids, and R leaves the member set through §2.7 with no stamp special case. Trigger MET (walk_survey K3/K4); ranks above REVEND (50.9 vs 30.9 ms est.); utf8 needs a fixed BYTE width (§7.3). |
+| LR-G11 | F | §7.6 `candidate-verify`, with its trigger. |
+| LR-G12 | F | §7.7: match-here across the three routes is ONE row under LR-G1 (`verify-at`); K8's trigger. |
+| LR-G13 | F | §7.8: the bounded-interval hand is `AT` with `t > s` under `search-from`'s filter; VMSEED stage 4's trigger, the entry itself BOONIES. |
+| LR-G14 | F | §7.9 (BOONIES). |
+
+### lfre1 — soundness / table fit
+
+| id | status | what changed, and where |
+|---|---|---|
+| LR-S1 | A | Fixed by §2.7: `dfa_table_name`, `dfa_scan_edge_name`, `dfa_uniform_folds` fold over the path's members, never over a FINISH selection, so on a hybrid (reached through `pcrec_emit_dfa_scan_stamps`, `emit_vm.c:11330`, and the orientation block's `emit_dfa.c:10870`, which VM artifacts reach through `pcrec_emit_prologue`, `emit_vm.c:13964`) nothing asks FINISH on `CR_VM`. The brief's "`emit_vm.c:10870`" is `emit_dfa.c:10870`; the evidence is the call path just named. The three functions, `:10713` and `:11330` are in the edit set; the hybrid witness is `(a+)b` (C5: 1,231 hybrids carry F+R text and none A); a sabotage plant re-keys the readers to FINISH and must abort (§2.3, §2.7, §5 L0). |
+| LR-S2 | A | C4 is relabelled PLUMBING (two readers of `Vm.mrl_win`'s conjuncts agree); the answer-level control is named before L3: E9's window-identity twin against libpcre2 10.46. The projection covers the three window-consumer sites BY CONSTRUCTION: it is computed once, at `Vm.mrl_win`'s one assignment (`emit_vm.c:10368`), and the entry (`:13396-13406`), the RETRY recompute (`:13261-13276`) and the adaptive re-seed (`:13310-13327`) all read that field (§1.2, §3.1, §5 L0, §5 L3). |
+| LR-S3 | A | `ENDSET` never reaches the VM's verify-at: `FIN3`'s `take[CR_VM]` = {`SPAN`, `AT`}; struck from §1.3 and from §1.4's matrix; `ENDSET` on `CR_VM` goes to `search-from` (§1.3, §1.4, §2.3, §4.3). |
+| LR-S4 | A | Both halves: the model gains the edge E-VR (`verify-at` on `CR_VM` fails → RETRY), which the shipped code has, and L3's twin counts its traversals and asserts 0 on exact hybrids (§2.5, §5 L3). |
+| LR-S5 | A | G4 is a CLOSED predicate over node kinds, an exhaustive switch with no `default:`: no member of ANY `A_BREF.refs[]` in `S` names a group of `P`; `A_CALL` and `A_VAR` fail closed; a kind added later (conditionals, callouts) is a compile error at the switch. The DUPNAMES witness `(?J)(?<n>a+)X(?<n>b)?\k<n>` fails it. Stated in BOTH notes (§4.6; `where_to_start.md` §2.2, §2.4). |
+| LR-S6 | A | The edit set grows from 31 to 55 entries (LR-S1's sites, `emit_vm.c:11330` and `:10368`, the F-9 spellings, the LR-G3 arms, the listing sites, the RETRY `.contract` rows) and is re-derived with `sabotage_anchors.py` at `00ddf7d5`: **8 re-aim (S140, S494, S566, S599, S606-S609), 35 rows re-run at L0, 76 after**. Names reconciled (`hand = AT`, not `BOUNDED`). The `(\w+)\1` witness is reached by the path derivation's LOCATE ask on `CR_VM` (§2.7 places it). S88/S141 (`:13405`) are re-RUN after L0, not re-aimed: the projection's record sits at its one assignment, not beside `:13405` (§5 L0). |
+| LR-S7 | A | L2's inbox note names pcrec-bench's `tools/selfcheck.py` pins (read at `76e13c1d`): `"dfa_start": "reverse-pass"` at `:3705-3707` (provably-empty) and `:3729-3731` (anchored attempt), exactly L2.1's movers; the provably-empty case's `"dfa_match": "search-filter"` (`:3707`), LR-G8's L2 mover; `"dfa_scan": "unanchored"` at `:3552-3554`, a closed-vocabulary reader that does not move (`foo[0-9]+bar` has no end pin); and the adapter's closed `dfa_match` enum (`adapter.py:1011-1013`) (§5 L2). |
+| LR-S8 | A | Absorbed by §2.7: F-9 is FOUR spellings (`pcrec_artifact_has_dfa_scan`, `emit_dfa.c:10713`'s `(!vm \|\| prefilter)`, `:10922`'s `dfa_body`, `compile.c:2381`), all read the path's body bit at L0; `compile.c:229` reads the derivation's NEEDS half; `-fno-anchored-dfa` is read once, at `compile.c:230`. |
+| LR-S9 | A | Same as LR-S1: within L0 the derivation lands before the fold. |
+| LR-S10 | A | `match_api.md:4731-4733`'s "the O(n) forward+reverse table pair" is false on `pinned` artifacts today; its spec hunk is owed by L0 (drafted in §5 L0). |
+| LR-S11 | A | `.contract = CG_FIXED` also on RETRY `exact`, `clamped` and `retry-anchored`, citing `emit_dfa.c:8331-8345`'s rulings; their control is the window-identity twin, not a deny differential (§1.5). |
+| LR-S12 | A | The size ladder's drop rungs get a rev-end clause stated through §2.7: a rung applies only if the member set it leaves is a strict subset of the one before; under form C's T2, dropping A turns T2 into T3 and ADDS F, so `SDR_NO_ANCHORED` skips there (§5 L2). |
+| LR-S13 | A | LR-G2 resolves the key; `AT`'s `I` is a request filter, never degraded; the FINISH row ids are renamed `FIN1`-`FIN4` (rev 2's F1-F7 and rev 1's F6 collided with each other and with the findings F-n) (§1.2, §2.3). |
 
 ---
 
@@ -88,54 +144,57 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
 
 1. **The model (§1).** A LOCATOR is a DFA walk named by its seed(s), its direction,
    the slice of the pattern its machine covers and that machine's LANGUAGE (exact,
-   or a superset by erasure). `[r2 G2]` It hands ONE result type, a product: a start
-   interval `[s, t]`, a bit saying whether a match is PROVEN to start at `s`, and an
-   end set `D` that contains the priority end at `s`. Revision 1's six types are
-   points of it (`SPAN` = proven, `D = {e}`; `ENDSET` = proven, `|D| > 1`; `LOWER` =
-   `[s, ∞)` unproven; `NOMATCH` = the empty interval; the caller's match-here = `[s, s]`
-   unproven), and `CAND` is `LOWER` (`[r2 G1]`): "one try, then re-locate" vs "an
-   attempt loop" is the re-entry policy RETRY already chooses. A superset locator's
-   result degrades to `{LOWER, NOMATCH}` by one lattice projection. `[r2 G3]` A
-   FINISHER is one of four actions — report, nomatch, verify-at `s`, search-from `s`
-   — wearing the DFA or the VM hat of the route it runs on. Obligations O1-O10 are
-   stated on the two axes (§1.4); give-up posture is two columns, a derived
-   classification and a declared contract, with a give-up differential as the
-   independent control (§1.5, `[r2 G7]`).
+   or a superset by erasure). It hands ONE result type, a product
+   `(I, e, D)` **`[r2.1 LR-G2]`**: a start interval `I = [s, t]` (every match start
+   ≥ `lo` lies in it), `e` = "some match starts in `I`", and an end set `D` that
+   contains the priority end of the leftmost match. FINISH is keyed on the existing
+   `CT_*` bits; the names `NOMATCH`, `SPAN`, `ENDSET`, `LOWER` and `AT` are listing
+   aliases of masks (`AT` = `CT_LOWER|CT_UPPER` at a point, a caller's request that is
+   never degraded). `CAND` is `LOWER` (`[r2 G1]`). A superset locator's result degrades
+   to `{LOWER, NOMATCH}` by one lattice projection, applied where the body's lowering
+   RECORDED an erasure (`[r2.1 LR-G3]`). A FINISHER is one of four rows — `nomatch`,
+   `report`, `verify-at`, `search-from` — wearing the DFA or the VM hat of the route
+   it runs on, its availability a predicate on that route's machines
+   (`[r2.1 LR-G1]`). Obligations O1-O10 are stated on the product (§1.4); give-up
+   posture is a derived classification plus a declared contract (§1.5).
 2. **The table (§2).** Two new slots of the ONE `cand_rows[]` (D151 add. 3 Q2):
-   `LOCATE`, a BODY slot asked once per DFA-shaped body (and once by an artifact with
-   no DFA body, on `CR_VM`), and `FINISH`, a slot block keyed (finisher route, shape),
-   asked by each caller-facing entry. `[r2 G4]` FINISH is not new machinery: it
-   promotes `cand_nodes`' VERIFIER/LOOP/CALLER and FOLDS `dfa_matches[]`, which is
-   already a first-match choice with a deny (`-fno-anchored-dfa`). `[r2 C1]`
-   Totality is keyed on (locator route, finisher route). `[r2 G6]` Relocate goes to
-   the route's FALLBACK locate row with a lexicographic progress measure, checked on
-   every succ cycle.
+   `LOCATE`, a BODY slot, and `FINISH`, a slot block keyed (finisher route, hand
+   mask), asked by each caller-facing entry. FINISH promotes `cand_nodes`'
+   VERIFIER/LOOP/CALLER and FOLDS `dfa_matches[]`. Totality is keyed on (locator
+   route, finisher route); relocate goes to the route's fallback locate row with a
+   lexicographic progress measure. **`[r2.1 LR-G4]` Every row declares `.needs`**
+   (machines F/R/A/ATT/VM and the (slot, route) cells it runs), and §2.7's ONE
+   derivation computes the selected PATH as the closure over the selected rows:
+   membership = needs ∩ what was built. Every reader of "which machines and slots
+   does this artifact use" reads it, which is what fixes LR-S1 (the membership
+   readers run on hybrids and must never ask FINISH there).
 3. **The family (§3).** Every shipped start mechanism casts as (seed, direction,
    language) → a point of the product; the census puts every compiled artifact in
-   exactly one of eleven (locator, finisher) pairs (bench 343, corpus 5,012), now under
-   FOUR controls, all at 0 disagreements (§3.1, `[r2 C10]`). **No shipped output
-   falls outside the product, so D156's revisit trigger does not fire**; revision 1's
-   proposed wording amendment (add `CAND`, F-6) is WITHDRAWN (`[r2 G1]`).
+   exactly one of eleven (locator, finisher) pairs (bench 343, corpus 5,012), under
+   FIVE controls, all at 0 disagreements; C5 (`[r2.1 LR-G4]`) holds today's
+   machine-membership rule against the emitted bytes, 0 / 5,355 (§3.1). **No shipped
+   output falls outside the product, so D156's revisit trigger does not fire.**
 4. **REVEND (§4).** `rev-end` is one LOCATE row (route `CR_DFA`, predicate `end_pin`,
-   deny `-fno-rev-end`); its tie arms are FINISH's `verify-anchored` (T2) and
-   `search-from` (T3) rows — the folded `dfa_matches[]` — and whether a tie can arise
-   (`nl_last`, T1) is a property of the row's hand shapes. Stage 2 (captures) is the
-   same row with the VM hat; NEUTRAL by window identity (E9 upheld it: 0 / 5,199,120)
-   but FILED on its population (0 bench / 13 corpus). Its PRESENCE deference is a read
-   on `dominated`, not a new row (`[r2 G9]`). The relaxed-reverse locator is sound with
-   the reference's own fold, the union over `refs[]`, the closure on the lowered set
-   and every Σ* source gated (`[r2 E4-E7]`): FILED. rev-inner needs `S` free of
-   references into `P` (`[r2 E1]`, G4), or it hands `LOWER` to the attempt loop.
-5. **Build (§5).** L0, a no-mover cut to the panel's list (`[r2 G12]`), its re-aims
-   DERIVED (6 re-aim, 18 re-run, `[r2 C3]`); L1 = `revend.md` S0+S1; L2 = REVEND stage
-   1, the abi 71 → 72 event, as three separable commits (L2.0 the machine-membership
-   no-mover, L2.1 D-2's `attempt-start`, L2.2 `rev-end`) with the bench adapter note
-   (`[r2 C7]`); `[GIVEUP-DIFF]` before any VM-finisher LOCATE row; L3-L5 FILED. The
-   stamp rule (§5.1) names the locator once, on `RX_DFA_SCAN`, adds one REQ_WHY token
-   and supersedes `revend.md` §5.2 (`[r2 C6]`).
-6. **Questions (§8)** restated under the revised model: L0's place, stage 2, the stamp
-   RULE, the one-way spec sentence, the relaxed locator's deny, rev-inner's reduced
-   VM value after E1, and the ATTEMPT match-here form the fold exposes.
+   deny `-fno-rev-end`, needs R); its tie arms are FINISH's `verify-at` (T2) and
+   `search-from` (T3). Stage 2 (captures) is the same row with the VM hat, NEUTRAL by
+   window identity, FILED on its population; under it `ENDSET` goes to `search-from`,
+   never the VM's verify-at (`[r2.1 LR-S3]`). PRESENCE is asked in BOTH stages and
+   reads `dominated` through the locator's `.whole` (`[r2.1 LR-G6]`). The
+   relaxed-reverse locator is sound as specified: FILED. rev-inner needs the closed
+   predicate G4 (`[r2.1 LR-S5]`), or it hands `LOWER` to the attempt loop.
+5. **Build (§5).** L0, a no-mover: the two slots, §2.7's path derivation and its
+   readers, `FIN3 verify-at` and `FIN4 search-from` (the `dfa_matches[]` fold), the
+   erasure record, the data corrections and a spec hunk for `match_api.md:4731`
+   (`[r2.1 LR-S10]`); its re-aims DERIVED from a 55-entry edit set (8 re-aim, 35
+   re-run, `[r2.1 LR-S6]`). L1 = `revend.md` S0+S1. L2 = REVEND stage 1, the abi
+   71 → 72 event, as two separable commits: L2.1 the GENERATED stamp rule (its first
+   absence cell is D-2's `attempt-start`) and L2.2 `rev-end` with FIN1/FIN2; rev 2's
+   L2.0 is absorbed into L0. `[GIVEUP-DIFF]` is GIVEUP1 made direction-checked, with a
+   ladder arm and W1's witness (`[r2.1 LR-G5]`). L3-L5 FILED; `[START-LANDING]` is
+   placed and filed (§7.3).
+6. **Questions (§8)** restated under revision 2.1, with both critics' judgments where
+   they gave one: L0's scope, stage 2, the stamp RULE, the one-way spec sentences, the
+   relaxed locator's deny, rev-inner's rank after E1, and the ATTEMPT match-here form.
 
 ---
 
@@ -161,101 +220,167 @@ on `CR_VM`. The chain stays as it is; this note names its OUTPUT.
 
 The match-here entry (`<prefix>_match`) has a locator too, the trivial one:
 `caller`, which hands the position the caller gave (`[r2 G4(b)]`, §3.4).
+**`[r2.1 LR-G8]`** It is composed with the body: the match-here entry's locator is
+`caller ⊓ body`, the MEET (§1.2's order) of the caller's point request and the body
+LOCATE row's STATIC verdict. Today only `empty` has one (`I = ∅` for every `lo`), so
+on an `empty` body the meet is `∅` and the entry asks FINISH for `NOMATCH`; on every
+other body the meet is the caller's request, `AT`. This is why `verify-at` needs no
+`!dfa_engine_is_empty` conjunct: it is never asked there.
 
-### 1.2 The result is a product `[r2 G2]`
+### 1.2 The result is a product `[r2 G2, r2.1 LR-G2]`
 
-A locator hands `r = (I, p, D)`, relative to its accepted lower bound `lo`:
+A locator hands `r = (I, e, D)`, relative to its accepted lower bound `lo`:
 
 | component | meaning | the locator's obligation |
 |---|---|---|
 | `I = [s, t]` | every match start ≥ `lo` lies in `I`; `t` may be `∞` | no match starts in `[lo, s)` and none above `t`; `I = ∅` (written `s > t`) means NO match from `lo` |
-| `p` | proven: a match DOES start at `s` | under `p`, `s` is the leftmost start ≥ `lo` (O1); without `p`, nothing about `s` beyond the bound |
-| `D` | a set of positions that contains the PRIORITY end of the match at `s` | meaningful under `p`; `D = ⊤` means "unknown" (every position ≥ `s`) |
+| `e` | **`[r2.1 LR-G2]`** EXISTENCE: some match starts in `I` | with `I` a point `[s, s]`, `e` makes `s` the leftmost start ≥ `lo` (O1); with `t > s` it proves only that one exists |
+| `D` | a set of positions that contains the PRIORITY end of the leftmost match | meaningful under `e` at a point; `D = ⊤` means "unknown" (every position ≥ `s`) |
 
-Revision 1's types are points of it, and the FINISH key is the SHAPE of the point,
-a five-valued projection:
+Revision 2's bit `p` ("a match starts AT `s`") could not say "a match exists in
+`[s, t]`", which `[OPT-VMSEED]` stage 4's seed window and §7.5's subset locator both
+need (LR-G2); `p` is `e` at a point.
 
-| shape (FINISH key) | point | rev 1 type | shipped producer |
-|---|---|---|---|
-| `NOMATCH` | `I = ∅` | `NOMATCH` | PRESENCE / WIDTH verdicts, the empty engine |
-| `SPAN` | `p`, `D = {e}` | `SPAN` | the composite's RECOVER (exact language) |
-| `ENDSET` | `p`, `\|D\| > 1` | `ENDSET` | `rev-end`'s tie (L2); **no cap on `\|D\|`** |
-| `LOWER` | `¬p`, `t = ∞` | `LOWER` **and** `CAND` (`[r2 G1]`) | WINDOW W1, FIRST's handoff, RETRY's re-seed, the VM-route composite, any superset locator |
-| `AT` | `¬p`, `I = [s, s]` | (none in rev 1) | the `caller` locator of the match-here entry (`[r2 C1]`) |
+**The FINISH key is the hand's `CT_*` mask `[r2.1 LR-G2]`.** One vocabulary serves
+the composite's inside and the LOCATE → FINISH boundary; rev 2's five-valued shape
+key is gone and its names survive as LISTING ALIASES of masks:
+
+| alias | `CT_*` mask | point of the product | rev 1 type | shipped producer |
+|---|---|---|---|---|
+| `NOMATCH` | `CT_VERDICT` | `I = ∅` | `NOMATCH` | PRESENCE / WIDTH verdicts, `empty`, `caller ⊓ empty` |
+| `SPAN` | `CT_START` | `[s, s]`, `e`, `D = {e}` | `SPAN` | the composite's RECOVER (exact language) |
+| `ENDSET` | `CT_START \| CT_ENDSET` | `[s, s]`, `e`, `\|D\| > 1`; **no cap on `\|D\|`** | `ENDSET` | `rev-end`'s tie (L2) |
+| `LOWER` | `CT_LOWER` | `[s, ∞)`, `¬e` | `LOWER` **and** `CAND` (`[r2 G1]`) | WINDOW W1, FIRST's handoff, RETRY's re-seed, the VM-route composite, any superset locator |
+| `AT` | `CT_LOWER \| CT_UPPER`, **at a point** | `[s, s]`, `¬e`: a REQUEST | (none) | the `caller` locator of the match-here entry |
+| (window, filed §7.8) | `CT_LOWER \| CT_UPPER`, `t > s` | `[s, t]`, `¬e` | (none) | `[OPT-VMSEED]` stage 4 |
+| (exists, filed §7.5) | `CT_LOWER \| CT_UPPER \| CT_START` | `[s, t]`, `e` | (none) | a subset locator (BOONIES) |
+
+"At a point" is a property of the ASK, not a bit: the asker states it
+(`CandSel.point`; `caller` always asks a point), and only `verify-at`'s `take` cells
+read it. **`AT` is never degraded `[r2.1 LR-S13]`**: its `I` is the caller's filter
+("a match starting exactly at `s`"), not a locator's claim, so the boundary
+projection below never touches it; `search-from` honours it as a filter.
 
 **`CAND` is `LOWER` `[r2 G1]`.** Their obligation cells were identical in
-revision 1's matrix (O1 O5-O9 vs O5 O6 O9, the difference being O1, which is a
-property of the FINISHER that reads the start, not of the hand). "One anchored try,
-then re-locate" versus "an attempt loop from `s`" is a RE-ENTRY POLICY, and the
-table already has the slot that chooses it: RETRY (`exact` / `clamped` re-seed vs
-`fixed` step vs `adaptive`), and the composite's own verifier resume (NEXT's
-re-seed). In code, `CT_CAND` stays as the spelling of NEXT → VERIFIER inside the
-composite (an edge that never crosses the LOCATE → FINISH boundary); at the boundary
-there is no `CAND`.
+revision 1's matrix. "One anchored try, then re-locate" versus "an attempt loop from
+`s`" is a RE-ENTRY POLICY, which RETRY already chooses. In code `CT_CAND` stays the
+spelling of NEXT → VERIFIER inside the composite (an edge that never crosses the
+LOCATE → FINISH boundary); at the boundary there is no `CAND`.
 
 **Degradation is a lattice projection.** Order points by information: `r ⊑ r′`
-(`r′` says no more than `r`) iff `I ⊆ I′`, `p ≥ p′` and `D ⊆ D′`. A locator over a
-SUPERSET language `L′ ⊇ L` hands `degrade(r) = ([s, ∞), ¬p, ⊤)`, or `∅` unchanged:
-the leftmost `L′` start is ≤ the leftmost `L` start (every `L` match is an `L′` match
-with the same span), so the lower bound survives; nothing else does — not `p` (an
-`L′` match at `s` proves no `L` match), not `t` (the `L` start may be anywhere above),
-not `D` (`atomic_groups_design.md`'s 122 refuting cells; the `mrl_win` gate). And
-`NOMATCH` survives (`L ⊆ L′`). So a superset locator hands `{LOWER, NOMATCH}`
-(`[r2 G1]`; revision 1's "at most `CAND`" and §4.5's `LOWER` were the same claim
-spelled twice). `pf_know.md` §0 measured exactly this split: the START is a sound
-lower bound on every hybrid, the span exact only under `Vm.mrl_win`.
+(`r′` says no more than `r`) iff `I ⊆ I′`, `e ≥ e′` and `D ⊆ D′`; the MEET `r ⊓ r′`
+is `(I ∩ I′, e ∨ e′, D ∩ D′)` where both are sound (LR-G8's composition, §1.1). A
+locator over a SUPERSET language `L′ ⊇ L` hands `degrade(r) = ([s, ∞), ¬e, ⊤)`, or
+`∅` unchanged: the leftmost `L′` start is ≤ the leftmost `L` start, so the lower bound
+survives; nothing else does — not `e`, not `t`, not `D` (`atomic_groups_design.md`'s
+122 refuting cells; the `mrl_win` gate). `NOMATCH` survives (`L ⊆ L′`). So a superset
+locator hands `{LOWER, NOMATCH}`. `pf_know.md` §0 measured exactly this split.
 
-**Where the projection is applied `[r2 C1]`.** At the LOCATE → FINISH boundary,
-not on a row. The composite's RECOVER hands `SPAN` truthfully OF ITS BODY'S
-LANGUAGE (the body is the capture-erased, possibly erased-further pattern); whether
-that language is `L` is a fact about the body, `cand_lang_exact(cx) =
-fit.chosen == ENGM_DFA || pcrec_vm_prefilter_window(cx)`, and the boundary applies
-`degrade` where it is false. `pcrec_vm_prefilter_window` takes a `Ctx` and is the
-function `Vm.mrl_win` is assigned from (`emit_vm.c:10368`), so the boundary needs no
-`Vm`, and the census's control C4 holds the derivation against the independent
-`RX_VM_RESEED "exact"` stamp (759 / 734, 0 disagreements, §3.1). Revision 1's F-3
-("the inlined RECOVER declares `CT_START` where it hands `CAND`") was right about the
+**Where the projection is applied, and what it reads `[r2 C1, r2.1 LR-G3, LR-S2]`.**
+At the LOCATE → FINISH boundary, not on a row. The composite's RECOVER hands `SPAN`
+truthfully OF ITS BODY'S LANGUAGE; whether that language is `L` is a fact about the
+body, and revision 2.1 makes it a RECORDED fact rather than a list of known erasures:
+
+- **The erasure record.** `src/ir/nfa.c`'s lowering writes, into the machine it
+  builds, the set of language-widening erasures it APPLIED (`Nfa.erased`: `LOOK` at
+  the `A_LOOK` arm `:710`, `ATOMIC` at the `A_ATOMIC` arm `:905`, `COUNT` where the
+  collapse fires `:796-799`). The arms that fail into the internal error today
+  (`A_BREF`, `A_VAR`, `A_CALL` in a cycle) record `BREF`, `VAR`, `CALLSTAR` the day
+  §7.1 gives them a relaxation, which is why this is §7.1's PRECONDITION: without it
+  the relaxed prefilter would read EXACT (no listed erasure fires), the boundary would
+  hand `SPAN`, and `mrl_win` would use a superset's window END as a ceiling, the
+  atomic-groups 122-cell class.
+- **The rule.** For a body in front of a VM finisher, `exact ⇔ Nfa.erased = ∅`. A body
+  whose finisher is a DFA is exact by D67/SR-8's routing (any erasure that could widen
+  its language forces the VM), so `cand_lang_exact(cx) = path.finish != CR_VM ||
+  pcrec_vm_prefilter_window(cx)`, and `pcrec_vm_prefilter_window` becomes `fit.prefilter
+  && body.erased == ∅`.
+- **Its readers.** `pcrec_vm_prefilter_window` (hence `Vm.mrl_win`, `emit_vm.c:10368`),
+  `cand_lang_exact`, the handoff's (d′) decline (`emit_dfa.c:7361`, through the first),
+  and `RX_VM_PREFILTER_LANG` (`emit_vm.c:11239`), which at L0 reads the record's `COUNT`
+  member only, byte-identically; its blind spot is F-13 (§10).
+- **The no-mover obligation.** The record must reproduce today's `PF_KIND_ATOMIC` /
+  `PF_KIND_LOOK` / `prefilter_collapsed` conjuncts on every hybrid. The arms are
+  reached exactly where the kinds fact sees the node, by construction of both walks,
+  but that is an argument; L0's gate is the emit sweep plus a direct compare of the
+  two predicates over every census hybrid, and a disagreement is a finding before the
+  commit lands. A discharged possessive (a proven no-op `A_ATOMIC`) on a hybrid reads
+  inexact under both; reading it exact would be a sound MOVER and is not taken (D77).
+- **Where it is computed.** Once, at `Vm.mrl_win`'s one assignment (`emit_vm.c:10368`,
+  `v->mrl_win = cand_lang_exact(cx)` on the VM route), with ONE trace record
+  (`CANDTRACE BOUNDARY vm <SPAN|LOWER>`). The three consumers of the inlined body's
+  window — the entry (`:13396-13406`), the RETRY recompute (`:13261-13276`) and the
+  adaptive re-seed (`:13310-13327`, which reads only `window[0][0]`, the `LOWER` half)
+  — all read that field, so the projection covers all three BY CONSTRUCTION
+  (`[r2.1 LR-S2]`); rev 2's record at the entry alone would have covered one.
+
+The census's C4 is PLUMBING, not a control (`[r2.1 LR-S2, LR-G3]`): `RX_VM_RESEED
+"exact"` is the RETRY row whose predicate IS `Vm.mrl_win`, so C4 checks that two
+readers of one derivation agree. The answer-level control is E9's window-identity
+twin against libpcre2 (§6.2), named before L3. Revision 1's F-3 was right about the
 effect and wrong about the fix: no RECOVER row changes; the boundary does.
 
-**What becomes of the remaining enum bits** (spellings in code stay, per G2):
+**What becomes of the remaining enum bits** (all stay spellings in code):
 
 | bit | today | in the product |
 |---|---|---|
-| `CT_LOWER` | WINDOW, FIRST, RETRY hands; most slots accept | the `LOWER` shape; inside the composite, unchanged |
-| `CT_UPPER` | BOUND → LOOP | the interval's `t`; stays the spelling of BOUND → LOOP inside the composite. No locator hands `t < ∞` across the boundary except `caller` (`AT`); `[OPT-VMSEED]` stage 4's seed window would be the first (§7) |
+| `CT_LOWER` | WINDOW, FIRST, RETRY hands; most slots accept | `I`'s lower end; the `LOWER` key, alone |
+| `CT_UPPER` | BOUND → LOOP | `I`'s upper end `t`; with `CT_LOWER`, the `AT` key (a point) and §7.8's window |
 | `CT_CAND` | NEXT, RETRY hand; RETRY, VERIFIER accept | `LOWER` (G1); kept only as NEXT → VERIFIER's spelling inside the composite |
-| `CT_WINDOW` | accepted by VERIFIER, handed by NO row | **deleted at L0** (`[r2 G2, C12]`); the ceiling a VM verifier reads is `max(D)` of a `SPAN`/`ENDSET`, and O4 states its obligation |
-| `CT_VERDICT` | PRESENCE / WIDTH → CALLER | the `NOMATCH` shape (or "pass", the bound unchanged) |
+| `CT_WINDOW` | accepted by VERIFIER, handed by NO row | **deleted at L0** (`[r2 G2, C12]`); the ceiling a VM verifier reads is `e` of a `SPAN`, and O4 states its obligation |
+| `CT_VERDICT` | PRESENCE / WIDTH → CALLER | `I = ∅`, the `NOMATCH` key (or "pass", the bound unchanged) |
 | `CT_HIT` | PRESENCE → FIRST | inside the composite only (the gate's landmark); not a locator output |
-| `CT_START` | RECOVER → CALLER | the `SPAN` shape's `s` |
-| `CT_ENDSET` (new, L2) | — | the `ENDSET` shape |
+| `CT_START` | RECOVER → CALLER | `e` at a point with `D = {e}`, the `SPAN` key |
+| `CT_ENDSET` (new, L2) | — | qualifies `CT_START`: `\|D\| > 1`, the `ENDSET` key |
 
-### 1.3 FINISH: four actions, two hats `[r2 G3, G4]`
+### 1.3 FINISH: four rows, two hats `[r2 G3, G4, r2.1 LR-G1, LR-S3]`
 
-A finisher consumes one shape and returns the answer, or relocates. Its ACTION is
-chosen by the shape; its HAT by the route it runs on (the entry's: `cand_finish_of`,
-§2.6), which is D156's "capture need" (the VM hat iff `fit.chosen == ENGM_VM`).
+A finisher consumes one hand and returns the answer, or relocates. Revision 2.1 makes
+the four ACTIONS the four ROWS (rev 2 had seven: three verify-at rows and two
+search-from rows split by hat and machine). Each row's HAT is the finisher route's
+(`path.finish`, §2.7), which is D156's "capture need" (the VM hat iff `fit.chosen ==
+ENGM_VM`); its AVAILABILITY on a route is `needs[route] ⊆ built`, a predicate on that
+route's machines, not a second row.
 
-| action | takes | DFA hat (`CR_DFA` / `CR_ATTEMPT`) | VM hat (`CR_VM`) | shipped today as |
-|---|---|---|---|---|
-| **report** | `SPAN` | return `(s, e)` | — (the VM must write groups ≥ 1: verify-at instead) | every DFA artifact's return (CALLER) |
-| **nomatch** | `NOMATCH` | return 0 | return 0 | PRESENCE / WIDTH verdicts, the empty engine (CALLER) |
-| **verify-at `s`** | `SPAN` (VM), `ENDSET`, `AT` | the anchored machine from `s`: `adfa` on `CR_DFA` (built only under `anchored_ok`, deny `-fno-anchored-dfa`), the attempt machine itself on `CR_ATTEMPT` (always built) | one anchored VM attempt at `s`, ceiling `max(D)` where the artifact clamps, `n` otherwise | `dfa_matches[0]` `unwrapped`; ATTEMPT's fused per-candidate run (VERIFIER); the exact hybrid's attempt at `window[0][0]`; the VM's `_match` |
-| **search-from `s`** | `ENDSET`, `LOWER`, `AT` | the route's FALLBACK locate row (the composite) from `lo = s`, filtered to `I` (a start above `t` is NOMATCH) | the attempt loop from `s`; its loop head re-locates through the inlined composite where a prefilter exists; RETRY on failure | `dfa_matches[1]` `search-filter` (`AT`, `t = s`); the VM-only loop and the inexact hybrid (LOOP + RETRY) |
+| row | `take` per route (aliases) | DFA hat (`CR_DFA` / `CR_ATTEMPT`) | VM hat (`CR_VM`) | needs per route | shipped today as |
+|---|---|---|---|---|---|
+| `FIN1 nomatch` | `NOMATCH` everywhere | return 0 | return 0 | — | PRESENCE / WIDTH verdicts, the empty engine (CALLER) |
+| `FIN2 report` | `SPAN` on DFA / ATTEMPT; not routed on `CR_VM` (the VM must write groups ≥ 1) | return `(s, e)` | — | — | every DFA artifact's return (CALLER) |
+| `FIN3 verify-at` | `CR_DFA`: `ENDSET`, `AT`; `CR_ATTEMPT`: `ENDSET` (**not `AT`: the F-11 cell**, Q7); `CR_VM`: `SPAN`, `AT` (**never `ENDSET`**, LR-S3) | the anchored run from `s`: `adfa` on `CR_DFA`, the attempt machine on `CR_ATTEMPT` | one anchored VM attempt at `s`, ceiling `e` (a `SPAN`) or `n` (an `AT`) | `CR_DFA`: A; `CR_ATTEMPT`: ATT; `CR_VM`: VM | `dfa_matches[0]` `unwrapped`; ATTEMPT's fused per-candidate run (VERIFIER); the exact hybrid's attempt at `window[0][0]`; the VM's `_match` |
+| `FIN4 search-from` | `ENDSET`, `LOWER`, `AT` (point or window), and, at L0 only, the `NOMATCH` of `caller ⊓ empty` (LR-G8) | relocate: a LOCATE ask from `lo = s` (§2.5), filtered to `I` | the attempt loop from `s`; its loop head re-locates through the inlined composite where a prefilter exists; RETRY on failure | the LOCATE cell on the route (the relocate target), hence that row's needs | `dfa_matches[1]` `search-filter`; the VM-only loop and the inexact hybrid (LOOP + RETRY) |
+
+- **Availability, not a deny `[r2.1 LR-G1]`.** `verify-at` on `CR_DFA` is available
+  where the anchored machine was BUILT (`anchored_ok`, an input). `-fno-anchored-dfa`
+  denies what it removes, the build (`compile.c:230`, the flag's one reader; today the
+  flag is read there AND as `dfa_matches[0]`'s deny, LR-S8's "half true"). The `match`
+  listing keeps showing the flag on the `unwrapped` row as a `CandList.fact_deny`, a
+  FACT's deny the listing shows and the walk never reads (`start_table.md` §3.7, the
+  shape `vm-anchor-bound` and `end-window` already use), so `--list-axes`' `match`
+  lines are byte-identical.
+- **Why `verify-at` on `CR_VM` never takes `ENDSET` `[r2.1 LR-S3]`.** The VM hat's
+  verify is NEUTRAL only when its ceiling equals the deny arm's, and on a clamped
+  hybrid that ceiling is the composite's priority end, which only the composite
+  computes. `max(D)` is sound (O4(ii)) but moves the (start, ceiling) pair (O4(i)), and
+  `n` moves it the other way. So `ENDSET` on `CR_VM` goes to `search-from`, whose loop
+  head relocates through the composite. Revision 2's §1.3 cell ("ceiling `max(D)` where
+  the artifact clamps") and its matrix cell are struck; §4.3 was already right.
+- **The F-11 cell.** On `CR_ATTEMPT` the attempt machine always exists, so an
+  availability-only `verify-at` would take the match-here `AT` and move 20 bench / 308
+  corpus `_match` bodies from `search-filter` to one anchored run. L0 is a no-mover, so
+  `take[CR_ATTEMPT]` omits `AT`: ONE visible cell, deleted by Q7's row when measured.
 
 `cand_nodes`' VERIFIER, LOOP and CALLER are not separate successors of FINISH: they
-ARE its actions (VERIFIER = verify-at, LOOP = search-from's VM hat, CALLER = report /
-nomatch). After L0 "verify a candidate" has ONE home. D156's finisher list (return,
-anchored DFA run, VM over the span, VM search from a lower bound) is the same four
-actions with the hats spelled out; the one D156 does not name, relocate, is
-search-from with the DFA hat — shipped twice already (the K82 handoff's `LOWER` into
-NEXT inside the composite, and `search-filter`). Revision 1's F6 ("vm-relocate") is
-search-from with the VM hat entered at its loop head (§4.3).
+ARE its rows' actions (VERIFIER = `verify-at`, LOOP = `search-from`'s VM hat,
+CALLER = `report` / `nomatch`). After L0 "verify a candidate" has ONE home. D156's
+finisher list (return, anchored DFA run, VM over the span, VM search from a lower
+bound) is the same four rows with the hats spelled out; the one D156 does not name,
+relocate, is `search-from` with the DFA hat — shipped twice already (the K82 handoff's
+`LOWER` into NEXT inside the composite, and `search-filter`).
 
-### 1.4 The exactness obligations, on the two axes `[r2 G2]`
+### 1.4 The exactness obligations, on the product `[r2 G2, r2.1 LR-G2]`
 
-- **O1 leftmost-first start.** Under `p`, `s` is the smallest start ≥ `lo` of any
-  match of the LOCATOR's language; it is the answer's start iff that language is `L`
+- **O1 leftmost-first start.** Under `e` at a point (`I = [s, s]`; revision 2's
+  `p`), `s` is the smallest start ≥ `lo` of any match of the LOCATOR's language; it is the answer's start iff that language is `L`
   (§1.2's boundary projection). PCRE2 takes the smallest start with any match;
   priority acts only among ends at that start (`revend.md` §3.1).
 - **O2 end priority.** `D` contains the priority end at `s` (PCRE2's, not the
@@ -303,18 +428,18 @@ search-from with the VM hat entered at its loop head (§4.3).
 - **O10 cost.** A locator costs at most the deny arm's locator, up to a constant
   (REVEND: depth from `n` ≤ `n − lo`).
 
-**The pair matrix on the two axes.** Rows are shapes, columns actions; a dash is a
+**The pair matrix.** Rows are hand keys (aliases), columns FINISH rows; a dash is a
 pair FINISH never forms.
 
-| shape ↓ / action → | report | nomatch | verify-at | search-from |
+| hand ↓ / row → | `FIN2 report` | `FIN1 nomatch` | `FIN3 verify-at` | `FIN4 search-from` |
 |---|---|---|---|---|
 | `SPAN` | DFA: O1 O2 O5-O7 | — | VM: O1-O7, ceiling `e` (O4 NEUTRAL by window identity) | — |
-| `ENDSET` | — | — | DFA: O1 O2 O5-O8; VM: O1-O8, ceiling `max(D)` only where unclamped (§4.3) | O1 O5-O9; VM: the loop head's priority end is the ceiling |
+| `ENDSET` | — | — | DFA only: O1 O2 O5-O8 (**`[r2.1 LR-S3]`** the VM cell is struck: `ENDSET` never reaches the VM's verify-at) | O1 O5-O9; VM: the loop head's priority end is the ceiling |
 | `LOWER` | — | — | — | O3-O7 O9 (VM: O4 ONE_WAY when it skips) |
-| `AT` | — | — | O1-O3 O5-O7 (DFA: `unwrapped`; VM: the VM's `_match`) | DFA: O5-O7, filter `start == s` |
-| `NOMATCH` | — | O5 | — | — |
+| `AT` | — | — | O1-O3 O5-O7 (DFA: `unwrapped`; VM: the VM's `_match`; not on `CR_ATTEMPT`, the F-11 cell) | DFA: O5-O7, filter `start == s` |
+| `NOMATCH` | — | O5 | — | O5, at L0 only (`caller ⊓ empty`, LR-G8): the relocated search answers 0 |
 
-### 1.5 The give-up posture: two columns `[r2 G7]`
+### 1.5 The give-up posture: two columns `[r2 G7, r2.1 LR-G5, LR-G9, LR-S11]`
 
 Revision 1 proposed "derive the posture from the pair". The panel showed it is not a
 function of the pair: (a) W1 on `CR_VM` is NEUTRAL on an exact hybrid (the exact
@@ -338,33 +463,67 @@ So two columns:
   classification, it had no reader, and its zero value is how F-1 happened (W1 read
   NEUTRAL by default). Deleting the declaration is the F-1 correction; no zero default
   is left to be wrong.
-- **Contract (declared, checked).** `.contract = CG_FIXED` where a ruling forbids any
-  move of the give-up surface (today: the handoff, K82 Q10). An unset contract is a
-  wildcard (memory `pcrec-no-silent-defaults`: an unused field is a wildcard, not a
-  presumed value). The CHECK is behavioural (below), not a comparison of two columns.
-- **The independent control: a give-up differential.** For each row with a deny
-  flag on a VM route, compile every witness twice (default, deny), run each at a swept
-  budget ladder (steps and work, `budget` directives, ~19 points, `E3`'s shape), and
-  compare the per-budget outcome (answer vs give-up): FIXED and NEUTRAL require
-  identical outcome sets; ONE_WAY allows default-answers-where-deny-gives-up and
-  forbids the converse. Witnesses: K82h §3.1a's 35 budget / `gu` blocks (all VM, no
-  DFA scan), plus the VM-only end-window witnesses (T6a's 13 start-unanchored), plus
-  one constructed witness per ONE_WAY row. It reads ANSWERS, so it shares no source
-  with the table. Built as row `[GIVEUP-DIFF]` (§5), before the first VM-finisher
-  LOCATE row. **Classification of today's rows** (by the rule; the instrument confirms):
-  W1 `window` ONE_WAY (VM-only and collapsed classes covered); PRESENCE `set-leads` /
-  `emitted` ONE_WAY on `CR_VM`; `presence-none`, `one-attempt`, `dominated` NEUTRAL
-  (no check emitted); WIDTH `ceiling` ONE_WAY; NEXT `first-class` ONE_WAY; BOUND
-  `vm-anchored`/`vm-gstart` ONE_WAY; RETRY `adaptive*` ONE_WAY, `exact`/`clamped`/
-  `anchored`/`fixed` NEUTRAL; FIRST `handoff` NEUTRAL on its population (every hybrid
-  mover's prefilter is `exact`, K82h §3.1a) with contract FIXED.
+- **Contract (declared, checked) `[r2.1 LR-S11]`.** `.contract = CG_FIXED` where a
+  ruling forbids any move of the give-up surface. Today four rows carry one: FIRST's
+  `handoff` (K82 Q10), and RETRY's `exact`, `clamped` and `retry-anchored`, whose
+  rulings sit at `emit_dfa.c:8331-8345` (`exact`: nothing may make an exact hybrid's
+  retry adaptive, its window END is live; `clamped`: a step block would ADD attempts,
+  so an answer could become a give-up; `retry-anchored`: the choice does not exist,
+  the retry is never reached). An unset contract is a wildcard (memory
+  `pcrec-no-silent-defaults`). The CHECK is behavioural (below), not a comparison of
+  two columns.
+- **The independent control: GIVEUP1, direction-checked `[r2 G7, r2.1 LR-G5]`.**
+  Revision 2 proposed a new `[GIVEUP-DIFF]` section. Most of it exists: `make
+  test-axes`' GIVEUP1 relation (`tests/axes/run_axes.sh:1270-1320`) already compiles
+  the whole corpus default vs each deny and FAILS on any case where exactly one side
+  gives up, unless an exact `(axis, file:line)` key is in `GIVEUP1_ALLOWANCE`. It
+  ignores DIRECTION. So `[GIVEUP-DIFF]` is three additions to it, no new section:
+  1. **Direction from the derived classification.** An allowance key is admissible
+     only in the direction the row's classification permits: ONE_WAY admits "default
+     answers, deny gives up" and the converse is a failure whether or not a key names
+     it; NEUTRAL and FIXED rows admit no key at all.
+  2. **A budget-ladder arm.** The witnesses below run at a swept ladder of step and
+     work budgets (`budget` directives, ~19 points, E3's shape), default vs deny, with
+     the same direction rule per budget point.
+  3. **Witnesses per ONE_WAY row**: K82h §3.1a's 35 budget / `gu` blocks, the VM-only
+     end-window witnesses (T6a's 13 start-unanchored), and one constructed witness per
+     ONE_WAY row. F-1's PRESENCE half is already witnessed (64 `-fno-req-byte` keys,
+     22 `-fno-start-set`); **W1's is constructed and measured here** (lane locfin21,
+     this tree, gcc 15.2, python `re` as the span oracle): `(\w|\w\w)x$` with
+     `--engine=vm --step-budget=50` on `"ab" × 600 + "abx"` answers `(1200, 1203)` by
+     default (W1 stamps `RX_END_WINDOW "4"`) and gives up (`PCREC_ERR_STEPS`) under
+     `-fno-end-window`; python `re` agrees on the span. That is the ONE_WAY direction.
+     Without `--engine=vm` the same pattern is an exact hybrid and both arms answer
+     (W1 NEUTRAL there), which is the classification's join in miniature.
+  It reads ANSWERS, so it shares no source with the table. It must exist before the
+  first VM-finisher LOCATE row (L3, L4, L5).
+- **Undeniable rows `[r2.1 LR-G9, LR-S11]`.** A row with no deny (RETRY `exact`,
+  `clamped`, `retry-anchored`; `rev-end`'s stage-2 VM hat; FINISH's rows) has no deny
+  arm to differ from, so its control is the WINDOW-IDENTITY twin (E9's: the walk's or
+  the row's window against the shipped prefilter's, every string to length 6-7 at every
+  `lo`, then libpcre2), its population STRATIFIED by L0's derivations (`path.finish`,
+  `path.locate`, the member set) and by LR-G3's erasure set, so a class the corpus does
+  not populate is visible as an empty stratum rather than averaged away.
+
+**Classification of today's rows** (by the rule; the instrument confirms):
+W1 `window` ONE_WAY (VM-only and collapsed classes covered; witness above);
+PRESENCE `set-leads` / `emitted` ONE_WAY on `CR_VM`; `presence-none`, `one-attempt`,
+`dominated` NEUTRAL (no check emitted); WIDTH `ceiling` ONE_WAY; NEXT `first-class`
+ONE_WAY; BOUND `vm-anchored`/`vm-gstart` ONE_WAY; RETRY `adaptive*` ONE_WAY,
+`exact`/`clamped`/`retry-anchored`/`fixed` NEUTRAL (the first three with contract FIXED);
+FIRST `handoff` NEUTRAL on its population (every hybrid mover's prefilter is `exact`,
+K82h §3.1a) with contract FIXED. LR-G9's note: rev-end (NEUTRAL on hybrids by window
+identity), the relaxed-reverse locator (ONE_WAY) and rev-inner (ONE_WAY on the VM)
+each fill this classification with no new column.
 
 **Where to attack §1.** (a) A shipped or filed locator whose output is not a point
 of the product. (b) The boundary projection: a body whose `cand_lang_exact` is true
-but whose RECOVER span is not `L`'s (an erasure `pcrec_vm_prefilter_window` misses).
-(c) O4(ii): a ceiling source that is not `max(D)` of a proven point. (d) The progress
-measure (O9): a relocate whose target rank does not exceed the handing row's.
-(e) §1.5's classification rule on a row that both adds and removes attempts.
+but whose RECOVER span is not `L`'s — an `src/ir/nfa.c` arm that widens the language
+without recording it in `Nfa.erased` (`[r2.1 LR-G3]`). (c) O4(ii): a VM verify-at
+ceiling that is not `e` of a `SPAN` or `n`. (d) The progress measure (O9): a relocate
+whose target rank does not exceed the handing row's. (e) §1.5's classification rule
+on a row that both adds and removes attempts. (f) The meet `caller ⊓ body`
+(`[r2.1 LR-G8]`): a body with a static verdict other than `empty`'s.
 
 ---
 
