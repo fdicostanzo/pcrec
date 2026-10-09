@@ -175,6 +175,8 @@ void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb)
     ps->s.cmt_close = sink_cmt_close;
     ps->s.cstr = sink_cstr;
     ps->s.legend_byte = sink_legend_byte;
+    ps->s.simd_open = pcrec_memfn_sink_simd_open;
+    ps->s.simd_close = pcrec_memfn_sink_simd_close;
 }
 
 StrBuf *pcrec_memfn_sink_sb(Ctx *cx, mf_sink *c)

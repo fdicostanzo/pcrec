@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 8   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 9   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -56,7 +56,11 @@
                            32 (mf_pred.term[] grows, Q-R10-3), a strided
                            site's kit-owned reads at `s[cursor + i]`
                            (Q-R10-4) and ADVANCE's span_hi an ITERATION
-                           count (Q-R10-5). No MF_VOCAB move */
+                           count (Q-R10-5). No MF_VOCAB move. 9 (R4e'
+                           batch 1, R-13, 2026-10-09): mf_sink.simd_open
+                           and simd_close, appended LAST (§R4.9.2.4). No
+                           MF_VOCAB move; mf_pred.plan_pos2 (RQ-2) is NOT
+                           in this bump: it lands with RQ-2 */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -352,7 +356,16 @@ typedef struct {
  * as pcrec_sb_cstr does. CHOSEN (M1b: its first kit caller, the run compare).
  * `stamp` writes one stamp line with its value QUOTED (a string); `stamp_int`
  * (RULED Q-M1b-2, MF_SITE_ABI 4, appended LAST because initializers are
- * positional) writes one with its value UNQUOTED (an integer). */
+ * positional) writes one with its value UNQUOTED (an integer).
+ * `simd_open(u, level)` / `simd_close(u)` (MF_SITE_ABI 9, R4e' batch 1,
+ * integration.md §R4.9.2.4; appended LAST) BRACKET every byte the kit writes
+ * under a CPU-level guard: the guard's `#if` line through its `#endif` (the
+ * intrinsics `#include` and the level's helper included), and the selector's
+ * guarded arms. A bracket opens and closes at a line start, never nests and
+ * never splits a comment. `level` is the kit's levels.def index, opaque to
+ * the host. pcrec counts the bracketed bytes out of every length decision
+ * (RQ-3). NULL = not offered: the kit then renders no guarded text at all
+ * (a host that cannot count it never receives it). */
 typedef struct mf_sink {
     void *u;
     void (*puts)(void *u, const char *s);
@@ -365,6 +378,8 @@ typedef struct mf_sink {
                          int (*extra_escape)(uint8_t));
     void (*legend_byte)(void *u, uint8_t byte);
     void (*stamp_int)(void *u, const char *name, long long value);
+    void (*simd_open)(void *u, int level);
+    void (*simd_close)(void *u);
 } mf_sink;
 
 /* The kit's scratch, backed by pcrec's arena: memory lives until pcrec's
