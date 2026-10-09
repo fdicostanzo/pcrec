@@ -502,6 +502,14 @@ is EXPECTED to time out"*, and neither would a separate arm.
   (MF_MAX_TERM 32 -> 31 below VM_MAX_STRIDE, emit_vm.c's build copy
   removed). S679 (`more` keeps `+ 1` at W > 1) was not built: it needs
   the sanitizer arm and a measurement first.
+- `n2sample` → `tests/memfn/run_n2_sample.sh` ([MEMFN-ROWCON] N2, lane
+  m7fix, 2026-10-08): the N2 would-decline census's own driver and report on
+  a dozen witness patterns x three arms, with an `-DMF_TRACE` pcrec built
+  from the sabotaged tree; red iff the census rc is nonzero (rc 5). A kit
+  row whose `applies` holds too widely is declined by the contract gate and
+  the walk lands where it would have anyway: no answer, artifact byte or pin
+  moves (M7's 7,726,522 census moves at zero movers). Row S668. Before this
+  arm the census had no mech arm at all; the full census is a slot run.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
   lane memfnstamp, 2026-10-05): C11, the kit's two every-artifact stamps.
   Builds nothing itself (reads the sabotaged tree's build/pcrec); about 15 s.
@@ -3581,3 +3589,16 @@ EQUIVALENT mutant (row 10 refuses every NOMEM arrival the same way; checked
 with `make alloc`), so S-F1 has no row of its own. S-F9 (rows 3-4 stop
 carrying `overflow_why`) is not taken: the retry would read an
 uninitialized buffer, which is not a well-defined plant.
+
+### [DEC-FALLBACK] B5 — re-aims S238/S422/S626, no new rows (lane decfbB5, 2026-10-08)
+
+B5 makes every token a table read (the attribution walk, T3, T4, the
+`pfwhy` cell) and deletes the both-derivations oracle with fbt (d). Re-aimed,
+each planted on a `git archive` copy and detected in-lane: S238 (the two
+optional-contributor drop rows' cells planted PASS, `SAB_COUNT=2`; the
+artifact falls through the walk to `selected`; `run_anchored_match.sh`
+§6a), S422 (the `pfwhy` test; `run_prefilter_collapse.sh`'s K41 control),
+S626 (the `attrib` record names the first fired row, not the giving one;
+fbt (a) att-ovfdfa/att-ovfpf). S642-S645 and S651, whose B2-B4 detector
+was (d), are detected by fbt (a)/(b)/(c) on the live default-build
+behaviour (`docs/dev/lanes/decfbB5_report.md`). No new S-id.

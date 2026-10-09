@@ -79,8 +79,12 @@ S=$(sed -n "${DSTART},\$p" "$C" | grep -oE '^\s+cx\.([a-z_][a-z0-9_]*) = \1;' | 
     sort -u | while read -r v; do case " $L " in *" $v "*) echo "$v";; esac; done | tr '\n' ' ')
 nonempty S "$S"
 
-D='esel_of lang_nullable_declinable prefilter_decision fit_rungs fit_walk fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name'
-for d in $D; do grep -rqwE "$d" src || { echo "state_readers.sh: declared name $d no longer occurs in src/" >&2; exit 2; }; done
+D='esel_of fit_attrib_walk pflw_walk st_why_walk pf_admit_walk prefilter_decision fit_rungs fit_walk fit_rung_denied fit_rung_of fit_collapse_applies fit_anchored_applies fit_prefilter_applies fit_always size_term_choose size_drop_note forces_dfa_overflow pcrec_engine_sel_name'
+# [decfbB4] CODE lines only: B4 deleted the local `lang_nullable_declinable`
+# and its name survived in comments, which a plain grep read as present.
+# (A here-string, not a pipe into grep -q: the SIGPIPE note above.)
+for d in $D; do grep -qvE '^\s*(\*|/\*|//)' <<<"$(grep -rwhE --include=*.c --include=*.h --include=*.def "$d" src || true)" ||
+    { echo "state_readers.sh: declared name $d no longer occurs in src/ code" >&2; exit 2; }; done
 V=""
 for anchor in CR_SEL1 SDR_NO_PREMUL PFLW_SEL1 ESEL_SELECTED; do
     pre=${anchor%%_*}_

@@ -26762,3 +26762,42 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - **Lessons:** two source-text readers broken by one refactor step in one day (memory pcrec-check-design-lessons); a light-validation script must STOP on a red step (B2's kept going and would have released the heavy chain; I pulled .lift); I `cd`'d into a worktree twice more (memory rule pcrec-manager-never-cd-worktree, still slipping: use absolute paths only).
 - **Frank asked for a resume blurb** (written at his explicit request to /tmp/pcrec_blurb.md, outside the repo scope by his instruction; he then said the bench would do it).
 - Reset at Frank's request (context high).
+
+## 2026-10-08 — session 99 (pcrec manager, Linux dev box): B3 merged, B4 delivered, the SIMD thread opened, kit M7/M6 rulings
+
+**Accomplished.**
+- **[DEC-FALLBACK] B3 MERGED** (1debbd04). Light tier all green; heavy: make test green (perfrun j4p4, 917 s, contaminated=YES), strict/alloc/testscripts green, mech 55 rows with 0 unexpected (S178 declared undetected). Post-merge `make -j16`, `make strict`, `make test-findings test-registry` green. perfrun rows for B2 and B3 folded into the ttune ledger. Pushed.
+- **B4 DELIVERED** (lane decfbB4, opus, lane/decfbB4 2eaa2429 off B3's tip 69ab9650). The admission is now T2's walk: `lang_nullable_declinable`, the has_var and verdict ternaries and the `--emit-ir` 7-arm chain are deleted. It kept an up-front `empty_admits` ask, because without it the `--emit-facts` used column would flip on nearly every compile, not just backref/call ones (B2 under-sized this). Re-aims S102/S165/S272/S176/S216/S612/S625/S640. Findings: S176's old plant is a no-op at B4 (B5 should check derived re-runs anchored on locals); state_readers.sh's existence check was fail-OPEN and is now fail-closed. Light tier all green, the emit-ir-auto hard gate included; heavy make test green; **mech 69 rows were in flight at close**.
+- **Kit (pcrecdev3).** R-8 scoping answered:
+  - Q-R8-1: N7U split out (utf8's caseless backref is a per-character decode walk with independently advancing cursors, Kelvin sign vs k, so it is not a lockstep byte compare);
+  - Q-R8-3: no-callback seam, recorded as **D58 addendum 2**.
+
+  M7's build and blinded G2 have landed on lane/memfn-m7. **Slot12 (M7's heavy chain) is QUEUED behind B4's heavy chain.** I authorized an oracle-verified tests/backrefs cell for S670's silent wrong answer (`(?i)(a+)\1` on "aaa").
+- **SIMD re-opened (Frank). D147 addendum 11, "I'm not left handed".** SIMD was last only so the scalar path could be optimized without SIMD muddying the comparison. The kit's on/off layer makes them two independent paths. The 2:1 migration:SIMD capacity split lifts at M5′. [OPT-SIMD] is STATE:started for the kit layer only. Filed **R-9** (R4e′ design pass + D6 panel) and **R-10** (M6, ids S676-S685).
+- **D144 addendum 4 (Frank):** official SIMD verdicts are pcrec-bench runs on each form's hardware: ubuntubudu (Zen 1), this dev box (Zen 4, full AVX-512, checked with lscpu) and the Mac. The manager coordinates the boxes. Bench inbox I-138; the bench answered with O-90 (cpu_isa, import, explicit -m cflags testee pairs, per-host reports, same-host ratio verdicts). I answered with **I-139**: pcrec executes dev-box windows with the bench's run_window.sh, no ssh grant, all five proposals accepted.
+- **D147 addendum 12 (Frank):** N6 (`vm_rev_emit`'s backward walk) is RETIRED from the site manifest. It was misfiled: it is the VM's one-position engine step mirrored, not a search. R-10's scoping also found an unlisted lazy-cursor rmin prefix loop; it is to be listed `pending` in M6's commit.
+- **D147 addendum 13 (Frank, PRELIMINARY):** what "a SIMD form is faster" means. A same-host, same-window bench run against the scalar twin; target median beyond the noise band, no other cell beyond the floor, per ISA tier, net of size and portability. It names the trap that glibc memchr/memcmp are already SIMD.
+- **[MEMFN-ENTRYSINK] filed, not scheduled** (Frank): no function-entry setup sink in the kit today. Build SIMD without it and measure first.
+
+**Lessons.** I `cd`'d into worktrees/memfn once more (searching memfn.h), and caught and reverted it immediately. A relayed "Frank ruling" from a peer was confirmed with Frank before recording, twice; both were real, and both gained detail in the confirmation (the reason, and the multi-host scope). A bench-inbox push was rejected because the bench had pushed meanwhile; I rebased the single inbox commit, kept their I-137 ack line, and pushed.
+
+**Next.** On B4's mech COMPLETE (0 unexpected): merge lane/decfbB4 ALONE, build/strict/findings/registry, perfrun --fold, push, then GO slot12 to the kit. Then brief B5 (the token derivations; carry B4's finding 3). Prune decfbB0/B2/B3 once quiet.
+
+## 2026-10-08 (evening) — hundredth session: B4, B5, B6 and M7 merged; R-9 ruled (D155); paced for the night
+
+**Merged to main (all pushed):**
+- [DEC-FALLBACK] **B4** (ceff0421): T2 replaces the prefilter admission. Light tier green; make test 0 section errors; mech 69 rows, unexpected 0 (S178 is the declared undetected).
+- **B5** (lane decfbB5, opus): the four token derivations read the tables (attribution walk, T3, T4, the fired T1 row's `pfwhy`). The both-derivations oracle, fbt (d) and oracle_sweep.py are deleted. The registry source legs :755/:782 are retired with the pin 214 → 210. Light green; make test green; mech 71/0 unexpected. Finding: deleting (d) removed the only check of the §1.9 invariants, so `trace_sane` was added to every fbt (a) compile.
+- **B6** (lane decfbB6, sonnet): the three fallback `--list-axes` listings project an `axlist` column on T1-T4, and the 17 hand rows are deleted. Output is byte-identical. make test green; mech 24/0. Findings for B7: `forced`/`selected` have no table row; multi-producer values sit on the first producing row. The lane wrote 3 scratch files to /tmp, then deleted them (scope slip, self-reported).
+- **[MEMFN] M7** (kit, R-8, lane/memfn-m7 33c02ac9): zero movers, no abi event. slot12 + slot13 green: census would_decline 0, identity gate 0 movers on 7 option sets, G2 full 185,774,876/0, make test, mech.
+
+**Rulings (Frank):**
+- **D155**: R-9's Q-R9-1..9. The floor rule is amended so the SIMD choice sits at file scope.
+- **D155 addendum 1**: Q-R9-10 shape (c), "a function that does work never contains #if; a selector's whole body may be the #if chain"; Q-R9-11 is a `freq` column.
+- Filed: [MEMFN-RTDISPATCH] (dispatch by frequency class) and [TT-MECHPAR] (mech rows ran ~serial at load 1 on 16 cores; the first lane after the 7am reset).
+- [MEMFN-ENTRYSINK]'s set1-hoist claim corrected (r9fu: gcc 15.2 rebuilds broadcasts per entry).
+- **Process**: Frank prefers DISCUSSION to lettered (a)/(b)/(c) option menus (memory `pcrec-discussion-not-option-menus`, relayed to the kit). Peer-relayed rulings were confirmed with Frank before recording, every time.
+
+**Pacing:** at 89% of the subscription (resets 2026-10-09 7am local) Frank asked to dial back to one lane at a time across sessions. The kit held g2m6 and R-9's re-check panel until after the reset.
+
+**Next (after 7am):** [TT-MECHPAR] lane (sonnet); B7 (the declared listing commit, using B6's findings); the kit's g2m6 → M6 slot (R-10) and R-9's light re-check.

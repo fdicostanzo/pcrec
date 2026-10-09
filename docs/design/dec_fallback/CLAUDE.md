@@ -17,12 +17,21 @@ first edit (the note's §4.1), because main moves under a design note.
 - `call_graph_fallback.txt` — `../start_table/call_graph.py . --family
   fallback` (decfbB0c, B0 item 9; 53-member family, 14 seeds, regenerated
   by a build lane on its own base; regenerated at B1 with the `def-trace`
-  owner lines).
+  owner lines; at B4 `FB_ROOTS` gains T2's walk `pf_admit_walk`, the family
+  B3's plus that one definition; at B5 `FB_ROOTS` gains the token
+  derivations' walks `fit_attrib_walk`, `pflw_walk`/`pflw_value`,
+  `st_why_walk` and T4's table `st_whys` (string cells, so no member token
+  pulls it in): family 86 -> 98, the +12 being those roots, T4's seven
+  predicates and its row type `StWhy`. The PARENT tree under the same roots
+  has the identical 98, so B5's code moved no member; at B6 the family is 99: T1's row type now carries the `FbList` cell type, which joins it, and the listing accessors `fb_pick`/`fb_find`/`pcrec_fb_list_row` are definitions outside it).
 - `sabotage_anchors.tsv`, `sabotage_anchors.summary` — `../start_table/
   sabotage_anchors.py . call_graph_fallback.txt refactor_edit_set.tsv
   --final after-B6 --edit-names` (exit 2 = the pre-existing S571
   unresolved site): 11 RE-AIM rows (B2 S421/S423, B3 S253/S259, B4 S102/
   S165/S216/S272/S612, B5 S238/S422), `rerun_at` computed per B commit;
+  regenerated at each B commit's HEAD (B5: the B5 edit-set lines, read off
+  B5's diff, no longer occur, so the map reads 2 B5 re-aims; the step
+  derivation against the parent is in `docs/dev/lanes/decfbB5_report.md`);
   the reproduction against rev 1's hand list is in
   `docs/dev/lanes/decfbB0c_report.md`.
 - `state_readers.sh`, `state_readers.txt` — the K35 reader census: every
@@ -41,7 +50,17 @@ first edit (the note's §4.1), because main moves under a design note.
   input function, so the script reads `fit_labels`' body as part of the
   recovery point (R/RQ unchanged), declares `fit_walk` where `fit_select`
   was, and loses the deleted `dropped_*` flags, the five tests and the
-  oracle's arrival/notes code. The note's §2.1 gives the line classes.
+  oracle's arrival/notes code. At B4, 488: `D` names T2's walk
+  (`pf_admit_walk`) where the deleted local `lang_nullable_declinable` was,
+  and the existence check reads CODE lines of `.c`/`.h`/`.def` only (the
+  deleted name survived in comments and CLAUDE.md text, which the old
+  check read as present); the verdict ternary, the listing chain and the
+  admission oracle's lines are gone, T2's walk and row writes are in. At
+  B5, 455: `D` adds the three token walks (`fit_attrib_walk`, `pflw_walk`,
+  `st_why_walk`); `E` loses the two deleted declined-nullable members, and
+  the deleted ternaries (`esel_of`'s, the PFLW chain, `cx.size_term_why =`,
+  the attrib record's token-to-row chain) and the oracle's lines are gone.
+  The note's §2.1 gives the line classes.
 - `attempt_hist.py` — B0 item 5, the ATTEMPT HISTOGRAM's own driver:
   decfb0's probed copy (`../decision_families/decfb0/build_ref.py`'s
   PATCHES) built at a PARENT and a CHILD revision from `git archive`, and
@@ -69,16 +88,12 @@ first edit (the note's §4.1), because main moves under a design note.
   population and (b) the rev-2 prototype over its population x arms, plus
   (b)'s admit rows (`analyse.t2_row`), gate rows (`t3_row`) and the final
   `attrib` token against `RX_ENGINE_SEL`. Reads `row_reach.py`'s OUT.
-- `oracle_sweep.py` — B2's BOTH-DERIVATIONS ORACLE over the full corpus
-  mirror in BOTH orders: per limit variant, a default-order and a
-  `-DPCREC_CAND_NEW_FIRST` trace compiler of one revision (`git archive`),
-  row_reach's population x the prototype's 14 arms, plus an `--emit-ir`
-  pass (the listing's token site). FAILS on a `CANDORACLE` line or a
-  signal, on the two orders' stdout/rc differing, or (K35) on a checked
-  site with no `CANDFIT` hit in an order; writes `OUT/hits.tsv`. A filter
-  test: the oracle shares its predicates with the tables. Deleted with the
-  oracle at B5. B3 retired its `arrival` and `note` sites (their
-  old side is gone).
+- (`oracle_sweep.py`, B2's both-derivations oracle over the full corpus
+  mirror in both orders, was DELETED at B5 with the oracle: B3 retired its
+  `arrival`/`note` sites, B4 its `admit`/`admit-listing` sites, and B5
+  deleted the last old derivations its `gate`/`stwhy`/`attrib`/`pfwhy`
+  sites compared against. `git show 54d82727:docs/design/dec_fallback/
+  oracle_sweep.py` is its last text.)
 - `trace_declared_B1.txt` — B1's declared trace multiplicity (its ten site
   keys) for `emit_sweep.py --trace-declared` against B0; meaningless
   against any later parent.
@@ -87,7 +102,9 @@ first edit (the note's §4.1), because main moves under a design note.
   RESTATES the deleted `retry_collapse`/`retry_drop` from their inputs (so it
   stays independent of the walk it watches), the `rung` probe prints every
   row past 0-4. `attempt_hist.py --child-patches` (B3) / `--parent-patches`
-  (B4+) and `cross_record.py` (a) read its PATCHES.
+  (B4+) and `cross_record.py` (a) read its PATCHES. B4 moves none of its
+  anchors (compile.c's dispatch is untouched), so B4's gate passes it as
+  both `--parent-patches` and `--child-patches`.
 - `reach/` — rev 2's row-reach PROTOTYPE (probed scratch compilers over
   decfb0's population x 5 limit variants x 14 flag arms) and its output: the
   witness for every T1-T4 row, the UNREACHED cells, and the checks of the

@@ -6,6 +6,11 @@
 # instrument that can be red is the K35 row-count floor, C17_ROW_FLOOR in
 # tests/memfn/run_site_manifest.sh (a literal sharing no source with the
 # TSV). SAB_REACH_POP asserts the row exists and the floor is still 14.
+# RE-PINNED 2026-10-08 (lane m7fix): M7 (R-8, Q-R8-1) split N7U from N7, so
+# the manifest holds 14 rows and C17_ROW_FLOOR is 14 (`=14` then a comment);
+# the POP still read `=13$`, so the row scored UNREACHED. The form is lane
+# m6's (e48cc296). The SETREST plant leaves 13 rows, below 14: same defect,
+# same detector.
 # RE-ANCHORED 2026-10-08 (D147 add. 12, lane m6): N6 retired, so the manifest
 # holds 14 rows and C17_ROW_FLOOR is 14 (the POP had read 13 since the M7/M6
 # floor raises; it now matches the live literal, `=14` then a comment). The

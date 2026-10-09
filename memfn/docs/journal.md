@@ -975,3 +975,94 @@ pointer when a kit change merges to main.
   pcrec-bench run, macOS work included. The bench can run on the dev box
   too, but it is PLANNED and coordinated through main, which owns the
   bench inbox. Posted to main.
+- 2026-10-08: D144 addendum 4 (Frank via main, main 04733583). Official
+  SIMD verdicts are pcrec-bench runs on the hardware each form targets.
+  The bench runs on several boxes: ubuntubudu (Zen 1), this dev box
+  (7700X, Zen 4: AVX2 and full AVX-512) and the Mac. Main coordinates runs
+  on this box. CORRECTION to my earlier priority: AVX-512 is NOT filed;
+  SSE first stands, and the AVX2/AVX-512 order is argued on evidence. The
+  r9 panel was briefed before this, so the consolidation folds it in.
+- 2026-10-08: Frank answered R-9's questions directly to the kit:
+  - Q-R9-1/2/3/5/7/8/9: "I agree" (as recommended).
+  - Q-R9-4: "if that [space] isn't true then it's fastest wins". This
+    matches the recommendation: no named-benefit path for SIMD rows.
+  - Q-R9-6 (the floor rule) is PENDING: he asked what it is, and it was
+    explained (SIMD-on = SIMD-off plus guarded text only; compiled without
+    the feature it IS the scalar code; checked by C18).
+  - Posted to main. Also: lane g2m6 (M6 blinded G2) was stopped by Frank;
+    no relaunch without his word.
+- 2026-10-08: Frank (kit session) on R-9:
+  - Q-R9-6 (floor rule): AGREED.
+  - **No `#if`/`#ifdef` inside function bodies** ("hard to read"). The SIMD
+    choice moves to FILE SCOPE: per-level `static inline` helpers selected
+    by `#if` there, and the function body makes one plain call. The kit's
+    reading: the SIMD-off artifact also calls the helper (scalar body =
+    today's loop). That is a one-time byte move and abi event, so the
+    floor rule stays byte-exact; measured under G1.
+  - **Runtime dispatch is FILED, not current.** The motive: one artifact
+    must not need 4-5 whole copies (500 KB) for different CPUs. So it is
+    per-SITE multiversioning: only the hot helpers get one copy per level
+    (target attribute), selected once at startup from the CPU. The level
+    set is named at compile time and need not cascade (e.g. AVX-512 or
+    scalar). Static (#if) and dynamic (startup choice) share the same
+    file-scope structure.
+- 2026-10-08: Frank, refining runtime dispatch (still FILED):
+  - (1) Per-arch separate artifacts selected later (e.g. a chosen lib.so)
+    already work through static selection; nothing is needed from pcrec.
+  - (2) There are two frequency classes:
+    - INFREQUENT sites (precheck, find-start; about once per search call)
+      may be dispatched dynamically per hardware;
+    - FREQUENT / hot-loop sites must not pay a hardware check. They take a
+      STATIC choice: the lowest common denominator of the selected set, or
+      a named most-common level.
+  - This only matters with more than one arch selected for dynamic support
+    AND a hot-loop SIMD form, so it may be theoretical. Example classes
+    (r9fu): PRE's FUNC runs once per call (infrequent); the filed OFS
+    run-pinned vrun re-seeds inside the DFA scan loop (frequent).
+- 2026-10-08: Frank ruled Q-R9-10 (from revision D155): shape (b), one
+  unchanging FUNC that calls a level macro selected at file scope by
+  `#if/#elif/#else`, NOT the FUNC-as-selector shape (a). The macro is ALL
+  CAPS so it reads as a macro: `<PREFIX>_<FN>_LEVEL` (e.g.
+  `RX_REQRUN_LEVEL`), following pcrec's upper-cased-prefix stamp
+  convention; the helpers stay `<p>_<fn>__body` / `__w16` / `__w32`.
+  Q-R9-11 (frequency class): kit-decided, a `freq` column in DELEG_SITES
+  built only when [MEMFN-RTDISPATCH] triggers (not MF_P_INLOOP).
+- 2026-10-08: Frank REVISED Q-R9-10 to shape (c), superseding (b): no
+  level macro. The FUNC is written once, and its whole body is the
+  `#if/#elif/#else` chain with one helper call per arm. The rule's
+  wording, confirmed by Frank: "a function that does work never contains
+  `#if`; a selector function's whole body may be the `#if` chain, one call
+  per arm, and nothing else."
+- 2026-10-08 evening: SESSION RESET at Frank's request. State:
+  - **M7 (R-8)** is BUILT, and its slot12 findings are fixed (m7fix) on
+    lane/memfn-m7. It waits for slot13's re-validation (main GOs it after
+    B5). Then `done: R-8`.
+  - **M6 (R-10, VMSTRIDE only)** is BUILT, and N6 is retired, on
+    lane/memfn-m6 (stacked on an older m7). Still needed: the blinded G2
+    lane g2m6 (stopped for the reset, cell clean), the m7 fixes merged
+    in, then its slot.
+  - **R-9 (SIMD design):** D155 revision on lane/memfn-r9 @ c0b61c16.
+    Q-R9-1..11 are ruled (D155 + addendum 1; Q-R9-10 is shape (c), the
+    selector-body rule). The text still describes Q-R9-10 as open with
+    (a)/(b): update it to (c), then a light re-check panel.
+  - Frank: lettered options are fine, but leave room to bat a question
+    around.
+- 2026-10-08 night (session after reset): r9c (doc-only) updated §R4.9 to
+  Q-R9-10 shape (c) + Q-R9-11 `freq`, Q-R9-1..11 RULED, C18 leg (d)
+  selector-only; lane/memfn-r9 fast-forwarded to 5a9e8c4c. The light
+  re-check panel is still owed before `done: R-9`. Main asked for pacing
+  (subscription 89%, resets 07:00): g2m6 stopped before writing (cell
+  clean), held until after the reset; the panel waits too. M7 waits for
+  main's slot13 GO (B5's chain still running).
+- 2026-10-08 22:55: slot13 GREEN at 999dd994 (main 84da351b merged; one
+  lanes-index conflict, both lines kept): census would_decline 0, gate 0
+  movers x7 sets, G2 full 185,774,876/0, make test green (perfrun 708 s),
+  mech 14/14 unexpected 0. mismatch_inplace pcrec_floor pinned 2116
+  (6c8288d0); test-memfn-rows 127/0. `done: R-8` posted (33c02ac9), main
+  told. Held for pacing until after 07:00: g2m6, the m7→m6 merge and M6's
+  slot, and R-9's light re-check panel.
+- 2026-10-08 ~23:30: M7 MERGED by main (post-merge build/strict/rows/
+  registry green; m7, m7fix, s670cell pruned). Frank discussed SIMD
+  priorities (fused byte+cond forms; prioritize by site-category frequency
+  x winnable margin; no population census exists yet) — discussion only,
+  nothing scheduled. SESSION RESET at Frank's request; wake.md rewritten.

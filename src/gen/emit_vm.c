@@ -9162,36 +9162,6 @@ typedef struct {
      * machine that answers for a superset. Copied off `job->fit`, never
      * re-derived (K39; docs/design/prefilter_count_independence.md). */
     bool      prefilter_collapsed;
-    /* [OPT-4.1] was a collapse RUNG offered and DECLINED because the collapsed
-     * language is nullable? Read only by the listing's prefilter line, and for
-     * `has_bref`/`has_call`'s exact reason: without it that line names a FLAG
-     * the caller did not pass ("-fno-prefilter", or "--engine=vm") as the
-     * reason an artifact has no prefilter. Copied off `job->fit`, never
-     * re-derived. */
-    bool      prefilter_declined_nullable;
-    /* [OPT-4.2] the SAME decline, off the rung: an ORDINARY hybrid's own
-     * EXACT prefilter was nullable, with no rung ever involved. Read only by
-     * the listing's prefilter line, for `prefilter_declined_nullable`'s own
-     * reason -- worded differently there because there is no rung to name
-     * ("offered and declined") on this path, only a policy this pattern's
-     * own language triggered. Copied off `job->fit`, never re-derived. */
-    bool      prefilter_declined_nullable_default;
-    /* [M6.5.2] does this artifact contain a backreference? Read only by the
-     * listing's prefilter line, which without it names a FLAG the caller did
-     * not pass as the reason a backref pattern has none. */
-    bool      has_bref;
-    /* [DD-14 wave E] does this artifact contain a SUBROUTINE CALL? Read by
-     * the same listing line, for the same reason and with a DIFFERENT
-     * argument behind it. A backreference's erasure is a real approximation
-     * that is sometimes a superset; a CALL's erasure is not an approximation
-     * at all -- it is a DIFFERENT LANGUAGE (design subroutines_design.md
-     * SS8.2: `a(?1)b` with group 1 = `x` matches "axb", and the erased `ab`
-     * does not). Without this arm the listing said "NO (--engine=vm)" for
-     * every call-bearing pattern compiled under `auto`, i.e. it named a flag
-     * the caller did not pass as the reason -- MEASURED on this branch
-     * before the arm existed, the identical defect [M6.5.2] found for
-     * backreferences one module earlier. */
-    bool      has_call;
     /* [DD-14.EMPTY] the root's MINIMUM WIDTH, `pcrec_minw(root)` read AFTER
      * `pcrec_callgraph_build` has run its fixpoint (see the search entry's
      * own comment for why the ORDER is the whole content of this field). */
@@ -9387,36 +9357,6 @@ static const CandRow *vm_width_row(const Vm *v);
 static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 {
     Ctx *cx = v->cx;
-    /* [SEL-1] A FIFTH "off" ROUTE, for the identical reason the backreference
-     * and call arms below are tested before the two flag routes: no flag
-     * explains it. `cx->dfa_disabled` means this compile is
-     * `compile_driver`'s one-shot retry after `auto`'s own DFA-cap-overflow
-     * fallback (src/opt/select_engine.c) -- the prefilter this artifact would
-     * otherwise have gotten is DROPPED because its DFA build hit the same cap
-     * `--engine=dfa` refuses on, not because of `-fno-prefilter` or the
-     * `--engine=vm` side effect. Computed into a buffer BEFORE the chain
-     * below (unlike the static arms) because it has to embed
-     * `cx->dfa_overflow_why`'s own text -- the same cap name `RX_ENGINE_WHY`
-     * carries when the overflow is ALSO why this pattern chose the VM
-     * (`st->why` differs from it when a request-derived reason, e.g. a live
-     * capture, won that race first: this line still has to explain the
-     * PREFILTER specifically, which the overflow decided regardless of which
-     * reason won the ENGINE). Left empty (and unread) unless
-     * `cx->dfa_disabled` fires. */
-    /* [REVW.2] EP2 called this "the file's best-documented buffer and the one
-     * most likely to survive a sloppy migration": it carried a MEASURED
-     * 142-byte worst case and a deliberate +160 K38-precedent margin over it,
-     * which is a correct answer FOR ONE SITE and is exactly the question
-     * `pcrec_sb_fragf` dissolves. NULL when `cx->dfa_disabled` is false, which is
-     * safe because the ONE read below sits behind that same test -- and is
-     * an improvement on the old shape, where the unread buffer was
-     * uninitialized rather than merely unread. */
-    const char *sel1_prefilter_reason =
-        !cx->dfa_disabled ? NULL
-        : vm_rolef(v, "%s -- the auto-selected prefilter's own DFA build hit"
-                      " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
-                      " instead of refusing (SEL-1)", cx->dfa_overflow_why);
-
     /* Counted here rather than beside their own sections, because [DD-8]
      * moves the two COUNTS into `summary` (they are artifact-wide facts) and
      * leaves the two sections to carry rows. Empty BY COUNT rather than by a
@@ -9475,26 +9415,21 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
     /* [M4.6f] the "off" reason has SEVEN routes now, and the listing names
      * the one that actually fired rather than assuming the older,
-     * single-route text. [DD-8] splits each arm into a stable VALUE TOKEN and
-     * its prose: the token is what a consumer compares (an equality against a
-     * fixed vocabulary), the note is what a human reads, and neither is a
-     * needle hunted for inside a sentence -- which is what every one of this
-     * listing's prefilter consumers did before.
+     * single-route text. [DD-8] splits each route into a stable VALUE TOKEN
+     * and its prose: the token is what a consumer compares (an equality
+     * against a fixed vocabulary), the note is what a human reads, and
+     * neither is a needle hunted for inside a sentence -- which is what every
+     * one of this listing's prefilter consumers did before.
      *
-     * THE ORDER OF THE ARMS IS LOAD-BEARING and is unchanged. The four
-     * construct/analysis routes are tested BEFORE the two flag routes for one
-     * reason stated four times below: no flag explains them, so falling
-     * through to a flag arm would print a diagnostic naming a flag the caller
-     * did not pass. */
+     * [DEC-FALLBACK] B4: THE ROUTE IS THE ADMISSION ROW THAT DECIDED IT
+     * (`fit.pf_admit`, T2 in src/opt/select_engine.c), and its `list`/`note`
+     * cells are the token and prose this line used to choose by a chain of
+     * its own over the same facts in a different order. T2's order is
+     * load-bearing for the reason the chain's was: the construct and analysis
+     * rows are asked BEFORE the two flag rows, because no flag explains them
+     * and falling through to a flag row would print a diagnostic naming a
+     * flag the caller did not pass. */
     const char *pf_val, *pf_note;
-#ifdef PCREC_CAND_TRACE
-    /* [DEC-FALLBACK] B2: T2's listing cell beside the chain below (the
-     * oracle): a verdict ON lists the `yes` pair, an OFF one the row's value. */
-    const PfAdmit *pfa = cx->job->fit.pf_admit;
-    const char *pf_new = PCREC_FIT_NEW_FIRST && pfa
-        ? (st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list)
-        : NULL;
-#endif
     if (st->prefilter) {
         /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped being
          * true of every hybrid. On a collapse RUNG (Frank's ruling B: a DFA
@@ -9517,90 +9452,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             pf_note = "the capture-erased forward+reverse DFA pair hands the VM"
                       " an exact window (S6.1); the VM never scans";
         }
-    /* [M6.5.2] A ROUTE NO FLAG EXPLAINS, and the first of them: a
-     * BACKREFERENCE pattern has no prefilter under ANY invocation. Erasing a
-     * backreference is a real approximation that is not even a SUPERSET once
-     * the referenced group's transitive closure holds an assertion or an
-     * atomic/possessive operator, and where it IS a superset its leftmost
-     * SPAN differs from the true one on a large fraction of subjects -- so
-     * there is no exact window to hand the VM either way (backrefs_design.md
-     * S7). Without this arm the listing said "--engine=vm" for a pattern
-     * compiled under `auto`, i.e. a diagnostic naming a flag the caller did
-     * not pass. */
-    } else if (st->has_bref) {
-        pf_val  = "no-backreference";
-        pf_note = "the erased approximation is neither a sound superset nor the"
-                  " true span (S7); no flag changes this";
-    /* [DD-14 wave E] THE SECOND SUCH ROUTE. A SUBROUTINE CALL's erasure is
-     * not a loose approximation, it is a different language (design SS8.2),
-     * so there is no window to hand the VM under ANY invocation -- and
-     * `-fprefilter` REFUSES rather than overriding
-     * (src/opt/select_engine.c). */
-    } else if (st->has_call) {
-        pf_val  = "no-linked-call";
-        pf_note = "LINKED subroutine call -- erasing a call is a DIFFERENT"
-                  " language, not a superset (S8.2), and a call in a cycle has"
-                  " no finite inlining either; no flag changes this, and"
-                  " -fprefilter refuses. A SPLICED call is not a reason: its"
-                  " callee is inlined EXACTLY (S8.3, S6.3)";
-    /* [OPT-4.1] tested AHEAD of the [SEL-1] arm and of the two flag routes,
-     * for the reason all three arms above it share, and it is the more
-     * specific fact where both apply. On the [SEL-1] rung `cx->dfa_disabled`
-     * is ALSO true, and the arm below would report the overflow -- true, but
-     * it is the reason the rung was OFFERED, not the reason nothing came back
-     * from it. It is also the only arm that can fire with `dfa_disabled`
-     * FALSE (the size rung), where every arm below would name a flag the
-     * caller did not pass. */
-    } else if (st->prefilter_declined_nullable) {
-        pf_val  = "no-nullable-collapsed";
-        pf_note = "nullable collapsed language -- a ladder rung offered the"
-                  " count-collapsed prefilter ([OPT-4]) and it was DECLINED:"
-                  " every X{m,n} lowers as X{min(m,1),}, and this pattern's"
-                  " collapsed language matches the empty string, so the filter"
-                  " could never dismiss a position and would cost a scan it"
-                  " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
-                  " -fprefilter is do-or-die and is never silently dropped: on"
-                  " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
-                  " it suppresses the rung itself and the compile refuses."
-                  " -fprefilter-collapse does not override it";
-    /* [OPT-4.2] THE RUNGLESS TWIN, tested immediately after its rung-scoped
-     * sibling for the same "no flag explains it" reason -- and it must be
-     * worded DIFFERENTLY, not merely generalized, because there is no rung
-     * here to say was "offered": this pattern's own EXACT language is
-     * nullable on the ORDINARY hybrid path, no ladder attempt involved. */
-    } else if (st->prefilter_declined_nullable_default) {
-        pf_val  = "no-nullable-exact";
-        pf_note = "nullable exact language -- this pattern's own EXACT"
-                  " language matches the empty string, so the ordinary hybrid's"
-                  " forward+reverse DFA pair would admit a zero-length match at"
-                  " every position and could never dismiss one ([OPT-4.2], the"
-                  " general form of [OPT-4.1]'s rung-scoped decline; pcrec-bench"
-                  " O-10 measured 1.2-9.9x on the analogous collapsed shape)."
-                  " -fprefilter overrides this decline; -fno-prefilter already"
-                  " reaches the same artifact by a different door";
-    /* [SEL-1] tested here, ahead of the two flag routes, for the same reason
-     * has_bref/has_call are: this is a route no flag explains and it must not
-     * be reported as one. The note carries `cx->dfa_overflow_why` verbatim,
-     * which is the cap NAME a consumer asserts on. */
-    } else if (cx->dfa_disabled) {
-        pf_val  = "no-dfa-overflow";
-        pf_note = sel1_prefilter_reason;
-    } else if (cx->opt->flags & PCREC_NO_PREFILTER) {
-        pf_val  = "no-fno-prefilter";
-        pf_note = "-fno-prefilter -- forced off; the VM scans from search_from"
-                  " itself";
     } else {
-        pf_val  = "no-engine-vm";
-        pf_note = "--engine=vm -- the VM scans from search_from itself"
-                  " (R21 E-6)";
+        const PfAdmit *pfa = cx->job->fit.pf_admit;
+        pf_val  = pfa->list;
+        pf_note = vm_rolef(v, pfa->note, cx->dfa_overflow_why);
     }
-#ifdef PCREC_CAND_TRACE
-    if (!pf_new && pfa)
-        pf_new = st->prefilter ? (st->prefilter_collapsed ? "yes-collapsed" : "yes") : pfa->list;
-    PCREC_FIT_HIT("admit-listing", pfa ? pfa->name : "-");
-    if (!pfa || !pf_new || strcmp(pf_new, pf_val) != 0)
-        pcrec_fit_oracle_fail("admit-listing", pf_new ? pf_new : "-", pf_val, "emit-ir");
-#endif
     vm_row3(o, "prefilter", pf_val, pf_note);
     /* [DD-14.EMPTY] the ROOT MINIMUM WIDTH, listed only when it reached the
      * analysis ceiling -- the debug-listing half of the artifact stamp
@@ -11322,26 +11178,16 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * last rung dropped it — the one "none" a caller did not ask for.
      * `_PREFILTER_LANG_WHY`'s shape: the refused artifact's bytes and the
      * cap they exceeded, both carried from `compile_driver`, which decided.
-     * Written only where the rung fired, so no other artifact moves. */
-    if (cx->size_drop_rung == SDR_NO_PREFILTER)
-        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY",
-                  "\"size cap retry, hybrid %llu > %llu\"",
+     * Written only where a fired T1 row carries a `pfwhy` cell (the latest
+     * such row; `drop-prefilter` is the one that does), so no other artifact
+     * moves. The cell IS the stamp's format ([DEC-FALLBACK] B5; the
+     * `size_drop_rung` test it replaced is dec_fallback.md §4.2's). */
+    const char *pfwhy = NULL;
+    for (int i = cx->fit_nseq; i-- > 0 && !pfwhy; )
+        pfwhy = cx->fit_seq[i]->pfwhy;
+    if (pfwhy)
+        pcrec_sb_stampf(c, v->up, "VM_PREFILTER_WHY", pfwhy,
                   cx->size_cap_bytes, cx->size_cap_limit);
-#ifdef PCREC_CAND_TRACE
-    {
-        /* [DEC-FALLBACK] B2: the fired row's `pfwhy` cell beside the test
-         * above (the oracle; its format string is the stamp's). */
-        const char *pfwhy = NULL;
-        for (int i = 0; i < cx->fit_nseq; i++)
-            if (cx->fit_seq[i]->pfwhy) pfwhy = cx->fit_seq[i]->pfwhy;
-        PCREC_FIT_HIT("pfwhy", pfwhy ? "stamped" : "-");
-        if ((pfwhy != NULL) != (cx->size_drop_rung == SDR_NO_PREFILTER) ||
-            (pfwhy && strcmp(pfwhy, "\"size cap retry, hybrid %llu > %llu\"") != 0))
-            pcrec_fit_oracle_fail("pfwhy", pfwhy ? pfwhy : "-",
-                                  cx->size_drop_rung == SDR_NO_PREFILTER ? "stamped" : "-",
-                                  "vm_emit_stamps");
-    }
-#endif
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's
@@ -14043,44 +13889,6 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
         /* [OPT-4] off `fit`, the one derivation (D81) -- `prefn` says a
          * prefilter was emitted, this says which language it recognises. */
         st.prefilter_collapsed = job->fit.prefilter_collapsed;
-        /* [OPT-4.1] the same rule, one field over: the listing reports the
-         * decision `select_engine.c` took, it does not re-derive it. */
-        st.prefilter_declined_nullable = job->fit.prefilter_declined_nullable;
-        /* [OPT-4.2] its rungless twin, the same rule. */
-        st.prefilter_declined_nullable_default =
-            job->fit.prefilter_declined_nullable_default;
-        /* [VAR ruling, 2026-09-23] THE PATTERN'S KIND, NOT THE ENCODING
-         * SEAM'S MASK BIT, and the rename that generalised the seam entry is
-         * what exposed this. The bit used to be `PCREC_ENCE_BREF` and meant
-         * exactly what this field is named for; it is now `PCREC_ENCE_SPAN`
-         * and is set by a `${name}` VARIABLE too, so reading it here would
-         * make the listing report "NO (backreference)" for a pattern that has
-         * none.
-         *
-         * The E1 kind mask's `BREF` bit ([PATFACTS] step 3.2) is the one
-         * source `select_engine.c` forces the prefilter off from, so the
-         * listing reports the SAME fact rather than a second derivation of it
-         * — which is precisely what the `has_call` line below says for its
-         * own construct. A FACT READ OFF A SHARED BIT STOPS BEING THAT FACT
-         * THE DAY THE BIT IS SHARED, and nothing about the sharing makes a
-         * sound; a kind bit is one construct's and is never shared. */
-        st.has_bref  = (pcrec_fact_kinds(cx) & PF_KIND_BREF) != 0;
-        /* [DD-14 wave E] NOT read off `enc_mask`: a call has no residual
-         * encoding entry to leave a bit in. The E1 kind is the one source `select_engine.c` forces the prefilter
-         * off from, so the listing reports the SAME fact rather than a
-         * second derivation of it. */
-        /* [DD-14 wave G] the LINKED-call kind, matching the verdict this
-         * line EXPLAINS. `src/opt/select_engine.c` narrowed `fit.prefilter`
-         * to the linked form — a SPLICED call has an exact finite lowering,
-         * so it is not a reason for anything to be off — and a listing whose
-         * REASON is computed from a different predicate than the DECISION is
-         * the very defect this arm was added to fix, one wave on: it used to
-         * name a flag the caller had not passed, and left as `has_call` it
-         * would name a CONSTRUCT that is not the cause. MEASURED before the
-         * change: `--engine=vm '(?:(x)){0}a(?1)b'` — a fully SPLICED call —
-         * read "NO (subroutine call)" where the honest answer is
-         * "NO (--engine=vm)". */
-        st.has_call  = (pcrec_fact_kinds(cx) & PF_KIND_LINKED_CALL) != 0;
         st.root_minw = v->root_minw;
         st.why = job->fit.why;
         vm_render_listing(v, &job->irsb, &st);
