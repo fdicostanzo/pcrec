@@ -1730,3 +1730,78 @@ the compiler, and is never adopted silently. Proposed for main to file
     - The bench note: every FUNC-bearing bench artifact moves by abi plus
       routing. Assembly is unchanged except the utf8 K50 cold-path epilogue,
       and timing on those artifacts is null.
+
+## R-12 — VMLAZY + N7U: READ-ONLY scoping of the last two `pending` migration sites
+
+- ack: 2026-10-09 — **R-12 taken.** It is the migration thread's lane.
+  READ-ONLY scoping starts now (lane r12scope, opus, worktree
+  worktrees/r12 on lane/memfn-r12, cut from main a681d78f). Its findings
+  arrive as a responses notice per site, plus a retire-or-migrate argument
+  for each. Sabotage ids: S706-S715.
+
+## R-13 — R4e′ batch 1: `vrun-w32` / `vrun-w16`, the first SIMD rows (CANDIDATE)
+
+- ack: 2026-10-09 — **R-13 taken.** It is the SIMD thread's lane.
+  - The build is cut from main ONCE RQ-3 lands (abi 71). Order: the
+    `mf_sink` `simd_open`/`simd_close` ops first, then the PREFIX rows in
+    levels.def order.
+  - Each row gets its `--memfn=no-NAME` deny plus a pcrec cli case, a
+    simd_bounds.tsv bound, G2 coverage, and C18's four legs.
+  - The floor rule is proved by the identity gate on every arm.
+  - Sabotage ids: S716-S730.
+  - Until RQ-3 lands, nothing is briefed beyond reading.
+- notice: 2026-10-09 — **R-12 step 1 (READ-ONLY scoping) DONE.** Report: docs/dev/lanes/r12scope_report.md (lane r12scope, lane/memfn-r12 @ 1e60976a).
+  - **VMLAZY: MIGRATE by re-expression; no kit contract change.**
+    - The lazy rmin prefix is the cursor rung's mandatory iterations. The
+      possessive and greedy arms already discharge theirs as the delegated
+      span scan plus pcrec's own reach test. So the lazy arm calls
+      vm_emit_span_scan with cap rmin and then the same reach test.
+    - Path, in advnorm's shape: (1) a pcrec NORMALIZE abi event (text moves;
+      G1 expected null; movers-by-ID census, including RQ-3's entry-shape
+      read); (2) a zero-mover REPLACE through VMSPAN/VMSTRIDE. Then the
+      manifest row is deleted, the span-count C12 row deleted and S685
+      retired.
+    - Population: 135 instances; 39 default / 111 VM / 95 utf8-VM artifacts.
+    - Retire was argued and declined: it is a multi-position scan, the kit's
+      charter.
+  - **N7U: RETIRE by ruling is recommended**, on a stated byte-domain
+    criterion.
+    - Every kit term, fact and read is byte-domain. N7U's predicate is the
+      encoding's CHARACTER domain: decode, code-point fold, length-changing
+      result.
+    - Migrating would hand the kit a loop, two cursors and `!=` around three
+      pieces of pcrec text, which is N6's misfiling one domain over.
+    - If it migrates instead, the cost is: MF_VOCAB 3→4 (handoff
+      ON_DIFF_AT), MF_SITE_ABI +1 (unit_kind, a decode hook, MF_FOLD_CP), a
+      D58 addendum-2 revisit, and landing AFTER R-13 batch 1 and R4j.
+  - **FINDING: an unlisted search site.** `<prefix>_valid_upto` (UTF-VALID,
+    enc_utf8.c) carries a byte-domain SWAR ASCII skip that C17 cannot see;
+    none of its literals match a vocabulary line.
+  - **Overlap with R-13.**
+    - VMLAZY is disjoint in code, but serializes on pcrec's abi number after
+      RQ-3's 71.
+    - N7U, if migrated, overlaps memfn.h/compose.c, so it would go after
+      batch 1.
+  - **Before R4j/M5:** VMLAZY yes. N7U: the ruling now, any build after.
+  - **Questions:**
+    - **Q-R12-3, for Frank (a D147 addendum, like N6).** Is N7U a search
+      site at all? The forces: completeness (Q42) pushes toward migrating;
+      the kit's byte-domain contract and the N6 precedent push toward
+      retiring. My leaning is RETIRE, adopting the byte-domain criterion as
+      the general rule, so the next character-domain site is classified by
+      rule rather than by case.
+    - **For main:**
+      - Q-R12-1: VMLAZY's normalize byte move. Leaning: no Frank ruling
+        needed (the advnorm precedent); tell him.
+      - Q-R12-2: delete the VMLAZY row rather than give it its own DELEG id.
+        Leaning: delete.
+      - Q-R12-5: list valid_upto's skip as a `pending` row VALID, plus a
+        vocabulary re-sweep of literals added since R4a. Leaning: yes. The
+        manifest is main's.
+      - Q-R12-6: keep the span-count vocabulary line at ceiling 0 as a
+        re-spell tripwire. Leaning: yes.
+      - Q-R12-4 is moot if N7U retires.
+  - **Sabotage ids:** VMLAZY S706-S710. N7U S711 if retired (S711-S715 if
+    migrated).
+  - **Proposed next:** the VMLAZY build lane (migration thread) once main
+    agrees Q-R12-1/2 and gives it an abi number after RQ-3's 71.
