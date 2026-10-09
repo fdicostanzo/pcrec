@@ -1135,3 +1135,24 @@ pointer when a kit change merges to main.
   and declares a bound in tests/memfn/simd_bounds.tsv, which
   `make test-memfn-guarded` checks. RQ-1 (`--memfn=` carrier) landed with
   clibundle; the first options.def row must add a pcrec cli case.
+
+## 2026-10-09 evening — kit session (pcrecdev3), paused for reset (context 53%)
+
+- R-11 COMPLETE (R4e′.0b merged at abi 70, 82ff9432).
+- R-12 step 1 scoping merged (df66a032). Main's answers: Q-R12-1 no Frank
+  ruling for VMLAZY's normalize, abi 72; Q-R12-2 delete the VMLAZY row; Q-R12-5
+  add VALID + vocab re-sweep; Q-R12-6 keep span-count at ceiling 0.
+- **Frank ruled Q-R12-3 (D147 addendum 14): N7U RETIRED; the kit is
+  ENCODING-BLIND.** The rule: a walk whose unit is the encoding's character
+  (a decode on either operand) belongs to the encoding; its byte-domain
+  sub-loops are kit sites. Frank: "Kit shouldn't, now at least and unless
+  strong counter evidence emerges, know about encoding ... a passed lower()
+  type encoding function but then what role is memfn playing?" N7U's site
+  (span_match_caseless) serves caseless backrefs AND `${name}` variables; an
+  ASCII fast path inside it is filed [MEMFN-CI-ASCII], not scheduled. OWED:
+  delete N7U's manifest row and write the rule into integration.md §R4.3.4
+  beside Q-R10-11 (a small commit on lane/memfn-vmlazy after its chain).
+- VMLAZY built by lane vmlazy (opus) on lane/memfn-vmlazy @ 40a3e5bf
+  (normalize abi 70->72, zero-mover REPLACE, VALID row); G1 null; light
+  green; chain2 (6 sweep arms) still running detached at pause.
+- Frank 2026-10-09: the kit session too looks for a reset above 35% context.
