@@ -1835,656 +1835,435 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 #   python3 scripts/emit_sweep.py --ref HEAD --tree-rev HEAD --variant all \
 #       --no-variant-floor --no-self-check --trace --trace-order fallback=ordered \
 #       --emit-pins pins.py
+# RE-MEASURED 2026-10-09 (lane decattr, abi 69: [DEC-VAR-ATTRIB]'s `no-variable`/
+# `no-size-cap` tokens and [DEC-COLLAPSE-WASTE]'s shorter fallback sequences), the
+# same command at 365caa6c against itself, every cell 0 movers / 0 asymmetric.
 # Floors sit AT the measured value (the smaller side), DIFFER_PINS' stance: a
 # B commit is a no-mover over one corpus, so a count below it is a corpus
 # change (a reviewed re-pin) or a plumbing loss. `reach` is both_ok per
 # stream; `tags` is the per-tag count of each TALLY stream; `manifest` names,
 # for every tag under THIN_TAG, the shortest pattern carrying it on both
 # sides. A tag absent from a cell had a measured count of 0 and has no floor.
-VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                        b')(?!e)(?!f)(?!g)(?!h'
-                                                                        b')(?!i)(?!j)(?!k)(?!l'
-                                                                        b')(?!m)(?!n)(?!o)(?!p'
-                                                                        b')(?!q)',
-                                                     'no-engine-vm': b'${v}x',
-                                                     'no-fno-prefilter': b'((a)+)+',
-                                                     'no-nullable-collapsed': b'(?:ab){0,160'
-                                                                              b'00}',
+VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                        b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
+                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                     'no-size-cap': b'((a)+)+',
+                                                     'no-variable': b'${v}x',
                                                      'yes-collapsed': b'a{500}'},
-                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{50'
-                                                                                                 b'0}',
-                                                                              'no-engine-vm': b'${v}'
-                                                                                              b'x',
-                                                                              'no-fno-prefilter': b'((a)'
-                                                                                                  b'+)+'},
-                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{50'
-                                                                                        b'0}',
-                                                                     'no-nullable-collapsed': b'(?:a'
-                                                                                              b'b){0'
-                                                                                              b',160'
-                                                                                              b'00}'},
-                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3'
-                                                                                   b'}'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{500}',
+                                                                              'no-size-cap': b'((a)+)+',
+                                                                              'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{500}',
+                                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                     'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3}'},
                                     'stderr': {'stderr-default': b'a{500}'}},
-                       'reach': {'c-default': 4941,
-                                 'c-vm': 4937,
-                                 'emit-ir-vm': 4937,
-                                 'facts': 4817},
-                       'tags': {'emit-ir-auto': {'no-backreference': 484,
+                       'reach': {'c-default': 4949, 'c-vm': 4945, 'emit-ir-vm': 4945, 'facts': 4817},
+                       'tags': {'emit-ir-auto': {'no-backreference': 492,
                                                  'no-dfa-overflow': 3,
-                                                 'no-engine-vm': 17,
-                                                 'no-fno-prefilter': 67,
                                                  'no-linked-call': 122,
                                                  'no-nullable-collapsed': 1,
-                                                 'no-nullable-exact': 133,
+                                                 'no-nullable-exact': 105,
+                                                 'no-size-cap': 67,
+                                                 'no-variable': 45,
                                                  'refused': 3254,
                                                  'yes': 1308,
                                                  'yes-collapsed': 34},
-                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 484,
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
                                                                           'no-dfa-overflow': 30,
-                                                                          'no-engine-vm': 17,
-                                                                          'no-fno-prefilter': 78,
                                                                           'no-linked-call': 122,
-                                                                          'no-nullable-exact': 133,
+                                                                          'no-nullable-exact': 105,
+                                                                          'no-size-cap': 78,
+                                                                          'no-variable': 45,
                                                                           'refused': 3251,
                                                                           'yes': 1308},
-                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 484,
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
                                                                  'no-dfa-overflow': 7,
-                                                                 'no-fno-prefilter': 1427,
+                                                                 'no-fno-prefilter': 1410,
                                                                  'no-linked-call': 122,
                                                                  'no-nullable-collapsed': 1,
-                                                                 'no-nullable-exact': 133,
+                                                                 'no-nullable-exact': 105,
+                                                                 'no-variable': 45,
                                                                  'refused': 3249},
-                                'emit-ir-auto[-fprefilter]': {'refused': 4000,
-                                                              'yes': 1412,
-                                                              'yes-collapsed': 11},
-                                'stderr': {'refused-default': 482,
-                                           'refused-vm': 486,
-                                           'stderr-default': 93}}},
- ('lowboth', 'utf8'): {'manifest': {'emit-ir-auto': {'no-engine-vm': b'${v}x',
-                                                     'no-nullable-collapsed': b'[^c]{0,4}$',
+                                'emit-ir-auto[-fprefilter]': {'refused': 4008, 'yes': 1412, 'yes-collapsed': 11},
+                                'stderr': {'refused-default': 482, 'refused-vm': 486, 'stderr-default': 93}}},
+ ('lowboth', 'utf8'): {'manifest': {'emit-ir-auto': {'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                     'no-variable': b'${v}x',
                                                      'yes-collapsed': b'a{500}'},
-                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-engine-vm': b'${v}'
-                                                                                              b'x'},
-                                    'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]'
-                                                                                              b'{0,4'
-                                                                                              b'}$'},
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                                     'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'a{2,4}+a'}},
                        'reach': {'c-default': 4886, 'c-vm': 4880, 'emit-ir-vm': 4880},
                        'tags': {'emit-ir-auto': {'no-backreference': 462,
                                                  'no-dfa-overflow': 116,
-                                                 'no-engine-vm': 17,
-                                                 'no-fno-prefilter': 271,
                                                  'no-linked-call': 102,
                                                  'no-nullable-collapsed': 3,
-                                                 'no-nullable-exact': 130,
-                                                 'refused': 3178,
+                                                 'no-nullable-exact': 109,
+                                                 'no-size-cap': 271,
+                                                 'no-variable': 38,
+                                                 'refused': 3186,
                                                  'yes': 1126,
                                                  'yes-collapsed': 18},
                                 'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 462,
                                                                           'no-dfa-overflow': 143,
-                                                                          'no-engine-vm': 17,
-                                                                          'no-fno-prefilter': 280,
                                                                           'no-linked-call': 102,
-                                                                          'no-nullable-exact': 130,
-                                                                          'refused': 3163,
+                                                                          'no-nullable-exact': 109,
+                                                                          'no-size-cap': 280,
+                                                                          'no-variable': 38,
+                                                                          'refused': 3171,
                                                                           'yes': 1126},
                                 'emit-ir-auto[-fno-prefilter]': {'no-backreference': 462,
                                                                  'no-dfa-overflow': 109,
-                                                                 'no-fno-prefilter': 1457,
+                                                                 'no-fno-prefilter': 1440,
                                                                  'no-linked-call': 102,
                                                                  'no-nullable-collapsed': 3,
-                                                                 'no-nullable-exact': 130,
-                                                                 'refused': 3160},
-                                'emit-ir-auto[-fprefilter]': {'refused': 4204,
-                                                              'yes': 1210,
-                                                              'yes-collapsed': 9},
-                                'stderr': {'refused-default': 537,
-                                           'refused-vm': 543,
-                                           'stderr-default': 444}}},
- ('lowdfa', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                       b')(?!e)(?!f)(?!g)(?!h'
-                                                                       b')(?!i)(?!j)(?!k)(?!l'
-                                                                       b')(?!m)(?!n)(?!o)(?!p'
-                                                                       b')(?!q)',
-                                                    'no-engine-vm': b'${v}x',
+                                                                 'no-nullable-exact': 109,
+                                                                 'no-variable': 38,
+                                                                 'refused': 3168},
+                                'emit-ir-auto[-fprefilter]': {'refused': 4212, 'yes': 1210, 'yes-collapsed': 9},
+                                'stderr': {'refused-default': 545, 'refused-vm': 551, 'stderr-default': 444}}},
+ ('lowdfa', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                       b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                    'no-variable': b'${v}x',
                                                     'yes-collapsed': b'a{500}'},
-                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{50'
-                                                                                                b'0}',
-                                                                             'no-engine-vm': b'${v}'
-                                                                                             b'x'},
-                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{50'
-                                                                                       b'0}',
-                                                                    'no-nullable-collapsed': b'(?:a'
-                                                                                             b'b){0'
-                                                                                             b',160'
-                                                                                             b'00}'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'a{500}',
+                                                                             'no-variable': b'${v}x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'a{500}',
+                                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                    'no-variable': b'${v}x'},
                                    'stderr': {'stderr-default': b'a{500}'}},
-                      'reach': {'c-default': 4972,
-                                'c-vm': 4973,
-                                'emit-ir-vm': 4973,
-                                'facts': 4932},
-                      'tags': {'emit-ir-auto': {'no-backreference': 492,
+                      'reach': {'c-default': 4980, 'c-vm': 4981, 'emit-ir-vm': 4981, 'facts': 4940},
+                      'tags': {'emit-ir-auto': {'no-backreference': 500,
                                                 'no-dfa-overflow': 8,
-                                                'no-engine-vm': 17,
                                                 'no-linked-call': 127,
                                                 'no-nullable-collapsed': 1,
-                                                'no-nullable-exact': 138,
+                                                'no-nullable-exact': 110,
+                                                'no-variable': 45,
                                                 'refused': 3223,
                                                 'yes': 1391,
                                                 'yes-collapsed': 26},
-                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 500,
                                                                          'no-dfa-overflow': 35,
-                                                                         'no-engine-vm': 17,
                                                                          'no-linked-call': 127,
-                                                                         'no-nullable-exact': 138,
+                                                                         'no-nullable-exact': 110,
+                                                                         'no-variable': 45,
                                                                          'refused': 3223,
                                                                          'yes': 1391},
-                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 500,
                                                                 'no-dfa-overflow': 12,
-                                                                'no-fno-prefilter': 1430,
+                                                                'no-fno-prefilter': 1413,
                                                                 'no-linked-call': 127,
                                                                 'no-nullable-collapsed': 1,
-                                                                'no-nullable-exact': 138,
+                                                                'no-nullable-exact': 110,
+                                                                'no-variable': 45,
                                                                 'refused': 3223},
-                               'emit-ir-auto[-fprefilter]': {'refused': 3925, 'yes': 1498},
-                               'stderr': {'refused-default': 451,
-                                          'refused-vm': 450,
-                                          'stderr-default': 34}}},
- ('lowdfa', 'utf8'): {'manifest': {'emit-ir-auto': {'no-engine-vm': b'${v}x',
-                                                    'no-nullable-collapsed': b'[^c]{0,4}$',
+                               'emit-ir-auto[-fprefilter]': {'refused': 3933, 'yes': 1498},
+                               'stderr': {'refused-default': 451, 'refused-vm': 450, 'stderr-default': 34}}},
+ ('lowdfa', 'utf8'): {'manifest': {'emit-ir-auto': {'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                    'no-variable': b'${v}x',
                                                     'yes-collapsed': b'a{500}'},
-                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-engine-vm': b'${v}'
-                                                                                             b'x'},
-                                   'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]'
-                                                                                             b'{0,4'
-                                                                                             b'}$'},
-                                   'stderr': {'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
-                                                           b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
-                      'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
-                      'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-variable': b'${v}x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-nullable-collapsed': b'[^c]{0,4}$',
+                                                                    'no-variable': b'${v}x'},
+                                   'stderr': {'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,6}(){2,3}){1,2})'
+                                                           b'{2,3}'}},
+                      'reach': {'c-default': 5009, 'c-vm': 5010, 'emit-ir-vm': 5010},
+                      'tags': {'emit-ir-auto': {'no-backreference': 502,
                                                 'no-dfa-overflow': 121,
-                                                'no-engine-vm': 17,
                                                 'no-linked-call': 127,
                                                 'no-nullable-collapsed': 3,
-                                                'no-nullable-exact': 143,
+                                                'no-nullable-exact': 115,
+                                                'no-variable': 45,
                                                 'refused': 3072,
                                                 'yes': 1422,
                                                 'yes-collapsed': 24},
-                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 502,
                                                                          'no-dfa-overflow': 148,
-                                                                         'no-engine-vm': 17,
                                                                          'no-linked-call': 127,
-                                                                         'no-nullable-exact': 143,
+                                                                         'no-nullable-exact': 115,
+                                                                         'no-variable': 45,
                                                                          'refused': 3072,
                                                                          'yes': 1422},
-                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 502,
                                                                 'no-dfa-overflow': 114,
-                                                                'no-fno-prefilter': 1470,
+                                                                'no-fno-prefilter': 1453,
                                                                 'no-linked-call': 127,
                                                                 'no-nullable-collapsed': 3,
-                                                                'no-nullable-exact': 143,
+                                                                'no-nullable-exact': 115,
+                                                                'no-variable': 45,
                                                                 'refused': 3072},
-                               'emit-ir-auto[-fprefilter]': {'refused': 3892, 'yes': 1531},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3900, 'yes': 1531},
                                'stderr': {'refused-default': 422,
                                           'refused-vm': 421,
                                           'stderr-default': 151,
                                           'stderr-vm': 1}}},
- ('lowsize', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                        b')(?!e)(?!f)(?!g)(?!h'
-                                                                        b')(?!i)(?!j)(?!k)(?!l'
-                                                                        b')(?!m)(?!n)(?!o)(?!p'
-                                                                        b')(?!q)',
-                                                     'no-engine-vm': b'${v}x',
-                                                     'no-fno-prefilter': b'((a)+)+',
-                                                     'no-nullable-collapsed': b'(?:ab){0,160'
-                                                                              b'00}',
+ ('lowsize', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                        b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
+                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                     'no-size-cap': b'((a)+)+',
+                                                     'no-variable': b'${v}x',
                                                      'yes-collapsed': b'(a+){2,3}'},
-                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                                 b'b){0'
-                                                                                                 b',160'
-                                                                                                 b'00}',
-                                                                              'no-engine-vm': b'${v}'
-                                                                                              b'x',
-                                                                              'no-fno-prefilter': b'((a)'
-                                                                                                  b'+)+'},
-                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                        b'a)(?'
-                                                                                        b'!b)('
-                                                                                        b'?!c)'
-                                                                                        b'(?!d'
-                                                                                        b')(?!'
-                                                                                        b'e)(?'
-                                                                                        b'!f)('
-                                                                                        b'?!g)'
-                                                                                        b'(?!h'
-                                                                                        b')(?!'
-                                                                                        b'i)(?'
-                                                                                        b'!j)('
-                                                                                        b'?!k)'
-                                                                                        b'(?!l'
-                                                                                        b')(?!'
-                                                                                        b'm)(?'
-                                                                                        b'!n)('
-                                                                                        b'?!o)'
-                                                                                        b'(?!p'
-                                                                                        b')(?!'
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                              'no-size-cap': b'((a)+)+',
+                                                                              'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                        b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                        b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!'
                                                                                         b'q)',
-                                                                     'no-nullable-collapsed': b'(?:a'
-                                                                                              b'b){0'
-                                                                                              b',160'
-                                                                                              b'00}'},
-                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3'
-                                                                                   b'}'},
+                                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                     'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'(a+){2,3}'},
                                     'stderr': {'stderr-default': b'((a)+)+'}},
-                       'reach': {'c-default': 4936,
-                                 'c-vm': 4937,
-                                 'emit-ir-vm': 4937,
-                                 'facts': 4740},
-                       'tags': {'emit-ir-auto': {'no-backreference': 484,
+                       'reach': {'c-default': 4944, 'c-vm': 4945, 'emit-ir-vm': 4945, 'facts': 4740},
+                       'tags': {'emit-ir-auto': {'no-backreference': 492,
                                                  'no-dfa-overflow': 1,
-                                                 'no-engine-vm': 17,
-                                                 'no-fno-prefilter': 69,
                                                  'no-linked-call': 122,
                                                  'no-nullable-collapsed': 1,
-                                                 'no-nullable-exact': 133,
+                                                 'no-nullable-exact': 105,
+                                                 'no-size-cap': 69,
+                                                 'no-variable': 45,
                                                  'refused': 3270,
                                                  'yes': 1312,
                                                  'yes-collapsed': 14},
-                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 484,
+                                'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
                                                                           'no-dfa-overflow': 3,
-                                                                          'no-engine-vm': 17,
-                                                                          'no-fno-prefilter': 82,
                                                                           'no-linked-call': 122,
-                                                                          'no-nullable-exact': 133,
+                                                                          'no-nullable-exact': 105,
+                                                                          'no-size-cap': 82,
+                                                                          'no-variable': 45,
                                                                           'refused': 3270,
                                                                           'yes': 1312},
-                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 484,
+                                'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
                                                                  'no-dfa-overflow': 1,
-                                                                 'no-fno-prefilter': 1427,
+                                                                 'no-fno-prefilter': 1410,
                                                                  'no-linked-call': 122,
                                                                  'no-nullable-collapsed': 1,
-                                                                 'no-nullable-exact': 133,
+                                                                 'no-nullable-exact': 105,
+                                                                 'no-variable': 45,
                                                                  'refused': 3255},
-                                'emit-ir-auto[-fprefilter]': {'refused': 3994,
-                                                              'yes': 1416,
-                                                              'yes-collapsed': 13},
-                                'stderr': {'refused-default': 487,
-                                           'refused-vm': 486,
-                                           'stderr-default': 74}}},
- ('lowsize', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                        b')(?!e)(?!f)(?!g)(?!h'
-                                                                        b')(?!i)(?!j)(?!k)(?!l'
-                                                                        b')(?!m)(?!n)(?!o)(?!p'
-                                                                        b')(?!q)',
-                                                     'no-engine-vm': b'${v}x',
-                                                     'no-nullable-collapsed': b'(?:ab){0,160'
-                                                                              b'00}',
+                                'emit-ir-auto[-fprefilter]': {'refused': 4002, 'yes': 1416, 'yes-collapsed': 13},
+                                'stderr': {'refused-default': 487, 'refused-vm': 486, 'stderr-default': 74}}},
+ ('lowsize', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                        b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
+                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                     'no-variable': b'${v}x',
                                                      'yes-collapsed': b'a{2,4}+a'},
-                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                                 b'b){0'
-                                                                                                 b',160'
-                                                                                                 b'00}',
-                                                                              'no-engine-vm': b'${v}'
-                                                                                              b'x'},
-                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                        b'a)(?'
-                                                                                        b'!b)('
-                                                                                        b'?!c)'
-                                                                                        b'(?!d'
-                                                                                        b')(?!'
-                                                                                        b'e)(?'
-                                                                                        b'!f)('
-                                                                                        b'?!g)'
-                                                                                        b'(?!h'
-                                                                                        b')(?!'
-                                                                                        b'i)(?'
-                                                                                        b'!j)('
-                                                                                        b'?!k)'
-                                                                                        b'(?!l'
-                                                                                        b')(?!'
-                                                                                        b'm)(?'
-                                                                                        b'!n)('
-                                                                                        b'?!o)'
-                                                                                        b'(?!p'
-                                                                                        b')(?!'
+                                    'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                              'no-variable': b'${v}x'},
+                                    'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                        b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                        b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!'
                                                                                         b'q)',
-                                                                     'no-nullable-collapsed': b'(?:a'
-                                                                                              b'b){0'
-                                                                                              b',160'
-                                                                                              b'00}'},
+                                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                     'no-variable': b'${v}x'},
                                     'emit-ir-auto[-fprefilter]': {'yes-collapsed': b'a{2,4}+a'}},
                        'reach': {'c-default': 4809, 'c-vm': 4880, 'emit-ir-vm': 4880},
                        'tags': {'emit-ir-auto': {'no-backreference': 462,
                                                  'no-dfa-overflow': 1,
-                                                 'no-engine-vm': 17,
-                                                 'no-fno-prefilter': 284,
                                                  'no-linked-call': 102,
                                                  'no-nullable-collapsed': 1,
-                                                 'no-nullable-exact': 130,
-                                                 'refused': 3287,
+                                                 'no-nullable-exact': 109,
+                                                 'no-size-cap': 284,
+                                                 'no-variable': 38,
+                                                 'refused': 3295,
                                                  'yes': 1129,
                                                  'yes-collapsed': 10},
                                 'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 462,
                                                                           'no-dfa-overflow': 4,
-                                                                          'no-engine-vm': 17,
-                                                                          'no-fno-prefilter': 294,
                                                                           'no-linked-call': 102,
-                                                                          'no-nullable-exact': 130,
-                                                                          'refused': 3285,
+                                                                          'no-nullable-exact': 109,
+                                                                          'no-size-cap': 294,
+                                                                          'no-variable': 38,
+                                                                          'refused': 3293,
                                                                           'yes': 1129},
                                 'emit-ir-auto[-fno-prefilter]': {'no-backreference': 462,
                                                                  'no-dfa-overflow': 1,
-                                                                 'no-fno-prefilter': 1457,
+                                                                 'no-fno-prefilter': 1440,
                                                                  'no-linked-call': 102,
                                                                  'no-nullable-collapsed': 1,
-                                                                 'no-nullable-exact': 130,
-                                                                 'refused': 3270},
-                                'emit-ir-auto[-fprefilter]': {'refused': 4200,
-                                                              'yes': 1213,
-                                                              'yes-collapsed': 10},
-                                'stderr': {'refused-default': 614,
-                                           'refused-vm': 543,
-                                           'stderr-default': 356}}},
- ('lowthr', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                       b')(?!e)(?!f)(?!g)(?!h'
-                                                                       b')(?!i)(?!j)(?!k)(?!l'
-                                                                       b')(?!m)(?!n)(?!o)(?!p'
-                                                                       b')(?!q)',
-                                                    'no-engine-vm': b'${v}x',
+                                                                 'no-nullable-exact': 109,
+                                                                 'no-variable': 38,
+                                                                 'refused': 3278},
+                                'emit-ir-auto[-fprefilter]': {'refused': 4208, 'yes': 1213, 'yes-collapsed': 10},
+                                'stderr': {'refused-default': 622, 'refused-vm': 551, 'stderr-default': 356}}},
+ ('lowthr', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                       b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
-                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
-                                                                     b'28,30}0+|a'},
-                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                                b'b){0'
-                                                                                                b',160'
-                                                                                                b'00}',
-                                                                             'no-engine-vm': b'${v}'
-                                                                                             b'x'},
-                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                       b'a)(?'
-                                                                                       b'!b)('
-                                                                                       b'?!c)'
-                                                                                       b'(?!d'
-                                                                                       b')(?!'
-                                                                                       b'e)(?'
-                                                                                       b'!f)('
-                                                                                       b'?!g)'
-                                                                                       b'(?!h'
-                                                                                       b')(?!'
-                                                                                       b'i)(?'
-                                                                                       b'!j)('
-                                                                                       b'?!k)'
-                                                                                       b'(?!l'
-                                                                                       b')(?!'
-                                                                                       b'm)(?'
-                                                                                       b'!n)('
-                                                                                       b'?!o)'
-                                                                                       b'(?!p'
-                                                                                       b')(?!'
+                                                    'no-variable': b'${v}x',
+                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){28,30}0+|a'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                             'no-variable': b'${v}x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                       b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                       b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!'
                                                                                        b'q)',
-                                                                    'no-nullable-collapsed': b'(?:a'
-                                                                                             b'b){0'
-                                                                                             b',160'
-                                                                                             b'00}'},
+                                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                    'no-variable': b'${v}x'},
                                    'stderr': {'stderr-default': b'((a)|ab){4000}c'}},
-                      'reach': {'c-default': 4972,
-                                'c-vm': 4973,
-                                'emit-ir-vm': 4973,
-                                'facts': 4932},
-                      'tags': {'emit-ir-auto': {'no-backreference': 492,
+                      'reach': {'c-default': 4980, 'c-vm': 4981, 'emit-ir-vm': 4981, 'facts': 4940},
+                      'tags': {'emit-ir-auto': {'no-backreference': 500,
                                                 'no-dfa-overflow': 1,
-                                                'no-engine-vm': 17,
                                                 'no-linked-call': 127,
                                                 'no-nullable-collapsed': 1,
-                                                'no-nullable-exact': 138,
+                                                'no-nullable-exact': 110,
+                                                'no-variable': 45,
                                                 'refused': 3234,
                                                 'yes': 1412,
                                                 'yes-collapsed': 1},
-                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 500,
                                                                          'no-dfa-overflow': 3,
-                                                                         'no-engine-vm': 17,
                                                                          'no-linked-call': 127,
-                                                                         'no-nullable-exact': 138,
+                                                                         'no-nullable-exact': 110,
+                                                                         'no-variable': 45,
                                                                          'refused': 3234,
                                                                          'yes': 1412},
-                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 500,
                                                                 'no-dfa-overflow': 1,
-                                                                'no-fno-prefilter': 1430,
+                                                                'no-fno-prefilter': 1413,
                                                                 'no-linked-call': 127,
                                                                 'no-nullable-collapsed': 1,
-                                                                'no-nullable-exact': 138,
+                                                                'no-nullable-exact': 110,
+                                                                'no-variable': 45,
                                                                 'refused': 3234},
-                               'emit-ir-auto[-fprefilter]': {'refused': 3901, 'yes': 1522},
-                               'stderr': {'refused-default': 451,
-                                          'refused-vm': 450,
-                                          'stderr-default': 5}}},
- ('lowthr', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                       b')(?!e)(?!f)(?!g)(?!h'
-                                                                       b')(?!i)(?!j)(?!k)(?!l'
-                                                                       b')(?!m)(?!n)(?!o)(?!p'
-                                                                       b')(?!q)',
-                                                    'no-engine-vm': b'${v}x',
-                                                    'no-fno-prefilter': b'(\\p{Xwd})',
+                               'emit-ir-auto[-fprefilter]': {'refused': 3909, 'yes': 1522},
+                               'stderr': {'refused-default': 451, 'refused-vm': 450, 'stderr-default': 5}}},
+ ('lowthr', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                       b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
-                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
-                                                                     b'8,8}0+|a'},
-                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                                b'b){0'
-                                                                                                b',160'
-                                                                                                b'00}',
-                                                                             'no-engine-vm': b'${v}'
-                                                                                             b'x',
-                                                                             'no-fno-prefilter': b'(\\p{'
-                                                                                                 b'Xwd}'
-                                                                                                 b')'},
-                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                       b'a)(?'
-                                                                                       b'!b)('
-                                                                                       b'?!c)'
-                                                                                       b'(?!d'
-                                                                                       b')(?!'
-                                                                                       b'e)(?'
-                                                                                       b'!f)('
-                                                                                       b'?!g)'
-                                                                                       b'(?!h'
-                                                                                       b')(?!'
-                                                                                       b'i)(?'
-                                                                                       b'!j)('
-                                                                                       b'?!k)'
-                                                                                       b'(?!l'
-                                                                                       b')(?!'
-                                                                                       b'm)(?'
-                                                                                       b'!n)('
-                                                                                       b'?!o)'
-                                                                                       b'(?!p'
-                                                                                       b')(?!'
+                                                    'no-size-cap': b'(\\p{Xwd})',
+                                                    'no-variable': b'${v}x',
+                                                    'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){8,8}0+|a'},
+                                   'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                             'no-size-cap': b'(\\p{Xwd})',
+                                                                             'no-variable': b'${v}x'},
+                                   'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                       b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                       b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!'
                                                                                        b'q)',
-                                                                    'no-nullable-collapsed': b'(?:a'
-                                                                                             b'b){0'
-                                                                                             b',160'
-                                                                                             b'00}'},
+                                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                    'no-variable': b'${v}x'},
                                    'stderr': {'stderr-default': b'\\P{C}',
-                                              'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
-                                                           b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
-                      'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
-                      'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                              'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,6}(){2,3}){1,2})'
+                                                           b'{2,3}'}},
+                      'reach': {'c-default': 5009, 'c-vm': 5010, 'emit-ir-vm': 5010},
+                      'tags': {'emit-ir-auto': {'no-backreference': 502,
                                                 'no-dfa-overflow': 1,
-                                                'no-engine-vm': 17,
-                                                'no-fno-prefilter': 2,
                                                 'no-linked-call': 127,
                                                 'no-nullable-collapsed': 1,
-                                                'no-nullable-exact': 143,
+                                                'no-nullable-exact': 115,
+                                                'no-size-cap': 2,
+                                                'no-variable': 45,
                                                 'refused': 3187,
                                                 'yes': 1449,
                                                 'yes-collapsed': 2},
-                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                               'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 502,
                                                                          'no-dfa-overflow': 4,
-                                                                         'no-engine-vm': 17,
-                                                                         'no-fno-prefilter': 2,
                                                                          'no-linked-call': 127,
-                                                                         'no-nullable-exact': 143,
+                                                                         'no-nullable-exact': 115,
+                                                                         'no-size-cap': 2,
+                                                                         'no-variable': 45,
                                                                          'refused': 3187,
                                                                          'yes': 1449},
-                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                               'emit-ir-auto[-fno-prefilter]': {'no-backreference': 502,
                                                                 'no-dfa-overflow': 1,
-                                                                'no-fno-prefilter': 1470,
+                                                                'no-fno-prefilter': 1453,
                                                                 'no-linked-call': 127,
                                                                 'no-nullable-collapsed': 1,
-                                                                'no-nullable-exact': 143,
+                                                                'no-nullable-exact': 115,
+                                                                'no-variable': 45,
                                                                 'refused': 3187},
-                               'emit-ir-auto[-fprefilter]': {'refused': 3859, 'yes': 1564},
+                               'emit-ir-auto[-fprefilter]': {'refused': 3867, 'yes': 1564},
                                'stderr': {'refused-default': 422,
                                           'refused-vm': 421,
                                           'stderr-default': 83,
                                           'stderr-vm': 1}}},
- ('plain', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                      b')(?!e)(?!f)(?!g)(?!h'
-                                                                      b')(?!i)(?!j)(?!k)(?!l'
-                                                                      b')(?!m)(?!n)(?!o)(?!p'
-                                                                      b')(?!q)',
-                                                   'no-engine-vm': b'${v}x',
+ ('plain', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                      b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
-                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
-                                                                    b'28,30}0+|a'},
-                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                               b'b){0'
-                                                                                               b',160'
-                                                                                               b'00}',
-                                                                            'no-engine-vm': b'${v}'
-                                                                                            b'x'},
-                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                      b'a)(?'
-                                                                                      b'!b)('
-                                                                                      b'?!c)'
-                                                                                      b'(?!d'
-                                                                                      b')(?!'
-                                                                                      b'e)(?'
-                                                                                      b'!f)('
-                                                                                      b'?!g)'
-                                                                                      b'(?!h'
-                                                                                      b')(?!'
-                                                                                      b'i)(?'
-                                                                                      b'!j)('
-                                                                                      b'?!k)'
-                                                                                      b'(?!l'
-                                                                                      b')(?!'
-                                                                                      b'm)(?'
-                                                                                      b'!n)('
-                                                                                      b'?!o)'
-                                                                                      b'(?!p'
-                                                                                      b')(?!q)',
-                                                                   'no-nullable-collapsed': b'(?:a'
-                                                                                            b'b){0'
-                                                                                            b',160'
-                                                                                            b'00}'},
+                                                   'no-variable': b'${v}x',
+                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){28,30}0+|a'},
+                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                            'no-variable': b'${v}x'},
+                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                      b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                      b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
+                                                                   'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                   'no-variable': b'${v}x'},
                                   'stderr': {'stderr-default': b'((a)|ab){4000}c'}},
-                     'reach': {'c-default': 4972,
-                               'c-vm': 4973,
-                               'emit-ir-vm': 4973,
-                               'facts': 4932},
-                     'tags': {'emit-ir-auto': {'no-backreference': 492,
+                     'reach': {'c-default': 4980, 'c-vm': 4981, 'emit-ir-vm': 4981, 'facts': 4940},
+                     'tags': {'emit-ir-auto': {'no-backreference': 500,
                                                'no-dfa-overflow': 1,
-                                               'no-engine-vm': 17,
                                                'no-linked-call': 127,
                                                'no-nullable-collapsed': 1,
-                                               'no-nullable-exact': 138,
+                                               'no-nullable-exact': 110,
+                                               'no-variable': 45,
                                                'refused': 3234,
                                                'yes': 1412,
                                                'yes-collapsed': 1},
-                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 492,
+                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 500,
                                                                         'no-dfa-overflow': 3,
-                                                                        'no-engine-vm': 17,
                                                                         'no-linked-call': 127,
-                                                                        'no-nullable-exact': 138,
+                                                                        'no-nullable-exact': 110,
+                                                                        'no-variable': 45,
                                                                         'refused': 3234,
                                                                         'yes': 1412},
-                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 492,
+                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 500,
                                                                'no-dfa-overflow': 1,
-                                                               'no-fno-prefilter': 1430,
+                                                               'no-fno-prefilter': 1413,
                                                                'no-linked-call': 127,
                                                                'no-nullable-collapsed': 1,
-                                                               'no-nullable-exact': 138,
+                                                               'no-nullable-exact': 110,
+                                                               'no-variable': 45,
                                                                'refused': 3234},
-                              'emit-ir-auto[-fprefilter]': {'refused': 3901, 'yes': 1522},
-                              'stderr': {'refused-default': 451,
-                                         'refused-vm': 450,
-                                         'stderr-default': 5}}},
- ('plain', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d'
-                                                                      b')(?!e)(?!f)(?!g)(?!h'
-                                                                      b')(?!i)(?!j)(?!k)(?!l'
-                                                                      b')(?!m)(?!n)(?!o)(?!p'
-                                                                      b')(?!q)',
-                                                   'no-engine-vm': b'${v}x',
-                                                   'no-fno-prefilter': b'(\\p{Xwd})',
+                              'emit-ir-auto[-fprefilter]': {'refused': 3909, 'yes': 1522},
+                              'stderr': {'refused-default': 451, 'refused-vm': 450, 'stderr-default': 5}}},
+ ('plain', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
+                                                                      b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                    'no-nullable-collapsed': b'(?:ab){0,16000}',
-                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){'
-                                                                    b'8,8}0+|a'},
-                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:a'
-                                                                                               b'b){0'
-                                                                                               b',160'
-                                                                                               b'00}',
-                                                                            'no-engine-vm': b'${v}'
-                                                                                            b'x',
-                                                                            'no-fno-prefilter': b'(\\p{'
-                                                                                                b'Xwd}'
-                                                                                                b')'},
-                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!'
-                                                                                      b'a)(?'
-                                                                                      b'!b)('
-                                                                                      b'?!c)'
-                                                                                      b'(?!d'
-                                                                                      b')(?!'
-                                                                                      b'e)(?'
-                                                                                      b'!f)('
-                                                                                      b'?!g)'
-                                                                                      b'(?!h'
-                                                                                      b')(?!'
-                                                                                      b'i)(?'
-                                                                                      b'!j)('
-                                                                                      b'?!k)'
-                                                                                      b'(?!l'
-                                                                                      b')(?!'
-                                                                                      b'm)(?'
-                                                                                      b'!n)('
-                                                                                      b'?!o)'
-                                                                                      b'(?!p'
-                                                                                      b')(?!q)',
-                                                                   'no-nullable-collapsed': b'(?:a'
-                                                                                            b'b){0'
-                                                                                            b',160'
-                                                                                            b'00}'},
+                                                   'no-size-cap': b'(\\p{Xwd})',
+                                                   'no-variable': b'${v}x',
+                                                   'yes-collapsed': b'(1{0,30}?[^]abc][^abc]){8,8}0+|a'},
+                                  'emit-ir-auto[-fno-prefilter-collapse]': {'no-dfa-overflow': b'(?:ab){0,16000}',
+                                                                            'no-size-cap': b'(\\p{Xwd})',
+                                                                            'no-variable': b'${v}x'},
+                                  'emit-ir-auto[-fno-prefilter]': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?'
+                                                                                      b'!f)(?!g)(?!h)(?!i)(?!j)(?!k)'
+                                                                                      b'(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
+                                                                   'no-nullable-collapsed': b'(?:ab){0,16000}',
+                                                                   'no-variable': b'${v}x'},
                                   'stderr': {'stderr-default': b'\\P{C}',
-                                             'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2'
-                                                          b'}?)+){0,6}(){2,3}){1,2}){2,3}'}},
-                     'reach': {'c-default': 5001, 'c-vm': 5002, 'emit-ir-vm': 5002},
-                     'tags': {'emit-ir-auto': {'no-backreference': 494,
+                                             'stderr-vm': b'((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,6}(){2,3}){1,2})'
+                                                          b'{2,3}'}},
+                     'reach': {'c-default': 5009, 'c-vm': 5010, 'emit-ir-vm': 5010},
+                     'tags': {'emit-ir-auto': {'no-backreference': 502,
                                                'no-dfa-overflow': 1,
-                                               'no-engine-vm': 17,
-                                               'no-fno-prefilter': 2,
                                                'no-linked-call': 127,
                                                'no-nullable-collapsed': 1,
-                                               'no-nullable-exact': 143,
+                                               'no-nullable-exact': 115,
+                                               'no-size-cap': 2,
+                                               'no-variable': 45,
                                                'refused': 3187,
                                                'yes': 1449,
                                                'yes-collapsed': 2},
-                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 494,
+                              'emit-ir-auto[-fno-prefilter-collapse]': {'no-backreference': 502,
                                                                         'no-dfa-overflow': 4,
-                                                                        'no-engine-vm': 17,
-                                                                        'no-fno-prefilter': 2,
                                                                         'no-linked-call': 127,
-                                                                        'no-nullable-exact': 143,
+                                                                        'no-nullable-exact': 115,
+                                                                        'no-size-cap': 2,
+                                                                        'no-variable': 45,
                                                                         'refused': 3187,
                                                                         'yes': 1449},
-                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 494,
+                              'emit-ir-auto[-fno-prefilter]': {'no-backreference': 502,
                                                                'no-dfa-overflow': 1,
-                                                               'no-fno-prefilter': 1470,
+                                                               'no-fno-prefilter': 1453,
                                                                'no-linked-call': 127,
                                                                'no-nullable-collapsed': 1,
-                                                               'no-nullable-exact': 143,
+                                                               'no-nullable-exact': 115,
+                                                               'no-variable': 45,
                                                                'refused': 3187},
-                              'emit-ir-auto[-fprefilter]': {'refused': 3859, 'yes': 1564},
+                              'emit-ir-auto[-fprefilter]': {'refused': 3867, 'yes': 1564},
                               'stderr': {'refused-default': 422,
                                          'refused-vm': 421,
                                          'stderr-default': 83,
@@ -2495,11 +2274,11 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
 # `gate`/`stwhy`/`attrib` slots (B0's C1-only values were 315,269/105,080
 # for plain, ~20k/15k lower in every cell). Measured, no margin: the trace
 # is deterministic and its population only grows with the corpus.
-TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 363673, 'c-vm': 128223},
- 'lowdfa': {'c-default': 334599, 'c-vm': 120524},
- 'lowsize': {'c-default': 365663, 'c-vm': 128223},
- 'lowthr': {'c-default': 355346, 'c-vm': 128252},
- 'plain': {'c-default': 334904, 'c-vm': 120524}}
+TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 360896, 'c-vm': 128390},
+ 'lowdfa': {'c-default': 334754, 'c-vm': 120691},
+ 'lowsize': {'c-default': 362766, 'c-vm': 128390},
+ 'lowthr': {'c-default': 355509, 'c-vm': 128419},
+ 'plain': {'c-default': 335067, 'c-vm': 120691}}
 
 
 STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",

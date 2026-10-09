@@ -182,8 +182,13 @@ On this box, pinned to CPUs 0-7:
 - All green: `test-fallback-table` (141/0), `test-prefilter` (52/0),
   `test-registry`, `test-prefilter-collapse`, `test-vars`, `test-resource`,
   `test-rxtsource`, `test-codegen`.
-- `run_recursion_identity.sh`: see the handback (it was still running when
-  this was written).
+- `run_recursion_identity.sh`: 17/0 (FILEPIN self-pinned).
+- `make testscripts`: green. emit_sweep's self-test expectations were
+  updated to the new tokens.
+- emit_sweep `VARIANT_PINS` and `TRACE_VARIANT_RECORDS_FLOOR`: re-measured
+  at `365caa6c` against itself (`--variant all --trace --emit-pins`). Every
+  cell had 0 movers. The old pins failed only on the moved tokens'
+  manifests.
 
 **OWED, armed on `.lift`:** `build/land/waiter.sh` -> `chain.sh`, decfbB7's
 shape: perfrun `make test`, strict, testscripts, mech VALIDATE_ONLY, then 46
