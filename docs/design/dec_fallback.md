@@ -938,6 +938,40 @@ each argued in the report:
   walk). The prototype's `adm` probe re-anchors after the row's writes
   (`reach/build_reach.py`).
 
+**B5's outcome (lane decfbB5, 2026-10-08, base main `54d82727`; report
+`../dev/lanes/decfbB5_report.md`).** Every token is a table read:
+`esel_of` returns the attribution walk (`fit_attrib_walk`, §1.7) behind its
+kept premise check; the collapse gate walks T3 (`pflw_walk`/`pflw_value`
+give `collapse` and `VM_PREFILTER_LANG_WHY` from one row); `UNROLL_K_WHY`
+is T4's (`st_why_walk`); `VM_PREFILTER_WHY` is written where the latest
+fired T1 row carries a `pfwhy` cell, with the cell as its format. The four
+old derivations are deleted, and so is the both-derivations oracle (A's C5
+precedent), with fbt (d) and `oracle_sweep.py`; the registry's two source
+legs retired in the same commit as the `cx.size_term_why =` ternary
+(`run_registry_tests.sh` 214 -> 210, measured), behind fbt (b). Spot
+identity against `54d82727` (44 witnesses x `-o -`/`--emit-ir`/
+`--emit-facts=byte`, stdout+stderr+rc) is 132/132, and the TRACE builds'
+records are identical on the same 132. Choices and findings, each argued
+in the report:
+- `EngineFit.prefilter_declined_nullable{,_default}` are deleted: once the
+  ternary went they were written and never read (the walk reads the
+  admission row's `esel` cell).
+- The trace's `attrib` record prints the walk's own source (the fired
+  row's name) and `gate` prints T3's row, B4's `admit` shape: the trace
+  compare against the B4 parent is what held the walks to the ternaries.
+- `pcrec_fit_oracle_fail` is renamed `pcrec_fit_invariant_fail`: only
+  §1.9's invariants call it now, and fbt (a)'s compiles fail on its
+  `CANDORACLE` line or a signal (`trace_sane`, red-tested).
+- Re-aims S238 (the two optional-contributor drop rows' cells planted
+  PASS), S422 (the `pfwhy` test) and S626 (derived: its record derivation
+  is gone; the plant names the first fired row). S645 is derived as a
+  re-aim but its anchor text is kept (a re-run). `--step` derives 34
+  re-runs; none plants a local the rewritten decisions stopped reading
+  (B4 finding 3's check).
+- `call_graph.py`'s `FB_ROOTS` gains the three token walks, `pflw_value`
+  and `st_whys` (family 86 -> 98; the parent under the same roots is the
+  same 98).
+
 **B7's deliverables:**
 - `engine-route` lists in the attribution order (§6.2: two listed orders
   swap).

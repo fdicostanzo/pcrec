@@ -376,6 +376,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   oracle's arrival and notes checks retired with their old side; its token
   checks (admission, listing, gate, size term, attribution, `pfwhy`) stay
   until B4/B5, and §1.9's once/sequence invariants stay at `fit_record`.
+  **[DEC-FALLBACK] B5 (lane decfbB5, 2026-10-08) THE TOKENS ARE CELL READS**
+  (§4.2 B5; no abi event, zero movers). The collapse gate walks T3
+  (`pflw_walk`; the row gives `collapse` and, through `pflw_value`,
+  `prefilter_lang_why`), and `cx.size_term_why` is T4's (`st_why_walk`);
+  both ternaries are deleted and the two tables lose `unused`. The
+  both-derivations oracle is DELETED (A's C5 precedent):
+  `pcrec_fit_oracle_fail` is now `pcrec_fit_invariant_fail`, which only
+  §1.9's invariants call (once, sequence, attempt bound, sel1-drop, the
+  admission's `has_var`), and `PCREC_FIT_NEW_FIRST`/`PCREC_FIT_HIT`
+  (`CANDFIT`) are gone, so `-DPCREC_CAND_NEW_FIRST` no longer changes the
+  fallback family's build. `pcrec_fit_cells_row_name` (trace build) names
+  the T1 row of a `fit_seq` entry for the `attrib` record. The `gate`
+  record prints T3's row.
 - **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
   its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
   `docs/design/opt_dial_design.md` the design record, D103 the governance).

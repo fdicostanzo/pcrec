@@ -3558,3 +3558,16 @@ EQUIVALENT mutant (row 10 refuses every NOMEM arrival the same way; checked
 with `make alloc`), so S-F1 has no row of its own. S-F9 (rows 3-4 stop
 carrying `overflow_why`) is not taken: the retry would read an
 uninitialized buffer, which is not a well-defined plant.
+
+### [DEC-FALLBACK] B5 — re-aims S238/S422/S626, no new rows (lane decfbB5, 2026-10-08)
+
+B5 makes every token a table read (the attribution walk, T3, T4, the
+`pfwhy` cell) and deletes the both-derivations oracle with fbt (d). Re-aimed,
+each planted on a `git archive` copy and detected in-lane: S238 (the two
+optional-contributor drop rows' cells planted PASS, `SAB_COUNT=2`; the
+artifact falls through the walk to `selected`; `run_anchored_match.sh`
+§6a), S422 (the `pfwhy` test; `run_prefilter_collapse.sh`'s K41 control),
+S626 (the `attrib` record names the first fired row, not the giving one;
+fbt (a) att-ovfdfa/att-ovfpf). S642-S645 and S651, whose B2-B4 detector
+was (d), are detected by fbt (a)/(b)/(c) on the live default-build
+behaviour (`docs/dev/lanes/decfbB5_report.md`). No new S-id.

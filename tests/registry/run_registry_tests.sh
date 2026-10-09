@@ -660,16 +660,21 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # 205 -> 214 at [ART-POSS-ARMS] (lane possbuild, 2026-10-07): the
 # `poss-ctx-follow` (a0, a1) and `poss-bref-first` (group-text) rows carry a
 # deny bit each, 3 checks each. Measured: 214 PASS, 0 failed.
-if [ "$axesn" -ne 214 ]; then
+# 214 -> 210 at [DEC-FALLBACK] B5 (lane decfbB5, 2026-10-08): the two
+# emitter-source legs (`RX_ENGINE_SEL` from `pcrec_engine_sel_name`,
+# `RX_UNROLL_K_WHY` from compile.c's `cx.size_term_why` ternary) retired, 2
+# PASS lines each; their emitter half is tests/codegen/run_fallback_table.sh
+# (b)'s witnesses. Measured: 210 PASS, 0 failed.
+if [ "$axesn" -ne 210 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 214." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 210." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (214 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (210 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 214 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 210 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

@@ -5152,3 +5152,14 @@ the `--emit-ir` `prefilter` line reads its row, so (d)'s 27 `admit` and
 and the listing's chain). T2's independent controls are (a)'s hand-written
 `admit` records and `tests/prefilter/run_prefilter_tests.sh` §7's
 `check_ir_value` rows. 164 checks. `oracle_sweep.py` drops the two sites.
+
+**B5 (lane decfbB5, 2026-10-08): (d) retires.** The last old derivations
+(`esel_of`'s ternary, the PFLW ternary, `cx.size_term_why =`,
+`VM_PREFILTER_WHY`'s SDR test) are gone, so the oracle and (d) went with
+them (A's C5 precedent), and with them the six `trlowthr`/`nf*` trace
+compilers. Every (a) compile now FAILS on a `CANDORACLE` line or a signal
+(`trace_sane`): §1.9's invariants still run in the trace build and (a) is
+their in-suite check. 135 checks, ~17 s. `oracle_sweep.py` had no site
+left and is deleted. The registry's two source legs retired in the same
+change (tests/registry/CLAUDE.md "[decfbB5]"; `run_registry_tests.sh`'s
+`axes_registry_check` pin 214 -> 210).

@@ -1502,3 +1502,16 @@ also sources. Measured identical before and after: 214 PASS / 0 FAIL, and
 byte-identical output. The two source legs (`pcrec_engine_sel_name`'s
 returns, `cx.size_term_why =`) still run; they retire at B5 of
 `docs/design/dec_fallback.md`, behind that leg.
+
+## [decfbB5] the two source legs retired
+
+At B5 of `docs/design/dec_fallback.md` (§4.5) `axes_registry_check.sh`'s
+`RX_ENGINE_SEL (pcrec_engine_sel_name)` and `RX_UNROLL_K_WHY (compile.c
+cx.size_term_why derivation)` legs retired, in the commit that deleted the
+`cx.size_term_why =` ternary: both tokens are table cells now, so a code side
+would share its spelling with what it checks. Their emitter half is
+`tests/codegen/run_fallback_table.sh` (b): every one of the 8 `ENGINE_SEL`
+and 7 `UNROLL_K_WHY` values stamped by a witness (K35 floor per value), the
+observed set equal to `match_api.md` §6.3's. The docs legs stay. The
+script's `COMPILEC` input went with the second leg (its only reader).
+`run_registry_tests.sh`'s pin moves 214 -> 210, measured.
