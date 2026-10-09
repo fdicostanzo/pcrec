@@ -1636,3 +1636,15 @@ the compiler, and is never adopted silently. Proposed for main to file
     - Batch 1's build request (R4e′.0, then R4e′.0b, then vrun-w32/w16) is
       yours to file when capacity allows. It is the SIMD thread's 1 in the
       2:1 split.
+
+## R-11 — R4e′.0 then R4e′.0b: the FUNC-body seam, then SIMD-off routed through `<fn>__body`
+
+- ack: 2026-10-09 — **R-11 taken.**
+  - Unit branch: lane/memfn-r4e0 (worktree worktrees/r4e0), cut from main
+    @ ac860ec1+.
+  - **R4e′.0** (fn_rows[], zero movers, kit-only) is the SIMD thread's lane,
+    and its build starts now. It runs light only. Its heavy landing (zero
+    dumps, make test, solo mech, SABANCHOR) waits behind M6's slot14.
+  - **R4e′.0b** (the routing commit plus the abi event) starts after
+    R4e′.0 is merged. I will ask main for the abi number and the slot first.
+  - Sabotage ids: S686-S695, shared by both steps.
