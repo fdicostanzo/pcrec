@@ -203,6 +203,7 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
     s->span_hi = MF_SPAN_UNBOUNDED;
     s->cand_ppm_hi = MF_PPM_FULL;
     s->pred.plan_hint = MF_NO_PRED;
+    s->pred.plan_pos2 = MF_NO_POS;
     s->policy = pcrec_memfn_policy(cx->opt->flags) |
                 (pcrec_deleg_sites[id].budget == DELEG_LOOP ? MF_P_INLOOP : 0);
     s->denies = pcrec_memfn_denies(cx->opt->flags);
@@ -212,7 +213,9 @@ mf_site *pcrec_memfn_site(Ctx *cx, DelegSite id)
 
 mf_pred *pcrec_memfn_preds(Ctx *cx, int n)
 {
-    return pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_pred));
+    mf_pred *p = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(mf_pred));
+    for (int i = 0; i < n; i++) p[i].plan_pos2 = MF_NO_POS;   /* RQ-2: none */
+    return p;
 }
 
 /* The density hint's default, "unknown" (§7.6). */

@@ -541,6 +541,38 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
     return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
 }
 
+/* The SECOND position a fused pair filter tests beside the scanned one
+ * (`ka`): PICK over the run's OTHER positions as cubes, in the order
+ * `pcrec_find_run_scan_index` uses (`[n-1, ..., 0]` without `ka`), so a data
+ * tie and the NONE answer both go to the rightmost other position.
+ * [MEMFN] RQ-2 (integration.md §2.3 T7, Q-R9-3 (a)): the fact the kit's
+ * vector filter ANDs as KB, carried in `mf_pred.plan_pos2`.
+ *
+ * THE DISTANCE RULE is `kb != ka` and nothing more. UNMEASURED DEFAULT: the
+ * design names a distance rule without stating one, and this is the
+ * smallest rule that reproduces R-1's four timed cells under NONE (SELECT
+ * 4/5, USER 0/3, CAT 0/2, it 0/1; memfnr4b_report.md §1). A wider minimum
+ * distance (adjacent bytes co-occur, so the product of their rates
+ * overstates the pair's rarity) is §R4.9.5 item 10's KB sweep's question.
+ * The positions are those of whatever run the caller hands over, so under
+ * `-e utf8` this inherits the scan pick's positional prior (U8-PICK,
+ * u8pick0_report.md). */
+int pcrec_find_pick2(const uint32_t *rate, const unsigned char *bytes,
+                     const unsigned char *mask, int n, int ka)
+{
+    if (n > PCREC_MAX_REQ_RUN_SCAN) abort();   /* run_scan_index's own guard */
+    unsigned char cand[PCREC_MAX_REQ_RUN_SCAN], care[PCREC_MAX_REQ_RUN_SCAN];
+    int pos[PCREC_MAX_REQ_RUN_SCAN], m = 0;
+    if (n < 2) return -1;
+    for (int i = n - 1; i >= 0; i--) {
+        if (i == ka) continue;
+        cand[m] = bytes[i];
+        care[m] = mask ? mask[i] : 0xFF;
+        pos[m++] = i;
+    }
+    return pos[pcrec_find_pick(rate, cand, care, m, 0)];
+}
+
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
  * of the window of that length containing `idx` with the lowest mass, ties
  * to the leftmost by the strict `<` — so on an exact run under NONE, where

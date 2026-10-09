@@ -56,7 +56,12 @@
                            32 (mf_pred.term[] grows, Q-R10-3), a strided
                            site's kit-owned reads at `s[cursor + i]`
                            (Q-R10-4) and ADVANCE's span_hi an ITERATION
-                           count (Q-R10-5). No MF_VOCAB move */
+                           count (Q-R10-5). No MF_VOCAB move. 9 (RQ-2,
+                           Q-R9-3 RULED (a), 2026-10-09): mf_pred.plan_pos2,
+                           appended LAST, and MF_NO_POS. No MF_VOCAB move;
+                           no kit row reads it yet. ("The next number at
+                           landing": R-13's sink-ops bump renumbers
+                           against it, whichever lands second.) */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -81,6 +86,7 @@
 #define MF_SPAN_UNBOUNDED UINT64_MAX  /* span_hi when nothing is proven        */
 #define MF_PPM_FULL       1000000u    /* density hint default: [0, 1e6]        */
 #define MF_NO_PRED        0xFFu       /* ret_pred / plan_hint: none            */
+#define MF_NO_POS         0xFFFFu     /* plan_pos2: no second position         */
 
 /* ---- the operation vocabulary (§8.2, §14.0, §14.3) ----------------------- */
 
@@ -271,6 +277,14 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
                                        `site.pred.fn_ref`, for every op
                                        (K-1); a FUNC site stating 0 states
                                        no name and is refused (R1)           */
+    uint16_t plan_pos2;             /* a SECOND position inside the same RUN
+                                       term, rarest after plan_pos by pcrec's
+                                       prior (RQ-2, Q-R9-3 RULED (a): the
+                                       fused pair filter's KB); != plan_pos.
+                                       MF_NO_POS = none. Read only where
+                                       plan_hint names a RUN term. A SPEED
+                                       fact: a reader that ignores it stays
+                                       exact. MF_SITE_ABI 9, appended LAST */
 } mf_pred;
 
 typedef struct {

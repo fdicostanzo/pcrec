@@ -270,6 +270,15 @@ int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               const unsigned char *mask, int n);
 
+/* Which OTHER position of a run (the same arguments; `mask` NULL where every
+ * position is exact) a fused pair filter tests beside the scanned position
+ * `ka`: PICK over the positions `[n-1, ..., 0]` without `ka`, ties to the
+ * rightmost other position under both arms. -1 when n < 2. The distance rule
+ * is `kb != ka` (an UNMEASURED DEFAULT, stated at the definition). [MEMFN]
+ * RQ-2: `mf_pred.plan_pos2`. */
+int pcrec_find_pick2(const uint32_t *rate, const unsigned char *bytes,
+                     const unsigned char *mask, int n, int ka);
+
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` positions is truncated to.
  * MASS over each window of that many positions containing `idx`, a window's
  * mass being that of its MEMBERS (T for an exact position, T and T | ~K for

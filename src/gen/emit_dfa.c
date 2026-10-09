@@ -1161,8 +1161,11 @@ static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
         }
         if (!k) {
             if (in_run) {
+                int kb = pcrec_find_pick2(pcrec_find_byte_rate(cx), t->run_bytes,
+                                          t->run_mask, t->run_len, sp - t->run_o);
                 p->plan_hint = p->nterm;
                 p->plan_pos = (uint16_t)(sp - t->run_o);
+                p->plan_pos2 = kb < 0 ? MF_NO_POS : (uint16_t)kb;
             }
             pcrec_memfn_term_run(&p->term[p->nterm++], t->run_o, t->run_bytes,
                                  t->run_mask, t->run_len, MF_REQUIRED);
