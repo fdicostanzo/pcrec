@@ -13,6 +13,11 @@ scaffolding version, which changes far more often than a release does. See
 
 ### Changed
 
+- **`--fast-or-fail` is renamed `--size-cap=refuse|degrade`** (default
+  `degrade`, today's behaviour). The old spelling is retired with no alias
+  (pre-1.0); the library bit 41 is `PCREC_SIZE_CAP_REFUSE`. The scope is
+  the size-cap ladder only (`docs/spec/cli.md` §1, `limits.md` §8). No
+  artifact byte moves.
 - The literal-run compare is one emitter with a row table ([OPT-LITSCAN] S4
   C1, abi 58): an exact run of length 3, 5-7 or 9-15 is compared as two
   overlapping word loads instead of a `memcmp`, on both engines.

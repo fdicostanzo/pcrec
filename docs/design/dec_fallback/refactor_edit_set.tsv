@@ -16,7 +16,7 @@ line	{ "drop-premul",    0,                           true,  fit_premul_applies,
 line	{ "drop-prefilter", 0,                           true,  fit_prefilter_applies, FIT_DROP_PREFILTER },	B2	fit_rungs[] row gains columns
 line	{ "refuse",         0,                           false, fit_always,            FIT_REFUSE         },	B2	fit_rungs[] row gains columns (on = every label)
 line	if (!r->applies || fit_rung_denied(r, s->flags)) continue;	B2	fit_select filters on the arrival's label set
-line	(r->degrading && (flags & PCREC_FAST_OR_FAIL) != 0);	B2	the fast-or-fail reach becomes the row's `fof` cell
+line	(r->degrading && (flags & PCREC_SIZE_CAP_REFUSE) != 0);	B2	the fast-or-fail reach becomes the row's `fof` cell
 token	ovf_eligible	B3	the [SEL-1] block is deleted into rows sel1-collapse / sel1-drop
 token	retry_collapse	B3	the [SEL-1] block is deleted into rows
 token	retry_drop	B3	the [SEL-1] block is deleted into rows

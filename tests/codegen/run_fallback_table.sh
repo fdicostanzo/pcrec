@@ -248,7 +248,7 @@ fstate seq-sel1cd 2 'cr=0'
 fstate seq-sel1cd 2 'latch=1/0'
 fseq seq-look     trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_LOOK"
 fseq seq-sel1d    trplain ok 'sel1-drop@overflow'                              "$W_OVF" -fno-prefilter-collapse
-fseq seq-fofsel1  trplain ok 'sel1-collapse@overflow'                          "$W_SEL1" --fast-or-fail
+fseq seq-fofsel1  trplain ok 'sel1-collapse@overflow'                          "$W_SEL1" --size-cap=refuse
 fseq seq-nopfsel1 trplain ok 'sel1-collapse@overflow'                          "$W_OVF" -fno-prefilter
 fseq seq-ovfpf    trlowdfa ok 'sel1-collapse@overflow > sel1-drop@overflow'    "$OVFPF"
 # T1 rows 6-9 (the size-cap ladder), arrival label `size`
@@ -267,7 +267,7 @@ fseq seq-trial    trplain ok 'size-term-trial@other > size-term-trial@other > si
 fseq seq-trialref trlowsize refused 'size-term-trial@other > size-term-trial@other > refuse@size' "$W_NEST8"
 # T1 row 10 (refuse) under every label it is asked on
 fseq seq-refovf   trplain refused 'refuse@overflow'                            '(?:ab){0,16000}' --engine=dfa
-fseq seq-refsize  trplain refused 'refuse@size'                                '(\p{Xwd})' -e utf8 --fast-or-fail
+fseq seq-refsize  trplain refused 'refuse@size'                                '(\p{Xwd})' -e utf8 --size-cap=refuse
 fseq seq-refother trplain refused 'refuse@other'                               '\A*'
 fseq seq-refpf    trplain refused 'refuse@other'                               "$W_OVF" -fprefilter
 # no arrival at all

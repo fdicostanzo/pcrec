@@ -3341,8 +3341,8 @@ The size-cap ladder became ONE first-match table (`fit_rungs[]`,
 `fit_premul_applies`); intent unchanged, re-verified. **S420** makes the new
 prefilter-drop row never apply (the witness `(\p{Xwd})` -e utf8 refuses:
 harness target `tests/uprops/size_ladder_prefilter_drop.rxt` + resource);
-**S421** makes `fit_rung_denied` ignore `PCREC_FAST_OR_FAIL` (resource's four
-`--fast-or-fail` refusal cells + pfcollapse's K41 control); **S422** drops the
+**S421** makes `fit_rung_denied` ignore `PCREC_SIZE_CAP_REFUSE` (resource's four
+`--size-cap=refuse` refusal cells + pfcollapse's K41 control); **S422** drops the
 `<PREFIX>_VM_PREFILTER_WHY` stamp (resource WHY cell + pfcollapse); **S423**
 flips the prefilter-drop row's `degrading` cell (exactly one resource cell,
 the locality check).
@@ -3559,7 +3559,7 @@ move) and the detector is the trace build's both-derivations oracle or
 `fallbacktable`). T1: S627 rows 3/4 swapped (S-F3), S628 sel1-drop keeps
 `dd` (S-F13), S629 sel1-collapse does not latch (S-F8's cell), S630
 drop-prefilter does not restart (S-F11; the bound check fires first), S631
-sel1-collapse inside `--fast-or-fail`'s reach (S-F4), S632 drop-premul `on`
+sel1-collapse inside `--size-cap=refuse`'s reach (S-F4), S632 drop-premul `on`
 overflow (S-F7), S633 drop-prefilter carries no size-cap figures (S-F10),
 S634 drop-premul ORs no flag (S-F12), S635 sel1-collapse writes CR_SIZECAP
 (S-F14; the one-writer check), S636 drop-anchored keeps `sdr` (S-F15), S637
