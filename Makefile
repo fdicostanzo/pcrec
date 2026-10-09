@@ -1285,11 +1285,12 @@ test-memfn-guarded: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-guarded.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_guarded.sh
 
-# [MEMFN] RQ-2: the PROBE build (-DPCREC_RANK_PROBE: every RUN-scanning
-# PRE/OFS predicate pcrec hands the kit, with pcrec_find_run_rank's ranking
-# of its run, on stderr) over the corpus at three arms: each ranking equals a
-# brute force under the compile's byte-rate, and a PRE predicate scans
-# rank[0]. Seconds, plus the probe build.
+# [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
+# predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
+# stderr) over the corpus at three arms: each ranking equals a brute force
+# under the compile's byte-rate, a predicate with no RUN term carries
+# rank_n 0, and a PRE predicate scans rank_pos[0]. Seconds, plus the probe
+# build.
 test-memfn-rank: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rank.sh

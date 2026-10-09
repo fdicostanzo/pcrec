@@ -449,21 +449,24 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   script. What it cannot see: a length reader of a buffer the witness never
   writes (hsb, a scratch buffer not spliced).
 
-### The run ranking (lane rq2, [MEMFN] RQ-2, Q-R9-3 RULED (a))
+### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 
 - **run_rank.sh**, **rank_check.py** — `make test-memfn-rank` (in
   TEST_SECTIONS; mech arm `rank`; about 7 s plus the probe build). Builds
   the PROBE compiler (`-DPCREC_RANK_PROBE`: `pcrec_memfn_define` prints one
-  `RANK` line per RUN-scanning predicate of every PRE/OFS site, with
-  `pcrec_find_run_rank`'s ranking of the run) and runs the corpus's distinct
-  patterns plus named witnesses at three arms (byte, `-e utf8`,
-  `--engine=vm`). Each ranking (positions and masses) must equal a brute
-  force (every position's cube mass under the `--list-analysis default`
-  byte-rate, or NONE's member count; ascending, ties to the rightmost), and
-  a PRE predicate must scan rank[0]. K35 floors (literal in the checker,
-  applied at `--every 1` only) per site, encoding, masked runs, rankings the
-  prior moves off the positional order, and data ties. Blind to any
-  consumer of the ranking (none exists yet).
+  `RANK` line per predicate of every PRE/OFS site, with the
+  `mf_pred.rank_*` it carries) and runs the corpus's distinct patterns plus
+  named witnesses at three arms (byte, `-e utf8`, `--engine=vm`). A
+  predicate whose plan_hint names a RUN term must carry every position of
+  the term (rank_n == the run length) ordered and rated as a brute force
+  derives them (each position's cube mass under the `--list-analysis
+  default` byte-rate, or NONE's member count; ascending, ties to the higher
+  offset); every other predicate must carry rank_n 0; a PRE predicate must
+  scan rank_pos[0]. It prints the longest run term per site against
+  MF_RANK_MAX. K35 floors (literal in the checker, applied at `--every 1`
+  only) per site, encoding, masked runs, rankings the rate moves off the
+  positional order, data ties and rank_n-0 predicates. Blind to any reader
+  of the ranking (none exists yet).
 
 ## Sabotage rows
 

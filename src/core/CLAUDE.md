@@ -84,18 +84,15 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (`req_set_leads_applies`, the admission's `set-leads` row) asks it over
   `[the run's scan cube, the set's pick]`.
 
-  **[MEMFN] RQ-2 (lane rq2, 2026-10-09; integration.md §2.3 T7, Q-R9-3
-  RULED (a)): `pcrec_find_run_rank`, a fourth rate reader, not a
-  mechanism.** It ranks every position of a run rarest first by PICK's own
-  cost (the cube mass), stable over `pcrec_find_run_scan_index`'s candidate
-  order `[n-1, ..., 0]`, so ties go to the rightmost and `pos[0]` is that
-  reader's answer; each position's mass comes back beside it. It states the
-  FACT a fused filter's positions are chosen from; any second-position or
-  distance rule is its consumer's. No caller in a default build: the
-  kit-facing field's shape is pending a ruling, and until then only the
-  `-DPCREC_RANK_PROBE` test build calls it (src/gen/memfn_sites.c). Under
-  `-e utf8` the byte-rate is NONE, so the ranking is by cube size, then
-  positional (U8-PICK).
+  **[MEMFN] RQ-2 (lane rq2, 2026-10-09, D157): `pcrec_find_run_rank`, a
+  fourth rate reader, not a mechanism.** It orders every position of a run
+  by PICK's own cost (the cube mass), lowest first, stable over
+  `pcrec_find_run_scan_index`'s candidate order `[n-1, ..., 0]`, so ties go
+  to the rightmost and `pos[0]` is that reader's answer; each position's mass
+  comes back beside it. Its one caller is `ofs_pred_rank` (src/gen/
+  emit_dfa.c), which states the result as `mf_pred.rank_*`. Under `-e utf8`
+  the byte-rate is NONE, so the order is by cube size, then positional
+  (U8-PICK).
 
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both

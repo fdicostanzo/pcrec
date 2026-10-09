@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# tests/memfn/run_rank.sh -- [MEMFN] RQ-2's check (integration.md §R4.9.11
-# RQ-2, Q-R9-3 RULED (a)): `make test-memfn-rank`, in TEST_SECTIONS.
+# tests/memfn/run_rank.sh -- [MEMFN] RQ-2's check (D157; memfn.h's
+# mf_pred.rank_n/rank_pos/rank_ppm): `make test-memfn-rank`, in TEST_SECTIONS.
 #
 # Builds the PROBE compiler (this tree with -DPCREC_RANK_PROBE: every
-# RUN-scanning predicate of every PRE/OFS site pcrec hands the kit prints one
-# `RANK` line on stderr, with `pcrec_find_run_rank`'s ranking of that run)
-# and runs rank_check.py over the corpus's distinct patterns plus named
-# witnesses at three arms (byte, `-e utf8`, `--engine=vm`): each ranking must
-# equal a brute force (every position's cube mass under the compile's
-# byte-rate, ascending, ties to the rightmost), and on the PRE site the
-# scanned position must be rank[0]. K35 floors per site, encoding, masked
-# runs, non-positional rankings and data ties, literal in the checker.
-# What it does NOT see: a run term no site hands the kit; a consumer of the
-# ranking (none exists until the kit-facing field's shape is ruled).
+# predicate of every PRE/OFS site pcrec hands the kit prints one `RANK` line
+# on stderr, with the ranking it carries) and runs rank_check.py over the
+# corpus's distinct patterns plus named witnesses at three arms (byte,
+# `-e utf8`, `--engine=vm`): a RUN-scanning predicate's ranking must list
+# every position of the run as a brute force orders and rates them (each
+# position's cube mass under the compile's byte-rate, ascending, ties to the
+# higher offset), any other predicate must carry rank_n 0, and on the PRE
+# site the scanned position must be rank_pos[0]. K35 floors literal in the
+# checker.
+# What it does NOT see: a predicate built outside pcrec_memfn_define; any
+# reader of the ranking (none exists yet).
 #
 # Usage: bash tests/memfn/run_rank.sh [TREE] [--every N]
 # Env:   CC (the probe build's compiler), RANK_PROBE_BIN (skip the build).

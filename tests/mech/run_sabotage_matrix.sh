@@ -384,11 +384,10 @@
 #     no identity gate. Registered before S699-S703.
 #   rank — added 2026-10-09 ([MEMFN] RQ-2, lane rq2); runs
 #     tests/memfn/run_rank.sh: it builds the sabotaged tree's own PROBE
-#     compiler (-DPCREC_RANK_PROBE, every RUN-scanning PRE/OFS predicate and
-#     its run's ranking on stderr) and holds each ranking to a brute force
-#     over the whole corpus (seconds). Its own arm because nothing consumes
-#     the ranking yet, so a wrong ranking moves no artifact, no answer and no
-#     identity gate.
+#     compiler (-DPCREC_RANK_PROBE, every PRE/OFS predicate's mf_pred.rank_*
+#     on stderr) and holds each ranking to a brute force over the whole
+#     corpus (seconds). Its own arm because nothing reads the ranking yet,
+#     so a wrong ranking moves no artifact, no answer and no identity gate.
 #   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
 #     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
 #     against their pins, the row-contract gate cases (check 6) and the

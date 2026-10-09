@@ -520,10 +520,10 @@ is EXPECTED to time out"*, and neither would a separate arm.
   moves (M7's 7,726,522 census moves at zero movers). Row S668. Before this
   arm the census had no mech arm at all; the full census is a slot run.
 - `rank` → `tests/memfn/run_rank.sh` ([MEMFN] RQ-2, lane rq2,
-  2026-10-09): builds the sabotaged tree's `-DPCREC_RANK_PROBE` compiler
-  and holds every PRE/OFS run's `pcrec_find_run_rank` ranking to a brute
+  2026-10-09, D157): builds the sabotaged tree's `-DPCREC_RANK_PROBE`
+  compiler and holds every PRE/OFS predicate's `mf_pred.rank_*` to a brute
   force over the whole corpus at three arms (about 7 s plus the build).
-  Nothing consumes the ranking yet, so a wrong ranking moves no artifact,
+  Nothing reads the ranking yet, so a wrong ranking moves no artifact,
   answer or identity gate. Rows: planned in `docs/dev/lanes/rq2_report.md`
   §5, ids from the manager.
 - `memfnstamps` → `tests/memfn/run_libc_census.sh --quick` ([MEMFN] R4a′,
