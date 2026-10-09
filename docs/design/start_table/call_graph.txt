@@ -1,5 +1,5 @@
 # call_graph.py: roots emit_unanchored,emit_attempt,vm_emit_search_body | stamps pcrec_emit_dfa_scan_stamps,vm_emit_stamps
-# definitions 2115; reachable from bodies 840, from stamp writers 727; seeds 15; family 135
+# definitions 2116; reachable from bodies 840, from stamp writers 727; seeds 15; family 135
 kind	name	site	detail
 def-const	ABLOCK_MIN	src/core/arena.c:6-6	
 def-func	pcrec_arena_alloc	src/core/arena.c:13-38	
@@ -71,12 +71,12 @@ def-func	fit_cr_of	src/core/compile.c:1497-1506
 def-func	fit_sdr_of	src/core/compile.c:1508-1517	
 def-func	fit_record	src/core/compile.c:1525-1550	
 def-macro	FIT_TRACE	src/core/compile.c:1597-1597	
-def-func	compile_driver	src/core/compile.c:1613-3000	
-def-func	pcrec_compile	src/core/compile.c:3005-3009	
-def-func	pcrec_compile_driver	src/core/compile.c:3023-3030	
-def-func	pcrec_emit_ir	src/core/compile.c:3037-3056	
-def-func	pcrec_count_groups	src/core/compile.c:3068-3113	
-def-func	pcrec_output_free	src/core/compile.c:3117-3123	
+def-func	compile_driver	src/core/compile.c:1613-3012	
+def-func	pcrec_compile	src/core/compile.c:3017-3021	
+def-func	pcrec_compile_driver	src/core/compile.c:3035-3042	
+def-func	pcrec_emit_ir	src/core/compile.c:3049-3068	
+def-func	pcrec_count_groups	src/core/compile.c:3080-3125	
+def-func	pcrec_output_free	src/core/compile.c:3129-3135	
 def-func	pcrec_compile_defs	src/core/compile_defs.c:43-49	
 def-func	pcrec_cpset_init	src/core/cpset.c:66-72	
 def-func	cpset_grow	src/core/cpset.c:78-87	
@@ -267,27 +267,27 @@ def-type	RxtDef	src/core/internal.h:5886-5906
 def-type	RxtDefs	src/core/internal.h:5912-5920	
 def-type	RxtTarget	src/core/internal.h:5956-5992	
 def-func	pcrec_startgate_needed	src/core/internal.h:6081-6084	
-def-type	PcrecStart0	src/core/internal.h:6159-6169	
-def-type	PcrecTuneRow	src/core/internal.h:6186-6193	
-def-type	enum@src/core/internal.h:6314	src/core/internal.h:6314-6314	
-def-type	DfaMemo	src/core/internal.h:6334-6337	
-def-type	enum@src/core/internal.h:6446	src/core/internal.h:6446-6450	
-def-type	PcrecAxisCand	src/core/internal.h:6676-6679	
-def-const	PCREC_W_UNBOUNDED	src/core/internal.h:6752-6752	
-def-type	GenNames	src/core/internal.h:6772-6775	
-def-type	PcrecCandListRow	src/core/internal.h:6820-6827	
-def-type	BufSurface	src/core/internal.h:6846-6852	
-def-type	CandRoute	src/core/internal.h:7052-7052	
-def-type	CandSlot	src/core/internal.h:7054-7064	
-def-type	CandVmFacts	src/core/internal.h:7071-7077	
-def-type	CandRsAction	src/core/internal.h:7090-7090	
-def-type	CandRsStart	src/core/internal.h:7091-7091	
-def-type	CandReseed	src/core/internal.h:7092-7098	
-def-type	CandOne	src/core/internal.h:7103-7107	
-def-type	CandBound	src/core/internal.h:7108-7113	
-def-type	CandWidth	src/core/internal.h:7117-7119	
-def-macro	PCREC_CAND_TRACE_REC	src/core/internal.h:7188-7188	
-def-macro	PCREC_CAND_TRACE_RECF	src/core/internal.h:7189-7190	
+def-type	PcrecStart0	src/core/internal.h:6162-6172	
+def-type	PcrecTuneRow	src/core/internal.h:6189-6196	
+def-type	enum@src/core/internal.h:6317	src/core/internal.h:6317-6317	
+def-type	DfaMemo	src/core/internal.h:6337-6340	
+def-type	enum@src/core/internal.h:6449	src/core/internal.h:6449-6453	
+def-type	PcrecAxisCand	src/core/internal.h:6679-6682	
+def-const	PCREC_W_UNBOUNDED	src/core/internal.h:6755-6755	
+def-type	GenNames	src/core/internal.h:6775-6778	
+def-type	PcrecCandListRow	src/core/internal.h:6823-6830	
+def-type	BufSurface	src/core/internal.h:6849-6855	
+def-type	CandRoute	src/core/internal.h:7055-7055	
+def-type	CandSlot	src/core/internal.h:7057-7067	
+def-type	CandVmFacts	src/core/internal.h:7074-7080	
+def-type	CandRsAction	src/core/internal.h:7093-7093	
+def-type	CandRsStart	src/core/internal.h:7094-7094	
+def-type	CandReseed	src/core/internal.h:7095-7101	
+def-type	CandOne	src/core/internal.h:7106-7110	
+def-type	CandBound	src/core/internal.h:7111-7116	
+def-type	CandWidth	src/core/internal.h:7120-7122	
+def-macro	PCREC_CAND_TRACE_REC	src/core/internal.h:7191-7191	
+def-macro	PCREC_CAND_TRACE_RECF	src/core/internal.h:7192-7193	
 def-const	PCREC_LIMITS_H	src/core/limits.h:43-43	
 def-macro	PCREC_LIMIT_LIMITS_H	src/core/limits.h:718-719	
 def-macro	PCREC_LIMIT_LIMITS_H_NONE	src/core/limits.h:720-720	
@@ -1317,26 +1317,27 @@ def-func	sink_cstr	src/gen/memfn_sites.c:109-112
 def-func	sink_legend_byte	src/gen/memfn_sites.c:114-117	
 def-func	pcrec_memfn_sink	src/gen/memfn_sites.c:119-130	
 def-func	pcrec_memfn_sink_sb	src/gen/memfn_sites.c:132-138	
-def-func	pcrec_memfn_site	src/gen/memfn_sites.c:142-155	
-def-func	pcrec_memfn_preds	src/gen/memfn_sites.c:157-160	
-def-func	term_unknown_density	src/gen/memfn_sites.c:163-167	
-def-func	pcrec_memfn_term_byte	src/gen/memfn_sites.c:169-177	
-def-func	pcrec_memfn_term_set	src/gen/memfn_sites.c:179-190	
-def-func	pcrec_memfn_term_run	src/gen/memfn_sites.c:192-203	
-def-func	pred_kinds	src/gen/memfn_sites.c:208-215	
-def-func	deleg_check	src/gen/memfn_sites.c:221-241	
-def-func	pcrec_memfn_check_use	src/gen/memfn_sites.c:243-250	
-def-func	kit_check	src/gen/memfn_sites.c:255-260	
-def-func	pcrec_memfn_define	src/gen/memfn_sites.c:262-272	
-def-func	pcrec_memfn_use	src/gen/memfn_sites.c:274-280	
-def-func	pcrec_memfn_call	src/gen/memfn_sites.c:282-288	
-def-func	pcrec_memfn_emit	src/gen/memfn_sites.c:290-298	
-def-func	span_fold_kind	src/gen/memfn_sites.c:304-312	
-def-func	pcrec_memfn_span_site	src/gen/memfn_sites.c:314-351	
-def-func	adv_member	src/gen/memfn_sites.c:358-363	
-def-func	pcrec_memfn_advance_site	src/gen/memfn_sites.c:365-398	
-def-func	pcrec_memfn_flush_helpers	src/gen/memfn_sites.c:400-406	
-def-func	pcrec_memfn_art_end	src/gen/memfn_sites.c:410-418	
+def-func	pcrec_memfn_opts_check	src/gen/memfn_sites.c:143-148	
+def-func	pcrec_memfn_site	src/gen/memfn_sites.c:150-163	
+def-func	pcrec_memfn_preds	src/gen/memfn_sites.c:165-168	
+def-func	term_unknown_density	src/gen/memfn_sites.c:171-175	
+def-func	pcrec_memfn_term_byte	src/gen/memfn_sites.c:177-185	
+def-func	pcrec_memfn_term_set	src/gen/memfn_sites.c:187-198	
+def-func	pcrec_memfn_term_run	src/gen/memfn_sites.c:200-211	
+def-func	pred_kinds	src/gen/memfn_sites.c:216-223	
+def-func	deleg_check	src/gen/memfn_sites.c:229-249	
+def-func	pcrec_memfn_check_use	src/gen/memfn_sites.c:251-258	
+def-func	kit_check	src/gen/memfn_sites.c:263-268	
+def-func	pcrec_memfn_define	src/gen/memfn_sites.c:270-280	
+def-func	pcrec_memfn_use	src/gen/memfn_sites.c:282-288	
+def-func	pcrec_memfn_call	src/gen/memfn_sites.c:290-296	
+def-func	pcrec_memfn_emit	src/gen/memfn_sites.c:298-306	
+def-func	span_fold_kind	src/gen/memfn_sites.c:312-320	
+def-func	pcrec_memfn_span_site	src/gen/memfn_sites.c:322-359	
+def-func	adv_member	src/gen/memfn_sites.c:366-371	
+def-func	pcrec_memfn_advance_site	src/gen/memfn_sites.c:373-406	
+def-func	pcrec_memfn_flush_helpers	src/gen/memfn_sites.c:408-414	
+def-func	pcrec_memfn_art_end	src/gen/memfn_sites.c:418-426	
 def-const	PCREC_GEN_MEMFN_SITES_H	src/gen/memfn_sites.h:13-13	
 def-type	DelegBudget	src/gen/memfn_sites.h:21-21	
 def-macro	DELEG_H	src/gen/memfn_sites.h:22-22	
@@ -2119,8 +2120,8 @@ def-func	pcrec_brace_quant_shape	src/parse/scans.c:143-161
 def-trace	trace@src/core/compile.c:1386	src/core/compile.c:1386-1492	
 def-trace	trace@src/core/compile.c:1567	src/core/compile.c:1567-1596	
 def-trace	trace@src/core/internal.h:2571	src/core/internal.h:2571-2587	
-def-trace	trace@src/core/internal.h:7135	src/core/internal.h:7135-7141	
-def-trace	trace@src/core/internal.h:7160	src/core/internal.h:7160-7187	
+def-trace	trace@src/core/internal.h:7138	src/core/internal.h:7138-7144	
+def-trace	trace@src/core/internal.h:7163	src/core/internal.h:7163-7190	
 def-trace	trace@src/gen/emit_dfa.c:331	src/gen/emit_dfa.c:331-343	
 def-trace	trace@src/gen/emit_dfa.c:1121	src/gen/emit_dfa.c:1121-1137	
 def-trace	trace@src/gen/emit_dfa.c:8459	src/gen/emit_dfa.c:8459-8665	
@@ -2142,10 +2143,10 @@ seed	pcrec_fact_run_pin	src/facts/facts.c:421
 seed	pcrec_fact_start_anchor	src/facts/facts.c:367	
 seed	pcrec_fact_start_set	src/facts/facts.c:373	
 seed	unanch_start	src/gen/emit_dfa.c:4241	
-family-type	CandSlot	src/core/internal.h:7054	plan; names 
-family-type	CandReseed	src/core/internal.h:7092	plan; names 
-family-type	CandBound	src/core/internal.h:7108	plan; names 
-family-type	CandWidth	src/core/internal.h:7117	plan; names 
+family-type	CandSlot	src/core/internal.h:7057	plan; names 
+family-type	CandReseed	src/core/internal.h:7095	plan; names 
+family-type	CandBound	src/core/internal.h:7111	plan; names 
+family-type	CandWidth	src/core/internal.h:7120	plan; names 
 family-macro	CAND_READ	src/gen/emit_dfa.c:325	body+stamp; names cand_read
 family-macro	CAND_BOUND_ONE	src/gen/emit_dfa.c:328	body+stamp; names CAND_READ
 family-type	ReqAdmit	src/gen/emit_dfa.c:357	plan; names 

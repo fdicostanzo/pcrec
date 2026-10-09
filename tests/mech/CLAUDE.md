@@ -32,7 +32,9 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   byte-identical to a serial run's, and `JOBS` defaults to `tests/lib/
   procs_default.sh`'s count / `PROCS` — [CORPUS-PCAP], the box's own
   performance-core count on darwin, nproc elsewhere — so
-  concurrent tree builds do not oversubscribe. In BOTH modes the summary now
+  concurrent tree builds do not oversubscribe. [TT-MECHPAR 2026-10-09] The row throttle is a slot pool: the next row
+  starts when ANY running row exits (it used to wait on the oldest row's pid,
+  so one slow head row serialised the list; docs/testing.md "[TT-MECHPAR]"). In BOTH modes the summary now
   guards its row count against the number of definitions requested: before
   this, a sabotage whose definition failed validation produced NO row and the
   denominator (`wc -l` of arrived rows) silently shrank — 19/19 reads as
@@ -256,6 +258,9 @@ is EXPECTED to time out"*, and neither would a separate arm.
   ([ENG-ABS]'s precedent), because `cap-rescue`'s natural population is zero
   and the CLI overrides are raise-only — that cell is the tree's ONLY witness
   to the materiality bar declining at all, which is what S192 scores against.
+  Its §10 ([K100], 2026-10-09) builds a THIRD compiler at emit_sweep's
+  `lowsize` limits, the only witness that a restarting fallback row re-runs
+  the ladder from the caller's K; S696 scores against it.
 - `pfcollapse` → `tests/codegen/run_prefilter_collapse.sh`, [OPT-4]'s
   count-collapsed hybrid prefilter and [OPT-4.1]'s nullability gate on its
   rescue, held to the ARTIFACT. **ITS OWN ARM, and with the strongest form of
@@ -3340,8 +3345,8 @@ The size-cap ladder became ONE first-match table (`fit_rungs[]`,
 `fit_premul_applies`); intent unchanged, re-verified. **S420** makes the new
 prefilter-drop row never apply (the witness `(\p{Xwd})` -e utf8 refuses:
 harness target `tests/uprops/size_ladder_prefilter_drop.rxt` + resource);
-**S421** makes `fit_rung_denied` ignore `PCREC_FAST_OR_FAIL` (resource's four
-`--fast-or-fail` refusal cells + pfcollapse's K41 control); **S422** drops the
+**S421** makes `fit_rung_denied` ignore `PCREC_SIZE_CAP_REFUSE` (resource's four
+`--size-cap=refuse` refusal cells + pfcollapse's K41 control); **S422** drops the
 `<PREFIX>_VM_PREFILTER_WHY` stamp (resource WHY cell + pfcollapse); **S423**
 flips the prefilter-drop row's `degrading` cell (exactly one resource cell,
 the locality check).
@@ -3558,7 +3563,7 @@ move) and the detector is the trace build's both-derivations oracle or
 `fallbacktable`). T1: S627 rows 3/4 swapped (S-F3), S628 sel1-drop keeps
 `dd` (S-F13), S629 sel1-collapse does not latch (S-F8's cell), S630
 drop-prefilter does not restart (S-F11; the bound check fires first), S631
-sel1-collapse inside `--fast-or-fail`'s reach (S-F4), S632 drop-premul `on`
+sel1-collapse inside `--size-cap=refuse`'s reach (S-F4), S632 drop-premul `on`
 overflow (S-F7), S633 drop-prefilter carries no size-cap figures (S-F10),
 S634 drop-premul ORs no flag (S-F12), S635 sel1-collapse writes CR_SIZECAP
 (S-F14; the one-writer check), S636 drop-anchored keeps `sdr` (S-F15), S637

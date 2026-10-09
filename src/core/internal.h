@@ -6143,6 +6143,9 @@ void pcrec_memfn_stamps_render(Ctx *cx);
  * resolves deny, force, then `axes.def`'s default). The ONE derivation; every
  * `mf_art_begin` caller passes this and never a literal. */
 uint32_t pcrec_memfn_policy(uint64_t flags);
+/* [MEMFN] RQ-1: validates `opt->memfn` (the `--memfn=` string) with the
+ * kit's `mf_opts_check` and refuses the compile with the kit's own text. */
+void pcrec_memfn_opts_check(Ctx *cx);
 /* [K50]/[UTF-VALID] The caller-startpos entry prologue: the startpos-guard
  * axis's value (refuse / nothing / align) and then the `-futf-check`
  * precheck, at the four sites that take a caller's position. `anchored`

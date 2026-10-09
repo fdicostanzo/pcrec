@@ -197,7 +197,7 @@ at `6f24e187`.
 
 | family | what it controls | CLI | `.rxt` | API (`pcrec_options`) | stamped as | swept by | kind today |
 |---|---|---|---|---|---|---|---|
-| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--fast-or-fail` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s strategy mask (DERIVED from `core/axes.def`: every axis bit not in `kept`, plus `PCREC_FAST_OR_FAIL`; K92, abi 65 -- never a hand-kept list) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent. **[r1 OS-M2] Across sources: UNION** (cell A4: a file's `-fno-premul-table` and a CLI `-fno-req-byte` both apply) |
+| deny bits (`-fno-X`) | one optimization each; 35 deny bits (bits 4-45 less the five force bits, `--ucp` (34) and `--size-cap=refuse` (41)) | `-fno-X`, hidden from `--help` (D47.3) | a config's `pcrec <raw>` line | `flags` bits 4-45 | per-mechanism OUTCOME stamps (D46: `RX_DFA_TABLE`, `RX_VM_PREFILTER`, …). `rx_info.flags` records each bit unless it is in `emit_info_def`'s strategy mask (DERIVED from `core/axes.def`: every axis bit not in `kept`, plus `PCREC_SIZE_CAP_REFUSE`; K92, abi 65 -- never a hand-kept list) | `make test-axes`, one job per bit (`tests/axes/run_axes.sh`) | boolean; OR'd; idempotent. **[r1 OS-M2] Across sources: UNION** (cell A4: a file's `-fno-premul-table` and a CLI `-fno-req-byte` both apply) |
 | force bits (`-fX`) | the force twin of a deny | `-fprefilter`, `-fprefilter-collapse`, `-fstartpos-guard=align`, `-futf-check`, `-fcomments` | `pcrec <raw>` | `flags` bits 9, 20, 27, 39, 40 | as above | as above (force arms) | **[r1 OS-M1] with its deny, ONE three-valued axis per `axes.def` row.** Both values requested, from ONE source or from TWO, is REFUSED (cells A1, A2, A5, A9). The exception is comments, where deny wins in either direction (A6, A7, A10) |
 | contract axes | which ANSWER a call gives (§2.23, §2.36) | `-fno-startpos-guard`, `-fstartpos-guard=align`, `-futf-check` | `pcrec <raw>` | `flags` 25, 40, 39 | `RX_STARTPOS_GUARD`, `RX_UTF_CHECK`; kept in `rx_info.flags` | swept against their documented behaviour, not identity | boolean / three-valued |
 | semantic bits | what the pattern MEANS | `-i`, `--ucp`, `--no-captures` | `flags` letters; `pcrec <raw>` | `flags` 0, 34, 2 | `rx_info.flags` unmasked | not swept (structurally ineligible, D125) | boolean. **[r1 OS-M2] Across sources, the letters UNION** with the CLI's `-i`/`--ucp`/`--no-captures` (cells B1-B4). Within the file, a typed config `flags` line is REPLACED whole by the block's (B8), while a raw `pcrec -i` line unions with the block (B7) |
@@ -209,7 +209,8 @@ at `6f24e187`.
 | module gate | which constructs compile | `--features LIST` | `features` (UNION with configs unless `features only`) | `features` (spec string; NULL = no request) | `PCREC_FEATURE_SET`, `PCREC_FEATURE_MODULES` | not an axis (refusals change by design) | **a set mechanism**: `std1` is a FROZEN named set, `all` a DERIVED one, `none` the empty one. **[r1 OS-M2] Across sources it is ONE WHOLE-LIST axis, file-wins, SILENT**: a CLI `--features lookaround` is dropped under a file `features atomic-groups` (C5, C6). Within the file, config and block UNION (C8). `--features` on a `pcrec` line is refused (C3) |
 | findings | which subject statistics speed reads | `--analysis NAME` | `analysis <name>` | `analysis` | `RX_FINDINGS` (`kind=source:digest`), `rx_info.findings` | not an identity axis (speed only) | **a bundle**, composed INSIDE itself by `include` (D123); config later-wins; CLI fill-only, REPORTED when both name one (F1, F2) |
 | resource bounds | budgets, capacities, caps | `--step-budget=`, `--work-budget=`, `--backtrack-frames=`, `--max-emit-*`, `--warn-emit-bytes=` | `budget` | the budget/cap fields | `RX_FAST_FRAMES` etc. | `limits.md`'s own checks | value; raise-only for the caps. **[r1 OS-M2] Across sources: file-wins, SILENT**, by either spelling (H3, H4) |
-| size policy | refuse vs degrade | `--fast-or-fail` | `pcrec <raw>` | `flags` 41 | masked out of `rx_info.flags` | not swept | boolean |
+| size policy | refuse vs degrade | `--size-cap=refuse\|degrade` (was `--fast-or-fail`) | `pcrec <raw>` | `flags` 41 | masked out of `rx_info.flags` | not swept | boolean |
+| kit option string | which kit rows are denied | `--memfn=OPTS` | `pcrec <raw>` | `memfn` (one opaque string) | none (a kit row stamps its own, once it moves a byte) | each row swept by `test-axes` from the kit registry | silent file-wins string; inert at `-fno-memfn-simd` for `simd` rows |
 | unspelled constants | dial cells with no flag | none (the ladder's bar is a constant beside `size_term_choose`; the threshold is `limits.def`'s `PCREC_SIZE_TERM_THRESHOLD`, kind `BUILD_D`; the entry-chain term; λ's rule) | none | none | through outcome stamps | through the dial's jobs | set only by the dial |
 
 The table excludes MODES and LISTINGS (`--emit-ir`, `--list-*`,
@@ -814,7 +815,7 @@ Every axis already has a class in the tree's own vocabulary (`tuning.md`
 |---|---|
 | identity | answer-preserving, refusal-preserving (with the give-up carve-out below) |
 | engine-selecting | answer-preserving but may move the engine or refuse under `--engine=dfa` (`-fno-splice-calls`, `-fno-atomic-discharge`, `-fno-ctx-node`) |
-| policy | changes WHETHER an artifact is produced, never its answers (`--fast-or-fail`, the caps) |
+| policy | changes WHETHER an artifact is produced, never its answers (`--size-cap=refuse`, the caps) |
 | contract | changes which ANSWER a call gives, on purpose (`-futf-check`, `-fstartpos-guard=align`) |
 | semantic | changes what the pattern MEANS (`-i`, `--ucp`, `--no-captures`, `encoding`) |
 | instrument | changes what the artifact DOES besides matching (`--trace`) or CONTAINS (`-fcomments`, object-identical) |
@@ -1740,7 +1741,7 @@ byte-identical over the corpus. It carries the D103 ritual's new step
 **Where a panel should attack first** (revision 2):
 
 - §2.5a's cell set. Is there an axis KIND with a cross-source rule that
-  none of the 42 cells exercises (the `--fast-or-fail`/cap family, the
+  none of the 42 cells exercises (the `--size-cap=refuse`/cap family, the
   `--max-emit-*` overrides, `--warn-emit-bytes`)?
 - R2's flip of cell D3. The `.rxt` survey (R2) found one fixture and no
   caller relying on it. Is there a non-`.rxt` driver (a bench adapter, a

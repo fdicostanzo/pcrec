@@ -6,6 +6,13 @@ Entry point: pcrec command-line tool. Parses flags, calls pcrec_compile(), write
 `opt.flags |= PCREC_CASELESS` / `PCREC_EMIT_MAIN` — `pcrec_options` no
 longer has separate `caseless`/`emit_main` int fields (lib/CLAUDE.md).
 
+**[SIZE-CAP-FLAG] / [MEMFN] RQ-1 (2026-10-09):** `--size-cap=refuse|degrade`
+(was `--fast-or-fail`, retired with no alias) sets/clears
+`PCREC_SIZE_CAP_REFUSE`. `--memfn=OPTS` stores ONE opaque pointer in
+`opt.memfn`; the kit validates it in the compile. A config's raw `pcrec`
+line copies a value it set through `cli_keep_string` (the split tokens are
+freed right after the parse).
+
 **[M4.5b] (2026-08-15):** five GENERATION AXES for the VM engine
 (docs/design/engine_m4.md §4.6/§5.3/§5.6). `--no-captures` sets
 `PCREC_NO_CAPTURES`; `--engine=dfa|vm|auto`, `--step-budget=N`,
@@ -194,6 +201,13 @@ buffer to route through a single call — a change of SHAPE, not of channel.
 ## Files
 
 - **main.c** — CLI: option parsing ([-p PREFIX] [-e byte|utf8 | --encoding=byte|utf8] [-i] [--emit-main] -o OUT FILE.rxt... | -o OUT.c --pattern 'PATTERN' — [REL-1.10]/D118, the gcc shape; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing; the SR-3 syntax queries (--list-syntax, --explain, --flavour, --list-verbs, **--list-families** ([M6.6.2] wave F, D71 item 3 — one line per construct FAMILY: the rows sharing a key, with `built` ANDed over the members and every member spelling listed. It takes no `--flavour`, and for a reason of its own rather than by inheritance from --list-verbs: a family is a grouping OF rows, so filtering its members would print families whose membership silently depends on the filter, and the ANDed `built` would then mean something different per invocation); **--list-definitions** ([DD-11.2], D85 — the replacement/definition table, the FIFTH registry surface: one row per (row, definitions-array entry), joining `--list-syntax` on `kind`/`selector`/`syntax`; DOES take `--flavour`, unlike `--list-families`/`--list-axes`, since it walks the same rows `--list-syntax` filters — `docs/spec/registry.md` §9 is the column contract); **--explain was REWRITTEN at MOD-0.7** from a prefix match on the `syntax` column into a live doorway call — it prints the ROW's declared attribution beside the LIVE recogniser's answer and compares them per row, and it has a THIRD exit code: 0 answered-and-agreed, 1 the query could not be answered (unchanged), **3 at least one row DISSENTS** — a defect surfaced, not a bad question, which is why it is not folded into 1); --count-groups --pattern PATTERN (MOD-0.1 §18.1); and --probe-ask WANT CONSTRUCT ([REL-1.10]/D118 addendum: CONSTRUCT is the flag's own second argument, MOD-0.1 §18.2 — one doorway call at ask level claim|verdict|result, real cursor reported before/after; check06's cursor-rule channel; a doorway REFUSING is a normal exit-0 outcome, only a channel that could not run exits 1); --features LIST (MOD-0.1 slice 9 — the enabled set: module names from --list-syntax's module column, a frozen named set (`std1`, D37), or all/none, unknown names refused by name; composes with every mode; installs the set via pcrec_enabled_set_spec before anything consults the gate. **[STD1] phase A (D37, 2026-08-13):** a bare invocation (no `--features` at all) now ALSO resolves through `pcrec_enabled_set_spec`, using `pcrec_default_features` (src/parse/enabled.c, `"std1"` since [STD1] phase B; it was `"none"` at phase A and this line said so until [REVW.5]) instead of skipping the call — behaviourally identical to before (mask stays 0) but gives the enabled-set machinery a named answer for a bare invocation too, which is what lets src/gen's artifact stamp report something honest ("Feature set: none") rather than nothing. An explicit `--features` always overrides the default; the default constant is the SOLE point that later flips to `"std1"`)
+
+**`main` / `cli_dispatch` (K98, 2026-10-09).** `main` parses, refuses the
+conflicts every mode shares, and decodes `--pattern-esc` ONCE into an arena it
+frees after `cli_dispatch` (the modes, taking `CliState` by value) returns, so
+every mode that reads `--pattern` reads the decoded value. The decode used to
+sit above the compile alone, below the queries' early returns.
+
 
 **A DOORWAY THAT RAISES (R20/MOD07-1)** is a third reason `--explain` and
 `--probe-ask` return NULL, and each now prints a different sentence for it.

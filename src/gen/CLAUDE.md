@@ -834,7 +834,7 @@ reason the D47.3 family and the prefilter force pair are both masked out of
 **[FLAGBITS] (2026-10-06, abi 65) THE MASK IS NOW DERIVED, so the sentence
 above describes a list that no longer exists:** `strategy_denials` is every
 `src/core/axes.def` bit except the `kept` set (the two engine-selecting
-denials and the two contract axes), plus `PCREC_FAST_OR_FAIL`. A new axis is
+denials and the two contract axes), plus `PCREC_SIZE_CAP_REFUSE`. `pcrec_memfn_site` copies `pcrec_options.memfn` ([MEMFN] RQ-1) into every site's `opts`; `pcrec_memfn_opts_check` is the once-per-compile kit validation. A new axis is
 masked on arrival; forgetting one in `kept` is the recoverable direction.
 Bits 18/21 were the last two strategy bits the old list lacked (K92). [ART-POSS-ARMS] (abi 66) made the engine-selecting denials three:
 `-fno-poss-ctx-follow` (tuning.md §2.44) joined `kept`, and `emit_vm.c` gained
@@ -3891,7 +3891,7 @@ SDR_NO_PREFILTER`); `N`/`CAP` are `Ctx.size_cap_bytes`/`size_cap_limit`, the
 refused attempt's figures the driver carried forward. No artifact that
 compiled before the rung existed carries the line, so no emitted byte of an
 existing artifact moved (corpus sweep in `docs/dev/lanes/pfdrop_report.md`).
-`rx_info.flags` masks `PCREC_FAST_OR_FAIL` (`emit_dfa.c`'s strategy mask).
+`rx_info.flags` masks `PCREC_SIZE_CAP_REFUSE` (`emit_dfa.c`'s strategy mask).
 
 ## K79 (abi 54, lane k7980): the emitters see the render PLACEHOLDER, not the caller's prefix
 

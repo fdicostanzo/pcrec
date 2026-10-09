@@ -295,7 +295,7 @@ written beside the row in `cand_rows[]` since [START-TABLE] C6; for the
 three fallback axes, the row's `axlist` cell beside it in the fallback tables
 (`fit_rungs[]`, `pf_admits[]`, `esel_ends[]`) since [DEC-FALLBACK] B6/B7, and
 for `fallback` and `prefilter-admit` GENERATED from the row's own cells
-(arrival labels, degrading, `--fast-or-fail` reach, attempts added, repeat;
+(arrival labels, degrading, `--size-cap=refuse` reach, attempts added, repeat;
 verdict and `--emit-ir` listing token);
 `tuning.md` §2's prose for the `kind=predicate` rows) — evaluating a real
 candidate's predicate needs a live pattern a
@@ -337,6 +337,12 @@ kit's `mf_options()`, read from the kit — pcrec's dump names no row:
 | `layer` | `scalar` \| `simd`: the acceptance reading that owns the row; a `simd` row is inert at `-fno-memfn-simd` |
 | `spelling` | the accepted `--memfn=` spelling(s), `\|`-joined |
 | `doc` | one line, the kit's |
+
+**How a row is reached.** `--memfn=no-NAME` (or bare `NAME` for a `pair`
+row), a config's raw `pcrec --memfn=` line, or `pcrec_options.memfn`
+([MEMFN] RQ-1, `cli.md` §1): ONE opaque string pcrec validates only through
+the kit and copies into every site. A `simd` row given at `-fno-memfn-simd`
+is accepted and inert.
 
 These are NOT pcrec axes: no row carries a `lib/pcrec.h` bit, `axes.def`
 has no row for one, and `test-axes`, the identity gates and the registry

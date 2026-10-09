@@ -636,7 +636,7 @@ static void size_drop_note(const char *what, const char *cost)
 /* [PF-DROP] (D135) THE SIZE-CAP LADDER AS ONE FIRST-MATCH TABLE: which rung
  * the driver takes when an emitted-size cap has just refused an attempt.
  * Rows are tried in order; a row whose deny bit the caller set, or a
- * DEGRADING row under `PCREC_FAST_OR_FAIL`, is transparent; the first row
+ * DEGRADING row under `PCREC_SIZE_CAP_REFUSE`, is transparent; the first row
  * that applies is taken, and the last row always applies and refuses.
  *
  * THE ORDER IS BY MEASURED RUN-TIME COST, cheapest first
@@ -650,7 +650,7 @@ static void size_drop_note(const char *what, const char *cost)
  * only within one engine.
  *
  * `degrading` IS THE CLASSIFICATION D135 asks for, one column, and
- * `fit_rung_denied` is the ONE predicate `--fast-or-fail` acts through —
+ * `fit_rung_denied` is the ONE predicate `--size-cap=refuse` acts through —
  * no rung tests the switch itself. Every rung today measures slower, so
  * every rung is degrading; the column exists so that a rung which costs no
  * speed is allowed under the switch by saying so here. The unroll rescue is
@@ -719,10 +719,10 @@ typedef struct {
     uint64_t   flags_or;
     unsigned   carry;       /* FIT_CARRY_* */
     bool       latch;
-    bool       restart;
+    bool       restart;     /* the term's phase, record AND the K it wrote (K100) */
 } FitSets;
 
-/* `fof`: inside `--fast-or-fail`'s reach (§1.2). The switch denies a row only
+/* `fof`: inside `--size-cap=refuse`'s reach (§1.2). The switch denies a row only
  * when it is degrading AND in the reach; the [SEL-1] rows are degrading and
  * outside it (Q2, KEEP: the switch is a size-cap policy). */
 typedef enum { FIT_FOF_UNSTATED, FIT_FOF_OUT, FIT_FOF_IN } FitFof;
@@ -753,7 +753,7 @@ typedef struct {
 /* [PF-DROP] (D135) THE SIZE-CAP LADDER. Every rung below is a row
  * of `fit_rungs[]`, which carries the order, each rung's deny bit
  * and its degrading classification; the walk takes the first that
- * applies and is not denied (`--fast-or-fail` denies every degrading
+ * applies and is not denied (`--size-cap=refuse` denies every degrading
  * row inside its reach). A rung that changes a VM artifact's figures
  * restarts the size-term ladder, whose record would otherwise pick a
  * `K` for an artifact that no longer exists. Each rung's reason sits
@@ -1102,11 +1102,11 @@ static const FitRung fit_rungs[] = {
 #undef FIT_CELLS_PASS
 
 /* True when the caller has turned row `r` off: its own deny bit, or
- * `--fast-or-fail` on a degrading row inside the switch's reach (`fof`). */
+ * `--size-cap=refuse` on a degrading row inside the switch's reach (`fof`). */
 static bool fit_rung_denied(const FitRung *r, uint64_t flags)
 {
     return (r->deny & flags) != 0 ||
-           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_FAST_OR_FAIL) != 0);
+           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_SIZE_CAP_REFUSE) != 0);
 }
 
 /* The rung row whose action is `act`. */
@@ -1373,7 +1373,7 @@ bool pcrec_fit_table_row(int i, FbTabRow *out)
     out->name = r->name;
     out->deny = r->deny;
     int n = snprintf(out->desc, sizeof out->desc,
-                     "%s; asked on the arrivals: %s; %s; --fast-or-fail %s; adds %d attempt%s; fires %s",
+                     "%s; asked on the arrivals: %s; %s; --size-cap=refuse %s; adds %d attempt%s; fires %s",
                      fit_act_verb(r->act), on,
                      r->degrading ? "degrading" : "not degrading",
                      r->fof == FIT_FOF_IN ? "denies it" : "does not reach it",
@@ -1654,6 +1654,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * first `setjmp`, and never written again. */
     const char *const user_prefix = defo.prefix;
     defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+    /* [K100] the caller's `--unroll=K` (0: none), which the size term's
+     * ladder and FINAL attempts overwrite in `defo.unroll_k` and a
+     * restarting row's `sets` routine puts back. */
+    const int user_unroll_k = defo.unroll_k;
     pcrec_options hopt;   /* the facts hook's real-prefix view, filled there */
 
     /* [REL-1.11] THE ENABLED FEATURE SET, RESOLVED ONCE, HERE — before the
@@ -2144,6 +2148,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool restart_term = w->restart;
             fit_record(rung, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired);
             if (restart_term) {
+                /* [K100] the restart includes the K the ladder wrote: left
+                 * in place, the "default" attempt ran at the leaked K, its
+                 * term read `option` and the ladder never ran again. */
+                defo.unroll_k = user_unroll_k;
                 st_phase = ST_DEFAULT; st_idx = 0; st_final_k = 0;
                 st_rescue = false; st_capexcl = false;
                 memset(st_k, 0, sizeof st_k);
@@ -2233,6 +2241,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             (defo.flags & PCREC_FORCE_STARTPOS_ALIGN))
             pcrec_ctx_fail(&cx, 0, "-fstartpos-guard=align and "
                            "-fno-startpos-guard cannot both be requested");
+
+        /* [MEMFN] RQ-1 the `--memfn=` string, validated ONCE per compile by
+         * the kit (every attempt carries the same string). */
+        if (attempt == 0) pcrec_memfn_opts_check(&cx);
 
         /* [FINDINGS] B2 THE ANALYSIS CHAIN, resolved here — before the
          * parse, so a bad analysis name refuses even a pattern that would

@@ -1770,6 +1770,23 @@ in both modes. No new implementation work was needed for TT-2's mech item;
 this note exists so a future reader of the TT-2 plan row does not go
 looking for parallel mech and conclude it is missing.
 
+### [TT-MECHPAR] the row throttle was a FIFO on the oldest pid, fixed (2026-10-09)
+
+Named-row lane chains (`PROCS=4`, ~70 rows) ran effectively serial: load1 ~1,
+one process alive, B4's 69 rows 36 min and B5's 71 rows 42 min. Measured
+(docs/dev/lanes/mechpar_profile.md): the `PROCS>1` dispatch `wait`ed on
+`pids[0]`, the OLDEST row, once `PROCS` rows were running, so a slow row at
+the head of the list (S159's single-threaded recursion suite, ~12.5 min)
+held every slot closed after its three companions finished. 12-row probe
+(`taskset -c 0-7`, PROCS=4): 62 % of the 1223 s wall at load 1-2.
+Fix: a slot pool (`jobs -pr` count, 0.2 s poll; bash 3.2-safe) launches the
+next row when ANY row exits. Same 12 rows, same flags: 792 s (the wall is now
+the slowest row, S159, ~750 s), per-row verdicts identical. The full-size
+71-row comparison (PROCS=4 vs serial PROCS=1, one HEAD) is
+docs/dev/lanes/mechpar_chain/ and its figures are in mechpar_report.md.
+A list's wall is now bounded below by its slowest row; list the long rows
+(recursion arm) in the same invocation, not after.
+
 ### [TT-8] the PROCS leak into inner suite sharding, fixed (2026-08-23)
 
 `run_sabotage_matrix.sh`'s `PROCS` is documented above as ROW-level
