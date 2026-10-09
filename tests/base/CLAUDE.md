@@ -146,6 +146,13 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   (sabotage S612). They are `# pcre2-only` for python's cost and libpcre2's
   match limit (U19, U4); their `nomatch` is verified on the language-equal
   patterns and by python offline (the transcript).
+- **vm_lazy_rmin_prefix.rxt** — [MEMFN] R-12 (lane vmlazy, 2026-10-09): the
+  VM cursor rung's LAZY rmin prefix, a span scan capped at rmin plus the
+  rung's reach test. Runs short of rmin at stride 1 and 2, exactly rmin,
+  past rmin and rmin = 200, each pattern on the default route and under
+  `engine vm` (the only route where the prefix alone must refuse a short
+  run). Generated from python3 `re`; sabotage rows S706-S708/S710's
+  detector.
 - **opt41_rung_nullable_decline.rxt** — the [OPT-4.1] `--emit-ir` prefilter
   value `no-nullable-collapsed` REACHABILITY WITNESS (adm71 item 4,
   2026-09-19): `docs/dev/lanes/dd8_report.md` section 4.3 filed that value

@@ -14,6 +14,8 @@
 # pending rows left (N6, N7U, VMLAZY) are each one migration from leaving too.
 # NOTE 2026-10-08 (D147 add. 12, lane m6): N6 was RETIRED (not a search site);
 # the pending rows are now N7U and VMLAZY. The plant (VMSTRIDE) is unaffected.
+# NOTE 2026-10-09 (R-12 REPLACE, lane vmlazy): VMLAZY deleted; the pending
+# row is N7U alone. The plant (VMSTRIDE) is unaffected.
 # So the plant moves to the MANIFEST: the delegated VMSTRIDE row is flipped
 # back to `pending`. Its emitters (vm_span_advance, vm_emit_span_scan) spell
 # no form, the kit renders the loop, so rule 4 fires. Intent unchanged: a

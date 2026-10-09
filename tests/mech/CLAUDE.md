@@ -3661,3 +3661,20 @@ selector written above its helper), all on memfnstamps + memfnarms; S693
 (PCREC_ARTIFACT_ABI left at 69; codegen's [DD-14.FB] ABI_EXPECT). No row
 re-aimed: S687's and S689's anchors and reach lines still resolve (the
 PREFIX render line kept its text; `rx_ofsskip(` is the selector's head).
+
+### [MEMFN] R-12 VMLAZY — S706-S710, S685 retired (lane vmlazy, 2026-10-09)
+
+R-12 re-spells the VM cursor rung's lazy rmin prefix as the kit's span scan
+capped at rmin (VMSPAN/VMSTRIDE) plus pcrec's reach test (`vm_span_reach`),
+in two steps: NORMALIZE (abi 70 -> 72) then REPLACE (zero movers, the VMLAZY
+manifest row deleted). New rows, hand-measured solo (lane report §5): S706
+(the reach test dropped), S707 (the cap one short), S708 (the reach test in
+iterations, not bytes: stride > 1 only), S710 (the cap dropped, S680's lazy
+sibling), all on `harness` over `tests/base/vm_lazy_rmin_prefix.rxt` (its
+`engine vm` blocks; on the default route the hybrid's exact prefilter rejects
+first); S709 (the M6 counted loop re-spelled) on memfnforms + memfnmanifest,
+through the `span-count` vocabulary line KEPT at C12 ceiling 0 (Q-R12-6).
+S685 is RETIRED as declared UNREACHED (its population, the VMLAZY pending
+row, is gone; its REACH_POP reads NOW REACHED if one returns). S680
+re-aimed (`vm_span_advance` takes the cap as a parameter), S512's floor POP
+14 -> 13, S693 re-aimed to 72 -> 70.

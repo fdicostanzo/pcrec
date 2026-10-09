@@ -44,11 +44,18 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   vocabulary line and its C12 row are deleted: 12 delegated / 2 pending
   (N7U, VMLAZY), 14 rows, `C17_ROW_FLOOR` 14, C12 2 rows
   (`C12_CEIL_ROWS_FLOOR` 2).
+  **R-12 REPLACE (lane vmlazy, Q-R12-2):** VMLAZY's row is DELETED, not
+  flipped: the lazy rmin prefix is now `vm_emit_span_scan` capped at rmin,
+  i.e. VMSPAN/VMSTRIDE instances (their row notes carry the history). 12
+  delegated / 1 pending (N7U), 13 rows, `C17_ROW_FLOOR` 13; C12 1 row
+  (`C12_CEIL_ROWS_FLOOR` 1). The `span-count` vocabulary line stays at
+  ceiling 0 as the re-spell tripwire (Q-R12-6, sabotage S709).
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
   count as a search form when an emitter spells them. There are four
   classes: libc search calls, table-walk loops, runcmp row texts and the
   span compares (the encoding seam's two; since M6 `span-count`, a counted
-  span loop, the VM's lazy rmin prefix). Python regexes are matched against
+  span loop, the VM's lazy rmin prefix as M6 found it, spelled by nothing
+  since R-12 and kept at C12 ceiling 0 as a tripwire). Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form
   ratchet, born at R4c) reads THIS file rather than keep a second list.
 - **c17_lex.py** — the emitter reader. It returns every C string literal

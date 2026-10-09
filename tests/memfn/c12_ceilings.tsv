@@ -44,11 +44,13 @@
 # shape, so its row swapped span-count 1 -> walk-open 1 (the total stays 2;
 # not a raise: M6's swap is the precedent). The span-count vocabulary line
 # stays at ceiling 0 as the tripwire for the old counted loop (Q-R12-6).
+# R-12's REPLACE (lane vmlazy) deleted that emit_vm.c walk-open row (1 -> 0):
+# the lazy prefix is the kit's VMSPAN/VMSTRIDE site, so emit_vm.c spells no
+# search form and the only row left is enc_utf8.c's span-decode (N7U).
 #
-# The row count (2) and the total (2 forms; R-12's NORMALIZE swap: span-count 1 out, walk-open 1 in; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
+# The row count (1) and the total (1 form; 2 before R-12's REPLACE; R-12's NORMALIZE swap: span-count 1 out, walk-open 1 in; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/gen/emit_vm.c	walk-open	-	1	the VM cursor rung's lazy rmin prefix, spelled by pcrec in the kit's ADVANCE layout (VMLAZY, pending; R-12 NORMALIZE, deleted by R-12's REPLACE)
 src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)

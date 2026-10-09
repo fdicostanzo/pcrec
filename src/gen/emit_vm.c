@@ -4664,11 +4664,13 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
  * the cursor `<prefix>_span_cursor` stepped by W, each member pcrec's own
  * class test of its position (`vm_cls_test`'s text, `members[i]`), the
  * subject (the kit's own byte at offset i is subject[cursor + i], Q-R10-4),
- * and for a bounded quantifier the caller's `it_` (declared and read by
- * pcrec's text, 0 at the loop) capped at rmax ITERATIONS (Q-R10-5). */
-static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t (*seq)[32],
+ * and, where `cap` >= 0, the caller's `it_` (declared and read by pcrec's
+ * text, 0 at the loop) capped at `cap` ITERATIONS (Q-R10-5): rmax for a
+ * bounded possessive/greedy scan, rmin for the lazy arm's prefix; -1 is
+ * unbounded. */
+static PcrecAdvance vm_span_advance(Vm *v, const uint8_t (*seq)[32],
                                     int stride, const char *const *members,
-                                    const char *bound)
+                                    const char *bound, int cap)
 {
     uint8_t *set = pcrec_arena_alloc(&v->cx->arena, 256 * (size_t)stride);
     for (int i = 0; i < stride; i++)
@@ -4680,16 +4682,17 @@ static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t (*seq)[32
         .more = vm_rolef(v, "%s + %d <= %s", cur, stride, bound),
         .peek = vm_rolef(v, "subject[%s + 0]", cur),
         .step = vm_rolef(v, "%s += %d", cur, stride), .cursor = cur,
-        .count = a->u.rep.rmax >= 0 ? "it_" : NULL, .count_start = 0,
-        .span = a->u.rep.rmax >= 0 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,
+        .count = cap >= 0 ? "it_" : NULL, .count_start = 0,
+        .span = cap >= 0 ? (uint64_t)cap : MF_SPAN_UNBOUNDED,
         .indent = "        " };
 }
 
 /* Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as every position's class test holds.
  *
- * [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
- * arms (the possessive one and the greedy one, 140 lines apart, which wrote
- * the same eight lines with no agreement check between them).
+ * [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for all three of
+ * `vm_cursor_rep`'s arms: the possessive and greedy scans, and since [MEMFN]
+ * R-12 the lazy arm's rmin prefix (VMLAZY, deleted: those iterations are
+ * this same site, capped at rmin, then the rung's reach test).
  *
  * Produces the `{ … }` block that walks `<prefix>_span_cursor` forward in
  * `stride` steps for as long as each position's test (`members[i]`) holds.
@@ -4702,21 +4705,21 @@ static PcrecAdvance vm_span_advance(Vm *v, const Ast *a, const uint8_t (*seq)[32
  * declaration cannot be left to the caller: this helper opens the brace, and
  * `lim_` lives inside it.
  *
- * Reads `a->u.rep.rmax` (the `it_` counter is emitted only for a bounded
- * quantifier) and `v->p`/`v->up`; writes only `v->b`.
+ * `cap` is the iteration cap (`it_` is declared only when `cap` >= 0; -1 is
+ * unbounded). Reads `v->p`/`v->up`; writes only `v->b`.
  */
-static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t (*seq)[32], int stride,
-                              const char *const *members, const char *clamp)
+static void vm_emit_span_scan(Vm *v, const uint8_t (*seq)[32], int stride,
+                              const char *const *members, const char *clamp, int cap)
 {
     StrBuf *b = v->b;
     pcrec_sb_puts(b, "    {\n");
-    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "        unsigned long it_ = 0;\n");
+    if (cap >= 0) pcrec_sb_puts(b, "        unsigned long it_ = 0;\n");
     if (clamp)
         pcrec_sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
                   v->up, clamp, stride);
     pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
     const char *bound = clamp ? "lim_" : "subject_length";
-    PcrecAdvance sa = vm_span_advance(v, a, seq, stride, members, bound);
+    PcrecAdvance sa = vm_span_advance(v, seq, stride, members, bound, cap);
     DelegSite id = stride == 1 ? DELEG_VMSPAN : DELEG_VMSTRIDE;
     mf_hooks h;
     mf_site *s = pcrec_memfn_advance_site(v->cx, id, &sa, &h);
@@ -4877,7 +4880,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * rmin, publish the groups, take the continuation. Nothing here can
          * be resumed, which is the whole point — the emitted C contains no
          * label the loop could come back to. */
-        vm_emit_span_scan(v, a, seq, stride, members, NULL);
+        vm_emit_span_scan(v, seq, stride, members, NULL, a->u.rep.rmax);
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
          * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
          * rmin test. The scan has completed, `pos` is still the loop's entry
@@ -5008,8 +5011,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
-        vm_emit_span_scan(v, a, seq, stride, members,
-                          fold ? vm_mrl_amt(v, mrl) : NULL);
+        vm_emit_span_scan(v, seq, stride, members,
+                          fold ? vm_mrl_amt(v, mrl) : NULL, a->u.rep.rmax);
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,
                   "MRL: the clamp IS the scan's own bound, so the doomed suffix "
@@ -5029,23 +5032,15 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * on "aa" gives [0,2)/g1=[0,1) under a greedy scan where both oracles
          * give [0,1)/g1=[0,0). */
         /* The rmin prefix: the rung's mandatory iterations, spelled as the
-         * other two arms spell theirs -- a span scan capped at rmin
-         * iterations, then the reach test (R-12, r12scope_report.md §1.5:
-         * "reached rmin" is "the cursor stands at entry + rmin*W", the scan
-         * stopping at the cap, at the first block a member rejects, or where
-         * the subject ends). The text is the kit's ADVANCE layout, still
-         * spelled by pcrec: tests/memfn/site_manifest.tsv row VMLAZY,
-         * `pending`, until the REPLACE step routes it through
-         * vm_emit_span_scan. */
+         * other two arms spell theirs -- the span scan capped at rmin
+         * iterations, then the reach test ([MEMFN] R-12, r12scope_report.md
+         * §1.3: "reached rmin" is "the cursor stands at entry + rmin*W", the
+         * scan stopping at the cap, at the first block a member rejects, or
+         * where the subject ends). The scan block writes its own cursor
+         * init; the bound is `subject_length`, since this arm folds no MRL
+         * clamp (the MRL test sits at the retry label). */
         if (a->u.rep.rmin > 0) {
-            pcrec_sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
-            pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-            pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= subject_length) && it_ < %dULL",
-                            v->p, stride, a->u.rep.rmin);
-            for (int i = 0; i < stride; i++)
-                pcrec_sb_printf(b, " && (%s)", members[i]);
-            pcrec_sb_printf(b, ") {\n            %s_span_cursor += %d;\n            it_++;\n        }\n    }\n",
-                            v->p, stride);
+            vm_emit_span_scan(v, seq, stride, members, NULL, a->u.rep.rmin);
             vm_span_reach(v, low, lo_off);
         } else
             pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
