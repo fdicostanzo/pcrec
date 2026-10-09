@@ -26812,3 +26812,27 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - [MEMFN] M6 (R-10) merged at 287133ba: zero movers, slot14 green apart from the W5 floor, which the kit's w5fix fixed.
 - Lessons: an auto-lift gate keyed on "no run_sabotage process" also matched the kit's light pinned rows. Key a gate to the owning worktree's artifacts, never to a process name. The manager `cd`'d into worktrees twice; use absolute paths and `git -C` only.
 - NEXT: the timing verdict, then lift chains k100 -> clibundle -> kit slot15 -> decattr (the abi event goes last). RQ-3 is awaiting Frank.
+
+## 2026-10-09 — session 101, afternoon close (manager; reset at Frank's go, context 55%)
+
+- **Landed today, in order, on main:** k100 (K100 + K98), clibundle ([SIZE-CAP-FLAG] `--size-cap`, RQ-1 `--memfn=`), memfn R4e′.0 (131c173a), decattr ([DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], **abi 69**, 32a1c91f), memfn R4e′.0b (**abi 70**, 82ff9432; R-11 complete). [TT-MECHPAR] earlier (same-HEAD 2071 s -> 631 s, verdicts identical).
+- **In flight at close:** RQ-3 (lane/rq3 @ 0890ed9b, **abi 71**, D155 add. 2). rq3land merged main (abi 70) in and re-pinned. It self-lifted its heavy chain, detached as SID 1349594, writing to worktrees/rq3/build/land/trailer.log. make test (0 section errors) and strict are green; emit_sweep and mech are running. NOT merged.
+- **Rulings:**
+  - D155 addendum 2: SIMD bytes neutral to size decisions + reported, no aggregate cap ("fixed overhead unlike dfa state explosions").
+  - D147 addendum 14: N7U RETIRED; the kit is encoding-blind. [MEMFN-CI-ASCII] filed.
+  - The deadlock check is folded into the heartbeat and fires only while waiting on a specific peer; never ping an idle peer. Both peers were told.
+  - [BREF-FOLD-ONCE] goes to boonies ("Focus on high impact optimization over obscure stuff").
+  - **Round 3 GO after the reset:** [OPT-REVEND] first (tail-anchored losses x1,000-x24,900 on capability@0.2, bench README), then [U8-PICK] STEP 0 and [ENG-TACTICS] reverse-inner. [ART-TRAIL-ELIDE] is backup.
+- **Bench:**
+  - I-140 was stranded locally for hours. It was rebased and pushed; always fetch, commit and push together.
+  - I-141 answered the O-93 trend RFC; v0.2 folds in our asks plus R19, the instrument sha.
+  - O-92's short-search slowdown was the BENCH's driver (O-94); O-95 bounded it to one window.
+  - [B133] sentinels: Frank settled them with the bench directly.
+- **Kit:** requests R-12 (VMLAZY + N7U scoping; scoping done, VMLAZY build lane running at abi 72) and R-13 (batch 1, waiting on RQ-3's merge ping).
+- **Incidents and lessons:**
+  - Two waiters on one worktree ran interleaved chains (decattr). BOILERPLATE now says one waiter per worktree, and never rewrite a live chain.sh.
+  - A slot script wrote DONE on a FATAL stage and released rq3 early. The kit fixed it: DONE only on the last stage, FAILED otherwise.
+  - A log-archive glob moved a chain's script.
+  - The manager stopped a lane that had already delivered.
+  - Lanes took kit-reserved sabotage ids. BOILERPLATE now names the reservations.
+  - An auto-lift gate keyed on a process name also matched the kit's light rows.
