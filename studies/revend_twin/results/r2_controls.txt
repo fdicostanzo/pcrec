@@ -82,10 +82,10 @@ walk  [nodead]  tie-slazy                pool_byte \s*?$                  byte s
 walk  [nodead]  tie-slazy                long      \s*?$                  byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=21 findall_diff=0 rc=0
 walk  [nodead]  tie-sstar                pool_byte \s*$                   byte subjects=848 cells=20351 twin_diff=0 | oracle_cells=18747 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=931 findall_diff=0 rc=0
 walk  [nodead]  tie-sstar                long      \s*$                   byte subjects=12 cells=876 twin_diff=0 | oracle_cells=108 orig_vs_pcre2=0 twin_vs_pcre2=0 | findall_calls=19 findall_diff=0 rc=0
-walk  [nodead]  x1-dla                   pool_byte  ASAN: rc=1
-walk  [nodead]  x1-dla                   long       ASAN: rc=1
-walk  [nodead]  x1-dnla                  pool_byte  ASAN: rc=1
-walk  [nodead]  x1-dnla                  long       ASAN: rc=1
-walk  [nodead]  x1-aZla                  pool_byte  ASAN: rc=1
-walk  [nodead]  x1-aZla                  long       ASAN: rc=1
-== run_r2_check COMPLETE 2026-10-09T17:30:38-04:00
+walk  [nodead]  x1-dla                   pool_byte  ASAN:AddressSanitizer: SEGV rc=1
+walk  [nodead]  x1-dla                   long       ASAN:AddressSanitizer: SEGV rc=1
+walk  [nodead]  x1-dnla                  pool_byte  ASAN:AddressSanitizer: SEGV rc=1
+walk  [nodead]  x1-dnla                  long       ASAN:AddressSanitizer: SEGV rc=1
+walk  [nodead]  x1-aZla                  pool_byte  ASAN:AddressSanitizer: SEGV rc=1
+walk  [nodead]  x1-aZla                  long       ASAN:AddressSanitizer: SEGV rc=1
+== run_r2_check COMPLETE 2026-10-09T17:34:35-04:00

@@ -38,7 +38,7 @@ one_body() {
         printf '%-6s%-9s %-24s %-9s ' "$1" "${sab:+[$sab]}" "$name" "$(basename "$pool" .hex)"
         ASAN_OPTIONS=detect_leaks=0 gnutimeout 900 "$d/check" "$pat" "$enc" "$pool" 2>"$d/asan.$(basename "$pool")" | tr -d '\n'
         rc=${PIPESTATUS[0]}
-        if grep -q 'AddressSanitizer' "$d/asan.$(basename "$pool")"; then printf ' ASAN:%s' "$(grep -m1 -oE 'AddressSanitizer: [a-z-]+' "$d/asan.$(basename "$pool")")"; fi
+        if grep -q 'AddressSanitizer' "$d/asan.$(basename "$pool")"; then printf ' ASAN:%s' "$(grep -m1 -oE 'AddressSanitizer: [A-Za-z-]+' "$d/asan.$(basename "$pool")")"; fi
         echo " rc=$rc"
     done
 }

@@ -71,9 +71,7 @@ open_txt = body[:body.index("{\n") + 2]
 first_decl = body.find("    static const ")
 need(first_decl > 0, "no table declarations")
 head = body[len(open_txt):first_decl]
-k50 = re.search(r"    /\* \[K50\].*?return PCREC_ERR_STARTPOS;\n", head, re.S)
-keep_head = k50.group(0) if k50 else ""
-head_pre = head.replace(keep_head, "", 1)
+# (a) is kept at the head, (b)/(c) are separated out below.
 # (1) the forward pass: from its first declaration to its no-match return.
 #     An artifact with a REQ handoff starts its scan at the handoff position.
 ho_txt = ("    size_t handoff_position = %s_reqrun(subject, subject_length, search_from);\n"
@@ -83,10 +81,15 @@ if handoff:
     ho_adj = re.search(r"    if \(handoff_position - search_from > \d+\) \{\n        handoff_position -= \d+;\n    \} else\n        handoff_position = search_from;\n", body)
     if ho_adj and body.find(ho_txt) + len(ho_txt) == ho_adj.start():
         ho_txt += ho_adj.group(0)
-if handoff:
-    head_pre = head_pre.replace(ho_txt, "", 1)
-need(re.fullmatch(r"(    if \((?:[^;]|\n)*?\)\s*return 0;\n)*", head_pre) is not None,
-     f"unrecognised head lines: {head_pre!r}")
+head_rest = head.replace(ho_txt, "", 1) if handoff else head
+pre_re = re.compile(r"    if \((?:[^;])*?\)\s*return 0;\n")
+head_pre = "".join(pre_re.findall(head_rest))
+keep_head = pre_re.sub("", head_rest)
+# what stays is the ENTRY guard (K50's refusal, K75's alignment): comments
+# and statements that read only search_from/subject_length/the subject
+for l in keep_head.splitlines():
+    need(l.lstrip().startswith(("/*", "*")) or "search_from" in l,
+         f"unrecognised head line: {l!r}")
 fwd_a = body.find("    size_t scan_position = %s;\n" % ("handoff_position" if handoff else "search_from"))
 fwd_z_txt = "    if (last_accept_position == (size_t)-1) return 0;\n"
 fwd_z = body.find(fwd_z_txt)
