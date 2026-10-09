@@ -747,6 +747,7 @@ typedef struct {
     FitNote     note;
     int         retries;     /* attempts the row adds when it fires (§1.8) */
     FitRepeat   repeat;
+    FbList      axlist[3];   /* the `--list-axes` cells this row carries (B6) */
 } FitRung;
 
 /* [PF-DROP] (D135) THE SIZE-CAP LADDER. Every rung below is a row
@@ -1019,7 +1020,13 @@ static const FitRung fit_rungs[] = {
       .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
       .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
       .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
-      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
+      .axlist = { { "engine-route", 3, "collapsed-prefilter", 0, 0, "",
+                    "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)" },
+                  { "engine-route", 5, "overflowed-dfa", 0, 0, "",
+                    "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)" },
+                  { "engine-route", 6, "overflowed-prefilter", 0, 0, "",
+                    "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped" } } },
     /* 4 [SEL-1] the prefilter-drop rung */
     { .name = "sel1-drop", .deny = 0, .degrading = true,
       .applies = fit_sel1_drop_applies, .act = FIT_SEL1_DROP,
@@ -1036,7 +1043,25 @@ static const FitRung fit_rungs[] = {
       .fof = FIT_FOF_IN, .applies = fit_collapse_applies, .act = FIT_COLLAPSE, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_SIZECAP, false, true },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_PASS }, PFLW_SIZECAP, NULL },
-      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+      .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
+      /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
+       * lane's own brief. Before this row, a successful [OPT-4] SIZE-rung
+       * rescue (the emitted-size cap refused the exact artifact, the
+       * retry's count-collapsed prefilter shipped and survived) stamped
+       * `"selected"` — indistinguishable from a compile that never hit
+       * any cap at all. Placed LAST among the "fell back" outcomes rather
+       * than beside `collapsed-prefilter` (order 3): that row's own
+       * `applies` text already reads "auto, a DFA build overflowed" —
+       * true only of the [SEL-1] rung — and inserting a SIZE-rung outcome
+       * between it and its neighbours would suggest the two rungs share
+       * one ladder position, which they do not (compile_driver's own
+       * comment: two SEPARATE rungs in one retry loop, offered under
+       * different conditions). `order` is this dump's own field and
+       * carries no promise about `ESEL_*`'s numeric values (internal.h's
+       * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
+       * DFA-overflow range at the C level). */
+      .axlist = { { "engine-route", 7, "size-cap-retry", 0, 0, "",
+                    "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)" } } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false },
@@ -1166,6 +1191,7 @@ typedef struct {
     bool        (*applies)(const PflwSel *s);
     bool          collapse;
     unsigned char pflw;        /* PFLW_PASS: the T1 row that set the reason gives it */
+    FbList        axlist[1];   /* the `--list-axes` cell this row carries (B6) */
 } PflwRow;
 
 /* The collapse is worth building: asked, and not nullable unless forced. */
@@ -1180,11 +1206,15 @@ static bool pflw_always(const PflwSel *s) { (void)s; return true; }
 
 /* A RUNG BEATS THE FLAG (the gate's own comment): row 1 before row 2. */
 static const PflwRow pflw_rows[] = {
-    { "rung",     pflw_rung,   true,  PFLW_PASS     },
-    { "forced",   pflw_worth,  true,  PFLW_FORCED   },
-    { "nullable", pflw_wanted, false, PFLW_NULLABLE },
-    { "exact",    pflw_rep,    false, PFLW_EXACT    },
-    { "no-rep",   pflw_always, false, PFLW_NO_REP   },
+    { "rung",     pflw_rung,   true,  PFLW_PASS,
+      .axlist = { { "prefilter-lang", 1, "count-collapsed", PCREC_NO_PREFILTER_COLLAPSE, PCREC_FORCE_PREFILTER_COLLAPSE, "",
+                    "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, AND either -fprefilter-collapse was passed or compile_driver took a retry rung (a DFA state cap overflowed, or an emitted-size cap refused the exact artifact). There is no state-count knee: the default is the exact language (Frank's ruling B). Every X{m,n} then lowers as X{min(m,1),}" } } },
+    { "forced",   pflw_worth,  true,  PFLW_FORCED, .axlist = FB_NO_LIST },
+    { "nullable", pflw_wanted, false, PFLW_NULLABLE,
+      .axlist = { { "prefilter-lang", 2, "exact", 0, 0, "",
+                    "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse" } } },
+    { "exact",    pflw_rep,    false, PFLW_EXACT, .axlist = FB_NO_LIST },
+    { "no-rep",   pflw_always, false, PFLW_NO_REP,   .axlist = FB_NO_LIST },
 };
 
 /* T3's walk: the first row that applies (the last always does). */
@@ -1219,6 +1249,7 @@ typedef struct {
     const char *tok;           /* NULL on the `ladder_cell` row */
     bool      (*applies)(const StWhySel *s);
     bool        ladder_cell;   /* the token is the T1 row's `ukw` cell */
+    FbList      axlist[1];     /* the `--list-axes` cell this row carries (B6) */
 } StWhy;
 
 static bool stw_option(const StWhySel *s)  { return s->unroll_k > 0 && s->phase == ST_DEFAULT; }
@@ -1230,13 +1261,27 @@ static bool stw_capexcl(const StWhySel *s) { return s->capexcl; }
 static bool stw_always(const StWhySel *s)  { (void)s; return true; }
 
 static const StWhy st_whys[] = {
-    { "option",              stw_option,  false },
-    { "denied",              stw_denied,  false },
-    { "default",             stw_default, false },
-    { NULL,                  stw_rescue,  true  },
-    { "size-model",          stw_moved,   false },
-    { "capacity-declined",   stw_capexcl, false },
-    { "size-model-declined", stw_always,  false },
+    { "option",              stw_option,  false,
+      .axlist = { { "size-term", 1, "option", 0, 0, "",
+                    "an explicit --unroll=K on the command line: the term never runs (compile.c: defo.unroll_k > 0 && st_phase == ST_DEFAULT)" } } },
+    { "denied",              stw_denied,  false,
+      .axlist = { { "size-term", 2, "denied", PCREC_NO_SIZE_TERM, 0, "",
+                    "the axis is denied: K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K" } } },
+    { "default",             stw_default, false,
+      .axlist = { { "size-term", 3, "default", 0, 0, "",
+                    "the counter rung is not live, or the emitted CODE size did not exceed PCREC_SIZE_TERM_THRESHOLD, so the ladder never ran" } } },
+    { NULL,                  stw_rescue,  true,
+      .axlist = { { "size-term", 4, "cap-rescue", 0, 0, "",
+                    "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build" } } },
+    { "size-model",          stw_moved,   false,
+      .axlist = { { "size-term", 5, "size-model", 0, 0, "",
+                    "the ladder ran and its argmin K saved at least 25% of the default K's bytes, so the materiality bar took it" } } },
+    { "capacity-declined",   stw_capexcl, false,
+      .axlist = { { "size-term", 6, "capacity-declined", 0, 0, "",
+                    "the ladder ran; the K it wanted would have lowered this artifact's declared capacity (.frame_capacity or .subject_ceiling, §3.3a) below the default K's, so that rung was excluded before the materiality bar was ever asked — natural corpus population 0 at the shipped threshold (tests/codegen/run_size_term.sh §7/§7b), reached only through a lowered-threshold reference build" } } },
+    { "size-model-declined", stw_always,  false,
+      .axlist = { { "size-term", 7, "size-model-declined", 0, 0, "",
+                    "always (fallback) — the ladder ran and the materiality bar rejected its argmin K on bytes alone, with no capacity exclusion in play" } } },
 };
 
 /* The T1 row whose `ukw` cell T4's `ladder_cell` row reads. */
@@ -1253,6 +1298,42 @@ static const char *st_why_walk(const StWhySel *s)
     size_t i = 0;
     while (i + 1 < sizeof st_whys / sizeof st_whys[0] && !st_whys[i].applies(s)) i++;
     return st_whys[i].ladder_cell ? fit_ukw_row()->ukw : st_whys[i].tok;
+}
+
+/* [DEC-FALLBACK] B6: the cell of `l[0..n)` listed under (`axis`, `order`), and
+ * the number of cells that matched (added to `*nmatch` when not NULL). */
+static const FbList *fb_pick(const FbList *l, size_t n, const char *axis, int order,
+                             int *nmatch)
+{
+    const FbList *hit = NULL;
+    for (size_t k = 0; k < n; k++) {
+        if (!l[k].axis || strcmp(l[k].axis, axis) || l[k].order != order) continue;
+        if (!hit) hit = &l[k];
+        if (nmatch) (*nmatch)++;
+    }
+    return hit;
+}
+
+/* The cell of (`axis`, `order`) over all four tables and the walk's ends,
+ * first match in T1, T3, T4, T2 order; `*nmatch` counts them all. */
+static const FbList *fb_find(const char *axis, int order, int *nmatch)
+{
+    const FbList *hit = NULL, *h;
+    for (size_t r = 0; r < sizeof fit_rungs / sizeof fit_rungs[0]; r++)
+        if ((h = fb_pick(fit_rungs[r].axlist, sizeof fit_rungs[r].axlist / sizeof fit_rungs[r].axlist[0],
+                         axis, order, nmatch)) && !hit) hit = h;
+    for (size_t r = 0; r < sizeof pflw_rows / sizeof pflw_rows[0]; r++)
+        if ((h = fb_pick(pflw_rows[r].axlist, 1, axis, order, nmatch)) && !hit) hit = h;
+    for (size_t r = 0; r < sizeof st_whys / sizeof st_whys[0]; r++)
+        if ((h = fb_pick(st_whys[r].axlist, 1, axis, order, nmatch)) && !hit) hit = h;
+    if ((h = pcrec_pf_admits_list_row(axis, order, nmatch)) && !hit) hit = h;
+    return hit;
+}
+
+/* The `i`th (from 0) candidate of fallback axis `axis` (internal.h). */
+const FbList *pcrec_fb_list_row(const char *axis, int i)
+{
+    return fb_find(axis, i + 1, NULL);
 }
 
 #ifdef PCREC_CAND_TRACE
@@ -1336,6 +1417,20 @@ static void fit_tables_selfcheck(Ctx *cx)
     fit_check(cx, st_whys[sizeof st_whys / sizeof st_whys[0] - 1].applies == stw_always,
               "T4's last row does not always apply");
     pcrec_pf_admits_selfcheck(cx);
+    /* B6: each listed axis is orders 1..n, every order carried by exactly one
+     * cell and no cell outside them. */
+    static const char *const fb_axes[] = { "engine-route", "size-term", "prefilter-lang" };
+    for (size_t a = 0; a < sizeof fb_axes / sizeof fb_axes[0]; a++) {
+        int n = 0, total = 0;
+        while (pcrec_fb_list_row(fb_axes[a], n)) n++;
+        for (int o = 1; o <= 64; o++) {
+            int m = 0;
+            (void)fb_find(fb_axes[a], o, &m);
+            fit_check(cx, m <= 1, "a listed order is carried by two cells");
+            total += m;
+        }
+        fit_check(cx, n > 0 && total == n, "a listed axis has a gap or a stray order");
+    }
 }
 
 /* §1.7's legal sequences, as their pairwise transitions (the second may

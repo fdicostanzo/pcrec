@@ -449,6 +449,22 @@ static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
              (deny_val || force_val) ? flag : cli_flag_lit, applies);
 }
 
+/* [DEC-FALLBACK] B6: the three fallback axes (`engine-route`, `size-term`,
+ * `prefilter-lang`) are projected off the tables' `axlist` columns
+ * (`pcrec_fb_list_row`, src/core/compile.c) rather than stated here: name,
+ * order, deny/force bits, lever spelling and `desc` sit beside their rows, so
+ * this surface cannot list a candidate the walk does not have. The descs are
+ * the hand table's, moved verbatim (B7 corrects the wrong ones). `kind` stays
+ * `predicate` until B7. `stamp` is the axis's stamp macro, which names the
+ * artifact's side of the listing and is not a table fact. */
+static void emit_fb_axis(StrBuf *sb, const char *axis, const char *stamp)
+{
+    PredAxis p = { axis, NULL, stamp, "", 0, NULL, 0, NULL, NULL, NULL };
+    const FbList *l;
+    for (int i = 0; (l = pcrec_fb_list_row(axis, i)); i++)
+        emit_pred_row(sb, &p, l->order, l->name, l->name, l->deny, l->force, l->cli, l->desc);
+}
+
 /* `--list-axes`' eleven hand-stated VM/engine-selection axis rows — the
  * ones with no candidate-list-as-data anywhere in the tree yet, unlike the
  * six DFA layer-1 axes above this function, which are walked live off
@@ -540,30 +556,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * matching `deny_bit`/`force_bit`'s own empty-string convention for a
      * fact this table's columns cannot carry. Rows 3-7 have no lever at
      * all: nothing denies "the ladder chose K by argmin" specifically. */
-    {
-        PredAxis p = { "size-term", NULL, "RX_UNROLL_K_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "option", "option",
-                     0, 0, "",
-                     "an explicit --unroll=K on the command line: the term never runs (compile.c: defo.unroll_k > 0 && st_phase == ST_DEFAULT)");
-        emit_pred_row(sb, &p, 2, "denied", "denied",
-                     PCREC_NO_SIZE_TERM, 0, "",
-                     "the axis is denied: K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K");
-        emit_pred_row(sb, &p, 3, "default", "default",
-                     0, 0, "",
-                     "the counter rung is not live, or the emitted CODE size did not exceed PCREC_SIZE_TERM_THRESHOLD, so the ladder never ran");
-        emit_pred_row(sb, &p, 4, "cap-rescue", "cap-rescue",
-                     0, 0, "",
-                     "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build");
-        emit_pred_row(sb, &p, 5, "size-model", "size-model",
-                     0, 0, "",
-                     "the ladder ran and its argmin K saved at least 25% of the default K's bytes, so the materiality bar took it");
-        emit_pred_row(sb, &p, 6, "capacity-declined", "capacity-declined",
-                     0, 0, "",
-                     "the ladder ran; the K it wanted would have lowered this artifact's declared capacity (.frame_capacity or .subject_ceiling, §3.3a) below the default K's, so that rung was excluded before the materiality bar was ever asked — natural corpus population 0 at the shipped threshold (tests/codegen/run_size_term.sh §7/§7b), reached only through a lowered-threshold reference build");
-        emit_pred_row(sb, &p, 7, "size-model-declined", "size-model-declined",
-                     0, 0, "",
-                     "always (fallback) — the ladder ran and the materiality bar rejected its argmin K on bytes alone, with no capacity exclusion in play");
-    }
+    emit_fb_axis(sb, "size-term", "RX_UNROLL_K_WHY");
     /* length-prune — §2.4, RX_VM_PRUNES's own named pair */
     {
         PredAxis p = { "length-prune", NULL, "RX_VM_PRUNES", "", 0, NULL, 0, NULL, NULL, NULL };
@@ -602,16 +595,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * specified in docs/spec/tuning.md §2.17 beside the values below.
      * (`size-term` above is the other shape — there the `_WHY` macro IS the
      * selector, because that axis has no separate value stamp.) */
-    {
-        PredAxis p = { "prefilter-lang", NULL, "RX_VM_PREFILTER_LANG", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",
-                     PCREC_NO_PREFILTER_COLLAPSE, PCREC_FORCE_PREFILTER_COLLAPSE,
-                     "",
-                     "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, AND either -fprefilter-collapse was passed or compile_driver took a retry rung (a DFA state cap overflowed, or an emitted-size cap refused the exact artifact). There is no state-count knee: the default is the exact language (Frank's ruling B). Every X{m,n} then lowers as X{min(m,1),}");
-        emit_pred_row(sb, &p, 2, "exact", "exact",
-                     0, 0, "",
-                     "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");
-    }
+    emit_fb_axis(sb, "prefilter-lang", "RX_VM_PREFILTER_LANG");
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
      * named value — stamp_value left empty on both rows for that reason. */
     {
@@ -948,55 +932,7 @@ static void emit_predicate_axes(StrBuf *sb)
      * the route is an OUTCOME of `--engine=` and of build results, never a
      * thing a bit requests, so the deny/force columns are empty exactly as
      * `engine`'s are. */
-    {
-        PredAxis p = { "engine-route", NULL, "RX_ENGINE_SEL", "", 0, NULL, 0, NULL, NULL, NULL };
-        emit_pred_row(sb, &p, 1, "forced", "forced",
-                     0, 0, "--engine=vm / --engine=dfa",
-                     "the caller named the engine, so auto selected nothing");
-        /* [OPT-4.2] THE EIGHTH ROUTE, placed right after `forced` rather
-         * than beside its rung-scoped cousin below: it is the ONE route in
-         * this list that is not a fallback of any kind (internal.h's own
-         * placement note on `ESEL_DECLINED_NULLABLE_DEFAULT` has the
-         * argument), and grouping it with the "auto, a DFA build
-         * overflowed" family would misstate what it is. */
-        emit_pred_row(sb, &p, 2, "declined-nullable-default", "declined-nullable-default",
-                     0, 0, "",
-                     "auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door");
-        emit_pred_row(sb, &p, 3, "collapsed-prefilter", "collapsed-prefilter",
-                     0, 0, "",
-                     "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
-        emit_pred_row(sb, &p, 4, "declined-nullable", "declined-nullable",
-                     0, 0, "",
-                     "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither");
-        emit_pred_row(sb, &p, 5, "overflowed-dfa", "overflowed-dfa",
-                     0, 0, "",
-                     "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
-        emit_pred_row(sb, &p, 6, "overflowed-prefilter", "overflowed-prefilter",
-                     0, 0, "",
-                     "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
-        /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
-         * lane's own brief. Before this row, a successful [OPT-4] SIZE-rung
-         * rescue (the emitted-size cap refused the exact artifact, the
-         * retry's count-collapsed prefilter shipped and survived) stamped
-         * `"selected"` — indistinguishable from a compile that never hit
-         * any cap at all. Placed LAST among the "fell back" outcomes rather
-         * than beside `collapsed-prefilter` (order 3): that row's own
-         * `applies` text already reads "auto, a DFA build overflowed" —
-         * true only of the [SEL-1] rung — and inserting a SIZE-rung outcome
-         * between it and its neighbours would suggest the two rungs share
-         * one ladder position, which they do not (compile_driver's own
-         * comment: two SEPARATE rungs in one retry loop, offered under
-         * different conditions). `order` is this dump's own field and
-         * carries no promise about `ESEL_*`'s numeric values (internal.h's
-         * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
-         * DFA-overflow range at the C level). */
-        emit_pred_row(sb, &p, 7, "size-cap-retry", "size-cap-retry",
-                     0, 0, "",
-                     "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)");
-        emit_pred_row(sb, &p, 8, "selected", "selected",
-                     0, 0, "",
-                     "always (fallback) — auto chose on the AST and nothing overflowed");
-    }
+    emit_fb_axis(sb, "engine-route", "RX_ENGINE_SEL");
 }
 
 /* ---- the kit's section ---------------------------------------------------- */

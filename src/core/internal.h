@@ -2486,6 +2486,37 @@ typedef struct {
     const char   *pfwhy;     /* a `"…%llu > %llu"` format over the carried size-cap figures */
 } FitCells;
 
+/* [DEC-FALLBACK] B6: A ROW'S `--list-axes` CELL (§4.2). The three fallback
+ * axes `engine-route`, `size-term` and `prefilter-lang` are listed by
+ * projecting the tables' `axlist` columns through `pcrec_fb_list_row`, so the
+ * listing cannot state a candidate the tables do not have. A cell carries
+ * today's order, candidate name (which is also the stamp value), deny/force
+ * bits, the CLI spelling of a lever that is not a flags bit, and `desc`,
+ * VERBATIM from the hand table it replaced: B6 is byte-identical, and the
+ * wrong descs (F-B2's, `size-cap-retry`'s) are B7's to correct. `axis` NULL:
+ * the slot lists nothing. */
+typedef struct {
+    const char *axis;
+    int         order;
+    const char *name;
+    uint64_t    deny, force;
+    const char *cli;
+    const char *desc;
+} FbList;
+
+/* The `i`th (from 0) candidate of fallback axis `axis`, which is the cell
+ * whose `order` is `i + 1` in whichever table row carries it; NULL past the
+ * last. Defined in src/core/compile.c over T1/T3/T4 and, through
+ * `pcrec_pf_admits_list_row`, T2 and the `forced`/`selected` ends. */
+const FbList *pcrec_fb_list_row(const char *axis, int i);
+/* A row that lists nothing says so (an omitted `axlist` is a compiler
+ * warning, not a silent empty cell). */
+#define FB_NO_LIST { { NULL, 0, NULL, 0, 0, NULL, NULL } }
+/* T2's half (src/opt/select_engine.c): the cell for (`axis`, `order`) among
+ * the admission rows and the attribution walk's two ends. `*nmatch`, when
+ * not NULL, gains the number of cells that matched, for the self-check. */
+const FbList *pcrec_pf_admits_list_row(const char *axis, int order, int *nmatch);
+
 /* T2's inputs, gathered once by `prefilter_decision` (§1.4). The two
  * nullability facts are NOT here: a row asks `pcrec_fact_nullable` or
  * `pcrec_fact_empty_admits` itself, where it decides on it. Which of the two
@@ -2520,6 +2551,8 @@ typedef struct PfAdmit {
      * overflow cap name (`Ctx.dfa_overflow_why`; a row without the
      * conversion ignores it). NULL exactly where `list` is. */
     const char *note;
+    /* the `--list-axes` cell this row carries, if any (B6) */
+    FbList      axlist[1];
 } PfAdmit;
 
 #ifdef PCREC_CAND_TRACE
