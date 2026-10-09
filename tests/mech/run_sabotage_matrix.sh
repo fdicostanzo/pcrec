@@ -382,6 +382,19 @@
 #     Its own arm because the plain build has no guarded byte, so a length
 #     reader that forgets the subtraction moves no artifact, no answer and
 #     no identity gate. Registered before S699-S703.
+#   simdfloor — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
+#     tests/memfn/run_simd_floor.sh (the whole corpus: its floors are full-population) with the sabotaged tree's own
+#     pcrec: C18's four legs, the guard lint and C9-x86 over the -fmemfn-simd
+#     movers. Its own arm because SIMD text sits only under -fmemfn-simd and
+#     inside level guards: every answer arm runs at the default (no SIMD
+#     text) and a compile at the default -march never sees a w32 arm.
+#     Registered before S716-S730.
+#   g2simd — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
+#     memfn/tests/run_g2_simd.py --quick against the sabotaged tree's
+#     build/libpcrec.a: G2's SIMD family (the batch-1 site space against G2's
+#     own byte loop at every level, guard pages, the class table, the bounds,
+#     the plants). Its own arm because make test-memfn-g2's quick tier is a
+#     much longer run than these rows need. Registered before S716-S730.
 #   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
 #     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
 #     against their pins, the row-contract gate cases (check 6) and the
@@ -2949,6 +2962,24 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnreach.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnreach.log" "$f" "memfnreach:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            simdfloor)
+                # [MEMFN] R-13 tests/memfn/run_simd_floor.sh -- see the
+                # vocabulary entry above. The sabotaged tree's own pcrec.
+                PCREC="$pcrec" CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_simd_floor.sh" "$tree" \
+                    > "$work/simdfloor.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/simdfloor.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/simdfloor.log" | grep -oE '[0-9]+')"
+                score_arm "$work/simdfloor.log" "$f" "simdfloor:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2simd)
+                # [MEMFN] R-13 memfn/tests/run_g2_simd.py --quick -- see the
+                # vocabulary entry above. Links "$tree/build/libpcrec.a".
+                TMPDIR="$work" python3 "$tree/memfn/tests/run_g2_simd.py" --root "$tree" --quick \
+                    > "$work/g2simd.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2simd.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2simd.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2simd.log" "$f" "g2simd:${f:-ERR}fail/${p:-?}pass"
                 ;;
             simdguarded)
                 # [MEMFN] RQ-3 tests/memfn/run_simd_guarded.sh — see the

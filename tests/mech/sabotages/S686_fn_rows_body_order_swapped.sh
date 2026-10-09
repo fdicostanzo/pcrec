@@ -24,7 +24,9 @@ SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "(?i)select"'
 SAB_REACH_EXPECT='    size_t ha = 0, hb = 0;'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct },
-    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct },'
-SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct },   /* SABOTAGE S686 */
-    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct },'
+# Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
+# (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
+SAB_BEFORE='    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },
+    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },'
+SAB_AFTER='    { FN_BODY, memchr_holds, memchr_body, &fn_memchr_ct, NULL },   /* SABOTAGE S686 */
+    { FN_BODY, pair_holds,   pair_body,   &fn_pair_ct,   NULL },'
