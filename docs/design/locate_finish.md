@@ -1611,122 +1611,239 @@ time.
 
 ---
 
-## 7. Candidates with triggers (filed, not designed beyond the trigger) `[r2 G13, G14]`
+## 7. Candidates with triggers (filed, not designed beyond the trigger) `[r2 G13, G14, r2.1 LR-G3, LR-G10..G14]`
 
 ### 7.1 The relaxed-backref machine run FORWARD (G13)
 
 §4.5's `relax(P)` is a SOUND general erasure for `A_BREF`. Run forward, it is a
 superset prefilter for every acyclic-backref VM-only artifact (`backrefs_design.md`
 §7.4's chartered prefilter, needing no E2 gate since the relaxation is
-assertion-erased; VM-only search measured 6.2-130× slower than a hybrid). **Trigger:**
-a census of VM-only backref artifacts where `relax(P)` is acyclic and the N7 START-SET
-hat does not narrow, PLUS one bench backref cell paying the attempt loop.
+assertion-erased; VM-only search measured 6.2-130× slower than a hybrid). **Stated
+precondition `[r2.1 LR-G3]`: the erasure record.** Its lowering arm must record
+`BREF` (and `VAR`/`CALLSTAR` where those relax) in `Nfa.erased`, so
+`pcrec_vm_prefilter_window`, `cand_lang_exact` and (d′) read the prefilter as a
+SUPERSET; today's kinds-list predicate never tests BREF/VAR and would read it EXACT,
+hand `SPAN` across the boundary, and use the superset's window END as the MRL ceiling
+(the atomic-groups 122-cell class). The record lands at L0, so the precondition is
+met before this row can be built. **Trigger:** a census of VM-only backref artifacts
+where `relax(P)` is acyclic and the N7 START-SET hat does not narrow, PLUS one bench
+backref cell paying the attempt loop.
 
 ### 7.2 rev-end as rev-inner with landmark = end: a seed-SET reverse walk (G14(1))
 
 `(?m)$` seeded at every `'\n'` + `n`. **Trigger:** a bench or real-world `(?m)...$`
 cell whose attempt loop or forward scan dominates (the finding names the cell).
 
-### 7.3 A fixed-width RECOVER row: start = end − W (G14(2))
+### 7.3 `[START-LANDING]`: RECOVER rows that know the start without walking `[r2.1 LR-G10]`
 
-For a fixed-width pattern the reverse pass is arithmetic. **Trigger:** a measured
-reverse-pass share on a fixed-width bench cell (the finding names it).
+Plan row `[START-LANDING]` (filed 2026-10-09 from `../dev/walk_survey.md` §7 F1, its
+classes K4 and K3), with revision 2's §7.3 (G14(2), the fixed-width row) FOLDED IN:
+they are one family and one placement.
+
+- **Placement: the composite's RECOVER slot**, the question "given a match END, where
+  does it start?", as four first-match rows ordered by how much the start needs:
+  1. `pinned` (shipped, [OPT-5] STEP 2): ZERO bytes of evidence — the forward machine's
+     start state accepts unconditionally, so the match starts at `search_from`;
+  2. `landing` (new): ONE byte — the forward scan's skip loop LANDED on `L`, and a
+     compile-time fact holds: every start-set byte, in its start view, takes the
+     anchored machine to an accepting state; then a match starts at `L` and, `L` being
+     the first candidate ≥ `search_from`, it is the leftmost (walk_survey §4 K4, "what
+     makes it exact"); the fact holds for `C+`, `C`, `C{1,n}`, `C+D*` token shapes and
+     fails for literals and a leading assertion;
+  3. `end-minus-width` (new; revision 2's §7.3): a fixed-width pattern's start is
+     `end − W`; under `-e utf8` `W` must be a fixed BYTE width (a fixed character
+     width is not, K49/K50);
+  4. `reverse-pass` (shipped): the fallback.
+- **One row each, nothing else moves.** Each hands `SPAN` across the boundary exactly as
+  `reverse-pass` does, so FINISH is unchanged; on a hybrid the window is the same span
+  (NEUTRAL by window identity, the same argument as stage 2's). R leaves the member
+  set through §2.7 when `landing` or `end-minus-width` is selected, so the stamps fold
+  over F (+A) with no special case, and `RX_DFA_START` names the selected row (two new
+  values: a closed-vocabulary event for the bench adapter, `adapter.py:802-806`).
+- **Trigger: MET.** walk_survey measured K4 on 176 / 343 bench patterns (85.7% of
+  reverse-pass bytes on throughput cells are landing bytes; twins −20..−42%) and K3 on
+  74 bench / 1,002 corpus (`abcd` −36..−37%), est. 50.9 ms bench-weighted, which
+  RANKS IT ABOVE `[OPT-REVEND]` (30.9 ms) on the next `[OPTLOOP]` candidate list. Its
+  design lane owns the landing record (where the skip loop's landing is kept), the
+  fact's derivation and its control, and K4's fact-less form, which is §7.6's
+  separate row.
 
 ### 7.4 A forward regular-prefix locator over `P·Σ*` (G14(3))
 
 **Trigger:** the finding's: a population where the prefix's language is regular, the
 suffix is not, and no landmark rescues the start.
 
-### 7.5 A subset locator handing `UPPER` + EXISTS (G14(4), BOONIES-class)
+### 7.5 A subset locator handing EXISTS (G14(4), BOONIES-class)
 
-A machine for a SUBSET of `L` proves a match exists and bounds the start from above
-(the product's `t`). **BOONIES** (memory `pcrec-high-impact-focus`): no measurement
-chartered; trigger as the finding states.
+A machine for a SUBSET of `L` proves a match exists and bounds the start from above:
+the hand `CT_LOWER | CT_UPPER | CT_START` = `([s, t], e)` (§1.2's table). **BOONIES**
+(memory `pcrec-high-impact-focus`): no measurement chartered; trigger as the finding
+states.
+
+### 7.6 `candidate-verify`: K4's fact-less form, a second LOCATE row (LR-G11)
+
+Where `landing`'s compile-time fact fails, the ATTEMPT candidate loop with the
+UNWRAPPED anchored machine verifying each landing (one anchored run per candidate;
+continue unanchored from `L + 1` on a death) is a second LOCATE row on `CR_DFA`,
+`.needs` = F, A. It costs an anchored attempt per false landing, so it is a selection
+question. **Trigger:** a fact-less bench cell where reverse-pass bytes dominate AND
+the measured landing-hit rate clears the break-even of one anchored attempt per false
+landing (walk_survey's 36 no-landing throughput cells are where it only costs).
+
+### 7.7 Match-here across three routes is ONE row (LR-G12)
+
+F-11 (ATTEMPT's `_match` runs a whole search), K8 (the VM route's `_match` scans for a
+start the anchored question does not need) and the `empty` / `-fno-anchored-dfa`
+fallbacks are one row under LR-G1: `verify-at` taking `AT` on every route whose
+machine is built (the F-11 cell deleted, the VM cell asked at L3). **Trigger:** K8's —
+a long-subject match cell (the bench's match subjects are ≤ 5 KB today, est. 0.01 ms).
+§8 Q7.
+
+### 7.8 The bounded-interval hand (LR-G13)
+
+`[OPT-VMSEED]` stage 4's seed window, G14(4)'s interval and a "match starting in
+`[s, t]`" entry are the `CT_LOWER | CT_UPPER` mask with `t > s` (§1.2): `search-from`
+takes it under its filter (a start above `t` is `NOMATCH`); `verify-at` does not
+(it is not a point). **Trigger:** VMSEED stage 4's; the caller-facing entry itself is
+BOONIES.
+
+### 7.9 On superset hybrids the landing is already a LOWER (LR-G14, BOONIES)
+
+On a superset hybrid the forward skip loop's landing `L` is a sound `LOWER` without
+the reverse pass: every match of `L(P)` starts at a start-set byte at or after
+`search_from`, so none starts below `L`. **BOONIES**: no measurement
+chartered.
 
 ---
 
-## 8. Questions for Frank (discussion)
+## 8. Questions for Frank (discussion), restated under revision 2.1
 
-Settled by the panel and struck: revision 1's Q1 (FINISH is a slot block, G4/G5).
-Reshaped: Q5 (posture) by G7, now a narrower question about a spec sentence.
+**Settled and struck.** Revision 1's Q1 (FINISH is a slot block: G4/G5). Revision 2's
+Q1, "L0 before REVEND, or folded into REVEND's abi event?": both re-check critics put
+L0 first (lfre2: "L0 first, with LR-G1 and LR-G4 adopted there"; lfre1: "L0 is NOT
+build-ready until LR-S1 is fixed; L2 is ready after L0 plus LR-S3/S5/S7"), and the
+binding dispositions place work AT L0 (LR-G1, LR-G4), so the question is answered. One
+force it had is now larger and worth knowing: L0 grew from four items to three
+commits, a 55-entry edit set and 8 re-aims, because it now carries the path
+derivation; it is still a no-mover, and every piece of the growth is a reader that
+would otherwise be re-keyed wrongly by the fold (LR-S1). Revision 2's Q7 (ATTEMPT's
+match-here form) is FILED by LR-G12 as §7.7, one row across three routes, with K8's
+trigger (lfre2: "measured as the K8 family"); the F-11 cell stays visible in
+`verify-at`'s take until then. Revision 2's Q5 (the relaxed locator's deny): the
+leaning (its own bit when built) and lfre2's judgment agree and lfre1 gave none, so it
+is recorded as AGREED unless you object, not discussed again.
 
-**Q1. L0 before REVEND, or folded into REVEND's abi event?** *Problem:* REVEND needs a
-home; LOCATE is that home. *Forces:* G12 cut L0 to four items, and it now delivers
-something on its own (the `dfa_matches[]` fold, one finisher derivation in place of
-ten reads, F-1/F-2/F-3 corrected, a progress check the table lacked); D153 (remodel
-first) and the start table's precedent favour a no-mover first. Against: one more
-panel-reviewed step before a measurable win. *Leaning:* L0 first; folding it into L2
-would turn L0's "no mover" proof into "movers = REVEND's set exactly", which is
-harder to read and to bisect.
+The critics' judgments below are as the review records them: lfre2's in the
+re-check's paragraph on §8, lfre1's read from its findings where they bear on a
+question (lfre1 recorded no separate §8 judgments).
 
-**Q2. Stage 2 with stage 1?** *Problem:* the stage-1 conjunct is the one place a
-route-independent locator is kept off a route. *Forces:* the mechanism is small (one
-`dominated` disjunct, one DAG edge, F6/F7 takes, the twin), NEUTRAL (E9's evidence is
-the strongest of the round), and not building it is the special case; but the
-population is 0 bench / 13 corpus, 11 already W1-clamped, and D77 says wait.
-*Leaning:* FILED with `revend.md`'s trigger, the conjunct commented as stage 2's
-switch. If you weigh the generality argument above D77 here, it folds into L2 for one
-read and one twin.
+**Q1′ (new). After L0: REVEND or `[START-LANDING]` first?** *Problem:* this note was
+chartered for REVEND, and the re-check placed a second, larger family in the same
+frame: `[START-LANDING]`'s RECOVER rows (§7.3), whose trigger is already MET.
+*Forces:* walk_survey's bench-weighted estimates put `[START-LANDING]` at 50.9 ms and
+REVEND at 30.9 ms; `[START-LANDING]` is smaller in kind (RECOVER rows, no new slot, no
+new LOCATE row, two new `RX_DFA_START` values) while REVEND carries L1's fact split,
+L2's walk and the generated stamp rule; both ride L0, and `[START-LANDING]` needs L0
+more than it looks — without §2.7, taking R off the path for `landing` would be a
+FOURTH conjunct in each of the three membership readers, the special-case trap
+LR-G4 exists to close. Against: REVEND is designed, panelled twice and has its twins;
+`[START-LANDING]` has measurements and a placement, not a design. *Leaning:* L0 first
+regardless; then put `[START-LANDING]` on the next `[OPTLOOP]` round's candidate list
+ranked by its estimate, ahead of REVEND, and let the round decide, since ranking is the
+loop's job, not this note's. *lfre2:* `[START-LANDING]` belongs in RECOVER and ranks
+above REVEND (LR-G10); rev-inner ranks below both. *lfre1:* no judgment recorded.
 
-**Q3. The stamp RULE.** *Problem:* a `rev-end` artifact does not run most slots; their
-stamps must say something true. *Forces:* naming the locator once and having
-off-path slots read an absence value keeps the bytes small and the readers few, but
-it means one stamp (`REQ_WHY`) gains a token and three stamps change their fold
-(§5.1); a new `RX_LOCATE` stamp is more explicit and moves every artifact. *Leaning:*
-§5.1's rule, which also supersedes `revend.md` §5.2. The spellings are mine to
-settle; whether "off the path ⇒ absence, the locator named once" is the rule for every
-future locator is yours.
+**Q2. Stage 2 with stage 1?** *Problem:* the stage-1 conjunct (`path.finish !=
+CR_VM`) is the one place a route-independent locator is kept off a route. *Forces:*
+the mechanism is now smaller than in revision 2 — the PRESENCE deference lands with
+stage 1 anyway (LR-G6), so stage 2 is the conjunct, `FIN3`/`FIN4`'s VM cells and the
+twin; it is NEUTRAL by window identity (E9: 0 / 5,199,120); not building it is the
+special case. But the population is 0 bench / 13 corpus, 11 already W1-bounded, and
+D77 says wait; and LR-S3/S4 show the VM side has two sharp edges (`ENDSET` must not
+reach the VM's verify-at; E-VR must be unreached on exact hybrids) that only the twin
+watches. *Leaning:* FILED with `revend.md`'s trigger, the conjunct commented as stage
+2's switch. If you weigh generality above D77 here, it folds into L2 for one conjunct,
+two take cells and one twin. *lfre2:* stage 2 FILED. *lfre1:* no judgment on filing;
+its LR-S3/LR-S4 are the conditions any build of it must meet.
 
-**Q4. The one-way spec sentence.** *Problem:* W1 and the VM-route PRESENCE checks skip
-attempts the deny arm runs, so a budget-limited call can answer where the deny arm
-gives up (ONE_WAY), and no spec sentence says so; the WIDTH ceiling's does exist in
-spirit. *Forces:* `[GIVEUP-DIFF]` will confirm the classification behaviourally, and a
-caller who sets a step budget can observe it; saying nothing leaves `tuning.md`'s
-`-fno-end-window` / `-fno-req-byte` entries silently incomplete. *Leaning:* add the
-one-way sentence to those entries when `[GIVEUP-DIFF]` lands, worded as D148 Q6's.
+**Q3. The stamp RULE, now generated.** *Problem:* a locator that does not run most
+slots must leave their stamps saying something true, and every future path-changing
+locator (`empty`, `rev-end`, `[START-LANDING]`'s rows, rev-inner) meets the same
+problem. *Forces:* revision 2 wrote a per-stamp table for `rev-end` and a new REQ_WHY
+token; revision 2.1 generates the rule from §2.7 (a slot asked on the path stamps its
+selection, one not asked stamps its absence), keeps REQ_WHY at four tokens by ASKING
+PRESENCE (LR-G6), and makes D-2 the rule's first absence cell at L2.1. The cost of
+being general shows in two places: F-12 (an `empty` body's `RX_END_WINDOW` is
+corrected, population 0 today) and LR-G8's `FIN1` on `caller ⊓ empty`, which moves the
+53 corpus `empty` artifacts' `_match` to `return 0` and gives `RX_DFA_MATCH` a third
+value that the bench adapter's closed enum and `selfcheck.py:3707` must learn — for no
+measurable gain, because the general rule does it, not a need. Keeping today's
+`search-filter` there would take a predicate that excludes one hand from one row,
+which is the parallel special case the rule exists to remove. A new `RX_LOCATE` stamp
+remains the more explicit alternative and moves every artifact. *Leaning:* the
+generated rule, with the `empty` `_match` move taken inside L2's abi event and named
+in the inbox note. Whether "off the path ⇒ absence, the locator named once, generated
+from the path" is the rule for every future locator is yours. *lfre2:* the stamp rule
+generated from the path derivation; no REQ_WHY token. *lfre1:* LR-S10 (the
+`"unanchored"` sentence is already false on `pinned` artifacts) and LR-S12 (the size
+ladder) are the rule's two existing casualties, both fixed by stating membership once.
 
-**Q5. The relaxed-reverse locator's deny.** *Problem:* it is `rev-end`'s walk over a
-different machine. *Forces:* one deny keeps the family one switch; but its
-classification (ONE_WAY), its erasure mode and its population differ, and `test-axes`
-isolates only what has its own bit. *Leaning:* its own bit when built; noted now so
-L2's bit is not later overloaded.
+**Q4. The one-way spec sentences.** *Problem:* W1 and the VM-route PRESENCE checks
+skip attempts the deny arm runs, so a budget-limited call can answer where the deny
+arm gives up (ONE_WAY), and no spec sentence says so; §1.5 now has W1's witness
+(`(\w|\w\w)x$`, `--engine=vm`, step budget 50: default answers, `-fno-end-window`
+gives up). *Forces:* GIVEUP1, direction-checked, will hold every ONE_WAY row to its
+direction, and a caller who sets a step budget can observe it; one sentence per
+`tuning.md` entry repeats itself across W1, `-fno-req-byte`, `-fno-start-set`, the
+anchor bound and the adaptive re-seed. *Leaning:* lfre2's form — ONE preamble sentence
+in `tuning.md` §2 stating what ONE_WAY means for a caller's budget, and a per-entry
+MARKER on each ONE_WAY row with a deny — landing with `[GIVEUP-DIFF]`, worded as D148
+Q6's. *lfre2:* one preamble sentence with per-entry markers. *lfre1:* LR-S11 adds that
+the undeniable rows' contracts (RETRY `exact`/`clamped`/`retry-anchored`) are part of
+the same surface and are checked by the twin, not by a deny differential.
 
-**Q6. rev-inner after E1.** *Problem:* E1 shows rev-inner's per-occurrence verify is
-unsound exactly on its VM-route population (a backreference in `S` to a group of `P`),
-so there it can only hand a LOWER bound to the attempt loop. *Forces:* D151 placed
-the reverse walk partly FOR that population; a lower bound still skips the prefix
-work up to the first viable occurrence, but no longer verifies one occurrence at a
-time, so its win shrinks on dense subjects. *Leaning:* keep D151's trigger unchanged
-(the `dup-param-detect` twin), and have the twin measure the LOWER form, which is the
-only sound one there. Does the reduced VM value change how you rank it?
-
-**Q7. The ATTEMPT match-here form the fold exposes.** *Problem:* folding
-`dfa_matches[]` makes visible that an ENG_ATTEMPT artifact's `_match` runs a whole
-search from `s` and discards later starts, where `verify-attempt` would answer with one
-anchored run. *Forces:* a form mover on 20 bench / 308 corpus artifacts, answers
-identical, already filed as `anchored_match_unwrapped.md` §10's open item; L0 must
-stay a no-mover. *Leaning:* leave it to its filed row and give that row this note's
-F4 as its mechanism (one `take` bit), measured before it is built (D77).
+**Q6. rev-inner after E1 and LR-S5.** *Problem:* rev-inner's per-occurrence verify is
+sound only under G4, now a closed predicate that also fails DUPNAMES references
+spanning `P` and `S`; on its VM-route population (a backreference in `S` to a group of
+`P`) it can only hand a LOWER bound to the attempt loop. *Forces:* D151 placed the
+reverse walk partly FOR that population; a lower bound still skips the prefix work up
+to the first viable occurrence, but no longer verifies one occurrence at a time, so its
+win shrinks on dense subjects; and §7.3's `[START-LANDING]` and REVEND now rank above
+it on measured estimates. *Leaning:* keep D151's trigger unchanged (the
+`dup-param-detect` twin), have the twin measure the LOWER form FIRST (the only sound
+one there), and rank rev-inner below `[START-LANDING]` and REVEND. Does the reduced VM
+value change how you rank it? *lfre2:* rev-inner ranks below `[START-LANDING]` and
+REVEND, and its twin measures the LOWER form first. *lfre1:* LR-S5 (the DUPNAMES
+witness) is the reason G4 is a closed predicate; no ranking judgment.
 
 ---
 
 ## 9. The lenses
 
-- **specific vs general:** general. One product type, four actions, two hats cover
-  every shipped mechanism; REVEND's E13, tie table, R2/R4 and stage 2 are instances,
-  and `dfa_matches[]` stops being a parallel table.
-- **core vs derived:** the tables, the boundary projection and the classification are
-  derived; `end_pin`, `nl_last`, the relaxed machine and `cand_lang_exact`'s inputs
-  are core facts or machine properties; the contract column is declared because it is
-  a ruling.
-- **applicable vs assumption-changing:** applicable; no contract changes at L0.
-- **fits the architecture vs refactor:** L0 is a small refactor in refactor A's shape;
-  L2 fits.
+- **specific vs general:** general. One product type keyed on the existing `CT_*`
+  bits, four FINISH rows, two hats cover every shipped mechanism; REVEND's E13, tie
+  table, R2/R4 and stage 2 are instances, `dfa_matches[]` stops being a parallel
+  table, and `empty`'s eight hand-spelled off-path conjuncts become one derivation
+  (`[r2.1 LR-G4]`).
+- **core vs derived:** the tables, the path, the boundary projection and the
+  classification are derived; `end_pin`, `nl_last`, the relaxed machine, the erasure
+  record and the inputs of `cand_lang_exact` are core facts or machine properties;
+  `.needs` is declared because it is a property of each row's emitter (and is held to
+  the emitters by the trace and the text); the contract column is declared because it
+  is a ruling.
+- **applicable vs assumption-changing:** applicable; no contract changes at L0 (its
+  spec hunk corrects a sentence that is already false).
+- **fits the architecture vs refactor:** L0 is a refactor in refactor A's shape, now
+  three commits; L2 fits, and its stamp work is the generated rule rather than edits.
 - **shared question / engine hat (D124):** FINISH is D124's other axis: "what does the
-  engine still have to compute", with the hat by route.
-- **sibling of a family (memory `pcrec-forest-for-trees`):** three families surfaced:
-  FINISH (ten reads + `dfa_matches[]`), "does a DFA body exist" (three spellings, §3.3),
-  and the machine-membership rule (four spellings, L2.0).
+  engine still have to compute", with the hat by route and the availability by the
+  route's machines.
+- **sibling of a family (memory `pcrec-forest-for-trees`):** revision 2 surfaced three
+  families (FINISH; "does a DFA body exist"; machine membership); the re-check showed
+  they are ONE, "what the selected path uses", with `empty`, `rev-end` and
+  `[START-LANDING]`'s rows as its members (§2.7). It also shows the next sibling to
+  watch: the slot stamps' absence values, which the generated rule turns from a
+  per-locator table into a column.
 
 ---
 
@@ -1734,27 +1851,46 @@ F4 as its mechanism (one `take` bit), measured before it is built (D77).
 
 - **F-1** (revised) W1 `window` and the VM-route PRESENCE checks are ONE_WAY by §1.5's
   rule, and their declared posture read NEUTRAL by the zero value; the declared column
-  had no reader. Fixed at L0 by deleting the declaration (§1.5); confirmed behaviourally
-  by `[GIVEUP-DIFF]`.
+  had no reader. Fixed at L0 by deleting the declaration (§1.5); W1's half is now
+  WITNESSED (`[r2.1 LR-G5]`, §1.5), PRESENCE's half already was; GIVEUP1,
+  direction-checked, holds both.
 - **F-2** `dfa_match_is_unwrapped` (`emit_dfa.c:7727`) compares a row POINTER; dissolved
   by the fold (§3.4).
-- **F-3** (revised) On the 22 bench / 621 corpus superset hybrids the inlined body's
-  `SPAN` is not `L`'s; the fix is the boundary projection `cand_lang_exact`, not a
-  RECOVER declaration (§1.2).
-- **F-4** `revend.md` §3.9's stage-2 posture (ONE_WAY) is NEUTRAL given F7-not-F6 on
-  clamped ties (§4.3; E9).
+- **F-3** (revised twice) On the 22 bench / 621 corpus superset hybrids the inlined
+  body's `SPAN` is not `L`'s; the fix is the boundary projection `cand_lang_exact`,
+  reading the RECORDED erasure set (`[r2.1 LR-G3]`), computed once where `Vm.mrl_win` is
+  assigned (§1.2).
+- **F-4** `revend.md` §3.9's stage-2 posture (ONE_WAY) is NEUTRAL given that a clamped
+  tie goes to `search-from`, never to the VM's verify-at (§4.3; E9; `[r2.1 LR-S3]`).
 - **F-5** rev-inner is a LOCATE row, not NEXT (§4.6).
 - **F-6** WITHDRAWN `[r2 G1]`: D156's type list did not omit anything; `CAND` is
   `LOWER`.
-- **F-7** (new, `[r2 C3]`) Revision 1's "L0 re-aims 0 sabotage rows" was wrong: the
-  derived count is 6 (S566, S599, S606-S609).
-- **F-8** (new, `[r2 E1]`) `where_to_start.md` §2.2 step 1 was unsound when `S`
-  references `P`'s groups; corrected in place.
-- **F-9** (new) "Does a DFA body exist" is spelled three ways (`pcrec_artifact_has_dfa_scan`,
-  `(!vm || prefilter)` at `emit_dfa.c:10707-10708`, `dfa_body` at `:10922`); L0 points
-  the first local spelling at the predicate; `:10922` is a later one-line tidy (not in
-  G12's L0).
-- **F-10** (new) The machine-membership rule is spelled four times (`dfa_table_name`,
-  `dfa_uniform_folds`, `dfa_scan_edge_name`, the orientation block); L2.0 unifies it.
-- **F-11** (new) An ENG_ATTEMPT artifact's `_match` is `search-filter` (a whole search
-  from `s`); the fold makes the alternative a one-bit row change (§2.3, §8 Q7).
+- **F-7** (revised `[r2.1 LR-S6]`) Revision 1's "L0 re-aims 0 sabotage rows" was wrong
+  (rev 2 derived 6); with revision 2.1's edit set the derived count is 8 (S140, S494,
+  S566, S599, S606-S609).
+- **F-8** (`[r2 E1]`, sharpened `[r2.1 LR-S5]`) `where_to_start.md` §2.2 step 1 was
+  unsound when `S` references `P`'s groups; corrected in place, and its G4 is now the
+  closed predicate of §4.6 (the DUPNAMES reference spanning `P` and `S` fails it).
+- **F-9** (revised `[r2.1 LR-S8]`) "Does a DFA body exist" is spelled FOUR ways
+  (`pcrec_artifact_has_dfa_scan`, `(!vm || prefilter)` at `emit_dfa.c:10707-10713`,
+  `dfa_body` at `:10922`, and `compile.c:2381`, the build condition itself); all read
+  `path.body` at L0 (§2.7).
+- **F-10** (revised `[r2.1 LR-G4]`) The machine-membership rule is spelled four times
+  (`dfa_table_name`, `dfa_uniform_folds`, `dfa_scan_edge_name`, the orientation block);
+  L0's member fold unifies it (revision 2's L2.0 is absorbed), and C5 holds today's
+  rule against the bytes (0 / 5,355).
+- **F-11** An ENG_ATTEMPT artifact's `_match` is `search-filter` (a whole search from
+  `s`); under LR-G1 the alternative is one take cell of `verify-at` (§2.3, §7.7).
+- **F-12** (new, lane locfin21) `[^\x00-\xff]$` stamps `RX_END_WINDOW "2"` while its
+  search body is a bare `return 0` that applies no window (measured on this tree's
+  build): a stamp naming a selection that was not emitted, the defect class DD-13c
+  rules out. Population 0 in the census (all 71 `empty` rows stamp `"none"`), so it
+  is reachable only off-corpus. The generated stamp rule corrects it at L2.1 (WINDOW
+  is not asked on an `empty` path).
+- **F-13** (new, `[r2.1 LR-G3]`) `RX_VM_PREFILTER_LANG` reads `"exact"` on 727 of the
+  734 superset hybrids (19 bench / 708 corpus): its vocabulary names only the count
+  collapse, so an atomic- or lookaround-erased prefilter stamps `"exact"`. This is
+  `pf_know.md`'s "blind spot", now counted. Reading the whole erasure record would fix
+  it and move the stamp on all 727 (a closed-vocabulary event for any bench reader);
+  filed for a later abi event, not taken at L0 or L2 (D77: no reader is known to be
+  misled today, `RX_VM_RESEED` carries the truth).
