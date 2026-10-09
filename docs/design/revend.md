@@ -399,6 +399,15 @@ and reverse passes are not emitted on an admitted artifact (except under T3).
 
 ### 5.2 Stamps `[r2 X10]`
 
+> **SUPERSEDED IN PART by `locate_finish.md` revision 2 §5.1 (lane locfin2, 2026-10-09,
+> panel id C6).** The stamp rule there names the locator ONCE, on `RX_DFA_SCAN`
+> (value `"rev-end"`); `RX_END_WINDOW` keeps its vocabulary and reads `"none"` on an
+> admitted artifact, `RX_DFA_START` keeps `"reverse-pass"` (true: the start is found
+> on the reverse machine), `RX_REQ_WHY` gains the token `"locator"`, and
+> `RX_DFA_TABLE`/`_UNIFORM_FOLDS`/`_SCAN_EDGE` fold over the machines the artifact
+> emits. The two bullets below that give `END_WINDOW` and `DFA_START` the value
+> `"rev-end"` are the superseded proposal, kept for the record.
+
 - `<PREFIX>_END_WINDOW` gains the value `"rev-end"` (closed vocabulary + 1; it was a number
   or `"none"`).
 - **The downstream search stamps** (`RX_DFA_SCAN`, `RX_DFA_PREFILTER`,

@@ -54,6 +54,20 @@ byte-identical to the first run; only the control block moved.
   under `src/gen/` testing `fit.chosen`, `fit.prefilter` or `prefn`.
   `results/finish_sites.txt` is its output; the note's §3.3 dispositions it.
 
+- `l0_edit_set.tsv` — [lane locfin2, panel id C3] the text `locate_finish.md`
+  rev 2's L0 CHANGES, written once as data (31 entries: `def`/`token`/`line`,
+  each with its reason), in `docs/design/start_table/refactor_edit_set.tsv`'s
+  format. The re-aim list is DERIVED from it, never stated:
+  `python3 -I docs/design/start_table/sabotage_anchors.py . CALL_GRAPH
+  studies/locate_finish/l0_edit_set.tsv --final after-L0`, where CALL_GRAPH is
+  `docs/design/start_table/call_graph.py .`'s output at the same pin (not
+  committed; regenerate it). `results/l0_sabotage_anchors.tsv` and `.summary`
+  are that run at main `7efca415`: 6 re-aim (S566, S599, S606-S609), 18 re-run
+  at L0, 98 after L0; 3 pre-existing unresolved `src/` sites outside the
+  family (S176, S640, S571). `sabotage_anchors.py`'s ORDER gained `L0`/`L2`
+  for this (byte-neutral for the C/B labels). A build lane re-derives at its
+  own pin before numbering.
+
 **The instrument defect it caught in itself (recorded, not hidden).** The
 first run's TEXT marker was `rx_reverse_next_state`; C1 read 146
 disagreements, all artifacts whose reverse machine uses the uniform-fold
