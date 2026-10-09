@@ -53,3 +53,18 @@ concurrent chain. Never built or run by pcrec's `make`.
   - `timing.txt`: form A, 3 repeats, with load1 per line.
   - `timing_lower.txt`: form B.
 - `.gitignore`: `work/` (generated artifacts, binaries, ~25 MB of subjects).
+
+## Q1 (lane revq1, 2026-10-09): bounded patterns, W1 vs form B
+
+Backs `docs/design/revend.md` section 10 Q1. Verdict and table: `q1_bounded.md`.
+
+- `q1_patterns.tsv`: the 13 bounded end-pinned patterns with per-pattern tails.
+- `mksubj_q1.py PATTERNS OUTDIR`: 1 MiB / 64 KiB prose bodies x {long, short, non, nl} tails.
+- `timedrv3.c`: three-arm interleaved timing (`o` default/W1, `t` form B, `d`
+  `-fno-end-window`) with a three-way answer assert.
+- `run_q1.sh [CPU] [REPEATS]`: builds the three artifacts per pattern (B is twinned from the
+  W1-denied artifact), runs `check.c` identity, then the timing passes into `work/q1/`.
+- `q1_table.py TIMING.tsv`: renders the markdown table (medians, pass-median ranges, flags).
+- `mktwin.py` (form B) now also twins artifacts that carry a REQ handoff: the
+  `<p>_reqrun` pre-check (and its `c - K` back-off block) moves to after the walk.
+- `results/q1_timing.tsv`, `q1_identity.txt`, `q1_table.md`: the verbatim outputs.
