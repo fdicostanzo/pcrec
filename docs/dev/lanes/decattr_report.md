@@ -345,3 +345,79 @@ started detached (`setsid`) and checked alive after arming. Verdicts land in
 `build/land/trailer.log`. make test's verdict is
 `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-' build/land/test.log`, and
 mech's is its `== mech run COMPLETE` trailer.
+
+## Triage (dectri)
+
+Lane dectri (opus, 2026-10-09) read the clean 13:04 heavy chain
+(`build/land/trailer.log`; `contaminated_1218/` ignored for verdicts),
+restored the missing movers stage and triaged the mech reds. No real
+regression was found. The two red rows were stale witnesses after the ruled
+[DEC-COLLAPSE-WASTE] change. Both plants are unchanged, and only the
+detector witnesses moved (`0c3068e6`).
+
+### Movers stage (was rc=127)
+
+The manager's log archive had moved `build/land/movers_variants.sh` into
+`contaminated_1218/`. dectri copied it back unchanged and ran it the way
+chain.sh does (`gnutimeout 7200 bash build/land/movers_variants.sh >
+build/land/movers.log`), under `taskset -c 0-7` against HEAD `d668c7fc`.
+It finished at rc=0 (`build/land/movers.done`), and every variant read
+`MOVERS: ALL DECLARED SHAPES`, with 0 ASYMMETRIC and 0 UNDECLARED:
+
+| variant | population | movers | `refuse:<delta>` |
+|---|---:|---:|---|
+| plain | 4,387 | 132 (decland's figure) | none |
+| lowsize | 4,387 | 953 | 1 × `-17` |
+| lowdfa | 4,387 | 126 | none |
+| lowboth | 4,387 | 898 (decland's figure) | 1 × `-17` |
+| lowthr | 4,387 | 132 | none |
+
+The only refuse delta is -17, which is inside the declared {-17,-6,-23}.
+
+### Mech: 46 rows, unexpected 2, undetected 2
+
+- **46, not 47.** No id was dropped. The chain's argument list holds 46
+  distinct ids, and the set of rows in `mech.log` equals it exactly
+  (checked with a set diff). The "Rows (47)" comment in chain.sh, and item
+  6 of decland's section above, both miscount: the comment's breakdown
+  counts S641 (or S621) twice, once by name and once inside S620-S651.
+- **S626 (attrib names the first fired row, not the giving one):
+  STALE WITNESS.**
+  - *Cause.* [DEC-COLLAPSE-WASTE] (§2) offers `sel1-collapse` only where a
+    collapse can help. The detector witnesses lost their two-row sequence:
+    `att-ovfdfa` (W_OVF, class (ii)) and `att-ovfpf` (OVFPF, class (i))
+    now fire `sel1-drop` alone. With one fired row, the first fired row is
+    the giving row, so the plant printed the same record
+    (`fallbacktable:0fail/141pass`).
+  - *Evidence.* Sabotaged and clean trace builds, compared. On W_LOOKR,
+    the clean build prints `from=sel1-drop` and the plant prints
+    `from=sel1-collapse`. On lowsize `(\bcat\b){2,}` -e utf8, the clean
+    build prints `from=drop-prefilter` and the plant prints
+    `from=prefilter-collapse`.
+  - *Fix.* Two new fbt (a) records, `att-ovfcd` (W_LOOKR) and `att-scpfd`
+    (that lowsize witness).
+- **S648 (T1 row 6 loses its deny bit): STALE WITNESS.**
+  - *Cause.* Row 6 is now offered only on a collapsible repeat (§2), so
+    `seq-pfdrop`'s `(\p{Xwd})` never reaches the `-fno-prefilter-collapse`
+    bit. It reads `drop-prefilter@size` with or without the plant.
+  - *Evidence.* `(\p{Xwd}{1,3})` -e utf8 -fno-prefilter-collapse reads
+    `drop-prefilter@size` clean. Under the plant it reads
+    `prefilter-collapse@size > drop-prefilter@size`, at shipped limits.
+    `(\p{Xwd}){2,}` and `a(\p{Xwd}){1,4}` show the same split.
+  - *Fix.* `seq-pfdrop` now uses `(\p{Xwd}{1,3})`. It was moved, not added,
+    because the old pattern only duplicated `seq-pfcdrop`.
+- **Intent.** Both rows' SAB_BEFORE/SAB_AFTER are unchanged. The re-aim note
+  is in each sabotage file. Neither SAB_EXPECT changed. The planted code is
+  still wrong and is now caught.
+- **Clean tree.** `tests/codegen/run_fallback_table.sh` reads 143/0 at
+  `0c3068e6`. That is 141 plus the two new records; `seq-pfdrop` was
+  re-pointed, not added.
+- **Solo verdicts.** `env PROCS=1 bash tests/mech/run_sabotage_matrix.sh
+  SNNN`, pinned to CPUs 0-7:
+  - S626: DETECTED, `fallbacktable:2fail/141pass`, COMPLETE 1 row, unexpected 0, at `0c3068e6`
+  - S648: DETECTED, `fallbacktable:1fail/142pass`, COMPLETE 1 row, unexpected 0, at `0c3068e6`
+
+  Logs: `build/tmp/dectri/mech_S626.log`, `mech_S648.log`.
+- **Same class, not run.** S649's comment names `att-ovfdfa` as one of its
+  detectors. The chain's S649 was still DETECTED (via `seq-sel1cd`'s
+  `latch` state), so it needs no change.
