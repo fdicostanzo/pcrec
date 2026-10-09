@@ -1244,7 +1244,7 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
                         indent, posvar, k);
         if (k > 0)
             pcrec_sb_printf(c, "%s    handoff_position -= %lld;\n", indent, k);
-        if (round.len > 0) pcrec_sb_puts(c, round.p);
+        if (round.len > 0) pcrec_sb_splice(c, &round);
         pcrec_sb_printf(c, "%s} else\n"
                            "%s    handoff_position = %s;\n",
                         indent, indent, posvar);

@@ -633,6 +633,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   axis cannot move a size decision — the defect it exists to close is in
   `docs/dev/lanes/emitverb_report.md` §3a.
 
+  **and, since [MEMFN] RQ-3 (lane rq3, 2026-10-09, D155 item 9 + addendum
+  2), THE SIMD BRACKET AND THE DECISION VIEW**: `pcrec_sb_simd_open`/
+  `pcrec_sb_simd_close` bound one CPU-guarded region (line-aligned, never
+  nested, an internal-error refusal otherwise) and count its uncut bytes into
+  `StrBuf.simd_guarded` and its written text's caps breakdown into
+  `simd_size`; `pcrec_sb_splice` appends a scratch buffer WITH that record.
+  The rule above is superseded by its stricter form: **a length DECISION
+  reads `pcrec_sb_len_decide` (uncut minus guarded) and the caps read
+  `pcrec_sb_size_decide` (the measure minus the guarded text's)**, so the
+  SIMD switch cannot move a decision either. The caps' text measure itself,
+  `pcrec_emit_size_measure` (with its `PcrecEmitSize` breakdown), moved here
+  from compile.c so the bracket can measure its own text in the base tier.
+
   **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
   `pcrec_sb_text`/`pcrec_sb_textn`/`pcrec_sb_field` (the two escape vocabularies), `pcrec_sb_join` and
   `pcrec_sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk

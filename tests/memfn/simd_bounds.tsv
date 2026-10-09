@@ -1,0 +1,14 @@
+# tests/memfn/simd_bounds.tsv -- [MEMFN] RQ-3 (D155 item 9 + addendum 2): each SIMD row's
+# declared bound on the CPU-guarded bytes ONE rendering writes (Q-R9-9's
+# per-row bound, `mf_formdecl.guarded_max` once the kit declares it).
+# simd_guarded_check.py holds every artifact's <PREFIX>_SIMD_GUARDED_BYTES
+# to the sum of these over its rendered sites; a MEMFN_FORMS token with no
+# row here FAILS (UNDECLARED). No aggregate budget exists (addendum 2).
+#
+# form<TAB>guarded_max
+#
+# rq3-witness: the test-only synthetic block (-DPCREC_SIMD_WITNESS, 60,000
+# pad lines of 27 bytes plus ~190 of guard, comment, table and #endif:
+# 1,620,166 bytes measured). Under 2x the block, so a bracket that counts a
+# block twice exceeds it (S703).
+rq3-witness	1700000

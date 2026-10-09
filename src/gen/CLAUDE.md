@@ -1126,6 +1126,12 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   sites rendered through) and ENDS it (`pcrec_memfn_art_end`: every defined
   site used, every header the kit's text needs declared by the prologue,
   `Job.string_h`).
+  **[MEMFN] RQ-3 (lane rq3, 2026-10-09, abi 71):** pcrec's own line after
+  the kit's three, `<PREFIX>_SIMD_GUARDED_BYTES`, the artifact's CPU-guarded
+  byte count (csb's and hsb's `simd_guarded`) as FIXED-WIDTH hex: the line
+  renders before the size measurement, so its length must not vary with the
+  count. Under the test-only `-DPCREC_SIMD_WITNESS` build the mark is
+  preceded by a synthetic guarded block (`pcrec_memfn_simd_witness`).
 
 - **memfn_sites.c / memfn_sites.h / memfn_sites.def** — [MEMFN] R4c (lane
   r4ccore, 2026-10-06; `docs/design/memfn/integration.md` §14, §15, §22
@@ -1180,6 +1186,14 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   defined in emit_dfa.c), moved here from core/internal.h because its site
   id is a `DelegSite`.
 
+  **[MEMFN] RQ-3 (lane rq3, 2026-10-09):** pcrec's half of the kit's two
+  DESIGNED sink ops, `pcrec_memfn_sink_simd_open(u, level)`/
+  `pcrec_memfn_sink_simd_close(u)` (the bracket in `core/sb.c`), at the
+  declared signatures and NOT YET WIRED: `mf_sink` has no members for them
+  until the kit's SIMD batch 1 bumps `MF_SITE_ABI`. Under
+  `-DPCREC_SIMD_WITNESS` only, `pcrec_memfn_simd_witness` writes one
+  synthetic guarded block through them (tests/memfn/run_simd_guarded.sh);
+  emit_vm.c's `vm_init` and the memfn mark call it.
 - **runcmp.c** — **DELETED at [MEMFN] M1b (lane m1b, 2026-10-07, zero
   movers): THE RUN COMPARE IS THE KIT'S**, `memfn/src/runcmp.c` (see
   `memfn/src/CLAUDE.md`), transcribed with its row table, helpers and

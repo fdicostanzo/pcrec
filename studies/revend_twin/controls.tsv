@@ -1,0 +1,4 @@
+tail-digits-eol	byte	1	\d+$
+tail-space-eol	byte	1	\s+$
+u-astar	byte	1	a*$
+u-dotstar	byte	1	.*$

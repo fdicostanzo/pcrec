@@ -1,0 +1,14 @@
+# name	eol(1 for $/\Z, 0 for \z)	pattern	tail_long	tail_short	tail_non	(tail_nl = tail_short+"\n" for eol=1; escapes \n \xHH decoded)
+bench-anc-dollar	1	done$	\nall done	\nall done	\nall dont
+bench-anc-z-lc	0	done\z	\nall done	\nall done	\nall dont
+bench-anc-z-uc	1	done\Z	\nall done	\nall done	\nall dont
+bench-abc-dollar	1	abc$	\nabc	\nabc	\nabd
+bench-letters-bounded-tail-z	0	(?:[a-z]{0,1024})\z	\n@Q1000	\nab	\nab!
+w-d18-dollar	1	\d{1,8}$	\nid 12345678	\nid 7	\nid 12345678x
+w-az64-z	0	[a-z]{0,64}\z	\n@Q60	\nab	\nab!
+w-foo-barbaz-txt	1	(?:foo|barbaz)\.txt$	\nsee barbaz.txt	\nfoo.txt	\nfoo.txt.bak
+c-bfoo-dollar	1	\bfoo$	\n a foo	\nfoo	\nfoox
+c-a5b5-dollar	1	a{5,10}b{5,10}$	\n@A10@B10	\naaaaabbbbb	\naaaaabbbb
+c-notc13-z	0	[^c]{1,3}\z	\nxyz	\nx	\nxyc
+c-error-dollar	1	ERROR$	\nERROR	\nERROR	\nERRO
+c-xaz5-z	0	x[a-z]{0,5}\z	\nxabcde	\nx	\nx!

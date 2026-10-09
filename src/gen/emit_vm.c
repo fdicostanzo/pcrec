@@ -10223,6 +10223,9 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
     v->cx = cx;
     v->b = &job->vmsb;   /* Job-owned, so the longjmp cleanup path frees it */
     v->p = cx->opt->prefix;
+#ifdef PCREC_SIMD_WITNESS
+    pcrec_memfn_simd_witness(v->b);   /* [MEMFN] RQ-3: the knee's own block */
+#endif
 
     /* [DD-14.EMPTY] THE ROOT'S MINIMUM WIDTH, READ HERE AND NOT AT ENGINE
      * SELECTION. `pcrec_minw` reads an `A_CALL`'s contribution off
@@ -10790,8 +10793,10 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
     Job *job = cx->job;
 
     /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: a size DECISION, and the
-     * comment axis must not reach it. */
-    en->program_bytes = pcrec_sb_len_uncut(&job->vmsb);
+     * comment axis must not reach it. [MEMFN] RQ-3: read through the decision
+     * view, which also subtracts the CPU-guarded bytes, so the SIMD switch
+     * cannot reach it either (D155 addendum 2). */
+    en->program_bytes = pcrec_sb_len_decide(&job->vmsb);
 
     /* [CC-CLANG fix, 2026-09-01] DOES THIS ARTIFACT EVER PUSH A RESUME FRAME
      * — the ONE bool three later readers share: the `<PREFIX>_VM_FRAMELESS`
@@ -10924,7 +10929,8 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
         long long term = pcrec_tune_vm_inline_chain_max(cx->opt->tune);
         if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
         /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: this comparison is a size
-         * DECISION, and the comment axis must not reach it. */
+         * DECISION, and the comment axis must not reach it ([MEMFN] RQ-3: nor
+         * the SIMD switch; `program_bytes` is `pcrec_sb_len_decide`). */
         if ((long long)en->program_bytes <= term)
             shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
         else
@@ -12832,7 +12838,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         pcrec_sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
                      " scan_position, subject_length);\n", v->p);
     pcrec_sb_printf(c, "    goto %s_L0;\n\n", v->p);
-    pcrec_sb_puts(c, v->b->p ? v->b->p : "");
+    pcrec_sb_splice(c, v->b);   /* [MEMFN] RQ-3: the program's guarded record with it */
     /* The three trace lines. Built here rather than inline so the untraced
      * artifact's text is the SAME format string with three empty inserts —
      * one emitted shape, not two, for the same reason the traced macros above

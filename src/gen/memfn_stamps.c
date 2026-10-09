@@ -1,7 +1,8 @@
 /* src/gen/memfn_stamps.c — [MEMFN] R4a′: the kit's every-artifact stamps,
  * `<PREFIX>_RUN_WORDS` (M1b), `<PREFIX>_MEMFN_FORMS` and `<PREFIX>_MEMFN_LIBC`
  * (docs/design/memfn/integration.md §R4.3.3, §R4.8, §18; D147 addendum 10,
- * Q53/Q55; docs/spec/match_api.md §6.3).
+ * Q53/Q55; docs/spec/match_api.md §6.3), and pcrec's own line after them,
+ * `<PREFIX>_SIMD_GUARDED_BYTES` ([MEMFN] RQ-3, D155 addendum 2).
  *
  * THE KIT WRITES THE LINES; pcrec owns WHERE they go and the libc inventory
  * of the text pcrec spelled. Both engines write a one-line MARK where the
@@ -35,6 +36,9 @@
 
 void pcrec_emit_memfn_mark(StrBuf *c)
 {
+#ifdef PCREC_SIMD_WITNESS
+    pcrec_memfn_simd_witness(c);   /* RQ-3's file-scope block, both engines */
+#endif
     pcrec_sb_puts(c, MEMFN_MARK);
 }
 
@@ -242,6 +246,24 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     int rc = scan_libc_calls(art, job->csb.p ? job->csb.p : "", job->csb.len) ||
              scan_libc_calls(art, job->hsb.p ? job->hsb.p : "", job->hsb.len) ||
              mf_stamps(art, &sink);
+    /* [MEMFN] RQ-3 (D155 addendum 2, "Reported"): pcrec's own line after the
+     * kit's three, the artifact's CPU-guarded byte count in the decision
+     * view's unit (uncut, so the comment axis cannot move it, and at the
+     * prefix placeholder, so `-p` cannot). Every length decision subtracts
+     * these bytes; this line is where the real size stays visible. Read from
+     * the two finished buffers' records, which carry every spliced scratch
+     * buffer's (pcrec_sb_splice).
+     *
+     * FIXED-WIDTH HEX, and the width is the point: this line is itself
+     * emitted code the size decisions measure (it renders before the
+     * measurement), so a decimal value would make the line one byte longer
+     * per digit and leak the guarded count into every cap, knee and quoted
+     * figure. Measured, not argued: the first build's witness moved
+     * `--warn-emit-bytes`' quoted sizes by 6 bytes ("1620166" vs "0"). */
+    if (!rc)
+        pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
+                        (unsigned long long)(job->csb.simd_guarded +
+                                             job->hsb.simd_guarded));
     bool ok = !rc && splice_mark(&job->csb, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)

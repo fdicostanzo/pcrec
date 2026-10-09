@@ -2316,7 +2316,7 @@ and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
 - **`rx_info.abi` is `72` on every artifact today (lane vmlazy bumped it
-  from 70, 2026-10-09; `71` is [MEMFN] RQ-3's, landing first: [MEMFN] R-12
+  from 71, 2026-10-09; `71` is [MEMFN] RQ-3's, landed first: [MEMFN] R-12
   — THE VMLAZY NORMALIZATION, `docs/dev/lanes/r12scope_report.md` §1.5,
   `docs/dev/lanes/vmlazy_report.md`).** The VM cursor rung's LAZY arm
   spells its rmin prefix (the loop's mandatory iterations) the way the
@@ -2331,6 +2331,17 @@ the bump's own commit.**
   `<PREFIX>_VM_PROGRAM_BYTES` moves with the text. No stamp is added, no
   struct offset or `rx_info` member moves, and no symbol a caller links
   against changes.
+- **`rx_info.abi` was `71` (lane rq3 bumped it from
+  70, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; rq3 was built on `69` and
+  re-landed on R4e′.0b's `70`).** ONE stamp line is added
+  to every artifact, both engines, directly after `<PREFIX>_MEMFN_LIBC`:
+  `<PREFIX>_SIMD_GUARDED_BYTES` (§6.3), the artifact's CPU-guarded byte
+  count. It reads `0ULL` on every artifact, since no SIMD form exists and
+  `-fmemfn-simd` is inert. No other byte moves: every length decision now
+  reads the SIMD-off length (`len_uncut` minus the guarded bytes; the caps'
+  measure minus the guarded text's), which equals the old reading wherever
+  nothing is guarded, and the sweep against `abi` 69 read zero movers
+  outside the new line. No struct offset moves and no answer moves.
 - **`rx_info.abi` was `70` (lane r4e0b bumped it
   from 69, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
   `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
@@ -4158,6 +4169,43 @@ engine-scoped.**
     (`tuning.md` §2.43): default against `-fno-memfn-simd`, reported
     "identical (no SIMD form)" while no SIMD form exists. Its movers half
     (`-fmemfn-simd` against SIMD-off) stays UNREACHED until one does.
+
+  **[MEMFN] RQ-3, `abi` 71, 2026-10-09 (D155 addendum 2):
+  `<PREFIX>_SIMD_GUARDED_BYTES` — HOW MANY BYTES OF THE ARTIFACT SIT UNDER A
+  CPU-LEVEL GUARD.** On EVERY artifact, both engines, written by pcrec
+  directly after `<PREFIX>_MEMFN_LIBC`; an unsigned integer.
+
+  ```c
+  #define RX_SIMD_GUARDED_BYTES 0ULL   /* or any count */
+  ```
+
+  **The IFF: it is the number of bytes the search-code kit wrote between
+  its `simd_open` and `simd_close` sink calls** (the `#if <level>` blocks a
+  SIMD-on form adds: its per-level helpers and the guarded arms of its
+  selector, `docs/design/memfn/integration.md` §R4.9.2.4), counted in the
+  unit every pcrec length decision uses: comment bytes `-fno-comments`
+  dropped are included, and the symbol prefix is counted at a fixed width,
+  so neither `-fno-comments` nor `-p` changes the value. `0ULL` on every
+  artifact that holds no such block, which is every artifact today: no
+  SIMD form exists and `-fmemfn-simd` is inert (`tuning.md` §2.43).
+  **What a consumer may conclude:** the artifact's size beyond its SIMD-off
+  compile. Those bytes are deliberately invisible to every pcrec size
+  DECISION — the VM entry-shape knee and `<PREFIX>_VM_PROGRAM_BYTES`, the
+  size term and its ladder, and the D84 caps (`docs/spec/limits.md` §8)
+  all read the length minus these bytes — so turning SIMD on moves no
+  rung, no ladder step, no refusal and no other stamp's value; this line
+  is where the difference stays visible. There is no aggregate budget on
+  it (D155 addendum 2): each SIMD row bounds its own guarded bytes, and
+  the check below holds the stamped total to the sum of those bounds. No
+  `rx_info` mirror (D77).
+  - **Checked by** `make test-memfn-guarded`
+    (`tests/memfn/run_simd_guarded.sh`): every artifact of a corpus sample
+    carries the line, and its value is at most the sum, over the SIMD forms
+    `<PREFIX>_MEMFN_FORMS` lists, of each form's declared bound (0 while
+    the value is `"none"`). The arithmetic and the decision neutrality are
+    exercised by a test-only build that writes a synthetic guarded block
+    through the same sink calls: its artifacts must equal the plain
+    build's, block and stamp value aside.
 
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,

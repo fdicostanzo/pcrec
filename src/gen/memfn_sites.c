@@ -116,6 +116,54 @@ static void sink_legend_byte(void *u, uint8_t byte)
     pcrec_emit_legend_byte(((PcrecMfSink *)u)->sb, byte);
 }
 
+void pcrec_memfn_sink_simd_open(void *u, int level)
+{
+    (void)level;
+    pcrec_sb_simd_open(((PcrecMfSink *)u)->sb);
+}
+
+void pcrec_memfn_sink_simd_close(void *u)
+{
+    pcrec_sb_simd_close(((PcrecMfSink *)u)->sb);
+}
+
+#ifdef PCREC_SIMD_WITNESS
+/* Pad lines in one synthetic block (`-DPCREC_SIMD_WITNESS_PAD=N` moves it).
+ * Sized against the readers it must reach: one block's CODE bytes (60,000 x
+ * 27) exceed both caps, so a cap reader that forgets the subtraction refuses
+ * every compile rather than only a near-cap one, and a VM artifact's two
+ * blocks (its program's, spliced, and the file's) exceed 3 x
+ * PCREC_MAX_EMIT_BYTES, the size-term ladder's scratch bound. */
+#ifndef PCREC_SIMD_WITNESS_PAD
+#define PCREC_SIMD_WITNESS_PAD 60000
+#endif
+
+/* [MEMFN] RQ-3 THE SYNTHETIC GUARDED BLOCK, compiled only into the test
+ * build `-DPCREC_SIMD_WITNESS` (tests/memfn/run_simd_guarded.sh). It writes
+ * one block through the sink exactly as a SIMD form will, bracketed by the
+ * sink's own `simd_open`/`simd_close`: a guard line no compiler defines, a
+ * NONESSENTIAL comment (so the bracket counts muted bytes), a table line and
+ * pad lines (so the caps' prose and table subtraction are both exercised),
+ * and the `#endif`. The check holds the witness build's artifacts to the
+ * plain build's, block and stamp value aside: the decisions cannot see it. */
+void pcrec_memfn_simd_witness(StrBuf *sb)
+{
+    PcrecMfSink ps;
+    pcrec_memfn_sink(&ps, sb);
+    pcrec_memfn_sink_simd_open(&ps, 0);
+    ps.s.puts(&ps, "#if defined(PCREC_RQ3_WITNESS_GUARD)\n");
+    if (ps.s.cmt_open(&ps, MF_CMT_NONESSENTIAL)) {
+        ps.s.puts(&ps, "[MEMFN] RQ-3 synthetic guarded block (test-only build)");
+        ps.s.cmt_close(&ps);
+    }
+    ps.s.puts(&ps, "static const unsigned char pcrec_rq3w_t[4] = { 0, 1, 2, 3 };\n");
+    for (int i = 0; i < PCREC_SIMD_WITNESS_PAD; i++)
+        pcrec_sb_printf(sb, "int pcrec_rq3w_pad_%06d;\n", i);
+    ps.s.puts(&ps, "#endif\n");
+    pcrec_memfn_sink_simd_close(&ps);
+}
+#endif
+
 void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb)
 {
     memset(ps, 0, sizeof *ps);

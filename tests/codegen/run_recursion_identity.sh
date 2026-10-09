@@ -1219,6 +1219,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `<fn>__body` and becomes one call to it; every other artifact moves by the
 # abi digits alone. `74f941dc` is the lane's src commit; the manager re-pins
 # to the merge (the self-pin convention).
+# [MEMFN] RQ-3 SELF-PIN (lane rq3, landed by lane rq3land, 2026-10-09), abi
+# 70 -> 71: every artifact gains `<PREFIX>_SIMD_GUARDED_BYTES`; no other byte
+# moves. `3b7d7b69` (the merge of main 47842ee3, R4e'.0b's 70) is the lane's
+# last src commit; the manager re-pins to the merge (the self-pin convention).
+# [MEMFN] R-12 VMLAZY SELF-PIN (lane vmlazy, landed by lane vmlmerge,
+# 2026-10-09), abi 71 -> 72 (71 is RQ-3's, landed first): the VM cursor
+# rung's lazy rmin prefix is spelled as a span scan capped at rmin plus the
+# reach test; only lazy-cursor-prefix artifacts move beyond the abi digits.
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-7106b370}"   # [MEMFN] R-12 VMLAZY SELF-PIN (2026-10-09), abi 70 -> 72: the lane's abi commit (the manager re-pins to the merge)
 
 WORKDIR="$(mktemp -d)"
