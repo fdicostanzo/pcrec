@@ -43,7 +43,7 @@ and D144 addendum 4. It overrides anything below that conflicts.** Read
   whole body is the `#if`/`#elif`/`#else` chain, one plain call per arm.
   SIMD-off routes through `<fn>__body` too: a one-time byte move (+139 B
   per FUNC, measured) and a pcrec abi event, step R4e′.0b, measured as G1
-  (§R4.9.2.6). Runtime dispatch stays FILED (`[MEMFN-RTDISPATCH]`);
+  (§R4.9.2.6). **`[R4e′.0b]` BUILT** (lane r4e0b, 2026-10-09, abi 68 -> 70). Runtime dispatch stays FILED (`[MEMFN-RTDISPATCH]`);
   §R4.9.3.1 shows the same helpers serve it. Q-R9-10 and Q-R9-11 are
   RULED (D155 addendum 1).
 
@@ -1224,6 +1224,36 @@ nothing, so measure it":
    - From batch 1 on, the SIMD-on layer is judged against this routed
      SIMD-off (§R4.9.6), never against the pre-routing text.
 
+> **`[R4e′.0b]` BUILT** (lane r4e0b, 2026-10-09, request R-11;
+> `docs/dev/lanes/r4e0b_report.md`). pcrec abi 68 -> 70 (the pcrec manager
+> assigned 70; 69 is another lane's event). As built:
+> - The seam `ofs_fn_define` writes the BODY row's loop under `fn_head`'s
+>   head as `<fn>__body`, then the PREFIX row's helpers (none), then
+>   `fn_selector`'s `<fn>`: `return <fn>__body(subject, n, pos[, tables]);`.
+>   The PREFIX walk is handed the helper's name (`fn_in.body_fn`). A later
+>   PREFIX row adds `#if` arms above that call without touching the BODY
+>   text. No options.def deny: the routing is the floor shape D155 ordered,
+>   measured once against its parent (this section), not an arm with an OFF.
+> - **G1, measured** (`probes/r4e0b/`, every corpus row and composition
+>   file, four `.c` streams, gcc 15.2, the dev box): 0 OTHER and 0
+>   ASYMMETRIC; every FUNC-bearing artifact un-routes to the parent byte for
+>   byte, and the movers are exactly the parent artifacts holding a FUNC
+>   (3,334 artifact-streams; the `--emit-ir` listings identical, headers abi
+>   digits only). The delta per FUNC is 121 + 2 x len(name) plus its tables
+>   (rx_reqrun +139, rx_ofsskip +141, rx_reqrun_whole +151; 203 table-bearing
+>   ofsskips +184), as predicted on every mover.
+> - **Assembly is NOT identical on every mover**, against the prediction:
+>   2,126 of 2,452 movers identical at `-O2` and at `-O2 -march=x86-64-v3`;
+>   326 differ at both, 11 `byte` ones by block order alone (the same
+>   instructions), 315 `-e utf8` ones by the K50 guard's error return taking
+>   its own epilogue (typically +7 instructions on the cold `startpos`
+>   path), 0 VM-forced. `-Os` (sampled) 4 of 127 differ; `-O0` all differ
+>   (one more call).
+> - **Timing, only for those** (tier U, one core, 7 alternated runs,
+>   find-all on 64 KiB and 64-byte calls): all 227 distinct patterns read
+>   null, every ratio inside its own run-to-run spread (utf8 medians 1.000
+>   thr / 1.001 call); identical-assembly controls read the same.
+
 ### R4.9.3 Cascades and the short-span path
 
 **Three ways a level is picked.**
@@ -1823,7 +1853,7 @@ kit narrows or removes the row in a follow-up.
 **Step R4e′.0 (the seam) precedes batch 1** and is its own kit request:
 §R4.9.2.1, zero movers, no options.def row, no `MF_SITE_ABI` bump. **`[R4e′.0]` BUILT** (lane r4e0, 2026-10-09).
 `[D155]` **Step R4e′.0b (the routing) follows it, also before batch 1**:
-§R4.9.2.6. It moves every FUNC's loop into `<fn>__body` and makes the FUNC
+§R4.9.2.6. **`[R4e′.0b]` BUILT** (lane r4e0b, 2026-10-09, abi 68 -> 70). It moves every FUNC's loop into `<fn>__body` and makes the FUNC
 one call. It is a pcrec abi event (RQ-6), it has no options.def row, and
 it is measured as G1. Batch 1 then adds only guarded text.
 
@@ -9060,6 +9090,8 @@ text stays opt-in until R4f.
 >   - `[D155]` **Step R4e′.0b, the routing** (§R4.9.2.6): the FUNC's loop
 >     becomes `<fn>__body` and the FUNC one call. It is a pcrec abi event
 >     (RQ-6), measured as G1, and lands before batch 1.
+>     **`[R4e′.0b]` BUILT** (lane r4e0b, 2026-10-09, abi 68 -> 70;
+>     §R4.9.2.6's as-built block).
 >   - **Batch 1** (§R4.9.7): rows `vrun-w32`/`vrun-w16` in `fn_rows[]`
 >     for a FUNC part whose predicate is one RUN term and its site's only
 >     predicate (PRE window with no lead; OFS run-pinned by its own cell).

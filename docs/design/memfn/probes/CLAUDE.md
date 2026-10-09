@@ -46,3 +46,5 @@ Maintenance: update this file when files are added/removed or change roles.
   the abi DATA read across; `--nonid-out` lists the non-identical movers),
   `routing_timing.py` (the parent-vs-routed timing pair for those movers
   only). Results in `docs/dev/lanes/r4e0b_report.md` §4.
+  `r4e0b/out/` holds the transcripts (the full census, the -Os/-O0 sample,
+  both timing tables) and `nonid_full.tsv`, the non-identical movers.

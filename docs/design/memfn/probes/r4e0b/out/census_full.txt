@@ -1,0 +1,87 @@
+# routing_census.py --ref 131c173a --abi 68:70 --asm --jobs 4 --floor 1000 (lane r4e0b, 2026-10-09, Linux dev box 7700X, gcc 15.2, taskset -c 12-15, src = 74f941dc); per-mover ASM hunks elided (the movers are nonid_full.tsv); the 652 FAILs are the 326 movers x 2 gating recipes
+[emit_sweep] archiving 131c173a (routing_ref) into /home/pcrec/projects/pcrec/worktrees/r4e0b/build-emitsweep/src_routing_ref ...
+[emit_sweep] building routing_ref (CC=gcc CFLAGS=<default>) ...
+== R4e'.0b routing census: ref 131c173a vs /home/pcrec/projects/pcrec/worktrees/r4e0b/build/pcrec; 5431 pattern rows (every 1), 373 composition files; cc gcc ==
+  c-default done
+  c-vm done
+  c-utf8 done
+  c-comments done
+  emit-ir-vm done
+| stream | identical | abi | routed | OTHER | ASYMMETRIC | both-refuse |
+|---|---|---|---|---|---|---|
+| c-comments | 0 | 4106 | 874 | 0 | 0 | 451 |
+| c-default | 0 | 4106 | 874 | 0 | 0 | 451 |
+| c-utf8 | 0 | 4038 | 971 | 0 | 0 | 422 |
+| c-vm | 0 | 4374 | 607 | 0 | 0 | 450 |
+| comp-c | 0 | 46 | 8 | 0 | 0 | 0 |
+| comp-h | 0 | 54 | 0 | 0 | 0 | 0 |
+| emit-ir-vm | 4981 | 0 | 0 | 0 | 0 | 450 |
+routed functions by customer:
+  c-comments: ofsskip 681, reqrun 335, reqrun_whole 6
+  c-default: ofsskip 681, reqrun 335, reqrun_whole 6
+  c-utf8: ofsskip 820, reqrun 504, reqrun_whole 6
+  c-vm: reqrun 607, reqrun_whole 63
+  comp-c: ofsskip 7, reqrun 2
+per-function delta (customer, bytes): count
+  ofsskip +141: 1984
+  ofsskip +153: 2
+  ofsskip +184: 203
+  reqrun +139: 1783
+  reqrun_whole +151: 81
+== assembly: 2452 routed movers (every 1), recipes ['-O2', '-O2 -march=x86-64-v3'], reported-only [] ==
+| recipe | identical | DIFFERENT | ERROR | gates |
+|---|---|---|---|---|
+| `-O2` | 2126 | 326 | 0 | yes |
+| `-O2 -march=x86-64-v3` | 2126 | 326 | 0 | yes |
+ .L18:
+ .L18:
+ .L0:
+ .L0:
+ .L12:
+ .L12:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L8:
+ .L18:
+ .L18:
+ .L18:
+ .L41:
+ .L41:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+ .L0:
+-O2: of the DIFFERENT, 21 have the same instruction multiset (layout/order only)
+-O2 -march=x86-64-v3: of the DIFFERENT, 21 have the same instruction multiset (layout/order only)
+census: 652 FAIL (routed 3334)
+CENSUS_FULL_DONE rc=1 275s

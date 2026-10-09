@@ -1,0 +1,164 @@
+# --every 20 --no-comp --asm --recipe=-O2 --report-recipe=-Os --report-recipe=-O0 (same box/src)
+[emit_sweep] archiving 131c173a (routing_ref) into /home/pcrec/projects/pcrec/worktrees/r4e0b/build-emitsweep/src_routing_ref ...
+[emit_sweep] building routing_ref (CC=gcc CFLAGS=<default>) ...
+== R4e'.0b routing census: ref 131c173a vs /home/pcrec/projects/pcrec/worktrees/r4e0b/build/pcrec; 272 pattern rows (every 20), 0 composition files; cc gcc ==
+  c-default done
+  c-vm done
+  c-utf8 done
+  c-comments done
+  emit-ir-vm done
+| stream | identical | abi | routed | OTHER | ASYMMETRIC | both-refuse |
+|---|---|---|---|---|---|---|
+| c-comments | 0 | 207 | 44 | 0 | 0 | 21 |
+| c-default | 0 | 207 | 44 | 0 | 0 | 21 |
+| c-utf8 | 0 | 202 | 51 | 0 | 0 | 19 |
+| c-vm | 0 | 219 | 32 | 0 | 0 | 21 |
+| emit-ir-vm | 251 | 0 | 0 | 0 | 0 | 21 |
+routed functions by customer:
+  c-comments: ofsskip 34, reqrun 17
+  c-default: ofsskip 34, reqrun 17
+  c-utf8: ofsskip 42, reqrun 23
+  c-vm: reqrun 32, reqrun_whole 2
+per-function delta (customer, bytes): count
+  ofsskip +141: 106
+  ofsskip +184: 4
+  reqrun +139: 89
+  reqrun_whole +151: 2
+== assembly: 127 routed movers (every 1), recipes ['-O2'], reported-only ['-Os', '-O0'] ==
+| recipe | identical | DIFFERENT | ERROR | gates |
+|---|---|---|---|---|
+| `-O2` | 113 | 14 | 0 | yes |
+| `-Os` | 123 | 4 | 0 | reported |
+| `-O0` | 0 | 127 | 0 | reported |
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
+ .L28:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_reqrun:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_ofsskip:
++rx_reqrun:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_reqrun:
++rx_reqrun:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
++rx_ofsskip:
+-O2: of the DIFFERENT, 0 have the same instruction multiset (layout/order only)
+-Os: of the DIFFERENT, 0 have the same instruction multiset (layout/order only)
+-O0: of the DIFFERENT, 0 have the same instruction multiset (layout/order only)
+census: 14 FAIL (routed 171)
