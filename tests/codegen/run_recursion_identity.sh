@@ -2267,9 +2267,9 @@ sweep() { # sweep <label> <extra pcrec args>
                     [ "$rb_bref" != "$rb_lazy" ] && rbrefrename=$((rbrefrename + 1))
                     [ "$lazy_this" = 1 ] && rlazy=$((rlazy + 1))
                     if [ "$possflip_this" = 1 ]; then
-                        printf 'REGION MOVED (ruled, [ART-POSS-ARMS] arm A selected the DFA; denying%s -fno-ctx-node -fno-poss-ctx-follow -fno-poss-bref-first restores the pinned VM region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                        printf 'REGION MOVED (ruled, [ART-POSS-ARMS] arm A selected the DFA; denying%s -fno-ctx-node -fno-poss-ctx-follow -fno-poss-bref-first restores the pinned VM region%s) %s\n' "$deny" "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
                     else
-                        printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                        printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region%s) %s\n' "$deny" "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
                     fi
                 elif [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
