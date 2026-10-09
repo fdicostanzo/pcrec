@@ -103,3 +103,9 @@ Backs `docs/design/revend.md` revision 2 (§6). Scratch tier, Linux dev box.
   [min-max of pass medians], C/W1, C/B, C/A).
 - `results/r2_identity.txt`, `r2_controls.txt`, `r2_timing.tsv`,
   `r2_table.md`, `r2_meta.txt`: the verbatim outputs.
+- `r2_spread.py [TIMING.tsv]` (manager, 2026-10-09, Frank: "do a std dev and
+  see"): per-cell run-to-run spread over the 7 passes (mean/stdev of each
+  arm's pass medians, CV), and per comparison whether the gap exceeds
+  2*(sd_x + sd_y). `results/r2_spread.txt`: median CV ~1% on every arm (p90
+  3-5%) at load1 1.4-3.0; C vs today separated and faster on 68/68; C slower
+  than B on 17 non-matching cells by ~0.5 ns (the unused tie arm).
