@@ -8,7 +8,7 @@
 SAB_ID='S640-t2-forced-off-var-swapped'
 SAB_FILE='src/opt/select_engine.c'
 SAB_SUITES='fallbacktable'
-SAB_DESC="T2's forced-off and var rows swapped, so -fno-prefilter a\${v}b would list no-engine-vm instead of no-fno-prefilter"
+SAB_DESC="T2's var row defers to -fno-prefilter (as if it sat below forced-off), so -fno-prefilter a\${v}b would list no-fno-prefilter instead of no-variable"
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S640. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
@@ -18,17 +18,12 @@ SAB_COUNT=1
 # lines. The plant still swaps the forced-off and var rows. With the
 # oracle's admit sites retired, the detectors are fbt (a)'s adm-varoff
 # record and run_prefilter_tests.sh §7's check_ir_value row.
-SAB_BEFORE='    { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
-      ESEL_PASS,
-      "-fno-prefilter -- forced off; the VM scans from search_from"
-      " itself", .axlist = FB_NO_LIST },
-    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
-      ESEL_PASS,
-      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },'
-SAB_AFTER='    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",
-      ESEL_PASS,
-      PFA_NOTE_ENGINE_VM, .axlist = FB_NO_LIST },
-    { "forced-off",         pfa_forced_off,         PFV_OFF,     "no-fno-prefilter",
-      ESEL_PASS,
-      "-fno-prefilter -- forced off; the VM scans from search_from"
-      " itself", .axlist = FB_NO_LIST },   /* SABOTAGE S640 */'
+# [DEC-VAR-ATTRIB] (lane decattr, 2026-10-09) RE-AIMED, INTENT RE-VERIFIED.
+# The contract INVERTED by ruling: the var row is a construct row AHEAD of
+# forced-off, so -fno-prefilter a${v}b lists no-variable (no flag changes a
+# variable's route). The rows are no longer adjacent, so a swap has no
+# one-hunk text; the same claim is planted as the var row DEFERRING to the
+# flag. Detectors: run_prefilter_tests.sh §7b's "var-vs-forced-off order"
+# row and fbt (a)'s adm-varoff record.
+SAB_BEFORE='static bool pfa_var(const PfAdmitSel *s)  { return (s->kinds & PF_KIND_VAR) != 0; }'
+SAB_AFTER='static bool pfa_var(const PfAdmitSel *s)  { return (s->kinds & PF_KIND_VAR) != 0 && !s->force_off; }   /* SABOTAGE S640 */'

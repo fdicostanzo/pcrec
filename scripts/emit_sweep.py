@@ -567,7 +567,9 @@ IR_AUTO_ARMS = ("", "-fno-prefilter", "-fprefilter", "-fno-prefilter-collapse")
 # copied: a token outside it is counted under its own name and has no floor).
 IR_TOKENS = ("yes", "yes-collapsed", "no-backreference", "no-linked-call",
              "no-nullable-collapsed", "no-nullable-exact", "no-dfa-overflow",
-             "no-fno-prefilter", "no-engine-vm")
+             "no-fno-prefilter", "no-engine-vm",
+             # [DEC-VAR-ATTRIB] (abi 69): T2's `var` and `size-dropped` rows
+             "no-variable", "no-size-cap")
 
 
 def ir_auto_stream(arm):

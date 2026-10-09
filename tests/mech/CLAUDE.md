@@ -3588,3 +3588,19 @@ S626 (the `attrib` record names the first fired row, not the giving one;
 fbt (a) att-ovfdfa/att-ovfpf). S642-S645 and S651, whose B2-B4 detector
 was (d), are detected by fbt (a)/(b)/(c) on the live default-build
 behaviour (`docs/dev/lanes/decfbB5_report.md`). No new S-id.
+
+### [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE] — rows S674-S675, re-aims S272/S612/S625/S639/S640, witness move S641 (lane decattr, 2026-10-09)
+
+New: S674 T2's `size-dropped` row never applies (§4.5's wrong attribution
+back; detectors run_prefilter_tests.sh §7b and fbt (a) adm-sizedrop/
+adm-sizedcol), S675 `fit_collapse_can_help` answers true (the wasted collapse
+attempts back; detectors fbt (a)'s hand-written sequences). Re-anchored,
+plant unchanged: S272 (the var row lists `no-variable`), S612 (the
+`!pfa_var` conjunct went). Re-aimed, the contract inverted by ruling: S639
+(var-nullable is deleted; the plant now gives the `var` row the
+`declined-nullable-default` cell, F1 back), S640 (the var row precedes
+forced-off; the plant makes it defer to `-fno-prefilter`), S625 (the admit
+record's wrong name moves to the `var` row). S641's witness moved to the
+non-nullable `^(?:a|b)*a(?:a|b){20}$` (the nullable one no longer takes the
+rung). `docs/dev/lanes/decattr_report.md` carries the solo runs. Renumber
+S674/S675 at landing if another lane took them first.

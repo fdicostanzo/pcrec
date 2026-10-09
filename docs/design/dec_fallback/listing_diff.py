@@ -17,6 +17,8 @@ MANIFEST lines (TAB-separated, `#` comments):
   axis  candidate  column  old  new     a changed cell; candidate `*` = every
                                         row the REF listing has under axis
                                         (an empty population is an error)
+  -  axis  candidate                    a REMOVED row ([DEC-VAR-ATTRIB]): the
+                                        REF must have it, NEW must not
   +  axis  order  candidate  kind  stamp_macro  stamp_value  deny_macro
      deny_bit  force_macro  force_bit  cli_flag  applies_prefix
                                         an ADDED row. Every cell but the last
@@ -76,12 +78,21 @@ def main():
     nh, nr, nt = load(sys.argv[2])
     want = {}      # (key, col) -> (old, new)
     added = {}     # key -> (cells without applies, applies_prefix)
+    removed = set()
     with open(sys.argv[3], encoding="utf-8") as fh:
         for n, line in enumerate(fh, 1):
             line = line.rstrip("\n")
             if not line or line.startswith("#"):
                 continue
             p = line.split("\t")
+            if p[0] == "-":
+                if len(p) != 3:
+                    die(f"{sys.argv[3]}:{n}: a removed row wants axis, candidate after `-`")
+                k = (p[1], p[2])
+                if not any(k == r for r, _ in rr) or k in removed:
+                    die(f"{sys.argv[3]}:{n}: removed row {k} is not in REF or is declared twice")
+                removed.add(k)
+                continue
             if p[0] == "+":
                 if len(p) != 1 + len(COLS):
                     die(f"{sys.argv[3]}:{n}: an added row wants {len(COLS)} cells after `+`")
@@ -108,8 +119,11 @@ def main():
         bad.append("the #section tail differs")
     ref, new = dict(rr), dict(nr)
     for k in ref:
-        if k not in new:
+        if k not in new and k not in removed:
             bad.append(f"REMOVED row {'/'.join(k)}")
+    for k in removed:
+        if k in new:
+            bad.append(f"DECLARED REMOVED row {'/'.join(k)} is still listed")
     for k in new:
         if k not in ref and k not in added:
             bad.append(f"UNDECLARED ADDED row {'/'.join(k)}")
@@ -158,7 +172,7 @@ def main():
             ok = False
         addok += ok
     print(f"rows {len(rr)}/{len(nr)}; declared cells {len(want)}, changed as declared {seen}; "
-          f"declared added rows {len(added)}, as declared {addok}")
+          f"declared added rows {len(added)}, as declared {addok}; declared removed {len(removed)}")
     for b in bad:
         print("  " + b)
     good = not bad and seen == len(want) and addok == len(added)

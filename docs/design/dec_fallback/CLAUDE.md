@@ -25,6 +25,7 @@ first edit (the note's §4.1), because main moves under a design note.
   predicates and its row type `StWhy`. The PARENT tree under the same roots
   has the identical 98, so B5's code moved no member; at B6 the family is 99: T1's row type now carries the `FbList` cell type, which joins it, and the listing accessors `fb_pick`/`fb_find`/`pcrec_fb_list_row` are definitions outside it).
 - `listing_diff.py`, `listing_declared_B7.tsv` — B7's declared-listing control (C7's `../start_table/listing_diff.py`, extended to MOVED rows by keying on (axis, candidate) and to ADDED rows by a `+` declaration with an `applies` prefix): `python3 -I listing_diff.py PARENT_LIST NEW_LIST listing_declared_B7.tsv` -> `EXACTLY AS DECLARED` (21 changed cells, 21 added rows); an undeclared move, a declared non-move or a missing/extra row fails.
+- `listing_declared_decattr.tsv` — [DEC-VAR-ATTRIB]'s (lane decattr, 2026-10-09) declared `--list-axes` movers, T2 (`prefilter-admit`) only: `var-nullable` removed (a `-` line, the form `listing_diff.py` gained for it), `var` re-ordered 9 -> 3 with its `no-variable` desc, `size-dropped` added at 7, `forced-on`/`forced-off` 7/8 -> 8/9. `python3 -I listing_diff.py PARENT_LIST NEW_LIST listing_declared_decattr.tsv` -> `EXACTLY AS DECLARED` (4 changed cells, 1 added, 1 removed).
 - `sabotage_anchors.tsv`, `sabotage_anchors.summary` — `../start_table/
   sabotage_anchors.py . call_graph_fallback.txt refactor_edit_set.tsv
   --final after-B6 --edit-names` (exit 2 = the pre-existing S571

@@ -1645,14 +1645,16 @@ the [OPT-4] size rung's own decline above) now compile inside every cap and
 never reach a rung at all.
 
 `select_engine.c`'s fit site derived ONE shared local (since [DEC-FALLBACK]
-B4 it is T2's rows 3-5, below the backreference and linked-call rows; the
-text keeps the old name for the history),
+B4 it is T2's rows 3-5, below the backreference and linked-call rows; since
+[DEC-VAR-ATTRIB] rows 4-5, below the `var` construct row too; the text keeps
+the old name for the history),
 `lang_nullable_declinable` (`nullable && !has_bref &&
 !has_call && !force_on` — since [NULLABLE-ANCH] (abi 68) its first conjunct
 is the E1 fact `empty_admits`, not bare nullability, except on a `${...}`
-pattern, which keeps `nullable` so its `ENGINE_SEL` token holds (F1 of
-`docs/dev/lanes/nullanch0_report.md`, refactor B's to decide; S612 plants
-the old read) — the exact conjuncts [OPT-4.1]'s decline above
+pattern, which kept `nullable` so its `ENGINE_SEL` token held (F1 of
+`docs/dev/lanes/nullanch0_report.md`), until [DEC-VAR-ATTRIB] (abi 69) made
+`var` a construct row ahead of both declines and deleted that exception, so a
+`${...}` pattern stamps `selected`; S612 plants the old bare read) — the exact conjuncts [OPT-4.1]'s decline above
 already had, minus the collapsible-repeat kind, which is meaningless off
 a rung: the ordinary path never collapses anything, so there is always a
 concrete prefilter to decline), and reads it into BOTH declines:

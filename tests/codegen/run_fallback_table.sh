@@ -239,25 +239,40 @@ W_SEL1='(1{0,30}?[^]abc][^abc]){28,30}0+|a'   # the collapsed prefilter survives
 W_LOOK='x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)'
 W_TOWER='(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
 W_NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
+# [DEC-COLLAPSE-WASTE] (abi 69): a collapse rung is offered only where it can
+# help, so W_OVF (nullable, not empty_admits: class (ii)), W_LOOK and OVFPF
+# (no counted repeat: class (i)) now go straight to `sel1-drop`. The two
+# witnesses below keep the rows a REAL collapse attempt fires: W_LOOKR's
+# counted `y{2,3}` makes the collapse a different machine, which still
+# overflows on the lookaheads (collapse, then drop); W_OVFNN is W_OVF made
+# non-nullable, so its rung is taken under -fno-prefilter too (T2's
+# overflow-drop at SEL1 scope, the force_off disjunct).
+W_LOOKR="${W_LOOK}y{2,3}"
+W_OVFNN='^(?:a|b)*a(?:a|b){20}$'
 # T1 rows 3-4 ([SEL-1]), arrival label `overflow`
 fseq seq-sel1c    trplain ok 'sel1-collapse@overflow'                          "$W_SEL1"
 fstate seq-sel1c 1 'cr=1'
-fseq seq-sel1cd   trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_OVF"
+fseq seq-sel1cd   trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_LOOKR"
 fstate seq-sel1cd 1 'latch=1/0'
 fstate seq-sel1cd 2 'cr=0'
 fstate seq-sel1cd 2 'latch=1/0'
-fseq seq-look     trplain ok 'sel1-collapse@overflow > sel1-drop@overflow'     "$W_LOOK"
+fseq seq-ovfii    trplain ok 'sel1-drop@overflow'                              "$W_OVF"
+fstate seq-ovfii 1 'cr=0'
+fstate seq-ovfii 1 'latch=1/0'
+fseq seq-look     trplain ok 'sel1-drop@overflow'                              "$W_LOOK"
 fseq seq-sel1d    trplain ok 'sel1-drop@overflow'                              "$W_OVF" -fno-prefilter-collapse
 fseq seq-fofsel1  trplain ok 'sel1-collapse@overflow'                          "$W_SEL1" --fast-or-fail
-fseq seq-nopfsel1 trplain ok 'sel1-collapse@overflow'                          "$W_OVF" -fno-prefilter
-fseq seq-ovfpf    trlowdfa ok 'sel1-collapse@overflow > sel1-drop@overflow'    "$OVFPF"
+fseq seq-nopfsel1 trplain ok 'sel1-collapse@overflow'                          "$W_OVFNN" -fno-prefilter
+fseq seq-ovfpf    trlowdfa ok 'sel1-drop@overflow'                             "$OVFPF"
 # T1 rows 6-9 (the size-cap ladder), arrival label `size`
-fseq seq-pfcdrop  trplain ok 'prefilter-collapse@size > drop-prefilter@size'   '(\p{Xwd})' -e utf8
-fstate seq-pfcdrop 2 'restart=1'
+fseq seq-pfcdrop  trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8
+fstate seq-pfcdrop 1 'restart=1'
 fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '(\p{Xwd})' -e utf8 -fno-prefilter-collapse
 fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}b'
-fseq seq-pfcbcat  trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b)+' -e utf8
+fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(\bcat\b)+' -e utf8
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}' -e utf8
+fstate seq-pfcd2 2 'restart=1'
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8
 fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8
@@ -295,20 +310,25 @@ frec() {
 }
 frec adm-default  trplain admit 'none|default pf=1'            '(a)b'
 frec adm-nulex    trplain admit 'none|nullable-exact pf=0'     '(a)*'
-frec adm-varnul   trplain admit 'none|var-nullable pf=0'       '^${v}$'
+# [DEC-VAR-ATTRIB]: `var` is a construct row ahead of the nullability and
+# flag rows, so a nullable variable pattern and a -fno-prefilter one take it
+# too (until abi 69: `var-nullable`, and `forced-off` under the flag).
+frec adm-varnul   trplain admit 'none|var pf=0'                '^${v}$'
 frec adm-var      trplain admit 'none|var pf=0'                'a${v}b'
-frec adm-varoff   trplain admit 'none|forced-off pf=0'         'a${v}b' -fno-prefilter
+frec adm-varoff   trplain admit 'none|var pf=0'                'a${v}b' -fno-prefilter
 frec adm-bref     trplain admit 'none|backref pf=0'            '(a)\1'
 frec adm-call     trplain admit 'none|linked-call pf=0'        '(a|b(?1)c)+'
 frec adm-nulcol   trplain admit 'sel1|nullable-collapsed pf=0' '(?:ab){0,16000}'
 frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
-frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVF" -fno-prefilter
+frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVFNN" -fno-prefilter
 frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
-frec adm-foffsc   trplain admit 'sizecap|forced-off pf=0'      '(\p{Xwd})' -e utf8
+frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd})' -e utf8
+frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcat\b){2,}' -e utf8
 frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
 frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
 frec att-dnd      trplain attrib '-|declined-nullable-default from=admit'     '(a)*'
+frec att-varnul   trplain attrib '-|selected from=none'                       '^${v}$'
 frec att-dn       trplain attrib '-|declined-nullable from=admit'             '(?:ab){0,16000}'
 frec att-cpf      trplain attrib '-|collapsed-prefilter from=sel1-collapse'   "$W_SEL1"
 frec att-ovfdfa   trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_OVF"
@@ -320,7 +340,9 @@ frec gate-sel1    trplain gate 'sel1|rung pflw=sel1'         "$W_SEL1"
 frec gate-sizecap trplain gate 'sizecap|rung pflw=sizecap'   '(\p{Xwd}{1,3})' -e utf8
 frec gate-forced  trplain gate 'none|forced pflw=forced'     '(x)?a{0,4}\Gb' -fprefilter-collapse
 frec gate-nul     trplain gate 'none|nullable pflw=nullable' '^(a{2,9})*$' -fprefilter-collapse
-frec gate-nulsel1 trplain gate 'sel1|nullable pflw=nullable' "$W_OVF"
+# (gate-nulsel1, T3 `nullable` at SEL1 scope on W_OVF, went with
+# [DEC-COLLAPSE-WASTE]: it WAS class (ii), the rung that rebuilt the exact
+# machine. T3 `nullable` is reached only under -fprefilter-collapse now.)
 frec gate-exact   trplain gate 'none|exact pflw=exact'       '(a){2,3}b'
 frec gate-norep   trplain gate 'none|no-rep pflw=no-rep'     '(a)b'
 

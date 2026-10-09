@@ -372,7 +372,7 @@ as if `-fno-prefilter` had been passed, though `--emit-ir`'s `prefilter`
 summary row does not claim that flag's credit: its value is
 `no-dfa-overflow` (not `no-fno-prefilter`) and its note carries the same
 `RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` has
-the nine-token vocabulary.
+the eleven-token vocabulary.
 
 **[PF-DROP] (2026-09-30, D135) A FOURTH OFF-ROUTE: THE EMITTED-SIZE CAP.**
 A hybrid whose ARTIFACT (not its DFA build) is over an emitted-size cap, and
@@ -382,7 +382,11 @@ stamps `RX_VM_PREFILTER "none"` with `RX_VM_PREFILTER_WHY "size cap retry,
 hybrid N > CAP"` — the one `"none"` that stamp is written beside, since it is
 the one no flag explains. The artifact is otherwise the `-fno-prefilter` one.
 Never under `-fprefilter` (the rung is not offered; the compile refuses), and
-denied with every other slower-to-fit rung by `--fast-or-fail`.
+denied with every other slower-to-fit rung by `--fast-or-fail`. Since `abi`
+69 ([DEC-VAR-ATTRIB]) `--emit-ir`'s `prefilter` row says so too: its value is
+`no-size-cap`, not `no-fno-prefilter` (the rung drops the prefilter by
+OR-ing that flag into the retry's options, and the listing named the flag
+until then).
 
 **[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
 Before the prefilter is dropped, the fallback tries ONE more thing: building
@@ -1317,9 +1321,11 @@ other subject in one linear pass and is KEPT: `<PREFIX>_ENGINE_SEL` reads
 construct (lookaround, `\b`, `\G`, `\K`, a multiline anchor, a
 backreference, a variable, a nullable call) counts as always satisfiable, so
 the answer errs only toward declining. One-sided (`^(\s+)*`, `(\s+)*$`) and
-multiline (`(?m)^(\s+)*$`) forms are still declined. A `${...}` pattern keeps
-bare nullability, because `has_var` turns its prefilter off regardless and the
-choice moves only its `ENGINE_SEL` token. No answer moves: the prefilter is a
+multiline (`(?m)^(\s+)*$`) forms are still declined. A `${...}` pattern is
+never declined: its variable turns the prefilter off before any nullability
+is asked (its `--emit-ir` value is `no-variable`), so it reads `"selected"`
+([DEC-VAR-ATTRIB], `abi` 69; until then it kept bare nullability only so that
+a nullable one read `"declined-nullable-default"`). No answer moves: the prefilter is a
 filter. MEASURED (scratch tier, `docs/dev/lanes/nullanch1_report.md`): a
 near-miss that used to exhaust the step budget (`PCREC_ERR_STEPS`) now answers
 `nomatch` in ~22 ns; a LONG all-matching subject pays the forward DFA pass on
@@ -1337,6 +1343,18 @@ four are non-nullable and keep their rescue under the rule above; they are
 LEFT ALONE deliberately. **A measured FLAT is not a loss**, and a rung that
 buys nothing but bytes is revisited only if a LOSS appears — at which point the
 question is the anchored regime's reach, not this predicate.
+
+**A RUNG IS OFFERED ONLY WHERE THE COLLAPSE CAN HELP** ([DEC-COLLAPSE-WASTE],
+`abi` 69). Both rungs, the [SEL-1] overflow rung and the size rung, are
+skipped when the retry would rebuild the machine that just failed: when the
+pattern has no collapsible repeat (the collapsed language IS the exact one),
+and when the language is nullable but not `empty_admits` without
+`-fprefilter` (the decline above keeps the prefilter, and the collapse is not
+built for a nullable language, so the exact machine would be rebuilt). The
+ladder's next row takes the same arrival (the prefilter drop), so the final
+artifact is the one the skipped attempt led to, one failed attempt sooner. A
+`size cap retry` figure in `<PREFIX>_VM_PREFILTER_WHY` is then the exact
+artifact's, not the wasted retry's.
 
 **THERE IS NO STATE-COUNT KNEE.** An earlier design collapsed whenever the
 exact NFA exceeded a measured budget; it was reversed on a corpus regression
