@@ -258,3 +258,33 @@ Then a D6 panel (2-4 read-only critics; the lenses include check independence an
 - the vocabulary gap, if any.
 
 **Landing bar:** R-5/R-6/R-8's. ZERO MOVERS judged by `memfn_r4c_gate.py --zero-dumps`; `make strict`; the full `make test` on a slot I name; solo mech for every moved anchor; [SABANCHOR] green. Sabotage ids: S676-S685.
+
+## R-11 (2026-10-09, pcrec manager) — R4e′.0 then R4e′.0b: the FUNC-body seam `fn_rows[]` (zero movers), then SIMD-off routed through `<fn>__body` (one pcrec abi event)
+
+**Customer:** `[OPT-SIMD]`, integration.md rev 4.9 §R4.9 (R-9 done, ad3d9ea4, merged to main in this session).
+
+**Trigger:** R-9 is done, and §R4.9's build order puts these two steps ahead of every SIMD row.
+
+**Capacity:** the SIMD thread's item under the 2:1 split. It does not jump M6. R-10 keeps its order, and both R-11 steps queue behind M6's slot14 for heavy slots.
+
+**Step R4e′.0, kit-only, ZERO MOVERS (§R4.9.2.1, RQ-0).** PRE and OFS share a selected first-match table `fn_rows[]`. It has a BODY slot, today's scalar loops promoted byte-identically, and an empty PREFIX slot. No decorator over the floor.
+- Landing bar: R-8/R-10's. Zero movers by `memfn_r4c_gate.py --zero-dumps`; `make strict`; full `make test` on a slot I name; solo mech for every moved anchor; [SABANCHOR] green.
+
+**Step R4e′.0b, the routing commit (§R4.9.2.5/§R4.9.2.6, D155 item 6, RQ-6).** SIMD-off routes every FUNC through `<fn>__body`, and the FUNC becomes the file-scope selector. This is a pcrec ABI EVENT, done in the same commit:
+- bump to the next abi number at landing; do not presume it, read main's;
+- find EVERY reader of the number by grep (D94: the `.abi` stamp, test expectations, spec sentences, the gate's (B) pin);
+- re-pin the identity gates;
+- run `make test-codegen` plus the suites that count (registry, codegen, rxtsource).
+- Measured as §R4.9.2.6's G1 census:
+  - movers by id against the `fn` census, with the predicted +139 B per FUNC checked per mover;
+  - the un-done text diff;
+  - assembly identity at `-O2` default and at v3 (predicted 0 assembly movers);
+  - timing ONLY for a non-identical mover.
+- The census report travels with the commit.
+- Its two prerequisites: R4e′.0 merged, and main free of an in-flight abi event. Ask me before the slot so I can confirm the number.
+
+**Not in this request:**
+- Batch 1's rows (`vrun-w32`/`vrun-w16`). They wait on main's RQ-1 (`--memfn=` carrier), RQ-2 (`pcrec_find_pick2` / `plan_pos2`) and RQ-3 (SIMD-guarded bytes neutral to length decisions), and on RQ-4's slot. Main files them on pcrec's side, then files batch 1 as its own request.
+- [EMIT-VERB]: no plan row. It resolves through decisions.md, and no measured need asks for a row (D77).
+
+**Sabotage ids:** S686-S695.
