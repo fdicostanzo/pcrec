@@ -14,6 +14,12 @@ WHAT IT CHECKS, per artifact of a corpus-wide population:
             `memcpy` of a constant 1-8 bytes) and minus the C library's
             data objects (the stdio streams, which `--emit-main` and
             `--trace` artifacts reference);
+  ROUTING   (R4e'.0b, D155) every offset-skip/pre-check function is routed:
+            its loop under `<fn>__body`, the function itself a selector
+            whose whole body is one call per arm, and no other function body
+            holds a conditional directive (routing_shape.py, C18's routing
+            leg); the functions counted are a population with its own floor
+            (`funcs`), and the rule's planted controls run first;
   FORMS     the value is "none". Its "none implies identical to the
             SIMD-off compile" half RUNS from R4c, when the switch is born
             (R-4, Q5), at BOTH layers. The default IS -fno-memfn-simd, so
@@ -58,6 +64,8 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import routing_shape  # noqa: E402
 
 PRELUDE = r'''#include <string.h>
 #undef memcpy
@@ -131,6 +139,7 @@ class Census:
         self.calls = {}         # libc name -> artifacts calling it
         self.idiom = 0          # artifacts with >= 1 idiom memcpy load
         self.none = 0
+        self.funcs = 0          # routed offset-skip/pre-check functions seen
         self.problems = []      # (key, message)
 
     def nm_names(self, cpath, workdir):
@@ -154,6 +163,12 @@ class Census:
 
     def one(self, key, text, cpath, workdir):
         """Checks one artifact; returns a result tuple for record()."""
+        nfunc, why = routing_shape.check(text)
+        if why:
+            return (key, '?', None, None, 'routing: ' + '; '.join(why[:3]), nfunc)
+        return self.stamps(key, text, cpath, workdir) + (nfunc,)
+
+    def stamps(self, key, text, cpath, workdir):
         stamps = STAMP.findall(text)
         eng = ENGINE.findall(text)
         family = eng[0] if len(eng) == 1 else '?'
@@ -180,8 +195,9 @@ class Census:
         return (key, family, line, idiom, None)
 
     def record(self, res):
-        key, family, line, idiom, problem = res
+        key, family, line, idiom, problem, nfunc = res
         self.n += 1
+        self.funcs += nfunc
         self.family[family] = self.family.get(family, 0) + 1
         if problem:
             self.problems.append((key, problem))
@@ -240,6 +256,11 @@ def main():
     print('== C11: <PREFIX>_MEMFN_FORMS / _MEMFN_LIBC over %d distinct corpus patterns '
           '(cc %s, nm decoration "%s") ==' % (len(patterns), a.cc, decor))
     cen = Census(a.cc, decor)
+    for name, good, why in routing_shape.selftest():
+        if good:
+            ok('routing control: %s' % name)
+        else:
+            bad('routing control: %s reads %s' % (name, why or 'clean'))
     refused = 0
     ident = []
 
@@ -318,6 +339,8 @@ def main():
           'a header), %d sampled patterns refused by pcrec (not artifacts)'
           % (cen.n, ncomp, refused))
     print('families: %s' % ', '.join('%s %d' % kv for kv in sorted(cen.family.items())))
+    print('routing: %d offset-skip/pre-check functions, each routed through its __body'
+          % cen.funcs)
     print('LIBC values: %d none; idiom-memcpy artifacts %d; calls: %s'
           % (cen.none, cen.idiom, ', '.join('%s %d' % kv for kv in sorted(cen.calls.items()))))
 
@@ -326,11 +349,11 @@ def main():
     if len(cen.problems) > 40:
         bad('... and %d more artifacts' % (len(cen.problems) - 40))
     if not cen.problems:
-        ok('presence, grammar and LIBC == compile on all %d artifacts' % cen.n)
+        ok('routing, presence, grammar and LIBC == compile on all %d artifacts' % cen.n)
 
     counts = {'artifacts': cen.n, 'dfa': cen.family.get('dfa', 0),
               'vm': cen.family.get('vm', 0), 'composition': ncomp,
-              'none': cen.none, 'idiom': cen.idiom}
+              'none': cen.none, 'idiom': cen.idiom, 'funcs': cen.funcs}
     counts.update(('calls-' + k, v) for k, v in cen.calls.items())
     for name, floor in sorted(floors.items()):
         got = counts.get(name, 0)

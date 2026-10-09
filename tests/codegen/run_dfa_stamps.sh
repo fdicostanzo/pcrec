@@ -275,7 +275,7 @@ read_artifact() {
         # the run pre-check blocks (rx_reqrun, rx_reqrun_whole) come from the
         # same emitter and carry the same compare, and an unscoped match read
         # every offset-set artifact with a run pre-check as run-pinned.
-        /^static inline size_t rx_ofsskip\(/            { in_ofs = 1 }
+        /^static inline size_t rx_ofsskip__body\(/      { in_ofs = 1 }   # the loop (R4e.0b routing)
         /^}$/                                           { in_ofs = 0 }
         # [OPT-LITSCAN] S4 C1: the overlap row of the run compare spells the
         # term as word loads (`rx_w4(subject + cand ...`), its `memcmp` row

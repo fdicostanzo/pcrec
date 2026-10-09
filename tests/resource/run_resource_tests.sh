@@ -731,10 +731,18 @@ elif [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied 
     # `0ULL` where it read `2097152ULL`: seven digits become one, -6 bytes.
     # MEASURED (this tree's build, the same `-o` basename) and the only moving
     # line is `.flags`; the abi digits are the same width.
-    if [ "$sz" -eq 762691 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762691 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator; 762551 before [OPT-LITSCAN] S4 C1's RUN_WORDS stamp; 762574 before [K82] (B)'s REQ_HANDOFF stamp; 762604 before [START-SET] stage 2's VM_START_SCAN stamp; 762636 before [MEMFN] R4a′'s two kit stamps) — the cap still works, this witness no longer reaches it"
+    #
+    # RE-PINNED 762691 -> 762832, 2026-10-09 (lane r4e0b, [MEMFN] R4e'.0b,
+    # the routing, abi 68 -> 70): this witness's offset-skip function
+    # `rx_ofsskip` keeps its loop under `rx_ofsskip__body` and becomes one
+    # call to it. VERIFIED BY DIFFING against the abi-68 compiler (main
+    # 131c173a) at the SAME `-o` basename: the abi digits (same width), the
+    # helper's renamed head (+6) and the five-line selector inserted after it
+    # (+135: 121 + 2 x len("rx_ofsskip") - 6), nothing else: +141.
+    if [ "$sz" -eq 762832 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762832 bytes (762691 before [MEMFN] R4e'.0b's routing; was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror; 762381 before [UTF-VALID]'s subject validator; 762551 before [OPT-LITSCAN] S4 C1's RUN_WORDS stamp; 762574 before [K82] (B)'s REQ_HANDOFF stamp; 762604 before [START-SET] stage 2's VM_START_SCAN stamp; 762636 before [MEMFN] R4a′'s two kit stamps) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762691 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762832 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

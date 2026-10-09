@@ -90,7 +90,8 @@ stamp() { sed -n "s/^#define RX_$2 \"\\(.*\\)\"\$/\\1/p" "$1" | head -1; }
 # [whole]` prints that block; PRECHK_RE matches either pre-check form's text
 # (the one-byte check's memchr, or a call of the run block) and NOT the
 # candidate-start prefilter's own memchr, which scans `pos`/`scan_position`.
-reqrun_fn() { sed -n "/^static inline size_t rx_reqrun${2:+_$2}(/,/^}\$/p" "$1"; }
+# the run pre-check's LOOP: since R4e'.0b the helper rx_reqrun[_X]__body (rx_reqrun[_X] is its one-call selector)
+reqrun_fn() { sed -n "/^static inline size_t rx_reqrun${2:+_$2}__body(/,/^}\$/p" "$1"; }
 PRECHK_RE='memchr(subject + search_from,\|rx_reqrun(subject, subject_length, search_from)'
 # reqrun_scans FILE BYTE: the window block's memchr is for BYTE
 reqrun_scans() { reqrun_fn "$1" | grep -q "memchr(subject + pos[ +0-9]*, $2, n - pos"; }

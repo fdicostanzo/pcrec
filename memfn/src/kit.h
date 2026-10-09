@@ -285,11 +285,13 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def);
 /* The scan: offset `*k` from the candidate and byte `*a`; `*b` is the
  * second member where the scanned position is a two-member cube, else -1. */
 void ofs_fn_scan(const mf_pred *p, int *k, int *a, int *b);
-/* Writes `static inline size_t <fn>(subject, n, pos[, tables]) { … }` and
- * the blank line after it, for predicate `p` of site `handle` (the calling
- * site: the offset-skip site, or the pre-check composite that holds `p`).
- * Its body is the chosen row of `fn_rows[]` (ofsskip.c, integration.md
- * §R4.9.2.1): the BODY slot's loop, then the PREFIX slot's helpers. */
+/* Writes the function `<fn>` for predicate `p` of site `handle` (the
+ * calling site: the offset-skip site, or the pre-check composite that holds
+ * `p`), each piece `static inline size_t NAME(subject, n, pos[, tables])
+ * { … }` followed by a blank line: the helper `<fn>__body`, whose body is
+ * the BODY slot's chosen row of `fn_rows[]` (ofsskip.c, integration.md
+ * §R4.9.2.1); the PREFIX slot's helpers; then `<fn>` itself, the selector
+ * (§R4.9.2.5: with no PREFIX row, one call to `<fn>__body`). */
 int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
                   const mf_pred *p, const char *fn, mf_sink *o);
 /* Writes its call, `<fn>(<s>, <n>, <lo>[, tables])`, the definition's

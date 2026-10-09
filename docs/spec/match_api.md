@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 68
-   #error "pcrec: this artifact (abi 68) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 70
+   #error "pcrec: this artifact (abi 70) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 68
+   #define PCREC_RX_ABI_H 70
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `68` on every artifact today (lane nullanch2 bumped it
+- **`rx_info.abi` is `70` on every artifact today (lane r4e0b bumped it
+  from 68, 2026-10-09; the pcrec manager assigned `70` while `69` is another
+  lane's event in flight: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
+  `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
+  offset-skip/pre-check function (`<prefix>_reqrun`, `<prefix>_reqrun_whole`,
+  `<prefix>_ofsskip`) keeps its loop, byte for byte, under the head
+  `<prefix>_<fn>__body`, and the function itself becomes one call to it,
+  `return <prefix>_<fn>__body(subject, n, pos[, tables]);`: the SIMD-off
+  shape that a later CPU-guarded helper adds `#if` arms above (the floor
+  rule). Both are `static inline` in the `.c`, so no symbol a caller links
+  against changes, no stamp is added or changes value, no struct offset or
+  `rx_info` member moves and no answer moves; an artifact with no such
+  function differs from `abi` 68 in its abi digits alone.
+- **`rx_info.abi` was `68` (lane nullanch2 bumped it
   from 67, 2026-10-08, re-landing lane nullanch1's change after R4h's layout
   normalization took 67: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
   DECLINE, `tuning.md` §2.17).** Both prefilter declines read the new E1
