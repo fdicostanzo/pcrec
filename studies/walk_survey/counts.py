@@ -11,12 +11,14 @@ for name, cells, res in (("bench", sys.argv[1], sys.argv[3]), ("corpus", sys.arg
     rows = [r for r in csv.DictReader(open(cells), delimiter="\t") if r["config"] == "default"]
     pats = {r["pid"] for r in rows}
     print("== %s: %d patterns with at least one live default-config cell" % (name, len(pats)))
-    print("class\tpatterns\tshare\tcells\tby regime")
+    print("class\tpatterns\tshare\tcells\test_ms(auto-caps)\test_ms(excl. K1 cells)\tby regime")
     for c in CL:
         hit = [r for r in rows if int(r.get("G_" + c) or 0) > 0]
         p = {r["pid"] for r in hit}
-        print("%s\t%d\t%.1f%%\t%d\t%s" % (c, len(p), 100.0 * len(p) / max(1, len(pats)), len(hit),
-              dict(collections.Counter(r["regime"] for r in hit))))
+        est = sum(float(r.get("est_ns_" + c) or 0) for r in hit) / 1e6
+        est2 = sum(float(r.get("est_ns_" + c) or 0) for r in hit if c == "K1" or int(r.get("G_K1") or 0) == 0) / 1e6
+        print("%s\t%d\t%.1f%%\t%d\t%.2f\t%.2f\t%s" % (c, len(p), 100.0 * len(p) / max(1, len(pats)), len(hit),
+              est, est2, dict(collections.Counter(r["regime"] for r in hit))))
     # K5's cliff population: every artifact whose required run is CASE-FOLDED
     # (RX_REQ_RUN carries a /mask: the two-stream pair arm)
     pair = set(); allp = set()

@@ -199,6 +199,8 @@ Ranked by BENCH IMPACT first. That is `est_ms`: the sum over the auto-caps teste
 gratuitous bytes per subject byte on the representative subjects. "twin" is the
 answer-checked hand-twin timing of §5 (`results/twin_timing*.txt`, scratch tier: Ryzen
 7700X, one core, a box at load1 11-12 from other lanes, best of 5, two runs).
+The cell, pattern and est_ms columns are `results/counts.txt` (from `counts.py`). The
+both-config sums and the top cells per class are `results/summary.txt`.
 
 | rank | class | D156 role | bench cells / patterns (auto-caps) | est_ms (upper) | representative G/n | twin | corpus patterns | owner row |
 |---|---|---|---|---|---|---|---|---|
@@ -407,7 +409,7 @@ subjects both variants occur often enough that the fold still wins: `(?i)cat` on
 | `(?i)cat`, 1 MiB lowercase (47,663 matches) | 190 / 210 ms | 0.95 / 1.02 ms | 200x / 206x |
 | `(?i)error`, a 1 MiB lowercase log (3,038 matches) | 12.5 / 13.5 ms | 0.48 / 0.60 ms | 26x / 23x |
 
-**Population.** Every caseless required run on the pair arm: 11 of 343 bench patterns (three trigger on the bench's own subjects), 61 of 4,171 corpus patterns (32 trigger on the synthesized subjects).
+**Population.** Every FOLDED required run (a caseless run, or a two-byte class position) on the pair arm: 11 of 343 bench patterns (three trigger on the bench's own subjects), 61 of 4,171 corpus patterns (32 trigger on the synthesized subjects).
 
 **Owner.** [OPT-LITSCAN] S4 (C3). K82 (closed) fixed C3's measured regressions through the
 handoff, but this is a different mechanism that the bench's subjects do not trigger.
