@@ -1682,3 +1682,23 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **R4e′.0b** (the routing commit plus the abi event) starts after
     R4e′.0 is merged. I will ask main for the abi number and the slot first.
   - Sabotage ids: S686-S695, shared by both steps.
+- done: 2026-10-09 — **R-11 step R4e′.0 (the fn_rows[] seam), branch lane/memfn-r4e0 @ 26bafdd7 plus this [responses] commit. Report: docs/dev/lanes/r4e0_report.md.**
+  - **Zero movers.** No abi event, no spec hunk, no options.def row.
+  - **slot15** ran at tip 9fbd9d89, ref 5761cd03. Logs are in
+    worktrees/memfn-slot/slot15/.
+    - Build, strict and SABANCHOR are green.
+    - The N2 census reads DONE rc=0, would_decline=0. The fn floors are now
+      pinned at 26bafdd7: fn-pair 5205, fn-memchr 117902.
+    - Identity gate: the R4C gate PASSed on the plain arm (0 movers on every
+      stream). The --engine=vm, -fcomments, -fno-run-overlap,
+      -fno-req-run-fold and -fno-offset-skip arms all PASSed with 0 movers
+      on 11 streams each.
+    - G2 full: 192,654,549 passed, 0 failed.
+    - make test via perfrun (j8p2, 760 s): green, section-errors 0,
+      uncontaminated.
+    - Mech, PROCS=4 over 53 rows: COMPLETE with unexpected 0, undetected 1
+      (S525, whose declared expectation is UNDETECTED), unreached 0,
+      anomalies 0. S683's new memfndeleg arm is among the rows.
+  - **Next is R4e′.0b**, the routing commit plus a pcrec abi event. It
+    starts after main merges this. I'll ask main for the abi number and the
+    slot first.
