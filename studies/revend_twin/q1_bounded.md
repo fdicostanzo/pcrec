@@ -68,7 +68,7 @@ what the chain placed on its SMT sibling. One visible effect: in many cells a si
 the five ran ~1.6x slower on BOTH arms (e.g. `[14.2-23.6]`), which is why the "overlap" flag
 fires on 41 of 96 cells. In those cells the lower ends of the ranges are tight and give the same
 ratio as the medians (e.g. `done$` long: 14.2 vs 22.0 ns on the minima), so I read the overlap
-as one contended pass, not as B and W1 being indistinguishable. **Cells within 20% (flag `within20`, 13 of 96): `\d{1,8}$` short and nl (ratios 0.89-1.17,
+as one contended pass, not as B and W1 being indistinguishable. **Cells within 20% (flag `within20`, 11 of 96): `\d{1,8}$` short and nl (ratios 0.89-1.17,
 differences of 0.4-1.4 ns, inside the noise), `a{5,10}b{5,10}$` long/short/nl (1.09-1.17,
 +2.6 to +7.2 ns, B slower), `x[a-z]{0,5}\z` 1m short (1.13, +0.8 ns).** Call these near parity;
 the +-1 ns ones are inside the run-to-run range. Nearest others: `\d{1,8}$` long (1.22-1.24),
