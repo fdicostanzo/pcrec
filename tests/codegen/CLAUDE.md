@@ -3824,6 +3824,14 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   `REQRUN_FN_RE`/`REQRUN_FN_BODY_RE` (both definitions, excised together).
   `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's src
   commit in a follow-up commit (it cannot name its own commit).
+- **[MEMFN] R-12, THE VMLAZY NORMALIZATION (lane vmlazy, 2026-10-09, abi 70
+  -> 72; 71 is RQ-3's, landing first):** the VM cursor rung's lazy rmin
+  prefix is spelled as a span scan capped at rmin iterations plus the rung's
+  reach test (`docs/dev/lanes/vmlazy_report.md`). `run_codegen_tests.sh`'s
+  `ABI_EXPECT` 72 and its ledger message; `run_recursion_identity.sh` (B)'s
+  FILEPIN self-pinned in a follow-up commit. No byte-count pin moved
+  (`run_cpset_structure.sh` [3], the K59 resource rung and C5 `arms.tsv`
+  carry no lazy cursor prefix: all three suites green unchanged).
 - **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
   abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;

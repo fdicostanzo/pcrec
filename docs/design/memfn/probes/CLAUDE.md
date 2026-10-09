@@ -48,3 +48,13 @@ Maintenance: update this file when files are added/removed or change roles.
   only). Results in `docs/dev/lanes/r4e0b_report.md` §4.
   `r4e0b/out/` holds the transcripts (the full census, the -Os/-O0 sample,
   both timing tables) and `nonid_full.tsv`, the non-identical movers.
+- `vmlazy/` — R-12 VMLAZY NORMALIZE's G1 instrument (lane vmlazy,
+  2026-10-09; `docs/dev/lanes/r12scope_report.md` §1.5):
+  `lazy_census.py` (movers by id against the parent's own lazy-prefix
+  count read by the OLD form's regex, the un-done text diff with
+  `RX_VM_PROGRAM_BYTES` read back by the measured block delta, the reach
+  test's offset checked as K*W, an `RX_VM_ENTRY_SHAPE` mover class, six
+  planted controls run first, a K35 floor per stream, and `-S` assembly
+  identity per recipe through `r4e0b/routing_census.py`'s normalizer;
+  `--movers-out`/`--nonid-out` list the movers). `vmlazy/out/` holds the
+  transcripts. Results in `docs/dev/lanes/vmlazy_report.md`.

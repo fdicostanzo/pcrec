@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 70
-   #error "pcrec: this artifact (abi 70) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 72
+   #error "pcrec: this artifact (abi 72) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 70
+   #define PCREC_RX_ABI_H 72
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,7 +2315,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `70` on every artifact today (lane r4e0b bumped it
+- **`rx_info.abi` is `72` on every artifact today (lane vmlazy bumped it
+  from 70, 2026-10-09; `71` is [MEMFN] RQ-3's, landing first: [MEMFN] R-12
+  — THE VMLAZY NORMALIZATION, `docs/dev/lanes/r12scope_report.md` §1.5,
+  `docs/dev/lanes/vmlazy_report.md`).** The VM cursor rung's LAZY arm
+  spells its rmin prefix (the loop's mandatory iterations) the way the
+  rung's possessive and greedy arms spell theirs: a span scan capped at
+  rmin iterations, then the reach test `if ((ptrdiff_t)<prefix>_span_cursor
+  < slot_values[<low>] + <rmin*W>) goto <prefix>_fail;`. It was a counted
+  loop that failed inside the loop at the first short block. The two forms
+  stop at the same block and fail on the same inputs, and the step and
+  work budgets are charged the same, so no answer moves. Only artifacts
+  whose VM program has a lazy quantifier with `rmin > 0` on the cursor rung
+  move beyond their abi digits, and on those
+  `<PREFIX>_VM_PROGRAM_BYTES` moves with the text. No stamp is added, no
+  struct offset or `rx_info` member moves, and no symbol a caller links
+  against changes.
+- **`rx_info.abi` was `70` (lane r4e0b bumped it
   from 69, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
   `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
   offset-skip/pre-check function (`<prefix>_reqrun`, `<prefix>_reqrun_whole`,

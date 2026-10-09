@@ -136,7 +136,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   rows / 3 forms after M6's REPLACE, which deleted `emit_vm.c`'s walk-open
   row, 1 -> 0, the strided span loop being the kit's VMSTRIDE, and added
   its `span-count` row at 1, VMLAZY's form seen for the first time by
-  RULING Q-R10-7, not a raise);
+  RULING Q-R10-7, not a raise; R-12's NORMALIZE (lane vmlazy, abi 72)
+  re-spelled that prefix in the kit's ADVANCE layout, so the same site's
+  row swapped `span-count` 1 -> `walk-open` 1, still 2 rows / 2 forms);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer

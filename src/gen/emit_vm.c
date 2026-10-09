@@ -4724,6 +4724,17 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, const uint8_t (*seq)[32], int
     pcrec_sb_puts(b, "    }\n");
 }
 
+/* Emits the cursor rung's reach test: fail unless the cursor stands at least
+ * `lo_off` (rmin blocks of W bytes) past the loop's entry, read from the
+ * trailed low-water slot `low`. The greedy arm asks it at the continuation
+ * (every retreat lands there); the lazy arm asks it once, after its rmin
+ * prefix. */
+static void vm_span_reach(Vm *v, int low, long long lo_off)
+{
+    pcrec_sb_printf(v->b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld) goto %s_fail;\n",
+                    v->p, low, lo_off, v->p);
+}
+
 /* §2.5's cursor rung, with D44.1's capture extension.
  *
  * GREEDY: consume greedily to the furthest position, then push exactly ONE
@@ -5007,8 +5018,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
-        pcrec_sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld) goto %s_fail;\n",
-                  v->p, low, lo_off, v->p);
+        vm_span_reach(v, low, lo_off);
         vm_ev(v, VE_NOTE, 0, 0, "below the low-water mark: exhausted");
     } else {
         /* LAZY: the shortest acceptable run first, extended one stride per
@@ -5018,19 +5028,27 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * retreat. Getting this wrong is not a performance difference: `(a*?)a`
          * on "aa" gives [0,2)/g1=[0,1) under a greedy scan where both oracles
          * give [0,1)/g1=[0,0). */
-        pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
-        /* The rmin prefix: a fixed-count verify of rmin span blocks. A span
-         * loop the memfn kit does not render yet: tests/memfn/site_manifest.tsv
-         * row VMLAZY, `pending` (Q-R10-7, M6's REPLACE), its form C17's
-         * `span-count` vocabulary line. */
+        /* The rmin prefix: the rung's mandatory iterations, spelled as the
+         * other two arms spell theirs -- a span scan capped at rmin
+         * iterations, then the reach test (R-12, r12scope_report.md §1.5:
+         * "reached rmin" is "the cursor stands at entry + rmin*W", the scan
+         * stopping at the cap, at the first block a member rejects, or where
+         * the subject ends). The text is the kit's ADVANCE layout, still
+         * spelled by pcrec: tests/memfn/site_manifest.tsv row VMLAZY,
+         * `pending`, until the REPLACE step routes it through
+         * vm_emit_span_scan. */
         if (a->u.rep.rmin > 0) {
             pcrec_sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
-            pcrec_sb_printf(b, "        while (it_ < %dUL) {\n", a->u.rep.rmin);
-            pcrec_sb_printf(b, "            if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n",
-                      v->p, stride, test, v->p);
-            pcrec_sb_printf(b, "            %s_span_cursor += %d; it_++;\n", v->p, stride);
-            pcrec_sb_puts(b, "        }\n    }\n");
-        }
+            pcrec_sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
+            pcrec_sb_printf(b, "        while ((%s_span_cursor + %d <= subject_length) && it_ < %dULL",
+                            v->p, stride, a->u.rep.rmin);
+            for (int i = 0; i < stride; i++)
+                pcrec_sb_printf(b, " && (%s)", members[i]);
+            pcrec_sb_printf(b, ") {\n            %s_span_cursor += %d;\n            it_++;\n        }\n    }\n",
+                            v->p, stride);
+            vm_span_reach(v, low, lo_off);
+        } else
+            pcrec_sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
