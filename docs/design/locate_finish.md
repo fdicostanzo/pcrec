@@ -58,7 +58,7 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
 | C4 | A | G12 defers every FINISH row with no producer, so L0 ships NO unreached row; `run_cand_oracle.sh` gains a declared-unreached allowance file (one line per row, with its argument and the commit that gives it a producer; a row in the file that IS reached fails), first used by L2's `verify-attempt` (§5 L0, L2). |
 | C5 | A | L0's sabotage plan is rebuilt (§5 L0): no declared-vs-derived posture plant (circular, and the declared column is deleted); new plants for `.hand` dropped (hand mandatory on a FINISH ask; a 0 hand aborts), the verify-anchored / search-from ORDER swapped, and F-2 reverted (a grep row: no row-POINTER compare in `src/gen`). F-3's plant no longer waits on a later landing: the boundary degrade is L0's, witnessed on a superset hybrid. |
 | C6 | A | REQ_WHY gains ONE token, `"locator"` (no pre-check: the selected locator is not the composite); DFA_TABLE / DFA_UNIFORM_FOLDS / DFA_SCAN_EDGE / the orientation block fold over the machines the artifact EMITS, through one membership derivation (L2.0, a no-mover) — under form C the forward machine is absent and they read the reverse (+ anchored) machines; the supersession of `revend.md` §5.2 is recorded in BOTH notes (§5.1; `revend.md` gains a forward pointer). |
-| C7 | A | pcrec-bench's `testees/pcrec/adapter.py`, `report.py` and `tools/selfcheck.py` are listed as READERS of DFA_SCAN/DFA_START (§5 L2); L2's deliverable includes an `[inbox]` adapter note to pcrec-bench and the window handshake. |
+| C7 | A | pcrec-bench's `testees/pcrec/adapter.py`, `pcrecbench/report.py` and `tools/selfcheck.py` are listed as READERS of DFA_SCAN/DFA_START (§5 L2); L2's deliverable includes an `[inbox]` adapter note to pcrec-bench and the window handshake. |
 | C8 | A | §3.3 is corrected: the reader grep includes `pcrec_artifact_has_dfa_scan` (12 callers, `:3119`/`:3193` the `rx_info.scan`/`search_form` mirrors), `:10708` is dispositioned (it is `pcrec_artifact_has_dfa_scan` spelled locally), and the VM class is 15 lines, not 16. DFA_SCAN's machine-proxy readers join L2's reader list (§3.3, §5 L2). |
 | C9 | A | Spec citations corrected: DFA_START is `match_api.md:788-796` and `:4829-4839`; `:4686-4703` is now the VM stamp block. Every DFA_SCAN value table that needs the fourth value is listed in L2's spec hunk (§5 L2). |
 | C10 | A | `analyze.py` gains C4 (the exact/superset classifier vs the INDEPENDENT stamp `RX_VM_RESEED "exact"`: 759 exact / 734 superset hybrids, 0 disagreements) and a TWO-SIDED C3 (the converse holds outside two declared exceptions, both the shipped fact's own declines: 22 multibyte rows, 2 `\G`; plus a width-direction check with a declared probe-blind-call exception, 138 rows). Re-run: every existing table line unchanged (§3.1, `summary.txt`). |
@@ -961,8 +961,13 @@ Checks, sabotage and spec as `revend.md` §9.1 items 1-2.
   `pcrec_artifact_has_dfa_scan`'s 12 callers, which remain TRUE on a `rev-end`
   artifact (it has a DFA body; what it lacks is the forward machine); (d) the
   `DFA_START` value readers (19 files, 5 rows) for D-2; (e) **outside the repo
-  `[r2 C7]`**: pcrec-bench `testees/pcrec/adapter.py` (`:699-705` and `:802-806` hold
-  CLOSED `dfa_scan` / `dfa_start` vocabularies), `report.py` and `tools/selfcheck.py`;
+  `[r2 C7]`** (pcrec-bench at `76e13c1d`, read-only): `testees/pcrec/adapter.py`
+  `:699-701` (`"dfa_scan"`: enum `["unanchored", "attempt", "empty"]`) and `:802-804`
+  (`"dfa_start"`: enum `["pinned", "reverse-pass"]`), both CLOSED vocabularies;
+  `pcrecbench/report.py` (`_dfa_scan_display` `:2282`, the `start=<pinned|reverse-pass>`
+  legend `:763-767`); `tools/selfcheck.py` (named by the panel; this revision found no
+  literal of either vocabulary in it at that commit, so the build lane confirms whether
+  it validates the adapter's enums generically);
   then the counting suites (registry, codegen, rxtsource) whether or not they cite the
   number (D94 addendum).
 - **pcrec-bench deliverable `[r2 C7]`.** An `[inbox]` adapter note
