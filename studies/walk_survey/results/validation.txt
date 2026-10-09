@@ -1,0 +1,14 @@
+== 1 known gratuitous: \d+$ (today's artifact)
+  end_digits n=1048576 rc=1 span=[1048571,1048576) T=1048585 U=1048576 T_scan=0 ahead=0 | skip=1048572/1048572 fwd=6/5 rev=7/6
+== 2 the same pattern, [OPT-REVEND] form-C twin (walk only)
+  end_digits n=1048576 rc=1 span=[1048571,1048576) T=8 U=6 T_scan=0 ahead=0 | rev=7/6 unk=1/1
+== 3 known tight: ^abc on abc_start / abc_end; abc on abc_end
+  abc_start  n=1048576 rc=1 span=[0,3) T=4 U=4 T_scan=0 ahead=1 | fwd=4/4
+  abc_end    n=1048576 rc=0 span=[-1,-1) T=1 U=1 T_scan=0 ahead=0 | fwd=1/1
+  abc_end    n=1048576 rc=1 span=[1048573,1048576) T=1095189 U=1048575 T_scan=1048574 ahead=0 | skip=1095182/1048575 fwd=3/3 rev=4/4
+== 4 planted controls on ^abc (must each show ~n extra bytes)
+  abc_start  n=1048576 rc=1 span=[0,3) T=1048580 U=1048576 T_scan=0 ahead=1048573 | fwd=4/4 unk=1048576/1048576
+  abc_start  n=1048576 rc=1 span=[0,3) T=1048580 U=1048576 T_scan=0 ahead=1048573 | fwd=4/4 unk=1048576/1048576
+== 5 independent count: gcov line counts vs the instrument (\d+$, end_digits)
+  gcov: forward-step line executions=5  skip-loop line executions=1048572  reverse-step line executions=2
+  (a skip-loop line execution is one loop test: one subject load per test that reaches the load)

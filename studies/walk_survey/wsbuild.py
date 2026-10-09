@@ -72,7 +72,15 @@ def main():
     args = sys.argv[3:]
     os.makedirs(out, exist_ok=True)
     c = os.path.join(out, "rx.c")
-    r = subprocess.run([pcrec, "-p", "rx", "-o", c] + args, capture_output=True, timeout=300)
+    if os.environ.get("WS_SRC"):
+        # a HAND-MADE artifact (a twin or a planted control): WS_SRC is its
+        # rx.c, WS_HDR its rx.h; pcrec is not run
+        import shutil
+        shutil.copy(os.environ["WS_SRC"], c)
+        shutil.copy(os.environ["WS_HDR"], os.path.join(out, "rx.h"))
+        r = subprocess.CompletedProcess([], 0, b"", b"")
+    else:
+        r = subprocess.run([pcrec, "-p", "rx", "-o", c] + args, capture_output=True, timeout=300)
     if r.returncode != 0:
         print("REFUSED\t" + r.stderr.decode("utf8", "replace").split("\n")[0][:200])
         sys.exit(3)
