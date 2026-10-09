@@ -149,6 +149,19 @@ static int consistent(const g2_site *d, const g2_items *it, uint64_t S,
     int unwritten_ok = d->handoff == G2_H_ASSIGN && (d->noread || d->leaves);   /* G2pf2: on_miss_leaves 1 => result UNSPECIFIED on a miss (memfn.h) */    /* lane g2pf: PF cell 1 too */
     int miss_res_ok = o->res == missv || (unwritten_ok && o->res == G2_SENT);
 
+    if (d->handoff == G2_H_ADVANCE && d->fam == G2_FAM_STRIDE) {
+        /* lane g2m6: the strided ADVANCE (W terms, W = 1 included), g2_ref_stride */
+        size_t cur_;
+        unsigned long cnt_;
+        g2_ref_stride(d, s, n, lo, &cur_, &cnt_, NULL);
+        if (o->res != cur_ || (d->has_count && o->cnt != cnt_)) {
+            snprintf(why, whyn, "STRIDE W=%u: cursor %zu count %lu, want %zu / %lu (lo %zu n %zu)",
+                     d->preds[0].nterm, o->res, o->cnt, cur_, cnt_, lo, n);
+            return 0;
+        }
+        return 1;
+    }
+
     if (d->handoff == G2_H_ADVANCE) {
         /* §8.3 rule 5 + §14.3: `while (more && member(peek)) step;`, the
          * count capped at span_hi; the hooks are G2's (g2_gen.c fill_hooks) */
@@ -346,4 +359,36 @@ int g2_ref_mismatch(const uint8_t *map, const uint8_t *s, size_t n, size_t lo,
         if (a != b) { *k = j; return 1; }
     }
     return 0;
+}
+
+/* lane g2m6, the STRIDED ADVANCE oracle (g2_ref.h): a plain scalar byte loop over the
+ * generated space, written from the contract (memfn.h, the ADVANCE hooks: Q-R10-2..5)
+ * and sharing nothing with the kit. W1 defects 8-10 make it wrong on purpose. */
+int g2_ref_stride(const g2_site *d, const uint8_t *s, size_t n, size_t lo, size_t *cursor,
+                  unsigned long *cnt, int *failpos)
+{
+    const g2_pred *P = &d->preds[0];
+    size_t W = P->nterm;
+    size_t cur = lo;
+    unsigned long c = d->count_start;
+    unsigned long cap = d->span_hi == G2_UNBOUNDED ? 0 : (unsigned long)d->span_hi;
+    int capped = d->span_hi != G2_UNBOUNDED;
+    if (g2_ref_defect == 8 && capped) cap = (unsigned long)(d->span_hi / W);     /* W1-8: bytes, not iterations */
+    int why = G2_ST_MORE, fp = -1;
+    for (;;) {
+        if (capped && c >= cap) { why = G2_ST_CAP; break; }
+        if (g2_ref_defect == 9 ? !(cur + W < n) : !(cur + W <= n)) { why = G2_ST_MORE; break; }   /* W1-9: strict */
+        int ok = 1;
+        for (size_t i = 0; i < W; i++) {
+            size_t ti = g2_ref_defect == 10 ? W - 1 - i : i;                       /* W1-10: reversed terms */
+            if (!set_has(P->t[ti].set, s[cur + i])) { ok = 0; fp = (int)i; break; }
+        }
+        if (!ok) { why = G2_ST_TERM; break; }
+        cur += W;
+        c++;
+    }
+    *cursor = cur;
+    *cnt = c;
+    if (failpos) *failpos = why == G2_ST_TERM ? fp : -1;
+    return why;
 }

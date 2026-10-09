@@ -235,6 +235,36 @@ static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
     return 1;
 }
 
+/* SKIP's predicate rule, NULL iff it holds. RULED Q-G2-9: one SET term at
+ * offset 0 (the candidate's own byte). RULED Q-R10-2 (MF_SITE_ABI 8): an
+ * ADVANCE may be STRIDED, W = nterm SET terms, every one REQUIRED, term i at
+ * offset i (one step of W contiguous positions), and then forward only
+ * (no customer reads a strided run backward, D77). At W = 1 the rule is
+ * Q-G2-9's, unchanged. */
+static const char *skip_check(const mf_site *s)
+{
+    const mf_pred *p = &s->pred;
+    if (s->handoff != MF_H_ADVANCE || p->nterm == 1) {
+        if (p->nterm != 1 || p->term[0].kind != MF_T_SET)
+            return "SKIP takes exactly one SET term (`pred`): only an ADVANCE may stride";
+        if (p->term[0].offset != 0)
+            return "SKIP's SET term is at offset 0 (the candidate's own byte)";
+        return NULL;
+    }
+    for (unsigned t = 0; t < p->nterm; t++) {
+        const mf_term *tm = &p->term[t];
+        if (tm->kind != MF_T_SET)
+            return "a strided ADVANCE's terms are SET terms (`pred`)";
+        if (tm->offset != (int32_t)t)
+            return "a strided ADVANCE's term i sits at offset i (`pred`)";
+        if (tm->need != MF_REQUIRED)
+            return "a strided ADVANCE's terms are REQUIRED (`pred`)";
+    }
+    if (s->reverse)
+        return "a strided ADVANCE (nterm > 1) has no reverse reading (`reverse`)";
+    return NULL;
+}
+
 static const char *site_check(const mf_site *s)
 {
     const char *why = NULL;
@@ -285,10 +315,10 @@ static const char *site_check(const mf_site *s)
     } else if (!pred_kinds(&s->pred, &kinds, &why)) {
         return why;
     }
-    if (s->op == MF_OP_SKIP && (s->pred.nterm != 1 || s->pred.term[0].kind != MF_T_SET))
-        return "SKIP takes exactly one SET term";
-    if (s->op == MF_OP_SKIP && s->pred.term[0].offset != 0)
-        return "SKIP's SET term is at offset 0 (the candidate's own byte)";
+    if (s->op == MF_OP_SKIP) {
+        const char *skip = skip_check(s);
+        if (skip) return skip;
+    }
     if (!mf_vocab_has(s->op, s->handoff, kinds))
         return "(op, handoff, term kinds) is not in the vocabulary";
 

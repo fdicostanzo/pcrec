@@ -27,7 +27,9 @@ DEF="$ROOT_DIR/src/gen/memfn_sites.def"
 D91_SCAN="PF PRE OFS SETREST VERIFY MLINE"
 # N7 ([MEMFN] M7, RULED Q-R8-10): the encoding seam's span compare runs at
 # every VM backreference / variable step, so it is D91's budget 2.
-D91_LOOP="STAY EDGE VMSPAN VMRUN N7"
+# VMSTRIDE ([MEMFN] M6): the VM cursor rung's strided span loop runs at every
+# VM step that enters a cursor-rung repeat, as VMSPAN does: budget 2.
+D91_LOOP="STAY EDGE VMSPAN VMSTRIDE VMRUN N7"
 
 pass=0; fail=0
 ok()  { pass=$((pass + 1)); }

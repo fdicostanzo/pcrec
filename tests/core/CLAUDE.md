@@ -145,6 +145,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   sites could not have caught it.
 
 - **alloc_inject.h** / **alloc_check.c** / **run_alloc_tests.sh** —
+  [w5fix] W5's witness pattern `(?:a?){N}` is MEASURED, not pinned: `w5_run` tries `w5_counts` in order and uses the first whose forced loop allocates (prints the choice; fails only if none does).
   [REVW.U L5-R1] THE ALLOCATION-FAILURE INJECTOR (`make alloc`, opt-in,
   NOT part of `make test`). `alloc_inject.h` is `-include`d ahead of
   every source file in a SEPARATE build tree (`ALLOC_DIR := build-alloc`

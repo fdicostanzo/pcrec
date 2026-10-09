@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 7   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 8   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -49,13 +49,25 @@
                            7 (M7 prep, R-8, 2026-10-08): MF_OP_MISMATCH,
                            MF_H_ON_DIFF and MF_T_REF (MF_VOCAB 3);
                            mf_site.fold_kind and mf_hooks.ref/reflen/fold,
-                           each appended LAST (Q-R8-4/5) */
+                           each appended LAST (Q-R8-4/5). 8 (M6 prep,
+                           R-10, 2026-10-08): the STRIDED ADVANCE (Q-G2-9
+                           relaxed on ADVANCE only: W REQUIRED SET terms
+                           at offsets 0..W-1, Q-R10-2), MF_MAX_TERM 8 ->
+                           32 (mf_pred.term[] grows, Q-R10-3), a strided
+                           site's kit-owned reads at `s[cursor + i]`
+                           (Q-R10-4) and ADVANCE's span_hi an ITERATION
+                           count (Q-R10-5). No MF_VOCAB move */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
 /* ---- bounds and sentinels ------------------------------------------------ */
 
-#define MF_MAX_TERM 8                 /* terms in one conjunction (§8.2)       */
+/* Terms in one conjunction (§8.2). 32 since MF_SITE_ABI 8 (M6, RULED
+ * Q-R10-3): a STRIDED ADVANCE carries one SET term per position of its
+ * step, and pcrec's VM cursor rung admits bodies of up to 32 positions
+ * (emit_vm.c's VM_MAX_STRIDE, which pcrec asserts <= this). A SHAPE BOUND,
+ * not a tuning constant: it is the widest step a site may state. */
+#define MF_MAX_TERM 32
 /* The most negative term offset a site may send (§14.6). A SHAPE BOUND, not
  * a tuning constant; 8 leaves room without a contract change. CHOSEN: the
  * design names the bound but no value. No delegated site sends a negative
@@ -99,7 +111,12 @@ typedef enum {
                                nothing here is designed for it.)            */
     MF_OP_SKIP,             /* first cand in [lo,hi) whose byte is NOT in the
                                one SET term, which sits at offset 0 (RULED
-                               Q-G2-9: any other offset is refused)          */
+                               Q-G2-9: any other offset is refused). RULED
+                               Q-R10-2 (MF_SITE_ABI 8): an ADVANCE SKIP may
+                               be STRIDED, W in 1..MF_MAX_TERM REQUIRED SET
+                               terms, term i at offset i (W contiguous
+                               positions, one step): see the ADVANCE hooks.
+                               Every other SKIP keeps Q-G2-9's one term   */
     MF_OP_VERIFY,           /* does the predicate hold at cand == lo; lo must
                                lie in [lo,hi), so an empty range takes the
                                site's `empty` outcome (RULED Q-G2-17, F1)     */
@@ -427,8 +444,28 @@ typedef struct {
        it): `ind while ((more)[ && count < <span_hi>ULL] && (member)) {`,
        then `ind     step;`, `ind     count++;` (only with a counter) and
        `ind }`, the cap an unsigned 64-bit literal; one file per in-loop
-       shape under tests/memfn/pins/r4h_target/, checked byte for byte    */
-    const char *cursor;     /* the cursor lvalue                                */
+       shape under tests/memfn/pins/r4h_target/, checked byte for byte.
+       THE STRIDED ADVANCE (RULED Q-R10-2..5, MF_SITE_ABI 8; M6, the VM's
+       strided span loop). `pred` holds W in 1..MF_MAX_TERM SET terms, every
+       one REQUIRED, term i at offset i; the site is one step of W positions.
+       The cursor advances while `more`, the cap and EVERY term hold at the
+       cursor: term i tests the byte at cursor + i. `step` advances the
+       cursor by exactly W (a CALLER precondition, as floor <= lo is), and
+       `more` must prove the W bytes [cursor, cursor + W) readable (pcrec's
+       is `cursor + W <= bound`); the text reads them only while `more`
+       holds. `span_hi` caps the COUNTER, which counts ITERATIONS (RULED
+       Q-R10-5): the proven byte span is span_hi x W, and at W = 1 the two
+       readings are one. `reverse` is refused at W > 1 (no customer, D77).
+       The render is the one above with `(member)` once per term in term
+       order, ` && `-joined: `&& (m0) && (m1) ...`; the member hook is called
+       once per term with that term's id. Where the kit tests a term itself
+       (no member hook), the byte at offset i is `s[cursor + i]` (RULED
+       Q-R10-4, the hooks `s` and `cursor`, both REQUIRED at W > 1; at W = 1
+       the byte stays `peek`). One file per strided shape under
+       tests/memfn/pins/m6_target/, checked byte for byte                 */
+    const char *cursor;     /* the cursor lvalue; with `s`, REQUIRED on a
+                               strided ADVANCE (W > 1, Q-R10-4), whose kit-
+                               owned reads are `s[cursor + i]`              */
     const char *step;       /* pcrec's step statement (`pos++;`, `pos--;`, …)   */
     const char *more;       /* pcrec's continue condition                       */
     const char *peek;       /* the byte at the cursor, not consumed             */
@@ -646,6 +683,7 @@ int mf_opts_check(const char *str, char *err, size_t n);
 #define mf_ref_find_literal MF_NS(ref_find_literal)
 #define mf_ref_run_verify   MF_NS(ref_run_verify)
 #define mf_ref_mismatch     MF_NS(ref_mismatch)
+#define mf_ref_skip_blocks  MF_NS(ref_skip_blocks)
 
 /* F1: the first i with s[i] == c */
 size_t mf_ref_find_byte(const uint8_t *s, size_t n, uint8_t c);
@@ -672,5 +710,12 @@ int mf_ref_run_verify(const uint8_t *s, size_t n, size_t pos,
  * min(m, reflen) folded bytes, or min(m, reflen) itself when that is short
  * of reflen. Exact: a fold is the caller's, applied before. */
 size_t mf_ref_mismatch(const uint8_t *a, const uint8_t *b, size_t n);
+/* F5 STRIDED (MF_SITE_ABI 8, M6): the bytes a strided ADVANCE of w
+ * positions moves over s[0..n): j*w for the least j such that the block
+ * [j*w, j*w + w) is not wholly inside s[0..n) or some position i of it has
+ * s[j*w + i] NOT in sets[i]. A multiple of w; w 1 is mf_ref_skip_in_set.
+ * A cap of K iterations is the caller's n: min(n, K*w). */
+size_t mf_ref_skip_blocks(const uint8_t *s, size_t n, const uint8_t (*sets)[32],
+                          size_t w);
 
 #endif /* MEMFN_H */

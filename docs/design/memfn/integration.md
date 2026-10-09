@@ -3466,7 +3466,7 @@ span returning a prefix count, is covered by the definition):
 - VERIFY and VMRUN;
 - STAY, the scan edge's loop, and VMSPAN at stride 1;
 - MLINE (N3);
-- `vm_rev_emit`'s backward walk (N6);
+- ~~`vm_rev_emit`'s backward walk (N6)~~ **RETIRED (D147 add. 12):** not a search site, a mirrored one-position VM step;
 - the VM span at stride > 1;
 - the encoding seam's span compare (N7).
 
@@ -3502,7 +3502,19 @@ These are NOT search sites, and are not listed:
 
 - T4 one-position membership (one position, the `member` hook's
   source);
-- any DFA or VM step, and T8/T9 (the engine).
+- any DFA or VM step, and T8/T9 (the engine);
+- **`[M6]`** (Q-R10-11, kit ruling 2026-10-08) the encoding seam's utf8
+  `$_back_step` / `next_pos` loops: bounded per-character decode steps
+  (at most 4 bytes), the seam's analogue of T4, not searches.
+
+> **`[M6]` As built (2026-10-08):** VMSTRIDE is `delegated` (the VM span
+> loop at stride > 1, §15.9) and its `walk-open` ceiling is gone from C12;
+> the cursor rung's LAZY rmin prefix, a counted verify of rmin span blocks
+> that no vocabulary line saw, is its own `pending` row VMLAZY (Q-R10-7),
+> spelling the new `span-count` line. N6 stayed `pending` pending Frank's
+> Q-R10-1 ruling; **N6 RETIRED (D147 add. 12):** not a search site (a
+> mirrored one-position VM step, §R4.3.4's exclusion); its manifest row, the
+> `walk-back` vocabulary line and its C12 ceiling row are deleted.
 
 **The CHECKED SITE MANIFEST.** `tests/memfn/site_manifest.tsv` has one
 row per search site: site id, emitter function(s), op/handoff, D91
@@ -4322,7 +4334,7 @@ inputs are a set and a run, not a `DfaSel`.
 | N3 | `emit_attempt`'s `(?m)^` skip | `emit_dfa.c:8649` | F1, rest of subject | one libc `memchr('\n')`, candidate = hit + 1. Keeps its own form (compare_stack.md §5), provisionally |
 | N4 | `emit_req_set_rest` | `emit_dfa.c:1170` | k × F1 presence tests (no current menu item: "all of S present") | a `for` over a `static const` member list, one `memchr` each |
 | N5 | the ofsskip scan ARM | `emit_dfa.c:6143` `ofs_test_emit_fn` | F1 at offset k* plus a verify (F9's shape); F2/F3 for the cube (the K82 pair arm) | an `if`: pair arm (two `memchr` streams), else one `memchr` |
-| N6 | `vm_rev_emit`'s backward walk | `emit_vm.c` (compare_stack.md §2.3) | F6 reverse, per byte | a per-byte L1 test with `cur--`. Keeps its own form (compare_stack.md §5) |
+| N6 **RETIRED (D147 add. 12: not a search site)** | `vm_rev_emit`'s backward walk | `emit_vm.c` (compare_stack.md §2.3) | F6 reverse, per byte | a per-byte L1 test with `cur--`. Keeps its own form (compare_stack.md §5) |
 | N7 | `$_span_match[_caseless]` | `src/enc/enc_byte.c:153/184` | F8 `mismatch`, a run-time operand | a byte loop returning a prefix count. Gated on a cell (compare_stack.md S6) |
 | VMSTART | [START-SET] stage 2's VM hat: the prefilter-less VM attempt loop's entry and retry seek (`docs/design/startset.md` §5; built lane ssbuild2, 2026-10-05, abi 62) | `emit_dfa.c` `pf_vm_emit_first_class`, through `pcrec_emit_find` (T1 PF's own one statement) | F5 over the start set `S`, IN-LOOP per failed attempt (D91 budget 2, UNMEASURED, D149) | `while (pos < n && !<p>_start_set[s[pos]]) pos++` after a 256-entry table; the table form only at stage 2 (Q-R5). **The C17 site manifest (`tests/memfn/site_manifest.tsv`) does not exist at this pin, so the row is recorded here, `pending`, migrating with T1 PF's step** |
 
@@ -4469,7 +4481,7 @@ rows (§R4.9.7). §2.5's "the fallback is the next row" survives as
 | T8, T9 | excluded (§1.2) | — | — | — | — | — |
 | N1-N4 | rows of `SCAN_ROWS` at sites `STAY`, `VMSPAN`, `PF`, `SETREST` | — | — | — | as T3's | **no, as built (b), (d), (f)**. N3 stays `libc-memchr` (row 4) with no change |
 | N5 | `SCAN_ROWS` site `OFS`: rows 2 (`vec-verify`, which subsumes the K82 pair arm as one fused cube pass, F3), 3, 4, 5, 6 | — | — | — | the verify hook, `maxk`, the guard | **no, as built (a)** |
-| N6, N7 | none planned. N6 keeps its own form (compare_stack.md §5). N7's F8 is a run-time operand row of its own when S6's cell exists | — | — | — | — | — |
+| N6, N7 | none planned. N6 (RETIRED, D147 add. 12) keeps its own form (compare_stack.md §5). N7's F8 is a run-time operand row of its own when S6's cell exists | — | — | — | — | — |
 
 ### 2.4 Where SIMD does NOT slot cleanly, and the fix for each
 
@@ -5711,7 +5723,7 @@ typedef struct {                    /* one position term, relative to cand      
                                        0..MF_PPM_FULL when unknown (the default)   */
 } mf_term;
 
-#define MF_MAX_TERM 8
+#define MF_MAX_TERM 8          /* [M6] 32 since MF_SITE_ABI 8 (Q-R10-3) */
 typedef struct mf_pred {            /* a CONJUNCTION of terms                        */
     uint8_t  nterm;
     mf_term  term[MF_MAX_TERM];
@@ -5763,7 +5775,7 @@ const char *mf_kit_version(void);                       /* "pcrec-memory-functio
 > kit version (§18).
 
 **Size (K3).** An `mf_site` is about 0.6 KB at `MF_MAX_TERM` 8 (32-byte
-sets dominate). `preds` and runs are pointers into pcrec's arena. The kit
+sets dominate; **`[M6]`** 2,696 bytes at 32, measured on x86_64, arena-backed). `preds` and runs are pointers into pcrec's arena. The kit
 allocates nothing on the caller's stack beyond its frame and takes
 scratch from `mf_arena`, which pcrec backs with its own arena. C10
 (§10.5) forbids an `mf_site` or `mf_result` as an automatic variable
@@ -5917,7 +5929,7 @@ reason:
 | VERIFY and VMRUN (T6 `pcrec_runcmp_rows`: `words`, `overlap`, `bytes`, `memcmp`) | yes, as TWO site bits: VERIFY at budget 1 (the run term of a prefilter or pre-check, `emit_dfa.c:6039`) and VMRUN at budget 2 (inside the VM's match, `emit_vm.c:4483`, `:8628`) | VERIFY of one RUN term at a known position. One emitter, two budgets: runcmp's callers already split that way, which is why rev 2 put T6 under both of its loop and scan bits |
 | STAY (N1), EDGE's loop (T3), VMSPAN (N2 at stride 1) | yes, at D91 budget 2 | SKIP with ADVANCE. Only the LOOP; the scan edge's peeled guard, its accept stores and state writes stay pcrec's (§9.3) |
 | MLINE (N3, `(?m)^`'s `memchr('\n')`) | yes, last | FIND of one byte. No customer, so it migrates only for uniformity, and only if Q30 says so |
-| N6 (`vm_rev_emit`'s backward walk) | not now | a per-byte L1 test with captures in flight; compare_stack.md §5 keeps its form. Filed |
+| N6 (`vm_rev_emit`'s backward walk) **RETIRED, D147 add. 12** | not now | a per-byte L1 test with captures in flight; compare_stack.md §5 keeps its form. Filed |
 | N7 (`$_span_match[_caseless]`) | no | the encoding seam's residual entry; the encoding owns it (D23; **`[rev4.6]`** r5 B6: the owner is D58/DD-12, not D23, §R4.3.4). F8 `mismatch` is a later vocabulary item if S6's cell exists |
 | VM span at stride > 1 | no | not a byte-set search (§2.4 d) |
 | T4 one-position membership | never | one position, not a search; it is the `member` hook's source (§8.3 rule 6) |
@@ -6133,7 +6145,7 @@ over a fixed request fixture.
 > safe because each step is zero-mover. The table's "customer" column
 > now names the trigger of the step's first MOVERS, which do still need
 > a measured cell. Its `memchr(` column ends at 0 after M4, and M6/M7
-> (N6, the strided VM span, N7) join it (§22). A CHECKED SITE MANIFEST
+> (the strided VM span, N7; N6 RETIRED, D147 add. 12) join it (§22). A CHECKED SITE MANIFEST
 > (C17) lists every site as `delegated` or `pending`.
 
 A step is taken when a CUSTOMER needs its sites in the kit (the
@@ -7940,6 +7952,37 @@ Built by lane m7 (2026-10-08, R-8; rulings Q-R8-1..10 in
   byte mismatch. It keeps its body: manifest row N7U, `pending`, trigger
   "completeness after M7 + a decode-hook vocabulary step" (Q-R8-1).
 
+### 15.9 STMT / SKIP / ADVANCE, STRIDED: the VM span loop at stride > 1 (VMSTRIDE) — M6, as built `[M6]`
+
+Built by lane m6 (2026-10-08, R-10 cut to VMSTRIDE; rulings Q-R10-2..12 in
+`memfn/docs/responses.md`; design `docs/dev/lanes/m6scope_report.md`;
+report `docs/dev/lanes/m6_report.md`). Zero movers, no pcrec abi event, no
+spec hunk, NO `MF_VOCAB` move.
+
+- **The site** is the VM cursor rung's span loop when the body is W > 1
+  bytes wide (`vm_emit_span_scan`, both of `vm_cursor_rep`'s scanning arms).
+  It is the existing generic SKIP / ADVANCE over W SET terms: one step reads
+  W contiguous positions, term i at offset i (Q-R10-2).
+- **The contract step** (`MF_SITE_ABI` 8): Q-G2-9 relaxed on ADVANCE only
+  (W REQUIRED SET terms at offsets 0..W-1, forward only; every other SKIP
+  keeps one term at 0); `MF_MAX_TERM` 8 -> 32 (`VM_MAX_STRIDE`, asserted in
+  `emit_vm.c` and by C14); a strided site's kit-owned reads index
+  `s[cursor + i]` (Q-R10-4, so it states `s` and `cursor`); `span_hi` caps
+  ITERATIONS (Q-R10-5). The gate field `stride` (ONE / MANY) makes the
+  generic row USE `s`/`cursor` at MANY.
+- **The render** (`stmt_advance`): R4h's frozen target with one `(member)`
+  per term, ` && `-joined; frozen byte for byte from pre-M6 artifacts
+  (`tests/memfn/pins/m6_target/`, C5 check 12) and run against the contract
+  (check 13).
+- **pcrec's side**: ONE builder, `vm_span_advance`, for every stride
+  (`vm_stride_loop` deleted); `PcrecAdvance.stride` is stated by every
+  builder (STAY/EDGE state 1; 0 is refused: Q-R10-12); DELEG_SITES row
+  VMSTRIDE beside VMSPAN (Q-R10-6), budget 2. The block, `it_`, `lim_`, the
+  cursor init, the rung, admission, possessify, MRL and every member text
+  stay pcrec's (m6scope V1-V15).
+- **Not migrated:** the lazy arm's rmin prefix (VMLAZY, `pending`,
+  Q-R10-7) and N6 (Q-R10-1, Frank's; RETIRED, D147 add. 12: not a search site).
+
 ## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
 
 **The trigger's site class.** M1 exists for K82 cause (B): the
@@ -8912,10 +8955,10 @@ text stays opt-in until R4f.
 >
 >   **Prerequisite:** M5. **Trigger:** RULED (Q40), accepted by its
 >   alpha.
-> - **M6, the remaining VM searches:** N6 (`vm_rev_emit`'s backward
->   walk) and the VM span at stride > 1. Zero movers, and an `MF_VOCAB`
+> - **M6, the remaining VM searches:** ~~N6 (`vm_rev_emit`'s backward
+>   walk)~~ (**N6 RETIRED, D147 add. 12**: not a search site) and the VM span at stride > 1. Zero movers, and an `MF_VOCAB`
 >   bump for the backward walk with captures in flight and the strided
->   SKIP. **Prerequisite:** R4h. **Trigger:** completeness.
+>   SKIP (the bump no longer applies to N6). **Prerequisite:** R4h. **Trigger:** completeness.
 > - **M7, N7** (the encoding seam's span compare). Zero movers.
 >   **Prerequisite:** M1b. **Trigger:** completeness, once Q54 rules
 >   its seam (**`[rev4.7]`** ruled YES, D147 addendum 10). **`[rev4.6]`** (r5 B6) It carries an `MF_VOCAB` bump (a
@@ -8926,7 +8969,13 @@ text stays opt-in until R4f.
 >   and UCP caseless), through D58 addendum 2's site token and keyed side
 >   table; utf8's caseless walk split out as **N7U** (`pending`, Q-R8-1);
 >   C12's two span-index rows deleted (5 -> 3 rows); C17 14 rows, 11
->   delegated / 3 pending (N6, VMSTRIDE, N7U).
+>   delegated / 3 pending (N6, VMSTRIDE, N7U; N6 since retired, D147 add. 12).
+>   **`[M6]` BUILT for VMSTRIDE only** (lane m6, 2026-10-08; §15.9; R-10
+>   cut by ruling): the strided span is the existing SKIP / ADVANCE over W
+>   SET terms (`MF_SITE_ABI` 8, NO `MF_VOCAB` bump); VMSTRIDE `delegated`,
+>   the lazy rmin prefix listed as **VMLAZY** (`pending`, Q-R10-7); C12
+>   3 rows (walk-open out, span-count in); C17 15 rows, 12 delegated / 3
+>   pending (N6, N7U, VMLAZY). N6 waited on Frank (Q-R10-1); **RETIRED (D147 add. 12)**: C17 14 rows, 12 delegated / 2 pending (N7U, VMLAZY), C12 2 rows.
 >
 >   **End state: C17 reads 0 pending, and C12 reads 0 in every class
 >   outside the kit.**
@@ -9019,7 +9068,7 @@ text stays opt-in until R4f.
 >     across several migration steps AND a real second consumer), with
 >     §20.1's files moving unchanged.
 >
->   M4 and N6 leave this list: they are scheduled (M4, M6).
+>   M4 and N6 leave this list: they are scheduled (M4, M6); N6 was later RETIRED (D147 add. 12).
 
 > **`[rev4.2]`** (D147; Q35/Q36 RULED 2026-10-05, §23) Prerequisites and
 > triggers stand; the steps read:

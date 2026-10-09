@@ -13,10 +13,14 @@ C13  `on_cand` duplicability: declared UNREACHED while no `on_cand` producer
      exists with C13 still unbuilt, so it can never pass vacuously.
 C14  shape bounds: a TU compiled with $CC against the tree's own core/internal.h
      (so limits.def's CURRENT values) and memfn.h asserts MF_MAX_TERM >=
-     PCREC_OFSK_MAX_SET + 1, npred wide enough for every byte (uint16_t), and
-     MF_MAX_BACK covering today's deepest rewind (-1). A control compiles the
-     same asserts against a copy of memfn.h with MF_MAX_TERM lowered below the
-     bound and requires the compile to FAIL (the assert can fire).
+     PCREC_OFSK_MAX_SET + 1, npred wide enough for every byte (uint16_t),
+     MF_MAX_BACK covering today's deepest rewind (-1), and (M6, MF_SITE_ABI 8)
+     MF_MAX_TERM >= src/gen/emit_vm.c's VM_MAX_STRIDE (the VM cursor rung's
+     widest body is one strided ADVANCE site, one SET term per position; the
+     enum is read from the source, hard-failing if absent, and passed in as
+     C14_VM_MAX_STRIDE). Two controls compile the same asserts against copies
+     of memfn.h with MF_MAX_TERM lowered below each bound and require the
+     compile to FAIL on that bound's own assert (each assert can fire).
 
 Prints PASS:/FAIL:/UNREACHED: lines and the `checks passed:`/`checks failed:`
 totals tests/mech scrapes. Exit 1 on any FAIL.
@@ -153,15 +157,18 @@ _Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
 _Static_assert(sizeof(((mf_site *)0)->npred) >= 2,
                "C14: npred must index every byte (N4's set may hold 256)");
 _Static_assert(MF_MAX_BACK >= 1, "C14: MF_MAX_BACK must cover today's deepest rewind (-1)");
+_Static_assert(MF_MAX_TERM >= C14_VM_MAX_STRIDE,
+               "C14 stride: MF_MAX_TERM must hold VM_MAX_STRIDE positions (one strided site)");
 int c14_unused;
 '''
 
 
-def c14_compile(cc, root, tmp, include_dir, name):
+def c14_compile(cc, root, tmp, include_dir, name, stride):
     src = os.path.join(tmp, name + '.c')
     with open(src, 'w') as fh:
         fh.write(C14_TU)
-    r = subprocess.run([cc, '-std=gnu11', '-fsyntax-only', '-I' + os.path.join(root, 'lib'),
+    r = subprocess.run([cc, '-std=gnu11', '-fsyntax-only', '-DC14_VM_MAX_STRIDE=%d' % stride,
+                        '-I' + os.path.join(root, 'lib'),
                         '-I' + os.path.join(root, 'src'), '-I' + include_dir, src],
                        capture_output=True, text=True)
     return r.returncode, r.stderr
@@ -175,15 +182,18 @@ def c14(root, cc, tmpbase):
     with open(hdr, encoding='utf-8') as fh:
         htxt = fh.read()
     mt = re.search(r'^#define MF_MAX_TERM\s+(\d+)', htxt, re.M)
-    if len(m) != 1 or not mt:
-        bad('C14: cannot read the bound (limits.def rows %d, MF_MAX_TERM %s)'
-            % (len(m), 'found' if mt else 'absent'))
+    with open(os.path.join(root, 'src/gen/emit_vm.c'), encoding='utf-8') as fh:
+        ms = re.findall(r'^enum \{ VM_MAX_STRIDE = (\d+) \};', fh.read(), re.M)
+    if len(m) != 1 or not mt or len(ms) != 1:
+        bad('C14: cannot read the bound (limits.def rows %d, MF_MAX_TERM %s, VM_MAX_STRIDE rows %d)'
+            % (len(m), 'found' if mt else 'absent', len(ms)))
         return
-    print('C14: limits.def PCREC_OFSK_MAX_SET = %s, memfn.h MF_MAX_TERM = %s (a run term needs %d)'
-          % (m[0], mt.group(1), int(m[0]) + 1))
+    stride = int(ms[0])
+    print('C14: limits.def PCREC_OFSK_MAX_SET = %s, memfn.h MF_MAX_TERM = %s (a run term needs %d; '
+          'emit_vm.c VM_MAX_STRIDE = %d)' % (m[0], mt.group(1), int(m[0]) + 1, stride))
     tmp = tempfile.mkdtemp(prefix='c14.', dir=tmpbase)
     try:
-        rc, err = c14_compile(cc, root, tmp, os.path.join(root, 'memfn/include'), 'real')
+        rc, err = c14_compile(cc, root, tmp, os.path.join(root, 'memfn/include'), 'real', stride)
         if rc == 0:
             ok('C14: the shape asserts compile against the tree\'s limits.def and memfn.h')
         else:
@@ -194,12 +204,26 @@ def c14(root, cc, tmpbase):
         lowered = int(m[0])
         with open(os.path.join(cdir, 'memfn.h'), 'w') as fh:
             fh.write(re.sub(r'^(#define MF_MAX_TERM\s+)\d+', r'\g<1>%d' % lowered, htxt, flags=re.M))
-        rc2, err2 = c14_compile(cc, root, tmp, cdir, 'ctl')
-        if rc2 != 0 and 'C14' in err2:
+        rc2, err2 = c14_compile(cc, root, tmp, cdir, 'ctl', stride)
+        if rc2 != 0 and 'C14: MF_MAX_TERM must hold PCREC_OFSK_MAX_SET' in err2:
             ok('C14 control: MF_MAX_TERM lowered to %d (below the bound) makes the assert FIRE' % lowered)
         else:
             bad('C14 control: the lowered header did not trip the assert (rc %d): the check cannot '
                 'fail' % rc2)
+        # the stride bound's own control: lowered to one below VM_MAX_STRIDE,
+        # which still holds the offset-skip bound, so only the stride assert fires
+        sdir = os.path.join(tmp, 'incs')
+        os.makedirs(sdir)
+        with open(os.path.join(sdir, 'memfn.h'), 'w') as fh:
+            fh.write(re.sub(r'^(#define MF_MAX_TERM\s+)\d+', r'\g<1>%d' % (stride - 1), htxt,
+                            flags=re.M))
+        rc3, err3 = c14_compile(cc, root, tmp, sdir, 'ctls', stride)
+        if rc3 != 0 and 'C14 stride' in err3 and 'PCREC_OFSK_MAX_SET' not in err3:
+            ok('C14 stride control: MF_MAX_TERM lowered to %d (below VM_MAX_STRIDE) makes the '
+               'stride assert FIRE' % (stride - 1))
+        else:
+            bad('C14 stride control: the lowered header did not trip the stride assert alone '
+                '(rc %d): the check cannot fail' % rc3)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
