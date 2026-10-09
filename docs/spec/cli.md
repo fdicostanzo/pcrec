@@ -434,6 +434,34 @@ artifact that fits is byte-identical with or without it (masked out of
 `-fno-size-term`) still works on its own. Raising a cap remains the way to
 keep the faster form AND compile.
 
+### `--memfn=OPTS` — the search-code kit's option string
+
+**[MEMFN] RQ-1 (2026-10-09).** Carries ONE opaque, comma-separated string to
+pcrec-memory-functions (`memfn/`), the in-tree kit that renders pcrec's
+search sites. A spelling is `no-NAME` (deny row NAME) or, for a row declared
+a pair, bare `NAME` (force it); the rows are the `memfn` section of
+`--list-axes` (`registry.md` §6). pcrec never splits, sorts or looks up an
+option: the kit owns the string's meaning.
+
+- **Validation** is the kit's (`mf_opts_check`), run ONCE per compile before
+  the parse, and its refusal text is shown unchanged after the compile's
+  usual `pcrec: ` lead (D26: the wording is the kit's). An empty string is
+  accepted and means none. Until the kit registers a row (the registry is
+  empty today) every non-empty string is refused as an unknown option.
+- **Carriers.** The `--memfn=OPTS` flag; a config's raw `pcrec --memfn=OPTS`
+  line (the same parser); `pcrec_options.memfn`, a `const char *`
+  (`lib/pcrec.h`), NULL or `""` for none. The string is copied by reference
+  into every delegated site's `opts`.
+- **Composition** (a string value option, `option_sets.md` §2.5a): on the
+  command line the later flag wins; across sources a config's value wins
+  over the command line's, SILENTLY.
+- **Inert where the layer is off.** A row of the kit's `simd` layer is
+  accepted and does nothing at `-fno-memfn-simd` (the default), so one
+  string can be written once for both builds. A scalar-layer row acts at
+  either setting.
+- **No flag bit, no `rx_info.flags` movement, no abi event**: with no
+  registered row the artifact is byte-identical with or without the flag.
+
 ### `--backtrack-frames=N`
 
 Raises the emitted resume-stack (and its trail) capacity above the
@@ -1269,6 +1297,10 @@ Stated plainly rather than left for a stranger to discover by trial:
   either — see §1.
 
 ## Revision history
+
+- 2026-10-09 ([MEMFN] RQ-1): §1 gains `--memfn=OPTS` (and
+  `pcrec_options.memfn`), the kit's opaque option string; no artifact byte
+  moves.
 
 - 2026-10-09 ([SIZE-CAP-FLAG], Frank's ruling): §1 `--fast-or-fail` is
   RENAMED `--size-cap=refuse|degrade` (default `degrade`); the old spelling

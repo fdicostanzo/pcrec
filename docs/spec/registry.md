@@ -338,6 +338,12 @@ kit's `mf_options()`, read from the kit — pcrec's dump names no row:
 | `spelling` | the accepted `--memfn=` spelling(s), `\|`-joined |
 | `doc` | one line, the kit's |
 
+**How a row is reached.** `--memfn=no-NAME` (or bare `NAME` for a `pair`
+row), a config's raw `pcrec --memfn=` line, or `pcrec_options.memfn`
+([MEMFN] RQ-1, `cli.md` §1): ONE opaque string pcrec validates only through
+the kit and copies into every site. A `simd` row given at `-fno-memfn-simd`
+is accepted and inert.
+
 These are NOT pcrec axes: no row carries a `lib/pcrec.h` bit, `axes.def`
 has no row for one, and `test-axes`, the identity gates and the registry
 check read them from this section, never from a list of their own. Each is

@@ -361,4 +361,8 @@ build the 9000-branch pattern string). python3 is therefore not a hard
 dependency of `make test`, but on a box without it this case silently stops
 guarding anything — the skip goes to stderr and the suite still exits 0.
 
+Also covers `--size-cap=refuse|degrade` (default identity, bad value, the
+retired `--fast-or-fail`) and `--memfn=` (empty accepted and identical, the
+kit's refusal text, a config's raw line winning silently).
+
 Maintenance: update this file when cases or covered surfaces change.

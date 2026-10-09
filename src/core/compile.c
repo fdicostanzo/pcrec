@@ -2234,6 +2234,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             pcrec_ctx_fail(&cx, 0, "-fstartpos-guard=align and "
                            "-fno-startpos-guard cannot both be requested");
 
+        /* [MEMFN] RQ-1 the `--memfn=` string, validated ONCE per compile by
+         * the kit (every attempt carries the same string). */
+        if (attempt == 0) pcrec_memfn_opts_check(&cx);
+
         /* [FINDINGS] B2 THE ANALYSIS CHAIN, resolved here — before the
          * parse, so a bad analysis name refuses even a pattern that would
          * never ask a query (design §4.3's "eager"), and after the encoding

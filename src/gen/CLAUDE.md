@@ -834,7 +834,7 @@ reason the D47.3 family and the prefilter force pair are both masked out of
 **[FLAGBITS] (2026-10-06, abi 65) THE MASK IS NOW DERIVED, so the sentence
 above describes a list that no longer exists:** `strategy_denials` is every
 `src/core/axes.def` bit except the `kept` set (the two engine-selecting
-denials and the two contract axes), plus `PCREC_SIZE_CAP_REFUSE`. A new axis is
+denials and the two contract axes), plus `PCREC_SIZE_CAP_REFUSE`. `pcrec_memfn_site` copies `pcrec_options.memfn` ([MEMFN] RQ-1) into every site's `opts`; `pcrec_memfn_opts_check` is the once-per-compile kit validation. A new axis is
 masked on arrival; forgetting one in `kept` is the recoverable direction.
 Bits 18/21 were the last two strategy bits the old list lacked (K92). [ART-POSS-ARMS] (abi 66) made the engine-selecting denials three:
 `-fno-poss-ctx-follow` (tuning.md §2.44) joined `kept`, and `emit_vm.c` gained

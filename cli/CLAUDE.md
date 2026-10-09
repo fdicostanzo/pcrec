@@ -6,6 +6,13 @@ Entry point: pcrec command-line tool. Parses flags, calls pcrec_compile(), write
 `opt.flags |= PCREC_CASELESS` / `PCREC_EMIT_MAIN` — `pcrec_options` no
 longer has separate `caseless`/`emit_main` int fields (lib/CLAUDE.md).
 
+**[SIZE-CAP-FLAG] / [MEMFN] RQ-1 (2026-10-09):** `--size-cap=refuse|degrade`
+(was `--fast-or-fail`, retired with no alias) sets/clears
+`PCREC_SIZE_CAP_REFUSE`. `--memfn=OPTS` stores ONE opaque pointer in
+`opt.memfn`; the kit validates it in the compile. A config's raw `pcrec`
+line copies a value it set through `cli_keep_string` (the split tokens are
+freed right after the parse).
+
 **[M4.5b] (2026-08-15):** five GENERATION AXES for the VM engine
 (docs/design/engine_m4.md §4.6/§5.3/§5.6). `--no-captures` sets
 `PCREC_NO_CAPTURES`; `--engine=dfa|vm|auto`, `--step-budget=N`,

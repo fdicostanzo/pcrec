@@ -1549,6 +1549,17 @@ typedef struct {
     const char *const *analysis_dirs;
     const char        *analysis_source;
     size_t             analysis_source_len;
+
+    /* [MEMFN] RQ-1 THE KIT'S OPTION STRING (`--memfn=`; docs/design/memfn/
+     * integration.md §R4.4.1): ONE opaque, comma-separated string, e.g.
+     * "no-NAME" to deny a kit row. pcrec never splits or looks up an option
+     * in it: it is validated once per compile by the kit's own parser
+     * (`mf_opts_check`, whose refusal text pcrec shows unchanged) and copied
+     * into every delegated site. NULL or "" means none. An option that
+     * belongs to the SIMD layer is accepted and INERT under
+     * `-fno-memfn-simd` (the default). It is not a flag bit and does not
+     * move `rx_info.flags`. */
+    const char        *memfn;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

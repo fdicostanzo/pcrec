@@ -204,6 +204,11 @@ static void usage(FILE *f)
           "                 DFA prefilter, so the VM derives the whole span\n"
           "                 independently -- which is what makes it usable as a\n"
           "                 cross-check against the DFA rather than an echo of it\n"
+          "  --memfn=OPTS   the search-code kit's options, one opaque comma-\n"
+          "                 separated string (e.g. no-NAME denies a kit row);\n"
+          "                 validated by the kit, whose refusal is shown as\n"
+          "                 is. Inert at -fno-memfn-simd for SIMD-layer rows\n"
+          "                 (docs/spec/cli.md). --list-axes lists the rows\n"
           "  --tune=N       the SPEED-VS-SIZE DIAL: -2 | -1 | 0 | 1 | 2, or\n"
           "                 equivalently min-size | size | balanced | speed |\n"
           "                 max-speed (default 0/balanced, today's defaults\n"
@@ -620,6 +625,20 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_FLAVOUR_APPLIES \
     (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(EXPLAIN))
 
+/* [MEMFN] RQ-1: replaces `*s` with a copy that lives to process exit. The
+ * copies stay reachable from `kept`, so the leak tier does not report them. */
+static char **kept;
+static size_t nkept;
+static int cli_keep_string(const char **s)
+{
+    char **nk = realloc(kept, (nkept + 1) * sizeof *kept);
+    if (!nk) { perror("realloc"); return 1; }
+    kept = nk;
+    if (!(kept[nkept] = strdup(*s))) { perror("strdup"); return 1; }
+    *s = kept[nkept++];
+    return 0;
+}
+
 /* Everything past `opt` is zero — i.e. this invocation asked for compile
  * options and nothing else. The comparison is over the raw bytes of the
  * tail, which is well defined here because every `CliState` in this file is
@@ -965,6 +984,10 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strncmp(a, "--encoding=", 11)) {
             if (set_encoding(&opt, a + 11) != 0) return 1;
         }
+        /* [MEMFN] RQ-1 the kit's option string, carried OPAQUE: validated by
+         * the kit inside the compile (pcrec_compile), never parsed here. A
+         * later flag wins (any value option's argv rule). */
+        else if (!strncmp(a, "--memfn=", 8)) opt.memfn = a + 8;
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             int want;
@@ -1265,6 +1288,11 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char where[160];
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
         int rc = cli_parse(n, v, &ts, where);
+        /* [MEMFN] RQ-1 `--memfn=` carries a POINTER into the split tokens,
+         * which die just below: a value the raw line set (it differs from
+         * the CLI's own) is kept for the process's life first. */
+        if (rc == 0 && ts.opt.memfn && ts.opt.memfn != cli->opt.memfn &&
+            cli_keep_string(&ts.opt.memfn) != 0) rc = 1;
         free(v); free(buf);
         if (rc != 0) { free(ts.libdirs); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config

@@ -2286,6 +2286,57 @@ else
     fail "K70: (?aD)\\d under -e utf8 did not compile (rc $wrc)" "$werr"
 fi
 
+# [SIZE-CAP-FLAG] `--size-cap=refuse|degrade` replaced `--fast-or-fail`: the
+# default and `degrade` compile identically, a bad value and the retired
+# spelling are refused (no alias).
+rm -f "$WORKDIR/sc1.c" "$WORKDIR/sc2.c"
+pcrec_run "$PCREC" -p rx -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/sc1.c"
+pcrec_run "$PCREC" -p rx --size-cap=refuse --size-cap=degrade -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/sc2.c"
+if [ -s "$WORKDIR/sc1.c" ] && cmp -s "$WORKDIR/sc1.c" "$WORKDIR/sc2.c"; then
+    pass "--size-cap=degrade (after refuse) is the default: byte-identical"
+else
+    fail "--size-cap=degrade differs from the default or did not compile"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --size-cap=bogus -o "$WORKDIR/sc3.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q 'size-cap must be refuse or degrade'; then
+    pass "--size-cap=bogus is refused, naming the two values"
+else
+    fail "--size-cap=bogus was not refused as expected (rc $wrc)" "$werr"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --fast-or-fail -o "$WORKDIR/sc4.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "unknown option '--fast-or-fail'"; then
+    pass "--fast-or-fail is retired with no alias"
+else
+    fail "--fast-or-fail was not refused as an unknown option (rc $wrc)" "$werr"
+fi
+
+# [MEMFN] RQ-1 `--memfn=` carries ONE opaque string to the kit's validator.
+# Empty is accepted and moves nothing; a string the kit does not know is
+# refused with the KIT's text; a config's raw line wins over the CLI's,
+# silently (a string value option, option_sets.md 2.5a).
+rm -f "$WORKDIR/mf1.c" "$WORKDIR/mf2.c"
+pcrec_run "$PCREC" -p rx -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/mf1.c"
+pcrec_run "$PCREC" -p rx --memfn= -o - --pattern 'a+b' 2>/dev/null >"$WORKDIR/mf2.c"
+if [ -s "$WORKDIR/mf1.c" ] && cmp -s "$WORKDIR/mf1.c" "$WORKDIR/mf2.c"; then
+    pass "--memfn= (empty) is accepted and byte-identical to no flag"
+else
+    fail "--memfn= (empty) differs from the default or did not compile"
+fi
+werr="$(pcrec_run "$PCREC" -p rx --memfn=no-nosuchrow -o "$WORKDIR/mf3.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "^pcrec: --memfn=: unknown option 'no-nosuchrow'"; then
+    pass "--memfn=no-nosuchrow is refused with the kit's own text"
+else
+    fail "--memfn=no-nosuchrow was not refused with the kit's text (rc $wrc)" "$werr"
+fi
+printf 'config mf\n  pcrec --memfn=no-fromfile\n\ntarget t = a_run with mf\n\npattern a+\nname a_run\nm "aaa" 0 3\n' > "$WORKDIR/mf.rxt"
+werr="$(pcrec_run "$PCREC" --memfn=no-fromcli -o "$WORKDIR/mf4.c" "$WORKDIR/mf.rxt" 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "unknown option 'no-fromfile'" \
+   && ! printf '%s' "$werr" | grep -q "no-fromcli"; then
+    pass "a config's raw --memfn= reaches the kit and wins over the CLI's, silently"
+else
+    fail "config --memfn= did not win silently (rc $wrc)" "$werr"
+fi
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
