@@ -26,7 +26,9 @@ None of them is read by a check.
   definitions are parsed in this mode only. `--family start` (default) is
   byte-identical to the output before the selector. Output:
   `../dec_fallback/call_graph_fallback.txt`.
-  `sabotage_anchors.py` accepts either family's graph; `--final LABEL`
+  `sabotage_anchors.py` accepts either family's graph (and, since lane
+  locfin2, the labels `L0`/`L2` of `../locate_finish.md` rev 2, whose edit set is
+  `studies/locate_finish/l0_edit_set.tsv`); `--final LABEL`
   (the single re-run of an untouched owner, default `after-C5b`) and
   `--edit-names` (also re-run at a commit whose edit-set text names the
   owner, or that rewrites a `def` the owner's body names) serve the B

@@ -238,18 +238,47 @@ if it matches, that is the answer; otherwise continue with the next occurrence
 ### 2.2 Claim and preconditions
 
 **Claim.** If (G1) `P` holds no backreference, call, atomic group or possessive
-quantifier, and (G2) the split is UNAMBIGUOUS — `P` has fixed byte width, or `P`
-cannot consume every distinct byte of `L` — then tactic (b) returns exactly
-libpcre2's leftmost-first match (span and captures) from `lo`.
+quantifier, (G2) the split is UNAMBIGUOUS — `P` has fixed byte width, or `P`
+cannot consume every distinct byte of `L` — and **(G4) `S` holds no reference
+into `P`'s groups** (no backreference to a group of `P`, no condition on one; and,
+conservatively, no `${...}` variable) **[r2 E1]**, then tactic (b) returns exactly
+libpcre2's leftmost-first match (span and captures) from `lo`. Without G4 the
+sound mapping is weaker: `LOWER = s*(j₀)` for the first occurrence `j₀` whose
+`starts` is non-empty, finished by the ordinary attempt loop from there (below).
 
 Argument, in three steps:
 
 1. *Per occurrence.* A match starting at `s` that uses occurrence `j` has
    `s ∈ starts(j)`, and conversely any `s ∈ starts(j)` with an `S`-continuation
-   from `j + |L|` gives a match at `s` (the continuation does not depend on `s`
-   when `S` holds no reference into `P`; when it does, the forward verify reads
-   the real captures). So if any match uses `j`, the anchored forward run at
-   `s*(j)` succeeds, and the leftmost start among matches using `j` is `s*(j)`.
+   from `j + |L|` gives a match at `s`, PROVIDED the continuation does not depend
+   on `s` — which is G4. So under G4, if any match uses `j`, the anchored forward
+   run at `s*(j)` succeeds, and the leftmost start among matches using `j` is
+   `s*(j)`.
+
+   **[r2 E1] CORRECTION (lane locfin2, 2026-10-09; panel
+   `../dev/reviews/2026-10-09-r-locfin-panel.md` LF-E1).** The first version of
+   this step read "when it does [reference `P`], the forward verify reads the real
+   captures", and concluded the same. That is UNSOUND: when `S` references a group
+   of `P`, the capture `P` makes depends on `s`, so the verify at `s*(j)` can FAIL
+   while a larger `s ∈ starts(j)` SUCCEEDS, and the tactic then moves to the next
+   occurrence and loses the match. `(a+)X\1` on `"aaXa"`: `starts(2) = {0, 1}`,
+   the verify at 0 fails (`\1` needs `aa`), libpcre2 answers (1,4), the tactic
+   NOMATCH; a second witness returns a LATER match than the leftmost. Measured by
+   the critic: 82 wrong of 82,903 over the 1,199 gated cases with a backreference
+   in `S`; the `lowerbound` form below, 0 wrong. The study's own 0 / 129,222
+   (§2.6) reproduces: its population held too few backreferences in `S` (K35's
+   shape — a population nobody counted). This is exactly rev-inner's VM-route
+   population (§3: `\b(\w+)=[^&]*&(?:[^&]*&)*\1=`, `(\w+) \1`), so the
+   correction is not a corner case.
+
+   **Without G4: `LOWER`, not a candidate per occurrence.** `starts(j)` depends on
+   `P` alone (G1 makes it regular), so step 2's monotonicity holds whatever `S`
+   is; hence no match starts below `s*(j₀)`, `j₀` the first occurrence with a
+   non-empty `starts`. That is a LOWER bound, and the finisher is the ordinary
+   attempt loop from `s*(j₀)` (the VM's, or the DFA body's), not one anchored
+   verify per occurrence. It is still a gain wherever `s*(j₀)` is far from `lo`
+   (the whole point on the VM-only population), and its give-up posture is the
+   loop's, ONE_WAY (it skips only attempts below a proven lower bound).
 2. *Across occurrences (the which-occurrence problem).* For `j < j'`, every
    `s' ∈ starts(j')` with `s' ≤ j` would put the whole occurrence at `j` inside
    a string `P` matches — impossible when `P` cannot consume all of `L`'s bytes
@@ -308,6 +337,9 @@ G1  P is regular-faithful: no A_BREF, no linked call, no atomic/possessive
     DFA's own [ENG-LOOK] boundary)
 G2  fixed_width(P)  ∨  ¬(bytes(L) ⊆ alphabet(P))          [rust's first two]
 G3  the landmark is admitted: ppm(L's scan byte) ≤ ppm(today's key) / F
+G4  S reads no capture state of P: no backreference / group condition naming a
+    group of P (conservatively, no ${...} either) [r2 E1]; where G4 fails the
+    row hands LOWER(s*(j0)) to the attempt loop instead of CAND per occurrence
 ```
 
 G2's "alphabet" is the set of bytes `P` can consume (a byte-set union over `P`'s
@@ -431,7 +463,10 @@ Two separate costs, only one of which is new:
 **Yes.** Tactic (b)'s output is a candidate start; any anchored verifier consumes
 it. Concretely:
 
-- **P must be backref-free and regular-faithful (G1); S may hold anything.** The
+- **P must be backref-free and regular-faithful (G1); S may hold anything** —
+  but **[r2 E1]** where `S` references a group of `P` (G4 fails, which is this
+  whole VM population's shape) the walk hands `LOWER(s*(j₀))` to the attempt loop,
+  never a candidate per occurrence (§2.2 step 1's correction). The
   reverse machine is built from `P`'s sub-tree alone, so `S`'s backreferences,
   calls, atomics and lookarounds never enter it. This is the decisive difference
   from the hybrid prefilter, which needs the WHOLE pattern's DFA and is therefore

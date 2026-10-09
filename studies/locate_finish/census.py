@@ -12,8 +12,10 @@ tree's libpcrec.a), so the two censuses count the same rows the same way.
 Per row, two instruments that share no source:
   FACTS  `pcrec --emit-facts=<enc> --features all`: the `kinds` fact and the
          artifact's decision stamps (RX_ENGINE, RX_VM_PREFILTER[_LANG],
-         RX_DFA_SCAN, RX_DFA_START, RX_DFA_MATCH, RX_END_WINDOW, ...), read
-         off the emitted C by the compiler's own listing.
+         RX_DFA_SCAN, RX_DFA_START, RX_DFA_MATCH, RX_END_WINDOW, RX_VM_RESEED,
+         ...), read off the emitted C by the compiler's own listing; and the
+         end_window fact's decline reason (f_end_window_why), which analyze.py
+         reads ONLY to cross-check its declared C3 exceptions.
   TEXT   for every row the stamps call a VM hybrid or a DFA artifact: the
          emitted C itself, grepped for the reverse machine's accessor family
          (any `rx_reverse_` identifier: the uniform-fold representation has no
@@ -50,7 +52,7 @@ spec.loader.exec_module(rvc)          # reads PCREC/PROBE/BENCH/CORPUS/OUT itsel
 
 STAMPS = ["ENGINE", "ENGINE_SEL", "VM_PREFILTER", "VM_PREFILTER_LANG", "DFA_SCAN",
           "DFA_START", "DFA_MATCH", "DFA_PREFILTER", "END_WINDOW", "REQ_HANDOFF",
-          "VM_START", "VM_START_SCAN", "VM_PRUNE_CEILING", "NCAPS"]
+          "VM_START", "VM_START_SCAN", "VM_PRUNE_CEILING", "NCAPS", "VM_RESEED"]
 
 
 def base_cmd(r):
@@ -81,6 +83,8 @@ def facts(r):
         f = ln.split("\t")
         if sect == "facts" and len(f) >= 7 and f[1] in ("kinds", "start_anchor", "end_window"):
             d["f_" + f[1]] = f[6]
+            if f[1] == "end_window" and len(f) >= 8:
+                d["f_end_window_why"] = f[7]      # "decline:<why>" / "" (C3's exceptions)
         elif sect == "decisions" and len(f) >= 3 and f[1].startswith("RX_"):
             k = f[1][3:]
             if k in STAMPS:
@@ -161,7 +165,7 @@ def main():
         r["loc"], r["fin"] = classify(r)
         r["endpin"] = int(pinned_view(r))
     keys = ["pop", "id", "suite", "enc", "icase", "status", "view", "cwmax", "minw",
-            "lead_unb", "gstart", "f_kinds", "f_start_anchor", "f_end_window"] + STAMPS + \
+            "lead_unb", "gstart", "f_kinds", "f_start_anchor", "f_end_window", "f_end_window_why"] + STAMPS + \
         ["refused", "t_ok", "t_rev", "t_pref", "loc", "fin", "endpin", "pattern_hex"]
     with open(os.path.join(OUT, "rows.tsv"), "w") as fh:
         fh.write("\t".join(keys) + "\n")
