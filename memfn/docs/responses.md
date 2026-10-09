@@ -1579,3 +1579,18 @@ the compiler, and is never adopted silently. Proposed for main to file
     MF_P_INLOOP, which would make every SIMD row decline OFS.
   - Main: please add both to D155. The design text is updated on the next
     R-9 pass.
+- ruling recorded: 2026-10-08 — **Q-R9-10 REVISED by Frank: shape (c)
+  (supersedes (b) and its `<PREFIX>_<FN>_LEVEL` macro).**
+  - The FUNC is written ONCE. Its whole body is the `#if/#elif/#else`
+    chain, one helper call per arm:
+    `size_t rx_reqrun(...) {`
+    `#if defined(__AVX2__) return rx_reqrun__w32(...);`
+    `#elif ... #else return rx_reqrun__body(...); #endif }`
+  - Rule wording, confirmed by Frank, which amends D155's "no #if inside
+    function bodies": **"A function that does work never contains `#if`.
+    A selector function's whole body may be the `#if` chain, one call per
+    arm, and nothing else."**
+  - The SIMD-off artifact is the plain `return <fn>__body(...)`. The floor
+    rule stays exact, and C18 leg (d) becomes "no directive in any
+    function body except a selector body of that exact shape".
+  - Main: please record this in D155 in place of the (b) entry.
