@@ -37,6 +37,17 @@ CONTROL C4  census classifier (F-vm-span) vs stamp RX_VM_RESEED == "exact", ever
   hybrids by reason they are not exact (lang!=exact / atomic kind / lookaround kind): 7 / 250 / 515  (kind-name spellings live: both > 0)
   hybrids with no RX_VM_RESEED stamp: 0; non-hybrids carrying one: 0
   disagreements: 0
+CONTROL C5  machine membership (stamps, today's reader rule) vs text (rx_forward_/rx_reverse_/rx_anchored_)
+  ('dfa:attempt', '-', 'agree'): 328
+  ('dfa:empty', '-', 'agree'): 53
+  ('dfa:unanchored', 'F', 'agree'): 3
+  ('dfa:unanchored', 'FA', 'agree'): 243
+  ('dfa:unanchored', 'FR', 'agree'): 42
+  ('dfa:unanchored', 'FRA', 'agree'): 2383
+  ('hybrid', '-', 'agree'): 262
+  ('hybrid', 'FR', 'agree'): 1231
+  ('vm:-', '-', 'agree'): 810
+  disagreements: 0
 
 POPULATION
   rows                                                           bench  367   corpus  5431 ( 4562 distinct)

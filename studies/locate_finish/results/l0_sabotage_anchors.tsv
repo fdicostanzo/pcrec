@@ -64,7 +64,7 @@ S135_backstep_clamped_to_startpos	S135	1	src/gen/emit_vm.c	vm_look_behind_branch
 S135_backstep_clamped_to_startpos	S135	2	src/gen/emit_vm.c	vm_look_behind_branch	def	6939	1/1	OTHER					
 S136_width_rule_accepts_variable	S136	1	src/parse/mod_lookaround.c	la_widths	def	310	2/2	OTHER					
 S13_trie_off_shipped	S13	1	src/ir/nfa.c	enum@src/ir/nfa.c:295	def	295	1/1	OTHER					
-S140_look_ceiling_predicate	S140	1	src/gen/emit_vm.c	pcrec_vm_prefilter_window	def	3645	1/1	RE-RUN		after-L0		prefilter_collapsed	
+S140_look_ceiling_predicate	S140	1	src/gen/emit_vm.c	pcrec_vm_prefilter_window	def	3645	1/1	RE-AIM	L0		def pcrec_vm_prefilter_window	prefilter_collapsed	
 S141_look_ceiling_builders	S141	1	src/gen/emit_vm.c	vm_emit_search_body	def	13405	1/1	RE-RUN		after-L0		mrl_win,nclamp	
 S141_look_ceiling_builders	S141	2	src/gen/emit_vm.c	vm_emit_search_body	def	13273	1/1	RE-RUN		after-L0		mrl_win	
 S142_alias_family_wrong_module	S142	1	src/parse/registry.c	verb_rows	def	1241	1/1	OTHER					
@@ -157,17 +157,17 @@ S215_scanedge_selection_cap_dropped	S215	1	src/opt/scanedge.c	pcrec_scanedge_dfa
 S216_opt42_default_decline_neutered	S216	1	src/opt/select_engine.c	pfa_default_scope	def	560	1/1	OTHER					
 S217_has_push_npush_estimate_reverts	S217	1	src/gen/emit_vm.c	vm_plan_entry	def	10812	1/1	OTHER					
 S217_has_push_npush_estimate_reverts	S217	2	src/gen/emit_vm.c	vm_count_slots_rep	def	3108	1/1	OTHER					
-S218_pinned_predicate_widened	S218	1	src/gen/emit_dfa.c	start_pinned_applies	def	7901	1/1	RE-RUN		after-L0			
-S218_pinned_predicate_widened	S218	2	src/gen/emit_dfa.c	start_pinned_applies	def	7903	1/1	RE-RUN		after-L0			
-S219_pinned_seed_conjunct_dropped	S219	1	src/gen/emit_dfa.c	start_pinned_applies	def	7906	1/1	RE-RUN		after-L0			
+S218_pinned_predicate_widened	S218	1	src/gen/emit_dfa.c	start_pinned_applies	def	7901	1/1	RE-RUN		L0			L0:edit-set
+S218_pinned_predicate_widened	S218	2	src/gen/emit_dfa.c	start_pinned_applies	def	7903	1/1	RE-RUN		L0			L0:edit-set
+S219_pinned_seed_conjunct_dropped	S219	1	src/gen/emit_dfa.c	start_pinned_applies	def	7906	1/1	RE-RUN		L0			L0:edit-set
 S21_cls_peek_raw	S21	1	src/parse/parse.c	cls_peek_past_dash	def	463	1/1	OTHER					
-S220_pinned_view_clause_dropped	S220	1	src/gen/emit_dfa.c	start_pinned_applies	def	7903	1/1	RE-RUN		after-L0			
+S220_pinned_view_clause_dropped	S220	1	src/gen/emit_dfa.c	start_pinned_applies	def	7903	1/1	RE-RUN		L0			L0:edit-set
 S221_pinned_start_written_as_zero	S221	1	src/gen/emit_dfa.c	emit_unanchored	def	9836	1/1	RE-RUN		L0			L0:edit-set
 S222_start_stamp_forked_from_selection	S222	1	src/gen/emit_dfa.c	dfa_search_start_name	def	7938	1/1	RE-RUN		after-L0		dfa_search_start_name,dfa_search_start_of	
 S223_pinned_assert_routing_call_deleted	S223	1	src/gen/emit_dfa.c	emit_unanchored	def	9754	1/1	RE-RUN		L0			L0:edit-set
-S224_vm_frameless_stamp_inverted	S224	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		after-L0			
-S225_vm_frameless_stamp_from_npush	S225	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		after-L0			
-S226_vm_frameless_stamp_conditional	S226	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		after-L0			
+S224_vm_frameless_stamp_inverted	S224	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		L0			L0:edit-set
+S225_vm_frameless_stamp_from_npush	S225	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		L0			L0:edit-set
+S226_vm_frameless_stamp_conditional	S226	1	src/gen/emit_vm.c	vm_emit_stamps	def	11423	1/1	RE-RUN		L0			L0:edit-set
 S227_scan_edge_entry_s0_only	S227	1	src/gen/emit_dfa.c	emit_scan_loop	def	9565	1/1	OTHER					
 S228_cls_fold_recognizer_widened	S228	1	src/gen/clskit.c	is_ascii_fold_pair	def	631	1/1	OTHER					
 S229_utf8_retry_advances_one_byte	S229	1	src/enc/enc_utf8.c	advance_utf8	def	541	1/1	OTHER					
@@ -336,7 +336,7 @@ S414_align_seeks_one_byte	S414	1	src/gen/emit_dfa.c	pcrec_emit_startpos_guard	de
 S41_ir_label_drift	S41	1	src/gen/emit_vm.c	vm_plan	def	10626	1/1	OTHER					
 S420_prefilter_drop_rung_deleted	S420	1	src/core/compile.c	fit_prefilter_applies	def	835	1/1	OTHER					
 S421_fast_or_fail_inert	S421	1	src/core/compile.c	fit_rung_denied	def	1023	1/1	OTHER					
-S422_prefilter_drop_unstamped	S422	1	src/gen/emit_vm.c	vm_emit_stamps	def	11194	1/1	RE-RUN		after-L0			
+S422_prefilter_drop_unstamped	S422	1	src/gen/emit_vm.c	vm_emit_stamps	def	11194	1/1	RE-RUN		L0			L0:edit-set
 S423_prefilter_drop_not_degrading	S423	1	src/core/compile.c	fit_rungs	def	999	1/1	OTHER					
 S42_ir_push_unrecorded	S42	1	src/gen/emit_vm.c	vm_push_at	def	3457	1/1	OTHER					
 S430_clss2_byte_kit_wrong_class	S430	1	src/gen/emit_vm.c	vm_emit_search_body	def	12665	1/1	RE-RUN		after-L0			
@@ -379,7 +379,7 @@ S463_handoff_k_minus_one	S463	1	src/gen/emit_dfa.c	emit_req_handoff_rest	def	123
 S464_gate_later_occurrence	S464	1	memfn/src/precheck.c	file:memfn/src/precheck.c	outside	223	1/1	OTHER					
 S465_width_counts_characters	S465	1	src/facts/req.c	rb_walk	def	487	1/1	OTHER					
 S466_alt_width_left	S466	1	src/facts/req.c	rr_alt	def	444	1/1	OTHER					
-S467_unbounded_handed_off	S467	1	src/gen/emit_dfa.c	req_handoff_applies	def	7358	1/1	RE-RUN		after-L0			
+S467_unbounded_handed_off	S467	1	src/gen/emit_dfa.c	req_handoff_applies	def	7358	1/1	RE-RUN		L0			L0:edit-set
 S468_seed_reads_startpos	S468	1	src/gen/emit_dfa.c	seed_emit_seeded	def	5815	1/1	OTHER					
 S469_vm_gstart_moved	S469	1	src/gen/emit_vm.c	vm_emit_search_body	def	13519	1/1	RE-RUN		after-L0			
 S46_poss_no_unique_iteration	S46	1	src/opt/possessify.c	body_admits_unique_iteration	def	1072	1/1	OTHER					
@@ -388,8 +388,8 @@ S471_roundup_dropped	S471	1	src/gen/emit_dfa.c	emit_req_handoff_rest	def	1233	1/
 S472_roundup_unbounded	S472	1	src/gen/emit_dfa.c	pcrec_emit_start_zero	def	939	1/1	OTHER					
 S473_deny_ignored	S473	1	src/gen/emit_dfa.c	cand_rows	def	8212	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
 S474_run_choice_prefers_bounded	S474	1	src/facts/req.c	rn_better	def	310	1/1	OTHER					
-S475_verb_conjunct_dropped	S475	1	src/gen/emit_dfa.c	req_handoff_applies	lead	7338	1/1	RE-RUN		after-L0			
-S476_dprime_decline_dropped	S476	1	src/gen/emit_dfa.c	req_handoff_applies	def	7360	1/1	RE-RUN		after-L0		pcrec_vm_prefilter_window	
+S475_verb_conjunct_dropped	S475	1	src/gen/emit_dfa.c	req_handoff_applies	lead	7338	1/1	RE-RUN		L0			L0:edit-set
+S476_dprime_decline_dropped	S476	1	src/gen/emit_dfa.c	req_handoff_applies	def	7360	1/1	RE-RUN		L0		pcrec_vm_prefilter_window	L0:edit-set
 S477_dd12a_excision_widened	S477	1	tests/codegen/run_encoding_checks.sh	file:tests/codegen/run_encoding_checks.sh	outside	666	1/1	OTHER					
 S478_vmhat_set_drops_member	S478	1	src/gen/emit_dfa.c	pf_vm_emit_first_class	def	6873	1/1	RE-RUN		after-L0			
 S479_vmhat_memchr_seek_late	S479	1	src/gen/emit_dfa.c	pcrec_emit_vm_start_seek	lead	6956	1/1	RE-RUN		after-L0			
@@ -409,7 +409,7 @@ S490_dfahat_scan_kind_conjunct	S490	1	src/gen/emit_dfa.c	pf_dfa_start_set	def	66
 S491_vmhat_nullable_conjunct	S491	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6849	1/1	RE-RUN		after-L0			
 S492_vmhat_anchor_conjunct	S492	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6848	1/1	RE-RUN		after-L0		CAND_BOUND_ONE	
 S493_vmhat_prefn_conjunct	S493	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6847	1/1	RE-RUN		after-L0			
-S494_has_dfa_scan_on_vmhat	S494	1	src/gen/emit_dfa.c	pcrec_artifact_has_dfa_scan	def	439	1/1	RE-RUN		after-L0			
+S494_has_dfa_scan_on_vmhat	S494	1	src/gen/emit_dfa.c	pcrec_artifact_has_dfa_scan	def	439	1/1	RE-AIM	L0		def pcrec_artifact_has_dfa_scan		
 S495_cand_ppm_reads_row_name	S495	1	src/gen/emit_dfa.c	pcrec_dfa_cand_ppm	def	7106	1/1	RE-RUN		after-L0			
 S496_vmhat_verb_conjunct	S496	1	src/gen/emit_dfa.c	pf_vm_start_applies	lead	6830	1/1	RE-RUN		after-L0			
 S497_vmhat_utf8_assertion	S497	1	src/gen/emit_dfa.c	pf_vm_start_applies	def	6852	1/1	RE-RUN		after-L0			
@@ -430,20 +430,20 @@ S515_c11_idiom_exclusion_broken	S515	1	src/gen/memfn_stamps.c	memcpy_is_idiom	de
 S516_c11_family_missing_stamps	S516	1	src/gen/emit_vm.c	vm_emit_epilogue	def	13868	1/1	RE-RUN		after-L0			
 S516_c11_family_missing_stamps	S516	2	src/gen/memfn_stamps.c	pcrec_memfn_stamps_render	def	272	1/1	OTHER					
 S517_c11_memcmp_dropped	S517	1	src/gen/memfn_stamps.c	libc_names	def	54	1/1	OTHER					
-S518_c4_isa_name_in_emitter	S518	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		after-L0		req_handoff_applies	
-S519_c4_intrinsic_in_emitter	S519	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		after-L0		req_handoff_applies	
+S518_c4_isa_name_in_emitter	S518	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
+S519_c4_intrinsic_in_emitter	S519	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
 S51_revdet_no_iteration_cut	S51	1	src/gen/emit_vm.c	vm_revdet_rep	def	5723	1/1	OTHER					
-S520_c4_kit_internal_include	S520	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		after-L0		req_handoff_applies	
-S521_c4_form_id_compare	S521	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		after-L0		req_handoff_applies	
+S520_c4_kit_internal_include	S520	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
+S521_c4_form_id_compare	S521	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
 S522_c4_allowlist_stale	S522	1	tests/memfn/c4_allowlist.tsv	file:tests/memfn/c4_allowlist.tsv	outside	16	1/1	OTHER					
 S523_c4_hex_escape_not_excluded	S523	1	tests/memfn/arch_blind_check.py	file:tests/memfn/arch_blind_check.py	outside	78	1/1	OTHER					
 S524_c12_memchr_returns	S524	1	src/gen/emit_dfa.c	pcrec_emit_find	def	6076	1/1	OTHER					
 S525_c12_vocab_loses_memchr	S525	1	tests/memfn/search_vocab.tsv	file:tests/memfn/search_vocab.tsv	outside	34	1/1	OTHER					
 S526_c14_max_term_lowered	S526	1	memfn/include/memfn.h	file:memfn/include/memfn.h	outside	70	1/1	OTHER					
 S526_c14_max_term_lowered	S526	2	src/gen/emit_vm.c	file:src/gen/emit_vm.c	filescope	230	1/1	OTHER					
-S527_c13_producer_without_check	S527	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		after-L0		req_handoff_applies	
+S527_c13_producer_without_check	S527	1	src/gen/emit_dfa.c	req_handoff_applies	def	7348	1/1	RE-RUN		L0		req_handoff_applies	L0:edit-set
 S528_c17_kit_call_unlisted	S528	1	src/gen/memfn_stamps.c	pcrec_memfn_stamps_render	def	241	1/1	OTHER					
-S529_reach_hybrid_handoff_lost	S529	1	src/gen/emit_dfa.c	req_handoff_applies	def	7359	1/1	RE-RUN		after-L0		prefilter_collapsed	
+S529_reach_hybrid_handoff_lost	S529	1	src/gen/emit_dfa.c	req_handoff_applies	def	7359	1/1	RE-RUN		L0		prefilter_collapsed	L0:edit-set
 S52_revdet_first_iteration_captures	S52	1	src/gen/emit_vm.c	vm_rev_emit	def	5435	2/2	OTHER					
 S53_counter_untrailed	S53	1	src/gen/emit_vm.c	vm_counter_phase	def	6067	1/1	OTHER					
 S54_counter_no_residue	S54	1	src/gen/emit_vm.c	vm_counter_phase	def	5937	1/1	OTHER					
@@ -465,7 +465,7 @@ S566_precheck_site_never_defined	S566	1	src/gen/emit_dfa.c	emit_unanchored	def	9
 S56_counter_empty_guard	S56	1	src/gen/emit_vm.c	vm_counter_phase	def	5972	1/1	OTHER					
 S570_kit_runcmp_deny_ignored	S570	1	memfn/src/compose.c	file:memfn/src/compose.c	outside	169	1/1	OTHER					
 S571_deny_map_drops_run_overlap	S571	1	src/gen/memfn_sites.c	?	unresolved	35	1/1	OTHER					
-S572_prologue_helpers_not_flushed	S572	1	src/gen/emit_dfa.c	pcrec_emit_prologue	def	11185	1/1	RE-RUN		after-L0			
+S572_prologue_helpers_not_flushed	S572	1	src/gen/emit_dfa.c	pcrec_emit_prologue	def	11185	1/1	RE-RUN		L0			L0:edit-set
 S573_run_words_miscounted	S573	1	memfn/src/runcmp.c	file:memfn/src/runcmp.c	outside	253	1/1	OTHER					
 S57_counter_trip_local	S57	1	src/gen/emit_vm.c	vm_cursor_rep	def	4860	1/1	OTHER					
 S586_poss_call_context_ignored	S586	1	src/opt/possessify.c	cc_widen	def	1585	1/1	OTHER					

@@ -6,7 +6,7 @@
 
 Every population is printed twice: ROWS (every bench pattern / corpus block)
 and DISTINCT (corpus deduplicated on (pattern bytes, encoding, -i)); the bench
-is already distinct.  The four controls run first and the script exits 1 if
+is already distinct.  The five controls run first and the script exits 1 if
 any of them disagrees, so a summary is never printed over a broken census.
 """
 import collections
@@ -224,6 +224,43 @@ print(f"  hybrids with no RX_VM_RESEED stamp: {sum(1 for r in hyb if not r['VM_R
 dis4 += nohyb + sum(1 for r in hyb if not r["VM_RESEED"])
 print(f"  disagreements: {dis4}")
 bad += dis4 > 0
+
+# ---- CONTROL C5 [r2.1 LR-G4, LR-S1]: MACHINE MEMBERSHIP vs the TEXT.  The
+# rule the three membership readers spell today (emit_dfa.c dfa_table_name,
+# dfa_scan_edge_name, dfa_uniform_folds: "forward always, reverse unless
+# pinned, anchored iff unwrapped", nothing on an attempt or empty scan), read
+# here off the STAMPS, against which machine identifier families the emitted
+# C actually carries (`rx_forward_`, `rx_reverse_`, `rx_anchored_`).  This is
+# the membership the L0 path derivation must reproduce (locate_finish.md
+# §2.7): at L0 the build lane swaps the stamp side for the derivation's own
+# member set and keeps the text side.  Shares no source with the readers (the
+# text is the bytes).  Hybrids are included: they reach the three readers
+# through pcrec_emit_dfa_scan_stamps and the orientation block, and their
+# `_match` is the VM's, so no A is expected (LR-S1's population).
+def want_members(r):
+    if r["DFA_SCAN"] != "unanchored":
+        return (False, False, False)
+    return (True, r["DFA_START"] != "pinned", r["DFA_MATCH"] == "unwrapped")
+
+c5 = collections.Counter()
+dis5 = []
+for r in comp:
+    if r["t_ok"] != "ok":
+        continue
+    want = want_members(r)
+    got = (r["t_fwd"] == "1", r["t_rev"] == "1", r["t_anch"] == "1")
+    kind = "hybrid" if r["VM_PREFILTER"] == "hybrid" else (r["ENGINE"] + ":" + (r["DFA_SCAN"] or "-"))
+    c5[(kind, "".join(n for n, b in zip("FRA", want) if b) or "-",
+        "agree" if want == got else "DISAGREE")] += 1
+    if want != got:
+        dis5.append((r, want, got))
+print("CONTROL C5  machine membership (stamps, today's reader rule) vs text (rx_forward_/rx_reverse_/rx_anchored_)")
+for k, v in sorted(c5.items()):
+    print(f"  {k}: {v}")
+for r, w, g in dis5[:10]:
+    print(f"    DISAGREES {r['pop']} {r['id']} want={w} text={g} {bytes.fromhex(r['pattern_hex'])[:60]!r}")
+print(f"  disagreements: {len(dis5)}")
+bad += len(dis5) > 0
 if bad:
     print("CONTROLS FAILED — no tables printed")
     sys.exit(1)
