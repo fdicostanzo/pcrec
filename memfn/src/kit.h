@@ -286,9 +286,12 @@ int ofs_fn_applies(const mf_pred *p, const mf_hooks *def);
  * second member where the scanned position is a two-member cube, else -1. */
 void ofs_fn_scan(const mf_pred *p, int *k, int *a, int *b);
 /* Writes `static inline size_t <fn>(subject, n, pos[, tables]) { … }` and
- * the blank line after it. */
-int ofs_fn_define(mf_art *art, const mf_hooks *h, const mf_pred *p,
-                  const char *fn, mf_sink *o);
+ * the blank line after it, for predicate `p` of site `handle` (the calling
+ * site: the offset-skip site, or the pre-check composite that holds `p`).
+ * Its body is the chosen row of `fn_rows[]` (ofsskip.c, integration.md
+ * §R4.9.2.1): the BODY slot's loop, then the PREFIX slot's helpers. */
+int ofs_fn_define(mf_art *art, uint32_t handle, const mf_hooks *h,
+                  const mf_pred *p, const char *fn, mf_sink *o);
 /* Writes its call, `<fn>(<s>, <n>, <lo>[, tables])`, the definition's
  * parameters in its order. */
 int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
@@ -323,11 +326,14 @@ int run_cmp_sat(const mf_term *t);
 
 #define kit_arm_contract MF_NS(kit_arm_contract)
 #define rc_row_contract  MF_NS(rc_row_contract)
+#define fn_row_contract  MF_NS(fn_row_contract)
 
 /* Row `i`'s contract in first-match order, or NULL past the last: the
- * composer's arms (compose.c) and the run compare's rows (runcmp.c). */
+ * composer's arms (compose.c), the run compare's rows (runcmp.c) and the
+ * offset-skip function's rows (ofsskip.c `fn_rows[]`, every slot). */
 const gate_contract *kit_arm_contract(size_t i);
 const gate_contract *rc_row_contract(size_t i);
+const gate_contract *fn_row_contract(size_t i);
 
 /* One selection's context, repeated on each of its records. `site` is the
  * handle (0 in the run walk, which has none). */
@@ -337,6 +343,38 @@ typedef struct {
     unsigned       site, phase;
     const gate_in *in;
 } gate_tctx;
+
+/* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------
+ *
+ * The kit's three first-match tables (the composer's arms, the run compare's
+ * rows, the offset-skip function's `fn_rows[]`) are walked by ONE function.
+ * A table states itself through the accessors below; the walk asks, per row
+ * in table order and only of the rows in the asked SLOT: the DENY (the row's
+ * `MF_D_*` bit in the art's denies), then the CONTRACT (the gate at the
+ * walk's phases), then the row's own predicate. The first row all three pass
+ * is chosen. A table with one question has one slot, 0. */
+typedef struct {
+    const char *table;                          /* the trace's table name   */
+    size_t      n;                              /* rows, every slot          */
+    const gate_contract *(*ct)(size_t i);       /* row i's contract          */
+    int       (*slot)(size_t i);                /* row i's slot; NULL: all 0 */
+    uint64_t  (*deny)(size_t i);                /* row i's MF_D_* bit; NULL:
+                                                   no row has a deny        */
+    int       (*holds)(size_t i, const void *x); /* row i's predicate over
+                                                   the walk's input `x`     */
+} kit_table;
+
+#define kit_walk MF_NS(kit_walk)
+
+/* The first row of slot `slot` of table `t` that `denies` does not deny,
+ * that the gate passes at `gphases` over `in`, and whose predicate holds over
+ * `x`: its index; or `t->n` when no row of the slot serves, `*why` then the
+ * last declined row's verdict (left as given when none was declined). Writes
+ * the MF_TRACE records of the selection under `tc` (a slot with no row is no
+ * selection: it records nothing). */
+size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphases,
+                uint64_t denies, const void *x, const gate_tctx *tc,
+                gate_verdict *why);
 
 #ifdef MF_TRACE
 #define gate_trace_art MF_NS(gate_trace_art)
