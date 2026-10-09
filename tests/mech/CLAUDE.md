@@ -3678,3 +3678,9 @@ S685 is RETIRED as declared UNREACHED (its population, the VMLAZY pending
 row, is gone; its REACH_POP reads NOW REACHED if one returns). S680
 re-aimed (`vm_span_advance` takes the cap as a parameter), S512's floor POP
 14 -> 13, S693 re-aimed to 72 -> 70.
+S711 (lane vmlrid, the same day): the lazy reach test one byte short, the
+negative control of `run_recursion_identity.sh`'s eighth named exception
+(`lazy_prefix_rewrite`, R1); `recidentity harness`, the recidentity arm
+SKIPPED by construction (no git history), its non-admission validated by
+hand; solo DETECTED on harness (`corpus:1fail/137pass`). Stride > 1 is
+answer-invisible (lattice), so the identity gate is its only detector there.
