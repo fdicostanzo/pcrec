@@ -1,0 +1,12 @@
+attempt histogram: parent 3a991688 vs child d4c2b5cb, variants plain,lowsize,lowdfa,lowboth,lowthr
+-- plain: population 4802/4802 common 4802 only-parent 0 only-child 0; histogram (attempts: compiles) 1:4781/4781 2:17/19 3:2/0 7:2/2
+   DIFFERS: 2 compiles differ; multi-attempt compiles 21/21; BYTES_DIFF 0/0
+-- lowsize: population 4802/4802 common 4802 only-parent 0 only-child 0; histogram (attempts: compiles) 1:4571/4571 2:39/86 3:149/102 7:31/31 8:1/1 9:11/11
+   DIFFERS: 47 compiles differ; multi-attempt compiles 231/231
+-- lowdfa: population 4802/4802 common 4802 only-parent 0 only-child 0; histogram (attempts: compiles) 1:4712/4712 2:24/84 3:64/4 7:2/2
+   DIFFERS: 60 compiles differ; multi-attempt compiles 90/90
+-- lowboth: population 4802/4802 common 4802 only-parent 0 only-child 0; histogram (attempts: compiles) 1:4564/4564 2:45/147 3:149/47 7:28/28 8:15/15 9:1/1
+   DIFFERS: 102 compiles differ; multi-attempt compiles 238/238
+-- lowthr: population 4802/4802 common 4802 only-parent 0 only-child 0; histogram (attempts: compiles) 1:4741/4741 2:16/18 3:2/0 7:42/42 8:1/1
+   DIFFERS: 2 compiles differ; multi-attempt compiles 61/61
+ATTEMPT HISTOGRAM: DIFFERS

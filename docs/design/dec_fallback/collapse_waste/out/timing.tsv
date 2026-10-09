@@ -1,0 +1,111 @@
+variant	pattern	args	parent_s	child_s	saved_s	ratio	rc
+plain	"(\\p{Xwd})"	-e utf8 --pattern-esc --pattern	0.1847	0.1299	0.0548	1.42	0
+plain	"x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)"	--features all --pattern-esc --pattern	0.0012	0.0012	0.0000	1.02	0
+lowsize	"((?=(a+))a)+"	--features lookaround --pattern-esc --pattern	0.0024	0.0019	0.0005	1.27	0
+lowsize	"((a)+)+"	--pattern-esc --pattern	0.0023	0.0018	0.0005	1.28	0
+lowsize	"((ab)+c)+"	--pattern-esc --pattern	0.0024	0.0019	0.0006	1.31	0
+lowsize	"(?+1)a(a+)b"	--features recursion --pattern-esc --pattern	0.0023	0.0018	0.0005	1.29	0
+lowsize	"(?1)a((?2))c(a+)b"	--features recursion --pattern-esc --pattern	0.0028	0.0021	0.0007	1.33	0
+lowsize	"(?1)a(a+)b"	--features recursion --pattern-esc --pattern	0.0025	0.0019	0.0006	1.29	0
+lowsize	"(?:(?>aa|a))+ab"	--features atomic-groups --pattern-esc --pattern	0.0026	0.0020	0.0006	1.30	0
+lowsize	"(?:(a)(?=(b))|(c)(?=(d)))+"	--features lookaround --pattern-esc --pattern	0.0025	0.0019	0.0005	1.28	0
+lowsize	"(?:(a+)b|x)(?1)a"	--features recursion --pattern-esc --pattern	0.0026	0.0020	0.0006	1.29	0
+lowsize	"(?:\\b(?1)|x)(a+)"	--features all --pattern-esc --pattern	0.0025	0.0019	0.0006	1.30	0
+lowsize	"(?<g>(?=a)a|b)+(?&g)"	--features all --pattern-esc --pattern	0.0025	0.0019	0.0006	1.32	0
+lowsize	"(?<g>(?i)[a-z])(?<=(?&g))x"	--features lookaround,modifiers,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0027	0.0021	0.0006	1.31	0
+lowsize	"(?<g>(?i)s)(?<=(?&g))x"	--features lookaround,modifiers,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0026	0.0020	0.0006	1.30	0
+lowsize	"(?<g>.)(?<=(?&g))x"	--features lookaround,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0029	0.0022	0.0007	1.30	0
+lowsize	"(?<g>[\\x{0}-\\x{10FFFF}])(?<=(?&g))x"	--features lookaround,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0030	0.0022	0.0007	1.33	0
+lowsize	"(?<g>[^a])(?<=(?&g))x"	--features lookaround,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0030	0.0023	0.0006	1.28	0
+lowsize	"(?<g>[a\\x{3b1}])(?<=(?&g))x"	--features lookaround,named-groups,recursion -e utf8 --pattern-esc --pattern	0.0026	0.0021	0.0006	1.28	0
+lowsize	"(?<g>\\b\\w)(?&g)*"	--features all --pattern-esc --pattern	0.0026	0.0020	0.0006	1.30	0
+lowsize	"(?<p>\\w+?\\b)(?:-(?&p))*"	--features all --pattern-esc --pattern	0.0025	0.0020	0.0005	1.26	0
+lowsize	"(?<w>\\w+)(?:\\W+(?&w))*\\b"	-i --features all --pattern-esc --pattern	0.0030	0.0023	0.0007	1.32	0
+lowsize	"(?<w>\\w+?)(?:\\W(?&w))??\\b"	--features all --pattern-esc --pattern	0.0028	0.0021	0.0007	1.34	0
+lowsize	"(?<x>\\W*)(?<y>(?&x)\\w+)"	--features all --pattern-esc --pattern	0.0029	0.0022	0.0007	1.32	0
+lowsize	"(?>(?:aa|a)+a)ab"	--features atomic-groups --pattern-esc --pattern	0.0026	0.0020	0.0006	1.29	0
+lowsize	"(?>(?:aa|a)+a)b"	--features atomic-groups --pattern-esc --pattern	0.0025	0.0020	0.0005	1.25	0
+lowsize	"(?>a(?:aa|a)+)ab"	--features atomic-groups --pattern-esc --pattern	0.0026	0.0020	0.0006	1.29	0
+lowsize	"(?>a(?:aa|a)+)b"	--features atomic-groups --pattern-esc --pattern	0.0025	0.0019	0.0006	1.29	0
+lowsize	"(?>a|\\b)+b"	-i --features all --pattern-esc --pattern	0.0026	0.0020	0.0006	1.32	0
+lowsize	"(?P<n>a+)b(?P>n)a"	--features recursion,named-groups --pattern-esc --pattern	0.0024	0.0019	0.0005	1.28	0
+lowsize	"(\\W*)(?1)\\b\\w"	--features all --pattern-esc --pattern	0.0027	0.0020	0.0007	1.34	0
+lowsize	"(\\bcat\\b)+"	--features assertions --pattern-esc --pattern	0.0025	0.0019	0.0006	1.30	0
+lowsize	"(\\p{Xwd})"	-e utf8 --pattern-esc --pattern	0.1794	0.1277	0.0517	1.40	0
+lowsize	"(a+)\\B(?1)"	--features all --pattern-esc --pattern	0.0026	0.0020	0.0006	1.27	0
+lowsize	"(a+)b((?1))c(?2)a"	--features recursion --pattern-esc --pattern	0.0030	0.0023	0.0007	1.32	0
+lowsize	"(a+)b(?-1)a"	--features recursion --pattern-esc --pattern	0.0025	0.0019	0.0006	1.29	0
+lowsize	"(a+)b(?1)+a"	--features recursion --pattern-esc --pattern	0.0027	0.0021	0.0006	1.30	0
+lowsize	"(a+)b(?1)a"	--features recursion --pattern-esc --pattern	0.0025	0.0019	0.0006	1.28	0
+lowsize	"(a+)b(?:x(?1))*a"	--features recursion --pattern-esc --pattern	0.0025	0.0020	0.0005	1.28	0
+lowsize	"(a+?)(?1)\\b"	--features all --pattern-esc --pattern	0.0024	0.0020	0.0004	1.21	0
+lowsize	"(a?)(?1)(?1)b"	--features all --pattern-esc --pattern	0.0025	0.0019	0.0006	1.31	0
+lowsize	"(a|\\b)+(?1)b"	-i --features all --pattern-esc --pattern	0.0026	0.0019	0.0006	1.33	0
+lowsize	"(x*)(?1)(?1)y"	--features all --pattern-esc --pattern	0.0022	0.0018	0.0005	1.25	0
+lowsize	"^(?(DEFINE)(?<g>a+))(?&g)++ab$"	--features recursion,named-groups,atomic-groups --pattern-esc --pattern	0.0022	0.0017	0.0004	1.24	0
+lowsize	"^(a?)(?1)+a$"	--features recursion --pattern-esc --pattern	0.0023	0.0018	0.0004	1.24	0
+lowsize	"x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)"	--features all --pattern-esc --pattern	0.0014	0.0014	0.0000	1.02	0
+lowsize	"x(\\P{L})y"	--features all -e utf8 --pattern-esc --pattern	0.1258	0.0842	0.0416	1.49	0
+lowsize	"x(\\P{Unknown})y"	--features all -e utf8 --pattern-esc --pattern	0.1400	0.0942	0.0458	1.49	0
+lowsize	"x(\\p{L})y"	--features all -e utf8 --pattern-esc --pattern	0.1275	0.0772	0.0503	1.65	0
+lowdfa	"(*UCP)[[:^digit:]]"	-e utf8 --pattern-esc --pattern	0.0077	0.0055	0.0022	1.40	0
+lowdfa	"(*UCP)[^\\d]"	-e utf8 --pattern-esc --pattern	0.0074	0.0054	0.0020	1.36	0
+lowdfa	"(*UCP)[^\\s\\d]+"	-e utf8 --pattern-esc --pattern	0.0083	0.0063	0.0020	1.31	0
+lowdfa	"(*UCP)\\D"	-e utf8 --pattern-esc --pattern	0.0065	0.0054	0.0011	1.21	0
+lowdfa	"(\\p{Xwd})"	-e utf8 --pattern-esc --pattern	0.0346	0.0331	0.0015	1.04	0
+lowdfa	"[\\p{Lu}]"	-i --features unicode-props -e utf8 --pattern-esc --pattern	0.0083	0.0081	0.0002	1.02	0
+lowdfa	"[\\p{Lu}k]"	-i --features unicode-props -e utf8 --pattern-esc --pattern	0.0088	0.0084	0.0004	1.05	0
+lowdfa	"[\\p{Lu}x]"	-i --features unicode-props -e utf8 --pattern-esc --pattern	0.0087	0.0085	0.0002	1.03	0
+lowdfa	"[^\\p{Greek}]"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0038	0.0033	0.0005	1.15	0
+lowdfa	"[^\\p{Ll}]"	-i --features unicode-props -e utf8 --pattern-esc --pattern	0.0119	0.0086	0.0034	1.39	0
+lowdfa	"\\P{Cf}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0031	0.0030	0.0001	1.04	0
+lowdfa	"\\P{Cn}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0340	0.0297	0.0043	1.15	0
+lowdfa	"\\P{C}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0308	0.0298	0.0010	1.04	0
+lowdfa	"\\P{Greek}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0039	0.0034	0.0004	1.12	0
+lowdfa	"\\P{Ll}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0209	0.0178	0.0030	1.17	0
+lowdfa	"\\P{Lm}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0059	0.0047	0.0012	1.24	0
+lowdfa	"\\P{Lo}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0264	0.0243	0.0021	1.09	0
+lowdfa	"\\P{Lu}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0204	0.0178	0.0025	1.14	0
+lowdfa	"\\P{L}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0313	0.0288	0.0025	1.09	0
+lowdfa	"\\P{Mc}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0111	0.0105	0.0005	1.05	0
+lowdfa	"\\P{Mn}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0173	0.0156	0.0017	1.11	0
+lowdfa	"\\P{M}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0163	0.0146	0.0017	1.12	0
+lowdfa	"\\P{Nd}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0069	0.0050	0.0020	1.39	0
+lowdfa	"\\P{No}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0064	0.0060	0.0004	1.06	0
+lowdfa	"\\P{N}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0109	0.0095	0.0014	1.15	0
+lowdfa	"\\P{Pe}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0040	0.0037	0.0003	1.07	0
+lowdfa	"\\P{Po}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0112	0.0097	0.0015	1.16	0
+lowdfa	"\\P{Ps}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0038	0.0035	0.0003	1.07	0
+lowdfa	"\\P{P}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0111	0.0098	0.0014	1.14	0
+lowdfa	"\\P{Sc}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0032	0.0029	0.0002	1.08	0
+lowdfa	"\\P{Sk}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0033	0.0031	0.0002	1.06	0
+lowdfa	"\\P{Sm}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0049	0.0047	0.0002	1.04	0
+lowdfa	"\\P{So}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0115	0.0106	0.0010	1.09	0
+lowdfa	"\\P{S}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0142	0.0122	0.0019	1.16	0
+lowdfa	"\\P{Unknown}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0322	0.0304	0.0018	1.06	0
+lowdfa	"\\p{Cn}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0295	0.0280	0.0015	1.05	0
+lowdfa	"\\p{C}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0310	0.0292	0.0018	1.06	0
+lowdfa	"\\p{Ll}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0210	0.0157	0.0053	1.34	0
+lowdfa	"\\p{Lo}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0235	0.0212	0.0022	1.11	0
+lowdfa	"\\p{Lu}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0204	0.0193	0.0012	1.06	0
+lowdfa	"\\p{L}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0314	0.0295	0.0019	1.07	0
+lowdfa	"\\p{Mn}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0198	0.0159	0.0039	1.24	0
+lowdfa	"\\p{M}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0207	0.0165	0.0042	1.26	0
+lowdfa	"\\p{N}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0108	0.0104	0.0004	1.03	0
+lowdfa	"\\p{Po}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0140	0.0105	0.0036	1.34	0
+lowdfa	"\\p{P}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0160	0.0120	0.0040	1.33	0
+lowdfa	"\\p{So}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0105	0.0115	-0.0010	0.92	0
+lowdfa	"\\p{S}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0126	0.0114	0.0012	1.11	0
+lowdfa	"\\p{Unknown}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0324	0.0300	0.0025	1.08	0
+lowdfa	"\\p{Zzzz}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0325	0.0308	0.0016	1.05	0
+lowdfa	"\\p{sc=Unknown}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0298	0.0272	0.0026	1.10	0
+lowdfa	"\\p{scx=Unknown}"	--features unicode-props -e utf8 --pattern-esc --pattern	0.0308	0.0287	0.0021	1.07	0
+lowdfa	"x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)"	--features all --pattern-esc --pattern	0.0012	0.0012	0.0000	1.02	0
+lowdfa	"x(\\P{L})y"	--features all -e utf8 --pattern-esc --pattern	0.0336	0.0324	0.0012	1.04	0
+lowdfa	"x(\\P{Unknown})y"	--features all -e utf8 --pattern-esc --pattern	0.0358	0.0337	0.0021	1.06	0
+lowdfa	"x(\\p{L})y"	--features all -e utf8 --pattern-esc --pattern	0.0332	0.0327	0.0005	1.01	0
+lowdfa	"x\\P{L}y"	--features all -e utf8 --pattern-esc --pattern	0.0377	0.0358	0.0019	1.05	0
+lowdfa	"x\\P{Unknown}y"	--features all -e utf8 --pattern-esc --pattern	0.0372	0.0349	0.0023	1.07	0
+lowdfa	"x\\p{L}y"	--features all -e utf8 --pattern-esc --pattern	0.0324	0.0316	0.0008	1.02	0
+lowdfa	"x\\p{Xwd}y"	--features all -e utf8 --pattern-esc --pattern	0.0406	0.0381	0.0025	1.07	0
+#TOTAL			1.958	1.591	0.366	1.23
