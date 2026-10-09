@@ -304,8 +304,12 @@ body, and revision 2.1 makes it a RECORDED fact rather than a list of known eras
   reached exactly where the kinds fact sees the node, by construction of both walks,
   but that is an argument; L0's gate is the emit sweep plus a direct compare of the
   two predicates over every census hybrid, and a disagreement is a finding before the
-  commit lands. A discharged possessive (a proven no-op `A_ATOMIC`) on a hybrid reads
-  inexact under both; reading it exact would be a sound MOVER and is not taken (D77).
+  commit lands. Two places to look first: a discharged possessive (a proven no-op
+  `A_ATOMIC`) on a hybrid reads inexact under both, and reading it exact would be a
+  sound MOVER, not taken (D77); and a collapsed build in which no repeat had a count to
+  collapse would leave `prefilter_collapsed` true with nothing recorded (the [OPT-4.1]
+  ladder gates collapse on a collapsible repeat, so this should be empty; the compare
+  proves it rather than assuming it).
 - **Where it is computed.** Once, at `Vm.mrl_win`'s one assignment (`emit_vm.c:10368`,
   `v->mrl_win = cand_lang_exact(cx)` on the VM route), with ONE trace record
   (`CANDTRACE BOUNDARY vm <SPAN|LOWER>`). The three consumers of the inlined body's
@@ -347,7 +351,7 @@ route's machines, not a second row.
 | `FIN1 nomatch` | `NOMATCH` everywhere | return 0 | return 0 | — | PRESENCE / WIDTH verdicts, the empty engine (CALLER) |
 | `FIN2 report` | `SPAN` on DFA / ATTEMPT; not routed on `CR_VM` (the VM must write groups ≥ 1) | return `(s, e)` | — | — | every DFA artifact's return (CALLER) |
 | `FIN3 verify-at` | `CR_DFA`: `ENDSET`, `AT`; `CR_ATTEMPT`: `ENDSET` (**not `AT`: the F-11 cell**, Q7); `CR_VM`: `SPAN`, `AT` (**never `ENDSET`**, LR-S3) | the anchored run from `s`: `adfa` on `CR_DFA`, the attempt machine on `CR_ATTEMPT` | one anchored VM attempt at `s`, ceiling `e` (a `SPAN`) or `n` (an `AT`) | `CR_DFA`: A; `CR_ATTEMPT`: ATT; `CR_VM`: VM | `dfa_matches[0]` `unwrapped`; ATTEMPT's fused per-candidate run (VERIFIER); the exact hybrid's attempt at `window[0][0]`; the VM's `_match` |
-| `FIN4 search-from` | `ENDSET`, `LOWER`, `AT` (point or window), and, at L0 only, the `NOMATCH` of `caller ⊓ empty` (LR-G8) | relocate: a LOCATE ask from `lo = s` (§2.5), filtered to `I` | the attempt loop from `s`; its loop head re-locates through the inlined composite where a prefilter exists; RETRY on failure | the LOCATE cell on the route (the relocate target), hence that row's needs | `dfa_matches[1]` `search-filter`; the VM-only loop and the inexact hybrid (LOOP + RETRY) |
+| `FIN4 search-from` | `ENDSET`, `LOWER`, `AT` (point or window), and, at L0 only, the `NOMATCH` of `caller ⊓ empty` (LR-G8) | relocate: a LOCATE ask from `lo = s` (§2.5), filtered to `I` | the attempt loop from `s`; its loop head re-locates through the inlined composite where a prefilter exists; RETRY on failure | DFA, ATTEMPT: the LOCATE cell it relocates to; VM: VM, the VM entry's front (WINDOW, PRESENCE, WIDTH, FIRST, BOUND) and RETRY on `CR_VM` | `dfa_matches[1]` `search-filter`; the VM-only loop and the inexact hybrid (LOOP + RETRY) |
 
 - **Availability, not a deny `[r2.1 LR-G1]`.** `verify-at` on `CR_DFA` is available
   where the anchored machine was BUILT (`anchored_ok`, an input). `-fno-anchored-dfa`
@@ -578,7 +582,7 @@ producer that gives them a choice.
 | `FIN1` | `nomatch` | all | `NOMATCH` | — | always | — | L2 |
 | `FIN2` | `report` | DFA, ATTEMPT | `SPAN` | — | always | — | L2 |
 | `FIN3` | `verify-at` | DFA, ATTEMPT, VM | DFA: `ENDSET`, `AT`; ATTEMPT: `ENDSET` (F-11 cell); VM: `SPAN`, `AT` (LR-S3) | DFA: A; ATTEMPT: ATT; VM: VM | `needs[route] ⊆ built` (on `CR_DFA`: `anchored_ok`; elsewhere always) | `match` 1 `unwrapped`, `fact_deny` = `PCREC_NO_ANCHORED_DFA` | **L0** (`AT` on DFA); `ENDSET` at L2; VM cells at L3 |
-| `FIN4` | `search-from` | all | `ENDSET`, `LOWER`, `AT` (point or window); at L0 also `NOMATCH` (LR-G8) | the LOCATE cell on the route (§2.5) | always | `match` 2 `search-filter` | **L0** (`AT`, `NOMATCH` on DFA/ATTEMPT); the rest at L2/L3 |
+| `FIN4` | `search-from` | all | `ENDSET`, `LOWER`, `AT` (point or window); at L0 also `NOMATCH` (LR-G8) | DFA, ATTEMPT: the LOCATE cell it relocates to (§2.5); VM: VM and the VM entry's front and RETRY on `CR_VM` | always | `match` 2 `search-filter` | **L0** (`AT`, `NOMATCH` on DFA/ATTEMPT); the rest at L2/L3 |
 
 The `match` listing is the rows' `.list[CR_DFA]` projection with the descriptions
 moved beside the rows verbatim from `src/dump/axes_dump.c:135-136`, so
@@ -775,11 +779,18 @@ layer's shape), computes:
 | `needs`, `asks` | the union of `.needs` over the SELECTED closure | the roots below, then every selected row's cells, each asked on its route, visited once per (slot, route) |
 | members | `needs ∩ built` | — |
 
-The ROOTS are the entries the artifact emits: the search entry's LOCATE ask on
-`locate`; the match-here entry's FINISH ask on `finish` when `finish ≠ CR_VM`, with
-hand `caller ⊓ body` (`AT`, or `NOMATCH` on a body whose selected LOCATE row is
-`empty`, LR-G8); and, where `finish = CR_VM`, the VM's own `_match` (VM), until L3
-routes it through `FIN3`. Because the closure follows `cand_nodes`' finite graph and
+The ROOTS are the entries the artifact emits:
+
+1. the search entry's LOCATE ask on `locate` (on a DFA-finisher artifact the selected
+   row also runs the entry's front: `composite` WINDOW, PRESENCE, FIRST; `empty` and
+   `rev-end` PRESENCE only);
+2. on `finish = CR_VM`, the VM search entry, which IS `FIN4`'s VM hat (§1.3): its needs
+   are `FIN4.needs[CR_VM]` (VM; the front WINDOW, PRESENCE, WIDTH, FIRST, BOUND and
+   RETRY on `CR_VM`) although no FINISH ask selects `FIN4` on `CR_VM` before L3;
+3. the match-here entry: on `finish ≠ CR_VM` its FINISH ask, with hand `caller ⊓ body`
+   (`AT`, or `NOMATCH` on a body whose selected LOCATE row is `empty`, LR-G8); on
+   `finish = CR_VM` the VM's own `_match`, which is `FIN3`'s VM hat (VM), until L3
+   routes it through the table. Because the closure follows `cand_nodes`' finite graph and
 visits each (slot, route) once, it terminates; because it evaluates the same
 `cand_select` the emitters call, it cannot disagree with them about a selection.
 In the trace build `needs ⊆ built` is asserted: a selected row needing an unbuilt

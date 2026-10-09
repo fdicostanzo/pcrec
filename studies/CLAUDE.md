@@ -288,10 +288,13 @@ re-measure before load-bearing use.
 - `locate_finish/` — D156's LOCATE × FINISH census (lane locfin, 2026-10-09;
   compile-side, Linux dev box): every corpus/bench artifact's locator and finisher
   today, the stage-1/stage-2/relaxed-reverse populations, D-2's population, and the
-  `fit.chosen` grep behind the FINISH decision; three controls (stamp vs emitted
-  text twice, the borrowed end-pin probe vs the shipped fact) gate the tables.
-  Borrows `docs/dev/optloop/revend/`'s population and probe. Backs
-  `docs/design/locate_finish.md` §3-§4. See its own CLAUDE.md.
+  `fit.chosen` grep behind the FINISH decision; five controls gate the tables
+  (stamp vs emitted text twice, the borrowed end-pin probe vs the shipped fact both
+  ways, the hybrid classifier vs `RX_VM_RESEED` — plumbing, not independent — and,
+  since rev 2.1, the machine-membership rule vs the emitted text). Also the L0 edit
+  set and its derived sabotage re-aims. Borrows `docs/dev/optloop/revend/`'s
+  population and probe. Backs `docs/design/locate_finish.md` §2.7, §3-§5. See its own
+  CLAUDE.md.
 
 - `walk_survey/` — the GRATUITOUS-WALK SURVEY (lane walksurvey, 2026-10-09;
   survey + measurement only): a per-phase subject-load instrument (the
