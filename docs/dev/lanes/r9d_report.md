@@ -294,9 +294,11 @@ no timed runs. Every edit in integration.md is marked `[D155]`.
   - Each rendered rung is a guarded helper `<fn>__w<VW>`. Its entry test
     (the derived reach) falls through by name to the next rendered rung
     or to `__body`.
-  - The FUNC itself is the selector: one `#if`/`#elif`/`#else` chain at
-    file scope, written by the seam from `levels.def`. Each arm's body is
-    ONE call, and the `#else` arm is the SIMD-off FUNC byte for byte.
+  - The FUNC itself is the selector. `[rev c]` SUPERSEDED by Q-R9-10
+    shape (c): the FUNC is written once and its whole body is the
+    `#if`/`#elif`/`#else` chain, one call per arm, written by the seam from
+    `levels.def`; the `#else` arm's call is the SIMD-off FUNC's line byte
+    for byte (see "rev c text pass" below).
   - The PREFIX slot now renders whole helper definitions only.
   - Names are the FUNC name plus `__body` or `__<stamp token>`. They are
     unique because every FUNC name ends in a fixed pcrec suffix.
@@ -321,7 +323,9 @@ no timed runs. Every edit in integration.md is marked `[D155]`.
     against the mover census.
   - (c) The raw source is insertion-only, which makes RQ-3's
     `len − simd_guarded` exact.
-  - (d) A brace-depth lint: no directive inside a body.
+  - (d) A brace-depth lint: no directive inside a body. `[rev c]` Now: a
+    directive in a body only in the selector shape (whole body = the chain,
+    one call per arm, nothing else).
   - Guarded bytes are whole definitions plus directives. Q-R9-9 is RULED
     (a), and `guarded_max` covers the helper, the include share, the
     selector arm and the directives.
@@ -335,13 +339,14 @@ no timed runs. Every edit in integration.md is marked `[D155]`.
     work.
   - The hard problem left to the row: "chosen once" without a mutable
     static (TS-1).
-- **Questions.** Q-R9-1..9 are marked RULED in place. NEW:
+- **Questions.** Q-R9-1..9 are marked RULED in place. `[rev c]` Q-R9-10
+  and Q-R9-11 are now RULED too (D155 addendum 1). As raised at the time:
   - **Q-R9-10:** the FUNC-as-selector shape (C) vs an invariant FUNC
-    plus `<fn>__level` (A). Recommend C.
+    plus `<fn>__level` (A). Recommend C. RULED shape (c), superseding (b).
   - **Q-R9-11:** the frequency class is not `MF_P_INLOOP`: D91 puts OFS
     in budget 1, and overloading the bit would make every SIMD row
     decline OFS. Recommend a `DELEG_SITES` `freq` column, born with
-    RTDISPATCH (D77).
+    RTDISPATCH (D77). RULED as recommended (kit-decided).
 
 ### Probes (scratch `build/d155/`, gitignored; gcc 15.2.0, glibc 2.43, `taskset -c 12-15`, `gnutimeout 60`)
 
@@ -408,3 +413,84 @@ Results:
 Docs only. The scratch compiles and greps above are the only runs; no
 timed run and no `make`. Transcripts: `build/d155/{norm_cmp,levels,c18,
 diff_answers,bytes,rt,srcdiff,plants}.txt`.
+
+## Revision c: rev c text pass (2026-10-08, same lane, doc-only)
+
+**Input.** D155 addendum 1 (Frank, confirmed to the manager): Q-R9-10 is
+RULED shape (c), superseding an intermediate shape (b) (a file-scope level
+macro) that was ruled and superseded the same day; Q-R9-11 is RULED
+(`freq` column in `DELEG_SITES`, built only when `[MEMFN-RTDISPATCH]`
+triggers, not an `MF_P_INLOOP` flag, kit-decided). Revision stays 4.9. No
+make, no suites, no measurements: probe numbers taken on the older
+file-scope-definitions rendering are labelled as such and are re-measured
+by R4e′.0b's G1 and the first batch's C18, not re-claimed.
+
+### Passages changed, by section (docs/design/memfn/integration.md)
+
+- **Short list** (top): the "No `#if` inside a function body" bullet now
+  states the addendum's rule, the FUNC written once as a selector, and
+  Q-R9-10/11 RULED.
+- **§R4.9.2 summary** (floor-rule bullet): "no function body holds a
+  directive" becomes "no function that does work", with the selector
+  exception.
+- **§R4.9.2.1 item 3** (assembly order): the FUNC "is a selector chain at
+  file scope" becomes "written once; its whole body is the selector chain".
+- **§R4.9.2.3** (floor-rule box, intro and leg (d)): leg (d) allows a `#`
+  line in a body only in the selector shape (whole body = the chain, one
+  call per arm, nothing else); any other is a C18 failure. "no level
+  macro defined" reworded to "no ISA macro defined" (it meant `__SSE2__`
+  and kin, not shape (b)'s macro).
+- **§R4.9.2.4** (bracketing): selector parts bracketed are the chain
+  lines inside the body; the FUNC head, braces and the `#else` call are
+  unbracketed. `guarded_max`'s "selector arm" is the chain line plus one
+  call. The 84-lines/0-deleted measurement is labelled as taken on the
+  superseded rendering.
+- **§R4.9.2.5** (the shape): the Frank-quote paragraph gains the addendum's
+  verbatim rule; the SIMD-on emitted-text example is rewritten so the FUNC
+  appears once with the chain as its whole body (helpers first, FUNC
+  last); piece 3 rewritten; piece 2 notes the selector follows the helpers;
+  the "alternative shape, Shape A" paragraph is replaced by "Ruled shape
+  (c), and what it superseded", with the one sentence recording that (b)
+  was ruled then superseded (D155 addendum 1) and the measurement caveat.
+- **§R4.9.2.6 / G1 probes** ("C18 on the new shape"): labelled as measured
+  on the superseded rendering.
+- **§R4.9.3.1** and the **Q-R9-11 cross-references** (finding paragraph,
+  "what it must design" list): marked RULED with the `freq` column.
+- **§R4.9.8, C18 as amended** (row): leg (d) restated as above; a new
+  sabotage plant (a selector arm holding more than its one call, red at
+  (d)).
+- **§R4.9.10**: lead paragraph now "Q-R9-1..11 are RULED"; Q-R9-9's
+  "(NEW)" dropped; Q-R9-10 and Q-R9-11 rewritten as RULED entries with
+  the rulings (the (C)/(A) option text removed).
+- **§R4.9.12** (D155 items table): intro covers addendum 1; two rows
+  added (Q-R9-10, Q-R9-11).
+- **`[rev4.9]` note near the end of the file**: "Q-R9-2..8 are OPEN" ->
+  RULED.
+
+### Other files fixed
+
+- `memfn/CLAUDE.md` (line 29): "Q-R9-2..9 for Frank" -> Q-R9-1..11 RULED.
+- `docs/design/memfn/CLAUDE.md` (rev 4.9 entry): "Q-R9-1..8 are open" and
+  the D155 paragraph (selector wording, leg (d), Q-R9-10/11 RULED).
+- `docs/design/CLAUDE.md` (memfn entry): "Q-R9-1..9 are ruled ... a
+  selector, no `#if` in a body" -> Q-R9-1..11, selector FUNC with the
+  chain as its whole body.
+- `docs/dev/lanes/CLAUDE.md` (r9d_report entry): "Q-R9-1..8 are for Frank".
+- `docs/dev/lanes/r9d_report.md`, D155 section: the selector bullet, leg
+  (d), and the Questions bullets carry `[rev c]` marks (history kept, not
+  erased).
+- Checked and unchanged: `memfn/docs/*.md` (no Q-R9-10/11 or (a)/(b)
+  mentions), `docs/dev/plan.md`.
+
+### Greps run (worktree root), final results
+
+    grep -nE 'Shape A|shape A|shape \(a\)|shape \(b\)|\(C\) \*\*The FUNC|\(A\) \*\*An invariant|<fn>__level|Q-R9-10 and Q-R9-11 are (new|NEW)|Q-R9-1[01] \(NEW\)|Q-R9-2\.\.8 are OPEN' \
+      docs/design/memfn/integration.md docs/design/memfn/CLAUDE.md docs/design/CLAUDE.md memfn/CLAUDE.md memfn/docs/*.md
+    -> 0 hits
+
+    grep -nE 'level macro|_LEVEL' docs/design/memfn/integration.md
+    -> only: the ONE sentence recording (b) superseded by (c) (in
+       "Ruled shape (c)", plus the Q-R9-10 entry's mention); MF_LEVEL
+       (levels.def's own macro, lines ~602-621) and `<PREFIX>_ISA_LEVEL`
+       (isa_selection.md's stamp, an unrelated old passage near line 4683).
+       No passage presents (a) or (b) as the design or as open.
