@@ -52,5 +52,5 @@ runcmp	words	15408	13870
 runcmp	overlap	108903	7275
 runcmp	bytes	324	14838
 runcmp	memcmp	87769	32669
-fn	fn-pair	PLACEHOLDER	10422
-fn	fn-memchr	PLACEHOLDER	18981
+fn	fn-pair	5205	10422
+fn	fn-memchr	117902	18981
