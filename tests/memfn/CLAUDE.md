@@ -405,6 +405,28 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   nonzero (rc 5: a would-decline or a no-row selection). Floor 8 on the
   pattern file. The full census stays a slot run.
 
+### The guarded-bytes check (lane rq3, [MEMFN] RQ-3, D155 addendum 2)
+
+- **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** —
+  `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
+  Builds the WITNESS compiler (`-DPCREC_SIMD_WITNESS`: a synthetic guarded
+  block written through the sink's `simd_open`/`simd_close` before the memfn
+  mark and at the start of the VM program; 1,620,166 bytes each, its code
+  alone over both caps) and compares it with the tree's build/pcrec over a
+  corpus sample (`--every N`, default 10; mech 40) plus four named witnesses
+  (both sides of the VM entry-shape knee, NEST8's moving ladder, a DFA
+  artifact) at six arms (default, `--engine=vm`, `-fcomments`,
+  `-fno-comments`, a 54-byte prefix, `--warn-emit-bytes=1` so every compile
+  quotes its sizes). Two claims: every artifact's
+  `<PREFIX>_SIMD_GUARDED_BYTES` is at most the sum of its rendered SIMD rows'
+  bounds (`simd_bounds.tsv`; the plain build reads 0 <= 0, a MEMFN_FORMS
+  token with no row is UNDECLARED), and the witness's artifacts, rc and
+  stderr equal the plain build's with the blocks and the stamp line removed
+  (NEUTRALITY), with the stamp exactly blocks x the uncut block size in
+  every arm (ARITHMETIC). K35 floors per reached reader, literal in the
+  script. What it cannot see: a length reader of a buffer the witness never
+  writes (hsb, a scratch buffer not spliced).
+
 ## Sabotage rows
 
 - S510: a `memchr(` text planted in an unlisted function trips rule 1.
@@ -443,6 +465,11 @@ M7 fix (lane m7fix) adds S668 on a new arm `n2sample` (run_n2_sample.sh):
 the gate declines it everywhere and only the N2 census sees it. It re-pins
 S512's REACH_POP to the floor M7 set (`C17_ROW_FLOOR=14`). Hand-measured
 figures: `docs/dev/lanes/m7fix_report.md`.
+
+RQ-3 (lane rq3) adds S699-S703 on arm `simdguarded`: the knee reads the
+uncut length (S699), the caps' view stops subtracting (S700), the ladder's
+trial abort counts guarded bytes (S701), the splice drops the record (S702),
+the bracket counts twice (S703). Figures: `docs/dev/lanes/rq3_report.md`.
 
 ## Maintaining it
 

@@ -58,5 +58,6 @@ if [ ! -x "$PCREC" ] || [ ! -x "$WIT" ]; then
     echo "FAIL: [simd-guarded-build] missing compiler: $PCREC / $WIT"
     echo "checks passed: 0"; echo "checks failed: 1"; exit 1
 fi
-"$TIMEOUT_BIN" 1800 python3 "$TREE/tests/memfn/simd_guarded_check.py" \
-    --plain "$PCREC" --witness "$WIT" --every "$EVERY"
+# One line: K37's grep reads the bound on the line that names the compiler
+# (the driver also bounds each compile it makes, --timeout).
+"$TIMEOUT_BIN" 1800 python3 "$TREE/tests/memfn/simd_guarded_check.py" --plain "$PCREC" --witness "$WIT" --every "$EVERY"
