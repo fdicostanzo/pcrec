@@ -34,7 +34,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="recidentity harness"
 SAB_HARNESS_TARGET="tests/base/vm_lazy_rmin_prefix.rxt"
 SAB_DESC='the VM cursor rung'"'"'s lazy-prefix reach test asks for rmin * stride - 1 bytes: answer-invisible at stride > 1 (lattice), a wrong answer at stride 1; the row proves the recursion-identity gate'"'"'s R-12 vmlazy-prefix bucket does not admit a resembling non-ruled prefix change'
-SAB_DOC_FIGURE="recidentity: SKIPPED-no-git-history inside the mech matrix by construction (varland finding 7); the bucket's non-admission was HAND-MEASURED by lane vmlrid 2026-10-09 (docs/dev/lanes/vmlmerge_report.md, the vmlrid section). Read the harness figure from a run: bash tests/mech/run_sabotage_matrix.sh S711."
+SAB_DOC_FIGURE="recidentity: SKIPPED-no-git-history inside the mech matrix by construction (varland finding 7); the bucket's non-admission was HAND-MEASURED by lane vmlrid 2026-10-09 (docs/dev/lanes/vmlmerge_report.md, the vmlrid section). MEASURED solo 2026-10-09 at ca278766: reach:ok(1/1), recidentity:SKIPPED-no-git-history, corpus:1fail/137pass -- DETECTED (SKIPPED -- no oracle), unexpected: 0 (the one harness failure, hand-confirmed: vm_lazy_rmin_prefix.rxt:173, z(a){3,}?c? on "zaac" (engine vm) answers match 0 4 where python re says nomatch -- a stride-1 run one short of rmin). Re-run: bash tests/mech/run_sabotage_matrix.sh S711."
 SAB_REACH='"$PCREC" -p rx --engine=vm --features all -o - --pattern "(?:ab){3,}?"'
 SAB_REACH_EXPECT='slot_values[2] + 6) goto rx_fail;'
 SAB_EXPECT=DETECTED
