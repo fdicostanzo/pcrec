@@ -1156,3 +1156,25 @@ pointer when a kit change merges to main.
   (normalize abi 70->72, zero-mover REPLACE, VALID row); G1 null; light
   green; chain2 (6 sweep arms) still running detached at pause.
 - Frank 2026-10-09: the kit session too looks for a reset above 35% context.
+
+## 2026-10-09 ~17:15 — wake after reset; VMLAZY chain2 green; N7U retired
+
+- Woke from the vmlazy wake.md. Heartbeat cron `17,47` recreated.
+  requests.md holds no new item.
+- **Chain2 COMPLETE, green** (vmlazy_report §8a): 13 light suites rc=0, and
+  9 emit_sweep arms show 0 movers / 0 asymmetric. utf8 and `-fno-cls-kit`
+  exited rc=1 on r4clx's DECLARED composition-floor exception (37 < 38, both
+  sides). The first read of an rc=1 looked like a failure; the judge table
+  in r4clx_report.md is where that exception is declared.
+- **N7U retired** by lane n7uret (sonnet, light). Docs/TSV only, so no pcrec
+  byte moves. C17 floor 14 -> 13, C12 floor 2 -> 1, S512 re-pinned. Merged
+  into lane/memfn-vmlazy after chain2 exited; strict and the manifest/forms
+  checks are green on the merge. The D58 add. 2 revisit close is owed to
+  main and posted as a notice.
+- Stale worktrees r4e0/r4e0b/w5fix/r12: `.scratch` was deleted; they are kept
+  by wtprune's 120-min quiet gate, so prune them later.
+- Frank asked for the first SIMD directional reading when it exists. It
+  does not exist yet: R-13 waits on RQ-3, then RQ-2 and the RQ-4 slot for
+  timing. Report it when the R-13 sweeps produce it.
+- Waiting on RQ-3 (abi 71; its chain is running) before the §8 slot chain
+  and R-13.
