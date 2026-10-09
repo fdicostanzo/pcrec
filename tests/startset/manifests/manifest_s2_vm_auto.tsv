@@ -394,6 +394,7 @@ tests/possessify/possessify.rxt:3990	-i --features all --encoding=utf8 --engine=
 tests/possessify/possessify.rxt:4007	-i --features all --encoding=utf8 --engine=vm	6b2b2b5c62
 tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
 # possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
+# m7fix (2026-10-08): +8 rows, every one an s670cell block (ae7cf901: tests/backrefs/caseless.rxt:71,86; caseless_ucp.rxt:262,274,288,298,310,322), correct VM-hat movers never pinned; census_s1.py on lane/m7fix (c9e90c77 + kit fixes), no existing row moved. Bench rows NOT refreshed: against pcrec-bench bb87dfa5 the census adds bench rows (counted, not checked), left for a bench-pin re-sync.
 tests/possessify/possessify.rxt:4033	--features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
 tests/possessify/possessify.rxt:4057	--features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
 tests/possessify/possessify.rxt:4081	--features all --encoding=utf8 --engine=vm	782b5c625b5c787b65397d615d
@@ -418,3 +419,11 @@ tests/possessify/possessify.rxt:4586	-i --features all --encoding=utf8 --engine=
 tests/possessify/possessify.rxt:4618	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
 tests/possessify/possessify.rxt:4650	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
 tests/possessify/possessify.rxt:4681	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31
+tests/backrefs/caseless.rxt:71	--features backrefs,modifiers	283f692928612b295c31
+tests/backrefs/caseless.rxt:86	--features backrefs,modifiers	283f6929286162295c31
+tests/backrefs/caseless_ucp.rxt:262	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:274	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865395c786530295c31
+tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31

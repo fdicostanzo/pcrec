@@ -48,6 +48,16 @@ scripts, any failing fails the section.
   `-fno-start-set` (checks-m5: the deny arm is today's emitter, so no frozen
   binary is needed) and reads F as `T = S`. `s3_dfa` and `s2_vm_auto`
   byte-identical; `s2_vm_forced` +12, the `dfahat_f1.rxt` blocks.
+  **Re-pinned at m7fix** (2026-10-08): s670cell (ae7cf901) added eight
+  caseless-backreference blocks (`tests/backrefs/caseless.rxt:71,86`,
+  `caseless_ucp.rxt:262,274,288,298,310,322`) that are correct VM-hat movers
+  and were never pinned, so `[vm-movers]` read 8 unlisted on both arms.
+  `census_s1.py` on the lane's build: `s2_vm_auto` +8 and `s2_vm_forced` +8,
+  exactly those blocks, no existing row moved, `s3_dfa` unchanged. Only the
+  corpus rows were taken: the same run against pcrec-bench bb87dfa5 also adds
+  bench rows (+6 forced, +1 `s3_dfa`), which are counted, never checked, and
+  are left for a bench-pin re-sync. **A corpus-adding lane runs
+  `make test-startset`** (k94tri's lesson, again).
 
 ## Stage 2 — the VM hat (lane ssbuild2, abi 62)
 
