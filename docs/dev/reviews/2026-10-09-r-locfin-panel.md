@@ -115,6 +115,28 @@ Two read-only critics: **lfre1** (opus; soundness + table fit) and **lfre2** (op
 
 lfre2's §8 judgments are recorded in its message: L0 first, with LR-G1 and LR-G4 adopted there; stage 2 FILED; the stamp rule generated from the path derivation; one tuning.md preamble sentence with per-entry markers; the relaxed locator gets its own deny bit; rev-inner ranks below [START-LANDING] and REVEND, and its twin measures the LOWER form first; ATTEMPT match-here measured as the K8 family.
 
-## lfre1 — soundness / table fit
+## lfre1 — soundness / table fit (LR-S1..S13)
 
-PENDING.
+Verdict: the model holds. L0 is NOT build-ready until LR-S1 is fixed; L2 is ready after L0 plus LR-S3/S5/S7. No further panel is needed: the manager checks each fix directly.
+
+| id | sev | finding | disposition |
+|---|---|---|---|
+| LR-S1 | HIGH, blocks L0 | "At L0 the only FINISH asker is match-here" is FALSE. Three machine-membership readers call `dfa_match_is_unwrapped` (dfa_table_name :4466, dfa_scan_edge_name :4523, dfa_uniform_folds :4577), and they run on HYBRIDS via pcrec_emit_dfa_scan_stamps (emit_vm.c:11330) and the orientation block (:10870). Re-keyed to cand_finish_of (CR_VM on hybrids), they hit a NO-ROW selection on ~39 bench / 1,192 corpus hybrids (e.g. `(a+)b`). | ACCEPT. The fix CONVERGES with LR-G4: move the machine-membership derivation (L2.0's `dfa_machines_of`, generalized per LR-G4 as rows' `.needs` ∩ what built) INTO L0, ahead of the fold, so membership readers read the machine fact, never the FINISH selection. Add the three functions + :10870 to the edit set, with a hybrid witness |
+| LR-S2 | — / MED | `cand_lang_exact`'s derivation CLEARED (every erasure classified; BREF/VAR/linked-call never reach a prefilter today). NOT cleared: C4 is plumbing (RX_VM_RESEED `exact` reads mrl_win, the same conjuncts), not an independent control. The window is consumed at THREE sites (entry, RETRY recompute 13261-13327, adaptive re-seed), and the projection must cover all three. | ACCEPT: relabel C4 as plumbing; name an answer-level control before L3 (E9's window twin vs libpcre2); the projection covers all three sites (and LR-G3's erasure-set record closes the latent hole) |
+| LR-S3 | MED | O4 text CLEARED (libpcre2 confirms both witnesses), but applied inconsistently: §1.3 VM verify-at says "ceiling max(D) where clamped" (wrong on clamped hybrids), §1.4 says the opposite, §2.3 F6 takes no ENDSET. | ACCEPT: ENDSET never reaches VM verify-at; strike it from §1.3 and from the matrix's VM cell |
+| LR-S4 | CLEARED / LOW | Progress as (lo, rank) has no witness against it. Residual: the shipped RETRY `exact` row runs after a FAILED SPAN verify, and the model has no F6 failure edge. | ACCEPT: add verify→RETRY or have L3's twin assert RETRY is unreached on exact hybrids |
+| LR-S5 | CLEARED + NEW LOW/MED | E1/G4 cleared on the witness. NEW: DUPNAMES `(?J)(?<n>a+)X(?<n>b)?\k<n>` (libpcre2 aaXa→(1,4)): refs[] spans P and S, so a G4 reading "the ref is into S" passes and the per-occurrence verify returns NOMATCH. | ACCEPT: G4 = no member of ANY `A_BREF.refs[]` in S names a group of P, stated in both notes, as a CLOSED predicate over node kinds (callouts/conditionals fail closed when built) |
+| LR-S6 | CLEARED / LOW | L0 re-aims reproduce byte-for-byte (6 re-aim, 18 + 98 re-run); the 3 unresolved rows are outside the family. Gaps: LR-S1's sites; the boundary trace beside :13405 is S88/S141's anchor (add emit_vm.c to the edit set and re-derive); `hand = BOUNDED` vs `AT`; the `(\w+)\1` witness assumes a VM LOCATE ask no item places. | ACCEPT |
+| LR-S7 | MED | pcrec-bench tools/selfcheck.py DOES pin the vocabularies (`dfa_start: reverse-pass` at :3705-3707 and :3729-3731, exactly L2.1's attempt-start movers; `dfa_scan: unanchored` at :3552-3554). | ACCEPT: the L2 inbox note names them as known movers |
+| LR-S8 | LOW | F-9 undercounted (compile.c:2381, emit_dfa.c:10713). §3.3 misses compile.c:229 (`build_anchored_dfa` reads the F3 deny too, so "the deny moves with its row" is half true). | ACCEPT (LR-G4's derivation absorbs them) |
+| LR-S9 | — | F-10/F-11 REAL; F-10's spellings are LR-S1's readers, so L2.0's work must precede the fold. | ACCEPT (same as LR-S1) |
+| LR-S10 | LOW | match_api.md:4731's machine-proxy sentence is ALREADY false on `pinned` artifacts (stamp "unanchored", no reverse machine). | ACCEPT: the spec hunk is owed independently of rev-end, so file it to land with L0 |
+| LR-S11 | LOW | [GIVEUP-DIFF] reaches only deniable rows; RETRY exact/clamped/anchored are undeniable by a ruled contract (emit_dfa.c:8331-8345). | ACCEPT: `.contract` carries those rulings too |
+| LR-S12 | LOW | [ART-SIZE] drop rung SDR_NO_ANCHORED turns rev-end T2 into T3, which EMITS the forward machine form C dropped, so dropping can GROW the artifact. | ACCEPT: the drop rung gets a rev-end clause |
+| LR-S13 | LOW | The 5-value key is partial (VMSEED's window); AT's I is a request filter (never degrade it); F6 id reused across revisions. | ACCEPT (LR-G2 resolves the key; rename the id) |
+
+## Re-check verdict
+
+**Both critics converge on one structural change.** The machine and path derivation (LR-G4's `.needs` closure ∩ what built) moves INTO L0, ahead of the `dfa_matches[]` fold. That fixes LR-S1's blocker, absorbs F-9/F-10/LR-S8 and generates the stamp rule. Add LR-G1 (four FINISH rows with route hats, done at L0), LR-G2 (key on the CT_* bits with an `e` bit), LR-G3 (a recorded erasure set), and the text fixes above.
+
+Next: revision 2.1 (lane `locfin21`). The manager checks each fix directly; no further panel (lfre1's recommendation, accepted). Then Frank's questions, restated.
