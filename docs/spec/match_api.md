@@ -298,11 +298,11 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    refused.** The block opens
 
    ```c
-   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 69
-   #error "pcrec: this artifact (abi 69) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+   #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 70
+   #error "pcrec: this artifact (abi 70) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
    #endif
    #ifndef PCREC_RX_ABI_H
-   #define PCREC_RX_ABI_H 69
+   #define PCREC_RX_ABI_H 70
    ```
 
    so artifacts of one abi still share the first block, and an artifact of
@@ -2315,8 +2315,8 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `69` on every artifact today (lane r4e0b bumped it
-  from 68, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
+- **`rx_info.abi` is `70` on every artifact today (lane r4e0b bumped it
+  from 69, 2026-10-09: [MEMFN] R4e′.0b — THE ROUTING, D155 item 6,
   `docs/design/memfn/integration.md` §R4.9.2.5/§R4.9.2.6).** Every
   offset-skip/pre-check function (`<prefix>_reqrun`, `<prefix>_reqrun_whole`,
   `<prefix>_ofsskip`) keeps its loop, byte for byte, under the head
@@ -2326,7 +2326,21 @@ the bump's own commit.**
   rule). Both are `static inline` in the `.c`, so no symbol a caller links
   against changes, no stamp is added or changes value, no struct offset or
   `rx_info` member moves and no answer moves; an artifact with no such
-  function differs from `abi` 68 in its abi digits alone.
+  function differs from `abi` 69 in its abi digits alone.
+- **`rx_info.abi` was `69` (lane decattr bumped it
+  from 68, 2026-10-09: [DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE], one event —
+  `docs/design/dec_fallback.md` §5.1, §5.2, §6.1).** Two stamp VALUES move,
+  no stamp is added. (1) A `${...}` pattern's `<PREFIX>_ENGINE_SEL` reads
+  `"selected"` where a nullable one read `"declined-nullable-default"` (F1:
+  its variable, not a nullability decline, turns the prefilter off). (2) A
+  collapse rung is no longer offered on an attempt the collapse cannot help
+  (no collapsible repeat; nullable but not `empty_admits`), so on a compile
+  that drops the prefilter for size `<PREFIX>_VM_PREFILTER_WHY`'s
+  `size cap retry, hybrid N > CAP` figure is the exact artifact's rather than
+  the wasted retry's (`-e utf8 (\p{Xwd})`: `1028613` -> `1028607`). Every
+  other artifact differs from `abi` 68 in its abi digits alone, and no answer
+  moves. `--emit-ir` (not an artifact) moves too: `no-variable` and
+  `no-size-cap` join the `prefilter` vocabulary (`ir_listing.md`).
 - **`rx_info.abi` was `68` (lane nullanch2 bumped it
   from 67, 2026-10-08, re-landing lane nullanch1's change after R4h's layout
   normalization took 67: [NULLABLE-ANCH] — THE ANCHOR-AWARE NULLABILITY
@@ -4466,7 +4480,7 @@ neither is parsed to produce the other.
 |---|---|
 | `"selected"` | `auto` chose on the AST and nothing overflowed. The common case, on both engines |
 | `"forced"` | the caller named `--engine=vm` or `--engine=dfa`, so `auto` selected nothing |
-| `"declined-nullable-default"` | [OPT-4.2] (2026-08-31) `auto` (or forced `--engine=vm` plus `-fprefilter`), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one. Since `abi` 68 ([NULLABLE-ANCH]) "nullable" is the `empty_admits` fact: a pattern whose every empty match crosses a non-multiline start AND end anchor (`^(\s+)*$`) is not declined and reads `"selected"`. No rung is involved and no prefilter survives. The general form of `"declined-nullable"` below, off the rung it is scoped to (`tuning.md` §2.17) |
+| `"declined-nullable-default"` | [OPT-4.2] (2026-08-31) `auto`, NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one. Since `abi` 68 ([NULLABLE-ANCH]) "nullable" is the `empty_admits` fact: a pattern whose every empty match crosses a non-multiline start AND end anchor (`^(\s+)*$`) is not declined and reads `"selected"`. Since `abi` 69 ([DEC-VAR-ATTRIB]) a `${...}` pattern is never declined here either: its variable turns the prefilter off before any nullability is asked, and it reads `"selected"` (it read this value when nullable, a decline that decided nothing). `-fprefilter` overrides the decline, and an explicit `--engine=vm` reads `"forced"` (F-B2). No rung is involved and no prefilter survives. The general form of `"declined-nullable"` below, off the rung it is scoped to (`tuning.md` §2.17) |
 | `"overflowed-dfa"` | `auto`, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback ([SEL-1]) |
 | `"overflowed-prefilter"` | `auto`, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped |
 | `"collapsed-prefilter"` | `auto`, a DFA build overflowed a STATE cap, and the [SEL-1] retry KEPT a prefilter by rebuilding it from the count-collapsed language (`tuning.md` §2.5, §2.17) |

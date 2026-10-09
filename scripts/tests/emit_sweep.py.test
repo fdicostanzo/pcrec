@@ -52,9 +52,11 @@ sweep --extra=-fno-scan-edge; rc=$?
 # [DEC-FALLBACK] B0: the tally streams over hand-written witnesses (decoded
 # --list-source escapes). Each line below is the expected tag tally of one
 # stream, read from the compiler at B0's base, so an arm lost in the stream's
-# plumbing (design S-I3: `-fno-prefilter` dropped reads `yes`/`no-engine-vm`
-# where `no-fno-prefilter=2/2` is expected) or a stream that stopped
-# comparing refusals fails here.
+# plumbing (design S-I3: `-fno-prefilter` dropped reads `yes` where
+# `no-fno-prefilter=1/1` is expected) or a stream that stopped comparing
+# refusals fails here. [DEC-VAR-ATTRIB] (abi 69): `a${v}b` lists
+# `no-variable` under every arm (it listed `no-engine-vm`, and the flag under
+# `-fno-prefilter`, before).
 cat > "$T/irw.txt" <<'W'
 (a)b
 (a)\\1
@@ -74,10 +76,10 @@ while IFS='|' read -r stream want; do
     got=$(awk -v s="-- stream: $stream --" '$0 == s {f=1; next} f && /tags/ {sub(/^ *tags \(side a \/ side b\): /, ""); print; exit}' "$T/log")
     [ "$got" = "$want" ] && ok "$stream tags: $want" || bad "$stream tags: got '$got', want '$want'"
 done <<'E'
-emit-ir-auto|no-backreference=1/1 no-dfa-overflow=1/1 no-engine-vm=1/1 no-nullable-collapsed=1/1 no-nullable-exact=1/1 refused=2/2 yes=1/1
-emit-ir-auto[-fno-prefilter]|no-backreference=1/1 no-dfa-overflow=1/1 no-fno-prefilter=2/2 no-nullable-collapsed=1/1 no-nullable-exact=1/1 refused=2/2
+emit-ir-auto|no-backreference=1/1 no-dfa-overflow=1/1 no-nullable-collapsed=1/1 no-nullable-exact=1/1 no-variable=1/1 refused=2/2 yes=1/1
+emit-ir-auto[-fno-prefilter]|no-backreference=1/1 no-dfa-overflow=1/1 no-fno-prefilter=1/1 no-nullable-collapsed=1/1 no-nullable-exact=1/1 no-variable=1/1 refused=2/2
 emit-ir-auto[-fprefilter]|refused=6/6 yes=2/2
-emit-ir-auto[-fno-prefilter-collapse]|no-backreference=1/1 no-dfa-overflow=2/2 no-engine-vm=1/1 no-nullable-exact=1/1 refused=2/2 yes=1/1
+emit-ir-auto[-fno-prefilter-collapse]|no-backreference=1/1 no-dfa-overflow=2/2 no-nullable-exact=1/1 no-variable=1/1 refused=2/2 yes=1/1
 stderr|refused-default=1/1 refused-vm=1/1
 E
 

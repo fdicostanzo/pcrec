@@ -895,7 +895,7 @@ fi
 # `(?i)HeLLo` +68, `(\w+)\s+\1` +44. Verified against a ref build of main
 # 77b6b37e with only the abi constant bumped (emit_sweep --ref): the delta is
 # those loops and RX_VM_PROGRAM_BYTES where the VM span scan sits, nothing else.
-# RE-RECORDED 2026-10-09 at [MEMFN] R4e'.0b, THE ROUTING (abi 68 -> 69, lane
+# RE-RECORDED 2026-10-09 at [MEMFN] R4e'.0b, THE ROUTING (abi 69 -> 70, lane
 # r4e0b; the digit is one width): five EMITTED_BYTES rows move, each by its
 # offset-skip/pre-check functions' routing alone (the loop under
 # `<fn>__body`, `<fn>` one call to it): `abc`, `(a)(b)(c)` and `(?<=foo)bar`

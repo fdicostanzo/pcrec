@@ -733,7 +733,7 @@ elif [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied 
     # line is `.flags`; the abi digits are the same width.
     #
     # RE-PINNED 762691 -> 762832, 2026-10-09 (lane r4e0b, [MEMFN] R4e'.0b,
-    # the routing, abi 68 -> 69): this witness's offset-skip function
+    # the routing, abi 69 -> 70): this witness's offset-skip function
     # `rx_ofsskip` keeps its loop under `rx_ofsskip__body` and becomes one
     # call to it. VERIFIED BY DIFFING against the abi-68 compiler (main
     # 131c173a) at the SAME `-o` basename: the abi digits (same width), the

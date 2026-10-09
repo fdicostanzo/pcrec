@@ -1,4 +1,4 @@
-# r4e0b — [MEMFN] R-11 step R4e′.0b, the routing (a pcrec abi event, 68 -> 69)
+# r4e0b — [MEMFN] R-11 step R4e′.0b, the routing (a pcrec abi event, 69 -> 70)
 
 Lane r4e0b, opus, 2026-10-09. Branch `lane/memfn-r4e0b`, cut from main
 `131c173a`, which contains R4e′.0. Design: integration.md §R4.9.2.5 (the
@@ -44,7 +44,7 @@ event in flight, so this lane wrote 70 directly and did not also bump to 69.
 |---|---|
 | `memfn/src/ofsskip.c` | `fn_head`, `fn_selector`, `fn_in.body_fn`; the seam's order (helper, PREFIX, selector); header and section comments |
 | `memfn/src/kit.h` | `ofs_fn_define`'s comment states the three pieces |
-| `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI` 68 -> 69 |
+| `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI` 69 -> 70 |
 | `docs/spec/match_api.md` | the shared-block guard example (`!= 70`, `(abi 69)`, `PCREC_RX_ABI_H 70`); §6 change log entry for 70 |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=69` and its ledger message (copied from §6) |
 | `tests/codegen/run_recursion_identity.sh` | (B) FILEPIN self-pinned to `74f941dc` (commit `f7c8624f`) |

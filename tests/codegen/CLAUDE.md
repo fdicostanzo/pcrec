@@ -3803,8 +3803,16 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
 - `run_recursion_identity.sh`'s (B) pin re-pinned (see its comment).
 - S368's anchor re-aimed (the guard call gained its `anchored` argument).
 
-- **[MEMFN] R4e'.0b, THE ROUTING (lane r4e0b, 2026-10-09, abi 68 -> 69; 69
-  is another lane's event, the pcrec manager assigned 70):** every
+- **[DEC-VAR-ATTRIB] + [DEC-COLLAPSE-WASTE] (lane decattr, 2026-10-09, abi
+  68 -> 69, one event; renumber at landing if another event lands first):**
+  `run_codegen_tests.sh`'s `ABI_EXPECT` 69 and its ledger message;
+  `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's last
+  src commit; `run_fallback_table.sh` (a)'s sequences and admit/attrib/gate
+  records re-signed for both items (two new witnesses, `W_LOOKR` and
+  `W_OVFNN`, keep the rows a real collapse attempt fires);
+  `docs/dev/lanes/decattr_report.md` lists the movers.
+- **[MEMFN] R4e'.0b, THE ROUTING (lane r4e0b, 2026-10-09, abi 69 -> 70; 69
+  is decattr's event, landed first):** every
   offset-skip/pre-check function's loop moves under `<fn>__body` and `<fn>`
   becomes one call to it (D155 item 6). `run_codegen_tests.sh`'s
   `ABI_EXPECT` 70 and its ledger message; `run_cpset_structure.sh` [3]'s

@@ -282,7 +282,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   the two reads-below FIND fixtures' four rows (78, `ARMS_ROW_FLOOR` 78); M7
   prep the five MISMATCH fixtures' ten rows (88, `ARMS_ROW_FLOOR` 88); M6
   prep the seven strided ADVANCE fixtures' fourteen rows (102,
-  `ARMS_ROW_FLOOR` 102); R4e'.0b (lane r4e0b, the routing, abi 68 -> 69)
+  `ARMS_ROW_FLOOR` 102); R4e'.0b (lane r4e0b, the routing, abi 69 -> 70)
   RE-PINNED the ten `def` parts that hold an offset-skip function (six
   ofsskip, four precheck), no `use` part moved (its header records the
   deltas). A

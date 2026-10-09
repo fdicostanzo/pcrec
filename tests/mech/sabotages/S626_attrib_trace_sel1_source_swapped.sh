@@ -20,5 +20,13 @@ SAB_COUNT=1
 # the plant names the FIRST fired row instead of the giving one, so on
 # `sel1-collapse > sel1-drop` (W_OVF, OVFPF) the record names sel1-collapse
 # for sel1-drop's ROLE cell. fbt (a)'s att-ovfdfa / att-ovfpf detect it.
+# dectri (2026-10-09) RE-AIMED THE DETECTOR, plant unchanged, intent
+# re-verified. [DEC-COLLAPSE-WASTE] (abi 69) offers the collapse rung only
+# where it can help, so W_OVF and OVFPF fire sel1-drop alone: the first fired
+# row IS the giving row and the plant read the same (decattr's chain:
+# fallbacktable 0fail). The detector is now fbt (a)'s att-ovfcd (W_LOOKR,
+# sel1-collapse > sel1-drop; the plant prints from=sel1-collapse) and
+# att-scpfd (lowsize `(\bcat\b){2,}` -e utf8, prefilter-collapse >
+# drop-prefilter), both measured red under the plant and green without it.
 SAB_BEFORE='    const char *from = src >= ESEL_FROM_ROW    ? pcrec_fit_cells_row_name(cx->fit_seq[src - ESEL_FROM_ROW])'
 SAB_AFTER='    const char *from = src >= ESEL_FROM_ROW    ? pcrec_fit_cells_row_name(cx->fit_seq[0])   /* SABOTAGE S626 */'

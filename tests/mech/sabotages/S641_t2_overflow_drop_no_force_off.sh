@@ -14,3 +14,8 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='           (s->cx->collapse_reason != CR_SEL1 || s->force_off);'
 SAB_AFTER='           (s->cx->collapse_reason != CR_SEL1);   /* SABOTAGE S641 */'
+# [DEC-COLLAPSE-WASTE] (lane decattr, 2026-10-09) WITNESS MOVED, anchor and
+# plant unchanged: the nullable witness above no longer takes the [SEL-1]
+# rung (class (ii)), so the detectors read its non-nullable form
+# ^(?:a|b)*a(?:a|b){20}$ under -fno-prefilter (run_prefilter_tests.sh §7b
+# "overflow-drop/SEL1", fbt (a) adm-ovfsel1).

@@ -1,0 +1,5 @@
+stream	cell	file	pattern	class
+c	utf8	tests/uprops/size_ladder_prefilter_drop.rxt	(\\p{Xwd})	pfwhy:size cap retry, hybrid 1028522 > 1000000->size cap retry, hybrid 1028516 > 1000000
+c	utf8	tests/utf8/wclass_illformed.rxt	x(\\p{Xwd})y	pfwhy:size cap retry, hybrid 1015708 > 1000000->size cap retry, hybrid 1015702 > 1000000
+facts	byte	tests/uprops/size_ladder_prefilter_drop.rxt	(\\p{Xwd})	stamp:VM_PREFILTER_WHY:"size cap retry, hybrid 1028522 > 1000000"->"size cap retry, hybrid 1028516 > 1000000"
+facts	byte	tests/utf8/wclass_illformed.rxt	x(\\p{Xwd})y	stamp:VM_PREFILTER_WHY:"size cap retry, hybrid 1015708 > 1000000"->"size cap retry, hybrid 1015702 > 1000000"

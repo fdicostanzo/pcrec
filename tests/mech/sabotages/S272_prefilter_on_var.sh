@@ -38,5 +38,8 @@ SAB_COUNT=1
 # the prefilter off for a non-nullable `${...}` pattern (a nullable one is
 # row 3's, off either way, exactly as the old plant left it through the
 # untouched default decline). The plant hands row 9's verdict to the default.
-SAB_BEFORE='    { "var",                pfa_var,                PFV_OFF,     "no-engine-vm",'
-SAB_AFTER='    { "var",                pfa_var,                PFV_DEFAULT, "no-engine-vm",   /* SABOTAGE S272 */'
+# [DEC-VAR-ATTRIB] (lane decattr, 2026-10-09) RE-ANCHORED, INTENT RE-VERIFIED:
+# the var row (now row 3, a construct row) lists `no-variable`; the plant
+# still hands its verdict to the default.
+SAB_BEFORE='    { "var",                pfa_var,                PFV_OFF,     "no-variable",'
+SAB_AFTER='    { "var",                pfa_var,                PFV_DEFAULT, "no-variable",   /* SABOTAGE S272 */'
