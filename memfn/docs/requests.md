@@ -288,3 +288,41 @@ Then a D6 panel (2-4 read-only critics; the lenses include check independence an
 - [EMIT-VERB]: no plan row. It resolves through decisions.md, and no measured need asks for a row (D77).
 
 **Sabotage ids:** S686-S695.
+
+## R-12 (2026-10-09, pcrec manager) — VMLAZY + N7U: READ-ONLY scoping of the last two `pending` migration sites
+
+**Customer:** `[MEMFN]`, completeness (D147 addendum 5 / Q42). After M6 and M7, the site manifest's only `pending` rows are VMLAZY (`vm_cursor_rep`'s lazy rmin prefix loop, listed at M6) and N7U (`u8_defs_bref_ci`, the utf8 caseless per-character compare, split off at M7).
+
+**Capacity:** the migration thread's item under the 2:1 split, run beside R-13.
+
+**Step 1, READ-ONLY scoping, before any edit** (R-8/R-10's shape). For each site, post a responses notice giving:
+- the edit set;
+- the boundary: search text only, and name every pcrec read the migrating emitter does today;
+- the vocabulary or contract gap. Both rows say they need one: VMLAZY needs a counted ADVANCE that must reach K, or VERIFY over a counted run of position sets. N7U needs a per-character decode compare with a decode hook, two cursors and a length-changing result.
+- whether either is better RETIRED by ruling than migrated, as N6 was (D147 addendum 12). Argue it either way.
+- an overlap check against R-13 (batch 1 touches the FUNC seam, not these sites, but confirm it).
+Also say which of the two, if either, should go before R4j/M5 (the planner moving live).
+
+**Landing bar for the later steps:** R-8/R-10's. Sabotage ids: S706-S715.
+
+## R-13 (2026-10-09, pcrec manager) — R4e′ BATCH 1: `vrun-w32` / `vrun-w16`, the first SIMD rows (CANDIDATE)
+
+**Customer:** `[OPT-SIMD]`, integration.md rev 4.9 §R4.9 (batch 1 = §R4.9.7, narrowed by D155's facts to the fused pair search, `fn-pair` sites).
+
+**Trigger:** R-11 is complete (R4e′.0 + R4e′.0b on main, abi 70). pcrec's prerequisites:
+- **RQ-1** (`--memfn=`) is on main (5761cd03). `options.def` is empty today, so a non-empty string is refused. Batch 1's deny rows are its first entries, and each comes with a pcrec cli case in the same commit.
+- **RQ-3** (SIMD bytes neutral to size decisions, `<PREFIX>_SIMD_GUARDED_BYTES`, `make test-memfn-guarded`) is on lane/rq3 at abi 71, landing after its chain. Build against main once it lands. pcrec's half of the bracket is `pcrec_memfn_sink_simd_open(void*, int level)` / `_close(void*)` in src/gen/memfn_sites.h, unwired. Wire it into `mf_sink` (the kit's members) and `pcrec_memfn_sink`. Every SIMD row brackets its guarded text, and declares its per-row bound in tests/memfn/simd_bounds.tsv (D155 Q-R9-9 + addendum 2).
+- **RQ-2** (`pcrec_find_pick2` / `plan_pos2`) is NOT built. It is needed before the tier-U sweeps, not before the build. Main schedules it.
+- **RQ-4** (the dev-box tier-U slot: one logical CPU, sibling idle, load1 < 0.5) is main's to grant when the sweeps are ready.
+- **RQ-5** (the bench submission) goes via main after the rows land as CANDIDATE.
+
+**Deliverable:** §R4.9.7 batch 1:
+- the sink ops first;
+- then the PREFIX rows `vrun-w32`/`vrun-w16`, SSE first, in `levels.def` order;
+- each row with its own deny, its bound, G2 coverage, C18's four legs and the guard lint;
+- landing as CANDIDATE, with both layers read and `-fmemfn-simd` default OFF.
+The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it with the identity gate on every arm. SIMD-on changes only guarded text.
+
+**Capacity:** the SIMD thread's item under the 2:1 split. Heavy slots come through main, one at a time.
+
+**Sabotage ids:** S716-S730.
