@@ -1,0 +1,128 @@
+CONTROL C1  stamp(DFA_SCAN=unanchored & DFA_START=reverse-pass) vs text(any rx_reverse_ identifier)
+  (False, False): 1699
+  (True, True): 3656
+  disagreements: 0
+CONTROL C2  stamp(VM_PREFILTER=hybrid) vs text(rx_prefilter( )
+  (False, False): 3862
+  (True, True): 1493
+  disagreements: 0
+CONTROL C3  shipped end_window numeric => probe view in {$,\z}
+  fact-window, probe-pinned: 400
+  disagreements: 0
+
+POPULATION
+  rows                                                           bench  367   corpus  5431 ( 4562 distinct)
+  compiled (ENGINE stamp present)                                bench  343   corpus  5012 ( 4191 distinct)
+  refused or timed out                                           bench   24   corpus   419 (  371 distinct)
+
+T1  TODAY's (locator, finisher), every compiled artifact (locate_finish.md §3.1)
+  L-candloop x F-anch-dfa                                        bench   20   corpus   308 (  237 distinct)
+  L-empty x F-nomatch                                            bench    0   corpus    53 (   47 distinct)
+  L-fwdrev x F-none                                              bench  233   corpus  2192 ( 1768 distinct)
+  L-pinned x F-none                                              bench   15   corpus   231 (  192 distinct)
+  L-trivial x F-vm-search                                        bench   19   corpus   791 (  668 distinct)
+  P-candloop x F-vm-cand                                         bench    3   corpus    82 (   66 distinct)
+  P-candloop x F-vm-span                                         bench   14   corpus   145 (  115 distinct)
+  P-empty x F-vm-cand                                            bench    0   corpus     6 (    6 distinct)
+  P-empty x F-vm-span                                            bench    0   corpus    12 (   10 distinct)
+  P-fwdrev x F-vm-cand                                           bench   22   corpus   621 (  585 distinct)
+  P-fwdrev x F-vm-span                                           bench   17   corpus   571 (  497 distinct)
+
+T2  hybrids by the inlined prefilter's own locator (does it carry reverse tables?)
+  P-fwdrev (any language)                                        bench   39   corpus  1192 ( 1082 distinct)
+  P-fwdrev  exact language (F-vm-span)                           bench   17   corpus   571 (  497 distinct)
+  P-pinned (any language)                                        bench    0   corpus     0 (    0 distinct)
+  P-pinned  exact language (F-vm-span)                           bench    0   corpus     0 (    0 distinct)
+  P-candloop (any language)                                      bench   17   corpus   227 (  181 distinct)
+  P-candloop  exact language (F-vm-span)                         bench   14   corpus   145 (  115 distinct)
+  P-empty (any language)                                         bench    0   corpus    18 (   16 distinct)
+  P-empty  exact language (F-vm-span)                            bench    0   corpus    12 (   10 distinct)
+
+T3  END-PINNED artifacts ($ / \Z / \z outside (?m), no \G; the borrowed probe) by today's pair
+  end-pinned, compiled                                           bench   41   corpus   771 (  572 distinct)
+  L-candloop x F-anch-dfa                                        bench   13   corpus   120 (   97 distinct)
+     ... of which width-bounded (W1 serves today)                bench    4   corpus    80 (   65 distinct)
+  L-fwdrev x F-none                                              bench   12   corpus   171 (  121 distinct)
+     ... of which width-bounded (W1 serves today)                bench    7   corpus   121 (   80 distinct)
+  L-trivial x F-vm-search                                        bench    1   corpus   275 (  189 distinct)
+     ... of which width-bounded (W1 serves today)                bench    0   corpus     6 (    6 distinct)
+  P-candloop x F-vm-cand                                         bench    2   corpus    69 (   57 distinct)
+     ... of which width-bounded (W1 serves today)                bench    0   corpus    61 (   51 distinct)
+  P-candloop x F-vm-span                                         bench   13   corpus   123 (   95 distinct)
+     ... of which width-bounded (W1 serves today)                bench    3   corpus   107 (   86 distinct)
+  P-fwdrev x F-vm-cand                                           bench    0   corpus     1 (    1 distinct)
+     ... of which width-bounded (W1 serves today)                bench    0   corpus     1 (    1 distinct)
+  P-fwdrev x F-vm-span                                           bench    0   corpus    12 (   12 distinct)
+     ... of which width-bounded (W1 serves today)                bench    0   corpus    10 (   10 distinct)
+
+T4  STAGE 1 (rev-end x DFA finisher): end-pinned, DFA route, forward+reverse locator
+  admitted (L-fwdrev)                                            bench   12   corpus   171 (  121 distinct)
+     unbounded (class U)                                         bench    5   corpus    50 (   41 distinct)
+     bounded (class B, W1 today)                                 bench    7   corpus   121 (   80 distinct)
+  end-pinned on L-pinned (must be 0: P1 needs a PLAIN accept at s0) bench    0   corpus     0 (    0 distinct)
+  end-pinned on L-candloop (R2 declines: no reverse machine)     bench   13   corpus   120 (   97 distinct)
+
+T5  STAGE 2 (rev-end x VM finisher): end-pinned hybrids whose prefilter carries reverse tables
+  admitted (P-fwdrev)                                            bench    0   corpus    13 (   13 distinct)
+     exact language (F-vm-span: window identity => NEUTRAL)      bench    0   corpus    12 (   12 distinct)
+     superset language (F-vm-cand: CAND + RETRY)                 bench    0   corpus     1 (    1 distinct)
+     unbounded                                                   bench    0   corpus     2 (    2 distinct)
+     bounded (W1 at the VM entry today)                          bench    0   corpus    11 (   11 distinct)
+  end-pinned hybrids on P-candloop (no reverse tables)           bench   15   corpus   192 (  152 distinct)
+
+T6  END-PINNED VM-ONLY artifacts (no prefilter): the relaxed-reverse population
+  end-pinned VM-only                                             bench    1   corpus   275 (  189 distinct)
+     kinds has bref                                              bench    0   corpus   145 (  110 distinct)
+     kinds has linked_call                                       bench    1   corpus    84 (   56 distinct)
+     kinds has var                                               bench    0   corpus    44 (   19 distinct)
+     none of bref/linked_call/var (other decline reason)         bench    0   corpus     6 (    6 distinct)
+     start-anchored (one attempt; nothing to locate)             bench    1   corpus   255 (  176 distinct)
+     start-UNanchored (any kind)                                 bench    0   corpus    20 (   13 distinct)
+     start-UNanchored, bref, unbounded                           bench    0   corpus    14 (    7 distinct)
+
+T6a the distinct start-unanchored members of T5 and T6
+  stage 2 (P-fwdrev, end-pinned): 13 distinct
+    corpus tests/assertions/d27/anchors_abs.rxt:77          byte F-vm-span   ew=none  kinds=live_capture             b'(a\\z)+'
+    corpus tests/assertions/end_window.rxt:227              byte F-vm-span   ew=4     kinds=live_capture             b'(ab)(c)$'
+    corpus tests/assertions/kreset.rxt:705                  byte F-vm-span   ew=2     kinds=none                     b'a\\Kb\\z'
+    corpus tests/assertions/kreset.rxt:720                  byte F-vm-span   ew=3     kinds=none                     b'a\\Kb\\Z'
+    corpus tests/assertions/kreset.rxt:735                  byte F-vm-span   ew=3     kinds=none                     b'a\\Kb$'
+    corpus tests/assertions/multiline.rxt:1681              byte F-vm-span   ew=4     kinds=live_capture,collapsible_rep b'([^c]{1,3})$'
+    corpus tests/assertions/wordb_vm.rxt:864                byte F-vm-span   ew=4     kinds=live_capture             b'(\\bfoo)$'
+    corpus tests/base/alternation_trie.rxt:105              byte F-vm-span   ew=7     kinds=live_capture             b'(log|login|logout)$'
+    corpus tests/base/d27_edge.rxt:162                      byte F-vm-span   ew=4     kinds=live_capture,collapsible_rep b'(a$){1,3}'
+    corpus tests/captures/structure_anchors_misc.rxt:7      byte F-vm-span   ew=none  kinds=live_capture             b'(a+)$'
+    corpus tests/possessify/composition_d27.rxt:1178        byte F-vm-cand   ew=3     kinds=lookaround,collapsible_rep b'\\w{1,2}(?:(?=)|)$'
+    corpus tests/possessify/possessify.rxt:2808             byte F-vm-span   ew=4     kinds=live_capture,collapsible_rep b'(a{1,3}?$)'
+    corpus tests/possessify/possessify.rxt:2852             byte F-vm-span   ew=6     kinds=live_capture,collapsible_rep b'(a{0,4}c$)'
+  VM-only end-pinned, start-unanchored: 13 distinct
+    corpus tests/assertions/multiline.rxt:1712              byte F-vm-search ew=5     kinds=live_capture,collapsible_rep b'(a{0,4})$'
+    corpus tests/backrefs/caseless_ucp.rxt:250              byte F-vm-search ew=none  kinds=bref,live_capture        b'(?i)(\\xe9)(?:x|\\1)$'
+    corpus tests/base/possess_lazy_guard.rxt:171            byte F-vm-search ew=5     kinds=live_capture,collapsible_rep b'([^c]{0,4}?)$'
+    corpus tests/captures/participation_and_zerowidth.rxt:112 byte F-vm-search ew=none  kinds=live_capture             b'(a*)$'
+    corpus tests/lookaround/alpha_spellings.rxt:219         byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(*pla:(a|ab))\\1$'
+    corpus tests/lookaround/alpha_spellings.rxt:232         byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(*positive_lookahead:(a|ab))\\1$'
+    corpus tests/lookaround/alpha_spellings.rxt:244         byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(*napla:(a|ab))\\1$'
+    corpus tests/lookaround/alpha_spellings.rxt:257         byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(*non_atomic_positive_lookahead:(a|ab))\\1$'
+    corpus tests/lookaround/d27/spellings.rxt:115           byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(?*(a|ab))\\1$'
+    corpus tests/lookaround/d27/spellings.rxt:162           byte F-vm-search ew=none  kinds=bref,lookaround,live_capture b'(?=(a|ab))\\1$'
+    corpus tests/possessify/composition_d27.rxt:983         byte F-vm-search ew=2     kinds=lookaround               b'-?(?:(?=)|)$'
+    corpus tests/possessify/possessify.rxt:2674             byte F-vm-search ew=5     kinds=live_capture,collapsible_rep b'(a{0,4}$)'
+    corpus tests/possessify/possessify.rxt:2743             byte F-vm-search ew=5     kinds=live_capture,collapsible_rep b'([ab]{0,4}$)'
+
+T7  bench members of the T4-T6 populations (start-unanchored only)
+  stage 1: 12
+    capability/letters-bounded-tail-z
+    capability/tail-digits-eol
+    capability/tail-dotstar-txt
+    capability/tail-ext-lower-txt
+    capability/tail-space-eol
+    capability/tail-word-eoz
+    capability/wild-semdiv-dollar-trailing-newline-pcre2
+    litrun/ctrl-abc-dollar
+    sentinel/wild-semdiv-dollar-trailing-newline-pcre2
+    syntax/anc-dollar
+    syntax/anc-z-lc
+    syntax/anc-z-uc
+  stage 2: 0
+  VM-only: 0
