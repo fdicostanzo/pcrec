@@ -1286,3 +1286,23 @@ pointer when a kit change merges to main.
   verdict needs the full list, which takes a re-run of the comparator on
   the slot's own binaries. Budget ~25 min for it, or have the slot script
   dump the keys.
+
+## 2026-10-10 — R-13 brought onto post-R-12 main (lane r13merge)
+
+- R-12 merged to main (a15fb77b). Merging it into lane/memfn-r13 conflicted
+  in 8 files, 4 of them main's [SPEC-CLEAN] rewrites. I aborted the merge
+  and delegated it to lane r13merge (opus). It kept main's structure and
+  re-homed R-13's facts at limits §8.3¶3, registry §6¶8a/¶8b (floor literal
+  3), tuning §2.43¶3a/¶3b/¶4 and match_api §6.3.10. The history narrative
+  was dropped (the history files are frozen; the narrative stays in the
+  lane reports).
+- One red, fixed in the lane: the axes_registry_check coverage pin went
+  216 -> 217, because R-13's memfn floor arm is now reached. The stale pin
+  was already on R-13's own tip.
+- Reviewed: the ledger unions lost no entry (by count), and the spec diff
+  against main is R-13 facts only. Fast-forwarded lane/memfn-r13 to
+  48e56aad; build green. Light suites green in the lane (report
+  docs/dev/lanes/r13merge_report.md).
+- OWED, a kit follow-up: stale "no SIMD form exists" comments in
+  lib/pcrec.h, src/dump/axes_dump.c and tests/memfn/libc_census.py.
+- Next: slot18 on main's GO (revbuild holds the slot).
