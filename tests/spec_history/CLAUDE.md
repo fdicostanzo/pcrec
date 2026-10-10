@@ -52,11 +52,12 @@ holds the numbering, the generated contents and every citation of the doc.
   FAILS. `cite_exclude.tsv` — the few places that are not citations (this
   directory's own plants, the specclean/specnum migration logs, two grep
   outputs over the old file); each row is a hole in the check.
-- `sabotage_row_cites.pending` — the citation check's sabotage row, waiting
-  for the manager to allocate an S-id (its header says how to land it).
-  The history check's row is S748
-  (`tests/mech/sabotages/S748_spec_history_marker.sh`); the mech suite word
-  `spechistory` is registered in `tests/mech/run_sabotage_matrix.sh`.
+- Sabotage rows: the history check's is S748
+  (`tests/mech/sabotages/S748_spec_history_marker.sh`), the citation check's
+  is S749 (`tests/mech/sabotages/S749_spec_cite_dangling.sh`); the mech suite
+  word `spechistory` is registered in `tests/mech/run_sabotage_matrix.sh`.
+  A lane report must not quote a planted citation literally: the tree-wide
+  citation scan reads it as a dangling number (spectri, 2026-10-09).
 
 ## What it does not catch
 
