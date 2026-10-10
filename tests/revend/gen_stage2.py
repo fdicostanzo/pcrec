@@ -25,6 +25,31 @@ def S(*xs):                       # subjects at startpos 0
 CELLS = []
 add = CELLS.append
 
+HEADER = """# [OPT-REVEND] STAGE 2 correctness corpus (lane rev2corp, 2026-10-10).
+# Capture-bearing END-PINNED patterns (`$`, `\\Z`, `\\z`, without (?m)): the
+# population REVEND's stage 2 (docs/design/locate_finish.md section 4.3) hands
+# to a reverse-seeded locator plus a VM finisher that places the groups. The
+# corpus describes SEMANTICS main already implements; it exists so the L1/L2
+# build is verified against answers fixed BEFORE it exists.
+#
+# ORACLE FIRST. Every m/n/ms/ns/g line is libpcre2 10.46's answer, written by
+# tests/revend/gen_stage2.py (the case table lives there, with each family's
+# rationale), never pcrec's; tests/revend/verify_stage2.py re-reads THIS file
+# and re-asks the oracle for every span and every group slot (it shares no
+# code with the generator). python `re` is NOT an oracle here (its `\\Z` is
+# PCRE2's `\\z`), so every block is `# pcre2-only`. The oracle compiles at
+# options=0: `flags i`, `flags u` and `encoding utf8` are carried into the
+# oracle as (?i), (*UCP) and (*UTF) pattern prefixes.
+#
+# FAMILIES (the risk each stresses is named in docs/dev/lanes/rev2corp_report.md):
+# A the n vs n-1 tie on a final newline; B group placement that depends on the
+# remainder; C groups in loops (last iteration); D optional/unset groups;
+# E alternation priority inside groups; F nested groups; G empty matches at the
+# end; H search-from offsets near the end; I the census's unbounded shapes;
+# J \\b and lookbehind near the match start; K UTF-8 multi-byte tails (byte
+# offsets); L caseless tails; M other pin spellings and non-pinned controls.
+"""
+
 # ---- A. the n vs n-1 tie: subject ends in "\n" ($ and \Z accept both ends) ----
 add(C(r"(a+)$", "A: `$` before a final newline: the match ends at n-1, never n (the 'a' run cannot cross the newline)",
       S("aa", "aa\n", "aa\n\n", "a\na", "a\na\n", "\n", "", "b\n")))
@@ -270,6 +295,28 @@ add(C(r"(?m)(\d+)$", "M/ctrl: MULTILINE `$` is NOT end-pinned: every line end is
 add(C(r"(\d+)$|(x)", "M/ctrl: a top-level alternation whose second branch is unpinned",
       S("a12", "x1", "1x", "12x", "ab")))
 
+# ---- N. the design note's named witnesses: lazy ties, \\K, clamped widths, pins under a loop ----
+add(C(r"(\s+?){2}$", "N (locate_finish 4.3 E3): the LAZY tie that moves the window: end priority differs from max(D); the search-from-not-verify-at witness",
+      S("a    ", "a  ", "a   \n", "a \n", "a \n \n", "    ", "a ", "  \n")))
+add(C(r"(\s+?)\s*$", "N: lazy group then a greedy tail to the pin; the group is the first blank only",
+      S("a   ", "a \n", "   ", "a", " \n  ")))
+add(C(r"(a+?)$", "N: a lazy group still has to reach the pin; the leftmost start is forced to the run start",
+      S("aaa", "baa", "aa\n", "b")))
+add(C(r"(a\z)+", "N (T5 unbounded witness): the pin INSIDE a loop; only the last iteration can satisfy it",
+      S("a", "aa", "ba", "a\n", "")))
+add(C(r"(a+)$", "N (T5 unbounded witness): the plain unbounded group, long runs and interior non-matches",
+      S("aaaaaaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaaaaaab", "baaaaaaaaaaaaaaaaaaa\n", "aaaaaaaaaabaaaaaaaaaa")))
+add(C(r"(\d{2,4})$", "N (clamped width): a bounded group at the end: the locator window is clamped, the start is leftmost-feasible",
+      S("1", "12", "12345", "123456\n", "x123", "x12\n\n")))
+add(C(r"(a{3})$", "N (clamped width): an exact-count group",
+      S("aaa", "aaaa", "aa", "aaa\n", "baaa", "aaab")))
+add(C(r"(\w{1,3})\z", "N (clamped width): bounded word group under \\z",
+      S("abcdef", "ab", "abcd ", "a b", "abc\n", "")))
+add(C(r"(x)\K(\d+)$", "N (\\K): the reported match start moves past the first group; the groups keep their own spans",
+      S("x12", "x12\n", "ax1", "x", "xx12"), feat="classes"))
+add(C(r"(?:a|(b))\K(c)?$", "N (\\K): K with an optional trailing group at the pin",
+      S("ac", "b", "bc", "a\n", "ab")))
+
 # -----------------------------------------------------------------------
 
 def esc(b):
@@ -295,7 +342,7 @@ def oracle(binp, scratch, pat, i, utf8, ucp, subj, sp):
 def main():
     binp, scratch = sys.argv[1:3]
     os.makedirs(scratch, exist_ok=True)
-    print("# See the header comment of tests/revend/stage2_captures.rxt (written by hand\n# above this generated body by gen_stage2.py's caller).")
+    print(HEADER.rstrip("\n"))
     for pat, i, utf8, feat, why, subs, ucp in CELLS:
         print()
         print("# " + why)
@@ -304,7 +351,7 @@ def main():
         if i or ucp: print("flags " + ("i" if i else "") + ("u" if ucp else ""))
         if utf8: print("encoding utf8")
         fs = [x for x in (feat or "").split(",") if x]
-        if any(t in pat for t in ("\\z", "\\Z", "\\b", "(?m)")) and "assertions" not in fs: fs.append("assertions")
+        if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\K", "(?m)")) and "assertions" not in fs: fs.append("assertions")
         if fs and any(t in pat for t in ("\\d", "\\D", "\\w", "\\W", "\\s", "\\S", "[")) and "classes" not in fs: fs.append("classes")
         if "(?m)" in pat and "modifiers" not in fs: fs.append("modifiers")
         if "(?<" in pat and "lookaround" not in fs: fs.append("lookaround")
