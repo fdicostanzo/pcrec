@@ -1,0 +1,301 @@
+C5-0001	HISTORY		Process/doc-structure statement about the old spec paragraph; the new doc says the changelog lives in docs/dev/history/abi_changelog.md (lines 9-11, 1305). Not a current-behaviour fact.
+C5-0002	MAPPED	1138	abi 71 stated at 1138, 1281 (and the guard value at 99-103). Probe: build/pcrec emits (abi 71).
+C5-0003	MAPPED	2251	SIMD_GUARDED_BYTES written by pcrec directly after MEMFN_LIBC (2251-2253; order at 2190-2193; scope all at 1453). Probe: line follows RX_MEMFN_LIBC.
+C5-0004	MAPPED	2251	Stamp defined as bytes under a CPU-level guard (2251-2253, 2259-2262).
+C5-0005	MAPPED	2256	Reads zero on every artifact today since no SIMD form exists and -fmemfn-simd is inert (2256, 2265-2267). Probe: 0x0000000000000000ULL.
+C5-0006	MAPPED	2268	Size decisions read length minus guarded bytes (2268-2272); limits.md:800-810 states the same. Zero guarded bytes makes it equal the plain length.
+C5-0007	UNMAPPED		TRUE (probe: rx_reqrun__body / rx_ofsskip__body exist, wrapper is one call). Internal .c helper shape; new doc does not mention __body or these helper names.
+C5-0008	UNMAPPED		TRUE (probe: return rx_reqrun__body(subject, n, pos);). Internal emitted-text form, not in new doc.
+C5-0009	UNMAPPED		TRUE (probe: all are static inline in the .c). New doc says nothing about these helpers' linkage; tuning.md:3501 shows rx_reqrun as static inline.
+C5-0010	MAPPED	1509	Row text says a ${...} pattern is never declined (its variable turns the prefilter off first) and reads "selected". Probe: --features vars '${x}a*' -> ENGINE_SEL "selected".
+C5-0011	POINTED	1513	1513 cites tuning.md 2.17 for the collapse rung; tuning.md:1344-1357 states the rung is skipped with no collapsible repeat / nullable-not-empty_admits. TRUE: src/core/compile.c:695-699.
+C5-0012	UNMAPPED		New 1741 says N is "the refused artifact's bytes" without saying the exact-vs-wasted-retry fact. TRUE: tuning.md:1352-1356; probe -e utf8 (\p{Xwd}) gives "hybrid 1028659 > 1000000".
+C5-0013	UNMAPPED		Not in match_api.md. TRUE and stated in ir_listing.md:118-119 (no-variable, no-size-cap); no pointer to it at the new doc's prefilter text.
+C5-0014	MAPPED	1509	1509 says the default decline reads empty_admits; the rung-scope decline (1513) cites tuning.md 2.17 which states both scopes read empty_admits (tuning.md:1311-1314). TRUE: select_engine.c:565,592.
+C5-0015	MAPPED	1509	A nullable pattern whose every empty match crosses a non-multiline start AND end anchor is not declined and reads "selected". Probe '^(\s+)*$': ENGINE_SEL selected, VM_PREFILTER hybrid, LANG present; '(\s+)*$' declined.
+C5-0016	HISTORY		Describes the effect of the old bump on movers (a near-miss "now" answers nomatch); tuning.md:1327-1331 records the measurement. Not a standing contract fact.
+C5-0017	UNMAPPED		TRUE (probe VM span scan: while ((rx_span_cursor + 1 <= lim_) && it_ < 50ULL && (...)) {). Internal emitted-text layout, not in new doc.
+C5-0018	UNMAPPED		TRUE (probe: counter cap spelled 50ULL). Emitted-text detail, not in new doc.
+C5-0019	POINTED	1984	1976-1984 describe the arms (A0/A1, B) and cite tuning.md 2.44/2.45; those sections (tuning.md:3755-3761, 3786-3789) define arm A (context gate valued by what it admits) and arm B (backref first from its groups).
+C5-0020	MAPPED	1982	POSS_ARMS: every VM artifact (1434); 0x0u where no arm needed (1982-1984). Probe: RX_VM_POSS_ARMS 0x0u.
+C5-0021	HISTORY		Comparison with the abi-65 artifact (past state). Current rule: a denied arm's bit is 0 (1984).
+C5-0022	UNMAPPED		TRUE (probe: --features all '\w++\b' -> RX_ENGINE "dfa"; with -fno-poss-ctx-follow "vm"). Stated at tuning.md:3764-3775; new doc 1264-1265 only says engine-selecting denials are kept in flags.
+C5-0023	MAPPED	1261	Strategy mask derived: every axis bit masked except the named kept set (1261-1264), citing tuning.md 2 "THE rx_info.flags RULE".
+C5-0024	POINTED	1262	1262-1269 point to tuning.md 2 (rule at tuning.md:132-139, which names -fno-size-term bit 18 and -fno-scan-edge bit 21). Probe: both leave .flags = 0.
+C5-0025	MAPPED	1262	"a new axis is masked on arrival" (1262-1263).
+C5-0026	MAPPED	1590	Rows first-memchr-bounded and first-class-bounded in the RX_DFA_PREFILTER table (1590-1591); rx_info.prefilter mirrors RX_DFA_PREFILTER (1158). Probe: '\b(?:true|false|null)\b' -> first-class-bounded.
+C5-0027	POINTED	1590	1590-1591 state S vs E, one byte memchr / 256-entry start_bytes table, bounded, re-seed, and cite tuning.md 2.42; the S-cannot-match-empty condition is at tuning.md:3704-3710.
+C5-0028	POINTED	1590	1590 cites tuning.md 2.42 and "Removed by -fno-start-set"; the hybrid inlined-prefilter hat and the single deny for both hats are at tuning.md:3641-3643, 3693-3701.
+C5-0029	MAPPED	2190	Both stamps on every artifact of both engines, after RUN_WORDS (2190-2194). Probe order: RUN_WORDS, MEMFN_FORMS, MEMFN_LIBC.
+C5-0030	MAPPED	2225	MEMFN_FORMS is "none" on every artifact today since no SIMD form exists (2216, 2224-2227).
+C5-0031	MAPPED	2230	MEMFN_LIBC is "none" or the sorted source-level inventory of C library calls (2230-2239).
+C5-0032	UNMAPPED		Not in new doc. TRUE: src/gen/memfn_stamps.c:41-42 and src/core/compile.c:2643-2645 render the lines before the size measurement, so size-cap figures include them.
+C5-0033	MAPPED	1946	VM-route first-class row conditions (VM_PREFILTER "none", unanchored, start_set non-nullable, fewer than 256 members, 256-entry table, seek before first attempt and after each failed one) all at 1946.
+C5-0034	MAPPED	1946	Seek sits after the range guard, boundary guard, valid_upto and necessary-set pre-check (1946), so those answers are unchanged.
+C5-0035	MAPPED	1421	VM_START_SCAN on every artifact, "first-class" or "none" (1421, 1934-1947).
+C5-0036	POINTED	1262	Mask rule at 1261-1269 (tuning.md:132-139; tuning.md:3641-3643 says -fno-start-set bit 47 masked). Probe: .flags = 0 under -fno-start-set.
+C5-0037	MAPPED	361	361-364 and 1950-1951: a give-up under -fno-start-set may become the answer with the skip on, never the reverse.
+C5-0038	POINTED	1917	1917-1918 name the req-use table's handoff row and cite tuning.md 2.41 (tuning.md:3588-3593: second table beside 2.29, axis req-use, listed by --list-axes). 1923-1925 state what handoff keeps.
+C5-0039	MAPPED	1923	The pre-check's search block returns the LEAST position >= startpos where the whole window occurs, or n (1923-1925).
+C5-0040	MAPPED	1925	Scan begins at max(startpos, that - K), rounded up to a character start under a multibyte encoding when it moved; K is req_run_maxoff in bytes (1925-1931).
+C5-0041	MAPPED	1926	"The three bodies with a DFA scan read it at their one start site; \G keeps reading startpos" (1926-1928).
+C5-0042	MAPPED	1909	REQ_HANDOFF on every artifact, decimal K or "none" (1420, 1909-1929).
+C5-0043	POINTED	1262	Mask rule 1261-1269; tuning.md:3584-3591 (bit 46, MASKED). Probe: .flags = 0 under -fno-req-handoff.
+C5-0044	POINTED	1888	1886-1900 give the REQ_WHY tokens and cite tuning.md 2.29, which states the five-row first-match table and axis req-admit (tuning.md:2777-2787).
+C5-0045	POINTED	1897	1897 mentions the rarer necessary-set byte's lead check and cites tuning.md 2.40; strictly-rarer, tie-keeps-run and the K65 skip are tuning.md:3560-3573.
+C5-0046	POINTED	1262	Mask rule 1261-1269; tuning.md:3552-3556 (bit 45, MASKED). Probe: .flags = 0 under -fno-req-set-lead.
+C5-0047	POINTED	1855	1853-1855 cite findings.md 4 for which analysis answers; findings.md:121 states PICK's NONE answer is argmin of uniform mass (cardinality), ties to rightmost.
+C5-0048	POINTED	1884	1883-1884 cite tuning.md 2.28 for the derivation (scan-member pick, tuning.md:2751-2753) and 1855 findings.md 4 (findings.md:121 exact before pair). Probe: -e utf8 (?i)sel9ectxy scans idx 2, the exact '9'.
+C5-0049	MAPPED	1894	REQ_WHY keeps four tokens (1894-1900); 1897 says "emitted" covers a lead by a rarer set byte.
+C5-0050	POINTED	1884	Two-member-cube positions are visible in the REQ_RUN grammar (1881-1883, 1857-1858 cite tuning.md 2.39); the admission rule is tuning.md:2738-2744, 3487-3492.
+C5-0051	POINTED	1884	Ranking by sum popcount(K), floor 16 (PCREC_MIN_REQ_RUN_BITS) and the alternation cube hull are at tuning.md:2738-2750 (2.28), which 1884 cites.
+C5-0052	POINTED	2199	2198-2201 name the words row for masked runs and cite tuning.md 2.38/2.39; compare text and bytes row under -fno-run-overlap are tuning.md:3425-3445.
+C5-0053	POINTED	1884	Pair scanned as two leapfrogged memchr streams: tuning.md:2751-2754, 3497-3515 (2.28/2.39); new doc only cites those sections (1858, 1884).
+C5-0054	MAPPED	1881	A masked run carries "/" and each position's K in hex after @idx (1868-1883).
+C5-0055	MAPPED	1857	Where the run's scan member is a two-member cube, REQ_BYTE is the set's pick or "none" for an empty set (1857-1858); "emitted" + REQ_BYTE "none" follows. Probe confirms REQ_BYTE "none" with RUN present.
+C5-0056	UNMAPPED		Not in new doc (no K65/whole-set text). TRUE per tuning.md:3530-3532 (whole-set half keeps testing every set member the run does not prove).
+C5-0057	POINTED	1262	Mask rule 1261-1269; tuning.md:3473 (bit 44). Probe: .flags = 0 under -fno-req-run-fold.
+C5-0058	UNMAPPED		Partly shown (1882-1883: T is each position's lower member). Internal-error refusal and popcount 7/8 not stated. TRUE: src/facts/req.c:81, 249-257; tuning.md:2733-2737.
+C5-0059	POINTED	1858	1858 cites tuning.md 2.39, whose pair-arm text (tuning.md:3497-3500, code at 3502-3515) shows the while (pos + maxk < n) guard.
+C5-0060	UNMAPPED		Not in new doc. TRUE: tuning.md:2982-2987 (the pin covers exact positions only; no masked run enters the DFA_PREFILTER table).
+C5-0061	SUPERSEDED	2204	New 2202-2205: the run compare is written by the kit's emitter (memfn/src/runcmp.c), not src/gen/runcmp.c. Evidence: src/gen/runcmp.c absent, memfn/src/runcmp.c exists; tuning.md:3416-3421.
+C5-0062	MAPPED	2199	Overlap row applies to an exact run of length 3, 5-7 or 9-15 (2199-2200).
+C5-0063	POINTED	2199	2198-2200 cite tuning.md 2.38 (tuning.md:3438-3445: static inline uint<8W>_t <prefix>_w<W>(const void*) memcpy helper, constant is the same helper on a string literal); 2235-2237 mention <prefix>_wN loads.
+C5-0064	MAPPED	2200	"Any other exact run compare is a memcmp" (2200-2201, 2079-2080).
+C5-0065	POINTED	2199	Helper emission (only where a word compare is written, once each, ahead of first use): tuning.md:3445-3447, reached from the 2.38 citation at 2199.
+C5-0066	MAPPED	2190	RUN_WORDS on every artifact of both engines, counts word compares, written after the engine body (2190-2205). Probe: RX_RUN_WORDS present.
+C5-0067	POINTED	1262	Mask rule 1261-1269; tuning.md:3402 (bit 43). Probe: .flags = 0 under -fno-run-overlap; 2201 says RUN_WORDS 0 under it.
+C5-0068	POINTED	2199	o + W <= L invariant at tuning.md:3453-3455 (2.38, cited at 2199).
+C5-0069	POINTED	2199	Constants are string literals, never integer literals: tuning.md:3443-3445 (2.38, cited at 2199).
+C5-0070	POINTED	2199	Reads exactly the run's L bytes behind the existing bounds guard: tuning.md:3453-3455 (2.38, cited at 2199).
+C5-0071	POINTED	1654	1654 cites tuning.md 2.18; END-view-only member and trimmed view-target head are at tuning.md:1543-1546 and 2.37 (3365-3396).
+C5-0072	MAPPED	1778	VM_RESEED value "anchored" (1778; table at 1773-1781).
+C5-0073	MAPPED	1778	Row text: start-anchored, no retry runs, artifact equals its -fno-hyb-reseed artifact byte for byte. Probe: '^(a)(?=bc)\w*x' -fno-length-prune reads "anchored" and differs from -fno-hyb-reseed only in include lines.
+C5-0074	MAPPED	330	330-333: DFA artifact with NCAPS >= 2 whose groups can never be set writes PCREC_UNSET on success only. NOTE: 891-892 say a DFA artifact always has NCAPS 1; probe '(?(DEFINE)(?<x>\b))b(?&x)' gives RX_ENGINE "dfa" with RX_NCAPS 2.
+C5-0075	MAPPED	330	Observable half stated (slots written PCREC_UNSET on a success only, 330-333); emission placement after the caps[0] write is not stated but unobservable.
+C5-0076	MAPPED	327	Every return other than 1 leaves the whole caps untouched; startpos > n returns 0 (327-336).
+C5-0077	MAPPED	327	Same sentence covers VM, hybrid, _match_caps and _in entries and names tests/codegen/run_nomatch_caps.sh (327-333).
+C5-0078	MAPPED	99	Guard value and the #if ... != 71 / #error opening shown verbatim (96-104).
+C5-0079	MAPPED	106	A different-abi artifact in the translation unit fails to compile naming the cause (106-108).
+C5-0080	MAPPED	106	"artifacts of one abi share the first block" (106-107).
+C5-0081	MAPPED	107	+ 0 refuses a pre-54 artifact included first; pre-54 included after a newer one is not refused (107-110).
+C5-0082	MAPPED	2039	Program is emitted under a two-byte placeholder prefix and the caller's -p spelling is written onto the finished text (2039-2042).
+C5-0083	POINTED	2043	2041-2043 cite limits.md "Size limits and the prefix" (limits.md:766-775: caps, size term trigger and ladder, entry-shape knee all read the canonical length).
+C5-0084	POINTED	2043	Same artifact whatever the prefix, only the spelling differs: limits.md:766-775, 786-795 (cited at 2043); 2041-2042 say number and rung are the same under every prefix.
+C5-0085	MAPPED	2037	PROGRAM_BYTES is measured at the canonical two-byte prefix length (2037-2043).
+C5-0086	MAPPED	1231	A compile supplying no name stamps its own prefix (1231-1232, 2542).
+C5-0087	MAPPED	1654	Scan-edge test is the class-form table's answer at the scan site, spelled by the emitters a VM class read uses (1654-1658).
+C5-0088	MAPPED	1669	"otherwise (unsigned)(b - lo) <= span u" in the "range" row (1669). Probe se3.c: (unsigned)(b - 97) <= 25u.
+C5-0089	UNMAPPED		TRUE (probe VM 'a[\x00-\x7f]b': (subject[scan_position] <= 127)). New doc states "b <= hi from 0" only for the DFA scan edge (1669), not for VM classes.
+C5-0090	MAPPED	1670	At --tune=-2/-1 every edge's ASCII case pair is "fold" (1670).
+C5-0091	MAPPED	2090	Byte class takes the kit at --tune=-2/-1 where the kit is smaller than the class's table (2090-2093).
+C5-0092	POINTED	2093	2093 cites tuning.md 2.33; tuning.md:3174-3175: a byte kit whose set spans every byte carries no bound.
+C5-0093	MAPPED	1672	"kit" value: at -2/-1 only, every edge's class takes a static inline <prefix>_<machine>_scankit<N> smaller than its 256-byte table (1672).
+C5-0094	MAPPED	1672	DFA_SCAN_EDGE "kit" is a listed value (1672).
+C5-0095	MAPPED	1672	"Never at 0/+1/+2, never under -fno-cls-kit" (1672).
+C5-0096	MAPPED	2067	Class-form table in src/gen/clskit.c chooses the fold shape (2067-2068); 1656 names the table for the scan edge; tuning.md 2.33/5.4 for the rest.
+C5-0097	POINTED	2093	2090-2093 state the kit form at -2/-1 and cite tuning.md 2.33 (tuning.md:3158-3166: neither one interval nor fold pair, unless atom table).
+C5-0098	MAPPED	2088	CLS_KIT counts <prefix>_wcls<N> and <prefix>_class_kit<N> (2088-2093).
+C5-0099	MAPPED	2095	CLS_KIT is 0 under -e byte at 0/+1/+2, i.e. no byte-class kit there (2095).
+C5-0100	POINTED	2093	Not stated in match_api.md; tuning.md:3175-3177 (cited at 2093). TRUE: probe -e utf8 'a[\x{e0}-\x{ff}]b' -> rx_wcls0 is one range compare.
+C5-0101	MAPPED	176	#define PCREC_ERR_UTF (-9) in the shared block (176, 789).
+C5-0102	MAPPED	1415	UTF_CHECK on every artifact (1415, 1807-1816).
+C5-0103	MAPPED	594	Every artifact exports <prefix>_valid_upto, whatever -futf-check says (594-596; inventory at 274; declaration at 582).
+C5-0104	MAPPED	605	<prefix>_VALID_LB is a .c-only macro read by the body (605-606, 1395-1396).
+C5-0105	UNMAPPED		TRUE (probe -e utf8 --features vars: rx_var_valid calls rx_valid_upto(v, vlen, 0) == vlen). Not in match_api.md or vars.md (no var_valid text in docs/spec).
+C5-0106	MAPPED	2734	Every entry that takes a subject checks, at one site per body, beside the boundary guard (2734-2737).
+C5-0107	MAPPED	1804	-fstartpos-guard=align: STARTPOS_GUARD "align", position moved at entry in place of refusal (1804, 2671-2683).
+C5-0108	MAPPED	1264	Startpos guard bits 25 and 40 and -futf-check bit 39 (1264-1265). Probe: flags 549755813888 (bit 39), 1099511627776 (bit 40).
+C5-0109	MAPPED	1263	Contract axes kept in flags, masked only under byte (1263-1266).
+C5-0110	MAPPED	1816	"inert" under byte, byte-identical to one built without the flag (1816, 2680, 2744-2745). Probe: byte artifact identical with and without both flags.
+C5-0111	MAPPED	1779	Over-approximating prefilter: retry steps or re-seeds per call (1779-1780, 1783-1786); causes and gap rule at tuning.md:3252-3262 (cited 1786).
+C5-0112	MAPPED	1776	"exact" and "clamped" rows keep the non-adaptive retry (1776-1777, 1786).
+C5-0113	MAPPED	1768	VM_RESEED on hybrids only, names the first-match row that fired (1433, 1768-1771).
+C5-0114	MAPPED	1783	An adaptive artifact runs a subset of the attempts, so can answer where the non-adaptive retry gave up on a budget, never the reverse (1783-1785).
+C5-0115	POINTED	1262	Mask rule 1261-1269; tuning.md:3245-3249 (bit 37, MASKED). Probe: .flags = 0 under -fno-hyb-reseed.
+C5-0116	MAPPED	2088	Wide class (more than one member, some member deeper than one code unit) tested as <prefix>_decode plus one matcher (2088-2091).
+C5-0117	POINTED	2093	2088-2093 cite tuning.md 2.33; tuning.md:3125-3129 says wcls<N> is static inline and its form is chosen by the --tune class table. Probe: static inline int rx_wcls0.
+C5-0118	MAPPED	2093	<prefix>_decode is a static inline encoding-seam helper declared nowhere (2093-2094). Probe: static inline rx_decode defined ahead of the program.
+C5-0119	UNMAPPED		TRUE (probe -e utf8 (?i)(\w+)\1: rx_span_match_caseless calls rx_decode). Not in new doc; vars.md:150-157 mentions only the shared span-match pair.
+C5-0120	MAPPED	1443	CLS_KIT on every VM artifact (1443, 2088).
+C5-0121	UNMAPPED		TRUE (probe -e utf8 --features all --engine=vm '\P{Unknown}' compiles; refuses under -fno-cls-kit). Stated at tuning.md:3139-3141, 3184-3190; absent from match_api.md.
+C5-0122	POINTED	1262	Mask rule 1261-1269; tuning.md:3113 (bit 36). Probe: .flags = 0 under -fno-cls-kit.
+C5-0123	MAPPED	2111	"-fno-cls-kit denies the atom table too" (2111).
+C5-0124	MAPPED	2103	One shared static const unsigned char <prefix>_class_atoms[256], taken at 11 or more table-read byte classes and at most 64 atoms (2103-2109).
+C5-0125	MAPPED	2105	One static inline matcher <prefix>_class_atom<N> per class, one load and one shift of a 64-bit immediate; else a 32-byte bitmap per class (2105-2111).
+C5-0126	MAPPED	1444	CLS_ATOMS on every VM artifact (1444, 2102-2111).
+C5-0127	MAPPED	2109	"it is selected after the entry rung" (2109-2110), so the rung's knee is unaffected.
+C5-0128	MAPPED	2111	0 under -fno-cls-pack; -fno-cls-kit also denies the table, so cls-pack denies the atom row alone (2111); masked by 1262.
+C5-0129	MAPPED	2689	On a subject beginning with continuation bytes the search begins at the first non-continuation byte (2689-2692); nullable examples at 2693-2694.
+C5-0130	MAPPED	2689	Same rule (2689-2692) plus 2769-2771: a search's first attempt at offset 0 follows 9.3. The per-body emission sites are internal.
+C5-0131	MAPPED	2703	Anchored entries answer -1 at ctx->pos == 0 on such a subject (2703-2708, 647-648).
+C5-0132	UNMAPPED		Not in new doc. TRUE: src/ir/nfa.c:1083-1090 ([K50-NULLGATE], pcrec_startgate_needed): a non-nullable pattern needs no start gate.
+C5-0133	MAPPED	2655	Anchored entries carry the same guard against ctx->pos (2655-2657; 641-645).
+C5-0134	HISTORY		Describes which answers moved at that bump (past-state diff), not current behaviour.
+C5-0135	UNMAPPED		TRUE (probe --features lookaround '(?<=a)b' -> DFA; DFA/VM under -fno-ctx-node). match_api.md never mentions context nodes; stated at tuning.md:3055-3100 (2.32).
+C5-0136	UNMAPPED		TRUE (same probe: lookaround-only pattern moves to the DFA). Stated at tuning.md:3079-3086; absent from match_api.md.
+C5-0137	UNMAPPED		TRUE (probe --ucp --features all -e byte '\bfoo\b' compiles to a DFA). Not stated in match_api.md.
+C5-0138	POINTED	1262	Mask rule 1261-1269; tuning.md:3055-3062 (bit 35, masked). Probe: .flags = 0 under -fno-ctx-node.
+C5-0139	UNMAPPED		TRUE (probe: --features all lists every module in FEATURE_MODULES, incl. ucp, vars). 64-66 and 2304-2306 describe the stamp but not that "all" lists every module.
+C5-0140	MAPPED	2304	Stamps carry the feature set the artifact was built with (2304-2306; 64-70).
+C5-0141	POINTED	1884	Rightmost positional tie for the run scan member: tuning.md:2683-2686 (cited via 1884) and findings.md:128.
+C5-0142	POINTED	1884	Window MASS ties leftmost: tuning.md:2705-2708 and findings.md:129 (1884 cites 2.28).
+C5-0143	HISTORY		Describes how the stamp moved at that bump; the current rule (window contains the pick, tuning.md:2705-2708) is covered by 0142.
+C5-0144	MAPPED	1822	None of the six stamps changes an answer (1822-1824); every value is a member of the necessary set (1858-1859).
+C5-0145	MAPPED	2076	Run of three or more one-byte literals; "a two-byte run stays a two-node byte chain" (2076-2078). Floor is not a flag: src/core/cpset.c:475-480.
+C5-0146	UNMAPPED		TRUE (src/core/cpset.c:475, tuning.md:3016-3020). Internal one-predicate-three-readers fact, not in new doc.
+C5-0147	MAPPED	2076	LIT_RUNS counts the run compares written; two-byte runs are not counted (2076-2081).
+C5-0148	POINTED	2081	2081 cites tuning.md 2.31/2.38; tuning.md:3050-3052 states no answer or give-up moves and budgets charge what the chain charged (limits.md 3.1).
+C5-0149	POINTED	2081	New 2077-2078 only says the island chain counts; tuning.md:3010-3012 (cited at 2081) says it is a different mechanism not under the floor.
+C5-0150	UNMAPPED		TRUE (probe '(a|(?1))*?b' has no EMPTY_GUARD slot; '(a|(?1)|)*?b' keeps it). Call-nullability fixpoint is not in match_api.md or other spec docs.
+C5-0151	UNMAPPED		TRUE (probe: '(a|(?1))*?b' and the DEFINE variant emit no RX_SLOT_EMPTY_GUARD). <PREFIX>_SLOT_* is internal (1393-1394), so the specific absence is unstated.
+C5-0152	UNMAPPED		TRUE (probe: nullable callee keeps RX_SLOT_EMPTY_GUARD0). Not in new doc.
+C5-0153	UNMAPPED		Not in new doc; E1 nullable fact belongs to facts_listing.md. No contrary evidence found.
+C5-0154	MAPPED	2076	Three or more consecutive literals consumed by one bounds check and one run compare (2076-2081); the 2-or-more wording is stale. Probe: LIT_RUNS 1 on (x)abcdefg.
+C5-0155	MAPPED	2077	An alternation island's single-child trie chain is the same run compare (2077-2078).
+C5-0156	UNMAPPED		Not in new doc; tuning.md:3040-3041 states it. Probe: artifacts include <string.h> when memcmp/memchr are used.
+C5-0157	MAPPED	1442	LIT_RUNS on every VM artifact, hybrids included (1442, 2076; scope vm = 1401-1404).
+C5-0158	POINTED	1262	Mask rule 1261-1269; 2081 says LIT_RUNS is 0 under -fno-lit-run. Probe: .flags = 0 under it.
+C5-0159	UNMAPPED		Not in match_api.md. TRUE and stated in ir_listing.md:176 (compare op).
+C5-0160	MAPPED	2280	FINDINGS on every artifact, written beside the rx_info definition (2190-2194, 2280-2298).
+C5-0161	MAPPED	1165	rx_info field 28 findings (1165); new members are appended (1302-1303).
+C5-0162	POINTED	1855	Byte-rate prior is data: 1853-1855 cite findings.md; findings.md:127-133 list the consumers and findings.md:171 the shipped default.rxt. "Normalizes to the old table" is history.
+C5-0163	UNMAPPED		Not in new doc. TRUE per findings.md:123 and 133 (offset-k reads MASS; NONE is cardinality), no stated encoding-gate sentence there.
+C5-0164	MAPPED	1390	Stamps report cost, size or shape, never answers (1390-1392); findings.md:133 notes every tested offset set is necessary.
+C5-0165	POINTED	1262	Mask rule 1261-1269 (bits 28-30). Probe: .flags = 0 under -fno-vm-anchor-bound, -fno-end-window, -fno-req-byte.
+C5-0166	MAPPED	1257	flags records the request with answer-preserving denials masked so identical artifacts do not differ in reflection (1257-1262).
+C5-0167	POINTED	1884	Tuning.md:2683-2686 says the run scan member ties to the rightmost (PICK's NONE answer). Probe: -e utf8 '[a-z]+@example' scans idx 7, the rightmost. For masked runs NONE prefers an exact position first (findings.md:121).
+C5-0168	HISTORY		Assurance about which artifacts moved at abi 38 (byte untouched by construction).
+C5-0169	UNMAPPED		TRUE (probe: static inline rx_reqrun / rx_reqrun_whole beside rx_ofsskip). Helper names/linkage not in match_api.md.
+C5-0170	MAPPED	1923	Pre-check search block returns the least position where the run window occurs, or n (1923-1925).
+C5-0171	UNMAPPED		TRUE when no handoff (probe: if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;); with a handoff row the call feeds the scan start instead (probe uuid pattern). Not in new doc.
+C5-0172	UNMAPPED		TRUE (probe: while (pos + 3 < n) guards the memchr). K27 obligation text is tuning.md:3497-3500 for the masked block; absent from match_api.md.
+C5-0173	UNMAPPED		TRUE (probe: static inline). Not in new doc.
+C5-0174	POINTED	1884	tuning.md:2712-2716 (2.28, cited at 1884): denying -fno-req-byte denies the run check; -fno-req-run alone leaves the one-byte check. 1898 covers REQ_WHY "none" under -fno-req-byte.
+C5-0175	MAPPED	1900	"dominated": the artifact's own candidate-start memchr (or run-pinned test) already scans a byte at least as rare (1900); run-pinned elision at 1588.
+C5-0176	MAPPED	1588	run-pinned and run-pinned-bounded values (1588-1589); rx_info.prefilter mirrors them (1158).
+C5-0177	MAPPED	1588	Run at a fixed offset, scan already on the scan member, whole run verified as one compare, offsets listing may start 0* (1588, 1607-1611). "Ahead of every other form" is tuning.md:3693-3698.
+C5-0178	POINTED	1588	1588 "Removed by -fno-run-prefilter or -fno-offset-skip"; bit 32 and masking via 1262 and tuning.md:2948-2949, 2975-2979.
+C5-0179	MAPPED	1588	"Removed by -fno-run-prefilter or -fno-offset-skip" (1588).
+C5-0180	POINTED	1888	Admission elisions carry no axis: tuning.md:2785-2786, 2975-2977 (cited via 1888 for the REQ_WHY tokens); 1588 states what -fno-run-prefilter removes.
+C5-0181	POINTED	1884	Not stated in match_api.md; tuning.md:2705-2711 (cited via 1884): runs over PCREC_MAX_REQ_RUN_EMIT (8) are truncated to the prior-chosen window.
+C5-0182	UNMAPPED		Not in new doc. TRUE: tuning.md:2839-2841 (the necessary-byte/run pre-check is the only linear NO-MATCH PROOF on a no-prefilter VM route); 1859-1860 say only that the pre-check rejects a subject in one pass.
+C5-0183	UNMAPPED		Behaviour TRUE (probe: rx_reqrun then rx_reqrun_whole); not in new doc (tuning.md:2855-2868). Function names emit_req_run_rest / Job.req_set are stale (src/gen/emit_dfa.c now builds reqrun_whole via dfa_fragf).
+C5-0184	UNMAPPED		Not in new doc. TRUE in effect: tuning.md:2869-2873 (whole-set half skips every EXACT position's byte of the whole run); rq_set[] no longer exists as such.
+C5-0185	POINTED	1884	tuning.md:2712-2716 (denying -fno-req-byte denies the run check) and 2865-2880; 1898 shows -fno-req-byte gives REQ_WHY "none".
+C5-0186	UNMAPPED		Same as C5-0182: tuning.md:2839-2841; applies to backreference/linked-call patterns and --engine=vm without -fprefilter. Not in new doc.
+C5-0187	UNMAPPED		Not in new doc. Shape is stale: probe shows the remaining necessary bytes as inline !memchr(subject + search_from, 83, ...) tests, no rq_set[] array. Absent member -> NOMATCH still holds (tuning.md:2869-2873).
+C5-0188	MAPPED	1898	REQ_WHY "none" when nothing is necessary, incl. -fno-req-byte (1898, 1861-1862); tuning.md 2.27 for the axis.
+C5-0189	POINTED	1888	1899 states the one-attempt decline; the linearity conjunct (exact-language hybrid or frameless VM program) is tuning.md:2822-2835 (2.29, cited at 1888).
+C5-0190	POINTED	1888	tuning.md:2826-2828 (a count-collapsed superset is not the no-match proof); 1764-1765 note a superset cannot bound the match end.
+C5-0191	MAPPED	1898	-fno-req-byte -> REQ_WHY "none" on both routes (1898, 1861-1862).
+C5-0192	MAPPED	230	Module vars: rx_ctx.vars/nvars carry the caller's variable values by name (230-232; vars.md).
+C5-0193	MAPPED	76	rx_var in the shared ABI block, listed first (76, 133-139).
+C5-0194	MAPPED	149	rx_ctx.vars and nvars shown as the last two fields (149-151).
+C5-0195	MAPPED	230	Variables ride rx_ctx, "what keeps a var-bearing artifact's <prefix>_match an rx_matchfn" (230-232, 281-283).
+C5-0196	MAPPED	175	PCREC_ERR_UNSET_VAR (-8): below the floor, a refusal, caps untouched (175, 788, 839-841).
+C5-0197	MAPPED	1163	rx_info members vars (name table) and nvars (1163-1164).
+C5-0198	MAPPED	120	NVARS and VAR_<NAME> index macros on var-bearing artifacts (120-121, 1457).
+C5-0199	POINTED	230	230-232 and 1457 point to vars.md; vars.md:69-77 states variables are passed BY NAME because an index is meaningful only inside one artifact.
+C5-0200	MAPPED	1163	rx_info.vars is the variable-NAME table (1163). The <prefix>_var_names[] symbol name is an internal emitted array, not named.
+C5-0201	POINTED	230	vars.md:76-77 (artifact resolves its mentioned names against the caller's array once per call); <prefix>_vars_resolve is an internal static.
+C5-0202	UNMAPPED		Not in match_api.md. vars.md:150-157 states the shared $_span_match / $_span_match_caseless pair for backreferences and variables.
+C5-0203	UNMAPPED		TRUE (probe: -e utf8 --features vars emits rx_var_valid). Not in match_api.md; vars.md lacks it.
+C5-0204	UNMAPPED		Internal residual naming; vars.md:155-157 mentions the residual in passing. Probe: rx_span_match_caseless is emitted for a caseless backref.
+C5-0205	MAPPED	279	Trailing const rx_var *vars, size_t nvars pair on search and search_in, buffer descriptor stays last (279-283).
+C5-0206	MAPPED	230	docs/spec/vars.md named as the module's contract at 231, 282, 317, 788, 841, 1163.
+C5-0207	MAPPED	1894	REQ_WHY on every artifact, closed four-token set (1419, 1886-1900).
+C5-0208	MAPPED	1887	"whether the artifact acted on either fact, and why not" (1887-1888, 1894-1900).
+C5-0209	MAPPED	1902	REQ_BYTE/REQ_RUN keep naming the derived facts; REQ_WHY "none" iff both are "none" (1902-1906).
+C5-0210	POINTED	1888	1899 gives the one-attempt decline; the start_max/VM_START conditions and the linearity conjunct are tuning.md:2800-2835 (2.29, cited at 1888).
+C5-0211	MAPPED	1900	"dominated": own candidate-start memchr already scans a byte at least as rare (1900).
+C5-0212	MAPPED	1899	Declines say a whole-window pass in front only adds work (1899-1900); -fno-req-byte -> "none" (1898).
+C5-0213	MAPPED	1865	REQ_RUN on every artifact (1418, 1865-1884).
+C5-0214	MAPPED	1877	Hex bytes, @, scanned member index; "none" at length below 2 (1877-1879).
+C5-0215	POINTED	1884	1877-1879 name the memchr member; the memcmp per hit and the one-or-two-conjunct window guard are tuning.md 2.28 (cited 1884). Probe: while (pos + 3 < n) with memchr + memcmp.
+C5-0216	MAPPED	1851	REQ_BYTE: least likely necessary-set member by the analysis's byte-rate, rightmost rule as tiebreak (1851-1855). Three-line shape not stated; probe shows it.
+C5-0217	POINTED	1884	Same as C5-0174: tuning.md:2712-2716; 1898 and 1861-1862 cover -fno-req-byte.
+C5-0218	HISTORY		Rationale in lib/pcrec.h:52-73 (now spelled PCREC_BIT(N) = 1ull << (n)); 2497 and 1139 state flags is uint64_t.
+C5-0219	MAPPED	2497	pcrec_options.flags is uint64_t (2497; rx_info.flags uint64_t at 1139).
+C5-0220	MAPPED	1834	END_WINDOW and REQ_BYTE are strings with a "none" member because 0 is legal (1834, 1851).
+C5-0221	MAPPED	2118	VM_START on every VM artifact (1445, 2117-2135).
+C5-0222	MAPPED	2131	Either non-"unanchored" value means the emitted search loop stops after one attempt (2131-2132). attempt_max name is internal; probe: const size_t attempt_max = search_from;.
+C5-0223	MAPPED	1837	END_WINDOW value is the bound both search entries clamp to (1837). Probe: two-line clamp search_from = subject_length - 2ULL.
+C5-0224	MAPPED	1859	A necessary byte makes a non-"none" artifact reject a whole subject in one pass (1859-1860). The #include <string.h> side effect is not stated.
+C5-0225	POINTED	1840	1840, 1854 and 2133 cite tuning.md 2.26, 2.27, 2.25; each states the denied artifact is the pre-mechanism one.
+C5-0226	MAPPED	1308	Provenance line names PCREC_VERSION and abi on every artifact under every -fcomments setting (1308-1315).
+C5-0227	MAPPED	1311	PCREC_VERSION versions the tool independently of abi (1311-1313).
+C5-0228	UNMAPPED		Not in match_api.md. TRUE and stated in cli.md:45-54. Probe: build/pcrec --version prints "pcrec 0.2.0-beta".
+C5-0229	MAPPED	1308	Exactly two comment classes under every setting; everything else only under -fcomments (1308-1320).
+C5-0230	MAPPED	1317	Non-essential comments emitted only under -fcomments (1317-1318).
+C5-0231	POINTED	1262	Mask rule 1261-1269; tuning.md:2336. Probe: .flags = 0 under -fno-comments.
+C5-0232	MAPPED	1292	-fcomments and -fno-comments differ in comment text only: object file, comment-excluded size and every #define identical (1292-1296).
+C5-0233	MAPPED	1310	Provenance line carries the abi digit (1310). The "(abi 27)" example is stale (now abi 71 plus the version).
+C5-0234	MAPPED	2308	TUNE is a closed five-token string stamp (2308-2311; 1412).
+C5-0235	MAPPED	2310	"At the default balanced nothing else differs" (2310-2311). The tune.c sentinel-row mechanism is internal.
+C5-0236	UNMAPPED		Only the balanced case is stated (2310). Answer identity across all five positions and no refusal-set move: tuning.md:4329-4333 (5.5); no statement about struct offsets or rx_info members at other positions.
+C5-0237	UNMAPPED		TRUE (probe '[a-z]{2}[0-9]{2}': rx_reverse_scan_views:; and rx_reverse_scan_edge:;). Emitted-text detail not in new doc.
+C5-0238	HISTORY		Statement about which artifacts moved at that bump (and -fno-scan-edge excusing it); the standing fact (no scan edge, no such labels) is trivial.
+C5-0239	MAPPED	174	#define PCREC_ERR_STARTPOS (-7) in the shared block (174, 787).
+C5-0240	MAPPED	2769	Every engine-generated position (candidate starts, retries, first attempt at offset 0) is a character start (2769-2773). Gate-as-automaton-state and attempt-loop continue are internal.
+C5-0241	MAPPED	2638	Under an encoding with multi-byte characters entries refuse a mid-character startpos (2638-2657); byte emits no guard (2620-2621, 1805). Probe: utf8 guards at search/match/match_caps; byte has none.
+C5-0242	HISTORY		Comparison with pre-K50 artifacts. Current semantics of -fno-startpos-guard are at 2661-2667.
+C5-0243	MAPPED	2063	ASCII-fold class tested (byte | 0x20) == lower with no 32-byte bitmap emitted (2063-2067).
+C5-0244	MAPPED	2062	VM_CLS_FOLDS on every VM artifact (1441, 2062-2072).
+C5-0245	POINTED	2064	2064 cites tuning.md 2.22 (tuning.md:2112, -fno-cls-fold bit 24). The flag spelling is not in match_api.md.
+C5-0246	MAPPED	2020	ENTRY_SHAPE and PROGRAM_BYTES on every VM artifact (1439, 2019-2046).
+C5-0247	HISTORY		About a past bump's effect on an old property ("framed artifacts byte-identical").
+C5-0248	POINTED	1654	Entry dispatch (is_stop && !is_dead) and precondition (8): tuning.md:1546-1550, 1621. Probe: if (rx_.._is_stop(state) && !rx_.._is_dead(state)) goto ..scan_edge in tests/codegen/run_scan_edge_census.sh.
+C5-0249	MAPPED	1115	ref non-NULL on every delivered row, naming the definition (1115-1118; 240-243).
+C5-0250	MAPPED	1108	nnames counts the caller-scope prefix, nentries the whole array, sort key leads with scope (1108-1118).
+C5-0251	MAPPED	1105	ngroups is the target pattern's own count (1105-1107).
+C5-0252	MAPPED	1087	A delivering call's slots hold what the callee matched (1087-1095).
+C5-0253	MAPPED	1059	"A single-pattern artifact is unaffected by everything in this section" (1059-1060).
+C5-0254	POINTED	1654	1654 cites tuning.md 2.18: heads renumbered to top rows, extra <prefix>_<m>_is_stop accessor (tuning.md:1592-1595, 1632). Probe: rx_reverse_is_stop returns s >= 3u.
+C5-0255	POINTED	1654	Loop test widened to is_stop, edge blocks on an edge path: tuning.md:1592-1604. Probe: if (!rx_reverse_is_stop(reverse_state)) continue;.
+C5-0256	MAPPED	1668	"none": no scan edge ... or a build under -fno-scan-edge (1668); no accessor/renumbering for them follows from tuning.md:1632 (cited 1654).
+C5-0257	POINTED	1654	Precondition (8) is tuning.md:1546-1550 and is NARROWED there (a seed-named head is refused only on a machine whose prefilter writes the state variable), so the old unconditional wording is stale.
+C5-0258	MAPPED	1654	"tuning.md 2.18" cited as the scan-edge authority (1654, 1668-1673).
+C5-0259	MAPPED	2049	Flat alternation lowered as a trie dispatch over its literal alternatives (2049-2056); node structure (byte compare / switch / try site) is tuning.md 2.20, cited at 2052.
+C5-0260	MAPPED	2049	VM_ALT_ISLANDS on every VM artifact (1440, 2048-2060).
+C5-0261	HISTORY		Rationale for the identity gate's comparison (A) (a past-state claim about "the first bump").
+C5-0262	POINTED	2052	2052 cites tuning.md 2.20 (tuning.md:1843, -fno-alt-island bit 23); the flag spelling is not in match_api.md.
+C5-0263	HISTORY		About a test script's excuse rule (check design), not artifact behaviour.
+C5-0264	SUPERSEDED	2009	New 2009-2013: FRAMELESS 1 makes the eight statics ELIGIBLE; ENTRY_SHAPE says which carry it. Probe: frameless '(a|b)*?(?:c|d)+?e' with --vm-entry-shape=1/2 ("plain") has 0 always_inline; shapes 3/4 ("inline") have 8.
+C5-0265	MAPPED	2011	"0 means none does (a framed artifact is "plain" by construction: gcc refuses always_inline on a function containing a computed goto)" (2011-2013). Probe: framed artifact has 0.
+C5-0266	UNMAPPED		TRUE for frameless "inline" shape (probe nm: no rx_search_run / rx_match_anchored). Not in new doc, and false for frameless "plain" shape since always_inline is shape-dependent.
+C5-0267	MAPPED	1634	All-equal DFA tables are not emitted and the accessor returns the constant (1634-1640).
+C5-0268	MAPPED	1638	<m>_next_state and <m>_is_accepting are the foldable tables (1638-1640).
+C5-0269	MAPPED	1637	Accessor keeps state and class parameters so subject[pos++] is still evaluated (1637-1639).
+C5-0270	MAPPED	1634	DFA_UNIFORM_FOLDS counts the folded tables and is how a fold is observed (1634-1643).
+C5-0271	MAPPED	1629	DFA_TABLE names the selection MADE; folded constant fixed by it (1629-1632).
+C5-0272	MAPPED	1162	rx_info field 25 search_form (1162).
+C5-0273	MAPPED	1676	DFA_START on every artifact containing a DFA scan (1428, 1676-1678).
+C5-0274	MAPPED	1688	"pinned": the artifact carries NO reverse machine (tables, accessors, loop) (1688); 1626 notes DFA_TABLE composes over the reverse machine unless pinned.
+C5-0275	MAPPED	2005	FRAMELESS on every VM artifact (1438, 2005-2008).
+C5-0276	MAPPED	1160	rx_info fields name and nentries (1160-1161).
+C5-0277	UNMAPPED		TRUE (probe DFA artifact: #ifndef __has_attribute ... #if __has_attribute(noclone) __attribute__((noclone)) #endif before rx_search). Not in new doc.
+C5-0278	MAPPED	2005	FRAMELESS 1 iff no RX_PUSH site and no linked call, i.e. the fail label has no pop-and-resume goto * dispatch (2005-2008). Probe: '[a-z]{0,4096}' --engine=vm has 0 goto *.
+C5-0279	SUPERSEDED	1427	New 1427 scopes DFA_SCAN_EDGE to artifacts containing a DFA scan (DFA artifacts and hybrids). Probe: plain VM artifacts (VM_PREFILTER "none") carry no RX_DFA_SCAN_EDGE.
+C5-0280	MAPPED	1651	Scan edge: a counted class run replaced by a bounded cursor loop and deleted from the transition table (1651-1654).
+C5-0281	MAPPED	1744	LANG and LANG_WHY on exactly the artifacts with VM_PREFILTER "hybrid" (1744-1746).
+C5-0282	MAPPED	2164	UNROLL_K, UNROLL_K_WHY, MAX_EMIT_CODE_BYTES, MAX_EMIT_BYTES (2164-2185; scopes vm/vm/vm/all at 1448-1450).
+C5-0283	MAPPED	654	The anchored match-here form ("unwrapped" third machine) is described and stamped (654-662, 1694-1710).
+C5-0284	MAPPED	1586	Offset-k candidate-start skip is the "offset-set" prefilter (1586, 1597-1613).
+C5-0285	UNMAPPED		The pre-multiplied table is stated (1624, 1616-1627); the opaque state token and accessor block are not in the new doc (see C5-0295).
+C5-0286	MAPPED	1300	"Do not build version negotiation on abi until a v1 declaration" (1300-1301). "Layout version and nothing more" is superseded by 1279-1283.
+C5-0287	MAPPED	1297	"no compatibility story ... pre-v1" (1297-1301; 27-34).
+C5-0288	MAPPED	1149	Fields 12-15 (resume_frames .. trail_frame_size) sit after subject_ceiling in the declaration-order table (1148-1152).
+C5-0289	HISTORY		Past bump description (abi 4 added three DFA stamps); a DFA artifact today carries many more (1422-1429).
+C5-0290	MAPPED	1279	abi is the version of the emitted scaffolding as a whole (1279-1283).
+C5-0291	MAPPED	1288	A bump is paired with a re-pin of the codegen identity gate, run_recursion_identity.sh comparison (B), in the same change (1285-1289).
+C5-0292	MAPPED	2144	Tier stamps (FAST_FRAMES/FAST_TRAIL) are VM-only; a DFA artifact has no tier (2144-2145, 2901-2905, 1447).
+C5-0293	MAPPED	1571	DFA_SCAN has "empty" (1571); a VM artifact carries the DFA-scan stamps iff it is a hybrid (1371-1373). "Two _DFA_* lines" is stale: a hybrid now carries the full dfa-scan set.
+C5-0294	HISTORY		Describes how scan/prefilter were appended at a past bump; the standing rule that members are appended is at 1302-1303.
+C5-0295	UNMAPPED		TRUE (probe: typedef unsigned rx_forward_state; rx_forward_step/_is_dead/_accepts ..., plus an anchored machine). Not in new doc; only 48-50 and 1393-1396 give prefix scoping/internality in general.
+C5-0296	UNMAPPED		Accessor set (_step, _is_dead, _accepts, _accepts_class, _row, _view_live, _view_take, now also _is_stop) not in new doc. TRUE per probe for the subset each machine uses.
+C5-0297	HISTORY		Past-bump assurance (nothing caller-visible moved).
+C5-0298	MAPPED	1387	"Each stamp is written from the same predicate or value the emitted code branches on" (1387-1389; 1215-1217).
+C5-0299	MAPPED	48	Every other emitted identifier is prefix-scoped (48-50); .c-internal names are not part of the contract (1393-1396).
+C5-0300	MAPPED	2005	No RX_PUSH and no linked call -> no pop-and-resume goto * dispatch (2005-2008). Probe: frameless artifacts contain no goto *.
+C5-0301	MAPPED	2005	FRAMELESS 0 otherwise (2005-2008): a pushing program keeps the dispatch (framed probe has goto *).

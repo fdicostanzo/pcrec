@@ -67,8 +67,8 @@ cell is still the expected answer.
   grammar, moved in the same change as leg A.
 - **Spec (D80)** — `rxt_format.md` (the name grammar, the prefix mapping,
   `target = <def>`, the collision refusal, the not-callable-from-a-pattern
-  boundary), `match_api.md` §6 (S9b as D89 revised it, plus a new
-  composition subsection), `cli.md` (a `lib` file is read).
+  boundary), `match_api.md` §6 / §5.4 (S9b as D89 revised it, plus a new
+  composition subsection, now §5.5), `cli.md` (a `lib` file is read).
 - **Tests** — six fixtures and a W1.3 section in `tests/rxtsource/`; the
   altwide dogfood fixture; `tests/definitions/` with its own section
   (`make test-definitions`).
@@ -125,7 +125,7 @@ particular line; it is the absence of the suites.
 
 **The branch does NOT bump the number.** `w1_impl.md` §8.7 carries the D94
 grep, run over the branch: **six readers of the current value 17**, of which
-a hand-enumerated four would have missed two (`match_api.md:1754` and the
+a hand-enumerated four would have missed two (`match_api.md §6¶17` and the
 bump ledger clause at `run_codegen_tests.sh:2760`) — D94's own lesson
 reproduced on the very next bump after the ruling. Two further grep hits are
 recorded as NOT readers, because a list that silently dropped them would be

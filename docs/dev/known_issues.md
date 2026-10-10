@@ -144,7 +144,7 @@ contract bits) and the semantic flags (`--trace`, `-i`, `--ucp`, ...).
 (`src/gen/emit_dfa.c`), so a new axis joins it on arrival and forgetting a
 `kept` row is the recoverable direction. This is an abi event (65): the
 emitted `.flags` literal moves under those two denials. Spec: `tuning.md` §2
-"THE `rx_info.flags` RULE" and §2.16/§2.18, `match_api.md` §6 change log.
+"THE `rx_info.flags` RULE" and §2.16/§2.18, `match_api.md` §6 change log (now `docs/dev/history/abi_changelog.md`).
 Check: `tests/codegen/run_prechecks.sh` section 6b sweeps every `-f` spelling
 `--list-axes` carries (red on exactly bits 18/21 against the pre-fix
 compiler). Sabotage S65/S67/S295 re-aimed (a bit joins `kept`). Not done
@@ -302,11 +302,11 @@ The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. 
 
 ---
 
-## K78 — FIXED 2026-09-30 (lane k78, abi 55) (found by lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1
+## K78 — FIXED 2026-09-30 (lane k78, abi 55) (found by lane uvbuild) — a DFA artifact with DEAD groups writes `caps[1]` on a NO-MATCH, against match_api.md §3.1¶2
 
 **Witness:** `(?(DEFINE)(?<x>\b))b(?&x)` under `-e byte` (reproduces on base d8d40397, before [UTF-VALID]). The [DD-14 wave G] entry fill writes the dead group's slot even when the call returns no match. Reproducer and trace: docs/dev/lanes/uvbuild_report.md §5. Pre-existing; independent of UTF-VALID.
 
-**Cause, confirmed:** `emit_search_head` (src/gen/emit_dfa.c) wrote the PCREC_UNSET fill for slots 1..NCAPS-1 at the top of `<prefix>_search`, before the `startpos > n` return and before any answer, so every non-success return of a DFA artifact with `<PREFIX>_NCAPS >= 2` wrote `caps` (measured on the pre-fix compiler: 2,094 of 4,284 non-success calls over the eight witnesses on the auto route, and 1,041 corpus-slice calls). **Fix:** the fill is `emit_dead_group_fill`, called on each SUCCESS path after the `caps[0]` write and before `return 1` (the reverse-pass and pinned unanchored forms, and the per-start attempt form); the empty-engine exit has no success path and writes nothing. Only DFA artifacts with `NCAPS >= 2` move. **Other sites checked, all clean before and after:** the VM, the VM hybrid, `_match_caps` (unwrapped and search-filter), and the `_in` spellings with a NULL and a one-frame descriptor (FRAMES give-ups included). Spec: match_api.md §3.1 (a sentence) and §6 (the abi 55 entry). Check: tests/codegen/run_nomatch_caps.sh (test-codegen; mech arm `nomatchcaps`, sabotage S439). Report: docs/dev/lanes/k78_report.md.
+**Cause, confirmed:** `emit_search_head` (src/gen/emit_dfa.c) wrote the PCREC_UNSET fill for slots 1..NCAPS-1 at the top of `<prefix>_search`, before the `startpos > n` return and before any answer, so every non-success return of a DFA artifact with `<PREFIX>_NCAPS >= 2` wrote `caps` (measured on the pre-fix compiler: 2,094 of 4,284 non-success calls over the eight witnesses on the auto route, and 1,041 corpus-slice calls). **Fix:** the fill is `emit_dead_group_fill`, called on each SUCCESS path after the `caps[0]` write and before `return 1` (the reverse-pass and pinned unanchored forms, and the per-start attempt form); the empty-engine exit has no success path and writes nothing. Only DFA artifacts with `NCAPS >= 2` move. **Other sites checked, all clean before and after:** the VM, the VM hybrid, `_match_caps` (unwrapped and search-filter), and the `_in` spellings with a NULL and a one-frame descriptor (FRAMES give-ups included). Spec: match_api.md §3.1 (a sentence; `§3.1¶2`) and §6 (the abi 55 entry, now in `docs/dev/history/abi_changelog.md`). Check: tests/codegen/run_nomatch_caps.sh (test-codegen; mech arm `nomatchcaps`, sabotage S439). Report: docs/dev/lanes/k78_report.md.
 
 ---
 
@@ -314,7 +314,7 @@ The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. 
 
 **Witness:** docs/dev/lanes/pfx0_report.md (simulated with a mutated header: no diagnostic). The same-abi two-header case is checked and clean (run_codegen_tests.sh:437-520, :905+). No check covers the mixed-abi case. The fix shape is probably an abi-keyed guard or a static assert on the block's abi. Changing it is emitted scaffolding, so it is an abi event (D76/D94).
 
-**Fix:** the guard carries the abi as its VALUE (`#define PCREC_RX_ABI_H 54`) and the block opens with `#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54` / `#error`, so a mixed-abi TU fails to compile naming the cause; same-abi is unchanged (first block wins). One valued guard rather than an abi-keyed guard NAME, which would let both blocks through and fail, if at all, on a `struct` redefinition that does not name the cause. `+ 0` also refuses a pre-54 artifact included first; a pre-54 artifact included AFTER a 54 one stays silent (its `#ifndef` predates the rule). Spec: match_api.md §2 and §6. Check: run_codegen_tests.sh K80-a/-b/-c; sabotage S438. Report: docs/dev/lanes/k7980_report.md.
+**Fix:** the guard carries the abi as its VALUE (`#define PCREC_RX_ABI_H 54`) and the block opens with `#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 54` / `#error`, so a mixed-abi TU fails to compile naming the cause; same-abi is unchanged (first block wins). One valued guard rather than an abi-keyed guard NAME, which would let both blocks through and fail, if at all, on a `struct` redefinition that does not name the cause. `+ 0` also refuses a pre-54 artifact included first; a pre-54 artifact included AFTER a 54 one stays silent (its `#ifndef` predates the rule). Spec: match_api.md §2 and §6 (the guard example is now `§1¶7`; the abi log is `docs/dev/history/abi_changelog.md`). Check: run_codegen_tests.sh K80-a/-b/-c; sabotage S438. Report: docs/dev/lanes/k7980_report.md.
 
 ---
 
@@ -341,7 +341,7 @@ The Mac scratch read had `base10num-grok` mix4k at +27% and did not list hex4k. 
 
 **Witness:** `a` on `a\x80a` under `-e utf8`: pcrec's find-all (the match_api.md protocol: next startpos = previous end) finds 1 match; libpcre2 10.46 with PCRE2_MATCH_INVALID_UTF finds 2. After the first match the next startpos is the stray `\x80`, and K73 ruling (a) keeps K50's refusal of an EXPLICIT startpos on a continuation byte. Pre-existing. **The question:** a STRAY continuation byte (ill-formed, not inside any character) is not "mid-character"; skipping forward there, while refusing only a true mid-character position inside a well-formed sequence, may be the principled line. Measure PCRE2 on both kinds first. Frank's ruling; ruling (a) itself stands.
 
-**FIXED (M1, Frank's D132 ruling 2026-09-30; measurement docs/dev/k75_measurement.md).** PCRE2 draws no line between a stray and a mid-character continuation byte, so the fix is not a new engine line: after a NON-EMPTY match the find-all loop of match_api.md §3.1 resumes at `<prefix>_next_pos(s, n, end - 1)` (from `end`, past continuation bytes) instead of `end`. No emitted byte changes, no abi event; a no-op on a well-formed subject. K50's refusal of a CALLER-passed non-boundary startpos is untouched, and §3.1 now states the rule outright (caller startpos must be a boundary; loop-computed positions always are; a continuation byte is never a match start). Sites: match_api.md §3.1 (+ the startpos bullet), rxt_format.md `mc`, docs/guide/using-the-matcher-from-c.md, the find-all drivers (tests/harness/driver.c, verify_rxt.py's `_findall_protocol`, tests/encseam/findall_driver.c, tests/assertions/gstart_findall.c, tests/codegen/entry_shape_driver.c, the backrefs §6 driver). Witnesses: six new `mc` cells in tests/rxtsource/fixtures/mc_illformed_utf8.rxtin (`a`, `.`, `a|` over `a\x80a` et al., counts from libpcre2 10.48 with MATCH_INVALID_UTF); sabotage S407 (C leg) and S408 (python leg). Report: docs/dev/lanes/k75fix_report.md. The opt-in START ALIGNMENT (D132 item 2) is chartered into [UTF-VALID], not this fix. K74 (empty-match family at an ill-formed subject end) is unchanged.
+**FIXED (M1, Frank's D132 ruling 2026-09-30; measurement docs/dev/k75_measurement.md).** PCRE2 draws no line between a stray and a mid-character continuation byte, so the fix is not a new engine line: after a NON-EMPTY match the find-all loop of match_api.md §3.1 resumes at `<prefix>_next_pos(s, n, end - 1)` (from `end`, past continuation bytes) instead of `end`. No emitted byte changes, no abi event; a no-op on a well-formed subject. K50's refusal of a CALLER-passed non-boundary startpos is untouched, and §3.1 now states the rule outright (caller startpos must be a boundary; now §9.2; loop-computed positions always are; a continuation byte is never a match start). Sites: match_api.md §3.1.3 (+ the startpos bullet, now §9.2), rxt_format.md `mc`, docs/guide/using-the-matcher-from-c.md, the find-all drivers (tests/harness/driver.c, verify_rxt.py's `_findall_protocol`, tests/encseam/findall_driver.c, tests/assertions/gstart_findall.c, tests/codegen/entry_shape_driver.c, the backrefs §6 driver). Witnesses: six new `mc` cells in tests/rxtsource/fixtures/mc_illformed_utf8.rxtin (`a`, `.`, `a|` over `a\x80a` et al., counts from libpcre2 10.48 with MATCH_INVALID_UTF); sabotage S407 (C leg) and S408 (python leg). Report: docs/dev/lanes/k75fix_report.md. The opt-in START ALIGNMENT (D132 item 2) is chartered into [UTF-VALID], not this fix. K74 (empty-match family at an ill-formed subject end) is unchanged.
 
 **2026-10-03 bench note (O-80, answering I-123):** no bench cell carries an ill-formed subject under `-e utf8` — only `bench/utf8@0.1` declares utf8 and its 98 subjects verified well-formed three ways (invalid-UTF parked for `@0.3`) — so no bench alignment is needed and its find-all keeps `pos = end`. A cross-pairing hazard (a `-e utf8` artifact run on a byte-mode set's non-UTF-8 subjects) exists structurally, has never been run in any window, and is noted, not pursued.
 
@@ -369,10 +369,10 @@ normative `next_pos` advance. Every OTHER ill-formed lead (0xFF, 0xE3
 truncated, ...) is a valid start position and answers (0,0) exactly as pcrec
 does. pcrec's guard (`enc_utf8`'s `search_from == 0 || ...`) exempts 0, so
 the first candidate on a subject that begins with continuation bytes is not a
-boundary, contradicting §3.1's "every position the ENGINE generates is a
+boundary, contradicting §3.1's (now §9.5) "every position the ENGINE generates is a
 character boundary". **Status: OPEN, held for a ruling** — the fix changes the
 emitted guard text of every `-e utf8` artifact (an `abi` event, D76/D94) and
-rounds a `startpos` where §3.1 says "neither arm ROUNDS the caller's
+rounds a `startpos` where §3.1 (now §9.2) says "neither arm ROUNDS the caller's
 startpos"; recommended shape and the two alternatives are in the lane report.
 
 **Fix (2026-09-29, Frank's ruling (a)).** Offset 0 is still never REFUSED,
@@ -396,7 +396,7 @@ its driver now sweeps `_match` too, with its own floor. Witnesses:
 `tests/utf8/k73_startskip.rxt` (86 cells, libpcre2 10.46 transcript
 `docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt`; 45 fail on the pre-fix
 compiler) and seven new §5 engine rows in `run_startbnd_diff.sh`. Spec:
-`docs/spec/match_api.md` §3.1 (two bullets) and §6, `docs/spec/tuning.md`
+`docs/spec/match_api.md` §3.1 (two bullets; now §9.3 and §9.2) and §6 (the abi entry, now `docs/dev/history/abi_changelog.md`; `§6.3.6¶2`), `docs/spec/tuning.md`
 §2.23. Report: `docs/dev/lanes/k73utf_report.md`.
 
 ---
@@ -660,7 +660,7 @@ the repro: router-prefix-order (`/user|/users`) reads `.flags = 2` under
 default and under each of the three deny flags, where it read 1073741826 /
 536870914 / 268435458 before the fix. `PCREC_ARTIFACT_ABI` 38 -> 39 in the
 same change (D76/D94 ritual: the constant, `ABI_EXPECT` + the narrative
-string, `match_api.md` §6's change-log entry, `run_recursion_identity.sh`'s
+string, `match_api.md` §6's change-log entry (now `docs/dev/history/abi_changelog.md`), `run_recursion_identity.sh`'s
 (B) pin re-derived to `b255027f`); `tuning.md` §2.27 gains the owed
 cross-reference to §2.30 (litscan_s1.md §1.1 invariant 2). No pcrec-side
 check pinned the old unmasked `.flags` value (confirmed by grep — none
@@ -676,7 +676,7 @@ green by design — the leak moves no answer). See
 The original entry follows.
 
 A reflection-surface defect, not an answer defect. `docs/spec/match_api.md`
-§6.3's rule is that `flags` records the REQUEST "with the testing/tuning
+§6.3's (`§6¶16`, in §6) rule is that `flags` records the REQUEST "with the testing/tuning
 denials masked OUT, because an axis that changes no answer must not make two
 identically-behaving artifacts differ in their reflection surface". Three
 deny bits from [OPTLOOP.1] batch 1 are not masked: `-fno-vm-anchor-bound`

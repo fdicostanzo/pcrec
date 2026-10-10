@@ -40,12 +40,12 @@ Validation on the Mac (logs in the session scratchpad
   ([SEL-SIZE]: main's `completed (refuted)` text kept; [OPT-HYB-RESEED-XCALL]:
   main's line plus rsform's appended HELD paragraph).
 - **vedge**: the lanes index (kept both). `plan.md` [OPT-VEDGE], two rows: main's
-  ROUND-1 ruling kept, plus vedge's built/abi note with abi 57. `match_api.md` §6:
+  ROUND-1 ruling kept, plus vedge's built/abi note with abi 57. `docs/dev/history/abi_changelog.md`:
   the vedge paragraph is now "is `57`", from 56, and rsform's paragraph became
   "was `56`". `run_codegen_tests.sh` ABI message: vedge's clause appended after
   rsform's, as 56->57. `run_recursion_identity.sh` FILEPIN: comment chain kept,
   pin re-done at the end.
-- **s4build**: the lanes index; `match_api.md` §2's guard quote (now 58) and §6
+- **s4build**: the lanes index; `match_api.md §1¶7`'s guard quote (now 58) and docs/dev/history/abi_changelog.md
   (s4build paragraph "is `58`", from 57; vedge's became "was `57`");
   `tuning.md` (§2.37 vedge kept, s4build's section became §2.38; §4's mirror
   table keeps both rows); `lib/pcrec.h` (both macros: `PCREC_NO_VIEW_EDGE`
@@ -61,8 +61,8 @@ Validation on the Mac (logs in the session scratchpad
 **[OPT-VEDGE] abi 56 -> 57** (14e78104). The grep was
 `(abi|ABI)[^0-9]{0,30}56|55 ?-> ?56|!= 56|ABI_H 56` over the tree. Readers:
 `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh` `ABI_EXPECT`
-and its message, `match_api.md` §2 guard quote (`!= 57`, `(abi 57)`, `ABI_H 57`)
-and §6 log, `tuning.md` §2.37 header paragraph, the lanes index line, and a
+and its message, `match_api.md §1¶7` guard quote (`!= 57`, `(abi 57)`, `ABI_H 57`)
+and the change log (docs/dev/history/abi_changelog.md), `tuning.md` §2.37 header paragraph, the lanes index line, and a
 landing note in `vedge_report.md`. Lines that legitimately say 56 belong to
 rsform: src/gen/CLAUDE.md, tests/codegen/CLAUDE.md,
 docs/dev/reseed/anchored_sweep.py, and rsform_report.md. Bit 42 and S440 did
@@ -76,12 +76,12 @@ byte-equal to a line lane/s4build ADDED and that no sibling lane also added.
 The changed lines were reviewed one by one. Readers moved:
 
 - abi: `CHANGELOG.md`, `docs/design/compare_stack.md` (2),
-  `match_api.md` §6 entry + §6.3 `RUN_WORDS` + §2.31 note, `tuning.md`
+  `docs/dev/history/abi_changelog.md` entry + `match_api.md` §6.3 `RUN_WORDS` + §2.31 note, `tuning.md`
   (§2.31, §2.38, §4 mirror row, §5 rung table's run-overlap row + intro),
   `lib/pcrec.h` comment, `src/gen/CLAUDE.md`, `run_codegen_tests.sh` (3
   comments), `run_offset_skip.sh`, `run_cpset_structure.sh` re-record note,
   `tests/litscan/CLAUDE.md`.
-- bit: `lib/pcrec.h` `PCREC_BIT(43)`, `match_api.md` §6, `tuning.md` §2.38
+- bit: `lib/pcrec.h` `PCREC_BIT(43)`, `docs/dev/history/abi_changelog.md`, `tuning.md` §2.38
   header, `src/gen/CLAUDE.md`, `run_registry_tests.sh` comment.
 - §2.38: `tuning.md`, `match_api.md`, `lib/pcrec.h`, `src/dump/axes_dump.c`,
   `src/gen/runcmp.c`, `src/gen/CLAUDE.md`, `runcmp_check.py`,

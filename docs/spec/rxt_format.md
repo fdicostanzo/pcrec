@@ -130,7 +130,7 @@ that disqualified an earlier candidate PCRE2 turned out to accept).
   export list and is already the caller's own.
 - **A delivering call on a RECURSIVE definition is refused**, because
   delivery needs the callee written out at the site.
-- What a caller then reads is `docs/spec/match_api.md` §6's "Composition".
+- What a caller then reads is `docs/spec/match_api.md` §5.5's "Composition" (`§5.5`).
 
 ### Building from a source file
 
@@ -597,7 +597,7 @@ off.
     reader does not parse patterns.
   - Exporting a name does not by itself put anything in an artifact: the
     list says what MAY be delivered, and a DELIVERING CALL decides what IS
-    (see "Composition" in `docs/spec/match_api.md` §6). An exported name
+    (see "Composition" in `docs/spec/match_api.md` §5.5). An exported name
     that no site delivers costs nothing at all — no slot, no row.
   - **A delivering call on a definition that exports nothing is REFUSED.**
     The default being "nothing" is what makes that a real check rather than
@@ -801,13 +801,13 @@ the stray stepped over, the `a` at 2); `.` over `"a\x80a"` is **2** and `a|`
 over it **3** — libpcre2 10.48's counts under `PCRE2_MATCH_INVALID_UTF`
 driven through this loop (`docs/dev/lanes/k75fix_report.md`). The rule is
 about positions the LOOP computes; a `startpos` a caller passes to an entry
-is still refused when it is not a boundary (`match_api.md` §3.1).
+is still refused when it is not a boundary (`match_api.md` §9.2).
 
 **[K73] AND THE FIRST SEARCH OF THE LOOP IS AT OFFSET 0, WHICH ON AN
 ILL-FORMED SUBJECT IS NOT WHERE A MATCH IS ATTEMPTED.** Under the same
 encodings, a search from offset 0 of a subject that begins with bytes in
 `0x80`-`0xBF` starts at the first byte outside that range (`match_api.md`
-§3.1's offset-0 bullet), so a consumer transcribing the protocol applies
+§9.3), so a consumer transcribing the protocol applies
 the same skip before its first search: `x?` over `"\x80\x80\x80"` is **1**
 (the empty match at the end), and over `"a\x80\x80\x80"` is **2** (offset
 0, then the advance above to the end) — both libpcre2 10.46's counts under

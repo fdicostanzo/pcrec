@@ -1,6 +1,10 @@
-# tests/lib/spec_extract.sh — ONE implementation of the four hand-written-set
+# tests/lib/spec_extract.sh — ONE implementation of the hand-written-set
 # extractors (docs/spec/match_api.md §6.3's value sets, and a C function's
-# `return "..."` literals). Sourced, never executed. Moved here VERBATIM from
+# `return "..."` literals). Every §6.3 value set is a markdown table directly
+# under a `<!-- value-set: RX_NAME -->` marker line, and callers anchor on that
+# marker (lane specclean, 2026-10-09): prose rewording, a count word or a
+# reordered paragraph cannot move it. The line- and prose-shaped extractors
+# that older spellings of the spec needed were retired with them. Sourced, never executed. Moved here VERBATIM from
 # tests/registry/axes_registry_check.sh (decfbB0b, 2026-10-08) so that
 # tests/registry/axes_registry_check.sh (the dump-vs-docs/code legs) and
 # tests/codegen/run_fallback_table.sh (the observed-stamp leg) read the
@@ -29,43 +33,6 @@ extract_md_table_values() {
         }
         found && n>0 { found=0 }
     ' "$file"
-}
-
-# extract_line_values FILE PATTERN — every distinct lowercase `"word"` on a
-# line matching PATTERN (extended regex). Used for the two macros whose
-# value set is a bare pair of string literals in prose/code rather than a
-# markdown table (`RX_VM_PREFILTER`, `RX_ENGINE`).
-#
-# PASS A WORD-BOUNDED PATTERN (`\<NAME\>`). This function harvests every
-# lowercase literal on a MATCHING LINE, so a pattern that also matches a
-# prefixed sibling (`RX_VM_PREFILTER_LANG`, `RX_ENGINE_WHY`, `RX_ENGINE_SEL`)
-# silently imports that macro's value set into this one's. Both call sites are
-# bounded; the unbounded one cost a red battery on 2026-08-29.
-extract_line_values() {
-    local file="$1" pattern="$2"
-    grep -E "$pattern" "$file" | grep -oE '"[a-z]+"' | tr -d '"' | sort -u
-}
-
-# extract_prose_values FILE ANCHOR — every distinct lowercase (hyphens
-# allowed) `"quoted"` literal from the ANCHOR's own line through the next
-# blank line. [REG-SV]: `RX_UNROLL_K_WHY`'s SEVEN values
-# (docs/spec/match_api.md §6.3) are neither a markdown table
-# (extract_md_table_values) nor confined to one line carrying a literal
-# default-prefix `RX_...` artifact excerpt (extract_line_values, which
-# `RX_VM_PREFILTER`/`RX_ENGINE` both have and this macro does not —
-# match_api.md spells it `<PREFIX>_UNROLL_K_WHY` throughout) — they are
-# ordinary multi-line PROSE, one bullet, seven `` `"value"` `` code-spans
-# spread across it. ANCHOR ON THE MACRO NAME, NEVER A COUNT WORD ("SEVEN")
-# — this script's own standing lesson (see the RX_DFA_PREFILTER anchor note
-# above), stated here a fourth time because an eighth value landing must
-# not silently break the anchor that finds the other seven.
-extract_prose_values() {
-    local file="$1" anchor="$2"
-    awk -v anchor="$anchor" '
-        index($0, anchor) { found=1 }
-        found { print }
-        found && /^[ \t]*$/ { found=0 }
-    ' "$file" | grep -oE '"[a-z-]+"' | tr -d '"' | sort -u
 }
 
 # extract_c_return_values FILE FUNC_SIG_ANCHOR — every distinct lowercase

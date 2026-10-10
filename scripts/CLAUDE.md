@@ -530,4 +530,12 @@ pcrec (the Makefile owns that).
   `perfrun --fold` (in main) appends them to docs/dev/ttune_ledger.tsv. Triage
   rule and columns: docs/dev/ttune_measurement.md; BOILERPLATE.md.
 
+- **spec_toc.py** — rebuilds the generated table of contents of a numbered
+  `docs/spec/*.md` (lane specnum, 2026-10-09): number plus link for every
+  numbered heading, between `<!-- spec-toc:begin -->` and `<!-- spec-toc:end -->`
+  (`--init` puts the markers under the `# ` title; `--check` writes nothing
+  and exits 1 on a stale block, a missing `<a id="sN">` anchor or a repeated
+  number). The numbering rule is docs/spec/CLAUDE.md's "Numbering and
+  citation"; `make test-spec-history` runs `--check`. Standard library only.
+
 Maintenance: update this file when scripts are added/removed or change role.

@@ -25,7 +25,7 @@ SAB_ID="S238-size-drop-unstamped"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="an artifact rescued by the optional-contributor drop rung stamps ENGINE_SEL \"selected\", so a caller cannot tell it from an unremarkable compile and the census's size-drop bucket empties into the state-cap overflow one"
-SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table; docs/spec/limits.md 8's 'The optional-contributor drop'"
+SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop'"
 SAB_COUNT=2
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking

@@ -70,7 +70,7 @@ tests/ src/ lib/ CHANGELOG*`, dispositioned:
 | hit | disposition |
 |---|---|
 | `tests/codegen/run_recursion_identity.sh` (FILEPIN + narrative) | **stale -> FIXED in this lane** (§1 above) |
-| `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]/D76 addendum) | already correctly updated by admitimpl's own delivery — the `abi 31` entry is the live head, the `abi 30` entry re-headed "was"; left |
+| `docs/dev/history/abi_changelog.md` (the ONE change log, [REVW.A1]/D76 addendum) | already correctly updated by admitimpl's own delivery — the `abi 31` entry is the live head, the `abi 30` entry re-headed "was"; left |
 | `docs/dev/lanes/admitimpl_report.md`, `docs/dev/lanes/repin2_report.md` | own lanes' committed reports — historical record of what each lane did; left |
 | `docs/dev/lanes/CLAUDE.md:2747` (repin2 entry), `:2899` (admitimpl entry) | historical lane-index entries, correctly describing what each landed; left |
 | `tests/resource/run_resource_tests.sh:566-612` | live pin already re-recorded to `762367` by admitimpl (§5.1 item 2 of its own report); the `abi 30`/`abi 29` mentions are the file's own re-pin narrative history; left |

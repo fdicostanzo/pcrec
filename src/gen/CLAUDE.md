@@ -34,11 +34,12 @@ stays here.
 ## THE `abi` NUMBER — its change log is NOT here
 
 `rx_info.abi` versions the emitted scaffolding as a whole (D76). **The one
-canonical change log is `docs/spec/match_api.md` §6**, ruled [REVW.A1]
-(2026-09-19); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
+canonical change log is `docs/dev/history/abi_changelog.md`** (ruled for
+`docs/spec/match_api.md` §6 at [REVW.A1], 2026-09-19, and moved there
+verbatim by the spec's facts-only rewrite, lane specclean, 2026-10-09); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
 to a pointer in the same change, and `tests/codegen/run_codegen_tests.sh`'s
-transition string is a CHECK's failure message maintained FROM §6, not a
-second home.
+transition string is a CHECK's failure message maintained FROM the change
+log, not a second home.
 
 The `##` sections below carry abi numbers in their own titles, and they STAY:
 each is the design record for ITS milestone, with the reasoning behind that
@@ -2877,7 +2878,7 @@ correct one on every artifact in the tree.
 **`nentries` READS THE SAME COUNT `nnames` DOES, AND SHIPS ANYWAY.** Today
 `groups[]` holds the primary pattern's own named rows and nothing else, so
 the two numbers are equal on every artifact pcrec emits. They are different
-QUESTIONS — `nnames` is what `docs/spec/match_api.md` §6's caller algorithm
+QUESTIONS — `nnames` is what `docs/spec/match_api.md` §5.4's caller algorithm
 bsearches, and the primary's rows stay a genuine PREFIX of the array once
 [DD-13b.W1.3]'s composer injects a definition's own names below them — and
 the field lands now because it rides this bump. The alternative is a second
@@ -3517,7 +3518,7 @@ that binds a definition:
   primary's own groups"*) and was emitted as a literal `NULL` until now;
   W1.3 is its first producer.
 - `ng_cmp_name`'s key becomes **`(ref-is-NULL, name, number)`**. That is an
-  ABI CONTRACT and not a tiebreak: `match_api.md` §6 documents `nnames` as
+  ABI CONTRACT and not a tiebreak: `match_api.md` §5.4 documents `nnames` as
   the entries in `groups[]` and hands a caller a bsearch that walks a name
   RUN, so rows sorting AMONG the primary's while `nnames` counted only the
   primary's would let a caller walk off its own run into a library's private
@@ -3578,9 +3579,9 @@ past the bound), `((a)|b){0,4000}c` (brief mode, 4002 accepting states) and
 ## [VAR] — the CALLER-VARIABLE surface (abi 31 -> 32)
 
 Module `vars` gives a pattern `${name}`, whose bytes the caller supplies per
-call. The whole ABI surface lands in ONE event; the narrative is
-`docs/spec/match_api.md` §6, which is the change log's only home (D76
-addendum), and the module's contract page is `docs/spec/vars.md`.
+call. The whole ABI surface lands in ONE event; the narrative is `docs/dev/history/abi_changelog.md`, the change log's only
+home (D76 addendum; it moved out of `docs/spec/match_api.md` §6 in lane
+specclean), and the module's contract page is `docs/spec/vars.md`.
 
 Three things a reader of THIS directory needs.
 

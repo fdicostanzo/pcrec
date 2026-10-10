@@ -228,7 +228,7 @@ standing darwin red `run_inline_capability.sh` (`nm arm_a.o`) is expected.
 **Bump, 45 → 46** (D76/K64): one-character-lookaround patterns get different
 emitted text for identical inputs (VM → DFA, or `vm_ctx` in place of the
 sub-match), and UCP `\b` under byte moves the refusal set. Full D94 ritual:
-the constant committed alone (`7e8ab18a`), `docs/spec/match_api.md` §6's
+the constant committed alone (`7e8ab18a`), `docs/dev/history/abi_changelog.md`
 change-log entry, `run_codegen_tests.sh` `ABI_EXPECT=46` + its copied
 message, `run_recursion_identity.sh` FILEPIN self-pinned to `7e8ab18a`; grep
 for other readers of 45 found none. No struct offset moves, no `rx_info`
@@ -236,7 +236,7 @@ member; `PCREC_NO_CTX_NODE` is masked out of `rx_info.flags`.
 
 **Spec hunks (D80)**: `tuning.md` §2.32 (+ §4 rows for bits 32, 33, 35 —
 32/33 were missing, backfilled), `limits.md` §3.8/§3.9, `cli.md` (UCP `\b`;
-the `-f` family list), `match_api.md` §6, `facts_listing.md` (the
+the `-f` family list), `docs/dev/history/abi_changelog.md`, `facts_listing.md` (the
 `lookaround` kind), `docs/pcre2_compliance.md`'s `(*UCP)` survey row.
 
 ## 9. Findings not fixed

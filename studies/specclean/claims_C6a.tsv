@@ -1,0 +1,300 @@
+C6-0001	3646	N	An artifact carries compile-time macros so a caller can #if on a fact rather than read an rx_info field at run time (D46: every strategy selection point is observable).
+C6-0002	3652	N	The compile-time macro mirror of rx_info is PARTIAL: on a VM artifact six of rx_info's fifteen fields have a macro and nine do not.
+C6-0003	3654	N	rx_info.ncaps is mirrored by the macro <PREFIX>_NCAPS.
+C6-0004	3654	N	rx_info.engine is mirrored by <PREFIX>_ENGINE, as the string "vm" on a VM artifact.
+C6-0005	3655	N	rx_info.engine_why is mirrored by <PREFIX>_ENGINE_WHY.
+C6-0006	3656	N	rx_info.step_budget is mirrored by <PREFIX>_STEP_BUDGET.
+C6-0007	3656	N	rx_info.work_budget is mirrored by <PREFIX>_WORK_BUDGET.
+C6-0008	3657	N	rx_info.frame_capacity is mirrored by <PREFIX>_BT_FRAMES.
+C6-0009	3657	N	rx_info fields abi, flags, encoding, ngroups, nnames, subject_ceiling, pattern, pattern_len and groups have no compile-time macro.
+C6-0010	3659	N	rx_info.ngroups has no macro, so it is reachable only by reading <prefix>_info at run time (unlike ncaps, which has <PREFIX>_NCAPS).
+C6-0011	3667	N	Selection facts (family (a): which engine, which candidate-start mechanism) are unconditional: present on every artifact pcrec emits, with an engine-appropriate value.
+C6-0012	3669	N	The M2.1 self-loop skip is a scan-avoidance mechanism that is not yet stamped.
+C6-0013	3672	N	<PREFIX>_ENGINE is stamped on both artifact kinds, as "vm" or "dfa", from one emitter (pcrec_emit_engine_stamp) so the two spellings cannot drift.
+C6-0014	3674	N	The prefilter axis keeps engine-specific macro names because its value sets are different vocabularies: <PREFIX>_VM_PREFILTER is the VM's; <PREFIX>_DFA_PREFILTER and <PREFIX>_DFA_SCAN are the DFA scan's.
+C6-0015	3684	N	<PREFIX>_ENGINE is on every artifact pcrec emits, without exception.
+C6-0016	3685	N	<PREFIX>_DFA_SCAN and <PREFIX>_DFA_PREFILTER are on every artifact that CONTAINS a DFA scan: every DFA artifact and every VM hybrid.
+C6-0017	3687	N	A VM hybrid (<PREFIX>_VM_PREFILTER "hybrid") inlines the DFA emitter's own forward+reverse or attempt scan as a static function with its own tables, its own D11 bound and its own candidate-start filter.
+C6-0018	3692	N	A non-hybrid VM artifact contains no DFA scan and carries neither <PREFIX>_DFA_SCAN nor <PREFIX>_DFA_PREFILTER.
+C6-0019	3693	N	IFF: a VM artifact carries the two _DFA_* macros (_DFA_SCAN, _DFA_PREFILTER) if and only if <PREFIX>_VM_PREFILTER is "hybrid".
+C6-0020	3696	N	tests/codegen/run_dfa_stamps.sh asserts the hybrid <=> _DFA_* IFF in both directions, using the emitted static <prefix>_prefilter body as the independent third term.
+C6-0021	3699	N	<PREFIX>_VM_PREFILTER and <PREFIX>_DFA_PREFILTER are two different selections, not two spellings of one.
+C6-0022	3700	N	<PREFIX>_VM_PREFILTER says whether the VM runs a capture-erased DFA ahead of its program at all.
+C6-0023	3701	N	<PREFIX>_DFA_PREFILTER says what candidate-start filter the DFA scan itself carries.
+C6-0024	3702	N	A hybrid artifact answers both _VM_PREFILTER and _DFA_PREFILTER, and the two answers are independent.
+C6-0025	3705	N	<PREFIX>_VM_PREFILTER_LANG is a third independent selection question beside _VM_PREFILTER and _DFA_PREFILTER, not a refinement of either: which LANGUAGE the prefilter DFA recognises.
+C6-0026	3711	N	<PREFIX>_VM_PREFILTER_LANG has exactly two values, "exact" and "count-collapsed".
+C6-0027	3714	N	<PREFIX>_VM_PREFILTER_LANG "exact" means the count-collapse axis did not fire: the prefilter is not a count-collapsed superset (it may still over-approximate for another reason).
+C6-0028	3715	N	<PREFIX>_VM_PREFILTER_LANG "count-collapsed" means the prefilter recognises a count-collapsed superset: every A_REP with rmin > 1 or rmax > 1 is lowered as X{min(rmin,1),} so the machine does not scale with the count.
+C6-0029	3717	N	<PREFIX>_VM_PREFILTER_LANG is present on every artifact whose VM prefilter decision came out "hybrid", i.e. exactly where <PREFIX>_VM_PREFILTER reads "hybrid".
+C6-0030	3720	N	<PREFIX>_VM_PREFILTER_LANG is on no DFA artifact at all, because a DFA artifact takes no VM prefilter decision.
+C6-0031	3721	N	The _VM_PREFILTER_LANG scope (hybrid only) is narrower than the _DFA_* family's scope (contains a DFA scan, which a plain DFA artifact also satisfies).
+C6-0032	3723	N	tests/codegen/run_dfa_stamps.sh asserts the _VM_PREFILTER_LANG IFF in both directions.
+C6-0033	3725	N	A prefilter is a filter and its contract is unchanged by the _VM_PREFILTER_LANG value: its rejection is sound and its span START is a lower bound the VM verifies from.
+C6-0034	3728	N	The artifact's answers are identical under _VM_PREFILTER_LANG "exact" and "count-collapsed" (the axis is answer-identity-preserving, D46).
+C6-0035	3730	N	A count-collapsed superset cannot supply an upper bound on the match end, so a "count-collapsed" artifact always reads <PREFIX>_VM_PRUNE_CEILING "subject-end".
+C6-0036	3732	N	The "count-collapsed" => "subject-end" consequence is the same one an atomic group or a lookaround already has.
+C6-0037	3733	N	<PREFIX>_VM_PREFILTER_LANG has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent; the trigger to add one is a named consumer, not symmetry (D77).
+C6-0038	3737	N	<PREFIX>_VM_PREFILTER_LANG reports the count-collapse axis ONLY (D142).
+C6-0039	3738	N	<PREFIX>_VM_PREFILTER_LANG "exact" does NOT say the prefilter recognises the pattern's own language.
+C6-0040	3739	N	A lookbehind, lookahead, atomic group or \K is erased from the prefilter's machine, which then over-approximates while _VM_PREFILTER_LANG still reads "exact".
+C6-0041	3741	M	Measured on 76 lookbehind, 47 lookahead, 132 atomic and 53 \K hybrids (docs/design/pf_know.md section 2.2/8.4): the prefilter over-approximates while _VM_PREFILTER_LANG reads "exact".
+C6-0042	3743	N	Whether a successful prefilter also proves the match END is read from <PREFIX>_VM_RESEED: its "exact" row is the one where the prefilter answers for the pattern's own language.
+C6-0043	3746	N	No stamp line is added to report whether the prefilter recognises the pattern's own language beyond _VM_RESEED.
+C6-0044	3748	N	<PREFIX>_VM_RESEED reports what the hybrid's retry does after a failed attempt.
+C6-0045	3750	N	<PREFIX>_VM_RESEED has the same IFF as _VM_PREFILTER_LANG: present on every artifact whose _VM_PREFILTER reads "hybrid", and no other.
+C6-0046	3751	N	The <PREFIX>_VM_RESEED value is the name of the first-match row that fired; pcrec --list-axes prints the table under axis hyb-reseed.
+C6-0047	3756	N	<PREFIX>_VM_RESEED "exact": the prefilter answers for the pattern's own language, so a failed attempt cannot follow one of its answers; the retry is the one emitted before abi 49.
+C6-0048	3757	N	<PREFIX>_VM_RESEED "clamped": over-approximating prefilter on an artifact with an MRL clamp; the pre-abi-49 retry, which already re-seeds after every failed attempt.
+C6-0049	3758	N	<PREFIX>_VM_RESEED "anchored": over-approximating clamp-free prefilter on a start-anchored pattern (_VM_START not "unanchored"); the attempt loop stops after its first attempt, no retry runs, and the pre-abi-49 retry's text is emitted.
+C6-0050	3759	N	<PREFIX>_VM_RESEED "adaptive-dense": over-approximating clamp-free prefilter where the compile's byte-rate prior predicts dense candidates; the retry steps or re-seeds per call, starting in step mode.
+C6-0051	3760	N	<PREFIX>_VM_RESEED "adaptive": over-approximating clamp-free prefilter; the retry steps or re-seeds per call, starting with a short step budget.
+C6-0052	3761	N	<PREFIX>_VM_RESEED "fixed": -fno-hyb-reseed on an over-approximating clamp-free prefilter; the pre-abi-49 retry.
+C6-0053	3763	N	<PREFIX>_VM_RESEED is a selection fact emitted under _VM_PREFILTER_LANG's IFF rather than unconditionally.
+C6-0054	3764	N	<PREFIX>_VM_RESEED has no rx_info mirror (D77).
+C6-0055	3765	N	<PREFIX>_VM_RESEED describes run time only: every value answers identically, except that an adaptive* artifact can answer where the pre-abi-49 retry gave up on a budget.
+C6-0056	3769	N	<PREFIX>_STARTPOS_GUARD reports what the entries do with a caller's mid-character position.
+C6-0057	3771	N	<PREFIX>_STARTPOS_GUARD is unconditional: on every artifact of both engines, a family (a) selection fact riding the shared prologue, because the axis belongs to the entries.
+C6-0058	3777	N	<PREFIX>_STARTPOS_GUARD "guarded": a startpos (or ctx->pos) > 0 inside a character is refused with PCREC_ERR_STARTPOS; the default under an encoding with multi-byte characters.
+C6-0059	3778	N	<PREFIX>_STARTPOS_GUARD "align": (-fstartpos-guard=align) such a position is moved forward to the next character start once at entry; an anchored entry answers -1.
+C6-0060	3779	N	<PREFIX>_STARTPOS_GUARD "permissive": the artifact answers at whatever position the caller named; arises from -fno-startpos-guard, or an encoding (byte) where every position is a character start.
+C6-0061	3781	N	<PREFIX>_UTF_CHECK reports whether the entries refuse an ill-formed subject.
+C6-0062	3782	N	<PREFIX>_UTF_CHECK is unconditional, on every artifact, beside _STARTPOS_GUARD.
+C6-0063	3787	N	<PREFIX>_UTF_CHECK "whole": (-futf-check) every entry that takes a subject refuses with PCREC_ERR_UTF when an ill-formed sequence begins in [startpos - LB, n).
+C6-0064	3788	N	<PREFIX>_UTF_CHECK "off": the default; invalid-tolerant, an ill-formed sequence matches nothing and is not reported.
+C6-0065	3789	N	<PREFIX>_UTF_CHECK "inert": the encoding has no ill-formed byte strings (byte); no check exists whatever was asked.
+C6-0066	3791	N	<PREFIX>_STARTPOS_GUARD and <PREFIX>_UTF_CHECK are each read off the same predicate the emitted entry text is, so a stamp and its body cannot disagree.
+C6-0067	3793	N	Neither <PREFIX>_STARTPOS_GUARD nor <PREFIX>_UTF_CHECK has an rx_info mirror (D77).
+C6-0068	3793	N	rx_info.flags carries the two UTF-check/startpos-guard request bits, masked out where inert.
+C6-0069	3795	N	<PREFIX>_DFA_TABLE is a third _DFA_* macro, under the same IFF as _DFA_SCAN/_DFA_PREFILTER: present on every artifact that contains a DFA scan (every DFA artifact and every VM hybrid), and no other.
+C6-0070	3797	N	<PREFIX>_DFA_TABLE names the encoding of the DFA scan's transition table.
+C6-0071	3803	N	<PREFIX>_DFA_TABLE "premultiplied": every numeric transition table in the artifact's DFA scan holds next_state * classes, so the emitted step is state = table[state + class].
+C6-0072	3804	N	<PREFIX>_DFA_TABLE "indexed": every numeric transition table holds next_state and the step multiplies (the form emitted before OPT-3).
+C6-0073	3805	N	<PREFIX>_DFA_TABLE "mixed": the machines the artifact contains took different forms; the choice is per machine, on that machine's own states * classes and seed table (a machine that can start dead for some context byte is indexed).
+C6-0074	3805	N	The machines considered by <PREFIX>_DFA_TABLE are the forward one, the reverse one unless the search is start-pinned, and the anchored one under <PREFIX>_DFA_MATCH "unwrapped".
+C6-0075	3806	N	<PREFIX>_DFA_TABLE "none": the scan has no numeric transition table at all: _DFA_SCAN "attempt" (states are labels, a step is a computed goto) or _DFA_SCAN "empty".
+C6-0076	3808	N	<PREFIX>_DFA_TABLE is a family (a) selection fact, read off the same predicate the emitted loop branches on.
+C6-0077	3811	N	<PREFIX>_DFA_TABLE names the selection that was MADE; after the uniform fold an artifact can carry that selection without carrying a table.
+C6-0078	3813	N	<PREFIX>_DFA_UNIFORM_FOLDS is where a consumer reads how many DFA tables are actually present.
+C6-0079	3815	N	<PREFIX>_DFA_TABLE does NOT fall to "none" when every table folds; the representation was still chosen.
+C6-0080	3817	N	The representation fixes the folded constant's value: 65535 under "premultiplied", -1 under "indexed".
+C6-0081	3819	N	<PREFIX>_DFA_TABLE "none" means a scan with no numeric transition table by construction (_DFA_SCAN "attempt" or "empty"), not a fully folded scan.
+C6-0082	3822	N	<PREFIX>_DFA_TABLE has no rx_info mirror, deliberately.
+C6-0083	3823	N	Unlike scan and prefilter, whose rx_info mirrors tuning.md section 3.2 records, <PREFIX>_DFA_TABLE has no rx_info field.
+C6-0084	3824	N	Section 6.3's (a)/(b) split is a rule about macros and makes the macro owed; the rx_info struct fields are a separate layout decision.
+C6-0085	3829	N	Trigger: the first consumer that reads rx_info.scan or rx_info.prefilter at run time makes a table mirror owed too, as an append at the end of the struct that moves no existing offset.
+C6-0086	3834	N	There are three rx_info mirrors of a DFA selection stamp (scan, prefilter, match_form) plus search_form as the fourth field; table is not one of them.
+C6-0087	3834	N	rx_info.scan and rx_info.prefilter are mirrors of a DFA selection stamp (DD-13c, abi 6).
+C6-0088	3837	N	rx_info.match_form mirrors a DFA selection stamp (ENG-ABS, abi 10).
+C6-0089	3838	N	rx_info.search_form mirrors a DFA selection stamp (OPT-5 STEP 2, abi 16).
+C6-0090	3839	N	match_form and search_form mirror caller-visible COST properties of an entry point the caller calls, whereas table and scan_edge are internal encoding choices with no rx_info mirror.
+C6-0091	3842	N	rx_info.search_form's guard is scan/prefilter's, not match_form's: a hybrid inlines this emitter's search body, so it has a search form to report.
+C6-0092	3846	N	The four DFA stamp values (_DFA_SCAN, _DFA_PREFILTER, _DFA_TABLE, _DFA_SCAN_EDGE family) come from one derivation per engine (unanch_start, attempt_cand in src/gen/emit_dfa.c) read by every site that needs them: emitted loop, DFA stamp, hybrid stamp.
+C6-0093	3849	N	A DFA-derived stamp cannot disagree with the loop it describes unless the derivation itself is wrong, in which case the loop is wrong too.
+C6-0094	3851	N	<PREFIX>_DFA_UNIFORM_FOLDS is a fourth _DFA_* macro, under the same IFF as _DFA_TABLE: present on every artifact that contains a DFA scan (every DFA artifact and every VM hybrid), and no other.
+C6-0095	3855	N	<PREFIX>_DFA_UNIFORM_FOLDS is an INTEGER, not a string (e.g. #define RX_DFA_UNIFORM_FOLDS 4).
+C6-0096	3861	N	<PREFIX>_DFA_UNIFORM_FOLDS is the number of the artifact's DFA tables whose cells were all equal and which are therefore NOT EMITTED; the accessor returns the constant instead.
+C6-0097	3863	N	Two tables per machine are foldable, <m>_next_state and <m>_is_accepting, so <PREFIX>_DFA_UNIFORM_FOLDS runs 0..6.
+C6-0098	3865	N	The forward machine is always counted in <PREFIX>_DFA_UNIFORM_FOLDS.
+C6-0099	3865	N	The reverse machine is counted in <PREFIX>_DFA_UNIFORM_FOLDS unless the search is start-pinned (it is not in the artifact to fold).
+C6-0100	3867	N	The anchored machine is counted in <PREFIX>_DFA_UNIFORM_FOLDS under <PREFIX>_DFA_MATCH "unwrapped".
+C6-0101	3868	N	<PREFIX>_DFA_UNIFORM_FOLDS, _DFA_TABLE and _DFA_SCAN_EDGE use the same machine composition, so none can name a machine the artifact does not contain.
+C6-0102	3869	N	<PREFIX>_DFA_UNIFORM_FOLDS is 0 on _DFA_SCAN "attempt" and "empty", which have neither table.
+C6-0103	3872	N	<PREFIX>_DFA_UNIFORM_FOLDS is a COUNT and deliberately not a MASK: it is a whole-artifact total with no per-quantifier axis to mix.
+C6-0104	3872	N	Other masks in section 6.3 are masks because a rung, strategy or clamp is chosen per A_REP and a scalar would lie on a mixed artifact.
+C6-0105	3877	N	<PREFIX>_DFA_UNIFORM_FOLDS is family (b) (a fact about what the emitted machine turned out to contain), for <PREFIX>_VM_FRAMELESS's reason.
+C6-0106	3881	N	There is no fold mode anywhere upstream of the emitter; the fold is discovered while the emitter has the table in hand.
+C6-0107	3883	N	<PREFIX>_DFA_UNIFORM_FOLDS is owed rather than optional, because the fold's effect is a table's absence and a fact readable only by a macro's absence is not an acceptable discriminator.
+C6-0108	3885	N	tests/codegen/run_dfa_uniform_fold.sh reads <PREFIX>_DFA_UNIFORM_FOLDS.
+C6-0109	3887	N	A consumer may conclude from <PREFIX>_DFA_UNIFORM_FOLDS that the artifact is smaller and its scan loop cheaper by that many indexed loads.
+C6-0110	3889	N	A consumer may NOT conclude anything about the answers from <PREFIX>_DFA_UNIFORM_FOLDS: they are identical either way, a uniform table and its constant being the same function.
+C6-0111	3892	N	<PREFIX>_DFA_UNIFORM_FOLDS has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent, because no consumer reads the fact at run time today (D77).
+C6-0112	3893	N	The trigger that would make an rx_info mirror of <PREFIX>_DFA_UNIFORM_FOLDS owed is the one _DFA_TABLE's entry names, and it would be a struct append moving no existing offset.
+C6-0113	3897	N	<PREFIX>_END_WINDOW reports how far from the subject's end a match may begin.
+C6-0114	3898	N	<PREFIX>_END_WINDOW is a family (a) stamp: on every artifact pcrec emits, both engines, because the analysis is neither engine's.
+C6-0115	3902	N	<PREFIX>_END_WINDOW "4" (a decimal string) means a match begins in [n - 4, n].
+C6-0116	3903	N	<PREFIX>_END_WINDOW "none" means nothing was proved.
+C6-0117	3906	N	<PREFIX>_END_WINDOW is a string with a "none" member, not a number with a sentinel, because 0 is a legal window (a \z pattern of maximum width 0 may begin only at the subject's end).
+C6-0118	3912	N	The <PREFIX>_END_WINDOW value is the bound both search entries clamp to, emitted from the same compile-time field as the clamp itself.
+C6-0119	3913	N	<PREFIX>_END_WINDOW is "none" for a pattern that is not end-anchored.
+C6-0120	3914	N	<PREFIX>_END_WINDOW is "none" for a pattern whose width is unbounded.
+C6-0121	3914	N	<PREFIX>_END_WINDOW is "none" for a pattern containing \G.
+C6-0122	3915	N	<PREFIX>_END_WINDOW is "none" for a pattern under a multi-byte encoding.
+C6-0123	3915	N	<PREFIX>_END_WINDOW is "none" for an artifact built with -fno-end-window.
+C6-0124	3917	N	A consumer may conclude that a non-"none" <PREFIX>_END_WINDOW artifact does constant work on an arbitrarily long subject.
+C6-0125	3918	N	A consumer may NOT read <PREFIX>_END_WINDOW "none" as "this pattern is not end-anchored".
+C6-0126	3921	N	<PREFIX>_END_WINDOW has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent, because no consumer reads the fact at run time today (D77).
+C6-0127	3924	N	<PREFIX>_REQ_BYTE reports a byte every match must contain.
+C6-0128	3925	N	<PREFIX>_REQ_BYTE is a family (a) stamp: on every artifact pcrec emits, both engines.
+C6-0129	3928	N	<PREFIX>_REQ_BYTE "62" (decimal byte value string) means every match contains the byte '>'.
+C6-0130	3929	N	<PREFIX>_REQ_BYTE "none" means no byte is necessary on every path.
+C6-0131	3932	N	<PREFIX>_REQ_BYTE is a string with a "none" member because 0 is a legal byte value, so no number is free to mean "declined".
+C6-0132	3934	N	The <PREFIX>_REQ_BYTE value is the member of the necessary set a subject is least likely to contain, by the resolved analysis's byte-rate answer, with the rightmost rule as tiebreak and as the whole answer where the answer is NONE.
+C6-0133	3939	N	Where the OPT-REQPOS RUN shipped (tuning.md 2.28) and its scan member is an exact byte, <PREFIX>_REQ_BYTE is that member.
+C6-0134	3940	N	Where the run's scan member is a two-member cube (tuning.md 2.39), <PREFIX>_REQ_BYTE is the set's pick, or "none" for an empty set.
+C6-0135	3942	N	Every <PREFIX>_REQ_BYTE value is a member of the necessary set.
+C6-0136	3944	N	A consumer may conclude that a non-"none" <PREFIX>_REQ_BYTE artifact rejects a whole subject in one pass when the byte is absent, provided <PREFIX>_REQ_WHY reads "emitted".
+C6-0137	3946	N	<PREFIX>_REQ_WHY is the stamp that says whether the <PREFIX>_REQ_BYTE fact was acted on.
+C6-0138	3947	N	A consumer may NOT read <PREFIX>_REQ_BYTE "none" as "this pattern has no required literal": it is the safe answer of a conservative analysis.
+C6-0139	3949	N	A caselessly folded literal, an alternation with no common byte, and -fno-req-byte all report <PREFIX>_REQ_BYTE "none".
+C6-0140	3952	N	<PREFIX>_REQ_BYTE has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent, because no consumer reads the fact at run time today (D77).
+C6-0141	3955	N	<PREFIX>_REQ_RUN reports a literal run every match must contain.
+C6-0142	3956	N	<PREFIX>_REQ_RUN is a family (a) stamp: on every artifact pcrec emits, both engines.
+C6-0143	3960	N	<PREFIX>_REQ_RUN "2e746172@0" means every match contains ".tar" and the emitted memchr scans member 0 ('.').
+C6-0144	3962	N	<PREFIX>_REQ_RUN "53454c454354@4/dfdfdfdfdfdf" (for (?i)select) means every match contains a member of each position with (x & K) == T, and the scan is the pair at position 4.
+C6-0145	3966	N	<PREFIX>_REQ_RUN "none" means no run of two or more bytes.
+C6-0146	3969	N	The <PREFIX>_REQ_RUN value is the run's bytes as lowercase hex, then '@', then the index within the run of the member the emitted memchr scans for.
+C6-0147	3970	N	<PREFIX>_REQ_RUN is "none" at a run length below 2, which is <PREFIX>_REQ_BYTE's own case.
+C6-0148	3971	N	<PREFIX>_REQ_RUN uses hex because a run is arbitrary bytes inside a #define's string body.
+C6-0149	3974	N	<PREFIX>_REQ_BYTE is exactly bytes[idx] of <PREFIX>_REQ_RUN wherever position idx is an exact byte, which makes the two stamps checkable against each other.
+C6-0150	3976	N	Since abi 59, a <PREFIX>_REQ_RUN run whose positions are not all exact bytes carries '/' and each position's mask K in hex.
+C6-0151	3977	N	In a masked <PREFIX>_REQ_RUN, T (the bytes) is each position's lower member and (x & K) == T is its membership test.
+C6-0152	3978	N	An exact <PREFIX>_REQ_RUN run's text is unchanged by the mask suffix (no '/' part).
+C6-0153	3979	N	<PREFIX>_REQ_RUN has no rx_info mirror, for its sibling's reason.
+C6-0154	3982	N	<PREFIX>_REQ_WHY reports whether the artifact acted on either required-byte/required-run fact, and why not.
+C6-0155	3984	N	<PREFIX>_REQ_WHY is a closed four-token selection stamp, family (a): on every artifact pcrec emits, both engines.
+C6-0156	3987	N	<PREFIX>_REQ_WHY has exactly four values: "emitted", "none", "one-attempt", "dominated".
+C6-0157	3992	N	<PREFIX>_REQ_WHY "emitted": the artifact emits a pre-check on the byte or run its two siblings (_REQ_BYTE, _REQ_RUN) name.
+C6-0158	3992	N	Since abi 60, a <PREFIX>_REQ_WHY "emitted" pre-check may be LED by a rarer necessary-set byte's one-byte check; the stamp says whether, not in which shape.
+C6-0159	3992	N	Since abi 61, a <PREFIX>_REQ_WHY "emitted" pre-check may be HANDED OFF (see <PREFIX>_REQ_HANDOFF).
+C6-0160	3993	N	<PREFIX>_REQ_WHY "none": nothing is necessary, no byte and no run (the analysis found neither, or -fno-req-byte denied them).
+C6-0161	3994	N	<PREFIX>_REQ_WHY "one-attempt": declined because the search route tries ONE start position, so a whole-window pass in front of it can only add work.
+C6-0162	3995	N	<PREFIX>_REQ_WHY "dominated": declined because the artifact's own candidate-start memchr already scans a byte at least as rare.
+C6-0163	3997	N	<PREFIX>_REQ_WHY is "none" if and only if <PREFIX>_REQ_BYTE and <PREFIX>_REQ_RUN are both "none" (since abi 59).
+C6-0164	4000	N	Any <PREFIX>_REQ_WHY value other than "none" asserts that a byte or a run WAS derived; only "emitted" asserts that the artifact tests it.
+C6-0165	4001	N	A consumer asking whether an artifact rejects a subject in one pass reads <PREFIX>_REQ_WHY first and then _REQ_BYTE/_REQ_RUN for the value, never the siblings alone.
+C6-0166	4004	N	<PREFIX>_REQ_WHY has no rx_info mirror, its siblings' reason.
+C6-0167	4006	N	<PREFIX>_REQ_HANDOFF (abi 61) reports where the search body's scan begins.
+C6-0168	4007	N	<PREFIX>_REQ_HANDOFF is a family (a) stamp: on every artifact pcrec emits, both engines.
+C6-0169	4008	N	A stamp varies by engine family, never by presence within one; "does not apply" is a value (Frank's ruling, 2026-10-05).
+C6-0170	4012	N	<PREFIX>_REQ_HANDOFF "2" (a decimal K) means the scan begins K bytes before the run pre-check's first window hit.
+C6-0171	4014	N	<PREFIX>_REQ_HANDOFF "none" means the scan begins at startpos.
+C6-0172	4017	N	<PREFIX>_REQ_HANDOFF is a decimal K only where the req-use table's handoff row applies (tuning.md 2.41).
+C6-0173	4018	N	A <PREFIX>_REQ_HANDOFF decimal value requires an emitted run pre-check (<PREFIX>_REQ_WHY "emitted" with a <PREFIX>_REQ_RUN).
+C6-0174	4019	N	A <PREFIX>_REQ_HANDOFF decimal value requires a DFA scan in front of the body (a DFA artifact, or a VM hybrid's prefilter).
+C6-0175	4020	N	A <PREFIX>_REQ_HANDOFF decimal value requires a finite K.
+C6-0176	4020	N	A <PREFIX>_REQ_HANDOFF decimal value requires a prefilter that is not count-collapsed.
+C6-0177	4021	N	A <PREFIX>_REQ_HANDOFF decimal value is excluded for a VM hybrid with a \G start family whose prefilter window is its match ceiling.
+C6-0178	4023	N	Under a decimal <PREFIX>_REQ_HANDOFF, every match begins at most K bytes before an occurrence of the run's window.
+C6-0179	4024	N	Under a decimal <PREFIX>_REQ_HANDOFF, the pre-check's search block returns the LEAST position >= startpos at which the whole window occurs, or n when none does.
+C6-0180	4025	N	A caller of the pre-check's search block may use the returned position, not only its comparison with n.
+C6-0181	4027	N	Under a decimal <PREFIX>_REQ_HANDOFF, the body begins its scan at max(startpos, hit - K), rounded up to a character start under a multibyte encoding when it moved.
+C6-0182	4028	N	<PREFIX>_REQ_HANDOFF is "none" everywhere else, including every artifact built -fno-req-handoff.
+C6-0183	4029	N	The <PREFIX>_REQ_HANDOFF K is the req_run_maxoff fact --emit-facts lists (facts_listing.md), in BYTES.
+C6-0184	4030	N	(?i)straße under -e utf8 reads <PREFIX>_REQ_HANDOFF "2", because (?i)s matches U+017F (two bytes) before the window TRA.
+C6-0185	4032	N	A non-"none" <PREFIX>_REQ_HANDOFF never changes an answer or a give-up; it says the artifact skips positions a necessary literal proved cannot begin a match.
+C6-0186	4034	N	<PREFIX>_REQ_HANDOFF has no rx_info mirror, its siblings' reason.
+C6-0187	4036	N	<PREFIX>_VM_START_SCAN (abi 62) reports where a VM attempt can start.
+C6-0188	4037	N	<PREFIX>_VM_START_SCAN is a family (a) stamp: on every artifact pcrec emits, both engines, beside <PREFIX>_REQ_HANDOFF and for its ruling.
+C6-0189	4041	N	<PREFIX>_VM_START_SCAN "first-class" means attempts start only where the byte is in the start set.
+C6-0190	4043	N	<PREFIX>_VM_START_SCAN "none" means every position is attempted.
+C6-0191	4046	N	<PREFIX>_VM_START_SCAN is "first-class" where the candidate table's VM-route row applies (tuning.md 2.42).
+C6-0192	4047	N	<PREFIX>_VM_START_SCAN "first-class" requires a VM artifact with no DFA prefilter (<PREFIX>_VM_PREFILTER "none").
+C6-0193	4048	N	<PREFIX>_VM_START_SCAN "first-class" requires an unanchored pattern.
+C6-0194	4048	N	<PREFIX>_VM_START_SCAN "first-class" requires a start set (the start_set fact --emit-facts lists) that cannot match empty and has fewer than 256 members.
+C6-0195	4050	N	Under <PREFIX>_VM_START_SCAN "first-class", the attempt loop seeks the next byte of the start set through a 256-entry table before its first attempt and after each failed one.
+C6-0196	4052	N	Under <PREFIX>_VM_START_SCAN "first-class", the artifact answers no-match where no start-set byte is left.
+C6-0197	4053	N	<PREFIX>_VM_START_SCAN is "none" on every DFA artifact.
+C6-0198	4053	N	<PREFIX>_VM_START_SCAN is "none" on every VM hybrid (whose prefilter is its start test).
+C6-0199	4054	N	<PREFIX>_VM_START_SCAN is "none" on every anchored or \G-start pattern.
+C6-0200	4055	N	<PREFIX>_VM_START_SCAN is "none" on every artifact built -fno-start-set.
+C6-0201	4055	N	<PREFIX>_VM_START_SCAN names the FORM of the seek; a one-byte (memchr) form is not built.
+C6-0202	4057	N	A non-"none" <PREFIX>_VM_START_SCAN never changes an answer; a give-up may become the answer (section 3.1).
+C6-0203	4057	N	<PREFIX>_VM_START_SCAN has no rx_info mirror, its siblings' reason.
+C6-0204	4060	N	<PREFIX>_FINDINGS reports which findings this artifact was built from.
+C6-0205	4061	N	<PREFIX>_FINDINGS is a family (a) stamp: on every artifact, both engines.
+C6-0206	4064	N	<PREFIX>_FINDINGS "byte-rate=default:1822fb973b95a4da" is an example value of form query=bundle:digest.
+C6-0207	4065	N	<PREFIX>_FINDINGS "byte-rate=none" means the findings query was asked and nothing answered (e.g. -e utf8).
+C6-0208	4066	N	<PREFIX>_FINDINGS "" (empty string) means nothing was asked.
+C6-0209	4069	N	<PREFIX>_FINDINGS holds one query=bundle:digest item per findings query the compile ASKED, in the fixed query order, joined with ';'.
+C6-0210	4071	N	<PREFIX>_FINDINGS uses query=none where the analysis declares nothing for this compile's encoding.
+C6-0211	4071	N	<PREFIX>_FINDINGS is the empty string when no reader asked.
+C6-0212	4072	N	docs/spec/findings.md section 5 is the grammar of <PREFIX>_FINDINGS and the digest's byte layout.
+C6-0213	4073	N	In <PREFIX>_FINDINGS, bundle is the analysis whose block ANSWERED.
+C6-0214	4074	N	The <PREFIX>_FINDINGS digest covers exactly what the readers consumed, so two artifacts built from the same rates carry the same stamp.
+C6-0215	4075	N	<PREFIX>_FINDINGS is written after every reader has run, beside the rx_info definition rather than with its prologue siblings, so an ask made while the engine body is emitted is recorded.
+C6-0216	4077	N	<PREFIX>_FINDINGS HAS an rx_info mirror, rx_info.findings, which equals it byte for byte.
+C6-0217	4078	N	The analysis bundle name is plain text in the artifact: a binary built under a user's analysis discloses its name.
+C6-0218	4082	N	<PREFIX>_RUN_WORDS (abi 58) reports how many run compares the overlap row wrote.
+C6-0219	4083	N	<PREFIX>_RUN_WORDS is on every artifact, both engines.
+C6-0220	4083	N	<PREFIX>_RUN_WORDS is an activity count that section (b) keeps VM-only elsewhere, but it is stamped on both engines because the mechanism it counts (the run compare, tuning.md 2.38) is both engines'.
+C6-0221	4086	N	The run compare writes the DFA scan's run term and run pre-check as well as the VM's literal runs and island chains.
+C6-0222	4088	N	Since MEMFN M1b (2026-10-07, no abi event) the run compare is pcrec-memory-functions' (memfn/src/runcmp.c), and the kit writes the <PREFIX>_RUN_WORDS line, as the first of its three lines.
+C6-0223	4091	N	The <PREFIX>_RUN_WORDS value is an unquoted integer.
+C6-0224	4094	N	#define RX_RUN_WORDS 1 /* or 0, or any count */ is the form of the <PREFIX>_RUN_WORDS stamp.
+C6-0225	4097	N	<PREFIX>_RUN_WORDS is the number of literal-run compares the artifact writes as word compares, counting each compare once whatever engine wrote it.
+C6-0226	4098	N	The overlap row writes word compares for an exact run of length 3, 5-7 or 9-15.
+C6-0227	4099	N	Since abi 59 the words row writes a masked run as a word compare (tuning.md 2.39) and is counted in <PREFIX>_RUN_WORDS.
+C6-0228	4101	N	Any other exact run compare is a memcmp and is not counted in <PREFIX>_RUN_WORDS.
+C6-0229	4102	N	<PREFIX>_RUN_WORDS is 0 on every artifact that writes no word compares, and under -fno-run-overlap.
+C6-0230	4103	N	<PREFIX>_RUN_WORDS is written after the engine body, beside the rx_info definition (<PREFIX>_FINDINGS' placement), because a DFA artifact's compares sit in file-scope blocks emitted after the prologue.
+C6-0231	4105	N	<PREFIX>_RUN_WORDS is a COUNT, for _VM_LIT_RUNS' reason.
+C6-0232	4105	N	A consumer may NOT conclude anything about the answers from <PREFIX>_RUN_WORDS; they are identical either way.
+C6-0233	4107	N	<PREFIX>_RUN_WORDS has no rx_info mirror (D77).
+C6-0234	4109	N	<PREFIX>_MEMFN_FORMS and <PREFIX>_MEMFN_LIBC (abi 63, 2026-10-05) report what the search-code kit rendered and which libc functions the artifact calls.
+C6-0235	4111	N	<PREFIX>_MEMFN_FORMS and <PREFIX>_MEMFN_LIBC are on every artifact, both engines.
+C6-0236	4112	N	The <PREFIX>_MEMFN_FORMS/_MEMFN_LIBC pair is written by pcrec-memory-functions (memfn/, D146/D147).
+C6-0237	4113	N	The <PREFIX>_MEMFN_FORMS/_MEMFN_LIBC pair sits directly after <PREFIX>_RUN_WORDS.
+C6-0238	4116	N	<PREFIX>_MEMFN_FORMS is "none" iff the artifact is byte-identical (stamp lines aside) to its own -fno-memfn-simd compile.
+C6-0239	4121	N	Otherwise <PREFIX>_MEMFN_FORMS lists the ids of the forms that make the artifact differ, comma-joined in site order.
+C6-0240	4122	N	A site that cascades between ISA levels carries its forms in <PREFIX>_MEMFN_FORMS as ID@LEVEL+LEVEL.
+C6-0241	4123	N	<PREFIX>_MEMFN_FORMS ids and level names are OPAQUE: a consumer buckets on none/not-none and never parses an id.
+C6-0242	4125	N	SIMD is off by default and no SIMD form exists yet, so <PREFIX>_MEMFN_FORMS is "none" on every artifact until the kit's first SIMD-on form ships (D147 addendum 10, Q55).
+C6-0243	4127	N	CHECK: A scalar-layer kit change (one that moves bytes at the default build) does NOT change <PREFIX>_MEMFN_FORMS.
+C6-0244	4129	N	A scalar-layer kit change is attributed by its abi event and its --memfn=no-NAME deny row.
+C6-0245	4130	N	A consumer that must tell two same-abi builds apart records the build recipe (abi, pcrec commit, argv).
+C6-0246	4132	N	<PREFIX>_MEMFN_LIBC is "none" or the names of the C library functions the artifact's code calls, sorted in byte order, distinct, comma-joined with no space.
+C6-0247	4134	N	<PREFIX>_MEMFN_LIBC is a source-level inventory of the WHOLE artifact (search code, variable resolver, an --emit-main driver, --trace output; comments and string literals excluded).
+C6-0248	4136	N	<PREFIX>_MEMFN_LIBC is not a promise of a dispatched call: a name is listed even where the compiler later inlines or folds that call.
+C6-0249	4138	N	A memcpy of a constant 1-8 bytes (a register load, e.g. the literal-run word loads <prefix>_wN) is not listed in <PREFIX>_MEMFN_LIBC.
+C6-0250	4140	N	Data objects an --emit-main or --trace artifact references (stderr) are not functions and are not listed in <PREFIX>_MEMFN_LIBC.
+C6-0251	4142	N	A consumer may conclude that a SIMD-off artifact whose <PREFIX>_MEMFN_LIBC lists memchr delegates that search to the C library's own dispatch.
+C6-0252	4144	N	Neither <PREFIX>_MEMFN_FORMS nor <PREFIX>_MEMFN_LIBC carries a kit version or the kit's vocabulary number, so a kit release that moves no emitted byte moves neither.
+C6-0253	4145	N	Neither <PREFIX>_MEMFN_FORMS nor <PREFIX>_MEMFN_LIBC has an rx_info mirror (D77).
+C6-0254	4147	M	Checked by C11 (make test-memfn-stamps, tests/memfn/run_libc_census.sh): over a corpus-wide sample every artifact carries both _MEMFN_FORMS and _MEMFN_LIBC lines.
+C6-0255	4149	M	Checked by C11: <PREFIX>_MEMFN_LIBC equals the undefined function symbols of the artifact's -O0 -fno-builtin object minus the constant-size memcpy loads.
+C6-0256	4151	H	CHECK: The identity half of the _MEMFN_FORMS check compares default against -fno-memfn-simd (tuning.md 2.43), reported "identical (no SIMD form)" while no SIMD form exists, running from R4c when the -fno-memfn-simd/-fmemfn-simd switch exists.
+C6-0257	4154	H	CHECK: The movers half of the _MEMFN_FORMS check (-fmemfn-simd against SIMD-off) stays unreached until a SIMD form exists.
+C6-0258	4157	N	<PREFIX>_SIMD_GUARDED_BYTES (abi 71, 2026-10-09, D155 addendum 2) reports how many bytes of the artifact sit under a CPU-level guard.
+C6-0259	4159	N	<PREFIX>_SIMD_GUARDED_BYTES is on every artifact, both engines, written by pcrec directly after <PREFIX>_MEMFN_LIBC.
+C6-0260	4160	N	<PREFIX>_SIMD_GUARDED_BYTES is an unsigned integer (e.g. #define RX_SIMD_GUARDED_BYTES 0ULL).
+C6-0261	4166	N	<PREFIX>_SIMD_GUARDED_BYTES is the number of bytes the search-code kit wrote between its simd_open and simd_close sink calls (the #if <level> blocks a SIMD-on form adds: per-level helpers and the guarded arms of its selector).
+C6-0262	4170	N	<PREFIX>_SIMD_GUARDED_BYTES is counted in the unit every pcrec length decision uses: comment bytes -fno-comments dropped are included, and the symbol prefix is counted at a fixed width.
+C6-0263	4172	N	Neither -fno-comments nor -p changes the <PREFIX>_SIMD_GUARDED_BYTES value.
+C6-0264	4172	N	<PREFIX>_SIMD_GUARDED_BYTES is 0ULL on every artifact that holds no such block, which is every artifact today: no SIMD form exists and -fmemfn-simd is inert (tuning.md 2.43).
+C6-0265	4175	N	A consumer may conclude from <PREFIX>_SIMD_GUARDED_BYTES the artifact's size beyond its SIMD-off compile.
+C6-0266	4176	N	The SIMD-guarded bytes are invisible to every pcrec size decision: the VM entry-shape knee and <PREFIX>_VM_PROGRAM_BYTES, the size term and its ladder, and the D84 caps (limits.md section 8) all read the length minus these bytes.
+C6-0267	4180	N	Turning SIMD on moves no rung, no ladder step, no refusal and no other stamp's value; <PREFIX>_SIMD_GUARDED_BYTES is where the difference stays visible.
+C6-0268	4181	N	There is no aggregate budget on <PREFIX>_SIMD_GUARDED_BYTES (D155 addendum 2): each SIMD row bounds its own guarded bytes.
+C6-0269	4183	N	<PREFIX>_SIMD_GUARDED_BYTES has no rx_info mirror (D77).
+C6-0270	4185	M	Checked by make test-memfn-guarded (tests/memfn/run_simd_guarded.sh): every artifact of a corpus sample carries the _SIMD_GUARDED_BYTES line.
+C6-0271	4187	M	Checked by make test-memfn-guarded: the _SIMD_GUARDED_BYTES value is at most the sum over the SIMD forms <PREFIX>_MEMFN_FORMS lists of each form's declared bound (0 while the value is "none").
+C6-0272	4189	M	A test-only build writing a synthetic guarded block through the same sink calls must produce artifacts equal to the plain build's, block and stamp value aside (arithmetic and decision neutrality of _SIMD_GUARDED_BYTES).
+C6-0273	4194	N	Family (b) capacity and activity macros stay VM-only: <PREFIX>_VM_RUNGS, _VM_STRATS, _VM_PRUNES, _VM_PRUNE_CEILING, _VM_CALL_SPLICED/_LINKED, _VM_ROOT_MINW, _VM_FRAMELESS, _VM_ALT_ISLANDS, _VM_CLS_FOLDS, _VM_LIT_RUNS, _VM_CLS_KIT, _VM_START, the budget macros and the frame/trail sizes.
+C6-0274	4199	N	Family (b) macros report what the VM DID (per quantifier, per call site, per frame); a DFA artifact has no such activity to report and does not carry them.
+C6-0275	4204	N	<PREFIX>_VM_START reports where an attempt may begin.
+C6-0276	4205	N	<PREFIX>_VM_START is a closed three-token selection stamp, on every VM artifact (hybrids included) and never defined on a pure-DFA artifact.
+C6-0277	4209	N	<PREFIX>_VM_START has exactly three values: "anchored", "gstart", "unanchored".
+C6-0278	4214	N	<PREFIX>_VM_START "anchored": every alternative of the whole pattern begins with ^ (outside multiline) or \A, so only offset 0 can start a match.
+C6-0279	4215	N	<PREFIX>_VM_START "gstart": every alternative begins with \G, so only the caller's own search_from can start a match.
+C6-0280	4216	N	<PREFIX>_VM_START "unanchored": nothing was proved, or -fno-vm-anchor-bound was given.
+C6-0281	4218	N	Either non-"unanchored" <PREFIX>_VM_START value means the emitted search loop stops after ONE attempt (tuning.md 2.25).
+C6-0282	4219	N	The <PREFIX>_VM_START fact is pcrec_start_anchor's, derived from the AST above either engine.
+C6-0283	4220	N	The DFA's own start_max is the same fact on the other engine, legible there through <PREFIX>_DFA_SCAN "attempt"; the two vocabularies are deliberately one.
+C6-0284	4224	N	A consumer may NOT read <PREFIX>_VM_START "unanchored" as "this pattern is not anchored": it is the safe answer of a conservative analysis.
+C6-0285	4225	N	A denied build, a backreference-leading pattern and a genuinely unanchored pattern all report <PREFIX>_VM_START "unanchored".
+C6-0286	4227	N	From the non-"unanchored" <PREFIX>_VM_START values a consumer may conclude a fact about the artifact's loop, never a promise about run time.
+C6-0287	4230	N	<PREFIX>_VM_START has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent, because no consumer reads the fact at run time today (D77).
+C6-0288	4233	N	<PREFIX>_VM_FRAMELESS (OPT-VMFL) is family (b), for _VM_CALL_SPLICED's reason: it is what the emitted program turned out to CONTAIN, not a decision the compiler made before emitting.
+C6-0289	4235	N	There is no frameless mode anywhere upstream of the emitter.
+C6-0290	4240	N	<PREFIX>_VM_FRAMELESS is 1 or 0 (e.g. #define RX_VM_FRAMELESS 1).
+C6-0291	4243	N	<PREFIX>_VM_FRAMELESS is 1 iff the artifact's VM program emits no RX_PUSH site and no linked call, i.e. the fail label has no pop-and-resume goto * dispatch; 0 otherwise.
+C6-0292	4245	N	<PREFIX>_VM_FRAMELESS is unconditional on every VM artifact, hybrids included, and never defined on a pure-DFA artifact.
+C6-0293	4246	N	Both <PREFIX>_VM_FRAMELESS values are spelled, never one omitted, because a fact readable by a macro's absence is a discriminator that was removed from two checks (OPT-1's _FAST_FRAMES precedent).
+C6-0294	4251	N	<PREFIX>_VM_FRAMELESS is a scalar boolean and not a mask: "did any site emit a push" is a whole-artifact fact with no per-quantifier axis to mix.
+C6-0295	4251	N	The masks (_VM_RUNGS, _VM_STRATS, _VM_PRUNES) are masks because the rung/strategy/clamp is chosen per A_REP and a scalar would lie on a mixed artifact.
+C6-0296	4254	N	<PREFIX>_VM_FRAMELESS has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent (D77); the trigger to add one is the same one RX_DFA_TABLE's entry names, as a struct append moving no existing offset.
+C6-0297	4261	N	<PREFIX>_VM_FRAMELESS reports a second fact about the same artifact (CC-DIFF STEP 1), deliberately the same macro rather than a new one.
+C6-0298	4262	N	<PREFIX>_VM_FRAMELESS 1 additionally means the artifact's eight VM entry-chain statics carry static inline __attribute__((always_inline)) (at abi 17); 0 means none of them does.
+C6-0299	4265	N	A separate stamp <PREFIX>_VM_INLINE_CHAIN was considered and rejected: it would carry the same value as _VM_FRAMELESS by construction, since the emitter derives both from the one has_push bool.
+C6-0300	4270	N	A consumer that wants to know whether the VM entry chain is inlined reads <PREFIX>_VM_FRAMELESS, qualified by <PREFIX>_VM_ENTRY_SHAPE.

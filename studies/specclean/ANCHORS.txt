@@ -1,0 +1,151 @@
+#citing                             line   13  **Citing this document.** Cite a section by its anchor —
+#verification                       line   21  **What the statements rest on.** Every rule below is checked against the
+#pre-v1                             line   27  **Pre-v1 posture (D40).** This contract carries no backwards-compatibility
+#namespaces                         line   38  ## 1. Symbols and namespaces
+#per-artifact-symbols               line   43  **1. Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
+#library-surface                    line   59  **2. pcrec's own fixed library surface**: the `PCREC_*` enum and bit
+#abi-block                          line   76  **3. The shared ABI block**: fixed-literal types and contract constants,
+#abi-guard                          line   97  **The guard's value is the `abi`, and a mixed-`abi` translation unit is
+#artifact-forms                     line  115  **Self-contained and split artifacts.** An artifact is either one
+#abi-types                          line  129  ## 2. Fixed ABI types
+#rx-info-tag                        line  256  **`rx_info` is a struct TAG, not a typedef.** Every emitted reference spells
+#entry-points                       line  267  ## 3. Entry points
+#entry-inventory                    line  270  Every artifact exports, unconditionally, these per-artifact symbols:
+#choosing-an-entry                  line  298  **Which entry to call.** The discriminator is whether the start position is
+#search                             line  313  ### 3.1 `<prefix>_search` — the search entry
+#search-conventions                 line  333  - **`0` means no match, not a zero-length match.** A zero-length match is a
+#absolute-offsets                   line  354  **Every offset written to `caps` is an ABSOLUTE offset into `s`, never
+#search-skips                       line  359  **A search may skip positions it proves cannot begin a match, and its answer
+#reported-start                     line  379  **`caps[0][0]` is where REPORTING begins, which is not always where matching
+#search-forms                       line  397  **A DFA search takes one of two forms, answer-identical and differing only in
+#subject-bytes                      line  413  **The subject is `n` bytes and nothing more.** A `0x00` byte inside `s` is an
+#find-all                           line  429  #### Finding every match
+#find-all-measured                  line  479  **Measured.** The loop, compiled against real artifacts on both engines
+#find-all-lossy                     line  494  **Where the loop is lossy.** It reports FEWER matches than PCRE2 and python
+#find-all-g                         line  508  **`\G` under the loop means "contiguous with the previous match"** —
+#find-all-k                         line  517  **`\K` under the loop is safe.** The loop advances off `caps[0][1]`, which
+#next-pos                           line  526  #### 3.1.1 `<prefix>_next_pos` — the encoding residual
+#next-pos-utf8                      line  572  **Under `utf8` the advance is defined on every input, well-formed or not, and
+#valid-upto                         line  600  #### 3.1.2 `<prefix>_valid_upto` — the subject validator
+#find-all-validated                 line  634  **Find-all under the check: validate once, loop on the default artifact**
+#match                              line  652  ### 3.2 `<prefix>_match` — the anchored match-here entry
+#match-forms                        line  677  **A DFA artifact's `<prefix>_match` takes one of two forms**, named by
+#match-caps                         line  705  ### 3.3 `<prefix>_match_caps` — the anchored, capture-delivering entry
+#info                               line  725  ### 3.4 `<prefix>_info` — the reflection structure
+#giveups-per-entry                  line  735  ### 3.5 Give-ups across the entries
+#k28-initializer                    line  759  **The DFA wrappers' local caps arrays are zero-initialized** (`= {{0}}`), in
+#whole-subject                      line  768  ### 3.6 Whole-subject and end-anchored matching: the `(?:P)\z` idiom
+#giveup-codes                       line  804  ## 4. Give-up and refusal codes
+#giveups                            line  825  **Give-ups**, `[PCREC_ERR_FLOOR, -2]`, say the engine ran and exhausted a
+#err-frames                         line  834  **`PCREC_ERR_FRAMES` names a RESOURCE, not an array and not an owner.** The
+#budget-per-call                    line  845  **One call to an un-suffixed entry may spend up to twice the step budget and
+#below-floor                        line  854  **Below the floor: not give-ups.** Values strictly below `PCREC_ERR_FLOOR` are
+#composed-call-sites                line  884  **Composed call sites trap below the floor, except on `PCREC_ERR_UTF`.** A
+#limits-pointers                    line  902  **Where the numbers live.** This section states what each value means. The
+#captures                           line  912  ## 5. Captures and groups
+#r22                                line  949  ### 5.1 What a written slot holds
+#non-requirements                   line  965  ### 5.2 Explicit non-requirements
+#concurrency                        line  981  ### 5.3 Concurrency and reentrancy
+#stack-headroom                     line 1004  **The promise is collectable only with enough stack headroom at the call
+#concurrency-checks                 line 1029  **Guarded by shipped checks in `make test`:**
+#named-groups                       line 1045  ### 5.4 Named groups: the `groups[]` index
+#dup-name-algorithm                 line 1080  **The caller's algorithm for a name that may be duplicated.** `bsearch`
+#composition                        line 1090  ### 5.5 Composition: a library's delivered groups
+#rx-info                            line 1160  ## 6. `rx_info` — the reflection structure
+#rx-info-fields                     line 1170  | # | field | type | meaning | mirror |
+#rx-info-counts                     line 1206  **`ncaps`, `ngroups`, `nnames` and `nentries` are four different counts.**
+#rx-info-scan                       line 1231  **`scan` and `prefilter`** are the run-time mirrors of the selection facts
+#rx-info-name                       line 1260  **`name` says what the artifact IS; `<prefix>` says what its symbols are
+#rx-info-pattern                    line 1272  **`pattern`** is embedded unconditionally as an escaped C string literal: `"`,
+#rx-info-findings                   line 1277  **`findings`** mirrors `<PREFIX>_FINDINGS` because `rx_info` is the canonical
+#frame-capacity-sentinel            line 1284  **`frame_capacity`'s sentinel differs from the same-named option's.** On the
+#flags                              line 1294  **`flags` records the REQUEST; the stamp macros record what the emitter DID.**
+#abi                                line 1316  **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
+#emitted-comments                   line 1345  **What a default artifact carries by way of comments** (`tuning.md` §2.24).
+#rx-info-placement                  line 1360  ### 6.1 `rx_info` is link-time data
+#stamps                             line 1374  ### 6.3 The compile-time mirror: stamp macros
+#stamp-scoping                      line 1381  #### 6.3.1 Scoping rules
+#stamp-inventory                    line 1444  #### 6.3.2 Inventory
+#stamp-engine-selection             line 1505  #### 6.3.3 Engine selection
+#stamp-engine                       line 1514  **`<PREFIX>_ENGINE`** — which engine the artifact is; family (a), on every
+#stamp-engine-why                   line 1525  **`<PREFIX>_ENGINE_WHY`** — prose naming the construct or outcome that forced
+#stamp-engine-sel                   line 1543  **`<PREFIX>_ENGINE_SEL`** — the same decision as a CLOSED TOKEN a consumer
+#stamp-dfa                          line 1586  #### 6.3.4 The DFA scan
+#stamp-dfa-scan                     line 1608  **`<PREFIX>_DFA_SCAN`** — which DFA scan the artifact contains; both shapes
+#stamp-dfa-prefilter                line 1620  **`<PREFIX>_DFA_PREFILTER`** — the candidate-start mechanism of the scan.
+#stamp-dfa-prefilter-offsets        line 1644  **`<PREFIX>_DFA_PREFILTER_OFFSETS`** — which offsets the filter tests, as a
+#stamp-dfa-table                    line 1662  **`<PREFIX>_DFA_TABLE`** — the encoding of the scan's transition tables
+#stamp-dfa-uniform-folds            line 1681  **`<PREFIX>_DFA_UNIFORM_FOLDS`** — an integer COUNT: how many of the
+#stamp-dfa-scan-edge                line 1698  **`<PREFIX>_DFA_SCAN_EDGE`** — how the scan tests the class of a SCAN EDGE: a
+#stamp-dfa-start                    line 1723  **`<PREFIX>_DFA_START`** — which of two forms the search entry takes to
+#stamp-dfa-match                    line 1742  **`<PREFIX>_DFA_MATCH`** — which of §3.2's two forms the artifact's
+#stamp-vm-prefilter-group           line 1760  #### 6.3.5 The VM prefilter
+#stamp-vm-prefilter                 line 1775  **`<PREFIX>_VM_PREFILTER`** — on every VM artifact. `rx_info` has no field for
+#stamp-vm-prefilter-why             line 1785  **`<PREFIX>_VM_PREFILTER_WHY`** — emitted ONLY where the size-cap ladder's last
+#stamp-vm-prefilter-lang            line 1793  **`<PREFIX>_VM_PREFILTER_LANG`** and **`_VM_PREFILTER_LANG_WHY`** — on exactly
+#stamp-vm-reseed                    line 1818  **`<PREFIX>_VM_RESEED`** — what the hybrid's RETRY does after a failed attempt
+#stamp-entry-contract               line 1839  #### 6.3.6 The entries' character-position contract
+#stamp-startpos-guard               line 1847  **`<PREFIX>_STARTPOS_GUARD`** — what the entries do with a caller's
+#stamp-utf-check                    line 1858  **`<PREFIX>_UTF_CHECK`** — whether the entries refuse an ill-formed subject
+#stamp-prechecks                    line 1869  #### 6.3.7 Windows, necessary literals and start positions
+#stamp-end-window                   line 1877  **`<PREFIX>_END_WINDOW`** — how far from the subject's end a match may begin.
+#stamp-req-byte                     line 1894  **`<PREFIX>_REQ_BYTE`** — a byte every match must contain.
+#stamp-req-run                      line 1915  **`<PREFIX>_REQ_RUN`** — a literal run every match must contain.
+#stamp-req-why                      line 1938  **`<PREFIX>_REQ_WHY`** — whether the artifact acted on either fact, and why
+#stamp-req-handoff                  line 1960  **`<PREFIX>_REQ_HANDOFF`** — where the search body's scan begins.
+#stamp-vm-start-scan                line 1986  **`<PREFIX>_VM_START_SCAN`** — where a VM attempt can start.
+#stamp-vm                           line 2005  #### 6.3.8 VM capacity and activity
+#stamp-vm-masks                     line 2020  **The four masks.** Each is the OR of what the artifact's quantifiers used,
+#stamp-vm-prune-ceiling             line 2039  **`<PREFIX>_VM_PRUNE_CEILING`** — the match-end ceiling the length pruning
+#stamp-vm-call                      line 2046  **`<PREFIX>_VM_CALL_SPLICED`** and **`<PREFIX>_VM_CALL_LINKED`** — on
+#stamp-vm-root-minw                 line 2052  **`<PREFIX>_VM_ROOT_MINW`** — emitted only on a VM artifact whose pattern's
+#stamp-vm-frameless                 line 2057  **`<PREFIX>_VM_FRAMELESS`** — `1` if and only if the VM program emits no
+#stamp-vm-entry-shape               line 2071  **`<PREFIX>_VM_ENTRY_SHAPE`** and **`<PREFIX>_VM_PROGRAM_BYTES`** — the rung
+#stamp-vm-alt-islands               line 2100  **`<PREFIX>_VM_ALT_ISLANDS`** — the number of flat alternations the VM lowered
+#stamp-vm-cls-folds                 line 2114  **`<PREFIX>_VM_CLS_FOLDS`** — the number of the VM program's class-pool
+#stamp-vm-lit-runs                  line 2127  **`<PREFIX>_VM_LIT_RUNS`** — the number of literal-run compares the VM program
+#stamp-vm-cls-kit                   line 2139  **`<PREFIX>_VM_CLS_KIT`** — the number of distinct class-matcher functions
+#stamp-vm-cls-atoms                 line 2154  **`<PREFIX>_VM_CLS_ATOMS`** — non-zero exactly when the VM program tests its
+#stamp-vm-start                     line 2169  **`<PREFIX>_VM_START`** — where an attempt may begin; a closed token.
+#stamp-budgets                      line 2189  **`<PREFIX>_STEP_BUDGET`** and **`<PREFIX>_WORK_BUDGET`** — the budgets the
+#stamp-fast                         line 2194  **`<PREFIX>_FAST_FRAMES`** and **`<PREFIX>_FAST_TRAIL`** — the capacities the
+#stamp-size                         line 2213  #### 6.3.9 The size term and the size caps
+#stamp-unroll-k                     line 2216  **`<PREFIX>_UNROLL_K`** and **`<PREFIX>_UNROLL_K_WHY`** — on every VM
+#stamp-max-emit                     line 2233  **`<PREFIX>_MAX_EMIT_CODE_BYTES`** (VM artifacts) and
+#stamp-artifact-wide                line 2240  #### 6.3.10 Artifact-wide counts and the search-code kit
+#stamp-run-words                    line 2249  **`<PREFIX>_RUN_WORDS`** — the number of literal-run compares the artifact
+#stamp-memfn                        line 2264  **`<PREFIX>_MEMFN_FORMS`** and **`<PREFIX>_MEMFN_LIBC`** — what the search-code
+#stamp-simd-guarded-bytes           line 2303  **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact sit under a
+#stamp-findings                     line 2333  **`<PREFIX>_FINDINGS`** — which findings this artifact was built from;
+#stamp-other                        line 2353  #### 6.3.11 Feature set, tuning position, alternation normalization
+#stamp-feature-set                  line 2356  **`PCREC_FEATURE_SET`** and **`PCREC_FEATURE_MODULES`** — the feature-module
+#stamp-tune                         line 2362  **`<PREFIX>_TUNE`** — the `--tune` position, a closed five-token string
+#stamp-altcls                       line 2368  **`<PREFIX>_ALTCLS_MERGES`** and **`<PREFIX>_ALTCLS_FACTORED`** — counts of
+#nul-terminated                     line 2381  ## 7. The compile entry takes a NUL-terminated pattern
+#library                            line 2427  ## 8. The library entry: `pcrec_options`, `pcrec_output`, `pcrec_error`
+#library-example                    line 2430  ### 8.0 A complete compile
+#link-gc-sections                   line 2473  **Link with `-Wl,--gc-sections` (GNU ld) or `-Wl,-dead_strip` (ld64).**
+#compile-guarantees                 line 2511  ### 8.1 What `pcrec_compile()` guarantees its caller (D56)
+#options                            line 2541  ### 8.2 The option and error structures
+#options-features                   line 2624  **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
+#options-flags                      line 2644  **Every boolean option is one representation end-to-end**
+#options-error                      line 2662  **`pcrec_error`** carries which input a diagnostic's `pos` indexes into:
+#encodings                          line 2686  ## 9. Encodings, character positions and subject validity
+#encodings-compiled                 line 2689  ### 9.1 The two encodings
+#startpos                           line 2714  ### 9.2 `startpos` must be a character boundary, and by default the artifact enforces it
+#startpos-align                     line 2751  **`-fstartpos-guard=align` is the rounding, asked for by name** (D133,
+#offset-zero                        line 2765  ### 9.3 Offset 0 on an ill-formed subject
+#utf-check                          line 2790  ### 9.4 `-futf-check`: refusing an ill-formed subject
+#utf-check-clip                     line 2827  **A stated divergence: `PCRE2_UTF` clips backward reads at `f`; pcrec does
+#engine-positions                   line 2846  ### 9.5 Positions the engine generates
+#buffers                            line 2857  ## 10. Working storage: the `_in` entries and the tiered default
+#buffers-why                        line 2874  ### 10.1 The default ceiling
+#buffers-entries                    line 2889  ### 10.2 The three entries and the descriptor
+#buffers-null-giveup                line 2926  ### 10.3 `buf == NULL`, and what a give-up means
+#buffers-sizing                     line 2949  ### 10.4 Sizing a buffer
+#buffers-concurrency                line 2993  ### 10.5 Concurrency
+#buffers-mmap-example               line 2999  ### 10.6 Example: an mmap'd, lazily-committed reservation
+#buffers-freestanding               line 3044  ### 10.7 The freestanding and embedded profile
+#buffers-unchanged                  line 3056  ### 10.8 What the `_in` entries do not change
+#tiered-entry                       line 3068  ### 10.9 The tiered default of the un-suffixed entries
+#tiered-entry-cost                  line 3117  **The cost model.** Measured on the RFC 5322 email specimen (`--engine=vm`,

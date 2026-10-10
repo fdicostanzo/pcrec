@@ -1,0 +1,276 @@
+C2-0001	MAPPED	301	search entry (3.1; table line 269)
+C2-0002	MAPPED	304	signature block; params expository (277-283)
+C2-0003	MAPPED	308	
+C2-0004	MAPPED	312	
+C2-0005	MAPPED	312	
+C2-0006	MAPPED	312	caps[0] the whole-match span
+C2-0007	MAPPED	313	
+C2-0008	MAPPED	313	caps untouched stated; bullet 325 says return is not two-valued
+C2-0009	MAPPED	314	
+C2-0010	MAPPED	314	
+C2-0011	MAPPED	314	also 784, 795-798
+C2-0012	MAPPED	315	also 827-829
+C2-0013	MAPPED	830	lookaround negative-polarity lookbehind end-check
+C2-0014	MAPPED	315	also 327 (every non-1 return leaves caps untouched)
+C2-0015	MAPPED	316	also 835-838
+C2-0016	MAPPED	316	
+C2-0017	MAPPED	316	also 837-838 and 9.2 (2638)
+C2-0018	MAPPED	318	also 842-844
+C2-0019	MAPPED	318	
+C2-0020	MAPPED	318	also 844
+C2-0021	MAPPED	318	also 847-848
+C2-0022	MAPPED	321	
+C2-0023	MAPPED	322	
+C2-0024	MAPPED	322	lines 322-324
+C2-0025	MAPPED	327	
+C2-0026	MAPPED	328	lines 328-329
+C2-0027	MAPPED	329	lines 329-332
+C2-0028	MAPPED	331	lines 331-332 written PCREC_UNSET on success only
+C2-0029	MAPPED	332	lines 332-333
+C2-0030	MAPPED	334	
+C2-0031	MAPPED	335	
+C2-0032	MAPPED	337	
+C2-0033	MAPPED	339	
+C2-0034	MAPPED	346	lines 346-352
+C2-0035	MAPPED	351	REQ_HANDOFF named at 351; stamp section 1909; stamp present in emitted artifacts (probe)
+C2-0036	MAPPED	356	lines 356-357
+C2-0037	MAPPED	358	lines 358-360
+C2-0038	MAPPED	1928	lines 337-338 give startpos assertion; 1928 says \G keeps reading startpos (REQ_HANDOFF section)
+C2-0039	MAPPED	353	lines 353-355
+C2-0040	MAPPED	354	VM_START_SCAN named; stamp section 1935; present in artifacts (probe)
+C2-0041	MAPPED	356	lines 356-357
+C2-0042	MAPPED	361	lines 361-364
+C2-0043	MAPPED	363	lines 363-364 (never the reverse)
+C2-0044	MAPPED	2635	9.2 heading and 2638-2641
+C2-0045	MAPPED	2620	lines 2618-2621 guards not emitted under byte
+C2-0046	MAPPED	2638	lines 2638-2640
+C2-0047	MAPPED	2639	lines 2639-2641
+C2-0048	MAPPED	2640	lines 2640-2641
+C2-0049	MAPPED	2643	lines 2643-2647 (20 of 20 stated)
+C2-0050	MAPPED	2645	lines 2645-2647
+C2-0051	MAPPED	2647	lines 2647-2648
+C2-0052	MAPPED	2652	also 335; order vs boundary guard implied by every position >= n being a boundary
+C2-0053	MAPPED	2652	also 335-336
+C2-0054	MAPPED	2652	lines 2652-2654
+C2-0055	MAPPED	2655	
+C2-0056	MAPPED	2655	lines 2655-2657
+C2-0057	MAPPED	2658	
+C2-0058	MAPPED	2658	lines 2658-2660; also 454-457
+C2-0059	MAPPED	2661	lines 2661-2662
+C2-0060	MAPPED	2663	lines 2663-2666
+C2-0061	MAPPED	2665	lines 2665-2666
+C2-0062	MAPPED	2667	lines 2667-2669
+C2-0063	MAPPED	2672	rounding by name; tuning.md 2.23 cited; 'third value of the axis' not worded
+C2-0064	MAPPED	2673	lines 2673-2674
+C2-0065	MAPPED	2674	lines 2674-2676
+C2-0066	MAPPED	2676	lines 2676-2678
+C2-0067	MAPPED	2678	never moved stated here; never refused stated at 2688
+C2-0068	MAPPED	2678	lines 2678-2679
+C2-0069	MAPPED	2680	
+C2-0070	MAPPED	2680	
+C2-0071	MAPPED	2681	lines 2681-2683
+C2-0072	MAPPED	2681	lines 2681-2683
+C2-0073	MAPPED	2688	
+C2-0074	MAPPED	2688	lines 2688-2692
+C2-0075	MAPPED	2691	lines 2691-2693
+C2-0076	MAPPED	2693	lines 2693-2694
+C2-0077	MAPPED	2694	lines 2694-2696
+C2-0078	MAPPED	2695	lines 2695-2697
+C2-0079	MAPPED	2697	lines 2697-2698
+C2-0080	MAPPED	2700	
+C2-0081	MAPPED	2692	2692 'as PCRE2_MATCH_INVALID_UTF advances its start offset' + 2701-2702 divergence; sole-place uniqueness only implied
+C2-0082	MAPPED	2701	lines 2701-2702
+C2-0083	MAPPED	2703	lines 2703-2704
+C2-0084	MAPPED	2704	lines 2704-2708
+C2-0085	MAPPED	2708	both entry shapes agree
+C2-0086	MAPPED	2713	lines 2713-2718; tuning.md 2.36 cited
+C2-0087	MAPPED	2713	also 2623-2624
+C2-0088	MAPPED	2715	lines 2715-2717
+C2-0089	MAPPED	2717	lines 2717-2719
+C2-0090	MAPPED	2719	
+C2-0091	MAPPED	2721	lines 2721-2723
+C2-0092	MAPPED	2723	
+C2-0093	MAPPED	2724	
+C2-0094	MAPPED	2724	lines 2724-2725
+C2-0095	MAPPED	2726	lines 2726-2727
+C2-0096	MAPPED	2728	
+C2-0097	MAPPED	2729	lines 2729-2730
+C2-0098	MAPPED	2730	lines 2730-2731
+C2-0099	MAPPED	2731	
+C2-0100	MAPPED	2731	lines 2731-2733
+C2-0101	MAPPED	2734	lines 2734-2735
+C2-0102	MAPPED	2735	lines 2735-2737
+C2-0103	MAPPED	2737	lines 2737-2738 (new omits 'on the VM' and the cost rationale)
+C2-0104	MAPPED	2739	lines 2739-2741
+C2-0105	MAPPED	2741	
+C2-0106	MAPPED	2741	lines 2741-2742
+C2-0107	MAPPED	2742	lines 2742-2743 and 3.1.2 idiom 613-622
+C2-0108	MAPPED	2744	lines 2744-2745
+C2-0109	MAPPED	2748	
+C2-0110	MAPPED	2749	lines 2749-2751
+C2-0111	MAPPED	2751	lines 2751-2753
+C2-0112	MAPPED	2753	lines 2753-2754
+C2-0113	MAPPED	2754	lines 2754-2756
+C2-0114	MAPPED	2756	
+C2-0115	MAPPED	2757	lines 2757-2758
+C2-0116	UNMAPPED		New doc says 'patterns whose backward reach exceeds LB' (2758-2759) but drops the count 'three patterns'. TRUE: tests/utfcheck/CLAUDE.md:59 and check.py:161 CLIP has 3 entries
+C2-0117	MAPPED	2759	lines 2759-2760
+C2-0118	MAPPED	2762	lines 2762-2764
+C2-0119	MAPPED	2769	lines 2769-2773 (guard axis governs only where a caller points)
+C2-0120	MAPPED	2769	lines 2769-2771 'under every setting of the guard'
+C2-0121	MAPPED	2771	lines 2771-2772
+C2-0122	MAPPED	2773	
+C2-0123	MAPPED	342	
+C2-0124	MAPPED	343	lines 343-344 ('not [0,3)' dropped, same fact)
+C2-0125	MAPPED	367	
+C2-0126	MAPPED	368	lines 368-369
+C2-0127	MAPPED	369	lines 369-370
+C2-0128	MAPPED	373	
+C2-0129	MAPPED	499	lines 499-500
+C2-0130	MAPPED	375	
+C2-0131	MAPPED	375	lines 375-376
+C2-0132	MAPPED	500	lines 500-502; also 437-440
+C2-0133	MAPPED	375	new states under \K equal ends do not imply nothing consumed; the 'measures zero' consequence is that same fact
+C2-0134	MAPPED	377	
+C2-0135	MAPPED	377	lines 377-378
+C2-0136	MAPPED	378	lines 378-379 (callout advance terminates)
+C2-0137	MAPPED	381	
+C2-0138	MAPPED	381	lines 381-382
+C2-0139	MAPPED	384	lines 384-386
+C2-0140	MAPPED	386	lines 386-389
+C2-0141	MAPPED	388	lines 388-391
+C2-0142	MAPPED	386	both stamp values named (pinned and reverse-pass) with <PREFIX>_DFA_START; 6.3.4 line 1681-1682; probe shows RX_DFA_START stamp
+C2-0143	MAPPED	384	answer-identical, differing only in cost and size
+C2-0144	MAPPED	392	lines 392-393
+C2-0145	MAPPED	393	lines 393-394
+C2-0146	MAPPED	394	lines 394-395
+C2-0147	MAPPED	396	lines 396-398 (returns 0)
+C2-0148	MAPPED	395	lines 395-397
+C2-0149	MAPPED	397	lines 397-398
+C2-0150	MAPPED	401	
+C2-0151	MAPPED	401	lines 401-402
+C2-0152	MAPPED	402	lines 402-404
+C2-0153	MAPPED	405	lines 405-407
+C2-0154	MAPPED	407	lines 407-408
+C2-0155	MAPPED	408	lines 408-410
+C2-0156	MAPPED	418	
+C2-0157	MAPPED	419	no batch find-all primitive stated; 'none planned for v1' dropped (roadmap, not behaviour)
+C2-0158	MAPPED	434	lines 434-436
+C2-0159	MAPPED	422	code block 422-432, identical
+C2-0160	MAPPED	426	comment on line 426
+C2-0161	MAPPED	441	lines 441-443; code 428-429
+C2-0162	MAPPED	437	lines 437-439; code 430
+C2-0163	MAPPED	443	lines 441-444
+C2-0164	MAPPED	443	entailed: next_pos(end-1) returns end on a well-formed subject (443-444), i.e. end is a boundary; not worded directly
+C2-0165	MAPPED	443	lines 443-444
+C2-0166	MAPPED	444	lines 444-446
+C2-0167	MAPPED	446	lines 446-447
+C2-0168	MAPPED	447	lines 447-449; new gives the current (aligned) loop result 2 matches = libpcre2; the old unaligned-loop figure 1 is dropped (describes the pre-K75 loop)
+C2-0169	MAPPED	449	
+C2-0170	MAPPED	450	lines 449-450
+C2-0171	MAPPED	2635	9.2 heading; 2649
+C2-0172	MAPPED	2649	lines 2649-2651
+C2-0173	MAPPED	2650	'libpcre2 draws no line either' + docs/dev/k75_measurement.md; the with/without-MATCH_INVALID_UTF detail dropped to that pointer
+C2-0174	MAPPED	454	lines 454-456
+C2-0175	MAPPED	454	lines 454-457
+C2-0176	MAPPED	457	lines 457-458; also 2771-2772
+C2-0177	MAPPED	458	lines 457-459
+C2-0178	MAPPED	459	lines 459-460
+C2-0179	MAPPED	437	lines 437-439
+C2-0180	MAPPED	441	lines 441-443
+C2-0181	MAPPED	438	lines 438-440
+C2-0182	MAPPED	439	lines 439-440
+C2-0183	MAPPED	451	lines 451-453
+C2-0184	MAPPED	452	lines 452-453; 527
+C2-0185	MAPPED	466	lines 466-468; the '52 runs' total is not stated (26 pairs x both engines x captures on/off described; no conflict)
+C2-0186	UNMAPPED		New doc names the fixture for ill-formed witnesses (472-473) but never says the 26 pairs are byte-encoded. TRUE: tests/encseam/CLAUDE.md 'this suite's byte encoding'; findall_cases.txt subjects are printable ASCII
+C2-0187	MAPPED	468	'22 of the 26 pairs'
+C2-0188	MAPPED	470	
+C2-0189	MAPPED	470	
+C2-0190	MAPPED	471	
+C2-0191	MAPPED	471	lines 471-472
+C2-0192	UNMAPPED		New doc lists only 4 example pairs and points to tests/encseam/findall_cases.txt (469); these 8 pairs are TRUE and present at findall_cases.txt lines 28-35 (a test file pointer, not a spec doc)
+C2-0193	UNMAPPED		Not listed in new doc; TRUE and present in tests/encseam/findall_cases.txt lines 42-50 (incl. c* and x over the empty subject); new doc only points to the file (469)
+C2-0194	MAPPED	469	lines 468-469
+C2-0195	MAPPED	476	lines 476-478
+C2-0196	MAPPED	478	lines 478-480
+C2-0197	MAPPED	480	lines 480-482
+C2-0198	MAPPED	482	lines 482-483
+C2-0199	MAPPED	483	lines 483-485
+C2-0200	MAPPED	485	
+C2-0201	MAPPED	485	
+C2-0202	MAPPED	486	
+C2-0203	MAPPED	486	lines 486-487
+C2-0204	MAPPED	490	lines 489-492
+C2-0205	MAPPED	491	lines 491-492
+C2-0206	MAPPED	490	lines 490-492
+C2-0207	MAPPED	493	lines 493-495
+C2-0208	MAPPED	495	lines 495-496
+C2-0209	MAPPED	499	lines 499-500
+C2-0210	MAPPED	500	lines 500-502
+C2-0211	MAPPED	502	lines 502-504
+C2-0212	MAPPED	503	'the match at 2..4 is not reported again at 4'
+C2-0213	MAPPED	503	lines 503-504
+C2-0214	MAPPED	505	test cited; 'runs every suite' dropped
+C2-0215	MAPPED	439	lines 438-440
+C2-0216	MAPPED	409	lines 409-410; src/gen/emit_dfa.c:9836,9849 still guard with if (capture_spans)
+C2-0217	UNMAPPED		Not in new doc. TRUE: probe of --emit-main artifact: main declares ptrdiff_t capture_spans[RX_NCAPS][2] and passes it to rx_search (never NULL)
+C2-0218	MAPPED	273	entry inventory table 265-275 lists next_pos; 'fifth' ordinal not used
+C2-0219	MAPPED	429	loop code 429-430; 461-463
+C2-0220	MAPPED	511	
+C2-0221	MAPPED	517	lines 517-518
+C2-0222	MAPPED	533	lines 533-535
+C2-0223	MAPPED	535	lines 535-536
+C2-0224	MAPPED	514	lines 514-516
+C2-0225	MAPPED	516	
+C2-0226	MAPPED	516	lines 516-517; the 'lets a loop terminate' rationale is dropped
+C2-0227	MAPPED	523	lines 523-524
+C2-0228	MAPPED	528	lines 528-529
+C2-0229	MAPPED	533	lines 533-536 and 461-463, 2630-2632
+C2-0230	MAPPED	520	lines 520-522
+C2-0231	MAPPED	520	lines 520-522
+C2-0232	MAPPED	523	
+C2-0233	MAPPED	524	lines 524-525
+C2-0234	MAPPED	526	
+C2-0235	MAPPED	527	
+C2-0236	MAPPED	538	lines 538-548
+C2-0237	MAPPED	551	lines 551-553
+C2-0238	MAPPED	555	lines 555-556
+C2-0239	MAPPED	558	
+C2-0240	MAPPED	558	lines 558-559
+C2-0241	MAPPED	520	bullets 520-527 are unqualified by encoding, with only the 'under byte reads nothing' exception; utf8 well-definedness on ill-formed input at 551
+C2-0242	MAPPED	560	lines 560-561
+C2-0243	MAPPED	572	code 565-576 verbatim from artifact
+C2-0244	UNMAPPED		New doc says only that rxt_format.md's mc production states the rule (562-563). Dropped: it is the entry's own, the encoding seam's, and K49's retry-advance rule. TRUE: docs/dev/known_issues.md:5557 'since K49 the retry advance is' this rule
+C2-0245	MAPPED	562	lines 562-563; rxt_format.md:785-788 states same rule
+C2-0246	MAPPED	461	lines 461-463: loop final for every encoding; utf8 artifact advances by characters, no source change
+C2-0247	MAPPED	461	'Do not inline + 1'; reason (wrong against utf8 artifact) at 462-463
+C2-0248	MAPPED	558	probe: -e utf8 artifact next_pos skips continuation bytes (while (i<n && (s[i]&0xC0)==0x80)); the loop compiles unchanged per 461-463
+C2-0249	MAPPED	2612	PCREC_ENC_BYTE value 0, CLI -e byte; '-e ascii is an unknown encoding' at 2615; the rename itself not recorded
+C2-0250	MAPPED	528	lines 528-529 (DD-12 (7))
+C2-0251	MAPPED	529	lines 529-531
+C2-0252	MAPPED	531	S68 cited; its emitted-bitmap-skip-loop description dropped
+C2-0253	UNMAPPED		Dropped: that under the byte backend the S68 sabotage is invisible to the .rxt corpus and only the structural check sees it. TRUE by construction: byte next_pos body is pos + 1 (line 547)
+C2-0254	MAPPED	579	
+C2-0255	MAPPED	582	
+C2-0256	MAPPED	585	lines 585-588
+C2-0257	MAPPED	587	lines 587-588
+C2-0258	MAPPED	588	lines 588-589
+C2-0259	MAPPED	589	lines 589-592
+C2-0260	MAPPED	594	
+C2-0261	MAPPED	595	lines 595-597
+C2-0262	MAPPED	596	also 2630-2632
+C2-0263	MAPPED	598	
+C2-0264	MAPPED	599	lines 599-601
+C2-0265	MAPPED	601	lines 601-602
+C2-0266	MAPPED	603	
+C2-0267	MAPPED	604	lines 604-605
+C2-0268	MAPPED	605	lines 605-606
+C2-0269	MAPPED	607	lines 607-608
+C2-0270	MAPPED	609	lines 609-610
+C2-0271	MAPPED	614	lines 614-616
+C2-0272	MAPPED	616	lines 616-617
+C2-0273	MAPPED	619	code 619-622
+C2-0274	MAPPED	624	lines 624-625
+C2-0275	MAPPED	625	lines 625-626
+C2-0276	MAPPED	626	lines 626-628

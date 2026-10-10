@@ -188,7 +188,7 @@ list directly, so it is right.
   emitted SCAFFOLDING and by D76/D94 plus the `vars` precedent
   (`d755a944`, abi 31 -> 32, the landing that added `,vars` to the same
   stamp) is an `abi` event on its own. Full D94 ritual applied (the
-  constant, `docs/spec/match_api.md` §6's change-log entry, `tests/
+  constant, `docs/dev/history/abi_changelog.md` entry, `tests/
   codegen/run_codegen_tests.sh`'s `ABI_EXPECT`/failure-message copy,
   `run_recursion_identity.sh`'s FILEPIN self-pinned to `a6e367a7`).
   Identity result restated: **UCP-free artifacts are byte-identical

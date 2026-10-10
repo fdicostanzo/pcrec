@@ -1,0 +1,140 @@
+C4-0001	MAPPED	1057	new: "compiling a .rxt source composes"; --source flag itself is retired (cli.md) so wording changed, fact stated
+C4-0002	MAPPED	1058	"A single-pattern artifact is unaffected by everything in this section"
+C4-0003	MAPPED	1062	export line + delivering call both required (1062-1065)
+C4-0004	MAPPED	1063	"(default: nothing)"
+C4-0005	MAPPED	1069	table row: plain call gives nothing, capture-transparent; "costs no slot" stated for unexported/undelivered at 1063-1064
+C4-0006	MAPPED	1063	"An exported name no site delivers costs no slot"
+C4-0007	MAPPED	1064	"a delivering call on a definition that exports nothing is refused"
+C4-0008	MAPPED	1069	table row 1
+C4-0009	MAPPED	1070	table row 2
+C4-0010	MAPPED	1071	table row 3
+C4-0011	MAPPED	1072	table row 4
+C4-0012	MAPPED	1074	"A site is a scope" bullet, independent rows and slots
+C4-0013	MAPPED	1075	a.local, a.host, b.local, b.host example
+C4-0014	MAPPED	1078	flat rows counted by nnames and found by 5.4 algorithm like caller's own groups
+C4-0015	MAPPED	1080	clash with own group or another flat import refused by name (no-precedence implied by "refused")
+C4-0016	MAPPED	1081	"they still carry ref"
+C4-0017	MAPPED	1082	addressed by NAME never number; number may move when library changes
+C4-0018	MAPPED	1085	"Read groups[i].name, take groups[i].slot, never compute one"
+C4-0019	MAPPED	1087	slots hold what callee matched; spans retained across the return
+C4-0020	MAPPED	1089	departs from PCRE2 capture-transparent subroutine; DEFINE example; "=" opts in
+C4-0021	MAPPED	1091	definition's own copy private, reads (-1,-1)
+C4-0022	MAPPED	1092	non-recursive: body written out with groups renamed site_x is legal PCRE2 delivering same spans; oracle exact
+C4-0023	MAPPED	1094	delivering call on recursive definition refused (delivery needs callee inlined)
+C4-0024	MAPPED	1101	table row exported AND delivered: one slot and one row per delivering site
+C4-0025	MAPPED	1102	table row: referenced by definition itself: one private slot, no row
+C4-0026	MAPPED	1103	table row neither: no slot, no row, spends no number
+C4-0027	MAPPED	1105	"ngroups is the target pattern's own count" (also row 5 of table at 1142)
+C4-0028	MAPPED	1105	slots 1..ngroups keep prefix promise; everything a definition occupies above it
+C4-0029	MAPPED	1108	nnames counts caller-scope rows (own named groups plus flat imports)
+C4-0030	MAPPED	1109	genuine PREFIX of groups[], sorted (caller-scope first, name, number)
+C4-0031	MAPPED	1110	5.4 algorithm over groups[0..nnames) correct unchanged, never walks into site-scoped row ("finds flat import w/o knowing form" implied by 1078-1079)
+C4-0032	MAPPED	1113	nentries-nnames = site-scoped rows at [nnames..nentries), named site.group
+C4-0033	MAPPED	1115	"The sort key is the SCOPE, not ref"
+C4-0034	MAPPED	1078	flat imports in caller's scope AND carry ref (1078-1081, 1115-1116)
+C4-0035	MAPPED	1115	ref non-NULL on every delivered row of either shape
+C4-0036	MAPPED	1117	caller-scope name never contains '.', site-scoped always does (plain-identifier reason not stated)
+C4-0037	MAPPED	1119	NCAPS may move across library versions while 1..ngroups holds still
+C4-0038	MAPPED	1021	new states refusal with "requires module 'named-groups'"; probe confirms full text "(?<...) requires module 'named-groups' (pattern offset 0)" (CLI now needs --pattern for literal)
+C4-0039	MAPPED	1023	new: --features named-groups compiles with nnames=1; example row {"b",1,1,NULL} at 1027; probe: (?<g>a) emits rx_group_names {g,1,1,NULL} ngroups=1 nnames=1
+C4-0040	HISTORY		process lesson about a verification command and a struct-comment edit; not a behaviour fact
+C4-0041	HISTORY		records when match_form was appended; current field order (match_form #22 after prefilter #21) is in the 6 table, generic append rule at 1302
+C4-0042	MAPPED	1218	match_form NULL on hybrid because _match is the VM anchored body (also 1159, 1697-1699)
+C4-0043	MAPPED	1218	hybrid contains a DFA scan so scan non-NULL, differs from match_form's NULL rule
+C4-0044	MAPPED	1196	scan/prefilter are run-time mirrors for consumers with no preprocessor (dlopen host, FFI, ctypes)
+C4-0045	HISTORY		append position of scan/prefilter at time of addition; current order in the 6 table (rows 20-21); generic append rule 1302
+C4-0046	MAPPED	1199	"asserted over the whole corpus on both engines by tests/codegen/run_dfa_stamps.sh"
+C4-0047	MAPPED	1204	DFA artifact: scan = DFA_SCAN value; three values in value-set 1566-1571
+C4-0048	SUPERSEDED	1204	new: prefilter = DFA_PREFILTER value; the value set at 1578-1591 has ELEVEN values not nine; probe emits offset-set, run-pinned (build/pcrec); src/gen/emit_dfa.c emits them
+C4-0049	MAPPED	1205	VM hybrid scan: "the same, describing the DFA scan the artifact inlines"
+C4-0050	SUPERSEDED	1205	new says prefilter "the same" (the DFA stamp value set, 1578-1591); old "same five values" false: probe of hybrid (a|b)c stamps DFA_PREFILTER "offset-set", (/user|/users)x "run-pinned"
+C4-0051	MAPPED	1206	VM non-hybrid: scan NULL, no DFA scan
+C4-0052	MAPPED	1206	prefilter "none" = VM_PREFILTER's value there
+C4-0053	MAPPED	1208	prefilter never NULL
+C4-0054	MAPPED	1210	scan != NULL on a VM artifact means hybrid
+C4-0055	MAPPED	1212	"hybrid" never appears in prefilter; reports inlined scan's mechanism
+C4-0056	MAPPED	1213	consumer wanting coarse answer tests scan != NULL
+C4-0057	MAPPED	1215	same emitter functions, cannot disagree
+C4-0058	MAPPED	1217	"field == macro" is asserted on every compiled artifact
+C4-0059	MAPPED	1144	engine values 1 DFA / 2 VM; contract-constant status at 84-88 and 205-206 (PCREC_ENGINE_* unprefixed in shared block, identical under every prefix)
+C4-0060	MAPPED	205	#define PCREC_ENGINE_DFA 1 / PCREC_ENGINE_VM 2 in shared PCREC_RX_ABI_H block
+C4-0061	HISTORY		states the defines were pinned to numbers the field already stamped (past-state ruling); current values stated at 205-206
+C4-0062	UNMAPPED		new doc never mentions ENGM_*; still TRUE: ENGM_* only in src/core/internal.h and src/opt/*, grep of emitted artifacts finds 0 ENGM (probe)
+C4-0063	UNMAPPED		new doc does not state the emitted .engine comment; old text is FALSE now: emitted line is ".engine = 2, /* PCREC_ENGINE_VM */" (probe, default build), not "PCREC_ENGINE_DFA=1 / PCREC_ENGINE_VM=2"
+C4-0064	MAPPED	1171	new says FOUR counts (adds nentries); the three are distinct and may differ
+C4-0065	MAPPED	1172	ngroups a fact about pattern text
+C4-0066	MAPPED	1172	ncaps what THIS build delivers, pinned to 1 on DFA or --no-captures
+C4-0067	SUPERSEDED	1143	nnames now = caller-scope rows only (prefix of groups[]); length of whole array is nentries (1161, 1190-1193); src/gen/emit_dfa.c ng_count_caller_scope counts non-site-scoped; equal only on single-pattern
+C4-0068	MAPPED	1175	--no-captures ngroups=1 ncaps=1; captures-on ngroups=1 ncaps=2
+C4-0069	MAPPED	1181	permanent prefix-length promise (D61), slots 1..ngroups own groups left-to-right
+C4-0070	MAPPED	1182	ngroups <= ncaps-1, equality on every single-pattern build
+C4-0071	MAPPED	1184	slots above ngroups for insertion/composition; APPEND, never interleave or renumber
+C4-0072	MAPPED	1106	composed artifact has ngroups < ncaps-1 (everything a definition occupies is above ngroups)
+C4-0073	MAPPED	1186	caller indexing caps by own group numbers safe against every insertion feature
+C4-0074	MAPPED	1188	promise pins caps LAYOUT; slot remains number-to-slot indirection
+C4-0075	MAPPED	1237	pattern embedded unconditionally as escaped C string literal
+C4-0076	MAPPED	1237	" \ and control bytes escaped
+C4-0077	MAPPED	1238	string-literal escaper distinct from the /* */ comment escaper
+C4-0078	MAPPED	1019	groups NULL and nnames 0 for pattern with no named group
+C4-0079	MAPPED	1019	also whenever named-groups not enabled; two different reasons
+C4-0080	MAPPED	1021	bare default refuses '(?<g>a)' with requires module 'named-groups' (probe confirms)
+C4-0081	MAPPED	1030	name by strcmp byte-exact case-sensitive; src/gen/emit_dfa.c:2812 ng_cmp_name uses strcmp
+C4-0082	MAPPED	1031	(?<name>a)(?<NAME>b) two distinct groups on libpcre2 10.46 and python re, also under (?i)
+C4-0083	MAPPED	1033	caseless folds matching, never name identity; case-sensitive sort at 1031
+C4-0084	MAPPED	1034	PCRE2_INFO_NAMETABLE same order; zeta/alpha/mu probe cited
+C4-0085	MAPPED	1030	(name asc, number asc), duplicate-name run 1038
+C4-0086	HISTORY		deliberate openness for a not-yet-existing ref-bearing producer; discharged by composition: sort key now leads with SCOPE (new 1036-1037, 1109-1110, 1115); every primary-module row ref NULL stated at 198/241
+C4-0087	MAPPED	1027	{ "b", 1, 1, NULL } for a(?<b>b|c)+d captures-on (verbatim array decl not quoted; probe: static const rx_group_entry rx_group_names[])
+C4-0088	UNMAPPED		new gives no rx_info instance for the named example; still TRUE (probe a(?<b>b|c)+d: .ngroups = 1, .nnames = 1, .groups = rx_group_names, also .nentries = 1)
+C4-0089	MAPPED	1016	array emitted as per-prefix <prefix>_group_names (also 49 per-artifact identifiers)
+C4-0090	MAPPED	1016	"(only the ENTRY type is a fixed ABI type)"
+C4-0091	MAPPED	1024	slot = caps index when build delivers one, -1 otherwise (also 196, 240)
+C4-0092	MAPPED	1025	named group forces VM on captures-on build so delivering row never on DFA
+C4-0093	MAPPED	1028	--no-captures emits { "b", 1, -1, NULL } and selects DFA (.engine = 1); probe confirms
+C4-0094	MAPPED	233	ncap watermark reading has no producer; every call site sets ncap=0
+C4-0095	MAPPED	235	reserved for a future mid-match view (nnames/groups-reserved analogy dropped)
+C4-0096	MAPPED	1309	exactly two things under every setting: provenance line + shared block doc-comments
+C4-0097	MAPPED	1310	/* Generated by pcrec VERSION (abi N). Pattern: <pattern> */
+C4-0098	MAPPED	1311	VERSION is PCREC_VERSION (lib/pcrec.h), N is rx_info.abi
+C4-0099	MAPPED	1311	on the .c and on the paired .h
+C4-0100	MAPPED	1313	rx_ctx field notes, rx_matchfn return-space, give-up/below-floor notes, rx_renderfn, rx_group_entry, every rx_info member note
+C4-0101	MAPPED	1316	everything else only under -fcomments (list given)
+C4-0102	MAPPED	1319	PCREC_FEATURE_SET / _MODULES carry feature set on the .c
+C4-0103	MAPPED	1318	paired .h of a default build records the feature set in no form
+C4-0104	HISTORY		records a past version bump (0.1.0-beta to 0.2.0-beta, REL-0.2, commit 35a9e2b4) and that it was not an abi event; current: lib/pcrec.h:18 PCREC_VERSION 0.2.0-beta; new doc says VERSION is independent of abi (1312)
+C4-0105	MAPPED	1282	abi mirrored by PCREC_RX_ABI_H guard value and provenance line, and by no macro (new adds the guard, which is itself a macro valued 71 at line 103)
+C4-0106	MAPPED	1279	abi versions emitted scaffolding as a whole: every declaration, comment and macro
+C4-0107	MAPPED	1285	any change to emitted scaffolding for identical inputs is a bump whether or not a struct offset moves
+C4-0108	MAPPED	1285	"whether or not a struct offset moves" stated; the 3-to-4 / 6-to-7 examples are history (abi_changelog.md); no-bump-is-smaller implied by "any change"
+C4-0109	MAPPED	1290	byte-exact whole-file, comments included, for given pattern, prefix, option set
+C4-0110	MAPPED	1291	-fcomments/-fno-comments two option sets, differ in comment text and nothing else
+C4-0111	MAPPED	1293	object file, comment-excluded size and every emitted #define identical
+C4-0112	MAPPED	1294	differing artifacts at one abi/option set = pcrec bug
+C4-0113	MAPPED	1297	no compatibility story, no announcement beyond the number; discharges D37
+C4-0114	MAPPED	1299	no deprecation cycle, migration note or advance notice
+C4-0115	MAPPED	1300	do not build version negotiation on abi until a v1 declaration
+C4-0116	MAPPED	1247	frame_capacity on both sides with different sentinels
+C4-0117	MAPPED	1248	input: 0 = let compiler size it, positive = request
+C4-0118	MAPPED	1249	output: -1 = no bound at all
+C4-0119	MAPPED	1250	every DFA artifact stamps -1
+C4-0120	MAPPED	1251	with step_budget = -1 and work_budget = -1
+C4-0121	MAPPED	1251	0 not a legal output value, -1 not a legal input value
+C4-0122	MAPPED	1030	(name ascending, number ascending)
+C4-0123	MAPPED	1038	module backrefs (?J) duplicate names form a run
+C4-0124	MAPPED	1038	run ordered by ascending group number
+C4-0125	MAPPED	1039	"tiebreak is a correctness requirement" stated; mechanism (declarations prepended giving descending order) omitted
+C4-0126	UNMAPPED		new doc does not name the comparator; still TRUE: src/gen/emit_dfa.c:2812 ng_cmp_name (key now (scope, name, number))
+C4-0127	MAPPED	1040	[M6.5-DUPNAMES] asserts strictly increasing (name, number); sabotage S120 removes tiebreak
+C4-0128	MAPPED	1045	bsearch groups[0..nnames) by name returns some row of the run
+C4-0129	MAPPED	1046	walk back to run's first row
+C4-0130	MAPPED	1047	forward to first row whose slot participated (both offsets set)
+C4-0131	MAPPED	1048	that row is the by-name resolution; PCRE2 "first of the set that is set", set-to-empty included
+C4-0132	MAPPED	1049	measured, backrefs_design 8.3, set includes set-to-empty
+C4-0133	MAPPED	1050	same algorithm as emitted \k<name> resolution; caller and matcher cannot disagree
+C4-0134	MAPPED	1051	run with no participating member is an unset name
+C4-0135	MAPPED	1325	"not part of rx_ctx or any callback parameter"
+C4-0136	MAPPED	1326	reads <prefix>_info by symbol at whatever point
+C4-0137	MAPPED	1327	not strictly .rodata; .data.rel.ro.local with relocations measured with readelf (6.1)
+C4-0138	MAPPED	1175	--no-captures a(b|c)+d: ngroups=1 ncaps=1, pattern has group, artifact delivers no slot
+C4-0139	MAPPED	1176	"which a reader of ncaps alone would miss"
+C4-0140	MAPPED	1177	coincide on a VM, captures-on, single-pattern artifact; the not-restated-as-rule clause dropped

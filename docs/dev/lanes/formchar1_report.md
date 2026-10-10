@@ -89,7 +89,7 @@ named here rather than buried.
   with a per-artifact-kind comment. D94 grep for readers of 22 found FIVE
   sites, all moved in this change: the `.abi` stamp itself,
   `run_codegen_tests.sh`'s `ABI_EXPECT` + its bump narrative (clause
-  appended), match_api.md's §6 general-rule sentence, match_api.md's
+  appended), match_api.md §6¶17's general-rule sentence, match_api.md's
   reflection-facts bullet, and `run_recursion_identity.sh`'s (B) FILEPIN
   (re-pinned to this lane's last src commit in a follow-up no-src commit,
   [ENG-ISL]'s lane precedent; the manager re-pins to the merge). The

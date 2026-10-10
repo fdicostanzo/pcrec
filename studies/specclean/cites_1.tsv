@@ -1,0 +1,177 @@
+CHANGELOG.md	43	match_api.md §6	docs/dev/history/abi_changelog.md	REPOINTED	abi bump record moved to history
+docs/design/artifact_size_term.md	1695	match_api.md:1083	match_api.md#buffers-sizing	REPOINTED	TRAIL_FRAMES caller-read macros (sizing, 10.4)
+docs/design/artifact_size_term.md	1867	match_api.md:1659-1720	match_api.md#stamp-dfa-scan / #stamp-dfa-prefilter	REPOINTED	DFA_SCAN/DFA_PREFILTER stamp bullets
+docs/design/backrefs_design.md	1886	match_api.md §6	match_api.md §5.4 #dup-name-algorithm	REPOINTED	duplicate-name bsearch algorithm
+docs/design/dd13_format/CLAUDE.md	419	match_api.md:1349	match_api.md#rx-info-counts	REPOINTED	nnames/nentries counts
+docs/design/dd13_format/CLAUDE.md	420	§6's caller bsearch	§5.4 #dup-name-algorithm	REPOINTED	bsearch algorithm for duplicate names
+docs/design/dd13_format/CLAUDE.md	452	match_api.md:159	match_api.md#abi	REPOINTED	abi number sentence
+docs/design/dd13_format/CLAUDE.md	561	match_api.md:1504	match_api.md#rx-info-fields	REPOINTED	groups/nnames NULL/0 sentence (rx_info fields table)
+docs/design/dd13_format/format_design.md	3425	match_api.md:159	match_api.md#abi	REPOINTED	abi number sentence
+docs/design/dd13_format/format_design.md	3429	:159 / ~:1340	#abi / #rx-info-fields	REPOINTED	abi sentence and rx_info table
+docs/design/dd13_format/format_design.md	4420	match_api.md §6's bsearch	match_api.md §5.4 #dup-name-algorithm	REPOINTED	bsearch algorithm
+docs/design/dd13_format/w1_impl.md	133	match_api.md:1504	match_api.md#rx-info-fields	REPOINTED	groups/nnames NULL/0 sentence
+docs/design/dd13_format/w1_impl.md	341	match_api.md:159 / ~:1340 / B4 §6 algorithm	#abi / #rx-info-fields / §5.4 #dup-name-algorithm	REPOINTED	abi sentence, struct table, dup-name algorithm
+docs/design/dd13_format/w1_impl.md	876	match_api.md:1349	match_api.md#rx-info-counts	REPOINTED	nnames count
+docs/design/dd13_format/w1_impl.md	877	:1684-1695	match_api.md#dup-name-algorithm	REPOINTED	bsearch name-run algorithm
+docs/design/dd13_format/w1_impl.md	889	match_api.md §6's algorithm	match_api.md §5.4 #dup-name-algorithm	REPOINTED	bsearch algorithm
+docs/design/dd13_format/w1_impl.md	1809	§6's caller algorithm	§5.4 #dup-name-algorithm	REPOINTED	bsearch algorithm
+docs/design/dd13_format/w1_impl.md	1809	match_api.md:1504	match_api.md#rx-info-fields	REPOINTED	groups/nnames NULL/0 sentence
+docs/design/dd13_format/w1_impl.md	2275	match_api.md §6 caller may bsearch	match_api.md §5.4 #dup-name-algorithm	REPOINTED	bsearch caller
+docs/design/dd13_format/w1_impl.md	2306	match_api.md §6 (S13c)	match_api.md §5.5 #composition	REPOINTED	composition: delivered groups / nentries
+docs/design/dd13_format/w1_impl.md	2306	§6's algorithm walks	§5.4 #dup-name-algorithm	REPOINTED	bsearch algorithm
+docs/design/dd13_format/w1_impl.md	2307	match_api.md §6 (S13d)	match_api.md §5.5 #composition	REPOINTED	composition tiers
+docs/design/dd13_format/w1_impl.md	2349	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/dd13_format/w1_impl.md	2350	match_api.md:1754	match_api.md#abi	REPOINTED	abi sentence (struct section)
+docs/design/dd13_format/w1_impl.md	2352	match_api.md:2208	docs/dev/history/abi_changelog.md	REPOINTED	abi-17 event is history; moved
+docs/design/dd13_format/w1_impl.md	2356	match_api.md:1754	match_api.md#abi	REPOINTED	abi sentence
+docs/design/encoding_data_layout.md	86	match_api.md §8.2	match_api.md §9.1 #encodings-compiled	REPOINTED	encoding names menu
+docs/design/encoding_data_layout.md	137	match_api.md:5291	match_api.md#encodings-compiled	REPOINTED	unknown encoding (want byte, utf8)
+docs/design/findings/design.md	72	match_api.md ~:2755	match_api.md#stamp-req-byte	REPOINTED	REQ_BYTE stamp
+docs/design/findings/design.md	1093	match_api.md §6 change-log line	docs/dev/history/abi_changelog.md	REPOINTED	change log moved
+docs/design/findings/design.md	1607	§6 abi change-log line	docs/dev/history/abi_changelog.md	REPOINTED	change log moved
+docs/design/findings/design.md	1607	match_api.md:~2755	match_api.md#stamp-req-byte	REPOINTED	REQ_BYTE stamp
+docs/design/hyb_reseed.md	148	match_api.md §6's abi-49 paragraph	docs/dev/history/abi_changelog.md abi 49	REPOINTED	abi bump text moved to history
+docs/design/litscan_k82h.md	673	match_api.md:302	match_api.md#abi-guard	REPOINTED	K80 #error text (abi guard)
+docs/design/litscan_k82h.md	674	match_api.md:2299 / §6 change log	match_api.md#abi / docs/dev/history/abi_changelog.md	REPOINTED	abi sentence; change log moved
+docs/design/litscan_k82h.md	320	match_api.md §3.1 (K73/K75)	match_api.md §9.2 #startpos, §3.1 #find-all	REPOINTED	startpos boundary rule moved to 9
+docs/design/locate_finish.md	63	match_api.md:788-796 / :4829-4839 / :4686-4703	match_api.md#stamp-dfa-start / #stamp-vm-prefilter-group	REPOINTED	DFA_START and VM stamp block
+docs/design/locate_finish.md	976	match_api.md:4731-4733	match_api.md#stamp-dfa-scan	REPOINTED	DFA_SCAN unanchored value
+docs/design/memfn/integration.md	8490	match_api.md K80 text / §6 abi sentence	#abi-guard / #abi	REPOINTED	abi guard and abi sentence
+docs/design/memfn/integration.md	8491	change log	docs/dev/history/abi_changelog.md	REPOINTED	change log moved
+docs/design/memfn/probes/rowcon/audit_kit_rows.md	196	match_api.md:2350, :4025-4048	match_api.md#stamp-memfn, #stamp-run-words	REPOINTED	RUN_WORDS and MEMFN stamps
+docs/design/opt5_step2_twopass.md	1188	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/opt5_step2_twopass.md	1189	match_api.md:1647	match_api.md#abi	REPOINTED	abi sentence (struct section)
+docs/design/opt5_step2_twopass.md	1198	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/opt5_step2_twopass.md	1199	:1602	(the abi sentence, #abi)	REPOINTED	second abi sentence
+docs/design/opt5_step2_twopass.md	1782	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/opt5_step2_twopass.md	1819	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/opt5_step2_twopass.md	1885	match_api.md:159	match_api.md#abi	REPOINTED	abi sentence
+docs/design/litscan_k82h.md	314	match_api.md §3.1	match_api.md §3.1 and §9.2 #startpos	REPOINTED	legal startpos (character boundary) rule moved to 9.2
+docs/design/locate_finish.md	1016	match_api.md :4714-4740 / :2145 / :1904 / :1940	#stamp-dfa-scan / #rx-info-scan / #rx-info-fields	REPOINTED	DFA_SCAN stamp list, rx_info scan row, field table
+docs/design/litscan_s4.md	1245	match_api.md §6's changelog	docs/dev/history/abi_changelog.md	REPOINTED	change log moved
+docs/design/litscan_s4.md	1247	line 302	match_api.md#abi-guard	REPOINTED	abi guard #error text
+docs/design/litscan_s4.md	1248	line 2299	match_api.md#abi	REPOINTED	abi sentence
+docs/design/litscan_k82h.md	715	§6 abi 61 change-log / :2299 / :3813	docs/dev/history/abi_changelog.md / #abi / #stamp-req-why	REPOINTED	change log moved; abi sentence; REQ_WHY stamp
+docs/design/locate_finish.md	1019	match_api.md :788-796 / :4829-4839 / :4686-4703	#stamp-dfa-start / #stamp-vm-prefilter-group	REPOINTED	DFA_START stamp; VM stamp block
+APPROACH.md	179	match_api.md §3.1.1	same	VALID	same topic in new doc
+CHANGELOG.md	8	match_api.md §6	same	VALID	same topic in new doc
+CHANGELOG.md	122	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/anchored_match_unwrapped.md	31	match_api.md §3.2	same	VALID	same topic in new doc
+docs/design/anchored_match_unwrapped.md	592	match_api.md §6	same	VALID	same topic in new doc
+docs/design/anchored_match_unwrapped.md	959	match_api.md §3.2	same	VALID	same topic in new doc
+docs/design/artifact_manager.md	44	match_api.md §6.	same	VALID	same topic in new doc
+docs/design/artifact_manager.md	55	match_api.md §3	same	VALID	same topic in new doc
+docs/design/artifact_manager.md	542	match_api.md §6	same	VALID	same topic in new doc
+docs/design/artifact_size_term.md	1868	match_api.md §6	same	VALID	same topic in new doc
+docs/design/artifact_size_term.md	1942	match_api.md §6	same	VALID	same topic in new doc
+docs/design/artifact_size_term.md	2098	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/assertions_design.md	1587	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	1648	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	1660	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	2625	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	2636	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	2852	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	2999	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_design.md	3098	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/assertions_measurements/probes/probe_startpos_context.py	20	match_api.md S3.1	same	VALID	same topic in new doc
+docs/design/assertions_measurements/probes/probe_startpos_context.py	72	match_api.md S3.1	same	VALID	same topic in new doc
+docs/design/CLAUDE.md	124	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/CLAUDE.md	231	match_api.md §2 (next line)	same	VALID	rx_renderfn in the fixed ABI types
+docs/design/CLAUDE.md	237	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/CLAUDE.md	1501	match_api.md §10	same	VALID	same topic in new doc
+docs/design/CLAUDE.md	1542	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/cls_tree_design.md	841	match_api.md §6	same	VALID	same topic in new doc
+docs/design/cls_tree_design.md	843	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dd13_format/CLAUDE.md	321	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	307	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	333	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	3428	match_api.md §6	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	4302	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	4337	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	4345	match_api.md §3.1.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	5685	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	5824	match_api.md §6	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	5825	match_api.md §2	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	5842	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	5842	match_api.md §3.1.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	6597	match_api.md §3.2	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	7165	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	7335	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/format_design.md	7523	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/usecases_and_outline.md	109	match_api §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w1_impl.md	1808	match_api.md §6	same	VALID	same topic in new doc
+docs/design/dd13_format/w1_impl.md	1812	match_api.md §2	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	251	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	525	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	1031	match_api.md §3.1.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	1259	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	1259	match_api.md §3.1.1	same	VALID	same topic in new doc
+docs/design/dd13_format/w23_impl.md	1282	match_api.md §6 (next line)	same	VALID	S9/S9b abi/rx_info hunk
+docs/design/dd13_format/w23_impl.md	1669	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	57	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	115	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	818	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	1037	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	1275	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/dec_fallback.md	1394	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/decision_families/stamp_inventory_raw.md	8	match_api.md §6.3.	same	VALID	same topic in new doc
+docs/design/decision_families/stamp_inventory_raw.md	42	match_api.md:2326	same	LEFT-UNRESOLVED	historical raw inventory; cites a line of a long-gone doc version; topic (a stamp bullet in the start-position family) not determinable from the line, and the file is a preserved record
+docs/design/decision_families/stamp_inventory_raw.md	43	match_api.md:2323	same	LEFT-UNRESOLVED	historical raw inventory; cites a line of a long-gone doc version; stamp topic not determinable
+docs/design/decision_families_survey.md	195	match_api.md §6.3.	same	VALID	same topic in new doc
+docs/design/emitter_form.md	439	match_api.md — §6	same	VALID	same topic in new doc
+docs/design/emitter_form.md	503	match_api.md §6	same	VALID	same topic in new doc
+docs/design/encoding_data_layout.md	88	match_api.md §3.1.	same	VALID	same topic in new doc
+docs/design/frame_buffer_design.md	4	match_api.md §10	same	VALID	same topic in new doc
+docs/design/frame_buffer_design.md	160	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/frame_buffer_design.md	756	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/litscan_k82b.md	413	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/litscan_k82h.md	215	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/litscan_k82h.md	714	match_api.md: §6.3	same	VALID	same topic in new doc
+docs/design/litscan_s1.md	1120	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/litscan_s1.md	1151	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/litscan_s4.md	1031	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/litscan_s4.md	1270	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/litscan_s4.md	1352	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/locate_finish.md	284	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/m6read_samples/dfa_after.h	114	match_api.md S3.1.	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/dfa_after.h	134	match_api.md S3.1	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/dfa_before.h	114	match_api.md S3.1.	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/dfa_before.h	132	match_api.md S3.1	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/vm_after.h	114	match_api.md S3.1.	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/vm_after.h	134	match_api.md S3.1	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/vm_before.h	114	match_api.md S3.1.	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/m6read_samples/vm_before.h	132	match_api.md S3.1	same	VALID	sample of emitted text (a header sample); S3.1 still the find-all/search entry
+docs/design/match_api_m4.md	314	match_api.md §4	same	VALID	same topic in new doc
+docs/design/match_api_m4.md	531	match_api.md §4	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	402	match_api.md §6	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	864	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	1347	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	1466	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	2009	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	2298	match_api.md §6.3 (next line)	same	VALID	stamp macros
+docs/design/memfn/integration.md	3398	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	6102	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/integration.md	8510	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/memfn/isa_evaluation.md	331	match_api.md §6	same	VALID	same topic in new doc
+docs/design/memfn/isa_selection.md	17	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/isa_selection.md	143	match_api.md §10.7	same	VALID	same topic in new doc
+docs/design/memfn/isa_selection.md	214	match_api.md §6	same	VALID	same topic in new doc
+docs/design/memfn/probes/isacost.c	72	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/probes/r4e0b/routing_timing.py	13	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/memfn/requirements.md	24	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/requirements.md	121	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/requirements.md	341	match_api.md §5.3	same	VALID	same topic in new doc
+docs/design/memfn/requirements.md	412	match_api.md §10.7	same	VALID	same topic in new doc
+docs/design/offset_k_skip.md	995	match_api.md §6	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	299	match_api.md §3.1 (next line)	same	VALID	absolute-offset rule (#absolute-offsets, in 3.1)
+docs/design/opt5_step2_twopass.md	545	match_api.md §3.6	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	900	match_api.md §3.1	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1670	match_api.md | **§6	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1671	match_api.md | **§6.3	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1672	match_api.md | **§6.3	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1673	match_api.md | **§6	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1674	match_api.md | **§3.1	same	VALID	same topic in new doc
+docs/design/opt5_step2_twopass.md	1696	match_api.md §6.3	same	VALID	same topic in new doc
+docs/design/option_sets.md	932	match_api.md §8.2	same	VALID	same topic in new doc
+docs/design/option_sets.md	944	match_api.md §8.2	same	VALID	same topic in new doc
+docs/design/option_sets.md	1563	match_api.md §8.2	same	VALID	same topic in new doc

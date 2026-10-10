@@ -235,7 +235,7 @@ are END-view `\w` chains this row admits. Their answers are covered by
 tests/assertions/wordb_*.rxt and are part of the owed corpus run.
 
 Pins moved: `PCREC_ARTIFACT_ABI` 56; `ABI_EXPECT=56` and its message;
-match_api.md §2 quote and §6 log; the recursion-identity FILEPIN 35a9e2b4 ->
+match_api.md §2 quote and the abi log (now `docs/dev/history/abi_changelog.md`); the recursion-identity FILEPIN 35a9e2b4 ->
 41aec745 (the lane's own src commit, the self-pin convention); registry axes
 count 171 -> 174; registry.md's `--list-axes` line 106/37 -> 112/39 (it
 was stale at 110/38 on main); tuning.md §2.37, the flags table and §2.18;

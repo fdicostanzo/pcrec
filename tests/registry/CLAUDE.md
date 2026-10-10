@@ -1497,7 +1497,9 @@ pinned count moves 155 -> 165.
 `axes_registry_check.sh` no longer defines `extract_md_table_values`,
 `extract_line_values`, `extract_prose_values`, `extract_c_return_values`; it
 sources them from `tests/lib/spec_extract.sh` (moved verbatim with their
-comments), which `tests/codegen/run_fallback_table.sh`'s observed-stamp leg
+comments; lane specclean, 2026-10-09, retired the line/prose extractors and
+moved every anchor to a `<!-- value-set: RX_NAME -->` marker in
+match_api.md), which `tests/codegen/run_fallback_table.sh`'s observed-stamp leg
 also sources. Measured identical before and after: 214 PASS / 0 FAIL, and
 byte-identical output. The two source legs (`pcrec_engine_sel_name`'s
 returns, `cx.size_term_why =`) still run; they retire at B5 of

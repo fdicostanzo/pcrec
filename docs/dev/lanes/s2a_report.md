@@ -51,7 +51,7 @@ Lane `s2a` (opus, engine code), 2026-09-27. Branch `lane/s2a` from main
 | commit | what |
 |---|---|
 | `242cc5ef` | the fact, the three readers, `vm_lit`, the island arm, P4 extern, `<string.h>` via a new `pcrec_emit_prologue` parameter; S279 re-anchored (rename only) |
-| `f9df48ab` | abi 40 -> 41, `ABI_EXPECT`, spec hunks (limits §3.1, tuning §2.31, ir_listing `compare` op, match_api §6), `tests/litscan/` corpus, S304/S305 |
+| `f9df48ab` | abi 40 -> 41, `ABI_EXPECT`, spec hunks (limits §3.1, tuning §2.31, ir_listing `compare` op, docs/dev/history/abi_changelog.md), `tests/litscan/` corpus, S304/S305 |
 | `f97c26a6` | `-fno-lit-run` + `<PREFIX>_VM_LIT_RUNS` (last `src/` commit), recursion-identity (A) third deny axis |
 | `7b8873d2` | CLAUDE.md for every directory whose roles changed; `docs/dev/optloop/s2a/s2a_movers.py` |
 | (after) | ir-listing baselines re-captured; recursion identity (B) re-pinned to `f97c26a6`; axes coverage, rxtsource census and cpset manifest re-pinned (§4); mech verdicts; chain + report |

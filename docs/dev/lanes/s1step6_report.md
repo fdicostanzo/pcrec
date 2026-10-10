@@ -69,14 +69,14 @@ its own event (S1 merged alone at 36).
 |---|---|
 | `dec4e46b` | the conversion (src), pre-abi |
 | (next) | prechecks readers + the mover instrument |
-| `c9dec3e4` | abi 36 -> 37 + ABI_EXPECT/message + match_api §6; encoding normalizer; S267/S278/S279 re-anchors; S293 — **the last `src/` commit, the (B) FILEPIN** |
+| `c9dec3e4` | abi 36 -> 37 + ABI_EXPECT/message + docs/dev/history/abi_changelog.md; encoding normalizer; S267/S278/S279 re-anchors; S293 — **the last `src/` commit, the (B) FILEPIN** |
 | `ca6538af` | FILEPIN, cpset manifest row, dfa_stamps scoping, CLAUDE.md files |
 | later | mover census at abi 37, design as-built note, this report |
 
 ## abi 36 -> 37 (D76/D94), readers by grep + by suite
 
 `PCREC_ARTIFACT_ABI`; `run_codegen_tests.sh` `ABI_EXPECT` (+ the message's
-missing 35->36 clause backfilled with 36->37); `match_api.md` §6 (new top
+missing 35->36 clause backfilled with 36->37); `docs/dev/history/abi_changelog.md` (new top
 entry, "gap-free 2 to 37"); `run_recursion_identity.sh` (B) FILEPIN ->
 `c9dec3e4`. Byte-count class the grep misses: cpset
 `m5_stage1_stamps.tsv` — ONE row, `\bword\b` 27302 -> 27284 (-18),

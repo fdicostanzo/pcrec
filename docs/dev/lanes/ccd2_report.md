@@ -448,8 +448,8 @@ session assigns it. Grepping the tree for readers of the current value found
 | 3 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=20` |
 | 4 | `tests/codegen/run_codegen_tests.sh:2760` | the `bad` message's cumulative event narrative, which gains a `20->21` clause |
 | 5 | `tests/codegen/run_recursion_identity.sh:699` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8d68ddc2}"` — comparison (B)'s pin, re-pinned to this change's last src commit in the same change |
-| 6 | `docs/spec/match_api.md:159` | "`rx_info.abi` is `20`" |
-| 7 | `docs/spec/match_api.md:1801` | "`rx_info.abi` is `20` on every artifact today ([DD-13b.W1.3] bumped it …)" — the event list, which gains this row's paragraph |
+| 6 | `docs/spec/match_api.md §6¶17` (was `:159`) | "`rx_info.abi` is `20`" |
+| 7 | `docs/dev/history/abi_changelog.md` (was `match_api.md line 1801`) | "`rx_info.abi` is `20` on every artifact today ([DD-13b.W1.3] bumped it …)" — the event list, which gains this row's paragraph |
 
 `make test-codegen` before delivering, per the situation index.
 
@@ -907,7 +907,7 @@ without its command line. That cost is stated in `match_api.md` §6.3's IFF.
 the post-lift work: `emit_dfa.c`'s stamp and its per-artifact-kind comment
 paragraph; `run_codegen_tests.sh`'s `ABI_EXPECT` and its cumulative-event
 message; `run_recursion_identity.sh`'s `FILEPIN`; and `match_api.md`'s two
-sentences (§159 and the event list at §1801). A hand-enumerated list would
+sentences (`§6¶17`, was §159, and the event list, was §1801, now `docs/dev/history/abi_changelog.md`). A hand-enumerated list would
 plausibly have stopped at four; D94's own lesson is that it missed a fifth.
 
 **`make test-codegen` was NOT run in this lane** — RULING 8 forbids suites here

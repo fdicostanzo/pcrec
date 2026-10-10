@@ -172,11 +172,11 @@ diagnostic's wording.
   match expectation anywhere here depends on backreferencing a named
   group. `named-groups`' own promise is the DECLARING spellings only.
 - **`rx_info.nnames`/`rx_info.groups` reflection** (docs/spec/match_api.md
-  S6): the `.rxt` `m`/`n`/`g` mechanic drives `tests/harness/driver.c`,
+  S5.4, §5.4): the `.rxt` `m`/`n`/`g` mechanic drives `tests/harness/driver.c`,
   which prints only `<prefix>_search`'s `caps[]` pairs -- it has no path
   to read `<prefix>_info` at all. This corpus therefore cannot exercise
   `nnames` or the `groups[]` array (including its still-unfixed sort
-  key, docs/spec/match_api.md S6: "no document states the sort KEY").
+  key, docs/spec/match_api.md S5.4 (§5.4): "no document states the sort KEY").
   That is an instrument limitation of the `.rxt` format, not a decision
   to skip the promise -- flagging it honestly rather than writing a
   `.rxt` case that cannot actually check what it claims to.

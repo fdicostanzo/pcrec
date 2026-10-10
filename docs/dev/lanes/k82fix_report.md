@@ -158,7 +158,7 @@ change between the two runs.
 
 Readers found by grep (`abi 59`, `ABI_EXPECT`, `PCREC_RX_ABI_H`,
 `PCREC_ARTIFACT_ABI`): `src/gen/emit_dfa.c:52`; `docs/spec/match_api.md`'s
-K80 block (two digits) and §6's change log (the new head entry);
+K80 block (two digits) and the change log (docs/dev/history/abi_changelog.md) (the new head entry);
 `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT` and its message. The
 other `abi 59` hits are history ("since `abi` 59", "(abi 59)" in comments)
 and stay. Identity-gate re-pins: §6.

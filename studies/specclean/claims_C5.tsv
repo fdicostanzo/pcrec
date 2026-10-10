@@ -1,0 +1,301 @@
+C5-0001	2309	H	CHECK: The abi change-log paragraph of the spec is the only change log for rx_info.abi, and a bump updates that paragraph in the bump's own commit.
+C5-0002	2318	H	rx_info.abi is 71 on every artifact.
+C5-0003	2320	H	Every artifact of both engines carries a <PREFIX>_SIMD_GUARDED_BYTES stamp line directly after <PREFIX>_MEMFN_LIBC.
+C5-0004	2321	H	<PREFIX>_SIMD_GUARDED_BYTES is the artifact's CPU-guarded byte count.
+C5-0005	2323	H	<PREFIX>_SIMD_GUARDED_BYTES reads 0ULL on every artifact, since no SIMD form exists and -fmemfn-simd is inert.
+C5-0006	2325	H	CHECK: Every length decision reads the SIMD-off length (len_uncut minus the guarded bytes; the size caps' measure minus the guarded text's), which equals the plain length wherever nothing is guarded.
+C5-0007	2333	H	CHECK: Each offset-skip/pre-check function (<prefix>_reqrun, <prefix>_reqrun_whole, <prefix>_ofsskip) keeps its loop under the head <prefix>_<fn>__body, and the function itself is one call to it.
+C5-0008	2335	H	CHECK: The forwarding body of those functions has the form return <prefix>_<fn>__body(subject, n, pos[, tables]); the SIMD-off shape that a CPU-guarded helper adds #if arms above.
+C5-0009	2338	H	CHECK: <prefix>_reqrun, <prefix>_reqrun_whole and <prefix>_ofsskip (and their __body heads) are static inline in the .c, so no linked symbol is involved.
+C5-0010	2343	H	CHECK: A ${...} pattern's <PREFIX>_ENGINE_SEL reads "selected" rather than "declined-nullable-default" (its variable, not a nullability decline, turns the prefilter off).
+C5-0011	2347	H	CHECK: A collapse rung is not offered on an attempt the collapse cannot help (no collapsible repeat; nullable but not empty_admits).
+C5-0012	2349	H	CHECK: When a compile drops the prefilter for size, <PREFIX>_VM_PREFILTER_WHY's "size cap retry, hybrid N > CAP" figure is the exact artifact's size, not a wasted retry's.
+C5-0013	2353	H	CHECK: The --emit-ir prefilter vocabulary includes the values no-variable and no-size-cap (ir_listing.md).
+C5-0014	2358	H	CHECK: Both prefilter declines read the E1 fact empty_admits instead of bare nullability.
+C5-0015	2360	H	CHECK: A nullable pattern whose every empty path crosses a non-multiline ^/\A AND $/\Z/\z keeps its exact hybrid prefilter; its ENGINE_SEL reads "selected" and VM_PREFILTER "hybrid" with prefilter tables, scan and VM_PREFILTER_LANG present.
+C5-0016	2369	H	CHECK: A near-miss that exhausts the step budget answers nomatch (K65's direction).
+C5-0017	2374	H	CHECK: The five in-loop ADVANCE sites (DFA stay skips fwd/rev, scan-edge loops unbounded/counted both directions, VM span scan) are spelled while ((MORE)[ && CNT < NULL] && (MEMBER)) { with the step and counter increment on their own lines in a braced body.
+C5-0018	2379	H	CHECK: In those ADVANCE loops the counter cap is written as %lluULL.
+C5-0019	2389	H	CHECK: Possessify arm A values a context gate (\b, \B, a one-character lookaround) in a quantifier's follow by what it can admit next; arm B reads a backreference's FIRST from its groups.
+C5-0020	2393	H	Every VM artifact carries <PREFIX>_VM_POSS_ARMS (section 6.3), 0x0u where no arm was needed.
+C5-0021	2396	H	CHECK: -fno-poss-ctx-follow -fno-poss-bref-first restores the abi-65 possessify program apart from the abi digits and the VM_POSS_ARMS stamp line.
+C5-0022	2396	H	CHECK: A possessify route flip can move RX_ENGINE itself (\w++\b is discharged and DFA-routed).
+C5-0023	2402	H	rx_info.flags' strategy mask is derived from src/core/axes.def: it masks every axis bit except the named kept set (tuning.md section 2, THE rx_info.flags RULE).
+C5-0024	2403	H	-fno-size-term (bit 18) and -fno-scan-edge (bit 21) are masked out of rx_info.flags.
+C5-0025	2408	H	A future axis bit is masked out of rx_info.flags on arrival unless it is in the named kept set.
+C5-0026	2417	H	CHECK: The DFA-route candidate table has rows first-memchr-bounded and first-class-bounded; RX_DFA_PREFILTER and rx_info.prefilter carry those two values (tuning.md 2.42, 6.3).
+C5-0027	2418	H	CHECK: On a seeded forward DFA scan whose start set S cannot match empty and is a proper subset of the start state's escape set E, the bounded skip tests S instead of E (one byte by memchr, several by a 256-entry <prefix>_start_bytes table) and re-seeds the scan state from the byte before its landing where it moved.
+C5-0028	2423	H	CHECK: A VM hybrid's inlined prefilter takes the first-memchr-bounded/first-class-bounded start-set skip too; -fno-start-set disables both the DFA and the VM start-set hats.
+C5-0029	2430	H	Every artifact of both engines carries <PREFIX>_MEMFN_FORMS and <PREFIX>_MEMFN_LIBC stamp lines directly after <PREFIX>_RUN_WORDS.
+C5-0030	2432	H	<PREFIX>_MEMFN_FORMS reads "none" on every artifact until the kit's first SIMD-on form.
+C5-0031	2433	H	<PREFIX>_MEMFN_LIBC is the artifact's source-level inventory of C library calls, or "none".
+C5-0032	2435	H	The <PREFIX>_MEMFN_FORMS and _MEMFN_LIBC lines render before the emitted-size measurement, so a size-cap retry's quoted size (<PREFIX>_VM_PREFILTER_WHY) of its discarded attempt includes them.
+C5-0033	2442	H	CHECK: The VM-route start-set row first-class applies to a VM artifact with no DFA prefilter, an unanchored pattern, and a start_set fact S that cannot match empty and has fewer than 256 members; it seeks the next byte of S (a 256-entry table) before the first attempt and after each failed one.
+C5-0034	2450	H	The VM start-set seek sits after the range guard, K50, rx_valid_upto and the K65/K66 pre-check, so a pre-check NOMATCH and a PCREC_ERR_UTF are unchanged.
+C5-0035	2452	H	Every artifact of both engines carries <PREFIX>_VM_START_SCAN, which reads "first-class" or "none" (section 6.3).
+C5-0036	2454	H	-fno-start-set (bit 47) is masked out of rx_info.flags.
+C5-0037	2456	H	CHECK: A give-up that the start-set-skipped attempts would have hit may become the answer (section 3.1).
+C5-0038	2459	H	Axis req-use (tuning.md 2.41, listed by --list-axes) is a two-row first-match table deciding what a search body does with an emitted run pre-check's answer; its handoff row keeps the pre-check's first window hit c.
+C5-0039	2464	H	The run pre-check's first window hit c is the LEFTMOST occurrence at or after startpos, a written contract of the search block.
+C5-0040	2465	H	With the handoff row the body begins its scan at max(startpos, c - K), K the window's maximum BYTE offset from the attempt start (core fact req_run_maxoff in --emit-facts), rounded up to a character start under a multibyte encoding, only when it moved.
+C5-0041	2469	H	The three bodies with a DFA scan (DFA unanchored scan and its seed, DFA attempt loop's first start, VM hybrid's first prefilter call) read the handoff at their one start site; \G keeps reading startpos.
+C5-0042	2472	H	Every artifact of both engines carries <PREFIX>_REQ_HANDOFF, which is "<K>" or "none" (section 6.3).
+C5-0043	2474	H	-fno-req-handoff (bit 46) is masked out of rx_info.flags.
+C5-0044	2479	H	CHECK: The whole-window pre-check admission (tuning.md 2.29) is a first-match row table none / one-attempt / dominated / set-leads / emitted, listed by --list-axes as axis req-admit.
+C5-0045	2483	H	CHECK: The set-leads row emits the necessary SET's pick's one-byte check in front of the run search where that byte is strictly rarer than the run's scan member (a tie keeps the run alone); on the no-DFA-scan VM route the K65 whole-set half then skips that byte.
+C5-0046	2487	H	-fno-req-set-lead (bit 45) is masked out of rx_info.flags.
+C5-0047	2488	H	pcrec_find_pick's NONE answer is the argmin of MASS's uniform mass (cardinality), ties to the reader's rightmost (findings.md section 4).
+C5-0048	2491	H	CHECK: Under NONE (every -e utf8 artifact under the default analysis) a masked run scans an EXACT position before a two-member pair.
+C5-0049	2494	H	<PREFIX>_REQ_WHY keeps its four tokens; a set-leads artifact reads "emitted".
+C5-0050	2510	H	CHECK: The necessary-run analysis (src/facts/req.c) admits, beside a single byte, a POSITION whose byte set is one two-member cube (T, K), such as a caseless letter [Ss], [jk] or an alternation's one-bit hull.
+C5-0051	2512	H	CHECK: Necessary runs are ranked by information (sum of popcount(K)) and floored at PCREC_MIN_REQ_RUN_BITS (16); an alternation's common head and tail are taken as the cube hull of its branches (tuning.md 2.28, 2.39).
+C5-0052	2516	H	CHECK: For an artifact whose req_run is masked, the run pre-check blocks (<prefix>_reqrun, and on the no-DFA-scan VM route <prefix>_reqrun_whole) compare the run masked through the run compare's words row, e.g. (<prefix>_w4(subject + cand) & <prefix>_w4("\337\337\337\337")) == <prefix>_w4("SELE"); the bytes row under -fno-run-overlap.
+C5-0053	2520	H	CHECK: A run block whose scan member is a pair scans both members as two memchr streams leapfrogged inside its one guarded loop.
+C5-0054	2521	H	<PREFIX>_REQ_RUN gains a /mask suffix when the run is masked (section 6.3).
+C5-0055	2523	H	CHECK: <PREFIX>_REQ_BYTE becomes the set's pick where the run's scan member is a pair; <PREFIX>_REQ_WHY may read "emitted" with <PREFIX>_REQ_BYTE "none".
+C5-0056	2524	H	CHECK: The K65 whole-set half tests every set member that the run's EXACT positions do not prove.
+C5-0057	2531	H	-fno-req-run-fold (bit 44) is masked out of rx_info.flags.
+C5-0058	2533	H	Every masked run position is canonical (T & ~K == 0, popcount(K) 7 or 8); the compiler refuses a non-canonical position as an internal error.
+C5-0059	2534	H	Every search of the pair arm sits inside the block's while (pos + maxk < n) guard.
+C5-0060	2535	H	A run pin covers exact positions only, so no masked run enters dfa_pfs[].
+C5-0061	2542	H	Every literal-run compare in emitted C (offset-skip block's run term, the run pre-check's compare, the VM's literal run, the island's single-child chains) is written by ONE emitter function with a first-match row table (src/gen/runcmp.c, tuning.md 2.38).
+C5-0062	2548	H	An EXACT run of length 3, 5-7 or 9-15 takes the overlap row: two overlapping natural-width words, the last at offset L - W.
+C5-0063	2550	H	Each overlap-row word is loaded by a static inline uint<8W>_t <prefix>_w<W>(const void *) memcpy helper and compared against the same load of a string literal, the compares joined by && in offset order.
+C5-0064	2552	H	Every run length other than 3, 5-7, 9-15 keeps the constant-length memcmp byte for byte.
+C5-0065	2553	H	The <prefix>_w<W> helpers are emitted only where an artifact writes a word row, once each, ahead of their first use.
+C5-0066	2555	H	Every artifact of both engines carries <PREFIX>_RUN_WORDS (section 6.3), a count of the compares the overlap row wrote, emitted after the engine body.
+C5-0067	2560	H	-fno-run-overlap (bit 43) is masked out of rx_info.flags.
+C5-0068	2562	H	Every overlap-row word lies inside the run (o + W <= L).
+C5-0069	2563	H	Each overlap-row word's constant is a string literal, never an integer literal of the target's byte order.
+C5-0070	2564	H	The overlap-row compare reads exactly the bytes the caller's existing bounds guard covers.
+C5-0071	2569	H	CHECK: The scan edge (tuning.md 2.18) takes a chain whose members carry only an END (\z) view on the forward and anchored machines, since the scan's own stop at n evaluates it; and on any machine a chain whose head is another state's view target, which starts one state later (tuning.md 2.37, -fno-view-edge).
+C5-0072	2582	H	<PREFIX>_VM_RESEED has the value "anchored" (section 6.3, tuning.md 2.35).
+C5-0073	2583	H	CHECK: A hybrid whose <PREFIX>_VM_START is not "unanchored" reads VM_RESEED "anchored", takes the pre-abi-49 retry, and emits no adaptive tail or its two per-call locals; its C equals its -fno-hyb-reseed artifact's byte for byte.
+C5-0074	2597	H	A DFA artifact whose <PREFIX>_NCAPS is 2 or more promises groups that no match can set (reached only through a subroutine call, or under {0}), and <prefix>_search reports them as PCREC_UNSET.
+C5-0075	2603	H	On a DFA artifact the dead-group fill is emitted on each success path (reverse-pass and pinned unanchored forms, per-start attempt form), after the caps[0] write and before return 1.
+C5-0076	2603	H	A no-match (and startpos > n) on a DFA artifact returns 0 with caps untouched, including caps[1..NCAPS-1].
+C5-0077	2610	H	The VM, the VM hybrid, the anchored _match_caps entries and the _in spellings leave caps untouched on every non-success return (checked by tests/codegen/run_nomatch_caps.sh).
+C5-0078	2616	H	The shared block's guard carries the abi as its value, #define PCREC_RX_ABI_H <abi>, and the block opens with #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != <abi> followed by #error.
+C5-0079	2619	H	A translation unit that includes artifacts of two different abis fails to compile, with an #error naming the cause.
+C5-0080	2622	H	Same-abi artifacts in one translation unit: the first shared block wins and every later one is skipped.
+C5-0081	2623	H	CHECK: The + 0 makes the test refuse a pre-54 artifact included FIRST (its guard is defined empty); a pre-54 artifact included AFTER a 54+ one is the one order that stays silent.
+C5-0082	2626	H	The compiler emits every artifact under a fixed two-byte placeholder prefix and writes the caller's -p spelling only onto the finished text.
+C5-0083	2628	H	Every size-predicated selection (VM entry shape, size term's trigger and ladder, emitted-size caps) is decided on the text at a canonical prefix length (limits.md Size limits and the prefix).
+C5-0084	2630	H	The same pattern under the same options gets the same artifact whatever its prefix, differing only in spelling.
+C5-0085	2634	H	<PREFIX>_VM_PROGRAM_BYTES reports the canonical (placeholder-prefix) length, not the prefix's own length.
+C5-0086	2637	H	rx_info.name's default is the prefix.
+C5-0087	2646	H	CHECK: A DFA scan edge asks src/gen/clskit.c's class-form table at the scan site and writes the answer through the emitters a VM class read uses (tuning.md 2.18).
+C5-0088	2648	H	CHECK: A scan edge over a byte range not starting at 0 is spelled (unsigned)(b - lo) <= span u, the VM's spelling.
+C5-0089	2650	H	CHECK: A VM artifact whose class is a range from 0 is spelled b <= hi.
+C5-0090	2651	H	CHECK: At --tune=-2/-1 a scan edge's ASCII case pair is the fold compare (<PREFIX>_DFA_SCAN_EDGE "fold", section 6.3).
+C5-0091	2653	H	CHECK: At --tune=-2/-1 a byte class takes its kit matcher only where the kit, written once per read, is smaller than the table its site reads (byte-kit, tuning.md 2.33).
+C5-0092	2656	H	CHECK: A byte kit whose set spans 0..255 carries no always-false bound.
+C5-0093	2662	H	CHECK: Axis I (the scan edge's run-extension body) has a third object kit: at --tune=-2/-1 an edge whose class is on the class-form table's byte-kit row (not one interval, not an ASCII fold pair) tests its run with a file-scope static inline <prefix>_<machine>_scankit<N> instead of a 256-byte table.
+C5-0094	2665	H	<PREFIX>_DFA_SCAN_EDGE has the value "kit" (section 6.3).
+C5-0095	2667	H	CHECK: No artifact at --tune 0/+1/+2 uses the scan-edge kit body; -fno-cls-kit restores the table body.
+C5-0096	2674	H	CHECK: The VM's per-class byte shape classifier is the first-match class-form table in src/gen/clskit.c (tuning.md 2.33, 5.4's lambda row).
+C5-0097	2675	H	CHECK: At --tune=-2/-1 a VM byte class that is neither one interval nor an ASCII fold pair is tested by a static inline <prefix>_class_kit<N> in place of a 32-byte bitmap (unless the artifact takes the shared atom table).
+C5-0098	2678	H	<PREFIX>_VM_CLS_KIT counts the byte-class kit matchers too (section 6.3).
+C5-0099	2679	H	CHECK: At --tune 0/+1/+2 a VM byte class's test is the bitmap/compare form, not the kit.
+C5-0100	2680	H	CHECK: At every tune position a WIDE class whose set is one interval of code points at or below U+00FF (-e utf8 [\x{e0}-\x{ff}]) is one range compare.
+C5-0101	2688	H	Every artifact's shared PCREC_RX_ABI_H block has #define PCREC_ERR_UTF (-9) (section 4).
+C5-0102	2692	H	Every artifact carries the <PREFIX>_UTF_CHECK stamp (section 6.3).
+C5-0103	2692	H	Every artifact exports the <prefix>_valid_upto entry with its declaration (section 3.1.2).
+C5-0104	2693	H	Every artifact carries the .c-only macro <prefix>_VALID_LB, which the body of <prefix>_valid_upto reads.
+C5-0105	2694	H	A -e utf8 artifact carrying a ${name} variable has its <prefix>_var_valid re-spelled on the <prefix>_valid_upto entry (one validator).
+C5-0106	2696	H	A -futf-check artifact under -e utf8 has one precheck line at each entry's caller-position site (section 3.1).
+C5-0107	2698	H	A -fstartpos-guard=align artifact under -e utf8 carries the alignment in place of the K50 refusal, and its <PREFIX>_STARTPOS_GUARD reads "align".
+C5-0108	2700	H	PCREC_FORCE_UTF_CHECK is bit 39 and PCREC_FORCE_STARTPOS_ALIGN is bit 40.
+C5-0109	2701	H	PCREC_FORCE_UTF_CHECK and PCREC_FORCE_STARTPOS_ALIGN are CONTRACT bits: kept in rx_info.flags, masked only under byte.
+C5-0110	2702	H	Under byte, PCREC_FORCE_UTF_CHECK and PCREC_FORCE_STARTPOS_ALIGN are inert and a byte artifact is byte-identical under either.
+C5-0111	2706	H	A VM hybrid whose prefilter answers for a LARGER language than the pattern's (a lookaround or atomic cut erased, or the [OPT-4] count collapse) retries after a failed attempt by either stepping or asking the prefilter again, chosen per CALL from the gaps the prefilter's own answers jump (tuning.md 2.35).
+C5-0112	2713	H	An exact-language hybrid and a clamped (MRL clamp) hybrid keep the non-adaptive retry.
+C5-0113	2716	H	Every hybrid artifact carries <PREFIX>_VM_RESEED naming the row that fired (section 6.3); a non-hybrid artifact has no such effect.
+C5-0114	2719	H	The adaptive retry runs a subset of the attempts the non-adaptive retry ran, so a call that gave up (PCREC_ERR_STEPS/_WORK) under a budget can now answer, and never the reverse.
+C5-0115	2724	H	-fno-hyb-reseed (PCREC_NO_HYB_RESEED, bit 37) is masked out of rx_info.flags.
+C5-0116	2733	H	CHECK: A class with more than one member, some member of which encodes deeper than one code unit (-e utf8: \p{L}, [^a], ., [e-u with diaeresis range]), is tested by a VM program as <prefix>_decode followed by <prefix>_wcls<N>.
+C5-0117	2737	H	<prefix>_wcls<N> is a static inline function whose form the --tune class table picks (section 5.4's lambda row).
+C5-0118	2739	H	<prefix>_decode is a static inline encoding-seam entry, declared nowhere, emitted ahead of the program.
+C5-0119	2740	H	The utf8 caseless span compare calls <prefix>_decode rather than carrying a private decoder.
+C5-0120	2743	H	Every VM artifact carries a <PREFIX>_VM_CLS_KIT line (section 6.3).
+C5-0121	2744	H	Wide classes that refused on the VM's code cap compile now: \P{Unknown} under --engine=vm (K55) and the K53 sets under --engine=vm.
+C5-0122	2747	H	-fno-cls-kit (PCREC_NO_CLS_KIT, bit 36) is masked out of rx_info.flags.
+C5-0123	2748	H	-fno-cls-kit denies the whole kit, the shared atom table included.
+C5-0124	2751	H	A VM program whose table-reading byte classes (no singleton, range or fold-pair compare covers them) number at least 11, and whose byte partition has at most 64 atoms, emits ONE static const unsigned char <prefix>_class_atoms[256].
+C5-0125	2753	H	For each such class the atom-table program emits one static inline matcher <prefix>_class_atom<N> (one load, one shift of a 64-bit immediate) in place of a <prefix>_class_bitmap<N>[32], and the program calls the matcher where it read the bitmap (tuning.md 2.34).
+C5-0126	2757	H	Every VM artifact carries a <PREFIX>_VM_CLS_ATOMS line (section 6.3).
+C5-0127	2758	H	The atom table is selected after the entry rung, so the program length the rung's knee compares is unchanged.
+C5-0128	2760	H	-fno-cls-pack (PCREC_NO_CLS_PACK, bit 38) is masked out of rx_info.flags and denies the atom row alone.
+C5-0129	2778	H	CHECK: Under an encoding restricting where a match may begin (utf8), a NULLABLE pattern's unanchored DFA scan (DFA artifact entry and VM hybrid's internal prefilter) seeks search_from past leading continuation bytes at offset 0.
+C5-0130	2781	H	CHECK: Under utf8 a NULLABLE pattern's ENG_ATTEMPT start loop skips offset 0 and the VM seeks its first attempt_position.
+C5-0131	2783	H	CHECK: Under utf8 the anchored match-here bodies of a NULLABLE pattern answer -1 at a non-boundary offset 0 (section 3.1's two bullets).
+C5-0132	2784	H	A non-nullable pattern gains none of the offset-0 start rule, since a match that consumes a byte already begins on a character start ([K50-NULLGATE]).
+C5-0133	2787	H	The DFA's "unwrapped" <prefix>_match (section 3.2) carries the [K50] caller-startpos guard and refuses a mid-character ctx->pos.
+C5-0134	2794	H	Answers move only on subjects that begin with a continuation byte (to libpcre2's) and on mid-character ctx->pos at the unwrapped DFA _match (to the refusal).
+C5-0135	2799	H	CHECK: A lookaround whose body's language is a set of single byte-expressible characters ((?<=\$), (?!y), (?=[ab]), non-atomic and alpha spellings) is lowered to the same context node \b/\B build (tuning.md 2.32, T3).
+C5-0136	2804	H	CHECK: A context node is carried by the DFA on its class axis and tested by the VM as one guarded byte read, so a pattern whose only DFA-excluding construct was such a lookaround gets a DFA artifact.
+C5-0137	2808	H	UCP \b/\B under -e byte compile (the Latin-1 word set is byte-expressible).
+C5-0138	2811	H	-fno-ctx-node (PCREC_NO_CTX_NODE, bit 35) is masked out of rx_info.flags.
+C5-0139	2821	H	CHECK: Under --features all every module's name joins PCREC_FEATURE_MODULES, emitted scaffolding regardless of whether the caller asked for the module; module ucp is (*UCP), --ucp, flags u.
+C5-0140	2825	H	CHECK: Stamps keep the requested feature set.
+C5-0141	2846	H	CHECK: The necessary run's scan-member pick (pcrec_find_run_scan_index, src/core/findings.c) orders candidates [n-1, n-2, ..., 0] so a data tie goes to the run's positional rightmost tied member, matching the reader's NONE answer.
+C5-0142	2864	H	CHECK: pcrec_find_run_window_start (the window MASS rule) ties leftmost, matching its own NONE.
+C5-0143	2868	H	CHECK: <PREFIX>_REQ_RUN's @idx and on some artifacts its window offset move with the pick (the truncation window is re-derived around the pick's member).
+C5-0144	2872	H	Choosing which necessary run/set member is scanned moves only a speed, never an answer, since every byte of a necessary run or set is necessary.
+C5-0145	2882	H	CHECK: pcrec_lit_run (src/core/cpset.c) requires a run of THREE or more consecutive one-byte literals; a two-byte pair falls through to the per-element byte chain; no deny flag.
+C5-0146	2886	H	CHECK: pcrec_lit_run is the one node-grain fact the VM's chain emission, cost walk and slot walk all share.
+C5-0147	2889	H	CHECK: <PREFIX>_VM_LIT_RUNS counts the run compares written, and a VM artifact whose only lit-run sites were two-byte runs loses that count.
+C5-0148	2894	H	No answer and no give-up moves with the literal-run compare: it accepts exactly the bytes the chain accepted, and step, work and node budgets charge what the chain charged (limits.md 3.1).
+C5-0149	2898	H	The island's single-child trie chain is a different mechanism sharing only the P4 primitive, and is not subject to the three-byte floor.
+C5-0150	2903	H	A subroutine call is nullable iff its callee's minimum width is 0 (u.call.minw's least fixpoint, published by the call graph before the pattern-facts E1 seal).
+C5-0151	2906	H	A quantifier over a non-nullable callee (e.g. (a|(?1))*?b) carries no empty-iteration guard; its slot legend and <PREFIX>_NSLOTS have no <PREFIX>_SLOT_EMPTY_GUARD<n> entry.
+C5-0152	2913	H	A callee that is nullable, directly or through another call, keeps its empty-iteration guard.
+C5-0153	2914	H	The E1 nullable fact (--emit-facts) is unaffected by the least-fixpoint rule for call nullability.
+C5-0154	2924	H	CHECK: In a VM program, three or more (originally two or more) consecutive one-byte literals on one concatenation are consumed under ONE label by one bounds check and one constant-length compare: if (scan_position + L <= subject_length && !memcmp(subject + scan_position, "<run>", L)).
+C5-0155	2928	H	An alternation island's single-child trie chain is the same run compare at its node's depth (tuning.md 2.31).
+C5-0156	2930	H	The artifact gains #include <string.h> where nothing else in it needed one.
+C5-0157	2931	H	EVERY VM artifact (a hybrid included) carries <PREFIX>_VM_LIT_RUNS, the count of run compares written (section 6.3).
+C5-0158	2933	H	-fno-lit-run (PCREC_NO_LIT_RUN, bit 33) is masked out of rx_info.flags.
+C5-0159	2948	H	The --emit-ir listing has a compare op (ir_listing.md).
+C5-0160	2953	H	Every artifact of both engines carries <PREFIX>_FINDINGS (section 6), written beside the rx_info definition.
+C5-0161	2955	H	rx_info has an APPENDED member findings (section 6) with its initializer line.
+C5-0162	2958	H	The byte-frequency prior (necessary-byte pick, run scan member and window, G1's density rule, offset-k selection) is DATA from src/findings/default.rxt (docs/spec/findings.md); the shipped default normalizes to the old table exactly.
+C5-0163	2964	H	CHECK: The offset-k selection's rate read takes the encoding gate the data declares, so under -e utf8 (where the default declares nothing) it ranks offset sets by CARDINALITY, MASS's NONE answer.
+C5-0164	2971	H	The rate chooses cost only: every set the offset-k selection ranks is necessary (findings design 6.2a).
+C5-0165	2976	H	PCREC_NO_VM_ANCHOR_BOUND, PCREC_NO_END_WINDOW and PCREC_NO_REQ_BYTE (bits 28-30) are masked out of rx_info.flags.
+C5-0166	2983	H	rx_info.flags records the request with testing/tuning denials masked OUT, because an axis that changes no answer must not make two identically-behaving artifacts differ in their reflection surface.
+C5-0167	3006	H	CHECK: The necessary RUN's scan member (rn_scan_index in src/opt/reqbyte.c) is the RIGHTMOST member under every encoding whose byte-frequency prior is not keyed to (all but byte), matching rb_pick's !bytekey fallback.
+C5-0168	3030	H	byte-encoding artifacts are untouched by the !bytekey rightmost rule: !bytekey gates the whole candidate difference.
+C5-0169	3038	H	CHECK: The run pre-check's scan loop (and K66's whole-run loop where the route emits one) is a file-scope static inline size_t <prefix>_reqrun / <prefix>_reqrun_whole(subject, n, pos) written by the SAME emitter as the <prefix>_ofsskip prefilter block.
+C5-0170	3043	H	<prefix>_reqrun returns the first position at which the run begins inside [pos, n), or n.
+C5-0171	3045	H	CHECK: The search entry's pre-check is one line per block: if (<prefix>_reqrun(subject, subject_length, search_from) >= subject_length) return 0;.
+C5-0172	3047	H	The block's loop guard pos + L-1 < n is false on an empty window, so its memchr is never reached there (K27's memchr(NULL, c, 0) obligation is discharged by the guard).
+C5-0173	3049	H	The <prefix>_reqrun and <prefix>_reqrun_whole helpers are static and declared nowhere.
+C5-0174	3059	H	-fno-req-run restores the one-byte check; -fno-req-byte removes the whole pre-check mechanism.
+C5-0175	3064	H	CHECK: G1 reads the scan byte of every <prefix>_ofsskip prefilter, not only memchr forms, and elides a RUN pre-check where the prefilter's test verifies the whole run at its pin (tuning.md 2.29).
+C5-0176	3068	H	RX_DFA_PREFILTER has the values "run-pinned" and "run-pinned-bounded" (section 6.3); rx_info.prefilter mirrors them.
+C5-0177	3070	H	CHECK: The run-pinned rows are selected ahead of every other form where the run sits at a fixed offset from every match's start and the scan already runs on its scan member there; the offset-skip block compares the whole run as one constant-length memcmp and its OFFSETS may start 0*.
+C5-0178	3073	H	Axis bit 32 is PCREC_NO_RUN_PREFILTER / -fno-run-prefilter (tuning.md 2.30), masked out of rx_info.flags.
+C5-0179	3074	H	-fno-offset-skip removes the run-pinned prefilter rows too.
+C5-0180	3080	H	CHECK: -fno-run-prefilter restores the pre-S1 artifact on every run-row artifact; the admission elisions have no axis.
+C5-0181	3086	H	PCREC_MAX_REQ_RUN_EMIT is 8: a necessary run longer than it is truncated to the window the frequency prior picks.
+C5-0182	3090	H	On a VM artifact with <PREFIX>_VM_PREFILTER "none" the pre-check is the call's only linear NO-MATCH PROOF.
+C5-0183	3094	H	CHECK: A VM artifact with VM_PREFILTER "none" and a run longer than its window follows the window's scan loop with a second scan loop of the same shape comparing the WHOLE run (emit_req_run_rest, src/gen/emit_dfa.c; ReqRun.whole/whole_len/at).
+C5-0184	3099	H	K65's rq_set[] block drops every byte of the whole run; <PREFIX>_REQ_RUN still names the window.
+C5-0185	3108	H	CHECK: -fno-req-run and -fno-req-byte still remove the whole-run compare.
+C5-0186	3112	H	On a VM artifact with <PREFIX>_VM_PREFILTER "none" (backreference- or linked-call-bearing patterns on the auto route, and --engine=vm builds without -fprefilter) the necessary-byte pre-check is the call's only linear NO-MATCH proof.
+C5-0187	3122	H	CHECK: After the byte check or the run check such an artifact emits one block: a static const unsigned char rq_set[] of every necessary byte the first half did not test, and a loop memchr-ing each; any absent member answers NOMATCH (emit_req_set_rest, src/gen/emit_dfa.c; Job.req_set).
+C5-0188	3135	H	-fno-req-byte removes the whole necessary-set mechanism (tuning.md 2.29).
+C5-0189	3142	H	CHECK: req_route_one_attempt (src/gen/emit_dfa.c) declines the pre-check on a one-attempt route only if that attempt is LINEAR: an EXACT-language hybrid DFA in front, or a frameless VM program (Job.vm_frameless, published by vm_plan_entry).
+C5-0190	3150	H	A count-collapsed superset hybrid is not a no-match proof; an exact match is.
+C5-0191	3169	H	-fno-req-byte removes the pre-check mechanism on both routes.
+C5-0192	3174	H	Module vars gives a pattern ${name}, whose bytes the CALLER supplies per call.
+C5-0193	3178	H	A fixed-literal ABI type rx_var {name, p, len} is in the shared PCREC_RX_ABI_H block of every artifact of both engines.
+C5-0194	3179	H	rx_ctx has two APPENDED fields: const rx_var *vars; size_t nvars;.
+C5-0195	3181	H	rx_matchfn's signature is untouched by variables: a var-bearing artifact's <prefix>_match is still an rx_matchfn byte for byte.
+C5-0196	3182	H	#define PCREC_ERR_UNSET_VAR (-8) is the THIRD below-the-floor code, with PCREC_ERR_STARTPOS's shape: a caller REFUSAL, nothing attempted, caps untouched.
+C5-0197	3185	H	rx_info has two APPENDED members: const char *const *vars; int nvars; (the variable-NAME table, on rx_info.groups' model).
+C5-0198	3190	H	A var-bearing artifact carries <PREFIX>_NVARS and one internal <PREFIX>_VAR_<NAME> index macro per name.
+C5-0199	3192	H	The <PREFIX>_VAR_<NAME> macro is the ARTIFACT's own index into its names table, never something a caller writes: variables are passed BY NAME, because an index is meaningless across separately compiled artifacts.
+C5-0200	3194	H	A var-bearing artifact carries a <prefix>_var_names[] table that rx_info.vars points at.
+C5-0201	3195	H	A var-bearing artifact carries a <prefix>_vars_resolve static that scans the caller's array ONCE PER CALL and evaluates each distinct expansion.
+C5-0202	3196	H	There is no separate compare entry for variables: the encoding seam's pair $_span_match / $_span_match_caseless takes the reference side as a POINTER AND A LENGTH, so ONE pair serves a backreference (subject + start, end - start) and a variable (the caller's resolved value).
+C5-0203	3201	H	Under a multi-byte encoding a fifth encoding-seam entry $_var_valid joins the span-match pair.
+C5-0204	3203	H	Every artifact carrying a backreference has its residual's NAME and signature in the generalised span-match form.
+C5-0205	3205	H	<prefix>_search and its _in siblings take a trailing const rx_var *vars, size_t nvars pair, because they are not rx_ctx-shaped and cannot read the ctx; the descriptor stays LAST (section 10.2).
+C5-0206	3211	H	docs/spec/vars.md is the module vars' own contract page.
+C5-0207	3215	H	Every artifact of both engines carries the shared-prologue stamp <PREFIX>_REQ_WHY, a closed four-token set: "emitted", "none", "one-attempt", "dominated".
+C5-0208	3220	H	<PREFIX>_REQ_WHY says whether the artifact acted on what the necessary-byte/run analyses found and, if not, which of two measured declines applies.
+C5-0209	3221	H	<PREFIX>_REQ_WHY is a SEPARATE stamp: the <PREFIX>_REQ_BYTE / <PREFIX>_REQ_RUN pair keeps naming what the ANALYSIS found, so neither value space carries decline information.
+C5-0210	3227	H	CHECK: Rule G2 declines the whole-window pre-check where the search route tries ONE start position (DFA start_max rows reading the literal 0 or search_from; VM <PREFIX>_VM_START "anchored"/"gstart"), subject to the linearity conjunct (tuning.md 2.29).
+C5-0211	3230	H	CHECK: Rule G1 declines the pre-check where the artifact's own single-byte memchr prefilter already scans a byte at least as rare.
+C5-0212	3233	H	A declined pre-check is a check not run and could only have returned the answer the engine below it returns anyway; -fno-req-byte removes the whole mechanism.
+C5-0213	3242	H	Every artifact of both engines carries the shared-prologue stamp <PREFIX>_REQ_RUN.
+C5-0214	3243	H	<PREFIX>_REQ_RUN is the run's bytes as lowercase hex, then @, then the scanned member's index within them, or the token "none" at L < 2.
+C5-0215	3248	H	CHECK: Where the run analysis reaches, the pre-check is a scan loop: one memchr for the run's rarest member, one constant-length memcmp of the run at each hit, and a window guard of one or two conjuncts depending on whether the scanned member is the run's first byte.
+C5-0216	3253	H	CHECK: Where a pattern has a necessary byte and no run, the pre-check is a three-line memchr check whose byte is chosen by [OPT-FREQPICK] as the necessary-set member a subject is least likely to contain, with PCRE2's rightmost rule as the tiebreak.
+C5-0217	3260	H	-fno-req-run restores the byte-check text on the run population; -fno-req-byte removes the pre-check mechanism entirely (tuning.md 2.27-2.28).
+C5-0218	3262	H	The flags enum in lib/pcrec.h is spelled 1ull << N, because PCREC_NO_REQ_RUN is bit 31 and 1u << 32 is undefined behaviour.
+C5-0219	3265	H	pcrec_options.flags is uint64_t.
+C5-0220	3270	H	Every artifact of both engines carries the shared-prologue stamps <PREFIX>_END_WINDOW and <PREFIX>_REQ_BYTE, each a string carrying a number or the token "none" (0 is a legal value of both facts).
+C5-0221	3274	H	Every VM artifact carries <PREFIX>_VM_START.
+C5-0222	3276	H	CHECK: Where the analyses reach, a VM artifact has const size_t attempt_max = search_from; and its attempt loop's continue test reads it ([OPT-ANCHOR-VM]).
+C5-0223	3278	H	CHECK: Where the end-window analysis reaches, both engines' search entries have a two-line clamp raising search_from to subject_length - W ([OPT-ENDWIN]).
+C5-0224	3279	H	CHECK: Where a necessary byte exists, both engines' search entries have a three-line memchr pre-check, and a VM artifact that had none gains #include <string.h> ([OPT-REQBYTE]).
+C5-0225	3285	H	-fno-vm-anchor-bound, -fno-end-window and -fno-req-byte each restore the pre-mechanism text on their own population (tuning.md 2.25-2.27).
+C5-0226	3288	H	The essential generated-by line names PCREC_VERSION and the abi on every artifact, whatever -fcomments says: /* Generated by pcrec <PCREC_VERSION> (abi <N>). Pattern: ... */.
+C5-0227	3290	H	PCREC_VERSION (lib/pcrec.h) is a semver string independent of abi: it versions the tool, abi versions one artifact's emitted scaffolding.
+C5-0228	3293	H	pcrec --version prints the PCREC_VERSION string (docs/spec/cli.md).
+C5-0229	3300	H	A default artifact carries no NON-ESSENTIAL comment lines; every comment line leaves every artifact of both engines except the generated-by/pattern-echo provenance line and the shared PCREC_RX_ABI_H type block's doc-comments (the ESSENTIAL class, D112).
+C5-0230	3304	H	-fcomments restores the non-essential comments.
+C5-0231	3305	H	The comment axes' deny bits are masked out of rx_info.flags.
+C5-0232	3308	H	The object file is byte-identical with and without comments, the comment-excluded source size is identical, and every emitted #define is identical, so no cap, refusal or answer moves with -fcomments.
+C5-0233	3313	H	The essential generated-by line also carries the abi digit, e.g. /* Generated by pcrec (abi 27). Pattern: ... */ (since extended with PCREC_VERSION).
+C5-0234	3319	H	Every artifact of both engines carries exactly one shared-prologue line #define <PREFIX>_TUNE "<token>", a closed five-token selection stamp.
+C5-0235	3322	H	At the default position balanced the --tune dial moves nothing but the <PREFIX>_TUNE stamp: its row in src/core/tune.c is all em-dash sentinels and its deny mask is empty.
+C5-0236	3327	H	At no --tune position does a struct offset, an rx_info member or an answer move: the dial's acceptance criterion.
+C5-0237	3332	H	CHECK: Every scan-edge-bearing DFA machine (or VM-hybrid inlined prefilter), of either direction, has a trailing ; on its scan_views and scan_edge labels, closing a label-followed-by-declaration shape that clang rejects.
+C5-0238	3338	H	An artifact with no scan edge has no such label semicolons (and -fno-scan-edge excuses an artifact from every scan-edge bump).
+C5-0239	3347	H	Every artifact of both engines carries #define PCREC_ERR_STARTPOS (-7) in the shared ABI block, section 4's second below-the-floor code.
+C5-0240	3350	H	CHECK: Under utf8 the unanchored machine carries the boundary gate as a real automaton state and an ENG_ATTEMPT artifact's start loop has a boundary continue.
+C5-0241	3352	H	Every artifact's entries carry the caller-startpos guard documented in section 3.1.
+C5-0242	3355	H	-fno-startpos-guard restores only the CALLER-side semantics, not byte identity.
+C5-0243	3359	H	CHECK: A two-member pool class that is an ASCII fold pair (differing only in bit 0x20, both letters) tests in the VM as (byte | 0x20) == lower and its 32-byte class_bitmap table is not emitted.
+C5-0244	3362	H	Every VM artifact carries a <PREFIX>_VM_CLS_FOLDS line whatever its value (section 6.3).
+C5-0245	3367	H	-fno-cls-fold sweeps the ASCII-fold class test axis (tuning.md 2.22).
+C5-0246	3369	H	Every VM artifact carries two stamps <PREFIX>_VM_ENTRY_SHAPE and <PREFIX>_VM_PROGRAM_BYTES.
+C5-0247	3372	H	<PREFIX>_VM_PROGRAM_BYTES deliberately costs the "framed artifacts are byte-identical" property (section 6.3).
+C5-0248	3375	H	CHECK: Scan-edge entry dispatch: the entry-seed check is generalised to is_stop && !is_dead, and precondition (8) requires the seed AND a prefilter reseed.
+C5-0249	3378	H	On a COMPOSED artifact (pcrec --source) groups[] has rows the target pattern did not declare, each carrying a non-NULL ref naming the definition it came from.
+C5-0250	3380	H	On a composed artifact the groups[] sort key has a leading SCOPE term, so nnames counts the caller-scope prefix while nentries counts the whole array.
+C5-0251	3382	H	On a composed artifact ngroups reads the primary pattern's own count.
+C5-0252	3383	H	On a composed artifact a delivering call site retains what its callee matched.
+C5-0253	3384	H	Composition's effects are invisible on a non-composed compile (an artifact built without --source).
+C5-0254	3390	H	CHECK: On any DFA machine carrying a SCAN EDGE the edge heads are renumbered to the machine's TOP rows, and the machine emits one extra accessor <prefix>_<m>_is_stop (folded to the constant 1 where every state is a head).
+C5-0255	3393	H	CHECK: In an edge-bearing DFA machine the loop's one per-iteration state test answers "dead OR a head", and the per-edge if (state == HEAD && ...) blocks live on an edge path reached only from that test.
+C5-0256	3396	H	An artifact with no scan edge, including every -fno-scan-edge build, has no scan-edge accessor or renumbering.
+C5-0257	3397	H	CHECK: Scan-edge precondition (8) refuses a head that any SEED family names; such a machine's <PREFIX>_DFA_SCAN_EDGE reads "none".
+C5-0258	3401	H	docs/spec/tuning.md section 2.18 is the contract for the scan edge.
+C5-0259	3405	H	CHECK: A flat alternation whose whole subtree matches a finite set of literal byte strings is lowered on the VM as a TRIE over the strings' bytes: a byte compare at a node with one child, a switch at a node with several, one try site per node where an alternative ends.
+C5-0260	3409	H	Every VM artifact carries a <PREFIX>_VM_ALT_ISLANDS line whatever its value (section 6.3).
+C5-0261	3413	H	An alternation island reaches the VM program region itself (stamps, entry chain, DFA tables and prefilters all sit above goto <prefix>_L0;).
+C5-0262	3414	H	-fno-alt-island sweeps the alternation-island axis.
+C5-0263	3416	H	CHECK: tests/codegen/run_recursion_identity.sh comparison (A) excuses a moved VM region only where the artifact's own <PREFIX>_VM_ALT_ISLANDS reads > 0, and fails an artifact stamping one whose region did not move.
+C5-0264	3425	H	On a FRAMELESS artifact (<PREFIX>_VM_FRAMELESS 1) the eight statics <prefix>_run_state_bind, _run_state_init, _reset_for_next_attempt, _match_anchored, _report_captures, <prefix>_search_run, <prefix>_match_run and <prefix>_match_caps_run carry static inline __attribute__((always_inline)).
+C5-0265	3429	H	A FRAMED artifact (<PREFIX>_VM_FRAMELESS 0) does not carry always_inline on those statics (gcc refuses always_inline on a function containing a computed goto, which a framed artifact has).
+C5-0266	3435	H	CHECK: On a frameless artifact <prefix>_search_run and <prefix>_match_anchored have no out-of-line copy left (nm lists neither).
+C5-0267	3439	H	A DFA transition or accept table whose cells are ALL EQUAL is not emitted, and its accessor returns the constant.
+C5-0268	3441	H	The all-equal-table fold affects <m>_next_state and <m>_is_accepting.
+C5-0269	3442	H	The folded accessor loses only its table parameter, keeping the state and class parameters so that a call site's subject[pos++] is still evaluated.
+C5-0270	3443	H	<PREFIX>_DFA_UNIFORM_FOLDS counts what was folded and is the supported way to observe it.
+C5-0271	3444	H	<PREFIX>_DFA_TABLE keeps naming the ENCODING that was SELECTED (the selection still fixes the folded constant's value); a "premultiplied" artifact reading 4 here carries no folded table at all.
+C5-0272	3453	H	rx_info has an appended member search_form.
+C5-0273	3454	H	A <PREFIX>_DFA_START stamp is on every artifact containing a DFA scan.
+C5-0274	3455	H	CHECK: On every artifact whose forward machine's start state accepts unconditionally, the whole REVERSE machine (tables, accessor block, scan loop) is absent from <prefix>_search, and <PREFIX>_DFA_TABLE and <PREFIX>_DFA_SCAN_EDGE no longer fold a machine the artifact does not contain.
+C5-0275	3457	H	<PREFIX>_VM_FRAMELESS is a stamp line on every VM artifact and every hybrid.
+C5-0276	3462	H	rx_info has appended members name and nentries (two initializer lines on every artifact of both engines).
+C5-0277	3466	H	CHECK: Every DFA and VM-hybrid artifact has the noclone attribute wrapped in an __has_attribute guard (three lines); gcc still emits the attribute.
+C5-0278	3468	H	CHECK: A FRAMELESS VM artifact (no RX_PUSH and no RX_CALL site anywhere in the program, e.g. [a-z]{0,4096} --engine=vm) omits the fail label's pop-and-resume goto * dispatch.
+C5-0279	3472	H	<PREFIX>_DFA_SCAN_EDGE (section 6.3) is on every artifact.
+C5-0280	3474	H	CHECK: A DFA scan whose machine carries a counted class run has that run's states replaced by one in-loop scan block.
+C5-0281	3477	H	<PREFIX>_VM_PREFILTER_LANG and <PREFIX>_VM_PREFILTER_LANG_WHY appear on every VM HYBRID and no other artifact kind.
+C5-0282	3479	H	Four size stamps are on artifacts: <PREFIX>_UNROLL_K, _UNROLL_K_WHY, _MAX_EMIT_CODE_BYTES, _MAX_EMIT_BYTES.
+C5-0283	3481	H	CHECK: The anchored match-here form (ENG-ABS) is an emitted DFA form.
+C5-0284	3481	H	CHECK: The offset-k candidate-start skip is an emitted DFA prefilter form.
+C5-0285	3482	H	CHECK: A DFA scan's state is an opaque token with an accessor block, and the pre-multiplied DFA transition table is an emitted table encoding.
+C5-0286	3484	H	rx_info.abi is a layout version and nothing more before v1: callers must not build version negotiation on it until v1 declares what a bump means.
+C5-0287	3484	H	rx_info.abi is not yet a compatibility promise.
+C5-0288	3486	H	CHECK: rx_info inserts four sizing fields after subject_ceiling (DD-14.FB, section 10.4).
+C5-0289	3490	H	CHECK: A DFA artifact carries three selection stamps (DD-13, section 6.3).
+C5-0290	3491	H	abi is the version of the EMITTED SCAFFOLDING as a whole, not of struct rx_info alone (D76).
+C5-0291	3493	H	tests/codegen/run_recursion_identity.sh's whole-file comparison (B) is pinned to the last src-touching commit of the change that bumped abi; a bump is paired with a re-pin of it in the same change.
+C5-0292	3499	H	CHECK: The two-tier default entries are emitted only by the VM path.
+C5-0293	3503	H	CHECK: <PREFIX>_DFA_SCAN has the "empty" value, and every VM hybrid carries two _DFA_* lines (DD-13c).
+C5-0294	3504	H	CHECK: rx_info members scan and prefilter are appended at the END of the struct, so no existing member's offset moves.
+C5-0295	3509	H	CHECK: The DFA scan's state is an OPAQUE TOKEN: every DFA artifact and every VM hybrid carries at FILE SCOPE immediately above its search function one block per machine of the form typedef <int|unsigned> <prefix>_<forward|reverse>_state; followed by up to seven static inline accessors.
+C5-0296	3515	H	CHECK: The DFA-state accessors are _step, _is_dead, _accepts, _accepts_class, _row, _view_live and _view_take, and the scan loop is written against them.
+C5-0297	3520	H	Nothing a caller can call, link or read as a value changed with the opaque-state block: the four entry points, the three _in entries, struct rx_info and its fields, RX_NCAPS, the buffer surface and every <PREFIX>_* stamp and its value set are unchanged.
+C5-0298	3524	H	RX_DFA_TABLE and RX_DFA_PREFILTER are read directly off the emitter's chosen representation object, so a stamp cannot disagree with the loop it describes.
+C5-0299	3526	H	The DFA accessor names are prefix-derived like every other emitted identifier and are subject to section 1's prefix rules; they are NOT part of the frozen ABI block.
+C5-0300	3544	H	CHECK: A VM artifact whose program contains no RX_PUSH and no RX_CALL site omits the fail label's pop-and-resume goto * dispatch, since run->resume_depth can never leave 0 there.
+C5-0301	3549	H	Every artifact that pushes at least one resume frame keeps the fail label's pop-and-resume dispatch.

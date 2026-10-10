@@ -1,0 +1,165 @@
+tests/codegen/run_dfa_stamps.sh	20	match_api.md §6	same	VALID	
+tests/codegen/run_dfa_stamps.sh	23	match_api.md §6.3	same	VALID	
+tests/codegen/run_dfa_stamps.sh	208	match_api.md §6.3	same	VALID	
+tests/codegen/run_dfa_stamps.sh	948	match_api.md §6.3	same	VALID	
+tests/codegen/run_dfa_uniform_fold.sh	12	match_api.md` §6.3	same	VALID	
+tests/codegen/run_fallback_table.sh	12	match_api.md §6.3	same	VALID	
+tests/codegen/run_fallback_table.sh	26	match_api.md's hand-written sets with	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	88	match_api.md}"	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	420	match_api.md's ENGINE_SEL set extracted, $nsel values	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	421	match_api.md's ENGINE_SEL set has $nsel values, expec	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	422	match_api.md's UNROLL_K_WHY set extracted, $nwhy valu	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	423	match_api.md's UNROLL_K_WHY set has $nwhy values, exp	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	437	match_api.md's set" \	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_fallback_table.sh	438	match_api.md's hand-written set"	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_ir_listing.sh	216	match_api.md §6.3	same	VALID	
+tests/codegen/run_ir_listing.sh	497	match_api.md 6.3	same	VALID	
+tests/codegen/run_offset_skip.sh	120	match_api.md §6.3	same	VALID	
+tests/codegen/run_prechecks.sh	502	match_api.md §3.1	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	36	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	292	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	376	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	468	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	605	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	770	match_api.md §6.3	same	VALID	
+tests/codegen/run_prefilter_collapse.sh	805	match_api.md's	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_prefilter_collapse.sh	850	match_api.md §6.3	same	VALID	
+tests/codegen/run_premul_table.sh	140	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/codegen/run_premul_table.sh	331	match_api.md §6.3	same	VALID	
+tests/codegen/run_premul_table.sh	416	match_api.md §6.3	same	VALID	
+tests/codegen/run_recursion_identity.sh	380	match_api.md` §10.8	same	VALID	
+tests/codegen/run_recursion_identity.sh	475	match_api.md §6.3	same	VALID	
+tests/codegen/run_recursion_identity.sh	486	match_api.md §10.9	same	VALID	
+tests/codegen/run_recursion_identity.sh	2190	match_api.md §6.3	same	VALID	
+tests/codegen/run_recursion_identity.sh	2406	match_api.md §6.3	same	VALID	
+tests/codegen/run_search_pinned.sh	126	match_api.md §6.3	same	VALID	
+tests/codegen/run_size_term.sh	113	match_api.md` §6.3	same	VALID	
+tests/definitions/CLAUDE.md	44	match_api.md` §6	act `match_api.md` §5.4's bsearch (`#named-groups`) depends on.	REPOINTED	
+tests/definitions/run_definitions_tests.sh	208	match_api.md §6	/match_api.md#rx-info-counts).	REPOINTED	
+tests/definitions/run_definitions_tests.sh	286	match_api.md` §6	ch_api.md#named-groups` (§5.4)	REPOINTED	
+tests/definitions/run_definitions_tests.sh	376	match_api.md` §6	and `match_api.md#dup-name-algorithm` (§5.4)'s	REPOINTED	
+tests/encseam/CLAUDE.md	10	match_api.md` §3.1	same	VALID	
+tests/encseam/findall_cases.txt	11	match_api.md §3.1	same	VALID	
+tests/encseam/findall_driver.c	1	match_api.md §3.1	same	VALID	
+tests/encseam/findall_oracle.py	3	match_api.md §3.1.	same	VALID	
+tests/encseam/findall_oracle.py	34	match_api.md §3.1	same	VALID	
+tests/encseam/run_encseam_tests.sh	7	match_api.md §3.1	same	VALID	
+tests/harness/CLAUDE.md	58	match_api.md` §3.1	same	VALID	
+tests/harness/driver.c	30	match_api.md` §3.1	same	VALID	
+tests/harness/driver.c	174	match_api.md §1	same	VALID	
+tests/harness/driver.c	473	match_api.md` §3.1	same	VALID	
+tests/harness/run.sh	3195	match_api.md` §3.1	same	VALID	
+tests/harness/verify_rxt.py	345	match_api.md` §3.1	same	VALID	
+tests/harness/verify_rxt.py	366	match_api.md §3.1	same	VALID	
+tests/harness/verify_rxt.py	370	match_api.md	(match_api.md#offset-zero,	REPOINTED	
+tests/harness/verify_rxt.py	982	match_api.md §3.1	same	VALID	
+tests/harness/verify_rxt.py	1882	match_api.md` §3.1	same	VALID	
+tests/island/CLAUDE.md	5	match_api.md` §6.3	same	VALID	
+tests/island/run_island_tests.sh	54	match_api.md §6.3	same	VALID	
+tests/lib/CLAUDE.md	471	match_api.md` §6.3	same	VALID	
+tests/lib/spec_extract.sh	2	match_api.md §6.3	same	VALID	
+tests/lib/spec_extract.sh	16	match_api.md are indented under	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/lib/spec_extract.sh	44	match_api.md prose) — both HAND-WRITTEN, so a value 	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/mech/CLAUDE.md	269	match_api.md` §6.3	same	VALID	
+tests/mech/CLAUDE.md	1788	match_api.md §3.1	same	VALID	
+tests/mech/run_sabotage_matrix.sh	452	match_api.md §6.3	same	VALID	
+tests/mech/run_sabotage_matrix.sh	1884	match_api.md §3.1	same	VALID	
+tests/mech/sabotages/CLAUDE.md	217	match_api.md` §3.1	same	VALID	
+tests/mech/sabotages/S190_anchored_dead_group_fill_empty.sh	17	match_api.md` §3.3	same	VALID	
+tests/mech/sabotages/S206_nullable_predicate_removed.sh	22	match_api.md §6.3	same	VALID	
+tests/mech/sabotages/S207_nullable_predicate_inverted.sh	22	match_api.md §6.3	same	VALID	
+tests/mech/sabotages/S216_opt42_default_decline_neutered.sh	46	match_api.md SS6.3	same	VALID	
+tests/mech/sabotages/S221_pinned_start_written_as_zero.sh	4	match_api.md` §3.1	same	VALID	
+tests/mech/sabotages/S232_startpos_guard_leaks_deny.sh	28	match_api.md 3.1	spec/match_api.md 9.2's -fno-startpos-guard bullet (#startpos); lib/pcrec.h's PCREC_NO_STARTPOS	REPOINTED	
+tests/mech/sabotages/S233_startpos_guard_leaks_byte.sh	13	match_api.md` 3.1	same	VALID	
+tests/mech/sabotages/S238_size_drop_unstamped.sh	11	match_api.md` §6.3	same	VALID	
+tests/mech/sabotages/S238_size_drop_unstamped.sh	28	match_api.md 6.3	spec/match_api.md 6.3's ENGINE_SEL table (#stamp-engine-sel); docs/spec/limits.md 8's 'The opti	REPOINTED	
+tests/mech/sabotages/S262_dfa_invariant_loop_open_inverted.sh	6	match_api.md §8.1	same	VALID	
+tests/mech/sabotages/S262_dfa_invariant_loop_open_inverted.sh	24	match_api.md`'s promise exists to rule out. After K61,	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/mech/sabotages/S367_start_zero_rule_not_emitted.sh	24	match_api.md 3.1	spec/match_api.md 9.3 (#offset-zero); docs/dev/lanes/k73utf_report.md"	REPOINTED	
+tests/mech/sabotages/S368_unwrapped_match_guard_deleted.sh	20	match_api.md 3.1	spec/match_api.md 9.2's anchored-entries bullet (#startpos); docs/dev/known_issues.md K73's fix	REPOINTED	
+tests/mech/sabotages/S407_findall_nonempty_arm_unaligned_c.sh	3	match_api.md` §3.1	same	VALID	
+tests/mech/sabotages/S411_utf_check_before_k50_guard.sh	17	match_api.md §3.1	spec/match_api.md §9.4's Order bullet (#utf-check). Exact re-run: bash tests/mech/run_sabotage_	REPOINTED	
+tests/mech/sabotages/S422_prefilter_drop_unstamped.sh	19	match_api.md §6.3	spec/match_api.md §6.3's <PREFIX>_VM_PREFILTER_WHY (#stamp-vm-prefilter-why)"	REPOINTED	
+tests/mech/sabotages/S439_k78_dead_group_fill_at_entry.sh	8	match_api.md §3.1.	same	VALID	
+tests/mech/sabotages/S622_fbt_esel_witness_dropped.sh	4	match_api.md §6.3	same	VALID	
+tests/mech/sabotages/S-U6_next_pos_byte_advance.sh	4	match_api.md` §3.1	same	VALID	
+tests/mech/sabotages/S-U6_next_pos_byte_advance.sh	20	match_api §3.1	same	VALID	
+tests/memfn/simd_guarded_check.py	3	match_api.md §6.3	spec/match_api.md §6.3 `<PREFIX>_SIMD_GUARDED_BYTES` (#stamp-simd-guarded-bytes),	REPOINTED	
+tests/mrl/run_mrl_tests.sh	425	match_api.md §6.3	same	VALID	
+tests/named_groups/d27/numbering_capture.rxt	8	match_api.md S3.3	same	VALID	
+tests/named_groups/d27/numbering_capture.rxt	35	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/numbering_capture.rxt	67	match_api.md S5.1	same	VALID	
+tests/named_groups/d27/oracle.py	9	match_api.md only, not the project's own	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/oracle.py	76	match_api.md S3.1	same	VALID	
+tests/named_groups/d27/README.md	6	match_api.md`,	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/README.md	24	match_api.md S5.1	same	VALID	
+tests/named_groups/d27/README.md	60	match_api.md's discussion	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/README.md	105	match_api.md mentions but	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/README.md	174	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/README.md	179	match_api.md S6	ec/match_api.md S5.4 (#named-groups): "no document states the sort KEY").	REPOINTED	
+tests/named_groups/d27/README.md	188	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/README.md	213	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/named_groups/d27/spellings.rxt	39	match_api.md S5.1	same	VALID	
+tests/parse/run_parse_tests.sh	210	match_api.md §6.3	same	VALID	
+tests/recursion/fb_mmap_driver.c	3	match_api.md §10.6	same	VALID	
+tests/registry/axes_registry_check.sh	24	match_api.md` §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	34	match_api.md §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	49	match_api.md §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	62	match_api.md` are HAND-WRITTEN, so a value added to t	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	81	match_api.md, §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	98	match_api.md}"	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	470	match_api.md §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	481	match_api.md (lane specclean,	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	497	match_api.md §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	509	match_api.md §6.3	same	VALID	
+tests/registry/axes_registry_check.sh	594	match_api.md and survives a	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	656	match_api.md	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	670	match_api.md's hand-written set with a K35 floor per 	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	689	match_api.md's) are the emitter half, as for	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/axes_registry_check.sh	720	match_api.md §6.3	same	VALID	
+tests/registry/CLAUDE.md	321	match_api.md` §6.3	same	VALID	
+tests/registry/CLAUDE.md	340	match_api.md` §6.3	same	VALID	
+tests/registry/CLAUDE.md	359	match_api.md`'s	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/CLAUDE.md	1478	match_api.md` §6.3	same	VALID	
+tests/registry/CLAUDE.md	1491	match_api.md` §6.3	same	VALID	
+tests/registry/CLAUDE.md	1502	match_api.md), which `tests/codegen/run_fallback_tab	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/CLAUDE.md	1517	match_api.md` §6.3	same	VALID	
+tests/registry/run_registry_tests.sh	504	match_api.md), and	same	VALID	no section number on this line (cited on adjacent line or none)
+tests/registry/run_registry_tests.sh	610	match_api.md §6.3	same	VALID	
+tests/resource/CLAUDE.md	199	match_api.md` §6.3	same	VALID	
+tests/resource/run_resource_tests.sh	820	match_api.md §6.3	same	VALID	
+tests/resource/run_resource_tests.sh	922	match_api.md` §6.3	same	VALID	
+tests/rxtsource/fixtures/deliver_clash_caller.rxtin	5	match_api.md` §6	# `match_api.md#dup-name-algorithm` (§5.4)'s bsearch, indistinguishable from a group the call	REPOINTED	
+tests/rxtsource/fixtures/mc_illformed_utf8.rxtin	3	match_api.md` §3.1.1	same	VALID	
+tests/rxtsource/run_rxtsource_tests.sh	3831	match_api.md section 6	spec/match_api.md#rx-info-name, section 6), and a build that mapped one into the	REPOINTED	
+tests/rxtsource/run_rxtsource_tests.sh	4856	match_api.md` §3.1.1	same	VALID	
+tests/startset/vmhat_diff.py	16	match_api.md §3.1	same	VALID	
+tests/startset/vmhat_driver.c	14	match_api.md §3.1	same	VALID	
+tests/thread/run_stackdepth_tests.sh	217	match_api.md §5.3	same	VALID	
+tests/thread/run_stackdepth_tests.sh	301	match_api.md §5.3	same	VALID	
+tests/utf8/k73_startskip.rxt	4	match_api.md §3.1	spec/match_api.md#offset-zero, §9.3).	REPOINTED	
+tests/utf8/run_startbnd_diff.sh	4	match_api.md §3.1	spec/match_api.md#startpos (§9.2), docs/dev/known_issues.md K50).	REPOINTED	
+tests/utf8/run_startbnd_diff.sh	248	match_api.md 3.1	sed (match_api.md#offset-zero, 9.3), so	REPOINTED	
+tests/utf8/run_startbnd_diff.sh	407	match_api.md` §3.1	same	VALID	
+tests/utf8/run_startbnd_diff.sh	442	match_api.md §3.1	same	VALID	
+tests/utf8/run_startbnd_diff.sh	446	match_api.md §3.1	same	VALID	
+tests/utf8/startbnd_driver.c	47	match_api.md §1	same	VALID	
+tests/utf8/startbnd_driver.c	61	match_api.md` §3.1	same	VALID	
+tests/utf8/startbnd_driver.c	165	match_api.md §3.1	same	VALID	
+tests/utf8/startbnd_engine_driver.c	40	match_api.md §3.1	same	VALID	
+tests/utfcheck/check.py	3	match_api.md §3.1	spec/match_api.md#utf-check (§9.4) and #valid-upto (§3.1.2)).	REPOINTED	
+tests/utfcheck/driver.c	20	match_api.md §3.1	same	VALID	
+tools/review/out/literal_census.tsv	2240	match_api.md names as the embedder's contract — and 	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_census.tsv	2241	match_api.md names as the embedder's contract — and 	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_census.tsv	2301	match_api.md §10.9	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_census.tsv	3091	match_api.md S3.1	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_census.tsv	3214	match_api.md S3.1	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_census.tsv	3736	match_api.md S3.1.	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_value_freq.tsv	411	match_api.md S3.1	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_value_freq.tsv	2174	match_api.md S3.1.	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_value_freq.tsv	3158	match_api.md names as the embedder's contract — and 	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_value_freq.tsv	3429	match_api.md names as the embedder's contract — and 	same	LEFT-GENERATED	generated census of src string literals
+tools/review/out/literal_value_freq.tsv	4916	match_api.md §10.9	same	LEFT-GENERATED	generated census of src string literals
+tests/harness/verify_rxt.py	371	§3.1's offset-0 bullet	§9.3's offset-0 rule (with #offset-zero on line 370)	REPOINTED	K73 offset-0 rule moved to §9.3
+tests/named_groups/d27/README.md	175	S6 (cited on prior line)	S5.4, #named-groups	REPOINTED	nnames/groups reflection -> §5.4

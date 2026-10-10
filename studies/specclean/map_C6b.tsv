@@ -1,0 +1,313 @@
+C6-0301	MAPPED	2009	New states 1 = ELIGIBLE and ENTRY_SHAPE says which carry it (2009-2013); probe: --no-captures a[bc]d+e --vm-entry-shape=1 gives FRAMELESS 1 + "plain". The CC-DIFF date is history.
+C6-0302	UNMAPPED		New 2009 says eight statics are eligible but no shape row says forward/inline carry the attribute on all eight. TRUE: probe a[bc]d+e shapes forward and inline each show 8 always_inline.
+C6-0303	MAPPED	2033	shared row: seven statics inline, matcher noinline. Probe: shared gives 7 always_inline + 1 noinline.
+C6-0304	UNMAPPED		New plain row (2032) says only one body, six framed entries; never says a frameless plain carries the attribute on none. TRUE: probe shape=1 on frameless artifact gives 0 always_inline; emit_vm.c:10933 ai="" for PLAIN.
+C6-0305	MAPPED	2009	FRAMELESS 1 means eligible for static inline always_inline; ENTRY_SHAPE says which carry it (2009-2011).
+C6-0306	MAPPED	2011	"0 means none does (a framed artifact is plain by construction: gcc refuses always_inline on computed goto)" 2011-2013.
+C6-0307	MAPPED	1956	Both are scoped VM and in the 6.3.8 capacity-and-activity group (family b, 1362-1364, 1439, 1956); the "for FRAMELESS's reason" phrasing is dropped but scope is stated.
+C6-0308	UNMAPPED		Not stated. Partly true: AUTO rung is chosen in emit_vm.c:10890-10921 from en->program_bytes after the program is emitted; but an explicit --vm-entry-shape=N exists (tuning.md:1996-2010) so "no mode upstream" is misleading.
+C6-0309	MAPPED	2030	Value-set table 2029-2035 lists plain, shared, forward, inline; example comment 2025 too.
+C6-0310	MAPPED	2026	Example 646ULL (ULL suffix; emit_vm.c stamps %lluULL) and table 1439 "integer"; no prose says unsigned long long beyond the literal spelling.
+C6-0311	MAPPED	2020	"the rung the emitter took for the artifact's six entries" 2020-2021.
+C6-0312	MAPPED	2032	plain row: one body, six framed entries.
+C6-0313	MAPPED	2033	shared row: one out-of-line body behind three forwarding entries.
+C6-0314	MAPPED	2034	forward row: three bodies in the three _in entries, three forwards.
+C6-0315	MAPPED	2035	inline row: six bodies (the STEP 1(a) remark is history).
+C6-0316	MAPPED	2037	"A closed token fixed at four by the emitter's own enum."
+C6-0317	MAPPED	2037	"emitted VM program size in bytes - the exact quantity VM_INLINE_CHAIN_MAX_BYTES was compared against when AUTO chose the rung" 2037-2040.
+C6-0318	MAPPED	1956	Row 1439 scope vm; 1956-1957 "every VM artifact, hybrids included, never on a pure-DFA artifact"; 1374-1378 always emitted within scope. Probe: DFA artifact has no VM_ENTRY_SHAPE.
+C6-0319	MAPPED	2040	Canonical two-byte prefix: program emitted under two-byte placeholder, caller's -p written afterwards, limits.md "Size limits and the prefix" cited (2040-2043). abi 54/K79 date is history.
+C6-0320	MAPPED	2042	"the number and the rung are the same under every prefix". Probe: -p rx and -p verylongprefix_name both PROGRAM_BYTES 1148ULL, "forward".
+C6-0321	MAPPED	2043	plain has four causes (framed, forward-illegal above the size term, tiered, or asked for) 2043-2045.
+C6-0322	MAPPED	2045	_VM_FRAMELESS and the size against the stamped limit tell the causes apart (2045-2046); wording folds tiered/asked-for into "the rest".
+C6-0323	MAPPED	2046	"Both are scalars." Scalar-vs-mask rule at 1383-1386; the per-A_REP reasoning is not repeated.
+C6-0324	MAPPED	1957	6.3.8 intro "None has an rx_info mirror except the budgets"; row 1439 mirror "-"; D77 rule 1354-1358.
+C6-0325	MAPPED	2049	Count of alternations lowered as island, chosen per alternation (2049-2051); 6.3.8 group is the VM-activity family. The emit_vm.c locus and RX_ALTCLS_FACTORED comparison are not repeated.
+C6-0326	UNMAPPED		Not stated in match_api.md. TRUE: tuning.md:1955 "Deny-only ... nothing for a caller to address and nothing to force" (-fno-alt-island).
+C6-0327	MAPPED	2059	Example "RX_VM_ALT_ISLANDS 1 /* or 0, or more */"; row 1440 count.
+C6-0328	MAPPED	2049	Same definition: trie dispatch over literal alternatives rather than serial resume chain; tuning.md 2.20 cited.
+C6-0329	MAPPED	1956	Scope vm (1440), 1956-1957, and 1374-1378 "0 and none spelled as readily as any other value".
+C6-0330	MAPPED	2056	"A DFA route has no such decision." The determinizes-the-same-trie reason is not repeated.
+C6-0331	MAPPED	2051	"A count, because the island is chosen per alternation."
+C6-0332	MAPPED	1383	"a count is a whole-artifact total; a MASK is used only where the decision is taken per quantifier". The _DFA_UNIFORM_FOLDS cross-reference is dropped.
+C6-0333	MAPPED	2053	"dispatches its alternations by byte" (2053-2054).
+C6-0334	MAPPED	2054	"cost on a wide alternation does not scale with the winner's branch index".
+C6-0335	MAPPED	2055	"its size does not depend on the order the alternatives were written".
+C6-0336	MAPPED	2055	"the island reports the same alternative, in the same backtracking order, as the chain" + general 1390-1392. Note tuning.md 2.20 adds a budget-binding caveat (island may answer where chain gives up).
+C6-0337	MAPPED	1354	1354-1358 mirror only when a named consumer reads at run time (D77); row 1440 "-"; 1957.
+C6-0338	MAPPED	2063	Count of VM class-pool entries in the ASCII-FOLD shape, chosen by the fold rows of clskit.c class-form table (2063-2067).
+C6-0339	UNMAPPED		Not stated. TRUE: -fno-cls-fold is deny-only (tuning.md 2.22, 2176 "Deny-only") so no fold mode a caller can force.
+C6-0340	MAPPED	2068	"A DFA scan edge's fold is reported by <PREFIX>_DFA_SCAN_EDGE "fold", not here."
+C6-0341	MAPPED	2072	Example "RX_VM_CLS_FOLDS 6 /* or 0, or any count */"; row 1441 count.
+C6-0342	MAPPED	2063	"number of the VM program's class-pool entries tested in the ASCII-FOLD shape" (tuning.md 2.22).
+C6-0343	MAPPED	2064	two-member set differing only in bit 0x20, both letters, (byte | 0x20) == lower, no 32-byte bitmap emitted.
+C6-0344	MAPPED	1956	Scope vm (1441); 1956-1957; 0 spelled as readily as any value (1374-1378).
+C6-0345	SUPERSEDED	2068	Old: DFA class machinery never consults the byte-fold row. Now a DFA scan edge does at --tune=-2/-1 (1670, 2068-2069). Probe: (?i)[a]{40}x --engine=dfa --tune=-2 gives DFA_SCAN_EDGE "fold"; --tune=0 gives "bitmap".
+C6-0346	MAPPED	2063	Row 1441 kind count and "the number of ... class-pool entries" (per pool class); the count-not-boolean wording and mixing-with-bitmap-classes example are not spelled out.
+C6-0347	MAPPED	2067	"Distinct fold classes carry distinct compare constants, so a structural check can hold the count to the text."
+C6-0348	MAPPED	2064	(byte | 0x20) == lower with no 32-byte bitmap emitted (2064-2066): one or-mask-and-compare, no table.
+C6-0349	MAPPED	1390	General rule: stamps never change answers unless a row says otherwise (1390-1392); the same-predicate reasoning is not repeated.
+C6-0350	MAPPED	1957	No rx_info mirror except budgets; row 1441 mirror "-".
+C6-0351	MAPPED	1442	Row 1442 vm count in 6.3.8 (VM activity family, 1362-1364, 1956); OPT-LITSCAN S2a/abi 41 is history.
+C6-0352	MAPPED	2084	Example "RX_VM_LIT_RUNS 5 /* or 0, or any count */".
+C6-0353	MAPPED	2076	"the number of literal-run compares the VM program writes".
+C6-0354	MAPPED	2077	run of three or more one-byte literals in a concatenation; a two-byte run stays a two-node byte chain (2077-2078).
+C6-0355	MAPPED	2078	"and an alternation island's single-child trie chain" counted; F5-floor nuance dropped.
+C6-0356	MAPPED	2079	"each one bounds check and one run compare" (tuning.md 2.31, 2.38).
+C6-0357	MAPPED	2080	constant-length memcmp, or at lengths gcc decomposes two overlapping word compares.
+C6-0358	MAPPED	1956	Scope vm (1442) + 1956-1957.
+C6-0359	MAPPED	2081	"0 under -fno-lit-run."
+C6-0360	MAPPED	2076	Row 1442 kind count and "the number of ..."; no explicit count-vs-boolean reason.
+C6-0361	MAPPED	1390	General rule 1390-1392 (never answers); row says nothing contrary.
+C6-0362	MAPPED	1443	Row 1443 vm count in 6.3.8 activity group; CLS-TREE S4/abi 48 is history.
+C6-0363	MAPPED	2099	Example "RX_VM_CLS_KIT 1 /* or 0, or any count */".
+C6-0364	MAPPED	2088	"number of distinct class-matcher functions the VM program calls: <prefix>_wcls<N> and <prefix>_class_kit<N>".
+C6-0365	MAPPED	2089	wcls: wide class, more than one member and some member deeper than one code unit, tested as decode plus one matcher.
+C6-0366	MAPPED	2091	class_kit: byte class tested by kit's form at --tune=-2/-1 where kit smaller than the class's table (tuning.md 2.33).
+C6-0367	MAPPED	2094	"A DFA scan edge's kit matcher is not counted here."; the DFA_SCAN_EDGE "kit" side is at 1672.
+C6-0368	MAPPED	1956	Scope vm (1443) + 1956-1957.
+C6-0369	MAPPED	2095	"0 under -fno-cls-kit".
+C6-0370	MAPPED	2095	"and under -e byte at 0/+1/+2".
+C6-0371	MAPPED	1443	Row 1443 kind count; "the number of distinct ..." 2088.
+C6-0372	MAPPED	1390	General rule 1390-1392.
+C6-0373	MAPPED	2095	"Which form a matcher took is --emit-ir's consume row and the matcher's own text."
+C6-0374	MAPPED	1444	Row 1444 vm count in 6.3.8 activity group; OPT-CLSPACK date/abi is history.
+C6-0375	MAPPED	2107	"the number of atoms the table numbers, 1..64"; example 2114.
+C6-0376	MAPPED	2103	non-zero exactly when VM tests table-read byte classes through ONE shared byte-to-atom table (<prefix>_class_atoms) (2103-2108).
+C6-0377	MAPPED	2110	"0 means a 32-byte bitmap per class, or no table-read class."
+C6-0378	MAPPED	1956	Scope vm (1444) + 1956-1957.
+C6-0379	MAPPED	2111	"0 under -fno-cls-pack; -fno-cls-kit denies the atom table too."
+C6-0380	MAPPED	1390	General rule 1390-1392.
+C6-0381	MAPPED	1447	Row 1447 vm integer; 6.3.8 activity/capacity group; OPT-1 date is history.
+C6-0382	MAPPED	2143	"the capacities the un-suffixed entries' FAST TIER runs on (10.9)".
+C6-0383	MAPPED	2144	"on every VM artifact, single-tier ones included."
+C6-0384	MAPPED	2148	Example "RX_FAST_FRAMES 47 /* tiered: below the stamped default */"; row 1447 integer.
+C6-0385	MAPPED	2149	Example "RX_FAST_TRAIL 71".
+C6-0386	MAPPED	2152	"FAST_FRAMES == RESUME_FRAMES is the statement this artifact has one tier, and the only spelling of it." Probe: -fno-tiered-entry gives FAST_FRAMES 2048 = RESUME_FRAMES 2048.
+C6-0387	MAPPED	2154	"the stamped default already fits a page" (2154-2156).
+C6-0388	MAPPED	2154	"the slot array alone does not [fit]" (2154-2155).
+C6-0389	MAPPED	2155	"the scaled fast tier would be too small to be worth two runs".
+C6-0390	MAPPED	2156	"or -fno-tiered-entry".
+C6-0391	UNMAPPED		New doc does not say how to tell the causes apart. FALSE as old stated: -fno-tiered-entry is an axis bit masked out of rx_info.flags (tuning.md:126, 749-770), so flags cannot show that cause.
+C6-0392	MAPPED	2144	"on every VM artifact" + 1374-1378 (never readable by macro absence).
+C6-0393	MAPPED	2156	".c-private: no entry takes a fast capacity and no caller sizes anything from one"; row 1447 (b) vs 10.4 macros in .h at 1456. The explicit contrast with 10.4 is not worded.
+C6-0394	MAPPED	2156	".c-private" here + 1350-1353 (every other stamp is in the .c only, needs self-contained artifact).
+C6-0395	MAPPED	2157	"a caller's code should not branch on the tier boundary."
+C6-0396	MAPPED	1363	Family (b) VM-only, DFA artifact has no such activity (1363-1364); 1379-1382 #if on (b) macro does not compile on DFA; budgets/masks rows 1434, 1446 scope vm. Probe: DFA artifact has none of them.
+C6-0397	MAPPED	2316	ALTCLS_MERGES/FACTORED on every artifact (1413, 2316-2317); NCAPS row 1455 "all (.h)". Probe: --no-captures DFA build defines RX_NCAPS 1 and both ALTCLS.
+C6-0398	MAPPED	84	Shared block carries the give-up codes, PCREC_UNSET, engine constants, nine stamp bit constants, unconditionally on every artifact DFA-only included (84-90); ABI-NS date is history.
+C6-0399	MAPPED	244	"emitted even on an artifact that can never produce the value (a DFA-only artifact never returns a give-up code and never stamps a VM mask)" 244-247. "reserved but unreachable" wording not used.
+C6-0400	MAPPED	1363	Budget macros (row 1446) and the masks (row 1434) are scope vm; family (b) not on DFA (1363-1364); 1379-1382. Probe: DFA artifact has no STEP_BUDGET/VM_RUNGS.
+C6-0401	MAPPED	1482	"VM artifacts only: a DFA artifact was not forced" (1482-1483); row 1411 scope vm.
+C6-0402	MAPPED	1483	"its rx_info.engine_why is NULL for the same reason".
+C6-0403	MAPPED	1498	"the same decision as a CLOSED TOKEN a consumer can bucket on" (ENGINE_WHY is prose 1480).
+C6-0404	MAPPED	1480	ENGINE_WHY is prose naming construct or outcome; ENGINE_SEL the closed token consumers bucket on (1498). The "allowed to name an offset" detail is shown by example 1487.
+C6-0405	MAPPED	1504	Value-set table 1504-1514 and "CLOSED TOKEN" 1498.
+C6-0406	MAPPED	1499	"family (a), on every artifact, both engines"; D81 rule 1359-1362; row 1410 scope all.
+C6-0407	MAPPED	1500	"written from one derivation at src/opt/select_engine.c's fit site; neither is parsed to produce the other."
+C6-0408	MAPPED	1507	selected row.
+C6-0409	MAPPED	1508	forced row.
+C6-0410	MAPPED	1509	declined-nullable-default row (auto, nothing overflowed, ordinary hybrid's prefilter language admits the empty match, no prefilter survives); wording is now the empty_admits form.
+C6-0411	MAPPED	1509	"A pattern whose every empty match crosses a non-multiline start AND end anchor (^(\s+)*$) is not declined ... reads selected."
+C6-0412	MAPPED	1509	"a ${...} pattern is never declined here (its variable turns the prefilter off first); reads selected."
+C6-0413	MAPPED	1509	"-fprefilter overrides the decline".
+C6-0414	MAPPED	1509	"an explicit --engine=vm reads forced" (tuning.md 2.17 cited).
+C6-0415	MAPPED	1509	"no prefilter survives" + 1525-1527 (one policy on two populations; never a ladder rung).
+C6-0416	MAPPED	1510	overflowed-dfa row.
+C6-0417	MAPPED	1511	overflowed-prefilter row.
+C6-0418	MAPPED	1512	collapsed-prefilter row.
+C6-0419	MAPPED	1513	declined-nullable row.
+C6-0420	MAPPED	1513	"no prefilter survives, and the artifact is the one this compile produced without that retry".
+C6-0421	MAPPED	1514	size-cap-retry row.
+C6-0422	MAPPED	1514	limits.md 8 cited; "The artifact's own stamps say which rung".
+C6-0423	SUPERSEDED	1514	Old named _DFA_PREFILTER with _PREFILTER_LANG_WHY "count-collapsed" (not real stamps). New: RX_VM_PREFILTER_LANG "count-collapsed"; live: emit_vm.c:11220 stamps "count-collapsed"/"exact" on VM_PREFILTER_LANG.
+C6-0424	MAPPED	1514	"ladder's last rung DROPPED the prefilter (RX_VM_PREFILTER "none" with RX_VM_PREFILTER_WHY)"; string form at 1738-1741.
+C6-0425	MAPPED	1738	"reading "size cap retry, hybrid N > CAP": the refused artifact's bytes and the cap it exceeded"; "only none it accompanies" at 1739-1740.
+C6-0426	MAPPED	1514	"on a DFA artifact, the anchored match-here machine was dropped (RX_DFA_MATCH "search-filter")"; tuning.md 2.15 pointer dropped.
+C6-0427	MAPPED	1514	"or the premultiplied table was (RX_DFA_TABLE off "premultiplied")".
+C6-0428	MAPPED	1512	collapsed-prefilter is the DFA STATE cap rung (1512) vs size-cap-retry "not a DFA state cap" (1514); compile_driver retry-loop locus not named.
+C6-0429	MAPPED	1516	"The last five are all fell back" (1516-1519); table order matches the five.
+C6-0430	MAPPED	1517	"the four overflow values share one prose string and differ in what survived".
+C6-0431	MAPPED	1495	"An emitted-SIZE refusal does not change [ENGINE_WHY]"; 1517-1518 size-cap-retry differs in which CAP fell back.
+C6-0432	MAPPED	1519	"A consumer asking did this compile fall back? tests for all five." The cost-or-which-cap reading is implied by 1517-1518 only.
+C6-0433	MAPPED	1520	"declined-nullable-default is not among them: nothing overflowed, and it sits beside selected/forced."
+C6-0434	MAPPED	1522	"are different outcomes though both carry RX_VM_PREFILTER none: the first is a rescue refused as useless, the second one that was unavailable."
+C6-0435	MAPPED	1523	Implied by 1523-1527 (declined-nullable = a ladder rung offered a rescue); the consumer-advice sentence itself is not worded.
+C6-0436	MAPPED	1525	"one policy on two populations".
+C6-0437	MAPPED	1526	"the second says a ladder rung offered a rescue and it was refused; the first says there was never a rung."
+C6-0438	MAPPED	1514	Successful retry with count-collapsed prefilter surviving reads size-cap-retry; LIM-1/D90 date is history.
+C6-0439	HISTORY		States what a successful OPT-4 size rung stamped before size-cap-retry existed: past-state explanation, not current behaviour.
+C6-0440	MAPPED	1507	selected is the unremarkable case (1507); refused rescue = declined-nullable (1513); shipped retry = size-cap-retry (1514).
+C6-0441	MAPPED	1514	One value covers both the VM-hybrid rungs and the DFA-artifact drop rungs (1514); K53-SELRETRY date is history.
+C6-0442	MAPPED	676	3.2: anchored machine dropped to fit an emitted-size cap (limits.md 8 "optional-contributor drop") identified by ENGINE_SEL size-cap-retry (676-680); also 1514, 1710. Probe: \p{L} -e utf8 auto gives search-filter + size-cap-retry.
+C6-0443	HISTORY		Counterfactual rationale for why the value was minted (what \p{L} would stamp without it), not a current-behaviour fact. The live behaviour is 1514 and probe auto \p{L} gives size-cap-retry.
+C6-0444	MAPPED	1529	"which contributor a retry dropped is read off the artifact's own stamps."
+C6-0445	MAPPED	1528	"The two size-cap rungs cannot both fire on one compile (the prefilter rungs need a VM hybrid, the drop rungs a DFA artifact)."
+C6-0446	MAPPED	1531	"Under --engine=vm or --engine=dfa the value is forced and says nothing about a retry."
+C6-0447	MAPPED	1531	1531-1534; same; "however the compile was rescued" implied.
+C6-0448	MAPPED	1534	Same measured case stated at 1534-1536. Probe confirms: --engine=dfa gives forced; auto gives size-cap-retry.
+C6-0449	MAPPED	1531	General forced rule covers --engine=vm; the OPT-4 witness itself is not named.
+C6-0450	MAPPED	1532	"which is not gated on auto: a drop rung changes an entry-point FORM inside the engine the caller demanded".
+C6-0451	UNMAPPED		Not stated in match_api.md. TRUE: tuning.md:1817 "Deny-only, -fno-anchored-dfa's shape" (no force flag).
+C6-0452	MAPPED	1536	"A consumer of a forced compile reads <PREFIX>_DFA_MATCH for whether an anchored machine exists, without its cause."
+C6-0453	MAPPED	1536	Forced reads nothing about retry (1531-1532); DFA_MATCH gives existence without cause (1536-1537); 1710 says only size-cap drop reads size-cap-retry. Five-population point not worded as such.
+C6-0454	MAPPED	1501	"No rx_info mirror"; named-consumer trigger at 1354-1358.
+C6-0455	MAPPED	1501	"rx_info.engine_why mirrors the prose".
+C6-0456	MAPPED	1484	"It can also name a BUILD OUTCOME".
+C6-0457	MAPPED	1484	"under --engine=auto a DFA build that overflows a cap (state count, table entries, the K7 element budget, tuning.md 2.11) is a selection outcome, not a refusal" (1484-1487).
+C6-0458	MAPPED	1487	Fallback artifact stamps e.g. "dfa overflowed: >32000 states at pattern offset 0" in ENGINE_WHY.
+C6-0459	MAPPED	1489	"Such an artifact can carry RX_VM_PREFILTER hybrid - the fallback's first rung rebuilds the prefilter from the count-collapsed language - or none" (1489-1492).
+C6-0460	MAPPED	1491	"RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N" says so (tuning.md 2.5, 2.17)".
+C6-0461	MAPPED	1487	Example string quoted verbatim.
+C6-0462	MAPPED	1488	"the offset is 0 by convention, because the reason belongs to the whole compile"; pcrec_ctx_fail remark dropped.
+C6-0463	MAPPED	1492	"Where a real construct (a capture request, a VM_ONLY registry row) also forces the VM, that reason wins the stamp" ("first forcing reason wins" 1483).
+C6-0464	MAPPED	1494	"the overflow's effect on the prefilter still applies through a fact this stamp does not carry."
+C6-0465	MAPPED	1379	"#ifing on RX_ENGINE is safe on every artifact."
+C6-0466	MAPPED	1380	"#ifing on a (b) macro such as RX_VM_RUNGS or a budget macro does not compile against a DFA artifact."
+C6-0467	MAPPED	1382	"(Measured by listing every #define in a fresh build of each kind.)" Probe agrees: DFA artifact lacks all VM-only stamps.
+C6-0468	MAPPED	1346	Contract constants in the .h; "Every other stamp is emitted into the .c only" (1346-1353).
+C6-0469	MAPPED	118	Split form .h carries shared ABI block (118-120) whose contents are listed 84-90 and 160-216. The block also holds more than the "four give-up codes".
+C6-0470	MAPPED	1346	<PREFIX>_NCAPS in the .h on every artifact (1346-1347, row 1455 "all (.h)", 118-119). Probe: DFA .h defines RX_NCAPS 1.
+C6-0471	SUPERSEDED	1348	Old counts (19 in .h, 26 in VM .c) are stale. New: 29 #defines in the .h of both builds, identical but for RX_NCAPS and sizing values. Probe: a(b|c)+d VM .h=29, DFA .h=29, differing only in NCAPS and 5 sizing macros. The .c count is no longer stated.
+C6-0472	HISTORY		Pre-ABI-NS counts (8 in .h, 35 in .c): past-state of an old artifact; the CHECK cannot be run against the current tool.
+C6-0473	MAPPED	1346	Contract constants reach a consumer's TU via the .h (1346-1348), vs 1350-1352 for other stamps that need a self-contained artifact.
+C6-0474	MAPPED	1350	"Every other stamp is emitted into the .c only, so reading one needs a self-contained artifact (header_name == NULL) or code inside the generated .c itself."
+C6-0475	MAPPED	1352	"Whether the stamps should also be emitted into the header is an open design question."
+C6-0476	MAPPED	1958	Examples: "A VM build of 'a(b|c)+d'" (1958-1966) and 1462-1466, 1553-1559; the annotations-are-the-document's remark is not repeated.
+C6-0477	MAPPED	1463	RX_ENGINE "vm" example; mirrors rx_info.engine (1409, 1470-1471).
+C6-0478	MAPPED	1465	RX_ENGINE_WHY "capture group at pattern offset 1".
+C6-0479	MAPPED	1733	VM_PREFILTER value set hybrid / none (1731-1735).
+C6-0480	MAPPED	1738	"emitted ONLY where the size-cap ladder's last rung dropped the prefilter"; row 1431.
+C6-0481	MAPPED	1744	LANG exact/count-collapsed; "reports the count-collapse axis ONLY (D142)"; VM_RESEED "exact" end proof (1761); only on hybrids (1744-1746).
+C6-0482	MAPPED	1746	"_LANG_WHY is prose naming which of five reasons produced the value (tuning.md 2.17's table)"; example 1718.
+C6-0483	MAPPED	1972	VM_RUNGS: CURSOR, _FRAMES_BOUNDED, _FRAMES_UNBOUNDED, _REVDET, _COUNTER.
+C6-0484	MAPPED	1974	VM_STRATS: POSSESSIVE / BACKTRACKING.
+C6-0485	MAPPED	1976	VM_POSS_ARMS per-ARM half of STRATS' POSSESSIVE bit, 0x1 A0, 0x2 A1, 0x4 B (1976-1980).
+C6-0486	MAPPED	1975	VM_PRUNES CLAMPED / UNCLAMPED (MRL).
+C6-0487	MAPPED	1988	PRUNE_CEILING values prefilter-window / subject-end / none (1988-1990), example "prefilter-window" at 1965. New calls it a token.
+C6-0488	MAPPED	1548	Example RX_ENGINE "dfa" (1545-1548) on (?:[a-z]+)@(?:[a-z]+); mirrors rx_info.engine (1409, 1470); unconditional all (1409).
+C6-0489	MAPPED	1566	DFA_SCAN values unanchored / attempt / empty (1566-1571).
+C6-0490	MAPPED	1550	Example RX_DFA_PREFILTER "byte-class" on the DFA specimen.
+C6-0491	MAPPED	1551	Example RX_DFA_TABLE "premultiplied".
+C6-0492	MAPPED	1553	Hybrid example 1553-1559 shows ENGINE vm, VM_PREFILTER hybrid, DFA_SCAN, DFA_PREFILTER, DFA_TABLE; ENGINE_WHY is scope vm (1411).
+C6-0493	MAPPED	1554	Hybrid comments 1556-1558: "this is that DFA", its candidate-start filter, its table's encoding.
+C6-0494	MAPPED	1562	"which DFA scan the artifact contains".
+C6-0495	MAPPED	1566	Three values in the value-set table.
+C6-0496	MAPPED	1569	"the O(n) forward+reverse table pair (D7)".
+C6-0497	MAPPED	1570	"the per-start-position computed-goto loop a ^/\A-bearing pattern takes".
+C6-0498	MAPPED	1562	"both shapes otherwise stamp RX_ENGINE "dfa", so this is the only way to tell them apart" (1562-1564). Both setting rx_info.engine DFA is implied by ENGINE row.
+C6-0499	MAPPED	1571	"empty" is the third value of DFA_SCAN (1571); "not a special case" not worded.
+C6-0500	MAPPED	1571	Proven-empty patterns (\B\b, \b\B, \d\b\w, a\bb, ^-anchored spellings): search body is one return 0 with no table, loop or skip, on either engine. Probe: \B\b gives DFA_SCAN "empty".
+C6-0501	HISTORY		Pre-DD-13c behaviour (empty artifacts stamping the loop name the emitter would have written): past state.
+C6-0502	MAPPED	1581	none row: "or the artifact provably matches nothing". Probe: \B\b gives DFA_PREFILTER "none".
+C6-0503	MAPPED	1574	"the candidate-start mechanism of the scan."
+C6-0504	MAPPED	1575	"Its values are the whole set" and the table 1578-1591 lists exactly eleven rows; the number eleven is not written.
+C6-0505	MAPPED	1581	none row (start_acc, every position candidate, or provably matches nothing).
+C6-0506	MAPPED	1582	memchr row.
+C6-0507	MAPPED	1583	byte-class row (256-entry <prefix>_can_begin_match bitmap walk).
+C6-0508	MAPPED	1584	memchr-bounded row.
+C6-0509	MAPPED	1585	byte-class-bounded row.
+C6-0510	MAPPED	1586	offset-set row (see _DFA_PREFILTER_OFFSETS).
+C6-0511	MAPPED	1587	offset-set-bounded row.
+C6-0512	MAPPED	1588	run-pinned row (necessary run at fixed offset, whole run as one compare, offset-set block with run as one term).
+C6-0513	MAPPED	1588	"the run pre-check is then not emitted (REQ_WHY "dominated")".
+C6-0514	MAPPED	1588	"Removed by -fno-run-prefilter or -fno-offset-skip."
+C6-0515	MAPPED	1589	run-pinned-bounded row.
+C6-0516	MAPPED	1590	first-memchr-bounded row (seeded machine, start set T proper subset of E, one byte memchr; tuning.md 2.42).
+C6-0517	MAPPED	1590	"bounded at n - 1; a skip that moved re-seeds the scan state from the byte before its landing".
+C6-0518	MAPPED	1590	"Removed by -fno-start-set."
+C6-0519	MAPPED	1591	first-class-bounded row: 256-entry <prefix>_start_bytes table walk, bounded at n - 1.
+C6-0520	MAPPED	1591	"There is no unbounded start-set form: a seeded machine always carries the D11 bound."
+C6-0521	MAPPED	1424	Row 1424 scope dfa-scan, same scope as the other DFA_* stamps (1542-1543).
+C6-0522	MAPPED	1598	comma-separated ascending list of byte offsets from the candidate's start, * marks the scanned one.
+C6-0523	MAPPED	1603	Example "0,8*,13" (the uuid shape).
+C6-0524	MAPPED	1604	"none" for every other value of _PREFILTER.
+C6-0525	MAPPED	1607	"Non-none exactly when _DFA_PREFILTER is one of the two offset-set or two run-pinned values."
+C6-0526	MAPPED	1608	run-pinned lists every offset the test covers, run's offsets individually (/user|/users: "0*,1,2,3,4").
+C6-0527	MAPPED	1610	"its scan may be offset 0 (0*), which no other value's scan is."
+C6-0528	MAPPED	1611	"a second stamp rather than a widening of _DFA_PREFILTER" because the latter is the emitter's closed set of FORMS, this a fact about the machine (1611-1613).
+C6-0529	MAPPED	1610	"Offset 0 is always a member."; the reason sentence (test the four older values make) is not repeated.
+C6-0530	MAPPED	1543	DFA_MATCH describes an ENTRY and is on DFA artifacts only (1543-1544, 1429, 1697-1699).
+C6-0531	MAPPED	1695	"which of 3.2's two forms the artifact's <prefix>_match and <prefix>_match_caps take".
+C6-0532	MAPPED	1709	unwrapped row; example 1702; own anchored machine run from ctx->pos.
+C6-0533	MAPPED	1710	search-filter row; example 1703.
+C6-0534	MAPPED	1709	"third machine - the forward tables without the start-anywhere self-loop - and runs it from ctx->pos".
+C6-0535	MAPPED	660	3.2 unwrapped: runs forward from ctx->pos, failing probe stops at first byte that cannot continue a match, succeeding costs one forward scan (660-665). "No backwards pass" is implied.
+C6-0536	MAPPED	666	3.2 and 1710: runs <prefix>_search and rejects a match not starting at ctx->pos.
+C6-0537	MAPPED	671	3.2 lists five populations: attempt, empty, anchored machine exceeded DFA cap, -fno-anchored-dfa, size-cap drop (671-680); 1710.
+C6-0538	MAPPED	1710	"Only the size-cap drop among them reads size-cap-retry; the others read their ordinary selection"; also 678-680.
+C6-0539	MAPPED	1542	Row 1427 scope dfa-scan; 1542-1543; OPT-5/abi 13 is history.
+C6-0540	MAPPED	1651	"how the scan tests the class of a SCAN EDGE".
+C6-0541	MAPPED	1651	"a maximal run of states differing only in how many bytes of one fixed class have been counted, replaced by a bounded cursor loop and deleted from the transition table (tuning.md 2.18; scanedge.c)".
+C6-0542	MAPPED	1654	"An edge's test is the class-form table's answer for its class at the artifact's --tune position and the scan site (clskit.c, D139 item 2), spelled by the emitters a VM class read uses."
+C6-0543	MAPPED	1657	"The six values below are all this macro ever reads"; table lists none, range, fold, bitmap, kit, mixed.
+C6-0544	MAPPED	1661	Example "range" /* (unsigned)(b - 97) <= 25u */.
+C6-0545	MAPPED	1662	Example "none" /* no machine carries a collapsible run */.
+C6-0546	MAPPED	1668	none row: no collapsible run; _DFA_SCAN "attempt"; "empty"; -fno-scan-edge.
+C6-0547	MAPPED	1669	range row.
+C6-0548	MAPPED	1669	"b == c, b <= hi from 0, otherwise (unsigned)(b - lo) <= span u ... touches no memory but the subject"; the VM's-own-spelling-since-abi-53 remark is dropped.
+C6-0549	MAPPED	1670	fold row: at --tune=-2/-1 only, ASCII case pair tested (b | 0x20) == x.
+C6-0550	MAPPED	1670	"At 0/+1/+2 a scan edge's fold pair is a bitmap (D138 Q1)." Probe: tune=0 gives "bitmap".
+C6-0551	MAPPED	1670	"Never under -fno-cls-fold".
+C6-0552	MAPPED	1671	bitmap row: at least one edge's class reads a 256-byte membership table.
+C6-0553	MAPPED	1671	"the loop-carried register is still the cursor"; the "memory reference is the price" clause not worded.
+C6-0554	MAPPED	1672	kit row: at --tune=-2/-1 only, every edge's class takes a kit matcher smaller than its 256-byte table.
+C6-0555	MAPPED	1672	"static inline kit matcher <prefix>_<machine>_scankit<N> ... (tuning.md 2.33)".
+C6-0556	MAPPED	1672	"Never at 0/+1/+2, never under -fno-cls-kit".
+C6-0557	MAPPED	1673	mixed row: edges took more than one form, choice per edge, a machine may carry up to four.
+C6-0558	MAPPED	1677	"Its scope is the DFA-scan scope, not _DFA_MATCH's" (1677-1678); row 1428.
+C6-0559	MAPPED	1428	Row 1428 scope dfa-scan token; family (a) rule 1359-1362 (selection facts stamped whether or not the mechanism fired).
+C6-0560	MAPPED	1676	"which of two forms the search entry takes to recover the match START (3.1)".
+C6-0561	MAPPED	1688	pinned row / example 1681.
+C6-0562	MAPPED	1689	reverse-pass row / example 1682.
+C6-0563	MAPPED	1688	pinned row: start state accepts unconditionally (every position, view, class context), accepts belong to a thread begun at search_from. D3 accept-pruning detail not repeated.
+C6-0564	MAPPED	1688	"every accept the forward loop records belongs to a thread that began at search_from, and the post-loop block writes that offset."
+C6-0565	MAPPED	1688	"The artifact carries NO reverse machine: no transition, accept or byte-class table, no stay or scan-edge tables, no <prefix>_reverse_* accessors, no reverse loop".
+C6-0566	MAPPED	1689	reverse-pass row: walks reverse machine backwards from the match end to the furthest-back accepting position.
+C6-0567	MAPPED	1689	Start state does not accept, or accepts depending on position/upcoming byte, or seeds into a possibly dead state, or scan attempt/empty, and -fno-start-pinned.
+C6-0568	MAPPED	1691	"The two are answer-identical" + 3.1 (383-385) "answer-identical and differing only in cost and size".
+C6-0569	MAPPED	391	3.1: "Both forms write absolute offsets (the pinned form writes caps[0][0] = startpos) and both keep the zero-length-match-is-a-success convention, on which the pinned form depends."
+C6-0570	MAPPED	1677	"mirrored by rx_info.search_form" (1428, 1162).
+C6-0571	MAPPED	1691	"opt5_step2_twopass.md is the proof; tuning.md 2.19 the axis."
+C6-0572	MAPPED	393	3.1: pinned search at startpos > 0 on a machine whose start state depends on the preceding byte (\b, (?m)^) can begin in a state from which nothing matches and returns 0 (393-396).
+C6-0573	MAPPED	397	3.1: "the emitted artifact keeps that test and marks it load-bearing."
+C6-0574	MAPPED	1542	"on every artifact that contains one ... except _DFA_MATCH, which describes an ENTRY and is on DFA artifacts only" (1542-1544).
+C6-0575	MAPPED	1698	"on a hybrid the match entry is the VM's own anchored body, which this value set does not describe" (1698-1699); 657-658.
+C6-0576	MAPPED	1697	"Defined on exactly the artifacts whose RX_ENGINE is "dfa"".
+C6-0577	MAPPED	1159	Table row 22 match_form: NULL on every artifact whose _match the DFA emitter did not write - every VM artifact, hybrids included.
+C6-0578	MAPPED	669	3.2: a caller issuing many expected-to-fail probes is in this form's worst case "and can read the form off the artifact" (669-672); 1695-1696.
+C6-0579	MAPPED	1593	"The -bounded forms are a real difference in what the mechanism buys".
+C6-0580	MAPPED	1594	"under a view, a skip may not pass a position whose accept has not been evaluated, so every skip stops one byte short and the memchr arm loses its early-out."
+C6-0581	HISTORY		Cites a past DD-13(b) measurement in docs/dev/plan.md as evidence; the behavioural fact (bounded forms are weaker) is stated at 1593-1595.
+C6-0582	MAPPED	1593	The "real difference, not a spelling" sentence carries the point (a consumer unable to tell the values apart would misattribute); the consumer hypothetical is not worded.
+C6-0583	MAPPED	1383	"A per-artifact verdict is a scalar; a count is a whole-artifact total" (1383-1384); rows 1409, 1422-1423, 1430, 1435 give kinds.
+C6-0584	MAPPED	1384	"a MASK is used only where the decision is taken per quantifier and a scalar would misreport a mixed artifact" (RX_VM_RUNGS, _STRATS, _PRUNES, _POSS_ARMS).
+C6-0585	MAPPED	1976	"the per-ARM half of _VM_STRATS' POSSESSIVE bit"; ART-POSS-ARMS/abi 66 is history.
+C6-0586	MAPPED	1977	0x1 (A0, a lookahead-born gate in the follow valued with nothing known on its left).
+C6-0587	MAPPED	1978	0x2 (A1, a gate valued by the loop's own last characters' polarity).
+C6-0588	MAPPED	1979	0x4 (B, a backreference's first character read from its groups).
+C6-0589	MAPPED	1980	"each set when that arm was NEEDED for some positive possessify verdict".
+C6-0590	MAPPED	1981	"for A1, decided by A1 alone; for A0 and B, the same compile with that arm denied counts fewer positive verdicts."
+C6-0591	MAPPED	1982	"0x0u where no arm was needed, including every artifact built with both arms denied (a denied arm's bit is 0 by construction; tuning.md 2.44/2.45)".
+C6-0592	MAPPED	1434	Row 1434 scope vm (every VM artifact, never DFA) + 1956-1957.
+C6-0593	MAPPED	1984	"These bit values are this paragraph's; they are not named constants in the shared block."
+C6-0594	SUPERSEDED	1406	Old: everything but RX_ENGINE in the VM macro block is VM-only. Inventory 1406-1457 gives per-macro scope; many are scope all (ENGINE_SEL, END_WINDOW, REQ_*, ALTCLS, TUNE...) or dfa-scan. Probe: DFA artifact defines ~28 stamps besides RX_ENGINE.
+C6-0595	MAPPED	1422	Rows 1422-1428 scope dfa-scan; 1542-1543; hybrids included (1366-1373).
+C6-0596	MAPPED	1425	Rows 1425-1428 (TABLE, UNIFORM_FOLDS, SCAN_EDGE, START) have scope dfa-scan, the same iff (1542-1543); OPT-3/OPT-5 step names are history.
+C6-0597	MAPPED	1543	"except <PREFIX>_DFA_MATCH, which describes an ENTRY and is on DFA artifacts only"; row 1429.
+C6-0598	MAPPED	84	Bit constants are unprefixed in the shared block, unconditional on every artifact DFA-only included (84-90, 208-216); "No per-prefix spelling of any of them exists."
+C6-0599	MAPPED	91	Masks stay per-prefix (91 "including the three masks") and vm scope (1434). NOTE new doc is inconsistent: 91 says three masks while 1968-1969 names four masks (adds VM_POSS_ARMS).
+C6-0600	MAPPED	1413	Row 1413 ALTCLS_MERGES/_FACTORED scope all; 2316-2317 "on every artifact, a DFA-only one included".
+C6-0601	MAPPED	2314	"counts of alternation runs merged into one class" (tuning.md 2.6).
+C6-0602	MAPPED	2315	"and prefix-factored" (tuning.md 2.7).
+C6-0603	MAPPED	2316	"Emitted before either engine is built, so they are on every artifact, a DFA-only one included."
+C6-0604	MAPPED	2317	DFA-only artifact carries both stamps. Probe: --no-captures --engine=dfa build defines RX_ALTCLS_MERGES 0 and RX_ALTCLS_FACTORED 0. The --no-captures framing of the measurement is not repeated.
+C6-0605	MAPPED	1257	"flags records the REQUEST; the stamp macros record what the emitter DID."
+C6-0606	MAPPED	1258	"flags is pcrec_options.flags exactly as compiled with the testing/tuning denials that change no answer masked OUT."
+C6-0607	MAPPED	1259	"so two identically-behaving artifacts do not differ in their reflection surface."
+C6-0608	MAPPED	1270	"The macros, by contrast, move when a denial is exercised".
+C6-0609	MAPPED	1271	'(x)(?:a|bc)+d': -fno-possessify moves RX_VM_STRATS 0x1u to 0x2u while rx_info.flags unchanged (1271-1273); also tuning.md 2.1.
+C6-0610	MAPPED	1273	"the whole initializer is identical between the two builds except frame_capacity, because denying possessification costs a frame."
+C6-0611	MAPPED	1275	"To see what was asked for on a masked axis, flags cannot be used; to see what happened, read the macro."
+C6-0612	MAPPED	1260	"The rule is general and derived: every axis bit is masked except the named kept set (tuning.md 2, THE rx_info.flags RULE)" (1260-1263).
+C6-0613	POINTED	1267	New points to tuning.md 2 (per-bit catalogue) and 4 (bit to field map) instead of lib/pcrec.h comments; tuning.md:126-141 states the rule and kept set, so a round-tripper learns which bits vanish.

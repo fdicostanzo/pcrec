@@ -5,229 +5,88 @@ use them. They are deliverables like code: actively maintained (not
 append-only), carry no build history, and may reference docs/design/
 documents for the reasoning behind a design without repeating it.
 
-Build history is NOT part of the spec (Frank, 2026-08-14): how a surface
+Build history is NOT part of the spec (Frank, 2026-08-14), and
+`make test-spec-history` (`tests/spec_history/`) flags it mechanically, with
+the other docs' current history counted as known debt: how a surface
 came to be — panel outcomes, refuted predictions, rulings, the design
 process — stays in docs/design/ and docs/dev/. A spec may refer to design
 documents but only INFORMATIONALLY: such references are background for the
 curious reader, never normative. The spec alone states the contract; if a
 spec and a design doc disagree, the spec is what the tool promises.
 
+## Numbering and citation (Frank, 2026-10-09; lane specnum)
+
+A spec is cited like a legal code: by NUMBER, which never changes. `match_api.md`
+is the first document to carry it; every other spec adopts it when it is
+rewritten facts-only (`tests/spec_history/cite_floors.tsv` has a row per
+adopter, and the checks below run on any `docs/spec/*.md` that carries the
+contents block).
+
+- **Sections.** Every heading below the `# ` title begins with its dotted
+  number (`## 3.`, `### 3.1`, `#### 3.1.3`; depth = heading level - 1) and is
+  preceded by a line `<a id="s3-1-3"></a>` (`s` + the number, dots to dashes).
+- **Paragraphs.** Every prose paragraph, list item and block quote begins
+  `<a id="s3-1-3-p4"></a>[3.1.3¶4] ` -- the section's number, `¶`, the
+  paragraph's number: 1, 2, 3 ... in document order within its innermost
+  section (the preamble above the first heading is section `0`). A fenced
+  code block or a table belongs to the paragraph it follows, or to its
+  section when nothing precedes it. `¶`, not another dot, because a section
+  can hold both subsections and paragraphs: `§3.1.1` is a subsection of
+  §3.1, `§3.1¶1` a paragraph of it.
+- **The citation form** is `match_api.md §3.1.3` or `match_api.md §3.1.3¶4`
+  (a human may add the topic). Never a line number, never an anchor name. A
+  shell or emitted string may use `S3.1`, the form the emitted
+  `<prefix>_next_pos` comment already has.
+- **Stability.** A number is never reused and never changes. An addition takes
+  a letter after its predecessor: a section between §3.2 and §3.3 is `§3.2a`
+  (its subsections `3.2a.1`, its paragraphs `§3.2a¶1`), a paragraph after ¶4
+  is `¶4a`. A removal leaves a one-line stub under the same number -- the
+  heading `### 3.2 — retired` or the paragraph `[3.2¶4] — retired.`, optionally
+  naming where the text went (`— retired (moved to §7¶2)`). Moving text to
+  another section is a removal plus an addition.
+- **Contents.** A block between `<!-- spec-toc:begin -->` and
+  `<!-- spec-toc:end -->` right under the title lists every numbered heading,
+  number and link, and is GENERATED: `python3 scripts/spec_toc.py FILE` (add
+  `--init` the first time) rewrites it; never edit between the markers.
+- **Checks** (`make test-spec-history`, `tests/spec_history/spec_cites.py`):
+  the numbering is well-formed (anchors, labels, order); the contents are
+  current; every `<doc>.md §N` / `§N¶K` / `SN` cited anywhere in the tree
+  names a number that exists (a retired stub exists); no `<doc>.md:<line>`
+  citation remains. What no check can see is a RENUMBERING that leaves every
+  cited number resolvable (a paragraph deleted and its successors shifted
+  up): review the diff of a spec edit for a changed label.
+- **Adopting it in another spec**: number the headings, give each its anchor
+  line, label the paragraphs (`studies/specnum/number.py` is the one-time pass
+  that labelled `match_api.md`; adapt it, it refuses a numbered file), run
+  `scripts/spec_toc.py --init`, add the doc's row to `cite_floors.tsv`,
+  and re-point the tree's citations of it (`studies/specnum/repoint.py` did
+  that for the anchor form).
+
 ## Files
 
-- `match_api.md` — **[M4.7f], 2026-08-18: the FIRST spec document.** The
-  as-built match-API contract: the generated artifact's entry points
-  (`<prefix>_search`/`_match`/`_match_caps`/`_info`), the six fixed-literal
-  ABI types (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
-  `struct rx_info`, `rx_renderfn`), capture-slot semantics (the C1–C11
-  requirements restated as contract prose, with the R22 cross-iteration-
-  retention/empty-final-iteration-overwrite rules folded in as first-class
-  text, not an addendum), the D49 give-up code space
-  (`RX_ERR_STEPS`/`_FRAMES`/`_WORK`/`_RECURSE` since [DD-14] wave A, the
-  `RX_ERR_FLOOR` partition) and the below-the-floor `RX_ERR_INTERNAL`
-  (NOT a give-up, [DD-14] wave A commit 2), the
-  `rx_info` reflection structure and its D46 compile-time observability
-  macro mirror, the compile-entry NUL-termination contract (with an
-  independently measured libpcre2 10.46 comparison — `PCRE2_ZERO_TERMINATED`
-  truncates identically), and `pcrec_options`/`pcrec_error`. Every claim
-  is verified against the shipped surface (`lib/pcrec.h`, artifacts
-  actually emitted by `build/pcrec`, cited tests) rather than copied from
-  `docs/design/match_api_m4.md`, which had drifted from what shipped in
-  one place (§3.5: the give-up-code collapse `match_api_m4.md` still
-  describes was superseded by D49 before this graduation and the shipped
-  artifact already implements the superseding rule) and carries one
-  as-built deviation of its own (§2: `rx_info` ships as a struct TAG, not
-  the bare typedef the design sketch showed — forced by a name collision
-  with the default-prefix `<prefix>_info` instance; **RULED D57,
-  2026-08-18: the struct-tag spelling is blessed as the contract and the
-  typedef form is dead**, so §2 states it as settled rather than open).
-  References `docs/design/match_api_m4.md`/`engine_m4.md` informationally
-  for the ruling history; this document alone states what pcrec promises.
-
-  **[M6.2] waves D and E each added a sentence to §3.1, and wave E's is the
-  larger one.** Wave D's says what `\G` means under the find-all loop
-  ("contiguous with the previous match", PCRE2's global-iteration semantics,
-  for free because the entry already takes the parameter PCRE2 threads). Wave
-  E's says that **`caps[0][0]` is where REPORTING begins, which is not always
-  where matching began** — `\K` moves it — with three consequences a caller
-  can see: `caps[0][0]` can exceed the offset the match began at and is
-  therefore not a bound on where the engine looked; `caps[0][0] ==
-  caps[0][1]` no longer implies nothing was consumed (`ab\K` reports `[2,2)`
-  after two bytes); and the anchored entries of §3.2/§3.3 return the CONSUMED
-  length, which is what makes the §5 callout advance terminate. The find-all
-  loop is unaffected because it advances off `caps[0][1]`, and that is
-  MEASURED against libpcre2 driven through the same loop
-  (`tests/assertions/run_kreset_diff.sh` §5) rather than argued.
-
-  **[K75] (D132, 2026-09-30) — §3.1's find-all loop resumes after a
-  non-empty match at `<prefix>_next_pos(s, n, end - 1)`, not `end`.** A
-  protocol change only (no emitted byte, no abi event): a no-op on a
-  well-formed subject, and under `-e utf8` it steps over a stray continuation
-  byte instead of handing the engine a `startpos` K50 refuses. §3.1 also now
-  states the boundary rule outright (a caller's `startpos` must be a
-  boundary; positions the loop computes always are; a continuation byte is
-  never a match start); `rxt_format.md`'s `mc` paragraph carries the same
-  advance.
-
-  **[M4.7g], 2026-08-18 — the R29 fix pass** (`docs/dev/reviews/
-  2026-08-18-r29-match-api-spec.md`) is the document's first revision,
-  and its shape is worth knowing before editing this file again: the
-  MATCHING SEMANTICS survived the panel untouched, and every landed fix
-  was in the surrounding surface — the library calling sequence (§8 now
-  carries one worked example that was compiled and run before it went in,
-  plus §8.1's D56 guarantees), the find-all protocol (§3.1, verified
-  against `re.finditer` and honest about where it is lossy against
-  PCRE2's NOTEMPTY retry, which pcrec cannot express), the reflection
-  surface's over-claims (§6.3's macro mirror is partial, and thinner
-  still on DFA artifacts), and the two shipped doc-comments an embedder
-  actually reads, which BOTH denied the give-up-code space §4 promises
-  (fixed in `src/gen/emit_dfa.c` and `lib/pcrec.h` in the same pass).
-  The document's header now carries a VERIFICATION LEDGER recording what
-  each pass re-measured; keep it current, and keep §3.5's record of the
-  two errors the panel found — an idealized quotation in a document whose
-  authority is "checked against the shipped surface" is the failure mode
-  the document exists to prevent, and old artifacts still carry the
-  comment it describes.
-
-  **[M5-SEAM], 2026-08-18 — the second revision** (D58, the encoding seam
-  prelude). Smaller in shape than R29's and worth knowing for one reason:
-  it is the first revision where a recorded CAVEAT was DISCHARGED rather
-  than a claim corrected. §3.1's find-all loop advanced by a literal `+ 1`
-  and carried a byte-vs-character caveat saying M5 would have to sharpen
-  it; the loop now advances through `<prefix>_next_pos`, the first encoding
-  residual, and the new §3.1.1 states that entry's contract. The caveat's
-  own text is QUOTED in §3.1.1 rather than deleted, with what discharged it
-  said next to it — the same discipline §3.5 follows for the two errors R29
-  found. Also in this pass: §1 and §3 count five per-artifact entry points
-  instead of four; §8.2 gains the per-compile-call encoding rule and
-  records the `PCREC_ENC_ASCII` -> `PCREC_ENC_BYTE` rename as an announced
-  pre-v1 boundary; §8.1's D56 quotation was re-measured (its wording had
-  gone stale — it promised a milestone that had already shipped). The
-  find-all measurement behind §3.1 is now a SUITE (`tests/encseam/`, in
-  `make test`) rather than a transcript, which is the direction to keep
-  taking this document's numbers.
-
-  **[M6.3], 2026-08-18 — the third revision** (module `named-groups`).
-  The second DISCHARGE this document has recorded (the [M5-SEAM] shape,
-  not a correction): §6's own open question — the `groups` array's sort
-  key — is fixed (`strcmp` on the name, matching libpcre2's own
-  `PCRE2_INFO_NAMETABLE` order, measured; docs/dev/decisions.md D59
-  carries the evidence and the reasoning) and §6's worked example is
-  re-quoted verbatim from a fresh build carrying the module, in both the
-  captures-default and `--no-captures` forms.
-
-  **[ABI-NS], 2026-08-18 — the fourth revision** (D60 + addendum, the
-  emitted universal-constant namespace unification). The give-up code
-  space (§4), the caps-array unset sentinel (§5), and the nine D46 stamp
-  bit constants (§6.3) move from per-`<PREFIX>` spellings to one
-  canonical, unprefixed `PCREC_*` spelling in the shared `PCREC_RX_ABI_H`
-  block (§2); the old `<PREFIX>_*` spellings are DELETED, no alias.
-  `rx_info.engine`'s formerly number-only contract (§6 used to say "no
-  such constant is #defined anywhere") gains names, `PCREC_ENGINE_DFA`/
-  `PCREC_ENGINE_VM`, in the same block. §1, §2, §4, §5, §6 and §6.3 are
-  re-quoted this pass, verbatim from fresh builds (both a `--no-captures`
-  DFA artifact and a captures-default VM one). A THIRD-PARTY collision
-  was found and fixed in the same lane, outside this document's own
-  scope but load-bearing for it: `lib/pcrec.h` already declared
-  `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM` as `enum` members for
-  `pcrec_options.engine` (the compile-time engine REQUEST), and an
-  artifact's own `#define` of the identical name, included before that
-  header, rewrote the enum declaration into invalid syntax — fixed by
-  converting `lib/pcrec.h`'s two members to plain `#define`s
-  byte-identical to the artifact's emission (`lib/CLAUDE.md` carries the
-  detail).
-
-  **[DD-14.FB], 2026-08-24 — the fifth revision, and the first that states
-  a contract BEFORE it exists** (D71 item 2, the caller-provided frame
-  buffer). Every earlier revision recorded what shipped; this one adds
-  **§10, marked "SPECIFIED, NOT YET BUILT" in its own first line**, because
-  D71 item 2 rules the buffer's shape "decided at docs/spec/match_api.md
-  under D40" and the three existing entries' compatibility story is a fact
-  about this document's contract. **The marking is the point, and an
-  editor of this file must keep it**: this document's authority is that
-  every claim was checked against the shipped surface, so a forward-looking
-  section is only safe while it says loudly that it is one — §1-§9 are what
-  pcrec promises today, §3/§4/§5.3/§6 carry one-line forward pointers that
-  each name the pending status, and nothing in §1-§9 changed in substance.
-  When the implementation lands, §10's status block comes off and its
-  content merges into §3/§5/§6 where it belongs; that merge is the
-  revision, not a re-write. Specified: three `_in` entries taking a
-  per-artifact `<prefix>_buffers` descriptor (deliberately NOT one of §1's
-  fixed-literal `rx_*` types — a frame's SIZE differs per artifact, so a
-  literal spelling would advertise an interchangeability that does not
-  exist), `buf == NULL` DEFINED as a call to the un-suffixed entry,
-  `PCREC_ERR_FRAMES` unchanged and retry defined, a sizing surface with
-  `abi` 2 → 3, and §5.3 extended by exactly one conjunct (own buffers per
-  concurrent call). The design record — alternatives, costs, and the
-  ASK — is `docs/design/frame_buffer_design.md`.
-  **One shipped-behaviour note rides this revision and is NOT
-  forward-looking**: §5.3 gains a MEASURED paragraph saying the concurrency
-  promise is collectable only on a large-enough thread stack.
-  `<prefix>_search`'s stack frame is 131,296 bytes on a call-bearing
-  artifact whose frame requirement is not statically bounded, which does
-  not fit a musl-default 128 KB thread and faults on a 2-byte subject. That
-  is a live gap between §5.3's contract and the shipped artifact, filed as
-  the design note's FINDING-1.
-
-  **[SPEC-1.4], 2026-08-26 — the docs/spec/ consolidation pass's own patch
-  set (D80), five small additions, no shipped behaviour changed.** §4 now
-  points at `docs/spec/limits.md` for the give-up codes' numeric trigger
-  defaults rather than leaving them unfound; §6.3's DFA-stamp-gap caveat
-  (survey row C2) was re-verified against a fresh DFA/hybrid build and
-  found already discharged by `[DD-13c]` — no wording changed there; §6
-  gained a caller-facing `abi` paragraph stating D76's rule in contract
-  terms (what a bump means, what stays fixed within one number, and that
-  pre-v1 the bump IS the whole of the announcement, D40 regime 1); §8.2
-  now leads with "`byte` is the only encoding implemented today" rather
-  than requiring a reader to find it three paragraphs down; and a new §3.6
-  states the `(?:P)\z` whole-subject/end-anchored idiom (survey row F9) —
-  why `\z` and not `$` (verified live: `(?:foo)$` matches `"foo\n"`,
-  `(?:foo)\z` does not), the `a|ab` counter-example showing a naive
-  `length == n` test is insufficient (verified live: `a|ab` on `"ab"`
-  reports `[0,1)`, `(?:a|ab)\z` on the same subject reports `[0,2)`), its
-  ruled-permanent status (`docs/dev/decisions.md` D77, plan row `[OS-4]`),
-  and the idiom's own DFA stamps (verified live: `RX_DFA_SCAN
-  "unanchored"`, `RX_DFA_PREFILTER "byte-class-bounded"`/
-  `"memchr-bounded"`).
-
-
-  **[DD-13b.W1.2], 2026-08-31 — the sixth revision, `rx_info.name` and
-  `rx_info.nentries`.** Two members APPENDED to §6's struct (no existing
-  offset moves) and `abi` 13 -> 14. `name` is the artifact's own name —
-  never NULL, stamping the `<prefix>` when a build supplies none — and it
-  answers a different question from `prefix`: one definition built under
-  three configs is three artifacts, three prefixes and ONE name.
-  `nentries` is the length of the whole `groups[]` array where `nnames`
-  counts the primary pattern's own rows, which stay a genuine PREFIX of
-  it; **they are EQUAL on every artifact pcrec emits today** and the
-  section says so in those words rather than implying a distinction that
-  has no producer yet. The field ships now because it rides this bump
-  rather than costing a second one.
-
-  **2026-09-10 (Frank's ruling, lane rpkg, wording only, same pass as
-  `limits.md` above):** §5.3's K33 paragraph restates the fit criterion as
-  free stack HEADROOM AT THE CALL SITE rather than thread-stack SIZE —
-  the musl-128KB and glibc-8MB numbers now read as worked examples of
-  headroom at call depth ~0, not as the rule. No shipped-behaviour claim
-  changed.
-
-  **`[OPTLOOP.1]` batch 1, 2026-09-22 (D119) — `abi` 28 -> 29, THE THREE
-  WHOLE-WINDOW PRE-CHECKS.** §6's `abi` change log gains its next entry:
-  every artifact of both engines gains the `<PREFIX>_END_WINDOW` and
-  `<PREFIX>_REQ_BYTE` stamps, every VM artifact gains `<PREFIX>_VM_START`,
-  and the three analyses' own populations gain the emitted bound, clamp and
-  `memchr` those stamps name. ONE bump for three mechanisms — one landing,
-  one emitted-scaffolding event. No struct offset moves, no `rx_info` member
-  is added or changed, no answer moves; §2.25-§2.27 of `tuning.md` carry the
-  axes and `end_window.rxt` the one mechanism that has an answer-level net.
-
-  **[REL-1.4], 2026-09-21 (D115) — `abi` 27 -> 28, THE VERSION STAMP.** §6's
-  `abi` change log gains its next entry: the essential generated-by line
-  now also names `PCREC_VERSION` (`lib/pcrec.h`) beside the abi digit —
-  `/* Generated by pcrec 0.1.0-beta (abi 28). Pattern: ... */`, on every
-  artifact of both engines regardless of `-fcomments`. No struct offset
-  moves, no `rx_info` member is added or changed, and no answer moves; the
-  comment TEXT is the only thing that changed. `PCREC_VERSION` itself is
-  independent of `abi` (versions the tool, not the emitted scaffolding).
+- `match_api.md` — the match-API contract, FACTS ONLY (rewritten by lane
+  specclean, 2026-10-09): §1 symbols and namespaces (the shared ABI block and
+  its `abi`-valued guard), §2 the fixed ABI types verbatim, §3 the entry points
+  (`<prefix>_search` with the find-all loop at §3.1 — the emitted
+  `<prefix>_next_pos` comment cites "match_api.md S3.1", so the loop stays
+  there — `_next_pos`, `_valid_upto`, `_match`, `_match_caps`, `_info`,
+  give-ups across entries, the `(?:P)\z` idiom), §4 the give-up and refusal
+  codes, §5 captures and groups (slot rules, concurrency at §5.3, named groups,
+  composition), §6 `rx_info` field by field and the `abi` rule, §6.3 every
+  stamp macro (an inventory table, then one anchored entry per stamp), §7 the
+  NUL-terminated compile entry, §8 the library structures, §9 encodings and
+  character positions, §10 the `_in` entries and the tiered default. **Cite it
+  by number** (`match_api.md §3.1.3`, or one paragraph, `§3.1.3¶4`), never
+  by line or anchor name; the numbering rule above applies, its contents
+  block is generated by `scripts/spec_toc.py`, and a §6.3 stamp is a numbered
+  paragraph of §6.3.x (the inventory table at §6.3.2¶1 gives each one). Every §6.3 value set is a table directly under a
+  `<!-- value-set: RX_NAME -->` marker, which `tests/registry/
+  axes_registry_check.sh` and `tests/codegen/run_fallback_table.sh` anchor on:
+  keep the marker with its table. Its history (revision notes, rulings,
+  walkbacks) is `docs/dev/history/match_api_record.md`, its `abi` change log
+  `docs/dev/history/abi_changelog.md`; `make test-spec-history`
+  (`tests/spec_history/`) keeps history out. `studies/specclean/claims.tsv`
+  maps every claim of the pre-rewrite text to its new home.
 
 - `table_contract.md` — the ruled contract for every command that outputs
   a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table

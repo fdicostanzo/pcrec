@@ -1,0 +1,194 @@
+docs/dev/lanes/vardesign_report.md	18	match_api.md §5.3	same	VALID	concurrency; binding-on-emitters
+docs/dev/lanes/vardesign_report.md	18	§10.5 (of match_api.md)	§5.3 (match_api.md#concurrency; formerly §10.5)	REPOINTED	old §10.5 buffer concurrency moved to §5.3
+docs/dev/lanes/vardesign_report.md	58	match_api.md §3.1	same	VALID	find-all caller loop
+docs/dev/lanes/varmvp_report.md	390	match_api.md §2	same	VALID	ABI types
+docs/dev/lanes/varmvp_report.md	390	§6's change log	docs/dev/history/abi_changelog.md	REPOINTED	abi change log moved
+docs/dev/lanes/varmvp_report.md	408	match_api.md §2	same	VALID	quoted ABI block
+docs/dev/lanes/vedge_report.md	238	match_api.md §2 quote and §6 log	match_api.md §2 quote and the abi log (docs/dev/history/abi_changelog.md)	REPOINTED	§2 VALID; abi log moved
+docs/dev/lanes/vmfl0_log.md	9	docs/spec/match_api.md §6.3	same	VALID	stamps
+docs/dev/lanes/w12_log.md	22	docs/spec/match_api.md:159 and :1602 ("abi is 13")	match_api.md#abi-guard and #abi	REPOINTED	topic from text: the two abi-number sentences (guard value; rx_info.abi rule)
+docs/dev/lanes/w12_report.md	111	match_api.md §6 (S9...)	same	VALID	rx_info members / abi sentences
+docs/dev/lanes/w12_report.md	236	match_api.md §6 says so in those words	same	VALID	rx_info section
+docs/dev/lanes/w12_report.md	336	match_api.md (two sentences, :159 and :1602)	#abi-guard and #abi (were :159 and :1602)	REPOINTED	abi-number sentences
+docs/dev/lanes/w13_report.md	70	match_api.md §6 (S9b ... composition subsection)	§6 / §5.4 #named-groups ... now §5.5 #composition	REPOINTED	named groups + composition moved out of §6
+docs/dev/lanes/w13_report.md	128	match_api.md:1754	match_api.md#abi	REPOINTED	a sentence stating the current abi value (D94 grep reader)
+docs/dev/lanes/w13_report.md	548	both match_api.md sentences	same	VALID	no locator (abi readers)
+docs/dev/lanes/w233_report.md	24	match_api.md §3.1	same	VALID	find-all loop
+docs/dev/lanes/w233_report.md	27	docs/spec/{rxt_format,cli,match_api}.md	same	VALID	no locator
+docs/dev/lanes/w235_report.md	111	match_api.md §3.1.1	same	VALID	next_pos ill-formed advance
+docs/dev/lanes/w23design_report.md	76	match_api.md §3.1	same	VALID	find-all protocol
+docs/dev/lanes/w5_facts.md	45	match_api.md §8.2 (lens 9 line cites :3319-3335 / :3399-3413)	§8.2; added "now #options"	REPOINTED	options struct stays §8.2; line numbers kept as drift record, anchor added
+docs/dev/lanes/w5_facts.md	57	docs/spec/match_api.md §6 (rx_info.abi paragraph, :1999-2295)	§6 (#abi); narrative now docs/dev/history/abi_changelog.md	REPOINTED	abi bump narrative moved to history
+docs/dev/lanes/w5_facts.md	162	docs/spec/match_api.md §8.2 is the contract (quoted lib/pcrec.h comment)	same	LEFT-UNRESOLVED	verbatim quote of lib/pcrec.h comment of the time; encodings now §9.1 #encodings-compiled; follows whatever lib/pcrec.h says
+docs/dev/lanes/w5_facts.md	187	match_api.md §8.2 (:3399-3413 today)	§8.2 (#options; :3399-3413 today)	REPOINTED	anchor added
+docs/dev/lanes/w5_facts.md	198	docs/spec/match_api.md §8.2 states the struct itself in full (quote of tuning.md)	same	VALID	options struct
+docs/dev/lanes/w5_facts.md	212	match_api.md:3450-3455	match_api.md#options-flags (was :3450-3455)	REPOINTED	mask-catalogue paragraph (options flags)
+docs/dev/lanes/w5_facts.md	291	match_api.md §8.2's exception list	match_api.md §1's exception list (#library-surface)	REPOINTED	naming-rule exceptions now in §1 item 2
+docs/dev/lanes/w5_facts.md	328	docs/spec/match_api.md §6.3 (one abi home)	same + abi log now docs/dev/history/abi_changelog.md	REPOINTED	abi log moved
+docs/dev/lanes/w5_facts.md	342	docs/spec/match_api.md §6 (rx_info.abi paragraph, :1999-2295)	§6 (#abi); narrative docs/dev/history/abi_changelog.md	REPOINTED	abi narrative moved
+docs/dev/lanes/w5_facts.md	355	docs/spec/match_api.md:159 and :1982 (:1999)	#abi-guard and #abi (were :159, :1982/:1999)	REPOINTED	abi-number sites re-pinned for 26->27
+docs/dev/lanes/w5_facts.md	360	docs/spec/match_api.md §6.3 ("one home")	same + [abi log now docs/dev/history/abi_changelog.md]	REPOINTED	quote of lens4 recommendation; abi log moved
+docs/dev/lanes/w5_facts.md	379	match_api.md (ONE canonical log)	same	VALID	no locator; historical recommendation
+docs/dev/lanes/w5_facts.md	437	docs/spec/match_api.md §6 (canonical abi home question)	same	VALID	historical open question; §6 still carries the abi rule (#abi)
+docs/dev/lanes/w5_report.md	46	match_api.md §8.2 struct quotation	same	VALID	options
+docs/dev/lanes/w5_report.md	48	match_api.md §8.2 mask catalogue	same	VALID	options
+docs/dev/lanes/w5_report.md	176	docs/spec/match_api.md §6 (gap-free abi log)	docs/dev/history/abi_changelog.md (then docs/spec/match_api.md §6)	REPOINTED	abi log moved
+docs/dev/lanes/w5_report.md	346	docs/spec/match_api.md §6 is THE abi log	docs/dev/history/abi_changelog.md (then ...§6)	REPOINTED	abi log moved
+docs/dev/lanes/w5_report.md	399	docs/spec/match_api.md §6, which says it IS the log	docs/dev/history/abi_changelog.md (then ...§6)	REPOINTED	abi log moved
+docs/dev/opt2_anchored_match_measurement.md	88	docs/spec/match_api.md §2	same	VALID	rx_matchfn typedef comment
+docs/dev/opt2_anchored_match_measurement.md	198	docs/spec/match_api.md §3.5's documented body	same	VALID	give-ups propagate / wrapper body (#giveups-per-entry, #k28-initializer)
+docs/dev/optloop/artrev/A01/review.md	167	match_api.md §3.1 (necessary-literal handoff)	same	VALID	§3.1 #search-skips
+docs/dev/optloop/artrev/A07b/review.md	185	match_api.md §10.3	same	VALID	buf==NULL
+docs/dev/optloop/artrev/generalize.md	303	match_api.md §10.9	same	VALID	tiered entry
+docs/dev/optloop/artrev/notebook/capability_doubled_word-rvA07b.md	69	match_api 10.3	same	VALID	buf==NULL
+docs/dev/optloop/b1ledger/CLAUDE.md	25	match_api.md §3.1 advance rule	same	VALID	find-all
+docs/dev/optvmfl_step0.md	371	docs/spec/match_api.md §6.3	same	VALID	stamp macros
+docs/dev/optloop/artrev/A07b/leads.tsv	4	match_api 10.3	same	VALID	buf==NULL
+docs/dev/plan_completed.md	2535	docs/spec/match_api.md (SPEC GRADUATION)	same	VALID	no locator
+docs/dev/plan_completed.md	2571	docs/spec/match_api.md (D6 panel)	same	VALID	no locator
+docs/dev/plan_completed.md	2949	docs/spec/match_api.md §3.1	same	VALID	\G sentence (#find-all-g)
+docs/dev/plan_completed.md	3212	docs/spec/match_api.md §3.1	same	VALID	reported start (#reported-start)
+docs/dev/plan_completed.md	3637	docs/spec/match_api.md (cell allowlist)	same	VALID	no locator
+docs/dev/plan_completed.md	3653	docs/spec/match_api.md (cell allowlist)	same	VALID	no locator
+docs/dev/plan_completed.md	3752	match_api.md §10 (and 3 bare docs/spec/match_api.md mentions)	same	VALID	buffers; bare mentions
+docs/dev/plan_completed.md	3762	match_api.md §6 (groups SORT KEY)	match_api.md §5.4 #named-groups (then §6)	REPOINTED	sort key moved to named-groups
+docs/dev/plan_completed.md	3794	match_api.md §6/§6.3	same	VALID	stamp table
+docs/dev/plan_completed.md	3795	match_api.md's stamp table	same	VALID	no number
+docs/dev/plan_completed.md	3797	match_api.md §6.3's tables	same	VALID	stamps
+docs/dev/plan_completed.md	3831	match_api.md §6.3 stamp	same	VALID	stamps
+docs/dev/plan_completed.md	3901	match_api.md §3.1 hunk (mid-char startpos, never round)	match_api.md §9.2 #startpos (then §3.1)	REPOINTED	startpos boundary moved to §9
+docs/dev/plan_completed.md	3965	match_api.md unchanged	same	VALID	no locator
+docs/dev/plan_completed.md	4233	match_api §4	same	VALID	give-up codes
+docs/dev/plan_completed.md	4239	match_api.md patches / entry (x2)	same	VALID	no locator
+docs/dev/plan_completed.md	4261	match_api.md §6 (abi readers)	same	VALID	abi sentence
+docs/dev/plan_completed.md	4268	docs/spec/match_api.md (pcrec_options spec hunk)	same	VALID	no locator
+docs/dev/plan_completed.md	4307	match_api.md §8.1	same	VALID	compile guarantees
+docs/dev/plan_completed.md	4433	match_api.md §6 is THE abi log	docs/dev/history/abi_changelog.md (then match_api.md §6)	REPOINTED	abi log moved
+docs/dev/plan_completed.md	4433	match_api.md §6 (home RULED)	docs/dev/history/abi_changelog.md (then match_api.md §6)	REPOINTED	abi log moved
+docs/dev/plan_completed.md	4437	docs/spec/match_api.md §6 is THE abi log	docs/dev/history/abi_changelog.md (then ...§6)	REPOINTED	abi log moved
+docs/dev/plan_completed.md	4546	match_api.md §6.3	same	VALID	stamps
+docs/dev/plan_completed.md	4630	match_api.md patches	same	VALID	no locator
+docs/dev/plan_completed.md	4634	match_api.md (2,096 lines)	same	VALID	no locator; historic size
+docs/dev/plan_completed.md	4654	match_api.md's discipline	same	VALID	no locator
+docs/dev/plan_completed.md	4672	match_api.md §3.1 (invalid-tolerant utf8)	match_api.md §9.1 #encodings-compiled (then §3.1)	REPOINTED	ill-formed default moved to §9
+docs/dev/plan_completed.md	4676	docs/spec/match_api.md §6.3	same	VALID	stamps
+docs/dev/plan_completed.md	4692	match_api.md 6.3	same	VALID	stamps
+docs/dev/plan_completed.md	4705	match_api.md 6.3	same	VALID	stamps
+docs/dev/plan_completed.md	4707	match_api.md 6.3	same	VALID	stamps
+docs/dev/plan_completed.md	4711	match_api.md §6 gains the abi-33 entry	docs/dev/history/abi_changelog.md (then match_api.md §6)	REPOINTED	abi log moved
+docs/dev/plan_completed.md	4711	match_api.md §6/§6.3 (tuning.md §2.29 spec hunks)	same	VALID	rx_info/stamps
+docs/dev/plan_completed.md	4717	match_api.md §6 (abi 37->38 readers)	same	VALID	abi sentence reader
+docs/dev/plan_completed.md	4835	match_api.md §3.1 (find-all sentence)	same	VALID	find-all
+docs/dev/plan_completed.md	5017	match_api.md §6/§6.3	same	VALID	stamps
+docs/dev/plan.md	175	docs/spec/match_api.md is the CONTRACT	same	VALID	no locator
+docs/dev/plan.md	226	match_api.md §3.1.2	same	VALID	valid_upto
+docs/dev/plan.md	272	docs/spec match_api.md §6's provenance line	same	VALID	provenance line is in §6 #abi
+docs/dev/plan.md	277	docs/spec/match_api.md:467	docs/spec/match_api.md#entry-inventory	REPOINTED	five entries exported unconditionally
+docs/dev/plan.md	277	match_api.md:188	match_api.md#stamp-vm-entry-shape	REPOINTED	un-suffixed entries forward to _in twins (VM entry shape forward/shared)
+docs/dev/plan.md	319	match_api.md (SPEC-CLEAN row, x3 bare)	same	VALID	no locator
+docs/dev/plan.md	320	docs/spec/match_api.md	same	VALID	no locator
+docs/dev/plan.md	349	match_api.md §3.1's v1 sentence	same	VALID	find-all
+docs/dev/plan.md	385	match_api.md's next changelog entry	the next entry of docs/dev/history/abi_changelog.md	REPOINTED	abi changelog moved
+docs/dev/plan.md	395	match_api.md's stamp catalogue	same	VALID	no locator
+docs/dev/plan.md	399	docs/spec/match_api.md §6	same	VALID	D80 spec hunk site
+docs/dev/plan.md	406	match_api §5.3/§10.5	match_api §5.3 #concurrency; formerly §5.3/§10.5	REPOINTED	old §10.5 moved to §5.3
+docs/dev/plan.md	406	spec hunks (match_api.md)	same	VALID	no locator
+docs/dev/plan.md	413	docs/spec/match_api.md (x1 bare); match_api.md §3.1 "Finding every match"	same	VALID	find-all
+docs/dev/plan.md	414	docs/spec/match_api.md (bare) + match_api.md rewrite of rx_info section	same	VALID	no locator
+docs/dev/plan.md	532	match_api.md §5.3; match_api.md §3.1's v1 sentence	same	VALID	concurrency; find-all
+docs/dev/plan.md	1183	docs/spec/match_api.md's contract	same	VALID	no locator
+docs/dev/plan.md	1286	match_api.md §6.3	same	VALID	token vocabulary
+docs/dev/plan.md	1287	match_api.md §6.3 (x2)	same	VALID	stamps
+docs/dev/plan.md	1297	match_api.md:4686-4703	match_api.md#stamp-dfa-start	REPOINTED	the DFA_START reverse-pass contradiction (text-determined)
+docs/dev/reviews/2026-08-14-r21-m4-design.md	77	match_api §1/§11.9 (DD-2 counters, M4.6)	same	VALID	refers to the M4 design doc docs/design/match_api_m4.md (checklist §11.9), not docs/spec/match_api.md
+docs/dev/reviews/2026-08-25-r37-dd13-stamps.md	20	match_api.md:1506 + §6.3	match_api.md#stamp-scoping (was :1506); §6.3 VALID	REPOINTED	"everything but RX_ENGINE is VM-only" = stamp scoping rule
+docs/dev/reviews/2026-08-25-r38-two-tier-entry.md	22	match_api.md §3 (email specimen timing)	match_api.md §10.9 #tiered-entry-cost (formerly §3)	REPOINTED	OPT-1 cost model moved
+docs/dev/reviews/2026-08-25-r38-two-tier-entry.md	23	match_api §3/§4/§10.9	§10.9 #tiered-entry-cost / §4 #budget-per-call (formerly §3/§4/§10.9)	REPOINTED	cost model and twice-budget moved
+docs/dev/reviews/2026-08-28-r40-artsize-term.md	15	match_api.md §6	same	VALID	flags/rx_info list of homes
+docs/dev/reviews/2026-08-28-r40-artsize-term.md	16	match_api.md §6.3	same	VALID	stamps
+docs/dev/reviews/2026-08-28-r40-artsize-term.md	16	match_api.md:1659-1720	match_api.md#stamp-dfa (was :1659-1720)	REPOINTED	per-mechanism bullets where _DFA_SCAN/_DFA_PREFILTER live
+docs/dev/reviews/2026-08-28-r40-artsize-term.md	20	match_api.md:159,1521	#abi-guard / #abi (were :159,1521)	REPOINTED	abi sites
+docs/dev/reviews/2026-08-28-r40-artsize-term.md	56	match_api.md:1083 (RX_TRAIL_FRAMES caller-read)	match_api.md#buffers-sizing (was :1083)	REPOINTED	sizing macros named as caller-read (guess from text)
+docs/dev/reviews/2026-08-28-r41-engabs-close.md	15	match_api.md:1570	match_api.md#abi (was :1570)	REPOINTED	abi site
+docs/dev/reviews/2026-08-28-r41-engabs-close.md	16	match_api.md §3.6	same	VALID	whole-subject idiom
+docs/dev/reviews/2026-08-28-r41-engabs-close.md	17	match_api.md argues why (_DFA_MATCH)	same	VALID	no locator (#stamp-dfa-match)
+docs/dev/reviews/2026-08-29-r44-dd13b-format.md	77	match_api.md:1484-1489 (D61 ngroups promise)	match_api.md#rx-info-counts (was :1484-1489)	REPOINTED	ngroups prefix promise
+docs/dev/reviews/2026-08-29-r44-dd13b-format.md	77	match_api.md hunk added to S9	same	VALID	no locator
+docs/dev/reviews/2026-08-29-r44-dd13b-format.md	78	stated in match_api.md	same	VALID	no locator
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	47	match_api.md S9b hunks	same	VALID	no locator
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	69	match_api.md:159	match_api.md#abi-guard (was :159)	REPOINTED	abi site
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	89	match_api.md:1349	match_api.md#rx-info-fields (was :1349)	REPOINTED	nnames field row
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	89	:1684-1695 (bsearch by name)	#dup-name-algorithm (was :1684-1695)	REPOINTED	duplicate-name algorithm
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	115	bsearch algorithm in match_api.md §6	match_api.md §5.4 #dup-name-algorithm (then §6)	REPOINTED	moved to §5.4
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	153	match_api.md:1349/1684-1695	#rx-info-fields/#dup-name-algorithm	REPOINTED	as line 89
+docs/dev/reviews/2026-08-30-r45-w1-impl.md	157	match_api.md:1504 (groups/nnames NULL/0)	match_api.md#named-groups (was :1504)	REPOINTED	groups NULL / nnames 0 rule
+docs/dev/reviews/2026-09-01-r49-opt5-step2.md	606	match_api.md:159 and :1647	#abi-guard and #abi (were :159, :1647)	REPOINTED	abi sentences
+docs/dev/reviews/2026-09-01-r49-opt5-step2.md	625	match_api.md §6.2 rx_info hunk	§6 rx_info hunk (#rx-info-fields; old §6.2 label)	REPOINTED	there is no §6.2 now; struct-layout hunk
+docs/dev/reviews/2026-09-01-r49-opt5-step2.md	727	match_api.md:159 reads 15	match_api.md#abi-guard (was :159)	REPOINTED	abi site
+docs/dev/reviews/2026-09-01-r49-opt5-step2.md	792	both match_api abi sentences	same	VALID	no locator
+docs/dev/reviews/2026-09-01-r49-opt5-step2.md	811	match_api §6 struct hunk; §6.3 count prose	same	VALID	rx_info / stamps
+docs/dev/reviews/2026-09-03-r53-alt-island.md	21	match_api.md §6.3	same	VALID	stamps
+docs/dev/reviews/2026-09-03-r53-alt-island.md	116	match_api.md:2168's abi pointer	docs/dev/history/abi_changelog.md (was match_api.md:2168)	REPOINTED	abi log entry pointer moved
+docs/dev/reviews/2026-09-12-r57-w23-format.md	103	match_api §3.1.1	same	VALID	next_pos / character boundary
+docs/dev/reviews/2026-09-20-frank-tour.md	137	docs/spec/match_api.md:3345	match_api.md#compile-guarantees (was :3345)	REPOINTED	"never abort()s" promise, §8.1
+docs/dev/reviews/2026-09-20-frank-tour.md	173	match_api.md "never abort()s..." (quote)	same	VALID	no locator
+docs/dev/reviews/2026-09-20-r61-fable-personal-review.md	31	docs/spec/match_api.md:3345	match_api.md#compile-guarantees (was :3345)	REPOINTED	never abort() promise
+docs/dev/reviews/2026-09-23-r1-var-design.md	11	docs/spec/match_api.md (bare)	same	VALID	no locator
+docs/dev/reviews/2026-09-23-r1-var-design.md	68	match_api.md:915-918	match_api.md#abi-types (was :915-918)	REPOINTED	rx_matchfn typedef
+docs/dev/reviews/2026-09-23-r1-var-design.md	69	match_api.md:1238	match_api.md#abi-block (was :1238)	REPOINTED	rx_* composability regardless of prefix
+docs/dev/reviews/2026-09-23-r1-var-design.md	102	match_api.md:178-179 (abi 24->25 move)	docs/dev/history/abi_changelog.md (was match_api.md:178-179)	REPOINTED	abi bump entry
+docs/dev/reviews/2026-09-30-r1-hyb-reseed-checks.md	239	match_api.md §6.3 table	same	VALID	stamps
+docs/dev/reviews/2026-09-30-r1-hyb-reseed-checks.md	250	match_api.md §6 abi paragraph and §6.3 stamp table	same	VALID	#abi and stamps
+docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md	16	match_api §6.3	same	VALID	stamps
+docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md	17	match_api §6 chain	docs/dev/history/abi_changelog.md (then match_api §6 chain)	REPOINTED	abi chain moved
+docs/dev/reviews/2026-09-30-r3-cls-tree-s2.md	17	match_api 3578/3635/3987	match_api#abi-guard/#abi (were 3578/3635/3987)	REPOINTED	listed as abi-number sites; guess (old lines hit abi/stamp text, not decisive)
+docs/dev/reviews/2026-10-04-r1-k82-handoff.md	21	match_api.md:2299/:3813	same	LEFT-UNRESOLVED	a byte-count reader list; old lines 2299 (provenance/type-block comments) and 3813 (DFA_TABLE/UNIFORM_FOLDS) are from a later doc version; candidates #emitted-comments, #stamp-dfa-table
+docs/dev/reviews/2026-10-05-r1-option-sets.md	47	match_api.md §8.2	same	VALID	API refusal / pcrec_error (#options-error)
+docs/dev/reviews/2026-10-05-r4-startset/ssc-checks.md	10	match_api.md:302	match_api.md#abi-guard (was :302)	REPOINTED	abi reader
+docs/dev/reviews/2026-10-05-r5-memfn-rev45/critic_B.md	40	match_api.md:2816	match_api.md#stamp-dfa-prefilter-offsets (was :2816)	REPOINTED	DFA_PREFILTER_OFFSETS
+docs/dev/reviews/2026-10-06-r2-starttable-recheck.md	26	match_api.md:2348, :2441 (name dfa_pfs[])	docs/dev/history/abi_changelog.md (was match_api.md:2348, :2441)	REPOINTED	dfa_pfs[] is named only in the abi log now
+docs/dev/reviews/2026-10-06-r2-starttable-recheck.md	31	match_api.md §3.1 :885	match_api.md §3.1 #find-all (was :885)	REPOINTED	empty-match advance rule
+docs/dev/reviews/2026-10-06-r-ss3-crit-checks.md	240	match_api §6 (K80 example, ABI bump)	docs/dev/history/abi_changelog.md (then match_api §6)	REPOINTED	abi entry
+docs/dev/reviews/2026-10-06-r-ss3-crit-checks.md	251	match_api §6 (63 is memfn R4a' ledger sentence)	docs/dev/history/abi_changelog.md (then match_api §6)	REPOINTED	abi entry
+docs/dev/reviews/2026-10-06-r-ss3-crit-checks.md	253	docs/spec/match_api.md §6's new entry	docs/dev/history/abi_changelog.md (then docs/spec/match_api.md §6)	REPOINTED	abi entry
+docs/dev/reviews/2026-10-06-r-ss3-crit-checks.md	291	match_api §6.3 values	same	VALID	stamps
+docs/dev/reviews/2026-10-06-r-ss3-crit-checks.md	297	match_api.md "already scans a byte at least as rare"	same	VALID	no locator (#stamp-req-why)
+docs/dev/reviews/2026-10-06-r-ss3-panel.md	34	match_api §6 wording	docs/dev/history/abi_changelog.md (then match_api §6) wording	REPOINTED	about the abi entry sentence (m7 in crit-checks)
+docs/dev/reviews/2026-10-06-r-starttable-crit-sound.md	385	match_api.md:4702	match_api.md#stamp-dfa-start (was :4702)	REPOINTED	reverse-pass row listing attempt/empty
+docs/dev/reviews/2026-10-07-r2-memfn-rowcon/r2_critic_customer.md	8	docs/spec/match_api.md	same	VALID	no locator
+docs/dev/reviews/2026-10-07-r2-memfn-rowcon/r2_critic_customer.md	128	match_api.md:4990 (§8.1, D56)	match_api.md#compile-guarantees (was :4990)	REPOINTED	never abort()
+docs/dev/reviews/2026-10-07-r2-memfn-rowcon/r2_critic_soundness.md	328	match_api §3.1	same	VALID	NULL empty subject (#subject-bytes)
+docs/dev/reviews/2026-10-08-r9-memfn-simd/correctness.md	6	docs/spec/match_api.md (stamps)	same	VALID	no locator
+docs/dev/reviews/2026-10-08-r9-memfn-simd/correctness.md	70	match_api.md §6 example	match_api.md §6.3 example (#stamp-vm-prefilter-why)	REPOINTED	stamp example moved to §6.3
+docs/dev/reviews/2026-10-08-r9-memfn-simd/correctness.md	231	match_api.md §6.3	same	VALID	stamps
+docs/dev/reviews/2026-10-08-r-decfallback-panel.md	44	match_api.md §6.3	same	VALID	stamps
+docs/dev/reviews/2026-10-09-r-locfin-panel.md	49	match_api.md:4686-4703; :788-796, :4829-4839	#stamp-dfa-start; #search-forms and #stamp-dfa-start	REPOINTED	DFA_START
+docs/dev/reviews/2026-10-09-r-locfin-panel.md	133	match_api.md:4731	match_api.md#stamp-dfa-scan (was :4731)	REPOINTED	machine-proxy sentence of DFA_SCAN
+docs/dev/reviews/lens_reports/CLAUDE.md	99	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens4_clarity_archaeology.md	250	docs/spec/match_api.md §6.3 (one home for abi log)	same + (abi log now docs/dev/history/abi_changelog.md)	REPOINTED	abi log moved
+docs/dev/reviews/lens_reports/lens4_clarity_archaeology.md	328	docs/spec/match_api.md §6.3 (abi contract's own section)	same + (log now docs/dev/history/abi_changelog.md)	REPOINTED	abi log moved
+docs/dev/reviews/lens_reports/lens4_clarity_archaeology.md	330	docs/spec/match_api.md §6.3's _ENGINE_SEL token table	same	VALID	stamp-engine-sel
+docs/dev/reviews/lens_reports/lens6_dependency_rxt_cut.md	51	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens6_dependency_rxt_cut.md	213	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens6_dependency_rxt_cut.md	692	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens9_public_surface.md	28	match_api.md §8.2 (struct quote)	same	VALID	options
+docs/dev/reviews/lens_reports/lens9_public_surface.md	31	match_api.md §8.2 delegates mask catalogue	same	VALID	options-flags
+docs/dev/reviews/lens_reports/lens9_public_surface.md	104	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens9_public_surface.md	153	match_api.md §8.0 consumer	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens9_public_surface.md	296	match_api.md §8.2 states the naming rule	match_api.md §1 #library-surface (then §8.2)	REPOINTED	PCREC_* naming rule is in §1 item 2
+docs/dev/reviews/lens_reports/lens9_public_surface.md	345	docs/spec/match_api.md uses RX_NCAPS	same	VALID	no locator
+docs/dev/reviews/lens_reports/lens9_public_surface.md	402	match_api.md §8.2 ("Two encodings compile")	match_api.md §9.1 #encodings-compiled (then §8.2)	REPOINTED	encodings moved
+docs/dev/reviews/lens_reports/lens9_public_surface.md	424	docs/spec/match_api.md §8.2 is the contract (suggested lib/pcrec.h comment text)	same	LEFT-UNRESOLVED	quoted proposed header comment; encodings now §9.1; follows lib/pcrec.h
+docs/dev/reviews/lens_reports/lens9_public_surface.md	438	docs/spec/match_api.md:3319-3335	match_api.md#options (was :3319-3335)	REPOINTED	pcrec_options code block
+docs/dev/reviews/lens_reports/lens9_public_surface.md	456	match_api.md (grep warn_emit_bytes)	same	VALID	no locator
+docs/dev/reviews/lens_reports/lens9_public_surface.md	465	docs/spec/match_api.md §8.2 states the struct itself in full (quote of tuning.md)	same	VALID	options
+docs/dev/reviews/lens_reports/lens9_public_surface.md	474	match_api.md's own ...	same	VALID	no locator
+docs/dev/reviews/lens_reports/lens9_public_surface.md	485	match_api.md §8.2 (+ tuning.md §4 sentence)	same	VALID	options
+docs/dev/reviews/lens_reports/lens9_public_surface.md	490	match_api.md §8.2 says (round-trip flags)	match_api.md §6 #flags (then §8.2)	REPOINTED	flags round-trip sentence is now in §6
+docs/dev/reviews/lens_reports/lens9_public_surface.md	510	match_api.md delegates	same	VALID	no locator
+docs/dev/reviews/lens_reports/lens9_public_surface.md	519	match_api.md §8.2 (point at tuning.md §2)	same	VALID	options-flags
+docs/dev/reviews/lens_reports/lens9_public_surface.md	686	match_api.md §8.0	same	VALID	worked example
+docs/dev/reviews/lens_reports/lens9_public_surface.md	733	match_api.md §8/§8.1/§8.2	same	VALID	library entry
+docs/dev/reviews/lens_reports/lens9_public_surface.md	737	match_api.md §1/§2/§6/§10	same	VALID	sections
+docs/dev/reviews/lens_reports/lens9_public_surface.md	758	match_api.md §8.2's struct	same	VALID	options
+docs/dev/reviews/lens_reports/lens9_public_surface.md	766	match_api.md §8.2's exhaustive-exceptions sentence	match_api.md §1 #library-surface (then §8.2)	REPOINTED	naming-rule exceptions in §1

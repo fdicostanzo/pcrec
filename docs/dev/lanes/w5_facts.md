@@ -44,7 +44,7 @@ Re-measuring against `b1f0a430` surfaced four corrections beyond what
    See §2.
 2. **Lens 9's line citations for `match_api.md` §8.2 have drifted**
    (`:3319-3335` at review time; the struct block is at `:3399-3413`
-   today) — a ~80-line shift from unrelated intervening doc growth
+   today, now `§8.2`) — a ~80-line shift from unrelated intervening doc growth
    (`docs/spec/CLAUDE.md`'s own revision-ledger entries). The FINDING
    (9 documented members against 19 shipped) is unchanged; only the
    citation moved. Re-aim by content, not by line, per `coding_guide.md`.
@@ -55,7 +55,7 @@ Re-measuring against `b1f0a430` surfaced four corrections beyond what
    NOT re-open these — lens 9's own §8 wave order lists them as steps 1-2,
    but they are already off the board.
 4. **`docs/spec/match_api.md` §6 (the `rx_info.abi` field's own
-   contract paragraph, `:1999-2295` at this pin) is a de facto FOURTH,
+   contract paragraph, `§6¶17`; the bump narrative is now `docs/dev/history/abi_changelog.md`; was `:1999-2295` at this pin) is a de facto FOURTH,
    continuous, gap-free abi bump narrative that lens 4's A1 finding does
    not name as one of the "three homes."** It runs backward from `27`
    ([EMIT-VERB]) through every single transition to `2` (`[DD-14.FB]`)
@@ -184,7 +184,7 @@ regressed either fix since.
 
 ## 4. P3 + §5.2 rider, and P6 — still open
 
-**P3.** `match_api.md` §8.2 (`:3399-3413` today) still quotes
+**P3.** `match_api.md` §8.2 (`§8.2`; `:3399-3413` today) still quotes
 `pcrec_options` with exactly the same **9 members** lens9 found:
 `prefix, encoding, flags, header_name, engine, step_budget, work_budget,
 unroll_k, frame_capacity`. The shipped struct (`lib/pcrec.h:760-994`) has
@@ -209,7 +209,7 @@ same as at review time). **Fold into one sweep of §8.2 + §4**, as lens9
 recommended — one commit re-quotes the 19-member struct and completes
 the mirror table.
 
-**P6.** `match_api.md:3450-3455` (drifted from lens9's `:3450`, same
+**P6.** `match_api.md §8.2¶11` (was `:3450-3455`; drifted from lens9's `:3450`, same
 paragraph) still reads: "which bits those are, and why each is masked,
 is documented per-flag in `lib/pcrec.h`'s own comments, which is the
 place to look — this document does not duplicate that catalogue."
@@ -288,7 +288,7 @@ at wave-order step 5, a standalone spec sentence, BEFORE step 6's P1
 rename). D104 instead folds it into the P1 wave as an actual RENAME:
 *"The P5 rider rides the same wave: `PCREC_DEFAULT_FEATURES` (an exported
 data symbol, the naming rule's second unstated exception) renames to
-`pcrec_default_features`, keeping match_api.md §8.2's exception list
+`pcrec_default_features`, keeping match_api.md §1's exception list (`§1¶3`)
 exhaustive."* So the correct disposition is: rename the symbol (4 call
 sites per lens9's earlier count), which makes §8.2's exception list
 correctly exhaustive with NO sentence added — there is no longer a
@@ -325,7 +325,7 @@ trigger; §7 item 2).
 
 Lens4 found "20→21 and 21→22 recorded nowhere in the tree at all" at
 review time, and recommended consolidating to ONE home,
-`docs/spec/match_api.md` §6.3, with the code comment cut to ~8 lines and
+`docs/spec/match_api.md` §6.3 (the abi log itself is now `docs/dev/history/abi_changelog.md`), with the code comment cut to ~8 lines and
 the shell message cut to one sentence.
 
 **Re-measured today (abi 27, six more bumps landed since the review:
@@ -340,7 +340,7 @@ the shell message cut to one sentence.
 
 **A fourth home lens4 never named, and it is the one that is actually
 complete**: `docs/spec/match_api.md` §6 (`rx_info.abi`'s own field
-paragraph, `:1999-2295` at this pin) is a continuous, gap-free narrative
+paragraph, `§6¶17`; the narrative is now `docs/dev/history/abi_changelog.md`; was `:1999-2295` at this pin) is a continuous, gap-free narrative
 running backward from `27` to `2` with **every single transition
 present**, including both of the transitions lens4 found recorded
 nowhere. It explains WHY the 20→21/21→22 gap exists in the other homes
@@ -352,12 +352,12 @@ already documented for `[DD-13b.W1.2]`'s 13→14/14→15); `[OPT-EDGE]` STEP
 1.1 then took 20→21, and `[CC-DIFF]` STEP 2 took 21→22. **This narrative
 has been extended by every single bump since it was written** — the
 `[EMIT-VERB]` lane's own citation table (`emitverb_report.md:324-325`)
-lists `docs/spec/match_api.md:159` and `:1982` (now `:1999` at this
+lists `docs/spec/match_api.md §1¶7` and `§6¶17` (were `:159` and `:1982`, `:1999` at this
 pin) as sites it re-pinned for 26→27, confirming this is a LIVE,
 actively-maintained fourth home, not a fossil.
 
 **What this changes for the implementing lane**: lens4's recommendation
-("one home, and it is `docs/spec/match_api.md` §6.3") is **already
+("one home, and it is `docs/spec/match_api.md` §6.3" [abi log now `docs/dev/history/abi_changelog.md`]) is **already
 substantively built**, at §6 rather than exactly §6.3, and has been kept
 current by every bump's own D76/D94 ritual since before the review. The
 actual work is:
