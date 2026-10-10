@@ -90,10 +90,38 @@ comparison. Log: `build/scratch/sweep.log` (worktree, gitignored). 67 s.
 - `make test-core` (incl. the new gate): 6 checks passed, 0 failed.
 - `make test` (perfrun), mech S792, `make test-spec-history`: see section 6.
 
-## 6. Validation verdicts (filled by the delivery)
+## 6. Validation verdicts and triage (triage lane, 2026-10-10)
 
-OWED -- chain armed detached: `build/scratch/val/chain.sh` in the worktree;
-logs `build/scratch/val/test.log` (+ `.perfrun`), `mech.log`, `spec.log`; the
-completion line is `DONE` in `build/scratch/val/test.rc`. Verdict: `grep -E
-'\*\*\* \[(Makefile:[0-9]+: )?test-' build/scratch/val/test.log` (empty = green);
-mech from the `== mech run COMPLETE` trailer of `mech.log`.
+First chain (5f06e1d3) came back RED on two counts; both fixed.
+
+1. `make test`: `test-codegen` failed. Cause: `[SABANCHOR]`
+   (`scripts/m6read_check_sab_anchors.py`) -- seven older sabotage rows
+   (S232, S252, S342, S395, S401, S406, S421) anchor `SAB_BEFORE` on the raw
+   spellings (`cx->opt->flags & PCREC_...`, `r->deny && (cx->opt->flags &
+   r->deny)`, `(flags & (A | B))`, ...) that this lane replaced with accessors.
+   Not a structural check keyed on spellings, not a census floor, not an
+   emitted-text change. Fix: re-anchored the seven rows (BEFORE and, where it
+   repeats the line, AFTER) onto the accessor spellings, same semantics and same
+   sabotage; the tripwire reads "all anchors resolve" (670 rows). Nothing
+   weakened.
+2. mech S792 UNDETECTED. Cause: the gate was fine (a direct run on a planted
+   raw read, and on `r->deny & flags`, `flags & ~mask`, `!(x->flags & K)`, all
+   exit 1, and the kept sabotaged tree's `core.log` shows the runner's own
+   `FAIL: raw option-word read` and `checks failed: 1`). The defect was the
+   mech `core` arm's scrape: `grep -m1 '^checks failed:'` read the FIRST
+   summary in `core.log`, which is the first sub-binary's (sat_arith_check:
+   `7 passed / 0 failed`), not the runner's total at the end. So the core arm
+   was blind to every check the runner itself runs after its sub-binaries
+   (a pre-existing mech bug the new gate was the first to expose). Fix:
+   `tests/mech/run_sabotage_matrix.sh` core arm takes the LAST summary pair
+   (`tail -1`), with a comment saying why.
+3. `docs/dev/artifact_size_log.tsv` modified: a side effect of the full test run
+   (the artifact-size harness regenerates it); it is committed only by a
+   deliberate regeneration (last: 042e9d3c), so restored with `git checkout`.
+
+Verdicts (tip is the commit carrying this report; chain `build/scratch/val2/`):
+- `make strict`: rc 0.
+- mech S792: `core:1fail/5pass DETECTED`, `== mech run COMPLETE: 1 rows
+  (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0 ...)`.
+- `make test-spec-history`: rc 0.
+- full `make test`: see the line appended below.
