@@ -51,3 +51,12 @@ might beat memchr when the first-picked byte is common in the subject. Open:
 was plain-case excluded from batch 1 deliberately (memchr/memmem already
 strong), or is it simply not reached yet? Check integration.md §R4.9 before
 evaluating.
+-> evaluated 2026-10-10: answered, deliberate. integration.md §R4.9.7.1
+   ("the glibc-inside trap") excludes `fn-memchr` bodies from batch 1. A
+   case-sensitive run scans ONE byte (pcrec's rarest pick: `z` at offset 5 in
+   `qeeeez`) with glibc `memchr`, which is already SIMD inside, picked by
+   CPU at load time. There is no measured cell showing a w16/w32 row beating
+   it. The form is FILED as the `vrun` over `fn-memchr` row, with three
+   trigger cells: exact window with a rare pick, exact window with a dense
+   pick, and OFS run-pinned (`/user|/users`). This entry adds nothing new
+   beyond that row.
