@@ -51,7 +51,9 @@ the chosen one), and one `END`.
 - `<what>` on `SEL`: `form=… op=… handoff=…` (arms and fn; the classes of
   those fields of the site), or `run=<class> len=<run_len>` (runcmp).
 - `verdict` on `ROW`, what the walk did with the row:
-  - `DENIED:<deny>` — skipped by a deny bit (`MF_D_RUN_OVERLAP`); the gate
+  - `DENIED:<deny>` — skipped by a deny bit (`MF_D_RUN_OVERLAP`), or,
+    printed as plain `DENIED`, by the row's own `--memfn=no-<name>` (an
+    options.def row, R4e' batch 1); the gate
     is not asked (`gate=-`);
   - `DECLINED` — the gate declined it (`gate=DECLINED`, its fields), and
     the walk moved on; its predicate was not asked, or was asked and does
@@ -72,7 +74,10 @@ the chosen one), and one `END`.
   Field and class names are `memfn/src/fields.def`'s.
 - `chosen` on `END`: the chosen row, or `-` (no row served: the kit
   refuses the site, and `fields` are the last declined row's, its total
-  fallback's, which the refusal text names).
+  fallback's, which the refusal text names), or `none` (R4e' batch 1: an
+  OPTIONAL slot chose no row, which is the ordinary answer and NOT a
+  refusal: the `fn` table's PREFIX walk, and a PREFIX row's named rung
+  re-asked by `kit_ask`; `fields` are the last declined row's, or `-`).
 - `would_decline` keeps N1's meaning, so N2's census reads an enforcing
   build unchanged:
   - at `define` and `run`: `1` iff the gate MOVED the selection, i.e. the
@@ -87,7 +92,8 @@ the chosen one), and one `END`.
 
 `grep 'MFTRACE END' | grep 'would_decline=1'` is the would-decline census:
 selections the gate changed, plus refused uses. `chosen=-` lines are the
-define/run refusals.
+define/run refusals; `chosen=none` lines are not (an optional slot that
+chose nothing).
 
 ## Reach (at exit)
 

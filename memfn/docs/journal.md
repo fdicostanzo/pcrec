@@ -1179,6 +1179,34 @@ pointer when a kit change merges to main.
 - Waiting on RQ-3 (abi 71; its chain is running) before the §8 slot chain
   and R-13.
 
+## 2026-10-09 ~19:20 — pause for reset (Frank's ask)
+
+- **R-12 VMLAZY.**
+  - RQ-3 landed on main (631771b7, abi 71). Lane vmlmerge merged main into
+    VMLAZY at abi 72; the readers were found by grep, and 12 light suites
+    and S693 are green.
+  - Recursion-identity (A) went red on 114/53/53/28 lazy patterns.
+    Kit ruling R1: an 8th exception, `lazy_prefix_rewrite`, a one-sided
+    mechanical rewrite of the reference. Lane vmlrid built it: matched by ID
+    on every axis, near-miss and S711 plants rejected, gate 18/0.
+  - lane/memfn-vmlazy fast-forwarded to 1bb49dee. slot17 is RUNNING
+    detached under main's GO.
+  - vmlmerge ended without reading R1 (sent while it was busy). Again:
+    rulings go as a file plus a message, and a fresh lane gets the work.
+- **R-13 batch 1.**
+  - Built by lane r13 as CANDIDATE: vrun-w16/w32, KA-only until RQ-2.
+    SIMD-off 0 movers, G2 51.2M/0, solo mech 20/20 clean. Q-R13-1..7 ruled
+    with the lane's leanings.
+- **D157 (Frank, via main).**
+  - RQ-2 states a ranked rarity array, and the distance rule is the kit's.
+    Lane r13doc recorded it in integration.md.
+  - Main's correction (do not presume any rule) went to the lane as ruling
+    R1, and the lane's second commit removed the candidate rule.
+    lane/memfn-r13 is at ae7b6a22.
+- Pruned the stale worktrees r4e0/r4e0b/w5fix/r12.
+- Frank asked when the first SIMD directional reading comes. It comes after
+  RQ-2, then the kit's rank_pos lane, then the RQ-4 timing slot.
+
 ## 2026-10-09 evening — wake after reset; slot17 read; startset red fixed
 
 - Woke from lane/memfn-r13's wake.md; heartbeat cron `17,47` recreated.
@@ -1204,6 +1232,44 @@ pointer when a kit change merges to main.
 - LESSON: a slot stage that dies on a usage error is a stage that measured nothing.
   Dry-run every new invocation's argument parsing before the slot.
 
+## 2026-10-09 night — R-13 follow-up (rankuse) built; R-12 delivered
+
+- R-12 delivered as `done:` on lane/memfn-vmlazy @ 92213567:
+  - slot17b read: make test green; VARIANTS FAILED only by the abi stamp; every mover
+    by id is in the lazy set (vartri).
+  - Four yes-collapsed floors fell by 1 when `(a{2,3}?){2,3}` crossed the lowered cap,
+    and VARIANT_PINS was re-pinned from slot17b's tallies.
+  - Main merges R-12 LAST, after specnum and lfl0, then gives a GO for a re-merge
+    plus slot (abi changelog re-homed to docs/dev/history/abi_changelog.md).
+- main 7b98a046 (RQ-2) merged into lane/memfn-r13 (6d16bbac): R-13's sink ops renumbered
+  MF_SITE_ABI 9 -> 10, with readers found by grep.
+- Lane rankuse (opus) built the kit's read of `rank_pos`:
+  - KB = the first ranked position other than KA. WHICH position is derived; HOW MANY
+    (two) is an UNMEASURED DEFAULT with the deny `--memfn=no-vrun-kb`.
+  - `rank_ok` refusals; bounds 2,700/2,800; SIMD-off 0 movers.
+  - Lane rkfix renumbered its S738-S742 (lfl0's ids) to S750-S754 (main's block), and
+    fixed two inherited reds: C4 (S726 renamed; 6 allowlist rows, floor 27) and K37.
+  - S522/S725/S726 solo clean. Fast-forwarded into lane/memfn-r13.
+- LESSONS:
+  - rankuse ran full-population emit_sweep and G2 while main's specnum chain held the
+    box, despite a light-only brief. Main marked that perfrun contaminated.
+  - rankuse missed two renumber messages while busy; its ids were fixed by a fresh lane.
+  - Future briefs: list heavy runs by NAME, and require run start/end times in the
+    report.
+- slot18 is scripted (memfn-slot/slot18/run.sh): 4 identity sweeps, N2, G2 full,
+  make test, 33 mech rows. It waits for seq5's end ("lfl0 CHAIN DONE; seq5 end") and
+  main's GO.
+
+## 2026-10-10 ~00:40 — session close (Frank /close)
+
+- Paused while waiting:
+  - R-12: the vmlazy re-merge is prepped at 0517caea (specnum in, abi-72 entry
+    re-homed). slot19 is scripted and waits for lfl0's merge and the NEXT main's
+    GO.
+  - R-13: built at 9348a747; slot18 runs after R-12 lands.
+  - Main reset at ~00:30.
+- wake.md was rewritten on both branches. A responses notice for R-13 is posted.
+  Nothing of the kit's is running on the box.
 ## 2026-10-10 — R-12 re-landed (slot19)
 
 - On main's GO (e33fb821: lfl0 landed, main green), I merged e33fb821 into
@@ -1220,3 +1286,42 @@ pointer when a kit change merges to main.
   verdict needs the full list, which takes a re-run of the comparator on
   the slot's own binaries. Budget ~25 min for it, or have the slot script
   dump the keys.
+
+## 2026-10-10 — R-13 brought onto post-R-12 main (lane r13merge)
+
+- R-12 merged to main (a15fb77b). Merging it into lane/memfn-r13 conflicted
+  in 8 files, 4 of them main's [SPEC-CLEAN] rewrites. I aborted the merge
+  and delegated it to lane r13merge (opus). It kept main's structure and
+  re-homed R-13's facts at limits §8.3¶3, registry §6¶8a/¶8b (floor literal
+  3), tuning §2.43¶3a/¶3b/¶4 and match_api §6.3.10. The history narrative
+  was dropped (the history files are frozen; the narrative stays in the
+  lane reports).
+- One red, fixed in the lane: the axes_registry_check coverage pin went
+  216 -> 217, because R-13's memfn floor arm is now reached. The stale pin
+  was already on R-13's own tip.
+- Reviewed: the ledger unions lost no entry (by count), and the spec diff
+  against main is R-13 facts only. Fast-forwarded lane/memfn-r13 to
+  48e56aad; build green. Light suites green in the lane (report
+  docs/dev/lanes/r13merge_report.md).
+- OWED, a kit follow-up: stale "no SIMD form exists" comments in
+  lib/pcrec.h, src/dump/axes_dump.c and tests/memfn/libc_census.py.
+- Next: slot18 on main's GO (revbuild holds the slot).
+
+## 2026-10-10 — R-13 slot18 read, delivered
+
+- Main's GO came after REVEND (abi 73) merged. Merged 9024449f into
+  lane/memfn-r13 (2a44386a): registry coverage pin 216+3+1 = 220, lanes
+  index union. Light suites green (8 suites).
+- slot18 09:56-11:22: build/strict/SABANCHOR, N2 (0 fails), G2 full
+  192,654,553/0, make test no red, mech 33 COMPLETE all zero. The sweeps
+  exit 1, as expected. A triage lane (s18tri, sonnet) read them by id: SIMD-off
+  moves only --list-axes; the five `start` arm floors are stale on main (equal
+  both sides, pins of 26d2069f) and go to main; the SIMD movers are vrun
+  text only and reconcile to simdfloor's 44.
+- vrun-w16/w32 pcrec N2 floors pinned at 70 (floor(0.9 x 78)).
+- done: R-13 posted. Next: RQ-4's tier-U timing slot (Frank's first SIMD-on
+  vs SIMD-off reading), on main's grant.
+- Side work: started memfn/docs/ideas.md (Frank) on lane/memfn-ideas, 6
+  entries from Frank's vrun questions (min-length end bound, duplicate
+  constants, plain-case = §R4.9.7.1 deliberate, byte+class filter, held mask,
+  VM start-set skip).

@@ -1,0 +1,46 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text; no third-party source
+ *   (memfn/PROVENANCE.md).
+ *
+ * memfn/src/levels.def — THE KIT'S ISA LEVELS (R4e' batch 1, request R-13;
+ * docs/design/memfn/integration.md §R4.9.2.2). An X-macro in options.def's
+ * idiom, kit-private: pcrec's build never reads it and pcrec's sources never
+ * include it (C4). The ONE place a level is named: a SIMD row references a
+ * level by token and never spells a guard; the seam (ofsskip.c) writes every
+ * directive from these strings; the tests read them through mf_levels().
+ *
+ * MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp)
+ *   token       kit-private id (an enum in kit.h, in this file's order)
+ *   family      the architecture family
+ *   guard       the preprocessor condition the level's text sits under:
+ *               predefined macros ONLY (RB-3), never a probe or a run-time
+ *               test. It names the architecture and excludes the ILP32 ABIs
+ *               (i686 -msse2 and x32 -mx32 both define __SSE2__; x32 also
+ *               defines __x86_64__: gcc -dM -E, 2026-10-08, [r9 C-8])
+ *   header      the compiler header the level's text includes, INSIDE the
+ *               guard, once per artifact ([r9 C-7, F-10]: a compiler header,
+ *               not a libc one, so the artifact stays self-contained). A
+ *               column the design's sketch did not list; it is the level's
+ *               own fact (w16 <emmintrin.h>, w32 <immintrin.h>, §R4.9.2.2)
+ *   vw          the register width in bytes, the DERIVED vector width (D149)
+ *   test_march  the -march the harness compiles this level at ([r9 F-13])
+ *   forbid      instruction classes (kit.h MF_I_*) a row at this level may
+ *               NOT use until a pcrec-bench run on Zen 1 shows no loss
+ *               ([r9 M-11]): PDEP/PEXT (microcoded on Zen 1) and gathers
+ *   stamp       the level's token in MEMFN_FORMS and in a helper's name
+ *               (`<fn>__<stamp>`), opaque and arch-blind
+ *
+ * ORDER: ascending width. The seam writes level blocks in this order (each
+ * helper defined before the one that falls through to it) and the
+ * selector's chain in the reverse (top level first). The w32 guard implies
+ * the w16 guard under gcc 15.2 (`-mavx2 -mno-sse2` keeps neither macro), so
+ * a w32 helper's fall-through to w16 always names a defined function.
+ * A 64-byte level and every aarch64 level are born with their first row
+ * (§R4.9.7's filed list).
+ */
+MF_LEVEL(LV_X86_W16, "x86-64",
+         "defined(__x86_64__) && !defined(__ILP32__) && defined(__SSE2__)",
+         "emmintrin.h", 16, "x86-64", MF_I_PDEP_PEXT | MF_I_GATHER, "w16")
+MF_LEVEL(LV_X86_W32, "x86-64",
+         "defined(__x86_64__) && !defined(__ILP32__) && defined(__AVX2__)",
+         "immintrin.h", 32, "x86-64-v3", MF_I_PDEP_PEXT | MF_I_GATHER, "w32")

@@ -174,6 +174,12 @@ struct mf_art {
     const char **libc;          /* noted libc names, sorted, distinct (§R4.3.3) */
     uint32_t    nlibc, libc_cap;
     unsigned    trace_id;       /* MF_TRACE: the art's number in the process  */
+    /* R4e' batch 1: the SIMD forms rendered on this art, MEMFN_FORMS' value
+       (`<form>@<level>+<level>`, one token per FUNC carrying a PREFIX row,
+       in site order; empty = "none"), and the levels whose header has been
+       included (bit LV_*: once per artifact per level, [r9 C-7]) */
+    kb          forms;
+    unsigned    simd_inc;
     char        err[256];
 };
 
@@ -267,6 +273,89 @@ int kit_sink_ok(mf_art *art, const mf_sink *o, const char *who);
 /* Formatted text straight to the sink. */
 void kit_out(mf_sink *o, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
+/* ---- the ISA levels and the SIMD rows' declaration (R4e' batch 1) -------
+ *
+ * integration.md §R4.9.2.2. The instruction classes a row's text uses
+ * ([r9 M-11]) and a level forbids; levels.def's tokens as an enum. */
+enum {
+    MF_I_LOADU     = 1u << 0,   /* unaligned vector load                    */
+    MF_I_AND       = 1u << 1,   /* vector and                               */
+    MF_I_CMPEQ     = 1u << 2,   /* bytewise compare-equal                   */
+    MF_I_MOVEMASK  = 1u << 3,   /* byte mask to a scalar bit mask           */
+    MF_I_BROADCAST = 1u << 4,   /* a byte broadcast to every lane           */
+    MF_I_CTZ       = 1u << 5,   /* count trailing zeros (scalar)            */
+    MF_I_PDEP_PEXT = 1u << 6,   /* BMI2 deposit/extract (Zen 1: microcoded) */
+    MF_I_GATHER    = 1u << 7    /* vector gathers                           */
+};
+
+enum {
+#define MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp) token,
+#include "levels.def"
+#undef MF_LEVEL
+    MF_NLEVEL
+};
+
+struct fn_in;
+
+/* A SIMD row's declaration (§R4.9.2.2, as built): the ONE deny carrier is
+ * its options.def row `opt` (its layer and budget are READ there, never
+ * restated); the level its text needs; the BODY rows it may sit over
+ * ([r9 C-2], [r9fu]: `fn-pair` alone in batch 1); the narrower same-form
+ * rows its ladder NAMES, top-down (data, never a walk-on); the instruction
+ * classes its text uses; its derived reach (VW + T, a CORRECTNESS bound,
+ * §R4.9.3); its bound on the guarded bytes one rendering writes (Q-R9-9,
+ * D155 item 9; checked by tests/memfn/simd_bounds.tsv and G2); its APPLIES
+ * over the calling site and the predicate; and its helper's text. */
+typedef struct mf_formdecl {
+    const char        *opt;         /* options.def name = the row's name     */
+    const char        *form;        /* MEMFN_FORMS' id (the form stem)       */
+    unsigned           level;       /* LV_*                                  */
+    const char *const *over;        /* NULL-terminated BODY row names        */
+    const char *const *rungs;       /* NULL-terminated rung row names        */
+    uint32_t           insn;        /* MF_I_* the text uses                  */
+    uint32_t         (*reach)(const mf_site *s, const mf_pred *p);
+    uint32_t           guarded_max;
+    int              (*applies)(const mf_site *s, const mf_pred *p);
+    /* Writes the helper's BODY (after the seam's head): its entry test,
+       falling through to `fall` with the head's arguments, its block loop
+       and the closing brace. Bytes outside the guard: none. */
+    int              (*render)(mf_art *art, const mf_hooks *h, const struct fn_in *x,
+                               const struct mf_formdecl *d, const char *fall,
+                               mf_sink *o);
+} mf_formdecl;
+
+/* The offset-skip function's walk input (ofsskip.c `fn_rows[]`): the
+ * predicate, its loop guard's `maxk` (= T) and its scan (ofs_fn_scan's
+ * offset `k`, byte `a` and second member `b`, -1 for none); the calling
+ * site; for a PREFIX row, the BODY row the seam chose (by name, the OVER
+ * test) and its helper's name `<fn>__body` (a helper's last fall-through,
+ * called by NAME: D155; the row never sees the body's text); and whether
+ * the define sink offers the bracket ops (a host that cannot count guarded
+ * bytes never receives them). */
+typedef struct fn_in {
+    const mf_pred *p;
+    int maxk, k, a, b;
+    const mf_site *site;
+    const char *body_row;
+    const char *body_fn;
+    int brackets;
+} fn_in;
+
+#define vrun_w16_decl MF_NS(vrun_w16_decl)
+#define vrun_w16_ct   MF_NS(vrun_w16_ct)
+#define vrun_w32_decl MF_NS(vrun_w32_decl)
+#define vrun_w32_ct   MF_NS(vrun_w32_ct)
+#define kit_level     MF_NS(kit_level)
+
+/* vrun.c: the batch-1 rows `vrun-w16`/`vrun-w32` (§R4.9.7): the fused
+ * run scan over a FUNC whose predicate is one RUN term and its site's only
+ * predicate, sitting over `fn-pair`. */
+extern const mf_formdecl vrun_w16_decl, vrun_w32_decl;
+extern const gate_contract vrun_w16_ct, vrun_w32_ct;
+
+/* Level `lv` (LV_*) of levels.def (levels.c). */
+const mf_level *kit_level(unsigned lv);
+
 /* ---- the offset-skip function, shared by two sites (ofsskip.c) ----------
  *
  * The offset-skip block is ONE renderer with two customers: the offset-skip
@@ -344,6 +433,9 @@ typedef struct {
     const char    *table;
     unsigned       site, phase;
     const gate_in *in;
+    int            optional;    /* the slot needs no row (a PREFIX walk, a
+                                   named rung): choosing none is no refusal,
+                                   END says `chosen=none` (R4e' batch 1)     */
 } gate_tctx;
 
 /* ---- the shared walk (integration.md §R4.9.2.3) ---------------------------
@@ -364,9 +456,16 @@ typedef struct {
                                                    no row has a deny        */
     int       (*holds)(size_t i, const void *x); /* row i's predicate over
                                                    the walk's input `x`     */
+    const char *(*opt)(size_t i);               /* row i's options.def name,
+                                                   denied by `no-<name>` in
+                                                   the site's `opts`; NULL
+                                                   (or a NULL name): none
+                                                   (R4e' batch 1)            */
 } kit_table;
 
-#define kit_walk MF_NS(kit_walk)
+#define kit_walk       MF_NS(kit_walk)
+#define kit_ask        MF_NS(kit_ask)
+#define kit_opt_denied MF_NS(kit_opt_denied)
 
 /* The first row of slot `slot` of table `t` that `denies` does not deny,
  * that the gate passes at `gphases` over `in`, and whose predicate holds over
@@ -377,6 +476,17 @@ typedef struct {
 size_t kit_walk(const kit_table *t, int slot, const gate_in *in, unsigned gphases,
                 uint64_t denies, const void *x, const gate_tctx *tc,
                 gate_verdict *why);
+
+/* Asks row `i` of table `t` the walk's questions (deny, gate, predicate) on
+ * its own: 1 iff it would be CHOSEN. Traced as a one-row selection under
+ * `tc`. A PREFIX row's NAMED rungs are re-asked this way (§R4.9.2.3, "the
+ * ladder": data, never a walk-on). */
+int kit_ask(const kit_table *t, size_t i, const gate_in *in, unsigned gphases,
+            uint64_t denies, const void *x, const gate_tctx *tc);
+
+/* 1 iff `--memfn=` string `opts` holds the token `no-<name>` (options.c; the
+ * string was validated by mf_opts_check). NULL `opts` or `name`: 0. */
+int kit_opt_denied(const char *opts, const char *name);
 
 #ifdef MF_TRACE
 #define gate_trace_art MF_NS(gate_trace_art)

@@ -20,6 +20,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "abc[0-9]+xyz"'
 SAB_REACH_EXPECT='static inline size_t rx_ofsskip(const unsigned char *subject, size_t n, size_t pos)'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (prefix && prefix->render(art, h, &x, o)) return -1;'
+# Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
+# (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
+SAB_BEFORE='    for (unsigned j = nr; j-- > 0;)'
 SAB_AFTER='    if (!prefix) o->puts(o->u, "\n");   /* SABOTAGE S687 */
-    if (prefix && prefix->render(art, h, &x, o)) return -1;'
+    for (unsigned j = nr; j-- > 0;)'

@@ -1,0 +1,28 @@
+# tests/memfn/simd_accept.tsv -- THE SIMD ACCEPTANCE RECORD ([MEMFN] R4e'
+# batch 1, R-13; docs/design/memfn/integration.md §R4.9.6 "The acceptance
+# record and its lifecycle"). One line per SIMD row x level x official CPU
+# class (§R4.9.5's table: w16 and w32 are judged on ubuntubudu, Zen 1, AND
+# the dev box, Zen 4). A row lands ONLY with a CANDIDATE line per level and
+# class (rows_check.py check F, `make test-memfn-rows`).
+#
+# state  CANDIDATE (landed behind -fmemfn-simd, OFF by default, tier-U
+#        evidence only), ACCEPTED (a tier-O bench reading met the bar on every
+#        official box running the level), STALE (the comparator moved; reads
+#        as CANDIDATE until re-measured), REJECTED (a tier-O loss).
+# tier   unofficial | bench. Only a `bench` line may be ACCEPTED or REJECTED.
+# The digests and the transcript are written by a TIMING RUN, never by hand:
+# C19 (the comparator/transcript digest check) is born with the first
+# transcript; until then every line is CANDIDATE with `-` in those columns
+# and check F says the C19 half is UNREACHED.
+#
+# row	level	cpu_class	state	tier	bins	prereg	bench_run_id	bench_commit	bench_gcc	bench_glibc	pcrec_commit	kit_commit	comparator_digest	transcript_comparator_digest	march	verdict	transcript
+# vrun-kb (lane rankuse, 2026-10-09) is not a level row but an option of both:
+# the vrun rows' second filter position. Its lines are the levels it moves.
+vrun-w16	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-w16	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-w32	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
+vrun-w32	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
+vrun-kb	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-kb	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-kb	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
+vrun-kb	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-

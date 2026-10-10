@@ -168,7 +168,7 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # are the kit's option registry (memfn/src/options.def, through
 # mf_options()); pcrec names none. Present, header-truthful, its columns
 # resolvable by name. Its INDEPENDENT control is a member-count FLOOR pinned
-# as a literal in docs/spec/registry.md §6¶8 ("memfn section floor: N"), which
+# as a literal in docs/spec/registry.md §6¶8b ("memfn section floor: N"), which
 # shares no source with options.def: born with the first row (R4d). Until
 # then the registry is empty and the floor arm is UNREACHED (K35) — printed
 # as such, never counted as a pass. A row that lands WITHOUT its floor fails.

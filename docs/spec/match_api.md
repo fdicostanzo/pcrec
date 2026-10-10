@@ -2267,8 +2267,14 @@ kit rendered, and which C library functions the artifact calls.
   forms that make it differ, comma-joined in site order, a site that cascades
   between ISA levels carrying them as `ID@LEVEL+LEVEL`. Ids and level names are
   OPAQUE: bucket on `"none"` / not-`"none"`, never parse an id. SIMD is off by
-  default and no SIMD form exists, so the value is `"none"` on every artifact
-  today (D147 addendum 10, Q55). A scalar-layer kit change does not change it;
+  default, so the value is `"none"` on every artifact compiled at the default
+  (D147 addendum 10, Q55). At `-fmemfn-simd` it names the SIMD rows rendered,
+  one token per FUNC they reach, in site order (`vrun@w32+w16`; the rows are
+  `registry.md` §6¶8a). The levels are the RENDERED ones, top-down (one per
+  `#if`/`#elif` arm of the FUNC's selector), never the live one: the
+  consumer's `-march` decides which arm compiles, so `vrun@w32+w16` built at
+  the default x86-64 runs the w16 arm and built with `-mgeneral-regs-only`
+  the scalar one. A scalar-layer kit change does not change it;
   such a change is attributed by its `abi` event and its `--memfn=no-NAME`
   deny row, and a consumer that must tell two same-`abi` builds apart records
   the build recipe (`abi`, pcrec commit, argv).
@@ -2289,8 +2295,9 @@ kit rendered, and which C library functions the artifact calls.
   carries both lines, and `MEMFN_LIBC` equals the undefined function symbols
   of the artifact's `-O0 -fno-builtin` object minus the constant-size `memcpy`
   loads. `MEMFN_FORMS`' identity half compares default against
-  `-fno-memfn-simd` (`tuning.md` §2.43), reported "identical (no SIMD form)"
-  while no SIMD form exists; its movers half stays unreached until one does.
+  `-fno-memfn-simd` (`tuning.md` §2.43); its movers half holds an
+  `-fmemfn-simd` compile byte-identical to the default exactly where its
+  `MEMFN_FORMS` reads `"none"`.
 
 <a id="s6-3-10-p8"></a>[6.3.10¶8] **`<PREFIX>_SIMD_GUARDED_BYTES`** — how many bytes of the artifact sit under a
 CPU-level guard; written by pcrec directly after `<PREFIX>_MEMFN_LIBC`, an
@@ -2307,8 +2314,10 @@ per-level helpers and the guarded arms of its selector,
 length decision uses: comment bytes `-fno-comments` dropped are included, and
 the symbol prefix is counted at a fixed width, so neither `-fno-comments` nor
 `-p` changes the value. It is zero on every artifact that holds no such block,
-which is every artifact today: no SIMD form exists and `-fmemfn-simd` is inert
-(`tuning.md` §2.43). It is the artifact's size beyond its SIMD-off compile.
+which is every artifact compiled at the default `-fno-memfn-simd`; at
+`-fmemfn-simd`, every artifact whose `MEMFN_FORMS` names a SIMD row carries a
+nonzero count (`tuning.md` §2.43¶3a; the per-row bounds are `limits.md`
+§8.3¶3). It is the artifact's size beyond its SIMD-off compile.
 Those bytes are invisible to every pcrec size DECISION — the VM entry-shape
 knee and `<PREFIX>_VM_PROGRAM_BYTES`, the size term and its ladder, and the D84
 caps (`limits.md` §8) all read the length minus these bytes — so turning SIMD

@@ -271,6 +271,8 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 
 <a id="s8-3-p2"></a>[8.3¶2] At `-march=L` the guarded text is compiled, so an artifact may exceed a cap's number in compiled bytes by its guarded total, which `<PREFIX>_SIMD_GUARDED_BYTES` reports (`match_api.md` §6.3). There is no aggregate budget on it: each SIMD form bounds its own guarded bytes, and the stamped total is checked against the sum of those bounds. The stamp reads `0` on an artifact with no guarded block.
 
+<a id="s8-3-p3"></a>[8.3¶3] At the default `-fno-memfn-simd` no artifact holds a guarded block, so the stamp reads `0` on every such artifact. At `-fmemfn-simd` it is nonzero exactly where a SIMD row rendered: the `vrun` rows (`registry.md` §6¶8a), over a FUNC whose predicate is one run. Such a FUNC's guarded bytes are at most 2,700 for `vrun-w16` and 2,800 for `vrun-w32`; `tests/memfn/simd_bounds.tsv` states each row's bound, measured over the kit's own generated site space.
+
 <a id="s8-4"></a>
 ### 8.4 The size-cap ladder and `--size-cap=refuse`
 
