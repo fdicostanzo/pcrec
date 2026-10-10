@@ -4,9 +4,9 @@ Lane revbuild, 2026-10-10, opus. Branch `lane/revbuild` off main `c85a1aac`
 (L0 merged), with main `64e8aa0e` (sstri) merged in. Design:
 `docs/design/locate_finish.md` rev 2.1 §4.3, §5 L1-L3; D156 addendum 1 (Q2
 RULED: stage 2 is built with stage 1); `docs/design/revend.md` §6 (form C),
-§9. The kit's R-12 (VMLAZY, abi 72) had not reached main when this report
-was written, so this lane takes **abi 72**; if R-12 lands first, renumber to
-73 at landing (§5).
+§9. The kit's R-12 (VMLAZY, abi 72) merged to main (`a15fb77b`) while the
+lane was finishing; it is merged into this branch and this lane takes
+**abi 73** (§5).
 
 **Status.** Built, committed, light gates green (§7). The landing chain (make
 strict, make test, test-axes, test-revend-twin, the mech rows) runs detached
@@ -25,6 +25,7 @@ as the lane's last act; its verdicts are in §7.2 once its trailer is written.
 | `9e4e6971` | rows | Sabotage rows S758-S781 (`studies/locate_finish/mk_l2_rows.py`), `run_rev_end.sh` §3 (ladder) and §4 (dead seed under the sanitizer). |
 | `f59658ca` | merge | main `64e8aa0e` merged in (clean). |
 | `61018d49` | abi | abi 71 -> 72 at every reader (§5); the startset manifests re-pinned. |
+| (R-12 merge) | merge + abi | main `a15fb77b` (R-12, abi 72) merged; abi renumbered 72 -> 73; conflicts resolved by mechanism (§5). |
 | `0c5bb267`... | docs | Spec hunks, CLAUDE.md files, plan STATE, emit_sweep's trace site, L3's captures net, census controls, FILEPIN self-pin, this report. |
 
 L2's "two separable commits" are `4863fc96` (L2.1, the stamp rule) and
@@ -91,7 +92,7 @@ re-run after their reach probes were fixed, §4 item 11):
 | S781 | anchored drop read by the ordinal | revend §3, 1 | DETECTED |
 
 Re-aimed L0 rows (intent unchanged, each says so in a `RE-AIMED` comment):
-S222, S237, S608, S738, S740, S741, S744, S745, S747; S693 re-aimed to abi 72.
+S222, S237, S608, S738, S740, S741, S744, S745, S747; S693 re-aimed to abi 73 (AFTER 72).
 `scripts/m6read_check_sab_anchors.py`: 632 rows, all anchors resolve. S693
 re-run: DETECTED (codegen 3 fail). The L0 rows S738-S747 run again in the
 landing chain (§7.2).
@@ -168,7 +169,7 @@ landing chain (§7.2).
 
 No ruling on file was contradicted by the code except item 1.
 
-## 5. abi 71 -> 72
+## 5. abi 72 -> 73 (built as 71 -> 72, renumbered on R-12)
 
 Readers found by grep for the number and changed in `61018d49`:
 `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`; `tests/codegen/run_codegen_tests.sh`
@@ -179,8 +180,18 @@ example's three lines, the `rx_info` table's `abi` row, §6¶17's sentence);
 the number: `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to
 `0c5bb267` (the lane's last src commit; re-pin at landing if the merge
 moves src or the number is renumbered); byte-count readers do not move from
-the digit (71 -> 72 is one width). The suites that count were run after the
+the digit (72 -> 73 is one width). The suites that count were run after the
 bump: registry, rxtsource, codegen (§7.1).
+
+**The R-12 merge.** Main `a15fb77b` (R-12 VMLAZY, abi 72) merged in. Six
+conflicts, each resolved by mechanism: the abi change log (this lane's entry
+on top as `73`, R-12's kept as "was `72`"); the codegen ledger message (R-12's
+clause kept, this lane's appended as `72->73`); `run_recursion_identity.sh`'s
+FILEPIN (main's R-12 self-pin `fd295ec0` taken, then re-pinned to this lane's
+last src commit after the renumber); S693 (re-aimed to BEFORE 73 / AFTER 72);
+`tests/mech/CLAUDE.md` (both sections kept); the rxtsource census (R-12's
+`vm_lazy_rmin_prefix.rxt` +1 file / +20 blocks / +138 lines and this lane's
++1 / +46 / +240 summed: 279 / 5,616 / 53,743, run.sh 255 files).
 
 ## 6. The window twin and the answer net
 

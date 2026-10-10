@@ -1135,3 +1135,88 @@ pointer when a kit change merges to main.
   and declares a bound in tests/memfn/simd_bounds.tsv, which
   `make test-memfn-guarded` checks. RQ-1 (`--memfn=` carrier) landed with
   clibundle; the first options.def row must add a pcrec cli case.
+
+## 2026-10-09 evening — kit session (pcrecdev3), paused for reset (context 53%)
+
+- R-11 COMPLETE (R4e′.0b merged at abi 70, 82ff9432).
+- R-12 step 1 scoping merged (df66a032). Main's answers: Q-R12-1 no Frank
+  ruling for VMLAZY's normalize, abi 72; Q-R12-2 delete the VMLAZY row; Q-R12-5
+  add VALID + vocab re-sweep; Q-R12-6 keep span-count at ceiling 0.
+- **Frank ruled Q-R12-3 (D147 addendum 14): N7U RETIRED; the kit is
+  ENCODING-BLIND.** The rule: a walk whose unit is the encoding's character
+  (a decode on either operand) belongs to the encoding; its byte-domain
+  sub-loops are kit sites. Frank: "Kit shouldn't, now at least and unless
+  strong counter evidence emerges, know about encoding ... a passed lower()
+  type encoding function but then what role is memfn playing?" N7U's site
+  (span_match_caseless) serves caseless backrefs AND `${name}` variables; an
+  ASCII fast path inside it is filed [MEMFN-CI-ASCII], not scheduled. OWED:
+  delete N7U's manifest row and write the rule into integration.md §R4.3.4
+  beside Q-R10-11 (a small commit on lane/memfn-vmlazy after its chain).
+- VMLAZY built by lane vmlazy (opus) on lane/memfn-vmlazy @ 40a3e5bf
+  (normalize abi 70->72, zero-mover REPLACE, VALID row); G1 null; light
+  green; chain2 (6 sweep arms) still running detached at pause.
+- Frank 2026-10-09: the kit session too looks for a reset above 35% context.
+
+## 2026-10-09 ~17:15 — wake after reset; VMLAZY chain2 green; N7U retired
+
+- Woke from the vmlazy wake.md. Heartbeat cron `17,47` recreated.
+  requests.md holds no new item.
+- **Chain2 COMPLETE, green** (vmlazy_report §8a): 13 light suites rc=0, and
+  9 emit_sweep arms show 0 movers / 0 asymmetric. utf8 and `-fno-cls-kit`
+  exited rc=1 on r4clx's DECLARED composition-floor exception (37 < 38, both
+  sides). The first read of an rc=1 looked like a failure; the judge table
+  in r4clx_report.md is where that exception is declared.
+- **N7U retired** by lane n7uret (sonnet, light). Docs/TSV only, so no pcrec
+  byte moves. C17 floor 14 -> 13, C12 floor 2 -> 1, S512 re-pinned. Merged
+  into lane/memfn-vmlazy after chain2 exited; strict and the manifest/forms
+  checks are green on the merge. The D58 add. 2 revisit close is owed to
+  main and posted as a notice.
+- Stale worktrees r4e0/r4e0b/w5fix/r12: `.scratch` was deleted; they are kept
+  by wtprune's 120-min quiet gate, so prune them later.
+- Frank asked for the first SIMD directional reading when it exists. It
+  does not exist yet: R-13 waits on RQ-3, then RQ-2 and the RQ-4 slot for
+  timing. Report it when the R-13 sweeps produce it.
+- Waiting on RQ-3 (abi 71; its chain is running) before the §8 slot chain
+  and R-13.
+
+## 2026-10-09 evening — wake after reset; slot17 read; startset red fixed
+
+- Woke from lane/memfn-r13's wake.md; heartbeat cron `17,47` recreated.
+- slot17 (lane/memfn-vmlazy @ 1bb49dee, ref 631771b7) DONE 20:15:
+  - Green: build, strict, sabanchor, recid 18/0, census 0 OTHER/ASYM (controls fire),
+    N2 clean, G2 full 192,654,549/0.
+  - mech: 26 rows, unexpected 0, undetected 0, anomalies 0; unreached 1 = S685
+    (declared UNREACHED: VMLAZY's pending row is deleted).
+  - make test RED: test-startset only.
+  - VARIANTS measured nothing: my script omitted `--tree-rev` (usage error).
+- Triage lane ssred: base green, tip red. Only `[vm-movers]` failed: the new corpus file
+  tests/base/vm_lazy_rmin_prefix.rxt was never added to the stage-2 VM manifests
+  (10 auto / 17 forced). It was a delivery miss, not an emission defect.
+- Lane vmlfix (921a3ef2) regenerated the manifests with census_s1.py and spliced in
+  only the corpus rows. test-startset and strict are green. lane/memfn-vmlazy was
+  fast-forwarded to it.
+  - Finding for main: the generator would also add 7 pcrec-bench rows (6 forced,
+    1 s3_dfa; bench @ 76e13c1d). They are un-refreshed, as at m7fix. Whether to
+    re-sync them is a bench-pin decision, and it is main's.
+- Main's order: rq2's chain → RQ-2 merges (it carries the 8ec0e97a variant re-pin) →
+  merge main into vmlazy → slot17b (variant sweep + make test), on main's GO.
+  done: R-12 waits for slot17b.
+- LESSON: a slot stage that dies on a usage error is a stage that measured nothing.
+  Dry-run every new invocation's argument parsing before the slot.
+
+## 2026-10-10 — R-12 re-landed (slot19)
+
+- On main's GO (e33fb821: lfl0 landed, main green), I merged e33fb821 into
+  lane/memfn-vmlazy (5df8b31b). Conflicts: startset manifests (union),
+  rxtsource census (summed from the merge base 276/5431/52073 to
+  278/5570/53503). A new [cites] check caught two line citations in
+  vmlmerge_report; they are now section citations.
+- slot19 04:07-04:49: every stage green; self-check CLEAN; VARIANTS FAILED
+  by design. A sonnet read-only pass re-ran the comparator on slot19's
+  binaries and found 0 movers outside abi-stamp or lazy (report §8c).
+- done: re-posted; main merges R-12 next, and revbuild takes abi 73 on top.
+  Next: merge post-R-12 main into lane/memfn-r13, then slot18 on main's GO.
+- LESSON: emit_sweep's log prints only 5 movers per stream. A by-id
+  verdict needs the full list, which takes a re-run of the comparator on
+  the slot's own binaries. Budget ~25 min for it, or have the slot script
+  dump the keys.

@@ -23,9 +23,9 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `72` on every artifact today (lane revbuild bumped it
-  from 71, 2026-10-10: [OPT-REVEND] L2 with stage 2 folded in, D156;
-  renumber at landing if the kit's R-12 takes 72 first).** An end-pinned
+- **`rx_info.abi` is `73` on every artifact today (lane revbuild bumped it
+  from 72, 2026-10-10: [OPT-REVEND] L2 with stage 2 folded in, D156; built
+  as 72 and renumbered at the merge of the kit's R-12, which took 72).** An end-pinned
   DFA body (`$`/`\Z`/`\z`, no `(?m)`, no `\G`, not optional) searches by the
   reverse-from-end walk: `<PREFIX>_DFA_SCAN` reads `"rev-end"`, the artifact
   carries no forward machine (a tie with no anchored machine keeps it for
@@ -40,6 +40,22 @@ the bump's own commit.**
   VM entry asks FINISH; the `-fno-rev-end` deny and the `locate` axis are
   new. No struct offset moves and no answer moves.
 
+- **`rx_info.abi` was `72` (lane vmlazy bumped it
+  from 71, 2026-10-09; `71` is [MEMFN] RQ-3's, landed first: [MEMFN] R-12
+  — THE VMLAZY NORMALIZATION, `docs/dev/lanes/r12scope_report.md` §1.5,
+  `docs/dev/lanes/vmlazy_report.md`).** The VM cursor rung's LAZY arm
+  spells its rmin prefix (the loop's mandatory iterations) the way the
+  rung's possessive and greedy arms spell theirs: a span scan capped at
+  rmin iterations, then the reach test `if ((ptrdiff_t)<prefix>_span_cursor
+  < slot_values[<low>] + <rmin*W>) goto <prefix>_fail;`. It was a counted
+  loop that failed inside the loop at the first short block. The two forms
+  stop at the same block and fail on the same inputs, and the step and
+  work budgets are charged the same, so no answer moves. Only artifacts
+  whose VM program has a lazy quantifier with `rmin > 0` on the cursor rung
+  move beyond their abi digits, and on those
+  `<PREFIX>_VM_PROGRAM_BYTES` moves with the text. No stamp is added, no
+  struct offset or `rx_info` member moves, and no symbol a caller links
+  against changes.
 - **`rx_info.abi` was `71` (lane rq3 bumped it from
   70, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; rq3 was built on `69` and
   re-landed on R4e′.0b's `70`).** ONE stamp line is added

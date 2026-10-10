@@ -14,13 +14,24 @@
 # WHERE IT IS SEEN. tests/codegen/run_codegen_tests.sh's [DD-14.FB] check
 # reads rx_info.abi off a VM and a DFA artifact against ABI_EXPECT (arm
 # codegen); an artifact's own shared-block guard reads the same number.
+#
+# RE-AIMED 2026-10-09 (lane vmlazy, R-12's VMLAZY normalization, abi 70 -> 72;
+# 71 is RQ-3's): the row now plants the number this tree's own bump left behind
+# (72 back to 70). Same detector, same arm. The manager re-aims it at merge
+# if RQ-3's 71 lands in between (the AFTER value is then 71).
+#
+# RE-AIMED 2026-10-09 (lane vmlmerge, the merge of main's RQ-3 71 under this
+# branch's 72): AFTER is 71, the parent's number, so the plant again names
+# the latest event's parent (the row's convention); same detector, same arm.
+#
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2, abi 72 -> 73, landed
+# on R-12's 72): AFTER is 72, the parent's number; same detector, same arm.
 SAB_ID="S693-abi-not-bumped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen"
-SAB_DESC="PCREC_ARTIFACT_ABI stays 70 (the parent's) while the routing moves every offset-skip/pre-check function, so rx_info.abi misnames the artifact"
+SAB_DESC="PCREC_ARTIFACT_ABI stays 71 (the parent's) while the VMLAZY normalization moves the lazy cursor prefix, so rx_info.abi misnames the artifact"
 SAB_DOC_FIGURE="HAND-MEASURED by lane r4e0b 2026-10-09 (one mech row, solo): see docs/dev/lanes/r4e0b_report.md §5. Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S693."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2, abi 71 -> 72): the plant still reverts the bump by one.
-SAB_BEFORE='#define PCREC_ARTIFACT_ABI 72'
-SAB_AFTER='#define PCREC_ARTIFACT_ABI 71   /* SABOTAGE S693 */'
+SAB_BEFORE='#define PCREC_ARTIFACT_ABI 73'
+SAB_AFTER='#define PCREC_ARTIFACT_ABI 72   /* SABOTAGE S693 */'

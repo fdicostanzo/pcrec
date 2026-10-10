@@ -48,3 +48,18 @@ Maintenance: update this file when files are added/removed or change roles.
   only). Results in `docs/dev/lanes/r4e0b_report.md` §4.
   `r4e0b/out/` holds the transcripts (the full census, the -Os/-O0 sample,
   both timing tables) and `nonid_full.tsv`, the non-identical movers.
+- `vmlazy/` — R-12 VMLAZY NORMALIZE's G1 instrument (lane vmlazy,
+  2026-10-09; `docs/dev/lanes/r12scope_report.md` §1.5):
+  `lazy_census.py` (movers by id against the parent's own lazy-prefix
+  count read by the OLD form's regex, the un-done text diff with
+  `RX_VM_PROGRAM_BYTES` read back by the measured block delta, the reach
+  test's offset checked as K*W, an `RX_VM_ENTRY_SHAPE` mover class, six
+  planted controls run first, a K35 floor per stream, and `-S` assembly
+  identity per recipe through `r4e0b/routing_census.py`'s normalizer;
+  `--movers-out`/`--nonid-out` list the movers). `vmlazy/out/` holds the
+  transcripts. Results in `docs/dev/lanes/vmlazy_report.md`. `movers.tsv` is the
+  5431-row census (before `tests/base/vm_lazy_rmin_prefix.rxt`); the slot17b
+  by-id read over the full 5451 rows, every cell and stream, is
+  `out/slot17b_movers_by_id.txt` (with `out/slot17b_pin_vs_measured.txt`, the
+  VARIANT_PINS re-pin's before/after; report §8b). `out/slot19_movers_by_id.txt`
+  is the same read at the re-landing slot over 5570 rows (report §8c).

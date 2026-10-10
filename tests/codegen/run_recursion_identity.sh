@@ -140,6 +140,7 @@ ELIDED_PATTERNS='(a){0}
 SIZETERM_TOTAL=0
 ADVNEW_TOTAL=0   # [MEMFN] R4h: new-layout span-scan loops seen in subject regions
 ADVOLD_TOTAL=0   # ... old one-line loops on the subject side (must stay 0)
+LAZYOLD_TOTAL=0  # [MEMFN] R-12 VMLAZY: old counted lazy-prefix loops on the subject side (must stay 0)
 SIZE_TERM_REGION_MOVERS='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}'
 
@@ -260,6 +261,19 @@ k++\b'
 # comment for the full account and the fold-composition case
 # (`^(?i:(a))\1$` above needs both this rewrite AND the fold's own deny-axis
 # excuse before the two sides agree).
+#
+# [MEMFN] R-12 VMLAZY (lane vmlrid) AN EIGHTH NAMED EXCEPTION EXISTS,
+# `lazy_prefix_rewrite()` below, the fourth's shape. The ruling, verbatim in
+# substance: "Build a named exception bucket for VMLAZY's NORMALIZE, in the
+# shape of `bref_rename_rewrite()`. Do not use a pattern list or a count. A
+# mechanical rewrite of the reference region turns the pre-NORMALIZE lazy
+# rmin prefix into the NORMALIZE spelling (the capped span scan plus the
+# reach test); the bucket admits a pattern only if the rewritten reference
+# equals the tip region byte for byte. The rewrite's text comes from the
+# NORMALIZE commit 7106b370's diff, never from the tip's output" (kit manager
+# ruling R1, R-12 VMLAZY, 2026-10-09; docs/dev/lanes/vmlmerge_rulings.md).
+# Its non-vacuity arm is an independent TEXT census of lazy counted repeats
+# with rmin >= 1 (`lazy_pop`), which every admitted pattern must belong to.
 #
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
@@ -1223,7 +1237,11 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 70 -> 71: every artifact gains `<PREFIX>_SIMD_GUARDED_BYTES`; no other byte
 # moves. `3b7d7b69` (the merge of main 47842ee3, R4e'.0b's 70) is the lane's
 # last src commit; the manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-0c5bb267}"   # [OPT-REVEND] L2 SELF-PIN (lane revbuild, 2026-10-10), abi 71 -> 72: the lane's last src commit (was 3b7d7b69, RQ-3's landing merge); re-pin at landing if the merge or a renumber moves src
+# [MEMFN] R-12 VMLAZY SELF-PIN (lane vmlazy, landed by lane vmlmerge,
+# 2026-10-09), abi 71 -> 72 (71 is RQ-3's, landed first): the VM cursor
+# rung's lazy rmin prefix is spelled as a span scan capped at rmin plus the
+# reach test; only lazy-cursor-prefix artifacts move beyond the abi digits.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fd295ec0}"   # [MEMFN] R-12 VMLAZY SELF-PIN (2026-10-09), abi 71 -> 72: lane/vmlmerge's landing merge (was 7106b370, the lane's abi commit)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1535,6 +1553,105 @@ cls_range0_rewrite() {
     sed -E 's/\(unsigned\)\(([^()]*) - 0\) <= ([0-9]+)u/\1 <= \2/g'
 }
 
+# [MEMFN] R-12 VMLAZY (lane vmlrid) THE EIGHTH NAMED EXCEPTION, MECHANICAL
+# like the fourth and ONE-SIDED like it (kit manager ruling R1, R-12 VMLAZY,
+# 2026-10-09). NORMALIZE (7106b370, abi 70 -> 72) re-spelled the VM cursor
+# rung's LAZY rmin prefix the way the greedy and possessive arms spell
+# theirs. Its diff, old spelling -> new spelling, is this function's whole
+# text (`P` the prefix, `S` the stride, `N` rmin, `TEST` the old
+# ` && (m0) && (m1)...` member string, which the new loop writes member by
+# member in the same order and with the same ` && (...)` wrapping):
+#
+#       RX_SET(RX_SLOT_SPAN_LOWk, (ptrdiff_t)scan_position);   (kept)
+#       P_span_cursor = scan_position;
+#       {
+#           unsigned long it_ = 0;
+#           while (it_ < NUL) {
+#               if (!(P_span_cursor + S <= subject_lengthTEST)) goto P_fail;
+#               P_span_cursor += S; it_++;
+#           }
+#       }
+#   -- becomes --
+#       RX_SET(RX_SLOT_SPAN_LOWk, (ptrdiff_t)scan_position);
+#       {
+#           unsigned long it_ = 0;
+#           P_span_cursor = scan_position;
+#           while ((P_span_cursor + S <= subject_length) && it_ < NULLTEST) {
+#               P_span_cursor += S;
+#               it_++;
+#           }
+#       }
+#       if ((ptrdiff_t)P_span_cursor < slot_values[LOW] + N*S) goto P_fail;
+#
+# WHY ONE-SIDED AND NOT A CANONICALIZER LIKE THE SEVENTH: the new spelling
+# carries strictly MORE than the old -- the reach test names the low-water
+# slot's NUMBER and the offset N*S. A two-sided canonicalizer would have to
+# map the new text back to the old, i.e. DROP the reach test, and a dropped
+# line is unchecked: a wrong slot or a wrong offset would be admitted.
+# Rewriting the OLD side forward instead leaves every byte of the reach test
+# compared. N and S are in the old loop's own text; the slot number is NOT
+# in the region (the RX_SET line names the macro, `RX_SLOT_SPAN_LOWk`), so it
+# is read from the SAME reference artifact's `#define RX_SLOT_SPAN_LOWk N`
+# table and passed in as $1 (`RX_SLOT_SPAN_LOW0=4 RX_SLOT_SPAN_LOW1=7 ...`):
+# a value the old artifact carries, never one read off the subject. A run of
+# lines that is not EXACTLY the nine-line old shape is left alone, so any
+# other difference still lands in `rdiff`. The caller passes the result
+# through `adv_layout_canon` (the seventh exception), because the subject's
+# region has been through it too: the new loop is a capped ADVANCE loop.
+lazy_prefix_rewrite() {
+    awk -v lowmap="$1" '
+    BEGIN {
+        n = split(lowmap, kv, " ")
+        for (i = 1; i <= n; i++) { split(kv[i], pr, "="); low[pr[1]] = pr[2] }
+    }
+    { line[NR] = $0 }
+    END {
+        i = 1
+        while (i <= NR) {
+            if (i + 8 <= NR \
+                && line[i] ~ /^    RX_SET\(RX_SLOT_SPAN_LOW[0-9]+, \(ptrdiff_t\)scan_position\);$/ \
+                && line[i+1] ~ /^    [a-z_0-9]+_span_cursor = scan_position;$/ \
+                && line[i+2] == "    {" \
+                && line[i+3] == "        unsigned long it_ = 0;" \
+                && line[i+4] ~ /^        while \(it_ < [0-9]+UL\) \{$/ \
+                && line[i+5] ~ /^            if \(!\([a-z_0-9]+_span_cursor \+ [0-9]+ <= subject_length.*\)\) goto [a-z_0-9]+_fail;$/ \
+                && line[i+6] ~ /^            [a-z_0-9]+_span_cursor \+= [0-9]+; it_\+\+;$/ \
+                && line[i+7] == "        }" \
+                && line[i+8] == "    }") {
+                slot = line[i]; sub(/^    RX_SET\(/, "", slot); sub(/,.*$/, "", slot)
+                cur = line[i+1]; sub(/^ */, "", cur); sub(/ = scan_position;$/, "", cur)
+                p = cur; sub(/_span_cursor$/, "", p)
+                rmin = line[i+4]; sub(/^        while \(it_ < /, "", rmin); sub(/UL\) \{$/, "", rmin)
+                body = line[i+5]
+                sub("^            if \\(!\\(" cur " \\+ ", "", body)
+                w = body; sub(/ .*$/, "", w)
+                test = body; sub("^[0-9]+ <= subject_length", "", test)
+                sub("\\)\\) goto " p "_fail;$", "", test)
+                step = line[i+6]; sub(/^ */, "", step)
+                if (!(slot in low) || step != cur " += " w "; it_++;") { print line[i]; i++; continue }
+                print line[i]
+                print "    {"
+                print "        unsigned long it_ = 0;"
+                print "        " cur " = scan_position;"
+                print "        while ((" cur " + " w " <= subject_length) && it_ < " rmin "ULL" test ") {"
+                print "            " cur " += " w ";"
+                print "            it_++;"
+                print "        }"
+                print "    }"
+                print "    if ((ptrdiff_t)" cur " < slot_values[" low[slot] "] + " (rmin * w) ") goto " p "_fail;"
+                i += 9
+                continue
+            }
+            print line[i]; i++
+        }
+    }
+    '
+}
+# The OLD lazy prefix's loop head; the subject side must never carry it.
+lazy_old_count() {
+    grep -cE '^        while \(it_ < [0-9]+UL\) \{$' || true
+}
+
 # ---- the corpus ------------------------------------------------------------
 PATFILE="$WORKDIR/patterns"
 find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
@@ -1721,7 +1838,7 @@ echo "recursion-identity: corpus $(grep -c . "$PATFILE") patterns; call-bearing:
 # this tree — a 29-pattern gap that reading the actual differing list
 # explained. The BROAD count (union of both spellings) is what the
 # non-vacuity check below compares against.
-python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" "$WORKDIR/ctx_pop" "$WORKDIR/possrc_pop" <<'PY'
+python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" "$WORKDIR/ctx_pop" "$WORKDIR/possrc_pop" "$WORKDIR/lazy_pop" <<'PY'
 import sys, re
 
 def mask_classes(pat):
@@ -1755,8 +1872,17 @@ CTX_RE = re.compile(
 # loop, whose only consumer is the free discharge, so the stamped-direction
 # converse below may excuse an unchanged region ONLY for these patterns.
 POSSRC_RE = re.compile(r"[+*?}]\+|\(\?>|\(\*atomic:")
-src, brefout, varout, ctxout, possrcout = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
-numeric = set(); named = set(); varhits = []; ctxhits = []; possrchits = []
+# [MEMFN] R-12 VMLAZY the EIGHTH exception's census: a pattern that SAYS a
+# LAZY repeat with rmin >= 1 -- `x+?`, `x{n}?`, `x{n,}?`, `x{n,m}?` with
+# n >= 1 -- or that sets the ungreedy option (`(?U)`, `(?xU:`, ...), under
+# which a plain `x+`/`x{n,m}` IS the lazy repeat. Read on the same
+# escape-collapsed masked text as POSSRC_RE, so `\+?` (an optional literal
+# plus) is not a lazy repeat. An OVERCOUNT of the cursor rung's lazy arm by
+# design (text cannot see engine or rung selection): the bucket's admitted
+# set must be a SUBSET of this one.
+LAZY_RE = re.compile(r"\+\?|\{[1-9][0-9]*(?:,[0-9]*)?\}\?|\(\?[a-zA-Z^-]*U")
+src, brefout, varout, ctxout, possrcout, lazyout = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+numeric = set(); named = set(); varhits = []; ctxhits = []; possrchits = []; lazyhits = []
 for line in open(src, encoding="utf-8", errors="surrogateescape"):
     p = line.rstrip("\n")
     if not p:
@@ -1772,6 +1898,8 @@ for line in open(src, encoding="utf-8", errors="surrogateescape"):
         ctxhits.append(p)
     if POSSRC_RE.search(re.sub(r"\\.", "E", m)):
         possrchits.append(p)
+    if LAZY_RE.search(re.sub(r"\\.", "E", m)):
+        lazyhits.append(p)
 bref_union = numeric | named
 open(brefout, "w", encoding="utf-8", errors="surrogateescape").write(
     "\n".join(sorted(bref_union)) + ("\n" if bref_union else ""))
@@ -1791,6 +1919,10 @@ open(possrcout, "w", encoding="utf-8", errors="surrogateescape").write(
     "\n".join(possrchits) + ("\n" if possrchits else ""))
 print("recursion-identity: source-possessive/atomic population in the call-free bucket "
       "(text census, independent of the artifact): %d" % len(possrchits))
+open(lazyout, "w", encoding="utf-8", errors="surrogateescape").write(
+    "\n".join(lazyhits) + ("\n" if lazyhits else ""))
+print("recursion-identity: lazy rmin>=1 repeat population in the call-free bucket "
+      "(text census, independent of the artifact): %d" % len(lazyhits))
 PY
 NBREF=$(grep -c . "$WORKDIR/bref_pop" || true)
 NVARPOP=$(grep -c . "$WORKDIR/var_pop" || true)
@@ -1798,6 +1930,17 @@ CTX_POP="$(cat "$WORKDIR/ctx_pop")"
 POSSRC_POP="$(cat "$WORKDIR/possrc_pop")"
 NPOSSSRC=$(grep -c . "$WORKDIR/possrc_pop" || true)
 NCTX=$(grep -c . "$WORKDIR/ctx_pop" || true)
+LAZY_POP="$(cat "$WORKDIR/lazy_pop")"
+NLAZY=$(grep -c . "$WORKDIR/lazy_pop" || true)
+# [MEMFN] R-12 VMLAZY THE CENSUS FLOOR (K35): the eighth exception's
+# population is counted, and a census that shrank below the floor (the
+# corpus lost its lazy repeats, or LAZY_RE stopped reading them) fails
+# here instead of leaving the bucket to defend nothing. MEASURED at landing
+# (lane vmlrid, 2026-10-09): see docs/dev/lanes/vmlmerge_report.md.
+LAZY_CENSUS_FLOOR=150
+if [ "$NLAZY" -lt "$LAZY_CENSUS_FLOOR" ]; then
+    bad "[MEMFN] R-12 VMLAZY the lazy-repeat text census found $NLAZY call-free patterns, below the floor of $LAZY_CENSUS_FLOOR -- the eighth exception's population has shrunk or the census regex has drifted"
+fi
 
 if [ "$nf" -lt 700 ]; then
     bad "corpus extraction found only $nf call-free patterns — the gate has no population"
@@ -1866,6 +2009,11 @@ sweep() { # sweep <label> <extra pcrec args>
     # explain.
     local rbrefrename=0
     local rclsrange0=0
+    # [MEMFN] R-12 VMLAZY the eighth exception's counter: a region that
+    # differs from the pre-module pin by VMLAZY NORMALIZE's lazy-prefix
+    # re-spelling, alone or composed with another bucket's explanation.
+    # `rlazyoutside` counts an admission OUTSIDE the text census (must be 0).
+    local rlazy=0 rlazyoutside=0
     # [recidfix->varland] the fifth exception's counter: a region admitted
     # because it uses module `vars`' `${...}` construct, which existed in NO
     # compiler before it shipped and needs no rewrite to explain, only proof
@@ -1940,7 +2088,23 @@ sweep() { # sweep <label> <extra pcrec args>
             # every pattern the rename never touches (`rb_bref` == `rb`), so
             # every comparison below that used to read `rb` reads this
             # instead without changing anything for a rename-free pattern.
-            rb_bref="$(printf '%s\n' "$rb" | bref_rename_rewrite)"
+            # [MEMFN] R-12 VMLAZY the eighth exception's baseline, composed
+            # UNDER the fourth's: the lazy prefix rewritten forward with the
+            # low-water slot numbers read off the REFERENCE artifact `r`.
+            # `rb_lazy` == `rb` for every pattern with no old lazy prefix.
+            lowmap="$(printf '%s\n' "$r" | sed -n 's/^#define \(RX_SLOT_SPAN_LOW[0-9]*\)  *\([0-9]*\)$/\1=\2/p' | tr '\n' ' ')"
+            rb_lazy="$(printf '%s\n' "$rb" | lazy_prefix_rewrite "$lowmap" | adv_layout_canon)"
+            LAZYOLD_TOTAL=$((LAZYOLD_TOTAL + $(printf '%s\n' "$ra_raw" | lazy_old_count)))
+            lazy_this=0
+            [ "$rb_lazy" != "$rb" ] && lazy_this=1
+            # The rewrite may FIRE only on a pattern the independent text
+            # census says carries a lazy rmin>=1 repeat -- a superset of
+            # what the bucket can admit, so every admission is inside it.
+            if [ "$lazy_this" = 1 ] && ! printf '%s\n' "$LAZY_POP" | grep -qxF -- "$pat"; then
+                rlazyoutside=$((rlazyoutside + 1))
+                printf 'VMLAZY PREFIX REWRITE FIRED OUTSIDE THE LAZY TEXT CENSUS %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            fi
+            rb_bref="$(printf '%s\n' "$rb_lazy" | bref_rename_rewrite)"
             if [ "$ra" = "$rb" ]; then
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
@@ -1948,18 +2112,28 @@ sweep() { # sweep <label> <extra pcrec args>
             elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
                 rsizeterm=$((rsizeterm + 1))
                 printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "$lazy_this" = 1 ] && [ "$ra" = "$rb_lazy" ]; then
+                # [MEMFN] R-12 VMLAZY THE NORMALIZE RE-SPELLING EXPLAINS THE
+                # WHOLE DIFFERENCE ON ITS OWN: the forward-rewritten
+                # pre-module region is byte-identical to the subject's.
+                rlazy=$((rlazy + 1))
+                printf 'REGION MOVED (ruled, R-12 VMLAZY NORMALIZE lazy rmin prefix: counted verify loop -> capped span scan + reach test) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             elif [ "$ra" = "$rb_bref" ]; then
                 # [recidfix->varland] THE RENAME EXPLAINS THE WHOLE
                 # DIFFERENCE ON ITS OWN — no island, no fold, nothing else:
                 # the rewritten pre-module region is now byte-identical to
-                # the subject's.
+                # the subject's. ([MEMFN] R-12: or the rename AND the lazy
+                # prefix together, credited to both.)
                 rbrefrename=$((rbrefrename + 1))
-                printf 'REGION MOVED (ruled, [VAR] M6 seam rename bref_match(subject,len,off,off)->span_match(subject,len,ptr,len)) %s\n' "$pat" >> "$WORKDIR/diff.$label"
-            elif [ "$ra" = "$(printf '%s\n' "$rb" | cls_range0_rewrite)" ]; then
+                [ "$lazy_this" = 1 ] && rlazy=$((rlazy + 1))
+                printf 'REGION MOVED (ruled, [VAR] M6 seam rename bref_match(subject,len,off,off)->span_match(subject,len,ptr,len)%s) %s\n' "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "$ra" = "$(printf '%s\n' "$rb_lazy" | cls_range0_rewrite)" ]; then
                 # [clss2fix, D139] the one-spelling range-from-0 rewrite
-                # explains the whole difference on its own.
+                # explains the whole difference on its own ([MEMFN] R-12: or
+                # with the lazy prefix's, credited to both).
                 rclsrange0=$((rclsrange0 + 1))
-                printf 'REGION MOVED (ruled, D139 one range spelling: (unsigned)(b - 0) <= Nu -> b <= N) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+                [ "$lazy_this" = 1 ] && rlazy=$((rlazy + 1))
+                printf 'REGION MOVED (ruled, D139 one range spelling: (unsigned)(b - 0) <= Nu -> b <= N%s) %s\n' "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
             elif printf '%s\n' "$ra" | grep -qF 'run->var_value['; then
                 # [recidfix->varland] A FIFTH THING FOUND WHILE BUILDING THE
                 # FOURTH: reading the actual 170-pattern population (not just
@@ -2090,11 +2264,12 @@ sweep() { # sweep <label> <extra pcrec args>
                     [ "${lit_a:-0}" -gt 0 ] && rlit=$((rlit + 1))
                     [ "${pack_a:-0}" -gt 0 ] && rpack=$((rpack + 1))
                     [ "${poss_a:-0}" -gt 0 ] && rposs=$((rposs + 1))
-                    [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
+                    [ "$rb_bref" != "$rb_lazy" ] && rbrefrename=$((rbrefrename + 1))
+                    [ "$lazy_this" = 1 ] && rlazy=$((rlazy + 1))
                     if [ "$possflip_this" = 1 ]; then
-                        printf 'REGION MOVED (ruled, [ART-POSS-ARMS] arm A selected the DFA; denying%s -fno-ctx-node -fno-poss-ctx-follow -fno-poss-bref-first restores the pinned VM region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                        printf 'REGION MOVED (ruled, [ART-POSS-ARMS] arm A selected the DFA; denying%s -fno-ctx-node -fno-poss-ctx-follow -fno-poss-bref-first restores the pinned VM region%s) %s\n' "$deny" "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
                     else
-                        printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region) %s\n' "$deny" "$pat" >> "$WORKDIR/diff.$label"
+                        printf 'REGION MOVED (ruled, [UCP] U2 context node; denying%s -fno-ctx-node restores the pinned region%s) %s\n' "$deny" "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" "$pat" >> "$WORKDIR/diff.$label"
                     fi
                 elif [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
@@ -2106,10 +2281,12 @@ sweep() { # sweep <label> <extra pcrec args>
                     # rewrite (not a no-op) that made the restore work — a
                     # pattern with no backreference at all must not inflate
                     # this count just because it also stamps a fold or island.
-                    [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
-                    printf 'REGION MOVED (ruled, islands=%s folds=%s litruns=%s atoms=%s possarms=%s%s; denying the stamped axes restores the pinned region) %s\n' \
+                    [ "$rb_bref" != "$rb_lazy" ] && rbrefrename=$((rbrefrename + 1))
+                    [ "$lazy_this" = 1 ] && rlazy=$((rlazy + 1))
+                    printf 'REGION MOVED (ruled, islands=%s folds=%s litruns=%s atoms=%s possarms=%s%s%s; denying the stamped axes restores the pinned region) %s\n' \
                         "${isl_a:-0}" "${fold_a:-0}" "${lit_a:-0}" "${pack_a:-0}" "${poss_a:-0}" \
-                        "$([ "$rb_bref" != "$rb" ] && printf ' +bref-rename')" \
+                        "$([ "$rb_bref" != "$rb_lazy" ] && printf ' +bref-rename')" \
+                        "$([ "$lazy_this" = 1 ] && printf ' +vmlazy-prefix')" \
                         "$pat" >> "$WORKDIR/diff.$label"
                 else
                     rdiff=$((rdiff + 1))
@@ -2254,7 +2431,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame poss-arms-moved=$rposs poss-arms-stamped-but-deny-is-a-noop=$rposssame poss-arms-stamped-on-source-possessive=$rpossverdict poss-arm-a-engine-flip-moved=$rpossflip unstamped-but-poss-deny-moves=$rnopossmoved call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename cls-range0-moved=$rclsrange0 vmlazy-prefix-moved=$rlazy var-construct-moved=$rvarnew ctx-node-moved=$rctx island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved litrun-moved=$rlit litrun-stamped-but-deny-is-a-noop=$rlitsame unstamped-but-litrun-deny-moves=$rnolitmoved atoms-moved=$rpack atoms-stamped-but-deny-is-a-noop=$rpacksame poss-arms-moved=$rposs poss-arms-stamped-but-deny-is-a-noop=$rposssame poss-arms-stamped-on-source-possessive=$rpossverdict poss-arm-a-engine-flip-moved=$rpossflip unstamped-but-poss-deny-moves=$rnopossmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -2338,6 +2515,19 @@ sweep() { # sweep <label> <extra pcrec args>
         bad "[$label] (A) the bref-rename bucket admitted ZERO patterns. Either every backreference-bearing pattern left the corpus (the bucket's population went to zero, which is itself a failure this file's own convention treats as one) or the rewrite has stopped matching real emitted text"
     elif [ "$rbrefrename" -lt $((NBREF - 30)) ] || [ "$rbrefrename" -gt $((NBREF + 30)) ]; then
         bad "[$label] (A) the bref-rename bucket admitted $rbrefrename patterns against an independent text census of $NBREF backreference-bearing call-free patterns (numeric \\1..\\9 plus named \\k<>/\\k''/\\k{}/(?P=) spellings) -- outside the +/-30 band this cross-check allows. Either the census's own regex has drifted from what the parser actually accepts as a backreference, or the bucket is now admitting (or missing) patterns for a reason unrelated to the rename"
+    fi
+    # [MEMFN] R-12 VMLAZY THE EIGHTH EXCEPTION'S NON-VACUITY ARM. The bucket
+    # must fire on EVERY axis (each one emits a VM cursor rung for some lazy
+    # pattern: measured at landing 53/114/53/28, vmlmerge_report.md), may
+    # never fire outside the text census, and can never exceed it.
+    if [ "$rlazy" -eq 0 ]; then
+        bad "[$label] (A) the vmlazy-prefix bucket admitted ZERO patterns. Either the corpus lost every lazy cursor-rung pattern on this axis or lazy_prefix_rewrite() has stopped matching the reference's counted-loop prefix"
+    elif [ "$rlazy" -gt "$NLAZY" ]; then
+        bad "[$label] (A) the vmlazy-prefix bucket admitted $rlazy patterns against a text census of $NLAZY lazy rmin>=1 call-free patterns -- it cannot admit more than the population it is drawn from"
+    fi
+    if [ "$rlazyoutside" -ne 0 ]; then
+        bad "[$label] (A) lazy_prefix_rewrite() fired on $rlazyoutside pattern(s) the lazy-repeat text census does not contain -- the rewrite is matching text that is not VMLAZY's lazy prefix, or the census has drifted:"
+        grep '^VMLAZY PREFIX REWRITE FIRED OUTSIDE' "$WORKDIR/diff.$label" | head -10 >&2
     fi
     # [recidfix->varland] THE FIFTH EXCEPTION'S NON-VACUITY ARM, the same
     # shape one construct over: `rvarnew` must fire somewhere and land near
@@ -2832,6 +3022,15 @@ else
 fi
 if [ "${ADVOLD_TOTAL:-0}" -ne 0 ]; then
     bad "[MEMFN] R4h $ADVOLD_TOTAL subject region(s) still carry the OLD one-line span-scan loop — the emitter did not move, or the canonicalizer hides a regression"
+fi
+# [MEMFN] R-12 VMLAZY the eighth exception's other direction: NORMALIZE
+# re-spelled EVERY lazy rmin prefix, so no subject region may still carry
+# the old counted verify loop (a site the emitter missed would otherwise sit
+# unnoticed beside a bucket that only ever sees the moved ones).
+if [ "${LAZYOLD_TOTAL:-0}" -ne 0 ]; then
+    bad "[MEMFN] R-12 VMLAZY $LAZYOLD_TOTAL subject region(s) still carry the OLD counted lazy-prefix loop (while (it_ < NUL) {) -- NORMALIZE did not reach every lazy cursor rung"
+else
+    ok "[MEMFN] R-12 VMLAZY no subject region on any axis carries the old counted lazy-prefix loop; the per-axis vmlazy-prefix checks above hold its admissions to a text census of $NLAZY"
 fi
 if [ "${SIZETERM_TOTAL:-0}" -eq 0 ]; then
     bad "[ART-SIZE] SIZE_TERM_REGION_MOVERS fired on NO axis: the two patterns it names no longer move their program region, so the list is stale and this gate is defending a claim that has changed. Re-derive it; do not delete it"

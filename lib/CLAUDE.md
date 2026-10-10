@@ -441,7 +441,7 @@ tripwires. Each records `<PREFIX>_VM_POSS_ARMS`'s bits (`match_api.md` §6.3).
 Both move the GIVE-UP surface in TWO directions (a STEPS/FRAMES give-up can
 become an answer, a WORK give-up can appear; `tuning.md` §2.1).
 
-## [OPT-REVEND] `PCREC_NO_REV_END` (bit 52, 2026-10-10, abi 72)
+## [OPT-REVEND] `PCREC_NO_REV_END` (bit 52, 2026-10-10, abi 73)
 
 The deny bit for LOCATE's `rev-end` row (`src/gen/emit_dfa.c`,
 `docs/design/locate_finish.md` §4.3, D156; `docs/spec/tuning.md` §2.46):
