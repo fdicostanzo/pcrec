@@ -205,7 +205,7 @@ for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$W
     # `RX_NCAPS - 1 >= ngroups` always and `>` exactly when something was
     # bound. Asserting the DIRECTION rather than a number keeps this check
     # from having to know the assignment order, which is the artifact's
-    # business (docs/spec/match_api.md#rx-info-counts).
+    # business (docs/spec/match_api.md §6¶3).
     cngroups="$(LC_ALL=C grep -m1 '^    \.ngroups = ' "$cdir/gen.c" | tr -dc '0-9')"
     cncaps="$(LC_ALL=C grep -m1 -oE '^#define [A-Z0-9_]*_NCAPS [0-9]+' "$cdir/gen.h" | awk '{print $3}')"
     cnnames="$(LC_ALL=C grep -m1 '^    \.nnames = ' "$cdir/gen.c" | tr -dc '0-9')"
@@ -283,7 +283,7 @@ print("match %d %d" % m.span() if m else "nomatch")
         # THE SLOTS DIFFER ON PURPOSE and are never compared: the composed
         # artifact's delivered slot sits above `ngroups` and the control's is
         # an ordinary group number. Matching by NAME is what makes that
-        # difference invisible, which is also the contract `match_api.md#named-groups` (§5.4)
+        # difference invisible, which is also the contract `match_api.md §5.4` (§5.4)
         # states for a caller.
         for crow in $crows; do
             cname="${crow%%:*}"; cslot="${crow##*:}"
@@ -373,7 +373,7 @@ $plain_rows"
 fi
 # THE ORDER IS THE ABI CONTRACT, AND THE KEY IS THE SCOPE — not `ref`.
 # `groups[]` sorts (caller-scope-first, name, number), so the `nnames` prefix
-# holds the pattern's own names AND any flat imports, and `match_api.md#dup-name-algorithm` (§5.4)'s
+# holds the pattern's own names AND any flat imports, and `match_api.md §5.4¶6` (§5.4)'s
 # shipped bsearch over `groups[0 .. nnames)` finds every name a caller may
 # spell for itself.
 #

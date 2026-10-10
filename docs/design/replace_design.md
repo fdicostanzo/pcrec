@@ -351,7 +351,7 @@ match's end is wrong by one substitution, and that was the note's own
 prediction P10 before it was measured.
 
 **One thing worth flagging for whoever implements it**, because it is a
-genuine seam and neither note owns both sides: `docs/spec/match_api.md` §3.1's (`#find-all-lossy`)
+genuine seam and neither note owns both sides: `docs/spec/match_api.md` §3.1.3¶9's
 *caller-driven* find-all loop is explicitly **lossy** relative to PCRE2 and
 python for empty-preferring patterns — it has no way to express PCRE2's
 "NOTEMPTY_ATSTART retry," so its result is always a strict subset. §6.1's

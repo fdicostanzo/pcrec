@@ -1476,7 +1476,7 @@ the general paragraphs):
   - the `VM_POSS_ARMS` bit it clears;
   - its witness.
 - `docs/dev/history/abi_changelog.md` (the abi change-log; was `match_api.md` §6's paragraph), plus the `VM_POSS_ARMS`
-  stamp's entry in the stamp table (`match_api.md#stamp-vm-masks`).
+  stamp's entry in the stamp table (`match_api.md §6.3.8¶2`).
 - `eng_brep_design.md` §2.5 (the assertion rule) gains a pointer here: "an
   assertion in the follow widens FOLLOW to all bytes" stops being true for
   `A_CTX`.

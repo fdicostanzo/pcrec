@@ -2864,7 +2864,7 @@ correct one on every artifact in the tree.
 **`nentries` READS THE SAME COUNT `nnames` DOES, AND SHIPS ANYWAY.** Today
 `groups[]` holds the primary pattern's own named rows and nothing else, so
 the two numbers are equal on every artifact pcrec emits. They are different
-QUESTIONS — `nnames` is what `docs/spec/match_api.md` §5.4's (#named-groups) caller algorithm
+QUESTIONS — `nnames` is what `docs/spec/match_api.md` §5.4's caller algorithm
 bsearches, and the primary's rows stay a genuine PREFIX of the array once
 [DD-13b.W1.3]'s composer injects a definition's own names below them — and
 the field lands now because it rides this bump. The alternative is a second
@@ -3504,7 +3504,7 @@ that binds a definition:
   primary's own groups"*) and was emitted as a literal `NULL` until now;
   W1.3 is its first producer.
 - `ng_cmp_name`'s key becomes **`(ref-is-NULL, name, number)`**. That is an
-  ABI CONTRACT and not a tiebreak: `match_api.md` §5.4 (#named-groups) documents `nnames` as
+  ABI CONTRACT and not a tiebreak: `match_api.md` §5.4 documents `nnames` as
   the entries in `groups[]` and hands a caller a bsearch that walks a name
   RUN, so rows sorting AMONG the primary's while `nnames` counted only the
   primary's would let a caller walk off its own run into a library's private

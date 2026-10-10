@@ -81,7 +81,7 @@ found by running the suites that count and by grep for `RE-PINNED`:
 ## 2. Spec hunks (D80)
 
 - `docs/spec/match_api.md`: §1 (the new per-artifact name, the ABI block's
-  three caller refusals); §2 (the `PCREC_ERR_UTF` line); §3.1 and §9.2/§9.4 (#startpos-align, #utf-check) (the -9 return
+  three caller refusals); §2 (the `PCREC_ERR_UTF` line); §3.1 and §9.2/§9.4 (§9.2¶9, §9.4) (the -9 return
   row, the align bullet replacing "neither arm rounds", the whole
   `-futf-check` paragraph: range, LB, raw step-back, ORDER, every entry, cost,
   byte-inert); **§3.1.2 `<prefix>_valid_upto`** (new: contract, every artifact,

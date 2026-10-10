@@ -135,7 +135,7 @@ Verification of equivalence: the same 200-pattern sweep before and after
   self-pinned to `c59fa836`, `tests/codegen/CLAUDE.md` entry. The digit is the
   same width, so no `EMITTED_BYTES` manifest moves at default flags.
 - D80 spec hunks: `tuning.md` §2 ("THE `rx_info.flags` RULE", stated once),
-  §2.16, §2.18; `match_api.md#flags` round-trip paragraph; `lib/pcrec.h` comments on
+  §2.16, §2.18; `match_api.md §6¶16` round-trip paragraph; `lib/pcrec.h` comments on
   bits 18 and 21; `src/gen/CLAUDE.md`, `lib/CLAUDE.md`.
 - `tests/codegen/run_prechecks.sh` section 6b: every `-f` spelling `--list-axes`
   carries (42, counted from the registry, floor 40), two witnesses (`abc`,

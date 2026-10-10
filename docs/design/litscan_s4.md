@@ -1244,8 +1244,8 @@ Readers known at `c231ffc1`, a floor and not the list:
 - `docs/spec/match_api.md`:
   - `docs/dev/history/abi_changelog.md` (was §6's changelog): "is 55" → "was 55", plus a new entry stating the
     mechanism, the mover manifest and the invariants;
-  - `#abi-guard`, the shared block's mixed-abi `#error` text (D143);
-  - `#abi`, `rx_info.abi`'s sentence.
+  - `§1¶7`, the shared block's mixed-abi `#error` text (D143);
+  - `§6¶17`, `rx_info.abi`'s sentence.
 - `tests/codegen/run_recursion_identity.sh`: the (B) `FILEPIN` re-pin to
   the commit's own last `src/` change (the k73utf convention), and (A)'s
   excuse axes.

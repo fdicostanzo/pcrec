@@ -14,7 +14,7 @@ with `-e byte|utf8` (or `PCREC_ENC_BYTE`/`PCREC_ENC_UTF8` in the library):
   automaton has no path through it — not an error, just a dead end.
   Compile with `-futf-check` if you want PCRE2's behaviour instead: the
   call is refused with `PCREC_ERR_UTF` and `<prefix>_valid_upto` tells you
-  where the bad bytes start (`docs/spec/match_api.md` §9.4 (`#utf-check`)/§3.1.2, which
+  where the bad bytes start (`docs/spec/match_api.md` §9.4/§3.1.2, which
   also shows how to validate once and search many times).
 
 This is a per-compile choice, never a process-wide setting: two patterns

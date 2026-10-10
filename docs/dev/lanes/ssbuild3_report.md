@@ -42,7 +42,7 @@ The readers, found by `grep -rn` for the old number (code, tests, spec):
 | `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI` (feeds both emission sites: the generated-by line and `rx_info.abi`) | 62 -> 64 (`b42dffa6`) |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + its ledger message | 64, ledger gains the stage-3 clause (copied from §6) |
 | `docs/dev/history/abi_changelog.md` (the abi narrative) | new head entry for 64, the 62 entry demoted to "was" |
-| `docs/spec/match_api.md#abi-guard` K80 `#error` worked example | 62 -> 64 (both lines) |
+| `docs/spec/match_api.md §1¶7` K80 `#error` worked example | 62 -> 64 (both lines) |
 | `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` | self-pinned to `b42dffa6`, the lane's last `src/` commit |
 | `tests/codegen/CLAUDE.md` | the stage-3 bump paragraph |
 
@@ -542,7 +542,7 @@ against the `eacde3dc` that was merged, so the merge and the ref agree on code).
 | file | resolution |
 |---|---|
 | `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI 64` (ours). The one constant; the generated-by line, `.abi`, and the K80 guard follow it. |
-| `docs/spec/match_api.md#abi-guard` (K80 example) | ours: `!= 64`, `(abi 64)`, `PCREC_RX_ABI_H 64`. |
+| `docs/spec/match_api.md §1¶7` (K80 example) | ours: `!= 64`, `(abi 64)`, `PCREC_RX_ABI_H 64`. |
 | `docs/dev/history/abi_changelog.md` (change log) | both entries kept, ours first (`abi` is `64`); main's R4a′ entry reworded from "is `63` on every artifact today" to "was `63`". |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=64`; the cause list gains R4a′'s 62->63 clause (copied from §6) before stage 3's, and stage 3's clause now reads 63->64. |
 | `tests/codegen/run_recursion_identity.sh` | FILEPIN (see L.2). |

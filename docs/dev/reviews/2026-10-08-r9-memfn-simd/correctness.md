@@ -67,7 +67,7 @@ near-cap size witnesses"); F-R9-5; RQ-3.
 **Failure.**
 - Some stamps quote MEASURED SIZES:
   - `<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid 1026588 > 1000000"`
-    (match_api.md §6.3 example, `#stamp-vm-prefilter-why`);
+    (match_api.md §6.3 example, `§6.3.5¶3`);
   - the K-ladder's "`%zu nodes %zu/%zu bytes, the ladder measured`"
     (compile.c:2724).
 - memfn_stamps.c: "The pass runs on every attempt, before the size

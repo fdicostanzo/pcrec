@@ -430,7 +430,7 @@ that an edge re-enters; it cannot prove the advance):
 - **E10**: on a NON-empty match the new `LOWER` is the end, past the start. On
   an EMPTY match `end == start`, and the strict advance is the CALLER's
   empty-match rule (`match_api.md` §3.1, "The empty-match advance",
-  `#find-all`), not the artifact's: the artifact's obligation ends at reporting the
+  `§3.1.3`), not the artifact's: the artifact's obligation ends at reporting the
   span [r2.1 S-N1(b)].
 - **E11** (future): the landmark search must resume PAST the previous hit `h`.
   A scan restarted at `s* < h` re-finds `h`, and the walk from `h` reaches the
@@ -859,7 +859,7 @@ each; each fix is its own ruled change.
     including the 388 ENG_ATTEMPT and the 64 empty-engine artifacts.
     `(?m)^ERROR`'s artifact carries no reverse table and stamps
     `"reverse-pass"`.
-  - **The spec:** `docs/spec/match_api.md#stamp-dfa-start` documents the value as "the
+  - **The spec:** `docs/spec/match_api.md §6.3.4¶11` documents the value as "the
     artifact carries its reverse machine and walks it backwards", then lists
     "whose scan is `attempt` or `empty`" among its population. The two sentences
     contradict each other.
@@ -1922,8 +1922,8 @@ which overlap this note:
   stamping `memchr`, DFA and HYBRID alike (33 (27 DFA + 6 HYBRID) in auto/byte), and only
   where it was elided. Keep the stamp token.
 - **Q5. D-2 (`DFA_START "reverse-pass"` on attempt/empty artifacts)?**
-  **RULED [Frank 2026-10-06]: option (a), a third value `attempt-start`, a later LOW-priority row, batched with the NEXT abi event (no standalone bump), with the D80 spec hunk fixing `match_api.md#stamp-dfa-start`'s contradiction and a bench adapter note.** (Was: recommend (unchanged)) a third value `attempt-start` for ATTEMPT and empty,
-  as its own abi event with the spec hunk correcting `match_api.md#stamp-dfa-start`'s
+  **RULED [Frank 2026-10-06]: option (a), a third value `attempt-start`, a later LOW-priority row, batched with the NEXT abi event (no standalone bump), with the D80 spec hunk fixing `match_api.md §6.3.4¶11`'s contradiction and a bench adapter note.** (Was: recommend (unchanged)) a third value `attempt-start` for ATTEMPT and empty,
+  as its own abi event with the spec hunk correcting `match_api.md §6.3.4¶11`'s
   contradiction. Low priority: no consumer is known to be misled. The
   alternative is a spec-only fix stating that the value means "not pinned".
 - **Q6. D-2b (`start_anchor` blind through a non-recursive call)?**

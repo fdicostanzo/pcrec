@@ -1,7 +1,7 @@
 # [K73] OFFSET 0 ON A SUBJECT THAT BEGINS WITH CONTINUATION BYTES is not where
 # a match is attempted: the search moves on to the next non-continuation byte,
 # as libpcre2 does under PCRE2_MATCH_INVALID_UTF (Frank's 2026-09-29 ruling (a);
-# docs/dev/known_issues.md K73; docs/spec/match_api.md#offset-zero, §9.3).
+# docs/dev/known_issues.md K73; docs/spec/match_api.md §9.3).
 #
 # WHAT THE BLOCKS COVER. Every pattern here can match EMPTY (the only
 # population the rule can reach: a match that consumes a byte begins on a

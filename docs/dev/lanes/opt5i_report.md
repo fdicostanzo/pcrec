@@ -74,7 +74,7 @@ all of them moved:
 | `src/gen/emit_dfa.c` — the `.abi = N` stamp | 15 | **16** |
 | `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT=N` | 15 | **16** |
 | `tests/codegen/run_codegen_tests.sh` — the `[DD-14.FB]` §10.4 bump ledger sentence | ends at 14→15 | **appends this bump's clause** |
-| `docs/spec/match_api.md#abi` — the §3-area "`rx_info.abi` is `N`" sentence | 15 | **16** |
+| `docs/spec/match_api.md §6¶17` — the §3-area "`rx_info.abi` is `N`" sentence | 15 | **16** |
 | `docs/dev/history/abi_changelog.md` — the §6 "`rx_info.abi` is `N` on every artifact today" sentence | 15 | **16** |
 | `tests/codegen/run_recursion_identity.sh` — `RECURSION_IDENTITY_FILEPIN` (the (B) pin) | `6dbdf41` | **RE-PIN OWED — see below** |
 
@@ -188,7 +188,7 @@ with this lane's charter, so it did not have to be done last.
 | the `match_api.md` §6.3 entry with its IFF | landed, with the IFF verbatim |
 | the `tuning.md` line if §4.2 names one | **§4.2 names none, and none was invented.** That file's §3 is the DFA side's own stamps; the VM's (b) family is documented in `match_api.md` §6.3 and has no `tuning.md` section to join, because there is no flag |
 | a `tests/codegen` structural check: every VM/hybrid artifact defines it; 1 ⇔ no `goto *`; 0 ⇔ it does; corpus + `-fprefilter` force axis | `tests/codegen/run_vm_frameless.sh`, `make test-vm-frameless`, **6 / 0**. Default axis: 1,492 VM artifacts (583 frameless / 909 pushing). Force axis: 1,266 VM (495 / 771). Both sides floored at 100 on each axis |
-| it rides the abi 15→16 bump and (B) re-pin, no separate bump | the `emit_dfa.c` abi comment, the `run_codegen_tests.sh` ledger sentence and `match_api.md#abi`'s abi paragraph all name it |
+| it rides the abi 15→16 bump and (B) re-pin, no separate bump | the `emit_dfa.c` abi comment, the `run_codegen_tests.sh` ledger sentence and `match_api.md §6¶17`'s abi paragraph all name it |
 
 **Its first run found a trap worth carrying forward, and it is finding F8
 below**: the `goto *` count must be SCOPED to the VM program's own function.

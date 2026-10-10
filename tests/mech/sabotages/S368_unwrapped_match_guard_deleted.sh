@@ -17,7 +17,7 @@ SAB_ID="S368-unwrapped-match-guard-deleted"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="startbnd"
 SAB_DESC="the DFA's unwrapped <prefix>_match stops emitting the K50 caller-startpos guard, so a mid-character ctx->pos is answered instead of refused (the state the form shipped in until K73)"
-SAB_DOC_FIGURE="docs/spec/match_api.md 9.2's anchored-entries bullet (#startpos); docs/dev/known_issues.md K73's fix paragraph"
+SAB_DOC_FIGURE="docs/spec/match_api.md 9.2's anchored-entries bullet (§9.2); docs/dev/known_issues.md K73's fix paragraph"
 SAB_COUNT=1
 # RE-ANCHORED [UTF-VALID] (lane uvbuild, 2026-09-30): the call gained its
 # `anchored` argument (the align value's NOMATCH form); the plant still

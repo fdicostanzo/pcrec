@@ -175,7 +175,7 @@ cause for the mixed one.
 **The `+ 0`.** Pre-54 artifacts define the guard EMPTY. `( + 0)` evaluates
 to 0, so old-then-new is refused too. New-then-old is the one order no
 emission can reach, because the old block's `#ifndef` was written before
-this rule existed. The spec says so (match_api.md#abi-guard).
+this rule existed. The spec says so (match_api.md §1¶7).
 
 **Checked:**
 
@@ -299,6 +299,6 @@ asserts must not happen.
 - tests/mech/run_sabotage_matrix.sh: arm `prefixinv`
 - tests/mech/sabotages/S437_*.sh and S438_*.sh
 - Makefile: `test-codegen` group
-- docs/spec/limits.md §8, match_api.md #abi-guard/#abi/§6.3, tuning.md §2.21
+- docs/spec/limits.md §8, match_api.md §1¶7/#abi/§6.3, tuning.md §2.21
 - docs/dev/known_issues.md (K79 and K80 FIXED), docs/dev/decisions.md (D143)
 - CLAUDE.md: src/core, src/gen, tests/codegen, tests/mech

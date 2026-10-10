@@ -109,7 +109,7 @@ scripts Makefile tools, filtered to abi contexts:
    header line, the valued guard and the `#error`).
 2. `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT=55`, plus a 54->55 clause
    at the end of its failure message.
-3. `docs/spec/match_api.md#abi-guard`'s quoted guard block (`!= 55`, `abi 55`,
+3. `docs/spec/match_api.md §1¶7`'s quoted guard block (`!= 55`, `abi 55`,
    `#define PCREC_RX_ABI_H 55`), because it shows the current emitted text.
 4. `docs/dev/history/abi_changelog.md`: a new `rx_info.abi is 55` entry above the 54
    one, which becomes "was 54".
@@ -176,7 +176,7 @@ journal) plus the k7980tri fix a111a150.
 - **abi.** It stays 55, with no conflict. S2's 50->53 and K79/K80's 54 were
   already under k78's base 44fc6ad5. The merge brings no emitted-scaffolding
   change. Readers checked by grep: `PCREC_ARTIFACT_ABI 55`, `ABI_EXPECT=55`,
-  and match_api.md#abi-guard guard block (`!= 55` / `abi 55` /
+  and match_api.md §1¶7 guard block (`!= 55` / `abi 55` /
   `PCREC_RX_ABI_H 55`).
 - **Composition with a111a150.** The only incoming `src/` change is
   `src/gen/emit_vm.c`'s `--emit-ir` caps cell, which now reads

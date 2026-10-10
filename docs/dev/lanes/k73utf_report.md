@@ -126,7 +126,7 @@ plants' state); the mech solo runs themselves are OWED (see Validation).
 
 ### Spec hunks (D80)
 
-`docs/spec/match_api.md` §9.2-§9.5 (#startpos-align, #offset-zero, #engine-positions) (the "neither arm rounds" sentence scoped to
+`docs/spec/match_api.md` §9.2-§9.5 (§9.2¶9, §9.3, §9.5) (the "neither arm rounds" sentence scoped to
 `startpos > 0`; two new bullets: offset 0, anchored entries; the
 engine-positions paragraph), docs/dev/history/abi_changelog.md (abi 46); `docs/spec/tuning.md` §2.23;
 `docs/spec/rxt_format.md`'s `mc` paragraph. `known_issues.md` K73 FIXED.

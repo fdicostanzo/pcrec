@@ -382,7 +382,7 @@ C0's arm is still right to add. The claim should be restated.
   - D-1 also fires on ATTEMPT hybrids. On `(?m)^(a)`, `REQ_WHY "dominated"`
     elides the `a` pre-check on a predecessor-`\n` scan.
   - D-2: confirmed. `(?m)^ERROR` stamps `"reverse-pass"` and the spec at
-    `match_api.md#stamp-dfa-start` (was `:4702`) lists `"attempt"`/`"empty"` in that row.
+    `match_api.md §6.3.4¶11` (was `:4702`) lists `"attempt"`/`"empty"` in that row.
   - D-3: confirmed at `axes_dump.c:106`.
   - R4's read of N12's byte (via `pcrec_dfa_cand_ppm`) is NOT a D-1 victim.
     The predecessor byte IS the scan's stop density, which is what R4 prices.

@@ -8487,7 +8487,7 @@ everywhere is still `none`). The ritual follows `litscan_k82h.md`
 
 - **the digit's readers**:
   - `src/gen/emit_dfa.c:52`;
-  - `docs/spec/match_api.md`'s K80 `#error` text (`#abi-guard`), `#abi`'s "abi is N"
+  - `docs/spec/match_api.md`'s K80 `#error` text (`§1¶7`), `§6¶17`'s "abi is N"
     sentence and its change log (`docs/dev/history/abi_changelog.md`);
   - `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT`;
   - `tests/codegen/run_recursion_identity.sh`'s `FILEPIN` and its

@@ -28,7 +28,7 @@ spec and a design doc disagree, the spec is what the tool promises.
   stamp macro (an inventory table, then one anchored entry per stamp), §7 the
   NUL-terminated compile entry, §8 the library structures, §9 encodings and
   character positions, §10 the `_in` entries and the tiered default. **Cite it
-  by anchor** (`match_api.md#find-all`), never by line; every section and stamp
+  by anchor** (`match_api.md §3.1.3`), never by line; every section and stamp
   has an explicit `<a id>`. Every §6.3 value set is a table directly under a
   `<!-- value-set: RX_NAME -->` marker, which `tests/registry/
   axes_registry_check.sh` and `tests/codegen/run_fallback_table.sh` anchor on:

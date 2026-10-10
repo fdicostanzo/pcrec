@@ -247,7 +247,7 @@ reads **abi 70 -> 71**.
 
 **Conflicts (8 files), resolved by mechanism.**
 - `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh`
-  `ABI_EXPECT`, `match_api.md#abi-guard` guard example: 71. The codegen
+  `ABI_EXPECT`, `match_api.md §1¶7` guard example: 71. The codegen
   ledger message keeps R4e′.0b's `69 -> 70` clause and appends RQ-3's as
   `70 -> 71`.
 - `docs/dev/history/abi_changelog.md` ledger: R4e′.0b's entry becomes "was `70`"; RQ-3's

@@ -19,7 +19,7 @@ Branch `lane/rel02` from main `ef97cd82`. Not tagged, not pushed (tagging
 - Docs naming the current version updated: README.md, CONTRIBUTING.md,
   docs/guide/CLAUDE.md, docs/guide/getting-started.md, docs/spec/cli.md
   (`--version` output), docs/design/artifact_manager.md (the quoted provenance
-  line), and a one-clause note in docs/spec/match_api.md §6's provenance (#emitted-comments)
+  line), and a one-clause note in docs/spec/match_api.md §6's provenance (§6¶23)
   bullet recording the string moved without an abi event (D80).
 
 ## Readers of the version string, found by grep (whole tree)

@@ -2,7 +2,7 @@
 #
 # `(?&*=name)` puts the exports in the CALLER's own scope, which is the whole
 # point of the form — a flat row is counted by `nnames` and found by
-# `match_api.md#dup-name-algorithm` (§5.4)'s bsearch, indistinguishable from a group the caller
+# `match_api.md §5.4¶6` (§5.4)'s bsearch, indistinguishable from a group the caller
 # declared. That is exactly why the clash must refuse: two rows sharing one
 # name would make that bsearch return whichever the sort happened to put
 # first.

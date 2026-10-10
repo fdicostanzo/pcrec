@@ -3272,7 +3272,7 @@ never edited afterwards.
   (rightmost, matching `rb_pick`'s own fallback) — WITH an abi bump
   (37 -> 38, overruling the census's own "no abi bump", k64fix's
   stamp-VALUE-and-emitted-text precedent). Full D76/D94 ritual (match_api.md
-  §6 (`#abi`; the change log is now `docs/dev/history/abi_changelog.md`), a dated reqpos_2b.md §2.3 amendment, the tuning.md §2.28 spec hunk,
+  §6 (`§6¶17`; the change log is now `docs/dev/history/abi_changelog.md`), a dated reqpos_2b.md §2.3 amendment, the tuning.md §2.28 spec hunk,
   src/opt/CLAUDE.md's design entry, (B) re-pinned to `fe5a0bbc` — this
   lane's own last `src/` commit, per the k66fix/s1build/s1step6
   self-pin convention); a new structural check (`run_prechecks.sh` §4.9:

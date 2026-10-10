@@ -496,7 +496,7 @@ is not true of a minimized machine. Step 4's re-seed must be CONDITIONAL
    `seed[class(s[q−1])]` (`emit_dfa.c`'s entry line). That is because the
    only thing the skipped bytes leave behind is the class of the last one.
    This is the SAME premise every caller startpos already relies on
-   (`match_api.md` §3.1, `#search-skips`, k82h Claim 3). The every-startpos identity sweeps
+   (`match_api.md` §3.1¶10, k82h Claim 3). The every-startpos identity sweeps
    (`tests/utf8/run_startbnd_diff.sh`, the identity gates) test it today.
    - **On a multi-byte context**, the premise would already be false at the
      entry. `pf_emit_ofs_reseed` makes the same assumption for `[OPT-K]`.
@@ -959,7 +959,7 @@ single-byte `S` read by `memchr` per failed attempt:
   set is found BY GREP at landing:
   - `stamps.py`/`gapconfig`;
   - the bench's own scripts (relayed);
-  - `match_api.md`'s value table (`#stamp-inventory`);
+  - `match_api.md`'s value table (`§6.3.2`);
   - the tests that enumerate it (S1 found a reader class this way).
 - **VM hat stamp (rev 2, checks-F1).** A NEW stamp, `<PREFIX>_VM_START_SCAN`,
   whose value is the row name (`"first-class"`; `"first-memchr"` only if
@@ -1457,7 +1457,7 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 - **Readers found by grep today**:
   - `src/gen/emit_dfa.c:52`;
   - `tests/codegen/run_codegen_tests.sh:3021` (`ABI_EXPECT`);
-  - `docs/spec/match_api.md` (the abi sentence `#abi`, the `#error` example `#abi-guard`,
+  - `docs/spec/match_api.md` (the abi sentence `§6¶17`, the `#error` example `§1¶7`,
     the change log `docs/dev/history/abi_changelog.md`);
   - the identity gate's (B) pin;
   - the byte-count reader class (size tripwire pins, `run_cpset_structure.sh`
@@ -1486,7 +1486,7 @@ has no reseed hazard. The DFA hat follows with F3 measured in its own alpha.
 - `match_api.md` gains:
   - the `_VM_START_SCAN` stamp;
   - the four `DFA_PREFILTER` values;
-  - the §3.1 give-up sentence (`match_api.md#search-skips`; k82h's sentence, generalized: "positions a
+  - the §3.1 give-up sentence (`match_api.md §3.1¶10`; k82h's sentence, generalized: "positions a
     start-set or necessary-literal proof excludes consume no budget; a search
     that gives up with `-fno-start-set` may return the answer an unbounded
     budget returns").

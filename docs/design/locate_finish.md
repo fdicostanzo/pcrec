@@ -60,7 +60,7 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
 | C6 | A | REQ_WHY gains ONE token, `"locator"` (no pre-check: the selected locator is not the composite); DFA_TABLE / DFA_UNIFORM_FOLDS / DFA_SCAN_EDGE / the orientation block fold over the machines the artifact EMITS, through one membership derivation (L2.0, a no-mover) — under form C the forward machine is absent and they read the reverse (+ anchored) machines; the supersession of `revend.md` §5.2 is recorded in BOTH notes (§5.1; `revend.md` gains a forward pointer). |
 | C7 | A | pcrec-bench's `testees/pcrec/adapter.py`, `pcrecbench/report.py` and `tools/selfcheck.py` are listed as READERS of DFA_SCAN/DFA_START (§5 L2); L2's deliverable includes an `[inbox]` adapter note to pcrec-bench and the window handshake. |
 | C8 | A | §3.3 is corrected: the reader grep includes `pcrec_artifact_has_dfa_scan` (12 callers, `:3119`/`:3193` the `rx_info.scan`/`search_form` mirrors), `:10708` is dispositioned (it is `pcrec_artifact_has_dfa_scan` spelled locally), and the VM class is 15 lines, not 16. DFA_SCAN's machine-proxy readers join L2's reader list (§3.3, §5 L2). |
-| C9 | A | Spec citations corrected: DFA_START is `match_api.md#stamp-dfa-start`; the VM stamp block is `match_api.md#stamp-vm-prefilter-group`. Every DFA_SCAN value table that needs the fourth value is listed in L2's spec hunk (§5 L2). |
+| C9 | A | Spec citations corrected: DFA_START is `match_api.md §6.3.4¶11`; the VM stamp block is `match_api.md §6.3.5`. Every DFA_SCAN value table that needs the fourth value is listed in L2's spec hunk (§5 L2). |
 | C10 | A | `analyze.py` gains C4 (the exact/superset classifier vs the INDEPENDENT stamp `RX_VM_RESEED "exact"`: 759 exact / 734 superset hybrids, 0 disagreements) and a TWO-SIDED C3 (the converse holds outside two declared exceptions, both the shipped fact's own declines: 22 multibyte rows, 2 `\G`; plus a width-direction check with a declared probe-blind-call exception, 138 rows). Re-run: every existing table line unchanged (§3.1, `summary.txt`). |
 | C11 | A | The PRESENCE → LOCATE read is gated on `pcrec_artifact_has_dfa_scan` (no body, no locator to defer to: the 275 end-pinned VM-only artifacts never defer) and is spelled as G9's read on `dominated` (§4.3). |
 | C12 | A | `CT_WINDOW` deleted (G2); SPAN's `D` upper bound is what a VM ceiling reads (§1.2). L2 commits a declared-listing file for the new `locate` axis (`listing_declared_L2.tsv`, read by `start_table/listing_diff.py`). `nomatch` on `CR_VM` has its producers: the WIDTH ceiling's verdict and the PRESENCE verdict, both inside the composite (§2.3). |
@@ -973,7 +973,7 @@ Checks, sabotage and spec as `revend.md` §9.1 items 1-2.
   plus every MACHINE-PROXY reader (`[r2 G10, C8]`: a reader that takes `"unanchored"`
   to mean "the forward machine / its scan edge / its prefilter is present". Found by
   this revision, not exhaustively: the CONTRACT itself defines the value that way
-  (`match_api.md#stamp-dfa-scan`: `"unanchored"` is "the O(n) forward+reverse table pair"),
+  (`match_api.md §6.3.4¶2`: `"unanchored"` is "the O(n) forward+reverse table pair"),
   and so does the bench adapter's enum description (`adapter.py:699-701`); the complete
   census is L2's first deliverable);
   `pcrec_artifact_has_dfa_scan`'s 12 callers, which remain TRUE on a `rev-end`
@@ -1013,11 +1013,11 @@ Checks, sabotage and spec as `revend.md` §9.1 items 1-2.
   L2.1. Re-aims: derived by re-running `sabotage_anchors.py` with L2's edit set at
   build time (S264 and S693 are known members).
 - **Spec (D80) `[r2 C9]`:** `tuning.md` §2.x `-fno-rev-end`; `match_api.md`:
-  `DFA_SCAN` gains `"rev-end"` in every value table (the stamp list `#stamp-dfa-scan`, the
-  `rx_info` table `#rx-info-scan`, the field comments `#rx-info-fields`, and the tables in
+  `DFA_SCAN` gains `"rev-end"` in every value table (the stamp list `§6.3.4¶2`, the
+  `rx_info` table `§6¶6`, the field comments `§6¶1`, and the tables in
   `facts_listing.md:113-126` and `registry.md:421`, each confirmed by the build's grep),
-  `DFA_START` gains `"attempt-start"` at `#stamp-dfa-start` (revision 1's
-  `:4686-4703` is now the VM stamp block, `#stamp-vm-prefilter-group`), the REQ_WHY token, the downstream stamps'
+  `DFA_START` gains `"attempt-start"` at `§6.3.4¶11` (revision 1's
+  `:4686-4703` is now the VM stamp block, `§6.3.5`), the REQ_WHY token, the downstream stamps'
   values on movers, `rx_info.search_form`, the abi sentence and TU-guard example;
   `registry.md`'s axis counts and the `locate` axis; `facts_listing.md` `end_pin`;
   `cli.md` where it lists axes.

@@ -12,7 +12,7 @@ clean); merge waits on the panel; the union battery follows the merge.
 
 | # | severity | finding | disposition |
 |---|---|---|---|
-| C1 | HOLDS | abi 9→10 at all four D76 sites (`emit_dfa.c:1310`; `run_codegen_tests.sh:2707` ABI_EXPECT=10; `match_api.md#abi` (was `:1570`); FILEPIN → 14d1feb = the lane's last src commit); no fifth abi-9 pin anywhere | none |
+| C1 | HOLDS | abi 9→10 at all four D76 sites (`emit_dfa.c:1310`; `run_codegen_tests.sh:2707` ABI_EXPECT=10; `match_api.md §6¶17` (was `:1570`); FILEPIN → 14d1feb = the lane's last src commit); no fifth abi-9 pin anywhere | none |
 | C2 | HOLDS | D80 hunks for every caller-observable change: tuning.md §2.15 + §3.1's stamp row, limits.md's second narrower exception, cli.md:224's axis list (r40's miss NOT repeated), match_api.md §3.6; `--help` silent on the flag (D47.3) | none |
 | C3 | HOLDS (documented exception) | `RX_DFA_MATCH`/`match_form` non-NULL only on `RX_ENGINE "dfa"` artifacts, NULL on VM incl. hybrids — differs from the scan-fact precedent, and match_api.md argues why (it describes the `_match` ENTRY, not a scan); verified live on 3 compiled patterns | none |
 | C4 | HOLDS | `--list-axes` 45 rows / 18 axes reproduced; registry 59→64 DERIVED (`grep -c '^PASS: '`); no hard-coded "4-15" range remains ("4-31, DERIVED, no upper bound"); bit 17 in the dump | none |

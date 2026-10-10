@@ -1,0 +1,7 @@
+# tests/spec_history/cite_floors.tsv -- the least number of citations of a
+# numbered spec doc the citation check must find in the tree (K35: a scan that
+# reads nothing passes everything). One row per doc that carries the
+# `<!-- spec-toc:begin -->` block; a doc with no row FAILS. Columns: doc stem,
+# floor. Set at about half the count measured when the doc adopted numbering
+# (match_api: 1,009 on 2026-10-09).
+match_api	500

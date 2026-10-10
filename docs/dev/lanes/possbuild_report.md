@@ -63,7 +63,7 @@ report. Its logs go to `build/slot/`, and it writes `build/slot/STAGES` plus
 |---|---|
 | §9 abi event | abi 65 → 66 (the readers are listed below) |
 | §9 deny bits | A is kept (`run_prechecks.sh` 6b `KEPT_ALWAYS`). B is masked. Both are checked by `run_possessify_tests.sh` section 9 (e). |
-| §9 spec (D80) | `tuning.md` §2.1, §2.8, §2.44 and §2.45, plus the `rx_info.flags` rule (three engine-selecting denials) and §2.32's kept list. `docs/dev/history/abi_changelog.md`, `match_api.md#abi-guard` K80 example and §6.3 stamp entry. `cli.md` hidden-flag list. `registry.md` axes count. |
+| §9 spec (D80) | `tuning.md` §2.1, §2.8, §2.44 and §2.45, plus the `rx_info.flags` rule (three engine-selecting denials) and §2.32's kept list. `docs/dev/history/abi_changelog.md`, `match_api.md §1¶7` K80 example and §6.3 stamp entry. `cli.md` hidden-flag list. `registry.md` axes count. |
 | §8.1 possdiff | `tests/possessify/run_possdiff.sh` gained the exhaustive subjects (`subjects_exh.py`), `# flags:` headers, REACH and the arms populations (`arms_*.txt`). It is in `make test-possessify`. The named-manifest floor is `arms_manifest.tsv`. Result: **288 patterns agree, 0 diverge, 623,938 cells, reach 15/15, manifest 35/35, 6 route-flip witnesses DFA-routed**. Red direction (sub-lane pd): the N2 plant is detected on `(\w+?(?:\b|))`. |
 | §8.2 sabotage | 10 rows: S560-S565 (A-m0, A-firstpol, A-mixed, B-nofold, B-firstmem, B-nonnull) and S601-S604 (A-cc, B-depth, A-lazy, B-textpos). S600 was taken by lane stc4. Every row is `harness possdiff`, targets `tests/possessify/possessify.rxt`, has a stamp-reading `SAB_REACH` (verified answering at HEAD, 10/10) and a `SAB_REACH_POP` (verified matching, 19/19 lines). **Mech verdicts OWED (slot).** |
 | §8.3/8.3a CLAIM-vs-MARK | `docs/design/poss_arms_measurements/built/` against the built compiler. The generators were verified at their pinned sha1s and not edited. **AB: computed 32,994 compared, 0 mark≠expect, 0 unsound, 662 extra flips, 0 anomalies; hand 44 / 0.** Base-marked 2,160. utf,ucp REFUSED 4,502 (`UCP_PIN` holds). The single-arm configs mismatch only in the safe direction (unsound 0). |
@@ -81,7 +81,7 @@ report. Its logs go to `build/slot/`, and it writes `build/slot/STAGES` plus
 **abi readers, found by grep for `65`:**
 - `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`;
 - `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` and its ledger message;
-- `docs/spec/match_api.md`: the K80 example (twice, match_api.md#abi-guard) and the change-log (docs/dev/history/abi_changelog.md)
+- `docs/spec/match_api.md`: the K80 example (twice, match_api.md §1¶7) and the change-log (docs/dev/history/abi_changelog.md)
   bullet;
 - `run_recursion_identity.sh` (B) FILEPIN.
 

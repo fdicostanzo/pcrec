@@ -131,7 +131,7 @@ Every g5/g6 hit was read. Those not in the table below are PROVENANCE, and
 provenance does not move:
 - "added at `abi` 62", "abi 61 -> 62" event headings in `src/gen/CLAUDE.md`,
   `tests/codegen/CLAUDE.md`, `tests/startset/CLAUDE.md`,
-  `tuning.md` §2.42/§3504/§3994, `match_api.md#stamp-vm-start-scan` and §6.3's START-SET
+  `tuning.md` §2.42/§3504/§3994, `match_api.md §6.3.7¶12` and §6.3's START-SET
   heading;
 - stage 2's own re-pin comments;
 - plan/optloop/review documents;
@@ -146,7 +146,7 @@ provenance does not move:
 |---|---|---|
 | the constant | `src/gen/emit_dfa.c:53` | `PCREC_ARTIFACT_ABI 62` -> `63`. It moves the generated-by line `(abi N)`, `.abi = N`, and the K80 guard's `!= N` / `(abi N)` / `#define PCREC_RX_ABI_H N` (verified on `-o -` of `a`) |
 | ABI_EXPECT | `tests/codegen/run_codegen_tests.sh:3021` | `62` -> `63`; the cause list gains the 62->63 entry, copied from §6 |
-| K80 example | `docs/spec/match_api.md#abi-guard` (three lines: `!= 63`, `(abi 63)`, `PCREC_RX_ABI_H 63`) | digit |
+| K80 example | `docs/spec/match_api.md §1¶7` (three lines: `!= 63`, `(abi 63)`, `PCREC_RX_ABI_H 63`) | digit |
 | the abi change log | `docs/dev/history/abi_changelog.md` | NEW entry "`rx_info.abi` is `63` ... (lane memfnbump bumped it from 62, 2026-10-06: [MEMFN] R4a′ — THE KIT'S TWO STAMPS ...)"; the 62 entry now reads "was `62`" (D80) |
 | §6.3 heading | `docs/spec/match_api.md` | "[MEMFN] R4a′, `abi` 63, 2026-10-05 (the stamps' own `abi` event)" |
 | (B) FILEPIN | `tests/codegen/run_recursion_identity.sh:1169` | `f09b4a32` -> `b2e75d05` (commit `a0670cba`) |

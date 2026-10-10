@@ -146,7 +146,7 @@ complements within `[0, 0xFF]`, unchanged from before this milestone.
 
 The encoding is a **per-compile scalar** (D58 ruling 2) — two patterns in one
 binary may use different encodings, since there is no process-global to set;
-`docs/spec/match_api.md` §9.1 (`#encodings-compiled`) states the library-level rule this flag is the
+`docs/spec/match_api.md` §9.1 states the library-level rule this flag is the
 CLI spelling of. `-e byte` and the bare default are BYTE-IDENTICAL artifacts
 (`tests/cli/run_cli_tests.sh` case13), not merely equivalent-behaving ones —
 the default IS the explicit request.
@@ -643,7 +643,7 @@ select which ANSWER a call gives, not which shape finds it: `-futf-check`
 makes every entry refuse an ill-formed subject with `PCREC_ERR_UTF` (-9),
 PCRE2_UTF's contract, and `-fstartpos-guard=align` moves a caller's
 mid-character `startpos` forward to the next character start instead of
-refusing it (`match_api.md` §9.2, `#startpos-align`). Both are OFF by default and inert under
+refusing it (`match_api.md` §9.2¶9). Both are OFF by default and inert under
 `-e byte`. `-futf-check=extent` is a RESERVED spelling and is refused by name
 (exit 1, "reserved and not built"); `-fstartpos-guard=align` together with
 `-fno-startpos-guard` is refused as a contradictory request (exit 1). Like the
@@ -763,7 +763,7 @@ calls resolve against:
   own space and are re-based into the caller's, and its own `flags` seed its
   parse. A definition does not inherit the target's `flags`.
 - **What a caller sees of a definition's groups is `docs/spec/match_api.md`
-  §5.5's (`#composition`) composition subsection**, and the short version is: a library's
+  §5.5's composition subsection**, and the short version is: a library's
   groups are non-capturing to the caller unless the definition NAMES them,
   and a named one is delivered BY NAME with a `groups[]` row whose `ref` is
   the definition's name.
@@ -1353,7 +1353,7 @@ Stated plainly rather than left for a stranger to discover by trial:
   across the closure is a refusal. `target [<prefix>] = <definition>`'s
   omitted-prefix form and the `-`/`.` name grammar are
   `docs/spec/rxt_format.md`'s; what a caller sees of a library's groups is
-  `docs/spec/match_api.md` §5.5's (`#composition`).
+  `docs/spec/match_api.md` §5.5's.
 - 2026-08-31 ([DD-13b.W1.2]): §1 gains `--source` / `--target` /
   `--lib-path` and the output-naming rule; §4's multi-pattern and
   `--lib` bullets are narrowed to what is now true. Nothing in §1's

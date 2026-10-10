@@ -18,11 +18,17 @@ unallowed hits.
   spec_history.py ROOT --survey   the per-file density table (no verdict)
   spec_history.py ROOT --lines F  every unallowed hit in file F, by marker
 
+The same run also performs the numbered-spec checks of spec_cites.py (a
+numbered doc's paragraph numbers, its generated contents, and every citation
+of it in the tree).
+
 Python 3 standard library only; reads files, writes nothing.
 """
 import os
 import re
 import sys
+
+import spec_cites
 
 # (id, description, compiled regex). A regex is matched per LINE; fenced code
 # blocks are skipped (emitted text quoted verbatim may carry tags and dates).
@@ -162,6 +168,10 @@ def main(argv):
         if f not in files:
             failed += 1
             print("FAIL: baseline names %s, which is not in docs/spec/ -- remove its rows" % f)
+    # the numbered-spec checks (numbering, contents, citations): spec_cites.py
+    p2, f2 = spec_cites.run(root)
+    passed += p2
+    failed += f2
     print("checks passed: %d" % passed)
     print("checks failed: %d" % failed)
     return 1 if failed else 0

@@ -289,9 +289,9 @@ Every reader of the current number, found by `grep -rn` for `abi.*17` /
 | 2 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` |
 | 3 | `tests/codegen/run_codegen_tests.sh:2760` | the `[DD-14.FB]` failure message's bump narrative — one clause per bump; this change appends `17->18` |
 | 4 | `tests/codegen/run_recursion_identity.sh:555` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"` — gate (B)'s pin, RE-PINNED to this change's last `src/` commit, not renumbered |
-| 5 | `docs/spec/match_api.md#abi` | "`rx_info.abi` is `17`" in the D76 scaffolding-rule paragraph |
+| 5 | `docs/spec/match_api.md §6¶17` | "`rx_info.abi` is `17`" in the D76 scaffolding-rule paragraph |
 | 6 | `docs/dev/history/abi_changelog.md` | "`rx_info.abi` is `17` on every artifact today ([CC-DIFF] STEP 1 bumped …)" |
-| 7 | `docs/spec/match_api.md#stamp-vm-frameless` | "the abi-17 entry above lists them", inside `_VM_FRAMELESS`'s second-fact paragraph — **this is D94's fifth reader**, the one a hand-enumerated list missed last time |
+| 7 | `docs/spec/match_api.md §6.3.8¶10` | "the abi-17 entry above lists them", inside `_VM_FRAMELESS`'s second-fact paragraph — **this is D94's fifth reader**, the one a hand-enumerated list missed last time |
 | 8 | `src/gen/CLAUDE.md:2399` | the `[CC-DIFF] STEP 1 … abi 16 -> 17` section heading (documentation; the new section I added is undated on this axis and needs the number added) |
 
 Not a reader, checked: pcrec-bench's `PB_SHIM_MIN_ABI` is 15, so 18 clears it

@@ -156,7 +156,7 @@ src/gen/emit_dfa.c:1801        .abi = 23           -> 24  (the stamp)
 src/gen/emit_dfa.c:1775        the abi comment block      (per-artifact-kind breakdown)
 tests/codegen/run_codegen_tests.sh:2761  ABI_EXPECT=23 -> 24  (+ its message)
 tests/codegen/run_recursion_identity.sh  FILEPIN            (B) re-pinned
-docs/spec/match_api.md#abi     "rx_info.abi is 23"  -> 24
+docs/spec/match_api.md §6¶17     "rx_info.abi is 23"  -> 24
 docs/dev/history/abi_changelog.md    "rx_info.abi is 24 on every artifact today"
 ```
 

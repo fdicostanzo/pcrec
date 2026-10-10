@@ -45,7 +45,7 @@ Validation on the Mac (logs in the session scratchpad
   "was `56`". `run_codegen_tests.sh` ABI message: vedge's clause appended after
   rsform's, as 56->57. `run_recursion_identity.sh` FILEPIN: comment chain kept,
   pin re-done at the end.
-- **s4build**: the lanes index; `match_api.md#abi-guard`'s guard quote (now 58) and docs/dev/history/abi_changelog.md
+- **s4build**: the lanes index; `match_api.md §1¶7`'s guard quote (now 58) and docs/dev/history/abi_changelog.md
   (s4build paragraph "is `58`", from 57; vedge's became "was `57`");
   `tuning.md` (§2.37 vedge kept, s4build's section became §2.38; §4's mirror
   table keeps both rows); `lib/pcrec.h` (both macros: `PCREC_NO_VIEW_EDGE`
@@ -61,7 +61,7 @@ Validation on the Mac (logs in the session scratchpad
 **[OPT-VEDGE] abi 56 -> 57** (14e78104). The grep was
 `(abi|ABI)[^0-9]{0,30}56|55 ?-> ?56|!= 56|ABI_H 56` over the tree. Readers:
 `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh` `ABI_EXPECT`
-and its message, `match_api.md#abi-guard` guard quote (`!= 57`, `(abi 57)`, `ABI_H 57`)
+and its message, `match_api.md §1¶7` guard quote (`!= 57`, `(abi 57)`, `ABI_H 57`)
 and the change log (docs/dev/history/abi_changelog.md), `tuning.md` §2.37 header paragraph, the lanes index line, and a
 landing note in `vedge_report.md`. Lines that legitimately say 56 belong to
 rsform: src/gen/CLAUDE.md, tests/codegen/CLAUDE.md,

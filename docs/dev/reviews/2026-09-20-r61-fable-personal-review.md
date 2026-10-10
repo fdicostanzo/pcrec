@@ -28,7 +28,7 @@ build: `clo_open`'s "loop not already open" check and `clo_walk`'s
 "the open loop is the stack top" check. Its own comment justifies the idiom
 as "this file's existing idiom (tab_grow, intern)" — **stale**: K7 moved
 both of those to `pcrec_ctx_nomem`/longjmp precisely so a library caller is
-never aborted, and docs/spec/match_api.md#compile-guarantees (was :3345) now promises "It never
+never aborted, and docs/spec/match_api.md §8.1 (was :3345) now promises "It never
 abort()s the caller on the compile path." These two are the only `abort()`
 reachable from `pcrec_compile` (arena.c/sb.c's are on DETACHED buffers).
 The checks are premises of a termination argument and the author says a

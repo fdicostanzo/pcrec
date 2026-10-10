@@ -134,7 +134,7 @@ survive the extraction exactly).
 sites in the closure walk (clo_open's "loop not already open", clo_walk's
 "the open loop is the stack top"). Its comment's justification ("this file's
 existing idiom — tab_grow, intern") is STALE since K7 moved both to
-`pcrec_ctx_nomem`; docs/spec/match_api.md#compile-guarantees (was :3345) promises "It never abort()s
+`pcrec_ctx_nomem`; docs/spec/match_api.md §8.1 (was :3345) promises "It never abort()s
 the caller on the compile path", and these are the only two aborts reachable
 from `pcrec_compile`. **Agreed shape:** `DFA_INVARIANT` → `pcrec_ctx_fail(cx,
 0, "internal error: ...")` carrying each invariant's text (the macro needs

@@ -65,8 +65,8 @@ selection. `variables_common.md` §6's fits-arch row corrected to match.
 **MECH-B2 (mech-F2) — `<prefix>_match` IS `rx_matchfn`; §4.1 changes its
 signature and §4.2 argues it does not — contradiction, OPEN to Frank.**
 `rx_matchfn` is a fixed-literal ABI type shared by every artifact
-(`match_api.md#abi-types` (was `:915-918`), emitted unconditionally at `emit_dfa.c:1013`,
-composability load-bearing per `match_api.md#abi-block` (was `:1238`)/`lib/pcrec.h:1326`).
+(`match_api.md §2` (was `:915-918`), emitted unconditionally at `emit_dfa.c:1013`,
+composability load-bearing per `match_api.md §1¶5` (was `:1238`)/`lib/pcrec.h:1326`).
 §4.1 gives a var-bearing artifact's `<prefix>_match` a `vars` parameter,
 which makes it no longer an `rx_matchfn` — the identical harm D38 rejected
 in the very sentence §4.2 quotes approvingly, narrowed to var-bearing
@@ -99,7 +99,7 @@ and `variables_roadmap.md` §1/§2.1/§5/§7 follow.
 **MECH-M1 (mech-F3)** — `PCREC_ERR_UNSET_VAR` lands in the shared ABI block
 `emit_dfa.c` emits unconditionally into every artifact (`:1034`/`:1051`/
 `:1073`, no gate), so "a var-free artifact is byte-identical to today" is
-false as stated (the same shape `docs/dev/history/abi_changelog.md` (was `match_api.md:178-179`) records for the
+false as stated (the same shape `docs/dev/history/abi_changelog.md` (was `match_api.md line 178-179`) records for the
 `abi` 24→25 move). **ACCEPT.** The VALUE is fixed in the spec; EMISSION is
 gated on the var-bearing bit (the `enc_mask`/residual pattern), so a
 var-free artifact is unchanged except for the `abi` digit every artifact

@@ -125,7 +125,7 @@ What holds, and needs no change:
 ### M3. `MF_NONE_ABORT` codifies `abort()` on the compile path, and the oracle needs NULL from the same table
 
 - **Evidence.**
-  - `docs/spec/match_api.md#compile-guarantees` (was `:4990`; §8.1, D56) promises: "It never `abort()`s the caller on
+  - `docs/spec/match_api.md §8.1` (was `:4990`; §8.1, D56) promises: "It never `abort()`s the caller on
     the compile path". It adds that every "cannot happen" site now refuses through
     `pcrec_ctx_fail`, and since 2026-09-18 the promise "has none" exceptions.
   - `esel_of` quotes that rule for its premise check (select_engine.c:945-960).

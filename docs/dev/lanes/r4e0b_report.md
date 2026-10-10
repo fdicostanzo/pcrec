@@ -45,7 +45,7 @@ event in flight, so this lane wrote 70 directly and did not also bump to 69.
 | `memfn/src/ofsskip.c` | `fn_head`, `fn_selector`, `fn_in.body_fn`; the seam's order (helper, PREFIX, selector); header and section comments |
 | `memfn/src/kit.h` | `ofs_fn_define`'s comment states the three pieces |
 | `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI` 69 -> 70 |
-| `docs/spec/match_api.md#abi-guard` | the shared-block guard example (`!= 70`, `(abi 69)`, `PCREC_RX_ABI_H 70`); `docs/dev/history/abi_changelog.md` entry for 70 |
+| `docs/spec/match_api.md §1¶7` | the shared-block guard example (`!= 70`, `(abi 69)`, `PCREC_RX_ABI_H 70`); `docs/dev/history/abi_changelog.md` entry for 70 |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=69` and its ledger message (copied from §6) |
 | `tests/codegen/run_recursion_identity.sh` | (B) FILEPIN self-pinned to `74f941dc` (commit `f7c8624f`) |
 | `tests/memfn/pins/arms.tsv` | the ten FUNC-bearing `def` parts re-pinned (no `use` part moved), header records why |
@@ -64,15 +64,15 @@ event in flight, so this lane wrote 70 directly and did not also bump to 69.
 1. **Digit readers.** The grep was `git grep -nIE '\babi[ :=_"(]*68\b|...|abi.{0,3}68'`,
    with `docs/dev/lanes` and `dev_journal.md` excluded.
    - LIVE: `src/gen/emit_dfa.c:54` (the one constant, which feeds both
-     emitted sites), `docs/spec/match_api.md#abi-guard` (the guard example),
-     `match_api.md#abi` ( "is `68` on every artifact today", now the
+     emitted sites), `docs/spec/match_api.md §1¶7` (the guard example),
+     `match_api.md §6¶17` ( "is `68` on every artifact today", now the
      70 entry plus the 68 entry demoted to "was"), and
      `tests/codegen/run_codegen_tests.sh:3042` (`ABI_EXPECT`) and its
      ledger message.
    - HISTORICAL, left as is: `docs/design/CLAUDE.md:2793`,
      `docs/design/dec_fallback.md:4`, `dec_fallback/refactor_edit_set.tsv:2`,
      `docs/dev/known_issues.md:36`, `docs/spec/tuning.md:1308`,
-     `match_api.md:4470`, `memfn/docs/journal.md:911`,
+     `match_api.md line 4470`, `memfn/docs/journal.md:911`,
      `src/facts/CLAUDE.md:112`, `src/opt/CLAUDE.md:1651`. Each is dated
      narrative ("since abi 68").
 2. **The (B) pin.** `run_recursion_identity.sh` FILEPIN, self-pinned. The

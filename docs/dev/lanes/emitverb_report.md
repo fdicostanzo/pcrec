@@ -321,7 +321,7 @@ under both settings on every case.
 |---|---|---|
 | `src/gen/emit_dfa.c`'s `.abi = 26,` | grep | -> 27 |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT=26` | grep | -> 27, plus the 26->27 clause on its own narrative (that message is the bump LOG) |
-| `docs/spec/match_api.md#abi` | grep | -> 27, [EMIT-VERB] named |
+| `docs/spec/match_api.md §6¶17` | grep | -> 27, [EMIT-VERB] named |
 | `docs/dev/history/abi_changelog.md` | grep | -> 27, with the measured figures |
 | `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` | grep | **OWED to the manager** (below) |
 | `tests/registry/run_registry_tests.sh`'s axes COVERAGE pin `102` | **NOT by grep** | -> 108 |

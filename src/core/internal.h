@@ -2823,7 +2823,7 @@ typedef struct NamedGroup {
      * and emitted as a literal `NULL` until this step (`emit_dfa.c`).
      *
      * IT IS ALSO THE SORT KEY'S LEADING TERM, and that is an ABI contract
-     * rather than a nicety: `match_api.md` §5.4 (#named-groups) documents `nnames` as the
+     * rather than a nicety: `match_api.md` §5.4 documents `nnames` as the
      * entries in `groups[]` and gives a caller a bsearch that walks a name
      * RUN. If injected rows sorted AMONG the primary's while `nnames`
      * counted only the primary's, a caller could miss its own name or land
@@ -2841,7 +2841,7 @@ typedef struct NamedGroup {
      *
      *   caller scope (`false`)   the pattern's own named groups AND flat
      *                            imports. These form the `nnames` PREFIX, in
-     *                            name order, so `match_api.md` §5.4's (#named-groups) shipped
+     *                            name order, so `match_api.md` §5.4's shipped
      *                            bsearch finds a flat import unchanged.
      *   site scope (`true`)      a `site.group` row from a delivering call.
      *                            Above `nnames`; reached by the qualified
@@ -3238,7 +3238,7 @@ struct Ctx {
      * (src/parse/mod_named_groups.c) and left NULL/0 by every pattern with
      * no named group. src/gen/emit_dfa.c's emit_info_def reads it once, at
      * the end of parse, to build the SORTED `rx_group_entry` array
-     * docs/spec/match_api.md §5.4 (#named-groups) promises (sort key: strcmp on the name —
+     * docs/spec/match_api.md §5.4 promises (sort key: strcmp on the name —
      * PCRE2's own PCRE2_INFO_NAMETABLE is sorted exactly this way,
      * measured directly in tests/probes/probe_named_groups.c, which is
      * this decision's evidence). */

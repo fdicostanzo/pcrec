@@ -1139,7 +1139,7 @@ delivered.
 **§2.6(e)'s cure covers ONE of the three ways a cursor gets to a
 mid-character position, and the first version implied it covered all three.**
 Stated per entry, which is what `docs/spec/match_api.md` §3.1 needs to gain
-under D80 (it landed as §9.2, `#startpos`):
+under D80 (it landed as §9.2):
 
 | how the cursor gets there | protected by | the artifact's promise under `utf8` |
 |---|---|---|
@@ -1160,7 +1160,7 @@ branch on every call, encoding-conditional, on the hot path, which is what
 > uses it.
 
 **This is a contract sentence, not an implementation note**, so it lands in
-`docs/spec/match_api.md` §3.1 in stage 2's own change (§13 obligation 1; it landed as §9.2, `#startpos`), not
+`docs/spec/match_api.md` §3.1 in stage 2's own change (§13 obligation 1; it landed as §9.2), not
 later. And **it is contingent on ASK 1**: if Frank rules that ill-formed input
 must be reported rather than silently unmatched, this row changes with it, and
 the opt-in validation entry that ASK 1 names is also where a `startpos`
@@ -4207,7 +4207,7 @@ this lane deliberately did not take.
 >
 > **Two obligations follow and are recorded here rather than left implicit**:
 > the divergence from PCRE2's default `PCRE2_UTF` mode is now a RULED,
-> user-visible semantic and belongs in `docs/spec/match_api.md` (§9, `#encodings`) in stage 2's
+> user-visible semantic and belongs in `docs/spec/match_api.md` (§9) in stage 2's
 > own change (D80, §13 obligation 1); and §2.6.1's per-entry `startpos`
 > promise rides with it, since both describe what the artifact does at a
 > position PCRE2 would refuse.

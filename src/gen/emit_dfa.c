@@ -1852,7 +1852,7 @@ static void emit_rx_abi_types(StrBuf *sb)
      * before this change, whose guard is defined EMPTY: `( + 0)` is 0, so
      * old-then-new is refused too. New-then-old is the one order no
      * emission can reach — the old block's `#ifndef` is already written —
-     * and the spec says so (match_api.md §1, #abi-guard). */
+     * and the spec says so (match_api.md §1¶7). */
     pcrec_sb_printf(sb,
         "#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != %d\n"
         "#error \"pcrec: this artifact (abi %d) shares a translation unit with "
@@ -2282,7 +2282,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
-         * (docs/spec/match_api.md §2, #abi-types: "no such constant is #defined
+         * (docs/spec/match_api.md §2: "no such constant is #defined
          * anywhere") gains names. The internal ENGM_* enum
          * (src/opt/select_engine.c) stays internal -- these two are the
          * emitted spelling, pinned to today's stamped numbers (this NAMES
@@ -2745,7 +2745,7 @@ typedef struct {
  * (tests/probes/probe_named_groups.c: a 3-name pattern declared
  * zeta/alpha/mu by paren order comes back alpha/mu/zeta) rather than
  * invented, which is what makes the array bsearch-able by name exactly as
- * docs/spec/match_api.md §5.4 (#named-groups) always said it would be, and settles the
+ * docs/spec/match_api.md §5.4 always said it would be, and settles the
  * paragraph that section left open (docs/dev/decisions.md's [M6.3] entry). */
 /* [M6.5.2] THE NUMBER TIEBREAK, AND IT IS A CORRECTNESS REQUIREMENT rather
  * than the reproducibility nicety it would have been before `(?J)` existed.
@@ -2761,7 +2761,7 @@ typedef struct {
  * FROM THE HEAD, so the array reaching `qsort` is in DESCENDING group number.
  * Under a name-only comparator and a STABLE sort — glibc's is a merge sort —
  * the emitted rows for one name would come out (name asc, number DESC), and
- * `docs/spec/match_api.md` §5.4's caller algorithm (#dup-name-algorithm: bsearch, walk BACK to the
+ * `docs/spec/match_api.md` §5.4's caller algorithm (§5.4¶6: bsearch, walk BACK to the
  * run's first row, then FORWARD to the first participating one) would then
  * select the HIGHEST-numbered participating group. That is precisely the
  * "last set" rule §8.3's `"xyy"` cell rules out: `(?J)^(?<a>x)(?<a>y)\k<a>$`
@@ -2791,7 +2791,7 @@ typedef struct {
  * stop finding it — so the first term is caller-scope-vs-site-scope, and
  * `ref` is left to answer the separate question of where a name came from. Once the composer can inject a DEFINITION's named
  * groups into this array, `nnames` and the array length stop being one
- * number: `match_api.md` §5.4 (#named-groups) documents `nnames` as the entries in `groups[]`
+ * number: `match_api.md` §5.4 documents `nnames` as the entries in `groups[]`
  * and hands a caller a bsearch that walks a name RUN backwards and forwards.
  * If injected rows sorted AMONG the primary's while `nnames` counted only
  * the primary's, a caller could walk off the end of its own run into a
