@@ -9369,6 +9369,46 @@ static void cand_path_selfcheck(void)
                                      cand_hand_alias(CAND_SLOT_FINISH, asked[rt][h]),
                                      "selfcheck");
             }
+        /* [START-LANDING] SL3 RECOVER's totality is per HAND too, and its
+         * askers are READ OFF THE TABLE: each LOCATE row's `u.locate.recover`
+         * is the hand its walk asks RECOVER with (the composite's verified
+         * end, `EXISTS`; `rev-end`'s speculative seeds, `WINDOW`). On every
+         * route RECOVER is asked, the last row taking each such hand is
+         * undeniable and available by construction, as FINISH's above. And
+         * a row that names a start WITHOUT walking back from the end (any
+         * action but the reverse walk) takes only hands that carry `START`:
+         * its start is derived from a verified end, which a hand without
+         * `START` (`WINDOW`) has not got (start_landing.md §4.3). */
+        for (int rt = 0; rt < 3; rt++) {
+            if (!(cand_nodes[CAND_SLOT_RECOVER].asks & CAND_ON(rt))) continue;
+            for (size_t j = 0; j < CAND_NROWS; j++) {
+                const CandRow *lr = &cand_rows[j];
+                if (lr->slot != CAND_SLOT_LOCATE || !(lr->routes & CAND_ON(rt)) ||
+                    !lr->u.locate.recover)
+                    continue;
+                const CandRow *last = NULL;
+                CandSel q = { .route = rt, .hand = lr->u.locate.recover, .point = true };
+                for (size_t i = 0; i < CAND_NROWS; i++)
+                    if (cand_rows[i].slot == CAND_SLOT_RECOVER &&
+                        (cand_rows[i].routes & CAND_ON(rt)) && cand_takes(&cand_rows[i], &q))
+                        last = &cand_rows[i];
+                if (!last || last->c.deny || last->c.applies != cand_always ||
+                    (last->needs[rt].mach & ~always_built[rt]))
+                    cand_oracle_fail("table-recover-not-total", CAND_ROUTE_NAME(rt),
+                                     cand_hand_alias(CAND_SLOT_RECOVER, lr->u.locate.recover),
+                                     "selfcheck");
+            }
+        }
+        for (size_t i = 0; i < CAND_NROWS; i++) {
+            const CandRow *r = &cand_rows[i];
+            if (r->slot != CAND_SLOT_RECOVER || r->u.recover.act == CRA_REVERSE) continue;
+            for (int rt = 0; rt < 3; rt++)
+                for (int k = 0; k < 4 && r->take[rt][k]; k++)
+                    if (!(r->take[rt][k] & CT_START))
+                        cand_oracle_fail("table-recover-start-unproved", r->c.name,
+                                         cand_hand_alias(CAND_SLOT_RECOVER, r->take[rt][k]),
+                                         "selfcheck");
+        }
         for (size_t i = 0; i < CAND_NROWS; i++)
             for (int rt = 0; rt < 3; rt++) {
                 if (cand_rows[i].take[rt][0] && !(CN(cand_rows[i].slot) & CAND_HANDED_SLOTS))
