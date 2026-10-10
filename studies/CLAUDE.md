@@ -310,7 +310,11 @@ re-measure before load-bearing use.
   rows applied, an emitter-independent twin transformer (`replace` and
   per-call `assert` modes, DFA bodies and hybrid prefilters alike), a
   three-answerer identity driver against libpcre2 10.46 with failing controls,
-  and directional timing. Backs `docs/design/start_landing.md`. See its own
-  CLAUDE.md.
+  and directional timing. Backs `docs/design/start_landing.md`. Revision 2 (lane
+  landrev): three guard forms in the twin (the post-loop skip, Fix A, the refuted
+  restart) calling the seam's own decode, an exhaustive decode-vs-Table-3-7
+  check, the class-own ill-formed pool, the guard timing with hostile subjects,
+  the regenerated census (empties, the width interval), and the DERIVED edit set,
+  reader census and witness-mover tables. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

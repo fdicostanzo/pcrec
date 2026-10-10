@@ -1417,6 +1417,23 @@ Revision 2's L2.0 (`dfa_machines_of`, the machine-membership no-mover) is GONE: 
   `SDR_NO_ANCHORED` is skipped there and the ladder moves to its next rung, where
   without the clause it would GROW the artifact by the forward machine and the
   composite.
+  **`[r2-landing]` The RECOVER hand (`start_landing.md` rev 2 §4.3, panel SL-C6).**
+  `rev-end`'s walk asks RECOVER at SPECULATIVE ends `{n − 1, n}`: its hand is the
+  WINDOW mask `CT_LOWER | CT_UPPER` (`¬e`), where the composite's VERIFIER → RECOVER
+  ask hands the EXISTS mask `CT_LOWER | CT_UPPER | CT_START` (§1.2's table; §7.5's
+  filed mask gains its first producer). `cand_select` filters RECOVER asks by
+  `take & hand` exactly as FINISH asks, the hand MANDATORY (abort on 0). `reverse-pass`
+  takes both masks; `pinned`, and `[START-LANDING]`'s `end-minus-width` and `landing`,
+  take only a hand carrying `e`. §2.7's closure key is (slot, route, HAND): the
+  `RX_DFA_START`/`search_form` stamp and every reader of the RECOVER selection read the
+  cell the PATH asked — on an artifact where `rev-end` is selected that is `rev-end`'s
+  WINDOW ask (→ `reverse-pass`), never a fresh hand-less ask (6 bench / 41 corpus
+  end-pinned fixed-width artifacts would otherwise stamp `end-minus-width` over a
+  reverse walk). SEQUENCING: whichever of L2.2 and `[START-LANDING]`'s SL3 lands second
+  carries it. If L2.2 lands first it adds the field and the masks with `reverse-pass`
+  taking every mask and `pinned` taking EXISTS (no mover: `pinned` never co-occurs with
+  `end_pin`, revend X3's assertion, now a declaration); SL3 then adds the two rows'
+  `take`. Its sabotage row (`start_landing.md` §7.5 row 8) becomes reachable here.
 - **abi:** 71 → 72, once, for the L2 merge. Readers BY GREP at build time (D76/D94):
   (a) the abi NUMBER (`revend.md` §5.3 (a)); (b) the byte-count readers (§5.3 (b));
   (c) the `DFA_SCAN` value readers — `revend.md` §5.3 (d)'s 33 files / 6 sabotage rows

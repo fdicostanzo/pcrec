@@ -1,0 +1,2 @@
+# decode_eq.py at main efc58146 (the seam's u8_defs_decode vs an independent Table 3-7), Linux dev box, gcc 15.2 -O2
+decode_eq windows*ends=17179869184 len0=8179941376 len1=8589934592 len2=377487360 len3=31457280 len4=1048576 disagreements=0

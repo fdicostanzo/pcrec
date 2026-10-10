@@ -1,7 +1,7 @@
 #!/bin/bash
 # [START-LANDING] hand-twin answer identity over a run list (STUDY).
 #   PCREC=build/pcrec POOLDIR=<dir with pool_byte.hex pool_utf8.hex> MODE=assert|replace \
-#     [CONTROL=noguard|wplus1|forcelanding] ./run_check.sh RUNLIST.tsv OUTDIR
+#     [CONTROL=noguard|wplus1|forcelanding] [GUARD=skip|inblock|restart] ./run_check.sh RUNLIST.tsv OUTDIR
 # RUNLIST.tsv: name enc icase cfg pattern_hex row W [subjects,comma,separated]
 #   (runlist.py writes it from census.py's output). Per row: emit the
 # artifact twice (-p o, -p t) with the bench's flags, twin the t copy
@@ -9,6 +9,9 @@
 # the machine-derived exhaustive pool (mksubj.py), the corpus/edge pool for
 # the encoding, and the row's own (bench) subjects. CONTROL is a planted
 # fault: the sweep must then FAIL (controls.tsv names the expected rows).
+# GUARD [rev 2, lane landrev] picks the first-character guard a `landing-u8`
+# twin carries (mktwin.py --guard=; default `skip`, SL-G1's post-loop form;
+# `inblock` is SL-E1's Fix A); CONTROL=noguard overrides it with none.
 # One summary line per (row, pool); exit 1 if any row disagreed.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -30,7 +33,7 @@ while IFS=$'\t' read -r name enc icase cfg phex row W subs; do
         landing|forcelanding) form=landing; [ "$enc" = utf8 ] && form=landing-u8 ;;
         *) echo "$name $cfg SKIP row=$row"; continue ;;
     esac
-    xa=(); [ "$CONTROL" = noguard ] && xa=(--no-guard)
+    xa=(--guard="${GUARD:-skip}"); [ "$CONTROL" = noguard ] && xa=(--guard=none)
     if ! python3 "$HERE/mktwin.py" "$d/t.c" "$d/t.c.tw" t "$form" "$MODE" "${xa[@]}" 2>"$d/tw.err"; then
         echo "$name $cfg NOT-TWINNABLE: $(cat "$d/tw.err")"; bad=1; continue
     fi

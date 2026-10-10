@@ -6,7 +6,22 @@
      land=alive-not-accept                              patterns 552 bytes       802756 est   0.00 ms
      land=assert-at-start                               patterns 217 bytes       732201 est   0.00 ms
      land=assert-after                                  patterns 155 bytes      1646498 est   0.00 ms
-  -- top 0 cells by est:
+  -- top 15 cells by est:
+     tests/utf8/restrict.rxt:85         search        end-minus-width  est   0.00 ms  G         6  n    49157  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/restrict.rxt:85         findall       end-minus-width  est   0.00 ms  G       621  n    49155  K3 0 K4 621  bench 0.00 ms
+     tests/utf8/restrict.rxt:34         search        end-minus-width  est   0.00 ms  G         5  n    49156  K3 5 K4 0  bench 0.00 ms
+     tests/utf8/restrict.rxt:34         findall       end-minus-width  est   0.00 ms  G      6132  n    49154  K3 6132 K4 0  bench 0.00 ms
+     tests/utf8/k73_startskip.rxt:102   search        end-minus-width  est   0.00 ms  G         3  n    49233  K3 0 K4 3  bench 0.00 ms
+     tests/utf8/k73_startskip.rxt:102   findall       end-minus-width  est   0.00 ms  G         2  n    49182  K3 0 K4 2  bench 0.00 ms
+     tests/utf8/hv_space.rxt:486        search        landing          est   0.00 ms  G         6  n    49300  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/hv_space.rxt:486        findall       landing          est   0.00 ms  G      1338  n    49222  K3 0 K4 1338  bench 0.00 ms
+     tests/utf8/hv_space.rxt:477        search        landing          est   0.00 ms  G         6  n    49304  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/hv_space.rxt:477        findall       landing          est   0.00 ms  G     16830  n    49226  K3 0 K4 16830  bench 0.00 ms
+     tests/utf8/fold.rxt:92             search        end-minus-width  est   0.00 ms  G         8  n    49179  K3 0 K4 8  bench 0.00 ms
+     tests/utf8/fold.rxt:92             findall       end-minus-width  est   0.00 ms  G      1577  n    49166  K3 0 K4 1577  bench 0.00 ms
+     tests/utf8/fold.rxt:61             search        end-minus-width  est   0.00 ms  G         6  n    49180  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/fold.rxt:61             findall       end-minus-width  est   0.00 ms  G     46259  n    49166  K3 0 K4 46259  bench 0.00 ms
+     tests/utf8/fold.rxt:49             search        landing          est   0.00 ms  G        10  n    49200  K3 0 K4 10  bench 0.00 ms
 == config nocaps: K3+K4 cells, bytes 16772822, est 0.00 ms
   landing          cells  673 patterns 339  bytes      8536050 ( 50.9%)  est    0.00 ms (  0.0%)
   end-minus-width  cells 2172 patterns 1102  bytes      4922517 ( 29.3%)  est    0.00 ms (  0.0%)
@@ -15,4 +30,19 @@
      land=alive-not-accept                              patterns 552 bytes       798647 est   0.00 ms
      land=assert-at-start                               patterns 228 bytes       734442 est   0.00 ms
      land=assert-after                                  patterns 155 bytes      1781166 est   0.00 ms
-  -- top 0 cells by est:
+  -- top 15 cells by est:
+     tests/utf8/restrict.rxt:85         search        end-minus-width  est   0.00 ms  G         6  n    49157  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/restrict.rxt:85         findall       end-minus-width  est   0.00 ms  G       621  n    49155  K3 0 K4 621  bench 0.00 ms
+     tests/utf8/restrict.rxt:34         search        end-minus-width  est   0.00 ms  G         5  n    49156  K3 5 K4 0  bench 0.00 ms
+     tests/utf8/restrict.rxt:34         findall       end-minus-width  est   0.00 ms  G      6132  n    49154  K3 6132 K4 0  bench 0.00 ms
+     tests/utf8/k73_startskip.rxt:102   search        end-minus-width  est   0.00 ms  G         3  n    49233  K3 0 K4 3  bench 0.00 ms
+     tests/utf8/k73_startskip.rxt:102   findall       end-minus-width  est   0.00 ms  G         2  n    49182  K3 0 K4 2  bench 0.00 ms
+     tests/utf8/hv_space.rxt:486        search        landing          est   0.00 ms  G         6  n    49300  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/hv_space.rxt:486        findall       landing          est   0.00 ms  G      1338  n    49222  K3 0 K4 1338  bench 0.00 ms
+     tests/utf8/hv_space.rxt:477        search        landing          est   0.00 ms  G         6  n    49304  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/hv_space.rxt:477        findall       landing          est   0.00 ms  G     16830  n    49226  K3 0 K4 16830  bench 0.00 ms
+     tests/utf8/fold.rxt:92             search        end-minus-width  est   0.00 ms  G         8  n    49179  K3 0 K4 8  bench 0.00 ms
+     tests/utf8/fold.rxt:92             findall       end-minus-width  est   0.00 ms  G      1577  n    49166  K3 0 K4 1577  bench 0.00 ms
+     tests/utf8/fold.rxt:61             search        end-minus-width  est   0.00 ms  G         6  n    49180  K3 0 K4 6  bench 0.00 ms
+     tests/utf8/fold.rxt:61             findall       end-minus-width  est   0.00 ms  G     46259  n    49166  K3 0 K4 46259  bench 0.00 ms
+     tests/utf8/fold.rxt:49             search        landing          est   0.00 ms  G        10  n    49200  K3 0 K4 10  bench 0.00 ms

@@ -14,19 +14,42 @@ MODE   replace    the reverse block is DELETED (the timing / answer twin)
                   (extern globals) count calls and disagreements. On a VM
                   hybrid this is the inlined prefilter's WINDOW, so diff == 0
                   is window identity (NEUTRAL), read per call.
---no-guard  CONTROL: landing-u8 without its guard (must fail on ill-formed
-            subjects).
+--guard=G   [rev 2, SL-G1/SL-E1] which first-character guard `landing-u8`
+            carries (default `skip`):
+              skip     SL-G1's POST-LOOP SKIP (the design's primary, §2.5):
+                       after the forward loop, if the character at the last
+                       landing L does not decode, start = the first position
+                       p > L at which one does (bounded by the end). No
+                       re-entry, no hot-path statement.
+              inblock  SL-E1's FIX A: the NEXT block's last statement tests the
+                       candidate and steps past an ill-formed one exactly as
+                       past a non-candidate (`continue`), then records.
+              restart  REVISION 1's form (recorded, refuted): re-enter the
+                       forward scan at L + 1 (QUADRATIC on lead runs).
+              none     CONTROL: no guard (must fail on ill-formed subjects).
+--no-guard  the old spelling of --guard=none.
+
+The decode every guard calls is THE SEAM'S OWN `$_decode`
+(`src/enc/enc_utf8.c` `u8_defs_decode`, read from the tree at twin time,
+`$` -> `<p>_tw`), so the twin tests the text a build would emit; its
+agreement with Unicode Table 3-7 is `decode_eq.py`'s separate, exhaustive
+check.
 
 Independent of the emitter: it edits today's artifact TEXT, anchored on the
 emitted lines below; every anchor is asserted (count == the number of DFA
 search bodies in the file, 1). Works on the DFA artifact's <p>_search and on
 a VM hybrid's static <p>_prefilter alike (the same emitter writes both).
 """
-import re, sys
+import os, re, sys
 
 src = open(sys.argv[1]).read()
 out, P, form, mode = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
-noguard = "--no-guard" in sys.argv[6:]
+guard = "skip"
+for a in sys.argv[6:]:
+    if a == "--no-guard": guard = "none"
+    elif a.startswith("--guard="): guard = a.split("=", 1)[1]
+if guard not in ("skip", "inblock", "restart", "none"):
+    sys.exit("mktwin: --guard=" + guard)
 
 
 def need(c, m):
@@ -66,22 +89,37 @@ else:
     close = k - 1          # index of the guard's closing brace
     line0 = src.rfind("\n", 0, close) + 1
     ind = src[line0:close]
-    src = src[:line0] + ind + "    %s_landing = scan_position;\n" % P + src[line0:]
+    u8 = form == "landing-u8"
+    if u8 and guard == "inblock":
+        # Fix A: an ill-formed candidate is stepped past like a non-candidate
+        # (the block re-runs at the loop top with the state still s0)
+        src = (src[:line0] + ind + "    if (scan_position < subject_length && !%s_tw_decode(subject, subject_length, scan_position, &%s_tw_cp)) { scan_position++; continue; }\n" % (P, P)
+               + ind + "    %s_landing = scan_position;\n" % P + src[line0:])
+    else:
+        src = src[:line0] + ind + "    %s_landing = scan_position;\n" % P + src[line0:]
     row = "%s_landing" % P
     decl = ""
-    if form == "landing-u8" and not noguard:
-        # relocate on an ill-formed first character: restart the forward scan
-        # at landing + 1 in the start state (the machine is unseeded, §2.1 L3)
+    if u8 and guard == "restart":
+        # REVISION 1 (refuted, SL-G1/SL-E1): restart the forward scan at
+        # landing + 1 in the start state -- a re-entry, quadratic on lead runs
         fl = "    for (;;) {\n"
         # the FORWARD loop is the first `for (;;)` after the landing decl
         d0 = src.index("    size_t %s_landing = search_from;\n" % P)
         f0 = src.index(fl, d0)
         src = src[:f0] + "  %s_land_restart:;\n" % P + src[f0:]
-        decl = ("        if (!%s_tw_wf(subject, subject_length, %s_landing)) {\n"
+        decl = ("        if (!%s_tw_decode(subject, subject_length, %s_landing, &%s_tw_cp)) {\n"
                 "            scan_position = %s_landing + 1; last_accept_position = (size_t)-1;\n"
                 "            forward_state = 0; %s_landing = scan_position;\n"
                 "            goto %s_land_restart;\n"
-                "        }\n") % (P, P, P, P, P)
+                "        }\n") % (P, P, P, P, P, P)
+    elif u8 and guard == "skip":
+        # SL-G1: no match starts at an ill-formed L; the leftmost start is the
+        # first decodable position after it (design §2.5's proof), which lies
+        # before the end; the bound is defensive, never reached when exact
+        decl = ("        if (!%s_tw_decode(subject, subject_length, %s_landing, &%s_tw_cp)) {\n"
+                "            do %s_landing++;\n"
+                "            while (%s_landing < last_accept_position && !%s_tw_decode(subject, subject_length, %s_landing, &%s_tw_cp));\n"
+                "        }\n") % (P, P, P, P, P, P, P, P)
 
 # re-find the reverse block (the landing edits moved offsets)
 i0 = src.index(B0); i1 = src.index(B1, i0)
@@ -102,27 +140,20 @@ else:
         i0 = src.index(B0); i1 = src.index(B1, i0)
     src = src[:i1] + chk + src[i1:]
 
-helpers = ("long %s_tw_calls, %s_tw_diff;\n" % (P, P) +
-           "static inline int %s_tw_wf(const unsigned char *s, size_t n, size_t p)\n"
-           "{   /* Unicode Table 3-7: is a well-formed character at p? */\n"
-           "    if (p >= n) return 0;\n"
-           "    unsigned c = s[p];\n"
-           "    if (c < 0x80) return 1;\n"
-           "    size_t k; unsigned lo = 0x80, hi = 0xBF;\n"
-           "    if (c >= 0xC2 && c <= 0xDF) k = 1;\n"
-           "    else if (c == 0xE0) { k = 2; lo = 0xA0; }\n"
-           "    else if (c >= 0xE1 && c <= 0xEC) k = 2;\n"
-           "    else if (c == 0xED) { k = 2; hi = 0x9F; }\n"
-           "    else if (c >= 0xEE && c <= 0xEF) k = 2;\n"
-           "    else if (c == 0xF0) { k = 3; lo = 0x90; }\n"
-           "    else if (c >= 0xF1 && c <= 0xF3) k = 3;\n"
-           "    else if (c == 0xF4) { k = 3; hi = 0x8F; }\n"
-           "    else return 0;\n"
-           "    if (p + k >= n) return 0;\n"
-           "    if (s[p + 1] < lo || s[p + 1] > hi) return 0;\n"
-           "    for (size_t i = 2; i <= k; i++) if (s[p + i] < 0x80 || s[p + i] > 0xBF) return 0;\n"
-           "    return 1;\n"
-           "}\n") % P
+def seam_decode():
+    """`u8_defs_decode` from src/enc/enc_utf8.c, unescaped, `$` -> `<P>_tw`."""
+    root = os.environ.get("PCREC_SRC") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    t = open(os.path.join(root, "src", "enc", "enc_utf8.c")).read()
+    i = t.index("static const char u8_defs_decode[] =")
+    j = t.index(";\n", i)
+    lits = re.findall(r'^"((?:[^"\\]|\\.)*)"', t[i:j], re.M)
+    need(lits, "u8_defs_decode literal")
+    body = "".join(bytes(l, "ascii").decode("unicode_escape") for l in lits)
+    need("$_decode(" in body, "u8_defs_decode spelling")
+    return body.replace("$", "%s_tw" % P)
+
+
+helpers = "long %s_tw_calls, %s_tw_diff;\nstatic unsigned %s_tw_cp;\n" % (P, P, P) + seam_decode()
 # helpers go before the first function that uses them: right after the includes
 inc = src.rfind("#include")
 nl = src.index("\n", inc) + 1
