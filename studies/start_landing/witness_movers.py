@@ -59,7 +59,7 @@ def extract(path):
         for m in re.finditer(r"--pattern\s+(\"((?:[^\"\\]|\\.)*)\"|'([^']*)')", line):
             q = m.group(1)[0]
             pat = sh_unquote(q, m.group(2) if q == '"' else m.group(3))
-            if "$" in pat and re.search(r"\$\{?[A-Za-z_]", pat):
+            if "$" in pat and re.search(r"\$(\{|[A-Za-z_0-9])", pat):
                 continue                      # a shell variable: built at run time
             flags = [f for f in FLAG.findall(line[:m.start()]) + FLAG.findall(line[m.end():])]
             out.append((pat, flags))

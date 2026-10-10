@@ -40,6 +40,9 @@ dot-e282 dot h-e282 o,s,i
 dot-f09f98 dot h-f09f98 o,s,i
 dot-c3-64k dot h64-c3 o,s,i,r
 pl-c3-64k pl h64-c3 o,s,i,r"
+# CELLSET=wf: only the well-formed cells plus one hostile pair (a tighter
+# second round on the decision the well-formed cells carry)
+[ "${CELLSET:-all}" = wf ] && CELLS=$(printf '%s\n' "$CELLS" | grep -E '^(dot-wf|pl-wf|dot-c3|pl-c3) ')
 echo "# $(date -Is) $(uname -n) load1=$(cut -d' ' -f1 /proc/loadavg) cpu=$CPU gcc -O2 reps=$REPS runs=$RUNS wall=${WALL}s"
 for rep in $(seq "$REPS"); do
     while read -r id b subj vs; do
