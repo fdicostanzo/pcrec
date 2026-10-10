@@ -141,3 +141,40 @@ the BLOCK, not after the candidate.
   first FREQUENT vector site on dense subjects, so evaluate it together
   with entry 4 / the vrun-over-fn-memchr row. The API-level form (cross-call
   iteration) is a separate, bigger question.
+
+## 2026-10-10 — the VM attempt loop's start-set skip: a scalar, re-entered, undelegated prefilter
+
+Follow-up to entry 5 (Frank: "while (notdone) { if s = find_cand then
+match(s) }"; the DFA is fine on dense subjects; the VM may still want it).
+- The VM's no-DFA search (`(?i)\d+cat --engine=vm`, lane/memfn-r13 build)
+  is exactly that loop. After every failed attempt it runs:
+  `attempt_position++; while (attempt_position < subject_length &&
+  !rx_start_set[subject[attempt_position]]) attempt_position++;`
+  This is a byte-at-a-time table walk over the start set (digits here),
+  re-entered per attempt. The vrun FUNC (`rx_reqrun`, the `cat` run) runs
+  ONCE at entry, as an existence check, and never drives the attempt
+  loop.
+- This skip is NOT a kit site: it is absent from
+  tests/memfn/site_manifest.tsv (PF, PRE, OFS, SETREST, VERIFY, VMRUN, STAY,
+  EDGE, VMSPAN, MLINE, VMSTRIDE, N7 delegated; VALID pending). pcrec
+  still emits it inline. Delegating it is main's call (DELEG_SITES).
+- Candidate forms, in rough order:
+  1. a start set of one byte: `memchr` (glibc SIMD);
+  2. a small set or range: the vector class test of entry 4 (3 ops for a
+     range), with a HELD MASK across attempts (entry 5). This site really
+     is re-entered per attempt, so on dense starts (digits in a log line)
+     the held mask saves the reload;
+  3. use the required run to bound the starts: with `\d+cat`, an attempt
+     can only succeed if a `cat` follows. Jumping to the next run hit and
+     walking back over the start class is a reverse-anchor idea; pcrec's
+     REVEND work may already cover it.
+- Frank's "islands" note for the DFA: that is how the DFA prefilter route
+  already works. The DFA dies, re-seeds, and the OFS skip FUNC finds the
+  next island (the FREQUENT site of entry 5). A held mask helps there only
+  when the next island lies in the same block. For one ipv4 per log line
+  (~100+ bytes apart) it usually does not, and that is plain memchr /
+  vector-scan territory.
+- First guess: the VM start-set skip may be the highest-value item in this
+  file. It is scalar today, re-entered on every attempt, and
+  `--engine=vm` / no-DFA patterns depend on it. Needs a census of how
+  often the no-DFA route runs on the bench, and a dense-start cell.
