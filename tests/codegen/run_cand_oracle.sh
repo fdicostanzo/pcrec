@@ -126,6 +126,22 @@ while IFS=$'\t' read -r row flags pat; do
     awk -F'\t' '$1=="CANDROW" && $2=="FINISH" {print $4" "$3" "$7}' "$WORK/err" >> "$WORK/cells"
 done < "$WIT"
 
+# [OPT-REVEND] L0 THE BOUNDARY PROJECTION (locate_finish.md §1.2, LR-S2): a
+# hybrid whose prefilter's language is the pattern's records `BOUNDARY vm
+# SPAN`, one whose lowering erased something records `LOWER`. Both
+# directions, so neither a projection that always says SPAN nor one that
+# always says LOWER passes.
+for bw in "SPAN	(a+)b" 'LOWER	\w{1,2}(?:(?=)|)$' 'LOWER	(?>a|ab)c(d)'; do
+    want="${bw%%	*}"; pat="${bw#*	}"
+    "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all -o "$WORK/w.c" --pattern "$pat" \
+        > /dev/null 2> "$WORK/err"
+    got="$(awk -F'\t' '$1=="CANDTRACE" && $2=="BOUNDARY" {print $4}' "$WORK/err" | sort -u | tr '\n' ' ')"
+    if grep -q '^CANDORACLE' "$WORK/err"; then
+        bad "[cand-oracle-boundary] $(grep -m1 '^CANDORACLE' "$WORK/err" | tr '\t' ' ') on $pat"
+    elif [ "$got" = "$want " ]; then ok "[cand-oracle-boundary] $pat records BOUNDARY vm $want"
+    else bad "[cand-oracle-boundary] $pat records '${got:-nothing}', want BOUNDARY vm $want"; fi
+done
+
 # The FINISH take cells, read off the table's source: every one reached or
 # declared unreached, and no declared one reached.
 decl="$(awk '/^static const CandRow cand_rows\[\] = \{/{f=1;next} f&&/^\};/{f=0} f' "$EMIT" \

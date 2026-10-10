@@ -4729,7 +4729,9 @@ section, which carries all of these at once:
 ```
 
 `RX_DFA_SCAN` names WHICH DFA SCAN the artifact CONTAINS. The three shapes
-are `"unanchored"` (the O(n) forward+reverse table pair, D7), `"attempt"`
+are `"unanchored"` (the O(n) forward scan from `search_from`, D7, followed by a
+reverse pass that recovers the match start unless `RX_DFA_START` is
+`"pinned"`), `"attempt"`
 (the per-start-position computed-goto loop a `^`/`\A`-bearing pattern
 takes) and `"empty"`; the first two are different loops with different cost
 curves, and nothing else a consumer can read distinguishes them — both stamp

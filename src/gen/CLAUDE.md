@@ -1011,7 +1011,9 @@ the stamps were silent about two things. Both fixes are about WHICH UNIT OWNS
 A STAMP, and the answer both times is **the mechanism the stamp names, not the
 artifact kind that usually carries it**.
 
-**(#5) `dfa_engine_is_empty` and the third scan value `"empty"`.** A pattern
+**(#5) `dfa_engine_is_empty` and the third scan value `"empty"`.** ([OPT-REVEND]
+L0: the derivation is now LOCATE's `empty` row, whose walk is the old exit, and
+`dfa_engine_is_empty` reads that selection; see the L0 bullet above.) A pattern
 proven to match nothing emits a body that is one `return 0` — no table, no
 loop, no skip — and BOTH emitters have that exit (`emit_unanchored` on
 `unanch_start`'s `empty`; `emit_attempt` on `d->n == 0`). Those artifacts used
@@ -1388,6 +1390,49 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   Sabotage S607-S609 (an edge dropped), S610 (a listed row's desc dropped).
   C7 corrects D-3 (the DFA hat's desc said `T = S & E*`; the code scans
   `T = S`) and lists every start axis as `kind=list`.
+- **emit_dfa.c — LOCATE × FINISH L0: two slots, the PATH derivation, the
+  `dfa_matches[]` fold** ([OPT-REVEND] L0, lane lfl0, 2026-10-09;
+  `docs/design/locate_finish.md` rev 2.1 §2, §5 L0, D156; zero movers, no abi
+  event). `CandSlot` gains LOCATE (first) and FINISH (last). LOCATE's rows
+  are `empty` (A1: the old `dfa_engine_is_empty` body is its predicate
+  `locate_empty_applies`; its walk `emit_empty_unanchored`/
+  `emit_empty_attempt` is the old early exit, the ATTEMPT one after the
+  shared front `attempt_entry`) and `composite` (A3: `emit_unanchored`/
+  `emit_attempt` by route, the VM's own body on CAND_ROUTE_VM);
+  `pcrec_emit_dfa_engine` writes the selected row's walk
+  (`cand_locate_emit`, record `locate`), and a VM artifact with no DFA body
+  asks LOCATE once on the VM route (`pcrec_cand_locate_vm`). Every row
+  declares `needs[route]` (`CandNeeds`: machines `CAND_M*`, the cells its
+  emitter asks, a LOCATE row's entry `front`); `cand_path_of` is the closure
+  over the selected rows from three roots (the search entry's LOCATE ask,
+  the VM search entry = `search-from`'s VM hat, the match-here entry's
+  FINISH ask), selecting ONLY in LOCATE/RECOVER/FINISH through the readers
+  the emitters use and quiet in the trace build; MEMBERS = needs ∩ built.
+  `dfa_table_name`/`dfa_scan_edge_name`/`dfa_uniform_folds` fold over the
+  members (never a FINISH selection: they run on hybrids, LR-S1);
+  `pcrec_artifact_has_dfa_scan` is the path's `body` bit (compile.c's build
+  gate reads it); the eleven `fit.chosen` FINISH reads are
+  `cand_finish_of`; `cand_locate_route` is the other route field. FINISH's
+  rows are `dfa_matches[]` folded: `verify-at` (FIN3, listed `unwrapped`,
+  available where the anchored machine was BUILT: `-fno-anchored-dfa` is a
+  `fact_deny` on its listing and is read only at compile.c's build, through
+  `pcrec_cand_finish_needs`, the NEEDS half) and `search-from` (FIN4,
+  `search-filter`); a FINISH ask carries a MANDATORY `CandSel.hand` (`CT_*`
+  mask: `CAND_HAND_AT` with `point`, or `CAND_HAND_NOMATCH`) and the walk
+  keeps a row only where it is one of `u.finish.take[route]`;
+  `dfa_match_of` asks with the meet `caller ⊓ body` (NOMATCH on an `empty`
+  body), so FIN3 needs no "not empty" conjunct; `dfa_match_is_unwrapped`
+  reads `u.finish.act` (F-2). `cand_nodes` gains the two nodes and per-edge
+  PROGRESS classes (`raise`/`rank`/`entry`); `CT_WINDOW` is deleted. The
+  self-check adds the progress cycle/rank checks, FINISH totality per hand,
+  `needs` only in walked slots on routed routes and asked cells; the trace
+  build asserts `needs ⊆ built`, aborts a FINISH ask with no hand, and
+  prints `CANDPATH` (members, asks, a hybrid's erasure record) and a `kind`
+  and `hand` field on `CANDROW`. `.giveup` is deleted (the classification is
+  derived, never declared); `.contract = CG_FIXED` marks `handoff` and RETRY
+  `exact`/`clamped`/`retry-anchored`. `pcrec_vm_prefilter_window` reads the
+  lowering's erasure record (`Nfa.erased`, src/ir/nfa.c), and `Vm.mrl_win`
+  is the boundary projection `pcrec_cand_lang_exact` (record `boundary`).
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter
@@ -2877,7 +2922,8 @@ the emitter had to grow, and the shape it grew in.
 **A SEVENTH AXIS, and the objects carry no emitter pointer.** The other six
 axes describe ONE MACHINE's form and are consumed by `DfaForm`. Axis G answers
 a question about an ENTRY POINT — which of the two shapes `<prefix>_match` and
-`<prefix>_match_caps` take — so `dfa_matches[]`'s objects are bare `DfaCand`s
+`<prefix>_match_caps` take ([OPT-REVEND] L0: since then the FINISH rows of
+`cand_rows[]`, see that bullet) — so `dfa_matches[]`'s objects were bare `DfaCand`s
 and the dispatch is one `if` in `pcrec_emit_dfa`. The two bodies are different
 enough (one has tables and a scan loop, the other is four lines around a call
 to `<prefix>_search`) that a shared skeleton would be a switch wearing a

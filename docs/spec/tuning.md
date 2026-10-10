@@ -3819,7 +3819,9 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
 - `RX_ENGINE` is **unconditional** — present on every artifact both engines
   produce, `"vm"` or `"dfa"`, from one emitter so the two cannot drift. This
   is what makes `#if`-ing on it safe, which §6.3 used to warn it was not.
-- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair),
+- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward scan, followed by a
+  reverse pass that recovers the match start unless `RX_DFA_START` is
+  `"pinned"`),
   `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern
   takes) or `"empty"` (`[DD-13c]`: the pattern provably matches nothing, so
   the body is one `return 0` and there is no loop of either shape in it).
