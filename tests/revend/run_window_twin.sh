@@ -19,11 +19,13 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/wintwin.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
 if ! printf '#include <pcre2.h>\n' | gcc -DPCRE2_CODE_UNIT_WIDTH=8 -E - >/dev/null 2>&1; then
     echo "SKIP: window twin: no libpcre2-8 headers (the oracle leg needs them)"
     echo "checks passed: 0"; echo "checks failed: 0"; exit 0
 fi
-python3 -I "$SCRIPT_DIR/window_twin.py" "$PCREC" "$WORK" > "$WORK/out" 2> "$WORK/err"
+# One bound on the whole sweep (window_twin.py bounds each compile and run).
+"$TIMEOUT_BIN" 1800 python3 -I "$SCRIPT_DIR/window_twin.py" "$PCREC" "$WORK" > "$WORK/out" 2> "$WORK/err"
 rc=$?
 cat "$WORK/out"
 head -40 "$WORK/err" >&2
