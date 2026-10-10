@@ -110,3 +110,5 @@ tests/ucp/ctxnode.rxt:367	--features all	282a55435029283f3c3d5c772978
 tests/utf8/axis08_lookbehind_varwidth.rxt:142	--features classes,lookaround --encoding=utf8	283f3c3d5c772978
 tests/utf8/axis08_lookbehind_varwidth.rxt:155	--features classes,lookaround --encoding=utf8	283f3c215c772978
 tests/utf8/axis13_ctx_illformed.rxt:51	--features all --encoding=utf8	283f3c215b615d2962
+# sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
+tests/revend/stage2_captures.rxt:1296	--features assertions,lookaround	283f3c21782928612b2924
