@@ -168,32 +168,23 @@ contents block).
   is unbuilt, so the row documents what the mechanism will read the day it
   lands, not a shipped behaviour.
 
-- `rxt_format.md` — **[SPEC-1.6], 2026-08-25.** The `.rxt` test-corpus
-  format and the harness driver protocol, extracted from `docs/testing.md`
-  (lines ~124-467 there): the full directive grammar (`pattern`/`flags`/
-  `features`/`perr`/`m`/`n`/`ms`/`ns`/`g`/`gp`/`gu`/`engine`/`budget`/
-  `frames-buffer=`), the subject escape table, the oracle-verification
-  requirement (the default python-`re` oracle, the `# pcre2-only`
-  exclusion convention, per-directory oracle overrides), how `run.sh`
-  scores a block, `tests/harness/driver.c`'s CLI/exit-code contract
-  (including the `_in`-entry anchored cross-check's exit `4`, previously
-  undocumented in prose anywhere), the D45 budget policy stated as policy
-  rather than measurement, and how to add a new component test directory.
-  Every claim verified against `tests/harness/run.sh`/`driver.c` at this
-  worktree's branch point (`d39ce94`); `docs/testing.md` keeps the process
-  record (runtimes, battery composition, sanitizer/lint measurements,
-  TT-* notes, the living oracle-exclusion catalog) and gained a header
-  note plus a one-paragraph pointer where the moved sections stood.
-
-
-  **[DD-13b.W1.2], 2026-08-31**: the head table's `target` row stops
-  reading "Parsed, not yet built" and its `lib` row stops reading
-  "Recorded, not yet resolved"; a new "Building from a source file"
-  section states what belongs to the FORMAT rather than to the CLI — a
-  definition is a block's `name` in the FILE namespace, the
-  no-target-plus-one-unnamed-block compatibility default, the
-  library-builds-nothing outcome, the `features` UNION and the
-  more-specific-wins table, and the harness's per-target agreement control.
+- `rxt_format.md` — the `.rxt` test-corpus format and the harness driver
+  protocol, FACTS ONLY and numbered (rewritten by lane specrxt): §1 the
+  format (§1.1 the head and its eleven declarations, §1.2 the delivering
+  call `(?&site=name)`, §1.3 building from a source file, §1.4 the lexical
+  rules in two layers — §1.4.1-§1.4.5 the structure layer S0-S3 and the open
+  subtree, §1.4.6 the schema layer, §1.4.7 values and whitespace — §1.5 the
+  block's line kinds with the subject escapes at §1.5.1, §1.6 named subjects
+  `@file:`, §1.7 `mc`, §1.8 `under`, §1.9 `provenance`, §1.10 `analysis`
+  bundles, §1.11 `variant`, §1.12 `ext` and its graduation rule, §1.13 the
+  schema and `--list-schema` with the constraint clause spellings at §1.13.1,
+  §1.14 an example that `run.sh` and `verify_rxt.py` pass), §2
+  `--list-source` (§2.1 the four `#section` blocks), §3 oracle verification
+  (§3.1 `oracle`), §4 how `run.sh` evaluates a block, §5 the driver protocol
+  and exit codes, §6 organizing tests by component. It says which of the
+  three readers (`pcrec`, `run.sh`, `verify_rxt.py`) enforces each rule.
+  Cite by number (`rxt_format.md §1.5`). No test reads its literal text.
+  History: `docs/dev/history/rxt_format_record.md`.
 
 - `registry.md` — the TSV column contract of the registry listings, FACTS ONLY
   and numbered (rewritten by lane specreg): §1 the append-only, resolve-by-name

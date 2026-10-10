@@ -136,7 +136,7 @@ changes). **S** = stated in `docs/spec/`. **—** = compile-time only, not in th
 | F2 | `src/parse/rxt_source.c:612-622` | `serves … when <enc>` validated by `pcrec_enc_by_name` | **yes** |
 | F3 | `analyze/count.c:340-352` `classify_encoding`/`enc_rank`; `:387-401` `derive_serves` | analyzer: observed `ascii/utf8/bytes`; writes `when byte,utf8` / `when byte` / `when utf8 via encode-utf8` | no: hard-coded (a zero-dependency binary, `analyze/CLAUDE.md`) |
 | F4 | `cli/main.c:161-162` | `--help`: "byte (default) or utf8, both compile" | no |
-| F5 | `docs/spec/match_api.md §9.1` ("want byte, utf8"), `docs/spec/rxt_format.md:943` (`byte`, `utf8`), `docs/design/findings/design.md` §2.4 | spec/design sentences enumerating encodings | no |
+| F5 | `docs/spec/match_api.md §9.1` ("want byte, utf8"), `docs/spec/rxt_format.md §1.10` (`byte`, `utf8`), `docs/design/findings/design.md` §2.4 | spec/design sentences enumerating encodings | no |
 | F6 | `src/dump/findings_dump.c:133-134` | `--list-analysis` resolution: one row per query × encoding | **yes** (iterates `pcrec_enc_by_id`) |
 | F7 | `src/dump/facts_dump.c`, `--emit-facts[=ENC,…]` | facts per listed encoding | yes (by name) |
 

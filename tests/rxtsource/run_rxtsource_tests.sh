@@ -4939,7 +4939,7 @@ fi
 # (w23_impl.md §4.3, build order item 3: "the §4.3 absence grep as a
 # committed check rather than a manual step"). Two of the three arms
 # are automatable; arm (c) is deliberately NOT a grep and §4.3 says why
-# (`docs/spec/rxt_format.md:130`'s "configs are three artifacts..." is
+# (`docs/spec/rxt_format.md §1.3`'s "configs are three artifacts..." is
 # legitimate English no pattern can separate from the withdrawn
 # `configs describe`/`configs build`) — it stays a standing review step.
 #

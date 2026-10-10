@@ -630,7 +630,7 @@ never edited afterwards.
   **Second: the withdrawal-absence check grepped the wrong five
   tokens.** `testee`/`option` are LIVE format spellings at three sites
   (`rxt_source.c:149`'s two `config_vocab` rows,
-  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `docs/spec/rxt_format.md §1.1`'s later-wave keyword list, and
   `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
   pinned at 32), so the withdrawal costs four sites and a deliberate
   narrowing rather than "a diff and nothing else" — an absence check
@@ -3812,3 +3812,4 @@ never edited afterwards.
 - `specreg_report.md` — [SPEC-CLEAN] registry.md and table_contract.md facts-only and numbered (2026-10-10, lane specreg, sonnet): 720 -> 208 and 174 -> 127 lines, marker lines 63 -> 0 and 13 -> 0, history frozen in `docs/dev/history/{registry,table_contract}_record.md`, the old registry section numbers kept so existing citations resolve, 15 line citations and the rule-prose citations re-pointed to numbers, baseline rows removed, cite floors set. Carries the claims ledgers, 17 code-wins disagreements (counts, the module roster, force-bit axes, family `built` rule, definitions tags) and four open questions.
 - `speclim_report.md` — [SPEC-CLEAN] limits.md and cli.md facts-only and numbered (2026-10-10, lane speclim, sonnet): old section numbers kept so existing citations resolve, history frozen in `docs/dev/history/{limits,cli}_record.md`, claims ledgers, the code-wins list, line citations re-pointed, baseline rows removed and cite floors set.
 - `specsmall_report.md` — [SPEC-CLEAN] facts_listing.md, ir_listing.md and findings.md facts-only and numbered, plus the `-i` --help wording and the tests/registry/CLAUDE.md row-count note (2026-10-10, lane specsmall, sonnet): old section numbers kept (findings section 3a included), history frozen in `docs/dev/history/{facts_listing,ir_listing,findings}_record.md`, claims ledgers, the code-wins list, citations re-pointed, baseline rows removed and cite floors set.
+- `specrxt_report.md` — [SPEC-CLEAN] rxt_format.md facts-only and numbered (2026-10-10, lane specrxt, sonnet): the `.rxt` format and driver protocol numbered into sections 1-6, history frozen in `docs/dev/history/rxt_format_record.md`, 17 code-wins corrections (block `description |`, repeated `budget` fields, operative `features only`, the `oracle` grammar and `oracle none`, the example's failing case, the driver's `[var...]` arguments and more), claims ledger, 61 line citations re-pointed, baseline rows removed and the cite floor set.

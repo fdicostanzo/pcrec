@@ -203,6 +203,6 @@
 | 4 | `--list-axes` | §6 |
 | 5 | `--list-definitions` | §9 |
 | 6 | `--list-limits` | `docs/spec/limits.md` §3 and `cli.md` §2 |
-| 7 | `--list-schema` | `docs/spec/rxt_format.md`, "The schema and its surface", and `cli.md` §2 |
+| 7 | `--list-schema` | `rxt_format.md` §1.13, and `cli.md` §2 |
 
 <a id="s10-p1"></a>[10¶1] The first five describe pcrec's own construct and axis registries, this document's subject. `--list-schema` describes the `.rxt` file format, whose contract lives with the format; a column table here would be a second home for it. The remaining table surfaces — `--list-source`, `--emit-ir`, `--emit-facts`, `--list-analyses`, `--list-analysis` — are listed with their producer shapes in `table_contract.md` §1.

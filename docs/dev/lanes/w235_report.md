@@ -92,7 +92,7 @@ them.
   withdrawn/reserved tokens. Requires 0 hits (measured 1 before the
   withdrawal, per `w23_impl.md` §4.3: `rxt_source.c:149`'s now-retired
   rows).
-- **SPEC ARM** (§4.3(c)): deliberately NOT automated. `rxt_format.md:130`'s
+- **SPEC ARM** (§4.3(c)): deliberately NOT automated. `rxt_format.md §1.3`'s
   "configs are three artifacts…" is legitimate English no pattern
   separates from the withdrawn `configs describe`/`configs build`; stays a
   standing review step.

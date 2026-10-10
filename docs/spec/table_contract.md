@@ -31,8 +31,8 @@ command conforms from the day it exists; one that does not is a defect.
 | `--list-families` | the construct-family index | one anonymous table |
 | `--list-axes` | the optimization-axis registry | an anonymous main table, then the named section `memfn` (the search-code kit's option registry, `registry.md` §6) |
 | `--list-limits` | the numeric-limits table | one anonymous table |
-| `--list-source` | the `.rxt` source file, as written (`docs/spec/rxt_format.md`) | an anonymous main table, then up to four named sections: `provenance`, `variants`, `cases`, `aux` — each emitted only when non-empty, always after the main table |
-| `--list-schema` | the `.rxt` format's own schema (`docs/spec/rxt_format.md`) | two named sections, `schema` and `surface` |
+| `--list-source` | the `.rxt` source file, as written (`rxt_format.md` §2) | an anonymous main table, then up to four named sections: `provenance`, `variants`, `cases`, `aux` — each emitted only when non-empty, always after the main table |
+| `--list-schema` | the `.rxt` format's own schema (`rxt_format.md` §1.13) | two named sections, `schema` and `surface` |
 | `--emit-ir` | the VM program listing (`docs/spec/ir_listing.md` §3) | nine named sections, no anonymous table; the sections have different column counts |
 | `--emit-facts` | the pattern-facts record listing (`docs/spec/facts_listing.md` §4) | two named sections, `facts` and `decisions` |
 | `--list-analyses` | the analyses built into the library (`docs/spec/findings.md`) | one anonymous table |
