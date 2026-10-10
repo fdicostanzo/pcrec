@@ -1,0 +1,348 @@
+# stream	key	pattern (escape-encoded)	argv
+c-default	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	
+c-default	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a{1,3}?)b'	(?>a{1,3}?)b	
+c-default	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	
+c-default	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)'	(?>a+?)	
+c-default	tests/base/d27_bodies.rxt:pattern:b'(ab){2,4}?'	(ab){2,4}?	
+c-default	tests/base/d27_edge.rxt:pattern:b'(a+?)(a+)'	(a+?)(a+)	
+c-default	tests/base/d27_edge.rxt:pattern:b'(a+)(a+?)'	(a+)(a+?)	
+c-default	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}'	(a{2,3}?){2,3}	
+c-default	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}?'	(a{2,3}?){2,3}?	
+c-default	tests/base/d27_nesting.rxt:pattern:b'((a{1,2}?){1,2}){1,2}'	((a{1,2}?){1,2}){1,2}	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?'	z(a){1,3}?	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?c?'	z(a){1,3}?c?	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?'	z(a){3,}?	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?c?'	z(a){3,}?c?	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?'	z(a)+?	
+c-default	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?c?'	z(a)+?c?	
+c-default	tests/captures/priority_and_iteration.rxt:pattern:b'(a){2,4}?'	(a){2,4}?	
+c-default	tests/captures/priority_and_iteration.rxt:pattern:b'(a+?)'	(a+?)	
+c-default	tests/mrl/06_lazy.rxt:pattern:b'(a{1,3}?){3,5}'	(a{1,3}?){3,5}	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?!)-'	[ab]{1,3}?(?!)-	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?=\\W|$)\\b'	\\w+?(?=\\W|$)\\b	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!\\b)-'	[a-]{1,3}?(?!\\b)-	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'a+?(?<=\\b)\\b'	a+?(?<=\\b)\\b	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?(?=\\W|$)a'	[^a]{1,3}?(?=\\W|$)a	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)\\b\\1'	(\\w+?)\\b\\1	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(b*)\\1\\2'	(a+?)(b*)\\1\\2	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(a|b)+?\\1'	(a|b)+?\\1	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(?=(\\w+?))\\1\\B'	(?=(\\w+?))\\1\\B	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)(?:\\b(?1))?'	(\\w+?)(?:\\b(?1))?	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?R)?\\B'	\\w+?(?R)?\\B	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(?1)\\b'	(a+?)(?1)\\b	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(?<p>\\w+?\\b)(?:-(?&p))*'	(?<p>\\w+?\\b)(?:-(?&p))*	
+c-default	tests/possessify/composition_d27.rxt:pattern:b'(?<w>\\w+?)(?:\\W(?&w))??\\b'	(?<w>\\w+?)(?:\\W(?&w))??\\b	
+c-default	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?)'	(a{1,3}?)	
+c-default	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?)'	(za{1,3}?)	
+c-default	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?c?)'	(a{1,3}?c?)	
+c-default	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?c?)'	(za{1,3}?c?)	
+c-default	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?$)'	(a{1,3}?$)	
+c-default	tests/possessify/possessify.rxt:pattern:b'(\\w+?(?:\\b|))'	(\\w+?(?:\\b|))	
+c-default	tests/recursion/k93.rxt:pattern:b'(a+?)b(?1)'	(a+?)b(?1)	
+c-vm	tests/assertions/gate.rxt:pattern:b'a{1,3}?$'	a{1,3}?$	--engine=vm
+c-vm	tests/assertions/gate.rxt:pattern:b'a{1,3}?\\z'	a{1,3}?\\z	--engine=vm
+c-vm	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	--engine=vm
+c-vm	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a{1,3}?)b'	(?>a{1,3}?)b	--engine=vm
+c-vm	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	--engine=vm
+c-vm	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)'	(?>a+?)	--engine=vm
+c-vm	tests/base/bounded_repeats.rxt:pattern:b'a{2,4}?'	a{2,4}?	--engine=vm
+c-vm	tests/base/bounded_repeats.rxt:pattern:b'a{2,}?'	a{2,}?	--engine=vm
+c-vm	tests/base/bounded_repeats.rxt:pattern:b'a{1,3}?'	a{1,3}?	--engine=vm
+c-vm	tests/base/d27_bodies.rxt:pattern:b'[abc]{2,4}?'	[abc]{2,4}?	--engine=vm
+c-vm	tests/base/d27_bodies.rxt:pattern:b'[^abc]{2,4}?'	[^abc]{2,4}?	--engine=vm
+c-vm	tests/base/d27_bodies.rxt:pattern:b'(ab){2,4}?'	(ab){2,4}?	--engine=vm
+c-vm	tests/base/d27_edge.rxt:pattern:b'(a+?)(a+)'	(a+?)(a+)	--engine=vm
+c-vm	tests/base/d27_edge.rxt:pattern:b'(a+)(a+?)'	(a+)(a+?)	--engine=vm
+c-vm	tests/base/d27_large_counts.rxt:pattern:b'a{200,500}?'	a{200,500}?	--engine=vm
+c-vm	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}'	(a{2,3}?){2,3}	--engine=vm
+c-vm	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}?'	(a{2,3}?){2,3}?	--engine=vm
+c-vm	tests/base/d27_nesting.rxt:pattern:b'((a{1,2}?){1,2}){1,2}'	((a{1,2}?){1,2}){1,2}	--engine=vm
+c-vm	tests/base/eol_engine.rxt:pattern:b'a+?$'	a+?$	--engine=vm
+c-vm	tests/base/leftmost_semantics.rxt:pattern:b'a+?'	a+?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:ab){3,}?'	(?:ab){3,}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:ab){3,}?c?'	(?:ab){3,}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{1,3}?'	za{1,3}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{1,3}?c?'	za{1,3}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{3,}?'	za{3,}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{3,}?c?'	za{3,}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za+?'	za+?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za+?c?'	za+?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(?:ab){3,}?'	z(?:ab){3,}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(?:ab){3,}?c?'	z(?:ab){3,}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?'	z(a){1,3}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?c?'	z(a){1,3}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?'	z(a){3,}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?c?'	z(a){3,}?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?'	z(a)+?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?c?'	z(a)+?c?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:z|)(?:ab){3,}?'	(?:z|)(?:ab){3,}?	--engine=vm
+c-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:z|)(?:ab){3,}?c?'	(?:z|)(?:ab){3,}?c?	--engine=vm
+c-vm	tests/base/quantifiers.rxt:pattern:b'a+?'	a+?	--engine=vm
+c-vm	tests/base/review_r1.rxt:pattern:b'a+?$'	a+?$	--engine=vm
+c-vm	tests/base/review_r2.rxt:pattern:b'c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}'	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	--engine=vm
+c-vm	tests/captures/priority_and_iteration.rxt:pattern:b'(a){2,4}?'	(a){2,4}?	--engine=vm
+c-vm	tests/captures/priority_and_iteration.rxt:pattern:b'(a+?)'	(a+?)	--engine=vm
+c-vm	tests/modifiers/letters.rxt:pattern:b'(?U)a+'	(?U)a+	--engine=vm
+c-vm	tests/modifiers/malformed_and_gate.rxt:pattern:b'a(?U)b+'	a(?U)b+	--engine=vm
+c-vm	tests/modifiers/malformed_and_gate.rxt:pattern:b'a(?U)b+'	a(?U)b+	--engine=vm
+c-vm	tests/modifiers/reset.rxt:pattern:b'(?U)(?^)a+'	(?U)(?^)a+	--engine=vm
+c-vm	tests/mrl/06_lazy.rxt:pattern:b'(a{1,3}?){3,5}'	(a{1,3}?){3,5}	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?:\\b|)a'	[a-]{1,3}?(?:\\b|)a	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W+?(?:\\b){0,2}'	\\W+?(?:\\b){0,2}	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?:(?<=a)|)\\B'	[ab]{1,3}?(?:(?<=a)|)\\B	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?(?:(?<!\\w)|)\\w'	[^a]{1,3}?(?:(?<!\\w)|)\\w	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:\\b|)'	-+?(?:\\b|)	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?(?:\\b|\\B)\\W'	[^a]{1,3}?(?:\\b|\\B)\\W	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:(?=\\w)|(?<=\\w))$'	-+?(?:(?=\\w)|(?<=\\w))$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W+?(?:(?!a)|)a'	\\W+?(?:(?!a)|)a	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?:\\B|)a'	[a-]{1,3}?(?:\\B|)a	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\d{1,3}?(?:\\b|a)\\b'	\\d{1,3}?(?:\\b|a)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:\\B|)'	-+?(?:\\B|)	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W+?(?:\\b)??\\B'	\\W+?(?:\\b)??\\B	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W+?(?:(?=\\w)|(?<=\\w))'	\\W+?(?:(?=\\w)|(?<=\\w))	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:\\B)*\\W'	\\w+?(?:\\B)*\\W	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?=a)?\\w'	a{1,3}?(?=a)?\\w	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-c]{1,3}?(?:\\B|)$'	[a-c]{1,3}?(?:\\B|)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]+?(?:(?=a)|)\\W'	[^a]+?(?:(?=a)|)\\W	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?!)-'	[ab]{1,3}?(?!)-	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]+?\\b'	[^a]+?\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?=\\W|$)\\b'	\\w+?(?=\\W|$)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?=\\w)\\W'	a{1,3}?(?=\\w)\\W	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!a)\\W'	[a-]{1,3}?(?!a)\\W	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!\\b)-'	[a-]{1,3}?(?!\\b)-	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w{1,3}?\\Ba'	\\w{1,3}?\\Ba	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'-{1,3}?\\Ba'	-{1,3}?\\Ba	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a+?(?<=\\b)\\b'	a+?(?<=\\b)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W{1,3}?(?!a)\\w'	\\W{1,3}?(?!a)\\w	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?(?=\\W|$)a'	[^a]{1,3}?(?=\\W|$)a	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?\\z'	[^a]{1,3}?\\z	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?<!a)\\b'	\\w+?(?<!a)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)\\b\\1'	(\\w+?)\\b\\1	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(b*)\\1\\2'	(a+?)(b*)\\1\\2	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(a|b)+?\\1'	(a|b)+?\\1	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?=(\\w+?))\\1\\B'	(?=(\\w+?))\\1\\B	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)(?:\\b(?1))?'	(\\w+?)(?:\\b(?1))?	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?R)?\\B'	\\w+?(?R)?\\B	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(?1)\\b'	(a+?)(?1)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?<p>\\w+?\\b)(?:-(?&p))*'	(?<p>\\w+?\\b)(?:-(?&p))*	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?<w>\\w+?)(?:\\W(?&w))??\\b'	(?<w>\\w+?)(?:\\W(?&w))??\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?\\b|b)+'	(?:a+?\\b|b)+	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a{1,2}?\\B)+'	(?:a{1,2}?\\B)+	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:\\w{1,2}?\\b)+'	(?:\\w{1,2}?\\b)+	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?)*\\b'	(?:a+?)*\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?)+?b'	(?:a+?)+?b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:|\\b)$'	a{1,3}?(?:|\\b)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:(?=a)|)$'	a{1,3}?(?:(?=a)|)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:)\\b'	a{1,3}?(?:)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:\\b|)b'	a{2,}?(?:\\b|)b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:|\\b)\\b'	a{2,}?(?:|\\b)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:|\\b)$'	a{2,}?(?:|\\b)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:)a'	a{2,}?(?:)a	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:(?=a)|)b'	\\w+?(?:(?=a)|)b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:\\B|)b'	\\w+?(?:\\B|)b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:)\\b'	\\w+?(?:)\\b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w{2,}?(?:|\\b)b'	\\w{2,}?(?:|\\b)b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\W{2,}?(?:\\B|)$'	\\W{2,}?(?:\\B|)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'.{1,3}?(?:\\b|)b'	.{1,3}?(?:\\b|)b	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'.{1,3}?(?:|\\b)$'	.{1,3}?(?:|\\b)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'.{1,3}?(?:\\B|)$'	.{1,3}?(?:\\B|)$	--engine=vm
+c-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?<=a)'	\\w+?(?<=a)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?'	a{1,3}?	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'za{1,3}?'	za{1,3}?	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?c?'	a{1,3}?c?	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'za{1,3}?c?'	za{1,3}?c?	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?$'	a{1,3}?$	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?)'	(a{1,3}?)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?)'	(za{1,3}?)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?c?)'	(a{1,3}?c?)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?c?)'	(za{1,3}?c?)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?$)'	(a{1,3}?$)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'(\\w+?(?:\\b|))'	(\\w+?(?:\\b|))	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'\\w{1,3}?(?:\\b|)'	\\w{1,3}?(?:\\b|)	--engine=vm
+c-vm	tests/possessify/possessify.rxt:pattern:b'[a-c]+?(?:\\B|)'	[a-c]+?(?:\\B|)	--engine=vm
+c-vm	tests/recursion/k93.rxt:pattern:b'(a+?)b(?1)'	(a+?)b(?1)	--engine=vm
+c-utf8	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-e utf8
+c-utf8	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a{1,3}?)b'	(?>a{1,3}?)b	-e utf8
+c-utf8	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-e utf8
+c-utf8	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)'	(?>a+?)	-e utf8
+c-utf8	tests/base/d27_bodies.rxt:pattern:b'(ab){2,4}?'	(ab){2,4}?	-e utf8
+c-utf8	tests/base/d27_edge.rxt:pattern:b'(a+?)(a+)'	(a+?)(a+)	-e utf8
+c-utf8	tests/base/d27_edge.rxt:pattern:b'(a+)(a+?)'	(a+)(a+?)	-e utf8
+c-utf8	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}'	(a{2,3}?){2,3}	-e utf8
+c-utf8	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}?'	(a{2,3}?){2,3}?	-e utf8
+c-utf8	tests/base/d27_nesting.rxt:pattern:b'((a{1,2}?){1,2}){1,2}'	((a{1,2}?){1,2}){1,2}	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?'	z(a){1,3}?	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?c?'	z(a){1,3}?c?	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?'	z(a){3,}?	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?c?'	z(a){3,}?c?	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?'	z(a)+?	-e utf8
+c-utf8	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?c?'	z(a)+?c?	-e utf8
+c-utf8	tests/captures/priority_and_iteration.rxt:pattern:b'(a){2,4}?'	(a){2,4}?	-e utf8
+c-utf8	tests/captures/priority_and_iteration.rxt:pattern:b'(a+?)'	(a+?)	-e utf8
+c-utf8	tests/mrl/06_lazy.rxt:pattern:b'(a{1,3}?){3,5}'	(a{1,3}?){3,5}	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?!)-'	[ab]{1,3}?(?!)-	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?=\\W|$)\\b'	\\w+?(?=\\W|$)\\b	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!\\b)-'	[a-]{1,3}?(?!\\b)-	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'a+?(?<=\\b)\\b'	a+?(?<=\\b)\\b	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)\\b\\1'	(\\w+?)\\b\\1	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(b*)\\1\\2'	(a+?)(b*)\\1\\2	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(a|b)+?\\1'	(a|b)+?\\1	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(?=(\\w+?))\\1\\B'	(?=(\\w+?))\\1\\B	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)(?:\\b(?1))?'	(\\w+?)(?:\\b(?1))?	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?R)?\\B'	\\w+?(?R)?\\B	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(?1)\\b'	(a+?)(?1)\\b	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(?<p>\\w+?\\b)(?:-(?&p))*'	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8
+c-utf8	tests/possessify/composition_d27.rxt:pattern:b'(?<w>\\w+?)(?:\\W(?&w))??\\b'	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?)'	(a{1,3}?)	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?)'	(za{1,3}?)	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?c?)'	(a{1,3}?c?)	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?c?)'	(za{1,3}?c?)	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?$)'	(a{1,3}?$)	-e utf8
+c-utf8	tests/possessify/possessify.rxt:pattern:b'(\\w+?(?:\\b|))'	(\\w+?(?:\\b|))	-e utf8
+c-utf8	tests/recursion/k93.rxt:pattern:b'(a+?)b(?1)'	(a+?)b(?1)	-e utf8
+c-utf8-vm	tests/assertions/gate.rxt:pattern:b'a{1,3}?$'	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	tests/assertions/gate.rxt:pattern:b'a{1,3}?\\z'	a{1,3}?\\z	-e utf8 --engine=vm
+c-utf8-vm	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a{1,3}?)b'	(?>a{1,3}?)b	-e utf8 --engine=vm
+c-utf8-vm	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)'	(?>a+?)	-e utf8 --engine=vm
+c-utf8-vm	tests/base/bounded_repeats.rxt:pattern:b'a{2,4}?'	a{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/bounded_repeats.rxt:pattern:b'a{2,}?'	a{2,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/bounded_repeats.rxt:pattern:b'a{1,3}?'	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_bodies.rxt:pattern:b'[abc]{2,4}?'	[abc]{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_bodies.rxt:pattern:b'(ab){2,4}?'	(ab){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_edge.rxt:pattern:b'(a+?)(a+)'	(a+?)(a+)	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_edge.rxt:pattern:b'(a+)(a+?)'	(a+)(a+?)	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_large_counts.rxt:pattern:b'a{200,500}?'	a{200,500}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}'	(a{2,3}?){2,3}	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}?'	(a{2,3}?){2,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/d27_nesting.rxt:pattern:b'((a{1,2}?){1,2}){1,2}'	((a{1,2}?){1,2}){1,2}	-e utf8 --engine=vm
+c-utf8-vm	tests/base/eol_engine.rxt:pattern:b'a+?$'	a+?$	-e utf8 --engine=vm
+c-utf8-vm	tests/base/leftmost_semantics.rxt:pattern:b'a+?'	a+?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:ab){3,}?'	(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:ab){3,}?c?'	(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{1,3}?'	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{1,3}?c?'	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{3,}?'	za{3,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za{3,}?c?'	za{3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za+?'	za+?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'za+?c?'	za+?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(?:ab){3,}?'	z(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(?:ab){3,}?c?'	z(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?'	z(a){1,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?c?'	z(a){1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?'	z(a){3,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?c?'	z(a){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?'	z(a)+?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?c?'	z(a)+?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:z|)(?:ab){3,}?'	(?:z|)(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/possess_lazy_guard.rxt:pattern:b'(?:z|)(?:ab){3,}?c?'	(?:z|)(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/quantifiers.rxt:pattern:b'a+?'	a+?	-e utf8 --engine=vm
+c-utf8-vm	tests/base/review_r1.rxt:pattern:b'a+?$'	a+?$	-e utf8 --engine=vm
+c-utf8-vm	tests/base/review_r2.rxt:pattern:b'c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}'	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	-e utf8 --engine=vm
+c-utf8-vm	tests/captures/priority_and_iteration.rxt:pattern:b'(a){2,4}?'	(a){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	tests/captures/priority_and_iteration.rxt:pattern:b'(a+?)'	(a+?)	-e utf8 --engine=vm
+c-utf8-vm	tests/modifiers/letters.rxt:pattern:b'(?U)a+'	(?U)a+	-e utf8 --engine=vm
+c-utf8-vm	tests/modifiers/malformed_and_gate.rxt:pattern:b'a(?U)b+'	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	tests/modifiers/malformed_and_gate.rxt:pattern:b'a(?U)b+'	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	tests/modifiers/reset.rxt:pattern:b'(?U)(?^)a+'	(?U)(?^)a+	-e utf8 --engine=vm
+c-utf8-vm	tests/mrl/06_lazy.rxt:pattern:b'(a{1,3}?){3,5}'	(a{1,3}?){3,5}	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?:\\b|)a'	[a-]{1,3}?(?:\\b|)a	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?:(?<=a)|)\\B'	[ab]{1,3}?(?:(?<=a)|)\\B	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:\\b|)'	-+?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:(?=\\w)|(?<=\\w))$'	-+?(?:(?=\\w)|(?<=\\w))$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?:\\B|)a'	[a-]{1,3}?(?:\\B|)a	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\d{1,3}?(?:\\b|a)\\b'	\\d{1,3}?(?:\\b|a)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'-+?(?:\\B|)'	-+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:\\B)*\\W'	\\w+?(?:\\B)*\\W	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?=a)?\\w'	a{1,3}?(?=a)?\\w	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-c]{1,3}?(?:\\B|)$'	[a-c]{1,3}?(?:\\B|)$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?!)-'	[ab]{1,3}?(?!)-	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?=\\W|$)\\b'	\\w+?(?=\\W|$)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?=\\w)\\W'	a{1,3}?(?=\\w)\\W	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!a)\\W'	[a-]{1,3}?(?!a)\\W	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!\\b)-'	[a-]{1,3}?(?!\\b)-	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w{1,3}?\\Ba'	\\w{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'-{1,3}?\\Ba'	-{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a+?(?<=\\b)\\b'	a+?(?<=\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?<!a)\\b'	\\w+?(?<!a)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)\\b\\1'	(\\w+?)\\b\\1	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(b*)\\1\\2'	(a+?)(b*)\\1\\2	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(a|b)+?\\1'	(a|b)+?\\1	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?=(\\w+?))\\1\\B'	(?=(\\w+?))\\1\\B	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)(?:\\b(?1))?'	(\\w+?)(?:\\b(?1))?	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?R)?\\B'	\\w+?(?R)?\\B	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(?1)\\b'	(a+?)(?1)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?<p>\\w+?\\b)(?:-(?&p))*'	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?<w>\\w+?)(?:\\W(?&w))??\\b'	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?\\b|b)+'	(?:a+?\\b|b)+	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a{1,2}?\\B)+'	(?:a{1,2}?\\B)+	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:\\w{1,2}?\\b)+'	(?:\\w{1,2}?\\b)+	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?)*\\b'	(?:a+?)*\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'(?:a+?)+?b'	(?:a+?)+?b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:|\\b)$'	a{1,3}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:(?=a)|)$'	a{1,3}?(?:(?=a)|)$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{1,3}?(?:)\\b'	a{1,3}?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:\\b|)b'	a{2,}?(?:\\b|)b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:|\\b)\\b'	a{2,}?(?:|\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:|\\b)$'	a{2,}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'a{2,}?(?:)a'	a{2,}?(?:)a	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:(?=a)|)b'	\\w+?(?:(?=a)|)b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:\\B|)b'	\\w+?(?:\\B|)b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?:)\\b'	\\w+?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w{2,}?(?:|\\b)b'	\\w{2,}?(?:|\\b)b	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?<=a)'	\\w+?(?<=a)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?'	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'za{1,3}?'	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?c?'	a{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'za{1,3}?c?'	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'a{1,3}?$'	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?)'	(a{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?)'	(za{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?c?)'	(a{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?c?)'	(za{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?$)'	(a{1,3}?$)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'(\\w+?(?:\\b|))'	(\\w+?(?:\\b|))	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'\\w{1,3}?(?:\\b|)'	\\w{1,3}?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	tests/possessify/possessify.rxt:pattern:b'[a-c]+?(?:\\B|)'	[a-c]+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	tests/recursion/k93.rxt:pattern:b'(a+?)b(?1)'	(a+?)b(?1)	-e utf8 --engine=vm
+c-comments	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-fcomments
+c-comments	tests/atomic_groups/atomic_quant.rxt:pattern:b'(?>a{1,3}?)b'	(?>a{1,3}?)b	-fcomments
+c-comments	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)b'	(?>a+?)b	-fcomments
+c-comments	tests/atomic_groups/d27/atomic_basic.rxt:pattern:b'(?>a+?)'	(?>a+?)	-fcomments
+c-comments	tests/base/d27_bodies.rxt:pattern:b'(ab){2,4}?'	(ab){2,4}?	-fcomments
+c-comments	tests/base/d27_edge.rxt:pattern:b'(a+?)(a+)'	(a+?)(a+)	-fcomments
+c-comments	tests/base/d27_edge.rxt:pattern:b'(a+)(a+?)'	(a+)(a+?)	-fcomments
+c-comments	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}'	(a{2,3}?){2,3}	-fcomments
+c-comments	tests/base/d27_nesting.rxt:pattern:b'(a{2,3}?){2,3}?'	(a{2,3}?){2,3}?	-fcomments
+c-comments	tests/base/d27_nesting.rxt:pattern:b'((a{1,2}?){1,2}){1,2}'	((a{1,2}?){1,2}){1,2}	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?'	z(a){1,3}?	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){1,3}?c?'	z(a){1,3}?c?	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?'	z(a){3,}?	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a){3,}?c?'	z(a){3,}?c?	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?'	z(a)+?	-fcomments
+c-comments	tests/base/possess_lazy_guard.rxt:pattern:b'z(a)+?c?'	z(a)+?c?	-fcomments
+c-comments	tests/captures/priority_and_iteration.rxt:pattern:b'(a){2,4}?'	(a){2,4}?	-fcomments
+c-comments	tests/captures/priority_and_iteration.rxt:pattern:b'(a+?)'	(a+?)	-fcomments
+c-comments	tests/mrl/06_lazy.rxt:pattern:b'(a{1,3}?){3,5}'	(a{1,3}?){3,5}	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'[ab]{1,3}?(?!)-'	[ab]{1,3}?(?!)-	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?=\\W|$)\\b'	\\w+?(?=\\W|$)\\b	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'[a-]{1,3}?(?!\\b)-'	[a-]{1,3}?(?!\\b)-	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'a+?(?<=\\b)\\b'	a+?(?<=\\b)\\b	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'[^a]{1,3}?(?=\\W|$)a'	[^a]{1,3}?(?=\\W|$)a	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)\\b\\1'	(\\w+?)\\b\\1	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(b*)\\1\\2'	(a+?)(b*)\\1\\2	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(a|b)+?\\1'	(a|b)+?\\1	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(?=(\\w+?))\\1\\B'	(?=(\\w+?))\\1\\B	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(\\w+?)(?:\\b(?1))?'	(\\w+?)(?:\\b(?1))?	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'\\w+?(?R)?\\B'	\\w+?(?R)?\\B	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(a+?)(?1)\\b'	(a+?)(?1)\\b	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(?<p>\\w+?\\b)(?:-(?&p))*'	(?<p>\\w+?\\b)(?:-(?&p))*	-fcomments
+c-comments	tests/possessify/composition_d27.rxt:pattern:b'(?<w>\\w+?)(?:\\W(?&w))??\\b'	(?<w>\\w+?)(?:\\W(?&w))??\\b	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?)'	(a{1,3}?)	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?)'	(za{1,3}?)	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?c?)'	(a{1,3}?c?)	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(za{1,3}?c?)'	(za{1,3}?c?)	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(a{1,3}?$)'	(a{1,3}?$)	-fcomments
+c-comments	tests/possessify/possessify.rxt:pattern:b'(\\w+?(?:\\b|))'	(\\w+?(?:\\b|))	-fcomments
+c-comments	tests/recursion/k93.rxt:pattern:b'(a+?)b(?1)'	(a+?)b(?1)	-fcomments

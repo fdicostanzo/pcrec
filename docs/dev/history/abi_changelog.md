@@ -23,7 +23,23 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `71` on every artifact today (lane rq3 bumped it from
+- **`rx_info.abi` is `72` on every artifact today (lane vmlazy bumped it
+  from 71, 2026-10-09; `71` is [MEMFN] RQ-3's, landed first: [MEMFN] R-12
+  — THE VMLAZY NORMALIZATION, `docs/dev/lanes/r12scope_report.md` §1.5,
+  `docs/dev/lanes/vmlazy_report.md`).** The VM cursor rung's LAZY arm
+  spells its rmin prefix (the loop's mandatory iterations) the way the
+  rung's possessive and greedy arms spell theirs: a span scan capped at
+  rmin iterations, then the reach test `if ((ptrdiff_t)<prefix>_span_cursor
+  < slot_values[<low>] + <rmin*W>) goto <prefix>_fail;`. It was a counted
+  loop that failed inside the loop at the first short block. The two forms
+  stop at the same block and fail on the same inputs, and the step and
+  work budgets are charged the same, so no answer moves. Only artifacts
+  whose VM program has a lazy quantifier with `rmin > 0` on the cursor rung
+  move beyond their abi digits, and on those
+  `<PREFIX>_VM_PROGRAM_BYTES` moves with the text. No stamp is added, no
+  struct offset or `rx_info` member moves, and no symbol a caller links
+  against changes.
+- **`rx_info.abi` was `71` (lane rq3 bumped it from
   70, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; rq3 was built on `69` and
   re-landed on R4e′.0b's `70`).** ONE stamp line is added
   to every artifact, both engines, directly after `<PREFIX>_MEMFN_LIBC`:

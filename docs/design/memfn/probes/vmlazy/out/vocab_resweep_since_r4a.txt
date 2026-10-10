@@ -1,0 +1,5 @@
+src/gen/emit_vm.c:13477	vm_emit_search_body	UNSEEN	    %s_run_state_init(run);\n    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n    ctx.caps = NULL; ctx.user = NULL;\n%s%s%s    for (;;) {\n  
+src/gen/memfn_stamps.c:50	libc_names	UNSEEN	memcpy
+src/gen/memfn_stamps.c:176	scan_libc_calls	UNSEEN	memcpy
+src/enc/enc_byte.c:291	defs_bref_ci_ucp	UNSEEN	static unsigned char $_span_ci_fold(unsigned char c)\n{\n    size_t lo = 0;\n    size_t hi = sizeof $_span_ci_fold_pairs / sizeof $_span_ci_fold_pairs[0];\n    
+# new literals 505, candidates 4, unseen by any vocabulary line 4 (base d78ac0ea)

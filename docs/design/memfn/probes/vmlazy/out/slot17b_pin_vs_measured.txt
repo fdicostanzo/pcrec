@@ -1,0 +1,92 @@
+cells measured: [('lowboth', 'byte'), ('lowboth', 'utf8'), ('lowdfa', 'byte'), ('lowdfa', 'utf8'), ('lowsize', 'byte'), ('lowsize', 'utf8'), ('lowthr', 'byte'), ('lowthr', 'utf8'), ('plain', 'byte'), ('plain', 'utf8')]
+cells pinned: [('lowboth', 'byte'), ('lowboth', 'utf8'), ('lowdfa', 'byte'), ('lowdfa', 'utf8'), ('lowsize', 'byte'), ('lowsize', 'utf8'), ('lowthr', 'byte'), ('lowthr', 'utf8'), ('plain', 'byte'), ('plain', 'utf8')]
+('lowboth', 'byte') REACH c-default pin 4944 meas 4964
+('lowboth', 'byte') REACH c-vm pin 4941 meas 4961
+('lowboth', 'byte') REACH emit-ir-vm pin 4941 meas 4961
+('lowboth', 'byte') REACH facts pin 4817 meas 4837
+('lowboth', 'byte') TAG emit-ir-auto yes pin 1301 meas 1319 
+('lowboth', 'byte') TAG emit-ir-auto yes-collapsed pin 31 meas 30 <-- BELOW FLOOR
+('lowboth', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] no-size-cap pin 87 meas 89 
+('lowboth', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1301 meas 1319 
+('lowboth', 'byte') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1410 meas 1430 
+('lowboth', 'byte') TAG emit-ir-auto[-fprefilter] yes pin 1405 meas 1423 
+('lowboth', 'byte') TAG emit-ir-auto[-fprefilter] yes-collapsed pin 13 meas 12 <-- BELOW FLOOR
+('lowboth', 'utf8') REACH c-default pin 4886 meas 4906
+('lowboth', 'utf8') REACH c-vm pin 4878 meas 4898
+('lowboth', 'utf8') REACH emit-ir-vm pin 4878 meas 4898
+('lowboth', 'utf8') TAG emit-ir-auto no-size-cap pin 282 meas 292 
+('lowboth', 'utf8') TAG emit-ir-auto yes pin 1114 meas 1124 
+('lowboth', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] no-size-cap pin 293 meas 303 
+('lowboth', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1114 meas 1124 
+('lowboth', 'utf8') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1439 meas 1459 
+('lowboth', 'utf8') TAG emit-ir-auto[-fprefilter] refused pin 4224 meas 4234 
+('lowboth', 'utf8') TAG emit-ir-auto[-fprefilter] yes pin 1196 meas 1206 
+('lowboth', 'utf8') TAG stderr stderr-default pin 455 meas 465 
+('lowdfa', 'byte') REACH c-default pin 4980 meas 5000
+('lowdfa', 'byte') REACH c-vm pin 4981 meas 5001
+('lowdfa', 'byte') REACH emit-ir-vm pin 4981 meas 5001
+('lowdfa', 'byte') REACH facts pin 4940 meas 4960
+('lowdfa', 'byte') TAG emit-ir-auto yes pin 1391 meas 1411 
+('lowdfa', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1391 meas 1411 
+('lowdfa', 'byte') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1413 meas 1433 
+('lowdfa', 'byte') TAG emit-ir-auto[-fprefilter] yes pin 1498 meas 1518 
+('lowdfa', 'utf8') REACH c-default pin 5009 meas 5029
+('lowdfa', 'utf8') REACH c-vm pin 5010 meas 5030
+('lowdfa', 'utf8') REACH emit-ir-vm pin 5010 meas 5030
+('lowdfa', 'utf8') TAG emit-ir-auto yes pin 1422 meas 1442 
+('lowdfa', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1422 meas 1442 
+('lowdfa', 'utf8') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1453 meas 1473 
+('lowdfa', 'utf8') TAG emit-ir-auto[-fprefilter] yes pin 1531 meas 1551 
+('lowsize', 'byte') REACH c-default pin 4957 meas 4977
+('lowsize', 'byte') REACH c-vm pin 4941 meas 4961
+('lowsize', 'byte') REACH emit-ir-vm pin 4941 meas 4961
+('lowsize', 'byte') REACH facts pin 4752 meas 4772
+('lowsize', 'byte') TAG emit-ir-auto yes pin 1305 meas 1323 
+('lowsize', 'byte') TAG emit-ir-auto yes-collapsed pin 21 meas 20 <-- BELOW FLOOR
+('lowsize', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] no-size-cap pin 104 meas 106 
+('lowsize', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1305 meas 1323 
+('lowsize', 'byte') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1410 meas 1430 
+('lowsize', 'byte') TAG emit-ir-auto[-fprefilter] yes pin 1409 meas 1427 
+('lowsize', 'byte') TAG emit-ir-auto[-fprefilter] yes-collapsed pin 20 meas 19 <-- BELOW FLOOR
+('lowsize', 'utf8') REACH c-default pin 4821 meas 4841
+('lowsize', 'utf8') REACH c-vm pin 4878 meas 4898
+('lowsize', 'utf8') REACH emit-ir-vm pin 4878 meas 4898
+('lowsize', 'utf8') TAG emit-ir-auto no-size-cap pin 308 meas 318 
+('lowsize', 'utf8') TAG emit-ir-auto yes pin 1116 meas 1126 
+('lowsize', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] no-size-cap pin 320 meas 330 
+('lowsize', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1116 meas 1126 
+('lowsize', 'utf8') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1439 meas 1459 
+('lowsize', 'utf8') TAG emit-ir-auto[-fprefilter] refused pin 4221 meas 4231 
+('lowsize', 'utf8') TAG emit-ir-auto[-fprefilter] yes pin 1198 meas 1208 
+('lowsize', 'utf8') TAG stderr stderr-default pin 380 meas 390 
+('lowthr', 'byte') REACH c-default pin 4980 meas 5000
+('lowthr', 'byte') REACH c-vm pin 4981 meas 5001
+('lowthr', 'byte') REACH emit-ir-vm pin 4981 meas 5001
+('lowthr', 'byte') REACH facts pin 4940 meas 4960
+('lowthr', 'byte') TAG emit-ir-auto yes pin 1412 meas 1432 
+('lowthr', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1412 meas 1432 
+('lowthr', 'byte') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1413 meas 1433 
+('lowthr', 'byte') TAG emit-ir-auto[-fprefilter] yes pin 1522 meas 1542 
+('lowthr', 'utf8') REACH c-default pin 5009 meas 5029
+('lowthr', 'utf8') REACH c-vm pin 5010 meas 5030
+('lowthr', 'utf8') REACH emit-ir-vm pin 5010 meas 5030
+('lowthr', 'utf8') TAG emit-ir-auto yes pin 1449 meas 1469 
+('lowthr', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1449 meas 1469 
+('lowthr', 'utf8') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1453 meas 1473 
+('lowthr', 'utf8') TAG emit-ir-auto[-fprefilter] yes pin 1564 meas 1584 
+('plain', 'byte') REACH c-default pin 4980 meas 5000
+('plain', 'byte') REACH c-vm pin 4981 meas 5001
+('plain', 'byte') REACH emit-ir-vm pin 4981 meas 5001
+('plain', 'byte') REACH facts pin 4940 meas 4960
+('plain', 'byte') TAG emit-ir-auto yes pin 1412 meas 1432 
+('plain', 'byte') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1412 meas 1432 
+('plain', 'byte') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1413 meas 1433 
+('plain', 'byte') TAG emit-ir-auto[-fprefilter] yes pin 1522 meas 1542 
+('plain', 'utf8') REACH c-default pin 5009 meas 5029
+('plain', 'utf8') REACH c-vm pin 5010 meas 5030
+('plain', 'utf8') REACH emit-ir-vm pin 5010 meas 5030
+('plain', 'utf8') TAG emit-ir-auto yes pin 1449 meas 1469 
+('plain', 'utf8') TAG emit-ir-auto[-fno-prefilter-collapse] yes pin 1449 meas 1469 
+('plain', 'utf8') TAG emit-ir-auto[-fno-prefilter] no-fno-prefilter pin 1453 meas 1473 
+('plain', 'utf8') TAG emit-ir-auto[-fprefilter] yes pin 1564 meas 1584 
+diffs 89

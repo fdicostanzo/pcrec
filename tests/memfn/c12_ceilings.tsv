@@ -39,11 +39,25 @@
 # A RAISE is never routine: it needs a ruling, named in the commit.
 #
 # D147 add. 12 (N6 retired: vm_rev_emit's backward walk is a mirrored one-position VM step, not a search site) deleted the emit_vm.c walk-back row (1 -> 0) and its vocabulary line.
+# R-12's NORMALIZE (lane vmlazy, abi 70 -> 72) re-spelled the lazy prefix as a
+# capped span scan in the kit's ADVANCE layout: the SAME site's form changed
+# shape, so its row swapped span-count 1 -> walk-open 1 (the total stays 2;
+# not a raise: M6's swap is the precedent). The span-count vocabulary line
+# stays at ceiling 0 as the tripwire for the old counted loop (Q-R12-6).
+# R-12's REPLACE (lane vmlazy) deleted that emit_vm.c walk-open row (1 -> 0):
+# the lazy prefix is the kit's VMSPAN/VMSTRIDE site, so emit_vm.c spells no
+# search form and the only row left is enc_utf8.c's span-decode (N7U).
+# R-12's VALID listing (Q-R12-5, lane vmlazy) added enc_utf8.c's swar-hibit
+# row at 1: NOT a raise of an existing form but a form the vocabulary had
+# never seen (`$_valid_upto`'s ASCII SWAR skip, pending VALID), by RULING.
 #
-# The row count (2) and the total (2 forms; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
+# R-12's N7U retirement (lane n7uret, Q-R12-3, D147 add. 14) deleted
+# enc_utf8.c's span-decode row (1 -> 0) and its vocabulary line: the caseless
+# per-character decode walk is the encoding's own, not a search form.
+#
+# The row count (1) and the total (1 form; 2 before R-12's N7U retirement, 1 before R-12's VALID listing, 2 before R-12's REPLACE; R-12's NORMALIZE swap: span-count 1 out, walk-open 1 in; 3 before D147 add. 12's walk-back deletion; M6's swap: walk-open 1 out, span-count 1 in; 7 before M7, whose REPLACE deleted the encoding seam's two span-index rows (enc_byte.c 3, enc_utf8.c 1); 8 before M4, 12 before M3, 14 before M2 (the header read 13, stale), 20 before M1b, 26 before M1) are echoed by the check; the
 # independent control is the vocabulary's own reach (rule 4 of C17).
 #
 # Columns (tab-separated): path, vocab line-id, libc call name (libc-call
 # lines only, else -), ceiling, note.
-src/gen/emit_vm.c	span-count	-	1	the VM cursor rung's lazy rmin prefix, a counted span verify (VMLAZY, pending; Q-R10-7)
-src/enc/enc_utf8.c	span-decode	-	1	the encoding seam's per-character decode compare (M7)
+src/enc/enc_utf8.c	swar-hibit	-	1	the utf8 subject validator's ASCII SWAR skip (VALID, pending; Q-R12-5)

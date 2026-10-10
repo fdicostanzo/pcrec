@@ -3845,6 +3845,31 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   `REQRUN_FN_RE`/`REQRUN_FN_BODY_RE` (both definitions, excised together).
   `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's src
   commit in a follow-up commit (it cannot name its own commit).
+- **[MEMFN] R-12, THE VMLAZY NORMALIZATION (lane vmlazy, 2026-10-09, abi 70
+  -> 72; 71 is RQ-3's, landing first; landed by lane vmlmerge as 71 -> 72,
+  the ledger message's last transition):** the VM cursor rung's lazy rmin
+  prefix is spelled as a span scan capped at rmin iterations plus the rung's
+  reach test (`docs/dev/lanes/vmlazy_report.md`). `run_codegen_tests.sh`'s
+  `ABI_EXPECT` 72 and its ledger message; `run_recursion_identity.sh` (B)'s
+  FILEPIN self-pinned in a follow-up commit. No byte-count pin moved
+  (`run_cpset_structure.sh` [3], the K59 resource rung and C5 `arms.tsv`
+  carry no lazy cursor prefix: all three suites green unchanged).
+  **`run_recursion_identity.sh` gains its EIGHTH named exception (lane
+  vmlrid, kit manager ruling R1, R-12 VMLAZY, 2026-10-09):**
+  `lazy_prefix_rewrite()`, a ONE-SIDED mechanical rewrite in the fourth's
+  shape. It turns the pre-module region's counted lazy-prefix loop into the
+  NORMALIZE spelling (capped span scan + reach test, text from 7106b370's
+  diff), reading the reach test's low-water slot number from the REFERENCE
+  artifact's own `#define RX_SLOT_SPAN_LOWk N` table, then passes the result
+  through `adv_layout_canon` like every region. Admission is exact equality,
+  composed under the bref rename, the D139 range rewrite and every deny-axis
+  restore (`+vmlazy-prefix` in their messages); `vmlazy-prefix-moved=` joins
+  the (A) line. Non-vacuity: an independent text census of lazy rmin >= 1
+  repeats (`lazy_pop`, floor 150), which the rewrite may never fire outside;
+  the bucket must fire on every axis; no subject region may still carry the
+  old loop (`LAZYOLD_TOTAL` == 0). Sabotage S711 is its negative control
+  (validated by hand: mech cannot run this gate). Figures:
+  `docs/dev/lanes/vmlmerge_report.md`, the vmlrid section.
 - **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
   abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;

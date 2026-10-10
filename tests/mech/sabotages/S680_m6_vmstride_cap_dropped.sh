@@ -3,6 +3,10 @@
 # span_hi caps ADVANCE's counter in ITERATIONS (RULED Q-R10-5); the VM's
 # bounded strided quantifier states rmax there. The plant drops it at W > 1
 # only (VMSPAN keeps its cap): the kit then counts `it_` but never tests it.
+# RE-AIMED 2026-10-09 (lane vmlazy, R-12 REPLACE): vm_span_advance takes the
+# cap as a parameter (`cap`: rmax for the possessive/greedy scans, rmin for
+# the lazy prefix) instead of reading a->u.rep.rmax; same plant, same
+# intent. Its reach widens: the lazy prefix at stride > 1 loses its cap too.
 SAB_ID="S680-m6-vmstride-cap-dropped"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness"
@@ -13,7 +17,7 @@ SAB_REACH='"$PCREC" -p rx -o - --pattern "(ab){2,4}"'
 SAB_REACH_EXPECT='while ((rx_span_cursor + 2 <= subject_length) && it_ < 4ULL && (subject[rx_span_cursor + 0] == 97) && (subject[rx_span_cursor + 1] == 98)) {'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        .span = a->u.rep.rmax >= 0 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,
+SAB_BEFORE='        .span = cap >= 0 ? (uint64_t)cap : MF_SPAN_UNBOUNDED,
         .indent = "        " };'
-SAB_AFTER='        .span = a->u.rep.rmax >= 0 && stride == 1 ? (uint64_t)a->u.rep.rmax : MF_SPAN_UNBOUNDED,  /* SABOTAGE S680 */
+SAB_AFTER='        .span = cap >= 0 && stride == 1 ? (uint64_t)cap : MF_SPAN_UNBOUNDED,  /* SABOTAGE S680 */
         .indent = "        " };'

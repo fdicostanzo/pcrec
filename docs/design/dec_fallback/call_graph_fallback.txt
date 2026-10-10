@@ -1,5 +1,5 @@
 # call_graph.py --family fallback: roots compile_driver,fit_walk,fit_rung_denied,fit_rung_of,fit_collapse_applies,fit_anchored_applies,fit_premul_applies,fit_prefilter_applies,fit_always,prefilter_decision,pf_admit_walk,size_term_choose,esel_of,fit_attrib_walk,pflw_walk,pflw_value,st_why_walk,st_whys | seeds derived by dec_fallback/state_readers.sh (D defs + member/enum tokens)
-# definitions 2188; reachable from bodies 1564, from stamp writers 0; seeds 18; family 99
+# definitions 2189; reachable from bodies 1564, from stamp writers 0; seeds 18; family 99
 kind	name	site	detail
 def-const	ABLOCK_MIN	src/core/arena.c:6-6	
 def-func	pcrec_arena_alloc	src/core/arena.c:13-38	
@@ -1259,98 +1259,99 @@ def-func	vm_run_site	src/gen/emit_vm.c:4410-4424
 def-func	vm_run_compare	src/gen/emit_vm.c:4432-4443	
 def-func	vm_isl_emit	src/gen/emit_vm.c:4452-4607	
 def-func	vm_alt	src/gen/emit_vm.c:4618-4658	
-def-func	vm_span_advance	src/gen/emit_vm.c:4669-4686	
-def-func	vm_emit_span_scan	src/gen/emit_vm.c:4708-4725	
-def-func	vm_cursor_rep	src/gen/emit_vm.c:4753-5110	
-def-func	vm_opt_chain	src/gen/emit_vm.c:5119-5161	
-def-func	vm_poss_chain	src/gen/emit_vm.c:5200-5263	
-def-func	vm_poss_star	src/gen/emit_vm.c:5279-5330	
-def-type	Rev	src/gen/emit_vm.c:5354-5363	
-def-func	vm_rev_index	src/gen/emit_vm.c:5369-5373	
-def-func	vm_rev_emit	src/gen/emit_vm.c:5384-5548	
-def-func	vm_revdet_rep	src/gen/emit_vm.c:5559-5871	
-def-func	vm_counter_phase	src/gen/emit_vm.c:5932-6111	
-def-func	vm_counter_poss_opt	src/gen/emit_vm.c:6146-6191	
-def-func	vm_counter_rep	src/gen/emit_vm.c:6208-6330	
-def-func	vm_star	src/gen/emit_vm.c:6348-6589	
-def-func	vm_atomic	src/gen/emit_vm.c:6694-6739	
-def-func	vm_look_behind_branch	src/gen/emit_vm.c:6887-7019	
-def-func	vm_look_behind	src/gen/emit_vm.c:7135-7202	
-def-func	vm_look	src/gen/emit_vm.c:7212-7308	
-def-type	VmSnap	src/gen/emit_vm.c:7354-7354	
-def-func	vm_snap	src/gen/emit_vm.c:7361-7368	
-def-func	vm_walk_caps	src/gen/emit_vm.c:7391-7419	
-def-func	vm_grp_set_cap	src/gen/emit_vm.c:7429-7433	
-def-type	VmWCaps	src/gen/emit_vm.c:7439-7439	
-def-func	vm_w_cap_slots	src/gen/emit_vm.c:7448-7458	
-def-func	vm_walk_calls	src/gen/emit_vm.c:7476-7503	
-def-func	vm_publish_saves	src/gen/emit_vm.c:7508-7518	
-def-func	vm_w_range	src/gen/emit_vm.c:7524-7527	
-def-func	vm_build_region_saves	src/gen/emit_vm.c:7563-7716	
-def-func	vm_memo_region_costs	src/gen/emit_vm.c:7737-7768	
-def-func	vm_ceiling	src/gen/emit_vm.c:7774-7778	
-def-type	VmCaps	src/gen/emit_vm.c:7790-7794	
-def-func	vm_plan_capacities	src/gen/emit_vm.c:7812-7906	
-def-func	vm_plan_regions	src/gen/emit_vm.c:7933-7969	
-def-func	vm_call	src/gen/emit_vm.c:8010-8037	
-def-func	vm_splice	src/gen/emit_vm.c:8125-8231	
-def-func	vm_region	src/gen/emit_vm.c:8270-8317	
-def-type	enum@src/gen/emit_vm.c:8325	src/gen/emit_vm.c:8325-8325	
-def-type	VmCtxForm	src/gen/emit_vm.c:8326-8332	
-def-table	vm_ctx_forms	src/gen/emit_vm.c:8334-8341	
-def-func	vm_ctx_side	src/gen/emit_vm.c:8344-8351	
-def-func	vm_ctx	src/gen/emit_vm.c:8369-8400	
-def-func	vm_cap	src/gen/emit_vm.c:8407-8474	
-def-func	vm_caseless_entry	src/gen/emit_vm.c:8479-8484	
-def-func	vm_bref	src/gen/emit_vm.c:8492-8640	
-def-func	vm_var	src/gen/emit_vm.c:8657-8701	
-def-func	vm_lit_describe	src/gen/emit_vm.c:8706-8722	
-def-func	vm_lit	src/gen/emit_vm.c:8736-8747	
-def-func	vm_cat	src/gen/emit_vm.c:8754-8793	
-def-func	vm_emit	src/gen/emit_vm.c:8805-8809	
-def-func	vm_emit_node	src/gen/emit_vm.c:8816-9083	
-def-func	vm_cls_describe	src/gen/emit_vm.c:9096-9134	
-def-func	vm_wcls_describe	src/gen/emit_vm.c:9139-9153	
-def-type	VmStamp	src/gen/emit_vm.c:9155-9170	
-def-func	vm_mask_names	src/gen/emit_vm.c:9230-9240	
-def-func	vm_sec	src/gen/emit_vm.c:9248-9253	
-def-func	vm_row3	src/gen/emit_vm.c:9260-9264	
-def-func	vm_listing_slot_row	src/gen/emit_vm.c:9274-9280	
-def-func	vm_listing_slots	src/gen/emit_vm.c:9288-9300	
-def-table	vm_revdet_slot_desc	src/gen/emit_vm.c:9303-9307	
-def-func	vm_listing_events	src/gen/emit_vm.c:9316-9329	
-def-func	vm_prow	src/gen/emit_vm.c:9338-9343	
-def-func	vm_render_listing	src/gen/emit_vm.c:9357-9858	
-def-type	VmField	src/gen/emit_vm.c:9890-9894	
-def-func	vm_layout	src/gen/emit_vm.c:9901-9913	
-def-func	vm_frame_fields	src/gen/emit_vm.c:9930-9950	
-def-func	vm_trail_fields	src/gen/emit_vm.c:9956-9964	
-def-func	vm_fields_join	src/gen/emit_vm.c:9967-9974	
-def-func	vm_emit_default_entry	src/gen/emit_vm.c:10015-10122	
-def-type	VmPlan	src/gen/emit_vm.c:10142-10167	
-def-type	VmEntry	src/gen/emit_vm.c:10177-10187	
-def-func	vm_init	src/gen/emit_vm.c:10205-10409	
-def-func	vm_plan	src/gen/emit_vm.c:10430-10760	
-def-func	vm_plan_entry	src/gen/emit_vm.c:10774-10947	
-def-type	VmReseedCal	src/gen/emit_vm.c:10993-10993	
-def-table	vm_reseed_cal	src/gen/emit_vm.c:10994-10997	
-def-func	vm_cand_facts	src/gen/emit_vm.c:11005-11010	
-def-macro	VM_CAND_HIT	src/gen/emit_vm.c:11021-11021	
-def-func	vm_width_row	src/gen/emit_vm.c:11029-11033	
-def-func	vm_bound_row	src/gen/emit_vm.c:11039-11043	
-def-type	VmReseed	src/gen/emit_vm.c:11046-11050	
-def-func	vm_plan_reseed	src/gen/emit_vm.c:11062-11075	
-def-func	vm_emit_stamps	src/gen/emit_vm.c:11097-11686	
-def-func	vm_emit_storage	src/gen/emit_vm.c:11707-12209	
-def-func	vm_var_word_bytes	src/gen/emit_vm.c:12236-12245	
-def-func	vm_var_emit_eval	src/gen/emit_vm.c:12262-12340	
-def-func	vm_emit_vars_resolve	src/gen/emit_vm.c:12373-12492	
-def-func	vm_vars_resolve_insert	src/gen/emit_vm.c:12509-12520	
-def-func	vm_emit_search_body	src/gen/emit_vm.c:12522-13524	
-def-func	vm_emit_match_guard	src/gen/emit_vm.c:13530-13534	
-def-func	vm_emit_entries	src/gen/emit_vm.c:13555-13834	
-def-func	vm_emit_epilogue	src/gen/emit_vm.c:13850-13912	
-def-func	pcrec_emit_vm	src/gen/emit_vm.c:13940-13964	
+def-func	vm_span_advance	src/gen/emit_vm.c:4671-4688	
+def-func	vm_emit_span_scan	src/gen/emit_vm.c:4711-4728	
+def-func	vm_span_reach	src/gen/emit_vm.c:4735-4739	
+def-func	vm_cursor_rep	src/gen/emit_vm.c:4767-5123	
+def-func	vm_opt_chain	src/gen/emit_vm.c:5132-5174	
+def-func	vm_poss_chain	src/gen/emit_vm.c:5213-5276	
+def-func	vm_poss_star	src/gen/emit_vm.c:5292-5343	
+def-type	Rev	src/gen/emit_vm.c:5367-5376	
+def-func	vm_rev_index	src/gen/emit_vm.c:5382-5386	
+def-func	vm_rev_emit	src/gen/emit_vm.c:5397-5561	
+def-func	vm_revdet_rep	src/gen/emit_vm.c:5572-5884	
+def-func	vm_counter_phase	src/gen/emit_vm.c:5945-6124	
+def-func	vm_counter_poss_opt	src/gen/emit_vm.c:6159-6204	
+def-func	vm_counter_rep	src/gen/emit_vm.c:6221-6343	
+def-func	vm_star	src/gen/emit_vm.c:6361-6602	
+def-func	vm_atomic	src/gen/emit_vm.c:6707-6752	
+def-func	vm_look_behind_branch	src/gen/emit_vm.c:6900-7032	
+def-func	vm_look_behind	src/gen/emit_vm.c:7148-7215	
+def-func	vm_look	src/gen/emit_vm.c:7225-7321	
+def-type	VmSnap	src/gen/emit_vm.c:7367-7367	
+def-func	vm_snap	src/gen/emit_vm.c:7374-7381	
+def-func	vm_walk_caps	src/gen/emit_vm.c:7404-7432	
+def-func	vm_grp_set_cap	src/gen/emit_vm.c:7442-7446	
+def-type	VmWCaps	src/gen/emit_vm.c:7452-7452	
+def-func	vm_w_cap_slots	src/gen/emit_vm.c:7461-7471	
+def-func	vm_walk_calls	src/gen/emit_vm.c:7489-7516	
+def-func	vm_publish_saves	src/gen/emit_vm.c:7521-7531	
+def-func	vm_w_range	src/gen/emit_vm.c:7537-7540	
+def-func	vm_build_region_saves	src/gen/emit_vm.c:7576-7729	
+def-func	vm_memo_region_costs	src/gen/emit_vm.c:7750-7781	
+def-func	vm_ceiling	src/gen/emit_vm.c:7787-7791	
+def-type	VmCaps	src/gen/emit_vm.c:7803-7807	
+def-func	vm_plan_capacities	src/gen/emit_vm.c:7825-7919	
+def-func	vm_plan_regions	src/gen/emit_vm.c:7946-7982	
+def-func	vm_call	src/gen/emit_vm.c:8023-8050	
+def-func	vm_splice	src/gen/emit_vm.c:8138-8244	
+def-func	vm_region	src/gen/emit_vm.c:8283-8330	
+def-type	enum@src/gen/emit_vm.c:8338	src/gen/emit_vm.c:8338-8338	
+def-type	VmCtxForm	src/gen/emit_vm.c:8339-8345	
+def-table	vm_ctx_forms	src/gen/emit_vm.c:8347-8354	
+def-func	vm_ctx_side	src/gen/emit_vm.c:8357-8364	
+def-func	vm_ctx	src/gen/emit_vm.c:8382-8413	
+def-func	vm_cap	src/gen/emit_vm.c:8420-8487	
+def-func	vm_caseless_entry	src/gen/emit_vm.c:8492-8497	
+def-func	vm_bref	src/gen/emit_vm.c:8505-8653	
+def-func	vm_var	src/gen/emit_vm.c:8670-8714	
+def-func	vm_lit_describe	src/gen/emit_vm.c:8719-8735	
+def-func	vm_lit	src/gen/emit_vm.c:8749-8760	
+def-func	vm_cat	src/gen/emit_vm.c:8767-8806	
+def-func	vm_emit	src/gen/emit_vm.c:8818-8822	
+def-func	vm_emit_node	src/gen/emit_vm.c:8829-9096	
+def-func	vm_cls_describe	src/gen/emit_vm.c:9109-9147	
+def-func	vm_wcls_describe	src/gen/emit_vm.c:9152-9166	
+def-type	VmStamp	src/gen/emit_vm.c:9168-9183	
+def-func	vm_mask_names	src/gen/emit_vm.c:9243-9253	
+def-func	vm_sec	src/gen/emit_vm.c:9261-9266	
+def-func	vm_row3	src/gen/emit_vm.c:9273-9277	
+def-func	vm_listing_slot_row	src/gen/emit_vm.c:9287-9293	
+def-func	vm_listing_slots	src/gen/emit_vm.c:9301-9313	
+def-table	vm_revdet_slot_desc	src/gen/emit_vm.c:9316-9320	
+def-func	vm_listing_events	src/gen/emit_vm.c:9329-9342	
+def-func	vm_prow	src/gen/emit_vm.c:9351-9356	
+def-func	vm_render_listing	src/gen/emit_vm.c:9370-9871	
+def-type	VmField	src/gen/emit_vm.c:9903-9907	
+def-func	vm_layout	src/gen/emit_vm.c:9914-9926	
+def-func	vm_frame_fields	src/gen/emit_vm.c:9943-9963	
+def-func	vm_trail_fields	src/gen/emit_vm.c:9969-9977	
+def-func	vm_fields_join	src/gen/emit_vm.c:9980-9987	
+def-func	vm_emit_default_entry	src/gen/emit_vm.c:10028-10135	
+def-type	VmPlan	src/gen/emit_vm.c:10155-10180	
+def-type	VmEntry	src/gen/emit_vm.c:10190-10200	
+def-func	vm_init	src/gen/emit_vm.c:10218-10422	
+def-func	vm_plan	src/gen/emit_vm.c:10443-10773	
+def-func	vm_plan_entry	src/gen/emit_vm.c:10787-10960	
+def-type	VmReseedCal	src/gen/emit_vm.c:11006-11006	
+def-table	vm_reseed_cal	src/gen/emit_vm.c:11007-11010	
+def-func	vm_cand_facts	src/gen/emit_vm.c:11018-11023	
+def-macro	VM_CAND_HIT	src/gen/emit_vm.c:11034-11034	
+def-func	vm_width_row	src/gen/emit_vm.c:11042-11046	
+def-func	vm_bound_row	src/gen/emit_vm.c:11052-11056	
+def-type	VmReseed	src/gen/emit_vm.c:11059-11063	
+def-func	vm_plan_reseed	src/gen/emit_vm.c:11075-11088	
+def-func	vm_emit_stamps	src/gen/emit_vm.c:11110-11699	
+def-func	vm_emit_storage	src/gen/emit_vm.c:11720-12222	
+def-func	vm_var_word_bytes	src/gen/emit_vm.c:12249-12258	
+def-func	vm_var_emit_eval	src/gen/emit_vm.c:12275-12353	
+def-func	vm_emit_vars_resolve	src/gen/emit_vm.c:12386-12505	
+def-func	vm_vars_resolve_insert	src/gen/emit_vm.c:12522-12533	
+def-func	vm_emit_search_body	src/gen/emit_vm.c:12535-13537	
+def-func	vm_emit_match_guard	src/gen/emit_vm.c:13543-13547	
+def-func	vm_emit_entries	src/gen/emit_vm.c:13568-13847	
+def-func	vm_emit_epilogue	src/gen/emit_vm.c:13863-13925	
+def-func	pcrec_emit_vm	src/gen/emit_vm.c:13953-13977	
 def-table	pcrec_deleg_sites	src/gen/memfn_sites.c:19-24	
 def-func	pcrec_memfn_denies	src/gen/memfn_sites.c:38-44	
 def-func	pcrec_memfn_deny_flags	src/gen/memfn_sites.c:46-52	
@@ -2197,7 +2198,7 @@ def-trace	trace@src/core/internal.h:7163	src/core/internal.h:7163-7190
 def-trace	trace@src/gen/emit_dfa.c:331	src/gen/emit_dfa.c:331-343	
 def-trace	trace@src/gen/emit_dfa.c:1121	src/gen/emit_dfa.c:1121-1137	
 def-trace	trace@src/gen/emit_dfa.c:8459	src/gen/emit_dfa.c:8459-8665	
-def-trace	trace@src/gen/emit_vm.c:11014	src/gen/emit_vm.c:11014-11020	
+def-trace	trace@src/gen/emit_vm.c:11027	src/gen/emit_vm.c:11027-11033	
 def-trace	trace@src/opt/select_engine.c:779	src/opt/select_engine.c:779-798	
 def-trace	trace@src/opt/select_engine.c:1273	src/opt/select_engine.c:1273-1308	
 seed	esel_of	src/opt/select_engine.c:1249	
@@ -2281,12 +2282,12 @@ family-func	emit_orientation_block	src/gen/emit_dfa.c:10704	body; names @field
 family-func	pcrec_emit_prologue	src/gen/emit_dfa.c:10914	body; names emit_orientation_block,emit_rx_abi_types,@field
 family-func	emit_dfa_stamps	src/gen/emit_dfa.c:11498	body; names pcrec_engine_sel_name
 family-func	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3643	body; names @field
-family-func	vm_render_listing	src/gen/emit_vm.c:9357	body; names @field
-family-func	vm_init	src/gen/emit_vm.c:10205	body; names pcrec_vm_prefilter_window,@field
-family-func	vm_plan_reseed	src/gen/emit_vm.c:11062	body; names @field
-family-func	vm_emit_stamps	src/gen/emit_vm.c:11097	body; names pcrec_artifact_has_dfa_scan,pcrec_engine_sel_name,@field
-family-func	vm_emit_search_body	src/gen/emit_vm.c:12522	body; names @field
-family-func	vm_emit_epilogue	src/gen/emit_vm.c:13850	body; names vm_render_listing,@field
+family-func	vm_render_listing	src/gen/emit_vm.c:9370	body; names @field
+family-func	vm_init	src/gen/emit_vm.c:10218	body; names pcrec_vm_prefilter_window,@field
+family-func	vm_plan_reseed	src/gen/emit_vm.c:11075	body; names @field
+family-func	vm_emit_stamps	src/gen/emit_vm.c:11110	body; names pcrec_artifact_has_dfa_scan,pcrec_engine_sel_name,@field
+family-func	vm_emit_search_body	src/gen/emit_vm.c:12535	body; names @field
+family-func	vm_emit_epilogue	src/gen/emit_vm.c:13863	body; names vm_render_listing,@field
 family-func	ctx_decline	src/ir/dfa.c:201	body; names @field
 family-func	intern	src/ir/dfa.c:1224	body; names pcrec_ctx_nomem,@field
 family-func	compile_ast	src/ir/nfa.c:590	body; names @field
@@ -2450,22 +2451,22 @@ site	pcrec_emit_prologue	src/gen/emit_dfa.c:10925	 via dfa_body | dfa_body && (c
 site	pcrec_emit_prologue	src/gen/emit_dfa.c:10927	pf | attempt_next_of(cx, &acand)->u.pf.scan == PF_SCAN_BYTE &&
 site	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3645	fit,prefilter | return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
 site	pcrec_vm_prefilter_window	src/gen/emit_vm.c:3647	fit,prefilter_collapsed | && !cx->job->fit.prefilter_collapsed;
-site	vm_render_listing	src/gen/emit_vm.c:9415	why | vm_rolef(v, "", st->why ? st->why : ""));
-site	vm_render_listing	src/gen/emit_vm.c:9433	prefilter | if (st->prefilter) {
-site	vm_render_listing	src/gen/emit_vm.c:9442	prefilter_collapsed | if (st->prefilter_collapsed) {
-site	vm_plan_reseed	src/gen/emit_vm.c:11065	fit,prefilter | if (!v->cx->job->fit.prefilter) return;
-site	vm_emit_stamps	src/gen/emit_vm.c:11126	fit,why | job->fit.why ? job->fit.why : "");
-site	vm_emit_stamps	src/gen/emit_vm.c:11137	fit,why | pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "",
-site	vm_emit_stamps	src/gen/emit_vm.c:11138	fit,why | strlen(job->fit.why ? job->fit.why : ""));
-site	vm_emit_stamps	src/gen/emit_vm.c:11176	fit,prefilter | job->fit.prefilter ? "" : "");
-site	vm_emit_stamps	src/gen/emit_vm.c:11186	fit_nseq via i | for (int i = cx->fit_nseq; i-- > 0 && !pfwhy; )
-site	vm_emit_stamps	src/gen/emit_vm.c:11212	fit,prefilter | if (job->fit.prefilter) {
-site	vm_emit_stamps	src/gen/emit_vm.c:11214	fit,prefilter_collapsed | job->fit.prefilter_collapsed ? "" : "");
-site	vm_emit_stamps	src/gen/emit_vm.c:11324	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v->up);
-site	vm_emit_search_body	src/gen/emit_vm.c:12698	fit,prefilter | if (job->fit.prefilter) {
-site	vm_emit_search_body	src/gen/emit_vm.c:13255	 via prefn | if (v->nclamp > 0 && prefn)
-site	vm_emit_search_body	src/gen/emit_vm.c:13387	 via prefn | if (!prefn && strcmp(first, "") != 0)
-site	vm_emit_search_body	src/gen/emit_vm.c:13390	 via prefn | if (prefn) {
+site	vm_render_listing	src/gen/emit_vm.c:9428	why | vm_rolef(v, "", st->why ? st->why : ""));
+site	vm_render_listing	src/gen/emit_vm.c:9446	prefilter | if (st->prefilter) {
+site	vm_render_listing	src/gen/emit_vm.c:9455	prefilter_collapsed | if (st->prefilter_collapsed) {
+site	vm_plan_reseed	src/gen/emit_vm.c:11078	fit,prefilter | if (!v->cx->job->fit.prefilter) return;
+site	vm_emit_stamps	src/gen/emit_vm.c:11139	fit,why | job->fit.why ? job->fit.why : "");
+site	vm_emit_stamps	src/gen/emit_vm.c:11150	fit,why | pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "",
+site	vm_emit_stamps	src/gen/emit_vm.c:11151	fit,why | strlen(job->fit.why ? job->fit.why : ""));
+site	vm_emit_stamps	src/gen/emit_vm.c:11189	fit,prefilter | job->fit.prefilter ? "" : "");
+site	vm_emit_stamps	src/gen/emit_vm.c:11199	fit_nseq via i | for (int i = cx->fit_nseq; i-- > 0 && !pfwhy; )
+site	vm_emit_stamps	src/gen/emit_vm.c:11225	fit,prefilter | if (job->fit.prefilter) {
+site	vm_emit_stamps	src/gen/emit_vm.c:11227	fit,prefilter_collapsed | job->fit.prefilter_collapsed ? "" : "");
+site	vm_emit_stamps	src/gen/emit_vm.c:11337	pcrec_artifact_has_dfa_scan | if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v->up);
+site	vm_emit_search_body	src/gen/emit_vm.c:12711	fit,prefilter | if (job->fit.prefilter) {
+site	vm_emit_search_body	src/gen/emit_vm.c:13268	 via prefn | if (v->nclamp > 0 && prefn)
+site	vm_emit_search_body	src/gen/emit_vm.c:13400	 via prefn | if (!prefn && strcmp(first, "") != 0)
+site	vm_emit_search_body	src/gen/emit_vm.c:13403	 via prefn | if (prefn) {
 site	intern	src/ir/dfa.c:1351	pcrec_ctx_nomem | if (!nst) pcrec_ctx_nomem(cx);
 site	compile_ast	src/ir/nfa.c:604	 via f | return f;
 site	compile_ast	src/ir/nfa.c:644	 via f | return f;
