@@ -15,9 +15,12 @@
 # ROW	FLAGS	PATTERN
 empty	-	[^\x00-\xff]
 empty	-	^\B\b
+rev-end	-	abc$
+rev-end	-	\s+$
+rev-end	-e utf8	\s+?$
 composite	-	a
 composite	-	^a
-window	-	abc$
+window	-	(abc)$
 window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)
 one-attempt	-	^(a)(b|c)
@@ -39,7 +42,7 @@ first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
 memchr	-	a(b|c)+d
-byte-class-bounded	-e utf8	.*\z
+byte-class-bounded	-e utf8	[ab]\b
 byte-class	-	\d
 pred-memchr	-	(?m)^ERROR
 next-none	-	a(b|c)+d
@@ -62,5 +65,10 @@ reverse-pass	-	a(b|c)+d
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
-search-from	-	[^\x00-\xff]
-search-from	-	^\B\b
+search-from	-fno-anchored-dfa	\s+$
+nomatch	-	[^\x00-\xff]
+nomatch	-	^\B\b
+nomatch	-	abc$
+report	-	a
+report	-	^ab
+verify-at	-	\s+$

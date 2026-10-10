@@ -6887,6 +6887,14 @@ bool pcrec_cand_finish_needs(Ctx *cx, unsigned m);
  * assignment reads it. src/gen/emit_dfa.c. */
 bool pcrec_cand_lang_exact(Ctx *cx);
 
+/* [OPT-REVEND] L2 THE SIZE LADDER's rev-end clause (locate_finish.md §5 L2,
+ * LR-S12): does dropping the anchored machine leave a member set that is a
+ * STRICT SUBSET of this compile's (the path re-derived with it unbuilt)? A
+ * `rev-end` tie that loses it relocates to the composite, which needs the
+ * forward machine: dropping A would GROW such an artifact. The anchored
+ * machine is the one droppable machine today. src/gen/emit_dfa.c. */
+bool pcrec_cand_drop_anchored_shrinks(Ctx *cx);
+
 /* [OPT-REVEND] L0 the LOCATE ask of an artifact with NO DFA body (a VM
  * artifact without a prefilter), once, on CAND_ROUTE_VM (locate_finish.md
  * §2.2, LR-S6): it selects `composite`, whose walk there is the VM's own

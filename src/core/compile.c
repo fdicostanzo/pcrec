@@ -768,8 +768,13 @@ static bool fit_collapse_applies(const FitSel *s)
  * "this DFA artifact carries it". */
 static bool fit_anchored_applies(const FitSel *s)
 {
+    /* [OPT-REVEND] L2 (LR-S12): only where the drop SHRINKS the member set
+     * (a `rev-end` tie with no anchored machine relocates to the composite,
+     * which adds the forward machine); otherwise the ladder goes on to its
+     * next rung. */
     return s->size_drop_rung == SDR_NONE &&
-           s->cx->job && s->cx->job->anchored_ok;
+           s->cx->job && s->cx->job->anchored_ok &&
+           pcrec_cand_drop_anchored_shrinks(s->cx);
 }
 
 /* [K59-PREMUL] THE DROP LADDER'S SECOND RUNG — the premultiplied
