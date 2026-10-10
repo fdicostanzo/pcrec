@@ -427,3 +427,14 @@ tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding
 tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
 tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
 tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
+# vmlfix (R-12, 2026-10-09): +10 rows, every one a tests/base/vm_lazy_rmin_prefix.rxt block (VMLAZY 08bda492, never pinned); census_s1.py on lane/vmlfix, no existing row moved. Bench rows NOT refreshed.
+tests/base/vm_lazy_rmin_prefix.rxt:103	--engine=vm	287829285c647b342c7d3f295c64
+tests/base/vm_lazy_rmin_prefix.rxt:126	--engine=vm	28612b3f2928612b29
+tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
+tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
+tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
+tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
+tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
+tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
