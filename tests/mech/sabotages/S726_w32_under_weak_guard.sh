@@ -3,7 +3,7 @@
 SAB_ID='S726-w32-under-weak-guard'
 SAB_FILE='memfn/src/levels.def'
 SAB_SUITES='simdfloor'
-SAB_DESC='the widest level is guarded by the next-lower level's guard, so an older target meets the widest level's intrinsics'
+SAB_DESC='the widest level is guarded by the next-lower guard, so an older target meets the widest level intrinsics'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S726. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

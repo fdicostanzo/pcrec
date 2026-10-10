@@ -29,5 +29,5 @@ if ! "$TIMEOUT_BIN" 120 "${CC:-gcc}" -O2 -I "$TREE/memfn/include" -o "$WORK/simd
     echo "FAIL: [simd-floor-build] the levels dumper did not build"; cat "$WORK/cc.log"
     echo "checks passed: 0"; echo "checks failed: 1"; exit 1
 fi
-TMPDIR="$WORK" "$TIMEOUT_BIN" 2400 python3 "$TREE/tests/memfn/simd_floor_check.py" \
-    --pcrec "$PCREC" --levels "$WORK/simd_levels" --every "$EVERY" --jobs "${SIMD_FLOOR_JOBS:-4}"
+TMPDIR="$WORK" "$TIMEOUT_BIN" 2400 python3 "$TREE/tests/memfn/simd_floor_check.py" --pcrec "$PCREC" \
+    --levels "$WORK/simd_levels" --every "$EVERY" --jobs "${SIMD_FLOOR_JOBS:-4}"
