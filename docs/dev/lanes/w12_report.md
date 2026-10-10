@@ -105,7 +105,7 @@ move.
 
 ### Spec (D80, in the same change)
 
-`docs/spec/cli.md` (S11: a `--source` section, §4's two bullets narrowed,
+`docs/spec/cli.md` (finding 11: a `--source` section, §4's two bullets narrowed,
 revision history), `docs/spec/rxt_format.md` (the `target` and `lib` head
 rows stop saying "not yet built"/"not yet resolved"; a new "Building from
 a source file" section), `docs/spec/match_api.md` §6 (S9: the two members,

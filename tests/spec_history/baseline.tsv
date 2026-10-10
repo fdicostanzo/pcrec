@@ -4,11 +4,6 @@
 # EXACTLY: a rise is new history, a fall means debt was paid and this row
 # must be lowered (or removed at 0) in the same change. match_api.md,
 # registry.md and table_contract.md have no row: they carry no history.
-cli.md	date	25
-cli.md	addendum	1
-cli.md	walkback	10
-cli.md	narrative	7
-cli.md	tagopen	13
 facts_listing.md	date	4
 facts_listing.md	addendum	1
 facts_listing.md	walkback	1

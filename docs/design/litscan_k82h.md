@@ -734,7 +734,7 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
 - `docs/spec/tuning.md`: a new §2.41 for `-fno-req-handoff`; the
   flags→flag table at :3738 gains the bit-46 row beside bit 45's; §2.29's
   `REQ_WHY` paragraph gains a cross-reference.
-- `docs/spec/registry.md` / `cli.md:582`: the `req-use` axis and the flag
+- `docs/spec/registry.md` / `cli.md (old line 582)`: the `req-use` axis and the flag
   in the deny-flag list.
 - `docs/spec/facts_listing.md`: the `req_run_maxoff` row and the `req-use`
   decision.

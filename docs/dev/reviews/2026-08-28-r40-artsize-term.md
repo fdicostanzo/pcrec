@@ -12,7 +12,7 @@ phase opens on the panel's dispositions.
 
 | # | severity | finding | disposition |
 |---|---|---|---|
-| AR1 | MISSING-OBLIGATION | D80 spec-hunk list incomplete: `docs/spec/cli.md:218-224` hand-enumerates every `-fno-` axis through `-fno-offset-skip`; the note names only tuning.md, limits.md, match_api.md §6 | ACCEPTED → landing bar: `-fno-size-term` added there in the same change |
+| AR1 | MISSING-OBLIGATION | D80 spec-hunk list incomplete: `cli.md (old line 218-224)` hand-enumerates every `-fno-` axis through `-fno-offset-skip`; the note names only tuning.md, limits.md, match_api.md §6 | ACCEPTED → landing bar: `-fno-size-term` added there in the same change |
 | AR2 | MISSING-OBLIGATION | the two new macros (`_UNROLL_K` / `_UNROLL_K_WHY`, §7.1) have no home in match_api.md §6.3's per-mechanism bullets (`match_api.md §6.3.4`, was `:1659-1720`, where `_DFA_SCAN`/`_DFA_PREFILTER` live) | ACCEPTED → landing bar: a §6.3 bullet on the `_DFA_SCAN` precedent, VM-artifact-scoped |
 | AR3 | GAP | §6.2's K sweep is a hand-written one-off; `--unroll` is a VALUE axis and [CHK-2] (c) "test-axes-from-dump" is NOT built — this note is the consumer (c) waits for and does not say so; `axes_dump.c` has no kind=value support | ACCEPTED → the note states it: the K-sweep check ships now as the gate; `--unroll` is registered as a value axis when [CHK-2] (c) is built, and this row is its named trigger (D77) |
 | AR4 | GAP | the note never states what K selection does to [ART-SIZE.1b]'s tripwire (MAX 1,400,000 B / 8.0 s) and size log | ACCEPTED → one sentence + the post-change `size_diff` as a delivery number: headroom grows, pin unaffected |
