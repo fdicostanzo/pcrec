@@ -125,74 +125,28 @@ contents block).
   header rule rather than from taste. Read it before changing anything
   `vm_render_listing` prints.
 
-- `limits.md` — **[SPEC-1.1], 2026-08-25.** The resource-bound contract:
-  the give-up code space (pointing at `match_api.md` §4 rather than
-  restating it), the step/work/frame/trail budget numbers each cited to
-  their compiled-in constant and CLI override, the compile-time
-  state-count ceilings pcrec actually promises versus D45's
-  test-harness compile timeout (which it does not), a re-measured worked
-  example (`^(a(?1)?b)$` gives up at n = 343, an 686-byte subject,
-  matching `match_api.md` §10.1 exactly at this commit), K33's stack
-  frame re-measured via `make test-stackdepth` (131,216 B — flagging a
-  stale 131,296 B figure still standing in `docs/dev/known_issues.md`'s
-  and D73's own prose, not corrected by this pass), and K34/D74's
-  documented-divergence framing at spec depth.
+- `limits.md` — the resource-bound contract, FACTS ONLY and numbered (rewritten
+  by lane speclim): §1 the guarantee (a give-up is never a false answer), §2 the
+  give-up codes, §3 the numbers (§3.1 step and work budgets, §3.2 frame and
+  trail capacities and the tiered entry's cost, §3.3 the compile-time ceilings,
+  their raise-only overrides and the DFA-side exceptions, §3.4a
+  `pcrec_limits_tsv`, §3.5 the `.rxt` source parser's caps, §3.6 `vars`, §3.7
+  findings, §3.8 `ucp`, §3.9 the DFA context sets), §4 the worked example, §5
+  the C stack, §6 left recursion, §7 what is not limited, §8 emitted artifact
+  size (§8.4 the size-cap ladder, §8.7 the warning) with §8a and §8b.
+  `pcrec --list-limits` names the section of each number in its `anchor`
+  column (3.1-3.9 and 8), and `tests/registry/limits_check.sh` finds each
+  anchored value, comma-grouped, inside that section's text: keep a number's
+  literal in its section. Cite by number (`limits.md §8.4`). History:
+  `docs/dev/history/limits_record.md`.
 
-  **2026-09-10 (Frank's ruling, lane rpkg, wording only, no behaviour
-  changed):** §5's K33 fit criterion is restated as free STACK HEADROOM AT
-  THE CALL SITE (entry + deep >= 134,400 B for the witness artifact class)
-  rather than "against a musl-default 128 KB thread stack" — the earlier
-  wording named a thread's total SIZE where what actually decides fit is
-  headroom REMAINING at the point the call happens, and the two coincide
-  only at call depth ~0. The musl-128KB and glibc-8MB numbers stay as
-  worked EXAMPLES of headroom at depth ~0; `docs/dev/known_issues.md`'s new
-  K33 DARWIN ADDENDUM is the measured case where the two diverge (macOS
-  grants MORE than a requested size, so a nominal 131,072 B thread's actual
-  headroom exceeds its own stated size).
-
-- `cli.md` — **[SPEC-1.2], 2026-08-25.** The full `pcrec` command-line
-  reference: compiling a pattern (`-o`/`-o -`, `-p`'s C-identifier prefix
-  grammar, `-e`/`--encoding` — byte-only today, `-i`, `--emit-main`,
-  `--no-captures`, `--engine=`'s do-or-die refusal, the budget/frame flags
-  pointing at `limits.md` for their numbers, `--features`' 17-module
-  roster with each module's shipped status read live off `--list-syntax`'s
-  `built` column, and the `-f`/`-fno-` tuning family pointing at
-  `tuning.md`), the three listing surfaces (`--list-syntax`/
-  `--list-verbs`/`--list-families`, pointing at `table_contract.md` for
-  the column contract itself), diagnostics ([SPEC-1.7] folded in as its
-  own section — the three exit codes verified live and DISTINGUISHED from
-  an `--emit-main` binary's own unrelated 0/1/2/3, the D26 tiers restated
-  caller-side, the offset-pinning convention from D26's tension addendum),
-  and an honest "what the CLI does not do" section (no runtime, no
-  multi-pattern units `[V-E]`, no `--lib` `[LIB]`, `--emit-ir` ships while
-  `--emit-dot` does not). Every flag verified against
-  `cli/main.c` AND a live `build/pcrec` run at this worktree's branch
-  point (`0e2b23d`); where `--help`'s wording and the code agreed, cited
-  directly rather than restated from memory.
-
-  **[DD-13b.W1.2], 2026-08-31**: §1 gains `--source` / `--target` /
-  `--lib-path` and the `-o` output-naming rule (a FILE for one target, an
-  existing DIRECTORY for several, `-` for one on stdout); §4's
-  "no multi-pattern compilation units" and "no `--lib FILE`" bullets are
-  NARROWED to what is now true rather than deleted — several patterns per
-  invocation, still one artifact per translation unit (D88), and
-  `--lib-path` resolves a `lib` reference's EXISTENCE without reading a
-  library's contents. Nothing in the single-pattern surface changed.
-
-  **[REL-1.4], 2026-09-21 (D115)**: §1 gains a `--version` entry — prints
-  `pcrec 0.1.0-beta` (`PCREC_VERSION`, `lib/pcrec.h`) and exits 0, parsed
-  identically to `-h`/`--help`. No existing flag's shape changed.
-
-  **[REL-1.10], 2026-09-21 (D118) — THE gcc SHAPE.** §1's usage line and
-  operand rule are rewritten: a positional operand is an INPUT FILE now
-  (new §1.1, several may be given, pooled into one `-o` decision), never a
-  pattern; `--pattern 'X'` is the one way to give a literal pattern;
-  `--source FILE` is RETIRED (an unknown option, no alias); `-I DIR` joins
-  `--lib-path DIR` as its short spelling; `--probe-ask WANT CONSTRUCT`
-  takes CONSTRUCT as its own second argument rather than through the (now
-  file-only) operand slot; a positional operand in any query mode is
-  refused. §4's multi-pattern bullet is reworded for several FILES rather
-  than one `--source`. No compile FLAG's own semantics changed.
+- `cli.md` — the `pcrec` command-line reference, FACTS ONLY and numbered
+  (rewritten by lane speclim): §1 compiling a pattern (§1.1 a file operand and
+  how a target's options compose, §1.2 `-o`, then one section per flag or flag
+  group through §1.18), §2 the listing and query surfaces (one section each),
+  §3 diagnostics (exit codes, the class tag, the compatibility tiers), §4 what
+  the CLI does not do. Cite by number (`cli.md §1.1.4`). History:
+  `docs/dev/history/cli_record.md`.
 
 - `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
   contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),

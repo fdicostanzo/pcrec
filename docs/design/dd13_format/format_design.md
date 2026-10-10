@@ -4895,7 +4895,7 @@ design copies rather than a new idea:
   **one derivation, two readers** (learnings §3) — so a dump that
   disagrees with the parser is not expressible.
   **(3.2, r57 S-N1: revision 3.1 wrote SIXTH in the same sentence that
-  lists six existing dumps. `docs/spec/cli.md:586` already calls
+  lists six existing dumps. `cli.md (old line 586)` already calls
   `--list-limits` "the SIXTH"; `--list-source` makes seven producers in
   `table_contract.md`'s Scope table, of which `--list-schema` would be
   the eighth conforming table and the seventh REGISTRY dump. The
@@ -5772,7 +5772,7 @@ everywhere.
   interface.
 - **`--list-schema` is NEW at revision 3.1 and is the SEVENTH** (§2.25;
   3.1 said SIXTH — r57 S-N1, corrected at all three sites, and
-  `docs/spec/cli.md:586` already gives `--list-limits` that ordinal):
+  `cli.md (old line 586)` already gives `--list-limits` that ordinal):
   the format's own structural rules as a TSV, walked off the same table
   the parser enforces. It is the surface Frank's consequence 3 asks
   for, and it is what makes §1.2.1's **three** keyword-dependent

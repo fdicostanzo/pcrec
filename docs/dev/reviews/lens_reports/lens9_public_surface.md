@@ -664,7 +664,7 @@ the artifact's own default, the other replaces the storage.
 One genuine gap, small: **`PCREC_TRACE` and `PCREC_VM_ENTRY_*` have no spec
 row under their enum spellings.** `grep -c` over `docs/spec/tuning.md` and
 `cli.md`: `PCREC_TRACE` 0/0, `PCREC_VM_ENTRY_AUTO` 0/0. Both have CLI
-spellings that *are* documented (`--trace` at `cli.md:943`;
+spellings that *are* documented (`--trace` at `cli.md (old line 943)`;
 `--vm-entry-shape` at `tuning.md` §2.21, which even discusses `int
 vm_entry_shape` at `:1778`) — so the axes are specified and only the
 constants a library caller must actually type are not. `tuning.md` §4's

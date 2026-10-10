@@ -24,7 +24,7 @@ the `.rxt` quoted-escape form first (`\" \\ \n \t \r \f \v \xHH`;
 SOURCE file's `target` lines instead of a positional pattern — one target
 per translation unit, `-o` takes a FILE (one target), an existing
 DIRECTORY (`<dir>/<prefix>.{c,h}` per target) or `-` (one target, stdout)
-(`cli/main.c:234-243`; `docs/spec/cli.md:488-656`). Seven no-pattern
+(`cli/main.c:234-243`; `cli.md (old line 488-656)`). Seven no-pattern
 `--list-*` registry dumps and three query modes (`--explain`,
 `--count-groups`, `--probe-ask`) round out the surface (`cli/main.c:250-305`).
 
@@ -189,7 +189,7 @@ today (`classes`, `modifiers`, `assertions`, `named-groups`,
 `atomic-groups`, `backrefs`, `lookaround`, `recursion`, `quoting`,
 `unicode-props` partial); 7 not built (`branch-reset`, `callouts`,
 `comments`, `conditionals`, `extended-classes`, `misc`, `verbs`)
-(`docs/spec/cli.md:335-352`).
+(`cli.md (old line 335-352)`).
 
 **PCREC_\* limits a caller can hit, and the documented remedy**
 (`docs/spec/limits.md`, `pcrec --list-limits`):
@@ -266,7 +266,7 @@ else's refusal.
   `--emit-ir` in `APPROACH.md` §6 but was never built; `[DD-8]` is
   STATE:started with `--emit-ir` landed and `--emit-dot` explicitly
   named as one of the still-not-started pieces within it
-  (`docs/spec/cli.md:988-994`).
+  (`cli.md (old line 988-994)`).
 - **`[V-E]` multi-pattern compilation units** (several named,
   cross-referencing patterns sharing one translation unit) —
   `docs/dev/plan.md:581`, STATE:not-started. `--source` compiles several
@@ -277,7 +277,7 @@ else's refusal.
   roadmap has not been ruled ("planned but I don't know that I'd put
   them on the spine," Frank, 2026-08-24). `--lib-path` resolves only
   whether a referenced file EXISTS, not its contents.
-- **`limits.md:779`'s own text is now STALE**: it still reads "What is
+- **the old `limits.md` line 779's own text is now STALE**: it still reads "What is
   NOT yet built is the path that COMPILES from a pattern-source file at
   all — `--source` and `--target`" — but `--source`/`--target` shipped
   at [DD-13b.W1.2] (2026-08-31) and are documented as built elsewhere in
@@ -306,7 +306,7 @@ else's refusal.
   (0/1/3), an `--emit-main` binary's exit codes (0/1/2/3, match/
   no-match/usage/give-up on the EMITTED program), and a generated
   function's give-up CODE space (`PCREC_ERR_STEPS` etc., all negative).
-  Stated explicitly in `docs/spec/cli.md:895-897` as a caller trap.
+  Stated explicitly in `cli.md (old line 895-897)` as a caller trap.
 - **`<prefix>_search`'s `0` return and `<prefix>_match`'s `0` return mean
   opposite things** — `_search`'s `0` is "no match"; `_match`'s `0` IS a
   successful zero-length match, and `_match`'s "no match" is `-1`

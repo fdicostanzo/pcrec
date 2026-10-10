@@ -229,8 +229,8 @@ confirmed no `--source` hit).
 
 | file:line | what it states |
 |---|---|
-| `docs/spec/cli.md:18` | usage line: `pcrec [options] -o OUT.c [--] 'PATTERN'` |
-| `docs/spec/cli.md:26,154,168-193,505-516,559,667-674,828,860,921,993,1033` | the pattern-operand rule, `--pattern-esc`, `--source`'s own section (§, ~508-674) and its precedence/refusal relations, the "positional argument … belongs to the PATTERN" note at 828 |
+| `cli.md (old line 18)` | usage line: `pcrec [options] -o OUT.c [--] 'PATTERN'` |
+| `cli.md (old line 26,154,168-193,505-516,559,667-674,828,860,921,993,1033)` | the pattern-operand rule, `--pattern-esc`, `--source`'s own section (§, ~508-674) and its precedence/refusal relations, the "positional argument … belongs to the PATTERN" note at 828 |
 | `docs/spec/rxt_format.md:9,58,125,375,406` | driver-protocol: "`pcrec` itself (`--source`/`--list-source`...)"; the `pcrec --source FILE -o OUT` sentence at 125; the operand-form note at 406 |
 | `README.md:9` | example invocation: `build/pcrec -p rx --emit-main -o matcher.c 'a(b|c)+d'` |
 | `CLAUDE.md:24,37` | the `make` comment line and the try-it line `build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'` (this is the session-root CLAUDE.md shown above — same file) |

@@ -128,6 +128,6 @@ Plus:
 - **Sabotage ids:** 7 (§9.2).
 - **No live finding against main.** The one oracle divergence is K74
   (known, open, deferred). One note for later readers: `-e utf8` implies the
-  `ucp` MODULE, not UCP semantics (`docs/spec/cli.md:219`). This lane's
+  `ucp` MODULE, not UCP semantics (`cli.md (old line 219)`). This lane's
   first utf8 oracle got that wrong and was superseded; it was not a pcrec
   issue.
