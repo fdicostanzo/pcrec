@@ -175,6 +175,45 @@ else
     fi
 fi
 
+# ---- §4 the dead seed under the sanitizer (revend.md X1) -------------------
+# A speculative seed whose reverse state is DEAD (a trailing lookahead the
+# view at that end refutes) must be skipped before the walk indexes its row:
+# `rx_reverse_is_dead` then `continue`. Unskipped, the walk reads the table at
+# the dead row, which no answer check sees reliably (the bytes there are often
+# readable) and the sanitizer sees on every call. Each witness, DFA and VM
+# hybrid, is built with --emit-main under -fsanitize=address,undefined
+# (first hit aborts) and its answer compared with the -fno-rev-end build's
+# (the composite: the reference shares no walk). SKIPS loudly where the
+# toolchain has no sanitizer.
+printf 'int main(void){return 0;}\n' > "$WORKDIR/sanprobe.c"
+if ! ${CC:-gcc} -fsanitize=address,undefined -o "$WORKDIR/sanprobe" "$WORKDIR/sanprobe.c" 2>/dev/null ||
+   ! "$WORKDIR/sanprobe"; then
+    echo "SKIP: [dead-seed] no -fsanitize=address,undefined on ${CC:-gcc}: §4 measured nothing"
+else
+    san_cells=0
+    for pat in '\d+$(?=\n)' '\d$(?!\n)' 'a\Z(?=\n)' '(\d+)$(?=\n)' '(\d)$(?!\n)'; do
+        "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx --emit-main -o "$WORKDIR/ds.c" --pattern "$pat" 2>/dev/null &&
+        "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx --emit-main -fno-rev-end -o "$WORKDIR/dr.c" --pattern "$pat" 2>/dev/null ||
+            { bad "[dead-seed] '$pat' did not compile"; continue; }
+        grep -q 'for (int revend_seed = 0;' "$WORKDIR/ds.c" ||
+            { bad "[dead-seed] '$pat' carries no rev-end walk: the witness no longer reaches the site"; continue; }
+        if ! ${CC:-gcc} -O1 -fsanitize=address,undefined -fno-sanitize-recover=all -o "$WORKDIR/ds" "$WORKDIR/ds.c" 2>"$WORKDIR/ds.err" ||
+           ! ${CC:-gcc} -O1 -o "$WORKDIR/dr" "$WORKDIR/dr.c" 2>>"$WORKDIR/ds.err"; then
+            bad "[dead-seed] '$pat': the artifact did not build: $(head -2 "$WORKDIR/ds.err")"; continue
+        fi
+        bad_cells=""
+        for subj in "12" $'12\n' "1" $'1\n' "a" $'a\n' $'a\n\n' ""; do
+            got="$("$TIMEOUT_BIN" 10 "$WORKDIR/ds" "$subj" 2>&1)"
+            want="$("$TIMEOUT_BIN" 10 "$WORKDIR/dr" "$subj" 2>&1)"
+            san_cells=$((san_cells + 1))
+            [ "$got" = "$want" ] || bad_cells="$bad_cells [$(printf %q "$subj"): $(printf %s "$got" | head -1 | cut -c1-90)]"
+        done
+        [ -z "$bad_cells" ] && ok "[dead-seed] '$pat': 8 subjects under the sanitizer answer as the composite does" \
+                            || bad "[dead-seed] '$pat':$bad_cells"
+    done
+    [ "$san_cells" -ge 40 ] || bad "[dead-seed] only $san_cells sanitizer cells ran (floor 40)"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

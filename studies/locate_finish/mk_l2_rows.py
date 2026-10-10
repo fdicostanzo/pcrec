@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """studies/locate_finish/mk_l2_rows.py -- [lane revbuild] writes [OPT-REVEND]
 L2's sabotage rows (locate_finish.md §5 L2: revend.md §9.2's sixteen recast,
-L2.1's stamp fork, the deference, the size-ladder clause; §5 L3: stage 2's
-four), S758-S780, into tests/mech/sabotages/. Each anchor is read off the
+L2.1's stamp fork, the deference, the size-ladder clause and its reader; §5
+L3: stage 2's four), S758-S781, into tests/mech/sabotages/. Each anchor is read off the
 CURRENT source and must occur exactly once (else this script stops), so the
 rows are written against the text they plant into.
 
@@ -78,11 +78,10 @@ row("S763", "end_pin_gstart_kept", W,
 row("S764", "revend_dead_seed_unskipped", E,
     '    emit_reverse_block(c, &rev, "revend", "continue;");',
     '    emit_reverse_block(c, &rev, "revend", NULL);   /* SABOTAGE S764 */',
-    "asan harness", "the walk's dead-seed skip deleted (X1): a speculative seed whose state is dead reads `view[row(dead)]`",
-    "the answer net's X family under ASan (`\\d+$(?=\\n)` on \"12\": the seed at n is the dead state)",
+    "revend", "the walk's dead-seed skip deleted (X1): a speculative seed whose state is dead reads `view[row(dead)]`",
+    "run_rev_end.sh §4: the X witnesses under -fsanitize=address,undefined (`\\d+$(?=\\n)` on \"12\": the seed at n is the dead state)",
     ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\\\d+$(?=\\\\n)" && '
-     'grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-DEADSKIP', "REACH-DEADSKIP"),
-    NET, "asan")
+     'grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-DEADSKIP', "REACH-DEADSKIP"))
 row("S765", "revend_tie_takes_n", E,
     '                   "        revend_end = revend_start + (size_t)revend_len;\\n"',
     '                   "        revend_end = subject_length; (void)revend_len;   /* SABOTAGE S765 */\\n"',
@@ -168,7 +167,13 @@ row("S776", "size_ladder_clause_dropped", "src/core/compile.c",
     '           s->cx->job && s->cx->job->anchored_ok &&\n           pcrec_cand_drop_anchored_shrinks(s->cx);',
     '           s->cx->job && s->cx->job->anchored_ok;   /* SABOTAGE S776: LR-S12 dropped */',
     "revend", "the size ladder drops the anchored machine of a tie-capable walk, which then relocates through the composite and GROWS",
-    "run_rev_end.sh §3: under a lowered emitted-size cap the tie witness must keep `RX_DFA_MATCH \"unwrapped\"` and no forward machine",
+    "run_rev_end.sh §3: under an emitted-size cap between the walk's premul-dropped and built sizes the tie witness must keep `RX_DFA_MATCH \"unwrapped\"` and no forward machine (with the clause dropped it takes the anchored rung, grows past the cap and refuses)",
+    None, design="docs/design/locate_finish.md §5 L2 (LR-S12)")
+row("S781", "anchored_drop_by_ordinal", "src/core/compile.c",
+    '    if (cx->anchored_dropped) return;\n',
+    '    if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;   /* SABOTAGE S781: the ordinal again */\n',
+    "revend", "the anchored machine dropped by the ladder's ORDINAL rather than by its row having fired: the premul rung drops the machine the skipped anchored rung kept",
+    "run_rev_end.sh §3: the tie witness under the derived cap takes the premul rung without its anchored machine, grows past the cap and refuses",
     None, design="docs/design/locate_finish.md §5 L2 (LR-S12)")
 D3 = "docs/design/locate_finish.md §5 L3 (stage 2; LR-S3/LR-S4)"
 row("S777", "vm_verify_takes_endset", E,
@@ -197,8 +202,8 @@ row("S779", "inlined_locate_on_vm", E,
 row("S780", "hybrid_dead_seed_unskipped", E,
     '    emit_reverse_block(c, &rev, "revend", "continue;");',
     '    emit_reverse_block(c, &rev, "revend", entry ? "continue;" : NULL);   /* SABOTAGE S780 */',
-    "revtwin", "X1 on a HYBRID: the inlined walk's dead-seed skip deleted",
-    "the window twin's trailing-lookaround hybrids (`(\\d+)$(?=\\n)`, `(\\d)$(?!\\n)`, `(a)\\Z(?=\\n)`)",
+    "revend revtwin", "X1 on a HYBRID: the inlined walk's dead-seed skip deleted",
+    "run_rev_end.sh §4's hybrid witnesses under the sanitizer (`(\\d+)$(?=\\n)`, `(\\d)$(?!\\n)`) and the window twin's trailing-lookaround hybrids",
     ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(\\\\d+)$(?=\\\\n)" && '
      'grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-HYB-DEADSKIP', "REACH-HYB-DEADSKIP"),
     design=D3)
