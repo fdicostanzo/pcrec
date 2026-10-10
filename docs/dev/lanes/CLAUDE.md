@@ -3840,3 +3840,4 @@ never edited afterwards.
   - SL2, the RECOVER rows `end-minus-width` and `landing`, with the post-loop utf8 guard, one success-site emitter and deny bits 53/54. Movers: bench 210+88, corpus 2,592+833. Five FIT movers are re-witnessed. `make test-start-landing` and `landing_illformed.rxt` come with it, along with Q2's no-guard timing.
   - SL3, RECOVER's per-hand totality in the self-check.
   - Sabotage S782-S791 and the bench readers to relay.
+- `sweepfloor_report.md` — start-sweep DIFFER_PINS re-pin after [OPT-REVEND] L2 (2026-10-10, lane sweepfloor, sonnet): five stale floors (byte run-prefilter/end-window/req-run, utf8 req-handoff/req-run) re-set; per-pattern A/B of a15fb77b vs 7388f1c0 over 4527 patterns shows all 95 leavers are end-pinned and rev-end at 7388f1c0; the `$` end-window manifest replaced by `^$`.

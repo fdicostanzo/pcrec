@@ -404,6 +404,16 @@ ARM_BASES = {"byte": (), "utf8": ("-e", "utf8")}
 # §3.4 and §3.3 item 2); -fno-length-prune from the full-corpus gate run on
 # ubuntubudu 2026-10-06 (docs/design/start_table/heavy_linux_2026-10-06/
 # arms.tsv; the earlier 1-in-10 sample floors were lower bounds).
+# REVEND RE-PIN (lane sweepfloor, 2026-10-10): [OPT-REVEND] L2 (7388f1c0, abi
+# 73) routes end-pinned patterns to rev-end, whose END_WINDOW reads "none",
+# so the end-window / req-run / run-prefilter / req-handoff axes stop
+# differing on them. Measured a15fb77b (pre) -> 7388f1c0 and main a2f66450:
+# byte run-prefilter 138->127, end-window 362->272, req-run stamp 311->296,
+# req-handoff 167->163; utf8 req-handoff 290->275, req-run stamp 309->294;
+# every pattern that left is end-pinned and rev-end at 7388f1c0, none at
+# a15fb77b (docs/dev/lanes/sweepfloor_report.md). Cells marked "REVEND
+# re-pin" below carry the new floor; the byte end-window manifest `$` is now
+# rev-end (no longer differs), `^$` is the shortest remaining mover.
 DIFFER_PINS = {
     # plain arms: the encoding and caseless populations (§3.3 item 2)
     ("byte", "-e utf8", "c-default"): (3188, 674, b"a"),
@@ -415,7 +425,7 @@ DIFFER_PINS = {
     # the start-family deny/force arms (§3.4's table), byte base
     ("byte", "-fno-offset-skip", "c-default"): (513, 513, b"ab"),
     ("byte", "-fno-offset-skip", "c-vm"): (0, 0, None),
-    ("byte", "-fno-run-prefilter", "c-default"): (132, 132, b"fi"),
+    ("byte", "-fno-run-prefilter", "c-default"): (127, 127, b"fi"),    # was 132: REVEND re-pin, header
     ("byte", "-fno-run-prefilter", "c-vm"): (0, 0, None),
     ("byte", "-fno-start-set", "c-default"): (136, 136, b"\\Bx"),
     ("byte", "-fno-start-set", "c-vm"): (2327, 2327, b"."),
@@ -429,11 +439,11 @@ DIFFER_PINS = {
     ("byte", "-fno-hyb-reseed", "c-vm"): (0, 0, None),
     ("byte", "-fno-vm-anchor-bound", "c-default"): (337, 337, b"^(a)"),
     ("byte", "-fno-vm-anchor-bound", "c-vm"): (488, 488, b"^"),
-    ("byte", "-fno-end-window", "c-default"): (288, 288, b"$"),
+    ("byte", "-fno-end-window", "c-default"): (272, 272, b"^$"),    # was 288, b"$": REVEND re-pin, header
     ("byte", "-fno-end-window", "c-vm"): (288, 288, b"$"),
     ("byte", "-fno-req-byte", "c-default"): (2639, 2043, b"$"),
     ("byte", "-fno-req-byte", "c-vm"): (3222, 2043, b"$"),
-    ("byte", "-fno-req-run", "c-default"): (530, 301, b"SS"),
+    ("byte", "-fno-req-run", "c-default"): (530, 296, b"SS"),    # stamp was 301: REVEND re-pin, header
     ("byte", "-fno-req-run", "c-vm"): (530, 17, b"SS"),
     ("byte", "-fno-req-run-fold", "c-default"): (48, 32, b"(?i)abc"),
     ("byte", "-fno-req-run-fold", "c-vm"): (48, 17, b"(?i)abc"),
@@ -452,7 +462,7 @@ DIFFER_PINS = {
     ("utf8", "-fno-start-pinned", "c-vm"): (0, 0, None),
     ("utf8", "-fno-req-set-lead", "c-default"): (8, 0, b"a{3}(?i:cat)"),
     ("utf8", "-fno-req-set-lead", "c-vm"): (8, 0, b"a{3}(?i:cat)"),
-    ("utf8", "-fno-req-handoff", "c-default"): (280, 280, b"123"),
+    ("utf8", "-fno-req-handoff", "c-default"): (275, 275, b"123"),    # was 280: REVEND re-pin, header
     ("utf8", "-fno-req-handoff", "c-vm"): (0, 0, None),
     ("utf8", "-fno-hyb-reseed", "c-default"): (420, 420, b"a*+a"),
     ("utf8", "-fno-hyb-reseed", "c-vm"): (0, 0, None),
@@ -462,7 +472,7 @@ DIFFER_PINS = {
     ("utf8", "-fno-end-window", "c-vm"): (0, 0, None),        # ASSERT_ZERO
     ("utf8", "-fno-req-byte", "c-default"): (2631, 2071, b"$"),
     ("utf8", "-fno-req-byte", "c-vm"): (3230, 2071, b"$"),
-    ("utf8", "-fno-req-run", "c-default"): (572, 299, b"SS"),
+    ("utf8", "-fno-req-run", "c-default"): (572, 294, b"SS"),    # stamp was 299: REVEND re-pin, header
     ("utf8", "-fno-req-run", "c-vm"): (572, 15, b"SS"),
     ("utf8", "-fno-req-run-fold", "c-default"): (38, 31, b"(?i)abc"),
     ("utf8", "-fno-req-run-fold", "c-vm"): (38, 15, b"(?i)abc"),
