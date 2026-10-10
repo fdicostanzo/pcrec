@@ -1004,12 +1004,12 @@ static const char *mf_layer_word(mf_layer l)
 }
 
 /* [MEMFN] R4a: the kit's option registry as the `memfn` section
- * (docs/design/memfn/integration.md §R4.4.1; table_contract.md §Sections),
+ * (docs/design/memfn/integration.md §R4.4.1; table_contract.md §4),
  * one row per mf_options() entry, after the anonymous main table. pcrec
  * names no row: the rows are whatever the kit's options.def holds (none at
  * R4a). Nothing follows the section's header line, so an empty registry is
- * an empty section, never a comment read as its header (table_contract.md
- * rule 3; the --emit-ir precedent). */
+ * an empty section, never a comment read as its header (table_contract.md §4¶7;
+ * the --emit-ir precedent). */
 static void emit_memfn_section(StrBuf *sb)
 {
     size_t n;

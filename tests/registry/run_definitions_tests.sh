@@ -114,7 +114,7 @@ else
         echo "definitions: table_check_truthfulness: $(cat "$WORKDIR/trutherr")" >&2
         rc=1
     fi
-    # No field may contain a TAB or a newline (table_contract.md rule 5;
+    # No field may contain a TAB or a newline (table_contract.md §2¶5;
     # `--list-syntax`'s own tests/registry/ pin, applied here) — checked
     # directly since `pcrec_sb_text` (src/core/sb.c, the FRAME escape this dump's
     # fields go through) escapes a TAB and a newline by NUMBER rather than

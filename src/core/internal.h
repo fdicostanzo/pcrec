@@ -225,7 +225,7 @@ void  pcrec_sb_free(StrBuf *sb);
  *              as `\xNN`; every printable byte, BACKSLASH INCLUDED, passes
  *              through. This is `--explain`'s vocabulary and every registry
  *              TSV dump's, whose `syntax` column is literally `\d` and whose
- *              contract (docs/spec/table_contract.md rule 5) says only that a
+ *              contract (docs/spec/table_contract.md §2¶5) says only that a
  *              field never contains a TAB.
  *   pcrec_sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
  *              pcrec_sb_text's tail. Round-trippable, because it doubles the

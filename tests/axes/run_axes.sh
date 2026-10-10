@@ -280,7 +280,7 @@ fi
 # [MEMFN] R4a: pcrec's axis table is `--list-axes`' leading anonymous table;
 # the kit's `memfn` section after it is not pcrec flags (its rows are
 # `--memfn=` options), so the pipe SELECTS the main table (table_main,
-# table_contract.md consumer rule 5) before reading any row.
+# table_contract.md §4¶5) before reading any row.
 # The pairing now comes off `pcrec --list-axes`, whose deny/force macro and
 # `cli_flag` columns are rendered from `src/core/axes.def` — the same row
 # `cli_axis_apply` parses. One derivation, read by the sweep instead of two

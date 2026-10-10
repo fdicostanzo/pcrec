@@ -520,8 +520,8 @@ case10() {
     assert_contains "case10: --list-syntax emits the column header" "$out" \
         "#kind	selector	syntax"
 
-    # [SR-11] HEADER TRUTHFULNESS (docs/spec/table_contract.md, "The
-    # checks"): every data row's field count equals the header's OWN
+    # [SR-11] HEADER TRUTHFULNESS (docs/spec/table_contract.md
+    # §5¶1): every data row's field count equals the header's OWN
     # declared count — table_check_truthfulness, tests/lib/table.sh. This
     # is the durable form of the old `NF != 16` literal (12 until MOD-0.1
     # appended `roadmap`, `quantifiable`, `class_expect`, 2026-08-11; 16

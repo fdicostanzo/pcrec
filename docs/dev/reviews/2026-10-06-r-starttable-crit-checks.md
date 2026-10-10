@@ -270,7 +270,7 @@ witness not committed under `tests/` is not swept. Add the option (list of
 `PATTERN` with per-line `--extra`), or require that every named witness is a
 committed `.rxt` cell first so the sweep sees it.
 
-### m8. `registry.md:267`
+### m8. `registry.md` §6¶4
 
 The spec says the listing is "live off the SAME arrays `src/gen/emit_dfa.c`'s own
 `dfa_select` walks". C3 deletes `dfa_select`/`dfa_pfs[]`. §3 says "no spec sentence

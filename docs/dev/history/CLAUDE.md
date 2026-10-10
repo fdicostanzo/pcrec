@@ -15,6 +15,14 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
   range, plus docs/spec/CLAUDE.md's old `match_api.md` entry. The complete
   old text is `git show aee1a570:docs/spec/match_api.md`;
   `studies/specclean/claims.tsv` maps its claims to the new document.
+- `registry_record.md` and `table_contract_record.md` — FROZEN. The history
+  `docs/spec/registry.md` and `docs/spec/table_contract.md` carried until
+  their facts-only rewrite (lane specreg, `[SPEC-CLEAN]`): the flagged
+  paragraphs of the old text, verbatim and in order, each tagged with its
+  old section and line range. Counts and "was N" narratives in them are as
+  of the time written. The complete old texts are
+  `git show 43cec6c0:docs/spec/registry.md` and `…table_contract.md`;
+  `docs/dev/lanes/specreg_report.md` carries the claims ledgers.
 - `abi_changelog.md` — LIVING. The `abi` change log, newest first, one entry
   per bump (D76 addendum [REVW.A1] named its home; it moved here verbatim
   from match_api.md §6). **An `abi` bump adds its entry here in the bump's

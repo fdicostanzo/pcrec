@@ -665,7 +665,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
   every printable byte, BACKSLASH INCLUDED, passes through. That is
   `--explain`'s vocabulary and every registry TSV dump's, whose contract
-  (`docs/spec/table_contract.md` rule 5) says only that a field never contains
+  (`docs/spec/table_contract.md` §2¶5) says only that a field never contains
   a TAB. `pcrec_sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
   plus that tail — which `tests/harness/driver.c`'s `decode()` reads back.
   MEASURED at the landing: **150 data rows** across `--list-syntax`/

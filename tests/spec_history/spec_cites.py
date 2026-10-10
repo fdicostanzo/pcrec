@@ -146,7 +146,7 @@ ITEM = re.compile(r"§" + ONE)
 
 
 def line_re(stem):
-    return re.compile(re.escape(stem) + r"(?:\.md)?:\d")
+    return re.compile(re.escape(stem) + r"(?:\.md)?:\d+(?![A-Za-z])")
 
 
 def cites_in(stem, text):
