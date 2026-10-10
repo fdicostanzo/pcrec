@@ -13967,4 +13967,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);
+#ifdef PCREC_CAND_TRACE
+    pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */
+#endif
 }

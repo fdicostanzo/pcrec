@@ -6856,6 +6856,28 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
  * false on a non-hybrid VM artifact. */
 bool pcrec_artifact_has_dfa_scan(Ctx *cx);
 
+/* [OPT-REVEND] L0 THE PATH DERIVATION's NEEDS HALF (locate_finish.md §2.7),
+ * asked before any machine is built: does some FINISH row routed on this
+ * compile's finisher route declare machine `m` (a `CAND_M*` bit)? Today only
+ * `verify-at` on the DFA route declares the anchored machine, which is what
+ * src/core/compile.c's `build_anchored_dfa` reads. src/gen/emit_dfa.c. */
+bool pcrec_cand_finish_needs(Ctx *cx, unsigned m);
+
+/* [OPT-REVEND] L0 THE LOCATE -> FINISH BOUNDARY's exactness (locate_finish.md
+ * §1.2): true where the body's result is the pattern's own language — a DFA
+ * finisher (exact by D67/SR-8's routing), or a VM finisher behind a prefilter
+ * whose lowering recorded no widening erasure. `Vm.mrl_win`'s one
+ * assignment reads it. src/gen/emit_dfa.c. */
+bool pcrec_cand_lang_exact(Ctx *cx);
+
+#ifdef PCREC_CAND_TRACE
+/* [OPT-REVEND] L0 the trace build's PATH record, one per artifact at the end
+ * of its emission: `CANDPATH <finish> <locate> <members> <asks>`, the
+ * derivation's own member set and asked cells, which the census's C5 and the
+ * trace-vs-asks check read. Quiet: it prints no selection record. */
+void pcrec_cand_path_trace(Ctx *cx);
+#endif
+
 /* [OPT-HYB-RESEED] How often the artifact's candidate-start scan stops, in
  * ppm of subject bytes (the prior's MASS over the set it tests; 1,000,000
  * when it tests none). src/gen/emit_dfa.c. */
@@ -7104,7 +7126,13 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * DFA-shaped body is the engine of the machine it runs, never `fit.chosen`. */
 typedef enum { CAND_ROUTE_DFA = 0, CAND_ROUTE_VM, CAND_ROUTE_ATTEMPT } CandRoute;
 
+/* [OPT-REVEND] L0 (docs/design/locate_finish.md rev 2.1 §2.2) adds the two
+ * slots that bracket the eight: LOCATE, FIRST, asks which WALK produces a
+ * body's result (`empty` or the `composite` the eight slots are the inside
+ * of), and FINISH, LAST, asks which row finishes a caller-facing entry's
+ * hand (`verify-at`, `search-from`; was `dfa_matches[]`). */
 typedef enum {
+    CAND_SLOT_LOCATE,     /* which walk produces this body's result? */
     CAND_SLOT_WINDOW,     /* can a match begin before n - W? (the entry, once) */
     CAND_SLOT_PRESENCE,   /* does the window hold every necessary landmark? */
     CAND_SLOT_WIDTH,      /* can the rest of the subject hold a match at all? */
@@ -7113,8 +7141,23 @@ typedef enum {
     CAND_SLOT_RETRY,      /* after a failed VM attempt: step or re-seed? */
     CAND_SLOT_BOUND,      /* how many start positions can match at all? */
     CAND_SLOT_RECOVER,    /* given a match END, where does it start? */
+    CAND_SLOT_FINISH,     /* which row finishes this entry's hand? */
     CAND_NSLOTS
 } CandSlot;
+
+/* [OPT-REVEND] L0 THE MACHINES a start-table row's emitter RUNS
+ * (`CandRow.needs[route].mach`, locate_finish.md §2.7): the forward machine
+ * `job->dfa`, the reverse `job->rdfa`, the anchored `job->adfa`, the
+ * ENG_ATTEMPT machine and the VM program. The path derivation's MEMBERS are
+ * the union of these over the selected rows, intersected with what the
+ * compile BUILT. */
+enum {
+    CAND_MF   = 1u << 0,
+    CAND_MR   = 1u << 1,
+    CAND_MA   = 1u << 2,
+    CAND_MATT = 1u << 3,
+    CAND_MVM  = 1u << 4
+};
 
 /* [START-TABLE] C2 the `Vm` fields a start row's predicate reads (§2.2 WIDTH):
  * H1 reads `root_minw`, R1 `mrl_win`, R2 `nclamp`, R4 the calibrated gap of

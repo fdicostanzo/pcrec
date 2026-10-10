@@ -13,6 +13,10 @@
 # is caught there and nowhere else.
 #
 # ROW	FLAGS	PATTERN
+empty	-	[^\x00-\xff]
+empty	-	^\B\b
+composite	-	a
+composite	-	^a
 window	-	abc$
 window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)

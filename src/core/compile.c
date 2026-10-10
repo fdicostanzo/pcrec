@@ -2378,7 +2378,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * because there is no SECOND attempt at the same automaton, only a
          * second attempt at the PIPELINE with that automaton already known
          * to be unbuildable. */
-        if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
+        /* [OPT-REVEND] L0 the path derivation's `body` bit, spelled once in
+         * src/gen/emit_dfa.c (`pcrec_artifact_has_dfa_scan`): a DFA-shaped
+         * body is emitted iff the DFA wins or the VM gets a prefilter. */
+        if (pcrec_artifact_has_dfa_scan(&cx)) {
             pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
             /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
              * prefilter_count_independence.md §4, as re-ruled). The decision
