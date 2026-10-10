@@ -33,8 +33,8 @@ command conforms from the day it exists; one that does not is a defect.
 | `--list-limits` | the numeric-limits table | one anonymous table |
 | `--list-source` | the `.rxt` source file, as written (`docs/spec/rxt_format.md`) | an anonymous main table, then up to four named sections: `provenance`, `variants`, `cases`, `aux` — each emitted only when non-empty, always after the main table |
 | `--list-schema` | the `.rxt` format's own schema (`docs/spec/rxt_format.md`) | two named sections, `schema` and `surface` |
-| `--emit-ir` | the VM program listing (`docs/spec/ir_listing.md`) | nine named sections, no anonymous table; the sections have different column counts |
-| `--emit-facts` | the pattern-facts record listing (`docs/spec/facts_listing.md`) | two named sections, `facts` and `decisions` |
+| `--emit-ir` | the VM program listing (`docs/spec/ir_listing.md` §3) | nine named sections, no anonymous table; the sections have different column counts |
+| `--emit-facts` | the pattern-facts record listing (`docs/spec/facts_listing.md` §4) | two named sections, `facts` and `decisions` |
 | `--list-analyses` | the analyses built into the library (`docs/spec/findings.md`) | one anonymous table |
 | `--list-analysis` | what one analysis name, or each target of one `.rxt` file, resolves to (`docs/spec/findings.md`) | every table a named section: `chain`, `resolution`, one per data kind, `declarations`, `provenance`; or `targets`, `chain`, `resolution` |
 

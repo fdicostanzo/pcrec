@@ -738,7 +738,7 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
   in the deny-flag list.
 - `docs/spec/facts_listing.md`: the `req_run_maxoff` row and the `req-use`
   decision.
-- `docs/spec/findings.md:128`: the run's scan-member PICK row. The handoff
+- `docs/spec/findings.md` §4: the run's scan-member PICK row. The handoff
   reads the window the PICK chose, never re-picks, so the row gains one
   sentence that the window's K is a walk fact independent of the PICK, or
   is left unchanged if the build finds no reader there.

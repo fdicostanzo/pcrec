@@ -8,7 +8,7 @@ SAB_ID="S326-findings-latin1-drop-uncounted"
 SAB_FILE="src/core/findings.c"
 SAB_SUITES="findings"
 SAB_DESC="pcrec_find_derive_counts's encode-latin1 arm drops a code point above U+00FF without adding its count to the drop total — the rate is unchanged, the listing's dropped column reads 0"
-SAB_DOC_FIGURE="findings: §12's 'via encode-latin1' derivation check and the 'dropped 12' check red; the latin1 stamp check stays green (the rate is unchanged). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S326."
+SAB_DOC_FIGURE="findings: sec. 12's 'via encode-latin1' derivation check and the 'dropped 12' check red; the latin1 stamp check stays green (the rate is unchanged). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S326."
 # [MECH-REACH] the drop count reaches the listing: a derivation with nothing
 # to drop still reports its (zero) drop count in the resolution row.
 SAB_REACH='"$PCREC" --list-analysis weblog | awk -F"\t" "\$1 == \"byte-rate\" && \$2 == \"utf8\" { print \"dropped=\" \$8 }"'

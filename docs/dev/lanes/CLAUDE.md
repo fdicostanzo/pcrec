@@ -3361,7 +3361,7 @@ never edited afterwards.
   (S1/S2/S3, include_next, the default terminal by identity),
   `--analysis` (fill-only), the `-I` lift, `--list-analyses`/
   `--list-analysis NAME|FILE`, the `pcrec_options` fields,
-  `tests/findings` §6-§11 (fixtures #1-#22, REACH, witnesses, K65
+  `tests/findings` sec. 6-sec. 11 (fixtures #1-#22, REACH, witnesses, K65
   give-up identity under bundles, the sampled slice with GIVEUP1=0, table
   contract), the FINDINGS axis, S308-S317 (all detected locally). Read §3
   for F-9: its per-attempt witness population is empty, so S314 is
@@ -3373,7 +3373,7 @@ never edited afterwards.
   `encode-latin1` beside the derivation vocabulary in `findings.c` (the one
   path the accessor and the listing read), `pcrec_utf8_encode` hoisted into
   `src/enc/`, the shipped `log`/`weblog` bundles generated from
-  `third_party/`, `gen-tables` -> `gen-findings`, `tests/findings` §12,
+  `third_party/`, `gen-tables` -> `gen-findings`, `tests/findings` sec. 12,
   twelve rxtsource refusals, S325-S328, the R35 census (both bundles'
   movers non-empty; `iso-ts` reproduces). Read §6: the shipped corpora are
   ASCII-only, so under `-e utf8` every non-ASCII byte ties at the floor and

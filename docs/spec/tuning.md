@@ -371,7 +371,7 @@ comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
 as if `-fno-prefilter` had been passed, though `--emit-ir`'s `prefilter`
 summary row does not claim that flag's credit: its value is
 `no-dfa-overflow` (not `no-fno-prefilter`) and its note carries the same
-`RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` has
+`RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` §3.1.1 has
 the eleven-token vocabulary.
 
 **[PF-DROP] (2026-09-30, D135) A FOURTH OFF-ROUTE: THE EMITTED-SIZE CAP.**

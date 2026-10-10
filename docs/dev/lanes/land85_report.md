@@ -37,7 +37,7 @@ land84/make_test.log` for `^FAIL:` finds exactly three lines, at 2139, 2433,
    - 1].blocks[0]` substitution adjusted for the new signature.
    `scripts/m6read_check_sab_anchors.py` now resolves all 332 rows (348
    anchor sites); S311 solo-run reads DETECTED (`reach:ok(1/1),
-   findings:24fail/63pass`).
+   findings: 24fail/63pass`).
 
 3. **`FAIL: nm could not read arm_a.o`** (test-codegen, line 2570) — the
    standing darwin-accepted probe, unrelated to anything in this delivery.
@@ -135,7 +135,7 @@ Light, run live on this box:
 - `PCREC=build/pcrec python3 tests/findings/gen_adversarial.py witness` —
   5/5 PASS (was 3/5).
 - `S311` solo mech row: DETECTED (`reach:ok(1/1),
-  findings:24fail/63pass`).
+  findings: 24fail/63pass`).
 - `zzz` manual spot-check (an independent third witness beside the two
   §2(a) hand-derivations): base stamps `RX_REQ_RUN "7a7a7a@0"`/
   `RX_DFA_PREFILTER "run-pinned"` (leftmost of the 3-way 'z' tie), this

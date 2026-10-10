@@ -2,7 +2,7 @@
 # 2026-09-19). `docs/dev/lanes/dd8_report.md` section 4.3 filed this
 # `--emit-ir` prefilter value ("a ladder rung offered the count-collapsed
 # prefilter and it was DECLINED", src/gen/emit_vm.c ~line 8683,
-# docs/spec/ir_listing.md:113) as UNREACHED BY ANY INPUT: dd8's own
+# docs/spec/ir_listing.md §3.1.1) as UNREACHED BY ANY INPUT: dd8's own
 # corpus/flag-axis sweep and three hand-built witnesses all missed it,
 # and the report argued structurally that [OPT-4.2]'s rungless twin
 # (`prefilter_declined_nullable_default`) always declines first, on the

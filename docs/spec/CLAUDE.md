@@ -131,7 +131,7 @@ contents block).
   trail capacities and the tiered entry's cost, §3.3 the compile-time ceilings,
   their raise-only overrides and the DFA-side exceptions, §3.4a
   `pcrec_limits_tsv`, §3.5 the `.rxt` source parser's caps, §3.6 `vars`, §3.7
-  findings, §3.8 `ucp`, §3.9 the DFA context sets), §4 the worked example, §5
+  findings data, §3.8 `ucp`, §3.9 the DFA context sets), §4 the worked example, §5
   the C stack, §6 left recursion, §7 what is not limited, §8 emitted artifact
   size (§8.4 the size-cap ladder, §8.7 the warning) with §8a and §8b.
   `pcrec --list-limits` names the section of each number in its `anchor`

@@ -479,7 +479,7 @@ of the step's parent: streams 1-4 and 6 byte-identical at both bases, stream 5
 identical except where noted, and all variants at `--variant all`. Run
 `make test-codegen` (DD12a(i)/(ii), K49 advance agreement), the `make test` sections
 `test-backrefs` (all three fold agreement checks), `test-uprops` (the `generate.py
---check`), `test-findings` (§2/§3/§12) and `test-encseam`, and `include_graph.py`
+--check`), `test-findings` (sec. 2/sec. 3/sec. 12) and `test-encseam`, and `include_graph.py`
 (back-edges ≤ 2). The sweep's reference is built from an archived revision and never
 from the working tree, which is what makes it an independent control.
 

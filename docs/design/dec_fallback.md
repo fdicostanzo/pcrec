@@ -152,7 +152,7 @@ deliverable now specified here and not built in this lane.
      artifact movers. It does move `--list-axes`, so it is B7's declared
      listing commit: one swap of two listed orders, `kind` `predicate` →
      `list`, and two corrected descs.
-6. **New findings** (§10).
+6. **New findings** (sec. 10).
    - **F-B1.** The `--emit-ir` chain has no `has_var` arm. A non-nullable
      `${…}` pattern compiled under `auto` lists
      `no-engine-vm  --engine=vm -- …`, a flag the caller never passed

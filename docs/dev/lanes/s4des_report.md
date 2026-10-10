@@ -7,7 +7,7 @@ worktree's compiler for the census.
 
 ## Delivered
 
-- `docs/design/litscan_s4.md`: the design note. §0 is the findings, §10 the
+- `docs/design/litscan_s4.md`: the design note. §0 is the findings, sec. 10 the
   eleven questions for the manager, each with a recommendation.
 - `docs/dev/optloop/s4/`: its instruments (`census.py`, `spell.c`,
   `one.c`/`two.c`, `hot.c`, with a `CLAUDE.md`).

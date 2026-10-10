@@ -55,7 +55,7 @@ ref), not the bytes.
 
 `generate.py` writes it (lane `findb5`, 2026-09-28; the sourcing lane's
 `generated_preview.rxt` scratch check is retired); `make gen-tables`
-regenerates it and the store, and `make test-findings` §12 runs
+regenerates it and the store, and `make test-findings` sec. 12 runs
 `generate.py --check`.
 
 ## Why this class ships (D123 addendum 7)

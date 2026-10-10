@@ -75,7 +75,7 @@ this corpus's authority alone.
 | `src/findings/log.rxt` (the shipped `log` analysis, `[FINDINGS]` B5) | `generate.py` in this directory, running `build/pcrec-analyze` over `synthetic_log_lines.txt` with `--fidelity synthesized` | module `findings`' `analysis log` bundle: `freq` + `cpfreq` blocks (design.md §13 B5). The shipped `weblog` does NOT `include` it (lane `findb5`: the two corpora are meant to be independent, and no query `weblog` lacks is one `log` answers) |
 
 `generate.py` writes it (lane `findb5`, 2026-09-28; the sourcing lane's
-`generated_preview.rxt` scratch check is retired); `make test-findings` §12
+`generated_preview.rxt` scratch check is retired); `make test-findings` sec. 12
 runs `generate.py --check`.
 
 ## Why this class ships (D123 addendum 7)

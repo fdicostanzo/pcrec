@@ -64,7 +64,7 @@ rev 2's B1 (step 3.1).
 - `docs/design/findings/CLAUDE.md`: "the three-call accessor" is
   replaced by the per-kind primitives. The file's role is unchanged.
 
-## Each NONE rule as now spelled (findings §6.1)
+## Each NONE rule as now spelled (findings sec. 6.1)
 
 | kind | primitive | NONE answer | readers |
 |---|---|---|---|
