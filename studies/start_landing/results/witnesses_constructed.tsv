@@ -1,0 +1,8 @@
+# constructed witnesses (rev 2) and the row-2 control, run_check.sh run-list format (subjects column empty)
+name	enc	icase	cfg	pattern_hex	row	W	subjects
+wit/ofs-bounded	utf8	0	default	c3a9283f3a7824293f	landing	-1	
+wit/k78-landing	byte	0	default	2861297b307d5c772b	landing	-1	
+wit/k78-landing-u8	utf8	0	default	2861297b307d5c772b	landing	-1	
+wit/k78-emw	byte	0	default	2861297b307d2862297b307d637c64	end-minus-width	1	
+wit/ci-long-s	utf8	0	default	283f692973	landing	-1	
+ctl/assert-after-forced	byte	0	default	615c62	forcelanding	-1	

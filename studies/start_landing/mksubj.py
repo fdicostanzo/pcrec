@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[START-LANDING] exhaustive short subjects for one artifact (STUDY).
+r"""[START-LANDING] exhaustive short subjects for one artifact (STUDY).
 
     mksubj.py ART.c PREFIX ENC OUT.hex [MAXSUBJ]
 
