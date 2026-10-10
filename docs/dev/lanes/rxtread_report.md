@@ -35,4 +35,4 @@ Classes are read off each leg's own output by `check_refusal_all3`. The var acce
 - `make strict`: rc 0.
 - `make test-rxtsource` (after the fixes): 298 passed, 0 failed (first run had 5 failures that found two real leg gaps: B/C treated bare `oracle none` as an engine named `none`, and B classed malformed `var` as `unknown-token-in-scope`; both fixed).
 - Full `make test`, `-j4 -Otarget`: OWED. Log `worktrees/rxtread/build/lane/test.log`, completion line `DONE rc=N`; verdict is `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` (empty = green).
-- `make test-spec-history`: see handback.
+- `make test-spec-history`: no FAIL line, no make Error line (green).
