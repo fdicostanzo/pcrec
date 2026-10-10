@@ -211,10 +211,23 @@ The F-2 revert is NOT a row (note §5 L0): it is
 6. The spec hunk also fixes `docs/spec/tuning.md:3822`, which repeated the
    same false sentence.
 
-### 3.2 Sabotage ids
+### 3.2 Sabotage ids (OWED by the manager)
 
-Requested 10 from the manager at lane start; no reply yet when this was
-written. Drafted rows are validated by plant (§2.3 when filled).
+I requested 10 ids from the manager at lane start, and none had arrived at
+handback. I took none. The highest S-id on main or in any worktree is
+S748, S750-S757 are rankuse's, and the kit ledger's "next free" is S758.
+To land the rows:
+
+    python3 studies/locate_finish/mk_l0_rows.py tests/mech/sabotages ID1 ID2 ... ID10
+    python3 scripts/m6read_check_sab_anchors.py .
+    git add tests/mech/sabotages && git commit
+
+The ids go in §2.3's table order. Then append the ten ids to
+`build/land/mech_ids.txt` BEFORE the chain's mech stage starts. That stage
+runs after make test, the variant trace and test-axes, and reads the file
+when it starts. It runs `git archive HEAD`, so the commit must land first.
+The generator's output under placeholder ids was planted and measured
+(§2.3).
 
 ## 4. Validation
 
@@ -308,4 +321,27 @@ lose NEXT → C6 3,902; `A_LOOK` stops recording → C7 478.
 
 ## 6. The heavy chain (OWED)
 
-PLACEHOLDER.
+`build/land/chain.sh` is armed DETACHED (`nohup setsid`). Its ONE waiter is
+`build/land/waiter.sh`, pid 3954545 at arming, cwd `worktrees/lfl0`. It
+polls `worktrees/lfl0/.lift` every 30 s. The waiter at pid 2050120 with the
+same relative name is specnum's. Verdicts go one line per stage to
+`build/land/trailer.log`:
+
+- `build rc=`;
+- `make test rc=`, plus `section errors: N` from `scripts/perfrun --label
+  lfl0`, log `build/land/test.log`. Read it with the perfrun note: 0 lines of
+  `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` is green;
+- `strict rc=`;
+- `recursion identity rc=` with its checks line;
+- `variant trace` with `CLEAN=` (want 5) and `FLOOR=` (want 0). This is
+  `--variant all --bases byte --trace` against main. Its rc is 1 on main's
+  own stale lowsize/lowboth reach floors (§4.1), so read the counts;
+- `test-axes rc=` and its section-error count, log `build/land/axes.log`;
+- `mech VALIDATE_ONLY rc=`;
+- `mech rc=` with the COMPLETE trailer, over the 136 derived rows in
+  `build/land/mech_ids.txt` (8 re-aim + 55 L0 re-runs + 73 after-L0). Add the
+  ten new ids per §3.2. Any FATAL is logged as `MECH_FATAL`;
+- `== CHAIN DONE`.
+
+A fresh agent reads `trailer.log` and the logs. It justifies any
+UNDETECTED/UNREACHED row against that row's own `SAB_EXPECT`.
