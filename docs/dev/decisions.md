@@ -9307,3 +9307,7 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Why.** D146's boundary is that pcrec states FACTS and the kit chooses FORMS. Rarity order and rates are facts; any rule about which or how many positions to use is a method, and choosing methods is the kit's job. The contract carries the facts only and implies no use of them (Frank, same day: "lets try not to presume the method that will be chosen- thats memfn's job"). pcrec's own scalar pick (KA) is unchanged. The [U8-PICK] utf8 prior will improve the ranking with no interface change.
 - **Contract details.** `MF_RANK_MAX` is a declared limit with a stated derivation. Entries past `rank_n` are never read (no presumed values). Zero pcrec movers SIMD-off and SIMD-on until a kit row consumes it.
 - **Revisit when** a kit form needs a fact the ranking cannot express (e.g. joint pair rates, which [OPT-REQPOS] showed are not products of marginals).
+
+### D156 addendum 1 — build order after the locate × finish panels (Frank, 2026-10-09)
+
+- **Q1′ RULED: REVEND before [START-LANDING]** ("i agree with you. bird in the hand. revend"). The order is L0 (the no-mover path derivation + folds, docs/design/locate_finish.md rev 2.1 §5), then REVEND's L1 + L2. [START-LANDING] gets its design pass in parallel (§7.3's RECOVER placement: `pinned`, `landing`, `end-minus-width`, `reverse-pass`) and enters the next [OPTLOOP] round ranked by its measured estimate.
