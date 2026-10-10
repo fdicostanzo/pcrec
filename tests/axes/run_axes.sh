@@ -1064,6 +1064,37 @@ declare -A GIVEUP1_ALLOWANCE=(
     ["--engine=vm|tests/base/k18_deep_nesting.rxt:62"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
     ["--engine=vm|tests/base/k18_deep_nesting.rxt:66"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
     ["--engine=vm|tests/base/k18_deep_nesting.rxt:67"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+
+# GROUP H — three cases whose corpus rows landed AFTER the last whole-corpus
+# sweep (main 041e450a, 2026-10-06); first reached by lfl0's landing sweep
+# (lane lflaxtri, docs/dev/lanes/lflaxtri_report.md). Each has the direction
+# of an earlier group: DEFAULT answers nomatch through a sound no-match
+# proof, the denied axis removes the proof and the fixed budget binds.
+# Byte-identical on main and lfl0 (re-run per case on both builds).
+#
+# H1 (4 cases) — tests/base/nullable_anch.rxt:48 and :67 under
+# `-fno-prefilter` and `--engine=vm` (the composite `--engine=vm
+# -fno-start-set` sweep resolves through its `--engine=vm` part, so it needs
+# no key of its own). `^(([a-z]+)*)+$` over 17 letters + "!" and
+# `^(\s+)*$` over 32 blanks + "x": the [NULLABLE-ANCH] decline-lift gives
+# both patterns the exact hybrid prefilter (RX_VM_PREFILTER "hybrid"), which
+# dismisses the subject in linear time; `-fno-prefilter` reads
+# RX_VM_PREFILTER "none" and `--engine=vm` disables the DFA prefilter
+# (tuning.md §2.11), so the catastrophic VM runs into `budget steps`.
+# Groups B and G1's mechanism exactly (tuning.md §2.5); the file's own
+# comments name these two cells as the former default give-ups.
+    ["-fno-prefilter|tests/base/nullable_anch.rxt:48"]="tuning.md §2.5 (Group B's mechanism): the exact hybrid prefilter dismisses the subject, -fno-prefilter leaves the catastrophic VM to its step budget — default nomatch, axis gives up (steps)"
+    ["-fno-prefilter|tests/base/nullable_anch.rxt:67"]="tuning.md §2.5 (Group B's mechanism): the exact hybrid prefilter dismisses the subject, -fno-prefilter leaves the catastrophic VM to its step budget — default nomatch, axis gives up (steps)"
+    ["--engine=vm|tests/base/nullable_anch.rxt:48"]="tuning.md §2.11 + §2.5 (Group G1's mechanism): --engine=vm disables the DFA prefilter, the catastrophic VM runs to its step budget — default nomatch, axis gives up (steps)"
+    ["--engine=vm|tests/base/nullable_anch.rxt:67"]="tuning.md §2.11 + §2.5 (Group G1's mechanism): --engine=vm disables the DFA prefilter, the catastrophic VM runs to its step budget — default nomatch, axis gives up (steps)"
+#
+# H2 (1 case) — tests/possessify/composition_d27.rxt:8336 under
+# `-fno-req-byte`: `a*(?R)?b` over "1- " (no `b`). Default emits
+# RX_REQ_BYTE "98" (RX_REQ_WHY "emitted"): one memchr proves nomatch;
+# `-fno-req-byte` reads RX_REQ_BYTE "none" and the left-recursive walk
+# exhausts the frame budget. Group E4's mechanism (§2.29 necessary-byte
+# pre-check on recursion; nomatch -> give-up (frames)).
+    ["-fno-req-byte|tests/possessify/composition_d27.rxt:8336"]="tuning.md §2.29 (Group E4's mechanism): the necessary-byte pre-check proves nomatch with one memchr, -fno-req-byte reopens the recursion walk — default nomatch, axis gives up (frames)"
 )
 
 # ============================================================================
