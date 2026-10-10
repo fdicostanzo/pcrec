@@ -361,9 +361,13 @@ layer `simd` and budget `scan` (`--memfn=no-vrun-w16`: the 16-byte vector
 run scan that `-fmemfn-simd` adds to a FUNC whose predicate is one run,
 `tuning.md` §2.43), and `vrun-w32`, the same form a level up (the 32-byte
 arm; its short spans fall to `vrun-w16` where both render). Denying
-`vrun-w32` leaves `vrun-w16` as the site's top arm.
+`vrun-w32` leaves `vrun-w16` as the site's top arm. The third row,
+`vrun-kb` (lane rankuse, 2026-10-09), is a `deny` row of layer `simd` and
+budget `scan` too: the vrun rows' second filter position, which the kit
+takes from pcrec's rarity ranking (`mf_pred.rank_*`, D157); denied, both
+rows filter on the scanned position alone.
 
-`memfn` section floor: 2
+`memfn` section floor: 3
 
 **[REG-SV] (2026-08-30) CLOSED A GAP `pcrec-bench` FOUND: two name-valued
 stamps had no `stamp_value` population on this surface at all.** The

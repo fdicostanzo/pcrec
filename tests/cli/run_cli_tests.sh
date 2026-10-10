@@ -2429,6 +2429,29 @@ if [ -s "$WORKDIR/mfs5.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs5.c"; then
 else
     fail "both vrun rows denied at -fmemfn-simd differs from the SIMD-off artifact"
 fi
+# ... and `--memfn=no-vrun-kb` (lane rankuse): the rows' second filter
+# position, the first position of pcrec's rarity ranking (mf_pred.rank_*)
+# other than the scanned one. On (?i)cat (scanned C at 0) the default mask
+# loads at i and i + 1; the deny keeps both rows and loads at i alone. Inert
+# at -fno-memfn-simd.
+pcrec_run "$PCREC" -p rx --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs6.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
+if [ -s "$WORKDIR/mfs6.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs6.c"; then
+    pass "--memfn=no-vrun-kb at -fno-memfn-simd is accepted and inert"
+else
+    fail "--memfn=no-vrun-kb at -fno-memfn-simd moved the artifact or did not compile"
+fi
+mfkb_loads() {   # the w16 helper's whole-block mask line: its load count
+    sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1" \
+        | grep 'm = (unsigned)' | grep 'subject + i' | grep -o '_mm_loadu_si128' | wc -l | tr -d ' '
+}
+if [ "$(mfkb_loads "$WORKDIR/mfs2.c")" = 2 ] && grep -q 'subject + i + 1))' "$WORKDIR/mfs2.c" \
+   && [ "$(mfkb_loads "$WORKDIR/mfs7.c")" = 1 ] && ! grep -q 'subject + i + 1))' "$WORKDIR/mfs7.c" \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs7.c"; then
+    pass "-fmemfn-simd filters on two ranked positions; --memfn=no-vrun-kb on the scanned one alone"
+else
+    fail "the vrun filter's second position (or its deny) is not as ruled on (?i)cat"
+fi
 
 echo "cases failed: $total_fail"
 

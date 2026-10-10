@@ -3758,7 +3758,11 @@ turned the force flag on.
 - **Its per-form switches** are the kit's own `--memfn=` namespace
   (`registry.md` §6): `--memfn=no-vrun-w32` denies the 32-byte row (the
   16-byte one is then the top arm) and `--memfn=no-vrun-w16` the 16-byte
-  row (the 32-byte arm then falls straight to `<fn>__body`). Given at
+  row (the 32-byte arm then falls straight to `<fn>__body`).
+  `--memfn=no-vrun-kb` keeps both rows and drops their second filter
+  position, so each block's candidate mask tests the scanned position
+  alone (the kit chooses that position from the rarity ranking pcrec
+  states, D157). Given at
   the default `-fno-memfn-simd`, a SIMD row's deny is accepted and does
   nothing. C11's identity half (`make test-memfn-stamps`) holds the
   `-fno-memfn-simd` compile byte-identical to the default, and its movers

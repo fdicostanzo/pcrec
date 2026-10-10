@@ -1654,7 +1654,7 @@ says so.
 | w32-over-w16 cut-over above reach | performance | the same, at `-march=x86-64-v3` |
 | main-loop unroll | performance | SWEPT in tier U at 1×, 2×, 4× per level, or the plain 1× loop shipped and labelled `UNMEASURED DEFAULT:`. "Left to the compiler" is not available for an intrinsic loop (`[r9 M-9]`). Never 2× silently |
 | scan position KA | site fact | DERIVED: `plan_hint`/`plan_pos` (§14.9), pcrec's fact |
-| second filter position KB | kit rule over a site fact | `[D157]` (amends Q-R9-3 (a)) pcrec states the ranked candidate positions (`rank_pos`/`rank_ppm`, RQ-2); the kit's distance rule chooses KB from them. The rule is OWED to the kit lane after RQ-2 lands and is labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`). The kit chooses which ranked positions its vector form reads (1, 2, N or none); pcrec states only the facts |
+| second filter position KB | kit rule over a site fact | `[D157]` (amends Q-R9-3 (a)) pcrec states the facts only: the RUN term's positions ordered by its prior rate, each with its rate (`rank_n`/`rank_pos`/`rank_ppm`, RQ-2). `[rankuse]` THE KIT'S CHOICE (lane rankuse, 2026-10-09, `memfn/src/vrun.c` "SECOND FILTER POSITION"): the vector filter reads TWO positions, KA (the BODY's scanned cube, `plan_pos`) and KB = the first ranked position other than KA, their compares ANDed before the movemask (R-1's `ffl`); KA alone where the ranking states no other position (`rank_n` 0, or KA alone). It reads the ranking's ORDER only, never a rate (a rate cut would be an unmeasured threshold). **How many (two): `UNMEASURED DEFAULT:`**, the count R-1 timed; its arm is the deny `--memfn=no-vrun-kb` (KA alone), timed against the default in RQ-4's tier-U slot. **Distance: none beyond KB ≠ KA, DERIVED for correctness** (every ranked position is in the run, so KB ≤ T and the reach VW + T covers its load); whether a FAR KB beats the rarer near one (correlated neighbours, D157's "revisit when") is unmeasured and has no variant until that reading triggers one. `compose.c` refuses a ranking that is not distinct positions of the scanned RUN term |
 | lead order | — | not applicable: batch 1 has no lead |
 | density bound | performance | the spacing ladder's covered range (item 7); no density decision is made in the text |
 | null-band quantile, sibling-busy cut, loops × launches, load1 < 0.5 | regime | `UNMEASURED DEFAULT:` each, labelled in place (`[r9 M-9]`) |
@@ -1864,9 +1864,9 @@ it is measured as G1. Batch 1 then adds only guarded text.
 > `memfn/src/levels.def`); no pcrec abi event; `-fmemfn-simd` still OFF by
 > default. Deviations, each with its reason in the report §3: the
 > MF_SITE_ABI bump (9, renumbered 10 when RQ-2 landed first as 9) carries the sink ops only (RQ-2's ranked array, `[D157]`
-> (was `plan_pos2`), was then unbuilt), so the filter is KA alone until the follow-up lane reads `rank_*`; walk tests 3-4 are the
+> (was `plan_pos2`), was then unbuilt), so the filter was KA alone until the follow-up lane rankuse read `rank_*` (KA AND KB, §R4.9.5 item 10's KB row; deny `no-vrun-kb`); walk tests 3-4 are the
 > PREFIX rows' predicate conjuncts; a `header` column in levels.def; runs
-> capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500
+> capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500, re-measured 2,700 / 2,800 by lane rankuse with KB
 > measured); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
 
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
@@ -1938,7 +1938,7 @@ order on evidence).**
 **Prerequisites:**
 - R4e′.0 (the seam) landed;
 - RQ-1 (`--memfn=`) landed, for the two denies;
-- RQ-2 (Q-R9-3 (a), `[D157]` ranked array) landed, for KB. `[D157]` KB is then chosen from `rank_pos` by the kit's own distance rule, OWED to the follow-up kit lane after RQ-2 lands and labelled per D149 (measured, derived, or `UNMEASURED DEFAULT:`); the kit chooses which ranked positions its vector form reads (1, 2, N or none);
+- RQ-2 (Q-R9-3 (a), `[D157]` ranked array) landed, for KB. `[rankuse]` The kit's choice is BUILT (§R4.9.5 item 10's KB row): KA and the first ranked position other than KA, two positions as an `UNMEASURED DEFAULT:` with its deny `no-vrun-kb`, no distance rule beyond KB ≠ KA (derived);
 - RQ-3 (neutrality) landed;
 - the tier-U slot (RQ-4) for the sweeps; the bench submission (RQ-5) is
   sent BEFORE any line moves past CANDIDATE.

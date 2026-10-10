@@ -186,14 +186,14 @@ static void cpos(mf_sink *o, const vrun_ops *v, const char *base, int k, int exa
 /* One block's candidate mask at `base` (C text): `(unsigned)MOVEMASK(<KA's
  * compare>)`, or with a KB `(unsigned)MOVEMASK(AND(<KA's>, <KB's>))`. */
 static void cmask(mf_sink *o, const vrun_ops *v, const char *base, int ka, int exact_a,
-                  int kb, int exact_b)
+                  int k2, int exact_b)
 {
     kit_out(o, "(unsigned)%s(", v->mmask);
-    if (kb >= 0) kit_out(o, "%s(", v->and_);
+    if (k2 >= 0) kit_out(o, "%s(", v->and_);
     cpos(o, v, base, ka, exact_a, 'a');
-    if (kb >= 0) {
+    if (k2 >= 0) {
         o->puts(o->u, ", ");
-        cpos(o, v, base, kb, exact_b, 'b');
+        cpos(o, v, base, k2, exact_b, 'b');
         o->puts(o->u, ")");
     }
     o->puts(o->u, ")");
@@ -216,16 +216,16 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     const mf_level *lv = kit_level(d->level);
     const vrun_ops *v = &ops_of[d->level];
     const mf_term *t = &x->p->term[0];
-    int ka = x->k, kb = vrun_kb(x);
+    int ka = x->k, k2 = vrun_kb(x);
     int ma = t->mask ? t->mask[ka - t->offset] : 0xFF, va = t->run[ka - t->offset];
-    int mb = kb < 0 ? 0xFF : t->mask ? t->mask[kb - t->offset] : 0xFF;
-    int vb = kb < 0 ? 0 : t->run[kb - t->offset];
+    int mb = k2 < 0 ? 0xFF : t->mask ? t->mask[k2 - t->offset] : 0xFF;
+    int vb = k2 < 0 ? 0 : t->run[k2 - t->offset];
     unsigned vw = lv->vw, tt = vrun_t(x->p), r = vw + tt;
 
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n", r, fall);
     kit_out(o, "    const %s ", v->type);
     bcast(o, v, ma, va, 'a');
-    if (kb >= 0) {
+    if (k2 >= 0) {
         o->puts(o->u, ", ");
         bcast(o, v, mb, vb, 'b');
     }
@@ -235,13 +235,13 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
                   "        unsigned m;\n");
     kit_out(o,    "        if (i + %u <= n) {\n"
                   "            m = ", r);
-    cmask(o, v, "i", ka, ma == 0xFF, kb, mb == 0xFF);
+    cmask(o, v, "i", ka, ma == 0xFF, k2, mb == 0xFF);
     kit_out(o, ";\n"
                   "        } else {\n"
                   "            if (i + %u >= n) return n;\n"
                   "            size_t f = n - %u;\n"
                   "            m = ", tt, r);
-    cmask(o, v, "f", ka, ma == 0xFF, kb, mb == 0xFF);
+    cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
     o->puts(o->u, " & (~0u << (i - f));\n"
                   "            i = f;\n"
                   "        }\n"
@@ -271,10 +271,11 @@ static const char *const vrun_no_rungs[] = { NULL };
 /* MEASURED (G2's SIMD family, memfn/tests/run_g2_simd.py, 2026-10-09, gcc
  * 15.2), each row rendered ALONE (the other denied): the worst case, site 1
  * of g2_simd_gen.c (a 32-byte run of three-digit masks compared byte by
- * byte under MF_D_RUN_OVERLAP), is 2,383 bytes at w16 and 2,413 at w32;
- * both rendered, 4,784. */
-#define VRUN_W16_GUARDED_MAX 2400
-#define VRUN_W32_GUARDED_MAX 2500
+ * byte under MF_D_RUN_OVERLAP, filtered on two masked positions since lane
+ * rankuse's KB), is 2,661 bytes at w16 and 2,721 at w32; both rendered,
+ * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). */
+#define VRUN_W16_GUARDED_MAX 2700
+#define VRUN_W32_GUARDED_MAX 2800
 
 /* guarded_max: the bound on the guarded bytes ONE rendering of the row
  * writes per FUNC (Q-R9-9, D155 item 9): its helper block (the `#if` line,

@@ -19,6 +19,16 @@ WHAT IT CHECKS, AND AGAINST WHAT
      terms, a run past the shape bound, a sink without brackets) names none
      and writes 0 guarded bytes, and each row's own deny drops exactly its
      level. Population floors per class (K35).
+  1b. THE RANKING (D157): every site states a GENERATED position ranking
+     (g2_simd_gen.c's modes: none, one entry on or off the scanned position,
+     whole permutations, the second entry at the run's ends, partial; rate
+     ties; entries past rank_n that a reader of them would choose). The
+     filter positions the kit's rule gives (memfn/src/vrun.c, SECOND FILTER
+     POSITION: KA, then the first STATED entry other than KA, none under
+     `no-vrun-kb`) are derived HERE from the generated entries and every
+     rendered helper's loads are held to them, in order. Each malformed copy
+     (rank_n past the run or MF_RANK_MAX, a position outside the run or twice)
+     must be refused by mf_define. Floors per mode and per shape (K35).
   2. GUARDED_MAX: every rendering's guarded bytes, measured by G2's own
      counting sink at pcrec's placeholder prefix and longest FUNC name, are
      at most the sum of tests/memfn/simd_bounds.tsv's bounds of the levels
@@ -67,12 +77,26 @@ CLASS_EXPECT = {
     'neg-two': 'none',
     'neg-long': 'none',
     'neg-nobrackets': 'none',
+    'deny-kb': 'vrun@w32+w16',
 }
 CLASS_FLOOR = 8          # sites per class (each negative class is 1 in 20)
 POS_FLOOR = 200          # positive sites
 CHECK_FLOOR = 17000000   # answer checks per build: 19,167,946 measured
 ASAN_CHECK_FLOOR = 17000000   # (Linux dev box, seed 20261009, 400 sites), ~90%
 PATH_FLOOR = 1000        # executions of each path at a live level
+# the ranking's populations among rendered sites (K35), literals: 400 sites
+# at seed 20261009 measured (Linux dev box, 2026-10-09) 36..48 rendered
+# sites per ranking mode, and per filter shape the counts noted below; each
+# floor is ~80% of its measurement
+RMODE_FLOOR = 29         # rendered sites per ranking mode (min measured 36)
+SHAPE_FLOOR = {          # rendered sites per filter shape
+    'kb': 164,           # a KB read (205)
+    'no-kb': 74,         # KA alone: no ranking, KA alone, or the deny (93)
+    'kb-not-rank0': 65,  # KB is the FIRST entry: the ranking not led by KA (82)
+    'kb-at-end': 87,     # KB at the run's first or last position (109)
+    'ties': 108,         # a rate tie among the stated entries (135)
+}
+BADRANK_FLOOR = 64       # malformed copies refused (80)
 # the level a build makes live (top first), and whether w16/w32 is live
 BUILDS = [
     # name,        flags,                      live levels
@@ -222,6 +246,34 @@ def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
     return r, None
 
 
+LOAD = re.compile(r'_loadu_si(?:128|256)\(\(const __m\d+i \*\)\(subject \+ i(?: \+ (\d+))?\)\)')
+
+
+def helper_loads(text):
+    """{(site id, level): [load offsets of the whole-block mask, in order]}
+    over every rendered helper `g2v_f<id>__<lvl>`."""
+    out = {}
+    for m in HELPER.finditer(text):
+        fn, lvl = m.group(1), m.group(2)
+        if not fn.startswith('g2v_f'):
+            continue
+        line = next((l for l in m.group(0).splitlines() if 'm = (unsigned)' in l
+                     and 'subject + i' in l), None)
+        out[(int(fn[5:]), lvl)] = ([int(k or 0) for k in LOAD.findall(line)] if line else None)
+    return out
+
+
+def expect_filter(cls, off, pp, rank):
+    """The rule, from the generated entries: KA, then the first stated entry
+    other than KA (none under the deny)."""
+    want = [off + pp]
+    if cls != 'deny-kb':
+        kb = next((r for r in rank if r != pp), None)
+        if kb is not None:
+            want.append(off + kb)
+    return want
+
+
 def parse(out):
     m = re.search(r'G2V checks=(\d+) fail=(\d+) faults=(\d+)', out)
     paths = {}
@@ -278,12 +330,40 @@ def run(a, root, work):
     # 1-2: the classes and the bounds
     bounds = load_bounds(root)
     counts, maxg = {}, {}
+    sites_c = os.path.join(work, 'g2v_sites.c')
+    text = open(sites_c).read()
+    loads = helper_loads(text)
+    rmodes, shapes, nbad = {}, {}, 0
     with open(os.path.join(work, 'g2v_meta.tsv')) as f:
         for line in f:
             if line.startswith('#'):
                 continue
-            sid, cls, L, off, pp, forms, gb, a16, a32 = line.rstrip('\n').split('\t')
+            (sid, cls, L, off, pp, forms, gb, a16, a32, rmode, rank, badrank,
+             ties) = line.rstrip('\n').split('\t')
             gb = int(gb)
+            # 1b: the malformed copy, and the filter the rule gives
+            if badrank != '-':
+                if badrank != 'refused':
+                    bad('site %s: a malformed ranking was %s, not refused' % (sid, badrank))
+                else:
+                    nbad += 1
+            if forms != 'none':
+                rank = [] if rank == '-' else [int(x) for x in rank.split(',')]
+                want = expect_filter(cls, int(off), int(pp), rank)
+                for lvl in forms.partition('@')[2].split('+'):
+                    got = loads.get((int(sid), lvl))
+                    if got != want:
+                        bad('site %s (%s, %s, rank %s): %s filter loads %r, the rule gives %r'
+                            % (sid, cls, rmode, rank, lvl, got, want))
+                    else:
+                        ok()
+                rmodes[rmode] = rmodes.get(rmode, 0) + 1
+                kb = want[1] - int(off) if len(want) > 1 else None
+                for shp, hit in (('kb', kb is not None), ('no-kb', kb is None),
+                                 ('kb-not-rank0', kb is not None and kb == rank[0]),
+                                 ('kb-at-end', kb in (0, int(L) - 1)),
+                                 ('ties', int(ties) > 0)):
+                    shapes[shp] = shapes.get(shp, 0) + hit
             # each row rendered ALONE against its own bound
             for row, alone in (('vrun-w16', int(a16)), ('vrun-w32', int(a32))):
                 if alone < 0:
@@ -319,11 +399,28 @@ def run(a, root, work):
             bad('class %s: %d sites < floor %d' % (cls, n, fl))
         else:
             ok()
+    for name, fl in sorted(rmodes.items()):
+        print('ranking mode %-10s %4d rendered sites (floor %d)' % (name, fl, RMODE_FLOOR))
+    for name in ('none', 'one-ka', 'one-other', 'full-ka', 'full-any', 'end', 'partial'):
+        if rmodes.get(name, 0) < RMODE_FLOOR:
+            bad('ranking mode %s: %d rendered sites < floor %d' % (name, rmodes.get(name, 0),
+                                                                  RMODE_FLOOR))
+        else:
+            ok()
+    for shp, fl in SHAPE_FLOOR.items():
+        print('filter shape %-12s %4d rendered sites (floor %d)' % (shp, shapes.get(shp, 0), fl))
+        if shapes.get(shp, 0) < fl:
+            bad('filter shape %s: %d rendered sites < floor %d' % (shp, shapes.get(shp, 0), fl))
+        else:
+            ok()
+    print('malformed rankings refused: %d (floor %d)' % (nbad, BADRANK_FLOOR))
+    if nbad < BADRANK_FLOOR:
+        bad('malformed rankings refused: %d < floor %d' % (nbad, BADRANK_FLOOR))
+    else:
+        ok()
     for tok, g in sorted(maxg.items()):
         lim = bounds.get(tok[6:]) if tok.startswith('alone:') else token_bound(tok, bounds)
         print('guarded bytes: %s max %d (bound %s)' % (tok, g, lim))
-    sites_c = os.path.join(work, 'g2v_sites.c')
-    text = open(sites_c).read()
     # every build of sections 3-5, prefetched concurrently (each driver run is
     # pinned to G2V_CPUS; the results are judged below in order)
     inst = os.path.join(work, 'g2v_sites_paths.c')

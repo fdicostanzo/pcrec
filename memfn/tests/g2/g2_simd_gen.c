@@ -18,7 +18,11 @@
  *                     pcrec's longest FUNC name (a second render into a
  *                     counting sink, never compiled); for a positive site
  *                     also each row's bytes rendered ALONE (the other row
- *                     denied), the measurement each row's bound rests on.
+ *                     denied), the measurement each row's bound rests on;
+ *                     then the ranking's mode, its STATED entries (rank_pos
+ *                     below rank_n, `-` for none), the malformed copy's
+ *                     verdict (`refused`/`accepted`, `-` untested) and the
+ *                     count of rate ties among the stated entries.
  * The space: run length 2..32 (every length, weighted short), term offset
  * 0..3, per-position masks (exact, a letter's case bit, another one-bit
  * cube, all four mixed), the scanned position a two-member cube; and its
@@ -28,6 +32,19 @@
  * two terms (APPLIES), a run longer than VRUN_MAX_RUN, and a sink without
  * the bracket ops. The classes go in the meta file; the runner holds each
  * to its expectation.
+ * THE RANKING (D157, `mf_pred.rank_*`): every site states one, GENERATED
+ * here in one of RM_N modes (none, one entry that is the scanned position,
+ * one that is not, a whole permutation led by the scanned position as
+ * pcrec states it, a whole permutation led by any position, the second
+ * entry at the run's first or last position, a partial ranking), its rates
+ * ascending with TIES in about a third, and the entries PAST rank_n filled
+ * with positions a reader of them would choose (so reading past rank_n
+ * shows in the text). The meta file carries the stated entries; the
+ * runner derives the filter positions the kit's rule (memfn/src/vrun.c's
+ * SECOND FILTER POSITION) gives from them and holds the rendered loads to
+ * it. One site in five also states a MALFORMED ranking in a copy (rank_n
+ * past the run, a position outside it, a position twice, rank_n past
+ * MF_RANK_MAX), which mf_define must refuse.
  *
  *   g2_simd_gen SEED NSITES OUTDIR
  */
@@ -115,13 +132,20 @@ static unsigned rnd(unsigned n)
 
 /* site classes: POS renders SIMD; every other class must render none */
 enum { C_POS, C_EXACT, C_SHORT, C_PORTABLE, C_DENY16, C_DENY32, C_TWO, C_LONG,
-       C_NOBRK, C_NCLASS };
+       C_NOBRK, C_DENYKB, C_NCLASS };
 static const char *const class_name[C_NCLASS] = {
     "pos", "neg-exact", "neg-short", "neg-portable", "deny-w16", "deny-w32",
-    "neg-two", "neg-long", "neg-nobrackets" };
+    "neg-two", "neg-long", "neg-nobrackets", "deny-kb" };
+
+/* ranking modes (the module comment's THE RANKING) */
+enum { RM_NONE, RM_ONE_KA, RM_ONE_OTHER, RM_FULL_KA, RM_FULL_ANY, RM_END, RM_PARTIAL, RM_N };
+static const char *const rmode_name[RM_N] = {
+    "none", "one-ka", "one-other", "full-ka", "full-any", "end", "partial" };
 
 typedef struct {
-    unsigned id, cls, L, off, pp;
+    unsigned id, cls, L, off, pp, rmode, rank_n;
+    uint16_t rank[MF_RANK_MAX];
+    uint32_t ppm[MF_RANK_MAX];
     uint8_t run[40], mask[40];
     mf_site site;
     char name[48];
@@ -165,6 +189,77 @@ static void gen_run(vsite *v, unsigned L, int scan_exact)
        scanned position to be a cube) */
 }
 
+/* A position of the run other than `ka` (L >= 2). */
+static unsigned other_pos(unsigned L, unsigned ka)
+{
+    unsigned j = rnd(L - 1);
+    return j >= ka ? j + 1 : j;
+}
+
+/* The ranking of mode v->rmode (a run of L <= MF_RANK_MAX; a longer run, the
+ * neg-long class, states none). Entries past rank_n are filled too, with a
+ * permutation's tail whose first entry is not the scanned position. */
+static void gen_rank(vsite *v)
+{
+    unsigned L = v->L, perm[MF_RANK_MAX];
+    if (L > MF_RANK_MAX) v->rmode = RM_NONE;
+    for (unsigned j = 0; j < L && j < MF_RANK_MAX; j++) perm[j] = j;
+    for (unsigned j = L < MF_RANK_MAX ? L : MF_RANK_MAX; j-- > 1;) {
+        unsigned k = rnd(j + 1), t = perm[j];
+        perm[j] = perm[k];
+        perm[k] = t;
+    }
+    unsigned n = L < MF_RANK_MAX ? L : MF_RANK_MAX;
+    /* `lead` first, then the rest of perm in order */
+    unsigned lead = v->pp;
+    switch (v->rmode) {
+    case RM_NONE:      v->rank_n = 0; lead = other_pos(L, v->pp); break;
+    case RM_ONE_KA:    v->rank_n = 1; break;
+    case RM_ONE_OTHER: v->rank_n = 1; lead = other_pos(L, v->pp); break;
+    case RM_FULL_KA:   v->rank_n = n; break;
+    case RM_FULL_ANY:  v->rank_n = n; lead = perm[0]; break;
+    case RM_END:       v->rank_n = n; break;
+    case RM_PARTIAL:   v->rank_n = 2 + rnd(n - 1); break;
+    }
+    unsigned m = 0;
+    v->rank[m++] = (uint16_t)lead;
+    if (v->rmode == RM_END) {
+        unsigned e = rnd(2) ? 0 : L - 1;
+        if (e == v->pp) e = e ? 0 : L - 1;
+        v->rank[m++] = (uint16_t)e;
+    }
+    if (v->rmode == RM_ONE_KA && L > 1) {
+        /* past rank_n: a position a reader of it would take as the second */
+        v->rank[m++] = (uint16_t)other_pos(L, v->pp);
+    }
+    for (unsigned j = 0; j < n; j++) {
+        int seen = 0;
+        for (unsigned k = 0; k < m; k++) seen |= v->rank[k] == perm[j];
+        if (!seen) v->rank[m++] = (uint16_t)perm[j];
+    }
+    uint32_t r = 1 + rnd(1000);
+    for (unsigned j = 0; j < n; j++) {
+        v->ppm[j] = r;
+        if (rnd(3)) r += 1 + rnd(20000);   /* else a tie with the next */
+    }
+}
+
+/* Writes a MALFORMED copy of v's ranking into `p` (kind k of 4); 0 if this
+ * run admits none of that kind. */
+static int bad_rank(const vsite *v, mf_pred *p, unsigned k)
+{
+    unsigned L = v->L;
+    p->rank_n = (uint8_t)(L < MF_RANK_MAX ? L : MF_RANK_MAX);
+    for (unsigned j = 0; j < p->rank_n; j++) p->rank_pos[j] = (uint16_t)j;
+    switch (k) {
+    case 0: if (L >= MF_RANK_MAX) return 0;
+            p->rank_n = (uint8_t)(L + 1); p->rank_pos[L] = 0; return 1;  /* past the run */
+    case 1: p->rank_pos[rnd(p->rank_n)] = (uint16_t)(L + rnd(4)); return 1;  /* outside it */
+    case 2: p->rank_pos[1] = p->rank_pos[0]; return 1;                     /* twice */
+    default: p->rank_n = MF_RANK_MAX + 1; return 1;                        /* > MF_RANK_MAX */
+    }
+}
+
 static unsigned run_len_of(unsigned i)
 {
     static const unsigned small[] = { 2, 3, 4, 5, 6, 7, 8 };
@@ -189,6 +284,11 @@ static void build_site(vsite *v)
     s->pred.plan_hint = 0;
     s->pred.plan_pos = (uint16_t)v->pp;
     s->pred.fn_ref = 1;
+    s->pred.rank_n = (uint8_t)v->rank_n;
+    for (unsigned j = 0; j < MF_RANK_MAX; j++) {
+        s->pred.rank_pos[j] = v->rank[j];
+        s->pred.rank_ppm[j] = v->ppm[j];
+    }
     mf_term *t = &s->pred.term[0];
     t->kind = MF_T_RUN;
     t->offset = (int32_t)v->off;
@@ -209,7 +309,8 @@ static void build_site(vsite *v)
     if (v->id % 7 == 1) s->denies = MF_D_RUN_OVERLAP;   /* the bytes form, 1 in 7 */
     if (v->cls == C_SHORT) s->span_hi = 16 + v->off + v->L - 2;   /* < every reach */
     s->policy = v->cls == C_PORTABLE ? MF_P_PORTABLE_ONLY : 0;
-    s->opts = v->cls == C_DENY16 ? "no-vrun-w16" : v->cls == C_DENY32 ? "no-vrun-w32" : NULL;
+    s->opts = v->cls == C_DENY16 ? "no-vrun-w16" : v->cls == C_DENY32 ? "no-vrun-w32"
+            : v->cls == C_DENYKB ? "no-vrun-kb" : NULL;
 }
 
 /* MEMFN_FORMS' value, captured from mf_stamps (the kit's own record of
@@ -256,16 +357,17 @@ int main(int argc, char **argv)
     fputs("/* generated by memfn/tests/g2/g2_simd_gen.c: do not edit */\n"
           "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
           "#include \"g2_simd.h\"\n\n", c);
-    fputs("# id\tclass\tL\toff\tplan_pos\tforms\tguarded_bytes\tw16_alone\tw32_alone\n", m);
+    fputs("# id\tclass\tL\toff\tplan_pos\tforms\tguarded_bytes\tw16_alone\tw32_alone"
+          "\trmode\trank\tbadrank\tties\n", m);
     vsite *v = calloc(nsites, sizeof *v);
     tb all = { 0 };
     int fails = 0;
     for (unsigned i = 0; i < nsites; i++) {
         v[i].id = i;
-        /* the first 64 and 12 in every 20 after are positive; the other 8
-           in 20 cycle through the negative classes, one each */
+        /* the first 64 and 11 in every 20 after are positive; the other 9
+           in 20 cycle through the other classes, one each */
         unsigned k = i % 20;
-        v[i].cls = i < 64 || k < 12 ? C_POS : C_EXACT + (k - 12);
+        v[i].cls = i < 64 || k < 11 ? C_POS : C_EXACT + (k - 11);
         gen_run(&v[i], v[i].cls == C_LONG ? 33 + rnd(8) : run_len_of(i), v[i].cls == C_EXACT);
         if (i == 0) {
             /* THE WORST CASE for guarded_max: the longest run the rows take
@@ -276,6 +378,8 @@ int main(int argc, char **argv)
             for (unsigned j = 0; j < 32; j++) { v[i].run[j] = 0x01; v[i].mask[j] = 0x7F; }
             v[i].pp = 31;
         }
+        if (i == 0 || i == 1) v[i].rmode = RM_FULL_KA;   /* a masked KB: the widest */
+        else v[i].rmode = rnd(RM_N);
         if (i == 1) {
             /* ... and under -fno-run-overlap (MF_D_RUN_OVERLAP), where a
                masked run is compared byte by byte (runcmp.c `bytes`), the
@@ -285,7 +389,24 @@ int main(int argc, char **argv)
             for (unsigned j = 0; j < 32; j++) { v[i].run[j] = 0xFE; v[i].mask[j] = 0xFE; }
             v[i].pp = 31;
         }
+        gen_rank(&v[i]);
         build_site(&v[i]);
+        /* one site in five: a malformed copy of its ranking must be refused */
+        const char *badrank = "-";
+        if (i % 5 == 3) {
+            vsite b = v[i];
+            if (bad_rank(&b, &b.site.pred, (i / 5) % 4)) {
+                tb bd = { 0 }, bc = { 0 };
+                mf_sink sd = sink_of(&bd, 1);
+                mf_art *art = mf_art_begin(&g_arena, "g2v_bad", b.site.policy, b.site.denies);
+                mf_hooks h = { 0 };
+                h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
+                h.fn_name = fn_name_hook; h.u = &b;
+                uint32_t handle = 0;
+                badrank = mf_define(art, &b.site, &h, &sd, &handle) ? "refused" : "accepted";
+                free(bd.p); free(bc.p);
+            }
+        }
         /* render 1: compiled (unique names) */
         snprintf(v[i].name, sizeof v[i].name, "g2v_f%u", i);
         char pre[32];
@@ -323,8 +444,13 @@ int main(int argc, char **argv)
             v[i].site.opts = NULL;
             free(adef.p); free(acall.p);
         }
-        fprintf(m, "%u\t%s\t%u\t%u\t%u\t%s\t%ld\t%ld\t%ld\n", i, class_name[v[i].cls], v[i].L,
-                v[i].off, v[i].pp, forms, mdef.guarded, alone[0], alone[1]);
+        fprintf(m, "%u\t%s\t%u\t%u\t%u\t%s\t%ld\t%ld\t%ld\t%s\t", i, class_name[v[i].cls],
+                v[i].L, v[i].off, v[i].pp, forms, mdef.guarded, alone[0], alone[1],
+                rmode_name[v[i].rmode]);
+        for (unsigned j = 0; j < v[i].rank_n; j++) fprintf(m, "%s%u", j ? "," : "", v[i].rank[j]);
+        unsigned ties = 0;   /* adjacent stated entries of equal rate */
+        for (unsigned j = 1; j < v[i].rank_n; j++) ties += v[i].ppm[j] == v[i].ppm[j - 1];
+        fprintf(m, "%s\t%s\t%u\n", v[i].rank_n ? "" : "-", badrank, ties);
         free(def.p); free(call.p); free(mdef.p); free(mcall.p);
     }
     fputs(all.p ? all.p : "", c);
