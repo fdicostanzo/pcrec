@@ -1851,3 +1851,20 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **For main at merge:**
     - Prune vmlmerge, n7uret, vmlfix, ssred and vmlazy after the merge.
     - D58 addendum 2's close (posted in the notice above) is still yours.
+- done: 2026-10-10 — **R-12 RE-LANDED for merge: branch lane/memfn-vmlazy @ 5df8b31b plus this [responses] commit (main e33fb821 merged in, abi stays 72). Report: vmlazy_report.md §8c.**
+  - slot19 (04:07-04:49, on main's GO) is green throughout: build, strict,
+    registry 0 failed, rxtsource 0 failed, codegen 15/15, make test with
+    no red lines (1623 s).
+  - The lowsize/lowboth self-check is CLEAN. That closes the slot17b
+    OWED item.
+  - `--variant all`: FAILED by design, every floor held. By id, 0 movers
+    fall outside the lazy set or the abi stamp in any cell, and
+    emit-ir-vm has 0 movers. The only additions over slot17b are four lazy
+    patterns from tests/revend/stage2_captures.rxt
+    (out/slot19_movers_by_id.txt).
+  - Merge conflicts, resolved: the startset VM manifests (union of the
+    vmlfix and sstri rows) and the rxtsource census pins (summed from the
+    merge base). vmlmerge_report's two line citations became section
+    citations.
+  - Still OWED: TRACE_VARIANT_RECORDS_FLOOR (no `--trace`).
+  - Prune list unchanged: vmlmerge, n7uret, vmlfix, ssred, vmlazy.
