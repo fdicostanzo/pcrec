@@ -98,3 +98,46 @@ regex)? Can the class be checked in SIMD?
 - First guess: medium for log/text scanning workloads (ipv4, dates
   `\d+-\d+`, versions `\d+\.\d+`). Needs a dense-dot cell to judge against
   memchr + table.
+
+## 2026-10-10 — hold the candidate mask across calls (dense subjects, wide registers)
+
+Frank: in a dense subject one w32 block can yield several candidate bits.
+Keep the mask after returning a candidate. The next search then pops the
+next bit instead of reloading, and once the mask is empty it resumes after
+the BLOCK, not after the candidate.
+- What already happens WITHIN one call: candidates that fail the run verify
+  are rolled off the mask (`while (m) { ...; m &= m - 1; }`), and an empty
+  mask advances `i += 32` to the next block. The idea is only about what
+  is lost when a candidate VERIFIES and the FUNC returns it: the rest of
+  the mask is discarded, and the next call from `cand + 1` reloads and
+  recompares the same block.
+- Where that loss happens today (lane/memfn-r13 build): nowhere inside a
+  search. Every batch-1 vrun site is called ONCE per `rx_search`. On the
+  DFA route it is a skip to the first candidate, after which the DFA scans
+  itself (`(?i)cat`: `handoff_position = rx_reqrun(...)`). On the VM routes
+  it is an entry existence check (`(?i)\d+cat --engine=vm`:
+  `if (rx_reqrun(...) >= subject_length) return 0;`). integration.md's
+  site table marks these INFREQUENT.
+- Where it would matter:
+  - FREQUENT sites, where a FUNC is re-called inside one search loop.
+    Example: OFS `<p>_ofsskip` on every DFA re-seed (`/user|/users`),
+    which is the filed vrun-over-fn-memchr / offset-set territory (entry 4).
+    Without a held mask a dense subject redoes up to 32 bytes of compare
+    per candidate, i.e. work O(n * density) instead of O(n).
+  - Global iteration ACROSS `rx_search` calls (all matches in a buffer):
+    each call starts fresh. Holding the mask there means caller-held state,
+    which is a public-API question (a cursor / iterator entry), not a kit
+    one.
+- Shape: the FUNC gets a small cursor `{ size_t blk; uint32_t m; }`. On
+  entry with `pos`: if `pos` is inside the held block, mask off the bits
+  below `pos` (`m &= ~0u << (pos - blk)`) and pop. Otherwise reload. The
+  stale-state rule is that the subject and `n` are unchanged. The same
+  idea applies to the scalar twin: the two-stream body could keep its
+  `ha`/`hb` memchr hits across calls the same way.
+- It changes the site contract (integration.md §14: FUNCs are pure
+  `(subject, n, pos)` today), so it is a pcrec-side change and an abi event
+  when a FREQUENT site first adopts it.
+- First guess: no value for batch 1's INFREQUENT sites. Real value at the
+  first FREQUENT vector site on dense subjects, so evaluate it together
+  with entry 4 / the vrun-over-fn-memchr row. The API-level form (cross-call
+  iteration) is a separate, bigger question.
