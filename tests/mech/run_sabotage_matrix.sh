@@ -382,6 +382,12 @@
 #     Its own arm because the plain build has no guarded byte, so a length
 #     reader that forgets the subtraction moves no artifact, no answer and
 #     no identity gate. Registered before S699-S703.
+#   rank — added 2026-10-09 ([MEMFN] RQ-2, lane rq2); runs
+#     tests/memfn/run_rank.sh: it builds the sabotaged tree's own PROBE
+#     compiler (-DPCREC_RANK_PROBE, every PRE/OFS predicate's mf_pred.rank_*
+#     on stderr) and holds each ranking to a brute force over the whole
+#     corpus (seconds). Its own arm because nothing reads the ranking yet,
+#     so a wrong ranking moves no artifact, no answer and no identity gate.
 #   memfnarms — added 2026-10-08 ([MEMFN] M4, lane m4); runs
 #     tests/memfn/run_arm_pins.sh, C5: every kit arm's fixture renderings
 #     against their pins, the row-contract gate cases (check 6) and the
@@ -2959,6 +2965,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/simdguarded.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/simdguarded.log" | grep -oE '[0-9]+')"
                 score_arm "$work/simdguarded.log" "$f" "simdguarded:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            rank)
+                # [MEMFN] RQ-2 tests/memfn/run_rank.sh — see the vocabulary
+                # entry above. Builds the probe compiler from "$tree".
+                CC="$CC" TMPDIR="$work" bash "$tree/tests/memfn/run_rank.sh" "$tree" \
+                    > "$work/rank.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/rank.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/rank.log" | grep -oE '[0-9]+')"
+                score_arm "$work/rank.log" "$f" "rank:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnstamps)
                 # [MEMFN] C11 tests/memfn/run_libc_census.sh --quick — see the

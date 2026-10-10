@@ -1,0 +1,11 @@
+name	enc	icase	cfg	pattern_hex	row	W	subjects
+ctl/literal-ab	byte	0	default	6162	forcelanding	-1	
+ctl/x-star-y	byte	0	default	782a79	forcelanding	-1	
+ctl/ab-or-xstar-y	byte	0	default	61627c782a79	forcelanding	-1	
+ctl/xa-or-a	byte	0	default	78617c61	forcelanding	-1	
+ctl/w-then-at	byte	0	default	5c772b40	forcelanding	-1	
+ctl/w-boundary-end	byte	0	default	5c772b5c62	forcelanding	-1	
+ctl/boundary-w	byte	0	default	5c625c772b	forcelanding	-1	
+ctl/dot-3-8	byte	0	default	2e7b332c387d	forcelanding	-1	
+ctl/u8-dot-3-8	utf8	0	default	2e7b332c387d	forcelanding	-1	
+ctl/az-2plus	byte	0	default	5b612d7a5d7b322c7d	forcelanding	-1	

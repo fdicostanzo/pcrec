@@ -325,4 +325,4 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 
 **Capacity:** the SIMD thread's item under the 2:1 split. Heavy slots come through main, one at a time.
 
-**Sabotage ids:** S716-S730.
+**Sabotage ids:** S716-S730. The R-13 follow-up (lane rankuse, the kit's use of `mf_pred.rank_*`, D157) holds S750-S757 (allocated 2026-10-09; next free S758).
