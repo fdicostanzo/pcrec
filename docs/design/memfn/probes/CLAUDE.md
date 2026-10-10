@@ -61,4 +61,5 @@ Maintenance: update this file when files are added/removed or change roles.
   5431-row census (before `tests/base/vm_lazy_rmin_prefix.rxt`); the slot17b
   by-id read over the full 5451 rows, every cell and stream, is
   `out/slot17b_movers_by_id.txt` (with `out/slot17b_pin_vs_measured.txt`, the
-  VARIANT_PINS re-pin's before/after; report §8b).
+  VARIANT_PINS re-pin's before/after; report §8b). `out/slot19_movers_by_id.txt`
+  is the same read at the re-landing slot over 5570 rows (report §8c).

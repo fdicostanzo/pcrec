@@ -337,6 +337,30 @@ slot17 ran at tip 1bb49dee, ref 631771b7, abi 71:72. slot17b ran at 1d8fae3b (ma
 - **movers.tsv** is the 5431-row census and misses the new file's 14 lazy rows. The
   5451-row by-id list above supersedes it for the verdict.
 
+## 8c. slot19, the re-landing slot (kit manager, 2026-10-10)
+
+- Tip 5df8b31b (main e33fb821 merged in: lfl0 L0, rev2corp, rxtread), ref
+  e33fb821. Run 04:07-04:49.
+- build, strict, test-registry (0 failed), test-rxtsource (0 failed; the
+  hand-summed census 278/5570/53503 holds), test-codegen 15/15, make test
+  with no red lines (1623 s).
+- The re-pin's self-check (`--ref HEAD --tree-rev HEAD --variant lowsize
+  --variant lowboth`) reads CLEAN. This closes the slot17b OWED item.
+- `--variant all` reads `VARIANTS: FAILED` with every tag floor held, as an
+  abi event must. A read-only by-id pass re-ran the comparator on slot19's
+  own binaries and listed every mover (the log prints five per stream):
+  `docs/design/memfn/probes/vmlazy/out/slot19_movers_by_id.txt`.
+  - 0 movers fall outside the lazy superset in any of the 10 cells. Each
+    .c mover is either abi-stamp-only or a lazy pattern.
+  - emit-ir-vm has 0 movers.
+  - Every slot17b id is still present. The only additions are four lazy
+    patterns from main's new tests/revend/stage2_captures.rxt, all of
+    them `RX_VM_PROGRAM_BYTES`-only facts movers. `(\s+?){2}$` is also in
+    the utf8 -fprefilter arm under lowsize/lowboth (23 -> 24).
+  - Not checked by hand: whether every stderr refusal figure shifts by a
+    multiple of 58.
+- TRACE_VARIANT_RECORDS_FLOOR is still not re-measured (no `--trace`).
+
 ## 9. Charter vs delivered
 
 | charter item | state |

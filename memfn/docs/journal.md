@@ -1203,3 +1203,20 @@ pointer when a kit change merges to main.
   done: R-12 waits for slot17b.
 - LESSON: a slot stage that dies on a usage error is a stage that measured nothing.
   Dry-run every new invocation's argument parsing before the slot.
+
+## 2026-10-10 — R-12 re-landed (slot19)
+
+- On main's GO (e33fb821: lfl0 landed, main green), I merged e33fb821 into
+  lane/memfn-vmlazy (5df8b31b). Conflicts: startset manifests (union),
+  rxtsource census (summed from the merge base 276/5431/52073 to
+  278/5570/53503). A new [cites] check caught two line citations in
+  vmlmerge_report; they are now section citations.
+- slot19 04:07-04:49: every stage green; self-check CLEAN; VARIANTS FAILED
+  by design. A sonnet read-only pass re-ran the comparator on slot19's
+  binaries and found 0 movers outside abi-stamp or lazy (report §8c).
+- done: re-posted; main merges R-12 next, and revbuild takes abi 73 on top.
+  Next: merge post-R-12 main into lane/memfn-r13, then slot18 on main's GO.
+- LESSON: emit_sweep's log prints only 5 movers per stream. A by-id
+  verdict needs the full list, which takes a re-run of the comparator on
+  the slot's own binaries. Budget ~25 min for it, or have the slot script
+  dump the keys.
