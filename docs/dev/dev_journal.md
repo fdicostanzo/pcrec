@@ -26865,3 +26865,39 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - Hand-listed reader and check lists keep missing gates (START-LANDING's 5 HIGH); derive edit sets by census.
   - Identity twins compare answers, not WORK: two critics found a quadratic the twins could not.
   - The manager `cd`'d into a worktree once more (corrected immediately) and used `pgrep -f` once in a probe (matched only itself).
+
+## 2026-10-09/10 — session 103 (hundred-and-third; Linux dev box; closed at Frank's ask)
+
+- **Landed on main:**
+  - specnum merged at 709c8ff6 ([SPEC-CLEAN] for match_api.md: facts-only, numbered §N¶K, generated contents, S748/S749).
+    - Its chain was red only on test-spec-history: the lane report quoted the check's own planted citations (triage lane spectri, report-only rewording).
+    - At landing I added S749 and one narrow cite_exclude row for the plant file.
+    - The merge conflicts carried five line-number citations of match_api.md from locfin21; I re-pointed them to §6.3.4¶2/¶11.
+    - D76 addendum 2: the abi change log lives in docs/dev/history/abi_changelog.md.
+    - [SPEC-CLEAN] continues with nine spec docs, filed and unscheduled.
+  - Pushed 1cb95b69. CI was still running at close (>1 h, longer than usual), so the later doc commits are held unpushed.
+- **Rulings (Frank), all recorded:**
+  - locate_finish §8 Q3: the generated off-path stamp rule (D156 add. 2).
+  - Q4 → **D158**: optimizations never reduce any pattern's ability to complete.
+    - K102 (possessify moves STEP cost into WORK) is its one ACCEPTED violator.
+    - Measured this session: effort is conserved, 800+394=1,194 off vs 0+1,199 on; a cost-categorization defect.
+    - Filed **[EFFORT-BUDGET]**: one weighted effort counter, weights as the dials; study first; Frank's usability point.
+  - Q6: rev-inner's trigger moves to the DFA route (walk_survey K12), and it ranks third (D151 add. 4).
+  - [START-LANDING] Q1-Q4 (D156 add. 3/4):
+    - Q1: build Λ. The general form is tagged-DFA restart tracking; filed **[ENG-TDFA]** with capture tags ("a bigger fish").
+    - Q2: the post-loop skip, with a binding happy-path implementation note.
+    - Q3: the hand.
+    - Q4: end-minus-width first.
+    - Q5: resolved by the manager as a filing (rev-end-width on [OPT-REVEND]).
+  - **D159**: byte encodings are out of scope (translation layers outside pcrec); other UTFs wait for a consumer; [ENC-DATA] CANCELLED; its Q5 (authored vs generated utf8 prior) moved to [U8-PICK].
+- **Kit:**
+  - R-12 (VMLAZY abi 72, @ 92213567) and R-13 (@ 9348a747, slot18 ~2.5 h) are both done on their branches.
+  - Ruled order: after lfl0 merges, GO R-12's re-merge slot (merge main, re-home the abi-72 entry into abi_changelog.md), then R-13's slot18.
+  - The kit's lane rankuse broke the box rule (a full emit_sweep during specnum's make test); acknowledged, and specnum's perfrun row is marked contaminated.
+- **In flight at close:**
+  - lfl0's chain is red on test-registry (RED-REAL); its mech rows were still running.
+  - Triage lane lfltri is diagnosing read-only until CHAIN DONE.
+- **Lessons:**
+  - Frank on [START-LANDING] Q4 ("they're the same picture"): an answer-free choice is the manager's call; triage question lists before relaying (memory pcrec-answer-free-choices-are-mine).
+  - The manager `cd`'d into a worktree again (corrected at once).
+  - A `git add` with a vanished path plus `2>/dev/null` silently staged nothing (S749's first commit carried only the rename).
