@@ -66,3 +66,45 @@ change):**
 7. **The abi event is 73 -> 74.**
 
 No assumption fails in a way that changes design; the build proceeds.
+
+## 1. SL1 — the facts (no artifact mover)
+
+**Built.** `src/facts/kset.c`: the frontier walk is ONE iterator
+(`wstart`/`wclose`/`wadvance`); `wclose` is one closure in two phases (the
+exact closure with assertions stopped at, then the passing one), so it also
+reports `accept_free` and `asrt`. Two E3 core facts in `facts.def`, owner
+`src/facts/kset.c`: `width` (`pcrec_width_walk`, `[bmin, bmax]` over the union
+frontier, assertions passed) and `land_char` (`pcrec_land_char`, Λ: per byte,
+exact, mid-character read off `PcrecEnc.start_cls`, a re-met mid-character
+frontier a cycle via a memo instead of a depth constant, Λ.2 asserted as
+K50-NULLGATE). `--emit-facts` lists them (`one-char` / `one-char+guard` /
+`declined` with `decline:nullable|assert-at-start|dead-start|alive-not-accept|
+assert-after`; `[bmin,bmax]` / `[bmin,inf)`). Spec: `facts_listing.md`
+§4.1.2¶7a/¶7b and §4.1.3¶3.
+
+**Checks.**
+- (a) Census agreement (`studies/start_landing/agree_sl1.sh`, the design's
+  probe functions re-anchored into a scratch copy of HEAD, the same compile):
+  bench 734 compiles, 545 agree, 0 disagree, 6 `capped` (the probe's 4096-byte
+  width cap: `cls-upto-8192/16384`, `cls-lazy-16384`, where the build reads
+  `[0,8192]`/`[0,16384]`); corpus 9,420 compiles, 5,909 agree, 0 disagree, 6
+  capped. Summaries in `studies/start_landing/results/slbuild/`.
+- (b) The hand-witness table, `tests/codegen/run_facts_checks.sh` §9
+  `[facts-sl1]`: 15 literal witnesses written from the definitions (the
+  design's 12 plus `a*`, `a|bc`, utf8 `\w+`), REACH over the four reachable
+  declines; 9/0. Failing direction: a plant reading an assertion after the
+  first character as an accept turns it red on `\w+\b` and `a\bb`.
+- Zero-mover gate: `scripts/emit_sweep.py --ref 06d19c67` — c-default,
+  c-vm, emit-ir-vm, emit-ir-auto (four arms), stderr, composition, dumps: 0
+  movers, 0 asymmetric. The facts stream moves on all 5,125 reached compiles,
+  by the two new rows (the listing prints every fact). `make strict` clean.
+
+**Deviation.** The design's hand table wrote `a\bb`'s Λ as "(empty engine)";
+§2.4's definition gives `decline:assert-after` (an assertion before the
+accept), and the table carries that. `dead-start` has no witness (a start
+closure with no consumer, accept or assertion is not a machine this parser
+builds); it is the safe answer for one.
+
+**Scope note.** One backup copy of `src/facts/kset.c` was written to `/tmp`
+for a failing-direction plant and removed at once; every other scratch file is
+under this worktree's `build/scratch/`.

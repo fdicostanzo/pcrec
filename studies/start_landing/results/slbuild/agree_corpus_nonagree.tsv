@@ -1,0 +1,7 @@
+pid	config	enc	probe_land	built_land	probe_w	built_w	verdict
+tests/counterk/counterk.rxt:1725	default	byte	decline:alive-not-accept	decline:alive-not-accept	[1,inf)	[1,8001]	capped
+tests/counterk/counterk.rxt:1725	nocaps	byte	decline:alive-not-accept	decline:alive-not-accept	[1,inf)	[1,8001]	capped
+tests/counterk/counterk.rxt:1807	default	byte	decline:alive-not-accept	decline:alive-not-accept	[4001,inf)	[4001,8001]	capped
+tests/counterk/counterk.rxt:1807	nocaps	byte	decline:alive-not-accept	decline:alive-not-accept	[4001,inf)	[4001,8001]	capped
+tests/counterk/counterk.rxt:1845	default	byte	decline:alive-not-accept	decline:alive-not-accept	[1,inf)	[1,8001]	capped
+tests/counterk/counterk.rxt:1845	nocaps	byte	decline:alive-not-accept	decline:alive-not-accept	[1,inf)	[1,8001]	capped

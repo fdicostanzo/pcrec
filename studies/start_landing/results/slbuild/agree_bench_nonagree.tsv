@@ -1,0 +1,7 @@
+pid	config	enc	probe_land	built_land	probe_w	built_w	verdict
+bounded/cls-lazy-16384	default	byte	decline:nullable	decline:nullable	[0,inf)	[0,16384]	capped
+bounded/cls-lazy-16384	nocaps	byte	decline:nullable	decline:nullable	[0,inf)	[0,16384]	capped
+bounded/cls-upto-16384	default	byte	decline:nullable	decline:nullable	[0,inf)	[0,16384]	capped
+bounded/cls-upto-16384	nocaps	byte	decline:nullable	decline:nullable	[0,inf)	[0,16384]	capped
+bounded/cls-upto-8192	default	byte	decline:nullable	decline:nullable	[0,inf)	[0,8192]	capped
+bounded/cls-upto-8192	nocaps	byte	decline:nullable	decline:nullable	[0,inf)	[0,8192]	capped
