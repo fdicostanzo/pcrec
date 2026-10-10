@@ -348,7 +348,10 @@ every oracle exclusion has an entry there.
   vs without-flags oracle — wrong in the silent direction; the d27 corpus's
   one `flags i` cell was scored a disagreement, the first flagged block this
   directory ever carried). Spell per-block caselessness inline (`(?i)...`)
-  to keep a cell verifiable here.
+  to keep a cell verifiable here. Since lane revtri (2026-10-10) a
+  non-byte `encoding` directive is skipped and counted the same way: the
+  oracle has no PCRE2_UTF, and `rev_end.rxt`'s three utf8 blocks (the first
+  in this directory) were mis-scored as five disagreements.
 - **d27/** — the [M6.2] D27-BLINDED ACCEPTANCE CORPUS, written at module
   close from the PCRE2 goal by an author denied `src/` and `tests/`
   (cell allowlist: docs/testing.md, docs/spec/match_api.md, build/ — see

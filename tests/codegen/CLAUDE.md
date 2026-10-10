@@ -4037,6 +4037,12 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
   forward machine; §4 the dead-seed X witnesses (DFA and hybrid) compiled
   `--emit-main` under `-fsanitize=address,undefined` and answered as the
   `-fno-rev-end` build does. Sabotage S758-S781.
+- **run_premul_table.sh**'s scan detector learns the walk's marker
+  (`for (int revend_seed = 0;`, shared with run_dfa_stamps.sh); without it
+  the 143 rev-end artifacts read as stamp-without-a-scan (lane revtri).
+  `cand_oracle_witnesses.tsv`: `a\Kb\b` (and `-fno-rev-end a\Kb\z`) for
+  `offset-set-bounded`, `(\s+)$` for the stage-2 `search-from vm ENDSET`
+  cell (lane revtri).
 - **run_dfa_stamps.sh** gains `[start]` (`RX_DFA_START` against the text: a
   reverse pass, the pinned form, or the absence value `"attempt-start"`) and
   the `rev-end` scan value with its witnesses.
