@@ -8718,8 +8718,10 @@ static const CandRow *dfa_match_of(Ctx *cx)
                   .route = cand_finish_of(cx), .point = true,
                   .hand = dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT };
     const CandRow *r = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
-    PCREC_CAND_TRACE_REC("FINISH", CAND_ROUTE_NAME(s.route), r->tok, "finish-match");
+    /* The hit FIRST: in the trace build it holds the hand mandatory and the
+     * row non-NULL before the record reads the row. */
     CAND_HIT(CAND_SLOT_FINISH, &s, r, "finish-match");
+    PCREC_CAND_TRACE_REC("FINISH", CAND_ROUTE_NAME(s.route), r->tok, "finish-match");
     return r;
 }
 
