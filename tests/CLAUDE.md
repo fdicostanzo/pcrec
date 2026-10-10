@@ -56,6 +56,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `litrun.rxt`, S2a's VM literal run as one `memcmp` (subject-end boundary,
   C-literal escapes, runs beside captures/choice points/islands), generated
   from python3 `re` by `gen_litrun.py`. See litscan/CLAUDE.md.
+- **revend/** — [OPT-REVEND] stage 2's CORRECTNESS CORPUS (lane rev2corp,
+  2026-10-10): capture-bearing end-pinned patterns (`$`/`\Z`/`\z`) with
+  matching and non-matching subjects, every cell and every group slot
+  libpcre2-10.46-generated (`gen_stage2.py`) and re-verified by an
+  independent reader (`verify_stage2.py`). Rides `test-corpus`; written before
+  the L1/L2 build it will verify. See revend/CLAUDE.md
 - **island/** — [ENG-ISL] STEP 1, the VM's ALTERNATION ISLAND (`make
   test-island`; `docs/spec/tuning.md` §2.20). Two `.rxt` files that ride
   `test-corpus` and are BLIND to the island by construction — the axis is
