@@ -40,7 +40,7 @@ T = table-driven, C = code (if/ternary/switch), N = number.
 - **Spec ladders, code not table:** §2.21 (EV:10798 if-chain, may_attr/may_fwd); §2.11 (AND over analyses[] + ternary); §2.5/§2.17 drop/collapse ladder (compile_driver); §2.16 (compile.c:1977); M4375 (esel_of ternary); §2.23/§2.36 (ED:10053/10065); §2.25/§2.4 VM_PRUNE_CEILING. VM_RESEED is a table but predicates dispatch by switch.
 - **Same predicate, different words:**
   - one start position: §2.29 G2 (start_max 0/search_from; VM_START anchored|gstart + linearity), §2.42 line 3528 ("unanchored (start_anchor)... anchored or \G runs one attempt"), §2.35 VM_RESEED "anchored" row, match_api.md line 2326, DFA_PREFILTER none (§2.29). All the start_anchor fact.
-  - "$/\Z/\z view or word context": M4613-4618, tuning.md:2846, §2.18 line 1629, §2.19/M4701 (1664), §2.26 line 2387, §2.42 "SEEDED" (3559; match_api.md line 2323).
+  - "$/\Z/\z view or word context": M4613-4618, tuning.md §3, §2.18 line 1629, §2.19/M4701 (1664), §2.26 line 2387, §2.42 "SEEDED" (3559; match_api.md line 2323).
   - unanchored/not nullable/<256 members: §2.42 lines 3528-3530 (VM) and 3571 (DFA hat, plus T=S proper subset of E); nullable wording also §2.17 and §2.23 line 2172.
   - DFA scan in front: §2.29 G1/K65/K66, §2.42, M "artifact CONTAINS a DFA scan"; code predicate once, pcrec_artifact_has_dfa_scan ED:383.
   - attempt is linear (§2.29: exact hybrid or frameless) never a named predicate.

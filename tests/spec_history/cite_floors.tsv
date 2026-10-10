@@ -3,7 +3,7 @@
 # reads nothing passes everything). One row per doc that carries the
 # `<!-- spec-toc:begin -->` block; a doc with no row FAILS. Columns: doc stem,
 # floor. Set at about half the count measured when the doc adopted numbering
-# (match_api: 1,009 on 2026-10-09; registry: 89, table_contract: 29 at their adoption; facts_listing 8, ir_listing 7 and findings 107 at theirs).
+# (match_api: 1,009 on 2026-10-09; registry: 89, table_contract: 29 at their adoption; facts_listing 8, ir_listing 7 and findings 107 at theirs; tuning 1,105 at its).
 match_api	500
 registry	44
 table_contract	14
@@ -12,3 +12,4 @@ cli	48
 facts_listing	4
 ir_listing	3
 findings	53
+tuning	550

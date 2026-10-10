@@ -71,7 +71,7 @@ event in flight, so this lane wrote 70 directly and did not also bump to 69.
      ledger message.
    - HISTORICAL, left as is: `docs/design/CLAUDE.md:2793`,
      `docs/design/dec_fallback.md:4`, `dec_fallback/refactor_edit_set.tsv:2`,
-     `docs/dev/known_issues.md:36`, `docs/spec/tuning.md:1308`,
+     `docs/dev/known_issues.md:36`, `docs/spec/tuning.md` §2.17,
      `match_api.md line 4470`, `memfn/docs/journal.md:911`,
      `src/facts/CLAUDE.md:112`, `src/opt/CLAUDE.md:1651`. Each is dated
      narrative ("since abi 68").

@@ -643,7 +643,7 @@ classes is an undispositioned member and stops the lane.
 - No `CR_*`, `SDR_*`, `ESEL_*` or `PFLW_*` value is renumbered.
 - No `Ctx`/`EngineFit` field is renamed: `prefilter_declined_nullable`,
   `prefilter_declined_nullable_default`, `prefilter_lang_why` and
-  `size_term_why` are now written from rows. `tuning.md:1463` cites
+  `size_term_why` are now written from rows. `tuning.md` §2.17 cites
   `prefilter_lang_why`, so no spec hunk is needed for it.
 - No deny bit is added, moved or reassigned.
 - The force loop (`pcrec_facts_force_all`) is unchanged; only its arrival
