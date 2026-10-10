@@ -178,3 +178,42 @@ match(s) }"; the DFA is fine on dense subjects; the VM may still want it).
   file. It is scalar today, re-entered on every attempt, and
   `--engine=vm` / no-DFA patterns depend on it. Needs a census of how
   often the no-DFA route runs on the bench, and a dense-start cell.
+
+## 2026-10-10 — fixed-length class spans as constructed instruction sequences (Frank, discussion with main)
+
+Pattern shape: a long mixed fixed-length span, e.g. `abc(?i)def\d{3}[a-z]{2}`
+(11 bytes, every position a byte set). Today the VM emits one bounds check +
+compare + dispatch per byte (the [WORD-FOLD] baseline).
+
+- Per-position form `((x & K) - L) <=u R`: exact byte (FF, c, 0); caseless
+  letter (DF, upper, 0); `\d` (FF, '0', 9); `[a-z]` (FF, 'a', 25);
+  `[a-zA-Z]` = fold then range (DF, 'A', 25), exact; past the span's end
+  (00, 0, 0). One SSE2 block: load, and, sub, min_epu8+cmpeq (or
+  subs_epu8 vs R, then zero test), movemask against the span mask, so about
+  5 ops for the 11-byte example. SWAR works too, but sub borrows across lanes,
+  so it needs the high-bit trick (a few ops more).
+- "Single masked interval" is a COMPUTED class property, not a list: for each
+  K in 0..255 take the folded image of the class and test whether the
+  pre-image of [min, max] is exactly the class (about 64K byte ops per class
+  at compile time). `\w` fails (0x7F & 0xDF = '_'); hex fails (two
+  intervals). Ladder: one masked interval -> union of k intervals ->
+  nibble-table shuffle (shufti, SSSE3, up to 8 distinct classes per span
+  with per-position class bits).
+- Frank: with mask registers (AVX-512BW k-masks) the explicit mask step goes
+  away. vpcmpub has an unsigned-LE predicate (sub + cmp straight to k, no
+  min/cmpeq), unions of ranges are kor, and per-position constants ride
+  masked ops. VBMI vpermi2b is a 128-entry lookup, which gives an arbitrary
+  ASCII class in one op. Some forms that are expensive in SSE2/AVX2 (ORing
+  ranges) become cheap.
+- Frank's framing: this is not one specific output. It is a SELECTOR that
+  CONSTRUCTS the instruction sequence from the span's composition (per-
+  position byte sets) plus a COST MODEL per ISA tier (SWAR / SSE2 / SSSE3 /
+  AVX2 / AVX-512BW+VBMI). "Needs a spike or something."
+- Uses: (1) verifying a candidate after an anchor hit; (2) fusing VM literal
+  and class chains (precondition: no live resume target inside the span);
+  (3) scan filters through the shift-and-across-blocks shape (ipv4 entry
+  above).
+- First guess at impact: unknown until a census counts the spans (length,
+  per-position rung) over the bench's patterns. Cost-model constants must be
+  derived (uops tables per uarch) or measured, never hand-set. AVX-512 is
+  not on the bench box (Zen 1), only the dev box (Zen 4).
