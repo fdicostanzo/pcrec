@@ -2923,6 +2923,30 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   seven failing controls; timing −29..−42%. Rows take 46.5 of 54.6 ms K3+K4 weight. Build
   B1-B4 after L0, one abi event, 9 sabotage rows; five questions for Frank. Evidence:
   `../../studies/start_landing/`.
+  **REVISION 2 (lane `landrev`, 2026-10-09) applies the D6 panel
+  (`../dev/reviews/2026-10-09-r-startlanding-panel.md`, 24 ids, read its §R2 first).**
+  - **The guard.** Revision 1's restart was QUADRATIC (SL-G1 = SL-E1). The design now
+    uses SL-G1's POST-LOOP SKIP: "start = the first well-formed character start at or
+    after the final landing", with its proof in full (§2.5.2). Both linear forms (the
+    skip and slcrit1's Fix A) were twinned in assert mode on an extended ill-formed pool
+    (class-own characters and truncations, the fixed tokens never thinned; two pool
+    defects recorded), with 0 differences each over 98.3 M cells. The skip is picked by
+    measurement on well-formed text (−27..−42% against today) and by structure (no
+    hot-path statement, no re-entry). The hostile control is linear for both forms
+    (1.8-5.3 ms per MiB) where the restart takes ~13 min; it becomes a standing 10 s
+    cell.
+  - **The fact.** Λ is stated over `PcrecEnc.start_cls`/`onebyte_max`, with
+    self-synchronization as precondition P0. Λ.2 is an ASSERTION implied by
+    K50-NULLGATE's checked omission (`nfa.c:1107`). The one character is DERIVED (§2.3.1).
+  - **The width.** The width is `[bmin, bmax]` from the one frontier iterator; the
+    hand is spelled as product masks (EXISTS / WINDOW), keyed (slot, route, hand) on
+    the path.
+  - **The build.** Empties are guarded by `recover_on_path` (SL-C1); one success-site
+    emitter carries the K78 fill. The edit set, the sabotage re-aims and the readers
+    are DERIVED (§4.5, §7.4), and every gate the panel named is found. The standing
+    gate is `run_start_landing.sh`, with a test-axes product arm with floors.
+  - **Filed.** Candidates U1 (fixed-margin captures) and U2 (`bmax` for
+    `[OPT-ENDWIN-ENC]`), with triggers (§11); §9 restated with the critics' judgments.
 - `encoding_data_layout.md` — **ENCODING DATA LAYOUT: INVENTORY + PROPOSAL, nothing
   moved** (lane `encinv`, 2026-10-09, from main `57fe04ef`, abi 71; Frank's "organize
   encoding data around the idea there may be more encodings").

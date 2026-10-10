@@ -53,7 +53,7 @@ src/ lib/ CHANGELOG*`, dispositioned:
 |---|---|
 | `tests/codegen/run_recursion_identity.sh` (FILEPIN + narrative) | **stale -> FIXED in this lane** (§1 above) |
 | `docs/design/CLAUDE.md:2180` | historical — describes the abi 29->30 event itself; left |
-| `docs/spec/match_api.md:2025,2037` | historical — the abi change log's own 29->30 transition prose (D76 addendum: this is the one home for the change log); left |
+| `docs/dev/history/abi_changelog.md` | historical — the abi change log's own 29->30 transition prose (D76 addendum: this is the one home for the change log); left |
 | `docs/dev/optloop/cycle1_ledger_reading.md:19` | historical — BEFORE/AFTER pins of a batch-1 measurement ledger; left |
 | `tests/codegen/run_cpset_structure.sh:533` | historical — "RE-RECORDED ... at batch 2 (abi 29 -> 30)" re-pin note; the file's live manifest already reflects abi 30 (batch 2's own delivery); left |
 | `tests/codegen/run_codegen_tests.sh:2862` | the cumulative D94 ritual narrative string — already includes the 29->30 entry; `ABI_EXPECT=30` confirmed live at line 2860; left |

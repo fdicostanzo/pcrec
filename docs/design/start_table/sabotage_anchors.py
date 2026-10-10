@@ -285,7 +285,8 @@ def touched(f, own):
 
 
 ORDER = ["C0", "C1", "C2", "C3", "C4", "C5", "C5b", "C6", "C7",
-         "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "L0", "L2"]
+         "B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "L0", "L2",
+         "SL1", "SL2", "SL3"]
 
 # ---- [admin1008b] STEPS: rerun_at from each commit's actual diff ----------
 kindof = {}

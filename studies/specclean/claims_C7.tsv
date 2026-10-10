@@ -1,0 +1,310 @@
+C7-0001	4951	N	pcrec_compile() takes a NUL-terminated const char *pattern and has no length parameter.
+C7-0002	4955	N	pcrec_compile signature is int pcrec_compile(const char *pattern, const pcrec_options *opt, pcrec_output *out, pcrec_error *err).
+C7-0003	4959	N	A raw 0x00 byte inside the intended pattern silently truncates the compile performed by pcrec_compile().
+C7-0004	4960	N	A 3-byte pattern "a\0b" compiles as the 1-byte pattern "a", and pcrec_compile() reports success for that shorter pattern.
+C7-0005	4962	N	The NUL truncation is documented, checkable behavior of the NUL-terminated entry point, not a defect pcrec intends to fix in this API shape.
+C7-0006	4967	M	Measured against libpcre2 10.46 (dlopen via tests/fuzz/pcre2_abi.h): PCRE2_ZERO_TERMINATED compile of the buffer {'a',0,'b'} yields a pattern matching only "a" (1-byte match at start of subject "a\0b").
+C7-0007	4972	M	Measured against libpcre2 10.46: compiling {'a',0,'b'} with explicit length=3 yields the real 3-byte pattern, matching the full subject "a\0b" with span [0,3).
+C7-0008	4975	N	The only way to avoid NUL truncation is for the caller to pass the pattern's true length, which PCRE2's API accepts and pcrec_compile() does not.
+C7-0009	4978	N	The NUL truncation is an API-surface gap relative to PCRE2's length-taking mode, not a semantics divergence between the two engines' NUL handling (PCRE2's sentinel mode fails identically).
+C7-0010	4983	N	rx_info.pattern_len reports the actual byte count pcrec_compile() saw and compiled (the truncated count), not the caller's intended count.
+C7-0011	4985	N	rx_info lives in the generated artifact; pcrec_compile() hands its caller C source text, not a struct.
+C7-0012	4988	N	At compile time the only way to read pattern_len is to string-search out.c_src for the emitted ".pattern_len = N," line.
+C7-0013	4990	N	Reading pattern_len as a value requires compiling and linking the artifact first.
+C7-0014	4993	N	A caller that knows the pattern's true length should test it before compiling; if strlen(pattern) != known_length the pattern contains a NUL and the caller refuses it itself.
+C7-0015	5003	N	The strlen pre-flight catches the truncation before it happens using only the standard library.
+C7-0016	5004	N	pattern_len remains the after-the-fact instrument for an artifact the caller already has.
+C7-0017	5005	M	Verified: compiling the byte-built 3-byte "a\0b" buffer through the real pcrec_compile() produces out.c_src containing ".pattern_len = 1,".
+C7-0018	5006	M	The CLI cannot carry a NUL through argv at all, so the NUL probe goes through the library pcrec_compile(), not the CLI.
+C7-0019	5009	M	The "a\0b" pattern_len probe is pinned as tests/cli/run_cli_tests.sh case16.
+C7-0020	5011	N	pattern_len is the source byte count, not the count of bytes the matcher walks (e.g. 'a\nb' is 4 source bytes and pattern_len = 4).
+C7-0021	5013	M	The pattern_len source-byte-count property is pinned structurally in tests/codegen/run_codegen_tests.sh.
+C7-0022	5016	N	A length-taking compile ((pattern, length) overload or equivalent that refuses a pattern whose declared extent it cannot verify) is not part of the pcrec_compile() contract.
+C7-0023	5019	H	CHECK: full length-taking compile support is scheduled with DD-3, tracked as docs/dev/known_issues.md K9, and is the natural trigger for customer V-A's (pattern, length) compatibility shim.
+C7-0024	5022	N	A caller with an untrusted or NUL-containing pattern source must run the strlen pre-flight itself; nothing in pcrec_compile()'s signature enforces it.
+C7-0025	5033	M	The section 8.0 sample compiles and runs as written: built with gcc -Wall -Wextra -Werror -Wl,-dead_strip against lib/pcrec.h and libpcrec.a, run, and its matcher.c/matcher.h output compiled in turn.
+C7-0026	5037	N	Consumers should link with -Wl,-dead_strip (ld64) or -Wl,--gc-sections (GNU ld).
+C7-0027	5038	N	libpcrec.a is a static archive in which the .rxt-source-file support (the --source composer) is statically reachable from the ordinary compile path.
+C7-0028	5040	N	A consumer that never calls pcrec_compile_defs or pcrec_rxt_source_parse still pulls the composer's object files in unless the linker drops unreachable sections.
+C7-0029	5042	M	Measured (2026-09-17 code review, L6 1.3): the -dead_strip flag alone recovers 43,968 of the 44,448 bytes those objects add to a minimal consumer's __text, leaving 480 bytes and two symbols the composer's early-return path still reaches.
+C7-0030	5045	N	Omitting the dead-strip/gc-sections linker flag is not wrong, only larger than needed.
+C7-0031	5058	N	pcrec_default_options(&opt) is the mandatory first step before using a pcrec_options.
+C7-0032	5058	N	A zero-initialized pcrec_options has prefix == NULL and every compile fails with "invalid symbol prefix".
+C7-0033	5061	N	pcrec_options.header_name == NULL (the default) produces a self-contained .c; setting it (e.g. "matcher.h") also produces a header.
+C7-0034	5063	N	pcrec_compile() returns nonzero (-1) on failure and sets err.msg, err.pos (size_t) and err.input (PCREC_ERR_INPUT_PATTERN or PCREC_ERR_INPUT_TEMPLATE).
+C7-0035	5069	N	out.c_src and out.h_src are malloc'd, NUL-terminated C source owned by the caller, who must free them.
+C7-0036	5070	N	out.h_src is non-NULL exactly when opt.header_name was set.
+C7-0037	5079	N	pcrec_output_free(&out) frees both buffers and sets both fields to NULL.
+C7-0038	5086	N	pcrec_default_options() is mandatory; skipping it fails every compile.
+C7-0039	5089	N	A zeroed pcrec_options has prefix == NULL, and pcrec refuses a NULL prefix; pcrec_default_options is not a convenience over a working zero state.
+C7-0040	5090	M	Measured: a memset-zeroed options struct returns -1 with err.msg == "invalid symbol prefix (must be a C identifier, <= 60 chars)" for a pattern that compiles fine after pcrec_default_options().
+C7-0041	5093	N	pcrec_default_options() sets prefix = "rx", encoding = PCREC_ENC_BYTE and header_name = NULL, and zeroes everything else.
+C7-0042	5095	N	A caller overrides fields after calling pcrec_default_options(), never instead of it.
+C7-0043	5096	M	Re-measured: a default-initialized pcrec_options has prefix=rx, encoding=0 (PCREC_ENC_BYTE), header_name=NULL, flags=0, engine=0.
+C7-0044	5099	N	pcrec_output owns two heap buffers and the caller frees them.
+C7-0045	5102	N	pcrec_output is a struct { char *c_src; char *h_src; }.
+C7-0046	5103	N	pcrec_output.c_src is malloc'd and freed with pcrec_output_free.
+C7-0047	5104	N	pcrec_output.h_src is malloc'd, or NULL when options.header_name == NULL.
+C7-0048	5108	N	pcrec_output_free() frees both buffers and NULLs both fields (measured before and after).
+C7-0049	5110	N	pcrec_output_free() is safe to call twice and safe on a struct whose h_src was never produced.
+C7-0050	5110	N	pcrec_output_free() is the only way to release the pcrec_output buffers.
+C7-0051	5111	N	Section 5.2's "no allocation, no lifecycle to manage" statement covers the MATCH path only; the compile path allocates and pcrec_output_free is its lifecycle.
+C7-0052	5114	N	h_src is non-NULL exactly when header_name was set (measured both ways); a caller should test h_src rather than header_name.
+C7-0053	5116	N	pcrec_compile() returns 0 on success and -1 on failure; a caller checks the return value, not the error struct.
+C7-0054	5117	N	pcrec_compile() fills err only on failure.
+C7-0055	5125	N	pcrec_compile() never abort()s the caller on the compile path.
+C7-0056	5126	N	Every allocation site on the compile path routes failure through the internal pcrec_ctx_nomem() and comes back as a normal -1-with-diagnostic return.
+C7-0057	5128	N	A caller that sets a memory limit to survive a hostile pattern does survive it: allocation failure yields -1 with a diagnostic, not an abort.
+C7-0058	5130	N	One abort() remains in the code deliberately, off the compile path: the syntax-dump path's detached string buffers, which run outside a compile and have no pcrec_error to report through.
+C7-0059	5132	N	DFA structural invariants refuse through pcrec_ctx_fail like every other "cannot happen" site in the compiler (K61); they no longer abort.
+C7-0060	5135	N	As of 2026-09-18 the never-abort/never-silently-succeed-under-OOM promise of pcrec_compile() has no exceptions.
+C7-0061	5140	N	When a pattern needs more than one internal attempt (the [ART-SIZE] size-term ladder, a --engine=auto DFA-overflow retry, or a size-cap retry rung), an allocation failure on a non-final attempt makes pcrec_compile() return -1 with a diagnostic rather than success from a fallback attempt (K60, D109).
+C7-0062	5146	M	The multi-attempt-ladder allocation-failure population was 2 of 3,159 corpus patterns at default axes (docs/dev/k60_measurement.md section 3).
+C7-0063	5148	M	make alloc's W4 witness: 108 of 158 forced failures were absorbed before the D109 fix, 0 after.
+C7-0064	5151	N	Allocation failure in the emitted DFA state legend's scratch buffers is an ordinary -1-with-diagnostic refusal; it no longer drops the legend and lets the compile succeed (K60, D105).
+C7-0065	5159	N	The state-legend scratch buffer is a fixed local and the remaining legend scratch lives in the compile's arena.
+C7-0066	5162	M	make alloc's W1 and W3 witnesses: 15 and 25 forced failures absorbed before the D105 fix, 0 after.
+C7-0067	5163	N	A compile that would previously have emitted a legend-less artifact under OOM now returns -1 with a diagnostic.
+C7-0068	5165	N	The emitted bytes of a compile that does not run out of memory are unchanged by the legend fix, so D105 is not an abi event.
+C7-0069	5167	N	A pattern can be REFUSED for compile-side resource reasons, a failure class distinct from a syntax error.
+C7-0070	5168	N	A resource refusal arrives through the same -1 return and the same pcrec_error as a syntax error; a caller distinguishes them by reading err.msg, not the return value.
+C7-0071	5171	M	Measured at the D56 boundary: pattern a{9795} compiles; a{9796} returns -1 with err.msg == "pattern too complex for the DFA engine (subset construction exceeds 48000000 state-set elements; try --engine=vm)".
+C7-0072	5174	N	A pattern refused for resource reasons is legal PCRE; the refusal is that compiling it would cost more than pcrec is willing to spend, so a caller reporting every -1 as bad regex syntax is wrong.
+C7-0073	5178	M	Measured: the same a{9796} compiles cleanly under --engine=vm, because that mode never builds the DFA whose cap the refusal names.
+C7-0074	5178	N	The escape named by the DFA-complexity diagnostic (--engine=vm) is real.
+C7-0075	5186	N	Two encodings compile: byte (the default) and utf8.
+C7-0076	5188	N	Under utf8 a character is one to four bytes and "." and a class match a whole character.
+C7-0077	5190	N	Under utf8 an ill-formed byte sequence in the SUBJECT matches nothing, with no validation pass and no error return.
+C7-0078	5192	N	Under utf8 a startpos passed to <prefix>_search must be a character boundary of the encoding.
+C7-0079	5194	N	<prefix>_next_pos (section 3.1.1) is the supported way to produce a character-boundary startpos, and the section 3.1 find-all loop uses it.
+C7-0080	5197	H	CHECK: the pcrec_options block quotes "all nineteen members" but lists twenty (prefix, encoding, flags, header_name, engine, step_budget, work_budget, unroll_k, vm_entry_shape, frame_capacity, six max_*, warn_emit_bytes, name, tune, features).
+C7-0081	5201	N	Every member of lib/pcrec.h's pcrec_options appears in the spec's quoted block with a one-line gloss; the full text per member is the header comment and, for a tuning axis, tuning.md section 2.
+C7-0082	5207	N	pcrec_options.prefix is a const char * C identifier prefix; default "rx".
+C7-0083	5208	N	pcrec_options.encoding is an int holding a PCREC_ENC_* value, per compile call.
+C7-0084	5209	N	pcrec_options.flags is a uint64_t carrying PCREC_CASELESS, PCREC_EMIT_MAIN, PCREC_NO_CAPTURES, PCREC_TRACE and the optimization-axis deny/force bits (catalogue in tuning.md section 2).
+C7-0085	5213	N	pcrec_options.header_name is a const char *; NULL means a self-contained .c.
+C7-0086	5214	N	pcrec_options.engine is an int taking PCREC_ENGINE_AUTO, PCREC_ENGINE_DFA or PCREC_ENGINE_VM.
+C7-0087	5215	N	pcrec_options.step_budget is an int64_t taking PCREC_STEP_BUDGET_DEFAULT, PCREC_STEP_BUDGET_NONE, or a count.
+C7-0088	5216	N	pcrec_options.work_budget is an int64_t taking PCREC_WORK_BUDGET_DEFAULT, PCREC_WORK_BUDGET_NONE, or a count.
+C7-0089	5217	N	pcrec_options.unroll_k is an int; PCREC_UNROLL_K_DEFAULT (0) means the built-in default.
+C7-0090	5218	N	pcrec_options.vm_entry_shape is an int taking PCREC_VM_ENTRY_AUTO (0), _PLAIN, _SHARED, _FORWARD or _INLINE; it is an ordinal rung, not a bit (tuning.md section 2.21).
+C7-0091	5221	N	pcrec_options.frame_capacity is an int; 0 means let the compiler size it.
+C7-0092	5222	N	pcrec_options.frame_capacity's 0 sentinel differs from rx_info's field of the same name, which uses -1 for unbounded.
+C7-0093	5224	N	pcrec_options.max_emit_code_bytes is a uint64_t RAISE-ONLY cap override; 0 means built-in.
+C7-0094	5225	N	pcrec_options.max_emit_bytes is a uint64_t RAISE-ONLY cap override; 0 means built-in.
+C7-0095	5226	N	pcrec_options.max_nfa_states is a uint64_t RAISE-ONLY compile budget; 0 means built-in.
+C7-0096	5227	N	pcrec_options.max_dfa_states_goto is a uint64_t RAISE-ONLY compile budget; 0 means built-in.
+C7-0097	5228	N	pcrec_options.max_subset_elems is a uint64_t RAISE-ONLY compile budget; 0 means built-in.
+C7-0098	5229	N	pcrec_options.max_auto_dfa_elems is a uint64_t RAISE-ONLY budget that governs the AUTO route's DFA attempt only; 0 means built-in.
+C7-0099	5231	N	pcrec_options.warn_emit_bytes is a uint64_t ADVISORY stderr-warning threshold, never a refusal; 0 DISABLES the warning.
+C7-0100	5232	N	pcrec_options.warn_emit_bytes can be lowered, unlike the max_* caps.
+C7-0101	5234	N	pcrec_options.name is a const char * giving what rx_info.name reports; NULL means use the prefix.
+C7-0102	5235	N	pcrec_options.tune is an int from PCREC_TUNE_MIN_SIZE to PCREC_TUNE_MAX_SPEED, range -2..+2; 0 is balanced and a structural no-op.
+C7-0103	5237	N	pcrec_options.features is a const char * naming the enabled feature-module set for this call, same vocabulary as --features; NULL means no request.
+C7-0104	5243	N	The six max_* members of pcrec_options are RAISE-ONLY.
+C7-0105	5244	N	A max_* value BELOW the built-in default is refused as a malformed option rather than honoured, so no caller can use one to manufacture someone else's refusal.
+C7-0106	5246	N	warn_emit_bytes is deliberately not raise-only because it never refuses anything, so lowering it cannot break a build.
+C7-0107	5248	N	docs/spec/limits.md is the home of the six max_* budgets; per-field derivations are lib/pcrec.h's comments.
+C7-0108	5251	N	pcrec_options.features is applied PER pcrec_compile() call.
+C7-0109	5253	N	pcrec_options.features accepts a comma-separated module-name list spelled as pcrec --list-syntax's module column spells them, the frozen named set "std1" (D37), "all", or "none".
+C7-0110	5255	N	An unknown name in pcrec_options.features is refused by name, as the CLI --features rule does, surfaced through pcrec_error like any compile-time refusal.
+C7-0111	5258	N	The pcrec_error wording for an unknown features name is identical to the CLI's "--features: <text>" stderr line minus the "--features: " prefix.
+C7-0112	5261	N	pcrec_options.features == NULL means "make no request" and is deliberately NOT the CLI's bare-invocation default (std1).
+C7-0113	5263	N	A library caller who never sets pcrec_options.features gets the raw, ungated compile with no module enabled.
+C7-0114	5265	N	A library caller wanting the CLI's bare-invocation behaviour passes "std1" or the exported constant pcrec_default_features explicitly.
+C7-0115	5267	N	The CLI always resolves a concrete value for pcrec_options.features (features ? features : pcrec_default_features) and never leaves it NULL, so a bare pcrec 'PATTERN' invocation is unaffected.
+C7-0116	5272	N	Applying pcrec_options.features touches no shared state (D19): two concurrent pcrec_compile() calls with different features values cannot race.
+C7-0117	5274	N	Each pcrec_compile() call resolves its features request into that compile's own internal state, never a process-global.
+C7-0118	5276	N	The CLI's own --features additionally installs a process-global read by --probe-ask, --count-groups and --list-source; pcrec_options.features affects only the one pcrec_compile() call.
+C7-0119	5281	N	pcrec_options.encoding is a per-compile-call scalar: one encoding per pcrec_compile() call, carried in this field and nowhere else.
+C7-0120	5283	N	There is no process-global, file-global or environment-variable encoding setting.
+C7-0121	5284	N	Mixing encodings inside one compilation unit or one binary is supported: each artifact is self-contained, carries its own prefix, and embeds exactly one encoding's residual block (section 3.1.1).
+C7-0122	5286	N	The CLI spells the encoding option -e NAME or --encoding=NAME.
+C7-0123	5289	N	PCREC_ENC_BYTE (0, the default) and PCREC_ENC_UTF8 (1) both compile.
+C7-0124	5290	N	The pcrec_options.encoding value is what rx_info.encoding reports (section 6).
+C7-0125	5291	N	Any other pcrec_options.encoding value is refused with "unknown encoding (want byte, utf8)", an ordinary -1-with-diagnostic return that writes no C.
+C7-0126	5294	N	A code point above 0xFF written as \x{...} is a compile error under the byte encoding and compiles under utf8.
+C7-0127	5296	N	The encoding reaches the parser only through a range check on a written \x{...} value (utf8_design.md section 2.7.3).
+C7-0128	5299	N	PCREC_ENC_ASCII no longer exists; PCREC_ENC_BYTE replaced it as a RENAME, not an alias.
+C7-0129	5301	N	CLI value "-e ascii" is now an unknown encoding.
+C7-0130	5303	N	The byte encoding treats every byte as a character, 0x80-and-up included, with no case and no meaning attached.
+C7-0131	5307	N	Every boolean option (PCREC_CASELESS, PCREC_EMIT_MAIN, PCREC_NO_CAPTURES, PCREC_UCP, strategy-denial/force flags) is one representation end-to-end: the same bit set by a CLI flag, carried in pcrec_options.flags, and reflected verbatim in rx_info.flags.
+C7-0132	5310	N	A boolean option bit is reflected verbatim in rx_info.flags except where deliberately masked (section 6.3).
+C7-0133	5312	N	PCREC_NO_CAPTURES recovers the pure-DFA artifact (<PREFIX>_NCAPS 1); captures are on by default.
+C7-0134	5314	N	PCREC_UCP is bit 34 of pcrec_options.flags.
+C7-0135	5315	N	PCREC_UCP carries PCRE2_UCP's semantics (docs/spec/cli.md --ucp).
+C7-0136	5315	N	PCREC_UCP changes answers, so it is NOT masked: rx_info.flags of an artifact compiled with --ucp has bit 34 set.
+C7-0137	5317	N	A pattern that turns UCP on inside itself with (*UCP) does not set PCREC_UCP bit 34, just as an inline (?i) does not set PCREC_CASELESS.
+C7-0138	5319	N	The pattern text, recorded in rx_info.pattern, is where inline (*UCP) is recorded.
+C7-0139	5320	H	CHECK: the arrival of the PCREC_UCP bit moved no emitted byte of any artifact compiled without it (no abi event).
+C7-0140	5322	N	A caller that round-trips its own flags through rx_info.flags will legitimately find some bits missing.
+C7-0141	5323	N	The bits masked out of rx_info.flags are the testing/tuning axes that change no answer (section 6.3).
+C7-0142	5324	N	docs/spec/tuning.md section 2 is the catalogue of axes (bit, CLI spelling, what it denies or forces, why it is masked) and section 4 maps every bit to its pcrec_options field.
+C7-0143	5328	N	The spec tier is the contract (D80); lib/pcrec.h's comments are the implementation's record of the same facts, not their authority.
+C7-0144	5333	N	pcrec_error carries which input a diagnostic's pos indexes into.
+C7-0145	5337	N	pcrec_err_input is an enum with PCREC_ERR_INPUT_PATTERN = 0 and PCREC_ERR_INPUT_TEMPLATE = 1.
+C7-0146	5342	N	pcrec_error has member char msg[256].
+C7-0147	5343	N	pcrec_error has member size_t pos.
+C7-0148	5344	N	pcrec_error has member pcrec_err_input input.
+C7-0149	5348	N	pcrec_compile() always sets err.input = PCREC_ERR_INPUT_PATTERN today; it has no other input yet.
+C7-0150	5349	N	PCREC_ERR_INPUT_TEMPLATE has no producer yet; a future substitution-template compiler is its first producer.
+C7-0151	5350	N	pcrec_compile() returns 0 on success (out filled) or -1 on failure (err filled if non-NULL).
+C7-0152	5352	M	Verified: the unterminated group "a(b" returns -1 with err.pos == 1 and err.input == PCREC_ERR_INPUT_PATTERN.
+C7-0153	5355	N	PCREC_* names only pcrec's own enum/bit-valued constants, never a struct field name and never a bare CLI flag spelling.
+C7-0154	5357	N	The one exception to PCREC_* naming is the per-artifact PCREC_FEATURE_SET and PCREC_FEATURE_MODULES stamps, which carry the PCREC_* spelling without living in lib/pcrec.h.
+C7-0155	5359	N	The list of PCREC_*-named things outside lib/pcrec.h is exhaustive: it has exactly the two feature stamps.
+C7-0156	5362	N	The exported feature-default data symbol (src/parse/enabled.c, D37's bare-default mapping point) is the lower-case pcrec_default_features.
+C7-0157	5366	N	PCRE2_* spellings are reserved for a future PCRE2-compatibility layer and are never native to pcrec.
+C7-0158	5373	N	docs/spec/match_api.md records what shipped and is pcrec's contract with an embedder; design records (match_api_m4.md, engine_m4.md) record why.
+C7-0159	5382	N	Pre-v1 posture (D40): the contract carries no backwards-compatibility weight yet.
+C7-0160	5383	N	Pre-v1, breaking changes are unconstrained in substance and governed only in form: one announced-boundary commit per break, populations conserved and accounted, never silent drift.
+C7-0161	5385	N	At a future v1 declaration this document (or its direct successor) becomes the compatibility-bound enumeration.
+C7-0162	5387	N	Until v1, "frozen" in this spec means "the M4 working baseline", not "permanent".
+C7-0163	5394	N	Every artifact pcrec emits exports <prefix>_search_in, <prefix>_match_in and <prefix>_match_caps_in.
+C7-0164	5396	N	Every artifact declares the <prefix>_buffers descriptor, carries the five sizing macros in its header and the four sizing fields on rx_info.
+C7-0165	5397	N	The caller-provided-buffer surface exists on both engines and is present and inert on a DFA artifact.
+C7-0166	5420	N	A generated matcher never allocates (section 5.2).
+C7-0167	5420	N	The resume stack and its undo trail are sized at compile time and live in the entry point's own stack frame.
+C7-0168	5422	N	The artifact's depth ceiling is a compile-time constant by default.
+C7-0169	5423	N	Per D71 item 2 a caller may supply the backtracking storage instead, keeping pcrec's never-allocates property while lifting the depth ceiling as far as the caller reserves.
+C7-0170	5429	M	Measured on a default -p rx --features all build of ^(a(?1)?b)$ (recursion depth grows with the subject): it matches up to a 684-byte subject and returns PCREC_ERR_FRAMES at a 686-byte one.
+C7-0171	5429	N	The default depth ceiling is expressed as a subject size, not a fixed number.
+C7-0172	5432	M	libpcre2 10.46 matches 800 KB of the same ^(a(?1)?b)$ shape (cited from subroutines_design.md section 5.6, not measured in this doc).
+C7-0173	5435	M	Measured: on the left-recursive runaway ^(a|(?1)a)$ over a^n b, PCREC_ERR_FRAMES is returned in 0.0006 s at every n from 100 to 100,000, flat across a 1,000x range.
+C7-0174	5438	M	libpcre2's cost on that runaway grows as the square of the subject (2.6-5.6 s at n = 20,000; exponent 2.04), cited from subroutines_design.md section 5.6.
+C7-0175	5440	N	The default artifact refuses a legitimate deep match as the price of refusing a runaway in constant time; section 10.6 is how a caller buys the depth back.
+C7-0176	5447	N	<prefix>_buffers is a typedef'd struct with members void *frames, size_t nframes, void *trail, size_t ntrail.
+C7-0177	5448	N	<prefix>_buffers.frames is storage for resume frames.
+C7-0178	5449	N	<prefix>_buffers.nframes is the capacity in frames, not bytes.
+C7-0179	5450	N	<prefix>_buffers.trail is storage for trail entries.
+C7-0180	5451	N	<prefix>_buffers.ntrail is the capacity in entries, not bytes.
+C7-0181	5454	N	int <prefix>_search_in(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2], const <prefix>_buffers *buf).
+C7-0182	5456	N	ptrdiff_t <prefix>_match_in(const rx_ctx *ctx, const <prefix>_buffers *buf).
+C7-0183	5457	N	ptrdiff_t <prefix>_match_caps_in(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2], const <prefix>_buffers *buf).
+C7-0184	5461	N	Each _in entry equals its un-suffixed sibling in anchoring promise, return space, caps/caps_out discipline and give-up codes, plus one argument naming where the working storage lives.
+C7-0185	5463	N	Sections 3.1, 3.2, 3.3, 4 and 5 apply to the _in entries unchanged.
+C7-0186	5469	N	<prefix>_buffers is PER-ARTIFACT, scoped by --prefix; it is not one of section 1's fixed-literal rx_* ABI types.
+C7-0187	5472	N	A resume frame's size differs between artifacts, so the buffer type is per-artifact; a fixed-literal spelling would advertise an interchangeability that does not exist.
+C7-0188	5473	M	Measured: a resume frame is 24 bytes on an artifact with no LINKED call and 40 bytes on one with a linked call (RX_VM_CALL_LINKED > 0).
+C7-0189	5475	N	A call that wave G SPLICED (RX_VM_CALL_SPLICED) is inlined and adds nothing to the resume frame.
+C7-0190	5476	M	Measured: the email specimen's factored form under --engine=vm stamps a 24-byte frame with ten spliced calls.
+C7-0191	5478	N	A caller reads the frame-size stamp and never infers it from the pattern text.
+C7-0192	5480	N	The nframes and ntrail counts are CAPACITIES (frames / trail entries), not byte sizes; section 10.4 is how a caller converts bytes to counts.
+C7-0193	5483	N	frames and trail are two separate regions and BOTH are required when buf is non-NULL; supplying one without the other is not expressible.
+C7-0194	5485	M	Measured on ^(a(?1)?b)$: the trail is the array that binds first at the stamped defaults, so raising only nframes would produce no change.
+C7-0195	5492	N	buf == NULL is defined to be exactly a call to the un-suffixed entry with the same other arguments, and an artifact is free to implement it as one.
+C7-0196	5498	N	A give-up from an _in entry means the buffer in use ran out, and the code does not say whose buffer it was.
+C7-0197	5499	N	PCREC_ERR_FRAMES is returned for a caller-supplied buffer exactly as for the stamped default, naming a RESOURCE rather than an array or owner (section 4).
+C7-0198	5502	N	The count of frames or trail entries that WOULD have sufficed is NOT reported on a give-up.
+C7-0199	5505	N	Reporting the sufficient count requires the diagnostic axis; the default artifact does not carry the machinery (D71 item 1 treatment).
+C7-0200	5507	N	A give-up is RETRYABLE: calling the same entry again with the same subject and startpos and a larger buffer is defined.
+C7-0201	5509	N	The matcher holds no state between calls (section 5.3), the caller's caps array is untouched on every negative return, and the buffers are pure scratch, so give-up/double/retry is a correct algorithm.
+C7-0202	5514	N	The contents of a caller-supplied buffer after any call are UNSPECIFIED; a caller must not read them and need not re-initialise them before the next call.
+C7-0203	5519	N	Both buffer regions must be suitably aligned for the artifact's own frame and trail types; <PREFIX>_BUFFER_ALIGN states the requirement.
+C7-0204	5521	N	Storage from malloc, mmap, or a declaration of any ordinary object type satisfies the alignment requirement on every target pcrec supports.
+C7-0205	5523	N	<PREFIX>_BUFFER_ALIGN exists for a caller doing pointer arithmetic inside a larger arena.
+C7-0206	5527	N	The frame and trail layouts are private to the artifact, are not published, and a caller must not assume them.
+C7-0207	5529	N	The emitted header carries five sizing macros: <PREFIX>_RESUME_FRAMES, _TRAIL_FRAMES, _RESUME_FRAME_SIZE, _TRAIL_FRAME_SIZE, _BUFFER_ALIGN.
+C7-0208	5532	N	<PREFIX>_RESUME_FRAMES is the stamped DEFAULT resume-frame capacity (example value 2048).
+C7-0209	5533	N	<PREFIX>_TRAIL_FRAMES is the stamped default trail capacity (example value 3072).
+C7-0210	5534	N	<PREFIX>_RESUME_FRAME_SIZE is the bytes per resume frame for THIS artifact (example value 40).
+C7-0211	5535	N	<PREFIX>_TRAIL_FRAME_SIZE is the bytes per trail entry (example value 16).
+C7-0212	5536	N	<PREFIX>_BUFFER_ALIGN is the required buffer alignment (example value 8).
+C7-0213	5539	N	The sizing macro values are stamped for the target and are not constants of pcrec; a reader must not take 40 as one.
+C7-0214	5541	M	Measured: a resume frame is 24 bytes on a call-free artifact, 40 on a call-bearing one, and 32 and 48 on the --trace versions of the same two.
+C7-0215	5543	N	A resume frame's size also depends on the target's own type sizes.
+C7-0216	5544	N	pcrec computes each sizing number at compile time from the same member list that emits the frame struct, so the two cannot drift.
+C7-0217	5547	N	The artifact asserts each stamped sizing macro against the real sizeof/_Alignof at its own build, so a number computed for a different target model is a loud compile error naming the macro.
+C7-0218	5550	N	A caller reads the sizing macros and never hardcodes their values.
+C7-0219	5553	H	CHECK: the two capacity macros (<PREFIX>_RESUME_FRAMES, <PREFIX>_TRAIL_FRAMES) are in the generated .h where a caller can read them (they previously lived in the generated .c).
+C7-0220	5554	N	rx_info carries four of the same sizing facts for a consumer with no C header (an FFI or dlopen binding).
+C7-0221	5560	N	rx_info.resume_frames is an int64_t giving the stamped default capacity.
+C7-0222	5561	N	rx_info.trail_frames is an int64_t.
+C7-0223	5562	N	rx_info.resume_frame_size is an int32_t giving bytes per resume frame.
+C7-0224	5563	N	rx_info.trail_frame_size is an int32_t giving bytes per trail entry.
+C7-0225	5566	H	CHECK: rx_info.abi is the layout version and is bumped on every layout change (section 6 rule "layout version; bump-on-change").
+C7-0226	5567	N	rx_info.resume_frames duplicates frame_capacity's information for the bounded case but is not redundant with it.
+C7-0227	5569	N	rx_info.frame_capacity reports -1 for "no bound at all" on a DFA artifact and answers a different question than resume_frames (section 6 sentinel-asymmetry note).
+C7-0228	5573	N	A stamped size of 0 means "this engine takes no buffers"; every DFA artifact stamps 0 because it has no resume stack.
+C7-0229	5575	N	Dividing bytes by <PREFIX>_RESUME_FRAME_SIZE is a division by zero on any DFA artifact.
+C7-0230	5578	N	A stamped 0 is rx_info's honest signal; pcrec does not stamp a fake non-zero size for storage that is never read.
+C7-0231	5580	N	A caller must test the stamped size before dividing by it and pass NULL when it is 0.
+C7-0232	5581	N	An _in entry on an artifact with stamped size 0 accepts a descriptor and ignores it, so NULL and a correctly-sized buffer are the same call there.
+C7-0233	5585	N	On a DFA artifact the whole buffer surface is present and inert, so a caller can write one call site against both engines.
+C7-0234	5588	N	The three _in entries, the <prefix>_buffers type and all five sizing macros are emitted on EVERY artifact.
+C7-0235	5589	N	On a DFA artifact the four sizing macros and the four rx_info sizing fields read 0.
+C7-0236	5591	N	On a DFA artifact an _in entry accepts a descriptor and ignores it, answering exactly as its un-suffixed sibling does.
+C7-0237	5593	N	The five buffer sizing macros are a deliberate departure from section 6.3's rule that per-artifact budget/capacity macros are VM-artifacts-only, because they are what a caller needs to CALL the artifact rather than what the artifact DID.
+C7-0238	5604	N	Section 5.3's concurrency rule gains one conjunct: concurrent calls need each their own caps/caps_out buffer AND their own frame and trail buffers.
+C7-0239	5605	N	Two concurrent calls sharing one <prefix>_buffers region are a data race in the CALLER's code, and the matcher does not serialize it.
+C7-0240	5607	N	One thread re-entering a matcher from a callout needs its own storage for the inner call.
+C7-0241	5610	N	There is deliberately no way to set a buffer once per artifact or per thread; the buffer travels with the call.
+C7-0242	5611	N	Emitted code has no mutable state (section 5.3, checked by TS-1) and no thread-local buffer, since a thread-local would fail reentrancy.
+C7-0243	5619	N	The operating system materialises only the pages the match actually touches in a lazily-committed reservation.
+C7-0244	5624	N	Worked example: the caller mmaps two lazily-committed regions (MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE) and builds rx_buffers { f, bytes / RX_RESUME_FRAME_SIZE, t, bytes / RX_TRAIL_FRAME_SIZE }.
+C7-0245	5637	N	rx_search_in(subject, n, 0, caps, &buf) with the mmap'd buffers allocates nothing in pcrec.
+C7-0246	5640	M	Measured on ^(a(?1)?b)$ with two 64 MB reservations: RX_RESUME_FRAME_SIZE == 40 and RX_TRAIL_FRAME_SIZE == 16 give 1,677,721 frames and 4,194,304 trail entries.
+C7-0247	5646	M	Measured with the two 64 MB reservations: a 684 B subject matches in 0.0001 s with 2.0 MB process RSS after.
+C7-0248	5647	M	Measured with the two 64 MB reservations: a 200 KB subject matches in 0.0135 s with 24 MB RSS after.
+C7-0249	5648	M	Measured with the two 64 MB reservations: an 800 KB subject matches in 0.056 s with 88 MB RSS after.
+C7-0250	5649	M	Measured with the two 64 MB reservations: a 932 KB subject matches in 0.065 s with 102 MB RSS after.
+C7-0251	5650	M	Measured with the two 64 MB reservations: a 940 KB subject returns PCREC_ERR_FRAMES in 0.069 s with 103 MB RSS after.
+C7-0252	5652	M	Re-measured on the shipped emitter (2026-08-25): 1,677,721 frames and 4,194,304 trail entries derive from the two reservations, with 1.8 MB resident before the first match.
+C7-0253	5654	M	Re-measured on the shipped emitter: the 800 KB row matches in 0.057 s having touched 90 MB, and the ceiling is still between n = 466,000 and n = 470,000.
+C7-0254	5656	M	tests/recursion/run_frame_buffer.sh is the re-measurement and asserts each of these numbers rather than printing them.
+C7-0255	5659	M	Corrected: through the un-suffixed rx_search, the same artifact returns PCREC_ERR_FRAMES on the four larger rows only; the 684 B row (exactly the largest subject the un-suffixed entry matches) returns 1.
+C7-0256	5668	M	Measured: 128 MB reserved costs 1.7 MB of resident memory until touched.
+C7-0257	5669	M	Measured: the 800 KB row is the depth libpcre2 10.46 was measured reaching from its heap, so the ruling's depth goal is met with room to spare.
+C7-0258	5670	M	The ceiling is predictable from the emitted numbers: the trail binds at ntrail / (trail entries per level) = 4,194,304 / 8.98, about 467,000 levels for ^(a(?1)?b)$, and the measured boundary sits between 466,000 and 470,000.
+C7-0259	5676	N	The caller-supplied buffer does not have to be mmap'd; any storage works (heap allocation, static array in the caller's translation unit, arena slice).
+C7-0260	5683	N	A caller with no mmap needs neither mmap nor a heap to use the buffer surface.
+C7-0261	5685	N	Passing NULL gives the stamped default, exactly today's behaviour, with the artifact's own storage on the stack.
+C7-0262	5687	N	A caller may point the descriptor at its own static storage.
+C7-0263	5688	N	Caller-declared static buffer storage does not violate section 5.3's no-mutable-state rule, which binds only what pcrec EMITS; storage in the embedder's translation unit is the embedder's.
+C7-0264	5691	N	The embedder is the party who knows whether its matcher calls are concurrent.
+C7-0265	5692	N	A single-context embedded caller can put the buffer in .bss, keep its stack small, and pay nothing.
+C7-0266	5700	N	<prefix>_search, <prefix>_match and <prefix>_match_caps keep their exact signatures, return spaces, anchoring promises and caps/caps_out disciplines.
+C7-0267	5702	N	A consumer that never calls an _in entry needs no source change and its call sites are binary-compatible.
+C7-0268	5704	N	<prefix>_next_pos is untouched by the _in entries, as is the section 3.1 find-all protocol that goes through it.
+C7-0269	5706	N	The give-up code space of section 4 gains no member from the _in entries; PCREC_ERR_FRAMES covers the caller-buffer case and nothing new is minted.
+C7-0270	5708	N	No allocation is added anywhere; section 5.2 stands, scoped to the match path, and the compile path's pcrec_output lifecycle (section 8) is unaffected.
+C7-0271	5711	N	The emitted run-struct text was never contractual.
+C7-0272	5711	H	CHECK: rx_info's layout and the emitted run-struct text are the two things the pre-v1 posture (section 9) lets break, governed in form by D40 regime 1; DD-3 has no versioning-event policy yet (plan.md STATE:not-started).
+C7-0273	5720	N	On an artifact whose stamped default storage does not fit inside one 4 KB page, each un-suffixed entry first runs the match on a page-budgeted buffer of <PREFIX>_FAST_FRAMES / <PREFIX>_FAST_TRAIL (section 6.3).
+C7-0274	5723	N	On PCREC_ERR_FRAMES and on no other outcome, the tiered un-suffixed entry re-runs the same match from scratch on the full stamped default and returns the second run's result.
+C7-0275	5725	N	Every other first-run outcome (match, no-match, PCREC_ERR_STEPS, _WORK, _RECURSE, PCREC_ERR_INTERNAL) is returned directly from the fast tier.
+C7-0276	5729	N	A FRAMES escalation restarts the step and work budgets: they are per CALL, not per tier, and the second run begins with both full.
+C7-0277	5735	N	Because of the budget restart, one call may spend up to twice each budget (stated in section 4).
+C7-0278	5737	N	The wasted fast attempt is bounded by the step and work budgets, not by the fast frame count.
+C7-0279	5740	N	Tiering changes no answer: the deep run is a bit-for-bit replay of a single-tier entry from scratch (same capacities, both budgets refilled, same start-position loop over the same prefilter, one deterministic engine).
+C7-0280	5744	N	Nothing the fast attempt did carries into the deep run: run state is a local of the tier that declared it, with no allocation, no thread-local and no mutable static (section 5.3).
+C7-0281	5746	N	For every artifact, subject and entry, the returned value and written capture spans are those the entry produced before the tier existed.
+C7-0282	5750	N	The fast attempt may reach PCREC_ERR_FRAMES where a single-tier run would have reached PCREC_ERR_STEPS; that FRAMES value is never returned (it is the escalation trigger) and the replay then reports PCREC_ERR_STEPS.
+C7-0283	5758	N	Every promise in sections 3, 3.1-3.3, 4 and 5 stands unchanged under the tiered default entry.
+C7-0284	5759	N	PCREC_ERR_FRAMES from an un-suffixed entry still means the stamped default ran out; it never reports the fast tier's exhaustion.
+C7-0285	5761	N	The depth an artifact can reach is unchanged by tiering (D73 keeps the stamped 2048/3072).
+C7-0286	5763	N	A call that DOES escalate is slower than a single-tier call.
+C7-0287	5763	M	Measured: an escalating call is 1.24-1.53x slower on ((a)|(aa))+b, with a 3.05x discontinuity across the boundary itself (section 3 carries the figures).
+C7-0288	5766	N	The tier is a bet that real calls hold on the fast tier; where a workload is measured not to, using _in or -fno-tiered-entry is the answer.
+C7-0289	5768	N	The _in entries are untouched by tiering in contract, signature and cost; they never had a tier and do not gain one, because the caller owns the storage.
+C7-0290	5770	N	buf == NULL remains section 10.3's "the same call" as the un-suffixed entry and therefore gets the tiering.
+C7-0291	5773	N	A caller must NOT rely on which tier answered; there is no supported observable for it.
+C7-0292	5774	N	<PREFIX>_FAST_FRAMES says where the tier boundary is, not which side a given call landed on.
+C7-0293	5776	N	A caller needing a depth guarantee on the fast path, or on a stack too small for the deep tier, uses an _in entry (section 10.2).
+C7-0294	5777	N	-fno-tiered-entry (tuning.md section 2.12) removes the tier for a whole artifact.
+C7-0295	5780	H	CHECK: the two tier stamps (<PREFIX>_FAST_FRAMES, <PREFIX>_FAST_TRAIL) are #defines, so they move no rx_info struct offset.
+C7-0296	5783	H	CHECK: rx_info.abi versions the artifact FORMAT, not the VM, so it moves on both engines regardless of which engine's bytes change.
+C7-0297	5786	N	The four [ART-SIZE] size-term macros follow the <PREFIX>_DFA_SCAN precedent: a selection fact stamped whether or not it fired (D81).
+C7-0298	5787	N	<PREFIX>_UNROLL_K and <PREFIX>_UNROLL_K_WHY are VM-artifact-scoped because a DFA artifact has no counter rung to have chosen a K for.
+C7-0299	5788	N	<PREFIX>_UNROLL_K is the unroll factor this artifact was emitted at.
+C7-0300	5789	N	<PREFIX>_UNROLL_K_WHY takes SEVEN values, because "the term did not run" has several distinguishable reasons a check must tell apart.
+C7-0301	5792	N	<PREFIX>_UNROLL_K_WHY == "option" means an explicit --unroll=K.
+C7-0302	5793	N	<PREFIX>_UNROLL_K_WHY == "denied" means -fno-size-term.
+C7-0303	5794	N	<PREFIX>_UNROLL_K_WHY == "default" means the term ran and the artifact was below its threshold.
+C7-0304	5795	N	<PREFIX>_UNROLL_K_WHY == "size-model" means the ladder ran and its K was taken.
+C7-0305	5796	N	<PREFIX>_UNROLL_K_WHY == "size-model-declined" means the ladder ran and the materiality bar rejected its K.
+C7-0306	5797	N	<PREFIX>_UNROLL_K_WHY == "cap-rescue" means the bar declined a K and an emitted-size cap took it anyway.
+C7-0307	5798	N	<PREFIX>_UNROLL_K_WHY == "capacity-declined" means the ladder ran and the K it wanted would have LOWERED the artifact's declared capacity (.frame_capacity or .subject_ceiling) below what the default K declares, so it was not a candidate (limits.md section 8a).
+C7-0308	5803	N	<PREFIX>_MAX_EMIT_CODE_BYTES and <PREFIX>_MAX_EMIT_BYTES are the EFFECTIVE limits this artifact was built under, letting a reader tell a fitted artifact from one built with a raised cap without the command line.
+C7-0309	5803	H	CHECK: <PREFIX>_MAX_EMIT_CODE_BYTES scope is not stated explicitly in the slice; only _MAX_EMIT_BYTES is said to be on both engines.
+C7-0310	5806	N	<PREFIX>_MAX_EMIT_BYTES is on BOTH engines; the total-bytes cap applies to whatever was emitted (limits.md section 8).

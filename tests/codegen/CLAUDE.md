@@ -2013,7 +2013,7 @@ direction was then demonstrated by reverting the fix (2 CUT-NOT-A-MARK).
 
 **`[M6.5-DUPNAMES]` — the reflection table's ORDER, read off the ARTIFACT.**
 With `(?J)` the `rx_info.groups` table can hold ADJACENT ROWS WITH EQUAL NAMES,
-and `docs/spec/match_api.md` §6's caller algorithm (bsearch, walk BACK to the
+and `docs/spec/match_api.md` §5.4's caller algorithm (§5.4¶6: bsearch, walk BACK to the
 run's first row, then FORWARD to the first participating one) selects the
 LOWEST-numbered participating member ONLY IF the within-name order is
 ascending. Get it backwards and the table encodes the "last set" rule
@@ -2200,7 +2200,7 @@ records for its own non-default-prefix case. Four prefixes of different
 length and shape, each of which must stamp itself.
 
 **`nentries` IS PINNED EQUAL TO `nnames` AND PRESENT.** Equality is the
-honest state of an uncomposed artifact (`docs/spec/match_api.md` §6) and the
+honest state of an uncomposed artifact (`docs/spec/match_api.md` §6¶3) and the
 composer is what will separate them; what the check pins is that the field
 EXISTS and is not hard-wired to 0 beside a real `nnames`, which is the shape
 a caller switching to `nentries` would silently lose every row to.

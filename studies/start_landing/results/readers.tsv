@@ -1,0 +1,251 @@
+class	token	file	nlines	runner
+stamp	DFA_START|search_form	pcrec:tests/registry/axes_registry_check.sh	2	tests/registry/run_registry_tests.sh tests/registry/run_definitions_tests.sh tests/lib/spec_extract.sh 
+stamp	DFA_START|search_form	pcrec:tests/registry/run_registry_tests.sh	1	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+stamp	DFA_START|search_form	pcrec:tests/base/start_pinned_startpos.rxt	1	tests/rxtsource/run_rxtsource_tests.sh tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh tests/mech/sabotages/S221_pinned_start_written_as_zero.sh 
+stamp	DFA_START|search_form	pcrec:tests/resource/run_resource_tests.sh	1	Makefile:1407:	bash tests/resource/run_resource_tests.sh tests/uprops/run_uprops_tests.sh tests/counterk/run_counterk_tests.sh 
+stamp	DFA_START|search_form	pcrec:tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	1	make mech (row)
+stamp	DFA_START|search_form	pcrec:tests/mech/sabotages/S219_pinned_seed_conjunct_dropped.sh	1	make mech (row)
+stamp	DFA_START|search_form	pcrec:tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	5	make mech (row)
+stamp	DFA_START|search_form	pcrec:tests/mech/sabotages/S218_pinned_predicate_widened.sh	1	make mech (row)
+stamp	DFA_START|search_form	pcrec:tests/mech/sabotages/S440_vedge_reverse_takes_end_view.sh	1	make mech (row)
+stamp	DFA_START|search_form	pcrec:tests/codegen/run_nomatch_caps.sh	1	Makefile:549:	    'bash tests/codegen/run_nomatch_caps.sh' tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S439_k78_dead_group_fill_at_entry.sh 
+stamp	DFA_START|search_form	pcrec:tests/codegen/run_premul_table.sh	2	Makefile:572:	bash tests/codegen/run_premul_table.sh Makefile:615:# sixth script in `test-codegen`'s group, on `run_premul_table.sh`'s measured tests/codegen/run_cand_oracle.sh 
+stamp	DFA_START|search_form	pcrec:tests/codegen/run_search_pinned.sh	21	Makefile:609:	bash tests/codegen/run_search_pinned.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+stamp	DFA_START|search_form	pcrec:tests/codegen/run_recursion_identity.sh	1	Makefile:1059:	bash tests/codegen/run_recursion_identity.sh tests/recursion/run_specimen_identity.sh tests/axes/run_axes.sh 
+stamp	DFA_START|search_form	pcrec:tests/codegen/run_codegen_tests.sh	1	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+stamp	DFA_START|search_form	pcrec:scripts/emit_sweep.py	2	tests/memfn/stamp_mover_census.py tests/memfn/libc_census.py tests/lib/c_artifact_cmp.sh 
+stamp	DFA_START|search_form	pcrec:lib/pcrec.h	2	build
+stamp	DFA_START|search_form	pcrec:docs/spec/tuning.md	6	spec
+stamp	DFA_START|search_form	pcrec:docs/spec/match_api.md	16	spec
+stamp	DFA_START|search_form	pcrec:src/dump/axes_dump.c	1	build
+stamp	DFA_START|search_form	pcrec:src/gen/emit_dfa.c	15	build
+stamp	DFA_START|search_form	pcrec:src/gen/CLAUDE.md	1	build
+stamp	DFA_START|search_form	bench:tools/selfcheck.py	16	bench:tools
+stamp	DFA_START|search_form	bench:pcrecbench/tests/test_report.py	3	bench:pcrecbench
+stamp	DFA_START|search_form	bench:pcrecbench/report.py	3	bench:pcrecbench
+stamp	DFA_START|search_form	bench:testees/pcrec/list_axes.tsv	2	bench:testees
+stamp	DFA_START|search_form	bench:testees/pcrec/shim.c	18	bench:testees
+stamp	DFA_START|search_form	bench:testees/pcrec/adapter.py	27	bench:testees
+stamp	DFA_START|search_form	bench:testees/pcrec/driver.c	11	bench:testees
+stamp	DFA_START|search_form	bench:testees/pcrec/CLAUDE.md	1	bench:testees
+value	reverse-pass	pcrec:tests/registry/run_registry_tests.sh	1	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+value	reverse-pass	pcrec:tests/resource/run_resource_tests.sh	1	Makefile:1407:	bash tests/resource/run_resource_tests.sh tests/uprops/run_uprops_tests.sh tests/counterk/run_counterk_tests.sh 
+value	reverse-pass	pcrec:tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	4	make mech (row)
+value	reverse-pass	pcrec:tests/mech/sabotages/S219_pinned_seed_conjunct_dropped.sh	1	make mech (row)
+value	reverse-pass	pcrec:tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	7	make mech (row)
+value	reverse-pass	pcrec:tests/mech/sabotages/S218_pinned_predicate_widened.sh	2	make mech (row)
+value	reverse-pass	pcrec:tests/mech/sabotages/S440_vedge_reverse_takes_end_view.sh	1	make mech (row)
+value	reverse-pass	pcrec:tests/codegen/cand_oracle_witnesses.tsv	2	tests/codegen/run_cand_oracle.sh 
+value	reverse-pass	pcrec:tests/codegen/run_nomatch_caps.sh	8	Makefile:549:	    'bash tests/codegen/run_nomatch_caps.sh' tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S439_k78_dead_group_fill_at_entry.sh 
+value	reverse-pass	pcrec:tests/codegen/run_search_pinned.sh	26	Makefile:609:	bash tests/codegen/run_search_pinned.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+value	reverse-pass	pcrec:tests/codegen/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+value	reverse-pass	pcrec:lib/pcrec.h	1	build
+value	reverse-pass	pcrec:docs/spec/tuning.md	1	spec
+value	reverse-pass	pcrec:docs/spec/match_api.md	5	spec
+value	reverse-pass	pcrec:src/gen/emit_dfa.c	7	build
+value	reverse-pass	bench:tools/selfcheck.py	23	bench:tools
+value	reverse-pass	bench:tools/CLAUDE.md	1	bench:tools
+value	reverse-pass	bench:pcrecbench/tests/test_report.py	11	bench:pcrecbench
+value	reverse-pass	bench:pcrecbench/report.py	5	bench:pcrecbench
+value	reverse-pass	bench:testees/pcrec/list_axes.tsv	1	bench:testees
+value	reverse-pass	bench:testees/pcrec/shim.c	3	bench:testees
+value	reverse-pass	bench:testees/pcrec/adapter.py	4	bench:testees
+value	reverse-pass	bench:testees/pcrec/CLAUDE.md	2	bench:testees
+value	reverse-pass	bench:bench/bounded/NOTES.md	1	bench:bench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/registry/run_registry_tests.sh	1	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/rxtsource/run_rxtsource_tests.sh	4	Makefile:486:	bash tests/rxtsource/run_rxtsource_tests.sh tests/definitions/run_definitions_tests.sh tests/harness/run.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/utfcheck/check.py	1	tests/recursion/d27/sr_check.py tests/memfn/run_site_manifest.sh tests/memfn/rows_check.py 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/utfcheck/gen_cases.py	1	tests/utfcheck/check.py tests/mech/sabotages/S409_utf_fastpath_skips_window_lead.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/base/start_pinned_startpos.rxt	2	tests/rxtsource/run_rxtsource_tests.sh tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh tests/mech/sabotages/S221_pinned_start_written_as_zero.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/resource/run_resource_tests.sh	12	Makefile:1407:	bash tests/resource/run_resource_tests.sh tests/uprops/run_uprops_tests.sh tests/counterk/run_counterk_tests.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	1	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh	2	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S219_pinned_seed_conjunct_dropped.sh	3	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S223_pinned_assert_routing_call_deleted.sh	8	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	2	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S218_pinned_predicate_widened.sh	1	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/sabotages/S221_pinned_start_written_as_zero.sh	4	make mech (row)
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/mech/CLAUDE.md	2	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/assertions/start_pinned_startpos.rxt	3	tests/rxtsource/run_rxtsource_tests.sh tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh tests/mech/sabotages/S221_pinned_start_written_as_zero.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/lookaround/gen_corpus.py	1	tests/recursion/gen_corpus.py tests/recursion/d27/sr_gen.py tests/rxtsource/run_rxtsource_tests.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/lookaround/lookahead.rxt	1	tests/rxtsource/run_rxtsource_tests.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh tests/mech/sabotages/S130_look_ignores_behind.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/lookaround/run_expansion_diff.sh	2	Makefile:998:# BREADTH instrument. `run_expansion_diff.sh` re-expresses `tests/assertions/`'s Makefile:1013:	bash tests/lookaround/run_expansion_diff.sh tests/lib/run_san_group.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/lookaround/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/cand_oracle_witnesses.tsv	1	tests/codegen/run_cand_oracle.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/manifests/s220_view_decliners.txt	2	tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/run_search_pinned.sh	29	Makefile:609:	bash tests/codegen/run_search_pinned.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/searchpin_driver.c	1	tests/codegen/run_search_pinned.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/run_dfa_uniform_fold.sh	1	Makefile:702:	bash tests/codegen/run_dfa_uniform_fold.sh tests/codegen/run_scan_edge_dispatch.sh tests/codegen/run_premul_table.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/run_recursion_identity.sh	1	Makefile:1059:	bash tests/codegen/run_recursion_identity.sh tests/recursion/run_specimen_identity.sh tests/axes/run_axes.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/run_codegen_tests.sh	1	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:tests/codegen/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:scripts/emit_sweep.py	4	tests/memfn/stamp_mover_census.py tests/memfn/libc_census.py tests/lib/c_artifact_cmp.sh 
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:lib/pcrec.h	4	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:docs/spec/tuning.md	6	spec
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:docs/spec/match_api.md	8	spec
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:docs/spec/cli.md	1	spec
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/opt/scanedge.c	1	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/opt/CLAUDE.md	1	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/core/internal.h	1	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/core/axes.def	1	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/gen/emit_dfa.c	15	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	pcrec:src/gen/CLAUDE.md	2	build
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:tools/selfcheck.py	28	bench:tools
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:tools/CLAUDE.md	1	bench:tools
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/adapters.py	1	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/store.py	1	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/tests/test_report.py	7	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/tests/fixtures/v14_pair/store/records/fixture-mini@1.0/libpcre2_10.46_jit-caps-simdna/fixture-mini@1.0__libpcre2_10.46_jit-caps-simdna__repfix-box__20260825T121000Z.jsonl	1	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/tests/fixtures/v14_pair/store/records/fixture-mini@1.0/pcrec_1.0.0-gdeadbee_vm-caps-simdna/fixture-mini@1.0__pcrec_1.0.0-gdeadbee_vm-caps-simdna__repfix-box__20260825T120500Z.jsonl	1	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/__main__.py	1	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:pcrecbench/report.py	4	bench:pcrecbench
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:testees/pcrec/list_axes.tsv	1	bench:testees
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:testees/pcrec/shim.c	4	bench:testees
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:testees/pcrec/adapter.py	9	bench:testees
+value	"pinned"|start-pinned|START_PINNED|start_pinned	bench:testees/pcrec/CLAUDE.md	2	bench:testees
+axis	search-start	pcrec:tests/registry/axes_registry_check.sh	1	tests/registry/run_registry_tests.sh tests/registry/run_definitions_tests.sh tests/lib/spec_extract.sh 
+axis	search-start	pcrec:tests/registry/run_registry_tests.sh	1	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+axis	search-start	pcrec:tests/lookaround/d27/gen_adversarial.py	1	tests/findings/gen_adversarial.py tests/findings/run_findings_tests.sh 
+axis	search-start	pcrec:scripts/emit_sweep.py	1	tests/memfn/stamp_mover_census.py tests/memfn/libc_census.py tests/lib/c_artifact_cmp.sh 
+axis	search-start	pcrec:docs/spec/tuning.md	1	spec
+axis	search-start	pcrec:docs/spec/registry.md	4	spec
+axis	search-start	pcrec:src/dump/axes_dump.c	4	build
+axis	search-start	pcrec:src/dump/CLAUDE.md	1	build
+axis	search-start	pcrec:src/core/internal.h	1	build
+axis	search-start	pcrec:src/gen/emit_dfa.c	5	build
+axis	search-start	pcrec:src/gen/CLAUDE.md	2	build
+axis	search-start	bench:tools/selfcheck.py	3	bench:tools
+axis	search-start	bench:testees/pcrec/list_axes.tsv	2	bench:testees
+axis	search-start	bench:testees/pcrec/adapter.py	6	bench:testees
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/memfn/arm_fixtures.c	5	Makefile:1300:# (tests/memfn/arm_fixtures.c) to the pinned sha256, with a perturbed-fixture tests/memfn/rows_check.py tests/memfn/run_arm_pins.sh 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/memfn/pins/r4h_target/adv-edge-counted-rev.c	6	-
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/memfn/pins/r4h_target/adv-stay-rev.c	5	-
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S73_accept_indexed_at_end.sh	2	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh	1	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh	1	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	3	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S74_reverse_termination_blind.sh	1	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/sabotages/S72_reverse_skip_blind_sfound.sh	1	make mech (row)
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/mech/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/bench/run_bench.sh	4	Makefile:1855:	bash tests/bench/run_bench.sh tests/lib/timeout_bin.sh tests/fuzz/run_capturediff_gate.sh 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/assertions/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/run_anchored_match.sh	1	Makefile:594:	    'bash tests/codegen/run_anchored_match.sh' \ tests/anchored/run_anchored_diff.sh tests/mech/run_sabotage_matrix.sh 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/run_scan_edge_dispatch.sh	1	-
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/run_premul_table.sh	10	Makefile:572:	bash tests/codegen/run_premul_table.sh Makefile:615:# sixth script in `test-codegen`'s group, on `run_premul_table.sh`'s measured tests/codegen/run_cand_oracle.sh 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/run_search_pinned.sh	21	Makefile:609:	bash tests/codegen/run_search_pinned.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/run_codegen_tests.sh	32	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:tests/codegen/CLAUDE.md	4	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:scripts/m6read_rename_emitted.py	2	-
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:src/gen/emit_dfa.c	10	build
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	pcrec:src/gen/CLAUDE.md	5	build
+recover	u\.recover|dfa_search_is_pinned	pcrec:tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	1	make mech (row)
+recover	u\.recover|dfa_search_is_pinned	pcrec:tests/codegen/cand_rows_check.py	1	tests/codegen/run_cand_rows.sh 
+recover	u\.recover|dfa_search_is_pinned	pcrec:src/gen/emit_dfa.c	16	build
+recover	u\.recover|dfa_search_is_pinned	pcrec:src/gen/CLAUDE.md	3	build
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/registry/run_registry_tests.sh	1	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/registry/limits_check.sh	2	tests/registry/run_registry_tests.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S209_vm_max_body_caps_delinked.sh 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/mech/sabotages/S693_abi_not_bumped.sh	5	make mech (row)
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/mech/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/codegen/run_cpset_structure.sh	21	Makefile:652:	bash tests/codegen/run_cpset_structure.sh 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/codegen/manifests/m5_stage1_stamps.tsv	12	tests/codegen/run_cpset_structure.sh 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/codegen/run_recursion_identity.sh	1	Makefile:1059:	bash tests/codegen/run_recursion_identity.sh tests/recursion/run_specimen_identity.sh tests/axes/run_axes.sh 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/codegen/run_codegen_tests.sh	4	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:tests/codegen/CLAUDE.md	16	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:lib/pcrec.h	1	build
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:lib/CLAUDE.md	1	build
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:src/gen/emit_dfa.c	7	build
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	pcrec:src/gen/CLAUDE.md	1	build
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	bench:testees/pcrec/CLAUDE.md	4	bench:testees
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/registry/axes_registry_check.sh	2	tests/registry/run_registry_tests.sh tests/registry/run_definitions_tests.sh tests/lib/spec_extract.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/registry/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/axes/run_axes.sh	4	Makefile:1825:# against the default build (tests/axes/run_axes.sh); the form census's Makefile:1831:# how to read a failure. `AXES=` (run_axes.sh) restricts to a subset for a Makefile:1834:	bash tests/axes/run_axes.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/axes/CLAUDE.md	2	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/island/run_island_tests.sh	1	Makefile:847:	bash tests/island/run_island_tests.sh tests/lib/c_artifact_cmp.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/mech/sabotages/S295_vm_anchor_bound_flags_leak.sh	4	make mech (row)
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/mech/sabotages/S67_altcls_flags_mask.sh	5	make mech (row)
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/mech/sabotages/S65_prefilter_flags_mask.sh	4	make mech (row)
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/mech/CLAUDE.md	2	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/codegen/run_prechecks.sh	2	Makefile:693:	bash tests/codegen/run_prechecks.sh tests/axes/run_axes.sh tests/mech/run_sabotage_matrix.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/codegen/run_recursion_identity.sh	3	Makefile:1059:	bash tests/codegen/run_recursion_identity.sh tests/recursion/run_specimen_identity.sh tests/axes/run_axes.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/codegen/run_facts_checks.sh	4	Makefile:525:# [PATFACTS] run_facts_checks.sh joins at step 3.0 (design §4.2.3): an Makefile:546:	    'bash tests/codegen/run_facts_checks.sh' \ tests/mech/run_sabotage_matrix.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/codegen/run_codegen_tests.sh	1	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:tests/codegen/CLAUDE.md	3	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:scripts/emit_sweep.py	1	tests/memfn/stamp_mover_census.py tests/memfn/libc_census.py tests/lib/c_artifact_cmp.sh 
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:cli/main.c	5	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:cli/CLAUDE.md	2	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:lib/pcrec.h	13	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:lib/CLAUDE.md	1	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:docs/spec/tuning.md	24	spec
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:docs/spec/match_api.md	2	spec
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:docs/spec/registry.md	3	spec
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/dump/axes_dump.c	11	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/dump/facts_dump.c	3	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/core/compile.c	3	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/core/internal.h	2	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/core/CLAUDE.md	2	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/core/axes.def	43	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/gen/memfn_sites.c	1	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/gen/emit_dfa.c	8	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	pcrec:src/gen/CLAUDE.md	4	build
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:tools/selfcheck.py	3	bench:tools
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:tools/CLAUDE.md	1	bench:tools
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:testees/pcrec/configs.toml	3	bench:testees
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:testees/pcrec/shim.c	3	bench:testees
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:testees/pcrec/adapter.py	7	bench:testees
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	bench:testees/pcrec/CLAUDE.md	6	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/registry/axes_registry_check.sh	12	tests/registry/run_registry_tests.sh tests/registry/run_definitions_tests.sh tests/lib/spec_extract.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/registry/run_registry_tests.sh	4	Makefile:460:	bash tests/registry/run_registry_tests.sh tests/registry/run_definitions_oracle.sh tests/registry/run_definitions_tests.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/registry/CLAUDE.md	3	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/startset/dfahat_checks.py	3	tests/startset/gen_dfahat_f1.py tests/startset/vmhat_checks.py tests/startset/run_dfahat_checks.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/startset/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/lib/spec_extract.sh	1	tests/registry/axes_registry_check.sh tests/codegen/run_fallback_table.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/resource/run_resource_tests.sh	4	Makefile:1407:	bash tests/resource/run_resource_tests.sh tests/uprops/run_uprops_tests.sh tests/counterk/run_counterk_tests.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/run_sabotage_matrix.sh	2	Makefile:1852:	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/mech/run_sabotage_matrix.sh tests/utf8/run_startbnd_diff.sh tests/mech/rows_for.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S249_tune_columns_swapped.sh	7	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S250_tune_wrong_deny_bit.sh	4	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh	1	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S252_premul_drop_rung_deleted.sh	1	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S433_clss2fix_scan_site_ignored.sh	1	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S253_premul_drop_note_unstamped.sh	3	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/sabotages/S284_run_rows_reseeds_false.sh	1	make mech (row)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/mech/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/size/CLAUDE.md	1	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_cpset_structure.sh	2	Makefile:652:	bash tests/codegen/run_cpset_structure.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/manifests/m5_stage1_stamps.tsv	10	tests/codegen/run_cpset_structure.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_clspack.sh	2	Makefile:647:# [OPT-CLSPACK] rides it too: tests/codegen/run_clspack.sh, the shared atom Makefile:654:	bash tests/codegen/run_clspack.sh tests/base/gen_clspack_atoms.py 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_premul_table.sh	15	Makefile:572:	bash tests/codegen/run_premul_table.sh Makefile:615:# sixth script in `test-codegen`'s group, on `run_premul_table.sh`'s measured tests/codegen/run_cand_oracle.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_search_pinned.sh	6	Makefile:609:	bash tests/codegen/run_search_pinned.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S220_pinned_view_clause_dropped.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_scan_edge_census.sh	2	Makefile:541:	    'bash tests/codegen/run_scan_edge_census.sh' \ tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_encoding_checks.sh	1	Makefile:669:	bash tests/codegen/run_encoding_checks.sh tests/mech/run_sabotage_matrix.sh tests/mech/sabotages/S477_dd12a_excision_widened.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_dfa_uniform_fold.sh	19	Makefile:702:	bash tests/codegen/run_dfa_uniform_fold.sh tests/codegen/run_scan_edge_dispatch.sh tests/codegen/run_premul_table.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_recursion_identity.sh	3	Makefile:1059:	bash tests/codegen/run_recursion_identity.sh tests/recursion/run_specimen_identity.sh tests/axes/run_axes.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_tune_dial.sh	9	Makefile:568:	bash tests/codegen/run_tune_dial.sh tests/axes/run_axes.sh tests/mech/run_sabotage_matrix.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_codegen_tests.sh	1	Makefile:509:# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at Makefile:535:	    'bash tests/codegen/run_codegen_tests.sh' \ Makefile:1151:# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/CLAUDE.md	5	Makefile:116:# D146/D147; memfn/CLAUDE.md). libpcrec.a LINKS the kit, so its objects join Makefile:386:# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note). Makefile:832:# (tests/prefilter/CLAUDE.md) is the whole of what this row owes. 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:tests/codegen/run_form_census.sh	19	Makefile:1827:# (docs/spec/match_api.md §6.3, tests/codegen/run_form_census.sh). OPT-IN, Makefile:1835:	PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh 
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:lib/pcrec.h	2	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:docs/spec/tuning.md	28	spec
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:docs/spec/match_api.md	46	spec
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:docs/spec/registry.md	3	spec
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:docs/spec/limits.md	3	spec
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:docs/spec/CLAUDE.md	1	spec
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/opt/CLAUDE.md	2	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/dump/axes_dump.c	11	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/core/internal.h	4	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/core/CLAUDE.md	1	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/gen/clskit.c	1	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/gen/emit_dfa.c	21	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/gen/emit_vm.c	6	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	pcrec:src/gen/CLAUDE.md	12	build
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:tools/selfcheck.py	3	bench:tools
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:tools/CLAUDE.md	1	bench:tools
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:pcrecbench/tests/test_report.py	4	bench:pcrecbench
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:pcrecbench/report.py	7	bench:pcrecbench
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:pcrecbench/CLAUDE.md	3	bench:pcrecbench
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/list_axes.tsv	12	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/configs.toml	1	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/shim.c	20	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/adapter.py	22	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/driver.c	2	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:testees/pcrec/CLAUDE.md	12	bench:testees
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	bench:bench/altwide/NOTES.md	8	bench:bench

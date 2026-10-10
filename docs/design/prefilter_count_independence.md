@@ -268,7 +268,7 @@ and gives `make test-axes` its deny/force pair on this axis.
 **Emitted scaffolding moves** (the stamp), so this is D76's ritual in one
 change: abi 11 -> 12 at all FOUR sites — `src/gen/emit_dfa.c`'s `.abi`,
 `tests/codegen/run_codegen_tests.sh`'s [DD-14.FB] §10.4 expectation,
-`docs/spec/match_api.md` §6's "abi is N" sentence, and
+`docs/spec/match_api.md §6¶17` (§6)'s "abi is N" sentence, and
 `tests/codegen/run_recursion_identity.sh`'s (B) pin. (STEP 3 correction: this
 paragraph originally named `tests/fuzz/run_capturediff_gate.sh` for the fourth
 site. That file carries no abi pin at all — it carries the fixed-seed

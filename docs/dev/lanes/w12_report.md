@@ -333,7 +333,7 @@ predates [OPT-5]:
 |---|---|---|---|
 | 1 | `src/gen/emit_dfa.c`'s `.abi` | 13 | **14, DONE** |
 | 2 | `tests/codegen/run_codegen_tests.sh:2707` `ABI_EXPECT` | 13 | **14, DONE** (+ the bump ledger) |
-| 3 | `docs/spec/match_api.md` (two sentences, `:159` and `:1602`) | 13 | **14, DONE** |
+| 3 | `docs/spec/match_api.md` (two sentences, `§1¶7` and `§6¶17`; were `:159` and `:1602`) | 13 | **14, DONE** |
 | 4 | `tests/codegen/run_recursion_identity.sh`'s `FILEPIN` | `dc2c8ef` | **OWED** |
 
 Site 4 must be this step's LAST src-touching commit (`run_recursion_

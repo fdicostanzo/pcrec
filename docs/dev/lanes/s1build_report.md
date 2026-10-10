@@ -103,7 +103,7 @@ built in order; **step 6 (the Q1 floating-run conversion) NOT built** (brief),
 ## abi 35 -> 36 (D76/D94)
 
 Readers found by grep of `35`: `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh`
-`ABI_EXPECT`, `match_api.md` §6 (new top entry, "gap-free 2 to 36"),
+`ABI_EXPECT`, `docs/dev/history/abi_changelog.md` (new top entry, "gap-free 2 to 36"),
 `run_recursion_identity.sh` (B) FILEPIN -> the last `src/` commit
 `6d92764d`. Byte-count classes the grep misses: the cpset-structure
 manifest's `EMITTED_BYTES` rows (3 re-recorded, all census movers:

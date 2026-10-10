@@ -3523,7 +3523,7 @@ non-empty dumped value: `RX_DFA_TABLE` and `RX_DFA_PREFILTER` against
 and `RX_ENGINE` against its prose/code-block string-literal pairs, and
 the nine D46 bit constants (`PCREC_VM_RUNG_*`/`_STRAT_*`/`_PRUNE_*`)
 against `src/gen/emit_dfa.c`'s own literal `#define` block — NOT
-`lib/pcrec.h`, which does not declare them at all (§6.3's own `[ABI-NS]`
+`lib/pcrec.h`, which does not declare them at all (§1's `[ABI-NS]` (`match_api.md §1¶5`)
 paragraph: they are emitted-ARTIFACT text). Two NAMED, CITED exceptions
 to the spec->dump sweep, neither a gap: `RX_DFA_TABLE`'s `"mixed"`/
 `"none"` are artifact-level compositions of the forward/reverse

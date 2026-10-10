@@ -12,7 +12,7 @@ D126. **Not merged.** abi 41 -> 42.
 |---|---|
 | `8fd5d4f3` c1 | `src/opt/callgraph.c` `cg_minw_publish` writes `u.call.nonnullable = minw != 0` beside `minw`: the LEAST fixpoint, published by `pcrec_callgraph_build` before the E1 seal. `src/gen/emit_vm.c`'s `vm_resolve_nonnull` + `vm_publish_nonnull` (the greatest fixpoint, run after the seal) deleted. `src/facts/widths.c` `pcrec_pattern_nullable` returns `pcrec_nullable(root)`. `pcrec_nullable`'s `A_CALL` arm unchanged (design §4.3 keeps it). Comments in `internal.h`, `mrl.c`, `callgraph.c`, `emit_vm.c`, `widths.c`; `src/gen/CLAUDE.md` |
 | `60170e80` | `tests/recursion/k69.rxt`; `run_facts_checks.sh` [facts-e1] gains six call rows |
-| `bcffbd42` c2 | abi 41 -> 42 (`PCREC_ARTIFACT_ABI`, `ABI_EXPECT` + its narrative, `match_api.md` §6 change log); sabotage S318/S319; S206/S207 re-anchored; CLAUDE.md in `src/core`, `src/opt`, `src/facts`, `tests/codegen`, `tests/mech`, `tests/recursion`. **The last `src/` commit** |
+| `bcffbd42` c2 | abi 41 -> 42 (`PCREC_ARTIFACT_ABI`, `ABI_EXPECT` + its narrative, `docs/dev/history/abi_changelog.md`); sabotage S318/S319; S206/S207 re-anchored; CLAUDE.md in `src/core`, `src/opt`, `src/facts`, `tests/codegen`, `tests/mech`, `tests/recursion`. **The last `src/` commit** |
 | `2d31b39f` c3 | `run_recursion_identity.sh` (B) FILEPIN -> `bcffbd42` (self-pin) |
 | `7e368ec4` | `run_rxtsource_tests.sh` census +1/+16/+70 (CENSUS_* and RUNSH_*: 222/4051/29381); K69 FIXED addendum; `plan.md` 3.5 flipped |
 
@@ -129,7 +129,7 @@ sab_anchors.py`: 316 rows, 332 sites, all resolve. Each row solo in the chain.
 Readers found by grep (`41` near `abi`/`ABI`, `` `41` ``, `ABI_EXPECT`,
 `FILEPIN`, and the byte-count manifests): `src/gen/emit_dfa.c`
 `PCREC_ARTIFACT_ABI`; `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` and
-its narrative; `docs/spec/match_api.md` §6 ("gap-free from 2 to 42", the new
+its narrative; `docs/dev/history/abi_changelog.md` ("gap-free from 2 to 42", the new
 top entry, 41 demoted to "was"); `tests/codegen/run_recursion_identity.sh`
 (B) FILEPIN -> `bcffbd42`. The remaining `abi 41` hits (`limits.md`,
 `tuning.md` §2.31, `lib/pcrec.h`, `run_tune_dial.sh`, `src/gen/CLAUDE.md`,
@@ -137,7 +137,7 @@ design notes) are dated history of S2a, not readers. The digit is the same
 length, so no byte-count manifest moves on it; the gate shows no corpus
 artifact of main's moved otherwise, so `m5_stage1_stamps.tsv` and the other
 recorded manifests are unaffected (to be confirmed by test-codegen in the
-chain). Spec: `match_api.md` §6 is the contract hunk (stamp VALUES move on
+chain). Spec: `docs/dev/history/abi_changelog.md` is the contract hunk (stamp VALUES move on
 movers; no stamp/member added).
 
 ## 6. Validation at handoff

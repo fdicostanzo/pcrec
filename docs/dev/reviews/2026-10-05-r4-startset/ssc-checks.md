@@ -7,7 +7,7 @@ Review r4, checks/controls/contract lens, on `docs/design/startset.md`: 13 findi
 - `pcrec_artifact_has_dfa_scan` is `fit.chosen == ENGM_DFA || fit.prefilter` (`emit_dfa.c:384-387`), so the VM hat cannot flip it unless the code is changed to.
 - Bit 47 is free; the highest bit is `PCREC_BIT(46)`.
 - Highest S on main is S477.
-- abi readers at `emit_dfa.c:52`, `run_codegen_tests.sh:3021` and `match_api.md:302` are correct.
+- abi readers at `emit_dfa.c:52`, `run_codegen_tests.sh:3021` and `match_api.md §1¶7` (was `:302`) are correct.
 - D148 rules Q3 (no force flag), so the D46 departure is not re-argued.
 
 ## F1. MAJOR. §6.1: the movers-only stamp `<PREFIX>_VM_START_SCAN` contradicts Frank's ruling on the K82 handoff stamp.

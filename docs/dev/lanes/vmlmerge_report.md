@@ -24,10 +24,10 @@ Auto-merged without conflict: `emit_vm.c`, `src/gen/CLAUDE.md`,
 
 `git grep -nIE '\babi[ :=_"(]*7[012]\b|abi.{0,3}7[012]\b|ABI_EXPECT=|ABI_H 7[012]|!= 7[012]\b|ARTIFACT_ABI 7[012]'`
 (lanes/journal/design/reviews/plan excluded), after the merge:
-- CURRENT-abi readers, all 72 (6 sites): `emit_dfa.c:54`, `match_api.md:301/302/305`
+- CURRENT-abi readers, all 72 (6 sites): `emit_dfa.c:54`, `match_api.md` §1¶7 (three guard lines)
   (guard example), match_api §6 head entry, `run_codegen_tests.sh:3042`
   `ABI_EXPECT`, S693 BEFORE.
-- History, left: `limits.md:797`, `match_api.md:4173`, `tuning.md:2035`,
+- History, left: `limits.md:797`, the `match_api.md` abi change log (now `docs/dev/history/abi_changelog.md`), `tuning.md:2035`,
   `src/gen/CLAUDE.md:1129`, `tests/codegen/CLAUDE.md:3806` (RQ-3 at 71);
   `cpset_structure.sh:907`, `run_resource_tests.sh:744`, `emit_sweep.py:1847`
   (dated re-pin notes); `memfn/docs/{requests,responses,wake}.md` (dated

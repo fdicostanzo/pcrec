@@ -47,7 +47,7 @@ LR-S1..S13 from lfre1, every disposition binding), with a §R2.1 table and
   - PRESENCE is asked in both stages, and REQ_WHY keeps four tokens (LR-G6).
   - `lroute` is dropped (LR-G7).
   - `.contract` is set on RETRY `exact`/`clamped`/`retry-anchored` (LR-S11).
-  - The `match_api.md:4731` spec hunk is drafted for L0 (LR-S10).
+  - The `match_api.md §6.3.4¶2` spec hunk is drafted for L0 (LR-S10).
   - The size ladder's rev-end clause, stated as "a drop rung applies only if the member
     set shrinks" (LR-S12).
   - The bench selfcheck pins named in L2's inbox note (LR-S7).

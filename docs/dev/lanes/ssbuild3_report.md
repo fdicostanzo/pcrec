@@ -31,7 +31,7 @@ see §1 for how the bump was drafted). A fresh agent resumes from §9.
 `PCREC_ARTIFACT_ABI` still read 62 on main, so 63 (the memfn kit's R4a′)
 has no artifact yet. This lane bumps straight to 64 as briefed; whichever
 of the two lands second re-reads the other's ledger entry (§6's narrative
-and the codegen ledger name 63 as R4a′'s). `match_api.md` §6's 64
+and the codegen ledger name 63 as R4a′'s). `docs/dev/history/abi_changelog.md`'s 64
 entry names 63 as R4a′'s; if R4a′ is dropped, 63 is a gap and that
 sentence is what explains it.
 
@@ -41,8 +41,8 @@ The readers, found by `grep -rn` for the old number (code, tests, spec):
 |---|---|
 | `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI` (feeds both emission sites: the generated-by line and `rx_info.abi`) | 62 -> 64 (`b42dffa6`) |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + its ledger message | 64, ledger gains the stage-3 clause (copied from §6) |
-| `docs/spec/match_api.md` §6 (the abi narrative) | new head entry for 64, the 62 entry demoted to "was" |
-| `docs/spec/match_api.md` K80 `#error` worked example | 62 -> 64 (both lines) |
+| `docs/dev/history/abi_changelog.md` (the abi narrative) | new head entry for 64, the 62 entry demoted to "was" |
+| `docs/spec/match_api.md §1¶7` K80 `#error` worked example | 62 -> 64 (both lines) |
 | `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` | self-pinned to `b42dffa6`, the lane's last `src/` commit |
 | `tests/codegen/CLAUDE.md` | the stage-3 bump paragraph |
 
@@ -386,7 +386,7 @@ the branch stays drafted 62 -> 64.
 | m4 | Not changed. `machine_sets`' `cbm_agrees` still reads vacuously on movers, which stays harmless while X comes from the transition tables. A future reader of `can_begin_match` must know that movers emit `start_bytes`. | — |
 | m5 | `census_s1.py` compiles every arm with `-fno-start-set` and reads F as `T = S`, so it runs on the CURRENT build. | Regenerated on this build: `s3_dfa` and `s2_vm_auto` **byte-identical**; `s2_vm_forced` **+12**, every one a `dfahat_f1.rxt` block. Summary `docs/design/startset/s3/census_ssfix3_summary.txt`; its `F-checked: \|E*\| < 256` row reads 12, the BLOCKER witnesses |
 | m6 | See QUESTIONS (abi merge order). | — |
-| m7 | `match_api.md` §6 and `tuning.md` §2.42 now say "restores the `abi`-62 `-fno-start-set` program (no VM hat either)". §2.42's applicability no longer claims `E*` is all 256; it states `T = S` and the decline. | — |
+| m7 | `docs/dev/history/abi_changelog.md` and `tuning.md` §2.42 now say "restores the `abi`-62 `-fno-start-set` program (no VM hat either)". §2.42's applicability no longer claims `E*` is all 256; it states `T = S` and the decline. | — |
 | m8 | For the landing inbox note (not written to pcrec-bench). The bench adapter's closed `dfa_prefilter` enum (`testees/pcrec/adapter.py:714-716`) lacks stage 2's `first-class` and stage 3's `first-memchr-bounded`/`first-class-bounded`, and 18 bench movers stamp them. `--list-axes`'s `prefilter` rows re-order (`memchr-bounded` 6 -> 8, ...). | — |
 | notes n1-n5 | Recorded; no change. | — |
 
@@ -517,7 +517,7 @@ arm's 11,000 floor at whole-corpus scale.
   `T = S`, the F1 shapes now DECLINE through this admission. The null cells
   in `alpha_s3.sh` remain the measurement.
 - **Q1 (abi order), checks-m6's completion.** R4a′ (abi 63) touches the
-  same `#define`, `ABI_EXPECT`, the K80 example, match_api §6, `FILEPIN`,
+  same `#define`, `ABI_EXPECT`, the K80 example, docs/dev/history/abi_changelog.md, `FILEPIN`,
   and the cpset/resource byte pins. Both branches regenerate
   `docs/dev/artifact_size_log.tsv` in full, and that file must be
   regenerated after the merge, not hand-resolved. If this branch lands
@@ -542,8 +542,8 @@ against the `eacde3dc` that was merged, so the merge and the ref agree on code).
 | file | resolution |
 |---|---|
 | `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI 64` (ours). The one constant; the generated-by line, `.abi`, and the K80 guard follow it. |
-| `docs/spec/match_api.md` (K80 example) | ours: `!= 64`, `(abi 64)`, `PCREC_RX_ABI_H 64`. |
-| `docs/spec/match_api.md` (§6 change log) | both entries kept, ours first (`abi` is `64`); main's R4a′ entry reworded from "is `63` on every artifact today" to "was `63`". |
+| `docs/spec/match_api.md §1¶7` (K80 example) | ours: `!= 64`, `(abi 64)`, `PCREC_RX_ABI_H 64`. |
+| `docs/dev/history/abi_changelog.md` (change log) | both entries kept, ours first (`abi` is `64`); main's R4a′ entry reworded from "is `63` on every artifact today" to "was `63`". |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=64`; the cause list gains R4a′'s 62->63 clause (copied from §6) before stage 3's, and stage 3's clause now reads 63->64. |
 | `tests/codegen/run_recursion_identity.sh` | FILEPIN (see L.2). |
 | `docs/dev/lanes/CLAUDE.md` | both index lines kept (`ssbuild3_report`, `artgen_report`). |

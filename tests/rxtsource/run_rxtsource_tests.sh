@@ -3828,7 +3828,7 @@ mkdir -p "$W13"
 # cls_upto_64 and ctx_lazy, and each must carry its ORIGINAL name. The two
 # are different fields answering different questions: the prefix is what the
 # symbols are called, the name is what the artifact IS
-# (docs/spec/match_api.md section 6), and a build that mapped one into the
+# (docs/spec/match_api.md §6¶12, section 6), and a build that mapped one into the
 # other would lose the bench id this whole ruling exists to preserve.
 mkdir -p "$W13/nd"
 if "$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/name_dashdot.rxt" -o "$W13/nd" 2>"$W13/nd.err"; then

@@ -1,0 +1,203 @@
+C1-0001	3	N	docs/spec/match_api.md states what lib/pcrec.h and every generated matcher actually promise, as shipped; it is the contract, not the design record.
+C1-0002	8	N	References to docs/design/match_api_m4.md and docs/design/engine_m4.md are informational; they are never a second source of authority.
+C1-0003	9	N	On any disagreement between match_api.md and match_api_m4.md/engine_m4.md, match_api.md is what pcrec promises.
+C1-0004	36	H	CHECK: the §6.3 mirror (stamp macros mirrored into rx_info) is partial, not total.
+C1-0005	42	H	The encoding residual entry <prefix>_next_pos is specified in §3.1.1, and the §3.1 find-all loop advances through it.
+C1-0006	47	M	Measured: the §3.1 find-all loop compiled against real artifacts agrees with python3 re.finditer on 26 (pattern, subject) pairs x 2 engine arms (52 runs), with the lossy class checked as a strict subset in both directions (tests/encseam/).
+C1-0007	53	M	CHECK: measured at the D56 refusal boundary between a{9795} and a{9796} (the refusal wording names an escape).
+C1-0008	59	H	The encoding enumerator is spelled PCREC_ENC_BYTE (renamed from PCREC_ENC_ASCII).
+C1-0009	60	H	The byte-vs-character caveat of the find-all loop is resolved by §3.1.1 (<prefix>_next_pos), not deleted.
+C1-0010	68	H	The sort key of rx_info's groups array is strcmp on the group name, matching libpcre2's PCRE2_INFO_NAMETABLE order.
+C1-0011	68	H	The groups array is sorted (by strcmp on name) and therefore bsearch-able.
+C1-0012	76	H	Under --no-captures a named-groups build delivers group rows with slot -1; with captures on, rows carry a real slot.
+C1-0013	79	H	On captures-on builds the primary groups' slot equals the group number permanently.
+C1-0014	81	H	The latitude for a slot different from the group number applies only to future ref-bearing rows, not to primary groups.
+C1-0015	84	H	rx_info.ngroups carries a PERMANENT-PREFIX promise: caps slots 1..ngroups are this pattern's own groups forever.
+C1-0016	85	H	Mechanisms that insert groups (composition etc.) append after slots 1..ngroups and never interleave with them.
+C1-0017	88	H	Every emitted macro whose value is a property of pcrec's contract rather than of one artifact has one canonical unprefixed PCREC_* spelling in the shared PCREC_RX_ABI_H block.
+C1-0018	92	H	The give-up codes are spelled PCREC_ERR_STEPS/_FRAMES/_WORK/_RECURSE/_FLOOR (no per-prefix <PREFIX>_ERR_* spelling exists).
+C1-0019	94	H	PCREC_ERR_FLOOR is -5 (it moved from -4 when PCREC_ERR_RECURSE joined the give-up codes).
+C1-0020	95	H	PCREC_ERR_INTERNAL lives in the same shared ABI block but is below the floor and is NOT a give-up.
+C1-0021	98	H	The caps-array unset sentinel is PCREC_UNSET (no <PREFIX>_UNSET).
+C1-0022	99	H	The nine D46 stamp bit constants are spelled PCREC_VM_RUNG_*, PCREC_VM_STRAT_*, PCREC_VM_PRUNE_* (no per-prefix spelling).
+C1-0023	102	H	The old per-prefix spellings of the moved macros are deleted, not aliased.
+C1-0024	103	H	PCREC_ENGINE_DFA and PCREC_ENGINE_VM name the values of rx_info.engine.
+C1-0025	106	H	What stays per-prefix is exactly the set whose value varies per artifact: <PREFIX>_NCAPS, the budget/capacity macros, the D46 stamp masks (<PREFIX>_VM_RUNGS/_STRATS/_PRUNES), <PREFIX>_VM_PREFILTER and <PREFIX>_VM_PRUNE_CEILING.
+C1-0026	124	H	Every artifact exports <prefix>_search_in, <prefix>_match_in and <prefix>_match_caps_in on both engines (inert on a DFA artifact).
+C1-0027	127	H	Every artifact declares <prefix>_buffers and carries five sizing macros and four additional rx_info fields for the §10 caller-provided frame buffer, on both engines, inert on a DFA artifact.
+C1-0028	131	M	Measured: <prefix>_search's stack frame is 131,216 B on a call-bearing artifact where <prefix>_search_in's is 144 B.
+C1-0029	133	M	Measured: the give-up boundary of the §10 change is unmoved: a 684-byte subject matches and 686 does not (PCREC_ERR_FRAMES).
+C1-0030	134	M	Measured: the MAP_NORESERVE worked example matches an 800 KB subject in 0.057 s touching 90 MB.
+C1-0031	142	H	CHECK: rx_info.abi is 27 in the revision note's text (stale; the artifact's abi is 71 per the K80 guard example).
+C1-0032	147	H	§4 points at docs/spec/limits.md for the numeric trigger defaults of the give-up codes.
+C1-0033	151	M	Measured on --no-captures '(?:foo|bar)\z': RX_ENGINE "dfa", RX_DFA_SCAN "unanchored", RX_DFA_PREFILTER "byte-class-bounded" are present.
+C1-0034	154	H	A consumer may #if on RX_ENGINE (the DFA stamp gap is discharged).
+C1-0035	160	H	CHECK: every artifact of both engines has exactly one line in the shared prologue, #define <PREFIX>_TUNE "<token>", a closed five-token selection stamp of 23-28 bytes by token.
+C1-0036	164	H	CHECK: at the default dial position balanced nothing else moves (every cell of that row in src/core/tune.c is the em-dash sentinel and its deny mask is empty).
+C1-0037	167	H	CHECK: a non-default dial position may move far more than the stamp, but no struct offset moves, no rx_info member is added or changed, and no answer moves at any position.
+C1-0038	171	H	CHECK: every scan-edge-bearing DFA machine (or VM-hybrid inlined prefilter) has a trailing ; on its scan_views and scan_edge labels (clang -Wc23-extensions fix); no answer moves.
+C1-0039	178	H	Candidate match starts are character boundaries: every artifact carries #define PCREC_ERR_STARTPOS (-7) in the shared ABI block.
+C1-0040	180	H	Under a multi-byte encoding the unanchored machine, ENG_ATTEMPT's start loop and the entries' boundary guard enforce that candidate match starts are character boundaries.
+C1-0041	183	H	CHECK: the VM's ASCII-FOLD class test is described at §6.3's _VM_CLS_FOLDS entry and docs/spec/tuning.md §2.22.
+C1-0042	185	H	CHECK: every VM artifact carries the <PREFIX>_VM_ENTRY_SHAPE and <PREFIX>_VM_PROGRAM_BYTES stamps.
+C1-0043	187	H	CHECK: at VM entry-shape rungs shared/forward the three _in entries carry the body and the un-suffixed entries forward to them, with a static empty descriptor emitted.
+C1-0044	190	H	CHECK: the scan-edge entry-seed dispatch is generalised to is_stop && !is_dead, and precondition (8) admits an edge only where the seed AND the prefilter reseeds.
+C1-0045	194	H	CHECK: on a composed artifact groups[] gains the definitions' delivered rows under a leading SCOPE sort key, so nentries exceeds nnames; invisible on a non-composed compile.
+C1-0046	198	H	CHECK: a flat alternation whose language is a finite literal set is emitted as a trie dispatch rather than vm_alt's serial resume chain, with a <PREFIX>_VM_ALT_ISLANDS count.
+C1-0047	202	H	CHECK: always_inline is applied to a frameless VM artifact's entry-chain helpers, and the uniform-table fold carries a <PREFIX>_DFA_UNIFORM_FOLDS stamp.
+C1-0048	205	H	CHECK: the start-pinned search is stamped by rx_info.search_form and <PREFIX>_DFA_START.
+C1-0049	210	H	§8.2 states plainly, before its field table, which encodings are implemented (CHECK: the note says byte is the only one, stale since utf8 shipped).
+C1-0050	213	H	§3.6 documents whole-subject / end-anchored matching via the (?:P)\z idiom.
+C1-0051	215	H	There is no native end-anchored entry, so whole-subject matching is expressed as the (?:P)\z idiom.
+C1-0052	216	H	$ is the wrong anchor for whole-subject matching: (?:foo)$ matches "foo\n" at [0,3) while (?:foo)\z on the same subject reports no match.
+C1-0053	217	H	A naive _match_caps(...) == n test is sufficient but not necessary for whole-subject matching.
+C1-0054	218	M	Measured: pattern a|ab on subject "ab" reports [0,1), while (?:a|ab)\z on the same subject reports [0,2) via the alternative the naive test never tries.
+C1-0055	222	H	The (?:P)\z idiom is RULED permanent (D77, plan row [OS-4], 2026-08-25); it is not a stopgap awaiting a future generation axis.
+C1-0056	224	M	Measured: whole-subject artifacts on --no-captures '(?:foo|bar)\z' and '(?:foo)\z' carry RX_DFA_SCAN "unanchored" and RX_DFA_PREFILTER "byte-class-bounded" / "memchr-bounded" respectively (the -bounded forms §6.3 documents for a \z view).
+C1-0057	229	H	§3.1.1 states the utf8 advance as normative text: from pos + 1, past every byte in 0x80-0xBF.
+C1-0058	232	H	The utf8 advance rule defines <prefix>_next_pos on ill-formed input, where "the next character boundary" had no single reading.
+C1-0059	245	N	Every symbol a pattern compile can produce falls into one of three groups: per-artifact (prefix-scoped), pcrec's fixed library surface, and fixed-literal ABI types.
+C1-0060	248	N	Boundary case: the two artifact-stamp macros PCREC_FEATURE_SET and PCREC_FEATURE_MODULES are PCREC_*-named yet per-artifact.
+C1-0061	251	N	Per-artifact symbols are scoped by the caller's pcrec_options.prefix, default "rx".
+C1-0062	252	N	<prefix>_search is a per-artifact symbol scoped by the prefix.
+C1-0063	252	N	<prefix>_match is a per-artifact symbol scoped by the prefix.
+C1-0064	252	N	<prefix>_match_caps is a per-artifact symbol scoped by the prefix.
+C1-0065	252	N	<prefix>_info is a per-artifact symbol scoped by the prefix.
+C1-0066	253	N	<prefix>_next_pos (§3.1.1) is a per-artifact symbol scoped by the prefix.
+C1-0067	254	N	<prefix>_valid_upto (§3.1.2, [UTF-VALID]) is a per-artifact symbol scoped by the prefix.
+C1-0068	254	N	The <PREFIX>_* macro family (RX_NCAPS and the D46 observability macros of §6.3) is scoped by the uppercased prefix.
+C1-0069	256	N	A pattern compiled with -p foo gets foo_search and FOO_NCAPS (verified by reading the emitted header).
+C1-0070	258	N	The CLI spells the prefix option -p and only -p; there is no --prefix long form and `pcrec --prefix foo ...` is an unknown-option error.
+C1-0071	261	H	RX_UNSET and RX_ERR_* are not in the per-prefix family; they are the fixed unprefixed PCREC_* constants in the ABI block and no <PREFIX>_* spelling exists, no alias.
+C1-0072	267	N	Group 2 is pcrec's own fixed library surface: the PCREC_* enum/bit constants and the pcrec_options, pcrec_output, pcrec_error and pcrec_err_input types declared in lib/pcrec.h.
+C1-0073	269	N	The group-2 library surface is never scoped by a generated pattern's prefix.
+C1-0074	272	N	The PCREC_* spelling is not by itself a promise that a name lives in lib/pcrec.h.
+C1-0075	274	N	Every emitted artifact carries PCREC_FEATURE_SET (D37 artifact stamp, e.g. "std1").
+C1-0076	275	N	Every emitted artifact carries PCREC_FEATURE_MODULES (D37 artifact stamp, e.g. "classes,modifiers").
+C1-0077	278	N	PCREC_FEATURE_SET and PCREC_FEATURE_MODULES are PCREC_*-named, per-artifact, and declared nowhere in lib/pcrec.h.
+C1-0078	279	N	PCREC_FEATURE_SET and PCREC_FEATURE_MODULES are the only exception to §8's naming rule; every other PCREC_* name follows it.
+C1-0079	282	N	Group 3 is the fixed-literal ABI types, scoped by neither the caller's prefix nor pcrec's library surface.
+C1-0080	283	N	The six group-3 types are rx_ctx, rx_matchfn, rx_callout_ref, rx_renderfn, rx_group_entry and struct rx_info, declared in that order.
+C1-0081	285	N	The group-3 types are always spelled rx_* regardless of the prefix.
+C1-0082	286	N	The fixed rx_* types let two differently-prefixed generated matchers compose in one translation unit (a compiled matcher links directly as another's callout, with no adapter).
+C1-0083	289	N	The six group-3 types live inside their own #ifndef PCREC_RX_ABI_H guard, separate from the per-prefix PCREC_GEN_<PREFIX>_H guard wrapping the rest of the file.
+C1-0084	292	N	Two artifacts compiled with different prefixes and #included into one TU declare the group-3 types identically and do not collide.
+C1-0085	293	M	Confirmed: -p rx and -p foo builds of the same pattern emit byte-identical #ifndef PCREC_RX_ABI_H blocks.
+C1-0086	297	N	K80 (abi 54): the value of the PCREC_RX_ABI_H guard macro is the abi number (e.g. #define PCREC_RX_ABI_H 71).
+C1-0087	300	N	Every artifact's ABI block opens with #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != <abi> followed by an #error, then #ifndef PCREC_RX_ABI_H / #define PCREC_RX_ABI_H <abi>.
+C1-0088	302	N	The #error text reads: "pcrec: this artifact (abi N) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec".
+C1-0089	308	N	Artifacts of one abi share the first ABI block in a TU.
+C1-0090	309	N	An artifact of a different abi (whose types may differ) included into the same TU fails to compile via #error instead of silently using the first block's types.
+C1-0091	311	N	The abi guard is one guard with a value, not a guard name per abi (two keyed guards would let both blocks through and fail on a struct redefinition).
+C1-0092	313	N	The `+ 0` in the abi guard test makes it refuse a pre-54 artifact included first (whose guard is defined empty).
+C1-0093	314	N	A pre-54 artifact included AFTER a 54-or-later one is not refused (its own #ifndef predates the rule).
+C1-0094	317	N	The shared guarded ABI block carries every emitted macro whose value is a pcrec-contract fact, unprefixed.
+C1-0095	319	N	The contract-fact macros are emitted unconditionally on every artifact, DFA-only included (reserved but unreachable).
+C1-0096	322	N	The shared ABI block carries PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK, PCREC_ERR_RECURSE and PCREC_ERR_FLOOR (the give-up code space, §4).
+C1-0097	324	N	PCREC_ERR_RECURSE joined the give-up codes and PCREC_ERR_FLOOR moved from -4 to -5 at [DD-14] wave A (D71 item 1).
+C1-0098	325	N	The shared ABI block carries the below-the-floor PCREC_ERR_INTERNAL, which is NOT a give-up.
+C1-0099	326	N	The shared ABI block carries PCREC_ERR_STARTPOS, PCREC_ERR_UNSET_VAR and PCREC_ERR_UTF, the caller-refusal siblings of PCREC_ERR_INTERNAL (§4).
+C1-0100	328	N	The shared ABI block carries the caps-array unset sentinel PCREC_UNSET (§5).
+C1-0101	329	N	The shared ABI block carries PCREC_ENGINE_DFA and PCREC_ENGINE_VM (§6).
+C1-0102	330	N	The shared ABI block carries the nine D46 stamp bit constants PCREC_VM_RUNG_CURSOR/_FRAMES_BOUNDED/_FRAMES_UNBOUNDED/_REVDET/_COUNTER, PCREC_VM_STRAT_POSSESSIVE/_BACKTRACKING, PCREC_VM_PRUNE_CLAMPED/_UNCLAMPED (§6.3).
+C1-0103	334	N	The old <PREFIX>_* spellings of the moved macros are deleted, not aliased.
+C1-0104	335	N	What stays per-prefix is <PREFIX>_NCAPS plus the D46 stamp MASKS and the budget/capacity macros of §6.3, because their values vary per artifact.
+C1-0105	339	N	A generated artifact is either self-contained (options.header_name == NULL, everything in the .c) or split into a paired .h/.c (options.header_name set).
+C1-0106	341	N	Both the self-contained and the split form carry identical declarations.
+C1-0107	343	N	The self-contained form omits the PCREC_GEN_<PREFIX>_H include guard entirely (there is no header to guard).
+C1-0108	344	M	Measured with header_name == NULL: zero occurrences of the PCREC_GEN_<PREFIX>_H guard, against three in the split form's .h.
+C1-0109	347	N	The D46 observability macros of §6.3 are emitted into the .c only, never into the .h.
+C1-0110	355	N	rx_ctx.subject is `const unsigned char *`, the whole subject, not a slice.
+C1-0111	357	N	rx_ctx.len is a size_t holding the subject length.
+C1-0112	358	N	rx_ctx.pos is a size_t naming where to match, anchored.
+C1-0113	359	N	rx_ctx.ncap is a size_t: the capture slots known so far (a watermark mid-match; ncaps on completion).
+C1-0114	361	N	rx_ctx.caps is `const ptrdiff_t (*)[2]` holding [start,end) pairs; {-1,-1} means unset.
+C1-0115	362	N	rx_ctx.user is a `void *` of per-binding user data.
+C1-0116	365	N	An rx_matchfn returns the matched length >= 0 (anchored at ctx->pos), -1 on fail, or a typed give-up code in [PCREC_ERR_FLOOR, -2].
+C1-0117	367	N	There is one typed give-up code per way the engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK/_RECURSE).
+C1-0118	367	N	D49: give-up codes PROPAGATE through an rx_matchfn; they are not collapsed to -1, and a caller doing an exact `== -1` test sees them as distinct values.
+C1-0119	370	N	Values strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort semantic.
+C1-0120	371	N	PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71 item 1) is the first producer of a below-the-floor value.
+C1-0121	373	N	A generated call site that invokes an rx_matchfn traps on a below-the-floor return.
+C1-0122	374	N	An rx_matchfn is self-contained: it must accept ctx->ncap == 0 and ctx->caps == NULL.
+C1-0123	375	N	rx_matchfn is `typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx)`.
+C1-0124	377	N	PCREC_ERR_STEPS is (-2).
+C1-0125	378	N	PCREC_ERR_FRAMES is (-3).
+C1-0126	379	N	PCREC_ERR_WORK is (-4).
+C1-0127	380	N	PCREC_ERR_RECURSE is (-5).
+C1-0128	380	N	CHECK: PCREC_ERR_RECURSE is reserved with no producer yet (D71 item 1) per the emitted comment.
+C1-0129	381	N	PCREC_ERR_FLOOR is (-5); give-ups occupy [FLOOR, -2]; values below are reserved (D49).
+C1-0130	382	N	PCREC_ERR_INTERNAL is (-6); it is below PCREC_ERR_FLOOR and is NOT a give-up (D71 item 1).
+C1-0131	383	N	PCREC_ERR_STARTPOS is (-7); it is below the floor and means a mid-character startpos was REFUSED ([K50]).
+C1-0132	384	N	PCREC_ERR_UNSET_VAR is (-8); it is below the floor and means an UNSET or ill-formed variable value was REFUSED ([VAR]).
+C1-0133	385	N	PCREC_ERR_UTF is (-9); it is below PCREC_ERR_FLOOR, NOT a give-up, and means an ill-formed subject was REFUSED (-futf-check; [UTF-VALID]).
+C1-0134	387	N	PCREC_UNSET is ((ptrdiff_t)-1), the caps-array unset sentinel.
+C1-0135	389	N	rx_callout_ref is a struct holding `rx_matchfn *fn` and `void *user`.
+C1-0136	394	N	rx_renderfn is emitted ONLY when a substitution template names it.
+C1-0137	395	N	An rx_renderfn renders one template segment from the same rx_ctx a callout receives.
+C1-0138	396	N	An rx_renderfn writes at most outcap bytes to out and returns the number of bytes produced, or -1 to fail.
+C1-0139	397	N	Called with out == NULL and outcap == 0, an rx_renderfn returns the length it WOULD produce and writes nothing.
+C1-0140	399	N	rx_renderfn is `typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx, unsigned char *out, size_t outcap)`.
+C1-0141	402	N	rx_group_entry is a struct with fields `const char *name`, `int number`, `int slot`, `const char *ref`.
+C1-0142	405	N	rx_group_entry.slot is the caps[] index this entry delivers, or -1 if this build delivers no slot for it.
+C1-0143	407	N	rx_group_entry.ref is NULL/empty for the primary's own groups.
+C1-0144	442	N	[DD-13b.W1.3] on a composed artifact (pcrec --source) an rx_group_entry row whose ref is non-NULL names the DEFINITION that declared the group; that row is a library's group seen by the caller (§6 composition).
+C1-0145	410	N	struct rx_info's full field list is quoted in §6 (the §2 block elides its body).
+C1-0146	414	N	PCREC_ENGINE_DFA is 1.
+C1-0147	415	N	PCREC_ENGINE_VM is 2.
+C1-0148	417	N	PCREC_VM_RUNG_CURSOR is 0x1u.
+C1-0149	418	N	PCREC_VM_RUNG_FRAMES_BOUNDED is 0x2u.
+C1-0150	419	N	PCREC_VM_RUNG_FRAMES_UNBOUNDED is 0x4u.
+C1-0151	420	N	PCREC_VM_RUNG_REVDET is 0x8u.
+C1-0152	421	N	PCREC_VM_RUNG_COUNTER is 0x10u.
+C1-0153	422	N	PCREC_VM_STRAT_POSSESSIVE is 0x1u.
+C1-0154	423	N	PCREC_VM_STRAT_BACKTRACKING is 0x2u.
+C1-0155	424	N	PCREC_VM_PRUNE_CLAMPED is 0x1u.
+C1-0156	425	N	PCREC_VM_PRUNE_UNCLAMPED is 0x2u.
+C1-0157	427	N	`extern const struct rx_info <prefix>_info;` is per-prefix and lives OUTSIDE the PCREC_RX_ABI_H guard.
+C1-0158	430	N	The §2 block is the emitted text verbatim except that the struct rx_info body is elided to §6 and the <prefix>_info extern is outside the guard.
+C1-0159	437	N	rx_renderfn carries a sizing protocol (shipped ABI text): called with out == NULL and outcap == 0 it writes nothing and returns the length it would produce, so a caller can size a buffer before rendering.
+C1-0160	441	N	The artifact documents rx_group_entry.ref only as "NULL/empty for the primary's own groups"; the composed-artifact producer is specified in §6.
+C1-0161	447	N	Every macro in the §2 ABI block is UNPREFIXED and byte-identical across every --prefix.
+C1-0162	450	N	The rx_matchfn comment carries no <PREFIX> placeholder, because the macros it names no longer vary per artifact.
+C1-0163	452	N	The nine D46 stamp bit constants and the two engine constants (PCREC_ENGINE_DFA/_VM) are emitted unconditionally, even on a DFA-only artifact that never produces a VM stamp value or a give-up code.
+C1-0164	459	N	<PREFIX> still appears elsewhere in the artifact: struct rx_info's ncaps field comment reads "this artifact's own <PREFIX>_NCAPS".
+C1-0165	461	N	<PREFIX>_NCAPS is a per-artifact VALUE and stays per-prefix on purpose.
+C1-0166	465	N	rx_info is a struct TAG, not a typedef; every reference spells `struct rx_info`.
+C1-0167	467	N	No bare `rx_info` typedef exists anywhere in an emitted header (it emits `struct rx_info { ... };` and `extern const struct rx_info <prefix>_info;`).
+C1-0168	471	N	Under the default prefix "rx" the per-artifact instance <prefix>_info is the identifier rx_info, byte-identical to the type's name, so a typedef of that name cannot coexist with it; struct tags live in a separate C namespace so `struct rx_info` and the instance rx_info coexist.
+C1-0169	477	N	An embedder writing code against a generated header declares `const struct rx_info *`, never a bare `rx_info`.
+C1-0170	480	N	The struct-tag spelling of rx_info is RULED, not provisional (D57, 2026-08-18); the design sketch's typedef form is dead.
+C1-0171	483	N	A consumer wanting a typedef'd name ships `typedef struct rx_info rx_info_t;` in its own header, which touches nothing pcrec emits.
+C1-0172	491	N	Every generated artifact exports, unconditionally, five <prefix>-scoped entry symbols: the four specified below plus the encoding residual <prefix>_next_pos.
+C1-0173	493	N	<prefix>_next_pos (§3.1.1, since [M5-SEAM]) is the one place an artifact's byte-vs-character distinction lives.
+C1-0174	496	N	Every artifact also exports <prefix>_search_in, <prefix>_match_in and <prefix>_match_caps_in (D71 item 2), each its un-suffixed sibling plus one argument naming where the working storage lives.
+C1-0175	499	N	An artifact exports eight entry symbols in total.
+C1-0176	500	N	§10 is the contract of the three _in entries.
+C1-0177	501	N	The three un-suffixed entries are unchanged in signature, return space and behaviour for a caller that never calls an _in entry (§10 promise).
+C1-0178	504	N	[OPT-1]: the three un-suffixed entries have a cost model.
+C1-0179	506	N	On an artifact whose stamped default storage does not fit inside one 4 KB page, each un-suffixed entry runs the match on a page-sized buffer.
+C1-0180	508	N	Such an entry escalates to the stamped default storage only on a PCREC_ERR_FRAMES give-up.
+C1-0181	509	N	Escalation calls a non-inlined internal function that owns the full storage and re-runs the match from scratch.
+C1-0182	510	N	The tiering leaves unchanged the signatures, return spaces, anchoring, caps disciplines, every answer and every capture span of the un-suffixed entries (§10.9 proves it).
+C1-0183	513	N	What tiering changes is only the price of a call.
+C1-0184	515	M	Measured on the RFC 5322 email specimen (--engine=vm, 16-byte matching subject, N=100k): 213-268 ns/call before tiering to 45.6-48.8 after, against 44.2-47.2 for <prefix>_search_in.
+C1-0185	518	M	Measured: the RFC 5322 specimen's entry frame (gcc -fstack-usage) shrinks from 98,512 B to 3,168 B under tiering.
+C1-0186	519	M	Measured: the ^(a(?1)?b)$ recursion specimen's frame shrinks from 131,216 B to 3,184 B (the numbers used by §5.3 and limits.md §5).
+C1-0187	520	N	Timing and frame numbers of different specimens must not be paired.
+C1-0188	523	N	The tiered-entry bet loses on some patterns.
+C1-0189	525	N	The wasted fast attempt is bounded by the STEP and WORK budgets, not by the frame count.
+C1-0190	526	N	Sixty frames of depth can absorb an unbounded amount of backtracking, so the small fast tier does not bound the work it does before giving up.
+C1-0191	529	N	There is a discontinuity at the tier boundary, not a ramp.
+C1-0192	530	M	Measured on ((a)|(aa))+b (tiered vs -fno-tiered-entry, N=20k, median of 5): 18.5 vs 207.1 ns at n=1 (11x faster tiered).
+C1-0193	531	M	Measured on ((a)|(aa))+b: 186.4 vs 365.3 ns at n=23 (tiered vs single-tier).
+C1-0194	532	M	Measured on ((a)|(aa))+b: 568.9 vs 372.9 ns at n=24, a 3.05x jump across one byte and 1.53x slower than the single-tier entry.
+C1-0195	533	M	Measured on ((a)|(aa))+b: above the boundary the tiered entry stays 1.24-1.53x slower than single-tier.
+C1-0196	534	M	Measured: the ((a)|(aa))+b boundary is a 25-byte subject (24 a's and a b).
+C1-0197	535	N	Depth is a property of the backtracking, not of the input length; "deep" can mean a very short subject.
+C1-0198	536	N	An escalating call can do up to twice the STEP budget of real work, because §10.9 resets both budgets for the deep attempt and the fast attempt's spend is additional.
+C1-0199	538	N	§4 states the consequence of the double budget spend for the give-up codes.
+C1-0200	540	N	A caller that needs depth on the fast path uses an _in entry, supplying its own storage (§10), and never meets the tier.
+C1-0201	541	N	A caller on a stack too small for the deep tier (§5.3, K33) should supply its own storage through the _in entries.
+C1-0202	543	N	-fno-tiered-entry (docs/spec/tuning.md §2.12) restores the single-tier entry shape without changing call sites.
+C1-0203	544	N	-fno-tiered-entry is the right choice for a workload measured to sit above the tier boundary.

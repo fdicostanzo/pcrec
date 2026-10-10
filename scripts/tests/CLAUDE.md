@@ -81,3 +81,11 @@ script's test coverage changes meaningfully.
   checks in all. Its first run caught a real hole (an int floor over no
   arms checked nothing), fixed before landing.
 
+- **spec_toc.py.test** — lane specnum's failing-direction control for
+  `scripts/spec_toc.py` (17 checks): a small numbered spec doc, `--init`
+  writing exactly the numbered headings (indented by depth, a heading inside
+  a code fence and the `# ` title left out), idempotence, and then a planted
+  stale title, a renamed heading, a heading with no `<a id>` line (the message
+  must name the anchor), a repeated number, a file with no markers (left
+  untouched) and one with no numbered headings, each reported; `--check`
+  writes nothing. Pure python, no pcrec.

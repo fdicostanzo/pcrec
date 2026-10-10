@@ -16,7 +16,7 @@ no `make`, no suite run. Four notes plus three wiring edits.
    a `const rx_var *vars` parameter on var-bearing artifacts only — no new
    entry point, no `rx_bind`, no bound state. A bound state is mutable state,
    which `match_api.md` §5.3 forbids as a binding contract on future
-   emitters, and §10.5 already refused the identical convenience for frame
+   emitters, and §5.3 (`match_api.md §5.3`; formerly §10.5) already refused the identical convenience for frame
    buffers for exactly that reason. No combinatorial growth, because a
    var-free pattern cannot be handed variables and a var-bearing one cannot
    be matched without them (D18).

@@ -252,7 +252,7 @@ re-pinned:
 | reader | what moved |
 |---|---|
 | `src/gen/emit_dfa.c:51` | `PCREC_ARTIFACT_ABI` 29 → 30, the one home |
-| `docs/spec/match_api.md` §6 | the abi CHANGE LOG, the only one ([REVW.A1]/D76 addendum) — a new bullet, the old one re-headed "was `29`" |
+| `docs/dev/history/abi_changelog.md` | the abi CHANGE LOG, the only one ([REVW.A1]/D76 addendum) — a new bullet, the old one re-headed "was `29`" |
 | `docs/spec/CLAUDE.md` | the batch-1 entry's own pointer |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT` 29 → 30 plus its narrative clause, copied FROM §6 and never authored there |
 | `CHANGELOG.md` | the `[Unreleased]` Added/Changed entries |

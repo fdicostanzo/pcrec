@@ -268,7 +268,7 @@ same start columns. Two consequences:
 
 - **Under `-e byte` the attempt set is IDENTICAL** to the shipped machine's.
   `step_end` counts the same positions the counter did, so answers and the
-  one-direction contract (match_api.md §6, the abi-49 paragraph) are
+  one-direction contract (`docs/dev/history/abi_changelog.md`, the abi-49 paragraph; was match_api.md §6) are
   untouched.
 - **Under `-e utf8` the block becomes a BYTE budget, not a character
   budget.** The gap column is already in bytes. This needs a `tuning.md`
@@ -314,7 +314,7 @@ These are ranked; the recommendation is (B2).
 |---|---|---|
 | B1 | a field in `rx_buffers` (the `_in` descriptor) | **rejected**: `const`, per-prefix type, a storage role, and reaches only `_in` callers |
 | B2 | ONE new entry `<p>_search_ex(subject, n, from, caps, const rx_buffers *buffers, pcrec_search_state *state)`, both pointers nullable | **recommended**: one entry rather than a hint×`_in` cross-product; NULL/NULL is `_search` |
-| B3 | a find-all iterator entry `<p>_find_next(pcrec_find *it, caps)`, caller-owned, carrying subject, position and state | strongest binding of the hint to "same subject, next position", and it would own §3.1's advance (the KB-17 hazard every caller re-implements); but it CONTRADICTS match_api.md §3.1's "no batch find-all primitive … none is planned for v1", so it is a Frank ruling |
+| B3 | a find-all iterator entry `<p>_find_next(pcrec_find *it, caps)`, caller-owned, carrying subject, position and state | strongest binding of the hint to "same subject, next position", and it would own §3.1's advance (the KB-17 hazard every caller re-implements); but it CONTRADICTS match_api.md §3.1.3's "no batch find-all primitive … none is planned for v1", so it is a Frank ruling |
 | B4 | a global or thread-local | **forbidden**: §5.3's reentrancy contract and TS-1 |
 
 ### The state: `pcrec_search_state`

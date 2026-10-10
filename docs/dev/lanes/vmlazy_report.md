@@ -65,7 +65,7 @@ manager assigned abi **72** (71 is RQ-3's, landing first; this branch writes
 1. **Digit readers** (`git grep -nIE '\babi[ :=_"(]*70\b|abi.{0,3}70\b|ABI_EXPECT=|ABI_H 70|!= 70'`,
    lanes/journal/design/reviews/plan excluded):
    - LIVE, moved: `src/gen/emit_dfa.c` (the constant; both emitted sites read
-     it), `docs/spec/match_api.md:301-305` (guard example) and §6 (new entry),
+     it), `docs/spec/match_api.md` §1¶7 (guard example) and the abi change log (new entry; since specclean, `docs/dev/history/abi_changelog.md`),
      `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + ledger message.
    - Sabotage BEFORE text: S693 (re-aimed).
    - HISTORICAL, left: `docs/dev/decisions.md:6666` (`ABI_EXPECT=24`

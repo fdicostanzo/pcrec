@@ -61,7 +61,7 @@ input `pcrec_err_input` names (`lib/pcrec.h:1009-1024`) — today always
 both engines (`lib/pcrec.h:1037-1131`, `docs/spec/match_api.md` §3, §6):
 
 - `int <prefix>_search(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2])` — leftmost search over `s[startpos..n)`; `1` match, `0` no-match, negative = give-up/refusal (§ give-up codes below). `caps` may be NULL.
-- `<prefix>_match` / `<prefix>_match_caps` — anchored match-here at `ctx->pos`, no search loop; return length / `-1` / give-up (a DIFFERENT return convention from `_search`: `0` here IS a zero-length match, `-1` is no-match — `docs/spec/match_api.md:539-540`).
+- `<prefix>_match` / `<prefix>_match_caps` — anchored match-here at `ctx->pos`, no search loop; return length / `-1` / give-up (a DIFFERENT return convention from `_search`: `0` here IS a zero-length match, `-1` is no-match — `docs/spec/match_api.md §3.2`).
 - `<prefix>_search_in` / `_match_in` / `_match_caps_in` — the un-suffixed twins plus a final `const <prefix>_buffers *` (caller-supplied `{frames, nframes, trail, ntrail}`); `NULL` descriptor is DEFINED as the un-suffixed call ([DD-14.FB] — `lib/pcrec.h:1083-1100`).
 - `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos)` — the encoding residual: next character boundary strictly after `pos` ([M5-SEAM]/D58 — `lib/pcrec.h:1108-1119`).
 - `extern const struct rx_info <prefix>_info` — the reflection structure (§ below).
@@ -94,7 +94,7 @@ nnames, engine, step_budget, work_budget, frame_capacity,
 subject_ceiling, resume_frames, trail_frames, resume_frame_size,
 trail_frame_size, pattern, pattern_len, groups, engine_why, scan,
 prefilter, match_form, name, nentries, search_form` (`docs/spec/
-match_api.md:1561-1660`).
+match_api.md §6¶1`).
 
 ---
 
@@ -261,7 +261,7 @@ else's refusal.
   `<prefix>_stream_init/feed/end` "arrives with milestone M3, whose
   design gate ... owns reconciling that contract with the two-pass
   engine before any streaming code is written" (`lib/pcrec.h:1128-1131`).
-  `match_api.md:1460`: "No partial-match or streaming window state."
+  `match_api.md §5.2`: "No partial-match or streaming window state."
 - **`--emit-dot`** (a DOT-format graph dump) was promised alongside
   `--emit-ir` in `APPROACH.md` §6 but was never built; `[DD-8]` is
   STATE:started with `--emit-ir` landed and `--emit-dot` explicitly
@@ -284,7 +284,7 @@ else's refusal.
   the same tree (`docs/spec/cli.md` §1). The sentence was never updated
   after the feature landed.
 - **The callout/composition trap contract has no producer yet**: "Composed
-  call sites must trap below the floor" (`docs/spec/match_api.md:1315-1321`)
+  call sites must trap below the floor" (`docs/spec/match_api.md §4¶10`)
   binds a call shape (callout code generation, submatcher composition)
   that no emitter builds today — the obligation is recorded for whichever
   future work first emits such a call site.
@@ -310,7 +310,7 @@ else's refusal.
 - **`<prefix>_search`'s `0` return and `<prefix>_match`'s `0` return mean
   opposite things** — `_search`'s `0` is "no match"; `_match`'s `0` IS a
   successful zero-length match, and `_match`'s "no match" is `-1`
-  (`docs/spec/match_api.md:539-540`). Two entry points on one artifact,
+  (`docs/spec/match_api.md §3.2`). Two entry points on one artifact,
   two conventions for the same integer.
 - **The pattern is NUL-terminated; the subject is length-counted** — an
   asymmetry between the two string inputs `pcrec_compile` and
@@ -335,6 +335,6 @@ else's refusal.
   an `enum` declaration into a syntax error (`lib/pcrec.h:724-742`).
 - **`rx_info`'s compile-time macro mirror is PARTIAL**: on a VM artifact
   6 of 15+ struct fields have a macro; `ngroups` — the field
-  `docs/spec/match_api.md` §6.2 works hardest to distinguish from
+  `docs/spec/match_api.md §6¶3` works hardest to distinguish from
   `ncaps` — has NO macro and is reachable only by reading `rx_info` at
-  run time (`docs/spec/match_api.md:2356-2368`).
+  run time (`docs/spec/match_api.md §6¶1`).

@@ -293,7 +293,7 @@ reader had them (§5.1). A reader cannot tell from a `PCREC_` name whether it
 is something they can `#include "pcrec.h"` and use, or something that exists
 only inside the compiler.
 
-**A1**: `docs/spec/match_api.md` §8.2 states the naming rule and I quote it
+**A1**: `docs/spec/match_api.md` §1 (`§1¶3`; then §8.2) states the naming rule and I quote it
 because it is narrower than one might expect —
 
 > `PCREC_*` names only pcrec's own enum/bit-valued constants — never a
@@ -399,7 +399,7 @@ $ grep -m2 encoding u8.c
 large-artifact warning, i.e. the UTF-8 backend and `unicode-props` are both
 live.)
 
-`docs/spec/match_api.md` §8.2 says the opposite of the header, correctly:
+`docs/spec/match_api.md` §9.1 (`§9.1`; then §8.2) says the opposite of the header, correctly:
 **"Two encodings compile: `byte` (the default) and `utf8`"** ([M5.0] stage 2),
 and the spec even records that *its own* earlier "byte is the only encoding
 implemented today" lead was superseded. `[M5.0]` is in
@@ -435,7 +435,7 @@ shipped check already contradicts the comment), never of this comment's text.
 The charter asks for a finding where the header and the spec disagree, "in
 both directions". Here it is, and the direction is spec-is-stale.
 
-`docs/spec/match_api.md:3319-3335` presents `pcrec_options` as a plain code
+`docs/spec/match_api.md §8.2` (was `:3319-3335`) presents `pcrec_options` as a plain code
 block with **no elision marker** and nine members:
 
 ```
@@ -487,7 +487,7 @@ check in the tree compares the spec's struct against the header (see §7).
 
 ### 4.4 P6 — three homes for the mask catalogue, and the spec points at the code
 
-`match_api.md` §8.2 says:
+`match_api.md` §6¶16 (then §8.2) says:
 
 > **A caller that round-trips its own flags through `rx_info.flags` will find
 > some bits missing, legitimately.** The masked ones are the testing/tuning
@@ -763,7 +763,7 @@ Ranked per A4 — MECHANICAL and safe first, DESIGN-EVENT last.
 4. **P4** (a generated `#define` block for `limits.def`'s `FLAG`-override
    rows, plus the one-sentence NUL-termination statement K9's own remedies
    both start from) — LOCAL, carries its `limits.md` hunk.
-5. **P5's spec half** (`match_api.md` §8.2's exhaustive-exceptions sentence
+5. **P5's spec half** (`match_api.md` §1¶3's exhaustive-exceptions sentence (then §8.2)
    vs. `PCREC_DEFAULT_FEATURES`) — one sentence, or one rename that keeps the
    rule exhaustive; the rename belongs in P1's wave.
 6. **P1** (the 12 unprefixed exports) — CROSS-CUTTING, 1,652 sites, 8

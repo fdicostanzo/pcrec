@@ -214,7 +214,7 @@ floor and not the whole population.
   - `tests/memfn/CLAUDE.md` and `src/gen/CLAUDE.md`: the MIGRATED table's
     "the lazy arm's rmin prefix stays pcrec's" sentence.
   - The abi readers, found by grep at the build.
-  - `docs/spec/match_api.md` §6's change-log entry.
+  - `docs/dev/history/abi_changelog.md` entry.
   - The `EMITTED_BYTES` manifests: the cpset CHECK 3 rows and any resource
     pins whose witness carries a lazy VM loop. `battriage_report.md`'s
     second reader class means a pin can quote a byte count with no abi digit
@@ -343,7 +343,7 @@ are sites, single steps are not", the line Q-R10-7 already drew.
        stride-2/utf8 and rmin ∈ {1, 2, 3, 200} shapes, plain and ASan;
      - G1 at SIMD-off on the lazy witnesses (D144: a null reading inside
        the floor is acceptance; r4e0b's 326-asm-mover precedent);
-     - `docs/spec/match_api.md` §6's entry.
+     - `docs/dev/history/abi_changelog.md` entry.
    - D149 needs nothing new: the cap is rmin, a pattern fact.
 2. **REPLACE (zero movers; I1 shadow; no abi event).**
    - The lazy arm calls `vm_emit_span_scan(…, rmin)`. The DELEG id is chosen

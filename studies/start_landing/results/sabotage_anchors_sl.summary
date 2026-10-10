@@ -1,0 +1,7 @@
+SITES 614 ROW_FILES 596 DISTINCT_IDS 596 DUP_IDS 0 () FAMILY_ROWS 116 RE_AIM_ROWS 3 RE_RUN_ROWS 113 COUNT_MISMATCH 0 UNRESOLVED_SRC 3 UNRESOLVED_OTHER 0 OTHER_ROWS_NAMING_FAMILY 1
+RESOLUTION datarow 12 def 514 factrow 1 filescope 2 lead 3 outside 79 unresolved 3
+RE_AIM_BY_COMMIT SL2 3
+RE_RUN_SITES_BY_COMMIT SL2 21 SL3 5 after-SL3 92
+UNRESOLVED S176_prefilter_for_a_linked_call 1 src/opt/select_engine.c 553
+UNRESOLVED S571_deny_map_drops_run_overlap 1 src/gen/memfn_sites.c 35
+UNRESOLVED S640_t2_forced_off_var_swapped 1 src/opt/select_engine.c 554
