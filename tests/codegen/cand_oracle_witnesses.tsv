@@ -34,7 +34,10 @@ handoff	-	\d\dxyz
 scan-from-startpos	-fno-req-handoff	\d\dxyz
 run-pinned-bounded	-	foo\b
 run-pinned	-	ABCDE
-offset-set-bounded	-	a\Kb\z
+# [OPT-REVEND] stage 2 put `a\Kb\z`'s inlined hybrid on rev-end (lane revtri):
+# `\b` keeps the bounded view at default, the deny keeps the old witness.
+offset-set-bounded	-	a\Kb\b
+offset-set-bounded	-fno-rev-end	a\Kb\z
 offset-set	-	\d\dxyz
 offset-set	-fno-run-prefilter	ABCDE
 first-memchr-bounded	-	\B(?<!a)d
@@ -66,6 +69,8 @@ verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
 search-from	-fno-anchored-dfa	\s+$
+# FIN4's VM ENDSET take cell (stage 2): a tie inside the inlined body (lane revtri).
+search-from	-	(\s+)$
 nomatch	-	[^\x00-\xff]
 nomatch	-	^\B\b
 nomatch	-	abc$

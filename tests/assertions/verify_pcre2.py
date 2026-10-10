@@ -160,6 +160,18 @@ def check_file(binpath, workdir, path):
             if data:
                 flagged = True
             continue
+        if kind == "encoding":
+            # A non-byte `encoding` is outside the domain for the same reason
+            # as `flags`: the oracle compiles at options=0, i.e. without
+            # PCRE2_UTF, so a utf8 block's cells would be scored against the
+            # byte semantics (`é+$` on "aéé" is (1,5) under UTF and (3,5)
+            # without). Skipped loudly, counted with the `flags` blocks.
+            # First populated by tests/assertions/rev_end.rxt's three utf8
+            # blocks ([OPT-REVEND], lane revtri 2026-10-10), whose cells were
+            # checked against libpcre2 10.46 WITH PCRE2_UTF instead.
+            if data != "byte":
+                flagged = True
+            continue
         if kind in ("features", "g", "gp"):
             continue
         if perr or pattern is None:
@@ -222,7 +234,7 @@ def main(argv):
                   % (os.path.relpath(path, ROOT), p,
                      "" if f == 0 else ", %d DISAGREE" % f,
                      "" if fl == 0 else
-                     ", %d skipped (`flags` blocks or `# pcre2-deviates` rulings)" % fl))
+                     ", %d skipped (`flags`/non-byte `encoding` blocks or `# pcre2-deviates` rulings)" % fl))
             total_p += p
             total_f += f
             total_fl += fl
@@ -232,7 +244,7 @@ def main(argv):
     print("verify_pcre2: %d cells agree with libpcre2, %d disagree%s"
           % (total_p, total_f,
              "" if total_fl == 0 else
-             ", %d skipped (`flags` blocks / `# pcre2-deviates` rulings, both counted)"
+             ", %d skipped (`flags`/non-byte `encoding` blocks / `# pcre2-deviates` rulings, all counted)"
              % total_fl))
     return 1 if total_f else 0
 

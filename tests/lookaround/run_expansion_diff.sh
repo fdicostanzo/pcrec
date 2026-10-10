@@ -564,13 +564,30 @@ cnt() { awk -F'\t' -v k="$1" '$1 == k {print $2}' "$PLAN/counts.tsv"; }
 #            p1_patterns 277 -> 294     p2_patterns 377 -> 394
 #            p1_identity  58 -> 72      p2_identity  86 -> 100
 #            p1_lookaround 211 -> 214   p2_lookaround 261 -> 264
-exp_pop="tot_blocks=499 tot_beh=12905 tot_g=67 \
-qual_blocks=294 qual_beh=11045 qual_g=13 \
+# DELTA 4 (revtri, the triage of lane/revbuild's landing red, [OPT-REVEND]
+# L2): `tests/assertions/rev_end.rxt` adds 46 blocks / 215 behavioural
+# cells / 25 capture-slot cells (counted against the file: 46 `pattern`
+# lines). Three of them declare `encoding utf8`, which no arm of this
+# driver runs (pcrec compiled with no `-e`, the oracle at options=0), so a
+# new rule Q7 disqualifies them (3 blocks / 11 cells) instead of scoring
+# byte answers against utf8 expectations (the 5 §1c and 3 B == C cells the
+# red run reported). The other 43 qualify (204 cells, all 25 g cells).
+# Q1-Q6 re-verified UNCHANGED. Re-measured on HEAD, not derived:
+#
+#            tot_blocks 499 -> 545      tot_beh 12905 -> 13120
+#            tot_g 67 -> 92             qual_g 13 -> 38
+#            qual_blocks 294 -> 337     qual_beh 11045 -> 11249
+#            p1_patterns 294 -> 337     p2_patterns 394 -> 444
+#            p1_identity  72 -> 76      p2_identity 100 -> 106
+#            p1_lookaround 214 -> 253   p2_lookaround 264 -> 308
+#            q7 0/0 -> 3/11
+exp_pop="tot_blocks=545 tot_beh=13120 tot_g=92 \
+qual_blocks=337 qual_beh=11249 qual_g=38 \
 q1_blocks=87 q1_cells=0 q2_blocks=87 q2_cells=754 \
 q3_blocks=0 q3_cells=0 q4_blocks=31 q4_cells=1106 \
-q5_blocks=0 q5_cells=0 q6_blocks=0 q6_cells=0 \
-p1_patterns=294 p2_patterns=394 \
-p1_identity=72 p2_identity=100 p1_lookaround=214 p2_lookaround=264"
+q5_blocks=0 q5_cells=0 q6_blocks=0 q6_cells=0 q7_blocks=3 q7_cells=11 \
+p1_patterns=337 p2_patterns=444 \
+p1_identity=76 p2_identity=106 p1_lookaround=253 p2_lookaround=308"
 pop_bad=0
 for kv in $exp_pop; do
     k="${kv%%=*}"; want="${kv#*=}"; got="$(cnt "$k")"
@@ -580,7 +597,7 @@ for kv in $exp_pop; do
     fi
 done
 if [ "$pop_bad" -eq 0 ]; then
-    ok "§1 the population: 499 blocks / 12,905 behavioural cells re-counted on HEAD, 294 blocks / 11,045 cells QUALIFYING, and the six per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0) EXACT against design §6.3. No delta"
+    ok "§1 the population: 545 blocks / 13,120 behavioural cells re-counted on HEAD, 337 blocks / 11,249 cells QUALIFYING, and the seven per-rule disqualification counts (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106, Q5 0/0, Q6 0/0, Q7 3/11) EXACT against design §6.3. No delta"
 fi
 # THE IDENTITY ROWS, asserted rather than tolerated. `\A` and `\z` are
 # PRIMITIVES in §6.1, so an occurrence-level substitution of one of them is
@@ -748,12 +765,12 @@ report_policy() {
     esac
 }
 case "$POLICY" in
-    all)  report_policy P1 294 72 214
-          report_policy P2 394 100 264
-          report_policy NONE 294 294 0 ;;
-    P1)   report_policy P1 294 72 214 ;;
-    P2)   report_policy P2 394 100 264 ;;
-    none) report_policy NONE 294 294 0 ;;
+    all)  report_policy P1 337 76 253
+          report_policy P2 444 106 308
+          report_policy NONE 337 337 0 ;;
+    P1)   report_policy P1 337 76 253 ;;
+    P2)   report_policy P2 444 106 308 ;;
+    none) report_policy NONE 337 337 0 ;;
 esac
 
 # ---- the headline, stated once ------------------------------------------
