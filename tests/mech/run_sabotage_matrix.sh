@@ -384,7 +384,7 @@
 #     no identity gate. Registered before S699-S703.
 #   simdfloor — added 2026-10-09 ([MEMFN] R-13, lane r13); runs
 #     tests/memfn/run_simd_floor.sh (the whole corpus: its floors are full-population) with the sabotaged tree's own
-#     pcrec: C18's four legs, the guard lint and C9-x86 over the -fmemfn-simd
+#     pcrec: C18's four legs, the guard lint and the level-guard leg over the -fmemfn-simd
 #     movers. Its own arm because SIMD text sits only under -fmemfn-simd and
 #     inside level guards: every answer arm runs at the default (no SIMD
 #     text) and a compile at the default -march never sees a w32 arm.

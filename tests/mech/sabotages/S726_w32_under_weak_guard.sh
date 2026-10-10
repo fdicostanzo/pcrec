@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# S726 ([MEMFN] R-13, R4e' batch 1, lane r13, 2026-10-09) -- C9-x86's plant: the w32 arm under an AVX-only guard compiles at x86-64-v3 and fails at sandybridge.
-SAB_ID='S726-w32-under-avx-guard'
+# S726 ([MEMFN] R-13, R4e' batch 1, lane r13, 2026-10-09) -- the widest level's arm under a guard one level too weak: it compiles at a mid target and fails at an older one.
+SAB_ID='S726-w32-under-weak-guard'
 SAB_FILE='memfn/src/levels.def'
 SAB_SUITES='simdfloor'
-SAB_DESC='the w32 level is guarded by __AVX__ (AVX without AVX2 admits it), so sandybridge meets AVX2 intrinsics'
+SAB_DESC='the widest level is guarded by the next-lower level's guard, so an older target meets the widest level's intrinsics'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S726. docs/dev/lanes/r13_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

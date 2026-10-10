@@ -107,11 +107,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   headers, targeting, arch nouns, kit-identity compares, reading kit output,
   the include graph) over `src/`+`cli/`+`lib/` code, the `.md` files inside
   them, and `tests/` (this directory exempt). The allowlist is COUNTED AT
-  BIRTH (15 hits, 11 rows) and only descends (a stale row is red). Controls:
+  BIRTH (15 hits, 11 rows; +12 hits, 6 rows 2026-10-09, lane rkfix: S725/S726 verbatim kit-guard anchors) and only descends (a stale row is red). Controls:
   positive plants per class derived from the compiler's own installation
   (`cc -dM -E` ISA-flag diffs, resource headers, `-dumpmachine`; classes 7-9
   are structural and take synthetic plants, said so), a zero-plant class is
-  RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (15) is a literal in
+  RED, a hex-escape negative control. `C4_ALLOW_FLOOR` (27) is a literal in
   the script. The plants are box-dependent: a Linux run may widen a class.
   Classes 1-2 plant the WHOLE derived population (not a sample) since lane
   r4clx (2026-10-06: ubuntubudu's sample missed `ABM`/`__LAHF_SAHF__`); the
