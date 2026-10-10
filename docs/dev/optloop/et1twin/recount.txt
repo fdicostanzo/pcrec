@@ -1,0 +1,32 @@
+| pattern | split P · L | G1 | G2 (formula) | G2 (factor-free) | today (DFA_START, handoff) | cells: regime est ms | verdict | note |
+|---|---|---|---|---|---|---|---|---|
+| `loglines/ipv6` | [0-9a-f]{1,4} · ':' (head of both branches) | y | y | y | reverse-pass, none | search_short 0.1430; throughput 5.6864 | **SURVIVES** | ':' not in [0-9a-f]; the split reads through the top-level alternation's common head |
+| `altwide/sfx-64` | 64 stems · 'ing' (S empty) | y | n | y | reverse-pass, 9 | search_short 0.0000; throughput 2.2592 | **REFINED-ONLY** | stems span a-z (i,n,g in alphabet(P)), widths 3-9; no stem contains 'ing', 'ing' border-free |
+| `altwide/sfx-256` | 256 stems · 'ing' | y | n | y | reverse-pass, 9 | search_short 0.0000; throughput 2.1245 | **REFINED-ONLY** | as sfx-64 |
+| `altwide/sfx-512` | 512 stems · 'ing' | y | n | y | reverse-pass, 9 | search_short 0.0000; throughput 1.4328 | **REFINED-ONLY** | as sfx-64 |
+| `syntax/cls-s-uc` | \S+ · '@' | y | n | n | reverse-pass, none | search_short 0.0000; throughput 1.4140 | **FAILS-G2** | '@' is in \S; P contains '@' as a factor |
+| `email/orig` | local part · '@' | y | n | n | reverse-pass, none | search_short 0.0007; throughput 0.8973 | **FAILS-G2** | the quoted local part's class \x23-\x5b holds '@': genuinely ambiguous split |
+| `email/factored` | local part · '@' | y | n | n | reverse-pass, none | search_short 0.0007; throughput 0.8939 | **FAILS-G2** | as email/orig |
+| `capability/wild-logparse-syslogbase-expanded` | timestamp prefix · ':' | n | y | y | reverse-pass, none | search_short 0.0001; throughput 0.8045 | **OFF-ROUTE** | VM hybrid (captures; size-cap retry); P holds (?!<[0-9]) lookahead: stage 2 at most |
+| `capability/wild-datetime-moment-iso8601` | - | - | - | - | attempt-start, none | search_short 0.0008; throughput 0.0691 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `capability/wild-validator-email-owasp` | - | - | - | - | attempt-start, none | search_short 0.0010; throughput 0.0461 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `loglines/kv-quoted` | \b[a-z_][a-z0-9_]{0,31} · '="' | y | y | y | reverse-pass, 32 | search_short 0.0000; throughput 0.0085 | **SURVIVES** | '=' not in alphabet(P); today: K82 handoff at c-32 already |
+| `capability/email-nested-plus` | - | - | - | - | attempt-start, none | search_short 0.0012; throughput 0.0000 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `loglines/uuid` | \b[0-9a-f]{8} · '-' | y | y | y | end-minus-width, none | search_short 0.0001; throughput 0.0010 | **SURVIVES** | fixed width 8; today end-minus-width (start exact, K3) |
+| `capability/winpath-near-miss` | - | - | - | - | attempt-start, none | search_short 0.0004; throughput 0.0001 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `capability/uuid-near-miss` | - | - | - | - | attempt-start, none | search_short 0.0005 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `capability/wild-logparse-winpath-grok` | (?>...) · '\\' | n | - | - | reverse-pass, none | search_short 0.0000 | **OFF-ROUTE** | atomic group in P; VM |
+| `bounded/csv5` | [^,\n]{0,32} · ',' | y | y | y | reverse-pass, none | search_short 0.0000 | **SURVIVES** | search_short only |
+| `capability/wild-validator-uuid-grok` | [A-Fa-f0-9]{8} · '-' | y | y | y | end-minus-width, none | throughput 0.0000 | **SURVIVES** | as loglines/uuid |
+| `sentinel/uuid-near-miss` | - | - | - | - | attempt-start, none | search_short 0.0000 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `sentinel/wild-validator-email-owasp` | - | - | - | - | attempt-start, none | search_short 0.0000 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+| `sentinel/winpath-near-miss` | - | - | - | - | attempt-start, none | search_short 0.0000 | **ANCHORED** | start-anchored (^ / one attempt): the tactic declines (where_to_start.md §2.5) |
+
+| verdict | est ms (walk_survey weights) |
+|---|---|
+| SURVIVES | 5.839 |
+| REFINED-ONLY | 5.817 |
+| FAILS-G2 | 3.207 |
+| OFF-ROUTE | 0.805 |
+| ANCHORED | 0.119 |
+| **all K12 cells (cf. walk_survey 15.8)** | **15.786** |
