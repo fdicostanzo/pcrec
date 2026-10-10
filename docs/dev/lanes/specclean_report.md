@@ -230,8 +230,19 @@ with none of the markers) is stated in its CLAUDE.md.
 - `make test-registry` (after the marker switch): `checks failed: 0`, every
   value-set leg PASS both directions (log was scratch).
 - `make test-spec-history`: 55 passed / 0 failed.
-- `make test-codegen`, `make test-rxtsource`, `make test-registry` (re-run
-  after the citation edits): see the handback message for the numbers.
+- After every edit (citations included), on this box, light, one at a time:
+  `make test-codegen` rc 0 (run_group 15/15 scripts); `make test-registry`
+  rc 0 (37/0 and 79/0); `make test-rxtsource` 279/0 (a first run read 276/3
+  ONLY because TMPDIR was the 105-character session scratchpad path, which
+  pushes three diagnostics past `pcrec_error`'s 256-byte buffer — re-run with
+  a short TMPDIR, green; no parser file changed: src/cli/lib diffs are
+  comment-only); `make test-fallback-table` 143/0; `make test-tune-dial`
+  113/0; `make test-memfn-rows` 137/0; `make test-spec-history` 55/0;
+  `make strict` clean. Emitted C byte-identical to main's binary on 16
+  pattern×flag cells.
+- OWED (the manager's, at merge): full `make test` (the box was owned by a
+  heavy kit run; brief said light checks only) and the mech run of the
+  pending sabotage row once it has an id.
 
 ## 9. Files
 
