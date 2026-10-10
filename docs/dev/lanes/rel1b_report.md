@@ -150,7 +150,7 @@ CLAUDE.md ritual note), plus a second pass for `PCREC_ARTIFACT_ABI`/
 | `tests/resource/run_resource_tests.sh:554-570` (k59premul byte pin) | `762114` byte pin | **RE-PINNED** to `762125` (+11 = `" 0.1.0-beta"`), arithmetic comment extended, `-fcomments` re-measurement 769844->769855 |
 | `tests/registry/run_registry_tests.sh:531` "deny bit 26 ... force bit 27" | AXIS BIT numbers (`PCREC_NO_COMMENTS`/`PCREC_FORCE_COMMENTS`), not `abi` | not-a-reader (different namespace) |
 | `tests/registry/limits_check.sh:321-323,468` | names `PCREC_ARTIFACT_ABI` as a SCHEMA VERSION allowlist entry, no numeric value | not-a-reader |
-| `docs/spec/tuning.md:2105` "bit 26 ... bit 27" | axis bit numbers, same as above | not-a-reader |
+| `docs/spec/tuning.md` §2.24 "bit 26 ... bit 27" | axis bit numbers, same as above | not-a-reader |
 | `docs/dev/history/abi_changelog.md` | the abi change log | **RE-PINNED** (new top entry; "gap-free from 2 to 27" -> "to 28"; provenance-line description gains `PCREC_VERSION`) |
 | `docs/dev/plan.md:573` "Runs after abi 27 lands" | [PLAN-AUDIT] historical gating note | historical-untouched (manager-owned file, not edited by this lane) |
 | `docs/dev/plan.md:578` | this lane's own [REL-1.4] row | manager-owned, not edited |

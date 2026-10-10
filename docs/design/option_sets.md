@@ -1049,7 +1049,7 @@ RXTFLAGS/RXTDUMP mechanism (`tests/axes/run_axes.sh`, the header's
   member of every family ∪ every standalone set. The list is read from
   `--list-sets`, never hand-copied, which is the script's own rule.
   **[r1 S12] It is checked against an INDEPENDENT floor**: the spec's
-  family table (`tuning.md` §6, written and ruled by hand, §5.3) states
+  family table (a `tuning.md` section not yet written, ruled by hand, §5.3) states
   each family's member count. The runner prints both counts per family
   and fails if `--list-sets` yields fewer jobs than the spec names. A
   member deleted from the set table cannot silently delete its own job.
@@ -1111,7 +1111,7 @@ an expectation side that does NOT share a source with the set table
    stamp there is none, because the line exists only when a set is named.
 3. **[r1 S11] Listing against an independent source, split by kind.** A
    PINNED set's `--list-sets` rows are checked against the spec's set table
-   (`tuning.md` §6), which states a pinned bundle in full, as §5.4 does for
+   (that future `tuning.md` section), which states a pinned bundle in full, as §5.4 does for
    the dial today. A DERIVED set's spec entry states its PREDICATE, not
    its members, so the spec cannot be its expectation. Its rows are
    checked against the independent counts above.

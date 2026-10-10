@@ -144,29 +144,26 @@ contents block).
   the CLI does not do. Cite by number (`cli.md §1.1.4`). History:
   `docs/dev/history/cli_record.md`.
 
-- `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
-  contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
-  one section per axis (every `-f`/`-fno-` flag, `--unroll=K`,
-  `--engine=`'s tuning-adjacent role) stating what each denies/forces, its
-  default, its emitted stamp (verified by an artifact diff), whether it is
-  ANSWER-IDENTITY-preserving or ENGINE-SELECTING, and the differential that
-  validates it with a measured population count. Also states the DFA side's
-  own stamps (§3 — the `[DD-13]` gap this document once recorded was closed
-  by `[DD-13]`/`[DD-13c]`, and `[OPT-3]` added `RX_DFA_TABLE` on 2026-08-26
-  with its own axis at §2.13) and a
-  `pcrec_options`-field-to-flag mirror table. Found and flagged one drift in
-  the process: `lib/pcrec.h`'s own comment names the splice/linkage stamp
-  `<PREFIX>_VM_CALLS`; the shipped emitter (`src/gen/emit_vm.c`) actually
-  emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
-  states the as-built name; `lib/pcrec.h`'s comment was corrected at 40d9f79.
-
-  **2026-09-29 (D131 item 1, lane adm131 applying clsfit's verbatim diff):**
-  §2's λ (class-matcher kit) row moves off `reservation` for the first
-  time — it states the RULED policy (one kit constant λ=4 plus a
-  first-match rule over the whole-set tables, `docs/design/
-  opt_dial_design.md` §4) — but is still a design-stage entry: `[CLS-TREE]`
-  is unbuilt, so the row documents what the mechanism will read the day it
-  lands, not a shipped behaviour.
+- `tuning.md` — the tuning-axis contract, FACTS ONLY and numbered (rewritten
+  by lane spectune): §1 what a tuning flag is (the four classes: answer-
+  identical, engine-selecting, contract, rendering; the answer-identity rule;
+  the dial default and explicit-beats-dial), §2 the axes — §2¶3 the
+  `rx_info.flags` mask rule, §2¶4 the inventory table, then one section per
+  axis, §2.1-§2.45 (a `--list-axes`-checked `(bit N)` in every flag heading;
+  §2.10 `--unroll`, §2.11 `--engine`, §2.21 `--vm-entry-shape`, §2.29 the
+  pre-check admission table, which has no flag), §3 the DFA scan's stamps
+  with §3.1 the hybrid and §3.2 the `rx_info` mirrors, §4 the
+  `pcrec_options` mirror (exhaustive over `flags`), §5 the `--tune` dial
+  (§5.4 the pinned policy table). Every pre-rewrite section number was kept.
+  Readers of its literal text, so keep their shapes: `tests/axes/run_axes.sh`
+  and `tests/registry/axes_registry_check.sh` take the `(bit N)` set between
+  `## 2.` and `## 3.` (every axis bit, nothing else); `tests/codegen/
+  run_facts_checks.sh` reads each `-fno-` section's `**Facts emptied**`
+  paragraph; `tests/codegen/run_tune_dial.sh` reads §5.4's table rows by
+  their first cell (`-fno-premul-table`, `ladder — bar`, `ladder —
+  threshold`: no earlier table may start a row with those); `tests/memfn/
+  rows_check.py` reads §2.38's row table. Cite by number (`tuning.md
+  §2.17`). History: `docs/dev/history/tuning_record.md`.
 
 - `rxt_format.md` — the `.rxt` test-corpus format and the harness driver
   protocol, FACTS ONLY and numbered (rewritten by lane specrxt): §1 the

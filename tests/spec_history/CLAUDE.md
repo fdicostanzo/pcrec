@@ -26,14 +26,14 @@ holds the numbering, the generated contents and every citation of the doc.
   the check landed. Held EXACTLY: a rise is new history; a fall means debt
   was paid and the row must be lowered in the same change. A file with no
   row must be clean (`match_api.md`, `registry.md`, `table_contract.md`, `limits.md`,
-  `cli.md`, `facts_listing.md`, `ir_listing.md`, `findings.md` and `rxt_format.md` have none).
+  `cli.md`, `facts_listing.md`, `ir_listing.md`, `findings.md`, `rxt_format.md` and `tuning.md` have none).
 - `run_spec_history.sh` — the section runner (`ROOT_DIR` overridable, which
   the mech arm uses). It runs `spec_history.py`, which also calls
   `spec_cites.py`, and prints ONE `checks passed:`/`checks failed:` total.
 - `spec_cites.py`, `specdoc.py` — the numbered-spec checks over every
   `docs/spec/*.md` that carries the `<!-- spec-toc:begin -->` block (today
   `match_api.md`, `registry.md`, `table_contract.md`, `limits.md`, `cli.md`,
-  `facts_listing.md`, `ir_listing.md`, `findings.md`, `rxt_format.md`; the rule is in docs/spec/CLAUDE.md, "Numbering and
+  `facts_listing.md`, `ir_listing.md`, `findings.md`, `rxt_format.md`, `tuning.md`; the rule is in docs/spec/CLAUDE.md, "Numbering and
   citation"). `specdoc.py` reads the structure (numbered headings, the
   paragraph units: a prose paragraph, a list item or a block quote; a code
   block or table belongs to the paragraph before it). `spec_cites.py`:
@@ -46,7 +46,9 @@ holds the numbering, the generated contents and every citation of the doc.
     tree (a `§A, §B` / `§A and §B` chain included) names a heading or label
     that exists, retired stubs included; no `<doc>.md:<line>` remains; a
     count under the doc's floor fails. The patterns are first run over
-    planted text (a planted dangling section and paragraph MUST be reported).
+    planted text (a planted dangling section and paragraph MUST be reported,
+    and a planted citation of a DIFFERENT numbered doc must not be read as
+    this one's).
   The tree is `git ls-files` when ROOT is the repository's top level, else a
   walk (a mech scratch tree is `git archive` output with no `.git`).
 - `cite_floors.tsv` — per adopter, the least citation count the scan must

@@ -241,7 +241,7 @@ while read -r flag; do
     # The flag's own `### 2.N` section, and in it the "Facts emptied" line.
     want="$(awk -v f="\`$flag\`" '
         /^### / { insec = (index($0, f) > 0); next }
-        insec && /^\*\*Facts emptied\*\*/ {
+        insec && /^(<a id="[^"]*"><\/a>\[[^]]*\] )?\*\*Facts emptied\*\*/ {
             line = $0; sub(/^.*\): */, "", line); gsub(/[`.,]/, " ", line); print line }' "$TUNING" |
         tr ' ' '\n' | grep -v '^$' | LC_ALL=C sort -u | tr '\n' ' ')"
     [ -n "$want" ] && nclaim=$((nclaim + 1))

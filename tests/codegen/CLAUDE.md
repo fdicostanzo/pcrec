@@ -962,7 +962,8 @@ decides whether to perform it — and then run the row through
   count taken from the table's plain text; (4) WHY-TRUTHFULNESS, every deny
   flag `axes.def` spells lists `deny:<flag>` on exactly the facts
   `docs/spec/tuning.md`'s "Facts emptied" line for that flag names (the
-  hand-written spec, never `facts.def`'s own deny column); (5) DECISIONS =
+  hand-written spec, never `facts.def`'s own deny column; the line is a
+  numbered paragraph, so it may open with its `<a id>[§¶]` label); (5) DECISIONS =
   STAMPS, the `decisions` section equal to the value `#define`s this script
   parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
   machinery macros excluded by NAME here, by `(` in the printer). And

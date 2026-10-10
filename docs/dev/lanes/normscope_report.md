@@ -54,7 +54,7 @@ Byte-count readers:
 
 Text-shape readers:
 - run_codegen_tests.sh :94/:243/:256 (they grep the one-line stay loop);
-- tuning.md:1519-1523 (the scan-edge example, a D80 hunk);
+- tuning.md §2.18 (the scan-edge example, a D80 hunk);
 - src/gen and tests/codegen CLAUDE.md.
 
 Sabotage: S214 (the `scan_run_length < %dUL` printf) and S72 (the rev-skip printf), plus whatever sabotage_anchors.py / SABANCHOR find.

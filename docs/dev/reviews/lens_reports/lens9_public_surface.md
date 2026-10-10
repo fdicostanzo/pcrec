@@ -459,7 +459,7 @@ and `options.tune` returns **zero rows** — the fields are not documented
 elsewhere in that document either, so this is absence, not relocation.
 
 **What makes it sharp rather than routine** is that a second spec document
-cites this one as the authority. `docs/spec/tuning.md:2325-2327`:
+cites this one as the authority. `docs/spec/tuning.md` §4:
 
 > Which `pcrec_options` fields (`lib/pcrec.h`) correspond to which flags in
 > §2. **`docs/spec/match_api.md` §8.2 states the struct itself in full;**

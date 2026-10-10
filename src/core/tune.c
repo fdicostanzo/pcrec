@@ -249,7 +249,7 @@ long long pcrec_tune_vm_inline_chain_max(int tune)
  * denial, because the dial sets a policy and does not revoke an explicit
  * request. Where a FORCE spelling exists the explicit flag wins outright;
  * where one does not, the spec says so rather than implying otherwise
- * (docs/spec/tuning.md §5, the narrowed "where a spelling exists" clause). */
+ * (docs/spec/tuning.md §1¶9, the narrowed "where a spelling exists" clause). */
 uint64_t pcrec_tune_deny_flags(int tune)
 {
     return pcrec_tune_row(tune)->deny_flags;
