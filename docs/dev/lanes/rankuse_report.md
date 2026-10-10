@@ -57,9 +57,9 @@ merged in). Request: memfn R-13, batch 1's follow-up step
 |---|---|
 | 24489c64 | vrun.c (`vrun_kb`, `cpos`/`cmask`/`bcast`, the module comment's SECOND FILTER POSITION and D149 rows), options.def `vrun-kb`, compose.c `rank_ok` |
 | 59a20fe3 | G2 SIMD family (generator rankings + runner check), bounds 2,700/2,800 (vrun.c, simd_bounds.tsv, limits.md), registry.md floor 3, tuning.md §2.43, cli cases, simd_accept.tsv lines, integration.md |
-| 862c09bd | sabotage rows S738-S742, CLAUDE.md files, cli case made arch-blind |
+| 862c09bd | sabotage rows S750-S754, CLAUDE.md files, cli case made arch-blind |
 | 95a6fd1d | report draft, lanes/CLAUDE.md line |
-| e67d1a05 | G2: the malformed copy's well-formed control (S742 finding, §7) |
+| e67d1a05 | G2: the malformed copy's well-formed control (S754 finding, §7) |
 | (tip) | report final |
 
 ## 3. Deny rows and readers moved (found by grep)
@@ -90,7 +90,7 @@ merged in). Request: memfn R-13, batch 1's follow-up step
 | `make test-cli` | 284 passed / 0 failed | `light/test-cli.log` |
 | `tests/registry/axes_registry_check.sh` | rc 0 (memfn floor 3/3) | `light/axes_registry.log` |
 | `make test-memfn-arch` | RED, **pre-existing on lane/memfn-r13**: C4 new-vocabulary hits in r13's S725/S726 and `run_sabotage_matrix.sh:387`. My one hit (an intrinsic name in the cli case) was removed | `light/test-memfn-arch.log` |
-| `make test-codegen` | RED 14/15, **pre-existing on lane/memfn-r13**: K37 flags `tests/memfn/run_simd_floor.sh:33`, a continuation line of a `$TIMEOUT_BIN` call that this lane did not touch. [SABANCHOR] resolves all 616 rows, S738-S742 included | `light/test-codegen.log` |
+| `make test-codegen` | RED 14/15, **pre-existing on lane/memfn-r13**: K37 flags `tests/memfn/run_simd_floor.sh:33`, a continuation line of a `$TIMEOUT_BIN` call that this lane did not touch. [SABANCHOR] resolves all 616 rows, S750-S754 included | `light/test-codegen.log` |
 | G2 SIMD family `--quick` (`memfn/tests/run_g2_simd.py`) | before the bound re-pin: 1,030 passed / 3 failed, all 3 being the old bounds. Every build: 19,250,552 checks, 0 fails, 0 faults. All 30 plant cells as required. Ranking: 7 modes 36-48 rendered sites each; shapes kb 205, no-kb 93, kb-not-rank0 82, kb-at-end 109, ties 135; 80 malformed copies refused. **After the re-pin (`g2s2.log`): 1,031 passed / 0 failed.** The same counts as before, with guarded maxima 2,661 / 2,721 / 5,370 under 2,700 / 2,800 / 5,500 | `g2s1.log`, `g2s2.log` |
 
 | `make test-memfn-g2` (G2 quick, all families plus the SIMD section, tree e67d1a05) | **51,169,263 passed / 0 failed** (SIMD family 1,031) | `g2main.log` |
@@ -156,17 +156,17 @@ which direction, and in which regime. KB stays as the default only if it
 never loses past the floor. The `UNMEASURED DEFAULT:` label in vrun.c
 becomes `MEASURED-UNOFFICIAL (<CPU class>)` from that reading.
 
-## 7. Sabotage S738-S742 (ids proposed to main, which has not confirmed them; each run solo with `PROCS=1 bash tests/mech/run_sabotage_matrix.sh SNNN`)
+## 7. Sabotage S750-S754 (renumbered from S738-S742 by lane rkfix, 2026-10-09: those collided with lane lfl0; main allocated S750-S757; ids confirmed; each run solo with `PROCS=1 bash tests/mech/run_sabotage_matrix.sh SNNN`)
 
 | id | edit | arms | solo verdict (tree) |
 |---|---|---|---|
-| S738 | KB ignores `rank_pos` (takes the run's tail positions in turn) | g2simd | DETECTED, g2simd 340 fail / 691 pass (95a6fd1d) |
-| S739 | the ranking read from its wrong end (commonest first) | g2simd | DETECTED, 271 / 760 (95a6fd1d) |
-| S740 | entries past `rank_n` read (`i < MF_RANK_MAX`) | g2simd | DETECTED, 145 / 886 (95a6fd1d) |
-| S741 | the `no-vrun-kb` deny ignored | cli g2simd | DETECTED, cli 1 / 284 and g2simd 22 / 1,009 (95a6fd1d) |
-| S742 | `rank_ok` disabled (a malformed ranking accepted) | g2simd | first run **UNDETECTED** (0 / 1,031, 95a6fd1d), a real finding, below. **Re-run after the fix: DETECTED, 81 / 1,030 (e67d1a05)**: 80 copies accepted plus the refusal floor |
+| S750 | KB ignores `rank_pos` (takes the run's tail positions in turn) | g2simd | DETECTED, g2simd 340 fail / 691 pass (95a6fd1d) |
+| S751 | the ranking read from its wrong end (commonest first) | g2simd | DETECTED, 271 / 760 (95a6fd1d) |
+| S752 | entries past `rank_n` read (`i < MF_RANK_MAX`) | g2simd | DETECTED, 145 / 886 (95a6fd1d) |
+| S753 | the `no-vrun-kb` deny ignored | cli g2simd | DETECTED, cli 1 / 284 and g2simd 22 / 1,009 (95a6fd1d) |
+| S754 | `rank_ok` disabled (a malformed ranking accepted) | g2simd | first run **UNDETECTED** (0 / 1,031, 95a6fd1d), a real finding, below. **Re-run after the fix: DETECTED, 81 / 1,030 (e67d1a05)**: 80 copies accepted plus the refusal floor |
 
-**S742's first run was a K35-class miss in G2's own check.** Every
+**S754's first run was a K35-class miss in G2's own check.** Every
 malformed copy was refused, but the cause was that the copy's FUNC name
 hook returned an empty name (`ofsskip: fn_name gave no name for fn_ref 1`;
 the site's name is only set later). The ranking had nothing to do with it,
@@ -202,7 +202,7 @@ passed / 0 failed.
    Read it with `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`. Expect the
    two pre-existing r13 reds (test-memfn-arch C4, test-codegen K37) unless
    r13 fixed them first.
-5. **The mech rows:** none are owed. S738-S742 are all DETECTED solo (§7).
+5. **The mech rows:** none are owed. S750-S754 are all DETECTED solo (§7).
    The rows a full battery would re-run are those anchored in `vrun.c` /
    `compose.c` (S716-S730, by `scripts/sabotage_anchors.py --step`).
 6. **RQ-4's timing question** (§6), in the tier-U slot.
@@ -218,6 +218,6 @@ passed / 0 failed.
 | own deny row + pcrec cli case in the same commit | DONE (59a20fe3 carries cli + floor; the row itself in 24489c64, one commit earlier on the branch: both are on the branch before any merge) |
 | bounds re-measured | DONE (2,700 / 2,800) |
 | G2 SIMD family: own byte loop, generated predicate space, rank_n 0, 1, ties, ends; `--quick` | DONE (§4.1) |
-| sabotage rows that kill the new read, measured solo | rows written (S738-S742; ids pending main's confirmation); solo verdicts in the addendum |
+| sabotage rows that kill the new read, measured solo | rows written (S750-S754; ids pending main's confirmation); solo verdicts in the addendum |
 | integration.md §R4.9.5 KB row | DONE |
 | CLAUDE.md files; this report; lanes/CLAUDE.md line | DONE |
