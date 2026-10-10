@@ -67,7 +67,7 @@ pcrec-bench is read only, through walk_survey's `git archive` copy.
 - `results/census_bench.tsv`, `results/census_corpus.tsv.gz` — the census.
 - `results/coverage_bench.txt`, `results/coverage_corpus.txt`,
   `results/predict.txt`.
-- `results/twins_bench.txt` (310 rows, assert mode), `results/twins_corpus.txt`
+- `results/twins_bench.txt` (310 rows, assert mode), `results/twins_corpus.txt.gz`
   (1,751 default-config rows, assert mode, `MAXSUBJ=12000`),
   `results/twins_residual_forced.txt` (the 117 bench residual patterns forced
   through `landing`: §2.8's upper bound), `results/controls.txt`.

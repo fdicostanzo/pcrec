@@ -624,7 +624,7 @@ either.
 
 ### 5.2 The corpus
 
-`results/twins_corpus.txt` covers every corpus pattern block the design selects, in the
+`results/twins_corpus.txt.gz` covers every corpus pattern block the design selects, in the
 default config: 1,751 rows, of which 1,334 are `end-minus-width` and 417 `landing`. It
 uses the same three pools, with two changes: the `ex` pool is capped at 12,000 subjects,
 and the third pool is the block's own subjects (walk_survey's synthesized 16 KiB
