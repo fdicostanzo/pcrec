@@ -7,9 +7,11 @@
 # WHEN (`all`, `body` = an artifact with a DFA body), WHY.
 # WHEN may also be `body-nomatch` (a DFA body whose LOCATE row is `empty`)
 # or `dfa-finisher` (the DFA emitter writes the caller-facing entries).
-NEXT	vm	dfa-finisher	RX_VM_START_SCAN: the shared prologue stamps the VM hat's NEXT selection on every artifact; a DFA artifact has no VM entry
-RECOVER	attempt	body	RX_DFA_START on an ENG_ATTEMPT body: the attempt loop runs no reverse pass, the stamp still names RECOVER's row (D-2's population)
-RECOVER	body	body-nomatch	RX_DFA_START on an empty body: no composite, no RECOVER on the path (D-2)
-NEXT	body	body-nomatch	RX_DFA_PREFILTER on an empty body: no forward scan on the path
-PRESENCE	*	body-nomatch	RX_REQ_WHY on an empty DFA artifact: its body runs no entry front
-FIRST	*	body-nomatch	RX_REQ_HANDOFF on an empty DFA artifact: its body runs no entry front
+# [OPT-REVEND] L2.1 (lane revbuild): the generated stamp rule EMPTIED the six
+# stamp-only rows L0 declared (each stamp now reads its slot's absence value
+# off the path). WHEN `rev-end` (the artifact's DFA_SCAN is "rev-end") is new
+# and is not a stamp: the scan-edge pass asks the forward machine's NEXT at
+# build time (`pcrec_dfa_scan_state_written`, compile.c), before the anchored
+# machine exists, and the path keeps the forward machine only where a tie
+# relocates; on the other walks the ask is for a machine the artifact drops.
+NEXT	dfa	rev-end	the scan-edge pass's precondition (8) asks the forward machine's NEXT before the anchored build decides whether a rev-end tie relocates (and so whether F is a member)

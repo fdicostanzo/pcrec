@@ -159,3 +159,13 @@ these files.
   (revend.md §9.2's sixteen recast, L2.1's stamp fork, the deference, the
   size-ladder clause and its reader, stage 2's four) from the CURRENT source:
   `python3 -I studies/locate_finish/mk_l2_rows.py tests/mech/sabotages`.
+- **At [OPT-REVEND] L2 (lane revbuild, 2026-10-10)** C1 and C5 learn the
+  `rev-end` walk (C1: the reverse pass is stamped by either scan value; C5: a
+  walk carries R, A iff unwrapped, and F only where a tie relocates, which no
+  stamp says, so C5 takes the text's F there and C5-L0 holds it), and
+  `asks_declared_L0.tsv`'s six stamp-only rows are gone (L2.1's generated
+  stamp rule) beside one new non-stamp row, WHEN `rev-end`: the scan-edge
+  pass asks the forward machine's NEXT before the anchored build. Measured on
+  the revbuild tip against pcrec-bench (read-only): 5,963 rows, 5,520
+  compiled; C1-C5 0, C5-L0 0, C6 5,520 agree (31 rows use the `rev-end`
+  declaration, 0 stale), C7 0.
