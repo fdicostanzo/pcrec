@@ -31,6 +31,15 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
   counts in them are as of the time written. The same texts are in git at the
   commit before the rewrite; `docs/dev/lanes/speclim_report.md` carries the
   claims ledgers.
+- `facts_listing_record.md`, `ir_listing_record.md` and `findings_record.md`
+  — FROZEN. The complete text `docs/spec/facts_listing.md`,
+  `docs/spec/ir_listing.md` and `docs/spec/findings.md` carried until their
+  facts-only rewrite (lane specsmall, `[SPEC-CLEAN]`), moved verbatim. The
+  rewritten specs keep the contract-bearing facts; the revision notes, step
+  narrative and statements the code has since overtaken (the `prefilter`
+  vocabulary was called nine tokens; it is eleven) are only here. The same
+  texts are in git at the commit before the rewrite;
+  `docs/dev/lanes/specsmall_report.md` carries the claims ledgers.
 - `abi_changelog.md` — LIVING. The `abi` change log, newest first, one entry
   per bump (D76 addendum [REVW.A1] named its home; it moved here verbatim
   from match_api.md §6). **An `abi` bump adds its entry here in the bump's

@@ -3361,7 +3361,7 @@ never edited afterwards.
   (S1/S2/S3, include_next, the default terminal by identity),
   `--analysis` (fill-only), the `-I` lift, `--list-analyses`/
   `--list-analysis NAME|FILE`, the `pcrec_options` fields,
-  `tests/findings` §6-§11 (fixtures #1-#22, REACH, witnesses, K65
+  `tests/findings` sec. 6-sec. 11 (fixtures #1-#22, REACH, witnesses, K65
   give-up identity under bundles, the sampled slice with GIVEUP1=0, table
   contract), the FINDINGS axis, S308-S317 (all detected locally). Read §3
   for F-9: its per-attempt witness population is empty, so S314 is
@@ -3373,7 +3373,7 @@ never edited afterwards.
   `encode-latin1` beside the derivation vocabulary in `findings.c` (the one
   path the accessor and the listing read), `pcrec_utf8_encode` hoisted into
   `src/enc/`, the shipped `log`/`weblog` bundles generated from
-  `third_party/`, `gen-tables` -> `gen-findings`, `tests/findings` §12,
+  `third_party/`, `gen-tables` -> `gen-findings`, `tests/findings` sec. 12,
   twelve rxtsource refusals, S325-S328, the R35 census (both bundles'
   movers non-empty; `iso-ts` reproduces). Read §6: the shipped corpora are
   ASCII-only, so under `-e utf8` every non-ASCII byte ties at the floor and
@@ -3811,3 +3811,4 @@ never edited afterwards.
 - `planaudit_report.md` — stale STATE:started audit (2026-10-10, lane planaudit, sonnet): 1 row closed ([ART-POSS-ARMS]), 5 retagged, 1 UNCLEAR ([OPT-VMSEED]), 4 accurate; table of evidence per row.
 - `specreg_report.md` — [SPEC-CLEAN] registry.md and table_contract.md facts-only and numbered (2026-10-10, lane specreg, sonnet): 720 -> 208 and 174 -> 127 lines, marker lines 63 -> 0 and 13 -> 0, history frozen in `docs/dev/history/{registry,table_contract}_record.md`, the old registry section numbers kept so existing citations resolve, 15 line citations and the rule-prose citations re-pointed to numbers, baseline rows removed, cite floors set. Carries the claims ledgers, 17 code-wins disagreements (counts, the module roster, force-bit axes, family `built` rule, definitions tags) and four open questions.
 - `speclim_report.md` — [SPEC-CLEAN] limits.md and cli.md facts-only and numbered (2026-10-10, lane speclim, sonnet): old section numbers kept so existing citations resolve, history frozen in `docs/dev/history/{limits,cli}_record.md`, claims ledgers, the code-wins list, line citations re-pointed, baseline rows removed and cite floors set.
+- `specsmall_report.md` — [SPEC-CLEAN] facts_listing.md, ir_listing.md and findings.md facts-only and numbered, plus the `-i` --help wording and the tests/registry/CLAUDE.md row-count note (2026-10-10, lane specsmall, sonnet): old section numbers kept (findings section 3a included), history frozen in `docs/dev/history/{facts_listing,ir_listing,findings}_record.md`, claims ledgers, the code-wins list, citations re-pointed, baseline rows removed and cite floors set.

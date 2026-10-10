@@ -187,7 +187,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 | under | a literal or a range folds by | so `(?i)k` matches | and `(?i)\xe9` matches |
 |---|---|---|---|
-| `--encoding=byte` (default) | the 52 ASCII letters, and nothing else | `k`, `K` | `\xe9` only |
+| `--encoding=byte` (default) | the 52 ASCII letters, and nothing else (without `--ucp`) | `k`, `K` | `\xe9` only |
+| `--encoding=byte --ucp` | the 52 ASCII letters and the Latin-1 pairs the `--ucp` classes fold | `k`, `K` | `\xe9`, `\xc9` |
 | `--encoding=utf8` | Unicode default simple case folding | `k`, `K`, U+212A KELVIN SIGN | U+00E9, U+00C9 |
 
 <a id="s1-8-p2"></a>[1.8¶2] Both are libpcre2's answers at the matching option word (`PCRE2_CASELESS` for `byte`, `PCRE2_UTF|PCRE2_CASELESS` for `utf8`). Consequences:
@@ -346,12 +347,12 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2-10"></a>
 ### 2.10 `--emit-ir`: the VM program listing
 
-<a id="s2-10-p1"></a>[2.10¶1] A query that takes a pattern, takes no `-o` and emits no C. It prints the VM program listing (labels, instructions with branch targets, choice points with preference order, capture-slot assignments, island boundaries, callout sites and the artifact-wide summary facts) and exits. It is VM-only: on a pattern that compiles to the DFA engine it refuses, naming `--engine=vm`. The output is `table_contract.md` TSV with every table a named `#section`; `ir_listing.md` is the format's contract. A consumer resolves columns by name and treats the listing as a debug surface: complete for control structure, lossy on operands. Every row derives from the event stream the emitting call appended, so the listing cannot drift from the emitter. `--emit-dot` does not exist.
+<a id="s2-10-p1"></a>[2.10¶1] A query that takes a pattern, takes no `-o` and emits no C. It prints the VM program listing (labels, instructions with branch targets, choice points with preference order, capture-slot assignments, island boundaries, callout sites and the artifact-wide summary facts) and exits. It is VM-only: on a pattern that compiles to the DFA engine it refuses, naming `--engine=vm`. The output is `table_contract.md` TSV with every table a named `#section`; `ir_listing.md` §3 specifies the sections. A consumer resolves columns by name and treats the listing as a debug surface: complete for control structure, lossy on operands. Every row derives from the event stream the emitting call appended, so the listing cannot drift from the emitter. `--emit-dot` does not exist.
 
 <a id="s2-11"></a>
 ### 2.11 `--emit-facts[=ENC,...]`: the pattern-facts listing
 
-<a id="s2-11-p1"></a>[2.11¶1] A query like `--emit-ir`: it takes a pattern, takes no `-o` and emits no C. It runs the ordinary compile to completion and prints every fact pcrec concluded about the pattern, its status, whether a pass asked for it and why, followed by the artifact's decision stamps. Every compile option applies unchanged. The bare flag lists the compile under the `-e` in effect; `=ENC,...` runs one compile per listed encoding and concatenates the rows, each naming its encoding, and an unknown encoding name is refused as `-e` refuses it. It works on every engine, composes with no other query mode, refuses `--flavour`, and a pattern pcrec refuses is refused with the compile's own diagnostic. The output is `table_contract.md` TSV in two sections, `facts` and `decisions`, specified by `facts_listing.md`. It is a debug listing: no `abi` number, and it never refuses a compile that succeeded.
+<a id="s2-11-p1"></a>[2.11¶1] A query like `--emit-ir`: it takes a pattern, takes no `-o` and emits no C. It runs the ordinary compile to completion and prints every fact pcrec concluded about the pattern, its status, whether a pass asked for it and why, followed by the artifact's decision stamps. Every compile option applies unchanged. The bare flag lists the compile under the `-e` in effect; `=ENC,...` runs one compile per listed encoding and concatenates the rows, each naming its encoding, and an unknown encoding name is refused as `-e` refuses it. It works on every engine, composes with no other query mode, refuses `--flavour`, and a pattern pcrec refuses is refused with the compile's own diagnostic. The output is `table_contract.md` TSV in two sections, `facts` and `decisions`, specified by `facts_listing.md` §4. It is a debug listing: no `abi` number, and it never refuses a compile that succeeded.
 
 <a id="s2-12"></a>
 ### 2.12 `--explain SYNTAX`

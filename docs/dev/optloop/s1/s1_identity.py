@@ -26,7 +26,7 @@ DELETED from both sides before the comparison, by name and nothing else, so
 any other line moving is still a `changed` artifact. Every
 `changed` record also names the `#define RX_*` stamps whose VALUES moved
 (`moved`, plus `program` when a non-stamp line moved too), which is the
-per-ARTIFACT manifest form findings §11.3 asks for; and `findings` counts
+per-ARTIFACT manifest form findings sec. 11.3 asks for; and `findings` counts
 the artifacts whose NEW side consumed `byte-rate` (the gate's REACH).
 
   BASE=<pcrec> NEW=<pcrec> SCR=<scratch> [EXTRA="-fno-..."] \\

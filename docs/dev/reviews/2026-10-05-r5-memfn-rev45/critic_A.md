@@ -38,7 +38,7 @@ Basis: `git log f116cff5..main -- src cli lib` shows K86 only (cli, not an abi e
 ## A3 — MAJOR: pcrec text and stamps describe the kit's plan, and a non-baseline arm can falsify them (touches Q55)
 - **Doc:** §14.9 plan_hint/plan_pos "Every other arm may ignore them"; §15.5 "The notes are pcrec's per part: … [OPT-REQPOS]"; §19 row 3 says plan_pos stays at M1.
 - **Emitter and spec:**
-  - `<PREFIX>_REQ_RUN`'s `@idx` is defined by docs/spec/findings.md:128 as "which position of the run the scan tests (one memchr for a byte, two streams for a pair)".
+  - `<PREFIX>_REQ_RUN`'s `@idx` is defined by docs/spec/findings.md §4 as "which position of the run the scan tests (one memchr for a byte, two streams for a pair)".
   - On the run route `<PREFIX>_REQ_BYTE` is the scan member. emit_dfa.c:1374 says the stamp "and the emitted memchr cannot disagree".
   - The entry-side [OPT-REQPOS] note (emit_req_run_check :1185-1196) reads "the scan is on byte %d at offset %d of the run" or "the scan is on position %d". That is a FORM statement, so by §14.2's own rule it belongs to the arm, not to pcrec's notes.
 - **Wrong:** R4d's fused run filter, or any arm that ignores plan_pos, moves bytes while pcrec still stamps and comments the old scan position. MEMFN_FORMS reads "none" at SIMD-off (Q55), so nothing flags it.

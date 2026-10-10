@@ -65,7 +65,7 @@ now stated in the figure.
 
 `e021b982`. `docs/dev/lanes/dd8_report.md` §4.3 filed `src/gen/
 emit_vm.c`'s `--emit-ir` prefilter value `no-nullable-collapsed`
-(~line 8683, `docs/spec/ir_listing.md:113`) as UNREACHED BY ANY INPUT,
+(~line 8683, `docs/spec/ir_listing.md` §3.1.1) as UNREACHED BY ANY INPUT,
 after its own corpus/flag-axis sweep and three hand-built witnesses all
 missed it, with a structural argument that [OPT-4.2]'s rungless twin
 (`prefilter_declined_nullable_default`) always declines first, on the

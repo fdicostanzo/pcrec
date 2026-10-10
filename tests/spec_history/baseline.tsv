@@ -3,19 +3,7 @@
 # 2026-10-09). Columns: file, marker id, count. The check holds each count
 # EXACTLY: a rise is new history, a fall means debt was paid and this row
 # must be lowered (or removed at 0) in the same change. match_api.md,
-# registry.md and table_contract.md have no row: they carry no history.
-facts_listing.md	date	4
-facts_listing.md	addendum	1
-facts_listing.md	walkback	1
-facts_listing.md	tagopen	1
-findings.md	date	1
-findings.md	walkback	1
-findings.md	tagopen	1
-ir_listing.md	date	2
-ir_listing.md	addendum	2
-ir_listing.md	walkback	2
-ir_listing.md	narrative	1
-ir_listing.md	tagopen	1
+# registry.md, table_contract.md, limits.md, cli.md, facts_listing.md, ir_listing.md and findings.md have no row: they carry no history.
 rxt_format.md	walkback	4
 rxt_format.md	narrative	1
 rxt_format.md	tagopen	3

@@ -1981,7 +1981,7 @@ at `max(startpos, that − K)`, rounded up to a character start under a
 multibyte encoding when it moved. The three bodies with a DFA scan read it at
 their one start site; `\G` keeps reading `startpos`. `"none"` everywhere else,
 including any build under `-fno-req-handoff`. `K` is the `req_run_maxoff` fact
-`--emit-facts` lists (`facts_listing.md`), in BYTES: `(?i)straße` under
+`--emit-facts` lists (`facts_listing.md` §4.1.2), in BYTES: `(?i)straße` under
 `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before the
 window `TRA`. A non-`"none"` value never changes an answer or a give-up.
 
@@ -2040,7 +2040,7 @@ built from the named bit constants of the shared block (§2):
 clamps against: `"prefilter-window"` (the hybrid prefilter's span end),
 `"subject-end"`, or `"none"` (no length pruning, e.g. `-fno-length-prune`).
 `--emit-ir`'s `prune-ceiling` row uses the same three words
-(`ir_listing.md`).
+(`ir_listing.md` §3.1.2).
 
 <a id="s6-3-8-p8"></a>[6.3.8¶8] **`<PREFIX>_VM_CALL_SPLICED`** and **`<PREFIX>_VM_CALL_LINKED`** — on
 call-bearing VM artifacts only: the number of subroutine-call sites spliced

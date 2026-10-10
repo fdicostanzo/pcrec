@@ -342,7 +342,7 @@ C0's arm is still right to add. The claim should be restated.
 
 - **n1. Ask ORDER is not observable anywhere. Only the evaluated SET is.**
   - The facts `used` column is a per-fact yes/no
-    (`facts_listing.md:95`; `pf->used |= pf_bit(f)`, `facts.c:115`).
+    (`facts_listing.md` §4.1; `pf->used |= pf_bit(f)`, `facts.c:115`).
   - `RX_FINDINGS` reads `byte_rate_asked`, a boolean (`findings.c:373-380`),
     and is written after every emitter has run (`emit_dfa.c:2687-2698`).
   - So §2.3(4)'s "the set of predicates EVALUATED, and their order, is

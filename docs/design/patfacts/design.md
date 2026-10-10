@@ -621,7 +621,7 @@ more than one consumer:
    its two facts, §2; E2 advances the epoch; E3 is set inside the
    `ENG_UNANCH` arm only, §3) and allocating `Job` as now.
 3. A consumer never reads `cx->opt->encoding` to decide a fact or a
-   ranking (§6). The findings §11.7 grep check (planned) is widened to
+   ranking (§6). The findings sec. 11.7 grep check (planned) is widened to
    cover `src/facts/`, the rate readers beside B1's primitives, `prefix_k.c`
    and `emit_dfa.c`'s G1. Inside `src/facts/` the rule is structural: the one
    derivation that needs encoding structure takes the descriptor as a
@@ -678,13 +678,13 @@ findings primitive, and readers pass candidates and never see `NULL`.
 |---|---|---|---|---|
 | PICK: which member to scan | `int pcrec_find_pick(rate, cand[], n, rightmost)` | the candidate at index `rightmost`, which is the reader's POSITIONAL rightmost (PCRE2's LASTCODEUNIT rule) | `rb_pick` (candidates: `s->pick`, then the other members 255→0; `rightmost = 0`), `rn_scan_index` (candidates: `bytes[0..n)`; `rightmost = n-1`) | argmin, ties to the EARLIEST candidate. `rb_pick`: `pick` if among the minima, else the largest byte. `rn_scan_index`: leftmost. Both exactly as today |
 | COMPARE: is `p` no commoner than `q` | `bool pcrec_find_no_commoner(rate, p, q)` | `false` (unknown ⇒ no density claim; identity is the caller's separate conjunct) | `req_byte_dominated_by` | — |
-| MASS: Σ rate over a set or a sequence | `pcrec_find_set_mass(rate, set)` (findings §6.1) + `pcrec_find_seq_mass(rate, bytes, n)` | the count (`|set|·10⁶/256` for a set, `findings/design.md` §0.8; `⌊n·10⁶/256⌋` for a sequence, the same uniform-rate cardinality, so every equal-length window ties; [D126 Q4] one MASS NONE rule, `findings/design.md` §6.1) | `set_ppm` (offset-k), `rn_window_start` | windows: ties to the leftmost, which under NONE is `lo_s`, today's `!bytekey` answer |
+| MASS: Σ rate over a set or a sequence | `pcrec_find_set_mass(rate, set)` (findings sec. 6.1) + `pcrec_find_seq_mass(rate, bytes, n)` | the count (`|set|·10⁶/256` for a set, `findings/design.md` §0.8; `⌊n·10⁶/256⌋` for a sequence, the same uniform-rate cardinality, so every equal-length window ties; [D126 Q4] one MASS NONE rule, `findings/design.md` §6.1) | `set_ppm` (offset-k), `rn_window_start` | windows: ties to the leftmost, which under NONE is `lo_s`, today's `!bytekey` answer |
 
 With this table, the two readers that diverged in R13 call ONE function
 and cannot diverge again. A future reader of an existing kind inherits the
 NONE rule. A new KIND of rate question adds one primitive with one NONE
 rule and a row here. A grep check (`rate == NULL`, `!rate`, `bytekey`,
-`PCREC_ENC_BYTE` in any rate reader) is widened from findings §11.7.
+`PCREC_ENC_BYTE` in any rate reader) is widened from findings sec. 11.7.
 
 **Byte-identity of the table under `-e byte` + default:** `rate` equals
 today's table entry for entry (`findings/design.md` §0.7), and the
@@ -695,7 +695,7 @@ Candidate order `[pick, 255..0 \ pick]` with ties-to-earliest gives the
 same answer in both cases. **Under `-e utf8`:** PICK and COMPARE answer
 exactly as today after reqrunenc2. MASS moves offset-k from the ungated
 prior to cardinality. That is findings B1's named per-artifact `utf8`
-manifest (findings §11.3) and its abi event.
+manifest (findings sec. 11.3) and its abi event.
 
 ---
 
@@ -781,11 +781,11 @@ own row after K68 merges.
   not copy it: `PatFacts` holds no rate pointer, the same rule as R39's
   `DfaSel`.
 - **The three rate primitives of §6.3, with their NONE answers inside.
-  This AMENDS findings §6.1** (which lists `pcrec_find_set_mass` only) and
+  This AMENDS findings sec. 6.1** (which lists `pcrec_find_set_mass` only) and
   **§6.3** (readers stop testing `rate == NULL`). `pcrec_find_seq_mass`
   is new, and it is the primitive `rn_window_start` needs.
 - The deletion of `pcrec_byte_freq_ppm`/`byte_freq_ppm_tbl`
-  (`prefix_k.c:112-165`), as findings §6.1 already plans.
+  (`prefix_k.c:112-165`), as findings sec. 6.1 already plans.
 - **The rate READERS move beside the primitives** (§4.2.2 carve-out (b)):
   `rb_pick`, `rn_scan_index` and `rn_window_start` out of `reqbyte.c`
   (which is then empty and deleted, since 3.0 lifted its walk into
@@ -807,7 +807,7 @@ own row after K68 merges.
 
 **B1 must NOT:** read `cx->opt->encoding` at any reader; memoize a rate
 anywhere but `Ctx`; add a second `req_*` field; or call `rb_walk`. Its
-movers are exactly findings §11.3's two manifests. `b1_byte_movers` is
+movers are exactly findings sec. 11.3's two manifests. `b1_byte_movers` is
 EMPTY. `b1_utf8_movers` is named per artifact: offset-k selection moves,
 plus any G1 fallout on the same artifact. Its abi event is the one D123-2
 ruled shared with the gate move.
@@ -940,7 +940,7 @@ wherever a commit moves code, so a mover is attributed to one relocation.
 |---|---|---|---|
 | **3.0a `internal.h` split** (3.0's first commit, before anything moves) | • `src/facts/` created with `facts.h` (consumer: types and accessors, empty of accessors yet) and `facts_derive.h` (private: derivations). The E2 derivation declarations leave `core/internal.h` for `facts_derive.h`: `pcrec_start_anchor`, `pcrec_end_window`, `pcrec_req_byte`. Their owners and their one caller today (`compile.c:1501-1520`) include it. `pcrec_prefix_ksets` (`internal.h:1698`) does NOT move yet: it is walk plus selection until 3.4 splits it, and its selection half is a pass function that stays declared in `internal.h` | A/B diff ZERO (a declaration move cannot change emitted text, and the diff proves it); `make strict` | **no** |
 | **3.0 skeleton + E2 req/anchor/window + `--emit-facts`** | • `Job.pf`, `PfEpoch`, `facts.c`, `facts.def`; the E2 accessors; the `compile.c:1501-1520` deny ternaries move into the accessors, so `compile.c` stops including `facts_derive.h`. The include-graph and link check (§4.2.3) is born in this commit with its two sabotage rows, its target list generated from the new `facts.def`, so every later relocation moves under it. • `git mv src/opt/startanch.c src/facts/`. • `git mv src/opt/endwin.c src/facts/`, the descriptor becoming a parameter (carve-out (d)). • `rb_walk` and its lattice lifted from `reqbyte.c` into `src/facts/req.c` (`rb_pick`/`rn_*` stay in `reqbyte.c` until 3.1). • The §11 listing with its checks 2-4; `REQ_*`/`VM_START`/`END_WINDOW` render through the shared renderers | A/B diff ZERO **per commit** over byte+utf8 × {default, `-fno-req-byte`, `-fno-req-run`, `-fno-end-window`, `-fno-vm-anchor-bound`, `-fno-run-prefilter`, `--engine=vm`}; `run_recursion_identity.sh` (B) with its pin UNMOVED (a re-pin is disqualifying); `run_prechecks.sh`; `make test-codegen`/`make strict` | **no** |
-| **3.1 = [FINDINGS] B1** | • the data tier; the §6.3 primitives. • `rb_pick`, `rn_scan_index`, `rn_window_start` move beside the primitives (carve-out (b)); `reqbyte.c` deleted. • `set_ppm` moves beside them. • C1-C4 call the primitives. • §11.6 check 1 (non-perturbation) born, with its sabotage row [r1 A10] | the moves: A/B diff ZERO per commit. The primitives: findings §11.3 manifests (`byte` EMPTY with REACH; `utf8` named per artifact); findings §13 B1's acceptance list | **YES**: the one D123-2 event |
+| **3.1 = [FINDINGS] B1** | • the data tier; the §6.3 primitives. • `rb_pick`, `rn_scan_index`, `rn_window_start` move beside the primitives (carve-out (b)); `reqbyte.c` deleted. • `set_ppm` moves beside them. • C1-C4 call the primitives. • §11.6 check 1 (non-perturbation) born, with its sabotage row [r1 A10] | the moves: A/B diff ZERO per commit. The primitives: findings sec. 11.3 manifests (`byte` EMPTY with REACH; `utf8` named per artifact); findings sec. 13 B1's acceptance list | **YES**: the one D123-2 event |
 | **3.2 E1: kinds, nullable** (revision 1's "cwidth" is dropped, §1) | • `src/facts/kinds.c` and `src/facts/widths.c` (NEW, composing the node primitives at the root); `pcrec_facts_seal_e1` forces both at `compile.c:1397` [r1 A1]. • `select_engine`'s locals, the `emit_vm.c:13191/13208` listing re-walk (R1) and `emit_vm.c:9980` read the accessors. • `fit.lang_nullable` and `fit.prefilter_has_collapsible_rep` deleted; readers read the accessors [r1 A7]. • The E1 invariance cross-check with its TWO sabotage rows (kind mask, nullability; §3, [r1 C6]) | A/B diff ZERO; `run_ir_listing.sh` (the listing is output, not artifact, and must be unchanged); `run_vm_identity.sh` | no |
 | **3.3 = S2a** | the node-grain literal-run function; the VM chain. No `src/facts/` move: its fact is node-grain (§4.3) | S2a's own gate (its movers are its design, not a migration) plus: cost/slot/emit agreement on every corpus pattern, the R5 check | **YES**, S2a's own |
 | **3.4 E3: the k-set walk + pin** — **FLAGGED: a POSSIBLE MOVER** [r1 A2] | • the walk half and the pin lifted from `prefix_k.c` into `src/facts/kset.c`; the per-offset `ppm` (`prefix_k.c:443`, `:475`) moves into the selection, which stays in `prefix_k.c` (carve-out (c)). • The E3 seal written inside the `ENG_UNANCH` arm only, and the two decline tokens (§3, [r1 A3]). • `unanch_start` reads the memo (R14). • The pin becomes a pure NFA+window fact, and its kind gate becomes each consumer's obligation (§4.5) | A/B diff ZERO; `run_offset_skip.sh`; the S1 census re-run, identical to `census_b_main.tsv`. Before the lane starts: a grep of every reader of `run_pinned`/`run_o`, each confirmed to carry the kind gate, attached to the lane's report | no |
@@ -1341,7 +1341,7 @@ manager's. Revision 2 changed Q1 (E1 is eager, E3 is per branch) and Q6
    compare / mass) inside findings primitives, not per reader.** This
    amends the ratified-and-panelled `findings/design.md` §6.2-§6.3. The
    delta's R13 is the reason: the per-reader shape is where the two copies
-   diverged. **Recommend: adopt, and apply it to findings §6.1-§6.3 as a
+   diverged. **Recommend: adopt, and apply it to findings sec. 6.1-sec. 6.3 as a
    manager edit before B1 opens.**
 5. **The record excludes route and emission DECISIONS** (`req_admit`,
    `DFA_SELECT` choices, `OfsTest`, `vm_frameless`, `fit`). They stay one

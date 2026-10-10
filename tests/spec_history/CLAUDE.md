@@ -25,14 +25,15 @@ holds the numbering, the generated contents and every citation of the doc.
 - `baseline.tsv` — KNOWN DEBT: the other spec docs' per-marker counts when
   the check landed. Held EXACTLY: a rise is new history; a fall means debt
   was paid and the row must be lowered in the same change. A file with no
-  row must be clean (`match_api.md`, `registry.md`, `table_contract.md`, `limits.md` and
-  `cli.md` have none).
+  row must be clean (`match_api.md`, `registry.md`, `table_contract.md`, `limits.md`,
+  `cli.md`, `facts_listing.md`, `ir_listing.md` and `findings.md` have none).
 - `run_spec_history.sh` — the section runner (`ROOT_DIR` overridable, which
   the mech arm uses). It runs `spec_history.py`, which also calls
   `spec_cites.py`, and prints ONE `checks passed:`/`checks failed:` total.
 - `spec_cites.py`, `specdoc.py` — the numbered-spec checks over every
   `docs/spec/*.md` that carries the `<!-- spec-toc:begin -->` block (today
-  `match_api.md`, `registry.md`, `table_contract.md`, `limits.md`, `cli.md`; the rule is in docs/spec/CLAUDE.md, "Numbering and
+  `match_api.md`, `registry.md`, `table_contract.md`, `limits.md`, `cli.md`,
+  `facts_listing.md`, `ir_listing.md`, `findings.md`; the rule is in docs/spec/CLAUDE.md, "Numbering and
   citation"). `specdoc.py` reads the structure (numbered headings, the
   paragraph units: a prose paragraph, a list item or a block quote; a code
   block or table belongs to the paragraph before it). `spec_cites.py`:
