@@ -18,5 +18,5 @@ SAB_REACH='"$PCREC" --engine=vm -p rx -o - --pattern "([aeiou])[bcdfg][hjklm][np
 SAB_REACH_EXPECT='#define RX_VM_CLS_ATOMS 12'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return (flags & (PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT)) ? 1u << CLSTD_ATOM : 0;'
-SAB_AFTER='    return (flags & (PCREC_NO_CLS_KIT)) ? 1u << CLSTD_ATOM : 0;'
+SAB_BEFORE='    return pcrec_flags_has(flags, PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT) ? 1u << CLSTD_ATOM : 0;'
+SAB_AFTER='    return pcrec_flags_has(flags, PCREC_NO_CLS_KIT) ? 1u << CLSTD_ATOM : 0;'

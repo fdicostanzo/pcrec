@@ -2022,8 +2022,8 @@ static void fq_init(Fq *q, Ctx *cx)
     uint64_t fl = cx->opt ? cx->opt->flags : 0;
     memset(q, 0, sizeof *q);
     q->cx    = cx;
-    q->arm_a = !(fl & PCREC_NO_POSS_CTX_FOLLOW);
-    q->arm_b = !(fl & PCREC_NO_POSS_BREF_FIRST);
+    q->arm_a = !pcrec_flags_has(fl, PCREC_NO_POSS_CTX_FOLLOW);
+    q->arm_b = !pcrec_flags_has(fl, PCREC_NO_POSS_BREF_FIRST);
 }
 
 static void pss_run(Pss *P, Ast *root);

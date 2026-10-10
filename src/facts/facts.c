@@ -133,7 +133,7 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
         pcrec_ctx_fail(cx, 0, "internal error: pattern fact '%s' asked before "
                        "its epoch (E%d) was sealed", pf_name[f], pf_epoch[f]);
     if (pf->have & pf_bit(f)) return false;
-    d = cx->opt->flags & pf_deny[f];
+    d = pcrec_flags_masked(cx->opt->flags, pf_deny[f]);
     if (d) {
         pf->have |= pf_bit(f);
         pf_store_empty(pf, f);
@@ -190,7 +190,7 @@ static void pf_derive_req_walk(Ctx *cx)
     RbRun run;
     int bits = 0;
     pcrec_req_walk(cx, pf->root,
-                   (cx->opt->flags & PCREC_NO_REQ_RUN_FOLD)
+                   pcrec_opt_has(cx->opt, PCREC_NO_REQ_RUN_FOLD)
                        ? 1 : PCREC_MAX_REQ_RUN_POS_SET,
                    &set, &run);
     for (int i = 0; i < run.n; i++) bits += __builtin_popcount(run.mask[i]);

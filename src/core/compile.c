@@ -86,8 +86,8 @@ void pcrec_default_options(pcrec_options *opt)
  * hand-written `!(flags & 0)` would give. */
 bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force)
 {
-    if (deny  && (flags & deny))  return false;
-    if (force && (flags & force)) return true;
+    if (deny  && pcrec_flags_has(flags, deny))  return false;
+    if (force && pcrec_flags_has(flags, force)) return true;
 /* The `!= 0` is spelled rather than left implicit because a row's `0`
  * column and MOST of its macro column are ENUM CONSTANTS since
  * [OPT-REQPOS] widened the flags enum to `1ull << N`, and gcc reads an
@@ -107,6 +107,17 @@ bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force)
 #include "core/axes.def"
     return true;
 }
+
+/* [FLAG-ACCESS] every key `axes.def` names is zero (no such bit) or ONE bit,
+ * which is what lets `pcrec_flags_has` (internal.h) read a key as a single
+ * axis; a multi-bit key is only ever a caller's own OR. Derived from the
+ * table, not retyped beside it. */
+#define PCREC_AXIS(dm, df, fm, ff, defst)                                  \
+    _Static_assert(((uint64_t)(dm) & ((uint64_t)(dm) - 1)) == 0,           \
+                   "axes.def deny key is not a single bit");               \
+    _Static_assert(((uint64_t)(fm) & ((uint64_t)(fm) - 1)) == 0,           \
+                   "axes.def force key is not a single bit");
+#include "core/axes.def"
 
 /* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES are measured on the finished
  * buffer by `pcrec_emit_size_measure` (src/core/sb.c, which carries the
@@ -233,7 +244,7 @@ static void build_anchored_dfa(Ctx *cx)
      * of `-fno-anchored-dfa`: it removes the build, and `verify-at` is
      * available exactly where the machine was built. */
     if (!pcrec_cand_finish_needs(cx, CAND_MA)) return;
-    if (cx->opt->flags & PCREC_NO_ANCHORED_DFA) return;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_ANCHORED_DFA)) return;
     /* [OPT-REVEND] L2 (LR-S12): the drop row FIRED, not the ladder's ordinal
      * passing it (the row declines where dropping grows the member set). */
     if (cx->anchored_dropped) return;
@@ -702,7 +713,7 @@ static bool fit_collapse_can_help(const FitSel *s)
 {
     Ctx *cx = s->cx;
     if (!cx->job || !(pcrec_fact_kinds(cx) & PF_KIND_COLLAPSIBLE_REP)) return false;
-    return (s->flags & PCREC_FORCE_PREFILTER) != 0 ||
+    return pcrec_flags_has(s->flags, PCREC_FORCE_PREFILTER) ||
            !pcrec_fact_nullable(cx) || pcrec_fact_empty_admits(cx);
 }
 
@@ -830,7 +841,7 @@ static bool fit_premul_applies(const FitSel *s)
 {
     return s->size_drop_rung < SDR_NO_PREMUL &&
            s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
-           !(s->flags & PCREC_NO_PREMUL_TABLE);
+           !pcrec_flags_has(s->flags, PCREC_NO_PREMUL_TABLE);
 }
 
 /* [PF-DROP] (D135) THE LAST RUNG: drop the VM hybrid's
@@ -848,7 +859,7 @@ static bool fit_prefilter_applies(const FitSel *s)
     return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&
            s->cx->job && s->cx->job->fit.chosen != ENGM_DFA &&
            s->cx->job->fit.prefilter &&
-           !(s->flags & PCREC_FORCE_PREFILTER);
+           !pcrec_flags_has(s->flags, PCREC_FORCE_PREFILTER);
 }
 
 /* The total fallback: nothing smaller is left, and the refusal stands. */
@@ -899,7 +910,7 @@ static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER
 static bool fit_sel1_eligible(const FitSel *s)
 {
     return s->cx->opt->engine == PCREC_ENGINE_AUTO &&
-           !(s->flags & PCREC_FORCE_PREFILTER);
+           !pcrec_flags_has(s->flags, PCREC_FORCE_PREFILTER);
 }
 
 /* [OPT-4] the [SEL-1] rung that keeps a count-collapsed prefilter: offered
@@ -1032,8 +1043,8 @@ static const FitRung fit_rungs[] = {
  * `--size-cap=refuse` on a degrading row inside the switch's reach (`fof`). */
 static bool fit_rung_denied(const FitRung *r, uint64_t flags)
 {
-    return (r->deny & flags) != 0 ||
-           (r->degrading && r->fof == FIT_FOF_IN && (flags & PCREC_SIZE_CAP_REFUSE) != 0);
+    return pcrec_flags_has(flags, r->deny) ||
+           (r->degrading && r->fof == FIT_FOF_IN && pcrec_flags_has(flags, PCREC_SIZE_CAP_REFUSE));
 }
 
 /* The rung row whose action is `act`. */
@@ -1180,7 +1191,7 @@ typedef struct {
 } StWhy;
 
 static bool stw_option(const StWhySel *s)  { return s->unroll_k > 0 && s->phase == ST_DEFAULT; }
-static bool stw_denied(const StWhySel *s)  { return (s->flags & PCREC_NO_SIZE_TERM) != 0; }
+static bool stw_denied(const StWhySel *s)  { return pcrec_flags_has(s->flags, PCREC_NO_SIZE_TERM); }
 static bool stw_default(const StWhySel *s) { return s->phase != ST_FINAL; }
 static bool stw_rescue(const StWhySel *s)  { return s->rescue; }
 static bool stw_moved(const StWhySel *s)   { return s->moved; }
@@ -1516,8 +1527,8 @@ static const char *fit_trace_labels(const Ctx *cx)
         "%s dd=%d cr=%d sdr=%d fo=%#llx ovw=%s sc=%llu/%llu latch=%d/%d "      \
         "restart=%d", (row), (int)dfa_disabled, (int)collapse_reason,          \
         (int)size_drop_rung,                                                   \
-        (unsigned long long)(defo.flags &                                      \
-                             (PCREC_NO_PREMUL_TABLE | PCREC_NO_PREFILTER)),    \
+        (unsigned long long)pcrec_flags_masked(defo.flags,                    \
+                             PCREC_NO_PREMUL_TABLE | PCREC_NO_PREFILTER),      \
         dfa_disabled ? overflow_why : "-", size_cap_bytes, size_cap_limit,     \
         (int)dfa_was_engine, (int)budget_fallback, (int)(restart))
 #else
@@ -1801,7 +1812,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * This one bool is read at exactly one place (parse.c's capturing-`(`
          * hook) and is what makes "--no-captures reproduces today's AST, and
          * therefore today's bytes" true by construction rather than by audit. */
-        cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
+        cx.want_caps = !pcrec_flags_has(defo.flags, PCREC_NO_CAPTURES);
         /* [DD-13b.W1.3] THE DEFINITION SET, and the ONE flag read from it.
          * NULL on every entry but `pcrec_compile_defs`, so the composer call
          * below is one pointer test and every artifact a non-`--source`
@@ -2166,8 +2177,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * the parse and whatever the encoding, because it is a fact about the
          * REQUEST: the same two bits are contradictory on a `byte` artifact,
          * where both happen to be inert. */
-        if ((defo.flags & PCREC_NO_STARTPOS_GUARD) &&
-            (defo.flags & PCREC_FORCE_STARTPOS_ALIGN))
+        if (pcrec_flags_has(defo.flags, PCREC_NO_STARTPOS_GUARD) &&
+            pcrec_flags_has(defo.flags, PCREC_FORCE_STARTPOS_ALIGN))
             pcrec_ctx_fail(&cx, 0, "-fstartpos-guard=align and "
                            "-fno-startpos-guard cannot both be requested");
 
@@ -2437,8 +2448,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * machine costs no allocation and — the expensive half —
              * determinization never runs on it. */
             const uint64_t pfc_flags = cx.opt->flags;
-            const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
-            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
+            const bool pfc_deny  = pcrec_flags_has(pfc_flags, PCREC_NO_PREFILTER_COLLAPSE);
+            const bool pfc_force = pcrec_flags_has(pfc_flags, PCREC_FORCE_PREFILTER_COLLAPSE);
             /* [OPT-4.1] READ, NOT RE-CALLED: the E1 kind mask is the one
              * derivation, and T2's `nullable-collapsed` row (src/opt/
              * select_engine.c) reads the same bit, so the two conjuncts
@@ -2477,7 +2488,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * that only the collapsed language can supply is honoured, not
              * silently answered with a refusal. */
             const bool pfc_prefilter_forced =
-                (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
+                pcrec_flags_has(pfc_flags, PCREC_FORCE_PREFILTER);
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, from
              * ONE row of T3 (`pflw_rows[]`, [DEC-FALLBACK] §1.5, D81's
              * "decision and reason together" as a table): the row that
@@ -2730,7 +2741,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * code bytes; K41 witness 1: 1,718,425). */
             bool run = cx.job->fit.chosen == ENGM_VM &&
                        defo.unroll_k == 0 &&
-                       !(defo.flags & PCREC_NO_SIZE_TERM) &&
+                       !pcrec_flags_has(defo.flags, PCREC_NO_SIZE_TERM) &&
                        (cx.job->vm_rungs & 0x10u) != 0 &&
                        emit_code > (size_t)size_term_threshold;
             if (run) {

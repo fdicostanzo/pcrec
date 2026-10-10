@@ -39,7 +39,7 @@ uint64_t pcrec_memfn_denies(uint64_t flags)
 {
     uint64_t d = 0;
     for (size_t i = 0; i < sizeof deny_map / sizeof deny_map[0]; i++)
-        if (flags & deny_map[i].flag) d |= deny_map[i].mf;
+        if (pcrec_flags_has(flags, deny_map[i].flag)) d |= deny_map[i].mf;
     return d;
 }
 

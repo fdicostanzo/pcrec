@@ -2169,8 +2169,8 @@ void pcrec_parse_mods_init(Ctx *cx)
 {
     ParseMods *m = pcrec_arena_alloc(&cx->arena, sizeof *m);
     *m = (ParseMods){ .caseless = cx->opt &&
-                                  (cx->opt->flags & PCREC_CASELESS) != 0,
-                      .ucp = cx->opt && (cx->opt->flags & PCREC_UCP) != 0 };
+                                  pcrec_opt_has(cx->opt, PCREC_CASELESS),
+                      .ucp = cx->opt && pcrec_opt_has(cx->opt, PCREC_UCP) };
     cx->mods = m;
     /* [UCP] `--ucp` asks for module `ucp`'s semantics, so it is refused by
      * the module's name when the module is not enabled — `(*UCP)`'s own gate,

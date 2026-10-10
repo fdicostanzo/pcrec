@@ -195,6 +195,47 @@ PcrecEmitSize pcrec_sb_size_decide(const StrBuf *sb);
  * non-NULL, is set when the text ends inside a comment or a table. */
 PcrecEmitSize pcrec_emit_size_measure(const char *src, size_t len, bool *open_out);
 
+/* [FLAG-ACCESS] THE OPTION WORD'S ONE READ SITE. Every question put to
+ * `pcrec_options.flags` -- "is this bit set", "which of these bits are set",
+ * "the word without these bits" -- goes through the four functions below and
+ * nowhere else; the representation (today one `uint64_t`, each key a
+ * `PCREC_BIT(n)` of `lib/pcrec.h`) is therefore named HERE and in the
+ * `PCREC_*` key macros only. Two words, a bitset or a separate deny set is a
+ * change to this block (plus the key macros' encoding), not to the ~60 sites
+ * that ask. `make test-flagaccess` refuses a raw `flags & PCREC_X` read
+ * anywhere else under src/ and cli/.
+ *
+ * A KEY is a `lib/pcrec.h` option macro (or an OR of them, or a table's
+ * `deny` column, which is the same value) -- the axis rows of
+ * `src/core/axes.def` name exactly these tokens, and compile.c's
+ * static asserts check that each is a single bit, so the accessor's "any of"
+ * reading is only ever exercised on a multi-bit key by a caller that wrote
+ * the OR. Writes (`|=`, `&= ~`) are the CLI's and the compiler's own
+ * construction of the word and are NOT behind this block.
+ *
+ *   pcrec_flags_has      any bit of `key` set in the word `flags`
+ *   pcrec_opt_has        the same, on an options struct
+ *   pcrec_flags_masked   the subset of `flags` selected by `key`
+ *   pcrec_flags_without  `flags` with `key` cleared */
+/* FLAG-ACCESS-BEGIN (tests/core/flag_access_check.py exempts this block only) */
+static inline bool pcrec_flags_has(uint64_t flags, uint64_t key)
+{
+    return (flags & key) != 0;
+}
+static inline bool pcrec_opt_has(const pcrec_options *opt, uint64_t key)
+{
+    return pcrec_flags_has(opt->flags, key);
+}
+static inline uint64_t pcrec_flags_masked(uint64_t flags, uint64_t key)
+{
+    return flags & key;
+}
+static inline uint64_t pcrec_flags_without(uint64_t flags, uint64_t key)
+{
+    return flags & ~key;
+}
+/* FLAG-ACCESS-END */
+
 /* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
  * deny, then force, then `src/core/axes.def`'s `default_state`. General over
  * every row; see its definition in src/core/compile.c. */

@@ -145,7 +145,7 @@ Ast *pcrec_look_t3(Ctx *cx, const Ast *body, bool behind, bool neg)
 {
     for (int i = 0; i < pcrec_look_nrows; i++) {
         const PcrecLookRow *r = &pcrec_look_rows[i];
-        if (r->deny && (cx->opt->flags & r->deny)) continue;
+        if (r->deny && pcrec_opt_has(cx->opt, r->deny)) continue;
         PcrecCpSet set;
         if (!r->applies(cx, body, &set)) continue;
         if (!r->ctx) return NULL;

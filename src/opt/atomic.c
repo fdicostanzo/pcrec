@@ -542,7 +542,7 @@ Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root)
      * See lib/pcrec.h for why this is its OWN flag rather than a clause on
      * that one: this denial changes which ENGINE a pattern gets, and an
      * optimisation flag must not. */
-    if (cx->opt && (cx->opt->flags & PCREC_NO_ATOMIC_DISCHARGE)) return root;
+    if (cx->opt && pcrec_opt_has(cx->opt, PCREC_NO_ATOMIC_DISCHARGE)) return root;
 
     DischargeSet d;
     memset(&d, 0, sizeof d);

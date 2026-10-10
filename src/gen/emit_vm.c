@@ -1535,7 +1535,7 @@ static int vm_cls(Vm *v, const uint8_t *bits)
  * Otherwise ONE decode + kit test (design §2.2, §6.1). */
 static bool vm_wcls_bytes(Ctx *cx, const Ast *a)
 {
-    if (cx->opt->flags & PCREC_NO_CLS_KIT) return true;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_CLS_KIT)) return true;
     if (!pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding), PCREC_ENCE_DECODE))
         return true;
     int n;
@@ -2318,7 +2318,7 @@ static int vm_cat_flatten(Ctx *cx, const Ast *a, const Ast ***out)
 static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
                       unsigned char *out)
 {
-    if (v->cx->opt->flags & PCREC_NO_LIT_RUN) return 0;
+    if (pcrec_opt_has(v->cx->opt, PCREC_NO_LIT_RUN)) return 0;
     return pcrec_lit_run(v->cx, el, n, j, out);
 }
 
@@ -2370,7 +2370,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * hard way: the artifact would size for 8 iterations and take 4000. */
     if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
         && !vm_revdet_fits(a, under_atomic)
-        && !(v->cx->opt->flags & PCREC_NO_COUNTER)
+        && !pcrec_opt_has(v->cx->opt, PCREC_NO_COUNTER)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l, false);
         const long long K = v->unroll_k;
@@ -3081,7 +3081,7 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
      * performs, and this rung does not replicate per iteration — it emits a
      * fixed K + residue whatever `m` is. Multiplying here would re-import
      * exactly the explosion the rung removes. */
-    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
+    if (!pcrec_opt_has(v->cx->opt, PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         const int K = v->unroll_k;
         const int nopt = a->u.rep.rmax - a->u.rep.rmin;
         int copies = vm_counter_copies(v, a, cuts);
@@ -4176,7 +4176,7 @@ static void vm_isl_insert(Vm *v, VmIsl *t, const uint8_t *w, int len, int idx)
 static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
 {
     memset(t, 0, sizeof *t);
-    if (v->cx->opt->flags & PCREC_NO_ALT_ISLAND) return false;
+    if (pcrec_opt_has(v->cx->opt, PCREC_NO_ALT_ISLAND)) return false;
 
     long long budget = VM_ISL_MAX_BYTES;
     VmIslWL wl;
@@ -4467,7 +4467,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
      * and a one-child parent — is compared by its parent's run compare and
      * is never emitted, so it takes no label. */
     bool *inrun = pcrec_arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *inrun);
-    const bool runs = !(v->cx->opt->flags & PCREC_NO_LIT_RUN);
+    const bool runs = !pcrec_opt_has(v->cx->opt, PCREC_NO_LIT_RUN);
     for (int x = 1; x < t->nnd; x++)
         inrun[x] = runs && t->nd[x].nacc == 0 && t->nd[x].nkids == 1
                 && t->nd[t->nd[x].parent].nkids == 1;
@@ -6494,7 +6494,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * one that catches the bodies all three above decline. Selected by the one
      * shared predicate the two pre-passes also call, never by a second reading
      * of the same conditions. */
-    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
+    if (!pcrec_opt_has(v->cx->opt, PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         vm_counter_rep(v, entry, a, next, under_atomic);
         return;
     }
@@ -9510,7 +9510,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * row per copy; these are per SOURCE `A_REP`, which is the only population
      * comparable with eng_brep_design.md §2.6's own census. Counting the rows
      * instead would measure replication as much as it measures the rule. */
-    if (cx->opt->flags & PCREC_NO_POSSESSIFY)
+    if (pcrec_opt_has(cx->opt, PCREC_NO_POSSESSIFY))
         /* The value is EMPTY, not "0/0": "0 of 0" would read as "this program
          * has no quantifiers", which is a different fact and usually a false
          * one. A denied pass has not counted anything, and an empty field is
@@ -10297,7 +10297,7 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
     }
     /* Set BEFORE the walk: vm_push_at reads it to decide whether the emitted
      * RX_PUSH carries its label id. */
-    v->tracing = (cx->opt->flags & PCREC_TRACE) != 0;
+    v->tracing = pcrec_opt_has(cx->opt, PCREC_TRACE);
     /* [ENG-BREP counter-K] K, resolved ONCE here. Set BEFORE vm_count_slots,
      * which is the first of the three consumers to run — vm_counter_fits reads
      * it, and a zero would make every quantifier "below K" and silently
@@ -10309,7 +10309,7 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * only by the stamp and by the entry points, because the walk itself sees
      * the ceiling through a macro and never needs to know which of the two it
      * is. `fit.prefilter` is select_engine's verdict and is final by now. */
-    v->mrl     = (cx->opt->flags & PCREC_NO_LENGTH_PRUNE) == 0;
+    v->mrl     = !pcrec_opt_has(cx->opt, PCREC_NO_LENGTH_PRUNE);
     /* [M6.4.2 / M6.6.2 wave E / OPT-4] RULE H3 — THE PREFILTER'S SPAN END IS
      * AN UPPER BOUND ONLY WHERE THE PREFILTER ANSWERS FOR THIS EXACT
      * LANGUAGE, and the three conjuncts are three ways it does not.
@@ -10702,7 +10702,7 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
      * standing direction rules out. */
     long long fast_frames = bt_frames, fast_trail = trail_frames;
     bool tiered = false;
-    if (!(cx->opt->flags & PCREC_NO_TIERED_ENTRY)) {
+    if (!pcrec_opt_has(cx->opt, PCREC_NO_TIERED_ENTRY)) {
         const long long slots = (long long)(nstate < 1 ? 1 : nstate)
                               * (long long)sizeof(ptrdiff_t);
         const long long avail = (long long)VM_FAST_TIER_BYTES - slots;
@@ -13908,7 +13908,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
                     has_budget ? budget : -1, work_budget, bt_frames, ceiling,
                     &pl->bufs);
 
-    if (cx->opt->flags & PCREC_EMIT_MAIN)
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
         pcrec_emit_main(cx, g);
 
     /* [M4.5c] The listing, rendered LAST — the event stream is complete by

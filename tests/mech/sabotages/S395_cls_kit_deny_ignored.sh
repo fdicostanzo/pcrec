@@ -11,6 +11,6 @@ SAB_DESC="vm_wcls_bytes no longer reads PCREC_NO_CLS_KIT, so -fno-cls-kit builds
 SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the s4build tip: wclass:1fail/16pass DETECTED -- [K2]."
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (cx->opt->flags & PCREC_NO_CLS_KIT) return true;
+SAB_BEFORE='    if (pcrec_opt_has(cx->opt, PCREC_NO_CLS_KIT)) return true;
 '
 SAB_AFTER=''

@@ -486,7 +486,7 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
 static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
 {
     if (fit->chosen != ENGM_VM) return;
-    if (cx->opt->flags & PCREC_NO_POSSESSIFY) return;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_POSSESSIFY)) return;
     for (int round = 0; round < SELECT_MAX_ROUNDS; round++)
         if (pcrec_possessify(cx, root) == 0) break;
 }
@@ -508,7 +508,7 @@ static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
 static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
 {
     if (fit->chosen != ENGM_VM) return;
-    if (cx->opt->flags & PCREC_NO_REVDET) return;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_REVDET)) return;
     (void)pcrec_revdet(cx, root);
 }
 
@@ -846,8 +846,8 @@ void pcrec_pf_admits_selfcheck(Ctx *cx)
  * buildable whatever engine was chosen. */
 static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
 {
-    bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
-    bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+    bool force_on  = pcrec_opt_has(cx->opt, PCREC_FORCE_PREFILTER);
+    bool force_off = pcrec_opt_has(cx->opt, PCREC_NO_PREFILTER);
     /* [PATFACTS] THE PATTERN'S KINDS, read once off the E1 record. Until
      * step 3.2 this site derived the prefilter language's nullability and
      * its collapsible-repeat test itself and copied both into `EngineFit`
@@ -997,8 +997,8 @@ static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
      * resolved to one of them), and the collapse decision itself lives at
      * `src/core/compile.c`'s build gate, where the two bits are read: this
      * site owes only the diagnostic. */
-    if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
-        (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
+    if (pcrec_opt_has(cx->opt, PCREC_FORCE_PREFILTER_COLLAPSE) &&
+        pcrec_opt_has(cx->opt, PCREC_NO_PREFILTER_COLLAPSE))
         pcrec_ctx_fail(cx, why_pos,
                  "-fprefilter-collapse and -fno-prefilter-collapse cannot "
                  "both be requested");
