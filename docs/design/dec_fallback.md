@@ -1291,7 +1291,7 @@ walk's back step.
 ### 4.6 Spec hunks
 
 Readers of the retiring identifiers outside `src/` were found by grep.
-- `docs/spec/` names `fit_rungs[]` (`limits.md:801`, unchanged: the name is
+- `docs/spec/` names `fit_rungs[]` (`limits.md` §8.4, unchanged: the name is
   kept), `dfa_disabled` (kept) and `prefilter_lang_why` (kept).
 - B2 owes ONE wording hunk with no behaviour change: `limits.md` §8's
   `--fast-or-fail` sentence ("denies every row the table marks degrading —

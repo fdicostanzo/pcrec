@@ -131,7 +131,7 @@ Statements found, during this survey, to be false or drifted against the shipped
 
 | file | status | what moves in | what's retired/referenced |
 |---|---|---|---|
-| `match_api.md` | EXISTS, keep | add: §4 subsection with D3's numeric defaults (or point to limits.md), §6.3 DFA-stamp-gap caveat (C2), §6 D76 caller-facing abi paragraph (C4), §9.1 explicit "only byte works today" lead sentence (F6), a §3.x whole-subject-matching subsection (F9) | nothing retired — this file's discipline is the model |
+| `match_api.md` | EXISTS, keep | add: §4 subsection with D3's numeric defaults (or point at the limits spec), §6.3 DFA-stamp-gap caveat (C2), §6 D76 caller-facing abi paragraph (C4), §9.1 explicit "only byte works today" lead sentence (F6), a §3.x whole-subject-matching subsection (F9) | nothing retired — this file's discipline is the model |
 | `table_contract.md` | EXISTS, keep | resolve/confirm the `--emit-ir` TO-BE-CONSIDERED note against current [DD-8] status (STALE #3) | — |
 | `tuning.md` | **NEW** | the full `-f`/`-fno-` family (A7), `--unroll=`, `--engine=`'s do-or-die posture restated caller-side, the byte-identity/engine-selecting distinction per flag (F5's caller-facing half) | retires the need to read `lib/pcrec.h`'s per-bit comments AND `lib/CLAUDE.md`'s per-bit prose AND `cli/main.c`'s per-flag comment to get the full picture — those three stay as CODE/CLAUDE.md-tier (accurate, but not the reader's first stop) |
 | `cli.md` | **NEW** | full flag reference (A1, A2, A3, A4 stub pointing at tuning.md, A5, A6, A8 stub pointing at registry.md, A9, A12, A13 stub pointing at diagnostics.md or inline, A14) | — |

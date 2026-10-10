@@ -277,7 +277,7 @@ else's refusal.
   roadmap has not been ruled ("planned but I don't know that I'd put
   them on the spine," Frank, 2026-08-24). `--lib-path` resolves only
   whether a referenced file EXISTS, not its contents.
-- **`limits.md:779`'s own text is now STALE**: it still reads "What is
+- **the old `limits.md` line 779's own text is now STALE**: it still reads "What is
   NOT yet built is the path that COMPILES from a pattern-source file at
   all — `--source` and `--target`" — but `--source`/`--target` shipped
   at [DD-13b.W1.2] (2026-08-31) and are documented as built elsewhere in
