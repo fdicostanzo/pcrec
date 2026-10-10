@@ -313,6 +313,27 @@ static void build_site(vsite *v)
             : v->cls == C_DENYKB ? "no-vrun-kb" : NULL;
 }
 
+/* 1 iff mf_define accepts site `s` under the name `name` (the hook reads
+ * `u`'s name, so `name` is copied there first), in an art of its own. */
+static int define_ok(vsite *u, const char *name, const mf_site *s)
+{
+    char keep[sizeof u->name], want[sizeof u->name];
+    snprintf(want, sizeof want, "%s", name);   /* `name` may be u->name itself */
+    snprintf(keep, sizeof keep, "%s", u->name);
+    snprintf(u->name, sizeof u->name, "%s", want);
+    tb bd = { 0 };
+    mf_sink sd = sink_of(&bd, 1);
+    mf_art *art = mf_art_begin(&g_arena, "g2v_bad", s->policy, s->denies);
+    mf_hooks h = { 0 };
+    h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
+    h.fn_name = fn_name_hook; h.u = u;
+    uint32_t handle = 0;
+    int ok = mf_define(art, s, &h, &sd, &handle) == 0;
+    free(bd.p);
+    snprintf(u->name, sizeof u->name, "%s", keep);
+    return ok;
+}
+
 /* MEMFN_FORMS' value, captured from mf_stamps (the kit's own record of
  * what it rendered: read only to hold it to G2's class expectation). */
 static void stamp_cap(void *u, const char *name, const char *val)
@@ -391,21 +412,16 @@ int main(int argc, char **argv)
         }
         gen_rank(&v[i]);
         build_site(&v[i]);
-        /* one site in five: a malformed copy of its ranking must be refused */
+        /* one site in five: a malformed copy of its ranking must be refused,
+           and the same copy with its ranking WELL-FORMED (the control) must
+           be accepted, so a refusal for any other reason reads as such */
         const char *badrank = "-";
         if (i % 5 == 3) {
             vsite b = v[i];
-            if (bad_rank(&b, &b.site.pred, (i / 5) % 4)) {
-                tb bd = { 0 }, bc = { 0 };
-                mf_sink sd = sink_of(&bd, 1);
-                mf_art *art = mf_art_begin(&g_arena, "g2v_bad", b.site.policy, b.site.denies);
-                mf_hooks h = { 0 };
-                h.s = "s"; h.n = "n"; h.lo = "lo"; h.miss = MF_MISS_N;
-                h.fn_name = fn_name_hook; h.u = &b;
-                uint32_t handle = 0;
-                badrank = mf_define(art, &b.site, &h, &sd, &handle) ? "refused" : "accepted";
-                free(bd.p); free(bc.p);
-            }
+            snprintf(b.name, sizeof b.name, "g2v_bad%u", i);
+            if (bad_rank(&b, &b.site.pred, (i / 5) % 4))
+                badrank = !define_ok(&v[i], b.name, &v[i].site) ? "control-refused"
+                        : define_ok(&b, b.name, &b.site) ? "accepted" : "refused";
         }
         /* render 1: compiled (unique names) */
         snprintf(v[i].name, sizeof v[i].name, "g2v_f%u", i);

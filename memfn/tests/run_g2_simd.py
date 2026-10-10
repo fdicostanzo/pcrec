@@ -344,7 +344,9 @@ def run(a, root, work):
             # 1b: the malformed copy, and the filter the rule gives
             if badrank != '-':
                 if badrank != 'refused':
-                    bad('site %s: a malformed ranking was %s, not refused' % (sid, badrank))
+                    bad('site %s: a malformed ranking was %s, not refused (control-refused: '
+                        'its well-formed control was refused too, so the copy tests nothing)'
+                        % (sid, badrank))
                 else:
                     nbad += 1
             if forms != 'none':

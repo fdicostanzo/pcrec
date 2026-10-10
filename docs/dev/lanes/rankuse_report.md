@@ -44,8 +44,12 @@ merged in). Request: memfn R-13, batch 1's follow-up step
 - **G2's SIMD family states rankings.** It covers seven modes, rate ties,
   entries past `rank_n` that a reader of them would pick, and malformed
   copies. It holds every rendered helper's loads, in order, to the rule as
-  derived from G2's OWN generated entries. G2 quick is green except the
-  bound re-pin (§4.1).
+  derived from G2's OWN generated entries. G2 SIMD family `--quick`:
+  1,031 passed / 0 failed (§4.1).
+- **Identity** (§4.2): there are 0 SIMD-off artifact movers against
+  lane/memfn-r13 across the whole argv population. At SIMD-on, the movers
+  are exactly the 44 vrun FUNC artifacts, and the deny is byte-identical to
+  R-13.
 
 ## 2. Commits
 
@@ -85,18 +89,29 @@ merged in). Request: memfn R-13, batch 1's follow-up step
 | `tests/registry/axes_registry_check.sh` | rc 0 (memfn floor 3/3) | `light/axes_registry.log` |
 | `make test-memfn-arch` | RED, **pre-existing on lane/memfn-r13**: C4 new-vocabulary hits in r13's S725/S726 and `run_sabotage_matrix.sh:387`. My one hit (an intrinsic name in the cli case) was removed | `light/test-memfn-arch.log` |
 | `make test-codegen` | RED 14/15, **pre-existing on lane/memfn-r13**: K37 flags `tests/memfn/run_simd_floor.sh:33`, a continuation line of a `$TIMEOUT_BIN` call that this lane did not touch. [SABANCHOR] resolves all 616 rows, S738-S742 included | `light/test-codegen.log` |
-| G2 SIMD family `--quick` (`memfn/tests/run_g2_simd.py`) | before the bound re-pin: 1,030 passed / 3 failed, all 3 being the old bounds. Every build: 19,250,552 checks, 0 fails, 0 faults. All 30 plant cells as required. Ranking: 7 modes 36-48 rendered sites each; shapes kb 205, no-kb 93, kb-not-rank0 82, kb-at-end 109, ties 135; 80 malformed copies refused. After the re-pin: see §4.3 | `g2s1.log`, `g2s2.log` |
+| G2 SIMD family `--quick` (`memfn/tests/run_g2_simd.py`) | before the bound re-pin: 1,030 passed / 3 failed, all 3 being the old bounds. Every build: 19,250,552 checks, 0 fails, 0 faults. All 30 plant cells as required. Ranking: 7 modes 36-48 rendered sites each; shapes kb 205, no-kb 93, kb-not-rank0 82, kb-at-end 109, ties 135; 80 malformed copies refused. **After the re-pin (`g2s2.log`): 1,031 passed / 0 failed.** The same counts as before, with guarded maxima 2,661 / 2,721 / 5,370 under 2,700 / 2,800 / 5,500 | `g2s1.log`, `g2s2.log` |
 
 All logs are under `/home/pcrec/.claude/jobs/e99da2a5/tmp/rankuse/`.
 
-### 4.2 Identity (sampled; the full gate is OWED)
+### 4.2 Identity, light tier (the full gate with `--arms start` / `--variant all` is OWED)
 
-`scripts/emit_sweep.py --ref-bin <lane/memfn-r13 6d16bbac build> --every 20`:
-see §4.3 for the numbers.
+All three runs use `scripts/emit_sweep.py --ref-bin <lane/memfn-r13 6d16bbac
+build>`. They covered every corpus pattern (argv population 5,431,
+composition 373 files), with logs in `sweep/`:
 
-### 4.3 Numbers filled at handback
+| arm | result |
+|---|---|
+| SIMD-off (default), all streams | **0 artifact movers** on every stream: c-default, c-vm, emit-ir-vm, facts, emit-ir-auto ×4, stderr, composition. The only dump that moves is `--list-axes`, by exactly the `vrun-kb` row. Self-check passed (`off.log`) |
+| `--extra=-fmemfn-simd`, all streams | c-default **44** movers and c-vm **43**: the vrun FUNC artifacts, matching test-memfn-simdfloor's 44. Every other stream has 0 movers; the dumps move by the row (`on.log`) |
+| `-fmemfn-simd --memfn=no-vrun-kb` (tree, through a wrapper `--bin`) vs base `-fmemfn-simd`, streams c-default/c-vm | **0 movers** on both (4,980 / 4,981 reached). The deny arm IS R-13's rendering byte for byte (`onkb.log`) |
 
-(see the addendum below)
+Both SIMD-on runs exit rc 1 only through the sweep's own "NO DIFFER FLOOR
+PINNED" rule on the unpinned `-fmemfn-simd` extra arm. That rule is about
+the instrument's arms and is not a mover.
+
+The `--memfn=no-vrun-kb` deny cannot be given to the base binary (its
+registry has no such row), so emit_sweep's `--extra` cannot pair it. A
+wrapper script that injects it into the tree side only was the instrument.
 
 ## 5. What is NOT built, and why
 
