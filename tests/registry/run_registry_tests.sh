@@ -671,16 +671,21 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # (`sel1-collapse`, `prefilter-collapse`: PCREC_NO_PREFILTER_COLLAPSE) get 3
 # checks each (macro/bit, cli flag, tuning.md heading). `prefilter-admit`
 # (T2) has no deny bit and adds none. Measured: 216 PASS, 0 failed.
-if [ "$axesn" -ne 216 ]; then
+# 216 -> 217 at [MEMFN] R-13 (merged onto main by lane r13merge,
+# 2026-10-10): the kit's first rows (vrun-w16, vrun-w32, vrun-kb) landed with
+# their `memfn` section floor (docs/spec/registry.md §6¶8b), so the
+# `[memfn floor]` arm prints PASS where it printed UNREACHED. Measured: 217
+# PASS, 0 failed.
+if [ "$axesn" -ne 217 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 216." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 217." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (216 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (217 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 216 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 217 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
