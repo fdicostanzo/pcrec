@@ -74,7 +74,18 @@ Found by grep (`grep -rn 'spec/tuning\.md'` over scripts, then each reader's par
 
 ## 8. Validation
 
-OWED until §8's results are filled in below by this lane's own validation step.
+Run on this branch after the report was written (tip before this section: `439fd435`):
+
+- `make strict`: `strict: whole tree compiles clean with -Werror -Wshadow`.
+- `make test-spec-history`: `checks passed: 136` / `checks failed: 0` (tuning: 57 headings, 299 paragraphs, contents current, `1111 citations scanned, floor 550`, zero markers).
+- `bash tests/registry/axes_registry_check.sh` (the file `run_registry_tests.sh` chains): `checks passed: 216` / `checks failed: 0`.
+- `bash tests/registry/limits_check.sh`: `checks passed: 37` / `checks failed: 0`.
+- `bash tests/codegen/run_facts_checks.sh` (the re-pinned reader): `checks passed: 8` / `checks failed: 0`; `REACH: 40 deny flag(s) from axes.def; 4 carry a tuning.md "Facts emptied" line`, `[facts-why]` PASS.
+- `bash tests/codegen/run_tune_dial.sh` (the §5.4 reader): `checks passed: 113` / `checks failed: 0`, including "the contract's -2 ladder cells read bar 0.95 / threshold 40,000".
+- `make test-memfn-rows` (the §2.38 reader): `checks passed: 137` / `checks failed: 0`.
+- `make test-cli`: `cases failed: 0`.
+- `tests/axes/run_axes.sh`'s `doc_bits` cross-check: NOT run (test-axes is barred by the box hold); emulated with the script's own `sed`/`grep` pipeline over the new text against `lib/pcrec.h`'s derived bits: identical 46-bit sets (4-33, 35-40, 42-51).
+- NOT run (box hold): full `make test`, mech, test-axes, san. The two edited C files are comment-only (`make strict` compiled them); no emitted byte, no abi event.
 
 ## 9. Open questions (not resolvable from the code; not guessed)
 
