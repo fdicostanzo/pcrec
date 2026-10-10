@@ -165,7 +165,11 @@ for row in "${MANIFEST[@]}"; do
         continue
     fi
 
-    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+    # [OPT-REVEND] the rows count the FORWARD (composite) machine's edges; an
+    # end-pinned row walks back from the end by default and carries no
+    # forward machine, so the census compiles every row with that row denied
+    # (byte-identical on a pattern it does not reach).
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
         bad "'$pat' failed to compile: $(head -1 "$TMP/err")"
         continue
     fi
@@ -294,7 +298,9 @@ fi
 # anchored, never reverse), and a chain whose head is a view target, trimmed
 # one link. Each row below is `pattern|forward reverse anchored` edge counts,
 # measured on the landing tree; under `-fno-view-edge` every count must be 0
-# (none of these machines has a view-free chain). What each row pins:
+# (none of these machines has a view-free chain); every row is compiled under
+# `-fno-rev-end` ([OPT-REVEND]: an end-pinned pattern's default artifact has
+# no forward machine). What each row pins:
 #   `(?:[a-z]{0,4})\z` forward = the END-view chain; reverse = the TRIM (its
 #                      start state reaches the chain only through its END
 #                      view); the row's own customer shape.
@@ -318,7 +324,7 @@ for row in "${VEDGE[@]}"; do
         continue
     fi
     for deny in "" -fno-view-edge; do
-        if ! pcrec_run "$PCREC" -p rx --features all -fcomments $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
             bad "'$pat' $deny failed to compile: $(head -1 "$TMP/err")"
             continue
         fi

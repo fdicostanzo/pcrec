@@ -283,6 +283,11 @@ read_artifact() {
         # goto star, never by a _step call).
         /forward_state = rx_forward_step\(/                        { scan = 1 }  # ENG_UNANCH
         /^static int rx_prefilter\(const unsigned char \*subject, / { scan = 1 }  # the inlined hybrid
+        # [OPT-REVEND] L2: the reverse walk from the end (emit_rev_end), whose
+        # RX_DFA_TABLE describes the reverse machine it steps. Marker shared
+        # with run_dfa_stamps.sh; missing here, 143 rev-end artifacts read as
+        # stamp-without-a-scan (lane revtri, 2026-10-10).
+        /^    for \(int revend_seed = 0; /                           { scan = 1 }  # REV_END
         # ---- (ii) STAMPED: the `#define` line, and nothing else ------------
         /^#define RX_DFA_TABLE "/ { s = $0; sub(/^#define RX_DFA_TABLE "/, "", s);
                                     sub(/"$/, "", s); stamp = s }

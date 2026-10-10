@@ -24,6 +24,22 @@ semantics main already implements, so it passes today; the report is
   re-asks the oracle for every cell and every group slot; shares no code with
   the generator. Exit 1 on any disagreement.
 
+- **gen_rev_end.py** — [OPT-REVEND] L2 (lane revbuild): the case table and
+  writer of `tests/assertions/rev_end.rxt`, the capture-free `rev-end` answer
+  net, oracle-first like `gen_stage2.py` (same usage; verify the written file
+  with `verify_stage2.py`).
+- **window_twin.py**, **window_twin_driver.c**, **window_twin_patterns.tsv**,
+  **run_window_twin.sh** — [OPT-REVEND] L2's WINDOW-IDENTITY TWIN (locate_finish.md
+  §5 L3; LR-S2, LR-S4), moved here from `studies/revend_twin` (r3): every
+  `stage2_captures.rxt` block plus the TSV, compiled default (A, the walk) and
+  `-fno-rev-end` (B) by one pcrec, linked into one driver with libpcre2-8,
+  run at every character-boundary offset of every subject over the
+  pattern's alphabet: the windows the VM's attempt reads (exact hybrids:
+  both have prefilters), the answers and the oracle must agree, and A's
+  E-VR traversals (the RETRY path) must be 0 on an exact hybrid. Strata
+  (exact hybrid, superset hybrid, DFA-only) each must be non-empty.
+  `make test-revend-twin` (opt-in; mech arm `revtwin`).
+
 ## Running
 
     bash tests/harness/run.sh tests/revend/stage2_captures.rxt              # default engine

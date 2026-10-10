@@ -144,3 +144,28 @@ machine.
 Regenerating `rows.tsv.gz` (a new pin, a grown corpus) moves `summary.txt` and
 every population number in `docs/design/locate_finish.md`; no check reads
 these files.
+
+- `l2_movers.py` — [lane revbuild] [OPT-REVEND] L2's MOVER CENSUS: every
+  corpus pattern compiled by two pcrec binaries (parent and change) at one
+  option set, each differing artifact classified by which stamps and
+  `rx_info` fields moved (else `text`). Its runs are cited in
+  `docs/dev/lanes/revbuild_report.md` (L2.1: 638 rows, all
+  `DFA_START`/`search_form` reverse-pass -> attempt-start; L2.2: 274 rows).
+  Its outputs are `results/l2_movers_l21.tsv` (L2.1 against L1) and
+  `results/l2_movers_l22.tsv` (L2.2 against L2.1); `results/l2_stage2_movers.txt`
+  lists the `stage2_captures.rxt` patterns stage 2 moves (default vs
+  `-fno-rev-end`).
+- `mk_l2_rows.py` — [lane revbuild] writes L2's sabotage rows S758-S781
+  (revend.md §9.2's sixteen recast, L2.1's stamp fork, the deference, the
+  size-ladder clause and its reader, stage 2's four) from the CURRENT source:
+  `python3 -I studies/locate_finish/mk_l2_rows.py tests/mech/sabotages`.
+- **At [OPT-REVEND] L2 (lane revbuild, 2026-10-10)** C1 and C5 learn the
+  `rev-end` walk (C1: the reverse pass is stamped by either scan value; C5: a
+  walk carries R, A iff unwrapped, and F only where a tie relocates, which no
+  stamp says, so C5 takes the text's F there and C5-L0 holds it), and
+  `asks_declared_L0.tsv`'s six stamp-only rows are gone (L2.1's generated
+  stamp rule) beside one new non-stamp row, WHEN `rev-end`: the scan-edge
+  pass asks the forward machine's NEXT before the anchored build. Measured on
+  the revbuild tip against pcrec-bench (read-only): 5,963 rows, 5,520
+  compiled; C1-C5 0, C5-L0 0, C6 5,520 agree (31 rows use the `rev-end`
+  declaration, 0 stale), C7 0.

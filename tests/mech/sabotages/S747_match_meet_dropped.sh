@@ -10,5 +10,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\B\\b" 
 SAB_REACH_EXPECT='REACH-EMPTY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                  .hand = dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT };'
-SAB_AFTER='                  .hand = CAND_HAND_AT };   /* SABOTAGE S747: the meet dropped */'
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the meet is dfa_match_hand's one line; the plant still asks AT on an empty body. Intent
+# unchanged.
+SAB_BEFORE='    return dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT;'
+SAB_AFTER='    return CAND_HAND_AT;   /* SABOTAGE S747: the meet dropped */'

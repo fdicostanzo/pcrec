@@ -345,7 +345,23 @@ floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
 # Floored per K35's convention (~85-90% margin, matching offset-set's own
 # 290/322): 100 clears both main's 117 and U2's 113 with margin to spare.
 floor_check "D:RX_DFA_PREFILTER=run-pinned"   100
-floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 12
+# [OPT-REVEND] L2 (2026-10-10, abi 73) legitimately re-derives
+# run-pinned-bounded's floor, by mechanism (lane revfloor, docs/dev/lanes/
+# revfloor_report.md): the rev-end locator (tuning.md §2.46) takes every
+# END-PINNED artifact before the forward prefilter ladder is asked, so the
+# eleven corpus patterns that were run-pinned-bounded AND end-pinned
+# (`abc$`, `abc\z`, `abc\Z`, `log$`, `/user$`, `/user\z`, `foo\b\z`,
+# `(abc)$`, `(ab)(c)$`, `(foo|foobar)$`, `(log|login|logout)$`) now stamp
+# RX_DFA_SCAN "rev-end" / RX_DFA_PREFILTER "none". Measured by per-pattern A/B
+# (main a15fb77b vs lane/revtri): 20 -> 9, exactly those eleven leave and
+# nothing moves into the form. Floored at ~80% of 9 (the 14 -> 12 convention,
+# rounded down).
+floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 7
+# The value that took them is floored in the same change (K35: every value the
+# corpus reaches gets a floor on first sight): 235 corpus patterns stamp
+# RX_DFA_SCAN "rev-end" at the L2 build (triples: 219 none/premultiplied, 8
+# byte-class-bounded, 5 memchr-bounded, 3 none/mixed) — floored at ~85%.
+floor_check "D:RX_DFA_SCAN=rev-end"           200
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # [ENG-ABS] (2026-08-29, abi 10) axis G. Measured on this tree: 825
 # `unwrapped` and 184 `search-filter` (180 of them ENG_ATTEMPT, 4 the empty
@@ -438,7 +454,7 @@ synthetic_table_witness '(?:[a-z]+)@(?:[a-z]+)' '-fno-premul-table' 'indexed'
 # above is caught by name rather than by silent omission.
 declare -A KNOWN_VALUES=(
     ["D:RX_ENGINE=vm"]=1 ["D:RX_ENGINE=dfa"]=1
-    ["D:RX_DFA_SCAN=unanchored"]=1 ["D:RX_DFA_SCAN=attempt"]=1 ["D:RX_DFA_SCAN=empty"]=1
+    ["D:RX_DFA_SCAN=unanchored"]=1 ["D:RX_DFA_SCAN=attempt"]=1 ["D:RX_DFA_SCAN=empty"]=1 ["D:RX_DFA_SCAN=rev-end"]=1
     ["D:RX_DFA_PREFILTER=none"]=1 ["D:RX_DFA_PREFILTER=memchr"]=1
     ["D:RX_DFA_PREFILTER=byte-class"]=1 ["D:RX_DFA_PREFILTER=memchr-bounded"]=1
     ["D:RX_DFA_PREFILTER=byte-class-bounded"]=1

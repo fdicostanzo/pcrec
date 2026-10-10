@@ -234,7 +234,9 @@ static void build_anchored_dfa(Ctx *cx)
      * available exactly where the machine was built. */
     if (!pcrec_cand_finish_needs(cx, CAND_MA)) return;
     if (cx->opt->flags & PCREC_NO_ANCHORED_DFA) return;
-    if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;
+    /* [OPT-REVEND] L2 (LR-S12): the drop row FIRED, not the ladder's ordinal
+     * passing it (the row declines where dropping grows the member set). */
+    if (cx->anchored_dropped) return;
 
     bool  saved_overflowed = cx->dfa_overflowed;
     char  saved_why[sizeof cx->dfa_overflow_why];
@@ -768,8 +770,13 @@ static bool fit_collapse_applies(const FitSel *s)
  * "this DFA artifact carries it". */
 static bool fit_anchored_applies(const FitSel *s)
 {
+    /* [OPT-REVEND] L2 (LR-S12): only where the drop SHRINKS the member set
+     * (a `rev-end` tie with no anchored machine relocates to the composite,
+     * which adds the forward machine); otherwise the ladder goes on to its
+     * next rung. */
     return s->size_drop_rung == SDR_NONE &&
-           s->cx->job && s->cx->job->anchored_ok;
+           s->cx->job && s->cx->job->anchored_ok &&
+           pcrec_cand_drop_anchored_shrinks(s->cx);
 }
 
 /* [K59-PREMUL] THE DROP LADDER'S SECOND RUNG — the premultiplied
@@ -1833,6 +1840,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * discovers can raise it, and `build_anchored_dfa` is its one
          * reader. */
         cx.size_drop_rung = size_drop_rung;
+        cx.anchored_dropped =
+            (fit_fired >> (fit_rung_of(FIT_DROP_ANCHORED) - fit_rungs)) & 1u;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;

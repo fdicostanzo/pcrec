@@ -172,6 +172,8 @@ PCREC_AXIS(PCREC_NO_SCAN_EDGE,    "-fno-scan-edge",    0, "", PCREC_AXIS_DEFAULT
 /* [OPT-VEDGE] the view-tolerant half of the scan edge above. */
 PCREC_AXIS(PCREC_NO_VIEW_EDGE,    "-fno-view-edge",    0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_START_PINNED, "-fno-start-pinned", 0, "", PCREC_AXIS_DEFAULT_ON)
+/* [OPT-REVEND] the reverse-from-end LOCATE row (`rev-end`). */
+PCREC_AXIS(PCREC_NO_REV_END,      "-fno-rev-end",      0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the CONTRACT axes ([K50], [UTF-VALID]) -----------------------------
  * Axes whose settings describe different real SEMANTICS for one input class,

@@ -10,13 +10,18 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a" && gr
 SAB_REACH_EXPECT='REACH-UNWRAPPED'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    { .c = { "verify-at", 0, finish_verify_at_applies }, .slot = CAND_SLOT_FINISH,
-      .routes = CR_DFA, .tok = "unwrapped", .map = CM_NONE,
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): verify-at gained its ENDSET and CR_VM cells and search-from its ENDSET/LOWER cells; the plant still moves verify-at after search-from. Intent
+# unchanged.
+SAB_BEFORE='    { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
+      .routes = CR_DFA | CR_VM, .tok = "unwrapped", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 1, "unwrapped", PCREC_NO_ANCHORED_DFA } },
       .desc = "the artifact'\''s own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])",
-      .needs = { [CAND_ROUTE_DFA] = { CAND_MA } },
-      .u.finish = { CAND_FIN_VERIFY, .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT } } } },
+      .needs = { [CAND_ROUTE_DFA] = { CAND_MA },
+                 [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
+                [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
+      .u.finish = { CAND_FIN_VERIFY } },
     { .c = { "search-from", 0, cand_always }, .slot = CAND_SLOT_FINISH,
 '
 SAB_AFTER='    /* SABOTAGE S741: verify-at moved after search-from */
@@ -24,14 +29,19 @@ SAB_AFTER='    /* SABOTAGE S741: verify-at moved after search-from */
 '
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
-SAB_BEFORE2='                              [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH } } } },
+SAB_BEFORE2='                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
+      .u.finish = { CAND_FIN_SEARCH } },
 '
-SAB_AFTER2='                              [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH } } } },
-    { .c = { "verify-at", 0, finish_verify_at_applies }, .slot = CAND_SLOT_FINISH,
-      .routes = CR_DFA, .tok = "unwrapped", .map = CM_NONE,
+SAB_AFTER2='                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
+      .u.finish = { CAND_FIN_SEARCH } },
+    { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
+      .routes = CR_DFA | CR_VM, .tok = "unwrapped", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 1, "unwrapped", PCREC_NO_ANCHORED_DFA } },
       .desc = "the artifact'\''s own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])",
-      .needs = { [CAND_ROUTE_DFA] = { CAND_MA } },
-      .u.finish = { CAND_FIN_VERIFY, .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT } } } },
+      .needs = { [CAND_ROUTE_DFA] = { CAND_MA },
+                 [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
+                [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
+      .u.finish = { CAND_FIN_VERIFY } },
 '

@@ -548,7 +548,8 @@ test-codegen: all
 	    'bash tests/codegen/run_facts_checks.sh' \
 	    'bash tests/codegen/run_cand_rows.sh' \
 	    'bash tests/codegen/run_prefix_invariance.sh' \
-	    'bash tests/codegen/run_nomatch_caps.sh'
+	    'bash tests/codegen/run_nomatch_caps.sh' \
+	    'bash tests/codegen/run_rev_end.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
@@ -1059,6 +1060,14 @@ test-recursion: all
 #     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # moved base
 test-recursion-identity: all
 	bash tests/codegen/run_recursion_identity.sh
+
+# [OPT-REVEND] L2 the WINDOW-IDENTITY TWIN (tests/revend/run_window_twin.sh,
+# locate_finish.md §5 L3's answer-level control): the `rev-end` build against
+# `-fno-rev-end` and libpcre2 over the stage-2 corpus and the twin's own
+# patterns, E-VR asserted 0 on exact hybrids. OPT-IN (~30 s): it links
+# libpcre2-8, whose answers are the reference 10.46's.
+test-revend-twin: all
+	bash tests/revend/run_window_twin.sh
 
 # [DD-14.LB] A CALL INSIDE A LOOKBEHIND, SWEPT — OPT-IN, and deliberately NOT
 # a prerequisite of `test:` above. Same shape and same ruling as
@@ -1896,7 +1905,7 @@ clean:
         test-known-fail test-thread test-atomic test-atomic-identity \
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
-        test-recursion test-recursion-identity test-recursion-lbsweep \
+        test-recursion test-recursion-identity test-revend-twin test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-cand-oracle test-fallback-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \

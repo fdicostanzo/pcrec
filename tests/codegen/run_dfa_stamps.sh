@@ -206,7 +206,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says. Any value outside
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
-SCAN_VALUES="unanchored attempt empty"
+SCAN_VALUES="unanchored rev-end attempt empty"
 PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded"
 
 # ---------------------------------------------------------------------------
@@ -234,6 +234,7 @@ read_artifact() {
         /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ \
                                                { mtnothing = 1 }                # emit_dfa.c: the empty engine
         /^    const size_t start_max = /       { attempt = 1 }                  # emit_attempt: the per-start loop
+        /^    for \(int revend_seed = 0; /    { revend = 1 }                   # emit_rev_end: the reverse walk from the end ([OPT-REVEND] L2)
         # [CC-DIFF] STEP 1(b): was rx_forward_next_state[ (the forward table
         # declaration itself) until the uniform-table fold made that
         # declaration OPTIONAL -- a folded machine emits no table at all, so
@@ -281,11 +282,17 @@ read_artifact() {
         # term as word loads (`rx_w4(subject + cand ...`), its `memcmp` row
         # as before; either is the run term.
         in_ofs && /(!memcmp|rx_w[248])\(subject \+ cand/ { ofs_run = 1 }
+        # [OPT-REVEND] L2.1 HOW THE START IS RECOVERED, from the text: a
+        # reverse machine anywhere (its accessors are `rx_reverse_*`), else the
+        # start write of the pinned body, else no recovery at all.
+        /rx_reverse_/                                   { rev = 1 }
+        /capture_spans\[0\]\[0\] = \(ptrdiff_t\)search_from;/ { pinned = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_PREFILTER "/ { np++; s_pf   = substr($3, 2, length($3) - 2) }
         /^#define RX_VM_PREFILTER "/  { s_vmpf = substr($3, 2, length($3) - 2) }   # [DD-13c] the OTHER side of the iff
+        /^#define RX_DFA_START "/     { s_start = substr($3, 2, length($3) - 2) }  # [OPT-REVEND] L2.1
         # ---- (iii) MIRRORED: the rx_info struct literal, and nothing else ---
         # [DD-13c] A THIRD SOURCE, kept as separate from the other two as they
         # are from each other. These are emit_info_def initializer lines, not
@@ -299,7 +306,7 @@ read_artifact() {
                                 f_pf   = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
         END {
             eng = vm ? "vm" : "dfa"
-            scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
+            scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-")))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
             else if (pf_fc && hat) pf = "first-class-bounded"
@@ -329,7 +336,9 @@ read_artifact() {
                   (s_pf == "" ? "-" : s_pf), ne + 0, ns + 0, np + 0, \
                   (s_vmpf == "" ? "-" : s_vmpf), \
                   (f_scan == "" ? "-" : f_scan), (f_pf == "" ? "-" : f_pf), \
-                  nfscan + 0, nfpf + 0
+                  nfscan + 0, nfpf + 0, \
+                  (!dfascan ? "-" : rev ? "reverse-pass" : pinned ? "pinned" : "attempt-start"), \
+                  (s_start == "" ? "-" : s_start)
         }'
 }
 
@@ -415,8 +424,13 @@ witness() {
 # fall on the near side of a cost model.
 witness unanchored memchr             'a'
 witness unanchored byte-class         '[af]'
-witness unanchored memchr-bounded     'a$'
-witness unanchored byte-class-bounded '[af]$'
+# [OPT-REVEND] L2 the two `-bounded` rows read a WORD-CONTEXT accept: an
+# end-pinned `a$`/`[af]$` now walks back from the end (`rev-end`, below) and
+# carries no forward scan to bound.
+witness unanchored memchr-bounded     'a\b'
+witness unanchored byte-class-bounded '[af]\b'
+witness rev-end    none               'a$'
+witness rev-end    none               '[af]+\z'
 witness unanchored none               '.*'
 # [START-SET] stage 3, THE DFA HAT's two forms: a seeded machine whose start set
 # is a proper subset of the escape set (\b's E is the 63 word bytes).
@@ -591,7 +605,14 @@ while IFS= read -r pat; do
     set -- $(read_artifact < "$art")
     d_eng="$1"; d_scan="$2"; d_pf="$3"
     s_eng="$4"; s_scan="$5"; s_pf="$6"; ne="$7"; ns="$8"; np="$9"; shift 9
-    s_vmpf="$1"; f_scan="$2"; f_pf="$3"; nfscan="$4"; nfpf="$5"
+    s_vmpf="$1"; f_scan="$2"; f_pf="$3"; nfscan="$4"; nfpf="$5"; d_start="$6"; s_start="$7"
+    # [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's witness on RECOVER: a
+    # DFA-scan artifact's `_DFA_START` names the start recovery its text
+    # carries -- "attempt-start" where no reverse machine and no pinned start
+    # write exists (an attempt loop, the empty engine) -- never a selection
+    # the path does not ask. Both engines; "-" on a plain VM artifact.
+    echo STARTCMP
+    [ "$s_start" = "$d_start" ] || { echo STARTBAD; echo "BAD: START: stamp '$s_start' vs text '$d_start': $pat"; }
     # [DD-13c] THE RUNTIME MIRRORS, on EVERY artifact of BOTH engines and
     # BEFORE the engine fork below, because the claim is not engine-specific:
     # whatever the macros say (including saying nothing), the struct must agree.
@@ -695,6 +716,7 @@ nvmsilent=$(tok VM_SILENT); nvmpfbad=$(tok VMPFBAD); nvmhyempty=$(tok VMHYEMPTY)
 # denominator collapses instead, and the assertion below makes the collapse a
 # RED rather than a number a reader has to notice.
 nscancmp=$(tok SCANCMP); npfcmp=$(tok PFCMP)
+nstartcmp=$(tok STARTCMP); nstartbad=$(tok STARTBAD)
 nmirror=$(tok MIRRORCMP); nmirrorbad=$(tok MIRRORBAD); nmirrormiss=$(tok MIRRORMISS)
 # [DD-13c] THE TWO ARTIFACT KINDS ARE TALLIED SEPARATELY AND THEN TOGETHER.
 # The DFA-only distribution is the one [DD-13] recorded and the one
@@ -943,6 +965,12 @@ if [ "$nmirror" -eq $((ndfa + nvm)) ]; then
     ok "[mirror] the mirror comparison ran on every compiled artifact: $nmirror = $ndfa DFA + $nvm VM"
 else
     bad "[mirror] the mirror comparison ran on $nmirror artifacts but $((ndfa + nvm)) compiled — $(( ndfa + nvm - nmirror )) were routed past it"
+fi
+# [OPT-REVEND] L2.1 the start-recovery agreement, over every compiled artifact.
+if [ "$nstartbad" -eq 0 ] && [ "$nstartcmp" -eq $((ndfa + nvm)) ]; then
+    ok "[start] <PREFIX>_DFA_START names the start recovery the emitted text carries (reverse machine / pinned start write / neither = attempt-start) on all $nstartcmp artifacts (the generated stamp rule: RECOVER off the path stamps its absence)"
+else
+    bad "[start] $nstartbad artifact(s) stamp a _DFA_START the text does not carry, over $nstartcmp of $((ndfa + nvm)) compared"
 fi
 [ "$nvalue" -eq 0 ] && ok "[values] every stamped value is one of the documented set (scan: $SCAN_VALUES; prefilter: $PF_VALUES)" \
                     || bad "[values] $nvalue stamp(s) carry a value outside the documented set — a new mechanism needs its match_api.md §6.3 hunk and a line in this file"

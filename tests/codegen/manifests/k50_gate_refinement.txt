@@ -271,20 +271,15 @@ $|\n
 (?m)a{0,4}$(?-m)
 (?m)x*$
 (a){0}
-[a-z]*$
 [a-z]{0,64}
 [ab]*+
-[ab]{0,4}$
 \Q\E
 \w*
 \z
 a*
-a*$
 a*+
 a*?
-a*\Z
 a*\z
-a*b*$
 a*|b
 a?
 a?+
@@ -295,19 +290,14 @@ a{,3}
 a{,3}+
 a{0,0}
 a{0,3}
-a{0,4}$
 a{0,4}?
-a{0,4}\Z
 a{0,4}\z
-a{0,5}b{0,5}$
 a{0,}
 a{0}
 a|
 a|b*
-b*$
 q||a
 x*
-x*$
 x*y*
 |a
 
@@ -322,3 +312,45 @@ x*y*
 #UNDECLARED \b\w*
 #UNDECLARED \bx*
 #UNDECLARED \bx?
+
+# ---------------------------------------------------------------------
+# [OPT-REVEND] L2 (lane revtri, 2026-10-10). The rev-end walk replaced the
+# forward scan on end-pinned nullable patterns, so the DFA_PREFILTER stamp
+# that DECLARED their axis-C form move (byte "none" vs utf8
+# "byte-class-bounded") is gone, and the same move now sits on the reverse
+# walk's view selector (eol-only under byte, end+eol under utf8: the extra
+# K50 class splits the end view from the eol view), which no stamp names.
+# Measured at full population (ENC_MAX_BLOCKS=0) on lane/revbuild 5c5d497a
+# against main a15fb77b: 18 patterns left the GATE class for the strict
+# bucket (10 of them rows above, removed here) and 4 new rev_end.rxt patterns
+# land there; every one's whole non-region difference is that view
+# selector (one, (?:a$)?\b, on the forward scan). Listed UNDECLARED, the
+# axis-E list's shape. Three new rev_end.rxt patterns join the GATE class.
+# Main itself does NOT match this manifest at full population (87 strict
+# pattern texts against 11 UNDECLARED rows before this change; pre-existing,
+# not re-derived here; docs/dev/lanes/revtri_report.md).
+(?:a$)?
+(\w{1,2})(?:(?=)|)$
+\s*$|x\z
+#UNDECLARED (?:[a-z]{0,5})\Z
+#UNDECLARED (?:a$)?\b
+#UNDECLARED (?:ab)?$
+#UNDECLARED [a-]*?(?:\B)*$
+#UNDECLARED [a-z]*$
+#UNDECLARED [a-z]{0,5}$
+#UNDECLARED [ab]*(?:\B|)$
+#UNDECLARED [ab]?(?:(?<=a)|)$
+#UNDECLARED [ab]{0,4}$
+#UNDECLARED \B$
+#UNDECLARED \d?(?:|\b)$
+#UNDECLARED \s*$
+#UNDECLARED \s*?$
+#UNDECLARED \w*\B$
+#UNDECLARED a*$
+#UNDECLARED a*\Z
+#UNDECLARED a*b*$
+#UNDECLARED a{0,4}$
+#UNDECLARED a{0,4}\Z
+#UNDECLARED a{0,5}b{0,5}$
+#UNDECLARED b*$
+#UNDECLARED x*$

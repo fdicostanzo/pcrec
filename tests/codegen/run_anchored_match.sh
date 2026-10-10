@@ -98,7 +98,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says
 # (docs/spec/match_api.md §6.3). A new value needs a spec hunk and a line here,
 # in the same change.
-MATCH_VALUES="unwrapped search-filter"
+MATCH_VALUES="unwrapped search-filter nomatch"
 
 emit() { # emit <outfile> <pattern> [extra pcrec args...]
     local out="$1" pat="$2"
@@ -164,7 +164,7 @@ witness "end-anchored"       'foo\z'          unwrapped     y
 witness "eol view"           'foo$'           unwrapped     y
 witness "attempt engine"     '^foo'           search-filter n
 witness "attempt via \\G"    '\Gfoo'          search-filter n
-witness "empty engine"       '\B\b'           search-filter n
+witness "empty engine"       '\B\b'           nomatch n
 witness "deny flag"          'foo[0-9]+bar'   search-filter n -fno-anchored-dfa
 [ "$fail" -eq 0 ] && ok "§1 nine named witnesses stamp the documented value, mirror it in rx_info, and carry (or do not carry) the anchored table accordingly"
 
@@ -669,7 +669,11 @@ while IFS= read -r pat; do
     if grep -qE '^typedef (unsigned|int) rx_anchored_state;' "$art"; then
         [ "$mf" = unwrapped ] || { echo MISMATCH; echo "BAD: carries an anchored machine but stamps \"$mf\": $pat"; }
     else
-        [ "$mf" = search-filter ] || { echo MISMATCH; echo "BAD: stamps \"$mf\" with no anchored machine: $pat"; }
+        # [OPT-REVEND] L2: the empty engine's `_match` is the `nomatch`
+        # form (FINISH asks NOMATCH), every other machine-less body the
+        # search-filter wrapper.
+        if [ "$sc" = empty ]; then want=nomatch; else want=search-filter; fi
+        [ "$mf" = "$want" ] || { echo MISMATCH; echo "BAD: stamps \"$mf\" with no anchored machine (scan $sc, want $want): $pat"; }
     fi
     # [K53-SELRETRY] THE FIFTH BUCKET, AND IT EXISTS BECAUSE THE FOURTH WAS
     # CLASSIFYING BY ELIMINATION. `DFA search-filter unanchored` meant "the
@@ -698,13 +702,13 @@ WORKER
     cnt() { grep -cxF "$1" "$WORKDIR/all.out" || true; }
     n_unwrapped="$(cnt 'DFA unwrapped unanchored')"
     n_attempt="$(cnt 'DFA search-filter attempt')"
-    n_empty="$(cnt 'DFA search-filter empty')"
+    n_empty="$(cnt 'DFA nomatch empty')"
     n_ovf="$(cnt 'DFA search-filter unanchored')"
     n_drop="$(cnt 'DFA search-filter unanchored sizedrop')"
     n_vm="$(cnt 'VM')"; n_ref="$(cnt 'REFUSED')"
     n_mis="$(grep -c '^MISMATCH$' "$WORKDIR/all.out" || true)"
     n_iff="$(grep -c '^IFFBAD$' "$WORKDIR/all.out" || true)"
-    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, search-filter(empty) $n_empty, search-filter(overflow) $n_ovf, search-filter(size-drop) $n_drop"
+    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, nomatch(empty) $n_empty, search-filter(overflow) $n_ovf, search-filter(size-drop) $n_drop"
     [ "$n_mis" -eq 0 ] && ok "§5 stamp and mechanism agree on all $((n_unwrapped + n_attempt + n_empty + n_ovf + n_drop)) DFA artifacts" \
         || { bad "§5 $n_mis DFA artifacts stamp a value their emitted body contradicts"; grep -m5 '^BAD: ' "$WORKDIR/all.out" >&2; }
     [ "$n_iff" -eq 0 ] && ok "§5 the iff holds over the corpus: RX_DFA_MATCH on exactly the DFA artifacts, .match_form NULL on every VM artifact (hybrids included)" \

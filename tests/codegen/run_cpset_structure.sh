@@ -910,6 +910,13 @@ fi
 # `abc`, `\bword\b`, `(?i)HeLLo` and `(a(?1)?b)` against main 82ff9432's
 # compiler at the same `-o` basename: the abi digits and that one line,
 # nothing else.
+# RE-RECORDED 2026-10-10 at [OPT-REVEND] L2 (lane revbuild, abi 72 -> 73):
+# all twelve `EMITTED_BYTES` rows +94, one number: the ABI block's ESSENTIAL
+# `rx_info.search_form` comment names the `"attempt-start"` value (L2.1's
+# RECOVER absence). `^foo$` moves +96: its `DFA_START` and `.search_form`
+# read `"attempt-start"` (13 bytes) where they read `"reverse-pass"` (12).
+# VERIFIED BY DIFFING `a` against main a15fb77b's compiler at the same `-o`:
+# the abi digits and that comment, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

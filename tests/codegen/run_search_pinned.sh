@@ -125,7 +125,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says
 # (docs/spec/match_api.md §6.3). A new value needs a spec hunk and a line here,
 # in the same change.
-START_VALUES="pinned reverse-pass"
+START_VALUES="pinned reverse-pass attempt-start"
 
 emit() { # emit <outfile> <pattern> [extra pcrec args...]
     local out="$1" pat="$2"
@@ -210,7 +210,7 @@ witness "class context"      '\bx*'              reverse-pass y
 witness "lookahead view (P2)" '(?!a)'            reverse-pass y
 witness "lookahead after star" 'x*(?!a)'         reverse-pass y
 witness "whole form \\z"     '(?:[a-z]{0,64})\z' reverse-pass y
-witness "attempt engine"     '^a*'               reverse-pass n
+witness "attempt engine"     '^a*'               attempt-start n
 witness "deny flag"          'a*'                reverse-pass y -fno-start-pinned
 [ "$fail" -eq 0 ] && ok "§1 seventeen named witnesses stamp the documented value, mirror it in rx_info, and carry (or do not carry) the reverse machine accordingly"
 
@@ -220,7 +220,7 @@ witness "deny flag"          'a*'                reverse-pass y -fno-start-pinne
 emit "$WORKDIR/att.c" '^a*' \
   && { has_rewind "$WORKDIR/att.c" \
         && bad "§1 '^a*' (ENG_ATTEMPT) emits a rewind_position — this file's model of that engine is wrong" \
-        || ok "§1 the ENG_ATTEMPT witness declines for its OWN reason (no reverse pass in that emitter at all), which is why its stamp is \"reverse-pass\" and its artifact carries no reverse machine"; }
+        || ok "§1 the ENG_ATTEMPT witness declines for its OWN reason (no reverse pass in that emitter at all), which is why its stamp is the absence value \"attempt-start\" ([OPT-REVEND] L2.1) and its artifact carries no reverse machine"; }
 
 # THE NEGATIVE CONTROL FOR THE WHOLE FILE. Without it every row above would
 # pass just as well on a compiler in which `pinned` is never selected —
@@ -343,12 +343,15 @@ AWK
 # so `local f="$1" v="$f"` leaves `v` EMPTY. Every derived local below is its
 # own statement for that reason.
 fold_repr() { # fold_repr <fwd> <rev> <anch> <match_form>
-    local f="$1" r="$2" a="$3" mf="$4"
-    local v="$f"
-    [ "$v" = "-" ] && { echo none; return; }
-    if [ "$r" != "-" ] && [ "$r" != "$v" ]; then echo mixed; return; fi
-    if [ "$mf" = "unwrapped" ] && [ "$a" != "-" ] && [ "$a" != "$v" ]; then echo mixed; return; fi
-    echo "$v"
+    # [OPT-REVEND] L2: over the machines PRESENT, whichever heads the list --
+    # a `rev-end` walk carries no forward machine.
+    local f="$1" r="$2" a="$3" mf="$4" v="" m
+    [ "$mf" = "unwrapped" ] || a="-"
+    for m in "$f" "$r" "$a"; do
+        [ "$m" = "-" ] && continue
+        if [ -z "$v" ]; then v="$m"; elif [ "$m" != "$v" ]; then echo mixed; return; fi
+    done
+    echo "${v:-none}"
 }
 fold_edge_one() { # fold_edge_one <edges> <bitmaps>
     local e="$1" b="$2"
@@ -435,7 +438,7 @@ one() {
     fi
     [ "$nstart" -eq 1 ] || { echo "DUP-$ax"; echo "BAD: RX_DFA_START appears $nstart times: $pat"; return; }
     echo "HASSTAMP-$ax"
-    case "$start" in pinned|reverse-pass) ;; *) echo "VALUE-$ax"; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
+    case "$start" in pinned|reverse-pass|attempt-start) ;; *) echo "VALUE-$ax"; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
     [ "$mir" = "$start" ] || { echo "MIRRBAD-$ax"; echo "BAD: rx_info.search_form '$mir' vs macro '$start': $pat"; }
     [ "$eng" = "vm" ] && echo "HYBRID-$ax" || echo "DFAART-$ax"
 
@@ -474,7 +477,7 @@ one() {
     [ "$edge" = "$want_edge" ] || { echo "EDGEBAD-$ax"; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab match=$mf): $pat"; }
 
     # ---- §9: a DECLINED artifact is byte-identical under the deny flag ----
-    if [ "$start" = "reverse-pass" ]; then
+    if [ "$start" = "reverse-pass" ] || [ "$start" = "attempt-start" ]; then
         if pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures $axflags -fno-start-pinned -o - --pattern "$pat" > "$den" 2>/dev/null; then
             if cmp -s "$art" "$den"; then echo "DENYSAME-$ax"; else
                 echo "DENYDIFF-$ax"; echo "BAD: a DECLINED artifact is NOT byte-identical under -fno-start-pinned ($ax) — the flag has an effect on a pattern the axis cannot act on, so the declined population is not a usable reference: $pat"

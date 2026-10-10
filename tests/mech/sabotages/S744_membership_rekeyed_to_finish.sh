@@ -10,9 +10,11 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(a+)b" &
 SAB_REACH_EXPECT='REACH-HYBRID'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='static const char *dfa_table_name(Ctx *cx)
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the membership folds read dfa_member_machines; the plant still ORs the anchored member off the FINISH selection. Intent
+# unchanged.
+SAB_BEFORE='static int dfa_member_machines(Ctx *cx, const Dfa *out[3])
 {
     unsigned m = cand_path_members(cx);'
-SAB_AFTER='static const char *dfa_table_name(Ctx *cx)
+SAB_AFTER='static int dfa_member_machines(Ctx *cx, const Dfa *out[3])
 {
     unsigned m = cand_path_members(cx) | (dfa_match_is_unwrapped(cx) ? CAND_MA : 0);   /* SABOTAGE S744 */'

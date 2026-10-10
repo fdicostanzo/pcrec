@@ -69,6 +69,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         memset(pf->start_set.bits, 0xFF, sizeof pf->start_set.bits);
         pf->start_set.nullable = true;
         break;
+    case PF_END_PIN:      pf->end_pin = PCREC_EPIN_NONE; break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
     case PF_REQ_SET:
         memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
@@ -232,12 +233,18 @@ static void pf_derive(Ctx *cx, PfFactId f)
     case PF_START_SET:
         pcrec_start_set(cx, pf->root, &pf->start_set);
         break;
+    case PF_END_PIN:
+        pf->end_pin = pcrec_end_pin(pf->root, &why);
+        break;
     case PF_END_WINDOW:
         /* The descriptor is resolved HERE, once, and handed in: the
          * derivation's one encoding input is declared, never looked up
-         * (design §4.2.2 carve-out (d)). */
+         * (design §4.2.2 carve-out (d)). The pin is asked along the
+         * DEPENDS-ON edge; its why becomes this fact's where it declines. */
+        pf_ask(cx, PF_END_PIN, false);
         pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
-                                          pf->root, &why);
+                                          pf->root, pf->end_pin,
+                                          (PfWhyCode)pf->why[PF_END_PIN].code, &why);
         break;
     case PF_REQ_SET:
     case PF_REQ_WHOLE_RUN:
@@ -374,6 +381,12 @@ const StartSet *pcrec_fact_start_set(Ctx *cx)
 {
     pf_ask(cx, PF_START_SET, true);
     return &cx->job->pf.start_set;
+}
+
+int pcrec_fact_end_pin(Ctx *cx)
+{
+    pf_ask(cx, PF_END_PIN, true);
+    return cx->job->pf.end_pin;
 }
 
 long long pcrec_fact_end_window(Ctx *cx)
@@ -529,6 +542,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         pcrec_sb_free(&sb);
         return t;
     }
+    case PF_END_PIN:
+        return pf->end_pin == PCREC_EPIN_Z ? "z" : pf->end_pin == PCREC_EPIN_EOL ? "eol"
+             : "none";
     case PF_END_WINDOW:
         if (pf->end_window < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%lld", pf->end_window);

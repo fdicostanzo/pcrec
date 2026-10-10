@@ -46,7 +46,9 @@ void pcrec_start_set(Ctx *cx, const Ast *root, StartSet *out);
  * receives which decline answered (`PF_WHY_ENC_MULTIBYTE` and the three
  * structural ones), or `PF_WHY_NONE` with a window — the reason is the
  * derivation's to report, never the listing's to infer from `-1`. */
-long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why);
+int       pcrec_end_pin(const Ast *root, PfWhyCode *why);
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root, int pin,
+                           PfWhyCode pinwhy, PfWhyCode *why);
                                                      /* src/facts/endwin.c */
 
 /* ---- [OPT-REQBYTE] + [OPT-REQPOS] tier 2b: the necessary set and run ------

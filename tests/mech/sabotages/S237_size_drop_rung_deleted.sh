@@ -33,8 +33,11 @@ SAB_COUNT=1
 # certifying nothing and says so rather than scoring.
 SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the drop rung gained the LR-S12 member-set clause; the plant still makes the rung never offered. Intent
+# unchanged.
 SAB_BEFORE='    return s->size_drop_rung == SDR_NONE &&
-           s->cx->job && s->cx->job->anchored_ok;'
+           s->cx->job && s->cx->job->anchored_ok &&
+           pcrec_cand_drop_anchored_shrinks(s->cx);'
 SAB_AFTER='    (void)s; return false;   /* SABOTAGE S237: the rung is never offered. */'
 # RE-ANCHORED 2026-09-30 (lane pfdrop, D135): the size-cap ladder became ONE
 # first-match table (`fit_rungs[]`, src/core/compile.c) and this rung's

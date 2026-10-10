@@ -539,7 +539,8 @@ enum {
      * and, concretely, so that an artifact the predicate DECLINES is byte-for-
      * byte the same under the flag as without it, which is what makes the
      * declined population a usable reference. What the emitter DID is reported
-     * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`) and mirrored at
+     * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`; `"attempt-start"`
+     * where no start is recovered) and mirrored at
      * run time by `rx_info.search_form`. */
     PCREC_NO_START_PINNED = PCREC_BIT(22),
 
@@ -1156,6 +1157,16 @@ enum {
  * Deny only. A `#define` pair for bit 32's reason. */
 #define PCREC_NO_POSS_CTX_FOLLOW PCREC_BIT(50)
 #define PCREC_NO_POSS_BREF_FIRST PCREC_BIT(51)
+
+/* [OPT-REVEND] `-fno-rev-end` -- deny the REVERSE-FROM-END locator
+ * (docs/spec/tuning.md §2.46): for a pattern every match of which ends at the
+ * subject's end, or just before a final newline (`$`, `\Z`, `\z` outside
+ * multiline), the search walks the artifact's own reverse machine back from
+ * those ends instead of scanning the subject forward; `<PREFIX>_DFA_SCAN`
+ * reads `"rev-end"` where it applies. Answer-identical, so the bit joins the
+ * derived strategy mask (masked out of `rx_info.flags`). Deny only. A
+ * `#define` for bit 32's reason. */
+#define PCREC_NO_REV_END PCREC_BIT(52)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

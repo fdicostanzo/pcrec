@@ -1510,7 +1510,10 @@ TRACE_RECORDS_FLOOR = {"c-default": 270131, "c-vm": 120691}
 # Every declared C1 site key must print at least once on the WORKING side of a
 # full-population run: a site whose record stopped printing would otherwise
 # hide inside the arm totals (K35). The keys are the C1 hook's site literals.
-TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd", "form-other",
+# [OPT-REVEND] L2 (lane revbuild): `form-other` retired -- NEXT is asked only
+# for the forward machine (`dfa_form_derive`); reverse and anchored machines
+# take the slot's fallback row without a selection.
+TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd",
                "search-start", "req-admit", "req-use", "reseed", "end-window",
                "attempt-cand", "attempt-bound", "vm-bound", "root-minw",
                "dfa-engine", "entry-gate", "engine-empty", "run-tests",

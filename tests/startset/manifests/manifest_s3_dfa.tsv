@@ -32,7 +32,6 @@ tests/assertions/d27/composition.rxt:45	--features assertions	5c62283f3a6361747c
 tests/assertions/d27/gating.rxt:120	--features assertions	5c6278
 tests/assertions/d27/word_boundary.rxt:51	--features assertions	5c62286361747c646f67295c62
 tests/assertions/d27/word_boundary.rxt:91	--features modifiers,assertions	283f69295c626361745c62
-tests/assertions/wordb_empty_compose.rxt:1168	--features assertions	5c426f5c5a
 tests/assertions/wordb_vm.rxt:414	--features assertions	285c622978
 tests/base/clspack_atoms.rxt:53	--features assertions	285c625b6165696f755d5b62636466675d2b295b686a6b6c6d5d2a3f5b6e707172735d7b322c337d5b747677787a5d5b4145494f555d5b42434446475d5b484a4b4c4d5d5b4e505152535d5b545657585a5d5b30323436385d5c62
 tests/lookaround/alpha_spellings.rxt:129	--features lookaround	282a6e6c623a612962
@@ -111,4 +110,4 @@ tests/utf8/axis08_lookbehind_varwidth.rxt:142	--features classes,lookaround --en
 tests/utf8/axis08_lookbehind_varwidth.rxt:155	--features classes,lookaround --encoding=utf8	283f3c215c772978
 tests/utf8/axis13_ctx_illformed.rxt:51	--features all --encoding=utf8	283f3c215b615d2962
 # sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
-tests/revend/stage2_captures.rxt:1296	--features assertions,lookaround	283f3c21782928612b2924
+# revbuild (2026-10-10, [OPT-REVEND] L2): -2 rows: tests/assertions/wordb_empty_compose.rxt:1168 `\Bo\Z` and tests/revend/stage2_captures.rxt:1296 `(?<!x)(a+)$`, end-pinned DFA bodies whose search is now the rev-end walk (LOCATE asks no forward scan, so the DFA hat has nothing to change); census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.

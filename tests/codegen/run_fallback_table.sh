@@ -276,7 +276,10 @@ fseq seq-pfdrop   trplain ok 'drop-prefilter@size'                             '
 fseq seq-pfc      trplain ok 'prefilter-collapse@size'                         '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 fseq seq-pfclow   trlowsize ok 'prefilter-collapse@size'                       '(?:a\K){2,}b'
 fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(\bcat\b)+' -e utf8
-fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}' -e utf8
+# [OPT-REVEND] L2 (lane revbuild): was '(\bcat\b){2,}', whose hybrid body is `empty` and lost its
+# whole-window pre-check to the walk deference (REQ_WHY "dominated", -705 B), landing under
+# the lowsize cap; `\w\w` restores the overshoot that collapse cannot fix and the drop can.
+fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}\w\w' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8
 fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8
@@ -328,7 +331,7 @@ frec adm-ovf      trplain admit 'none|overflow-drop pf=0'      "$W_OVF"
 frec adm-ovfsel1  trplain admit 'sel1|overflow-drop pf=0'      "$W_OVFNN" -fno-prefilter
 frec adm-fon      trplain admit 'none|forced-on pf=1'          '(a)b' --engine=vm -fprefilter
 frec adm-sizedrop trplain admit 'none|size-dropped pf=0'       '(\p{Xwd})' -e utf8
-frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcat\b){2,}' -e utf8
+frec adm-sizedcol trlowsize admit 'sizecap|size-dropped pf=0'  '(\bcat\b){2,}\w\w' -e utf8
 frec adm-fonsc    trplain admit 'sizecap|forced-on pf=1'       '^(\p{Xwd}{1,3})?$' -e utf8 -fprefilter
 frec att-forced   trplain attrib '-|forced from=forced'                       '(a)b' --engine=vm
 frec att-sel      trplain attrib '-|selected from=none'                       '(a)b'
@@ -342,7 +345,7 @@ frec att-ovfpf    trlowdfa attrib '-|overflowed-prefilter from=sel1-drop'     "$
 # [DEC-COLLAPSE-WASTE] att-ovfdfa/att-ovfpf fire sel1-drop alone, so the first
 # fired row and the giving row coincide there (dectri, 2026-10-09).
 frec att-ovfcd    trplain attrib '-|overflowed-dfa from=sel1-drop'            "$W_LOOKR"
-frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-prefilter'     '(\bcat\b){2,}' -e utf8
+frec att-scpfd    trlowsize attrib '-|size-cap-retry from=drop-prefilter'     '(\bcat\b){2,}\w\w' -e utf8
 frec att-scpfc    trlowsize attrib '-|size-cap-retry from=prefilter-collapse' '(?:a\K){2,}b'
 frec att-scanch   trplain attrib '-|size-cap-retry from=drop-anchored'        '\p{L}' -e utf8
 frec att-scpf     trplain attrib '-|size-cap-retry from=drop-prefilter'       '(\p{Xwd})' -e utf8
