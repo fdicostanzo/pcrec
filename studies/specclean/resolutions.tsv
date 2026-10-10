@@ -1,0 +1,88 @@
+C1-0164	MAPPED	always `== <PREFIX>_NCAPS`	resolved by the rx_info table row 4 (ncaps == <PREFIX>_NCAPS); the emitted member comment is a gloss of that row
+C2-0116	MAPPED	three patterns in the pinned set	added in the rewrite pass
+C2-0186	MAPPED	`byte`-encoded pairs	added
+C2-0192	MAPPED	`b*`/`"abbbab"`	added (full agreeing list)
+C2-0193	MAPPED	`[0-9]+`/`"a12b345"`	added (full agreeing list)
+C2-0217	MAPPED	driver passes a real array	added
+C2-0244	MAPPED	engine's own retry advance (K49)	added
+C2-0253	MAPPED	only the structural check can see one	added
+C3-0079	MAPPED	are zero-initialized	added (K28 paragraph, §3.5)
+C3-0083	MAPPED	`ctx->pos > ctx->len`	added (§3.2); verified emit_vm.c:13722 and DFA wrapper (search returns 0 -> -1)
+C3-0084	INTERNAL	is prefix-scoped and INTERNAL	internal emission detail with stale names (now rx_run_state_init / rx_match_anchored); covered by the internals clause of §1
+C3-0086	INTERNAL	is prefix-scoped and INTERNAL	internal: the VM body's return space equals rx_matchfn's (stated §3.5); the R_ aliases are internal (§6.3.1)
+C3-0091	MAPPED	It is never observed and changes no answer	added
+C3-0092	MAPPED	single dead state	added
+C3-0093	MAPPED	`--emit-main` `main()`. When a	added
+C3-0094	MAPPED	restructuring the test instead	added
+C3-0115	MAPPED	compiles two	added; the "final-byte skip gap" half is partly built ([OPT-ENDWIN]); plan.md [OS-4] is the record
+C3-0116	MAPPED	every other `\z`-bearing pattern	added
+C3-0330	MAPPED	canonical	added
+C4-0062	MAPPED	internal engine enum is	added
+C4-0063	SUPERSEDED	`PCREC_ENGINE_DFA` / `PCREC_ENGINE_VM` are the only emitted names	DOC DEFECT: old doc said the emitted .engine comment reads "PCREC_ENGINE_DFA=1 / PCREC_ENGINE_VM=2"; the default artifact emits `.engine = 2, /* PCREC_ENGINE_VM */` (probe, abi 71). New doc quotes no comment
+C4-0088	MAPPED	`.nentries = 1`	added
+C4-0126	MAPPED	`ng_cmp_name`	added
+C6-0036	SUPERSEDED	always reads `<PREFIX>_VM_PRUNE_CEILING "subject-end"`	DOC DEFECT: old doc said an atomic group or a lookaround has the same "subject-end" consequence; probe: xy(a+)(?>b+)c hybrid reads "prefilter-window", xy(a)(?=b)bc reads "none". New doc states only the count-collapsed consequence
+C6-0041	MAPPED	132 atomic	added
+C6-0090	MAPPED	caller-visible COST property	added
+C6-0101	MAPPED	`_DFA_TABLE` and `_DFA_SCAN_EDGE` compose	added
+C6-0106	MAPPED	discovered while	added (scoping rules)
+C6-0148	MAPPED	string body	added
+C6-0289	MAPPED	discovered while	added (scoping rules)
+C6-0302	MAPPED	all eight statics carry	added (entry-shape table)
+C6-0304	MAPPED	no entry-chain static carries	added (entry-shape table)
+C6-0308	MAPPED	picks the rung	added, corrected: AUTO picks after emission; --vm-entry-shape=N can name a rung
+C6-0326	MAPPED	discovered while	added (scoping rules)
+C6-0339	MAPPED	discovered while	added (scoping rules)
+C6-0391	SUPERSEDED	not distinguishable from `rx_info.flags`	DOC DEFECT: old doc said a consumer distinguishes the single-tier causes by reading rx_info.flags; -fno-tiered-entry is masked out of flags (tuning.md §2 rule, §2.12). New doc states they are not distinguishable from flags
+C6-0451	MAPPED	is deny-only)	added
+C7-0080	SUPERSEDED	all twenty-five members	DOC DEFECT: old block claimed "all nineteen members", listed twenty, and lib/pcrec.h has twenty-five (analysis, analysis_dirs, analysis_source, analysis_source_len, memfn missing). New block lists all 25
+C7-0081	SUPERSEDED	all twenty-five members	DOC DEFECT (same): the five missing members are now quoted and glossed
+C5-0007	INTERNAL	is prefix-scoped and INTERNAL	internal helper shape (<prefix>_<fn>__body); true by probe
+C5-0008	INTERNAL	is prefix-scoped and INTERNAL	internal emitted-text form; true by probe
+C5-0009	INTERNAL	is prefix-scoped and INTERNAL	internal static inline helpers; true by probe
+C5-0012	MAPPED	not a discarded intermediate retry's	added
+C5-0013	ELSEWHERE		--emit-ir vocabulary: docs/spec/ir_listing.md:118-119 (not a match-API fact)
+C5-0017	INTERNAL	is prefix-scoped and INTERNAL	internal emitted loop layout; true by probe
+C5-0018	INTERNAL	is prefix-scoped and INTERNAL	internal emitted-text detail; true by probe
+C5-0022	ELSEWHERE		engine route flip under possessify arms: docs/spec/tuning.md:3764-3775
+C5-0032	MAPPED	render before the size is measured	added
+C5-0056	ELSEWHERE		K65 whole-set half: docs/spec/tuning.md:3530-3532
+C5-0058	ELSEWHERE		masked-run canonical form: docs/spec/tuning.md:2733-2737
+C5-0060	ELSEWHERE		run pin covers exact positions only: docs/spec/tuning.md:2982-2987
+C5-0089	INTERNAL	is prefix-scoped and INTERNAL	VM class-test spelling is emitted-code detail; true by probe
+C5-0105	INTERNAL	`<prefix>_var_valid`	var_valid's body calls valid_upto (one validator): internal; the helper's existence is now listed in §3's inventory note
+C5-0119	INTERNAL	`<prefix>_decode` is a `static inline`	decode is stated as a static inline helper (§6.3.8 CLS_KIT); its use by the caseless compare is internal
+C5-0121	ELSEWHERE		wide classes compile under --engine=vm: docs/spec/tuning.md:3139-3141, 3184-3190
+C5-0132	INTERNAL	is prefix-scoped and INTERNAL	start-gate emission is internal (answers are §9.3's on every pattern)
+C5-0135	ELSEWHERE		context-node lowering: docs/spec/tuning.md §2.32 (3055-3100)
+C5-0136	ELSEWHERE		context node on DFA class axis: docs/spec/tuning.md:3079-3086
+C5-0137	ELSEWHERE		UCP \b/\B under -e byte compile: docs/spec/tuning.md §2.32 / docs/spec/cli.md --ucp (verified by probe in mapping)
+C5-0139	MAPPED	every module's name is listed	added
+C5-0146	INTERNAL	is prefix-scoped and INTERNAL	compiler-internal predicate (pcrec_lit_run)
+C5-0150	INTERNAL	is prefix-scoped and INTERNAL	compiler-internal analysis (call nullability fixpoint); no answer depends on it
+C5-0151	INTERNAL	is prefix-scoped and INTERNAL	slot legend / <PREFIX>_SLOT_* are internal (§6.3.1)
+C5-0152	INTERNAL	is prefix-scoped and INTERNAL	as C5-0151
+C5-0153	ELSEWHERE		E1 nullable fact: docs/spec/facts_listing.md (the --emit-facts contract)
+C5-0156	INTERNAL	is prefix-scoped and INTERNAL	the artifact's own #include set is internal
+C5-0159	ELSEWHERE		--emit-ir compare op: docs/spec/ir_listing.md:176
+C5-0163	ELSEWHERE		offset-k rate read: docs/spec/findings.md:123,133
+C5-0169	INTERNAL	is prefix-scoped and INTERNAL	internal helpers <prefix>_reqrun/_reqrun_whole; true by probe
+C5-0171	INTERNAL	is prefix-scoped and INTERNAL	internal emitted pre-check line
+C5-0172	INTERNAL	is prefix-scoped and INTERNAL	internal loop guard (K27 obligation): docs/spec/tuning.md:3497-3500
+C5-0173	INTERNAL	is prefix-scoped and INTERNAL	internal static helpers
+C5-0182	ELSEWHERE		only linear no-match proof on a no-prefilter VM: docs/spec/tuning.md:2839-2841
+C5-0183	ELSEWHERE		whole-run compare: docs/spec/tuning.md:2855-2868 (the old text's function names are stale)
+C5-0184	ELSEWHERE		docs/spec/tuning.md:2869-2873 (rq_set[] no longer exists as such; old text stale)
+C5-0186	ELSEWHERE		as C5-0182
+C5-0187	ELSEWHERE		docs/spec/tuning.md:2869-2873; old shape (rq_set[] array) is STALE: probe shows inline !memchr tests
+C5-0202	ELSEWHERE		docs/spec/vars.md:150-157
+C5-0203	MAPPED	`<prefix>_var_valid` (a variable-bearing	added to §3's inventory note
+C5-0204	MAPPED	`<prefix>_span_match_caseless` (a backreference	added to §3's inventory note
+C5-0228	ELSEWHERE		docs/spec/cli.md:45-54
+C5-0236	MAPPED	at no position does an answer move	added
+C5-0237	INTERNAL	is prefix-scoped and INTERNAL	internal label spelling; true by probe
+C5-0266	INTERNAL	is prefix-scoped and INTERNAL	internal symbol inlining; true for "inline"/"forward" shapes only
+C5-0277	INTERNAL	is prefix-scoped and INTERNAL	internal attribute guard; true by probe
+C5-0285	INTERNAL	is prefix-scoped and INTERNAL	DFA state token: internal (the premultiplied half is MAPPED at RX_DFA_TABLE)
+C5-0295	INTERNAL	the DFA state types and their	internal accessor block (named in the internals clause)
+C5-0296	INTERNAL	the DFA state types and their	internal accessor set (now also _is_stop)

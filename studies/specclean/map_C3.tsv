@@ -1,0 +1,344 @@
+C3-0001	MAPPED	165	rx_matchfn typedef at 165 (defined in section 2); also 634
+C3-0002	MAPPED	634	signature at 634; every artifact exports it, inventory 265-270
+C3-0003	MAPPED	637	bold sentence: matches at exactly ctx->pos, other starts not reported
+C3-0004	MAPPED	637	"That is the contract; how an artifact achieves it is not."
+C3-0005	MAPPED	657	"A VM artifact's <prefix>_match is the VM's own anchored body, with no search loop"
+C3-0006	MAPPED	655	two forms named by <PREFIX>_DFA_MATCH and rx_info.match_form (6.3)
+C3-0007	MAPPED	656	"both give the same answers"; the 'measured' label dropped but the fact is stated
+C3-0008	MAPPED	660	third machine = forward tables without start-anywhere self-loop, run forward from ctx->pos
+C3-0009	MAPPED	661	implied-complete by 'runs it forward from ctx->pos ... one forward scan'; no reverse pass is part of that statement
+C3-0010	MAPPED	662	failing probe stops at first byte that cannot continue a match beginning there
+C3-0011	MAPPED	663	a succeeding probe costs one forward scan (the 'rather than forward+reverse' contrast is not spelled out)
+C3-0012	MAPPED	664	anchored_match_unwrapped.md section 3 argues same length on every input
+C3-0013	MAPPED	666	search-filter form: runs unanchored search, rejects start != ctx->pos
+C3-0014	MAPPED	666	search-filter is the form for five populations (671-680)
+C3-0015	MAPPED	667	failing match-here may skim rest of subject for a later match the filter discards
+C3-0016	MAPPED	669	"the state-0 memchr skip keeps it a skim"; per-byte-walk contrast not spelled out
+C3-0017	MAPPED	669	many expected-to-fail probes on long subjects = worst case; readable off the artifact
+C3-0018	MAPPED	671	"Five populations take it"
+C3-0019	MAPPED	672	DFA_SCAN "attempt" (^- or \G-bearing)
+C3-0020	MAPPED	673	"empty" (matches nothing)
+C3-0021	MAPPED	674	anchored machine exceeded a DFA cap; selection outcome, never a refusal
+C3-0022	MAPPED	675	-fno-anchored-dfa (tuning.md 2.15)
+C3-0023	MAPPED	676	anchored machine dropped to fit an emitted-size cap (limits.md 8); the [K53-SELRETRY] date tag dropped
+C3-0024	MAPPED	678	"the only one of the five where a size limit rather than the pattern's shape cost the faster form"
+C3-0025	MAPPED	679	identified by <PREFIX>_ENGINE_SEL "size-cap-retry"; also 1514 and 1710
+C3-0026	MAPPED	679	raising --max-emit-bytes gets the anchored machine back
+C3-0027	MAPPED	640	returns matched length >= 0
+C3-0028	MAPPED	640	0 is a zero-length match at ctx->pos
+C3-0029	MAPPED	641	-1 on no match
+C3-0030	MAPPED	641	a give-up code (section 4)
+C3-0031	MAPPED	641	one of 3.1's caller refusals incl PCREC_ERR_STARTPOS
+C3-0032	MAPPED	642	-futf-check PCREC_ERR_UTF, same checks/position/order (guard first)/range as search
+C3-0033	MAPPED	645	-fstartpos-guard=align misaligned ctx->pos answers -1 after the check from the aligned position
+C3-0034	MAPPED	650	delivers no captures; ctx->caps is an input
+C3-0035	MAPPED	634	signature (634) has only ctx; 650 'delivers no captures'
+C3-0036	MAPPED	651	top-level caller passes ncap=0, caps=NULL
+C3-0037	MAPPED	686	signature of _match_caps
+C3-0038	MAPPED	689	"The anchoring promise, return space and forms of <prefix>_match"
+C3-0039	MAPPED	691	under "unwrapped" the entry delegates to <prefix>_match and fills the span itself
+C3-0040	MAPPED	691	caps_out[0] = [ctx->pos, ctx->pos+length), filled by the entry itself under unwrapped
+C3-0041	MAPPED	690	all of caps_out[0..NCAPS-1] written on success; 'same completed-match discipline as search' not worded but 327 and 896 state it
+C3-0042	MAPPED	691	caps_out[0] is [ctx->pos, ctx->pos + length)
+C3-0043	MAPPED	692	caps_out[k] is capturing group k for k>=1 in the pattern's own numbering on a captures-on build
+C3-0044	SUPERSEDED	1024	new text: slot is the caps index or -1 when the build delivers none (240-241); live: --no-captures named group emits {"b",1,-1,NULL} (build/pcrec probe); composed artifacts also deliver slot rows (5.5); slot==number only for primary groups (695)
+C3-0045	MAPPED	695	slot == number permanent for primary pattern's groups (D61); also 1181-1183
+C3-0046	MAPPED	1184	slots above ngroups APPEND and never interleave with or renumber the prefix; 5.5 at 1105-1107
+C3-0047	MAPPED	698	on every negative return caps_out untouched, give-ups included
+C3-0048	MAPPED	698	same sentence
+C3-0049	HISTORY		statement about the wording of generated-source comments; contract fact stated at 698; current emitted comment still says caps_out UNTOUCHED on every negative return (src/gen/emit_vm.c:13770)
+C3-0050	MAPPED	327	every return other than 1 leaves caps untouched, search/_in/_match_caps/_match_caps_in; also 5 at 898
+C3-0051	MAPPED	699	ctx->caps/ctx->ncap read as ordinary rx_ctx input, unrelated to caps_out
+C3-0052	MAPPED	700	top-level call passes ncap=0, caps=NULL
+C3-0053	MAPPED	291	no start known -> search
+C3-0054	MAPPED	292	start known, captures wanted, no search -> match_caps
+C3-0055	MAPPED	293	start known, neither offsets nor search -> match
+C3-0056	MAPPED	287	discriminator is whether start is KNOWN, never whether captures are wanted
+C3-0057	MAPPED	287	search delivers full captures when handed a caps buffer; first match plus groups is one call
+C3-0058	MAPPED	292	match_caps listed only for known-start case (implied exclusivity)
+C3-0059	MAPPED	725	"WHICH entry gives up on a given input is a property of that entry"
+C3-0060	MAPPED	776	"Uniformity is about the codes, not about when a give-up happens"
+C3-0061	MAPPED	725	different amounts of work; goes both ways
+C3-0062	MAPPED	727	(a|aa)+b --step-budget=3 over a*20X: search returns 0 via DFA prefilter
+C3-0063	MAPPED	729	match and match_caps return -2
+C3-0064	MAPPED	730	--backtrack-frames=1 over xxaaaaab: search returns -3
+C3-0065	MAPPED	730	both anchored entries return -1 (anchoring at 0 fails at once, no frame)
+C3-0066	MAPPED	732	handle give-ups on whichever entry is called
+C3-0067	MAPPED	733	never infer from one entry's clean answer that another would give one
+C3-0068	MAPPED	706	extern const struct rx_info <prefix>_info
+C3-0069	MAPPED	709	one instance per artifact, link-time constant data
+C3-0070	MAPPED	1327	not strictly .rodata: pointers need load-time relocation
+C3-0071	SUPERSEDED	1329	new: 200-byte object in .data.rel.ro.local; live: readelf on gcc -O2 object of 'a(b|c)+d' default build shows rx_info 200 OBJECT in .data.rel.ro.local (build/pcrec probe); old 104 is stale
+C3-0072	SUPERSEDED	1330	new: one R_X86_64_64 per non-NULL pointer member (seven); live: readelf -r of same object shows 7 R_X86_64_64 in .rela.data.rel.ro.local; old 'exactly two' stale
+C3-0073	MAPPED	1331	strings are in .rodata
+C3-0074	MAPPED	1332	no run-time initializer and no constructor; cost is relocations at load
+C3-0075	MAPPED	715	every entry propagates give-ups, none collapsed to -1 (D49); the match_api_m4.md/D42.3 history is not named
+C3-0076	SUPERSEDED	655	DFA _match now has two forms; only search-filter (666) is the search wrapper; unwrapped runs its own anchored machine; live: -fno-anchored-dfa gives wrapper calling rx_search with local caps (src/gen/emit_dfa.c:2594-2600), default build has own machine
+C3-0077	MAPPED	715	give-up codes propagate, not collapsed (D49); DFA wrapper returns found when found<0 at 717
+C3-0078	MAPPED	721	DFA never returns a give-up but entries are written to propagate one; rationale differs (switch survives a later VM compile vs 'later engine shares emitter')
+C3-0079	UNMAPPED		new doc does not state the zero-initialized local caps in the search-filter wrapper (K28); TRUE: src/gen/emit_dfa.c:2556-2594, emitted 'ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}}' under -fno-anchored-dfa
+C3-0080	MAPPED	717	DFA wrapper returns found when found < 0
+C3-0081	MAPPED	666	search-filter rejects any match whose start is not ctx->pos (the found != 1 test is implied; exact test not spelled out)
+C3-0082	MAPPED	640	returns matched length; end-start value of the wrapper is not spelled out but equals the contract length
+C3-0083	UNMAPPED		new doc does not say a VM _match returns -1 when ctx->pos > ctx->len (only search's startpos>n -> 0 at 335, 2652); TRUE: emitted rx_match_run 'if (ctx->pos > ctx->len) return -1;' (src/gen/emit_vm.c:13722)
+C3-0084	UNMAPPED		internal emission detail; names stale (now rx_run_state_init / <p>_match_anchored(ctx, run, ctx->len), build/pcrec probe emit_vm.c:13722-13730); not a contract fact, likely should stay out
+C3-0085	MAPPED	718	VM entry returns its body's result with no translation
+C3-0086	UNMAPPED		new doc only says <PREFIX>_R_* aliases are internal (1393); TRUE internal detail: impl returns >=0, -1 or R_ sentinels = ERR codes (emitted rx_match_run comment)
+C3-0087	HISTORY		argument about how to read evidence (DFA unreachable vs VM live); the fact it supports is stated at 721-723
+C3-0088	MAPPED	729	(a|aa)+b --step-budget=3: match and match_caps return -2
+C3-0089	MAPPED	732	--backtrack-frames=1: all three entries return -3 on "ab"
+C3-0090	MAPPED	666	search-filter form's start filter is what makes that DFA form honor anchoring (stated as 'rejects any match whose start is not ctx->pos')
+C3-0091	UNMAPPED		new doc silent on the caps initializer being unobservable; believed TRUE (src/gen/emit_dfa.c:2556-2576 comment; known_issues.md K28)
+C3-0092	UNMAPPED		K28 rationale (single-dead-state DFA, gcc -O1 maybe-uninitialized, -Werror consumer) not in new doc; TRUE per docs/dev/known_issues.md:4059-4070 (FIXED 2026-08-19)
+C3-0093	UNMAPPED		same initializer in match_caps and standalone main() not stated; TRUE: src/gen/emit_dfa.c:2628 region and --emit-main probe shows 'ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}}' in main()
+C3-0094	UNMAPPED		measured K28 negative result not in new doc; believed TRUE (known_issues.md K28) but not re-measured here
+C3-0095	HISTORY		ruling-history (D49 supersedes D42.3); the contract it ruled is stated at 715-721 and D49 is cited at 773
+C3-0096	MAPPED	719	a caller testing only r < 0 is unaffected
+C3-0097	MAPPED	720	exact == -1 comparison sees give-ups as distinct values
+C3-0098	HISTORY		past-state claim about artifacts generated before 2026-08-18
+C3-0099	HISTORY		process/history (old artifact comment vs spec); spec-is-contract stance at lines 3-8
+C3-0100	HISTORY		past fix note; current emitted rx_matchfn comment is quoted verbatim at 154-164
+C3-0101	MAPPED	739	"There is no end-anchored entry"
+C3-0102	MAPPED	739	3.1-3.3 answer 'does a match start here', never 'cover here to n'
+C3-0103	MAPPED	741	compile (?:P)\z and call any entry (PCRE2_ANCHORED|PCRE2_ENDANCHORED regime)
+C3-0104	MAPPED	747	\z not $; $ admits a trailing newline at default options
+C3-0105	MAPPED	748	(?:foo)$ matches "foo\n" at [0,3); (?:foo)\z does not
+C3-0106	MAPPED	749	\z (module assertions) admits nothing after it
+C3-0107	MAPPED	750	of $, \Z, \z the only anchor with that property at default options
+C3-0108	MAPPED	752	length==n is sufficient but not necessary
+C3-0109	MAPPED	753	leftmost-first picks first alternative that matches, not the longest
+C3-0110	MAPPED	755	a|ab anchored over "ab" reports [0,1)
+C3-0111	MAPPED	756	(?:a|ab)\z over "ab" reports [0,2)
+C3-0112	MAPPED	756	\z forces the engine past the a branch into ab
+C3-0113	MAPPED	743	idiom is permanent (D77, [OS-4])
+C3-0114	MAPPED	744	no end-anchored generation axis is built; built only under a measurement (the two specific forms are not listed)
+C3-0115	UNMAPPED		new doc silent on the two-artifact cost and the final-byte DFA skip gap as a general-opt candidate; believed TRUE as ruled (docs/dev/plan.md:978 [OS-4]) but the bounded-width half is since built as [OPT-ENDWIN] (plan.md:344)
+C3-0116	UNMAPPED		new doc silent that a \z optimization benefits every \z-bearing pattern equally; believed TRUE (plan.md:978 'a fold on the idiom benefits every \z user')
+C3-0117	MAPPED	758	a \z pattern still selects the DFA and match runs the anchored machine (3.2 "unwrapped"); the 2026-08-29 date dropped
+C3-0118	MAPPED	761	matching split 1.031x the backtracking VM; the prior 2.074x is history and omitted
+C3-0119	MAPPED	762	short valid emails 0.482x; prior 1.223x omitted (history)
+C3-0120	HISTORY		before/after narrative ('the entry got cheaper'); the current behaviour is at 758-762
+C3-0121	MAPPED	763	(?:foo|bar)\z stamps RX_DFA_SCAN "unanchored"
+C3-0122	MAPPED	764	stamps RX_DFA_PREFILTER "byte-class-bounded"
+C3-0123	MAPPED	763	stamps given for the idiom; '(the idiom anchors only the end)' at 764
+C3-0124	MAPPED	1593	-bounded forms: under a view a skip may not pass a position whose accept has not been evaluated; value rows 1584-1591
+C3-0125	MAPPED	765	(?:foo)\z stamps "memchr-bounded"
+C3-0126	MAPPED	765	RX_DFA_SCAN "attempt" comes from a leading ^/\A, which the idiom does not add
+C3-0127	MAPPED	868	'Where the numbers live': budgets/capacities defaults are limits.md's (3, 5, 8)
+C3-0128	MAPPED	872	state-count ceilings, emitted-size caps, tiered entry's numbers, K33/K34 detail are limits.md's
+C3-0129	MAPPED	773	one code space for search, every rx_matchfn (match and callout), match_caps and the _in entries
+C3-0130	MAPPED	774	"with the same value meaning the same thing at every entry"
+C3-0131	MAPPED	776	"Uniformity is about the codes, not about when a give-up happens (3.5)"
+C3-0132	MAPPED	812	one call to an un-suffixed entry may spend up to twice the step and work budgets
+C3-0133	MAPPED	813	tiered default re-runs on full default storage after PCREC_ERR_FRAMES, budgets refilled
+C3-0134	MAPPED	3010	10.9 'No answer changes': deep run is a replay of a single-tier entry, budgets refilled; also 3001-3008
+C3-0135	MAPPED	812	up to twice the step and work budget
+C3-0136	MAPPED	815	a returned PCREC_ERR_STEPS still means one attempt exhausted a full budget
+C3-0137	MAPPED	816	_in entries have no tier and are bounded by one budget
+C3-0138	MAPPED	817	hard bound: _in or -fno-tiered-entry (tuning.md 2.12)
+C3-0139	MAPPED	781	PCREC_ERR_STEPS -2
+C3-0140	MAPPED	782	PCREC_ERR_FRAMES -3
+C3-0141	MAPPED	783	PCREC_ERR_WORK -4
+C3-0142	MAPPED	784	PCREC_ERR_RECURSE -5 reserved, no emitter returns it
+C3-0143	MAPPED	785	FLOOR -5; give-ups [FLOOR,-2]; values below reserved (821)
+C3-0144	MAPPED	786	PCREC_ERR_INTERNAL -6 below the floor, not a give-up
+C3-0145	MAPPED	787	PCREC_ERR_STARTPOS -7 refused
+C3-0146	MAPPED	788	PCREC_ERR_UNSET_VAR -8 refused
+C3-0147	MAPPED	789	PCREC_ERR_UTF -9 refused (-futf-check)
+C3-0148	MAPPED	84	shared block carries the unprefixed constants; 'No per-prefix spelling of any of them exists' (90)
+C3-0149	MAPPED	81	-p rx and -p foo builds of one pattern emit byte-identical blocks
+C3-0150	MAPPED	795	RECURSE reserved for a recursion-depth counter the default artifact does not carry (D71 item 1; future axis not runtime flag)
+C3-0151	MAPPED	797	as unreachable on every artifact as STEPS on a DFA-only one; table 784 'no emitter returns it'
+C3-0152	MAPPED	821	values below FLOOR are not give-ups; INTERNAL row 786
+C3-0153	MAPPED	821	below-floor reserved for abort and refusal semantics; 'INTERNAL is the first producer' phrasing not kept
+C3-0154	MAPPED	827	artifact caught its own inconsistency (pcrec_maxw vs emitter walk), never a resource give-up
+C3-0155	MAPPED	830	one producer: lookaround negative-polarity lookbehind end-check (?<!X)
+C3-0156	MAPPED	830	declined branch is the assertion succeeding, so width disagreement would be a false match
+C3-0157	MAPPED	832	redundant for the width class the module ships, emitted as a self-consistency guard; 'never been observed' not stated
+C3-0158	MAPPED	833	a top-level entry propagates it like any negative return
+C3-0159	MAPPED	859	trap rule binds call sites that call INTO another matcher, not an exported entry's own return
+C3-0160	HISTORY		verification record of a measurement setup; related facts at 793-795 and 1379-1382
+C3-0161	MAPPED	793	a DFA artifact has no counter and never returns a give-up
+C3-0162	MAPPED	823	every artifact defines all the codes; DFA included (721-723)
+C3-0163	MAPPED	794	DFA artifact's --emit-main driver carries the full handler text for them
+C3-0164	MAPPED	823	constants emitted regardless so a caller's switch survives a later compile under another encoding or engine
+C3-0165	MAPPED	851	composed call site must enforce the below-floor trap (code block 856)
+C3-0166	MAPPED	859	binds call sites that call INTO another matcher, not an exported entry's own return
+C3-0167	MAPPED	865	pcrec emits no such call site today
+C3-0168	MAPPED	861	trapping on INTERNAL/STARTPOS at a composed callee is the design
+C3-0169	MAPPED	835	STARTPOS: a refusal of the CALL
+C3-0170	MAPPED	792	give-ups say the engine ran and exhausted a resource
+C3-0171	MAPPED	835	caller named a startpos/ctx->pos not a character boundary; nothing attempted, no budget touched
+C3-0172	MAPPED	822	every artifact defines all four; each returnable only where its cause can exist
+C3-0173	MAPPED	837	unreachable under byte, where no guard is emitted
+C3-0174	MAPPED	823	constants emitted regardless so a caller's switch survives a later compile under a different encoding
+C3-0175	MAPPED	861	composed call site traps on STARTPOS
+C3-0176	MAPPED	862	every position an engine generates is a boundary (9.5), so trapping is the design
+C3-0177	MAPPED	825	none renumbers the give-up partition; FLOOR -5 in table 785
+C3-0178	MAPPED	842	PCREC_ERR_UTF a refusal; composed site propagates it (851, 859)
+C3-0179	MAPPED	842	-futf-check found an ill-formed sequence beginning in [startpos-LB, n); refused before any attempt
+C3-0180	MAPPED	844	caps untouched on UTF refusal (also 318)
+C3-0181	MAPPED	844	<prefix>_valid_upto(s, n, startpos) is the offset
+C3-0182	MAPPED	845	one code for every kind of ill-formedness (D26)
+C3-0183	MAPPED	847	only a -futf-check artifact under an encoding with ill-formed byte strings can return it; all define it (822)
+C3-0184	MAPPED	851	composed call site traps below the floor EXCEPT on PCREC_ERR_UTF (D133 Q11)
+C3-0185	MAPPED	861	-6/-7 engine broke its rule; -9 caused by caller's data via LB reaching before the outer range
+C3-0186	MAPPED	856	trap line with && ret != PCREC_ERR_UTF; returned outward unchanged (859)
+C3-0187	MAPPED	865	no composed call sites emitted today; obligation binds the first that does
+C3-0188	MAPPED	825	renumbers nothing; -9 row below -8 in table 789
+C3-0189	MAPPED	801	PCREC_ERR_FRAMES names a RESOURCE, not an array and not an owner
+C3-0190	MAPPED	802	resume stack and undo trail both report it
+C3-0191	MAPPED	803	which one ran out is not reported
+C3-0192	MAPPED	804	^(a(?1)?b)$: trail full, two thirds of resume stack unused (frame_buffer_design.md 4)
+C3-0193	MAPPED	806	same code covers a caller-supplied buffer (10.3), not saying whose
+C3-0194	MAPPED	308	search return table: 1/0 plus give-up and refusal codes; 321-324 '0 means no match'
+C3-0195	MAPPED	325	return is not two-valued; test == 1 for matched
+C3-0196	MAPPED	882	const ptrdiff_t (*caps)[2], half-open [start,end) pairs (also 147)
+C3-0197	MAPPED	883	<PREFIX>_NCAPS per-artifact compile-time constant
+C3-0198	MAPPED	884	PCREC_UNSET ((ptrdiff_t)-1) contract constant in shared block (also 178)
+C3-0199	MAPPED	87	PCREC_UNSET in the shared block, no per-prefix spelling (90)
+C3-0200	MAPPED	91	<PREFIX>_NCAPS stays per-prefix: what varies per artifact
+C3-0201	MAPPED	887	unset is {-1,-1} in both slots
+C3-0202	MAPPED	887	caps[k][0] < 0 is a sufficient unset test
+C3-0203	MAPPED	889	index 0 is always the whole match
+C3-0204	MAPPED	889	so NCAPS >= 1
+C3-0205	MAPPED	890	NCAPS is a property of the ARTIFACT, not the pattern text
+C3-0206	MAPPED	891	a DFA artifact always has NCAPS 1
+C3-0207	MAPPED	892	NCAPS > 1 implies the VM engine
+C3-0208	MAPPED	893	--no-captures emits RX_NCAPS 1 with rx_info.ngroups == 1
+C3-0209	MAPPED	894	captures on (default) emits RX_NCAPS 2
+C3-0210	MAPPED	894	rx_info.ncaps == NCAPS always
+C3-0211	MAPPED	896	every pair 0..NCAPS-1 written on a completed match; no watermark needed
+C3-0212	MAPPED	898	failed match leaves the array untouched; give-up or refusal counts as failure
+C3-0213	MAPPED	899	every negative return from an anchored entry and a 0 or negative from search leaves array as caller left it
+C3-0214	MAPPED	901	'The return value alone communicates failure'; no {-1,-1} write on failure is implied by 'untouched'
+C3-0215	MAPPED	903	caller-owned, fixed-size, compile-time-sized; stack declaration
+C3-0216	MAPPED	904	nothing in the match contract allocates
+C3-0217	MAPPED	906	ctx->caps handed to a callout valid for that one call only
+C3-0218	MAPPED	907	engine rewrites the storage afterwards (trail-based undo); retaining callout has a bug of its own
+C3-0219	MAPPED	909	completed match's caps stable until the next match call reusing the buffer
+C3-0220	MAPPED	910	matcher never overwrites a buffer mid-splice
+C3-0221	MAPPED	896	every pair written on a completed match
+C3-0222	MAPPED	918	measured three-way unanimous (python re, libpcre2, pcrec)
+C3-0223	MAPPED	920	cross-iteration retention rule
+C3-0224	MAPPED	922	((a)|(b))* over "ab" reports group 2 as [0,1)
+C3-0225	MAPPED	924	unset means never participated in the whole match
+C3-0226	MAPPED	925	an empty final iteration still overwrites
+C3-0227	MAPPED	925	(a*)* and (a?)* over "aaa" report group 1 as [3,3)
+C3-0228	MAPPED	928	slot holds last-executed span or genuinely unset; caller never reasons about iteration
+C3-0229	MAPPED	924	unset = never participated in the whole match (also 928-929)
+C3-0230	MAPPED	934	non-requirements scoped to the MATCH path; compile path allocates, lifecycle in 8
+C3-0231	MAPPED	937	no ovector sizing negotiation
+C3-0232	MAPPED	938	no match-data object, no allocation, no lifecycle
+C3-0233	MAPPED	939	no run-time 'does group N exist' query
+C3-0234	MAPPED	940	no run-time name lookup; future substitution compiler resolves ${name} at pcrec-compile time
+C3-0235	MAPPED	942	no partial-match or streaming window state
+C3-0236	MAPPED	943	no callout context beyond what rx_ctx carries
+C3-0237	MAPPED	943	binding's user data lives in its rx_callout_ref
+C3-0238	MAPPED	944	nothing about WHICH callout is firing is visible to rx_matchfn's signature
+C3-0239	MAPPED	950	a generated matcher holds no mutable state of its own
+C3-0240	MAPPED	950	working state in the stack frame / caller buffers; tables, bitmaps, rx_info const
+C3-0241	MAPPED	955	any number of threads may call concurrently with their own caps/caps_out buffer
+C3-0242	MAPPED	957	sharing a buffer is a data race in the CALLER's code; matcher does not serialize
+C3-0243	MAPPED	960	one thread re-entering from a callout, same distinct-buffer rule
+C3-0244	MAPPED	962	<prefix>_info read-only, readable anywhere any time
+C3-0245	MAPPED	967	'This binds future emitters'
+C3-0246	MAPPED	967	an engine wanting mutable scratch must change this section first
+C3-0247	MAPPED	971	promise collectable only with enough stack headroom at the call site
+C3-0248	SUPERSEDED	972	default storage no longer sits in the entry frame: tiered default puts it in a noinline <name>_deep (src/gen/emit_vm.c:9998-10015, 10072); entry frame 3,184 B (975); -fno-tiered-entry restores single-tier shape (2998)
+C3-0249	MAPPED	972	default backtracking storage in a non-inlined internal function only a PCREC_ERR_FRAMES escalation reaches (10.9)
+C3-0250	MAPPED	975	3,184 B entry frame, 131,216 B internal function (^(a(?1)?b)$ --features all)
+C3-0251	MAPPED	983	statically bounded pattern pays nothing extra; a(b|c)+d entry frame 208 bytes
+C3-0252	MAPPED	982	a glibc-default 8 MB main thread is unaffected
+C3-0253	MAPPED	976	134,400 bytes of free stack at the call site; limits.md 5 states the rule
+C3-0254	MAPPED	978	nominal thread size equals headroom only at call depth ~0
+C3-0255	MAPPED	980	musl-default 128 KB thread at depth ~0: matches subjects the fast tier holds, faults on one deep enough to escalate
+C3-0256	MAPPED	985	remedy is the _in entries; 'only way to get a guarantee' not worded, alternatives at 987-988
+C3-0257	MAPPED	983	which subjects escalate depends on pattern and subject, not bounded in advance by a caller
+C3-0258	MAPPED	990	known_issues.md K33 carries the limitation
+C3-0259	MAPPED	991	tests/thread/run_stackdepth_tests.sh reproduces both halves
+C3-0260	MAPPED	985	the remedy is the _in entries (10)
+C3-0261	MAPPED	985	_in entry frame 144 B at -O2, 312 with the two statics, 224 at -O3 (inlining reason dropped)
+C3-0262	MAPPED	987	the default storage never reaches them
+C3-0263	MAPPED	985	caller supplies storage via _in (10.7 at 2966); arrays not on the thread stack
+C3-0264	MAPPED	987	a caller that cannot supply storage sizes the thread for the artifact or compiles with smaller --backtrack-frames
+C3-0265	MAPPED	989	default path unchanged by design (D73 keeps the stamped 2048/3072 default)
+C3-0266	MAPPED	980	musl 128 KB thread faults on a deep escalating subject; K33 at 990
+C3-0267	MAPPED	991	script reproduces: small entry frame, deep tier dying on a 128 KB thread, _search_in matching on the same thread
+C3-0268	MAPPED	995	guarded by shipped checks in make test (TS-1, TS-2, TS-3)
+C3-0269	MAPPED	998	TS-1 static scan across nine emission shapes, non-const statics and non-reentrant libc symbols
+C3-0270	MAPPED	1001	TS-2 TSan, eight threads share one matcher, five differently-shaped engines
+C3-0271	MAPPED	1003	every threaded result must equal a single-threaded baseline
+C3-0272	MAPPED	1004	planted race in a scratch copy of the driver must be caught or the check fails itself
+C3-0273	MAPPED	1006	TS-3 eight threads compile through pcrec_compile(), baseline-matched, TSan, sabotage-validated
+C3-0274	MAPPED	1008	pcrec_compile() safe to call concurrently (8)
+C3-0275	MAPPED	1127	<prefix>_info describes the artifact (reflection structure)
+C3-0276	MAPPED	1138	abi unsigned; bump-on-change at 1285-1289
+C3-0277	SUPERSEDED	1139	new: option bits as compiled with answer-preserving denials masked out (1257-1264); live: build/pcrec -fno-possessify/-fno-end-window/-fno-start-set artifacts all stamp .flags = 0ULL (probe) while -i stamps 1ULL
+C3-0278	MAPPED	1140	encoding int, PCREC_ENC_*: 0 byte, 1 utf8
+C3-0279	MAPPED	1141	ncaps int, caps slot count all-in, == NCAPS
+C3-0280	MAPPED	1142	ngroups int: capturing groups in pattern TEXT, lexical, independent of --no-captures and engine
+C3-0281	MAPPED	1142	composed artifact: TARGET pattern's own count; also 1105
+C3-0282	SUPERSEDED	1143	new: nnames = caller-scope rows (own named groups plus flat imports) (1108-1110); live: composed .rxt with (?&*=piece) and own group gives ngroups=1, nnames=2, row {"kept",4,4,"piece"} (build/pcrec probe)
+C3-0283	MAPPED	1019	groups NULL and nnames 0 when pattern declares no named group
+C3-0284	MAPPED	1019	also 0 when module named-groups is not enabled; 'two different reasons'
+C3-0285	MAPPED	1161	nentries = rows in groups[], all of them (1190-1193)
+C3-0286	MAPPED	1144	engine unsigned: DFA 1, VM 2
+C3-0287	MAPPED	1145	step_budget int64_t, -1 = none
+C3-0288	MAPPED	1146	work_budget -1 = none
+C3-0289	MAPPED	1146	work budget is the third bound (D47 second addendum), counted separately from steps
+C3-0290	MAPPED	1147	frame_capacity int64_t, -1 = no bound
+C3-0291	MAPPED	1247	frame_capacity sentinel differs from the same-named option's
+C3-0292	MAPPED	1148	subject_ceiling int64_t, 0 = unset / not applicable
+C3-0293	MAPPED	1148	nonzero = stamped honest ceiling for a residually-unbounded capture body
+C3-0294	MAPPED	1149	resume_frames int64_t: stamped DEFAULT resume capacity in frames
+C3-0295	MAPPED	1149	0 = no resume stack (every DFA artifact)
+C3-0296	MAPPED	1150	trail_frames: stamped default trail capacity in entries
+C3-0297	MAPPED	1151	resume_frame_size int32_t, bytes per resume frame
+C3-0298	MAPPED	1151	0 on a DFA artifact
+C3-0299	MAPPED	1152	trail_frame_size int32_t, bytes per trail entry
+C3-0300	MAPPED	1153	pattern: source text as given to pcrec_compile()
+C3-0301	MAPPED	1154	pattern_len size_t, bytes pcrec_compile() saw (7)
+C3-0302	MAPPED	1155	groups const rx_group_entry *; NULL when there is none (1019)
+C3-0303	MAPPED	1030	array sorted (name asc, number asc), name by strcmp
+C3-0304	MAPPED	1156	engine_why: construct or build outcome that forced the VM, or NULL
+C3-0305	MAPPED	1156	can also carry a prefilter note on a hybrid-eligible artifact
+C3-0306	MAPPED	1157	scan: unanchored/attempt/empty, mirrors DFA_SCAN
+C3-0307	MAPPED	1157	NULL when it contains none
+C3-0308	MAPPED	1158	prefilter: candidate-start mechanism
+C3-0309	MAPPED	1208	prefilter is never NULL
+C3-0310	MAPPED	1159	match_form: unwrapped / search-filter, mirrors DFA_MATCH
+C3-0311	MAPPED	1159	NULL on every VM artifact, hybrids included (1218-1220)
+C3-0312	MAPPED	1160	name: the artifact's own name
+C3-0313	MAPPED	1160	never NULL; stamps its own <prefix> when none supplied (1230)
+C3-0314	MAPPED	1161	nentries int: rows in groups[], all of them
+C3-0315	SUPERSEDED	1143	nnames now counts caller-scope rows incl flat imports, still a prefix (1108-1110); live probe: ngroups=1, nnames=2 on a flat-import composed artifact
+C3-0316	MAPPED	1113	nentries - nnames = site-scoped rows past nnames on a composed artifact; 1190-1191
+C3-0317	MAPPED	1115	ref is non-NULL on every delivered row (site-scoped rows are past nnames)
+C3-0318	MAPPED	1162	search_form: how search recovers the match start, mirrors DFA_START
+C3-0319	MAPPED	1688	"pinned": start is search_from by compile-time proof, no reverse machine at all
+C3-0320	MAPPED	1689	"reverse-pass": backwards scan from the match end (also 386)
+C3-0321	MAPPED	1162	non-NULL on every artifact that contains a DFA scan, hybrid included
+C3-0322	MAPPED	1221	search_form follows scan's rule, match_form's differs (1218-1220)
+C3-0323	MAPPED	1162	NULL only on a plain VM artifact
+C3-0324	MAPPED	1163	vars: variable NAMES in first-mention order
+C3-0325	MAPPED	1163	NULL when none
+C3-0326	MAPPED	1164	nvars int, entries in vars[]
+C3-0327	MAPPED	1165	findings mirrors <PREFIX>_FINDINGS
+C3-0328	MAPPED	1165	never NULL, "" when none asked
+C3-0329	HISTORY		append-history of one member; field order is fixed by the table at 1136-1165 and the append rule at 1302
+C3-0330	UNMAPPED		rationale (rx_info is the canonical machine-readable record, D43, so the macro alone is invisible to a linked binary) not stated; believed TRUE; new doc gives the equivalent rationale only for scan/prefilter at 1196-1198
+C3-0331	MAPPED	1242	findings names the analysis in plain text; shipped binary discloses the analysis name
+C3-0332	HISTORY		append-history; name and nentries are rows 23-24 in the table at 1160-1161
+C3-0333	MAPPED	1225	name says what the artifact IS; <prefix> says what its symbols are called
+C3-0334	MAPPED	1226	one definition built under three configs is three artifacts, three prefixes, ONE name
+C3-0335	MAPPED	1228	lets a consumer walking several <prefix>_info symbols say 'same matcher, built differently'
+C3-0336	MAPPED	1230	never NULL is a contract: no-name compile stamps its <prefix>
+C3-0337	MAPPED	1232	arbitrary text, not an identifier; nothing derives a symbol from it
+C3-0338	MAPPED	1233	.rxt's own name grammar is that format's rule, not this field's
+C3-0339	MAPPED	1045	caller's algorithm bsearches groups[0 .. nnames)
+C3-0340	SUPERSEDED	1108	nnames = caller-scope rows (own named groups plus flat imports), still a prefix; live probe: flat-import artifact ngroups=1, nnames=2 (see C3-0282)
+C3-0341	MAPPED	1161	nentries = length of the whole groups[] array (1191)
+C3-0342	MAPPED	1190	nentries equals nnames on every artifact built from a single pattern
+C3-0343	MAPPED	1190	exceeds it on a composed one (5.5, 1113); caveat: flat-import-only composition keeps them equal (probe)
+C3-0344	MAPPED	1191	only the pattern's own names -> nnames; everything -> nentries

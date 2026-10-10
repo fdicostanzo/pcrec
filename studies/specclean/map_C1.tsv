@@ -1,0 +1,203 @@
+C1-0001	MAPPED	3	Opening paragraph: library and every generated matcher promise; 'It is the contract'.
+C1-0002	MAPPED	5	Design docs are 'informational background, never a second source of authority'.
+C1-0003	MAPPED	7	'where one disagrees with this document, this document is what pcrec promises'.
+C1-0004	MAPPED	1354	'The mirror is partial.' with the per-field mirror column in the section 6 table (1136-1168).
+C1-0005	MAPPED	429	find-all loop calls <prefix>_next_pos (429-430); section 3.1.1 (508) specifies it. Both facts stated.
+C1-0006	MAPPED	466	New: loop agrees with re.finditer on 22 of the 26 pairs in tests/encseam/findall_cases.txt, the other 4 lossy strict-subset (475-487). Verified file: 22 exact + 4 lossy = 26. Both engines/captures arms stated; '52 runs' total not stated.
+C1-0007	MAPPED	2477	Stated at 2477-2484 (a{9795} compiles, a{9796} refused, wording names --engine=vm which works). CAVEAT live probe: refusal only under --engine=dfa; default auto prints a note and falls back to VM for a{9796}, so new text omits the engine condition (pre-existing inaccuracy).
+C1-0008	MAPPED	2612	PCREC_ENC_BYTE (0) is the spelling (2612, 2435); -e ascii is an unknown encoding (2615). The rename from ASCII is history (not in new doc).
+C1-0009	HISTORY		Statement about the old doc's own caveat text (how an earlier revision handled it); process/revision history, not a current-behaviour fact. The loop advancing via next_pos is mapped under C1-0005.
+C1-0010	MAPPED	1030	Sorted by name via strcmp; libpcre2 PCRE2_INFO_NAMETABLE order, probe_named_groups.c, D59 (1030-1036).
+C1-0011	MAPPED	1030	Sorted (name asc, number asc, strcmp) at 1030; bsearch-ability at 1045-1046 ('bsearch groups[0..nnames) by name').
+C1-0012	MAPPED	1024	slot -1 when build delivers none; captures-on '{ "b", 1, 1, NULL }' vs --no-captures '{ "b", 1, -1, NULL }' (1024-1029).
+C1-0013	MAPPED	695	'for the primary pattern's own groups slot == number is permanent (D61...)' (695); also 1181-1183.
+C1-0014	MAPPED	695	695 limits permanence to the primary's own groups and sends delivering rows to 5.4/5.5; 1188-1189 says rx_group_entry.slot stays the indirection for any other numbering. Same fact.
+C1-0015	MAPPED	1181	'ngroups is a PERMANENT PREFIX-LENGTH promise (D61)'; slots 1..ngroups are the pattern's own groups (1181-1183).
+C1-0016	MAPPED	1184	'Slots above ngroups belong to insertion and composition mechanisms, which APPEND and never interleave with or renumber the prefix' (1184-1187).
+C1-0017	MAPPED	84	Shared block carries every macro whose VALUE is a pcrec-contract fact, unprefixed (84-90).
+C1-0018	MAPPED	87	PCREC_ERR_* named in the shared block (87); 'No per-prefix spelling of any of them exists' (90); constants at 167-171.
+C1-0019	MAPPED	171	PCREC_ERR_FLOOR (-5) at 171 and 785. The -4 -> -5 move is history, not stated.
+C1-0020	MAPPED	173	PCREC_ERR_INTERNAL (-6) in the shared block, 'NOT a give-up' (173, 786, 827).
+C1-0021	MAPPED	178	PCREC_UNSET ((ptrdiff_t)-1) in the shared block (178, 87-88); no per-prefix spelling (90).
+C1-0022	MAPPED	88	Nine bit constants PCREC_VM_RUNG_*/STRAT_*/PRUNE_* in the shared block (88-90, 208-216).
+C1-0023	MAPPED	90	'No per-prefix spelling of any of them exists' (90); the word 'alias' is not used but the fact (spelling gone) is the same.
+C1-0024	MAPPED	205	PCREC_ENGINE_DFA 1 / PCREC_ENGINE_VM 2 (205-206); rx_info.engine row (1144) names them.
+C1-0025	MAPPED	91	'What stays per-prefix is exactly what varies per artifact: <PREFIX>_NCAPS, the stamp macros (including the three masks), and the budget, capacity and sizing macros' (91-92); covers VM_PREFILTER/PRUNE_CEILING as stamp macros.
+C1-0026	MAPPED	275	Entry table row for the three _in entries (275); 'Every artifact exports all three' (2830); inert on DFA (2901-2906).
+C1-0027	MAPPED	2873	Five sizing macros in the header on every artifact, four rx_info fields, <prefix>_buffers (2873-2906); inert on DFA (2901-2906).
+C1-0028	SUPERSEDED	974	New: <prefix>_search frame is 3,184 B (tiered), internal deep function 131,216 B, _in 144 B (974-986). Probe (-O2 -fstack-usage, ^(a(?1)?b)$ --features all): rx_search 3184, rx_search_deep 131216, rx_search_in 144. Old 'search frame 131,216' predates tiering.
+C1-0029	MAPPED	2797	'matches up to a 684-byte subject and returns PCREC_ERR_FRAMES at a 686-byte one' (2797-2800).
+C1-0030	MAPPED	2948	Table row 800 KB: match, 0.057 s, 90 MB RSS (2948).
+C1-0031	SUPERSEDED	1281	Old text said abi 27 (stale revision note). New: 'It is 71 on every artifact' (1281; 1138; guard 99-103). Probe: emitted '(abi 71)' and '.abi = 71'.
+C1-0032	MAPPED	868	'Where the numbers live' paragraph names docs/spec/limits.md for the numeric defaults of budgets/capacities (868-874).
+C1-0033	MAPPED	763	(?:foo|bar)\z stamps RX_DFA_SCAN "unanchored" and RX_DFA_PREFILTER "byte-class-bounded" (763-765). Probe (--no-captures --features assertions): confirmed, RX_ENGINE dfa.
+C1-0034	MAPPED	1379	'#if'ing on RX_ENGINE is safe on every artifact' (1379-1380); RX_ENGINE in the inventory as scope all (1409).
+C1-0035	MAPPED	2309	<PREFIX>_TUNE is a 'closed five-token string' on scope 'all' (1412, 2309). Probe: one '#define RX_TUNE "balanced"' line in the pre-#include prologue. NOT stated: 'one line in the shared prologue' placement and the 23-28 byte size (abi-27 bump delta, not a contract fact); placement is in tuning.md 5.3 (4225-4226).
+C1-0036	MAPPED	2310	'At the default "balanced" nothing else differs from a build with no --tune flag' (2310-2311). Verified src/core/tune.c:34-35,79 (balanced row all sentinel, deny mask empty); the structural reason is not in new doc.
+C1-0037	POINTED	2309	New line 2309 points tuning.md 5.3 at the stamp. tuning.md:4235-4241 (no rx_info mirror/flags), 4183 and 4327-4330 (answer-preserving, answer identity across all five positions). 'May move far more than the stamp' and 'no struct offset moves' are not stated in match_api.md; weak pointer.
+C1-0038	HISTORY		Abi-25 bump description (clang -Wc23-extensions label fix); emitted label punctuation is not caller-observable. Still true: probe emits 'rx_forward_scan_views:;' at c1a.c:234. Not stated in new doc.
+C1-0039	MAPPED	174	PCREC_ERR_STARTPOS (-7) in the shared block (174, 787); boundary guard 9.2 (2635).
+C1-0040	MAPPED	2769	9.5: every position the ENGINE generates (candidate starts, retry, first attempt at 0) is a character start; guard 9.2 for entries. ENG_ATTEMPT is not named.
+C1-0041	MAPPED	2062	_VM_CLS_FOLDS (2062-2069) describes the ASCII-FOLD shape and cites tuning.md 2.22.
+C1-0042	MAPPED	2019	<PREFIX>_VM_ENTRY_SHAPE and _VM_PROGRAM_BYTES on every VM artifact (1439, 2019-2046).
+C1-0043	POINTED	2020	New 2029-2036 tabulates shared (forwarding entries) and forward (bodies in the _in entries, three forwards) and points tuning.md 2.21 (2021). The 'static empty descriptor' is only in tuning.md:1993-1994,2012. Probe (--vm-entry-shape=2/3, frameless VM): rx_search forwards to rx_search_in via 'static const rx_buffers rx_no_buffers' at both rungs.
+C1-0044	POINTED	1654	New 1651-1655 names tuning.md 2.18 for the scan edge. tuning.md:1593-1635 states the entry test 'is_stop && !is_dead' and precondition (8) ('a machine whose prefilter reseeds may decline an edge'). Not in match_api.md.
+C1-0045	MAPPED	1108	Composed artifact: groups[] sorted (caller-scope first, name, number); nentries - nnames = site-scoped rows (1108-1118, 1036-1037). Non-composed unaffected (1057-1058).
+C1-0046	MAPPED	2048	VM_ALT_ISLANDS: trie dispatch over literal alternatives instead of the serial resume chain (2048-2056).
+C1-0047	MAPPED	2005	VM_FRAMELESS: 1 makes the entry-chain statics eligible for always_inline (2005-2013); DFA_UNIFORM_FOLDS (1634-1644).
+C1-0048	MAPPED	1675	DFA_START stamp and rx_info.search_form (1675-1692, 1162).
+C1-0049	SUPERSEDED	2612	Old 'byte is the only encoding implemented' is stale. New 9.1: byte (0) and utf8 (1) both compile; other values refused (2612-2616). Probe: build/pcrec -e utf8 --pattern 'a.b' rc=0; -e ascii: unknown encoding (want byte, utf8).
+C1-0050	MAPPED	737	Section 3.6 'Whole-subject and end-anchored matching: the (?:P)\z idiom' (737-766).
+C1-0051	MAPPED	739	'There is no end-anchored entry'; caller compiles (?:P)\z (739-742).
+C1-0052	MAPPED	747	'\z, not $': (?:foo)$ matches "foo\n" at [0,3) while (?:foo)\z does not (747-751).
+C1-0053	MAPPED	752	'Testing length == n on the ordinary anchored entry ... sufficient but not necessary' (752-753).
+C1-0054	MAPPED	754	a|ab anchored over "ab" reports [0,1); (?:a|ab)\z reports [0,2) (754-757).
+C1-0055	MAPPED	743	'The idiom is permanent (D77, plan row [OS-4])... no end-anchored generation axis is built' (743-745).
+C1-0056	MAPPED	763	Stated at 763-765, BUT part is now false in new doc and old: probe shows '(?:foo)\z' stamps RX_DFA_PREFILTER "run-pinned-bounded" (RX_REQ_WHY "dominated"); "memchr-bounded" only under -fno-run-prefilter. '(?:foo|bar)\z' byte-class-bounded is correct. Needs a spec fix at 764-765.
+C1-0057	MAPPED	555	Normative rule at 555-556: from pos + 1 advance past every byte in 0x80-0xBF, stopping at the first byte outside or at n.
+C1-0058	MAPPED	551	'Under utf8 the advance is defined on every input, well-formed or not' (551); ill-formed degrades to the next non-continuation byte (558-561).
+C1-0059	MAPPED	41	'Every symbol a pattern compile can produce falls into one of three groups' (41); groups at 44, 57, 74.
+C1-0060	MAPPED	62	Exception clause: PCREC_FEATURE_SET / _MODULES are PCREC_*-named yet PER-ARTIFACT, declared nowhere in lib/pcrec.h (62-69).
+C1-0061	MAPPED	44	Per-artifact symbols scoped by pcrec_options.prefix (default "rx") (44-45).
+C1-0062	MAPPED	45	<prefix>_search listed (45).
+C1-0063	MAPPED	45	<prefix>_match listed (45-46).
+C1-0064	MAPPED	46	<prefix>_match_caps listed (46).
+C1-0065	MAPPED	48	data symbol <prefix>_info listed (48).
+C1-0066	MAPPED	47	<prefix>_next_pos listed (47); section 3.1.1.
+C1-0067	MAPPED	47	<prefix>_valid_upto listed (47); section 3.1.2.
+C1-0068	MAPPED	50	'<PREFIX>_* macro family (<PREFIX>_NCAPS, the sizing macros, the stamp macros of 6.3)' (50-51).
+C1-0069	MAPPED	51	'A pattern compiled with -p foo gets foo_search, FOO_NCAPS, and so on' (51-52). 'verified by reading the emitted header' is not restated.
+C1-0070	MAPPED	52	'The CLI spells the option -p only; there is no --prefix long form (pcrec --prefix foo ... is an unknown-option error)' (52-53). Probe: --prefix gives "unknown option '--prefix'".
+C1-0071	MAPPED	90	'No per-prefix spelling of any of them exists' (90) for the PCREC_ERR_*/PCREC_UNSET constants; RX_UNSET/RX_ERR_* names themselves not mentioned.
+C1-0072	MAPPED	57	Library surface: PCREC_* enum and bit constants and pcrec_options/pcrec_output/pcrec_error/pcrec_err_input types in lib/pcrec.h (57-59).
+C1-0073	MAPPED	59	'These are never scoped by a pattern's prefix' (59-60).
+C1-0074	MAPPED	62	PCREC_* names only pcrec's enum/bit constants with one exception, FEATURE_SET/_MODULES, per-artifact and not in lib/pcrec.h (62-69) -- same reader takeaway.
+C1-0075	MAPPED	64	Every artifact carries PCREC_FEATURE_SET, e.g. "std1" (64-65); stamp section 6.3.11 (2304).
+C1-0076	MAPPED	65	PCREC_FEATURE_MODULES, e.g. "classes,modifiers" (65-66, 2304-2306).
+C1-0077	MAPPED	66	'PCREC_*-named, PER-ARTIFACT, and declared nowhere in lib/pcrec.h' (66-68).
+C1-0078	MAPPED	62	62-64: PCREC_* names only enum/bit constants 'with one exception' (the two stamps). Same fact, not worded as 'section 8 naming rule'.
+C1-0079	MAPPED	73	Shared ABI block: 'scoped by neither of the above' (73-75).
+C1-0080	SUPERSEDED	75	New: SEVEN types in order rx_var, rx_ctx, rx_matchfn, rx_callout_ref, rx_renderfn, rx_group_entry, struct rx_info (75-77, block 129-203). Probe: emitted header declares struct rx_var first (t2.h:14). Old list of six predates module vars.
+C1-0081	MAPPED	77	'They are spelled rx_* regardless of the prefix' (77-78).
+C1-0082	MAPPED	77	'so that two differently-prefixed matchers compose in one translation unit (one matcher links directly as another's callout, with no adapter)' (77-80).
+C1-0083	MAPPED	80	Types live inside their own PCREC_RX_ABI_H guard, separate from the per-prefix PCREC_GEN_<PREFIX>_H guard (80-82).
+C1-0084	MAPPED	77	Composition in one TU stated (77-79); the guard mechanics (80-82, 106-107) give the no-collision reason.
+C1-0085	MAPPED	82	'-p rx and -p foo builds of one pattern emit byte-identical blocks' (82).
+C1-0086	MAPPED	95	'The guard's value is the abi' (95); #define PCREC_RX_ABI_H 71 (103). The K80 / abi 54 label is only in 107-110 ('older than abi 54').
+C1-0087	MAPPED	98	Code block 98-104 gives the #if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 71 / #error / #ifndef / #define sequence.
+C1-0088	MAPPED	100	#error text quoted at 100: "pcrec: this artifact (abi 71) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec".
+C1-0089	MAPPED	106	'artifacts of one abi share the first block' (106).
+C1-0090	MAPPED	106	'an artifact of another abi (whose types may differ) fails to compile, naming the cause' (106-108).
+C1-0091	MAPPED	95	One guard whose VALUE is the abi (95-104). The rationale (two keyed guards would let both blocks through and fail on a struct redefinition) is not stated.
+C1-0092	MAPPED	107	'+ 0 makes the test refuse an artifact older than abi 54 included first (its guard is defined empty)' (107-109).
+C1-0093	MAPPED	109	'an artifact older than 54 included AFTER a newer one is not refused, because its own #ifndef predates the rule' (109-110).
+C1-0094	MAPPED	84	Same block carries every macro whose VALUE is a pcrec-contract fact, unprefixed (84-86).
+C1-0095	MAPPED	85	'emitted unconditionally on every artifact, a DFA-only one included' (85-86; 244-248). 'reserved but unreachable' is conveyed at 247-248 and 795-798.
+C1-0096	MAPPED	87	Give-up and refusal codes PCREC_ERR_* named in the block (87; 777).
+C1-0097	HISTORY		Describes the DD-14 wave A change event (RECURSE joined, FLOOR -4 -> -5). Current values stated at 170-171 and 784-785; the move itself is history.
+C1-0098	MAPPED	173	PCREC_ERR_INTERNAL (-6), below PCREC_ERR_FLOOR, 'NOT a give-up' (173, 786).
+C1-0099	MAPPED	174	STARTPOS/UNSET_VAR/UTF defined in the block (174-176) and tabulated as below-the-floor refusals (787-789).
+C1-0100	MAPPED	178	PCREC_UNSET in the block (178, 87-88).
+C1-0101	MAPPED	205	PCREC_ENGINE_DFA / _VM in the block (205-206, 88).
+C1-0102	MAPPED	208	Nine stamp bit constants listed at 208-216 and named at 88-90.
+C1-0103	MAPPED	90	'No per-prefix spelling of any of them exists' (90).
+C1-0104	MAPPED	91	'What stays per-prefix is exactly what varies per artifact: <PREFIX>_NCAPS, the stamp macros (including the three masks), and the budget, capacity and sizing macros' (91-92).
+C1-0105	MAPPED	113	Self-contained .c (header_name == NULL) or .c plus paired .h (header_name set) (113-116).
+C1-0106	MAPPED	116	'Both forms carry the same declarations' (116-117).
+C1-0107	MAPPED	117	'The self-contained form has no PCREC_GEN_<PREFIX>_H guard (there is no header to guard)' (117-118).
+C1-0108	MAPPED	117	Zero-guard fact stated (117-118). The 'three occurrences in the split .h' count is not. Probe: split .h has 3 (c1s.h lines 2,3,221), self-contained has none.
+C1-0109	MAPPED	121	'the stamp macros of 6.3 are emitted into the .c only' (121-122, 1346-1349); the shared contract constants and NCAPS/sizing macros are in the .h.
+C1-0110	MAPPED	142	rx_ctx.subject: 'whole subject, not a slice' (142). Type const unsigned char *.
+C1-0111	MAPPED	143	rx_ctx.len size_t 'subject length' (143).
+C1-0112	MAPPED	144	rx_ctx.pos size_t 'where to match, anchored' (144).
+C1-0113	MAPPED	145	rx_ctx.ncap size_t 'capture slots known so far (watermark mid-match; ncaps on completion)' (145-146); 233-235 adds that no producer exists for the watermark reading.
+C1-0114	MAPPED	147	rx_ctx.caps const ptrdiff_t (*caps)[2], '[start,end); {-1,-1} = unset' (147).
+C1-0115	MAPPED	148	rx_ctx.user void *, 'per-binding user data' (148).
+C1-0116	MAPPED	154	rx_matchfn return space in the block comment (154-164) and 225-229.
+C1-0117	MAPPED	155	'one per way the engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK/_RECURSE)' (155-156).
+C1-0118	MAPPED	156	D49: 'those codes PROPAGATE, they are not collapsed to -1, and a caller doing an exact == -1 test sees them as distinct values' (156-158; 715-722).
+C1-0119	MAPPED	158	'Values strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort semantic' (158-160); 820-825.
+C1-0120	MAPPED	160	'PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71 item 1) is its first producer' (160-162).
+C1-0121	MAPPED	162	'a generated call site that invokes an rx_matchfn traps on one' (162-163); 850-866 adds the PCREC_ERR_UTF exception.
+C1-0122	MAPPED	164	'Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL' (164; 228-229).
+C1-0123	MAPPED	165	typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx); (165).
+C1-0124	MAPPED	167	#define PCREC_ERR_STEPS (-2) (167; 781).
+C1-0125	MAPPED	168	#define PCREC_ERR_FRAMES (-3) (168; 782).
+C1-0126	MAPPED	169	#define PCREC_ERR_WORK (-4) (169; 783).
+C1-0127	MAPPED	170	#define PCREC_ERR_RECURSE (-5) (170; 784).
+C1-0128	MAPPED	170	'[DD-14] reserved: no producer yet (D71 item 1)' (170); 784, 795-798. Verified src/gen/emit_dfa.c:1942 emits the same comment and no arm returns R_RECURSE (emit_vm.c:13487).
+C1-0129	MAPPED	171	#define PCREC_ERR_FLOOR (-5) 'give-ups: [FLOOR,-2]; below: reserved (D49)' (171; 785).
+C1-0130	MAPPED	173	#define PCREC_ERR_INTERNAL (-6) 'NOT a give-up, D71 item 1' (173; 786).
+C1-0131	MAPPED	174	#define PCREC_ERR_STARTPOS (-7) 'a mid-character startpos was REFUSED' (174; 787).
+C1-0132	MAPPED	175	#define PCREC_ERR_UNSET_VAR (-8) (175; 788).
+C1-0133	MAPPED	176	#define PCREC_ERR_UTF (-9) 'an ill-formed subject was REFUSED (-futf-check)' (176; 789).
+C1-0134	MAPPED	178	#define PCREC_UNSET ((ptrdiff_t)-1) (178, 884).
+C1-0135	MAPPED	180	rx_callout_ref { rx_matchfn *fn; void *user; } (180-183).
+C1-0136	MAPPED	185	Block comment 'Emitted ONLY when a substitution template names it' (185); 238-239 refines: the typedef is in every artifact's block, a FUNCTION of this type only when a template names one.
+C1-0137	MAPPED	186	'Renders one template segment from the same rx_ctx a callout receives' (186-187).
+C1-0138	MAPPED	187	'Writes at most outcap bytes to out; returns the number of bytes produced, or -1 to fail' (187-188).
+C1-0139	MAPPED	188	'Called with out == NULL and outcap == 0, it returns the length it WOULD produce, writing nothing' (188-189; 236-238).
+C1-0140	MAPPED	190	typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx, unsigned char *out, size_t outcap); (190-191).
+C1-0141	MAPPED	193	rx_group_entry fields name, number, slot, ref (193-199).
+C1-0142	MAPPED	196	slot: 'caps[] index this entry delivers, or -1 if this build delivers no slot for it' (196-197; 240-241).
+C1-0143	MAPPED	198	'NULL/empty for the primary's own groups' (198; 241).
+C1-0144	MAPPED	241	'ref ... names the bound definition on a delivered row of a composed artifact (5.5)' (241-243); 1115-1118 (ref non-NULL on every delivered row, says which definition).
+C1-0145	MAPPED	129	'only struct rx_info's body is elided here; 6 lists it field by field' (129-130; 201-203).
+C1-0146	MAPPED	205	#define PCREC_ENGINE_DFA 1 (205; 1144).
+C1-0147	MAPPED	206	#define PCREC_ENGINE_VM 2 (206; 1144).
+C1-0148	MAPPED	208	PCREC_VM_RUNG_CURSOR 0x1u (208).
+C1-0149	MAPPED	209	PCREC_VM_RUNG_FRAMES_BOUNDED 0x2u (209).
+C1-0150	MAPPED	210	PCREC_VM_RUNG_FRAMES_UNBOUNDED 0x4u (210).
+C1-0151	MAPPED	211	PCREC_VM_RUNG_REVDET 0x8u (211).
+C1-0152	MAPPED	212	PCREC_VM_RUNG_COUNTER 0x10u (212).
+C1-0153	MAPPED	213	PCREC_VM_STRAT_POSSESSIVE 0x1u (213).
+C1-0154	MAPPED	214	PCREC_VM_STRAT_BACKTRACKING 0x2u (214).
+C1-0155	MAPPED	215	PCREC_VM_PRUNE_CLAMPED 0x1u (215).
+C1-0156	MAPPED	216	PCREC_VM_PRUNE_UNCLAMPED 0x2u (216).
+C1-0157	MAPPED	220	'extern const struct rx_info <prefix>_info; is per-prefix and is declared outside the block' (220-221).
+C1-0158	MAPPED	129	Block is 'verbatim from a default -p rx artifact ... (only struct rx_info's body is elided)' (129-130); extern outside the block (220-221).
+C1-0159	MAPPED	236	'rx_renderfn carries a sizing protocol: called with out == NULL and outcap == 0 it writes nothing and returns the length it would produce' (236-238).
+C1-0160	MAPPED	241	rx_group_entry bullet (240-243): ref is NULL for the primary's own groups and names the bound definition on a composed artifact (5.5). Whether 'the artifact documents only' is no longer a point.
+C1-0161	MAPPED	244	'Every macro in the block is unprefixed and identical under every prefix' (244-245).
+C1-0162	MAPPED	154	The block's rx_matchfn comment is quoted verbatim (154-164) and names only PCREC_ERR_* with no <PREFIX> placeholder; the 'because they no longer vary per artifact' reason is at 244-245.
+C1-0163	MAPPED	245	'emitted even on an artifact that can never produce the value (a DFA-only artifact never returns a give-up code and never stamps a VM mask)' (245-248; 84-87).
+C1-0164	UNMAPPED		Not stated: that rx_info's ncaps field comment names <PREFIX>_NCAPS. TRUE today (t2.h:86 '== this artifact's own <PREFIX>_NCAPS'); the new doc's ncaps row (1141) states ncaps == <PREFIX>_NCAPS and calls emitted member comments non-authoritative glosses (1129-1130), so low-value.
+C1-0165	MAPPED	91	<PREFIX>_NCAPS stays per-prefix because it varies per artifact (91-92); 890-891 ('a property of the ARTIFACT').
+C1-0166	MAPPED	251	'rx_info is a struct TAG, not a typedef. Every emitted reference spells struct rx_info' (251-252).
+C1-0167	MAPPED	252	'no bare rx_info type exists' (252-253); extern const struct rx_info <prefix>_info at 220.
+C1-0168	MAPPED	252	'under the default prefix the per-artifact instance <prefix>_info is the identifier rx_info, which a typedef of the same name could not coexist with' (252-254). Separate struct-tag namespace is implied, not spelled out.
+C1-0169	MAPPED	254	'An embedder declares const struct rx_info *' (254-255).
+C1-0170	MAPPED	256	'This spelling is ruled (D57), not provisional' (256-257). The 'design sketch typedef form is dead' clause is not restated.
+C1-0171	MAPPED	255	'a consumer that wants a typedef'd name declares its own, e.g. typedef struct rx_info rx_info_t;' (255-256).
+C1-0172	SUPERSEDED	265	Old said five entry symbols (four + next_pos). New 265-275 lists nine per-artifact symbols (search, match, match_caps, info, next_pos, valid_upto, three _in). Probe nm -g: rx_info (data) + search, match, match_caps, next_pos, valid_upto, search_in, match_in, match_caps_in.
+C1-0173	MAPPED	517	'It is the one place an artifact's byte-vs-character distinction lives (D58...)' (517-518). Note 2630 adds valid_upto as the second residue.
+C1-0174	MAPPED	275	Table row at 275; 2827-2830: 'each _in entry is its un-suffixed sibling in every respect ... plus one argument naming where the working storage lives'.
+C1-0175	SUPERSEDED	265	Old 'eight entry symbols in total' (5 incl. info + 3 _in). New inventory 265-275 has nine with valid_upto; probe nm shows 8 functions + rx_info data = 9. The new doc gives no count.
+C1-0176	MAPPED	2778	Section 10 'Working storage: the _in entries and the tiered default' (2778-2830); inventory row 275 points to 10.
+C1-0177	MAPPED	2978	10.8: the three un-suffixed entries 'keep their exact signatures, return spaces, anchoring and caps disciplines' (2978-2981); 295-298.
+C1-0178	MAPPED	295	'run on default working storage whose cost model is 10.9 (the tiered default)' (295-297); 'The cost model' at 3036.
+C1-0179	MAPPED	2990	'On an artifact whose stamped default storage does not fit in one 4 KB page, each un-suffixed entry runs the match on a page-sized buffer' (2990-2992).
+C1-0180	MAPPED	2992	Re-run 'on PCREC_ERR_FRAMES and on no other outcome' (2992-2994).
+C1-0181	MAPPED	2994	're-runs the same match from scratch on the full stamped default, by calling a non-inlined internal function that owns that storage' (2994-2996).
+C1-0182	MAPPED	3010	'No answer changes' paragraph (3010-3019) and 'Every promise of 3, 4 and 5 stands unchanged' (3023).
+C1-0183	MAPPED	3026	'The depth an artifact can reach is unchanged ... only the cost of not reaching it moved' (3026-3028).
+C1-0184	MAPPED	3037	Same figures 213-268 -> 45.6-48.8 ns/call vs 44.2-47.2 for search_in (3037-3040); 16-byte subject, N=100k stated.
+C1-0185	MAPPED	3040	entry frame 98,512 -> 3,168 B (gcc -fstack-usage) (3040-3041).
+C1-0186	MAPPED	3041	131,216 -> 3,184 B for the ^(a(?1)?b)$ specimen (3041-3042; 974-976). Probe: rx_search 3184, deep 131216.
+C1-0187	MAPPED	3041	'(The ^(a(?1)?b)$ specimen of 5.3 and limits.md 5 is a different artifact with different numbers: 131,216 -> 3,184 B.)' (3041-3042).
+C1-0188	MAPPED	3042	'The tier is a bet that real calls hold on the fast tier, and it loses on some patterns' (3042-3043).
+C1-0189	MAPPED	3045	'The wasted fast attempt is bounded by the STEP and WORK budgets, not by the frame count' (3045-3046).
+C1-0190	MAPPED	3006	'sixty frames of depth can absorb unbounded backtracking' (3006-3008).
+C1-0191	MAPPED	3047	'There is a DISCONTINUITY at the boundary, not a ramp' (3047).
+C1-0192	MAPPED	3048	((a)|(aa))+b: 18.5 vs 207.1 ns at n=1 (11x faster), N=20k, median of 5 (3048-3050).
+C1-0193	MAPPED	3049	186.4 vs 365.3 at n=23 (3049).
+C1-0194	MAPPED	3049	568.9 vs 372.9 at n=24, 3.05x jump across one byte, 1.53x slower than single-tier (3049-3051).
+C1-0195	MAPPED	3051	'1.24-1.53x slower above it' (3051).
+C1-0196	MAPPED	3052	'that boundary is a 25-byte subject (24 a's and a b)' (3052-3053).
+C1-0197	MAPPED	3052	'"Deep" can mean a very short subject ... Depth is a property of the backtracking, not of the input length' (3052-3053).
+C1-0198	MAPPED	3055	'An escalating call can do up to twice the step budget of work (4)' (3055); mechanism 3001-3008 and 811-815.
+C1-0199	MAPPED	811	Section 4 paragraph 'One call to an un-suffixed entry may spend up to twice the step budget and twice the work budget' (811-818); referenced from 3005, 3055.
+C1-0200	MAPPED	3057	'supplies its own storage through the _in entries and never meets the tier' (3057-3059).
+C1-0201	MAPPED	3058	'whose stack is too small for the deep tier (5.3, K33), supplies its own storage through the _in entries' (3057-3059; 985-988).
+C1-0202	MAPPED	2998	'-fno-tiered-entry (tuning.md 2.12) restores the single-tier shape without changing call sites' (2998-2999).
+C1-0203	MAPPED	3059	'-fno-tiered-entry is the answer for a workload measured to sit above the boundary' (3059-3060).

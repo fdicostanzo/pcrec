@@ -51,7 +51,10 @@ emitted identifier (helpers, tables, the named-group array), and the
 stamp macros of §6.3). A pattern compiled with `-p foo` gets `foo_search`,
 `FOO_NCAPS`, and so on. The CLI spells the option `-p` only; there is no
 `--prefix` long form (`pcrec --prefix foo …` is an unknown-option error).
-`docs/spec/cli.md` gives `-p`'s identifier grammar.
+`docs/spec/cli.md` gives `-p`'s identifier grammar. Every other emitted
+identifier — helper functions, tables, the DFA state types and their
+accessors, labels — is prefix-scoped and INTERNAL: its name, shape and
+linkage are not part of this contract and may change at any `abi` bump.
 
 <a id="library-surface"></a>
 **2. pcrec's own fixed library surface**: the `PCREC_*` enum and bit
@@ -241,6 +244,9 @@ What the block's comments state, made explicit:
   when this build delivers none; `ref` is NULL for the primary pattern's own
   groups and names the bound definition on a delivered row of a composed
   artifact (§5.5).
+- **`PCREC_ENGINE_DFA` / `PCREC_ENGINE_VM` are the only emitted names for
+  `rx_info.engine`'s two values**; the compiler's internal engine enum is
+  never emitted.
 - **Every macro in the block is unprefixed and identical under every
   prefix**, and is emitted even on an artifact that can never produce the
   value (a DFA-only artifact never returns a give-up code and never stamps a
@@ -273,6 +279,13 @@ Every artifact exports, unconditionally, these per-artifact symbols:
 | `<prefix>_next_pos` | the encoding residual: next character boundary | §3.1.1 |
 | `<prefix>_valid_upto` | the subject validator | §3.1.2 |
 | `<prefix>_search_in`, `<prefix>_match_in`, `<prefix>_match_caps_in` | the three above with caller-supplied working storage | §10 |
+
+Some artifacts also export and declare encoding-residual helpers the engine
+calls across the residual seam: `<prefix>_span_match` /
+`<prefix>_span_match_caseless` (a backreference- or variable-bearing
+artifact; `docs/spec/vars.md` §7) and `<prefix>_var_valid` (a variable-bearing
+artifact under a multi-byte encoding). They are not caller entries; their
+signatures are not part of this contract.
 
 The parameter names used in this document (`s`, `n`, `startpos`, `caps`) are
 expository; the emitted declarations spell them `subject`, `subject_length`,
@@ -407,7 +420,8 @@ match the 3 bytes `{'a', 0x00, 'b'}` (span `[0,3)`, group 1 `[1,2)`), and
 matching, non-matching and `n == 0` searches over exact-size buffers are
 clean; the same probe with `n` overstated by one fires a heap-buffer-overflow
 at the matcher's own `memchr` prefilter. The DFA matcher writes
-`caps[0][0]`/`caps[0][1]` only under `if (caps)`.
+`caps[0][0]`/`caps[0][1]` only under `if (caps)`; an `--emit-main` driver
+passes a real array, never `NULL`.
 
 Where a caller's `startpos` may point, and what happens on ill-formed text,
 is §9.
@@ -465,11 +479,16 @@ while (p <= n) {
 <a id="find-all-measured"></a>
 **Measured.** The loop, compiled against real artifacts on both engines
 (captures-on and `--no-captures`), agrees span for span with
-`python3 re.finditer` on 22 of the 26 pairs in
-`tests/encseam/findall_cases.txt` (run in `make test`), including `a*` over
-`"bbb"` → `(0,0) (1,1) (2,2) (3,3)`, `x?y` over `"yy"` → `(0,1) (1,2)`,
-`a|` over `"bab"` → `(0,0) (1,2) (2,2) (3,3)` and `a|b*` over `"cbbac"` →
-`(0,0) (1,3) (3,4) (4,4) (5,5)`. The ill-formed-subject witnesses are
+`python3 re.finditer` on 22 of the 26 `byte`-encoded pairs in
+`tests/encseam/findall_cases.txt` (run in `make test`): `a*` over `"bbb"` →
+`(0,0) (1,1) (2,2) (3,3)`, `x?y` over `"yy"` → `(0,1) (1,2)`, `a|` over
+`"bab"` → `(0,0) (1,2) (2,2) (3,3)`, `a|b*` over `"cbbac"` →
+`(0,0) (1,3) (3,4) (4,4) (5,5)`, and `a*`/`"aaa"`, `a?`/`"aba"`,
+`b*`/`"abbbab"`, `(a|)`/`"xax"`, `a(b|)c`/`"acabc"`, `(ab)*`/`"ababx"`,
+`a{0,2}`/`"aaaa"`, `[a-c]*`/`"xabcx"`, `[0-9]+`/`"a12b345"`, `a{2,}`/`"aaaa"`,
+`(?:ab|a)`/`"aab"`, `(a*)*`/`"aab"`, `.`/`"abc"`, `ab$`/`"xabab"`,
+`^a`/`"aa"`, `c*` and `x` over the empty subject, and `a`/`"a"`; the other
+four are the lossy class below. The ill-formed-subject witnesses are
 `tests/rxtsource/fixtures/mc_illformed_utf8.rxtin`.
 
 <a id="find-all-lossy"></a>
@@ -529,7 +548,9 @@ lives (D58; `docs/dev/plan.md` `[DD-12]`).
   not depend on the encoding (DD-12 (7)); `tests/codegen/
   run_codegen_tests.sh` checks every emitted engine body for a residual
   reference across six emission shapes in both artifact forms, and
-  `tests/mech/sabotages/S68_residual_in_hot_loop.sh` validates the check.
+  `tests/mech/sabotages/S68_residual_in_hot_loop.sh` validates the check
+  (under `byte` a residual call in a hot loop computes the same value, so only
+  the structural check can see one).
 - **One encoding per artifact.** An artifact embeds exactly one encoding's
   residual block, chosen per compile call by `pcrec_options.encoding` (§8.2,
   §9.1), so differently-prefixed artifacts compiled for different encodings
@@ -558,8 +579,9 @@ this rule is normative:**
 A well-formed character is skipped whole; an ill-formed sequence degrades to
 the next non-continuation byte rather than to a position inside the garbage;
 the loop is bounded by `n` rather than by a character's maximum of three
-continuation bytes, which makes the degradation total. This is also the rule
-`docs/spec/rxt_format.md`'s `mc` production states. Verbatim from a
+continuation bytes, which makes the degradation total. The same rule is the
+engine's own retry advance (K49), and `docs/spec/rxt_format.md`'s `mc`
+production states it for a foreign consumer. Verbatim from a
 `-e utf8 -fcomments` artifact:
 
 ```c
@@ -645,7 +667,8 @@ the same order (the boundary guard first) and over the same checked range
 `<prefix>_search` uses. Under `-fstartpos-guard=align` a misaligned
 `ctx->pos` answers `-1` (no match begins inside a character), after the check
 has run from the aligned position. On a subject that BEGINS with continuation
-bytes it answers `-1` at `ctx->pos == 0` (§9.3).
+bytes it answers `-1` at `ctx->pos == 0` (§9.3), and `ctx->pos > ctx->len`
+answers `-1`.
 
 It delivers **no captures**: `ctx->caps` is an input (§5), not an output
 channel. A top-level caller passes `ctx->ncap = 0, ctx->caps = NULL`, which
@@ -733,6 +756,15 @@ frame), and over `"ab"` all three return `-3`. A caller handles give-ups on
 whichever entry it calls, and never infers from one entry's clean answer that
 another would give one.
 
+<a id="k28-initializer"></a>
+**The DFA wrappers' local caps arrays are zero-initialized** (`= {{0}}`), in
+`<prefix>_match`, `<prefix>_match_caps` and the `--emit-main` `main()`. When a
+pattern's DFA is a single dead state, `<prefix>_search` always returns 0, gcc
+`-O1` inlines it and reports the array maybe-uninitialized though the read is
+unreachable; the initializer keeps a consumer's `-Werror` build clean
+(`docs/dev/known_issues.md` K28). It is never observed and changes no answer;
+restructuring the test instead was measured not to silence the report.
+
 <a id="whole-subject"></a>
 ### 3.6 Whole-subject and end-anchored matching: the `(?:P)\z` idiom
 
@@ -742,7 +774,9 @@ never "does a match cover here to `n`". A caller wanting PCRE2's
 `P` in a non-capturing group, followed by `\z` — and calls any entry as usual.
 The idiom is permanent (`docs/dev/decisions.md` D77, plan row `[OS-4]`): no
 end-anchored generation axis is built, and one is built only under a
-measurement that justifies it.
+measurement that justifies it. A caller asking both questions compiles two
+artifacts; any optimization of `\z` benefits the idiom exactly as it benefits
+every other `\z`-bearing pattern.
 
 - **`\z`, not `$`.** `$` admits a trailing newline at default options:
   `(?:foo)$` matches `"foo\n"` at `[0,3)`, while `(?:foo)\z` on the same
@@ -1026,7 +1060,8 @@ matching the same subject on the same thread.
   delivering row is never on a DFA artifact. Measured on `'a(?<b>b|c)+d'`
   with `--features named-groups`: captures-on emits `{ "b", 1, 1, NULL }`;
   `--no-captures` emits `{ "b", 1, -1, NULL }` and selects the DFA
-  (`.engine = 1`).
+  (`.engine = 1`). The captures-on artifact's `rx_info` reads
+  `.ngroups = 1`, `.nnames = 1`, `.nentries = 1`, `.groups = rx_group_names`.
 - **The array is sorted by `(name ascending, number ascending)`**, name by
   `strcmp`: byte-exact and case-sensitive. `(?<name>a)(?<NAME>b)` is two
   distinct groups under libpcre2 10.46 and python `re` alike, under
@@ -1036,7 +1071,8 @@ matching the same subject on the same thread.
   them back as `alpha`/`mu`/`zeta`; D59). On a composed artifact a leading
   SCOPE term precedes the key (§5.5).
 - **Duplicate names** (module `backrefs`' `(?J)`) form a RUN of rows ordered
-  by ascending group number. The tiebreak is a correctness requirement:
+  by ascending group number. The tiebreak is a correctness requirement (the emitted comparator is
+  `src/gen/emit_dfa.c`'s `ng_cmp_name`, keyed `(scope, name, number)`):
   `tests/codegen/run_codegen_tests.sh`'s `[M6.5-DUPNAMES]` check asserts the
   rows strictly increasing in `(name, number)`, and sabotage S120 removes the
   tiebreak.
@@ -1239,7 +1275,9 @@ that format's rule, not this field's).
 the one that writes `/* … */` comments.
 
 <a id="rx-info-findings"></a>
-**`findings`** names the analysis a byte-rate came from in plain text, so a
+**`findings`** mirrors `<PREFIX>_FINDINGS` because `rx_info` is the canonical
+machine-readable record (D43): the macro alone is invisible to a linked
+binary. It names the analysis a byte-rate came from in plain text, so a
 shipped binary discloses the name of the analysis it was built under
 (`docs/spec/findings.md` §5 states the grammar and the digest).
 
@@ -1355,13 +1393,21 @@ selection point must be observable".
   members have a stamp; most stamps have no `rx_info` field. A stamp gets a
   run-time mirror only when a named consumer reads the fact at run time (D77);
   the stamps marked "no mirror" below have none for that reason, and adding one
-  would be a struct append moving no existing offset.
+  would be a struct append moving no existing offset. `match_form` and
+  `search_form` have mirrors because each is a caller-visible COST property of
+  an entry the caller calls; `_DFA_TABLE` and `_DFA_SCAN_EDGE` are internal
+  encoding choices and have none.
 - **Two families.** (a) SELECTION FACTS — which engine, which candidate-start
   mechanism, which entry or search form, which pre-check — are stamped whether
   or not the mechanism fired (D81: a fact stamped only when it is interesting
   is a hint), on every artifact the mechanism can occur on. (b) CAPACITY and
   ACTIVITY macros report what the VM did — per quantifier, per call site, per
-  frame — and are VM-only; a DFA artifact has no such activity.
+  frame — and are VM-only; a DFA artifact has no such activity. Several stamps
+  report what the emitted code turned out to CONTAIN, discovered while
+  emitting rather than chosen by a mode a caller can force
+  (`<PREFIX>_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`,
+  `_DFA_UNIFORM_FOLDS`, and `_VM_ENTRY_SHAPE` under AUTO, which picks the rung
+  after the program is emitted; `--vm-entry-shape=N` can name one).
 - **A stamp's scope is the MECHANISM it names, not the artifact kind.** Four
   scopes occur: every artifact; every artifact that CONTAINS a DFA scan (every
   DFA artifact and every VM HYBRID — a VM artifact whose
@@ -1531,7 +1577,8 @@ fit site; neither is parsed to produce the other. No `rx_info` mirror;
 - **Under `--engine=vm` or `--engine=dfa` the value is `"forced"` and says
   nothing about a retry**, which is not gated on `auto`: a drop rung changes an
   entry-point FORM inside the engine the caller demanded, which is compatible
-  with the demand. Measured: `--engine=dfa --features unicode-props -e utf8 --
+  with the demand, and no flag lets a caller demand the dropped machine
+  (`-fno-anchored-dfa` is deny-only). Measured: `--engine=dfa --features unicode-props -e utf8 --
   '\p{L}'` compiles and stamps `"forced"`, where `auto` stamps
   `"size-cap-retry"`. A consumer of a forced compile reads `<PREFIX>_DFA_MATCH`
   for whether an anchored machine exists, without its cause.
@@ -1637,7 +1684,8 @@ artifact's DFA tables had all cells equal and are therefore NOT emitted, their
 accessor returning the constant (keeping its state and class parameters, so a
 call site's `subject[pos++]` is still evaluated). Two tables per machine are
 foldable, `<m>_next_state` and `<m>_is_accepting`, over the same machines
-`_DFA_TABLE` composes, so the value runs `0..6`; `0` on `"attempt"` and
+`_DFA_TABLE` and `_DFA_SCAN_EDGE` compose (so none of the three can name a
+machine the artifact does not contain), and the value runs `0..6`; `0` on `"attempt"` and
 `"empty"`. It is family (b) in nature — what the emitted machine turned out to
 contain — and is owed because a fold is visible only as a table's ABSENCE.
 `tests/codegen/run_dfa_uniform_fold.sh` reads it. The artifact is smaller and
@@ -1738,7 +1786,9 @@ it; `rx_info.scan != NULL` is its run-time reading.
 **`<PREFIX>_VM_PREFILTER_WHY`** — emitted ONLY where the size-cap ladder's last
 rung dropped the prefilter, and then beside `RX_VM_PREFILTER "none"` (the only
 `"none"` it accompanies), reading `"size cap retry, hybrid N > CAP"`: the
-refused artifact's bytes and the cap it exceeded (`limits.md` §8; D135).
+refused exact artifact's bytes (not a discarded intermediate retry's) and the
+cap it exceeded (`limits.md` §8; D135). The figure includes the
+`<PREFIX>_MEMFN_*` stamp lines, which render before the size is measured.
 
 <a id="stamp-vm-prefilter-lang"></a>
 **`<PREFIX>_VM_PREFILTER_LANG`** and **`_VM_PREFILTER_LANG_WHY`** — on exactly
@@ -1756,8 +1806,9 @@ No `rx_info` mirror.
 - **The stamp reports the count-collapse axis ONLY** (D142). `"exact"` does
   not say the prefilter recognises the pattern's own language: a lookbehind, a
   lookahead, an atomic group or `\K` is erased from the prefilter's machine,
-  which then over-approximates while this stamp reads `"exact"`
-  (`docs/design/pf_know.md` §2.2/§8.4). Whether a successful prefilter also
+  which then over-approximates while this stamp reads `"exact"` (measured on
+  76 lookbehind, 47 lookahead, 132 atomic and 53 `\K` hybrids,
+  `docs/design/pf_know.md` §2.2/§8.4). Whether a successful prefilter also
   proves the match END is read from `<PREFIX>_VM_RESEED "exact"`.
 - **A prefilter is a filter either way**: its rejection is sound and its span
   start is a lower bound the VM verifies from, so the answers are identical
@@ -1874,8 +1925,9 @@ common byte and `-fno-req-byte` all report it.
 #define RX_REQ_RUN "none"         /* no run of two or more bytes */
 ```
 
-The run's bytes as lowercase hex, `@`, and the index within them of the member
-the emitted `memchr` scans for; `"none"` at a length below 2
+The run's bytes as lowercase hex (a run is arbitrary bytes inside a
+`#define`'s string body), `@`, and the index within them of the member the
+emitted `memchr` scans for; `"none"` at a length below 2
 (`<PREFIX>_REQ_BYTE`'s case). `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`
 wherever position `idx` is an exact byte, which makes the two checkable
 against each other. A run whose positions are not all exact bytes carries `/`
@@ -2029,10 +2081,10 @@ chosen from (`tuning.md` §2.21).
 <!-- value-set: RX_VM_ENTRY_SHAPE -->
 | value | shape |
 |---|---|
-| `"plain"` | one body, six framed entries |
-| `"shared"` | one out-of-line body behind three forwarding entries; seven statics inline, the matcher `noinline` |
-| `"forward"` | three bodies in the three `_in` entries, three forwards |
-| `"inline"` | six bodies |
+| `"plain"` | one body, six framed entries; no entry-chain static carries `always_inline` |
+| `"shared"` | one out-of-line body behind three forwarding entries; seven of the eight statics carry `always_inline`, the matcher is `noinline` |
+| `"forward"` | three bodies in the three `_in` entries, three forwards; all eight statics carry `always_inline` |
+| `"inline"` | six bodies; all eight statics carry `always_inline` |
 
 A closed token fixed at four by the emitter's own enum. `_VM_PROGRAM_BYTES` is
 the emitted VM program size in bytes — the exact quantity
@@ -2153,7 +2205,8 @@ single-tier ones included.
 artifact has one tier", and the only spelling of it. Four things produce it:
 the stamped default already fits a page, the slot array alone does not, the
 scaled fast tier would be too small to be worth two runs, or
-`-fno-tiered-entry`. They are `.c`-private: no entry takes a fast capacity and
+`-fno-tiered-entry`; they are not distinguishable from `rx_info.flags`, in
+which `-fno-tiered-entry` is masked. They are `.c`-private: no entry takes a fast capacity and
 no caller sizes anything from one, and a caller's code should not branch on
 the tier boundary.
 
@@ -2303,12 +2356,14 @@ artifact.
 <a id="stamp-feature-set"></a>
 **`PCREC_FEATURE_SET`** and **`PCREC_FEATURE_MODULES`** — the feature-module
 set the artifact was built with (D37; §1): the named set, and the
-comma-separated modules. `PCREC_*`-named but per-artifact, in the `.c`.
+comma-separated modules. Under `--features all` every module's name is listed,
+whether or not the pattern uses it. `PCREC_*`-named but per-artifact, in the `.c`.
 
 <a id="stamp-tune"></a>
 **`<PREFIX>_TUNE`** — the `--tune` position, a closed five-token string
 (`tuning.md` §5.3). At the default `"balanced"` nothing else differs from a
-build with no `--tune` flag.
+build with no `--tune` flag; at no position does an answer move
+(`tuning.md` §5.5).
 
 <a id="stamp-altcls"></a>
 **`<PREFIX>_ALTCLS_MERGES`** and **`<PREFIX>_ALTCLS_FACTORED`** — counts of
@@ -2486,7 +2541,7 @@ Four things in the example are contract:
 <a id="options"></a>
 ### 8.2 The option and error structures
 
-`pcrec_options`, all nineteen members in declaration order; the comment
+`pcrec_options`, all twenty-five members in declaration order; the comment
 beside each is a one-line gloss, and the full text is `lib/pcrec.h`'s own
 comment and, for a tuning axis, `docs/spec/tuning.md` §2:
 
@@ -2522,9 +2577,21 @@ typedef struct {
     const char *name;        /* what rx_info.name reports; NULL = use prefix */
     int         tune;        /* PCREC_TUNE_MIN_SIZE .. _MAX_SPEED, -2..+2,
                                 0 = balanced and a structural no-op */
-    const char *features;    /* enabled feature-module set for THIS call;
+        const char *features;    /* enabled feature-module set for THIS call;
                                  same vocabulary as --features; NULL = no
                                  request (see below) */
+    const char        *analysis;            /* the findings ANALYSIS (bundle
+                                               name); NULL = the built-in
+                                               default alone */
+    const char *const *analysis_dirs;       /* NULL-terminated directory
+                                               list searched for NAME.rxt;
+                                               NULL = none */
+    const char        *analysis_source;     /* .rxt TEXT holding bundles,
+                                               parsed with no file access */
+    size_t             analysis_source_len; /* its length in bytes */
+    const char        *memfn;               /* the search-code kit's opaque
+                                               option string (--memfn=);
+                                               NULL or "" = none */
 } pcrec_options;
 ```
 
@@ -2540,6 +2607,19 @@ typedef struct {
 - **`frame_capacity`'s `0`** means "let the compiler size it"
   ([sentinel](#frame-capacity-sentinel)).
 - **`name`** is what `rx_info.name` reports; `NULL` uses the prefix.
+- **`analysis`, `analysis_dirs`, `analysis_source`, `analysis_source_len`**
+  choose the findings analysis a compile reads its byte rates from, resolved
+  `analysis_source` first, then `DIR/<name>.rxt` for each of `analysis_dirs`,
+  then the analyses built into the library, always ending in the built-in
+  `default`. An analysis changes speed, never an answer or a give-up; a name
+  that resolves nowhere, a malformed bundle or an include cycle refuses the
+  compile through `pcrec_error`. The chosen bundle's NAME is stamped into the
+  artifact (`<PREFIX>_FINDINGS`). `docs/spec/findings.md` is their contract.
+- **`memfn`** is one opaque comma-separated string (e.g. `"no-NAME"` denies a
+  kit row), validated once per compile by the kit's own parser, whose refusal
+  text pcrec shows unchanged. An option belonging to the SIMD layer is accepted
+  and inert under `-fno-memfn-simd` (the default). It is not a flag bit and
+  does not move `rx_info.flags`.
 
 <a id="options-features"></a>
 **`features`** applies the CLI's `--features` lever per `pcrec_compile()` call:
@@ -2756,7 +2836,7 @@ without `-futf-check`, and answers as the default artifact does (no match and
 `(4,5)` above): a match's answer must not depend on where the caller started
 the search. The refusal set and the refusal OFFSET are exact and unaffected;
 only the accepted ANSWER differs, and only for patterns whose backward reach
-exceeds LB. The class is 4 cells per configuration, pinned EXACTLY (`CLIP` in
+exceeds LB (three patterns in the pinned set). The class is 4 cells per configuration, pinned EXACTLY (`CLIP` in
 `tests/utfcheck/check.py`, the `clip-*` populations; reproducers in
 `docs/dev/lanes/uvbuild_report.md` §3.1/§5, the class described in
 `tests/utfcheck/CLAUDE.md`), so a change in either engine moves a number

@@ -1,0 +1,313 @@
+C6-0301	4273	N	CHECK: Since CC-DIFF STEP 2 (2026-09-04), <PREFIX>_VM_FRAMELESS 1 is a necessary and no longer a sufficient condition for the entry-chain inline attribute; <PREFIX>_VM_ENTRY_SHAPE carries the rest.
+C6-0302	4277	N	A frameless artifact may carry the inline attribute on all eight entry-chain statics (<PREFIX>_VM_ENTRY_SHAPE inline or forward).
+C6-0303	4278	N	A frameless artifact may carry the inline attribute on seven statics with the matcher noinline (<PREFIX>_VM_ENTRY_SHAPE shared).
+C6-0304	4279	N	A frameless artifact may carry the inline attribute on none (<PREFIX>_VM_ENTRY_SHAPE plain), which AUTO selects above the size term where the forward rungs are illegal.
+C6-0305	4280	N	<PREFIX>_VM_FRAMELESS 1 means the artifact is ELIGIBLE for the entry-chain inline attribute; <PREFIX>_VM_ENTRY_SHAPE says what was actually emitted.
+C6-0306	4282	N	<PREFIX>_VM_FRAMELESS 0 means none of the entry-chain statics carries the inline attribute; a framed artifact is plain by construction and there is no second route to 0.
+C6-0307	4286	N	<PREFIX>_VM_ENTRY_SHAPE and <PREFIX>_VM_PROGRAM_BYTES (CC-DIFF STEP 2, 2026-09-04) are family (b), for _VM_FRAMELESS's reason.
+C6-0308	4288	N	There is no entry-shape mode upstream of the emitter: the rung is chosen where the program has just been emitted, from the program's own size and what it turned out to contain.
+C6-0309	4293	N	<PREFIX>_VM_ENTRY_SHAPE has values "forward", "plain", "shared", "inline".
+C6-0310	4294	N	<PREFIX>_VM_PROGRAM_BYTES is an unsigned long long integer (e.g. 646ULL).
+C6-0311	4297	N	<PREFIX>_VM_ENTRY_SHAPE names the rung the emitter took for the artifact's six entries.
+C6-0312	4298	N	<PREFIX>_VM_ENTRY_SHAPE "plain": one body, six framed entries.
+C6-0313	4299	N	<PREFIX>_VM_ENTRY_SHAPE "shared": one out-of-line body behind three forwarding entries.
+C6-0314	4300	N	<PREFIX>_VM_ENTRY_SHAPE "forward": three bodies in the three _in entries, three forwards.
+C6-0315	4300	N	<PREFIX>_VM_ENTRY_SHAPE "inline": six bodies (what STEP 1(a) shipped).
+C6-0316	4301	N	<PREFIX>_VM_ENTRY_SHAPE is a closed token (as <PREFIX>_ENGINE_SEL is); a consumer cannot bucket on prose, and the value set is fixed at four by the emitter's own enum.
+C6-0317	4305	N	<PREFIX>_VM_PROGRAM_BYTES is the artifact's emitted VM program size in bytes: the exact quantity VM_INLINE_CHAIN_MAX_BYTES was compared against when AUTO chose the rung.
+C6-0318	4307	N	<PREFIX>_VM_ENTRY_SHAPE and <PREFIX>_VM_PROGRAM_BYTES are unconditional on every VM artifact, hybrids included, and never defined on a pure-DFA artifact.
+C6-0319	4311	N	Since abi 54 (K79), <PREFIX>_VM_PROGRAM_BYTES is measured at the canonical prefix length of two bytes: the program is emitted under a two-byte placeholder prefix and the caller's -p spelling is written afterwards (limits.md "Size limits and the prefix").
+C6-0320	4314	N	<PREFIX>_VM_PROGRAM_BYTES is the program's length as it reads at -p rx, the same under every prefix, and the entry-shape rung chosen is the same under every prefix.
+C6-0321	4319	N	Four artifacts can stamp <PREFIX>_VM_ENTRY_SHAPE "plain" for four different reasons (framed, forward-illegal above the term, tiered, or asked for), so the shape alone does not distinguish them.
+C6-0322	4322	N	<PREFIX>_VM_FRAMELESS separates the framed reason for "plain"; the program size (<PREFIX>_VM_PROGRAM_BYTES) against the stamped limit separates the rest.
+C6-0323	4327	N	<PREFIX>_VM_ENTRY_SHAPE and <PREFIX>_VM_PROGRAM_BYTES are scalars, not masks: the entry shape is a whole-artifact fact with no per-A_REP axis to mix.
+C6-0324	4328	N	Neither <PREFIX>_VM_ENTRY_SHAPE nor <PREFIX>_VM_PROGRAM_BYTES has an rx_info mirror, on RX_DFA_TABLE's precedent (D77).
+C6-0325	4332	N	<PREFIX>_VM_ALT_ISLANDS (ENG-ISL STEP 1, 2026-09-03) is family (b), for RX_ALTCLS_FACTORED's reason: what the emitted program turned out to CONTAIN, decided alternation by alternation in src/gen/emit_vm.c.
+C6-0326	4334	N	There is no island mode anywhere upstream of the emitter.
+C6-0327	4338	N	<PREFIX>_VM_ALT_ISLANDS is an integer count (e.g. #define RX_VM_ALT_ISLANDS 1, or 0, or more).
+C6-0328	4341	N	<PREFIX>_VM_ALT_ISLANDS is the number of the artifact's flat alternations that the VM lowered as an ALTERNATION ISLAND (a trie dispatch over the alternation's literal alternatives) rather than as vm_alt's serial resume chain (tuning.md 2.20).
+C6-0329	4344	N	<PREFIX>_VM_ALT_ISLANDS is unconditional on every VM artifact, hybrids included, and never defined on a pure-DFA artifact; 0 is spelled as readily as any other value.
+C6-0330	4347	N	A DFA artifact carries no <PREFIX>_VM_ALT_ISLANDS decision, since the DFA route determinizes the same trie for every alternation whether or not anyone names it.
+C6-0331	4352	N	<PREFIX>_VM_ALT_ISLANDS is a COUNT and not a boolean, on RX_ALTCLS_MERGES/_FACTORED's precedent: the island is selected per alternation, so a pattern with two can take it for one and decline the other.
+C6-0332	4355	N	<PREFIX>_VM_ALT_ISLANDS is not a mask, for _DFA_UNIFORM_FOLDS' reason: it is a whole-artifact total with no per-alternation axis to mix.
+C6-0333	4360	N	A consumer may conclude from <PREFIX>_VM_ALT_ISLANDS that the artifact dispatches its alternations by byte rather than by trying them in turn.
+C6-0334	4361	N	With islands, the artifact's cost on a wide alternation does not scale with the branch INDEX of the winner.
+C6-0335	4362	N	With islands, the artifact's emitted size does not depend on the ORDER the alternatives were written in.
+C6-0336	4363	N	A consumer may NOT conclude anything about the answers from <PREFIX>_VM_ALT_ISLANDS: an island reports the same alternative, in the same backtracking order, as the chain.
+C6-0337	4367	N	<PREFIX>_VM_ALT_ISLANDS has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent (D77); the trigger to add one is the same one RX_DFA_TABLE's entry names.
+C6-0338	4372	N	<PREFIX>_VM_CLS_FOLDS (FORM-CHAR STEP 1, 2026-09-05) is family (b), for _VM_ALT_ISLANDS' reason: what the emitted program turned out to CONTAIN, decided pool class by pool class by the fold rows of src/gen/clskit.c's class-form table (byte-fold, byte-fold-default).
+C6-0339	4374	N	There is no fold mode anywhere upstream of the emitter.
+C6-0340	4377	N	<PREFIX>_VM_CLS_FOLDS counts a VM program's folds only; a DFA scan edge's fold (abi 53, --tune=-2/-1) is reported by <PREFIX>_DFA_SCAN_EDGE "fold".
+C6-0341	4382	N	<PREFIX>_VM_CLS_FOLDS is an integer count (e.g. #define RX_VM_CLS_FOLDS 6, or 0, or any count).
+C6-0342	4385	N	<PREFIX>_VM_CLS_FOLDS is the number of the artifact's VM class-pool entries whose membership test takes the ASCII-FOLD shape (tuning.md 2.22).
+C6-0343	4386	N	The ASCII-FOLD shape is a two-member set differing only in bit 0x20, both members letters, tested as (byte | 0x20) == lower with NO 32-byte bitmap table emitted for it.
+C6-0344	4389	N	<PREFIX>_VM_CLS_FOLDS is unconditional on every VM artifact, hybrids included, and never defined on a pure-DFA artifact; 0 is spelled as readily as any other value.
+C6-0345	4391	N	The DFA route's class machinery (byte-class partition, scan-edge bodies) never consults the byte-fold row, so <PREFIX>_VM_CLS_FOLDS has nothing to report there.
+C6-0346	4395	N	<PREFIX>_VM_CLS_FOLDS is a COUNT and not a boolean, on _VM_ALT_ISLANDS' precedent: the shape is selected per pool class, so a pattern can mix fold-pair positions with bitmap classes.
+C6-0347	4397	N	Distinct pool entries are distinct sets, so distinct fold classes carry distinct compare constants, which lets a structural check hold the <PREFIX>_VM_CLS_FOLDS number to the artifact's own text.
+C6-0348	4402	N	A consumer may conclude from <PREFIX>_VM_CLS_FOLDS that the artifact's caseless-letter positions test by one or-mask-and-compare each (no load) and that it carries that many fewer 32-byte class tables.
+C6-0349	4404	N	A consumer may NOT conclude anything about the answers from <PREFIX>_VM_CLS_FOLDS: the fold compare and the bitmap read are the same predicate over the set's own two bytes.
+C6-0350	4408	N	<PREFIX>_VM_CLS_FOLDS has no rx_info mirror, on the same precedent and reason as <PREFIX>_VM_ALT_ISLANDS (D77).
+C6-0351	4411	N	<PREFIX>_VM_LIT_RUNS (OPT-LITSCAN S2a, abi 41) is family (b), for _VM_CLS_FOLDS' reason.
+C6-0352	4415	N	<PREFIX>_VM_LIT_RUNS is an integer count (e.g. #define RX_VM_LIT_RUNS 5, or 0, or any count).
+C6-0353	4418	N	<PREFIX>_VM_LIT_RUNS is the number of literal-run compares the artifact's VM program writes.
+C6-0354	4419	N	A literal run counted in <PREFIX>_VM_LIT_RUNS is a run of three or more one-byte literals in a concatenation (OPT-LITSCAN F5, abi 43, D127, narrowed from two: a two-byte run reads cheaper as its own two-node byte chain, tuning.md 2.31).
+C6-0355	4421	N	An alternation island's single-child trie chain is also counted in <PREFIX>_VM_LIT_RUNS, unaffected by F5's floor (its own mechanism).
+C6-0356	4423	N	Each counted literal run is compared as one bounds check and one run compare (tuning.md 2.31, 2.38).
+C6-0357	4424	N	Since abi 58 a run compare is a constant-length memcmp or, at the lengths gcc decomposes, two overlapping word compares.
+C6-0358	4426	N	<PREFIX>_VM_LIT_RUNS is unconditional on every VM artifact, hybrids included, never defined on a pure-DFA artifact.
+C6-0359	4428	N	<PREFIX>_VM_LIT_RUNS is 0 under -fno-lit-run.
+C6-0360	4428	N	<PREFIX>_VM_LIT_RUNS is a COUNT, for _VM_CLS_FOLDS' and _VM_ALT_ISLANDS' reason.
+C6-0361	4428	N	A consumer may NOT conclude anything about the answers from <PREFIX>_VM_LIT_RUNS; they are identical either way.
+C6-0362	4432	N	<PREFIX>_VM_CLS_KIT (CLS-TREE S4, 2026-09-29, abi 48) is family (b), for _VM_CLS_FOLDS' reason.
+C6-0363	4436	N	<PREFIX>_VM_CLS_KIT is an integer count (e.g. #define RX_VM_CLS_KIT 1, or 0, or any count).
+C6-0364	4439	N	<PREFIX>_VM_CLS_KIT is the number of distinct class-matcher functions (<prefix>_wcls<N> and, since abi 51, <prefix>_class_kit<N>) the artifact's VM program calls.
+C6-0365	4441	N	A wcls matcher is a wide class tested as one decode and one matcher.
+C6-0366	4442	N	A class_kit matcher is a byte class tested by the kit's K form at --tune=-2/-1, where the kit is smaller than the class's table (tuning.md 2.33).
+C6-0367	4444	N	A DFA scan edge's kit matcher (<prefix>_<machine>_scankit<N>) is not counted in <PREFIX>_VM_CLS_KIT; it is reported by <PREFIX>_DFA_SCAN_EDGE "kit".
+C6-0368	4446	N	<PREFIX>_VM_CLS_KIT is emitted on every VM artifact, hybrids included, and never on a pure-DFA artifact.
+C6-0369	4448	N	<PREFIX>_VM_CLS_KIT reads 0 under -fno-cls-kit.
+C6-0370	4448	N	<PREFIX>_VM_CLS_KIT reads 0 under -e byte at --tune=0/+1/+2.
+C6-0371	4449	N	<PREFIX>_VM_CLS_KIT is a COUNT, for the entries above's reason.
+C6-0372	4449	N	A consumer may NOT conclude anything about the answers from <PREFIX>_VM_CLS_KIT; they are identical either way.
+C6-0373	4451	N	A consumer may NOT conclude which form a matcher took from <PREFIX>_VM_CLS_KIT: that is --emit-ir's consume row and the matcher's own text.
+C6-0374	4454	N	<PREFIX>_VM_CLS_ATOMS (OPT-CLSPACK, 2026-09-30, abi 48) is family (b), for _VM_CLS_FOLDS' reason.
+C6-0375	4458	N	<PREFIX>_VM_CLS_ATOMS is 0 or the shared table's atom count, 1..64.
+C6-0376	4461	N	<PREFIX>_VM_CLS_ATOMS is non-zero exactly when the artifact's VM program tests its table-read byte classes through ONE shared byte->atom table (<prefix>_class_atoms, tuning.md 2.34); then it is the number of atoms that table numbers.
+C6-0377	4464	N	<PREFIX>_VM_CLS_ATOMS 0 means a 32-byte bitmap per class (or no table-read class at all).
+C6-0378	4465	N	<PREFIX>_VM_CLS_ATOMS is emitted on every VM artifact, hybrids included, and never on a pure-DFA artifact.
+C6-0379	4466	N	<PREFIX>_VM_CLS_ATOMS reads 0 under -fno-cls-pack.
+C6-0380	4467	N	A consumer may NOT conclude anything about the answers from <PREFIX>_VM_CLS_ATOMS; they are identical either way.
+C6-0381	4470	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL (OPT-1, 2026-08-25) are family (b) macros.
+C6-0382	4471	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL report the capacities the un-suffixed entries' FAST TIER runs on (sections 3, 10.9).
+C6-0383	4473	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL are on every VM artifact, single-tier ones included.
+C6-0384	4476	N	<PREFIX>_FAST_FRAMES is an integer (e.g. 47, tiered: below the stamped default).
+C6-0385	4477	N	<PREFIX>_FAST_TRAIL is an integer (e.g. 71).
+C6-0386	4480	N	<PREFIX>_FAST_FRAMES == <PREFIX>_RESUME_FRAMES is the statement "this artifact has one tier", and it is the only spelling of it.
+C6-0387	4482	N	A single-tier artifact arises when the stamped default already fits a page.
+C6-0388	4483	N	A single-tier artifact arises when the slot array alone does not fit a page.
+C6-0389	4483	N	A single-tier artifact arises when the scaled fast tier would be too small to be worth two runs.
+C6-0390	4484	N	A single-tier artifact arises under -fno-tiered-entry.
+C6-0391	4484	N	A consumer that needs to distinguish the causes of a single tier reads rx_info.flags and the pattern, not a missing macro.
+C6-0392	4485	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL are never absent on a VM artifact.
+C6-0393	4489	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL are family (b), not section 10.4: section 10.4's five macros (both engines) are arithmetic a caller must do in order to call an _in entry, whereas no entry takes a fast capacity and no caller sizes anything from one.
+C6-0394	4493	N	<PREFIX>_FAST_FRAMES and <PREFIX>_FAST_TRAIL are .c-private like the budget macros, so a consumer reading only the header does not see them.
+C6-0395	4495	N	A consumer's code should not branch on the tier boundary.
+C6-0396	4498	N	On a DFA artifact the (b) macros are absent: no budget macros and no _VM_RUNGS/_VM_STRATS/_VM_PRUNES masks.
+C6-0397	4500	N	A --no-captures build defines RX_NCAPS and the two RX_ALTCLS_* stamps.
+C6-0398	4501	N	Since ABI-NS (2026-08-18, D60), unconditionally on every artifact regardless of engine: the give-up code space, the unset sentinel, PCREC_ENGINE_DFA/PCREC_ENGINE_VM, and the nine D46 stamp bit constants (PCREC_VM_RUNG_*/PCREC_VM_STRAT_*/PCREC_VM_PRUNE_*) are defined.
+C6-0399	4505	N	The universal constants on a DFA artifact have the same "reserved but unreachable" shape the give-up codes had.
+C6-0400	4506	N	A DFA artifact does NOT carry the budget macros and the three OR'd masks RX_VM_RUNGS, RX_VM_STRATS, RX_VM_PRUNES; they stay VM-artifacts-only because a DFA artifact has no per-quantifier rung/strategy/clamp decision to summarize.
+C6-0401	4510	N	RX_ENGINE_WHY stays VM-only: it names the construct that FORCED the VM, and a DFA artifact was not forced.
+C6-0402	4512	N	A DFA artifact's rx_info.engine_why is NULL, so RX_ENGINE_WHY's absence mirrors the struct.
+C6-0403	4515	N	<PREFIX>_ENGINE_SEL (OPT-4, 2026-08-29) is the same decision as <PREFIX>_ENGINE_WHY expressed as a TOKEN, a different macro on purpose.
+C6-0404	4517	N	<PREFIX>_ENGINE_WHY is prose, written for a person and allowed to name an offset, a construct or a build outcome; a consumer cannot bucket on it.
+C6-0405	4521	N	<PREFIX>_ENGINE_SEL has a CLOSED value set.
+C6-0406	4522	N	<PREFIX>_ENGINE_SEL is unconditional on every artifact, both engines, like _ENGINE and unlike _ENGINE_WHY (D81: a fact stamped only when interesting is a hint, and "selected" is a fact).
+C6-0407	4524	N	<PREFIX>_ENGINE_SEL and <PREFIX>_ENGINE_WHY are written from one derivation at src/opt/select_engine.c's single fit site; neither is parsed to produce the other.
+C6-0408	4529	N	<PREFIX>_ENGINE_SEL "selected": auto chose on the AST and nothing overflowed; the common case, on both engines.
+C6-0409	4530	N	<PREFIX>_ENGINE_SEL "forced": the caller named --engine=vm or --engine=dfa, so auto selected nothing.
+C6-0410	4531	N	<PREFIX>_ENGINE_SEL "declined-nullable-default" (OPT-4.2, 2026-08-31): auto, nothing overflowed, and the ordinary hybrid's own exact prefilter language is nullable (matches the empty string), so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one.
+C6-0411	4531	N	Since abi 68 (NULLABLE-ANCH), "nullable" for <PREFIX>_ENGINE_SEL "declined-nullable-default" is the empty_admits fact: a pattern whose every empty match crosses a non-multiline start AND end anchor (e.g. ^(\s+)*$) is not declined and reads "selected".
+C6-0412	4531	N	Since abi 69 (DEC-VAR-ATTRIB) a ${...} pattern is never declined with "declined-nullable-default": its variable turns the prefilter off before nullability is asked, and it reads "selected".
+C6-0413	4531	N	-fprefilter overrides the "declined-nullable-default" decline.
+C6-0414	4531	N	An explicit --engine=vm reads <PREFIX>_ENGINE_SEL "forced" (F-B2) rather than "declined-nullable-default".
+C6-0415	4531	N	Under <PREFIX>_ENGINE_SEL "declined-nullable-default" no rung is involved and no prefilter survives; it is the general form of "declined-nullable" off the rung it is scoped to (tuning.md 2.17).
+C6-0416	4532	N	<PREFIX>_ENGINE_SEL "overflowed-dfa": auto, the DFA was to be the ENGINE, its build overflowed a cap, and no prefilter survived the fallback (SEL-1).
+C6-0417	4533	N	<PREFIX>_ENGINE_SEL "overflowed-prefilter": auto, the VM was already chosen for another reason, and only its auto-selected prefilter's DFA overflowed, so the prefilter was dropped.
+C6-0418	4534	N	<PREFIX>_ENGINE_SEL "collapsed-prefilter": auto, a DFA build overflowed a STATE cap, and the SEL-1 retry KEPT a prefilter by rebuilding it from the count-collapsed language (tuning.md 2.5, 2.17).
+C6-0419	4535	N	<PREFIX>_ENGINE_SEL "declined-nullable": auto, a SEL-1 or OPT-4 retry offered the count-collapsed prefilter and it was DECLINED because the collapsed language is nullable (matches the empty string).
+C6-0420	4535	N	Under <PREFIX>_ENGINE_SEL "declined-nullable" no prefilter survives and the artifact is the one this compile produced before that retry existed (tuning.md 2.17, OPT-4.1).
+C6-0421	4536	N	<PREFIX>_ENGINE_SEL "size-cap-retry": an emitted-SIZE cap (not a DFA state cap) refused the exact artifact and a retry rebuilt a smaller one that SHIPPED.
+C6-0422	4536	N	The rungs reaching "size-cap-retry" are the size-cap ladder's (limits.md section 8), and the artifact's own axis stamps say which.
+C6-0423	4536	N	On a VM hybrid, "size-cap-retry" is LIM-1/OPT-4's rung with the count-collapsed prefilter surviving, legible as <PREFIX>_DFA_PREFILTER with <PREFIX>_PREFILTER_LANG_WHY "count-collapsed" (tuning.md 2.17).
+C6-0424	4536	N	On a VM hybrid, "size-cap-retry" may be the ladder's last rung (PF-DROP, D135) with the prefilter DROPPED, legible as <PREFIX>_VM_PREFILTER "none" with <PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP".
+C6-0425	4536	N	The <PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP" string records the refused artifact's bytes and the cap it exceeded, and is the only "none" that stamp is written beside.
+C6-0426	4536	N	On a DFA artifact, "size-cap-retry" is K53-SELRETRY's optional-contributor drop where the anchored match-here machine was dropped (tuning.md 2.15), legible as <PREFIX>_DFA_MATCH "search-filter".
+C6-0427	4536	N	On a DFA artifact, "size-cap-retry" may be K59-PREMUL's premultiplied-table drop, legible as <PREFIX>_DFA_TABLE off "premultiplied".
+C6-0428	4536	N	"size-cap-retry" is distinct from "collapsed-prefilter", which is the SEL-1 DFA-state-cap rung's own success; the rungs are offered under different conditions in compile_driver's retry loop.
+C6-0429	4538	N	The last five <PREFIX>_ENGINE_SEL values (overflowed-dfa, overflowed-prefilter, collapsed-prefilter, declined-nullable, size-cap-retry) are all "fell back".
+C6-0430	4539	N	The first four fallback values share one _ENGINE_WHY prose string ("dfa overflowed: ...") and differ in what SURVIVED.
+C6-0431	4540	N	"size-cap-retry" has its own prose behavior: _ENGINE_WHY is unaffected by an emitted-size refusal, so it still reads whatever forced the VM or stays absent on a plain DFA build.
+C6-0432	4543	N	A consumer wanting only "did this compile fall back?" tests for all five fallback <PREFIX>_ENGINE_SEL values; one wanting cost or which cap reads which.
+C6-0433	4545	N	"declined-nullable-default" is NOT among the five fallback values: nothing overflowed on that path; it is an ordinary compile whose own prefilter a policy declined and sits beside "forced"/"selected".
+C6-0434	4550	N	<PREFIX>_ENGINE_SEL "declined-nullable" and "overflowed-dfa" are not the same outcome: both artifacts carry <PREFIX>_VM_PREFILTER "none", but the first is a rescue refused as useless and the second one that was not available.
+C6-0435	4553	N	A consumer measuring what the collapse rung buys must not count "declined-nullable" as a case where the rung had nothing to offer.
+C6-0436	4556	N	"declined-nullable-default" and "declined-nullable" are the same policy on two different populations, kept as two values (OPT-4.2, 2026-08-31).
+C6-0437	4559	N	"declined-nullable" says a ladder RUNG offered a rescue and it was refused; "declined-nullable-default" says there was never a rung: the ordinary hybrid's own exact prefilter was declined.
+C6-0438	4568	N	A size-rung retry that SUCCEEDS (collapsed prefilter survived) stamps <PREFIX>_ENGINE_SEL "size-cap-retry" (LIM-1, D90, 2026-08-30), not "selected".
+C6-0439	4571	N	Before "size-cap-retry" existed, a successful OPT-4 size rung stamped "selected" because dfa_disabled is never set on this rung: the DFA build itself succeeded and the whole artifact was refused by an emitted-size cap.
+C6-0440	4580	N	A refused rescue (nullable) reads "declined-nullable"; one that shipped reads "size-cap-retry"; only a genuinely unremarkable compile reads "selected".
+C6-0441	4583	N	K53-SELRETRY (2026-09-10): a second rung joined <PREFIX>_ENGINE_SEL "size-cap-retry" rather than minting a third value.
+C6-0442	4584	N	An artifact carrying the optional anchored match-here machine (<PREFIX>_DFA_MATCH "unwrapped") that a size cap refuses is re-emitted without it (limits.md section 8, "The optional-contributor drop") and reads "size-cap-retry".
+C6-0443	4590	N	Without the "size-cap-retry" value, \p{L} under -e utf8 would stamp "selected" while the artifact is slower than an unconstrained build's.
+C6-0444	4592	N	Which contributor a retry dropped is read off the artifact's own axis stamps, not off a second <PREFIX>_ENGINE_SEL value.
+C6-0445	4594	N	The two "size-cap-retry" rungs cannot both fire on one compile (the first requires a VM hybrid, the second a DFA artifact), so the pair is exact.
+C6-0446	4599	N	Under a force form <PREFIX>_ENGINE_SEL reads "forced" and says nothing about a retry: "forced" is tested first and wins outright.
+C6-0447	4601	N	--engine=dfa (or --engine=vm) on a pattern a size cap refused reads <PREFIX>_ENGINE_SEL "forced" however the compile was rescued.
+C6-0448	4602	M	Measured at K53-SELRETRY: --engine=dfa --features unicode-props -e utf8 -- '\p{L}' compiles and stamps <PREFIX>_ENGINE_SEL "forced" where the same pattern under auto stamps "size-cap-retry".
+C6-0449	4606	M	The OPT-4 size rung's own witness stamps "forced" under --engine=vm.
+C6-0450	4607	N	The size-cap retry is not gated on auto, unlike SEL-1's engine fallback (which changes the engine a caller demanded); a drop rung changes only an entry-point form inside the requested engine.
+C6-0451	4610	N	No flag lets a caller demand the dropped anchored machine (-fno-anchored-dfa is deny-only).
+C6-0452	4611	N	A consumer needing the WHY on a forced compile reads <PREFIX>_DFA_MATCH and gets "this artifact has no anchored machine" without its cause.
+C6-0453	4613	N	Distinguishing the five populations of the <PREFIX>_DFA_MATCH value needs <PREFIX>_ENGINE_SEL, which a force form has spent.
+C6-0454	4618	N	<PREFIX>_ENGINE_SEL has no rx_info mirror, on <PREFIX>_DFA_TABLE's precedent (D77); the trigger to add one is a named consumer rather than symmetry.
+C6-0455	4620	N	rx_info.engine_why continues to mirror the PROSE (<PREFIX>_ENGINE_WHY), not the token.
+C6-0456	4623	N	RX_ENGINE_WHY can also name a build outcome, not only a construct (SEL-1, 2026-08-28).
+C6-0457	4624	N	Under --engine=auto, a DFA build that overflows a cap (state count, table entries, the K7 element budget; tuning.md 2.11) is a selection outcome rather than a refusal, and the artifact falls back to the VM.
+C6-0458	4627	N	A SEL-1 fallback artifact stamps its outcome in RX_ENGINE_WHY the same way every other forcing reason is stamped.
+C6-0459	4628	N	Since OPT-4 (2026-08-29) a SEL-1 fallback can appear beside RX_VM_PREFILTER "hybrid" rather than only beside "none": the fallback's first rung rebuilds the prefilter from the count-collapsed language instead of dropping it.
+C6-0460	4631	N	RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N" says the prefilter was rebuilt from the count-collapsed language (tuning.md 2.5, 2.17).
+C6-0461	4632	N	Example RX_ENGINE_WHY for a DFA overflow: "dfa overflowed: >32000 states at pattern offset 0".
+C6-0462	4633	N	The offset in an overflow RX_ENGINE_WHY is not tied to any one AST node (it is a property of the whole compile) and reads 0 by convention, the same position the underlying pcrec_ctx_fail reports at.
+C6-0463	4636	N	If the engine choice is ALSO forced by a real construct (a capture request, a VM_ONLY registry row), that reason wins the RX_ENGINE_WHY stamp on the ordinary first-wins rule.
+C6-0464	4638	N	In that case, the overflow's own effect on the prefilter (dropped, RX_VM_PREFILTER "none") still applies independently, through a fact RX_ENGINE_WHY does not carry.
+C6-0465	4642	N	A consumer MAY #if on RX_ENGINE, because it is unconditional on every artifact.
+C6-0466	4648	N	A consumer #if-ing on RX_VM_RUNGS or a budget macro (any family (b) macro) writes code that does not compile against a DFA artifact.
+C6-0467	4649	M	Measured by listing every #define in a fresh build of each artifact kind: family (b) macros are absent from a DFA artifact.
+C6-0468	4652	N	The per-artifact SUMMARY macros live in the generated .c, not the .h; the universal PCREC_* constants live in the .h.
+C6-0469	4654	N	In the split form (the CLI default) the .h carries the whole unprefixed universal set from the shared PCREC_RX_ABI_H block (section 2): the four give-up codes, PCREC_UNSET, the two engine constants, the nine D46 stamp bit constants.
+C6-0470	4657	N	In the split form the .h also carries <PREFIX>_NCAPS, on every artifact including a DFA-only one.
+C6-0471	4658	M	Measured on one VM build and one DFA build: nineteen #defines in each .h, identical except RX_NCAPS's value; twenty-six in the VM .c.
+C6-0472	4660	H	CHECK: Before ABI-NS the .h had eight #defines and the .c thirty-five; the difference was the eleven macros that moved (PCREC_ENGINE_DFA/_VM new, plus nine D46 bit constants).
+C6-0473	4664	N	The #if use case for the universal constants no longer needs a self-contained build: they reach a consumer's TU through the ordinary #include "<name>.h".
+C6-0474	4667	N	The per-artifact SUMMARY macros (RX_ENGINE, the masks, the budgets) are emitted into the .c only, so reading them requires a self-contained artifact (header_name == NULL) or being the generated .c itself.
+C6-0475	4671	N	Whether the summary macros should also be emitted into the header is an open design question, not settled.
+C6-0476	4674	N	Example: the observability macros on a captures-default build of 'a(b|c)+d' are listed below; the #define lines are the artifact's, the /* ... */ annotations are the document's.
+C6-0477	4679	N	RX_ENGINE is "vm" on a captures-default build of a(b|c)+d and mirrors rx_info.engine.
+C6-0478	4680	N	RX_ENGINE_WHY is "capture group at pattern offset 1" on that build.
+C6-0479	4681	N	RX_VM_PREFILTER is "hybrid" or "none" on a VM artifact.
+C6-0480	4682	N	RX_VM_PREFILTER_WHY (e.g. "size cap retry, hybrid 1026588 > 1000000") is emitted ONLY where the size-cap ladder dropped the prefilter (PF-DROP).
+C6-0481	4687	N	RX_VM_PREFILTER_LANG is "exact" or "count-collapsed", reports the count-collapse axis ONLY (the end proof is _VM_RESEED "exact"), and is emitted only where _VM_PREFILTER reads "hybrid" (OPT-4).
+C6-0482	4694	N	RX_VM_PREFILTER_LANG_WHY (OPT-4) says which of five reasons produced the _VM_PREFILTER_LANG value (e.g. "no counted repeat").
+C6-0483	4697	N	RX_VM_RUNGS is a bitmask of which per-quantifier rungs the artifact actually uses: CURSOR/FRAMES_BOUNDED/FRAMES_UNBOUNDED/REVDET/COUNTER.
+C6-0484	4701	N	RX_VM_STRATS is a bitmask of POSSESSIVE/BACKTRACKING strategies.
+C6-0485	4702	N	RX_VM_POSS_ARMS (ART-POSS-ARMS) is a bitmask of which possessify ARM a positive verdict needed: 0x1 A0, 0x2 A1, 0x4 B.
+C6-0486	4705	N	RX_VM_PRUNES is a bitmask of CLAMPED/UNCLAMPED (MRL).
+C6-0487	4706	N	RX_VM_PRUNE_CEILING is a string; e.g. "prefilter-window" on the a(b|c)+d hybrid example.
+C6-0488	4709	N	On a DFA artifact (measured on (?:[a-z]+)@(?:[a-z]+)) RX_ENGINE is "dfa", mirrors rx_info.engine, and is unconditional.
+C6-0489	4714	N	RX_DFA_SCAN is "unanchored" or "attempt" (or "empty") on a DFA artifact.
+C6-0490	4715	N	RX_DFA_PREFILTER is "byte-class" on the email-specimen DFA artifact.
+C6-0491	4716	N	RX_DFA_TABLE is "premultiplied" on the email-specimen DFA artifact.
+C6-0492	4719	N	A VM hybrid (measured on a(b|c)+d) carries RX_ENGINE "vm", RX_ENGINE_WHY, RX_VM_PREFILTER "hybrid", RX_DFA_SCAN, RX_DFA_PREFILTER and RX_DFA_TABLE all at once.
+C6-0493	4726	N	On a VM hybrid, RX_DFA_SCAN, RX_DFA_PREFILTER and RX_DFA_TABLE describe the DFA that the VM runs ahead of its program, and its candidate-start filter and table encoding.
+C6-0494	4731	N	RX_DFA_SCAN names WHICH DFA SCAN the artifact CONTAINS.
+C6-0495	4732	N	RX_DFA_SCAN has three values: "unanchored", "attempt", "empty".
+C6-0496	4732	N	RX_DFA_SCAN "unanchored" is the O(n) forward+reverse table pair (D7).
+C6-0497	4733	N	RX_DFA_SCAN "attempt" is the per-start-position computed-goto loop a ^/\A-bearing pattern takes.
+C6-0498	4734	N	"unanchored" and "attempt" are different loops with different cost curves, and nothing else a consumer can read distinguishes them: both stamp RX_ENGINE "dfa" and both set rx_info.engine to PCREC_ENGINE_DFA.
+C6-0499	4738	N	RX_DFA_SCAN "empty" (DD-13c, 2026-08-25) is a third shape, not a special case of the other two.
+C6-0500	4739	N	A pattern the start analysis proves can match nothing (\B\b, \b\B, \d\b\w, a\bb, and their ^-anchored spellings) compiles to a search body that is one return 0: no table, no loop, no skip, on either engine.
+C6-0501	4742	H	CHECK: Before DD-13c, provably-empty artifacts stamped the name of the loop the emitter would have written ("unanchored", or "attempt" when anchored).
+C6-0502	4745	N	RX_DFA_PREFILTER reads "none" on every RX_DFA_SCAN "empty" artifact, because there is no scan for a filter to be part of.
+C6-0503	4748	N	RX_DFA_PREFILTER names the candidate-start mechanism the artifact carries.
+C6-0504	4749	N	RX_DFA_PREFILTER has eleven values, the whole set.
+C6-0505	4753	N	RX_DFA_PREFILTER "none": no candidate-start filter: the start state ACCEPTS (start_acc; no skip is sound; the largest cause, e.g. a*, .*, \bx*), every position is a candidate, or the artifact provably matches nothing.
+C6-0506	4754	N	RX_DFA_PREFILTER "memchr": ONE candidate byte value at offset 0; a memchr() replaces the steps.
+C6-0507	4755	N	RX_DFA_PREFILTER "byte-class": several candidate bytes at offset 0; a 256-entry <prefix>_can_begin_match bitmap walk.
+C6-0508	4756	N	RX_DFA_PREFILTER "memchr-bounded": the memchr form under a $/\Z/\z view or a word context: bounded at n - 1 and WITHOUT the early return 0.
+C6-0509	4757	N	RX_DFA_PREFILTER "byte-class-bounded": the bitmap form under the same view/word context, bounded at n - 1.
+C6-0510	4758	N	RX_DFA_PREFILTER "offset-set" (OPT-K): a SET of (offset, byte-set) tests, one scanned for and the rest verified on each candidate; see RX_DFA_PREFILTER_OFFSETS.
+C6-0511	4759	N	RX_DFA_PREFILTER "offset-set-bounded": the offset-set form under the same view/word context, bounded at n - 1.
+C6-0512	4760	N	RX_DFA_PREFILTER "run-pinned" (OPT-LITSCAN S1, abi 36): the pattern's necessary run (RX_REQ_RUN) sits at a fixed offset from every match's start and the scan already runs on the run's own scan member there, so the candidate test verifies the WHOLE run as one compare (the offset-set block with the run as one term).
+C6-0513	4760	N	Under RX_DFA_PREFILTER "run-pinned" the run pre-check is not emitted (RX_REQ_WHY "dominated").
+C6-0514	4760	N	RX_DFA_PREFILTER "run-pinned" is removed by -fno-run-prefilter OR -fno-offset-skip.
+C6-0515	4761	N	RX_DFA_PREFILTER "run-pinned-bounded": the run-pinned form under the same view/word context, bounded at n - 1.
+C6-0516	4762	N	RX_DFA_PREFILTER "first-memchr-bounded" (START-SET stage 3, the DFA hat, abi 64, tuning.md 2.42): on a SEEDED machine (a \b, a lookbehind, a (?m) context) whose plain skip would test the start state's escape set E, the skip tests the pattern's START SET T (the start_set fact) instead, where T is a proper subset of E; here ONE byte, a memchr().
+C6-0517	4762	N	RX_DFA_PREFILTER "first-memchr-bounded" is bounded at n - 1 like "memchr-bounded"; a skip that moved re-seeds the scan state from the byte before its landing.
+C6-0518	4762	N	RX_DFA_PREFILTER "first-memchr-bounded" is removed by -fno-start-set.
+C6-0519	4763	N	RX_DFA_PREFILTER "first-class-bounded": the same as first-memchr-bounded with several start-set bytes: a 256-entry <prefix>_start_bytes table walk, bounded at n - 1.
+C6-0520	4763	N	The DFA hat (first-*-bounded forms) has no unbounded form: a seeded machine always carries the D11 bound.
+C6-0521	4765	N	<PREFIX>_DFA_PREFILTER_OFFSETS (OPT-K, abi 9) is on every artifact the four RX_DFA_* stamps (_DFA_SCAN, _DFA_PREFILTER, _DFA_TABLE and itself) are on.
+C6-0522	4766	N	<PREFIX>_DFA_PREFILTER_OFFSETS names WHICH offsets the filter tests, as a comma-separated ascending list of byte offsets from the candidate's own start with '*' marking the one the scan searches for.
+C6-0523	4771	N	Example: RX_DFA_PREFILTER_OFFSETS "0,8*,13" (the uuid shape).
+C6-0524	4772	N	RX_DFA_PREFILTER_OFFSETS "none" is the value for every other value of _DFA_PREFILTER.
+C6-0525	4775	N	<PREFIX>_DFA_PREFILTER_OFFSETS reads "none" on every artifact whose _DFA_PREFILTER is not one of the two offset-set or two run-pinned values, and is non-"none" on exactly those four values (an iff).
+C6-0526	4778	N	On a run-pinned value, <PREFIX>_DFA_PREFILTER_OFFSETS lists every offset the test covers, the run's own offsets individually (router /user|/users: "0*,1,2,3,4").
+C6-0527	4779	N	On a run-pinned value the scan may be offset 0 ("0*"), which no other value's scan is.
+C6-0528	4780	N	<PREFIX>_DFA_PREFILTER_OFFSETS is a second stamp rather than a widening of _DFA_PREFILTER because _DFA_PREFILTER's value is the emitter's chosen FORM (a fixed, countable set of strings) while this one is a fact about the individual machine.
+C6-0529	4784	N	Offset 0 is always a member of <PREFIX>_DFA_PREFILTER_OFFSETS: it is the test the four older values already make (on a run-pinned value, as the scan, a verify, or a byte of the run).
+C6-0530	4788	N	<PREFIX>_DFA_MATCH (ENG-ABS, abi 10) is on every DFA artifact and, unlike the four stamps above, NOT on a VM hybrid.
+C6-0531	4790	N	<PREFIX>_DFA_MATCH names which of section 3.2's two forms the artifact's <prefix>_match and <prefix>_match_caps take.
+C6-0532	4794	N	<PREFIX>_DFA_MATCH "unwrapped": the artifact has its own anchored machine, run from ctx->pos.
+C6-0533	4795	N	<PREFIX>_DFA_MATCH "search-filter": the unanchored search is run and non-ctx->pos starts are rejected.
+C6-0534	4800	N	<PREFIX>_DFA_MATCH "unwrapped": the artifact carries a THIRD machine (the forward tables WITHOUT the start-anywhere self-loop) and runs it from ctx->pos.
+C6-0535	4800	N	Under <PREFIX>_DFA_MATCH "unwrapped" there is no later start to reject, no backwards pass, and a failing probe stops at the first byte that cannot continue a match beginning here.
+C6-0536	4801	N	<PREFIX>_DFA_MATCH "search-filter": the entry runs <prefix>_search and rejects any match whose start is not ctx->pos.
+C6-0537	4801	N	<PREFIX>_DFA_MATCH "search-filter" has FIVE populations: _DFA_SCAN "attempt"; _DFA_SCAN "empty"; an anchored machine that exceeded a DFA cap (a selection outcome, never a refusal); any build under -fno-anchored-dfa; and (K53-SELRETRY, 2026-09-10) an artifact whose anchored machine was dropped to fit under an emitted-size cap.
+C6-0538	4801	N	Only the size-cap-dropped population of <PREFIX>_DFA_MATCH "search-filter" is distinguished by <PREFIX>_ENGINE_SEL (it reads "size-cap-retry"); the other four read whatever their engine selection was, ordinarily "selected".
+C6-0539	4803	N	<PREFIX>_DFA_SCAN_EDGE (OPT-5, abi 13) is on every artifact that CONTAINS a DFA scan: DFA artifacts and VM hybrids, the same iff as _DFA_SCAN/_DFA_PREFILTER/_DFA_PREFILTER_OFFSETS/_DFA_TABLE.
+C6-0540	4806	N	<PREFIX>_DFA_SCAN_EDGE names how the DFA scan tests the class of a SCAN EDGE.
+C6-0541	4806	N	A scan edge is a maximal run of states differing only in how many bytes of one fixed class have been counted, replaced by a bounded cursor loop and DELETED from the transition table (tuning.md 2.18; src/opt/scanedge.c).
+C6-0542	4810	N	An edge's test is the class-form table's answer for its class at the artifact's --tune position and the scan site (src/gen/clskit.c ROWS/TAB_ROWS, abi 53, D139 item 2), spelled by the same emitters a VM program's class read uses.
+C6-0543	4813	N	<PREFIX>_DFA_SCAN_EDGE has exactly six values: "none", "range", "fold", "bitmap", "kit", "mixed".
+C6-0544	4816	N	RX_DFA_SCAN_EDGE "range" is exemplified by the test (unsigned)(b - 97) <= 25u.
+C6-0545	4817	N	RX_DFA_SCAN_EDGE "none" means no machine carries a collapsible run.
+C6-0546	4822	N	<PREFIX>_DFA_SCAN_EDGE "none": the artifact carries no scan edge; four causes, none of them a failure: no machine has a collapsible run; _DFA_SCAN "attempt" (states are code labels, step is a computed goto, no loop-carried table load to shorten); _DFA_SCAN "empty" (body is one return 0); any build under -fno-scan-edge.
+C6-0547	4823	N	<PREFIX>_DFA_SCAN_EDGE "range": every edge in the artifact tests a CONTIGUOUS byte range (the class table's byte-range row), emitted inline against immediates.
+C6-0548	4823	N	A "range" edge test is b == c, or b <= hi from 0, or otherwise (unsigned)(b - lo) <= span u (the VM's own spelling since abi 53), so the loop touches no memory but the subject.
+C6-0549	4824	N	<PREFIX>_DFA_SCAN_EDGE "fold" (abi 53): at --tune=-2/-1 only, every edge's class is an ASCII case pair on the byte-fold row, tested inline as (b | 0x20) == x.
+C6-0550	4824	N	At --tune 0/+1/+2 a scan edge's fold pair is a "bitmap" (D138 Q1: the default fold is held for both sites until its measurement rules).
+C6-0551	4824	N	<PREFIX>_DFA_SCAN_EDGE "fold" never occurs under -fno-cls-fold.
+C6-0552	4825	N	<PREFIX>_DFA_SCAN_EDGE "bitmap": at least one edge's class is on the byte-table row, and the table selection's scan-table row gives it a 256-byte membership table read.
+C6-0553	4825	N	Under "bitmap" the loop-carried register is still the cursor, which is the property the transform is for; the memory reference is the price.
+C6-0554	4826	N	<PREFIX>_DFA_SCAN_EDGE "kit" (CLS-TREE S2, abi 52): at --tune=-2/-1 only, every edge's class is on the class-form table's byte-kit row (its kit matcher, written at the edge's two test sites, is smaller than its 256-byte table; abi 53, D139 item 1).
+C6-0555	4826	N	Under "kit" the edge test calls a static inline kit matcher <prefix>_<machine>_scankit<N> in place of the table (tuning.md 2.33).
+C6-0556	4826	N	<PREFIX>_DFA_SCAN_EDGE "kit" never occurs at --tune 0/+1/+2 and never under -fno-cls-kit.
+C6-0557	4827	N	<PREFIX>_DFA_SCAN_EDGE "mixed": an artifact-level composition (as RX_DFA_TABLE's): the artifact's machines took more than one form; the choice is per EDGE and a machine may carry up to four.
+C6-0558	4829	N	<PREFIX>_DFA_START (OPT-5 STEP 2, abi 16) is on every artifact that CONTAINS a DFA scan: DFA artifacts and VM hybrids, the same iff as <PREFIX>_DFA_TABLE and the four stamps beside it, and NOT <PREFIX>_DFA_MATCH's narrower one.
+C6-0559	4832	N	<PREFIX>_DFA_START is a family (a) selection fact: defined iff the artifact contains a DFA scan, its value names the object axis J selected.
+C6-0560	4834	N	<PREFIX>_DFA_START names which of two forms the scan entry takes when it recovers the match START.
+C6-0561	4838	N	RX_DFA_START "pinned": the start is search_from, by compile-time proof.
+C6-0562	4839	N	RX_DFA_START "reverse-pass": a second, backwards scan finds the start.
+C6-0563	4844	N	<PREFIX>_DFA_START "pinned": the forward machine's start state accepts UNCONDITIONALLY (at every position, under every position view, in every class context), so a match exists wherever the search begins and D3's accept-pruning removed the start-anywhere self-loop from every accepting closure before the first byte was read.
+C6-0564	4844	N	Under "pinned", every accept the forward loop records belongs to a thread that began at search_from, and the post-loop block writes that offset directly.
+C6-0565	4844	N	A "pinned" artifact carries NO reverse machine: no transition, accept or byte-class table, no stay tables, no scan-edge membership tables, no <prefix>_reverse_* accessor block and no reverse scan loop.
+C6-0566	4845	N	<PREFIX>_DFA_START "reverse-pass": the artifact carries its reverse machine and walks it backwards from the match end to find the furthest-back accepting position.
+C6-0567	4845	N	"reverse-pass" covers every artifact whose start state does not accept, or whose accept depends on the position or the upcoming byte, or which seeds into a state that may be dead, or whose scan is "attempt" or "empty", or any build under -fno-start-pinned.
+C6-0568	4847	N	The "pinned" and "reverse-pass" forms are ANSWER-IDENTICAL and differ only in cost and size.
+C6-0569	4848	N	caps[0][0]'s contract is unchanged under both <PREFIX>_DFA_START forms, including section 3.1's "every offset written to caps is an ABSOLUTE offset into s, never relative to startpos" and the zero-length-match-is-a-success convention; the pinned form depends on both.
+C6-0570	4851	N	rx_info.search_form mirrors <PREFIX>_DFA_START.
+C6-0571	4852	N	docs/spec/tuning.md section 2.19 is the <PREFIX>_DFA_START axis and docs/design/opt5_step2_twopass.md the proof.
+C6-0572	4855	N	A pinned search can still return 0 on some calls: a search at startpos > 0 on a machine whose start state depends on a context byte can begin in a state with no live closure, records no accept, and "no match begins here" is the correct answer.
+C6-0573	4858	N	The emitted artifact keeps that no-live-closure test and names it load-bearing above the line.
+C6-0574	4861	N	The _DFA_START iff differs from the other stamps' in the fact: the other _DFA_* stamps describe a DFA scan (a VM hybrid contains one, so they appear on hybrids), while <PREFIX>_DFA_MATCH describes the artifact's <prefix>_match ENTRY.
+C6-0575	4865	N	On a hybrid the <prefix>_match entry is the VM's own anchored body, which the <PREFIX>_DFA_MATCH axis does not describe and whose value set it does not share.
+C6-0576	4867	N	<PREFIX>_DFA_MATCH is defined on exactly the artifacts whose RX_ENGINE is "dfa".
+C6-0577	4868	N	rx_info.match_form is NULL on every artifact whose engine is not "dfa", hybrid included.
+C6-0578	4869	N	<PREFIX>_DFA_MATCH is the entry a caller reads to know whether it is in section 3.2's worst case.
+C6-0579	4872	N	The two -bounded values of <PREFIX>_DFA_PREFILTER are a REAL difference in what the mechanism buys, not a spelling.
+C6-0580	4873	N	Under a view, a skip may not pass the position whose accept has not been evaluated yet, so every skip stops one byte short and the memchr arm loses its early-out.
+C6-0581	4875	M	DD-13 (b) measured the (?:P)\z spelling's loop as strictly weaker than the plain form's on the same candidate table (docs/dev/plan.md).
+C6-0582	4877	N	A consumer that cannot tell the -bounded values apart would attribute the difference to the pattern.
+C6-0583	4880	N	RX_ENGINE, RX_VM_PREFILTER, RX_DFA_SCAN, RX_DFA_PREFILTER and RX_VM_PRUNE_CEILING are scalar macros for a per-artifact-wide verdict.
+C6-0584	4882	N	RX_VM_RUNGS, RX_VM_STRATS and RX_VM_PRUNES are bitmasks, used when the axis is decided per-quantifier and a single scalar would misreport a mixed pattern.
+C6-0585	4885	N	RX_VM_POSS_ARMS (ART-POSS-ARMS, abi 66) is the per-ARM half of RX_VM_STRATS' POSSESSIVE bit.
+C6-0586	4886	N	RX_VM_POSS_ARMS bit 0x1 is A0, a lookahead-born gate in the follow valued with nothing known on its left.
+C6-0587	4888	N	RX_VM_POSS_ARMS bit 0x2 is A1, a gate valued by the loop's own LAST characters' polarity.
+C6-0588	4889	N	RX_VM_POSS_ARMS bit 0x4 is B, a backreference's first character read from its groups.
+C6-0589	4890	N	An RX_VM_POSS_ARMS bit is set when that arm was NEEDED for some positive possessify verdict.
+C6-0590	4891	N	For arm A1, the RX_VM_POSS_ARMS bit means the verdict was decided by A1 alone; for A0 and B, it means the same compile with that arm denied counts fewer positive verdicts.
+C6-0591	4892	N	RX_VM_POSS_ARMS is 0x0u where no arm was needed, including every artifact built with both arms denied: a denied arm's bit is 0 by construction (tuning.md 2.44/2.45).
+C6-0592	4894	N	RX_VM_POSS_ARMS is emitted on every VM artifact, never on a DFA-only one.
+C6-0593	4895	N	The RX_VM_POSS_ARMS bit values are defined in this document only; they are not named constants in the PCREC_RX_ABI_H block.
+C6-0594	4896	N	Of the VM macro block, everything but RX_ENGINE is VM-artifacts-only.
+C6-0595	4897	N	RX_DFA_SCAN, RX_DFA_PREFILTER, RX_DFA_PREFILTER_OFFSETS, RX_DFA_TABLE, RX_DFA_SCAN_EDGE and RX_DFA_START are the DFA scan's own selection facts and appear on every artifact that CONTAINS such a scan (DFA artifacts and VM hybrids).
+C6-0596	4901	N	RX_DFA_TABLE (OPT-3), RX_DFA_SCAN_EDGE (OPT-5 STEP 1) and RX_DFA_START (OPT-5 STEP 2) all join the "contains a DFA scan" iff unchanged.
+C6-0597	4904	N	RX_DFA_MATCH (ENG-ABS) does NOT join the "contains a DFA scan" iff: it is a fact about an ENTRY, so its iff is RX_ENGINE "dfa".
+C6-0598	4906	N	Since ABI-NS (2026-08-18, D60) the named bit constants (PCREC_VM_RUNG_*, PCREC_VM_STRAT_POSSESSIVE/_BACKTRACKING, PCREC_VM_PRUNE_CLAMPED/_UNCLAMPED) are not emitted per-prefix; they live in the shared unprefixed PCREC_RX_ABI_H block (section 2), emitted once and unconditionally on every artifact including a DFA-only one.
+C6-0599	4911	N	Only the three OR'd masks RX_VM_RUNGS, RX_VM_STRATS, RX_VM_PRUNES stay per-prefix and VM-only, since their value is the one genuinely per-artifact fact.
+C6-0600	4914	N	Two more D46 stamps are NOT VM-only, and a DFA-only artifact carries them too: RX_ALTCLS_MERGES and RX_ALTCLS_FACTORED.
+C6-0601	4917	N	RX_ALTCLS_MERGES is the count of alternation runs merged into one class.
+C6-0602	4918	N	RX_ALTCLS_FACTORED is the count of alternation runs prefix-factored.
+C6-0603	4921	N	RX_ALTCLS_MERGES and RX_ALTCLS_FACTORED are emitted before either engine is built, so they appear on a capture-free pattern's DFA artifact as well.
+C6-0604	4922	M	Measured on a --no-captures build: RX_ALTCLS_MERGES and RX_ALTCLS_FACTORED appear on a DFA artifact.
+C6-0605	4925	N	rx_info.flags and the compile-time macros answer different questions, and the masking rule applies to only one of them.
+C6-0606	4926	N	rx_info.flags records the REQUEST: the PCREC_* option bits exactly as compiled, with the testing/tuning denials masked OUT.
+C6-0607	4928	N	Axis denials are masked out of rx_info.flags because an axis that changes no answer must not make two identically-behaving artifacts differ in their reflection surface.
+C6-0608	4930	N	The observability macros record what the emitter DID, and visibly move when a denial is exercised.
+C6-0609	4931	M	Measured on (x)(?:a|bc)+d: building -fno-possessify moves RX_VM_STRATS from 0x1u (POSSESSIVE) to 0x2u (BACKTRACKING) while the emitted rx_info.flags value is unchanged.
+C6-0610	4934	M	Between the default and -fno-possessify builds of (x)(?:a|bc)+d, the whole rx_info initializer is identical except frame_capacity, which moves because denying possessification really does cost a frame.
+C6-0611	4936	N	To see what was ASKED FOR, rx_info.flags cannot be used for a masked axis; to see what HAPPENED, read the macro.
+C6-0612	4940	N	Every axis bit is masked from rx_info.flags except the named kept set; the rule is general and derived, not a list (tuning.md section 2, "THE rx_info.flags RULE"; K92).
+C6-0613	4941	N	The set of masked bits and per-flag reasoning live in lib/pcrec.h's own comments (indexed by lib/CLAUDE.md), which is where to look to see which bits legitimately vanish from rx_info.flags on a round trip.

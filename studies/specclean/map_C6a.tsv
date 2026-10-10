@@ -1,0 +1,300 @@
+C6-0001	MAPPED	1339	6.3 opening: stamps let a caller #if on a fact instead of reading a field; cites D46 observability
+C6-0002	SUPERSEDED	1136	rx_info now has 28 fields (probe initializer in a build of a(b|c)+d lists 28); table 1136-1165 gives each mirror; 1354 keeps the partial-mirror statement; old six-of-fifteen count is stale
+C6-0003	MAPPED	1141	ncaps row: mirror <PREFIX>_NCAPS
+C6-0004	MAPPED	1144	engine row: mirror <PREFIX>_ENGINE as a string; "vm" value at 1477
+C6-0005	MAPPED	1156	engine_why row: mirror <PREFIX>_ENGINE_WHY (also 1479-1483)
+C6-0006	MAPPED	1145	step_budget row mirror <PREFIX>_STEP_BUDGET (also 2138-2140)
+C6-0007	MAPPED	1146	work_budget row mirror <PREFIX>_WORK_BUDGET (also 2138-2140)
+C6-0008	SUPERSEDED	1147	frame_capacity mirror is now <PREFIX>_RESUME_FRAMES; _BT_FRAMES was renamed (src/gen/CLAUDE.md:106); fresh VM artifact defines RX_RESUME_FRAMES and no RX_BT_FRAMES (probe)
+C6-0009	MAPPED	1167	rx_info table shows no mirror for abi flags encoding ngroups nnames subject_ceiling pattern pattern_len groups; 1167 states every unmirrored field is run-time only
+C6-0010	MAPPED	1167	"Every field listed without a mirror is reachable only by reading <prefix>_info at run time - ngroups included"; ncaps mirror at 1141
+C6-0011	MAPPED	1359	family (a) selection facts stamped whether or not mechanism fired, on every artifact the mechanism can occur on; scope-by-mechanism refinement at 1365-1373
+C6-0012	HISTORY		Roadmap remark dated 2026-08-25 ("DD-13's next candidate"), not a contract fact; for the record still true: no self-loop-skip stamp exists in emit_dfa.c or the new stamp inventory 1398-1457
+C6-0013	MAPPED	1469	<PREFIX>_ENGINE on every artifact, both kinds written by one emitter function so spellings cannot drift (function name pcrec_emit_engine_stamp, src/core/internal.h:6836, not named)
+C6-0014	MAPPED	1722	new doc says _VM_PREFILTER is the VM question (1728) and _DFA_SCAN/_DFA_PREFILTER the DFA scan stamps (1562,1574); different value sets visible (1731 vs 1578); the explicit because-vocabularies rationale is not stated
+C6-0015	MAPPED	1409	inventory scope "all" for <PREFIX>_ENGINE; 1469 "on every artifact"
+C6-0016	MAPPED	1366	scope "every artifact that CONTAINS a DFA scan (every DFA artifact and every VM hybrid)"; 1542 and inventory 1422-1423
+C6-0017	MAPPED	1367	hybrid inlines the DFA emitter's scan as static <prefix>_prefilter (also 1734); omitted detail: own tables, own D11 bound, forward+reverse-or-attempt form; own filter at 1205
+C6-0018	MAPPED	1370	VM carries DFA-scan stamps iff hybrid; non-hybrid scan is NULL (1206) and VM_PREFILTER "none" (1735)
+C6-0019	MAPPED	1370	"carries the DFA-scan stamps IF AND ONLY IF it is a hybrid"; hybrid = VM_PREFILTER "hybrid" (1367-1368)
+C6-0020	MAPPED	1372	run_dfa_stamps.sh asserts both directions with emitted <prefix>_prefilter body as independent third term
+C6-0021	MAPPED	1722	"Three independent questions": _VM_PREFILTER, _DFA_PREFILTER, _VM_PREFILTER_LANG
+C6-0022	MAPPED	1722	first question: whether the VM runs a DFA ahead of its program; 1734 hybrid row
+C6-0023	MAPPED	1723	second question: what candidate-start filter that DFA's own scan carries; 1574
+C6-0024	MAPPED	1722	hybrid answers both; independence stated as "independent questions"; example block 1554-1558 shows both on one artifact
+C6-0025	MAPPED	1722	third independent question: which LANGUAGE the DFA recognises; 1744
+C6-0026	MAPPED	1750	value-set table gives exactly "exact" and "count-collapsed"
+C6-0027	MAPPED	1753	exact = count-collapse axis did not fire; may over-approximate otherwise: 1756-1760
+C6-0028	MAPPED	1754	count-collapsed superset, every repeat rmin>1 or rmax>1 lowered as X{min(rmin,1),}
+C6-0029	MAPPED	1744	"on exactly the artifacts whose _VM_PREFILTER reads hybrid"; inventory 1432
+C6-0030	MAPPED	1745	"and no DFA artifact" asserted both ways by run_dfa_stamps.sh (1746); because-clause not stated
+C6-0031	MAPPED	1432	inventory scope hybrid (1432) vs dfa-scan (1422-1427) and scope definitions 1401-1403
+C6-0032	MAPPED	1746	run_dfa_stamps.sh asserts it both ways
+C6-0033	MAPPED	1762	"A prefilter is a filter either way: rejection is sound and span start is a lower bound the VM verifies from"
+C6-0034	MAPPED	1763	"so the answers are identical (D46)"
+C6-0035	MAPPED	1764	"A superset cannot bound the match END so a count-collapsed artifact always reads _VM_PRUNE_CEILING subject-end"
+C6-0036	UNMAPPED		new doc states count-collapsed => subject-end (1764) but not that atomic/lookaround have the same consequence; believed NOT true as stated: probe xy(a+)(?>b+)c hybrid reads "prefilter-window" and xy(a)(?=b)bc reads "none"
+C6-0037	MAPPED	1748	"No rx_info mirror"; general mirror-only-for-named-consumer rule D77 at 1355-1358
+C6-0038	MAPPED	1756	"The stamp reports the count-collapse axis ONLY (D142)"
+C6-0039	MAPPED	1756	"exact does not say the prefilter recognises the pattern's own language"
+C6-0040	MAPPED	1757	lookbehind lookahead atomic or \K erased from prefilter machine which over-approximates while stamp reads exact
+C6-0041	UNMAPPED		new doc cites docs/design/pf_know.md 2.2/8.4 (1759-1760) but drops the 76/47/132/53 population counts; TRUE: pf_know.md:181 states 76 lookbehind 47 lookahead 53 \K 132 atomic (a design doc not a spec doc)
+C6-0042	MAPPED	1760	"Whether a successful prefilter also proves the match END is read from _VM_RESEED exact"; exact row 1776
+C6-0043	MAPPED	1760	stated as the single reading route (_VM_RESEED); no further stamp mentioned
+C6-0044	MAPPED	1768	_VM_RESEED: what the hybrid's RETRY does after a failed attempt
+C6-0045	MAPPED	1769	"same scope as _VM_PREFILTER_LANG"; inventory 1433 hybrid
+C6-0046	MAPPED	1770	value is the name of the first-match row that fired; pcrec --list-axes axis hyb-reseed
+C6-0047	MAPPED	1776	exact row: prefilter answers for own language; retry is the non-adaptive one (= pre-abi-49 retry)
+C6-0048	MAPPED	1777	clamped row: over-approximating prefilter with MRL clamp; retry re-seeds after every failed attempt
+C6-0049	MAPPED	1778	anchored row: attempt loop stops after first attempt so no retry runs; artifact equals -fno-hyb-reseed artifact byte for byte (equivalent to old pre-abi-49 retry text emitted)
+C6-0050	MAPPED	1779	adaptive-dense row, byte-rate prior predicts dense candidates, starts in step mode
+C6-0051	MAPPED	1780	adaptive row, short step budget
+C6-0052	MAPPED	1781	fixed row: -fno-hyb-reseed, non-adaptive retry
+C6-0053	MAPPED	1769	same scope as _VM_PREFILTER_LANG (hybrid only), inventory 1433; not unconditional
+C6-0054	MAPPED	1771	"No rx_info mirror"
+C6-0055	MAPPED	1783	every value answers identically except adaptive* can answer where non-adaptive retry gave up on a budget
+C6-0056	MAPPED	1797	_STARTPOS_GUARD: what the entries do with a caller's mid-character position
+C6-0057	MAPPED	1791	family (a) on every artifact of both engines, axis belongs to the entries; inventory 1414; shared-prologue placement not stated
+C6-0058	MAPPED	1803	guarded row
+C6-0059	MAPPED	1804	align row, anchored entry answers -1
+C6-0060	MAPPED	1805	permissive row
+C6-0061	MAPPED	1808	_UTF_CHECK: whether entries refuse an ill-formed subject
+C6-0062	MAPPED	1791	section intro covers both stamps: family (a) on every artifact of both engines; inventory 1415 scope all
+C6-0063	MAPPED	1814	whole row
+C6-0064	MAPPED	1815	off row
+C6-0065	MAPPED	1816	inert row
+C6-0066	MAPPED	1792	"read off the predicate the emitted entry text is"
+C6-0067	MAPPED	1793	"have no rx_info mirror"
+C6-0068	MAPPED	1793	"rx_info.flags carries the request bits, masked where inert"; also 1264-1266
+C6-0069	MAPPED	1425	inventory dfa-scan scope for _DFA_TABLE; 1542-1543
+C6-0070	MAPPED	1616	"the encoding of the scan's transition tables"
+C6-0071	MAPPED	1624	premultiplied row
+C6-0072	MAPPED	1625	indexed row
+C6-0073	MAPPED	1626	mixed row incl. per-machine choice and start-dead indexed rule
+C6-0074	MAPPED	1626	forward, reverse unless pinned, anchored under _DFA_MATCH unwrapped
+C6-0075	MAPPED	1627	none row: attempt (labels, computed goto) or empty
+C6-0076	MAPPED	1617	"A selection fact, read off the predicate the emitted loop branches on"
+C6-0077	MAPPED	1629	"The value names the selection that was MADE. After the uniform fold an artifact can carry that selection without carrying a table"
+C6-0078	MAPPED	1635	_DFA_UNIFORM_FOLDS is the count of tables not emitted (so tables present = total minus count); owed because fold visible only as absence 1642
+C6-0079	MAPPED	1630	"the stamp does not fall to none, because the representation still fixes the folded constant"
+C6-0080	MAPPED	1632	65535 under premultiplied, -1 under indexed
+C6-0081	MAPPED	1627	none = no numeric table by construction (attempt/empty); 1629-1632 separates it from fully folded
+C6-0082	MAPPED	1619	"No rx_info mirror"; inventory 1425
+C6-0083	MAPPED	1157	scan and prefilter rows have mirrors (1157-1158) while _DFA_TABLE inventory row 1425 mirror is "-"; tuning.md section 3.2 pointer not repeated
+C6-0084	MAPPED	1354	mirror is a separate matter gated on a named run-time consumer (D77) 1355-1358; selection-fact stamping rule 1359-1362; wording compressed
+C6-0085	MAPPED	1355	generalised: a mirror is added only when a named consumer reads the fact at run time, as a struct append moving no existing offset; old scan/prefilter-specific trigger not repeated
+C6-0086	MAPPED	1157	rx_info table: scan 1157 prefilter 1158 match_form 1159 search_form 1162; table has no mirror 1425
+C6-0087	MAPPED	1157	scan and prefilter rows and 1196 run-time mirrors of selection facts (DD-13c/abi 6 tag dropped as history)
+C6-0088	MAPPED	1159	match_form row mirrors <PREFIX>_DFA_MATCH; also 1696-1697
+C6-0089	MAPPED	1162	search_form row mirrors <PREFIX>_DFA_START; also 1676-1677
+C6-0090	UNMAPPED		new doc lists no mirror for _DFA_TABLE/_DFA_SCAN_EDGE (1425,1427) and mirrors for match_form/search_form but never states the cost-property vs internal-encoding rationale; TRUE: tuning.md:3893 and 3925 state it
+C6-0091	MAPPED	1221	"search_form follows scan's rule, because a hybrid inlines the DFA emitter's search body as its prefilter and so has a search form"
+C6-0092	MAPPED	1387	general "One derivation per fact" rule plus 1215-1217 field-and-macro same emitter functions; the specific functions unanch_start/attempt_cand (emit_dfa.c:3902) not named
+C6-0093	MAPPED	1387	"a stamp cannot disagree with the code it describes unless the derivation itself is wrong"
+C6-0094	MAPPED	1426	inventory dfa-scan scope for _DFA_UNIFORM_FOLDS; 1542
+C6-0095	MAPPED	1635	"an integer COUNT"; example 1647 #define RX_DFA_UNIFORM_FOLDS 4
+C6-0096	MAPPED	1635	count of tables with all cells equal, not emitted, accessor returns the constant
+C6-0097	MAPPED	1638	two foldable tables per machine (<m>_next_state, <m>_is_accepting), value runs 0..6
+C6-0098	MAPPED	1639	"over the same machines _DFA_TABLE composes" (forward always, 1626)
+C6-0099	MAPPED	1639	same machines _DFA_TABLE composes: reverse one unless search pinned (1626)
+C6-0100	MAPPED	1639	same machines: anchored one under _DFA_MATCH unwrapped (1626)
+C6-0101	UNMAPPED		new doc says UNIFORM_FOLDS runs over the same machines _DFA_TABLE composes (1639-1640) but does not say _DFA_SCAN_EDGE shares the composition; TRUE: emit_dfa.c:4521-4523 applies the same pinned/unwrapped test in the scan-edge name
+C6-0102	MAPPED	1641	"0 on attempt and empty"
+C6-0103	MAPPED	1635	"an integer COUNT"; count vs mask rule at 1383-1386
+C6-0104	MAPPED	1385	"a MASK is used only where the decision is taken per quantifier and a scalar would misreport a mixed artifact"
+C6-0105	MAPPED	1641	"It is family (b) in nature - what the emitted machine turned out to contain"
+C6-0106	UNMAPPED		new doc says what the emitted machine turned out to contain (1641) but not that no fold mode exists upstream of the emitter; TRUE: tuning.md:3877-3881 states no tuning axis and discovered while emitter held the table
+C6-0107	MAPPED	1642	"owed because a fold is visible only as a table's ABSENCE"; rule 1374-1375
+C6-0108	MAPPED	1643	run_dfa_uniform_fold.sh reads it
+C6-0109	MAPPED	1643	"The artifact is smaller and its scan cheaper by that many indexed loads"
+C6-0110	MAPPED	1644	"the answers are identical"; general no-answer-conclusion rule 1390-1392
+C6-0111	MAPPED	1426	inventory mirror column "-"; mirror-only-for-named-consumer rule 1355-1358
+C6-0112	MAPPED	1355	general trigger and struct-append statement; same generalisation as C6-0085
+C6-0113	MAPPED	1827	"how far from the subject's end a match may begin"
+C6-0114	MAPPED	1821	6.3.7 intro: family (a) on every artifact of both engines; inventory 1416
+C6-0115	MAPPED	1830	"4" means a match begins in [n - 4, n]
+C6-0116	MAPPED	1831	"none" = nothing was proved
+C6-0117	MAPPED	1834	string with a "none" member because 0 is a legal window (\z pattern of max width 0)
+C6-0118	MAPPED	1835	bound both search entries clamp to, from the same compile-time field as the clamp
+C6-0119	MAPPED	1837	"none" reported by a pattern not end-anchored
+C6-0120	MAPPED	1838	unbounded width
+C6-0121	MAPPED	1838	containing \G
+C6-0122	MAPPED	1838	under a multi-byte encoding
+C6-0123	MAPPED	1839	any build under -fno-end-window
+C6-0124	MAPPED	1839	non-"none" artifact does constant work on an arbitrarily long subject
+C6-0125	MAPPED	1840	"none" does not mean "not end-anchored"
+C6-0126	MAPPED	1821	"none has an rx_info mirror"; inventory 1416
+C6-0127	MAPPED	1844	a byte every match must contain
+C6-0128	MAPPED	1821	family (a) both engines; inventory 1417 scope all
+C6-0129	MAPPED	1847	"62" means every match contains '>'
+C6-0130	MAPPED	1848	"none" = no byte necessary on every path
+C6-0131	MAPPED	1851	string with "none" member (0 is a legal byte)
+C6-0132	MAPPED	1851	least likely byte by byte-rate answer, rightmost tiebreak and whole answer where NONE
+C6-0133	MAPPED	1855	run's scan member exact byte => REQ_BYTE is that member
+C6-0134	MAPPED	1856	two-member cube: the set's pick or "none" for an empty set (tuning.md 2.39)
+C6-0135	MAPPED	1858	"every value is a member of the necessary set"
+C6-0136	MAPPED	1859	non-"none" artifact rejects a whole subject in one pass PROVIDED _REQ_WHY reads "emitted"
+C6-0137	MAPPED	1887	_REQ_WHY: whether the artifact acted on either fact and why not
+C6-0138	MAPPED	1860	"none" does not mean "no required literal"; conservative-analysis phrase dropped
+C6-0139	MAPPED	1861	caselessly folded literal, alternation with no common byte, -fno-req-byte all report "none"
+C6-0140	MAPPED	1821	none of the six stamps has an rx_info mirror
+C6-0141	MAPPED	1865	a literal run every match must contain
+C6-0142	MAPPED	1821	family (a) both engines; inventory 1418
+C6-0143	MAPPED	1868	"2e746172@0" = ".tar", memchr scans member 0
+C6-0144	MAPPED	1870	(?i)select example: member of each position (x & K)==T, scan is the pair at position 4
+C6-0145	MAPPED	1874	"none" = no run of two or more bytes
+C6-0146	MAPPED	1877	lowercase hex, @, index of the member the memchr scans
+C6-0147	MAPPED	1879	"none" at a length below 2
+C6-0148	UNMAPPED		new doc gives the lowercase-hex form (1877) but not the reason (arbitrary bytes inside a #define string body); rationale only, TRUE (probe: RX_REQ_RUN is hex on every artifact)
+C6-0149	MAPPED	1879	REQ_BYTE exactly bytes[idx] where position idx is exact, making the two checkable against each other
+C6-0150	MAPPED	1881	non-exact run carries "/" and each position's mask K in hex (abi 59 tag dropped); probe: (?i)select -> 53454c454354@4/dfdfdfdfdfdf
+C6-0151	MAPPED	1882	T is each position's lower member, (x & K)==T its membership test
+C6-0152	MAPPED	1881	only a run with non-exact positions carries "/"; exact examples 1868 and probe abc -> 616263@1
+C6-0153	MAPPED	1821	no rx_info mirror for any of the six
+C6-0154	MAPPED	1887	whether the artifact acted on either fact and why not
+C6-0155	MAPPED	1887	closed token set (tuning.md 2.29); family (a) both engines 1821; inventory 1419
+C6-0156	MAPPED	1894	value table: emitted none one-attempt dominated (four rows)
+C6-0157	MAPPED	1897	emitted row: pre-check on the byte or run its siblings name
+C6-0158	MAPPED	1897	"possibly led by a rarer necessary-set byte's one-byte check (tuning.md 2.40)"; abi 60 tag dropped; stamp-says-whether-not-shape clause not repeated
+C6-0159	MAPPED	1897	"possibly handing off (_REQ_HANDOFF)"
+C6-0160	MAPPED	1898	none row
+C6-0161	MAPPED	1899	one-attempt row
+C6-0162	MAPPED	1900	dominated row
+C6-0163	MAPPED	1902	"none" iff _REQ_BYTE and _REQ_RUN are both "none"
+C6-0164	MAPPED	1903	any other value asserts a byte or run was derived; only "emitted" asserts it is tested
+C6-0165	MAPPED	1904	consumer reads this stamp then its siblings for the value
+C6-0166	MAPPED	1821	no rx_info mirror
+C6-0167	MAPPED	1909	where the search body's scan begins
+C6-0168	MAPPED	1821	family (a) both engines; inventory 1420
+C6-0169	MAPPED	1821	"a stamp varies by engine family, never by presence within one; 'does not apply' is a value" (ruling attribution dropped)
+C6-0170	MAPPED	1912	"2": scan begins 2 bytes before the run pre-check's first window hit
+C6-0171	MAPPED	1914	"none": scan begins at startpos
+C6-0172	MAPPED	1917	decimal K only where the req-use table's handoff row applies (tuning.md 2.41)
+C6-0173	MAPPED	1918	an emitted run pre-check (_REQ_WHY "emitted" with a _REQ_RUN)
+C6-0174	MAPPED	1919	DFA scan in front of the body (a DFA artifact, or a hybrid's prefilter)
+C6-0175	MAPPED	1920	a finite K
+C6-0176	MAPPED	1920	a prefilter that is not count-collapsed
+C6-0177	MAPPED	1921	not a hybrid with a \G start family whose prefilter window is its match ceiling
+C6-0178	MAPPED	1922	every match begins at most K bytes before an occurrence of the run's window
+C6-0179	MAPPED	1923	search block returns LEAST position >= startpos where the whole window occurs, or n
+C6-0180	MAPPED	1924	"the position itself is meaningful, not only its comparison with n"
+C6-0181	MAPPED	1925	body begins scan at max(startpos, that - K), rounded up to a character start under multibyte when it moved
+C6-0182	MAPPED	1928	"none" everywhere else including -fno-req-handoff
+C6-0183	MAPPED	1929	K is the req_run_maxoff fact --emit-facts lists, in BYTES
+C6-0184	MAPPED	1930	(?i)straße under -e utf8 reads "2" because (?i)s matches U+017F, two bytes, before window TRA
+C6-0185	MAPPED	1932	"never changes an answer or a give-up"; skip of proved-impossible positions in 3.1 search-skips 350-352
+C6-0186	MAPPED	1821	no rx_info mirror
+C6-0187	MAPPED	1935	where a VM attempt can start
+C6-0188	MAPPED	1821	family (a) both engines; inventory 1421 scope all; probe: DFA artifact carries RX_VM_START_SCAN "none"
+C6-0189	MAPPED	1946	first-class row: attempts start only where byte is in the start set (code comment 1938)
+C6-0190	MAPPED	1947	none row; comment 1940 "every position is attempted"
+C6-0191	MAPPED	1946	first-class where the candidate table's VM-route row applies (tuning.md 2.42)
+C6-0192	MAPPED	1946	VM artifact with VM_PREFILTER "none"
+C6-0193	MAPPED	1946	an unanchored pattern
+C6-0194	MAPPED	1946	start set (start_set fact, facts_listing.md) cannot match empty and has fewer than 256 members
+C6-0195	MAPPED	1946	seeks next byte of the set through a 256-entry table before first attempt and after each failed one
+C6-0196	MAPPED	1946	answers no-match where none is left
+C6-0197	MAPPED	1947	none on every DFA artifact
+C6-0198	MAPPED	1947	none on every hybrid (whose prefilter is its start test)
+C6-0199	MAPPED	1947	none on every anchored or \G-start pattern
+C6-0200	MAPPED	1947	none under -fno-start-set
+C6-0201	MAPPED	1949	"The value names the FORM of the seek; a one-byte (memchr) form is not built"
+C6-0202	MAPPED	1950	never changes an answer; a give-up may become the answer (3.1)
+C6-0203	MAPPED	1821	no rx_info mirror
+C6-0204	MAPPED	2281	which findings this artifact was built from
+C6-0205	MAPPED	2190	6.3.10 intro: on every artifact, both engines; inventory 1454
+C6-0206	MAPPED	2285	example "byte-rate=default:1822fb973b95a4da" (probe output matches); form query=bundle:digest at 2290
+C6-0207	MAPPED	2286	"byte-rate=none" asked, nothing answered (-e utf8)
+C6-0208	MAPPED	2287	"" nothing asked
+C6-0209	MAPPED	2290	one query=bundle:digest item per query ASKED, fixed query order, ;-joined
+C6-0210	MAPPED	2291	query=none where the analysis declares nothing for the encoding
+C6-0211	MAPPED	2292	empty string when no reader asked
+C6-0212	MAPPED	2293	docs/spec/findings.md section 5 gives the grammar and digest byte layout (also 1244)
+C6-0213	MAPPED	2294	bundle is the analysis whose block answered
+C6-0214	MAPPED	2295	digest covers exactly what readers consumed so same rates give same stamp
+C6-0215	MAPPED	2297	written after every reader has run so an ask during engine-body emission is recorded; placement beside rx_info definition 2190-2192
+C6-0216	MAPPED	2282	mirrored byte for byte by rx_info.findings; table 1165
+C6-0217	MAPPED	2298	"The bundle name is plain text in the artifact"; also 1242-1243
+C6-0218	SUPERSEDED	2197	RUN_WORDS now counts overlap AND words rows; probe: (?i)select (masked run) reads RX_RUN_WORDS 1; abc reads 1; old overlap-only (abi 58) wording is stale
+C6-0219	MAPPED	2190	on every artifact, both engines; inventory 1451
+C6-0220	MAPPED	2202	on both engines because the run compare writes the DFA scan's run term and pre-check too (2202-2205); VM-only-activity contrast not repeated
+C6-0221	MAPPED	2203	run compare writes the DFA scan's run term and run pre-check as well as VM literal runs and island chains
+C6-0222	MAPPED	2204	kit owns the run compare (memfn/src/runcmp.c); 2193-2194 first three stamps written by the kit in order RUN_WORDS first; M1b date/abi tag dropped as history
+C6-0223	MAPPED	2202	"An unquoted integer"
+C6-0224	MAPPED	2208	#define RX_RUN_WORDS 1 /* or 0, or any count */
+C6-0225	MAPPED	2197	number of literal-run compares written as WORD compares, each counted once whatever engine wrote it
+C6-0226	MAPPED	2199	overlap row: exact run of length 3, 5-7 or 9-15
+C6-0227	MAPPED	2199	words row (a masked run; tuning.md 2.38, 2.39); abi 59 tag dropped
+C6-0228	MAPPED	2200	any other exact run compare is a memcmp and not counted
+C6-0229	MAPPED	2201	0 where none written and under -fno-run-overlap
+C6-0230	MAPPED	2190	written after the engine body beside the rx_info definition; the DFA file-scope-block reason not repeated (2202-2205 gives the both-engines reason)
+C6-0231	MAPPED	1451	inventory kind "count"; count-vs-mask rule 1383-1386
+C6-0232	MAPPED	1390	general rule "a consumer may conclude something about cost size or shape, never about its answers"; row-specific sentence dropped
+C6-0233	MAPPED	1451	inventory mirror column "-"
+C6-0234	MAPPED	2212	what the search-code kit rendered and which C library functions the artifact calls
+C6-0235	MAPPED	2190	every artifact, both engines; inventory 1452
+C6-0236	MAPPED	2193	first three written by pcrec-memory-functions (memfn/, D146/D147)
+C6-0237	MAPPED	2191	stated order RUN_WORDS, MEMFN_FORMS, MEMFN_LIBC, SIMD_GUARDED_BYTES, FINDINGS; probe matches
+C6-0238	MAPPED	2220	MEMFN_FORMS "none" iff byte-identical (stamp lines aside) to its own -fno-memfn-simd compile
+C6-0239	MAPPED	2221	otherwise ids of the forms that make it differ, comma-joined in site order
+C6-0240	MAPPED	2222	cascading site carries ID@LEVEL+LEVEL
+C6-0241	MAPPED	2223	ids and level names OPAQUE: bucket on none/not-none, never parse an id
+C6-0242	MAPPED	2224	SIMD off by default and no SIMD form exists so "none" on every artifact today (D147 add.10, Q55)
+C6-0243	MAPPED	2226	verified: -fno-memfn-simd and default compile of xy(a)bc are byte-identical bar the header include; FORMS is defined as the diff vs that compile so a scalar change moves both and leaves FORMS unchanged
+C6-0244	MAPPED	2226	scalar-layer change attributed by its abi event and its --memfn=no-NAME deny row
+C6-0245	MAPPED	2228	consumer telling two same-abi builds apart records the build recipe (abi, pcrec commit, argv)
+C6-0246	MAPPED	2230	"none" or names sorted (byte order), distinct, comma-joined with no space
+C6-0247	MAPPED	2232	SOURCE-level inventory of the whole artifact (search code, variable resolver, --emit-main driver, --trace output; comments and string literals excluded)
+C6-0248	MAPPED	2234	not a promise of a dispatched call; listed even where the compiler later inlines or folds
+C6-0249	MAPPED	2235	memcpy of constant 1-8 bytes (literal-run word loads <prefix>_wN) not listed
+C6-0250	MAPPED	2237	data objects (stderr) are not functions and not listed
+C6-0251	MAPPED	2238	SIMD-off artifact that lists memchr delegates that search to the C library's own dispatch
+C6-0252	MAPPED	2240	neither carries a kit version or vocabulary number, so a kit release moving no emitted byte moves neither
+C6-0253	MAPPED	1452	inventory mirror column "-" for both
+C6-0254	MAPPED	2242	Checked by C11 (make test-memfn-stamps, run_libc_census.sh): every artifact in a corpus-wide sample carries both lines
+C6-0255	MAPPED	2244	MEMFN_LIBC equals undefined function symbols of the -O0 -fno-builtin object minus constant-size memcpy loads
+C6-0256	MAPPED	2246	identity half compares default vs -fno-memfn-simd (tuning.md 2.43), reported "identical (no SIMD form)"; verified the flag exists now (probe: identical output; tests/codegen/run_codegen_tests.sh and tests/memfn/libc_census.py carry the phrase)
+C6-0257	MAPPED	2248	"its movers half stays unreached until one does"
+C6-0258	MAPPED	2251	how many bytes of the artifact sit under a CPU-level guard (abi 71 / D155 tag dropped)
+C6-0259	MAPPED	2190	every artifact both engines; written by pcrec directly after MEMFN_LIBC (2252)
+C6-0260	SUPERSEDED	2252	now "an unsigned 64-bit integer spelled as 16 hex digits"; example 0x0000000000000000ULL (2256); probe vm.c:445 matches; old example 0ULL is stale
+C6-0261	MAPPED	2259	number of bytes the kit wrote between its simd_open and simd_close sink calls (#if blocks of a SIMD-on form)
+C6-0262	MAPPED	2263	counted in the unit every pcrec length decision uses; comment bytes included; prefix counted at fixed width
+C6-0263	MAPPED	2265	neither -fno-comments nor -p changes the value
+C6-0264	MAPPED	2265	zero on every artifact holding no such block, every artifact today; -fmemfn-simd inert (tuning.md 2.43)
+C6-0265	MAPPED	2267	"It is the artifact's size beyond its SIMD-off compile"
+C6-0266	MAPPED	2268	invisible to every pcrec size decision (entry-shape knee, PROGRAM_BYTES, size term and ladder, D84 caps)
+C6-0267	MAPPED	2270	turning SIMD on moves no rung, ladder step, refusal or other stamp's value
+C6-0268	MAPPED	2271	no aggregate budget (D155 add.2): each SIMD row bounds its own guarded bytes
+C6-0269	MAPPED	1453	inventory mirror column "-"
+C6-0270	MAPPED	2273	make test-memfn-guarded (run_simd_guarded.sh): every corpus-sample artifact carries the line
+C6-0271	MAPPED	2274	value at most the sum of declared bounds of forms MEMFN_FORMS lists (0 while "none")
+C6-0272	MAPPED	2276	test-only build writing a synthetic guarded block through the same sink calls must equal the plain build, block and stamp value aside
+C6-0273	SUPERSEDED	1956	VM-only scoping stated per stamp (1956-1957, inventory 1434-1447) but frame/trail SIZE macros are now on every artifact (inventory 1456, .h); probe: DFA artifact .h defines RX_RESUME_FRAMES 0 and RX_TRAIL_FRAMES 0; budgets stay VM-only (no STEP_BUDGET in DFA probe)
+C6-0274	MAPPED	1363	family (b) macros report what the VM did and are VM-only; "a DFA artifact has no such activity"
+C6-0275	MAPPED	2118	where an attempt may begin; a closed token
+C6-0276	MAPPED	1445	inventory scope vm, kind token; 1956 every VM artifact hybrids included, never a pure-DFA artifact; probe DFA artifact has no RX_VM_START
+C6-0277	MAPPED	2125	three rows anchored gstart unanchored
+C6-0278	MAPPED	2127	anchored row
+C6-0279	MAPPED	2128	gstart row
+C6-0280	MAPPED	2129	unanchored row: nothing proved or -fno-vm-anchor-bound
+C6-0281	MAPPED	2131	either non-unanchored value means the emitted search loop stops after one attempt (tuning.md 2.25)
+C6-0282	MAPPED	2132	fact is pcrec_start_anchor's, derived above either engine
+C6-0283	MAPPED	2133	on a DFA artifact the same fact is legible through _DFA_SCAN "attempt"; start_max name and deliberately-one-vocabulary remark not repeated
+C6-0284	MAPPED	2134	"unanchored" does not mean "not anchored"
+C6-0285	MAPPED	2134	a denied build and a backreference-leading pattern report it too
+C6-0286	MAPPED	2131	stated as a fact about the emitted search loop; general no-run-time-promise rule 1390-1392
+C6-0287	MAPPED	1445	inventory mirror column "-"; 1355-1358 D77 rule
+C6-0288	MAPPED	2006	defined by what the emitted program contains (no RX_PUSH site, no linked call); family (b) label itself and the CALL_SPLICED comparison are not repeated
+C6-0289	UNMAPPED		new doc does not say there is no frameless mode upstream of the emitter; TRUE: tuning.md:3877-3879 refers to RX_VM_FRAMELESS's reasoning (what the emitter turned out to contain)
+C6-0290	MAPPED	2016	#define RX_VM_FRAMELESS 1 /* or 0 */
+C6-0291	MAPPED	2006	1 iff no RX_PUSH site and no linked call (fail label has no pop-and-resume goto * dispatch); 0 otherwise
+C6-0292	MAPPED	1956	inventory scope vm (1438); every VM artifact hybrids included, never pure-DFA
+C6-0293	MAPPED	1374	"A fact is never readable by a macro's ABSENCE... 0 and none spelled as readily as any other value"; example shows both values 2016
+C6-0294	MAPPED	2008	"A scalar boolean (a whole-artifact fact)"; scalar-vs-mask rule 1383-1386
+C6-0295	MAPPED	1385	masks used only where decision is per quantifier; the four masks named 1386
+C6-0296	MAPPED	1438	inventory mirror column "-"; D77 trigger rule 1355-1358
+C6-0297	MAPPED	2009	FRAMELESS 1 also means the entry-chain statics are eligible for always_inline; same macro, no separate stamp mentioned
+C6-0298	SUPERSEDED	2009	now "ELIGIBLE for static inline always_inline"; _VM_ENTRY_SHAPE says which carry it; probe: 60-group literal pattern reads RX_VM_FRAMELESS 1 with ENTRY_SHAPE "plain" and zero always_inline; small one reads "inline" with 8; "0 means none does" still stated at 2011
+C6-0299	HISTORY		Records a rejected design alternative (_VM_INLINE_CHAIN), process not behaviour; also no longer true by construction since FRAMELESS 1 can read ENTRY_SHAPE "plain" (probe)
+C6-0300	MAPPED	2009	FRAMELESS 1 means eligible; _VM_ENTRY_SHAPE says which carry it (2010-2011, rows 2029-2036)
