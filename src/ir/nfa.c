@@ -707,7 +707,8 @@ static Frag compile_ast(NB *b, const Ast *a)
      * recognizer — is chartered as `[ENG-LOOK]` and is not this arm.
      * Reversal is identity for the same trivial reason `\K`'s is: an epsilon
      * has nothing to reverse. */
-    case A_LOOK:   return frag_single(b, N_EPS);
+    case A_LOOK:   b->nfa->erased |= NFA_ERASED_LOOK;   /* [OPT-REVEND] L0, LR-G3 */
+                   return frag_single(b, N_EPS);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
@@ -796,6 +797,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         if (b->collapse && (rmin > 1 || rmax > 1)) {
             rmin = rmin ? 1 : 0;
             rmax = -1;
+            b->nfa->erased |= NFA_ERASED_COUNT;   /* [OPT-REVEND] L0, LR-G3 */
         }
         if (rmin == 0 && rmax == 0) return frag_single(b, N_EPS);
 
@@ -902,6 +904,7 @@ static Frag compile_ast(NB *b, const Ast *a)
      * MISCOMPILE, which is what registry.c's own row comment has warned about
      * since before there was a producer, and what sabotage row S91 injects. */
     case A_ATOMIC:
+        b->nfa->erased |= NFA_ERASED_ATOMIC;   /* [OPT-REVEND] L0, LR-G3 */
         return compile_ast(b, a->l);
     /* [M6.5.2] NO MACHINE, AND THE ANSWER IS TO FALL INTO THE ERROR BELOW —
      * deliberately, not for want of an idea.
@@ -1018,6 +1021,7 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
      * fresh one. `st`/`cap` are deliberately kept: the array is Job-owned and
      * `nst` reuses it, so the second build costs no allocation. */
     nfa->n = 0;
+    nfa->erased = 0;   /* [OPT-REVEND] L0: the record is this build's own */
     NB b = { cx, nfa, reverse, 0, collapse };
     Frag f = compile_ast(&b, root);
     int acc = nst(&b, N_ACCEPT);

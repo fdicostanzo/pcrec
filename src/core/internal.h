@@ -1850,7 +1850,25 @@ typedef struct {
      * to `start`, so an UNWRAPPED machine (ENG_ATTEMPT's, and the reverse
      * machine) answers correctly without anyone having to remember to. */
     int     anch_start;
+    /* [OPT-REVEND] L0 THE ERASURES THIS BUILD APPLIED (`NFA_ERASED_*`,
+     * docs/design/locate_finish.md §1.2, LR-G3): each arm of the lowering
+     * that WIDENS the machine's language past the pattern's records itself
+     * here — a lookaround erased to epsilon, an atomic group made
+     * transparent, a counted repeat collapsed. Exactness is then a RECORDED
+     * fact of the machine, `erased == 0`, rather than a list of known
+     * erasures a reader must keep in step with the lowering
+     * (`pcrec_vm_prefilter_window`). Reset by each build. */
+    unsigned erased;
 } Nfa;
+
+/* [OPT-REVEND] L0 the erasure kinds `Nfa.erased` records (src/ir/nfa.c). A
+ * relaxation added later (a backreference, a variable, a call in a cycle,
+ * locate_finish.md §7.1) adds its bit in the arm that applies it. */
+enum {
+    NFA_ERASED_LOOK   = 1u << 0,   /* a lookaround lowered to epsilon */
+    NFA_ERASED_ATOMIC = 1u << 1,   /* an atomic group lowered transparently */
+    NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+};
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
  *      src/opt/prefix_k.c) ---- */

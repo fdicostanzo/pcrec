@@ -5208,7 +5208,13 @@ struct CandRow {
     unsigned       routes;     /* CAND_ON(route) mask, written on every row */
     const char    *tok;        /* today's spelling (trace, stamp, old table) */
     unsigned char  map;        /* CM_* */
-    unsigned char  giveup;     /* CG_* */
+    /* [OPT-REVEND] L0 the row's DECLARED give-up CONTRACT (locate_finish.md
+     * §1.5, [r2 G7], LR-S11): `CG_FIXED` where a ruling forbids any move of
+     * the VM's give-up surface; unset is a wildcard. The give-up
+     * CLASSIFICATION (neutral / one-way) is derived by an instrument over
+     * the corpus, never declared here: the declared column it replaces had
+     * no reader, and its zero value is how F-1 read W1 as neutral. */
+    unsigned char  contract;   /* CG_* */
     unsigned       hands;      /* CT_* handed to the slot's successors */
     CandList       list[3];    /* indexed by CandRoute */
     /* [OPT-REVEND] L0 what the row uses on each route (§2.7), the path
@@ -8087,11 +8093,14 @@ enum {
     CM_LOWERBOUND, CM_PRESENCE, CM_ONE, CM_RECOVER, CM_STEP, CM_RESEED, CM_ADAPT
 };
 
-/* The give-up POSTURE (§1.5): whether a row may move the VM's give-up
- * surface, and in which direction. */
+/* The give-up CONTRACT a row declares (`CandRow.contract`, start_table.md
+ * §1.5; locate_finish.md §1.5): unset, a wildcard, or FIXED — the row must
+ * never move the VM's give-up surface (K82 Q10's `handoff`; RETRY's `exact`,
+ * `clamped` and `retry-anchored`, whose rulings sit with their rows). Its
+ * control is behavioural ([GIVEUP-DIFF], the window-identity twin), never a
+ * comparison of two columns. */
 enum {
-    CG_NEUTRAL = 0,   /* changes no attempt the VM runs */
-    CG_ONE_WAY,       /* skips attempts: a give-up may become an answer */
+    CG_ANY = 0,       /* no contract */
     CG_FIXED          /* must never move the give-up surface */
 };
 
@@ -8380,7 +8389,7 @@ static const CandRow cand_rows[] = {
      * stamp and `--emit-ir`'s `root-minw` row; no `--list-axes` listing) */
     { .c = { "ceiling", 0, cand_ceiling_applies }, .slot = CAND_SLOT_WIDTH,
       .u.width = { .check = true },
-      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,
+      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI,
       .hands = CT_VERDICT },
     { .c = { "width-none", 0, cand_always }, .slot = CAND_SLOT_WIDTH,
       .routes = CR_VM, .tok = "none", .map = CM_NONE, .hands = CT_VERDICT },
@@ -8388,7 +8397,7 @@ static const CandRow cand_rows[] = {
     /* FIRST (`req_uses[]` until C4; `req_use` asks it) */
     { .c = { "handoff", PCREC_NO_REQ_HANDOFF, req_handoff_applies }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "handoff", .map = CM_LOWERBOUND,
-      .giveup = CG_FIXED, .hands = CT_LOWER,
+      .contract = CG_FIXED, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "req-use", 1, "handoff" } },
       .desc = "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding",
       .u.use = { REQ_USE_HANDOFF } },
@@ -8465,7 +8474,7 @@ static const CandRow cand_rows[] = {
      * hat is `-bounded`-only). */
     { .c = { "first-class", PCREC_NO_START_SET, pf_vm_start_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_VM, .tok = "first-class", .map = CM_EXACT0,
-      .giveup = CG_ONE_WAY, .hands = CT_CAND,
+      .hands = CT_CAND,
       .list = { [CAND_ROUTE_VM] = { "prefilter", 7, "first-class" } },
       .desc = "vm: [START-SET] a VM artifact with no DFA prefilter, an unanchored pattern, and a start set S (the start_set fact) that is not nullable and has fewer than 256 members: the attempt loop seeks the next byte of S, as a 256-entry table, before its first attempt and after each failed one; dfa: never (the DFA hat is -bounded only: a seeded machine always carries the D11 bound)",
       .u.pf = { .scan = PF_SCAN_SET, .emit_vm = pf_vm_emit_first_class } },
@@ -8526,6 +8535,7 @@ static const CandRow cand_rows[] = {
      * unarmed. */
     { .c = { "exact", 0, cand_rs_exact_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "exact", .map = CM_STEP, .hands = CT_CAND | CT_LOWER,
+      .contract = CG_FIXED,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 1, "exact" } },
       .desc = "the prefilter answers for the pattern's own language (no cut, no "
               "lookaround, no count collapse — Vm.mrl_win), so nothing is gained: "
@@ -8533,6 +8543,7 @@ static const CandRow cand_rows[] = {
       .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "clamped", 0, cand_rs_clamped_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "clamped", .map = CM_RESEED, .hands = CT_LOWER,
+      .contract = CG_FIXED,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 2, "clamped" } },
       .desc = "an MRL clamp exists, so today's retry already re-seeds after every "
               "failed attempt: kept, because a step block would add attempts it "
@@ -8540,6 +8551,7 @@ static const CandRow cand_rows[] = {
       .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "retry-anchored", 0, cand_rs_anchored_applies }, .slot = CAND_SLOT_RETRY,
       .routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,
+      .contract = CG_FIXED,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 3, "anchored" } },
       .desc = "every match begins at one position (`^`, `\\A`, `\\G` — the start_anchor "
               "fact), so the attempt loop stops after its first attempt and no "
@@ -8547,7 +8559,7 @@ static const CandRow cand_rows[] = {
       .u.reseed = { CAND_RS_A_FIXED, CAND_RS_S_NONE, false } },
     { .c = { "adaptive-dense", PCREC_NO_HYB_RESEED, cand_rs_dense_applies },
       .slot = CAND_SLOT_RETRY, .routes = CR_VM, .tok = "adaptive-dense", .map = CM_ADAPT,
-      .giveup = CG_ONE_WAY, .hands = CT_CAND | CT_LOWER,
+      .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 4, "adaptive-dense" } },
       .desc = "the compile's byte-rate prior (the built-in default under -e byte, "
               "cardinality where the prior is NONE) puts the candidate scan's byte "
@@ -8555,7 +8567,7 @@ static const CandRow cand_rows[] = {
               "starting inside an armed step block",
       .u.reseed = { CAND_RS_A_ADAPT, CAND_RS_S_CAP, true } },
     { .c = { "adaptive", PCREC_NO_HYB_RESEED, cand_always }, .slot = CAND_SLOT_RETRY,
-      .routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT, .giveup = CG_ONE_WAY,
+      .routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT,
       .hands = CT_CAND | CT_LOWER,
       .list = { [CAND_ROUTE_VM] = { "hyb-reseed", 5, "adaptive" } },
       .desc = "always, on an over-approximating prefilter: adaptive, starting with a "
@@ -8581,13 +8593,13 @@ static const CandRow cand_rows[] = {
       .u.bound = { .one = CAND_ONE_FROM,
                    .start_max = "search_from /* fully \\G-anchored */" } },
     { .c = { "vm-anchored", 0, cand_bound_anchored_vm_applies }, .slot = CAND_SLOT_BOUND,
-      .routes = CR_VM, .tok = "anchored", .map = CM_ONE, .giveup = CG_ONE_WAY,
+      .routes = CR_VM, .tok = "anchored", .map = CM_ONE,
       .hands = CT_UPPER,
       .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 1, "anchored", PCREC_NO_VM_ANCHOR_BOUND } },
       .desc = "per artifact on the VM route: every alternative of the whole pattern begins with ^ (outside multiline) or \\A, so only offset 0 can start a match and the attempt loop stops after one pass",
       .u.bound = { .one = CAND_ONE_ZERO, .attempt_max = CAND_VM_BOUND_ONE } },
     { .c = { "vm-gstart", 0, cand_bound_gstart_vm_applies }, .slot = CAND_SLOT_BOUND,
-      .routes = CR_VM, .tok = "gstart", .map = CM_ONE, .giveup = CG_ONE_WAY,
+      .routes = CR_VM, .tok = "gstart", .map = CM_ONE,
       .hands = CT_UPPER,
       .list = { [CAND_ROUTE_VM] = { "vm-anchor-bound", 2, "gstart", PCREC_NO_VM_ANCHOR_BOUND } },
       .desc = "per artifact on the VM route: every alternative begins with \\G, so only the caller's own search_from can start a match and the attempt loop stops after one pass",
@@ -9063,6 +9075,15 @@ bool pcrec_cand_finish_needs(Ctx *cx, unsigned m)
     return false;
 }
 
+/* `pcrec_cand_lang_exact` (internal.h): the boundary projection's test. A
+ * DFA finisher's body is exact by D67/SR-8's routing (any erasure that could
+ * widen its language forces the VM); a VM finisher's body is exact iff its
+ * prefilter exists and its lowering recorded no erasure. */
+bool pcrec_cand_lang_exact(Ctx *cx)
+{
+    return cand_finish_of(cx) != CAND_ROUTE_VM || pcrec_vm_prefilter_window(cx);
+}
+
 /* ---- [OPT-REVEND] L0 LOCATE's SELECTION AND THE PATH DERIVATION ---------
  *
  * docs/design/locate_finish.md rev 2.1 §2.7 (D156; LR-G4, LR-S1). Every
@@ -9247,6 +9268,17 @@ void pcrec_cand_path_trace(Ctx *cx)
             if (p.asks[rt] & CN(sl))
                 fprintf(stderr, "%s%s@%s", k++ ? "," : "", cand_nodes[sl].name,
                         CAND_ROUTE_NAME(rt));
+    /* LR-G3's no-mover compare (locate_finish.md §5 L0.3): on a hybrid, the
+     * recorded erasures (L look, A atomic, C count) beside the conjuncts the
+     * window read before the record existed. */
+    if (cx->job->fit.prefilter) {
+        unsigned e = cx->job->nfa.erased;
+        bool old = !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC) &&
+                   !(pcrec_fact_kinds(cx) & PF_KIND_LOOK) && !cx->job->fit.prefilter_collapsed;
+        fprintf(stderr, "\t%s%s%s%s\t%s", e & NFA_ERASED_LOOK ? "L" : "",
+                e & NFA_ERASED_ATOMIC ? "A" : "", e & NFA_ERASED_COUNT ? "C" : "",
+                e ? "" : "-", old ? "exact" : "inexact");
+    }
     fprintf(stderr, "\n");
 }
 #endif
