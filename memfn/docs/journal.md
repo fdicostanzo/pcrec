@@ -1178,3 +1178,28 @@ pointer when a kit change merges to main.
   timing. Report it when the R-13 sweeps produce it.
 - Waiting on RQ-3 (abi 71; its chain is running) before the §8 slot chain
   and R-13.
+
+## 2026-10-09 evening — wake after reset; slot17 read; startset red fixed
+
+- Woke from lane/memfn-r13's wake.md; heartbeat cron `17,47` recreated.
+- slot17 (lane/memfn-vmlazy @ 1bb49dee, ref 631771b7) DONE 20:15:
+  - Green: build, strict, sabanchor, recid 18/0, census 0 OTHER/ASYM (controls fire),
+    N2 clean, G2 full 192,654,549/0.
+  - mech: 26 rows, unexpected 0, undetected 0, anomalies 0; unreached 1 = S685
+    (declared UNREACHED: VMLAZY's pending row is deleted).
+  - make test RED: test-startset only.
+  - VARIANTS measured nothing: my script omitted `--tree-rev` (usage error).
+- Triage lane ssred: base green, tip red. Only `[vm-movers]` failed: the new corpus file
+  tests/base/vm_lazy_rmin_prefix.rxt was never added to the stage-2 VM manifests
+  (10 auto / 17 forced). It was a delivery miss, not an emission defect.
+- Lane vmlfix (921a3ef2) regenerated the manifests with census_s1.py and spliced in
+  only the corpus rows. test-startset and strict are green. lane/memfn-vmlazy was
+  fast-forwarded to it.
+  - Finding for main: the generator would also add 7 pcrec-bench rows (6 forced,
+    1 s3_dfa; bench @ 76e13c1d). They are un-refreshed, as at m7fix. Whether to
+    re-sync them is a bench-pin decision, and it is main's.
+- Main's order: rq2's chain → RQ-2 merges (it carries the 8ec0e97a variant re-pin) →
+  merge main into vmlazy → slot17b (variant sweep + make test), on main's GO.
+  done: R-12 waits for slot17b.
+- LESSON: a slot stage that dies on a usage error is a stage that measured nothing.
+  Dry-run every new invocation's argument parsing before the slot.
