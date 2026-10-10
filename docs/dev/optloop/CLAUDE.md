@@ -871,3 +871,10 @@ that cycle's analysis lands.
 ## [OPTLOOP] round 3's draft selection (lane `round3sel`, 2026-10-06)
 
 - `round3_selection.md` — the DRAFT round-3 slate for Frank: 8 ranked rows (3a = 1-4 ungated, 3b = 5-8, two GATED on [START-TABLE] C7) plus 4 backups, kanban-ordered; the not-selected list with reasons, the cause-group conflicts (start-table fold, RETRY slot, memfn-migrated text, [DEC-FALLBACK]'s admission ternary, the doubled-word triple), questions with recommendations, and the bench-only relay list. Docs only; Frank ratifies.
+
+## [ENG-TACTICS] stage 1's trigger (lane `et1twin`, 2026-10-10)
+
+- `et1twin/` — the K12 recount under D151's G2 and the reverse-inner hand
+  twins (ipv6, kv-quoted, sfx-64): twin source, drivers, identity and timing
+  scripts, raw outputs. Own `CLAUDE.md`; reading in
+  `../lanes/et1twin_report.md`.
