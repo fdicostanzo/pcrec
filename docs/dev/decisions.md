@@ -9317,6 +9317,7 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 
 - **RULED: the skip as designed**, with Fix A recorded and the hostile-input cell standing. Frank: "we 'tolerate' invalid utf but i don't want to enable it. invalid subjects simply don't match... the purpose of the approach is that its faster assuming the caller has clean data", then "I accept it as is. utf comes with certain costs. i would like to note to the implementation to try and optimize the happy path."
 - **Why a guard at all:** without it, `landing` reports an ill-formed byte INSIDE a match (utf8 `.` on `C3 61`: (0,2) where today and PCRE2 give (1,2)). The guard enforces "an ill-formed sequence matches nothing"; it adds no tolerance.
+- **Q3 RULED (same session): agree.** RECOVER asks carry a HAND, FINISH's `CandSel.hand` filter applied to one more slot, spelled as the product's masks (EXISTS vs WINDOW). The rows that answer without walking take only EXISTS. Whichever of [START-LANDING] and locate_finish L2.2 lands second builds it, keyed on the path derivation.
 - **The implementation note** (start_landing.md §9 Q2) binds SL2: nothing in the loop; a cheap well-formed check; no guard under `-futf-check`; a no-guard timing arm; BOUNDARY vs DECODABLE START named apart in the seam vocabulary.
 
 ## D157 — memfn RQ-2 states RARITY AS A RANKED ARRAY, not a second pick (Frank, 2026-10-09, hundred-and-second session)

@@ -1523,7 +1523,7 @@ Could another regime flip a decision?
   built Fix A and measured it linear and ~6% behind the post-loop form on `.`.
 - *Leaning:* the skip, with Fix A recorded and the hostile cell standing.
 
-**Q3. RECOVER asks carry a hand.**
+**Q3. RECOVER asks carry a hand.** **RULED 2026-10-09 (D156 addendum 4): agree: the hand as product masks (EXISTS/WINDOW), built by whichever of [START-LANDING] and L2.2 lands second, keyed on the path.**
 - *Problem:* `rev-end`'s walk asks RECOVER at a SPECULATIVE end; taking the
   composite's rows there is a wrong answer (§3.3).
 - *Forces:* the hand is FINISH's existing filter on one more slot, now spelled in the
