@@ -11,6 +11,24 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K102 — OPEN (filed 2026-10-09, manager, session 103, from D158) — BUDGET COMPLETION: possessification can make a `PCREC_ERR_WORK` give-up APPEAR where the denied build answers
+
+D158 (Frank): an optimization never reduces any pattern's ability to complete. Possessification violates that today under a caller-tuned `--work-budget`, and the spec documents the violation as a trade rather than a defect: `docs/spec/tuning.md` §2.1 ("the give-up surface moves in TWO directions") and `docs/spec/limits.md` §7 ("Possessification trades one counter for another").
+
+**Mechanism (as the spec states it):** a possessive span loop charges its forward scan to the WORK budget per iteration, where the backtracking form spent STEPS on retreats. So the denied build's STEPS/FRAMES give-ups can only become answers (allowed), but a WORK give-up can appear (forbidden by D158).
+
+**Witness:** `--engine=vm`, subject `docs/design/poss_arms_measurements/rev2/wb_subject.py 200` (809 bytes). `\b(\w+)\b\s+\1\b` with both §2.44/§2.45 arms denied completes at a minimum `--work-budget` of 394. With them on, it needs 1,199 (`rev2/minwb2.sh`). Any budget in 394..1,198 answers with the optimization OFF and gives up with it ON.
+
+**Fix direction (unmeasured):** the fix is in the budget ACCOUNTING, not in turning possessify off. A possessive scan must charge no more work than the backtracking form would on the same input. The fix lane derives the charge and proves the bound against the denied build over the possdiff population and a budget ladder.
+
+**Also stale:** limits.md §7 quotes 581/1,586, while tuning.md §2.1 has the re-measured 394/1,199 (possbuild, 2026-10-07). Both sentences go when this is fixed.
+
+**Check:** [GIVEUP-DIFF] (GIVEUP1 direction-checked, `locate_finish.md` LR-G5) must reach this. Its budget-ladder arm with `--work-budget` on the possessify axes is the arm that sees it. An allowance entry for it would be a blanket excuse of a D158 violation.
+
+**Scheduled:** unscheduled; Frank's call. The leaning is to fix it with or before [GIVEUP-DIFF], so the direction check lands green rather than with an allowance.
+
+---
+
 ## K101 — OPEN (filed 2026-10-09, manager, from lane walksurvey's class "K5" — docs/dev/walk_survey.md §K5, not to be confused with this file's own K5) — PERFORMANCE CLIFF: the caseless folded-run gate restarts every find-all call, a LATENT QUADRATIC
 
 `[OPT-LITSCAN]` S4's two-stream folded required-run arm (`litscan_s4.md` §2.3.4; e.g. `RX_REQ_RUN "434154@0/dfdfdf"` for `(?i)cat`) keeps one pending hit per case variant but sets `fresh = 1` on every call, so both streams are searched from `search_from`. When one variant is ABSENT from the text (the uppercase variant in lowercase prose or logs), its `memchr` runs to `n` on EVERY call, making a find-all `O(n × matches)`. Answers are unaffected; this is time only.

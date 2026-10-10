@@ -1819,7 +1819,7 @@ generated from the path derivation; no REQ_WHY token. *lfre1:* LR-S10 (the
 `"unanchored"` sentence is already false on `pinned` artifacts) and LR-S12 (the size
 ladder) are the rule's two existing casualties, both fixed by stating membership once.
 
-**Q4. The one-way spec sentences.** *Problem:* W1 and the VM-route PRESENCE checks
+**Q4. The one-way spec sentences.** **RULED 2026-10-09: agree (lfre2's form), generalized by Frank to a standing rule: optimizations never reduce any pattern's ability to complete (D158; known violator K102).** *Problem:* W1 and the VM-route PRESENCE checks
 skip attempts the deny arm runs, so a budget-limited call can answer where the deny
 arm gives up (ONE_WAY), and no spec sentence says so; §1.5 now has W1's witness
 (`(\w|\w\w)x$`, `--engine=vm`, step budget 50: default answers, `-fno-end-window`
