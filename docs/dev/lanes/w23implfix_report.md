@@ -55,7 +55,7 @@ FORMAT SPELLINGS at three sites:
 | site | what it is |
 |---|---|
 | `src/parse/rxt_source.c:149` | `config_vocab` carries `{ "testee", 3 }, { "option", 3 }` — leg A RECOGNISES both today and refuses them by name with their wave |
-| `docs/spec/rxt_format.md:57-62` | the later-wave keyword paragraph names both among the keywords *"recognised and refused by name, as NOT IN THIS BUILD"* |
+| `docs/spec/rxt_format.md §1.1` | the later-wave keyword paragraph names both among the keywords *"recognised and refused by name, as NOT IN THIS BUILD"* |
 | `tests/rxtsource/run_rxtsource_tests.sh:1188` | `CENSUS_WORDS_32` lists both, and the list's LENGTH is asserted against the literal `32` at `:1200-1206`, whose failure message reads *"It is format_design §1.1's list verbatim; if it changed, say so there too"* |
 
 So the note's *"Both mechanisms are design-note-only at this pin, which
@@ -75,7 +75,7 @@ five — **MEASURED 0 of 262 files**), the PARSER arm (**MEASURED 1
 today**, and its landing value is that it must read 0 after W23.1 — a
 check whose baseline is zero from the start proves nothing about the
 change that was made), and the SPEC arm, which is a READ, because
-`rxt_format.md:130`'s *"configs are three artifacts with three
+`rxt_format.md §1.3`'s *"configs are three artifacts with three
 prefixes and ONE …"* is legitimate English that no pattern separates
 from a production's spelling.
 

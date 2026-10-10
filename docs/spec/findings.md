@@ -29,7 +29,7 @@
 
 | term | meaning |
 |---|---|
-| analysis (bundle) | one `analysis <name>` block of an `.rxt` file (`rxt_format.md`): at most one data block per kind, and an optional `include <other>` |
+| analysis (bundle) | one `analysis <name>` block of an `.rxt` file (`rxt_format.md` §1.10): at most one data block per kind, and an optional `include <other>` |
 | block | one data block inside a bundle, headed by its kind (`freq`, `cpfreq`), holding COUNTS plus declarations plus provenance |
 | query | what a compiler reader asks. Closed set: `byte-rate`, `run-rarity` |
 | derivation | the named arithmetic turning a block's counts into a query's answer (§3). Closed set; each is legal on its kinds only |
@@ -151,7 +151,7 @@
 <a id="s7"></a>
 ## 7. Resolution: from a name to the chain
 
-<a id="s7-p1"></a>[7¶1] An analysis is named in exactly two places: a `config`'s `analysis <name>` line (`rxt_format.md`; one name, composed later-wins across `from`/`with` like `engine`), and `--analysis NAME` on the command line (or `pcrec_options.analysis`, §9). Names are lowercase: `[a-z][a-z0-9_-]*`.
+<a id="s7-p1"></a>[7¶1] An analysis is named in exactly two places: a `config`'s `analysis <name>` line (`rxt_format.md` §1.1; one name, composed later-wins across `from`/`with` like `engine`), and `--analysis NAME` on the command line (or `pcrec_options.analysis`, §9). Names are lowercase: `[a-z][a-z0-9_-]*`.
 
 <a id="s7-p2"></a>[7¶2] `--analysis` only FILLS. It names the analysis of a `--pattern` compile, and of each target of a file operand whose configs name none. It never overrides a config's own `analysis`; a target whose config names a different one gets the file's, with a non-fatal note on stderr (`cli.md` §1.1's file-wins rule; `--engine` stays its single exception). An experiment is a config VARIANT in the file (`config exp from base` plus `analysis x`, and a target built `with exp`). `--analysis` applies to a compile (a file operand or `--pattern`) and to `--list-analysis FILE`; combined with another query mode it is refused.
 

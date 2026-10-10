@@ -60,7 +60,7 @@ pcrec [options] -o OUT FILE.rxt...
 pcrec [options] -o OUT.c --pattern 'PATTERN'
 ```
 
-<a id="s1-p1"></a>[1¶1] A positional operand is an input file, never a pattern: each must be an existing `.rxt` source (`rxt_format.md`) and every one given is compiled as §1.1 describes, pooled into one invocation. A literal pattern is given with `--pattern 'X'` (§1.3). The two forms do not combine: a file operand together with `--pattern` is refused. `--` ends option parsing, which is how a file name beginning with `-` is passed; any other argument beginning with `-` that is not a known option is refused as an unknown option. An operand that is not an existing file is refused by name, with a message that points at `--pattern`; it is never reinterpreted as a pattern. A compile needs `-o` and either `--pattern` or at least one file operand; everything else defaults. `--source FILE` and `--fast-or-fail` are not options.
+<a id="s1-p1"></a>[1¶1] A positional operand is an input file, never a pattern: each must be an existing `.rxt` source (`rxt_format.md` §1) and every one given is compiled as §1.1 describes, pooled into one invocation. A literal pattern is given with `--pattern 'X'` (§1.3). The two forms do not combine: a file operand together with `--pattern` is refused. `--` ends option parsing, which is how a file name beginning with `-` is passed; any other argument beginning with `-` that is not a known option is refused as an unknown option. An operand that is not an existing file is refused by name, with a message that points at `--pattern`; it is never reinterpreted as a pattern. A compile needs `-o` and either `--pattern` or at least one file operand; everything else defaults. `--source FILE` and `--fast-or-fail` are not options.
 
 <a id="s1-1"></a>
 ### 1.1 A file operand: compiling from `.rxt` sources
@@ -149,7 +149,7 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 <a id="s1-4"></a>
 ### 1.4 `--pattern-esc`
 
-<a id="s1-4-p1"></a>[1.4¶1] Takes the `--pattern` value as double-quoted, escaped text and decodes it before anything else. The vocabulary is the `.rxt` format's subject escapes (`\"` `\\` `\n` `\t` `\r` `\f` `\v` `\xHH`), decoded by the function that decodes a `pattern-esc` block (`rxt_format.md` owns the table).
+<a id="s1-4-p1"></a>[1.4¶1] Takes the `--pattern` value as double-quoted, escaped text and decodes it before anything else. The vocabulary is the `.rxt` format's subject escapes (`\"` `\\` `\n` `\t` `\r` `\f` `\v` `\xHH`), decoded by the function that decodes a `pattern-esc` block (`rxt_format.md` §1.5.1 owns the table).
 
 ```
 pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
@@ -332,12 +332,12 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 <a id="s2-7"></a>
 ### 2.7 `--list-schema`
 
-<a id="s2-7-p1"></a>[2.7¶1] The `.rxt` format's own schema: one row per (scope, line-kind), in two named sections, `schema` and `surface` (the declared non-coverage: what the schema does not claim to validate, and why). `rxt_format.md` ("The schema and its surface") is the column contract. The dump walks the same table the parser enforces. Trailer comments `# schema-rows: N`, `# wave-built: N` and `# wave-reserved: N` give a consumer the table's row total and the wave boundaries.
+<a id="s2-7-p1"></a>[2.7¶1] The `.rxt` format's own schema: one row per (scope, line-kind), in two named sections, `schema` and `surface` (the declared non-coverage: what the schema does not claim to validate, and why). `rxt_format.md` §1.13 is the column contract. The dump walks the same table the parser enforces. Trailer comments `# schema-rows: N`, `# wave-built: N` and `# wave-reserved: N` give a consumer the table's row total and the wave boundaries.
 
 <a id="s2-8"></a>
 ### 2.8 `--list-source FILE`
 
-<a id="s2-8-p1"></a>[2.8¶1] The `.rxt` source file named by the option's value, as written: one row per head declaration and per pattern block in file order, followed by the `#section` blocks `provenance`, `variants`, `cases` and `aux` when non-empty. The column table, the `kind` vocabulary, the escaping rule and the "as written, never resolved" contract are `rxt_format.md`. The file is the option's value because the positional slot is a file operand's (§1), and a positional operand in any query mode is refused. A file that parses but declares no pattern block prints its head rows and exits 0; a file whose head does not parse exits 1 with a diagnostic naming the file, the line and the construct. A resolved view (`--list-source --resolved`) is not built.
+<a id="s2-8-p1"></a>[2.8¶1] The `.rxt` source file named by the option's value, as written: one row per head declaration and per pattern block in file order, followed by the `#section` blocks `provenance`, `variants`, `cases` and `aux` when non-empty. The column table, the `kind` vocabulary, the escaping rule and the "as written, never resolved" contract are `rxt_format.md` §2. The file is the option's value because the positional slot is a file operand's (§1), and a positional operand in any query mode is refused. A file that parses but declares no pattern block prints its head rows and exits 0; a file whose head does not parse exits 1 with a diagnostic naming the file, the line and the construct. A resolved view (`--list-source --resolved`) is not built.
 
 <a id="s2-9"></a>
 ### 2.9 `--list-analyses`, `--list-analysis NAME|FILE`

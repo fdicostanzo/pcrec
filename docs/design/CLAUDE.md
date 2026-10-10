@@ -2349,7 +2349,7 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   and the mechanism had TWO deterministic-failure blockers, both fixed in
   place.** R56-1: the serialization was non-injective (an un-escaped raw TAB
   byte and the literal two-byte sequence `\`+`t` both serialized to the same
-  two characters) — fixed to the `rxt_format.md`:458-474 five-escape
+  two characters) — fixed to the `rxt_format.md` §2.1 five-escape
   TSV-framing subset, backslash escaped FIRST, stated normatively with a
   trailing-backslash test vector. R56-2: `match_limit`/`depth_limit`/
   `heap_limit` join `OracleId.config` (this tree's own `sr_oracle.py`

@@ -630,7 +630,7 @@ never edited afterwards.
   **Second: the withdrawal-absence check grepped the wrong five
   tokens.** `testee`/`option` are LIVE format spellings at three sites
   (`rxt_source.c:149`'s two `config_vocab` rows,
-  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `docs/spec/rxt_format.md §1.1`'s later-wave keyword list, and
   `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
   pinned at 32), so the withdrawal costs four sites and a deliberate
   narrowing rather than "a diff and nothing else" — an absence check

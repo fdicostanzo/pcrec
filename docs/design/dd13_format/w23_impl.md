@@ -374,7 +374,7 @@ grep -rn -- "--list-source\|NF *[!=]= *[0-9]\|cut -f\|IFS=\$'\\\\t'\|awk -F'\\\\
 | **R5** | **`tests/rxtsource/run_rxtsource_tests.sh:479-494`** | **`awk -F'\t' -v want="$ncols" '$2 ~ /^#/ { next } NF != want + 1 { ... }'` — asserts EVERY non-comment row has exactly `ncols+1` fields, unconditionally of kind** | yes (`ncols` derives from `MANIFEST`, which moves in lockstep) | **NO. THIS IS THE `NF != 15` DEFECT, ALIVE, IN THIS REPO, FOUND BY GREP BEFORE LANDING** |
 | **R6** | **`tests/rxtsource/run_rxtsource_tests.sh:499-505`** | **`awk -F'\t' '$2 !~ /^#/ && $2 != "pattern" { n++ }'` and its `== "pattern"` twin at `:500`, asserted ZERO at `:501-505` ("the corpus has no head")** | yes (`$2` is positional from the front) | **NO. IT IS R5'S DEFECT IN THE INEQUALITY DIRECTION, AND A GREEN W23-S4 WOULD PROVE IT BROKEN** |
 | R7 | `tests/rxtsource/run_rxtsource_tests.sh:561-568` | the leg A→B/C projection: explicit positional column selection, `print "block", $1, $3..$13, $17` | **YES for APPENDS** (reads 1-13 and 17); an INSERTED column breaks it silently — which is what `table_contract.md`'s append-only rule exists to forbid | YES (`$2 == "pattern"` filter) |
-| R8 | `docs/spec/rxt_format.md:418-499` | the prose column contract | needs its SW11/SW14 hunk | needs the section column lists |
+| R8 | `docs/spec/rxt_format.md §2` | the prose column contract | needs its SW11/SW14 hunk | needs the section column lists |
 | R9 | `tests/mech/sabotages/S200,S201,S202,S203` | plants whose detectors ARE R4/R5 (and, once repaired, R6) | — | — |
 | — | `tests/harness/verify_rxt.py` | **does NOT read the dump at all** — it refuses a head-bearing file by name (`:407-417`) per the seam ruling | — | — |
 | — | `cli/`, `tools/`, `scripts/` | **no hits** | — | — |
@@ -1336,7 +1336,7 @@ SPELLINGS in the shipped tree, at three sites:**
 1. **`src/parse/rxt_source.c:149`** — `config_vocab` carries
    `{ "testee", 3 }, { "option", 3 }`, so leg A RECOGNISES both today
    and refuses them by name with their wave.
-2. **`docs/spec/rxt_format.md:57-62`** — the later-wave keyword
+2. **`docs/spec/rxt_format.md §1.1`** — the later-wave keyword
    paragraph names `testee` and `option` among the keywords that are
    *"recognised and refused by name, as NOT IN THIS BUILD"*. The
    withdrawal is therefore a SPEC EDIT, not merely an absence.
@@ -1379,7 +1379,7 @@ satisfy.** Three arms, and the third is deliberately not a grep:
   **0** after W23.1. A check whose baseline is zero from the start
   proves nothing about the change that was made.
 - **(c) THE SPEC ARM IS NOT A GREP AND SAYING SO IS THE POINT.**
-  `rxt_format.md:130` already reads *"configs are three artifacts with
+  `rxt_format.md §1.3` already reads *"configs are three artifacts with
   three prefixes and ONE …"* — legitimate English in which `configs` is
   a plural noun — so no pattern separates a withdrawn production's
   spelling from prose about configurations. The obligation is the third

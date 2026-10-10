@@ -626,7 +626,7 @@ this rule is normative:**
 the next non-continuation byte rather than to a position inside the garbage;
 the loop is bounded by `n` rather than by a character's maximum of three
 continuation bytes, which makes the degradation total. The same rule is the
-engine's own retry advance (K49), and `docs/spec/rxt_format.md`'s `mc`
+engine's own retry advance (K49), and `rxt_format.md` §1.7's `mc`
 production states it for a foreign consumer. Verbatim from a
 `-e utf8 -fcomments` artifact:
 
@@ -1126,7 +1126,7 @@ cannot disagree. A run none of whose members participated is an unset name.
 
 <a id="s5-5-p1"></a>[5.5¶1] `pcrec` compiling a `.rxt` source composes: the target pattern's `(?&…)` calls
 bind DEFINITIONS declared in that file or in a file it `lib`s
-(`docs/spec/rxt_format.md`). A single-pattern artifact is unaffected by
+(`rxt_format.md` §1.2). A single-pattern artifact is unaffected by
 everything in this section.
 
 <a id="s5-5-p2"></a>[5.5¶2] **A library's groups are private unless both sides ask.** The DEFINITION lists
