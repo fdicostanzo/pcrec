@@ -9307,6 +9307,12 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Process.** revrev (rev 2, walk-only twin and timing) finishes as briefed; a fresh opus design lane then writes the locate × finish design; a FULL D6 panel reviews it before any `src/` change.
 - **Revisit when** a locator appears whose output is not expressible as one of the typed results.
 
+### D156 addendum 3 — [START-LANDING] Q1: build Λ; DFA tagging is its own row (Frank, 2026-10-09, session 103)
+
+- **RULED: build Λ (the one-character fact) as `landing`'s admission.** The exact condition is not built here. Frank: "if you don't want to crack open the dfa i agree. primarily because once we do, we might also look at 'tagging' states that clearly show a capture group and thats a bigger fish."
+- **The framing that settled it** (Frank's): a DFA failure-and-restart is the same restart a VM's attempt loop makes. It is folded into one transition, so the scan never passes back through idle and the recorded landing goes stale (`ab` on "aab"). Λ is the class where every restart passes through idle. The general form tracks restarts INSIDE the DFA, i.e. tagged-DFA start tracking.
+- **Filed:** [ENG-TDFA] (start tags + capture tags, unscheduled). It subsumes [START-LANDING-EXC]. When built, its start half replaces Λ's admission predicate in place: same `landing` row, same record, no parallel mechanism.
+
 ## D157 — memfn RQ-2 states RARITY AS A RANKED ARRAY, not a second pick (Frank, 2026-10-09, hundred-and-second session)
 
 - **Ruling.** Frank: "that field feels specific. are we proscribing a method when we send the pick2 field? ... what if we sent an ordered array of N possible choices and it could pick2 or whatever it needed?" Then: "i like the general approach". This amends D155 item 3 / Q-R9-3 (a). pcrec does NOT send `mf_pred.plan_pos2` (a second filter position chosen by pcrec with a pcrec-side distance rule). It sends the site's candidate positions, rarest first, each with its prior rate: `rank_n` (0 = no facts), `rank_pos[MF_RANK_MAX]`, `rank_ppm[MF_RANK_MAX]`, appended last in `mf_pred`, under one MF_SITE_ABI bump.

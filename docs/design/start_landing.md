@@ -1493,7 +1493,7 @@ Could another regime flip a decision?
 
 ## 9. Questions for Frank (discussion, each with a leaning and the critics' judgments) `[r2 SL-G7]`
 
-**Q1. The fact: one character now, the excursion condition filed?**
+**Q1. The fact: one character now, the excursion condition filed?** **RULED 2026-10-09 (D156 addendum 3): build Λ. The general form is tagged-DFA restart tracking, filed as [ENG-TDFA] together with capture tags.**
 - *Problem:* the exact condition (§2.3) is a product walk over the emitted machine;
   the one-character fact is an NFA walk.
 - *Forces:* the general form is the house preference (memory
