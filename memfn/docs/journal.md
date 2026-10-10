@@ -1191,3 +1191,14 @@ pointer when a kit change merges to main.
 - slot18 is scripted (memfn-slot/slot18/run.sh): 4 identity sweeps, N2, G2 full,
   make test, 33 mech rows. It waits for seq5's end ("lfl0 CHAIN DONE; seq5 end") and
   main's GO.
+
+## 2026-10-10 ~00:40 — session close (Frank /close)
+
+- Paused while waiting:
+  - R-12: the vmlazy re-merge is prepped at 0517caea (specnum in, abi-72 entry
+    re-homed). slot19 is scripted and waits for lfl0's merge and the NEXT main's
+    GO.
+  - R-13: built at 9348a747; slot18 runs after R-12 lands.
+  - Main reset at ~00:30.
+- wake.md was rewritten on both branches. A responses notice for R-13 is posted.
+  Nothing of the kit's is running on the box.
