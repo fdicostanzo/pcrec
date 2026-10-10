@@ -529,8 +529,8 @@ static void rc_bind(Composer *co, const RxtDef *def)
      * budgets) staying the target's, because those are properties of the
      * ARTIFACT and a definition has no artifact of its own. */
     pcrec_options defopt = *cx->opt;
-    defopt.flags = (defopt.flags & ~(unsigned long long)PCREC_CASELESS)
-                 | (def->flags & (unsigned long long)PCREC_CASELESS);
+    defopt.flags = pcrec_flags_without(defopt.flags, PCREC_CASELESS)
+                 | pcrec_flags_masked(def->flags, PCREC_CASELESS);
 
     cx->pat            = def->pattern;
     cx->patlen         = strlen(def->pattern);

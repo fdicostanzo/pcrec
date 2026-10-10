@@ -149,6 +149,22 @@ else
     bad "varexp_check: $(grep -c '^FAIL' "$OUT5") sub-check(s) failed — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [FLAG-ACCESS] the option word's reader census as a gate: no raw read of
+# `pcrec_options.flags` under src/ cli/ lib/ outside the accessors' own
+# block in src/core/internal.h. A source scan, so it needs no build. See
+# flag_access_check.py's header for the independent control (self-test
+# fixtures + two population floors).
+# ---------------------------------------------------------------------------
+OUT6="$WORKDIR/flag_access_check.out"
+python3 -I "$SCRIPT_DIR/flag_access_check.py" "$ROOT_DIR" | tee "$OUT6"
+bin6_rc="${PIPESTATUS[0]}"
+if [ "$bin6_rc" -eq 0 ]; then
+    ok "flag_access_check: $(tail -1 "$OUT6")"
+else
+    bad "flag_access_check: $(grep -c '^FAIL' "$OUT6") finding(s) — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

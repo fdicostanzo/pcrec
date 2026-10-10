@@ -840,7 +840,7 @@ unsigned pcrec_clskit_deny_of(uint64_t flags)
 {
     unsigned m = 0;
     for (int d = 0; d < CLSD_NDENY; d++)
-        if (DENY_FLAG[d] && (flags & DENY_FLAG[d])) m |= 1u << d;
+        if (DENY_FLAG[d] && pcrec_flags_has(flags, DENY_FLAG[d])) m |= 1u << d;
     return m;
 }
 
@@ -879,7 +879,7 @@ size_t pcrec_clskit_byte_tests(ClsSite site, PcrecAxisCand *out, size_t cap)
  * `-fno-cls-pack` does. */
 unsigned pcrec_clskit_tabdeny_of(uint64_t flags)
 {
-    return (flags & (PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT)) ? 1u << CLSTD_ATOM : 0;
+    return pcrec_flags_has(flags, PCREC_NO_CLS_PACK | PCREC_NO_CLS_KIT) ? 1u << CLSTD_ATOM : 0;
 }
 
 /* How a byte class's test is spelled, read off its `ROWS` choice: the two

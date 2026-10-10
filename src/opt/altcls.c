@@ -333,7 +333,7 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
         br[k] = w;
     }
 
-    if (!(cx->opt->flags & PCREC_NO_ALTCLS_MERGE)) {
+    if (!pcrec_opt_has(cx->opt, PCREC_NO_ALTCLS_MERGE)) {
         Ast **out = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
         size_t m = 0, k = 0;
         while (k < n) {
@@ -363,7 +363,7 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
         n = m;
     }
 
-    if (!(cx->opt->flags & PCREC_NO_ALTCLS_FACTOR)) {
+    if (!pcrec_opt_has(cx->opt, PCREC_NO_ALTCLS_FACTOR)) {
         size_t before = (size_t)cx->job->altcls_factored;
         Ast *factored = altcls_factor_run(cx, br, n, 0);
         if ((size_t)cx->job->altcls_factored != before) any_rewritten = true;

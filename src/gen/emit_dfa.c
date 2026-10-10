@@ -755,7 +755,7 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
     bool trunc;
 
     buf[0] = '\0';
-    if (cx->opt->flags & PCREC_NO_STARTPOS_GUARD) return buf;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_STARTPOS_GUARD)) return buf;
     if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
         if (trunc)
@@ -793,7 +793,7 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
  * check. */
 bool pcrec_utf_check_on(Ctx *cx)
 {
-    return (cx->opt->flags & PCREC_FORCE_UTF_CHECK) &&
+    return pcrec_opt_has(cx->opt, PCREC_FORCE_UTF_CHECK) &&
            pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
                                PCREC_ENCE_VAR_VALID);
 }
@@ -850,7 +850,7 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
     char g[256];
     bool trunc = false;
 
-    if (!(cx->opt->flags & PCREC_FORCE_STARTPOS_ALIGN) ||
+    if (!pcrec_opt_has(cx->opt, PCREC_FORCE_STARTPOS_ALIGN) ||
         !pcrec_enc_start_guard(enc, g, sizeof g, posvar, subjvar, lenvar,
                                &trunc)) {
         char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
@@ -3136,7 +3136,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         const uint64_t strategy_denials = startpos_guard_inert | utf_check_inert |
                                           (axis_bits & ~kept) | PCREC_SIZE_CAP_REFUSE;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
-                  (unsigned long long)(cx->opt->flags & ~strategy_denials));
+                  (unsigned long long)pcrec_flags_without(cx->opt->flags, strategy_denials));
     }
     pcrec_sb_printf(c, "    .encoding = %d,\n", cx->opt->encoding);
     pcrec_sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
@@ -5529,7 +5529,7 @@ static const void *dfa_select(const void *list, size_t n, size_t sz,
     const char *base = (const char *)list;
     for (size_t i = 0; i < n; i++) {
         const DfaCand *cand = (const DfaCand *)(const void *)(base + i * sz);
-        if (cand->deny & flags) continue;
+        if (pcrec_flags_has(flags, cand->deny)) continue;
         if (cand->applies(s)) return (const void *)(base + i * sz);
     }
     return NULL;
@@ -8271,7 +8271,7 @@ bool pcrec_dfa_landing_guard(Ctx *cx)
     if (!pcrec_artifact_has_dfa_scan(cx) || !cand_recover_asked(cx)) return false;
     if (dfa_search_act(cx) != CRA_LANDING) return false;
     if (!pcrec_fact_land_char(cx)->wide) return false;
-    if (cx->opt->flags & PCREC_FORCE_UTF_CHECK) return false;
+    if (pcrec_opt_has(cx->opt, PCREC_FORCE_UTF_CHECK)) return false;
     if (!pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding), PCREC_ENCE_DECODE))
         pcrec_ctx_fail(cx, 0, "internal error: the landing guard is owed under an "
                        "encoding with no DECODE entry (start_landing.md §2.5.1)");
@@ -9033,7 +9033,7 @@ static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flag
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         if (r->slot != slot) continue;
-        if (r->c.deny & flags) continue;
+        if (pcrec_flags_has(flags, r->c.deny)) continue;
         if (!(r->routes & CAND_ON(s->route))) continue;
         if ((CN(slot) & CAND_HANDED_SLOTS) && !cand_takes(r, s)) continue;
         if (r->c.applies(s)) return r;
@@ -12612,7 +12612,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * read "guarded" on an artifact that carries none. */
         char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
         const PcrecEnc *sp_enc = pcrec_enc_by_id(cx->opt->encoding);
-        const bool sp_align = (cx->opt->flags & PCREC_FORCE_STARTPOS_ALIGN) &&
+        const bool sp_align = pcrec_opt_has(cx->opt, PCREC_FORCE_STARTPOS_ALIGN) &&
                               sp_enc && sp_enc->start_guard;
         pcrec_sb_stamp_str(c, g->upper, "STARTPOS_GUARD",
                      sp_align ? "align"
@@ -12808,11 +12808,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     }
     if (need_string_h)
         pcrec_sb_puts(c, "#include <string.h>\n");
-    if (cx->opt->flags & PCREC_EMIT_MAIN)
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
         pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     /* [MEMFN] R4c the kit's text needs no header this did not declare (§14.8;
      * asserted at the attempt's end, `pcrec_memfn_art_end`). */
-    cx->job->string_h = need_string_h || (cx->opt->flags & PCREC_EMIT_MAIN);
+    cx->job->string_h = need_string_h || pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN);
     pcrec_sb_puts(c, "\n");
     /* [OPT-LITSCAN] S4 the word-load helpers a VM body's run compares use
      * (the body is written before this prologue, so its widths are known);
@@ -13268,7 +13268,7 @@ void pcrec_emit_dfa(Ctx *cx)
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
 
-    if (cx->opt->flags & PCREC_EMIT_MAIN)
+    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
         pcrec_emit_main(cx, &g);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */

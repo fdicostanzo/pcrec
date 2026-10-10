@@ -506,7 +506,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
      * computed from it. Returning here is what makes the denied build the
      * control rather than a fourth variant of it. */
     for (int i = 0; i < n; i++) { cg->splice[i] = false; cg->exp[i] = PCREC_MINW_MAX; }
-    if (cx->opt->flags & PCREC_NO_SPLICE_CALLS) return;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_SPLICE_CALLS)) return;
 
     /* Nodes per region, and the cycles settled first. */
     long long *nodes = pcrec_arena_alloc(&cx->arena, nn * sizeof *nodes);

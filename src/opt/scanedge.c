@@ -543,9 +543,9 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds, bool end_is_exi
      * SOUNDNESS gate is this one: with the pass off, no state carries an
      * annotation and no state has been deleted, so the artifact is the one
      * the pre-[OPT-5] compiler emitted, byte for byte. */
-    if (cx->opt->flags & PCREC_NO_SCAN_EDGE) return;
+    if (pcrec_opt_has(cx->opt, PCREC_NO_SCAN_EDGE)) return;
     if (d->n <= 0 || d->ncls < 2) return;
-    bool vedge = !(cx->opt->flags & PCREC_NO_VIEW_EDGE);
+    bool vedge = !pcrec_opt_has(cx->opt, PCREC_NO_VIEW_EDGE);
     bool end_view_ok = vedge && end_is_exit;
 
     int    n     = d->n;
