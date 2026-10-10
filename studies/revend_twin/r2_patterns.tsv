@@ -1,0 +1,23 @@
+# name	encoding	eol(1 for $ / \Z, 0 for \z)	pattern
+# revision 2 (lane revrev) additions to patterns.tsv: the X1 dead-seed shapes
+# (a trailing lookaround the end_pin fact admits), the TIE witnesses (both
+# seeds reach s*: a pattern that can consume the final newline), and the
+# widest DFA-routed bound (`[a-z]{0,8192}\z` already falls back to the VM).
+x1-dla	byte	1	\d+$(?=\n)
+x1-dnla	byte	1	\d$(?!\n)
+x1-aZla	byte	1	a\Z(?=\n)
+x1-snla	byte	1	\s+$(?=\n)
+x1-xndot	byte	1	x$(?!.)
+x1-wzlb	byte	0	\w+\z(?<=z)
+tie-slazy	byte	1	\s*?$
+tie-splazy	byte	1	\s+?$
+tie-sstar	byte	1	\s*$
+tie-anylazy	byte	1	[\s\S]*?$
+tie-any	byte	1	[\s\S]*$
+tie-sdot	byte	1	(?s).*$
+tie-sdotlazy	byte	1	(?s).*?$
+tie-nlopt	byte	1	a\n?$
+tie-nlalt	byte	1	(?:\n|a)+$
+tie-mix	byte	1	\s*$|x\z
+tie-utf8	utf8	1	\s+?$
+wide-4096	byte	0	[a-z]{0,4096}\z

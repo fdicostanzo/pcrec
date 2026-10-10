@@ -1,0 +1,9 @@
+# cpu=2 sibling=10 2026-10-09T17:46:06-04:00 frank-desktop gcc 15.2.0 governor=performance
+# pass 1 start 2026-10-09T17:51:15-04:00 load1=2.98 waited=10x30s
+# pass 2 start 2026-10-09T17:53:47-04:00 load1=1.97 waited=5x30s
+# pass 3 start 2026-10-09T17:54:18-04:00 load1=1.38 waited=1x30s
+# pass 4 start 2026-10-09T17:54:20-04:00 load1=1.38 waited=0x30s
+# pass 5 start 2026-10-09T17:54:22-04:00 load1=1.38 waited=0x30s
+# pass 6 start 2026-10-09T17:54:24-04:00 load1=1.35 waited=0x30s
+# pass 7 start 2026-10-09T17:54:26-04:00 load1=1.35 waited=0x30s
+== run_r2_timing COMPLETE 2026-10-09T17:54:27-04:00 answer-diffs=0

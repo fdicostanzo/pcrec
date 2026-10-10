@@ -1,0 +1,12 @@
+# [OPT-REVEND] r2: cost of an UNUSED tie arm on \d+$ (nl_last is false, so T1 emits none).
+# C(tie arm) = mktwin walk (always emits the anchored tie arm); C(no tie arm) = mktwin walk TWIN_SABOTAGE=tien (the tie line is a plain assignment, never taken here: \d+$ cannot tie).
+# taskset -c 2, timedrv4 100000 31, 3 launches per subject; 2026-10-09T17:55:18-04:00 load1=0.76
+t-tail-txt-1m span=-1,-1 C(tie_arm)_med=3.3 C(no_tie_arm)_med=2.6
+t-tail-txt-1m span=-1,-1 C(tie_arm)_med=3.3 C(no_tie_arm)_med=2.6
+t-tail-txt-1m span=-1,-1 C(tie_arm)_med=3.3 C(no_tie_arm)_med=2.6
+t-tail-digits-1m span=1048519,1048527 C(tie_arm)_med=6.2 C(no_tie_arm)_med=5.3
+t-tail-digits-1m span=1048519,1048527 C(tie_arm)_med=7.1 C(no_tie_arm)_med=6.4
+t-tail-digits-1m span=1048519,1048527 C(tie_arm)_med=7.1 C(no_tie_arm)_med=6.4
+t-1m span=1048514,1048516 C(tie_arm)_med=6.2 C(no_tie_arm)_med=5.5
+t-1m span=1048514,1048516 C(tie_arm)_med=6.2 C(no_tie_arm)_med=5.5
+t-1m span=1048514,1048516 C(tie_arm)_med=6.2 C(no_tie_arm)_med=5.5

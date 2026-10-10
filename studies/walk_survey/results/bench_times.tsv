@@ -1,0 +1,896 @@
+set	pattern	regime	pcrec_caps_ns	pcrec_nocaps_ns	best_other_ns	best_other
+altwide	ci-256	match	1077.30087		1070.623111	rust_1.13.1_default-caps-simdna
+altwide	ci-256	search_short	7373.765526		13783.770672	rust_1.13.1_default-caps-simdna
+altwide	ci-256	throughput	2896722.158879		74735115.5	rust_1.13.1_default-caps-simdna
+altwide	ci-512	match	1538.661049		1203.402596	rust_1.13.1_default-caps-simdna
+altwide	ci-512	search_short	13466.328751		18523.038587	rust_1.13.1_default-caps-simdna
+altwide	ci-512	throughput	4104419.37037		493682127.0	rust_1.13.1_default-caps-simdna
+altwide	clsa-1024	match			591.787483	rust_1.13.1_default-caps-simdna
+altwide	clsa-1024	search_short			26884.510388	rust_1.13.1_default-caps-simdna
+altwide	clsa-1024	throughput			1221849773.0	libpcre2_10.46_jit-caps-simdna
+altwide	clsa-256	match	989.079503		580.485525	rust_1.13.1_default-caps-simdna
+altwide	clsa-256	search_short	8171.180985		11830.763338	rust_1.13.1_default-caps-simdna
+altwide	clsa-256	throughput	2899974.122807		65692668.0	rust_1.13.1_default-caps-simdna
+altwide	clsa-64	match	496.436958		566.697209	rust_1.13.1_default-caps-simdna
+altwide	clsa-64	search_short	7839.176491		9402.674766	rust_1.13.1_default-caps-simdna
+altwide	clsa-64	throughput	3398990.47		2197204.975	rust_1.13.1_default-caps-simdna
+altwide	clsd-1024	match			591.873252	rust_1.13.1_default-caps-simdna
+altwide	clsd-1024	search_short			29550.621638	rust_1.13.1_default-caps-simdna
+altwide	clsd-1024	throughput			1227691854.0	libpcre2_10.46_jit-caps-simdna
+altwide	clsd-256	match	978.217565		582.324524	rust_1.13.1_default-caps-simdna
+altwide	clsd-256	search_short	8372.641932		11308.83571	rust_1.13.1_default-caps-simdna
+altwide	clsd-256	throughput	2903690.956897		64411331.0	rust_1.13.1_default-caps-simdna
+altwide	clsd-64	match	504.676601		570.820139	rust_1.13.1_default-caps-simdna
+altwide	clsd-64	search_short	8060.535331		11149.916015	rust_1.13.1_default-caps-simdna
+altwide	clsd-64	throughput	3405165.479592		2348142.72093	rust_1.13.1_default-caps-simdna
+altwide	cnt-64	match	1849.406602		965.286098	rust_1.13.1_default-caps-simdna
+altwide	cnt-64	search_short	11729.994959		10128.315159	rust_1.13.1_default-caps-simdna
+altwide	cnt-64	throughput	3488511.959184		2215078.801587	rust_1.13.1_default-caps-simdna
+altwide	floor	match	432.589941		226.343897	rust_1.13.1_default-caps-simdna
+altwide	floor	search_short	542.566891		1761.889485	libpcre2_10.46_jit-caps-simdna
+altwide	floor	throughput	15384.768033		15598.764679	rust_1.13.1_default-caps-simdna
+altwide	nar4-256	match	453.427961		621.862878	rust_1.13.1_default-caps-simdna
+altwide	nar4-256	search_short	4429.699681		10399.057864	rust_1.13.1_default-caps-simdna
+altwide	nar4-256	throughput	1800968.734104		1761531.022727	rust_1.13.1_default-caps-simdna
+altwide	nar4-512	match	840.061903		622.632424	rust_1.13.1_default-caps-simdna
+altwide	nar4-512	search_short	5749.671759		10395.807119	rust_1.13.1_default-caps-simdna
+altwide	nar4-512	throughput	2037534.802548		1890665.666667	rust_1.13.1_default-caps-simdna
+altwide	nar4-64	match	457.348207		622.019805	rust_1.13.1_default-caps-simdna
+altwide	nar4-64	search_short	4510.432019		5244.375452	rust_1.13.1_default-caps-simdna
+altwide	nar4-64	throughput	1910195.150289		657758.757576	rust_1.13.1_default-caps-simdna
+altwide	pfx3-256	match	461.626666		533.448951	rust_1.13.1_default-caps-simdna
+altwide	pfx3-256	search_short	1016.876224		4007.297748	rust_1.13.1_default-caps-simdna
+altwide	pfx3-256	throughput	306618.198661		366444.861689	libpcre2_10.46_jit-caps-simdna
+altwide	pfx3-512	match	805.883915		533.401422	rust_1.13.1_default-caps-simdna
+altwide	pfx3-512	search_short	1014.530681		7652.601565	libpcre2_10.46_jit-caps-simdna
+altwide	pfx3-512	throughput	306914.274839		812979.55102	libpcre2_10.46_jit-caps-simdna
+altwide	s-2048	match			548.402831	rust_1.13.1_default-caps-simdna
+altwide	s-2048	search_short	15099.516247		10616.413047	rust_1.13.1_default-caps-simdna
+altwide	s-2048	throughput	4861426.230769		9737020.833333	rust_1.13.1_default-caps-simdna
+altwide	s-256	match	469.121393		541.350385	rust_1.13.1_default-caps-simdna
+altwide	s-256	search_short	8245.884283		10581.500482	rust_1.13.1_default-caps-simdna
+altwide	s-256	throughput	2894134.982143		2193514.681818	rust_1.13.1_default-caps-simdna
+altwide	s-4096	match			648.435104	rust_1.13.1_default-caps-simdna
+altwide	s-4096	search_short			23656.878054	rust_1.13.1_default-caps-simdna
+altwide	s-4096	throughput			8261255.4	rust_1.13.1_default-caps-simdna
+altwide	s-512	match	455.538004		542.66106	rust_1.13.1_default-caps-simdna
+altwide	s-512	search_short	8252.019524		10582.573018	rust_1.13.1_default-caps-simdna
+altwide	s-512	throughput	3182931.27451		3526350.0	rust_1.13.1_default-caps-simdna
+altwide	sfx-256	match	470.831681		545.241049	rust_1.13.1_default-caps-simdna
+altwide	sfx-256	search_short	1191.525377		10286.048696	rust_1.13.1_default-caps-simdna
+altwide	sfx-256	throughput	2957770.127273		2257277.571429	rust_1.13.1_default-caps-simdna
+altwide	sfx-512	match	605.763056		544.562564	rust_1.13.1_default-caps-simdna
+altwide	sfx-512	search_short	1188.752567		10286.143026	rust_1.13.1_default-caps-simdna
+altwide	sfx-512	throughput	3247703.443299		3610007.333333	rust_1.13.1_default-caps-simdna
+altwide	sfx-64	match	462.110444		542.882753	rust_1.13.1_default-caps-simdna
+altwide	sfx-64	search_short	1188.020076		5771.084985	rust_1.13.1_default-caps-simdna
+altwide	sfx-64	throughput	3226682.137255		849092.641732	rust_1.13.1_default-caps-simdna
+altwide	sh1-256	match	459.619104		611.034657	rust_1.13.1_default-caps-simdna
+altwide	sh1-256	search_short	1500.444444		10284.914622	rust_1.13.1_default-caps-simdna
+altwide	sh1-256	throughput	498191.224678		1676501.171053	rust_1.13.1_default-caps-simdna
+altwide	sh1-512	match	780.180653		613.936796	rust_1.13.1_default-caps-simdna
+altwide	sh1-512	search_short	1517.17256		10292.316606	rust_1.13.1_default-caps-simdna
+altwide	sh1-512	throughput	555129.942094		1722676.830508	rust_1.13.1_default-caps-simdna
+altwide	sh1-64	match	423.848295		612.48584	rust_1.13.1_default-caps-simdna
+altwide	sh1-64	search_short	1472.483146		4637.220422	rust_1.13.1_default-caps-simdna
+altwide	sh1-64	throughput	452374.88253		755843.769737	rust_1.13.1_default-caps-simdna
+altwide	srt-256	match	1061.995923		900.657996	rust_1.13.1_default-caps-simdna
+altwide	srt-256	search_short	7613.713835		11967.325991	rust_1.13.1_default-caps-simdna
+altwide	srt-256	throughput	2907081.424779		2269539.952381	rust_1.13.1_default-caps-simdna
+altwide	srt-512	match	1490.155622		1014.332029	rust_1.13.1_default-caps-simdna
+altwide	srt-512	search_short	13685.782047		12628.897213	rust_1.13.1_default-caps-simdna
+altwide	srt-512	throughput	4097687.617284		3525817.615385	rust_1.13.1_default-caps-simdna
+altwide	w-1024	match			1016.401096	rust_1.13.1_default-caps-simdna
+altwide	w-1024	search_short			12427.563737	rust_1.13.1_default-caps-simdna
+altwide	w-1024	throughput			6116305.75	rust_1.13.1_default-caps-simdna
+altwide	w-128	match	490.379727		781.488922	rust_1.13.1_default-caps-simdna
+altwide	w-128	search_short	7586.142158		11324.425803	rust_1.13.1_default-caps-simdna
+altwide	w-128	throughput	3114253.477064		1799906.112903	rust_1.13.1_default-caps-simdna
+altwide	w-192	match	492.936218		781.550263	rust_1.13.1_default-caps-simdna
+altwide	w-192	search_short	7591.733337		11402.542317	rust_1.13.1_default-caps-simdna
+altwide	w-192	throughput	3115150.357798		1983246.239264	rust_1.13.1_default-caps-simdna
+altwide	w-2048	match			1147.163587	rust_1.13.1_default-caps-simdna
+altwide	w-2048	search_short			12442.733919	rust_1.13.1_default-caps-simdna
+altwide	w-2048	throughput			10062631.0	rust_1.13.1_default-caps-simdna
+altwide	w-256	match	1059.713963		904.857336	rust_1.13.1_default-caps-simdna
+altwide	w-256	search_short	7621.305824		11936.419024	rust_1.13.1_default-caps-simdna
+altwide	w-256	throughput	2904399.681818		2247125.863636	rust_1.13.1_default-caps-simdna
+altwide	w-384	match	1431.130205		903.808096	rust_1.13.1_default-caps-simdna
+altwide	w-384	search_short	7638.297844		11975.035142	rust_1.13.1_default-caps-simdna
+altwide	w-384	throughput	3021117.190909		2842112.375	rust_1.13.1_default-caps-simdna
+altwide	w-512	match	1491.547409		1030.256048	rust_1.13.1_default-caps-simdna
+altwide	w-512	search_short	13718.807195		12672.258921	rust_1.13.1_default-caps-simdna
+altwide	w-512	throughput	4098028.95		3520906.923077	rust_1.13.1_default-caps-simdna
+altwide	w-64	match	514.147963		780.880245	rust_1.13.1_default-caps-simdna
+altwide	w-64	search_short	7432.182264		10055.799876	rust_1.13.1_default-caps-simdna
+altwide	w-64	throughput	3413623.83		2218165.732283	rust_1.13.1_default-caps-simdna
+altwide	w-8	match	454.139078		775.513637	rust_1.13.1_default-caps-simdna
+altwide	w-8	search_short	4627.956692		2746.199338	rust_1.13.1_default-caps-simdna
+altwide	w-8	throughput	2255481.513333		194929.057554	rust_1.13.1_default-caps-simdna
+altwide	w-96	match	510.70883		780.128428	rust_1.13.1_default-caps-simdna
+altwide	w-96	search_short	7583.460496		11454.126961	rust_1.13.1_default-caps-simdna
+altwide	w-96	throughput	3132499.481132		1736660.213542	rust_1.13.1_default-caps-simdna
+altwide	wb-256	match	1075.974618		906.982976	rust_1.13.1_default-caps-simdna
+altwide	wb-256	search_short	10113.839465		11268.312892	rust_1.13.1_default-caps-simdna
+altwide	wb-256	throughput	3087194.155963		1887843.722222	rust_1.13.1_default-caps-simdna
+altwide	wb-512	match	1473.675459		1015.451406	rust_1.13.1_default-caps-simdna
+altwide	wb-512	search_short	14721.989847		11961.230062	rust_1.13.1_default-caps-simdna
+altwide	wb-512	throughput	3987729.566265		2232315.565217	rust_1.13.1_default-caps-simdna
+bounded	cls-atleast-4096	match	7767.647195		275.647149	rust_1.13.1_default-caps-simdna
+bounded	cls-atleast-4096	search_short	2313.789365		258.697804	rust_1.13.1_default-caps-simdna
+bounded	cls-atleast-4096	throughput	87649.79699		59554.766088	libpcre2_10.46_jit-caps-simdna
+bounded	cls-lazy-16384	match	8733.643358		10658.387086	rust_1.13.1_default-caps-simdna
+bounded	cls-lazy-16384	search_short	338.965353		1999.642737	libpcre2_10.46_jit-caps-simdna
+bounded	cls-lazy-16384	throughput	347545.136943		4265584.207317	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-1024	match	4835.312758		6924.447128	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-1024	search_short	1020.422434		2565.862208	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-1024	throughput	143065.749183		797109.482883	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-128	match	2042.977965		2796.683914	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-128	search_short	869.590184		2292.380186	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-128	throughput	154548.308306		885284.881707	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-16	match	713.074777		953.781707	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-16	search_short	534.593365		2012.363357	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-16	throughput	191513.549237		1000453.260997	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-16384	match	1935.497123		6965.9354	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-16384	search_short	1006.272169		2532.037648	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-16384	throughput	141753.390341		815782.204433	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-2048	match	12443.851047		6915.414294	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-2048	search_short	1021.224657		2557.330876	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-2048	throughput	142498.997582		856141.665597	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-256	match	2992.974739		3922.437999	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-256	search_short	1022.164463		2488.373523	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-256	throughput	148053.656873		829804.40597	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-32	match	967.130406		1331.979163	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-32	search_short	599.875358		2068.748675	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-32	throughput	177361.136693		959043.888128	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-32768	match	1939.695876		6904.657086	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-32768	search_short	1114.847328		2592.724952	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-32768	throughput	184123.863521		855994.410296	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-4	match	550.312722		466.293458	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-4	search_short	471.348653		2013.959456	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-4	throughput	226799.17801		1652830.980892	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-4096	match	12442.066172		6926.432789	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-4096	search_short	1009.251084		2464.819611	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-4096	throughput	142065.391289		793850.742975	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-512	match	3904.309081		6444.879084	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-512	search_short	1020.506757		2527.083583	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-512	throughput	144952.888808		865523.94788	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-64	match	1469.780148		2192.29059	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-64	search_short	742.959026		2266.919635	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-64	throughput	178566.083424		914361.229508	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-65535	match			6928.72881	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-65535	search_short			2514.341969	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-65535	throughput			793722.966283	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-8	match	591.688402		687.184936	rust_1.13.1_default-caps-simdna
+bounded	cls-upto-8	search_short	495.364094		2025.936392	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-8	throughput	198848.978072		1196797.286982	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-8192	match	1935.82328		6946.856947	libpcre2_10.46_interp-caps-simdna
+bounded	cls-upto-8192	search_short	1006.829256		2493.988441	libpcre2_10.46_jit-caps-simdna
+bounded	cls-upto-8192	throughput	141848.364099		795646.813856	libpcre2_10.46_jit-caps-simdna
+bounded	csv5	match	1998.071636		2282.930783	libpcre2_10.46_jit-caps-simdna
+bounded	csv5	search_short	992.604829		6058.842129	libpcre2_10.46_jit-caps-simdna
+bounded	csv5	throughput	1671.849708		1807.41108	libpcre2_10.46_interp-caps-simdna
+bounded	ctx-greedy-256	match	669.49255		1759.44319	rust_1.13.1_default-caps-simdna
+bounded	ctx-greedy-256	search_short	6016.18509		5066.312806	libpcre2_10.46_jit-caps-simdna
+bounded	ctx-greedy-256	throughput	160151.068045		22174.209626	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-1024	match	1500.488302		1751.016997	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-1024	search_short	7800.787402		6200.218074	libpcre2_10.46_jit-caps-simdna
+bounded	ctx-lazy-1024	throughput	162074.265658		22705.615269	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-256	match	1505.653726		1733.716244	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-256	search_short	7793.612964		6254.889148	libpcre2_10.46_jit-caps-simdna
+bounded	ctx-lazy-256	throughput	162057.153911		22137.492513	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-64	match	1235.576531		1306.347196	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-64	search_short	7420.019481		3438.761844	rust_1.13.1_default-caps-simdna
+bounded	ctx-lazy-64	throughput	162069.632888		22039.477662	rust_1.13.1_default-caps-simdna
+bounded	dig-exact-16	match	708.466641		898.124188	rust_1.13.1_default-caps-simdna
+bounded	dig-exact-16	search_short	2145.950593		4063.650156	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-16	throughput	64392.112483		96414.847908	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-2	match	526.916726		558.655527	rust_1.13.1_default-caps-simdna
+bounded	dig-exact-2	search_short	934.483941		2495.949412	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-2	throughput	103075.285589		448526.209591	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-32	match	888.947757		758.477908	rust_1.13.1_default-caps-simdna
+bounded	dig-exact-32	search_short	2165.589511		3819.818398	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-32	throughput	69113.919754		71914.341434	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-8	match	600.975737		842.137195	rust_1.13.1_default-caps-simdna
+bounded	dig-exact-8	search_short	1933.654063		3773.720067	libpcre2_10.46_jit-caps-simdna
+bounded	dig-exact-8	throughput	72993.914083		145772.028306	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-16	match	750.00232		2173.659695	rust_1.13.1_default-caps-simdna
+bounded	dig-upto-16	search_short	1303.601006		2699.238317	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-16	throughput	76503.077135		116338.038066	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-2	match	549.636457		665.669382	rust_1.13.1_default-caps-simdna
+bounded	dig-upto-2	search_short	1033.140257		2590.954559	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-2	throughput	141807.047489		463733.201083	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-32	match	947.908077		3047.343181	rust_1.13.1_default-caps-simdna
+bounded	dig-upto-32	search_short	1411.584444		2750.343922	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-32	throughput	68735.055596		89293.844807	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-4	match	560.285054		1019.869895	rust_1.13.1_default-caps-simdna
+bounded	dig-upto-4	search_short	1184.553584		2602.161114	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-4	throughput	123345.053492		259140.126394	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-8	match	627.169339		1598.605625	rust_1.13.1_default-caps-simdna
+bounded	dig-upto-8	search_short	1234.078475		2636.210147	libpcre2_10.46_jit-caps-simdna
+bounded	dig-upto-8	throughput	90234.639943		163721.514803	libpcre2_10.46_jit-caps-simdna
+bounded	dotted4	match	586.080943		934.995081	rust_1.13.1_default-caps-simdna
+bounded	dotted4	search_short	1228.946962		3155.730489	libpcre2_10.46_jit-caps-simdna
+bounded	dotted4	throughput	1664.384978		34566.690202	libpcre2_10.46_jit-caps-simdna
+bounded	floor	match	511.684032		294.639447	rust_1.13.1_default-caps-simdna
+bounded	floor	search_short	473.734714		1086.247992	rust_1.13.1_default-caps-simdna
+bounded	floor	throughput	1686.841414		1753.905441	rust_1.13.1_default-caps-simdna
+bounded	grp-upto-1024	match	4843.332485		10810.617873	rust_1.13.1_default-caps-simdna
+bounded	grp-upto-1024	search_short	1020.664171		4568.128812	libpcre2_10.46_jit-caps-simdna
+bounded	grp-upto-1024	throughput	143532.861343		1110564.332248	libpcre2_10.46_jit-caps-simdna
+bounded	hex32	match	982.083462		753.801633	rust_1.13.1_default-caps-simdna
+bounded	hex32	search_short	2823.80245		4985.972877	libpcre2_10.46_jit-caps-simdna
+bounded	hex32	throughput	268323.14822		254111.883277	rust_1.13.1_default-caps-simdna
+bounded	line-80	match	5444.594234		9784.676362	libpcre2_10.46_interp-caps-simdna
+bounded	line-80	search_short	3790.006591		2928.904783	libpcre2_10.46_jit-caps-simdna
+bounded	line-80	throughput	75429.251109		32186.866592	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-4	match	750.349863		2172.530065	rust_1.13.1_default-caps-simdna
+bounded	nest2-4	search_short	1304.001822		2739.66366	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-4	throughput	76302.614242		105773.021312	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-64	match	2352.171894		7681.830372	libpcre2_10.46_interp-caps-simdna
+bounded	nest2-64	search_short	1697.844674		3021.787429	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-64	throughput	62503.585979		72778.235878	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-letters-6	match	1209.414589		1580.661997	rust_1.13.1_default-caps-simdna
+bounded	nest2-letters-6	search_short	1214.85577		2662.360588	libpcre2_10.46_jit-caps-simdna
+bounded	nest2-letters-6	throughput	159412.473456		176067.490772	libpcre2_10.46_jit-caps-simdna
+bounded	nest3-16	match	4009.718899		12675.664037	libpcre2_10.46_interp-caps-simdna
+bounded	nest3-16	search_short	1705.240328		3036.019152	libpcre2_10.46_jit-caps-simdna
+bounded	nest3-16	throughput	62412.804598		54184.937164	libpcre2_10.46_jit-caps-simdna
+bounded	nest3-3	match	900.181222		2553.689783	rust_1.13.1_default-caps-simdna
+bounded	nest3-3	search_short	1387.679503		2777.485747	libpcre2_10.46_jit-caps-simdna
+bounded	nest3-3	throughput	69343.796811		86418.216238	libpcre2_10.46_jit-caps-simdna
+bounded	pw-8-64	match	3505.319663		6930.298875	rust_1.13.1_default-caps-simdna
+bounded	pw-8-64	search_short	3004.92802		2664.068031	libpcre2_10.46_jit-caps-simdna
+bounded	pw-8-64	throughput	192398.467532		129626.817719	libpcre2_10.46_jit-caps-simdna
+bounded	year4	match	542.913578		669.196874	rust_1.13.1_default-caps-simdna
+bounded	year4	search_short	1770.336522		3501.83441	libpcre2_10.46_jit-caps-simdna
+bounded	year4	throughput	96800.275839		245762.949812	libpcre2_10.46_jit-caps-simdna
+email	factored	match	73263.689743		1834922.820908	libpcre2_10.46_interp-caps-simdna
+email	factored	search_short	4041.849662		15279.96186	libpcre2_10.46_jit-caps-simdna
+email	factored	throughput	7027725.299202		498628352.589744	libpcre2_10.46_interp-caps-simdna
+email	floor	match	891.868324		592.351754	rust_1.13.1_default-caps-simdna
+email	floor	search_short	1346.472119		3401.223923	libpcre2_10.46_jit-caps-simdna
+email	floor	throughput	698959.788416		850311.772388	rust_1.13.1_default-caps-simdna
+email	orig	match	73137.976781		121264.225537	rust_1.13.1_default-caps-simdna
+email	orig	search_short	3710.395603		6156.693601	libpcre2_10.46_jit-caps-simdna
+email	orig	throughput	7054261.410738		13914222.96	rust_1.13.1_default-caps-simdna
+litrun	alt-foo-tails	match	334.637838		1342.72616	libpcre2_10.46_jit-caps-simdna
+litrun	alt-foo-tails	search_short	371.175529		1088.951904	libpcre2_10.46_jit-caps-simdna
+litrun	alt-foo-tails	throughput	557027.323551		67761.818691	libpcre2_10.46_jit-caps-simdna
+litrun	ctrl-abc-dollar	match	311.092184		1585.15034	libpcre2_10.46_jit-caps-simdna
+litrun	ctrl-abc-dollar	search_short	409.783052		1178.420562	libpcre2_10.46_jit-caps-simdna
+litrun	ctrl-abc-dollar	throughput	454.378893		1218418.777566	libpcre2_10.46_jit-caps-simdna
+litrun	floor	match	282.002222		796.147215	libpcre2_10.46_jit-caps-simdna
+litrun	floor	search_short	240.676504		1025.725673	libpcre2_10.46_jit-caps-simdna
+litrun	floor	throughput	3135968.289409		8697331.216828	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l10	match	343.286975		1160.685282	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l10	search_short	444.556162		1254.690521	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l10	throughput	1091127.364912		1128879.94647	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l16	match	369.471614		1077.107332	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l16	search_short	554.975303		1064.598705	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l16	throughput	1013290.782692		580786.320916	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l2	match	296.875262		1614.823291	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l2	search_short	501.746503		1243.531073	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l2	throughput	3373686.064815		7864388.690987	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l3	match	310.037765		1602.142108	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l3	search_short	494.19915		1134.552152	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l3	throughput	3427996.730072		5453881.343077	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l31	match	411.731368		976.445858	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l31	search_short	899.602181		1098.018399	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l31	throughput	849313.654092		310440.348111	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l4	match	303.747291		1477.464111	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l4	search_short	435.426267		1117.666785	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l4	throughput	3146295.57563		3768922.730014	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l40	match	438.320098		802.092962	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l40	search_short	971.428853		1090.892445	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l40	throughput	457578.654668		143007.036124	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l7	match	325.897616		1366.848558	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l7	search_short	480.802196		1160.072011	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l7	throughput	3236083.8		2705146.350282	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l8	match	320.333426		1254.849813	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l8	search_short	471.243337		1111.025597	libpcre2_10.46_jit-caps-simdna
+litrun	lit-l8	throughput	2856360.372822		1763074.092238	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-aws-access-key-id	match	342.644551		1018.699097	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-aws-access-key-id	search_short	1355.775688		1134.406661	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-aws-access-key-id	throughput	825885.691344		155516.431625	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-github-pat	match	355.422409		1265.422046	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-github-pat	search_short	1497.045638		1267.972155	libpcre2_10.46_jit-caps-simdna
+litrun	wild-secrets-github-pat	throughput	29988.091249		67806.151054	libpcre2_10.46_jit-caps-simdna
+loglines	bignum	search_short	430277.218281		395913.648097	libpcre2_10.46_jit-caps-simdna
+loglines	bignum	throughput	13192391.358209		11382589.670732	libpcre2_10.46_jit-caps-simdna
+loglines	floor	search_short	2029.103333		4976.571523	libpcre2_10.46_jit-caps-simdna
+loglines	floor	throughput	2974997.318681		4168307.092683	rust_1.13.1_default-caps-simdna
+loglines	hex32-id	search_short	433652.548015		294679.269714	rust_1.13.1_default-caps-simdna
+loglines	hex32-id	throughput	13179275.477612		7465417.411765	rust_1.13.1_default-caps-simdna
+loglines	http-5xx	search_short	4960.404709		15746.826814	rust_1.13.1_default-caps-simdna
+loglines	http-5xx	throughput	285722.508326		443901.317308	rust_1.13.1_default-caps-simdna
+loglines	ipv4	search_short	207579.217646		294105.310308	rust_1.13.1_default-caps-simdna
+loglines	ipv4	throughput	6946652.302817		7507131.516484	rust_1.13.1_default-caps-simdna
+loglines	ipv6	search_short	259631.286898		291467.667681	rust_1.13.1_default-caps-simdna
+loglines	ipv6	throughput	10536653.202381		7477277.203883	rust_1.13.1_default-caps-simdna
+loglines	iso-ts	search_short	20652.453622		20688.099771	libpcre2_10.46_jit-caps-simdna
+loglines	iso-ts	throughput	1152798.426698		962034.73456	libpcre2_10.46_jit-caps-simdna
+loglines	kv-quoted	search_short	18823.473903		9141.66636	rust_1.13.1_default-caps-simdna
+loglines	kv-quoted	throughput	4993008.9488		210692.918991	rust_1.13.1_default-caps-simdna
+loglines	level-context	search_short	342444.123504		42982.552681	rust_1.13.1_default-caps-simdna
+loglines	level-context	throughput	11503979.723684		1098534.995434	rust_1.13.1_default-caps-simdna
+loglines	stack-frame	search_short	36084.685567		12891.368093	rust_1.13.1_default-caps-simdna
+loglines	stack-frame	throughput	2305245.838174		475090.818215	libpcre2_10.46_jit-caps-simdna
+loglines	uuid	search_short	21033.303739		35647.451022	libpcre2_10.46_jit-caps-simdna
+loglines	uuid	throughput	1080376.400231		1737828.36689	libpcre2_10.46_jit-caps-simdna
+syntax	alt-nested	match	474.351601	472.201408	424.30367	rust_1.13.1_default-caps-simdna
+syntax	alt-nested	search_short	722.971569	725.035403	1456.083738	rust_1.13.1_default-caps-simdna
+syntax	alt-nested	throughput	2126982.861789	2130373.608333	890038.825784	rust_1.13.1_default-caps-simdna
+syntax	alt-two	match	465.221651	464.857622	424.518798	rust_1.13.1_default-caps-simdna
+syntax	alt-two	search_short	742.157805	743.274682	1430.0975	rust_1.13.1_default-caps-simdna
+syntax	alt-two	throughput	1969241.067164	1976260.367647	870225.02381	rust_1.13.1_default-caps-simdna
+syntax	anc-a-uc	match	374.29228	373.544832	460.311339	rust_1.13.1_default-caps-simdna
+syntax	anc-a-uc	search_short	286.961579	286.597635	1592.302254	rust_1.13.1_default-caps-simdna
+syntax	anc-a-uc	throughput	19.604308	19.800488	82.160741	rust_1.13.1_default-caps-simdna
+syntax	anc-caret	match	374.270386	374.178673	460.250662	rust_1.13.1_default-caps-simdna
+syntax	anc-caret	search_short	286.501081	286.623909	1561.545055	libpcre2_10.46_jit-caps-simdna
+syntax	anc-caret	throughput	19.602582	19.819596	80.815036	rust_1.13.1_default-caps-simdna
+syntax	anc-dollar	match	458.962479	456.182047	460.695816	rust_1.13.1_default-caps-simdna
+syntax	anc-dollar	search_short	475.445101	476.138959	1635.064699	libpcre2_10.46_jit-caps-simdna
+syntax	anc-dollar	throughput	24.243366	24.315129	80.831573	rust_1.13.1_default-caps-simdna
+syntax	anc-g-uc	match	455.004895	453.711482	1905.567728	libpcre2_10.46_jit-caps-simdna
+syntax	anc-g-uc	search_short	294.731303	296.226386	1596.67305	libpcre2_10.46_jit-caps-simdna
+syntax	anc-g-uc	throughput	19.671466	19.920962	89.52173	libpcre2_10.46_interp-caps-simdna
+syntax	anc-m-caret	match	514.219725	515.205435	461.856186	rust_1.13.1_default-caps-simdna
+syntax	anc-m-caret	search_short	426.049725	426.983832	1752.353128	libpcre2_10.46_jit-caps-simdna
+syntax	anc-m-caret	throughput	422490.676223	422461.245378	189762.005693	libpcre2_10.46_jit-caps-simdna
+syntax	anc-m-dollar	match	454.182224	457.255435	461.079539	rust_1.13.1_default-caps-simdna
+syntax	anc-m-dollar	search_short	604.853758	604.399249	1643.781813	libpcre2_10.46_jit-caps-simdna
+syntax	anc-m-dollar	throughput	555876.805556	556072.878924	220209.803462	libpcre2_10.46_jit-caps-simdna
+syntax	anc-z-lc	match	452.396104	460.777871	460.453053	rust_1.13.1_default-caps-simdna
+syntax	anc-z-lc	search_short	412.69916	412.870699	1210.1981	rust_1.13.1_default-caps-simdna
+syntax	anc-z-lc	throughput	25.030173	25.049458	79.878756	rust_1.13.1_default-caps-simdna
+syntax	anc-z-uc	match	451.562587	455.010876	1325.052102	libpcre2_10.46_jit-caps-simdna
+syntax	anc-z-uc	search_short	474.825615	475.668731	1631.91751	libpcre2_10.46_jit-caps-simdna
+syntax	anc-z-uc	throughput	24.303634	24.265072	211505.913741	libpcre2_10.46_jit-caps-simdna
+syntax	asr-k-uc	match			1465.047291	libpcre2_10.46_jit-caps-simdna
+syntax	asr-k-uc	search_short	519.892084	521.662988	1650.809835	libpcre2_10.46_interp-caps-simdna
+syntax	asr-k-uc	throughput	96135.09548	96038.352176	144534.535479	libpcre2_10.46_jit-caps-simdna
+syntax	asr-nwb	match	464.496205	464.603841	322.198016	rust_1.13.1_default-caps-simdna
+syntax	asr-nwb	search_short	557.163819	558.105154	1663.364223	libpcre2_10.46_jit-caps-simdna
+syntax	asr-nwb	throughput	1182973.431925	1184769.455	368396.492982	libpcre2_10.46_jit-caps-simdna
+syntax	asr-wb	match	421.972884	421.10756	424.033122	rust_1.13.1_default-caps-simdna
+syntax	asr-wb	search_short	495.478002	495.681833	1722.88428	libpcre2_10.46_jit-caps-simdna
+syntax	asr-wb	throughput	1136354.727273	1138511.173333	392820.430712	libpcre2_10.46_jit-caps-simdna
+syntax	bak-1	match	511.544041	504.44882	2831.212946	libpcre2_10.46_jit-caps-simdna
+syntax	bak-1	search_short	6338.301291	6422.021907	5422.560582	libpcre2_10.46_jit-caps-simdna
+syntax	bak-1	throughput	15772794.222222	16054653.0	12779433.095238	libpcre2_10.46_jit-caps-simdna
+syntax	bak-2	match	431.788407	428.035626	4640.543058	libpcre2_10.46_interp-caps-simdna
+syntax	bak-2	search_short	7313.838942	8025.687335	5228.079321	libpcre2_10.46_jit-caps-simdna
+syntax	bak-2	throughput	13209096.809524	13303490.4	9965626.592593	libpcre2_10.46_jit-caps-simdna
+syntax	bak-g-rel	match	512.949963	509.972796	2851.711988	libpcre2_10.46_jit-caps-simdna
+syntax	bak-g-rel	search_short	6343.016559	6427.921671	5410.561296	libpcre2_10.46_jit-caps-simdna
+syntax	bak-g-rel	throughput	15731549.235294	16017910.555556	12803377.55	libpcre2_10.46_jit-caps-simdna
+syntax	bak-k-named	match	275.085574	274.56687	1526.809615	libpcre2_10.46_interp-caps-simdna
+syntax	bak-k-named	search_short	443.130104	437.44516	1657.110168	libpcre2_10.46_jit-caps-simdna
+syntax	bak-k-named	throughput	1571579.920245	1188711.137931	464541.361888	libpcre2_10.46_jit-caps-simdna
+syntax	bak-py	match	513.345171	502.263756	2853.096866	libpcre2_10.46_interp-caps-simdna
+syntax	bak-py	search_short	6368.495261	6425.351367	5430.004859	libpcre2_10.46_jit-caps-simdna
+syntax	bak-py	throughput	15730117.666667	16024732.722222	12758094.428571	libpcre2_10.46_jit-caps-simdna
+syntax	cls-d	match	479.136409	480.983648	1170.927977	rust_1.13.1_default-caps-simdna
+syntax	cls-d	search_short	663.049803	664.247782	2046.11271	libpcre2_10.46_jit-caps-simdna
+syntax	cls-d	throughput	1517884.594118	1505476.594286	2352430.6875	libpcre2_10.46_jit-caps-simdna
+syntax	cls-dot	match	453.135475	454.384353	580.195851	rust_1.13.1_default-caps-simdna
+syntax	cls-dot	search_short	526.952151	518.343248	1602.973515	libpcre2_10.46_jit-caps-simdna
+syntax	cls-dot	throughput	760724.541176	754308.485207	444715.846296	libpcre2_10.46_jit-caps-simdna
+syntax	cls-fold-pair	match	453.547618	452.010854	424.890804	rust_1.13.1_default-caps-simdna
+syntax	cls-fold-pair	search_short	509.361704	506.673798	1448.580222	rust_1.13.1_default-caps-simdna
+syntax	cls-fold-pair	throughput	1334009.376344	1331480.883333	436863.791289	libpcre2_10.46_jit-caps-simdna
+syntax	cls-h	match	471.576087	467.647229	1630.390346	libpcre2_10.46_jit-caps-simdna
+syntax	cls-h	search_short	395.187625	396.198613	1667.549414	libpcre2_10.46_jit-caps-simdna
+syntax	cls-h	throughput	259870.687273	259854.232082	132216.518852	libpcre2_10.46_jit-caps-simdna
+syntax	cls-i-class	match	457.987078	455.997164	628.126503	rust_1.13.1_default-caps-simdna
+syntax	cls-i-class	search_short	674.079409	678.388644	1682.731407	libpcre2_10.46_jit-caps-simdna
+syntax	cls-i-class	throughput	1382424.630208	1393658.673797	926051.878676	rust_1.13.1_default-caps-simdna
+syntax	cls-mixed-case	match	445.259684	448.15983	425.248221	rust_1.13.1_default-caps-simdna
+syntax	cls-mixed-case	search_short	515.935359	517.079576	1640.47726	libpcre2_10.46_jit-caps-simdna
+syntax	cls-mixed-case	throughput	766680.833333	759395.059649	1135201.151163	libpcre2_10.46_jit-caps-simdna
+syntax	cls-n-uc	match	463.067084	468.358483	1772.614442	libpcre2_10.46_jit-caps-simdna
+syntax	cls-n-uc	search_short	593.630879	597.375577	1761.93306	libpcre2_10.46_jit-caps-simdna
+syntax	cls-n-uc	throughput	828627.534884	830688.483333	300585.922977	libpcre2_10.46_jit-caps-simdna
+syntax	cls-negset	match	440.405391	453.965335	479.35066	rust_1.13.1_default-caps-simdna
+syntax	cls-negset	search_short	492.464841	485.59698	1721.463097	libpcre2_10.46_jit-caps-simdna
+syntax	cls-negset	throughput	744783.363914	744504.170819	962714.120192	libpcre2_10.46_jit-caps-simdna
+syntax	cls-pair-ctl	match	459.076385	452.394118	424.550409	rust_1.13.1_default-caps-simdna
+syntax	cls-pair-ctl	search_short	513.707265	507.87464	1442.828417	rust_1.13.1_default-caps-simdna
+syntax	cls-pair-ctl	throughput	1329745.924731	1331477.365591	647727.455041	rust_1.13.1_default-caps-simdna
+syntax	cls-posix	match	626.346128	645.526218	2158.281132	rust_1.13.1_default-caps-simdna
+syntax	cls-posix	search_short	755.852251	755.273934	1804.607982	libpcre2_10.46_jit-caps-simdna
+syntax	cls-posix	throughput	6564474.146341	6570013.974359	11395144.125	libpcre2_10.46_jit-caps-simdna
+syntax	cls-range	match	452.039277	439.927306	926.503349	rust_1.13.1_default-caps-simdna
+syntax	cls-range	search_short	418.489871	418.692759	1432.721449	rust_1.13.1_default-caps-simdna
+syntax	cls-range	throughput	247256.552954	246916.172754	273220.995772	libpcre2_10.46_jit-caps-simdna
+syntax	cls-s-lc	match	458.734463	457.371499	686.683436	rust_1.13.1_default-caps-simdna
+syntax	cls-s-lc	search_short	400.678776	400.578203	1252.941095	rust_1.13.1_default-caps-simdna
+syntax	cls-s-lc	throughput	726168.006173	726248.5	286720.317979	libpcre2_10.46_jit-caps-simdna
+syntax	cls-s-uc	match	742.230522	744.659144	1268.134456	rust_1.13.1_default-caps-simdna
+syntax	cls-s-uc	search_short	376.345084	376.470117	1740.570903	libpcre2_10.46_jit-caps-simdna
+syntax	cls-s-uc	throughput	2996566.477273	2986249.229885	2871149.174419	rust_1.13.1_default-caps-simdna
+syntax	cls-v	match	487.641971	480.847017	1902.847023	libpcre2_10.46_jit-caps-simdna
+syntax	cls-v	search_short	566.889975	567.141575	1692.847143	libpcre2_10.46_jit-caps-simdna
+syntax	cls-v	throughput	438921.060662	438894.332717	170296.328405	libpcre2_10.46_jit-caps-simdna
+syntax	cls-w	match	649.7259	642.659002	2477.599947	rust_1.13.1_default-caps-simdna
+syntax	cls-w	search_short	799.329394	807.042572	1971.475056	libpcre2_10.46_jit-caps-simdna
+syntax	cls-w	throughput	7089639.27027	7165741.972973	12821050.47619	libpcre2_10.46_jit-caps-simdna
+syntax	cnd-group	match			2408.059267	libpcre2_10.46_jit-caps-simdna
+syntax	cnd-group	search_short			2163.634516	libpcre2_10.46_jit-caps-simdna
+syntax	cnd-group	throughput			5117814.755102	libpcre2_10.46_jit-caps-simdna
+syntax	esc-cr	match	462.741041	457.511947	417.541182	rust_1.13.1_default-caps-simdna
+syntax	esc-cr	search_short	332.839447	337.433512	516.994923	rust_1.13.1_default-caps-simdna
+syntax	esc-cr	throughput	23145.19634	23151.922807	49841.221996	rust_1.13.1_default-caps-simdna
+syntax	esc-ctrl	match			1330.194826	libpcre2_10.46_jit-caps-simdna
+syntax	esc-ctrl	search_short			1562.228146	libpcre2_10.46_jit-caps-simdna
+syntax	esc-ctrl	throughput			57290.341601	libpcre2_10.46_jit-caps-simdna
+syntax	esc-hex	match	437.654859	434.284786	423.270305	rust_1.13.1_default-caps-simdna
+syntax	esc-hex	search_short	469.738638	468.702518	1021.002736	rust_1.13.1_default-caps-simdna
+syntax	esc-hex	throughput	678204.240896	679011.365994	345567.233766	rust_1.13.1_default-caps-simdna
+syntax	esc-hex-braced	match	443.814074	437.39524	1422.709641	libpcre2_10.46_jit-caps-simdna
+syntax	esc-hex-braced	search_short	359.210569	359.317837	1568.208087	libpcre2_10.46_jit-caps-simdna
+syntax	esc-hex-braced	throughput	38858.031279	38969.237106	274710.993557	libpcre2_10.46_jit-caps-simdna
+syntax	esc-nl	match	474.332824	478.614343	429.542579	rust_1.13.1_default-caps-simdna
+syntax	esc-nl	search_short	348.76209	349.102419	566.978543	rust_1.13.1_default-caps-simdna
+syntax	esc-nl	throughput	330275.771198	330724.013133	71370.735618	rust_1.13.1_default-caps-simdna
+syntax	esc-octal-0	match	480.311307	475.59893	1714.113381	libpcre2_10.46_jit-caps-simdna
+syntax	esc-octal-0	search_short	420.067904	419.478278	1763.27025	libpcre2_10.46_jit-caps-simdna
+syntax	esc-octal-0	throughput	404702.987805	404710.780277	168150.357198	libpcre2_10.46_jit-caps-simdna
+syntax	esc-octal-o	match			1408.302076	libpcre2_10.46_jit-caps-simdna
+syntax	esc-octal-o	search_short			1594.788884	libpcre2_10.46_jit-caps-simdna
+syntax	esc-octal-o	throughput			517143.766585	libpcre2_10.46_jit-caps-simdna
+syntax	esc-quote	match	454.097718	462.423752	1420.137943	libpcre2_10.46_jit-caps-simdna
+syntax	esc-quote	search_short	351.137745	351.15986	1634.925723	libpcre2_10.46_interp-caps-simdna
+syntax	esc-quote	throughput	269252.452164	268805.765068	106124.238037	libpcre2_10.46_jit-caps-simdna
+syntax	esc-tab	match	461.431425	461.864405	428.57692	rust_1.13.1_default-caps-simdna
+syntax	esc-tab	search_short	337.424668	337.386635	565.350644	rust_1.13.1_default-caps-simdna
+syntax	esc-tab	throughput	66069.81963	66136.80434	56460.440057	rust_1.13.1_default-caps-simdna
+syntax	floor	match	451.817971	453.952785	239.365979	rust_1.13.1_default-caps-simdna
+syntax	floor	search_short	395.195089	393.148084	766.813216	rust_1.13.1_default-caps-simdna
+syntax	floor	throughput	23142.621459	23141.556765	23197.63267	libpcre2_10.46_interp-caps-simdna
+syntax	grp-atomic-alt	match	500.62998	499.970393	1420.69018	libpcre2_10.46_jit-caps-simdna
+syntax	grp-atomic-alt	search_short	968.357686	969.191582	1731.677979	libpcre2_10.46_jit-caps-simdna
+syntax	grp-atomic-alt	throughput	1100838.047619	1099237.385281	403210.156928	libpcre2_10.46_jit-caps-simdna
+syntax	grp-atomic-rep	match	454.372314	459.351955	1511.413258	libpcre2_10.46_jit-caps-simdna
+syntax	grp-atomic-rep	search_short	717.409154	717.004326	1763.980876	libpcre2_10.46_jit-caps-simdna
+syntax	grp-atomic-rep	throughput	851100.989761	850787.364821	1458669.616766	libpcre2_10.46_jit-caps-simdna
+syntax	grp-branch-reset	match			1894.504774	libpcre2_10.46_jit-caps-simdna
+syntax	grp-branch-reset	search_short			1876.269981	libpcre2_10.46_jit-caps-simdna
+syntax	grp-branch-reset	throughput			1239281.432161	libpcre2_10.46_jit-caps-simdna
+syntax	grp-callout	match			1419.332594	libpcre2_10.46_jit-caps-simdna
+syntax	grp-callout	search_short			1627.260335	libpcre2_10.46_jit-caps-simdna
+syntax	grp-callout	throughput			555879.345324	libpcre2_10.46_jit-caps-simdna
+syntax	grp-cap	match	250.084314	443.269843	453.520667	rust_1.13.1_default-caps-simdna
+syntax	grp-cap	search_short	579.609535	469.220011	1736.540473	libpcre2_10.46_jit-caps-simdna
+syntax	grp-cap	throughput	764476.375839	680005.809798	546581.169856	libpcre2_10.46_jit-caps-simdna
+syntax	grp-comment	match			1408.340939	libpcre2_10.46_jit-caps-simdna
+syntax	grp-comment	search_short			1597.385557	libpcre2_10.46_jit-caps-simdna
+syntax	grp-comment	throughput			515705.46683	libpcre2_10.46_jit-caps-simdna
+syntax	grp-named	match	251.049201	433.174909	453.796071	rust_1.13.1_default-caps-simdna
+syntax	grp-named	search_short	581.329581	469.432345	1714.662992	libpcre2_10.46_jit-caps-simdna
+syntax	grp-named	throughput	765484.034921	678695.860335	543074.3125	libpcre2_10.46_jit-caps-simdna
+syntax	grp-named-quote	match	252.327263	440.905341	1480.470564	libpcre2_10.46_jit-caps-simdna
+syntax	grp-named-quote	search_short	578.312518	468.662896	1737.72823	libpcre2_10.46_jit-caps-simdna
+syntax	grp-named-quote	throughput	765312.974522	680846.881503	545012.516908	libpcre2_10.46_jit-caps-simdna
+syntax	grp-noncap	match	439.703836	430.990611	969.792208	rust_1.13.1_default-caps-simdna
+syntax	grp-noncap	search_short	520.644241	520.860274	1605.047615	libpcre2_10.46_jit-caps-simdna
+syntax	grp-noncap	throughput	206248.840122	206118.25369	163636.71568	libpcre2_10.46_jit-caps-simdna
+syntax	lit-cat	match	446.959963	446.772343	423.58247	rust_1.13.1_default-caps-simdna
+syntax	lit-cat	search_short	470.307257	469.555334	1022.302152	rust_1.13.1_default-caps-simdna
+syntax	lit-cat	throughput	678851.1	679183.805556	345109.446221	rust_1.13.1_default-caps-simdna
+syntax	lka-neg	match	375.759768	379.958388	1947.351698	libpcre2_10.46_jit-caps-simdna
+syntax	lka-neg	search_short	816.820516	821.892621	1770.435912	libpcre2_10.46_jit-caps-simdna
+syntax	lka-neg	throughput	545586.7733	545920.48855	296693.465269	libpcre2_10.46_jit-caps-simdna
+syntax	lka-nonatomic	match	229.496912	229.463116	2337.744757	libpcre2_10.46_jit-caps-simdna
+syntax	lka-nonatomic	search_short	644.654412	644.176141	1694.668832	libpcre2_10.46_jit-caps-simdna
+syntax	lka-nonatomic	throughput	525974.631347	526007.778993	301404.727394	libpcre2_10.46_jit-caps-simdna
+syntax	lka-pos	match	250.363796	249.625893	1913.155579	libpcre2_10.46_interp-caps-simdna
+syntax	lka-pos	search_short	754.707814	754.725228	1731.751372	libpcre2_10.46_jit-caps-simdna
+syntax	lka-pos	throughput	523382.797802	523566.04067	163094.231454	libpcre2_10.46_jit-caps-simdna
+syntax	lka-verb	match	249.634268	250.175978	1899.399318	libpcre2_10.46_jit-caps-simdna
+syntax	lka-verb	search_short	762.798915	753.230112	1725.162864	libpcre2_10.46_jit-caps-simdna
+syntax	lka-verb	throughput	523454.89011	523826.257511	163260.464939	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-neg	match	553.447758	556.124616	1337.641487	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-neg	search_short	844.831728	843.306419	1768.034059	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-neg	throughput	1183963.234742	1184840.688372	341251.507634	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-pos	match	235.915465	235.966991	1272.143202	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-pos	search_short	746.3568	746.246056	1658.5465	libpcre2_10.46_jit-caps-simdna
+syntax	lkb-pos	throughput	617576.905237	617054.75873	201079.517909	libpcre2_10.46_jit-caps-simdna
+syntax	mod-a	match	665.345349	666.08181	4035.680451	libpcre2_10.46_jit-caps-simdna
+syntax	mod-a	search_short	803.774366	807.162235	1987.176954	libpcre2_10.46_jit-caps-simdna
+syntax	mod-a	throughput	7117922.972973	7097608.742857	12802368.285714	libpcre2_10.46_jit-caps-simdna
+syntax	mod-i	match	456.681067	442.587887	627.724271	rust_1.13.1_default-caps-simdna
+syntax	mod-i	search_short	689.437138	691.436426	1660.96215	rust_1.13.1_default-caps-simdna
+syntax	mod-i	throughput	2173915.147826	2172331.157895	565429.851459	libpcre2_10.46_jit-caps-simdna
+syntax	mod-j-uc	match	1091.35349	958.578334	4265.761762	libpcre2_10.46_jit-caps-simdna
+syntax	mod-j-uc	search_short	11962.95047	12111.676243	6439.416341	libpcre2_10.46_jit-caps-simdna
+syntax	mod-j-uc	throughput	28871928.9	28895062.2	15977643.3125	libpcre2_10.46_jit-caps-simdna
+syntax	mod-n	match	432.49297	433.664084	1466.111712	libpcre2_10.46_jit-caps-simdna
+syntax	mod-n	search_short	468.701741	468.12138	1639.628133	libpcre2_10.46_jit-caps-simdna
+syntax	mod-n	throughput	681267.880556	678927.310345	521149.414216	libpcre2_10.46_jit-caps-simdna
+syntax	mod-r	match	443.566061	453.81348	1808.446062	libpcre2_10.46_interp-caps-simdna
+syntax	mod-r	search_short	720.318901	689.684897	1747.709369	libpcre2_10.46_jit-caps-simdna
+syntax	mod-r	throughput	2213074.732143	2175592.982609	565789.524752	libpcre2_10.46_jit-caps-simdna
+syntax	mod-reset	match	456.50517	457.279595	1573.027533	libpcre2_10.46_jit-caps-simdna
+syntax	mod-reset	search_short	863.86393	864.981964	1596.933361	libpcre2_10.46_jit-caps-simdna
+syntax	mod-reset	throughput	976694.654206	976402.787072	738166.577778	libpcre2_10.46_jit-caps-simdna
+syntax	mod-s	match	478.154776	478.817791	650.516571	rust_1.13.1_default-caps-simdna
+syntax	mod-s	search_short	597.778872	596.915397	1610.083332	rust_1.13.1_default-caps-simdna
+syntax	mod-s	throughput	451731.805501	451706.085149	169775.61157	libpcre2_10.46_jit-caps-simdna
+syntax	mod-u-uc	match	480.387746	480.284794	1041.545608	rust_1.13.1_default-caps-simdna
+syntax	mod-u-uc	search_short	417.08715	417.83408	1617.98465	libpcre2_10.46_jit-caps-simdna
+syntax	mod-u-uc	throughput	144772.577411	144564.797212	226567.527012	libpcre2_10.46_jit-caps-simdna
+syntax	mod-unset	match	457.140724	457.519342	528.564142	rust_1.13.1_default-caps-simdna
+syntax	mod-unset	search_short	863.496718	863.75749	1512.0275	rust_1.13.1_default-caps-simdna
+syntax	mod-unset	throughput	976564.953488	976725.190661	696464.586111	rust_1.13.1_default-caps-simdna
+syntax	mod-x	match			1406.036389	libpcre2_10.46_jit-caps-simdna
+syntax	mod-x	search_short	468.985205	469.108645	1022.113259	rust_1.13.1_default-caps-simdna
+syntax	mod-x	throughput	679220.389049	678847.927778	346777.765896	rust_1.13.1_default-caps-simdna
+syntax	msc-c-uc	match			1407.464613	libpcre2_10.46_jit-caps-simdna
+syntax	msc-c-uc	search_short			1647.24789	libpcre2_10.46_jit-caps-simdna
+syntax	msc-c-uc	throughput			442572.875926	libpcre2_10.46_jit-caps-simdna
+syntax	msc-r-uc	match			1876.998687	libpcre2_10.46_jit-caps-simdna
+syntax	msc-r-uc	search_short			1774.046591	libpcre2_10.46_jit-caps-simdna
+syntax	msc-r-uc	throughput			170213.549493	libpcre2_10.46_jit-caps-simdna
+syntax	msc-x-uc	match			1424.652579	libpcre2_10.46_jit-caps-simdna
+syntax	msc-x-uc	search_short			1746.173338	libpcre2_10.46_jit-caps-simdna
+syntax	msc-x-uc	throughput			1305841.696774	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-lazy	match	480.139448	479.961104	1074.081239	rust_1.13.1_default-caps-simdna
+syntax	qnt-lazy	search_short	414.960251	413.383103	1658.405265	rust_1.13.1_default-caps-simdna
+syntax	qnt-lazy	throughput	141279.53018	141761.531288	222444.889908	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-plus	match	453.708556	454.978162	1075.408584	rust_1.13.1_default-caps-simdna
+syntax	qnt-plus	search_short	715.692504	715.987952	1777.803456	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-plus	throughput	851941.343537	850676.062092	1550537.145833	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-plus-ctl	match	480.49634	487.35595	1032.341764	rust_1.13.1_default-caps-simdna
+syntax	qnt-plus-ctl	search_short	638.672455	639.311152	1839.508199	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-plus-ctl	throughput	720602.666667	720647.140411	1497535.35443	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-brace	match	430.49521	437.317684	1439.778223	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-brace	search_short	690.729523	691.374871	2049.376437	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-brace	throughput	878000.989865	878712.689189	1405914.023392	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-plus	match	389.917086	390.217105	1400.319892	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-plus	search_short	1469.288704	1468.084324	1796.578945	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-plus	throughput	720239.901754	720059.892857	1504735.882353	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-quest	match	260.7742	261.368976	968.116135	rust_1.13.1_default-caps-simdna
+syntax	qnt-poss-quest	search_short	1345.229063	1352.960739	1917.208534	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-quest	throughput	2395941.472727	2396870.179245	1208935.558824	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-star	match	443.804691	438.55175	1106.184993	rust_1.13.1_default-caps-simdna
+syntax	qnt-poss-star	search_short	559.240062	557.864688	1994.847561	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-poss-star	throughput	320948.2875	320739.617607	1030193.410714	rust_1.13.1_default-caps-simdna
+syntax	qnt-quest	match	453.955547	458.4769	271.454593	rust_1.13.1_default-caps-simdna
+syntax	qnt-quest	search_short	389.588913	388.91809	955.448553	rust_1.13.1_default-caps-simdna
+syntax	qnt-quest	throughput	1208669.951923	1206308.009524	436014.063439	rust_1.13.1_default-caps-simdna
+syntax	qnt-star	match	429.378598	435.452727	1067.778897	rust_1.13.1_default-caps-simdna
+syntax	qnt-star	search_short	514.833451	510.477881	1666.448805	libpcre2_10.46_jit-caps-simdna
+syntax	qnt-star	throughput	850702.106007	851870.631579	1260532.362573	libpcre2_10.46_jit-caps-simdna
+syntax	rec-1	match	605.454796	605.06023	2370.197208	libpcre2_10.46_jit-caps-simdna
+syntax	rec-1	search_short	694.465545	691.808534	1796.64224	libpcre2_10.46_jit-caps-simdna
+syntax	rec-1	throughput			10801638597.0	libpcre2_10.46_interp-caps-simdna
+syntax	rec-back	match	294.062218	437.741288	1621.488016	libpcre2_10.46_interp-caps-simdna
+syntax	rec-back	search_short	786.546322	628.187553	2066.626026	libpcre2_10.46_jit-caps-simdna
+syntax	rec-back	throughput	984311.492424	863451.003802	1562438.515337	libpcre2_10.46_jit-caps-simdna
+syntax	rec-define	match	461.007004	485.654339	1598.16853	libpcre2_10.46_interp-caps-simdna
+syntax	rec-define	search_short	392.571676	382.927797	1781.989305	libpcre2_10.46_jit-caps-simdna
+syntax	rec-define	throughput	156186.037608	156610.592366	3928018.338462	libpcre2_10.46_jit-caps-simdna
+syntax	rec-fwd	match	333.851801	432.098318	3628.861329	libpcre2_10.46_jit-caps-simdna
+syntax	rec-fwd	search_short	787.715029	629.428856	2997.425231	libpcre2_10.46_jit-caps-simdna
+syntax	rec-fwd	throughput	987288.458333	861033.754386	3486855.30137	libpcre2_10.46_jit-caps-simdna
+syntax	rec-g-angle	match	293.613153	439.066562	1621.502779	libpcre2_10.46_interp-caps-simdna
+syntax	rec-g-angle	search_short	785.777409	635.076712	2015.894104	libpcre2_10.46_jit-caps-simdna
+syntax	rec-g-angle	throughput	984023.764	860692.287234	1558206.153846	libpcre2_10.46_jit-caps-simdna
+syntax	rec-name	match	606.1833	604.923425	2369.970001	libpcre2_10.46_interp-caps-simdna
+syntax	rec-name	search_short	694.90852	690.398216	1732.784446	libpcre2_10.46_jit-caps-simdna
+syntax	rec-name	throughput			10821132278.0	libpcre2_10.46_interp-caps-simdna
+syntax	rec-py	match	293.744631	437.990104	1621.488641	libpcre2_10.46_jit-caps-simdna
+syntax	rec-py	search_short	791.381038	637.2254	2021.351691	libpcre2_10.46_jit-caps-simdna
+syntax	rec-py	throughput	985098.588679	859968.284768	1559104.658537	libpcre2_10.46_jit-caps-simdna
+syntax	rec-r-uc	match			2254.955573	libpcre2_10.46_jit-caps-simdna
+syntax	rec-r-uc	search_short	607.51546	605.587333	1677.593455	libpcre2_10.46_jit-caps-simdna
+syntax	rec-r-uc	throughput			9725255387.0	libpcre2_10.46_interp-caps-simdna
+syntax	unp-p-lc	match	631.046254	628.990121	4511.480841	libpcre2_10.46_interp-caps-simdna
+syntax	unp-p-lc	search_short	755.153336	755.223745	2310.484266	libpcre2_10.46_jit-caps-simdna
+syntax	unp-p-lc	throughput	6591207.731707	6531322.447368	15459291.166667	libpcre2_10.46_jit-caps-simdna
+syntax	unp-p-uc	match	506.089602	504.851547	1498.171639	rust_1.13.1_default-caps-simdna
+syntax	unp-p-uc	search_short	683.510368	687.937718	2510.988245	libpcre2_10.46_jit-caps-simdna
+syntax	unp-p-uc	throughput	5823137.222222	5830119.933333	16256292.875	libpcre2_10.46_jit-caps-simdna
+syntax	vrb-accept	match			1609.446434	libpcre2_10.46_interp-caps-simdna
+syntax	vrb-accept	search_short			1616.33291	libpcre2_10.46_jit-caps-simdna
+syntax	vrb-accept	throughput			269137.65194	libpcre2_10.46_jit-caps-simdna
+syntax	vrb-skip	match			1491.688785	libpcre2_10.46_jit-caps-simdna
+syntax	vrb-skip	search_short			1860.034153	libpcre2_10.46_jit-caps-simdna
+syntax	vrb-skip	throughput			1588213.342282	libpcre2_10.46_jit-caps-simdna
+syntax	xcl-minus	match			2309.017309	libpcre2_10.46_interp-caps-simdna
+syntax	xcl-minus	search_short			1919.049431	libpcre2_10.46_jit-caps-simdna
+syntax	xcl-minus	throughput			20359696.538462	libpcre2_10.46_jit-caps-simdna
+utf8	alt-cyr-64	search_short	1117.735578	1123.40144	3030.306224	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-cyr-64	throughput	3148328.177474	3126869.081699	9627.695809	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-distinct-lead	search_short	1377.446421	1385.490755	3172.096	rust_1.13.1_default-caps-simdna
+utf8	alt-distinct-lead	throughput	2781944.184416	2766580.444175	19555.253954	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-mixed-width	search_short	1412.396103	1420.553426	5027.903729	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	alt-mixed-width	throughput	2617355.04157	2621911.747368	3582.611132	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-nearmiss	search_short	1106.620005	1106.01281	1933.177434	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-nearmiss	throughput	145913.467201	145880.511998	76455.067621	rust_1.13.1_default-caps-simdna
+utf8	alt-shared-char	search_short	1387.18257	1387.740458	2517.300412	rust_1.13.1_default-caps-simdna
+utf8	alt-shared-char	throughput	349916.918822	349884.177769	12628.64468	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	alt-shared-lead	search_short	968.691171	956.52117	2431.98778	rust_1.13.1_default-caps-simdna
+utf8	alt-shared-lead	throughput	27536.188702	27556.8225	38343.47433	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-a-z	search_short	613.743918	614.519816	837.737489	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-a-z	throughput	44.381187	44.597322	42.179581	rust_1.13.1_default-caps-simdna
+utf8	asr-b-ascii	search_short	858.323745	854.396657	2552.296785	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-b-ascii	throughput	503151.791971	503172.444969	99322.01405	rust_1.13.1_default-caps-simdna
+utf8	asr-b-cyr	search_short	625.926742	625.77286	709.600842	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-b-cyr	throughput	96112.757436	96053.102568	173364.262514	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-b-cyr-ucp	search_short			4438.596847	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-b-cyr-ucp	throughput			2422460.875817	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-b-midchar	search_short	1142.469739	1142.047993	3573.976031	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-b-midchar	throughput	12715983.348837	12719119.109756	911.555077	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-caret-ml	search_short	878.154333	879.309196	2572.642396	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-caret-ml	throughput	27631.231089	27627.714986	71848.516483	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-dollar-ml	search_short	970.07325	971.118431	2556.282842	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	asr-dollar-ml	throughput	40733.903671	40723.618649	49863.768628	rust_1.13.1_default-caps-simdna
+utf8	asr-lb-class	search_short	1623.044469	1620.042948	4425.668907	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-class	throughput	6984831.607143	6986280.481707	6895682.1	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-fixed	search_short	1228.761852	1227.293645	4353.190256	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-fixed	throughput	90517.754361	90528.847898	2451522.045238	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-neg	search_short	1977.875315	1975.082969	4482.713448	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-neg	throughput	201102.321727	200925.220353	1902817.085714	oniguruma_6.9.10_default-caps-simdna_utf8
+utf8	asr-lb-varwidth	search_short	1706.482965	1715.382329	4348.366066	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	asr-lb-varwidth	throughput	108135.734731	107986.64956	2452473.443723	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	ci-ascii-control	search_short	1202.566498	1205.728436	2545.295465	rust_1.13.1_default-caps-simdna
+utf8	ci-ascii-control	throughput	1139194.979263	1139150.828608	94859.204064	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-class-range	search_short	1384.998092	1392.90899	3133.27425	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-class-range	throughput	5686842.873016	5686714.0625	173591.328205	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-e-acute	search_short	1095.992603	1099.614851	3556.510798	rust_1.13.1_default-caps-simdna
+utf8	ci-e-acute	throughput	527273.351664	527430.546411	11783.805746	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-greek-run	search_short	764.516096	764.968119	2206.941836	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-greek-run	throughput	27515.929669	27548.69295	93825.43712	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-kelvin	search_short	934.937646	913.379467	2332.225778	rust_1.13.1_default-caps-simdna
+utf8	ci-kelvin	throughput	719564.139741	718668.046416	7741.042574	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-long-s	search_short	1002.935688	991.163142	2961.227232	rust_1.13.1_default-caps-simdna
+utf8	ci-long-s	throughput	1335323.829966	1334177.194399	3558.807597	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-moskva	search_short	1233.075803	1235.131336	1321.017364	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-moskva	throughput	1297035.973563	1297373.596932	12667.888031	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-neg-fold	search_short	1589.320639	1584.788316	2786.837322	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-neg-fold	throughput	13028271.781609	13084273.505747	514.238638	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-sigma	search_short	958.307532	960.804753	2250.409099	rust_1.13.1_default-caps-simdna
+utf8	ci-sigma	throughput	573003.731016	573078.491998	76202.185083	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-strasse	search_short	1231.999617	1233.578923	1884.790257	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-strasse	throughput	1259894.56369	1261462.789474	15985.786784	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-turkish-i	search_short	942.80437	952.315736	1863.865251	rust_1.13.1_default-caps-simdna
+utf8	ci-turkish-i	throughput	1435597.030995	1440056.955954	1808.014352	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-ucp-invariance	search_short			3656.566414	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	ci-ucp-invariance	throughput			11787.796946	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-boundary-range	search_short	1484.179981	1488.003693	2957.318247	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-boundary-range	throughput	5616408.550388	5624301.790698	542.291045	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-d-ascii	search_short	951.9348	951.569366	2150.600207	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-d-ascii	throughput	618141.09589	618213.71371	10242.76698	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-d-ucp	search_short			2159.520791	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-d-ucp	throughput			14691.829456	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-dot	search_short	1592.866269	1590.738848	2816.820801	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-dot	throughput	13119169.609195	13088469.0	517.587879	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-dot-rep	search_short	951.715468	959.781695	1944.630711	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-dot-rep	throughput	93.503602	93.17157	42.016779	rust_1.13.1_default-caps-simdna
+utf8	cls-high-range	search_short	1558.756709	1558.753488	2763.03357	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-high-range	throughput	2996447.054124	2997765.974227	90756.274026	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-lead-pair	search_short	959.126959	971.036026	3256.786542	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-lead-pair	throughput	572980.763628	573033.622477	76254.056919	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-mixed	search_short	1751.84925	1748.962903	3273.059035	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-mixed	throughput	7980978.7	7971411.723077	10365.207797	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-allhigh	search_short	1408.498301	1425.021327	2735.315325	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-allhigh	throughput	3492401.362989	3494678.813793	496.043962	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-cjk	search_short	2397.233987	2395.143895	2796.605451	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-cjk	throughput	5608699.735577	5607736.009346	505.749638	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-single	search_short	1602.698673	1601.36397	2801.292958	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-neg-single	throughput	13044754.517241	13114542.406977	516.868478	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-posix-alpha	search_short	1296.116734	1298.902995	2693.523686	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-posix-alpha	throughput	4522373.468927	4528315.086705	3551.025469	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-s-nbsp	search_short	768.658975	767.869582	2803.683087	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-s-nbsp	throughput	138788.355233	138653.633964	37535.42825	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-s-ucp	search_short			2859.039837	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-s-ucp	throughput			37492.419464	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-w-ascii	search_short	1328.769399	1326.544634	2704.063892	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-w-ascii	throughput	4576247.354651	4577667.677966	3546.314235	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-w-ucp	search_short			3713.332687	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	cls-w-ucp	throughput			244319.170464	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	floor	search_short	875.09522	892.523817	1444.716935	rust_1.13.1_default-caps-simdna
+utf8	floor	throughput	27514.614595	27517.572491	27879.464774	rust_1.13.1_default-caps-simdna
+utf8	lit-1ch-2b	search_short	1070.236209	1082.393972	2570.058558	rust_1.13.1_default-caps-simdna
+utf8	lit-1ch-2b	throughput	377188.907454	377111.932053	8917.773156	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-1ch-3b	search_short	1159.280268	1167.712868	2497.776421	rust_1.13.1_default-caps-simdna
+utf8	lit-1ch-3b	throughput	264987.715049	264836.981593	8956.728083	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-1ch-4b	search_short	729.814092	726.870821	1639.56808	rust_1.13.1_default-caps-simdna
+utf8	lit-1ch-4b	throughput	388594.510704	388337.28286	34921.78239	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-anchored-run	search_short	600.084538	899.586551	891.942724	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-anchored-run	throughput	44.322216	65.41461	42.043006	rust_1.13.1_default-caps-simdna
+utf8	lit-cyr-run	search_short	678.037307	677.527044	885.468583	rust_1.13.1_default-caps-simdna
+utf8	lit-cyr-run	throughput	95033.64946	95107.220284	59623.078857	rust_1.13.1_default-caps-simdna
+utf8	lit-mixed-ascii	search_short	613.807806	614.513514	725.38689	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-mixed-ascii	throughput	72001.103668	71914.657109	59727.823304	rust_1.13.1_default-caps-simdna
+utf8	lit-nearmiss-run	search_short	877.819462	877.686982	1493.492029	rust_1.13.1_default-caps-simdna
+utf8	lit-nearmiss-run	throughput	40466.647611	40446.836931	59333.569551	rust_1.13.1_default-caps-simdna
+utf8	lit-nfc-pair	search_short	891.444258	891.319788	1616.362776	rust_1.13.1_default-caps-simdna
+utf8	lit-nfc-pair	throughput	695473.316961	694417.334207	11767.880422	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	lit-offset-at-head	search_short	917.652873	914.325409	1560.081696	rust_1.13.1_default-caps-simdna
+utf8	lit-offset-at-head	throughput	225202.129122	225412.297495	28334.025375	re2_11.0.0_default-caps-simdna_utf8
+utf8	lit-offset-at-tail	search_short	895.953241	896.62748	1590.317996	rust_1.13.1_default-caps-simdna
+utf8	lit-offset-at-tail	throughput	27579.299128	27535.805855	49621.071587	rust_1.13.1_default-caps-simdna
+utf8	lit-run-3	search_short	879.1399	877.238622	1500.065873	rust_1.13.1_default-caps-simdna
+utf8	lit-run-3	throughput	40474.866489	40505.173748	59358.662034	rust_1.13.1_default-caps-simdna
+utf8	lit-sharp-s	search_short	752.420333	753.315205	1214.739953	rust_1.13.1_default-caps-simdna
+utf8	lit-sharp-s	throughput	931048.468028	930828.10159	19349.89274	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-cyrillic	search_short	1301.667484	1292.755106	6110.92942	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	prp-cyrillic	throughput	3179412.065903	3187239.651786	179587.937653	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-greek	search_short	1006.442308	995.744238	5746.446426	libpcre2_10.46_jit-caps-simdna_utf8
+utf8	prp-greek	throughput	703268.011607	702912.712192	432853.144498	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-greek-sc	search_short	982.003826	988.548056	4116.490796	rust_1.13.1_default-caps-simdna
+utf8	prp-greek-sc	throughput	638786.453366	638935.300184	2907157.368421	rust_1.13.1_default-caps-simdna
+utf8	prp-han	search_short	1373.565138	1376.672658	2429.473114	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-han	throughput	2263022.351145	2264196.92623	25549.414462	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-l	search_short	3115.614777	3117.149055	3663.711848	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-l	throughput	11771691.070707	11778061.565657	502222.378748	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-l-anchored	search_short			2717.837777	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-l-anchored	throughput			42.273344	rust_1.13.1_default-caps-simdna
+utf8	prp-latin	search_short	1556.992569	1557.970861	3298.88737	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-latin	throughput	5608049.333333	5608204.679688	345649.226098	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-lu	search_short	1225.223601	1230.045628	2773.373708	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-lu	throughput	2544652.596195	2544759.291878	1401083.314943	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-n	search_short	1074.515044	1070.642045	2674.483742	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-n	throughput	1151810.286905	1151520.916098	3024050.507194	re2_11.0.0_default-caps-simdna_utf8
+utf8	prp-notl	search_short	1459.406674	1462.434852	3081.833731	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-notl	throughput	5800669.958115	5795322.889503	544806.871725	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-zs	search_short	1066.552654	1068.293258	3746.847727	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	prp-zs	throughput	4417574.047809	4422271.731405	598.621753	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-bounded-4b	search_short	728.557293	728.920196	1487.135449	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-bounded-4b	throughput	238992.990203	239344.589993	89288.892398	rust_1.13.1_default-caps-simdna
+utf8	qnt-class-run	search_short	1228.87274	1226.805585	1650.224513	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-class-run	throughput	2610026.335013	2614102.226328	9722.704842	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-counted-3b	search_short	961.791028	963.914183	954.714998	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-counted-3b	throughput	145146.718773	145752.129274	66651.495354	rust_1.13.1_default-caps-simdna
+utf8	qnt-dot-bounded	search_short	2467.566241	2473.349699	2652.87775	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-dot-bounded	throughput	6503303.421053	6498338.473958	540.095851	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-lazy-2b	search_short	1070.998973	1081.848969	3097.781017	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-lazy-2b	throughput	377049.652158	378742.56878	8922.291853	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-plus-2b	search_short	1114.236848	1103.07094	3098.392245	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+utf8	qnt-plus-2b	throughput	377653.653604	376522.642803	8918.482865	vectorscan_5.4.11_block-nosom-nocaps-simd_utf8
+capability	balanced-parens-rec	search_short	927.640701	918.20991	2970.317889	libpcre2_10.46_jit-caps-simdna
+capability	balanced-parens-rec	throughput	1194225.996381	1193769.546911	780604.703101	libpcre2_10.46_jit-caps-simdna
+capability	base10num-near-miss	search_short	566.060341	571.598468	2056.736288	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	base10num-near-miss	throughput	61.872516	61.915669	293.067837	rust_1.13.1_default-caps-simdna
+capability	bracket-array-define	search_short	1895.680831	1895.394625	2964.368835	oniguruma_6.9.10_default-caps-simdna
+capability	bracket-array-define	throughput	262.952272	263.403839	350.000746	oniguruma_6.9.10_default-caps-simdna
+capability	codegrammar-flat	search_short	942.532866	744.454242	2436.910238	libpcre2_10.46_dfa-nocaps-simdna
+capability	codegrammar-flat	throughput	656382.559482	686099.053744	198982.409741	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	codegrammar-xflag	search_short	941.972457	741.125353	2430.175587	libpcre2_10.46_dfa-nocaps-simdna
+capability	codegrammar-xflag	throughput	658946.136211	687025.463415	198997.653661	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	currency-lookbehind-fixed	search_short	876.093317	879.93776	4057.677784	libpcre2_10.46_jit-caps-simdna
+capability	currency-lookbehind-fixed	throughput	78530.674057	78567.271917	4860518.944245	libpcre2_10.46_jit-caps-simdna
+capability	date-nested-plus	search_short	887.156	532.551866	1781.324531	rust_1.13.1_default-caps-simdna
+capability	date-nested-plus	throughput	110.540003	62.026996	277.338286	rust_1.13.1_default-caps-simdna
+capability	doubled-word	search_short	5847.56752	5913.43432	13251.172788	libpcre2_10.46_jit-caps-simdna
+capability	doubled-word	throughput	29763867.376147	29572727.839623	43522658.051948	libpcre2_10.46_jit-caps-simdna
+capability	dup-param-detect	search_short	1158.417655	1160.375261	3513.2504	libpcre2_10.46_jit-caps-simdna
+capability	dup-param-detect	throughput	78614.658271	78487.167167	273489.254159	libpcre2_10.46_interp-caps-simdna
+capability	email-local-nodup	search_short	1491.949589	1490.128977	5139.705426	libpcre2_10.46_jit-caps-simdna
+capability	email-local-nodup	throughput	69209.916912	69228.905255	300799.03409	libpcre2_10.46_jit-caps-simdna
+capability	email-nested-plus	search_short	1403.676942	1007.749479	1855.274263	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	evil-alt-nested	search_short	1383.695895	849.073144	2175.743504	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	evil-alt-nested	throughput	95719.186678	69065.696101	47914.014439	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	file-ext-order	search_short	692.742383	692.950251	1414.391692	rust_1.13.1_default-caps-simdna
+capability	file-ext-order	throughput	795656.971648	795721.772089	178277.005457	rust_1.13.1_default-caps-simdna
+capability	float-literal-bound	search_short	906.873584	914.203344	3411.722788	libpcre2_10.46_jit-caps-simdna
+capability	float-literal-bound	throughput	4029004.556818	4042891.471284	5591534.718245	libpcre2_10.46_jit-caps-simdna
+capability	floor-byte	search_short	669.791686	669.384015	1233.367958	rust_1.13.1_default-caps-simdna
+capability	floor-byte	throughput	78579.00406	78609.889678	78963.566691	tre_0.9.0_default-caps-simdna
+capability	hex8-bounded	search_short	2212.089361	2211.108737	3463.89929	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	hex8-bounded	throughput	15422802.361386	15426462.819905	2029115.882367	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	high-byte-run	search_short	1137.698517	1134.477159	2693.984217	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	high-byte-run	throughput	1642376.437411	1642177.764512	218143.448514	vectorscan_5.4.11_block-som-nocaps-simd
+capability	ipv4-near-miss	search_short	447.1962	449.637484	961.554196	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	ipv4-near-miss	throughput	48.773968	49.273432	71.484169	rust_1.13.1_default-caps-simdna
+capability	keyword-prefix-order	search_short	785.970527	785.11965	1602.695595	rust_1.13.1_default-caps-simdna
+capability	keyword-prefix-order	throughput	2330783.564863	2330882.102041	5315.596718	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	letters-bounded-tail-z	search_short	2498.924349	2482.730385	1620.399021	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	letters-bounded-tail-z	throughput	10379.842162	10442.796646	238.145797	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	logparse-atomic	search_short	847.121365	806.269821	3017.169291	libpcre2_10.46_jit-caps-simdna
+capability	logparse-atomic	throughput	116.491546	111.280876	360.378397	oniguruma_6.9.10_default-caps-simdna
+capability	logparse-atomic-removed	search_short	867.076375	536.07234	1158.59054	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	logparse-atomic-removed	throughput	116.517497	71.321926	290.972364	rust_1.13.1_default-caps-simdna
+capability	mojibake-curly-quote	search_short	688.482689	689.940934	2051.712647	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	mojibake-curly-quote	throughput	78687.94349	78655.891844	79097.917293	libpcre2_10.46_interp-caps-simdna
+capability	negation-scope-lookbehind-var	search_short			2955.886388	libpcre2_10.46_jit-caps-simdna
+capability	negation-scope-lookbehind-var	throughput			200317.061048	libpcre2_10.46_jit-caps-simdna
+capability	nested-comment-rec	search_short	1550.913869	1439.461345	3364.547168	libpcre2_10.46_jit-caps-simdna
+capability	nested-comment-rec	throughput	78644.474074	78630.5962	176588.3363	libpcre2_10.46_jit-caps-simdna
+capability	numeric-id-nested-plus	search_short	844.225199	488.545393	1979.835327	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	numeric-id-nested-plus	throughput	104.060249	55.688843	297.203157	rust_1.13.1_default-caps-simdna
+capability	phone-list-nested-plus	search_short	905.964221	499.074822	2003.220519	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	phone-list-nested-plus	throughput	107.315128	55.312705	302.731564	rust_1.13.1_default-caps-simdna
+capability	phone-palindrome-6	search_short	2885.140898	2868.72427	4609.627959	libpcre2_10.46_jit-caps-simdna
+capability	phone-palindrome-6	throughput	9467412.96	9483570.691139	6755482.517007	libpcre2_10.46_jit-caps-simdna
+capability	pwd-strength-chain	search_short	12107.91795	12139.165748	8343.964065	libpcre2_10.46_jit-caps-simdna
+capability	pwd-strength-chain	throughput	533740.122159	533678.623784	270815.981467	libpcre2_10.46_jit-caps-simdna
+capability	quoted-delim-match	search_short	2111.10947	2072.689344	3574.96309	libpcre2_10.46_jit-caps-simdna
+capability	quoted-delim-match	throughput	2286537.312303	2276811.10625	589344.906015	libpcre2_10.46_jit-caps-simdna
+capability	router-prefix-order	search_short	694.311603	691.094376	1317.343508	rust_1.13.1_default-caps-simdna
+capability	router-prefix-order	throughput	396258.403625	396285.137919	169546.381438	rust_1.13.1_default-caps-simdna
+capability	tag-depth3-bound	search_short	1120.086168	1209.711957	3313.457784	libpcre2_10.46_jit-caps-simdna
+capability	tag-depth3-bound	throughput	78595.344262	78600.265933	79086.784544	libpcre2_10.46_interp-caps-simdna
+capability	tag-pair-match	search_short	1122.683781	1118.072946	3251.472509	libpcre2_10.46_jit-caps-simdna
+capability	tag-pair-match	throughput	78568.760574	78621.518823	79056.775922	libpcre2_10.46_interp-caps-simdna
+capability	tail-digits-eol	search_short	1674.439613	1684.24267	2829.164418	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	tail-digits-eol	throughput	3717492.792923	3716015.866889	878.526952	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	tail-dotstar-txt	search_short	655.445044	656.127169	1906.149615	rust_1.13.1_default-caps-simdna
+capability	tail-dotstar-txt	throughput	857810.331001	857869.916714	457.41549	rust_1.13.1_default-caps-simdna
+capability	tail-ext-lower-txt	search_short	684.966046	683.386329	1694.429646	rust_1.13.1_default-caps-simdna
+capability	tail-ext-lower-txt	throughput	8778161.205074	8779912.408705	401.251397	rust_1.13.1_default-caps-simdna
+capability	tail-space-eol	search_short	1367.332382	1371.303577	1809.261845	rust_1.13.1_default-caps-simdna
+capability	tail-space-eol	throughput	7864831.750685	7857051.993464	1013.026136	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	tail-word-eoz	search_short	2860.431499	2806.337546	2702.016623	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	tail-word-eoz	throughput	9821784.776786	9843456.949254	393.748259	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	trim-nested-star	search_short	839.070696	447.240685	1882.519745	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	trim-nested-star	throughput	114844.505229	93571.724222	47912.654096	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	utf8-lead-no-cont	search_short	1274.76064	1275.904842	3155.428517	libpcre2_10.46_dfa-nocaps-simdna
+capability	utf8-lead-no-cont	throughput	1660881.8557	1660317.909091	1475053.023595	libpcre2_10.46_jit-caps-simdna
+capability	uuid-near-miss	search_short	567.387438	566.42769	588.813519	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	uuid-near-miss	throughput	52.073117	52.108998	67.752264	rust_1.13.1_default-caps-simdna
+capability	wild-codegrammar-json-array-begin	search_short	701.303492	689.807443	1347.819134	rust_1.13.1_default-caps-simdna
+capability	wild-codegrammar-json-array-begin	throughput	274425.795187	274604.376667	77596.993722	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-codegrammar-json-constant	search_short	1673.523418	1660.061571	2997.513181	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-codegrammar-json-constant	throughput	8605178.943452	8634540.57561	660974.286396	vectorscan_5.4.11_block-som-nocaps-simd
+capability	wild-codegrammar-json-number-extended	search_short	1420.031572	1424.598964	3712.89673	libpcre2_10.46_jit-caps-simdna
+capability	wild-codegrammar-json-number-extended	throughput	5291944.806387	5298970.529058	9922120.435897	libpcre2_10.46_jit-caps-simdna
+capability	wild-codegrammar-json-object-begin	search_short	671.667818	682.592416	1230.755318	rust_1.13.1_default-caps-simdna
+capability	wild-codegrammar-json-object-begin	throughput	78562.755996	78565.162003	78967.487776	tre_0.9.0_default-caps-simdna
+capability	wild-codegrammar-json-stringcontent-escape	search_short	744.404053	739.240243	2792.838306	libpcre2_10.46_dfa-nocaps-simdna
+capability	wild-codegrammar-json-stringcontent-escape	throughput	78576.393985	78550.862978	79153.091139	libpcre2_10.46_interp-caps-simdna
+capability	wild-datetime-datefinder-alternation	search_short		2032.111709	3900.63646	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-datetime-datefinder-alternation	throughput		30112041.657143	10163.4344	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-datetime-moment-iso8601	search_short	1022.595458	594.690958	1629.636961	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-datetime-moment-iso8601	throughput	69137.853502	69055.769361	1735.102272	re2_11.0.0_default-caps-simdna
+capability	wild-logparse-base10num-grok	search_short	2408.871535	2393.662095	4074.514277	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-base10num-grok	throughput	10196188.283465	10194182.780488	11690732.576577	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-base10num-noatomic	search_short	1655.356499	1651.784441	4131.619663	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-base10num-noatomic	throughput	6918450.696658	6931223.97343	11997801.143519	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-quotedstring-grok	search_short	2208.843797	2185.05145	4310.288095	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-quotedstring-grok	throughput	2154264.715134	2154019.341974	4388977.625382	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-quotedstring-noatomic	search_short	1592.259202	1583.653043	15499.206294	libpcre2_10.46_dfa-nocaps-simdna
+capability	wild-logparse-quotedstring-noatomic	throughput	1901357.614476	1902521.036963	4418038.438806	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-syslogbase-expanded	search_short	1621.607352	1421.360406	7078.992485	libpcre2_10.46_dfa-nocaps-simdna
+capability	wild-logparse-syslogbase-expanded	throughput	4262958.113105	4272038.814003	14557801.393103	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-winpath-grok	search_short	935.801887	934.497976	3169.850771	libpcre2_10.46_jit-caps-simdna
+capability	wild-logparse-winpath-grok	throughput	78579.366175	78588.600698	132223.911198	libpcre2_10.46_dfa-nocaps-simdna
+capability	wild-secrets-aws-access-key-id	search_short	1414.364005	1174.129779	2148.52396	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-secrets-aws-access-key-id	throughput	158885.401082	158630.415173	240772.899788	rust_1.13.1_default-caps-simdna
+capability	wild-secrets-github-pat	search_short	1025.153484	881.146784	846.509737	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-secrets-github-pat	throughput	180313.679993	179567.570986	162541.664874	rust_1.13.1_default-caps-simdna
+capability	wild-secrets-slack-webhook-url	search_short	1177.128147	875.878008	712.970878	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-secrets-slack-webhook-url	throughput	396746.280246	397172.521122	176146.413898	libpcre2_10.46_jit-caps-simdna
+capability	wild-secrets-username-password-pair	search_short	1057.986781	776.76461	1665.390415	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-secrets-username-password-pair	throughput	79044.093862	79060.978879	85546.277578	libpcre2_10.46_dfa-nocaps-simdna
+capability	wild-semdiv-altorder-foo-foobar-rustregex	search_short	659.079858	659.314971	1339.434515	rust_1.13.1_default-caps-simdna
+capability	wild-semdiv-altorder-foo-foobar-rustregex	throughput	1268479.941019	1266205.994901	183675.918044	rust_1.13.1_default-caps-simdna
+capability	wild-semdiv-dollar-trailing-newline-pcre2	search_short	1071.684783	1076.687597	1493.027576	rust_1.13.1_default-caps-simdna
+capability	wild-semdiv-dollar-trailing-newline-pcre2	throughput	156.963211	157.453938	258.68578	rust_1.13.1_default-caps-simdna
+capability	wild-semdiv-empty-alt-repeat-pcre2	search_short	2908.639281	1245.471606	3880.07141	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-semdiv-empty-alt-repeat-pcre2	throughput	19785387.14094	8555958.705722	7932.260725	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-validator-email-owasp	search_short	1063.524604	1058.030187	2263.791328	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-validator-email-owasp	throughput	46113.056084	46113.729563	4320.89496	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-validator-ipv4-owasp	search_short	824.521417	451.893504	963.954728	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-validator-ipv4-owasp	throughput	97.60155	48.88499	67.84432	rust_1.13.1_default-caps-simdna
+capability	wild-validator-us-zip-owasp	search_short	777.164899	450.255108	995.404669	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-validator-us-zip-owasp	throughput	97.540094	48.958133	68.242205	rust_1.13.1_default-caps-simdna
+capability	wild-validator-uuid-grok	search_short	717.606248	713.084494	1229.712765	rust_1.13.1_default-caps-simdna
+capability	wild-validator-uuid-grok	throughput	138143.172373	138448.853828	259819.242841	libpcre2_10.46_jit-caps-simdna
+capability	wild-waf-crs-942140-dbnames	search_short	2015.295419	2012.897304	3416.610993	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942140-dbnames	throughput	12495946.945736	12505176.543726	2105436.0729	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942160-sleep-benchmark	search_short	673.307759	674.204024	2430.853671	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942160-sleep-benchmark	throughput	1411930.122056	1415769.081227	543254.997944	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942270-union-select	search_short	994.699659	997.570263	1965.39274	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942270-union-select	throughput	1966204.638132	1966615.823529	207225.848339	libpcre2_10.46_jit-caps-simdna
+capability	wild-waf-crs-942360-concat-sqli	search_short	7389.734234	7393.68797	4575.207705	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942360-concat-sqli	throughput	36452931.178571	36474443.658824	3587664.697581	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942500-comment-obfuscation	search_short	706.941842	706.295077	2396.124746	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	wild-waf-crs-942500-comment-obfuscation	throughput	78551.170543	78650.795526	140340.856093	rust_1.13.1_default-caps-simdna
+capability	winpath-near-miss	search_short	521.937595	520.631885	1478.957446	vectorscan_5.4.11_block-nosom-nocaps-simd
+capability	winpath-near-miss	throughput	69.809197	69.875519	293.761328	rust_1.13.1_default-caps-simdna

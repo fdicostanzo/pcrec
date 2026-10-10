@@ -26,6 +26,11 @@ prose (K91 I3).
    - Cells: the existing `quoted-delim-match` and `(\w)\1` at controlled start-byte densities of 5, 12, 33 and 80%. Also short subjects whose first byte is a start byte (K90 L3), and aws with the start byte absent (K91 I5).
    - Oracle: differential. The disarm rule's design waits on it.
 
+3a. **[OPT-REVEND] stage 2 (D156 add. 1 Q2, Frank: "it should be built. we can create some patterns for it") — capture-bearing end-anchored tails.**
+   - Cells: `(\d+)$`, `(\w+)\.txt$`, `([a-z]+)\s*$`, `(\s*)\z`, plus a lazy tie shape `(\s+?){2}$`, over the existing t-tail-*-1m bodies and one 64 KiB body (size independence). Auto-caps config (the capture/VM route), matching and non-matching tails.
+   - Also feeds [CAP-EARLY-STOP]: a capture with a long uncaptured tail, e.g. `(\w+)@[a-z.]+` on prose.
+   - Oracle: differential. Home set: capability.
+
 ## MED
 
 3. **CTX trio ([ART-HYB-COUNTED], I13, [ART-LAZY-FRAMELESS]): a hit-weighted ctx-* cell.**

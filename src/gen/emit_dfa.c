@@ -1139,6 +1139,26 @@ static void ofs_pred_trace(const mf_pred *p)
 _Static_assert(MF_MAX_TERM >= PCREC_OFSK_MAX_SET + 1,
                "an offset-skip block's terms (PCREC_OFSK_MAX_SET verify offsets "
                "plus its scan) must fit one memfn predicate (C14)");
+_Static_assert(MF_RANK_MAX >= PCREC_MAX_REQ_RUN_SCAN,
+               "a predicate's position ranking holds every position of the "
+               "longest run term pcrec hands the kit, so it is never truncated");
+
+/* States the ranking of `t`'s run term on `p` ([MEMFN] RQ-2, D157): every
+ * position of the term, ordered by the compile's prior rate, with each
+ * position's rate (`pcrec_find_run_rank`). */
+static void ofs_pred_rank(Ctx *cx, const OfsTest *t, mf_pred *p)
+{
+    int pos[PCREC_MAX_REQ_RUN_SCAN];
+    uint32_t mass[PCREC_MAX_REQ_RUN_SCAN];
+    pcrec_find_run_rank(pcrec_find_byte_rate(cx), t->run_bytes, t->run_mask,
+                        t->run_len, pos, mass);
+    for (int i = 0; i < t->run_len; i++) {
+        p->rank_pos[i] = (uint16_t)pos[i];
+        p->rank_ppm[i] = mass[i];
+    }
+    p->rank_n = (uint8_t)t->run_len;
+}
+
 static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
 {
     int sp = t->scan_k, reach = 0;
@@ -1163,6 +1183,7 @@ static void ofs_pred_of(Ctx *cx, const OfsTest *t, mf_pred *p, uint32_t fn_ref)
             if (in_run) {
                 p->plan_hint = p->nterm;
                 p->plan_pos = (uint16_t)(sp - t->run_o);
+                ofs_pred_rank(cx, t, p);
             }
             pcrec_memfn_term_run(&p->term[p->nterm++], t->run_o, t->run_bytes,
                                  t->run_mask, t->run_len, MF_REQUIRED);

@@ -1,0 +1,58 @@
+== config default: K3+K4 cells, bytes 33530444, est 54.62 ms
+  landing          cells   84 patterns  44  bytes     22705381 ( 67.7%)  est   42.58 ms ( 77.9%)
+  reverse-pass     cells  151 patterns 100  bytes      6027512 ( 18.0%)  est    8.11 ms ( 14.8%)
+  end-minus-width  cells  179 patterns 106  bytes      4797551 ( 14.3%)  est    3.94 ms (  7.2%)
+  -- reverse-pass residual by reason:
+     land=alive-not-accept                              patterns  85 bytes      5902069 est   7.92 ms
+     land=assert-after                                  patterns   3 bytes       123254 est   0.19 ms
+     land=assert-at-start                               patterns  12 bytes         2189 est   0.00 ms
+  -- top 20 cells by est:
+     utf8/prp-l                         throughput    landing          est   4.15 ms  G   1331007  n  1638400  K3 0 K4 1331007  bench 11.77 ms
+     utf8/cls-dot                       throughput    landing          est   3.18 ms  G   1638400  n  1638400  K3 0 K4 1638400  bench 13.12 ms
+     utf8/cls-neg-single                throughput    landing          est   3.11 ms  G   1605993  n  1638400  K3 0 K4 1605993  bench 13.04 ms
+     utf8/ci-neg-fold                   throughput    landing          est   3.11 ms  G   1605993  n  1638400  K3 0 K4 1605993  bench 13.03 ms
+     syntax/mod-a                       throughput    landing          est   2.99 ms  G   1595271  n  1376256  K3 0 K4 1595271  bench 7.12 ms
+     syntax/cls-w                       throughput    landing          est   2.98 ms  G   1595271  n  1376256  K3 0 K4 1595271  bench 7.09 ms
+     utf8/qnt-dot-bounded               throughput    reverse-pass     est   2.87 ms  G   1638399  n  1638400  K3 0 K4 1638399  bench 6.50 ms
+     utf8/cls-mixed                     throughput    landing          est   2.73 ms  G   1181962  n  1638400  K3 0 K4 1181962  bench 7.98 ms
+     syntax/unp-p-lc                    throughput    landing          est   2.68 ms  G   1446547  n  1376256  K3 0 K4 1446547  bench 6.59 ms
+     syntax/cls-posix                   throughput    landing          est   2.67 ms  G   1445794  n  1376256  K3 0 K4 1445794  bench 6.56 ms
+     capability/wild-semdiv-empty-alt-repeat-pcre2 throughput    reverse-pass     est   2.00 ms  G    737765  n  4681573  K3 0 K4 737765  bench 19.79 ms
+     syntax/unp-p-uc                    throughput    landing          est   1.75 ms  G    907953  n  1376256  K3 0 K4 907953  bench 5.82 ms
+     utf8/cls-neg-cjk                   throughput    landing          est   1.70 ms  G    943450  n  1638400  K3 0 K4 943450  bench 5.61 ms
+     utf8/ci-class-range                throughput    landing          est   1.51 ms  G    744653  n  1638400  K3 0 K4 744653  bench 5.69 ms
+     utf8/prp-latin                     throughput    landing          est   1.48 ms  G    735900  n  1638400  K3 0 K4 735900  bench 5.61 ms
+     utf8/cls-boundary-range            throughput    landing          est   1.45 ms  G    725267  n  1638400  K3 0 K4 725267  bench 5.62 ms
+     utf8/cls-w-ascii                   throughput    landing          est   1.32 ms  G    892089  n  1638400  K3 0 K4 892089  bench 4.58 ms
+     utf8/cls-posix-alpha               throughput    landing          est   1.30 ms  G    886238  n  1638400  K3 0 K4 886238  bench 4.52 ms
+     utf8/cls-neg-allhigh               throughput    landing          est   1.15 ms  G    995722  n  1638400  K3 0 K4 995722  bench 3.49 ms
+     email/orig                         throughput    reverse-pass     est   0.92 ms  G   1048575  n  5242880  K3 0 K4 1048575  bench 7.05 ms
+== config nocaps: K3+K4 cells, bytes 34438256, est 51.03 ms
+  landing          cells   84 patterns  44  bytes     22705381 ( 65.9%)  est   42.42 ms ( 83.1%)
+  reverse-pass     cells  153 patterns 101  bytes      6935324 ( 20.1%)  est    7.88 ms ( 15.5%)
+  end-minus-width  cells  179 patterns 106  bytes      4797551 ( 13.9%)  est    0.73 ms (  1.4%)
+  -- reverse-pass residual by reason:
+     land=alive-not-accept                              patterns  86 bytes      6809881 est   7.70 ms
+     land=assert-after                                  patterns   3 bytes       123254 est   0.19 ms
+     land=assert-at-start                               patterns  12 bytes         2189 est   0.00 ms
+  -- top 20 cells by est:
+     utf8/prp-l                         throughput    landing          est   4.15 ms  G   1331007  n  1638400  K3 0 K4 1331007  bench 11.78 ms
+     utf8/cls-dot                       throughput    landing          est   3.17 ms  G   1638400  n  1638400  K3 0 K4 1638400  bench 13.09 ms
+     utf8/cls-neg-single                throughput    landing          est   3.13 ms  G   1605993  n  1638400  K3 0 K4 1605993  bench 13.11 ms
+     utf8/ci-neg-fold                   throughput    landing          est   3.12 ms  G   1605993  n  1638400  K3 0 K4 1605993  bench 13.08 ms
+     syntax/cls-w                       throughput    landing          est   3.01 ms  G   1595271  n  1376256  K3 0 K4 1595271  bench 7.17 ms
+     syntax/mod-a                       throughput    landing          est   2.99 ms  G   1595271  n  1376256  K3 0 K4 1595271  bench 7.10 ms
+     utf8/qnt-dot-bounded               throughput    reverse-pass     est   2.87 ms  G   1638399  n  1638400  K3 0 K4 1638399  bench 6.50 ms
+     capability/wild-datetime-datefinder-alternation throughput    reverse-pass     est   2.80 ms  G    907677  n  4681573  K3 0 K4 907677  bench 30.11 ms
+     utf8/cls-mixed                     throughput    landing          est   2.72 ms  G   1181962  n  1638400  K3 0 K4 1181962  bench 7.97 ms
+     syntax/cls-posix                   throughput    landing          est   2.67 ms  G   1445794  n  1376256  K3 0 K4 1445794  bench 6.57 ms
+     syntax/unp-p-lc                    throughput    landing          est   2.66 ms  G   1446547  n  1376256  K3 0 K4 1446547  bench 6.53 ms
+     syntax/unp-p-uc                    throughput    landing          est   1.75 ms  G    907953  n  1376256  K3 0 K4 907953  bench 5.83 ms
+     utf8/cls-neg-cjk                   throughput    landing          est   1.70 ms  G    943450  n  1638400  K3 0 K4 943450  bench 5.61 ms
+     utf8/ci-class-range                throughput    landing          est   1.51 ms  G    744653  n  1638400  K3 0 K4 744653  bench 5.69 ms
+     utf8/prp-latin                     throughput    landing          est   1.48 ms  G    735900  n  1638400  K3 0 K4 735900  bench 5.61 ms
+     utf8/cls-boundary-range            throughput    landing          est   1.45 ms  G    725267  n  1638400  K3 0 K4 725267  bench 5.62 ms
+     utf8/cls-w-ascii                   throughput    landing          est   1.32 ms  G    892089  n  1638400  K3 0 K4 892089  bench 4.58 ms
+     utf8/cls-posix-alpha               throughput    landing          est   1.31 ms  G    886238  n  1638400  K3 0 K4 886238  bench 4.53 ms
+     utf8/cls-neg-allhigh               throughput    landing          est   1.15 ms  G    995722  n  1638400  K3 0 K4 995722  bench 3.49 ms
+     capability/wild-semdiv-empty-alt-repeat-pcre2 throughput    reverse-pass     est   0.99 ms  G    737765  n  4681573  K3 0 K4 737765  bench 8.56 ms

@@ -512,3 +512,11 @@ Maintenance: add a file per checkpoint and list it here.
 
 - `2026-10-09-r9b-memfn-simd.md` — LIGHT two-critic (sonnet) re-check of integration.md §R4.9 after D155 and add. 1: contract critic (deliverable after RC-1/RC-2), docs critic (BLOCKER DS-10, C18 still described as two legs); all 21 findings applied, by-id table inside.
 - `2026-10-09-r-revend-panel.md` — LIGHT D6 panel (rvcrit1 exactness/opus, ~70 new twins vs 10.46; rvcrit2 fit+checks/sonnet) on [OPT-REVEND] (revend.md, lane revdes). Exactness UPHELD (47 new shapes, 0 diffs beyond K74). Four HIGH: a dead speculative seed is an OOB read (end_pin admits trailing lookarounds, contrary to the note), CT_VERDICT has no accepting successor in WINDOW, R2b dereferences NULL, `.routes = CR_DFA` breaks route-independence; stamp-value readers missing from §5.3. Q1 (REVEND before W1) RE-OPENED to measurement: 3 passes vs 2 on bounded patterns, and W1-first needs no width conjunct (lane revq1). Bench predictions held pending the `.txt` re-run.
+- `2026-10-09-r-locfin-panel.md` — FULL D6 panel (lfcrit1 exactness/opus, measured vs 10.46; lfcrit2 table fit + checks/sonnet; lfcrit3 generality + unlocks/opus) on D156's locate × finish note (lane locfin). The frame holds, and stage 2 is NEUTRAL (0 / 5.2M window diffs). Not build-ready:
+  - the types and finishers shrink to the general form: start-interval × end-set, and four finishers × an engine hat;
+  - FINISH folds in `dfa_matches[]` and the VERIFIER/LOOP/CALLER nodes;
+  - totality is keyed on (locator route, finisher route);
+  - posture splits into a join plus a contract, with a give-up differential as its control;
+  - O4 admitted a wrong answer (E2);
+  - rev-inner per-occurrence CAND is unsound under backrefs in S (E1), which also corrects where_to_start.md §2.2.
+  Unlocks filed: a forward relaxed-backref prefilter, seed-set walks, fixed-width RECOVER. Revision lane locfin2.

@@ -1194,6 +1194,20 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `-DPCREC_SIMD_WITNESS` only, `pcrec_memfn_simd_witness` writes one
   synthetic guarded block through them (tests/memfn/run_simd_guarded.sh);
   emit_vm.c's `vm_init` and the memfn mark call it.
+
+  **[MEMFN] RQ-2 (lane rq2, 2026-10-09, D157, MF_SITE_ABI 9, no pcrec abi
+  event):** `mf_pred.rank_n`/`rank_pos`/`rank_ppm`, the position ranking, is
+  pcrec's fact. `ofs_pred_of` (emit_dfa.c), the PRE and OFS sites' one
+  predicate builder, states it through `ofs_pred_rank` wherever the scan sits
+  inside the RUN term: every position of that term, ordered by the
+  compile's prior rate (`pcrec_find_run_rank`), with each position's rate;
+  a `_Static_assert` holds `MF_RANK_MAX >= PCREC_MAX_REQ_RUN_SCAN`, so the
+  ranking is never truncated. Every other predicate keeps the arena's
+  `rank_n` 0 (no facts). The scanned position (`plan_pos`) is unchanged. No
+  kit row reads the ranking yet, so no emitted byte moves at either SIMD
+  setting. Under `-DPCREC_RANK_PROBE` only, `pcrec_memfn_define` prints each
+  predicate's ranking as handed to the kit (tests/memfn/run_rank.sh).
+
 - **runcmp.c** — **DELETED at [MEMFN] M1b (lane m1b, 2026-10-07, zero
   movers): THE RUN COMPARE IS THE KIT'S**, `memfn/src/runcmp.c` (see
   `memfn/src/CLAUDE.md`), transcribed with its row table, helpers and
