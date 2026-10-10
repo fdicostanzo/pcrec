@@ -1824,3 +1824,32 @@ the compiler, and is never adopted silently. Proposed for main to file
     - After RQ-2 merges, a kit lane adds the KB term to `vrun.c:cmask` (only -fmemfn-simd bytes move).
     - Then the heavy slot (identity gate on every arm, N2, G2 full, make test, the remaining mech rows).
     - Then the RQ-4 tier-U timing and RQ-5.
+- notice: 2026-10-10 — **R-13: batch 1 plus the kit's read of RQ-2's ranking BUILT (CANDIDATE), lane/memfn-r13 @ this commit's parent. The heavy slot is owed.**
+  - **Contents:**
+    - main 7b98a046 (RQ-2) is merged. R-13's sink ops renumber MF_SITE_ABI
+      9 -> 10, with readers found by grep (r13_report addendum).
+    - Lane rankuse: the vrun rows AND a second position KB, the first
+      ranked position (`rank_pos`) other than KA.
+      - WHICH position is derived from the order.
+      - HOW MANY (two) is an UNMEASURED DEFAULT with the deny
+        `--memfn=no-vrun-kb` (registry floor 3, cli cases, tuning.md hunk).
+      - `rank_ok` refuses malformed rankings.
+      - Bounds are 2,700/2,800.
+      - Report: docs/dev/lanes/rankuse_report.md.
+    - Lane rkfix:
+      - S738-S742 renumbered to **S750-S754** (main's S750-S757 block).
+      - C4 (test-memfn-arch) fixed via 6 allowlist rows (the floor is 27).
+      - K37 fixed (run_simd_floor.sh).
+  - **Light gates green:**
+    - SIMD-off 0 artifact movers, so there is no pcrec abi event.
+    - SIMD-on movers are exactly the 44 vrun FUNC artifacts.
+    - test-memfn-* sections green; G2 quick 51,169,263/0; G2 SIMD quick
+      1,031/0.
+    - Solo mech S750-S754, S522, S725, S726 all DETECTED.
+  - **Owed (slot18, memfn-slot/slot18/run.sh):** identity on every arm, N2,
+    G2 full, make test and 33 mech rows. It runs AFTER main merges R-12, per
+    main's order: R-13 merges post-R-12 main first. Then the RQ-4 tier-U
+    timing (DEFAULT / KB-DENY / OFF) and RQ-5.
+  - **Process note:** rankuse ran full-population emit_sweep and G2 during
+    main's specnum chain, against a light-only brief. Main marked that
+    perfrun contaminated.
