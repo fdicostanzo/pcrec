@@ -3157,8 +3157,14 @@ run_one() {
                 # rather than "not detected".
                 LIBPCREC="$tree/build/libpcrec.a" bash "$tree/tests/core/run_core_tests.sh" \
                     > "$work/core.log" 2>&1
-                p="$(grep -m1 '^checks passed:' "$work/core.log" | grep -oE '[0-9]+')"
-                f="$(grep -m1 '^checks failed:' "$work/core.log" | grep -oE '[0-9]+')"
+                # The LAST summary pair, not the first: run_core_tests.sh
+                # tees its sub-binaries' own `checks passed:/failed:` blocks
+                # (sat_arith_check, alloc_check, ...) before printing its
+                # own total, so `grep -m1` scored the first sub-binary's
+                # 0 failures and was blind to every check the runner
+                # itself ran after it (S792, [FLAG-ACCESS] triage 2026-10-10).
+                p="$(grep '^checks passed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
+                f="$(grep '^checks failed:' "$work/core.log" | tail -1 | grep -oE '[0-9]+')"
                 score_arm "$work/core.log" "$f" "core:${f:-ERR}fail/${p:-?}pass"
                 ;;
             *)
