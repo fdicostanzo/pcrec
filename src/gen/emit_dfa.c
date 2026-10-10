@@ -335,6 +335,11 @@ static bool cand_recover_asked(Ctx *cx);
 /* [OPT-REVEND] L0 the path's finisher route, a field read without a
  * selection (defined beside `cand_route_of`). */
 static CandRoute cand_finish_of(Ctx *cx);
+/* [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's question (locate_finish.md
+ * §5.1): NULL where the selected path asks `slot` on route `rt` (an entry
+ * slot on any route), so the stamp reads the slot's selection, else the
+ * slot's ABSENCE value. Beside the path derivation. */
+static const char *cand_stamp_absent(Ctx *cx, int slot, int rt);
 /* Does BOUND on `sel`'s route admit at most one start position: slot
  * `reader`'s read of BOUND's row (its `u.bound.one`). */
 #define CAND_BOUND_ONE(reader, sel, site)                                     \
@@ -2274,9 +2279,11 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    /* [OPT-5 STEP 2] HOW <prefix>_search recovers the match START:\n"
         "       \"pinned\" (the start is search_from by compile-time proof, and\n"
         "       this artifact carries no reverse machine at all) or\n"
-        "       \"reverse-pass\" (the second, backwards scan), mirroring\n"
-        "       <PREFIX>_DFA_START. The two forms are ANSWER-IDENTICAL and\n"
-        "       differ only in cost. NON-NULL on every artifact that CONTAINS\n"
+        "       \"reverse-pass\" (the second, backwards scan), or\n"
+        "       \"attempt-start\" (no recovery: an attempt loop's own start,\n"
+        "       or the empty engine), mirroring <PREFIX>_DFA_START. The\n"
+        "       forms are ANSWER-IDENTICAL and differ only in cost. NON-NULL\n"
+        "       on every artifact that CONTAINS\n"
         "       a DFA scan, a VM HYBRID INCLUDED -- a hybrid inlines this same\n"
         "       search body as its prefilter, so unlike match_form the guard\n"
         "       is \"has a DFA scan\" and not \"the DFA emitter wrote _match\".\n"
@@ -7092,7 +7099,8 @@ static const CandRow *vm_start_row(Ctx *cx, CandSel *s)
 const char *pcrec_vm_start_scan_name(Ctx *cx)
 {
     CandSel s;
-    return vm_start_row(cx, &s)->tok;
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_NEXT, CAND_ROUTE_VM);
+    return a ? a : vm_start_row(cx, &s)->tok;   /* [OPT-REVEND] L2.1 the rule */
 }
 
 /* Writes the VM hat's seek into `<p>_search_run` at indent `ind`: before the
@@ -7535,6 +7543,8 @@ static ReqUse req_use(Ctx *cx)
  * subtraction carries, or "none" where the scan starts at the startpos. */
 static const char *req_handoff_stamp(Ctx *cx)
 {
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_FIRST, CAND_ROUTE_DFA);
+    if (a) return a;                    /* [OPT-REVEND] L2.1: FIRST is off the path */
     if (req_use(cx) != REQ_USE_HANDOFF) return "none";
     return dfa_fragf(cx, "%lld", pcrec_fact_req_run_maxoff(cx));
 }
@@ -8044,9 +8054,9 @@ static bool start_pinned_applies(const CandSel *s)
  * DFA-shaped body (`cand_route_of`). It takes a bare `Ctx` because every
  * caller has one and none of them holds a `CandSel`; the `d` it builds is the
  * artifact's own forward machine, which is the machine this slot is about.
- * On ENG_ATTEMPT the route is `CAND_ROUTE_ATTEMPT`, where only `reverse-pass`
- * is routed: S1's predicate declined there at its own P4 before C3, so the
- * row chosen is the same. */
+ * [OPT-REVEND] L2.1 RECOVER is asked on CAND_ROUTE_DFA alone: an ENG_ATTEMPT
+ * body's path asks no RECOVER, and its stamp reads the slot's absence through
+ * the generated rule (`dfa_search_start_name`), never this selection. */
 static const CandRow *dfa_search_start_of(Ctx *cx)
 {
     CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = NULL, .forward = true, .st = -1,
@@ -8060,7 +8070,12 @@ static const CandRow *dfa_search_start_of(Ctx *cx)
 /* AXIS J's chosen row's spelling — `<PREFIX>_DFA_START`'s value and
  * `rx_info.search_form`'s. */
 static const char *dfa_search_start_name(Ctx *cx)
-{ return dfa_search_start_of(cx)->tok; }
+{
+    /* [OPT-REVEND] L2.1 the generated rule: RECOVER's absence where the path
+     * asks none (an attempt loop, the empty engine). */
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    return a ? a : dfa_search_start_of(cx)->tok;
+}
 
 /* The same selection as a yes/no, for the sites that need the ANSWER rather
  * than the name: the chosen row's `u.recover.pinned`, never a comparison of
@@ -8231,8 +8246,10 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_BOUND]    = { "BOUND",    0,
                              CAND_ON(CAND_ROUTE_ATTEMPT) | CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_LOOP) },
-    [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER,
-                             CAND_ON(CAND_ROUTE_DFA) | CAND_ON(CAND_ROUTE_ATTEMPT),
+    /* [OPT-REVEND] L2.1 asked on CAND_ROUTE_DFA alone: its ATTEMPT bit
+     * existed only so `<PREFIX>_DFA_START` could ask it there, and that
+     * stamp now reads RECOVER's ABSENCE where the path does not ask it. */
+    [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER, CAND_ON(CAND_ROUTE_DFA),
                              CN(CAND_NODE_CALLER) },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
@@ -8653,7 +8670,7 @@ static const CandRow cand_rows[] = {
       .desc = "ENG_UNANCH, a non-empty engine, and the forward machine's start state accepts under the PLAIN view with an accept that is invariant in position and in class context -- and, where mechanism 4 seeds, every live seed state does too. The match then provably begins at search_from and no reverse machine is emitted ([OPT-5] STEP 2)",
       .u.recover = { .pinned = true } },
     { .c = { "reverse-pass", 0, cand_always }, .slot = CAND_SLOT_RECOVER,
-      .routes = CR_DFA | CR_ATTEMPT, .tok = "reverse-pass", .map = CM_RECOVER,
+      .routes = CR_DFA, .tok = "reverse-pass", .map = CM_RECOVER,
       .hands = CT_START,
       .list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },
       .desc = "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start",
@@ -9290,6 +9307,47 @@ static CandPath cand_path_of(Ctx *cx)
 static unsigned cand_path_members(Ctx *cx)
 {
     return cand_path_of(cx).members;
+}
+
+/* [OPT-REVEND] L2.1 THE ABSENCE COLUMN of the generated stamp rule
+ * (locate_finish.md §5.1, D156 addendum 2): what a slot's stamp says where
+ * the selected path never asks the slot. Spellings are each stamp's own
+ * "nothing here" value; RECOVER's is `"attempt-start"` (D-2, start_table.md
+ * §6 Q5): no reverse pass recovers the start, the attempt that matched began
+ * there. A slot with no entry is asked on every path that stamps it, which
+ * the rule checks rather than assumes. */
+static const char *const cand_absent[CAND_NSLOTS] = {
+    [CAND_SLOT_WINDOW]  = "none",
+    [CAND_SLOT_FIRST]   = "none",
+    [CAND_SLOT_NEXT]    = "none",
+    [CAND_SLOT_RECOVER] = "attempt-start",
+};
+
+/* The ENTRY slots: asked once per artifact and route-independent (their
+ * choice is the same on every route, `cand_hit_every`), so "on the path" is
+ * "asked on some route". */
+#define CAND_ENTRY_SLOTS (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_FIRST))
+
+/* THE GENERATED STAMP RULE (forward-declared at the top): one function over
+ * the slot -> stamp projection and the absence column above, reading the
+ * path's `asks`. A slot asked on the path stamps its selected row's value
+ * (the caller's own derivation, unchanged); a slot not asked stamps its
+ * absence. So a path-changing LOCATE row (`empty`, `rev-end`) needs no stamp
+ * edit of its own, and a stamp never names a selection that was not emitted
+ * (DD-13c). A slot off the path with no absence value is an internal error:
+ * its stamp would have to invent one. */
+static const char *cand_stamp_absent(Ctx *cx, int slot, int rt)
+{
+    CandPath p = cand_path_of(cx);
+    unsigned asked = (CN(slot) & CAND_ENTRY_SLOTS)
+                   ? p.asks[CAND_ROUTE_DFA] | p.asks[CAND_ROUTE_ATTEMPT] | p.asks[CAND_ROUTE_VM]
+                   : p.asks[rt];
+    if (asked & CN(slot)) return NULL;
+    if (!cand_absent[slot])
+        pcrec_ctx_fail(cx, 0, "internal error: the stamp of slot %s is read on a "
+                       "path that does not ask it, and the slot has no absence "
+                       "value (locate_finish.md §5.1)", cand_nodes[slot].name);
+    return cand_absent[slot];
 }
 
 #ifdef PCREC_CAND_TRACE
@@ -11748,12 +11806,16 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * [START-TABLE] C5 the stamp PROJECTS WINDOW's row, the selection the
      * clamp reads: the window (from its landmark) where the row clamps, the
      * row's listed name (`none`) where it does not. */
+    /* [OPT-REVEND] L2.1 and through the generated rule: WINDOW's absence
+     * where the path asks no WINDOW (F-12: the empty engine applies none). */
     {
         CandSel ws;
-        const CandRow *wr = cand_window_of(cx, &ws);
+        const char *a = cand_stamp_absent(cx, CAND_SLOT_WINDOW, CAND_ROUTE_DFA);
+        const CandRow *wr = a ? NULL : cand_window_of(cx, &ws);
         pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",
-                           wr->u.window.clamp ? pcrec_fact_stamp(cx, PF_END_WINDOW)
-                                              : cand_listed_name(wr));
+                           a ? a
+                           : wr->u.window.clamp ? pcrec_fact_stamp(cx, PF_END_WINDOW)
+                                                : cand_listed_name(wr));
     }
     /* [OPT-REQBYTE] `<PREFIX>_REQ_BYTE` — THE BYTE EVERY MATCH MUST CONTAIN.
      * A §6.3 family-(a) SELECTION FACT for `<PREFIX>_END_WINDOW`'s reason,
@@ -12049,7 +12111,11 @@ static const char *dfa_prefilter_name(Ctx *cx)
      * arms below already answer "none" for exactly the artifacts
      * `dfa_engine_is_empty` identifies. An `if` here would be a THIRD statement
      * of that fact, and the check (tests/codegen/run_dfa_stamps.sh) asserts it
-     * from the emitted text instead. */
+     * from the emitted text instead. [OPT-REVEND] L2.1: NEXT off the path
+     * (the empty engine, a `rev-end` walk) stamps NEXT's absence, the
+     * generated rule, before either arm is asked. */
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_NEXT, cand_route_of(cx));
+    if (a) return a;
     if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) {
         /* ENG_ATTEMPT skips whole ATTEMPTS rather than positions inside one
          * (D63's loop-integration split), so it needs no D11 bound and has no
@@ -12131,6 +12197,8 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
      * already answers "none" for exactly those artifacts. A clause here would
      * be a fourth statement of that fact. ENG_ATTEMPT needs its own arm
      * because `unanch_start` is not the derivation it uses. */
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_NEXT, cand_route_of(cx));
+    if (a) { pcrec_sb_puts(out, a); return; }       /* [OPT-REVEND] L2.1 the rule */
     if (cand_route_of(cx) == CAND_ROUTE_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }
     UnanchStart us;
     OfsTest t;

@@ -539,7 +539,8 @@ enum {
      * and, concretely, so that an artifact the predicate DECLINES is byte-for-
      * byte the same under the flag as without it, which is what makes the
      * declined population a usable reference. What the emitter DID is reported
-     * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`) and mirrored at
+     * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`; `"attempt-start"`
+     * where no start is recovered) and mirrored at
      * run time by `rx_info.search_form`. */
     PCREC_NO_START_PINNED = PCREC_BIT(22),
 

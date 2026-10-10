@@ -472,7 +472,7 @@ return 1;
 
 <a id="s2-19-p5"></a>[2.19¶5] **A VM hybrid is in scope**: it inlines the same search body as its prefilter, and consumes the span as a bound (`attempt_position = window[0][0]`), never as the answer.
 
-<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"`, mirrored at run time by `rx_info.search_form` (§3, §3.2).
+<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"` (or `"attempt-start"` where the search recovers no start at all, `match_api.md` §6.3.4¶11), mirrored at run time by `rx_info.search_form` (§3, §3.2).
 
 <a id="s2-19-p7"></a>[2.19¶7] **Dial:** no cell, PURE WIN (§5.4).
 
@@ -973,7 +973,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | `<PREFIX>_DFA_TABLE` | the transition tables' encoding | §2.13 | none |
 | `<PREFIX>_DFA_UNIFORM_FOLDS` | how many of the artifact's DFA tables had all cells equal and are not emitted, their accessor returning the constant | none: what the machine turned out to contain, not a choice | none |
 | `<PREFIX>_DFA_SCAN_EDGE` | the scan edges' run test | §2.18, §2.22, §2.33, §2.37 | none |
-| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"` or `"reverse-pass"` | §2.19 | `rx_info.search_form` |
+| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"`, `"reverse-pass"`, or `"attempt-start"` (none recovered) | §2.19 | `rx_info.search_form` |
 | `<PREFIX>_DFA_MATCH` | which form `<prefix>_match` takes: `"unwrapped"` or `"search-filter"` | §2.15 | `rx_info.match_form` |
 
 <a id="s3-p2"></a>[3¶2] A stamp has an `rx_info` mirror where it is a caller-visible cost property of an entry the caller calls (`DFA_MATCH`, `DFA_START`) or where a header-less consumer buckets on it (`DFA_SCAN`, `DFA_PREFILTER`); an internal encoding choice has none (`DFA_TABLE`, `DFA_SCAN_EDGE`, `DFA_PREFILTER_OFFSETS`, `DFA_UNIFORM_FOLDS`). `<PREFIX>_DFA_TABLE` names the encoding selected even where every table of it folded, because the encoding fixes the folded constant.

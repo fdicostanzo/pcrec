@@ -1228,7 +1228,7 @@ compile time, where one exists.
 | 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"`; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
 | 23 | `name` | `const char *` | the artifact's own name; never `NULL` ([name](#s6-p12)) | — |
 | 24 | `nentries` | `int` | rows in `groups[]`, all of them (§5.4, §5.5) | — |
-| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"reverse-pass"`; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
+| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"reverse-pass"` / `"attempt-start"`; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
 | 26 | `vars` | `const char *const *` | the variable NAMES the pattern mentions, in first-mention order; `NULL` when none (`docs/spec/vars.md`) | — |
 | 27 | `nvars` | `int` | entries in `vars[]` | `<PREFIX>_NVARS` (var-bearing artifacts) |
 | 28 | `findings` | `const char *` | which findings each query the compile asked was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
@@ -1446,6 +1446,7 @@ selection point must be observable".
   value. A stamp whose value can legitimately be `0` and also needs a
   "declined" answer is a STRING with a `"none"` member, not a number with a
   sentinel.
+- <a id="s6-3-1-p5a"></a>[6.3.1¶5a] **A start-table stamp names a selection the artifact RUNS.** The stamps that report a search-start choice (`<PREFIX>_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_VM_START_SCAN`, `_DFA_START`) carry that choice where the artifact's search path makes it, and the choice's ABSENCE value where it does not: `"none"` for the end window, the handoff and the prefilters, `"attempt-start"` for `_DFA_START`. `<PREFIX>_DFA_SCAN` names the path; the others never describe a pass the artifact does not run.
 - <a id="s6-3-1-p6"></a>[6.3.1¶6] **`#if` on a stamp compiles only within its scope.** `#if`ing on
   `RX_ENGINE` is safe on every artifact; `#if`ing on a (b) macro such as
   `RX_VM_RUNGS` or a budget macro does not compile against a DFA artifact.
@@ -1742,13 +1743,15 @@ the DFA-scan scope, not `_DFA_MATCH`'s.
 ```c
 #define RX_DFA_START "pinned"         /* the start is search_from, by compile-time proof */
 #define RX_DFA_START "reverse-pass"   /* a second, backwards scan finds it */
+#define RX_DFA_START "attempt-start"  /* no start recovery: an attempt began there */
 ```
 
 <!-- value-set: RX_DFA_START -->
 | value | mechanism |
 |---|---|
 | `"pinned"` | the forward machine's start state accepts unconditionally — at every position, under every view, in every class context — so every accept the forward loop records belongs to a thread that began at `search_from`, and the post-loop block writes that offset. The artifact carries NO reverse machine: no transition, accept or byte-class table, no stay or scan-edge tables, no `<prefix>_reverse_*` accessors, no reverse loop |
-| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every artifact whose start state does not accept, or accepts depending on the position or the upcoming byte, or seeds into a state that may be dead, or whose scan is `"attempt"` or `"empty"`, and any build under `-fno-start-pinned` |
+| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact whose start state does not accept, or accepts depending on the position or the upcoming byte, or seeds into a state that may be dead, and any such build under `-fno-start-pinned` |
+| `"attempt-start"` | the search recovers no start: its scan is `"attempt"` (each attempt begins at a known position, and a match is reported from the attempt that found it) or `"empty"` (nothing matches). No reverse pass runs (§6.3.1¶5a) |
 
 <a id="s6-3-4-p12"></a>[6.3.4¶12] The two are answer-identical (`docs/design/opt5_step2_twopass.md` is the
 proof; `tuning.md` §2.19 the axis).
