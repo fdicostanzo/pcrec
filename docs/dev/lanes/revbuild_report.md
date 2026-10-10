@@ -171,17 +171,24 @@ No ruling on file was contradicted by the code except item 1.
 
 ## 5. abi 72 -> 73 (built as 71 -> 72, renumbered on R-12)
 
-Readers found by grep for the number and changed in `61018d49`:
+Readers found by grep for the number and changed in `61018d49` (71 -> 72),
+then again at the R-12 merge `be4b8dd2` (72 -> 73):
 `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`; `tests/codegen/run_codegen_tests.sh`
 `ABI_EXPECT` and its ledger message; `docs/spec/match_api.md` (the TU-guard
 example's three lines, the `rx_info` table's `abi` row, §6¶17's sentence);
 `tests/mech/sabotages/S693_abi_not_bumped.sh`;
 `docs/dev/history/abi_changelog.md` (new top entry). Readers that do not cite
 the number: `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to
-`0c5bb267` (the lane's last src commit; re-pin at landing if the merge
-moves src or the number is renumbered); byte-count readers do not move from
-the digit (72 -> 73 is one width). The suites that count were run after the
-bump: registry, rxtsource, codegen (§7.1).
+`be4b8dd2` (the R-12 merge, the lane's last src commit; re-pin at landing if
+main's merge moves src); the digit is one width, so byte counts move only by
+the text this lane changed: `run_cpset_structure.sh`'s twelve
+`EMITTED_BYTES` rows +94 each (the ABI block's ESSENTIAL
+`rx_info.search_form` comment now names `"attempt-start"`; `^foo$` +96 with
+its two stamp values), re-recorded after a same-`-o` diff against main
+`a15fb77b`'s compiler showed the abi digits and that comment only; the
+resource rescue pin (762,884) is unchanged (the comment lives in the `.h`
+there). The suites that count were run after the renumber: registry,
+rxtsource, startset, cpset-structure, codegen 16/16 (§7.1).
 
 **The R-12 merge.** Main `a15fb77b` (R-12 VMLAZY, abi 72) merged in. Six
 conflicts, each resolved by mechanism: the abi change log (this lane's entry
