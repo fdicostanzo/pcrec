@@ -3030,8 +3030,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" --p
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    # THE abi CHANGE LOG IS `docs/spec/match_api.md` §6 AND NOTHING ELSE
-    # ([REVW.A1], 2026-09-19). This is a CHECK, not a home: the pin below is
+    # THE abi CHANGE LOG IS `docs/dev/history/abi_changelog.md` AND NOTHING
+    # ELSE ([REVW.A1], 2026-09-19, which ruled it `docs/spec/match_api.md` §6;
+    # moved verbatim to docs/dev/history/ by lane specclean, 2026-10-09). This is a CHECK, not a home: the pin below is
     # the assertion, and the failure message's transition narrative is a COPY
     # kept for the reader who meets the red without the spec open. Every bump
     # updates §6 by its own D76/D94 ritual; this string is updated FROM §6,

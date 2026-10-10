@@ -34,11 +34,12 @@ stays here.
 ## THE `abi` NUMBER — its change log is NOT here
 
 `rx_info.abi` versions the emitted scaffolding as a whole (D76). **The one
-canonical change log is `docs/spec/match_api.md` §6**, ruled [REVW.A1]
-(2026-09-19); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
+canonical change log is `docs/dev/history/abi_changelog.md`** (ruled for
+`docs/spec/match_api.md` §6 at [REVW.A1], 2026-09-19, and moved there
+verbatim by the spec's facts-only rewrite, lane specclean, 2026-10-09); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
 to a pointer in the same change, and `tests/codegen/run_codegen_tests.sh`'s
-transition string is a CHECK's failure message maintained FROM §6, not a
-second home.
+transition string is a CHECK's failure message maintained FROM the change
+log, not a second home.
 
 The `##` sections below carry abi numbers in their own titles, and they STAY:
 each is the design record for ITS milestone, with the reasoning behind that
@@ -3564,9 +3565,9 @@ past the bound), `((a)|b){0,4000}c` (brief mode, 4002 accepting states) and
 ## [VAR] — the CALLER-VARIABLE surface (abi 31 -> 32)
 
 Module `vars` gives a pattern `${name}`, whose bytes the caller supplies per
-call. The whole ABI surface lands in ONE event; the narrative is
-`docs/spec/match_api.md` §6, which is the change log's only home (D76
-addendum), and the module's contract page is `docs/spec/vars.md`.
+call. The whole ABI surface lands in ONE event; the narrative is `docs/dev/history/abi_changelog.md`, the change log's only
+home (D76 addendum; it moved out of `docs/spec/match_api.md` §6 in lane
+specclean), and the module's contract page is `docs/spec/vars.md`.
 
 Three things a reader of THIS directory needs.
 

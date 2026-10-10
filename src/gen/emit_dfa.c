@@ -2929,8 +2929,11 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * and the `docs/spec/` hunk together (D76/D94), with every reader of the
      * number found BY GREP.
      *
-     * THE CHANGE LOG IS `docs/spec/match_api.md` §6, AND IT IS THE ONLY HOME
-     * ([REVW.A1], 2026-09-19). A 449-line narrative of every bump stood
+          * THE CHANGE LOG IS `docs/dev/history/abi_changelog.md`, AND IT IS THE
+     * ONLY HOME (ruled for `docs/spec/match_api.md` §6 at [REVW.A1],
+     * 2026-09-19; moved verbatim to docs/dev/history/ by the spec's
+     * facts-only rewrite, lane specclean, 2026-10-09 — the spec keeps the
+     * current number and what a bump means). A 449-line narrative of every bump stood
      * here and had drifted: eight transitions missing, the surviving entries
      * out of numerical order, and two of them (`20 -> 21`, `21 -> 22`)
      * recorded nowhere else in the tree while §6 carried them the whole
@@ -2942,7 +2945,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * the essential generated-by line now also names `PCREC_VERSION`
      * beside the abi digit — `rx_info.abi`'s VALUE, every struct offset and
      * every answer are unchanged; the comment TEXT is the only thing that
-     * moved. §6 states it and every predecessor. */
+     * moved. The change log states it and every predecessor. */
     pcrec_sb_printf(c, "    .abi = %d,\n", PCREC_ARTIFACT_ABI);
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
