@@ -1,0 +1,6 @@
+# [RXT-READERS] `oracle none` with no reason is refused by all three legs:
+# the skip is counted and printed, and a skip with no stated reason is the
+# silent pass the production exists to replace.
+pattern a+
+oracle none
+m "aaa" 0 3

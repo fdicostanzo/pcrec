@@ -536,12 +536,15 @@ off.
   then letters, digits or `_`; the value is a double-quoted string in the
   SAME escape vocabulary a subject carries, and there is no second one.
   `var n ""` is the EMPTY state (`rx_var.p != NULL`, `len == 0`).
-  `run.sh` and `verify_rxt.py` enforce the name grammar and the quoted value;
-  `pcrec` reads a `var` line as a qualified line and does not check either.
+  All three readers enforce the name grammar and the quoted value; a name
+  that is not an identifier (`var 1x "v"`) or a value that is not
+  double-quoted (`var a b`) is refused with class `value-shape`.
 - <a id="s1-5-p13"></a>[1.5¶13] `var-unset <name>` — block-scoped, repeatable: declares the slot UNSET
   (`rx_var.p == NULL`). It is a DECLARATION and not an omission, and the
   difference is testable: omitting the name entirely ALSO reads UNSET at the
-  artifact, so a block can assert both routes to one state.
+  artifact, so a block can assert both routes to one state. `<name>` is the
+  same identifier and nothing may follow it (`var-unset a b` is refused,
+  class `value-shape`, by all three readers).
 
   The harness builds an `rx_var[]` array from these lines VERBATIM — one
   entry per line, in source order, with no lookup and no de-duplication —
@@ -1487,16 +1490,15 @@ this build RESOLVES an oracle declaration to a verification — the default
 python-`re` tier and the `# pcre2-only` convention (§3) are independent of
 it, and a declaration's only effect is the counted skip below.
 
-<a id="s3-1-p2"></a>[3.1¶2] **`<engine-ref>` is an engine name, optionally `/` and a version.** In
-`pcrec` the ENGINE half is a `defname` (a letter or `_`, then letters,
-digits, `_`, `-` or `.`, so `pcre2-dfa` is spellable) and the VERSION half,
-when written, is letters, digits, `.`, `-` or `_`; a `/` with nothing after
-it is refused by name. On a BLOCK's `oracle` line `tests/harness/run.sh` and
-`tests/harness/verify_rxt.py` are narrower: they accept only an identifier
-as the engine (letters, digits, `_`; no `-`, no `.`). A second spelling,
-`oracle none <reason>`, declares a counted skip with a stated reason; `pcrec`
-accepts it (the reason is required), and both harness readers refuse it on a
-block's `oracle` line.
+<a id="s3-1-p2"></a>[3.1¶2] **`<engine-ref>` is an engine name, optionally `/` and a version.** All
+three readers (`pcrec`, `tests/harness/run.sh`, `tests/harness/verify_rxt.py`)
+accept the same grammar. The ENGINE half is a `defname` (a letter or `_`,
+then letters, digits, `_`, `-` or `.`, so `pcre2-dfa` is spellable) and the
+VERSION half, when written, is letters, digits, `.`, `-` or `_`; a `/` with
+nothing after it is refused by name, class `value-shape`. A second spelling,
+`oracle none <reason>`, declares a counted skip with a stated reason, legal at
+file and block scope alike; the reason is required, and a bare `oracle none`
+is refused, class `value-shape`.
 
 - <a id="s3-1-p3"></a>[3.1¶3] **`oracle python` and `oracle pcre2`** are engine-refs with no version.
 - <a id="s3-1-p4"></a>[3.1¶4] **A version PINS what a correctness claim was checked against**:

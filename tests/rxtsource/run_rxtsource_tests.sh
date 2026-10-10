@@ -2745,6 +2745,18 @@ check_accept_all3_kind engine   block_kinds_accept.rxt block-kinds-accept-engine
 check_accept_all3_kind var        var_bindings_accept.rxt var-bindings-accept-var
 check_accept_all3_kind var-unset  var_bindings_accept.rxt var-bindings-accept-unset
 
+# [RXT-READERS] ONE GRAMMAR, THREE LEGS, A FIXTURE PER CELL. `oracle`'s
+# engine half is a defname and `oracle none <reason>` is legal in a block;
+# `var`/`var-unset` are an identifier (then a double-quoted value). Accept
+# cells first, then the refusals, each class read off every leg itself.
+check_accept_all3_kind oracle oracle_forms_accept.rxt oracle-forms-accept
+check_refusal_all3 oracle_none_bare.rxt      oracle-none-bare      value-shape "'oracle none' needs a reason"
+check_refusal_all3 oracle_bad_engine.rxt     oracle-bad-engine     value-shape "'oracle' wants an engine reference"
+check_refusal_all3 oracle_empty_version.rxt  oracle-empty-version  value-shape "no version after it"
+check_refusal_all3 var_bad_name.rxt          var-bad-name          value-shape "'var' wants a variable name"
+check_refusal_all3 var_unquoted.rxt          var-unquoted          value-shape "'var' wants a name then a double-quoted value"
+check_refusal_all3 var_unset_extra.rxt       var-unset-extra       value-shape "'var-unset' wants a bare variable name"
+
 # --- [RXTDUP lane, sem25] a SECOND file-level 'description' is refused
 # the same way, naming the earlier line — docs/spec/rxt_format.md calls
 # this "a machine-readable prose FIELD" (singular). Head-only (legs B/C
