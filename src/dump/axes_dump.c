@@ -132,8 +132,6 @@ static const AxisDesc AXIS_DESC[] = {
     { "scan-body", "kit", "size-leaning --tune positions only (-2/-1): the class-form table answers byte-kit, i.e. the class's kit matcher written at the edge's two test sites is smaller than its 256-byte table, tested by a static inline kit matcher <prefix>_<machine>_scankit<N>; -fno-cls-kit denies it ([CLS-TREE] S2, D131 item 5, D139 item 1)" },
     { "scan-body", "bitmap", "always (fallback) -- the class-form table answers byte-table and the table selection (TAB_ROWS, site scan) picks the scan-table row: one 256-byte membership table per edge. The load is VALUE-addressed, not result-addressed, so the cursor is still the only loop-carried register. A per-ISA SIMD run-extension form would be a form of the edge's LOOP ([OPT-SIMD]; ISA-neutral by ruling, scalar forms always the fallback)" },
 
-    { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
-    { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
 };
 #define N_AXIS_DESC (sizeof AXIS_DESC / sizeof AXIS_DESC[0])
 
@@ -155,14 +153,11 @@ static const char *desc_of(const char *axis, const char *cand)
  * artifact). Where a stamp exists, D82's own rule ("the chosen object's name
  * IS the stamp value") makes `stamp_value` exactly the candidate's own name
  * — never re-derived. The start axes (`prefilter`, `search-start`) are not
- * here: their rows carry their own stamp (`emit_cand_axis`). */
+ * here: their rows carry their own stamp (`emit_cand_axis`), and so since
+ * [OPT-REVEND] L0 does axis G (`match`, `RX_DFA_MATCH`): the FINISH rows. */
 static const char *stamp_macro_of(const char *axis)
 {
     if (!strcmp(axis, "table")) return "RX_DFA_TABLE";
-    /* [ENG-ABS] axis G HAS a per-artifact stamp, unlike view/seed/accept/
-     * direction — its value is a caller-visible cost property of
-     * `<prefix>_match` (spec §3.2), not an emitter-internal decision. */
-    if (!strcmp(axis, "match")) return "RX_DFA_MATCH";
     /* [OPT-5] The stamp belongs to the BODY axis, whose candidate names ARE
      * its values. The REGION axis (`scan-edge`) has no value stamp of its
      * own: what an artifact reports is which body its edges took, and
@@ -1085,7 +1080,7 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "seed", "list", pcrec_dfa_axis_seed_cands);
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
     emit_dfa_list_axis(&sb, "direction", "both", pcrec_dfa_axis_direction_cands);
-    emit_dfa_list_axis(&sb, "match", "list", pcrec_dfa_axis_match_cands);
+    emit_cand_axis(&sb, "match");     /* [OPT-REVEND] L0: the FINISH rows */
     /* [OPT-5] axes H and I. Both are LIST axes off live candidate arrays,
      * not hand-stated predicate rows: manager ruling R1 makes the region
      * decision a D82 selection and the edge's run-extension body its own

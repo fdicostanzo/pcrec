@@ -275,11 +275,11 @@ static const char *dfa_prefilter_name(Ctx *cx);
  * decides WHICH `<prefix>_match` body is written). One derivation, three
  * readers, so the stamp cannot disagree with the emitted entry. */
 static const char *dfa_match_name(Ctx *cx);
-/* The same selection asked as a yes/no, for the two sites that need the
- * ANSWER rather than the name (the entry dispatch, and `RX_DFA_TABLE`'s
- * composition, which must include the anchored machine iff it was emitted).
- * Spelling it once here is what stops a `strcmp(name, "unwrapped")` growing
- * somewhere as a second reading of the same selection. */
+/* The same selection asked as a yes/no, for the site that needs the ANSWER
+ * rather than the name (the entry dispatch; since [OPT-REVEND] L0 the
+ * machine folds read the path's members instead). Spelling it once here is
+ * what stops a `strcmp(name, "unwrapped")` growing somewhere as a second
+ * reading of the same selection. */
 static bool dfa_match_is_unwrapped(Ctx *cx);
 
 /* [OPT-5 STEP 2] AXIS J's chosen object's name, forward-declared for axis G's
@@ -3480,6 +3480,15 @@ typedef struct CandSel {
      * set (`attempt_cand`'s output) for the reader that emits or prices the
      * skip, or NULL where the reader needs only the row. */
     struct CandSet *cand;
+    /* [OPT-REVEND] L0 a FINISH ask's HAND (locate_finish.md §1.2, §2.2): the
+     * `CT_*` mask of what is being finished (`AT` = CT_LOWER|CT_UPPER,
+     * `NOMATCH` = CT_VERDICT at L0). MANDATORY on a FINISH ask — a 0 hand
+     * selects no row, and the trace build aborts on it — and read by no other
+     * slot. `point`: the ask is for a match starting exactly at the lower
+     * bound (the match-here entry always asks one); only a take cell for
+     * `AT` reads it. */
+    unsigned    hand;
+    bool        point;
 } CandSel;
 
 /* [START-SET] THE ROUTES (`CandSel.route`, `CandRoute` in core/internal.h
@@ -5109,6 +5118,19 @@ typedef struct CandLocate {
     bool         nomatch;
 } CandLocate;
 
+/* [OPT-REVEND] L0 THE FINISH SLOT's PAYLOAD, `CandRow.u.finish`
+ * (locate_finish.md §1.3, §2.3): the row's ACTION, the finisher its hat runs
+ * (`cand_nodes`' VERIFIER, LOOP and CALLER are these actions), and the hands
+ * it TAKES on each route, a set of `CT_*` masks (0-terminated), so a hat's
+ * limits are data: `verify-at` takes no `AT` on CAND_ROUTE_ATTEMPT (the F-11
+ * cell, locate_finish.md §8 Q7). The walk keeps a FINISH row on a route only
+ * where the ask's hand is one of its take cells there. */
+enum { CAND_FIN_REPORT = 1, CAND_FIN_NOMATCH, CAND_FIN_VERIFY, CAND_FIN_SEARCH };
+typedef struct CandFinish {
+    unsigned char act;          /* CAND_FIN_* */
+    unsigned      take[3][4];   /* per CandRoute, CT_* hand masks */
+} CandFinish;
+
 /* [OPT-REVEND] L0 WHAT A ROW USES on one route (`CandRow.needs[route]`,
  * locate_finish.md §2.7): `mach`, the `CAND_M*` machines its emitter runs;
  * `cells`, the slots (`CN(slot)`) its emitter asks on the same route; and,
@@ -5207,6 +5229,7 @@ struct CandRow {
         CandReseed  reseed;    /* RETRY */
         CandBound   bound;     /* BOUND */
         CandRecover recover;   /* RECOVER */
+        CandFinish  finish;    /* FINISH */
     } u;
 };
 
@@ -7757,59 +7780,36 @@ static const DfaDir dfa_dir_anchored = {
 
 /* ---- AXIS G: WHICH FORM THE ANCHORED MATCH-HERE ENTRY TAKES -------------
  *
- * [ENG-ABS] (docs/design/anchored_match_unwrapped.md §5.1). Two objects, and
+ * [ENG-ABS] (docs/design/anchored_match_unwrapped.md §5.1). Two forms, and
  * the choice is per ARTIFACT rather than per machine — it is a question about
- * an ENTRY POINT, which is why this axis has no `DfaForm` and its objects
- * carry no emitter pointer: the two bodies are different enough (one has
- * tables and a scan loop, the other is four lines around a call to
- * `<prefix>_search`) that a shared skeleton would be a switch wearing a
- * skeleton's clothes.
+ * an ENTRY POINT: the two bodies are different enough (one has tables and a
+ * scan loop, the other is four lines around a call to `<prefix>_search`) that
+ * a shared skeleton would be a switch wearing a skeleton's clothes.
  *
- * `unwrapped` applies exactly when `Job.anchored_ok` is set — the artifact is
- * this emitter's own (not a VM hybrid's inlined prefilter), it is ENG_UNANCH,
- * and the anchored machine BUILT within the DFA caps — and when the artifact's
- * engine is not the empty one, whose `<prefix>_search` is a single `return 0`
- * and whose `_match` is correctly four lines around it.
+ * [OPT-REVEND] L0 THE AXIS IS THE FINISH SLOT's first block now
+ * (docs/design/locate_finish.md rev 2.1 §3.4, LR-G1): `dfa_matches[]` was
+ * FINISH's existing first-match table and folded into `cand_rows[]`, axis J's
+ * C3 precedent. Its two rows are `verify-at` (listed `unwrapped`: the
+ * anchored machine's own run from the caller's position) and `search-from`
+ * (listed `search-filter`: the search entry's own walk from there, filtered
+ * to a match starting exactly there). The match-here entry hands FINISH the
+ * meet `caller ⊓ body` (§1.1, LR-G8): `AT`, the caller's point, or `NOMATCH`
+ * where the body's LOCATE row is the static `empty` — which `verify-at` never
+ * takes, so it needs no "not the empty engine" conjunct.
  *
- * `-fno-anchored-dfa` is a `deny` FIELD on the first candidate, D82's shape:
- * the flag removes the object and the ordinary walk selects the fallback.
- * Nothing branches on the flag here. */
-typedef struct DfaMatch {
-    DfaCand c;
-} DfaMatch;
+ * `-fno-anchored-dfa` is no longer a row deny: it removes the anchored BUILD
+ * (src/core/compile.c, its one reader), and `verify-at` is AVAILABLE exactly
+ * where that machine was built. The listing shows the bit on the row as a
+ * `CandList.fact_deny`, the shape `vm-anchor-bound` and `end-window` use, so
+ * `--list-axes`' `match` lines are byte-identical. */
 
-/* AXIS G's first candidate: may `<prefix>_match` be the anchored machine's
- * own body rather than a wrapper around the search entry? Only where that
- * machine was built and the engine is not the empty one, whose `_search` is a
- * single `return 0` and whose `_match` is correctly four lines around it. */
-static bool match_unwrapped_applies(const CandSel *s)
+/* FINISH `verify-at`'s availability on CAND_ROUTE_DFA: the anchored machine
+ * was BUILT, within the DFA caps (`Job.anchored_ok`; ENG_UNANCH only, never
+ * a VM hybrid's inlined prefilter). */
+static bool finish_verify_at_applies(const CandSel *s)
 {
-    return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
+    return s->cx->job->anchored_ok;
 }
-
-static const DfaMatch dfa_matches[] = {
-    { { "unwrapped",     PCREC_NO_ANCHORED_DFA, match_unwrapped_applies } },
-    { { "search-filter", 0,                     cand_always             } },
-};
-
-/* THE ONE SELECTION, and the reason it takes a bare `Ctx` rather than a
- * `CandSel`: this axis's predicate asks nothing about a MACHINE. Passing a
- * fabricated `d` would invite a later candidate to read it. */
-static const DfaMatch *dfa_match_of(Ctx *cx)
-{
-    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
-                 .route = CAND_ROUTE_DFA };
-    return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
-}
-
-/* AXIS G's chosen object's name — `<PREFIX>_DFA_MATCH`'s value and
- * `rx_info.match_form`'s. */
-static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->c.name; }
-
-/* The same selection as a yes/no, for the two sites that need the ANSWER
- * rather than the name. */
-static bool dfa_match_is_unwrapped(Ctx *cx)
-{ return dfa_match_of(cx) == &dfa_matches[0]; }
 
 /* ---- AXIS J: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES ---------
  *
@@ -8074,6 +8074,11 @@ enum {
     CT_HIT     = 1u << 5,   /* x is the gate landmark's leftmost occurrence */
     CT_START   = 1u << 6    /* x is the reported match's start */
 };
+/* [OPT-REVEND] L0 the two hands FINISH is asked with at L0, as the listing
+ * aliases of their `CT_*` masks (locate_finish.md §1.2): `AT`, a caller's
+ * point request (asked with `CandSel.point`), and `NOMATCH`. */
+#define CAND_HAND_AT      (CT_LOWER | CT_UPPER)
+#define CAND_HAND_NOMATCH CT_VERDICT
 
 /* The hit-to-candidate MAPPING (§1.4). Data for checks and the listing: no
  * emitter branches on it. */
@@ -8192,8 +8197,10 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * relocate to LOCATE (E-FL, `rank`; E-FC, the match-here entry's search,
      * `entry`), and on the VM hat hand a failed attempt to RETRY (E-FR, E-VR,
      * `raise`). It takes the hands its askers give: `AT` and `NOMATCH` at L0.
-     * No row and no asker before the `dfa_matches[]` fold. */
-    [CAND_SLOT_FINISH]   = { "FINISH",   CT_LOWER | CT_UPPER | CT_VERDICT, 0,
+     * Its CAND_ROUTE_VM cells land with the VM entry's ask (L3); until then
+     * the VM search entry IS `search-from`'s VM hat, which the path
+     * derivation reads as a root. */
+    [CAND_SLOT_FINISH]   = { "FINISH",   CT_LOWER | CT_UPPER | CT_VERDICT, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_LOCATE) | CN(CAND_NODE_CALLER) |
                              CN(CAND_SLOT_RETRY),
                              .raise = CN(CAND_SLOT_RETRY), .rank = CN(CAND_SLOT_LOCATE),
@@ -8288,6 +8295,12 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage);
 /* The entry slots a body runs where it is the caller-facing entry (a LOCATE
  * row's `needs[route].front`): the clamp, the pre-check and its handoff. */
 #define CAND_FRONT_DFA (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_FIRST))
+/* The cells the VM search entry asks (`search-from`'s VM hat): its front
+ * (the code at the VM entry's head) and BOUND. Where a prefilter exists its
+ * RETRY re-enters the inlined body too (`cand_path_of`). */
+#define CAND_VM_ENTRY_CELLS (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) |  \
+                             CN(CAND_SLOT_WIDTH) | CN(CAND_SLOT_FIRST) |      \
+                             CN(CAND_SLOT_BOUND))
 
 /* THE TABLE: the 37 rows of §2.2 in first-match order, and since [OPT-REVEND]
  * L0 the LOCATE block at its head (locate_finish.md §2.4), one block per slot
@@ -8600,6 +8613,36 @@ static const CandRow cand_rows[] = {
       .desc = "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start",
       .needs = { [CAND_ROUTE_DFA] = { CAND_MR } },
       .u.recover = { .pinned = false } },
+
+    /* FINISH ([OPT-REVEND] L0, locate_finish.md §2.3; `dfa_matches[]`, axis G,
+     * until L0). Asked by the match-here entry with the meet `caller ⊓ body`
+     * (`dfa_match_of`); the search entry asks no FINISH row until L2, the VM
+     * entry none until L3. Only the L0 take cells exist: every other cell
+     * lands with the producer that asks it, so no cell is unreached.
+     * `verify-at` is FIN3: the anchored run from the caller's position,
+     * available where the anchored machine was built. `search-from` is FIN4:
+     * the search entry's own LOCATE ask from the caller's position, filtered
+     * to a match starting there (E-FC); on CAND_ROUTE_VM it is the VM search
+     * entry itself, whose needs the path derivation reads. The descs moved
+     * verbatim from src/dump/axes_dump.c. */
+    { .c = { "verify-at", 0, finish_verify_at_applies }, .slot = CAND_SLOT_FINISH,
+      .routes = CR_DFA, .tok = "unwrapped", .map = CM_NONE,
+      .hands = CT_START | CT_VERDICT,
+      .list = { [CAND_ROUTE_DFA] = { "match", 1, "unwrapped", PCREC_NO_ANCHORED_DFA } },
+      .desc = "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])",
+      .needs = { [CAND_ROUTE_DFA] = { CAND_MA } },
+      .u.finish = { CAND_FIN_VERIFY, .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT } } } },
+    { .c = { "search-from", 0, cand_always }, .slot = CAND_SLOT_FINISH,
+      .routes = CAND_ALL_ROUTES, .tok = "search-filter", .map = CM_NONE,
+      .hands = CT_LOWER | CT_START | CT_VERDICT,
+      .list = { [CAND_ROUTE_DFA] = { "match", 2, "search-filter" } },
+      .desc = "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag",
+      .needs = { [CAND_ROUTE_DFA]     = { 0, CN(CAND_SLOT_LOCATE) },
+                 [CAND_ROUTE_ATTEMPT] = { 0, CN(CAND_SLOT_LOCATE) },
+                 [CAND_ROUTE_VM]      = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
+      .u.finish = { CAND_FIN_SEARCH,
+                    .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_NOMATCH },
+                              [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH } } } },
 };
 #define CAND_NROWS (sizeof cand_rows / sizeof cand_rows[0])
 
@@ -8609,6 +8652,18 @@ static const CandRow cand_rows[] = {
  * Every (slot, asked route) ends in an undeniable `cand_always` row, so NULL
  * is unreachable (the trace build's self-check holds it). Since C5 it is the
  * only start decision: every slot's readers ask it and nothing else. */
+/* [OPT-REVEND] L0 does FINISH row `r` take the ask's hand on its route: one
+ * of its take cells there, and for `AT` only on a point ask (§2.2)? A 0 hand
+ * matches no cell. */
+static bool cand_takes(const CandRow *r, const CandSel *s)
+{
+    for (int k = 0; k < 4 && r->u.finish.take[s->route][k]; k++)
+        if (r->u.finish.take[s->route][k] == s->hand &&
+            (s->hand != CAND_HAND_AT || s->point))
+            return true;
+    return false;
+}
+
 static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flags)
 {
     for (size_t i = 0; i < CAND_NROWS; i++) {
@@ -8616,10 +8671,54 @@ static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flag
         if (r->slot != slot) continue;
         if (r->c.deny & flags) continue;
         if (!(r->routes & CAND_ON(s->route))) continue;
+        if (slot == CAND_SLOT_FINISH && !cand_takes(r, s)) continue;
         if (r->c.applies(s)) return r;
     }
     return NULL;
 }
+
+/* The last row of `slot` routed on `rt`: the slot's FALLBACK there (an
+ * undeniable `cand_always` row, by the trace build's totality check), or
+ * NULL. The path derivation reads FINISH's on CAND_ROUTE_VM as the VM search
+ * entry; the self-check reads it for the progress rank. */
+static const CandRow *cand_fallback(CandSlot slot, int rt)
+{
+    const CandRow *last = NULL;
+    for (size_t i = 0; i < CAND_NROWS; i++)
+        if (cand_rows[i].slot == slot && (cand_rows[i].routes & CAND_ON(rt)))
+            last = &cand_rows[i];
+    return last;
+}
+
+/* ---- [OPT-REVEND] L0 THE MATCH-HERE ENTRY's FINISH ASK (axis G's fold) ---
+ *
+ * The match-here entry hands FINISH `caller ⊓ body` on the finisher's route:
+ * `AT` (a point request at the caller's position) unless the body's LOCATE
+ * row is a static NOMATCH (`empty`), whose meet is `NOMATCH`
+ * (locate_finish.md §1.1, LR-G8). Asked by the three DFA-artifact readers
+ * (the `_match` dispatch, `<PREFIX>_DFA_MATCH`, `rx_info.match_form`) and,
+ * quietly, by the path derivation; a VM artifact's `_match` is the VM's own
+ * until L3. */
+static const CandRow *dfa_match_of(Ctx *cx)
+{
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
+                  .route = cand_finish_of(cx), .point = true,
+                  .hand = dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT };
+    const CandRow *r = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
+    PCREC_CAND_TRACE_REC("FINISH", CAND_ROUTE_NAME(s.route), r->tok, "finish-match");
+    CAND_HIT(CAND_SLOT_FINISH, &s, r, "finish-match");
+    return r;
+}
+
+/* AXIS G's chosen row's spelling — `<PREFIX>_DFA_MATCH`'s value and
+ * `rx_info.match_form`'s. */
+static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->tok; }
+
+/* The same selection as a yes/no, for the `_match` dispatch: the chosen
+ * row's ACTION, never a comparison of which row it was (F-2; the self-check's
+ * grep row holds no row-pointer compare in src/gen). */
+static bool dfa_match_is_unwrapped(Ctx *cx)
+{ return dfa_match_of(cx)->u.finish.act == CAND_FIN_VERIFY; }
 
 #ifdef PCREC_CAND_TRACE
 /* ---- [START-TABLE] THE HIT COUNTER (trace build only) ------------------
@@ -8763,17 +8862,6 @@ static void cand_rows_selfcheck(void)
     cand_path_selfcheck();
 }
 
-/* The last row of `slot` routed on `rt`: the slot's FALLBACK there (an
- * undeniable `cand_always` row, by the totality check), or NULL. */
-static const CandRow *cand_fallback(CandSlot slot, int rt)
-{
-    const CandRow *last = NULL;
-    for (size_t i = 0; i < CAND_NROWS; i++)
-        if (cand_rows[i].slot == slot && (cand_rows[i].routes & CAND_ON(rt)))
-            last = &cand_rows[i];
-    return last;
-}
-
 /* `cand_rows_selfcheck`'s [OPT-REVEND] L0 half: the progress classes and the
  * `needs` declarations (the rules are in that function's header). */
 static void cand_path_selfcheck(void)
@@ -8804,6 +8892,39 @@ static void cand_path_selfcheck(void)
                                      cand_nodes[n].name, "selfcheck");
             }
         }
+    /* FINISH's totality is per HAND (§2.3): on every route FINISH is asked,
+     * the last row taking each hand an asker gives there (the match-here
+     * entry's `AT` and `NOMATCH` on the DFA routes at L0) is undeniable and
+     * AVAILABLE BY CONSTRUCTION — its needs lie inside the machines the
+     * route always builds. A take cell on a route the row is not routed on
+     * is a cell nothing can select. */
+    {
+        const unsigned always_built[3] = {
+            [CAND_ROUTE_DFA] = CAND_MF | CAND_MR, [CAND_ROUTE_ATTEMPT] = CAND_MATT,
+            [CAND_ROUTE_VM] = CAND_MVM };
+        const unsigned asked[2] = { CAND_HAND_AT, CAND_HAND_NOMATCH };
+        for (int rt = 0; rt < 3; rt++) {
+            if (rt == CAND_ROUTE_VM) continue;     /* the VM entry asks at L3 */
+            for (int h = 0; h < 2; h++) {
+                const CandRow *last = NULL;
+                CandSel q = { .route = rt, .hand = asked[h], .point = true };
+                for (size_t i = 0; i < CAND_NROWS; i++)
+                    if (cand_rows[i].slot == CAND_SLOT_FINISH &&
+                        (cand_rows[i].routes & CAND_ON(rt)) && cand_takes(&cand_rows[i], &q))
+                        last = &cand_rows[i];
+                if (!last || last->c.applies != cand_always || last->c.deny ||
+                    (last->needs[rt].mach & ~always_built[rt]))
+                    cand_oracle_fail("table-finish-not-total", CAND_ROUTE_NAME(rt),
+                                     asked[h] == CAND_HAND_AT ? "AT" : "NOMATCH", "selfcheck");
+            }
+        }
+        for (size_t i = 0; i < CAND_NROWS; i++)
+            for (int rt = 0; rt < 3; rt++)
+                if (cand_rows[i].slot == CAND_SLOT_FINISH &&
+                    cand_rows[i].u.finish.take[rt][0] && !(cand_rows[i].routes & CAND_ON(rt)))
+                    cand_oracle_fail("table-take-unrouted", cand_rows[i].c.name,
+                                     CAND_ROUTE_NAME(rt), "selfcheck");
+    }
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         for (int rt = 0; rt < 3; rt++) {
@@ -8834,14 +8955,20 @@ static void cand_hit_as(CandSlot slot, const CandSel *s, const CandRow *r,
 {
     if (pcrec_cand_trace_quiet) return;
     cand_rows_selfcheck();
+    if (slot == CAND_SLOT_FINISH && !s->hand)
+        cand_oracle_fail("finish-no-hand", cand_nodes[slot].name, "-", site);
     if (!r)
         cand_oracle_fail("no-row", cand_nodes[slot].name, "-", site);
-    fprintf(stderr, "CANDROW\t%s\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
-            CAND_ROUTE_NAME(s->route), r->c.name, site, kind);
+    fprintf(stderr, "CANDROW\t%s\t%s\t%s\t%s\t%s\t%s\n", cand_nodes[slot].name,
+            CAND_ROUTE_NAME(s->route), r->c.name, site, kind,
+            slot != CAND_SLOT_FINISH ? "-" : s->hand == CAND_HAND_AT ? "AT"
+            : s->hand == CAND_HAND_NOMATCH ? "NOMATCH" : "?");
 }
 /* [OPT-REVEND] L0 the fifth field says whether the hit is an emitter's ASK
  * or a predicate's selection READ (`cand_read`): the trace-vs-asks check
- * compares the asks with the path derivation's `CANDPATH` cells. */
+ * compares the asks with the path derivation's `CANDPATH` cells. The sixth
+ * is a FINISH ask's hand alias (`-` elsewhere), the key of the oracle's
+ * declared-unreached allowance. */
 static void cand_hit(CandSlot slot, const CandSel *s, const CandRow *r, const char *site)
 {
     cand_hit_as(slot, s, r, site, "ask");
@@ -8921,6 +9048,19 @@ static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s
     const CandRow *r = cand_select(slot, s, s->cx->opt->flags);
     CAND_READ_HIT(reader, slot, s, r, site);
     return r;
+}
+
+/* `pcrec_cand_finish_needs` (internal.h): the path derivation's NEEDS half,
+ * the static half of the FINISH declarations on the finisher's route, read
+ * before any selection exists (src/core/compile.c's anchored build). */
+bool pcrec_cand_finish_needs(Ctx *cx, unsigned m)
+{
+    CandRoute rt = cand_finish_of(cx);
+    for (size_t i = 0; i < CAND_NROWS; i++)
+        if (cand_rows[i].slot == CAND_SLOT_FINISH && (cand_rows[i].routes & CAND_ON(rt)) &&
+            (cand_rows[i].needs[rt].mach & m))
+            return true;
+    return false;
 }
 
 /* ---- [OPT-REVEND] L0 LOCATE's SELECTION AND THE PATH DERIVATION ---------
@@ -9004,6 +9144,7 @@ static const CandRow *cand_path_row(Ctx *cx, CandPath *p, CandSlot slot, CandRou
     switch (slot) {
     case CAND_SLOT_LOCATE:  return cand_locate_of(cx);
     case CAND_SLOT_RECOVER: return p->recover = dfa_search_start_of(cx);
+    case CAND_SLOT_FINISH:  return dfa_match_of(cx);
     case CAND_SLOT_WINDOW:
     case CAND_SLOT_PRESENCE:
     case CAND_SLOT_WIDTH:
@@ -9011,41 +9152,40 @@ static const CandRow *cand_path_row(Ctx *cx, CandPath *p, CandSlot slot, CandRou
     case CAND_SLOT_NEXT:
     case CAND_SLOT_RETRY:
     case CAND_SLOT_BOUND:
-    case CAND_SLOT_FINISH:
     case CAND_NSLOTS:       break;
     }
     return NULL;
 }
 
-/* Visits cell (slot, rt) once: records the ask, then follows the row the
- * cell selects, adding its machines and visiting the cells it asks (and, for
- * a LOCATE row whose body is the caller-facing entry, its front). The graph
- * is finite and each cell is visited once, so it terminates. */
-static void cand_path_visit(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt)
+static void cand_path_visit(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt);
+
+/* Adds row `r`'s needs on `rt` to the path: its machines, and a visit to
+ * each cell it asks (and, for a LOCATE row whose body is the caller-facing
+ * entry, its front). */
+static void cand_path_follow(Ctx *cx, CandPath *p, const CandRow *r, CandRoute rt)
 {
-    if (p->asks[rt] & CN(slot)) return;
-    p->asks[rt] |= CN(slot);
-    const CandRow *r = cand_path_row(cx, p, slot, rt);
-    if (!r) return;
     const CandNeeds *n = &r->needs[rt];
     unsigned cells = n->cells;
-    if (slot == CAND_SLOT_LOCATE && p->finish != CAND_ROUTE_VM) cells |= n->front;
+    if (r->slot == CAND_SLOT_LOCATE && p->finish != CAND_ROUTE_VM) cells |= n->front;
     p->needs |= n->mach;
     for (int sl = 0; sl < CAND_NSLOTS; sl++)
         if (cells & CN(sl)) cand_path_visit(cx, p, (CandSlot)sl, rt);
 }
 
-/* The VM search entry's needs on CAND_ROUTE_VM, the root of a VM finisher:
- * the program and the entry's front (the code at the VM entry's head), and
- * BOUND. Where a prefilter exists its RETRY re-enters the inlined body. */
-#define CAND_VM_ENTRY_MACH  CAND_MVM
-#define CAND_VM_ENTRY_CELLS (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) |  \
-                             CN(CAND_SLOT_WIDTH) | CN(CAND_SLOT_FIRST) |      \
-                             CN(CAND_SLOT_BOUND))
+/* Visits cell (slot, rt) once: records the ask, then follows the row the
+ * cell selects. The graph is finite and each cell is visited once, so it
+ * terminates. */
+static void cand_path_visit(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt)
+{
+    if (p->asks[rt] & CN(slot)) return;
+    p->asks[rt] |= CN(slot);
+    const CandRow *r = cand_path_row(cx, p, slot, rt);
+    if (r) cand_path_follow(cx, p, r, rt);
+}
 
 /* Computes the selected path of this compile (§2.7), from three roots: the
  * search entry's LOCATE ask; on a VM finisher, the VM search entry; on a DFA
- * finisher, the match-here entry. Quiet in the trace build: the derivation
+ * finisher, the match-here entry's FINISH ask. Quiet in the trace build: the derivation
  * prints no record and counts no hit, so the trace holds the EMITTERS' asks,
  * which is what `CANDPATH` is compared against. */
 static CandPath cand_path_of(Ctx *cx)
@@ -9062,13 +9202,14 @@ static CandPath cand_path_of(Ctx *cx)
 
     cand_path_visit(cx, &p, CAND_SLOT_LOCATE, p.locate);
     if (p.finish == CAND_ROUTE_VM) {
-        p.needs |= CAND_VM_ENTRY_MACH;
-        for (int sl = 0; sl < CAND_NSLOTS; sl++)
-            if (CAND_VM_ENTRY_CELLS & CN(sl))
-                cand_path_visit(cx, &p, (CandSlot)sl, CAND_ROUTE_VM);
+        /* The VM search entry IS `search-from`'s VM hat (§1.3), though no
+         * FINISH ask selects it before L3; its `_match` is `verify-at`'s VM
+         * hat, which needs only the program, already here. */
+        cand_path_follow(cx, &p, cand_fallback(CAND_SLOT_FINISH, CAND_ROUTE_VM),
+                         CAND_ROUTE_VM);
         if (p.body) cand_path_visit(cx, &p, CAND_SLOT_RETRY, CAND_ROUTE_VM);
-    } else if (dfa_match_is_unwrapped(cx)) {
-        p.needs |= CAND_MA;
+    } else {
+        cand_path_visit(cx, &p, CAND_SLOT_FINISH, p.finish);
     }
     p.members = p.needs & p.built;
 #ifdef PCREC_CAND_TRACE
@@ -9296,12 +9437,6 @@ size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap)
 /* The accept-placement axis's candidates. */
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_accs); }
-/* [ENG-ABS] axis G rides the SAME generic walk — its objects are `DfaCand`-
- * headed like the other five lists, so `--list-axes` and the registry check
- * see the new candidates and the new deny bit with no hand-copied
- * restatement. */
-size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
-{ return AXIS_LIST(dfa_matches); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a

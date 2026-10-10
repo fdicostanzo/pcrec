@@ -6741,7 +6741,6 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis 
 
 size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
 
-size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
 
 /* [OPT-5] The scan edge's two axes, and they ride the SAME generic walk as
  * the six above -- their objects are `DfaCand`-headed, so `--list-axes` and

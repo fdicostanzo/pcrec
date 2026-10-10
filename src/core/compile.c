@@ -226,7 +226,13 @@ static void job_cleanup(Ctx *cx)
  * point in the emitter and D82's single-decision-point rule is untouched. */
 static void build_anchored_dfa(Ctx *cx)
 {
-    if (cx->job->fit.chosen != ENGM_DFA) return;
+    /* [OPT-REVEND] L0 the path derivation's NEEDS half: build A iff a FINISH
+     * row on this compile's finisher route declares it (today `verify-at` on
+     * the DFA route alone, so this is `fit.chosen == ENGM_DFA` on the
+     * ENG_UNANCH branch it is called from). The deny below is the one reader
+     * of `-fno-anchored-dfa`: it removes the build, and `verify-at` is
+     * available exactly where the machine was built. */
+    if (!pcrec_cand_finish_needs(cx, CAND_MA)) return;
     if (cx->opt->flags & PCREC_NO_ANCHORED_DFA) return;
     if (cx->size_drop_rung >= SDR_NO_ANCHORED) return;
 
