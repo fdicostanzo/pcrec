@@ -1063,7 +1063,13 @@ def parse_rxt(path):
             # is the one oracle here and a block naming another is stating a
             # true fact about somebody else's runner.
             v = line[len('oracle '):].strip()
-            if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$', v):
+            # [RXT-READERS] the engine half is a defname (`pcre2-dfa`), and
+            # `none <reason>` is the counted skip -- leg A's grammar.
+            if v == 'none':
+                _fail(path, lineno, 'value-shape',
+                      "'oracle none' needs a reason after it")
+            if not (re.match(r'^none\s+\S', v) or re.match(
+                    r'^[A-Za-z_][A-Za-z0-9_.-]*(/[A-Za-z0-9._-]+)?$', v)):
                 _fail(path, lineno, 'value-shape',
                       "'oracle' wants an engine reference, optionally "
                       f"'/<version>' (got {v!r})")

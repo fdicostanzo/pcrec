@@ -131,7 +131,7 @@ Every g5/g6 hit was read. Those not in the table below are PROVENANCE, and
 provenance does not move:
 - "added at `abi` 62", "abi 61 -> 62" event headings in `src/gen/CLAUDE.md`,
   `tests/codegen/CLAUDE.md`, `tests/startset/CLAUDE.md`,
-  `tuning.md` §2.42/§3504/§3994, `match_api.md §6.3.7¶12` and §6.3's START-SET
+  `tuning.md` §2.42 (and two more lines of its text then), `match_api.md §6.3.7¶12` and §6.3's START-SET
   heading;
 - stage 2's own re-pin comments;
 - plan/optloop/review documents;

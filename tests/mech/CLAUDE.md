@@ -3327,7 +3327,7 @@ locally by planting it, rebuilding and reading the named suite red
 (`docs/dev/lanes/findb5_report.md`). **S325** makes `encode-utf8` count a
 code point's LEAD byte only — invisible on the shipped `log`/`weblog`
 bundles, which are pure ASCII (one byte per code point), so its detectors
-are `tests/findings` §12's derivation oracle over code points of every UTF-8
+are `tests/findings` sec. 12's derivation oracle over code points of every UTF-8
 length and its Latin-1 sample; **S326** drops an `encode-latin1` code point
 above U+00FF without counting it — the rate does not move, only the
 listing's `dropped` column does; **S327** accepts a surrogate `cpfreq` key;

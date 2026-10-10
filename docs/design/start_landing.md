@@ -1493,7 +1493,7 @@ Could another regime flip a decision?
 
 ## 9. Questions for Frank (discussion, each with a leaning and the critics' judgments) `[r2 SL-G7]`
 
-**Q1. The fact: one character now, the excursion condition filed?**
+**Q1. The fact: one character now, the excursion condition filed?** **RULED 2026-10-09 (D156 addendum 3): build Λ. The general form is tagged-DFA restart tracking, filed as [ENG-TDFA] together with capture tags.**
 - *Problem:* the exact condition (§2.3) is a product walk over the emitted machine;
   the one-character fact is an NFA walk.
 - *Forces:* the general form is the house preference (memory
@@ -1509,7 +1509,7 @@ Could another regime flip a decision?
   upheld Λ's sufficiency on 265 new twinned shapes, 0 differences.
 - *Leaning:* build Λ; keep `[START-LANDING-EXC]` filed with its 1 ms trigger.
 
-**Q2. The tolerant-utf8 guard: which form, and is a guard right at all?**
+**Q2. The tolerant-utf8 guard: which form, and is a guard right at all?** **RULED 2026-10-09 (D156 addendum 4): the post-loop skip as designed, Fix A recorded, the hostile cell standing. Frank: "utf comes with certain costs. i would like to note to the implementation to try and optimize the happy path." IMPLEMENTATION NOTE for SL2. Valid UTF-8 is the case to make fast; the guard exists only to keep an ill-formed sequence out of a reported match. (1) Nothing of the guard enters the scan loop. (2) The guard's check on a well-formed landing should be as cheap as the seam allows: one decode, branch predicted not-taken. (3) Omit it where the contract makes it dead, i.e. under `-futf-check`, where the searched range is proven well-formed; the emission condition gains the contract conjunct. (4) SL2's timing carries a no-guard arm on the well-formed cells, so the guard's own cost is read rather than assumed. (5) Name the two predicates apart in the seam vocabulary: BOUNDARY (`start_guard`, byte-local, what align/K50 read) vs DECODABLE START (`$_decode > 0`, what this guard reads). They agree on well-formed text only.**
 - *Problem:* without a guard, `landing` under utf8 is limited to `-futf-check`
   artifacts, and the bench does not compile with `-futf-check`, so the two largest
   cells (utf8 `.`, `\p{L}+`, ~10 ms of weight) would be lost.
@@ -1523,7 +1523,7 @@ Could another regime flip a decision?
   built Fix A and measured it linear and ~6% behind the post-loop form on `.`.
 - *Leaning:* the skip, with Fix A recorded and the hostile cell standing.
 
-**Q3. RECOVER asks carry a hand.**
+**Q3. RECOVER asks carry a hand.** **RULED 2026-10-09 (D156 addendum 4): agree: the hand as product masks (EXISTS/WINDOW), built by whichever of [START-LANDING] and L2.2 lands second, keyed on the path.**
 - *Problem:* `rev-end`'s walk asks RECOVER at a SPECULATIVE end; taking the
   composite's rows there is a wrong answer (§3.3).
 - *Forces:* the hand is FINISH's existing filter on one more slot, now spelled in the
@@ -1537,7 +1537,7 @@ Could another regime flip a decision?
 - *Leaning:* the hand as masks, built by whichever of `[START-LANDING]` and L2.2 lands
   second; `locate_finish.md` L2.2 carries a note saying so.
 
-**Q4. `end-minus-width` before `landing`.**
+**Q4. `end-minus-width` before `landing`.** **RULED 2026-10-09 (D156 addendum 4): agree: `end-minus-width` first, by dominance (Frank: "they're the same picture"; an answer-free order is the manager's call).**
 - *Forces:* information order says "how much evidence", which puts `landing` (one
   character) before an end subtraction. Cost is equal (measured). The two answer
   identically where both apply, and `end-minus-width` needs strictly less (no record,
@@ -1550,7 +1550,7 @@ Could another regime flip a decision?
 - *Leaning:* `end-minus-width` second, by dominance; the survey's and LR-G10's order
   is the other defensible reading, and no answer depends on it.
 
-**Q5. Filing `rev-end-width`** (§3.3, §11 U3) on REVEND's side: an end-pinned
+**Q5. Filing `rev-end-width`** **RESOLVED 2026-10-09 by the manager (a filing, not a ruling): filed on the [OPT-REVEND] plan row with its trigger, the 10% labelled CHOSEN.** (§3.3, §11 U3) on REVEND's side: an end-pinned
 fixed-width pattern needs one anchored run of `W` bytes, not a walk.
 - *Critics:* slcrit3 (SL-G7 Q5): "file rev-end-width and label its 10% threshold".
 - *Leaning:* file with its trigger, the 10% labelled CHOSEN; 6 bench patterns.

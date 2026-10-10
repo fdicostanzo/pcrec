@@ -18835,7 +18835,7 @@ it). Frank's perf hold stands — [B21]/[B22]'s windows wait on his lift.
 lim1 from fa01910; Frank's "proceed as you want" stands; the box is
 free, no hold needed). Ruled by D90; the folded items ride: the
 size-cap rescue's distinct `_ENGINE_SEL` value (I-19 (3); a VALUE, no
-abi bump), registry.md §6/§203's stale axis counts, the `(a|b){1,30000}`
+abi bump), registry.md §6's stale axis counts (the second, at its old line 203, included), the `(a|b){1,30000}`
 witness as the bucket's test. W1.2 stays held for the bench's one
 re-pin; battery 6 at lim1's landing supersedes fa01910 as the pin (the
 bench session is closed and re-pins once, to whichever pin is newest at
@@ -26865,3 +26865,56 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - Hand-listed reader and check lists keep missing gates (START-LANDING's 5 HIGH); derive edit sets by census.
   - Identity twins compare answers, not WORK: two critics found a quadratic the twins could not.
   - The manager `cd`'d into a worktree once more (corrected immediately) and used `pgrep -f` once in a probe (matched only itself).
+
+## 2026-10-09/10 — session 103 (hundred-and-third; Linux dev box; closed at Frank's ask)
+
+- **Landed on main:**
+  - specnum merged at 709c8ff6 ([SPEC-CLEAN] for match_api.md: facts-only, numbered §N¶K, generated contents, S748/S749).
+    - Its chain was red only on test-spec-history: the lane report quoted the check's own planted citations (triage lane spectri, report-only rewording).
+    - At landing I added S749 and one narrow cite_exclude row for the plant file.
+    - The merge conflicts carried five line-number citations of match_api.md from locfin21; I re-pointed them to §6.3.4¶2/¶11.
+    - D76 addendum 2: the abi change log lives in docs/dev/history/abi_changelog.md.
+    - [SPEC-CLEAN] continues with nine spec docs, filed and unscheduled.
+  - Pushed 1cb95b69. CI was still running at close (>1 h, longer than usual), so the later doc commits are held unpushed.
+- **Rulings (Frank), all recorded:**
+  - locate_finish §8 Q3: the generated off-path stamp rule (D156 add. 2).
+  - Q4 → **D158**: optimizations never reduce any pattern's ability to complete.
+    - K102 (possessify moves STEP cost into WORK) is its one ACCEPTED violator.
+    - Measured this session: effort is conserved, 800+394=1,194 off vs 0+1,199 on; a cost-categorization defect.
+    - Filed **[EFFORT-BUDGET]**: one weighted effort counter, weights as the dials; study first; Frank's usability point.
+  - Q6: rev-inner's trigger moves to the DFA route (walk_survey K12), and it ranks third (D151 add. 4).
+  - [START-LANDING] Q1-Q4 (D156 add. 3/4):
+    - Q1: build Λ. The general form is tagged-DFA restart tracking; filed **[ENG-TDFA]** with capture tags ("a bigger fish").
+    - Q2: the post-loop skip, with a binding happy-path implementation note.
+    - Q3: the hand.
+    - Q4: end-minus-width first.
+    - Q5: resolved by the manager as a filing (rev-end-width on [OPT-REVEND]).
+  - **D159**: byte encodings are out of scope (translation layers outside pcrec); other UTFs wait for a consumer; [ENC-DATA] CANCELLED; its Q5 (authored vs generated utf8 prior) moved to [U8-PICK].
+- **Kit:**
+  - R-12 (VMLAZY abi 72, @ 92213567) and R-13 (@ 9348a747, slot18 ~2.5 h) are both done on their branches.
+  - Ruled order: after lfl0 merges, GO R-12's re-merge slot (merge main, re-home the abi-72 entry into abi_changelog.md), then R-13's slot18.
+  - The kit's lane rankuse broke the box rule (a full emit_sweep during specnum's make test); acknowledged, and specnum's perfrun row is marked contaminated.
+- **In flight at close:**
+  - lfl0's chain is red on test-registry (RED-REAL); its mech rows were still running.
+  - Triage lane lfltri is diagnosing read-only until CHAIN DONE.
+- **Lessons:**
+  - Frank on [START-LANDING] Q4 ("they're the same picture"): an answer-free choice is the manager's call; triage question lists before relaying (memory pcrec-answer-free-choices-are-mine).
+  - The manager `cd`'d into a worktree again (corrected at once).
+  - A `git add` with a vanished path plus `2>/dev/null` silently staged nothing (S749's first commit carried only the rename).
+
+## 2026-10-10 — session 104 (manager; Linux dev box) — SPEC-CLEAN finished, plan audit, interface push ruled
+
+- Woke from session 103's brief. CI 38018323798 had finished GREEN (1h12m); pushed the ten held commits. lfl0's detached chain was in test-axes; its finisher (`/tmp/claude-1001/lfltri/finish.sh`, PID 2335503) armed and waiting. A no-model watcher (`worktrees/.mgr/watch8.sh`) was set on it.
+- Frank: keep the locate×finish order (L0 → REVEND → START-LANDING), then return to the three-column split (capability/optimization/admin, not strict); run light OPPORTUNITY lanes beside non-timing runs (memory pcrec-three-lane-model updated).
+- planaudit (sonnet) merged: [ART-POSS-ARMS] closed, six rows retagged with landed/remaining notes; the manager set [OPT-SETS] and [OPT-VMSEED] to not-started (nothing active). Eleven delivered worktrees pruned.
+- [SPEC-CLEAN] COMPLETED by five sonnet/opus lanes, all light-tier only (box hold): specreg (registry.md, table_contract.md), speclim (limits.md, cli.md), specsmall (facts_listing, ir_listing, findings + the `-i` --help text now says the fold follows the encoding), specrxt (rxt_format.md), spectune (tuning.md, every §2.N kept, 16 code-wins corrections). Every docs/spec/*.md is facts-only and numbered; baseline.tsv holds no rows. Filed [RXT-READERS] (the three .rxt readers disagree on `oracle`/`var` spellings).
+- Process slip: the manager chained `git push` after a commit without gating on the check it had just run, pushing a red test-spec-history to main for minutes (speclim's report quoted section-sign fragments the tree-wide scan read as dangling). Fixed at 736005f5. Rule: gate a push on the verdict, never on the commit.
+- Frank's match_api.md organization findings filed as [SPEC-ORG] (document only). Frank RULED the interface push: keep developing; when work peters out, ONE push over rx_info / pcrec_options / CLI options / stamps, then the docs. Umbrella row [IFACE-PUSH]; memory pcrec-iface-push-later.
+- NOT DONE (carried): lfl0's merge and the post-merge make test on main (the chain is still in test-axes at close; it already shows AXIS FAIL lines, e.g. `--engine=vm -fno-start-set` 2 unallowed one-sided give-ups — read before merging); the kit's R-12 GO; the full make test over this session's doc merges (light checks only so far).
+
+## 2026-10-10 — session 105 (hundred-and-fifth; Linux dev box) — interim, stage boundary
+
+- **Landed on main:** GIVEUP1_ALLOWANCE Group H (4b57f773; triage lane lflaxtri: lfl0's three axis cases were missing rows for corpus cells newer than the last whole-corpus sweep, byte-identical on main); rev2corp (tests/revend/stage2_captures.rxt, 119 blocks, libpcre2 oracle-first); rxtread ([RXT-READERS] completed: one grammar for oracle/var across the three readers); **lfl0 = locate x finish L0** (c85a1aac; chain: make test red only on limits_check, fixed by the finisher 023bc58b; mech 146 rows 0 unexpected, S738-S747 all DETECTED; spec conflicts resolved by taking main's numbered text and re-applying lfl0's "unanchored" rewording at match_api.md §6 value table and tuning.md §3¶1).
+- **Filed:** [RXT-ONE-READER] (Frank: "it should be unified. but we have to focus") — unscheduled, with a venting log.
+- **Running:** post-merge full make test on main (build/mgr/postlfl0_test.log); lane revbuild (REVEND L1+L2 with stage 2, opus). Kit GO for R-12 waits on the make test verdict.
+- **Note:** nullable_anch.rxt:48/:67's corpus nomatch is correct, but libpcre2 at default limits returns match-limit there; the oracle configuration for those cells is not recorded (lflaxtri_report.md).

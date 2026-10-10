@@ -17,5 +17,5 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),
                                         [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA) |
-                                                            CAND_ON(CAND_ROUTE_ATTEMPT) } },'
-SAB_AFTER='                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM) } },   /* SABOTAGE S609 */'
+                                                            CAND_ON(CAND_ROUTE_ATTEMPT) },'
+SAB_AFTER='                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM) },   /* SABOTAGE S609 */'

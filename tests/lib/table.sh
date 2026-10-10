@@ -23,7 +23,7 @@
 # shell, and cannot source this file — it implements the SAME contract rules
 # directly; see its own header for the cross-reference.
 # tests/spec_mod0/spec_common.h is the C exemplar the contract itself names
-# and is intentionally untouched — see table_contract.md's consumer rule 1.)
+# and is intentionally untouched — see table_contract.md §3¶1.)
 #
 # TABLE_LIB_ROOT — computed once, same reason gen_timeout.sh computes
 # GEN_LIB_ROOT once: every call site that used to compute it again nearby was
@@ -32,8 +32,8 @@ TABLE_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
 
 # ---------------------------------------------------------------- sections
 #
-# table_contract.md's Sections rule: `#section NAME` announces a section; the
-# LAST `#` line before that section's first data row is ITS header (rule 3,
+# table_contract.md §4: `#section NAME` announces a section; the
+# LAST `#` line before that section's first data row is ITS header (§2¶3,
 # applied per section); a file with no `#section` line is one anonymous
 # section, byte-for-byte today's `--list-syntax`/`--list-verbs` shape (rule
 # 2); and a consumer reading a multi-section file WITHOUT naming a section
@@ -51,8 +51,8 @@ table__header_line() {
     if grep -q '^#section ' "$file" 2>/dev/null; then has_sections=1; fi
     if [ "$has_sections" -eq 1 ] && [ -z "$section" ]; then
         echo "table: '$file' has multiple #section blocks; a consumer must" >&2
-        echo "       name the section it wants (table_contract.md, Sections" >&2
-        echo "       rule 4) rather than parse whichever header came last" >&2
+        echo "       name the section it wants (table_contract.md §4¶5)" >&2
+        echo "       rather than parse whichever header came last" >&2
         return 1
     fi
     local active=1 found_section=0 hdr=""
@@ -100,8 +100,8 @@ table__header_fields() {
 #
 # table_header_ncols FILE [SECTION] — the header's DECLARED column count.
 # The base quantity every "header truthfulness" comparison (table_contract.md
-# "The checks") is stated against — never a literal number, per the
-# consumer contract's rule 3.
+# §5¶1) is stated against — never a literal number, per
+# table_contract.md §3¶3.
 table_header_ncols() {
     # NOT `table__header_fields ... | wc -l`: piping loses
     # table__header_fields's exit status (the pipeline's status is `wc`'s,
@@ -226,7 +226,7 @@ table_lookup() {
 # with no SECTION argument. The selector for a producer whose main table
 # stays anonymous while named sections follow it (`--list-source`,
 # `--list-axes` since [MEMFN] R4a's `memfn` section; table_contract.md
-# Sections, consumer rule 5). A file with no `#section` line is returned
+# §4¶6). A file with no `#section` line is returned
 # whole. Fails loudly when the main table holds no data row: a consumer that
 # selected an empty main table is reading the wrong stream.
 table_main() {
@@ -240,7 +240,7 @@ table_main() {
 }
 
 # table_check_truthfulness FILE [SECTION] — HEADER TRUTHFULNESS
-# (table_contract.md, "The checks"): every data row's field count equals the
+# (table_contract.md §5¶1): every data row's field count equals the
 # header's declared count. This is the correct final form of the old
 # tests/cli case10 `NF != 16` pin — the equality is against the header's OWN
 # count, never a literal, so the next appended column changes nothing here.

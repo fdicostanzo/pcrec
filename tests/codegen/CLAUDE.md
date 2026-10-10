@@ -42,7 +42,20 @@ or it has no regression net at all.
   NEXT), each dropped from `cand_nodes[].reads` and caught as
   `CANDORACLE undeclared-read`; S610 (a listed row without its `desc`, C6)
   is caught by the self-check's `table-desc-unlisted`.
-- **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
+  **Since [OPT-REVEND] L0** (lane lfl0, `docs/design/locate_finish.md` §5
+  L0): witnesses for LOCATE's `empty`/`composite` and FINISH's
+  `verify-at`/`search-from`; every FINISH TAKE CELL the table declares
+  (`.take`, read off the source) must be reached by a witness's
+  `CANDROW FINISH` hit (row, route, hand) or be listed in
+  **cand_oracle_unreached.tsv**, the declared-unreached allowance (one cell
+  per line with its argument and producing commit; EMPTY at L0; a listed
+  cell that is reached, or that the table does not declare, fails); and
+  `[cand-oracle-boundary]` holds the boundary projection both ways (`(a+)b`
+  records `BOUNDARY vm SPAN`, two superset hybrids `LOWER`).
+- **run_cand_rows.sh** + **cand_rows_check.py** — ([OPT-REVEND] L0 adds
+  **[cand-no-row-pointer]**, F-2's revert as a grep row: no comparison
+  against `&cand_rows[...]` and no `dfa_matches` under src/ cli/ lib/.)
+  [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
   `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
@@ -962,7 +975,8 @@ decides whether to perform it — and then run the row through
   count taken from the table's plain text; (4) WHY-TRUTHFULNESS, every deny
   flag `axes.def` spells lists `deny:<flag>` on exactly the facts
   `docs/spec/tuning.md`'s "Facts emptied" line for that flag names (the
-  hand-written spec, never `facts.def`'s own deny column); (5) DECISIONS =
+  hand-written spec, never `facts.def`'s own deny column; the line is a
+  numbered paragraph, so it may open with its `<a id>[§¶]` label); (5) DECISIONS =
   STAMPS, the `decisions` section equal to the value `#define`s this script
   parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
   machinery macros excluded by NAME here, by `(` in the printer). And

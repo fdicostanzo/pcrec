@@ -1,0 +1,23 @@
+# [RXT-READERS] The `oracle` forms ALL THREE legs accept, in a block: a
+# bare engine, an engine with a version, a HYPHENATED engine (a real
+# testee/oracle slug such as `pcre2-dfa`), and `oracle none <reason>`
+# (a counted, printed skip). One `oracle` line per block.
+pattern a+
+oracle python
+m "aaa" 0 3
+
+pattern b+
+oracle pcre2/10.46
+m "bbb" 0 3
+
+pattern c+
+oracle pcre2-dfa
+m "ccc" 0 3
+
+pattern d+
+oracle pcre2-dfa/10.46
+m "ddd" 0 3
+
+pattern e+
+oracle none python re cannot express this
+m "eee" 0 3

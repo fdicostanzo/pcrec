@@ -1,0 +1,4340 @@
+# Tuning axes -- record of the removed history
+
+FROZEN. Not normative. The text `docs/spec/tuning.md` carried until its facts-only rewrite (lane spectune, `[SPEC-CLEAN]`), moved verbatim and in full: the contract-bearing parts of it live on in the rewritten document (its claims ledger is `studies/spectune/claims.tsv`, summarized in `docs/dev/lanes/spectune_report.md`), and everything that is dated narrative, ruling, walkback, measurement history or an assertion the code has since overtaken is only here. Counts and measurements in it are as of the time written. The old text is also `git show eac53111:docs/spec/tuning.md`.
+
+# Tuning axes — the `-f`/`-fno-` family, `--unroll=`, and `--engine=`
+
+This is the **spec**, not the design record, per `docs/spec/CLAUDE.md`'s
+charter: it states what pcrec promises about the generation-time tuning
+flags, and points at `docs/design/eng_brep_design.md`, `docs/design/
+counterk_impl/counterk_design.md`, `docs/design/atomic_groups_design.md`,
+`docs/design/subroutines_design.md` and `docs/dev/decisions.md` (D46, D47,
+D47.3) for the reasoning and measurement history rather than repeating them.
+Every claim below was checked against `lib/pcrec.h`'s per-bit comments,
+`cli/main.c`'s flag parsing, and an emitted artifact's own `#define` stamps
+at the commit this document was written; the command that produced each
+re-measurement is recorded so a reader can redo it.
+
+**`pcrec --list-axes` ([CHK-2], `docs/spec/registry.md` §6) is the
+machine-readable view of this same table** — every bit-flag axis below
+plus the six DFA layer-1 axes (table representation, prefilter, view,
+seed, accept, direction) that have no CLI flag at all, one TSV row per
+(axis, candidate). It answers what THIS BUILD thinks its axes are; this
+document remains the promise about what denying/forcing one DOES.
+
+**WHERE AN AXIS'S BIT AND ITS SPELLING COME FROM ([REVW.4] wave 4, D111,
+2026-09-19).** Each bit is declared once in `lib/pcrec.h`, which is the
+contract. Each axis's CLI SPELLINGS — its `-fno-X` denial, its `-fX`
+force where it has one, and its default polarity — are one row of
+`src/core/axes.def`, and every reader is derived from that row: the
+parser's whole `-f` grammar, and the `deny_macro`/`deny_bit`/
+`force_macro`/`force_bit`/`cli_flag` columns of `--list-axes`. Before this
+wave the same table was hand-maintained in three places and reconciled by
+two `awk` passes over `cli/main.c`'s source text; those passes are deleted,
+because a check that reconciles three spellings has nothing to reconcile
+once there is one. **Nothing a caller can observe changed**: every flag
+below has the same spelling, the same bit and the same effect, and all seven
+`--list-*` dumps are byte-identical across the change. What a reader gains
+is that a spelling in this document, a spelling in the dump and a spelling
+the parser accepts are now one fact rather than three.
+
+## 1. What a tuning flag is
+
+A tuning flag is a **generation-time choice** (D18: options are compiled
+away, never a runtime parameter) that selects among machinery the compiler
+could otherwise choose on its own. The defining contract, true of every
+flag in §2 below except the two named ENGINE-SELECTING there **and the two
+CONTRACT (semantic) axes, §2.23** (added by [K50], 2026-09-06; its third
+value `-fstartpos-guard=align` by [UTF-VALID], 2026-09-30) **and §2.36**
+(`-futf-check`, [UTF-VALID]) — read their sections before assuming the
+sentence below covers them:
+
+> **Denying (or forcing) a tuning axis must not change what the emitted
+> matcher answers for any subject.** The span, every capture slot, and the
+> failure surface (no-match vs. a give-up and which one) are identical
+> between the two builds. It changes *how* the answer is found — which
+> internal strategy the emitter used — never the answer itself.
+
+This is D46's "every strategy-selection point is observable and
+forceable" principle (`docs/dev/decisions.md` D46), applied at the tuning
+layer: a compiler optimization that cannot be turned off cannot be
+differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
+strategy that cannot be denied cannot be differentially tested"). **Almost
+every** bit-flag axis in §2 is D47.3's family — the deny-only ones, the force
+pair (§2.5), and the three engine-selecting denials — and all but one of those
+exist **because** they have a differential that checks this exact
+claim directly: compile the same pattern twice, once with the strategy and
+once without, link both into one driver, and sweep subjects comparing
+span, every capture slot, and the failure surface. The exception is §2.5's
+force pair, the family's only one — its own correctness already rides
+an existing, already-validated suite (§2.5 states which), so it earns no
+NEW differential of its own even though it is D46's canonical
+motivating case for the observable/forceable principle. `--unroll=` is the
+deny family's value parameter and `--engine=` is the coarsest-grained
+member of the same observable/forceable principle, one level up.
+
+**Who this document is for.** A contributor building or reviewing a
+differential test needs to know, per axis: what it denies/forces, whether
+it can be relied on to leave the answer unchanged (so the denied build is
+a valid ground truth) or whether it can move the pattern between engines
+(so a differential comparing spans across the axis needs the engine
+difference accounted for separately), and which check already carries the
+evidence. A stranger tuning performance needs the same table read the
+other way: which knobs are safe to flip without re-verifying correctness,
+and which one is a `--engine`-shaped do-or-die request.
+
+**[OPT-DIAL] (2026-09-16) EVERY AXIS BELOW HAS A PER-POSITION DEFAULT, NOT
+A SINGLE ONE.** `--tune=N` (§5) is a PROFILE: one option whose value sets a
+GROUP of the axes below from a pinned table, in place of a caller
+composing them one flag at a time. Reading an axis's "default" in §2 below
+now means its value at `--tune=balanced` (`N=0`) specifically — the value
+pcrec has always shipped — and §5's table is where the other four
+positions' values live. **The allowlist**: the dial may set an axis only
+where a citable measurement justifies the position, so most of §2's axes
+carry no dial cell at all (§5 states each one's reason).
+
+**EXPLICIT PER-SWITCH FLAGS BEAT THE DIAL — WHERE A SPELLING EXISTS**
+(Frank, 2026-09-16, ruling on the design's §7.2a option 3). That is
+narrower than "explicit always wins," and the narrowing is not
+theoretical: three of the axes the dial moves are **DENY-ONLY**, with no
+force twin a caller could use to keep the optimization at a size-leaning
+position — `-fno-premul-table` (§2.13), `-fno-anchored-dfa` (§2.15) and
+`-fno-tiered-entry` (§2.12) — and the `[ART-SIZE]` ladder's two parameters
+(§2.10/§2.16) have **no CLI spelling at all**: the materiality bar is a
+constant beside `size_term_choose` and the threshold is
+`PCREC_SIZE_TERM_THRESHOLD`, a `limits.def` `BUILD_D` row precisely
+because it is a compile-time constant and not a flag (`docs/spec/
+limits.md` §3.3). A caller who wants to override the dial on one of
+these five cells has no spelling to do it with today; force twins and
+value flags are on-demand additions (design §7.2a option 1/2), not
+promised by this property.
+
+## 2. The axes
+
+Each subsection: what it controls, the default, the stamp it leaves in an
+emitted artifact (verified by an emitted-artifact diff, command given),
+whether it is ANSWER-IDENTITY-preserving or ENGINE-SELECTING, and the
+one-sentence reason the axis exists.
+
+**`make test-axes` ([CHK-2], `tests/axes/run_axes.sh`) is the sweep that
+enforces every axis's answer-identity promise stated below** — the whole
+`.rxt` corpus, per case, under every deny/force flag and the `--engine=`
+axis, compared against the default build (D80: the spec names its own
+enforcement). Opt-in, like the sanitizer battery; see `docs/testing.md`
+"Answer-identity sweep" for runtimes and how to read a failure, and its
+"classification rule" subsection for how a documented refusal (§2.3's
+replication cap, §2.5's force-prefilter refusal) or a budget boundary
+moving (a give-up or per-case timeout on either side) is distinguished
+from a genuine answer disagreement.
+
+**THE `rx_info.flags` RULE, stated once ([FLAGBITS], 2026-10-06).** Every
+axis bit in `src/core/axes.def` is **masked out of `rx_info.flags`, on every
+artifact, whether or not the axis could act on it**, EXCEPT these, which are
+KEPT because the reflection surface must still say which one a caller got:
+the three ENGINE-SELECTING denials (§2.8, §2.9, §2.44) and the two CONTRACT axes
+(§2.23's startpos guard with its `align` value, §2.36's `-futf-check`), the
+latter two masked only under the `byte` encoding where they are inert.
+`--size-cap=refuse` (D135, `limits.md` §8) is not an axis row and is masked
+too. The mask is derived from the axis table with "masked" as the default, so
+a new axis is masked the day it is added; each axis section below states what
+IT records instead (a stamp). `make test-codegen`'s `run_prechecks.sh`
+section 6b sweeps every `-f` spelling `--list-axes` carries against this
+rule. Before the rule was derived, `-fno-size-term` (bit 18) and
+`-fno-scan-edge` (bit 21) were the two strategy bits left unmasked (K92).
+
+### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
+
+**Denies** the possessification rewrite (`src/opt/possessify.c`,
+`docs/design/eng_brep_design.md` §2). Default: possessification runs.
+**ANSWER-IDENTITY-preserving** — masked out of `rx_info.flags`
+(`src/gen/emit_dfa.c`'s `emit_info_def`), because the rewrite changes no
+answer, only whether a quantifier's loop body possessifies. What moved is
+recorded in the `RX_VM_STRATS` bitmask (`PCREC_VM_STRAT_POSSESSIVE` /
+`_BACKTRACKING`), verified by compiling `'(x)(?:a|bc)+d'` with and without
+the flag:
+
+```
+$ build/pcrec -p rx --engine=vm --emit-main -o /tmp/a.c '(x)(?:a|bc)+d'; grep RX_VM_STRATS /tmp/a.c
+#define RX_VM_STRATS 0x1u
+$ build/pcrec -p rx --engine=vm -fno-possessify --emit-main -o /tmp/b.c '(x)(?:a|bc)+d'; grep RX_VM_STRATS /tmp/b.c
+#define RX_VM_STRATS 0x2u
+```
+
+(`0x1u` is `PCREC_VM_STRAT_POSSESSIVE`, `0x2u` is `PCREC_VM_STRAT_BACKTRACKING` — the named bit constants, `lib/pcrec.h`'s
+`PCREC_RX_ABI_H` block; the annotation is this document's, the emitted line carries only the hex value.
+`rx_info.flags` and every other field of the initializer are unchanged
+between the two builds except `frame_capacity`, which grows because a
+backtracking build needs a frame the possessive one does not — verified
+on this same pattern: `.frame_capacity = 3` possessified,
+`.frame_capacity = 4` under `-fno-possessify`; `docs/spec/match_api.md`
+§6¶16 records the same effect on its own example.) **Reason it exists:** possessification is
+a rewrite whose entire claim is "changes no answer", and a claim that
+cannot be turned off cannot be differentially tested (D47.3).
+
+**Answer identity holds under the default budgets; the give-up surface moves
+in TWO directions.** Under a caller-tuned `--step-budget`,
+`--work-budget` or `--backtrack-frames` the rewrite is not neutral. A
+possessified loop keeps no resume frames and spends no backtrack steps on
+retreats, so a `PCREC_ERR_STEPS` or `PCREC_ERR_FRAMES` give-up of the denied
+build can only become an answer. Its forward scan is charged to the WORK
+budget per iteration, so a `PCREC_ERR_WORK` give-up can APPEAR where the denied
+build answered. Measured (`--engine=vm`, the committed subject
+`docs/design/poss_arms_measurements/rev2/wb_subject.py 200`, 809 bytes, sha1
+`bc1608f6…`; `rev2/minwb2.sh`): the backtracking `\b(\w+)\b\s+\1\b` with both
+§2.44/§2.45 arms denied completes at a minimum `--work-budget` of 394, the
+possessive spelling `\b(\w++)\b\s++\1\b` at 1,199 (393 and 1,198 give up
+`PCREC_ERR_WORK`). `limits.md` §7 states the caller-facing consequence. The
+`-fno-poss-ctx-follow` / `-fno-poss-bref-first` arms (§2.44, §2.45) widen which
+loops this applies to: on the committed subject the doubled-word pattern's
+minimum work budget is 394 with both arms denied and 1,199 with both on, the
+hand-possessified spelling's own number (595 with arm B alone, 998 with arm A
+alone; re-measured on the built compiler, lane possbuild, 2026-10-07).
+
+**Differential:** `tests/possessify/run_possdiff.sh`. Population,
+measured this session (`bash tests/possessify/run_possdiff.sh`):
+
+```
+possdiff: 155 patterns agreed, 0 diverged, 0 refused by pcrec
+possdiff: 107 of 155 had at least one POSSESSIFIED quantifier
+possdiff: 77725 pattern-subject-startpos cells compared
+```
+
+**Not on the dial — GATE 3.** Size is measured and wrong-signed (`σ` =
+−1.69%: denying costs bytes rather than saving them); time is unmeasured
+(`docs/design/opt_dial_inventory.md` §7.1 item 6). A future throughput
+sweep is the missing half.
+
+### 2.2 `-fno-revdet` — `PCREC_NO_REVDET` (bit 5)
+
+**Denies** the REVERSE-DETERMINISTIC cursor rung (`docs/design/
+engine_m4.md` §2.5). Default: the rung runs where it applies. **ANSWER-
+IDENTITY-preserving**, same masked-out-of-`rx_info.flags` treatment as
+§2.1, for the same reason: the rung is one alternative body-copy-plus-
+backward-walk emission of a quantifier that a denial drops one rung
+further, to literal replication (frames). Moves the `RX_VM_RUNGS` bitmask
+(`PCREC_VM_RUNG_REVDET`), not re-measured separately this session (§2.1's
+stamp-verification method applies identically; `tests/rungselect/
+CLAUDE.md` documents the family's shared shape). **Reason it exists:**
+same D47.3 claim — a strategy that cannot be denied cannot be
+differentially tested, and denying it drops the quantifier to the
+semantic ground truth (literal replication).
+
+**Differential:** `tests/rungselect/run_rungdiff.sh`, which reuses
+`tests/possessify/possdiff_driver.c` (D47.3's family shares one driver;
+only the `-DDIFF_A_LABEL`/`-DDIFF_B_LABEL` words differ). Population,
+measured this session (`bash tests/rungselect/run_rungdiff.sh`; the first
+attempt hit a 180s `gnutimeout` under the manager's concurrent battery
+load — a load-contention timeout, not a defect, per the box's own
+guidance that a firing timeout is a finding to investigate rather than a
+reason to blindly extend; re-run at 600s completed):
+
+```
+rungdiff: 205 patterns agreed, 0 diverged, 0 refused by pcrec
+rungdiff: 106 of 205 took the REVERSE-DETERMINISTIC rung
+rungdiff: 395757 pattern-subject-startpos cells compared
+```
+
+**Not on the dial — GATE 3.** Size is measured and roughly a wash
+(−0.001% of the corpus); time is unmeasured
+(`docs/design/opt_dial_inventory.md` §7.1 item 6).
+
+### 2.3 `-fno-counter` — `PCREC_NO_COUNTER` (bit 6)
+
+**Denies** the COUNTER rung (`docs/design/counterk_impl/
+counterk_design.md`), the family's third member and — per its own
+comment in `lib/pcrec.h` — the one whose denial is load-bearing beyond
+testing: the counter rung has a **known limit** (the replication cap,
+`PCREC_MAX_VM_REPEAT_COPIES`), above which there is no `-fno-counter`
+build to compare against, because the cap is what refuses it. Default:
+the counter rung runs where it applies, unrolled by `unroll_k` (§2.10).
+**ANSWER-IDENTITY-preserving**, same masked treatment. **Reason it
+exists:** dropping a bounded repeat to literal replication is what ships
+today below the cap, so this is the differential's ground truth exactly
+as §2.1/§2.2's are, with the added role of being the ONLY ground truth
+the counter rung has (there is no third strategy under it to fall back
+to).
+
+**Differential:** `tests/counterk/run_counterkdiff.sh` (same shared
+driver). Population, measured this session (`bash tests/counterk/
+run_counterkdiff.sh`):
+
+```
+counterkdiff: 59 patterns agreed, 0 diverged, 0 refused by pcrec
+counterkdiff: 45 of 59 took the COUNTER rung
+counterkdiff: 541899 pattern-subject-startpos cells compared
+```
+
+**Not on the dial — NOT A RUNG.** The counter rung is a correctness-shaped
+floor (`docs/design/opt_dial_design.md` §3.3): below the replication cap
+it is the ONLY ground truth the ladder above it has, so denying it is a
+differential control, not a lever a caller trades size or speed against.
+
+### 2.4 `-fno-length-prune` — `PCREC_NO_LENGTH_PRUNE` (bit 7)
+
+**Denies** MINIMUM-REMAINING-LENGTH (MRL) pruning (`docs/design/
+k23_impl/k23_design.md`, D51 ruling 1). Default: MRL prunes where a bound
+is derivable. **ANSWER-IDENTITY-preserving**, same masked treatment, and
+the strongest case in the family for it: MRL emits a bound on whichever
+rung a quantifier already took and changes no rung, no slot and no
+capacity, so a denied artifact is claimed **byte-for-byte the emitter's
+own pre-MRL output** (`lib/pcrec.h`'s own comment) — not merely
+answer-identical, structurally identical. **Reason it exists:** same
+D47.3 claim, and the byte-for-byte form is what makes the ground truth
+strongest here.
+
+**Differential:** `tests/mrl/run_mrldiff.sh` (same shared driver), which
+sweeps **both engines** — the default (prefilter-windowed) ceiling and
+`--engine=vm` (subject-end) ceiling are different arithmetic and only the
+default is what ships, so both run. Population, measured this session
+(`bash tests/mrl/run_mrldiff.sh`):
+
+```
+mrldiff: 146 pattern-engine pairs agreed, 0 diverged, 0 refused by pcrec
+mrldiff: 138 of 146 carried at least one CLAMPED quantifier
+mrldiff: 202458 pattern-subject-startpos cells compared
+mrldiff: 22 cell(s) excused by the answer-more asymmetry (pinned expectation 22)
+mrldiff: 22 excused cell(s) refereed against the pure DFA engine; 0 pattern-engine pair(s) had no referee available
+mrldiff: rung coverage complete (mask 0x1f): every rung MRL emits a form for was reached
+```
+
+**Not on the dial — NOT A RUNG.** MRL trades nothing: a denied artifact is
+claimed byte-for-byte the pre-MRL emitter's own output, so there is no
+size or speed exchange for a dial position to spend.
+
+### 2.5 `-fno-prefilter` / `-fprefilter` — `PCREC_NO_PREFILTER` (bit 8) / `PCREC_FORCE_PREFILTER` (bit 9)
+
+The D46 close-out for the PREFILTER axis (`fit.prefilter`,
+`src/opt/select_engine.c`, `docs/design/engine_m4.md` §6.1/§4.7). A
+**FORCE PAIR**, not deny-only like §2.1-2.4 and §2.6-2.7 — the reason is
+structural, not a style choice: those deny a per-QUANTIFIER strategy
+(each quantifier walks its own ladder, so "force it on THIS quantifier"
+has no addressing problem to solve), while `fit.prefilter` is **one
+verdict for the whole artifact**, decided jointly with `--engine`
+(auto+captures turns it on; `--engine=vm` turns it off as a side effect,
+R21 E-6). Before this axis existed there was no way to ask for the OFF
+state under otherwise-auto selection, or the ON state under
+`--engine=vm` — exactly the coupling D46's own motivating scenario warns
+about (a test built to pin one axis silently moves on another), so both
+directions are independently reachable.
+
+Default: auto-selected jointly with the engine. **ANSWER-IDENTITY-
+preserving in one direction, DO-OR-DIE in the other**: `PCREC_NO_PREFILTER`
+never refuses (`--engine=vm` already ships that exact configuration).
+`PCREC_FORCE_PREFILTER` on a pattern that compiles to the DFA engine (no
+VM artifact exists to attach a prefilter to) **REFUSES** with a
+diagnostic — the same `--engine`-precedent do-or-die posture (D47.3),
+never a silent downgrade. Masked out of `rx_info.flags` (the axis changes
+no answer, only how one is found); what the emitter DID is the
+`RX_VM_PREFILTER` scalar stamp (`"hybrid"` / `"none"`), verified:
+
+```
+$ build/pcrec -p rx --emit-main -o /tmp/c.c 'a(b|c)+d'; grep RX_VM_PREFILTER /tmp/c.c
+#define RX_VM_PREFILTER "hybrid"
+$ build/pcrec -p rx -fno-prefilter --emit-main -o /tmp/d.c 'a(b|c)+d'; grep RX_VM_PREFILTER /tmp/d.c
+#define RX_VM_PREFILTER "none"
+```
+
+**It is charged against the emitted-size caps, and `-fprefilter` never
+drops it to fit.** The forced prefilter's byte DFA counts toward
+`limits.md` §8's emitted-bytes cap. A pattern that fits without it can
+therefore be REFUSED with it, with the size-cap diagnostic (`pattern too
+large: N bytes of emitted C source (limit ...)`): `\p{Xwd}` under `-e utf8`
+and `--engine=vm` is 1,013,468 bytes against 1,000,000 (1,013,932 when
+captured), where the same pattern without the flag is ~31 KB. This is the
+do-or-die posture above, not a defect: the size-ladder rungs that would make
+it fit by dropping the prefilter are ineligible under this flag (§2.17).
+`make test-axes` records this refusal as the axis's documented limit.
+
+**Reason it exists:** the hybrid prefilter (a capture-erased DFA
+forward+reverse pair used as an exact anchored-match window ahead of the
+VM) is an observability/controllability gap D46 names directly — without
+it, "which engine" and "does the hybrid prefilter run ahead of it" could
+not be independently pinned.
+
+**Differential:** deliberately **none of its own**
+(`tests/prefilter/CLAUDE.md`): the prefilter's correctness (that the
+hybrid answers the same span the pure VM would) already rides
+`tests/vm/run_vm_tests.sh` §3.7 and the ceiling-form coverage in
+`tests/mrl/run_mrl_tests.sh`; this axis adds observability and
+controllability on an already-validated mechanism, not a new algorithm.
+`tests/prefilter/run_prefilter_tests.sh` is structural (stamp assertions
+paired with an independent read of the emitted `_prefilter(` function
+bodies, so the check cannot pass on a stamp that has drifted from the
+actual machinery) — not a pattern-subject-startpos differential, so no
+cell tally applies here.
+
+**Identity is modulo WHICH BUDGET BINDS.** The prefilter changes how much WORK a search does before it answers, never the answer — but a give-up is a bound on work, so on a subject that sits near a budget the two builds can differ by a GIVE-UP CODE where neither is wrong: measured 2026-08-26 ([ENG-FORM]'s answer gate, pre-existing), `((a)|bc){0,4000}d` over 1 MB of `a` is `no match` with the hybrid's DFA prefilter and `PCREC_ERR_WORK` without it. A sweep that compares answers across this axis must classify a give-up on either side as budget-bound (reported, floored), not as a disagreement.
+
+**[SEL-1] (2026-08-28) A THIRD OFF-ROUTE, AND IT IS BEFORE THE TWO FLAG
+ROUTES FOR THE SAME REASON THE BACKREFERENCE/CALL ROUTES ARE (§4, `-fprefilter`'s force branch above): no flag explains it, so naming one would be a
+diagnostic lie. Under `auto`, with neither `-fprefilter` nor `-fno-prefilter`
+requested, an auto-selected prefilter whose own DFA build OVERFLOWS a cap
+(state count, table entries, K7's element budget — the identical caps
+`--engine=dfa` can hit) is DROPPED rather than refused: `fit.prefilter`
+comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
+as if `-fno-prefilter` had been passed, though `--emit-ir`'s `prefilter`
+summary row does not claim that flag's credit: its value is
+`no-dfa-overflow` (not `no-fno-prefilter`) and its note carries the same
+`RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` §3.1.1 has
+the eleven-token vocabulary.
+
+**[PF-DROP] (2026-09-30, D135) A FOURTH OFF-ROUTE: THE EMITTED-SIZE CAP.**
+A hybrid whose ARTIFACT (not its DFA build) is over an emitted-size cap, and
+still over it after the [OPT-4] collapse (§2.17), has its prefilter dropped by
+the size-cap ladder's last rung (`limits.md` §8, "The size-cap ladder") and
+stamps `RX_VM_PREFILTER "none"` with `RX_VM_PREFILTER_WHY "size cap retry,
+hybrid N > CAP"` — the one `"none"` that stamp is written beside, since it is
+the one no flag explains. The artifact is otherwise the `-fno-prefilter` one.
+Never under `-fprefilter` (the rung is not offered; the compile refuses), and
+denied with every other slower-to-fit rung by `--size-cap=refuse`. Since `abi`
+69 ([DEC-VAR-ATTRIB]) `--emit-ir`'s `prefilter` row says so too: its value is
+`no-size-cap`, not `no-fno-prefilter` (the rung drops the prefilter by
+OR-ing that flag into the retry's options, and the listing named the flag
+until then).
+
+**[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
+Before the prefilter is dropped, the fallback tries ONE more thing: building
+it from the count-collapsed language (§2.17). The ground for dropping it was
+that rebuilding would be the IDENTICAL machine that just overflowed — true of
+the pattern's own language, false of the collapsed superset, whose size is a
+function of the pattern's STRUCTURE alone. So an overflow witness can now come
+out `RX_VM_PREFILTER "hybrid"` with
+`RX_VM_PREFILTER_LANG "count-collapsed"` and
+`RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`, beside an
+`RX_ENGINE_WHY` that still names the overflow — which is what tells a reader
+which rung won. `RX_VM_PREFILTER "none"` remains the outcome when the
+COLLAPSED machine overflows too, and when `-fno-prefilter-collapse` is passed
+(a caller who denied the axis is not given it by the back door). `-fprefilter` itself is
+UNCHANGED — forcing the prefilter on a pattern whose DFA cannot be built
+still REFUSES with today's diagnostic (§2.11), because a caller who named
+the flag asked for the machine that overflows. See §2.11 for the mechanism
+(`src/opt/select_engine.c`'s `forces_dfa_overflow`, `Ctx.dfa_disabled`) and
+the cost bound; this entry states the PREFILTER-side half of the same single
+mechanism, not a second one.
+
+**Not on the dial — GATE 3.** The axis is measured only through an
+engine-changing proxy — its own trade is entangled with `--engine`'s
+(§2.11), so no clean two-axis rate exists for `-fno-prefilter`/`-fprefilter`
+on their own.
+
+### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
+
+**Denies** stage 1 of the ALTERNATION→CLASS normalization pass
+(`src/opt/altcls.c`, `docs/dev/plan.md`'s `[OPT-ALTCLS]` row): merging a
+maximal run of single-character alternation branches into one class.
+Default: stage 1 runs where a run qualifies. **ANSWER-IDENTITY-
+preserving**, masked out of `rx_info.flags`. Back to the DENY-only shape
+(not a force pair like §2.5): each mergeable run is its own selection
+point, addressed independently the way an `A_REP` walks its own
+possessify/revdet ladder, so there is no artifact-wide verdict for FORCE
+to solve an addressing problem for. **Unlike §2.1-2.4, this pass is NOT
+VM-only** — it runs before either engine is built, so a capture-free
+pattern's DFA artifact carries its stamp too. **Reason it exists:** same
+D47.3 claim, applied to a pass that predates engine selection.
+
+**Not on the dial.** `σ` = −2.40%: wrong-signed (denying this merge costs
+bytes, it does not save them). Independently GATE 2 — the deny arm moves
+the refusal set (K45: `tests/size/size_term.rxt:32`'s nested-repeat tower
+compiles only above the merge cap without it).
+
+### 2.7 `-fno-altcls-factor` — `PCREC_NO_ALTCLS_FACTOR` (bit 11)
+
+**Denies** stage 2 of the same pass: prefix-factoring a maximal run
+sharing a literal first byte, running on stage 1's output (so denying
+stage 1 alone still lets stage 2 factor an unmerged run's literal
+spelling; denying stage 2 alone leaves single-character merging live —
+this is why the pass has two knobs rather than one). Default: stage 2
+runs where a run qualifies. Same ANSWER-IDENTITY-preserving, masked, not
+VM-only treatment as §2.6. Both stages stamp `<PREFIX>_ALTCLS_MERGES` /
+`<PREFIX>_ALTCLS_FACTORED`, verified:
+
+```
+$ build/pcrec -p rx --no-captures --emit-main -o /tmp/e.c '[abc]|[def]|xyz'; grep RX_ALTCLS /tmp/e.c
+#define RX_ALTCLS_MERGES 1
+#define RX_ALTCLS_FACTORED 0
+```
+
+**Reason it exists:** same D47.3 claim; two bits because the two rewrite
+stages are separately useful to pin.
+
+**Differential (both bits):** `tests/altcls/run_altdiff.sh` (denies both
+`-fno-altcls-merge -fno-altcls-factor` together against the pass live, the
+shared driver). Population, measured this session (`bash tests/altcls/
+run_altdiff.sh`):
+
+```
+altdiff: 41 patterns agreed, 0 diverged, 0 refused by pcrec
+altdiff: 30 of 41 had at least one ALTCLS merge or factor
+altdiff: 35995 pattern-subject-startpos cells compared
+```
+
+**Not on the dial.** `σ` = −0.56%: wrong-signed, the same shape as §2.6.
+
+### 2.8 `-fno-atomic-discharge` — `PCREC_NO_ATOMIC_DISCHARGE` (bit 12)
+
+**Denies** the FREE DISCHARGE (`docs/design/atomic_groups_design.md`
+§5.3, `src/opt/atomic.c`): deleting an `A_ATOMIC` node whose cut
+possessify's verdict proves is a no-op. Default: the discharge runs where
+provably safe. **ENGINE-SELECTING — the first of the two axes in this
+family that is not answer-identity-preserving alone.** What it denies is
+an ENGINE, not a strategy: every other deny-only flag above leaves the
+same artifact kind and changes only the machinery inside it; denying this
+one leaves the `A_ATOMIC` node in the tree, which is DFA-excluding, so a
+pattern that would otherwise compile to a pure DFA compiles to the VM
+instead. **Consequence, verified this session:**
+
+```
+$ build/pcrec -p rx --features atomic-groups --engine=dfa \
+    -fno-atomic-discharge --no-captures -o /tmp/x1.c '[^"]*+"'
+pcrec: possessive quantifier requires the VM engine, which --engine=dfa excludes (pattern offset 5)
+```
+
+REFUSES — correct, and the flag doing its job (the same do-or-die
+posture `--engine` itself has). **NOT masked from `rx_info.flags`** — the one place this axis differs procedurally from
+§2.1-2.7 — because it can genuinely change which engine a pattern gets,
+so two artifacts differing only in this bit are not claimed
+identically-behaving-therefore-indistinguishable the way the masked axes
+are. Deliberately **separate from `-fno-possessify`**: the discharge is
+not gated by that flag, because an optimization denial must not decide
+which engine a pattern gets. **Reason it exists:** the discharge's
+"changes no answer" claim (for the case where it applies at all — a
+possessify-proved-dead atomic group) needs the same differential every
+other member of the family needs.
+
+**Differential:** `tests/atomic_groups/run_atomic_diff.sh` §3 (the
+DISCHARGE differential, pcrec-vs-pcrec, asserting identical answers with
+and without `-fno-atomic-discharge`, plus §5.4's emission-neutrality
+where it holds). Not independently re-run this session — its own suite
+carries subject sweeps against libpcre2 (§1, §2) in addition to §3's
+pcrec-vs-pcrec arm, and the brief scopes this lane to the flags' own
+identity/diff instruments; `tests/atomic_groups/CLAUDE.md` and the
+script's own header (read this session) are the citation.
+
+**Not on the dial — GATE 3.** No two-axis rate exists; the axis it moves
+is engine selection, which the dial does not second-guess (§5).
+
+The discharge asks the possessify verdict, so the possessify arms (§2.44,
+§2.45) widen what it discharges: `\w++\b` is discharged and DFA-routed by
+default. Denying the context-gate arm (`-fno-poss-ctx-follow`) keeps such a
+group on the VM.
+
+### 2.9 `-fno-splice-calls` — `PCREC_NO_SPLICE_CALLS` (bit 13)
+
+**Denies** the SPLICE linkage at every eligible subroutine call site
+(`docs/design/subroutines_design.md` §6.3, §9.2), forcing the CALL
+linkage everywhere instead. Default: a call site whose callee is not in a
+cycle and whose expansion fits the size budget is spliced (emitted
+inline, its own exit); every other site takes the shared CALL linkage.
+**ENGINE-SELECTING, the family's second and last such axis, and the
+same shape as §2.8's:** a spliced call has an exact finite lowering, so
+`src/ir/nfa.c` can build the machine and `select_engine` need not force
+the VM; denying the splice leaves a LINKED call, which is structurally
+VM-only. **Consequence, verified this session:**
+
+```
+$ build/pcrec -p rx --features named-groups,recursion --engine=dfa \
+    -fno-splice-calls --no-captures -o /tmp/x2.c '(?:(?<g>a)){0}(?&g)'
+pcrec: (?&name) requires the VM engine, which --engine=dfa excludes (pattern offset 14)
+```
+
+REFUSES — correct, the discharge's own precedent exactly. **NOT masked
+from `rx_info.flags`**, for the identical reason as §2.8 — verified: a
+default build of `'(a)(?1)'` carries `.flags = 2ULL` (`PCREC_EMIT_MAIN`
+only); the `-fno-splice-calls` build of the same pattern carries `.flags
+= 8194ULL` (`2 | (1u << 13)`) — the bit is visibly present, unlike every
+masked axis in §2.1-2.7. What the emitter did (sites spliced vs. linked)
+is **`<PREFIX>_VM_CALL_SPLICED`/`<PREFIX>_VM_CALL_LINKED`** (two scalar
+counts), verified on `'(a)(?1)'`:
+
+```
+$ build/pcrec -p rx --features named-groups,recursion --emit-main -o /tmp/s1.c '(a)(?1)'
+$ grep RX_VM_CALL /tmp/s1.c
+#define RX_VM_CALL_SPLICED 1
+#define RX_VM_CALL_LINKED 0
+$ build/pcrec -p rx --features named-groups,recursion -fno-splice-calls --emit-main -o /tmp/s2.c '(a)(?1)'
+$ grep RX_VM_CALL /tmp/s2.c
+#define RX_VM_CALL_SPLICED 0
+#define RX_VM_CALL_LINKED 1
+```
+
+The stamp is TWO counts, `<PREFIX>_VM_CALL_SPLICED` and
+`<PREFIX>_VM_CALL_LINKED` (never a single `<PREFIX>_VM_CALLS`): `SPLICED +
+LINKED` is every call site the emitter wrote, and the interesting question
+is their ratio (`src/gen/emit_vm.c`; `lib/pcrec.h`'s comment on the
+`PCREC_NO_SPLICE_CALLS` bit names the same pair). **Reason the axis exists:** the SPLICE-vs-
+LINKAGE choice reaches `select_engine.c`, which every pattern goes
+through, so an axis that pins the linkage constant localizes a wrong
+eligibility rule.
+
+**Differential:** `tests/recursion/run_recursion_diff.sh` §5, "`A == B`":
+the SPLICE-linked and the LINKAGE-linked artifact, over the corpus,
+compared on ANSWERS (not bytes — `tests/codegen/run_recursion_identity.sh`
+is the sibling BYTE-identity gate for the module-boundary claim, a
+different, narrower claim than this section's). Population, measured
+this session (`bash tests/recursion/run_recursion_diff.sh`, §5's own
+summary line):
+
+```
+PASS: §5 A == B: 279 of 322 corpus patterns compiled on BOTH linkages (43 refused on both), 28458 cells compared over 24 subjects x every startpos, span AND every group span, 0 disagreements between the SPLICE-linked and the LINKAGE-linked artifact
+```
+
+**Not on the dial — GATE 4.** The time cost reverses sign with the subject
+population (`docs/design/opt_dial_inventory.md` §4): faster for some
+subjects, slower for others, so "I want speed more than bytes" does not
+select a side.
+
+### 2.10 `--unroll=K` — the counter rung's value parameter
+
+Not a bit in `pcrec_options.flags`; a separate `int unroll_k` field
+(`lib/pcrec.h`). **The value parameter of `-fno-counter`'s rung (§2.3):**
+one emitted body copy per K iterations, K = 0 meaning the built-in
+`PCREC_DEFAULT_UNROLL_K` (`src/core/limits.h`; D47.2's calibration).
+Range enforced at the CLI: an integer in `1..4096` (`cli/main.c`).
+**One value per artifact, never per quantifier** — held strictly by the
+D47 ADDENDUM ("K must not become a per-pattern heuristic in v1"; the
+downward clamp that would have varied it moved whole to plan row
+`[ENG-CLAMP]`). Not itself answer-identity-vs-engine-selecting in the
+same sense as §2.1-2.9 — it is a tuning parameter of a strategy that is
+already selected, not a strategy denial — but it inherits the counter
+rung's ANSWER-IDENTITY claim: unrolling by a different K changes the
+emitted loop's shape, never what it accepts. **Reason it exists:** it is
+the one shape parameter the counter rung's design left open (`docs/
+design/counterk_impl/counterk_design.md` §4.1).
+
+**THE DIAL SETS §2.16's LADDER PARAMETERS, NEVER K DIRECTLY, AND THIS ROW
+IS NOT A RUNG ON THE DIAL'S OWN TABLE.** `--tune=N` moves the `[ART-SIZE]`
+materiality bar and the size threshold above which the ladder runs at all
+(§2.16); the ladder's existing per-pattern mechanism still derives K from
+those two numbers, one pattern at a time. A dial that set K itself would
+duplicate a decision an existing mechanism already makes better, on bytes
+it measures rather than models — the general-mechanisms rule
+(`docs/design/opt_dial_design.md` §3.5).
+
+**THE DECLARED-CAPACITY FLOOR (§3.5a) IS A STATED PRECONDITION OF BOTH
+LADDER ROWS.** `K` is answer-identical in the LANGUAGE, not in the DEPTH:
+a smaller `K` raises the per-iteration frame need, so the same
+`<PREFIX>_BT_FRAMES` carries a SHORTER subject at a smaller `K`
+(`^(a(?1)?b)$`'s `.subject_ceiling` moves 512 → 341 between `--unroll=8`
+and `--unroll=1`). What makes the `−2`/`−1` ladder cells admissible at all
+is `artifact_size_term.md` §3.3a's floor: a candidate rung whose artifact
+declares LESS capacity than the default K's — on `.frame_capacity` OR on
+`.subject_ceiling` — is not a candidate, stamped `capacity-declined`.
+Without that floor, lowering the dial's threshold would be a
+`match → give-up` answer change no flag asked for, which is exactly what
+`docs/spec/limits.md` §7's answer-identity promise is for.
+
+### 2.11 `--engine=dfa|vm|auto` — the coarsest-grained tuning-adjacent axis
+
+Not a `-f`/`-fno-` flag and not primarily a tuning axis — it is D46's own
+motivating case, restated here because every flag in §2.1-2.9 is scoped
+relative to it (the ENGINE-SELECTING ones, §2.8/§2.9 and §2.44, can force the
+same choice this flag makes directly). Default: `auto`, APPROACH.md §2's
+"automatic per pattern" selection. `dfa`/`vm` are diagnostic overrides —
+reproduce a bug, measure the hybrid against a VM-only build — and
+**DO-OR-DIE**: a request the pattern cannot honour (e.g. `--engine=dfa`
+on a pattern with unbounded backtracking machinery) REFUSES with a
+diagnostic naming the construct, never a silent fallback
+(`src/opt/select_engine.c`). `--engine=vm` additionally **disables the
+DFA prefilter** (D44/R21 E-6) — the one place this axis and §2.5 compose
+directly — which is what makes `--engine=vm` usable as an independent
+second derivation of the match span rather than an echo of the DFA's.
+**Forcing `--engine=vm` on a pattern `auto` would place on the DFA can
+also turn a trivial-subject MATCH into a `PCREC_ERR_FRAMES`/
+`PCREC_ERR_WORK` give-up**: a DFA has no per-nesting-level frame cost,
+while the VM's fixed resume-stack/trail budgets (`limits.md` §4) are
+consumed at roughly two resume frames and nine trail entries per nesting
+level regardless of subject length — so a pattern nested deep enough
+exceeds them under the forced VM even on a one-byte subject where `auto`
+selects the DFA and matches instantly. Witness: K18's own resource-guard
+file, `tests/base/k18_deep_nesting.rxt` (`docs/dev/known_issues.md`'s K18
+entry) — its 66-level-and-deeper `(?:...*)*` nestings answer `RX_ENGINE
+"dfa"` and match `"a"` under `auto`, and give up on `frames` under
+`--engine=vm` on the identical one-byte subject.
+`PCREC_ENGINE_AUTO` is an `enum` member; `PCREC_ENGINE_DFA`/
+`PCREC_ENGINE_VM` are `#define`s for the ABI-collision reason
+`lib/CLAUDE.md`'s `[ABI-NS]` entry states (an artifact's own identical
+`#define` of the same name must not error against this header). No
+separate differential of its own — every module's own diff suite already
+sweeps at least the default and `--engine=vm` axes (`tests/atomic_groups/
+run_atomic_diff.sh` §2, `tests/recursion/run_recursion_diff.sh`'s four
+axes) as the engine differential D46 asks for at the module level.
+
+**[SEL-1] (2026-08-28) `auto`'s DO-OR-DIE POSTURE HAS ONE EXCEPTION, AND IT
+IS ABOUT A CAP THE PATTERN COULD NOT HAVE ADVERTISED IN ADVANCE.** Every
+other DO-OR-DIE refusal above is decided by an AST-level analysis before any
+automaton is built — the pattern either carries a construct the requested
+engine cannot honour, or it does not. A DFA-cap overflow (state count, table
+entries, the K7 subset-element budget — `src/core/limits.h`, every cap
+`src/ir/dfa.c`'s two "pattern too complex" sites cover) is discovered only by
+attempting the BUILD, and under `auto` — with neither `--engine=dfa` nor
+`-fprefilter` in play — that overflow is a SELECTION OUTCOME rather than a
+refusal: the compile falls back to the VM (`RX_ENGINE "vm"`, `RX_ENGINE_WHY`
+naming the cap, e.g. `"dfa overflowed: >32000 states"`), and if the pattern
+was already VM-selected for another reason and only its auto-selected
+PREFILTER's DFA overflowed, the prefilter is DROPPED (`RX_VM_PREFILTER
+"none"`) rather than refused. `--engine=dfa` and `-fprefilter` are UNCHANGED
+by this — both still refuse with today's diagnostic
+(`"pattern too complex for the DFA engine (>N states; try --engine=vm)"`),
+because a caller who named the engine explicitly asked for the machine that
+cannot be built, and that request stays do-or-die.
+
+**THE COST BOUND** ([OPT-4], 2026-08-29: **at most TWO**, was one): the
+fallback compile is at most two refused DFA builds dearer than asking for
+`--engine=vm` directly, and the second is bounded by the first. The retry is
+now a two-rung ladder — build the prefilter from the count-collapsed language,
+and only if THAT overflows too, drop it (§2.5) — and the collapsed machine's
+NFA is strictly smaller than the exact one this compile already built, with a
+size that does not depend on any repeat count. A caller who passes
+`-fno-prefilter-collapse` skips the new rung entirely and keeps the original
+one-build bound. The sentence below describes the second rung, which is
+unchanged. The overflowing build's own
+cost is bounded by the K7 budget (`src/core/limits.h`'s `PCREC_MAX_SUBSET_
+ELEMS` entry: ~0.9 s / ~216 MB at the worst state-cap refusal measured
+there); `src/core/compile.c`'s retry never re-attempts that construction — it
+reruns the pipeline once with the DFA excluded from selection outright
+(`Ctx.dfa_disabled`, consumed by `src/opt/select_engine.c`'s
+`forces_dfa_overflow` row and by the prefilter derivation together, in one
+step), so a pattern that would have needed a prefilter DFA never builds it
+twice. Verified live (the witness `\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:
+timeout|timed out|refused|denied|unreachable)\b`, `--features all`):
+
+```
+$ time build/pcrec -p rx --features all --engine=auto -o /tmp/a.c "$P"
+real  0m0.52s
+$ grep -E 'RX_ENGINE |RX_ENGINE_WHY|RX_VM_PREFILTER' /tmp/a.c
+#define RX_ENGINE "vm"
+#define RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern offset 0"
+#define RX_VM_PREFILTER "none"
+$ build/pcrec -p rx --features all --engine=dfa -o /tmp/d.c "$P"
+pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
+$ build/pcrec -p rx --features all --engine=vm -fprefilter -o /tmp/v.c "$P"
+pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
+```
+
+`RX_ENGINE_WHY`'s text carries the ordinary `"... at pattern offset N"` suffix
+every `why` goes through (`why_text`, `src/opt/select_engine.c`) even though
+this reason is not tied to one AST node — offset 0 by convention, the same
+position the two `pcrec_ctx_fail` sites in `src/ir/dfa.c` already report at. If the
+pattern's engine choice is ALSO forced by a real construct (a live capture, a
+`VM_ONLY` registry row), that reason wins `RX_ENGINE_WHY` on the ordinary
+first-wins rule (§5.5) — the overflow's own effect (drop the prefilter) still
+applies independently, through `Ctx.dfa_disabled` rather than through `why`.
+Witness: `tests/vm/run_vm_tests.sh` §3b.
+
+**A FALLBACK CAN SHIP A VM ARTIFACT THE DFA REFUSAL USED TO SUPPRESS, AND ONLY
+THE VM'S OWN CAPS BOUND IT THEN** (K41, `docs/dev/known_issues.md`, found by
+the manager's landing battery, 2026-08-28). Before this row, a pattern whose
+DFA build overflowed was refused outright — the VM PROGRAM that pattern would
+have emitted was never built, so nothing about the VM emitter's own limits
+mattered for it. Under the fallback, that VM program IS built and shipped, and
+the DFA-side caps this section otherwise governs (state count, table entries,
+K7's subset-element budget) have nothing more to say about it: from that point
+on, the only bounds on the artifact are the VM emitter's OWN caps
+(`src/core/limits.h`) — `PCREC_MAX_VM_NODES` (131,072 emitted-node budget),
+`PCREC_MAX_VM_REPEAT_COPIES` (64, one bounded repeat's own replication
+ceiling) and `PCREC_MAX_VM_REPLICATION_PRODUCT` (nested-repeat products, tied
+to `PCREC_MAX_VM_NODES`'s own value). K41's measured witness is a case those
+caps do not fully cover today: a deeply-nested, wide bounded-repeat pattern
+whose VM artifact compiles fine as pcrec's own output but is large enough
+(2,004,778 bytes) that `gcc -O2 -c` itself hits a CPU-time resource limit —
+52.9 s / 540 MB, `internal compiler error: CPU time limit exceeded`. That is a
+test-harness/toolchain-visible cost (D45's gcc compile-time budget), not a
+pcrec correctness defect, and the fix direction (a VM-side emitted-PROGRAM-SIZE
+cap, refusing before emission the way the DFA-side caps already do) is
+chartered separately rather than built here — see K41's own entry.
+
+**Not on the dial — GATE 5, and independently GATE 2.** The time cost's
+range is violent (up to 173,580× on the fail path,
+`docs/design/opt_dial_design.md` §3.1) — a dial position that can turn a
+0.2 µs answer into a 35 ms one is not a dial position at any size saving.
+Independently, `--engine=dfa` refuses a captures-default pattern (D44.6),
+which is a refusal-set move gate 2 forbids on its own terms.
+
+### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
+
+**ANSWER-IDENTITY-preserving**, and the strongest such claim in this
+section: the tier it denies is a pure cost transformation whose two shapes
+are proved to answer identically by construction, not by sampling
+(`docs/spec/match_api.md` §10.9).
+
+**What it controls.** On an artifact whose stamped default storage does not
+fit inside one 4 KB page, `<prefix>_search`/`_match`/`_match_caps` run the
+match on a page-budgeted on-stack buffer and escalate to the stamped default
+— by calling a non-inlined internal function that owns it and re-runs from
+scratch — on `PCREC_ERR_FRAMES` and on nothing else. Denying emits the
+SINGLE-TIER shape those entries had before `[OPT-1]`. Default: the tier is
+ON. Deny-only, `-fno-possessify`'s shape rather than `§2.5`'s force pair:
+there is one entry shape per artifact, so there is nothing to address and
+nothing to force.
+
+**Reason it exists.** gcc's stack-clash protection probes every page of a
+function's frame on every call, so a 98,512-byte storage local cost 233.8
+ns on a subject that matches in a few hundred instructions
+(`docs/design/two_tier_entry.md` §1). The flag is both the bisect lever for
+that optimization and the build an identity gate can compare the old entry
+against — the second control `tests/codegen/run_tiered_entry.sh` §5 uses,
+in the shape `-fno-splice-calls` gives module `recursion`.
+
+**The stamp.** `<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL` (match_api.md
+§6.3(b)) — VM-only, `.c`-private, on every VM artifact. Under the denial
+they equal `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES`, which is the same
+reading three answer-preserving degenerate cases produce and is the
+document's only spelling of "this artifact has one tier". **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`), for the
+mask's own reason: it changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it, and what
+the emitter DID is already reported by the stamp.
+
+**The stamp anchors on `RX_FAST_`, not on `RX_(FAST|RESUME|TRAIL)`**: the
+looser pattern also matches the four §10.4 sizing macros and the `RX_TRAIL`
+undo macro, so it prints seven lines rather than two. Re-run and verified at
+this commit:
+
+```
+$ build/pcrec -p rx --engine=vm --features recursion -o - -- '^(a(?1)?b)$' \
+    | grep -E '^#define RX_FAST_'
+#define RX_FAST_FRAMES 47
+#define RX_FAST_TRAIL 71
+$ build/pcrec -p rx --engine=vm --features recursion -fno-tiered-entry -o - \
+    -- '^(a(?1)?b)$' | grep -E '^#define RX_FAST_'
+#define RX_FAST_FRAMES 2048
+#define RX_FAST_TRAIL 3072
+```
+
+(47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,
+and `FAST == RESUME`/`TRAIL` is how a reader tells that the tier is off.)
+
+**ON THE DIAL, CONDITIONALLY, AND UNRATIFIED AT EITHER SIZE POSITION
+TODAY.** `σ` = 7.48% clears the dial's savings floor. Converted through
+`docs/design/opt_dial_design.md` §3.2's per-regime rule, `m = 1 +
+4.06·φ_entry`, so `−2` would deny this axis for any `φ_entry ≤ 0.246` and
+`−1` for any `φ_entry ≤ 0.0246` — but `φ_entry` is unmeasured, chartered
+on demand (§5), and `src/core/tune.c`'s pinned table denies nothing on
+this bit at either position until that measurement lands and the cell is
+ratified as its own diff.
+
+### 2.13 `-fno-premul-table` — `PCREC_NO_PREMUL_TABLE` (bit 15)
+
+**ANSWER-IDENTITY-preserving.** The axis changes the ENCODING of a DFA
+state, not the machine: the same states, the same byte classes, the same
+transitions, written down differently.
+
+**What it controls.** A DFA scan's transition table normally holds
+`next_state * classes` rather than `next_state`, so the emitted step is
+`state = table[state + class]` (`unsigned short` cells, `65535` for dead)
+and the loop's carried dependency chain is `add, load` rather than
+`lea, lea, movslq, load`. Denying it emits the INDEXED form — the tables
+and the loop exactly as they shipped before `[OPT-3]`. Default: the
+pre-multiplied form is ON, subject to the generation-time bound below.
+Deny-only, `§2.12`'s shape rather than `§2.5`'s force pair: there is one
+table form per machine and the compiler picks it, so there is nothing to
+address and nothing to force.
+
+**Reason it exists.** `[OPT-3]` STEP 1 measured the DFA scan as
+LATENCY-bound — 10.7 cycles/byte on the comparative bench's throughput
+subjects, of which 7 are that address-arithmetic chain, with two
+independent streams nearly halving the per-byte cost — and the
+pre-multiplied form as **1.276x** on those three subjects,
+answer-identical over 40,469 answer lines across 91 subjects
+(`docs/dev/opt3_dfa_scan_measurement.md` §5, §7). The flag is both the
+bisect lever for that optimization and the build the identity comparison
+uses as its control.
+
+**The shipped form measures larger than that estimate**: re-measured on
+the emitter rather than on a patched artifact, `1.794x` on the same three
+subjects, which puts pcrec ahead of PCRE2-JIT on all three
+(`docs/design/premultiplied_dfa_table.md` §13 carries the table, the
+answer gate and the attribution for the difference).
+
+**The bound, and it is not this flag.** The form is REFUSED at generation
+time, per machine, when that machine's `states * classes` exceeds
+**65,535** — a CORRECTNESS condition and not a budget: a cell must fit
+`unsigned short` and stay distinguishable from the dead sentinel. The
+forward and reverse machines are decided separately, which is why
+`"mixed"` exists. A tighter 16,384-entry SIZE BUDGET was specified and
+then DELETED on a measurement (`docs/design/premultiplied_dfa_table.md`
+§7): the pre-multiplied form still wins across the whole L2-resident
+band — 1.107x at 18,432 entries, 1.097x at 36,864, and **1.287x on the
+corpus's own largest machine at 40,010** — because the two chain cycles
+the transform removes are removed whatever the load costs, and the accept
+table's growth is a `.rodata` cost rather than a per-byte one.
+
+**The stamp.** `<PREFIX>_DFA_TABLE` (§3), on every artifact that contains
+a DFA scan. **MASKED out of `rx_info.flags`** (`src/gen/emit_dfa.c`'s
+`strategy_denials`), for the mask's own reason: it changes no answer, so
+two artifacts that behave identically must not differ in their reflection
+surface over it, and what the emitter DID is already reported by the
+stamp. Re-run and verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures -o - -- '(?:[a-z]+)@(?:[a-z]+)' \
+    | grep -E '^#define RX_DFA_TABLE'
+#define RX_DFA_TABLE "premultiplied"
+$ build/pcrec -p rx --no-captures -fno-premul-table -o - \
+    -- '(?:[a-z]+)@(?:[a-z]+)' | grep -E '^#define RX_DFA_TABLE'
+#define RX_DFA_TABLE "indexed"
+```
+
+and the generation-time bound switching on its own, on the
+state-explosion family `[01]*1[01]{k}` (the forward machine's entry count
+in brackets). Every pattern in pcrec's own corpus is inside the bound —
+the largest is 40,010 entries — so the ABOVE-bound side is exercised by
+one member past what the corpus contains:
+
+```
+k=12  [36,864]  RX_DFA_TABLE "premultiplied"
+k=13  [73,728]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
+```
+
+**ON THE DIAL — `−2` DENIES UNCONDITIONALLY.** `σ` = 22…25% clears the
+dial's savings floor by a wide margin. Converted through §3.2's
+per-regime rule, `m = 1 + 0.794·φ_scan`, which stays inside `x₂` = 2.00
+for **every** `φ_scan ≤ 1` — the one cell in this whole table that needs
+no measurement to admit, because the conversion is safe at its own worst
+case. `−1` is the conditional half: it denies iff `φ_scan ≤ 0.126`, unmeasured,
+so the pinned table leaves `−1`'s cell an em-dash until that measurement
+ratifies it as its own diff (§5).
+
+**[K59-PREMUL] (2026-09-17) `compile_driver` MAY ALSO SET THIS AXIS ITSELF,
+INDEPENDENTLY OF THE DIAL — [K53-SELRETRY]'s optional-contributor drop
+ladder's second rung.** `docs/dev/known_issues.md` K59: `−2`'s own
+unconditional denial of this flag was rescuing a pattern the other four
+dial positions refused at `PCREC_MAX_EMIT_BYTES`, in violation of the
+"no dial position moves the refusal set" rule (§6.2 of the design). Fixed
+by generalizing the rescue rather than narrowing the cell: on a size-cap
+refusal, `compile_driver` may deny this flag for a DFA-engine artifact's
+own retry — appended after §2.15's anchored-machine drop, tried only when
+that one declined (fired and still insufficient, or never applicable) —
+stamping `RX_ENGINE_SEL "size-cap-retry"` and `RX_DFA_TABLE` off
+`"premultiplied"`, the same pair §2.15's own rung reads. Loud on firing: a
+non-fatal stderr note names the drop, cites the ~1.27x scan-dispatch cost
+(`docs/dev/opt3_dfa_scan_measurement.md`), and points at
+`--max-emit-bytes`/`--max-emit-code-bytes` as the recourse. Not built for a
+VM hybrid's embedded prefilter table (D77 — no measured population).
+`docs/spec/limits.md`'s "optional-contributor drop" section has the full
+two-rung account.
+
+### 2.14 `-fno-offset-skip` — `PCREC_NO_OFFSET_SKIP` (bit 16)
+
+**ANSWER-IDENTITY-preserving.** The axis changes WHERE the forward DFA
+scan starts stepping, not which strings match: every test it adds is a
+NECESSARY condition of a match beginning at that position, so it refuses
+only starts the stepped scan would refuse.
+
+**What it controls.** A DFA artifact's forward scan filters candidate
+match starts on the byte AT the candidate — one `memchr` for a single
+value, a 256-entry bitmap walk for a set (§2.5's neighbourhood, and the
+five older `<PREFIX>_DFA_PREFILTER` values). With this axis ON the
+compiler may instead derive, from the pattern's own prefix, a SET of
+`(offset k, byte-set)` tests every match must satisfy — for
+`\d{4}-\d{2}-…` a digit at offset 0 AND a `-` at offset 4 — scan for the
+rarest member with one `memchr` at its offset, verify the others on each
+candidate, and resume from a failed candidate one position later. Denying
+it emits the offset-0 filter exactly as it shipped before `[OPT-K]`.
+Default: the offset-k form is ON, subject to the selection below.
+Deny-only, `§2.13`'s shape rather than `§2.5`'s force pair: the compiler
+picks one k-set per artifact from its own cost model, so there is nothing
+to address and nothing to force.
+
+**Reason it exists.** `pcrec-bench`'s `loglines@0.1` measured pcrec
+**31.8× / 12.2× / 10.1× behind PCRE2-JIT** on `stack-frame`, `uuid` and
+`iso-ts`, and the cause was one fact all three share: the byte at offset
+0 is in every log line (a digit, a hex digit, a word character), so the
+offset-0 filter passed almost every position to a transition loop
+measured at **10.7 cycles/byte** (`[OPT-3]`). The selectivity of those
+patterns is a CONJUNCTION over offsets, which is what the JIT scans for
+and what this axis derives. It is also the bisect lever for the
+optimization and the build its identity comparison uses as its control.
+
+**The selection, and it is not this flag.** Whether an artifact gets an
+offset-k form is decided at generation time, per artifact, by a cost
+model over a byte-rate (`docs/design/offset_k_skip.md` §4): the form is adopted only when it is
+predicted at least **2×** cheaper than the offset-0 filter, and the
+scan offset must be a single byte value unless it is offset 0. Offset 0
+is always a member of the set. Neither the k-set cap (**4**) nor the
+walk bound (**24** offsets) can refuse a pattern — exceeding either
+declines an optimization — which is why `docs/spec/limits.md` says
+nothing about them.
+
+**The stamps.** `<PREFIX>_DFA_PREFILTER` gains the values
+`"offset-set"` and `"offset-set-bounded"` (and, with §2.30's run rows,
+`"run-pinned"`/`"run-pinned-bounded"`, which this flag ALSO removes), and the new sibling
+`<PREFIX>_DFA_PREFILTER_OFFSETS` names the chosen offsets with `*` on
+the scanned one (`docs/spec/match_api.md` §6.3). **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`), for the
+mask's own reason: it changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it, and
+what the emitter DID is already reported by the two stamps. Re-run and
+verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures --features all -o - \
+    -- '\d{4}-\d{2}-\d{2}' | grep -E '^#define RX_DFA_PREFILTER'
+#define RX_DFA_PREFILTER "offset-set"
+#define RX_DFA_PREFILTER_OFFSETS "0,4*"
+$ build/pcrec -p rx --no-captures --features all -fno-offset-skip -o - \
+    -- '\d{4}-\d{2}-\d{2}' | grep -E '^#define RX_DFA_PREFILTER'
+#define RX_DFA_PREFILTER "byte-class"
+#define RX_DFA_PREFILTER_OFFSETS "none"
+```
+
+and the SELECTION declining on a pattern with no selective offset — the
+same command on `\b[0-9a-f]{32}\b` reads `"byte-class-bounded"` /
+`"none"` with the flag ABSENT, which is the axis's own negative control.
+
+**The denied build and the pre-`[OPT-K]` compiler's output differ by
+exactly one line**, the `_DFA_PREFILTER_OFFSETS` stamp every `abi` 9
+artifact carries. That is the whole of the axis's footprint on a pattern
+it declines, and it is what makes the denied build the identity
+comparison's control.
+
+**Not on the dial — measured and flat.** `σ` = 1.30% median, and the
+whole distribution sits inside a 2% band: it fails the dial's 5%
+materiality bar (`y`) on its own, with no gate needed
+(`docs/design/optdial_size_sweep.md` §2.14).
+
+### 2.15 `-fno-anchored-dfa` — `PCREC_NO_ANCHORED_DFA` (bit 17)
+
+**ANSWER-IDENTITY-preserving.** The axis changes which MACHINE
+`<prefix>_match` runs, not which strings match: the form it enables runs
+the pattern's own automaton from `ctx->pos`, which is exactly the
+question the entry promises to answer (`docs/spec/match_api.md` §3.2).
+The argument that the two forms report the same length on every input is
+`docs/design/anchored_match_unwrapped.md` §3.
+
+**What it controls.** A DFA artifact's `<prefix>_match` and
+`<prefix>_match_caps` used to run the artifact's ordinary UNANCHORED
+search and reject any match whose start is not `ctx->pos`. With this axis
+ON the artifact carries a THIRD machine instead — the same subset
+construction over the same NFA, rooted at the pattern's own first state
+rather than at the start-anywhere self-loop — and runs it forward from
+`ctx->pos` with no reverse pass and no candidate skip. Denying it emits
+the search-and-filter bodies exactly as they shipped before `[ENG-ABS]`,
+and builds no third machine at all. Default: the anchored form is ON,
+subject to the selection below. Deny-only, §2.13's shape rather than
+§2.5's force pair: the compiler emits the form wherever the machine fits
+its caps, so there is nothing to address and nothing to force.
+
+**Reason it exists.** `[OPT-2]` STEP 2
+(`docs/dev/opt2_anchored_match_measurement.md`) measured the REVERSE PASS
+at **~50 % of the DFA's cost on every matching subject** of the bench's
+compliance set: deleting it takes matching subjects from **2.077× behind
+the VM to 1.046×** and short valid emails from **1.207× behind to
+0.571×**. Under the search-and-filter form that pass exists only to
+recover a start the caller already gave. The second motivation is
+`[ENG-ABS]`'s original one: a FAILING match-here can skim the remainder
+of a long subject hunting a later match the filter then discards, where
+an anchored body stops at the first divergent byte. It is also the
+bisect lever for the optimization and the build its identity comparison
+uses as its control.
+
+**The selection, and it is not this flag.** Whether an artifact gets the
+anchored form is decided at generation time, per artifact: the engine
+must be the one-pass unanchored DFA (a `^`- or `\G`-bearing pattern is on
+the per-start attempt engine and keeps the old form), the artifact must
+not be the empty engine, and the anchored machine must BUILD inside the
+DFA caps. A machine over a cap DECLINES an optimization — it never
+refuses a pattern, and the mandatory machines are built first so the
+shared subset-element budget cannot be spent on an optional one — which
+is why `docs/spec/limits.md` says nothing about it.
+
+**The stamps.** `<PREFIX>_DFA_MATCH` names the chosen form
+(`"unwrapped"` / `"search-filter"`) and `rx_info.match_form` mirrors it
+(`docs/spec/match_api.md` §6.3). **MASKED out of `rx_info.flags`**
+(`src/gen/emit_dfa.c`'s `strategy_denials`), for the mask's own reason:
+it changes no answer, so two artifacts that behave identically must not
+differ in their reflection surface over it, and what the emitter DID is
+already reported by the stamp. Re-run and verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures --features all -o - \
+    -- 'foo[0-9]+bar' | grep -E '^#define RX_DFA_MATCH'
+#define RX_DFA_MATCH "unwrapped"
+$ build/pcrec -p rx --no-captures --features all -fno-anchored-dfa -o - \
+    -- 'foo[0-9]+bar' | grep -E '^#define RX_DFA_MATCH'
+#define RX_DFA_MATCH "search-filter"
+```
+
+and the SELECTION declining on a pattern the other engine owns — the
+same command on `^foo` reads `RX_DFA_SCAN "attempt"` and
+`RX_DFA_MATCH "search-filter"` with the flag ABSENT, which is the axis's
+own negative control.
+
+**The denied build and the pre-`[ENG-ABS]` compiler's output differ by
+exactly two lines**, the `_DFA_MATCH` stamp every `abi` 10 DFA artifact
+carries and the `rx_info.match_form` field every `abi` 10 artifact
+carries. That is the whole of the axis's footprint on an artifact it
+declines, and it is what makes the denied build the identity
+comparison's control — a BYTE-IDENTITY claim against the older compiler
+would be false, which is D81 (selection facts are stamped
+unconditionally) rather than an oversight.
+
+**[K53-SELRETRY] (2026-09-10) PCREC NOW SETS THIS AXIS ITSELF WHEN THE
+ARTIFACT WILL NOT OTHERWISE FIT.** The machine this flag denies is
+OPTIONAL — it makes `<prefix>_match` faster and changes no answer — but its
+bytes counted toward `docs/spec/limits.md` §8's emitted-size caps, so it could
+refuse a pattern that compiles without it (six of module `unicode-props`'
+property names did, under `--encoding=utf8` at default axes). On a size-cap
+refusal with the machine present, `compile_driver` drops it and re-emits, and
+the resulting artifact is the one this flag would have produced — plus
+`<PREFIX>_ENGINE_SEL "size-cap-retry"`, which is how a reader tells "pcrec
+dropped it to fit" from "the caller passed the flag" (`"selected"`) and from
+"the machine exceeded a DFA state cap" (`"selected"` as well, the §5.2
+selection outcome). **The flag's meaning is unchanged**: passing it still
+denies the machine unconditionally, and passing it on one of those six
+patterns is the way to get the same artifact with the ordinary stamp.
+
+**[K59-PREMUL] (2026-09-17) THE LADDER GAINED A SECOND RUNG, SHARING THIS
+ONE'S `RX_ENGINE_SEL "size-cap-retry"` VALUE.** On a refusal this rung's own
+drop does not clear, `compile_driver` may ALSO deny `-fno-premul-table`
+(§2.13) for the same retry — APPENDED after this rung, tried only when it
+declined. A DFA-engine artifact whose retry dropped BOTH reads
+`RX_DFA_MATCH "search-filter"` (this rung) AND `RX_DFA_TABLE` off
+`"premultiplied"` (§2.13's rung); one without the other identifies which
+fired alone. `docs/dev/known_issues.md` K59 is the finding this rung
+closes: `--tune=min-size` used to compile a pattern the other four dial
+positions refused, because the dial's own unconditional `-2` denial of
+`-fno-premul-table` was doing by hand exactly what this second rung now
+does automatically on any refusal, at every position.
+
+**ON THE DIAL IN PRINCIPLE — DELIBERATELY EXCLUDED FROM `min-size` AT THE
+FIRST BUILD.** This is the largest size lever the dial has (`σ` = 15.32%
+median, **10.64%** of every byte pcrec emits over its own corpus), and it
+is the one row where the design's draft table and the ratified table
+disagree, so the disagreement is worth reading in full rather than
+picking a side silently. The axis's time cost is not one number but a
+**three-population distribution** (`docs/dev/opt2_anchored_match_measurement.md:293-295`):
+`m` = **1.161×** on non-matching subjects, **1.986×** on matching subjects
+overall, and **2.114×** on the 35 short matching subjects. A caller does
+not choose their subjects, so the dial's rule is to admit a penalty at
+its WORST measured population, never at its median — and 2.114× fails the
+working bound `x₂` = 2.00 by 5.7%. **At `x₂` = 2.00 the min-size column
+loses its largest row.** `src/core/tune.c`'s `−2` cell therefore denies
+`-fno-premul-table` and the `[ART-SIZE]` ladder alone; this axis is an
+em-dash at every position today. It returns only on its own owed A/B —
+**the shipped flag has never been measured**: the 1.161/1.986/2.114
+ledger is a ratio measured on a hand patch deleting the `\z` artifact's
+reverse pass, a cost-isolation experiment on the mechanism's
+*predecessor*, not on `-fno-anchored-dfa` itself — and that A/B is
+chartered on demand (§5) rather than run here.
+
+### 2.16 `-fno-size-term` — `PCREC_NO_SIZE_TERM` (bit 18)
+
+
+**ANSWER-IDENTITY-preserving for match results and captures — and NOT for
+the give-up surface.** The axis changes which unroll factor `K` the
+counter rung is emitted at. `K` is that rung's chunking factor: the rung
+compiles a bounded repeat to `ceil(n/K)` body copies plus a trailed
+counter whose arithmetic makes the realized iteration count exact at any
+`K >= 1`, so the span and the capture slots are identical at every `K`.
+What is NOT identical is what the artifact GIVES UP on: measured on
+`((a)|ab){12}c`, the minimum `--step-budget` that completes runs 89 at
+`K=1` to 110 at `K=8`, the minimum `--backtrack-frames` is 39 at `K=1`
+against 28 at `K=8` (descending `K` RAISES the frame requirement), and
+`<PREFIX>_TRAIL_FRAMES` runs 62 down to 51. Under the DEFAULT budgets the
+answers are identical; see `limits.md` §7.
+
+**What it controls.** With the axis ON (the default), an artifact whose
+COUNTER rung is live and whose emitted size exceeds
+`PCREC_SIZE_TERM_THRESHOLD` has its `K` chosen by re-emitting a descending
+ladder and taking the smallest emitted node count, kept only if it saves
+at least 25 % of the bytes. Denying the axis leaves `K` at `--unroll=K`
+or `PCREC_DEFAULT_UNROLL_K`, which is what the compiler emitted before
+[ART-SIZE].
+
+**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]
+B7).** `<PREFIX>_UNROLL_K_WHY` names the FIRST of its seven values, in this
+order, whose condition holds: `option`, `denied`, `default`, `cap-rescue`,
+`size-model`, `capacity-declined`, `size-model-declined`. So an explicit
+`--unroll=K` reads `option` even under `-fno-size-term`, and `-fno-size-term`
+reads `denied` even when the counter rung is not live. This is the order
+`--list-axes` lists the `size-term` axis in, and the table the compiler walks.
+
+**What it does NOT control: the two emitted-size caps.** `-fno-size-term`
+denies the SELECTION and never reaches
+`PCREC_MAX_VM_EMIT_CODE_BYTES`/`PCREC_MAX_EMIT_BYTES` — a safety refusal a
+flag can turn off is not one (D84 ruling 1). A denied build can therefore
+still be refused for size, and correctly: denying the term removes the
+mechanism that would have made the artifact smaller, it does not make an
+oversized artifact acceptable. To accept a larger artifact, RAISE a cap
+(`--max-emit-bytes=N`, `--max-emit-code-bytes=N`, raise-only) — see
+`limits.md` §8, "Handling an oversized artifact".
+
+**Masked out of `rx_info.flags`** (the rule above; K92 -- it was the one
+counter-ladder axis left unmasked, so `-fno-size-term` moved `.flags` to
+`262144` on every artifact, including DFA artifacts with no counter rung at
+all). `<PREFIX>_UNROLL_K_WHY`'s `denied` value is where the denial is recorded.
+
+**The stamp** is `<PREFIX>_UNROLL_K` (the chosen `K`) beside
+`<PREFIX>_UNROLL_K_WHY`, which has SEVEN values — `default`, `option`,
+`denied`, `size-model`, `size-model-declined`, `cap-rescue`,
+`capacity-declined` — because "the term did not run" has five
+distinguishable reasons and a check must be able to tell them apart. Both are unconditional on every VM artifact
+(D81).
+
+**THE DIAL SETS THIS MECHANISM'S TWO PARAMETERS — NOT A RUNG ITSELF.**
+`-fno-size-term` is `-fno-counter`'s shape, not a dial cell: it is the
+NAME of the ladder §2.10's fold describes, and there is nothing for a
+dial position to deny or force beyond the bar and the threshold below —
+denying the mechanism outright is a caller's own choice, orthogonal to
+where the dial sits.
+
+| `--tune=` | materiality bar | threshold (bytes) |
+|---|---:|---:|
+| `-2` `min-size` | **0.95** (save ≥5%) | **40,000** |
+| `-1` `size` | **0.85** (save ≥15%) | **80,000** |
+| `0` `balanced` | 0.75 (save ≥25%, today's default) | 120,000 |
+| `+1`/`+2` | — | — |
+
+The speed side is deliberately em-dashed (`docs/design/opt_dial_design.md`
+§3.5, **M13**): the speed a laxer bar or a lower threshold would buy is at
+most the 1-3% noise effect this section's own measurement reports, which
+fails the dial's speed-notch floor (`s` = 1.10×) by an order of magnitude.
+**§2.10's declared-capacity floor is a stated precondition of both
+size-side rows** — lowering the threshold to 40,000 runs the ladder on 81
+patterns it has never run on (`docs/design/opt_dial_design.md` §3.5b),
+and that population is admissible only because
+`artifact_size_term.md` §3.3a's floor excludes any candidate rung
+declaring less `.frame_capacity` or `.subject_ceiling` than the default
+K's.
+
+### 2.17 `-fno-prefilter-collapse` / `-fprefilter-collapse` — `PCREC_NO_PREFILTER_COLLAPSE` (bit 19) / `PCREC_FORCE_PREFILTER_COLLAPSE` (bit 20)
+
+
+**ANSWER-IDENTITY-preserving, in both directions and including the give-up
+surface.** The axis changes only the LANGUAGE the VM hybrid's inlined DFA
+recognises, and that DFA is a FILTER: what it owes the VM is a sound
+rejection and a lower bound on the match start, both of which a superset
+supplies, with the VM re-deriving the answer from every candidate it is
+handed (`§2.5`'s hybrid, and `match_api.md` §6.3.5¶4). The prefilter
+is answer-identity-preserving by D46's rule; this is a selection WITHIN it.
+
+**What it controls — FRANK'S RULING B, 2026-08-29.** The DEFAULT builds the
+prefilter from the pattern's OWN language. The count-collapsed superset —
+every `A_REP` with `rmin > 1` or `rmax > 1` lowered as `X{min(rmin,1),}`, a
+superset whose proof never mentions `n`, so the machine and the artifact stop
+scaling with the count — is chosen only as an ATTEMPT in `compile_driver`'s
+ladder, when the exact machine cannot be built or its artifact cannot ship:
+
+| rung | trigger | `<PREFIX>_VM_PREFILTER_LANG_WHY` |
+|---|---|---|
+| [SEL-1] | a DFA STATE cap overflowed, so the alternative is NO prefilter | `dfa overflow retry, exact nfa N` |
+| [OPT-4] | an emitted-size cap REFUSED the exact artifact, so the alternative is a REFUSAL | `size cap retry, exact N > cap` |
+
+**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]
+B7).** The ladder takes the first row, in `--list-axes`' `fallback` axis
+order, that applies to the arrival and is not denied: the two [SEL-1] rows
+for a DFA cap, then the size-cap rows cheapest first. `<PREFIX>_ENGINE_SEL`
+names the LATEST fired row that attributes the outcome, and is listed on
+`engine-route` in the order the attribution walk tests it: `forced`,
+`declined-nullable-default`, `declined-nullable`, `collapsed-prefilter`,
+`overflowed-dfa`, `overflowed-prefilter`, `size-cap-retry`, `selected`.
+`declined-nullable` precedes `collapsed-prefilter` because the admission
+decline is tested before any rung's own attribution; the listing used to
+show these two the other way round.
+
+**[OPT-4.1] (2026-08-30) A RUNG IS DECLINED WHEN THE COLLAPSED LANGUAGE IS
+NULLABLE, and this is the one condition under which neither rung above fires
+even though its trigger did.** If the collapsed language matches the EMPTY
+STRING — `[a-z]{0,32768}` collapses to `[a-z]*` — then it matches at every
+position, the filter can never dismiss one, and the artifact pays a scan whose
+every answer is "maybe". pcrec builds NO prefilter in that case:
+
+- on the **[SEL-1]** rung the artifact is the one that rung's absence would have
+  produced (`<PREFIX>_VM_PREFILTER "none"`), and `<PREFIX>_ENGINE_SEL` reads
+  **`"declined-nullable"`** — a value that exists precisely so this outcome can
+  be told apart from `"overflowed-dfa"`, where no rescue was available at all;
+- on the **[OPT-4] size** rung the artifact ships with no prefilter, which is
+  strictly SMALLER than the collapsed one, so the rung still rescues the compile
+  and nothing that compiles today stops compiling. `<PREFIX>_ENGINE_SEL` reads
+  **`"declined-nullable"`** there too ([LIM-1], 2026-08-30 — this used to read
+  `"selected"`, indistinguishable from an ordinary compile; both rungs' nullable
+  declines are now one value, `match_api.md` §6.3's own value table), and the
+  artifact's `<PREFIX>_VM_PREFILTER "none"` is what records the outcome;
+- under **`-fprefilter-collapse`** with no rung the prefilter is kept and built
+  from the EXACT language — the flag chooses a language, not whether a filter
+  exists — and the artifact stamps `_LANG "exact"` /
+  `_LANG_WHY "nullable collapsed language"`;
+- **`-fprefilter` is do-or-die and is never silently dropped, and what that
+  means differs by rung — stated per rung because the general sentence is
+  wrong on one of them.** On the **size** rung it OVERRIDES the decline: the
+  collapsed prefilter is built for a caller who demanded one, which is also
+  what keeps the promise above, since the only prefilter that fits under the
+  cap there IS the collapsed one. On the **[SEL-1]** rung it never reaches the
+  decline at all — `-fprefilter` makes that rung ineligible, so the compile
+  REFUSES rather than shipping a prefilter-less artifact for a caller who asked
+  for one. Either way the request is honoured or refused, never answered with
+  its opposite. `-fprefilter-collapse` does NOT override the decline on either
+  rung: it chooses a LANGUAGE for a filter, not whether one exists.
+
+MEASURED (pcrec-bench O-10, pin 96e44c2, three sets): where structure survives
+the collapse the rung is a 2.2-4.6x win (the `ctx` band, and `level-context`
+x4.60); where the collapsed language is nullable it was a 1.2-9.9x LOSS
+(`[a-z]{0,32768}`: search x3.57 slower, throughput 1.880 -> 6.899 ns/B,
+`t-digits-016k` x1.65 — a subject the filter was expected to dismiss and
+cannot). Nullability is what separates the two populations, and it is decided
+before any machine is built (`pcrec_minw(root) == 0`, `src/opt/mrl.c`).
+
+**[OPT-4.2] (2026-08-31) THE SAME DECLINE, GENERALIZED TO EVERY PREFILTER —
+NOT ONLY THE TWO RUNGS ABOVE.** [OPT-4.1]'s gate is scoped to a ladder
+ATTEMPT: it only ever asks about the collapsed language, because the two
+rungs above are the only places pcrec offers one. But the ORDINARY hybrid —
+`auto` (or forced `--engine=vm`) with no cap ever hit — builds the pattern's
+own EXACT prefilter unconditionally, and that filter is exactly as useless
+when the EXACT language is nullable as a collapsed one is: `(a|b){0,30000}`
+matches the empty string at every position (its own language, not merely its
+collapsed superset), and until this row landed the ordinary hybrid still
+built and shipped that filter regardless. The population GREW when [OPT-5]'s
+scan edge landed: patterns like this one that used to be REFUSED by the size
+cap (and so took the [OPT-4] size rung's own decline above) now compile
+comfortably inside every cap and never reach a rung at all — MEASURED
+2026-08-31, `(a|b){0,30000}`: 34,522 B, hybrid/exact.
+
+So the decline is now asked on EVERY prefilter this compiler can build, rung
+or not: `<PREFIX>_ENGINE_SEL` reads **`"declined-nullable-default"`**
+(`match_api.md` §6.3's own value table — a NEW value, kept separate from
+`"declined-nullable"` rather than folded into it, since the two answer
+different questions about different populations: a rung OFFERED and REFUSED
+a rescue vs. an ordinary compile that never had a rung to begin with) and
+`<PREFIX>_VM_PREFILTER` reads `"none"`, exactly as the rung-scoped decline's
+artifact does. The same three overrides apply, and `-fprefilter` is the only
+asymmetric one for the same reason: it outranks the decline (the artifact
+still gets its exact prefilter, on demand), while `-fno-prefilter` and
+`-fprefilter-collapse` change nothing about this outcome — the first already
+reaches the identical artifact by its own door, and the second's axis (which
+LANGUAGE a filter recognises) does not apply once no filter is going to be
+built at all.
+
+MEASURED (pcrec-bench O-10, the analogous collapsed shape): the same 1.2-9.9x
+loss the collapsed-language decline exists to avoid, since the mechanism is
+identical — a filter admitting a zero-length match at every position can
+dismiss none of them, whether that filter's language came from the pattern
+directly or from a count-collapse. The bench re-measures its `cls-*` hybrid
+cells after this lands; their prior 1.2-9.9x loss is the predicted win.
+
+**"NULLABLE" HERE MEANS "ADMITS AN UNCONFINED EMPTY MATCH"** ([NULLABLE-ANCH],
+`abi` 68, 2026-10-08). Both scopes of the decline, the rung's and the
+default's, ask the pattern-facts record's `empty_admits` (`facts_listing.md`),
+not bare nullability: the decline fires only where SOME way of matching the
+empty string crosses no non-multiline `^`/`\A` or no non-multiline
+`$`/`\Z`/`\z`. A nullable pattern whose EVERY empty path crosses both
+(`^(\s+)*$`, `^(([a-z]+)*)+$`, `\A(a*)*\z`) matches empty only on a subject
+that is empty up to a final newline, so its exact prefilter dismisses every
+other subject in one linear pass and is KEPT: `<PREFIX>_ENGINE_SEL` reads
+`"selected"` and `<PREFIX>_VM_PREFILTER` `"hybrid"`. Every other zero-width
+construct (lookaround, `\b`, `\G`, `\K`, a multiline anchor, a
+backreference, a variable, a nullable call) counts as always satisfiable, so
+the answer errs only toward declining. One-sided (`^(\s+)*`, `(\s+)*$`) and
+multiline (`(?m)^(\s+)*$`) forms are still declined. A `${...}` pattern is
+never declined: its variable turns the prefilter off before any nullability
+is asked (its `--emit-ir` value is `no-variable`), so it reads `"selected"`
+([DEC-VAR-ATTRIB], `abi` 69; until then it kept bare nullability only so that
+a nullable one read `"declined-nullable-default"`). No answer moves: the prefilter is a
+filter. MEASURED (scratch tier, `docs/dev/lanes/nullanch1_report.md`): a
+near-miss that used to exhaust the step budget (`PCREC_ERR_STEPS`) now answers
+`nomatch` in ~22 ns; a LONG all-matching subject pays the forward DFA pass on
+top of the VM's walk (~2-3x at 60 KB, K97).
+
+**A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole
+question** (`docs/dev/decisions.md` D77 — build under measurement). Nullability
+is not the only reason a rescue can fail to pay. A WHOLE-SUBJECT-anchored form
+(`(?:P)\z`) whose plain form is DFA-selected is rescued only in the ANCHORED
+regime, so its collapsed prefilter can dismiss but is never reached by an
+unanchored search: pcrec-bench measured four such cells (`cls-upto-16384`,
+`cls-lazy-16384`, `nest2-64`, `nest3-16`, `\z` forms only) as FLAT, costing
++376…+4,560 bytes of `.so` for no movement in either direction. Two of those
+four are non-nullable and keep their rescue under the rule above; they are
+LEFT ALONE deliberately. **A measured FLAT is not a loss**, and a rung that
+buys nothing but bytes is revisited only if a LOSS appears — at which point the
+question is the anchored regime's reach, not this predicate.
+
+**A RUNG IS OFFERED ONLY WHERE THE COLLAPSE CAN HELP** ([DEC-COLLAPSE-WASTE],
+`abi` 69). Both rungs, the [SEL-1] overflow rung and the size rung, are
+skipped when the retry would rebuild the machine that just failed: when the
+pattern has no collapsible repeat (the collapsed language IS the exact one),
+and when the language is nullable but not `empty_admits` without
+`-fprefilter` (the decline above keeps the prefilter, and the collapse is not
+built for a nullable language, so the exact machine would be rebuilt). The
+ladder's next row takes the same arrival (the prefilter drop), so the final
+artifact is the one the skipped attempt led to, one failed attempt sooner. A
+`size cap retry` figure in `<PREFIX>_VM_PREFILTER_WHY` is then the exact
+artifact's, not the wasted retry's.
+
+**THERE IS NO STATE-COUNT KNEE.** An earlier design collapsed whenever the
+exact NFA exceeded a measured budget; it was reversed on a corpus regression
+(`docs/design/prefilter_count_independence.md` §10a) and
+`PCREC_PREFILTER_EXACT_NFA_STATES` is deleted with deliberately nothing in its
+place — under ruling B the emitted-size caps are the only quantity that
+decides.
+
+**WHAT THE TWO FLAGS DO.**
+
+- `-fprefilter-collapse` collapses wherever a collapsible repeat exists AND the
+  collapsed language is not nullable ([OPT-4.1] above; a nullable one is
+  declined and stamped, and the artifact keeps its exact prefilter),
+  regardless of size or of any rung. It is the ONLY route to literal
+  count-INDEPENDENCE, and it is where the costs tabulated below live.
+  MEASURED (K39): under it `((a)|b){0,400}c` and `((a)|b){0,4000}c` emit the
+  same number of lines, where at the default the second is roughly 2.5x the
+  first.
+- `-fno-prefilter-collapse` denies BOTH rungs. On a pattern whose exact build
+  succeeds it changes nothing and the artifact is byte-identical; on one that
+  needed a rung it turns a superset prefilter into none. **[PF-DROP] (D135):
+  on the SIZE rung that no longer means a refusal** — the size-cap ladder's
+  next row drops the prefilter and the pattern ships with none
+  (`<PREFIX>_VM_PREFILTER_WHY "size cap retry, hybrid N > CAP"`), so what
+  this flag buys a caller is "never a superset prefilter", not "refuse". A
+  caller who would rather be told their pattern is oversize than be handed
+  any slower artifact passes `--size-cap=refuse` (`limits.md` §8, "The size-cap
+  ladder").
+
+**TWO CONJUNCTS ARE CORRECTNESS AND NEITHER FLAG REACHES THEM.** The collapse
+never applies when (a) these machines' sole customer is not the VM's prefilter
+— i.e. when the DFA is the ENGINE, where a superset would be a miscompile — or
+when (b) the pattern has no collapsible counted repeat, in which case the
+collapsed lowering IS the exact one. `-fprefilter-collapse` on such a pattern
+is HONOURED and vacuous, and the artifact says so
+(`_LANG_WHY "no counted repeat"`).
+
+**[OPT-4.1] ADDS A THIRD CONJUNCT THAT IS PERFORMANCE RATHER THAN CORRECTNESS,
+AND ONE FLAG DOES REACH IT.** The nullability decline above is not a soundness
+rule — a nullable collapsed prefilter would still answer correctly, it would
+just never dismiss anything — so unlike the two conjuncts in this paragraph it
+is overridable, by `-fprefilter` and by `-fprefilter` alone. The distinction is
+worth keeping straight: no flag can make pcrec build a superset prefilter for
+the DFA ENGINE, and every flag can be told to build a useless one.
+
+**WHY THE EXACT LANGUAGE IS THE DEFAULT, stated because it is a real trade
+and the trade went the other way once.** The exact prefilter is a SHARPER
+filter: it seeds the VM at the true leftmost start where the collapsed one
+seeds a lower bound the VM must walk forward from, and — because a superset's
+span END is not an upper bound (`match_api.md` §6.3.5¶4) — a collapsed
+artifact carries no `<PREFIX>_VM_PRUNE_CEILING "prefilter-window"`, reading
+`subject-end` instead. Both cost match time on some subjects; the second also
+costs step-budget headroom (see the fourth cost below). What the collapse buys
+is size, and under ruling B it is spent only where the alternative is a
+refusal or no prefilter at all.
+
+**THE COSTS BELOW ARE `-fprefilter-collapse`'s, NOT THE DEFAULT'S** — that is
+what Frank's ruling B changed, and it is why this table now sits under the
+FORCE flag. Under the knee default these landed on 23 corpus artifacts that
+compiled fine; under ruling B they land only where a caller asked for them, or
+on the two ladder rungs, where the alternative is a refusal or no prefilter at
+all. MEASURED 2026-08-29, gcc 15 `-O2`, one box; every pair returned the
+IDENTICAL answer — same match count, same span — which is the axis being
+answer-identity-preserving (D46) at an unbounded step budget. Read the first
+row before passing the flag:
+
+| case | collapsed (default) | exact (`-fno-prefilter-collapse`) |
+|---|---|---|
+| **worst case**, `((a)\|b){0,400}c` on 100,000 `a` then `c` | 9.24 s, **99,601 VM attempts**, 38,776 B | 0.000011 s, **1 attempt**, 55,069 B |
+| `(ab){300}` find-all over 64 KB of `ab` | 0.266 s, 246 attempts/search, 34,699 B | 0.006 s, 109 attempts/search, 67,471 B |
+| `(ab){300}` find-all over 66 KB that never matches | 0.089 s, 66,001 attempts | 0.006 s, **0 attempts** |
+| `((a)\|ab){0,100}c` find-all over 64 KB that matches | 0.028 s, 1,300 attempts, 56,675 B | 0.019 s, 1,300 attempts, 64,817 B |
+| `((a)\|ab){0,100}c` over 64 KB that never matches | **0.000006 s** | 0.000016 s |
+
+**THE TWO COSTS ARE SEPARABLE AND THESE ROWS SEPARATE THEM.** Rows 2 and 3
+are a pattern whose artifact reads `<PREFIX>_VM_PRUNE_CEILING "none"` under
+BOTH languages, so their whole difference is the lost sharp start — the VM
+verifying candidates the exact machine would never have offered. Row 4 is the
+opposite control: the attempt count is IDENTICAL at 1,300, so its 1.5× is
+entirely the lost `"prefilter-window"` ceiling.
+
+**THE TRADE IS NOT ONE-DIRECTIONAL.** Row 5 is a subject the prefilter
+rejects outright under either language, and there the collapsed artifact is
+~2.7× FASTER, because the smaller DFA scans the subject quicker. A caller
+whose traffic is mostly non-matching may be better off at the default even
+where a matching subject would favour the exact machine.
+
+**The first row is the shape to worry about**: a long run of the repeat's
+body followed by the terminator, where the exact reverse machine names the
+true start and the collapsed one names 0. It is the case the design note
+predicted before the code was written
+(`docs/design/prefilter_count_independence.md` §7.1) and it is worse in
+practice than "quadratic where the exact prefilter is linear" reads on the
+page.
+
+**AND A FOURTH COST, WHICH IS WHY THIS IS NO LONGER THE DEFAULT.** The lost
+`prefilter-window` ceiling does not only make matching slower: it changes which
+patterns fit inside a **step budget**. `(a{1,3}){65}` on a long run of `a`s
+answers `0,100 90,100` in 0.00 s with the exact prefilter and returns
+`PCREC_ERR_STEPS` after 13.34 s with the collapsed one. Answer identity is
+preserved in D46's unbounded sense — and `make test-axes` is right to keep
+passing — but the step budget is a documented caller-visible bound (DD-2/D22).
+The caller does not get a slower answer; they get no answer. That measurement,
+found on a base-tier corpus cell by the merge battery, is what reversed the
+default (design note §10a).
+
+**The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or
+`"count-collapsed"`, emitted exactly where `<PREFIX>_VM_PREFILTER` reads
+`"hybrid"` — an artifact with no prefilter names no language. It reports
+what was BUILT, so a request that changed nothing stamps `"exact"`. **It
+reports the count-collapse axis ONLY** (D142): `"exact"` means the language
+was not count-collapsed, not that the prefilter recognises the pattern's own
+language — lookbehind, lookahead, atomic and `\K` hybrids read `"exact"` with
+an over-approximating prefilter whose match END is unproven. Whether the
+prefilter proves the window END is read from the reseed stamp's `exact` row,
+`<PREFIX>_VM_RESEED "exact"` (§2.35, `match_api.md` §6.3).
+
+**And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
+convention), because `"exact"` alone does not say which of several quite
+different situations produced it. SIX values, emitted on the same
+condition as the line above (the pre-ruling-B budget value `"exact nfa N > B"`
+is GONE with the knee it named — the emitter has not written it since ruling B,
+and this table carried it stale until [OPT-4.1] removed it):
+
+| value | meaning |
+|---|---|
+| `"forced"` | `-fprefilter-collapse`: the caller asked for the collapsed language on a pattern that had something to collapse, and no rung was involved |
+| `"exact"` | the pattern's own language — the DEFAULT outcome under ruling B |
+| `"no counted repeat"` | nothing to collapse: this pattern's collapsed language IS its exact one. The state `-fprefilter-collapse` is honoured but vacuous in, kept distinct from `"exact"` so a caller who passed the flag knows which of the two happened |
+| `"nullable collapsed language"` | [OPT-4.1]: there WAS something to collapse and the collapse was DECLINED, because the collapsed language matches the empty string and such a filter can never dismiss a position. Kept distinct from `"no counted repeat"` for that value's own reason — a caller who passed `-fprefilter-collapse` needs to know the flag reached a POLICY, not a vacuity. Reachable only where a prefilter still exists to stamp; on a ladder rung the same decline leaves none, and `<PREFIX>_ENGINE_SEL "declined-nullable"` is where that outcome is recorded instead |
+| `"dfa overflow retry, exact nfa N"` | [SEL-1]'s rung: this pattern's DFA overflowed a STATE cap and the collapsed language is what stands between it and no prefilter at all. `N` is the EXACT machine's size, i.e. the scale of what the collapse avoided |
+| `"size cap retry, exact N > cap"` | [OPT-4]'s rung: an emitted-size cap REFUSED the exact artifact. `N` and `cap` are EMITTED BYTES, not NFA states — that is the comparison that caused the retry, and a reader deciding whether to raise a cap instead needs it |
+
+**THERE IS NO `"denied"` VALUE, and its absence is a measurement rather than an
+oversight.** Under ruling B `-fno-prefilter-collapse` denies the two ATTEMPTS.
+On a pattern whose exact build succeeds it changes nothing, so the honest stamp
+is whatever the default stamps — the byte-for-byte recovery promise. On a
+pattern that needed an attempt it turns a prefilter into none (on the size
+rung since [PF-DROP], the ladder's prefilter drop; before it, a REFUSAL), and
+neither leaves an artifact carrying this macro. A value no witness can reach
+is a value that should not exist.
+
+The two lines are two readers of one derivation, written at
+`src/core/compile.c`'s build gate: `prefilter_lang_why` and
+`prefilter_collapsed` cannot disagree, because the ladder that sets the reason
+branches on the decision it just made rather than re-walking its conjuncts.
+The last two values above are exactly the ones that read `"count-collapsed"`
+at the default; `"forced"` is the third, and it is the caller's.
+
+**There is no budget to document.** `PCREC_PREFILTER_EXACT_NFA_STATES` was the
+knee this section used to describe and it is deleted — see "What it controls"
+above and `docs/design/prefilter_count_independence.md` §10a for the regression
+that removed it.
+
+
+**[OPT-4.2] STRUCTURAL RETIREMENT (2026-09-01): the `_LANG_WHY` value
+`"nullable collapsed language"` is no longer reachable.** The collapse
+X{m,n} → X{min(m,1),} introduces nullability only when m == 0 or X is
+itself nullable — and in both cases the EXACT language is nullable too, so
+the [OPT-4.2] general decline (or the rung decline, which emits no
+prefilter and therefore no `_LANG` / `_LANG_WHY` at all) fires first.
+Verified structurally on both sides (pcrec-bench measured ten shapes, none
+reaches it; our own reachability witnesses became `declined_default`
+rows at the [OPT-4.2] merge for the same reason). The value string stays
+documented as HISTORICAL; nothing emits it. Re-opens only if either side
+finds a reachable witness — the argument above says where to look (a
+collapsed-nullable language whose exact language is NOT nullable, which
+the identity makes empty).
+
+**Not on the dial — GATE 4, the same shape as §2.9.** The time cost
+reverses sign with the subject population (the worst-case row above is a
+loss on some subjects and a win on others), so a size-vs-speed preference
+does not select between the two languages.
+
+### 2.18 `-fno-scan-edge` — `PCREC_NO_SCAN_EDGE` (bit 21)
+
+**What it controls.** Whether a DFA machine's *counted class runs* are
+collapsed into **scan edges**. A run here is a maximal sequence of states that
+differ in nothing but how many bytes of ONE fixed class have been counted —
+every one of them leaving by the same door on every other byte, and every one
+of them carrying the same accept bit. `[a-z]{0,16384}`'s forward machine is
+one such run of 16,384 states plus the state that has counted them all;
+`[a-z]*` and `[a-z]+` are the unbounded one-state form; `[0-9]{16}` is a run
+of sixteen. The pass is `src/opt/scanedge.c` and its header carries the exact
+criterion and its preconditions — five in the header, three more stated at
+their own sites: (6) a head may not be another state's position-VIEW target
+(since [OPT-VEDGE], §2.37, such a chain is trimmed to start one state later
+rather than refused, and precondition (3) admits an END-view-only member on
+the forward and anchored machines),
+(7) two chains that link must have their heads in ascending order, and
+(8) ([OPT-EDGE] STEP 1, narrowed at STEP 1.1) a head may not be a state any
+SEED family names **on a machine whose candidate-start prefilter writes the
+state variable** — the `offset-set` pair, whose skip lands past bytes that
+LEAVE the start state and must therefore re-seed. The other prefilter forms
+skip bytes the machine provably stays parked on and write nothing.
+
+Precondition (5)'s threshold — the shortest bounded run worth collapsing — is
+the `PCREC_MIN_SCAN_CHAIN` row of `pcrec --list-limits` (`2` states, a
+`selection knee`, no lever). It was re-measured against the STEP 1.1 loop
+rather than inherited: `edge` against `-fno-scan-edge` on the same pattern is
+not separated by more than the per-round range at `m` = 3, 4 or 8; the
+`m` = 2 cell was UNSTABLE on the 2026-09-04 run (median edge/no-edge 1.78,
+IQR 0.87, bimodal rounds — measurement instability, not a measured effect;
+re-measurement owed, docs/dev/lanes/edge2_report.md §9.3), so D77's
+"no gap, no move" leaves it at 2, and the unconditional SIZE win (the chain's
+interior states are deleted) is what admits `m` = 2 at all. Re-confirmed
+2026-09-21 on the fixed harness (I-82, D117): 0 of 16 cells separate — the
+floor stays 2.
+
+**Masked out of `rx_info.flags`** (the rule above; K92 -- `-fno-scan-edge`
+moved `.flags` to `2097152` on every artifact, including ones with no
+collapsible run). `<PREFIX>_DFA_SCAN_EDGE` (`none` under the denial) is where
+the emitter's decision is recorded.
+
+**What the artifact does instead.** One `if (state == K) { … }` block per
+edge, counting the class's bytes in a loop whose only carried value is the
+cursor:
+
+```c
+if (forward_state == 0) {
+    unsigned long scan_run_length = 0;
+    while ((scan_position < subject_length) && scan_run_length < 16ULL && ((unsigned char)(subject[scan_position] - 48) <= 9)) {
+        scan_position++;
+        scan_run_length++;
+    }
+    if (scan_run_length == 16UL) { forward_state = 2; last_accept_position = scan_position; }
+}
+```
+
+**WHERE THAT BLOCK SITS CHANGED AT [OPT-EDGE] STEP 1, and it is the reason
+the axis costs a machine that never takes an edge nothing at all.** Until
+then every edge block was on the loop's GENERIC PATH — one
+`if (state == K && …)` evaluated on every iteration at every state, so N
+edges cost N compares per byte. Since [OPT-EDGE] the machine's edge HEADS are
+renumbered to its TOP rows and the loop's ONE existing per-iteration state
+test (`is_dead`, which stopped the walk) is widened to a `<prefix>_<m>_is_stop`
+that answers "dead OR a head" in the same single unsigned compare. The edge
+blocks move onto a path reached only from that test, so the generic path
+carries NO per-edge compare:
+
+```c
+for (;;) {
+    if (<m>_accepts(state)) last_accept_position = scan_position;
+  <prefix>_forward_scan_views:
+    if (scan_position >= subject_length) break;
+    state = <m>_step(next_state, state, byte_class[subject[scan_position++]]);
+    if (!<m>_is_stop(state)) continue;            /* the generic path */
+    if (<m>_is_dead(state)) break;
+    /* … the edge blocks, unchanged … */
+    goto <prefix>_forward_scan_views;
+}
+```
+
+**A SECOND EMITTED SITE READS THE SAME SENTINEL, and it is the loop's ONE
+PER-SEARCH TEST rather than a per-byte one.** The state variable is also
+written before the loop, by the start seed (§2.x's mechanism 4: a machine whose
+interior start states differ by context class initialises it from
+`seed_state[byte_class[subject[search_from - 1]]]`, i.e. to any member of the
+family). A search that seeds straight onto a head must reach the edge body
+without the generic path, so the loop's entry asks the same question the body
+does:
+
+```c
+if (<m>_is_stop(state) && !<m>_is_dead(state)) goto <prefix>_forward_scan_edge;
+```
+
+folded away entirely on a machine with no seed, where the state IS the start
+state and the jump is unconditional or absent. **This entry test was an
+equality against the start state until [OPT-EDGE] STEP 1.1**, which was exact
+only while precondition (8) refused every other seed target as a head; asking
+the general question is what lets (8) narrow.
+
+Four consequences a caller can see. The emitted state NUMBERS of an
+edge-bearing machine differ from the pre-[OPT-EDGE] compiler's (the heads are
+the top rows); each such machine emits one extra accessor, `<prefix>_<m>_is_stop`
+(folded to the constant `1` where every state is a head); an artifact with
+no scan edge — which includes every artifact built with this flag — is
+byte-identical to the pre-[OPT-EDGE] compiler's; and, by precondition (8),
+a machine whose prefilter reseeds may decline an edge it would otherwise take.
+
+**WHAT (8) COSTS, MEASURED. At STEP 1 it cost ELEVEN artifacts an edge**, over
+every distinct `pattern` line under `tests/` (2,539 compiled by both
+compilers), every one a `\b`/`\B` pattern: `(\b\w+\b)`, `(foo\B)`, `\Bfoo\B`,
+`\b\K\w+`, `\b\w+\b`, `\b\w+\b$`, `\b\w+\b\z`, `\b\w+\z`, `\b\w\b`, `\bfoo\B`,
+`foo\B`. **At STEP 1.1 all eleven get it back**, and the two the STEP 1 census
+called hazardous turn out not to be: the edge each of them lost is on the
+REVERSE machine, which carries no candidate-start prefilter at all (every
+axis-B candidate requires the forward direction), so nothing in that loop can
+reseed. **The narrowed (8) has an EMPTY population on today's corpus** — an
+artifact compiled with the precondition removed entirely is byte-identical —
+because a machine that takes an `offset-set` prefilter has no scan-shaped chain
+in its forward machine to begin with. It is kept, exact and cheap, because the
+mechanism it guards is real: the reseed genuinely writes the state variable
+MID-BODY, after the loop's one stop test has been passed, where nothing can see
+it. `src/gen/emit_dfa.c`'s `dfa_form_derive` re-derives the rule from the
+machine it is about to emit, so the day the population stops being empty the
+pass and the emitter cannot disagree about it silently.
+
+**Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —
+`state = next_state[state + class]`, whose load ADDRESS is the value the
+previous iteration's load RETURNED — at ~3.62 ns/byte on an in-class letter
+run, against 0.60 for pcrec's own VM compiling the identical language. The
+difference is not the table lookup and it is not SIMD: it is whether the
+loop-carried register FEEDS an address (cheap, pipelined) or is FED BY a load
+(serial). A scan edge gives the DFA the VM's own loop shape.
+
+**It is the one DFA axis whose denial changes the MACHINE.** The run's
+interior states are DELETED — the edge replaces them — so this axis moves
+per-state table sizes as well as emitted code, and the denied build is the
+pre-`[OPT-5]` compiler byte for byte. `-fno-scan-edge` restores both the
+states and the table walk. No answer moves either way.
+
+**IT IS TWO AXES, and `--list-axes` reports both.** The emitter models the
+mechanism at the two levels D82 separates, and a caller reading the axis
+registry sees them as `scan-edge` and `scan-body`:
+
+| axis | candidates | question |
+|---|---|---|
+| `scan-edge` | `scan-edge`, `table-walk` | per STATE: does this state emit an edge at all? **This is the axis `-fno-scan-edge` denies** — the flag removes the first candidate and the ordinary walk selects the fallback. |
+| `scan-body` | `range`, `fold`, `kit`, `bitmap` | per EDGE: which run test does that edge use? **Not a scan-edge decision** — see below. |
+
+**THE EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER** ([CLS-TREE] S2
+review fixes, `abi` 53, D139 item 2). The scan edge has no class decision of
+its own: it asks the class-form table (`src/gen/clskit.c` `ROWS`, §2.33) for
+its class's form at the artifact's `--tune` position and at the SCAN SITE,
+and writes the answer through the same emitters a VM program's class read
+uses. The table's byte rows give `range` (one interval, an inline compare
+against immediates, spelled as the VM spells it), `fold` (an ASCII case pair,
+`(b | 0x20) == x`, at `-2`/`-1` only), `kit` (the class's kit matcher, at
+`-2`/`-1` only and only where it is smaller than the edge's table, §2.33) or
+a table read. WHICH table is the table selection's (`TAB_ROWS`) choice for the
+scan site — its `scan-table` row, one 256-byte table per edge, the edge's
+long-standing per-context choice, kept as that row's predicate until measured
+otherwise. What stays scan-edge-specific is only the loop around the test.
+`--list-axes` lists the four as `scan-body`'s candidates, read off the class
+table's byte rows, with the flag that denies each: `-fno-cls-fold` the fold
+and `-fno-cls-kit` the kit, here as on the VM (§2.22, §2.33).
+
+**AT THE DEFAULT POSITIONS A FOLD PAIR IS A TABLE ON THE SCAN EDGE**, as it
+always was, while a VM class read takes the fold compare: D138 Q1 holds the
+default fold pending FORM-CHAR2's timing measurement, and that ONE
+measurement rules the default for BOTH sites. The table carries it as one
+row (`byte-fold-default`, VM site only), so either ruling is a one-row edit.
+
+**The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3)
+and it reports each edge's run test by name: `"range"` when every edge the
+artifact carries tests a contiguous byte range, `"fold"` / `"kit"` at the
+size-leaning positions as above, `"bitmap"` when the test is a 256-byte
+membership read — whose load is addressed by *the byte this iteration read*,
+never by a previous iteration's result, so the cursor is still the only
+loop-carried register — `"mixed"` when the artifact's edges took more than
+one form, and `"none"` when the region axis chose `table-walk` everywhere.
+Like `<PREFIX>_DFA_TABLE` and `<PREFIX>_DFA_PREFILTER` it is a fact about a DFA
+SCAN, so a VM HYBRID that inlines one reports it too ([DD-13c]'s (a)/(b)
+split).
+
+**A SIMD FORM IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —
+branchless classify plus count-leading-zeros, `studies/simd1`'s measured shape,
+plan row `[OPT-SIMD]`'s territory — is a form of the edge's LOOP, not of its
+class test, so it belongs to the scan edge: a loop form selected ahead of the
+scalar loop, with nothing else moving (not the criterion, not the deletion,
+not the stamp's other values, not the gates). **Its contract is ISA-NEUTRAL
+by ruling**: it is "a SIMD run-extension form, per-ISA gated, with the scalar
+forms always available as the fallback", never an SSE2 or a NEON slot.
+Nothing emitted today is ISA-conditional, and the scalar loop is the portable
+baseline that keeps any per-ISA form optional forever.
+
+**AND THE COUNTED SEQUENCE HAS A PERIOD, WHICH IS 1.** The general shape of
+this mechanism is a chain whose advance classes CYCLE with period *k* — *k*
+singleton classes being a literal STRING, whose body is a counted loop of
+constant-length compares, i.e. `(?:ab){1,100}` collapsing the way `[ab]{1,100}`
+does. `DState.scan_period` carries that period so the criterion's output is a
+periodic sequence rather than a single class baked into the representation;
+only period 1 is built, the emitter asserts it rather than assuming it, and a
+period-*k* form is then a criterion extension plus a new `scan-body` object
+rather than a rewrite. The refusal is clean either way: a chain whose
+mid-period states disagree about their exit target is not scan-shaped and takes
+the ordinary walk.
+
+**The boundary, stated rather than left to be discovered.** A run is collapsed
+only when every one of its states has NO position view (`$`/`\Z`/`\z` select a
+different state at `pos == n-1`/`n`, and a scan passes those positions) and an
+accept bit that does not vary with the next byte's class (`\b`, `(?m)$`).
+Both are DECLINES, both are free on a pattern carrying none of those
+constructs, and a declined run compiles exactly as it did before this axis
+existed. At most four edges are collapsed per machine — each is a compare on
+the loop's generic path, the budget `pick_skip_states` already spends four of
+— and the longest runs are taken first. `ENG_ATTEMPT` (a `^`-anchored
+pattern) is not eligible at all: its states are code labels and a step is
+`goto *targets_K[class]`, so there is no loop-carried table load to shorten,
+which is `[OPT-3]`'s own reason for exempting that engine.
+
+**Not on the dial — flat on an inference, not on two independent
+counts.** The row fails `y` alone: its size cost is quoted absolutely
+(+364…612 B per edge-carrying machine, never converted to a fraction), so
+there is no `σ` to compare against the dial's bar. Under
+`docs/design/opt_dial_design.md` §3.2's conversion the row's throughput
+ratio (2.71-3.03×) only exceeds `x₂` = 2.00 for `φ_scan ≥ 0.493` — a
+conditional failure, not an independent one — which is why this is the
+one flat row in the table resting on a single argument rather than two
+(design §3.3, **N1**).
+
+### 2.19 `-fno-start-pinned` — `PCREC_NO_START_PINNED` (bit 22)
+
+**What it controls.** Which of two forms `<prefix>_search`'s post-loop block
+takes — the compiler calls this **axis J**, and `--list-axes` reports it as
+`search-start`.
+
+A DFA search runs TWO scans over the same bytes. The forward one finds where a
+match ENDS; a second, backwards one over an independently built REVERSE machine
+finds where that match BEGAN, because the forward tables record only where a
+match can end and never where the one that ended there started.
+
+For a large family of patterns the second scan's answer is a compile-time
+constant. When the forward machine's start state accepts **unconditionally** —
+at every position, under every position view, and in every class context — then
+a match exists wherever the search begins, and D3's accept-pruning has removed
+the start-anywhere self-loop from every accepting closure before the first byte
+is read. No later start is ever spawned, so every accept the forward loop
+records belongs to a thread that began at `search_from`, and the backwards scan
+would necessarily walk back to exactly that position. `[a-z]{0,4096}`, `a*`,
+`.*` and `\w*` are all in this family; `abc`, `[a-z]{4096,}` and `(?m)a*$` are
+not.
+
+**What the artifact does instead.** The post-loop block becomes two assignments
+and a `return 1`, and — the half that buys more than the time — **the reverse
+machine is not emitted at all**: no transition, accept or byte-class table, no
+stay tables, no scan-edge membership tables, no `<prefix>_reverse_*` accessor
+block, and no reverse scan loop.
+
+```c
+if (last_accept_position == (size_t)-1) return 0;
+if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from;
+                     capture_spans[0][1] = (ptrdiff_t)last_accept_position; }
+return 1;
+```
+
+**The `last_accept_position == (size_t)-1` gate above it is LOAD-BEARING and
+is kept.** A search at `startpos > 0` on a machine whose start state depends on
+a context byte can begin in a state with no live closure. It records no accept,
+and "no match begins here" is the correct answer; deleting the gate would
+report an empty match where there is none. The emitted artifact carries that
+sentence above the line, and the compiler additionally DECLINES the elision on
+any machine with a dead seed state, so the gate is not the only defence.
+
+**Why.** The two scans are the residual factor of roughly two between the DFA
+and pcrec's own VM on a counted class run: since `[OPT-5]` STEP 1 both are
+cursor loops, so the DFA does exactly twice the VM's work. `docs/design/
+opt5_step2_twopass.md` is the design and carries the proof.
+
+**No answer moves either way, and the denied build is a genuine control.**
+This is not the usual "the flag changes nothing observable" claim: the denied
+build recovers the match start from an INDEPENDENTLY BUILT automaton — the
+emitter's own note on the pair is that "the two machines are independent and
+need not agree" — where the default build derives it from a compile-time proof
+about the forward machine. Nothing is shared but the answer, which is what
+makes `make test-axes`'s sweep over this flag a control rather than a build
+comparing itself.
+
+**Deny-only**, `-fno-anchored-dfa`'s shape: the compiler takes the pinned form
+wherever the predicate holds, so there is nothing for a caller to address and
+nothing to force. A machine the predicate declines emits the reverse pass,
+which is a SELECTION OUTCOME and never a refusal. **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`): the axis changes
+no answer, so two artifacts that behave identically must not differ in their
+reflection surface over it — and concretely, so that an artifact the predicate
+DECLINES is byte-for-byte the same under the flag as without it. What the
+emitter DID is reported by `<PREFIX>_DFA_START` (§3 below) and mirrored at run
+time by `rx_info.search_form` (§3.2).
+
+**A VM HYBRID is in scope.** A hybrid inlines this same search body as its
+`static <prefix>_prefilter`, so the flag reaches it and the stamp appears on
+it. The elision is safe there for a second reason worth stating: the hybrid
+consumes the span as a BOUND (`attempt_position = window[0][0]`), never as the
+answer, and `search_from` is the strongest sound lower bound there is.
+
+**PURE WIN — off the dial because there is nothing for a dial position to
+trade.** Measured smaller AND faster on both axes: −3,232 B per pinned
+artifact AND ×1.985 faster (`docs/design/opt_dial_inventory.md` §2.19). A
+dial position that could turn this off would have a strictly-worse
+setting on it than the ordinary default, so it is not a candidate for any
+notch — the code's own comment records this as one of two rows an
+earlier inventory table dropped for want of a PURE WIN vocabulary
+(`docs/design/opt_dial_design.md` §3.3, **B3**).
+
+### 2.20 `-fno-alt-island` — `PCREC_NO_ALT_ISLAND` (bit 23)
+
+**What it controls.** Which of two shapes `src/gen/emit_vm.c` lowers an
+alternation of literal alternatives into. `--list-axes` reports it as
+`alt-island`.
+
+Today's `vm_alt` emits an N-way alternation as a CHAIN: one resume frame per
+untried branch, the frame pushed at branch k resuming branch k+1, and each
+branch its own run of byte tests. Matching the LAST of 512 branches therefore
+costs 511 push/fail/pop round trips on ONE subject byte. The ALTERNATION
+ISLAND replaces that with a TRIE over the alternatives' literal bytes: a byte
+compare at a node with one child, a `switch` on the subject byte at a node with
+several, and one try site per node where an alternative ends.
+
+**What it applies to, and the predicate is about the LANGUAGE rather than the
+branch list.** The island is built when the alternation's whole subtree matches
+a FINITE set of literal byte strings — every element a single-byte class, every
+combination of them enumerable in bounded space. That is deliberately not "each
+branch is a literal run": `src/opt/altcls.c`'s stage-2 factoring (§2.7) runs
+first and rewrites a wide alternation into a shared literal followed by a
+nested alternation, so a branch test declines exactly the patterns the axis
+exists for. Asking about the language instead makes the island's answer
+independent of how far that earlier pass got.
+
+**What it declines**, each a selection outcome and never a refusal — the
+alternation is emitted by the chain unchanged:
+
+| declined | why |
+|---|---|
+| any element that is not a one-byte class | a trie edge is a byte; a multi-byte class edge would break the disjoint-siblings property the exactness argument rests on (`src/ir/nfa.c`'s rule 2) |
+| a quantifier, a group, a capture, a backreference, a lookaround, an assertion, a subroutine call | the language is not a finite literal set, or the VM is needed inside the alternation |
+| a **caseless** alternation | D23 folds a caseless literal to a two-member CLASS at parse time, so its alternatives are class-leading before the emitter sees them. This is `[FORM-CHAR]`'s axis, not this one |
+| more literal alternatives, or more total literal bytes, than the emitter's own enumeration budget | the cross product of concatenated alternations is exponential in principle; over the budget the island is not built |
+| fewer than `VM_ISL_MIN_BRANCHES` (2) literal alternatives | there is no dispatch to make |
+| fewer than `VM_ISL_MIN_BRANCHES_PREFIXED` (4), for an island that PUSHES | measured: an island whose alternatives are NOT prefix-free keeps a resume frame, and below that width the trie walk plus the frame is more work than the chain it replaces |
+
+**THE TWO WIDTH KNEES ARE MEASURED, AND THE DISCRIMINATOR IS PREFIX FREEDOM
+RATHER THAN WIDTH.** Both are `src/core/limits.def` rows of kind
+`selection knee` — `pcrec --list-limits` dumps them beside
+`PCREC_DEFAULT_UNROLL_K` and `PCREC_SIZE_TERM_THRESHOLD`, and like those two
+they carry no `limits.md` anchor, because that document states what pcrec
+promises a CALLER about an emitted matcher's resource bounds and a knee that
+steers which lowering fires promises nothing.
+
+A PREFIX-FREE island's candidate chain has one entry, so it pushes nothing and
+the artifact comes out frameless; a PREFIX-BEARING one keeps a push. Measured
+on a quiet box (`docs/dev/lanes/isl1_report.md` §12.1, island time over chain
+time, 11 interleaved rounds, answers checked every round):
+
+| shape | width | island / chain |
+|---|---|---|
+| `foo\|bar`, prefix-free | 2 | 0.175 |
+| `(?:cat\|dog\|cow)s`, prefix-free | 3 | 0.140 |
+| `fo\|foo`, prefix-bearing | 2 | 1.131 |
+| `(?:ab\|abc)d`, prefix-bearing | 2 | 1.144 |
+| `(?:a\|ab\|abc\|abcd)z`, prefix-bearing | 4 | 1.001 |
+| 128 alternatives, every path prefix-bearing | 128 | 0.010 |
+
+So the floor for a pushing island is 4 and the floor for a prefix-free one
+stays 2: width 4 measured a wash, so it keeps the mechanism at no cost, and a
+width floor applied to every island would have thrown away the prefix-free
+width-2 population, which is where the largest per-pattern win in the table
+is.
+
+**No answer moves either way, and the argument is structural.** Leftmost-first
+over an alternation of literals is `min{ i : alternative i matches here }` — a
+function of WHICH alternatives match and never of their length or of trie
+depth, which is `src/ir/nfa.c:192`'s own counter-example (`abc|a|abd` on "abd"
+is the `a` branch, index 1, length 1, not the longer `abd` at index 2). Every
+trie edge is one byte, so sibling edges are disjoint and a subject selects ONE
+root-to-leaf path; the alternatives that match are exactly the ones that end on
+that path. When the continuation fails, PCRE backtracks INTO the alternation
+(`(ab|abc)d` on "abcd" must fall from `ab` to `abc`), and the island tries
+those alternatives in ascending original index — the order the chain tries them
+in.
+
+**There is no runtime deferred mask, and that is a consequence of the same
+fact.** Because the walk is a single deterministic path, the set of
+alternatives still live when the walk stops is a compile-time function of the
+node it stopped at. The emitter writes that list out as a chain of try sites
+instead of computing it at run time, so the island allocates no slot.
+
+**IDENTITY IS MODULO WHICH BUDGET BINDS**, exactly as §2.5 states for the
+prefilter, and this axis is the second instance. The island charges its trie
+walk to the WORK counter; `vm_alt`'s chain spends a STEP per branch resume. So
+on a subject where the chain's step budget binds and the island's does not, the
+island ANSWERS where the chain returns `PCREC_ERR_STEPS` — measured at the
+shipped budget with no flags on three of 4,263 fuzz cells (e.g.
+`(?:aabb|baba|abab||ba|aa|bab|b|aabbb|aba|ab)+?q` over a 64-byte a/b subject),
+and under a small `--step-budget` on ordinary patterns.
+
+**THE DIRECTION IS ONE-WAY AND THAT IS WHY IT IS SAFE:** the island does
+strictly less stepping than the chain for the same alternation, so it can only
+answer where the chain gives up, never the reverse — and on the three measured
+cells the island's answer is libpcre2's. The axis is answer-identical wherever
+neither arm's budget binds, which is every corpus cell: `make test-axes`'s
+budget-bound bucket reads 0 over 22,407 of them because no corpus cell
+approaches the budget at all.
+
+**THE EMITTED SIZE IS BOUNDED AGAINST THE CHAIN, not against a cap.** The
+island is built only where its estimated emitted size is within
+`VM_ISL_SIZE_FACTOR` of what `vm_alt` would emit for the same subtree. Without
+that rule the axis was able to REFUSE a pattern pcrec accepts without it — a
+10-factor cross product, 96 characters, at 897,983 bytes of emitted code
+against the 500,000 cap where the chain compiles at 30,179 — because the
+enumeration budgets bound the WORD LIST while the emitted size follows the
+TRIE, and a cross product blows the second up while the first is comfortable.
+**An optimization axis must never narrow what pcrec accepts**;
+`tests/island/run_island_tests.sh` carries a cross-product ladder asserting
+refusal identity, which no corpus sweep can supply because no corpus pattern
+has the shape.
+
+**Deny-only**, `-fno-altcls-factor`'s shape: the emitter takes the island
+wherever the predicate holds, so there is nothing for a caller to address and
+nothing to force.
+
+**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on arrival; K92), for that mask's own
+reason: the axis changes no answer, so two artifacts that behave identically
+must not differ in their reflection surface over it — and concretely, so that
+an alternation the predicate DECLINES is byte-for-byte the same under the flag,
+which is what makes the declined population a usable reference. What the
+emitter DID is reported by `<PREFIX>_VM_ALT_ISLANDS` (`docs/spec/match_api.md`
+§6.3), an activity COUNT.
+
+**VM route only.** The DFA route determinizes the same trie for free (that is
+why its artifacts are byte-identical under a branch reorder where the VM's are
+not), so there is nothing for this axis to select there and no DFA artifact
+carries the stamp.
+
+**PURE WIN — off the dial for §2.19's own reason.** Max growth 1.03×, 0
+refused, prefix-free islands at 0.140-0.175× of chain time
+(`docs/design/opt_dial_inventory.md` §2.20). The second row `B3` found
+missing from the inventory's first table.
+
+### 2.21 `--vm-entry-shape=N` — the VM entry chain's ORDINAL rung
+
+Not a bit in `pcrec_options.flags`; a separate `int vm_entry_shape` field
+(`lib/pcrec.h`), `--unroll=K`'s shape rather than the deny family's. Range
+enforced at the CLI: an integer in `0..4` (`cli/main.c`).
+
+**What it selects.** A VM artifact's six entries (`<prefix>_search`,
+`_search_in`, `_match`, `_match_in`, `_match_caps`, `_match_caps_in`) sit on
+three thin `_run` helpers which sit on one matcher body,
+`<prefix>_match_anchored`. This value chooses how many copies of that body the
+artifact carries and whether the un-suffixed entries bind storage or forward:
+
+| N | token | shape |
+|---|---|---|
+| 0 | — | **AUTO** (the default): the size term below chooses |
+| 1 | `plain` | no attribute anywhere. ONE body; six entries, each with its own frame, its `-fstack-protector` canary and an out-of-line call |
+| 2 | `shared` | the body `noinline` (ONE copy, called); the three un-suffixed entries FORWARD to their `_in` siblings through a static empty descriptor, so they carry no frame and no canary |
+| 3 | `forward` | the same forwards, body inlined: THREE copies, in the three `_in` entries. No canary anywhere in the artifact |
+| 4 | `inline` | six copies — what `[CC-DIFF]` STEP 1(a) shipped |
+
+**ANSWER-IDENTICAL across every value**, and the emitted matcher program is
+byte-identical across all five: what moves is the entry scaffolding above
+`goto <prefix>_L0;` and nothing below it.
+
+**WHAT `make test-axes` ACTUALLY SWEEPS, and it is TIERED.** The answer-identity
+sweep runs this axis's two REACHABLE-BY-DEFAULT rungs on every run — `forward`
+(what AUTO selects below the size term, so the shape most artifacts in the tree
+are built at) and `inline` (the ladder's max-speed end) — and all four only
+under `AXES_FULL=1`, which the union battery's axes stage exports
+(`scripts/battery.sh`). Four permanent full-corpus runs was judged too much for
+the day's suite; the battery is where the whole product belongs. **A
+default-only green run is therefore a claim about TWO of the four rungs**, and
+`tests/axes/run_axes.sh` prints its tier on every run and in its own summary so
+a two-rung result cannot be quoted as a four-rung one. What a default run does
+not cover is `plain`'s no-attribute emission and `shared`'s `noinline` matcher;
+the forward entries and the static empty descriptor land on `shared` AND
+`forward`, so that half of the new emitted code is covered by default, which is
+why the default pair is `forward`+`inline` rather than `plain`+`inline`.
+
+**A value the artifact cannot honour is a SELECTION OUTCOME, never a
+refusal** — `-fno-altcls-factor`'s rule. Values 2-4 need a FRAMELESS artifact
+(`<PREFIX>_VM_FRAMELESS 1`): gcc refuses `always_inline` on a function
+containing a computed goto, and on a framed artifact the storage is live, so
+inlining deletes nothing and only inflates the entry (`[CC-DIFF]` STEP 0
+measured 1.032 there). A framed artifact takes `plain` whatever is asked.
+Values 2 and 3 need more: the forward binds a NULL descriptor, so the artifact
+must provably never WRITE the working storage — no `RX_PUSH`, no linked call
+and no `RX_SET`. The trail is real storage even on a frameless artifact
+(`(abc)(def)` pushes nothing and saves two capture slots), so frameless alone
+is not enough. Where a forward rung is illegal the fallback is by INTENT:
+`shared` falls to `plain` and `forward` falls to `inline`, the other rung of
+the same body-count family.
+
+**AUTO, and the size term.** `VM_INLINE_CHAIN_MAX_BYTES` (`src/core/limits.def`,
+4,096 bytes) is compared against the artifact's own emitted program bytes,
+stamped as `<PREFIX>_VM_PROGRAM_BYTES` — measured at the canonical two-byte
+prefix length since `abi` 54, so the caller's `-p` never moves the rung
+(K79; `limits.md` "Size limits and the prefix"), and excluding the bytes the
+search-code kit writes under a CPU-level guard since `abi` 71, so
+`-fmemfn-simd` never moves it either (`limits.md` "Size limits and
+SIMD-guarded bytes"). At or below it AUTO takes `forward`;
+above it, `shared`. Where the forward rungs are illegal AUTO takes `inline`
+below the term and `plain` above it — the two shapes that shipped before and
+after `[CC-DIFF]` STEP 1 respectively, so neither step is novel.
+
+**THE TERM'S VALUE IS MEASURED ON RUN TIME AS WELL AS SIZE, and the second
+measurement says what crossing it COSTS.** A quiet-box ns/call ladder
+(2026-09-04; `docs/dev/lanes/ccd2_report.md` §12, seven artifacts from 645 to
+305,686 program bytes) reports `forward` within noise of `inline` on six of
+seven cells and FASTER at the widest, so `forward` is AUTO's default and
+`inline` is the max-speed rung a caller asks for. It also reports **`shared` at
+`plain`'s run time everywhere**. So the term does not choose HOW MUCH of the
+win an artifact gets: at or below it the artifact takes `forward` and gets ALL
+of it (33%-50% against `shared` on this ladder, at FEWER `.text` bytes — the
+default trades nothing), and above it the artifact gets NONE of it, because the
+rung it falls to is at the unoptimised run time. A caller who wants the win on
+a large artifact asks for it with `--vm-entry-shape=3`, paying the `.text` the
+ladder prices at 0.067 bytes per ns/call just above the term and 47.7 bytes per
+ns/call at 305,686.
+
+**Reason it exists, and it is a measurement.** `[CC-DIFF]` STEP 0
+(`docs/dev/ccdiff_step0.md`) found gcc leaving the entry chain out of line
+where clang inlines it, costing a 152-byte frame, a stack-protector canary and
+a call per search on storage a frameless artifact never touches; STEP 1(a)
+fixed that with `always_inline`, which six entries then honoured six times.
+`[ENG-ISL]` made WIDE artifacts frameless, and the same gate replicated a
+70 KB matcher six times (`.text` x3.8, gcc x4.3 on `w-256`). This value is the
+copy count made addressable, and the size term is where it is chosen from the
+artifact. `docs/dev/lanes/ccd2_report.md` §3 is the four-rung ladder the term
+was placed on.
+
+**What the emitter DID is stamped** — `<PREFIX>_VM_ENTRY_SHAPE` (the token
+above) and `<PREFIX>_VM_PROGRAM_BYTES` (the number the term compared), both
+`docs/spec/match_api.md` §6.3 family (b), both on every VM artifact including
+a hybrid, neither on a pure-DFA artifact. Two stamps rather than one because
+four different artifacts can read `plain` for four different reasons (framed,
+forward-illegal and large, tiered, or asked for), and the outcome alone does
+not say which.
+
+**Not masked out of `rx_info.flags`**, because it is not a flags bit at all;
+it has no reflection-surface question to answer.
+
+**[OPT-DIAL] NAMES THE TERM, AND ONLY THE TERM — NEVER A RUNG.** `--tune=N`
+(§5) is the dial's first native customer for this axis, and it moves
+`VM_INLINE_CHAIN_MAX_BYTES` alone:
+
+| `--tune=` | term (bytes) |
+|---|---:|
+| `-2`/`-1`/`0` | — (4,096, today's default) |
+| `+1`/`+2` | **8,192** |
+
+The size side is em-dashed: below 4,096 bytes of program the INLINE/SHARED
+`.text` ratio is already 1.01× — the default term exists precisely to take
+forwarding only where it costs nothing, so there is nothing for a size
+notch to recover. `+1` = 8,192 admits the three measured cells just above
+today's term (program 5,183 / 5,985 / 6,954 bytes, five times better
+bytes-per-ns/call than the next cell up) and nothing beyond them; `+2` is
+identical to `+1` (**M12**, `docs/design/opt_dial_design.md` §3.4) — a
+13,312-byte `+2` cell was withdrawn because it traced to a plan row's
+recommendation PHRASE ("8-13 kB") rather than a measurement, and there is
+no measured cell above program 6,954 B to cite.
+
+**THE DIAL NAMES THE TERM AND NEVER A RUNG, and that is an allowlist
+consequence rather than a stylistic choice.** Rung `shared` has no
+measured run time (its ns/call figure above is `plain`'s, not its own),
+so §5's allowlist forbids naming it directly; rung `forward`'s run time is
+established STRUCTURALLY (no entry frame, no canary, no out-of-line
+chain symbol) rather than measured. The TERM is the object with a
+measured rate on both sides, so it is what the dial spends. An explicit
+`--vm-entry-shape=N` still OVERRIDES whatever the dial set — explicit
+beats the dial where a spelling exists (§1), and this axis is one of the
+two rows where that spelling already existed before the dial did — so
+nothing documented above is withdrawn; what changes is that most callers
+stop spelling it.
+
+### 2.22 `-fno-cls-fold` — `PCREC_NO_CLS_FOLD` (bit 24)
+
+**What it controls.** Which test an ASCII case pair gets wherever the
+class-form table is read — a VM pool class at every position, and a DFA scan
+edge's run test at `-2`/`-1` (D139 item 3): the two fold rows of
+`src/gen/clskit.c`'s class-form table, `byte-fold` (size-leaning positions,
+both sites) and `byte-fold-default` (`0`/`+1`/`+2`, the VM site only) (their predicate
+`is_ascii_fold_pair`; before `abi` 51 it was `emit_vm.c`'s `vm_cls_shape`,
+retired by `[CLS-TREE]` S2) — `[FORM-CHAR]` STEP 1, the
+char-match form family's first built object beyond today's exact forms.
+`--list-axes` reports it as `cls-fold`.
+
+D23 folds a caseless letter into a two-member CLASS at parse time (`(?i)a`
+becomes `{'A','a'}`), so before this axis every VM test site for such a
+position read a per-class 32-byte bitmap (`load + shift + and`, 32 B of
+`.rodata` per class). The FOLD shape recognizes exactly an **ASCII fold
+pair** — two members differing only in bit `0x20`, both letters, which is
+what caseless folding produces and nothing else in the base grammar makes —
+and emits `(byte | 0x20) == lower` instead: one or-mask and one compare, no
+table. The class's `<prefix>_class_bitmap<N>` declaration is then not
+emitted at all (the pool class's row choice is the ONE derivation the test
+emitter, the table emitter and the `<PREFIX>_VM_CLS_FOLDS` stamp all read, so
+a test and its table cannot disagree about the shape). On the VM a fold row
+fires at every `--tune` position. Denied, the class falls to the next byte
+row: its table at `0`/`+1`/`+2`, and at `-2`/`-1` its kit matcher where that
+is smaller (§2.33's byte tier, which finds the pair as one `CUBES` section).
+**The default is HELD, and one measurement rules it for both sites**
+(`docs/dev/decisions.md` D138 Q1): the default positions keep the fold on the
+VM, byte-identical, while a scan edge's fold pair there keeps its 256-byte
+table, as it always did; FORM-CHAR2's timing decides the default fold, and
+the flip — to the table everywhere, or to the fold everywhere — is the
+`byte-fold-default` row alone. Whether this flag then retires is D138 Q3,
+ruled with that measurement.
+
+**The measured basis** (`docs/dev/form_char_step0.md` §2, family A;
+asm evidence committed at `studies/form_char_twins/`): gcc -O2 compiles
+`c=='a'||c=='A'`, `(c=='a')|(c=='A')` and `(c|0x20)=='a'` to the SAME
+branchless mask+compare+sete with NO LOAD, so the fold gives up nothing at
+run time against any spelling of the two-member test — the family's speed
+question is closed by compiler evidence, not a stopwatch — while deleting
+38% of the six-site witness's `.text` and its entire class-table `.rodata`.
+A caseless literal chain keeps its chain shape ([OPT-VMLIT]); what changes
+is only each position's test expression and the disappearance of its table.
+
+**Answer identity is structural**: `(b | 0x20) == (lo | 0x20)` holds for
+exactly the two bytes `{lo, lo|0x20}` — the set's own members — so the fold
+test and the bitmap read are the same predicate over bytes. `make
+test-axes` sweeps the flag against the default over the whole corpus.
+
+**What it declines**, each a selection outcome and never a refusal — the
+class keeps its singleton/range/bitmap shape unchanged:
+
+| declined | why |
+|---|---|
+| any set that is not exactly two members | the fold identity is about a pair |
+| a two-member set NOT differing only in bit `0x20` (`[ac]`) | the or-mask would admit bytes outside the set |
+| a `0x20`-pair of NON-letters (`` [@`] ``) | the compare would be exact, but the pair is not a FOLD — the recognizer names what caseless folding produces, and a wider two-member-compare form is unbuilt pending a measured need (D77) |
+| a DFA scan edge's fold pair at `0`/`+1`/`+2` | D138 Q1: the default fold is held (above); at `-2`/`-1` the scan edge takes the fold (`<PREFIX>_DFA_SCAN_EDGE "fold"`, §2.18) |
+
+**`[FORM-CHAR]`'s utf8 objects (4)/(5)** (`utf8-simple-fold`,
+`utf8-full-fold`) are M5.0's to add as class-form rows when its
+stages land; this axis reserves the enum and name space and builds nothing
+for them.
+
+**Deny-only**, `-fno-alt-island`'s shape: the table takes the fold
+wherever the set is a fold pair, so there is nothing for a caller to
+address and nothing to force.
+
+**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on arrival; K92), for that mask's own
+reason: the axis changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it — and
+concretely, so that an artifact with no fold pair is byte-for-byte the same
+under the flag, which is what makes the denied population a usable
+reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
+(`docs/spec/match_api.md` §6.3 family (b)), an activity COUNT, on a VM
+program; a scan edge's fold is reported by `<PREFIX>_DFA_SCAN_EDGE "fold"`.
+
+**Wherever the table is read** (D139 item 3). A row's flag denies that row at
+every site that reads the class-form table: a VM program's class reads and,
+since `abi` 53, a DFA scan edge's run test (§2.18). At the default positions
+no DFA artifact moves under the flag, because the scan site's fold row lists
+only `-2`/`-1`; the DFA's byte-class PARTITION itself never reads the
+table.
+
+**NOT A RUNG — off by RULING, not by a gate.** Frank ruled (2026-09-11)
+that this axis is SUBSUMED into `[CLS-TREE]`'s kit rather than placed on
+the dial standalone: its end state is the `m = 0x20` one-cube instance of
+that kit's general cube form, selected by the sectioning DP and priced by
+λ (§5). This is a different KIND of "no" from §2.23 below — a design
+decision that a special case folds into a general mechanism, not a
+measured or structural disqualification.
+
+### 2.23 `-fno-startpos-guard` / `-fstartpos-guard=align` — `PCREC_NO_STARTPOS_GUARD` (bit 25) / `PCREC_FORCE_STARTPOS_ALIGN` (bit 40)
+
+**THIS IS A CONTRACT AXIS: IT IS NOT ANSWER-IDENTITY-PRESERVING, AND EVERY
+OTHER ODDITY ABOUT IT FOLLOWS FROM THAT** (the first of two; §2.36 is the
+other). Read §1's contract, then read this: the builds give DIFFERENT ANSWERS
+on one input class, on purpose. It is not an engine-selecting axis either
+(§2.8's family) — every arm compiles to the same automaton and selects the
+same engine. It selects between THREE SEMANTICS for a caller-supplied start
+position, all of them ruled, so the axis is a contract choice wearing a
+tuning flag's spelling.
+
+| | |
+|---|---|
+| **What it controls** | what the emitted entries do with a caller `startpos` (or `ctx->pos`) inside a character (`docs/spec/match_api.md` §9.2) |
+| **Default** | refuse: the guard is ON |
+| **Values** | refuse (default); honour (`-fno-startpos-guard`); ALIGN forward (`-fstartpos-guard=align`, [UTF-VALID], D133). The two non-default spellings are refused together |
+| **Stamp** | `<PREFIX>_STARTPOS_GUARD`, a closed token: `"guarded"`, `"permissive"` or `"align"` |
+| **Answer-identical?** | **NO** — see below |
+| **Engine-selecting?** | no |
+| **Inert under** | the `byte` encoding, where every position is a character boundary; all three builds are byte-identical there, and both bits are masked out of `rx_info.flags` |
+
+**WHAT THE TWO ARMS ANSWER.** Under an encoding with multi-byte characters:
+
+- **guarded (default)** — a `startpos` inside a character is refused with
+  `PCREC_ERR_STARTPOS` (`match_api.md` §4). This is libpcre2's own behaviour
+  under `PCRE2_UTF`, which answers `PCRE2_ERROR_BADUTFOFFSET` for every
+  mid-character `startoffset` regardless of pattern (measured 20/20;
+  `docs/design/utf8_measurements/out/startbnd.txt` §2, 10.46).
+- **permissive (`-fno-startpos-guard`)** — the artifact answers at whatever
+  position the caller named, with the automaton's own answer. On a leading
+  NEGATIVE assertion that differs from BOTH PCRE2 UTF modes in the
+  SUCCEEDING direction: `(?<!.)` at offset 1 of `CE B1 CE B2` reports
+  `(1,1)`, because a truncated leading character has no path and a negative
+  assertion succeeds exactly where its body has none.
+
+- **align (`-fstartpos-guard=align`)** — a `startpos > 0` inside a
+  character is moved FORWARD over continuation bytes to the next character
+  start (or `n`), ONCE, at entry, and a search runs exactly as if that
+  position had been passed; an anchored match-here entry answers `-1`,
+  because no match begins inside a character. It is for a MISALIGNED POINTER
+  INTO VALID TEXT — a caller that split a buffer on arbitrary bytes (D132
+  item 2, D133) — and it is not a way to accept invalid UTF-8: under §2.36's
+  `-futf-check` the check runs from the aligned position with no carve-out.
+  Each position the loop skips is a continuation byte, so it can never
+  lose a match a character start could have reported.
+
+Neither of the first two arms ROUNDS a caller's `startpos > 0` to the next
+boundary; the third does, and only because it is asked for by name —
+`match_api.md` §9.2¶9 says why rounding is never silent. OFFSET 0 IS NOT THIS
+AXIS'S: it is never refused
+under either arm, and since [K73] a subject that begins with continuation
+bytes is searched from its first non-continuation byte under BOTH arms alike
+(`match_api.md` §9.3) — an engine rule with no flag, which is
+why the two builds still agree there.
+
+**IT IS NOT MASKED OUT OF `rx_info.flags`,** and with §2.36 it is one of the
+two contract axes in this document that are not (both bits, except under
+`byte`). Every other member of that mask changes an
+emitted SHAPE for one language, so stamping it would make two
+identically-behaving artifacts differ in their reflection surface over a knob
+with no observable effect. Here the effect IS observable, and a caller reading
+an artifact needs to be able to tell which contract it carries.
+
+**WHAT IT DOES NOT TOUCH, and this is the half a reader is most likely to get
+wrong.** The positions the ENGINE generates — an unanchored search's candidate
+match starts, a failed attempt's retry — are the encoding's character
+boundaries under BOTH arms, unconditionally — and since [K73] so is a
+search's first attempt at offset 0. That is K49's, K50's and K73's
+wrong-answer fix and it has no flag; a build that denied it would be the K50
+defect and there is no way to ask for one. The axis governs where a CALLER may
+point the entry, and nothing else.
+
+**AND SINCE [K50-NULLGATE] THAT GUARANTEE IS ABOUT WHAT IS REPORTED, NOT ABOUT
+WHICH POSITIONS ARE OFFERED.** The sentence above is the CONTRACT and is
+unchanged: no match is ever reported starting at a non-boundary, under either
+arm, for any pattern. What changed is the mechanism's population — the gate is
+built only where it can matter, which is where the pattern can match EMPTY. For
+a pattern that cannot, the gate is not merely unnecessary but REDUNDANT: a
+reported match consuming a byte already begins on a byte the encoding admits as
+a character start, so the pattern's own first-byte test refuses every
+mid-character start on its own. A non-nullable pattern's unanchored machine
+therefore offers the interior byte offsets again and none of them can answer.
+The compiler CHECKS that rather than asserting it — `src/ir/nfa.c`'s
+`cstart_check_omission` refuses, at the omission site, any pattern whose first
+byte could fall outside the encoding's character-start set or that can accept
+without consuming. A caller observes nothing; what moves is throughput on
+non-nullable patterns (the measured 1.33× `ENG_ATTEMPT` cost the gate carried
+is now a nullable-pattern-only price).
+
+**THE DIFFERENTIAL, and its non-vacuity floor.** `tests/utf8/run_startbnd_diff.sh`
+compiles one witness family both ways into ONE translation unit and sweeps
+every `startpos` of every subject: the two arms must be IDENTICAL at every
+character boundary (so the guard is transparent where it should be) and must
+DIVERGE at exactly the mid-character set with the typed code. An EMPTY
+divergence population is a dead guard and a RED result, not a pass. A third
+arm compiles the same family under `byte` and asserts the artifact is
+guard-free under either flag.
+
+**`make test-axes` SWEEPS IT FOR IDENTITY LIKE EVERY OTHER AXIS — BOTH
+NON-DEFAULT SPELLINGS — AND THAT IS A MEASUREMENT RATHER THAN AN EXEMPTION.**
+`-fstartpos-guard=align` differs from the default only at a mid-character
+`startpos > 0` too, so the argument below covers it word for word; its
+differential is `tests/utfcheck/`'s align arm, which compares an aligned
+call against libpcre2 10.46 at the aligned position. This section opened by saying the axis
+is not answer-identity-preserving, so a reader expects the sweep to need a
+documented divergence class for it. **It does not, because the corpus cannot
+reach the divergence.** Two facts, both measured:
+
+- **`tests/utf8/` is the only directory in the tree with `encoding utf8`
+  blocks.** Everywhere else compiles under `byte`, where the flag is inert AND
+  masked out of `rx_info.flags`, so the two builds are byte-identical.
+- **Within `tests/utf8/`, the sweep is CLEAN**: 1,130 cases, `agree=1130`,
+  `gained=0`, `mismatches=0`, `refused=0`. Every corpus cell starts at offset 0
+  or at a character boundary, where the guard is transparent — which is
+  exactly what makes a corpus a poor instrument for this axis and why the
+  differential exists.
+
+So the divergence class is EMPTY here, and an empty population is normally a
+red flag in this tree. It is not one here, and the distinction is worth
+stating: an empty divergence population in the DIFFERENTIAL means a dead
+guard and is a failure (§3's floor is 150 and rising), while an empty one in
+the corpus sweep means the corpus is blind to the axis by construction — which
+was known before the guard was built. The axis is watched by the instrument
+that can see it, and swept for identity by the one that cannot.
+
+**NOT ON THE DIAL — GATE 1, and a different kind of "no" from §2.22's
+above.** This section opened by saying the two arms give DIFFERENT
+ANSWERS on purpose, so no measurement could ever admit this axis to a
+mechanism whose entire acceptance criterion is answer identity (§5).
+Where §2.22 is off the dial by a RULING that could in principle be
+revisited, this axis is PERMANENTLY flat — structurally, not by choice.
+
+### 2.24 `-fno-comments` / `-fcomments` — `PCREC_NO_COMMENTS` (bit 26), `PCREC_FORCE_COMMENTS` (bit 27)
+
+**What it controls.** Whether the emitted artifact carries its HUMAN
+COMMENTARY — the orientation block, the per-table legends, the per-label role
+text, the paragraph above each entry point. `--list-axes` reports it as
+`comments`, with rows `essential-only` and `full`.
+
+**It is not an optimization axis**, and it is the only member of this section
+that is not. Every other axis here picks between emitted SHAPES for one
+language; this one picks between two RENDERINGS of one artifact. The code,
+the tables, the stamps and the answers are identical under both settings.
+
+**Pass `-fcomments` when you want to READ the artifact** — the orientation
+block and the table legends are written for exactly that, and nothing else in
+the file changes when you do.
+
+| | |
+|---|---|
+| **Default** | **OFF** — a default artifact carries only its ESSENTIAL comments (D112) |
+| **Stamp** | none, deliberately — see below |
+| **Answer-identical?** | yes, trivially: the C compiler discards comments |
+| **Engine-selecting?** | no |
+| **Inert under** | nothing; every artifact has comments to drop |
+
+**Measured over the 3,517 compiling corpus patterns** (`.c` + `.h` source
+bytes): comments were **44.2 %** of a default artifact before the flip — DFA
+45.6 %, VM 43.1 % — so that is what the default now saves. The object file is
+byte-identical on all 3,517, the comment-excluded source size is identical,
+and every emitted `#define` is identical.
+
+**THE TWO CLASSES** (D112). A comment is ESSENTIAL or NON-ESSENTIAL, and the
+class is decided at the emission site rather than by a filter over finished
+text:
+
+- **ESSENTIAL** — PROVENANCE and the EMBEDDER'S CONTRACT, and it is exactly
+  two things: the generated-by header line naming pcrec AND THE ABI and
+  echoing the pattern (`/* Generated by pcrec (abi N). Pattern: ... */`,
+  on both the `.c` and the `.h`; the abi digit rode the still-open 26 -> 27
+  bump as a same-day rider, D112 item 2 / D76 / D94), and the whole shared
+  `PCREC_RX_ABI_H` type block — the `rx_ctx` fields, the `rx_matchfn` return
+  space, the error codes and the `rx_info` fields — which
+  `docs/spec/match_api.md` names as the doc-comments an embedder actually
+  reads. These are emitted under EVERY setting. A file in someone else's
+  repository still says what it is, what it matches, and what the types a
+  caller touches promise. The ESSENTIAL set is a FIXED cost per artifact; the
+  non-essential set is the part that grows with the machine.
+
+  The **feature-set line** (`/` `* Feature set: ... *` `/`) is NOT in it: its
+  two values also ship as `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES`,
+  which are `#define`s and always emitted. One consequence is worth stating
+  because it is real — those macros live only in the `.c`, so a default
+  `.h` no longer records the feature set in any form.
+- **NON-ESSENTIAL** — everything else, which is most of it. This is what the
+  axis removes, and it is the SEAM a future levels axis would subdivide;
+  levels would never touch the essential set. Nobody builds levels until a
+  need is measured (D77).
+
+**IT CANNOT RESCUE OR REFUSE A PATTERN, structurally.**
+`PCREC_MAX_EMIT_BYTES` and `PCREC_MAX_EMIT_CODE_BYTES` are measured over the
+comment-EXCLUDED artifact (`src/core/limits.def`; `src/core/compile.c`'s
+"TOTAL is the artifact minus its comments"), so the refusal set is identical
+under both settings. The size-lever hazard K59 records for `--tune`'s own
+`-fno-premul-table` denial is absent here by construction rather than by
+calibration.
+
+**AND IT IS NOT A PERFORMANCE AXIS.** The object file is byte-identical under
+both settings, because the C compiler discards comments. `[ART-SIZE]`
+measured comment bytes correlating with `.o` size at r=0.43 against
+program+tables at r=0.99. The win is SOURCE size and readability, for an
+embedder shipping generated C in their own repository. Do not let it be sold
+as anything else.
+
+**A FORCE PAIR, and the only one here whose force flag RESTORES rather than
+pins.** `-fcomments` is not redundant with the default: a `config` block or a
+`--source` target can set either spelling, and a command line has to be able
+to override it in both directions (§`cli.md`'s file-wins precedence and its
+explicit-CLI exception). Deny wins over force, so `-fcomments -fno-comments`
+is comment-free — the same precedence every other pair in this section has.
+
+**NO STAMP, deliberately.** The prose's presence is its own record. A
+`<PREFIX>_COMMENTS` macro would be a second fact about the first, and it
+would still read `"full"` on an artifact some other tool had stripped —
+a claim about the file that the file could contradict. Both bits are masked by
+`emit_info_def`'s strategy mask (derived from `core/axes.def`; K92) for that mask's own reason: the
+axis changes no answer, so two identically-behaving artifacts must not differ
+in their reflection surface over it, and concretely, unmasked it would move
+five bytes of `rx_info.flags` and the object files would NOT be identical.
+
+**Where the gate is.** One render-time decision in the emission kit
+(`src/core/sb.c`'s `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`, D108): the emitters still
+emit every comment event they always did, and the buffer decides whether the
+text is written. It is not a post-hoc strip, so no line is ever repaired and
+no comment can be half-removed.
+
+### 2.25 `-fno-vm-anchor-bound` — `PCREC_NO_VM_ANCHOR_BOUND` (bit 28)
+
+**[OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119).** Denies the VM's
+attempt-loop START BOUND.
+
+**What the axis is.** A pattern whose every alternative begins with `^`
+(outside multiline) or `\A` can only match at absolute offset 0; one whose
+every alternative begins with `\G` can only match at the caller's own
+`search_from`. Either way at most ONE start position can match, so a search
+that has tried it is finished. The DFA emitter has bounded its attempt loop
+on exactly this fact since `[M6.2]` wave D (`start_max`); the VM's search
+loop ran to `subject_length` whatever the pattern said. The measured cost of
+that on `bracket-array-define` at 1 MiB is 52,122× the fastest engine in the
+roster (`docs/dev/optloop/cycle1_analysis.md` M2).
+
+**Where the fact comes from.** ONE predicate, `pcrec_start_anchor`
+(`src/facts/startanch.c`), walked over the LOWERED AST above either engine —
+above, because a VM-routed pattern has no DFA to ask, which is the whole
+reason the three rows with no rescue at all (`bracket-array-define`,
+`evil-alt-nested`, `trim-nested-star`) are VM rows. The DFA route keeps its
+own, tighter derivation for its own loop and ASSERTS that this one does not
+disagree in the unsound direction; the converse is expected and allowed,
+since the subset construction has already pruned branches the tree still
+carries.
+
+**What it changes.** On a VM artifact whose answer is not `unanchored`, one
+declaration (`const size_t attempt_max = search_from;`) and the loop's
+existing continue test reading that name instead of `subject_length`. On
+every other VM artifact, and on every DFA artifact, NOTHING — the emitted
+text is byte-identical to the form before the mechanism, which is what makes
+this flag's own sweep a control rather than a comparison of two new shapes.
+
+**Answer-identity.** Preserved, and in the strongest sense any axis in this
+document has: every attempt the bound removes is an attempt the artifact
+would have RUN AND FAILED. Denying the axis therefore changes run time and
+nothing a caller can observe — which is also why `<PREFIX>_VM_START` is the
+only detector the mechanism has, and why its sabotage row is a STAMP row.
+
+**The stamp.** `<PREFIX>_VM_START`, on EVERY VM artifact whatever its value:
+`"anchored"`, `"gstart"` or `"unanchored"`. A denied build reads
+`"unanchored"`, deliberately indistinguishable from a pattern with nothing to
+prove — the same no-trace rule §2.1's denial follows. It is the VM's reading
+of the fact `<PREFIX>_DFA_SCAN`'s `"attempt"` shape carries on the other
+engine; `--list-axes`' `vm-anchor-bound` rows name all three values.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `start_anchor`.
+A FACT deny: the start-anchor fact reads `unanchored` for every consumer of it
+at once — the VM's attempt-loop bound and `<PREFIX>_VM_START`, the DFA route's
+one-directional agreement assertion, and the pre-check admission's VM
+one-attempt arm (§2.29: on a VM route a denied anchor never admits
+`"one-attempt"`, so a pre-check that arm would have elided is emitted).
+
+### 2.26 `-fno-end-window` — `PCREC_NO_END_WINDOW` (bit 29)
+
+**[OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119).** Denies the END-ANCHOR START
+WINDOW.
+
+**What the axis is.** When every alternative of a pattern ends in `$`/`\Z`/
+`\z` outside multiline, every match ENDS at the subject's end (or one byte
+before it, under `$`/`\Z`'s final-newline allowance). If the pattern's
+maximum width is also finite, every match therefore BEGINS within
+`maxw + eps` bytes of the end, and a search may start its scan there instead
+of at the caller's `search_from`. `abc$` on a 1 MiB subject measured 1,401×
+behind `rust` and 725× behind the best scalar engine, and the hand-twin
+collapses it to a flat 30 ns at every subject size
+(`docs/dev/optloop/cycle1_analysis.md` M4, `cycle1_profile.md` M4). This is
+the general optimization D77 named and deferred — *"a FOLD ON THE IDIOM (the
+skip loop reasoning about `\z`)"* — with the measurement D77 asked for.
+
+**It is the position view's SECOND consumer.** `--list-axes`' `view` axis
+already recognises a `\z`/`$` view and uses it to choose the `-bounded`
+prefilter candidates, i.e. to shape the scan's ACCEPT test. This gives the
+same recognised view the scan's START BOUND.
+
+**Where the fact comes from.** `pcrec_end_window` (`src/facts/endwin.c`), one
+walk over the LOWERED AST above either engine; both search entries emit the
+same clamp from the same `Job` field, through one emitter.
+
+**The four declines, each structural.** The analysis answers "no window" —
+never a guess — when the maximum width is unbounded (the common case, and it
+costs nothing); when the encoding has positions that are not character
+boundaries, because a computed byte offset could land inside a character and
+a mid-character start is a wrong ANSWER and not merely a wasted attempt (K49
+/K50); when the pattern contains `\G` anywhere, because `\G` is the one
+assertion whose truth is a function of the `search_from` this clamp moves;
+and on a multiline `$`, which holds before every newline and says nothing
+about the subject's end (D62 control 3).
+
+**Answer-identity.** Preserved — but UNLIKE its two batch siblings this
+mechanism is one that CAN delete a match if it is wrong, because it moves the
+position a search starts at rather than removing work that would have failed.
+A window one byte too narrow drops a legal `$`-before-final-newline match.
+`tests/assertions/end_window.rxt` is the answer-level net (66 oracle-verified
+cases, each claim carried at a subject length that leaves the mechanism inert
+AND at one that makes it fire).
+
+**The stamp.** `<PREFIX>_END_WINDOW`, on EVERY artifact of both engines:
+the bound as a decimal string, or `"none"`. A string with a `"none"` member
+rather than a number with a sentinel, because `0` is a LEGAL window — a `\z`
+pattern of maximum width 0 may begin only at the subject's end — so no
+numeric value is free to mean "declined". A denied build reads `"none"`.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `end_window`.
+A FACT deny: the end-window fact reads `none` for every consumer of it — both
+engines' start clamp and `<PREFIX>_END_WINDOW`.
+
+### 2.27 `-fno-req-byte` — `PCREC_NO_REQ_BYTE` (bit 30)
+
+**[OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119).** Denies the REQUIRED-BYTE
+whole-window pre-check.
+
+**What the axis is.** Where every match of a pattern must contain some
+literal byte, a search over a window that does not contain that byte can
+answer NOMATCH in ONE `memchr`-class pass instead of running an attempt at
+every start position. PCRE2 records the same fact as
+`PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT` and has one for 25 of
+`capability@0.1`'s 64 patterns; pcrec computed nothing like it, which is the
+largest single weighted gap that subbench measured — five throughput rows at
+0.93–9.74 ns/byte against a 0.017 ns/byte floor three other engines reach
+(`docs/dev/optloop/cycle1_analysis.md` M1).
+
+**It extends the prefilter primitive rather than paralleling it.** The DFA
+scan's `RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same
+window, keyed on a CANDIDATE START. This is the same instrument keyed on a
+NECESSARY byte and hoisted one level out — which is what lets it serve the VM
+route, where the hybrid prefilter is declined outright for a backreference or
+a linked call and where three of those five rows live.
+
+**How the byte is derived.** A bottom-up walk of the LOWERED AST
+(`src/facts/req.c`) producing a SET: concatenation unions, alternation
+INTERSECTS, a quantifier admitting zero iterations contributes nothing, a
+one-byte class is a singleton, and a backreference, a linked call or any
+assertion contributes the empty set — which disables the check and is always
+sound. A lookaround's body is deliberately not descended into, because a
+LOOKBEHIND's bytes sit before the match's start and can be outside the window
+entirely.
+
+**Which member of the set the check tests, and it is no longer PCRE2's
+choice** ([OPT-FREQPICK], `docs/design/reqbyte_freq_pick.md`, ratified
+2026-09-22). The emitted byte is the member with the LOWEST byte-rate — the
+rate the compile's analysis declares, the rate `-fno-offset-skip`'s own
+selection also reads (`docs/spec/findings.md`) — because the member that
+pays is the one a subject is least likely to contain. PCRE2's RIGHTMOST rule
+survives as the TIEBREAK — today's `pick` where it is among the minima, the
+largest such byte otherwise — so the property the rightmost rule was chosen
+for is preserved: a later multi-byte form is a WIDENING of this mechanism
+rather than a different one, and §2.28 is that widening. Every member of the
+set is a byte every match must contain, so the choice can move a SPEED and
+can never move an ANSWER. Measured population: 13.60% of pcrec's own `.rxt`
+corpus moves its emitted byte, and no new axis bit is spent — which member is
+tested is a VALUE under this one, the shape `--unroll=K` and
+`--vm-entry-shape=N` already have.
+
+**The rates are whatever the resolved analysis declares; the default
+declares `byte` only** ([FINDINGS] B1, `docs/spec/findings.md` §2). A
+byte-frequency table is a fact about a subject corpus UNDER an encoding, and
+the shipped default is keyed to `byte` by its own contents: its whole
+0x80–0xFF half sits at the 2 ppm floor, so under `-e utf8` it would call the
+bytes a Latin corpus uses MOST the rarest bytes there are. Its data therefore
+says `serves byte-rate when byte`, and under every other encoding the
+`byte-rate` answer is NONE and the pick takes the PICK kind's NONE answer,
+the rightmost member — byte for byte the answer before [OPT-FREQPICK]. The
+NONE answer is spelled once per question KIND (`findings.md` §4), never per
+reader. Note that §2.28's RUN is NOT encoding-gated (a run of bytes is a run
+of bytes under either encoding) — only the choice of which member of it to
+scan for.
+
+**Unlike PCRE2's fact, the whole window counts.** `LASTCODEUNIT` excludes the
+match's first unit because its consumer is a per-attempt check; this one runs
+once per call over `[search_from, subject_length)`, where every byte of every
+match lies whatever its position in the match. The restriction is therefore
+not imposed, and strictly more patterns get the check.
+
+**Answer-identity.** Preserved, in its batch siblings' strongest sense: the
+check answers NOMATCH only where every attempt would have failed. It is
+nevertheless the one of the three with an ANSWER-LEVEL sabotage, because the
+natural corruption — inverting the `memchr` sense — is not in the sound
+direction and turns matching subjects into NOMATCH.
+
+**The stamp.** `<PREFIX>_REQ_BYTE`, on EVERY artifact of both engines: the
+byte as a decimal string, or `"none"`. A string with a `"none"` member for
+`<PREFIX>_END_WINDOW`'s reason — `0` is a legal byte value, so no number is
+free to mean "declined". Where §2.28's run shipped and its scan member is ONE
+EXACT byte, this stamp is that member rather than the whole set's pick, because
+there is ONE emitted `memchr` and this stamp reports what it tests. Where the
+run's scan member is a two-member cube (§2.39, a caseless letter scanned as two
+streams), no single byte is what the pre-check tests, and this stamp is the
+SET's pick — or `"none"` where the set is empty, as on `(?i)union.*?select.*?from`
+— so every value it carries is a member of the necessary set
+(`--emit-facts`' `req_set`); a member the run's T at that position happens to
+equal is not a byte every match must contain.
+
+**This stamp names the ANALYSIS, not the emission.** Since §2.29 the two can
+differ: an artifact may carry a derived byte here and emit no pre-check at
+all — and, since §2.39, a third way: where the run's scan member is a pair,
+the artifact's run block scans the pair while this stamp names the set's pick
+(on the no-DFA-scan route §2.29's whole-set half then `memchr`s that pick as
+well). `<PREFIX>_REQ_WHY` is the stamp that says whether anything is emitted,
+and a consumer asking "does this artifact pre-check a byte" must read that
+one.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_whole_run`, `req_run`, `req_byte`.
+A FACT deny over the whole necessary-byte family: every consumer of those facts
+sees a pattern with nothing necessary — the one-byte and run pre-checks and
+their stamps, the no-DFA-scan route's whole-set and whole-run compares, the
+admission (`<PREFIX>_REQ_WHY "none"`), G1's domination test, and the run PIN
+§2.30's run-pinned prefilter rows read (so `-fno-req-byte` removes that pin
+too, which is this rule working rather than a leak).
+
+**Denying this bit also reaches §2.30.** `-fno-req-byte` empties the `req_run`
+fact along with the byte set (the fact deny above covers the whole family), so
+the `run_pin` fact (`--emit-facts`' `run_pin` row) reads `none` and §2.30's
+run-pinned prefilter rows (`cand_rows[]`'s NEXT rows, `dfa_pfs[]` before [START-TABLE] C3) have no pin to test — a design consequence rather than a second denial
+(`docs/design/litscan_s1.md` §1.1 invariant 2).
+
+### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
+
+**[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the
+REQUIRED-RUN whole-window pre-check.
+
+**What the axis is.** §2.27's fact at WORD grain: the longest run of
+CONTIGUOUS literal bytes every match of the pattern must contain. Where such
+a run exists, the search scans for the run's rarest member and compares the
+whole run at each hit, so a window that contains the byte but not the RUN
+answers NOMATCH in one `memchr`-class pass where the byte alone could not.
+§2.27's one-byte check is this mechanism's `L = 1` case exactly, and `L = 1`
+artifacts are byte-identical to what they were before this axis existed.
+Measured population: 27.3% of `capability@0.1`'s patterns and 18.6% of
+pcrec's own `.rxt` corpus, with five bench patterns whose necessary BYTE is
+present in the throughput subject and whose RUN is absent
+(`docs/design/reqpos_2b.md` §1).
+
+**How the run is derived.** The SAME bottom-up walk of the lowered AST as
+§2.27, with a second accumulator (`src/facts/req.c`). A concatenation joins
+the left factor's guaranteed literal SUFFIX to the right factor's guaranteed
+literal PREFIX; a singleton byte class is a one-byte run; an alternation keeps
+only its branches' longest common prefix and common suffix; and everything
+that breaks the byte analysis breaks the run too, plus three declines of its
+own, each of which is a missed opportunity and never an unsound claim:
+
+- a class that is not ONE byte or ONE two-member cube contributes nothing
+  and breaks contiguity around it. Until §2.39 that was every multi-member
+  class, including every caselessly folded literal (D23 folds `(?i)a` to
+  `[aA]` at parse time), the largest decline by population; since §2.39 a
+  caseless letter, `[jk]`, or any class whose two members differ in one bit
+  is a run POSITION (below), and `-fno-req-run-fold` restores the old rule;
+- a quantifier that admits zero iterations breaks contiguity, and this is the
+  one arm where the opposite would DELETE a match: a C-comment pattern's two
+  delimiters abut only in the match where the repeat takes no iterations;
+- nothing is joined across a repeat's ITERATIONS, so `(?:ab){2,}` reports
+  `ab` and not `abab`, and nothing is claimed across an alternation's
+  non-common interior, so `(?:xabcy|zabcw)` reports no run at all.
+
+**Which member the scan tests, and how a long run is truncated.** The member
+with the lowest value in the same byte-rate §2.27 describes, ties to the
+RIGHTMOST — the PICK kind's own NONE answer, the same one §2.27's pick takes
+(`findings.md` §4). Both arms of the pick have named the rightmost member
+since `[FIND-TIE]` (2026-09-28, `docs/dev/plan.md`'s row): a tie carries no
+information, so a DATA tie should answer exactly what the question's NONE
+answer would — the run reader was the one PICK in `findings.c` whose data-tie
+order disagreed with its own NONE order (`[OPT-REQRUN-ENC]`, 2026-09-26, had
+already fixed the NONE arm alone, amending this paragraph's former "leftmost
+outright" rule for the no-byte-rate case only — `docs/dev/optloop/
+reqrunenc_census.md`). Under `-e utf8` a run's LEFTMOST member is a UTF-8
+lead byte whenever the run opens mid-character, and a lead byte is shared by
+every character in its script block, so a scan for it stops on nearly every
+byte of a non-Latin subject rather than the rare one the literal needs — the
+exact defect pcrec-bench's O-60 measured, and [FIND-TIE] found it recurring
+one call down: the shipped ASCII-only `log`/`weblog` bundles tie EVERY
+non-ASCII byte at the 2 ppm floor, so naming an analysis reached the same
+lead-byte pick through the DATA arm's leftmost tie rather than through NONE.
+A run's LAST byte can only be a lead byte if the run itself is truncated
+mid-character (an alternation's common suffix stopping between a lead byte
+and its continuation), measured in ZERO of 912 real `-e utf8` runs, so the
+rightmost rule closes both arms with no byte-range logic either way. A run
+longer than `PCREC_MAX_REQ_RUN_EMIT` (8 positions, a `--list-limits` row) is TRUNCATED and
+never split into two compares: to the 8-position window containing the scan
+member whose MEMBERS sum to the lowest byte-rate mass (a pair position counts
+both of its members), ties leftmost, and so to
+the LEFTMOST-of-the-admissible-range such window where no byte-rate applies
+(every window's mass is then the uniform one) —
+which, for a member at the run's own last index, collapses to the run's own
+last eight bytes (the admissible range has exactly one candidate). 8 is
+where gcc lowers a constant-length `memcmp` to one word load and one compare
+with no call out of line.
+
+**Relation to `-fno-req-byte`, which is an asymmetry and not an implicit.**
+Denying `-fno-req-byte` denies this too — there is no run check without a byte
+to scan for. Denying `-fno-req-run` alone leaves the one-byte check standing,
+byte-identical to what it emits without this axis. The two are independently
+revertible in that one direction because their populations differ and a caller
+who has measured a regression will want exactly one of them off.
+
+**Answer-identity.** Preserved in the same strongest sense: the check answers
+NOMATCH only where every attempt would have failed, because the run is
+necessary. Unlike §2.27 it is answer-DETECTABLE under corruption in BOTH of
+its natural forms — an inverted compare, and a run one byte longer than the
+analysis proved — so both are sabotage rows.
+
+**What it costs where it does not pay.** One constant-length `memcmp` per
+occurrence of the scanned member in the window. On a subject where the run is
+as common as its rarest byte that buys nothing: `": "` over log text pays
+9,070 two-byte compares per MiB and learns nothing. It ships with NO decline
+rule, deliberately — a run's rate is a JOINT property and the prior is a
+MARGINAL distribution, so predicting one from the other over-predicts the
+measured gain by 5×, 8× and 3,257× on the three measured rows and no threshold
+over that product separates them (`reqpos_2b.md` §4.2). This axis is the
+decline rule until a run-rate analysis exists.
+
+**A run is a run of POSITIONS** (`[OPT-LITSCAN]` S4 C3, `abi` 59, §2.39). A
+position is one byte or one two-member CUBE `(T, K)` — the bytes `x` with
+`(x & K) == T`, `K` `0xff` for a byte and one clear bit for a pair, `T` always
+the lower member. Every run is ranked by its INFORMATION, the sum over its
+positions of `popcount(K)` (8 per byte, 7 per pair), so among exact runs the
+order and the tie are exactly length's; a run ships only where that sum is at
+least `PCREC_MIN_REQ_RUN_BITS` (16, a `--list-limits` row) — every exact run of
+two bytes or more, as before, and three caseless letters but not two. An
+alternation's common prefix and suffix are, position by position, the
+smallest cube holding both branches' positions (`K' = Ka & Kb & ~(Ta ^ Tb)`,
+`T' = Ta & K'`), symmetric in the branches, stopping at the first position
+whose hull has more than two members — so `frank|fred` reports `fr[ae]`. The
+scan member's cost is its members' summed byte-rate (one PICK, its NONE answer
+the rightmost position either way); a masked run is compared masked by the run
+compare's `words`/`bytes` rows (§2.38), and a pair scan member is scanned as
+two `memchr` streams, one per member, leapfrogged inside the block's one
+guarded loop.
+
+**The stamp.** `<PREFIX>_REQ_RUN`, on EVERY artifact of both engines: the
+run's bytes as lowercase hex, then `@`, then the scanned member's index
+within them — `2e746172@0` for `.tar` — then, ONLY where some position is not
+an exact byte, `/` and each position's `K` in hex —
+`53454c454354@4/dfdfdfdfdfdf` for `(?i)select` — or `"none"` when no run
+ships. Hex because a run is arbitrary bytes inside a `#define`'s string body;
+the index because it is the one fact about the emitted check a reader cannot
+derive from the bytes, and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`
+wherever `mask[idx]` is `ff` (an exact scan member), which makes the two
+stamps checkable against each other; the mask because a masked run's bytes
+alone would read as an exact run of its upper-case spelling. An exact run's
+text is unchanged by the suffix rule. Like its sibling it names the ANALYSIS
+and not the emission — see §2.29.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run`.
+A FACT deny over the run: every consumer of it sees no run — the run pre-check
+and `<PREFIX>_REQ_RUN`, the no-DFA-scan route's whole-run compare, G1's run
+conjuncts, and the run PIN §2.30's run-pinned prefilter rows read. The
+necessary SET and the one-byte pick are untouched.
+
+### 2.29 The pre-checks' ADMISSION — `<PREFIX>_REQ_WHY`, the `req-admit` table
+
+**[OPT-PRECHECK-ADMIT], `[OPTLOOP.1]` ledger reading §6, ratified 2026-09-23
+(G1 + G2; G3 dropped on measurement).** It is the rule that decides whether
+§2.27's and §2.28's pre-check is emitted at all, and in which shape, and it is
+stated in this document because its outcome is caller-observable — one stamp,
+and the presence or absence of a `memchr` in the artifact. Since `abi` 60
+([K82]) it is a first-match table of five rows (since [START-TABLE] C4 the
+PRESENCE rows of the one start table `cand_rows[]`), in this order, listed live by
+`--list-axes` as axis `req-admit`: `none`, `one-attempt` (G2), `dominated`
+(G1), `set-leads` (§2.40) and `emitted`. The first row whose predicate holds
+decides; only `set-leads` has a deny bit (`-fno-req-set-lead`, bit 45), and
+the declines carry none, as before: removing one is never a speed choice a
+caller needs. Since `abi` 61 ([K82] (B)) a second table, `req-use` (§2.41),
+decides what the body does with an EMITTED run pre-check's answer — discard
+it, or begin the scan there (`<PREFIX>_REQ_HANDOFF`); it calls this table and
+never restates it.
+
+**Why it exists.** A whole-window pre-check is a pass over the subject. Batch 1
+emitted one wherever the analysis found a byte, and the bench's after-measurement
+(`docs/dev/optloop/cycle1_ledger_reading.md`) attributed 33 regressing cells to
+two shapes of that, each of which is pure cost with no possible benefit. Both
+are decided at emit time from facts the emitters already hold.
+
+**G2 — ADMISSION. Not in front of an exit that is already cheaper.** Where the
+artifact's search route tries exactly ONE start position, a pass over the whole
+window can only add work: the single attempt reads at most the same window, and
+the check that precedes it can at best replace an O(n) walk with an O(n) scan.
+The route is one attempt on the DFA side when every interior start state is
+dead — the two rows of the three-valued `start_max` that read the literal `0`
+(`^`-anchored) or `search_from` (`\G`-anchored) — and on the VM side when
+`<PREFIX>_VM_START` is `"anchored"` or `"gstart"`. This is the rule the
+candidate-start prefilter has always applied to itself, which is why those
+artifacts read `<PREFIX>_DFA_PREFILTER "none"`; the pre-check, emitted one
+level above it, now inherits it from the same predicates rather than restating
+them. Measured: 29 ledger cells, headed by `winpath-near-miss` and
+`email-nested-plus` at 20 ns → 23 µs.
+
+**G2 needs the one attempt to be LINEAR, and on the VM route that is a second
+condition** ([K64], 2026-09-25). "Reads at most the same window" is true of a
+DFA walk and false of a backtracking program: `^([a-zA-Z0-9._%+-]+)+@` under
+`--engine=vm` spends `3·2^(L−2) − 2` steps on a leading class run of length L
+before failing on the absent `@`, so on 30 or more such bytes its one attempt
+exhausts the step budget (§3.1 of `limits.md`) and returns `PCREC_ERR_STEPS`,
+where the pre-check answered NOMATCH after one `memchr` and PCRE2 answers
+NOMATCH too. There the pre-check is a NO-MATCH PROOF that bounds the call, not
+only a skipped attempt. So G2 declines on the VM route only where the attempt
+is linear by a fact the artifact already states: an EXACT-language hybrid DFA
+runs in front of it (`<PREFIX>_VM_PREFILTER "hybrid"` with
+`<PREFIX>_VM_PREFILTER_LANG "exact"` — that scan is itself the no-match proof;
+a `"count-collapsed"` superset is not), or the program is frameless
+(`<PREFIX>_VM_FRAMELESS 1` — it never pushes a resume frame, so it cannot
+backtrack). Every other one-attempt VM artifact — framed, with no prefilter or
+a collapsed one — emits the pre-check (`<PREFIX>_REQ_WHY "emitted"`). The DFA
+route is linear by construction and is unchanged.
+
+**On a VM route with no DFA scan, an emitted pre-check tests the WHOLE
+necessary set** ([K65], 2026-09-25). §2.27's choice of member is a speed
+choice everywhere a linear scan already bounds the call. Where nothing does —
+a VM artifact with `<PREFIX>_VM_PREFILTER "none"`, which is every
+backreference- or linked-call-bearing pattern on the auto route and every
+`--engine=vm` build without `-fprefilter` — the pre-check is the call's
+only linear NO-MATCH PROOF, and a proof resting on one member made the ANSWER on a hostile
+subject follow the pick: `(x?)([a-z]+)+Z.@\1` on 31 `a`s + `"Zb"` (with `@`
+absent) answered `PCREC_ERR_STEPS` under `-e byte`, whose prior picks `Z`,
+and NOMATCH under `-e utf8`, whose fallback picks `@`. So on that route the
+emitted check (§2.27's byte or §2.28's run) is followed by one `memchr` per
+remaining member of the necessary set, and ANY absent member answers
+NOMATCH. Which member is tested first still moves only a speed; whether the
+call is proved a no-match now depends on the set alone, a fact about the
+pattern. An artifact whose set is its pick alone (or its run's bytes alone)
+emits nothing more. `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN`/`<PREFIX>_REQ_WHY`
+are unchanged: the first two still name the first half's own byte and run,
+and the admission rules above still decide whether any of it is emitted.
+Where a DFA scan runs in front (a DFA artifact or any VM hybrid) nothing
+changes.
+
+**On the same route, a run longer than its window is compared WHOLE**
+([K66], 2026-09-25). §2.28 truncates a run longer than
+`PCREC_MAX_REQ_RUN_EMIT` to the 8-byte window the prior chooses, and
+`<PREFIX>_REQ_RUN` names that window; so with the window alone compared, a
+subject holding the window but not another slice of the run got no linear
+proof, and which subjects did followed the prior:
+`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on `"e"` + 36 `a`s + `"~#~#~#~#"` answered
+`PCREC_ERR_STEPS` under `-e byte` (window `~#~#~#~#`) and NOMATCH under
+`-e utf8` (window `eeeeeeee`). On a VM artifact with
+`<PREFIX>_VM_PREFILTER "none"` the window's compare is now followed by one
+compare of the whole run as the analysis holds it (up to
+`PCREC_MAX_REQ_RUN_SCAN` bytes, a structural bound no prior moves), scanned
+on the same member, and its absence answers NOMATCH — so the absence of ANY
+window of the run proves the no-match, and the answer rests on the run, a
+fact about the pattern. A masked run (§2.39) is compared masked in BOTH
+blocks, each with its own array's mask. The whole-set half above then skips
+every EXACT position's byte of the whole run — a pair position proves only
+that one of its members is present, so a set member equal to its `T` keeps
+its own `memchr`, which is what keeps NOMATCH from becoming a step give-up on
+`(x?)([a-z]+)+S\d(?i:select)\1`. `<PREFIX>_REQ_RUN` is unchanged and still names the window;
+an artifact whose run fits its window emits nothing more; where a DFA scan
+runs in front nothing changes.
+
+**G1 — DOMINANCE. Not a second pass on a byte already scanned.** Let `p` be
+the byte the artifact's own candidate-start scan runs on: the `memchr` form's
+byte, or — since `[OPT-LITSCAN]` S1 (`abi` 36) — the scan byte of an
+`offset-set` or `run-pinned` prefilter, which scans ONE byte at its scan
+offset. (A `byte-class` prefilter scans no single byte, and an artifact with
+no DFA scan at all has no `p`: there, as on every §2.29 [K65]/[K66] route, the
+pre-check stays.) The pre-check on `q` declines where:
+
+- **identity**: `p == q` — the same byte scanned twice. Needs no table, so it
+  declines under EVERY encoding. For a §2.28 RUN pre-check identity is
+  required AND the scan's candidate test must itself refuse every window
+  lacking the run: it must test each byte of the run at the offset where the
+  run is pinned from every match's start (an `offset-set` selection whose
+  verifies cover the whole run, or a `run-pinned` prefilter, which verifies
+  it as one compare). A run check dismisses strictly more than a `memchr` on
+  its scan byte does, so a byte scan alone never dominates it. A test that
+  verifies the run but scans a DIFFERENT member of it keeps the pre-check.
+  Over a masked run (§2.39) the same question is read over cubes: every
+  position must be tested, a pair position by a byte or a term whose members
+  all lie in its cube — `(?i)x/1234`'s offset-0 model term `{x, X}` verifies
+  it, while `a[bc]de`, whose prefilter tests nothing at offset 1, keeps its
+  pre-check.
+- **density**, for the ONE-BYTE pre-check under a `memchr`-form prefilter
+  only: `q` is not STRICTLY rarer than `p` by the byte-rate — the COMPARE
+  kind's question, whose NONE answer is "no density claim", so where no
+  byte-rate applies (§2.27) only identity elides.
+
+Measured: 4 ledger cells, all `wild-codegrammar-json-array-begin`, whose
+artifact ran `memchr(…, 91, …)` twice per call; and S1's own population
+(`docs/design/litscan_s1.md` §6), where router `/user|/users` and keyword
+`in|instanceof` ran the pre-check's scan byte a second time.
+
+**Answer-identity.** Preserved, including for give-ups: a declined
+pre-check is a check not run, and the check could only ever return NOMATCH
+where the engine below it then returns NOMATCH anyway — within the same step
+budget, which is what G2's linearity condition above guarantees. Without that
+condition the engine below could return a GIVE-UP instead ([K64]), so the
+condition is part of this claim and not only of G2's cost argument. Removing
+either rule outright is answer-invisible (the pre-check comes back and only
+costs time), which is why S269 and S270 are structural rows; removing the
+LINEARITY CONDITION is answer-detectable (NOMATCH becomes `PCREC_ERR_STEPS`),
+and S274 is that row, detected by `tests/base/k64_precheck_forced_vm.rxt`.
+Removing the WHOLE-SET half on the no-DFA-scan route is answer-detectable the
+same way, and S277 is that row, detected by
+`tests/base/k65_precheck_whole_set.rxt`.
+Removing the WHOLE-RUN compare there is answer-detectable too, and S278 is
+that row, detected by `tests/base/k66_precheck_whole_run.rxt`.
+
+**The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
+FOUR-TOKEN set. It answers WHETHER a pre-check is emitted; the `set-leads`
+row is a shape of an emitted one and stamps `"emitted"`:
+
+| value | meaning |
+|---|---|
+| `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name (and, under `set-leads`, §2.40, on a rarer necessary-set byte first) |
+| `"none"` | nothing is necessary — no necessary byte AND no necessary run (the analysis found neither, or `-fno-req-byte` denied them) |
+| `"one-attempt"` | G2 declined: the route tries one start position, linearly (a DFA, an exact hybrid, or a frameless VM program) |
+| `"dominated"` | G1 declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run) |
+
+`"none"` here holds if and only if `<PREFIX>_REQ_BYTE` AND `<PREFIX>_REQ_RUN`
+are both `"none"`, which is what makes the three checkable against each other.
+Until §2.39 the two spellings were equivalent, because every run byte was a set
+member; a masked run over an empty necessary set (`union-select`) has
+`<PREFIX>_REQ_BYTE "none"` and a pre-check (`"emitted"`). It is a separate stamp
+rather than a wider `<PREFIX>_REQ_BYTE` value in `<PREFIX>_ENGINE` /
+`<PREFIX>_ENGINE_WHY`'s shape: those two answer what the analysis found, a
+fact about the pattern, and this one answers whether the artifact acted on it.
+
+**One further emitted consequence.** A declined artifact whose body calls no
+other `memchr` also loses its `#include <string.h>`. Nothing else moves.
+
+### 2.30 `-fno-run-prefilter` — `PCREC_NO_RUN_PREFILTER` (bit 32)
+
+**`[OPT-LITSCAN]` S1, `abi` 36. ANSWER-IDENTITY-preserving.** Where the
+pattern's necessary run (§2.28, `<PREFIX>_REQ_RUN`) sits at a FIXED offset
+from every match's start — the §2.14 offset walk proves each of its bytes
+there — and the forward DFA scan already scans the run's own scan member at
+that offset (the offset-0 `memchr` byte, or the offset-set selection's scan
+offset), the prefilter verifies the WHOLE run on each candidate as ONE
+constant-length compare inside its `<PREFIX>_ofsskip` block. The run
+pre-check is then dominated (§2.29 G1) and not emitted. The run is verified
+as one term outside §2.14's k-set cap of 4. `<PREFIX>_DFA_PREFILTER` reads
+`"run-pinned"` or, under a view or word context, `"run-pinned-bounded"`; the
+scan can sit at offset 0 (`<PREFIX>_DFA_PREFILTER_OFFSETS "0*,1,2,3,4"` on
+`/user|/users`), which no other value's does.
+
+**Why.** Without it the artifact scanned the run's byte twice per call:
+once in the pre-check's own loop, once in the prefilter
+(`docs/design/litscan_s1.md` §0). Where the offset-set selection already
+verified the run, only the pre-check's pass is removed and the program is
+otherwise unchanged (§2.29).
+
+**THE DENY IS TWO BITS, and either removes the rows.** They carry
+`PCREC_NO_RUN_PREFILTER | PCREC_NO_OFFSET_SKIP`: they emit §2.14's
+`<PREFIX>_ofsskip` block, so they are members of that family, and
+`-fno-offset-skip` keeps its promise of the pre-`[OPT-K]` artifact only if it
+removes them too. With this flag alone the artifact is the one before S1:
+the prefilter falls back to `memchr[-bounded]` or `offset-set[-bounded]`, and
+the run pre-check returns (`<PREFIX>_REQ_WHY "emitted"`). The elision of a
+pre-check an `offset-set` selection already dominates is admission (§2.29)
+and has no axis. `--list-axes` renders the pair `|`-joined
+(`docs/spec/registry.md`). Deny-only; MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason. `-fno-req-run` and
+`-fno-req-byte` remove the run itself, so nothing is pinned under either.
+
+**The pin is a fact about EXACT positions** (it always was: it needs one byte
+at every offset it pins; stated since §2.39). On a masked run it pins the
+maximal stretch of exact positions around the window's rarest exact byte
+(`--emit-facts`' `run_pin` reads `o:at+len` for such a stretch, `o` for a
+whole-window pin, the text before §2.39), and the run rows' term and scan are
+that stretch's, compared exactly — no masked run enters `<PREFIX>_DFA_PREFILTER`'s
+table. `-fno-req-run-fold` reaches the pin the way `-fno-req-byte` does: it
+narrows the run, and the pin reads the narrowed run.
+
+### 2.31 `-fno-lit-run` — `PCREC_NO_LIT_RUN` (bit 33)
+
+**`[OPT-LITSCAN]` S2a, `abi` 41 (`docs/design/patfacts/design.md` §8.2).
+ANSWER-IDENTITY-preserving.** How a VM program spells a literal it has to
+consume. Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`) for
+the mask's own reason; the deny is the literal-compare kit's row flag (D122
+addendum 2 (4)). `<PREFIX>_VM_LIT_RUNS` (`match_api.md` §6.3) counts the run
+compares the program writes, `0` on every VM artifact that writes none and
+on every VM artifact under the flag. Denied, the program is the one this
+compiler emitted before `abi` 41, byte for byte apart from that stamp line.
+
+**[OPT-LITSCAN] F5, `abi` 43 (D127, 2026-09-28): THE FLOOR IS THREE BYTES,
+NOT TWO.** The `[B108]` read (`docs/dev/optloop/b108_reading.md`) measured a
+two-byte run's compare as the smallest gain in the whole L-sweep on a
+matching subject (0.929x, against 0.253x at L=40) and a real per-call cost
+on a failing one (`asr-lb-fixed`, +30%): a two-byte compare has nothing to
+amortize that a two-node early-exit byte chain does not already pay for,
+cheaper. Frank's ruling: "that makes the cost flatter but the benefits
+(budget) cleaner." The floor is part of `pcrec_lit_run`'s own predicate
+(`src/core/cpset.c`) — the one node-grain fact all three VM readers (the
+chain emission, the cost walk, the slot walk) share — rather than a second
+predicate at a call site (D122 addendum 2's "one row, one deny"); a declined
+two-byte pair falls through to `vm_cat`'s ordinary per-element path, which
+IS the pre-S2a byte chain. `-fno-lit-run` is unchanged: the floor is not a
+flag, and denying the axis still restores the abi-40 program exactly. The
+island's single-child trie chain (below) is untouched — it is a different
+mechanism sharing only the P4 primitive, and its own commit-rule floor is
+unaffected.
+
+**What it is.** In a concatenation, three or more CONSECUTIVE elements that
+are each one exact byte form a RUN, and the run is consumed by one bounds
+check and one constant-length compare:
+`if (scan_position + L <= subject_length && !memcmp(subject + scan_position, "<run>", L))`,
+under ONE label where the per-byte chain wrote `L`. In an alternation island
+(§2.20) a trie node's single-child chain, down to the first node that
+branches or where an alternative ends, is the same compare at that node's
+depth. The compare is the literal-compare kit's one emitter (the run
+compare, §2.38, since `abi` 58; P4 before it), the same function the
+run-pinned prefilter rows (§2.30) and the run pre-check use, so at the
+lengths §2.38's `overlap` row takes it is two overlapping word compares
+rather than a `memcmp`; gcc
+lowers a constant-length `memcmp` to word loads with no call, and it does not
+fuse a per-byte chain on its own (`docs/dev/optloop/vmlit_trigger_read.md`
+§1). The artifact gains `#include <string.h>` if nothing else in it needed
+one.
+
+**What ends a run.** Any element that is not one exact byte: a class of two
+or more bytes (so every letter under `(?i)` — the caseless mask compare is
+`[OPT-LITSCAN]` S4's, not this), a capture's open or close, a repeat, an
+atomic group, a lookaround, an assertion. A capture or a choice point
+between two bytes is program the matcher has to execute there, whatever the
+subject contains, which is why this run is NOT the necessary run §2.28
+names (that one is contiguous in the SUBJECT, across captures).
+
+**What it costs, and what it does not move.** The flag is swept by
+`make test-axes` like every deny axis. No answer and no give-up moves: the compare accepts exactly the bytes the chain accepted, it reads
+exactly `L` bytes after one `pos + L <= n` test (never past the subject's
+end), and the step, work and node budgets charge what the chain charged
+(`limits.md` §3.1). `<PREFIX>_VM_PROGRAM_BYTES` and the label count move
+with the program text; the island size rule's estimates (§2.20) do not, so
+no island is taken or declined differently. The backward walk (lookbehind
+bodies, the reverse-deterministic rung) and the cursor rung's fixed-length
+body keep their own per-byte compares.
+
+### 2.32 `-fno-ctx-node` — `PCREC_NO_CTX_NODE` (bit 35)
+
+**[UCP] U2, `abi` 46 (`docs/design/ucp_design.md` §0.1 T3, §2.2).
+ANSWER-IDENTITY-preserving, and ENGINE-MOVING in the §2.8 sense but NOT one
+of the KEPT engine-selecting denials.** How a lookaround whose body is a
+set of single characters is lowered. Deny-only, MASKED out of
+`rx_info.flags` (`strategy_denials`; `src/gen/emit_dfa.c`'s `kept` holds
+only `PCREC_NO_ATOMIC_DISCHARGE`, `PCREC_NO_SPLICE_CALLS` and (abi 66)
+`PCREC_NO_POSS_CTX_FOLLOW` among the denials, and this bit is not in it), so an artifact built under the flag
+reports `.flags = 0` exactly as an artifact built without it — measured
+2026-10-07 on `(?<=a)b` at `--features lookaround`. No stamp of its own:
+`<PREFIX>_ENGINE` is the observable consequence, the way
+`-fno-atomic-discharge` (§2.8) shows. The "three ENGINE-SELECTING denials"
+that the `rx_info.flags` rule above and §1 name are the three whose denial is
+KEPT in `.flags`; this axis has the same engine consequence (below) without
+that reflection, which is a fact about the code, not a different promise
+about answers.
+
+**What it is.** T3 is a first-match table of two rows (`pcrec --list-axes`
+prints it, read live off `src/parse/ctxnode.c`'s `pcrec_look_rows`):
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `ctx-node` | `-fno-ctx-node` | the body is capture-free and assertion-free, its LANGUAGE is a set of single characters, and every member is one byte of the encoding | the CONTEXT NODE: `(?<=C)`, `(?<!C)`, `(?=C)`, `(?!C)` (and the non-atomic and alpha spellings) read "is the previous / next character in `C`" |
+| 2 | `lookaround` | — | always | the lookaround's VM sub-match (§2.8's neighbour, `lookaround` module) |
+
+The predicate is over the LANGUAGE, not the spelling: `(?<=a|b)` and
+`(?<=[ab])` are the same node, and `(?=a?)`, `(?<=ab)`, `(?<=(a))` are not
+(width not exactly one character, or a capture). The context node is what
+`\b`/`\B` already were — the DFA carries it on its class axis (a
+per-machine list of context sets, whose ATOMS index every per-state view;
+overlapping sets are exact) and the VM tests it as one guarded byte read —
+so a pattern whose only DFA-excluding construct is such a lookaround MOVES
+from the VM to the DFA. `\b`/`\B` build the node directly and are not
+affected by the flag.
+
+**The encoding conjunct.** Row 1 requires every member of the set to be ONE
+byte of the encoding (`-e byte`: any set; `-e utf8`: ASCII-only). A set with
+a non-ASCII member under utf8 is not readable byte-wise — `(?<=[^a])a` on
+`80 61` would read the stray continuation byte as "in `[^a]`" — so it keeps
+row 2 until `[UCP]` U3/U4 build a character-stepped reading.
+
+**What it costs, and what it does not move.** Denied, every lookaround keeps
+its VM sub-match, the program this compiler emitted before `abi` 46, and
+accepts exactly the same subjects — `tests/ucp/run_ctxnode_tests.sh` runs the
+context-node corpus both ways, and `make test-axes` sweeps the flag like every
+deny axis. A DFA machine may carry at most `PCREC_MAX_CTX_SETS` distinct
+context sets and `PCREC_MAX_CTX_ATOMS` atoms (`limits.md` §3.9); over either,
+the DFA is declined exactly as for a state-cap overflow (`--engine=auto`
+takes the VM).
+
+**Forced `--engine=dfa` with the denial is refused**, the §2.8 shape
+(verified 2026-10-07): `pcrec -p rx --features lookaround --engine=dfa
+-fno-ctx-node --pattern '(?<=a)b'` exits 1 with `(?<=...) requires the VM
+engine, which --engine=dfa excludes`, while the same command without the
+flag compiles to a DFA. `<PREFIX>_ENGINE` reads `"vm"` under the denial and
+`"dfa"` without it.
+
+### 2.33 `-fno-cls-kit` — `PCREC_NO_CLS_KIT` (bit 36)
+
+**[CLS-TREE] S4, `abi` 48 (`docs/design/cls_tree_design.md` §2.2, §6.1;
+D129 Q2's one kit-level deny). ANSWER-IDENTITY-preserving.** How the VM tests
+a WIDE class: a class with more than one member, some member of which
+encodes deeper than one code unit. Under `-e byte` no class is wide, so the
+flag is inert there. Deny-only, and MASKED out of `rx_info.flags`
+(`strategy_denials`) for that mask's own reason.
+
+**What it is.** The VM decodes ONE character through the encoding's
+`<prefix>_decode` (a `static inline` entry, §6.3 of `match_api.md`, `§6.3.8¶16`). It then
+tests the character with `<prefix>_wcls<N>`, a `static inline` class-matcher
+function. There is one matcher per distinct set per artifact. The matcher's
+FORM is chosen by λ's row of the `--tune` table (§5.4), whose rows are
+`src/gen/clskit.c`'s first-match table: the sectioned kit `K`, or a
+whole-set table `P3`/`P2`/`B1`.
+
+The decoder rejects a truncated sequence, a stray continuation byte, an
+overlong form, a surrogate and anything above U+10FFFF. That is exactly the
+set the byte alternation cannot match, so ill-formed input matches nothing
+on either route.
+
+**Where the bytes stay.** A one-member wide class is a literal (`é`), so it
+keeps its bytes: that is a literal run, an island word, or a cursor stride.
+The DFA, the NFA and the VM hybrid's prefilter always read the byte
+alternation, whatever this flag says.
+
+**What it changes.** Most of all, it changes what the VM can BUILD:
+- a wide class that was hundreds of kilobytes of alternation is a few
+  kilobytes of matcher;
+- `\P{Unknown}` and the other large `\p` sets compile under
+  `--engine=vm` (K55 retired);
+- a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever
+  its prefilter fits the size caps.
+
+**The byte tier ([CLS-TREE] S2, `abi` 51; D131 item 5).** At the
+size-leaning positions (`--tune=-2`/`-1`) a VM BYTE class that is neither
+one interval nor an ASCII fold pair, in an artifact whose table-read byte
+classes do not take §2.34's shared atom table, is tested by
+`<prefix>_class_kit<N>(byte)`: the same kit's `K` matcher, `static inline`,
+in place of its 32-byte bitmap (zero `.rodata`) — **ONLY WHERE THE KIT IS
+SMALLER** (`abi` 53, D139 item 1): the `byte-kit` row carries `size-page3`'s
+smaller-than shape, comparing the kit written once per read of the class
+(each read inlines it) against the table its site reads — its bytes once,
+one read's `.text` per read. The kit's estimate is its model bytes plus the
+dispatch term fitted for its DOMAIN (578 B for a code-point set, 0 B for a
+byte set: the 41 corpus byte classes' matchers measure within -28..+26 B of
+the model); the table's is the measured cost of the table the site reads
+(`src/gen/clskit.c` `TABLE_COST`). A byte kit whose set spans every byte
+carries no bound. At `0`/`+1`/`+2` the byte
+class keeps its table: the kit's byte forms measured the SLOWEST byte form
+under a fair dispatch (O-77, `cls_tree_design.md` §1.7 addendum). The
+per-class choice is `src/gen/clskit.c`'s `ROWS` byte rows (§5.4's λ row).
+A wide class whose set is ONE interval of code points at or below U+00FF
+(`[\x{e0}-\x{ff}]` under `-e utf8`) now takes the same `byte-range` row
+and is one range compare at every position, where it read a `B1` table.
+
+**The DFA scan edge ([CLS-TREE] S2's second event, `abi` 52; D139).** At
+the same two positions, a DFA scan edge (§2.18) whose class the same table
+puts on the `byte-kit` row — asked at the scan site, where the table is the
+edge's 256-byte one and the test is written twice — tests its run with the
+kit's matcher `<prefix>_<machine>_scankit<N>` in place of that table,
+stamped `<PREFIX>_DFA_SCAN_EDGE "kit"` (`match_api.md` §6.3). The flag
+denies the row there too (D139 item 3: a row's flag denies it wherever the
+table is read), and the edge falls back to its table.
+
+**The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers
+written — wide-class matchers plus byte-class kit matchers — a D81 VM-only
+activity count. It reads 0 under the flag, and in every `-e byte` artifact
+at `0`/`+1`/`+2`.
+
+**Denied**, every wide class on the VM is the byte alternation this compiler
+emitted before `abi` 48, every byte class at `-2`/`-1` reads its table as
+before `abi` 51, every DFA scan edge reads its table as before `abi` 52, and
+the artifact accepts exactly the same subjects.
+The flag denies the WHOLE kit: the shared byte-class atom table of §2.34 is a
+kit form too, so under `-fno-cls-kit` every table-read byte class keeps its
+own bitmap as well (`-fno-cls-pack` denies that table alone).
+`make test-axes` sweeps the flag like every deny axis.
+
+**Denied, the byte alternation is the bytes again, so the K55 refusal returns
+on the same population.** A wide class whose alternation exceeds the
+emitted-code cap is refused on the VM (`--engine=vm`, or a default-route
+pattern that selects it, e.g. a capturing `\P{Unknown}`) (`pattern too large: N bytes
+of emitted code (limit 500000)`): `\p{Xwd}` under `-e utf8` is 576,773 bytes
+(577,122 captured). That refusal is this axis's documented limit and the
+reason the kit exists; no size-ladder rung applies to it. `make test-axes`
+records it as such, with a floor.
+
+
+### 2.34 `-fno-cls-pack` — `PCREC_NO_CLS_PACK` (bit 38)
+
+**[OPT-CLSPACK], `abi` 48 (D131 item 6; `docs/design/cls_tree_design.md`
+§1.7.3 and its O-77 addendum). ANSWER-IDENTITY-preserving.** How a VM
+program's TABLE-READ byte classes read their table. A byte class reads a
+table when no compare shape covers it: it is not a single byte, a
+contiguous range, or an ASCII fold pair (§2.22). Deny-only, and MASKED out
+of `rx_info.flags` (`strategy_denials`) for that mask's own reason.
+
+**What it is.** One ARTIFACT-level choice, made once the program's class
+pool is known. It is `src/gen/clskit.c`'s `TAB_ROWS`, a first-match table
+of two rows:
+
+| row | deny | predicate | form |
+|---|---|---|---|
+| `atom` | `-fno-cls-pack`, or `-fno-cls-kit` (§2.33) | at least 11 table-read classes, whose byte partition has at most 64 atoms | ONE `static const unsigned char <prefix>_class_atoms[256]` (byte -> atom), and per class a `static inline int <prefix>_class_atom<N>(unsigned)` that shifts a 64-bit immediate mask by the byte's atom |
+| `site` | — | always | a `static const unsigned char <prefix>_class_bitmap<N>[32]` per class |
+
+An ATOM is a set of bytes with identical class membership. Both rows list
+all five `--tune` positions today.
+
+**Why 11 and 64.** The shared form costs 256 bytes of table plus an 8-byte
+immediate per class; per-class bitmaps cost 32 bytes each. The shared form
+is smaller from 11 classes up. The fair-dispatch timing re-run (bench
+O-77) measured the two forms within noise of each other at 4, 16 and 32
+classes. 64 is the mask's width. Both numbers are `clskit.c`'s `PLACE`
+cells (`atom_min_sites`, `atom_max`), which a later ruling may move.
+
+**What it changes.** `.rodata`: 256 bytes in place of `32N`. The
+program's test at each site becomes a call of the class's matcher, one table
+load and one shift. It does not change which classes read a table, what the
+DFA or the prefilter emit, or any answer.
+
+**The stamp.** `<PREFIX>_VM_CLS_ATOMS` is the shared table's atom count,
+`0` when the per-class bitmaps are emitted: a D81 VM-only activity stamp
+(`match_api.md` §6.3). It reads 0 under the flag.
+
+**Denied** (by this flag, or by `-fno-cls-kit`, which denies the whole kit),
+every table-read class keeps its own 32-byte bitmap, the
+program this compiler emitted before `abi` 48, and the artifact accepts
+exactly the same subjects. `make test-axes` sweeps the flag like every deny
+axis.
+### 2.35 `-fno-hyb-reseed` — `PCREC_NO_HYB_RESEED` (bit 37)
+
+**[OPT-HYB-RESEED], `abi` 49 (`docs/design/hyb_reseed.md`).
+ANSWER-IDENTITY-preserving.** What a VM HYBRID's attempt loop does after a
+failed attempt. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason. `<PREFIX>_VM_RESEED`
+(`match_api.md` §6.3) names the row that fired. It is emitted on every
+hybrid and on no other artifact.
+
+**What it is.** A hybrid seeds each search from its DFA prefilter. When an
+attempt at a prefilter answer fails, the loop moves on in one of two ways:
+
+- it STEPS to the next character and attempts there, or
+- it RE-SEEDS, asking the prefilter where the next candidate starts.
+
+An attempt can only fail at a prefilter answer when the prefilter
+recognises a LARGER language than the pattern. Three things make it
+larger: a lookaround erased, an atomic cut erased, or the `[OPT-4]` count
+collapse (§2.17). Before `abi` 49 a hybrid re-seeded only where an MRL
+clamp existed and stepped everywhere else. So on a subject where one
+answer failed, it ran a VM attempt at every remaining character. The
+choice is now a first-match table (`pcrec --list-axes`, axis
+`hyb-reseed`; since [START-TABLE] C5 the RETRY rows of the one start table
+`cand_rows[]`, `docs/design/start_table.md`):
+
+| # | row | deny | applies | action |
+|---|---|---|---|---|
+| 1 | `exact` | — | the prefilter's language is the pattern's own (no cut, no lookaround, no collapse) | the pre-`abi`-49 retry: re-seed where an MRL clamp exists, else step. A failed attempt at an answer does not arise, and a clamped artifact's window must be recomputed |
+| 2 | `clamped` | — | an MRL clamp exists | the pre-`abi`-49 retry, which already re-seeds after every failed attempt. A step block would ADD attempts that retry skips, so an answer could become a give-up, and the measured gain was mixed (×2.2 faster to ×0.46 slower, `docs/dev/reseed/clamped.md`) |
+| 3 | `anchored` | — | the pattern is start-anchored (`^`, `\A` or `\G` begins every match; the `start_anchor` fact `<PREFIX>_VM_START` reports, §2.25) | the pre-`abi`-49 retry. The attempt loop's bound returns after the first failed attempt, so no retry runs, and the adaptive text would be unreachable. Added at `abi` 56 ([OPT-HYB-RESEED-FORM] A1); `-fno-vm-anchor-bound` empties the fact and the row together |
+| 4 | `adaptive-dense` | `-fno-hyb-reseed` | the compile's byte-rate PRIOR (`docs/spec/findings.md`) puts the candidate scan's byte set at a mean gap under the crossover below. Under `-e byte` with no `--analysis` the prior is the built-in `default` analysis (English-like letter frequencies), so a single common byte such as a space qualifies. Where the prior is NONE (`-e utf8` with no analysis naming a utf8 block) the rate is the set's CARDINALITY, so a single byte never qualifies and a wide class can | ADAPTIVE, starting inside an armed step block |
+| 5 | `adaptive` | `-fno-hyb-reseed` | always | ADAPTIVE, starting with a short step budget |
+| 6 | `fixed` | — | always | the pre-`abi`-49 retry |
+
+**ADAPTIVE** is decided per CALL, from two locals of the search function.
+No global and no `rx_ctx` field is involved, so a matcher stays reentrant
+and one call never changes the next.
+
+- Each re-seed reads how far the prefilter's answer jumped.
+- A jump shorter than the crossover ARMS the step block. A second short
+  jump with the block armed starts it.
+- The block ends in one re-seed, which is the block's PROBE. A short probe
+  starts the next block at double the length, up to a cap. A long jump
+  disarms the block.
+- A call starts from its row's state: `adaptive` spends a small step
+  budget before its first re-seed, unarmed; `adaptive-dense` starts inside
+  a cap-length block, armed.
+
+The crossover, the first block, the cap and that first budget are
+calibrated per PROGRAM CLASS: a frameless program (`<PREFIX>_VM_FRAMELESS
+1`) versus a framed one. Stepping a frameless program costs a few compares
+per position. Stepping a framed one costs a slot write, a trail entry, a
+push and a pop. The values come from scratch hand-twins on the Mac (the
+design note §3; the harness is `studies/hyb_reseed_cal/`). No `--tune`
+position moves them today.
+
+**What it costs, and what it does not move.** Both arms attempt only
+positions no match can be skipped past. Stepping is the pre-`abi`-49
+clamp-free retry. Re-seeding is the pre-`abi`-49 clamped retry, and it is
+sound because the prefilter's rejection is (L(P) ⊆ L(erase(P))). So no
+MATCH, NO-MATCH or span moves.
+
+A GIVE-UP can move, in ONE direction. The step and work budgets are shared
+across a call's attempts (`limits.md` §3.1) and only attempts charge them.
+An adaptive row is reached only on a clamp-free artifact, where the
+pre-`abi`-49 retry attempted every position after a failure, so the
+attempts an adaptive retry runs are a subset of those, in the same order.
+A call that gave up can therefore now answer; a call that answered still
+answers the same. (Row 2 exists to keep that true: on a clamped artifact a
+step block would run attempts the old retry skipped.) Denied, an adaptive
+hybrid's program is the pre-`abi`-49 one apart from its
+`<PREFIX>_VM_RESEED` line. Row 3 is the other way round: an `anchored`
+artifact's C is the same with and without the flag, stamp included, since
+the row is undeniable and sits above the two the flag denies. The flag is
+swept by `make test-axes` like every deny axis.
+
+### 2.36 `-futf-check` — `PCREC_FORCE_UTF_CHECK` (bit 39)
+
+**THE SECOND CONTRACT AXIS** ([UTF-VALID], `docs/design/utf_valid_design.md`,
+ruled D133). OFF by default. It selects which ANSWER a call gives on an
+ill-formed subject, not which shape finds it.
+
+| | |
+|---|---|
+| **What it controls** | whether every entry that takes a subject refuses an ill-formed one before any attempt (`docs/spec/match_api.md` §9.4) |
+| **Default** | OFF: invalid-tolerant, an ill-formed sequence matches nothing and is not reported (`PCRE2_MATCH_INVALID_UTF`'s semantics) |
+| **Stamp** | `<PREFIX>_UTF_CHECK`, a closed token: `"off"`, `"whole"`, or `"inert"` |
+| **Answer-identical?** | **NO** — it is a contract |
+| **Engine-selecting?** | no: the check sits in the entry, before any engine runs, so the DFA, the VM and the hybrid are covered identically |
+| **Inert under** | the `byte` encoding, where every byte string is well-formed: no check is emitted, the stamp reads `"inert"`, the bit is masked out of `rx_info.flags`, and the artifact is byte-identical to one built without the flag |
+
+**WHAT IT DOES.** Under `-e utf8`, after the §2.23 guard (or alignment), the
+call is refused with `PCREC_ERR_UTF` when an ill-formed sequence begins in
+`[startpos − LB, n)` — PCRE2's own `PCRE2_UTF` contract, with LB PCRE2's
+`max_lookbehind` fact. `match_api.md` §9.4 states the range, the order and
+the step-back; §3.1.2 is `<prefix>_valid_upto`, the offset, which every
+artifact carries whatever this flag says. `-futf-check=extent` is RESERVED
+(the design's §2.2, recorded not built) and refused by name.
+
+**WHY IT IS OFF.** One O(n) pass per call — about the cost of a scanning call
+again on sparse-accented text, and it turns a call a prefilter answers
+sublinearly into a linear one (the design's §5, directional). A find-all
+loop validates on every call; `match_api.md` §3.1.2 gives the linear idiom
+(validate once with `<prefix>_valid_upto`, loop on an artifact built without
+this flag).
+
+**`make test-axes` EXCLUDES IT FROM THE IDENTITY SWEEP BY NAME**, with the
+exclusion asserted present, and gives it its own arm: on every corpus cell,
+the checking build must give the default answer iff an independent python
+oracle finds the cell's checked range well-formed, and `PCREC_ERR_UTF`
+otherwise. The corpus carries ill-formed subjects on purpose
+(`tests/utf8/k73_startskip.rxt` and the ill-formed axes), so an identity
+sweep would report every one as a disagreement. `tests/utfcheck/` is the
+differential against libpcre2 10.46 (offsets included) and the byte-inert
+identity.
+
+**NOT ON THE DIAL — GATE 1**, §2.23's reason: its builds disagree about
+answers on purpose, so no measurement can admit it to a mechanism whose
+acceptance is answer identity.
+
+### 2.37 `-fno-view-edge` — `PCREC_NO_VIEW_EDGE` (bit 42)
+
+**[OPT-VEDGE], `abi` 57 (56 on lane/vedge, renumbered at the lane/r1land landing; `docs/dev/lanes/vedge_report.md`;
+`docs/design/opt5_step2_twopass.md` §2). ANSWER-IDENTITY-preserving.**
+Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`). No stamp of
+its own: it widens which chains §2.18's scan edge takes, and
+`<PREFIX>_DFA_SCAN_EDGE` leaving `"none"` is what it changes. `pcrec
+--list-axes` lists it as axis `view-edge`.
+
+**What it is.** §2.18's pass refused any chain that touched a `$`/`\Z`/`\z`
+position view. That left the whole-subject form `(?:[a-z]{0,n})\z`
+(`match_api.md` §3.6's idiom) walking its transition table once per byte, on
+both the forward pass and the reverse one. Two refusals are lifted:
+
+1. **A member may carry an END view** (`\z`, and no EOL view), on a machine
+   whose walk ENDS at the subject's end: the forward search machine and the
+   anchored match-here machine. There the END view is consulted at one
+   position, `n`, where the loop selects it, reads its accept bit and stops.
+   A scan that runs to `n` leaves the state at the chain's head, so every
+   member's END view must carry the same accept bit. A member whose own bit
+   is set while its END view's is clear is refused, because the scan records
+   its own bit at `n` too. The reverse machine steps from its END view (its
+   walk starts at `n`), so this half never applies to it.
+2. **A chain whose head is another state's view target is trimmed, not
+   refused**, on any machine. Precondition (6) refuses such a head: the view-
+   selected step into it would read the transition cell the edge deletes.
+   The chain now starts at the head's class successor, if that state's only
+   way in is the head. `(?:[a-z]{0,n})\z`'s reverse machine is the case: its
+   start state reaches the counting chain only through its END view.
+
+**What it buys (Mac scratch, `percall.c`, ns per whole-subject call).**
+`(?:[a-z]{0,4096})\z`: 40 letters 152 -> 46, 4,096 letters 16,774 -> 3,835,
+64 KiB of words 9,911 -> 2,864; the artifact drops from 465,741 to 247,889
+bytes. The forced VM is 20 / 1,915 / 14,177 on the same subjects, so a
+whole-subject DFA call is still about twice the VM's: the reverse pass
+remains (§2.19's elision cannot apply, since the start state accepts only at
+`n`). Denied, the pass is the one before this row, byte for byte.
+### 2.38 `-fno-run-overlap` — `PCREC_NO_RUN_OVERLAP` (bit 43)
+
+**`[OPT-LITSCAN]` S4 C1, `abi` 58 (`docs/design/litscan_s4.md` §1.3-§1.5,
+§2.1). ANSWER-IDENTITY-preserving.** How a literal-run compare is spelled,
+on both engines. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason; the deny is the
+literal-compare kit's row flag (D122 addendum 2 (4)). `<PREFIX>_RUN_WORDS`
+(`match_api.md` §6.3) counts the compares the `words` and `overlap` rows
+write, `0` on every artifact that writes none and on every artifact under the
+flag. Denied, every EXACT run compare is the `memcmp` this compiler emitted
+before `abi` 58, byte for byte apart from that stamp line, and every MASKED
+one (§2.39, `abi` 59) takes the `bytes` row.
+
+**What it is.** Every literal-run compare in emitted C — the offset-skip
+block's run term (§2.30, which is also the run pre-check's compare, §2.28)
+and the VM's literal run and island single-child chains (§2.31) — is
+written by ONE renderer through a first-match row table (`--list-axes` axis
+`run-overlap`, walked live off the table). Since [MEMFN] M1b (no `abi`
+event, not a byte moved) that renderer is pcrec-memory-functions' run
+compare (`memfn/src/runcmp.c`; before it `pcrec_emit_run_compare` in
+`src/gen/runcmp.c`), and this flag reaches it as the kit's in-emitter deny
+`MF_D_RUN_OVERLAP` (`docs/design/memfn/integration.md` §14.10, §R4.8):
+
+| row | applies | emits |
+|---|---|---|
+| `words` | a MASKED run (some position a two-member cube, §2.39) of length 2 or more | the run's natural-width words, the last at offset `L - W`, each `(w(base + o) & w("<K>")) == w("<T>")` with the mask a string literal too, joined by `&&` in offset order; a word whose mask is all `0xff` compares unmasked, one whose mask is all `0x00` is not loaded |
+| `overlap` | an exact run of length 3, 5, 6, 7 or 9-15 | two overlapping natural-width words (2, 4 or 8 bytes), the last at offset `L - W`, joined by `&&` in offset order |
+| `bytes` | a masked run (the masked domain's fallback) | `((base)[i] & K) == T` per position, joined by `&&`; `K` `0xff` elides the `&` |
+| `memcmp` | an exact run (the exact domain's fallback) | `!memcmp(base, "<run>", L)` |
+
+```c
+/* L = 6, the masked necessary run (?i)select, row `words` */
+(rx_w4(subject + cand) & rx_w4("\337\337\337\337")) == rx_w4("SELE")
+    && (rx_w4(subject + cand + 2) & rx_w4("\337\337\337\337")) == rx_w4("LECT")
+```
+
+```c
+/* L = 5, the run-pinned prefilter's run term for `/user` */
+rx_w4(subject + cand) == rx_w4("/use") && rx_w4(subject + cand + 1) == rx_w4("user")
+```
+
+Each word is loaded by a `static inline uint<8W>_t <prefix>_w<W>(const void *)`
+helper that is one `memcpy`, and its constant is the SAME helper applied to a
+string literal: gcc and clang fold that to an immediate, and no integer
+literal of the target's byte order appears in the text, so the compare is
+endian-neutral by construction. The helpers are emitted only where the
+artifact writes an `overlap` compare, once each, at file scope ahead of
+their first use.
+
+**Why those lengths.** gcc lowers a constant-length `memcmp` to ONE load and
+one compare at L in {1, 2, 4, 8} and to a vector compare at L >= 16; at the
+other lengths it decomposes into a greedy non-overlapping chain of 2-4
+pieces, each its own branch (`docs/dev/memcmp_lowering_study.md` §3). Two
+overlapping words cover the same bytes in two loads. Whether that is faster
+is MEASURED per cell, not assumed — a darwin scratch probe measured the
+`memcmp` faster in one loop shape (`litscan_s4.md` §1.6) — which is why the
+row has its own deny and ships only if its alpha shows a win beyond the
+noise floor (the design's Q3; the base/deny pair is the noise floor, §6.1).
+
+**What it costs, and what it does not move.** No answer and no give-up
+moves: the words read exactly the run's `L` bytes (every word lies inside
+the run, `o + W <= L`), behind the bounds guard each site already writes,
+and the step, work and node budgets charge the run compare exactly as they
+charged the `memcmp` (`limits.md` §3.1). AddressSanitizer instruments each
+word load (an inlined constant `memcmp` is invisible to it unless built
+`-fno-builtin-memcmp`). The flag is swept by `make test-axes` like every
+deny axis.
+
+**On the dial: every position, no trade** (§5.4): an `overlap` compare and
+the `memcmp` it replaces are within a word of each other in size.
+
+### 2.39 `-fno-req-run-fold` — `PCREC_NO_REQ_RUN_FOLD` (bit 44)
+
+**`[OPT-LITSCAN]` S4 C3, `abi` 59 (`docs/design/litscan_s4.md` §2.3).
+ANSWER-IDENTITY-preserving.** Denies the CASELESS NECESSARY RUN: the
+two-member cube positions of §2.28's run. Deny-only, MASKED out of
+`rx_info.flags` (`strategy_denials`) for the mask's own reason; its activity
+record is `<PREFIX>_REQ_RUN`'s `/mask` suffix, which only a masked run
+carries (`--list-axes` axis `req-run-fold`).
+
+**What it is.** A caseless literal is a two-member class at every letter
+(D23), so before this row a caseless word contributed NOTHING to the
+necessary run and `(?i)union.*?select.*?from` had no whole-window pre-check
+at all — pcrec-bench's one measured customer, at 0.718 ns/B against a
+two-stream hand twin's 0.439 (`docs/dev/optloop/waf_attribution.md`). A class
+whose byte set is one cube of at most `PCREC_MAX_REQ_RUN_POS_SET` (2, a
+`--list-limits` row) members is now a run POSITION (§2.28 "A run is a run of
+POSITIONS"). The mechanism is general rather than caseless: `[jk]` and an
+alternation's one-bit hull (`frank|fred` → `fr[ae]`) are positions too, and
+they are most of what moves.
+
+**What the pre-check emits on a masked run.** The run compare's `words` row
+(§2.38) verifies it masked. Where the scan member is an exact byte, the block
+is today's one-`memchr` loop; where it is a pair, the block scans BOTH
+members, two pending hits leapfrogged inside the block's one guarded loop
+(`while (pos + maxk < n)`, so no search is ever made on a window shorter than
+the run and `memchr(NULL, c, 0)` is closed, [K27]):
+
+```c
+static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t pos)
+{
+    size_t ha = 0, hb = 0;
+    int fresh = 1;
+    while (pos + 5 < n) {
+        size_t cand;
+        if (fresh || ha < pos + 4) {
+            const void *q = memchr(subject + pos + 4, 67, n - pos - 4);
+            ha = q ? (size_t)((const unsigned char *)q - subject) : n;
+        }
+        if (fresh || hb < pos + 4) {
+            const void *q = memchr(subject + pos + 4, 99, n - pos - 4);
+            hb = q ? (size_t)((const unsigned char *)q - subject) : n;
+        }
+        fresh = 0;
+        cand = ha < hb ? ha : hb;
+        if (cand >= n) return n;
+        cand -= 4;
+        if (cand + 5 >= n) return n;
+        if (/* the masked run compare */) return cand;
+        pos = cand + 1;
+    }
+    return n;
+}
+```
+
+**What it changes for each consumer (D124 item 3).** On a DFA artifact and a
+VM hybrid, a pre-check that does not run, or a one-pass proof of absence: no
+answer moves. On a VM route with no DFA scan it can only turn a step give-up
+into NOMATCH, by running fewer attempts, never the reverse — §2.29's
+whole-set half keeps testing every set member the run does not prove (its
+EXACT positions only). `<PREFIX>_REQ_BYTE` is a set member or `"none"`
+(§2.27); `<PREFIX>_REQ_WHY "none"` now requires no run as well (§2.29); the
+pin stays a fact about exact positions (§2.30). Measured movers at landing,
+byte-diffed against `abi` 58 over every corpus pattern (auto and
+`--engine=vm`) and every pcrec-bench export (the four compile configs): 41
+artifacts on the auto route (23 that had no run, 18 whose exact run a more
+informative masked run outranks), every one of them an artifact whose
+`req_run` is masked and no other (`docs/dev/lanes/c3build_report.md`).
+
+**Facts narrowed, not emptied** (`--emit-facts`, `docs/spec/facts_listing.md`):
+`req_whole_run`, `req_run` (and through them `req_byte` and `run_pin`). A
+FACT-LEVEL deny (D126 Q3): the walk's position bound drops to one member, so
+the analysis is the pre-row one exactly — single bytes ranked by length, an
+alternation's affixes by byte equality — for every consumer at once, and each
+artifact is the `abi` 58 program apart from its abi digit.
+
+**On the dial: every position, no trade** (§5.4): a masked run compare is
+smaller than the per-position path it shortcuts, and a pre-check is a pass the
+dial does not price.
+
+### 2.40 `-fno-req-set-lead` — `PCREC_NO_REQ_SET_LEAD` (bit 45)
+
+**[K82] (A), `abi` 60 (`docs/dev/lanes/k82fix_report.md`).
+ANSWER-IDENTITY-preserving.** Denies the `set-leads` row of §2.29's admission
+table. Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`) for the
+mask's own reason; `<PREFIX>_REQ_WHY` reads `"emitted"` either way, so the
+activity record is the emitted text itself (`--list-axes` axis `req-admit`,
+row `set-leads`).
+
+**What it is.** A run pre-check (§2.28) rejects a window that lacks the run,
+and its cost per call is its scan member's occurrences. Where a byte of the
+necessary SET is rarer than that scan member, a window lacking that byte holds
+no match either, and one `memchr` finds out. So where the run pre-check is
+admitted (no earlier row of §2.29 applies) and the set's pick (§2.27) is
+STRICTLY rarer than the run's scan member, the artifact emits the set pick's
+one-byte check FIRST and the run search after it. Rarer is one PICK
+(`docs/spec/findings.md` §4) over the two guards, the run's scan cube first,
+so a tie keeps the run alone: under the byte-rate, the set pick's rate against
+the scan cube's summed rate; under none, MASS's uniform answer, so a byte
+leads a two-member pair and never an exact byte. On the no-DFA-scan VM route,
+§2.29's whole-set half then skips the byte the lead already tested.
+
+The witness is `wild-secrets-username-password-pair`
+(`(?:username|USERNAME|user|USER)[ \t]*=…`): its masked run `USER` replaced
+abi 58's `memchr('=')`, a byte absent from the bench's subjects, and passed on
+every call after ~900 bytes, so the hybrid's prefilter scanned the whole
+subject (`docs/dev/lanes/k82diag_report.md` §1.A). With the lead, `=` is
+tested first and the call returns after one `memchr`.
+
+**Denied:** the run pre-check alone, the `abi` 59 program apart from the abi
+digits.
+
+### 2.41 `-fno-req-handoff` — `PCREC_NO_REQ_HANDOFF` (bit 46)
+
+**[K82] (B), `abi` 61 (`docs/design/litscan_k82h.md`, revision 2 and Frank's
+rulings of 2026-10-05; `docs/dev/lanes/k82hbuild_report.md`).
+ANSWER-IDENTITY-preserving, and GIVE-UP-preserving.** Denies the `handoff`
+row of the pre-check's USE table, axis `req-use` (`--list-axes`; since
+[START-TABLE] C4 the FIRST rows of the one start table `cand_rows[]`): the second
+table beside §2.29's admission, deciding what a search body does with an
+emitted run pre-check's answer. Deny-only, MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason; the activity record is
+`<PREFIX>_REQ_HANDOFF` (`match_api.md` §6.3), the `K` or `"none"`, on every
+artifact.
+
+**What it is.** A run pre-check (§2.28) finds the first position `c >=
+startpos` at which the run's window occurs, and before `abi` 61 every body
+threw `c` away and scanned again from `startpos`. Every match begins at most
+`K` bytes before an occurrence of the window, where `K` is the window's
+maximum BYTE offset from the attempt start — a core fact on the
+necessary-run walk, listed by `--emit-facts` as `req_run_maxoff`
+(`facts_listing.md`), counted in bytes on the encoding-lowered pattern
+(`(?i)straße` under `-e utf8` is `K = 2`: `(?i)s` matches U+017F, two
+bytes). So no match begins in `[startpos, c − K)`, and the body may begin its
+scan at `max(startpos, c − K)` and answer exactly what it answers from
+`startpos`. The pre-check's search block returns the LEAST such `c`, a
+contract the handoff relies on. The row applies, in order, where:
+
+- the admission (§2.29) emitted a run pre-check — the row CALLS the
+  admission, so `req-admit`'s verdict reaches it unchanged;
+- a DFA scan is in front of the body: a DFA artifact (its unanchored scan,
+  whose forward seed reads the byte before the moved start, or its attempt
+  loop's first start), or a VM hybrid, whose FIRST prefilter call starts there
+  — a VM artifact with no DFA scan never takes it;
+- `K` is finite (`req_run_maxoff` is not `unbounded`);
+- the hybrid's prefilter is not COUNT-COLLAPSED (Frank's Q10 ruling: its
+  answers may sit below `c − K`, so there the handoff could move a
+  budget-limited search from a give-up to a match; declined, this flag never
+  moves the give-up surface);
+- and not a VM hybrid whose program has a `\G` start family and whose
+  prefilter span end is its match ceiling (`RX_VM_PRUNE_CEILING`'s
+  `prefilter-window` language, Q9).
+
+Under a multibyte encoding a moved start is rounded UP to the next character
+start, through the encoding backend's own start predicate and bounded only by
+the subject's end (ill-formed text may hold any number of stray continuation
+bytes); a start that did not move is used as the caller gave it, so
+`-fno-startpos-guard`'s semantics are unchanged. `\G` keeps asserting at
+`startpos`. The DFA's reverse pass keeps `startpos` as its lower bound.
+
+**Denied:** the pre-check only discards, the `abi` 60 program apart from the
+abi digits and `<PREFIX>_REQ_HANDOFF "none"`.
+
+### 2.42 `-fno-start-set` — `PCREC_NO_START_SET` (bit 47)
+
+**[START-SET] stage 2, `abi` 62 (`docs/design/startset.md` §2 V, §4.2, §8;
+D148 + addenda 1-2; `docs/dev/lanes/ssbuild2_report.md`).
+ANSWER-IDENTITY-preserving; NOT give-up-preserving, in one direction.**
+Denies the candidate table's start-set rows — the VM-route row
+`first-class`, listed on the `prefilter` axis of `--list-axes` with the
+`RX_VM_START_SCAN` stamp, and since stage 3 (`abi` 64) the DFA hat's two rows
+below. Deny-only (D148 Q3), MASKED out of `rx_info.flags`
+(`strategy_denials`); the activity record is `<PREFIX>_VM_START_SCAN`
+(`match_api.md` §6.3), `"first-class"` or `"none"`, on every artifact.
+
+**What it is.** A VM artifact with no DFA prefilter starts an attempt at
+every position from `startpos`. An attempt at `p` can succeed only if the
+byte at `p` is in the pattern's START SET `S` — the `start_set` fact
+(`facts_listing.md`): the first byte of every non-empty match, with every
+zero-width construct erased, on the encoding-lowered pattern (so under
+`-e utf8` it holds lead bytes). Where the pattern cannot match empty the
+attempt loop seeks the next byte of `S` before its first attempt and after
+each failed one (after the encoding's own advance), and answers no-match
+when none is left. The row applies where:
+
+- the artifact is a VM artifact with no DFA prefilter (`RX_VM_PREFILTER
+  "none"`, at `auto` or under `--engine=vm`); a hybrid's prefilter is its
+  start test;
+- the pattern is unanchored (`start_anchor`): an anchored or `\G`-start
+  pattern runs one attempt;
+- `S` is not nullable (the erased language cannot match empty) and has
+  fewer than 256 members.
+
+The seek is a 256-entry table walk at any size of `S`; a one-byte `memchr`
+form is not built (a dense one-byte `S` read by `memchr` per failed attempt
+measured slower than the table, startset.md §4.4). It sits after the range
+guard, K50's startpos guard, `-futf-check`'s subject check and the K65/K66
+pre-check, so none of their answers move; `\G` keeps asserting at
+`startpos`, which the seek never moves.
+
+**The give-up surface moves in one direction.** A skipped attempt spends no
+steps, work, backtrack frames or trail, so a search that gives up under
+`-fno-start-set` may return the answer an unbounded budget returns
+(`match_api.md` §3.1). Witness: `(?=(?:a|b|x)*c)x` under `--engine=vm
+--backtrack-frames=8` on `(ab)×12` + `"xc"` gives up `PCREC_ERR_FRAMES`
+denied and answers `(24,25)` with the row (`tests/startset/giveup.rxt`).
+
+**Denied:** every position is attempted, the `abi` 61 program apart from the
+abi digits and `<PREFIX>_VM_START_SCAN "none"`.
+
+**[START-SET] stage 3, `abi` 64: THE DFA HAT** (`docs/design/startset.md`
+§2 F, §4.1, §6.4; `docs/dev/lanes/ssbuild3_report.md`). The same deny also
+removes the candidate table's two DFA-route start-set rows,
+`first-memchr-bounded` and `first-class-bounded` (stamped in
+`<PREFIX>_DFA_PREFILTER`, `match_api.md` §6.3). ANSWER-IDENTITY-preserving
+and give-up-preserving: the DFA scan's own steps are not metered, and a
+VM hybrid's prefilter answers the same windows.
+
+- **What it is.** The DFA's forward scan skips, while it sits in its start
+  state with nothing found, over bytes that cannot move it: today the start
+  state's ESCAPE set `E`. On a SEEDED machine — one whose start depends on
+  the byte before it (`\b`, `\B`, a lookbehind, a `(?m)` context) — `E`
+  holds every byte that changes that context, not only the bytes a match can
+  begin with: `\b(?:true|false|null)\b`'s `E` is the 63 word bytes, where
+  only `t`, `f` and `n` can start a match. The row skips over the START SET
+  `S` instead and, where the skip moved, RE-SEEDS the scan state from the
+  byte before its landing, exactly as a search started at that position
+  would (the skipped bytes begin no match in any context, so the landing
+  state is that seed).
+- **Where it applies.** The unanchored forward scan (a DFA artifact, or a VM
+  hybrid's inlined prefilter) of a seeded machine whose plain skip it
+  replaces (`byte-class-bounded`; the offset and run rows sit above it); `S`
+  not nullable with fewer than 256 members; and `T = S` a non-empty PROPER
+  subset of `E`. A start byte outside `E` — one that leaves every seed state
+  where it is, as the space does in `(?<=\w) *a` — fails that test, and the
+  artifact is the plain row's: the skip never passes a byte a match can begin
+  with. `T` of one byte takes
+  `first-memchr-bounded` (a `memchr`), several take `first-class-bounded`
+  (a `<prefix>_start_bytes` table). Both are bounded at `n - 1`: a seeded
+  machine always carries the D11 bound, so there is no unbounded form.
+- **What moves besides the skip.** Three selections that read the scanned
+  set see `T` where they saw `E`: G1's pre-check dominance (`RX_REQ_WHY` may
+  read `"dominated"` where the one-byte `T` is the pre-check's byte), the
+  hybrid re-seed row (`RX_VM_RESEED`, whose density is the prior's mass over
+  the scanned set), and the scan edge (`RX_DFA_SCAN_EDGE`, whose
+  precondition reads whether the prefilter re-seeds).
+- **Denied:** the plain `byte-class-bounded` skip over `E`: the `abi`-62
+  `-fno-start-set` program (no VM hat either) apart from the abi digits.
+
+### 2.43 `-fno-memfn-simd` / `-fmemfn-simd` — `PCREC_NO_MEMFN_SIMD` (bit 48), `PCREC_FORCE_MEMFN_SIMD` (bit 49)
+
+**[MEMFN] R4c, pcrec's ONE axis for the memory-function kit (D147
+addenda 6-7; `memfn/CLAUDE.md`, "ONE SIMD switch"). INERT today: both
+settings render the same artifact.** A force pair on the
+`-fno-comments`/`-fcomments` shape (`src/core/axes.def`), **OFF BY DEFAULT**
+until the SIMD hold lifts; turning it on by default is its own ruled event.
+The deny flag states the default and overrides a `config`/target block that
+turned the force flag on.
+
+- **Off (the default):** the kit renders PORTABLE C only (plain C, SWAR on
+  ordinary integers, libc calls, loop-free forms); the artifact runs on any
+  target.
+- **On:** the kit MAY render hardware-optimized forms for a specific CPU; such
+  an artifact MAY NOT EXECUTE ELSEWHERE. What it renders, which ISA levels and
+  whether it cascades at run time, is the kit's choice per site; pcrec carries
+  no profile, no `--isa=` axis and no architecture knowledge, and sends the
+  kit ONE bit (`MF_P_PORTABLE_ONLY`, set iff the force flag is not in
+  force).
+- **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and
+  `-fno-memfn-simd` produce byte-identical artifacts (checked by C11's
+  identity half, `make test-memfn-stamps`, which compiles each sampled
+  artifact under each flag against the default and prints "identical (no
+  SIMD form)" once per layer). The per-form switches are the kit's own `--memfn=` namespace
+  (`registry.md` §6), not this axis.
+- **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s
+  `strategy_denials` mask (`src/gen/emit_dfa.c`; §2's `rx_info.flags`
+  rule, which masks force bits too): the axis selects what the kit renders
+  and changes no answer. The activity record is
+  `<PREFIX>_MEMFN_FORMS` (`match_api.md` §6.3), `none` iff the artifact is
+  identical to its SIMD-off compile.
+
+### 2.44 `-fno-poss-ctx-follow` — `PCREC_NO_POSS_CTX_FOLLOW` (bit 50)
+
+**Denies** possessify's ARM A ([ART-POSS-ARMS], `docs/design/poss_arms.md`
+rev 2.1 §2): a context gate — `\b`, `\B`, or a one-character lookaround
+(module `ucp`'s context node) — in a quantifier's follow is valued by the
+next characters it can admit, instead of widening the follow to every
+byte. Two halves, one bit: **A0** (nothing known on the gate's left, so it
+narrows only a lookahead-born gate: `[A-Za-z0-9.]+(?=@)`) and **A1** (the
+left is the loop's own LAST characters, so `\w+\b` and `(?:a\.)+\B`
+possessify; greedy loops with at least one mandatory iteration only).
+Default: both run. Each changes no answer.
+
+**ENGINE-SELECTING, KEPT in `rx_info.flags`.** The free discharge (§2.8)
+asks the same verdict, so the arm can delete an atomic group or possessive
+suffix and move the pattern to the DFA. Denying it keeps the group on the
+VM, and `--engine=dfa` plus the denial REFUSES:
+
+```
+$ build/pcrec -p rx --features all --engine=dfa -fno-poss-ctx-follow -o - --pattern '\w++\b'
+pcrec: possessive quantifier requires the VM engine, which --engine=dfa excludes (pattern offset 3)
+$ build/pcrec -p rx --features all --engine=dfa -o - --pattern '\w++\b' | grep RX_ENGINE
+#define RX_ENGINE "dfa"
+```
+
+Measured over 4,132 bench and corpus patterns: 0 default-route engine
+flips (186 at risk; the note's §5.4), so the classification rests on the
+constructed witnesses above. **Records** `<PREFIX>_VM_POSS_ARMS` bits `0x1`
+(A0) and `0x2` (A1) (`match_api.md` §6.3); both are 0 under the denial,
+asserted on the artifact (`tests/possessify/run_possessify_tests.sh`).
+**Differential:** `tests/possessify/run_possdiff.sh` (denied vs armed).
+
+### 2.45 `-fno-poss-bref-first` — `PCREC_NO_POSS_BREF_FIRST` (bit 51)
+
+**Denies** possessify's ARM B ([ART-POSS-ARMS], `docs/design/poss_arms.md`
+§3): a backreference's first character is read from its groups — the union,
+over every group number it can name, of the first character of the TEXT
+each such group can capture, folded when the reference is caseless —
+instead of every byte. So `\s+` before `\1` in `\b(\w+)\b\s+\1\b`
+possessifies. Default: it runs. It changes no answer.
+
+**ANSWER-IDENTITY-preserving, MASKED from `rx_info.flags`.** A backreference
+is VM-only (under `--no-captures` too), so the arm can change the program
+and the free discharge but never `RX_ENGINE`; `--engine=dfa` refuses a
+backreference pattern with and without it. `tests/reject/`'s
+`reject_engine_dfa_bref_nocaptures` is the tripwire on that premise: if a
+backreference ever becomes DFA-runnable, this axis is reclassified
+engine-selecting. **Records** `<PREFIX>_VM_POSS_ARMS` bit `0x4`, 0 under the
+denial. **Differential:** `tests/possessify/run_possdiff.sh`.
+
+
+## 3. The DFA side's own stamps
+
+**CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
+it was open.** A DFA artifact now carries three D46 selection stamps, in the
+same position of the file a VM artifact carries its own:
+
+```
+$ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|DFA_)'
+#define RX_ENGINE "dfa"
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_TABLE "premultiplied"
+```
+
+`docs/spec/match_api.md` §6.3 is the contract; in short:
+
+- `RX_ENGINE` is **unconditional** — present on every artifact both engines
+  produce, `"vm"` or `"dfa"`, from one emitter so the two cannot drift. This
+  is what makes `#if`-ing on it safe, which §6.3 used to warn it was not.
+- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair),
+  `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern
+  takes) or `"empty"` (`[DD-13c]`: the pattern provably matches nothing, so
+  the body is one `return 0` and there is no loop of either shape in it).
+  Nothing else a consumer can read distinguishes them: all three stamp
+  `RX_ENGINE "dfa"` and all three set `rx_info.engine` to
+  `PCREC_ENGINE_DFA`. The unanchored/attempt split itself is plan row
+  `[OS-4]`'s subject.
+- `RX_DFA_PREFILTER` names the candidate-start mechanism, one of `"none"`,
+  `"memchr"`, `"byte-class"`, `"memchr-bounded"`, `"byte-class-bounded"`.
+  The `-bounded` pair is `[DD-13]` (b): under a `$`/`\Z`/`\z` view or a word
+  context every skip is bounded at `n - 1` and the `memchr` arm loses its
+  early-out, so the same candidate table buys measurably less. `"none"`'s
+  largest cause is not "no filter was wanted" but **the start state ACCEPTS**
+  — `\bx*`, `a*`, `.*`, `$` — where no skip is sound at all, because a skipped
+  run is a run of positions at which the pattern owes an empty match.
+  MEASURED over the corpus (2,772 patterns, `tests/codegen/run_dfa_stamps.sh`,
+  2026-08-25). **995 DFA artifacts**: `none` 380, `memchr` 327, `byte-class`
+  176, `memchr-bounded` 61, `byte-class-bounded` 51; `unanchored` 811 /
+  `attempt` 180 / `empty` 4. **1,263 VM hybrids** (§3.1): `memchr` 825,
+  `none` 264, `byte-class` 137, `memchr-bounded` 20, `byte-class-bounded` 17;
+  `unanchored` 1,071 / `attempt` 188 / `empty` 4. **Every artifact that
+  contains a DFA scan** (2,258): `memchr` 1,152, `none` 644, `byte-class` 313,
+  `memchr-bounded` 81, `byte-class-bounded` 68; `unanchored` 1,882 / `attempt`
+  368 / `empty` 8. The remaining 225 VM artifacts are non-hybrid and carry
+  neither macro; 289 corpus patterns are refused under `--features all`.
+
+- `RX_DFA_PREFILTER_OFFSETS` (`[OPT-K]`, 2026-08-28) names WHICH offsets
+  from the candidate's own start that filter tests, ascending, with `*` on
+  the one the scan searches for (`"0,8*,13"`), or `"none"` on every
+  artifact whose `RX_DFA_PREFILTER` is not one of the two `offset-set`
+  values. `docs/spec/match_api.md` §6.3 states the format; §2.14 above is
+  the axis, and `docs/design/offset_k_skip.md` the design. Like
+  `RX_DFA_TABLE` it has **no `rx_info` mirror**, for that stamp's reason.
+
+- `RX_DFA_TABLE` (`[OPT-3]`, 2026-08-26) names the ENCODING of that scan's
+  transition table, one of `"premultiplied"`, `"indexed"`, `"mixed"` or
+  `"none"`. `docs/spec/match_api.md` §6.3 states the value set; §2.13 above
+  is the axis, and `docs/design/premultiplied_dfa_table.md` the design.
+  `"none"` is not a failure: `"attempt"` scans have no numeric transition
+  table at all (their states are labels and a step is a computed `goto`),
+  and neither does `"empty"`. Unlike `RX_DFA_SCAN` and `RX_DFA_PREFILTER`
+  it has **no `rx_info` mirror** — §3.2's mirrors were a separate D40
+  decision for a header-less consumer, no such consumer reads them yet, and
+  match_api.md §6.3 states the trigger that would make this one owed.
+
+- `RX_DFA_UNIFORM_FOLDS` (`[CC-DIFF]` STEP 1, 2026-09-03) is an INTEGER, not
+  one of this section's string stamps: how many of this artifact's DFA
+  tables were ALL-EQUAL and are therefore NOT EMITTED, with the accessor
+  returning the constant instead (`0..6` — the forward machine's two tables
+  always in scope, the reverse machine's unless `RX_DFA_START "pinned"`, the
+  anchored machine's under `RX_DFA_MATCH "unwrapped"`). `docs/spec/
+  match_api.md` §6.3 states the value set and the IFF; there is no tuning
+  axis for it in §2 above — unlike every other stamp in this section, the
+  fold is not a generation-time CHOICE (no pass decides it, no `-fno-`
+  flag denies it), it is what the emitted machine turned out to CONTAIN,
+  discovered while the emitter held the table, which is `RX_VM_FRAMELESS`'s
+  reasoning one section down and not a new one. `RX_DFA_TABLE` still names
+  the ENCODING that was selected even where every table of it folded (it
+  still fixes the folded constant's value), so the two stamps read together
+  rather than one superseding the other. It has **no `rx_info` mirror**, on
+  `RX_DFA_TABLE`'s own precedent and for its stated reason.
+  `tests/codegen/run_dfa_uniform_fold.sh` holds it to the emitted text.
+
+- `RX_DFA_MATCH` (`[ENG-ABS]`, 2026-08-29) names which of the two forms
+  the artifact's `<prefix>_match` takes — `"unwrapped"` (its own anchored
+  machine, run from `ctx->pos`) or `"search-filter"` (the unanchored
+  search with non-`ctx->pos` starts rejected). §2.15 above is the axis and
+  `docs/design/anchored_match_unwrapped.md` the design. **It DOES have an
+  `rx_info` mirror** (`match_form`), unlike the two stamps above, and the
+  reason is the trigger `match_api.md` §6.3 named: this one is a
+  caller-visible COST property of an entry point the caller calls, not an
+  internal encoding choice — §3.2's worst case belongs to one of its two
+  values and a header-less consumer needs to know which it linked.
+  **It is also the one `RX_DFA_*` stamp a HYBRID does not carry** (§3.1
+  below), because a hybrid's `_match` is the VM's own anchored body.
+
+- `RX_DFA_SCAN_EDGE` (`[OPT-5]`, 2026-08-31) names how that scan tests the
+  class of a **scan edge** — a counted class run collapsed out of the
+  transition table into one bounded cursor loop — as `"range"` (a
+  subtract-and-compare against two immediates), `"bitmap"` (a 256-byte
+  membership read, for a class whose byte set is not contiguous), `"mixed"`
+  (the artifact's machines took both) or `"none"` (it carries no edge).
+  §2.18 above is the axis and `src/opt/scanedge.c` the pass;
+  `docs/spec/match_api.md` §6.3 states the value set. `"none"` is not a
+  failure and is the common answer: `"attempt"` scans are not eligible (their
+  states are labels), `"empty"` ones have no loop, and a machine with no
+  counted class run has nothing to collapse. Like `RX_DFA_TABLE` it has **no
+  `rx_info` mirror**, for that stamp's reason — it is an internal encoding
+  choice rather than a cost property of an entry point a caller calls — and
+  like it, a HYBRID DOES carry it, because a hybrid inlines this emitter's
+  scan and therefore has the fact to report.
+
+- `RX_DFA_START` (`[OPT-5]` STEP 2, 2026-09-02) names which of the two forms
+  that scan's ENTRY takes when it recovers the match START — `"pinned"` (the
+  start is `search_from` by compile-time proof, and the artifact carries no
+  reverse machine at all) or `"reverse-pass"` (the second, backwards scan over
+  the artifact's own reverse machine). §2.19 above is the axis and
+  `docs/design/opt5_step2_twopass.md` the design;
+  `docs/spec/match_api.md` §6.3 states the value set. The two forms are
+  **answer-identical** and differ only in cost — roughly a factor of two on a
+  counted class run — and in the artifact's size. **It DOES have an `rx_info`
+  mirror** (`search_form`), for `RX_DFA_MATCH`'s reason rather than a new one:
+  it is a caller-visible COST property of an entry point the caller calls, not
+  an internal encoding choice. Unlike `RX_DFA_MATCH`, a **HYBRID DOES carry
+  it** — a hybrid inlines this emitter's search body as its prefilter, so it
+  has the fact to report, which is `RX_DFA_SCAN_EDGE`'s placement rather than
+  `RX_DFA_MATCH`'s.
+
+`RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
+engine: it names the construct that FORCED the VM, and a DFA artifact was not
+forced — `rx_info.engine_why` is `NULL` there for the same reason.
+
+**`RX_TUNE` ([OPT-DIAL], 2026-09-16) is NOT a `RX_DFA_*` stamp — it belongs
+to neither engine and is emitted UNCONDITIONALLY on every artifact of
+BOTH engines**, in the shared prologue above `goto <prefix>_L0;`. §5
+states its full contract; it is named here because it is the one stamp in
+this document that does not sit in either engine's own bucket.
+
+### 3.1 A VM HYBRID carries these too (`[DD-13c]`, 2026-08-25)
+
+The stamps belong to the MECHANISM, not to the artifact kind that usually
+carries it, and the §6.1 hybrid is where those two come apart. A hybrid is a
+VM artifact whose `fit.prefilter` is on: it INLINES the DFA emitter's own
+scan as a `static` function and runs it ahead of the program, tables, D11
+bound and candidate-start filter included. That is the mechanism the email
+specimen's ~23x actually comes from — and until `[DD-13c]` it was the one
+artifact kind that stamped nothing about it, so a bench harness could bucket
+every artifact by scan shape EXCEPT the ones where the scan does the work.
+
+```
+$ build/pcrec -p rx -o - -- 'a(b|c)+d' | grep -E '^#define RX_(ENGINE|VM_PREFILTER|DFA_)'
+#define RX_ENGINE "vm"
+#define RX_ENGINE_WHY "capture group at pattern offset 1"
+#define RX_VM_PREFILTER "hybrid"
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_PREFILTER_OFFSETS "none"
+#define RX_DFA_TABLE "premultiplied"
+```
+
+**`RX_DFA_MATCH` IS ABSENT ABOVE, AND THAT IS THE ONE `_DFA_*` STAMP A
+HYBRID DOES NOT CARRY** (`[ENG-ABS]`, 2026-08-29). The four stamps in that
+listing describe a DFA SCAN, and a hybrid contains one. `RX_DFA_MATCH`
+describes the artifact's `<prefix>_match` ENTRY, and a hybrid's is the VM's
+own anchored body — a different mechanism with a different value set. Its
+iff is `RX_ENGINE "dfa"`, and `rx_info.match_form` is `NULL` here where
+`rx_info.scan` is not.
+
+The two prefilter macros are **two different selections**: `_VM_PREFILTER`
+says whether the VM runs a capture-erased DFA ahead of its program at all,
+`_DFA_PREFILTER` says what candidate-start filter that scan itself carries.
+A non-hybrid VM artifact carries neither `_DFA_*` macro — the relation is an
+IFF and `docs/spec/match_api.md` §6.3 (a) states it as one.
+
+### 3.2 …and `rx_info` carries the same two facts at RUN time (`[DD-13c]`)
+
+**For the bench and every other header-less consumer.** The macros above are
+preprocessor-only, so a harness that `dlopen`s an artifact, an FFI binding, or
+a tool walking several `<prefix>_info` symbols in one image could not read
+them at all — it had to parse the emitted C. Since `[DD-13c]` (Frank's D40
+addendum) `struct rx_info` carries two more fields, appended at the END of the
+struct beside `engine` and `engine_why`:
+
+```c
+const char *scan;       /* "unanchored" | "attempt" | "empty", or NULL */
+const char *prefilter;  /* the candidate-start mechanism; never NULL */
+```
+
+They mirror `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` exactly, are
+written from the SAME emitter derivation (never a second computation), and
+`tests/codegen/run_dfa_stamps.sh` asserts field == macro on every compiled
+artifact of both engines. `scan` is `NULL` on a VM artifact that is not a
+hybrid, and **a non-NULL `scan` on a VM artifact IS "this is a hybrid"** — the
+runtime reading of `RX_VM_PREFILTER "hybrid"`, which had no `rx_info` mirror
+before. `prefilter` is never `NULL`: it reads the DFA's vocabulary wherever
+`scan` is non-NULL and the VM's `"none"` where it is not. The full rule, with
+the reason the string `"hybrid"` never appears in the field, is
+`docs/spec/match_api.md` §6.
+
+**[OPT-5] STEP 2, 2026-09-02 — a THIRD mirror, and `match_form` was the
+second.**
+
+> **`rx_info.search_form`** mirrors `<PREFIX>_DFA_START`. It is the third
+> `rx_info` mirror of a DFA selection stamp, and it exists for
+> `match_form`'s reason rather than a new one: a header-less consumer that
+> `dlopen`s an artifact needs to know which form of `<prefix>_search` it
+> linked, because the two differ by roughly a factor of two in cost on a
+> counted class run and not at all in answers. Unlike `match_form`, it is
+> **non-NULL on a VM HYBRID as well**, because a hybrid inlines this same
+> search body as its prefilter; it is NULL only on a plain VM artifact with
+> no DFA scan.
+
+It is appended at the END of the struct, after `nentries`, so no existing
+member's offset moves, and it rides `rx_info.abi` 15 -> 16.
+`tests/codegen/run_search_pinned.sh` asserts field == macro on every compiled
+artifact of both engines, including the NULL case.
+
+**A BENCH ROW CAN NOW BE BUCKETED WITHOUT READING THE ARTIFACT'S SOURCE**, on
+either surface, for every artifact kind — which is the gap `[DD-13]`'s row
+opened against and `[DD-13c]` closes for the hybrid.
+
+**This is not a `-f` axis and has no CLI spelling.** It is observability of a
+selection the compiler makes on its own, which is what D46 asks for; there is
+no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
+stamp to the loop it names (every verdict derived from the emitted matcher
+text, then compared against the macro) and asserts the hybrid iff in both
+directions. `rx_info.abi` moved `3` -> `4` with `[DD-13]`'s stamps and
+`5` -> `6` with `[DD-13c]`'s (`[OPT-1]`'s two-tier entry took `4` -> `5` in
+between). [DD-13]'s was a D76 event only — the version of
+the emitted SCAFFOLDING, not of the struct. [DD-13c]'s is both: the same kind
+of scaffolding change PLUS a real (append-only) struct growth, §3.2.
+
+§2.5 (`-fno-prefilter`) governs `RX_VM_PREFILTER`, which is the VM's own
+axis; the DFA scan's candidate-start filter is a different vocabulary and a
+different stamp (`RX_DFA_PREFILTER`, this section).
+
+## 4. `pcrec_options` mirror
+
+Which `pcrec_options` fields (`lib/pcrec.h`) correspond to which flags in
+§2. `docs/spec/match_api.md` §8.2 states the struct itself in full; this
+table only maps field to axis.
+
+**THE TABLE IS EXHAUSTIVE OVER `flags`, and it says so because it once was
+not.** Seven axes that had a §2 section of their own — `-fno-size-term`,
+the `-fno-prefilter-collapse` pair, `-fno-scan-edge`, `-fno-start-pinned`,
+`-fno-cls-fold` and `-fno-startpos-guard` — had no row here, and neither
+did `--vm-entry-shape`'s `PCREC_VM_ENTRY_*` constants or `PCREC_TRACE`
+([REVW.5], lens 9's P3 rider). A reader could therefore find an axis in §2,
+fail to find its field here, and conclude the axis was CLI-only. Every bit
+of `flags` now appears below, either as an axis row or in the
+not-a-tuning-axis list that follows.
+
+| `pcrec_options` field | CLI spelling | §2 axis |
+|---|---|---|
+| `flags` bit `PCREC_NO_POSSESSIFY` | `-fno-possessify` | §2.1 |
+| `flags` bit `PCREC_NO_REVDET` | `-fno-revdet` | §2.2 |
+| `flags` bit `PCREC_NO_COUNTER` | `-fno-counter` | §2.3 |
+| `flags` bit `PCREC_NO_LENGTH_PRUNE` | `-fno-length-prune` | §2.4 |
+| `flags` bits `PCREC_NO_PREFILTER` / `PCREC_FORCE_PREFILTER` | `-fno-prefilter` / `-fprefilter` | §2.5 |
+| `flags` bit `PCREC_NO_ALTCLS_MERGE` | `-fno-altcls-merge` | §2.6 |
+| `flags` bit `PCREC_NO_ALTCLS_FACTOR` | `-fno-altcls-factor` | §2.7 |
+| `flags` bit `PCREC_NO_ATOMIC_DISCHARGE` | `-fno-atomic-discharge` | §2.8 |
+| `flags` bit `PCREC_NO_SPLICE_CALLS` | `-fno-splice-calls` | §2.9 |
+| `flags` bit `PCREC_NO_TIERED_ENTRY` | `-fno-tiered-entry` | §2.12 |
+| `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
+| `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
+| `flags` bit `PCREC_NO_ANCHORED_DFA` | `-fno-anchored-dfa` | §2.15 |
+| `flags` bit `PCREC_NO_SIZE_TERM` | `-fno-size-term` | §2.16 |
+| `flags` bits `PCREC_NO_PREFILTER_COLLAPSE` / `PCREC_FORCE_PREFILTER_COLLAPSE` | `-fno-prefilter-collapse` / `-fprefilter-collapse` | §2.17 |
+| `flags` bit `PCREC_NO_SCAN_EDGE` | `-fno-scan-edge` | §2.18 |
+| `flags` bit `PCREC_NO_START_PINNED` | `-fno-start-pinned` | §2.19 |
+| `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
+| `flags` bit `PCREC_NO_CLS_FOLD` | `-fno-cls-fold` | §2.22 |
+| `flags` bits `PCREC_NO_STARTPOS_GUARD` / `PCREC_FORCE_STARTPOS_ALIGN` | `-fno-startpos-guard` / `-fstartpos-guard=align` | §2.23 |
+| `flags` bit `PCREC_FORCE_UTF_CHECK` | `-futf-check` | §2.36 |
+| `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
+| `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
+| `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
+| `flags` bit `PCREC_NO_REQ_BYTE` | `-fno-req-byte` | §2.27 |
+| `flags` bit `PCREC_NO_REQ_RUN` | `-fno-req-run` | §2.28 |
+| `flags` bit `PCREC_NO_RUN_PREFILTER` | `-fno-run-prefilter` | §2.30 |
+| `flags` bit `PCREC_NO_LIT_RUN` | `-fno-lit-run` | §2.31 |
+| `flags` bit `PCREC_NO_CTX_NODE` | `-fno-ctx-node` | §2.32 |
+| `flags` bit `PCREC_NO_CLS_KIT` | `-fno-cls-kit` | §2.33 |
+| `flags` bit `PCREC_NO_CLS_PACK` | `-fno-cls-pack` | §2.34 |
+| `flags` bit `PCREC_NO_HYB_RESEED` | `-fno-hyb-reseed` | §2.35 |
+| `flags` bit `PCREC_NO_VIEW_EDGE` | `-fno-view-edge` | §2.37 |
+| `flags` bit `PCREC_NO_RUN_OVERLAP` | `-fno-run-overlap` | §2.38 |
+| `flags` bit `PCREC_NO_REQ_RUN_FOLD` | `-fno-req-run-fold` | §2.39 |
+| `flags` bit `PCREC_NO_REQ_SET_LEAD` | `-fno-req-set-lead` | §2.40 |
+| `flags` bit `PCREC_NO_REQ_HANDOFF` | `-fno-req-handoff` | §2.41 |
+| `flags` bit `PCREC_NO_START_SET` | `-fno-start-set` | §2.42 |
+| `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
+| `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
+| `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
+| `tune` (`PCREC_TUNE_MIN_SIZE` … `_MAX_SPEED`, `-2..+2`) | `--tune=N` | §5 |
+
+`step_budget`, `work_budget` and `frame_capacity` are resource-bound
+fields, not strategy-selection tuning axes — `docs/spec/limits.md` is
+their home, not this document. The six `max_*` caps and
+`warn_emit_bytes` are the same: resource bounds, `limits.md`'s territory,
+quoted as shipped in `match_api.md` §8.2.
+
+**The five `flags` bits that are NOT tuning axes**, named here so the
+table above can be read as exhaustive rather than as merely long:
+`PCREC_CASELESS`, `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` are semantic
+and output options (`docs/spec/match_api.md` §8.2 and `docs/spec/cli.md`),
+`PCREC_UCP` (bit 34, `--ucp`, [UCP] U1, D130 Q1) is a SEMANTIC axis — it
+changes what `\d \s \w` and the POSIX classes MATCH, so it is reflected in
+`rx_info.flags` UNMASKED, no `--tune` position may set it (D125's
+structurally-ineligible bucket: its two arms disagree about answers on
+purpose), and `make test-axes` does not sweep it (`docs/spec/cli.md`
+`--ucp`),
+and `PCREC_TRACE` (`--trace`) selects an INSTRUMENTED matcher that writes
+an event stream to stderr — a generation axis that deliberately changes
+what the artifact DOES at run time, which is exactly what a §2 axis may
+not do (`docs/spec/table_contract.md` §1¶3 places the stream
+explicitly OUT of the table contract and names `[V-H]` as its design
+home). None of the five is answer-preserving in §1's sense, so none
+belongs in §2, and `--trace`'s bit has no mirror row for that reason
+rather than by oversight.
+
+**`tune` has NO `PCREC_TUNE_SET` bit, and the absence is a recorded
+decision.** Every other field above has one representation; `tune`'s
+default (`0`/`balanced`) collides with an explicitly-typed `balanced` the
+same way `PCREC_ENGINE_AUTO` collides with an explicit `--engine=auto`
+(§2.11) — a caller cannot tell "no flag" from "the flag, typed at its
+default value" from the field alone. The general fix is EXPLICIT-SET
+PROVENANCE for every D93-composed axis (one enum per axis recording WHICH
+source wrote it: CLI, `.rxt` config/target, or default), not a per-axis
+bit — and it is deferred to its own measured trigger (D77): the trigger is
+the THIRD axis that needs the distinction. `--engine` is the first and
+shipped without it; `tune` is the second and does not need it either,
+because §5's file-wins rule makes an explicitly-typed `balanced` and an
+absent flag behave identically regardless.
+
+## 5. The `--tune` dial
+
+**THIS SECTION IS THE CONTRACT** (`docs/dev/decisions.md` D103; the design
+record is `docs/design/opt_dial_design.md`, cited informationally below
+for the reasoning, never normatively). §5.1's table is a PINNED CONTRACT:
+a cell changes only by an explicit ruled diff TO THIS SECTION, never
+because a measurement lands. `tests/codegen/run_tune_dial.sh` reads its
+expectation side from this table rather than from `src/core/tune.c`'s
+own copy, deliberately, so the check does not share a source with the
+compiler it checks (`docs/dev/learnings.md` §3). `docs/design/
+opt_dial_design.md` §3.2, THE PROPOSAL RUBRIC, is cited by reference for
+HOW a future cell is argued and does NOT move into this section — a
+caller reads this table, an author proposing a change to it reads the
+rubric.
+
+### 5.1 The five positions
+
+**`--tune=N`, an ordinal `N` in `-2..+2`, `0` the default, with five
+mnemonic aliases accepted on equal terms** (`src/core/tune.c` owns both
+spellings, so the CLI and the stamp cannot drift):
+
+| N | alias | direction |
+|---|---|---|
+| −2 | `min-size` | smallest artifact the measured rates justify |
+| −1 | `size` | size-leaning |
+| 0 | `balanced` | **today's defaults, unchanged, byte for byte** |
+| +1 | `speed` | speed-leaning |
+| +2 | `max-speed` | fastest the measured rates justify |
+
+**A negative value needs the `=` form.** `--tune -2` is refused by name,
+naming the `=` spelling (`--tune=-2`), rather than accepted by
+look-ahead: the separated form is two tokens whose second begins with
+`-`, and a look-ahead that guessed would make `--tune -o out.c` mean
+something nobody typed. The aliases have no leading dash and are the
+preferred spelling for exactly this reason. **Out of range is refused,
+never clamped** — a clamp would let a caller believe they had asked for
+something the artifact does not have, and `<PREFIX>_TUNE` (§5.3) exists
+precisely so an artifact says how it was built.
+
+**A `tune` line in a `.rxt` `config`/`target` block takes the identical
+vocabulary**, per D93's own framing that a config block's directives are
+the format's named axes. **THE FILE WINS, and `tune` is NOT a second
+exception to it** — see `docs/spec/cli.md`'s file-wins section, which
+states the ruling and the reason `--engine` is a poor precedent here:
+`tune` is answer-preserving by its own acceptance criterion (§5.5), so
+the H11 free-identity-control support behind `--engine`'s exception is
+vacuous for it, and `tune` has no comparability-facility forcing reason
+either (it cannot make a pattern refuse, unlike `--engine=dfa`). A
+conflict between an explicit non-default CLI `--tune=` and the file's own
+`tune` row is reported — non-fatal, on stderr, naming both sources and
+both values — with the file's value winning:
+
+```
+pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
+`tune speed` disagree; using the file's value (--tune is not the
+--engine exception)
+```
+
+**There is no `--force-tune`.** If a caller needs the command line to win
+on this axis, D93's own revisit-when names the shape such an override
+would take (an explicit loud flag, never a silent precedence flip) — this
+document promises no such flag today.
+
+### 5.2 Sign and unit conventions
+
+Every number in §5.4's table is stated in exactly one of two quantities.
+
+- **`σ` — SIZE, as a fraction of the default artifact.**
+  `σ = 1 − bytes(denied) / bytes(default)`, median over the switch's own
+  movers, on comment-excluded emitted C source bytes. `σ > 0` means the
+  optimization COSTS those bytes (denying it saves them); `σ < 0` means
+  denying it costs bytes instead ("wrong-signed").
+- **`m` — TIME, as a multiplicative slowdown of end-to-end match time.**
+  `m = time(denied) / time(default)`. `m > 1` means denying the switch is
+  slower.
+
+A cell citing a bound (`x₁`, `x₂`, `t_mid`) or a floor (`s`) is an `m`
+value; a cell citing a savings floor (`y`, `z_mid`) or a whole-artifact
+size budget (`Z₁`, `Z₂`) is a `σ` fraction or an artifact multiple. Where a
+ledger reports a penalty as a DISTRIBUTION over named subject
+populations, the cell is admitted at its WORST measured population, never
+at its median (gate 6, §5.4) — a dial position is a promise to a caller
+who does not choose their subjects.
+
+### 5.3 The stamp
+
+`<PREFIX>_TUNE`, a closed five-token string — the alias spelling, never
+the number — emitted UNCONDITIONALLY on every artifact of both engines,
+in the shared prologue, including at `balanced`:
+
+```c
+#define RX_TUNE "balanced"
+```
+
+A consumer buckets on the token; a number would invite arithmetic on an
+ordinal whose spacing means nothing. There is deliberately **no `rx_info`
+mirror**: nothing at run time behaves differently because of the dial (it
+is answer-preserving by construction), so a mirror would be a field no
+consumer can act on — the same reasoning `RX_DFA_TABLE` is refused one on
+(D77: build a mirror when a measured consumer asks; none has been named
+for `tune`). Nor does `tune` join `rx_info.flags`: every member of that
+mask changes an emitted SHAPE for one language (§2.23's own statement of
+the rule), and `tune` is precisely such a case, already covered.
+
+### 5.4 The policy table
+
+**Thirty-two rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,
+added at `abi` 58 with a cell at no position), `-fno-req-run-fold` (§2.39,
+added at `abi` 59, likewise), `-fno-req-set-lead` (§2.40, added at `abi` 60,
+likewise), `-fno-req-handoff` (§2.41, added at `abi` 61, likewise), `-fno-start-set`
+(§2.42, added at `abi` 62, likewise), λ, the `[ART-SIZE]`
+ladder's two parameters, and the emitted-size caps** (the last three are
+not §2 axes in their own right — the ladder's parameters are
+`-fno-size-term`'s sub-parameters, listed separately because the dial
+sets them separately, and the caps are `limits.def` boundaries).
+
+**A cell is either a value, or an em-dash meaning the dial does not touch
+this axis at this position.** A cell equal to the default is an em-dash,
+not a restatement of the default — a `0`-column cell states the default;
+every other column states what the dial CHANGES. `†` marks a cell that
+remains an em-dash TODAY pending an unmeasured quantity (`φ_scan`,
+`φ_entry`, or `-fno-anchored-dfa`'s own owed A/B) named in the "why"
+column — a condition is not a cell, and it becomes one only by its own
+ruled diff to this table, never automatically when the measurement
+lands.
+
+| axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
+|---|---|---|---|---|---|---|
+| λ (class-matcher kit) | smaller of `K`, `P3` | = `−2` | **`P3`** if `K` ≥ 16 sections and `P3` ≤ 1.26×`K`, else `K` | — | smaller of `P2`, `B1` where `0` chose `P3`, else as `0` | BUILT at `[CLS-TREE]` S4 (`abi` 48): the VM's wide-class matcher (§2.33); `docs/design/opt_dial_design.md` §4 (D131): ONE kit constant (λ = 4, the sectioning DP's size end, `K`) at every position plus a first-match row over the whole-set tables `P3`/`P2`/`B1`; three distinct programs. Calibration: `cls_tree_design.md` §1.7 (ubuntubudu, per-probe model r = +0.98; `P3` 3.2× faster than today's pinned middle for +11% bytes). **BYTE classes** (`[CLS-TREE]` S2, `abi` 51, D131 item 5): a one-interval set is one inline compare and an ASCII fold pair the §2.22 fold compare at EVERY position on the VM (and at `−2`/`−1` on a scan edge, D138 Q1); any other byte class reads its kit matcher `K` (`<prefix>_class_kit<N>`, a scan edge's `<prefix>_<machine>_scankit<N>`) at `−2`/`−1` where it is smaller than the table its site reads (`abi` 53, D139) and a table otherwise (a VM class's 32-byte bitmap or §2.34's shared atom table, which wins at every position from 11 table-read classes; a scan edge's 256-byte table) — the kit's byte forms are a size-leaning position only (O-77: slowest byte form under a fair dispatch). The same table serves the VM and the scan edge (§2.18) |
+| `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
+| `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
+| `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |
+| `-fno-anchored-dfa` | — (EXCLUDED `†`) | — | **allow** | — | — | §2.15; `m` is a three-population distribution 1.161×/1.986×/**2.114×**; the worst population fails `x₂` = 2.00 by 5.7%. Returns only on its own owed A/B, never run on the shipped flag |
+| `-fno-tiered-entry` | — `†` | — `†` | **allow** | — | — | §2.12; `σ` = 7.48% ≥ `y`; `−2` iff `φ_entry` ≤ 0.246, `−1` iff `φ_entry` ≤ 0.0246 (both unmeasured) |
+| `--vm-entry-shape` term | — | — | **4,096** | **8,192** | **8,192** (= `+1`) | §2.21; the raise's measured cheap band tops out at program 6,954 B, which 8,192 covers |
+| `--unroll=K` | — | — | — | — | — | **NOT A RUNG** — set BY the ladder rows above, never directly (§2.10) |
+| `-fno-offset-skip` | — | — | **allow** | — | — | §2.14; `σ` = 1.30% median, whole distribution inside a 2% band — fails `y` |
+| `-fno-scan-edge` | — | — | **allow** | — | — | §2.18; fails `y` alone, on an inference never converted to a fraction (**N1**) |
+| `-fno-altcls-merge` | — | — | **allow** | — | — | §2.6; `σ` = **−2.40%**: wrong-signed; independently GATE 2 (deny arm moves the refusal set, K45) |
+| `-fno-altcls-factor` | — | — | **allow** | — | — | §2.7; `σ` = **−0.56%**: wrong-signed |
+| `--engine` | — | — | **auto** | — | — | §2.11; **GATE 5** (up to 173,580× on the fail path) AND **GATE 2** (`--engine=dfa` refuses captures-default patterns, D44.6) |
+| `-fno-possessify` | — | — | — | — | — | §2.1; **GATE 3**: size measured (`σ` = −1.69%, wrong-signed), time unmeasured |
+| `-fno-revdet` | — | — | — | — | — | §2.2; **GATE 3**: size measured (a wash, −0.001%), time unmeasured |
+| `-fno-prefilter` | — | — | — | — | — | §2.5; **GATE 3**: measured only through an engine-changing proxy |
+| `-fno-atomic-discharge` | — | — | — | — | — | §2.8; **GATE 3**; the axis it moves is engine selection |
+| `-fno-splice-calls` | — | — | — | — | — | §2.9; **GATE 4** — the time cost reverses sign with the subject population |
+| `-fno-prefilter-collapse` | — | — | — | — | — | §2.17; **GATE 4** — same |
+| `-fno-counter` | — | — | — | — | — | §2.3; **NOT A RUNG** — a correctness-shaped floor |
+| `-fno-length-prune` | — | — | — | — | — | §2.4; **NOT A RUNG** — denial is byte-identical; trades nothing |
+| `-fno-start-pinned` | — | — | — | — | — | §2.19; **PURE WIN** — −3,232 B per pinned artifact AND ×1.985 faster |
+| `-fno-alt-island` | — | — | — | — | — | §2.20; **PURE WIN** — max growth 1.03×, 0 refused, prefix-free islands at 0.140-0.175× of chain time |
+| `-fno-cls-fold` | — | — | — | — | — | §2.22; **NOT A RUNG** — off by RULING (Frank, 2026-09-11); absorbed into λ |
+| `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; **GATE 1** — the three values disagree about answers on purpose; permanently flat |
+| `-futf-check` | — | — | — | — | — | §2.36; **GATE 1** — a contract, off by default; permanently flat |
+| `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
+| `-fno-run-overlap` | — | — | — | — | — | §2.38; **NOT A RUNG** — the row and the `memcmp` it replaces are within a word in size, so no position trades on it; whether it ships at all is its own alpha (`litscan_s4.md` Q3), not a dial cell |
+| `-fno-req-set-lead` | — | — | — | — | — | §2.40; **NOT A RUNG** — one more one-byte `memchr`, not a size/speed trade the dial prices |
+| `-fno-req-handoff` | — | — | — | — | — | §2.41; **NOT A RUNG** — a subtraction and a compare, not a size/speed trade the dial prices; it removes a rescan |
+| `-fno-start-set` | — | — | — | — | — | §2.42; **NOT A RUNG** — a 256-byte table and one walk per failed attempt (the VM hat), a narrower skip set plus a re-seed (the DFA hat), not a size/speed trade the dial prices; it removes attempts and scan steps that cannot begin a match |
+| `-fno-req-run-fold` | — | — | — | — | — | §2.39; **NOT A RUNG** — a narrower or wider necessary fact, not a size/speed trade; whether it ships is its own alpha (the `union-select` cell), not a dial cell |
+| emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
+
+**The seven reason codes**, one per flat row above:
+
+| code | means |
+|---|---|
+| **PURE WIN** | measured better on BOTH axes; a dial position that could turn it off would have a strictly-worse setting on it |
+| **GATE 1** | structurally answer-changing; permanently flat |
+| **GATE 2** | its deny arm moves the refusal set |
+| **GATE 3** | one axis has no number; contingently flat, with the measurement named |
+| **GATE 4** | the time cost reverses sign with the workload |
+| **GATE 5** | the time cost's range is violent |
+| **NOT A RUNG** | a floor, a boundary, a no-op, or a PARAMETER of another row |
+
+**Four rows carry a ratified cell at the first build**: the `[ART-SIZE]`
+ladder's bar and threshold (both size-side), `-fno-premul-table`'s `−2`
+denial, and the entry-chain term's `+1`/`+2` raise. **Twenty-four rows
+carry none** — twenty-one of them permanently or by gate (one of the seven
+codes above), and three (`-fno-anchored-dfa`, `-fno-tiered-entry`, λ)
+CONTINGENTLY, pending an unmeasured quantity named in their own row. That
+is the difference between an allowlist and a list of things nobody got
+round to.
+
+**λ has since been ruled (D131) and BUILT (`[CLS-TREE]` S4, `abi` 48)**,
+so it is the fifth row with cells. It is also the row that makes `+2`
+DISTINCT from `+1`: where `0` chooses `P3`, `+2` chooses the smaller of `P2`
+and `B1`. Every other row still reads `+2` equal to `+1`.
+
+### 5.5 Acceptance
+
+`--tune`'s acceptance is answer identity across all five positions, over
+the whole corpus — `make test-axes` treats the dial as a fifth kind of
+axis on its existing sweep, and no dial position may move the REFUSAL SET
+in either direction. This section states the promise; it is not this
+document's job to restate the check plan (`docs/design/
+opt_dial_design.md` §6/§8 carries the check IDs and sabotage rows for an
+implementer).
+

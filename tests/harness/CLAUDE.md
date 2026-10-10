@@ -128,3 +128,5 @@ and the `mc` find-all paths. No block can expect it (no directive compiles
 `RXTFLAGS=-futf-check`, where `make test-axes`' own arm
 (`tests/axes/utfcheck_arm.py`) reads the dump. `run.sh` and
 `verify_rxt.py` are unchanged.
+
+- **[RXT-READERS] `oracle` and `var` grammar (run.sh, verify_rxt.py).** Both legs now take leg A's `oracle` grammar: engine half a `defname` (`pcre2-dfa`), `oracle none <reason>` legal in a block (a counted skip; bare `none` refused, `value-shape`). run.sh classes a malformed `var`/`var-unset` line `value-shape` (it used to fall through to `unknown-token-in-scope`). Fixtures: `tests/rxtsource/CLAUDE.md`.

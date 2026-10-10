@@ -33,7 +33,7 @@ read-only (no hit).
 | `src/gen/emit_dfa.c:334, 5410, 5446-5447, 5545-5547, 5606` | `OfsTest.run_o` — a DIFFERENT field: the selected row's own copy of the offset, written only by `ofs_test_of`'s run branch (`:5410`) | reads `OfsTest`, not the pin | inherits `ofs_test_of`'s transitive gate |
 | `src/gen/emit_dfa.c:7531` `anch_start` | `memset(&o->ofsk, 0, ...)` with `kind = DFA_PF_NONE` — the anchored match-here form | no (zeroes it) | its `kind` is `NONE`, so every pin reader above declines |
 | `src/gen/CLAUDE.md:3216`, `src/opt/CLAUDE.md:321`, `tests/CLAUDE.md:549`, `tests/offsetskip/CLAUDE.md:3,53`, `tests/rxtsource/run_rxtsource_tests.sh:311,384` | prose / the `run_pinned.rxt` FILE name | no | — |
-| `docs/spec/tuning.md:2414` | spec prose: `-fno-req-byte` leaves `u->ofsk.run_pinned` false | no (prose; updated by this step, D80) | — |
+| `docs/spec/tuning.md` §2.27 | spec prose: `-fno-req-byte` leaves `u->ofsk.run_pinned` false | no (prose; updated by this step, D80) | — |
 | `tests/mech/sabotages/S280_run_pin_bytes_ignored.sh` | plants into the WRITER | no | — |
 | `docs/dev/optloop/s1/probe*_patch.py` (scratch probes) | compute their OWN pin from the walk, gated `nwalk` (i.e. only where the selection ran) | own pin | not an in-tree reader |
 

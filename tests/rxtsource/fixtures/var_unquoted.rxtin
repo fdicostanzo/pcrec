@@ -1,0 +1,5 @@
+# [RXT-READERS] `var` wants a double-quoted value: `var a b` is refused by
+# all three legs (leg A used to accept it).
+pattern a+
+var a b
+m "aaa" 0 3

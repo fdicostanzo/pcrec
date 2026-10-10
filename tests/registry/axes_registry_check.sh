@@ -127,7 +127,7 @@ trap cleanup EXIT
 # [MEMFN] R4a: `--list-axes` is a MULTI-SECTION stream — pcrec's anonymous
 # axis table, then the kit's `memfn` section (docs/spec/registry.md §6). Every
 # check below reads pcrec's table, SELECTED as the leading anonymous table
-# (table_main; table_contract.md consumer rule 5), so a kit row can never be
+# (table_main; table_contract.md §4¶6), so a kit row can never be
 # read as a pcrec axis; the `memfn` section is read by name in its own block.
 RAW="$WORKDIR/axes.raw.tsv"
 TSV="$WORKDIR/axes.tsv"
@@ -140,7 +140,7 @@ ok()   { npass=$((npass + 1)); echo "PASS: $1"; }
 bad()  { nfail=$((nfail + 1)); echo "FAIL: $1" >&2; }
 
 # ============================================================================
-# HEADER TRUTHFULNESS (table_contract.md) — every row's field count agrees
+# HEADER TRUTHFULNESS (table_contract.md §5¶1) — every row's field count agrees
 # with the header's own declared count, before anything below trusts a
 # column index the header claims to have.
 # ============================================================================
@@ -168,7 +168,7 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # are the kit's option registry (memfn/src/options.def, through
 # mf_options()); pcrec names none. Present, header-truthful, its columns
 # resolvable by name. Its INDEPENDENT control is a member-count FLOOR pinned
-# as a literal in docs/spec/registry.md §6 ("memfn section floor: N"), which
+# as a literal in docs/spec/registry.md §6¶8 ("memfn section floor: N"), which
 # shares no source with options.def: born with the first row (R4d). Until
 # then the registry is empty and the floor arm is UNREACHED (K35) — printed
 # as such, never counted as a pass. A row that lands WITHOUT its floor fails.
@@ -185,7 +185,7 @@ else
     mfrows="$(table_section_rows "$RAW" memfn | grep -c . || true)"
     mffloor="$(sed -n 's/.*`memfn` section floor: \([0-9][0-9]*\).*/\1/p' "$REGMD" | head -1)"
     if [ -z "$mffloor" ] && [ "$mfrows" -eq 0 ]; then
-        echo "UNREACHED: [memfn floor] the kit's registry is empty ($mfrows rows) and no floor is pinned in docs/spec/registry.md §6 -- the floor is born with the first row ([MEMFN] R4d); nothing to check until then (K35)"
+        echo "UNREACHED: [memfn floor] the kit's registry is empty ($mfrows rows) and no floor is pinned in docs/spec/registry.md §6¶8 -- the floor is born with the first row ([MEMFN] R4d); nothing to check until then (K35)"
     elif [ -z "$mffloor" ]; then
         bad "[memfn floor] the section has $mfrows row(s) but docs/spec/registry.md §6 pins no '\`memfn\` section floor: N' -- a kit row landed without raising its floor (integration.md §R4.4.1)"
     elif [ "$mfrows" -lt "$mffloor" ]; then

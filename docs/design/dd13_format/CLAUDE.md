@@ -699,15 +699,15 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   as ordinary English in `src/` and `tests/`), **and it grepped the
   wrong five tokens** — `testee`/`option` are LIVE FORMAT SPELLINGS at
   three sites (`rxt_source.c:149`'s two `config_vocab` rows,
-  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `docs/spec/rxt_format.md §1.1`'s later-wave keyword list, and
   `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
   pinned at 32), so the withdrawal costs four sites and a deliberate
   narrowing rather than "a diff and nothing else"; the check is now
   three arms, the third of which is a READ and not a grep, because
-  `rxt_format.md:130`'s *"configs are three artifacts"* is legitimate
+  `rxt_format.md §1.3`'s *"configs are three artifacts"* is legitimate
   English no pattern separates. And **spec row S3 has never landed** —
   `format_design.md:5782` labels it W1 while
-  `docs/spec/rxt_format.md:531-565` has no cell notion, no
+  `docs/spec/rxt_format.md §4` has no cell notion, no
   entry/fragment counts and no resolution-failure class — which is
   SW20 and the general lesson that *a wave label says when a row was
   scheduled, never whether it shipped*.

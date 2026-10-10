@@ -1492,7 +1492,7 @@ Revision 2's L2.0 (`dfa_machines_of`, the machine-membership no-mover) is GONE: 
 - **Spec (D80) `[r2 C9]`:** `tuning.md` §2.x `-fno-rev-end`; `match_api.md`:
   `DFA_SCAN` gains `"rev-end"` in every value table (the stamp list `§6.3.4¶2`, the
   `rx_info` table `§6¶6`, the field comments `§6¶1`, and the tables in
-  `facts_listing.md:113-126` and `registry.md:421`, each confirmed by the build's
+  `facts_listing.md` §4.1.3 and `registry.md` §6¶9, each confirmed by the build's
   grep), `DFA_START` gains `"attempt-start"` at `§6.3.4¶11` (L2.1), `DFA_MATCH` its third value, the
   generated stamp rule's sentence, the REQ_WHY `dominated` description widened to "the
   scan or the locator already tests it", `rx_info.search_form`, the abi sentence and

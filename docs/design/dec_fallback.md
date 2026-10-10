@@ -152,7 +152,7 @@ deliverable now specified here and not built in this lane.
      artifact movers. It does move `--list-axes`, so it is B7's declared
      listing commit: one swap of two listed orders, `kind` `predicate` →
      `list`, and two corrected descs.
-6. **New findings** (§10).
+6. **New findings** (sec. 10).
    - **F-B1.** The `--emit-ir` chain has no `has_var` arm. A non-nullable
      `${…}` pattern compiled under `auto` lists
      `no-engine-vm  --engine=vm -- …`, a flag the caller never passed
@@ -248,7 +248,7 @@ Today's columns stay: `name`, `deny`, `degrading`, `applies`, `act`. B adds:
 row costs run time to make the artifact fit or recover". `fof` = "this row is
 inside `--fast-or-fail`'s reach", and the switch denies a row only when both
 hold. Rows 3-4 are degrading (a [SEL-1] retry ships a VM with a collapsed or
-no prefilter) and outside the reach, which is today's scope (`cli.md:414`
+no prefilter) and outside the reach, which is today's scope (`cli.md (old line 414)`
 calls the switch "a size POLICY"). `limits.md` §8 ("denies every row the
 table marks degrading — today all five") and the comment at
 `run_resource_tests.sh:1338` were written when the table held only size rows.
@@ -643,7 +643,7 @@ classes is an undispositioned member and stops the lane.
 - No `CR_*`, `SDR_*`, `ESEL_*` or `PFLW_*` value is renumbered.
 - No `Ctx`/`EngineFit` field is renamed: `prefilter_declined_nullable`,
   `prefilter_declined_nullable_default`, `prefilter_lang_why` and
-  `size_term_why` are now written from rows. `tuning.md:1463` cites
+  `size_term_why` are now written from rows. `tuning.md` §2.17 cites
   `prefilter_lang_why`, so no spec hunk is needed for it.
 - No deny bit is added, moved or reassigned.
 - The force loop (`pcrec_facts_force_all`) is unchanged; only its arrival
@@ -1291,7 +1291,7 @@ walk's back step.
 ### 4.6 Spec hunks
 
 Readers of the retiring identifiers outside `src/` were found by grep.
-- `docs/spec/` names `fit_rungs[]` (`limits.md:801`, unchanged: the name is
+- `docs/spec/` names `fit_rungs[]` (`limits.md` §8.4, unchanged: the name is
   kept), `dfa_disabled` (kept) and `prefilter_lang_why` (kept).
 - B2 owes ONE wording hunk with no behaviour change: `limits.md` §8's
   `--fast-or-fail` sentence ("denies every row the table marks degrading —
@@ -1541,7 +1541,7 @@ D80 for designs):
 ### 8.2 `--fast-or-fail`
 
 Today it denies every DEGRADING row of the size-cap ladder (`limits.md` §8).
-`cli.md:414` calls it "a size POLICY". It does not touch [SEL-1], whose two
+`cli.md (old line 414)` calls it "a size POLICY". It does not touch [SEL-1], whose two
 rungs also cost run time. That scope is consistent with the spec but stated
 nowhere as a scope.
 

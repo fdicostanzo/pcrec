@@ -226,7 +226,7 @@ through the exhaustive switch, and nothing enforces it, which the
 - **(c) the SPEC arm is a READ and not a grep.** `rxt_format.md`'s
   later-wave keyword paragraph named `testee` and `option` and now does
   not; it gained the sentence that the list is DERIVED, so the next
-  withdrawal costs no edit here at all. `rxt_format.md:130`'s *"configs
+  withdrawal costs no edit here at all. `rxt_format.md §1.3`'s *"configs
   are three artifacts"* is legitimate English and was read rather than
   matched, exactly as §4.3 requires.
 

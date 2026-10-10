@@ -225,7 +225,7 @@ void  pcrec_sb_free(StrBuf *sb);
  *              as `\xNN`; every printable byte, BACKSLASH INCLUDED, passes
  *              through. This is `--explain`'s vocabulary and every registry
  *              TSV dump's, whose `syntax` column is literally `\d` and whose
- *              contract (docs/spec/table_contract.md rule 5) says only that a
+ *              contract (docs/spec/table_contract.md §2¶5) says only that a
  *              field never contains a TAB.
  *   pcrec_sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
  *              pcrec_sb_text's tail. Round-trippable, because it doubles the
@@ -1850,7 +1850,25 @@ typedef struct {
      * to `start`, so an UNWRAPPED machine (ENG_ATTEMPT's, and the reverse
      * machine) answers correctly without anyone having to remember to. */
     int     anch_start;
+    /* [OPT-REVEND] L0 THE ERASURES THIS BUILD APPLIED (`NFA_ERASED_*`,
+     * docs/design/locate_finish.md §1.2, LR-G3): each arm of the lowering
+     * that WIDENS the machine's language past the pattern's records itself
+     * here — a lookaround erased to epsilon, an atomic group made
+     * transparent, a counted repeat collapsed. Exactness is then a RECORDED
+     * fact of the machine, `erased == 0`, rather than a list of known
+     * erasures a reader must keep in step with the lowering
+     * (`pcrec_vm_prefilter_window`). Reset by each build. */
+    unsigned erased;
 } Nfa;
+
+/* [OPT-REVEND] L0 the erasure kinds `Nfa.erased` records (src/ir/nfa.c). A
+ * relaxation added later (a backreference, a variable, a call in a cycle,
+ * locate_finish.md §7.1) adds its bit in the arm that applies it. */
+enum {
+    NFA_ERASED_LOOK   = 1u << 0,   /* a lookaround lowered to epsilon */
+    NFA_ERASED_ATOMIC = 1u << 1,   /* an atomic group lowered transparently */
+    NFA_ERASED_COUNT  = 1u << 2    /* a counted repeat collapsed (X{m,n} -> X{min(m,1),}) */
+};
 
 /* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
  *      src/opt/prefix_k.c) ---- */
@@ -6741,7 +6759,6 @@ size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis 
 
 size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
 
-size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
 
 /* [OPT-5] The scan edge's two axes, and they ride the SAME generic walk as
  * the six above -- their objects are `DfaCand`-headed, so `--list-axes` and
@@ -6855,6 +6872,34 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
  * outside the DFA emitter must ask. True on a DFA artifact and on a VM HYBRID,
  * false on a non-hybrid VM artifact. */
 bool pcrec_artifact_has_dfa_scan(Ctx *cx);
+
+/* [OPT-REVEND] L0 THE PATH DERIVATION's NEEDS HALF (locate_finish.md §2.7),
+ * asked before any machine is built: does some FINISH row routed on this
+ * compile's finisher route declare machine `m` (a `CAND_M*` bit)? Today only
+ * `verify-at` on the DFA route declares the anchored machine, which is what
+ * src/core/compile.c's `build_anchored_dfa` reads. src/gen/emit_dfa.c. */
+bool pcrec_cand_finish_needs(Ctx *cx, unsigned m);
+
+/* [OPT-REVEND] L0 THE LOCATE -> FINISH BOUNDARY's exactness (locate_finish.md
+ * §1.2): true where the body's result is the pattern's own language — a DFA
+ * finisher (exact by D67/SR-8's routing), or a VM finisher behind a prefilter
+ * whose lowering recorded no widening erasure. `Vm.mrl_win`'s one
+ * assignment reads it. src/gen/emit_dfa.c. */
+bool pcrec_cand_lang_exact(Ctx *cx);
+
+/* [OPT-REVEND] L0 the LOCATE ask of an artifact with NO DFA body (a VM
+ * artifact without a prefilter), once, on CAND_ROUTE_VM (locate_finish.md
+ * §2.2, LR-S6): it selects `composite`, whose walk there is the VM's own
+ * search body, and emits nothing. src/gen/emit_dfa.c. */
+void pcrec_cand_locate_vm(Ctx *cx);
+
+#ifdef PCREC_CAND_TRACE
+/* [OPT-REVEND] L0 the trace build's PATH record, one per artifact at the end
+ * of its emission: `CANDPATH <finish> <locate> <members> <asks>`, the
+ * derivation's own member set and asked cells, which the census's C5 and the
+ * trace-vs-asks check read. Quiet: it prints no selection record. */
+void pcrec_cand_path_trace(Ctx *cx);
+#endif
 
 /* [OPT-HYB-RESEED] How often the artifact's candidate-start scan stops, in
  * ppm of subject bytes (the prior's MASS over the set it tests; 1,000,000
@@ -7104,7 +7149,13 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * DFA-shaped body is the engine of the machine it runs, never `fit.chosen`. */
 typedef enum { CAND_ROUTE_DFA = 0, CAND_ROUTE_VM, CAND_ROUTE_ATTEMPT } CandRoute;
 
+/* [OPT-REVEND] L0 (docs/design/locate_finish.md rev 2.1 §2.2) adds the two
+ * slots that bracket the eight: LOCATE, FIRST, asks which WALK produces a
+ * body's result (`empty` or the `composite` the eight slots are the inside
+ * of), and FINISH, LAST, asks which row finishes a caller-facing entry's
+ * hand (`verify-at`, `search-from`; was `dfa_matches[]`). */
 typedef enum {
+    CAND_SLOT_LOCATE,     /* which walk produces this body's result? */
     CAND_SLOT_WINDOW,     /* can a match begin before n - W? (the entry, once) */
     CAND_SLOT_PRESENCE,   /* does the window hold every necessary landmark? */
     CAND_SLOT_WIDTH,      /* can the rest of the subject hold a match at all? */
@@ -7113,8 +7164,23 @@ typedef enum {
     CAND_SLOT_RETRY,      /* after a failed VM attempt: step or re-seed? */
     CAND_SLOT_BOUND,      /* how many start positions can match at all? */
     CAND_SLOT_RECOVER,    /* given a match END, where does it start? */
+    CAND_SLOT_FINISH,     /* which row finishes this entry's hand? */
     CAND_NSLOTS
 } CandSlot;
+
+/* [OPT-REVEND] L0 THE MACHINES a start-table row's emitter RUNS
+ * (`CandRow.needs[route].mach`, locate_finish.md §2.7): the forward machine
+ * `job->dfa`, the reverse `job->rdfa`, the anchored `job->adfa`, the
+ * ENG_ATTEMPT machine and the VM program. The path derivation's MEMBERS are
+ * the union of these over the selected rows, intersected with what the
+ * compile BUILT. */
+enum {
+    CAND_MF   = 1u << 0,
+    CAND_MR   = 1u << 1,
+    CAND_MA   = 1u << 2,
+    CAND_MATT = 1u << 3,
+    CAND_MVM  = 1u << 4
+};
 
 /* [START-TABLE] C2 the `Vm` fields a start row's predicate reads (§2.2 WIDTH):
  * H1 reads `root_minw`, R1 `mrl_win`, R2 `nclamp`, R4 the calibrated gap of

@@ -137,7 +137,7 @@ the bump's own commit.**
   from 62, 2026-10-06; `63` is the memfn kit's R4a′: [START-SET] stage 3 —
   THE DFA HAT, `docs/design/startset.md` §2 F, §4.1, §6.4, D148 + addenda
   1-2).** The candidate table gains two DFA-route rows, `first-memchr-bounded`
-  and `first-class-bounded` (`tuning.md` §2.42, §6.3's `RX_DFA_PREFILTER`
+  and `first-class-bounded` (`tuning.md` §2.42; `match_api.md` §6.3's `RX_DFA_PREFILTER`
   values). On a SEEDED forward DFA scan (a `\b`, a lookbehind, a `(?m)`
   context) whose plain bounded skip tests the start state's escape set `E`,
   and whose start set `S` cannot match empty and is a proper subset of `E`,

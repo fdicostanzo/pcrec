@@ -261,6 +261,116 @@ for r, w, g in dis5[:10]:
     print(f"    DISAGREES {r['pop']} {r['id']} want={w} text={g} {bytes.fromhex(r['pattern_hex'])[:60]!r}")
 print(f"  disagreements: {len(dis5)}")
 bad += len(dis5) > 0
+
+# ---- [OPT-REVEND] L0 (lane lfl0): the PATH derivation's controls, present
+# when census.py ran with PCREC_TRACE (the `p_*`/`t_asks` columns).
+#   C5-L0  C5 with the stamp side replaced by the derivation's OWN member set
+#          (`CANDPATH`'s members), the text side kept: the derivation must
+#          reproduce the machines the bytes carry, hybrids included.
+#   C6     the TRACE vs `asks`: the cells the emitters asked (`CANDROW ... ask`)
+#          against the derivation's closure (`CANDPATH`'s asks), up to the
+#          DECLARED stamp-only asks (asks_declared_L0.tsv). The ENTRY slots
+#          (WINDOW, PRESENCE, FIRST) are asked on CAND_ROUTE_DFA by every
+#          body (start_table.md C4/C5's rule), so they compare without route.
+#          Fails on an undeclared difference either way, and on a declaration
+#          that no row uses (stale).
+#   C7     LR-G3's no-mover compare: on every hybrid, the recorded erasure set
+#          is empty iff the conjuncts it replaced read exact.
+if "p_members" in hdr:
+    import os
+    ENTRY = {"WINDOW", "PRESENCE", "FIRST"}
+    def norm(cells):
+        out = set()
+        for c in cells.split(","):
+            if not c or c == "-":
+                continue
+            sl, rt = c.split("@")
+            out.add(sl + "@*" if sl in ENTRY else c)
+        return out
+    decl = []
+    dpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "asks_declared_L0.tsv")
+    for ln in open(dpath):
+        if ln.startswith("#") or not ln.strip():
+            continue
+        sl, rt, when = ln.rstrip("\n").split("\t")[:3]
+        decl.append((sl, rt, when))
+    def body(r):
+        return r["p_locate"] != "vm"
+    def applies(r, rule):
+        sl, rt, when = rule
+        if when == "body" and not body(r):
+            return None
+        if when == "body-nomatch" and not (body(r) and r["p_members"] in ("-", "V")):
+            return None
+        if when == "dfa-finisher" and r["p_finish"] == "vm":
+            return None
+        route = r["p_locate"] if rt == "body" else rt
+        return sl + "@" + ("*" if sl in ENTRY else route)
+    pc = [r for r in comp if r.get("p_ok")]
+    c5l = collections.Counter(); dis5l = []
+    c6 = collections.Counter(); dis6 = []; used = collections.Counter()
+    c7 = collections.Counter(); dis7 = []
+    aborts = [r for r in pc if r["p_ok"] != "ok"]
+    for r in pc:
+        if r["p_ok"] != "ok" or r["t_ok"] != "ok":
+            continue
+        m = r["p_members"]
+        want = ("F" in m, "R" in m, "A" in m)
+        got = (r["t_fwd"] == "1", r["t_rev"] == "1", r["t_anch"] == "1")
+        kind = "hybrid" if r["VM_PREFILTER"] == "hybrid" else (r["ENGINE"] + ":" + (r["DFA_SCAN"] or "-"))
+        c5l[(kind, m, "agree" if want == got else "DISAGREE")] += 1
+        if want != got:
+            dis5l.append((r, m, got))
+        pa, ta = norm(r["p_asks"]), norm(r["t_asks"])
+        allow = {}
+        for rule in decl:
+            c = applies(r, rule)
+            if c:
+                allow[c] = rule
+        extra = ta - pa
+        missing = pa - ta
+        undecl = {c for c in extra if c not in allow}
+        for c in extra & set(allow):
+            used[allow[c]] += 1
+        c6[("agree" if not undecl and not missing else "DISAGREE")] += 1
+        if undecl or missing:
+            dis6.append((r, sorted(undecl), sorted(missing)))
+        if r["p_erased"]:
+            ok7 = (r["p_erased"] == "-") == (r["p_oldexact"] == "exact")
+            c7[(r["p_erased"], r["p_oldexact"], "agree" if ok7 else "DISAGREE")] += 1
+            if not ok7:
+                dis7.append(r)
+    print(f"CONTROL L0 population: {len(pc)} compiled rows through the trace build, "
+          f"{len(aborts)} aborted or refused there")
+    for r in aborts[:10]:
+        print(f"    ABORT {r['pop']} {r['id']} {r['p_ok']} {bytes.fromhex(r['pattern_hex'])[:60]!r}")
+    print("CONTROL C5-L0  the path derivation's members (CANDPATH) vs text (rx_forward_/rx_reverse_/rx_anchored_)")
+    for k, v in sorted(c5l.items()):
+        print(f"  {k}: {v}")
+    for r, m, g in dis5l[:10]:
+        print(f"    DISAGREES {r['pop']} {r['id']} members={m} text={g} {bytes.fromhex(r['pattern_hex'])[:60]!r}")
+    print(f"  disagreements: {len(dis5l)}")
+    print("CONTROL C6  the emitters' asks (CANDROW ask) vs the derivation's asks (CANDPATH) + declared stamp-only asks")
+    for k, v in sorted(c6.items()):
+        print(f"  {k}: {v}")
+    for rule in decl:
+        print(f"  declared {rule[0]}@{rule[1]} when {rule[2]}: used by {used[rule]} rows")
+    stale = [rule for rule in decl if not used[rule]]
+    shapes = collections.Counter((tuple(u), tuple(mi)) for _, u, mi in dis6)
+    for (u, mi), v in shapes.most_common(15):
+        print(f"    DISAGREE x{v}: undeclared extra {list(u)} missing {list(mi)}")
+    for r, u, mi in dis6[:5]:
+        print(f"    e.g. {r['pop']} {r['id']} {bytes.fromhex(r['pattern_hex'])[:60]!r} p={r['p_asks']} t={r['t_asks']}")
+    print(f"  disagreements: {len(dis6)}; stale declarations: {len(stale)}")
+    print("CONTROL C7  the recorded erasure set (Nfa.erased) vs the conjuncts it replaced, every hybrid")
+    for k, v in sorted(c7.items()):
+        print(f"  {k}: {v}")
+    for r in dis7[:10]:
+        print(f"    DISAGREES {r['pop']} {r['id']} erased={r['p_erased']} old={r['p_oldexact']} "
+              f"{bytes.fromhex(r['pattern_hex'])[:60]!r}")
+    print(f"  disagreements: {len(dis7)}")
+    bad += (len(dis5l) > 0) + (len(dis6) > 0) + (len(stale) > 0) + (len(dis7) > 0) + (len(aborts) > 0)
+    bad += (sum(c5l.values()) == 0) + (sum(c7.values()) == 0)
 if bad:
     print("CONTROLS FAILED — no tables printed")
     sys.exit(1)

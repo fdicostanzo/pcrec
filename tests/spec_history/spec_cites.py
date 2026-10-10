@@ -146,7 +146,7 @@ ITEM = re.compile(r"§" + ONE)
 
 
 def line_re(stem):
-    return re.compile(re.escape(stem) + r"(?:\.md)?:\d")
+    return re.compile(re.escape(stem) + r"(?:\.md)?:\d+(?![A-Za-z])")
 
 
 def cites_in(stem, text):
@@ -221,12 +221,14 @@ def check_cites(root, name, path, files):
         d = specdoc.parse(fh.read().split("\n"))
     res = []
 
-    # controls: the patterns must see what they exist to see
+    # controls: the patterns must see what they exist to see, and must not
+    # read another numbered doc's citation as this one's
+    other = "tuning" if name != "tuning" else "match_api"
     ok_ctl = (cites_in(name, "x " + name + ".md §3.1.3¶4 y") == [(1, "3.1.3", "4")]
               and cites_in(name, name + ".md `§6.3` and §10.4") == [(1, "6.3", None), (1, "10.4", None)]
               and cites_in(name, "(" + name + ".md S3.1)") == [(1, "3.1", None)]
               and line_cites_in(name, "see " + name + ".md:" + "123") == [1]
-              and cites_in(name, "tuning.md §2.5") == [])
+              and cites_in(name, other + ".md §2.5") == [])
     res.append((ok_ctl, "[cites] %s: the citation patterns read planted text correctly (control)" % name))
     probe_bad = [c for c in cites_in(name, name + ".md §99.9 and " + name + ".md §3.1.3¶999")
                  if not ((c[1] in d.sections) and (c[2] is None or (c[1], c[2]) in d.labels))]

@@ -52,7 +52,7 @@ The recommended ruling "`miss` NULL is `n` for FUNC/RETURN and a REFUSAL elsewhe
 - Consequences the plan does not list:
   - Stream 5 moves. The plan's gate "0 movers, all streams" fails at T2, or the listing row additions have to be declared EXPECTED movers like `--emit-ir`.
   - `tests/registry/axes_registry_check.sh:186-195` reads the `memfn` section row count against the literal `` `memfn` section floor: N `` in docs/spec/registry.md. Today the section is empty and the check is UNREACHED (line 189). T2 makes it REACHED for the first time. The floor must be born in the same commit (D80, registry.md s6).
-  - docs/spec/registry.md s6 (the `axis` transcript, 42 values) goes stale if the arms are listed as an axis rather than as `memfn` rows. docs/spec/table_contract.md:24 and cli.md `--list-axes` (cli.md:914-950) describe the sections.
+  - docs/spec/registry.md s6 (the `axis` transcript, 42 values) goes stale if the arms are listed as an axis rather than as `memfn` rows. docs/spec/table_contract.md §1 and cli.md `--list-axes` (cli.md (old line 914-950)) describe the sections.
   - The registry PASS count rises with the new `[memfn floor]` OK line (and any per-row checks). Any pinned PASS counts in tests/registry must be re-read.
 - Also: a deny that removes `ofsskip` falls the site to generic, which is a different text than pcrec's pre-migration text. The deny is therefore not N/A, it is a byte MOVER under the deny (the plan says "its alpha is N/A"). memfn/CLAUDE.md: "a row of the kit's own registry ... that deny is the change's alpha OFF arm" and D144 item 4. The row is then not inert: it is a new observable switch, and it needs a C5 pin and a row in `--memfn=` documentation. Say so, or do not add denies for non-moving arms (compose.c:112-120 chose not to, deliberately).
 - Fix: change the T2 gate to "stream 5 moves by exactly the declared memfn rows; streams 1-4,6 byte-identical", pin the floor in the same commit, and list the registry/spec files in T2's deliverable.
@@ -104,7 +104,7 @@ The recommended ruling "`miss` NULL is `n` for FUNC/RETURN and a REFUSAL elsewhe
 | memfn/PROVENANCE.md | rows for `table.c`, `fields.def` (C16) |
 | memfn/include/memfn.h | `MF_SITE_ABI` comment and number (M1/M4); `mf_hooks` field comments for every ruled field; the `mf_run_rows` comment; the new section's header; `mf_result` |
 | docs/design/memfn/integration.md | s14.0/14.1/14.2 (hook semantics), s15.1 (`miss`), new `[rev4.9]` section in the R4.7/R4.8 shape, s22 plan (new step rows), s17 (C5 fixtures), s10.2 (G2 floors); the audit's row "Not counted: `use`, `policy`, `opts`" |
-| docs/spec/registry.md s6 | `memfn` section floor literal (born at first row), `axis` transcript if arms become an axis; docs/spec/table_contract.md:24, docs/spec/cli.md `--list-axes` (914-950) |
+| docs/spec/registry.md s6 | `memfn` section floor literal (born at first row), `axis` transcript if arms become an axis; docs/spec/table_contract.md §1, docs/spec/cli.md `--list-axes` (914-950) |
 | docs/spec/match_api.md | stamps sections that cite `MEMFN_FORMS`/`MEMFN_LIBC` (2350, 4025-4048) only if a stamp changes; otherwise unaffected |
 | docs/dev/plan.md | the [MEMFN-ROWCON] row (572), its trigger rows ([LIST-TABLES], [START-TABLE] C2's hit counter, K96 row), and any row naming K96 as a gate |
 | docs/dev/decisions.md | a new D-id for the ROWCON mechanism and the Q-ROW-1 rulings; D152's "tables" family gains the kit |

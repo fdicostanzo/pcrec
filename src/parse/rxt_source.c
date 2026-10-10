@@ -488,6 +488,38 @@ static int defname_ok(const char *s)
     return 1;
 }
 
+/* [RXT-READERS] A `var` / `var-unset` LINE'S SHAPE, in the one grammar all
+ * three legs enforce: `var <ident> "<value>"` and `var-unset <ident>`. The
+ * generic qualified-value check only sees that SOME value is present, so
+ * `var 1x "v"` and `var a b` reached the dump here while `run.sh` and
+ * `verify_rxt.py` refused them. The value's escapes are the driver's to
+ * decode; this checks the quoting and nothing inside it. */
+static int var_line_ok(RxtP *p, size_t line, const char *tok, int has_value)
+{
+    const char *kind = has_value ? "var" : "var-unset";
+    const char *v = value_trimmed(p, tok);
+    size_t n = 0;
+    while (v[n] && v[n] != ' ' && v[n] != '\t') n++;
+    if (!ident_ok(arena_strndup(p->arena, v, n)))
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'%s' wants a variable name -- a letter or '_' then "
+                        "letters, digits or '_' (got '%s')", kind, v);
+    const char *rest = skip_ws(v + n);
+    if (!has_value) {
+        if (*rest)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'var-unset' wants a bare variable name (got "
+                            "'%s')", v);
+        return 0;
+    }
+    size_t rl = strlen(rest);
+    if (rest == v + n || rl < 2 || rest[0] != '"' || rest[rl - 1] != '"')
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'var' wants a name then a double-quoted value -- "
+                        "var <name> \"<value>\" (got '%s')", v);
+    return 0;
+}
+
 /* [FINDINGS] B0: an ANALYSIS name — `[a-z][a-z0-9_-]*`, LOWERCASE ONLY
  * (r2 M-S6). A bundle name becomes a `-I DIR/<name>.rxt` directory entry
  * matched byte for byte, so `Log` and `log` must never both be spellable:
@@ -3518,11 +3550,16 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
          * is a TEST fact (what the harness passes the artifact for this
          * block's cases), and a compiler that started recording them would be
          * a second harness. The schema walk above has already checked the
-         * value's SHAPE — `var`'s qualified name-then-subject, `var-unset`'s
-         * bare token — so this leg's whole obligation is discharged by
-         * accepting the line, which is what makes the three-leg agreement
-         * real rather than a claim about a line one leg drops silently. */
-        if (tok_is(tok, "var") || tok_is(tok, "var-unset")) continue;
+         * value's NON-EMPTINESS only; `var_line_ok` checks the rest — the
+         * name is an `ident` and the value a double-quoted string, the
+         * grammar `run.sh` and `verify_rxt.py` enforce — so the three legs
+         * agree on the line instead of leg A passing what the others
+         * refuse. */
+        if (tok_is(tok, "var") || tok_is(tok, "var-unset")) {
+            if (var_line_ok(&p, line, tok, tok_is(tok, "var")) != 0)
+                goto fail;
+            continue;
+        }
         if (tok_is(tok, "frames-buffer=")) {
             /* [DD-13b.W23.4] POSITIONAL, not block-scoped (rxt_format.md's
              * own words): the route named here governs every CASE row

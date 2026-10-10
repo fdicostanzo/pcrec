@@ -194,7 +194,7 @@ frame_capacity, max_emit_code_bytes, max_emit_bytes, max_nfa_states,
 max_dfa_states_goto, max_subset_elems, max_auto_dfa_elems,
 warn_emit_bytes, name, tune` — the identical count and the identical 10
 missing fields lens9 named, unmoved by any of waves 3/4/EMIT-VERB (none
-of them touch `pcrec_options`). `docs/spec/tuning.md:2436` still reads
+of them touch `pcrec_options`). `docs/spec/tuning.md` §4 still reads
 "`docs/spec/match_api.md` §8.2 states the struct itself in full" — still
 false.
 

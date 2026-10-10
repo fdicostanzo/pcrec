@@ -704,7 +704,7 @@ own alpha script inherits `alpha_k82.sh`'s `norm()` and must read
 | `tests/lib/c_artifact_cmp.sh`'s `emit_sweep` (the recursion identity gate's whole-file sweep) | every artifact: a FILEPIN re-pin | the digit only: the same re-pin, fewer differing lines |
 | `tests/findings/manifests/*.txt` (b1/ship mover lists) | re-derive: a stamp line on both arms must not create a mover | re-derive: the handoff is findings-independent (K is a walk fact), so the lists should not move; the build confirms |
 | `tests/registry/run_registry_tests.sh:629-643` (`axesn == 186`) | +k | +k |
-| `docs/spec/registry.md:192` ("124 rows / 42 axes") | +2 rows, +1 axis | same |
+| `docs/spec/registry.md` §6 ("124 rows / 42 axes") | +2 rows, +1 axis | same |
 | `tests/axes/run_axes.sh` groups (F3 is bit 45's) | a new GROUP F4 for bit 46 | same |
 
 `k` is measured at the build: k82fix's analogous event (one axis, one
@@ -734,11 +734,11 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
 - `docs/spec/tuning.md`: a new §2.41 for `-fno-req-handoff`; the
   flags→flag table at :3738 gains the bit-46 row beside bit 45's; §2.29's
   `REQ_WHY` paragraph gains a cross-reference.
-- `docs/spec/registry.md` / `cli.md:582`: the `req-use` axis and the flag
+- `docs/spec/registry.md` / `cli.md (old line 582)`: the `req-use` axis and the flag
   in the deny-flag list.
 - `docs/spec/facts_listing.md`: the `req_run_maxoff` row and the `req-use`
   decision.
-- `docs/spec/findings.md:128`: the run's scan-member PICK row. The handoff
+- `docs/spec/findings.md` §4: the run's scan-member PICK row. The handoff
   reads the window the PICK chose, never re-picks, so the row gains one
   sentence that the window's K is a walk fact independent of the PICK, or
   is left unchanged if the build finds no reader there.

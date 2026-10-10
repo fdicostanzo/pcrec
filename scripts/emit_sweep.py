@@ -1490,7 +1490,17 @@ TRACE_TAG = b"CANDTRACE\t"
 # Records-per-arm floor (a trace arm that prints nothing passes any diff),
 # over the full corpus rows. A --trace run against a build with no hook
 # FAILS here, as it should.
-TRACE_RECORDS_FLOOR = {"c-default": 334904, "c-vm": 120524}
+TRACE_RECORDS_FLOOR = {"c-default": 270131, "c-vm": 120691}
+# [OPT-REVEND] L0 re-pin (lane lfl0, 2026-10-09): the plain variant's
+# working side at the L0 tip 9afe18f7 against main e1e387b9, byte base, the
+# SET gate clean (declared sites `locate`/`finish-match`/`boundary`,
+# studies/locate_finish/trace_declared_L0.txt). c-default FELL by 64,936:
+# the machine-membership folds read the PATH derivation, which runs quiet,
+# so their per-call re-prints of RECOVER/ROUTE records are gone (each record
+# still prints from its emitter or stamp, so no record left the SET). c-vm
+# ROSE by 4,996: the VM-only LOCATE ask and the hybrids' BOUNDARY record.
+# The floor binds BOTH sides, so each arm pins min(base, tip): the tip for
+# c-default, the base (120,691) for c-vm.
 # [DEC-FALLBACK] B1 re-pin (lane decfbB1): the plain variant's working-side
 # count in the B1 gate run (the same streams, CFLAGS and byte base this
 # non-variant trace run uses), C1's records plus the fallback trace's; it was
@@ -2317,11 +2327,16 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
 # `gate`/`stwhy`/`attrib` slots (B0's C1-only values were 315,269/105,080
 # for plain, ~20k/15k lower in every cell). Measured, no margin: the trace
 # is deterministic and its population only grows with the corpus.
-TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 362174, 'c-vm': 128390},
- 'lowdfa': {'c-default': 334754, 'c-vm': 120691},
- 'lowsize': {'c-default': 370103, 'c-vm': 128390},
- 'lowthr': {'c-default': 355509, 'c-vm': 128419},
- 'plain': {'c-default': 335067, 'c-vm': 120691}}
+# [OPT-REVEND] L0 re-pin (lane lfl0, 2026-10-09): the working side of
+# `--variant all --bases byte --trace` at the L0 tip 9afe18f7 against main
+# e1e387b9, every variant's SET gate clean; the fall and rise are
+# TRACE_RECORDS_FLOOR's note above, per variant, and each arm pins
+# min(base, tip) because the floor binds both sides.
+TRACE_VARIANT_RECORDS_FLOOR = {'lowboth': {'c-default': 293099, 'c-vm': 128394},
+ 'lowdfa': {'c-default': 269989, 'c-vm': 120691},
+ 'lowsize': {'c-default': 300582, 'c-vm': 128394},
+ 'lowthr': {'c-default': 286811, 'c-vm': 128419},
+ 'plain': {'c-default': 270131, 'c-vm': 120691}}
 
 
 STREAMS_ALL = ("c-default", "c-vm", "emit-ir", "composition", "dumps", "facts",

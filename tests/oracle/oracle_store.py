@@ -28,7 +28,7 @@ and serialized unescaped.
 
 ## Canonical serialization (§4, R56-1 corrected)
 
-The `docs/spec/rxt_format.md`:458-474 FIVE-ESCAPE TSV-FRAMING SUBSET
+The `docs/spec/rxt_format.md` section 2.1 FIVE-ESCAPE TSV-FRAMING SUBSET
 (`\\ \t \n \r \xNN`), BACKSLASH ESCAPED FIRST — not the seven-escape
 quoted-context vocabulary, which protects a `"`-delimited `<subject>` literal
 and has nothing to protect here. Escaping the backslash first is what makes
