@@ -26836,3 +26836,32 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - The manager stopped a lane that had already delivered.
   - Lanes took kit-reserved sabotage ids. BOILERPLATE now names the reservations.
   - An auto-lift gate keyed on a process name also matched the kit's light rows.
+
+## 2026-10-09 — session 102 (hundred-and-second; Linux dev box; closed at Frank's ask)
+
+- **Landed on main, in order:**
+  - RQ-3 (631771b7, **abi 71**). Its chain was green. Its emit_sweep VARIANTS red was stale lowered-cap reach floors (re-pinned 6973d7f5; main itself was red). The kit was pinged.
+  - The [OPT-REVEND] design line: revdes rev 1, the light panel, revq1 (form B measured 1.4-1.55x SLOWER than W1 on matching bounded tails), revrev rev 2 (form C walk-only primary, from Frank's "if you're not doing captures, why walk forwards at all"; a twin at 0 diffs / 1.39M cells; C beats W1 on every bounded cell, separated by more than 2σ, with run-to-run CV ~1% per Frank's "do a std dev").
+  - **D156 (Frank): search = LOCATE × FINISH** ("we have dfa prefilter then vm now. this is the same but the prefilter is reverse"). Then locfin (design) → FULL panel (38 ids, 7efca415) → locfin2 (rev 2) → re-check (27 ids) → locfin21 (rev 2.1: the PATH derivation, each row's `.needs`, membership = needs ∩ built, a generated off-path stamp rule).
+  - [U8-PICK] STEP 0 (lit-sharp-s is a utf8 PICK DEFECT; the lever is a utf8 byte-rate prior).
+  - walksurvey: a per-load instrument over every bench/corpus artifact. It found the largest unowned class, [START-LANDING] (51% of bench patterns, est 50.9 ms), and **K101** (the caseless folded-run gate restarts on every find-all call, ~200x off-bench).
+  - encinv ([ENC-DATA] inventory + layout proposal).
+  - **RQ-2 (7b98a046):** D157's ranked rarity array (MF_SITE_ABI 9), S731-S737, and the variant-pin re-pin (RQ-3's +52 B stamp line alone moved 18 lowered-cap patterns; filed [CAP-STAMP-BYTES]). Pushed.
+  - landdes ([START-LANDING] design) and its panel: the rows are EXACT (~558M per-call checks, 0 diffs); two critics independently found the utf8 guard QUADRATIC on ill-formed lead runs (7 s vs 0.12 ms at k=1e5); two linear forms exist.
+- **Rulings (Frank):**
+  - D156 and addendum 1: L0 first, then REVEND before [START-LANDING] ("bird in the hand"); stage 2 (captures) IS BUILT, with patterns created for it.
+  - D157: RQ-2 states FACTS (an ordered rarity array plus rates); never presume the kit's method (memory pcrec-kit-facts-not-methods).
+  - Critics who ADD the general form and unlocks are valued (memory pcrec-critics-propose-unlocks).
+  - The deadlock check NAMES the awaited thing; a peer waiting on me gets a one-line ack (memory updated).
+  - Timing is directional: report σ, don't wait for a quiet box.
+- **Filed from Frank's match_api.md read:** [FINDALL-NEXT] (a boolean whole-step iterator `while (<prefix>_next(&it,...))`, status in `it.rc`), [SPEC-LANG] (our own definition of the regex language, validated by a mischievous tool+doc-only lane), [RXINFO-REMODEL] (sections as sub-structs along the search path; `engine` outdated; every field const at member level; paired with [V-E]), [STAMP-REVIEW] (do we need stamps / could rx_info alone serve / organization), [SPEC-CLEAN] (facts-only specs). Also [CAP-EARLY-STOP] (the capture walk ends at the last group's close, given a reverse remainder mark), [START-LANDING], [FINDALL-REENTRY] (BOONIES) and [CAP-STAMP-BYTES].
+- **In flight at close:**
+  - specnum's chain (lane/specnum = the [SPEC-CLEAN] rewrite + numbering/TOC; LIFTED 22:14);
+  - then lfl0's chain (lane/lfl0 = locate × finish L0, a no-mover, S738-S747), lifted automatically by the detached `worktrees/.mgr/seq5.sh` (log `worktrees/.mgr/seq5.log`);
+  - landrev ([START-LANDING] rev 2), finishing at close.
+  - The kit's R-12 (VMLAZY, abi 72) is awaiting its own done: after slot17b. R-13 continues (rankuse S750-S757).
+- **Lessons:**
+  - Addenda to running lanes were MISSED three times (specclean's numbering/TOC, lfl0's ids twice). Scope changes go to fresh lanes; the manager lands small items itself.
+  - Hand-listed reader and check lists keep missing gates (START-LANDING's 5 HIGH); derive edit sets by census.
+  - Identity twins compare answers, not WORK: two critics found a quadratic the twins could not.
+  - The manager `cd`'d into a worktree once more (corrected immediately) and used `pgrep -f` once in a probe (matched only itself).
