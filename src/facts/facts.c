@@ -93,6 +93,8 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
     case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
+    case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
+    case PF_WIDTH:        pf->width = (WidthIv){ -1, -1 }; break;
     case PF_NFACTS:       break;
     }
 }
@@ -155,7 +157,10 @@ static void pf_done(PatFacts *pf, PfFactId f)
 static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
 {
     bool decl = code == PF_WHY_ENC_MULTIBYTE || code == PF_WHY_NOT_END_ANCHORED ||
-                code == PF_WHY_GSTART || code == PF_WHY_UNBOUNDED;
+                code == PF_WHY_GSTART || code == PF_WHY_UNBOUNDED ||
+                code == PF_WHY_NULLABLE || code == PF_WHY_ASSERT_AT_START ||
+                code == PF_WHY_DEAD_START || code == PF_WHY_ALIVE_NOT_ACCEPT ||
+                code == PF_WHY_ASSERT_AFTER;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
                           (unsigned char)code, 0 };
@@ -275,6 +280,16 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_ask(cx, PF_REQ_RUN, false);
         pcrec_run_pin(&pf->kset_walk, &pf->req_run, pcrec_find_byte_rate(cx),
                       &pf->run_pin);
+        break;
+    case PF_LAND_CHAR:
+        /* The machine E3 sealed, and the descriptor resolved here, once
+         * (design §4.2.2 carve-out (d)). */
+        why = pcrec_land_char(cx, &cx->job->nfa, pcrec_enc_by_id(cx->opt->encoding),
+                              &pf->land_char.wide);
+        pf->land_char.holds = why == PF_WHY_NONE;
+        break;
+    case PF_WIDTH:
+        pcrec_width_walk(cx, &cx->job->nfa, &pf->width.bmin, &pf->width.bmax);
         break;
     case PF_NFACTS:
         return;
@@ -435,6 +450,18 @@ const RunPin *pcrec_fact_run_pin(Ctx *cx)
 {
     pf_ask(cx, PF_RUN_PIN, true);
     return &cx->job->pf.run_pin;
+}
+
+const LandChar *pcrec_fact_land_char(Ctx *cx)
+{
+    pf_ask(cx, PF_LAND_CHAR, true);
+    return &cx->job->pf.land_char;
+}
+
+const WidthIv *pcrec_fact_width(Ctx *cx)
+{
+    pf_ask(cx, PF_WIDTH, true);
+    return &cx->job->pf.width;
 }
 
 void pcrec_facts_force_all(Ctx *cx)
@@ -600,6 +627,17 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
             return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
         return pcrec_sb_fragf(&cx->arena, "%d:%d+%d", pf->run_pin.o,
                               pf->run_pin.at, pf->run_pin.len);
+    case PF_LAND_CHAR:
+        /* `one-char`, with `+guard` where a first byte is above the
+         * encoding's one-byte repertoire (§2.5's guard is owed). */
+        if (!pf->land_char.holds) return "none";
+        return pf->land_char.wide ? "one-char+guard" : "one-char";
+    case PF_WIDTH:
+        /* `[bmin,bmax]`, or `[bmin,inf)` where no bound exists. */
+        if (pf->width.bmin < 0) return "none";
+        if (pf->width.bmax >= PCREC_W_UNBOUNDED)
+            return pcrec_sb_fragf(&cx->arena, "[%lld,inf)", pf->width.bmin);
+        return pcrec_sb_fragf(&cx->arena, "[%lld,%lld]", pf->width.bmin, pf->width.bmax);
     case PF_NFACTS:
         break;
     }

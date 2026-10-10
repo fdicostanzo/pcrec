@@ -52,4 +52,6 @@ PF_FACT(REQ_RUN_MAXOFF, "req_run_maxoff", 2, PF_DERIVED, 0,                     
 PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "req_set req_run")
 PF_FACT(KSET_WALK,     "kset_walk",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 PF_FACT(RUN_PIN,       "run_pin",       3, PF_DERIVED, 0,                                   "src/facts/kset.c",    "kset_walk req_run")
+PF_FACT(LAND_CHAR,     "land_char",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
+PF_FACT(WIDTH,         "width",         3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
 #undef PF_FACT

@@ -196,6 +196,26 @@ typedef struct {
     int      idx;        /* the scanned position inside the stretch */
 } RunPin;
 
+/* [START-LANDING] THE ONE-CHARACTER FACT (fact `land_char`, E3 core,
+ * docs/design/start_landing.md §2.4): `holds` where every one-character path
+ * from the pattern's anchored start ends dead or unconditionally accepting,
+ * with no assertion before it and no empty match; `wide` where a first byte
+ * lies above the encoding's `onebyte_max`, so the character at a landing may
+ * span bytes and §2.5's guard is owed. The empty value is `{ false, false }`. */
+typedef struct {
+    bool holds;
+    bool wide;
+} LandChar;
+
+/* [START-LANDING] THE BYTE WIDTH INTERVAL (fact `width`, E3 core, §3.1):
+ * every match is between `bmin` and `bmax` bytes long; `bmax` is
+ * `PCREC_W_UNBOUNDED` where no bound exists, and `bmin` is -1 (the empty
+ * value, with `bmax` -1) where nothing is known. A fixed width is
+ * `bmin == bmax`. */
+typedef struct {
+    long long bmin, bmax;
+} WidthIv;
+
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
  * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
@@ -264,7 +284,16 @@ typedef enum {
      * forward NFA exists but `ENG_ATTEMPT` never wraps it, or no forward NFA
      * was built at all (a VM route with no DFA scan). Status `absent`. */
     PF_WHY_ATTEMPT_UNWRAPPED,
-    PF_WHY_NO_FORWARD_NFA
+    PF_WHY_NO_FORWARD_NFA,
+    /* [START-LANDING] `land_char`'s declines (src/facts/kset.c): Λ.1 the
+     * pattern matches empty, an assertion reads the start edge, or nothing
+     * consumes from the start; Λ.3 a whole character leaves a thread alive
+     * and not accepting, or an assertion stands before the accept. */
+    PF_WHY_NULLABLE,
+    PF_WHY_ASSERT_AT_START,
+    PF_WHY_DEAD_START,
+    PF_WHY_ALIVE_NOT_ACCEPT,
+    PF_WHY_ASSERT_AFTER
 } PfWhyCode;
 
 typedef struct {
@@ -321,6 +350,12 @@ typedef struct {
     /* [OPT-LITSCAN] S1 E3 derived: the run's window pinned on the walk. No
      * deny of its own; a denied run (`len == 0`) pins nothing. */
     RunPin    run_pin;
+    /* [START-LANDING] E3 core, sealed on the `ENG_UNANCH` branch only: the
+     * one-character fact and the byte width interval over the wrapped NFA.
+     * No deny of their own: each reader row (`landing`, `end-minus-width`)
+     * carries its row deny. */
+    LandChar  land_char;
+    WidthIv   width;
     PfWhy     why[PF_NFACTS];
     /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
      * asks the facts no pass asked, after the artifact is complete, and
@@ -379,6 +414,8 @@ long long      pcrec_fact_req_run_maxoff(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
+const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */
+const WidthIv  *pcrec_fact_width(Ctx *cx);       /* E3 [START-LANDING] */
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *
