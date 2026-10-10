@@ -187,7 +187,8 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 | under | a literal or a range folds by | so `(?i)k` matches | and `(?i)\xe9` matches |
 |---|---|---|---|
-| `--encoding=byte` (default) | the 52 ASCII letters, and nothing else | `k`, `K` | `\xe9` only |
+| `--encoding=byte` (default) | the 52 ASCII letters, and nothing else (without `--ucp`) | `k`, `K` | `\xe9` only |
+| `--encoding=byte --ucp` | the 52 ASCII letters and the Latin-1 pairs the `--ucp` classes fold | `k`, `K` | `\xe9`, `\xc9` |
 | `--encoding=utf8` | Unicode default simple case folding | `k`, `K`, U+212A KELVIN SIGN | U+00E9, U+00C9 |
 
 <a id="s1-8-p2"></a>[1.8¶2] Both are libpcre2's answers at the matching option word (`PCRE2_CASELESS` for `byte`, `PCRE2_UTF|PCRE2_CASELESS` for `utf8`). Consequences:
