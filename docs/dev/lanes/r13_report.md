@@ -306,3 +306,34 @@ define and its comment block, the memfn/include, memfn, memfn/tests and
 lanes CLAUDE.md lines, memfn_sites.h, and integration.md's batch-1 note.
 The number appears in this report's text above as 9 because that was its
 number when the report was written.
+
+## Addendum (2026-10-10, kit manager): slot18, the heavy chain
+
+Tip 2a44386a (main 9024449f, REVEND abi 73, merged in), ref 9024449f, run
+09:56-11:22 on main's GO.
+- build, strict and SABANCHOR are green. N2: 0 would-decline, `floor_fail=0`.
+  `--propose` gives vrun-w16 and vrun-w32 78 chosen each, so both pcrec
+  floors are pinned at 70 (`tests/memfn/row_floors.tsv`). The re-check
+  reads `floor_fail=0 floor_placeholder=0`.
+- G2 full: 192,654,553 passed, 0 failed. make test: no red lines (900 s).
+  mech: 33 rows `COMPLETE` (unexpected 0, undetected 0, unreached 0,
+  anomalies 0, oracle-skipped 0).
+- Identity sweeps (plain, `--arms start`, `--variant all`, and `--extra
+  -fmemfn-simd`) all exit 1, as expected. Lane s18tri read every mover by
+  id (`docs/design/memfn/probes/r13/slot18_sweep_triage.md`):
+  - SIMD-off: the only mover is the `dumps` stream's `--list-axes` (the
+    new memfn rows). There are 0 .c/IR/facts/stderr movers in every cell.
+  - `--arms start`: five DIFFER_PINS arm floors fall below their pins, with
+    main and tree EQUAL: byte -fno-run-prefilter 127<132, byte
+    -fno-end-window 272<288 (plus a `$` manifest), byte -fno-req-run stamp
+    296<301, utf8 -fno-req-handoff 275<280, utf8 -fno-req-run stamp
+    294<299. The pins date from 26d2069f (2026-10-06). This is stale on
+    main, not R-13; main re-pins.
+  - `-fmemfn-simd`: 87 corpus-row movers (44 c-default + 43 c-vm), all vrun
+    text (the w16/w32 FUNCs, the dispatcher, the MEMFN_FORMS and
+    SIMD_GUARDED_BYTES stamps; inserted bytes == the guarded count). They
+    are 21 distinct patterns = 39 (pattern, engine) cells, + 5 named
+    witnesses = simdfloor's 44.
+- The §8 OWED heavy list is DISCHARGED, apart from RQ-4's tier-U timing
+  slot (DEFAULT / KB-DENY / OFF), which comes next and gives the first
+  SIMD-on vs SIMD-off reading.

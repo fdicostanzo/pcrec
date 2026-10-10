@@ -1306,3 +1306,22 @@ pointer when a kit change merges to main.
 - OWED, a kit follow-up: stale "no SIMD form exists" comments in
   lib/pcrec.h, src/dump/axes_dump.c and tests/memfn/libc_census.py.
 - Next: slot18 on main's GO (revbuild holds the slot).
+
+## 2026-10-10 — R-13 slot18 read, delivered
+
+- Main's GO came after REVEND (abi 73) merged. Merged 9024449f into
+  lane/memfn-r13 (2a44386a): registry coverage pin 216+3+1 = 220, lanes
+  index union. Light suites green (8 suites).
+- slot18 09:56-11:22: build/strict/SABANCHOR, N2 (0 fails), G2 full
+  192,654,553/0, make test no red, mech 33 COMPLETE all zero. The sweeps
+  exit 1, as expected. A triage lane (s18tri, sonnet) read them by id: SIMD-off
+  moves only --list-axes; the five `start` arm floors are stale on main (equal
+  both sides, pins of 26d2069f) and go to main; the SIMD movers are vrun
+  text only and reconcile to simdfloor's 44.
+- vrun-w16/w32 pcrec N2 floors pinned at 70 (floor(0.9 x 78)).
+- done: R-13 posted. Next: RQ-4's tier-U timing slot (Frank's first SIMD-on
+  vs SIMD-off reading), on main's grant.
+- Side work: started memfn/docs/ideas.md (Frank) on lane/memfn-ideas, 6
+  entries from Frank's vrun questions (min-length end bound, duplicate
+  constants, plain-case = §R4.9.7.1 deliberate, byte+class filter, held mask,
+  VM start-set skip).
