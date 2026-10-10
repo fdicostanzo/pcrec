@@ -1550,7 +1550,7 @@ Could another regime flip a decision?
 - *Leaning:* `end-minus-width` second, by dominance; the survey's and LR-G10's order
   is the other defensible reading, and no answer depends on it.
 
-**Q5. Filing `rev-end-width`** (§3.3, §11 U3) on REVEND's side: an end-pinned
+**Q5. Filing `rev-end-width`** **RESOLVED 2026-10-09 by the manager (a filing, not a ruling): filed on the [OPT-REVEND] plan row with its trigger, the 10% labelled CHOSEN.** (§3.3, §11 U3) on REVEND's side: an end-pinned
 fixed-width pattern needs one anchored run of `W` bytes, not a walk.
 - *Critics:* slcrit3 (SL-G7 Q5): "file rev-end-width and label its 10% threshold".
 - *Leaning:* file with its trigger, the 10% labelled CHOSEN; 6 bench patterns.
