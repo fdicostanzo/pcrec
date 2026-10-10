@@ -15,9 +15,12 @@
 # ROW	FLAGS	PATTERN
 empty	-	[^\x00-\xff]
 empty	-	^\B\b
+rev-end	-	abc$
+rev-end	-	\s+$
+rev-end	-e utf8	\s+?$
 composite	-	a
 composite	-	^a
-window	-	abc$
+window	-	(abc)$
 window-none	-	a(b|c)+d
 presence-none	-	[a-z](?=the)
 one-attempt	-	^(a)(b|c)
@@ -31,7 +34,10 @@ handoff	-	\d\dxyz
 scan-from-startpos	-fno-req-handoff	\d\dxyz
 run-pinned-bounded	-	foo\b
 run-pinned	-	ABCDE
-offset-set-bounded	-	a\Kb\z
+# [OPT-REVEND] stage 2 put `a\Kb\z`'s inlined hybrid on rev-end (lane revtri):
+# `\b` keeps the bounded view at default, the deny keeps the old witness.
+offset-set-bounded	-	a\Kb\b
+offset-set-bounded	-fno-rev-end	a\Kb\z
 offset-set	-	\d\dxyz
 offset-set	-fno-run-prefilter	ABCDE
 first-memchr-bounded	-	\B(?<!a)d
@@ -39,7 +45,7 @@ first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I
 memchr-bounded	-	x$.*
 memchr	-	a(b|c)+d
-byte-class-bounded	-e utf8	.*\z
+byte-class-bounded	-e utf8	[ab]\b
 byte-class	-	\d
 pred-memchr	-	(?m)^ERROR
 next-none	-	a(b|c)+d
@@ -62,5 +68,12 @@ reverse-pass	-	a(b|c)+d
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
-search-from	-	[^\x00-\xff]
-search-from	-	^\B\b
+search-from	-fno-anchored-dfa	\s+$
+# FIN4's VM ENDSET take cell (stage 2): a tie inside the inlined body (lane revtri).
+search-from	-	(\s+)$
+nomatch	-	[^\x00-\xff]
+nomatch	-	^\B\b
+nomatch	-	abc$
+report	-	a
+report	-	^ab
+verify-at	-	\s+$

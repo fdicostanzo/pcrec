@@ -4,8 +4,10 @@
 # that no witness can reach yet, with the argument and the commit that gives
 # it a producer. A listed cell that a witness DOES reach fails the check
 # (stale declaration); a cell listed here that the table does not declare
-# fails too. EMPTY at L0: every L0 cell has a producer. Its first entry is
-# planned at L2: (verify-at, attempt, ENDSET), no ENDSET producer on
-# CAND_ROUTE_ATTEMPT until a reverse machine exists there.
+# fails too. EMPTY at L0: every L0 cell has a producer. Still EMPTY at L2
+# ([OPT-REVEND] lane revbuild): the planned (verify-at, attempt, ENDSET) cell
+# was not declared, because no ENDSET producer exists on CAND_ROUTE_ATTEMPT
+# until a reverse machine exists there, and a cell lands with the producer
+# that asks it (docs/dev/lanes/revbuild_report.md, deviations).
 #
 # ROW	ROUTE	HAND	WHY	PRODUCER

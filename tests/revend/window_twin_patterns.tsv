@@ -1,0 +1,39 @@
+# tests/revend/window_twin_patterns.tsv -- [OPT-REVEND] L2's twin population
+# beyond tests/revend/stage2_captures.rxt (lane revbuild): the design's named
+# stage-2 witnesses (locate_finish.md §4.3, §5 L3: the lazy tie, the clamped
+# ties, the superset, X1 on a hybrid) and the stage-1 DFA-only shapes (form C
+# with each tie arm: T1, T2, T3 under -fno-anchored-dfa).
+# Columns (TAB): name, encoding (byte|utf8), flags (`-`, or letters: i
+# caseless, u UCP, N -fno-anchored-dfa on BOTH builds), alphabet (`\n` is a
+# newline), pattern.
+lazy-tie	byte	-	 a\n	(\s+?){2}$
+greedy-tie	byte	-	 a\n	(\s+){2}$
+clamped-tie	byte	-	 a\n	(\s$){1,3}
+unclamped-tie	byte	-	abc\n	([^c]{1,3})$
+digits	byte	-	1a\n	(\d+)$
+a-plus	byte	-	ab\n	(a+)$
+a-z-plus	byte	-	ab\n	(a\z)+
+kreset	byte	-	ab\n	a\Kb$
+superset-look	byte	-	ab\n	\w{1,2}(?:(?=)|)$
+superset-look-cap	byte	-	ab\n	(\w{1,2})(?:(?=)|)$
+x1-la-hyb	byte	-	1a\n	(\d+)$(?=\n)
+x1-nla-hyb	byte	-	1a\n	(\d)$(?!\n)
+x1-z-hyb	byte	-	ab\n	(a)\Z(?=\n)
+caseless-hyb	byte	i	aB\n	(ab)$
+utf8-hyb	utf8	-	aé\n	(é+)$
+utf8-lazy-tie	utf8	-	 é\n	(\s+?)$
+dfa-t1	byte	-	1a\n	\d+$
+dfa-t1z	byte	-	ab\n	a+\z
+dfa-t2	byte	-	 a\n	\s+$
+dfa-t2-lazy	byte	-	 a\n	\s*?$
+dfa-t2-null	byte	-	ab\n	a*$
+dfa-t3	byte	N	 a\n	\s+$
+dfa-t3-lazy	byte	N	 a\n	\s*?$
+dfa-x1	byte	-	1a\n	\d+$(?=\n)
+dfa-x1n	byte	-	1a\n	\d$(?!\n)
+dfa-x1z	byte	-	ab\n	a\Z(?=\n)
+dfa-mix	byte	-	1a\n	\d+$|\w+\z
+dfa-mixtie	byte	-	 x\n	\s*$|x\z
+dfa-wordb	byte	-	ab \n	\bab$
+dfa-utf8	utf8	-	aé\n	é+$
+dfa-utf8-tie	utf8	-	 é\n	\s+?$

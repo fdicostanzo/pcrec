@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `72` on every artifact today (lane vmlazy bumped it
+- **`rx_info.abi` is `73` on every artifact today (lane revbuild bumped it
+  from 72, 2026-10-10: [OPT-REVEND] L2 with stage 2 folded in, D156; built
+  as 72 and renumbered at the merge of the kit's R-12, which took 72).** An end-pinned
+  DFA body (`$`/`\Z`/`\z`, no `(?m)`, no `\G`, not optional) searches by the
+  reverse-from-end walk: `<PREFIX>_DFA_SCAN` reads `"rev-end"`, the artifact
+  carries no forward machine (a tie with no anchored machine keeps it for
+  the relocate), and the walk's seeds, dead-seed skip and tie arm are new
+  emitted text. The generated stamp rule (`<PREFIX>_DFA_START`, WINDOW,
+  FIRST, NEXT and the pre-check stamps read their slot's ABSENCE value where
+  the path does not ask the slot) moves `<PREFIX>_DFA_START` to
+  `"attempt-start"` on attempt/empty bodies; an empty body's `<prefix>_match`
+  is the `"nomatch"` form; a whole-window pre-check ahead of a walk that
+  answers presence itself reads `<PREFIX>_REQ_WHY "dominated"` and is not
+  emitted. An exact VM hybrid's inlined prefilter walks too (stage 2) and its
+  VM entry asks FINISH; the `-fno-rev-end` deny and the `locate` axis are
+  new. No struct offset moves and no answer moves.
+
+- **`rx_info.abi` was `72` (lane vmlazy bumped it
   from 71, 2026-10-09; `71` is [MEMFN] RQ-3's, landed first: [MEMFN] R-12
   — THE VMLAZY NORMALIZATION, `docs/dev/lanes/r12scope_report.md` §1.5,
   `docs/dev/lanes/vmlazy_report.md`).** The VM cursor rung's LAZY arm

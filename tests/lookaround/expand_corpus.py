@@ -398,7 +398,7 @@ def read_blocks(path):
                 out.append(cur)
             cur = {"pattern": line[len("pattern "):], "dirs": [], "cells": [],
                    "gcells": [], "lead": lead, "lineno": lineno,
-                   "feats": None, "flags": None}
+                   "feats": None, "flags": None, "enc": None}
             lead = []
             continue
         if cur is None:
@@ -414,6 +414,9 @@ def read_blocks(path):
             cur["dirs"].append(line)
         elif line.startswith("flags "):
             cur["flags"] = line[len("flags "):].strip()
+            cur["dirs"].append(line)
+        elif line.startswith("encoding "):
+            cur["enc"] = line[len("encoding "):].strip()
             cur["dirs"].append(line)
         elif line.startswith("perr"):
             cur["dirs"].append(line)
@@ -501,6 +504,7 @@ def main():
         "Q4 modifier state not constant": [0, 0],
         "Q5 \\K inside a substituted body": [0, 0],
         "Q6 block marked # pcre2-deviates (D68)": [0, 0],
+        "Q7 block declares a non-byte encoding": [0, 0],
     }
     tot = {"blocks": 0, "beh": 0, "g": 0}
     qual = {"blocks": 0, "beh": 0, "g": 0}
@@ -546,6 +550,15 @@ def main():
                 why = "Q4 modifier state not constant"
             elif deviates:
                 why = "Q6 block marked # pcre2-deviates (D68)"
+            elif b["enc"] not in (None, "byte"):
+                # Q7 — all three arms run BYTE semantics: pcrec is compiled
+                # with no `-e`, and the oracle (bref_oracle.py) compiles at
+                # options=0 with no PCRE2_UTF. A utf8 block's cells are
+                # therefore outside the domain, the same reason
+                # tests/assertions/verify_pcre2.py skips it. First populated
+                # by tests/assertions/rev_end.rxt's three utf8 blocks
+                # ([OPT-REVEND], lane revtri 2026-10-10).
+                why = "Q7 block declares a non-byte encoding"
             else:
                 # Q5 — `\K` must not land INSIDE a substituted body, since
                 # PCRE2 refuses it there (err 199). It cannot, given the
@@ -570,6 +583,17 @@ def main():
             # in the shell driver's `read -r`. No block in the corpus has
             # one today; this is the guard that keeps that a fact rather
             # than an assumption the day one is added.
+            # bref_oracle.py reads the plan's pattern as TEXT and hands it to
+            # libpcre2 encoded latin-1, so a non-ASCII pattern reaches arm C
+            # as different bytes from the ones pcrec compiles (`é` is C3 A9
+            # to pcrec and E9 to the oracle). No qualifying block has one
+            # (rev_end.rxt's `é+$` is a utf8 block, Q7); this keeps it so.
+            if any(ord(ch) >= 0x80 for ch in pat):
+                sys.stderr.write("expand_corpus: FATAL: qualifying block "
+                                 "%s:%d has a non-ASCII pattern, which arm "
+                                 "C's latin-1 pattern read cannot carry\n"
+                                 % (rel, b["lineno"]))
+                return 2
             if "\t" in pat or "\n" in pat:
                 sys.stderr.write("expand_corpus: FATAL: qualifying block "
                                  "%s:%d has a TAB or NEWLINE in its pattern, "
@@ -704,6 +728,8 @@ def main():
         ("q5_cells", REJ["Q5 \\K inside a substituted body"][1]),
         ("q6_blocks", REJ["Q6 block marked # pcre2-deviates (D68)"][0]),
         ("q6_cells", REJ["Q6 block marked # pcre2-deviates (D68)"][1]),
+        ("q7_blocks", REJ["Q7 block declares a non-byte encoding"][0]),
+        ("q7_cells", REJ["Q7 block declares a non-byte encoding"][1]),
         ("p1_patterns", n_p1), ("p2_patterns", n_p2),
         ("p1_identity", n_p1_id), ("p2_identity", n_p2_id),
         ("p1_lookaround", n_p1_look), ("p2_lookaround", n_p2_look),

@@ -3850,7 +3850,7 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   the ledger message's last transition):** the VM cursor rung's lazy rmin
   prefix is spelled as a span scan capped at rmin iterations plus the rung's
   reach test (`docs/dev/lanes/vmlazy_report.md`). `run_codegen_tests.sh`'s
-  `ABI_EXPECT` 72 and its ledger message; `run_recursion_identity.sh` (B)'s
+  `ABI_EXPECT` 73 and its ledger message; `run_recursion_identity.sh` (B)'s
   FILEPIN self-pinned in a follow-up commit. No byte-count pin moved
   (`run_cpset_structure.sh` [3], the K59 resource rung and C5 `arms.tsv`
   carry no lazy cursor prefix: all three suites green unchanged).
@@ -4022,3 +4022,39 @@ Both directions (lane report `docs/dev/lanes/decfbB0b_report.md`): green on
 the tree; red on a dropped witness (the floor fires), a value removed from
 match_api's set (the equality and the size guard fire), `pcrec_engine_sel_name`
 returning `selected` for `forced`, and a changed PFLW stamp text.
+
+## [OPT-REVEND] L2 (lane revbuild, 2026-10-10, abi 72 -> 73)
+
+- **run_rev_end.sh** — LOCATE's `rev-end` row held to the artifact (in
+  `make test-codegen`; mech arm `revend`). §1 named witnesses: the stamp,
+  `rx_info.scan`, the walk's text (`for (int revend_seed = 0;`), no forward
+  machine, the tie arm (T2 `rx_match` run, T3 relocate) and the declines;
+  §2 a corpus sweep under `-fno-rev-end` (floors on the walking population);
+  §3 the size ladder's rev-end clause: a reference compiler built with
+  `PCREC_MAX_EMIT_BYTES` set between the tie witness's premul-dropped and
+  built sizes (read off `--warn-emit-bytes`, the cap's own measure, and
+  asserted to straddle) must ship it `unwrapped`, `size-cap-retry`, no
+  forward machine; §4 the dead-seed X witnesses (DFA and hybrid) compiled
+  `--emit-main` under `-fsanitize=address,undefined` and answered as the
+  `-fno-rev-end` build does. Sabotage S758-S781.
+- **run_premul_table.sh**'s scan detector learns the walk's marker
+  (`for (int revend_seed = 0;`, shared with run_dfa_stamps.sh); without it
+  the 143 rev-end artifacts read as stamp-without-a-scan (lane revtri).
+  `cand_oracle_witnesses.tsv`: `a\Kb\b` (and `-fno-rev-end a\Kb\z`) for
+  `offset-set-bounded`, `(\s+)$` for the stage-2 `search-from vm ENDSET`
+  cell (lane revtri).
+- **run_dfa_stamps.sh** gains `[start]` (`RX_DFA_START` against the text: a
+  reverse pass, the pinned form, or the absence value `"attempt-start"`) and
+  the `rev-end` scan value with its witnesses.
+- Re-pins at this event: `run_search_pinned.sh` (the `attempt-start` value;
+  the table fold over the machines present, whichever heads the list),
+  `run_anchored_match.sh` (`nomatch` on the empty engine), `run_prechecks.sh`
+  §2 (the end window is the walk's DENIED form: §2.1/§2.5 compile with
+  `-fno-rev-end`, §2.6 holds the default's absence), `run_fallback_table.sh`
+  (`seq-pfcd2`'s witness moved to `(\bcat\b){2,}\w\w`: the old one lost
+  705 B to the walk's deference and fit the cap), `run_nomatch_caps.sh`
+  (forms `attempt-start` and a rev-end witness), `run_scan_edge_census.sh`
+  and the M2.7/M2.12 gens (compile with `-fno-rev-end`: they measure the
+  forward scan), `cand_oracle_witnesses.tsv`; `ABI_EXPECT` 73 and its
+  ledger message.
+

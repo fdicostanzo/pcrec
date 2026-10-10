@@ -3209,6 +3209,12 @@ struct Ctx {
      * first, and that is a measurement per contributor, not a property this
      * enum can assert. */
     unsigned char        size_drop_rung;    /* SDR_* */
+    /* [OPT-REVEND] L2 (LR-S12) did the ladder's `drop-anchored` row FIRE on
+     * this compile (its bit in the fired record)? `build_anchored_dfa`'s one
+     * reader of the drop, in place of the ordinal: the row is skipped where
+     * the drop would GROW the member set (a `rev-end` tie), and a later rung
+     * must not drop the machine the skipped one kept. */
+    bool                 anchored_dropped;
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
@@ -6886,6 +6892,26 @@ bool pcrec_cand_finish_needs(Ctx *cx, unsigned m);
  * whose lowering recorded no widening erasure. `Vm.mrl_win`'s one
  * assignment reads it. src/gen/emit_dfa.c. */
 bool pcrec_cand_lang_exact(Ctx *cx);
+
+/* [OPT-REVEND] L2 THE SIZE LADDER's rev-end clause (locate_finish.md §5 L2,
+ * LR-S12): does dropping the anchored machine leave a member set that is a
+ * STRICT SUBSET of this compile's (the path re-derived with it unbuilt)? A
+ * `rev-end` tie that loses it relocates to the composite, which needs the
+ * forward machine: dropping A would GROW such an artifact. The anchored
+ * machine is the one droppable machine today. src/gen/emit_dfa.c. */
+bool pcrec_cand_drop_anchored_shrinks(Ctx *cx);
+/* [OPT-REVEND] L2.1 the generated stamp rule's ABSENCE value for start-table
+ * slot `slot` (a `CandSlot`), or NULL where the slot has none: what its stamp
+ * reads where the path does not ask the slot. `--list-axes` shows it as the
+ * axis's absence row. src/gen/emit_dfa.c. */
+const char *pcrec_cand_absence(int slot);
+
+/* [OPT-REVEND] L2 stage 2 THE VM ENTRY's FINISH ASKS (locate_finish.md
+ * §2.3, §4.3): the search entry's hand (its inlined body's SPAN, or LOWER
+ * where the boundary projects it or no body exists), NOMATCH, and the
+ * match-here entry's AT; `verify-at`'s VM hat must finish the search hand
+ * exactly where `mrl_win` arms the window ceiling. src/gen/emit_dfa.c. */
+void pcrec_cand_finish_vm(Ctx *cx, bool mrl_win);
 
 /* [OPT-REVEND] L0 the LOCATE ask of an artifact with NO DFA body (a VM
  * artifact without a prefilter), once, on CAND_ROUTE_VM (locate_finish.md

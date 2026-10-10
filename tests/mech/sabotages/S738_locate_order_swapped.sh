@@ -10,30 +10,30 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\B\\b" 
 SAB_REACH_EXPECT='REACH-EMPTY'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): rev-end sits between empty and composite, and empty gained its DFA front, whole and fin; the plant still moves empty after the composite. Intent
+# unchanged.
 SAB_BEFORE='    { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_LOCATE,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "empty", .map = CM_NONE, .hands = CT_VERDICT,
-      .needs = { [CAND_ROUTE_ATTEMPT] = { .front = CAND_FRONT_DFA } },
+      .needs = { [CAND_ROUTE_DFA]     = { .front = CN(CAND_SLOT_PRESENCE) },
+                 [CAND_ROUTE_ATTEMPT] = { .front = CAND_FRONT_DFA } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_empty_unanchored,
                               [CAND_ROUTE_ATTEMPT] = emit_empty_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "empty", [CAND_ROUTE_ATTEMPT] = "empty" },
-                    .nomatch = true } },
-    { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
+                    .nomatch = true, .whole = true, .fin = CT_VERDICT } },
 '
 SAB_AFTER='    /* SABOTAGE S738: empty moved after composite */
-    { .c = { "composite", 0, cand_always }, .slot = CAND_SLOT_LOCATE,
 '
 SAB_FILE2='src/gen/emit_dfa.c'
 SAB_COUNT2=1
-SAB_BEFORE2='                    .scan = { [CAND_ROUTE_DFA] = "unanchored",
-                              [CAND_ROUTE_ATTEMPT] = "attempt" } } },
+SAB_BEFORE2='                    .recover = CAND_HAND_EXISTS, .fin = CT_START } },
 '
-SAB_AFTER2='                    .scan = { [CAND_ROUTE_DFA] = "unanchored",
-                              [CAND_ROUTE_ATTEMPT] = "attempt" } } },
+SAB_AFTER2='                    .recover = CAND_HAND_EXISTS, .fin = CT_START } },
     { .c = { "empty", 0, locate_empty_applies }, .slot = CAND_SLOT_LOCATE,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "empty", .map = CM_NONE, .hands = CT_VERDICT,
-      .needs = { [CAND_ROUTE_ATTEMPT] = { .front = CAND_FRONT_DFA } },
+      .needs = { [CAND_ROUTE_DFA]     = { .front = CN(CAND_SLOT_PRESENCE) },
+                 [CAND_ROUTE_ATTEMPT] = { .front = CAND_FRONT_DFA } },
       .u.locate = { .emit = { [CAND_ROUTE_DFA] = emit_empty_unanchored,
                               [CAND_ROUTE_ATTEMPT] = emit_empty_attempt },
                     .scan = { [CAND_ROUTE_DFA] = "empty", [CAND_ROUTE_ATTEMPT] = "empty" },
-                    .nomatch = true } },
+                    .nomatch = true, .whole = true, .fin = CT_VERDICT } },
 '

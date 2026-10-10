@@ -22,7 +22,8 @@
 #
 # THE POPULATION, and why each part is there:
 #   W  the dead-group WITNESSES below, every DFA search form among them
-#      (reverse-pass, pinned, attempt, empty) — the forms whose success sites
+#      (reverse-pass, pinned, attempt, empty, and [OPT-REVEND]'s rev-end
+#      walk) — the forms whose success sites
 #      each carry their own copy of the fill. Run on four routes: auto,
 #      --engine=vm, -fno-anchored-dfa (the search-filter `_match`), and
 #      -e utf8 (the startpos guard's -7 refusal is another negative return).
@@ -103,9 +104,10 @@ WITNESSES=(
     'unanchored/reverse-pass|(a){0}(b){0}c|d'
     'unanchored/pinned|(?(DEFINE)(?<x>a))b*'
     'unanchored/pinned|(x){0}a*'
-    'attempt/reverse-pass|^(?(DEFINE)(?<x>a))b(?&x)'
-    'attempt/reverse-pass|\G(a){0}b'
-    'empty/reverse-pass|(?(DEFINE)(?<x>a))[^\x00-\xff]'
+    'attempt/attempt-start|^(?(DEFINE)(?<x>a))b(?&x)'
+    'attempt/attempt-start|\G(a){0}b'
+    'empty/attempt-start|(?(DEFINE)(?<x>a))[^\x00-\xff]'
+    'rev-end/reverse-pass|(?(DEFINE)(?<x>a))b+$'
 )
 STRIDE="${NOMATCH_STRIDE:-12}"
 POP="$TMP/pop.tsv"   # index route pattern
@@ -173,7 +175,7 @@ for w in "${WITNESSES[@]}"; do
         bad "reach: witness $pat is [$st engine=$eng NCAPS=$nc form=$scan/$start] on the auto route, not a DFA dead-group artifact of form $want — re-derive the witness"
     fi
 done
-for f in unanchored/reverse-pass unanchored/pinned attempt/reverse-pass empty/reverse-pass; do
+for f in unanchored/reverse-pass unanchored/pinned attempt/attempt-start empty/attempt-start rev-end/reverse-pass; do
     case "$forms_seen" in *" $f "*) ;; *) bad "reach: no dead-group witness reaches the DFA search form $f" ;; esac
 done
 read -r a n _ _ _ <<< "$(summ '$4=="dfa" && $5>=2')"

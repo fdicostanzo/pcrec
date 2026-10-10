@@ -72,14 +72,23 @@ SAB_COUNT=1
 # gone. Intent re-verified: the plant still replaces the projection with a
 # forked predicate at the stamp site, and the body is still emitted from the
 # selection (`dfa_search_is_pinned` reads the row's `u.recover.pinned`).
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the stamp reads RECOVER's absence first (L2.1's generated rule); the fork keeps that half and forks the selection after it. Intent
+# unchanged.
 SAB_BEFORE='static const char *dfa_search_start_name(Ctx *cx)
-{ return dfa_search_start_of(cx)->tok; }'
+{
+    /* [OPT-REVEND] L2.1 the generated rule: RECOVER'\''s absence where the path
+     * asks none (an attempt loop, the empty engine). */
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    return a ? a : dfa_search_start_of(cx)->tok;
+}'
 SAB_AFTER='/* SABOTAGE S222: the stamp is a SECOND predicate, forked from the selection
  * the body was emitted through. It reads the WIDENED accept bit AND omits
  * the invariance clause -- both halves, because the widened read ALONE is
  * MEASURED to agree with the selection everywhere (see this file header). */
 static const char *dfa_search_start_name(Ctx *cx)
 {
+    const char *a = cand_stamp_absent(cx, CAND_SLOT_RECOVER, cand_route_of(cx));
+    if (a) return a;
     if (cx->job->engine != PCREC_ENG_UNANCH || dfa_engine_is_empty(cx))
         return "reverse-pass";
     const Dfa *fd = &cx->job->dfa;

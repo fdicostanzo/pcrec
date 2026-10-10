@@ -50,6 +50,7 @@
   - [§2.43](#s2-43) `-fno-memfn-simd` / `-fmemfn-simd` — `PCREC_NO_MEMFN_SIMD` (bit 48), `PCREC_FORCE_MEMFN_SIMD` (bit 49)
   - [§2.44](#s2-44) `-fno-poss-ctx-follow` — `PCREC_NO_POSS_CTX_FOLLOW` (bit 50)
   - [§2.45](#s2-45) `-fno-poss-bref-first` — `PCREC_NO_POSS_BREF_FIRST` (bit 51)
+  - [§2.46](#s2-46) `-fno-rev-end` — `PCREC_NO_REV_END` (bit 52)
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -146,6 +147,7 @@
 | 2.43 | `-fno-memfn-simd` / `-fmemfn-simd` | 48 / 49 | off | answer-identical | masked | `<PREFIX>_MEMFN_FORMS` |
 | 2.44 | `-fno-poss-ctx-follow` | 50 | on | engine-selecting | kept | `<PREFIX>_VM_POSS_ARMS` |
 | 2.45 | `-fno-poss-bref-first` | 51 | on | answer-identical | masked | `<PREFIX>_VM_POSS_ARMS` |
+| 2.46 | `-fno-rev-end` | 52 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -325,9 +327,9 @@
 
 <a id="s2-15-p2"></a>[2.15¶2] **The selection is not this flag.** The anchored form needs the one-pass unanchored DFA engine (a `^`- or `\G`-bearing pattern runs on the per-start `attempt` scan and keeps the search-filter form), an artifact that is not the empty engine, and an anchored machine that builds inside the DFA caps (`PCREC_ANCHORED_MAX_STATES`, and the shared caps after the mandatory machines are built). A machine over a cap declines the form; it never refuses a pattern.
 
-<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"` or `"search-filter"`, mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`).
+<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"`, `"search-filter"` or, on the empty engine, `"nomatch"` (`<prefix>_match` returns no match without a scan), mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`).
 
-<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally.
+<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally. The rung is skipped where the drop would add a machine (`limits.md` §8.4¶2a).
 
 <a id="s2-15-p5"></a>[2.15¶5] **Dial:** no cell, deliberately excluded from `−2` pending its own measurement (§5.4).
 
@@ -472,7 +474,7 @@ return 1;
 
 <a id="s2-19-p5"></a>[2.19¶5] **A VM hybrid is in scope**: it inlines the same search body as its prefilter, and consumes the span as a bound (`attempt_position = window[0][0]`), never as the answer.
 
-<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"`, mirrored at run time by `rx_info.search_form` (§3, §3.2).
+<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"` (or `"attempt-start"` where the search recovers no start at all, `match_api.md` §6.3.4¶11), mirrored at run time by `rx_info.search_form` (§3, §3.2).
 
 <a id="s2-19-p7"></a>[2.19¶7] **Dial:** no cell, PURE WIN (§5.4).
 
@@ -626,6 +628,8 @@ A fact deny: the start-anchor fact reads `unanchored` for every consumer at once
 
 <a id="s2-26-p4"></a>[2.26¶4] **The stamp** is `<PREFIX>_END_WINDOW` on every artifact of both engines: the bound as a decimal string, or `"none"`. A string with a `"none"` member, because `0` is a legal window (a `\z` pattern of maximum width 0 may begin only at the end). A denied build reads `"none"`.
 
+<a id="s2-26-p4a"></a>[2.26¶4a] Where §2.46's reverse walk applies, no forward scan runs to clamp and the stamp reads `"none"`; under `-fno-rev-end` the window applies as above.
+
 <a id="s2-26-p5"></a>[2.26¶5] **Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `end_window`.
 A fact deny: the end-window fact reads `none` for every consumer of it — both engines' start clamp and `<PREFIX>_END_WINDOW`.
 
@@ -690,7 +694,7 @@ A fact deny over the run: every consumer sees no run — the run pre-check and `
 | `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name (under `set-leads`, on a rarer necessary-set byte first) |
 | `"none"` | nothing is necessary: no necessary byte and no necessary run |
 | `"one-attempt"` | declined: the route tries one start position, linearly |
-| `"dominated"` | declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run) |
+| `"dominated"` | declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run), or the search's locator decides presence itself (a `"rev-end"` or `"empty"` scan, §2.46) |
 
 <a id="s2-29-p11"></a>[2.29¶11] `"none"` holds if and only if `<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` are both `"none"`. A masked run over an empty necessary set has `<PREFIX>_REQ_BYTE "none"` and an emitted pre-check. A declined artifact whose body calls no other `memchr` has no `#include <string.h>`.
 
@@ -960,6 +964,19 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-45-p2"></a>[2.45¶2] ANSWER-IDENTICAL, masked out of `rx_info.flags`. A backreference is VM-only (under `--no-captures` too), so the arm can change the program and the free discharge but never `<PREFIX>_ENGINE`; `--engine=dfa` refuses a backreference pattern with and without it. `tests/reject/`'s `reject_engine_dfa_bref_nocaptures` holds that premise: if a backreference ever becomes DFA-runnable, this axis becomes engine-selecting. **The stamp** is `<PREFIX>_VM_POSS_ARMS` bit `0x4`, `0` under the denial. **Differential:** `tests/possessify/run_possdiff.sh`.
 
+<a id="s2-46"></a>
+### 2.46 `-fno-rev-end` — `PCREC_NO_REV_END` (bit 52)
+
+<a id="s2-46-p1"></a>[2.46¶1] **Denies** the REVERSE-FROM-END search. When every match of a pattern ends at the subject's end (`\z`), or there or just before a final newline (`$`, `\Z`) — every alternative ends in one of them outside multiline, and the pattern has no `\G` (the `end_pin` fact, `facts_listing.md` §4.1.2¶9a) — the search walks the artifact's own reverse machine backwards from each possible end down to `search_from`, and the smallest position where the walk accepts is the match start. Where one end reaches that start, it is the match's end and no forward pass runs. Where both ends reach it (a tie, possible only when a match can end by consuming the final newline), one forward run decides the end: the anchored match-here machine from the start (`<PREFIX>_DFA_MATCH "unwrapped"`), or otherwise the ordinary forward-then-reverse search from the start. The work is proportional to the match, not to the subject. Default: on. Masked out of `rx_info.flags`.
+
+<a id="s2-46-p2"></a>[2.46¶2] **Where it applies.** A DFA-scan body on the unanchored engine (`<PREFIX>_DFA_SCAN` would otherwise read `"unanchored"`): a DFA artifact, and the inlined prefilter of a VM hybrid, whose start and end the VM's attempt then reads exactly as it reads the forward search's (a tie there always takes the forward search from the start, never the VM's anchored attempt). Not on an `"attempt"` body (a `^`/`\A` pattern has no reverse machine), not on a VM artifact without a prefilter, not under a multiline `$`, and not on a pattern containing `\G`. A trailing zero-width item (`\b`, a lookahead) does not stop it.
+
+<a id="s2-46-p3"></a>[2.46¶3] **ANSWER-IDENTICAL** (`tests/assertions/rev_end.rxt` and `tests/revend/stage2_captures.rxt` against libpcre2 10.46, the latter on the VM hybrid's captures). It also takes the bounded-width patterns §2.26's window would clamp: on an artifact it applies to, no forward scan runs to clamp, and `<PREFIX>_END_WINDOW` reads `"none"` (`match_api.md` §6.3.1¶5a).
+
+<a id="s2-46-p4"></a>[2.46¶4] **The stamp** is `<PREFIX>_DFA_SCAN "rev-end"` (and `rx_info.scan`); the denied build reads `"unanchored"`. On a `"rev-end"` artifact `<PREFIX>_DFA_START` is `"reverse-pass"`, `<PREFIX>_DFA_PREFILTER` and `<PREFIX>_REQ_HANDOFF` read `"none"`, `<PREFIX>_REQ_WHY` reads `"dominated"` where a necessary byte exists (the walk itself proves there is no match), and the table stamps describe the reverse machine (and the anchored one where a tie can run it).
+
+<a id="s2-46-p5"></a>[2.46¶5] **Under the size caps.** Without its anchored machine a walk that can tie relocates through the forward-then-reverse search and so carries the forward machine, a larger artifact; the size-cap ladder's `drop-anchored` rung is skipped there (`limits.md` §8.4¶2a).
+
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
 
@@ -967,14 +984,14 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 | stamp | names | axis | `rx_info` mirror |
 |---|---|---|---|
-| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the O(n) forward scan, followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"`), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | none: the engine's own selection | `rx_info.scan` |
+| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the O(n) forward scan, followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"`), `"rev-end"` (the reverse walk from the subject's end, §2.46), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | §2.46; otherwise the engine's own selection | `rx_info.scan` |
 | `<PREFIX>_DFA_PREFILTER` | the candidate-start mechanism | §2.14, §2.30, §2.42; the plain forms have no flag | `rx_info.prefilter` |
 | `<PREFIX>_DFA_PREFILTER_OFFSETS` | the offsets an `offset-set` or `run-pinned` filter tests | §2.14, §2.30 | none |
 | `<PREFIX>_DFA_TABLE` | the transition tables' encoding | §2.13 | none |
 | `<PREFIX>_DFA_UNIFORM_FOLDS` | how many of the artifact's DFA tables had all cells equal and are not emitted, their accessor returning the constant | none: what the machine turned out to contain, not a choice | none |
 | `<PREFIX>_DFA_SCAN_EDGE` | the scan edges' run test | §2.18, §2.22, §2.33, §2.37 | none |
-| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"` or `"reverse-pass"` | §2.19 | `rx_info.search_form` |
-| `<PREFIX>_DFA_MATCH` | which form `<prefix>_match` takes: `"unwrapped"` or `"search-filter"` | §2.15 | `rx_info.match_form` |
+| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"`, `"reverse-pass"`, or `"attempt-start"` (none recovered) | §2.19 | `rx_info.search_form` |
+| `<PREFIX>_DFA_MATCH` | which form `<prefix>_match` takes: `"unwrapped"`, `"search-filter"`, or `"nomatch"` (an `"empty"` scan: no match exists) | §2.15 | `rx_info.match_form` |
 
 <a id="s3-p2"></a>[3¶2] A stamp has an `rx_info` mirror where it is a caller-visible cost property of an entry the caller calls (`DFA_MATCH`, `DFA_START`) or where a header-less consumer buckets on it (`DFA_SCAN`, `DFA_PREFILTER`); an internal encoding choice has none (`DFA_TABLE`, `DFA_SCAN_EDGE`, `DFA_PREFILTER_OFFSETS`, `DFA_UNIFORM_FOLDS`). `<PREFIX>_DFA_TABLE` names the encoding selected even where every table of it folded, because the encoding fixes the folded constant.
 
@@ -1057,6 +1074,7 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bits `PCREC_NO_MEMFN_SIMD` / `PCREC_FORCE_MEMFN_SIMD` | `-fno-memfn-simd` / `-fmemfn-simd` | §2.43 |
 | `flags` bit `PCREC_NO_POSS_CTX_FOLLOW` | `-fno-poss-ctx-follow` | §2.44 |
 | `flags` bit `PCREC_NO_POSS_BREF_FIRST` | `-fno-poss-bref-first` | §2.45 |
+| `flags` bit `PCREC_NO_REV_END` | `-fno-rev-end` | §2.46 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO` / `_DFA` / `_VM`) | `--engine=E` | §2.11 |

@@ -10,5 +10,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a" && gr
 SAB_REACH_EXPECT='REACH-FINISH'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                  .hand = dfa_engine_is_empty(cx) ? CAND_HAND_NOMATCH : CAND_HAND_AT };'
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the match-here hand is dfa_match_hand(cx); the plant still passes hand 0. Intent
+# unchanged.
+SAB_BEFORE='                  .hand = dfa_match_hand(cx) };'
 SAB_AFTER='                  .hand = 0 };   /* SABOTAGE S740: the hand dropped */'

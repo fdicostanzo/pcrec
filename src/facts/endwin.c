@@ -54,8 +54,11 @@
  * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM, `src/opt/mrl.c:38-46`'s rule.
  *
  * Called by the pattern-facts record (`src/facts/facts.c`) on the
- * `end_window` fact's first ask, over the LOWERED tree the E2 seal recorded
- * after `pcrec_lower_enc`. */
+ * `end_pin` and `end_window` facts' first asks, over the LOWERED tree the E2
+ * seal recorded after `pcrec_lower_enc`. [OPT-REVEND] L1 split the view half
+ * out as its own fact, `end_pin` (`pcrec_end_pin`, below): declines (3) and
+ * (4) and the walk are the pin's; (1) and (2) stay the window's, and the
+ * window READS the pin, so the two cannot drift. */
 
 #include "core/internal.h"
 #include "enc/enc.h"
@@ -152,6 +155,34 @@ static void ew_see_gstart(void *ud, const Ast *a)
     if (a->k == A_GSTART) *(bool *)ud = true;
 }
 
+/* [OPT-REVEND] L1 the END PIN: which end-anchor every match satisfies
+ * (`PCREC_EPIN_*`), or `PCREC_EPIN_NONE` where it declines — `ew_walk`'s view
+ * plus decline (3); decline (4) is inside the walk. It is the view half of
+ * `pcrec_end_window` below, with NO width (1) and NO encoding (2) decline:
+ * a seeded reverse walk needs neither, since it starts at a character
+ * boundary and walks whole characters (revend.md §3.6). A trailing
+ * zero-width factor, a lookaround included, is transparent (`A_CAT`'s
+ * `cwmax == 0` arm): seeding a position where no match ends is sound,
+ * because the walk accepts nothing there, provided a DEAD seed state is
+ * skipped before its first view lookup (revend.md §3.7, the walk's own
+ * obligation). */
+int pcrec_end_pin(const Ast *root, PfWhyCode *why)
+{
+    bool gstart = false;
+    int view;
+
+    *why = PF_WHY_NOT_END_ANCHORED;
+    view = ew_walk(root);
+    if (view == EW_NONE) return PCREC_EPIN_NONE;          /* not end-anchored */
+
+    *why = PF_WHY_GSTART;
+    pcrec_ast_visit(root, ew_see_gstart, &gstart);
+    if (gstart) return PCREC_EPIN_NONE;                   /* (3) */
+
+    *why = PF_WHY_NONE;
+    return view == EW_Z ? PCREC_EPIN_Z : PCREC_EPIN_EOL;
+}
+
 /* The artifact-level answer: the window `W` in BYTES — a match may begin only
  * in `[subject_length - W, subject_length]` — or `-1` where the mechanism
  * declines. See the header for the four structural declines and for why
@@ -161,12 +192,13 @@ static void ew_see_gstart(void *ud, const Ast *a)
  * carve-out (d), docs/design/patfacts/design.md §4.2.2): the record resolves
  * it once and this derivation never reads `cx->opt->encoding`. Its
  * structural fields (`start_cls`, `max_cp`) are the only encoding facts a
- * fact derivation sees. */
-long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why)
+ * fact derivation sees. `pin` and `pinwhy` are the `end_pin` fact's value and
+ * reason ([OPT-REVEND] L1): this is its READER, so declines (3) and (4) and
+ * the view are decided once, there. */
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root, int pin,
+                           PfWhyCode pinwhy, PfWhyCode *why)
 {
-    bool gstart = false;
     long long w;
-    int view;
 
     /* (2) — one test, two obligations: no non-boundary positions, and
      * therefore one byte per character, which is what lets `pcrec_cwmax`'s
@@ -174,18 +206,13 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why)
     *why = PF_WHY_ENC_MULTIBYTE;
     if (!e || e->start_cls || e->max_cp > 0xFFu) return -1;
 
-    *why = PF_WHY_NOT_END_ANCHORED;
-    view = ew_walk(root);
-    if (view == EW_NONE) return -1;                       /* not end-anchored */
-
-    *why = PF_WHY_GSTART;
-    pcrec_ast_visit(root, ew_see_gstart, &gstart);
-    if (gstart) return -1;                                /* (3) */
+    *why = pinwhy;
+    if (pin == PCREC_EPIN_NONE) return -1;                /* not pinned, or (3) */
 
     *why = PF_WHY_UNBOUNDED;
     w = pcrec_cwmax(root);
     if (w >= PCREC_W_UNBOUNDED) return -1;                /* (1) */
 
     *why = PF_WHY_NONE;
-    return w + (view == EW_Z ? 0 : EW_EOL_SLACK);
+    return w + (pin == PCREC_EPIN_Z ? 0 : EW_EOL_SLACK);
 }

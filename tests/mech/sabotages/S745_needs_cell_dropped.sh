@@ -8,7 +8,9 @@ SAB_DESC='reverse-pass loses its needs (R): the member folds skip the reverse ma
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/lfl0_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S745.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): reverse-pass gained its take cells after its needs; the plant still drops its needs. Intent
+# unchanged.
 SAB_BEFORE='      .needs = { [CAND_ROUTE_DFA] = { CAND_MR } },
-      .u.recover = { .pinned = false } },'
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS, CAND_HAND_WINDOW } },'
 SAB_AFTER='      /* SABOTAGE S745: the reverse machine'\''s needs dropped */
-      .u.recover = { .pinned = false } },'
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS, CAND_HAND_WINDOW } },'

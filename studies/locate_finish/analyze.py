@@ -46,8 +46,9 @@ bad = 0
 # ---- CONTROL C1: the stamp says the artifact carries a reverse pass; the TEXT
 # says whether any `rx_reverse_` identifier is there.  Shares no source with the
 # stamp writer (it reads the emitted C).
+# [OPT-REVEND] L2 (lane revbuild): a `rev-end` walk is the reverse machine too.
 def stamp_rev(r):
-    return r["DFA_SCAN"] == "unanchored" and r["DFA_START"] == "reverse-pass"
+    return r["DFA_SCAN"] in ("unanchored", "rev-end") and r["DFA_START"] == "reverse-pass"
 
 c1 = collections.Counter()
 for r in comp:
@@ -55,7 +56,7 @@ for r in comp:
         c1["text-refused"] += 1
         continue
     c1[(stamp_rev(r), r["t_rev"] == "1")] += 1
-print("CONTROL C1  stamp(DFA_SCAN=unanchored & DFA_START=reverse-pass) vs text(any rx_reverse_ identifier)")
+print("CONTROL C1  stamp(DFA_SCAN in {unanchored, rev-end} & DFA_START=reverse-pass) vs text(any rx_reverse_ identifier)")
 for k, v in sorted(c1.items(), key=str):
     print(f"  {k}: {v}")
 dis1 = c1[(True, False)] + c1[(False, True)]
@@ -237,7 +238,13 @@ bad += dis4 > 0
 # text is the bytes).  Hybrids are included: they reach the three readers
 # through pcrec_emit_dfa_scan_stamps and the orientation block, and their
 # `_match` is the VM's, so no A is expected (LR-S1's population).
-def want_members(r):
+# [OPT-REVEND] L2 (lane revbuild): a `rev-end` walk carries the reverse
+# machine and the anchored one iff unwrapped; it carries the forward machine
+# only where a tie relocates through the composite, which no stamp says, so
+# C5 takes the text's F on those rows (C5-L0 holds F against the derivation).
+def want_members(r, got_f=False):
+    if r["DFA_SCAN"] == "rev-end":
+        return (got_f, True, r["DFA_MATCH"] == "unwrapped")
     if r["DFA_SCAN"] != "unanchored":
         return (False, False, False)
     return (True, r["DFA_START"] != "pinned", r["DFA_MATCH"] == "unwrapped")
@@ -247,8 +254,8 @@ dis5 = []
 for r in comp:
     if r["t_ok"] != "ok":
         continue
-    want = want_members(r)
     got = (r["t_fwd"] == "1", r["t_rev"] == "1", r["t_anch"] == "1")
+    want = want_members(r, got[0])
     kind = "hybrid" if r["VM_PREFILTER"] == "hybrid" else (r["ENGINE"] + ":" + (r["DFA_SCAN"] or "-"))
     c5[(kind, "".join(n for n, b in zip("FRA", want) if b) or "-",
         "agree" if want == got else "DISAGREE")] += 1
@@ -303,6 +310,8 @@ if "p_members" in hdr:
         if when == "body-nomatch" and not (body(r) and r["p_members"] in ("-", "V")):
             return None
         if when == "dfa-finisher" and r["p_finish"] == "vm":
+            return None
+        if when == "rev-end" and r["DFA_SCAN"] != "rev-end":
             return None
         route = r["p_locate"] if rt == "body" else rt
         return sl + "@" + ("*" if sl in ENTRY else route)

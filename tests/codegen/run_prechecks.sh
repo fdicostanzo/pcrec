@@ -239,12 +239,17 @@ PATS
 # the structural half — that the bound was DERIVED, that a declining pattern
 # emitted no clamp at all, and that the two agree.
 
+# [OPT-REVEND] L2: on a DFA artifact an end-pinned pattern's search is the
+# `rev-end` walk, which asks no WINDOW (the walk starts at the end), so the
+# window is the walk's DENIED form: §2.1 and §2.5 compile with `-fno-rev-end`,
+# and §2.6 holds the default's absence to the walk.
+#
 # §2.1 — the derived bound on witnesses whose arithmetic is checkable by hand,
 # and the four structural declines.
 while IFS='%' read -r pat _sep want; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s2_$RANDOM$RANDOM.c"
-    if ! emit "$a" "$pat"; then
+    if ! emit "$a" "$pat" -fno-rev-end; then
         bad "[2.1] $pat: refused; expected RX_END_WINDOW \"$want\""
         continue
     fi
@@ -332,7 +337,7 @@ s2_win=0; s2_tot=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     s2_tot=$((s2_tot + 1))
-    emit "$WORKDIR/s2_c.c" "$pat" || continue
+    emit "$WORKDIR/s2_c.c" "$pat" -fno-rev-end || continue
     [ "$(stamp "$WORKDIR/s2_c.c" END_WINDOW)" = "none" ] || s2_win=$((s2_win + 1))
 done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/assertions/end_window.rxt")
 [ "$s2_tot" -ge 12 ] \
@@ -341,6 +346,29 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/assertions/end_window.rxt")
 [ "$s2_win" -ge "$S2_FLOOR" ] \
     && ok "[2.5] $s2_win of $s2_tot corpus patterns carry an end window (floor $S2_FLOOR)" \
     || bad "[2.5] only $s2_win corpus patterns carry an end window, floor is $S2_FLOOR — §2.1 may be vacuous"
+
+# §2.6 — [OPT-REVEND] L2: the default build's walk supersedes the window. A
+# witness §2.1 bounds reads `RX_DFA_SCAN "rev-end"`, `RX_END_WINDOW "none"`
+# (the slot is not on the walk's path) and emits no clamp; the same pattern
+# under `--engine=vm` (no walk) keeps the window.
+for pat in 'abc$' '\z' 'a{0,4}$'; do
+    if emit "$WORKDIR/s2_rev.c" "$pat"; then
+        [ "$(stamp "$WORKDIR/s2_rev.c" DFA_SCAN)" = "rev-end" ] \
+            && [ "$(stamp "$WORKDIR/s2_rev.c" END_WINDOW)" = "none" ] \
+            && ! grep -q 'search_from = subject_length - ' "$WORKDIR/s2_rev.c" \
+            && ok "[2.6] $pat: the walk (rev-end) asks no window, stamps \"none\" and emits no clamp" \
+            || bad "[2.6] $pat: expected RX_DFA_SCAN \"rev-end\" with RX_END_WINDOW \"none\" and no clamp, got scan \"$(stamp "$WORKDIR/s2_rev.c" DFA_SCAN)\" window \"$(stamp "$WORKDIR/s2_rev.c" END_WINDOW)\""
+    else
+        bad "[2.6] $pat: refused"
+    fi
+done
+if emit "$WORKDIR/s2_revvm.c" 'abc$' --engine=vm; then
+    [ "$(stamp "$WORKDIR/s2_revvm.c" END_WINDOW)" = "4" ] \
+        && ok "[2.6] --engine=vm: abc\$ keeps the window (4): no walk on that route" \
+        || bad "[2.6] --engine=vm: abc\$ stamps \"$(stamp "$WORKDIR/s2_revvm.c" END_WINDOW)\", expected 4"
+else
+    bad "[2.6] --engine=vm: abc\$ refused"
+fi
 
 # =========================================================================
 # SECTION 3 — [OPT-REQBYTE]: <PREFIX>_REQ_BYTE and the memchr it names

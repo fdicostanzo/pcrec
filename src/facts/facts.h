@@ -132,6 +132,20 @@ enum {
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
 
+/* [OPT-REVEND] L1 THE END PIN — where can a match END? The view half of
+ * `end_window` (src/facts/endwin.c's header): every match ends at the
+ * subject's end (`\z`), or at it or one byte before a final newline (`$`,
+ * `\Z`), with no width and no encoding conjunct. Declines `\G` anywhere and
+ * a multiline `$`; a trailing zero-width factor (a lookaround included) is
+ * transparent, which is sound for a seeded walk because a seed where no match
+ * ends accepts nothing there (a DEAD seed is skipped, revend.md §3.7). Ordered
+ * weakest first, `ew_walk`'s order. */
+enum {
+    PCREC_EPIN_NONE = 0,    /* not end-pinned (or `\G`, or a multiline `$`) */
+    PCREC_EPIN_EOL,         /* every match ends at n, or at n-1 before a final '\n' */
+    PCREC_EPIN_Z            /* every match ends at n */
+};
+
 /* [START-SET] THE START SET (fact `start_set`, E2 core; D148,
  * docs/design/startset.md §3): a SUPERSET of the bytes the first consumed byte
  * of a non-empty match can be, on the lowered tree, with every zero-width node
@@ -280,8 +294,13 @@ typedef struct {
     /* [START-SET] E2 core: the start set; no deny of its own (the hats' row
      * deny, `-fno-start-set`, never empties the fact). */
     StartSet  start_set;
+    /* [OPT-REVEND] L1 E2 core: `PCREC_EPIN_*`, the end anchor every match
+     * satisfies; no deny of its own (the reader rows carry theirs). */
+    int       end_pin;
     /* [OPT-ENDWIN] E2 core: the end-anchor start window in BYTES, or -1 where
-     * the analysis declines; -1 under `-fno-end-window`. Both emitters. */
+     * the analysis declines; -1 under `-fno-end-window`. Both emitters. Since
+     * [OPT-REVEND] L1 a READER of `end_pin` (the width and the encoding over
+     * the pin), so the two cannot drift. */
     long long end_window;
     /* [K65] E2 core: the whole necessary set; empty under `-fno-req-byte`. */
     ReqSet    req_set;
@@ -347,6 +366,7 @@ bool           pcrec_fact_empty_admits(Ctx *cx);
 
 int            pcrec_fact_start_anchor(Ctx *cx);
 const StartSet *pcrec_fact_start_set(Ctx *cx);   /* E2 */
+int            pcrec_fact_end_pin(Ctx *cx);        /* E2: PCREC_EPIN_* */
 long long      pcrec_fact_end_window(Ctx *cx);
 const ReqSet  *pcrec_fact_req_set(Ctx *cx);
 /* Both return `PatFacts.req_run`: the whole run is its core half, the

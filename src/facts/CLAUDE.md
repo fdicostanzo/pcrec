@@ -175,6 +175,13 @@ defect traced to that edge (design §4.2.1, §10).
   a declared parameter, `pcrec_end_window(const PcrecEnc *, const Ast *)`,
   resolved once by `facts.c` — the derivation never reads
   `cx->opt->encoding`, design §4.2.2 carve-out (d)).
+  **[OPT-REVEND] L1 splits the view half out as its own fact, `end_pin`**
+  (`pcrec_end_pin`: `none`/`eol`/`z`, `ew_walk` plus the `\G` decline, with
+  NO width and NO encoding decline): `end_window` READS it (its row in
+  `facts.def` depends on `end_pin`), so the window is "the pin, the encoding
+  test, then `pcrec_cwmax`" and the two cannot drift; `end_window`'s
+  `--emit-facts` row is byte-identical (its encoding decline still answers
+  first). The `rev-end` LOCATE row's predicate is the pin's consumer.
 
   **IT IS THE POSITION VIEW'S SECOND CONSUMER, not a second derivation.**
   `--list-axes`' `view` axis already recognises a `\z`/`$` view and uses it to

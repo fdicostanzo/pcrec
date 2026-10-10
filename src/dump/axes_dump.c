@@ -1073,6 +1073,9 @@ char *pcrec_axes_tsv(void)
         "#axis\torder\tcandidate\tkind\tstamp_macro\tstamp_value\tdeny_macro\t"
         "deny_bit\tforce_macro\tforce_bit\tcli_flag\tapplies\n");
 
+    /* [OPT-REVEND] L2 the LOCATE rows that are a choice (`rev-end`, the
+     * composite): which walk produces the search's result. */
+    emit_cand_axis(&sb, "locate");
     emit_dfa_list_axis(&sb, "table", "list", pcrec_dfa_axis_table_cands);
     emit_table_composite_rows(&sb);
     emit_cand_axis(&sb, "prefilter");
@@ -1093,8 +1096,15 @@ char *pcrec_axes_tsv(void)
      * G's shape: the two forms of <prefix>_search's post-loop block. It has
      * NO composite rows -- unlike `table` and `scan-body`, whose stamps
      * compose a fact across machines, RX_DFA_START names one artifact-level
-     * selection and its value set is exactly these two candidates. */
+     * selection: these two candidates, or ([OPT-REVEND] L2.1) the slot's
+     * absence value `attempt-start` where the path asks no RECOVER. */
     emit_cand_axis(&sb, "search-start");
+    /* [OPT-REVEND] L2.1 the slot's ABSENCE value, read off the generated
+     * stamp rule's own column: what `RX_DFA_START` reads on a path that asks
+     * no RECOVER. A predicate row (no lever: the path, not a flag, decides). */
+    axis_row(&sb, "search-start", 3, pcrec_cand_absence(CAND_SLOT_RECOVER), "predicate",
+             "RX_DFA_START", pcrec_cand_absence(CAND_SLOT_RECOVER), "", "", "", "", "",
+             "the search's path asks no RECOVER (an ENG_ATTEMPT loop, whose attempt began at the start it reports, or the empty engine): the generated stamp rule's absence value");
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);
