@@ -8305,11 +8305,12 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage);
  * row's `needs[route].front`): the clamp, the pre-check and its handoff. */
 #define CAND_FRONT_DFA (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) | CN(CAND_SLOT_FIRST))
 /* The cells the VM search entry asks (`search-from`'s VM hat): its front
- * (the code at the VM entry's head) and BOUND. Where a prefilter exists its
- * RETRY re-enters the inlined body too (`cand_path_of`). */
+ * (the code at the VM entry's head), its seek (NEXT on the VM route, the
+ * start-set hat where no prefilter exists) and BOUND. Where a prefilter
+ * exists its RETRY re-enters the inlined body too (`cand_path_of`). */
 #define CAND_VM_ENTRY_CELLS (CN(CAND_SLOT_WINDOW) | CN(CAND_SLOT_PRESENCE) |  \
                              CN(CAND_SLOT_WIDTH) | CN(CAND_SLOT_FIRST) |      \
-                             CN(CAND_SLOT_BOUND))
+                             CN(CAND_SLOT_NEXT) | CN(CAND_SLOT_BOUND))
 
 /* THE TABLE: the 37 rows of §2.2 in first-match order, and since [OPT-REVEND]
  * L0 the LOCATE block at its head (locate_finish.md §2.4), one block per slot
@@ -9121,6 +9122,14 @@ static const CandRow *cand_locate_emit(Ctx *cx)
     PCREC_CAND_TRACE_REC("LOCATE", CAND_ROUTE_NAME(s.route), r->tok, "locate");
     CAND_HIT(CAND_SLOT_LOCATE, &s, r, "locate");
     return r;
+}
+
+/* `pcrec_cand_locate_vm` (internal.h): the LOCATE ask of an artifact with
+ * no DFA body, once, on CAND_ROUTE_VM. Its row (`composite`) has no emitter
+ * there: the VM's own search body is that row's VM hat. */
+void pcrec_cand_locate_vm(Ctx *cx)
+{
+    (void)cand_locate_emit(cx);
 }
 
 /* [DD-13c] Is the body the EMPTY engine: did LOCATE select the row whose

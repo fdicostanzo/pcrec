@@ -6887,6 +6887,12 @@ bool pcrec_cand_finish_needs(Ctx *cx, unsigned m);
  * assignment reads it. src/gen/emit_dfa.c. */
 bool pcrec_cand_lang_exact(Ctx *cx);
 
+/* [OPT-REVEND] L0 the LOCATE ask of an artifact with NO DFA body (a VM
+ * artifact without a prefilter), once, on CAND_ROUTE_VM (locate_finish.md
+ * §2.2, LR-S6): it selects `composite`, whose walk there is the VM's own
+ * search body, and emits nothing. src/gen/emit_dfa.c. */
+void pcrec_cand_locate_vm(Ctx *cx);
+
 #ifdef PCREC_CAND_TRACE
 /* [OPT-REVEND] L0 the trace build's PATH record, one per artifact at the end
  * of its emission: `CANDPATH <finish> <locate> <members> <asks>`, the

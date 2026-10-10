@@ -1,0 +1,15 @@
+# [OPT-REVEND] L0 the DECLARED stamp-only asks (locate_finish.md §2.7 "the
+# trace vs asks"; read by analyze.py's control C6). A cell here is one an
+# EMITTER asks for a STAMP's value although the path derivation's closure does
+# not reach it: the slot is not on the selected path, but today's stamp still
+# reports its selection. L2.1's generated stamp rule empties this file.
+# Columns: SLOT, ROUTE (a route name, or `body` = the body's locate route),
+# WHEN (`all`, `body` = an artifact with a DFA body), WHY.
+# WHEN may also be `body-nomatch` (a DFA body whose LOCATE row is `empty`)
+# or `dfa-finisher` (the DFA emitter writes the caller-facing entries).
+NEXT	vm	dfa-finisher	RX_VM_START_SCAN: the shared prologue stamps the VM hat's NEXT selection on every artifact; a DFA artifact has no VM entry
+RECOVER	attempt	body	RX_DFA_START on an ENG_ATTEMPT body: the attempt loop runs no reverse pass, the stamp still names RECOVER's row (D-2's population)
+RECOVER	body	body-nomatch	RX_DFA_START on an empty body: no composite, no RECOVER on the path (D-2)
+NEXT	body	body-nomatch	RX_DFA_PREFILTER on an empty body: no forward scan on the path
+PRESENCE	*	body-nomatch	RX_REQ_WHY on an empty DFA artifact: its body runs no entry front
+FIRST	*	body-nomatch	RX_REQ_HANDOFF on an empty DFA artifact: its body runs no entry front

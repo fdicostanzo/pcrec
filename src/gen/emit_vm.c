@@ -13981,6 +13981,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en, &rs);
     vm_emit_storage(&v, &pl);
+    /* [OPT-REVEND] L0 a VM artifact with no DFA body asks LOCATE on the VM
+     * route; a hybrid asked it from its inlined body (`pcrec_emit_dfa_engine`). */
+    if (!pcrec_artifact_has_dfa_scan(cx)) pcrec_cand_locate_vm(cx);
     vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);

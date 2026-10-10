@@ -1,0 +1,26 @@
+# [OPT-REVEND] L0's DECLARED trace multiplicity (docs/design/locate_finish.md
+# rev 2.1 §5 L0 "Checks"; read by scripts/trace_diff.py / emit_sweep.py
+# --trace-declared when the L0 tip is compared against its base). Records
+# whose `site` is named here are filtered from both sides; every other record
+# must be identical (the SET gate). A site listed here that filters nothing
+# on the working side fails the compare (a stale declaration).
+#
+# The three NEW records of L0, each a new site:
+#   locate        `LOCATE <route> <empty|composite>` — pcrec_emit_dfa_engine's
+#                 ask of the body's LOCATE row (every DFA artifact and hybrid)
+#   finish-match  `FINISH <route> <unwrapped|search-filter>` — the match-here
+#                 entry's FINISH ask (axis G's fold; DFA artifacts only)
+#   boundary      `BOUNDARY vm <SPAN|LOWER>` — the boundary projection at
+#                 Vm.mrl_win's one assignment (hybrids only)
+#
+# NOT declared, because they are not additions: the `ROUTE ... engine-empty`
+# record the `empty` row's predicate prints (it was dfa_engine_is_empty's;
+# the same record, now printed by the LOCATE ask and no longer by the
+# membership folds, which read the path derivation quietly) and the
+# `RECOVER ... search-start` record (no longer printed by the folds or the
+# orientation block on bodies whose path asks no RECOVER; the stamps still
+# print it). Both move in multiplicity and order only, which the SET gate
+# does not see by design.
+locate
+finish-match
+boundary

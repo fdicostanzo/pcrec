@@ -10,7 +10,7 @@ SAB_DESC='a row hands a type its slot successors do not accept: H1 ceiling hands
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/stc2_report.md); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S599.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,
+SAB_BEFORE='      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI,
       .hands = CT_VERDICT },'
-SAB_AFTER='      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,
+SAB_AFTER='      .routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI,
       .hands = CT_CAND },   /* SABOTAGE S599 */'
