@@ -239,5 +239,13 @@ C5-L0 0, C6 5,520 agree, C7 0.
 
 ### 7.2 Landing chain
 
-OWED at the time of writing; filled in from `build/scratch/landing.log`'s
-trailer by the chain's own summary (see the handback message).
+OWED at hand-off. The chain was armed detached at `11a3b198` on the
+manager's `.lift` (05:44): `worktrees/revbuild/build/land/chain.sh`, one log
+line per step in `build/land/landing.log`, ending `CHAIN COMPLETE`. Steps
+and logs (all under `worktrees/revbuild/build/land/`): `make strict`
+(`strict.log`); `make test` through `scripts/perfrun --label revbuild`
+(`test.log`, `test.log.perfrun`); `make test-revend-twin` (`twin.log`); the
+mech rows S758-S781, S738-S747, S222, S237, S608 and S693 (`mech.log`,
+trailer `== mech run COMPLETE`); `make test-axes` (`axes.log`, last). The
+verdicts are make's `*** [(Makefile:N: )?test-X]` lines, which the chain
+copies into `landing.log`.
