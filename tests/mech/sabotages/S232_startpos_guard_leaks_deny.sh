@@ -29,5 +29,5 @@ SAB_DOC_FIGURE="docs/spec/tuning.md 2.23; docs/spec/match_api.md 9.2's -fno-star
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx -e utf8 --features lookaround -o - --pattern "(?<!.)" | grep -o "return PCREC_ERR_STARTPOS;" | head -1'
 SAB_REACH_EXPECT='return PCREC_ERR_STARTPOS;'
-SAB_BEFORE='    if (cx->opt->flags & PCREC_NO_STARTPOS_GUARD) return buf;'
+SAB_BEFORE='    if (pcrec_opt_has(cx->opt, PCREC_NO_STARTPOS_GUARD)) return buf;'
 SAB_AFTER='    /* SABOTAGE S232: the deny flag is not read. */'

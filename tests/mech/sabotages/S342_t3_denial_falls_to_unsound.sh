@@ -21,5 +21,5 @@ SAB_REACH='"$PCREC" --features all -fno-ctx-node -p rx -o "$REACH_TMP/o0.c" --pa
 SAB_REACH_EXPECT="1"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (r->deny && (cx->opt->flags & r->deny)) continue;'
-SAB_AFTER='        if (r->deny && (cx->opt->flags & r->deny)) return pcrec_ast_node(cx, A_EMPTY);   /* SABOTAGE S342 */'
+SAB_BEFORE='        if (r->deny && pcrec_opt_has(cx->opt, r->deny)) continue;'
+SAB_AFTER='        if (r->deny && pcrec_opt_has(cx->opt, r->deny)) return pcrec_ast_node(cx, A_EMPTY);   /* SABOTAGE S342 */'

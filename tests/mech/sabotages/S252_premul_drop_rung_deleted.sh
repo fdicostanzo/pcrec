@@ -38,7 +38,7 @@ SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{
 SAB_REACH_EXPECT='size-cap-retry'
 SAB_BEFORE='    return s->size_drop_rung < SDR_NO_PREMUL &&
            s->cx->job && s->cx->job->fit.chosen == ENGM_DFA &&
-           !(s->flags & PCREC_NO_PREMUL_TABLE);'
+           !pcrec_flags_has(s->flags, PCREC_NO_PREMUL_TABLE);'
 SAB_AFTER='    (void)s; return false;   /* SABOTAGE S252: the rung is never offered. */'
 # RE-ANCHORED 2026-09-30 (lane pfdrop, D135): the rung's eligibility moved
 # into its `fit_rungs[]` row's predicate `fit_premul_applies`
