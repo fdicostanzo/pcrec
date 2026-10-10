@@ -1866,8 +1866,8 @@ it is measured as G1. Batch 1 then adds only guarded text.
 > MF_SITE_ABI bump (9, renumbered 10 when RQ-2 landed first as 9) carries the sink ops only (RQ-2's ranked array, `[D157]`
 > (was `plan_pos2`), was then unbuilt), so the filter was KA alone until the follow-up lane rankuse read `rank_*` (KA AND KB, §R4.9.5 item 10's KB row; deny `no-vrun-kb`); walk tests 3-4 are the
 > PREFIX rows' predicate conjuncts; a `header` column in levels.def; runs
-> capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500, re-measured 2,700 / 2,800 by lane rankuse with KB
-> measured); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
+> capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500
+> measured; 2,700 / 2,800 re-measured by lane rankuse with KB); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
 
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
 site's only predicate; rows `vrun-w32` and `vrun-w16` in `fn_rows[]`.**

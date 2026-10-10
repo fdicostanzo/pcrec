@@ -26,7 +26,7 @@ rendering is the SIMD-off rendering plus guarded text (the floor rule).
 Verdicts are two-tier (D144 addendum 4): kit timings are unofficial; an
 official verdict is a pcrec-bench run on each box a level targets,
 requested through the pcrec manager (the kit never writes to the bench).
-The first batch (`vrun-w32`/`vrun-w16`) is there, BUILT as CANDIDATE by lane r13 (R-13, 2026-10-09: `src/vrun.c`, `src/levels.def`, MF_SITE_ABI 10's `mf_sink.simd_open`/`simd_close`; `docs/dev/lanes/r13_report.md`), and Q-R9-1..11 are RULED (D155 and addendum 1: a function that does work never contains `#if`; a selector's whole body may be the `#if` chain, one call per arm). §R4.8 is M1b's contract (R-5:
+The first batch (`vrun-w32`/`vrun-w16`) is there, BUILT as CANDIDATE by lane r13 (R-13, 2026-10-09: `src/vrun.c`, `src/levels.def`, MF_SITE_ABI 10's `mf_sink.simd_open`/`simd_close`; `docs/dev/lanes/r13_report.md`; their second filter position KB, read from RQ-2's ranking with its deny `vrun-kb`, by lane rankuse, `docs/dev/lanes/rankuse_report.md`), and Q-R9-1..11 are RULED (D155 and addendum 1: a function that does work never contains `#if`; a selector's whole body may be the `#if` chain, one call per arm). §R4.8 is M1b's contract (R-5:
 `stamp_int`, `run_cmp` retired, `MF_SITE_ABI` 4). R4h prep (2026-10-08,
 Q-R4h-1 (a)) made it 5: `mf_site.count_by_caller`, the caller-owned ADVANCE
 counter; it also added the ADVANCE hooks' shape classes (fields.def) and

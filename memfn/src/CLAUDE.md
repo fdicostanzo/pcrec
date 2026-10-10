@@ -28,7 +28,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
   `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
-  rules outside the vocabulary are REFUSED loudly) and their table
+  rules outside the vocabulary are REFUSED loudly; since lane rankuse
+  `rank_ok` refuses a position ranking that is not distinct positions of
+  the RUN term `plan_hint` names, or longer than it or MF_RANK_MAX) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
   `precheck_assign` (one renderer, two rows: N3's split by handoff),
   `runcmp`, the five PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
@@ -122,7 +124,12 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   deny, level, `over` = `fn-pair`, named rungs, instruction classes, reach,
   `guarded_max`, APPLIES, render) and a contract (`vrun_*_ct`: the BODY's
   serves plus `policy` NONE|SIZE). The module comment carries the
-  over-read argument and every constant's D149 label.
+  over-read argument and every constant's D149 label. Since lane rankuse
+  (2026-10-09, D157) the candidate mask ANDs a SECOND position, KB, the
+  first position of pcrec's rarity ranking (`mf_pred.rank_*`) other than KA
+  (`vrun_kb`; none where the ranking states no other), denied by
+  `--memfn=no-vrun-kb`; two positions is an `UNMEASURED DEFAULT` (the
+  form R-1 timed), no distance rule beyond KB != KA (derived).
 - **levels.def**, **levels.c** — the kit's ISA LEVELS (R4e' batch 1):
   `MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp)`,
   the one place a level's guard string, intrinsics header, width and stamp
@@ -243,7 +250,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   in-loop site DECLINE them with no new verdict.
 - **options.def** — the kit's option registry, an X-macro
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). Born empty;
-  its first rows are R4e' batch 1's SIMD denies (`vrun-w16`, `vrun-w32`).
+  its first rows are R4e' batch 1's SIMD denies (`vrun-w16`, `vrun-w32`),
+  then `vrun-kb` (lane rankuse: the vrun rows' second filter position, an
+  option of a form rather than a row of a table).
   Each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
   the same commit and raises the floor in `docs/spec/registry.md` §6. See
   `../CLAUDE.md` "The kit's option namespace".

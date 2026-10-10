@@ -2443,7 +2443,7 @@ else
 fi
 mfkb_loads() {   # the w16 helper's whole-block mask line: its load count
     sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1" \
-        | grep 'm = (unsigned)' | grep 'subject + i' | grep -o '_mm_loadu_si128' | wc -l | tr -d ' '
+        | grep 'm = (unsigned)' | grep -o '(subject + i[ +0-9]*))' | wc -l | tr -d ' '
 }
 if [ "$(mfkb_loads "$WORKDIR/mfs2.c")" = 2 ] && grep -q 'subject + i + 1))' "$WORKDIR/mfs2.c" \
    && [ "$(mfkb_loads "$WORKDIR/mfs7.c")" = 1 ] && ! grep -q 'subject + i + 1))' "$WORKDIR/mfs7.c" \

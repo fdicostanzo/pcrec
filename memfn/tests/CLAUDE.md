@@ -31,7 +31,14 @@ bytes the generator chose) and the compiler, not on the author.
   `simd_open`/`simd_close` and counts the bracketed bytes. A second render
   of every site at pcrec's placeholder prefix and longest FUNC name
   measures its guarded bytes. Sites 0 and 1 are the constructed worst cases
-  of `guarded_max`. Writes `g2v_sites.c` and `g2v_meta.tsv`.
+  of `guarded_max`. Since lane rankuse (D157) every site also STATES a
+  generated position ranking (`mf_pred.rank_*`) in one of seven modes (none,
+  one entry on or off the scanned position, whole permutations led by it or
+  by any position, the second entry at the run's ends, partial), rates with
+  ties, entries past `rank_n` filled with positions a reader would choose;
+  one site in five also tries a MALFORMED copy, which must be refused; and
+  a `deny-kb` class (`--memfn=no-vrun-kb`). Writes `g2v_sites.c` and
+  `g2v_meta.tsv` (the stated entries, the copy's verdict, the tie count).
 - **g2/g2_simd.h**, **g2/g2_simd_driver.c** — the site table and the
   driver: G2's reference (first c >= pos whose run holds, a plain byte
   loop) against every rendered function, at every span length 0..2*32+T+8,
@@ -41,7 +48,13 @@ bytes the generator chose) and the compiler, not on the author.
   0..31 (POISONED under ASan); a fault is a failure.
 - **run_g2_simd.py** — the runner (run_g2.sh section 4a; alone:
   `python3 memfn/tests/run_g2_simd.py [--quick]`): each class's MEMFN_FORMS
-  against a hand table, guarded bytes against `tests/memfn/simd_bounds.tsv`,
+  against a hand table; THE RANKING CHECK (rankuse): every rendered
+  helper's whole-block loads, in order, equal the filter the kit's rule
+  gives from the GENERATED entries (KA, then the first stated entry other
+  than KA; KA alone under the deny), every malformed copy refused, floors
+  per ranking mode and per filter shape (a KB, none, KB not the first
+  entry, KB at the run's ends, a rate tie);
+  guarded bytes against `tests/memfn/simd_bounds.tsv`,
   answers at x86-64 / x86-64-v3 / x86-64-v4 / `-mgeneral-regs-only` and
   ASan+UBSan, per-path execution floors (its OWN text instrumentation of
   the rendered file: entry fall-through, whole block, final block, verify),
