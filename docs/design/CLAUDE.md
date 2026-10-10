@@ -2903,6 +2903,26 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   control C5 (membership vs the bytes, 0 / 5,355); the L0 edit set grows to 55 entries
   and re-derives 8 re-aims / 35 re-runs. §8 restates Frank's questions with both
   critics' judgments.
+- `start_landing.md` — **`[START-LANDING]` RECOVER ROWS THAT KNOW THE START WITHOUT
+  WALKING, PROPOSED, design + hand-twin** (lane `landdes`, 2026-10-09, from main
+  `e1e387b9`, abi 71; placed by `locate_finish.md` §7.3, designed in parallel with
+  REVEND per D156 addendum 1). Two new RECOVER rows ahead of `reverse-pass`, each proved
+  to return EXACTLY today's reverse-pass start on every call (so PCRE2 agreement is
+  inherited and hybrids are NEUTRAL by window identity, verified per prefilter call):
+  `end-minus-width` (a fixed BYTE width read from the NFA walk, assertions passed) and
+  `landing` (the NEXT block's last landing, under Λ, the ONE-CHARACTER fact: every
+  one-character path from `anch_start` ends dead or unconditionally accepting, no
+  assertion at the start edge, not nullable, no continuation byte in the start set;
+  owner `src/facts/kset.c`, E3, an exact closure where `kset_walk`'s passes). The
+  survey's one-byte fact is too narrow under utf8, and under the invalid-tolerant
+  contract an ill-formed first character re-enters the scan at `landing + 1` (a RAISE
+  edge, measured free). The exact "excursion" condition is FILED: its measured extra
+  reach is ≤ 0.58 ms of 54.6. RECOVER asks gain FINISH's `hand` filter (`END` vs
+  `rev-end`'s speculative `SEED`, which neither new row may take). Twins: 310 bench rows,
+  91.5M cells, 50.1M per-call compares, 0 differences, 0 new libpcre2 disagreements;
+  seven failing controls; timing −29..−42%. Rows take 46.5 of 54.6 ms K3+K4 weight. Build
+  B1-B4 after L0, one abi event, 9 sabotage rows; five questions for Frank. Evidence:
+  `../../studies/start_landing/`.
 - `encoding_data_layout.md` — **ENCODING DATA LAYOUT: INVENTORY + PROPOSAL, nothing
   moved** (lane `encinv`, 2026-10-09, from main `57fe04ef`, abi 71; Frank's "organize
   encoding data around the idea there may be more encodings").

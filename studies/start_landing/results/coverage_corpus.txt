@@ -1,0 +1,18 @@
+== config default: K3+K4 cells, bytes 16597482, est 0.00 ms
+  landing          cells  671 patterns 338  bytes      8493612 ( 51.2%)  est    0.00 ms (  0.0%)
+  end-minus-width  cells 2172 patterns 1102  bytes      4922415 ( 29.7%)  est    0.00 ms (  0.0%)
+  reverse-pass     cells 1694 patterns 924  bytes      3181455 ( 19.2%)  est    0.00 ms (  0.0%)
+  -- reverse-pass residual by reason:
+     land=alive-not-accept                              patterns 552 bytes       802756 est   0.00 ms
+     land=assert-at-start                               patterns 217 bytes       732201 est   0.00 ms
+     land=assert-after                                  patterns 155 bytes      1646498 est   0.00 ms
+  -- top 0 cells by est:
+== config nocaps: K3+K4 cells, bytes 16772822, est 0.00 ms
+  landing          cells  673 patterns 339  bytes      8536050 ( 50.9%)  est    0.00 ms (  0.0%)
+  end-minus-width  cells 2172 patterns 1102  bytes      4922517 ( 29.3%)  est    0.00 ms (  0.0%)
+  reverse-pass     cells 1713 patterns 935  bytes      3314255 ( 19.8%)  est    0.00 ms (  0.0%)
+  -- reverse-pass residual by reason:
+     land=alive-not-accept                              patterns 552 bytes       798647 est   0.00 ms
+     land=assert-at-start                               patterns 228 bytes       734442 est   0.00 ms
+     land=assert-after                                  patterns 155 bytes      1781166 est   0.00 ms
+  -- top 0 cells by est:

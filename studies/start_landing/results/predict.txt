@@ -1,0 +1,19 @@
+cell                               regime       row              today ms    G/T   pred_GT pred_twin
+utf8/prp-l                         throughput   landing             11.77   0.35      7.62      7.63
+utf8/cls-dot                       throughput   landing             13.12   0.24      9.94      7.60
+utf8/cls-neg-single                throughput   landing             13.04   0.24      9.93         -
+utf8/ci-neg-fold                   throughput   landing             13.03   0.24      9.92         -
+syntax/mod-a                       throughput   landing              7.12   0.42      4.12      5.01
+syntax/cls-w                       throughput   landing              7.09   0.42      4.11      4.99
+utf8/cls-mixed                     throughput   landing              7.98   0.34      5.26         -
+syntax/unp-p-lc                    throughput   landing              6.59   0.41      3.91         -
+syntax/cls-posix                   throughput   landing              6.56   0.41      3.90         -
+syntax/unp-p-uc                    throughput   landing              5.82   0.30      4.07         -
+utf8/cls-neg-cjk                   throughput   landing              5.61   0.30      3.91         -
+utf8/ci-class-range                throughput   landing              5.69   0.27      4.18         -
+utf8/prp-latin                     throughput   landing              5.61   0.26      4.13         -
+utf8/cls-boundary-range            throughput   landing              5.62   0.26      4.17         -
+utf8/cls-w-ascii                   throughput   landing              4.58   0.29      3.25         -
+utf8/cls-posix-alpha               throughput   landing              4.52   0.29      3.22         -
+utf8/cls-neg-allhigh               throughput   landing              3.49   0.33      2.34         -
+utf8/prp-notl                      throughput   landing              5.80   0.14      4.97         -
