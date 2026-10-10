@@ -1,0 +1,5 @@
+# [RXT-READERS] `var` wants an identifier name: a leading digit is refused
+# by all three legs (leg A used to accept it).
+pattern a+
+var 1x "v"
+m "aaa" 0 3

@@ -1,0 +1,6 @@
+# [RXT-READERS] An `oracle` engine must be a defname (a letter or `_`,
+# then letters, digits, `_`, `-` or `.`): a leading digit is refused by
+# all three legs.
+pattern a+
+oracle 1pcre2
+m "aaa" 0 3

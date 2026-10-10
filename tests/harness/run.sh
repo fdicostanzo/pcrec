@@ -3273,7 +3273,12 @@ for file in "${files[@]}"; do
             oracle_ref="${oracle_ref%"${oracle_ref##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'oracle' line before any pattern block"
-            elif [[ ! "$oracle_ref" =~ ^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$ ]]; then
+            elif [[ "$oracle_ref" =~ ^none[[:space:]]+[^[:space:]] ]]; then
+                # [RXT-READERS] `oracle none <reason>` (§2.9): a counted,
+                # printed skip, in a block as at file level. The reason is
+                # required (a bare `none` falls through to the refusal).
+                total_oracle_skips=$((total_oracle_skips + 1))
+            elif [[ ! "$oracle_ref" =~ ^[A-Za-z_][A-Za-z0-9_.-]*(/[A-Za-z0-9._-]+)?$ ]]; then
                 record_fail_class value-shape "$file" "$lineno" \
                     "'oracle' wants an engine reference, optionally '/<version>' (got '$oracle_ref')"
             else
