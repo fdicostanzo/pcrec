@@ -5647,6 +5647,10 @@ from §6 in the same change, with a comment at its site saying which
 direction the copying goes. Nothing about what a bump IS changes; this
 addendum names the one document the ritual writes to.
 
+### D76 addendum 2 — the `abi` change log lives in `docs/dev/history/abi_changelog.md` ([SPEC-CLEAN], manager ruling at the specnum merge, 2026-10-09)
+
+The facts-only rewrite of `docs/spec/match_api.md` (lane specclean; D80's "the spec carries no build history") moved the change log out of the spec, verbatim. The ONE-LOG rule of the addendum above stands, and only the home moves. A bump now (1) adds its entry to `docs/dev/history/abi_changelog.md` and (2) updates the spec's current-number sentence (`match_api.md` §6, the `#abi` paragraph). Every other reader of the number is still found by grep, as D94 says. The readers that named the log's old home were re-pointed in the same change: `src/gen/emit_dfa.c`'s comment, `src/gen/CLAUDE.md`, and `tests/codegen/run_codegen_tests.sh`'s comment. `make test-spec-history` keeps the log from drifting back into the spec. First user: VMLAZY's abi 72 (kit R-12), which re-homes its entry at its main-merge.
+
 ## D77 — no end-anchored generation axis now: the `(?:P)\z` idiom stands; the axis is built later UNDER MEASUREMENT or not at all (Frank, 2026-08-25)
 
 **Context.** pcrec-bench's whole-subject regime (PCRE2
