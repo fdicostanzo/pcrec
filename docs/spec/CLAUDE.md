@@ -88,17 +88,16 @@ contents block).
   (`tests/spec_history/`) keeps history out. `studies/specclean/claims.tsv`
   maps every claim of the pre-rewrite text to its new home.
 
-- `table_contract.md` — the ruled contract for every command that outputs
-  a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
-  surface, which adopts it at birth): `#` comments, a header row naming
-  all columns, append-only columns, consumers resolve by header NAME
-  (never hardcoded count/position, trailing-safe, count only as
-  header-equality). Chartered by Frank 2026-08-21 from the D65
-  format-consumer breakage; [SR-11] tracks consumer conversion + the
-  two checks. **[DD-8], 2026-09-19: `--emit-ir` ADOPTED IT** and is the
-  Sections mechanism's third producer, the first with no anonymous table
-  and the first whose sections carry different column counts; `--trace`
-  remains out of scope.
+- `table_contract.md` — the wire format of every command that outputs a DATA
+  TABLE, FACTS ONLY and numbered (rewritten by lane specreg): §1 scope (a table
+  of every conforming producer and its shape, anonymous or sectioned), §2 the
+  producer rules (`#` comments, a header row naming all columns, append-only
+  columns, no TAB in a field), §3 the consumer rules (resolve by header name,
+  trailing-safe, field count only as header equality), §4 sections (`#section
+  NAME`, the leading anonymous table), §5 the two checks (header truthfulness,
+  generator agreement). A new table surface adopts it at birth and gets a row in
+  §1. Cite by number (`table_contract.md §2¶4`). History:
+  `docs/dev/history/table_contract_record.md`.
 
 - `facts_listing.md` — **[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8).**
   `--emit-facts`' output format: its two `#section` blocks (`facts`,
@@ -246,33 +245,18 @@ contents block).
   library-builds-nothing outcome, the `features` UNION and the
   more-specific-wins table, and the harness's per-target agreement control.
 
-- `registry.md` — **[SPEC-1.5], 2026-08-25.** The `--list-syntax`/
-  `--list-verbs`/`--list-families` TSV COLUMN CONTRACT: every column
-  by header name and its value set (which are a closed, stable
-  vocabulary versus which are free text), read live off a fresh build.
-  Distinct from `table_contract.md` (the generic wire format every
-  table shares) and from `cli.md` §2 (what each surface answers, in
-  prose) — this document is the data contract itself: 17 columns for
-  `--list-syntax` (128 rows this pass), 6 for `--list-verbs` (50 rows),
-  7 for `--list-families` (90 rows), the `built` (D65) vs.
-  `status`/`roadmap` distinction stated at the detail cli.md's one
-  sentence points past, and the `family` (D71 item 3) grouping rule
-  (AND-over-members `built`, dispatch identity unchanged per row, R6).
-  States what `tests/registry/`'s two batteries pin (self-consistency
-  vs. the independent libpcre2 check, PC-3) and what neither guarantees.
-  Flags one drift found in the process: `tests/registry/CLAUDE.md`'s
-  own prose still cites the row count as "100 since Q2/SR-9"; the live
-  count today is 128 (`registry_check.c`'s own exact-count assertion
-  agrees) — not corrected in that file by this pass.
-  **[DD-11.2], 2026-08-29**: `registry.md` gained §9, `--list-definitions`
-  (D85, the FIFTH surface) — this bullet's own "`--list-syntax`/
-  `--list-verbs`/`--list-families`" summary and its 128/90 row counts are
-  now stale on TWO counts (this addition, and the pre-existing `--list-
-  axes`/[CHK-2] omission this paragraph never picked up either); not
-  rewritten wholesale in this pass — see `registry.md` itself for the
-  live figures (§2's 138, §5's 100, §9's 50 and counting; §2's `kind`
-  column also gained a sixth value, `bare`, at the manager's `RK_BARE`
-  ruling, 2026-08-29).
+- `registry.md` — the TSV column contract of the registry listings, FACTS ONLY
+  and numbered (rewritten by lane specreg): §1 the append-only, resolve-by-name
+  promise, §2 `--list-syntax` (17 columns, each with its value set and whether
+  it is a closed vocabulary or free text), §3 `built` versus `status`/`roadmap`,
+  §4 `--list-verbs`, §5 `--list-families` (the grouping rule and `built`'s
+  direction), §6 `--list-axes` (12 columns, the source boundary, the one-row-per-
+  value rule, the kit's `memfn` section and its pinned floor), §7 what the
+  registry tests pin and what they do not, §8 retired, §9 `--list-definitions`,
+  §10 where every table surface is documented. Cite by number (`registry.md
+  §6¶4`). `tests/registry/axes_registry_check.sh` reads the `memfn` floor
+  literal from §6¶8, so that paragraph keeps its form (see it). History:
+  `docs/dev/history/registry_record.md`.
 
 - `findings.md` — **[FINDINGS] B1, 2026-09-27 (D122/D123/D126).** The
   findings contract: the terms, the `freq` kind and its row grammar, the

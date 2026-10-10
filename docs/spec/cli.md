@@ -972,7 +972,7 @@ option registry of pcrec-memory-functions, the in-tree search-code kit
 (`memfn/src/options.def`), one row per kit option reachable as
 `--memfn=no-NAME`. Those rows are not pcrec axes and carry no flag bit. A
 consumer selects the table it reads (`docs/spec/table_contract.md`
-Sections, consumer rule 5); `registry.md` §6 has the section's columns.
+§4¶6); `registry.md` §6 has the section's columns.
 
 ### `--list-definitions`
 

@@ -80,7 +80,7 @@ findings and encseam sections.
 - E6: resolve derivations through the registry's encoder.
 - E7: assert ASCII-compatibility.
 - E8: rename `DEF_ENCODING_UTF8` to `DEF_ENCODING_UNICODE`. This one is SPEC-MOVING:
-  `--list-definitions` output, `docs/spec/registry.md:536` and `cli.md:228`.
+  `--list-definitions` output, `docs/spec/registry.md` §9 and `cli.md:228`.
 
 No step is an abi event. Each `PcrecEnc`, `LowerOps` or `PcrecEncEntry` field change
 is a D58 seam event to record. The abi-moving items stay separate: fold-table

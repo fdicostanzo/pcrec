@@ -1339,7 +1339,7 @@ registry_check.c's alone.
   failure: a module renamed in registry.c leaves the prose confidently
   describing something that no longer exists, and nothing else would notice.
 
-**[SR-11] GENERATOR AGREEMENT (2026-08-21, docs/spec/table_contract.md):**
+**[SR-11] GENERATOR AGREEMENT (2026-08-21, docs/spec/table_contract.md §5¶2):**
 `dump()` now cross-checks its own `COLS` list against `--list-syntax`'s LIVE
 header line before parsing a single row — a column appended, renamed or
 reordered in the dump without a matching `COLS` update fails immediately,

@@ -4116,7 +4116,7 @@ purpose), and `make test-axes` does not sweep it (`docs/spec/cli.md`
 and `PCREC_TRACE` (`--trace`) selects an INSTRUMENTED matcher that writes
 an event stream to stderr — a generation axis that deliberately changes
 what the artifact DOES at run time, which is exactly what a §2 axis may
-not do (`docs/spec/table_contract.md`'s Scope section places the stream
+not do (`docs/spec/table_contract.md` §1¶3 places the stream
 explicitly OUT of the table contract and names `[V-H]` as its design
 home). None of the five is answer-preserving in §1's sense, so none
 belongs in §2, and `--trace`'s bit has no mirror row for that reason

@@ -2,8 +2,8 @@
 # other docs/spec files carried when this check landed (lane specclean,
 # 2026-10-09). Columns: file, marker id, count. The check holds each count
 # EXACTLY: a rise is new history, a fall means debt was paid and this row
-# must be lowered (or removed at 0) in the same change. match_api.md has no
-# row: it carries no history.
+# must be lowered (or removed at 0) in the same change. match_api.md,
+# registry.md and table_contract.md have no row: they carry no history.
 cli.md	date	25
 cli.md	addendum	1
 cli.md	walkback	10
@@ -26,16 +26,9 @@ limits.md	addendum	1
 limits.md	walkback	6
 limits.md	narrative	5
 limits.md	tagopen	19
-registry.md	date	24
-registry.md	walkback	11
-registry.md	narrative	23
-registry.md	tagopen	5
 rxt_format.md	walkback	4
 rxt_format.md	narrative	1
 rxt_format.md	tagopen	3
-table_contract.md	date	8
-table_contract.md	narrative	3
-table_contract.md	tagopen	2
 tuning.md	date	53
 tuning.md	addendum	5
 tuning.md	walkback	34

@@ -141,7 +141,7 @@ first; K3 second.
 - **A kit change that moves a byte adds its row in the same commit.**
   The row is that change's OFF arm.
 - `pcrec --list-axes` prints pcrec's axes, then a `memfn` section
-  (`table_contract.md` §Sections) read from `mf_options()`. It is the
+  (`table_contract.md` §4) read from `mf_options()`. It is the
   ONE enumeration point for `test-axes`, the identity gates and the
   registry check.
 - **The independent control** is a floor on that section's member count,
