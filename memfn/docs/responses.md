@@ -1916,3 +1916,28 @@ the compiler, and is never adopted silently. Proposed for main to file
     citations.
   - Still OWED: TRACE_VARIANT_RECORDS_FLOOR (no `--trace`).
   - Prune list unchanged: vmlmerge, n7uret, vmlfix, ssred, vmlazy.
+- done: 2026-10-10 — **R-13 (batch 1: vrun-w32 / vrun-w16 + vrun-kb, CANDIDATE; SIMD-off byte-identical, NO pcrec abi event): branch lane/memfn-r13 @ d655cde9 plus this [responses] commit (main 9024449f, REVEND abi 73, merged in). Report: docs/dev/lanes/r13_report.md (addendum "slot18"), rankuse_report.md, r13merge_report.md.**
+  - slot18 (09:56-11:22, on main's GO):
+    - build, strict, SABANCHOR green; N2 0 fails; G2 full 192,654,553/0;
+      make test no red lines (900 s); mech 33 rows COMPLETE (0/0/0/0/0).
+  - Identity sweeps, read by id (lane s18tri,
+    docs/design/memfn/probes/r13/slot18_sweep_triage.md):
+    - SIMD-off: the only mover is `--list-axes` (the 3 new memfn rows).
+    - `-fmemfn-simd`: 87 corpus-row movers, all vrun text = 39 distinct
+      (pattern, engine) cells, + 5 named = simdfloor's 44.
+  - vrun-w16/w32 pcrec N2 floors pinned at 70 (floor(0.9 x 78)); the
+    re-check reads floor_fail=0 placeholder=0.
+  - **For main:** the `--arms start` sweep flags five DIFFER_PINS floors
+    stale ON MAIN. They read the same on main and tree, and the pins come
+    from 26d2069f:
+    - byte -fno-run-prefilter: differ+stamp 127 < 132
+    - byte -fno-end-window: differ+stamp 272 < 288, plus manifest `$`
+      did not differ
+    - byte -fno-req-run: stamp 296 < 301
+    - utf8 -fno-req-handoff: differ+stamp 275 < 280
+    - utf8 -fno-req-run: stamp 294 < 299
+  - Registry coverage pin is 220 (216 + REVEND 3 + R-13 1).
+  - Next for the kit: RQ-4's tier-U timing slot (arms DEFAULT / KB-DENY /
+    OFF), the first SIMD-on vs SIMD-off reading, on main's grant.
+  - Small OWED: stale "no SIMD form exists" comments in lib/pcrec.h,
+    src/dump/axes_dump.c and tests/memfn/libc_census.py (text only).
