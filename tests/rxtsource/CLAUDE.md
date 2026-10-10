@@ -1037,3 +1037,13 @@ now uses `bigram` (still not a row). Sabotage rows: S290 (the ` and `
 conjunction read as its first conjunct only), S291 (the fragment refusal
 swallowed), S327 (a surrogate key accepted), S328 (the derived-count ceiling
 unchecked).
+
+## [RXT-READERS] one `oracle` / `var` grammar across the three legs
+
+Seven fixtures, all three legs (`check_accept_all3_kind` /
+`check_refusal_all3`, class read off each leg's own output): the accept cell
+`oracle_forms_accept.rxtin` (bare, versioned, HYPHENATED `pcre2-dfa`, and
+`oracle none <reason>` in a block) and the refusals `oracle_none_bare`,
+`oracle_bad_engine`, `oracle_empty_version`, `var_bad_name`, `var_unquoted`,
+`var_unset_extra` (all class `value-shape`). Contract: `docs/spec/rxt_format.md`
+§3.1 and §1.5; report `docs/dev/lanes/rxtread_report.md`.
