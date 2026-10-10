@@ -68,3 +68,11 @@ Maintenance: update this file when files are added/removed or change roles.
   `start` arm floors fall below pins that are stale on main, the same on both
   sides. The 87 `-fmemfn-simd` movers are vrun text only = 39 distinct cells,
   + 5 named = simdfloor's 44) and `slot18_simd_mover_ids.txt` (the 87 ids).
+- `rq4/` — RQ-4's tier-U timing harness (lane rq4h, 2026-10-10; the question
+  is `docs/dev/lanes/rankuse_report.md` §6): 51 cells (`cells.tsv`), a driver
+  linked against each emitted artifact (`rq4_drv.c`, times `rx_search` and the
+  §3.1.3 find-all), the runner (`rq4.py`: emit 3 arms, facts incl. byte
+  identity and the live dispatcher arm per level, build, answer check,
+  interleaved `taskset` timing) and the table (`rq4_table.py`: D−K and
+  ON−OFF against null bands). Run by `worktrees/memfn-slot/slot20/run.sh`.
+  Report: `docs/dev/lanes/rq4h_report.md`. Own CLAUDE.md.

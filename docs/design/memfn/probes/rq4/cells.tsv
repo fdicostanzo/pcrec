@@ -1,0 +1,63 @@
+# RQ-4 cells (lane rq4h). Columns, TAB-separated:
+#   id  engine(auto|vm)  class  bench(cap|syn|-)  inject(DEN|-)  witness  pattern
+# class: R1 = the four R-1 cells (tb_r4b.c, bench patterns); MOVER = the
+# slot18 -fmemfn-simd vrun movers (probes/r13/slot18_simd_mover_ids.txt,
+# deduped to distinct (pattern, engine); the auto-engine (?i)cat and
+# union-select movers ARE the R1 cells mi and us, not repeated); KB = KA's byte COMMON, the run rare
+# (inject KA's scanned byte at 1/DEN into the filler); SPARSE = sparse-pick
+# fn-pair (§R4.9.7.1); NULL = a non-vrun control. Band membership is NOT this
+# column: rq4.py reads it from the arms' byte identity (meta.tsv).
+# witness: a string the pattern matches, Python escapes (\t \n \xNN); it is
+# planted to make hits. Every pcrec call is `-p rx --features all` (as
+# emit_sweep and alpha_k82.sh); `engine` adds --engine=vm.
+us	auto	R1	cap	-	UNION SELECT a FROM	(?i)union.*?select.*?from
+up	auto	R1	cap	-	user = "bob.12", password = "hunter22"	(?:username|USERNAME|user|USER)[ \t]*=[ \t]*["']([a-zA-Z0-9.@_\-+]{3,30})["']\s*[,;]?\s*(?:\s*(?:\#|//)[^\n\r]*[\n\r])*(?:password|pass|PASSWORD|PASS)[ \t]*=[ \t]*["']([^"']{5,30})["']
+mi	auto	R1	syn	-	cAt	(?i)cat
+cn	auto	R1	syn	-	itxm	it\Nm
+m01	auto	MOVER	-	-	abCdEf	(?<=ab)(?i:cdef)
+m02	auto	MOVER	-	-	aaacAt	a{3}(?i:cat)
+m03	auto	MOVER	-	-	ace	(a(b|c)(d|e))
+m04	auto	MOVER	-	-	a sElect	a.*?(?i:select)
+m05	auto	MOVER	-	-	aBc	(?i)(?>abc)
+m06	auto	MOVER	-	-	AbC	(?i)abc
+m07	auto	MOVER	-	-	abC	((?i:abc))
+m08	auto	MOVER	-	-	aBs	(?:(?i:abs)|(?i:ab)S)
+m09	auto	MOVER	-	-	AbS	(?:(?i:ab)S|(?i:abs))
+m10	auto	MOVER	-	-	 caT 	(?i)\bcat\b
+m11	auto	MOVER	-	-	caTCA	(?i)(ca)t\1
+m12	auto	MOVER	-	-	CatSdog	(?i)(cat)s?dog
+m13	auto	MOVER	-	-	FooBar	(?i)foobar
+m14	auto	MOVER	-	-	aBc	(?i)\QABC\E
+m15	auto	MOVER	-	-	SaB	(?:(?i:sab)|S(?i:ab))
+m16	auto	MOVER	-	-	SelAbeCt	(?i)sel(?:ab)*ect
+m17	auto	MOVER	-	-	sElEct	(?i)select
+m19	auto	MOVER	-	-	sAB	(?:S(?i:ab)|(?i:sab))
+v01	vm	MOVER	-	-	abCdEf	(?<=ab)(?i:cdef)
+v02	vm	MOVER	-	-	ace	(a(b|c)(d|e))
+v03	vm	MOVER	-	-	aBc	(?i)(?>abc)
+v04	vm	MOVER	-	-	AbC	(?i)abc
+v05	vm	MOVER	-	-	abC	((?i:abc))
+v06	vm	MOVER	-	-	aBs	(?:(?i:abs)|(?i:ab)S)
+v07	vm	MOVER	-	-	AbS	(?:(?i:ab)S|(?i:abs))
+v08	vm	MOVER	-	-	 caT 	(?i)\bcat\b
+v09	vm	MOVER	-	-	caTCA	(?i)(ca)t\1
+v10	vm	MOVER	-	-	CatSdog	(?i)(cat)s?dog
+v11	vm	MOVER	-	-	FooBar	(?i)foobar
+v12	vm	MOVER	-	-	aBc	(?i)\QABC\E
+v13	vm	MOVER	-	-	SaB	(?:(?i:sab)|S(?i:ab))
+v14	vm	MOVER	-	-	SelAbeCt	(?i)sel(?:ab)*ect
+v15	vm	MOVER	-	-	sElEct	(?i)select
+v16	vm	MOVER	-	-	Union Select x From	(?i)union.*?select.*?from
+v17	vm	MOVER	-	-	x/1234	(?i)x/1234
+v18	vm	MOVER	-	-	sAB	(?:S(?i:ab)|(?i:sab))
+v19	vm	MOVER	-	-	cAt	(?i)cat
+kb	auto	KB	-	8	cAt	(?i)cat
+sp	auto	SPARSE	-	-	AzQb	(?i)azqb
+n01	auto	NULL	-	-	xyzzy	xyzzy
+n02	auto	NULL	-	-	12xyzzy	\d+xyzzy
+n03	auto	NULL	-	-	12aB/cD	(?i)\d+ab/cd
+n04	auto	NULL	-	-	X/1234	(?i)x/1234
+n05	auto	NULL	-	-	aselectb	[a-z]*select[a-z]*
+n06	vm	NULL	-	-	xyzzy	xyzzy
+n07	vm	NULL	-	-	abxyzzy	(a|b)+xyzzy
+n08	vm	NULL	-	-	12aB/cD	(?i)\d+ab/cd

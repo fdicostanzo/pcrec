@@ -1325,3 +1325,34 @@ pointer when a kit change merges to main.
   entries from Frank's vrun questions (min-length end bound, duplicate
   constants, plain-case = §R4.9.7.1 deliberate, byte+class filter, held mask,
   VM start-set skip).
+
+## 2026-10-10 — RQ-4 timing harness built (lane rq4h), slot20 ready
+
+- R-13 and lane/memfn-ideas merged to main (a2f66450). Main granted RQ-4's
+  tier-U slot, after slbuild's ([START-LANDING], abi 74) chain.
+- Lane rq4h (opus) built docs/design/memfn/probes/rq4/: 51 cells (the four
+  R-1 cells, 39 slot18 vrun movers, a KB cell with KA's byte at 1/8, a
+  sparse-pick fn-pair cell `(?i)azqb`, 8 non-vrun nulls), arms
+  DEFAULT/KB-DENY/OFF at x86-64 (w16) and x86-64-v3 (w32), rx_search plus
+  find-all, interleaved, rotated, taskset 12-15, with sibling-busy
+  discard. The null band is the max |delta| over byte-identical cells.
+  Report docs/dev/lanes/rq4h_report.md.
+- Merged into lane/memfn-rq4 (67d019a2). slot20/run.sh now points at
+  worktrees/rq4. A tiny dry run there is green (11:43-11:44, not a reading).
+  Full slot ~75-105 min; it needs cores 12-15 and their SMT siblings 4-7
+  quiet.
+
+## 2026-10-10 — slot20: the RQ-4 reading (tier U)
+
+- On main's GO (box quiet, main's lanes held) slot20 ran 16:01-17:10:
+  15,696 readings, fails=0. Summary in rq4h_report.md's addendum; table at
+  probes/rq4/out/slot20_table.md.
+- SIMD-on vs OFF: wins dominate (throughput 458 W / 9 L over both levels;
+  `(?i)cat` 1 MiB -81% w16, -91% w32). Losses are pc16 per-call setup
+  (+0.15..1.5 ns), the sparse-pick cell `(?i)azqb` at w16 (+55..79% on
+  sparse subjects: the §R4.9.7.1 risk CONFIRMED; it wins at w32), and v14
+  (VM, unexplained, a single cell).
+- KB: large throughput wins (to -92%), 179 small losses in the dense-hit and
+  short-span regimes. §6's never-loses rule is not met, so Q-RQ4-1 goes to
+  Frank via main (leaning: keep KB; a density-aware distance rule over
+  rank_ppm is the general fix, filed rather than built).
