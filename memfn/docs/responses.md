@@ -1941,3 +1941,25 @@ the compiler, and is never adopted silently. Proposed for main to file
     OFF), the first SIMD-on vs SIMD-off reading, on main's grant.
   - Small OWED: stale "no SIMD form exists" comments in lib/pcrec.h,
     src/dump/axes_dump.c and tests/memfn/libc_census.py (text only).
+- notice: 2026-10-10 — **RQ-4 (R-13 follow-up) tier-U reading DONE: branch lane/memfn-rq4 @ 3b48a595 plus this [responses] commit (harness lane rq4h; slot20 16:01-17:10; 15,696 readings, fails=0; Zen 4 7700X). Report: docs/dev/lanes/rq4h_report.md (addendum); table docs/design/memfn/probes/rq4/out/slot20_table.md. Tier U: directional, NOT a verdict (§R4.9.5).**
+  - SIMD-on vs OFF: throughput W/N/L is 219/22/5 (w16) and 239/3/4 (w32);
+    density 239/0/0 at both levels; `(?i)cat` 1 MiB -81% (w16) / -91%
+    (w32). The losses are pc16 per-call setup (+0.15..1.5 ns) and the next
+    two items.
+  - **Finding:** the sparse-pick cell `(?i)azqb` LOSES at w16 on sparse
+    subjects (+55..79%) and wins at w32. This confirms the §R4.9.7.1 risk.
+    Fix direction: a distance rule over `rank_ppm` (w16 declines when both
+    picks are rare). It needs a cut-over measurement; no build yet.
+  - One unexplained cell: v14 `(?i)sel(?:ab)*ect --engine=vm` loses
+    5-10% at w32 on sparse throughput.
+  - **Q-RQ4-1 for Frank:** KB (the second filter position) wins large
+    (up to -92%) but loses small (+2..11%, +0.1..0.7 ns) in 179 of 1396
+    comparisons, in the dense-hit and short-span regimes. rankuse §6's
+    rule ("KB stays default only if it never loses past the floor") is
+    therefore NOT met. Recommendation: keep KB as the default, mark it
+    MEASURED-UNOFFICIAL (zen4), and file a density-aware distance rule
+    (decline KB when the picks' ppm predicts dense hits) as the general
+    fix, built under measurement.
+  - Raw TSVs (28 MB) stay in worktrees/memfn-slot/slot20/run (scratch).
+  - Official verdicts remain the bench run on the target hardware
+    (D144 add. 4).
