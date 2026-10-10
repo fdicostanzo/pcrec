@@ -92,8 +92,8 @@ floors rather than identity.
 - This is class (b), a population pin moved by SL2's corpus edit.
 
 **Fix and re-run.** `composition_producing_floor` re-pinned 38 -> 37, with
-the cause commented (242aba6b). The re-run is `build/tri/sweep2.log`; its
-verdict is in the handback.
+the cause commented (242aba6b). The re-run (`build/tri/sweep2.log`) is
+rc 0, with every floor held.
 
 ## 3. The chain's axes and mech verdicts
 
