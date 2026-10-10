@@ -337,7 +337,8 @@ off.
   occurrence in its scope; `at-most-one` refuses a second, naming the
   earlier line; `repeat` permits one; `accumulate` joins (`budget`
   accumulates over its FIELD set, which is why `budget steps=` and `budget
-  frames=` are legal in one block and a repeated FIELD is not).
+  frames=` are legal in one block; a repeated field is accepted and the
+  last one wins).
 - <a id="s1-4-6-p3"></a>[1.4.6¶3] **Constraints** are drawn from a closed vocabulary of SEVEN kinds:
   `required`, `required-if`, `forbidden-if`, `exactly-one-of`, `closed`,
   `unique-by`, `functional-binding`. The vocabulary is what a row MAY
@@ -535,6 +536,8 @@ off.
   then letters, digits or `_`; the value is a double-quoted string in the
   SAME escape vocabulary a subject carries, and there is no second one.
   `var n ""` is the EMPTY state (`rx_var.p != NULL`, `len == 0`).
+  `run.sh` and `verify_rxt.py` enforce the name grammar and the quoted value;
+  `pcrec` reads a `var` line as a qualified line and does not check either.
 - <a id="s1-5-p13"></a>[1.5¶13] `var-unset <name>` — block-scoped, repeatable: declares the slot UNSET
   (`rx_var.p == NULL`). It is a DECLARATION and not an omission, and the
   difference is testable: omitting the name entirely ALSO reads UNSET at the

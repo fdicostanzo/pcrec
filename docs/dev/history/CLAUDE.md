@@ -40,6 +40,14 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
   vocabulary was called nine tokens; it is eleven) are only here. The same
   texts are in git at the commit before the rewrite;
   `docs/dev/lanes/specsmall_report.md` carries the claims ledgers.
+- `rxt_format_record.md` — FROZEN. The complete text `docs/spec/rxt_format.md`
+  carried until its facts-only rewrite (lane specrxt, `[SPEC-CLEAN]`), moved
+  verbatim. The rewritten spec keeps the contract-bearing facts; the
+  build-step tags, measurements, the "drift found" section and the statements
+  the code has since overtaken (the `oracle` engine grammar, the block
+  `description` block scalar, `features only` called inert) are only here.
+  The same text is `git show eac53111:docs/spec/rxt_format.md`;
+  `docs/dev/lanes/specrxt_report.md` carries the claims ledger.
 - `abi_changelog.md` — LIVING. The `abi` change log, newest first, one entry
   per bump (D76 addendum [REVW.A1] named its home; it moved here verbatim
   from match_api.md §6). **An `abi` bump adds its entry here in the bump's
