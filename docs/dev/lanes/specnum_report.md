@@ -152,7 +152,7 @@ edit. Filed as a possible follow-up, not a row.
 
 Light, this box, one at a time, `TMPDIR` a 20-character path:
 
-Run at `6e93a73b`+S748 (the doc, the checks and the citation rewrite were
+Run at `cd88f7d8` (the doc, the checks and the citation rewrite were
 final; later commits touch only CLAUDE.md files, the report, the self-test and
 the pending row), log files in the lane's scratchpad:
 
