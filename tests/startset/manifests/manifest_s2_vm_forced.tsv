@@ -746,7 +746,6 @@ tests/base/alternation_trie.rxt:82		6162637c782b7c6162647c61
 tests/base/alternation_trie.rxt:88		78283f3a797a297c7879
 tests/base/alternation_trie.rxt:93		286361747c6361727c636172742973
 tests/base/alternation_trie.rxt:97		283f3a666f6f7c666f6f626172292b
-tests/base/anchors.rxt:36		61626324
 tests/base/anchors.rxt:51		617c5e62
 tests/base/anchors.rxt:55		5e617c6224
 tests/base/bounded_repeats.rxt:105		617b20322c7d
@@ -3552,3 +3551,27 @@ tests/revend/stage2_captures.rxt:816		2828612b2928622b29292b24
 tests/revend/stage2_captures.rxt:840		286128622863293f293f2924
 tests/revend/stage2_captures.rxt:865		28285c642b292d285c642b292924
 tests/revend/stage2_captures.rxt:886		2828286129292924
+# revbuild (2026-10-10, [OPT-REVEND] L2): +23 rows, every one a new tests/assertions/rev_end.rxt block (the rev-end answer net), correct forced-VM movers; -1 row tests/base/anchors.rxt:36 `abc$`, whose (text, options) twin rev_end.rxt:355 now takes its id in the dedup (ssbuild3's precedent); census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
+tests/assertions/rev_end.rxt:105	--features classes	5b615c6e5d2b24
+tests/assertions/rev_end.rxt:115		283f3a617c615c6e2924
+tests/assertions/rev_end.rxt:122		283f3a615c6e7c612924
+tests/assertions/rev_end.rxt:129	--features classes	5c772b24
+tests/assertions/rev_end.rxt:18	--features classes	5c642b24
+tests/assertions/rev_end.rxt:207	--features classes,lookaround	5c642b24283f3d5c6e29
+tests/assertions/rev_end.rxt:216	--features classes,lookaround	5c6424283f215c6e29
+tests/assertions/rev_end.rxt:225	--features assertions,lookaround	615c5a283f3d5c6e29
+tests/assertions/rev_end.rxt:233	--features assertions	61245c62
+tests/assertions/rev_end.rxt:243	--features assertions,classes	5c642b247c5c772b5c7a
+tests/assertions/rev_end.rxt:262	--encoding=utf8	c3a92b24
+tests/assertions/rev_end.rxt:271	--features classes --encoding=utf8	5c732b3f24
+tests/assertions/rev_end.rxt:280	--encoding=utf8	2e24
+tests/assertions/rev_end.rxt:289	--features assertions	5c62616224
+tests/assertions/rev_end.rxt:30	--features classes	5c732b24
+tests/assertions/rev_end.rxt:300	--features assertions	5c426224
+tests/assertions/rev_end.rxt:335	--features assertions	5c4761247c6224
+tests/assertions/rev_end.rxt:345	--features classes,lookaround	5c777b312c327d283f3a283f3d297c2924
+tests/assertions/rev_end.rxt:355		61626324
+tests/assertions/rev_end.rxt:363	--features classes	5b612d7a5d7b322c347d24
+tests/assertions/rev_end.rxt:372	--features assertions,classes	785b61625d3f5c7a
+tests/assertions/rev_end.rxt:43	--features classes	5c732b3f24
+tests/assertions/rev_end.rxt:74	--features classes	5b612d7a5d2b5c2e74787424

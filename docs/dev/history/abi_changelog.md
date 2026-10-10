@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `71` on every artifact today (lane rq3 bumped it from
+- **`rx_info.abi` is `72` on every artifact today (lane revbuild bumped it
+  from 71, 2026-10-10: [OPT-REVEND] L2 with stage 2 folded in, D156;
+  renumber at landing if the kit's R-12 takes 72 first).** An end-pinned
+  DFA body (`$`/`\Z`/`\z`, no `(?m)`, no `\G`, not optional) searches by the
+  reverse-from-end walk: `<PREFIX>_DFA_SCAN` reads `"rev-end"`, the artifact
+  carries no forward machine (a tie with no anchored machine keeps it for
+  the relocate), and the walk's seeds, dead-seed skip and tie arm are new
+  emitted text. The generated stamp rule (`<PREFIX>_DFA_START`, WINDOW,
+  FIRST, NEXT and the pre-check stamps read their slot's ABSENCE value where
+  the path does not ask the slot) moves `<PREFIX>_DFA_START` to
+  `"attempt-start"` on attempt/empty bodies; an empty body's `<prefix>_match`
+  is the `"nomatch"` form; a whole-window pre-check ahead of a walk that
+  answers presence itself reads `<PREFIX>_REQ_WHY "dominated"` and is not
+  emitted. An exact VM hybrid's inlined prefilter walks too (stage 2) and its
+  VM entry asks FINISH; the `-fno-rev-end` deny and the `locate` axis are
+  new. No struct offset moves and no answer moves.
+
+- **`rx_info.abi` was `71` (lane rq3 bumped it from
   70, 2026-10-09: [MEMFN] RQ-3, D155 addendum 2; rq3 was built on `69` and
   re-landed on R4e′.0b's `70`).** ONE stamp line is added
   to every artifact, both engines, directly after `<PREFIX>_MEMFN_LIBC`:

@@ -428,4 +428,4 @@ tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf
 tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
 tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
 # sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
-tests/revend/stage2_captures.rxt:1453	--encoding=utf8	285c707b4c7d2b2924
+# revbuild (2026-10-10, [OPT-REVEND] L2): -1 row: tests/revend/stage2_captures.rxt:1453 `(\p{L}+)$` under utf8, whose hybrid prefilter now fits the size cap (the rev-end walk replaces the composite), so its VM entry carries no start-set hat; census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
