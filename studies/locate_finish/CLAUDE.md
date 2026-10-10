@@ -151,6 +151,10 @@ these files.
   `rx_info` fields moved (else `text`). Its runs are cited in
   `docs/dev/lanes/revbuild_report.md` (L2.1: 638 rows, all
   `DFA_START`/`search_form` reverse-pass -> attempt-start; L2.2: 274 rows).
+  Its outputs are `results/l2_movers_l21.tsv` (L2.1 against L1) and
+  `results/l2_movers_l22.tsv` (L2.2 against L2.1); `results/l2_stage2_movers.txt`
+  lists the `stage2_captures.rxt` patterns stage 2 moves (default vs
+  `-fno-rev-end`).
 - `mk_l2_rows.py` — [lane revbuild] writes L2's sabotage rows S758-S781
   (revend.md §9.2's sixteen recast, L2.1's stamp fork, the deference, the
   size-ladder clause and its reader, stage 2's four) from the CURRENT source:

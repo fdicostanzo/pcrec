@@ -164,8 +164,9 @@ scripts, any failing fails the section.
 
 **Re-pinned at revbuild** (2026-10-10, [OPT-REVEND] L2): `census_s1.py` on
 the lane's build (`-fno-start-set` arm, no bench) moved four corpus rows and
-added 23. `s2_vm_auto` -1 (`stage2_captures.rxt:1453`, whose hybrid
-prefilter now fits the cap, so no VM hat), `s2_vm_forced` +23 (the new
-`tests/assertions/rev_end.rxt` blocks) -1 (`base/anchors.rxt:36`, whose
-dedup twin `rev_end.rxt:355` takes the id), `s3_dfa` -2 (two end-pinned DFA
+added 30. `s2_vm_auto` -1 (`stage2_captures.rxt:1453`, whose hybrid
+prefilter now fits the cap, so no VM hat), `s2_vm_forced` +30 (the new
+`tests/assertions/rev_end.rxt` blocks) -2 (`base/anchors.rxt:36` and
+`captures/structure_anchors_misc.rxt:7`, whose dedup twins in `rev_end.rxt`
+take the ids), `s3_dfa` -2 (two end-pinned DFA
 bodies whose search is now the walk, so the DFA hat changes nothing).

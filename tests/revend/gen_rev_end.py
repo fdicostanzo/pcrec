@@ -9,6 +9,9 @@ trailing-lookaround shapes, utf8 tails and a utf8 tie. Capture groups are
 tests/revend/stage2_captures.rxt's; these blocks are capture-free, so the
 default build routes them to the DFA (the walk on its own) and
 `--engine=vm` / `-fno-rev-end` (the axes sweep) to the other finishers.
+Family G is the exception: stage 2's captures net (locate_finish.md §5 L3),
+capture-bearing, so the default build routes it to the VM hybrid whose inlined
+prefilter walks; its `g` lines are the oracle's group spans.
 
 Usage: gen_rev_end.py ORACLE_BIN SCRATCH_DIR > tests/assertions/rev_end.rxt
 ORACLE_BIN is tests/fuzz/pcre2_oracle.c built against libpcre2-8 (options=0:
@@ -36,15 +39,18 @@ HEADER = """# [OPT-REVEND] L2 THE `rev-end` ANSWER NET (lane revbuild; revend.md
 # libpcre2 10.46's answers (every m/n/ms/ns line is the oracle's, never
 # pcrec's); tests/revend/verify_stage2.py re-reads this file and re-asks the
 # oracle. python `re` is not an oracle here (its `\\Z` is PCRE2's `\\z`), so
-# every block is `# pcre2-only`. Capture-free: the default build runs the
+# every block is `# pcre2-only`. Family G aside, capture-free: the default build runs the
 # reverse-from-end walk on the DFA (`<PREFIX>_DFA_SCAN "rev-end"`); the axes
 # sweep runs the same cells under `-fno-rev-end`, `-fno-anchored-dfa` (the tie
-# relocates instead of running the anchored machine) and `--engine=vm`.
+# relocates instead of running the anchored machine) and `--engine=vm`. Family G
+# (stage 2's captures net) carries groups: a VM hybrid whose inlined prefilter
+# walks, its `g` lines the oracle's group spans.
 #
 # FAMILIES: T the two seeds and their ties (lazy and greedy); P startpos at 0,
 # mid-match, n-1 and n; E empty matches and nullable bodies; X trailing
 # lookarounds (a dead seed, X1); M mixed pins; U utf8 tails; W word context
-# at the start edge; B bounded widths the end window also serves."""
+# at the start edge; D declines; S a superset hybrid; G stage 2's captures;
+# B bounded widths the end window also serves."""
 
 # ---- T: the seeds and their ties ------------------------------------------
 C(r"\d+$", "T: one seed: digits cannot take the final newline (no tie code)",
@@ -121,6 +127,20 @@ C(r"\Ga$|b$", "D: `\\G` anywhere declines (it reads the startpos)",
 # ---- S: a superset hybrid (lookaround erased: the walk's start is a bound) ---
 C(r"\w{1,2}(?:(?=)|)$", "S: an erased lookaround makes the prefilter a superset; the VM decides",
   S("ab", "abc", "abc\n", "a b\n", " "))
+# ---- G: stage 2's captures net (locate_finish.md §5 L3): VM hybrids --------
+C(r"(\d+)$", "G: digits in a group: the hybrid's inlined walk, the VM places the group",
+  S("abc123", "abc123\n", "12a", "\n", "7") + SP("ab12", 3))
+C(r"(a+)$", "G: a run that cannot take the final newline", S("baa", "baa\n", "aa\n\n", "b"))
+C(r"a\Kb$", "G: `\\K` moves the reported start; the walk's start bounds the attempt",
+  S("ab", "xab\n", "abab", "b"))
+C(r"([^c]{1,3})$", "G: the unclamped tie: the group can take the final newline",
+  S("ab\n", "a\n", "\n", "abcd\n", "c"))
+C(r"(\s+){2}$", "G: a clamped tie (count-collapsed body): greedy",
+  S("a  \n", "a \n", "  ", " \n\n", "a"))
+C(r"(\s$){1,3}", "G: a clamped tie with the pin inside the repeat", S(" \n", " ", "a \n", "\n"))
+C(r"(\s+?){2}$", "G: the LAZY clamped tie (r2 E3's witness)", S("a  \n", " \n", "a   ", "  \n\n"))
+C(r"(\w{1,2})(?:(?=)|)$", "G: the superset witness: an erased lookaround, the walk's start is a bound",
+  S("abc", "abc\n", "a b\n", " "))
 # ---- B: bounded widths (W1's population, now the walk's) -------------------
 C(r"abc$", "B: a fixed literal tail", S("xxabc", "abc\n", "abcabc", "ab"))
 C(r"[a-z]{2,4}$", "B: a bounded class run", S("abcdef", "ab\n", "a", "a bc\n"))
@@ -155,7 +175,7 @@ def main():
         print("pattern " + pat)
         if utf8: print("encoding utf8")
         fs = []
-        if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\B", "\\G", "(?m)")): fs.append("assertions")
+        if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\B", "\\G", "\\K", "(?m)")): fs.append("assertions")
         if any(t in pat for t in ("\\d", "\\w", "\\s", "[")): fs.append("classes")
         if "(?=" in pat or "(?!" in pat: fs.append("lookaround")
         if "(?m)" in pat: fs.append("modifiers")
@@ -169,5 +189,8 @@ def main():
                 print('%s %s"%s"' % ("n" if sp == 0 else "ns", pre, esc(s)))
             else:
                 print('%s %s"%s" %s %s' % ("m" if sp == 0 else "ms", pre, esc(s), ans[1], ans[2]))
+                v = ans[1:]
+                for k in range(1, len(v) // 2):
+                    print("g %d %s %s" % (k, v[2 * k], v[2 * k + 1]))
 
 main()

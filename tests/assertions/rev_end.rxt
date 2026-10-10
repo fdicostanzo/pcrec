@@ -3,15 +3,18 @@
 # libpcre2 10.46's answers (every m/n/ms/ns line is the oracle's, never
 # pcrec's); tests/revend/verify_stage2.py re-reads this file and re-asks the
 # oracle. python `re` is not an oracle here (its `\Z` is PCRE2's `\z`), so
-# every block is `# pcre2-only`. Capture-free: the default build runs the
+# every block is `# pcre2-only`. Family G aside, capture-free: the default build runs the
 # reverse-from-end walk on the DFA (`<PREFIX>_DFA_SCAN "rev-end"`); the axes
 # sweep runs the same cells under `-fno-rev-end`, `-fno-anchored-dfa` (the tie
-# relocates instead of running the anchored machine) and `--engine=vm`.
+# relocates instead of running the anchored machine) and `--engine=vm`. Family G
+# (stage 2's captures net) carries groups: a VM hybrid whose inlined prefilter
+# walks, its `g` lines the oracle's group spans.
 #
 # FAMILIES: T the two seeds and their ties (lazy and greedy); P startpos at 0,
 # mid-match, n-1 and n; E empty matches and nullable bodies; X trailing
 # lookarounds (a dead seed, X1); M mixed pins; U utf8 tails; W word context
-# at the start edge; B bounded widths the end window also serves.
+# at the start edge; D declines; S a superset hybrid; G stage 2's captures;
+# B bounded widths the end window also serves.
 
 # T: one seed: digits cannot take the final newline (no tie code)
 # pcre2-only
@@ -348,6 +351,106 @@ m "ab" 0 2
 m "abc" 1 3
 m "abc\n" 1 3
 m "a b\n" 2 3
+n " "
+
+# G: digits in a group: the hybrid's inlined walk, the VM places the group
+# pcre2-only
+pattern (\d+)$
+features classes
+m "abc123" 3 6
+g 1 3 6
+m "abc123\n" 3 6
+g 1 3 6
+n "12a"
+n "\n"
+m "7" 0 1
+g 1 0 1
+ms 3 "ab12" 3 4
+g 1 3 4
+
+# G: a run that cannot take the final newline
+# pcre2-only
+pattern (a+)$
+m "baa" 1 3
+g 1 1 3
+m "baa\n" 1 3
+g 1 1 3
+n "aa\n\n"
+n "b"
+
+# G: `\K` moves the reported start; the walk's start bounds the attempt
+# pcre2-only
+pattern a\Kb$
+features assertions
+m "ab" 1 2
+m "xab\n" 2 3
+m "abab" 3 4
+n "b"
+
+# G: the unclamped tie: the group can take the final newline
+# pcre2-only
+pattern ([^c]{1,3})$
+features classes
+m "ab\n" 0 3
+g 1 0 3
+m "a\n" 0 2
+g 1 0 2
+m "\n" 0 1
+g 1 0 1
+m "abcd\n" 3 5
+g 1 3 5
+n "c"
+
+# G: a clamped tie (count-collapsed body): greedy
+# pcre2-only
+pattern (\s+){2}$
+features classes
+m "a  \n" 1 4
+g 1 3 4
+m "a \n" 1 3
+g 1 2 3
+m "  " 0 2
+g 1 1 2
+m " \n\n" 0 3
+g 1 2 3
+n "a"
+
+# G: a clamped tie with the pin inside the repeat
+# pcre2-only
+pattern (\s$){1,3}
+features classes
+m " \n" 0 2
+g 1 1 2
+m " " 0 1
+g 1 0 1
+m "a \n" 1 3
+g 1 2 3
+m "\n" 0 1
+g 1 0 1
+
+# G: the LAZY clamped tie (r2 E3's witness)
+# pcre2-only
+pattern (\s+?){2}$
+features classes
+m "a  \n" 1 3
+g 1 2 3
+m " \n" 0 2
+g 1 1 2
+m "a   " 1 4
+g 1 2 4
+m "  \n\n" 0 3
+g 1 1 3
+
+# G: the superset witness: an erased lookaround, the walk's start is a bound
+# pcre2-only
+pattern (\w{1,2})(?:(?=)|)$
+features classes,lookaround
+m "abc" 1 3
+g 1 1 3
+m "abc\n" 1 3
+g 1 1 3
+m "a b\n" 2 3
+g 1 2 3
 n " "
 
 # B: a fixed literal tail
