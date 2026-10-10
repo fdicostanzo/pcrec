@@ -3467,3 +3467,88 @@ tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding
 tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
 tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
 tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
+# sstri (2026-10-10): +84 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
+tests/revend/stage2_captures.rxt:1025		285c642b2924
+tests/revend/stage2_captures.rxt:1066	--features assertions,classes	285c772b295c7a
+tests/revend/stage2_captures.rxt:1084	--features assertions,classes	285c625c772b2924
+tests/revend/stage2_captures.rxt:1099		286129623f24
+tests/revend/stage2_captures.rxt:1148		285c6429285c64293f24
+tests/revend/stage2_captures.rxt:1203		285b5e2f5d2b2924
+tests/revend/stage2_captures.rxt:1220		282e2a295c2e74787424
+tests/revend/stage2_captures.rxt:1264	--features assertions,classes	5c62285c772b2924
+tests/revend/stage2_captures.rxt:1281	--features assertions,classes,lookaround	283f3c3d2c29285c642b2924
+tests/revend/stage2_captures.rxt:1296	--features assertions,lookaround	283f3c21782928612b2924
+tests/revend/stage2_captures.rxt:1311	--features assertions,classes,lookaround	283f3c3d5c7329285c532b295c7a
+tests/revend/stage2_captures.rxt:1325	--features assertions,classes,lookaround	283f3c3d5e7c2c29285c772b2924
+tests/revend/stage2_captures.rxt:1339	--features assertions,classes	285c77295c6224
+tests/revend/stage2_captures.rxt:1352	--encoding=utf8	282e2924
+tests/revend/stage2_captures.rxt:1369	--features assertions,classes --encoding=utf8	285c772b295c7a
+tests/revend/stage2_captures.rxt:137		28617c615c6e2924
+tests/revend/stage2_captures.rxt:1382	--encoding=utf8	285b5e2f5d2b2924
+tests/revend/stage2_captures.rxt:1397	--encoding=utf8	285c787b65397d2b2924
+tests/revend/stage2_captures.rxt:1410	--ucp --encoding=utf8	285c732b2924
+tests/revend/stage2_captures.rxt:1426	--ucp --encoding=utf8	285c642b2924
+tests/revend/stage2_captures.rxt:1441	--encoding=utf8	282e2a295c2e74787424
+tests/revend/stage2_captures.rxt:1453	--encoding=utf8	285c707b4c7d2b2924
+tests/revend/stage2_captures.rxt:1466	--encoding=utf8	285c772b2924
+tests/revend/stage2_captures.rxt:1480	--features assertions --encoding=utf8	282e295c5a
+tests/revend/stage2_captures.rxt:149		28615c6e7c612924
+tests/revend/stage2_captures.rxt:1494	--encoding=utf8	28617c5c787b65397d292b24
+tests/revend/stage2_captures.rxt:1507	-i	286162632924
+tests/revend/stage2_captures.rxt:1520	-i --features assertions	28612b295c7a
+tests/revend/stage2_captures.rxt:1533	-i	285b612d635d2b2924
+tests/revend/stage2_captures.rxt:1546	-i	285b5e615d2b2924
+tests/revend/stage2_captures.rxt:1559	-i	282e2a295c2e54585424
+tests/revend/stage2_captures.rxt:1571	-i --encoding=utf8	286b2924
+tests/revend/stage2_captures.rxt:1586	-i --encoding=utf8	285c787b65397d2b2924
+tests/revend/stage2_captures.rxt:1599	--features assertions	282861295c7a29
+tests/revend/stage2_captures.rxt:161		28615c6e3f2924
+tests/revend/stage2_captures.rxt:1612		28612429
+tests/revend/stage2_captures.rxt:1623		286129283f3a2429
+tests/revend/stage2_captures.rxt:1644	--features atomic-groups	28612b2b2924
+tests/revend/stage2_captures.rxt:1656	--features atomic-groups	283f3e612b2928622924
+tests/revend/stage2_captures.rxt:1669	--features classes,assertions,modifiers	283f6d29285c642b2924
+tests/revend/stage2_captures.rxt:1683		285c642b29247c287829
+tests/revend/stage2_captures.rxt:1700		285c732b3f297b327d24
+tests/revend/stage2_captures.rxt:171		28615c6e3f3f2924
+tests/revend/stage2_captures.rxt:1719		285c732b3f295c732a24
+tests/revend/stage2_captures.rxt:1732		28612b3f2924
+tests/revend/stage2_captures.rxt:1767		285c647b322c347d2924
+tests/revend/stage2_captures.rxt:1781		28617b337d2924
+tests/revend/stage2_captures.rxt:1795	--features assertions,classes	285c777b312c337d295c7a
+tests/revend/stage2_captures.rxt:1809	--features classes,assertions	2878295c4b285c642b2924
+tests/revend/stage2_captures.rxt:181	--features assertions	2861295c6e3f5c7a
+tests/revend/stage2_captures.rxt:1827	--features assertions	283f3a617c286229295c4b2863293f24
+tests/revend/stage2_captures.rxt:192	--features assertions	2861295c6e3f5c5a
+tests/revend/stage2_captures.rxt:220		285c732b2924
+tests/revend/stage2_captures.rxt:238	--features assertions,classes	285c732b295c7a
+tests/revend/stage2_captures.rxt:252		28612a29616224
+tests/revend/stage2_captures.rxt:267		28612a3f29616224
+tests/revend/stage2_captures.rxt:279		28612b2928613f2924
+tests/revend/stage2_captures.rxt:312		28617c61622928637c6263642924
+tests/revend/stage2_captures.rxt:329		28617c61622928637c6263642928642a2924
+tests/revend/stage2_captures.rxt:349		285c642b29285c642924
+tests/revend/stage2_captures.rxt:364		282e2b3f29285c642b2924
+tests/revend/stage2_captures.rxt:384		282e2a29285c642924
+tests/revend/stage2_captures.rxt:398		285b612d7a5d2b29285b302d395d2a2924
+tests/revend/stage2_captures.rxt:415		283f3a2861297c286229292b24
+tests/revend/stage2_captures.rxt:436		28617c62292b24
+tests/revend/stage2_captures.rxt:463		28285c64297c78292b24
+tests/revend/stage2_captures.rxt:506		28612b7c62292a6324
+tests/revend/stage2_captures.rxt:543		285c647b312c327d292b24
+tests/revend/stage2_captures.rxt:556		2861627c61292a6224
+tests/revend/stage2_captures.rxt:586		283f3a2861297c2862297c2863292924
+tests/revend/stage2_captures.rxt:663		2861297c6224
+tests/revend/stage2_captures.rxt:681		286124297c286229
+tests/revend/stage2_captures.rxt:703		283f3a782861297c792924
+tests/revend/stage2_captures.rxt:717		28617c61622924
+tests/revend/stage2_captures.rxt:731		2861627c612924
+tests/revend/stage2_captures.rxt:743		28666f6f7c666f6f6261722924
+tests/revend/stage2_captures.rxt:756		28666f6f7c666f6f6261727c6261722924
+tests/revend/stage2_captures.rxt:767		285c772b7c5c772b5c2e2924
+tests/revend/stage2_captures.rxt:781		283f3a617c61622928637c626364293f24
+tests/revend/stage2_captures.rxt:795		282861292862292924
+tests/revend/stage2_captures.rxt:816		2828612b2928622b29292b24
+tests/revend/stage2_captures.rxt:840		286128622863293f293f2924
+tests/revend/stage2_captures.rxt:865		28285c642b292d285c642b292924
+tests/revend/stage2_captures.rxt:886		2828286129292924
