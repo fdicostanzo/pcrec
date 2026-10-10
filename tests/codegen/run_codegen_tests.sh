@@ -181,7 +181,10 @@ else
 fi
 
 # ---- M2.7: `$` patterns must use the O(n) engine, not per-start attempts ----
-if gen dollar 'a*b$'; then
+# [OPT-REVEND] these M2.7/M2.12 rows read the COMPOSITE's forward EOL path; an
+# end-pinned pattern walks back from the subject's end by default (`rev-end`,
+# run_rev_end.sh's), so they compile it with that row denied.
+if gen dollar 'a*b$' -fno-rev-end; then
     if grep -q 'rx_forward_eol_view\[' "$WORKDIR/dollar.body"; then
         ok "M2.7: 'a*b\$' uses the unanchored engine with EOL variants"
     else
@@ -233,7 +236,7 @@ fi
 # M2.7 traded the prefilter and skip loops away for correctness on the EOL
 # path and left `$` patterns at ~291 MB/s where the same pattern without `$`
 # ran at ~22 GB/s. Nothing in the corpus or the budgets could see that.
-if gen eolskip '.*=.*$'; then
+if gen eolskip '.*=.*$' -fno-rev-end; then
     if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/eolskip.body"; then
         ok "M2.12: '.*=.*\$' emits a skip table on the EOL path"
     else
@@ -262,7 +265,7 @@ if gen eolskip '.*=.*$'; then
     fi
 fi
 # the memchr prefilter must survive on the EOL path as well
-if gen eolpre 'a*b$'; then
+if gen eolpre 'a*b$' -fno-rev-end; then
     if grep -q 'memchr' "$WORKDIR/eolpre.body"; then
         ok "M2.12: 'a*b\$' keeps the memchr prefilter on the EOL path"
     else

@@ -206,7 +206,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says. Any value outside
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
-SCAN_VALUES="unanchored attempt empty"
+SCAN_VALUES="unanchored rev-end attempt empty"
 PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded"
 
 # ---------------------------------------------------------------------------
@@ -234,6 +234,7 @@ read_artifact() {
         /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ \
                                                { mtnothing = 1 }                # emit_dfa.c: the empty engine
         /^    const size_t start_max = /       { attempt = 1 }                  # emit_attempt: the per-start loop
+        /^    for \(int revend_seed = 0; /    { revend = 1 }                   # emit_rev_end: the reverse walk from the end ([OPT-REVEND] L2)
         # [CC-DIFF] STEP 1(b): was rx_forward_next_state[ (the forward table
         # declaration itself) until the uniform-table fold made that
         # declaration OPTIONAL -- a folded machine emits no table at all, so
@@ -305,7 +306,7 @@ read_artifact() {
                                 f_pf   = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
         END {
             eng = vm ? "vm" : "dfa"
-            scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
+            scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-")))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
             else if (pf_fc && hat) pf = "first-class-bounded"
@@ -423,8 +424,13 @@ witness() {
 # fall on the near side of a cost model.
 witness unanchored memchr             'a'
 witness unanchored byte-class         '[af]'
-witness unanchored memchr-bounded     'a$'
-witness unanchored byte-class-bounded '[af]$'
+# [OPT-REVEND] L2 the two `-bounded` rows read a WORD-CONTEXT accept: an
+# end-pinned `a$`/`[af]$` now walks back from the end (`rev-end`, below) and
+# carries no forward scan to bound.
+witness unanchored memchr-bounded     'a\b'
+witness unanchored byte-class-bounded '[af]\b'
+witness rev-end    none               'a$'
+witness rev-end    none               '[af]+\z'
 witness unanchored none               '.*'
 # [START-SET] stage 3, THE DFA HAT's two forms: a seeded machine whose start set
 # is a proper subset of the escape set (\b's E is the 63 word bytes).

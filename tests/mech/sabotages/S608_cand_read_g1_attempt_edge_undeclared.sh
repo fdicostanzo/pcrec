@@ -17,8 +17,10 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?m)^ERR
 SAB_REACH_EXPECT='REACH-ATTEMPT-G1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
+# RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): PRESENCE's reads gained the LOCATE edge after NEXT; the plant still drops NEXT's ATTEMPT bit. Intent
+# unchanged.
 SAB_BEFORE='                                        [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA) |
-                                                            CAND_ON(CAND_ROUTE_ATTEMPT) } },
-    [CAND_SLOT_WIDTH] '
-SAB_AFTER='                                        [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA) } },   /* SABOTAGE S608 */
-    [CAND_SLOT_WIDTH] '
+                                                            CAND_ON(CAND_ROUTE_ATTEMPT),
+                                        /* [OPT-REVEND] L2 `dominated`'\''s'
+SAB_AFTER='                                        [CAND_SLOT_NEXT]  = CAND_ON(CAND_ROUTE_DFA),   /* SABOTAGE S608 */
+                                        /* [OPT-REVEND] L2 `dominated`'\''s'

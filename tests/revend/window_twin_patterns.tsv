@@ -1,4 +1,4 @@
-# studies/revend_twin/r3_patterns.tsv -- [OPT-REVEND] L2's twin population
+# tests/revend/window_twin_patterns.tsv -- [OPT-REVEND] L2's twin population
 # beyond tests/revend/stage2_captures.rxt (lane revbuild): the design's named
 # stage-2 witnesses (locate_finish.md §4.3, §5 L3: the lazy tie, the clamped
 # ties, the superset, X1 on a hybrid) and the stage-1 DFA-only shapes (form C

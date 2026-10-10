@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""studies/revend_twin/r3_twin.py -- [OPT-REVEND] L2's WINDOW-IDENTITY TWIN,
+"""tests/revend/window_twin.py -- [OPT-REVEND] L2's WINDOW-IDENTITY TWIN,
 stage 2 and stage 1 together (locate_finish.md §4.3, §5 L3; LR-S2, LR-S4;
-lane revbuild). Drives r3_driver.c over a population.
+lane revbuild). Drives window_twin_driver.c over a population.
 
 For each pattern: compile A (default: the `rev-end` walk) and B
 (`-fno-rev-end`: the composite) with the SAME pcrec build, wrap each in its own
 translation unit (B's `<p>_reset_for_next_attempt` is not instrumented; A's is,
-counting E-VR traversals), link with r3_driver.c and libpcre2-8, and run every
+counting E-VR traversals), link with window_twin_driver.c and libpcre2-8, and run every
 subject over the pattern's alphabet up to MAXLEN characters at every
 character-boundary offset. Reports per pattern: the artifact class (A's
 `RX_DFA_SCAN`, engine, `RX_VM_RESEED` -- `exact` is the exact hybrid, the
 LR-S4 stratum), window/answer/oracle differences and the E-VR count.
 
-  python3 -I studies/revend_twin/r3_twin.py PCREC OUTDIR [--extra FILE] [--stage2-rxt FILE]
+  python3 -I tests/revend/window_twin.py PCREC OUTDIR [--extra FILE] [--stage2-rxt FILE]
 
 The population is every block of tests/revend/stage2_captures.rxt (its own
-flags and encoding) plus r3_patterns.tsv. Exit 1 on any difference, on a
+flags and encoding) plus window_twin_patterns.tsv. Exit 1 on any difference, on a
 nonzero E-VR count on an exact hybrid, or on an empty stratum the design
 names (exact hybrid, superset hybrid, DFA-only), so a population that stopped
 reaching a class is a failure, not a pass (K35).
@@ -122,8 +122,8 @@ def wrapper(tag, prefix, cfile, text, count_evr):
 def main():
     args = sys.argv[1:]
     pcrec, out = os.path.abspath(args[0]), os.path.abspath(args[1])
-    extra = os.path.join(HERE, "r3_patterns.tsv")
-    s2 = os.path.join(HERE, "..", "..", "tests", "revend", "stage2_captures.rxt")
+    extra = os.path.join(HERE, "window_twin_patterns.tsv")
+    s2 = os.path.join(HERE, "stage2_captures.rxt")
     if "--extra" in args:
         extra = args[args.index("--extra") + 1]
     if "--stage2-rxt" in args:
@@ -132,7 +132,7 @@ def main():
     pop = [dict(b, name="s2:%d" % i) for i, b in enumerate(stage2_blocks(s2))] + extra_rows(extra)
     strata = {}
     bad = 0
-    with open(os.path.join(out, "r3_results.tsv"), "w") as res:
+    with open(os.path.join(out, "window_twin_results.tsv"), "w") as res:
         res.write("#name\tenc\tflags\tclass\tcells\tpf_cells\twin_diff\tans_diff\tora_diff\tevr\tpattern\n")
         for k, row in enumerate(pop):
             d = os.path.join(out, "p%03d" % k)
@@ -157,7 +157,7 @@ def main():
             open(os.path.join(d, "wa.c"), "w").write(wrapper("A", "pa", ca, ta, True))
             open(os.path.join(d, "wb.c"), "w").write(wrapper("B", "pb", cb, tb, False))
             exe = os.path.join(d, "drv")
-            cc = subprocess.run(["gcc", "-O1", "-w", "-o", exe, os.path.join(HERE, "r3_driver.c"),
+            cc = subprocess.run(["gcc", "-O1", "-w", "-o", exe, os.path.join(HERE, "window_twin_driver.c"),
                                  os.path.join(d, "wa.c"), os.path.join(d, "wb.c"), "-lpcre2-8"],
                                 capture_output=True, text=True)
             if cc.returncode:

@@ -361,6 +361,22 @@
 #     dead-group DFA witnesses and a corpus slice on both routes. Its own arm
 #     because a caps write on a no-match moves no RETURN value, and the
 #     harness's driver never reads caps after a 0. Registered before S439.
+#   dfastamps — added 2026-10-10 ([OPT-REVEND] L2, lane revbuild); runs
+#     tests/codegen/run_dfa_stamps.sh: every DFA-scan stamp held to the
+#     emitted text it names (the scan, the prefilter, since L2.1 the start
+#     recovery). Its own arm because a stamp that names a selection the
+#     artifact does not run moves no answer. Registered before S758.
+#   revend — added 2026-10-10 ([OPT-REVEND] L2, lane revbuild); runs
+#     tests/codegen/run_rev_end.sh: the `rev-end` walk's witnesses per tie
+#     arm and decline, and the corpus under `-fno-rev-end` (a declining
+#     artifact byte-identical, a walking one carrying its walk iff stamped).
+#     Its own arm because the row is answer-identical by construction.
+#     Registered before S758.
+#   revtwin — added 2026-10-10 ([OPT-REVEND] L2, lane revbuild); runs
+#     tests/revend/run_window_twin.sh: the inlined walk's window against the
+#     composite's, the answers against `-fno-rev-end` and libpcre2, and E-VR
+#     0 on exact hybrids. SKIPPED (not scored) without libpcre2. Registered
+#     before S758.
 #   memfnmanifest — added 2026-10-05 ([MEMFN] R4a, lane memfnmanifest); runs
 #     tests/memfn/run_site_manifest.sh, C17: the checked site manifest
 #     (integration.md §R4.3.4) against what src/gen/ and src/enc/ spell. Its
@@ -2901,6 +2917,38 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/nomatchcaps.log" | grep -oE '[0-9]+')"
                 score_arm "$work/nomatchcaps.log" "$f" "nomatchcaps:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            dfastamps)
+                # [OPT-REVEND] L2 tests/codegen/run_dfa_stamps.sh — see the
+                # vocabulary entry above.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_dfa_stamps.sh" > "$work/dfastamps.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/dfastamps.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/dfastamps.log" | grep -oE '[0-9]+')"
+                score_arm "$work/dfastamps.log" "$f" "dfastamps:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            revend)
+                # [OPT-REVEND] L2 tests/codegen/run_rev_end.sh — see the
+                # vocabulary entry above.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_rev_end.sh" > "$work/revend.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/revend.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/revend.log" | grep -oE '[0-9]+')"
+                score_arm "$work/revend.log" "$f" "revend:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            revtwin)
+                # [OPT-REVEND] L2 tests/revend/run_window_twin.sh — see the
+                # vocabulary entry above; SKIPS (not scored) without libpcre2.
+                PCREC="$pcrec" TMPDIR="$work" \
+                    bash "$tree/tests/revend/run_window_twin.sh" > "$work/revtwin.log" 2>&1
+                if grep -q '^SKIP:' "$work/revtwin.log"; then
+                    suite_bits+=("revtwin:SKIPPED-no-libpcre2")
+                    any_skip=1
+                else
+                    p="$(grep -m1 '^checks passed:' "$work/revtwin.log" | grep -oE '[0-9]+')"
+                    f="$(grep -m1 '^checks failed:' "$work/revtwin.log" | grep -oE '[0-9]+')"
+                    score_arm "$work/revtwin.log" "$f" "revtwin:${f:-ERR}fail/${p:-?}pass"
+                fi
                 ;;
             memfnmanifest)
                 # [MEMFN] C17 tests/memfn/run_site_manifest.sh — see the

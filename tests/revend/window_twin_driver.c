@@ -1,4 +1,4 @@
-/* studies/revend_twin/r3_driver.c -- [OPT-REVEND] L2 STAGE 2's WINDOW-IDENTITY
+/* tests/revend/window_twin_driver.c -- [OPT-REVEND] L2 STAGE 2's WINDOW-IDENTITY
  * TWIN (locate_finish.md §4.3, §5 L3, LR-S2/LR-S4; lane revbuild).
  *
  * Links two builds of ONE pattern: A, the artifact with the `rev-end` walk
@@ -15,9 +15,9 @@
  * and counts E-VR traversals: VM attempts that FAIL after the first attempt
  * of a search on A (the wrappers count `<p>_reset_for_next_attempt`, the
  * text every failed attempt runs). On an EXACT hybrid the window IS the
- * match, so the count must be 0 (LR-S4); `r3_twin.py` asserts it.
+ * match, so the count must be 0 (LR-S4); `window_twin.py` asserts it.
  *
- * Usage: r3_driver ALPHABET MAXLEN ORACLE_PATTERN ORACLE_OPTS
+ * Usage: window_twin_driver ALPHABET MAXLEN ORACLE_PATTERN ORACLE_OPTS
  *   ALPHABET: the characters, UTF-8 encoded (each code point is one letter);
  *   ORACLE_PATTERN "-" skips (3). ORACLE_OPTS: a string of `i` (caseless) and
  *   `u` (UTF) letters, or "-".
