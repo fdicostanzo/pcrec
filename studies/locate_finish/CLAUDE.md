@@ -93,6 +93,16 @@ except the new control C5.
 - `trace_declared_L0.txt` — the L0 tip's declared trace multiplicity for
   `emit_sweep.py --trace` (the three new sites `locate`, `finish-match`,
   `boundary`), with why the moved-but-not-added records are not declared.
+- `mk_l0_rows.py` — [lane lfl0] writes L0's ten new sabotage rows (the
+  note's §5 L0 plants 1-10, each plant-validated DETECTED at landing,
+  `docs/dev/lanes/lfl0_report.md` §2.3) under the ids the manager assigns:
+  `python3 studies/locate_finish/mk_l0_rows.py tests/mech/sabotages ID1 ... ID10`.
+  Its anchors are the L0 tip's text.
+- `results/l0_build_sabotage_anchors.tsv`, `.summary` — [lane lfl0] the
+  derivation at the L0 BUILD tip, `--step L0=e1e387b9..<tip>` over the
+  edit set with the seven build lines appended: 8 re-aim (the planned
+  eight), 55 rows re-run at L0 (54 by hunk, 1 by reach), 75 sites after; the
+  same 3 pre-existing unresolved sites (exit 2).
 - `finish_sites.sh` — the FINISH decision as spelled today: every code line
   under `src/gen/` testing `fit.chosen`, `fit.prefilter` or `prefn`.
   `results/finish_sites.txt` is its output; the note's §3.3 dispositions it.
