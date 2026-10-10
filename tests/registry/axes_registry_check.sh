@@ -477,6 +477,11 @@ fi
 # implementation, shared with tests/codegen/run_fallback_table.sh); their
 # comments moved with them.
 . "$ROOT_DIR/tests/lib/spec_extract.sh"
+# Every anchor below is a `<!-- value-set: RX_NAME -->` marker line placed
+# directly above that macro's value table in match_api.md (lane specclean,
+# 2026-10-09). The per-macro anchor notes further down describe the phrase
+# anchors those markers replaced; the lesson they record (anchor on nothing a
+# new value or a rewording can change) is what the markers implement.
 
 
 # check_value_set MACRO SPEC_VALS DUMP_VALS EXCEPT — both directions for one
@@ -539,7 +544,7 @@ axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
 }' "$TSV")"
 
 check_value_set "RX_DFA_TABLE" \
-    "$(extract_md_table_values "$MATCHAPI" "2026-08-26: a THIRD")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_TABLE -->")" \
     "$(dump_stamp_vals RX_DFA_TABLE)" \
     ""
 # [REG-SV], 2026-08-30: NO MORE EXCEPTION HERE. "mixed"/"none" used to be a
@@ -579,7 +584,7 @@ check_value_set "RX_DFA_TABLE (dfa_table_name composite values)" \
 # rule is worth stating once here: anchor on the part of a sentence a new
 # member does not change.
 check_value_set "RX_DFA_PREFILTER" \
-    "$(extract_md_table_values "$MATCHAPI" "values are the whole set")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_PREFILTER -->")" \
     "$(dump_stamp_vals RX_DFA_PREFILTER)" \
     ""
 
@@ -589,7 +594,7 @@ check_value_set "RX_DFA_PREFILTER" \
 # substitution. "is on every DFA" is unique in match_api.md and survives a
 # value being added.
 check_value_set "RX_DFA_MATCH" \
-    "$(extract_md_table_values "$MATCHAPI" "is on every DFA")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_MATCH -->")" \
     "$(dump_stamp_vals RX_DFA_MATCH)" \
     ""
 
@@ -602,7 +607,7 @@ check_value_set "RX_DFA_MATCH" \
 # phrase would be harmless today and a silent mis-harvest the day the two
 # paragraphs are reordered.
 check_value_set "RX_DFA_SCAN_EDGE" \
-    "$(extract_md_table_values "$MATCHAPI" "all this macro ever reads")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_SCAN_EDGE -->")" \
     "$(dump_stamp_vals RX_DFA_SCAN_EDGE)" \
     ""
 
@@ -616,7 +621,7 @@ check_value_set "RX_DFA_SCAN_EDGE" \
 # phrase naming a number goes stale the day a third form lands, silently, by
 # harvesting a shorter list than the spec states.
 check_value_set "RX_DFA_START" \
-    "$(extract_md_table_values "$MATCHAPI" "which of two forms the scan entry takes")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_START -->")" \
     "$(dump_stamp_vals RX_DFA_START)" \
     ""
 
@@ -629,12 +634,12 @@ check_value_set "RX_DFA_START" \
 # and this one had simply never had a prefixed sibling until 2026-08-29.
 # `RX_ENGINE_SEL` landed the same day and would have done the same thing here.
 check_value_set "RX_VM_PREFILTER" \
-    "$(extract_line_values "$MATCHAPI" '\<RX_VM_PREFILTER\>')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_VM_PREFILTER -->")" \
     "$(dump_stamp_vals RX_VM_PREFILTER)" \
     ""
 
 check_value_set "RX_ENGINE" \
-    "$(extract_line_values "$MATCHAPI" '\<RX_ENGINE\>')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_ENGINE -->")" \
     "$(dump_stamp_vals RX_ENGINE)" \
     ""
 
@@ -651,7 +656,7 @@ check_value_set "RX_ENGINE" \
 # break the extractor. `the same decision as a TOKEN` is unique in match_api.md
 # and survives a value being added.
 check_value_set "RX_ENGINE_SEL" \
-    "$(extract_md_table_values "$MATCHAPI" "the same decision as a TOKEN")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_ENGINE_SEL -->")" \
     "$(dump_stamp_vals RX_ENGINE_SEL)" \
     ""
 
@@ -673,7 +678,7 @@ check_value_set "RX_ENGINE_SEL" \
 # `extract_prose_values`'s own header for why this macro needs a third
 # extraction shape.
 check_value_set "RX_UNROLL_K_WHY" \
-    "$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_UNROLL_K_WHY -->")" \
     "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
     ""
 
@@ -693,7 +698,7 @@ check_value_set "RX_UNROLL_K_WHY" \
 # source is the hand-written §6.3 table; tests/codegen's [OPT-HYB-RESEED]
 # witnesses stamp each of the five values once, which is the emitter half.
 check_value_set "RX_VM_RESEED" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_VM_RESEED`, what the')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_VM_RESEED -->")" \
     "$(dump_stamp_vals RX_VM_RESEED)" \
     ""
 
@@ -703,11 +708,11 @@ check_value_set "RX_VM_RESEED" \
 # independent sources; tests/utfcheck's per-config stamp asserts are the
 # emitter half.
 check_value_set "RX_STARTPOS_GUARD" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_STARTPOS_GUARD`,')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_STARTPOS_GUARD -->")" \
     "$(dump_stamp_vals RX_STARTPOS_GUARD)" \
     ""
 check_value_set "RX_UTF_CHECK" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_UTF_CHECK`, whether the')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_UTF_CHECK -->")" \
     "$(dump_stamp_vals RX_UTF_CHECK)" \
     ""
 

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# PENDING SABOTAGE ROW -- the id is the manager's to allocate (lane specclean,
+# 2026-10-09). To land it: pick a free S-id (BOILERPLATE: not inside a range
+# memfn/docs/requests.md reserves), replace every `SXXX` below, and move this
+# file to tests/mech/sabotages/S<id>_spec_history_marker.sh. The suite word
+# `spechistory` is already registered in tests/mech/run_sabotage_matrix.sh.
+#
+# SXXX ([SPEC-CLEAN]) -- a dated, row-tag-opened revision note planted into
+# docs/spec/match_api.md (the shape the rewrite removed). Detector: the
+# spechistory arm, tests/spec_history/run_spec_history.sh -- match_api.md has
+# no baseline row, so ANY unallowed marker there is red. Expected: 5 marker
+# classes red (date, addendum, walkback, narrative, tagopen), hand-verified at
+# the lane against a scratch copy of the tree.
+SAB_ID='SXXX-spec-history-marker'
+SAB_FILE='docs/spec/match_api.md'
+SAB_SUITES='spechistory'
+SAB_DESC='a dated [TAG] ADDENDUM revision note with walkback and panel narrative is planted at the head of match_api.md section 4'
+SAB_DOC_FIGURE='Hand-verified at landing (docs/dev/lanes/specclean_report.md, the check section): 5 FAIL lines. Re-run: bash tests/mech/run_sabotage_matrix.sh SXXX.'
+SAB_EXPECT=DETECTED
+SAB_COUNT=1
+SAB_BEFORE='## 4. Give-up and refusal codes'
+SAB_AFTER='## 4. Give-up and refusal codes
+
+**[XYZ-1], 2026-10-09 — ADDENDUM:** this section used to read otherwise; the R99 panel corrected it.'

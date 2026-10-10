@@ -411,8 +411,8 @@ wit why-sizemodeldecl lowsize '-' 'size-model-declined'   '(?:a\K){0,10}b'
 wit why-capacitydecl  lowthr  '-' 'capacity-declined'     '(((?:a{0,2}b)+c){0,20}d){0,20}e' --engine=vm
 
 # --- the spec's hand-written sets, through the registry's extractors -------
-spec_sel="$(extract_md_table_values "$MATCHAPI" "the same decision as a TOKEN")"
-spec_why="$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')"
+spec_sel="$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_ENGINE_SEL -->")"
+spec_why="$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_UNROLL_K_WHY -->")"
 
 # K35 fail-closed: an extraction that found nothing (or the wrong number)
 # must not read as "equal to the empty observation".
