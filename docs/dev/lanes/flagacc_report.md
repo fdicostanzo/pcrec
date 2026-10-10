@@ -125,3 +125,4 @@ Verdicts (tip is the commit carrying this report; chain `build/scratch/val2/`):
   (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0 ...)`.
 - `make test-spec-history`: rc 0.
 - full `make test`: see the line appended below.
+- full `make test`: rc 0, `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'` empty (green), at the tip below.
