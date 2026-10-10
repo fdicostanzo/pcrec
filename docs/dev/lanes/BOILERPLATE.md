@@ -179,6 +179,11 @@ Branch lane/<lane>, committed, report committed, targeted validation run
 with numbers in the handback. RE-PIN EVERY MANIFEST/COUNT/PIN YOUR CHANGE
 MOVES in the same delivery (readers found by grep) — post-merge manager
 cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
+A NEW OR CHANGED .rxt CORPUS FILE moves population pins well beyond
+the rxtsource census: the start-set mover manifests (tests/startset/manifests/),
+the axes allowances, size tripwires. Run `make test` (async), not only the
+section you think counts (2026-10-10: rev2corp re-pinned rxtsource only;
+main's post-merge make test went red on test-startset, lane sstri).
 Never merge to main yourself.
 
 ## Other boxes
