@@ -8,3 +8,4 @@ studies/specclean/	all	lane specclean's citation re-pointing logs and briefs: th
 studies/specnum/	all	lane specnum's one-time migration tools and anchor map: they name the old and the new forms side by side
 docs/design/start_table/reader_grep.txt	line	a grep -n output over the spec as it was (path:line:text is grep's own syntax)
 docs/design/subroutines_measurements/out/premises.txt	line	a grep -n output over the spec as it was (path:line:text is grep's own syntax)
+tests/mech/sabotages/S749_spec_cite_dangling.sh	cites	S749 IS the dangling-citation plant (its SAB_AFTER must carry the wrong number), the same reason as tests/spec_history/ above
