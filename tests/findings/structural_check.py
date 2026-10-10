@@ -58,6 +58,24 @@ def strip_comments(text):
     return re.sub(r"//[^\n]*", "", text)
 
 
+# A brace inside a string or character literal is emitted text, not code, and
+# so is a `/*` inside one: `functions` counts depth over braces, so S1 reads a
+# text with comments AND literals blanked in ONE left-to-right pass (a comment
+# opener inside a literal is not a comment). With `strip_comments` alone,
+# `emit_search_head`'s emitted function head `"...)\n{\n"` opened a body that
+# ran on for thousands of lines, and the day [START-LANDING] SL2 moved where
+# the stray closer sat it swallowed `req_byte_dominated_by`, so S1 lost a known
+# reader (lane sltri, 2026-10-10).
+TOKEN = re.compile(r'/\*.*?\*/|//[^\n]*|"(?:\\.|[^"\\\n])*"' r"|'(?:\\.|[^'\\\n])*'", re.S)
+
+
+def code_only(text):
+    def blank(m):
+        t = m.group(0)
+        return t[0] * 2 if t[0] in "\"'" else "\n" * t.count("\n")
+    return TOKEN.sub(blank, text)
+
+
 def functions(text):
     """(name, body) for every top-level function definition."""
     lines = text.split("\n")
@@ -94,7 +112,7 @@ for d, _, fs in os.walk(os.path.join(ROOT, "src")):
 readers, s1bad = set(), 0
 for path in sorted(srcs):
     rel = os.path.relpath(path, ROOT)
-    for name, body in functions(strip_comments(open(path, encoding="latin-1").read())):
+    for name, body in functions(code_only(open(path, encoding="latin-1").read())):
         if name in PRIMITIVES and rel == "src/core/findings.c":
             continue
         calls = set(re.findall(r"\b(pcrec_find_\w+)\s*\(", body)) - {name}

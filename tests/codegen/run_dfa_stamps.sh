@@ -288,7 +288,7 @@ read_artifact() {
         /rx_reverse_/                                   { rev = 1 }
         /capture_spans\[0\]\[0\] = \(ptrdiff_t\)search_from;/ { pinned = 1 }
         # [START-LANDING] the two rows that recover the start with no reverse
-        # machine: the end minus the fixed width, or the NEXT block's record.
+        # machine: the end minus the fixed width, or the record of the NEXT block.
         /size_t match_start_position = last_accept_position - [0-9]+;/ { emw = 1 }
         /capture_spans\[0\]\[0\] = \(ptrdiff_t\)landing_position;/ { landing = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------

@@ -707,10 +707,16 @@ fi
 echo "== §6 — K59: the refusal-set move, CLOSED, asserted as fixed =="
 
 K59_PATTERN='[^\p{C}\p{M}\p{P}]'
+# [START-LANDING] SL2 (abi 74) made this witness a FIT mover: by default it
+# takes RECOVER's `landing` row, drops the reverse machine, and fits at every
+# position with no rung (708,814 B at --tune=0). `-fno-start-landing` (masked,
+# answer-neutral) puts it back on the reverse pass, where it still reaches
+# both rungs exactly as before (lane sltri, 2026-10-10).
+K59_DENY='-fno-start-landing'
 k59_bad_compile=0; k59_bad_stamp=0; k59_bad_note=0
 
 for pos in $POSITIONS; do
-    if ! emit "--tune=$pos" -e utf8 --features unicode-props -- "$K59_PATTERN"; then
+    if ! emit "--tune=$pos" -e utf8 --features unicode-props $K59_DENY -- "$K59_PATTERN"; then
         bad "§6: --tune=$pos REFUSED the K59 witness — the fix regressed: $(head -1 "$WORKDIR/err.txt")"
         k59_bad_compile=$((k59_bad_compile + 1))
         continue

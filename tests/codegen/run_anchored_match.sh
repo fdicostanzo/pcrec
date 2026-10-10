@@ -529,6 +529,13 @@ fi
 # quoting 19,665 bytes, under this section's own `-ge 23000` ceiling).
 K53_CAP_HI=21500
 K53_CAP_LO=15000
+# [START-LANDING] SL2 (abi 74): the fixed-width witnesses now take RECOVER's
+# `end-minus-width` row and drop the reverse machine, so their artifacts
+# shrink under the window calibrated above and fit WITH the anchored machine.
+# Every compile in this section denies both new rows (masked, answer-neutral)
+# so the window and the drop rung it measures stay the reverse-pass ones
+# (lane sltri, 2026-10-10).
+K53_DENY='-fno-start-width -fno-start-landing'
 k53_build_ref() {   # $1 = cap, $2 = output path
     $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         -DPCREC_MAX_EMIT_BYTES="$1" \
@@ -551,7 +558,7 @@ else
     # ---- (a) the rung fires, and the artifact is the denied build's --------
     dropped=0; kept=0; wrongsel=0; wrongbytes=0
     for pat in 'foobarbazqux' 'abcdefghij[0-9]+' 'a[bc]d[ef]g[hi]j[kl]m' 'ab'; do
-        pcrec_run "$HI" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+        pcrec_run "$HI" -p rx --no-captures --features all $K53_DENY -o "$WORKDIR/k.c" \
             --pattern "$pat" > "$WORKDIR/k.err" 2>&1 \
             || { bad "§6a the capped compiler REFUSED '$pat' — an OPTIONAL machine's bytes must never be what refuses a pattern (K53): $(head -2 "$WORKDIR/k.err")"; continue; }
         ks="$(stamp "$WORKDIR/k.c")"
@@ -560,7 +567,7 @@ else
             dropped=$((dropped + 1))
             has_anchored_tbl "$WORKDIR/k.c" && bad "§6a '$pat' dropped to search-filter but still emitted an anchored table"
             [ "$sel" = size-cap-retry ] || { bad "§6a '$pat' took the drop rung but stamps RX_ENGINE_SEL \"$sel\" — a caller cannot tell this artifact from an unremarkable compile (docs/spec/match_api.md §6.3)"; wrongsel=$((wrongsel + 1)); }
-            pcrec_run "$HI" -p rx --no-captures --features all -fno-anchored-dfa \
+            pcrec_run "$HI" -p rx --no-captures --features all $K53_DENY -fno-anchored-dfa \
                 -o "$WORKDIR/k_deny.c" --pattern "$pat" >/dev/null 2>&1 \
                 || bad "§6a the denied build of '$pat' did not compile under the same cap — the comparison below has no control"
             norm "$WORKDIR/k.c" > "$WORKDIR/k.norm"
@@ -580,7 +587,7 @@ else
         || bad "§6a NO pattern keeps the unwrapped form under the ${K53_CAP_HI}-byte cap — the rung is firing on everything and §6a compares a dead axis"
 
     # ---- (b) the rung is BOUNDED, and the refusal quotes the smaller figure -
-    pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+    pcrec_run "$LO" -p rx --no-captures --features all $K53_DENY -o "$WORKDIR/k.c" \
         --pattern 'foobarbazqux' > "$WORKDIR/k.err" 2>&1
     lo_bytes="$(k53_bytes "$WORKDIR/k.err")"
     if [ -z "$lo_bytes" ]; then
@@ -592,10 +599,10 @@ else
     fi
 
     # ---- (c) no contributor, no retry ---------------------------------------
-    pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
+    pcrec_run "$LO" -p rx --no-captures --features all $K53_DENY -o "$WORKDIR/k.c" \
         --pattern '^foobarbazqux' > "$WORKDIR/k.err" 2>&1
     c_plain="$(k53_bytes "$WORKDIR/k.err")"
-    pcrec_run "$LO" -p rx --no-captures --features all -fno-anchored-dfa \
+    pcrec_run "$LO" -p rx --no-captures --features all $K53_DENY -fno-anchored-dfa \
         -o "$WORKDIR/k.c" --pattern '^foobarbazqux' > "$WORKDIR/k2.err" 2>&1
     c_deny="$(k53_bytes "$WORKDIR/k2.err")"
     [ -n "$c_plain" ] && [ "$c_plain" = "$c_deny" ] \

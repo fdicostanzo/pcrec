@@ -280,8 +280,11 @@ check_ir_value "T2 forced-on/SIZECAP"       'yes-collapsed'         '^(\p{Xwd}{1
 # size-dropped | NONE ([DEC-VAR-ATTRIB] §4.5: the [PF-DROP] artifact's
 # listing names the rung, not the flag the rung ORs in; it listed
 # 'no-fno-prefilter' until abi 69). forced-off is NONE only (above): the
-# rung is the only writer of the bit at SIZECAP.
-check_ir_value "T2 size-dropped/NONE"       'no-size-cap'           '(\p{Xwd})'                    $IRF -e utf8
+# rung is the only writer of the bit at SIZECAP. `-fno-start-landing`: since
+# [START-LANDING] SL2 (abi 74) the witness takes RECOVER's `landing` row,
+# drops the reverse machine and fits with its prefilter (a FIT mover); the
+# masked deny puts it back on the reverse pass and the rung (lane sltri).
+check_ir_value "T2 size-dropped/NONE"       'no-size-cap'           '(\p{Xwd})'                    $IRF -e utf8 -fno-start-landing
 check_ir_value "T2 forced-off vs rung"      'no-fno-prefilter'      '(\p{Xwd})'                    $IRF -e utf8 -fno-prefilter
 # var | NONE ([DEC-VAR-ATTRIB] F-B1 + F1: a construct row, listing
 # 'no-variable'; until abi 69 'no-engine-vm', 'no-nullable-exact' on a
