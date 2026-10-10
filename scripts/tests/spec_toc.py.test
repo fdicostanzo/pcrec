@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# spec_toc.py self-test (lane specnum): a small numbered spec doc with planted
+# defects the script MUST report, each paired with the clean case it was
+# planted into, so a script that reports everything (or nothing) cannot pass.
+# tests/spec_history/ runs `spec_toc.py --check` over the real match_api.md;
+# this file is the failing-direction control for the script itself. Pure
+# python, no pcrec.
+set -u
+here=$(cd "$(dirname "$0")/.." && pwd)
+TOC=$here/spec_toc.py
+T=$(mktemp -d "${TMPDIR:-/tmp}/spec_toc.test.XXXXXX")
+trap 'rm -rf "$T"' EXIT
+pass=0 fail=0
+ok()  { echo "PASS: $*"; pass=$((pass+1)); }
+bad() { echo "FAIL: $*"; fail=$((fail+1)); }
+expect() { # expect NAME WANT_RC ARGS...
+    name=$1 want=$2; shift 2
+    out=$(python3 -I "$TOC" "$@" 2>&1); rc=$?
+    if [ "$rc" = "$want" ]; then ok "$name (rc $rc)"; else bad "$name: rc $rc, wanted $want: $out"; fi
+}
+
+cat > "$T/good.md" <<'EOF'
+# A spec
+
+Intro, no number.
+
+<a id="s1"></a>
+## 1. First
+
+<a id="s1-p1"></a>[1¶1] A paragraph.
+
+<a id="s1-1"></a>
+### 1.1 `code` title
+
+<a id="s1-1-1"></a>
+#### 1.1.1 Deep
+
+```
+## 9. A heading inside a code fence is not a heading
+```
+
+<a id="s1-1a"></a>
+### 1.1a Inserted
+
+<a id="s2"></a>
+## 2. Second
+EOF
+
+# 1. --init puts the markers under the title and lists exactly the numbered headings
+cp "$T/good.md" "$T/a.md"
+expect "--init writes" 0 --init "$T/a.md"
+want='- [§1](#s1) First
+  - [§1.1](#s1-1) `code` title
+    - [§1.1.1](#s1-1-1) Deep
+  - [§1.1a](#s1-1a) Inserted
+- [§2](#s2) Second'
+got=$(sed -n '/spec-toc:begin/,/spec-toc:end/p' "$T/a.md" | grep -E '^ *- \[')
+if [ "$got" = "$want" ]; then ok "entries: numbered headings only, indented by depth, fence ignored"; else bad "entries differ:
+$got"; fi
+if [ "$(sed -n 3p "$T/a.md")" = "<!-- spec-toc:begin -->" ]; then ok "block sits under the title line"; else bad "block not under the title"; fi
+
+# 2. idempotent and --check clean
+cp "$T/a.md" "$T/a.before"
+expect "second run" 0 "$T/a.md"
+cmp -s "$T/a.md" "$T/a.before" && ok "idempotent" || bad "second run changed the file"
+expect "--check clean" 0 --check "$T/a.md"
+
+# 3. a stale block is reported and --check writes nothing
+sed 's/^- \[§2\](#s2) Second/- [§2](#s2) Secondo/' "$T/a.md" > "$T/stale.md"
+cp "$T/stale.md" "$T/stale.before"
+expect "stale title" 1 --check "$T/stale.md"
+cmp -s "$T/stale.md" "$T/stale.before" && ok "--check wrote nothing" || bad "--check modified the file"
+expect "stale fixed by a rebuild" 0 "$T/stale.md"
+expect "rebuilt is clean" 0 --check "$T/stale.md"
+
+# 4. a heading edit makes the block stale
+sed 's/^## 2\. Second/## 2. Second, renamed/' "$T/a.md" > "$T/edit.md"
+expect "heading renamed" 1 --check "$T/edit.md"
+
+# 5. a numbered heading with no anchor line is an error (a TOC link must resolve)
+grep -v '^<a id="s1-1-1"></a>$' "$T/a.md" > "$T/noanchor.md"
+expect "missing anchor" 1 --check "$T/noanchor.md"
+python3 -I "$TOC" "$T/noanchor.md" 2>&1 | grep -q 's1-1-1' && ok "the message names the anchor" || bad "message does not name the anchor"
+
+# 6. one number on two headings is an error
+sed 's/^## 2\. Second/## 1. Second/' "$T/a.md" > "$T/dup.md"
+expect "duplicate number" 1 --check "$T/dup.md"
+
+# 7. no markers and no --init is an error that writes nothing; no numbered
+#    headings is an error
+cp "$T/good.md" "$T/nomark.md"
+expect "no markers" 1 "$T/nomark.md"
+cmp -s "$T/nomark.md" "$T/good.md" && ok "no markers: file untouched" || bad "no markers: file modified"
+printf '# T\n\n## Unnumbered\n' > "$T/none.md"
+expect "no numbered headings" 1 --init "$T/none.md"
+
+echo "checks passed: $pass"
+echo "checks failed: $fail"
+[ "$fail" = 0 ]
