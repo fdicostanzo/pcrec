@@ -5418,6 +5418,15 @@ struct DfaForm {
      * point), which every call of it (`pf_emit_ofs[_bounded]`) uses; 0
      * before the block is written. */
     uint32_t       ofs_site;
+    /* [OPT-REVEND] L1 THE WALK's TWO PARAMETERS beyond its direction
+     * (`emit_reverse_block`, revend.md §8): `lbl`, the stem its edge labels
+     * are named from (the direction's name, until a second copy of the same
+     * machine's walk shares a function with the first), and `dead`, the
+     * statement an entry at the DEAD state takes (the direction's
+     * `dead_entry`, until a caller seeds speculatively). Both are written
+     * by `dfa_form_derive` from the direction, never left to a zero. */
+    const char    *lbl;
+    const char    *dead;
 };
 
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
@@ -9909,6 +9918,8 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->p       = cx->opt->prefix;
     f->dir     = dir;
     f->from    = dir->reverse ? NULL : "search_from";
+    f->lbl     = dir->c.name;
+    f->dead    = dir->dead_entry;
     f->repr    = DFA_SELECT(DfaRepr, dfa_reprs, &s, flags);
     f->view    = DFA_SELECT(DfaView, dfa_views, &s, flags);
     f->seed    = DFA_SELECT(DfaSeed, dfa_seeds, &s, flags);
@@ -10155,7 +10166,7 @@ static bool dfa_seed_can_be_scan_head(const Dfa *d)
  * on a shared name, and `dir->c.name` is the same string the tables and the
  * accessors are already named after. */
 static const char *scan_label(const DfaForm *f, const char *tag)
-{ return dfa_fragf(f->cx, "%s_%s_scan_%s", f->p, f->dir->c.name, tag); }
+{ return dfa_fragf(f->cx, "%s_%s_scan_%s", f->p, f->lbl, tag); }
 
 /* Emits `f`'s whole per-byte state-machine loop: the ordinary table-step
  * body, plus one dispatch to each [OPT-5] scan edge's own bounded-count
@@ -10178,9 +10189,9 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * can say so: the loop's first statement is the accept probe, and the
      * dead state has no row in the accept table. `dead_entry` is the
      * direction's own "no match" (see `DfaDir`). */
-    if (f->dir->dead_entry && dfa_entry_can_be_dead(f->d))
+    if (f->dead && dfa_entry_can_be_dead(f->d))
         pcrec_sb_printf(c, "%sif (%s_%s_is_dead(%s)) %s\n", ind, f->p,
-                  f->dir->c.name, f->dir->statev, f->dir->dead_entry);
+                  f->dir->c.name, f->dir->statev, f->dead);
     /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
      * per byte. `emit_init` is the only writer of the state variable outside
      * the loop, and a state that is already a head must reach the edge body
@@ -10311,6 +10322,31 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
     for (int k = 0; k < f->nscan; k++) emit_scan_edge(c, f, f->scan[k]);
     pcrec_sb_printf(c, "%s    goto %s;\n", ind, lv);
     pcrec_sb_printf(c, "%s}\n", ind);
+}
+
+/* [OPT-REVEND] L1 THE SEEDED REVERSE BLOCK (revend.md §8, locate_finish.md
+ * §4.1): the reverse machine `rev` walked from the seed `match_end_position`
+ * down to the lower bound `search_from`, recording the smallest accepting
+ * position in `match_start_position`. RECOVER's reverse pass and the
+ * `rev-end` walk are its two callers, and the caller declares the three
+ * variables (each walk seeds its own end; the which-seed report is the
+ * caller's, which compares the result per seed).
+ *
+ * `label` stems the block's edge labels: a second copy of the walk in one
+ * function needs its own. `dead_skip`, where non-NULL, is what a DEAD seed
+ * does before the block's first view lookup reads `view[row(dead)]` (an
+ * out-of-bounds read, revend.md §3.7, X1): a SPECULATIVE seed (rev-end's `n`
+ * and `n - 1`, rev-inner's landmark) may be dead; RECOVER's seed is a real
+ * forward accept and never is, so it passes NULL and its text is unchanged.
+ * The names stay RECOVER's spellings: the one caller that would need others
+ * (rev-inner, D151) is filed. */
+static void emit_reverse_block(StrBuf *c, const DfaForm *rev, const char *label,
+                               const char *dead_skip)
+{
+    DfaForm f = *rev;
+    f.lbl = label;
+    if (dead_skip) f.dead = dead_skip;
+    emit_scan_loop(c, &f);
 }
 
 /* ---- ENG_UNANCH: the assembly ------------------------------------------- */
@@ -10490,7 +10526,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                "        size_t match_end_position = last_accept_position;\n"
                "        size_t match_start_position = (size_t)-1;\n"
                "        size_t rewind_position = match_end_position;\n");
-    emit_scan_loop(c, &rev);
+    emit_reverse_block(c, &rev, dfa_dir_reverse.c.name, NULL);
     pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
                "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n");
     emit_dead_group_fill(cx, c, "        ");
