@@ -23,7 +23,7 @@ tail line backwards.
 | `RX_DFA_PREFILTER` | `byte-class-bounded` (`\d+$`, `\w+\z`, `\s+$`, `[a-z]+\.txt$`); `memchr-bounded` (`.*\.txt$`) | `none` (all five) |
 | `RX_DFA_MATCH` | `unwrapped` | `unwrapped` |
 | `RX_VM_PREFILTER` | not emitted (DFA artifact) | not emitted |
-| `RX_DFA_SCAN_EDGE` | as O-91 | unchanged on the three run patterns (`\d+$` `range`, others `bitmap`; the walk uses it as the run loop) |
+| `RX_DFA_SCAN_EDGE` | `range` (`\d+$`), `bitmap` (`\w+\z`, `\s+$`), `none` (the two `.txt$` patterns) | identical at both pins; the rev-end walk's run loop uses it |
 
 The caps and nocaps artifacts of each pattern are byte-identical but for the
 header include line and `.flags` (0 vs 4): every pattern has `ngroups 0`, so
@@ -31,7 +31,7 @@ there is no capture work and no finisher span work on the caps route
 (`ncaps 1`, group 0 only, written straight from the walk). The same stamps
 hold on both routes. The predictions are therefore ONE set of numbers for
 auto-caps and auto-nocaps; if the two routes differ in the AFTER window by
-more than the bench's usual route spread (O-91: 0-2%), that is a finding.
+more than the bench's route-to-route spread on these cells (O-91: under 1% on the 1 MiB cells), that is a finding.
 
 Predicted AFTER values are **7-98 ns per call** (table below) against O-91's
 0.21-2.85 ms: predicted ratios 2,100x to 420,000x, 10x to 4,300x on the
@@ -170,7 +170,7 @@ Rank the cells on the steps column.
   value across `t-tail-*-1m`): rev-end did not run in the bench's build
   (artifact stamp `RX_DFA_SCAN` is not `rev-end`), or the artifact was built
   with `-fno-rev-end`; check the stamp first.
-- Caps and nocaps differing by more than the usual 0-2% on a cell: a finisher
+- Caps and nocaps differing by more than that spread on a cell: a finisher
   or tie ran on one route only; the artifacts are identical here, so that
   would be a bench build difference.
 - A short cell (7-24 ns predicted) reading 40-60 ns while the sentinel set
