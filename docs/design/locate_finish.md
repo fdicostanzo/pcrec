@@ -1797,7 +1797,7 @@ watches. *Leaning:* FILED with `revend.md`'s trigger, the conjunct commented as 
 two take cells and one twin. *lfre2:* stage 2 FILED. *lfre1:* no judgment on filing;
 its LR-S3/LR-S4 are the conditions any build of it must meet.
 
-**Q3. The stamp RULE, now generated.** *Problem:* a locator that does not run most
+**Q3. The stamp RULE, now generated.** **RULED 2026-10-09: agree — the leaning as written, standing for every future locator (D156 addendum 2).** *Problem:* a locator that does not run most
 slots must leave their stamps saying something true, and every future path-changing
 locator (`empty`, `rev-end`, `[START-LANDING]`'s rows, rev-inner) meets the same
 problem. *Forces:* revision 2 wrote a per-stamp table for `rev-end` and a new REQ_WHY
