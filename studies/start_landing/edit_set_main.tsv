@@ -1,0 +1,39 @@
+# start_landing.md rev 2 §7's edit set RE-DERIVED at main 06d19c67 (abi 73) by lane slbuild, 2026-10-10 (STEP 0).
+# The design's edit_set.tsv was written at efc58146 (abi 71), before [OPT-REVEND] L0 (c85a1aac) and L1+L2 with stage 2
+# (abi 73). Same format; read by docs/design/start_table/sabotage_anchors.py. What moved and why: the reconciliation in
+# docs/dev/lanes/slbuild_report.md §0. Every `line` below occurs exactly once in its file at 06d19c67 (counted).
+# kind	value	commit	why
+def	wclose	SL1	[r2 SL-G3] the ONE closure step: it also records accept on an assertion-free path and whether an assertion was reached (two-phase); kset_walk's answer is unchanged
+def	pcrec_kset_walk	SL1	the union-frontier iterator's first consumer; its loop moves onto the shared step (the width interval is the second consumer)
+def	pf_store_empty	SL1	the two new facts' empty values
+def	pf_derive	SL1	the two new facts' derivations (E3, on Job.nfa)
+def	pf_done_why	SL1	the new decline codes are declines
+def	pcrec_fact_render	SL1	the two new facts' renderers
+def	fd_why	SL1	src/dump/facts_dump.c: the decline spellings
+def	CandRecover	SL2	`bool pinned` becomes `act` (CRA_SEARCH_FROM / CRA_END_MINUS_W / CRA_LANDING / CRA_REVERSE)
+token	u.recover.pinned	SL2	the payload field is renamed; every reader re-keys on `act` (dfa_search_is_pinned, emit_rev_end's two assertions)
+line	.u.recover = { .pinned = true } },	SL2	pinned's payload -> .act = CRA_SEARCH_FROM
+line	.u.recover = { .pinned = false } },	SL2	reverse-pass's payload -> .act = CRA_REVERSE
+line	.list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },	SL2	reverse-pass's listing rank 2 -> 4; the two new rows are INSERTED between pinned and reverse-pass
+def	dfa_search_is_pinned	SL2	becomes the selected row's action; its two callers (emit_unanchored, the orientation block) read the action or the path's R membership
+line	bool pinned = dfa_search_is_pinned(cx);	SL2	emit_unanchored's dispatch local -> the RECOVER row
+line	if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);	SL2	R's form is derived iff R is a member of the path (L0's fold)
+line	else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);	SL2	the per-action assertion (pinned's routing; landing's unseeded machine, L3)
+line	if (!pinned) rev.repr->emit_token(c, &rev);	SL2	R membership
+line	if (!pinned) emit_scan_defs(c, &rev);	SL2	R membership
+line	if (!pinned) emit_machine_tables(c, &rev);	SL2	R membership
+line	req_handoff_assert_body(cx, &job->dfa, pinned);	SL2	the K82 body assertion reads the action (search_from is the answer only under CRA_SEARCH_FROM)
+line	unanch_scan(cx, c, &fwd, &rev, pinned);	SL2	the composite's scan takes the RECOVER row, not a bool
+line	unanch_scan(cx, c, &fwd, &rev, false);	SL2	the rev-end relocate passes the path's RECOVER row (WINDOW: reverse-pass)
+def	unanch_scan	SL2	the dispatch becomes a switch on `act` (four actions), each ending in the ONE success-site emitter; the landing guard
+def	emit_rev_end	SL2	its two RECOVER assertions re-keyed on `act`; its report through the one success-site emitter
+line	emit_dead_group_fill(cx, c, ind);	SL2	[r2 SL-C3] rev-end's success site -> the one success-site emitter
+line	emit_dead_group_fill(cx, c, "    ");	SL2	[r2 SL-C3] pinned's success site -> the one success-site emitter
+line	emit_dead_group_fill(cx, c, "        ");	SL2	[r2 SL-C3] reverse-pass's success site -> the one success-site emitter
+line	pcrec_sb_printf(c, "%s}\n", ind);	SL2	the NEXT block's closing line in five of the eight emitters becomes pf_close (the record); every other occurrence of this generic line is over-reported, never under
+line	pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);	SL2	the closer of the other three NEXT emitters -> pf_close
+line	bool pinned = body && cand_recover_asked(cx) && dfa_search_is_pinned(cx);	SL2	the orientation block reads the RECOVER row's action (paragraph 3 per action)
+def	emit_orientation_block	SL2	paragraph 3 per RECOVER action
+line	CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH) },	SL2	cand_nodes[RECOVER] declares its read of NEXT (landing's L4, a selection read)
+line	#define PCREC_ARTIFACT_ABI 73	SL2	the abi event 73 -> 74
+def	cand_path_selfcheck	SL3	per-HAND totality extended from FINISH to every handed slot (RECOVER: EXISTS, WINDOW)
