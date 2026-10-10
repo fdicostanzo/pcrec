@@ -1,0 +1,4 @@
+ipv6	subjects=524	findall_matches=3264	startpos_hits/searches=77910/275231	diff(o,t)=0	diff(o,p2)=0	diff(t,p2)=0
+kvq	subjects=524	findall_matches=1632	startpos_hits/searches=45919/250279	diff(o,t)=0	diff(o,p2)=0	diff(t,p2)=0
+sfx64	subjects=444	findall_matches=1490	startpos_hits/searches=32327/48110	diff(o,t)=0	diff(o,p2)=0	diff(t,p2)=0
+== ident COMPLETE rc=0

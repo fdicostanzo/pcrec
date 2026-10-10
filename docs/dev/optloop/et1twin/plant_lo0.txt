@@ -1,0 +1,3 @@
+ipv6: twin vs today 0 lines differ; lo0 plant vs today 383 of 512 subject lines differ
+kvq: twin vs today 0 lines differ; lo0 plant vs today 335 of 512 subject lines differ
+sfx64: twin vs today 0 lines differ; lo0 plant vs today 342 of 440 subject lines differ
