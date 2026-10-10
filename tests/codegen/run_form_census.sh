@@ -164,6 +164,10 @@ while IFS= read -r pat; do
         [ -n "$pf" ] && echo "D:RX_DFA_PREFILTER=$pf"
         [ -n "$tbl" ] && echo "D:RX_DFA_TABLE=$tbl"
         [ -n "$mf" ] && echo "D:RX_DFA_MATCH=$mf"
+        # [START-LANDING] the RECOVER slot's stamp (how the search recovers the
+        # match start), on every DFA-scan artifact like the scan facts.
+        st="$(stamp "$art" RX_DFA_START)"
+        [ -n "$st" ] && echo "D:RX_DFA_START=$st"
         if [ -n "$scan" ] && [ -n "$pf" ] && [ -n "$tbl" ]; then
             echo "D:TRIPLE=$scan,$pf,$tbl"
         fi
@@ -371,6 +375,15 @@ floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # instrument that sees it.
 floor_check "D:RX_DFA_MATCH=unwrapped"        780
 floor_check "D:RX_DFA_MATCH=search-filter"    150
+# [START-LANDING] SL2 (lane slbuild, 2026-10-10, abi 74): the RECOVER slot's
+# five values, floored on first sight (K35, ~85% of this census's count at
+# the SL2 build: end-minus-width 1,407, reverse-pass 1,247, attempt-start
+# 504, landing 211, pinned 191).
+floor_check "D:RX_DFA_START=end-minus-width"  1200
+floor_check "D:RX_DFA_START=reverse-pass"     1050
+floor_check "D:RX_DFA_START=attempt-start"    430
+floor_check "D:RX_DFA_START=landing"          180
+floor_check "D:RX_DFA_START=pinned"           160
 # Capacity/activity (b) — VM artifacts, DEFAULT population.
 floor_check "D:RX_VM_PREFILTER=hybrid"        900
 floor_check "D:RX_VM_PREFILTER=none"          150
@@ -465,6 +478,9 @@ declare -A KNOWN_VALUES=(
     ["D:RX_DFA_TABLE=mixed"]=1 ["D:RX_DFA_TABLE=none"]=1
     ["D:RX_VM_PREFILTER=hybrid"]=1 ["D:RX_VM_PREFILTER=none"]=1
     ["D:RX_DFA_MATCH=unwrapped"]=1 ["D:RX_DFA_MATCH=search-filter"]=1
+    ["D:RX_DFA_START=pinned"]=1 ["D:RX_DFA_START=end-minus-width"]=1
+    ["D:RX_DFA_START=landing"]=1 ["D:RX_DFA_START=reverse-pass"]=1
+    ["D:RX_DFA_START=attempt-start"]=1
 )
 for tok in "${!KNOWN_VALUES[@]}"; do
     n="$(count_of x "$tok")"

@@ -330,6 +330,10 @@ echo "== §5 the size-cap ladder's last rung ([PF-DROP], D135) =="
 # A utf8-arm section (the witness is `utf8`-only, and the sweep is the whole
 # code-point space), so `make test-uprops`'s byte arm skips it and
 # `make test-uprops-utf8` runs it.
+# [START-LANDING] (lane slbuild, 2026-10-10): the witness takes the `landing`
+# start by default and then fits with its prefilter (a FIT mover), so the
+# compile denies that row to keep reaching the rung whose artifact this
+# section sweeps; `-fno-start-landing` is masked and moves no answer.
 wit='(\p{Xwd})'
 mkdir -p "$WORKDIR/pd"
 case " ${ENC:-byte utf8} " in
@@ -337,7 +341,7 @@ case " ${ENC:-byte utf8} " in
   *) echo "SKIP: uprops §5: ENC excludes utf8 (make test-uprops-utf8 runs it)"; wit="" ;;
 esac
 if [ -z "$wit" ]; then :
-elif "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -p rx -o "$WORKDIR/pd/pd.c" \
+elif "$TIMEOUT_BIN" 60 "$PCREC" -e utf8 -fno-start-landing -p rx -o "$WORKDIR/pd/pd.c" \
         --pattern "$wit" 2>"$WORKDIR/pd.err"; then
     ok "utf8: $wit compiles at default axes (the prefilter-drop rung rescued it)"
     # WHAT IT MATCHES: the whole code-point space, against the plain

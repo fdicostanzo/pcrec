@@ -51,6 +51,8 @@
   - [§2.44](#s2-44) `-fno-poss-ctx-follow` — `PCREC_NO_POSS_CTX_FOLLOW` (bit 50)
   - [§2.45](#s2-45) `-fno-poss-bref-first` — `PCREC_NO_POSS_BREF_FIRST` (bit 51)
   - [§2.46](#s2-46) `-fno-rev-end` — `PCREC_NO_REV_END` (bit 52)
+  - [§2.47](#s2-47) `-fno-start-width` — `PCREC_NO_START_WIDTH` (bit 53)
+  - [§2.48](#s2-48) `-fno-start-landing` — `PCREC_NO_START_LANDING` (bit 54)
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -148,6 +150,8 @@
 | 2.44 | `-fno-poss-ctx-follow` | 50 | on | engine-selecting | kept | `<PREFIX>_VM_POSS_ARMS` |
 | 2.45 | `-fno-poss-bref-first` | 51 | on | answer-identical | masked | `<PREFIX>_VM_POSS_ARMS` |
 | 2.46 | `-fno-rev-end` | 52 | on | answer-identical | masked | `<PREFIX>_DFA_SCAN` |
+| 2.47 | `-fno-start-width` | 53 | on | answer-identical | masked | `<PREFIX>_DFA_START` |
+| 2.48 | `-fno-start-landing` | 54 | on | answer-identical | masked | `<PREFIX>_DFA_START` |
 
 <a id="s2-1"></a>
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
@@ -474,7 +478,9 @@ return 1;
 
 <a id="s2-19-p5"></a>[2.19¶5] **A VM hybrid is in scope**: it inlines the same search body as its prefilter, and consumes the span as a bound (`attempt_position = window[0][0]`), never as the answer.
 
-<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"` (or `"attempt-start"` where the search recovers no start at all, `match_api.md` §6.3.4¶11), mirrored at run time by `rx_info.search_form` (§3, §3.2).
+<a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"` (or `"end-minus-width"`/`"landing"` where §2.47/§2.48 take the start, or `"attempt-start"` where the search recovers no start at all, `match_api.md` §6.3.4¶11), mirrored at run time by `rx_info.search_form` (§3, §3.2).
+
+<a id="s2-19-p8"></a>[2.19¶8] **The axis `search-start` has four rows, first match**: `pinned` (the start is `search_from`), `end-minus-width` (§2.47), `landing` (§2.48), and the reverse pass, which no flag denies. Each deny removes its row and the walk falls to the next; where both §2.47 and §2.48 apply only the two flags together reach the reverse pass, and only the three together reach it from a `pinned` artifact whose width is 0.
 
 <a id="s2-19-p7"></a>[2.19¶7] **Dial:** no cell, PURE WIN (§5.4).
 
@@ -977,6 +983,26 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 <a id="s2-46-p5"></a>[2.46¶5] **Under the size caps.** Without its anchored machine a walk that can tie relocates through the forward-then-reverse search and so carries the forward machine, a larger artifact; the size-cap ladder's `drop-anchored` rung is skipped there (`limits.md` §8.4¶2a).
 
+<a id="s2-47"></a>
+### 2.47 `-fno-start-width` — `PCREC_NO_START_WIDTH` (bit 53)
+
+<a id="s2-47-p1"></a>[2.47¶1] **Denies** the END-MINUS-WIDTH start, axis `search-start` in `--list-axes`. When every match of the pattern is the same number of bytes `W` (the `width` fact is `[W,W]`, `facts_listing.md` §4.1.2¶7b; assertions are zero-width), the match ending at the forward scan's verified end began `W` bytes before it, so the search writes that start without a backwards scan and the reverse machine is not emitted. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only; a declined artifact is byte-identical under the flag.
+
+<a id="s2-47-p2"></a>[2.47¶2] `abcd`, `a|b`, `[a-z]`, ``, `(?!a)` and `$`-free fixed-width patterns take it; `x*y`, `a|bc` and every unbounded repeat do not. It is not taken on a `"rev-end"` artifact (§2.46), whose ends are the walk's speculative seeds rather than a verified match end, nor on a body with no reverse pass to replace (`"attempt"`, `"empty"`). A `pinned` artifact (§2.19) keeps `pinned`.
+
+<a id="s2-47-p3"></a>[2.47¶3] **The stamp** is `<PREFIX>_DFA_START "end-minus-width"` and `rx_info.search_form`; the denied build reads the next row's value (`"landing"` where §2.48 applies, else `"reverse-pass"`). Design: `docs/design/start_landing.md` §3.
+
+<a id="s2-48"></a>
+### 2.48 `-fno-start-landing` — `PCREC_NO_START_LANDING` (bit 54)
+
+<a id="s2-48-p1"></a>[2.48¶1] **Denies** the LANDING start, axis `search-start` in `--list-axes`. When every one-character path from the pattern's own start ends dead or unconditionally accepting, with no assertion before the accept and no empty match (the `land_char` fact, `facts_listing.md` §4.1.2¶7a), the match the forward scan finds began at the position its candidate-start skip last handed the machine at its start state: the skip records that position (one statement in its block), and the search writes it as the start without a backwards scan, so the reverse machine is not emitted. Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only; a declined artifact is byte-identical under the flag.
+
+<a id="s2-48-p2"></a>[2.48¶2] `\w+`, `[a-z]+\d*`, `(?s).+` and, under `-e utf8`, `.` and `\p{L}+` take it; `ab`, `x*y`, `\b\w+`, `\w+\b` and `.{3,8}` do not. It needs a candidate-start skip (a forward scan whose `<PREFIX>_DFA_PREFILTER` is `"none"` declines), and, like §2.47, a verified match end. Where both apply §2.47 is taken first; the two answer identically there.
+
+<a id="s2-48-p3"></a>[2.48¶3] **An ill-formed sequence matches nothing** (`match_api.md` §9): where a first byte of the pattern lies above the encoding's one-byte repertoire, the character at the landing may not decode, and the search then steps forward to the first position at or after it whose character does, never re-entering the scan (one decode per reported match on well-formed text; one per ill-formed byte of the last excursion otherwise). Under `-futf-check` the searched range is already proven well-formed and the step is not emitted.
+
+<a id="s2-48-p4"></a>[2.48¶4] **The stamp** is `<PREFIX>_DFA_START "landing"` and `rx_info.search_form`; the denied build reads `"reverse-pass"`. Design: `docs/design/start_landing.md` §2.
+
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
 
@@ -990,7 +1016,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 | `<PREFIX>_DFA_TABLE` | the transition tables' encoding | §2.13 | none |
 | `<PREFIX>_DFA_UNIFORM_FOLDS` | how many of the artifact's DFA tables had all cells equal and are not emitted, their accessor returning the constant | none: what the machine turned out to contain, not a choice | none |
 | `<PREFIX>_DFA_SCAN_EDGE` | the scan edges' run test | §2.18, §2.22, §2.33, §2.37 | none |
-| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"`, `"reverse-pass"`, or `"attempt-start"` (none recovered) | §2.19 | `rx_info.search_form` |
+| `<PREFIX>_DFA_START` | how the search recovers the match start: `"pinned"`, `"end-minus-width"`, `"landing"`, `"reverse-pass"`, or `"attempt-start"` (none recovered) | §2.19, §2.47, §2.48 | `rx_info.search_form` |
 | `<PREFIX>_DFA_MATCH` | which form `<prefix>_match` takes: `"unwrapped"`, `"search-filter"`, or `"nomatch"` (an `"empty"` scan: no match exists) | §2.15 | `rx_info.match_form` |
 
 <a id="s3-p2"></a>[3¶2] A stamp has an `rx_info` mirror where it is a caller-visible cost property of an entry the caller calls (`DFA_MATCH`, `DFA_START`) or where a header-less consumer buckets on it (`DFA_SCAN`, `DFA_PREFILTER`); an internal encoding choice has none (`DFA_TABLE`, `DFA_SCAN_EDGE`, `DFA_PREFILTER_OFFSETS`, `DFA_UNIFORM_FOLDS`). `<PREFIX>_DFA_TABLE` names the encoding selected even where every table of it folded, because the encoding fixes the folded constant.
@@ -1050,6 +1076,8 @@ $ build/pcrec -p rx -o - --pattern 'a(b|c)+d' | grep -E '^#define RX_(ENGINE |VM
 | `flags` bits `PCREC_NO_PREFILTER_COLLAPSE` / `PCREC_FORCE_PREFILTER_COLLAPSE` | `-fno-prefilter-collapse` / `-fprefilter-collapse` | §2.17 |
 | `flags` bit `PCREC_NO_SCAN_EDGE` | `-fno-scan-edge` | §2.18 |
 | `flags` bit `PCREC_NO_START_PINNED` | `-fno-start-pinned` | §2.19 |
+| `flags` bit `PCREC_NO_START_WIDTH` | `-fno-start-width` | §2.47 |
+| `flags` bit `PCREC_NO_START_LANDING` | `-fno-start-landing` | §2.48 |
 | `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
 | `flags` bit `PCREC_NO_CLS_FOLD` | `-fno-cls-fold` | §2.22 |
 | `flags` bits `PCREC_NO_STARTPOS_GUARD` / `PCREC_FORCE_STARTPOS_ALIGN` | `-fno-startpos-guard` / `-fstartpos-guard=align` | §2.23 |
@@ -1168,6 +1196,8 @@ pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
 | `-fno-counter` | — | — | — | — | — | §2.3; NOT A RUNG: a correctness floor |
 | `-fno-length-prune` | — | — | — | — | — | §2.4; NOT A RUNG: trades nothing |
 | `-fno-start-pinned` | — | — | — | — | — | §2.19; PURE WIN |
+| `-fno-start-width` | — | — | — | — | — | §2.47; PURE WIN |
+| `-fno-start-landing` | — | — | — | — | — | §2.48; PURE WIN |
 | `-fno-alt-island` | — | — | — | — | — | §2.20; PURE WIN |
 | `-fno-cls-fold` | — | — | — | — | — | §2.22; NOT A RUNG: absorbed into λ |
 | `-fno-startpos-guard` / `-fstartpos-guard=align` | — | — | — | — | — | §2.23; GATE 1 |

@@ -65,6 +65,10 @@ all	-fno-vm-anchor-bound	^(a)(b|c)
 pinned	-	a?+
 reverse-pass	-fno-start-pinned	a?+
 reverse-pass	-	a(b|c)+d
+end-minus-width	-	abcd
+landing	-	\w+
+landing	-fno-start-width	[a-z]
+reverse-pass	-fno-start-width -fno-start-landing	abcd
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a

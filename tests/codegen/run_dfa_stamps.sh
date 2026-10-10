@@ -287,6 +287,10 @@ read_artifact() {
         # start write of the pinned body, else no recovery at all.
         /rx_reverse_/                                   { rev = 1 }
         /capture_spans\[0\]\[0\] = \(ptrdiff_t\)search_from;/ { pinned = 1 }
+        # [START-LANDING] the two rows that recover the start with no reverse
+        # machine: the end minus the fixed width, or the NEXT block's record.
+        /size_t match_start_position = last_accept_position - [0-9]+;/ { emw = 1 }
+        /capture_spans\[0\]\[0\] = \(ptrdiff_t\)landing_position;/ { landing = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
@@ -337,7 +341,7 @@ read_artifact() {
                   (s_vmpf == "" ? "-" : s_vmpf), \
                   (f_scan == "" ? "-" : f_scan), (f_pf == "" ? "-" : f_pf), \
                   nfscan + 0, nfpf + 0, \
-                  (!dfascan ? "-" : rev ? "reverse-pass" : pinned ? "pinned" : "attempt-start"), \
+                  (!dfascan ? "-" : rev ? "reverse-pass" : pinned ? "pinned" : emw ? "end-minus-width" : landing ? "landing" : "attempt-start"), \
                   (s_start == "" ? "-" : s_start)
         }'
 }
@@ -608,9 +612,11 @@ while IFS= read -r pat; do
     s_vmpf="$1"; f_scan="$2"; f_pf="$3"; nfscan="$4"; nfpf="$5"; d_start="$6"; s_start="$7"
     # [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's witness on RECOVER: a
     # DFA-scan artifact's `_DFA_START` names the start recovery its text
-    # carries -- "attempt-start" where no reverse machine and no pinned start
-    # write exists (an attempt loop, the empty engine) -- never a selection
-    # the path does not ask. Both engines; "-" on a plain VM artifact.
+    # carries -- "attempt-start" where no reverse machine, no pinned start
+    # write and neither [START-LANDING] start (the end-minus-width subtraction,
+    # the landing record's start write) exists (an attempt loop, the empty
+    # engine) -- never a selection the path does not ask. Both engines; "-"
+    # on a plain VM artifact.
     echo STARTCMP
     [ "$s_start" = "$d_start" ] || { echo STARTBAD; echo "BAD: START: stamp '$s_start' vs text '$d_start': $pat"; }
     # [DD-13c] THE RUNTIME MIRRORS, on EVERY artifact of BOTH engines and
@@ -968,7 +974,7 @@ else
 fi
 # [OPT-REVEND] L2.1 the start-recovery agreement, over every compiled artifact.
 if [ "$nstartbad" -eq 0 ] && [ "$nstartcmp" -eq $((ndfa + nvm)) ]; then
-    ok "[start] <PREFIX>_DFA_START names the start recovery the emitted text carries (reverse machine / pinned start write / neither = attempt-start) on all $nstartcmp artifacts (the generated stamp rule: RECOVER off the path stamps its absence)"
+    ok "[start] <PREFIX>_DFA_START names the start recovery the emitted text carries (reverse machine / pinned start write / width subtraction / landing start write / neither = attempt-start) on all $nstartcmp artifacts (the generated stamp rule: RECOVER off the path stamps its absence)"
 else
     bad "[start] $nstartbad artifact(s) stamp a _DFA_START the text does not carry, over $nstartcmp of $((ndfa + nvm)) compared"
 fi

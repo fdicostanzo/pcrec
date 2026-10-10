@@ -10768,6 +10768,12 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
                             PCREC_ENCE_VAR_VALID))
         v->enc_mask |= PCREC_ENCE_VAR_VALID;
 
+    /* [START-LANDING] the hybrid's inlined prefilter body may take RECOVER
+     * `landing`, whose guard calls the encoding's DECODE entry
+     * (`pcrec_dfa_landing_guard`); the inline definitions below precede it. */
+    if (pcrec_dfa_landing_guard(cx))
+        v->enc_mask |= PCREC_ENCE_DECODE;
+
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
     job->enc_mask = v->enc_mask;

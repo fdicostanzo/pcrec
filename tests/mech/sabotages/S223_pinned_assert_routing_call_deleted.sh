@@ -55,8 +55,12 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 1, solo mech run, tree 26644f50
 SAB_REACH='grep -q "start_pinned_assert_routing(cx," "$TREE/src/gen/emit_dfa.c" && echo REACH-CALL-SITE-PRESENT'
 SAB_REACH_EXPECT="REACH-CALL-SITE-PRESENT"
 SAB_COUNT=1
-SAB_BEFORE='    else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);'
-SAB_AFTER='    else         { /* SABOTAGE S223: the P0/P3 routing assertion CALL is
+# RE-AIMED 2026-10-10 (lane slbuild, [START-LANDING] SL2): the dispatch's
+# assertion line is per RECOVER action now (the pinned row's P0/P3 routing
+# assertion, the landing row's unseeded assertion); the plant deletes the
+# pinned call. Same detector (section 7's wiring grep).
+SAB_BEFORE='    if (act == CRA_SEARCH_FROM)  start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);'
+SAB_AFTER='    if (act == CRA_SEARCH_FROM)  { /* SABOTAGE S223: the P0/P3 routing assertion CALL is
      * deleted here. The function definition below is untouched and becomes
      * dead code -- the wiring grep in run_search_pinned.sh section 7 is the
      * only guard that can see this. */ }'

@@ -1168,6 +1168,19 @@ enum {
  * `#define` for bit 32's reason. */
 #define PCREC_NO_REV_END PCREC_BIT(52)
 
+/* [START-LANDING] `-fno-start-width` and `-fno-start-landing` -- deny the two
+ * start-recovery rows that answer without the reverse pass
+ * (docs/spec/tuning.md §2.19): `end-minus-width` (every match has one byte
+ * width W, so the start is the end minus W) and `landing` (the start is where
+ * the forward scan's prefilter last landed); `<PREFIX>_DFA_START` reads
+ * `"end-minus-width"` / `"landing"` where they apply. Each removes its row and
+ * the walk falls to the next; where both apply, only the two together reach
+ * the reverse pass. Answer-identical, so both bits join the derived strategy
+ * mask (masked out of `rx_info.flags`). Deny only. `#define`s for bit 32's
+ * reason. */
+#define PCREC_NO_START_WIDTH   PCREC_BIT(53)
+#define PCREC_NO_START_LANDING PCREC_BIT(54)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

@@ -23,7 +23,27 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `73` on every artifact today (lane revbuild bumped it
+- **`rx_info.abi` is `74` on every artifact today (lane slbuild bumped it
+  from 73, 2026-10-10: [START-LANDING] SL2, docs/design/start_landing.md rev 2,
+  D156 addenda 3 and 4).** RECOVER gains two rows between `pinned` and the
+  reverse pass: `end-minus-width` (every match has one byte width W, so the
+  start is the verified end minus W) and `landing` (under the one-character
+  fact, the start is the position the NEXT block last landed on).
+  `<PREFIX>_DFA_START`/`rx_info.search_form` gain the two values, and their
+  artifacts carry no reverse machine (its tables, accessor block and loop
+  leave; the machine stamps fold over what is left). A `landing` artifact's
+  NEXT block gains one statement (`landing_position = scan_position;`) and
+  its search body the record's declaration, and, where a first byte is above
+  the one-byte repertoire and the contract is not `-futf-check`, a post-loop
+  guard calling the encoding's `<prefix>_decode` (a `static inline` entry
+  emitted ahead of the search body). Every success site of a DFA search body
+  is written by one emitter (`caps[0]`, K78's fill, `return 1`); a VM hybrid's
+  inlined prefilter takes the rows too. The orientation block's step 3 names
+  the action. Deny bits 53/54 (`-fno-start-width`, `-fno-start-landing`) are
+  new, masked out of `rx_info.flags`. No struct offset moves and no answer
+  moves.
+
+- **`rx_info.abi` was `73` (lane revbuild bumped it
   from 72, 2026-10-10: [OPT-REVEND] L2 with stage 2 folded in, D156; built
   as 72 and renumbered at the merge of the kit's R-12, which took 72).** An end-pinned
   DFA body (`$`/`\Z`/`\z`, no `(?m)`, no `\G`, not optional) searches by the

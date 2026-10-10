@@ -324,7 +324,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
-      test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+      test-search-pinned test-start-landing test-vm-frameless test-dfa-uniform-fold \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
@@ -609,6 +609,15 @@ test-anchored-match: all
 test-search-pinned: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-search-pinned.ran"; fi
 	bash tests/codegen/run_search_pinned.sh
+
+# [START-LANDING] the two RECOVER rows' standing gate
+# (docs/design/start_landing.md §7.3): named witnesses, a corpus sweep with
+# floors, the stamp-against-text check, the answers against the triple-deny
+# build, and the hostile-utf8 timing cell (10 s). Its own section for
+# `test-search-pinned`'s reason (a whole-corpus sweep plus driver builds).
+test-start-landing: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-start-landing.ran"; fi
+	bash tests/codegen/run_start_landing.sh
 
 # [CC-DIFF] STEP 2 the VM ENTRY-SHAPE LADDER's ANSWER-IDENTITY GATE: the four
 # `--vm-entry-shape` rungs against the artifact AUTO emits, span by span and
@@ -1900,7 +1909,7 @@ clean:
         test-recursion test-recursion-identity test-revend-twin test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-cand-oracle test-fallback-table test-anchored-match \
-        test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+        test-search-pinned test-start-landing test-vm-frameless test-dfa-uniform-fold \
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \

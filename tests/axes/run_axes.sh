@@ -1465,6 +1465,17 @@ if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-set "*) true ;; (*) false 
     job_label+=("--engine=vm -fno-start-set (§2.11 x §2.42)"); job_flags+=("--engine=vm -fno-start-set"); job_lost_ok+=("1")
     job_savedump[$((${#job_label[@]} - 1))]="$WORKDIR/ss_vm_deny.tsv"
 fi
+# [START-LANDING] THE PRODUCT ARM (docs/design/start_landing.md §7.2,
+# [r2 SL-C7]; lane slbuild, 2026-10-10). Where BOTH new RECOVER rows apply,
+# `-fno-start-width` alone selects `landing` and `-fno-start-landing` alone
+# selects `end-minus-width`, so neither single-flag job reaches the reverse
+# pass there; the product job denies both and is the one arm that compares the
+# rows' starts against the independently built reverse machine on every mover.
+# A job against the DEFAULT baseline like the bit jobs; its floor is below the
+# job loop. Selected by the empty AXES= or by either of its two flags.
+if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-width "*|*" -fno-start-landing "*) true ;; (*) false ;; esac; then
+    job_label+=("-fno-start-width -fno-start-landing (§2.47 x §2.48)"); job_flags+=("-fno-start-width -fno-start-landing"); job_lost_ok+=("0")
+fi
 # [CC-DIFF] STEP 2 THE VM ENTRY SHAPE (§2.21), the coarse axis's shape one
 # option over: an ORDINAL rather than a bit, so it is appended here for the
 # same reason `--engine=` is — RXTFLAGS takes an arbitrary extra flag, not
@@ -1960,6 +1971,35 @@ if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-set "*) true ;; (*) false 
 fi
 
 # ============================================================================
+# [START-LANDING] the product arm's REACH: the default baseline's cases whose
+# block is in the SL2 mover manifest (tests/axes/start_landing_movers.tsv, the
+# blocks whose default compile selects `end-minus-width` or `landing`), held to
+# a floor, so a product job that stopped comparing the movers fails rather than
+# reading clean (K35). The count reuses startset_arm.py (a block-keyed case
+# count against any manifest of `<path>:<pattern line>` ids).
+# ============================================================================
+landing_verdict="not run (filtered out by AXES=)"
+if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-width "*|*" -fno-start-landing "*) true ;; (*) false ;; esac; then
+    sl_movers="$(python3 "$SCRIPT_DIR/startset_arm.py" "$BASE_DUMP" \
+                    "$SCRIPT_DIR/start_landing_movers.tsv" "$ROOT_DIR")"
+    sl_mc="$(echo "$sl_movers" | grep -oE 'mover_cases=[0-9]+' | cut -d= -f2)"
+    # K35 FLOOR: half the 8,149 case lines (m/n/mc/gu) the manifest's 1,713
+    # blocks carry statically (lane slbuild, 2026-10-10); the first full run
+    # prints the measured count.
+    SL_MOVER_FLOOR="${SL_MOVER_FLOOR:-4000}"
+    echo
+    echo "axes: [START-LANDING] product arm reach: ${sl_movers#startset arm: } (floor $SL_MOVER_FLOOR)"
+    if [ "${sl_mc:-0}" -lt "$SL_MOVER_FLOOR" ]; then
+        landing_verdict="FAIL — ${sl_mc:-0} SL2 mover cases in the baseline, below the floor $SL_MOVER_FLOOR"
+        echo "AXIS FAIL: [START-LANDING] $landing_verdict" >&2
+        fail=1
+    else
+        landing_verdict="OK — ${sl_mc} SL2 mover cases compared by the product job (floor $SL_MOVER_FLOOR)"
+    fi
+    echo "  $landing_verdict"
+fi
+
+# ============================================================================
 # SUMMARY
 # ============================================================================
 
@@ -1973,6 +2013,7 @@ echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
 echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
 echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
+echo "[START-LANDING] product arm reach: $landing_verdict"
 echo "[START-SET] product arm (--engine=vm x -fno-start-set): $startset_verdict"
 echo "[START-SET] DFA hat population (-fno-start-set vs default): $dfahat_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"

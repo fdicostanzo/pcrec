@@ -377,6 +377,12 @@
 #     composite's, the answers against `-fno-rev-end` and libpcre2, and E-VR
 #     0 on exact hybrids. SKIPPED (not scored) without libpcre2. Registered
 #     before S758.
+#   startlanding — added 2026-10-10 ([START-LANDING] SL2, lane slbuild); runs
+#     tests/codegen/run_start_landing.sh: the two RECOVER rows' witnesses, the
+#     corpus sweep with floors, the stamp against the text, the answers
+#     against the triple-deny build, and the hostile-utf8 10 s cell. Its own
+#     arm because both rows are answer-identical by construction. Registered
+#     before S782.
 #   memfnmanifest — added 2026-10-05 ([MEMFN] R4a, lane memfnmanifest); runs
 #     tests/memfn/run_site_manifest.sh, C17: the checked site manifest
 #     (integration.md §R4.3.4) against what src/gen/ and src/enc/ spell. Its
@@ -2949,6 +2955,15 @@ run_one() {
                     f="$(grep -m1 '^checks failed:' "$work/revtwin.log" | grep -oE '[0-9]+')"
                     score_arm "$work/revtwin.log" "$f" "revtwin:${f:-ERR}fail/${p:-?}pass"
                 fi
+                ;;
+            startlanding)
+                # [START-LANDING] tests/codegen/run_start_landing.sh — see the
+                # vocabulary entry above.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" TMPDIR="$work" \
+                    bash "$tree/tests/codegen/run_start_landing.sh" > "$work/startlanding.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/startlanding.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/startlanding.log" | grep -oE '[0-9]+')"
+                score_arm "$work/startlanding.log" "$f" "startlanding:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfnmanifest)
                 # [MEMFN] C17 tests/memfn/run_site_manifest.sh — see the

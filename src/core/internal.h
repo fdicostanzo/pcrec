@@ -6878,6 +6878,10 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
  * outside the DFA emitter must ask. True on a DFA artifact and on a VM HYBRID,
  * false on a non-hybrid VM artifact. */
 bool pcrec_artifact_has_dfa_scan(Ctx *cx);
+/* [START-LANDING] is the RECOVER row `landing`'s first-character guard
+ * emitted in this artifact's DFA body (src/gen/emit_dfa.c): the entry mask's
+ * DECODE reader, asked by both emitters before their prologue. */
+bool pcrec_dfa_landing_guard(Ctx *cx);
 
 /* [OPT-REVEND] L0 THE PATH DERIVATION's NEEDS HALF (locate_finish.md §2.7),
  * asked before any machine is built: does some FINISH row routed on this

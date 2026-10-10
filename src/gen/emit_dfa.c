@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 73
+#define PCREC_ARTIFACT_ABI 74
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -290,10 +290,10 @@ static bool dfa_match_is_unwrapped(Ctx *cx);
  * pinned artifact no longer contains. One derivation, five readers, so no
  * reader can disagree with the body that was emitted. */
 static const char *dfa_search_start_name(Ctx *cx);
-/* The same selection asked as a yes/no, for the four sites that need the
- * ANSWER rather than the name. Spelled once here so that no
- * `strcmp(name, "pinned")` grows anywhere as a second reading. */
-static bool dfa_search_is_pinned(Ctx *cx);
+/* The same selection asked for its ACTION (`CRA_*`, [START-LANDING]), for the
+ * sites that need the answer rather than the name. Spelled once here so that
+ * no `strcmp(name, "pinned")` grows anywhere as a second reading. */
+static unsigned dfa_search_act(Ctx *cx);
 
 /* [START-TABLE] the trace build's HIT COUNTER at a start-table reader
  * (defined beside `cand_rows[]`, far below), forward-declared because the
@@ -1714,6 +1714,21 @@ static void emit_dead_group_fill(Ctx *cx, StrBuf *c, const char *ind)
         "%s        capture_spans[rx_g][0] = PCREC_UNSET;\n"
         "%s        capture_spans[rx_g][1] = PCREC_UNSET;\n"
         "%s    }\n", ind, ind, ind);
+}
+
+/* [START-LANDING] THE ONE SUCCESS SITE of a DFA search body ([r2 SL-C3]):
+ * the reported span `[start, end)` into `capture_spans[0]`, K78's dead-group
+ * fill, and `return 1`, at indent `ind`. Every RECOVER action and the
+ * `rev-end` walk's report end here, so an action added later cannot omit
+ * the fill; the `return 0` sites are not success sites and write nothing
+ * (K78: no write on a no-match). `start`/`end` are emitted expressions. */
+static void emit_search_success(Ctx *cx, StrBuf *c, const char *start,
+                                const char *end, const char *ind)
+{
+    pcrec_sb_printf(c, "%sif (capture_spans) { capture_spans[0][0] = (ptrdiff_t)%s;"
+                    " capture_spans[0][1] = (ptrdiff_t)%s; }\n", ind, start, end);
+    emit_dead_group_fill(cx, c, ind);
+    pcrec_sb_printf(c, "%sreturn 1;\n", ind);
 }
 
 /* Writes the search entry's attributes, signature and opening brace, plus
@@ -5214,11 +5229,20 @@ typedef struct CandNeeds {
     unsigned front;
 } CandNeeds;
 
-/* [START-TABLE] C3 THE RECOVER SLOT's PAYLOAD, `CandRow.u.recover`: whether
- * the row elides the reverse pass. `dfa_search_is_pinned`'s readers test
- * this PROPERTY, never which row was chosen ([r2 sound-m2]). */
+/* [START-TABLE] C3 THE RECOVER SLOT's PAYLOAD, `CandRow.u.recover`: the
+ * row's ACTION, how the search body recovers the match start once the forward
+ * scan has its end ([START-LANDING], docs/design/start_landing.md §4.1; a
+ * bool `pinned` until then). `dfa_search_act`'s readers test this PROPERTY,
+ * never which row was chosen ([r2 sound-m2]); whether the reverse machine is
+ * present is the PATH's member fold (`.needs`), never this field. */
+enum {
+    CRA_SEARCH_FROM = 1,   /* `pinned`: the start is `search_from` */
+    CRA_END_MINUS_W,       /* `end-minus-width`: the end minus the fixed byte width */
+    CRA_LANDING,           /* `landing`: the NEXT block's last landing */
+    CRA_REVERSE            /* `reverse-pass`: the backwards scan */
+};
 typedef struct CandRecover {
-    bool pinned;
+    unsigned char act;     /* CRA_* */
 } CandRecover;
 
 /* [START-TABLE] C5 THE WINDOW SLOT's PAYLOAD, `CandRow.u.window`: whether
@@ -5481,6 +5505,11 @@ struct DfaForm {
      * by `dfa_form_derive` from the direction, never left to a zero. */
     const char    *lbl;
     const char    *dead;
+    /* [START-LANDING] the NEXT block RECORDS its landing (`pf_close`): the
+     * forward search machine whose RECOVER row is `landing`. False from
+     * `dfa_form_derive`; `emit_unanchored`, which holds the RECOVER row,
+     * sets it on its forward form. */
+    bool           landing;
 };
 
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
@@ -6162,6 +6191,21 @@ static void pf_open(StrBuf *c, const DfaForm *f)
               f->dir->recv);
 }
 
+/* [START-LANDING] THE NEXT BLOCK's CLOSE, the ONE site every NEXT emitter
+ * ends at (docs/design/start_landing.md §2.1): `inner` closes the bounded
+ * forms' inner `if` first. Where the form records the landing (the RECOVER row
+ * `landing`, `DfaForm.landing`), the block's LAST statement stores the
+ * position the machine steps from at its start state, so a ninth NEXT form
+ * cannot be added without it. Byte-identical elsewhere. */
+static void pf_close(StrBuf *c, const DfaForm *f, bool inner)
+{
+    const char *ind = f->dir->bind;
+    if (inner) pcrec_sb_printf(c, "%s    }\n", ind);
+    if (f->landing)
+        pcrec_sb_printf(c, "%s    landing_position = %s;\n", ind, f->dir->posv);
+    pcrec_sb_printf(c, "%s}\n", ind);
+}
+
 /* The `memchr` skip's emitted explanation, naming the one byte that can begin
  * a match — so a reader of the artifact meets the reason and not just the
  * call. */
@@ -6316,7 +6360,7 @@ static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
      * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
     pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, "return 0;");
-    pcrec_sb_printf(c, "%s}\n", ind);
+    pf_close(c, f, false);
 }
 
 /* AXIS B, `memchr-bounded`: the same skip stopped at n-1 and with NO early
@@ -6336,7 +6380,7 @@ static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
      * flag inside one. */
     pcrec_sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
     pf_emit_find(c, f, dfa_fragf(f->cx, "%s        ", ind), 1, NULL);
-    pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
+    pf_close(c, f, true);
 }
 
 /* AXIS B, `byte-class`: the candidate set is a proper subset but not a
@@ -6349,7 +6393,7 @@ static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
     pf_open(c, f);
     pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 0, NULL);
     pcrec_sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
-    pcrec_sb_printf(c, "%s}\n", ind);
+    pf_close(c, f, false);
 }
 
 /* AXIS B, `byte-class-bounded`: the same loop stopped at n-1, so a state that
@@ -6365,7 +6409,7 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
      * never skipped past; below n-1 the view is unreachable, which is also
      * why the view state cannot be stale after a skip (D11). */
     pf_emit_find(c, f, dfa_fragf(f->cx, "%s    ", ind), 1, NULL);
-    pcrec_sb_printf(c, "%s}\n", ind);
+    pf_close(c, f, false);
 }
 
 /* ---- [OPT-K] THE OFFSET-k FORMS ----------------------------------------
@@ -6762,7 +6806,7 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     {
         pf_emit_ofs_reseed(c, f, dfa_fragf(f->cx, "%s    ", ind));
     }
-    pcrec_sb_printf(c, "%s}\n", ind);
+    pf_close(c, f, false);
 }
 
 /* AXIS B, `offset-set-bounded`: the same skip with no early `return 0` — a
@@ -6789,7 +6833,7 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     {
         pf_emit_ofs_reseed(c, f, dfa_fragf(f->cx, "%s        ", ind));
     }
-    pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
+    pf_close(c, f, true);
 }
 
 /* ---- [START-SET] STAGE 3: THE DFA HAT (D148 + addenda 1-2; startset.md §2 F, §4.1, §6.4) ----
@@ -6965,7 +7009,7 @@ static void pf_emit_first_memchr_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s        size_t skip_from = scan_position;\n", ind);
     pf_emit_find(c, f, in8, 1, NULL);
     pf_emit_moved_reseed(c, f, in8);
-    pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
+    pf_close(c, f, true);
 }
 
 /* AXIS B, `first-class-bounded`: `byte-class-bounded`'s skip over the
@@ -6979,7 +7023,7 @@ static void pf_emit_first_class_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    size_t skip_from = scan_position;\n", ind);
     pf_emit_find(c, f, in4, 1, NULL);
     pf_emit_moved_reseed(c, f, in4);
-    pcrec_sb_printf(c, "%s}\n", ind);
+    pf_close(c, f, false);
 }
 
 /* ---- [START-SET] STAGE 2: THE VM HAT (D148; docs/design/startset.md §2, §4.2) ----
@@ -8080,6 +8124,23 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
         }
 }
 
+/* [START-LANDING] L3, ASSERTED (start_landing.md §2.6): `landing` reads the
+ * landing record from an UNSEEDED machine — one start state, the initializer
+ * a constant — which Λ.1 (no assertion at the start edge) implies: the seeds
+ * `s1u[u]`/`s1g[u]` differ only through a left-context assertion in the start
+ * closure. Lemma 1's base case rests on it, so a violation is a loud internal
+ * error rather than a wrong landing (census: 0 of 2,225 Λ-OK compiles seeded). */
+static void start_landing_assert_unseeded(Ctx *cx, const Dfa *fd)
+{
+    bool seeded = dfa_needs_seed(fd) || fd->s1u[UPC_PLAIN] != fd->s0;
+    for (int u = 0; u < fd->natoms; u++)
+        if (fd->s1g[u] != fd->s1u[u]) seeded = true;
+    if (seeded)
+        pcrec_ctx_fail(cx, 0, "internal error: the RECOVER row `landing` reached a "
+                       "SEEDED machine; the one-character fact (no assertion at the "
+                       "start edge) implies an unseeded one (start_landing.md §2.6 L3)");
+}
+
 /* THE PREDICATE. `CandSel.d` IS the forward machine and is read as such — this
  * axis is genuinely about it, so unlike axis G there is nothing fabricated to
  * invite a later candidate to misread. */
@@ -8112,6 +8173,42 @@ static bool start_pinned_applies(const CandSel *s)
         }
     }
     return true;
+}
+
+/* [START-LANDING] S2 `end-minus-width` (docs/design/start_landing.md §3.2):
+ * every match has the same BYTE width `W`, so a verified end `e` puts the
+ * start at `e - W`, exactly where today's reverse pass would. W0 is the path's
+ * RECOVER membership (`cand_recover_asked`, `pinned`'s P4, so an empty body
+ * never takes it); W1 the route; W2 the `width` fact's fixed interval. W3,
+ * that the end is VERIFIED, is the hand: the row takes only `EXISTS`
+ * (`cand_takes`), so `rev-end`'s speculative ends never reach it. */
+static bool start_width_applies(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+    if (cand_route_of(cx) != CAND_ROUTE_DFA) return false;
+    if (!cand_recover_asked(cx)) return false;
+    const WidthIv *w = pcrec_fact_width(cx);
+    return w->bmin >= 0 && w->bmin == w->bmax;
+}
+
+/* [START-LANDING] S3 `landing` (§2.6): under the one-character fact Λ the
+ * forward scan's LAST landing — the position the NEXT block last handed the
+ * machine at its start state — is the start today's reverse pass returns
+ * (§2.4's Theorem; §2.5's guard covers an ill-formed character there). L0′
+ * the path's RECOVER membership; L1 the route; L2 Λ; L4 the NEXT row selected
+ * for the forward machine HAS a block to record in (`next-none` has none),
+ * READ through the selection DAG's RECOVER -> NEXT edge. L3 (an unseeded
+ * machine) is asserted at emission, not tested: Λ.1 implies it. L5 is the
+ * hand, as `end-minus-width`'s. */
+static bool start_landing_applies(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+    UnanchStart us;
+    if (cand_route_of(cx) != CAND_ROUTE_DFA) return false;
+    if (!cand_recover_asked(cx)) return false;
+    if (!pcrec_fact_land_char(cx)->holds) return false;
+    unanch_start(cx, &us);
+    return dfa_pf_read(cx, CAND_SLOT_RECOVER, &us)->u.pf.emit != NULL;
 }
 
 /* THE ONE SELECTION, `cand_select(RECOVER)` on the route of the artifact's
@@ -8151,11 +8248,33 @@ static const char *dfa_search_start_name(Ctx *cx)
     return a ? a : dfa_search_start_of(cx)->tok;
 }
 
-/* The same selection as a yes/no, for the sites that need the ANSWER rather
- * than the name: the chosen row's `u.recover.pinned`, never a comparison of
- * which row it was ([r2 sound-m2]). */
-static bool dfa_search_is_pinned(Ctx *cx)
-{ return dfa_search_start_of(cx)->u.recover.pinned; }
+/* The same selection as its ACTION, for the sites that need the answer
+ * rather than the name: the chosen row's `u.recover.act`, never a comparison
+ * of which row it was ([r2 sound-m2]). */
+static unsigned dfa_search_act(Ctx *cx)
+{ return dfa_search_start_of(cx)->u.recover.act; }
+
+/* [START-LANDING] IS THE LANDING's FIRST-CHARACTER GUARD EMITTED
+ * (docs/design/start_landing.md §2.5.1; D156 addendum 4 Q2): the artifact's
+ * DFA body takes RECOVER `landing`, a first byte lies above the encoding's
+ * one-byte repertoire (the `land_char` fact's `wide`), and the contract does
+ * not already prove the searched range well-formed (`-futf-check` validates
+ * it before any scan, Q2 item 3). An encoding owing the guard has a DECODE
+ * row; its absence is an internal error, never a silently dropped guard.
+ * Asked by the search body that emits the guard and, before the prologue, by
+ * each emitter that sets the artifact's entry mask (the guard calls
+ * `<prefix>_decode`). */
+bool pcrec_dfa_landing_guard(Ctx *cx)
+{
+    if (!pcrec_artifact_has_dfa_scan(cx) || !cand_recover_asked(cx)) return false;
+    if (dfa_search_act(cx) != CRA_LANDING) return false;
+    if (!pcrec_fact_land_char(cx)->wide) return false;
+    if (cx->opt->flags & PCREC_FORCE_UTF_CHECK) return false;
+    if (!pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding), PCREC_ENCE_DECODE))
+        pcrec_ctx_fail(cx, 0, "internal error: the landing guard is owed under an "
+                       "encoding with no DECODE entry (start_landing.md §2.5.1)");
+    return true;
+}
 
 /* ==== [START-TABLE] C2 THE ONE START TABLE ===============================
  *
@@ -8345,8 +8464,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * stamp now reads RECOVER's ABSENCE where the path does not ask it. */
     /* [OPT-REVEND] L2 its result crosses to FINISH (E-LF: the composite's
      * SPAN), and it is asked with a hand ([r2-landing]). */
+    /* [START-LANDING] `landing` (L4) READS NEXT's selection for the forward
+     * machine on the same route. */
     [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER | CT_UPPER | CT_START,
-                             CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH) },
+                             CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) } },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
      * relocate to LOCATE (E-FL, `rank`; E-FC, the match-here entry's search,
@@ -8796,21 +8918,41 @@ static const CandRow cand_rows[] = {
      * (`EXISTS`), the `rev-end` walk's seeds are speculative ends (`WINDOW`).
      * `pinned` answers without walking, so it takes only `EXISTS`; the
      * reverse pass takes both. (So `pinned` never meets an end-pinned walk,
-     * revend.md X3's premise, as a declaration.) */
+     * revend.md X3's premise, as a declaration.)
+     * [START-LANDING] (docs/design/start_landing.md §4.1, §10) the rows are a
+     * 2x3 grid by where the evidence about the start comes from and how much:
+     * `pinned` (start side, none), `end-minus-width` (end side, bounded),
+     * `landing` (start side, bounded), `reverse-pass` (end side, unbounded).
+     * `end-minus-width` precedes `landing` by DOMINANCE (D156 addendum 4 Q4):
+     * the two answer identically where both apply and its needs are strictly
+     * smaller. Both answer without walking, so both take only `EXISTS`. */
     { .c = { "pinned", PCREC_NO_START_PINNED, start_pinned_applies },
       .slot = CAND_SLOT_RECOVER, .routes = CR_DFA, .tok = "pinned", .map = CM_RECOVER,
       .hands = CT_START, .list = { [CAND_ROUTE_DFA] = { "search-start", 1, "pinned" } },
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS } },
       .desc = "ENG_UNANCH, a non-empty engine, and the forward machine's start state accepts under the PLAIN view with an accept that is invariant in position and in class context -- and, where mechanism 4 seeds, every live seed state does too. The match then provably begins at search_from and no reverse machine is emitted ([OPT-5] STEP 2)",
-      .u.recover = { .pinned = true } },
+      .u.recover = { CRA_SEARCH_FROM } },
+    { .c = { "end-minus-width", PCREC_NO_START_WIDTH, start_width_applies },
+      .slot = CAND_SLOT_RECOVER, .routes = CR_DFA, .tok = "end-minus-width", .map = CM_RECOVER,
+      .hands = CT_START, .list = { [CAND_ROUTE_DFA] = { "search-start", 2, "end-minus-width" } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS } },
+      .desc = "end side, bounded evidence: every match is the same number of bytes W (the width fact's interval [W,W]), so the start is the verified end minus W and no reverse machine is emitted ([START-LANDING])",
+      .u.recover = { CRA_END_MINUS_W } },
+    { .c = { "landing", PCREC_NO_START_LANDING, start_landing_applies },
+      .slot = CAND_SLOT_RECOVER, .routes = CR_DFA, .tok = "landing", .map = CM_RECOVER,
+      .hands = CT_START, .list = { [CAND_ROUTE_DFA] = { "search-start", 3, "landing" } },
+      .needs = { [CAND_ROUTE_DFA] = { 0, CN(CAND_SLOT_NEXT) } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS } },
+      .desc = "start side, bounded evidence: every one-character path from the pattern's start ends dead or accepting (the land_char fact), so the start is the position the prefilter last landed on, stepped to the next character start where the character there does not decode; no reverse machine is emitted ([START-LANDING])",
+      .u.recover = { CRA_LANDING } },
     { .c = { "reverse-pass", 0, cand_always }, .slot = CAND_SLOT_RECOVER,
       .routes = CR_DFA, .tok = "reverse-pass", .map = CM_RECOVER,
       .hands = CT_START,
-      .list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },
+      .list = { [CAND_ROUTE_DFA] = { "search-start", 4, "reverse-pass" } },
       .desc = "always (fallback) -- the backwards scan over the artifact's own reverse machine recovers the match start",
       .needs = { [CAND_ROUTE_DFA] = { CAND_MR } },
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_EXISTS, CAND_HAND_WINDOW } },
-      .u.recover = { .pinned = false } },
+      .u.recover = { CRA_REVERSE } },
 
     /* FINISH ([OPT-REVEND] L0, locate_finish.md §2.3; `dfa_matches[]`, axis G,
      * until L0). Asked by the match-here entry with the meet `caller ⊓ body`
@@ -10276,6 +10418,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->from    = dir->reverse ? NULL : "search_from";
     f->lbl     = dir->c.name;
     f->dead    = dir->dead_entry;
+    f->landing = false;
     f->repr    = DFA_SELECT(DfaRepr, dfa_reprs, &s, flags);
     f->view    = DFA_SELECT(DfaView, dfa_views, &s, flags);
     f->seed    = DFA_SELECT(DfaSeed, dfa_seeds, &s, flags);
@@ -10720,9 +10863,9 @@ static void emit_reverse_block(StrBuf *c, const DfaForm *rev, const char *label,
  * test and reads the startpos only as a lower bound (Claim 2); ENG_UNANCH
  * implies no `\G` start family, the premise `start_pinned_assert_routing`
  * asserts for the pinned form, asked here of the second body shape. */
-static void req_handoff_assert_body(Ctx *cx, const Dfa *fd, bool pinned)
+static void req_handoff_assert_body(Ctx *cx, const Dfa *fd, unsigned act)
 {
-    if (pinned)
+    if (act == CRA_SEARCH_FROM)
         pcrec_ctx_fail(cx, 0, "internal error: the [K82] handoff reached the "
                        "start-pinned search, whose answer is its start");
     if (dfa_needs_gseed(fd))
@@ -10777,13 +10920,19 @@ static void emit_empty_unanchored(Ctx *cx, const char *fn, const char *storage)
 
 /* THE COMPOSITE's SCAN on CAND_ROUTE_DFA, from its forward pass to the close
  * of the search function: the forward scan from the form's `from`, then the
- * start recovery `pinned` chose (none, or the reverse pass), then the report
+ * start recovery RECOVER's row `rr` chose — its ACTION (`u.recover.act`,
+ * [START-LANDING]): `search_from` (`pinned`), the end minus the fixed width
+ * (`end-minus-width`), the last landing (`landing`, with §2.5's guard where
+ * owed), or the reverse pass — then the report through the ONE success site
  * (FINISH's SPAN, E-LF; asked where the body is the caller-facing entry). Its
  * tables are already emitted. `emit_unanchored` is its first caller; the
  * `rev-end` walk's RELOCATE (E-FL, a tie with no anchored machine) is its
- * second, entered at the walk's start with `search_from` moved there. */
-static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev, bool pinned)
+ * second, entered at the walk's start with `search_from` moved there, with the
+ * path's RECOVER row (the WINDOW ask's, the reverse pass). */
+static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
+                        const CandRow *rr)
 {
+    unsigned act = rr->u.recover.act;
     /* [OPT-REVEND] L2 the composite's result crosses to FINISH: SPAN, which
      * `report` finishes on a DFA-hat route (its text is the success tail
      * below). A hybrid's inlined body hands its span to the VM entry, which
@@ -10800,8 +10949,14 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev, bool pin
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c, "    size_t scan_position = %s;\n"
                "    size_t last_accept_position = (size_t)-1;\n", fwd->from);
+    /* [START-LANDING] the landing's record, initialised to where the forward
+     * walk starts: an unseeded machine (Λ ⇒ L3) is at its start state there,
+     * so the NEXT block runs before any accept and overwrites it. */
+    if (fwd->landing)
+        pcrec_sb_printf(c, "    size_t landing_position = %s;\n", fwd->from);
     emit_scan_loop(c, fwd);
-    if (pinned) {
+    switch (act) {
+    case CRA_SEARCH_FROM:
         /* THE GATE IS LOAD-BEARING AND THE EMITTED COMMENT SAYS SO, which is
          * the point of writing it at all: a reader of a coverage report finds
          * this branch never taken on this corpus and must not conclude it is
@@ -10827,12 +10982,65 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev, bool pin
             "    // above belongs to a thread that began at search_from, and\n"
             "    // a backwards scan would walk back to exactly that\n"
             "    // position. The offset is ABSOLUTE into subject, never\n"
-            "    // relative to search_from.\n"
-            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n");
-        emit_dead_group_fill(cx, c, "    ");
-        pcrec_sb_puts(c, "    return 1;\n"
-                   "}\n");
+            "    // relative to search_from.\n");
+        emit_search_success(cx, c, "search_from", "last_accept_position", "    ");
+        pcrec_sb_puts(c, "}\n");
         return;
+    case CRA_END_MINUS_W: {
+        long long w = pcrec_fact_width(cx)->bmin;
+        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n");
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "    // ---- THE MATCH BEGAN %lld BYTES BEFORE ITS END ----------------\n"
+            "    // [START-LANDING] Every match of this pattern is exactly %lld\n"
+            "    // bytes long, so the match ending at the forward scan's last\n"
+            "    // accept began that many bytes before it: no reverse pass, and\n"
+            "    // no reverse machine in this artifact.\n", w, w);
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_printf(c, "    size_t match_start_position = last_accept_position - %lld;\n", w);
+        emit_search_success(cx, c, "match_start_position", "last_accept_position", "    ");
+        pcrec_sb_puts(c, "}\n");
+        return;
+    }
+    case CRA_LANDING:
+        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n");
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_puts(c,
+            "    // ---- THE MATCH BEGAN AT THE LAST LANDING ---------------------\n"
+            "    // [START-LANDING] Every one-character path from this pattern's\n"
+            "    // start ends dead or accepting, so the thread the prefilter\n"
+            "    // last handed the machine at its start state is the one that\n"
+            "    // accepted: the match began where it landed. No reverse pass,\n"
+            "    // and no reverse machine in this artifact.\n");
+        pcrec_sb_cmt_close(c);
+        if (pcrec_dfa_landing_guard(cx)) {
+            /* §2.5.2's SKIP, after the loop and never inside it (D156
+             * addendum 4 Q2: nothing of the guard on the scan's hot path; one
+             * decode, predicted not taken, on well-formed text). */
+            pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+            pcrec_sb_puts(c,
+                "    // An ill-formed sequence matches nothing: where the bytes at\n"
+                "    // the landing do not decode, the match began at the first\n"
+                "    // position after it that does.\n");
+            pcrec_sb_cmt_close(c);
+            pcrec_sb_printf(c,
+                "    {\n"
+                "        unsigned landing_cp;\n"
+                "        if (__builtin_expect(!%s_decode(subject, subject_length, landing_position, &landing_cp), 0)) {\n"
+                "            do landing_position++;\n"
+                "            while (landing_position < last_accept_position &&\n"
+                "                   !%s_decode(subject, subject_length, landing_position, &landing_cp));\n"
+                "        }\n"
+                "    }\n", fwd->p, fwd->p);
+        }
+        emit_search_success(cx, c, "landing_position", "last_accept_position", "    ");
+        pcrec_sb_puts(c, "}\n");
+        return;
+    case CRA_REVERSE:
+        break;
+    default:
+        pcrec_ctx_fail(cx, 0, "internal error: RECOVER row '%s' names no action",
+                       rr->tok);
     }
     pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
                "    {\n"
@@ -10840,11 +11048,9 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev, bool pin
                "        size_t match_start_position = (size_t)-1;\n"
                "        size_t rewind_position = match_end_position;\n");
     emit_reverse_block(c, rev, dfa_dir_reverse.c.name, NULL);
-    pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
-               "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n");
-    emit_dead_group_fill(cx, c, "        ");
-    pcrec_sb_puts(c, "        return 1;\n"
-               "    }\n"
+    pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n");
+    emit_search_success(cx, c, "match_start_position", "match_end_position", "        ");
+    pcrec_sb_puts(c, "    }\n"
                "}\n");
 }
 
@@ -10868,18 +11074,30 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * tale ("M2.7 forked a second copy, and the fork is exactly how the
      * prefilter and skip loops went missing from the `$` path for a whole
      * milestone"). */
-    bool pinned = dfa_search_is_pinned(cx);
+    const CandRow *rr = dfa_search_start_of(cx);
+    unsigned act = rr->u.recover.act;
+    /* [START-LANDING] the reverse machine is a MEMBER of the path iff the
+     * RECOVER row's needs name it (L0's fold, `.needs`): only `reverse-pass`
+     * does. The emitter reads the same fold every machine stamp reads. */
+    bool rmem = (cand_path_members(cx) & CAND_MR) != 0;
 
     DfaForm fwd, rev;
     dfa_form_derive(cx, &job->dfa,  &us, &dfa_dir_forward, &fwd);
-    /* THE REVERSE MACHINE'S FORM IS NOT EVEN DERIVED under `pinned`, which is
-     * a deliberate step past "derived and not emitted": nothing downstream may
-     * read a form for a machine whose text is absent, and leaving `rev`
-     * uninitialised is how the compiler enforces that rather than a comment.
-     * The reverse machine is still BUILT — skipping the build is a separate
-     * compiler-CPU optimization with its own trigger (design note §8 Q5). */
-    if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
-    else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);
+    fwd.landing = act == CRA_LANDING;
+    /* THE REVERSE MACHINE'S FORM IS NOT EVEN DERIVED where it is not a
+     * member, which is a deliberate step past "derived and not emitted":
+     * nothing downstream may read a form for a machine whose text is absent,
+     * and leaving `rev` uninitialised is how the compiler enforces that rather
+     * than a comment. The reverse machine is still BUILT — skipping the build
+     * is a separate compiler-CPU optimization with its own trigger (design
+     * note §8 Q5). Each action that answers without it asserts its own
+     * premise: `pinned`'s routing (P0), `landing`'s unseeded machine (L3). */
+    if (rmem != (act == CRA_REVERSE))
+        pcrec_ctx_fail(cx, 0, "internal error: RECOVER row '%s' and the path's "
+                       "reverse-machine membership disagree", rr->tok);
+    if (rmem)                    dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    if (act == CRA_SEARCH_FROM)  start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);
+    if (act == CRA_LANDING)      start_landing_assert_unseeded(cx, &job->dfa);
 
     /* LAYER 2, at file scope and above the body: the accessor blocks — one
      * per machine this artifact actually contains — and, [OPT-K], the forward
@@ -10887,9 +11105,9 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * the VM hybrid inlines this emitter's output, so a block emitted here is
      * a block the hybrid gets. */
     fwd.repr->emit_token(c, &fwd);
-    if (!pinned) rev.repr->emit_token(c, &rev);
+    if (rmem) rev.repr->emit_token(c, &rev);
     emit_scan_defs(c, &fwd);
-    if (!pinned) emit_scan_defs(c, &rev);
+    if (rmem) emit_scan_defs(c, &rev);
     if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
      * condition as its call below. */
@@ -10920,11 +11138,11 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
         fwd.from = pcrec_emit_req_byte_check(cx, c, "    ", "search_from",
                                              "subject", "subject_length");
         if (req_use(cx) == REQ_USE_HANDOFF)
-            req_handoff_assert_body(cx, &job->dfa, pinned);
+            req_handoff_assert_body(cx, &job->dfa, act);
     }
     emit_machine_tables(c, &fwd);
-    if (!pinned) emit_machine_tables(c, &rev);
-    unanch_scan(cx, c, &fwd, &rev, pinned);
+    if (rmem) emit_machine_tables(c, &rev);
+    unanch_scan(cx, c, &fwd, &rev, rr);
 }
 
 /* ---- [OPT-REVEND] L2: THE REVERSE-FROM-END WALK (`rev-end`) -------------
@@ -11051,10 +11269,15 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     GenNames g;
 
     unanch_start(cx, &us);
-    if (dfa_search_start_at(cx, CAND_HAND_WINDOW)->u.recover.pinned)
-        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk selected RECOVER "
-                       "`pinned`, whose machine has no reverse pass (revend.md X3)");
-    if (relocate && dfa_search_start_at(cx, CAND_HAND_EXISTS)->u.recover.pinned)
+    /* [START-LANDING] the walk IS a reverse pass: its WINDOW ask must select
+     * the reverse pass, never a row that answers without walking (none of
+     * `pinned`, `end-minus-width` and `landing` takes WINDOW). The relocate
+     * re-enters the composite with that same row (the path's cell), and a
+     * start-pinned composite there would be revend.md X3's premise broken. */
+    if (dfa_search_start_at(cx, CAND_HAND_WINDOW)->u.recover.act != CRA_REVERSE)
+        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk selected a RECOVER "
+                       "row that does not walk back (revend.md X3, start_landing.md §4.3)");
+    if (relocate && dfa_search_start_at(cx, CAND_HAND_EXISTS)->u.recover.act == CRA_SEARCH_FROM)
         pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's relocate reached a "
                        "start-pinned composite (revend.md X3)");
     if (relocate) dfa_form_derive(cx, &job->dfa, &us, &dfa_dir_forward, &fwd);
@@ -11131,13 +11354,8 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     if (entry && cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
         pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's SPAN is finished "
                        "by a row that is not `report`");
-    {
-        const char *ind = relocate ? "        " : "    ";
-        pcrec_sb_printf(c, "%sif (capture_spans) { capture_spans[0][0] = (ptrdiff_t)revend_start;"
-                   " capture_spans[0][1] = (ptrdiff_t)revend_end; }\n", ind);
-        emit_dead_group_fill(cx, c, ind);
-        pcrec_sb_printf(c, "%sreturn 1;\n", ind);
-    }
+    emit_search_success(cx, c, "revend_start", "revend_end",
+                        relocate ? "        " : "    ");
     if (!relocate) {
         pcrec_sb_puts(c, "}\n");
         return;
@@ -11148,7 +11366,7 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
      * end; `\G` cannot occur (the `end_pin` fact declines it). */
     pcrec_sb_puts(c, "    }\n"
                "    search_from = revend_start;\n");
-    unanch_scan(cx, c, &fwd, &rev, false);
+    unanch_scan(cx, c, &fwd, &rev, dfa_search_start_at(cx, CAND_HAND_WINDOW));
 }
 
 /* ---- [ENG-ABS]: THE ANCHORED MATCH-HERE ENTRIES ------------------------- */
@@ -12057,7 +12275,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * built, so the selection would read uninitialised analysis, which is
      * `emit_info_def`'s own reason for guarding its two mirrors; the empty and
      * ENG_ATTEMPT bodies run no reverse pass to elide. */
-    bool pinned = body && cand_recover_asked(cx) && dfa_search_is_pinned(cx);
+    unsigned act = body && cand_recover_asked(cx) ? dfa_search_act(cx) : CRA_REVERSE;
     /* WHICH prefilter shape the forward scan uses is NOT re-derived here. The
      * derivation lives in emit_unanchored, which owns it, and a second copy
      * that agreed today would be a second source of truth about the emitted
@@ -12144,9 +12362,9 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
          * ARTIFACT DOES NOT CONTAIN, which is the same rule that makes the
          * two stamp folds drop the reverse machine — this paragraph is a
          * READER's map of the file, and a map naming tables that are not
-         * there is worse than no map. Read off the SAME `dfa_search_is_pinned`
-         * the body was emitted through. */
-        if (pinned)
+         * there is worse than no map. Read off the SAME RECOVER action
+         * (`dfa_search_act`) the body was emitted through. */
+        if (act == CRA_SEARCH_FROM)
             pcrec_sb_puts(c, " *\n"
                        " *   3. NO REVERSE SCAN, AND NO REVERSE TABLES IN THIS FILE. For\n"
                        " *      this pattern the forward machine accepts before it reads\n"
@@ -12157,6 +12375,22 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " *      back to. Other patterns' artifacts carry a second set of\n"
                        " *      tables here, built from the same pattern read right to\n"
                        " *      left; this one does not need them.\n *\n");
+        else if (act == CRA_END_MINUS_W)
+            pcrec_sb_puts(c, " *\n"
+                       " *   3. NO REVERSE SCAN, AND NO REVERSE TABLES IN THIS FILE. For\n"
+                       " *      this pattern every match is the same number of bytes\n"
+                       " *      long, so the match that ends where step 1 found it began\n"
+                       " *      exactly that many bytes earlier. Other patterns' artifacts\n"
+                       " *      walk back through a second set of tables here; this one\n"
+                       " *      subtracts.\n *\n");
+        else if (act == CRA_LANDING)
+            pcrec_sb_puts(c, " *\n"
+                       " *   3. NO REVERSE SCAN, AND NO REVERSE TABLES IN THIS FILE. For\n"
+                       " *      this pattern one character decides whether a match that\n"
+                       " *      starts somewhere can still go on, so the match begins at\n"
+                       " *      the position the prefilter skip (step 2) last landed on.\n"
+                       " *      Step 2 records that position as it goes; other patterns'\n"
+                       " *      artifacts walk back through a second set of tables here.\n *\n");
         else
             pcrec_sb_puts(c, " *\n"
                        " *   3. REVERSE SCAN. Walk backwards from the end found in step 1,\n"
@@ -12168,7 +12402,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
     } else {
         pcrec_sb_puts(c, " * This pattern reports where its capture groups matched, so the\n"
                    " * matcher is built in two halves that run one after the other:\n *\n");
-        if (body && pinned)
+        if (body && act == CRA_SEARCH_FROM)
             /* [OPT-5 STEP 2] A HYBRID'S INLINED PREFILTER IS THIS EMITTER'S
              * OWN SEARCH BODY, so the elision reaches it and this paragraph
              * must say so — "a pair of scanners" would name a machine the
@@ -12178,6 +12412,16 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " *     two offsets?\" while ignoring the groups. Its start is the\n"
                        " *     position the search began at -- the machine accepts before\n"
                        " *     it reads a byte -- so it needs no backwards pass and this\n"
+                       " *     artifact carries no reverse tables. It never backtracks.\n"
+                       " *     What it cannot do is say where the groups fell.\n *\n");
+        else if (body && act != CRA_REVERSE)
+            /* [START-LANDING] the other two rows that answer without the
+             * reverse pass reach the hybrid's body too. */
+            pcrec_sb_puts(c, " *   HALF 1 -- the prefilter. ONE table-driven forward scanner\n"
+                       " *     that answers \"is there a match at all, and between which\n"
+                       " *     two offsets?\" while ignoring the groups. It finds where the\n"
+                       " *     match starts without a backwards pass (from the match's one\n"
+                       " *     fixed length, or from where its skip last landed), so this\n"
                        " *     artifact carries no reverse tables. It never backtracks.\n"
                        " *     What it cannot do is say where the groups fell.\n *\n");
         else if (body)
@@ -12926,6 +13170,10 @@ void pcrec_emit_dfa(Ctx *cx)
      * so its mask is the two unconditional entries alone ([UTF-VALID] added
      * the second, the subject validator). */
     cx->job->enc_mask = PCREC_ENCE_NEXT_POS | PCREC_ENCE_VALID_UPTO;
+    /* [START-LANDING] the landing's guard calls the encoding's DECODE entry
+     * (`pcrec_dfa_landing_guard`), a `static inline` entry defined ahead of
+     * the search body below. */
+    if (pcrec_dfa_landing_guard(cx)) cx->job->enc_mask |= PCREC_ENCE_DECODE;
     {
         /* [DD-14.FB] spec §10.4: the surface is emitted on a DFA artifact
          * too, INERT. This engine has no resume stack and no trail, so the
@@ -12939,6 +13187,11 @@ void pcrec_emit_dfa(Ctx *cx)
      * the two artifact kinds put their engine line at the same point of the
      * file and a reader (or a grep) finds it in one place. */
     emit_dfa_stamps(cx, c, g.upper);
+    /* The encoding's `static inline` entries the mask carries (the landing
+     * guard's DECODE), ahead of the search body that calls them; nothing on
+     * an artifact whose mask holds none. */
+    pcrec_enc_emit_inline_defs(c, pcrec_enc_by_id(cx->opt->encoding), cx->job->enc_mask,
+                               cx->opt->prefix);
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     pcrec_sb_puts(c, "\n");
