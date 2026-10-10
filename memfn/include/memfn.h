@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 8   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 9   /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -56,7 +56,12 @@
                            32 (mf_pred.term[] grows, Q-R10-3), a strided
                            site's kit-owned reads at `s[cursor + i]`
                            (Q-R10-4) and ADVANCE's span_hi an ITERATION
-                           count (Q-R10-5). No MF_VOCAB move */
+                           count (Q-R10-5). No MF_VOCAB move. 9 (RQ-2,
+                           D157, 2026-10-09): mf_pred.rank_n/rank_pos/
+                           rank_ppm and MF_RANK_MAX, appended LAST. No
+                           MF_VOCAB move; no kit row reads them yet. (The
+                           next number at landing: R-13's sink-ops bump
+                           renumbers against it, whichever lands second.) */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -68,6 +73,14 @@
  * (emit_vm.c's VM_MAX_STRIDE, which pcrec asserts <= this). A SHAPE BOUND,
  * not a tuning constant: it is the widest step a site may state. */
 #define MF_MAX_TERM 32
+/* Entries in a predicate's position ranking (mf_pred.rank_*, RQ-2, D157).
+ * A SHAPE BOUND, not a tuning constant: the longest RUN term pcrec hands the
+ * kit is its run analysis's own truncation bound, PCREC_MAX_REQ_RUN_SCAN
+ * (32 positions; the PRE window is at most PCREC_MAX_REQ_RUN_EMIT = 8, the
+ * K66 whole run at most 32, the OFS pinned stretch at most the window), and
+ * pcrec asserts MF_RANK_MAX >= that bound where it fills the ranking, so a
+ * ranking is never truncated: rank_n is the run term's whole length. */
+#define MF_RANK_MAX 32
 /* The most negative term offset a site may send (§14.6). A SHAPE BOUND, not
  * a tuning constant; 8 leaves room without a contract change. CHOSEN: the
  * design names the bound but no value. No delegated site sends a negative
@@ -271,6 +284,18 @@ typedef struct mf_pred {            /* a CONJUNCTION of terms                 */
                                        `site.pred.fn_ref`, for every op
                                        (K-1); a FUNC site stating 0 states
                                        no name and is refused (R1)           */
+    /* THE POSITION RANKING (RQ-2, D157, MF_SITE_ABI 9; appended LAST): a
+     * FACT pcrec states about the RUN term plan_hint names. rank_n positions
+     * of that term (offsets within it), ordered by pcrec's prior rate,
+     * lowest first, ties to the higher offset; rank_ppm[i] is rank_pos[i]'s
+     * rate, in ppm summed over the position's members (both members of a
+     * masked position), under this compile's byte-rate or, where the compile
+     * has none, the uniform rate. rank_n 0 = no facts: a predicate whose
+     * plan_hint names no RUN term. Entries past rank_n are unspecified and
+     * never read. */
+    uint8_t  rank_n;                /* 0..MF_RANK_MAX                         */
+    uint16_t rank_pos[MF_RANK_MAX];
+    uint32_t rank_ppm[MF_RANK_MAX];
 } mf_pred;
 
 typedef struct {
