@@ -1,0 +1,61 @@
+# pcrec --emit-facts: the pattern-facts record of the compile(s) below,
+# one per encoding (docs/spec/facts_listing.md). A DEBUG listing: the
+# section and column names and the status/used/why vocabularies are
+# promised; the fact names, reasons and notes are advisory.
+#section facts
+# One row per record fact, in facts.def order. `used` is yes when a pass
+# asked for the fact while the artifact was built, no when only this
+# listing asked (after the artifact was complete).
+#encoding	fact	grain	epoch	status	used	value	why	note
+utf8	kinds	pattern	E1	derived	yes	none		core; owner src/facts/kinds.c
+utf8	nullable	pattern	E1	derived	yes	no		core; owner src/facts/widths.c
+utf8	empty_admits	pattern	E1	derived	yes	no		core; owner src/facts/widths.c
+utf8	start_anchor	pattern	E2	derived	no	unanchored		core; owner src/facts/startanch.c
+utf8	start_set	pattern	E2	derived	yes	1:0000000000000000000008000000000000000000000000000000000000000000		core; owner src/facts/startset.c
+utf8	end_window	pattern	E2	declined	yes	none	decline:enc-multibyte	core; owner src/facts/endwin.c
+utf8	req_set	pattern	E2	derived	yes	83,97,101,114,116,159,195		core; owner src/facts/req.c
+utf8	req_whole_run	pattern	E2	derived	yes	53747261c39f65		core; owner src/facts/req.c
+utf8	req_run	pattern	E2	derived	yes	53747261c39f65@6	rate:none(utf8)->rightmost	derived; owner src/facts/req.c
+utf8	req_run_maxoff	pattern	E2	derived	yes	0		derived; owner src/facts/req.c
+utf8	req_byte	pattern	E2	derived	yes	101	rate:none(utf8)->rightmost	derived; owner src/facts/req.c
+utf8	kset_walk	pattern	E3	derived	yes	83,116,114,97,195,159,101		core; owner src/facts/kset.c
+utf8	run_pin	pattern	E3	derived	yes	0		derived; owner src/facts/kset.c
+#section decisions
+# The artifact's own value stamps, read off the emitted C as written:
+# the route and emission DECISIONS the record does not hold (D124).
+#encoding	stamp	value
+utf8	PCREC_FEATURE_SET	"all"
+utf8	PCREC_FEATURE_MODULES	"classes,unicode-props,assertions,backrefs,recursion,quoting,misc,lookaround,named-groups,atomic-groups,comments,callouts,branch-reset,conditionals,extended-classes,modifiers,ucp,verbs,vars"
+utf8	RX_ALTCLS_MERGES	0
+utf8	RX_ALTCLS_FACTORED	0
+utf8	RX_STARTPOS_GUARD	"guarded"
+utf8	RX_UTF_CHECK	"off"
+utf8	RX_END_WINDOW	"none"
+utf8	RX_REQ_BYTE	"101"
+utf8	RX_REQ_RUN	"53747261c39f65@6"
+utf8	RX_REQ_WHY	"emitted"
+utf8	RX_REQ_HANDOFF	"0"
+utf8	RX_VM_START_SCAN	"none"
+utf8	RX_TUNE	"balanced"
+utf8	RX_NCAPS	1
+utf8	RX_RESUME_FRAMES	0
+utf8	RX_TRAIL_FRAMES	0
+utf8	RX_RESUME_FRAME_SIZE	0
+utf8	RX_TRAIL_FRAME_SIZE	0
+utf8	RX_BUFFER_ALIGN	1
+utf8	RX_ENGINE	"dfa"
+utf8	RX_ENGINE_SEL	"selected"
+utf8	RX_DFA_SCAN	"unanchored"
+utf8	RX_DFA_PREFILTER	"offset-set"
+utf8	RX_DFA_PREFILTER_OFFSETS	"0,1*"
+utf8	RX_DFA_TABLE	"premultiplied"
+utf8	RX_DFA_UNIFORM_FOLDS	0
+utf8	RX_DFA_SCAN_EDGE	"none"
+utf8	RX_DFA_START	"reverse-pass"
+utf8	RX_DFA_MATCH	"unwrapped"
+utf8	RX_MAX_EMIT_BYTES	1000000
+utf8	RX_RUN_WORDS	1
+utf8	RX_MEMFN_FORMS	"none"
+utf8	RX_MEMFN_LIBC	"memchr"
+utf8	RX_SIMD_GUARDED_BYTES	0x0000000000000000ULL
+utf8	RX_FINDINGS	"byte-rate=none"

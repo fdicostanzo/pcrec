@@ -1,0 +1,60 @@
+# locate_finish.md rev 2.1 §5 L0: the text the no-mover L0 CHANGES, written once as data. Rev 2 wrote it at main 7efca415;
+# rev 2.1 (lane locfin21, panel re-check LR-S1/LR-S6/LR-G1/G3/G4/G8) extends it at main 00ddf7d5 (src identical, abi 71).
+# Read by ../../docs/design/start_table/sabotage_anchors.py (a row is
+# RE-AIM iff its anchor sits in a `def` below or OVERLAPS a `token`/`line` occurrence, in EVERY file).
+# kind	value	commit	why
+def	pcrec_emit_dfa_engine	L0	the body dispatch reads LOCATE's row (empty / composite by route) in place of its if/else
+def	dfa_engine_is_empty	L0	becomes the reader of LOCATE's selection (cand_locate_of(cx)->u.locate.walk == CAND_WALK_EMPTY); its old body is the `empty` row's predicate; its eight callers are untouched
+def	DfaMatch	L0	axis G folds into cand_rows[] FINISH rows (the type goes)
+def	match_unwrapped_applies	L0	becomes verify-at's CR_DFA availability: the anchored machine was built (anchored_ok); the !empty conjunct is dropped, the caller meeting an empty body hands NOMATCH [r2.1 LR-G1, LR-G8]
+def	dfa_matches	L0	table deleted into cand_rows[] (FINISH: verify-at, search-from) [r2.1 LR-G1]
+def	dfa_match_of	L0	walk -> cand_select(FINISH, path.finish, hand = AT, or NOMATCH where the caller meets an empty body [r2.1 LR-S6 name reconciled, LR-G8])
+def	dfa_match_name	L0	reads the FINISH row's list name
+def	dfa_match_is_unwrapped	L0	reads u.finish.act == CAND_FIN_VERIFY, never a row pointer (F-2); its only remaining caller is the _match dispatch (:11588), the membership readers read the path [r2.1 LR-S1]
+def	cand_nodes	L0	LOCATE and FINISH nodes; VERIFIER loses CT_WINDOW; LOCATE->FINISH and FINISH->LOCATE edges with their progress attribute
+def	cand_select	L0	the FINISH walk filters u.finish.take & s->hand (hand mandatory on a FINISH ask)
+def	cand_rows_selfcheck	L0	totality keyed (locator route, finisher route, CT_* hand mask); progress check on succ cycles; hand mandatory; .needs cells checked against .routes [r2.1 LR-G2, LR-G4]
+token	CT_WINDOW	L0	deleted: accepted by VERIFIER, handed by no row (G2/C12)
+token	CG_NEUTRAL = 0	L0	the giveup column splits: declared contract only (CG_FIXED, also on RETRY exact/clamped/retry-anchored, LR-S11); the classification is derived (G7)
+line	.routes = CR_VM, .tok = "ceiling", .map = CM_WINDOWHI, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.giveup = CG_FIXED, .hands = CT_LOWER,	L0	.giveup -> .contract = CG_FIXED (K82 Q10)
+line	.giveup = CG_ONE_WAY, .hands = CT_CAND,	L0	declared classification deleted (derived)
+line	.giveup = CG_ONE_WAY, .hands = CT_CAND | CT_LOWER,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "adaptive", .map = CM_ADAPT, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "anchored", .map = CM_ONE, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	.routes = CR_VM, .tok = "gstart", .map = CM_ONE, .giveup = CG_ONE_WAY,	L0	declared classification deleted (derived)
+line	if (cx->job->fit.chosen != ENGM_DFA || dfa_artifact_ncaps(cx) <= 1)	L0	FINISH read -> cand_finish_of (the dead-group fill, emit_dfa.c:1650)
+line	if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);	L0	FINISH read -> cand_finish_of (:9768, :10068)
+line	PCREC_CAND_TRACE_REC("ROUTE", "dfa", cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined",	L0	trace record reads cand_finish_of (:9769)
+line	cx->job->fit.chosen == ENGM_DFA ? "entry" : "inlined", "entry-gate");	L0	trace record reads cand_finish_of (:10070)
+line	if (cx->job->fit.chosen == ENGM_DFA) {	L0	FINISH read -> cand_finish_of (:9784, :10083)
+line	if (cx->job->fit.chosen == ENGM_DFA)	L0	FINISH read -> cand_finish_of (:1728, :3145; also matches the two lines above)
+line	bool vm = job->fit.chosen == ENGM_VM;	L0	the orientation block's VM test -> cand_finish_of (:10707)
+line	if (us.empty) {	L0	emit_unanchored's empty arm moves to the LOCATE `empty` row's emitter (:9729)
+line	if (dfa_engine_is_empty(cx)) {	L0	emit_attempt's empty arm moves to the LOCATE `empty` row's emitter (:10094)
+line	if (dfa_match_is_unwrapped(cx)) {	L0	axis G's one dispatch (:11588) reads the FINISH row
+line	bool prefilter = job->fit.prefilter;	L0	the orientation block reads pcrec_artifact_has_dfa_scan (:10708)
+def	dfa_table_name	L0	[r2.1 LR-S1, LR-G4, F-10] folds over the path derivation's members & {F,R,A}; its empty/ATTEMPT returns and the pinned/unwrapped conjuncts become the fold over a smaller or empty set (runs on hybrids via emit_vm.c:11330 and the orientation block)
+def	dfa_scan_edge_name	L0	[r2.1 LR-S1, LR-G4, F-10] the same fold over the path's members
+def	dfa_uniform_folds	L0	[r2.1 LR-S1, LR-G4, F-10] the same fold over the path's members
+def	pcrec_artifact_has_dfa_scan	L0	[r2.1 LR-G4, F-9] reads the path derivation's body bit; its 12 callers are untouched
+def	dfa_scan_name	L0	[r2.1 LR-G4] RX_DFA_SCAN is the selected LOCATE row's listed name on the body route (empty / composite by route), one of the 8 dfa_engine_is_empty callers
+line	if (dfa_engine_is_empty(cx)) return false;	L0	[r2.1 LR-G4] start_pinned_applies's P4 (emit_dfa.c:7895) becomes the path's RECOVER-on-the-path read
+line	if (!pcrec_artifact_has_dfa_scan(cx) || dfa_engine_is_empty(cx))	L0	[r2.1 LR-G4] req_handoff_applies (emit_dfa.c:7355): `!has_dfa_scan || empty` becomes "the forward scan is a member of the path"
+def	pcrec_vm_prefilter_window	L0	[r2.1 LR-G3] reads the body lowering's recorded erasure set (exact iff empty), never a list of kinds
+def	pcrec_dfa_axis_match_cands	L0	[r2.1 LR-G1] the match axis is cand_rows[]' FINISH projection (verify-at listed `unwrapped` with fact_deny PCREC_NO_ANCHORED_DFA, search-from `search-filter`)
+line	if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v->up);	L0	[r2.1 LR-S1] emit_vm.c:11330, the hybrid's DFA stamps gated by the path's body bit
+line	bool pinned = (!vm || prefilter) && dfa_search_is_pinned(cx);	L0	[r2.1 LR-S8, F-9] emit_dfa.c:10713 reads the path (body bit, RECOVER's row)
+line	bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;	L0	[r2.1 F-9] emit_dfa.c:10922, the third spelling of the body bit, reads the path (moved into L0 by LR-G4)
+line	if (cx->job->fit.chosen != ENGM_DFA) return;	L0	[r2.1 LR-S8, LR-G1] compile.c:229, build_anchored_dfa: build A iff a FINISH row on the finisher route needs it (the path's NEEDS half); the deny below it is the one site that reads -fno-anchored-dfa
+line	if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {	L0	[r2.1 LR-S8, F-9] compile.c:2381, the fourth spelling of the body bit, reads the path
+line	v->mrl_win = pcrec_vm_prefilter_window(cx);	L0	[r2.1 LR-S2, LR-S6] emit_vm.c:10368, the boundary projection's ONE assignment (cand_lang_exact) and its trace record; the three window consumers (entry :13396-13406, RETRY recompute :13261-13276, adaptive re-seed :13310-13327) read the field, so the projection covers all three by construction
+line	case A_LOOK:   return frag_single(b, N_EPS);	L0	[r2.1 LR-G3] src/ir/nfa.c: the lookaround erasure records itself in the built machine's erasure set
+line	return compile_ast(b, a->l);	L0	[r2.1 LR-G3] src/ir/nfa.c:905, the atomic erasure records itself
+line	rmin = rmin ? 1 : 0;	L0	[r2.1 LR-G3] src/ir/nfa.c:797, the count collapse records itself
+line	emit_dfa_list_axis(&sb, "match", "list", pcrec_dfa_axis_match_cands);	L0	[r2.1 LR-G1] src/dump/axes_dump.c:1088 lists the FINISH rows' match projection
+line	{ "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },	L0	[r2.1 LR-G1] the desc moves beside the row (C6), text unchanged
+line	{ "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },	L0	[r2.1 LR-G1] the desc moves beside the row (C6), text unchanged
+line	.routes = CR_VM, .tok = "exact", .map = CM_STEP, .hands = CT_CAND | CT_LOWER,	L0	[r2.1 LR-S11] .contract = CG_FIXED (emit_dfa.c:8331-8345's ruling)
+line	.routes = CR_VM, .tok = "clamped", .map = CM_RESEED, .hands = CT_LOWER,	L0	[r2.1 LR-S11] .contract = CG_FIXED
+line	.routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,	L0	[r2.1 LR-S11] .contract = CG_FIXED (RETRY's retry-anchored row)

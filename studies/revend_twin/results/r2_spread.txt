@@ -1,0 +1,48 @@
+cells 71
+o: n 71 CV median 0.010 p90 0.051 max 0.158
+c: n 68 CV median 0.012 p90 0.042 max 0.278
+a: n 65 CV median 0.013 p90 0.037 max 0.211
+b: n 68 CV median 0.010 p90 0.028 max 0.201
+c vs o: c faster 68, c slower 0, inside noise 0
+
+c vs b: c faster 49, c slower 17, inside noise 2
+    slower ('bench-abc-dollar', '1m.non') 3.1 vs 2.8
+    slower ('bench-anc-dollar', '1m.non') 3.1 vs 2.7
+    slower ('bench-anc-z-uc', '1m.non') 3.1 vs 2.7
+    slower ('c-a5b5-dollar', '1m.non') 4.7 vs 4.3
+    slower ('c-bfoo-dollar', '1m.non') 2.9 vs 2.6
+    slower ('c-error-dollar', '1m.non') 3.1 vs 2.7
+    inside-noise ('c-xaz5-z', '1m.non') 2.2±0.56 vs 2.6±0.52
+    slower ('tail-digits-eol', 't-tail-space-1m') 3.1 vs 2.5
+    slower ('tail-digits-eol', 't-tail-txt-1m') 3.1 vs 2.5
+    slower ('tail-dotstar-txt', 't-tail-digits-1m') 3.3 vs 3.1
+    slower ('tail-dotstar-txt', 't-tail-space-1m') 3.3 vs 3.1
+    slower ('tail-ext-lower-txt', 't-tail-digits-1m') 3.1 vs 2.7
+    slower ('tail-ext-lower-txt', 't-tail-space-1m') 3.1 vs 2.7
+    slower ('tail-space-eol', 't-tail-digits-1m') 3.1 vs 2.6
+    slower ('tail-space-eol', 't-tail-txt-1m') 3.1 vs 2.7
+    slower ('tail-space-eol', 't-trim-nearmiss-16k') 3.1 vs 2.6
+    inside-noise ('tail-word-eoz', 't-tail-space-1m') 2.2±0.08 vs 2.2±0.00
+    slower ('w-d18-dollar', '1m.non') 3.1 vs 2.5
+    slower ('w-foo-barbaz-txt', '1m.non') 3.1 vs 2.9
+c vs a: c faster 45, c slower 13, inside noise 7
+    slower ('bench-abc-dollar', '1m.non') 3.1 vs 2.9
+    inside-noise ('bench-anc-dollar', '1m.non') 3.1±0.04 vs 3.0±0.04
+    inside-noise ('bench-anc-z-uc', '1m.non') 3.1±0.04 vs 3.0±0.04
+    slower ('c-a5b5-dollar', '1m.non') 4.7 vs 4.6
+    slower ('c-bfoo-dollar', '1m.non') 2.9 vs 2.8
+    inside-noise ('c-error-dollar', '1m.non') 3.1±0.08 vs 3.0±0.08
+    inside-noise ('c-xaz5-z', '1m.non') 2.2±0.56 vs 2.8±0.60
+    slower ('tail-digits-eol', 't-tail-space-1m') 3.1 vs 2.9
+    slower ('tail-digits-eol', 't-tail-txt-1m') 3.1 vs 2.9
+    inside-noise ('tail-dotstar-txt', 't-tail-digits-1m') 3.3±0.00 vs 3.3±0.00
+    inside-noise ('tail-dotstar-txt', 't-tail-space-1m') 3.3±0.00 vs 3.3±0.00
+    slower ('tail-ext-lower-txt', 't-tail-digits-1m') 3.1 vs 3.0
+    slower ('tail-ext-lower-txt', 't-tail-space-1m') 3.1 vs 3.0
+    slower ('tail-space-eol', 't-tail-digits-1m') 3.1 vs 2.9
+    slower ('tail-space-eol', 't-tail-spacenl-1m') 11.7 vs 10.9
+    slower ('tail-space-eol', 't-tail-txt-1m') 3.1 vs 2.9
+    slower ('tail-space-eol', 't-trim-nearmiss-16k') 3.1 vs 2.9
+    slower ('w-d18-dollar', '1m.non') 3.1 vs 2.9
+    inside-noise ('w-foo-barbaz-txt', '1m.nl') 9.2±2.56 vs 18.9±3.28
+    slower ('w-foo-barbaz-txt', '1m.non') 3.1 vs 3.0

@@ -1,0 +1,95 @@
+ctl/u8-dot-noguard         landing-u8       ex            cells=62432   twin_diff=0          calls=37586      call_diff=3047       NEW_BAD=0  findall_calls=22823   findall_diff=0
+ctl/u8-dot-noguard         landing-u8       pool_utf8     cells=1555    twin_diff=0          calls=980        call_diff=32         NEW_BAD=0  findall_calls=751     findall_diff=0
+ctl/u8-pL-noguard          landing-u8       ex            cells=62432   twin_diff=0          calls=23676      call_diff=2027       NEW_BAD=0  findall_calls=14473   findall_diff=0
+ctl/u8-pL-noguard          landing-u8       pool_utf8     cells=1555    twin_diff=0          calls=699        call_diff=32         NEW_BAD=0  findall_calls=558     findall_diff=0
+ctl/u8-dot-hybrid-noguard  landing-u8       ex            cells=62432   twin_diff=0          calls=37586      call_diff=3047       NEW_BAD=0  findall_calls=22823   findall_diff=0
+ctl/u8-dot-hybrid-noguard  landing-u8       pool_utf8     cells=1555    twin_diff=0          calls=980        call_diff=32         NEW_BAD=0  findall_calls=751     findall_diff=0
+ctl/abcd-w+1               width:5          ex            cells=151367  twin_diff=0          calls=252        call_diff=252        NEW_BAD=0  findall_calls=19617   findall_diff=0
+ctl/abcd-w+1               width:5          pool_byte     cells=20351   twin_diff=0          calls=52         call_diff=52         NEW_BAD=0  findall_calls=862     findall_diff=0
+ctl/u8-e-acute-w+1         width:3          ex            cells=215223  twin_diff=0          calls=44319      call_diff=44319      NEW_BAD=0  findall_calls=32832   findall_diff=0
+ctl/u8-e-acute-w+1         width:3          pool_utf8     cells=1555    twin_diff=0          calls=21         call_diff=21         NEW_BAD=0  findall_calls=308     findall_diff=0
+ctl/hyb-d4-w+1             width:5          ex            cells=491520  twin_diff=0          calls=77517      call_diff=77517      NEW_BAD=0  findall_calls=44491   findall_diff=0
+ctl/hyb-d4-w+1             width:5          pool_byte     cells=20351   twin_diff=0          calls=57         call_diff=57         NEW_BAD=0  findall_calls=861     findall_diff=0
+ctl/literal-ab             landing          ex            cells=310007  twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=54128   findall_diff=0
+ctl/literal-ab             landing          pool_byte     cells=20351   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=2010    findall_diff=0
+ctl/x-star-y               landing          ex            from=0        orig=1(0,2)          twin=1(1,2)      subj=7879                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(0,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(0,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+subjects=29524             twin_diff=55152  calls=0       |             oracle_cells=280483  orig_vs_pcre2=0  twin_vs_pcre2=55152                                   
+ctl/x-star-y               landing          pool_byte     from=0        orig=1(0,2)          twin=1(1,2)      subj=7879                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+TWIN-DIFF                  orig=1(0,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(0,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(0,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(0,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+subjects=848               twin_diff=357    calls=0       |             oracle_cells=18747   orig_vs_pcre2=0  twin_vs_pcre2=294                                     
+ctl/ab-or-xstar-y          landing          ex            from=0        orig=1(1,2)          twin=1(0,2)      subj=6179                                             
+NEW-BAD                    twin=1(0,2)      pcre2=1(1,2)                                                                                                            
+TWIN-DIFF                  orig=1(0,2)      twin=1(1,2)                                                                                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+TWIN-DIFF                  orig=1(2,3)      twin=1(1,3)                                                                                                             
+NEW-BAD                    twin=1(1,3)      pcre2=1(2,3)                                                                                                            
+TWIN-DIFF                  orig=1(2,3)      twin=1(1,3)                                                                                                             
+NEW-BAD                    twin=1(1,3)      pcre2=1(2,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+subjects=19531             twin_diff=17491  calls=0       |             oracle_cells=131836  orig_vs_pcre2=0  twin_vs_pcre2=17491                                   
+ctl/ab-or-xstar-y          landing          pool_byte     from=0        orig=1(2,4)          twin=1(0,4)      subj=61616162                                         
+NEW-BAD                    twin=1(0,4)      pcre2=1(2,4)                                                                                                            
+TWIN-DIFF                  orig=1(2,4)      twin=1(1,4)                                                                                                             
+NEW-BAD                    twin=1(1,4)      pcre2=1(2,4)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(0,3)                                                                                                             
+NEW-BAD                    twin=1(0,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(0,3)                                                                                                             
+NEW-BAD                    twin=1(0,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(0,2)      twin=1(1,2)                                                                                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+subjects=848               twin_diff=1586   calls=0       |             oracle_cells=18747   orig_vs_pcre2=0  twin_vs_pcre2=1460                                    
+ctl/xa-or-a                landing          ex            from=0        orig=1(0,2)          twin=1(1,2)      subj=7861                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(1,3)      twin=1(2,3)                                                                                                             
+NEW-BAD                    twin=1(2,3)      pcre2=1(1,3)                                                                                                            
+TWIN-DIFF                  orig=1(0,2)      twin=1(1,2)                                                                                                             
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+subjects=29524             twin_diff=55152  calls=0       |             oracle_cells=280483  orig_vs_pcre2=0  twin_vs_pcre2=55152                                   
+ctl/xa-or-a                landing          pool_byte     from=0        orig=1(0,2)          twin=1(1,2)      subj=786162                                           
+NEW-BAD                    twin=1(1,2)      pcre2=1(0,2)                                                                                                            
+TWIN-DIFF                  orig=1(2,4)      twin=1(3,4)                                                                                                             
+NEW-BAD                    twin=1(3,4)      pcre2=1(2,4)                                                                                                            
+TWIN-DIFF                  orig=1(2,4)      twin=1(3,4)                                                                                                             
+NEW-BAD                    twin=1(3,4)      pcre2=1(2,4)                                                                                                            
+TWIN-DIFF                  orig=1(2,4)      twin=1(3,4)                                                                                                             
+NEW-BAD                    twin=1(3,4)      pcre2=1(2,4)                                                                                                            
+TWIN-DIFF                  orig=1(2,4)      twin=1(3,4)                                                                                                             
+NEW-BAD                    twin=1(3,4)      pcre2=1(2,4)                                                                                                            
+subjects=848               twin_diff=216    calls=0       |             oracle_cells=18747   orig_vs_pcre2=0  twin_vs_pcre2=216                                     
+ctl/w-then-at              landing          ex            cells=310007  twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=54128   findall_diff=0
+ctl/w-then-at              landing          pool_byte     cells=20351   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=863     findall_diff=0
+ctl/w-boundary-end         landing          ex            cells=491520  twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=147455  findall_diff=0
+ctl/w-boundary-end         landing          pool_byte     cells=20351   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=1841    findall_diff=0
+ctl/boundary-w             landing          ex            cells=491520  twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=147455  findall_diff=0
+ctl/boundary-w             landing          pool_byte     cells=20351   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=1841    findall_diff=0
+ctl/dot-3-8                NOT-TWINNABLE:   mktwin:       guard         (next-none,          or               two                                                   
+ctl/u8-dot-3-8             landing-u8       ex            cells=62432   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=9206    findall_diff=0
+ctl/u8-dot-3-8             landing-u8       pool_utf8     from=0        orig=1(2,5)          twin=1(0,5)      subj=61ce7a7a61                                       
+NEW-BAD                    twin=1(0,5)      pcre2=1(2,5)                                                                                                            
+TWIN-DIFF                  orig=1(2,5)      twin=1(0,5)                                                                                                             
+NEW-BAD                    twin=1(0,5)      pcre2=1(2,5)                                                                                                            
+subjects=300               twin_diff=2      calls=0       |             oracle_cells=877     orig_vs_pcre2=0  twin_vs_pcre2=2                                       
+ctl/az-2plus               landing          ex            cells=491520  twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=86015   findall_diff=0
+ctl/az-2plus               landing          pool_byte     cells=20351   twin_diff=0          calls=0          call_diff=0          NEW_BAD=0  findall_calls=1485    findall_diff=0

@@ -1,0 +1,176 @@
+diff --git a/src/gen/emit_dfa.c b/src/gen/emit_dfa.c
+index 638dd558..ab805f55 100644
+--- a/src/gen/emit_dfa.c
++++ b/src/gen/emit_dfa.c
+@@ -9257,6 +9257,163 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
+  * carries both a stay skip and an edge, and no seed target is a head on a
+  * machine whose prefilter reseeds — and they are worth having precisely
+  * because they cannot share a source with what they check. */
++/* ==== [START-LANDING] PROTOTYPE PROBE (studies/start_landing/proto.patch) ====
++ * NOT A BUILD PATH. Prints, per forward form derivation, the facts the
++ * design's two RECOVER rows read, when PCREC_LANDPROBE is set. */
++#define LP_MAXW 4096
++typedef struct {
++    const Nfa *nfa; uint8_t *seen; unsigned gen; int *stack;
++    long budget;
++} LpWalk;
++
++/* EXACT closure of `seeds`: N_CLASS members into cur[], accept reached on an
++ * assertion-free epsilon path -> *acc; any assertion node reached -> *asrt
++ * (not passed: an assertion makes the walk decline, never widen). */
++static int lp_close(LpWalk *w, const int *seeds, int ns, int *cur, bool *acc, bool *asrt)
++{
++    int sp = 0, nc = 0;
++    if (++w->gen == 0) { memset(w->seen, 0, (size_t)w->nfa->n * sizeof *w->seen); w->gen = 1; }
++    *acc = false; *asrt = false;
++    for (int i = 0; i < ns; i++) {
++        int s = seeds[i];
++        if (s < 0 || s >= w->nfa->n || w->seen[s] == (uint8_t)w->gen) continue;
++        w->seen[s] = (uint8_t)w->gen; w->stack[sp++] = s;
++    }
++    while (sp > 0) {
++        int s = w->stack[--sp];
++        const NState *st = &w->nfa->st[s];
++        int nx[2], nn = 0;
++        switch (st->k) {
++        case N_CLASS: cur[nc++] = s; break;
++        case N_ACCEPT: *acc = true; break;
++        case N_SPLIT: nx[nn++] = st->t1; nx[nn++] = st->t2; break;
++        case N_EPS: nx[nn++] = st->t1; break;
++        case N_BOT: case N_EOL: case N_END: case N_BOT_M: case N_EOL_M:
++        case N_CTX: case N_GSTART: case N_CSTART:
++            *asrt = true; break;
++        }
++        for (int i = 0; i < nn; i++) {
++            int t = nx[i];
++            if (t < 0 || t >= w->nfa->n || w->seen[t] == (uint8_t)w->gen) continue;
++            w->seen[t] = (uint8_t)w->gen; w->stack[sp++] = t;
++        }
++    }
++    return nc;
++}
++
++static int lp_cmp(const void *a, const void *b) { int x = *(const int *)a, y = *(const int *)b; return (x > y) - (x < y); }
++
++/* One-CHARACTER dead-or-accept from frontier `cur` at byte depth `depth`.
++ * Returns NULL on success, else the decline reason. */
++static const char *lp_char(LpWalk *w, const int *cur, int nc, int depth, bool mb)
++{
++    if (--w->budget < 0) return "budget";
++    int n = w->nfa->n;
++    int *seeds = malloc(sizeof(int) * (size_t)(nc ? nc : 1));
++    int *nxt = malloc(sizeof(int) * (size_t)n);
++    /* distinct successor seed lists, deduped per frontier */
++    int **done = malloc(sizeof(int *) * 256); int *dlen = malloc(sizeof(int) * 256); int nd = 0;
++    const char *why = NULL;
++    for (int b = 0; b < 256 && !why; b++) {
++        int ns = 0;
++        for (int i = 0; i < nc; i++)
++            if (cls_has(w->nfa->st[cur[i]].cls, (unsigned)b)) seeds[ns++] = w->nfa->st[cur[i]].t1;
++        if (ns == 0) continue;                       /* dead on b */
++        qsort(seeds, (size_t)ns, sizeof(int), lp_cmp);
++        int dup = 0;
++        for (int k = 0; k < nd && !dup; k++)
++            if (dlen[k] == ns && !memcmp(done[k], seeds, sizeof(int) * (size_t)ns)) dup = 1;
++        if (dup) continue;
++        done[nd] = malloc(sizeof(int) * (size_t)ns); memcpy(done[nd], seeds, sizeof(int) * (size_t)ns); dlen[nd++] = ns;
++        bool acc, asrt;
++        int nn = lp_close(w, seeds, ns, nxt, &acc, &asrt);
++        if (acc) continue;                           /* unconditional accept */
++        if (asrt) { why = "assert-after"; break; }
++        if (nn == 0) continue;                       /* dead */
++        /* alive, not accepted: only mid-character under a multibyte enc */
++        if (!mb || depth >= 3) { why = "alive-not-accept"; break; }
++        for (int i = 0; i < nn && !why; i++)
++            for (int c = 0; c < 256; c++)
++                if (cls_has(w->nfa->st[nxt[i]].cls, (unsigned)c) && (c < 0x80 || c > 0xBF)) { why = "alive-not-accept"; break; }
++        if (why) break;
++        int *cp = malloc(sizeof(int) * (size_t)nn); memcpy(cp, nxt, sizeof(int) * (size_t)nn);
++        why = lp_char(w, cp, nn, depth + 1, mb);
++        free(cp);
++    }
++    for (int k = 0; k < nd; k++) free(done[k]);
++    free(done); free(dlen); free(seeds); free(nxt);
++    return why;
++}
++
++/* THE LANDING FACT (design §2): NULL when it holds, else the reason. */
++static const char *lp_land_fact(const Nfa *nfa, bool mb)
++{
++    if (nfa->n <= 0 || nfa->anch_start < 0) return "no-nfa";
++    LpWalk w = { nfa, calloc((size_t)nfa->n, 1), 0, malloc(sizeof(int) * (size_t)nfa->n * 2 + 8), 200000 };
++    int *cur = malloc(sizeof(int) * (size_t)nfa->n);
++    bool acc, asrt; int seed = nfa->anch_start;
++    int nc = lp_close(&w, &seed, 1, cur, &acc, &asrt);
++    const char *why = NULL;
++    if (acc) why = "nullable";
++    else if (asrt) why = "assert-at-start";
++    else if (nc == 0) why = "empty";
++    if (!why && mb)
++        for (int i = 0; i < nc && !why; i++)
++            for (int c = 0x80; c <= 0xBF; c++)
++                if (cls_has(nfa->st[cur[i]].cls, (unsigned)c)) { why = "cont-in-start-set"; break; }
++    if (!why) why = lp_char(&w, cur, nc, 0, mb);
++    free(cur); free(w.seen); free(w.stack);
++    return why;
++}
++
++/* THE FIXED BYTE WIDTH: W >= 0 when every path from anch_start to accept has
++ * exactly W bytes (assertions PASSED: zero-width, a superset of paths), else -1. */
++static long lp_fixed_width(const Nfa *nfa)
++{
++    if (nfa->n <= 0 || nfa->anch_start < 0) return -1;
++    int n = nfa->n;
++    uint8_t *seen = calloc((size_t)n, 1); int *stack = malloc(sizeof(int) * (size_t)n * 2 + 8);
++    int *cur = malloc(sizeof(int) * (size_t)n), *seeds = malloc(sizeof(int) * (size_t)n);
++    int ns = 1; seeds[0] = nfa->anch_start; long W = -1;
++    for (long j = 0; j <= n + 1 && j <= LP_MAXW; j++) {
++        memset(seen, 0, (size_t)n);
++        int sp = 0, nc = 0; bool acc = false;
++        for (int i = 0; i < ns; i++) if (!seen[seeds[i]]) { seen[seeds[i]] = 1; stack[sp++] = seeds[i]; }
++        while (sp > 0) {
++            int s = stack[--sp]; const NState *st = &nfa->st[s]; int nx[2], nn = 0;
++            switch (st->k) {
++            case N_CLASS: cur[nc++] = s; break;
++            case N_ACCEPT: acc = true; break;
++            case N_SPLIT: nx[nn++] = st->t1; nx[nn++] = st->t2; break;
++            default: nx[nn++] = st->t1; break;  /* every assertion and N_EPS: passed */
++            }
++            for (int i = 0; i < nn; i++) { int t = nx[i]; if (t >= 0 && t < n && !seen[t]) { seen[t] = 1; stack[sp++] = t; } }
++        }
++        if (acc) { W = (nc == 0) ? j : -1; break; }
++        if (nc == 0) break;
++        ns = 0;
++        for (int i = 0; i < nc; i++) seeds[ns++] = nfa->st[cur[i]].t1;
++    }
++    free(seen); free(stack); free(cur); free(seeds);
++    return W;
++}
++
++static void lp_probe(Ctx *cx, const Dfa *d, const CandRow *pf)
++{
++    if (!getenv("PCREC_LANDPROBE") || d != &cx->job->dfa) return;
++    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
++    bool mb = pcrec_enc_has_entry(enc, PCREC_ENCE_DECODE);
++    const char *lf = lp_land_fact(&cx->job->nfa, mb);
++    long W = lp_fixed_width(&cx->job->nfa);
++    bool seeded = dfa_needs_seed(d) || d->s1u[UPC_PLAIN] != d->s0;
++    for (int u = 0; u < d->natoms; u++) if (d->s1g[u] != d->s1u[u]) seeded = true;
++    fprintf(stderr, "LANDPROBE\troute=%s\tfit=%s\tnext=%s\tseeded=%d\tland=%s\tfixedw=%ld\trecover=%s\tmb=%d\n",
++            CAND_ROUTE_NAME(cand_route_of(cx)),
++            cx->job->fit.chosen == ENGM_DFA ? "dfa" : "vm", pf->tok, seeded,
++            lf ? lf : "OK", W, dfa_search_start_of(cx)->tok, mb);
++}
++/* ==== end PROTOTYPE PROBE ==== */
++
+ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
+                             const DfaDir *dir, DfaForm *f)
+ {
+@@ -9282,6 +9439,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
+      * NEXT slot of `cand_rows[]`, on this body's route (`cand_route_of`:
+      * every machine here is ENG_UNANCH's, so `CAND_ROUTE_DFA`). */
+     f->pf      = cand_select(CAND_SLOT_NEXT, &s, flags);
++    if (!dir->reverse) lp_probe(cx, d, f->pf);
+     if (d == &cx->job->dfa)
+         PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->tok, "form-fwd");
+     else

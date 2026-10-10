@@ -333,7 +333,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-manifest test-memfn-g2 test-memfn-stamps test-memfn-arms \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
-      test-memfn-simdfloor
+      test-memfn-simdfloor \
+      test-memfn-rank
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1292,6 +1293,16 @@ test-memfn-simdfloor: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-simdfloor.ran"; fi
 	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_simd_floor.sh
 
+# [MEMFN] RQ-2 (D157): the PROBE build (-DPCREC_RANK_PROBE: every PRE/OFS
+# predicate pcrec hands the kit, with the mf_pred.rank_* it carries, on
+# stderr) over the corpus at three arms: each ranking equals a brute force
+# under the compile's byte-rate, a predicate with no RUN term carries
+# rank_n 0, and a PRE predicate scans rank_pos[0]. Seconds, plus the probe
+# build.
+test-memfn-rank: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-memfn-rank.ran"; fi
+	CC="$(CC)" TMPDIR=$${TMPDIR:-/var/tmp} bash tests/memfn/run_rank.sh
+
 # [MEMFN] R4c: C5, the per-arm pins (tests/memfn/pins/arms.tsv): every
 # scalar arm the kit carries renders its fixed fixture sites
 # (tests/memfn/arm_fixtures.c) to the pinned sha256, with a perturbed-fixture
@@ -1884,7 +1895,7 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-utfcheck test-memfn-link test-core test-examples test-clskit \
-        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor \
+        test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
         test-startset \

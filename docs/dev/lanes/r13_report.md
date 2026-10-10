@@ -296,3 +296,13 @@ by the lane at handback (see §9 for the completed state).
 | 6 provenance: SPDX/headers, PROVENANCE.md, CLAUDE.md files | DONE (C16 green: test-memfn-link 8/0) |
 | 7 this report; OWED list; lanes/CLAUDE.md line | DONE |
 | no build of the filed list | held: no fn-memchr over, no lead form, no w64, no cascade |
+
+## Addendum (2026-10-09 evening, kit manager): MF_SITE_ABI renumbered 9 -> 10
+
+RQ-2 (D157's ranked array) landed on main first as `MF_SITE_ABI` 9
+(7b98a046). At the merge of main into lane/memfn-r13 the sink ops took
+10, per Q-R13-3. The readers were found by grep and moved to 10: memfn.h's
+define and its comment block, the memfn/include, memfn, memfn/tests and
+lanes CLAUDE.md lines, memfn_sites.h, and integration.md's batch-1 note.
+The number appears in this report's text above as 9 because that was its
+number when the report was written.

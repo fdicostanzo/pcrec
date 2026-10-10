@@ -1,0 +1,13 @@
+id	pattern
+lit-1ch-2b	é
+lit-1ch-3b	日
+lit-1ch-4b	😀
+lit-anchored-run	^日本語$
+lit-cyr-run	Москва
+lit-mixed-ascii	user@例え.jp
+lit-nearmiss-run	日本語
+lit-nfc-pair	café
+lit-offset-at-head	@é
+lit-offset-at-tail	é@
+lit-run-3	日本語
+lit-sharp-s	Straße

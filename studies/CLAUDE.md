@@ -279,5 +279,38 @@ re-measure before load-bearing use.
   against the artifact and libpcre2 10.46 (every startpos, find-all), two
   `TWIN_SABOTAGE` controls must fail, `timedrv.c` times both on 1 MiB tails.
   Backs `docs/design/revend.md` §6-§7. See its own CLAUDE.md.
+- `u8pick_twin/` — [U8-PICK] STEP 0 (lane u8pick0, 2026-10-09; measurement only,
+  scratch tier, Linux dev box): the 12 bench `lit-*` utf8 cells compiled `-e byte`
+  vs `-e utf8` (plus a scratch structural UTF-8 prior, the bench pin's compiler as
+  a calibration arm, and memmem / AVX2-pair proxies), timed on the bench's own
+  regenerated subjects, 15 interleaved pinned passes, answer identity 0 diffs.
+  Backs `docs/dev/lanes/u8pick0_report.md`. See its CLAUDE.md.
+- `locate_finish/` — D156's LOCATE × FINISH census (lane locfin, 2026-10-09;
+  compile-side, Linux dev box): every corpus/bench artifact's locator and finisher
+  today, the stage-1/stage-2/relaxed-reverse populations, D-2's population, and the
+  `fit.chosen` grep behind the FINISH decision; five controls gate the tables
+  (stamp vs emitted text twice, the borrowed end-pin probe vs the shipped fact both
+  ways, the hybrid classifier vs `RX_VM_RESEED` — plumbing, not independent — and,
+  since rev 2.1, the machine-membership rule vs the emitted text). Also the L0 edit
+  set and its derived sabotage re-aims. Borrows `docs/dev/optloop/revend/`'s
+  population and probe. Backs `docs/design/locate_finish.md` §2.7, §3-§5. See its own
+  CLAUDE.md.
+
+- `walk_survey/` — the GRATUITOUS-WALK SURVEY (lane walksurvey, 2026-10-09;
+  survey + measurement only): a per-phase subject-load instrument (the
+  artifact compiled with KASAN-style call hooks, loads attributed to phases by
+  the emitted line), run over every bench cell and every corpus pattern block,
+  classes K1-K12 with gratuitous-byte counts, and answer-checked hand-twins
+  for the top classes. Backs `docs/dev/walk_survey.md`. See its own CLAUDE.md.
+
+- `start_landing/` — `[START-LANDING]`'s evidence (lane landdes, 2026-10-09;
+  design + hand-twin only, Linux dev box): a scratch fact-probe patch (prints
+  the landing fact and the fixed byte width, selects nothing), the census over
+  walk_survey's bench and corpus populations with the design's first-match
+  rows applied, an emitter-independent twin transformer (`replace` and
+  per-call `assert` modes, DFA bodies and hybrid prefilters alike), a
+  three-answerer identity driver against libpcre2 10.46 with failing controls,
+  and directional timing. Backs `docs/design/start_landing.md`. See its own
+  CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

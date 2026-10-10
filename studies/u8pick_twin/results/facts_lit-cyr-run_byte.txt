@@ -1,0 +1,61 @@
+# pcrec --emit-facts: the pattern-facts record of the compile(s) below,
+# one per encoding (docs/spec/facts_listing.md). A DEBUG listing: the
+# section and column names and the status/used/why vocabularies are
+# promised; the fact names, reasons and notes are advisory.
+#section facts
+# One row per record fact, in facts.def order. `used` is yes when a pass
+# asked for the fact while the artifact was built, no when only this
+# listing asked (after the artifact was complete).
+#encoding	fact	grain	epoch	status	used	value	why	note
+byte	kinds	pattern	E1	derived	yes	none		core; owner src/facts/kinds.c
+byte	nullable	pattern	E1	derived	yes	no		core; owner src/facts/widths.c
+byte	empty_admits	pattern	E1	derived	yes	no		core; owner src/facts/widths.c
+byte	start_anchor	pattern	E2	derived	no	unanchored		core; owner src/facts/startanch.c
+byte	start_set	pattern	E2	derived	yes	1:0000000000000000000000000000000000000000000000000000010000000000		core; owner src/facts/startset.c
+byte	end_window	pattern	E2	declined	yes	none	decline:not-end-anchored	core; owner src/facts/endwin.c
+byte	req_set	pattern	E2	derived	yes	129,156,176,178,186,190,208,209		core; owner src/facts/req.c
+byte	req_whole_run	pattern	E2	derived	yes	d09cd0bed181d0bad0b2d0b0		core; owner src/facts/req.c
+byte	req_run	pattern	E2	derived	yes	d181d0bad0b2d0b0@7	rate:builtin-prior	derived; owner src/facts/req.c
+byte	req_run_maxoff	pattern	E2	derived	yes	4		derived; owner src/facts/req.c
+byte	req_byte	pattern	E2	derived	yes	176	rate:builtin-prior	derived; owner src/facts/req.c
+byte	kset_walk	pattern	E3	derived	yes	208,156,208,190,209,129,208,186,208,178,208,176		core; owner src/facts/kset.c
+byte	run_pin	pattern	E3	derived	yes	4		derived; owner src/facts/kset.c
+#section decisions
+# The artifact's own value stamps, read off the emitted C as written:
+# the route and emission DECISIONS the record does not hold (D124).
+#encoding	stamp	value
+byte	PCREC_FEATURE_SET	"all"
+byte	PCREC_FEATURE_MODULES	"classes,unicode-props,assertions,backrefs,recursion,quoting,misc,lookaround,named-groups,atomic-groups,comments,callouts,branch-reset,conditionals,extended-classes,modifiers,ucp,verbs,vars"
+byte	RX_ALTCLS_MERGES	0
+byte	RX_ALTCLS_FACTORED	0
+byte	RX_STARTPOS_GUARD	"permissive"
+byte	RX_UTF_CHECK	"inert"
+byte	RX_END_WINDOW	"none"
+byte	RX_REQ_BYTE	"176"
+byte	RX_REQ_RUN	"d181d0bad0b2d0b0@7"
+byte	RX_REQ_WHY	"emitted"
+byte	RX_REQ_HANDOFF	"4"
+byte	RX_VM_START_SCAN	"none"
+byte	RX_TUNE	"balanced"
+byte	RX_NCAPS	1
+byte	RX_RESUME_FRAMES	0
+byte	RX_TRAIL_FRAMES	0
+byte	RX_RESUME_FRAME_SIZE	0
+byte	RX_TRAIL_FRAME_SIZE	0
+byte	RX_BUFFER_ALIGN	1
+byte	RX_ENGINE	"dfa"
+byte	RX_ENGINE_SEL	"selected"
+byte	RX_DFA_SCAN	"unanchored"
+byte	RX_DFA_PREFILTER	"memchr"
+byte	RX_DFA_PREFILTER_OFFSETS	"none"
+byte	RX_DFA_TABLE	"premultiplied"
+byte	RX_DFA_UNIFORM_FOLDS	0
+byte	RX_DFA_SCAN_EDGE	"none"
+byte	RX_DFA_START	"reverse-pass"
+byte	RX_DFA_MATCH	"unwrapped"
+byte	RX_MAX_EMIT_BYTES	1000000
+byte	RX_RUN_WORDS	0
+byte	RX_MEMFN_FORMS	"none"
+byte	RX_MEMFN_LIBC	"memchr,memcmp"
+byte	RX_SIMD_GUARDED_BYTES	0x0000000000000000ULL
+byte	RX_FINDINGS	"byte-rate=default:1822fb973b95a4da"

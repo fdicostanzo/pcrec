@@ -2754,7 +2754,7 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     - Instruments: `startset/rev2/` (own CLAUDE.md).
   - **§6.4 (lane `ssedge`, same day) is D148 addendum 1's edge evidence**: 80 draft edge blocks / 2,070 libpcre2-generated cells (10.48 and 10.46 agree on all), and a mutation run in which every listed wrong variant is detected at answer level except two equivalent ones. It refutes two of the note's claims: the unconditional re-seed is unsound on ordinary seeded movers, not only `\G`, and `Tdfa` is not a sound floor. It also finds the DFA hat `-bounded`-only and flags the weak §6.3 rows. Instruments: `startset/edge/`.
 - `startset/` — that note's census, first-set probe, hand twins and transcripts (own CLAUDE.md).
-- `where_to_start.md` — **STUDY, design only** (lane `startstudy`, 2026-10-06, from main `6816f839`): Frank's three questions — a general strategy for not starting at the beginning, whether a reverse walk from an inner landmark records the match start, and whether that works as a prefilter. §1 casts every shipped start mechanism (anchors, `dfa_pfs[]`'s rows, the START-SET hats, the req pre-checks, K82 set-leads and handoff, OPT-ENDWIN, the reverse pass, the hybrid prefilter) as rows of one contract (landmark, scanner, mapping EXACT/WINDOW/LOWER-BOUND/PRESENCE, verifier), names four parallel special cases with file:line, and places a new REVERSE-WALK candidate row in information order. §2 is the soundness argument for `P·L·S` (the walk records the smallest accepting start; exact iff P is regular-faithful and the split unambiguous, rust's `has_no_earlier_match` [RArevinner], whose July-2026 fix is the which-occurrence bug) with an edge/mutation table against libpcre2 10.48: 0 wrong over 329,771 gated searches + 57,204 find-alls, all 6 mutations detected, the ungated tactic and the erased-atomic walk both wrong. §3: the prefilter form reaches the backref/linked-call VM population (only P must be backref-free); bounded P collapses to offset-k/handoff; the give-up surface moves one-way. §4: census with controls (C2/C3 at 0 disagreements): the best landmark is behind the start on 480 corpus / 24 bench unanchored patterns, the new exact mapping on 77 / 8. §5: recommendation, D77 triggers, row re-scoping ([ENG-TACTICS], [ARTREV] I1) and six questions. Instruments: `where_to_start/`.
+- `where_to_start.md` — **STUDY, design only** (lane `startstudy`, 2026-10-06, from main `6816f839`; **§2.2 step 1, §2.4 and §3 CORRECTED in place by lane locfin2, `[r2 E1]`**: the per-occurrence tactic is unsound when `S` references a group of `P` — new gate G4, else a LOWER bound to the attempt loop; **G4 restated as a CLOSED predicate over node kinds by lane locfin21, `[r2.1 LR-S5]`**: `refs[]` read as a set, so a DUPNAMES reference spanning `P` and `S` fails it): Frank's three questions — a general strategy for not starting at the beginning, whether a reverse walk from an inner landmark records the match start, and whether that works as a prefilter. §1 casts every shipped start mechanism (anchors, `dfa_pfs[]`'s rows, the START-SET hats, the req pre-checks, K82 set-leads and handoff, OPT-ENDWIN, the reverse pass, the hybrid prefilter) as rows of one contract (landmark, scanner, mapping EXACT/WINDOW/LOWER-BOUND/PRESENCE, verifier), names four parallel special cases with file:line, and places a new REVERSE-WALK candidate row in information order. §2 is the soundness argument for `P·L·S` (the walk records the smallest accepting start; exact iff P is regular-faithful and the split unambiguous, rust's `has_no_earlier_match` [RArevinner], whose July-2026 fix is the which-occurrence bug) with an edge/mutation table against libpcre2 10.48: 0 wrong over 329,771 gated searches + 57,204 find-alls, all 6 mutations detected, the ungated tactic and the erased-atomic walk both wrong. §3: the prefilter form reaches the backref/linked-call VM population (only P must be backref-free); bounded P collapses to offset-k/handoff; the give-up surface moves one-way. §4: census with controls (C2/C3 at 0 disagreements): the best landmark is behind the start on 480 corpus / 24 bench unanchored patterns, the new exact mapping on 77 / 8. §5: recommendation, D77 triggers, row re-scoping ([ENG-TACTICS], [ARTREV] I1) and six questions. Instruments: `where_to_start/`.
 - `where_to_start/` — that note's soundness model, landmark census and transcripts (own CLAUDE.md).
 - `start_table.md` — **ONE START-STRATEGY TABLE, PROPOSED, design only** (lane `starttable`, 2026-10-06, from main `74379fe0`, abi 64; Frank's "single start strategy decision table" plus the manager's three-step plan). It folds every start mechanism into ONE first-match array, `cand_rows[]` (D148 Q2's name). Those mechanisms are today five arrays (`dfa_pfs[]`, `req_admits[]`, `req_uses[]`, `dfa_search_starts[]`, `pcrec_reseed_rows[]`) and five inline decisions (ENG_ATTEMPT's predecessor-byte skip and `start_max`, the VM's `attempt_max`, the end-window clamp, the root minimum-width check).
   - **§1, the row contract:** name, deny, predicate, SLOT, routes, landmark fact, memfn site, mapping, hat, give-up posture, listing projection, `desc`, and a typed payload union. The slot is the question a row answers. The walk is first-match per (slot, route), the existing `routes` mechanism along a second axis, never a planner.
@@ -2830,6 +2830,131 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   parameterized reverse-block helper; REVEND builds first. Abi readers by grep
   (§5.3), 7 sabotage rows, spec hunks, three questions for Frank (§10). Evidence:
   `../../studies/revend_twin/`.
+  **REVISION 2 (lane `revrev`, 2026-10-09) applies the light D6 panel
+  (`../dev/reviews/2026-10-09-r-revend-panel.md`, X1-X13, read its §R2 first) and makes
+  Frank's FORM C ("walk-only") the primary design:** no forward pass; the walk records which
+  seed reaches `s*`; one seed is the end, a TIE (both seeds) is decided by one anchored run
+  (or, with no anchored machine, by the body), via a three-row tie table and the fact
+  `nl_last`. It hands `START`/`VERDICT` to the CALLER over a new edge E13 (X2). Identity
+  0 twin diffs over 1.39M cells per form, 74 patterns; five controls red. Four-arm timing:
+  C leads on every matching cell bar the tie, and beats W1 on all 47 bounded cells, so Q1
+  collapses; the new Q2 is the downstream stamps on admitted artifacts. Readers by grep
+  (§5.3), 16 sabotage ids, predictions <= 100 ns per acceptance cell.
+- `locate_finish.md` — **SEARCH IS LOCATE × FINISH (D156), PROPOSED, design only**
+  (lane `locfin`, 2026-10-09, from main `525dec33`, abi 71; a FULL D6 panel reviews
+  it before any `src/` change; every section ends with a "where to attack" note).
+  §1 the model: a locator (seed, direction, slice, exact or superset language)
+  hands one of six types (`SPAN`, `ENDSET`, `CAND`, `LOWER`, `UPPER`, `NOMATCH`;
+  a superset locator degrades to `CAND`), a finisher (report, nomatch, anchored
+  DFA run, relocate, VM window, VM search) consumes it, obligations O1-O10 per
+  pair, and the give-up posture DERIVED from the pair. §2 maps it onto the start
+  table: two new slots in the one `cand_rows[]`, `LOCATE` (first, asked by every
+  DFA-shaped body incl. the hybrid's inlined prefilter) and `FINISH` (last, keyed
+  by (type, route)); `revend.md`'s E13 is withdrawn for the generic LOCATE →
+  FINISH edge. §3 the family survey with a census (every artifact in one of
+  eleven today's pairs; FINISH spelled at ten `fit.chosen` reads; `dfa_matches[]`
+  is REVEND's tie table already); no shipped output falls outside the six types.
+  §4 REVEND as a LOCATE row (R2/R4 dissolve into the table; R3 is stage 2's
+  switch), stage 2 NEUTRAL by window identity (correcting `revend.md` §3.9) but
+  FILED (0 bench / 13 corpus), the backreference relaxed-reverse locator (sound as
+  specified, not the erasure `select_engine.c` measured unsound; 7 corpus / 0
+  bench, FILED), rev-inner as a LOCATE row (not NEXT). §5 build: L0 no-mover
+  (two slots, `cand_finish_of`), L1 = revend S0/S1, L2 rev-end (abi 71 → 72, D-2
+  batched, 17 sabotage ids), L3-L5 filed; §5.1 the stamp rule (the locator on
+  `RX_DFA_SCAN`, no new stamp). §7 six questions, §9 findings F-1..F-6 (W1's
+  VM-route posture, a row-pointer compare, RECOVER's declared type on superset
+  hybrids). Evidence: `../../studies/locate_finish/`.
+  **REVISION 2 (lane `locfin2`, 2026-10-09) applies the FULL D6 panel
+  (`../dev/reviews/2026-10-09-r-locfin-panel.md`, 38 ids, read its §R2 first).**
+  The result is a PRODUCT (start interval × proven bit × end set; `CAND` = `LOWER`,
+  `CT_WINDOW` deleted, superset ⇒ {LOWER, NOMATCH} by a boundary projection
+  `cand_lang_exact`); FINISH is four actions (report / nomatch / verify-at /
+  search-from) × a DFA or VM hat, a slot block that FOLDS `dfa_matches[]`; totality
+  keyed (locator route, finisher route); relocate to the route's fallback row with a
+  progress check; posture = a derived classification + a declared contract, its
+  control a give-up differential (`[GIVEUP-DIFF]`); O4 on (start, ceiling) pairs with
+  ceiling ≥ priority end; rev-inner gains G4 (`where_to_start.md` §2.2 corrected);
+  §4.5's relaxation uses the reference's own fold, the union over `refs[]`, the
+  lowered-set closure, every Σ* source gated. L0 cut to the panel's list with its
+  re-aims DERIVED (6 re-aim / 18 re-run, `l0_edit_set.tsv`); L2 = three separable
+  commits (machine-membership no-mover, D-2, rev-end) plus a pcrec-bench adapter
+  note; the stamp rule adds REQ_WHY `"locator"` and supersedes `revend.md` §5.2.
+  Census: four controls (C4 new, C3 two-sided), 0 disagreements. §7 files G13/G14
+  with triggers; §8 seven questions.
+  **REVISION 2.1 (lane `locfin21`, 2026-10-09) applies the re-check of revision 2
+  (same review file, "RE-CHECK of revision 2": 27 ids, LR-G1..G14 and LR-S1..S13,
+  read its §R2.1 first).** The central change, where both critics converged: a PATH
+  derivation (§2.7) moves INTO L0, ahead of the `dfa_matches[]` fold — every row
+  declares `.needs[route]` (machines F/R/A/ATT/VM and the (slot, route) cells its
+  emitter runs), the selected path is the closure over the selected rows, membership =
+  needs ∩ built, and every reader of "which machines/slots are used" reads it (the
+  three membership readers that would otherwise have hit a NO-ROW FINISH selection on
+  1,231 hybrids, LR-S1; the eight `dfa_engine_is_empty` callers; the twelve
+  `pcrec_artifact_has_dfa_scan` callers; F-9's four spellings incl. `compile.c:229`/
+  `:2381`); rev 2's L2.0 disappears, and the off-path stamp rule is GENERATED from it
+  at L2.1, whose first absence cell is D-2. Also: FINISH is four rows (`nomatch`,
+  `report`, `verify-at`, `search-from`) with hats by route and availability on the
+  route's machines, `-fno-anchored-dfa` shown as a `fact_deny` (LR-G1); the result is
+  `(I, e, D)` keyed on the `CT_*` bits (LR-G2); the body's lowering RECORDS its
+  erasure set (LR-G3, §7.1's precondition); `caller ⊓ body` (LR-G8); ENDSET never
+  reaches the VM's verify-at (LR-S3); G4 a closed predicate (LR-S5); GIVEUP1
+  direction-checked with W1's witness constructed (LR-G5); REQ_WHY keeps four tokens
+  (LR-G6); `[START-LANDING]` placed in RECOVER and filed (§7.3); F-12/F-13 new. Census
+  control C5 (membership vs the bytes, 0 / 5,355); the L0 edit set grows to 55 entries
+  and re-derives 8 re-aims / 35 re-runs. §8 restates Frank's questions with both
+  critics' judgments.
+- `start_landing.md` — **`[START-LANDING]` RECOVER ROWS THAT KNOW THE START WITHOUT
+  WALKING, PROPOSED, design + hand-twin** (lane `landdes`, 2026-10-09, from main
+  `e1e387b9`, abi 71; placed by `locate_finish.md` §7.3, designed in parallel with
+  REVEND per D156 addendum 1). Two new RECOVER rows ahead of `reverse-pass`, each proved
+  to return EXACTLY today's reverse-pass start on every call (so PCRE2 agreement is
+  inherited and hybrids are NEUTRAL by window identity, verified per prefilter call):
+  `end-minus-width` (a fixed BYTE width read from the NFA walk, assertions passed) and
+  `landing` (the NEXT block's last landing, under Λ, the ONE-CHARACTER fact: every
+  one-character path from `anch_start` ends dead or unconditionally accepting, no
+  assertion at the start edge, not nullable, no continuation byte in the start set;
+  owner `src/facts/kset.c`, E3, an exact closure where `kset_walk`'s passes). The
+  survey's one-byte fact is too narrow under utf8, and under the invalid-tolerant
+  contract an ill-formed first character re-enters the scan at `landing + 1` (a RAISE
+  edge, measured free). The exact "excursion" condition is FILED: its measured extra
+  reach is ≤ 0.58 ms of 54.6. RECOVER asks gain FINISH's `hand` filter (`END` vs
+  `rev-end`'s speculative `SEED`, which neither new row may take). Twins: 310 bench rows,
+  91.5M cells, 50.1M per-call compares, 0 differences, 0 new libpcre2 disagreements;
+  seven failing controls; timing −29..−42%. Rows take 46.5 of 54.6 ms K3+K4 weight. Build
+  B1-B4 after L0, one abi event, 9 sabotage rows; five questions for Frank. Evidence:
+  `../../studies/start_landing/`.
+- `encoding_data_layout.md` — **ENCODING DATA LAYOUT: INVENTORY + PROPOSAL, nothing
+  moved** (lane `encinv`, 2026-10-09, from main `57fe04ef`, abi 71; Frank's "organize
+  encoding data around the idea there may be more encodings").
+  - **§1 inventory**: every encoding-keyed data set and table, with file:line
+    consumers and an emitted/spec column. It covers the seam rows, the code-point data
+    from the UCD, the tables outside `src/enc/`, the findings priors, four
+    vocabularies, the oracle captures, and the tests, sweep, stamps, limits and bench.
+  - **§2 diagnosis**: most "encoding data" is CODE-POINT data, and
+    `utf8_fold_pairs.inc` is Unicode content under an encoding name.
+    - There are two per-encoding registries: `lower_ops[]`'s `identity_max`
+      restates `onebyte_max`, so the third-encoding recipe's "nothing outside
+      `src/enc/`" is false.
+    - Five sites infer a capability from `max_cp` thresholds or table presence,
+      which assumes ASCII-compatibility without declaring it.
+    - The two match-time fold tables are made by two mechanisms, one an entry-id
+      special case in the shared `enc.c`.
+    - The encoder sits in the shared file, and `core/findings.c -> enc/enc.h` is a
+      measured layer back-edge.
+    - `latin1` means three things.
+    - A third encoding touches 15 places, 9 of them avoidable.
+  - **§3 proposal**: key data by the most general axis its content depends on
+    (repertoire by source, bytes by encoding, corpus by analysis). Keep one file per
+    encoding, with directories only at a D77 trigger. The `PcrecEnc` row is the
+    manifest (`encode`, `ucp_fold`, ASCII-compatibility checked), backed by a
+    documentation-tier manifest table.
+  - **§4 migration**: eight no-mover steps E0-E8 proven by `emit_sweep.py`. E8 moves
+    a spec/listing name and nothing is an abi event. Fold-table unification and the
+    prior are the abi-moving items, kept separate.
+  - **§5**: [U8-PICK]'s utf8 prior goes in `default.rxt` as a `cpfreq` block. A
+    generated sibling bundle does not work, because the chain terminal does not
+    follow its own `include`.
+  - **§6** answers the standing questions; **§7** has six questions for Frank.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except

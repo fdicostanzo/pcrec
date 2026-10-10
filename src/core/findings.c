@@ -541,6 +541,35 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
     return n - 1 - pcrec_find_pick(rate, cand, care, n, 0);
 }
 
+/* Every position of a run, ordered by the cost PICK uses (the mass of the
+ * position's cube), lowest first, into `pos[0..n)` with each position's mass
+ * in `mass[0..n)` (`mass` may be NULL). The order is PICK applied repeatedly:
+ * a stable insertion over `pcrec_find_run_scan_index`'s candidate order
+ * `[n-1, ..., 0]`, so ties go to the rightmost position under both arms and
+ * `pos[0]` is that reader's answer. [MEMFN] RQ-2 (D157): the ranking the
+ * PRE/OFS builders state as `mf_pred.rank_*`. The positions are those of
+ * whatever run the caller hands over, so under `-e utf8` (byte-rate NONE)
+ * the order is by cube size, then positional (U8-PICK, u8pick0_report.md). */
+void pcrec_find_run_rank(const uint32_t *rate, const unsigned char *bytes,
+                         const unsigned char *mask, int n, int *pos,
+                         uint32_t *mass)
+{
+    if (n > PCREC_MAX_REQ_RUN_SCAN) abort();   /* run_scan_index's own guard */
+    uint32_t m[PCREC_MAX_REQ_RUN_SCAN];
+    for (int k = 0; k < n; k++) {            /* insertion: stable, n <= 32 */
+        int i = n - 1 - k, j = k;
+        uint32_t c = cube_mass(rate, bytes[i], mask ? mask[i] : 0xFF);
+        while (j > 0 && m[j - 1] > c) {
+            m[j] = m[j - 1];
+            pos[j] = pos[j - 1];
+            j--;
+        }
+        m[j] = c;
+        pos[j] = i;
+    }
+    if (mass) memcpy(mass, m, (size_t)n * sizeof *mass);
+}
+
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
  * of the window of that length containing `idx` with the lowest mass, ties
  * to the leftmost by the strict `<` — so on an exact run under NONE, where

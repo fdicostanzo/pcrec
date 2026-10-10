@@ -1,0 +1,344 @@
+pid	enc	engine	vm_prefilter	dfa_scan	start_set_n	landmark	landmark_in_start	k12
+altwide/ci-256	byte	dfa		unanchored	52	-	-	0
+altwide/ci-512	byte	dfa		unanchored	52	-	-	0
+altwide/clsa-256	byte	dfa		unanchored	26	-	-	0
+altwide/clsa-64	byte	dfa		unanchored	24	-	-	0
+altwide/clsd-256	byte	dfa		unanchored	26	-	-	0
+altwide/clsd-64	byte	dfa		unanchored	24	-	-	0
+altwide/cnt-64	byte	dfa		unanchored	24	-	-	0
+altwide/floor	byte	dfa		unanchored	1	35	yes	0
+altwide/nar4-256	byte	dfa		unanchored	4	-	-	0
+altwide/nar4-512	byte	dfa		unanchored	4	-	-	0
+altwide/nar4-64	byte	dfa		unanchored	4	-	-	0
+altwide/pfx3-256	byte	dfa		unanchored	1	113	yes	0
+altwide/pfx3-512	byte	dfa		unanchored	1	113	yes	0
+altwide/s-2048	byte	dfa		unanchored	26	-	-	0
+altwide/s-256	byte	dfa		unanchored	26	-	-	0
+altwide/s-512	byte	dfa		unanchored	26	-	-	0
+altwide/sfx-256	byte	dfa		unanchored	26	103	yes	1
+altwide/sfx-512	byte	dfa		unanchored	26	103	yes	1
+altwide/sfx-64	byte	dfa		unanchored	25	103	no	1
+altwide/sh1-256	byte	dfa		unanchored	1	107	yes	0
+altwide/sh1-512	byte	dfa		unanchored	1	107	yes	0
+altwide/sh1-64	byte	dfa		unanchored	1	107	yes	0
+altwide/srt-256	byte	dfa		unanchored	26	-	-	0
+altwide/srt-512	byte	dfa		unanchored	26	-	-	0
+altwide/w-128	byte	dfa		unanchored	25	-	-	0
+altwide/w-192	byte	dfa		unanchored	25	-	-	0
+altwide/w-256	byte	dfa		unanchored	26	-	-	0
+altwide/w-384	byte	dfa		unanchored	26	-	-	0
+altwide/w-512	byte	dfa		unanchored	26	-	-	0
+altwide/w-64	byte	dfa		unanchored	24	-	-	0
+altwide/w-8	byte	dfa		unanchored	6	-	-	0
+altwide/w-96	byte	dfa		unanchored	25	-	-	0
+altwide/wb-256	byte	dfa		unanchored	26	-	-	0
+altwide/wb-512	byte	dfa		unanchored	26	-	-	0
+bounded/cls-atleast-4096	byte	dfa		unanchored	26	-	-	0
+bounded/cls-lazy-16384	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-1024	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-128	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-16	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-16384	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-2048	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-256	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-32	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-32768	byte	vm	none		0	-	-	0
+bounded/cls-upto-4	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-4096	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-512	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-64	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-8	byte	dfa		unanchored	0	-	-	0
+bounded/cls-upto-8192	byte	dfa		unanchored	0	-	-	0
+bounded/csv5	byte	dfa		unanchored	255	44	yes	1
+bounded/ctx-greedy-256	byte	vm	hybrid	unanchored	3	97	yes	0
+bounded/ctx-lazy-1024	byte	vm	hybrid	unanchored	3	97	yes	0
+bounded/ctx-lazy-256	byte	vm	hybrid	unanchored	3	97	yes	0
+bounded/ctx-lazy-64	byte	vm	hybrid	unanchored	3	97	yes	0
+bounded/dig-exact-16	byte	dfa		unanchored	10	-	-	0
+bounded/dig-exact-2	byte	dfa		unanchored	10	-	-	0
+bounded/dig-exact-32	byte	dfa		unanchored	10	-	-	0
+bounded/dig-exact-8	byte	dfa		unanchored	10	-	-	0
+bounded/dig-upto-16	byte	dfa		unanchored	10	-	-	0
+bounded/dig-upto-2	byte	dfa		unanchored	10	-	-	0
+bounded/dig-upto-32	byte	dfa		unanchored	10	-	-	0
+bounded/dig-upto-4	byte	dfa		unanchored	10	-	-	0
+bounded/dig-upto-8	byte	dfa		unanchored	10	-	-	0
+bounded/dotted4	byte	dfa		unanchored	10	46	no	0
+bounded/floor	byte	dfa		unanchored	1	58	yes	0
+bounded/grp-upto-1024	byte	dfa		unanchored	0	-	-	0
+bounded/hex32	byte	dfa		unanchored	16	-	-	0
+bounded/line-80	byte	dfa		unanchored	255	-	-	0
+bounded/nest2-4	byte	dfa		unanchored	10	-	-	0
+bounded/nest2-64	byte	dfa		unanchored	10	-	-	0
+bounded/nest2-letters-6	byte	dfa		unanchored	26	-	-	0
+bounded/nest3-16	byte	dfa		unanchored	10	-	-	0
+bounded/nest3-3	byte	dfa		unanchored	10	-	-	0
+bounded/pw-8-64	byte	dfa		unanchored	255	-	-	0
+bounded/year4	byte	dfa		unanchored	10	-	-	0
+capability/balanced-parens-rec	byte	vm	none		1	41	no	0
+capability/base10num-near-miss	byte	dfa		attempt	11	-	-	0
+capability/bracket-array-define	byte	vm	none		0	-	-	0
+capability/codegrammar-flat	byte	vm	hybrid	unanchored	1	34	yes	0
+capability/codegrammar-xflag	byte	vm	hybrid	unanchored	1	34	yes	0
+capability/currency-lookbehind-fixed	byte	dfa		unanchored	10	-	-	0
+capability/date-nested-plus	byte	vm	hybrid	attempt	10	-	-	0
+capability/doubled-word	byte	vm	none		63	-	-	0
+capability/dup-param-detect	byte	vm	none		63	38	no	0
+capability/email-local-nodup	byte	vm	hybrid	attempt	63	-	-	0
+capability/email-nested-plus	byte	vm	hybrid	attempt	67	64	no	1
+capability/evil-alt-nested	byte	vm	hybrid	attempt	0	-	-	0
+capability/file-ext-order	byte	dfa		unanchored	1	46	yes	0
+capability/float-literal-bound	byte	dfa		unanchored	10	46	no	0
+capability/floor-byte	byte	dfa		unanchored	1	126	yes	0
+capability/hex8-bounded	byte	dfa		unanchored	16	-	-	0
+capability/high-byte-run	byte	dfa		unanchored	128	-	-	0
+capability/ipv4-near-miss	byte	dfa		attempt	10	46	no	0
+capability/keyword-prefix-order	byte	dfa		unanchored	1	110	no	0
+capability/letters-bounded-tail-z	byte	dfa		unanchored	0	-	-	0
+capability/logparse-atomic-removed	byte	vm	hybrid	attempt	7	58	no	0
+capability/logparse-atomic	byte	vm	hybrid	attempt	7	58	no	0
+capability/mojibake-curly-quote	byte	dfa		unanchored	1	148	no	0
+capability/nested-comment-rec	byte	vm	none		1	42	no	0
+capability/numeric-id-nested-plus	byte	vm	hybrid	attempt	10	-	-	0
+capability/phone-list-nested-plus	byte	vm	hybrid	attempt	10	-	-	0
+capability/phone-palindrome-6	byte	vm	none		10	-	-	0
+capability/pwd-strength-chain	byte	vm	hybrid	attempt	255	-	-	0
+capability/quoted-delim-match	byte	vm	none		2	-	-	0
+capability/router-prefix-order	byte	dfa		unanchored	1	47	yes	0
+capability/tag-depth3-bound	byte	vm	none		1	60	yes	0
+capability/tag-pair-match	byte	vm	none		1	60	yes	0
+capability/tail-digits-eol	byte	dfa		unanchored	10	-	-	0
+capability/tail-dotstar-txt	byte	dfa		unanchored	255	120	yes	1
+capability/tail-ext-lower-txt	byte	dfa		unanchored	26	120	yes	1
+capability/tail-space-eol	byte	dfa		unanchored	6	-	-	0
+capability/tail-word-eoz	byte	dfa		unanchored	63	-	-	0
+capability/trim-nested-star	byte	vm	hybrid	attempt	0	-	-	0
+capability/utf8-lead-no-cont	byte	dfa		unanchored	30	-	-	0
+capability/uuid-near-miss	byte	dfa		attempt	22	45	no	1
+capability/wild-codegrammar-json-array-begin	byte	dfa		unanchored	1	91	yes	0
+capability/wild-codegrammar-json-constant	byte	dfa		unanchored	3	-	-	0
+capability/wild-codegrammar-json-number-extended	byte	dfa		unanchored	11	-	-	0
+capability/wild-codegrammar-json-object-begin	byte	dfa		unanchored	1	123	yes	0
+capability/wild-codegrammar-json-stringcontent-escape	byte	dfa		unanchored	1	92	yes	0
+capability/wild-datetime-moment-iso8601	byte	vm	hybrid	attempt	18	45	yes	1
+capability/wild-logparse-base10num-grok	byte	vm	hybrid	unanchored	13	-	-	0
+capability/wild-logparse-base10num-noatomic	byte	dfa		unanchored	13	-	-	0
+capability/wild-logparse-quotedstring-grok	byte	vm	hybrid	unanchored	3	-	-	0
+capability/wild-logparse-quotedstring-noatomic	byte	dfa		unanchored	3	-	-	0
+capability/wild-logparse-syslogbase-expanded	byte	vm	hybrid	unanchored	16	58	no	1
+capability/wild-logparse-winpath-grok	byte	vm	hybrid	unanchored	53	92	yes	1
+capability/wild-secrets-aws-access-key-id	byte	vm	hybrid	unanchored	1	65	yes	0
+capability/wild-secrets-github-pat	byte	vm	hybrid	unanchored	1	95	no	0
+capability/wild-secrets-slack-webhook-url	byte	vm	hybrid	unanchored	2	47	no	0
+capability/wild-secrets-username-password-pair	byte	vm	hybrid	unanchored	2	61	no	0
+capability/wild-semdiv-altorder-foo-foobar-rustregex	byte	dfa		unanchored	1	102	yes	0
+capability/wild-semdiv-dollar-trailing-newline-pcre2	byte	dfa		unanchored	1	98	no	0
+capability/wild-semdiv-empty-alt-repeat-pcre2	byte	vm	hybrid	unanchored	11	-	-	0
+capability/wild-validator-email-owasp	byte	dfa		attempt	67	64	no	1
+capability/wild-validator-ipv4-owasp	byte	vm	hybrid	attempt	10	46	no	0
+capability/wild-validator-us-zip-owasp	byte	vm	hybrid	attempt	10	-	-	0
+capability/wild-validator-uuid-grok	byte	dfa		unanchored	22	45	no	1
+capability/wild-waf-crs-942140-dbnames	byte	dfa		unanchored	14	-	-	0
+capability/wild-waf-crs-942160-sleep-benchmark	byte	dfa		unanchored	4	41	no	0
+capability/wild-waf-crs-942270-union-select	byte	dfa		unanchored	2	83,115	no	0
+capability/wild-waf-crs-942360-concat-sqli	byte	dfa		attempt	256	-	-	0
+capability/wild-waf-crs-942500-comment-obfuscation	byte	dfa		unanchored	1	42	no	0
+capability/winpath-near-miss	byte	dfa		attempt	52	92	no	1
+email/factored	byte	dfa		unanchored	256	64	yes	1
+email/floor	byte	dfa		unanchored	1	64	yes	0
+email/orig	byte	dfa		unanchored	56	64	no	1
+litrun/alt-foo-tails	byte	dfa		unanchored	1	102	yes	0
+litrun/ctrl-abc-dollar	byte	dfa		unanchored	1	98	no	0
+litrun/floor	byte	dfa		unanchored	1	35	yes	0
+litrun/lit-l10	byte	dfa		unanchored	1	106	no	0
+litrun/lit-l16	byte	dfa		unanchored	1	106	no	0
+litrun/lit-l2	byte	dfa		unanchored	1	98	no	0
+litrun/lit-l3	byte	dfa		unanchored	1	98	no	0
+litrun/lit-l31	byte	dfa		unanchored	1	122	no	0
+litrun/lit-l4	byte	dfa		unanchored	1	98	no	0
+litrun/lit-l40	byte	dfa		unanchored	1	74	no	0
+litrun/lit-l7	byte	dfa		unanchored	1	98	no	0
+litrun/lit-l8	byte	dfa		unanchored	1	98	no	0
+litrun/wild-secrets-aws-access-key-id	byte	vm	hybrid	unanchored	1	65	yes	0
+litrun/wild-secrets-github-pat	byte	vm	hybrid	unanchored	1	95	no	0
+loglines/bignum	byte	dfa		unanchored	10	-	-	0
+loglines/floor	byte	dfa		unanchored	1	58	yes	0
+loglines/hex32-id	byte	dfa		unanchored	16	-	-	0
+loglines/http-5xx	byte	dfa		unanchored	1	80	no	0
+loglines/ipv4	byte	dfa		unanchored	10	46	no	0
+loglines/ipv6	byte	dfa		unanchored	16	58	no	1
+loglines/iso-ts	byte	dfa		unanchored	10	45	no	0
+loglines/kv-quoted	byte	dfa		unanchored	27	34	no	1
+loglines/level-context	byte	vm	hybrid	unanchored	3	101	no	0
+loglines/stack-frame	byte	dfa		unanchored	1	97	yes	0
+loglines/uuid	byte	dfa		unanchored	16	45	no	1
+sentinel/base10num-near-miss	byte	dfa		attempt	11	-	-	0
+sentinel/file-ext-order	byte	dfa		unanchored	1	46	yes	0
+sentinel/floor-byte	byte	dfa		unanchored	1	126	yes	0
+sentinel/ipv4-near-miss	byte	dfa		attempt	10	46	no	0
+sentinel/keyword-prefix-order	byte	dfa		unanchored	1	110	no	0
+sentinel/numeric-id-nested-plus	byte	vm	hybrid	attempt	10	-	-	0
+sentinel/phone-list-nested-plus	byte	vm	hybrid	attempt	10	-	-	0
+sentinel/router-prefix-order	byte	dfa		unanchored	1	47	yes	0
+sentinel/trim-nested-star	byte	vm	hybrid	attempt	0	-	-	0
+sentinel/uuid-near-miss	byte	dfa		attempt	22	45	no	1
+sentinel/wild-semdiv-dollar-trailing-newline-pcre2	byte	dfa		unanchored	1	98	no	0
+sentinel/wild-validator-email-owasp	byte	dfa		attempt	67	64	no	1
+sentinel/wild-validator-us-zip-owasp	byte	vm	hybrid	attempt	10	-	-	0
+sentinel/wild-waf-crs-942360-concat-sqli	byte	dfa		attempt	256	-	-	0
+sentinel/winpath-near-miss	byte	dfa		attempt	52	92	no	1
+syntax/alt-nested	byte	dfa		unanchored	2	-	-	0
+syntax/alt-two	byte	dfa		unanchored	2	-	-	0
+syntax/anc-a-uc	byte	dfa		attempt	1	109	no	0
+syntax/anc-caret	byte	dfa		attempt	1	109	no	0
+syntax/anc-dollar	byte	dfa		unanchored	1	100	yes	0
+syntax/anc-g-uc	byte	dfa		attempt	1	109	no	0
+syntax/anc-m-caret	byte	dfa		attempt	1	109	no	0
+syntax/anc-m-dollar	byte	dfa		unanchored	1	100	yes	0
+syntax/anc-z-lc	byte	dfa		unanchored	1	100	yes	0
+syntax/anc-z-uc	byte	dfa		unanchored	1	100	yes	0
+syntax/asr-k-uc	byte	vm	hybrid	unanchored	1	61	no	0
+syntax/asr-nwb	byte	dfa		unanchored	1	99	yes	0
+syntax/asr-wb	byte	dfa		unanchored	1	99	yes	0
+syntax/bak-1	byte	vm	none		63	32	no	0
+syntax/bak-2	byte	vm	none		63	-	-	0
+syntax/bak-g-rel	byte	vm	none		63	32	no	0
+syntax/bak-k-named	byte	vm	none		1	60	yes	0
+syntax/bak-py	byte	vm	none		63	32	no	0
+syntax/cls-d	byte	dfa		unanchored	10	-	-	0
+syntax/cls-dot	byte	dfa		unanchored	1	99	yes	0
+syntax/cls-fold-pair	byte	dfa		unanchored	1	99	yes	0
+syntax/cls-h	byte	dfa		unanchored	1	118	no	0
+syntax/cls-i-class	byte	dfa		unanchored	2	-	-	0
+syntax/cls-mixed-case	byte	dfa		unanchored	1	99	yes	0
+syntax/cls-n-uc	byte	dfa		unanchored	1	105	yes	0
+syntax/cls-negset	byte	dfa		unanchored	1	99	yes	0
+syntax/cls-pair-ctl	byte	dfa		unanchored	1	99	yes	0
+syntax/cls-posix	byte	dfa		unanchored	52	-	-	0
+syntax/cls-range	byte	dfa		unanchored	1	120	no	0
+syntax/cls-s-lc	byte	dfa		unanchored	1	115	no	0
+syntax/cls-s-uc	byte	dfa		unanchored	250	64	yes	1
+syntax/cls-v	byte	dfa		unanchored	1	100	no	0
+syntax/cls-w	byte	dfa		unanchored	63	-	-	0
+syntax/esc-cr	byte	dfa		unanchored	1	13	no	0
+syntax/esc-hex-braced	byte	dfa		unanchored	1	233	no	0
+syntax/esc-hex	byte	dfa		unanchored	1	99	yes	0
+syntax/esc-nl	byte	dfa		unanchored	1	10	no	0
+syntax/esc-octal-0	byte	dfa		unanchored	1	109	no	0
+syntax/esc-quote	byte	dfa		unanchored	1	120	no	0
+syntax/esc-tab	byte	dfa		unanchored	1	9	no	0
+syntax/floor	byte	dfa		unanchored	1	35	yes	0
+syntax/grp-atomic-alt	byte	vm	hybrid	unanchored	1	99	no	0
+syntax/grp-atomic-rep	byte	dfa		unanchored	1	98	no	0
+syntax/grp-cap	byte	vm	hybrid	unanchored	1	99	yes	0
+syntax/grp-named-quote	byte	vm	hybrid	unanchored	1	99	yes	0
+syntax/grp-named	byte	vm	hybrid	unanchored	1	99	yes	0
+syntax/grp-noncap	byte	dfa		unanchored	1	98	no	0
+syntax/lit-cat	byte	dfa		unanchored	1	99	yes	0
+syntax/lka-neg	byte	vm	hybrid	unanchored	1	109	no	0
+syntax/lka-nonatomic	byte	vm	hybrid	unanchored	1	109	no	0
+syntax/lka-pos	byte	vm	hybrid	unanchored	1	109	no	0
+syntax/lka-verb	byte	vm	hybrid	unanchored	1	109	no	0
+syntax/lkb-neg	byte	vm	hybrid	unanchored	1	100	yes	0
+syntax/lkb-pos	byte	vm	hybrid	unanchored	1	100	yes	0
+syntax/mod-a	byte	dfa		unanchored	63	-	-	0
+syntax/mod-i	byte	dfa		unanchored	2	67,99	yes	0
+syntax/mod-j-uc	byte	vm	none		63	32	no	0
+syntax/mod-n	byte	dfa		unanchored	1	99	yes	0
+syntax/mod-r	byte	dfa		unanchored	2	67,99	yes	0
+syntax/mod-reset	byte	dfa		unanchored	2	97	no	0
+syntax/mod-s	byte	dfa		unanchored	1	100	no	0
+syntax/mod-u-uc	byte	dfa		unanchored	1	34	yes	0
+syntax/mod-unset	byte	dfa		unanchored	2	97	no	0
+syntax/mod-x	byte	dfa		unanchored	1	99	yes	0
+syntax/qnt-lazy	byte	dfa		unanchored	1	34	yes	0
+syntax/qnt-plus-ctl	byte	dfa		unanchored	1	98	no	0
+syntax/qnt-plus	byte	dfa		unanchored	1	98	no	0
+syntax/qnt-poss-brace	byte	dfa		unanchored	1	98	no	0
+syntax/qnt-poss-plus	byte	vm	hybrid	unanchored	1	98	no	0
+syntax/qnt-poss-quest	byte	vm	hybrid	unanchored	1	97	yes	0
+syntax/qnt-poss-star	byte	dfa		unanchored	2	98	yes	0
+syntax/qnt-quest	byte	dfa		unanchored	1	99	yes	0
+syntax/qnt-star	byte	dfa		unanchored	1	99	yes	0
+syntax/rec-1	byte	vm	none		1	41	no	0
+syntax/rec-back	byte	vm	hybrid	unanchored	10	-	-	0
+syntax/rec-define	byte	dfa		unanchored	256	58	yes	1
+syntax/rec-fwd	byte	vm	hybrid	unanchored	0	-	-	0
+syntax/rec-g-angle	byte	vm	hybrid	unanchored	10	-	-	0
+syntax/rec-name	byte	vm	none		1	41	no	0
+syntax/rec-py	byte	vm	hybrid	unanchored	10	-	-	0
+syntax/rec-r-uc	byte	vm	none		1	41	no	0
+syntax/unp-p-lc	byte	dfa		unanchored	117	-	-	0
+syntax/unp-p-uc	byte	dfa		unanchored	139	-	-	0
+utf8/alt-cyr-64	utf8	dfa		unanchored	2	-	-	0
+utf8/alt-distinct-lead	utf8	dfa		unanchored	3	-	-	0
+utf8/alt-mixed-width	utf8	dfa		unanchored	4	-	-	0
+utf8/alt-nearmiss	utf8	dfa		unanchored	1	172	no	0
+utf8/alt-shared-char	utf8	dfa		unanchored	1	165	no	0
+utf8/alt-shared-lead	utf8	dfa		unanchored	1	206	yes	0
+utf8/asr-a-z	utf8	dfa		attempt	1	158	no	0
+utf8/asr-b-ascii	utf8	dfa		unanchored	1	116	no	0
+utf8/asr-b-cyr	utf8	dfa		unanchored	1	176	no	0
+utf8/asr-b-midchar	utf8	dfa		unanchored	0	-	-	0
+utf8/asr-caret-ml	utf8	dfa		attempt	1	165	no	0
+utf8/asr-dollar-ml	utf8	dfa		unanchored	1	158	no	0
+utf8/asr-lb-class	utf8	vm	hybrid	unanchored	6	-	-	0
+utf8/asr-lb-fixed	utf8	vm	hybrid	unanchored	1	120	yes	0
+utf8/asr-lb-neg	utf8	vm	hybrid	unanchored	1	172	no	0
+utf8/asr-lb-varwidth	utf8	vm	hybrid	unanchored	1	120	yes	0
+utf8/ci-ascii-control	utf8	dfa		unanchored	2	65,97	yes	0
+utf8/ci-class-range	utf8	dfa		unanchored	54	-	-	0
+utf8/ci-e-acute	utf8	dfa		unanchored	1	195	yes	0
+utf8/ci-greek-run	utf8	dfa		unanchored	1	206	yes	0
+utf8/ci-kelvin	utf8	dfa		unanchored	3	-	-	0
+utf8/ci-long-s	utf8	dfa		unanchored	3	-	-	0
+utf8/ci-moskva	utf8	dfa		unanchored	1	208	yes	0
+utf8/ci-neg-fold	utf8	dfa		unanchored	179	-	-	0
+utf8/ci-sigma	utf8	dfa		unanchored	2	-	-	0
+utf8/ci-strasse	utf8	dfa		unanchored	3	84,116	no	0
+utf8/ci-turkish-i	utf8	dfa		unanchored	2	-	-	0
+utf8/ci-ucp-invariance	utf8	dfa		unanchored	1	195	yes	0
+utf8/cls-boundary-range	utf8	dfa		unanchored	33	-	-	0
+utf8/cls-d-ascii	utf8	dfa		unanchored	10	-	-	0
+utf8/cls-d-ucp	utf8	dfa		unanchored	18	-	-	0
+utf8/cls-dot-rep	utf8	dfa		attempt	178	-	-	0
+utf8/cls-dot	utf8	dfa		unanchored	178	-	-	0
+utf8/cls-high-range	utf8	dfa		unanchored	31	-	-	0
+utf8/cls-lead-pair	utf8	dfa		unanchored	2	-	-	0
+utf8/cls-mixed	utf8	dfa		unanchored	29	-	-	0
+utf8/cls-neg-allhigh	utf8	dfa		unanchored	128	-	-	0
+utf8/cls-neg-cjk	utf8	dfa		unanchored	174	-	-	0
+utf8/cls-neg-single	utf8	dfa		unanchored	179	-	-	0
+utf8/cls-posix-alpha	utf8	dfa		unanchored	52	-	-	0
+utf8/cls-s-nbsp	utf8	dfa		unanchored	1	98	no	0
+utf8/cls-s-ucp	utf8	dfa		unanchored	1	98	no	0
+utf8/cls-w-ascii	utf8	dfa		unanchored	63	-	-	0
+utf8/floor	utf8	dfa		unanchored	1	126	yes	0
+utf8/lit-1ch-2b	utf8	dfa		unanchored	1	169	no	0
+utf8/lit-1ch-3b	utf8	dfa		unanchored	1	165	no	0
+utf8/lit-1ch-4b	utf8	dfa		unanchored	1	128	no	0
+utf8/lit-anchored-run	utf8	dfa		attempt	1	158	no	0
+utf8/lit-cyr-run	utf8	dfa		unanchored	1	176	no	0
+utf8/lit-mixed-ascii	utf8	dfa		unanchored	1	136	no	0
+utf8/lit-nearmiss-run	utf8	dfa		unanchored	1	158	no	0
+utf8/lit-nfc-pair	utf8	dfa		unanchored	1	169	no	0
+utf8/lit-offset-at-head	utf8	dfa		unanchored	1	169	no	0
+utf8/lit-offset-at-tail	utf8	dfa		unanchored	1	64	no	0
+utf8/lit-run-3	utf8	dfa		unanchored	1	158	no	0
+utf8/lit-sharp-s	utf8	dfa		unanchored	1	101	no	0
+utf8/prp-cyrillic	utf8	dfa		unanchored	12	-	-	0
+utf8/prp-greek-sc	utf8	dfa		unanchored	7	-	-	0
+utf8/prp-greek	utf8	dfa		unanchored	9	-	-	0
+utf8/prp-han	utf8	dfa		unanchored	12	-	-	0
+utf8/prp-l	utf8	dfa		unanchored	97	-	-	0
+utf8/prp-latin	utf8	dfa		unanchored	71	-	-	0
+utf8/prp-lu	utf8	dfa		unanchored	47	-	-	0
+utf8/prp-n	utf8	dfa		unanchored	21	-	-	0
+utf8/prp-notl	utf8	dfa		unanchored	109	-	-	0
+utf8/prp-zs	utf8	dfa		unanchored	5	-	-	0
+utf8/qnt-bounded-4b	utf8	dfa		unanchored	1	128	no	0
+utf8/qnt-class-run	utf8	dfa		unanchored	4	-	-	0
+utf8/qnt-counted-3b	utf8	dfa		unanchored	1	172	no	0
+utf8/qnt-dot-bounded	utf8	dfa		unanchored	178	-	-	0
+utf8/qnt-lazy-2b	utf8	dfa		unanchored	1	169	no	0
+utf8/qnt-plus-2b	utf8	dfa		unanchored	1	169	no	0

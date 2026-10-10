@@ -15,7 +15,7 @@ its report is **`G2M7_REPORT.md`**.
 Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
 its report is **`G2M6_REPORT.md`**.
 
-## The SIMD family (lane r13, R-13, R4e' batch 1; MF_SITE_ABI 9)
+## The SIMD family (lane r13, R-13, R4e' batch 1; MF_SITE_ABI 10)
 
 NOT written blinded: lane r13 wrote the kit's rows and this family both, so
 its independence rests on the oracle (G2's own scalar byte loop over the

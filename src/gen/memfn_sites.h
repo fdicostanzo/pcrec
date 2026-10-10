@@ -68,7 +68,7 @@ void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb);
  * under a CPU-level guard, and pcrec counts the bracketed bytes into the
  * buffer's guarded record (pcrec_sb_simd_open/_close), which every length
  * decision subtracts. pcrec_memfn_sink wires them into `mf_sink`'s two
- * members (born in SIMD batch 1's MF_SITE_ABI 9 bump, R-13). `level` is the
+ * members (born in SIMD batch 1's MF_SITE_ABI 10 bump, R-13). `level` is the
  * kit's levels.def index, which pcrec does not read. */
 void pcrec_memfn_sink_simd_open(void *u, int level);
 void pcrec_memfn_sink_simd_close(void *u);
