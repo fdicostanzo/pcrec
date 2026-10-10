@@ -12,7 +12,7 @@ population (every distinct .rxt corpus block, its own flags/features/encoding/
 engine) per limit variant. The two sides are compared per compile: status,
 attempt count (the `att=` probes) and the whole probe sequence (the transition
 signature, state values included). It shares no code with the tables T1-T4;
-its limits (§4.3 item 4, critB2 m1) are that it shares the `setjmp` site and
+its bounds (§4.3 item 4, critB2 m1) are that it shares the `setjmp` site and
 `rung->name` with what it watches, lumps the trial catch with other failures,
 and sees no state the probes do not print.
 

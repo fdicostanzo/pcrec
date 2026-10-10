@@ -10,7 +10,7 @@ main mid-flight). Nothing merged to main.
   branch) and CLSPACK (47 -> 48) now ride together. `PCREC_ARTIFACT_ABI` 48;
   `ABI_EXPECT=48` and its narrative in `tests/codegen/run_codegen_tests.sh`
   keep K73's 47 entry and append ONE combined S4 + CLSPACK 47 -> 48 entry;
-  `docs/spec/match_api.md` §6 keeps K73's entry as "was 47" and gains ONE 48
+  `docs/dev/history/abi_changelog.md` keeps K73's entry as "was 47" and gains ONE 48
   entry (S4's and CLSPACK's folded, the identity/census verification of both
   named); the two stamp entries in §6.3 read `abi` 48; `tuning.md`'s S4
   sentences read `abi` 48; `src/gen/CLAUDE.md`, `tests/axes/run_axes.sh`'s K55

@@ -1883,7 +1883,7 @@ promise"), because no field is added, removed, reordered or retyped.
 **One CONSUMER-VISIBLE change, and it must be written into the contract.**
 `rx_info.groups` is documented "sorted, bsearch-able" (`emit_dfa.c:456`), and
 `bsearch` on a table with duplicate keys returns **some** matching row, not
-the first. So `docs/spec/match_api.md` §6 gains the caller algorithm — and it
+the first. So `docs/spec/match_api.md` §5.4¶6 gains the caller algorithm — and it
 is the *same* algorithm the emitted code uses (§8.3), which is the [M6.5]
 row's own requirement that both consumers share one rule:
 

@@ -1,0 +1,29 @@
+control unplanted                          want lazy   got lazy
+control reach offset +1                    want OTHER  got OTHER
+control a member byte edited               want OTHER  got OTHER
+control the prefix left in the old form    want OTHER  got OTHER
+control a byte outside the prefix          want OTHER  got OTHER
+control PROGRAM_BYTES off by one           want OTHER  got OTHER
+== R-12 VMLAZY census: ref df66a032 vs /home/pcrec/projects/pcrec/worktrees/vmlazy/build/pcrec; 5431 pattern rows (every 1); cc gcc ==
+  c-default done
+  c-vm done
+  c-utf8 done
+  c-utf8-vm done
+  c-comments done
+  emit-ir-vm done
+
+| stream | identical | abi | lazy | shape | OTHER | ASYMMETRIC | both-refuse | prefixes |
+|---|---|---|---|---|---|---|---|---|
+| c-comments | 0 | 4940 | 40 | 0 | 0 | 0 | 451 | 57 |
+| c-default | 0 | 4940 | 40 | 0 | 0 | 0 | 451 | 57 |
+| c-utf8 | 0 | 4970 | 39 | 0 | 0 | 0 | 422 | 56 |
+| c-utf8-vm | 0 | 4904 | 106 | 0 | 0 | 0 | 421 | 130 |
+| c-vm | 0 | 4859 | 122 | 0 | 0 | 0 | 450 | 146 |
+| emit-ir-vm | 4981 | 0 | 0 | 0 | 0 | 0 | 450 | 0 |
+
+== assembly: 307 movers, recipes ['-O2', '-O2 -march=x86-64-v3'] ==
+| recipe | identical | DIFFERENT | ERROR |
+|---|---|---|---|
+| `-O2` | 0 | 307 | 0 |
+| `-O2 -march=x86-64-v3` | 0 | 307 | 0 |
+census: CLEAN (lazy movers 347)

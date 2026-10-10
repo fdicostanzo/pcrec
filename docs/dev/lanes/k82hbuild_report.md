@@ -135,7 +135,7 @@ The bench K histogram (auto): 0 ×33, 1, 2, 3 ×2, 4 ×2, 5, 9 ×3, 23, 26, 31,
 ## 4. abi 60 -> 61 and the readers (D76/D94, §2.3a by grep)
 
 - The digit: `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`; `match_api.md` the
-  K80 `#error` text, §6's log entry ("is `61`"), §6.3's new stamp and the
+  K80 `#error` text, the change-log entry (docs/dev/history/abi_changelog.md) ("is `61`"), §6.3's new stamp and the
   `REQ_WHY` `"emitted"` row; `run_codegen_tests.sh` `ABI_EXPECT=61` and its
   narrative; `run_recursion_identity.sh` FILEPIN self-pinned to `b55d5554`.
 - The byte counts (the stamp line is 30 bytes at `-p rx`):
@@ -152,7 +152,7 @@ The bench K histogram (auto): 0 ×33, 1, 2, 3 ×2, 4 ×2, 5, 9 ×3, 23, 26, 31,
   near) — the chain's `make test` regenerates it; commit it or not at merge.
 - Spec hunks (D80): `match_api.md` §3.1 (the scan-may-begin-later sentence
   and the step-budget sentence; the give-up clause is the Q10 decline, so the
-  count-collapsed allowance sentence is NOT shipped), §6, §6.3; `tuning.md`
+  count-collapsed allowance sentence is NOT shipped), §6 (+ docs/dev/history/abi_changelog.md), §6.3; `tuning.md`
   §2.41 (new), §2.29's cross-reference, the flags table, the dial policy
   table (31 rows); `facts_listing.md`'s value column; `findings.md` (the
   handoff never re-picks); `cli.md`'s deny list; `registry.md`;

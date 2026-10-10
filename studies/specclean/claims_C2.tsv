@@ -1,0 +1,276 @@
+C2-0001	547	N	`<prefix>_search` is the search-loop entry of a generated artifact.
+C2-0002	549	N	Signature: `int <prefix>_search(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2]);`
+C2-0003	554	N	`<prefix>_search` searches `s[startpos..n)` for the leftmost match.
+C2-0004	558	N	`<prefix>_search` returns `1` when a match is found.
+C2-0005	558	N	On a match with `caps != NULL`, `<prefix>_search` writes `<PREFIX>_NCAPS` pairs to `caps`.
+C2-0006	558	N	On a match, `caps[0]` is the whole-match span (there is no second name for it).
+C2-0007	559	N	`<prefix>_search` returns `0` on no match.
+C2-0008	559	N	On no match, `<prefix>_search` leaves `caps` (if non-NULL) untouched; the `int` return alone communicates match/no-match.
+C2-0009	560	N	`<prefix>_search` returns `<PREFIX>_ERR_STEPS`, `<PREFIX>_ERR_FRAMES`, `<PREFIX>_ERR_WORK` or `<PREFIX>_ERR_RECURSE` when the engine gives up (see §4).
+C2-0010	560	N	On an engine give-up return, `<prefix>_search` leaves `caps` untouched.
+C2-0011	560	N	`<PREFIX>_ERR_RECURSE` is reserved and has no producer yet.
+C2-0012	561	N	`PCREC_ERR_INTERNAL` is NOT a give-up (§4): it means the artifact detected its own analysis/emission inconsistency.
+C2-0013	561	N	Today the only producer of `PCREC_ERR_INTERNAL` is module `lookaround`'s negative-polarity end-check.
+C2-0014	561	N	On `PCREC_ERR_INTERNAL`, `caps` is left untouched like every other negative return.
+C2-0015	562	N	`PCREC_ERR_STARTPOS` is NOT a give-up (§4): `startpos` is not a character boundary of the artifact's encoding, so the call is REFUSED and nothing is attempted.
+C2-0016	562	N	On `PCREC_ERR_STARTPOS`, `caps` is left untouched.
+C2-0017	562	N	Only an artifact compiled for an encoding with multi-byte characters can return `PCREC_ERR_STARTPOS`, and only when the startpos guard is not denied.
+C2-0018	563	N	`PCREC_ERR_UTF` is NOT a give-up (§4): the artifact was compiled with `-futf-check` and an ill-formed sequence begins in the checked range `[startpos - LB, n)`.
+C2-0019	563	N	On `PCREC_ERR_UTF` the call is refused before any attempt and `caps` is left untouched.
+C2-0020	563	N	`<prefix>_valid_upto(s, n, startpos)` (§3.1.2) gives the offset of the ill-formed sequence behind `PCREC_ERR_UTF`.
+C2-0021	563	N	Only a `-futf-check` artifact under an encoding with ill-formed byte strings can return `PCREC_ERR_UTF`.
+C2-0022	565	N	A `0` return from `<prefix>_search` means no match, not a zero-length match.
+C2-0023	566	N	A zero-length match in `<prefix>_search` is a success: it returns `1` with `caps[0][0] == caps[0][1]`.
+C2-0024	567	N	The anchored entries (§3.2/§3.3) use the other convention: their return value carries a length, so `0` IS a zero-length match and no-match is `-1`.
+C2-0025	571	N	Every return other than `1` leaves the whole `caps` array untouched, on every engine.
+C2-0026	571	N	The leave-`caps`-untouched rule on non-`1` returns holds through every entry that takes `caps`: `_search`, `_search_in`, `_match_caps`, `_match_caps_in`.
+C2-0027	573	N	The rule holds for an artifact whose groups above 0 can never be set (each reached only through a subroutine call or under `{0}`; a DFA artifact with `<PREFIX>_NCAPS >= 2`).
+C2-0028	576	N	In such an artifact the unsettable group slots are written `PCREC_UNSET` on a success only, never on a no-match.
+C2-0029	577	N	`tests/codegen/run_nomatch_caps.sh` checks the no-match-leaves-caps-untouched rule.
+C2-0030	580	N	`caps` may be `NULL` for `<prefix>_search` (existence-only search).
+C2-0031	582	N	`<prefix>_search` with `startpos > n` returns `0`.
+C2-0032	582	N	In `<prefix>_search`, `^` anchors to absolute offset `0` regardless of `startpos`.
+C2-0033	583	N	`s` may be `NULL` only when `n == 0`.
+C2-0034	585	N	A search may begin its internal scan after `startpos` where a necessary literal proves no match begins earlier; its answer is the one a scan from `startpos` gives.
+C2-0035	585	H	CHECK: The necessary-literal scan skip is reported through the `<PREFIX>_REQ_HANDOFF` stamp (§6.3).
+C2-0036	588	N	The step budget meters only the work the matcher performs, so positions proven unable to begin a match consume none.
+C2-0037	590	N	No artifact begins a scan later where that could change whether a budget-limited search answers or gives up (a count-collapsed prefilter declines).
+C2-0038	592	N	`\G` keeps asserting at `startpos` itself even when the scan begins later.
+C2-0039	594	N	A search may skip a START position whose byte cannot begin a match: a prefilter-less VM artifact attempts no match where the pattern's start set excludes the byte there.
+C2-0040	595	H	CHECK: The start-set skip is reported through the `<PREFIX>_VM_START_SCAN` stamp (§6.3).
+C2-0041	597	N	Positions that a start-set or necessary-literal proof excludes consume no budget and no capacity.
+C2-0042	599	N	A search that gives up under `-fno-start-set` (on steps, work, backtrack frames, trail, or a caller-provided buffer's capacity in the `_in` entries) may return the answer an unbounded budget and capacity return.
+C2-0043	601	N	A search under `-fno-start-set` never gives up where the default (with the skip) answers; an answer under `-fno-start-set` is the answer with the skip.
+C2-0044	604	N	`startpos` MUST be a character boundary of the artifact's encoding, and by default the artifact enforces it.
+C2-0045	606	N	Under the `byte` encoding every position is a character boundary and no startpos guard is emitted at all.
+C2-0046	608	N	Under an encoding with multi-byte characters a `startpos` inside a character is refused with `PCREC_ERR_STARTPOS`.
+C2-0047	610	N	`PCREC_ERR_STARTPOS` is a negative return below `PCREC_ERR_FLOOR` (§4) and not a give-up: nothing was attempted and no budget was spent.
+C2-0048	611	N	The startpos-guard test is O(1) and reads at most one byte of `s`.
+C2-0049	614	M	Under `PCRE2_UTF`, libpcre2 returns `PCRE2_ERROR_BADUTFOFFSET` for every mid-character `startoffset`; measured over ten patterns at both mid-character offsets of a two-character subject, 20 of 20 refused (libpcre2 10.46).
+C2-0050	617	M	The same ten patterns answered normally at all three boundary offsets of the two-character subject (libpcre2 10.46; docs/design/utf8_measurements/out/startbnd.txt).
+C2-0051	620	N	Under D26 pcrec owes the refusal of a mid-character startpos, not libpcre2's error number.
+C2-0052	621	N	A `startpos` past the end of the subject returns `0` (the `startpos > n` check comes before the character-boundary guard).
+C2-0053	622	N	Every position at or beyond `n` counts as a character boundary.
+C2-0054	624	N	libpcre2 answers `PCRE2_ERROR_BADOFFSET` for a startoffset past the end; pcrec deliberately keeps returning `0` (a stated divergence).
+C2-0055	627	N	The anchored entries (§3.2/§3.3) carry the same startpos guard against `ctx->pos`.
+C2-0056	629	N	The `_in` entries of §10 inherit the startpos guard from the bodies they share.
+C2-0057	630	N	`<prefix>_next_pos` (§3.1.1) is the supported way to produce a valid `startpos`.
+C2-0058	631	N	The find-all loop uses `<prefix>_next_pos` on both arms, so the loop is unaffected by the startpos guard in either direction, ill-formed subjects included.
+C2-0059	634	N	`-fno-startpos-guard` selects the other semantics: the artifact answers at whatever position the caller named, with the automaton's own answer.
+C2-0060	638	N	Under `-fno-startpos-guard`, for a leading negative assertion the answer differs from both of PCRE2's UTF modes in the succeeding direction: `(?<!.)` at offset 1 of the bytes `CE B1 CE B2` reports `(1,1)`.
+C2-0061	640	N	A truncated leading character has no path, and a negative assertion succeeds exactly where its body has none.
+C2-0062	641	N	Neither the default guard arm nor `-fno-startpos-guard` rounds a caller's `startpos > 0`; neither silently advances to the next boundary.
+C2-0063	645	N	`-fstartpos-guard=align` is the third value of the startpos-guard axis (`docs/spec/tuning.md` §2.23); it is rounding asked for by name.
+C2-0064	648	N	`-fstartpos-guard=align` is for a caller holding a misaligned pointer into valid text.
+C2-0065	649	N	Under `-fstartpos-guard=align`, a `startpos > 0` inside a character is moved FORWARD over continuation bytes to the next character start (or `n`), once, at entry.
+C2-0066	651	N	Under `-fstartpos-guard=align` the search runs exactly as if the aligned position had been passed: `caps` offsets, `\G` and a lookbehind's context are all read from it.
+C2-0067	653	N	Under `-fstartpos-guard=align`, offset 0 is never moved and never refused.
+C2-0068	653	N	Under `-fstartpos-guard=align`, the anchored entries (§3.2/§3.3) answer `-1` at a misaligned `ctx->pos`, because no match begins inside a character.
+C2-0069	655	N	`-fstartpos-guard=align` is refused together with `-fno-startpos-guard`.
+C2-0070	655	N	`-fstartpos-guard=align` is inert under the `byte` encoding.
+C2-0071	656	N	`-fstartpos-guard=align` is not a way to accept invalid UTF-8.
+C2-0072	657	N	Under `-futf-check` with `-fstartpos-guard=align`, the check runs from the ALIGNED position, stepping back behind it as for any startpos, so the bytes of the character the pointer landed inside are checked as the caller's real text.
+C2-0073	660	N	Offset 0 is never refused by the startpos guard.
+C2-0074	660	N	On an ill-formed subject, offset 0 is not where a match is attempted if the subject begins with continuation bytes (`0x80`-`0xBF`): offset 0 is then not a character start.
+C2-0075	665	N	When a subject begins with continuation bytes, the search begins at the first non-continuation byte (or at `n`), exactly as `PCRE2_MATCH_INVALID_UTF` advances its start offset, and every answer is the answer from there.
+C2-0076	667	N	For a subject beginning with continuation bytes: `''`, `\B`, `x*` and `(?=)` report `(1,1)` on `\x80` and `(2,2)` on `\x80\x80`.
+C2-0077	668	N	For a subject beginning with continuation bytes, `^`, `\A` and `\G` are FALSE at the moved start; `^` finds nothing on `\x80`.
+C2-0078	669	N	`\G|b` reports `(2,3)` on `\x80\x80b` (libpcre2 10.46; docs/dev/lanes/k73utf_evidence/k73_witness_10.46.txt).
+C2-0079	671	N	An ill-formed LEAD byte (`0xFF`, a truncated `0xE3`) is a valid start and is attempted.
+C2-0080	672	N	The offset-0 start rule has NO FLAG: it is the same under `-fno-startpos-guard`, which governs only a `startpos > 0`.
+C2-0081	674	N	The offset-0 start rule is the one place pcrec does what `PCRE2_MATCH_INVALID_UTF` does at a start offset.
+C2-0082	675	N	An explicit mid-character `startpos > 0` keeps the `PCREC_ERR_STARTPOS` refusal: a deliberate, stated divergence from `PCRE2_MATCH_INVALID_UTF`.
+C2-0083	677	N	The anchored entries (§3.2/§3.3) answer `-1` at `ctx->pos == 0` on a subject beginning with continuation bytes, because they report only a match beginning exactly at `ctx->pos` and none begins at a non-character-start.
+C2-0084	680	N	libpcre2 under `PCRE2_ANCHORED` advances the start and reports the match at the moved start (`(1,1)` for `x*` on `\x80`); pcrec's anchored contract cannot report a start other than `ctx->pos`, a second stated divergence.
+C2-0085	682	N	Both anchored entry shapes (§3.2/§3.3) agree on the `-1` answer at `ctx->pos == 0` on a continuation-leading subject.
+C2-0086	685	N	An artifact compiled with `-futf-check` refuses an ill-formed subject with `PCREC_ERR_UTF`, as `PCRE2_UTF` does (axis: `docs/spec/tuning.md` §2.36).
+C2-0087	687	N	By default an artifact is INVALID-TOLERANT: an ill-formed sequence matches nothing and nothing reports it (`PCRE2_MATCH_INVALID_UTF` semantics, K73's start rule).
+C2-0088	690	N	A `-futf-check` artifact refuses the call with `PCREC_ERR_UTF` when an ill-formed sequence BEGINS anywhere in `[f, n)`, where `f` is `startpos` stepped back LB characters.
+C2-0089	692	N	The `-futf-check` refusal happens before any attempt, whether or not a match lies before the bad bytes: `a` on `a\xff` is refused, as libpcre2 10.46 refuses it.
+C2-0090	694	N	A `-futf-check` artifact otherwise answers exactly as the default artifact would.
+C2-0091	697	N	LB is PCRE2's `max_lookbehind` fact: the widest lookbehind branch in characters, and 1 for `\b`, `\B` and `\A`.
+C2-0092	698	N	LB is never summed through nesting, and dead code (a `(?(DEFINE)...)` body) counts.
+C2-0093	699	N	`^`, `$`, `\G`, `\z`, `\Z` and `\K` count 0 toward LB.
+C2-0094	700	N	Under `-futf-check`, `b` on `\xffab` from startpos 2 answers `(2,3)` while `(?<=..)b` there is refused.
+C2-0095	702	N	The `-futf-check` step-back is PCRE2's raw walk: per character, one byte back and then back over every continuation byte, clamped at 0 and not validated.
+C2-0096	704	N	Order of checks: the K50 startpos guard FIRST, then the `-futf-check` check (measured on libpcre2 10.46).
+C2-0097	705	N	A mid-character `startpos > 0` is `PCREC_ERR_STARTPOS` whether or not the subject is well-formed.
+C2-0098	707	N	Under `-fstartpos-guard=align` the `-futf-check` check runs from the aligned position.
+C2-0099	708	N	`startpos > n` keeps returning `0` and is not checked by `-futf-check`.
+C2-0100	708	N	At `startpos == 0` K50 does not refuse, so a subject that begins with a continuation byte is refused by the `-futf-check` check at offset 0.
+C2-0101	710	N	Every entry that takes a subject performs the `-futf-check` check, at one site per body, beside the K50 guard.
+C2-0102	711	N	The anchored entries (§3.2/§3.3) and §10's `_in` entries return `PCREC_ERR_UTF` on exactly the calls `<prefix>_search` refuses from the same position.
+C2-0103	713	N	On the VM, a FRAMES escalation of the tiered default entry (§10.9) re-runs the body and validates a second time (the stated cost of re-running from scratch).
+C2-0104	716	N	The `-futf-check` cost is one O(n) pass per call (directional: about as much again as a scanning call on sparse-accented text).
+C2-0105	717	N	Under `-futf-check`, a call a prefilter would answer sublinearly becomes linear.
+C2-0106	719	N	`-futf-check` is off by default because of its O(n) cost.
+C2-0107	719	N	A find-all loop over a `-futf-check` artifact validates on every call; §3.1.2 gives the linear idiom.
+C2-0108	721	N	Under the `byte` encoding `-futf-check` is inert: no check is emitted, `<PREFIX>_UTF_CHECK` reads `"inert"`, and the artifact is byte-identical to one built without the flag.
+C2-0109	724	N	STATED DIVERGENCE: `PCRE2_UTF` clips backward reads at `f`; pcrec does not (measured on libpcre2 10.46 and 10.48).
+C2-0110	726	M	Under `PCRE2_UTF`, libpcre2 treats `f` as the start of the subject for the backward reads a lookbehind or `\b` makes, even on well-formed text (libpcre2 10.46 and 10.48).
+C2-0111	728	M	`(?<=\ba)b` on `"xab"` from startpos 2 reports `(2,3)` under `PCRE2_UTF`, though the same pattern finds nothing from 0 and finds nothing without UTF.
+C2-0112	731	M	`(?<=(?<=..)a)b` on `"zzzab"` from startpos 4 finds nothing under `PCRE2_UTF` and reports `(4,5)` without it.
+C2-0113	733	N	pcrec reads the real bytes with or without `-futf-check`: `(?<=\ba)b` on `"xab"` from 2 finds nothing and `(?<=(?<=..)a)b` on `"zzzab"` from 4 reports `(4,5)`.
+C2-0114	735	N	pcrec's principle: a match's answer must not depend on where the caller started the search.
+C2-0115	739	N	On the clip divergence, the refusal set and the refusal OFFSET are exact and unaffected; only the accepted ANSWER differs.
+C2-0116	740	M	The clip divergence affects only patterns whose backward reach exceeds LB (three patterns in the pinned set).
+C2-0117	742	M	The clip class is 4 cells per configuration, pinned EXACTLY (`CLIP` in `tests/utfcheck/check.py`, the `clip-*` populations).
+C2-0118	746	N	A change in either engine moves a number rather than a sentence; a deliberate, stated divergence is the only allowed exception to D26's exactness of what a pattern matches.
+C2-0119	749	N	What the artifact promises about its own positions is NOT part of the `-futf-check`/startpos-guard axis.
+C2-0120	750	N	Every position the ENGINE generates (an unanchored search's candidate match starts, a failed attempt's retry, and the first attempt of a search at offset 0) is a character start of the encoding, unconditionally and under either setting of the startpos-guard flag.
+C2-0121	754	N	A reported match span never begins inside a character on any subject, whichever startpos-guard arm the artifact carries.
+C2-0122	755	N	The startpos-guard flag governs only where a CALLER may point the entry.
+C2-0123	758	N	Every offset written to `caps` is an ABSOLUTE offset into `s`, never relative to `startpos`.
+C2-0124	760	M	Measured: searching `"xabcabcx"` for `abc` from `startpos = 0` reports `[1,4)`, and the next search from `4` reports `[4,7)`, not `[0,3)`.
+C2-0125	763	N	`caps[0][0]` is where REPORTING begins, which is not always where matching began.
+C2-0126	765	N	`\K` resets the reported start to wherever the winning path last crossed it.
+C2-0127	767	N	`a\Kb` over `"ab"` consumes two bytes from offset 0 and reports `[1,2)`.
+C2-0128	769	N	`caps[0][0]` can be greater than the offset the match began at, so it is not a bound on where the engine looked.
+C2-0129	771	N	The find-all loop advances off `caps[0][1]` (the match END), which `\K` does not touch.
+C2-0130	774	N	`caps[0][0] == caps[0][1]` does not imply nothing was consumed under `\K`.
+C2-0131	775	N	`ab\K` over `"ab"` reports `[2,2)` after consuming two bytes.
+C2-0132	776	N	Under `\K`, the find-all loop stays correct: an empty REPORTED span at `p` advances by `<prefix>_next_pos` and the next search starts past it.
+C2-0133	777	N	A caller that measures work done by the reported span width would measure zero under `\K` (`ab\K`).
+C2-0134	779	N	The anchored entries of §3.2/§3.3 return the CONSUMED length, which is the number that differs from the reported span under `\K`.
+C2-0135	780	N	On `ab\K` at `pos = 0` the anchored entries return `2` while the span they report (§3.3) is `[2,2)`.
+C2-0136	781	N	Returning the consumed length from the anchored entries is deliberate and is what makes the §5 callout protocol's advance terminate.
+C2-0137	784	N	A pattern with no `\K` is unaffected in every respect by the reporting-start rule.
+C2-0138	785	N	The `\K` construct is module-gated (`assertions`) and, when present, forces the VM engine.
+C2-0139	787	N	`<prefix>_search` on a DFA artifact has two forms, answer-identical and differing only in cost, reported by `<PREFIX>_DFA_START` (§6.3; tuning.md §2.19).
+C2-0140	790	N	A DFA search normally runs two scans over the same bytes: a forward one to find where the match ends and a backward one over a second, independently built machine to find where it began.
+C2-0141	792	N	On a pattern whose forward machine accepts before it reads a byte (`a*`, `.*`, `[a-z]{0,4096}` and that family), the compiler proves the second scan's answer is `startpos` and emits neither the scan nor the machine.
+C2-0142	795	N	An artifact whose backward scan is proved away stamps `<PREFIX>_DFA_START "pinned"`; otherwise it stamps `"reverse-pass"`.
+C2-0143	798	N	Nothing in the `<prefix>_search` contract changes between the pinned and reverse-pass forms.
+C2-0144	799	N	Both forms report ABSOLUTE offsets into `s`; the pinned form writes `caps[0][0] = startpos`, never `0`.
+C2-0145	801	N	Both forms keep the zero-length-match-is-a-success convention; the pinned form depends on it (the empty match at `startpos` is the answer it reports).
+C2-0146	803	N	The only caller-observable differences between pinned and reverse-pass forms are cost (roughly a factor of two on a counted class run) and artifact size.
+C2-0147	807	N	A pinned search still returns `0` on some calls.
+C2-0148	808	N	A pinned search at `startpos > 0` on a machine whose start state depends on the byte before it (`\b`, `(?m)^`) can begin in a state from which nothing can match; no accept is recorded and `0` is the correct answer.
+C2-0149	810	N	The emitted pinned artifact keeps the test that delivers that `0` and names it load-bearing so a coverage report does not mistake it for dead code.
+C2-0150	814	N	`s` is `n` bytes and nothing more.
+C2-0151	814	N	A `0x00` byte inside `s` is an ORDINARY byte with no special meaning; only the pattern side (§7) is NUL-terminated.
+C2-0152	817	N	The matcher never reads `s[n]`: there is no sentinel, `s` need not be NUL-terminated and need not have a readable byte after its end.
+C2-0153	819	M	Measured on both engines with the subject in an exact-size heap allocation under AddressSanitizer: `a.b` and `a(.)b` both match the 3 bytes `{'a', 0x00, 'b'}` (span `[0,3)`, group 1 `[1,2)`).
+C2-0154	821	M	Matching, non-matching and `n == 0` searches over exact-size buffers are all ASan-clean on both engines.
+C2-0155	823	M	The exact-size-buffer check is non-vacuous: the same probe compiled to read one byte past the end (`n` overstated by one) fires a heap-buffer-overflow at the matcher's own `memchr` prefilter.
+C2-0156	829	N	`<prefix>_search` is ONE-SHOT: it finds the first match at or after `startpos`.
+C2-0157	830	N	There is no batch find-all primitive and none is planned for v1; a caller wanting every match writes the loop.
+C2-0158	832	N	The find-all loop is not simply "restart at the previous match's end", which spins forever the first time a pattern matches empty (`a*` on `"bbb"` returns `[0,0)` from `startpos = 0` for ever).
+C2-0159	836	N	The find-all loop idiom: `p = 0; while (p <= n) { r = <prefix>_search(s,n,p,caps); if (r != 1) break; report(caps[0][0], caps[0][1]); p = (caps[0][1] > caps[0][0]) ? <prefix>_next_pos(s,n,(size_t)caps[0][1]-1) : <prefix>_next_pos(s,n,(size_t)caps[0][0]); }`.
+C2-0160	840	N	In the find-all loop, `r == 0` means done and `r < 0` means the engine gave up (§4); both break the loop.
+C2-0161	842	N	In the find-all loop, after a non-empty match the next position is `<prefix>_next_pos(s, n, caps[0][1] - 1)` (boundary-aligned resume at the match end).
+C2-0162	844	N	In the find-all loop, after an EMPTY match the next position is `<prefix>_next_pos(s, n, caps[0][0])` (the next character after the match start).
+C2-0163	848	N	The non-empty arm of the find-all loop is aligned, and the alignment is a no-op on a well-formed subject.
+C2-0164	849	N	A non-empty match ends at a character boundary of a well-formed subject.
+C2-0165	850	N	`<prefix>_next_pos(s, n, end - 1)` returns `end` itself under `byte` (where it is `end - 1 + 1`) and under `utf8`, on a well-formed subject.
+C2-0166	852	N	The aligned non-empty arm differs from `p = end` only where the match ends immediately before a STRAY continuation byte (one that no lead byte claims): the loop steps over the stray to the next non-continuation byte.
+C2-0167	855	N	The aligned non-empty arm avoids handing the engine a `startpos` the guard refuses (`PCREC_ERR_STARTPOS`) after a match ending before a stray continuation byte.
+C2-0168	857	M	Measured: `a` over `a\x80a` under `-e utf8` with the unaligned loop reported 1 match, where libpcre2 with `PCRE2_MATCH_INVALID_UTF` driven through the same loop reports 2.
+C2-0169	859	N	The subtraction `end - 1` in the loop cannot underflow because a non-empty match has `end >= 1`.
+C2-0170	860	N	`end - 1 < n` keeps `<prefix>_next_pos` in its boundary-skipping domain (`pos >= n` is where it returns `pos + 1`).
+C2-0171	863	N	A `startpos` the CALLER passes in must be a character boundary of the artifact's encoding.
+C2-0172	867	N	A caller who names a continuation byte as `startpos` is REFUSED with `PCREC_ERR_STARTPOS`, whether the byte is inside a well-formed character or is a stray.
+C2-0173	870	M	libpcre2 draws no line between a continuation byte inside a well-formed character and a stray: without `PCRE2_MATCH_INVALID_UTF` both are `PCRE2_ERROR_BADUTFOFFSET`, with it both are advanced (docs/dev/k75_measurement.md).
+C2-0174	873	N	The positions the find-all loop computes are always boundaries: `0` (or the offset-0 rule's own start), a match end aligned as above, and the `<prefix>_next_pos` advance.
+C2-0175	875	N	The find-all loop as written never triggers `PCREC_ERR_STARTPOS`, on a well-formed or an ill-formed subject.
+C2-0176	878	N	A continuation byte is never a match START: every position the engine generates is a character start.
+C2-0177	880	N	Stepping over a continuation byte, as the find-all loop does after a non-empty match and as `<prefix>_next_pos` does after an empty one, cannot lose a match.
+C2-0178	882	N	The empty-match family at an ill-formed subject END is a separate matter (K74) and is not changed by the loop alignment.
+C2-0179	885	N	Empty-match advance rule: a zero-length match is reported like any other, and then the next search starts at the next CHARACTER boundary past its start.
+C2-0180	886	N	After a non-empty match the next search starts at the first boundary at or after its end (the aligned arm).
+C2-0181	888	N	The empty-match advance is off the match's own START (`caps[0][0]`), not off the loop variable.
+C2-0182	889	N	An empty match can be found at a position later than the one searched from.
+C2-0183	890	N	The find-all loop terminates because `p` moves strictly forward every iteration and `p > n` ends it.
+C2-0184	891	N	`<prefix>_next_pos` returns a position strictly greater than the one it was given (§3.1.1's contract).
+C2-0185	895	M	The find-all loop was compiled against real artifacts and run against python3 `re.finditer` on twenty-six (pattern, subject) pairs, on both engines, each pattern compiled twice (captures-on and `--no-captures`), 52 runs.
+C2-0186	895	M	The twenty-six pairs are `byte`-encoded; the ill-formed-subject witnesses are `tests/rxtsource/fixtures/mc_illformed_utf8.rxtin`.
+C2-0187	898	M	Twenty-two of the twenty-six pairs agree with `re.finditer` span for span.
+C2-0188	902	M	`a*` over `"bbb"` gives `(0,0) (1,1) (2,2) (3,3)` under the find-all loop, agreeing with `re.finditer`.
+C2-0189	903	M	`x?y` over `"yy"` gives `(0,1) (1,2)` under the find-all loop, agreeing with `re.finditer`.
+C2-0190	904	M	`a|` over `"bab"` gives `(0,0) (1,2) (2,2) (3,3)` under the find-all loop, agreeing with `re.finditer`.
+C2-0191	905	M	`a|b*` over `"cbbac"` gives `(0,0) (1,3) (3,4) (4,4) (5,5)` under the find-all loop, agreeing with `re.finditer`.
+C2-0192	906	M	The find-all loop also agrees with `re.finditer` on `a*`/`"aaa"`, `a?`/`"aba"`, `b*`/`"abbbab"`, `(a|)`/`"xax"`, `a(b|)c`/`"acabc"`, `(ab)*`/`"ababx"`, `a{0,2}`/`"aaaa"`, `[a-c]*`/`"xabcx"`.
+C2-0193	909	M	The find-all loop also agrees on `[0-9]+`/`"a12b345"`, `a{2,}`/`"aaaa"`, `(?:ab|a)`/`"aab"`, `(a*)*`/`"aab"`, `.`/`"abc"`, `ab$`/`"xabab"`, `^a`/`"aa"`, `c*` and `x` over the EMPTY subject, and `a`/`"a"`.
+C2-0194	911	M	The whole find-all measurement set is `tests/encseam/findall_cases.txt` and it runs in `make test`.
+C2-0195	915	N	The find-all loop is LOSSY: it reports fewer matches than PCRE2 and python `re` for a pattern that prefers the empty match at a position where a non-empty match also starts.
+C2-0196	917	N	PCRE2 and python `re`, on finding an empty match at `p`, retry at `p` with "empty match not permitted here" (`PCRE2_NOTEMPTY_ATSTART`) and report the non-empty match too, before moving on.
+C2-0197	921	N	pcrec's entry points cannot express the NOTEMPTY_ATSTART retry: no entry has a "must not match empty here" mode, so the advance rule is the whole of what a pcrec consumer can do.
+C2-0198	924	N	All measured divergences of the find-all loop are OMISSIONS: the loop's spans are always a strict SUBSET of `re.finditer`'s, which the suite checks.
+C2-0199	926	M	`|a` over `"aaa"`: the find-all loop reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where `re.finditer` reports 7, adding `(0,1) (1,2) (2,3)`.
+C2-0200	928	M	`a*?` over `"aaa"`: the find-all loop reports 4 spans vs 7 for `re.finditer`.
+C2-0201	929	M	`a??` over `"aba"`: the find-all loop reports 4 spans vs 6 for `re.finditer`.
+C2-0202	929	M	`b*?` over `"abba"`: the find-all loop reports 5 spans vs 7 for `re.finditer`.
+C2-0203	930	N	Where the pattern's own preference picks a non-empty match wherever one starts (every greedy quantifier among the agreeing cases), the find-all loop has no divergence.
+C2-0204	934	N	The find-all loop is what gives `\G` its meaning.
+C2-0205	936	N	`\G` asserts that the current position equals the `startpos` the call was given.
+C2-0206	938	N	Under the find-all loop (which passes its resume position as `startpos`), `\G` means "contiguous with the previous match", which is PCRE2's global-iteration semantics.
+C2-0207	941	N	`\G\w+` under the find-all loop is a TOKENIZER: it reports `(0,2)` on `"ab ab ab"` and stops at the first gap, where the `\G`-free `\w+` reports all three.
+C2-0208	943	M	Measured by `tests/assertions/run_gstart_diff.sh` §1 against libpcre2 driven through the same loop (not a hand-written span list).
+C2-0209	947	N	`\K` under the find-all loop is safe: the loop advances off `caps[0][1]` and `\K` moves only `caps[0][0]`, so termination and progress are untouched.
+C2-0210	950	N	A `\K` pattern can report an empty span after consuming bytes (`ab\K` gives `[2,2)`), which takes the loop's EMPTY arm and advances one character from the REPORTED START rather than the match end.
+C2-0211	953	M	`ab\K` over `"ababab"` reports `2,2 6,6` under the find-all loop, from both pcrec and libpcre2 driven through the same loop.
+C2-0212	955	N	Under the find-all loop's empty arm the match at offset 2..4 of `ab\K` over `"ababab"` is not reported again at 4.
+C2-0213	956	M	`a\Kb` over `"ababab"` reports `1,2 3,4 5,6` under the find-all loop, from both pcrec and libpcre2.
+C2-0214	957	M	`tests/assertions/run_kreset_diff.sh` §5 is the `\K` find-all comparison against libpcre2 and runs every suite.
+C2-0215	959	N	The loop's empty arm is written against `caps[0][0]` rather than the loop variable because an empty match can be found at a different offset from the one asked for, which `\K` makes routine.
+C2-0216	963	M	In the shipped DFA emitter (`src/gen/emit_dfa.c`), the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under `if (caps)` in the unanchored search body.
+C2-0217	966	N	The `--emit-main` `main()` carries no `caps` NULL guard and needs none: it passes a real array, never `NULL`.
+C2-0218	969	N	Every artifact carries `<prefix>_next_pos` as a fifth exported entry.
+C2-0219	971	N	The find-all loop's advance goes through `<prefix>_next_pos`, not `+ 1`.
+C2-0220	975	N	Signature: `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos);`
+C2-0221	978	N	`<prefix>_next_pos` is the one place an artifact's byte-vs-character distinction lives.
+C2-0222	980	N	An artifact embeds exactly one encoding's residual block, chosen per compile call by `pcrec_options.encoding` (§8.2), never process- or file-globally.
+C2-0223	983	N	Two differently-prefixed artifacts compiled for different encodings compose in one translation unit.
+C2-0224	991	N	`<prefix>_next_pos` returns the smallest position STRICTLY GREATER than `pos` that is a character boundary of the artifact's encoding, counting every position >= `n` as a boundary.
+C2-0225	994	N	The result of `<prefix>_next_pos` is in `(pos, n]` whenever `pos < n`.
+C2-0226	995	N	The result of `<prefix>_next_pos` is `pos + 1` whenever `pos >= n`; this is what lets a find-all loop advance past a zero-length match and still terminate.
+C2-0227	1000	N	`<prefix>_next_pos` reads `s` only at offsets in `[pos, n)`, so the `(s == NULL, n == 0)` subject that `<prefix>_search` accepts is legal there too.
+C2-0228	1002	N	`<prefix>_next_pos` is never called from the artifact's own engine; it is caller-facing residue, not hot-path code.
+C2-0229	1006	N	An artifact compiled for a different encoding exports the same `<prefix>_next_pos` entry with that encoding's body, and no caller loop changes.
+C2-0230	1014	N	`<prefix>_next_pos` is an ordinary extern function, not a macro and not `static inline`.
+C2-0231	1015	N	`<prefix>_next_pos` is declared in the emitted header (or, in a self-contained artifact, in the `.c` beside the other entries' declarations) and defined in the `.c`.
+C2-0232	1019	N	`<prefix>_next_pos` never reads outside `[pos, n)`.
+C2-0233	1020	N	Under the byte encoding `<prefix>_next_pos` does not read `s` at all.
+C2-0234	1022	N	`pos > n` is not an error for `<prefix>_next_pos`: the result is simply `pos + 1`.
+C2-0235	1024	N	The result of `<prefix>_next_pos` is always strictly greater than `pos`.
+C2-0236	1026	N	Under the byte encoding the body of `<prefix>_next_pos` is `return pos + 1;` (with `s` and `n` unused).
+C2-0237	1040	N	Under `utf8` the advance of `<prefix>_next_pos` is defined on every input, well-formed or not, and the rule is normative.
+C2-0238	1046	N	Under `utf8`, `<prefix>_next_pos` advances from `pos + 1` past every byte in the range `0x80`-`0xBF`, stopping at the first byte outside that range or at `n`.
+C2-0239	1049	N	Under `utf8`, a well-formed character is skipped whole by `<prefix>_next_pos`.
+C2-0240	1050	N	Under `utf8`, a truncated or otherwise ill-formed sequence degrades under `<prefix>_next_pos` to the next non-continuation byte, not a position in the middle of the garbage.
+C2-0241	1052	N	The four `<prefix>_next_pos` promises (extern, bounded reads, `pos > n` ok, strictly greater) hold unchanged under `utf8` on ill-formed input.
+C2-0242	1053	N	The `utf8` `<prefix>_next_pos` loop is bounded by `n`, not by a well-formed character's maximum of three continuation bytes, which makes the degradation total.
+C2-0243	1063	N	The `utf8` body of `<prefix>_next_pos` is: `size_t i = pos + 1; while (i < n && (s[i] & 0xC0) == 0x80) i++; return i;`.
+C2-0244	1071	N	The `utf8` `<prefix>_next_pos` rule is the entry's own rule, the encoding seam's, and K49's retry advance.
+C2-0245	1075	N	`docs/spec/rxt_format.md`'s `mc` production is the consumer that reads the `utf8` `<prefix>_next_pos` rule and states the same rule.
+C2-0246	1086	H	The find-all loop is final: M5's UTF-8 backend supplies a boundary-aware `<prefix>_next_pos` under the same signature and no caller's find-all loop changes.
+C2-0247	1089	H	A consumer must NOT inline `+ 1` in place of `<prefix>_next_pos`: that makes a byte-compiled caller wrong against a UTF-8-compiled artifact.
+C2-0248	1092	H	CHECK: `<prefix>_next_pos` under `utf8` skips forward over continuation bytes to the next character boundary, and the find-all loop compiles unchanged against a `-e utf8` artifact.
+C2-0249	1096	H	The encoding constant is `PCREC_ENC_BYTE` and the CLI encoding value is `byte` (the semantics are "every byte is a character"); there is no `PCREC_ENC_ASCII` (§8.2 records the rename).
+C2-0250	1101	N	A residual entry is never called from the artifact's own engine (DD-12 (7) forbids the hot path depending on the encoding).
+C2-0251	1104	M	`tests/codegen/run_codegen_tests.sh` reads every emitted engine body for a residual reference across six emission shapes in both artifact forms.
+C2-0252	1106	M	The residual-in-engine check is sabotage-validated by `tests/mech/sabotages/S68_residual_in_hot_loop.sh` (the emitted bitmap prefilter's skip loop advancing through `<prefix>_next_pos`).
+C2-0253	1108	M	Under the byte backend the sabotaged advance and `+ 1` are the same value, so the whole `.rxt` corpus stays green and only the structural check sees the sabotage.
+C2-0254	1112	N	`<prefix>_valid_upto` is the subject validator (UTF-VALID).
+C2-0255	1115	N	Signature: `size_t <prefix>_valid_upto(const unsigned char *s, size_t n, size_t startpos);`
+C2-0256	1118	N	`<prefix>_valid_upto` returns the offset of the FIRST BYTE of the first ill-formed sequence of the artifact's encoding that begins at or after `f`, where `f` is `startpos` stepped back LB characters by PCRE2's raw walk.
+C2-0257	1121	N	`<prefix>_valid_upto` returns `n` when there is no ill-formed sequence, and `n` when `startpos > n`.
+C2-0258	1122	N	The offset `<prefix>_valid_upto` returns is the sequence's lead byte, or a stray continuation byte itself.
+C2-0259	1123	M	That offset equals `PCRE2_UTF`'s own error offset (`pcre2_get_startchar`) on every measured kind: truncated, overlong, surrogate, above U+10FFFF, `0xF5`-`0xFF`, isolated continuation (libpcre2 10.46; docs/design/utf_valid_design.md §1).
+C2-0260	1127	N	EVERY artifact exports `<prefix>_valid_upto`, whatever `-futf-check` says.
+C2-0261	1128	N	Under `byte`, the body of `<prefix>_valid_upto` is `return n;` and `s` is never read, so the `(s == NULL, n == 0)` subject is legal there too.
+C2-0262	1130	N	A caller's code using `<prefix>_valid_upto` compiles unchanged across encodings.
+C2-0263	1131	N	A `-futf-check` artifact refuses exactly the calls for which `<prefix>_valid_upto` returns `< n`.
+C2-0264	1132	N	The value `<prefix>_valid_upto` returns is the offset of the `-futf-check` refusal when passed the SAME `startpos` the refused call was given (under `-fstartpos-guard=align`, the aligned one).
+C2-0265	1134	N	The step-back happens INSIDE `<prefix>_valid_upto`, so a lookbehind-window error before `startpos` is reported, not missed.
+C2-0266	1136	N	`<prefix>_valid_upto` is called once per call from the entry, never from an engine body.
+C2-0267	1137	M	The [M5-SEAM] structural check counts the call sites of `<prefix>_valid_upto` like those of `<prefix>_next_pos`.
+C2-0268	1138	N	LB reaches the `<prefix>_valid_upto` body as `<prefix>_VALID_LB`, a `.c`-only macro, and is otherwise not part of the contract.
+C2-0269	1140	N	`<prefix>_valid_upto` does not refuse a mid-character `startpos`: with LB 0 the walk starts ON the continuation byte, which is then reported as ill-formed.
+C2-0270	1142	N	The checking entries never ask the mid-character question of `<prefix>_valid_upto`, because the K50 guard (or the alignment) runs first.
+C2-0271	1145	N	Find-all over a `-futf-check` artifact validates `[f, n)` on every call, so `m` matches cost O(n*m) validation bytes (PCRE2's own property, for which it documents `PCRE2_NO_UTF_CHECK`).
+C2-0272	1149	N	The linear idiom for find-all under the check needs ONE artifact compiled WITHOUT `-futf-check`.
+C2-0273	1153	N	Linear idiom: if `<prefix>_valid_upto(s, n, 0) != n` refuse (the offset is the return); otherwise run the §3.1 find-all loop unchanged on the same default artifact.
+C2-0274	1157	N	The default artifact in the validate-once idiom answers exactly as the checking artifact would on every call of the loop, because every call's checked range lies inside `[0, n)`.
+C2-0275	1158	N	A validity cursor kept inside the artifact across calls is not offered, because §5.3's reentrancy contract forbids the state.
+C2-0276	1160	N	The per-call "check as you move forward" contract (`-futf-check=extent`) is RESERVED and refused until a caller measures a need for it.

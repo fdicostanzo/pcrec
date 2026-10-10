@@ -56,6 +56,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `litrun.rxt`, S2a's VM literal run as one `memcmp` (subject-end boundary,
   C-literal escapes, runs beside captures/choice points/islands), generated
   from python3 `re` by `gen_litrun.py`. See litscan/CLAUDE.md.
+- **revend/** — [OPT-REVEND] stage 2's CORRECTNESS CORPUS (lane rev2corp,
+  2026-10-10): capture-bearing end-pinned patterns (`$`/`\Z`/`\z`) with
+  matching and non-matching subjects, every cell and every group slot
+  libpcre2-10.46-generated (`gen_stage2.py`) and re-verified by an
+  independent reader (`verify_stage2.py`). Rides `test-corpus`; written before
+  the L1/L2 build it will verify. See revend/CLAUDE.md
 - **island/** — [ENG-ISL] STEP 1, the VM's ALTERNATION ISLAND (`make
   test-island`; `docs/spec/tuning.md` §2.20). Two `.rxt` files that ride
   `test-corpus` and are BLIND to the island by construction — the axis is
@@ -597,6 +603,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   for why the ground truth is the DENIED build and why the subject grid is
   written rather than harvested from the corpus's own `m` lines.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
+- **spec_history/** — `make test-spec-history` (in `make test`): flags build
+  history (dates, ADDENDUM, walkbacks, panel/ruling narrative, row-tag-opened
+  paragraphs) in docs/spec/*.md against an allowlist and a known-debt
+  baseline; lane specclean, 2026-10-09. Since lane specnum the same section
+  holds the numbered-spec checks: paragraph numbering, the generated
+  contents, and every `match_api.md §N` citation in the tree. See its
+  CLAUDE.md.
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
   and a black-box `build/pcrec` were the only inputs). NOT part of `make

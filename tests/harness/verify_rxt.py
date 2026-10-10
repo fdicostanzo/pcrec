@@ -367,8 +367,8 @@ def _findall_protocol(compiled, subj, encoding):
     a stray continuation byte resumes past it rather than on it.
 
     [K73] AND THE FIRST SEARCH STARTS PAST LEADING CONTINUATION BYTES under
-    `utf8`: a search at offset 0 does not attempt a match on one (match_api.md
-    §3.1's offset-0 bullet), so the first `search` is issued from the first
+    `utf8`: a search at offset 0 does not attempt a match on one (match_api.md §9.3,
+    §9.3's offset-0 rule), so the first `search` is issued from the first
     non-continuation byte. `re.search(subj, pos)` then sees the moved start
     exactly as the engine does — `^`/`\A` false there, `\b` reading the byte
     before it."""
@@ -1063,7 +1063,13 @@ def parse_rxt(path):
             # is the one oracle here and a block naming another is stating a
             # true fact about somebody else's runner.
             v = line[len('oracle '):].strip()
-            if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$', v):
+            # [RXT-READERS] the engine half is a defname (`pcre2-dfa`), and
+            # `none <reason>` is the counted skip -- leg A's grammar.
+            if v == 'none':
+                _fail(path, lineno, 'value-shape',
+                      "'oracle none' needs a reason after it")
+            if not (re.match(r'^none\s+\S', v) or re.match(
+                    r'^[A-Za-z_][A-Za-z0-9_.-]*(/[A-Za-z0-9._-]+)?$', v)):
                 _fail(path, lineno, 'value-shape',
                       "'oracle' wants an engine reference, optionally "
                       f"'/<version>' (got {v!r})")

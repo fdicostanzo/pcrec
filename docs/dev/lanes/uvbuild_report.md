@@ -56,7 +56,7 @@ docs/spec docs/guide examples scripts Makefile tools`):
 
 1. `src/gen/emit_dfa.c:51` `#define PCREC_ARTIFACT_ABI 50` (feeds the
    generated-by header line and `rx_info.abi`).
-2. `docs/spec/match_api.md` §6 — the ONE change-log paragraph ("`rx_info.abi`
+2. `docs/dev/history/abi_changelog.md` — the ONE change-log paragraph ("`rx_info.abi`
    is `50` ..."), new entry above the 49 one.
 3. `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT=50` and the appended
    49->50 clause of its failure message.
@@ -81,14 +81,14 @@ found by running the suites that count and by grep for `RE-PINNED`:
 ## 2. Spec hunks (D80)
 
 - `docs/spec/match_api.md`: §1 (the new per-artifact name, the ABI block's
-  three caller refusals); §2 (the `PCREC_ERR_UTF` line); §3.1 (the -9 return
+  three caller refusals); §2 (the `PCREC_ERR_UTF` line); §3.1 and §9.2/§9.4 (§9.2¶9, §9.4) (the -9 return
   row, the align bullet replacing "neither arm rounds", the whole
   `-futf-check` paragraph: range, LB, raw step-back, ORDER, every entry, cost,
   byte-inert); **§3.1.2 `<prefix>_valid_upto`** (new: contract, every artifact,
   the find-all idiom "validate once, loop on the default artifact", extent
   reserved); §3.2 (the anchored entries' -7/-9/-1-under-align); §4 (the code
   block gains -8 and -9; the -9 paragraph with the composed-site PROPAGATE
-  rule `ret < FLOOR && ret != PCREC_ERR_UTF`); §6 (the abi change log);
+  rule `ret < FLOOR && ret != PCREC_ERR_UTF`); the abi change log (docs/dev/history/abi_changelog.md);
   §6.3 (`<PREFIX>_STARTPOS_GUARD` and `<PREFIX>_UTF_CHECK` value tables).
   **§3.1's find-all LOOP text is untouched** (k75fix's territory); the idiom
   lives in §3.1.2.

@@ -1,0 +1,140 @@
+C4-0001	2004	N	`pcrec --source FILE` composes: the target pattern's `(?&...)` calls bind definitions declared in that file or in a file it `lib`s.
+C4-0002	2007	N	Composition changes nothing about `rx_info` for a single-pattern artifact; a caller of a single-pattern artifact is unaffected in every particular.
+C4-0003	2010	N	A library's groups are private unless both sides ask: the definition must list the group with an `export` line AND the call site must use a delivering call; neither alone does anything.
+C4-0004	2013	N	A definition's default export list is empty (nothing is offered without an `export` line).
+C4-0005	2015	N	A plain `(?&name)` call asks for nothing and costs nothing (no rows, no slots).
+C4-0006	2018	N	An exported name that no site delivers costs no slot at all.
+C4-0007	2019	N	A delivering call on a definition that exports nothing is refused.
+C4-0008	2025	N	`(?&name)` gives the caller nothing; it is capture-transparent, exactly as PCRE2 defines it.
+C4-0009	2026	N	`(?&site=name)` gives one `groups[]` row per exported group, named `site.group`, with `ref` = the definition's name.
+C4-0010	2027	N	`(?&=name)` gives the same rows as `(?&site=name)`, with the definition's own name used as the site.
+C4-0011	2028	N	`(?&*=name)` gives one row per exported group, named as exported, in the caller's own scope.
+C4-0012	2030	N	A site is a scope: two delivering calls of one definition under two site names are two independent sets of rows and two sets of slots that do not alias.
+C4-0013	2032	N	`(?&a=email)...(?&b=email)` gives rows `a.local`, `a.host`, `b.local`, `b.host`.
+C4-0014	2034	N	`(?&*=name)` rows are in the caller's own scope: they are counted by `nnames` and found by the section 6 algorithm exactly like a group the caller declared.
+C4-0015	2036	N	A name clash of a flat import (`(?&*=name)`) with a caller's own group or with another flat import is refused by name, not resolved by precedence.
+C4-0016	2039	N	`(?&*=name)` rows still carry `ref`, naming the definition they came from (scope and origin are separate questions).
+C4-0017	2041	N	A delivered group is addressed by name, never by number; its number depends on which definitions the target bound, in what order, and which sites delivered, and may move when the library changes.
+C4-0018	2044	N	A caller reads `groups[i].name`, takes `groups[i].slot`, and never computes a delivered group's slot.
+C4-0019	2047	N	After a delivering call returns, the site's slots hold what the callee matched on that call; the spans are retained across the return rather than restored away.
+C4-0020	2049	N	Delivered-slot retention is a deliberate departure from PCRE2, where a plain subroutine call is capture-transparent (`(?(DEFINE)(?<g>a))(?&g)` leaves group 1 unset); the `=` in the call opts into it.
+C4-0021	2052	N	The definition's own copy of a delivered group stays private and reads `(-1,-1)`; only the site's rows are readable.
+C4-0022	2055	N	For a non-recursive definition, writing the definition's body out at the call site with its groups renamed `site_x` is a legal PCRE2 pattern delivering the same spans (exact oracle).
+C4-0023	2058	N	A delivering call on a recursive definition is refused, because delivery needs the callee inlined at the site.
+C4-0024	2061	N	A definition's group that is exported AND delivered by some site gets one caps[] slot and one `groups[]` row per delivering site.
+C4-0025	2061	N	A definition's group that is referenced by the definition itself (not delivered) gets one private caps[] slot and no `groups[]` row.
+C4-0026	2061	N	A definition's group that is neither exported-and-delivered nor self-referenced spends no number at all: no caps[] slot and no `groups[]` row.
+C4-0027	2070	N	`rx_info.ngroups` is the target pattern's own group count, also in a composed artifact.
+C4-0028	2071	N	In a composed artifact slots `1..ngroups` keep their permanent-prefix promise (D61); everything a definition occupies is above `ngroups`.
+C4-0029	2073	N	`rx_info.nnames` counts the caller-scope rows: the pattern's own named groups plus any flat imports.
+C4-0030	2074	N	The caller-scope rows are a genuine prefix of `groups[]`, which is sorted `(caller-scope first, name, number)`.
+C4-0031	2076	N	The section 6 by-name algorithm run over `groups[0 .. nnames)` is correct unchanged, finds a flat import without knowing the form exists, and can never walk a name run into a site-scoped row.
+C4-0032	2079	N	`nentries - nnames` is the number of site-scoped rows, which occupy `groups[nnames .. nentries)`, each named `site.group`.
+C4-0033	2081	N	The groups[] sort key's first component is the scope (caller-scope vs site-scoped), not `ref`.
+C4-0034	2082	N	A flat import carries a `ref` and is still caller scope.
+C4-0035	2083	N	`ref` names which definition a name came from and is non-NULL on every delivered row of either shape (site-scoped or flat).
+C4-0036	2085	N	A caller-scope name never contains a `.`, and a site-scoped name always does (export names and site names are plain identifiers).
+C4-0037	2087	N	`RX_NCAPS` may move across library versions while every index in `1..ngroups` holds still.
+C4-0038	2092	H	CHECK: Module `named-groups` is gated and not enabled by default: `build/pcrec -p rx -o - -- '(?<g>a)'` refuses with "(?<...) requires module 'named-groups' (pattern offset 0)".
+C4-0039	2102	M	Measured 2026-08-30: with `--features named-groups`, `'(?<g>a)'` emits `rx_group_names[] = { { "g", 1, 1, NULL } }` with `.ngroups = 1` and `.nnames = 1`.
+C4-0040	2111	H	A verification command pins an output, not the reason for that output (a cited measurement can outlive its fact while still reproducing); the struct comment now names both reasons for `nnames` 0 separately.
+C4-0041	2120	N	`rx_info.match_form` is appended after `prefilter` in the struct; no existing member's offset moved.
+C4-0042	2123	N	`rx_info.match_form` is NULL on a hybrid artifact, because a hybrid's `<prefix>_match` is the VM's anchored body and the field's value set does not describe it.
+C4-0043	2123	N	`rx_info.scan` is non-NULL on a hybrid (a hybrid contains a DFA scan), so its NULL rule differs from `match_form`'s.
+C4-0044	2129	N	The two DFA-scan macros of section 6.3 are preprocessor-only; `rx_info.scan` and `rx_info.prefilter` are their runtime mirrors for consumers that cannot read macros (dlopen hosts, FFI bindings).
+C4-0045	2133	N	`rx_info.scan` and `rx_info.prefilter` are appended at the end of the struct after the three pointers, so no existing member's offset moves.
+C4-0046	2140	M	`tests/codegen/run_dfa_stamps.sh` asserts every line of the scan/prefilter rule over the whole corpus on both engines.
+C4-0047	2145	N	On a DFA artifact `rx_info.scan` is one of `"unanchored"`, `"attempt"`, `"empty"`, equal to the value of `<PREFIX>_DFA_SCAN`.
+C4-0048	2145	N	On a DFA artifact `rx_info.prefilter` equals the value of `<PREFIX>_DFA_PREFILTER`, one of the nine values listed in section 6.3.
+C4-0049	2146	N	On a hybrid VM artifact `rx_info.scan` is one of the same three values (`"unanchored"`/`"attempt"`/`"empty"`), describing the DFA scan the artifact inlines.
+C4-0050	2146	N	On a hybrid VM artifact `rx_info.prefilter` is one of the same five values, describing the inlined scan's own filter.
+C4-0051	2147	N	On a non-hybrid VM artifact `rx_info.scan` is NULL, because there is no DFA scan in the artifact.
+C4-0052	2147	N	On a non-hybrid VM artifact `rx_info.prefilter` is `"none"`, the VM's own vocabulary (the value of `<PREFIX>_VM_PREFILTER` on exactly these artifacts).
+C4-0053	2152	N	`rx_info.prefilter` is never NULL; every artifact answers the candidate-start question, including "none".
+C4-0054	2154	N	On a VM artifact, `rx_info.scan != NULL` is exactly "this is a hybrid" (the runtime reading of `<PREFIX>_VM_PREFILTER "hybrid"`).
+C4-0055	2157	N	The string `"hybrid"` never appears in `rx_info.prefilter`; a hybrid reports its inlined scan's actual mechanism instead.
+C4-0056	2159	N	A consumer wanting the coarse hybrid answer tests `scan != NULL`, not `strcmp(prefilter, "hybrid")`.
+C4-0057	2163	N	`rx_info.scan`/`prefilter` and the `<PREFIX>_DFA_SCAN`/`_DFA_PREFILTER` macros are written from the same pair of emitter functions and report the same answer.
+C4-0058	2165	M	"field == macro" is asserted on every compiled artifact of both engines.
+C4-0059	2169	N	`engine`'s numeric values are universal, artifact-independent pcrec-contract values: 1 = DFA, 2 = VM.
+C4-0060	2178	N	`PCREC_ENGINE_DFA` (value 1) and `PCREC_ENGINE_VM` (value 2) are real `#define`s in the shared `PCREC_RX_ABI_H` block (section 2).
+C4-0061	2180	N	The `PCREC_ENGINE_*` defines are pinned to the numbers the `engine` field already stamped; they name the existing contract and do not renumber it.
+C4-0062	2181	N	The internal `ENGM_DFA`/`ENGM_VM` enum stays internal and is never exported as an emitted symbol.
+C4-0063	2183	N	The emitted `.engine` comment reads `PCREC_ENGINE_DFA=1 / PCREC_ENGINE_VM=2`.
+C4-0064	2186	N	`ngroups`, `ncaps` and `nnames` are three genuinely different counts and do not in general coincide.
+C4-0065	2187	N	`ngroups` is a fact about the pattern's own text.
+C4-0066	2188	N	`ncaps` is a fact about what this build delivers; it is pinned to 1 on any DFA-compiled or `--no-captures` build regardless of how many groups the text has.
+C4-0067	2190	N	`nnames` is the length of the named-group index (the `groups[]` table).
+C4-0068	2191	M	Verified: `--no-captures 'a(b|c)+d'` has `ngroups=1, ncaps=1`; the captures-default build of the same pattern has `ngroups=1, ncaps=2`.
+C4-0069	2195	N	`ngroups` is a permanent prefix-length promise (D61): on any captures-on build, slots `1..ngroups` of the caps array are this pattern's own groups in its own left-to-right numbering.
+C4-0070	2199	N	On a captures-on build `ngroups <= ncaps - 1`, with equality on every build from a single pattern.
+C4-0071	2200	N	Slots above `ngroups` are reserved for insertion/composition mechanisms; a ref-bearing producer appends its delivered slots and never interleaves with or renumbers the primary prefix.
+C4-0072	2203	N	A composed artifact has `ngroups < ncaps - 1`; every slot in between belongs to a bound definition.
+C4-0073	2205	N	A caller indexing `caps` by the pattern's own group numbers is safe against every future insertion feature.
+C4-0074	2207	N	The prefix promise pins the caps layout, not group numbering; `rx_group_entry.slot` remains the number-to-slot indirection.
+C4-0075	2212	N	`rx_info.pattern` is embedded unconditionally as an escaped C string literal.
+C4-0076	2213	N	The pattern string literal escapes `"`, `\`, and control bytes, so a pattern containing `"` does not break the emitted `.c`.
+C4-0077	2215	M	Verified: the emitter carries a dedicated string-literal escaper distinct from the `/* ... */`-comment escaper used elsewhere in the file.
+C4-0078	2218	N	`rx_info.groups` is NULL and `nnames` is 0 for a pattern with no named group.
+C4-0079	2219	N	`groups`/`nnames` are NULL/0 for every pattern until module `named-groups` is enabled (`--features named-groups` or a named set including it).
+C4-0080	2221	M	Verified live: `'(?<g>a)'` refuses with `requires module 'named-groups'` against the bare default feature set.
+C4-0081	2222	H	CHECK: The groups[] sort compares names with `strcmp`, byte-exact and case-sensitive (superseded for duplicated names by (name asc, number asc), see section 6.0).
+C4-0082	2225	M	Measured on libpcre2 10.46 and python3 `re`: `(?<name>a)(?<NAME>b)` is two distinct groups, unchanged under `(?i)`/`PCRE2_CASELESS`.
+C4-0083	2228	N	Caseless folds matching, never group-name identity; the groups[] sort key applies no case fold.
+C4-0084	2229	M	libpcre2's `PCRE2_INFO_NAMETABLE` is sorted by the same strcmp name order: a pattern declaring `zeta`/`alpha`/`mu` reports its table as `alpha`/`mu`/`zeta` (tests/probes/probe_named_groups.c).
+C4-0085	2235	N	The groups[] sort key is (name asc, number asc) for duplicated names; see section 6.0.
+C4-0086	2238	N	The sort key for `ref`-bearing rows other than the composition rows is not fixed beyond what the composition section states (every primary-module row has `ref` NULL/empty).
+C4-0087	2246	M	Quoted from a fresh `-p rx --features named-groups` build of `'a(?<b>b|c)+d'`: `static const rx_group_entry rx_group_names[] = { { "b", 1, 1, NULL }, };`.
+C4-0088	2254	M	The same artifact's `rx_info` instance has `.ngroups = 1`, `.nnames = 1`, `.groups = rx_group_names`.
+C4-0089	2263	N	The groups array's C identifier (`rx_group_names` under the default `--prefix rx`) is `<prefix>`-scoped like every other per-artifact symbol.
+C4-0090	2265	N	Only the entry type `rx_group_entry` is one of the six fixed-literal ABI types; the groups array identifier is not.
+C4-0091	2266	N	Each `rx_group_entry.slot` is the group's capture-slot index when the build actually delivers one (captures-wanted build), and `-1` otherwise.
+C4-0092	2268	N	A named group's presence forces the VM through the generic capture-forcing engine-selection rule, so a named-group artifact with a live slot is never a DFA artifact.
+C4-0093	2271	M	Verified: the same pattern compiled `--no-captures` stamps `{ "b", 1, -1, NULL }` and selects the DFA engine (`.engine = 1`).
+C4-0094	2278	N	`rx_ctx.ncap`'s watermark-mid-match reading has no producer: every call site in every emitted artifact sets `ctx.ncap = 0` and nothing advances it, so no caller can observe a watermark.
+C4-0095	2282	N	`rx_ctx.ncap` is reserved for a future mid-match view, as `nnames`/`groups` were reserved for `named-groups`.
+C4-0096	2286	N	A default artifact carries exactly two kinds of comments: the provenance line and the shared `PCREC_RX_ABI_H` type block's doc-comments; both are emitted under every setting.
+C4-0097	2287	N	The provenance line reads `/* Generated by pcrec VERSION (abi N). Pattern: <pattern> */`.
+C4-0098	2288	N	In the provenance line VERSION is `PCREC_VERSION` (`lib/pcrec.h`) and N is the same digit `rx_info.abi` carries.
+C4-0099	2296	N	The provenance line is emitted on the `.c` and on the paired `.h`.
+C4-0100	2297	N	The shared `PCREC_RX_ABI_H` block's doc-comments cover `rx_ctx`'s field notes, `rx_matchfn`'s return-space paragraph, the give-up and below-the-floor code notes, `rx_renderfn`, `rx_group_entry` and every `rx_info` member's note.
+C4-0101	2302	N	Everything else the emitter can say (orientation block, table and state legends, per-label role lines, entry-point paragraphs, encoding residuals' doc-comments, the feature-set line) is emitted only under `-fcomments`.
+C4-0102	2306	N	`PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES` (section 6.3) still carry the feature set on the `.c` in a default build.
+C4-0103	2308	N	In a default build the paired `.h` records the feature set in no form.
+C4-0104	2294	H	CHECK: `PCREC_VERSION` moved `0.1.0-beta` to `0.2.0-beta` at REL-0.2 as a string-only change of the same byte length, not an abi event.
+C4-0105	3554	N	`rx_info.abi` is mirrored nowhere else (no other macro or field carries it besides the provenance line digit).
+C4-0106	3557	N	`rx_info.abi` is the version of the emitted scaffolding as a whole: every declaration, comment and macro in the artifact, not merely `struct rx_info`'s layout.
+C4-0107	3560	N	A change to any emitted scaffolding, whether or not a struct offset moves, is an `abi` bump.
+C4-0108	3562	H	CHECK: Abi bumps may move no struct offset at all (e.g. 3 to 4 added two stamp lines; 6 to 7 moved emitted program bytes in the DFA scan tables and loop lines), and none is a smaller event than another by the document's promise.
+C4-0109	3569	N	Within one `abi` number the emitted output is byte-exact whole-file for a given pattern, prefix and option set, comments included.
+C4-0110	3572	N	`-fcomments` and `-fno-comments` are two different option sets; their artifacts differ in comment text and in nothing else.
+C4-0111	3575	N	Between `-fcomments` and `-fno-comments` artifacts the object file, the comment-excluded size and every emitted `#define` are identical.
+C4-0112	3577	N	A caller finding two artifacts compiled at the same `abi` (same pattern, prefix, option set) to differ has found a pcrec bug, not an expected drift.
+C4-0113	3579	N	Pre-v1, an `abi` bump carries no compatibility story and no announcement beyond the stamp itself; the bumped number discharges D37's announced-boundary requirement.
+C4-0114	3583	N	No separate deprecation cycle, migration note or advance notice is to be expected for an `abi` bump pre-v1.
+C4-0115	3584	N	`abi` makes no version-negotiation promise; a caller wanting version-negotiation semantics from `abi` builds on a promise the document does not make until a v1 declaration says otherwise (section 9).
+C4-0116	3588	N	The field name `frame_capacity` appears on both sides of the API with different sentinels (input option vs output info), answering different questions.
+C4-0117	3590	N	Input side: `pcrec_options.frame_capacity == 0` means "let the compiler size it"; a positive value is a request.
+C4-0118	3593	N	Output side: `rx_info.frame_capacity == -1` means "no bound at all".
+C4-0119	3594	N	A DFA artifact stamps `rx_info.frame_capacity = -1`, having no resume stack to bound.
+C4-0120	3595	M	Measured: a `--no-captures` build stamps `.frame_capacity = -1` alongside `.step_budget = -1` and `.work_budget = -1`.
+C4-0121	3596	N	`0` is not a legal `rx_info.frame_capacity` output value, and `-1` is not a legal `pcrec_options.frame_capacity` input value.
+C4-0122	3602	N	The groups[] sort key is (name asc, number asc).
+C4-0123	3604	N	Module `backrefs` ships `(?J)`, so a name may label a run of rows in `groups[]`.
+C4-0124	3606	N	Within a run of rows sharing a name, rows are ordered by ascending group number.
+C4-0125	3607	N	The number tiebreak is a correctness requirement: without it the emitter yields descending numbers within a run (declarations are prepended) and the caller's by-name algorithm selects the wrong member.
+C4-0126	3610	N	The emitted comparator is `src/gen/emit_dfa.c`'s `ng_cmp_name`.
+C4-0127	3611	M	`tests/codegen/run_codegen_tests.sh`'s `[M6.5-DUPNAMES]` check reads the rows off the artifact and asserts them strictly increasing in (name, number); sabotage S120 removes the tiebreak.
+C4-0128	3615	N	Caller's algorithm for a possibly duplicated name: `bsearch` by name returns some row of the run.
+C4-0129	3616	N	Then walk back to the run's first row (the previous row with a different name, plus one).
+C4-0130	3617	N	Then walk forward to the first row whose slot participated in the match (both offsets set).
+C4-0131	3619	N	That first participating row is the group a by-name reference resolved to, per PCRE2's "first of the set that is set" rule, where "set" includes set-to-empty.
+C4-0132	3620	M	Measured (backrefs design section 8.3): first of the name-run by ascending number that is SET, where set includes set-to-empty.
+C4-0133	3621	N	The caller's by-name algorithm is the same algorithm the emitted `\k<name>` resolution uses, so caller and matcher cannot disagree about which member a name meant.
+C4-0134	3623	N	A name-run none of whose members participated is an unset name.
+C4-0135	3626	N	`rx_info` is link-time data, not part of `rx_ctx` or any callback parameter.
+C4-0136	3628	N	A caller reads `<prefix>_info` by symbol, once, at whatever point it wants the artifact's facts about itself.
+C4-0137	3630	N	`<prefix>_info` is placed in section `.data.rel.ro.local`, not `.rodata`, for the reason section 3.4 measures.
+C4-0138	3637	N	`'a(b|c)+d'` compiled `--no-captures` has `ncaps=1, ngroups=1`: the pattern has a group but the artifact delivers no slot for it.
+C4-0139	3639	N	A reader who only checks `ncaps` would wrongly conclude the pattern has no groups; `ngroups` must be consulted.
+C4-0140	3640	N	`ngroups` and `ncaps - 1` coincide only on a VM-compiled, captures-on artifact (the common case since M4.5); `rx_info` does not restate this as a rule for every build.

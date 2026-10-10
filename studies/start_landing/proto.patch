@@ -1,8 +1,7 @@
 diff --git a/src/gen/emit_dfa.c b/src/gen/emit_dfa.c
-index 638dd558..ab805f55 100644
 --- a/src/gen/emit_dfa.c
 +++ b/src/gen/emit_dfa.c
-@@ -9257,6 +9257,163 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
+@@ -9278,6 +9278,217 @@
   * carries both a stay skip and an edge, and no seed target is a head on a
   * machine whose prefilter reseeds — and they are worth having precisely
   * because they cannot share a source with what they check. */
@@ -13,6 +12,8 @@ index 638dd558..ab805f55 100644
 +typedef struct {
 +    const Nfa *nfa; uint8_t *seen; unsigned gen; int *stack;
 +    long budget;
++    const unsigned char *scls;   /* [rev 2, SL-G2] the seam's start_cls; NULL = every byte starts */
++    int maxdepth;                /* deepest mid-character frontier reached */
 +} LpWalk;
 +
 +/* EXACT closure of `seeds`: N_CLASS members into cur[], accept reached on an
@@ -56,6 +57,7 @@ index 638dd558..ab805f55 100644
 + * Returns NULL on success, else the decline reason. */
 +static const char *lp_char(LpWalk *w, const int *cur, int nc, int depth, bool mb)
 +{
++    if (depth > w->maxdepth) w->maxdepth = depth;
 +    if (--w->budget < 0) return "budget";
 +    int n = w->nfa->n;
 +    int *seeds = malloc(sizeof(int) * (size_t)(nc ? nc : 1));
@@ -80,10 +82,13 @@ index 638dd558..ab805f55 100644
 +        if (asrt) { why = "assert-after"; break; }
 +        if (nn == 0) continue;                       /* dead */
 +        /* alive, not accepted: only mid-character under a multibyte enc */
-+        if (!mb || depth >= 3) { why = "alive-not-accept"; break; }
++        /* [rev 2, SL-G2] mid-character iff every live state reads only bytes
++         * the seam's start_cls does NOT admit; the depth is bounded by the walk
++         * (a frontier deeper than the NFA has states is a cycle: decline) */
++        if (!mb || depth >= w->nfa->n) { why = "alive-not-accept"; break; }
 +        for (int i = 0; i < nn && !why; i++)
 +            for (int c = 0; c < 256; c++)
-+                if (cls_has(w->nfa->st[nxt[i]].cls, (unsigned)c) && (c < 0x80 || c > 0xBF)) { why = "alive-not-accept"; break; }
++                if (cls_has(w->nfa->st[nxt[i]].cls, (unsigned)c) && cls_has(w->scls, (unsigned)c)) { why = "alive-not-accept"; break; }
 +        if (why) break;
 +        int *cp = malloc(sizeof(int) * (size_t)nn); memcpy(cp, nxt, sizeof(int) * (size_t)nn);
 +        why = lp_char(w, cp, nn, depth + 1, mb);
@@ -95,10 +100,13 @@ index 638dd558..ab805f55 100644
 +}
 +
 +/* THE LANDING FACT (design §2): NULL when it holds, else the reason. */
-+static const char *lp_land_fact(const Nfa *nfa, bool mb)
++static const char *lp_land_fact(const Nfa *nfa, const unsigned char *scls, unsigned onebyte_max,
++                                int *hi, int *maxdepth)
 +{
++    bool mb = scls != NULL;
++    *hi = 0; *maxdepth = 0;
 +    if (nfa->n <= 0 || nfa->anch_start < 0) return "no-nfa";
-+    LpWalk w = { nfa, calloc((size_t)nfa->n, 1), 0, malloc(sizeof(int) * (size_t)nfa->n * 2 + 8), 200000 };
++    LpWalk w = { nfa, calloc((size_t)nfa->n, 1), 0, malloc(sizeof(int) * (size_t)nfa->n * 2 + 8), 200000, scls, 0 };
 +    int *cur = malloc(sizeof(int) * (size_t)nfa->n);
 +    bool acc, asrt; int seed = nfa->anch_start;
 +    int nc = lp_close(&w, &seed, 1, cur, &acc, &asrt);
@@ -106,11 +114,17 @@ index 638dd558..ab805f55 100644
 +    if (acc) why = "nullable";
 +    else if (asrt) why = "assert-at-start";
 +    else if (nc == 0) why = "empty";
++    /* [rev 2] the guard's condition (SL-G2): a first byte above the seam's
++     * one-byte repertoire -- read before any decline, it is a census column */
++    for (int i = 0; i < nc; i++)
++        for (unsigned c = onebyte_max + 1; c < 256; c++)
++            if (cls_has(nfa->st[cur[i]].cls, c)) *hi = 1;
 +    if (!why && mb)
 +        for (int i = 0; i < nc && !why; i++)
-+            for (int c = 0x80; c <= 0xBF; c++)
-+                if (cls_has(nfa->st[cur[i]].cls, (unsigned)c)) { why = "cont-in-start-set"; break; }
++            for (int c = 0; c < 256; c++)
++                if (cls_has(nfa->st[cur[i]].cls, (unsigned)c) && !cls_has(scls, (unsigned)c)) { why = "cont-in-start-set"; break; }
 +    if (!why) why = lp_char(&w, cur, nc, 0, mb);
++    *maxdepth = w.maxdepth;
 +    free(cur); free(w.seen); free(w.stack);
 +    return why;
 +}
@@ -147,26 +161,65 @@ index 638dd558..ab805f55 100644
 +    return W;
 +}
 +
++/* [rev 2, SL-G3] THE BYTE WIDTH INTERVAL [bmin, bmax] from ONE union-frontier
++ * iterator (assertions PASSED, a superset of paths): bmin = the first depth
++ * whose frontier reaches accept, bmax = the last (-1 when a frontier is
++ * still live past the NFA's state count: a cycle, unbounded). W = bmin when
++ * bmin == bmax. */
++static void lp_width_interval(const Nfa *nfa, long *bmin, long *bmax)
++{
++    *bmin = -1; *bmax = -1;
++    if (nfa->n <= 0 || nfa->anch_start < 0) return;
++    int n = nfa->n;
++    uint8_t *seen = calloc((size_t)n, 1); int *stack = malloc(sizeof(int) * (size_t)n * 2 + 8);
++    int *cur = malloc(sizeof(int) * (size_t)n), *seeds = malloc(sizeof(int) * (size_t)n);
++    int ns = 1; seeds[0] = nfa->anch_start; long last = -1; bool bounded = false;
++    for (long j = 0; j <= n + 1 && j <= LP_MAXW; j++) {
++        memset(seen, 0, (size_t)n);
++        int sp = 0, nc = 0; bool acc = false;
++        for (int i = 0; i < ns; i++) if (!seen[seeds[i]]) { seen[seeds[i]] = 1; stack[sp++] = seeds[i]; }
++        while (sp > 0) {
++            int s = stack[--sp]; const NState *st = &nfa->st[s]; int nx[2], nn = 0;
++            switch (st->k) {
++            case N_CLASS: cur[nc++] = s; break;
++            case N_ACCEPT: acc = true; break;
++            case N_SPLIT: nx[nn++] = st->t1; nx[nn++] = st->t2; break;
++            default: nx[nn++] = st->t1; break;
++            }
++            for (int i = 0; i < nn; i++) { int t = nx[i]; if (t >= 0 && t < n && !seen[t]) { seen[t] = 1; stack[sp++] = t; } }
++        }
++        if (acc) { if (*bmin < 0) *bmin = j; last = j; }
++        if (nc == 0) { bounded = true; break; }
++        ns = 0;
++        for (int i = 0; i < nc; i++) seeds[ns++] = nfa->st[cur[i]].t1;
++    }
++    *bmax = bounded ? last : -1;
++    free(seen); free(stack); free(cur); free(seeds);
++}
++
 +static void lp_probe(Ctx *cx, const Dfa *d, const CandRow *pf)
 +{
 +    if (!getenv("PCREC_LANDPROBE") || d != &cx->job->dfa) return;
 +    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
-+    bool mb = pcrec_enc_has_entry(enc, PCREC_ENCE_DECODE);
-+    const char *lf = lp_land_fact(&cx->job->nfa, mb);
++    bool mb = enc->start_cls != NULL;
++    int hi, ldepth; long bmin, bmax;
++    const char *lf = lp_land_fact(&cx->job->nfa, enc->start_cls, enc->onebyte_max, &hi, &ldepth);
 +    long W = lp_fixed_width(&cx->job->nfa);
++    lp_width_interval(&cx->job->nfa, &bmin, &bmax);
 +    bool seeded = dfa_needs_seed(d) || d->s1u[UPC_PLAIN] != d->s0;
 +    for (int u = 0; u < d->natoms; u++) if (d->s1g[u] != d->s1u[u]) seeded = true;
-+    fprintf(stderr, "LANDPROBE\troute=%s\tfit=%s\tnext=%s\tseeded=%d\tland=%s\tfixedw=%ld\trecover=%s\tmb=%d\n",
++    fprintf(stderr, "LANDPROBE\troute=%s\tfit=%s\tnext=%s\tseeded=%d\tland=%s\tfixedw=%ld\trecover=%s\tmb=%d\tbmin=%ld\tbmax=%ld\thi=%d\tldepth=%d\tdecode=%d\n",
 +            CAND_ROUTE_NAME(cand_route_of(cx)),
 +            cx->job->fit.chosen == ENGM_DFA ? "dfa" : "vm", pf->tok, seeded,
-+            lf ? lf : "OK", W, dfa_search_start_of(cx)->tok, mb);
++            lf ? lf : "OK", W, dfa_search_start_of(cx)->tok, mb, bmin, bmax, hi, ldepth,
++            (int)pcrec_enc_has_entry(enc, PCREC_ENCE_DECODE));
 +}
 +/* ==== end PROTOTYPE PROBE ==== */
 +
  static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                              const DfaDir *dir, DfaForm *f)
  {
-@@ -9282,6 +9439,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
+@@ -9303,6 +9514,7 @@
       * NEXT slot of `cand_rows[]`, on this body's route (`cand_route_of`:
       * every machine here is ENG_UNANCH's, so `CAND_ROUTE_DFA`). */
      f->pf      = cand_select(CAND_SLOT_NEXT, &s, flags);
@@ -174,3 +227,16 @@ index 638dd558..ab805f55 100644
      if (d == &cx->job->dfa)
          PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s.route), f->pf->tok, "form-fwd");
      else
+@@ -9747,6 +9959,12 @@
+ 
+     /* [DD-13] THE ONE EMPTY-ENGINE EXIT, and it is taken BEFORE any token
+      * block is emitted so an artifact that matches nothing grows nothing. */
++    if (us.empty && getenv("PCREC_LANDPROBE")) {   /* [rev 2, SL-C1] the census arm for empties */
++        long bmin, bmax;
++        lp_width_interval(&cx->job->nfa, &bmin, &bmax);
++        fprintf(stderr, "LANDEMPTY\tfixedw=%ld\tbmin=%ld\tbmax=%ld\trecover=%s\n",
++                lp_fixed_width(&cx->job->nfa), bmin, bmax, dfa_search_start_of(cx)->tok);
++    }
+     if (us.empty) {
+         emit_search_head(cx, c, fn, storage);
+         pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"

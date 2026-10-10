@@ -32,7 +32,7 @@ includes.
   by hand.
 
 `make gen-tables` regenerates the two generated bundles AND the store;
-`make test-findings` §12 fails when either is stale against its corpus,
+`make test-findings` sec. 12 fails when either is stale against its corpus,
 finding each generator from the bundle's own provenance `source` (the
 `third_party/` directory's name), so a new generated bundle needs no edit
 there. Neither is consulted unless a compile names it: the chain of a

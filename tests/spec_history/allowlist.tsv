@@ -1,0 +1,6 @@
+# tests/spec_history/allowlist.tsv -- marker hits in docs/spec/*.md that are
+# NOT build history. Columns (TAB-separated): file, marker id, a substring of
+# the hit line, why it is not history. Keep each substring specific enough
+# that it cannot excuse a real revision note on another line.
+match_api.md	walkback	which returns SOME row of the run; walk back to	the duplicate-name algorithm's own step ("walk back to the run's first row"), not a walkback
+match_api.md	addendum	(D47 second addendum)	a citation of a decision entry by its name, not a revision note

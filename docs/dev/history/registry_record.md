@@ -1,0 +1,599 @@
+# The registry listings contract -- record of the removed history
+
+FROZEN. Not normative. The history `docs/spec/registry.md` carried until its facts-only rewrite (lane specreg, `[SPEC-CLEAN]`), moved verbatim, in order. Counts, row figures and "was N" narratives here are as of the time written and are NOT current. The complete old text is `git show 43cec6c0:docs/spec/registry.md`. Each block is tagged `[old §X, lines a-b]`.
+
+## [old preamble, lines 3-14]
+
+This is the **spec**, not the design record, per `docs/spec/CLAUDE.md`'s
+charter. `docs/spec/table_contract.md` states the WIRE FORMAT every
+tabular pcrec command shares (`#` comments, one header row, append-only
+columns, resolve-by-name); `docs/spec/cli.md` §2 states what each of the
+three listing surfaces *answers*, in one paragraph apiece. This document
+is the third leg: for `--list-syntax`, `--list-verbs` and
+`--list-families`, **every column, by name, with its value set**, and
+which values are a closed, stable vocabulary a consumer may switch on
+versus which are free text a consumer may only display. Every value set
+below was read live off a fresh build at this worktree's branch point
+(`962e2de`); the command that produced each is given so a reader can
+redo it.
+
+## [old §1, lines 16-40]
+
+## 1. The shape of the promise
+
+`docs/spec/table_contract.md` rule 4 is the load-bearing one for this
+document: **columns are added at the END; a consumer resolves a column
+by its HEADER NAME, never by hardcoded position or field count; a
+column is never removed or renumbered.** That freedom to append lasts
+through pre-v1 (D40, `docs/dev/decisions.md`): after v1, the same rule
+holds but backwards-compatibility becomes a binding promise rather than
+a house habit. The rule exists because it was already broken once:
+D65 appended the `built` column (below) to `--list-syntax`, and two
+consumers that had hardcoded `NF != 15` broke while every consumer that
+resolved by header name did not (`docs/design/registry_built_status_memo.md`'s
+Correction section has the full survey). `tests/lib/table.sh` is the
+shell/awk implementation of the resolve-by-name rule;
+`tests/registry/compliance_section.py`'s `COLS` list is python's, and it
+is itself cross-checked against the dump's live header every run (§4
+below) so the two implementations cannot silently disagree about what
+a header says.
+
+The registry's own generating structure (`RegRow`, `src/core/internal.h`)
+is the single declarative source SR-4 was built around: one row per
+spelling, read by the parser, the reject-test suite, `--explain`, and
+`docs/pcre2_compliance.md`'s generated index — never re-derived. This
+document only describes what the THREE DUMPS built from that source
+print; it does not re-describe the row struct itself.
+
+## [old §2, row-count drift note, lines 52-59]
+
+17 columns, confirmed live this pass. 138 data rows
+(`build/pcrec --list-syntax | grep -vc '^#'`) — this is the number
+`tests/registry/registry_check.c:614`'s exact-count assertion pins
+today; **`tests/registry/CLAUDE.md`'s own prose still says "100 since
+Q2/SR-9"**, which was true when that paragraph was written and has
+since drifted behind six further row-adding modules — flagged here as
+the drift the survey brief (A8) asked to name, not corrected in that
+file by this pass.
+
+## [old §2, live counts, lines 81-90]
+
+Live counts this pass (`build/pcrec --list-syntax \| grep -v '^#' \|
+cut -f16 \| sort \| uniq -c`): `built` 108, `unbuilt` 14, `-` 16, `defect`
+0 — 138 total, matching `registry_check.c`'s own pinned
+`checked/built/unbuilt/na` tuple (138/108/14/16) exactly. [M4-QUOTING]
+moved this from 106/16 to 108/14: module `quoting`'s two rows (`\Q`, `\E`)
+flip `unbuilt -> built`, the first `RF_LEXICAL` rows ever to (their
+producer is a lexer-mode transition with no `aport`/`cport` to read, so
+`pcrec_construct_built_status` gained a dedicated arm for the flag rather
+than the usual doorway-return classification — see
+`src/dump/syntax_dump.c`'s own comment on that arm).
+
+## [old §3, wave-E incident, lines 108-114]
+
+Confusing the two once cost a lane a whole review pass: `docs/CLAUDE.md`'s
+wave-E incident record describes prose rows carrying the shipped
+status while the generated index's `status`/`roadmap` columns were read
+as though they meant the same thing, for 34 rows of already-shipped
+modules. `built` exists precisely so a reader never has to re-derive
+"is this actually built" from `status` plus a memorized module
+rollout state.
+
+## [old §6, row/axis count narrative, lines 192-255]
+
+`build/pcrec --list-axes | bash tests/lib/table.sh table-main - | grep -vc '^#'`
+— **157 rows / 48 axes** (the MAIN table only, [MEMFN] R4a: the count never
+includes the kit's `memfn` section below), re-derived live 2026-10-09 by lane
+decfbB7 ([DEC-FALLBACK] B7: +21 rows and +2 axes, `fallback` (11 rows) and
+`prefilter-admit` (10 rows), the fallback ladder T1 and the prefilter
+admission T2 listed whole). Was 136/46, re-derived live 2026-10-07 by lane
+possbuild ([ART-POSS-ARMS]: +5 rows and +2 axes, `poss-ctx-follow` (a0, a1,
+widen) and `poss-bref-first` (group-text, widen), bits 50/51, stamp
+`RX_VM_POSS_ARMS` — `tuning.md` §2.44/§2.45). Was 131/44, re-derived
+live 2026-10-06 by lane r4caxis ([MEMFN] R4c: +2 rows and +1 axis,
+`memfn-simd`, the kit's one switch, `-fno-memfn-simd`/`-fmemfn-simd`,
+bits 48/49, INERT — `tuning.md` §2.43). Was 129/43, re-derived
+live 2026-10-06 by lane ssbuild3 ([START-SET] stage 3: +2 rows and no new
+axis, `first-memchr-bounded` and `first-class-bounded` on the `prefilter`
+axis, the DFA hat's rows, each carrying `-fno-start-set`). Was 127/43,
+re-derived live 2026-10-05 by lane ssbuild2 ([START-SET] stage 2: +1 row and no new
+axis, `first-class` on the `prefilter` axis, the VM hat's row, which
+carries `-fno-start-set` and names its own stamp, `RX_VM_START_SCAN`, in the
+`stamp_macro` column — the first row of an axis whose stamp is not the
+axis's own). Was 126/43, re-derived
+live 2026-10-05 by lane k82hbuild ([K82] (B): +2 rows and +1 axis,
+`req-use`, the pre-check's use table walked live, whose `handoff` row
+carries `-fno-req-handoff`). Was 124/42, re-derived
+live 2026-10-04 by lane k82fix ([K82]: +5 rows and +1 axis, `req-admit`, the
+whole-window pre-check's admission table walked live, whose `set-leads` row
+carries `-fno-req-set-lead`). Was 119/41, re-derived
+live 2026-10-03 by lane c3build ([OPT-LITSCAN] S4 C3: +2 rows on
+`run-overlap`, its masked `words` and `bytes` rows, and +2 rows and +1 axis,
+`req-run-fold`). Was 115/40, re-derived live 2026-10-03 by lane r1land (the [OPTLOOP] round-1 landing stack: +1 row,
+`hyb-reseed`'s `anchored`, [OPT-HYB-RESEED-FORM] A1, which did not move this
+line; +2 rows and +1 axis, `run-overlap`, [OPT-LITSCAN] S4 C1). Was 112/39,
+re-derived live 2026-10-03 by lane vedge ([OPT-VEDGE]: +2 rows and +1 axis for
+`view-edge`; the read found the line stale by 4 rows / 1 axis — the base
+tree printed 110/38, `utf-check` having landed without moving it — the sixth
+demonstration of the rule below). Was 106/37, re-derived
+live 2026-09-30 by [CLS-TREE] S2's review-fix lane (clss2fix): `scan-body`
+reads its four run tests off the class-form table (+1 row, `fold`, D139),
+and the read found the line stale by 5 rows / 2 axes — `cls-kit` and
+`cls-pack` had landed ([CLS-TREE] S4, [OPT-CLSPACK]) and S2 added the
+`kit` body — the fifth demonstration of the rule below. Was 100/35,
+re-derived live 2026-09-30 ([OPT-HYB-RESEED]'s fix lane: +5 rows and +1 axis for
+`hyb-reseed`, and the read found the line stale by 8 rows / 3 axes it had
+never been moved for — `lit-run`, `req-run` and `ctx-node` had landed; the
+fourth demonstration of the rule below). Was 87/31, re-derived
+live at [OPT-5] STEP 2 (2026-09-02: +2 rows and +1 axis for
+`search-start`, and the read ALSO found the line stale by 7 rows / 2 axes it
+had never been moved for — `scan-edge` and `scan-body` landed with [OPT-5]
+STEP 1 and this line still said 63/21, the third time the standing "re-derive
+rather than trust this line" rule below has been demonstrated by the line
+itself. Was 63/21 at [LIM-1], 2026-08-30 — which was last stated as 61, moved by one `engine-
+route` row this pass's own ENGINE_SEL fold-in adds ([LIM-1]/axes_dump.c below)
+and by one further row of unstated origin at the branch point this pass read
+from, no new axis name either time — see this section's own standing "re-
+derive rather than trust this line" rule, which is exactly the drift this
+correction demonstrates). [REG-SV] (2026-08-30, moved this from 54/21 — five more
+`table` rows, no new axis name; see §6's own [REG-SV] paragraph below — this
+number moves with every axis landing, so it is stated as a live count
+rather than a number to trust), 12 columns. Where the first three surfaces describe
+SYNTAX pcrec accepts, this one describes the compiler's own TUNING
+machinery: for every axis where `src/gen/emit_dfa.c` or
+`src/opt`/`select_engine.c` chooses among two or more emitted
+strategies for a pattern, one row per (axis, candidate), in the
+emitter's own PREFERENCE order (order 1 is tried first; the last
+candidate of an axis always applies).
+
+## [old §6, axis column (transcript and history), lines 262-262]
+
+| `axis` | 48 values today, and the list below is a TRANSCRIPT of `pcrec --list-axes`'s own `axis` column, deduplicated rather than a hand-kept set — re-derive it rather than trusting this line, which has now gone stale TWICE (pcrec-bench's O-10 item 8 caught it reading 19 while omitting `engine-route` and `prefilter-lang`; [OPT-5] STEP 2's read caught it reading 21 while omitting `scan-edge` and `scan-body`, which STEP 1 had landed; and it then stood at 24 while `alt-island`, `cls-fold`, `comments` and `startpos-guard` had ALL landed, which `[OPTLOOP.1]` batch 1 found when it came to add its own three): `accept`, `alt-island`, `altcls-factor`, `altcls-merge`, `atomic-discharge`, `cls-fold`, `cls-kit`, `cls-pack`, `comments`, `counter`, `ctx-node`, `direction`, `end-window`, `engine`, `engine-route`, `fallback`, `hyb-reseed`, `length-prune`, `lit-run`, `match`, `possessify`, `prefilter`, `prefilter-admit`, `prefilter-lang`, `req-admit`, `req-byte`, `req-run`, `req-run-fold`, `revdet`, `run-overlap`, `scan-body`, `scan-edge`, `search-start`, `seed`, `size-term`, `splice-calls`, `startpos-guard`, `table`, `tiered-entry`, `utf-check`, `view`, `view-edge`, `vm-anchor-bound`, `vm-prefilter` (re-transcribed 2026-10-09 by lane decfbB7, which added [DEC-FALLBACK] B7's `fallback` and `prefilter-admit`; 2026-10-04 by lane k82fix, which added [K82]'s `req-admit`; 2026-10-03 by lane c3build, which added [OPT-LITSCAN] S4 C3's `req-run-fold`; 2026-10-03 at the lane/r1land landing, which added [OPT-LITSCAN] S4 C1's `run-overlap`; 2026-10-03 at [OPT-VEDGE], which added `view-edge`; 2026-09-30 at [UTF-VALID], which added `utf-check`; it had stood at 35 while `cls-kit` and `cls-pack` landed, and at 31 while `lit-run`, `req-run` and `ctx-node` did). TEN are the DFA layer-1 axes (`table`, `prefilter`, `view`, `seed`, `accept`, `direction`, `match` — `docs/design/emitter_form.md` §3 and, for `match`, `docs/design/anchored_match_unwrapped.md` §5.1 — plus `scan-edge` and `scan-body`, [OPT-5] STEP 1's region and run-test axes — `scan-body`'s candidates read off `src/gen/clskit.c`'s class-form table since D139, the edge having no class decision of its own — and `search-start`, [OPT-5] STEP 2's search-entry axis, `docs/design/opt5_step2_twopass.md` §4.1); the other thirty-eight (`req-admit`, the pre-check admission table [K82] made listable, `req-run-fold`, [OPT-LITSCAN] S4 C3's caseless necessary run, `view-edge`, [OPT-VEDGE]'s widening of `scan-edge`, and `run-overlap`, [OPT-LITSCAN] S4 C1's run-compare spelling, joined them) are VM-side, emitted-shape, WHOLE-WINDOW PRE-CHECK and CONTRACT axes (`docs/spec/tuning.md` §2) — the last group, `[OPTLOOP.1]` batch 1's `vm-anchor-bound`/`end-window`/`req-byte`, is the first whose analysis sits ABOVE either engine, so two of its three report on DFA artifacts as well | yes, but append-only — a new axis is a new value, never a renumbering |
+
+## [old §6, kind and stamp_value cells, lines 265-267]
+
+| `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it; since [DEC-FALLBACK] B7 this includes the three FALLBACK axes `engine-route`, `size-term` and `prefilter-lang` (their rows are cells of the fallback tables T1-T4, listed in the order the tables walk them) and the two whole-table axes `fallback` (T1, one row per ladder row) and `prefilter-admit` (T2, one row per admission row), which carry no stamp macro; since [START-TABLE] C7 this includes all seven START axes, `prefilter`, `search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound` and `end-window`, which are rows of the one start table `cand_rows[]` — the last five were `predicate` before C7) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
+| `stamp_macro` | the `#define` this candidate is reported through (e.g. `RX_DFA_TABLE`, `RX_VM_STRATS`), or empty when no such macro exists — axes `view`/`seed`/`accept`/`direction` have none (emitter-internal decisions with no observable trace), and a few `predicate` axes stamp an ACTIVITY COUNT rather than a named value (`RX_ALTCLS_MERGES`, `RX_VM_CALL_SPLICED`/`_LINKED`, `RX_FAST_FRAMES`) | yes as a vocabulary shape |
+| `stamp_value` | the value `stamp_macro` takes when this candidate is chosen — empty when `stamp_macro` is empty OR is a count rather than a name (D82: "the chosen object's name IS the stamp value" holds exactly where this column is non-empty). Where a macro's real value set is wider than a two-candidate mechanism/fallback pair — because the artifact reports WHY a selection landed where it did, or composes a fact from more than one machine — the axis carries ONE ROW PER VALUE instead (`engine-route` was the first instance; `size-term`'s seven rows and `table`'s two composite rows, [REG-SV], are two more), and a row with no lever of its own (empty `deny_macro`/`force_macro`/`cli_flag`) still carries its own real `stamp_value`, never an empty one standing in for "not a candidate" | free text, but always another column's own value when non-empty |
+
+## [old §6, source boundary, lines 273-317]
+
+**BOUNDARY, stated once here because it governs every column above**:
+this dump shares its source with the emitter it describes — for the
+`kind=list`/`both` axes, `candidate`/`deny_macro`/`deny_bit` are read
+live off the SAME arrays `src/gen/emit_dfa.c`'s own selection walks read
+(`src/dump/axes_dump.c`'s accessor calls): `dfa_select`'s lists for the
+machine-form axes and, for the seven START axes (`prefilter`,
+`search-start`, `req-admit`, `req-use`, `hyb-reseed`, `vm-anchor-bound`,
+`end-window`), the rows of the one start table `cand_rows[]` that
+`cand_select` walks, each listed under its axis by the row's own
+`list[route]` column and projected with its stamp macro and value (since
+[START-TABLE] C6, `docs/design/start_table.md`; the start axes' rows had
+become that table's slot by slot at C3-C5), so a new candidate landing in
+one of those arrays appears here with no edit to the dump. A start axis's
+`deny_macro` may name a FACT's deny bit rather than the row's own: on
+`vm-anchor-bound`'s anchored rows `-fno-vm-anchor-bound` and on
+`end-window`'s `window` row `-fno-end-window` empty the landmark the row
+reads, so the bit removes the row's population without removing the row
+(start_table.md §3.7). The
+`applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
+§3's own "applies when" column, transcribed by a human, for the
+machine-form `kind=list`/`both` rows; for a start axis, the row's `desc`,
+written beside the row in `cand_rows[]` since [START-TABLE] C6; for the
+three fallback axes, the row's `axlist` cell beside it in the fallback tables
+(`fit_rungs[]`, `pf_admits[]`, `esel_ends[]`) since [DEC-FALLBACK] B6/B7, and
+for `fallback` and `prefilter-admit` GENERATED from the row's own cells
+(arrival labels, degrading, `--size-cap=refuse` reach, attempts added, repeat;
+verdict and `--emit-ir` listing token);
+`tuning.md` §2's prose for the `kind=predicate` rows) — evaluating a real
+candidate's predicate needs a live pattern a
+context-free listing command does not have, so the text is a
+description, never a live evaluation. **This dump therefore proves what
+the compiler THINKS its own axes are; it is not independent evidence
+that a stamp or a flag behaves as described** — `tests/codegen/
+run_dfa_stamps.sh` (reads emitted artifacts) and `docs/spec/tuning.md`
+§2's own differentials (compile twice, compare answers) are the
+independent side of THAT claim. `tests/registry/`'s axis registry check
+(§7) is the independent side of THIS dump specifically: it reads this
+TSV against `docs/spec/tuning.md`, a file this dump never opens, and
+against the SHIPPED PARSER's own behaviour — it RUNS `pcrec` with each
+advertised `cli_flag` and requires it to be accepted. It no longer reads
+`cli/main.c`'s source text: since [REVW.4] wave 4 (D111) the parser's
+spellings and this dump's `cli_flag` column are one row of
+`src/core/axes.def`, so comparing the two would be comparing a table with
+itself. What the shared row cannot make true — that the grammar arm is
+still REACHED — is what the live probe measures.
+
+## [old §6, memfn section and REG-SV, lines 323-428]
+
+**[MEMFN] R4a: THE `memfn` SECTION.** After the axis table (which stays
+the leading anonymous table, `table_contract.md` Sections rule 2 and
+consumer rule 5) the stream carries `#section memfn`: the option registry
+of pcrec-memory-functions, the in-tree search-code kit (D146/D147,
+`docs/design/memfn/integration.md` §R4.4.1). One row per entry of the
+kit's `mf_options()`, read from the kit — pcrec's dump names no row:
+
+    #name  kind  budget  layer  spelling  doc
+
+| column | value set |
+|---|---|
+| `name` | the kit's option id, `[a-z0-9-]`, arch-blind |
+| `kind` | `deny` (reached only as `--memfn=no-NAME`) \| `pair` (also forced as `--memfn=NAME`) |
+| `budget` | D91's `scan` \| `loop` \| `any` |
+| `layer` | `scalar` \| `simd`: the acceptance reading that owns the row; a `simd` row is inert at `-fno-memfn-simd` |
+| `spelling` | the accepted `--memfn=` spelling(s), `\|`-joined |
+| `doc` | one line, the kit's |
+
+**How a row is reached.** `--memfn=no-NAME` (or bare `NAME` for a `pair`
+row), a config's raw `pcrec --memfn=` line, or `pcrec_options.memfn`
+([MEMFN] RQ-1, `cli.md` §1): ONE opaque string pcrec validates only through
+the kit and copies into every site. A `simd` row given at `-fno-memfn-simd`
+is accepted and inert.
+
+These are NOT pcrec axes: no row carries a `lib/pcrec.h` bit, `axes.def`
+has no row for one, and `test-axes`, the identity gates and the registry
+check read them from this section, never from a list of their own. Each is
+a kit change's own deny (D144 item 4), born with the change that moves an
+emitted byte.
+
+**The section is EMPTY at R4a** — header only, zero rows: the kit moves no
+emitted byte yet, so it has no option. Its independent control is a
+member-count FLOOR pinned here as a literal, sharing no source with the
+kit's registry; it is BORN with the first row ([MEMFN] R4d, the first kit
+change that moves a byte), in the form `` `memfn` section floor: `` followed
+by the number, raised in every change that adds a row. Until then
+`tests/registry/axes_registry_check.sh` reports the floor arm as
+UNREACHED (K35), never as a pass, and FAILS if a row appears with no floor
+pinned.
+
+**[REG-SV] (2026-08-30) CLOSED A GAP `pcrec-bench` FOUND: two name-valued
+stamps had no `stamp_value` population on this surface at all.** The
+`size-term` axis's two rows both stamped an EMPTY `stamp_value` despite
+`RX_UNROLL_K_WHY` being name-valued with SEVEN real values
+(`docs/spec/match_api.md` §6.3) — so neither the registry check nor a
+consumer archiving this TSV (the bench's own `list_axes.tsv` adapter) could
+tell which of the seven an artifact had landed on from this surface alone.
+The `table` axis's two rows named only its per-MACHINE candidates
+(`premultiplied`/`indexed`), leaving `RX_DFA_TABLE`'s two ARTIFACT-LEVEL
+composite values (`none`, `mixed`) off this surface entirely, though the
+axis registry check already carried a NAMED, CITED exception for exactly
+that gap (§7's `axes_registry_check.sh` bullet, pre-[REG-SV] revision).
+
+Both are fixed the SAME way, one row per producible value — `engine-route`'s
+own shape (§6's `stamp_value` cell above states the general rule now) —
+rather than a `stamp_value` cell listing a set: the existing readers
+(`axes_registry_check.sh`'s `dump_stamp_vals`, one row = one value) already
+handle that shape with no new parser, where a listed-set cell would have
+needed one. `size-term` grew from 2 rows to 7 (`option`, `denied`,
+`default`, `cap-rescue`, `size-model`, `capacity-declined`,
+`size-model-declined`, in the SAME priority order `src/core/compile.c`'s own
+derivation tests them in — one derivation, two readers, never re-decided in
+the dump); `table` grew from 2 rows to 4 (`premultiplied`/`indexed` from the
+live per-machine list, unchanged, plus two hand-stated composite rows for
+`none`/`mixed`, order 3/4). The fix also CORRECTED a pre-existing
+mis-attribution found while reshaping `size-term`: the `PCREC_NO_SIZE_TERM`/
+`-fno-size-term` lever used to sit on the row named `"size-model"`, but
+denying the axis makes the artifact stamp `"denied"`, never `"size-model"`
+— a hand-typed row whose `stamp_value` the emitter can never actually
+produce, exactly the finding this whole row exists to catch, found inside
+its own fix. `axes_registry_check.sh`'s `RX_DFA_TABLE` exception is
+discharged (not merely narrowed) and its own comment says so; a new
+`RX_UNROLL_K_WHY` value-set check pair was added where none existed before.
+
+**Reachability, measured against a live `build/pcrec` under a HOLD that
+forbade a corpus sweep or a `-D`-rebuilt reference compiler (one call at a
+time, this build only):** `default` (`a(b|c)+d`, no flags), `option`
+(`a(b|c)+d --unroll=4`) and `denied` (`a(b|c)+d -fno-size-term`) are
+witnessed directly; `size-model` is witnessed by the nested-repeat pattern
+`tests/codegen/run_size_term.sh` already uses (`NEST8`) at the shipped
+threshold, with no flag needed. `cap-rescue` and `capacity-declined` are
+NOT reachable from any pattern-and-flags combination on a stock build —
+`tests/codegen/run_size_term.sh` §5/§6 and §7/§7b already measure and PIN
+their natural corpus population at exactly 0, reachable only through a
+reference compiler built with a lowered `PCREC_SIZE_TERM_THRESHOLD`/
+`PCREC_MAX_VM_EMIT_CODE_BYTES` at pcrec's OWN compile time (D84 ruling 1's
+raise-only CLI rule is what makes this true from outside, permanently, not
+only under this HOLD) — that script IS the witness for both, and it already
+runs under `make test-codegen`. `size-model-declined`'s natural
+reachability at the shipped threshold is UNCONFIRMED by this pass — no
+cited natural witness was found in `docs/design/artifact_size_term.md` or
+either spec document, and confirming one needs either a corpus sweep or the
+same `PCREC_SIZE_TERM_THRESHOLD`-lowered reference build `run_size_term.sh`
+already builds for its §9 materiality-bar cells, both forbidden under this
+HOLD's one-call, no-`cc` shape. Left as a named open item for whoever runs
+`make test-codegen`/`test-registry` after the HOLD lifts, not asserted
+either way here. `table`'s two composite values are BOTH witnessed directly
+on a stock build with no reference compiler: `none` on `\B\b` (a
+proven-empty engine, `RX_DFA_SCAN "empty"`) and `mixed` on
+`[01]*1[01]{13}` — `tests/codegen/run_form_census.sh`'s own synthetic
+witness for exactly this cell, chosen there because the corpus's own
+population is 0.
+
+No emitted scaffolding changed — this is a registry-surface change only,
+the dump's own text and the seven/four values it now enumerates were
+already true of the compiler before this pass, so there is no `abi` bump.
+
+## [old §7, test-run figures and REL-1.6/pc3floor, lines 432-482]
+
+- **`registry_check.c`** (`tests/registry/`) is **pcrec checking
+  pcrec** — table-vs-parser self-consistency in both directions, an
+  EXACT row count (138, §2), the `roadmap`/`quantifiable`/`class_expect`
+  legal-pairing rules, kind coverage, and the D65/D71 derived-column
+  assertions (the `defect` outcome, the family AND-rule). It is the
+  suite that catches a row naming the *wrong* module or a malformed
+  pairing; it cannot catch a row that is plausibly wrong on both sides
+  at once, because the wrongness is what both sides read (its own
+  `CLAUDE.md`, "pcrec checking pcrec" section, states this as a
+  measured limit, not a hedge).
+- **PC-3** (`pcre2_check.c`, same directory) is the check that closes
+  that gap: it asks **libpcre2**, independently, whether an `RS_MODULE`
+  row's construct really exists in PCRE2 and whether an `RS_REJECTED`
+  row's diagnostic really matches PCRE2's own rejection — plus several
+  generated differentials (byte sweeps, class-bracket doorway,
+  POSIX names) with populations in the tens of thousands. This pass
+  (`PROCS=4 make test-registry`): registry_check 207/0, PC-3 191/0, pc4
+  (the semantic differential, what a produced construct MATCHES cell
+  by cell) 0 disagreements over 62,872 compared cells. What PC-3
+  guarantees a consumer: every `RS_MODULE`/`RS_REJECTED` row's
+  existence-or-non-existence claim against PCRE2 is independently
+  checked, not merely self-consistent. What it does NOT guarantee: it
+  says nothing about `built` (a pcrec-only fact PCRE2 has no opinion
+  on) and nothing about `class_expect`'s exact measured value beyond
+  what its own generated cells happen to cover.
+
+  **[REL-1.6], 2026-09-22 — PC-3 carries a VERSION FLOOR** (libpcre2
+  10.46, `PCREC_PCRE2_FLOOR_{MAJOR,MINOR}` in `pcre2_check.c`, D98): a
+  resolved libpcre2 older than the floor SKIPs with the same banner
+  shape absence does, naming the floor and the resolved version, rather
+  than running checks written against constructs (the `(?a)`/`(?r)`
+  group modifiers, several verb names) only the floor and newer have.
+  This is what a stranger's older distro package gets; CI builds the
+  pinned 10.46 itself (`.github/workflows/ci.yml`) precisely so its own
+  run exercises the checks rather than skipping them.
+
+  **[pc3floor], 2026-09-21 — the POSIX-class-names probe count is a
+  FLOOR, not a pin.** That one count (`expect_probes_floor()` in
+  `pcre2_check.c`) reads `pool_from_library()`, i.e. the RESOLVED
+  LIBRARY BINARY's own ASCII strings — a property of the (version,
+  toolchain, build) triple, not of the version alone, unlike every
+  other exact `expect_probes()` pin in the same file (those iterate
+  pcrec-owned tables/loops and are build-invariant). CI run 35681785230
+  measured a THIRD legitimate value for libpcre2 10.46 alone: 149804
+  (ubuntubudu's own build), 154210 (the GitHub Actions runner's own
+  from-source build), 155742 (darwin's from-source build). The check
+  now asserts `>= floor` (the smallest known-good measurement per
+  resolved version — 149804 at 10.46, 187872 at 10.48) and prints a
+  `RECORD:` line naming every measured value per box/toolchain, so a
+  real coverage drop still fails loudly (below the floor) while an
+  ordinary different-build-same-version reading does not.
+
+## [old §7, axes check, lines 492-510]
+
+- **`axes_registry_check.sh`** (`tests/registry/`, [CHK-2] piece 1) is
+  §6's own independent-side check: it reads `--list-axes`'s TSV against
+  `docs/spec/tuning.md` §2 (every documented `(bit N)` heading has a
+  dumped row at that bit, and vice versa), the SHIPPED PARSER (every
+  dumped `cli_flag` is a spelling `build/pcrec` actually accepts — run,
+  not read out of `cli/main.c`'s text, which since [REVW.4] wave 4 derives
+  from the same `src/core/axes.def` row this column does) and
+  `docs/spec/match_api.md`
+  §6.3 (every dumped `stamp_value` is a value that macro's own
+  value-set table or string-literal pair lists there, and vice versa —
+  the STAMP-VALUE half of the charter's own direction (a), added on
+  manager review; the nine D46 bit constants' own value set is read from
+  `src/gen/emit_dfa.c`'s literal `#define` block instead, since they are
+  emitted-artifact text `lib/pcrec.h` never declares), in BOTH
+  directions, every discrepancy named by name rather than by count alone
+  (`docs/dev/learnings.md` §3; two named, cited exceptions to the
+  spec->dump value sweep, stated in the script's own header). See
+  `docs/testing.md` "the axis registry check" for its runtime and
+  sabotage validation (53 checks total).
+
+## [old §8 landing note, lines 512-523]
+
+## 8. Landing note
+
+Every column's name and value set above was read from a live
+`build/pcrec` at `962e2de` (`gnutimeout 600 make -j4`, clean); no
+registry data, source, or `tests/lib/table.sh` resolver was touched to
+produce this document. `PROCS=4 make test-registry` ran once this pass:
+green (registry_check 207/0, PC-3 191/0, pc4 clean). `make strict`:
+clean.
+
+§6 (`--list-axes`) and §7's `axes_registry_check.sh` bullet were added
+by [CHK-2] piece 1 (lane `chk2p1`), read from a live `build/pcrec` at
+this lane's own branch point; not re-verified against the commit above.
+
+## [old §9, intro and definitions boundary, lines 525-530]
+
+## 9. `--list-definitions` — the replacement/definition table (the FIFTH surface, D85/[DD-11.2])
+
+`build/pcrec --list-definitions | grep -vc '^#'` — 50 rows today (grows
+as the remaining census items land, see below), 7 columns:
+
+    #kind  selector  syntax  order  predicate  definition  applies
+
+## [old §9, definition-kind history, lines 540-688]
+
+**BOUNDARY, stated once here because it governs every column above**:
+this dump shares its source with the resolver it describes.
+`kind`/`selector`/`syntax`/`predicate`/`definition` are read live off
+the SAME `RegRow.definitions` arrays `pcrec_def_resolve`
+(`src/parse/definitions.c`) walks at option-resolution time — one
+derivation, two readers, `--list-definitions`'s own instance of the
+principle `--list-axes` (§6) and `--list-syntax` (§2) already state.
+**This dump therefore proves what the table THINKS its definitions
+are; it is not independent evidence that a definition string parses to
+core-only vocabulary, or that it MATCHES the same strings as the
+construct it stands for.** The first is
+`tests/registry/definitions_check.c`'s structural check (every
+`DEFK_STR`/POSIX definition parses under `--features all`, every
+builder's and `DEFK_TEXTFN`'s output passes `pcrec_ast_all_core`,
+`src/parse/definitions.c`'s own exhaustive `AKind` switch — plus a
+static well-formedness sweep: every non-NULL `definitions` list ends
+in a `DEF_ALWAYS` entry, so `pcrec_def_resolve`'s fallthrough path is
+an `assert`, never a silent NULL); the second is [DD-11.3]'s
+option-matrix self-oracle (BUILT, 2026-08-29 — 354 cells, 101,244 A==B
++ 101,244 A==C comparisons, 0 disagreements, covering every `DefKind`
+including the DEFK_TEXTFN and operand-keyed POSIX families the note
+below once excluded) — see docs/design/definitions_table.md §3/§6 for
+both. `tests/registry/
+run_definitions_tests.sh`'s containment grep is a third, narrower
+claim: that the tag evaluator (`pcrec_def_tag_applies`) is reached
+from exactly one call site, so `predicate`'s values cannot be
+second-guessed by a hidden second evaluator anywhere in the tree.
+
+`--list-definitions` takes `--flavour` exactly as `--list-syntax` does
+(r43 K6, reversing the design note's first-pass "no"): it walks the
+same `RegRow`s, filtered identically, so an unfiltered dump would
+print a definition for a construct `--list-syntax --flavour=X` says
+does not exist under that flavour. It takes no pattern/`-o` — a syntax
+query, `cli.md` §1.
+
+**Five `DefKind`s reach this dump today**: `DEFK_STR` (a fixed
+core-syntax string — the class-escape family, `\R`, `\b`/`\B`, the
+fixed literal escapes, the POSIX named-class row's 14 names, each its
+own entry since the family is a FINITE enumerable set rather than an
+unbounded operand space, and `\Z`'s own row — below). **The 14 POSIX
+entries each also carry `RegDef.operand`** (r43-third-round follow-up,
+2026-08-29): the name itself ("alpha", "digit", ...), read by this dump
+(the `[[:name:]] ≡ ...` rendering above) and by [DD-11.3]'s self-oracle
+directly, bypassing `pcrec_def_resolve`'s first-applicable-wins walk —
+which, over an all-`DEF_ALWAYS` list, can only ever answer entry 1
+("alnum") regardless of the row's own fixed `syntax` example. `DEFK_BUILDER`
+(an AST-operand function — the possessive-suffix family, `(?n)` —
+**since a second manager ruling, r43-second-round, carries a TEMPLATE
+in `str` exactly as `DEFK_TEXTFN` does**, `X<quant>+ ≡ (?>X<quant>)` /
+`(?n)(X) ≡ (?:X)`, instantiated over a small body set for [DD-11.3]'s
+self-oracle rather than compared at the AST level — D77, no measured
+need for AST-structural-equality infrastructure); `DEFK_TEXTFN`
+(manager ruling: the general shape for "a binding parameterized by
+TEXT AT THE OCCURRENCE" — `\cX`, bare `\x`, `\o{}`, octal/`\0`,
+`\N{U+}` — each carries a human-readable TEMPLATE for this column plus
+a function that calls the EXISTING decoder where one exists, becomes
+the first decode site where none does yet, per `\R`'s own precedent
+for an unbuilt construct); `DEF_IDENTITY` (manager ruling: the row's
+own primitive form, an EXPLICIT entry never inferred from an absent
+one — [DD-13]'s stamp-design lesson applied here), used by two rows,
+both on `RK_BARE` (below); and `DEFK_ROW` (second manager ruling,
+r43-second-round: an entry that CHAINS to another row's own
+resolution rather than restating a fact that row already carries —
+"an alias row defines to the row it aliases, never to the alias's own
+expansion" — `str` holds the TARGET's `syntax`, `family`'s own
+reference-by-string idiom, generalised past one `RegKind` via
+`pcrec_registry_row_by_syntax`; `pcrec_def_resolve` WALKS THROUGH it,
+depth-bounded against a mis-edited cycle, so a caller never sees a
+`DEFK_ROW` entry itself). Used by one row today — `$`'s non-multiline
+entry, chaining to `\Z`'s own row, which carries the real substitution
+`(?=\n?\z)` exactly once.
+
+**`RK_BARE` (manager ruling, 2026-08-29): a new no-doorway `RegKind`,
+on `RK_QUANTSUFFIX`'s own precedent** — consulted by the dumps and by
+this table's own definitions machinery, by nothing on the live parse
+path. Three rows: `^`, `$`, and the plain capturing group `(...)`,
+which is what closes the gap the paragraph below used to describe as
+open. `^`, `$` and `(...)` are base grammar parsed directly in
+`p_atom`/`p_group_body` with no doorway, unlike the literal escapes
+(which route through the real `\` doorway even when answered before
+reaching the registry); `RK_BARE` gives them a table row without
+adding a lookup to that path — the dumps and `pcrec_def_resolve` reach
+these rows by iterating `all_kinds`/`pcrec_registry()`, never by a
+parse-time dispatch, exactly as `RK_QUANTSUFFIX` already does not cost
+the base tier a lookup on every quantifier. `RK_COUNT` bumped; every
+`RK_COUNT`-shaped guard in the tree re-measured from a live run rather
+than computed by hand (`tests/registry/CLAUDE.md`'s own count
+citations, `tests/registry/registry_check.c`'s row/family/built-status
+tuples, `tests/registry/pcre2_check.c`, `compliance_section.py`,
+`tests/cli/run_cli_tests.sh` case10's noroute set).
+
+Each `RK_BARE` row's `definitions` carries a real option matrix
+rather than a single entry: `^`'s `DEF_MULTILINE` substitution is
+`\A|(?<=\n)(?!\z)`, falling through to a `DEF_IDENTITY` `DEF_ALWAYS`
+entry (`A_BOL`, `^`'s own non-multiline form, genuinely is core —
+`\A`'s alias, per the design note's full-reduction census). `$`'s
+`DEF_MULTILINE` substitution is `(?=\n)|\z`, falling through to a
+`DEFK_ROW` `DEF_ALWAYS` entry — **not** `DEF_IDENTITY`: the structural
+check (`tests/registry/definitions_check.c`'s `check_str_entry(owner,
+r->syntax)` extension for `DEF_IDENTITY` entries) FAILED here, proving
+`A_EOL` is not core under full reduction — it aliases `\Z`, which
+itself reduces to `(?=\n?\z)`, so this row's `DEF_ALWAYS` entry needed
+a real substitution, not the identity the manager's original ruling
+assumed. Rather than restate `(?=\n?\z)` a second time, it CHAINS to
+`\Z`'s own row (a second manager ruling, r43-second-round: "an alias
+row defines to the row it aliases, never to the alias's own
+expansion") — `\Z`'s row carries the fact exactly once, `\Z`'s own
+non-`(?m)` construct having the identical A_EOL-not-core problem `$`
+does. The
+capturing-group row's `DEF_NOCAP` entry is `DEFK_BUILDER`
+(`pcrec_def_build_identity`, `(?n)`'s existing no-op builder — reused
+rather than duplicated), falling through to a `DEF_IDENTITY`
+`DEF_ALWAYS` entry (an ordinary `A_CAP`, unaffected by `(?n)` outside
+its scope).
+
+`\x{...}` (braced hex) still has no row of its own, but not for the
+reason this paragraph used to give: the manager's `RK_BARE` ruling
+also settled that a definitions row costs no lookup on the base path
+(`src/parse/CLAUDE.md`'s "no LOOKUP on the base path" rule is about
+dispatch, not about a table entry dispatch never consults), so `\x{...}`
+and bare `\xHH` are declared ONE construct with two spellings, sharing
+ONE row — the pre-existing bare-`\x` `RK_ESC`/`RS_BASE` row, whose
+`DEFK_TEXTFN` template now names both forms (`\xHH or \x{HHHH} = byte
+HH..HHHH (hex)`) and whose textfn (`pcrec_def_text_hex`) is the one
+decode site for both. `parse.c` still handles the braced form as a base
+`\x` special case with no doorway and no row — **but [M5.0] stage 2
+changed what it DECIDES**: `\x{…}` is base grammar now, range-checked
+against the compile's encoding universe (compiles up to `0x10FFFF` under
+`utf8`, refuses above `0xFF` under `byte` with the err-134 analogue), where
+before it always refused with "requires module 'unicode-props'". The row
+and the no-doorway placement are unchanged; the diagnostic is not.
+
+`\Q...\E` stays excluded from this table, and by a different rule than
+either of the above: it is LEXICAL — a delimiter pair the lexer strips
+before any construct is recognised, never itself a construct with a
+core-syntax equivalent — so it earns no row and no `DefKind` at all
+(manager ruling, distinguishing it from `(?x)`, the design note's other
+excluded item, in `docs/design/definitions_table.md` §1).
+
+Neither is `[DD-11.5]`'s wiring-into-real-compilation step, which stays
+gated on M6.6's exact one-byte-fixed-lookbehind lowering per the design
+note's own §4.
+
+**This pass**: `build/pcrec --list-definitions` read live at this
+worktree's own HEAD; `bash tests/registry/run_registry_tests.sh` and
+`tests/registry/run_definitions_tests.sh` both green (the latter still
+standalone — see tests/registry/CLAUDE.md's note — pending the table's
+population settling); `make strict` clean.
+
+
+## [old §10 reconciled sequence, lines 691-720]
+
+## 10. The numbered sequence, RECONCILED — and `--list-schema`
+
+**[DD-13b.W23.1]** This document's own numbered sequence stopped at the
+FIFTH surface while two surfaces were undocumented here, so a reader
+counting sections and a reader counting the CLI's dumps got different
+answers. The reconciled list, which is the one `docs/spec/cli.md` §2 and
+`docs/spec/table_contract.md`'s Scope table both agree with:
+
+| # | surface | documented |
+|---|---|---|
+| 1 | `--list-syntax` | §2 |
+| 2 | `--list-verbs` | §4 |
+| 3 | `--list-families` | §5 |
+| 4 | `--list-axes` | §6 |
+| 5 | `--list-definitions` | §9 |
+| 6 | `--list-limits` | `docs/spec/limits.md` §3 + `cli.md` §2 |
+| 7 | **`--list-schema`** | `docs/spec/rxt_format.md`'s "The schema and its surface" + `cli.md` §2 |
+
+The row is added to a RECONCILED list rather than appended to a gap,
+because an ordinal that is wrong in the document that enumerates its own
+predecessors is the cheapest possible instance of a number nobody
+re-derived — and this document had two such gaps before the seventh
+surface arrived to expose them.
+
+**`--list-schema` is documented ELSEWHERE on purpose**, unlike the five
+above. The other surfaces describe pcrec's own construct registry, which
+is this document's subject; the schema describes the `.rxt` FILE FORMAT,
+whose contract lives with the format. Duplicating its column table here
+would be a second home for it — the drift shape this whole document
+exists to make checkable.

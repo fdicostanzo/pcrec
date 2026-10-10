@@ -142,6 +142,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   and the manager's still-owed commands (the PROCS re-validation sweep, the
   full "after" matrix) — both box-exclusive and not run by this lane.
   Written 2026-08-23.
+- `history/` — build history moved OUT of the spec tier (records, never normative): `match_api_record.md`, `registry_record.md`, `table_contract_record.md`, `limits_record.md`, `cli_record.md`, `facts_listing_record.md`, `ir_listing_record.md`, `findings_record.md`, `rxt_format_record.md` and `tuning_record.md` (the history the spec docs carried until their facts-only rewrites, frozen) and `abi_changelog.md` (the LIVING `abi` change log; a bump adds its entry there). See history/CLAUDE.md.
 - `lanes/` — per-lane restart logs and delivery reports (`<lane>_log.md`, `<lane>_report.md`; optional, the lane's own voice, historical after merge). See lanes/CLAUDE.md.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.

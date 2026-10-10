@@ -13,6 +13,10 @@ re-measure before load-bearing use.
 
 ## Studies
 
+- `specnum/` -- [SPEC-CLEAN] numbering (lane specnum, 2026-10-09): the one-time passes that gave `match_api.md` its permanent section and paragraph numbers and re-pointed the tree's `match_api.md#anchor` citations to `§N¶K`, plus the old-anchor to number map. See its CLAUDE.md.
+- `specclean/` -- [SPEC-CLEAN] (lane specclean, 2026-10-09): the claims ledger and citation logs behind match_api.md's facts-only rewrite (2,187 claims, 0 unmapped). See its CLAUDE.md.
+- `spectune/` -- [SPEC-CLEAN] (lane spectune, 2026-10-10): the claims ledger behind tuning.md's facts-only rewrite (434 old paragraph units, each mapped) and the two one-time passes that numbered the new text and built the ledger. See its CLAUDE.md.
+
 - `u3_island_twin/` -- [UCP] U3's D77 trigger (lane u3twin, 2026-09-30): the island form of ucp_design.md s3 hand-built as C twins, proven answer-identical to today's artifacts and libpcre2 10.46, timed island vs all-byte/VM. See its CLAUDE.md.
 
 - `simd1/` — precompiled AVX2/SSE fixed-pattern SIMD matchers (Frank +
@@ -310,7 +314,11 @@ re-measure before load-bearing use.
   rows applied, an emitter-independent twin transformer (`replace` and
   per-call `assert` modes, DFA bodies and hybrid prefilters alike), a
   three-answerer identity driver against libpcre2 10.46 with failing controls,
-  and directional timing. Backs `docs/design/start_landing.md`. See its own
-  CLAUDE.md.
+  and directional timing. Backs `docs/design/start_landing.md`. Revision 2 (lane
+  landrev): three guard forms in the twin (the post-loop skip, Fix A, the refuted
+  restart) calling the seam's own decode, an exhaustive decode-vs-Table-3-7
+  check, the class-own ill-formed pool, the guard timing with hostile subjects,
+  the regenerated census (empties, the width interval), and the DERIVED edit set,
+  reader census and witness-mover tables. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.

@@ -1805,6 +1805,52 @@ the compiler, and is never adopted silently. Proposed for main to file
     migrated).
   - **Proposed next:** the VMLAZY build lane (migration thread) once main
     agrees Q-R12-1/2 and gives it an abi number after RQ-3's 71.
+- notice: 2026-10-09 — **R-12: N7U RETIRED (D147 addendum 14) and VMLAZY's pre-slot chain GREEN, both on lane/memfn-vmlazy.**
+  - **N7U** (lane n7uret, merged at the branch tip; report
+    docs/dev/lanes/n7uret_report.md). Docs/TSV only and no pcrec byte moves.
+    Manifest row N7U, the `span-decode` vocabulary line and its C12 row are
+    deleted. C17 floor 14 -> 13, C12 floor 2 -> 1. S512 is re-pinned and
+    DETECTED solo; S511 DETECTED. integration.md §R4.3.4 carries the rule:
+    a walk whose unit is the encoding's character belongs to the encoding,
+    and its byte-domain sub-loops are kit sites. S711 unused.
+  - **Owed to main (decisions.md is yours):** close D58 addendum 2's revisit
+    clause (the "or N7U" part, around line 9256) as "does not migrate; D147
+    add. 14".
+  - **VMLAZY chain2** (light, report vmlazy_report.md §8a): 13 suites rc=0.
+    The REPLACE-vs-NORMALIZE emit_sweep reads `movers=0 asymmetric=0` on
+    every stream of 9 arms. The rc=1 on `utf8`/`-fno-cls-kit` is the
+    declared composition-floor exception (37 < 38, both sides).
+  - **Next:** the §8 slot chain after RQ-3 (abi 71) lands. I merge main,
+    re-pin, then ASK for the slot17 GO.
+- done: 2026-10-09 — **R-12 (VMLAZY, pcrec abi 71 -> 72; N7U retired): branch lane/memfn-vmlazy @ 736d4050 plus this [responses] commit. Reports: docs/dev/lanes/vmlazy_report.md (§8b is the slot chain), vmlmerge_report.md, n7uret_report.md.**
+  - **slot17** (tip 1bb49dee, ref 631771b7):
+    - build, strict, SABANCHOR green; recid 18/0 (the eighth exception
+      `lazy_prefix_rewrite`); lazy census 0 OTHER/ASYMMETRIC, controls fire;
+      N2 clean; G2 full 192,654,549/0.
+    - mech, 26 rows: `COMPLETE: unexpected 0, undetected 0, unreached 1,
+      anomalies 0`. The unreached row is S685, declared UNREACHED because
+      VMLAZY's pending row is deleted.
+    - make test RED at test-startset only, fixed by vmlfix 921a3ef2: the
+      stage-2 VM manifests lacked the new corpus file's blocks (10 auto / 17
+      forced). 7 bench rows stay un-refreshed by your ruling.
+  - **slot17b** (tip 1d8fae3b = main 7b98a046 merged in, ref 7b98a046):
+    - make test green, 0 section errors (perfrun contaminated by load, timing
+      only).
+    - emit_sweep `--variant all` reads `VARIANTS: FAILED`, as an abi event
+      must (every .c row moves by the stamp). Lane vartri read every mover
+      by id over all 10 cells; none falls outside the lazy set
+      (docs/design/memfn/probes/vmlazy/out/slot17b_movers_by_id.txt).
+    - Four yes-collapsed floors fell by 1 at lowsize/lowboth byte
+      (emit-ir-auto and -fprefilter): `(a{2,3}?){2,3}` crosses the lowered
+      30000 B cap (29936 -> 30110, +58 B per lazy prefix), as vmlmerge §3
+      predicted. VARIANT_PINS is re-pinned from slot17b's tallies (736d4050).
+  - **OWED, small and not blocking:**
+    - A self-check of the re-pin, `--ref HEAD --tree-rev HEAD --variant
+      lowsize --variant lowboth` (~5 min), on the next slot.
+    - TRACE_VARIANT_RECORDS_FLOOR was not re-measured (no `--trace`).
+  - **For main at merge:**
+    - Prune vmlmerge, n7uret, vmlfix, ssred and vmlazy after the merge.
+    - D58 addendum 2's close (posted in the notice above) is still yours.
 - notice: 2026-10-09 — **R-13 batch 1 BUILT as CANDIDATE on lane/memfn-r13 @ 9f043b96 (not yet delivered).** Report: docs/dev/lanes/r13_report.md.
   - **Light validation:**
     - SIMD-off reads 0 movers on every artifact stream vs 631771b7, so there is no abi event.
@@ -1853,3 +1899,20 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **Process note:** rankuse ran full-population emit_sweep and G2 during
     main's specnum chain, against a light-only brief. Main marked that
     perfrun contaminated.
+- done: 2026-10-10 — **R-12 RE-LANDED for merge: branch lane/memfn-vmlazy @ 5df8b31b plus this [responses] commit (main e33fb821 merged in, abi stays 72). Report: vmlazy_report.md §8c.**
+  - slot19 (04:07-04:49, on main's GO) is green throughout: build, strict,
+    registry 0 failed, rxtsource 0 failed, codegen 15/15, make test with
+    no red lines (1623 s).
+  - The lowsize/lowboth self-check is CLEAN. That closes the slot17b
+    OWED item.
+  - `--variant all`: FAILED by design, every floor held. By id, 0 movers
+    fall outside the lazy set or the abi stamp in any cell, and
+    emit-ir-vm has 0 movers. The only additions over slot17b are four lazy
+    patterns from tests/revend/stage2_captures.rxt
+    (out/slot19_movers_by_id.txt).
+  - Merge conflicts, resolved: the startset VM manifests (union of the
+    vmlfix and sstri rows) and the rxtsource census pins (summed from the
+    merge base). vmlmerge_report's two line citations became section
+    citations.
+  - Still OWED: TRACE_VARIANT_RECORDS_FLOOR (no `--trace`).
+  - Prune list unchanged: vmlmerge, n7uret, vmlfix, ssred, vmlazy.

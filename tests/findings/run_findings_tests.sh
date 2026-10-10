@@ -513,7 +513,7 @@ fi
 if grep -qF 'has\x09a tab' "$WORKDIR/t11b"; then
     ok "§11 a TAB in a bundle's question is escaped as \\x09 in the declarations section"
 else
-    bad "§11 a TAB in a bundle's question was not escaped (table_contract.md producer rule 5)"
+    bad "§11 a TAB in a bundle's question was not escaped (table_contract.md §2¶5)"
 fi
 
 # =========================================================================

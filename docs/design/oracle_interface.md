@@ -425,7 +425,7 @@ patterns, one serialized form, one hash: exactly the collision the review
 found, and it needed no adversarial input to reach, only two patterns this
 tree already has reason to hold side by side.
 
-**The canonical serialization is the `docs/spec/rxt_format.md`:458-474
+**The canonical serialization is the `docs/spec/rxt_format.md` §2.1
 FIVE-ESCAPE TSV-FRAMING SUBSET, stated normatively, not the seven-escape
 quoted-context vocabulary that section explicitly calls out as a
 different, larger thing.** This tree has TWO escape vocabularies and they
@@ -439,7 +439,7 @@ serve different jobs:
   no closing delimiter for `\"` to protect, so importing that vocabulary
   wholesale would carry an escape with nothing to guard and would be one
   more thing a reader has to know does nothing here.
-- **The TSV-framing subset** (`rxt_format.md`:458-474, five escapes: `\\
+- **The TSV-framing subset** (`rxt_format.md` §2.1, five escapes: `\\
   \t \n \r \xNN`) — the ones `pcrec --list-source`'s own dump already uses
   to protect TSV FRAMING for exactly this reason: "the dump's five escapes
   ... are the ones needed to protect TSV FRAMING, not the full seven-escape

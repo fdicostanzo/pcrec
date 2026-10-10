@@ -349,7 +349,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (the collapse rung's reason), so `COMPILE_MAX_ATTEMPTS` gained a third
   ladder run; it is never taken on a [SEL-1] retry (`!dfa_disabled`), which
   keeps `esel_of`'s premise (a drop rung and a DFA overflow never share a
-  compile) true. `docs/spec/limits.md` §8 "The size-cap ladder" is the
+  compile) true. `docs/spec/limits.md` §8.4 is the
   contract and carries the classification table.
   **[DEC-FALLBACK] B2 (lane decfbB2, 2026-10-08) THE TABLE BECOMES THE WHOLE
   LADDER, BESIDE THE OLD DISPATCH** (`docs/design/dec_fallback.md` §1.1-
@@ -665,7 +665,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
   every printable byte, BACKSLASH INCLUDED, passes through. That is
   `--explain`'s vocabulary and every registry TSV dump's, whose contract
-  (`docs/spec/table_contract.md` rule 5) says only that a field never contains
+  (`docs/spec/table_contract.md` §2¶5) says only that a field never contains
   a TAB. `pcrec_sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
   plus that tail — which `tests/harness/driver.c`'s `decode()` reads back.
   MEASURED at the landing: **150 data rows** across `--list-syntax`/
@@ -771,7 +771,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_ctx_fail`'s message render), and renders `csb`/`hsb`/`irsb` at
   `facts_force` after the force loop, then shows the facts hook a
   real-prefix options view (`hopt`). Every size decision is thereby
-  measured at a canonical two-byte prefix (`docs/spec/limits.md` §8 "Size
+  measured at a canonical two-byte prefix (`docs/spec/limits.md` §8.2 "Size
   limits and the prefix"); `-p rx` output is byte-identical to before.
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2

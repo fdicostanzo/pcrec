@@ -1,0 +1,12 @@
+# [START-LANDING] rev 2 (SL-C2): the VOCABULARY the build moves, one regex per line (grep -E). readers.sh greps
+# every check surface for each; the file list it prints IS the reader set (never a hand list). A line is
+# class<TAB>regex<TAB>what moves
+stamp	DFA_START|search_form	two new values of RX_DFA_START / rx_info.search_form (closed vocabulary event)
+value	reverse-pass	movers leave it; a check expecting it on a mover's witness flips
+value	"pinned"|start-pinned|START_PINNED|start_pinned	the deny chain under -fno-start-pinned now lands on end-minus-width/landing
+axis	search-start	the listing axis gains two rows (ranks 2/3), reverse-pass moves to rank 4
+text	rx_reverse_|_reverse_state|rewind_position|match_start_position	the reverse machine's TEXT leaves every mover (tables, accessors, loop)
+recover	u\.recover|dfa_search_is_pinned	the payload field and its reader
+abi	PCREC_ARTIFACT_ABI|ABI_EXPECT|EMITTED_BYTES	the abi number and the emitted-byte pins
+deny	strategy_denials|axes\.def|PCREC_AXIS\(	two deny bits (axes.def rows -> the mask and --list-axes)
+machine	DFA_SCAN_EDGE|DFA_TABLE|DFA_UNIFORM_FOLDS|scan_edge_census	the member-folded machine stamps: R leaves a mover, so a value folded over R can change (selection-fact movers)

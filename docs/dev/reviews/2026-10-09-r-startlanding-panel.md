@@ -19,9 +19,27 @@ the revision lane. Status is ACCEPTED unless marked otherwise.
 | SL-G8 | LOW | Constants: no tuning constant reaches the artifact (state it). Label the encoding literals (SL-G2), the two trigger thresholds and the instrument caps. | ACCEPT |
 | SL-G9 | UNLOCKS | U1 FIXED-MARGIN CAPTURES: groups whose boundaries sit at fixed byte offsets from s or e on every path (`"([^"]*)"`, `<(\w+)>`, `(\d{4})-(\d{2})-(\d{2})`) let an EXACT hybrid `report` arithmetic captures with no VM run; the degenerate case of [CAP-EARLY-STOP]; D142's family. U2: SL-G3's bmax is [OPT-ENDWIN-ENC]'s missing fact (W1 under utf8). U3: rev-end-width. U4: §7.6 candidate-verify reuses B2's record site, and SL-G1's skip is its DECODE-verifier instance. No material unlock for the VM hat, ATTEMPT, or [FINDALL-REENTRY]. | FILE U1 (on [CAP-EARLY-STOP] / D142, with D142's trigger restricted to an all-fixed-margin census) and U2 (on [OPT-ENDWIN-ENC]); U3/U4 as filed |
 
-## slcrit1 — exactness
+## slcrit1 — exactness (SL-E1..E4)
 
-PENDING.
+UPHELD, with counts: 265 new twinned rows (111 landing, 154 end-minus-width, 30 hybrids) covering the shapes the design's population lacked: multibyte first characters, mixed-width start sets, caseless k/ſ/K-sign/ß/İ, leftmost-first `a|ab`, assertion and lookaround endings, and `\K`/lookbehind hybrids. On a 6,485-subject ill-formed utf8 pool: 39.98M cells, 313.0M per-call row-vs-reverse compares and 297M find-all calls, all 0 differences, with 0 new libpcre2 disagreements. Startpos variants (align / no-guard / -futf-check): 4.69M cells each, 0. Row order: landing forced on the 66 both-apply rows gave 7.89M cells, 0. Λ is sufficient, emw is exact, and the order holds.
+
+| id | sev | finding | disposition |
+|---|---|---|---|
+| SL-E1 | HIGH (= SL-G1, found independently) | The guard restart is QUADRATIC, MEASURED: utf8 `.` on `C3`×1e5 `a` takes 0.12 ms today vs 7.0 s twinned (57,000×); `\p{L}+` 0.24 ms vs 11.2 s; ~13 min per 1 MiB call on attacker-controlled bytes. This refutes §2.5 and §8.1. Fix A (BUILT): test well-formedness inside the NEXT block and skip a bad landing like a non-candidate. Identity 6.90M cells, 0 diffs; linear (k=1e6 1.8 ms vs 1.2 ms); well-formed cost `.` 5.65 vs 5.35 ms for the post-loop form (today 9.25). Fix B (argued): keep the post-loop guard and probe forward character by character. | ACCEPT. Two linear forms are on the table: SL-G1's post-loop skip ("start = the first well-formed character at or after L", with a proof sketch, zero hot-path cost, no re-entry edge) and SL-E1's in-loop Fix A (measured, ~6% on well-formed text). The revision BUILDS SL-G1's form as primary, twins both with the hostile-input timing control (1 MiB of `C3` then `a`, wall bound), and takes the measured winner. The timing control becomes a standing sabotage/timing cell |
+| SL-E2 | LOW (= SL-G2) | Λ.2/Λ.3/the guard hard-code UTF-8 ranges; Lemma 1 assumes a self-synchronizing encoding (it fails for Shift-JIS/GBK-like encodings). | ACCEPT with SL-G2; state self-synchronization as a precondition (feeds [ENC-DATA]'s ASCII-compatibility question) |
+| SL-E3 | LOW | The seam's decode is `$_decode(s, end, p, *cp)` and reads s[p] unguarded; B2 relies on landing < n whenever F accepts (true under Λ's non-nullable). | ACCEPT: state it beside the guard |
+| SL-E4 | LOW | mksubj.py's "exhaustive" pool drops the truncated lead C3 past 9 tokens, carries no class-own multibyte characters, no surrogates/overlongs/>U+10FFFF/lead runs, and no timing on ill-formed input. | ACCEPT: always keep the ill-formed tokens plus one representative per multibyte lead class |
+
+## Verdict
+
+**The rows are exact.** Two critics independently twinned ~558M per-call checks between them with 0 differences, and the design's identity claim stands.
+
+The design is NOT build-ready:
+- SL-G1/SL-E1: the utf8 guard is quadratic, a must-fix with a linear form;
+- the build plan's checks and readers are hand-listed and incomplete: SL-C1 (empty-engine bodies), SL-C2 (readers, derive by census), SL-C3 (dead-group fill), SL-C4 (reach), SL-C5 (no standing detector);
+- the vocabulary should be unified with locate × finish (SL-G3/G4, SL-C6).
+
+Next: revision lane `landrev`. A focused re-check follows on the guard form and the derived edit set only. [START-LANDING] builds after REVEND (D156 addendum 1), so there is no schedule pressure.
 
 ## slcrit2 — fit / checks / readers / census (SL-C1..C11)
 

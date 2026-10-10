@@ -8822,7 +8822,7 @@ hardcoded default allowlist REMOVED — the allowlist is now a required
 per-invocation argument (R22 item 5: the stale default would have
 leaked the K17/K18 fuzz alphabet; a hardcoded default goes stale in the
 LEAK direction, an explicit list is a per-lane manager decision). The
-M4.7 row now records the owed match_api §2.2 contract-text wording pass
+M4.7 row now records the owed §2.2 of the old match_api (now §5.1) contract-text wording pass
 (cross-iteration retention; empty-final-iteration overwrite) so it
 survives wake.md rotation.
 
@@ -10423,7 +10423,7 @@ own method): first byte letter/`_`, later bytes alnum/`_`, max 128 bytes
 duplicate name a compile error (no DUPNAMES). `PCRE2_INFO_NAMETABLE`
 itself sorts by name — the finding behind D59's sort-key ruling for
 pcrec's own `rx_info.groups`, which discharges docs/spec/match_api.md
-§6's long-open "sort key not yet fixed" paragraph in the same change,
+§6's (now §5.4) long-open "sort key not yet fixed" paragraph in the same change,
 re-quoted verbatim from a fresh build in both directions (captures-on
 and `--no-captures`, proving the `slot: -1` claim both ways).
 
@@ -12045,7 +12045,7 @@ divergence — one module in two today; the other found a tier-1.
 UNION BATTERY ON 3aa446f (build/battery_m65.log, 20:59 → 22:24): test
 22,138/0 EXIT=0; strict 0; ubsan 0; asan 0; lint 0; zero sanitizer
 reports. Edit window used: the lane's three reported prose/registration
-gaps closed on main (match_api.md §6.0 with the (name asc, number asc)
+gaps closed on main (§6.0 of the old match_api.md (now §5.4 / `§5.4¶6`) with the (name asc, number asc)
 key and the dup-run caller algorithm; S102's header population 3; the
 matrix's registration comment true — `brefidentity` registered and
 reserved with zero rows, S103's wiring a close residual). The corrected
@@ -15370,7 +15370,7 @@ day's third instance of that lesson); the DFA population floored and
 refusals ceilinged (A9); the check's own comment cited 2,758 for a
 population it measures as 2,772 — in the comment about miscounted
 populations (A10); emit_vm.c's three comments still asserting the
-retired VM-only rule (A3); match_api.md:1506 contradicting §6.3's own
+retired VM-only rule (A3); match_api.md line 1506 (now `§6.3.1`) contradicting §6.3's own
 split (A4); "candidate-start", not "scan-avoidance", until the
 self-loop skip is stamped (A7); the "none" gloss's largest cause is
 start_acc (A8). Review: docs/dev/reviews/2026-08-25-r37-dd13-stamps.md.
@@ -15482,7 +15482,7 @@ row with the lane's shipped facts folded in; strict clean); its battery
 launched 00:02. Then srStamp2 — rebasing onto it — flagged that MAIN
 WAS RED: srTier bumped `.abi` to 5 but never updated the hand-spelled
 [DD-14.FB] §10.4 expectation in run_codegen_tests.sh (4), nor
-match_api.md §6's "abi is 4" sentence; its suite list had never
+match_api.md §6¶17's "abi is 4" sentence; its suite list had never
 included test-codegen, and my review did not catch the second site
 either. Battery STOPPED (a red clean tree would score the matrix's
 codegen rows as anomalies); fixed on main bf20427; the solo
@@ -15503,7 +15503,7 @@ byte-identical vs ac4917d, vm-identity 9/0, tiered 17/0, strict. The
 DFA-only prefilter distribution held 380/327/176/61/51 across its two
 halves, srTier's merge and three rebases — a control that survived
 everything. It added the two missing bump entries to match_api.md §6's
-provenance paragraph (4→5 [OPT-1], 5→6 [DD-13c]). Its note for the rule:
+provenance paragraph (now `docs/dev/history/abi_changelog.md`) (4→5 [OPT-1], 5→6 [DD-13c]). Its note for the rule:
 a rebase rewrites every hash, so "(B) names this change's last src
 commit" must be recomputed after each one — the pin moved three times
 inside one change. Kept the rule (a battery BETWEEN merges) rather than
@@ -16147,7 +16147,7 @@ output byte-identical for in-range prefixes (test-codegen 3/3), tests/cli
 case17 compiles a 60-char-prefix artifact on both engines and was shown
 to DETECT against the pre-fix compiler; K38 FIXED in place — and
 [SPEC-1.4]: five match_api.md hunks each verified against a fresh build
-(§4 → limits.md; C2 verified current; §6 caller-facing abi paragraph;
+(§4 → limits.md; C2 verified current; §6¶17 caller-facing abi paragraph;
 §8.2 byte-only lead; §3.6 the `(?:P)\z` idiom with the `$` vs `\z` and
 `a|ab` live counter-examples). Its make test 1,872/0 read from the log
 (the lane went idle before reporting — idle ≠ delivered; the artifact
@@ -16331,7 +16331,7 @@ compared only the changed ones could say nothing about them.
 **abi 6 -> 7, all four sites in this change**, and it is the FIRST bump that
 moves emitted PROGRAM bytes rather than scaffolding — [DD-13], [OPT-1] and
 [DD-13c] were all scaffolding. `emit_dfa.c`'s `.abi`, `run_codegen_tests.sh`'s
-`ABI_EXPECT`, `match_api.md` §6's two sentences, and
+`ABI_EXPECT`, `match_api.md` §6's two sentences (`§6¶17`; the history sentence now in `docs/dev/history/abi_changelog.md`), and
 `run_recursion_identity.sh`'s (B) pin, re-pinned to `49356e8`. Comparison (A)
 is expected byte-identical and here that is a real check: `prog_region` is
 `goto <p>_L0;` through `<p>_accept:`, and a hybrid's inlined prefilter is
@@ -18213,7 +18213,7 @@ missing, not the meaning").
 r45sem 4 BLOCKERS — a delivering call is capture-transparent AND its
 slots are restored on return, so §2.8 delivers nothing; the re-basing
 walk corrupts caller-scope `(?&^.w)` references; `--emit-composed`
-re-introduces by-name binding; `nnames`/`groups[]` breaks match_api §6's
+re-introduces by-name binding; `nnames`/`groups[]` breaks match_api §6's (now §5.4)
 own lookup — plus 5 must-fix, 6 should; verdict "the spine is right, four
 things before code". r45chk 1 BLOCKER (C0 is empty-vs-empty and the
 format note's S-C7 was silently replaced) + 6 must-fix (W-2/W-5/W-7
@@ -18326,7 +18326,7 @@ sent as I-18 (bench c52a74e); the bench's window ran 05:22-~06:25 on
 gate-shape test run); it re-pins to 96e44c2 next ([B19]). [OPT-4]
 archived to plan_completed.md (090b924). **lane/w1 MERGED (e4c563f,
 docs only: w1_impl.md revision 2.4, its CLAUDE.md entry, four
-format_design.md corrections, match_api.md's nnames sentence)** — the
+format_design.md corrections, match_api.md's nnames sentence, now `§6¶3`)** — the
 [DD-13b.W1] design is on main; W1.1 starts CODE next session (a fresh
 worktree from main; w1_impl.md §7 is the step brief; the verify_rxt.py
 wiring is .1's condition). **lane/admin1 UNMERGED** (33588a4 [REG-SV] +
@@ -18835,7 +18835,7 @@ it). Frank's perf hold stands — [B21]/[B22]'s windows wait on his lift.
 lim1 from fa01910; Frank's "proceed as you want" stands; the box is
 free, no hold needed). Ruled by D90; the folded items ride: the
 size-cap rescue's distinct `_ENGINE_SEL` value (I-19 (3); a VALUE, no
-abi bump), registry.md §6/§203's stale axis counts, the `(a|b){1,30000}`
+abi bump), registry.md §6's stale axis counts (the second, at its old line 203, included), the `(a|b){1,30000}`
 witness as the bucket's test. W1.2 stays held for the bench's one
 re-pin; battery 6 at lim1's landing supersedes fa01910 as the pin (the
 bench session is closed and re-pins once, to whichever pin is newest at
@@ -20133,7 +20133,7 @@ to w-2048 under the raise; the scan-edge counterfactual ×1.089 on iso-ts
 at the pinned tier → [OPT-EDGE]'s BEFORE; the I-37 cell's 0.432
 reproduces on the clang arm (the gcc half still open — a layout probe
 proposed). I-39 answers the five asks; the ALTCLS stamps they asked for
-already exist (match_api.md:2429). The bench's daytime lane re-pins to
+already exist (match_api.md §6.3.11¶3). The bench's daytime lane re-pins to
 288d505.
 
 ## 2026-09-03 — Fiftieth session, part 17 (10:1x): the second executive summary (the altwide/noedge/clang night) merged and published
@@ -20401,7 +20401,7 @@ path-keyed fixpoint and a duplicate-definition refusal; the name grammar
 of the `-`/`.`→`_` mapping, `target = <def>` deriving the prefix, the
 collision refusal, all three legs moved (rxt_source.c, run.sh, verify_
 rxt.py); groups[] sorted (ref-is-NULL, name, number); spec hunks in
-rxt_format.md, match_api.md §6, cli.md; six fixtures + a W1.3 section in
+rxt_format.md, match_api.md §6 (groups[] sort: now §5.4), cli.md; six fixtures + a W1.3 section in
 tests/rxtsource; the altwide@0.2 dogfood fixture with provenance;
 tests/definitions/ with its own make section (never run). The design
 change: D89's Q-W1 ruling adds a third tier (an unnamed unreferenced lib
@@ -20822,7 +20822,7 @@ edge1 delivered: emit_vm.c back at 9d8401a (VM artifacts byte-identical
 to main, verified on three patterns); both reds gone (run_size_term.sh
 alone 32/0; -fanalyzer clean on the two regressing patterns as single
 artifacts); abi 17→19 in one commit over every re-grepped reader,
-match_api.md:2148 correctly LEFT (a cross-reference to abi 17's own
+match_api.md line 2148 (now in `docs/dev/history/abi_changelog.md`) correctly LEFT (a cross-reference to abi 17's own
 entry); FILEPIN left at a3f40b1 for the manager (a pin must name a
 commit reachable after the merge — opt5i/ccdiff1's precedent, the
 better one). The k18 GCC-CPU tripwire re-measured: not load, not this
@@ -20931,7 +20931,7 @@ size log rewritten by the corpus stage was restored each time. Next:
 merge lane/edge1 (bcaf14f1, abi 19) — expected conflicts only at the
 abi-ritual sites (emit_dfa.c's producer, run_codegen_tests.sh's
 ABI_EXPECT + narrative, run_recursion_identity.sh's pin block,
-match_api.md's abi paragraphs) — then its chain, then w13.
+match_api.md's abi paragraphs, now `docs/dev/history/abi_changelog.md`) — then its chain, then w13.
 
 ## 2026-09-04 — Fifty-first session, part 49 (06:1x EDT): [OPT-EDGE] STEP 1 MERGED (386abf94, abi 19); FILEPIN → 386abf94 (4671c773); its short chain running
 
@@ -20941,7 +20941,7 @@ isl1's (17->18) clause SPLICED into the bump-history narrative before
 edge1's, re-worded (18->19); both pin-comment blocks kept in
 run_recursion_identity.sh; match_api.md's 19 entry atop the 18 entry
 (re-headed "the 18 it replaces"), and §6's opening sentence naming all
-three events. make + strict clean. The chain (test → codegen →
+three events (now `docs/dev/history/abi_changelog.md` / `§6¶17`). make + strict clean. The chain (test → codegen →
 registry → axes) started 06:1x; then w13's merge (minus its size log),
 its chain, [LIM-2]'s launch, the battery, DONE + OPEN to the bench.
 
@@ -20950,7 +20950,7 @@ its chain, [LIM-2]'s launch, the battery, DONE + OPEN to the bench.
 Main at 4671c773 (386abf94 + the FILEPIN re-pin): every stage green
 first time. Next: merge lane/w13 (3648d566, abi 20) EXCLUDING its
 regenerated docs/dev/artifact_size_log.tsv; expected conflicts:
-plan.md (the [DD-13b.W1.3] row), match_api.md (the abi paragraphs),
+plan.md (the [DD-13b.W1.3] row), match_api.md (the abi paragraphs, now `docs/dev/history/abi_changelog.md`),
 src/gen/CLAUDE.md (added sections), emit_dfa.c's producer (20),
 run_codegen_tests.sh (ABI_EXPECT 20 + a 19->20 clause), the identity
 gate's pin block (keep all; FILEPIN → the w13 merge). Then its chain,
@@ -24283,7 +24283,7 @@ resource, cpset, specimen, test-codegen) → push → the bench's abi 27
 note + the I-77 battery request (the box is free tonight) → wave 5
 launched from that main (fact sheet merged 8d961dc0; D104 addendum:
 29 renames grouped by blast radius, make test while iterating, one
-battery at close; A1's home = match_api.md §6).
+battery at close; A1's home = match_api.md §6, now `docs/dev/history/abi_changelog.md`).
 
 ## 2026-09-20 (early morning) — wave 5 gated; THE REFACTOR IS COMPLETE
 
@@ -24315,7 +24315,7 @@ documented use; the motivating asymmetry was false) → rider w5r builds
 --flavour's own applies-to relation; the limits surface (one declaration,
 not eight #defines — D90; two of eleven cited constants were not real);
 pcrec_default_features; [REVW.A1] landed (match_api.md §6 the one abi
-log, D76 addendum). w5's own make test was killed by its own 40-min
+log [now `docs/dev/history/abi_changelog.md`], D76 addendum). w5's own make test was killed by its own 40-min
 timeout (inconclusive; the gate on main superseded it). FLAGGED FOR
 FRANK: lens 9 §5.1's K9/NUL-termination sentence. **[REVW.5] and
 [REVW.A1] → completed: the 2026-09-17 code-review refactor is DONE**
@@ -24665,7 +24665,7 @@ as queued behind a viewer wave (03f65dd). Heartbeat cron up.
 2. D115 (919388bd): the product version is `PCREC_VERSION` = "0.1.0-beta",
    semver, versioning the TOOL, independent of abi; `--version`,
    lib/pcrec.h, one emitted-header stamp line (abi 27→28 with the D94
-   ritual), CHANGELOG seed, cli.md + match_api.md §6 hunks.
+   ritual), CHANGELOG seed, cli.md + match_api.md §6 hunks (the abi 27→28 entry; now `docs/dev/history/abi_changelog.md`).
 3. D116 (16a62901, "agree 2"): root CLAUDE.md keeps its content behind a
    three-line preface (applied); the README is BRIEF AND FRIENDLY with NO
    drifting numbers ("every line means another line to maintain");
@@ -24703,7 +24703,7 @@ rest. rel1b: PCREC_VERSION "0.1.0-beta", `--version` → `pcrec
 0.1.0-beta`, the essential generated-by line stamps it (abi 27→28; the
 comments-axis recognizer had hardcoded the old text — a REAL regression
 its first run caught, fixed); readers re-pinned by grep (resource byte
-pin 762114→762125, ABI_EXPECT, match_api §6); (B) FILEPIN re-pinned to
+pin 762114→762125, ABI_EXPECT, match_api §6¶17); (B) FILEPIN re-pinned to
 the merge a70982c9 by the manager (579588da); riders: -e help text,
 limits.md's --source sentence. DARWIN GATE at 579588da:
 build/gate_579588da/, watcher on the trailer.
@@ -26545,7 +26545,7 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   was NO row tracking the fold.
 - flagbits (K92): bits 18/21 leaked into rx_info.flags — the 4th incident of a
   hand-kept mask; meta verdict: `.flags` = request minus answer-identical
-  strategy denials, masked by axis class (D43, match_api §6.3), so a BUG; fix
+  strategy denials, masked by axis class (D43, match_api §6.3; `§6¶16`), so a BUG; fix
   derives the mask from axes.def. Mac make test: one red, the lane's own
   unguarded `sort` (K35) — fixed by the manager (0f32defe), test-codegen
   re-run 0 failed; merged e6e6d6eb, ABI 65. Bench I-132 (6f1b34e; bare
@@ -26836,3 +26836,85 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
   - The manager stopped a lane that had already delivered.
   - Lanes took kit-reserved sabotage ids. BOILERPLATE now names the reservations.
   - An auto-lift gate keyed on a process name also matched the kit's light rows.
+
+## 2026-10-09 — session 102 (hundred-and-second; Linux dev box; closed at Frank's ask)
+
+- **Landed on main, in order:**
+  - RQ-3 (631771b7, **abi 71**). Its chain was green. Its emit_sweep VARIANTS red was stale lowered-cap reach floors (re-pinned 6973d7f5; main itself was red). The kit was pinged.
+  - The [OPT-REVEND] design line: revdes rev 1, the light panel, revq1 (form B measured 1.4-1.55x SLOWER than W1 on matching bounded tails), revrev rev 2 (form C walk-only primary, from Frank's "if you're not doing captures, why walk forwards at all"; a twin at 0 diffs / 1.39M cells; C beats W1 on every bounded cell, separated by more than 2σ, with run-to-run CV ~1% per Frank's "do a std dev").
+  - **D156 (Frank): search = LOCATE × FINISH** ("we have dfa prefilter then vm now. this is the same but the prefilter is reverse"). Then locfin (design) → FULL panel (38 ids, 7efca415) → locfin2 (rev 2) → re-check (27 ids) → locfin21 (rev 2.1: the PATH derivation, each row's `.needs`, membership = needs ∩ built, a generated off-path stamp rule).
+  - [U8-PICK] STEP 0 (lit-sharp-s is a utf8 PICK DEFECT; the lever is a utf8 byte-rate prior).
+  - walksurvey: a per-load instrument over every bench/corpus artifact. It found the largest unowned class, [START-LANDING] (51% of bench patterns, est 50.9 ms), and **K101** (the caseless folded-run gate restarts on every find-all call, ~200x off-bench).
+  - encinv ([ENC-DATA] inventory + layout proposal).
+  - **RQ-2 (7b98a046):** D157's ranked rarity array (MF_SITE_ABI 9), S731-S737, and the variant-pin re-pin (RQ-3's +52 B stamp line alone moved 18 lowered-cap patterns; filed [CAP-STAMP-BYTES]). Pushed.
+  - landdes ([START-LANDING] design) and its panel: the rows are EXACT (~558M per-call checks, 0 diffs); two critics independently found the utf8 guard QUADRATIC on ill-formed lead runs (7 s vs 0.12 ms at k=1e5); two linear forms exist.
+- **Rulings (Frank):**
+  - D156 and addendum 1: L0 first, then REVEND before [START-LANDING] ("bird in the hand"); stage 2 (captures) IS BUILT, with patterns created for it.
+  - D157: RQ-2 states FACTS (an ordered rarity array plus rates); never presume the kit's method (memory pcrec-kit-facts-not-methods).
+  - Critics who ADD the general form and unlocks are valued (memory pcrec-critics-propose-unlocks).
+  - The deadlock check NAMES the awaited thing; a peer waiting on me gets a one-line ack (memory updated).
+  - Timing is directional: report σ, don't wait for a quiet box.
+- **Filed from Frank's match_api.md read:** [FINDALL-NEXT] (a boolean whole-step iterator `while (<prefix>_next(&it,...))`, status in `it.rc`), [SPEC-LANG] (our own definition of the regex language, validated by a mischievous tool+doc-only lane), [RXINFO-REMODEL] (sections as sub-structs along the search path; `engine` outdated; every field const at member level; paired with [V-E]), [STAMP-REVIEW] (do we need stamps / could rx_info alone serve / organization), [SPEC-CLEAN] (facts-only specs). Also [CAP-EARLY-STOP] (the capture walk ends at the last group's close, given a reverse remainder mark), [START-LANDING], [FINDALL-REENTRY] (BOONIES) and [CAP-STAMP-BYTES].
+- **In flight at close:**
+  - specnum's chain (lane/specnum = the [SPEC-CLEAN] rewrite + numbering/TOC; LIFTED 22:14);
+  - then lfl0's chain (lane/lfl0 = locate × finish L0, a no-mover, S738-S747), lifted automatically by the detached `worktrees/.mgr/seq5.sh` (log `worktrees/.mgr/seq5.log`);
+  - landrev ([START-LANDING] rev 2), finishing at close.
+  - The kit's R-12 (VMLAZY, abi 72) is awaiting its own done: after slot17b. R-13 continues (rankuse S750-S757).
+- **Lessons:**
+  - Addenda to running lanes were MISSED three times (specclean's numbering/TOC, lfl0's ids twice). Scope changes go to fresh lanes; the manager lands small items itself.
+  - Hand-listed reader and check lists keep missing gates (START-LANDING's 5 HIGH); derive edit sets by census.
+  - Identity twins compare answers, not WORK: two critics found a quadratic the twins could not.
+  - The manager `cd`'d into a worktree once more (corrected immediately) and used `pgrep -f` once in a probe (matched only itself).
+
+## 2026-10-09/10 — session 103 (hundred-and-third; Linux dev box; closed at Frank's ask)
+
+- **Landed on main:**
+  - specnum merged at 709c8ff6 ([SPEC-CLEAN] for match_api.md: facts-only, numbered §N¶K, generated contents, S748/S749).
+    - Its chain was red only on test-spec-history: the lane report quoted the check's own planted citations (triage lane spectri, report-only rewording).
+    - At landing I added S749 and one narrow cite_exclude row for the plant file.
+    - The merge conflicts carried five line-number citations of match_api.md from locfin21; I re-pointed them to §6.3.4¶2/¶11.
+    - D76 addendum 2: the abi change log lives in docs/dev/history/abi_changelog.md.
+    - [SPEC-CLEAN] continues with nine spec docs, filed and unscheduled.
+  - Pushed 1cb95b69. CI was still running at close (>1 h, longer than usual), so the later doc commits are held unpushed.
+- **Rulings (Frank), all recorded:**
+  - locate_finish §8 Q3: the generated off-path stamp rule (D156 add. 2).
+  - Q4 → **D158**: optimizations never reduce any pattern's ability to complete.
+    - K102 (possessify moves STEP cost into WORK) is its one ACCEPTED violator.
+    - Measured this session: effort is conserved, 800+394=1,194 off vs 0+1,199 on; a cost-categorization defect.
+    - Filed **[EFFORT-BUDGET]**: one weighted effort counter, weights as the dials; study first; Frank's usability point.
+  - Q6: rev-inner's trigger moves to the DFA route (walk_survey K12), and it ranks third (D151 add. 4).
+  - [START-LANDING] Q1-Q4 (D156 add. 3/4):
+    - Q1: build Λ. The general form is tagged-DFA restart tracking; filed **[ENG-TDFA]** with capture tags ("a bigger fish").
+    - Q2: the post-loop skip, with a binding happy-path implementation note.
+    - Q3: the hand.
+    - Q4: end-minus-width first.
+    - Q5: resolved by the manager as a filing (rev-end-width on [OPT-REVEND]).
+  - **D159**: byte encodings are out of scope (translation layers outside pcrec); other UTFs wait for a consumer; [ENC-DATA] CANCELLED; its Q5 (authored vs generated utf8 prior) moved to [U8-PICK].
+- **Kit:**
+  - R-12 (VMLAZY abi 72, @ 92213567) and R-13 (@ 9348a747, slot18 ~2.5 h) are both done on their branches.
+  - Ruled order: after lfl0 merges, GO R-12's re-merge slot (merge main, re-home the abi-72 entry into abi_changelog.md), then R-13's slot18.
+  - The kit's lane rankuse broke the box rule (a full emit_sweep during specnum's make test); acknowledged, and specnum's perfrun row is marked contaminated.
+- **In flight at close:**
+  - lfl0's chain is red on test-registry (RED-REAL); its mech rows were still running.
+  - Triage lane lfltri is diagnosing read-only until CHAIN DONE.
+- **Lessons:**
+  - Frank on [START-LANDING] Q4 ("they're the same picture"): an answer-free choice is the manager's call; triage question lists before relaying (memory pcrec-answer-free-choices-are-mine).
+  - The manager `cd`'d into a worktree again (corrected at once).
+  - A `git add` with a vanished path plus `2>/dev/null` silently staged nothing (S749's first commit carried only the rename).
+
+## 2026-10-10 — session 104 (manager; Linux dev box) — SPEC-CLEAN finished, plan audit, interface push ruled
+
+- Woke from session 103's brief. CI 38018323798 had finished GREEN (1h12m); pushed the ten held commits. lfl0's detached chain was in test-axes; its finisher (`/tmp/claude-1001/lfltri/finish.sh`, PID 2335503) armed and waiting. A no-model watcher (`worktrees/.mgr/watch8.sh`) was set on it.
+- Frank: keep the locate×finish order (L0 → REVEND → START-LANDING), then return to the three-column split (capability/optimization/admin, not strict); run light OPPORTUNITY lanes beside non-timing runs (memory pcrec-three-lane-model updated).
+- planaudit (sonnet) merged: [ART-POSS-ARMS] closed, six rows retagged with landed/remaining notes; the manager set [OPT-SETS] and [OPT-VMSEED] to not-started (nothing active). Eleven delivered worktrees pruned.
+- [SPEC-CLEAN] COMPLETED by five sonnet/opus lanes, all light-tier only (box hold): specreg (registry.md, table_contract.md), speclim (limits.md, cli.md), specsmall (facts_listing, ir_listing, findings + the `-i` --help text now says the fold follows the encoding), specrxt (rxt_format.md), spectune (tuning.md, every §2.N kept, 16 code-wins corrections). Every docs/spec/*.md is facts-only and numbered; baseline.tsv holds no rows. Filed [RXT-READERS] (the three .rxt readers disagree on `oracle`/`var` spellings).
+- Process slip: the manager chained `git push` after a commit without gating on the check it had just run, pushing a red test-spec-history to main for minutes (speclim's report quoted section-sign fragments the tree-wide scan read as dangling). Fixed at 736005f5. Rule: gate a push on the verdict, never on the commit.
+- Frank's match_api.md organization findings filed as [SPEC-ORG] (document only). Frank RULED the interface push: keep developing; when work peters out, ONE push over rx_info / pcrec_options / CLI options / stamps, then the docs. Umbrella row [IFACE-PUSH]; memory pcrec-iface-push-later.
+- NOT DONE (carried): lfl0's merge and the post-merge make test on main (the chain is still in test-axes at close; it already shows AXIS FAIL lines, e.g. `--engine=vm -fno-start-set` 2 unallowed one-sided give-ups — read before merging); the kit's R-12 GO; the full make test over this session's doc merges (light checks only so far).
+
+## 2026-10-10 — session 105 (hundred-and-fifth; Linux dev box) — interim, stage boundary
+
+- **Landed on main:** GIVEUP1_ALLOWANCE Group H (4b57f773; triage lane lflaxtri: lfl0's three axis cases were missing rows for corpus cells newer than the last whole-corpus sweep, byte-identical on main); rev2corp (tests/revend/stage2_captures.rxt, 119 blocks, libpcre2 oracle-first); rxtread ([RXT-READERS] completed: one grammar for oracle/var across the three readers); **lfl0 = locate x finish L0** (c85a1aac; chain: make test red only on limits_check, fixed by the finisher 023bc58b; mech 146 rows 0 unexpected, S738-S747 all DETECTED; spec conflicts resolved by taking main's numbered text and re-applying lfl0's "unanchored" rewording at match_api.md §6 value table and tuning.md §3¶1).
+- **Filed:** [RXT-ONE-READER] (Frank: "it should be unified. but we have to focus") — unscheduled, with a venting log.
+- **Running:** post-merge full make test on main (build/mgr/postlfl0_test.log); lane revbuild (REVEND L1+L2 with stage 2, opus). Kit GO for R-12 waits on the make test verdict.
+- **Note:** nullable_anch.rxt:48/:67's corpus nomatch is correct, but libpcre2 at default limits returns match-limit there; the oracle configuration for those cells is not recorded (lflaxtri_report.md).

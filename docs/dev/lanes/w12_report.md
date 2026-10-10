@@ -105,7 +105,7 @@ move.
 
 ### Spec (D80, in the same change)
 
-`docs/spec/cli.md` (S11: a `--source` section, §4's two bullets narrowed,
+`docs/spec/cli.md` (finding 11: a `--source` section, §4's two bullets narrowed,
 revision history), `docs/spec/rxt_format.md` (the `target` and `lib` head
 rows stop saying "not yet built"/"not yet resolved"; a new "Building from
 a source file" section), `docs/spec/match_api.md` §6 (S9: the two members,
@@ -333,7 +333,7 @@ predates [OPT-5]:
 |---|---|---|---|
 | 1 | `src/gen/emit_dfa.c`'s `.abi` | 13 | **14, DONE** |
 | 2 | `tests/codegen/run_codegen_tests.sh:2707` `ABI_EXPECT` | 13 | **14, DONE** (+ the bump ledger) |
-| 3 | `docs/spec/match_api.md` (two sentences, `:159` and `:1602`) | 13 | **14, DONE** |
+| 3 | `docs/spec/match_api.md` (two sentences, `§1¶7` and `§6¶17`; were `:159` and `:1602`) | 13 | **14, DONE** |
 | 4 | `tests/codegen/run_recursion_identity.sh`'s `FILEPIN` | `dc2c8ef` | **OWED** |
 
 Site 4 must be this step's LAST src-touching commit (`run_recursion_

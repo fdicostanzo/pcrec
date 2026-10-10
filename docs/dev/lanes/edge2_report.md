@@ -561,11 +561,11 @@ Every reader of the number, from
 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=20` |
 | `tests/codegen/run_codegen_tests.sh:2760` | the bump narrative, which gains a `20->21` clause |
 | `tests/codegen/run_recursion_identity.sh:699` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8d68ddc2}"` — gate (B)'s pin, re-pinned to the MERGE commit |
-| `docs/spec/match_api.md:159` | "`rx_info.abi` is `20`" |
-| `docs/spec/match_api.md:1801` | "**`rx_info.abi` is `20` on every artifact today**", the per-bump narrative |
+| `docs/spec/match_api.md §6¶17` | "`rx_info.abi` is `20`" |
+| `docs/dev/history/abi_changelog.md` | "**`rx_info.abi` is `20` on every artifact today**", the per-bump narrative |
 
 Two further hits are HISTORICAL cross-references and do not move
-(`match_api.md:2190` "the abi-6 fields", `:2298` "the abi-17 statics"); they
+(`docs/dev/history/match_api_record.md` "the abi-6 fields", `match_api.md §6.3.8¶10` "the abi-17 statics"); they
 are listed because D94's lesson is that a hand-enumerated list missed a fifth
 reader in this exact file.
 
@@ -798,8 +798,8 @@ independently re-verified by edge2b, since it requires a compile).
 
 Site list (§7, by grep, unchanged since the write phase): `src/gen/
 emit_dfa.c:1662`, `tests/codegen/run_codegen_tests.sh:2758`, `:2760`,
-`tests/codegen/run_recursion_identity.sh:699`, `docs/spec/match_api.md:159`,
-`:1801` (plus two historical cross-references that do not move). Bump owed
+`tests/codegen/run_recursion_identity.sh:699`, `docs/spec/match_api.md §6¶17`,
+`docs/dev/history/abi_changelog.md` (plus two historical cross-references that do not move). Bump owed
 at merge: **20 → 21**, assigned by the manager (ruling 1); edge2b bumps
 nothing.
 

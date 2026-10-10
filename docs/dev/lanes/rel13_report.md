@@ -103,7 +103,7 @@ with no `--pattern` flag — which no longer parses (`pcrec: ...: not an
 existing file; a literal pattern is given with --pattern`). The example's
 NUMBERS are still correct (re-verified live above with `--pattern` added),
 only the command's own syntax is stale. `docs/dev/lanes/iface_digest.md`
-§4's own note about `limits.md:779` being stale from an earlier CLI shift
+§4's own note about the old `limits.md` line 779 being stale from an earlier CLI shift
 is the same class of miss recurring — this one is `limits.md`'s own §4,
 not a different section. Flagging rather than fixing since `docs/spec/`
 edits are outside this lane's charter (guide only).

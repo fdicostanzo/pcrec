@@ -12,7 +12,7 @@ are: T2 rows for the first, one predicate in T1 rows 3 and 6 for the second.
 | `3a991688` | [DEC-VAR-ATTRIB] code: T2 `var` becomes construct row 3 (`no-variable`), `var-nullable` deleted, `size-dropped` row added (`no-size-cap`), the up-front ask is `empty_admits` for every pattern |
 | `d4c2b5cb` | [DEC-COLLAPSE-WASTE] code: `fit_collapse_can_help`, asked by `sel1-collapse` and `prefilter-collapse` |
 | `227ac344` | spec hunks (match_api §6.3, ir_listing, tuning §2.17/§4), fbt and prefilter witnesses, row_reach zeros, emit_sweep tokens, the listing manifest, the sabotage re-aims plus S697/S698, the CLAUDE.md files |
-| `1e9ba027` | abi 68 -> 69: `PCREC_ARTIFACT_ABI`, `ABI_EXPECT` and its ledger, the match_api guard and §6 change-log entry, the codegen CLAUDE ledger |
+| `1e9ba027` | abi 68 -> 69: `PCREC_ARTIFACT_ABI`, `ABI_EXPECT` and its ledger, the match_api guard (match_api.md §1¶7) and the change-log entry (docs/dev/history/abi_changelog.md), the codegen CLAUDE ledger |
 | `365caa6c` | recursion identity (B) FILEPIN self-pinned to `1e9ba027` |
 | `7480aa50` | `docs/design/dec_fallback/collapse_waste/`: the mover manifest, the attempt-count census and the compile timing |
 | (last) | emit_sweep VARIANT_PINS re-measured, and this report |
@@ -135,7 +135,7 @@ timed: no -O2 variant binaries were built for them.
 ## 5. Readers re-pinned (D76/D94, found by grep and by the suites)
 
 - **abi number:** `PCREC_ARTIFACT_ABI`, `ABI_EXPECT` and its ledger message,
-  match_api's guard block (three spellings), the §6 change-log entry, the
+  match_api's guard block (match_api.md §1¶7) (three spellings), the change-log entry (docs/dev/history/abi_changelog.md), the
   codegen CLAUDE ledger, and the recursion identity (B) FILEPIN. The
   "since/until abi 68" sentences are history and are left alone.
 - **Listing tokens:** `ir_listing.md`'s vocabulary (+2), `tuning.md`
@@ -265,7 +265,7 @@ scripts/docs/spec: only history and clibundle's own retirement checks).
   so 68 -> 69 stands. Every file main changed since `3b43b33d` was grepped
   for an abi 68/69 reader: none new (the hits are history sentences and
   decattr's own). Readers on the merged tree: `PCREC_ARTIFACT_ABI 69`,
-  `ABI_EXPECT=69`, match_api §6 entry "from 68", the FILEPIN below. No
+  `ABI_EXPECT=69`, docs/dev/history/abi_changelog.md entry "from 68", the FILEPIN below. No
   byte-count reader moved: main's three lanes declared 0 artifact movers, and
   decattr's own movers are stamp text only.
 - **FILEPIN.** recursion identity (B) self-pinned to the merge `ef3f7b08`

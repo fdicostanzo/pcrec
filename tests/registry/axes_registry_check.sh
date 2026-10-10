@@ -127,7 +127,7 @@ trap cleanup EXIT
 # [MEMFN] R4a: `--list-axes` is a MULTI-SECTION stream — pcrec's anonymous
 # axis table, then the kit's `memfn` section (docs/spec/registry.md §6). Every
 # check below reads pcrec's table, SELECTED as the leading anonymous table
-# (table_main; table_contract.md consumer rule 5), so a kit row can never be
+# (table_main; table_contract.md §4¶6), so a kit row can never be
 # read as a pcrec axis; the `memfn` section is read by name in its own block.
 RAW="$WORKDIR/axes.raw.tsv"
 TSV="$WORKDIR/axes.tsv"
@@ -140,7 +140,7 @@ ok()   { npass=$((npass + 1)); echo "PASS: $1"; }
 bad()  { nfail=$((nfail + 1)); echo "FAIL: $1" >&2; }
 
 # ============================================================================
-# HEADER TRUTHFULNESS (table_contract.md) — every row's field count agrees
+# HEADER TRUTHFULNESS (table_contract.md §5¶1) — every row's field count agrees
 # with the header's own declared count, before anything below trusts a
 # column index the header claims to have.
 # ============================================================================
@@ -168,7 +168,7 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # are the kit's option registry (memfn/src/options.def, through
 # mf_options()); pcrec names none. Present, header-truthful, its columns
 # resolvable by name. Its INDEPENDENT control is a member-count FLOOR pinned
-# as a literal in docs/spec/registry.md §6 ("memfn section floor: N"), which
+# as a literal in docs/spec/registry.md §6¶8b ("memfn section floor: N"), which
 # shares no source with options.def: born with the first row (R4d). Until
 # then the registry is empty and the floor arm is UNREACHED (K35) — printed
 # as such, never counted as a pass. A row that lands WITHOUT its floor fails.
@@ -185,7 +185,7 @@ else
     mfrows="$(table_section_rows "$RAW" memfn | grep -c . || true)"
     mffloor="$(sed -n 's/.*`memfn` section floor: \([0-9][0-9]*\).*/\1/p' "$REGMD" | head -1)"
     if [ -z "$mffloor" ] && [ "$mfrows" -eq 0 ]; then
-        echo "UNREACHED: [memfn floor] the kit's registry is empty ($mfrows rows) and no floor is pinned in docs/spec/registry.md §6 -- the floor is born with the first row ([MEMFN] R4d); nothing to check until then (K35)"
+        echo "UNREACHED: [memfn floor] the kit's registry is empty ($mfrows rows) and no floor is pinned in docs/spec/registry.md §6¶8 -- the floor is born with the first row ([MEMFN] R4d); nothing to check until then (K35)"
     elif [ -z "$mffloor" ]; then
         bad "[memfn floor] the section has $mfrows row(s) but docs/spec/registry.md §6 pins no '\`memfn\` section floor: N' -- a kit row landed without raising its floor (integration.md §R4.4.1)"
     elif [ "$mfrows" -lt "$mffloor" ]; then
@@ -477,6 +477,11 @@ fi
 # implementation, shared with tests/codegen/run_fallback_table.sh); their
 # comments moved with them.
 . "$ROOT_DIR/tests/lib/spec_extract.sh"
+# Every anchor below is a `<!-- value-set: RX_NAME -->` marker line placed
+# directly above that macro's value table in match_api.md (lane specclean,
+# 2026-10-09). The per-macro anchor notes further down describe the phrase
+# anchors those markers replaced; the lesson they record (anchor on nothing a
+# new value or a rewording can change) is what the markers implement.
 
 
 # check_value_set MACRO SPEC_VALS DUMP_VALS EXCEPT — both directions for one
@@ -539,7 +544,7 @@ axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
 }' "$TSV")"
 
 check_value_set "RX_DFA_TABLE" \
-    "$(extract_md_table_values "$MATCHAPI" "2026-08-26: a THIRD")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_TABLE -->")" \
     "$(dump_stamp_vals RX_DFA_TABLE)" \
     ""
 # [REG-SV], 2026-08-30: NO MORE EXCEPTION HERE. "mixed"/"none" used to be a
@@ -579,7 +584,7 @@ check_value_set "RX_DFA_TABLE (dfa_table_name composite values)" \
 # rule is worth stating once here: anchor on the part of a sentence a new
 # member does not change.
 check_value_set "RX_DFA_PREFILTER" \
-    "$(extract_md_table_values "$MATCHAPI" "values are the whole set")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_PREFILTER -->")" \
     "$(dump_stamp_vals RX_DFA_PREFILTER)" \
     ""
 
@@ -589,7 +594,7 @@ check_value_set "RX_DFA_PREFILTER" \
 # substitution. "is on every DFA" is unique in match_api.md and survives a
 # value being added.
 check_value_set "RX_DFA_MATCH" \
-    "$(extract_md_table_values "$MATCHAPI" "is on every DFA")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_MATCH -->")" \
     "$(dump_stamp_vals RX_DFA_MATCH)" \
     ""
 
@@ -602,7 +607,7 @@ check_value_set "RX_DFA_MATCH" \
 # phrase would be harmless today and a silent mis-harvest the day the two
 # paragraphs are reordered.
 check_value_set "RX_DFA_SCAN_EDGE" \
-    "$(extract_md_table_values "$MATCHAPI" "all this macro ever reads")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_SCAN_EDGE -->")" \
     "$(dump_stamp_vals RX_DFA_SCAN_EDGE)" \
     ""
 
@@ -616,7 +621,7 @@ check_value_set "RX_DFA_SCAN_EDGE" \
 # phrase naming a number goes stale the day a third form lands, silently, by
 # harvesting a shorter list than the spec states.
 check_value_set "RX_DFA_START" \
-    "$(extract_md_table_values "$MATCHAPI" "which of two forms the scan entry takes")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_DFA_START -->")" \
     "$(dump_stamp_vals RX_DFA_START)" \
     ""
 
@@ -629,12 +634,12 @@ check_value_set "RX_DFA_START" \
 # and this one had simply never had a prefixed sibling until 2026-08-29.
 # `RX_ENGINE_SEL` landed the same day and would have done the same thing here.
 check_value_set "RX_VM_PREFILTER" \
-    "$(extract_line_values "$MATCHAPI" '\<RX_VM_PREFILTER\>')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_VM_PREFILTER -->")" \
     "$(dump_stamp_vals RX_VM_PREFILTER)" \
     ""
 
 check_value_set "RX_ENGINE" \
-    "$(extract_line_values "$MATCHAPI" '\<RX_ENGINE\>')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_ENGINE -->")" \
     "$(dump_stamp_vals RX_ENGINE)" \
     ""
 
@@ -651,7 +656,7 @@ check_value_set "RX_ENGINE" \
 # break the extractor. `the same decision as a TOKEN` is unique in match_api.md
 # and survives a value being added.
 check_value_set "RX_ENGINE_SEL" \
-    "$(extract_md_table_values "$MATCHAPI" "the same decision as a TOKEN")" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_ENGINE_SEL -->")" \
     "$(dump_stamp_vals RX_ENGINE_SEL)" \
     ""
 
@@ -673,7 +678,7 @@ check_value_set "RX_ENGINE_SEL" \
 # `extract_prose_values`'s own header for why this macro needs a third
 # extraction shape.
 check_value_set "RX_UNROLL_K_WHY" \
-    "$(extract_prose_values "$MATCHAPI" '`<PREFIX>_UNROLL_K_WHY`')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_UNROLL_K_WHY -->")" \
     "$(dump_stamp_vals RX_UNROLL_K_WHY)" \
     ""
 
@@ -693,7 +698,7 @@ check_value_set "RX_UNROLL_K_WHY" \
 # source is the hand-written §6.3 table; tests/codegen's [OPT-HYB-RESEED]
 # witnesses stamp each of the five values once, which is the emitter half.
 check_value_set "RX_VM_RESEED" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_VM_RESEED`, what the')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_VM_RESEED -->")" \
     "$(dump_stamp_vals RX_VM_RESEED)" \
     ""
 
@@ -703,11 +708,11 @@ check_value_set "RX_VM_RESEED" \
 # independent sources; tests/utfcheck's per-config stamp asserts are the
 # emitter half.
 check_value_set "RX_STARTPOS_GUARD" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_STARTPOS_GUARD`,')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_STARTPOS_GUARD -->")" \
     "$(dump_stamp_vals RX_STARTPOS_GUARD)" \
     ""
 check_value_set "RX_UTF_CHECK" \
-    "$(extract_md_table_values "$MATCHAPI" '`<PREFIX>_UTF_CHECK`, whether the')" \
+    "$(extract_md_table_values "$MATCHAPI" "<!-- value-set: RX_UTF_CHECK -->")" \
     "$(dump_stamp_vals RX_UTF_CHECK)" \
     ""
 

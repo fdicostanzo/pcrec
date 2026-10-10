@@ -1,0 +1,6 @@
+# tests/spec_history/baseline.tsv -- KNOWN DEBT: the history-marker counts the
+# other docs/spec files carried when this check landed (lane specclean,
+# 2026-10-09). Columns: file, marker id, count. The check holds each count
+# EXACTLY: a rise is new history, a fall means debt was paid and this row
+# must be lowered (or removed at 0) in the same change. match_api.md,
+# registry.md, table_contract.md, limits.md, cli.md, facts_listing.md, ir_listing.md, findings.md, rxt_format.md and tuning.md have no row: they carry no history.

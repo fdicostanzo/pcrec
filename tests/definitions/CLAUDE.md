@@ -41,7 +41,7 @@ text — never off the composer's own report: that a definition was bound at
 all (`RX_NCAPS - 1 > ngroups`, the [MECH-REACH] guard against a witness that
 stopped reaching its site), that `nnames <= nentries`, and that every
 ref-NULL row in `groups[]` precedes every ref-bearing one, which is the ABI
-contract `match_api.md` §6's bsearch depends on.
+contract `match_api.md` §5.4's bsearch (`§5.4`) depends on.
 
 Its population is PINNED (seven targets, twenty-three cases) and compared against
 an awk pass over the raw bytes, because two artifacts agree perfectly about

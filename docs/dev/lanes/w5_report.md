@@ -173,7 +173,7 @@ Four homes, measured at `abi` 27:
 | `src/gen/emit_dfa.c`'s comment log, 449 lines | 8 transitions missing, surviving entries OUT OF NUMERICAL ORDER (`8->9` between `3->4` and `4->5`) |
 | `run_codegen_tests.sh`'s failure message | missing `20->21`, `21->22` |
 | `src/gen/CLAUDE.md`'s `##` sections | last abi-numbered title `17->18` |
-| `docs/spec/match_api.md` §6 | **gap-free `2`..`27`** |
+| `docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6) | **gap-free `2`..`27`** |
 
 §6 is complete for a structural reason: every bump's D76/D94 ritual carries a
 `docs/spec/` hunk, so the same act that takes the bump maintains §6, while the
@@ -343,7 +343,7 @@ in §7.
 
 - **D104 extends to the whole population**, grouped by blast radius; the
   brief's re-measure instruction is what surfaced 34 rather than 29.
-- **`docs/spec/match_api.md` §6 is THE abi log**; the other narrative homes
+- **`docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6) is THE abi log**; the other narrative homes
   become pointers; a CHECK is not a home — keep it, backfill from §6, say
   which way the copying goes.
 - **P5's structural half is DEFERRED to v1** and was not touched.
@@ -396,7 +396,7 @@ A reader of the refactored tree should look at these four things, in order:
    whole of P1, and it is the only one of this wave's items whose result is a
    single command.
 2. **`src/gen/emit_dfa.c` above `.abi = %d`** — 22 lines where 449 were, and
-   the 22 say where the log went and why. Then `docs/spec/match_api.md` §6,
+   the 22 say where the log went and why. Then `docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6),
    which says it IS the log. The pair is the shape [REVW.A1] is arguing for.
 3. **`lib/pcrec.h`'s tail** — one declaration, `pcrec_limits_tsv`, with the
    reasoning for why it is a table and not thirty `#define`s. It is the

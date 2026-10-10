@@ -352,8 +352,8 @@ def dump():
         sys.exit(f"compliance_section: pcrec --list-syntax failed: {out.stderr}")
     lines = out.stdout.splitlines()
 
-    # [SR-11] GENERATOR AGREEMENT (docs/spec/table_contract.md, "The
-    # checks"): COLS above is this script's own transcription of
+    # [SR-11] GENERATOR AGREEMENT (docs/spec/table_contract.md
+    # §5¶2): COLS above is this script's own transcription of
     # --list-syntax's column order, and a transcription that stops matching
     # its source is exactly the D65 failure shape one level up
     # (docs/design/registry_built_status_memo.md's Correction section) — a

@@ -466,9 +466,7 @@ directory asserts that the description and the shipped parser actually agree.
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
-   Plus an EXACT row count (138 at [DD-11]'s `RK_BARE` addition — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 128 at [DD-14]'s close, 100 at Q2/SR-9; this file said 68 until
-   2026-08-11, which is the drift an exact count is supposed to prevent
-   happening to its own documentation) so rows cannot be deleted silently — the
+   Plus an EXACT row count (the `total != N` test in registry_check.c is the only place the figure lives; it moves with every change that adds or removes a row, in the same commit, and this file states no number so it cannot drift from it) so rows cannot be deleted silently — the
    same "TABLE SHRANK" guard tests/reject/ carries. Note what R8/C4-10 measured
    about all three of these exact-count tripwires: each prints its own remedy,
    so following their instructions verbatim is how a row with a WRONG MODULE
@@ -676,9 +674,8 @@ directory asserts that the description and the shipped parser actually agree.
 
 10. **[D65] the BUILT-STATUS defect assertion** (docs/dev/plan.md's post-M6.2
     queue item 4; docs/design/registry_built_status_memo.md, ratified
-    wholesale 2026-08-21) — `check_built_status_defects` iterates all 118
-    rows (100 when this paragraph was written; 104 at [M6.4.2], 106 at
-    [M6.5.2], 118 at [M6.6.2] wave F's twelve alpha-spelling INDEX rows) and calls `pcrec_construct_built_status` (src/dump/syntax_dump.c),
+    wholesale 2026-08-21) — `check_built_status_defects` iterates every
+    registry row and calls `pcrec_construct_built_status` (src/dump/syntax_dump.c),
     the SAME function `pcrec --list-syntax`'s new `built` column calls, on
     every one. It is a defect check, not a status check: `--list-syntax` and
     the generated compliance index render `built`/`unbuilt`/`—`, and this
@@ -1339,7 +1336,7 @@ registry_check.c's alone.
   failure: a module renamed in registry.c leaves the prose confidently
   describing something that no longer exists, and nothing else would notice.
 
-**[SR-11] GENERATOR AGREEMENT (2026-08-21, docs/spec/table_contract.md):**
+**[SR-11] GENERATOR AGREEMENT (2026-08-21, docs/spec/table_contract.md §5¶2):**
 `dump()` now cross-checks its own `COLS` list against `--list-syntax`'s LIVE
 header line before parsing a single row — a column appended, renamed or
 reordered in the dump without a matching `COLS` update fails immediately,
@@ -1497,7 +1494,9 @@ pinned count moves 155 -> 165.
 `axes_registry_check.sh` no longer defines `extract_md_table_values`,
 `extract_line_values`, `extract_prose_values`, `extract_c_return_values`; it
 sources them from `tests/lib/spec_extract.sh` (moved verbatim with their
-comments), which `tests/codegen/run_fallback_table.sh`'s observed-stamp leg
+comments; lane specclean, 2026-10-09, retired the line/prose extractors and
+moved every anchor to a `<!-- value-set: RX_NAME -->` marker in
+match_api.md), which `tests/codegen/run_fallback_table.sh`'s observed-stamp leg
 also sources. Measured identical before and after: 214 PASS / 0 FAIL, and
 byte-identical output. The two source legs (`pcrec_engine_sel_name`'s
 returns, `cx.size_term_why =`) still run; they retire at B5 of

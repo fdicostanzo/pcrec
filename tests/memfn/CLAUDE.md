@@ -44,11 +44,31 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   vocabulary line and its C12 row are deleted: 12 delegated / 2 pending
   (N7U, VMLAZY), 14 rows, `C17_ROW_FLOOR` 14, C12 2 rows
   (`C12_CEIL_ROWS_FLOOR` 2).
+  **R-12 REPLACE (lane vmlazy, Q-R12-2):** VMLAZY's row is DELETED, not
+  flipped: the lazy rmin prefix is now `vm_emit_span_scan` capped at rmin,
+  i.e. VMSPAN/VMSTRIDE instances (their row notes carry the history). 12
+  delegated / 1 pending (N7U), 13 rows, `C17_ROW_FLOOR` 13; C12 1 row
+  (`C12_CEIL_ROWS_FLOOR` 1). The `span-count` vocabulary line stays at
+  ceiling 0 as the re-spell tripwire (Q-R12-6, sabotage S709).
+  **R-12 VALID (Q-R12-5):** the utf8 subject validator's ASCII SWAR skip
+  (`u8_defs_valid_upto`, a constant in src/enc/) is listed `pending` with its
+  own vocabulary line (`swar-hibit`, class `word-skip`) and C12 row: 12 delegated / 2 pending (N7U, VALID), 14 rows,
+  `C17_ROW_FLOOR` 14, C12 2 rows. **R-12 N7U RETIRED (Q-R12-3, D147 add. 14,
+  lane n7uret):** utf8's caseless decode walk is the encoding's, not a kit
+  site; row N7U, the `span-decode` vocabulary line and its C12 row are
+  deleted: 12 delegated / 1 pending (VALID), 13 rows, `C17_ROW_FLOOR` 13,
+  C12 1 row (`C12_CEIL_ROWS_FLOOR` 1). A re-sweep of every src/gen/ and src/enc/
+  literal (`docs/design/memfn/probes/vmlazy/vocab_resweep.py`, both the
+  since-R4a and the whole population) found no third unlisted site
+  (`docs/dev/lanes/vmlazy_report.md` §6). Sabotage S712.
 - **search_vocab.tsv** — THE SEARCH-FORM VOCABULARY: the text shapes that
-  count as a search form when an emitter spells them. There are four
-  classes: libc search calls, table-walk loops, runcmp row texts and the
-  span compares (the encoding seam's two; since M6 `span-count`, a counted
-  span loop, the VM's lazy rmin prefix). Python regexes are matched against
+  count as a search form when an emitter spells them. There are five
+  classes: libc search calls, table-walk loops, runcmp row texts, the
+  word-at-a-time skip (since R-12, `$_valid_upto`'s) and the
+  span compares (the encoding seam's span-index, retired with M7's REPLACE; the
+  `span-decode` line went with N7U, D147 add. 14; since M6 `span-count`, a counted
+  span loop, the VM's lazy rmin prefix as M6 found it, spelled by nothing
+  since R-12 and kept at C12 ceiling 0 as a tripwire). Python regexes are matched against
   string literals. It names no site and no function. C12 (the emitted-form
   ratchet, born at R4c) reads THIS file rather than keep a second list.
 - **c17_lex.py** — the emitter reader. It returns every C string literal
@@ -136,7 +156,9 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   rows / 3 forms after M6's REPLACE, which deleted `emit_vm.c`'s walk-open
   row, 1 -> 0, the strided span loop being the kit's VMSTRIDE, and added
   its `span-count` row at 1, VMLAZY's form seen for the first time by
-  RULING Q-R10-7, not a raise);
+  RULING Q-R10-7, not a raise; R-12's NORMALIZE (lane vmlazy, abi 72)
+  re-spelled that prefix in the kit's ADVANCE layout, so the same site's
+  row swapped `span-count` 1 -> `walk-open` 1, still 2 rows / 2 forms);
   REPLACE edits the one number on the row.
   Higher is red (a replaced form came back) AND lower is red (stale ceiling
   or a blind lexer). C13 is declared UNREACHED while no `on_cand` producer

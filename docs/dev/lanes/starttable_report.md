@@ -36,7 +36,7 @@ changed. Branch `lane/starttable` off main `74379fe0` (abi 64).
      start byte. 33 artifacts.
    - D-2: `RX_DFA_START "reverse-pass"` is stamped on 452 ATTEMPT and
      empty-engine artifacts that carry no reverse machine. The spec at
-     `match_api.md:4686-4703` contradicts itself on this.
+     `match_api.md §6.3.4¶11` contradicts itself on this.
    - D-2b: the machine's and the `start_anchor` fact's one-start proofs differ
      on 1 of 388 patterns, `(?(DEFINE)(?<g>\Ga))(?&g)`.
    - D-3: `--list-axes`' `first-memchr-bounded` desc still says `T = S & E*`

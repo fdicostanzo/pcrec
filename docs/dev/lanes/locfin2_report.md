@@ -103,7 +103,7 @@ sabotage re-aim list); no long run is owed.
   the fold makes the alternative a one-bit change (§8 Q7, `anchored_match_unwrapped.md`
   §10's open item).
 - The spec defines `"unanchored"` as "the O(n) forward+reverse table pair"
-  (`match_api.md:4731-4733`): a machine-proxy reading in the contract itself, which
+  (`match_api.md §6.3.4¶2`): a machine-proxy reading in the contract itself, which
   L2's spec hunk must reword when `"rev-end"` is added.
 
 ## Questions for Frank (§8 of the note)

@@ -27,7 +27,7 @@ validation is the Linux slot's.
 | §8.5's ASCII differential, 31-block exclusion asserted | **DONE (local slice; full sweep owed to Linux slot)** | `run_encoding_checks.sh §8.5`: 150-block local slice, 0 divergences; census ASCII=2932 excl(subject)=30 (the decode-not-text-scan control) |
 | §8.1.1 check 3 (stamp census) as a diff | **DONE** | `run_encoding_checks.sh` CHK3: ASCII utf8 stamps == byte stamps |
 | sabotage rows S-U4..S-U10 written and DETECTED | **DONE** | all demonstrated in the failing direction (§3 below) |
-| specs in the same change (D80) | **DONE** | `cli.md` (`-e utf8` accepted + ill-formed/startpos contract), `match_api.md §8.2/§3.1`, `registry.md` (`\x{}`) |
+| specs in the same change (D80) | **DONE** | `cli.md` (`-e utf8` accepted + ill-formed/startpos contract), `match_api.md §8.2/§9.1/§9.2` (§9.1, §9.2), `registry.md` (`\x{}`) |
 | directory CLAUDE.md updates | **DONE** | `src/gen/enc`, `src/opt` (lower_enc/mrl/callgraph), `tests/codegen`, `tests/mrl` |
 | NO abi bump (byte axis byte-identical) | **CONFIRMED** | new utf8 artifacts are new outputs; byte artifacts unmoved (`.abi = 22`) |
 

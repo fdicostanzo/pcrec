@@ -432,7 +432,7 @@ Three findings:
   next in line. At small haystack sizes this stops being cleanup and becomes the main event
   (see §13).
 - **64/128-byte unrolling** (memchr, Muła): fewer branches per byte, hides compare latency —
-  should compound with our front-end-density findings (§11). Watch register pressure on long
+  should compound with our front-end-density findings (sec. 11). Watch register pressure on long
   chains.
 - **memchr-jump hybrid**: when the single rarest byte is very sparse, `memchr`-skip to it and
   verify — same frequency data as Study A, different combinator; wins at very low densities.

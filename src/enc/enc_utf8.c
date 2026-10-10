@@ -474,7 +474,8 @@ static const char u8_defs_valid_upto[] =
  * span compare, the exact one (enc.h's PcrecEncSite). The caseless compare
  * walks characters (decode, fold, length-changing consumption), is not a
  * byte mismatch, and has NO ROW: `u8_defs_bref_ci` spells its own body
- * (manifest row N7U, pending its own vocabulary step). */
+ * (not a kit site, D147 add. 14: a walk whose unit is the encoding's
+ * character belongs to the encoding). */
 static const PcrecEncSite sites_utf8[] = {
     { PCREC_ENCE_SPAN, PCREC_ENC_FOLD_NONE, NULL, "return -(ptrdiff_t)i - 1;" },
     { 0, PCREC_ENC_FOLD_NONE, NULL, NULL }

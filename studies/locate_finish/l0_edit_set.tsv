@@ -58,3 +58,11 @@ line	{ "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty e
 line	.routes = CR_VM, .tok = "exact", .map = CM_STEP, .hands = CT_CAND | CT_LOWER,	L0	[r2.1 LR-S11] .contract = CG_FIXED (emit_dfa.c:8331-8345's ruling)
 line	.routes = CR_VM, .tok = "clamped", .map = CM_RESEED, .hands = CT_LOWER,	L0	[r2.1 LR-S11] .contract = CG_FIXED
 line	.routes = CR_VM, .tok = "anchored", .map = CM_STEP, .hands = CT_CAND,	L0	[r2.1 LR-S11] .contract = CG_FIXED (RETRY's retry-anchored row)
+# [lane lfl0, the BUILD] the lines L0 changed beyond rev 2.1's plan, added so the derivation reads the edit that landed (the plan's 55 entries are unchanged above):
+line	if (prefilter && pinned)	L0	[lfl0] the orientation block's hybrid paragraph reads the path's body bit (`body`)
+line	else if (prefilter)	L0	[lfl0] the same, the two-scanner paragraph
+line	if (!vm || prefilter) {	L0	[lfl0] the orientation block's table paragraph reads the body bit
+line	job->fit.prefilter_collapsed ? "count-collapsed" : "exact");	L0	[lfl0] emit_vm.c RX_VM_PREFILTER_LANG reads the erasure record's COUNT member (LR-G3, the note's §1.2 bullet; missing from the plan's set)
+line	if (cand_route_of(cx) == CAND_ROUTE_DFA) emit_unanchored(cx, fn, storage);	L0	[lfl0] pcrec_emit_dfa_engine's dispatch (inside its listed def)
+line	return cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);	L0	[lfl0] match_unwrapped_applies' body, now finish_verify_at_applies (inside its listed def)
+line	CT_WINDOW  = 1u << 3,   /* the candidate's match lies in [x, e) */	L0	[lfl0] the deleted CT_WINDOW enumerator line (the token above names its uses)

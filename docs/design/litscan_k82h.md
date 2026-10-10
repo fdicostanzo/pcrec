@@ -311,13 +311,13 @@ extend to the prefilter's third argument (§4.4).
 
 **Claim 3 (the body is correct at `lo`).** The emitted body's answer at a
 legal startpos is the PCRE2 answer. That is the artifact contract,
-`match_api.md` §3.1. `tests/utf8/run_startbnd_diff.sh` and the identity
+`match_api.md` §3.1 and §9.2. `tests/utf8/run_startbnd_diff.sh` and the identity
 gates sweep it at every startpos.
 - Under `-e byte`, every position is legal.
 - Under a multibyte encoding, only character starts are legal (K50 refuses
   the others). So `lo` is ROUNDED UP to the next character start before it
   is used (§1.4 (e)). That keeps Claim 1's conclusion, because a
-  continuation byte is never a match start (`match_api.md` §3.1, K73/K75),
+  continuation byte is never a match start (`match_api.md` §9.2, §3.1.3, K73/K75),
   and it makes `lo` a startpos the contract covers.
 
 [r1 S-F9] **Claim 3 turns every-startpos correctness from a contract into a
@@ -670,8 +670,8 @@ this list; the list is a floor, not the inventory.
 | reader (lane/k82fix) | what it pins |
 |---|---|
 | `src/gen/emit_dfa.c:52` | `#define PCREC_ARTIFACT_ABI 60` |
-| `docs/spec/match_api.md:302` | the K80 `#error` text, `(abi 60)` |
-| `docs/spec/match_api.md:2299` | "`rx_info.abi` is `60` on every artifact today", plus §6's change log |
+| `docs/spec/match_api.md §1¶7` | the K80 `#error` text, `(abi 60)` |
+| `docs/spec/match_api.md §6¶17` | "`rx_info.abi` is `60` on every artifact today", plus the change log (`docs/dev/history/abi_changelog.md`) |
 | `tests/codegen/run_codegen_tests.sh:3021` | `ABI_EXPECT=60` and its bump-ledger message |
 | `tests/codegen/run_recursion_identity.sh:1160` | `FILEPIN` (`bdb6d556`), the (B) whole-file reference |
 | `tests/codegen/run_recursion_identity.sh:1252-1261` | `ABI_SUBJ` vs `ABI_PIN`: the "bump abi and re-pin (B)" tripwire |
@@ -704,7 +704,7 @@ own alpha script inherits `alpha_k82.sh`'s `norm()` and must read
 | `tests/lib/c_artifact_cmp.sh`'s `emit_sweep` (the recursion identity gate's whole-file sweep) | every artifact: a FILEPIN re-pin | the digit only: the same re-pin, fewer differing lines |
 | `tests/findings/manifests/*.txt` (b1/ship mover lists) | re-derive: a stamp line on both arms must not create a mover | re-derive: the handoff is findings-independent (K is a walk fact), so the lists should not move; the build confirms |
 | `tests/registry/run_registry_tests.sh:629-643` (`axesn == 186`) | +k | +k |
-| `docs/spec/registry.md:192` ("124 rows / 42 axes") | +2 rows, +1 axis | same |
+| `docs/spec/registry.md` §6 ("124 rows / 42 axes") | +2 rows, +1 axis | same |
 | `tests/axes/run_axes.sh` groups (F3 is bit 45's) | a new GROUP F4 for bit 46 | same |
 
 `k` is measured at the build: k82fix's analogous event (one axis, one
@@ -712,8 +712,8 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
 
 **The contract readers (D80), which move under either option.**
 - `docs/spec/match_api.md`: §6.3 the stamp, its presence rule and
-  value; §6 the abi 61 change-log entry; :2299's "abi is 60" sentence;
-  :3813's `REQ_WHY` table, whose `"emitted"` row gains "since `abi` 61
+  value; `docs/dev/history/abi_changelog.md` the abi 61 change-log entry; `§6¶17`'s "abi is 60" sentence;
+  `§6.3.7¶8`'s `REQ_WHY` table, whose `"emitted"` row gains "since `abi` 61
   possibly handed off (`REQ_HANDOFF`)"; and §3.1's sentence, revised by
   [r1 C-C8] because revision 1's "unobservable by the contract" is false
   for the give-up surface (a deny flag that moves `PCREC_ERR_STEPS` versus
@@ -734,11 +734,11 @@ flagged row) was 183 → 186, +3; the panel estimated +2.
 - `docs/spec/tuning.md`: a new §2.41 for `-fno-req-handoff`; the
   flags→flag table at :3738 gains the bit-46 row beside bit 45's; §2.29's
   `REQ_WHY` paragraph gains a cross-reference.
-- `docs/spec/registry.md` / `cli.md:582`: the `req-use` axis and the flag
+- `docs/spec/registry.md` / `cli.md (old line 582)`: the `req-use` axis and the flag
   in the deny-flag list.
 - `docs/spec/facts_listing.md`: the `req_run_maxoff` row and the `req-use`
   decision.
-- `docs/spec/findings.md:128`: the run's scan-member PICK row. The handoff
+- `docs/spec/findings.md` §4: the run's scan-member PICK row. The handoff
   reads the window the PICK chose, never re-picks, so the row gains one
   sentence that the window's K is a walk fact independent of the PICK, or
   is left unchanged if the build finds no reader there.

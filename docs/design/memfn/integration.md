@@ -314,7 +314,7 @@ M4 and M7 landed, `MF_SITE_ABI` 7, `MF_VOCAB` 3, 11 rows in `arms[]`,
 | `linux_results.md` | glibc's call term, the AVX2 knee, dispatch costs, T-A, the survey's x86 bars | §R4.9.3; §R4.9.7 filed list |
 | `opt3_dfa_scan_measurement.md` §3-§4 | the DFA candidate skip skips 0 bytes per entry on English text | §R4.9.7 filed list (PF set) |
 | `isa_selection.md`, `isa_evaluation.md`, `requirements.md` N-4/RB-3/RB-4/RB-7 | compile-time selection by predefined macros; no mutable static; a loop-free short path per tier | §R4.9.2, §R4.9.3 |
-| `[r9]` the kit tip, read-only (`lane/memfn-m7`) | M4 (MLINE, `pf_memchr_back`, `MF_SITE_ABI` 6), M7 (MISMATCH, `mismatch_inplace`, N7 delegated, N7U pending, `MF_SITE_ABI` 7, `MF_VOCAB` 3); `ofs_fn_define` called directly by `precheck_define` and the OFS arm; `options.def` 0 rows | §R4.9.2.1 (the seam); §R4.9.7 |
+| `[r9]` the kit tip, read-only (`lane/memfn-m7`) | M4 (MLINE, `pf_memchr_back`, `MF_SITE_ABI` 6), M7 (MISMATCH, `mismatch_inplace`, N7 delegated, N7U pending (since retired, D147 add. 14), `MF_SITE_ABI` 7, `MF_VOCAB` 3); `ofs_fn_define` called directly by `precheck_define` and the OFS arm; `options.def` 0 rows | §R4.9.2.1 (the seam); §R4.9.7 |
 
 ### R4.9.1 Findings in the prior measurements, read before designing
 
@@ -2041,7 +2041,8 @@ re-read against the kit tip):
 | STAY, EDGE, VMSPAN (budget 2, ADVANCE) and VMSTRIDE (M6, building at `MF_SITE_ABI` 8: multi-term ADVANCE, `MF_MAX_TERM` 32) | in-loop, short spans; AVX2 without a 16 B tier costs 8-16 ns at 16 B (§6.1). `[r9 F-6]` A SIMD ADVANCE form needs a NUMERIC loop limit and stride the kit can read; ADVANCE carries `more` as a text expression and `span_hi` as an iteration cap. DECIDED (manager, D77): M6's `MF_SITE_ABI` 8 does NOT carry that bound; it comes in its own bump with the first SIMD ADVANCE cell. This answers R-10's Q-R10-10 (main relays it to `responses.md`) | U-3, a Linux cell dominated by class runs (§22 R4h's mover trigger), AND the bound's own bump |
 | VERIFY / VMRUN masked run (`vec-masked`, L ≥ 16) | no cell; gcc already lowers a constant exact `memcmp` at L ≥ 16 to a vector compare in portable C | a run-compare-bound cell; the row would sit in `rc_row` and take the same `mf_formdecl` |
 | N7, MISMATCH (delegated at M7: `mismatch_inplace` and the generic row) | no cell; a span compare's bound is a run-time operand pair | a MISMATCH-bound cell |
-| N7U (pending: per-character decode compare, an `MF_VOCAB` bump) and the lazy cursor rung's rmin prefix loop (pending, Q-R10-7) | not yet delegated | migration first, then a cell |
+| ~~N7U~~ (per-character decode compare) | RETIRED (D147 addendum 14): the encoding's character walk, not a kit site | — |
+| the lazy cursor rung's rmin prefix loop | migrated (R-12, VMSTRIDE/VMSPAN's instance) | — |
 | ~~N6~~ | RETIRED (D147 addendum 12): an engine step, not a search site. No SIMD row will ever exist for it | — |
 | a 64-byte level (AVX-512) | no CELL (the hardware exists: the dev box) | a tier-U probe at `-march=x86-64-v4` showing a w64 rung beats w32 past the null band at a batch-1 cell |
 | aarch64 levels (NEON) | addendum 8 | Frank admits Mac verdicts for the cells, or an aarch64 Linux box exists |
@@ -3593,7 +3594,8 @@ run-time-operand `mismatch` with a prefix-count return.
 > **`[M7]` As built (2026-10-08):** N7 is `delegated` for the byte-wise
 > compares and its `s[at + i]` ceilings are gone from C12; utf8's caseless
 > decode walk is its own `pending` row N7U (Q-R8-1), still spelling the
-> `span-decode` vocabulary line (§15.8).
+> `span-decode` vocabulary line (§15.8). (Retired, D147 add. 14: not a kit
+> site; row and line deleted.)
 
 These are NOT search sites, and are not listed:
 
@@ -3603,12 +3605,24 @@ These are NOT search sites, and are not listed:
 - **`[M6]`** (Q-R10-11, kit ruling 2026-10-08) the encoding seam's utf8
   `$_back_step` / `next_pos` loops: bounded per-character decode steps
   (at most 4 bytes), the seam's analogue of T4, not searches.
+- **`[R-12]`** (Q-R12-3, D147 addendum 14, Frank 2026-10-09) the encoding
+  seam's utf8 CASELESS span compare (`u8_defs_bref_ci`, once manifest row
+  N7U): a walk whose unit is the encoding's CHARACTER (a decode on either
+  operand), not a byte window. **The rule:** such a walk belongs to the
+  encoding, not the kit; its byte-domain sub-loops are kit sites; the kit
+  is encoding-blind. N7U is RETIRED: its row, the `span-decode` vocabulary
+  line and its C12 row are deleted (C17 13 rows, C12 1 row).
 
 > **`[M6]` As built (2026-10-08):** VMSTRIDE is `delegated` (the VM span
 > loop at stride > 1, §15.9) and its `walk-open` ceiling is gone from C12;
 > the cursor rung's LAZY rmin prefix, a counted verify of rmin span blocks
 > that no vocabulary line saw, is its own `pending` row VMLAZY (Q-R10-7),
-> spelling the new `span-count` line. N6 stayed `pending` pending Frank's
+> spelling the new `span-count` line. **`[R-12]` BUILT (lane vmlazy,
+> 2026-10-09):** NORMALIZE (pcrec abi 70 -> 72) re-spelled the prefix as the
+> span scan capped at rmin plus the rung's reach test; REPLACE (zero movers)
+> routes it through VMSPAN/VMSTRIDE and DELETES the VMLAZY row (Q-R12-2);
+> `span-count` stays at C12 ceiling 0 (Q-R12-6); `$_valid_upto`'s ASCII SWAR
+> skip is listed `pending` as VALID (Q-R12-5). N6 stayed `pending` pending Frank's
 > Q-R10-1 ruling; **N6 RETIRED (D147 add. 12):** not a search site (a
 > mirrored one-position VM step, §R4.3.4's exclusion); its manifest row, the
 > `walk-back` vocabulary line and its C12 ceiling row are deleted.
@@ -8048,6 +8062,7 @@ Built by lane m7 (2026-10-08, R-8; rulings Q-R8-1..10 in
   per-character decode walk (two cursors, a length-changing result), not a
   byte mismatch. It keeps its body: manifest row N7U, `pending`, trigger
   "completeness after M7 + a decode-hook vocabulary step" (Q-R8-1).
+  **Retired (D147 add. 14):** not a kit site; the row is deleted.
 
 ### 15.9 STMT / SKIP / ADVANCE, STRIDED: the VM span loop at stride > 1 (VMSTRIDE) — M6, as built `[M6]`
 
@@ -8078,7 +8093,8 @@ spec hunk, NO `MF_VOCAB` move.
   cursor init, the rung, admission, possessify, MRL and every member text
   stay pcrec's (m6scope V1-V15).
 - **Not migrated:** the lazy arm's rmin prefix (VMLAZY, `pending`,
-  Q-R10-7) and N6 (Q-R10-1, Frank's; RETIRED, D147 add. 12: not a search site).
+  Q-R10-7; **`[R-12]` MIGRATED** by re-expression, lane vmlazy 2026-10-09: the
+  same site capped at rmin, VMLAZY deleted) and N6 (Q-R10-1, Frank's; RETIRED, D147 add. 12: not a search site).
 
 ## 16. M1, narrowed and sequenced (r3 G-F10, G-F11) `[rev4]`
 
@@ -8508,8 +8524,8 @@ everywhere is still `none`). The ritual follows `litscan_k82h.md`
 
 - **the digit's readers**:
   - `src/gen/emit_dfa.c:52`;
-  - `docs/spec/match_api.md`'s K80 `#error` text, §6's "abi is N"
-    sentence and its change log;
+  - `docs/spec/match_api.md`'s K80 `#error` text (`§1¶7`), `§6¶17`'s "abi is N"
+    sentence and its change log (`docs/dev/history/abi_changelog.md`);
   - `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT`;
   - `tests/codegen/run_recursion_identity.sh`'s `FILEPIN` and its
     `ABI_SUBJ`/`ABI_PIN` tripwire;
@@ -9073,6 +9089,12 @@ text stays opt-in until R4f.
 >   the lazy rmin prefix listed as **VMLAZY** (`pending`, Q-R10-7); C12
 >   3 rows (walk-open out, span-count in); C17 15 rows, 12 delegated / 3
 >   pending (N6, N7U, VMLAZY). N6 waited on Frank (Q-R10-1); **RETIRED (D147 add. 12)**: C17 14 rows, 12 delegated / 2 pending (N7U, VMLAZY), C12 2 rows.
+>   **`[R-12]` BUILT (lane vmlazy, 2026-10-09):** VMLAZY migrated by
+>   re-expression (NORMALIZE abi 72, then a zero-mover REPLACE) and its row
+>   deleted; VALID listed `pending` (Q-R12-5). C17 14 rows, 12 delegated / 2
+>   pending (N7U, VALID), C12 2 rows (span-decode, swar-hibit); N7U HELD for
+>   Frank's ruling (Q-R12-3). **Ruled (D147 add. 14): N7U RETIRED**; C17
+>   13 rows, 12 delegated / 1 pending (VALID), C12 1 row (swar-hibit). `docs/dev/lanes/vmlazy_report.md`.
 >
 >   **End state: C17 reads 0 pending, and C12 reads 0 in every class
 >   outside the kit.**

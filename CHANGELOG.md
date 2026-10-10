@@ -40,7 +40,7 @@ modules (`vars`, `ucp`), a UTF-8 validity contract, a findings-driven
 rate-table mechanism, a composed class-matcher kit that makes the large
 Unicode classes small, and a run of optimizations that each remove work a
 search would have thrown away. `rx_info.abi` moved 28 → 55 across the
-interval — every step is recorded in `docs/spec/match_api.md` §6; the
+interval — every step is recorded in `docs/dev/history/abi_changelog.md`; the
 version below is the TOOL's, independent of it (D115). Still beta, still
 pre-1.0; streaming input (M3) is not implemented.
 

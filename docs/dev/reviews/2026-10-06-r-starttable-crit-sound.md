@@ -342,7 +342,7 @@ C0's arm is still right to add. The claim should be restated.
 
 - **n1. Ask ORDER is not observable anywhere. Only the evaluated SET is.**
   - The facts `used` column is a per-fact yes/no
-    (`facts_listing.md:95`; `pf->used |= pf_bit(f)`, `facts.c:115`).
+    (`facts_listing.md` §4.1; `pf->used |= pf_bit(f)`, `facts.c:115`).
   - `RX_FINDINGS` reads `byte_rate_asked`, a boolean (`findings.c:373-380`),
     and is written after every emitter has run (`emit_dfa.c:2687-2698`).
   - So §2.3(4)'s "the set of predicates EVALUATED, and their order, is
@@ -382,7 +382,7 @@ C0's arm is still right to add. The claim should be restated.
   - D-1 also fires on ATTEMPT hybrids. On `(?m)^(a)`, `REQ_WHY "dominated"`
     elides the `a` pre-check on a predecessor-`\n` scan.
   - D-2: confirmed. `(?m)^ERROR` stamps `"reverse-pass"` and the spec at
-    `match_api.md:4702` lists `"attempt"`/`"empty"` in that row.
+    `match_api.md §6.3.4¶11` (was `:4702`) lists `"attempt"`/`"empty"` in that row.
   - D-3: confirmed at `axes_dump.c:106`.
   - R4's read of N12's byte (via `pcrec_dfa_cand_ppm`) is NOT a D-1 victim.
     The predecessor byte IS the scan's stop density, which is what R4 prices.

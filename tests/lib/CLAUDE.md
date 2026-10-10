@@ -293,8 +293,7 @@ section targets depend on.
   silently parsing whichever header came last. **[MEMFN] R4a:
   `table_main FILE` ("-" = stdin)** selects the LEADING ANONYMOUS TABLE of
   a stream whose main table stays unnamed while named sections follow it
-  (every line before the first `#section`; table_contract.md consumer rule
-  5): `--list-axes` gained the kit's `memfn` section, and its consumers
+  (every line before the first `#section`; table_contract.md §4¶6): `--list-axes` gained the kit's `memfn` section, and its consumers
   (axes_registry_check.sh, tests/axes/run_axes.sh, run_comments_axis.sh)
   read pcrec's table through it. **[DD-8], 2026-09-19: the
   file gained its ROW-reading half** — `table_section_rows FILE SECTION`
@@ -319,7 +318,7 @@ section targets depend on.
   cannot source this file; it re-implements the identical two rules
   (comment-skip, "the last `#` line before the first data row is the
   header") and cross-checks its own `COLS` list against the dump's live
-  header on every run (table_contract.md's GENERATOR AGREEMENT check), so
+  header on every run (table_contract.md §5¶2, GENERATOR AGREEMENT), so
   the two implementations cannot silently disagree about what a header
   says. Also runnable as a command for a sabotage control or a non-shell
   caller: `bash tests/lib/table.sh table-col-index FILE COL [SECTION]`
@@ -467,9 +466,11 @@ Maintenance: update this file when files are added/removed or their roles
 change.
 
 - **spec_extract.sh** — [decfbB0b] sourced, never run: the registry check's
-  four hand-written-set extractors (`extract_md_table_values`,
-  `extract_line_values`, `extract_prose_values`, `extract_c_return_values`)
-  over `docs/spec/match_api.md` §6.3 and a C function's `return "..."`
-  literals, moved here verbatim from `tests/registry/axes_registry_check.sh`
+  hand-written-set extractors (`extract_md_table_values`,
+  `extract_c_return_values`) over `docs/spec/match_api.md` §6.3's value-set
+  tables — each directly under a `<!-- value-set: RX_NAME -->` marker, the
+  anchor every caller uses (lane specclean, 2026-10-09, which also retired
+  `extract_line_values`/`extract_prose_values`) — and a C function's
+  `return "..."` literals, moved here verbatim from `tests/registry/axes_registry_check.sh`
   so it and `tests/codegen/run_fallback_table.sh` read the spec's sets
   through ONE implementation. Defines functions only.

@@ -933,7 +933,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
      *       by the qualified name.
      *   `(?&*=name)`                   ->  row `group`, `ref` = NULL. The
      *       author asked for it in the CALLER's own scope, so that is where
-     *       it goes — counted by `nnames`, found by `match_api.md` §6's
+     *       it goes — counted by `nnames`, found by `match_api.md` §5.4's
      *       bsearch, indistinguishable from a group the caller declared.
      *       That last clause is exactly what the clash refusal below pays
      *       for, and it is the tradeoff the form exists to make.
@@ -990,7 +990,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
              * caller's own group or on another flat import, and two
              * delivering calls that named the same site. A row name is a
              * caller's whole handle on a delivered group, so two rows
-             * sharing one would make `match_api.md` §6's bsearch return
+             * sharing one would make `match_api.md` §5.4's bsearch return
              * whichever the sort happened to put first. */
             for (const NamedGroup *o = cx->named_groups; o; o = o->next)
                 if (strcmp(o->name, rowname) == 0)

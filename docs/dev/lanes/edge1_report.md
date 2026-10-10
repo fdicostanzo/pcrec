@@ -692,9 +692,9 @@ manager gives the number. Every reader of 17, found by grepping the tree:
 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` |
 | `tests/codegen/run_codegen_tests.sh:2760` | the failure message's bump history, which gains a `17->18` clause naming BOTH halves |
 | `tests/codegen/run_recursion_identity.sh` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"` — gate (B)'s pin, re-pinned to the MERGE commit, plus its own comment block |
-| `docs/spec/match_api.md:159` | "`rx_info.abi` is `17`" in the §6 abi paragraph |
-| `docs/spec/match_api.md:1694` | "**`rx_info.abi` is `17` on every artifact today**", the per-bump narrative |
-| `docs/spec/match_api.md:2148` | "the abi-17 entry above" — a cross-reference to the entry that documented [CC-DIFF]'s spelling (a). It names a HISTORICAL entry and most likely does NOT move; it is listed because D94's lesson is that the hand-enumerated list missed a fifth reader in this exact file. |
+| `docs/spec/match_api.md §6¶17` | "`rx_info.abi` is `17`" in the §6 abi paragraph |
+| `docs/dev/history/abi_changelog.md` | "**`rx_info.abi` is `17` on every artifact today**", the per-bump narrative |
+| `docs/spec/match_api.md §6.3.8¶10` | "the abi-17 entry above" — a cross-reference to the entry that documented [CC-DIFF]'s spelling (a). It names a HISTORICAL entry and most likely does NOT move; it is listed because D94's lesson is that the hand-enumerated list missed a fifth reader in this exact file. |
 
 **What comparison (A) of `run_recursion_identity.sh` should do.** (A) extracts
 `goto <p>_L0;` through `<p>_accept:` — the VM's own program. Nothing on this

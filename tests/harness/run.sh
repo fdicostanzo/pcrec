@@ -3190,6 +3190,12 @@ for file in "${files[@]}"; do
             else
                 cur_vars+=("${BASH_REMATCH[1]}")
             fi
+        elif [[ "$line" =~ ^var(-unset)?([[:space:]]|$) ]]; then
+            # [RXT-READERS] A `var`/`var-unset` line the two arms above did
+            # not take is a malformed VALUE of a known kind (leg A's and
+            # leg C's class), not an unknown token.
+            record_fail_class value-shape "$file" "$lineno" \
+                "'var' wants a name then a double-quoted value, 'var-unset' a bare name (got '$line')"
         elif [[ "$line" =~ ^mc[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             # `mc "<subject>" <n>` — the FIND-ALL COUNT (format_design
             # §2.21). The rule is `docs/spec/match_api.md` §3.1's shipped
@@ -3273,7 +3279,15 @@ for file in "${files[@]}"; do
             oracle_ref="${oracle_ref%"${oracle_ref##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'oracle' line before any pattern block"
-            elif [[ ! "$oracle_ref" =~ ^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$ ]]; then
+            elif [[ "$oracle_ref" =~ ^none[[:space:]]+[^[:space:]] ]]; then
+                # [RXT-READERS] `oracle none <reason>` (§2.9): a counted,
+                # printed skip, in a block as at file level. The reason is
+                # required (a bare `none` falls through to the refusal).
+                total_oracle_skips=$((total_oracle_skips + 1))
+            elif [[ "$oracle_ref" == none ]]; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'oracle none' needs a reason after it"
+            elif [[ ! "$oracle_ref" =~ ^[A-Za-z_][A-Za-z0-9_.-]*(/[A-Za-z0-9._-]+)?$ ]]; then
                 record_fail_class value-shape "$file" "$lineno" \
                     "'oracle' wants an engine reference, optionally '/<version>' (got '$oracle_ref')"
             else

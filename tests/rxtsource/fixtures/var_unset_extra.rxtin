@@ -1,0 +1,4 @@
+# [RXT-READERS] `var-unset` wants a bare identifier and nothing after it.
+pattern a+
+var-unset a b
+m "aaa" 0 3

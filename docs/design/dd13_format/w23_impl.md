@@ -239,7 +239,7 @@ duplication.
 | F3 | `src/parse/rxt_schema.c` (**new**) | C | the table's READER: `pcrec_rxt_schema_row(scope, kind)`, the three structure-layer parameter queries (`opens_group`, the `value`+`children` PAIR, `children == tree`), and ONE exhaustive `default:`-less switch over the constraint enum — `src/parse/definitions.c`'s `pcrec_def_tag_applies` shape, so a kind added later is a compile error at the one site that must handle it | W23.1 |
 | F4 | `src/parse/rxt_source.c` | C | leg A's dispatch becomes a WALK over F1 rather than three `vocab_find` tables. **MEASURED, what is displaced**: `head_vocab :137-142`, `config_vocab :145-150`, `block_vocab :156-167`, `vocab_find :169-174`, and the per-line dispatch inside `pcrec_rxt_source_parse :984-1365` (head branch `:1068-1136`, body branch `:1139-1314`). S1 attachment replaces the flat `line_indented` test at `:1021-1030`; S3's extent rule replaces `parse_prose`'s `:513-564` loop condition; the diagnostic CLASS tag joins `rxt_fail :196-219` (**MEASURED: 61 CALL SITES** — `grep -c 'rxt_fail('` returns 63 and two of those are the prototype at `:193` and the definition at `:196`, r59-B-N3). **Also displaced: `config_vocab`'s two WITHDRAWN rows** `{ "testee", 3 }, { "option", 3 }` at `:149` — see §4.3, which is where revision 1's absence claim was wrong | W23.1 |
 | F5 | `src/parse/schema_dump.c` (**new**) | C | `--list-schema`, `src/parse/limits_dump.c`'s shape (**MEASURED**: 89 lines, `pcrec_limits_tsv :55-89` (revision 1 said `:57`; the function opens at `:55`, r59-C), and it `#include`s the `.def` directly with the macro defined at the call site). Plus the `surface` section: the declared NON-coverage rows (§2.24's table, four rows at 3.4.1) | W23.1 |
-| F6 | `cli/main.c` | C | `--list-schema` joins the registry-dump guard. **MEASURED**: the six existing dumps dispatch at `:651-656`, `--list-source` separately at `:664` with its own branch `:1177-1216` (revision 1 said `:1230`; the branch's closing brace is `:1216` and `--probe-ask`'s comment opens at `:1218`, r59-C), and the shared guard block is `:1330-1379`. `--list-schema` is the **SEVENTH registry dump** and the eighth conforming table producer (§2.25.1, corrected at r57 S-N1 — `docs/spec/cli.md:586` already gives `--list-limits` the sixth ordinal) | W23.1 |
+| F6 | `cli/main.c` | C | `--list-schema` joins the registry-dump guard. **MEASURED**: the six existing dumps dispatch at `:651-656`, `--list-source` separately at `:664` with its own branch `:1177-1216` (revision 1 said `:1230`; the branch's closing brace is `:1216` and `--probe-ask`'s comment opens at `:1218`, r59-C), and the shared guard block is `:1330-1379`. `--list-schema` is the **SEVENTH registry dump** and the eighth conforming table producer (§2.25.1, corrected at r57 S-N1 — `cli.md (old line 586)` already gives `--list-limits` the sixth ordinal) | W23.1 |
 | F7 | `tests/harness/run.sh` | bash | leg B: the ATTACHMENT arm; the diagnostic CLASS tag it has never had; the STEP 0 parity refusals (§1.8); the block-scoped W23 arms (`tag`, `mc`, `under`, `pattern-esc`, `provenance`, `variant`, `ext`); `@file:` subjects; cells; `use` | W23.2, .3 |
 | **F7a** | `tests/harness/run.sh` | bash | **leg B's `include` half (§1.10, NEW at revision 1.1 — r59-B2).** Entry-set SUBTRACTION at discovery (**MEASURED**: discovery is `:293-307` — the no-arg `find … -not -path "*/known_fail/*"` at `:296-297` and the directory-argument `find` at `:302`. Revision 1 named no site at all and `format_design.md` §2.11 cites `run.sh:184-216`, which is the `tests/lib` shim sourcing and the `CC` resolution — §1.10's first finding); the fragment SPLICE into the entry's own per-file loop; the CLOSURE tally; the fourth failure class; the two new summary lines | **W23.3a** |
 | F8 | `tests/harness/verify_rxt.py` | python3 | leg C: the same three lists. **MEASURED**: `parse_rxt :343-615`, eighteen kinds, catch-all `:613-614`; the head-bearing refusal `:407-417` stays (the seam ruling); `dump_file :649-712` gains the new kinds | W23.2, .3 |
@@ -374,7 +374,7 @@ grep -rn -- "--list-source\|NF *[!=]= *[0-9]\|cut -f\|IFS=\$'\\\\t'\|awk -F'\\\\
 | **R5** | **`tests/rxtsource/run_rxtsource_tests.sh:479-494`** | **`awk -F'\t' -v want="$ncols" '$2 ~ /^#/ { next } NF != want + 1 { ... }'` — asserts EVERY non-comment row has exactly `ncols+1` fields, unconditionally of kind** | yes (`ncols` derives from `MANIFEST`, which moves in lockstep) | **NO. THIS IS THE `NF != 15` DEFECT, ALIVE, IN THIS REPO, FOUND BY GREP BEFORE LANDING** |
 | **R6** | **`tests/rxtsource/run_rxtsource_tests.sh:499-505`** | **`awk -F'\t' '$2 !~ /^#/ && $2 != "pattern" { n++ }'` and its `== "pattern"` twin at `:500`, asserted ZERO at `:501-505` ("the corpus has no head")** | yes (`$2` is positional from the front) | **NO. IT IS R5'S DEFECT IN THE INEQUALITY DIRECTION, AND A GREEN W23-S4 WOULD PROVE IT BROKEN** |
 | R7 | `tests/rxtsource/run_rxtsource_tests.sh:561-568` | the leg A→B/C projection: explicit positional column selection, `print "block", $1, $3..$13, $17` | **YES for APPENDS** (reads 1-13 and 17); an INSERTED column breaks it silently — which is what `table_contract.md`'s append-only rule exists to forbid | YES (`$2 == "pattern"` filter) |
-| R8 | `docs/spec/rxt_format.md:418-499` | the prose column contract | needs its SW11/SW14 hunk | needs the section column lists |
+| R8 | `docs/spec/rxt_format.md §2` | the prose column contract | needs its SW11/SW14 hunk | needs the section column lists |
 | R9 | `tests/mech/sabotages/S200,S201,S202,S203` | plants whose detectors ARE R4/R5 (and, once repaired, R6) | — | — |
 | — | `tests/harness/verify_rxt.py` | **does NOT read the dump at all** — it refuses a head-bearing file by name (`:407-417`) per the seam ruling | — | — |
 | — | `cli/`, `tools/`, `scripts/` | **no hits** | — | — |
@@ -1336,7 +1336,7 @@ SPELLINGS in the shipped tree, at three sites:**
 1. **`src/parse/rxt_source.c:149`** — `config_vocab` carries
    `{ "testee", 3 }, { "option", 3 }`, so leg A RECOGNISES both today
    and refuses them by name with their wave.
-2. **`docs/spec/rxt_format.md:57-62`** — the later-wave keyword
+2. **`docs/spec/rxt_format.md §1.1`** — the later-wave keyword
    paragraph names `testee` and `option` among the keywords that are
    *"recognised and refused by name, as NOT IN THIS BUILD"*. The
    withdrawal is therefore a SPEC EDIT, not merely an absence.
@@ -1379,7 +1379,7 @@ satisfy.** Three arms, and the third is deliberately not a grep:
   **0** after W23.1. A check whose baseline is zero from the start
   proves nothing about the change that was made.
 - **(c) THE SPEC ARM IS NOT A GREP AND SAYING SO IS THE POINT.**
-  `rxt_format.md:130` already reads *"configs are three artifacts with
+  `rxt_format.md §1.3` already reads *"configs are three artifacts with
   three prefixes and ONE …"* — legitimate English in which `configs` is
   a plural noun — so no pattern separates a withdrawn production's
   spelling from prose about configurations. The obligation is the third

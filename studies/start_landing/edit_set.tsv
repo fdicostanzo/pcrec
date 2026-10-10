@@ -1,0 +1,33 @@
+# start_landing.md rev 2 §7: the text [START-LANDING]'s build CHANGES, written once as data (lane landrev, 2026-10-09,
+# main efc58146, abi 71), in docs/design/start_table/refactor_edit_set.tsv's format. Commits SL1-SL3 land AFTER
+# locate_finish.md's L0 (SL4 is the bench relay and edits no src/ text). Read by
+# ../../docs/design/start_table/sabotage_anchors.py (a row is RE-AIM iff its anchor sits in a `def` below or
+# OVERLAPS a `token`/`line` occurrence, in EVERY file). NEVER a hand list of rows: the re-aims are DERIVED from this.
+# kind	value	commit	why
+def	pcrec_kset_walk	SL1	[r2 SL-G3] its frontier walk becomes the ONE union-frontier iterator (per-depth flags); kset_walk is its first consumer, the byte width interval [bmin, bmax] its second; kset's own answer is unchanged
+line	.list = { [CAND_ROUTE_DFA] = { "search-start", 2, "reverse-pass" } },	SL2	cand_rows[]: reverse-pass's listing rank 2 -> 4; the two new rows are INSERTED between pinned and reverse-pass (an insertion rewrites no existing anchor text, so the table is not a `def` here)
+def	CandRecover	SL2	`bool pinned` becomes `CandRecoverAct act` (CRA_SEARCH_FROM / CRA_END_MINUS_W / CRA_LANDING / CRA_REVERSE)
+line	if (dfa_engine_is_empty(cx)) return false;	SL2	[r2 SL-C1] start_pinned_applies's P4 becomes the shared `recover_on_path(cx)` read the two new predicates also open with (L0 already re-spells this line as the path's read; whichever lands first owns the text, the other re-anchors); every other occurrence of this generic line is over-reported, never under
+def	dfa_search_is_pinned	SL2	becomes `act == CRA_SEARCH_FROM`; each of its five callers re-classified by what it asks (R-membership is the path fold, `.needs`)
+line	if (!pinned) dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);	SL2	emit_unanchored: R's form is derived iff R is a member of the path (L0's fold), not iff the row is pinned
+line	else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);	SL2	the per-action assertion (pinned's routing; landing's unseeded machine, L3)
+line	if (!pinned) rev.repr->emit_token(c, &rev);	SL2	R membership
+line	if (!pinned) emit_scan_defs(c, &rev);	SL2	R membership
+line	if (!pinned) emit_machine_tables(c, &rev);	SL2	R membership
+line	if (pinned) {	SL2	the dispatch becomes a switch on `act` (four actions), each ending in the ONE success-site emitter
+line	emit_dead_group_fill(cx, c, "    ");	SL2	[r2 SL-C3] moves INTO the one success-site emitter (caps[0] + dead-group fill + return 1), which every action calls
+line	emit_dead_group_fill(cx, c, "        ");	SL2	[r2 SL-C3] as above (reverse-pass's success site)
+line	"    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n");	SL2	pinned's caps[0] write moves into the success-site emitter
+line	"        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n");	SL2	reverse-pass's caps[0] write moves into the success-site emitter
+line	pcrec_sb_printf(c, "%s}\n", ind);	SL2	the NEXT block's closing line in five of the eight emitters (pf_emit_memchr, _bcls, _bcls_bounded, _ofs, _first_class_bounded) becomes pf_close(c, f), which writes the record; every other occurrence of this generic line in the file is over-reported, never under
+line	pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);	SL2	the closer of the other three (_memchr_bounded, _ofs_bounded, _first_memchr_bounded) -> pf_close
+token	u.recover.pinned	SL2	the payload field is renamed; every reader re-keys on `act`
+line	.u.recover = { .pinned = true } },	SL2	pinned's payload -> .act = CRA_SEARCH_FROM
+line	.u.recover = { .pinned = false } },	SL2	reverse-pass's payload -> .act = CRA_REVERSE
+line	bool pinned = dfa_search_is_pinned(cx);	SL2	emit_unanchored's dispatch local -> the action
+line	bool pinned = (!vm || prefilter) && dfa_search_is_pinned(cx);	SL2	the orientation block (emit_dfa.c:10734) re-classified (also an L0 line)
+line	req_handoff_assert_body(cx, &job->dfa, pinned);	SL2	the K82 body assertion reads "R absent", re-keyed on the path's membership
+line	#define PCREC_ARTIFACT_ABI 71	SL2	the abi event (N -> N+1 where N is main's number at SL2)
+def	cand_select	SL3	[r2 SL-C6] RECOVER asks filter `take & hand` as FINISH asks do (L0); the hand is mandatory (abort on 0)
+def	cand_rows_selfcheck	SL3	totality over (RECOVER, route, hand): the last row taking each hand is undeniable
+def	dfa_search_start_of	SL3	the composite's ask carries `.hand = CT_END`; it and its readers stop being a hand-less ask [r2 SL-C6]

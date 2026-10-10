@@ -81,7 +81,7 @@ Invariant: S1 reads `Job.req_run`, so that field must not fork.
 5. **abi 34 → 35** (the brief's ruling).
    - No stamp, stamp value, declaration or layout moves. The bump moves
      emitted PROGRAM text on the 12.
-   - The ritual: `PCREC_ARTIFACT_ABI`, `match_api.md` §6's new top entry
+   - The ritual: `PCREC_ARTIFACT_ABI`, `docs/dev/history/abi_changelog.md`'s new top entry
      (and "gap-free from 2 to 35"), `run_codegen_tests.sh` `ABI_EXPECT` and
      its narrative, and `run_recursion_identity.sh` (B) FILEPIN →
      `a446a99e` (the bump commit).

@@ -1,0 +1,365 @@
+file	pattern	flags	today	facts	rev2	moves
+tests/mech/sabotages/S-U10_cwmin_fixpoint_one_round.sh	^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S-U12_bare_namespace_is_script.sh	\p{Greek}	-e byte	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S-U1_fold_after_negate.sh	[^k]	-i -e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S-U2_fold_pairing_not_closure.sh	k	-i -e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S-U3_fold_confined_to_bytes.sh	[a-z]	-i -e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S-U5_back_step_byte_arithmetic.sh	(?<=\x{3b1})x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S-U6_next_pos_byte_advance.sh		-e utf8	pinned	W=0 land=nullable	pinned	
+tests/mech/sabotages/S-U7_surrogates_encodable.sh	^.$	-e utf8	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S-U8_mrl_bound_loosened_utf8.sh	(a)(?:\x{3b1}){0,3}x	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S-U9_back_step_length_test_deleted.sh	(?<!.)x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S110_atom_port_claims_class.sh	[\1]	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S111_gate_check_dropped.sh	(a)\1	-	none	-	none	
+tests/mech/sabotages/S119_deferred_validity_skipped.sh	(a)\2	-	REFUSED	-	-	
+tests/mech/sabotages/S121_revdet_node_unguarded.sh	((\p{Ll})|1){3}!	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S155_depth_capacity_untyped.sh	^(a(?1)?b)$	--engine=vm	none	-	none	
+tests/mech/sabotages/S15_drop_d_row.sh	\d	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S16_wrong_module_d.sh	\d	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S172_postresolve_walk_order.sh	^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&g))ab(?<=(?&h))$	-	REFUSED	-	-	
+tests/mech/sabotages/S172_postresolve_walk_order.sh	^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))$	-	REFUSED	-	-	
+tests/mech/sabotages/S191_sizeterm_greedy_descent.sh	((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}	-	none	-	none	
+tests/mech/sabotages/S192_sizeterm_bar_removed.sh	((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}	-	none	-	none	
+tests/mech/sabotages/S193_sizecap_comparison_inverted.sh	(?:[a-z][0-9]){0,8000}	-	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S206_nullable_predicate_removed.sh	(?:(?:a|b)*a(?:a|b){15})?	-	none	-	none	
+tests/mech/sabotages/S207_nullable_predicate_inverted.sh	\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b	-	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/mech/sabotages/S20_char_d_literal.sh	\d	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S218_pinned_predicate_widened.sh	$	--no-captures	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S219_pinned_seed_conjunct_dropped.sh	\bx*	--no-captures --no-captures	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/mech/sabotages/S219_pinned_seed_conjunct_dropped.sh	\ba|c*	--no-captures --no-captures	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	\bx*	--no-captures --no-captures --no-captures	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	x*	--no-captures --no-captures --no-captures	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S220_pinned_view_clause_dropped.sh	(?!a)	--no-captures --no-captures --no-captures	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S221_pinned_start_written_as_zero.sh	a*	--no-captures	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S222_start_stamp_forked_from_selection.sh	(?m)a*$	--no-captures	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/mech/sabotages/S224_vm_frameless_stamp_inverted.sh	(a)b	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S225_vm_frameless_stamp_from_npush.sh	^(a(?1)?b)$	-	none	-	none	
+tests/mech/sabotages/S226_vm_frameless_stamp_conditional.sh	^(a(?1)?b)$	-	none	-	none	
+tests/mech/sabotages/S227_scan_edge_entry_s0_only.sh	foo\B	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S228_cls_fold_recognizer_widened.sh	([ac])x	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S228_cls_fold_recognizer_widened.sh	([Aa])x	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S232_startpos_guard_leaks_deny.sh	(?<!.)	-e utf8	none	-	none	
+tests/mech/sabotages/S233_startpos_guard_leaks_byte.sh	\B	-	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S234_startpos_gate_deleted.sh	\B	-e utf8	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S235_attempt_loop_ungated.sh	(?m)^a|\B	-e utf8	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S236_nullgate_omits_on_nullable.sh	\B	-e utf8	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S237_size_drop_rung_deleted.sh	\p{L}	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S238_size_drop_unstamped.sh	\p{L}	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S249_tune_columns_swapped.sh	a(b|c)+d	--no-captures --no-captures --engine=vm --engine=vm	none	-	none	
+tests/mech/sabotages/S249_tune_columns_swapped.sh	(a{10,20}){10,50}	--no-captures --no-captures --engine=vm --engine=vm	none	-	none	
+tests/mech/sabotages/S250_tune_wrong_deny_bit.sh	a(b|c)+d	--no-captures --engine=vm --engine=vm -fno-tiered-entry	none	-	none	
+tests/mech/sabotages/S250_tune_wrong_deny_bit.sh	((a)|(aa))+b	--no-captures --engine=vm --engine=vm -fno-tiered-entry	none	-	none	
+tests/mech/sabotages/S251_tune_ladder_threshold_dropped.sh	(a{10,20}){10,50}	--engine=vm --engine=vm	none	-	none	
+tests/mech/sabotages/S252_premul_drop_rung_deleted.sh	[^\p{C}\p{M}\p{P}]	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S253_premul_drop_note_unstamped.sh	[^\p{C}\p{M}\p{P}]	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/mech/sabotages/S263_vm_anchor_bound_subject_length.sh	^(a)b	--engine=vm	none	-	none	
+tests/mech/sabotages/S264_end_window_one_byte_narrow.sh	abc$	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S265_req_byte_memchr_inverted.sh	a.?b	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S266_freqpick_argmax.sh	[0-9]+x[0-9]+e[0-9]+	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S267_req_run_memcmp_inverted.sh	a=b	-fno-offset-skip -fno-run-overlap	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S268_req_run_alt_overclaim.sh	(?:/user|/users)	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S268_req_run_alt_overclaim.sh	(?:xabcy|wabcv)q	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S269_precheck_admission_removed.sh	^abc$	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S270_precheck_dominance_removed.sh	\[	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S273_span_match_length_off_by_one.sh	(a)\1	-	none	-	none	
+tests/mech/sabotages/S274_precheck_g2_vm_linearity_removed.sh	^([a-zA-Z0-9._%+-]+)+@	--engine=vm	none	-	none	
+tests/mech/sabotages/S275_cls_fold_emitted_constant_shifted.sh	([Aa])x	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S276_precheck_g2_unanchored_admitted.sh	([a-zA-Z0-9._%+-]+)+@	--engine=vm	none	-	none	
+tests/mech/sabotages/S277_precheck_whole_set_removed.sh	(x?)([a-z]+)+Z.@\1	-e byte	none	-	none	
+tests/mech/sabotages/S278_precheck_whole_run_removed.sh	(x?)([a-z]+)+eeeeeeee~#~#~#~#\1	-e byte	none	-	none	
+tests/mech/sabotages/S279_run_term_offset_plus_one.sh	/user|/users	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S27_verb_blame_offset.sh	(*)	-	REFUSED	-	-	
+tests/mech/sabotages/S280_run_pin_bytes_ignored.sh	/abcd[xy]/user	-	reverse-pass	W=11 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S281_run_row_clause4_dropped.sh	in|instanceof	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S282_deny_field_32bit.sh	/user|/users	-fno-run-prefilter	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S283_run_rows_offset_skip_bit_dropped.sh	/user|/users	-fno-offset-skip	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S284_run_rows_reseeds_false.sh	\bat /user[0-9]{2,50}x	-fcomments	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/mech/sabotages/S285_run_term_length_plus_one.sh	/user|/users	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S286_g1_verifies_conjunct_dropped.sh	q[a-z]*qu	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S287_ofstest_maxk_not_widened.sh	[ab]/user	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S288_density_memchr_guard_dropped.sh	[ab]\x80[0-9]{3}\x81	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S289_clause3_dropped.sh	\Bfoo\B	-	reverse-pass	W=3 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S28_verb_table_case_swap.sh	(*FOO)	-	REFUSED	-	-	
+tests/mech/sabotages/S28_verb_table_case_swap.sh	(*foo)	-	REFUSED	-	-	
+tests/mech/sabotages/S293_reqrun_scan_offset_dropped.sh	a=b	-fno-offset-skip	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S294_reqrun_enc_decline_leftmost.sh	é@	-e utf8	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S295_vm_anchor_bound_flags_leak.sh	^abc	--engine=vm --engine=vm -fno-vm-anchor-bound	none	-	none	
+tests/mech/sabotages/S29_verb_atstart_drop.sh	a(*UTF)	-	REFUSED	-	-	
+tests/mech/sabotages/S301_findings_reader_local_none.sh	[0-9]+x[0-9]+e[0-9]+	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S302_e1_kind_mask_moves_under_lowering.sh	\x{3b1}	-e utf8	reverse-pass	W=2 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S303_e1_nullability_moves_under_lowering.sh	\x{3b1}	-e utf8	reverse-pass	W=2 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S304_lit_run_one_byte_too_long.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S305_lit_run_slot_walk_overskips.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S306_e3_sealed_on_attempt_route.sh	^abc	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S307_e3_decline_names_wrong_route.sh	^abc	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S307_e3_decline_names_wrong_route.sh	(a)\1b	-	none	-	none	
+tests/mech/sabotages/S308_findings_when_ignored.sh	abc	-e utf8 -e utf8	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S309_findings_digest_reads_provenance.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S30_verb_unknown_name_blames_nstart.sh	(*FOO)	-	REFUSED	-	-	
+tests/mech/sabotages/S310_findings_self_include_from_s1.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S311_findings_answer_from_other_block.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S312_findings_residue_ties_high.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S315_findings_terminal_by_name.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S316_findings_k65_pick_decides_giveup.sh	(x?)([a-z]+)+Z.@\1	-	none	-	none	
+tests/mech/sabotages/S317_findings_g1_elides_without_scan.sh	(x?)([a-z]+)+Z.@\1	-	none	-	none	
+tests/mech/sabotages/S318_call_nullability_greatest.sh	(a|(?1))*?b	--engine=vm	none	-	none	
+tests/mech/sabotages/S319_call_nullability_never.sh	(?(DEFINE)(?<g>a?))(?&g)*	--engine=vm	none	-	none	
+tests/mech/sabotages/S31_uprops_reflag_class_invalid.sh	[\N{U+41}]	-	REFUSED	-	-	
+tests/mech/sabotages/S320_lit_run_floor_reverts_to_two.sh	xy	--engine=vm	none	-	none	
+tests/mech/sabotages/S329_find_run_scan_data_tie_leftmost.sh	[a-z]+@é	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S32_uprops_offbyone_cap.sh	\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}	-	REFUSED	-	-	
+tests/mech/sabotages/S32_uprops_offbyone_cap.sh	\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}	-	REFUSED	-	-	
+tests/mech/sabotages/S332_k70_restrict_refusal_removed.sh	(?i)(?r)k	-e utf8	REFUSED	-	-	
+tests/mech/sabotages/S333_ucp_verb_answers_verbs.sh	(*UCP)a	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S334_ucp_tag_true_without_ucp.sh	\d	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S335_ucp_lower_folds_under_i.sh	(*UCP)(?i)[[:lower:]]	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S336_ucp_aw_not_reaching_wordb.sh	(*UCP)(?aW:a\b)	-e utf8	reverse-pass	W=1 land=assert-after	end-minus-width	MOVES
+tests/mech/sabotages/S337_ctx_atoms_first_match_chain.sh	(?<=[aeiou])x\b	-	reverse-pass	W=1 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S338_t3_two_character_body.sh	(?<=ab)x	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S339_t3_capture_bearing_body.sh	(?<=(a))x	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S33_uprops_drop_caret_consume.sh	\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}	-	REFUSED	-	-	
+tests/mech/sabotages/S33_uprops_drop_caret_consume.sh	\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}	-	REFUSED	-	-	
+tests/mech/sabotages/S340_ctx_precondition_clamps.sh	(?<=[^a])a	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S341_ctx_absent_reads_in_set.sh	(?<![a-c])\d	-	reverse-pass	W=1 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S342_t3_denial_falls_to_unsound.sh	(?<=a|b)x	-fno-ctx-node	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S343_ctx_shared_set_first_row_only.sh	(?m)^ERROR(?:(?=\n)|\z)	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S34_uprops_no_casefold.sh	\p{c}	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S35_uprops_insignificant_bytes_significant.sh	\p{ A}	-	REFUSED	-	-	
+tests/mech/sabotages/S367_start_zero_rule_not_emitted.sh	x*	-e utf8	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S368_unwrapped_match_guard_deleted.sh	x*	-e utf8	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S370_hyb_reseed_probe_never_ends_block.sh	(?<=a|é)x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S371_hyb_reseed_adaptive_text_dropped.sh	(?<=é)x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S372_hyb_reseed_calibration_swapped.sh	(?<=é)x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S390_decode_accepts_overlong.sh	x[^a]y	-e utf8 --engine=vm	none	-	none	
+tests/mech/sabotages/S391_decode_accepts_surrogate.sh	x[^a]y	-e utf8 --engine=vm	none	-	none	
+tests/mech/sabotages/S400_clspack_atom_mask_shifted.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S401_clspack_deny_ignored.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S402_clspack_threshold_off_by_one.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S403_clspack_respell_skipped.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S404_clspack_atom_cap_dropped.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S405_clspack_respell_before_rung.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S406_clspack_kit_deny_ignored.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ][02468]	--engine=vm	none	-	none	
+tests/mech/sabotages/S409_utf_fastpath_skips_window_lead.sh	a	-e utf8 -futf-check	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S410_utf_validator_surrogate_accepted.sh	a	-e utf8 -futf-check	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S411_utf_check_before_k50_guard.sh	a	-e utf8 -futf-check	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S412_utf_stepback_one_byte.sh	(?<=a)b	-e utf8 -futf-check	reverse-pass	W=1 land=assert-at-start	end-minus-width	MOVES
+tests/mech/sabotages/S413_utf_lb_lookbehind_not_raised.sh	(?<=..)b	-e utf8 -futf-check	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S414_align_seeks_one_byte.sh	a	-e utf8 -fstartpos-guard=align	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S420_prefilter_drop_rung_deleted.sh	(\p{Xwd})	-e utf8	none	-	none	
+tests/mech/sabotages/S421_fast_or_fail_inert.sh	(\p{Xwd})	-e utf8	none	-	none	
+tests/mech/sabotages/S422_prefilter_drop_unstamped.sh	(\p{Xwd})	-e utf8	none	-	none	
+tests/mech/sabotages/S423_prefilter_drop_not_degrading.sh	(\p{Xwd})	-e utf8	none	-	none	
+tests/mech/sabotages/S430_clss2_byte_kit_wrong_class.sh	([aeiou])[bcdfg][hjklm][npqrs][tvwxz][AEIOU][BCDFG][HJKLM][NPQRS][TVWXZ]	--engine=vm	none	-	none	
+tests/mech/sabotages/S431_clss2_byte_kit_deny_ignored.sh	[aeiou]+x	--engine=vm --engine=vm -fno-cls-kit	none	-	none	
+tests/mech/sabotages/S432_clss2_byte_kit_at_default.sh	[aeiou]+x	--engine=vm	none	-	none	
+tests/mech/sabotages/S433_clss2fix_scan_site_ignored.sh	(?i)xa{3,}b	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S434_clss2fix_range_top_dropped.sh	([a-z]+)x	--engine=vm	none	-	none	
+tests/mech/sabotages/S435_clss2fix_kit_calls_ignored.sh	([^"\\]+)"([^"\\]+)"	--engine=vm	none	-	none	
+tests/mech/sabotages/S436_clss2fix_kit_bound_dropped.sh	([a\x80-\x8f\xf0-\xff]+)z	--engine=vm	none	-	none	
+tests/mech/sabotages/S437_k7980_emitters_see_real_prefix.sh	(foo|bar)[0-9]{2,5}(x)	--engine=vm	none	-	none	
+tests/mech/sabotages/S438_k7980_mixed_abi_fence_off.sh	a(b|c)+d	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S439_k78_dead_group_fill_at_entry.sh	(?(DEFINE)(?<x>\b))b(?&x)	-	reverse-pass	W=1 land=assert-after	end-minus-width	MOVES
+tests/mech/sabotages/S440_vedge_reverse_takes_end_view.sh	[a-z]{2,4}(?:\z|[a-z])	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S441_hyb_reseed_anchored_row_never_holds.sh	^(?>a|ab): (.*)$	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S443_run_word_overreads.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S444_run_word_last_byte_unchecked.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S445_run_word_sense_inverted.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S446_req_cube_crosses_repeat.sh	(?i)sel(?:ab)*ect	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S447_pair_scan_one_stream.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S448_req_pin_takes_masked.sh	a[bc]de	-	reverse-pass	W=4 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S449_whole_run_unmasked.sh	(x?)(?i:abcdefghijkl)\1	-	none	-	none	
+tests/mech/sabotages/S450_pair_research_behind.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S451_req_hull_keeps_left.sh	(?:S(?i:ab)|(?i:sab))	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S452_set_rest_marks_masked.sh	(x?)([a-z]+)+S\d(?i:s)qz\1	-	none	-	none	
+tests/mech/sabotages/S453_req_pick_takes_pair.sh	(?i:select)\d+x	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S454_pair_dispatch_memchr_first.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S455_pair_search_above_guard.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S456_cube_stores_upper.sh	frank|fred	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S457_set_leads_never_applies.sh	(?:user|USER)[ \t]*=	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S458_set_leads_tie_leads.sh	é@	-e utf8	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S459_set_rest_retests_lead.sh	(x?)([a-z]+)+Z.@#\1	-	none	-	none	
+tests/mech/sabotages/S460_lead_after_run.sh	(?:user|USER)[ \t]*=	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S461_pick_none_ignores_size.sh	日本|日曜|日付	-e utf8	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S462_set_lead_deny_ignored.sh	(?:user|USER)[ \t]*=	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S463_handoff_k_minus_one.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S464_gate_later_occurrence.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S465_width_counts_characters.sh	\	-e utf8	REFUSED	-	-	
+tests/mech/sabotages/S466_alt_width_left.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S467_unbounded_handed_off.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S468_seed_reads_startpos.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S469_vm_gstart_moved.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S470_no_clamp.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S471_roundup_dropped.sh	\	-e utf8	REFUSED	-	-	
+tests/mech/sabotages/S472_roundup_unbounded.sh	\	-e utf8	REFUSED	-	-	
+tests/mech/sabotages/S473_deny_ignored.sh	\	-fno-req-handoff	REFUSED	-	-	
+tests/mech/sabotages/S474_run_choice_prefers_bounded.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S475_verb_conjunct_dropped.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S476_dprime_decline_dropped.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S477_dd12a_excision_widened.sh	\	-e utf8	REFUSED	-	-	
+tests/mech/sabotages/S478_vmhat_set_drops_member.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S479_vmhat_memchr_seek_late.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S480_dfahat_t_from_s0_escapes.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S481_dfahat_class_reseed_deleted.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S482_dfahat_memchr_hit_reseed_deleted.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S483_dfahat_class_clamp_reseed_deleted.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S484_dfahat_memchr_clamp_reseed_deleted.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S485_dfahat_reseed_unconditional.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S486_dfahat_t_widened.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S487_dfahat_seeded_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S488_dfahat_nullable_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S489_dfahat_full_set_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S490_dfahat_scan_kind_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S491_vmhat_nullable_conjunct.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S492_vmhat_anchor_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S493_vmhat_prefn_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S494_has_dfa_scan_on_vmhat.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S495_cand_ppm_reads_row_name.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S496_vmhat_verb_conjunct.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S497_vmhat_utf8_assertion.sh	$(printf '\''\200(a)\1'\'')	-e utf8	none	-	none	
+tests/mech/sabotages/S498_walk_call_drops_bytes.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S499_walk_bref_drops_bytes.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S500_walk_var_drops_bytes.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S501_walk_look_consumes.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S502_walk_cat_drops_null_term.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S504_dfahat_seek_before_utf_check.sh	\	-e utf8 -futf-check	REFUSED	-	-	
+tests/mech/sabotages/S514_c11_libc_name_extra.sh	a(b|c)+d	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S515_c11_idiom_exclusion_broken.sh	x(a|b)abcdefg	-	reverse-pass	W=9 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S516_c11_family_missing_stamps.sh	a(b|c)+d	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S517_c11_memcmp_dropped.sh	abcdefghq	-	reverse-pass	W=9 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S560_poss_a1_m0_admitted.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S561_poss_a1_polarity_from_first.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S562_poss_a1_mixed_last_collapsed.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S563_poss_b_caseless_fold_dropped.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S564_poss_b_first_member_only.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S565_poss_b_never_nullable.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S566_precheck_site_never_defined.sh	frank|fred	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S570_kit_runcmp_deny_ignored.sh	xyz(a|ab)c	--engine=vm -fno-run-overlap	none	-	none	
+tests/mech/sabotages/S571_deny_map_drops_run_overlap.sh	/user|/users	-fno-run-overlap	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S572_prologue_helpers_not_flushed.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S573_run_words_miscounted.sh	xyz(a|ab)c	--engine=vm	none	-	none	
+tests/mech/sabotages/S586_poss_call_context_ignored.sh	(a+)b(?1)a	--engine=vm	none	-	none	
+tests/mech/sabotages/S587_poss_call_context_one_round.sh	(?1)a((?2))c(a+)b	--engine=vm	none	-	none	
+tests/mech/sabotages/S588_poss_call_in_lookaround_ignored.sh	(a+)b(?=(?1)a)	--engine=vm	none	-	none	
+tests/mech/sabotages/S601_poss_a1_call_join_dropped.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S602_poss_b_in_progress_recomputed.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S603_poss_a1_admits_lazy.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S604_poss_b_reads_position_first.sh	\	--engine=vm	REFUSED	-	-	
+tests/mech/sabotages/S605_cand_retry_row_read_by_name.sh	\	-	REFUSED	-	-	
+tests/mech/sabotages/S606_cand_read_edge_undeclared.sh	I	--engine=vm	none	-	none	
+tests/mech/sabotages/S607_cand_read_f1_edge_undeclared.sh	\d\dxyz	-	reverse-pass	W=5 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S608_cand_read_g1_attempt_edge_undeclared.sh	(?m)^ERROR	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S609_cand_read_r4_edge_undeclared.sh	[a-z](?=the)	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/mech/sabotages/S614_r4h_stay_view_bound_dropped.sh	[^c]{1,3}$	-	reverse-pass	W=-1 land=assert-after	reverse-pass	
+tests/mech/sabotages/S615_r4h_edge_unbounded_loop_unbounded.sh	.*	-	pinned	W=-1 land=nullable	pinned	
+tests/mech/sabotages/S616_r4h_vmspan_it_cap_dropped.sh	(a)[a-z]{2,9}x	--engine=vm	none	-	none	
+tests/mech/sabotages/S617_m4_mline_plus_k_dropped.sh	(?m)^abc	-	reverse-pass	-	reverse-pass	
+tests/mech/sabotages/S666_m7_mismatch_subject_bound_dropped.sh	(a+)\1	-	none	-	none	
+tests/mech/sabotages/S667_m7_mismatch_loop_bound_inclusive.sh	(a+)\1	-	none	-	none	
+tests/mech/sabotages/S668_n2_applies_always_holds.sh	(?i)(ab)\1	-	none	-	none	
+tests/mech/sabotages/S668_n2_applies_always_holds.sh	(a+)\1	-	none	-	none	
+tests/mech/sabotages/S669_m7_inplace_fold_one_side.sh	(?i)(ab)\1	-	none	-	none	
+tests/mech/sabotages/S670_m7_inplace_exhaustion_falls_out.sh	(?i)(ab)\1	-	none	-	none	
+tests/mech/sabotages/S671_m7_mismatch_result_off_by_one.sh	(a+)\1	-	none	-	none	
+tests/mech/sabotages/S673_m7_backend_respells_loop.sh	(a+)\1	-	none	-	none	
+tests/mech/sabotages/S676_m6_stride_first_term_only.sh	(?:ab)+c	--engine=vm	none	-	none	
+tests/mech/sabotages/S677_m6_stride_terms_or_joined.sh	(?:ab)+c	--engine=vm	none	-	none	
+tests/mech/sabotages/S678_m6_adv_member_ignores_term.sh	(?:ab)+c	--engine=vm	none	-	none	
+tests/mech/sabotages/S680_m6_vmstride_cap_dropped.sh	(ab){2,4}	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S684_m6_vm_respells_strided_loop.sh	(?:ab)+c	--engine=vm	none	-	none	
+tests/mech/sabotages/S686_fn_rows_body_order_swapped.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S687_fn_prefix_rendered_when_empty.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S688_kit_walk_not_first_match.sh	(?i)select	-	reverse-pass	W=6 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S689_empty_slot_walked.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S690_fn_selector_does_work.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S691_fn_unrouted.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S692_fn_body_holds_if.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S694_fn_selector_drops_tables.sh	[0-9]{4}-[0-9]{2}-[0-9]{2}	-	reverse-pass	W=10 land=alive-not-accept	end-minus-width	MOVES
+tests/mech/sabotages/S695_fn_helper_below_selector.sh	abc[0-9]+xyz	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/mech/sabotages/S70_unbuilt_refusal_removed.sh	\c	-	REFUSED	-	-	
+tests/mech/sabotages/S70_unbuilt_refusal_removed.sh	\R	-	REFUSED	-	-	
+tests/axes/run_axes.sh	x\p{Xwd}y	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	abc$	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	a(b|c)+d	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	[a-z](?=the)	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	^(a)(b|c)	-	reverse-pass	-	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	foo\b	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	x{2,5}((?i:cat))	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	x{2,5}((?i:cat))	-fno-req-set-lead	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	^((?1)a)$	-	none	-	none	
+tests/codegen/cand_oracle_witnesses.tsv	\d\dxyz	-	reverse-pass	W=5 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	\d\dxyz	-fno-req-handoff	reverse-pass	W=5 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	ABCDE	-	reverse-pass	W=5 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	a\Kb\z	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	ABCDE	-fno-run-prefilter	reverse-pass	W=5 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	\B(?<!a)d	-	reverse-pass	W=1 land=assert-at-start	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	\b(ab|cd)\b.{0,2}\b(ab|c)\b	-	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	I	--engine=vm	none	-	none	
+tests/codegen/cand_oracle_witnesses.tsv	x$.*	-	reverse-pass	W=-1 land=assert-after	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	.*\z	-e utf8	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	\d	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/cand_oracle_witnesses.tsv	(?m)^ERROR	-	reverse-pass	-	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	I	--engine=vm -fno-start-set	none	-	none	
+tests/codegen/cand_oracle_witnesses.tsv	[^b]*+c	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	^(?(DEFINE)(?<g>a{1,3}))(?>(?&g))aa$	-	reverse-pass	-	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	[^b]*+c	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	[^b]*+c	-fno-hyb-reseed	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	\Ga(b)	-	reverse-pass	-	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	^(a)(b|c)	-fno-vm-anchor-bound	reverse-pass	-	reverse-pass	
+tests/codegen/cand_oracle_witnesses.tsv	a?+	-	pinned	W=-1 land=nullable	pinned	
+tests/codegen/cand_oracle_witnesses.tsv	a?+	-fno-start-pinned	reverse-pass	W=-1 land=nullable	reverse-pass	
+tests/codegen/manifests/s220_view_decliners.txt	\B	-	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/codegen/manifests/s220_view_decliners.txt	\B\B	-	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/codegen/manifests/s220_view_decliners.txt	\Bx*	-	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/codegen/manifests/s220_view_decliners.txt	\Bx?	-	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/codegen/manifests/s220_view_decliners.txt	(?![^a])	-	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/codegen/manifests/s220_view_decliners.txt	(?!a)	-	reverse-pass	W=0 land=assert-at-start	end-minus-width	MOVES
+tests/codegen/manifests/s220_view_decliners.txt	x*(?!a)	-	reverse-pass	W=-1 land=assert-at-start	reverse-pass	
+tests/codegen/run_anchored_match.sh	(?(DEFINE)(?<g>a))(?&g)b	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_anchored_match.sh	foobarbazqux	--no-captures	reverse-pass	W=12 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_anchored_match.sh	^foobarbazqux	--no-captures	reverse-pass	-	reverse-pass	
+tests/codegen/run_anchored_match.sh	^foobarbazqux	--no-captures -fno-anchored-dfa	reverse-pass	-	reverse-pass	
+tests/codegen/run_clspack.sh	(a)b	--engine=vm	none	-	none	
+tests/codegen/run_clspack.sh	a[bc]d	--engine=vm	none	-	none	
+tests/codegen/run_clspack.sh	x[aeiou]{5,30}y	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	(get|post|put|delete|patch)	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	.*=.*	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	^a|b	-	reverse-pass	-	reverse-pass	
+tests/codegen/run_codegen_tests.sh	a(b|c)+d	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	x(y|z)+w	-	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	a	-fcomments	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	a	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	abc	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	a\nb	-	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	(alpha|beta|gamma|delta|epsilon)	--no-captures	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	a(b|c)+d	--no-captures	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	abc	--no-captures	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	(\b\w+\b)	--engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	a\Kb	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	(a)(b)	--engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	a(b|c)d	--no-captures	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/codegen/run_codegen_tests.sh	(?:a|ab){1,3}+c	--engine=vm --no-captures -fno-possessify	none	-	none	
+tests/codegen/run_codegen_tests.sh	(?>a|ab)c	--engine=vm --no-captures	none	-	none	
+tests/codegen/run_codegen_tests.sh	a*+b	--no-captures	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_codegen_tests.sh	(a)(b)+c	--engine=vm --engine=vm --engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	(a(?1)?b)	--engine=vm --engine=vm --engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	(a)(?1)	--engine=vm --engine=vm --engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	((?:a|b))(?1)	--engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	^(a(?1)?b)$	--engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	xy	--engine=vm --engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	xyz	--engine=vm --engine=vm	none	-	none	
+tests/codegen/run_codegen_tests.sh	(?<=a|é)x	-e utf8	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/run_cpset_structure.sh	[^a]	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/run_encoding_checks.sh	(a)(?:\x{3b1}){0,3}x	-e utf8	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/codegen/run_facts_checks.sh	a(	-	REFUSED	-	-	
+tests/codegen/run_recursion_identity.sh	a	-	reverse-pass	W=1 land=OK	end-minus-width	MOVES
+tests/codegen/run_tune_dial.sh	\p{L}	-e utf8 --engine=vm	none	-	none	
+tests/island/run_island_tests.sh	cat|dog	--engine=dfa	reverse-pass	W=3 land=alive-not-accept	end-minus-width	MOVES
+tests/registry/axes_registry_check.sh	a(b)	-	reverse-pass	W=2 land=alive-not-accept	end-minus-width	MOVES
+tests/resource/run_resource_tests.sh	a{5,25000}	-fno-scan-edge -fno-start-pinned	reverse-pass	W=-1 land=alive-not-accept	reverse-pass	
+tests/resource/run_resource_tests.sh	(a|b){0,30000}	-	none	-	none	
+tests/resource/run_resource_tests.sh	(a|b){1,30000}	-fno-scan-edge	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/resource/run_resource_tests.sh	\p{L}	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/resource/run_resource_tests.sh	[^\p{C}\p{M}\p{P}]	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/resource/run_resource_tests.sh	(\p{L})	-e utf8	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/resource/run_resource_tests.sh	a{65535}	-	reverse-pass	W=-1 land=OK	landing	MOVES
+tests/resource/run_resource_tests.sh	(a|b)*a(a|b){20}	--no-captures --engine=dfa	REFUSED	-	-	

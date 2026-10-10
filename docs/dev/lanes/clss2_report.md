@@ -75,7 +75,7 @@ own commit and abi event.
 1. `src/gen/emit_dfa.c:51` `PCREC_ARTIFACT_ABI`.
 2. `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` and its transition
    message.
-3. `docs/spec/match_api.md` §6's "is `N` today" paragraph. The previous
+3. `docs/spec/match_api.md` §6¶17's "is `N` today" paragraph. The previous
    entry becomes "was".
 4. `tests/codegen/run_recursion_identity.sh` comparison (B) `FILEPIN`,
    self-pinned to `22d150a8` and then to `979b0b62`, in follow-up commits
@@ -98,7 +98,7 @@ rows are re-verified by `make test-cpset-structure` (§5).
     stamp is widened, and "Denied" now covers both.
   - §5.4 λ row: the byte-class forms per position.
 - `docs/spec/match_api.md`:
-  - §6: the abi 51 and 52 entries.
+  - §6: the abi 51 and 52 entries (now in `docs/dev/history/abi_changelog.md`).
   - §6.3: `_VM_CLS_FOLDS`'s derivation, `_VM_CLS_KIT`'s IFF (both matcher
     families), and `_DFA_SCAN_EDGE`'s `"kit"` row (five values).
 - `cli.md` and `registry.md` are unchanged. No flag was added or removed,
@@ -377,7 +377,7 @@ choose it.
 | E-M3 | FIXED as above; the witnesses' VM residual is reported, not hidden | table above |
 | E-M2 | FIXED: the scan edge maps nothing — it reads ROWS | `(?i)xa{3,}b` -484 B at -2; tune-dial §3f; clspack PART 5 `fold` differential |
 | E-M1 | FIXED: spec says the row flags deny wherever the table is read | tuning.md §2.22/§2.33, lib/pcrec.h, match_api §6.3 |
-| S-M1 | for the manager at merge; this lane's event is 53 | match_api §6 "is 53 / was 52 / was 51" |
+| S-M1 | for the manager at merge; this lane's event is 53 | match_api §6 (`§6¶17`; the was-entries now in `docs/dev/history/abi_changelog.md`) "is 53 / was 52 / was 51" |
 | S-M2 | FIXED: tuning.md §2.18 rewritten (four run tests, the table's answer, SIMD reserved as a LOOP form); axes_dump.c descriptions + composite comment; emit_dfa.c axis I header and `scan_edge_of` comment | — |
 | C-M1 | owed: the `make test-axes` run below | chain log |
 | C-M2 | the manager's (Linux) | — |
@@ -414,7 +414,7 @@ Spec hunks:
   with Q3 pointing at D138; "wherever the table is read"), §2.33 (byte-kit
   only where smaller, the per-domain dispatch term, the bound; the scan edge
   row), §5.4 λ row.
-- `docs/spec/match_api.md`: §6 "is 53", §6.3 `RX_DFA_SCAN_EDGE` (six
+- `docs/spec/match_api.md`: §6 "is 53" (`§6¶17`), §6.3 `RX_DFA_SCAN_EDGE` (six
   values, `"fold"` new, the range spelling), `_VM_CLS_FOLDS` / `_VM_CLS_KIT`
   scope.
 - `docs/spec/registry.md` §6: 106 rows / 37 axes, re-derived; the line was
@@ -427,7 +427,7 @@ abi readers, found by `git grep` for the digit:
 - `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`;
 - `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` and its transition
   message;
-- `match_api.md` §6;
+- `match_api.md` §6¶17;
 - `run_recursion_identity.sh` FILEPIN, re-pinned to `2c45260a`.
 
 (A) moved on ONE pattern: `[\0-\7]` on `--engine=vm` (the range-from-0
@@ -515,7 +515,7 @@ The ad hoc classifier is `worktrees/s2tri/scratch/norm_movers.py`
 `git merge main` into lane/s2tri, conflicts in 7 files, resolved:
 `emit_dfa.c` (`PCREC_ARTIFACT_ABI` 53), `run_codegen_tests.sh` (`ABI_EXPECT=53`
 and its message now names [UTF-VALID] 49->50 before S2's 50->51, 51->52,
-52->53), `match_api.md` §6 (S2's three entries kept on top, UTF-VALID's entry
+52->53), `match_api.md` §6 (now `docs/dev/history/abi_changelog.md`; S2's three entries kept on top, UTF-VALID's entry
 demoted to "was `50`", S2's "from 49" -> "from 50", "restores the abi-49 byte
 tests" -> abi-50), `registry.md` (axis line = main's 38 values, with the
 clss2fix `scan-body` wording re-applied), `run_registry_tests.sh` (axes

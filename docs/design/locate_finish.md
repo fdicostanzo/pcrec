@@ -72,7 +72,7 @@ candidate with a trigger, §7). Section numbers are this revision's.
 | LR-S7 | A | L2's inbox note names pcrec-bench's `tools/selfcheck.py` pins (read at `76e13c1d`): `"dfa_start": "reverse-pass"` at `:3705-3707` (provably-empty) and `:3729-3731` (anchored attempt), exactly L2.1's movers; the provably-empty case's `"dfa_match": "search-filter"` (`:3707`), LR-G8's L2 mover; `"dfa_scan": "unanchored"` at `:3552-3554`, a closed-vocabulary reader that does not move (`foo[0-9]+bar` has no end pin); and the adapter's closed `dfa_match` enum (`adapter.py:1011-1013`) (§5 L2). |
 | LR-S8 | A | Absorbed by §2.7: F-9 is FOUR spellings (`pcrec_artifact_has_dfa_scan`, `emit_dfa.c:10713`'s `(!vm \|\| prefilter)`, `:10922`'s `dfa_body`, `compile.c:2381`), all read the path's body bit at L0; `compile.c:229` reads the derivation's NEEDS half; `-fno-anchored-dfa` is read once, at `compile.c:230`. |
 | LR-S9 | A | Same as LR-S1: within L0 the derivation lands before the fold. |
-| LR-S10 | A | `match_api.md:4731-4733`'s "the O(n) forward+reverse table pair" is false on `pinned` artifacts today; its spec hunk is owed by L0 (drafted in §5 L0). |
+| LR-S10 | A | `match_api.md §6.3.4¶2`'s "the O(n) forward+reverse table pair" is false on `pinned` artifacts today; its spec hunk is owed by L0 (drafted in §5 L0). |
 | LR-S11 | A | `.contract = CG_FIXED` also on RETRY `exact`, `clamped` and `retry-anchored`, citing `emit_dfa.c:8331-8345`'s rulings; their control is the window-identity twin, not a deny differential (§1.5). |
 | LR-S12 | A | The size ladder's drop rungs get a rev-end clause stated through §2.7: a rung applies only if the member set it leaves is a strict subset of the one before; under form C's T2, dropping A turns T2 into T3 and ADDS F, so `SDR_NO_ANCHORED` skips there (§5 L2). |
 | LR-S13 | A | LR-G2 resolves the key; `AT`'s `I` is a request filter, never degraded; the FINISH row ids are renamed `FIN1`-`FIN4` (rev 2's F1-F7 and rev 1's F6 collided with each other and with the findings F-n) (§1.2, §2.3). |
@@ -116,7 +116,7 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
 | C6 | A | REQ_WHY gains ONE token, `"locator"` (no pre-check: the selected locator is not the composite); DFA_TABLE / DFA_UNIFORM_FOLDS / DFA_SCAN_EDGE / the orientation block fold over the machines the artifact EMITS, through one membership derivation (L2.0, a no-mover) — under form C the forward machine is absent and they read the reverse (+ anchored) machines; the supersession of `revend.md` §5.2 is recorded in BOTH notes (§5.1; `revend.md` gains a forward pointer). |
 | C7 | A | pcrec-bench's `testees/pcrec/adapter.py`, `pcrecbench/report.py` and `tools/selfcheck.py` are listed as READERS of DFA_SCAN/DFA_START (§5 L2); L2's deliverable includes an `[inbox]` adapter note to pcrec-bench and the window handshake. |
 | C8 | A | §3.3 is corrected: the reader grep includes `pcrec_artifact_has_dfa_scan` (12 callers, `:3119`/`:3193` the `rx_info.scan`/`search_form` mirrors), `:10708` is dispositioned (it is `pcrec_artifact_has_dfa_scan` spelled locally), and the VM class is 15 lines, not 16. DFA_SCAN's machine-proxy readers join L2's reader list (§3.3, §5 L2). |
-| C9 | A | Spec citations corrected: DFA_START is `match_api.md:788-796` and `:4829-4839`; `:4686-4703` is now the VM stamp block. Every DFA_SCAN value table that needs the fourth value is listed in L2's spec hunk (§5 L2). |
+| C9 | A | Spec citations corrected: DFA_START is `match_api.md §6.3.4¶11`; the VM stamp block is `match_api.md §6.3.5`. Every DFA_SCAN value table that needs the fourth value is listed in L2's spec hunk (§5 L2). |
 | C10 | A | `analyze.py` gains C4 (the exact/superset classifier vs the INDEPENDENT stamp `RX_VM_RESEED "exact"`: 759 exact / 734 superset hybrids, 0 disagreements) and a TWO-SIDED C3 (the converse holds outside two declared exceptions, both the shipped fact's own declines: 22 multibyte rows, 2 `\G`; plus a width-direction check with a declared probe-blind-call exception, 138 rows). Re-run: every existing table line unchanged (§3.1, `summary.txt`). |
 | C11 | A | The PRESENCE → LOCATE read is gated on `pcrec_artifact_has_dfa_scan` (no body, no locator to defer to: the 275 end-pinned VM-only artifacts never defer) and is spelled as G9's read on `dominated` (§4.3). |
 | C12 | A | `CT_WINDOW` deleted (G2); SPAN's `D` upper bound is what a VM ceiling reads (§1.2). L2 commits a declared-listing file for the new `locate` axis (`listing_declared_L2.tsv`, read by `start_table/listing_diff.py`). `nomatch` on `CR_VM` has its producers: the WIDTH ceiling's verdict and the PRESENCE verdict, both inside the composite (§2.3). |
@@ -184,7 +184,7 @@ candidate with a trigger, §7). Line numbers are this revision's sections.
    predicate G4 (`[r2.1 LR-S5]`), or it hands `LOWER` to the attempt loop.
 5. **Build (§5).** L0, a no-mover: the two slots, §2.7's path derivation and its
    readers, `FIN3 verify-at` and `FIN4 search-from` (the `dfa_matches[]` fold), the
-   erasure record, the data corrections and a spec hunk for `match_api.md:4731`
+   erasure record, the data corrections and a spec hunk for `match_api.md §6.3.4¶2`
    (`[r2.1 LR-S10]`); its re-aims DERIVED from a 55-entry edit set (8 re-aim, 35
    re-run, `[r2.1 LR-S6]`). L1 = `revend.md` S0+S1. L2 = REVEND stage 1, the abi
    71 → 72 event, as two separable commits: L2.1 the GENERATED stamp rule (its first
@@ -1283,7 +1283,7 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
     already gates.
 - **abi:** none. No emitted byte, no stamp, no listing byte moves.
 - **Spec `[r2.1 LR-S10]`:** one hunk, owed by L0 although no behaviour changes, because
-  the CONTRACT is already false: `match_api.md:4731-4733` defines `RX_DFA_SCAN
+  the CONTRACT is already false: `match_api.md §6.3.4¶2` defines `RX_DFA_SCAN
   "unanchored"` as "the O(n) forward+reverse table pair", and on every `pinned`
   artifact (15 bench / 231 corpus, census T1) there is no reverse machine. Draft:
   *"`"unanchored"` (the O(n) forward scan from `search_from`, D7, followed by a reverse
@@ -1391,7 +1391,7 @@ Revision 2's L2.0 (`dfa_machines_of`, the machine-membership no-mover) is GONE: 
   `empty` body with a finite end window (0 in the census; `[^\x00-\xff]$` stamps
   `"2"` today over a `return 0` body). `emit_sweep` default vs parent must equal T8 ∪
   F-12's set exactly. Its own sabotage row (the stamp forked from `asks`), its own
-  spec hunk (`DFA_START` gains `"attempt-start"` at `match_api.md:788-796` and
+  spec hunk (`DFA_START` gains `"attempt-start"` at `match_api.md §6.3.4¶11` and
   `:4829-4839`, and §6.3 gains the rule's sentence). **Separable**: a red in L2.2
   bisects to L2.2.
 - **L2.2 — `rev-end`.** LOCATE row A2 with its `.needs` (R, PRESENCE, RECOVER) and the
@@ -1417,6 +1417,23 @@ Revision 2's L2.0 (`dfa_machines_of`, the machine-membership no-mover) is GONE: 
   `SDR_NO_ANCHORED` is skipped there and the ladder moves to its next rung, where
   without the clause it would GROW the artifact by the forward machine and the
   composite.
+  **`[r2-landing]` The RECOVER hand (`start_landing.md` rev 2 §4.3, panel SL-C6).**
+  `rev-end`'s walk asks RECOVER at SPECULATIVE ends `{n − 1, n}`: its hand is the
+  WINDOW mask `CT_LOWER | CT_UPPER` (`¬e`), where the composite's VERIFIER → RECOVER
+  ask hands the EXISTS mask `CT_LOWER | CT_UPPER | CT_START` (§1.2's table; §7.5's
+  filed mask gains its first producer). `cand_select` filters RECOVER asks by
+  `take & hand` exactly as FINISH asks, the hand MANDATORY (abort on 0). `reverse-pass`
+  takes both masks; `pinned`, and `[START-LANDING]`'s `end-minus-width` and `landing`,
+  take only a hand carrying `e`. §2.7's closure key is (slot, route, HAND): the
+  `RX_DFA_START`/`search_form` stamp and every reader of the RECOVER selection read the
+  cell the PATH asked — on an artifact where `rev-end` is selected that is `rev-end`'s
+  WINDOW ask (→ `reverse-pass`), never a fresh hand-less ask (6 bench / 41 corpus
+  end-pinned fixed-width artifacts would otherwise stamp `end-minus-width` over a
+  reverse walk). SEQUENCING: whichever of L2.2 and `[START-LANDING]`'s SL3 lands second
+  carries it. If L2.2 lands first it adds the field and the masks with `reverse-pass`
+  taking every mask and `pinned` taking EXISTS (no mover: `pinned` never co-occurs with
+  `end_pin`, revend X3's assertion, now a declaration); SL3 then adds the two rows'
+  `take`. Its sabotage row (`start_landing.md` §7.5 row 8) becomes reachable here.
 - **abi:** 71 → 72, once, for the L2 merge. Readers BY GREP at build time (D76/D94):
   (a) the abi NUMBER (`revend.md` §5.3 (a)); (b) the byte-count readers (§5.3 (b));
   (c) the `DFA_SCAN` value readers — `revend.md` §5.3 (d)'s 33 files / 6 sabotage rows
@@ -1473,10 +1490,10 @@ Revision 2's L2.0 (`dfa_machines_of`, the machine-membership no-mover) is GONE: 
   Re-aims: derived by re-running `sabotage_anchors.py` with L2's edit set at build
   time (S222, S264 and S693 are known members).
 - **Spec (D80) `[r2 C9]`:** `tuning.md` §2.x `-fno-rev-end`; `match_api.md`:
-  `DFA_SCAN` gains `"rev-end"` in every value table (the stamp list `:4714-4740`, the
-  `rx_info` table `:2145`, the field comments `:1904`/`:1940`, and the tables in
-  `facts_listing.md:113-126` and `registry.md:421`, each confirmed by the build's
-  grep), `DFA_START` gains `"attempt-start"` (L2.1), `DFA_MATCH` its third value, the
+  `DFA_SCAN` gains `"rev-end"` in every value table (the stamp list `§6.3.4¶2`, the
+  `rx_info` table `§6¶6`, the field comments `§6¶1`, and the tables in
+  `facts_listing.md` §4.1.3 and `registry.md` §6¶9, each confirmed by the build's
+  grep), `DFA_START` gains `"attempt-start"` at `§6.3.4¶11` (L2.1), `DFA_MATCH` its third value, the
   generated stamp rule's sentence, the REQ_WHY `dominated` description widened to "the
   scan or the locator already tests it", `rx_info.search_form`, the abi sentence and
   TU-guard example; `registry.md`'s axis counts and the `locate` axis;
@@ -1780,7 +1797,7 @@ watches. *Leaning:* FILED with `revend.md`'s trigger, the conjunct commented as 
 two take cells and one twin. *lfre2:* stage 2 FILED. *lfre1:* no judgment on filing;
 its LR-S3/LR-S4 are the conditions any build of it must meet.
 
-**Q3. The stamp RULE, now generated.** *Problem:* a locator that does not run most
+**Q3. The stamp RULE, now generated.** **RULED 2026-10-09: agree — the leaning as written, standing for every future locator (D156 addendum 2).** *Problem:* a locator that does not run most
 slots must leave their stamps saying something true, and every future path-changing
 locator (`empty`, `rev-end`, `[START-LANDING]`'s rows, rev-inner) meets the same
 problem. *Forces:* revision 2 wrote a per-stamp table for `rev-end` and a new REQ_WHY
@@ -1802,7 +1819,7 @@ generated from the path derivation; no REQ_WHY token. *lfre1:* LR-S10 (the
 `"unanchored"` sentence is already false on `pinned` artifacts) and LR-S12 (the size
 ladder) are the rule's two existing casualties, both fixed by stating membership once.
 
-**Q4. The one-way spec sentences.** *Problem:* W1 and the VM-route PRESENCE checks
+**Q4. The one-way spec sentences.** **RULED 2026-10-09: agree (lfre2's form), generalized by Frank to a standing rule: optimizations never reduce any pattern's ability to complete (D158; known violator K102).** *Problem:* W1 and the VM-route PRESENCE checks
 skip attempts the deny arm runs, so a budget-limited call can answer where the deny
 arm gives up (ONE_WAY), and no spec sentence says so; §1.5 now has W1's witness
 (`(\w|\w\w)x$`, `--engine=vm`, step budget 50: default answers, `-fno-end-window`
@@ -1816,7 +1833,7 @@ Q6's. *lfre2:* one preamble sentence with per-entry markers. *lfre1:* LR-S11 add
 the undeniable rows' contracts (RETRY `exact`/`clamped`/`retry-anchored`) are part of
 the same surface and are checked by the twin, not by a deny differential.
 
-**Q6. rev-inner after E1 and LR-S5.** *Problem:* rev-inner's per-occurrence verify is
+**Q6. rev-inner after E1 and LR-S5.** **RULED 2026-10-09 (D151 addendum 4): the question was framed on the wrong route. Rev-inner's value is the DFA population (walk_survey K12, G4 by construction). Stage 1 = the DFA hat, triggered by a K12 twin after G2. Stage 2 = the VM LOWER form, keeping the `dup-param-detect` trigger. Rank third, after [START-LANDING] and REVEND.** *Problem:* rev-inner's per-occurrence verify is
 sound only under G4, now a closed predicate that also fails DUPNAMES references
 spanning `P` and `S`; on its VM-route population (a backreference in `S` to a group of
 `P`) it can only hand a LOWER bound to the attempt loop. *Forces:* D151 placed the

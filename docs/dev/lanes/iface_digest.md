@@ -24,7 +24,7 @@ the `.rxt` quoted-escape form first (`\" \\ \n \t \r \f \v \xHH`;
 SOURCE file's `target` lines instead of a positional pattern — one target
 per translation unit, `-o` takes a FILE (one target), an existing
 DIRECTORY (`<dir>/<prefix>.{c,h}` per target) or `-` (one target, stdout)
-(`cli/main.c:234-243`; `docs/spec/cli.md:488-656`). Seven no-pattern
+(`cli/main.c:234-243`; `cli.md (old line 488-656)`). Seven no-pattern
 `--list-*` registry dumps and three query modes (`--explain`,
 `--count-groups`, `--probe-ask`) round out the surface (`cli/main.c:250-305`).
 
@@ -61,7 +61,7 @@ input `pcrec_err_input` names (`lib/pcrec.h:1009-1024`) — today always
 both engines (`lib/pcrec.h:1037-1131`, `docs/spec/match_api.md` §3, §6):
 
 - `int <prefix>_search(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2])` — leftmost search over `s[startpos..n)`; `1` match, `0` no-match, negative = give-up/refusal (§ give-up codes below). `caps` may be NULL.
-- `<prefix>_match` / `<prefix>_match_caps` — anchored match-here at `ctx->pos`, no search loop; return length / `-1` / give-up (a DIFFERENT return convention from `_search`: `0` here IS a zero-length match, `-1` is no-match — `docs/spec/match_api.md:539-540`).
+- `<prefix>_match` / `<prefix>_match_caps` — anchored match-here at `ctx->pos`, no search loop; return length / `-1` / give-up (a DIFFERENT return convention from `_search`: `0` here IS a zero-length match, `-1` is no-match — `docs/spec/match_api.md §3.2`).
 - `<prefix>_search_in` / `_match_in` / `_match_caps_in` — the un-suffixed twins plus a final `const <prefix>_buffers *` (caller-supplied `{frames, nframes, trail, ntrail}`); `NULL` descriptor is DEFINED as the un-suffixed call ([DD-14.FB] — `lib/pcrec.h:1083-1100`).
 - `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos)` — the encoding residual: next character boundary strictly after `pos` ([M5-SEAM]/D58 — `lib/pcrec.h:1108-1119`).
 - `extern const struct rx_info <prefix>_info` — the reflection structure (§ below).
@@ -94,7 +94,7 @@ nnames, engine, step_budget, work_budget, frame_capacity,
 subject_ceiling, resume_frames, trail_frames, resume_frame_size,
 trail_frame_size, pattern, pattern_len, groups, engine_why, scan,
 prefilter, match_form, name, nentries, search_form` (`docs/spec/
-match_api.md:1561-1660`).
+match_api.md §6¶1`).
 
 ---
 
@@ -189,7 +189,7 @@ today (`classes`, `modifiers`, `assertions`, `named-groups`,
 `atomic-groups`, `backrefs`, `lookaround`, `recursion`, `quoting`,
 `unicode-props` partial); 7 not built (`branch-reset`, `callouts`,
 `comments`, `conditionals`, `extended-classes`, `misc`, `verbs`)
-(`docs/spec/cli.md:335-352`).
+(`cli.md (old line 335-352)`).
 
 **PCREC_\* limits a caller can hit, and the documented remedy**
 (`docs/spec/limits.md`, `pcrec --list-limits`):
@@ -261,12 +261,12 @@ else's refusal.
   `<prefix>_stream_init/feed/end` "arrives with milestone M3, whose
   design gate ... owns reconciling that contract with the two-pass
   engine before any streaming code is written" (`lib/pcrec.h:1128-1131`).
-  `match_api.md:1460`: "No partial-match or streaming window state."
+  `match_api.md §5.2`: "No partial-match or streaming window state."
 - **`--emit-dot`** (a DOT-format graph dump) was promised alongside
   `--emit-ir` in `APPROACH.md` §6 but was never built; `[DD-8]` is
   STATE:started with `--emit-ir` landed and `--emit-dot` explicitly
   named as one of the still-not-started pieces within it
-  (`docs/spec/cli.md:988-994`).
+  (`cli.md (old line 988-994)`).
 - **`[V-E]` multi-pattern compilation units** (several named,
   cross-referencing patterns sharing one translation unit) —
   `docs/dev/plan.md:581`, STATE:not-started. `--source` compiles several
@@ -277,14 +277,14 @@ else's refusal.
   roadmap has not been ruled ("planned but I don't know that I'd put
   them on the spine," Frank, 2026-08-24). `--lib-path` resolves only
   whether a referenced file EXISTS, not its contents.
-- **`limits.md:779`'s own text is now STALE**: it still reads "What is
+- **the old `limits.md` line 779's own text is now STALE**: it still reads "What is
   NOT yet built is the path that COMPILES from a pattern-source file at
   all — `--source` and `--target`" — but `--source`/`--target` shipped
   at [DD-13b.W1.2] (2026-08-31) and are documented as built elsewhere in
   the same tree (`docs/spec/cli.md` §1). The sentence was never updated
   after the feature landed.
 - **The callout/composition trap contract has no producer yet**: "Composed
-  call sites must trap below the floor" (`docs/spec/match_api.md:1315-1321`)
+  call sites must trap below the floor" (`docs/spec/match_api.md §4¶10`)
   binds a call shape (callout code generation, submatcher composition)
   that no emitter builds today — the obligation is recorded for whichever
   future work first emits such a call site.
@@ -306,11 +306,11 @@ else's refusal.
   (0/1/3), an `--emit-main` binary's exit codes (0/1/2/3, match/
   no-match/usage/give-up on the EMITTED program), and a generated
   function's give-up CODE space (`PCREC_ERR_STEPS` etc., all negative).
-  Stated explicitly in `docs/spec/cli.md:895-897` as a caller trap.
+  Stated explicitly in `cli.md (old line 895-897)` as a caller trap.
 - **`<prefix>_search`'s `0` return and `<prefix>_match`'s `0` return mean
   opposite things** — `_search`'s `0` is "no match"; `_match`'s `0` IS a
   successful zero-length match, and `_match`'s "no match" is `-1`
-  (`docs/spec/match_api.md:539-540`). Two entry points on one artifact,
+  (`docs/spec/match_api.md §3.2`). Two entry points on one artifact,
   two conventions for the same integer.
 - **The pattern is NUL-terminated; the subject is length-counted** — an
   asymmetry between the two string inputs `pcrec_compile` and
@@ -335,6 +335,6 @@ else's refusal.
   an `enum` declaration into a syntax error (`lib/pcrec.h:724-742`).
 - **`rx_info`'s compile-time macro mirror is PARTIAL**: on a VM artifact
   6 of 15+ struct fields have a macro; `ngroups` — the field
-  `docs/spec/match_api.md` §6.2 works hardest to distinguish from
+  `docs/spec/match_api.md §6¶3` works hardest to distinguish from
   `ncaps` — has NO macro and is reachable only by reading `rx_info` at
-  run time (`docs/spec/match_api.md:2356-2368`).
+  run time (`docs/spec/match_api.md §6¶1`).

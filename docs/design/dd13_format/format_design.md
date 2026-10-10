@@ -3422,11 +3422,11 @@ target <prefix> = <name> [with <config>[,<config>…]]
   11 → 12 after this note was written, so W1's bump is **12 → 13**.
   Three sites in the tree agree on 12 — `emit_dfa.c:1375`,
   `tests/codegen/run_codegen_tests.sh:2707` (`ABI_EXPECT=12`), and
-  `docs/spec/match_api.md:159`), `tests/codegen/run_codegen_tests.sh`'s
+  `docs/spec/match_api.md §6¶17`), `tests/codegen/run_codegen_tests.sh`'s
   [DD-14.FB] §10.4 expectation (**`ABI_EXPECT` at
   `run_codegen_tests.sh:2707`**, with the bump ledger in the `bad`
   message at `:2709`), `docs/spec/match_api.md` §6 (**the "`rx_info.abi`
-  is `12`" sentence at `:159`, and the struct block at ~`:1340`**), and
+  is `12`" sentence (`§6¶17`), and the struct block (`§6¶1`)**), and
   the identity gate's (B) pin (**`FILEPIN` at
   `tests/codegen/run_recursion_identity.sh:456`, currently `c275aef`** —
   and that file's own rule at `:394-406` binds: the pin moves with the
@@ -4417,7 +4417,7 @@ mapped through `pcrec_rxt_prefix_from_name` (`src/parse/rxt_source.c:337`
   `cx->named_groups` entry already carries it, with the comment stating
   the reason a silent tie-break is not available (*"a row name is a
   caller's whole handle on a delivered group, so two rows sharing one
-  would make `match_api.md` §6's bsearch return whichever the sort
+  would make `match_api.md` §5.4¶6's bsearch return whichever the sort
   happened to put first"*). §2.22's rule is that shape one derivation
   over: synthesize, then refuse the tie. Citing it matters because it
   shows the refusal is the house pattern rather than this section's
@@ -4895,7 +4895,7 @@ design copies rather than a new idea:
   **one derivation, two readers** (learnings §3) — so a dump that
   disagrees with the parser is not expressible.
   **(3.2, r57 S-N1: revision 3.1 wrote SIXTH in the same sentence that
-  lists six existing dumps. `docs/spec/cli.md:586` already calls
+  lists six existing dumps. `cli.md (old line 586)` already calls
   `--list-limits` "the SIXTH"; `--list-source` makes seven producers in
   `table_contract.md`'s Scope table, of which `--list-schema` would be
   the eighth conforming table and the seventh REGISTRY dump. The
@@ -5772,7 +5772,7 @@ everywhere.
   interface.
 - **`--list-schema` is NEW at revision 3.1 and is the SEVENTH** (§2.25;
   3.1 said SIXTH — r57 S-N1, corrected at all three sites, and
-  `docs/spec/cli.md:586` already gives `--list-limits` that ordinal):
+  `cli.md (old line 586)` already gives `--list-limits` that ordinal):
   the format's own structural rules as a TSV, walked off the same table
   the parser enforces. It is the surface Frank's consequence 3 asks
   for, and it is what makes §1.2.1's **three** keyword-dependent

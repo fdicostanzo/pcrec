@@ -136,7 +136,7 @@ above), with no struct offset and no `rx_info` member touched. Per that
 precedent (and K64fix's, cited there) a stamp-VALUE-and-emitted-text move
 IS an `abi` event even with no new scaffolding. Bumped `abi` 43 -> 44
 (`src/gen/emit_dfa.c`'s `PCREC_ARTIFACT_ABI`). D94's grep for the old digit
-plus the suites-that-count rule: `docs/spec/match_api.md` §6 (new top
+plus the suites-that-count rule: `docs/dev/history/abi_changelog.md` (new top
 entry), `docs/spec/findings.md` §4 (reader table row), `docs/spec/tuning.md`
 §2.28, `docs/design/reqpos_2b.md` §2.3 (a SECOND AMENDMENT beside
 `[OPT-REQRUN-ENC]`'s own), `src/core/CLAUDE.md`'s findings.c entry — all
@@ -219,7 +219,7 @@ exactly.
 - `tests/codegen/run_prechecks.sh` — §4.9c corrected, §4.5/§5.9r re-derived,
   new §4.10 (a/b/c).
 - `tests/mech/sabotages/S329_find_run_scan_data_tie_leftmost.sh` — new row.
-- `docs/spec/match_api.md` §6, `docs/spec/findings.md` §4,
+- `docs/dev/history/abi_changelog.md`, `docs/spec/findings.md` §4,
   `docs/spec/tuning.md` §2.28, `docs/design/reqpos_2b.md` §2.3 — D80 spec
   hunks.
 - `docs/dev/plan.md` — `[FIND-TIE]` row, STATE:not-started -> STATE:started

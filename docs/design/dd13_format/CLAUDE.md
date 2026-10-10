@@ -416,8 +416,8 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   (modifier leakage across a splice is live — a bare `(?i)` is never
   restored — so each spliced wrapper carries an explicit modifier reset).
   **B4 — `nnames` counting only the primary while `groups[]` held every
-  row broke a SHIPPED ABI contract** (`match_api.md:1349` documents
-  `nnames` as "entries in groups[]", and §6's caller bsearch walks a name
+  row broke a SHIPPED ABI contract** (`match_api.md §6¶3` documents
+  `nnames` as "entries in groups[]", and §5.4¶6's caller bsearch walks a name
   run): the sort key becomes (ref-is-NULL, name, number) so the primary's
   rows are a genuine PREFIX, `nnames` keeps its meaning, and a NEW
   `nentries` rides the abi bump.
@@ -449,7 +449,7 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   first, because each is forced by code the note did not cite:**
   (1) **the abi is 12, not 11** — the note's §2.7 says 11 at
   `emit_dfa.c:1310`; `emit_dfa.c:1375`, `run_codegen_tests.sh:2707` and
-  `match_api.md:159` all say 12 ([OPT-4] bumped it after the note was
+  `match_api.md §6¶17` all say 12 ([OPT-4] bumped it after the note was
   written), so W1's bump is 12 → 13 and the four D76 sites are re-cited
   exactly, including the (B) pin at `run_recursion_identity.sh:456`.
   (2) **the definition's wrapper TAKES an assigned number, so the oracle
@@ -558,7 +558,7 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   direction (`link`'s own situation, `callgraph.c:246`/`:337`); the
   sub-parse's pending list is CAPTURED into the scope record rather than
   overwritten by the restore, making the re-basing TWO passes (a tree walk
-  for `A_CAP`, a pass over the captured list); and `match_api.md:1504`
+  for `A_CAP`, a pass over the captured list); and `match_api.md §6¶1`
   joins §1.6's `nnames` sentence as a SECOND instance of the same
   staleness shape in one struct's documentation. **NEW §7 is the
   [DD-13b.W1.1] STEP BRIEF** — a seven-item build order with the reason
@@ -699,15 +699,15 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   as ordinary English in `src/` and `tests/`), **and it grepped the
   wrong five tokens** — `testee`/`option` are LIVE FORMAT SPELLINGS at
   three sites (`rxt_source.c:149`'s two `config_vocab` rows,
-  `docs/spec/rxt_format.md:57-62`'s later-wave keyword list, and
+  `docs/spec/rxt_format.md §1.1`'s later-wave keyword list, and
   `run_rxtsource_tests.sh:1188`'s `CENSUS_WORDS_32` whose length is
   pinned at 32), so the withdrawal costs four sites and a deliberate
   narrowing rather than "a diff and nothing else"; the check is now
   three arms, the third of which is a READ and not a grep, because
-  `rxt_format.md:130`'s *"configs are three artifacts"* is legitimate
+  `rxt_format.md §1.3`'s *"configs are three artifacts"* is legitimate
   English no pattern separates. And **spec row S3 has never landed** —
   `format_design.md:5782` labels it W1 while
-  `docs/spec/rxt_format.md:531-565` has no cell notion, no
+  `docs/spec/rxt_format.md §4` has no cell notion, no
   entry/fragment counts and no resolution-failure class — which is
   SW20 and the general lesson that *a wave label says when a row was
   scheduled, never whether it shipped*.

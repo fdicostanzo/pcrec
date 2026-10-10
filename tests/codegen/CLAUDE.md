@@ -42,7 +42,20 @@ or it has no regression net at all.
   NEXT), each dropped from `cand_nodes[].reads` and caught as
   `CANDORACLE undeclared-read`; S610 (a listed row without its `desc`, C6)
   is caught by the self-check's `table-desc-unlisted`.
-- **run_cand_rows.sh** + **cand_rows_check.py** — [START-SET] (D148;
+  **Since [OPT-REVEND] L0** (lane lfl0, `docs/design/locate_finish.md` §5
+  L0): witnesses for LOCATE's `empty`/`composite` and FINISH's
+  `verify-at`/`search-from`; every FINISH TAKE CELL the table declares
+  (`.take`, read off the source) must be reached by a witness's
+  `CANDROW FINISH` hit (row, route, hand) or be listed in
+  **cand_oracle_unreached.tsv**, the declared-unreached allowance (one cell
+  per line with its argument and producing commit; EMPTY at L0; a listed
+  cell that is reached, or that the table does not declare, fails); and
+  `[cand-oracle-boundary]` holds the boundary projection both ways (`(a+)b`
+  records `BOUNDARY vm SPAN`, two superset hybrids `LOWER`).
+- **run_cand_rows.sh** + **cand_rows_check.py** — ([OPT-REVEND] L0 adds
+  **[cand-no-row-pointer]**, F-2's revert as a grep row: no comparison
+  against `&cand_rows[...]` and no `dfa_matches` under src/ cli/ lib/.)
+  [START-SET] (D148;
   `docs/design/startset.md` §8): the candidate table's (`dfa_pfs[]`, since
   [START-TABLE] C3 `cand_rows[]`'s NEXT and RECOVER rows) structural checks, in `make test-codegen` (well under a second; mech arm
   `candrows`). **[cand-no-name-strcmp]** (stage 0, K84): no comparison call
@@ -962,7 +975,8 @@ decides whether to perform it — and then run the row through
   count taken from the table's plain text; (4) WHY-TRUTHFULNESS, every deny
   flag `axes.def` spells lists `deny:<flag>` on exactly the facts
   `docs/spec/tuning.md`'s "Facts emptied" line for that flag names (the
-  hand-written spec, never `facts.def`'s own deny column); (5) DECISIONS =
+  hand-written spec, never `facts.def`'s own deny column; the line is a
+  numbered paragraph, so it may open with its `<a id>[§¶]` label); (5) DECISIONS =
   STAMPS, the `decisions` section equal to the value `#define`s this script
   parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
   machinery macros excluded by NAME here, by `(` in the printer). And
@@ -2013,7 +2027,7 @@ direction was then demonstrated by reverting the fix (2 CUT-NOT-A-MARK).
 
 **`[M6.5-DUPNAMES]` — the reflection table's ORDER, read off the ARTIFACT.**
 With `(?J)` the `rx_info.groups` table can hold ADJACENT ROWS WITH EQUAL NAMES,
-and `docs/spec/match_api.md` §6's caller algorithm (bsearch, walk BACK to the
+and `docs/spec/match_api.md` §5.4's caller algorithm (§5.4¶6: bsearch, walk BACK to the
 run's first row, then FORWARD to the first participating one) selects the
 LOWEST-numbered participating member ONLY IF the within-name order is
 ascending. Get it backwards and the table encodes the "last set" rule
@@ -2200,7 +2214,7 @@ records for its own non-default-prefix case. Four prefixes of different
 length and shape, each of which must stamp itself.
 
 **`nentries` IS PINNED EQUAL TO `nnames` AND PRESENT.** Equality is the
-honest state of an uncomposed artifact (`docs/spec/match_api.md` §6) and the
+honest state of an uncomposed artifact (`docs/spec/match_api.md` §6¶3) and the
 composer is what will separate them; what the check pins is that the field
 EXISTS and is not hard-wired to 0 beside a real `nnames`, which is the shape
 a caller switching to `nentries` would silently lose every row to.
@@ -3831,6 +3845,31 @@ must fire on `default`/`noprefilter`. `ctx-node-moved=` joins the (A) line.
   `REQRUN_FN_RE`/`REQRUN_FN_BODY_RE` (both definitions, excised together).
   `run_recursion_identity.sh` (B)'s FILEPIN self-pinned to the lane's src
   commit in a follow-up commit (it cannot name its own commit).
+- **[MEMFN] R-12, THE VMLAZY NORMALIZATION (lane vmlazy, 2026-10-09, abi 70
+  -> 72; 71 is RQ-3's, landing first; landed by lane vmlmerge as 71 -> 72,
+  the ledger message's last transition):** the VM cursor rung's lazy rmin
+  prefix is spelled as a span scan capped at rmin iterations plus the rung's
+  reach test (`docs/dev/lanes/vmlazy_report.md`). `run_codegen_tests.sh`'s
+  `ABI_EXPECT` 72 and its ledger message; `run_recursion_identity.sh` (B)'s
+  FILEPIN self-pinned in a follow-up commit. No byte-count pin moved
+  (`run_cpset_structure.sh` [3], the K59 resource rung and C5 `arms.tsv`
+  carry no lazy cursor prefix: all three suites green unchanged).
+  **`run_recursion_identity.sh` gains its EIGHTH named exception (lane
+  vmlrid, kit manager ruling R1, R-12 VMLAZY, 2026-10-09):**
+  `lazy_prefix_rewrite()`, a ONE-SIDED mechanical rewrite in the fourth's
+  shape. It turns the pre-module region's counted lazy-prefix loop into the
+  NORMALIZE spelling (capped span scan + reach test, text from 7106b370's
+  diff), reading the reach test's low-water slot number from the REFERENCE
+  artifact's own `#define RX_SLOT_SPAN_LOWk N` table, then passes the result
+  through `adv_layout_canon` like every region. Admission is exact equality,
+  composed under the bref rename, the D139 range rewrite and every deny-axis
+  restore (`+vmlazy-prefix` in their messages); `vmlazy-prefix-moved=` joins
+  the (A) line. Non-vacuity: an independent text census of lazy rmin >= 1
+  repeats (`lazy_pop`, floor 150), which the rewrite may never fire outside;
+  the bucket must fire on every axis; no subject region may still carry the
+  old loop (`LAZYOLD_TOTAL` == 0). Sabotage S711 is its negative control
+  (validated by hand: mech cannot run this gate). Figures:
+  `docs/dev/lanes/vmlmerge_report.md`, the vmlrid section.
 - **[NULLABLE-ANCH] (lane nullanch1, 2026-10-08, abi 66 -> 67; RENUMBERED to
   abi 67 -> 68 by lane nullanch2 after advnorm took 67):**
   `run_codegen_tests.sh`'s `ABI_EXPECT` 68 and its ledger message;

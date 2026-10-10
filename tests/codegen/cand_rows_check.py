@@ -65,6 +65,17 @@ re-aimed at C3, start_table.md §3.5)
     VM-route selection never reaches a predicate that reads a machine. (Until
     C3 the walk was `dfa_select` and the test `cand_routed(`.)
 
+[cand-no-row-pointer] ([OPT-REVEND] L0, docs/design/locate_finish.md §5 L0,
+F-2's revert as a grep row)
+    No comparison under src/ cli/ lib/ has `&cand_rows[...]` as an operand,
+    and the identifier `dfa_matches` does not appear: axis G's old table was
+    read by comparing the selected row's POINTER with `&dfa_matches[0]`
+    (F-2), so a reorder or an inserted row silently flipped the reading.
+    Since the fold `dfa_match_is_unwrapped` reads `u.finish.act`. WHAT IT
+    CANNOT SEE: a pointer compare through a local holding `&cand_rows[k]`,
+    or an index compare (`r - cand_rows == k`); `dfa_edge_taken`'s
+    `&dfa_edges[0]` (axis H, not a start-table row) is out of its scope.
+
 The row-name population is read off the table's text and must be non-empty
 (K35): an empty population would make (a) pass vacuously.
 
@@ -242,8 +253,35 @@ def route_checks():
         ok("[cand-route-walk] cand_select tests the row's route mask before its applies")
 
 
+def row_pointer_check():
+    """[cand-no-row-pointer] F-2's revert, as a grep row ([OPT-REVEND] L0)."""
+    files = []
+    for root in ("src", "cli", "lib"):
+        for d, _sub, fs in os.walk(os.path.join(TREE, root)):
+            files += [os.path.join(d, f) for f in sorted(fs) if f.endswith((".c", ".h"))]
+    cmp_ = re.compile(r"[!=]=\s*&\s*cand_rows\s*\[|&\s*cand_rows\s*\[[^]]*\]\s*[!=]=")
+    hits, nfiles = [], 0
+    for path in files:
+        text = strip_comments(open(path, errors="replace").read())
+        nfiles += 1
+        rel = os.path.relpath(path, TREE)
+        for m in cmp_.finditer(text):
+            hits.append("%s:%d" % (rel, text.count("\n", 0, m.start()) + 1))
+        for m in re.finditer(r"\bdfa_matches\b", text):
+            hits.append("%s:%d (dfa_matches)" % (rel, text.count("\n", 0, m.start()) + 1))
+    if nfiles == 0:
+        bad("[cand-no-row-pointer] no source file read under src/ cli/ lib/")
+    elif hits:
+        bad("[cand-no-row-pointer] a reader compares a cand_rows[] row POINTER, or axis G's "
+            "folded table is back (F-2): " + ", ".join(hits))
+    else:
+        ok("[cand-no-row-pointer] no comparison against &cand_rows[...] and no dfa_matches[] "
+           "in %d files: a FINISH reader tests the row's u.finish.act" % nfiles)
+
+
 main()
 route_checks()
+row_pointer_check()
 print("checks passed: %d" % passed)
 print("checks failed: %d" % failed)
 sys.exit(1 if failed else 0)

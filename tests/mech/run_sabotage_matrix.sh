@@ -472,6 +472,14 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
+#     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
+#     docs/spec/: the history-marker check (allowlist + known-debt baseline)
+#     and, since lane specnum, the numbered-spec checks (paragraph numbers,
+#     the generated contents, every citation of a numbered doc in the tree).
+#     Its own arm because it reads spec TEXT, which no other suite reads for
+#     this property. Row: S748. Verdict: the script's
+#     `checks passed:`/`checks failed:` summary.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -2679,6 +2687,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 score_arm "$work/startbnd.log" "$f" "startbnd:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            spechistory)
+                # tests/spec_history/run_spec_history.sh -- reads docs/spec/*.md
+                # text for build history; no binary involved (vocabulary note).
+                ROOT_DIR="$tree" bash "$tree/tests/spec_history/run_spec_history.sh" \
+                    > "$work/spechistory.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/spechistory.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/spechistory.log" | grep -oE '[0-9]+')"
+                score_arm "$work/spechistory.log" "$f" "spechistory:${f:-ERR}fail/${p:-?}pass"
                 ;;
             utfcheck)
                 # [UTF-VALID] tests/utfcheck/run_utfcheck.sh — `-futf-check`

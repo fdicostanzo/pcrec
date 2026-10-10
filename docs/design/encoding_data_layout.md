@@ -1,5 +1,7 @@
 # Encoding data layout — the encoding as the organizing unit (inventory, diagnosis, proposal)
 
+> **STATUS (2026-10-09, D159): [ENC-DATA] CANCELLED. Nothing here is scheduled.** Non-UTF byte encodings are out of scope for pcrec (translation layers outside it). Other UTFs wait for a concrete consumer. This note stays as the reference map such an effort starts from: §1's inventory, §2.3's three sites reading code-point bitmaps as bytes. §7's questions are dissolved by D159, except Q5, which moved to [U8-PICK].
+
 **Lane `encinv`, 2026-10-09, opus, from main `57fe04ef` (abi 71). INVENTORY + PROPOSAL
 ONLY: nothing under `src/`, `cli/`, `lib/`, `tests/`, `third_party/` or `docs/spec/`
 moved.** Frank, 2026-10-09: *"please organize encoding data (it should be to some
@@ -83,7 +85,7 @@ changes). **S** = stated in `docs/spec/`. **—** = compile-time only, not in th
 
 | # | path | what | enc | made how | consumers | E/S |
 |---|---|---|---|---|---|---|
-| A1 | `src/enc/enc.c:22-25` `enc_table[]` | THE registry: one `PcrecEnc*` per encoding, by-id/by-name lookup, name menu | all | hand | ~30 `pcrec_enc_by_id` sites (parse, ir, facts, opt, gen, dump, core); `cli/main.c:354` by name; `rxt_source.c:618` validates `serves when` names | S (`match_api.md` §8.2, cli.md) |
+| A1 | `src/enc/enc.c:22-25` `enc_table[]` | THE registry: one `PcrecEnc*` per encoding, by-id/by-name lookup, name menu | all | hand | ~30 `pcrec_enc_by_id` sites (parse, ir, facts, opt, gen, dump, core); `cli/main.c:354` by name; `rxt_source.c:618` validates `serves when` names | S (`match_api.md` §9.1, cli.md) |
 | A2 | `lib/pcrec.h:35-36` `PCREC_ENC_BYTE=0`, `PCREC_ENC_UTF8=1` | public enum, the ids the rows carry | all | hand | `rx_info.encoding` (`emit_dfa.c:3069` emits the integer) | E S |
 | A3 | `src/enc/enc_byte.c:322-403` | byte backend: `PcrecEnc` row (`max_cp` 0xFF, `fold` ascii, `onebyte_max` 0xFF, `restrict_ok` true, `start_cls`/`guard` NULL), `entries_byte[]` residual text, `sites_byte[]`, `advance_byte` | byte | hand | emitters via `pcrec_enc_emit_*`; parse/ir/facts via fields | E S (`match_api.md` §3.1.x) |
 | A4 | `src/enc/enc_utf8.c:478-626` | utf8 backend: same row shape; entries `next_pos`, span compares, `decode`, `back_step`, `var_valid`, `valid_upto`; `start_cls_utf8[32]` (`:562`), `start_guard_utf8` (`:597`), `advance_utf8` | utf8 | hand (+A5 included) | as A3 | E S |
@@ -134,7 +136,7 @@ changes). **S** = stated in `docs/spec/`. **—** = compile-time only, not in th
 | F2 | `src/parse/rxt_source.c:612-622` | `serves … when <enc>` validated by `pcrec_enc_by_name` | **yes** |
 | F3 | `analyze/count.c:340-352` `classify_encoding`/`enc_rank`; `:387-401` `derive_serves` | analyzer: observed `ascii/utf8/bytes`; writes `when byte,utf8` / `when byte` / `when utf8 via encode-utf8` | no: hard-coded (a zero-dependency binary, `analyze/CLAUDE.md`) |
 | F4 | `cli/main.c:161-162` | `--help`: "byte (default) or utf8, both compile" | no |
-| F5 | `docs/spec/match_api.md:5291` ("want byte, utf8"), `docs/spec/rxt_format.md:943` (`byte`, `utf8`), `docs/design/findings/design.md` §2.4 | spec/design sentences enumerating encodings | no |
+| F5 | `docs/spec/match_api.md §9.1` ("want byte, utf8"), `docs/spec/rxt_format.md §1.10` (`byte`, `utf8`), `docs/design/findings/design.md` §2.4 | spec/design sentences enumerating encodings | no |
 | F6 | `src/dump/findings_dump.c:133-134` | `--list-analysis` resolution: one row per query × encoding | **yes** (iterates `pcrec_enc_by_id`) |
 | F7 | `src/dump/facts_dump.c`, `--emit-facts[=ENC,…]` | facts per listed encoding | yes (by name) |
 
@@ -477,7 +479,7 @@ of the step's parent: streams 1-4 and 6 byte-identical at both bases, stream 5
 identical except where noted, and all variants at `--variant all`. Run
 `make test-codegen` (DD12a(i)/(ii), K49 advance agreement), the `make test` sections
 `test-backrefs` (all three fold agreement checks), `test-uprops` (the `generate.py
---check`), `test-findings` (§2/§3/§12) and `test-encseam`, and `include_graph.py`
+--check`), `test-findings` (sec. 2/sec. 3/sec. 12) and `test-encseam`, and `include_graph.py`
 (back-edges ≤ 2). The sweep's reference is built from an archived revision and never
 from the working tree, which is what makes it an independent control.
 
@@ -491,7 +493,7 @@ from the working tree, which is what makes it an independent control.
 | E5 | rename `src/enc/utf8_fold_pairs.inc` → `ucd_fold_pairs.inc` (`generate.py:148`, `Makefile:190`, `enc_utf8.c:170`, `third_party` README/CLAUDE/PROVENANCE); regenerate (the header comment changes, and it is outside the emitted string literals) | none emitted; the `.inc` header text moves | no | no |
 | E6 | findings derivations resolve the encoder through the registry: `encode-utf8` → `pcrec_enc_by_name("utf8")->encode`. `encode-latin1` stays bound to byte's encoder pending Q2. The menu literal `rxt_source.c:589` is rendered from `find_derivs[]` | none (the digest is over the ppm table, `findings.c:332`) | no | no |
 | E7 | assert ASCII compatibility (`onebyte_max >= 0x7F`) at registry check time; `enc.h` recipe states it | none | no | no |
-| E8 | rename the definitions tag `DEF_ENCODING_UTF8` → `DEF_ENCODING_UNICODE` (its predicate is already the capability) | **`--list-definitions` output** (`definitions.c:184` prints the tag; 4 rows today) → emit_sweep stream 5 shows the expected mover; no test pins the name (grep) | no | **yes**: `docs/spec/registry.md:536` (the closed tag list) and `docs/spec/cli.md:228`, in the same change (D80) |
+| E8 | rename the definitions tag `DEF_ENCODING_UTF8` → `DEF_ENCODING_UNICODE` (its predicate is already the capability) | **`--list-definitions` output** (`definitions.c:184` prints the tag; 4 rows today) → emit_sweep stream 5 shows the expected mover; no test pins the name (grep) | no | **yes**: `docs/spec/registry.md` §9 (the closed tag list) and `cli.md (old line 228)`, in the same change (D80) |
 
 E1-E7 touch `src/` but add no emitted byte. E1/E2/E3/E4 each add or remove a
 `PcrecEnc`/`LowerOps`/`PcrecEncEntry` field, and each is recorded as a D58 seam event

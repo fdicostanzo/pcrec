@@ -1,0 +1,310 @@
+C7-0001	MAPPED	2334	NUL-terminated pattern, no length
+C7-0002	MAPPED	2330	signature quoted verbatim
+C7-0003	MAPPED	2334	raw 0x00 silently truncates the compile
+C7-0004	MAPPED	2335	"a\0b" compiles as "a" and reports success
+C7-0005	MAPPED	2337	documented behaviour of a NUL-terminated entry, not a defect this API shape will fix
+C7-0006	MAPPED	2340	PCRE2_ZERO_TERMINATED on {a,0,b} matches only "a"; libpcre2 10.46 via tests/fuzz/pcre2_abi.h
+C7-0007	MAPPED	2343	length=3 matches the whole subject [0,3)
+C7-0008	MAPPED	2344	new: PCRE2 also accepts a true length and pcrec_compile does not (API-surface gap); "only way" is implied by the strlen pre-flight bullet at 2355
+C7-0009	MAPPED	2344	API-surface gap not a difference in NUL semantics; sentinel mode truncates identically (2340)
+C7-0010	MAPPED	2347	pattern_len = byte count pcrec_compile saw, i.e. truncated count; also field row at 1154
+C7-0011	MAPPED	2349	out.c_src is source text; rx_info is artifact data (6.1 at 1323); new says reading it needs the artifact compiled and linked
+C7-0012	MAPPED	2354	string search of out.c_src
+C7-0013	MAPPED	2353	needs the artifact compiled and linked
+C7-0014	MAPPED	2355	strlen(pattern) != known_length pre-flight, snippet at 2360
+C7-0015	MAPPED	2360	strlen pre-flight shown; "standard library only" is implicit in the snippet
+C7-0016	MAPPED	2347	pattern_len records what was compiled; "after-the-fact instrument" framing implied by 2353 (needs the artifact)
+C7-0017	MAPPED	2348	out.c_src contains ".pattern_len = 1,"
+C7-0018	MAPPED	2350	CLI cannot carry a NUL through argv
+C7-0019	MAPPED	2350	tests/cli/run_cli_tests.sh case16
+C7-0020	MAPPED	2351	source byte count; 'a\nb' pattern_len = 4
+C7-0021	MAPPED	2352	pinned in tests/codegen/run_codegen_tests.sh
+C7-0022	MAPPED	2365	length-taking compile not part of this contract
+C7-0023	MAPPED	2367	new states scheduled with [DD-3] and tracked as K9 (K9 exists at docs/dev/known_issues.md:2274); the customer V-A shim trigger is dropped (plan/process fact)
+C7-0024	MAPPED	2355	caller with NUL-bearing text runs the pre-flight; 2364 "Nothing in pcrec_compile()'s signature enforces it"
+C7-0025	MAPPED	2378	sample compiles and runs as written; new drops the -Wl,-dead_strip detail from the build line but the compile-and-run claim is stated
+C7-0026	MAPPED	2419	link with --gc-sections (GNU ld) or -dead_strip (ld64)
+C7-0027	MAPPED	2420	composer statically reachable from the ordinary compile path
+C7-0028	MAPPED	2422	pcrec_compile_defs / pcrec_rxt_source_parse never called but objects pulled in
+C7-0029	MAPPED	2423	43,968 of 44,448 bytes recovered; 480 bytes and two symbols remain
+C7-0030	MAPPED	2426	omitting it is not wrong, only larger
+C7-0031	MAPPED	2431	pcrec_default_options() is mandatory (also 2392)
+C7-0032	MAPPED	2431	zeroed options: prefix NULL and "invalid symbol prefix" (also 2393)
+C7-0033	MAPPED	2395	header_name NULL = self-contained .c; set = also header (2451)
+C7-0034	MAPPED	2452	returns -1 on failure; err.msg/pos/input quoted at 2398 and struct 2591
+C7-0035	MAPPED	2403	c_src/h_src malloc'd NUL-terminated C source, caller frees
+C7-0036	MAPPED	2451	h_src non-NULL exactly when header_name set
+C7-0037	MAPPED	2447	frees both and NULLs both fields
+C7-0038	MAPPED	2431	mandatory
+C7-0039	MAPPED	2431	zeroed struct has prefix NULL which pcrec refuses
+C7-0040	MAPPED	2433	memset-zeroed returns -1 with the exact msg
+C7-0041	MAPPED	2435	prefix rx, encoding PCREC_ENC_BYTE, header_name NULL, zero the rest
+C7-0042	MAPPED	2437	override fields after calling it, never instead
+C7-0043	MAPPED	2435	prefix rx, encoding 0, header_name NULL, flags = 0, engine = 0
+C7-0044	MAPPED	2438	two heap buffers, caller frees
+C7-0045	MAPPED	2441	struct quoted
+C7-0046	MAPPED	2442	c_src malloc'd, free with pcrec_output_free
+C7-0047	MAPPED	2443	h_src malloc'd or NULL
+C7-0048	MAPPED	2447	frees both and NULLs both; "measured before and after" wording dropped
+C7-0049	MAPPED	2447	safe to call twice and when h_src never produced
+C7-0050	MAPPED	2448	there is no other way to release them
+C7-0051	MAPPED	2449	compile path's lifecycle; match path has none; also 5.2 at 934-935
+C7-0052	MAPPED	2451	test h_src
+C7-0053	MAPPED	2452	check the return value not the error struct; 0 success -1 failure
+C7-0054	MAPPED	2453	fills err only on failure
+C7-0055	MAPPED	2459	never abort()s the caller on the compile path
+C7-0056	MAPPED	2460	every allocation site routes failure via pcrec_ctx_nomem to -1
+C7-0057	MAPPED	2461	memory limit survives a hostile pattern
+C7-0058	MAPPED	2471	one abort() left on syntax-dump path
+C7-0059	MAPPED	2469	DFA structural invariants refuse via pcrec_ctx_fail (K61)
+C7-0060	MAPPED	2459	never-abort on compile path plus no degraded success under memory pressure (2462); the dated "no exceptions" wording dropped but new states the one off-path abort
+C7-0061	MAPPED	2463	non-final attempt allocation failure reported as -1 (K60, D109)
+C7-0062	HISTORY		corpus-population measurement (2 of 3,159) behind the K60 fix, lives in docs/dev/k60_measurement.md; not a current-behaviour fact of the API
+C7-0063	HISTORY		108 of 158 absorbed BEFORE the fix is past-state; the current fact (0 absorbed) is at 2468
+C7-0064	MAPPED	2466	legend scratch allocation failure is an ordinary refusal (K60, D105)
+C7-0065	MAPPED	2467	new: legend scratch lives in the compile's arena; the "fixed local" half of the old sentence is not restated
+C7-0066	HISTORY		15 and 25 absorbed BEFORE the D105 fix is past-state; current 0 at 2468
+C7-0067	MAPPED	2466	failure there is an ordinary refusal instead of a legend-less artifact
+C7-0068	MAPPED	2473	emitted bytes of a compile that does not run out of memory do not depend on this
+C7-0069	MAPPED	2475	resource refusal distinct from syntax error
+C7-0070	MAPPED	2476	same -1 and pcrec_error; tell apart by err.msg
+C7-0071	MAPPED	2477	a{9795} compiles; a{9796} refused with the exact msg
+C7-0072	MAPPED	2480	legal PCRE; reporting every -1 as bad syntax is wrong
+C7-0073	MAPPED	2482	a{9796} compiles under --engine=vm
+C7-0074	MAPPED	2482	the escape the message names is real
+C7-0075	MAPPED	2612	byte (default) and utf8 both compile
+C7-0076	MAPPED	2622	one to four bytes; . and a class match a whole character
+C7-0077	MAPPED	2623	ill-formed subject sequence matches nothing and is not reported; 9.4 (2713) says the default does no validation
+C7-0078	MAPPED	2635	startpos must be a character boundary and is enforced by default
+C7-0079	MAPPED	2658	next_pos is the supported way; the find-all loop uses it (2659, 461)
+C7-0080	UNMAPPED		new 2489 still says "all nineteen members" and quotes 20; lib/pcrec.h pcrec_options now has 25 members (adds analysis, analysis_dirs, analysis_source, analysis_source_len, memfn) so the count and the claim are FALSE
+C7-0081	UNMAPPED		new 2489 says the quoted block is all members with a one-line gloss each, but 5 real members are absent (analysis x4 documented in findings.md:295, memfn in cli.md:456); gloss-then-pointer part is true (2490-2491)
+C7-0082	MAPPED	2495	prefix const char * default "rx"
+C7-0083	MAPPED	2496	encoding int PCREC_ENC_* per compile call
+C7-0084	MAPPED	2497	flags uint64_t with the named bits and axis bits, catalogue tuning.md 2
+C7-0085	MAPPED	2501	header_name NULL = self-contained .c
+C7-0086	MAPPED	2502	engine AUTO/DFA/VM
+C7-0087	MAPPED	2503	step_budget int64_t DEFAULT/NONE/count
+C7-0088	MAPPED	2504	work_budget int64_t DEFAULT/NONE/count
+C7-0089	MAPPED	2505	unroll_k int, DEFAULT (0)
+C7-0090	MAPPED	2506	vm_entry_shape ordinal rung not a bit, tuning.md 2.21
+C7-0091	MAPPED	2509	frame_capacity 0 = let compiler size it
+C7-0092	MAPPED	2509	0 sentinel differs from rx_info's -1 (also 2540, 1247)
+C7-0093	MAPPED	2512	max_emit_code_bytes RAISE-ONLY, 0 built-in
+C7-0094	MAPPED	2513	max_emit_bytes
+C7-0095	MAPPED	2514	max_nfa_states
+C7-0096	MAPPED	2515	max_dfa_states_goto
+C7-0097	MAPPED	2516	max_subset_elems
+C7-0098	MAPPED	2517	max_auto_dfa_elems, AUTO route DFA attempt only
+C7-0099	MAPPED	2519	warn_emit_bytes ADVISORY, 0 disables
+C7-0100	MAPPED	2520	lowerable unlike the caps
+C7-0101	MAPPED	2522	name reports rx_info.name; NULL = prefix
+C7-0102	MAPPED	2523	tune -2..+2, 0 balanced and structural no-op
+C7-0103	MAPPED	2525	features: module set for this call, same vocabulary as --features, NULL no request
+C7-0104	MAPPED	2531	six max_* RAISE-ONLY
+C7-0105	MAPPED	2531	below default refused as malformed option
+C7-0106	MAPPED	2533	warn_emit_bytes not raise-only because it never refuses
+C7-0107	MAPPED	2534	limits.md is their home; derivations in lib/pcrec.h comments via 2490
+C7-0108	MAPPED	2545	applied per pcrec_compile() call
+C7-0109	MAPPED	2546	comma list as --list-syntax module column, "std1", "all", "none"
+C7-0110	MAPPED	2548	unknown name refused by name through pcrec_error
+C7-0111	MAPPED	2549	CLI's --features: <text> wording minus prefix
+C7-0112	MAPPED	2551	NULL = no request, not the CLI bare default
+C7-0113	MAPPED	2552	ungated compile with no module enabled
+C7-0114	MAPPED	2553	pass "std1" or pcrec_default_features
+C7-0115	MAPPED	2554	CLI assigns features ? features : pcrec_default_features
+C7-0116	MAPPED	2557	touches no shared state (D19), concurrent compiles cannot race
+C7-0117	MAPPED	2558	each resolves into its own compile's state
+C7-0118	MAPPED	2559	CLI --features also installs a process-global read by --probe-ask --count-groups --list-source
+C7-0119	MAPPED	2535	per-compile-call scalar, carried in this field only
+C7-0120	MAPPED	2536	no process-global, file-global or env variable
+C7-0121	MAPPED	2537	mixing encodings supported; own prefix, one encoding's residual block
+C7-0122	MAPPED	2616	-e NAME or --encoding=NAME
+C7-0123	MAPPED	2612	PCREC_ENC_BYTE 0 default, PCREC_ENC_UTF8 1
+C7-0124	MAPPED	2613	value is what rx_info.encoding reports
+C7-0125	MAPPED	2614	other values refused with the exact msg, no C written
+C7-0126	MAPPED	2627	\x{...} above 0xFF error under byte, compiles under utf8
+C7-0127	MAPPED	2627	encoding reaches the parser in one place; design ref utf8_design.md 2.7.3
+C7-0128	HISTORY		PCREC_ENC_ASCII rename is past-state (still recorded in lib/pcrec.h:26); current fact "-e ascii is an unknown encoding" is at 2615
+C7-0129	MAPPED	2615	-e ascii is an unknown encoding
+C7-0130	MAPPED	2618	every byte a character, no case, no meaning
+C7-0131	MAPPED	2565	one representation end-to-end; flag list at 2566
+C7-0132	MAPPED	2568	reflected in rx_info.flags unless deliberately masked (also 1257-1270)
+C7-0133	MAPPED	2571	PCREC_NO_CAPTURES gives pure-DFA NCAPS 1; captures on by default
+C7-0134	MAPPED	2573	PCREC_UCP bit 34
+C7-0135	MAPPED	2573	PCRE2_UCP semantics, cli.md --ucp
+C7-0136	MAPPED	2574	changes answers so not masked
+C7-0137	MAPPED	2574	(*UCP) inline does not set the bit, as (?i) does not set CASELESS
+C7-0138	MAPPED	2576	rx_info.pattern records it
+C7-0139	HISTORY		states the arrival of the UCP bit moved no emitted byte (past change event, no abi event); not a current-behaviour fact
+C7-0140	MAPPED	1269	round-tripping flags finds masked bits missing, legitimately
+C7-0141	MAPPED	1258	masked bits are the testing/tuning denials that change no answer
+C7-0142	MAPPED	2577	tuning.md 2 catalogue and 4 bit-to-field map
+C7-0143	MAPPED	2579	lib/pcrec.h comments are the implementation's record, not authority; the spec-is-contract half at 3-11
+C7-0144	MAPPED	2583	pcrec_error carries which input pos indexes
+C7-0145	MAPPED	2586	enum quoted with 0 and 1
+C7-0146	MAPPED	2592	char msg[256]
+C7-0147	MAPPED	2593	size_t pos
+C7-0148	MAPPED	2594	pcrec_err_input input
+C7-0149	MAPPED	2598	always PATTERN today
+C7-0150	MAPPED	2598	TEMPLATE has no producer; future template compiler is first
+C7-0151	MAPPED	2452	0 success -1 failure, err filled if non-NULL
+C7-0152	MAPPED	2600	"a(b" returns -1 with pos == 1 and input PATTERN
+C7-0153	MAPPED	62	PCREC_* names only pcrec's own enum- or bit-valued constants
+C7-0154	MAPPED	64	PCREC_FEATURE_SET and PCREC_FEATURE_MODULES the one exception, per-artifact, not in lib/pcrec.h
+C7-0155	MAPPED	62	"with one exception" makes the set exhaustive
+C7-0156	MAPPED	68	lower-case data symbol pcrec_default_features (src/parse/enabled.c path not named; section 8.2 ref)
+C7-0157	MAPPED	70	PCRE2_* reserved for a future compat layer, never native
+C7-0158	MAPPED	3	spec is the contract; design docs informational (design records not named individually)
+C7-0159	MAPPED	27	pre-v1 posture D40
+C7-0160	MAPPED	28	unconstrained in substance, governed in form
+C7-0161	MAPPED	33	v1 successor becomes the compatibility-bound enumeration
+C7-0162	HISTORY		statement about the old document's use of the word "frozen" (M4 working baseline); new doc does not use the word that way (2547 is the unrelated std1 frozen set)
+C7-0163	MAPPED	2830	every artifact exports all three (also 275)
+C7-0164	MAPPED	2873	five sizing macros in the header, four rx_info fields (2883), buffers type everywhere (2901)
+C7-0165	MAPPED	2901	present and inert on a DFA artifact
+C7-0166	MAPPED	2780	a generated matcher never allocates
+C7-0167	MAPPED	2780	sized at compile time; stack-frame residency at 951 and 2968
+C7-0168	MAPPED	2782	depth ceiling a compile-time constant
+C7-0169	MAPPED	2783	caller may supply storage, keeping never-allocates (D71 item 2)
+C7-0170	MAPPED	2797	684-byte match, 686-byte PCREC_ERR_FRAMES
+C7-0171	MAPPED	2797	ceiling is a SUBJECT SIZE
+C7-0172	MAPPED	2800	libpcre2 10.46 matches 800 KB (cited from subroutines_design.md 5.6)
+C7-0173	MAPPED	2803	runaway returns FRAMES in 0.0006 s for n 100..100,000
+C7-0174	MAPPED	2804	libpcre2 quadratic 2.6-5.6 s at n=20,000, exponent 2.04
+C7-0175	MAPPED	2806	new states the constant-time refusal (2803) and that 10.6 buys the depth; the "price" framing is implied
+C7-0176	MAPPED	2813	struct quoted
+C7-0177	MAPPED	2814	frames
+C7-0178	MAPPED	2815	nframes capacity in frames not bytes
+C7-0179	MAPPED	2816	trail
+C7-0180	MAPPED	2817	ntrail capacity in entries
+C7-0181	MAPPED	2820	search_in signature
+C7-0182	MAPPED	2822	match_in signature
+C7-0183	MAPPED	2823	match_caps_in signature
+C7-0184	MAPPED	2827	equal to the un-suffixed sibling plus one argument
+C7-0185	MAPPED	2829	3, 4, 5 apply unchanged (new adds 9)
+C7-0186	MAPPED	2832	per-artifact not a fixed-literal rx_* type
+C7-0187	MAPPED	2832	frame SIZE differs between artifacts
+C7-0188	MAPPED	2833	24 without a LINKED call, 40 with
+C7-0189	MAPPED	2835	SPLICED call inlined adds nothing
+C7-0190	MAPPED	2836	email specimen factored form stamps 24 with ten spliced calls
+C7-0191	MAPPED	2837	read the stamp, never infer from the pattern
+C7-0192	MAPPED	2839	counts are capacities; 10.4 converts
+C7-0193	MAPPED	2841	two regions, both required when buf non-NULL
+C7-0194	MAPPED	2842	trail binds first on ^(a(?1)?b)$
+C7-0195	MAPPED	2849	buf == NULL exactly the un-suffixed call
+C7-0196	MAPPED	2852	give-up means the buffer in use ran out, not whose
+C7-0197	MAPPED	2853	FRAMES for caller buffer as for stamped default
+C7-0198	MAPPED	2854	sufficient count NOT reported
+C7-0199	MAPPED	2855	diagnostic fact, default artifact carries no machinery (D71 item 1)
+C7-0200	MAPPED	2857	retryable with larger buffer
+C7-0201	MAPPED	2858	no state between calls, caps untouched, buffers scratch
+C7-0202	MAPPED	2861	contents unspecified, need not re-initialise
+C7-0203	MAPPED	2863	alignment, BUFFER_ALIGN
+C7-0204	MAPPED	2864	malloc, mmap or ordinary object satisfies it
+C7-0205	MAPPED	2866	macro for pointer arithmetic in an arena
+C7-0206	MAPPED	2872	layouts private to the artifact, only the arithmetic published
+C7-0207	MAPPED	2873	five macros
+C7-0208	MAPPED	2876	RESUME_FRAMES stamped DEFAULT, example 2048
+C7-0209	MAPPED	2877	TRAIL_FRAMES 3072
+C7-0210	MAPPED	2878	RESUME_FRAME_SIZE 40
+C7-0211	MAPPED	2879	TRAIL_FRAME_SIZE 16
+C7-0212	MAPPED	2880	BUFFER_ALIGN 8
+C7-0213	MAPPED	2887	stamped for the target, not constants of pcrec; hardcode nothing
+C7-0214	MAPPED	2888	24 call-free, 40 call-bearing, 32 and 48 with --trace
+C7-0215	MAPPED	2889	also depends on target type sizes
+C7-0216	MAPPED	2890	computed from the same member list that emits the struct
+C7-0217	MAPPED	2891	artifact asserts against real sizeof/_Alignof, compile error naming the macro
+C7-0218	MAPPED	2894	read the macros, never hardcode
+C7-0219	MAPPED	2873	macros are in the emitted HEADER; probe confirms RESUME_FRAMES TRAIL_FRAMES FRAME_SIZE BUFFER_ALIGN in c7.h (build/pcrec -o c7.c); the "previously in .c" is history
+C7-0220	MAPPED	2883	four of the same facts as rx_info fields for FFI/dlopen consumers
+C7-0221	MAPPED	1149	resume_frames int64_t stamped default capacity
+C7-0222	MAPPED	1150	trail_frames int64_t
+C7-0223	MAPPED	1151	resume_frame_size int32_t
+C7-0224	MAPPED	1152	trail_frame_size int32_t
+C7-0225	MAPPED	1279	abi is the version of the emitted scaffolding, bumped on any change (1285); the literal "layout version" wording replaced by this broader and current statement
+C7-0226	MAPPED	2908	resume_frames carries same number as frame_capacity for the bounded case (also 1252)
+C7-0227	MAPPED	2909	frame_capacity -1 = no bound on DFA artifact; sentinel at 1246
+C7-0228	MAPPED	2898	stamped 0 means this engine takes no buffers; every DFA artifact (2901)
+C7-0229	MAPPED	2899	division by zero on every DFA artifact
+C7-0230	MAPPED	2898	0 is the signal; "no fake non-zero size" is implied
+C7-0231	MAPPED	2898	test before dividing, pass NULL when 0
+C7-0232	MAPPED	2903	_in accepts a descriptor and ignores it; NULL and a buffer same call (2900 "nothing is lost")
+C7-0233	MAPPED	2901	present and inert so one call site works against both engines
+C7-0234	MAPPED	2901	three _in entries, buffers type, five macros on every artifact
+C7-0235	MAPPED	2903	four sizing macros and four rx_info fields read 0
+C7-0236	MAPPED	2904	ignores descriptor, answers as un-suffixed sibling
+C7-0237	MAPPED	2905	five macros on both engines unlike VM-only capacity macros of 6.3 because needed to CALL an entry
+C7-0238	MAPPED	956	concurrent calls need own caps and own frame and trail buffers
+C7-0239	MAPPED	957	sharing is a data race in the CALLER's code, matcher does not serialize
+C7-0240	MAPPED	960	re-entry from a callout needs its own storage
+C7-0241	MAPPED	963	no per-artifact or per-thread buffer; buffer travels with the call
+C7-0242	MAPPED	963	mutable emitted state forbidden (TS-1), thread-local fails reentrancy
+C7-0243	MAPPED	2921	OS materialises only pages touched
+C7-0244	MAPPED	2929	two MAP_NORESERVE mmaps and the buffers initializer
+C7-0245	MAPPED	2937	rx_search_in with mmap'd buffers, pcrec allocates nothing
+C7-0246	MAPPED	2941	1,677,721 frames and 4,194,304 trail entries
+C7-0247	MAPPED	2946	684 B 0.0001 s 2.0 MB
+C7-0248	MAPPED	2947	200 KB 0.0135 s 24 MB
+C7-0249	SUPERSEDED	2948	old 0.056 s / 88 MB RSS; new 0.057 s / 90 MB is the 2026-08-25 re-measure (old claim C7-0253 itself). Probe on this box (c7dir, build/pcrec, 2x64MB mmap, a^400000 b^400000): match, ru_maxrss 89,608 KB (~90 MB); time is machine-dependent (0.032 s here)
+C7-0250	MAPPED	2949	932 KB 0.065 s 102 MB
+C7-0251	MAPPED	2950	940 KB FRAMES 0.069 s 103 MB
+C7-0252	MAPPED	2940	1,677,721 frames and 4,194,304 entries, 1.8 MB resident before first match
+C7-0253	MAPPED	2948	800 KB 0.057 s and 90 MB in the table; boundary between 466,000 and 470,000 at 2958
+C7-0254	MAPPED	2954	tests/recursion/run_frame_buffer.sh asserts these
+C7-0255	MAPPED	2952	un-suffixed rx_search matches the 684 B subject and gives FRAMES on the four larger
+C7-0256	MAPPED	2954	128 MB reserved costs about 1.7 MB resident until touched
+C7-0257	MAPPED	2955	800 KB row is the depth libpcre2 10.46 reaches
+C7-0258	MAPPED	2956	ceiling predictable 4,194,304 / 8.98 about 467,000, boundary 466,000-470,000
+C7-0259	MAPPED	2959	buffer need not be mmap'd: heap, static array, arena slice
+C7-0260	MAPPED	2966	caller with no mmap and no heap has two routes
+C7-0261	MAPPED	2968	pass NULL for the stamped default, on the stack
+C7-0262	MAPPED	2969	point descriptor at own static storage
+C7-0263	MAPPED	2970	does not violate 5.3 which binds what pcrec EMITS
+C7-0264	MAPPED	2971	embedder knows whether its calls are concurrent
+C7-0265	MAPPED	2972	single-context embedded caller: .bss, small stack, pays nothing
+C7-0266	MAPPED	2978	three un-suffixed entries keep signatures, return spaces, anchoring, caps disciplines
+C7-0267	MAPPED	2979	no source change, binary-compatible
+C7-0268	MAPPED	2982	next_pos and find-all untouched
+C7-0269	MAPPED	2983	code space gains no member; FRAMES covers the caller-buffer case
+C7-0270	MAPPED	2985	no allocation added; 5.2 scoped to match path; the compile-path-unaffected clause is implied by the scoping
+C7-0271	MAPPED	2872	frame and trail layouts are private to the artifact and not published (the run-struct text); the explicit "never contractual" phrase is gone
+C7-0272	HISTORY		describes what the abi 2 to 3 change broke (rx_info layout, run-struct text) and the plan state of DD-3; past-change/process note, current posture is stated at 27-34
+C7-0273	MAPPED	2990	page-sized buffer when stamped default does not fit in one 4 KB page
+C7-0274	MAPPED	2993	re-run on full stamped default on FRAMES and no other outcome
+C7-0275	MAPPED	2996	every other outcome returned from the first run
+C7-0276	MAPPED	3001	escalation restarts step and work budgets, per CALL
+C7-0277	MAPPED	3005	up to twice each budget, 4 rule
+C7-0278	MAPPED	3006	wasted fast attempt bounded by the budgets not the fast frame count
+C7-0279	MAPPED	3010	no answer changes; bit-for-bit replay
+C7-0280	MAPPED	3013	nothing carries; run state a local, no allocation, thread-local or mutable static
+C7-0281	MAPPED	3015	returned value and spans are those of a single-tier entry
+C7-0282	MAPPED	3017	fast FRAMES where single-tier reaches STEPS; never returned, replay reports STEPS
+C7-0283	MAPPED	3023	every promise of 3, 4, 5 stands
+C7-0284	MAPPED	3024	FRAMES from an un-suffixed entry means the stamped default ran out
+C7-0285	MAPPED	3026	depth unchanged, D73 keeps 2048/3072
+C7-0286	MAPPED	3043	tier is a bet that loses on some patterns; escalating-call cost 3049-3051
+C7-0287	MAPPED	3047	on ((a)|(aa))+b: 1.24-1.53x slower above the boundary, 3.05x jump across the boundary byte
+C7-0288	MAPPED	3057	supply _in storage or -fno-tiered-entry for a workload measured above the boundary
+C7-0289	MAPPED	3028	_in entries have no tier; caller owns storage
+C7-0290	MAPPED	3029	buf == NULL still the un-suffixed call and gets the tier
+C7-0291	MAPPED	3032	must not rely on which tier answered, no observable
+C7-0292	MAPPED	3033	FAST_FRAMES says where the boundary is, not which side
+C7-0293	MAPPED	3057	depth guarantee or too-small stack: use _in
+C7-0294	MAPPED	2998	-fno-tiered-entry (tuning.md 2.12) restores single-tier shape
+C7-0295	HISTORY		describes the abi 4 to 5 bump (the two tier stamps are #defines so no struct offset moved); past change event not a current-behaviour fact
+C7-0296	MAPPED	1279	abi versions the emitted scaffolding as a whole and is 71 on every artifact (1281); the abi 4 to 5 event ("no DFA bytes moved") is history
+C7-0297	MAPPED	2166	selection facts stamped whether or not the term fired (D81)
+C7-0298	MAPPED	2164	UNROLL_K and UNROLL_K_WHY on every VM artifact; the "because a DFA artifact has no counter rung" reason is not restated
+C7-0299	MAPPED	2164	unroll factor the artifact was emitted at
+C7-0300	MAPPED	2169	value table has seven rows
+C7-0301	MAPPED	2172	option = explicit --unroll=K
+C7-0302	MAPPED	2173	denied = -fno-size-term
+C7-0303	MAPPED	2174	default = term ran, below threshold
+C7-0304	MAPPED	2175	size-model = ladder ran, K taken
+C7-0305	MAPPED	2176	size-model-declined = materiality bar rejected K
+C7-0306	MAPPED	2177	cap-rescue
+C7-0307	MAPPED	2178	capacity-declined, limits.md 8a
+C7-0308	MAPPED	2183	EFFECTIVE limits the artifact was built under, so fitted is told from raised-cap without the command line
+C7-0309	MAPPED	2181	CODE_BYTES is on VM artifacts (verified: src/gen/emit_vm.c:11369 emits it, emit_dfa.c:11521 lists it VM-only; probe of a DFA artifact shows only MAX_EMIT_BYTES)
+C7-0310	MAPPED	2182	MAX_EMIT_BYTES on every artifact, total-bytes cap applies to whatever was emitted, limits.md 8

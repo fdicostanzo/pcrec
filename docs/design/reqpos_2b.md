@@ -289,7 +289,7 @@ O-60 lead-byte defect through the DATA arm rather than the NONE one
 now offers its candidates `[n-1, n-2, ..., 0]`, so `pcrec_find_pick`'s own
 earliest-candidate tie rule lands on the rightmost tied member whether or
 not a rate applies. `abi` 43 -> 44 (a stamp-VALUE-and-emitted-text move,
-`docs/spec/match_api.md` §6's precedent for this shape). See
+`docs/spec/match_api.md §6¶17` (§6)'s precedent for this shape). See
 `docs/dev/lanes/findtie_report.md`.
 
 ### 2.4 What the mechanism declines, stated as a list
@@ -371,7 +371,7 @@ Six things about it, each one a rule this tree already holds:
 * **The `<=` guard above the loop is the same two-obligations-in-one-test
   `pcrec_emit_req_byte_check` already writes** and its comment already
   explains: `memchr(NULL, c, 0)` is undefined behaviour and `match_api.md`
-  §3.1 permits a legal empty subject with a NULL pointer (UBSan reads the
+  §3.1¶2 permits a legal empty subject with a NULL pointer (UBSan reads the
   emitted artifact, so this is a report and not a theory), and an empty window
   cannot hold the run anyway. Unchanged, reused.
 * **The window guard is `rp_c - search_from >= i` and `rp_c - i + L <=

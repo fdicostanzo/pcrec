@@ -1,0 +1,31 @@
+# HAND-EXTRACTED (lane landrev, main efc58146): the witnesses witness_movers.py could not read statically (patterns
+# built at run time) in the three gates slcrit2 named, copied by hand from the cited lines and put through the
+# probe (proto.patch rev 2). The rev-2 row is census.py's row_of. Marked hand-extracted: not a derivation.
+source	pattern	flags	today	W	land	seeded	next	rev2
+tests/codegen/run_search_pinned.sh:§1	abc	--no-captures	reverse-pass	3	alive-not-accept	0	run-pinned	end-minus-width  MOVES
+tests/codegen/run_search_pinned.sh:§1	[a-z]{4096,}	--no-captures	reverse-pass	-1	alive-not-accept	0	byte-class	reverse-pass
+tests/codegen/run_search_pinned.sh:§1	$	--no-captures	reverse-pass	0	assert-at-start	0	none	end-minus-width  MOVES
+tests/codegen/run_search_pinned.sh:§1	(?m)a*$	--no-captures	reverse-pass	-1	assert-at-start	0	none	reverse-pass
+tests/codegen/run_search_pinned.sh:§1	\bx*	--no-captures	reverse-pass	-1	assert-at-start	1	none	reverse-pass
+tests/codegen/run_search_pinned.sh:§1	(?!a)	--no-captures	reverse-pass	0	assert-at-start	0	none	end-minus-width  MOVES
+tests/codegen/run_search_pinned.sh:§1	x*(?!a)	--no-captures	reverse-pass	-1	assert-at-start	0	none	reverse-pass
+tests/codegen/run_search_pinned.sh:§1	(?:[a-z]{0,64})\z	--no-captures	reverse-pass	-1	assert-at-start	0	byte-class-bounded	reverse-pass
+tests/codegen/run_search_pinned.sh:§1	a*	--no-captures -fno-start-pinned	reverse-pass	-1	nullable	0	none	reverse-pass
+tests/codegen/run_search_pinned.sh:DIFF	a*|9$	--no-captures	pinned	-1	nullable	0	none	pinned
+tests/codegen/run_search_pinned.sh:DIFF	a*|\b9	--no-captures	pinned	-1	nullable	0	none	pinned
+tests/codegen/run_nomatch_caps.sh:K78	(?(DEFINE)(?<x>\b))b(?&x)	-	reverse-pass	1	assert-after	0	memchr-bounded	end-minus-width  MOVES
+tests/codegen/run_nomatch_caps.sh:K78	(?(DEFINE)(?<g>a))(?&g)b	-	reverse-pass	2	alive-not-accept	0	offset-set	end-minus-width  MOVES
+tests/codegen/run_nomatch_caps.sh:K78	(a){0}(b){0}c|d	-	reverse-pass	1	OK	0	byte-class	end-minus-width  MOVES
+tests/codegen/run_nomatch_caps.sh:K78	(?(DEFINE)(?<x>a))b*	-	pinned	-1	nullable	0	none	pinned
+tests/codegen/run_nomatch_caps.sh:K78	(x){0}a*	-	pinned	-1	nullable	0	none	pinned
+tests/codegen/run_nomatch_caps.sh:K78	(?(DEFINE)(?<x>a))[^\x00-\xff]	-	reverse-pass	1	-	-	-	empty
+tests/codegen/run_scan_edge_census.sh:rows	(\b\w+\b)	-	reverse-pass	-1	assert-at-start	1	byte-class-bounded	reverse-pass
+tests/codegen/run_scan_edge_census.sh:rows	(foo\B)	-	reverse-pass	3	alive-not-accept	0	run-pinned-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:rows	\b\w+\b	-	reverse-pass	-1	assert-at-start	1	byte-class-bounded	reverse-pass
+tests/codegen/run_scan_edge_census.sh:rows	\b\w\b	-	reverse-pass	1	assert-at-start	1	byte-class-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:rows	foo\B	-	reverse-pass	3	alive-not-accept	0	run-pinned-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:rows	\Bfoo\B	-	reverse-pass	3	assert-at-start	1	offset-set-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:rows	\bfoo\B	-	reverse-pass	3	assert-at-start	1	offset-set-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:VEDGE	(?:[a-z]{0,4})\z	-	reverse-pass	-1	assert-at-start	0	byte-class-bounded	reverse-pass
+tests/codegen/run_scan_edge_census.sh:VEDGE	[0-9]{3}\z	-	reverse-pass	3	alive-not-accept	0	byte-class-bounded	end-minus-width  MOVES
+tests/codegen/run_scan_edge_census.sh:VEDGE	a{0,4}$	-	reverse-pass	-1	assert-at-start	0	memchr-bounded	reverse-pass

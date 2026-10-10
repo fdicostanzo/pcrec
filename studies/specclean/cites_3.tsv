@@ -1,0 +1,217 @@
+docs/dev/lanes/d105_report.md	28	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/d105_report.md	427	match_api.md §8.1	match_api.md §8.1	VALID	same topic in new doc
+docs/dev/lanes/decattr_report.md	14	match_api §6.3	match_api §6.3	VALID	same topic in new doc
+docs/dev/lanes/decattr_report.md	15	the match_api guard and §6 change-log entry	the match_api guard (match_api.md#abi-guard) and the change-log entry (docs/dev/history/abi_changelog.md)	REPOINTED	guard -> #abi-guard (§1); change log moved to history
+docs/dev/lanes/decattr_report.md	138	match_api's guard block (three spellings)	match_api's guard block (match_api.md#abi-guard) (three spellings)	REPOINTED	guard block -> #abi-guard
+docs/dev/lanes/decattr_report.md	138	the §6 change-log entry	the change-log entry (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved
+docs/dev/lanes/decattr_report.md	268	match_api §6 entry "from 68"	docs/dev/history/abi_changelog.md entry "from 68"	REPOINTED	change log moved
+docs/dev/lanes/decfbB0b_report.md	23	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/decfbB0b_report.md	33	match_api.md (no locator)	same	VALID	three bare mentions of match_api.md inside quoted FAIL messages/row description
+docs/dev/lanes/decfbB0_report.md	53	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/decfbB5_report.md	77	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/edge1_report.md	695	`docs/spec/match_api.md:159`	`docs/spec/match_api.md#abi`	REPOINTED	line 159 = abi paragraph with 'rx_info.abi is N' -> #abi
+docs/dev/lanes/edge1_report.md	696	`docs/spec/match_api.md:1694`	`docs/dev/history/abi_changelog.md`	REPOINTED	per-bump narrative moved to history
+docs/dev/lanes/edge1_report.md	697	`docs/spec/match_api.md:2148`	`docs/spec/match_api.md#stamp-vm-frameless`	REPOINTED	_VM_FRAMELESS second-fact paragraph (the abi-17 always_inline statics)
+docs/dev/lanes/edge2_report.md	564	`docs/spec/match_api.md:159`	`docs/spec/match_api.md#abi`	REPOINTED	abi paragraph
+docs/dev/lanes/edge2_report.md	565	`docs/spec/match_api.md:1801`	`docs/dev/history/abi_changelog.md`	REPOINTED	per-bump narrative moved to history
+docs/dev/lanes/edge2_report.md	568	`match_api.md:2190`	`docs/dev/history/match_api_record.md`	REPOINTED	'the abi-6 fields' text now in the record
+docs/dev/lanes/edge2_report.md	568	`:2298`	`match_api.md#stamp-vm-frameless`	REPOINTED	'the abi-17 statics' = _VM_FRAMELESS paragraph
+docs/dev/lanes/edge2_report.md	801	`docs/spec/match_api.md:159`	`docs/spec/match_api.md#abi`	REPOINTED	abi paragraph
+docs/dev/lanes/edge2_report.md	802	`:1801`	`docs/dev/history/abi_changelog.md`	REPOINTED	per-bump narrative moved to history
+docs/dev/lanes/emitverb_report.md	120	match_api.md (no locator)	same	VALID	names the emitted rx_matchfn ABI block (#abi-block) as embedder's contract; no locator
+docs/dev/lanes/emitverb_report.md	324	`docs/spec/match_api.md:159`	`docs/spec/match_api.md#abi`	REPOINTED	abi paragraph
+docs/dev/lanes/emitverb_report.md	325	`docs/spec/match_api.md:1982`	`docs/dev/history/abi_changelog.md`	REPOINTED	abi-27 entry with measured figures is in the change log
+docs/dev/lanes/emitverb_report.md	607	§6's bump log	the bump log (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved
+docs/dev/lanes/emitverb_report.md	606	match_api.md (no locator)	same	VALID	bare mention of match_api.md (the artifact excerpts)
+docs/dev/lanes/f3search_driver.c	7	docs/spec/match_api.md §3.1	docs/spec/match_api.md §3.1	VALID	comment; find-all loop stays §3.1 (#find-all)
+docs/dev/lanes/findb1_report.md	150	`docs/spec/match_api.md` §6 change log	`docs/dev/history/abi_changelog.md`	REPOINTED	change log moved
+docs/dev/lanes/findb1_report.md	339	match_api.md §6's struct listing	match_api.md §6's struct listing	VALID	rx_info struct listing stays §6 (#rx-info-fields)
+docs/dev/lanes/findtie_report.md	139	`docs/spec/match_api.md` §6 (new top	`docs/dev/history/abi_changelog.md` (new top	REPOINTED	abi 44 top entry -> change log
+docs/dev/lanes/findtie_report.md	222	`docs/spec/match_api.md` §6,	`docs/dev/history/abi_changelog.md`,	REPOINTED	D80 hunk of abi bump = change-log entry
+docs/dev/lanes/fixnow_report.md	30	match_api.md §8.2	match_api.md §8.2	VALID	same topic in new doc
+docs/dev/lanes/fixnow_report.md	148	match_api.md §8.0	match_api.md §8.0	VALID	same topic in new doc
+docs/dev/lanes/flagbits_report.md	57	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/flagbits_report.md	79	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/flagbits_report.md	133	`match_api.md` §6 change-log entry	`docs/dev/history/abi_changelog.md` entry	REPOINTED	change log moved
+docs/dev/lanes/flagbits_report.md	138	`match_api.md` round-trip paragraph	`match_api.md#flags` round-trip paragraph	REPOINTED	flags round-trip paragraph -> #flags
+docs/dev/lanes/formchar1_report.md	86	match_api.md §6.3 `_VM_CLS_FOLDS` entry	match_api.md §6.3 `_VM_CLS_FOLDS` entry	VALID	stamp entry stays §6.3 (#stamp-vm-cls-folds)
+docs/dev/lanes/formchar1_report.md	92	match_api.md's §6 general-rule sentence	match_api.md#abi's general-rule sentence	REPOINTED	D76 general rule -> #abi
+docs/dev/lanes/formchar1_report.md	92	match_api.md (no locator)	same	VALID	second bare 'match_api.md's reflection-facts bullet' (line ends, bullet on 93)
+docs/dev/lanes/iface_digest.md	7	match_api.md (no locator)	same	VALID	file list
+docs/dev/lanes/iface_digest.md	61	match_api.md §3, §6	match_api.md §3, §6	VALID	same topic in new doc
+docs/dev/lanes/iface_digest.md	64	`docs/spec/match_api.md:539-540`	`docs/spec/match_api.md#match`	REPOINTED	_match return convention (0 is a zero-length match, -1 no match)
+docs/dev/lanes/iface_digest.md	70	match_api.md §4	match_api.md §4	VALID	same topic in new doc
+docs/dev/lanes/iface_digest.md	91	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/iface_digest.md	97	match_api.md:1561-1660	match_api.md#rx-info-fields	REPOINTED	rx_info field list
+docs/dev/lanes/iface_digest.md	251	match_api.md §3.6	match_api.md §3.6	VALID	same topic in new doc
+docs/dev/lanes/iface_digest.md	264	`match_api.md:1460`	`match_api.md#non-requirements`	REPOINTED	'No partial-match or streaming window state' is in §5.2
+docs/dev/lanes/iface_digest.md	287	`docs/spec/match_api.md:1315-1321`	`docs/spec/match_api.md#composed-call-sites`	REPOINTED	'Composed call sites must trap below the floor'
+docs/dev/lanes/iface_digest.md	313	`docs/spec/match_api.md:539-540`	`docs/spec/match_api.md#match`	REPOINTED	_match return convention
+docs/dev/lanes/iface_digest.md	338	`docs/spec/match_api.md` §6.2	`docs/spec/match_api.md#rx-info-counts`	REPOINTED	old §6.2 -> #rx-info-counts
+docs/dev/lanes/iface_digest.md	340	`docs/spec/match_api.md:2356-2368`	`docs/spec/match_api.md#rx-info-fields`	REPOINTED	ngroups has no macro mirror: field table mirror column
+docs/dev/lanes/isl1_report.md	21	match_api.md §6.3 family (b): `<PREFIX>_VM_ALT_ISLANDS`	match_api.md §6.3 family (b): `<PREFIX>_VM_ALT_ISLANDS`	VALID	stamp entry (#stamp-vm-alt-islands)
+docs/dev/lanes/isl1_report.md	292	`docs/spec/match_api.md:159`	`docs/spec/match_api.md#abi`	REPOINTED	D76 scaffolding-rule paragraph
+docs/dev/lanes/isl1_report.md	293	`docs/spec/match_api.md:1694`	`docs/dev/history/abi_changelog.md`	REPOINTED	per-bump narrative moved
+docs/dev/lanes/isl1_report.md	294	`docs/spec/match_api.md:2148`	`docs/spec/match_api.md#stamp-vm-frameless`	REPOINTED	_VM_FRAMELESS second-fact paragraph
+docs/dev/lanes/isl1_report.md	537	match_api.md (no locator)	same	VALID	bare mention (match_api.md sentences)
+docs/dev/lanes/isl1_report.md	889	match_api.md (no locator)	same	VALID	bare mention (always_inline cross-reference = #stamp-vm-frameless)
+docs/dev/lanes/k50bnd_report.md	87	match_api.md §4	match_api.md §4	VALID	same topic in new doc
+docs/dev/lanes/k50bnd_report.md	105	match_api.md §3.1	match_api.md §3.1	VALID	startpos > n returns 0 stays in §3.1 (also noted in #startpos)
+docs/dev/lanes/k50bnd_report.md	131	match_api.md §3.1	match_api.md §3.1	VALID	startpos > n divergence stated in §3.1 and #startpos
+docs/dev/lanes/k50bnd_report.md	159	docs/spec/match_api.md:159	docs/spec/match_api.md#abi	REPOINTED	abi paragraph
+docs/dev/lanes/k50bnd_report.md	160	docs/spec/match_api.md:1816	docs/dev/history/abi_changelog.md	REPOINTED	per-bump narrative moved
+docs/dev/lanes/k50bnd_report.md	227	match_api.md §4	match_api.md §4	VALID	same topic in new doc
+docs/dev/lanes/k50bnd_report.md	672	docs/spec/match_api.md (§3.1, §4, two abi sentences)	docs/spec/match_api.md (§3.1, §4, two abi sentences)	VALID	same topic in new doc
+docs/dev/lanes/k60fix_report.md	33	match_api.md §8.1	match_api.md §8.1	VALID	same topic in new doc
+docs/dev/lanes/k65fix_report.md	57	`match_api.md` §6's new top entry	`docs/dev/history/abi_changelog.md`'s new top entry	REPOINTED	change log moved
+docs/dev/lanes/k66fix_report.md	84	`match_api.md` §6's new top entry	`docs/dev/history/abi_changelog.md`'s new top entry	REPOINTED	change log moved
+docs/dev/lanes/k68fix_report.md	35	match_api.md (no locator)	same	VALID	'copied FROM `match_api.md`' then §6 on line 36
+docs/dev/lanes/k68fix_report.md	36	§6 per D76 addendum	docs/dev/history/abi_changelog.md per D76 addendum	REPOINTED	change log moved (cite continues from line 35)
+docs/dev/lanes/k68fix_report.md	37	`docs/spec/match_api.md` §6	`docs/dev/history/abi_changelog.md`	REPOINTED	change log moved
+docs/dev/lanes/k68fix_report.md	152	match_api.md §6,	docs/dev/history/abi_changelog.md,	REPOINTED	change log moved
+docs/dev/lanes/k69fix_report.md	15	`match_api.md` §6 change log	`docs/dev/history/abi_changelog.md`	REPOINTED	change log moved
+docs/dev/lanes/k69fix_report.md	132	`docs/spec/match_api.md` §6 (	`docs/dev/history/abi_changelog.md` (	REPOINTED	change log moved
+docs/dev/lanes/k69fix_report.md	140	`match_api.md` §6 is the contract hunk	`docs/dev/history/abi_changelog.md` is the contract hunk	REPOINTED	abi-bump hunk = change-log entry
+docs/dev/lanes/k7273_report.md	53	`match_api.md` §3.1's	`match_api.md` §9.5's (#engine-positions)	REPOINTED	'every position the ENGINE generates is a character boundary' -> §9.5
+k73utf_evidence/CLAUDE.md	10	match_api §3.1 find-all	match_api §3.1 find-all	VALID	find-all loop stays §3.1 (#find-all)
+k73utf_evidence/pr3.c	6	match_api 3.1	match_api 3.1	VALID	comment; find-all loop stays §3.1
+docs/dev/lanes/k73utf_report.md	79	`docs/spec/match_api.md` §6:	`docs/dev/history/abi_changelog.md`:	REPOINTED	change log moved
+docs/dev/lanes/k73utf_report.md	129	`docs/spec/match_api.md` §3.1 (	`docs/spec/match_api.md` §9.2-§9.5 (#startpos-align, #offset-zero, #engine-positions) (	REPOINTED	neither-arm-rounds / offset 0 / engine-positions moved to §9
+docs/dev/lanes/k73utf_report.md	131	§6 (abi 46)	docs/dev/history/abi_changelog.md (abi 46)	REPOINTED	change log moved (cite continues from line 129)
+docs/dev/lanes/k75fix_report.md	11	`docs/spec/match_api.md` §3.1 —	`docs/spec/match_api.md` §3.1 (#find-all; boundary rule is §9.2 #startpos) —	REPOINTED	loop arm stays §3.1; boundary rule now §9.2
+docs/dev/lanes/k75fix_report.md	137	match_api.md §3.1	match_api.md §3.1	VALID	find-all loop #find-all
+docs/dev/lanes/k78_report.md	16	match_api.md §3.1	match_api.md §3.1	VALID	caps untouched on 0 (#search-conventions)
+docs/dev/lanes/k78_report.md	112	`docs/spec/match_api.md` §2's quoted guard block	`docs/spec/match_api.md#abi-guard`'s quoted guard block	REPOINTED	guard block is in §1 #abi-guard
+docs/dev/lanes/k78_report.md	114	`docs/spec/match_api.md` §6:	`docs/dev/history/abi_changelog.md`:	REPOINTED	change log moved
+docs/dev/lanes/k78_report.md	132	match_api.md §3.1	match_api.md §3.1	VALID	caps untouched on non-1 return (#search-conventions)
+docs/dev/lanes/k78_report.md	136	match_api.md §6: the abi 55 change-log entry	docs/dev/history/abi_changelog.md: the abi 55 change-log entry	REPOINTED	change log moved
+docs/dev/lanes/k78_report.md	179	match_api.md §2's guard block	match_api.md#abi-guard guard block	REPOINTED	guard block -> #abi-guard
+docs/dev/lanes/k7980_report.md	111	match_api.md §6.3	match_api.md §6.3	VALID	(#stamp-vm-entry-shape, VM_PROGRAM_BYTES)
+docs/dev/lanes/k7980_report.md	178	(match_api.md §2)	(match_api.md#abi-guard)	REPOINTED	guard refusal rule -> #abi-guard
+docs/dev/lanes/k7980_report.md	212	`docs/spec/match_api.md` §6 (the change log	`docs/dev/history/abi_changelog.md` (the change log	REPOINTED	change log moved
+docs/dev/lanes/k7980_report.md	302	match_api.md §2/§6/§6.3	match_api.md #abi-guard/#abi/§6.3	REPOINTED	guard + abi rule
+docs/dev/lanes/k82diag_report.md	328	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/k82fix_report.md	17	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/k82fix_report.md	160	match_api.md (no locator)	same	VALID	bare; K80 block (=#abi-guard) and change log continue on line 161
+docs/dev/lanes/k82fix_report.md	161	§6's change log	the change log (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved (cite continues from line 160)
+docs/dev/lanes/k82hbuild_report.md	137	match_api.md (no locator)	same	VALID	bare; K80 #error text, §6 log entry on 138
+docs/dev/lanes/k82hbuild_report.md	138	§6's log entry	the change-log entry (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved
+docs/dev/lanes/k82hbuild_report.md	153	match_api.md §3.1	match_api.md §3.1	VALID	scan-may-begin-later sentence stays §3.1 (#search-skips)
+docs/dev/lanes/k82hbuild_report.md	155	), §6, §6.3;	), §6 (+ docs/dev/history/abi_changelog.md), §6.3;	REPOINTED	abi hunk = change-log entry
+docs/dev/lanes/land4_report.md	13	`docs/spec/match_api.md` §6 keeps K73's entry	`docs/dev/history/abi_changelog.md` keeps K73's entry	REPOINTED	change log moved
+docs/dev/lanes/land4_report.md	25	match_api.md (no locator)	same	VALID	cross-reference list
+docs/dev/lanes/land5_report.md	21	`match_api.md` §6: a new `abi is 49` entry	`docs/dev/history/abi_changelog.md`: a new `abi is 49` entry	REPOINTED	change log moved
+docs/dev/lanes/land5_report.md	23	`match_api.md` §6 + §6.3	`docs/dev/history/abi_changelog.md` + `match_api.md` §6.3	REPOINTED	§6 hunk = change log; §6.3 stays
+docs/dev/lanes/libfeat_report.md	324	match_api.md §8.2	match_api.md §8.2	VALID	same topic in new doc
+docs/dev/lanes/lim1_report.md	115	match_api.md (no locator)	same	VALID	dump-vs-match_api.md leg
+docs/dev/lanes/lim1_report.md	118	match_api.md (no locator)	same	VALID	match_api.md's table
+docs/dev/lanes/lim1_report.md	125	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/lim1_report.md	176	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/lim1_report.md	197	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/locfin2_report.md	106	`match_api.md:4731-4733`	`match_api.md#stamp-dfa-scan`	REPOINTED	RX_DFA_SCAN 'unanchored' definition
+docs/dev/lanes/m1b_report.md	126	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/memfnbump_report.md	134	`match_api.md` :595	`match_api.md#stamp-vm-start-scan`	REPOINTED	[START-SET] / VM_START_SCAN passage
+docs/dev/lanes/memfnbump_report.md	149	`docs/spec/match_api.md` §6 (three lines	`docs/spec/match_api.md#abi-guard` (three lines	REPOINTED	K80 guard example
+docs/dev/lanes/memfnbump_report.md	150	`docs/spec/match_api.md` §6 |	`docs/dev/history/abi_changelog.md` |	REPOINTED	change log moved
+docs/dev/lanes/memfnbump_report.md	151	match_api.md (no locator)	same	VALID	heading row (§6.3 heading)
+docs/dev/lanes/memfnstamp_report.md	29	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/memfnstamp_report.md	254	match_api.md (no locator)	same	VALID	bare; K80/§6/§6.3 items listed
+docs/dev/lanes/memfnstamp_report.md	254	§6's	the abi paragraph's (match_api.md#abi; entry in docs/dev/history/abi_changelog.md)	REPOINTED	'rx_info.abi is N' paragraph + change log
+docs/dev/lanes/memfnstamp_report.md	278	`match_api.md` §6's paragraph	`match_api.md#abi` paragraph	REPOINTED	abi paragraph; change log in docs/dev/history/abi_changelog.md
+docs/dev/lanes/memfnstamp_report.md	306	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/nullanch0_report.md	232	match_api §6.3	match_api §6.3	VALID	same topic in new doc
+docs/dev/lanes/o42_report.md	140	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/o42_report.md	269	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	118	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	124	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	144	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	211	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/opt41_report.md	249	match_api.md §6.3 H1/H2/H3	match_api.md §6.3 H1/H2/H3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	563	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt41_report.md	823	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/opt41_report.md	1034	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt5i_report.md	77	`docs/spec/match_api.md` — the §3-area	`docs/spec/match_api.md#abi` — the §3-area	REPOINTED	line-159 abi sentence -> #abi
+docs/dev/lanes/opt5i_report.md	78	`docs/spec/match_api.md` — the §6	`docs/dev/history/abi_changelog.md` — the §6	REPOINTED	per-bump 'is N on every artifact today' narrative moved
+docs/dev/lanes/opt5i_report.md	188	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt5i_report.md	189	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/opt5i_report.md	191	`match_api.md`'s abi paragraph	`match_api.md#abi`'s abi paragraph	REPOINTED	
+docs/dev/lanes/optimpl2_report.md	255	`docs/spec/match_api.md` §6	`docs/dev/history/abi_changelog.md`	REPOINTED	change log moved
+docs/dev/lanes/possbuild_report.md	66	`match_api.md` §6 change log, K80 example	`docs/dev/history/abi_changelog.md`, `match_api.md#abi-guard` K80 example	REPOINTED	change log moved; K80 example in #abi-guard
+docs/dev/lanes/possbuild_report.md	84	the K80 example (twice) and the §6 change-log	the K80 example (twice, match_api.md#abi-guard) and the change-log (docs/dev/history/abi_changelog.md)	REPOINTED	
+docs/dev/lanes/r12scope_report.md	217	`docs/spec/match_api.md` §6's change-log entry	`docs/dev/history/abi_changelog.md` entry	REPOINTED	change log moved
+docs/dev/lanes/r12scope_report.md	346	`docs/spec/match_api.md` §6's entry	`docs/dev/history/abi_changelog.md` entry	REPOINTED	change log moved
+docs/dev/lanes/r12scope_report.md	467	match_api.md (no locator)	same	VALID	D58 entry contract (rx_matchfn return space, §2); no locator
+docs/dev/lanes/r1land_report.md	43	`match_api.md` §6:	`docs/dev/history/abi_changelog.md`:	REPOINTED	change log moved
+docs/dev/lanes/r1land_report.md	48	`match_api.md` §2's guard quote (now 58) and §6	`match_api.md#abi-guard`'s guard quote (now 58) and docs/dev/history/abi_changelog.md	REPOINTED	guard -> #abi-guard; change log moved
+docs/dev/lanes/r1land_report.md	64	`match_api.md` §2 guard quote	`match_api.md#abi-guard` guard quote	REPOINTED	
+docs/dev/lanes/r1land_report.md	65	and §6 log,	and the change log (docs/dev/history/abi_changelog.md),	REPOINTED	change log moved (cite continues from line 64)
+docs/dev/lanes/r1land_report.md	79	`match_api.md` §6 entry + §6.3 `RUN_WORDS` + §2.31 note	`docs/dev/history/abi_changelog.md` entry + `match_api.md` §6.3 `RUN_WORDS` + §2.31 note	REPOINTED	change log moved; §6.3 stays
+docs/dev/lanes/r1land_report.md	84	`match_api.md` §6,	`docs/dev/history/abi_changelog.md`,	REPOINTED	bit-43 hunk = abi entry in change log
+docs/dev/lanes/r1land_report.md	86	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/r4e0b_report.md	48	`docs/spec/match_api.md` | the shared-block guard example (`!= 70`, `(abi 69)`, `PCREC_RX_ABI_H 70`); §6 change log entry for 70	`docs/spec/match_api.md#abi-guard` | the shared-block guard example (`!= 70`, `(abi 69)`, `PCREC_RX_ABI_H 70`); `docs/dev/history/abi_changelog.md` entry for 70	REPOINTED	guard -> #abi-guard; change log moved
+docs/dev/lanes/r4e0b_report.md	67	`docs/spec/match_api.md:301-305`	`docs/spec/match_api.md#abi-guard`	REPOINTED	guard example
+docs/dev/lanes/r4e0b_report.md	68	`match_api.md:2318` (§6,	`match_api.md#abi` (	REPOINTED	'is N on every artifact today' -> #abi
+docs/dev/lanes/r4e0b_report.md	75	`match_api.md:4470`	`match_api.md:4470`	LEFT-UNRESOLVED	cited as 'dated narrative (since abi 68)' but old line 4470 is the FAST_FRAMES paragraph and no 'since abi 68' text matches in the old doc/record; cannot determine
+docs/dev/lanes/rel02_report.md	22	docs/spec/match_api.md §6's provenance bullet	docs/spec/match_api.md §6's provenance bullet (#emitted-comments)	REPOINTED	provenance line is described under #abi / #emitted-comments; §6 still valid
+docs/dev/lanes/rel02_report.md	30	match_api.md §6's abi-28 log entry	docs/dev/history/abi_changelog.md's abi-28 log entry	REPOINTED	change log moved
+docs/dev/lanes/rel13_report.md	52	docs/spec/match_api.md §8.0	docs/spec/match_api.md §8.0	VALID	same topic in new doc
+docs/dev/lanes/rel1a_report.md	31	`docs/spec/match_api.md:159`/	`docs/spec/match_api.md#abi`/	REPOINTED	abi paragraph
+docs/dev/lanes/rel1a_report.md	32	`:2011`	`docs/dev/history/abi_changelog.md`	REPOINTED	abi-27 entry (change log)
+docs/dev/lanes/rel1b_report.md	36	**`docs/spec/match_api.md`** §6 —	**`docs/dev/history/abi_changelog.md`** —	REPOINTED	change log moved
+docs/dev/lanes/rel1b_report.md	53	`docs/spec/match_api.md` §6 (D76	`docs/dev/history/abi_changelog.md` (D76	REPOINTED	change log moved
+docs/dev/lanes/rel1b_report.md	154	`docs/spec/match_api.md:2026` §6	`docs/dev/history/abi_changelog.md`	REPOINTED	the abi change log
+docs/dev/lanes/rel1pre_facts.md	16	docs/spec/match_api.md §10	docs/spec/match_api.md §10	VALID	
+docs/dev/lanes/rel1pre_facts.md	14	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/rel1pre_facts.md	74	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/rel1pre_facts.md	83	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/rel1pre_facts.md	98	`docs/spec/match_api.md` §6 (the single home	`docs/dev/history/abi_changelog.md` (the single home	REPOINTED	change log moved
+docs/dev/lanes/rel1pre_facts.md	213	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/repin2_report.md	56	`docs/spec/match_api.md:2025,2037`	`docs/dev/history/abi_changelog.md`	REPOINTED	the abi change log's 29->30 transition prose
+docs/dev/lanes/repin3_report.md	73	`docs/spec/match_api.md` §6 (the ONE change log	`docs/dev/history/abi_changelog.md` (the ONE change log	REPOINTED	change log moved
+docs/dev/lanes/reqrunenc2_report.md	26	`docs/spec/match_api.md` §6 —	`docs/dev/history/abi_changelog.md` —	REPOINTED	change log moved
+docs/dev/lanes/reseed_report.md	178	`match_api.md` §6 entry	`docs/dev/history/abi_changelog.md` entry	REPOINTED	change log moved
+docs/dev/lanes/reseed_report.md	283	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/reseed_report.md	289	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/reseed_report.md	292	`match_api.md`'s abi paragraph	`match_api.md#abi`'s abi paragraph	REPOINTED	
+docs/dev/lanes/rpkg_report.md	60	match_api.md §5.3	match_api.md §5.3	VALID	same topic in new doc
+docs/dev/lanes/rq3_report.md	250	`match_api.md` §6's guard example	`match_api.md#abi-guard` guard example	REPOINTED	
+docs/dev/lanes/rq3_report.md	253	`match_api.md` §6's ledger	`docs/dev/history/abi_changelog.md` ledger	REPOINTED	change log moved
+docs/dev/lanes/rsform_report.md	38	§2's quoted guard block (3 digits), the §6 abi change log (new top entry)	#abi-guard's quoted guard block (3 digits), the abi change log in docs/dev/history/abi_changelog.md (new top entry)	REPOINTED	guard -> #abi-guard; change log moved
+docs/dev/lanes/rsform_report.md	49	`match_api.md:301/302/305`	`match_api.md#abi-guard`	REPOINTED	guard lines
+docs/dev/lanes/rsform_report.md	51	the §6 change log	the change log (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved (cite continues from line 49)
+docs/dev/lanes/s1build_report.md	106	`match_api.md` §6 (new top entry	`docs/dev/history/abi_changelog.md` (new top entry	REPOINTED	change log moved
+docs/dev/lanes/s1build_report.md	111	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/s1build_report.md	189	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/s1step6_report.md	72	match_api §6;	docs/dev/history/abi_changelog.md;	REPOINTED	change log moved
+docs/dev/lanes/s1step6_report.md	79	`match_api.md` §6 (new top	`docs/dev/history/abi_changelog.md` (new top	REPOINTED	change log moved
+docs/dev/lanes/s2a_report.md	54	match_api §6)	docs/dev/history/abi_changelog.md)	REPOINTED	change log moved
+docs/dev/lanes/s4build_report.md	173	`docs/spec/match_api.md` §6: the abi-56 entry	`docs/dev/history/abi_changelog.md`: the abi-56 entry	REPOINTED	change log moved
+docs/dev/lanes/ssbuild3_report.md	24	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/ssbuild3_report.md	34	`match_api.md` §6's 64	`docs/dev/history/abi_changelog.md`'s 64	REPOINTED	change log moved
+docs/dev/lanes/ssbuild3_report.md	44	`docs/spec/match_api.md` §6 (the abi narrative)	`docs/dev/history/abi_changelog.md` (the abi narrative)	REPOINTED	change log moved
+docs/dev/lanes/ssbuild3_report.md	45	`docs/spec/match_api.md` K80	`docs/spec/match_api.md#abi-guard` K80	REPOINTED	K80 example = guard
+docs/dev/lanes/ssbuild3_report.md	54	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/ssbuild3_report.md	389	`match_api.md` §6 and	`docs/dev/history/abi_changelog.md` and	REPOINTED	'restores the abi-62 -fno-start-set program' is in the change log
+docs/dev/lanes/ssbuild3_report.md	520	match_api §6,	docs/dev/history/abi_changelog.md,	REPOINTED	change log moved
+docs/dev/lanes/ssbuild3_report.md	545	`docs/spec/match_api.md` (K80 example)	`docs/spec/match_api.md#abi-guard` (K80 example)	REPOINTED	
+docs/dev/lanes/ssbuild3_report.md	546	`docs/spec/match_api.md` (§6 change log)	`docs/dev/history/abi_changelog.md` (change log)	REPOINTED	change log moved
+docs/dev/lanes/starttable_report.md	39	`match_api.md:4686-4703`	`match_api.md#stamp-dfa-start`	REPOINTED	RX_DFA_START 'reverse-pass' passage
+docs/dev/lanes/tour4_report.md	51	match_api.md §8.1	match_api.md §8.1	VALID	same topic in new doc
+docs/dev/lanes/tour4_report.md	63	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/tour4_report.md	227	match_api.md (no locator)	same	VALID	'Two abort()s remain' sentence (now §8.1 area); no locator
+docs/dev/lanes/triu2_report.md	213	match_api.md §3.2	match_api.md §3.2	VALID	same topic in new doc
+docs/dev/lanes/ucpu1_report.md	144	match_api.md (no locator)	same	VALID	'(§8.2's reflection paragraph: bit 34...)' in same line: §8.2 still valid (#options-flags)
+docs/dev/lanes/ucpu1_report.md	191	`docs/spec/match_api.md` §6's change-log entry	`docs/dev/history/abi_changelog.md` entry	REPOINTED	change log moved
+docs/dev/lanes/ucpu2_report.md	231	`docs/spec/match_api.md` §6's	`docs/dev/history/abi_changelog.md`	REPOINTED	change log moved
+docs/dev/lanes/ucpu2_report.md	239	`match_api.md` §6,	`docs/dev/history/abi_changelog.md`,	REPOINTED	change log moved
+docs/dev/lanes/utf8k53_report.md	160	match_api.md §6.3	match_api.md §6.3	VALID	same topic in new doc
+docs/dev/lanes/utf8k53_report.md	495	match_api.md (no locator)	same	VALID	ENGINE_SEL and DFA_MATCH tables (§6.3)
+docs/dev/lanes/utf8k53_report.md	564	match_api.md (no locator)	same	VALID	bare file mention, no locator
+docs/dev/lanes/utf8s2_report.md	30	`match_api.md §8.2/§3.1`	`match_api.md §8.2/§9.1/§9.2` (#encodings-compiled, #startpos)	REPOINTED	encodings and ill-formed/startpos contract moved to §9
+docs/dev/lanes/uvbuild_report.md	59	`docs/spec/match_api.md` §6 —	`docs/dev/history/abi_changelog.md` —	REPOINTED	change log moved
+docs/dev/lanes/uvbuild_report.md	66	match_api.md §6.3's VM_RESEED table	match_api.md §6.3's VM_RESEED table	VALID	same topic in new doc
+docs/dev/lanes/uvbuild_report.md	83	docs/spec/match_api.md: §1 ... §2 (the PCREC_ERR_UTF line)	docs/spec/match_api.md: §1 ... §2 (the PCREC_ERR_UTF line)	VALID	same topic in new doc
+docs/dev/lanes/uvbuild_report.md	84	§3.1 (the -9 return	§3.1 and §9.2/§9.4 (#startpos-align, #utf-check) (the -9 return	REPOINTED	align bullet / -futf-check paragraph moved to §9
+docs/dev/lanes/uvbuild_report.md	91	§6 (the abi change log)	the abi change log (docs/dev/history/abi_changelog.md)	REPOINTED	change log moved
+docs/dev/lanes/uvbuild_report.md	157	match_api.md §3.1	match_api.md §3.1	VALID	same topic in new doc
+docs/dev/lanes/uvbuild_report.md	220	match_api.md §3.1	match_api.md §3.1	VALID	same topic in new doc

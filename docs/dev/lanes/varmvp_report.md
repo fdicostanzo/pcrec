@@ -387,7 +387,7 @@ with it).
 |---|---|
 | `src/gen/emit_dfa.c`'s `PCREC_ARTIFACT_ABI` | 32 |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` + its change-log clause | 32 |
-| `docs/spec/match_api.md` §2 (`rx_var`, `rx_ctx`'s two fields, the error code) and §6's change log | the abi 32 entry |
+| `docs/spec/match_api.md` §2 (`rx_var`, `rx_ctx`'s two fields, the error code) and the abi change log (now `docs/dev/history/abi_changelog.md`) | the abi 32 entry |
 | `docs/spec/vars.md` | NEW — the module's contract page |
 | `docs/spec/limits.md` §3.6 | NEW — the two numeric limits |
 | `tests/resource/run_resource_tests.sh` | 762367 → 762401 (+34) |

@@ -175,7 +175,7 @@ Run on a scratch build of HEAD (`d27eb208`+, bit 37) unless noted:
 
 **ABI SERIALIZATION.** This branch writes abi 46 → 47 (the u2land base).
 If k73utf or another lane lands first, the digit, `ABI_EXPECT`, the
-`match_api.md` §6 entry and the FILEPIN need the manager's renumber at
+`docs/dev/history/abi_changelog.md` entry and the FILEPIN need the manager's renumber at
 merge.
 
 ## 7. Mac scratch timing (`docs/dev/reseed/timing_mac.md`)
@@ -289,7 +289,7 @@ re-shapes the adaptive text.
 | chk F6.3 | `check_value_set "RX_VM_RESEED"`: dump vs `match_api.md` §6.3 in both directions. There is deliberately no emitter-source leg: the dump and the stamp share `pcrec_reseed_rows`. Registry pin 147 → **149**, by mechanism | `axes_registry_check.sh` 149/0 |
 | chk F6.4 | `registry.md` §6 now reads 100 rows / 35 axes. It had been stale by 8 rows / 3 axes before this change (`lit-run`, `req-run`, `ctx-node`) | — |
 | chk F7 | The identity sweep is strict: a mover's diff must be exactly the adaptive text's lines | OWED (§10.3) |
-| sem F1 | MEASURED (`docs/dev/reseed/clamped.md`): clamped over-approximating hybrids gain ×1.3-×2.2 on three dense witnesses and lose **×0.46** on a fourth. The row also costs a contract clause (answer → give-up). **Excluded by a table row**: `clamped`, second and undeniable, on today's retry. The give-up qualifier is now in `match_api.md`'s abi paragraph, §6.3, `tuning.md` §2.33 and `lib/pcrec.h`: a give-up can become an answer, never the reverse | witness differential budget arm: 0 violations, 1 give-up → answer observed |
+| sem F1 | MEASURED (`docs/dev/reseed/clamped.md`): clamped over-approximating hybrids gain ×1.3-×2.2 on three dense witnesses and lose **×0.46** on a fourth. The row also costs a contract clause (answer → give-up). **Excluded by a table row**: `clamped`, second and undeniable, on today's retry. The give-up qualifier is now in `match_api.md §6¶17`'s abi paragraph, §6.3, `tuning.md` §2.33 and `lib/pcrec.h`: a give-up can become an answer, never the reverse | witness differential budget arm: 0 violations, 1 give-up → answer observed |
 | sem table | The start state is now row columns: `start` (which calibration column) and `armed`. `action` is FIXED/ADAPT only | — |
 | sem F10 | Design §6 now has a line on callouts and verbs. It also has a new line on a per-PROGRAM step cost, the ×0.46 mechanism | — |
 | sem gaps | `docs/dev/reseed/answer_diff_witness.py`: 19 witnesses (all sem's, the two zero-match ones fixed so they match), subjects of 4 KB (every startpos), 300 KB and 1 MiB (find-all plus 400 startpos), 3 densities, and a step/work-budget arm | **19 witnesses, 0 violations**, 100k-200k calls each, most with 100k+ matches (`answer_diff_witness.log`) |

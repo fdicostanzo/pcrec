@@ -1,0 +1,615 @@
+# stream	recipe	instructions	pattern (escape-encoded)	argv
+c-default	-O2	952 vs 957 instruction lines	(?>a+?)b	
+c-default	-O2 -march=x86-64-v3	963 vs 968 instruction lines	(?>a+?)b	
+c-default	-O2	952 vs 957 instruction lines	(?>a{1,3}?)b	
+c-default	-O2 -march=x86-64-v3	963 vs 968 instruction lines	(?>a{1,3}?)b	
+c-default	-O2	952 vs 957 instruction lines	(?>a+?)b	
+c-default	-O2 -march=x86-64-v3	963 vs 968 instruction lines	(?>a+?)b	
+c-default	-O2	922 vs 928 instruction lines	(?>a+?)	
+c-default	-O2 -march=x86-64-v3	933 vs 939 instruction lines	(?>a+?)	
+c-default	-O2	835 vs 861 instruction lines	(ab){2,4}?	
+c-default	-O2 -march=x86-64-v3	847 vs 873 instruction lines	(ab){2,4}?	
+c-default	-O2	1067 vs 1069 instruction lines	(a+?)(a+)	
+c-default	-O2 -march=x86-64-v3	1080 vs 1082 instruction lines	(a+?)(a+)	
+c-default	-O2	1047 vs 1049 instruction lines	(a+)(a+?)	
+c-default	-O2 -march=x86-64-v3	1041 vs 1043 instruction lines	(a+)(a+?)	
+c-default	-O2	1143 vs 1178 instruction lines	(a{2,3}?){2,3}	
+c-default	-O2 -march=x86-64-v3	1155 vs 1190 instruction lines	(a{2,3}?){2,3}	
+c-default	-O2	1131 vs 1197 instruction lines	(a{2,3}?){2,3}?	
+c-default	-O2 -march=x86-64-v3	1142 vs 1208 instruction lines	(a{2,3}?){2,3}?	
+c-default	-O2	1304 vs 1311 instruction lines	((a{1,2}?){1,2}){1,2}	
+c-default	-O2 -march=x86-64-v3	1301 vs 1308 instruction lines	((a{1,2}?){1,2}){1,2}	
+c-default	-O2	797 vs 798 instruction lines	z(a){1,3}?	
+c-default	-O2 -march=x86-64-v3	809 vs 810 instruction lines	z(a){1,3}?	
+c-default	-O2	848 vs 849 instruction lines	z(a){1,3}?c?	
+c-default	-O2 -march=x86-64-v3	860 vs 861 instruction lines	z(a){1,3}?c?	
+c-default	-O2	840 vs 858 instruction lines	z(a){3,}?	
+c-default	-O2 -march=x86-64-v3	853 vs 871 instruction lines	z(a){3,}?	
+c-default	-O2	853 vs 871 instruction lines	z(a){3,}?c?	
+c-default	-O2 -march=x86-64-v3	865 vs 883 instruction lines	z(a){3,}?c?	
+c-default	-O2	787 vs 789 instruction lines	z(a)+?	
+c-default	-O2 -march=x86-64-v3	799 vs 801 instruction lines	z(a)+?	
+c-default	-O2	836 vs 838 instruction lines	z(a)+?c?	
+c-default	-O2 -march=x86-64-v3	848 vs 850 instruction lines	z(a)+?c?	
+c-default	-O2	809 vs 820 instruction lines	(a){2,4}?	
+c-default	-O2 -march=x86-64-v3	826 vs 837 instruction lines	(a){2,4}?	
+c-default	-O2	810 vs 812 instruction lines	(a+?)	
+c-default	-O2 -march=x86-64-v3	823 vs 825 instruction lines	(a+?)	
+c-default	-O2	1319 vs 1336 instruction lines	(a{1,3}?){3,5}	
+c-default	-O2 -march=x86-64-v3	1315 vs 1332 instruction lines	(a{1,3}?){3,5}	
+c-default	-O2	974 vs 975 instruction lines	[ab]{1,3}?(?!)-	
+c-default	-O2 -march=x86-64-v3	982 vs 983 instruction lines	[ab]{1,3}?(?!)-	
+c-default	-O2	1115 vs 1113 instruction lines	\\w+?(?=\\W|$)\\b	
+c-default	-O2 -march=x86-64-v3	1121 vs 1119 instruction lines	\\w+?(?=\\W|$)\\b	
+c-default	-O2	969 vs 966 instruction lines	[a-]{1,3}?(?!\\b)-	
+c-default	-O2 -march=x86-64-v3	975 vs 971 instruction lines	[a-]{1,3}?(?!\\b)-	
+c-default	-O2	1081 vs 1082 instruction lines	a+?(?<=\\b)\\b	
+c-default	-O2 -march=x86-64-v3	1090 vs 1090 instruction lines	a+?(?<=\\b)\\b	
+c-default	-O2	1086 vs 1092 instruction lines	[^a]{1,3}?(?=\\W|$)a	
+c-default	-O2 -march=x86-64-v3	1094 vs 1100 instruction lines	[^a]{1,3}?(?=\\W|$)a	
+c-default	-O2	850 vs 854 instruction lines	(\\w+?)\\b\\1	
+c-default	-O2 -march=x86-64-v3	868 vs 872 instruction lines	(\\w+?)\\b\\1	
+c-default	-O2	916 vs 918 instruction lines	(a+?)(b*)\\1\\2	
+c-default	-O2 -march=x86-64-v3	918 vs 920 instruction lines	(a+?)(b*)\\1\\2	
+c-default	-O2	782 vs 787 instruction lines	(a|b)+?\\1	
+c-default	-O2 -march=x86-64-v3	800 vs 805 instruction lines	(a|b)+?\\1	
+c-default	-O2	839 vs 845 instruction lines	(?=(\\w+?))\\1\\B	
+c-default	-O2 -march=x86-64-v3	845 vs 852 instruction lines	(?=(\\w+?))\\1\\B	
+c-default	-O2	1156 vs 1160 instruction lines	(\\w+?)(?:\\b(?1))?	
+c-default	-O2 -march=x86-64-v3	1155 vs 1159 instruction lines	(\\w+?)(?:\\b(?1))?	
+c-default	-O2	1139 vs 1149 instruction lines	\\w+?(?R)?\\B	
+c-default	-O2 -march=x86-64-v3	1139 vs 1140 instruction lines	\\w+?(?R)?\\B	
+c-default	-O2	1217 vs 1224 instruction lines	(a+?)(?1)\\b	
+c-default	-O2 -march=x86-64-v3	1209 vs 1216 instruction lines	(a+?)(?1)\\b	
+c-default	-O2	1402 vs 1405 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	
+c-default	-O2 -march=x86-64-v3	1409 vs 1419 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	
+c-default	-O2	1295 vs 1316 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	
+c-default	-O2 -march=x86-64-v3	1291 vs 1312 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	
+c-default	-O2	813 vs 817 instruction lines	(a{1,3}?)	
+c-default	-O2 -march=x86-64-v3	826 vs 830 instruction lines	(a{1,3}?)	
+c-default	-O2	805 vs 801 instruction lines	(za{1,3}?)	
+c-default	-O2 -march=x86-64-v3	817 vs 813 instruction lines	(za{1,3}?)	
+c-default	-O2	844 vs 849 instruction lines	(a{1,3}?c?)	
+c-default	-O2 -march=x86-64-v3	857 vs 862 instruction lines	(a{1,3}?c?)	
+c-default	-O2	842 vs 836 instruction lines	(za{1,3}?c?)	
+c-default	-O2 -march=x86-64-v3	854 vs 848 instruction lines	(za{1,3}?c?)	
+c-default	-O2	900 vs 906 instruction lines	(a{1,3}?$)	
+c-default	-O2 -march=x86-64-v3	912 vs 918 instruction lines	(a{1,3}?$)	
+c-default	-O2	928 vs 935 instruction lines	(\\w+?(?:\\b|))	
+c-default	-O2 -march=x86-64-v3	937 vs 943 instruction lines	(\\w+?(?:\\b|))	
+c-default	-O2	1131 vs 1138 instruction lines	(a+?)b(?1)	
+c-default	-O2 -march=x86-64-v3	1131 vs 1138 instruction lines	(a+?)b(?1)	
+c-vm	-O2	658 vs 664 instruction lines	a{1,3}?$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	656 vs 662 instruction lines	a{1,3}?$	--engine=vm
+c-vm	-O2	653 vs 660 instruction lines	a{1,3}?\\z	--engine=vm
+c-vm	-O2 -march=x86-64-v3	651 vs 658 instruction lines	a{1,3}?\\z	--engine=vm
+c-vm	-O2	697 vs 702 instruction lines	(?>a+?)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	711 vs 716 instruction lines	(?>a+?)b	--engine=vm
+c-vm	-O2	701 vs 706 instruction lines	(?>a{1,3}?)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	715 vs 720 instruction lines	(?>a{1,3}?)b	--engine=vm
+c-vm	-O2	697 vs 702 instruction lines	(?>a+?)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	711 vs 716 instruction lines	(?>a+?)b	--engine=vm
+c-vm	-O2	685 vs 691 instruction lines	(?>a+?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	698 vs 704 instruction lines	(?>a+?)	--engine=vm
+c-vm	-O2	656 vs 667 instruction lines	a{2,4}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	654 vs 665 instruction lines	a{2,4}?	--engine=vm
+c-vm	-O2	652 vs 663 instruction lines	a{2,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	650 vs 661 instruction lines	a{2,}?	--engine=vm
+c-vm	-O2	649 vs 653 instruction lines	a{1,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	647 vs 651 instruction lines	a{1,3}?	--engine=vm
+c-vm	-O2	651 vs 662 instruction lines	[abc]{2,4}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	649 vs 660 instruction lines	[abc]{2,4}?	--engine=vm
+c-vm	-O2	661 vs 682 instruction lines	[^abc]{2,4}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	659 vs 680 instruction lines	[^abc]{2,4}?	--engine=vm
+c-vm	-O2	735 vs 761 instruction lines	(ab){2,4}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	746 vs 772 instruction lines	(ab){2,4}?	--engine=vm
+c-vm	-O2	806 vs 808 instruction lines	(a+?)(a+)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	823 vs 825 instruction lines	(a+?)(a+)	--engine=vm
+c-vm	-O2	786 vs 788 instruction lines	(a+)(a+?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	781 vs 783 instruction lines	(a+)(a+?)	--engine=vm
+c-vm	-O2	655 vs 666 instruction lines	a{200,500}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	653 vs 664 instruction lines	a{200,500}?	--engine=vm
+c-vm	-O2	899 vs 934 instruction lines	(a{2,3}?){2,3}	--engine=vm
+c-vm	-O2 -march=x86-64-v3	912 vs 947 instruction lines	(a{2,3}?){2,3}	--engine=vm
+c-vm	-O2	893 vs 959 instruction lines	(a{2,3}?){2,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	905 vs 971 instruction lines	(a{2,3}?){2,3}?	--engine=vm
+c-vm	-O2	1026 vs 1033 instruction lines	((a{1,2}?){1,2}){1,2}	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1024 vs 1031 instruction lines	((a{1,2}?){1,2}){1,2}	--engine=vm
+c-vm	-O2	653 vs 657 instruction lines	a+?$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	651 vs 655 instruction lines	a+?$	--engine=vm
+c-vm	-O2	647 vs 649 instruction lines	a+?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	645 vs 647 instruction lines	a+?	--engine=vm
+c-vm	-O2	672 vs 687 instruction lines	(?:ab){3,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	670 vs 685 instruction lines	(?:ab){3,}?	--engine=vm
+c-vm	-O2	691 vs 706 instruction lines	(?:ab){3,}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	689 vs 704 instruction lines	(?:ab){3,}?c?	--engine=vm
+c-vm	-O2	660 vs 662 instruction lines	za{1,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	658 vs 660 instruction lines	za{1,3}?	--engine=vm
+c-vm	-O2	681 vs 683 instruction lines	za{1,3}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	679 vs 681 instruction lines	za{1,3}?c?	--engine=vm
+c-vm	-O2	659 vs 677 instruction lines	za{3,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	657 vs 675 instruction lines	za{3,}?	--engine=vm
+c-vm	-O2	677 vs 695 instruction lines	za{3,}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	675 vs 693 instruction lines	za{3,}?c?	--engine=vm
+c-vm	-O2	656 vs 658 instruction lines	za+?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	654 vs 656 instruction lines	za+?	--engine=vm
+c-vm	-O2	677 vs 679 instruction lines	za+?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	675 vs 677 instruction lines	za+?c?	--engine=vm
+c-vm	-O2	678 vs 695 instruction lines	z(?:ab){3,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	676 vs 693 instruction lines	z(?:ab){3,}?	--engine=vm
+c-vm	-O2	696 vs 713 instruction lines	z(?:ab){3,}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	694 vs 711 instruction lines	z(?:ab){3,}?c?	--engine=vm
+c-vm	-O2	718 vs 719 instruction lines	z(a){1,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	731 vs 732 instruction lines	z(a){1,3}?	--engine=vm
+c-vm	-O2	751 vs 752 instruction lines	z(a){1,3}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	764 vs 765 instruction lines	z(a){1,3}?c?	--engine=vm
+c-vm	-O2	717 vs 735 instruction lines	z(a){3,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	730 vs 748 instruction lines	z(a){3,}?	--engine=vm
+c-vm	-O2	747 vs 765 instruction lines	z(a){3,}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	760 vs 778 instruction lines	z(a){3,}?c?	--engine=vm
+c-vm	-O2	714 vs 716 instruction lines	z(a)+?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	727 vs 729 instruction lines	z(a)+?	--engine=vm
+c-vm	-O2	747 vs 749 instruction lines	z(a)+?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	760 vs 762 instruction lines	z(a)+?c?	--engine=vm
+c-vm	-O2	726 vs 737 instruction lines	(?:z|)(?:ab){3,}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	728 vs 739 instruction lines	(?:z|)(?:ab){3,}?	--engine=vm
+c-vm	-O2	738 vs 748 instruction lines	(?:z|)(?:ab){3,}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	744 vs 748 instruction lines	(?:z|)(?:ab){3,}?c?	--engine=vm
+c-vm	-O2	647 vs 649 instruction lines	a+?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	645 vs 647 instruction lines	a+?	--engine=vm
+c-vm	-O2	653 vs 657 instruction lines	a+?$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	651 vs 655 instruction lines	a+?$	--engine=vm
+c-vm	-O2	1418 vs 1429 instruction lines	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1406 vs 1416 instruction lines	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	--engine=vm
+c-vm	-O2	713 vs 724 instruction lines	(a){2,4}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	725 vs 736 instruction lines	(a){2,4}?	--engine=vm
+c-vm	-O2	711 vs 713 instruction lines	(a+?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	723 vs 725 instruction lines	(a+?)	--engine=vm
+c-vm	-O2	647 vs 649 instruction lines	(?U)a+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	645 vs 647 instruction lines	(?U)a+	--engine=vm
+c-vm	-O2	656 vs 658 instruction lines	a(?U)b+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	654 vs 656 instruction lines	a(?U)b+	--engine=vm
+c-vm	-O2	656 vs 658 instruction lines	a(?U)b+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	654 vs 656 instruction lines	a(?U)b+	--engine=vm
+c-vm	-O2	647 vs 649 instruction lines	(?U)(?^)a+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	645 vs 647 instruction lines	(?U)(?^)a+	--engine=vm
+c-vm	-O2	1050 vs 1067 instruction lines	(a{1,3}?){3,5}	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1047 vs 1064 instruction lines	(a{1,3}?){3,5}	--engine=vm
+c-vm	-O2	764 vs 769 instruction lines	[a-]{1,3}?(?:\\b|)a	--engine=vm
+c-vm	-O2 -march=x86-64-v3	766 vs 769 instruction lines	[a-]{1,3}?(?:\\b|)a	--engine=vm
+c-vm	-O2	804 vs 805 instruction lines	\\W+?(?:\\b){0,2}	--engine=vm
+c-vm	-O2 -march=x86-64-v3	801 vs 803 instruction lines	\\W+?(?:\\b){0,2}	--engine=vm
+c-vm	-O2	728 vs 731 instruction lines	[ab]{1,3}?(?:(?<=a)|)\\B	--engine=vm
+c-vm	-O2 -march=x86-64-v3	731 vs 732 instruction lines	[ab]{1,3}?(?:(?<=a)|)\\B	--engine=vm
+c-vm	-O2	739 vs 746 instruction lines	[^a]{1,3}?(?:(?<!\\w)|)\\w	--engine=vm
+c-vm	-O2 -march=x86-64-v3	741 vs 746 instruction lines	[^a]{1,3}?(?:(?<!\\w)|)\\w	--engine=vm
+c-vm	-O2	733 vs 737 instruction lines	-+?(?:\\b|)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	733 vs 739 instruction lines	-+?(?:\\b|)	--engine=vm
+c-vm	-O2	813 vs 810 instruction lines	[^a]{1,3}?(?:\\b|\\B)\\W	--engine=vm
+c-vm	-O2 -march=x86-64-v3	805 vs 812 instruction lines	[^a]{1,3}?(?:\\b|\\B)\\W	--engine=vm
+c-vm	-O2	724 vs 723 instruction lines	-+?(?:(?=\\w)|(?<=\\w))$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	726 vs 725 instruction lines	-+?(?:(?=\\w)|(?<=\\w))$	--engine=vm
+c-vm	-O2	734 vs 730 instruction lines	\\W+?(?:(?!a)|)a	--engine=vm
+c-vm	-O2 -march=x86-64-v3	736 vs 730 instruction lines	\\W+?(?:(?!a)|)a	--engine=vm
+c-vm	-O2	765 vs 772 instruction lines	[a-]{1,3}?(?:\\B|)a	--engine=vm
+c-vm	-O2 -march=x86-64-v3	766 vs 772 instruction lines	[a-]{1,3}?(?:\\B|)a	--engine=vm
+c-vm	-O2	763 vs 765 instruction lines	\\d{1,3}?(?:\\b|a)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	764 vs 766 instruction lines	\\d{1,3}?(?:\\b|a)\\b	--engine=vm
+c-vm	-O2	735 vs 737 instruction lines	-+?(?:\\B|)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	735 vs 739 instruction lines	-+?(?:\\B|)	--engine=vm
+c-vm	-O2	772 vs 788 instruction lines	\\W+?(?:\\b)??\\B	--engine=vm
+c-vm	-O2 -march=x86-64-v3	773 vs 789 instruction lines	\\W+?(?:\\b)??\\B	--engine=vm
+c-vm	-O2	733 vs 734 instruction lines	\\W+?(?:(?=\\w)|(?<=\\w))	--engine=vm
+c-vm	-O2 -march=x86-64-v3	735 vs 736 instruction lines	\\W+?(?:(?=\\w)|(?<=\\w))	--engine=vm
+c-vm	-O2	1006 vs 1009 instruction lines	\\w+?(?:\\B)*\\W	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1017 vs 1023 instruction lines	\\w+?(?:\\B)*\\W	--engine=vm
+c-vm	-O2	735 vs 736 instruction lines	a{1,3}?(?=a)?\\w	--engine=vm
+c-vm	-O2 -march=x86-64-v3	737 vs 738 instruction lines	a{1,3}?(?=a)?\\w	--engine=vm
+c-vm	-O2	750 vs 749 instruction lines	[a-c]{1,3}?(?:\\B|)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	751 vs 750 instruction lines	[a-c]{1,3}?(?:\\B|)$	--engine=vm
+c-vm	-O2	726 vs 739 instruction lines	[^a]+?(?:(?=a)|)\\W	--engine=vm
+c-vm	-O2 -march=x86-64-v3	728 vs 741 instruction lines	[^a]+?(?:(?=a)|)\\W	--engine=vm
+c-vm	-O2	752 vs 753 instruction lines	[ab]{1,3}?(?!)-	--engine=vm
+c-vm	-O2 -march=x86-64-v3	759 vs 760 instruction lines	[ab]{1,3}?(?!)-	--engine=vm
+c-vm	-O2	698 vs 701 instruction lines	[^a]+?\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	695 vs 698 instruction lines	[^a]+?\\b	--engine=vm
+c-vm	-O2	845 vs 843 instruction lines	\\w+?(?=\\W|$)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	850 vs 848 instruction lines	\\w+?(?=\\W|$)\\b	--engine=vm
+c-vm	-O2	677 vs 683 instruction lines	a{1,3}?(?=\\w)\\W	--engine=vm
+c-vm	-O2 -march=x86-64-v3	675 vs 681 instruction lines	a{1,3}?(?=\\w)\\W	--engine=vm
+c-vm	-O2	687 vs 695 instruction lines	[a-]{1,3}?(?!a)\\W	--engine=vm
+c-vm	-O2 -march=x86-64-v3	685 vs 692 instruction lines	[a-]{1,3}?(?!a)\\W	--engine=vm
+c-vm	-O2	803 vs 800 instruction lines	[a-]{1,3}?(?!\\b)-	--engine=vm
+c-vm	-O2 -march=x86-64-v3	808 vs 804 instruction lines	[a-]{1,3}?(?!\\b)-	--engine=vm
+c-vm	-O2	728 vs 735 instruction lines	\\w{1,3}?\\Ba	--engine=vm
+c-vm	-O2 -march=x86-64-v3	716 vs 723 instruction lines	\\w{1,3}?\\Ba	--engine=vm
+c-vm	-O2	718 vs 724 instruction lines	-{1,3}?\\Ba	--engine=vm
+c-vm	-O2 -march=x86-64-v3	707 vs 713 instruction lines	-{1,3}?\\Ba	--engine=vm
+c-vm	-O2	812 vs 813 instruction lines	a+?(?<=\\b)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	823 vs 823 instruction lines	a+?(?<=\\b)\\b	--engine=vm
+c-vm	-O2	684 vs 692 instruction lines	\\W{1,3}?(?!a)\\w	--engine=vm
+c-vm	-O2 -march=x86-64-v3	682 vs 689 instruction lines	\\W{1,3}?(?!a)\\w	--engine=vm
+c-vm	-O2	809 vs 815 instruction lines	[^a]{1,3}?(?=\\W|$)a	--engine=vm
+c-vm	-O2 -march=x86-64-v3	816 vs 822 instruction lines	[^a]{1,3}?(?=\\W|$)a	--engine=vm
+c-vm	-O2	670 vs 678 instruction lines	[^a]{1,3}?\\z	--engine=vm
+c-vm	-O2 -march=x86-64-v3	668 vs 676 instruction lines	[^a]{1,3}?\\z	--engine=vm
+c-vm	-O2	701 vs 704 instruction lines	\\w+?(?<!a)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	699 vs 702 instruction lines	\\w+?(?<!a)\\b	--engine=vm
+c-vm	-O2	850 vs 854 instruction lines	(\\w+?)\\b\\1	--engine=vm
+c-vm	-O2 -march=x86-64-v3	868 vs 872 instruction lines	(\\w+?)\\b\\1	--engine=vm
+c-vm	-O2	916 vs 918 instruction lines	(a+?)(b*)\\1\\2	--engine=vm
+c-vm	-O2 -march=x86-64-v3	918 vs 920 instruction lines	(a+?)(b*)\\1\\2	--engine=vm
+c-vm	-O2	782 vs 787 instruction lines	(a|b)+?\\1	--engine=vm
+c-vm	-O2 -march=x86-64-v3	800 vs 805 instruction lines	(a|b)+?\\1	--engine=vm
+c-vm	-O2	839 vs 845 instruction lines	(?=(\\w+?))\\1\\B	--engine=vm
+c-vm	-O2 -march=x86-64-v3	845 vs 852 instruction lines	(?=(\\w+?))\\1\\B	--engine=vm
+c-vm	-O2	934 vs 938 instruction lines	(\\w+?)(?:\\b(?1))?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	938 vs 942 instruction lines	(\\w+?)(?:\\b(?1))?	--engine=vm
+c-vm	-O2	1139 vs 1149 instruction lines	\\w+?(?R)?\\B	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1139 vs 1140 instruction lines	\\w+?(?R)?\\B	--engine=vm
+c-vm	-O2	921 vs 928 instruction lines	(a+?)(?1)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	914 vs 921 instruction lines	(a+?)(?1)\\b	--engine=vm
+c-vm	-O2	1179 vs 1182 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1191 vs 1201 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	--engine=vm
+c-vm	-O2	999 vs 1020 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	996 vs 1017 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	--engine=vm
+c-vm	-O2	1038 vs 1027 instruction lines	(?:a+?\\b|b)+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1041 vs 1032 instruction lines	(?:a+?\\b|b)+	--engine=vm
+c-vm	-O2	1039 vs 1016 instruction lines	(?:a{1,2}?\\B)+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1043 vs 1022 instruction lines	(?:a{1,2}?\\B)+	--engine=vm
+c-vm	-O2	1020 vs 1023 instruction lines	(?:\\w{1,2}?\\b)+	--engine=vm
+c-vm	-O2 -march=x86-64-v3	1032 vs 1020 instruction lines	(?:\\w{1,2}?\\b)+	--engine=vm
+c-vm	-O2	869 vs 868 instruction lines	(?:a+?)*\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	866 vs 866 instruction lines	(?:a+?)*\\b	--engine=vm
+c-vm	-O2	946 vs 956 instruction lines	(?:a+?)+?b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	954 vs 964 instruction lines	(?:a+?)+?b	--engine=vm
+c-vm	-O2	749 vs 755 instruction lines	a{1,3}?(?:|\\b)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	750 vs 755 instruction lines	a{1,3}?(?:|\\b)$	--engine=vm
+c-vm	-O2	701 vs 704 instruction lines	a{1,3}?(?:(?=a)|)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	703 vs 706 instruction lines	a{1,3}?(?:(?=a)|)$	--engine=vm
+c-vm	-O2	694 vs 698 instruction lines	a{1,3}?(?:)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	692 vs 696 instruction lines	a{1,3}?(?:)\\b	--engine=vm
+c-vm	-O2	739 vs 766 instruction lines	a{2,}?(?:\\b|)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	740 vs 768 instruction lines	a{2,}?(?:\\b|)b	--engine=vm
+c-vm	-O2	757 vs 787 instruction lines	a{2,}?(?:|\\b)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	758 vs 788 instruction lines	a{2,}?(?:|\\b)\\b	--engine=vm
+c-vm	-O2	730 vs 762 instruction lines	a{2,}?(?:|\\b)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	731 vs 762 instruction lines	a{2,}?(?:|\\b)$	--engine=vm
+c-vm	-O2	654 vs 673 instruction lines	a{2,}?(?:)a	--engine=vm
+c-vm	-O2 -march=x86-64-v3	652 vs 671 instruction lines	a{2,}?(?:)a	--engine=vm
+c-vm	-O2	732 vs 733 instruction lines	\\w+?(?:(?=a)|)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	734 vs 735 instruction lines	\\w+?(?:(?=a)|)b	--engine=vm
+c-vm	-O2	769 vs 775 instruction lines	\\w+?(?:\\B|)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	769 vs 777 instruction lines	\\w+?(?:\\B|)b	--engine=vm
+c-vm	-O2	699 vs 702 instruction lines	\\w+?(?:)\\b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	697 vs 700 instruction lines	\\w+?(?:)\\b	--engine=vm
+c-vm	-O2	743 vs 773 instruction lines	\\w{2,}?(?:|\\b)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	746 vs 776 instruction lines	\\w{2,}?(?:|\\b)b	--engine=vm
+c-vm	-O2	744 vs 767 instruction lines	\\W{2,}?(?:\\B|)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	745 vs 768 instruction lines	\\W{2,}?(?:\\B|)$	--engine=vm
+c-vm	-O2	761 vs 766 instruction lines	.{1,3}?(?:\\b|)b	--engine=vm
+c-vm	-O2 -march=x86-64-v3	763 vs 766 instruction lines	.{1,3}?(?:\\b|)b	--engine=vm
+c-vm	-O2	755 vs 772 instruction lines	.{1,3}?(?:|\\b)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	757 vs 775 instruction lines	.{1,3}?(?:|\\b)$	--engine=vm
+c-vm	-O2	763 vs 763 instruction lines	.{1,3}?(?:\\B|)$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	762 vs 765 instruction lines	.{1,3}?(?:\\B|)$	--engine=vm
+c-vm	-O2	672 vs 678 instruction lines	\\w+?(?<=a)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	670 vs 676 instruction lines	\\w+?(?<=a)	--engine=vm
+c-vm	-O2	649 vs 653 instruction lines	a{1,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	647 vs 651 instruction lines	a{1,3}?	--engine=vm
+c-vm	-O2	660 vs 662 instruction lines	za{1,3}?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	658 vs 660 instruction lines	za{1,3}?	--engine=vm
+c-vm	-O2	669 vs 674 instruction lines	a{1,3}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	667 vs 672 instruction lines	a{1,3}?c?	--engine=vm
+c-vm	-O2	681 vs 683 instruction lines	za{1,3}?c?	--engine=vm
+c-vm	-O2 -march=x86-64-v3	679 vs 681 instruction lines	za{1,3}?c?	--engine=vm
+c-vm	-O2	658 vs 664 instruction lines	a{1,3}?$	--engine=vm
+c-vm	-O2 -march=x86-64-v3	656 vs 662 instruction lines	a{1,3}?$	--engine=vm
+c-vm	-O2	713 vs 717 instruction lines	(a{1,3}?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	725 vs 729 instruction lines	(a{1,3}?)	--engine=vm
+c-vm	-O2	726 vs 722 instruction lines	(za{1,3}?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	739 vs 735 instruction lines	(za{1,3}?)	--engine=vm
+c-vm	-O2	729 vs 734 instruction lines	(a{1,3}?c?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	741 vs 746 instruction lines	(a{1,3}?c?)	--engine=vm
+c-vm	-O2	745 vs 739 instruction lines	(za{1,3}?c?)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	758 vs 752 instruction lines	(za{1,3}?c?)	--engine=vm
+c-vm	-O2	722 vs 728 instruction lines	(a{1,3}?$)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	734 vs 740 instruction lines	(a{1,3}?$)	--engine=vm
+c-vm	-O2	789 vs 796 instruction lines	(\\w+?(?:\\b|))	--engine=vm
+c-vm	-O2 -march=x86-64-v3	798 vs 804 instruction lines	(\\w+?(?:\\b|))	--engine=vm
+c-vm	-O2	755 vs 760 instruction lines	\\w{1,3}?(?:\\b|)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	756 vs 760 instruction lines	\\w{1,3}?(?:\\b|)	--engine=vm
+c-vm	-O2	728 vs 729 instruction lines	[a-c]+?(?:\\B|)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	728 vs 732 instruction lines	[a-c]+?(?:\\B|)	--engine=vm
+c-vm	-O2	893 vs 900 instruction lines	(a+?)b(?1)	--engine=vm
+c-vm	-O2 -march=x86-64-v3	893 vs 900 instruction lines	(a+?)b(?1)	--engine=vm
+c-utf8	-O2	1146 vs 1151 instruction lines	(?>a+?)b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1156 vs 1161 instruction lines	(?>a+?)b	-e utf8
+c-utf8	-O2	1146 vs 1151 instruction lines	(?>a{1,3}?)b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1156 vs 1161 instruction lines	(?>a{1,3}?)b	-e utf8
+c-utf8	-O2	1146 vs 1151 instruction lines	(?>a+?)b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1156 vs 1161 instruction lines	(?>a+?)b	-e utf8
+c-utf8	-O2	1115 vs 1121 instruction lines	(?>a+?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1127 vs 1133 instruction lines	(?>a+?)	-e utf8
+c-utf8	-O2	1023 vs 1049 instruction lines	(ab){2,4}?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1042 vs 1068 instruction lines	(ab){2,4}?	-e utf8
+c-utf8	-O2	1229 vs 1231 instruction lines	(a+?)(a+)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1240 vs 1242 instruction lines	(a+?)(a+)	-e utf8
+c-utf8	-O2	1234 vs 1236 instruction lines	(a+)(a+?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1228 vs 1230 instruction lines	(a+)(a+?)	-e utf8
+c-utf8	-O2	1344 vs 1379 instruction lines	(a{2,3}?){2,3}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1354 vs 1389 instruction lines	(a{2,3}?){2,3}	-e utf8
+c-utf8	-O2	1333 vs 1399 instruction lines	(a{2,3}?){2,3}?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1342 vs 1408 instruction lines	(a{2,3}?){2,3}?	-e utf8
+c-utf8	-O2	1494 vs 1501 instruction lines	((a{1,2}?){1,2}){1,2}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1487 vs 1494 instruction lines	((a{1,2}?){1,2}){1,2}	-e utf8
+c-utf8	-O2	1004 vs 1005 instruction lines	z(a){1,3}?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1023 vs 1024 instruction lines	z(a){1,3}?	-e utf8
+c-utf8	-O2	1055 vs 1056 instruction lines	z(a){1,3}?c?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1074 vs 1075 instruction lines	z(a){1,3}?c?	-e utf8
+c-utf8	-O2	1046 vs 1064 instruction lines	z(a){3,}?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1065 vs 1083 instruction lines	z(a){3,}?	-e utf8
+c-utf8	-O2	1060 vs 1078 instruction lines	z(a){3,}?c?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1079 vs 1097 instruction lines	z(a){3,}?c?	-e utf8
+c-utf8	-O2	994 vs 996 instruction lines	z(a)+?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1013 vs 1015 instruction lines	z(a)+?	-e utf8
+c-utf8	-O2	1043 vs 1045 instruction lines	z(a)+?c?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1062 vs 1064 instruction lines	z(a)+?c?	-e utf8
+c-utf8	-O2	1004 vs 1015 instruction lines	(a){2,4}?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1022 vs 1033 instruction lines	(a){2,4}?	-e utf8
+c-utf8	-O2	1002 vs 1004 instruction lines	(a+?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1014 vs 1016 instruction lines	(a+?)	-e utf8
+c-utf8	-O2	1519 vs 1536 instruction lines	(a{1,3}?){3,5}	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1515 vs 1532 instruction lines	(a{1,3}?){3,5}	-e utf8
+c-utf8	-O2	1199 vs 1200 instruction lines	[ab]{1,3}?(?!)-	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1204 vs 1205 instruction lines	[ab]{1,3}?(?!)-	-e utf8
+c-utf8	-O2	1355 vs 1358 instruction lines	\\w+?(?=\\W|$)\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1369 vs 1372 instruction lines	\\w+?(?=\\W|$)\\b	-e utf8
+c-utf8	-O2	1205 vs 1202 instruction lines	[a-]{1,3}?(?!\\b)-	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1208 vs 1204 instruction lines	[a-]{1,3}?(?!\\b)-	-e utf8
+c-utf8	-O2	1329 vs 1331 instruction lines	a+?(?<=\\b)\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1338 vs 1340 instruction lines	a+?(?<=\\b)\\b	-e utf8
+c-utf8	-O2	1060 vs 1064 instruction lines	(\\w+?)\\b\\1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1079 vs 1083 instruction lines	(\\w+?)\\b\\1	-e utf8
+c-utf8	-O2	1076 vs 1078 instruction lines	(a+?)(b*)\\1\\2	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1084 vs 1086 instruction lines	(a+?)(b*)\\1\\2	-e utf8
+c-utf8	-O2	981 vs 986 instruction lines	(a|b)+?\\1	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1000 vs 1005 instruction lines	(a|b)+?\\1	-e utf8
+c-utf8	-O2	1069 vs 1075 instruction lines	(?=(\\w+?))\\1\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1070 vs 1077 instruction lines	(?=(\\w+?))\\1\\B	-e utf8
+c-utf8	-O2	1367 vs 1371 instruction lines	(\\w+?)(?:\\b(?1))?	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1366 vs 1370 instruction lines	(\\w+?)(?:\\b(?1))?	-e utf8
+c-utf8	-O2	1396 vs 1406 instruction lines	\\w+?(?R)?\\B	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1396 vs 1397 instruction lines	\\w+?(?R)?\\B	-e utf8
+c-utf8	-O2	1429 vs 1436 instruction lines	(a+?)(?1)\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1421 vs 1428 instruction lines	(a+?)(?1)\\b	-e utf8
+c-utf8	-O2	1603 vs 1606 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1604 vs 1614 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8
+c-utf8	-O2	1733 vs 1749 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1731 vs 1746 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8
+c-utf8	-O2	1005 vs 1009 instruction lines	(a{1,3}?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1017 vs 1021 instruction lines	(a{1,3}?)	-e utf8
+c-utf8	-O2	1012 vs 1008 instruction lines	(za{1,3}?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1031 vs 1027 instruction lines	(za{1,3}?)	-e utf8
+c-utf8	-O2	1036 vs 1041 instruction lines	(a{1,3}?c?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1048 vs 1053 instruction lines	(a{1,3}?c?)	-e utf8
+c-utf8	-O2	1049 vs 1043 instruction lines	(za{1,3}?c?)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1068 vs 1062 instruction lines	(za{1,3}?c?)	-e utf8
+c-utf8	-O2	1083 vs 1089 instruction lines	(a{1,3}?$)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1095 vs 1101 instruction lines	(a{1,3}?$)	-e utf8
+c-utf8	-O2	1132 vs 1139 instruction lines	(\\w+?(?:\\b|))	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1142 vs 1148 instruction lines	(\\w+?(?:\\b|))	-e utf8
+c-utf8	-O2	1332 vs 1339 instruction lines	(a+?)b(?1)	-e utf8
+c-utf8	-O2 -march=x86-64-v3	1332 vs 1339 instruction lines	(a+?)b(?1)	-e utf8
+c-utf8-vm	-O2	867 vs 873 instruction lines	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	865 vs 871 instruction lines	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	-O2	862 vs 869 instruction lines	a{1,3}?\\z	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	860 vs 867 instruction lines	a{1,3}?\\z	-e utf8 --engine=vm
+c-utf8-vm	-O2	901 vs 906 instruction lines	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	917 vs 922 instruction lines	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	905 vs 910 instruction lines	(?>a{1,3}?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	921 vs 926 instruction lines	(?>a{1,3}?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	901 vs 906 instruction lines	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	917 vs 922 instruction lines	(?>a+?)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	886 vs 892 instruction lines	(?>a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	901 vs 907 instruction lines	(?>a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	868 vs 879 instruction lines	a{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	866 vs 877 instruction lines	a{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	864 vs 875 instruction lines	a{2,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	862 vs 873 instruction lines	a{2,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	861 vs 865 instruction lines	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	859 vs 863 instruction lines	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	862 vs 873 instruction lines	[abc]{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	860 vs 871 instruction lines	[abc]{2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	930 vs 956 instruction lines	(ab){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	943 vs 969 instruction lines	(ab){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	971 vs 973 instruction lines	(a+?)(a+)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	988 vs 990 instruction lines	(a+?)(a+)	-e utf8 --engine=vm
+c-utf8-vm	-O2	976 vs 978 instruction lines	(a+)(a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	972 vs 974 instruction lines	(a+)(a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	867 vs 878 instruction lines	a{200,500}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	865 vs 876 instruction lines	a{200,500}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	1103 vs 1138 instruction lines	(a{2,3}?){2,3}	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1115 vs 1150 instruction lines	(a{2,3}?){2,3}	-e utf8 --engine=vm
+c-utf8-vm	-O2	1098 vs 1164 instruction lines	(a{2,3}?){2,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1109 vs 1175 instruction lines	(a{2,3}?){2,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	1219 vs 1226 instruction lines	((a{1,2}?){1,2}){1,2}	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1214 vs 1221 instruction lines	((a{1,2}?){1,2}){1,2}	-e utf8 --engine=vm
+c-utf8-vm	-O2	865 vs 869 instruction lines	a+?$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	863 vs 867 instruction lines	a+?$	-e utf8 --engine=vm
+c-utf8-vm	-O2	859 vs 861 instruction lines	a+?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	857 vs 859 instruction lines	a+?	-e utf8 --engine=vm
+c-utf8-vm	-O2	879 vs 894 instruction lines	(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	877 vs 892 instruction lines	(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	898 vs 913 instruction lines	(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	896 vs 911 instruction lines	(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	875 vs 877 instruction lines	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	873 vs 875 instruction lines	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	896 vs 898 instruction lines	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	894 vs 896 instruction lines	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	874 vs 892 instruction lines	za{3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	872 vs 890 instruction lines	za{3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	892 vs 910 instruction lines	za{3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	890 vs 908 instruction lines	za{3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	871 vs 873 instruction lines	za+?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	869 vs 871 instruction lines	za+?	-e utf8 --engine=vm
+c-utf8-vm	-O2	892 vs 894 instruction lines	za+?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	890 vs 892 instruction lines	za+?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	893 vs 910 instruction lines	z(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	891 vs 908 instruction lines	z(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	911 vs 928 instruction lines	z(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	909 vs 926 instruction lines	z(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	921 vs 922 instruction lines	z(a){1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	936 vs 937 instruction lines	z(a){1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	954 vs 955 instruction lines	z(a){1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	969 vs 970 instruction lines	z(a){1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	920 vs 938 instruction lines	z(a){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	935 vs 953 instruction lines	z(a){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	950 vs 968 instruction lines	z(a){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	965 vs 983 instruction lines	z(a){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	917 vs 919 instruction lines	z(a)+?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	932 vs 934 instruction lines	z(a)+?	-e utf8 --engine=vm
+c-utf8-vm	-O2	950 vs 952 instruction lines	z(a)+?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	965 vs 967 instruction lines	z(a)+?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	922 vs 933 instruction lines	(?:z|)(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	924 vs 935 instruction lines	(?:z|)(?:ab){3,}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	934 vs 944 instruction lines	(?:z|)(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	940 vs 944 instruction lines	(?:z|)(?:ab){3,}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	859 vs 861 instruction lines	a+?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	857 vs 859 instruction lines	a+?	-e utf8 --engine=vm
+c-utf8-vm	-O2	865 vs 869 instruction lines	a+?$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	863 vs 867 instruction lines	a+?$	-e utf8 --engine=vm
+c-utf8-vm	-O2	1784 vs 1795 instruction lines	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1767 vs 1777 instruction lines	c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}	-e utf8 --engine=vm
+c-utf8-vm	-O2	913 vs 924 instruction lines	(a){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	927 vs 938 instruction lines	(a){2,4}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	911 vs 913 instruction lines	(a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	925 vs 927 instruction lines	(a+?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	859 vs 861 instruction lines	(?U)a+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	857 vs 859 instruction lines	(?U)a+	-e utf8 --engine=vm
+c-utf8-vm	-O2	871 vs 873 instruction lines	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	869 vs 871 instruction lines	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	-O2	871 vs 873 instruction lines	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	869 vs 871 instruction lines	a(?U)b+	-e utf8 --engine=vm
+c-utf8-vm	-O2	859 vs 861 instruction lines	(?U)(?^)a+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	857 vs 859 instruction lines	(?U)(?^)a+	-e utf8 --engine=vm
+c-utf8-vm	-O2	1253 vs 1270 instruction lines	(a{1,3}?){3,5}	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1251 vs 1268 instruction lines	(a{1,3}?){3,5}	-e utf8 --engine=vm
+c-utf8-vm	-O2	1021 vs 1026 instruction lines	[a-]{1,3}?(?:\\b|)a	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1022 vs 1025 instruction lines	[a-]{1,3}?(?:\\b|)a	-e utf8 --engine=vm
+c-utf8-vm	-O2	939 vs 942 instruction lines	[ab]{1,3}?(?:(?<=a)|)\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	942 vs 943 instruction lines	[ab]{1,3}?(?:(?<=a)|)\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2	945 vs 949 instruction lines	-+?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	945 vs 951 instruction lines	-+?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	-O2	936 vs 935 instruction lines	-+?(?:(?=\\w)|(?<=\\w))$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	938 vs 937 instruction lines	-+?(?:(?=\\w)|(?<=\\w))$	-e utf8 --engine=vm
+c-utf8-vm	-O2	1022 vs 1029 instruction lines	[a-]{1,3}?(?:\\B|)a	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1022 vs 1028 instruction lines	[a-]{1,3}?(?:\\B|)a	-e utf8 --engine=vm
+c-utf8-vm	-O2	974 vs 976 instruction lines	\\d{1,3}?(?:\\b|a)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	975 vs 977 instruction lines	\\d{1,3}?(?:\\b|a)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	947 vs 949 instruction lines	-+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	947 vs 951 instruction lines	-+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	-O2	1307 vs 1309 instruction lines	\\w+?(?:\\B)*\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1318 vs 1323 instruction lines	\\w+?(?:\\B)*\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2	981 vs 982 instruction lines	a{1,3}?(?=a)?\\w	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	982 vs 983 instruction lines	a{1,3}?(?=a)?\\w	-e utf8 --engine=vm
+c-utf8-vm	-O2	957 vs 956 instruction lines	[a-c]{1,3}?(?:\\B|)$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	958 vs 957 instruction lines	[a-c]{1,3}?(?:\\B|)$	-e utf8 --engine=vm
+c-utf8-vm	-O2	980 vs 981 instruction lines	[ab]{1,3}?(?!)-	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	985 vs 986 instruction lines	[ab]{1,3}?(?!)-	-e utf8 --engine=vm
+c-utf8-vm	-O2	1092 vs 1095 instruction lines	\\w+?(?=\\W|$)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1105 vs 1108 instruction lines	\\w+?(?=\\W|$)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1027 vs 1031 instruction lines	a{1,3}?(?=\\w)\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1024 vs 1028 instruction lines	a{1,3}?(?=\\w)\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2	1019 vs 1026 instruction lines	[a-]{1,3}?(?!a)\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1016 vs 1023 instruction lines	[a-]{1,3}?(?!a)\\W	-e utf8 --engine=vm
+c-utf8-vm	-O2	1042 vs 1039 instruction lines	[a-]{1,3}?(?!\\b)-	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1045 vs 1041 instruction lines	[a-]{1,3}?(?!\\b)-	-e utf8 --engine=vm
+c-utf8-vm	-O2	995 vs 1002 instruction lines	\\w{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	982 vs 989 instruction lines	\\w{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	-O2	988 vs 994 instruction lines	-{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	976 vs 982 instruction lines	-{1,3}?\\Ba	-e utf8 --engine=vm
+c-utf8-vm	-O2	1068 vs 1070 instruction lines	a+?(?<=\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1080 vs 1082 instruction lines	a+?(?<=\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	923 vs 926 instruction lines	\\w+?(?<!a)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	921 vs 924 instruction lines	\\w+?(?<!a)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1060 vs 1064 instruction lines	(\\w+?)\\b\\1	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1079 vs 1083 instruction lines	(\\w+?)\\b\\1	-e utf8 --engine=vm
+c-utf8-vm	-O2	1076 vs 1078 instruction lines	(a+?)(b*)\\1\\2	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1084 vs 1086 instruction lines	(a+?)(b*)\\1\\2	-e utf8 --engine=vm
+c-utf8-vm	-O2	981 vs 986 instruction lines	(a|b)+?\\1	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1000 vs 1005 instruction lines	(a|b)+?\\1	-e utf8 --engine=vm
+c-utf8-vm	-O2	1069 vs 1075 instruction lines	(?=(\\w+?))\\1\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1070 vs 1077 instruction lines	(?=(\\w+?))\\1\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2	1147 vs 1151 instruction lines	(\\w+?)(?:\\b(?1))?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1152 vs 1156 instruction lines	(\\w+?)(?:\\b(?1))?	-e utf8 --engine=vm
+c-utf8-vm	-O2	1396 vs 1406 instruction lines	\\w+?(?R)?\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1396 vs 1397 instruction lines	\\w+?(?R)?\\B	-e utf8 --engine=vm
+c-utf8-vm	-O2	1136 vs 1143 instruction lines	(a+?)(?1)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1130 vs 1137 instruction lines	(a+?)(?1)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1382 vs 1385 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1389 vs 1399 instruction lines	(?<p>\\w+?\\b)(?:-(?&p))*	-e utf8 --engine=vm
+c-utf8-vm	-O2	1264 vs 1286 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1268 vs 1285 instruction lines	(?<w>\\w+?)(?:\\W(?&w))??\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1295 vs 1284 instruction lines	(?:a+?\\b|b)+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1298 vs 1289 instruction lines	(?:a+?\\b|b)+	-e utf8 --engine=vm
+c-utf8-vm	-O2	1297 vs 1274 instruction lines	(?:a{1,2}?\\B)+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1301 vs 1280 instruction lines	(?:a{1,2}?\\B)+	-e utf8 --engine=vm
+c-utf8-vm	-O2	1274 vs 1280 instruction lines	(?:\\w{1,2}?\\b)+	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1286 vs 1277 instruction lines	(?:\\w{1,2}?\\b)+	-e utf8 --engine=vm
+c-utf8-vm	-O2	1117 vs 1116 instruction lines	(?:a+?)*\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1116 vs 1116 instruction lines	(?:a+?)*\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1196 vs 1206 instruction lines	(?:a+?)+?b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1204 vs 1214 instruction lines	(?:a+?)+?b	-e utf8 --engine=vm
+c-utf8-vm	-O2	958 vs 964 instruction lines	a{1,3}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	959 vs 964 instruction lines	a{1,3}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	-O2	899 vs 902 instruction lines	a{1,3}?(?:(?=a)|)$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	901 vs 904 instruction lines	a{1,3}?(?:(?=a)|)$	-e utf8 --engine=vm
+c-utf8-vm	-O2	917 vs 921 instruction lines	a{1,3}?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	915 vs 919 instruction lines	a{1,3}?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	999 vs 1026 instruction lines	a{2,}?(?:\\b|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	999 vs 1027 instruction lines	a{2,}?(?:\\b|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	969 vs 999 instruction lines	a{2,}?(?:|\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	970 vs 1000 instruction lines	a{2,}?(?:|\\b)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	942 vs 974 instruction lines	a{2,}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	943 vs 974 instruction lines	a{2,}?(?:|\\b)$	-e utf8 --engine=vm
+c-utf8-vm	-O2	910 vs 929 instruction lines	a{2,}?(?:)a	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	907 vs 926 instruction lines	a{2,}?(?:)a	-e utf8 --engine=vm
+c-utf8-vm	-O2	978 vs 979 instruction lines	\\w+?(?:(?=a)|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	979 vs 980 instruction lines	\\w+?(?:(?=a)|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1026 vs 1032 instruction lines	\\w+?(?:\\B|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1025 vs 1033 instruction lines	\\w+?(?:\\B|)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	921 vs 924 instruction lines	\\w+?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	919 vs 922 instruction lines	\\w+?(?:)\\b	-e utf8 --engine=vm
+c-utf8-vm	-O2	1000 vs 1030 instruction lines	\\w{2,}?(?:|\\b)b	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1002 vs 1032 instruction lines	\\w{2,}?(?:|\\b)b	-e utf8 --engine=vm
+c-utf8-vm	-O2	894 vs 900 instruction lines	\\w+?(?<=a)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	892 vs 898 instruction lines	\\w+?(?<=a)	-e utf8 --engine=vm
+c-utf8-vm	-O2	861 vs 865 instruction lines	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	859 vs 863 instruction lines	a{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	875 vs 877 instruction lines	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	873 vs 875 instruction lines	za{1,3}?	-e utf8 --engine=vm
+c-utf8-vm	-O2	881 vs 886 instruction lines	a{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	879 vs 884 instruction lines	a{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	896 vs 898 instruction lines	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	894 vs 896 instruction lines	za{1,3}?c?	-e utf8 --engine=vm
+c-utf8-vm	-O2	867 vs 873 instruction lines	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	865 vs 871 instruction lines	a{1,3}?$	-e utf8 --engine=vm
+c-utf8-vm	-O2	913 vs 917 instruction lines	(a{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	927 vs 931 instruction lines	(a{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	929 vs 925 instruction lines	(za{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	944 vs 940 instruction lines	(za{1,3}?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	929 vs 934 instruction lines	(a{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	943 vs 948 instruction lines	(a{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	948 vs 942 instruction lines	(za{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	963 vs 957 instruction lines	(za{1,3}?c?)	-e utf8 --engine=vm
+c-utf8-vm	-O2	919 vs 925 instruction lines	(a{1,3}?$)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	933 vs 939 instruction lines	(a{1,3}?$)	-e utf8 --engine=vm
+c-utf8-vm	-O2	999 vs 1006 instruction lines	(\\w+?(?:\\b|))	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1009 vs 1015 instruction lines	(\\w+?(?:\\b|))	-e utf8 --engine=vm
+c-utf8-vm	-O2	966 vs 971 instruction lines	\\w{1,3}?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	967 vs 971 instruction lines	\\w{1,3}?(?:\\b|)	-e utf8 --engine=vm
+c-utf8-vm	-O2	939 vs 940 instruction lines	[a-c]+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	939 vs 943 instruction lines	[a-c]+?(?:\\B|)	-e utf8 --engine=vm
+c-utf8-vm	-O2	1100 vs 1107 instruction lines	(a+?)b(?1)	-e utf8 --engine=vm
+c-utf8-vm	-O2 -march=x86-64-v3	1101 vs 1108 instruction lines	(a+?)b(?1)	-e utf8 --engine=vm

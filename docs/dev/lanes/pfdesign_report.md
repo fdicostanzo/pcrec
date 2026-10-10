@@ -35,7 +35,7 @@ manager owns it).
    - §6: encoding. No fact reads the encoding enum. The prior's NONE
      answer is spelled once per QUESTION KIND (pick / compare / mass)
      inside findings primitives, which is R13's structural cure and
-     amends findings §6.1-§6.3.
+     amends findings sec. 6.1-sec. 6.3.
    - §7: deny. Fact denies are "nothing to find" for every consumer, and
      row denies are rows. Measured witness table. No use-deny is built
      (the four existing configs span the bench attribution).

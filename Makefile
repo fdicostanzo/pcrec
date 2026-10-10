@@ -334,7 +334,8 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-deleg test-memfn-arch test-memfn-forms test-memfn-reach \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
-      test-memfn-rank
+      test-memfn-rank \
+      test-spec-history
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1487,6 +1488,14 @@ test-capturediff: all
 test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
+# [SPEC-CLEAN] docs/spec/ carries no build history (docs/spec/CLAUDE.md):
+# tests/spec_history/ flags dated revision notes, ADDENDUM, walkbacks and
+# panel/ruling narrative in docs/spec/*.md against an allowlist and a
+# known-debt baseline. Reads text only, so it does not depend on `all`.
+test-spec-history:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-spec-history.ran"; fi
+	bash tests/spec_history/run_spec_history.sh
+
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
 # analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
 # ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
@@ -1898,6 +1907,6 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset \
+        test-startset test-spec-history \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

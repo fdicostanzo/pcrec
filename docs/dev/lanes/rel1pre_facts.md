@@ -10,10 +10,10 @@ elsewhere). Branch `lane/rel1pre` from `30099e67`.
 
 | obligation | where satisfied | status |
 |---|---|---|
-| Recursion frame/trail defaults (2,048/3,072) in user docs | `docs/spec/limits.md:78` ("Resume-stack default: 2,048 frames. Trail default: 3,072 entries."), `docs/spec/limits.md:404`; source constants `src/core/limits.def:183-186` | DONE (spec tier) |
+| Recursion frame/trail defaults (2,048/3,072) in user docs | `docs/spec/limits.md` §3.2¶1 ("Resume-stack default: 2,048 frames. Trail default: 3,072 entries."), `docs/spec/limits.md` §3.4a; source constants `src/core/limits.def:183-186` | DONE (spec tier) |
 | The subject-size implication for recursive patterns (`^(a(?1)?b)$` gives up at 684 bytes) | not found by grep for "684" in `docs/spec/limits.md` or `docs/spec/match_api.md` | GAP — the specific worked example from D73 isn't in the spec; the general mechanism (frame/trail counts, `_in` override) is |
-| musl/small-thread-stack caveat (K33) | `docs/spec/limits.md:413-523` (whole "§5. K33: the default entries and the C stack" section — musl's 128 KB default named at `:451`) | DONE (spec tier) |
-| Caller-provided buffer (`_in` entries) as the remedy | `docs/spec/limits.md:125`, `:484-523`; `docs/spec/match_api.md` §10 (cited at `limits.md:484`) | DONE (spec tier) |
+| musl/small-thread-stack caveat (K33) | `docs/spec/limits.md` §5 (whole "§5. K33: the default entries and the C stack" section — musl's 128 KB default named in §5¶3) | DONE (spec tier) |
+| Caller-provided buffer (`_in` entries) as the remedy | `docs/spec/limits.md` §3.2¶3, §5; `docs/spec/match_api.md` §10 (cited in `limits.md` §5) | DONE (spec tier) |
 | The GUIDE-1 use-case paragraph pointing at the above | `docs/guide/` does not exist | GAP — full row not started |
 | README pass referencing the guide | README.md has no guide reference (guide doesn't exist) | GAP |
 | Release-mechanics item: "abi resets to 1 at the 1.0 release" | D81 addendum (`docs/dev/decisions.md`), reaffirmed at D113/D114 (`docs/dev/decisions.md:7692-7693`): **the reset does NOT fire at 0.1** — abi keeps counting past 27. Nothing to build for 0.1 beyond stating this. | NOT APPLICABLE to 0.1 (by design) |
@@ -95,7 +95,7 @@ Makefile` empty). `git tag -l` returns nothing — no tags exist yet.
 The `abi` number (unrelated to a product version — it versions emitted
 scaffolding, not the tool) is emitted per-artifact and is currently 27
 (`[EMIT-VERB]`, `docs/dev/lanes/emitverb_report.md`). It is documented at
-`docs/spec/match_api.md` §6 (the single home for the abi change log per
+`docs/dev/history/abi_changelog.md` (the single home for the abi change log per
 `docs/dev/lanes/w5_report.md`'s D76 addendum) and governed by D76/D94 (grep-
 by-number re-pin ritual, `CLAUDE.md`'s situation-index row). **The 0.1 beta
 must NOT reset this number** — D113/D114 rule that explicitly (§1 above).

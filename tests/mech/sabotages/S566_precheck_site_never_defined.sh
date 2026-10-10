@@ -23,6 +23,6 @@ SAB_REACH_EXPECT="REACH-PRECHECK-EMITTED"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='     * condition as its call below. */
-    if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);'
+    if (cand_finish_of(cx) != CAND_ROUTE_VM) pcrec_emit_req_run_blocks(cx, c);'
 SAB_AFTER='     * condition as its call below. */
     /* SABOTAGE S566: the pre-check site is never defined */'

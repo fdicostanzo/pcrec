@@ -1,0 +1,4 @@
+# [RXT-READERS] A `/` with no version after it is refused by all three legs.
+pattern a+
+oracle pcre2/
+m "aaa" 0 3

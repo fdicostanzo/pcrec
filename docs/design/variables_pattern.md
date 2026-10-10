@@ -420,7 +420,7 @@ bottleneck and the placement rule's precondition holds.
 > replaces recorded the contradiction: §4.1's withdrawn draft gave
 > `<prefix>_match` a `const rx_var *vars` parameter, but `<prefix>_match`
 > **is** `rx_matchfn`, a fixed-literal ABI type shared by every artifact
-> (`docs/spec/match_api.md:915-918`; `match_api.md:1238`/`lib/pcrec.h:1326`
+> (`docs/spec/match_api.md §2`; `match_api.md §1¶5`/`lib/pcrec.h:1326`
 > bind the unprefixed spelling to composability), so that draft made a
 > var-bearing artifact's `<prefix>_match` **no longer an `rx_matchfn`** —
 > the identical harm D38 rejected for a per-call `user` parameter, narrowed
@@ -637,7 +637,7 @@ The three candidates and why two lose:
   **This value lands in the shared ABI block, which `src/gen/emit_dfa.c`
   emits UNCONDITIONALLY into every artifact** (`:1034`, `:1051`, `:1073` are
   straight `puts` of the three existing `#define` lines with no gate) — the
-  same block `docs/spec/match_api.md:178-179` records moving abi 24→25 for
+  same block `docs/dev/history/abi_changelog.md` (the K50 entry; was `match_api.md line 178-179`) records moving abi 24→25 for
   the last such addition ("`[K50]` ... **every artifact** gains `#define
   PCREC_ERR_STARTPOS (-7)` in the shared ABI block"). So the VALUE
   `PCREC_ERR_UNSET_VAR (-8)` is fixed once, in the spec, for every artifact —

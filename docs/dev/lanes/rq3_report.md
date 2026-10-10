@@ -247,10 +247,10 @@ reads **abi 70 -> 71**.
 
 **Conflicts (8 files), resolved by mechanism.**
 - `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI`, `run_codegen_tests.sh`
-  `ABI_EXPECT`, `match_api.md` §6's guard example: 71. The codegen
+  `ABI_EXPECT`, `match_api.md §1¶7` guard example: 71. The codegen
   ledger message keeps R4e′.0b's `69 -> 70` clause and appends RQ-3's as
   `70 -> 71`.
-- `match_api.md` §6's ledger: R4e′.0b's entry becomes "was `70`"; RQ-3's
+- `docs/dev/history/abi_changelog.md` ledger: R4e′.0b's entry becomes "was `70`"; RQ-3's
   "is `71`" entry now says it was built on 69 and re-landed on 70.
 - `m5_stage1_stamps.tsv`, `run_resource_tests.sh`, `run_cpset_structure.sh`,
   `run_recursion_identity.sh`: main's side taken, then re-measured (below).

@@ -1,0 +1,32 @@
+src/gen/clskit.c:1065	emit_leaf	UNSEEN	%s{\n%s    unsigned x = %s, a = 0, b = %du;\n%s    while (a < b) {\n%s        unsigned m = (a + b) >> 1;\n%s        if (x < %s_lo[m]) b = m;\n%s        else if 
+src/gen/emit_dfa.c:850	pcrec_emit_startpos_guard	UNSEEN	%sif (!(%s == 0 || %s)) do %s++; while (!(%s));\n
+src/gen/emit_dfa.c:871	pcrec_emit_startpos_guard	UNSEEN	%s    do aligned_from++; while (!(%s));\n
+src/gen/emit_dfa.c:939	pcrec_emit_start_zero	UNSEEN	%swhile (!(%s)) %s++;\n
+src/gen/emit_dfa.c:950	pcrec_emit_start_zero	UNSEEN	%sif (%s == 0 && !(%s)) do %s++; while (!(%s));\n
+src/gen/emit_dfa.c:1655	emit_dead_group_fill	UNSEEN	%sif (capture_spans)\n%s    for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n
+src/gen/emit_dfa.c:2626	emit_match_caps_def	UNSEEN	    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n    if (found < 0) return (ptrdiff_t)fo
+src/gen/emit_dfa.c:9573	emit_scan_loop	UNSEEN	%sfor (;;) {\n
+src/gen/emit_dfa.c:9995	emit_anchored_match_caps_def	UNSEEN	ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n{\n    ptrdiff_t rx_len = %s(ctx);\n    if (rx_len < 0) return rx_len;\n    if (capture_span
+src/gen/emit_dfa.c:10309	emit_attempt	UNSEEN	    for (start = %s; start <= start_max; start++) {\n
+src/gen/emit_vm.c:5786	vm_revdet_rep	UNSEEN	    { int i_; for (i_ = 0; i_ < %d; i_++) %s_revdet_group_seen[i_] = 0; }\n
+src/gen/emit_vm.c:12040	vm_emit_storage	UNSEEN	#define %s_CHARGE_WORK(n_) do {                                    \\\n        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \\\n        if (nw_ > 0) {  
+src/gen/emit_vm.c:12091	vm_emit_storage	UNSEEN	#define %s_TRAIL(slot_) do {                                  \\\n        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n        run->trail[
+src/gen/emit_vm.c:12125	vm_emit_storage	UNSEEN	#define %s_TRAIL(slot_) do {                                  \\\n        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n        run->trail[
+src/gen/emit_vm.c:12193	vm_emit_storage	UNSEEN	#define %s_CALL(ret_, p_) do {                               \\\n        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n        run->resume_s
+src/gen/emit_vm.c:12206	vm_emit_storage	UNSEEN	#define %s_CALL(ret_, p_) do {                               \\\n        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n        run->resume_s
+src/gen/emit_vm.c:12432	vm_emit_vars_resolve	UNSEEN	static %sptrdiff_t %s_vars_resolve(const rx_ctx *ctx, %s_run_state *run)\n{\n    const unsigned char *raw_p[%s_NVARS];\n    size_t raw_len[%s_NVARS];\n    size_
+src/gen/emit_vm.c:12591	vm_emit_search_body	UNSEEN	static %svoid %s_run_state_init(%s_run_state *run)\n{\n    int i;\n    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n    run->resume_depth
+src/gen/emit_vm.c:12634	vm_emit_search_body	UNSEEN	static %svoid %s_reset_for_next_attempt(%s_run_state *run)\n{\n    while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].
+src/gen/emit_vm.c:13001	vm_emit_search_body	UNSEEN	        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n            run->trail_depth--;\n            slot_values[run->trail[run->trail_d
+src/gen/emit_vm.c:13062	vm_emit_search_body	UNSEEN	static %svoid %s_report_captures(const %s_run_state *run, ptrdiff_t (*capture_spans)[2],\n                        size_t match_start, ptrdiff_t match_length)\n{
+src/gen/emit_vm.c:13477	vm_emit_search_body	UNSEEN	    %s_run_state_init(run);\n    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n    ctx.caps = NULL; ctx.user = NULL;\n%s%s%s    for (;;) {\n  
+src/gen/memfn_stamps.c:50	libc_names	UNSEEN	memcpy
+src/gen/memfn_stamps.c:176	scan_libc_calls	UNSEEN	memcpy
+src/enc/enc_byte.c:291	defs_bref_ci_ucp	UNSEEN	static unsigned char $_span_ci_fold(unsigned char c)\n{\n    size_t lo = 0;\n    size_t hi = sizeof $_span_ci_fold_pairs / sizeof $_span_ci_fold_pairs[0];\n    
+src/enc/enc_utf8.c:63	u8_defs_next_pos	UNSEEN	size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n{\n    size_t i = pos + 1;\n    while (i < n && (s[i] & 0xC0) == 0x80) i++;\n    return i;\n}\n
+src/enc/enc_utf8.c:171	u8_defs_bref_ci	span-decode	};\n\nstatic unsigned $_span_ci_fold(unsigned c)\n{\n    size_t lo = 0;\n    size_t hi = sizeof $_span_ci_fold_pairs / sizeof $_span_ci_fold_pairs[0];\n    whil
+src/enc/enc_utf8.c:233	u8_defs_decode	UNSEEN	static inline size_t $_decode(const unsigned char *s, size_t end, size_t p,\n                               unsigned *cp)\n{\n    unsigned char b = s[p];\n    s
+src/enc/enc_utf8.c:303	u8_defs_back_step	UNSEEN	size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n{\n    (void)n;                 /* reads only below pos, as the contract says */\n  
+src/enc/enc_utf8.c:432	u8_defs_valid_upto	UNSEEN	size_t $_valid_upto(const unsigned char *s, size_t n, size_t startpos)\n{\n    size_t p = startpos, k = $_VALID_LB;\n    if (startpos > n) return n;\n    /* The
+src/enc/enc_utf8.c:536	advance_utf8	UNSEEN	/* [K49] The retry advance is this ENCODING's step, not `+ 1`: an\n * unanchored search may only ever try LATER CHARACTER BOUNDARIES as\n * match starts, or it 
+# new literals 2711, candidates 31, unseen by any vocabulary line 30 (base --all)

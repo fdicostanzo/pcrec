@@ -17,7 +17,7 @@ The note's escaping is ambiguous between the tree's TWO vocabularies
 and its own §12 example is non-injective (unescaped backslashes: a
 pattern's literal `\`+`t` collides with an escaped raw TAB —
 deterministic, on ordinary patterns). FIX: the canonical serialization
-is the rxt_format.md:458-474 FIVE-ESCAPE TSV-FRAMING SUBSET
+is the rxt_format.md §2.1 FIVE-ESCAPE TSV-FRAMING SUBSET
 (`\\ \t \n \r \xNN`), backslash escaped FIRST, stated normatively
 with the producer rule spelled out, both vocabularies named and the
 quoted-context one explicitly rejected, §12's examples corrected, and

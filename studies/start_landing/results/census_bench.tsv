@@ -1,735 +1,735 @@
-pid	config	enc	rc	route	fit	next	seeded	land	fixedw	recover	mb	row
-altwide/ci-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/ci-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/ci-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/ci-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsa-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/clsa-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/clsa-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsa-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsa-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsa-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsd-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/clsd-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/clsd-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsd-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsd-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/clsd-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/cnt-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/cnt-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-altwide/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-altwide/nar4-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/nar4-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/nar4-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/nar4-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/nar4-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/nar4-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/pfx3-256	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/pfx3-256	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/pfx3-512	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/pfx3-512	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-2048	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-2048	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-4096	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/s-4096	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/s-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/s-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sfx-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-256	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-256	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-512	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-512	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-64	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/sh1-64	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/srt-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/srt-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/srt-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/srt-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/w-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/w-128	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-128	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-192	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-192	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-2048	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/w-2048	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-altwide/w-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-384	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-384	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-8	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-8	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-96	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/w-96	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-altwide/wb-256	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-altwide/wb-256	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-altwide/wb-512	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-altwide/wb-512	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/cls-atleast-4096	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/cls-atleast-4096	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/cls-lazy-16384	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-lazy-16384	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-1024	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-1024	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-128	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-128	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-16	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-16	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-16384	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-16384	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-2048	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-2048	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-256	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-256	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-32	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-32	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-32768	default	byte	ok	none	-	-	-	-	-	-	-	-
-bounded/cls-upto-32768	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-bounded/cls-upto-4	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-4	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-4096	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-4096	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-512	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-512	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-64	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-64	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-65535	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-bounded/cls-upto-65535	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-bounded/cls-upto-8	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-8	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-8192	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/cls-upto-8192	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/csv5	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/csv5	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/ctx-greedy-256	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-greedy-256	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-1024	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-1024	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-256	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-256	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-64	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/ctx-lazy-64	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-bounded/dig-exact-16	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	16	reverse-pass	0	end-minus-width
-bounded/dig-exact-16	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	16	reverse-pass	0	end-minus-width
-bounded/dig-exact-2	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	2	reverse-pass	0	end-minus-width
-bounded/dig-exact-2	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	2	reverse-pass	0	end-minus-width
-bounded/dig-exact-32	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width
-bounded/dig-exact-32	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width
-bounded/dig-exact-8	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	8	reverse-pass	0	end-minus-width
-bounded/dig-exact-8	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	8	reverse-pass	0	end-minus-width
-bounded/dig-upto-16	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-16	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-2	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-2	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-32	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-32	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-4	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-4	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-8	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dig-upto-8	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/dotted4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/dotted4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-bounded/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-bounded/grp-upto-1024	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/grp-upto-1024	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned
-bounded/hex32	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width
-bounded/hex32	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width
-bounded/line-80	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/line-80	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/nest2-4	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest2-4	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest2-64	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest2-64	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest2-letters-6	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest2-letters-6	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest3-16	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest3-16	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest3-3	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/nest3-3	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-bounded/pw-8-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/pw-8-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-bounded/year4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-bounded/year4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-capability/balanced-parens-rec	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/balanced-parens-rec	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/base10num-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/base10num-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/bracket-array-define	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/bracket-array-define	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/codegrammar-flat	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/codegrammar-flat	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/codegrammar-xflag	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/codegrammar-xflag	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/currency-lookbehind-fixed	default	byte	ok	dfa	dfa	memchr-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/currency-lookbehind-fixed	nocaps	byte	ok	dfa	dfa	memchr-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/date-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/date-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/doubled-word	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/doubled-word	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/dup-param-detect	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/dup-param-detect	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/email-local-nodup	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/email-local-nodup	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/email-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/email-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/evil-alt-nested	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/evil-alt-nested	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/file-ext-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/file-ext-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/float-literal-bound	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/float-literal-bound	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/floor-byte	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/floor-byte	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/hex8-bounded	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	8	reverse-pass	0	end-minus-width
-capability/hex8-bounded	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	8	reverse-pass	0	end-minus-width
-capability/high-byte-run	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/high-byte-run	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/ipv4-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/ipv4-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/keyword-prefix-order	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/keyword-prefix-order	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/letters-bounded-tail-z	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/letters-bounded-tail-z	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/logparse-atomic-removed	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/logparse-atomic-removed	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/logparse-atomic	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/logparse-atomic	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/mojibake-curly-quote	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/mojibake-curly-quote	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/negation-scope-lookbehind-var	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-capability/negation-scope-lookbehind-var	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-capability/nested-comment-rec	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/nested-comment-rec	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/numeric-id-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/numeric-id-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/phone-list-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/phone-list-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/phone-palindrome-6	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/phone-palindrome-6	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/pwd-strength-chain	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/pwd-strength-chain	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/quoted-delim-match	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/quoted-delim-match	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/router-prefix-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/router-prefix-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/tag-depth3-bound	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/tag-depth3-bound	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/tag-pair-match	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/tag-pair-match	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/tail-digits-eol	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/tail-digits-eol	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/tail-dotstar-txt	default	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/tail-dotstar-txt	nocaps	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/tail-ext-lower-txt	default	byte	ok	dfa	dfa	byte-class-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/tail-ext-lower-txt	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/tail-space-eol	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/tail-space-eol	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/tail-word-eoz	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/tail-word-eoz	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass
-capability/trim-nested-star	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/trim-nested-star	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/utf8-lead-no-cont	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	1	reverse-pass	0	end-minus-width
-capability/utf8-lead-no-cont	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	1	reverse-pass	0	end-minus-width
-capability/uuid-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/uuid-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-codegrammar-json-array-begin	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/wild-codegrammar-json-array-begin	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/wild-codegrammar-json-constant	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-codegrammar-json-constant	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-codegrammar-json-number-extended	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-codegrammar-json-number-extended	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-codegrammar-json-object-begin	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/wild-codegrammar-json-object-begin	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-capability/wild-codegrammar-json-stringcontent-escape	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-codegrammar-json-stringcontent-escape	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-datetime-datefinder-alternation	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-capability/wild-datetime-datefinder-alternation	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-datetime-moment-iso8601	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-datetime-moment-iso8601	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-logparse-base10num-grok	default	byte	ok	dfa	vm	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-base10num-grok	nocaps	byte	ok	dfa	vm	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-base10num-noatomic	default	byte	ok	dfa	dfa	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-base10num-noatomic	nocaps	byte	ok	dfa	dfa	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-quotedstring-grok	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-quotedstring-grok	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-quotedstring-noatomic	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-quotedstring-noatomic	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-syslogbase-expanded	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-syslogbase-expanded	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-winpath-grok	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-logparse-winpath-grok	nocaps	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-secrets-aws-access-key-id	default	byte	ok	dfa	vm	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width
-capability/wild-secrets-aws-access-key-id	nocaps	byte	ok	dfa	dfa	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width
-capability/wild-secrets-github-pat	default	byte	ok	dfa	vm	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width
-capability/wild-secrets-github-pat	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width
-capability/wild-secrets-slack-webhook-url	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-secrets-slack-webhook-url	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-secrets-username-password-pair	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-secrets-username-password-pair	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-semdiv-altorder-foo-foobar-rustregex	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-semdiv-altorder-foo-foobar-rustregex	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-semdiv-dollar-trailing-newline-pcre2	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-capability/wild-semdiv-dollar-trailing-newline-pcre2	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-capability/wild-semdiv-empty-alt-repeat-pcre2	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-semdiv-empty-alt-repeat-pcre2	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-validator-email-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-email-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-ipv4-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-ipv4-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-us-zip-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-us-zip-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-validator-uuid-grok	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	36	reverse-pass	0	end-minus-width
-capability/wild-validator-uuid-grok	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	36	reverse-pass	0	end-minus-width
-capability/wild-waf-crs-942140-dbnames	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942140-dbnames	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942160-sleep-benchmark	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942160-sleep-benchmark	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942270-union-select	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942270-union-select	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942360-concat-sqli	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-waf-crs-942360-concat-sqli	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-capability/wild-waf-crs-942500-comment-obfuscation	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/wild-waf-crs-942500-comment-obfuscation	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-capability/winpath-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-capability/winpath-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-email/factored	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-email/factored	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-email/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-email/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-email/orig	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-email/orig	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-litrun/alt-foo-tails	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-litrun/alt-foo-tails	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-litrun/ctrl-abc-dollar	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-litrun/ctrl-abc-dollar	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-litrun/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-litrun/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-litrun/lit-l10	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width
-litrun/lit-l10	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width
-litrun/lit-l16	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	16	reverse-pass	0	end-minus-width
-litrun/lit-l16	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	16	reverse-pass	0	end-minus-width
-litrun/lit-l2	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	2	reverse-pass	0	end-minus-width
-litrun/lit-l2	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	2	reverse-pass	0	end-minus-width
-litrun/lit-l3	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-litrun/lit-l3	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-litrun/lit-l31	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	31	reverse-pass	0	end-minus-width
-litrun/lit-l31	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	31	reverse-pass	0	end-minus-width
-litrun/lit-l4	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-litrun/lit-l4	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-litrun/lit-l40	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	40	reverse-pass	0	end-minus-width
-litrun/lit-l40	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	40	reverse-pass	0	end-minus-width
-litrun/lit-l7	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	7	reverse-pass	0	end-minus-width
-litrun/lit-l7	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	7	reverse-pass	0	end-minus-width
-litrun/lit-l8	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	8	reverse-pass	0	end-minus-width
-litrun/lit-l8	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	8	reverse-pass	0	end-minus-width
-litrun/wild-secrets-aws-access-key-id	default	byte	ok	dfa	vm	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width
-litrun/wild-secrets-aws-access-key-id	nocaps	byte	ok	dfa	dfa	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width
-litrun/wild-secrets-github-pat	default	byte	ok	dfa	vm	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width
-litrun/wild-secrets-github-pat	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width
-loglines/bignum	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/bignum	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-loglines/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-loglines/hex32-id	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	32	reverse-pass	0	end-minus-width
-loglines/hex32-id	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	32	reverse-pass	0	end-minus-width
-loglines/http-5xx	default	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/http-5xx	nocaps	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/ipv4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/ipv4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/ipv6	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/ipv6	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/iso-ts	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/iso-ts	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-loglines/kv-quoted	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/kv-quoted	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/level-context	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/level-context	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/stack-frame	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/stack-frame	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass
-loglines/uuid	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	36	reverse-pass	0	end-minus-width
-loglines/uuid	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	36	reverse-pass	0	end-minus-width
-sentinel/base10num-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/base10num-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/file-ext-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/file-ext-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/floor-byte	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-sentinel/floor-byte	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-sentinel/ipv4-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/ipv4-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/keyword-prefix-order	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/keyword-prefix-order	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/numeric-id-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/numeric-id-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/phone-list-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/phone-list-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/router-prefix-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/router-prefix-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-sentinel/trim-nested-star	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/trim-nested-star	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/uuid-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/uuid-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-semdiv-dollar-trailing-newline-pcre2	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-sentinel/wild-semdiv-dollar-trailing-newline-pcre2	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-sentinel/wild-validator-email-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-validator-email-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-validator-us-zip-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-validator-us-zip-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-waf-crs-942360-concat-sqli	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/wild-waf-crs-942360-concat-sqli	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/winpath-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-
-sentinel/winpath-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/alt-nested	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/alt-nested	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/alt-two	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/alt-two	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/anc-a-uc	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-a-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-caret	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-caret	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-dollar	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-dollar	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-g-uc	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-g-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-m-caret	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-m-caret	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/anc-m-dollar	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-m-dollar	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-z-lc	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-z-lc	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-z-uc	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/anc-z-uc	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/asr-k-uc	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/asr-k-uc	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/asr-nwb	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width
-syntax/asr-nwb	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width
-syntax/asr-wb	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width
-syntax/asr-wb	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width
-syntax/bak-1	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-1	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-2	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-2	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-g-rel	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-g-rel	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-k-named	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-k-named	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-py	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/bak-py	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/cls-d	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cls-d	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cls-dot	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-dot	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-fold-pair	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-fold-pair	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-h	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-h	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-i-class	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-i-class	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-mixed-case	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-mixed-case	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-n-uc	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/cls-n-uc	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/cls-negset	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-negset	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-pair-ctl	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-pair-ctl	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/cls-posix	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cls-posix	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cls-range	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-range	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-s-lc	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-s-lc	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-s-uc	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-s-uc	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-v	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-v	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/cls-w	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cls-w	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/cnd-group	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/cnd-group	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/esc-cr	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width
-syntax/esc-cr	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width
-syntax/esc-ctrl	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/esc-ctrl	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/esc-hex-braced	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/esc-hex-braced	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/esc-hex	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/esc-hex	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/esc-nl	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/esc-nl	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/esc-octal-0	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/esc-octal-0	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/esc-octal-o	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/esc-octal-o	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/esc-quote	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/esc-quote	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/esc-tab	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/esc-tab	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-syntax/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width
-syntax/grp-atomic-alt	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/grp-atomic-alt	nocaps	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/grp-atomic-rep	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/grp-atomic-rep	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/grp-branch-reset	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-branch-reset	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-callout	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-callout	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-cap	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-cap	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-comment	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-comment	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/grp-named-quote	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-named-quote	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-named	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-named	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/grp-noncap	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/grp-noncap	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/lit-cat	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/lit-cat	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/lka-neg	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-neg	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-nonatomic	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-nonatomic	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-pos	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-pos	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-verb	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lka-verb	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lkb-neg	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lkb-neg	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lkb-pos	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/lkb-pos	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/mod-a	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/mod-a	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/mod-i	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-i	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-j-uc	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/mod-j-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/mod-n	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-n	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-r	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-r	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-reset	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-reset	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-s	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/mod-s	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	0	end-minus-width
-syntax/mod-u-uc	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/mod-u-uc	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/mod-unset	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-unset	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-x	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/mod-x	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width
-syntax/msc-c-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/msc-c-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/msc-r-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/msc-r-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/msc-x-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/msc-x-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/qnt-lazy	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-lazy	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-plus-ctl	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-plus-ctl	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-plus	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-plus	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-brace	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-brace	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-plus	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-plus	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-quest	default	byte	ok	dfa	vm	memchr	0	OK	-1	reverse-pass	0	landing
-syntax/qnt-poss-quest	nocaps	byte	ok	dfa	vm	memchr	0	OK	-1	reverse-pass	0	landing
-syntax/qnt-poss-star	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-poss-star	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-quest	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-quest	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-star	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/qnt-star	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass
-syntax/rec-1	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/rec-1	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/rec-back	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-back	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-define	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	0	end-minus-width
-syntax/rec-define	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	0	end-minus-width
-syntax/rec-fwd	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-fwd	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-g-angle	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-g-angle	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-name	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/rec-name	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/rec-py	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-py	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width
-syntax/rec-r-uc	default	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/rec-r-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-
-syntax/unp-p-lc	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/unp-p-lc	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/unp-p-uc	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/unp-p-uc	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing
-syntax/vrb-accept	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/vrb-accept	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/vrb-skip	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/vrb-skip	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/xcl-minus	default	byte	REFUSED	-	-	-	-	-	-	-	-	-
-syntax/xcl-minus	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/alt-cyr-64	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/alt-cyr-64	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/alt-distinct-lead	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/alt-distinct-lead	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/alt-mixed-width	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/alt-mixed-width	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/alt-nearmiss	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/alt-nearmiss	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/alt-shared-char	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width
-utf8/alt-shared-char	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width
-utf8/alt-shared-lead	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/alt-shared-lead	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/asr-a-z	default	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/asr-a-z	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/asr-b-ascii	default	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	1	end-minus-width
-utf8/asr-b-ascii	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	1	end-minus-width
-utf8/asr-b-cyr-ucp	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/asr-b-cyr-ucp	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/asr-b-cyr	default	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	12	reverse-pass	1	end-minus-width
-utf8/asr-b-cyr	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	12	reverse-pass	1	end-minus-width
-utf8/asr-b-midchar	default	utf8	ok	dfa	dfa	none	1	assert-at-start	0	reverse-pass	1	end-minus-width
-utf8/asr-b-midchar	nocaps	utf8	ok	dfa	dfa	none	1	assert-at-start	0	reverse-pass	1	end-minus-width
-utf8/asr-caret-ml	default	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/asr-caret-ml	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/asr-dollar-ml	default	utf8	ok	dfa	dfa	offset-set-bounded	0	assert-after	3	reverse-pass	1	end-minus-width
-utf8/asr-dollar-ml	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	0	assert-after	3	reverse-pass	1	end-minus-width
-utf8/asr-lb-class	default	utf8	ok	dfa	vm	byte-class	0	OK	1	reverse-pass	1	end-minus-width
-utf8/asr-lb-class	nocaps	utf8	ok	dfa	vm	byte-class	0	OK	1	reverse-pass	1	end-minus-width
-utf8/asr-lb-fixed	default	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/asr-lb-fixed	nocaps	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/asr-lb-neg	default	utf8	ok	dfa	vm	offset-set	0	OK	3	reverse-pass	1	end-minus-width
-utf8/asr-lb-neg	nocaps	utf8	ok	dfa	vm	offset-set	0	OK	3	reverse-pass	1	end-minus-width
-utf8/asr-lb-varwidth	default	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/asr-lb-varwidth	nocaps	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/ci-ascii-control	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/ci-ascii-control	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/ci-class-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-class-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-e-acute	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/ci-e-acute	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/ci-greek-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width
-utf8/ci-greek-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width
-utf8/ci-kelvin	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-kelvin	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-long-s	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-long-s	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-moskva	default	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/ci-moskva	nocaps	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/ci-neg-fold	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-neg-fold	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/ci-sigma	default	utf8	ok	dfa	dfa	byte-class	0	OK	2	reverse-pass	1	end-minus-width
-utf8/ci-sigma	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	2	reverse-pass	1	end-minus-width
-utf8/ci-strasse	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/ci-strasse	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/ci-turkish-i	default	utf8	ok	dfa	dfa	byte-class	0	OK	1	reverse-pass	1	end-minus-width
-utf8/ci-turkish-i	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	1	reverse-pass	1	end-minus-width
-utf8/ci-ucp-invariance	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/ci-ucp-invariance	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width
-utf8/cls-boundary-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-boundary-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-d-ascii	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	1	end-minus-width
-utf8/cls-d-ascii	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	1	end-minus-width
-utf8/cls-d-ucp	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/cls-d-ucp	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/cls-dot-rep	default	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/cls-dot-rep	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/cls-dot	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-dot	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-high-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-high-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-lead-pair	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-lead-pair	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-mixed	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-mixed	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-allhigh	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-allhigh	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-cjk	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-cjk	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-single	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-neg-single	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-posix-alpha	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-posix-alpha	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-s-nbsp	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/cls-s-nbsp	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/cls-s-ucp	default	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/cls-s-ucp	nocaps	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/cls-w-ascii	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-w-ascii	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/cls-w-ucp	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/cls-w-ucp	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/floor	default	utf8	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/floor	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	1	end-minus-width
-utf8/lit-1ch-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	2	reverse-pass	1	end-minus-width
-utf8/lit-1ch-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	2	reverse-pass	1	end-minus-width
-utf8/lit-1ch-3b	default	utf8	ok	dfa	dfa	offset-set	0	OK	3	reverse-pass	1	end-minus-width
-utf8/lit-1ch-3b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	3	reverse-pass	1	end-minus-width
-utf8/lit-1ch-4b	default	utf8	ok	dfa	dfa	offset-set	0	OK	4	reverse-pass	1	end-minus-width
-utf8/lit-1ch-4b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	4	reverse-pass	1	end-minus-width
-utf8/lit-anchored-run	default	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/lit-anchored-run	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-
-utf8/lit-cyr-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	12	reverse-pass	1	end-minus-width
-utf8/lit-cyr-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	12	reverse-pass	1	end-minus-width
-utf8/lit-mixed-ascii	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/lit-mixed-ascii	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/lit-nearmiss-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/lit-nearmiss-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/lit-nfc-pair	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	1	end-minus-width
-utf8/lit-nfc-pair	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	1	end-minus-width
-utf8/lit-offset-at-head	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/lit-offset-at-head	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/lit-offset-at-tail	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/lit-offset-at-tail	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width
-utf8/lit-run-3	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/lit-run-3	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width
-utf8/lit-sharp-s	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	7	reverse-pass	1	end-minus-width
-utf8/lit-sharp-s	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	7	reverse-pass	1	end-minus-width
-utf8/prp-cyrillic	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-cyrillic	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-greek-sc	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-greek-sc	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-greek	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-greek	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-han	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-han	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-ingreek	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/prp-ingreek	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/prp-l-anchored	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/prp-l-anchored	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-
-utf8/prp-l	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-l	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-latin	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-latin	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-lu	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-lu	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-n	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-n	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-notl	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-notl	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-zs	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/prp-zs	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing
-utf8/qnt-bounded-4b	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-bounded-4b	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-class-run	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-class-run	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-counted-3b	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-counted-3b	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-dot-bounded	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-dot-bounded	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass
-utf8/qnt-lazy-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing
-utf8/qnt-lazy-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing
-utf8/qnt-plus-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing
-utf8/qnt-plus-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing
+pid	config	enc	rc	route	fit	next	seeded	land	fixedw	recover	mb	row	bmin	bmax	hi	ldepth
+altwide/ci-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/ci-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/ci-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/ci-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/clsa-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/clsa-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/clsa-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsa-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsa-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsa-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsd-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/clsd-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/clsd-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsd-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsd-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/clsd-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	13	0	0
+altwide/cnt-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	36	0	0
+altwide/cnt-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	36	0	0
+altwide/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+altwide/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+altwide/nar4-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/nar4-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/nar4-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/nar4-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/nar4-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	12	0	0
+altwide/nar4-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	12	0	0
+altwide/pfx3-256	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/pfx3-256	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/pfx3-512	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/pfx3-512	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/s-2048	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/s-2048	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/s-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/s-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/s-4096	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/s-4096	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/s-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/s-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+altwide/sfx-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sfx-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sfx-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sfx-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sfx-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sfx-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	6	12	0	0
+altwide/sh1-256	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/sh1-256	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/sh1-512	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/sh1-512	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/sh1-64	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/sh1-64	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/srt-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/srt-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/srt-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/srt-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-1024	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/w-1024	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/w-128	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-128	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-192	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-192	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-2048	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/w-2048	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+altwide/w-256	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-256	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-384	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-384	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-512	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-512	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-8	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	12	0	0
+altwide/w-8	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	12	0	0
+altwide/w-96	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/w-96	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/wb-256	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/wb-256	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/wb-512	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	12	0	0
+altwide/wb-512	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	12	0	0
+bounded/cls-atleast-4096	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4096	-1	0	0
+bounded/cls-atleast-4096	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4096	-1	0	0
+bounded/cls-lazy-16384	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/cls-lazy-16384	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/cls-upto-1024	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	1024	0	0
+bounded/cls-upto-1024	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	1024	0	0
+bounded/cls-upto-128	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	128	0	0
+bounded/cls-upto-128	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	128	0	0
+bounded/cls-upto-16	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	16	0	0
+bounded/cls-upto-16	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	16	0	0
+bounded/cls-upto-16384	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/cls-upto-16384	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/cls-upto-2048	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	2048	0	0
+bounded/cls-upto-2048	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	2048	0	0
+bounded/cls-upto-256	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	256	0	0
+bounded/cls-upto-256	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	256	0	0
+bounded/cls-upto-32	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	32	0	0
+bounded/cls-upto-32	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	32	0	0
+bounded/cls-upto-32768	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+bounded/cls-upto-32768	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+bounded/cls-upto-4	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	4	0	0
+bounded/cls-upto-4	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	4	0	0
+bounded/cls-upto-4096	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	4096	0	0
+bounded/cls-upto-4096	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	4096	0	0
+bounded/cls-upto-512	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	512	0	0
+bounded/cls-upto-512	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	512	0	0
+bounded/cls-upto-64	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	64	0	0
+bounded/cls-upto-64	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	64	0	0
+bounded/cls-upto-65535	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+bounded/cls-upto-65535	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+bounded/cls-upto-8	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	8	0	0
+bounded/cls-upto-8	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	8	0	0
+bounded/cls-upto-8192	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/cls-upto-8192	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	-1	0	0
+bounded/csv5	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	164	0	0
+bounded/csv5	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	164	0	0
+bounded/ctx-greedy-256	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-greedy-256	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-1024	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-1024	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-256	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-256	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-64	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/ctx-lazy-64	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	8	-1	0	0
+bounded/dig-exact-16	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	16	reverse-pass	0	end-minus-width	16	16	0	0
+bounded/dig-exact-16	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	16	reverse-pass	0	end-minus-width	16	16	0	0
+bounded/dig-exact-2	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	2	reverse-pass	0	end-minus-width	2	2	0	0
+bounded/dig-exact-2	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	2	reverse-pass	0	end-minus-width	2	2	0	0
+bounded/dig-exact-32	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width	32	32	0	0
+bounded/dig-exact-32	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width	32	32	0	0
+bounded/dig-exact-8	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	8	reverse-pass	0	end-minus-width	8	8	0	0
+bounded/dig-exact-8	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	8	reverse-pass	0	end-minus-width	8	8	0	0
+bounded/dig-upto-16	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	16	0	0
+bounded/dig-upto-16	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	16	0	0
+bounded/dig-upto-2	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	2	0	0
+bounded/dig-upto-2	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	2	0	0
+bounded/dig-upto-32	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	32	0	0
+bounded/dig-upto-32	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	32	0	0
+bounded/dig-upto-4	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4	0	0
+bounded/dig-upto-4	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4	0	0
+bounded/dig-upto-8	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	8	0	0
+bounded/dig-upto-8	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	8	0	0
+bounded/dotted4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	15	0	0
+bounded/dotted4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	15	0	0
+bounded/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+bounded/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+bounded/grp-upto-1024	default	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	1024	0	0
+bounded/grp-upto-1024	nocaps	byte	ok	dfa	dfa	none	0	nullable	-1	pinned	0	pinned	0	1024	0	0
+bounded/hex32	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width	32	32	0	0
+bounded/hex32	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	32	reverse-pass	0	end-minus-width	32	32	0	0
+bounded/line-80	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	80	-1	0	0
+bounded/line-80	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	80	-1	0	0
+bounded/nest2-4	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	16	0	0
+bounded/nest2-4	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	16	0	0
+bounded/nest2-64	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4096	0	0
+bounded/nest2-64	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4096	0	0
+bounded/nest2-letters-6	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	36	0	0
+bounded/nest2-letters-6	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	36	0	0
+bounded/nest3-16	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4096	0	0
+bounded/nest3-16	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	4096	0	0
+bounded/nest3-3	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	27	0	0
+bounded/nest3-3	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	27	0	0
+bounded/pw-8-64	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	8	64	0	0
+bounded/pw-8-64	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	8	64	0	0
+bounded/year4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+bounded/year4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+capability/balanced-parens-rec	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/balanced-parens-rec	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/base10num-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/base10num-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/bracket-array-define	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/bracket-array-define	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/codegrammar-flat	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/codegrammar-flat	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/codegrammar-xflag	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/codegrammar-xflag	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/currency-lookbehind-fixed	default	byte	ok	dfa	dfa	memchr-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/currency-lookbehind-fixed	nocaps	byte	ok	dfa	dfa	memchr-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/date-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/date-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/doubled-word	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/doubled-word	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/dup-param-detect	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/dup-param-detect	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/email-local-nodup	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/email-local-nodup	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/email-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/email-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/evil-alt-nested	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/evil-alt-nested	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/file-ext-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	7	0	0
+capability/file-ext-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	7	0	0
+capability/float-literal-bound	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+capability/float-literal-bound	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+capability/floor-byte	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/floor-byte	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/hex8-bounded	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	8	reverse-pass	0	end-minus-width	8	8	0	0
+capability/hex8-bounded	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	8	reverse-pass	0	end-minus-width	8	8	0	0
+capability/high-byte-run	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	4	0	0
+capability/high-byte-run	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	4	0	0
+capability/ipv4-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/ipv4-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/keyword-prefix-order	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	10	0	0
+capability/keyword-prefix-order	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	10	0	0
+capability/letters-bounded-tail-z	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-at-start	-1	reverse-pass	0	reverse-pass	0	1024	0	0
+capability/letters-bounded-tail-z	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-at-start	-1	reverse-pass	0	reverse-pass	0	1024	0	0
+capability/logparse-atomic-removed	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/logparse-atomic-removed	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/logparse-atomic	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/logparse-atomic	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/mojibake-curly-quote	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/mojibake-curly-quote	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/negation-scope-lookbehind-var	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+capability/negation-scope-lookbehind-var	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+capability/nested-comment-rec	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/nested-comment-rec	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/numeric-id-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/numeric-id-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/phone-list-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/phone-list-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/phone-palindrome-6	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/phone-palindrome-6	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/pwd-strength-chain	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/pwd-strength-chain	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/quoted-delim-match	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/quoted-delim-match	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/router-prefix-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+capability/router-prefix-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+capability/tag-depth3-bound	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/tag-depth3-bound	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/tag-pair-match	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/tag-pair-match	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/tail-digits-eol	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/tail-digits-eol	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/tail-dotstar-txt	default	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/tail-dotstar-txt	nocaps	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/tail-ext-lower-txt	default	byte	ok	dfa	dfa	byte-class-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+capability/tail-ext-lower-txt	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+capability/tail-space-eol	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/tail-space-eol	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/tail-word-eoz	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/tail-word-eoz	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/trim-nested-star	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/trim-nested-star	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/utf8-lead-no-cont	default	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/utf8-lead-no-cont	nocaps	byte	ok	dfa	dfa	byte-class-bounded	0	assert-after	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/uuid-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/uuid-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-codegrammar-json-array-begin	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/wild-codegrammar-json-array-begin	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/wild-codegrammar-json-constant	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	5	0	0
+capability/wild-codegrammar-json-constant	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	5	0	0
+capability/wild-codegrammar-json-number-extended	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-codegrammar-json-number-extended	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-codegrammar-json-object-begin	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/wild-codegrammar-json-object-begin	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+capability/wild-codegrammar-json-stringcontent-escape	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	6	0	0
+capability/wild-codegrammar-json-stringcontent-escape	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	6	0	0
+capability/wild-datetime-datefinder-alternation	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-datetime-datefinder-alternation	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-datetime-moment-iso8601	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-datetime-moment-iso8601	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-logparse-base10num-grok	default	byte	ok	dfa	vm	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-logparse-base10num-grok	nocaps	byte	ok	dfa	vm	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-logparse-base10num-noatomic	default	byte	ok	dfa	dfa	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-logparse-base10num-noatomic	nocaps	byte	ok	dfa	dfa	byte-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-logparse-quotedstring-grok	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-logparse-quotedstring-grok	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-logparse-quotedstring-noatomic	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-logparse-quotedstring-noatomic	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-logparse-syslogbase-expanded	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	16	-1	0	0
+capability/wild-logparse-syslogbase-expanded	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	16	-1	0	0
+capability/wild-logparse-winpath-grok	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-logparse-winpath-grok	nocaps	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+capability/wild-secrets-aws-access-key-id	default	byte	ok	dfa	vm	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width	20	20	0	0
+capability/wild-secrets-aws-access-key-id	nocaps	byte	ok	dfa	dfa	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width	20	20	0	0
+capability/wild-secrets-github-pat	default	byte	ok	dfa	vm	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width	93	93	0	0
+capability/wild-secrets-github-pat	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width	93	93	0	0
+capability/wild-secrets-slack-webhook-url	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	77	81	0	0
+capability/wild-secrets-slack-webhook-url	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	77	81	0	0
+capability/wild-secrets-username-password-pair	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	22	-1	0	0
+capability/wild-secrets-username-password-pair	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	22	-1	0	0
+capability/wild-semdiv-altorder-foo-foobar-rustregex	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+capability/wild-semdiv-altorder-foo-foobar-rustregex	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	6	0	0
+capability/wild-semdiv-dollar-trailing-newline-pcre2	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+capability/wild-semdiv-dollar-trailing-newline-pcre2	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+capability/wild-semdiv-empty-alt-repeat-pcre2	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-semdiv-empty-alt-repeat-pcre2	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+capability/wild-validator-email-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-email-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-ipv4-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-ipv4-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-us-zip-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-us-zip-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-validator-uuid-grok	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	36	reverse-pass	0	end-minus-width	36	36	0	0
+capability/wild-validator-uuid-grok	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	36	reverse-pass	0	end-minus-width	36	36	0	0
+capability/wild-waf-crs-942140-dbnames	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/wild-waf-crs-942140-dbnames	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+capability/wild-waf-crs-942160-sleep-benchmark	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	-1	0	0
+capability/wild-waf-crs-942160-sleep-benchmark	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	-1	0	0
+capability/wild-waf-crs-942270-union-select	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	15	-1	0	0
+capability/wild-waf-crs-942270-union-select	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	15	-1	0	0
+capability/wild-waf-crs-942360-concat-sqli	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-waf-crs-942360-concat-sqli	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/wild-waf-crs-942500-comment-obfuscation	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+capability/wild-waf-crs-942500-comment-obfuscation	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+capability/winpath-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+capability/winpath-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+email/factored	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+email/factored	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+email/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+email/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+email/orig	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+email/orig	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+litrun/alt-foo-tails	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	6	0	0
+litrun/alt-foo-tails	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	6	0	0
+litrun/ctrl-abc-dollar	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+litrun/ctrl-abc-dollar	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+litrun/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+litrun/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+litrun/lit-l10	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width	10	10	0	0
+litrun/lit-l10	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width	10	10	0	0
+litrun/lit-l16	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	16	reverse-pass	0	end-minus-width	16	16	0	0
+litrun/lit-l16	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	16	reverse-pass	0	end-minus-width	16	16	0	0
+litrun/lit-l2	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	2	reverse-pass	0	end-minus-width	2	2	0	0
+litrun/lit-l2	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	2	reverse-pass	0	end-minus-width	2	2	0	0
+litrun/lit-l3	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+litrun/lit-l3	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+litrun/lit-l31	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	31	reverse-pass	0	end-minus-width	31	31	0	0
+litrun/lit-l31	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	31	reverse-pass	0	end-minus-width	31	31	0	0
+litrun/lit-l4	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+litrun/lit-l4	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+litrun/lit-l40	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	40	reverse-pass	0	end-minus-width	40	40	0	0
+litrun/lit-l40	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	40	reverse-pass	0	end-minus-width	40	40	0	0
+litrun/lit-l7	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	7	reverse-pass	0	end-minus-width	7	7	0	0
+litrun/lit-l7	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	7	reverse-pass	0	end-minus-width	7	7	0	0
+litrun/lit-l8	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	8	reverse-pass	0	end-minus-width	8	8	0	0
+litrun/lit-l8	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	8	reverse-pass	0	end-minus-width	8	8	0	0
+litrun/wild-secrets-aws-access-key-id	default	byte	ok	dfa	vm	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width	20	20	0	0
+litrun/wild-secrets-aws-access-key-id	nocaps	byte	ok	dfa	dfa	first-memchr-bounded	1	assert-at-start	20	reverse-pass	0	end-minus-width	20	20	0	0
+litrun/wild-secrets-github-pat	default	byte	ok	dfa	vm	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width	93	93	0	0
+litrun/wild-secrets-github-pat	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	93	reverse-pass	0	end-minus-width	93	93	0	0
+loglines/bignum	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	10	19	0	0
+loglines/bignum	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	10	19	0	0
+loglines/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+loglines/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+loglines/hex32-id	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	32	reverse-pass	0	end-minus-width	32	32	0	0
+loglines/hex32-id	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	32	reverse-pass	0	end-minus-width	32	32	0	0
+loglines/http-5xx	default	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	20	-1	0	0
+loglines/http-5xx	nocaps	byte	ok	dfa	dfa	memchr-bounded	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	20	-1	0	0
+loglines/ipv4	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	15	0	0
+loglines/ipv4	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	15	0	0
+loglines/ipv6	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	40	0	0
+loglines/ipv6	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	40	0	0
+loglines/iso-ts	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	19	32	0	0
+loglines/iso-ts	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	19	32	0	0
+loglines/kv-quoted	default	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+loglines/kv-quoted	nocaps	byte	ok	dfa	dfa	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	4	-1	0	0
+loglines/level-context	default	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	10	-1	0	0
+loglines/level-context	nocaps	byte	ok	dfa	vm	first-class-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	10	-1	0	0
+loglines/stack-frame	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	18	-1	0	0
+loglines/stack-frame	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	-1	reverse-pass	0	reverse-pass	18	-1	0	0
+loglines/uuid	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	36	reverse-pass	0	end-minus-width	36	36	0	0
+loglines/uuid	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	36	reverse-pass	0	end-minus-width	36	36	0	0
+sentinel/base10num-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/base10num-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/file-ext-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	7	0	0
+sentinel/file-ext-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	4	7	0	0
+sentinel/floor-byte	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+sentinel/floor-byte	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+sentinel/ipv4-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/ipv4-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/keyword-prefix-order	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	10	0	0
+sentinel/keyword-prefix-order	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	10	0	0
+sentinel/numeric-id-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/numeric-id-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/phone-list-nested-plus	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/phone-list-nested-plus	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/router-prefix-order	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+sentinel/router-prefix-order	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+sentinel/trim-nested-star	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/trim-nested-star	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/uuid-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/uuid-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-semdiv-dollar-trailing-newline-pcre2	default	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+sentinel/wild-semdiv-dollar-trailing-newline-pcre2	nocaps	byte	ok	dfa	dfa	run-pinned-bounded	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+sentinel/wild-validator-email-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-validator-email-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-validator-us-zip-owasp	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-validator-us-zip-owasp	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-waf-crs-942360-concat-sqli	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/wild-waf-crs-942360-concat-sqli	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/winpath-near-miss	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+sentinel/winpath-near-miss	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/alt-nested	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/alt-nested	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/alt-two	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/alt-two	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/anc-a-uc	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-a-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-caret	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-caret	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-dollar	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-dollar	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-g-uc	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-g-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-m-caret	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-m-caret	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/anc-m-dollar	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-m-dollar	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-z-lc	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-z-lc	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-z-uc	default	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/anc-z-uc	nocaps	byte	ok	dfa	dfa	offset-set-bounded	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/asr-k-uc	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+syntax/asr-k-uc	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	-1	0	0
+syntax/asr-nwb	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/asr-nwb	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/asr-wb	default	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/asr-wb	nocaps	byte	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/bak-1	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-1	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-2	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-2	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-g-rel	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-g-rel	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-k-named	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-k-named	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-py	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/bak-py	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/cls-d	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cls-d	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cls-dot	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-dot	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-fold-pair	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-fold-pair	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-h	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	9	-1	0	0
+syntax/cls-h	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	9	-1	0	0
+syntax/cls-i-class	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-i-class	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-mixed-case	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-mixed-case	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-n-uc	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/cls-n-uc	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/cls-negset	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-negset	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-pair-ctl	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-pair-ctl	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/cls-posix	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cls-posix	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cls-range	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/cls-range	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/cls-s-lc	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	-1	0	0
+syntax/cls-s-lc	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	7	-1	0	0
+syntax/cls-s-uc	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/cls-s-uc	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/cls-v	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	9	-1	0	0
+syntax/cls-v	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	9	-1	0	0
+syntax/cls-w	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cls-w	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/cnd-group	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/cnd-group	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/esc-cr	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width	10	10	0	0
+syntax/esc-cr	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	10	reverse-pass	0	end-minus-width	10	10	0	0
+syntax/esc-ctrl	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/esc-ctrl	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/esc-hex-braced	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/esc-hex-braced	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/esc-hex	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/esc-hex	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/esc-nl	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/esc-nl	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/esc-octal-0	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/esc-octal-0	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/esc-octal-o	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/esc-octal-o	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/esc-quote	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/esc-quote	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/esc-tab	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/esc-tab	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/floor	default	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+syntax/floor	nocaps	byte	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	0	end-minus-width	1	1	0	0
+syntax/grp-atomic-alt	default	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	3	0	0
+syntax/grp-atomic-alt	nocaps	byte	ok	dfa	vm	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	3	0	0
+syntax/grp-atomic-rep	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/grp-atomic-rep	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/grp-branch-reset	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-branch-reset	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-callout	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-callout	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-cap	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-cap	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-comment	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-comment	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/grp-named-quote	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-named-quote	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-named	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-named	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/grp-noncap	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/grp-noncap	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/lit-cat	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/lit-cat	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/lka-neg	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-neg	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-nonatomic	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-nonatomic	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-pos	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-pos	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-verb	default	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lka-verb	nocaps	byte	ok	dfa	vm	run-pinned	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lkb-neg	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lkb-neg	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lkb-pos	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/lkb-pos	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/mod-a	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/mod-a	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/mod-i	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-i	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-j-uc	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/mod-j-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/mod-n	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-n	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-r	default	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-r	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-reset	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-reset	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-s	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/mod-s	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	0	end-minus-width	9	9	0	0
+syntax/mod-u-uc	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/mod-u-uc	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/mod-unset	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-unset	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-x	default	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/mod-x	nocaps	byte	ok	dfa	dfa	run-pinned	0	alive-not-accept	3	reverse-pass	0	end-minus-width	3	3	0	0
+syntax/msc-c-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/msc-c-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/msc-r-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/msc-r-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/msc-x-uc	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/msc-x-uc	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/qnt-lazy	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/qnt-lazy	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/qnt-plus-ctl	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/qnt-plus-ctl	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/qnt-plus	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/qnt-plus	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/qnt-poss-brace	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	3	0	0
+syntax/qnt-poss-brace	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	3	0	0
+syntax/qnt-poss-plus	default	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/qnt-poss-plus	nocaps	byte	ok	dfa	vm	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	3	-1	0	0
+syntax/qnt-poss-quest	default	byte	ok	dfa	vm	memchr	0	OK	-1	reverse-pass	0	landing	1	2	0	0
+syntax/qnt-poss-quest	nocaps	byte	ok	dfa	vm	memchr	0	OK	-1	reverse-pass	0	landing	1	2	0	0
+syntax/qnt-poss-star	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+syntax/qnt-poss-star	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	1	-1	0	0
+syntax/qnt-quest	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+syntax/qnt-quest	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	5	6	0	0
+syntax/qnt-star	default	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/qnt-star	nocaps	byte	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	0	reverse-pass	2	-1	0	0
+syntax/rec-1	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/rec-1	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/rec-back	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-back	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-define	default	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	0	end-minus-width	5	5	0	0
+syntax/rec-define	nocaps	byte	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	0	end-minus-width	5	5	0	0
+syntax/rec-fwd	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-fwd	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-g-angle	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-g-angle	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-name	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/rec-name	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/rec-py	default	byte	ok	dfa	vm	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-py	nocaps	byte	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	0	end-minus-width	4	4	0	0
+syntax/rec-r-uc	default	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/rec-r-uc	nocaps	byte	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/unp-p-lc	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/unp-p-lc	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/unp-p-uc	default	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/unp-p-uc	nocaps	byte	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	0	landing	1	-1	0	0
+syntax/vrb-accept	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/vrb-accept	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/vrb-skip	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/vrb-skip	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/xcl-minus	default	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+syntax/xcl-minus	nocaps	byte	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/alt-cyr-64	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	4	14	1	1
+utf8/alt-cyr-64	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	4	14	1	1
+utf8/alt-distinct-lead	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	5	12	1	0
+utf8/alt-distinct-lead	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	5	12	1	0
+utf8/alt-mixed-width	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/alt-mixed-width	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/alt-nearmiss	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/alt-nearmiss	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/alt-shared-char	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width	6	6	1	2
+utf8/alt-shared-char	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width	6	6	1	2
+utf8/alt-shared-lead	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/alt-shared-lead	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/asr-a-z	default	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-a-z	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-b-ascii	default	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/asr-b-ascii	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/asr-b-cyr-ucp	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-b-cyr-ucp	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-b-cyr	default	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	12	reverse-pass	1	end-minus-width	12	12	0	0
+utf8/asr-b-cyr	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	1	assert-at-start	12	reverse-pass	1	end-minus-width	12	12	0	0
+utf8/asr-b-midchar	default	utf8	ok	dfa	dfa	none	1	assert-at-start	0	reverse-pass	1	end-minus-width	0	0	0	0
+utf8/asr-b-midchar	nocaps	utf8	ok	dfa	dfa	none	1	assert-at-start	0	reverse-pass	1	end-minus-width	0	0	0	0
+utf8/asr-caret-ml	default	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-caret-ml	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/asr-dollar-ml	default	utf8	ok	dfa	dfa	offset-set-bounded	0	assert-after	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/asr-dollar-ml	nocaps	utf8	ok	dfa	dfa	offset-set-bounded	0	assert-after	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/asr-lb-class	default	utf8	ok	dfa	vm	byte-class	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/asr-lb-class	nocaps	utf8	ok	dfa	vm	byte-class	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/asr-lb-fixed	default	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/asr-lb-fixed	nocaps	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/asr-lb-neg	default	utf8	ok	dfa	vm	offset-set	0	OK	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/asr-lb-neg	nocaps	utf8	ok	dfa	vm	offset-set	0	OK	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/asr-lb-varwidth	default	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/asr-lb-varwidth	nocaps	utf8	ok	dfa	vm	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/ci-ascii-control	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/ci-ascii-control	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/ci-class-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	2
+utf8/ci-class-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	2
+utf8/ci-e-acute	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/ci-e-acute	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/ci-greek-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width	6	6	1	1
+utf8/ci-greek-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	6	reverse-pass	1	end-minus-width	6	6	1	1
+utf8/ci-kelvin	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	3	1	2
+utf8/ci-kelvin	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	3	1	2
+utf8/ci-long-s	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	2	1	1
+utf8/ci-long-s	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	2	1	1
+utf8/ci-moskva	default	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	12	15	1	1
+utf8/ci-moskva	nocaps	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	12	15	1	1
+utf8/ci-neg-fold	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/ci-neg-fold	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/ci-sigma	default	utf8	ok	dfa	dfa	byte-class	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/ci-sigma	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/ci-strasse	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	7	9	1	0
+utf8/ci-strasse	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	7	9	1	0
+utf8/ci-turkish-i	default	utf8	ok	dfa	dfa	byte-class	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/ci-turkish-i	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/ci-ucp-invariance	default	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/ci-ucp-invariance	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/cls-boundary-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	1
+utf8/cls-boundary-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	1
+utf8/cls-d-ascii	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	1	end-minus-width	4	4	0	0
+utf8/cls-d-ascii	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	4	reverse-pass	1	end-minus-width	4	4	0	0
+utf8/cls-d-ucp	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	4	16	1	0
+utf8/cls-d-ucp	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	4	16	1	0
+utf8/cls-dot-rep	default	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/cls-dot-rep	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/cls-dot	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/cls-dot	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/cls-high-range	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	2
+utf8/cls-high-range	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	2
+utf8/cls-lead-pair	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	1
+utf8/cls-lead-pair	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	1
+utf8/cls-mixed	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	1
+utf8/cls-mixed	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	1
+utf8/cls-neg-allhigh	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-neg-allhigh	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-neg-cjk	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/cls-neg-cjk	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/cls-neg-single	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/cls-neg-single	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/cls-posix-alpha	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-posix-alpha	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-s-nbsp	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/cls-s-nbsp	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/cls-s-ucp	default	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	3	5	0	0
+utf8/cls-s-ucp	nocaps	utf8	ok	dfa	dfa	memchr	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	3	5	0	0
+utf8/cls-w-ascii	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-w-ascii	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	0	0
+utf8/cls-w-ucp	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/cls-w-ucp	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/floor	default	utf8	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/floor	nocaps	utf8	ok	dfa	dfa	memchr	0	OK	1	reverse-pass	1	end-minus-width	1	1	0	0
+utf8/lit-1ch-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/lit-1ch-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	2	reverse-pass	1	end-minus-width	2	2	1	1
+utf8/lit-1ch-3b	default	utf8	ok	dfa	dfa	offset-set	0	OK	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/lit-1ch-3b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	3	reverse-pass	1	end-minus-width	3	3	1	2
+utf8/lit-1ch-4b	default	utf8	ok	dfa	dfa	offset-set	0	OK	4	reverse-pass	1	end-minus-width	4	4	1	3
+utf8/lit-1ch-4b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	4	reverse-pass	1	end-minus-width	4	4	1	3
+utf8/lit-anchored-run	default	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/lit-anchored-run	nocaps	utf8	ok	none	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/lit-cyr-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	12	reverse-pass	1	end-minus-width	12	12	1	1
+utf8/lit-cyr-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	12	reverse-pass	1	end-minus-width	12	12	1	1
+utf8/lit-mixed-ascii	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	14	17	0	0
+utf8/lit-mixed-ascii	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	14	17	0	0
+utf8/lit-nearmiss-run	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/lit-nearmiss-run	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/lit-nfc-pair	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	1	end-minus-width	5	5	0	0
+utf8/lit-nfc-pair	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	5	reverse-pass	1	end-minus-width	5	5	0	0
+utf8/lit-offset-at-head	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/lit-offset-at-head	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	0	0
+utf8/lit-offset-at-tail	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	1	1
+utf8/lit-offset-at-tail	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	3	reverse-pass	1	end-minus-width	3	3	1	1
+utf8/lit-run-3	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/lit-run-3	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	9	reverse-pass	1	end-minus-width	9	9	1	2
+utf8/lit-sharp-s	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	7	reverse-pass	1	end-minus-width	7	7	0	0
+utf8/lit-sharp-s	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	7	reverse-pass	1	end-minus-width	7	7	0	0
+utf8/prp-cyrillic	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	3
+utf8/prp-cyrillic	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	3
+utf8/prp-greek-sc	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	4	1	3
+utf8/prp-greek-sc	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	4	1	3
+utf8/prp-greek	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	4	1	3
+utf8/prp-greek	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	4	1	3
+utf8/prp-han	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	3
+utf8/prp-han	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	2	-1	1	3
+utf8/prp-ingreek	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/prp-ingreek	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/prp-l-anchored	default	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/prp-l-anchored	nocaps	utf8	REFUSED	-	-	-	-	-	-	-	-	-	-	-	-	-
+utf8/prp-l	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-l	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-latin	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-latin	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-lu	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/prp-lu	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	4	1	3
+utf8/prp-n	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-n	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-notl	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-notl	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	-1	1	3
+utf8/prp-zs	default	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	3	1	2
+utf8/prp-zs	nocaps	utf8	ok	dfa	dfa	byte-class	0	OK	-1	reverse-pass	1	landing	1	3	1	2
+utf8/qnt-bounded-4b	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	8	16	1	3
+utf8/qnt-bounded-4b	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	8	16	1	3
+utf8/qnt-class-run	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	8	32	1	1
+utf8/qnt-class-run	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	8	32	1	1
+utf8/qnt-counted-3b	default	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	12	-1	1	2
+utf8/qnt-counted-3b	nocaps	utf8	ok	dfa	dfa	offset-set	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	12	-1	1	2
+utf8/qnt-dot-bounded	default	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	3	32	1	0
+utf8/qnt-dot-bounded	nocaps	utf8	ok	dfa	dfa	byte-class	0	alive-not-accept	-1	reverse-pass	1	reverse-pass	3	32	1	0
+utf8/qnt-lazy-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing	2	-1	1	1
+utf8/qnt-lazy-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing	2	-1	1	1
+utf8/qnt-plus-2b	default	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing	2	-1	1	1
+utf8/qnt-plus-2b	nocaps	utf8	ok	dfa	dfa	offset-set	0	OK	-1	reverse-pass	1	landing	2	-1	1	1

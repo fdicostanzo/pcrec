@@ -47,12 +47,9 @@ SAB_COUNT=1
 # it still deletes the LOOKAROUND conjunct and only that one, so the collapsed
 # conjunct is carried through to SAB_AFTER rather than quietly dropped —
 # deleting two conjuncts would be a different, easier-to-detect row.
-SAB_BEFORE='    return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
-                                  && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
-                                  && !cx->job->fit.prefilter_collapsed;'
-SAB_AFTER='    /* SABOTAGE S140: the lookaround conjunct deleted (design §5.6(2)) */
-    return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
-                                  && !cx->job->fit.prefilter_collapsed;'
+SAB_BEFORE='    return cx->job->fit.prefilter && !cx->job->nfa.erased;'
+SAB_AFTER='    /* SABOTAGE S140: the lookaround member of the erasure record ignored (design §5.6(2)) */
+    return cx->job->fit.prefilter && !(cx->job->nfa.erased & ~NFA_ERASED_LOOK);'
 # RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
 # expression moved verbatim (`job->` read through `cx->job->`) into
 # `pcrec_vm_prefilter_window`, the ONE derivation `Vm.mrl_win` and the

@@ -23,7 +23,7 @@ Every reader found by grep and updated in the same change:
 - `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT=38`; the failure-message
   narrative gains its own `(37->38 -- ...)` clause (the s1step6/c9dec3e4
   template).
-- `docs/spec/match_api.md` §6 — new `is \`38\`` bullet (the previous `is
+- `docs/dev/history/abi_changelog.md` — new `is \`38\`` bullet (the previous `is
   \`37\`` bullet becomes `was \`37\``), the change-log's own gap-free range
   updated to `2` to `38`.
 - `docs/design/reqpos_2b.md` §2.3 — a DATED AMENDMENT (per the manager's

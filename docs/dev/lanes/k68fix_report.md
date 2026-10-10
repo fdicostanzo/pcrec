@@ -33,8 +33,8 @@ Verified against the repro at `ec79d98c` (router-prefix-order,
 - `src/gen/emit_dfa.c:51` — `PCREC_ARTIFACT_ABI` 38 -> 39.
 - `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT=39`; the narrative
   string gains its own clause for this bump (copied FROM `match_api.md`
-  §6 per D76 addendum, not authored twice).
-- `docs/spec/match_api.md` §6 — new change-log entry, "gap-free from 2 to
+  docs/dev/history/abi_changelog.md per D76 addendum, not authored twice).
+- `docs/dev/history/abi_changelog.md` — new change-log entry, "gap-free from 2 to
   39".
 - `tests/codegen/run_recursion_identity.sh` — (B) FILEPIN re-pinned to
   `b255027f` (this lane's own last `src/`-touching commit — the mask fix
@@ -149,7 +149,7 @@ Progress/completion markers: `/tmp/k68fix_chain.log`, final line
 ## Commits (in order)
 
 1. `b255027f` — the flags-mask fix + abi ritual (bump 38 -> 39).
-2. `885aeb81` — abi ritual docs (match_api.md §6, ABI_EXPECT, tuning.md
+2. `885aeb81` — abi ritual docs (docs/dev/history/abi_changelog.md, ABI_EXPECT, tuning.md
    §2.27 cross-ref).
 3. `9d0d3597`, `c5d3e155` — cherry-picked from `main` (K68's own filing/
    scheduling commits, docs-only, needed because `lane/reqrunenc2` branches

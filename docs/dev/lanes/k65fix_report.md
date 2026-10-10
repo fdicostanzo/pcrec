@@ -54,7 +54,7 @@ the pre-check tests EVERY member of the necessary set.
    census files, 452/452.)
 5. **abi 33 → 34** (the brief's ruling). No stamp, stamp value, declaration
    or layout changes; emitted PROGRAM text moves on the 452. The ritual:
-   `PCREC_ARTIFACT_ABI`, `match_api.md` §6's new top entry (and "gap-free from
+   `PCREC_ARTIFACT_ABI`, `docs/dev/history/abi_changelog.md`'s new top entry (and "gap-free from
    2 to 34"), `run_codegen_tests.sh` `ABI_EXPECT` and its narrative, and
    `run_recursion_identity.sh` (B) re-pinned to `3b3c06f0` (the bump commit).
    The digit is a same-length substitution, so no byte-count manifest moves.
