@@ -1,0 +1,4 @@
+name	enc	icase	cfg	pattern_hex	row	W	subjects
+ctl/abcd-w+1	byte	0	default	61626364	end-minus-width	4	
+ctl/u8-e-acute-w+1	utf8	0	default	c3a9	end-minus-width	2	
+ctl/hyb-d4-w+1	byte	0	default	285c647b347d29	end-minus-width	4	

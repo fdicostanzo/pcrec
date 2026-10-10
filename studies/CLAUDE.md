@@ -303,4 +303,14 @@ re-measure before load-bearing use.
   classes K1-K12 with gratuitous-byte counts, and answer-checked hand-twins
   for the top classes. Backs `docs/dev/walk_survey.md`. See its own CLAUDE.md.
 
+- `start_landing/` — `[START-LANDING]`'s evidence (lane landdes, 2026-10-09;
+  design + hand-twin only, Linux dev box): a scratch fact-probe patch (prints
+  the landing fact and the fixed byte width, selects nothing), the census over
+  walk_survey's bench and corpus populations with the design's first-match
+  rows applied, an emitter-independent twin transformer (`replace` and
+  per-call `assert` modes, DFA bodies and hybrid prefilters alike), a
+  three-answerer identity driver against libpcre2 10.46 with failing controls,
+  and directional timing. Backs `docs/design/start_landing.md`. See its own
+  CLAUDE.md.
+
 Maintenance: update this file when studies are added/removed.

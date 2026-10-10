@@ -37,7 +37,7 @@ while IFS=$'\t' read -r name enc icase cfg phex row W subs; do
     mv "$d/t.c.tw" "$d/t.c"
     gcc -O1 -w -I"$d" -o "$d/check" "$HERE/check.c" "$d/o.c" "$d/t.c" -lpcre2-8 2>"$d/cc.err" \
         || { echo "$name $cfg CCFAIL $(head -c 300 "$d/cc.err")"; bad=1; continue; }
-    python3 "$HERE/mksubj.py" "$d/o.c" o "$enc" "$d/ex.hex" >/dev/null
+    python3 "$HERE/mksubj.py" "$d/o.c" o "$enc" "$d/ex.hex" "${MAXSUBJ:-40000}" >/dev/null
     pools=("$d/ex.hex" "$POOLDIR/pool_$enc.hex")
     if [ -n "${subs:-}" ]; then
         python3 -c 'import sys

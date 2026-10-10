@@ -1,0 +1,4 @@
+name	enc	icase	cfg	pattern_hex	row	W	subjects
+ctl/u8-dot-noguard	utf8	0	default	2e	landing	-1	
+ctl/u8-pL-noguard	utf8	0	default	5c707b4c7d2b	landing	-1	
+ctl/u8-dot-hybrid-noguard	utf8	0	default	282e29	landing	-1	
