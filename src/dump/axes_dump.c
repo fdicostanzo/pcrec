@@ -1099,6 +1099,12 @@ char *pcrec_axes_tsv(void)
      * selection: these two candidates, or ([OPT-REVEND] L2.1) the slot's
      * absence value `attempt-start` where the path asks no RECOVER. */
     emit_cand_axis(&sb, "search-start");
+    /* [OPT-REVEND] L2.1 the slot's ABSENCE value, read off the generated
+     * stamp rule's own column: what `RX_DFA_START` reads on a path that asks
+     * no RECOVER. A predicate row (no lever: the path, not a flag, decides). */
+    axis_row(&sb, "search-start", 3, pcrec_cand_absence(CAND_SLOT_RECOVER), "predicate",
+             "RX_DFA_START", pcrec_cand_absence(CAND_SLOT_RECOVER), "", "", "", "", "",
+             "the search's path asks no RECOVER (an ENG_ATTEMPT loop, whose attempt began at the start it reports, or the empty engine): the generated stamp rule's absence value");
 
     emit_predicate_axes(&sb);
     emit_memfn_section(&sb);

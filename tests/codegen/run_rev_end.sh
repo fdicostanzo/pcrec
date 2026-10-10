@@ -129,6 +129,52 @@ grep '^BAD: ' "$WORKDIR/verdicts" | head -10 >&2
 [ "$ndb" -eq 0 ] && ok "[corpus] every declining artifact is byte-identical under -fno-rev-end ($ndecl)" \
                  || bad "[corpus] $ndb declining artifact(s) move under -fno-rev-end"
 [ "$nbr" -eq 0 ] || bad "[corpus] $nbr pattern(s) refused only under -fno-rev-end"
+
+# ---- §3 the size ladder's rev-end clause (locate_finish.md §5 L2, LR-S12) --
+# A drop rung applies only if the member set it leaves is a STRICT SUBSET of
+# the one before it. A tie-capable walk that loses its anchored machine
+# relocates through the composite and GROWS (it gains the forward machine), so
+# under an emitted-size cap between the walk's size with the premultiplied
+# table dropped and its size as built, the ladder must skip the anchored rung
+# and take the next (premul): the witness then compiles, still `unwrapped`,
+# with no forward machine. Without the clause it takes the anchored rung,
+# grows past the cap and refuses (or ships the bigger composite). The cap is
+# DERIVED from the witness's own sizes on the default build (the comment-
+# excluded artifact size `--warn-emit-bytes` reports, the cap's own measure), and the three sizes'
+# order is asserted first, so a witness whose sizes stop straddling reads as
+# its own failure rather than as a pass. A reference compiler is built with
+# that cap (`PCREC_MAX_EMIT_BYTES`, FLAG_D), run_size_term.sh's shape.
+. "$ROOT_DIR/tests/lib/lib_srcs.sh"
+LADDER='\s+$'
+size_of() {
+    "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx "$@" --warn-emit-bytes=1 -o "$WORKDIR/sz.c" \
+        --pattern "$LADDER" 2>&1 | sed -n 's/.*artifact: \([0-9]*\) bytes of emitted C source.*/\1/p' | head -1
+}
+s_def=$(size_of); s_np=$(size_of -fno-premul-table)
+s_grow=$(size_of -fno-anchored-dfa -fno-premul-table)
+if [ -z "$s_def" ] || [ -z "$s_np" ] || [ -z "$s_grow" ] || [ "$s_np" -ge "$s_def" ] ||
+   [ "$s_grow" -le "$s_def" ]; then
+    bad "[ladder] the witness '$LADDER' no longer straddles: built $s_def, premul-dropped $s_np, anchored-and-premul-dropped $s_grow (need premul < built < grown)"
+else
+    cap=$(( (s_np + s_def) / 2 ))
+    REF="$WORKDIR/pcrec_cap"
+    # shellcheck disable=SC2046
+    if ${CC:-gcc} -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+           -DPCREC_MAX_EMIT_BYTES=$cap -o "$REF" "$ROOT_DIR/cli/main.c" \
+           $(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ') 2>"$WORKDIR/ref.err"; then
+        if "$TIMEOUT_BIN" 60 "$REF" --features all -p rx -o "$WORKDIR/lad.c" --pattern "$LADDER" 2>/dev/null &&
+           grep -qF '#define RX_DFA_MATCH "unwrapped"' "$WORKDIR/lad.c" &&
+           grep -qF '#define RX_ENGINE_SEL "size-cap-retry"' "$WORKDIR/lad.c" &&
+           ! grep -q 'rx_forward_' "$WORKDIR/lad.c"; then
+            ok "[ladder] under a cap of $cap (built $s_def, premul-dropped $s_np, grown $s_grow) the tie witness skips the anchored rung: unwrapped, size-cap-retry, no forward machine"
+        else
+            bad "[ladder] under a cap of $cap the tie witness '$LADDER' took the anchored rung (or refused): $(grep -E 'RX_DFA_MATCH|RX_ENGINE_SEL' "$WORKDIR/lad.c" 2>/dev/null | tr '\n' ' ')"
+        fi
+    else
+        bad "[ladder] the reference compiler (PCREC_MAX_EMIT_BYTES=$cap) did not build: $(head -3 "$WORKDIR/ref.err")"
+    fi
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

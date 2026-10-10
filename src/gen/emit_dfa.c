@@ -9614,6 +9614,13 @@ static const char *const cand_absent[CAND_NSLOTS] = {
     [CAND_SLOT_RECOVER] = "attempt-start",
 };
 
+/* `pcrec_cand_absence` (internal.h): slot `slot`'s absence value, for the
+ * `--list-axes` row that shows it. */
+const char *pcrec_cand_absence(int slot)
+{
+    return slot >= 0 && slot < CAND_NSLOTS ? cand_absent[slot] : NULL;
+}
+
 /* The ENTRY slots: asked once per artifact and route-independent (their
  * choice is the same on every route, `cand_hit_every`), so "on the path" is
  * "asked on some route". */

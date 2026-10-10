@@ -110,6 +110,17 @@ C(r".$", "U: one character before the end, after an ASCII and a multi-byte prefi
 C(r"\bab$", "W: a leading boundary reads the byte before the start",
   S("ab", "xab", "x ab", "ab\n") + SP("x ab", 1, 2))
 C(r"\Bb$", "W: a non-boundary at the start", S("ab", "b", "a b\n") + SP("ab", 1))
+# ---- D: declines (end_pin's three structural declines, and an optional pin) -
+C(r"(?:a$)?", "D: an optional end-anchored group pins nothing (rmin == 0): the empty match at 0",
+  S("b", "ab", "a", "a\n", ""))
+C(r"(?:a$)?\b", "D: the same with a trailing zero-width item", S("b", "a", " a"))
+C(r"(?m)a$", "D: a multiline `$` holds before every newline: not end-pinned",
+  S("a\nb", "ba\nc\n", "b\na", "a"))
+C(r"\Ga$|b$", "D: `\\G` anywhere declines (it reads the startpos)",
+  SP("xa", 0, 1) + SP("ab", 0, 1) + S("a"))
+# ---- S: a superset hybrid (lookaround erased: the walk's start is a bound) ---
+C(r"\w{1,2}(?:(?=)|)$", "S: an erased lookaround makes the prefilter a superset; the VM decides",
+  S("ab", "abc", "abc\n", "a b\n", " "))
 # ---- B: bounded widths (W1's population, now the walk's) -------------------
 C(r"abc$", "B: a fixed literal tail", S("xxabc", "abc\n", "abcabc", "ab"))
 C(r"[a-z]{2,4}$", "B: a bounded class run", S("abcdef", "ab\n", "a", "a bc\n"))
@@ -144,9 +155,10 @@ def main():
         print("pattern " + pat)
         if utf8: print("encoding utf8")
         fs = []
-        if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\B")): fs.append("assertions")
+        if any(t in pat for t in ("\\z", "\\Z", "\\b", "\\B", "\\G", "(?m)")): fs.append("assertions")
         if any(t in pat for t in ("\\d", "\\w", "\\s", "[")): fs.append("classes")
         if "(?=" in pat or "(?!" in pat: fs.append("lookaround")
+        if "(?m)" in pat: fs.append("modifiers")
         if fs: print("features " + ",".join(fs))
         for sp, s in subs:
             ans = oracle(binp, scratch, pat, utf8, s, sp)
