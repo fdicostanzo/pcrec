@@ -1833,7 +1833,7 @@ Q6's. *lfre2:* one preamble sentence with per-entry markers. *lfre1:* LR-S11 add
 the undeniable rows' contracts (RETRY `exact`/`clamped`/`retry-anchored`) are part of
 the same surface and are checked by the twin, not by a deny differential.
 
-**Q6. rev-inner after E1 and LR-S5.** *Problem:* rev-inner's per-occurrence verify is
+**Q6. rev-inner after E1 and LR-S5.** **RULED 2026-10-09 (D151 addendum 4): the question was framed on the wrong route. Rev-inner's value is the DFA population (walk_survey K12, G4 by construction). Stage 1 = the DFA hat, triggered by a K12 twin after G2. Stage 2 = the VM LOWER form, keeping the `dup-param-detect` trigger. Rank third, after [START-LANDING] and REVEND.** *Problem:* rev-inner's per-occurrence verify is
 sound only under G4, now a closed predicate that also fails DUPNAMES references
 spanning `P` and `S`; on its VM-route population (a backreference in `S` to a group of
 `P`) it can only hand a LOWER bound to the attempt loop. *Forces:* D151 placed the
