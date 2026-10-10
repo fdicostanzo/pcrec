@@ -1,0 +1,7 @@
+stratum	patterns	cells	win_diff	ans_diff	ora_diff	evr
+dfa-only	15	380865	0	0	0	0
+exact-hybrid	101	2768435	0	0	0	0
+hybrid-vs-unprefiltered	1	22461	0	0	0	0
+not-rev-end	30	890532	0	0	0	1371232
+superset-hybrid	3	73812	0	0	0	23630
+FAILURES: 0

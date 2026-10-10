@@ -13984,6 +13984,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [OPT-REVEND] L0 a VM artifact with no DFA body asks LOCATE on the VM
      * route; a hybrid asked it from its inlined body (`pcrec_emit_dfa_engine`). */
     if (!pcrec_artifact_has_dfa_scan(cx)) pcrec_cand_locate_vm(cx);
+    /* [OPT-REVEND] L2 stage 2 the VM entry asks FINISH for the hands it
+     * finishes (its VM hat: the search entry and `_match`). */
+    pcrec_cand_finish_vm(cx, v.mrl_win);
     vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);

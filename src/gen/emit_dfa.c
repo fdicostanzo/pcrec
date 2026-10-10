@@ -335,6 +335,11 @@ static bool cand_recover_asked(Ctx *cx);
 /* [OPT-REVEND] L2 can the `rev-end` walk TIE (both seeds reach the start), so
  * FINISH is asked for ENDSET? Beside the walk's emitter. */
 static bool revend_ties(Ctx *cx);
+/* [OPT-REVEND] L2 the VM entry's search hand, the boundary projection of a
+ * hand, and whether the body's walk asks FINISH for a tie (beside the walk). */
+static unsigned cand_vm_search_hand(Ctx *cx);
+static unsigned cand_project(Ctx *cx, unsigned hand);
+static bool revend_tie_asked(Ctx *cx);
 /* [OPT-REVEND] L0 the path's finisher route, a field read without a
  * selection (defined beside `cand_route_of`). */
 static CandRoute cand_finish_of(Ctx *cx);
@@ -4502,13 +4507,13 @@ static bool locate_empty_applies(const CandSel *s)
 /* [OPT-REVEND] L2 `rev-end`'s predicate (locate_finish.md §4.1, revend.md
  * §2.3): R1, every match ends at `n` or `n - 1` (the `end_pin` fact). R2 is
  * the row's route mask (CAND_ROUTE_DFA: the reverse machine exists), R4 its
- * order (`empty` precedes it). R3 is STAGE 1's one conjunct, the finisher a
- * DFA's: the VM hybrid's inlined body stays on the composite until stage 2
- * drops it. */
+ * order (`empty` precedes it). R3, stage 1's "the finisher is a DFA's", is
+ * DROPPED (stage 2, D156 addendum 1 Q2): a VM hybrid's inlined body walks
+ * too, and FINISH's VM hat finishes its hand (an ENDSET never reaches the
+ * VM's verify-at, LR-S3: that cell is not in its take). */
 static bool locate_rev_end_applies(const CandSel *s)
 {
-    if (pcrec_fact_end_pin(s->cx) == PCREC_EPIN_NONE) return false;  /* R1 */
-    return cand_finish_of(s->cx) != CAND_ROUTE_VM;                     /* stage 1 */
+    return pcrec_fact_end_pin(s->cx) != PCREC_EPIN_NONE;               /* R1 */
 }
 
 /* Is the body's selected LOCATE row a static NOMATCH (`empty`)? Defined
@@ -7910,9 +7915,13 @@ static const DfaDir dfa_dir_anchored = {
 /* FINISH `verify-at`'s availability on CAND_ROUTE_DFA: the anchored machine
  * was BUILT, within the DFA caps (`Job.anchored_ok`; ENG_UNANCH only, never
  * a VM hybrid's inlined prefilter). */
-static bool finish_verify_at_applies(const CandSel *s)
+/* `verify-at`'s AVAILABILITY (locate_finish.md §2.3, LR-G1): its needs on
+ * the asked route are built — the anchored machine on CAND_ROUTE_DFA
+ * (`anchored_ok`), the VM program on CAND_ROUTE_VM (always, where the VM is
+ * the finisher). Not a deny: `-fno-anchored-dfa` removes the BUILD. */
+static bool finish_available(const CandSel *s)
 {
-    return s->cx->job->anchored_ok;
+    return s->route == CAND_ROUTE_VM || s->cx->job->anchored_ok;
 }
 
 /* ---- AXIS J: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES ---------
@@ -8817,13 +8826,15 @@ static const CandRow cand_rows[] = {
      * whose needs the path derivation reads. `nomatch` is FIN1 and `report`
      * FIN2, the two finishers with nothing left to compute. The first two
      * descs moved verbatim from src/dump/axes_dump.c. */
-    { .c = { "verify-at", 0, finish_verify_at_applies }, .slot = CAND_SLOT_FINISH,
-      .routes = CR_DFA, .tok = "unwrapped", .map = CM_NONE,
+    { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
+      .routes = CR_DFA | CR_VM, .tok = "unwrapped", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 1, "unwrapped", PCREC_NO_ANCHORED_DFA } },
       .desc = "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])",
-      .needs = { [CAND_ROUTE_DFA] = { CAND_MA } },
-      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET } },
+      .needs = { [CAND_ROUTE_DFA] = { CAND_MA },
+                 [CAND_ROUTE_VM]  = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_AT, CAND_HAND_ENDSET },
+                [CAND_ROUTE_VM]  = { CAND_HAND_SPAN, CAND_HAND_AT } },
       .u.finish = { CAND_FIN_VERIFY } },
     { .c = { "search-from", 0, cand_always }, .slot = CAND_SLOT_FINISH,
       .routes = CAND_ALL_ROUTES, .tok = "search-filter", .map = CM_NONE,
@@ -8834,13 +8845,15 @@ static const CandRow cand_rows[] = {
                  [CAND_ROUTE_ATTEMPT] = { 0, CN(CAND_SLOT_LOCATE) },
                  [CAND_ROUTE_VM]      = { CAND_MVM, CAND_VM_ENTRY_CELLS } },
       .take = { [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_ENDSET },
-                [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT } },
+                [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT },
+                [CAND_ROUTE_VM]      = { CAND_HAND_ENDSET, CAND_HAND_LOWER } },
       .u.finish = { CAND_FIN_SEARCH } },
     { .c = { "nomatch", 0, cand_always }, .slot = CAND_SLOT_FINISH,
-      .routes = CR_DFA | CR_ATTEMPT, .tok = "nomatch", .map = CM_NONE, .hands = CT_VERDICT,
+      .routes = CAND_ALL_ROUTES, .tok = "nomatch", .map = CM_NONE, .hands = CT_VERDICT,
       .list = { [CAND_ROUTE_DFA] = { "match", 3, "nomatch" } },
       .desc = "always, where the body's locator proves there is no match at all (the empty engine): the match-here entry answers -1 at once, as every search entry answers 0",
-      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_NOMATCH }, [CAND_ROUTE_ATTEMPT] = { CAND_HAND_NOMATCH } },
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_NOMATCH }, [CAND_ROUTE_ATTEMPT] = { CAND_HAND_NOMATCH },
+                [CAND_ROUTE_VM] = { CAND_HAND_NOMATCH } },
       .u.finish = { CAND_FIN_NOMATCH } },
     { .c = { "report", 0, cand_always }, .slot = CAND_SLOT_FINISH,
       .routes = CR_DFA | CR_ATTEMPT, .tok = "report", .map = CM_NONE, .hands = CT_START,
@@ -9187,22 +9200,28 @@ static void cand_path_selfcheck(void)
             [CAND_ROUTE_DFA] = CAND_MF | CAND_MR, [CAND_ROUTE_ATTEMPT] = CAND_MATT,
             [CAND_ROUTE_VM] = CAND_MVM };
         /* The hands each route's askers give (0-terminated): the match-here
-         * entry's `AT` and `NOMATCH`, the search bodies' SPAN, and on
-         * CAND_ROUTE_DFA `rev-end`'s ENDSET. CAND_ROUTE_VM: the VM entry
-         * asks at L3. */
-        const unsigned asked[3][5] = {
+         * entry's `AT` and `NOMATCH`, the search bodies' SPAN, `rev-end`'s
+         * ENDSET; on CAND_ROUTE_VM the VM entry's projected hand (SPAN, or
+         * LOWER behind a superset body or none) and an inlined tie's. */
+        const unsigned asked[3][6] = {
             [CAND_ROUTE_DFA]     = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN,
                                      CAND_HAND_ENDSET },
-            [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN } };
+            [CAND_ROUTE_ATTEMPT] = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN },
+            [CAND_ROUTE_VM]      = { CAND_HAND_AT, CAND_HAND_NOMATCH, CAND_HAND_SPAN,
+                                     CAND_HAND_LOWER, CAND_HAND_ENDSET } };
         for (int rt = 0; rt < 3; rt++)
-            for (int h = 0; h < 5 && asked[rt][h]; h++) {
+            for (int h = 0; h < 6 && asked[rt][h]; h++) {
                 const CandRow *last = NULL;
                 CandSel q = { .route = rt, .hand = asked[rt][h], .point = true };
                 for (size_t i = 0; i < CAND_NROWS; i++)
                     if (cand_rows[i].slot == CAND_SLOT_FINISH &&
                         (cand_rows[i].routes & CAND_ON(rt)) && cand_takes(&cand_rows[i], &q))
                         last = &cand_rows[i];
-                if (!last || last->c.applies != cand_always || last->c.deny ||
+                /* Available BY CONSTRUCTION: an undeniable row whose
+                 * predicate is always true, or is the availability test of
+                 * needs this route always builds. */
+                if (!last || last->c.deny ||
+                    (last->c.applies != cand_always && last->c.applies != finish_available) ||
                     (last->needs[rt].mach & ~always_built[rt]))
                     cand_oracle_fail("table-finish-not-total", CAND_ROUTE_NAME(rt),
                                      cand_hand_alias(CAND_SLOT_FINISH, asked[rt][h]),
@@ -9513,17 +9532,18 @@ static void cand_path_visit(Ctx *cx, CandPath *p, CandSlot slot, CandRoute rt)
  * RELOCATE (E-FL): its walk is the route's FALLBACK LOCATE row's, entered at
  * the located start, below that row's front, so its cells join the path and
  * its front does not. */
-static void cand_path_finish(Ctx *cx, CandPath *p, CandRoute rt, unsigned hand, bool point)
+static void cand_path_finish(Ctx *cx, CandPath *p, CandRoute rt, unsigned hand, bool point,
+                             int reloc)
 {
     const CandRow *r = cand_finish_sel(cx, rt, hand, point);
     p->asks[rt] |= CN(CAND_SLOT_FINISH);
     if (!r) return;
-    if (r->u.finish.act == CAND_FIN_SEARCH && rt != CAND_ROUTE_VM && hand != CAND_HAND_AT) {
-        const CandRow *fb = cand_fallback(CAND_SLOT_LOCATE, rt);
-        p->needs |= r->needs[rt].mach | fb->needs[rt].mach;
+    if (r->u.finish.act == CAND_FIN_SEARCH && reloc >= 0 && hand != CAND_HAND_AT) {
+        const CandRow *fb = cand_fallback(CAND_SLOT_LOCATE, reloc);
+        p->needs |= fb->needs[reloc].mach;
         for (int sl = 0; sl < CAND_NSLOTS; sl++)
-            if (fb->needs[rt].cells & CN(sl)) cand_path_visit(cx, p, (CandSlot)sl, rt);
-        return;
+            if (fb->needs[reloc].cells & CN(sl)) cand_path_visit(cx, p, (CandSlot)sl, (CandRoute)reloc);
+        if ((int)rt == reloc) { p->needs |= r->needs[rt].mach; return; }
     }
     cand_path_follow(cx, p, r, rt);
 }
@@ -9548,17 +9568,21 @@ static CandPath cand_path_of(Ctx *cx)
 
     cand_path_visit(cx, &p, CAND_SLOT_LOCATE, p.locate);
     if (p.finish == CAND_ROUTE_VM) {
-        /* The VM search entry IS `search-from`'s VM hat (§1.3), though no
-         * FINISH ask selects it before L3; its `_match` is `verify-at`'s VM
-         * hat, which needs only the program, already here. */
-        cand_path_follow(cx, &p, cand_fallback(CAND_SLOT_FINISH, CAND_ROUTE_VM),
-                         CAND_ROUTE_VM);
+        /* The VM entry's FINISH asks (`pcrec_cand_finish_vm`): its search
+         * entry's projected hand and NOMATCH, its `_match`'s `AT`; and an
+         * inlined walk's tie, whose relocate runs on the BODY's route. */
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_vm_search_hand(cx), false, -1);
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_NOMATCH, false, -1);
+        cand_path_finish(cx, &p, CAND_ROUTE_VM, CAND_HAND_AT, true, -1);
+        if (p.body && revend_tie_asked(cx))
+            cand_path_finish(cx, &p, CAND_ROUTE_VM, cand_project(cx, CAND_HAND_ENDSET), false,
+                             p.locate);
         if (p.body) cand_path_visit(cx, &p, CAND_SLOT_RETRY, CAND_ROUTE_VM);
     } else {
         unsigned h[3];
         int nh = cand_locate_hands(cx, cand_locate_of(cx), h);
-        for (int k = 0; k < nh; k++) cand_path_finish(cx, &p, p.finish, h[k], false);
-        cand_path_finish(cx, &p, p.finish, dfa_match_hand(cx), true);
+        for (int k = 0; k < nh; k++) cand_path_finish(cx, &p, p.finish, h[k], false, p.finish);
+        cand_path_finish(cx, &p, p.finish, dfa_match_hand(cx), true, p.finish);
     }
     p.members = p.needs & p.built;
 #ifdef PCREC_CAND_TRACE
@@ -10939,6 +10963,45 @@ static bool revend_nl_last(const Dfa *d)
 static bool revend_ties(Ctx *cx)
 {
     return pcrec_fact_end_pin(cx) == PCREC_EPIN_EOL && revend_nl_last(&cx->job->rdfa);
+}
+
+/* Does this compile's body walk ask FINISH for a tie: `rev-end` is its
+ * LOCATE row and the walk can tie. */
+static bool revend_tie_asked(Ctx *cx)
+{
+    unsigned h[3];
+    int n = cand_locate_hands(cx, cand_locate_of(cx), h);
+    for (int k = 0; k < n; k++) if (h[k] == CAND_HAND_ENDSET) return true;
+    return false;
+}
+
+/* The VM search entry's hand (E-LF across the boundary projection): its
+ * inlined body's SPAN where one exists, else the VM-route composite's LOWER,
+ * projected (`cand_project`). */
+static unsigned cand_vm_search_hand(Ctx *cx)
+{
+    return cand_project(cx, pcrec_artifact_has_dfa_scan(cx) ? CAND_HAND_SPAN : CAND_HAND_LOWER);
+}
+
+/* `pcrec_cand_finish_vm` (internal.h): the VM entry's FINISH asks, with
+ * their records and hits. `verify-at` finishes its search hand exactly where
+ * the window ceiling `Vm.mrl_win` is armed (an exact hybrid); anything else
+ * is an internal error, not a silent choice. */
+void pcrec_cand_finish_vm(Ctx *cx, bool mrl_win)
+{
+    const CandRow *r[3];
+    const unsigned hand[3] = { cand_vm_search_hand(cx), CAND_HAND_NOMATCH, CAND_HAND_AT };
+    for (int k = 0; k < 3; k++) {
+        CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
+                      .route = CAND_ROUTE_VM, .point = k == 2, .hand = hand[k] };
+        r[k] = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
+        CAND_HIT(CAND_SLOT_FINISH, &s, r[k], "finish-vm");
+        PCREC_CAND_TRACE_REC("FINISH", "vm", r[k]->tok, "finish-vm");
+    }
+    if ((r[0]->u.finish.act == CAND_FIN_VERIFY) != (mrl_win && pcrec_artifact_has_dfa_scan(cx)) ||
+        r[1]->u.finish.act != CAND_FIN_NOMATCH || r[2]->u.finish.act != CAND_FIN_VERIFY)
+        pcrec_ctx_fail(cx, 0, "internal error: the VM entry's FINISH rows disagree with "
+                       "the window it arms (locate_finish.md §2.3)");
 }
 
 /* [OPT-REVEND] L2 the boundary projection of a hand FINISH is asked with on

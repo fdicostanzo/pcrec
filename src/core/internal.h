@@ -6895,6 +6895,13 @@ bool pcrec_cand_lang_exact(Ctx *cx);
  * machine is the one droppable machine today. src/gen/emit_dfa.c. */
 bool pcrec_cand_drop_anchored_shrinks(Ctx *cx);
 
+/* [OPT-REVEND] L2 stage 2 THE VM ENTRY's FINISH ASKS (locate_finish.md
+ * §2.3, §4.3): the search entry's hand (its inlined body's SPAN, or LOWER
+ * where the boundary projects it or no body exists), NOMATCH, and the
+ * match-here entry's AT; `verify-at`'s VM hat must finish the search hand
+ * exactly where `mrl_win` arms the window ceiling. src/gen/emit_dfa.c. */
+void pcrec_cand_finish_vm(Ctx *cx, bool mrl_win);
+
 /* [OPT-REVEND] L0 the LOCATE ask of an artifact with NO DFA body (a VM
  * artifact without a prefilter), once, on CAND_ROUTE_VM (locate_finish.md
  * §2.2, LR-S6): it selects `composite`, whose walk there is the VM's own
