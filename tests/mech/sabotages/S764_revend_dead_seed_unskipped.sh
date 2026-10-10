@@ -6,7 +6,7 @@ SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='revend'
 SAB_DESC='the walk'\''s dead-seed skip deleted (X1): a speculative seed whose state is dead reads `view[row(dead)]`'
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S764.'
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\d+$(?=\\n)" && grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-DEADSKIP'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\d+\$(?=\\n)" && grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-DEADSKIP'
 SAB_REACH_EXPECT='REACH-DEADSKIP'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

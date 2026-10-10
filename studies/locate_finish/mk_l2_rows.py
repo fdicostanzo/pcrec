@@ -80,7 +80,7 @@ row("S764", "revend_dead_seed_unskipped", E,
     '    emit_reverse_block(c, &rev, "revend", NULL);   /* SABOTAGE S764 */',
     "revend", "the walk's dead-seed skip deleted (X1): a speculative seed whose state is dead reads `view[row(dead)]`",
     "run_rev_end.sh §4: the X witnesses under -fsanitize=address,undefined (`\\d+$(?=\\n)` on \"12\": the seed at n is the dead state)",
-    ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\\\d+$(?=\\\\n)" && '
+    ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\\\d+\\$(?=\\\\n)" && '
      'grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-DEADSKIP', "REACH-DEADSKIP"))
 row("S765", "revend_tie_takes_n", E,
     '                   "        revend_end = revend_start + (size_t)revend_len;\\n"',
@@ -204,7 +204,7 @@ row("S780", "hybrid_dead_seed_unskipped", E,
     '    emit_reverse_block(c, &rev, "revend", entry ? "continue;" : NULL);   /* SABOTAGE S780 */',
     "revend revtwin", "X1 on a HYBRID: the inlined walk's dead-seed skip deleted",
     "run_rev_end.sh §4's hybrid witnesses under the sanitizer (`(\\d+)$(?=\\n)`, `(\\d)$(?!\\n)`) and the window twin's trailing-lookaround hybrids",
-    ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(\\\\d+)$(?=\\\\n)" && '
+    ('"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(\\\\d+)\\$(?=\\\\n)" && '
      'grep -q "if (rx_reverse_is_dead(reverse_state)) continue;" "$REACH_TMP/o.c" && echo REACH-HYB-DEADSKIP', "REACH-HYB-DEADSKIP"),
     design=D3)
 
