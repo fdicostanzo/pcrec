@@ -12,6 +12,17 @@ population file (pop_bench.py / pop_corpus.py: pid set enc icase pattern_hex
 `-i`, `--no-captures`). Output, one row per compile:
 
   pid config enc rc route fit next seeded land fixedw recover mb row
+      bmin bmax hi ldepth
+
+[rev 2, lane landrev] The probe (proto.patch rev 2) also prints the byte width
+INTERVAL [bmin, bmax] from one union-frontier iterator (SL-G3; `fixedw` is
+kept as the cross-check: W >= 0 must equal bmin == bmax), `hi` (a first byte
+above the seam's `onebyte_max`: the rows where the guard is emitted, SL-G2),
+`ldepth` (the deepest mid-character frontier Λ's walk reached), and a
+LANDEMPTY line on an EMPTY engine (SL-C1). An empty artifact (`RX_DFA_SCAN
+"empty"`) is row `empty`: RECOVER is off its path, every new row declines
+there (the shared `recover_on_path` conjunct, design §4.1), and its W is
+reported so the population the conjunct protects is counted, not assumed.
 
 `row` is the design's first-match RECOVER selection, computed HERE from the
 printed facts by the design's predicates (§3 of docs/design/start_landing.md):
@@ -19,6 +30,7 @@ printed facts by the design's predicates (§3 of docs/design/start_landing.md):
   end-minus-width route dfa, fixedw >= 0
   landing         route dfa, land OK, not seeded, next != none
   reverse-pass    otherwise (route dfa)
+  empty           the empty engine (rev 2): no row may take it
   -               route attempt / no DFA body (RECOVER not asked)
 """
 import os, subprocess, sys, tempfile, threading
@@ -63,12 +75,23 @@ def one(job):
     try:
         r = subprocess.run(args, capture_output=True, timeout=300, env=env)
     except subprocess.TimeoutExpired:
-        return [pid, cfg, enc, "TIMEOUT"] + ["-"] * 9
-    lines = [l for l in r.stderr.decode("utf8", "replace").split("\n") if l.startswith("LANDPROBE")]
+        return [pid, cfg, enc, "TIMEOUT"] + ["-"] * 13
+    err = r.stderr.decode("utf8", "replace").split("\n")
+    lines = [l for l in err if l.startswith("LANDPROBE")]
+    empt = [l for l in err if l.startswith("LANDEMPTY")]
     if r.returncode != 0:
-        return [pid, cfg, enc, "REFUSED"] + ["-"] * 9
+        return [pid, cfg, enc, "REFUSED"] + ["-"] * 13
+    if empt:
+        try:
+            art = open(out, encoding="latin-1").read()
+        except OSError:
+            art = ""
+        if 'DFA_SCAN "empty"' in art:
+            f = dict(kv.split("=", 1) for kv in empt[-1].split("\t")[1:])
+            return [pid, cfg, enc, "ok", "dfa", "-", "-", "-", "-", f["fixedw"], f["recover"], "-",
+                    "empty", f["bmin"], f["bmax"], "-", "-"]
     if not lines:   # no forward DFA form derived: VM-only or ENG_ATTEMPT-only
-        return [pid, cfg, enc, "ok", "none"] + ["-"] * 8
+        return [pid, cfg, enc, "ok", "none"] + ["-"] * 12
     f = dict(kv.split("=", 1) for kv in lines[-1].split("\t")[1:])
     # the LAST probe line may come from an ABANDONED fit-ladder attempt (a
     # size-cap drop of the prefilter, say): the emitted artifact is the
@@ -78,9 +101,9 @@ def one(job):
     except OSError:
         art = ""
     if '_DFA_START "' not in art:
-        return [pid, cfg, enc, "ok", "none"] + ["-"] * 8
+        return [pid, cfg, enc, "ok", "none"] + ["-"] * 12
     return [pid, cfg, enc, "ok", f["route"], f["fit"], f["next"], f["seeded"], f["land"],
-            f["fixedw"], f["recover"], f["mb"], row_of(f)]
+            f["fixedw"], f["recover"], f["mb"], row_of(f), f["bmin"], f["bmax"], f["hi"], f["ldepth"]]
 
 
 jobs, seen = [], set()
@@ -93,7 +116,7 @@ for line in open(POP):
     for cfg in ("default", "nocaps"):
         jobs.append((f[0], f[2], f[3], bytes.fromhex(f[4]), cfg))
 
-print("\t".join("pid config enc rc route fit next seeded land fixedw recover mb row".split()))
+print("\t".join("pid config enc rc route fit next seeded land fixedw recover mb row bmin bmax hi ldepth".split()))
 with ThreadPoolExecutor(JOBS) as ex:
     for out in ex.map(one, jobs):
         print("\t".join(out), flush=True)
