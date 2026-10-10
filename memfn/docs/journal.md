@@ -1163,3 +1163,31 @@ pointer when a kit change merges to main.
 - Pruned the stale worktrees r4e0/r4e0b/w5fix/r12.
 - Frank asked when the first SIMD directional reading comes. It comes after
   RQ-2, then the kit's rank_pos lane, then the RQ-4 timing slot.
+
+## 2026-10-09 night — R-13 follow-up (rankuse) built; R-12 delivered
+
+- R-12 delivered as `done:` on lane/memfn-vmlazy @ 92213567:
+  - slot17b read: make test green; VARIANTS FAILED only by the abi stamp; every mover
+    by id is in the lazy set (vartri).
+  - Four yes-collapsed floors fell by 1 when `(a{2,3}?){2,3}` crossed the lowered cap,
+    and VARIANT_PINS was re-pinned from slot17b's tallies.
+  - Main merges R-12 LAST, after specnum and lfl0, then gives a GO for a re-merge
+    plus slot (abi changelog re-homed to docs/dev/history/abi_changelog.md).
+- main 7b98a046 (RQ-2) merged into lane/memfn-r13 (6d16bbac): R-13's sink ops renumbered
+  MF_SITE_ABI 9 -> 10, with readers found by grep.
+- Lane rankuse (opus) built the kit's read of `rank_pos`:
+  - KB = the first ranked position other than KA. WHICH position is derived; HOW MANY
+    (two) is an UNMEASURED DEFAULT with the deny `--memfn=no-vrun-kb`.
+  - `rank_ok` refusals; bounds 2,700/2,800; SIMD-off 0 movers.
+  - Lane rkfix renumbered its S738-S742 (lfl0's ids) to S750-S754 (main's block), and
+    fixed two inherited reds: C4 (S726 renamed; 6 allowlist rows, floor 27) and K37.
+  - S522/S725/S726 solo clean. Fast-forwarded into lane/memfn-r13.
+- LESSONS:
+  - rankuse ran full-population emit_sweep and G2 while main's specnum chain held the
+    box, despite a light-only brief. Main marked that perfrun contaminated.
+  - rankuse missed two renumber messages while busy; its ids were fixed by a fresh lane.
+  - Future briefs: list heavy runs by NAME, and require run start/end times in the
+    report.
+- slot18 is scripted (memfn-slot/slot18/run.sh): 4 identity sweeps, N2, G2 full,
+  make test, 33 mech rows. It waits for seq5's end ("lfl0 CHAIN DONE; seq5 end") and
+  main's GO.
