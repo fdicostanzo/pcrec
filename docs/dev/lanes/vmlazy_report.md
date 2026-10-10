@@ -300,6 +300,43 @@ r4e0b §7's shape.
 - Then lane n7uret (N7U retired, D147 add. 14; docs/TSV only) merged on top;
   strict, test-memfn-manifest, test-memfn-forms green on the merge.
 
+## 8b. The slot chain, read by the kit manager 2026-10-09 (slot17 + slot17b)
+
+slot17 ran at tip 1bb49dee, ref 631771b7, abi 71:72. slot17b ran at 1d8fae3b (main
+7b98a046 merged in), ref 7b98a046. Logs are in `worktrees/memfn-slot/slot17{,b}/`
+(scratch, not kept).
+
+- **Green:** build, strict, SABANCHOR, recursion identity 18/0, the lazy G1 census (0
+  OTHER / ASYMMETRIC, its three planted controls fire), N2 (would_decline 0,
+  floors clean), and G2 full (192,654,549 passed / 0 failed).
+- **mech, 26 rows (PROCS=4):** `COMPLETE: unexpected 0, undetected 0, unreached 1,
+  anomalies 0`. The unreached row is S685, which is declared UNREACHED because
+  VMLAZY's pending manifest row is deleted.
+- **slot17's make test: RED, test-startset only.** The new corpus file's blocks were
+  missing from the stage-2 VM manifests: 10 movers in auto, 17 in forced (triage
+  lane ssred; base green, tip red). Lane vmlfix (921a3ef2) regenerated them with
+  census_s1.py and spliced in only the corpus rows. The 7 bench rows the generator
+  also proposes stay un-refreshed, by main's ruling: a bench re-pin is its own step.
+- **slot17b's make test (after vmlfix and the main merge): green**, 0 section errors.
+  perfrun flags it contaminated (load1 8.2), which affects the timing only.
+- **slot17 VARIANTS** measured nothing (the slot script omitted `--tree-rev`). slot17b
+  re-ran it at the post-RQ-2 base: `VARIANTS: FAILED`, as an abi event must, because
+  every reached .c row moves by the stamp. Lane vartri read every mover by id over
+  all 10 cells (`out/slot17b_movers_by_id.txt`):
+  - none falls outside the lazy set;
+  - .c bodies move only on lazy patterns;
+  - facts moves only `RX_VM_PROGRAM_BYTES`, in +58 B steps per lazy prefix;
+  - the lowered-cap movers are `(a{2,3}?){2,3}` crossing 30000 B (29936 -> 30110),
+    plus refusal figures shifted by multiples of 58;
+  - emit-ir-vm: 0 movers.
+- **Four tag floors fell (all yes-collapsed -1):** lowsize/lowboth byte emit-ir-auto
+  and -fprefilter. That is the cross-cap flip predicted in §3 of
+  vmlmerge_report.md. VARIANT_PINS was re-pinned from slot17b's own tallies; every
+  other change is a rise, mostly the new file's +20 reach. Manifests are unchanged.
+  TRACE_VARIANT_RECORDS_FLOOR was not re-measured (no `--trace`).
+- **movers.tsv** is the 5431-row census and misses the new file's 14 lazy rows. The
+  5451-row by-id list above supersedes it for the verdict.
+
 ## 9. Charter vs delivered
 
 | charter item | state |

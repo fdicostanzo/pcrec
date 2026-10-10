@@ -57,4 +57,8 @@ Maintenance: update this file when files are added/removed or change roles.
   planted controls run first, a K35 floor per stream, and `-S` assembly
   identity per recipe through `r4e0b/routing_census.py`'s normalizer;
   `--movers-out`/`--nonid-out` list the movers). `vmlazy/out/` holds the
-  transcripts. Results in `docs/dev/lanes/vmlazy_report.md`.
+  transcripts. Results in `docs/dev/lanes/vmlazy_report.md`. `movers.tsv` is the
+  5431-row census (before `tests/base/vm_lazy_rmin_prefix.rxt`); the slot17b
+  by-id read over the full 5451 rows, every cell and stream, is
+  `out/slot17b_movers_by_id.txt` (with `out/slot17b_pin_vs_measured.txt`, the
+  VARIANT_PINS re-pin's before/after; report §8b).
