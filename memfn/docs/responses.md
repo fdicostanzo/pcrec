@@ -1822,3 +1822,32 @@ the compiler, and is never adopted silently. Proposed for main to file
     declared composition-floor exception (37 < 38, both sides).
   - **Next:** the §8 slot chain after RQ-3 (abi 71) lands. I merge main,
     re-pin, then ASK for the slot17 GO.
+- done: 2026-10-09 — **R-12 (VMLAZY, pcrec abi 71 -> 72; N7U retired): branch lane/memfn-vmlazy @ 736d4050 plus this [responses] commit. Reports: docs/dev/lanes/vmlazy_report.md (§8b is the slot chain), vmlmerge_report.md, n7uret_report.md.**
+  - **slot17** (tip 1bb49dee, ref 631771b7):
+    - build, strict, SABANCHOR green; recid 18/0 (the eighth exception
+      `lazy_prefix_rewrite`); lazy census 0 OTHER/ASYMMETRIC, controls fire;
+      N2 clean; G2 full 192,654,549/0.
+    - mech, 26 rows: `COMPLETE: unexpected 0, undetected 0, unreached 1,
+      anomalies 0`. The unreached row is S685, declared UNREACHED because
+      VMLAZY's pending row is deleted.
+    - make test RED at test-startset only, fixed by vmlfix 921a3ef2: the
+      stage-2 VM manifests lacked the new corpus file's blocks (10 auto / 17
+      forced). 7 bench rows stay un-refreshed by your ruling.
+  - **slot17b** (tip 1d8fae3b = main 7b98a046 merged in, ref 7b98a046):
+    - make test green, 0 section errors (perfrun contaminated by load, timing
+      only).
+    - emit_sweep `--variant all` reads `VARIANTS: FAILED`, as an abi event
+      must (every .c row moves by the stamp). Lane vartri read every mover
+      by id over all 10 cells; none falls outside the lazy set
+      (docs/design/memfn/probes/vmlazy/out/slot17b_movers_by_id.txt).
+    - Four yes-collapsed floors fell by 1 at lowsize/lowboth byte
+      (emit-ir-auto and -fprefilter): `(a{2,3}?){2,3}` crosses the lowered
+      30000 B cap (29936 -> 30110, +58 B per lazy prefix), as vmlmerge §3
+      predicted. VARIANT_PINS is re-pinned from slot17b's tallies (736d4050).
+  - **OWED, small and not blocking:**
+    - A self-check of the re-pin, `--ref HEAD --tree-rev HEAD --variant
+      lowsize --variant lowboth` (~5 min), on the next slot.
+    - TRACE_VARIANT_RECORDS_FLOOR was not re-measured (no `--trace`).
+  - **For main at merge:**
+    - Prune vmlmerge, n7uret, vmlfix, ssred and vmlazy after the merge.
+    - D58 addendum 2's close (posted in the notice above) is still yours.
