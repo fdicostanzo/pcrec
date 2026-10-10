@@ -70,6 +70,15 @@ def one(job):
     if not lines:   # no forward DFA form derived: VM-only or ENG_ATTEMPT-only
         return [pid, cfg, enc, "ok", "none"] + ["-"] * 8
     f = dict(kv.split("=", 1) for kv in lines[-1].split("\t")[1:])
+    # the LAST probe line may come from an ABANDONED fit-ladder attempt (a
+    # size-cap drop of the prefilter, say): the emitted artifact is the
+    # judge of whether a DFA body, hence RECOVER, survived
+    try:
+        art = open(out, encoding="latin-1").read()
+    except OSError:
+        art = ""
+    if '_DFA_START "' not in art:
+        return [pid, cfg, enc, "ok", "none"] + ["-"] * 8
     return [pid, cfg, enc, "ok", f["route"], f["fit"], f["next"], f["seeded"], f["land"],
             f["fixedw"], f["recover"], f["mb"], row_of(f)]
 

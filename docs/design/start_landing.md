@@ -53,7 +53,7 @@ LR-G10/LR-G11/LR-G14.
    `.needs` omit R, so §2.7's member fold drops the reverse machine with no stamp edit.
    `RX_DFA_START` and `rx_info.search_form` gain two values. One abi event. On
    hybrids the rows are NEUTRAL BY WINDOW IDENTITY, verified per prefilter call
-   (2,742,756 calls over 33 hybrid rows, 0 differences, §5).
+   (68.4 M calls over 670 hybrid rows, bench and corpus, 0 differences, §5).
 4. **(d) Identity (§5).** Every bench row the design selects (310 (pattern, config)
    rows) was twinned in ASSERT mode, which keeps the reverse pass and compares its
    start with the row's on every call. Coverage: 91.5 M (call, startpos) cells, every
@@ -61,8 +61,8 @@ LR-G10/LR-G11/LR-G14.
    a machine-derived exhaustive pool (ill-formed utf8 tokens included). Results:
    **0** twin/artifact differences, **0** per-call differences in 50.1 M calls, and
    **0** new libpcre2 disagreements (the 14,504 pre-existing ones are K74's, identical
-   on both sides). The corpus (1,751 rows, default config) is in
-   `results/twins_corpus.txt` (§5.2). Seven controls FAIL as they must (§5.3).
+   on both sides). The corpus adds 1,750 rows and 143.3 M per-call checks, also with
+   0 differences (§5.2). Seven controls FAIL as they must (§5.3).
    Directional timing, two runs, 7700X, loaded box: `abcd` −37/−38%, utf8 `.` −42%,
    utf8 `\p{L}+` −35%, `\w+` −29/−30%. Every gap except `\w+` exceeds 2(σa+σb); the
    `\w+` gap does not, because one cold outlier of 5.5 ms inflates σ (§5.4).
@@ -503,9 +503,9 @@ cell where the walk exceeds 10% of the cell", 6 bench patterns today.
 
 **Hybrids: NEUTRAL by window identity, verified, not argued.** The survey argued it
 from language identity. §1's identity is stronger: per call, the prefilter's
-`window[0][0]` is today's. ASSERT-mode twins of the 33 bench hybrid rows compared it
-on 2,742,756 prefilter calls (every startpos, the VM's RETRY recomputes included,
-since they call the same prefilter): 0 differences (§5.1). The superset and collapsed
+`window[0][0]` is today's. ASSERT-mode twins of 670 hybrid rows (33 bench, 637
+corpus) compared it on 68.4 M prefilter calls (every startpos, the VM's RETRY
+recomputes included, since they call the same prefilter): 0 differences (§5.1, §5.2). The superset and collapsed
 hybrids are covered by the same argument: Λ and `W` are read from the NFA the
 prefilter's machines are built from, and the identity is with that machine's reverse
 pass. `locate_finish.md` §1.5's classification: NEUTRAL (no attempt removed).
@@ -624,11 +624,34 @@ either.
 
 ### 5.2 The corpus
 
-`results/twins_corpus.txt`: every corpus pattern block the design selects, default
-config (1,751 rows: 1,334 `end-minus-width`, 417 `landing`). Same three pools, the
-`ex` pool capped at 12,000 subjects, and the block's own subjects (walk_survey's
-synthesized 16 KiB subjects around each block's match) as the third. Totals are in
-§9's report line and `docs/dev/lanes/landdes_report.md`.
+`results/twins_corpus.txt` covers every corpus pattern block the design selects, in the
+default config: 1,751 rows, of which 1,334 are `end-minus-width` and 417 `landing`. It
+uses the same three pools, with two changes: the `ex` pool is capped at 12,000 subjects,
+and the third pool is the block's own subjects (walk_survey's synthesized 16 KiB
+subjects around each block's match).
+
+| | rows | cells | twin ≠ artifact | DFA-body calls / diffs | libpcre2 (artifact / twin / twin-only) | find-all calls / diffs |
+|---|---|---|---|---|---|---|
+| all | 1,750 | 169,952,746 | 0 | 143,323,191 / 0 | 43,440 / 43,440 / **0** | 56,164,734 / 0 |
+| of which hybrids | 637 | 70,893,458 | 0 | 65,703,299 / 0 | — | 17,892,005 / 0 |
+
+The 1,751st row is NOT-TWINNABLE, because the census read its facts from an abandoned
+fit-ladder attempt. `tests/uprops/size_ladder_prefilter_drop.rxt:15`'s final artifact
+has its prefilter size-dropped, so it has no DFA body and RECOVER is not asked.
+`census.py` now judges by the emitted artifact (report F-L4).
+
+The 43,440 libpcre2 disagreements are all pre-existing and identical on both sides:
+- `(()|^){0}[b]` is the documented PCRE2 10.46 optimizer quirk
+  (`../dev/upstream_issues.md`; `tests/base/fuzz_regressions.rxt:29`).
+- utf8 `$`, `\b` and `\B` at an ill-formed END are K74.
+- `(a(b)?)+` and `((?=(a+))a)+` give up on capacity (rc −3) on a 2,000-byte run, where
+  libpcre2 answers. A give-up is in-contract.
+
+Bench and corpus together:
+- 2,060 twinned rows and 261.5 M cells;
+- **193.5 M per-call identity checks, 0 differences**, of which 68.4 M are hybrid
+  prefilter calls;
+- 86.5 M find-all calls, 0 differences.
 
 ### 5.3 Controls that fail (`results/controls.txt`)
 
