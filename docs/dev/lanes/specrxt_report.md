@@ -106,3 +106,11 @@ SUPERSEDED = not the live behaviour (section 3); HISTORY = a dated, step or find
 ## 7. Validation
 
 Run LAST, after this report was written (the scan reads it). Verdict lines are appended below by the lane.
+
+Run LAST on the final tree (commit after this report), verdict lines quoted:
+- `make strict`: `strict: whole tree compiles clean with -Werror -Wshadow`.
+- `make test-spec-history`: `checks passed: 136` / `checks failed: 0` (rxt_format.md: five markers 0 clean; 32 numbered headings, 224 paragraphs each labelled in order, contents current, citation floor read).
+- `make test-cli`: `cases failed: 0`.
+- `bash tests/registry/limits_check.sh`: `checks passed: 37` / `checks failed: 0`; `bash tests/registry/axes_registry_check.sh`: `checks passed: 216` / `checks failed: 0` (run because registry.md, limits.md and match_api.md each took a one-line citation hunk).
+- The example in section 1.14 extracted from the doc and run: `run.sh` cases passed 9, failed 0; `verify_rxt.py` ALL CHECKS PASSED.
+- Skipped on purpose (box hold): `make test-rxtsource` (it reruns the whole corpus through `run.sh`; this lane changed only one comment in it), full `make test`, mech, test-axes, san. No `src/` file was edited.
