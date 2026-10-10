@@ -1180,7 +1180,7 @@ compile time, where one exists.
 | 7 | `engine` | `unsigned` | `PCREC_ENGINE_DFA` (1) or `PCREC_ENGINE_VM` (2) | `<PREFIX>_ENGINE` (as a string) |
 | 8 | `step_budget` | `int64_t` | the step budget; `-1` = none (every DFA artifact) | `<PREFIX>_STEP_BUDGET` |
 | 9 | `work_budget` | `int64_t` | the work budget — the third bound (D47 second addendum): per-iteration forward work the fail label never sees, in work units, counted separately from steps; `-1` = none | `<PREFIX>_WORK_BUDGET` |
-| 10 | `frame_capacity` | `int64_t` | the resume-frame capacity; `-1` = no bound (every DFA artifact) ([sentinel](#frame-capacity-sentinel)) | `<PREFIX>_RESUME_FRAMES` |
+| 10 | `frame_capacity` | `int64_t` | the resume-frame capacity; `-1` = no bound (every DFA artifact) ([sentinel](#frame-capacity-sentinel)) | `<PREFIX>_RESUME_FRAMES` in the bounded case (a DFA artifact stamps `0` there) |
 | 11 | `subject_ceiling` | `int64_t` | `0` = unset / not applicable; otherwise the stamped honest subject ceiling for a residually-unbounded capture body | — |
 | 12 | `resume_frames` | `int64_t` | the stamped DEFAULT resume capacity, in frames; `0` = no resume stack (every DFA artifact) | `<PREFIX>_RESUME_FRAMES` |
 | 13 | `trail_frames` | `int64_t` | the stamped default trail capacity, in entries; `0` on a DFA artifact | `<PREFIX>_TRAIL_FRAMES` |
@@ -2980,7 +2980,8 @@ with no C header (an FFI or `dlopen` binding).
   artifact. Pass `NULL` when the size is `0`; nothing is lost.
 - **On a DFA artifact the whole surface is present and inert**: the three
   `_in` entries, the `<prefix>_buffers` type and the five macros are emitted;
-  the four sizing macros and the four `rx_info` fields read `0`; and an `_in`
+  the four sizing macros and the four `rx_info` fields read `0` (and
+  `<PREFIX>_BUFFER_ALIGN` reads `1`); and an `_in`
   entry accepts a descriptor and ignores it, answering as its un-suffixed
   sibling. One call site therefore works against both engines. These five
   macros are on both engines, unlike the VM-only capacity macros of §6.3,

@@ -143,9 +143,9 @@
 #buffers-entries                    line 2889  ### 10.2 The three entries and the descriptor
 #buffers-null-giveup                line 2926  ### 10.3 `buf == NULL`, and what a give-up means
 #buffers-sizing                     line 2949  ### 10.4 Sizing a buffer
-#buffers-concurrency                line 2992  ### 10.5 Concurrency
-#buffers-mmap-example               line 2998  ### 10.6 Example: an mmap'd, lazily-committed reservation
-#buffers-freestanding               line 3043  ### 10.7 The freestanding and embedded profile
-#buffers-unchanged                  line 3055  ### 10.8 What the `_in` entries do not change
-#tiered-entry                       line 3067  ### 10.9 The tiered default of the un-suffixed entries
-#tiered-entry-cost                  line 3116  **The cost model.** Measured on the RFC 5322 email specimen (`--engine=vm`,
+#buffers-concurrency                line 2993  ### 10.5 Concurrency
+#buffers-mmap-example               line 2999  ### 10.6 Example: an mmap'd, lazily-committed reservation
+#buffers-freestanding               line 3044  ### 10.7 The freestanding and embedded profile
+#buffers-unchanged                  line 3056  ### 10.8 What the `_in` entries do not change
+#tiered-entry                       line 3068  ### 10.9 The tiered default of the un-suffixed entries
+#tiered-entry-cost                  line 3117  **The cost model.** Measured on the RFC 5322 email specimen (`--engine=vm`,
