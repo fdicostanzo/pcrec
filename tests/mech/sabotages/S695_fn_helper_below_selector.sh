@@ -20,10 +20,9 @@ SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "abc[0-9]+xyz"'
 SAB_REACH_EXPECT='    return rx_ofsskip__body(subject, n, pos);'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    if (fn_head(art, h, p, x.body_fn, o) || body->render(art, h, &x, o)) return -1;
-    if (prefix && prefix->render(art, h, &x, o)) return -1;
-    return fn_selector(art, h, p, fn, x.body_fn, o);'
-SAB_AFTER='    if (fn_selector(art, h, p, fn, x.body_fn, o)) return -1;   /* SABOTAGE S695 */
+# Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
+# (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
+SAB_BEFORE='    if (fn_head(art, h, p, x.body_fn, o) || body->render(art, h, &x, o)) return -1;'
+SAB_AFTER='    if (fn_selector(art, h, p, fn, x.body_fn, rung, names, nr, o)) return -1;   /* SABOTAGE S695 */
     if (fn_head(art, h, p, x.body_fn, o) || body->render(art, h, &x, o)) return -1;
-    if (prefix && prefix->render(art, h, &x, o)) return -1;
     return 0;'

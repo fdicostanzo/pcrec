@@ -129,6 +129,14 @@ MF_CLASS(FOLD_STMT,   "a fold text of statements folding the lvalue `@`: balance
 MF_CLASS(EXACT,       "a RUN term with no mask, or every mask byte 0xFF")
 MF_CLASS(MASKED,      "a RUN term with some mask byte not 0xFF, every run byte inside its mask")
 MF_CLASS(UNSAT,       "a RUN term with a run byte outside its mask (Q-G2-13: never holds)")
+/* the site's policy word (R4e' batch 1, integration.md §R4.9.2.3 [r9 F-3]): a
+   stated BIT-SET value. Each set bit is one class; NONE is the empty word. A
+   row serves the value iff it serves EVERY class the value carries (gate.c's
+   class_set_of): a SIMD row serves neither PORTABLE nor INLOOP, so it is
+   DECLINED under -fno-memfn-simd and on an in-loop site, with no new verdict */
+MF_CLASS(PORTABLE,    "policy carries MF_P_PORTABLE_ONLY (-fmemfn-simd not forced)")
+MF_CLASS(INLOOP,      "policy carries MF_P_INLOOP (D91 budget 2)")
+MF_CLASS(SIZE,        "policy carries MF_P_SIZE_LEANING (--tune -2/-1; set by nothing yet)")
 
 /* ---- the fields: mf_site (the define walk) ------------------------------- */
 
@@ -177,6 +185,11 @@ MF_FIELD(span_hi, MF_PH_DEFINE, VALUE, cl_span_hi,
 MF_FIELD(denies, MF_PH_DEFINE, VALUE, cl_denies,
          CM(NONE) | CM(RUN_OVERLAP) | CM(OTHER),
          "the compile's MF_D_* denies (OTHER: a bit no row knows)")
+MF_FIELD(policy, MF_PH_DEFINE, VALUE, cl_policy,
+         CM(NONE) | CM(PORTABLE) | CM(INLOOP) | CM(SIZE) | CM(OTHER),
+         "the site's MF_P_* word, a BIT SET (R4e' batch 1, §R4.9.2.3): every set bit is its "
+         "class and a row must serve each (NONE: no bit); a bit no class names is OTHER. "
+         "Scalar rows serve MF_ANY; a SIMD row serves NONE and SIZE only")
 MF_FIELD(fn_ref, MF_PH_DEFINE, HOOK, cl_fn_ref,
          CM(REF) | CM(OTHER),
          "site.pred.fn_ref, the id pcrec's fn_name hook names a FUNC site by, for every op "

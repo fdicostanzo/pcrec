@@ -36,7 +36,7 @@
 #define MF_NS(name) pcrec_mf_##name
 #endif
 
-#define MF_SITE_ABI 9   /* layout and meaning of every struct below. 4 (M1b,
+#define MF_SITE_ABI 10  /* layout and meaning of every struct below. 4 (M1b,
                            §R4.8): mf_sink.stamp_int; mf_hooks.run_cmp
                            retired; `note` no longer carries helpers. 5
                            (R4h prep, Q-R4h-1 (a), 2026-10-08):
@@ -59,9 +59,11 @@
                            count (Q-R10-5). No MF_VOCAB move. 9 (RQ-2,
                            D157, 2026-10-09): mf_pred.rank_n/rank_pos/
                            rank_ppm and MF_RANK_MAX, appended LAST. No
-                           MF_VOCAB move; no kit row reads them yet. (The
-                           next number at landing: R-13's sink-ops bump
-                           renumbers against it, whichever lands second.) */
+                           MF_VOCAB move; no kit row reads them yet.
+                           10 (R4e' batch 1, R-13, 2026-10-09; renumbered
+                           after RQ-2 landed first): mf_sink.simd_open and
+                           simd_close, appended LAST (§R4.9.2.4). No
+                           MF_VOCAB move. */
 #define MF_VOCAB    3   /* the operation vocabulary: op x handoff x term kinds.
                            3 (M7 prep, R-8): MISMATCH / ON_DIFF / REF       */
 
@@ -377,7 +379,16 @@ typedef struct {
  * as pcrec_sb_cstr does. CHOSEN (M1b: its first kit caller, the run compare).
  * `stamp` writes one stamp line with its value QUOTED (a string); `stamp_int`
  * (RULED Q-M1b-2, MF_SITE_ABI 4, appended LAST because initializers are
- * positional) writes one with its value UNQUOTED (an integer). */
+ * positional) writes one with its value UNQUOTED (an integer).
+ * `simd_open(u, level)` / `simd_close(u)` (MF_SITE_ABI 10, R4e' batch 1,
+ * integration.md §R4.9.2.4; appended LAST) BRACKET every byte the kit writes
+ * under a CPU-level guard: the guard's `#if` line through its `#endif` (the
+ * intrinsics `#include` and the level's helper included), and the selector's
+ * guarded arms. A bracket opens and closes at a line start, never nests and
+ * never splits a comment. `level` is the kit's levels.def index, opaque to
+ * the host. pcrec counts the bracketed bytes out of every length decision
+ * (RQ-3). NULL = not offered: the kit then renders no guarded text at all
+ * (a host that cannot count it never receives it). */
 typedef struct mf_sink {
     void *u;
     void (*puts)(void *u, const char *s);
@@ -390,6 +401,8 @@ typedef struct mf_sink {
                          int (*extra_escape)(uint8_t));
     void (*legend_byte)(void *u, uint8_t byte);
     void (*stamp_int)(void *u, const char *name, long long value);
+    void (*simd_open)(void *u, int level);
+    void (*simd_close)(void *u);
 } mf_sink;
 
 /* The kit's scratch, backed by pcrec's arena: memory lives until pcrec's
@@ -693,6 +706,28 @@ const mf_option *mf_options(size_t *n);
  * Returns 0, or -1 with the kit's refusal text in err[0..n) (pcrec shows it
  * unchanged, D26). */
 int mf_opts_check(const char *str, char *err, size_t n);
+
+/* ---- the kit's ISA levels (R4e' batch 1; memfn/src/levels.def) ---------
+ *
+ * The levels a SIMD row's text may sit under, in levels.def's order
+ * (ascending width). pcrec never reads this: it is the enumeration point
+ * the kit's own tests compile against (each level's `test_march`, [r9
+ * F-13]), with a literal floor on its count in the tests (K35). Every
+ * string is DATA: this header names no architecture (C4). */
+#define mf_levels MF_NS(levels)
+typedef struct {
+    const char *token;      /* kit-private id                                 */
+    const char *family;     /* the architecture family                        */
+    const char *guard;      /* the preprocessor condition its text sits under */
+    const char *header;     /* the compiler header included inside the guard  */
+    unsigned    vw;         /* the register width in bytes                    */
+    const char *test_march; /* the -march the tests compile the level at      */
+    uint32_t    forbid;     /* instruction classes its rows may not use (kit) */
+    const char *stamp;      /* its MEMFN_FORMS token                          */
+} mf_level;
+
+/* The levels, in levels.def's order; `*n` gets the count. */
+const mf_level *mf_levels(size_t *n);
 
 /* ---- K1: the primitives' REFERENCE functions (requirements.md §1.3) ------
  *

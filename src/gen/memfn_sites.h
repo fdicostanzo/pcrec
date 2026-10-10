@@ -55,7 +55,8 @@ mf_art *pcrec_memfn_art(Ctx *cx);
  * comment). `cstr` is pcrec_sb_cstr (a string literal's body, the run
  * compare's constants); `legend_byte` is the DFA emitter's
  * (`pcrec_emit_legend_byte`); `comment_byte`, `stamp` and `stamp_int` are
- * not offered here (the stamps' sink is memfn_stamps.c's). */
+ * not offered here (the stamps' sink is memfn_stamps.c's); `simd_open` and
+ * `simd_close` are RQ-3's bracket counters below (wired since R-13). */
 typedef struct {
     mf_sink s;
     StrBuf *sb;
@@ -66,10 +67,9 @@ void pcrec_memfn_sink(PcrecMfSink *ps, StrBuf *sb);
  * `simd_open(u, level)` and `simd_close(u)` bracket every byte the kit writes
  * under a CPU-level guard, and pcrec counts the bracketed bytes into the
  * buffer's guarded record (pcrec_sb_simd_open/_close), which every length
- * decision subtracts. KIT GAP: `mf_sink` has no such members yet (they are
- * born in SIMD batch 1's MF_SITE_ABI bump), so pcrec_memfn_sink cannot wire
- * them; these are the functions it will wire, at the declared signatures.
- * `level` is the kit's levels.def token, which pcrec does not read. */
+ * decision subtracts. pcrec_memfn_sink wires them into `mf_sink`'s two
+ * members (born in SIMD batch 1's MF_SITE_ABI 10 bump, R-13). `level` is the
+ * kit's levels.def index, which pcrec does not read. */
 void pcrec_memfn_sink_simd_open(void *u, int level);
 void pcrec_memfn_sink_simd_close(void *u);
 #ifdef PCREC_SIMD_WITNESS

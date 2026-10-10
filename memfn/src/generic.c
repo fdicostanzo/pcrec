@@ -843,6 +843,7 @@ static const gate_contract generic_ct = {
     [FLD_note_tag]        = MF_ANY,     /* not read (file header) */
     [FLD_indent]          = MF_ANY,     /* :390, :489, :566 */
     [FLD_comment_tier]    = MF_ANY,     /* not read: no comment */
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
     [FLD_fold_kind]       = MF_ANY,     /* mm_render: NONE exact, else the fold text */
     [FLD_ref]             = MF_ANY,     /* mm_render parenthesizes a non-identifier */
     [FLD_reflen]          = MF_ANY,     /* mm_render parenthesizes a non-identifier */

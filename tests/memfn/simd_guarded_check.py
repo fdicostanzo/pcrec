@@ -5,7 +5,7 @@ docs/spec/limits.md "Size limits and SIMD-guarded bytes"). Driven by
 tests/memfn/run_simd_guarded.sh, which builds the WITNESS compiler.
 
 TWO COMPILERS over one population (a corpus sample plus named witnesses) at
-six argv arms:
+seven argv arms (`simd`, R-13, renders the real SIMD rows):
 
   PLAIN    the tree's build/pcrec. Every compiled artifact carries exactly
            one `<UP>_SIMD_GUARDED_BYTES` line, and its value is at most the
@@ -59,6 +59,9 @@ ARMS = [
     ('nocomments', ['-fno-comments']),
     ('longprefix', ['-p', LONG_PREFIX]),
     ('warn', ['--warn-emit-bytes=1']),   # every compile quotes its two sizes
+    # R-13: the SIMD layer on, so the plain half bounds REAL SIMD rows' bytes
+    # (vrun-w16/-w32) and the witness half holds neutrality beside them
+    ('simd', ['-fmemfn-simd']),
 ]
 
 # NAMED WITNESSES, each reaching a reader the corpus sample may not: a VM
@@ -72,6 +75,7 @@ NAMED = [
     ('knee-above', '(?:(abc)|(def)|(ghi)){1,40}xyz'),
     ('ladder', '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'),
     ('dfa', 'abc[0-9]+def'),
+    ('vrun', '(?i)union.*?select'),   # R-13: a vrun FUNC under the `simd` arm
 ]
 
 # K35 FLOORS, literal: each population a reader needs, counted over the run.
@@ -82,6 +86,7 @@ FLOORS = {
     'two-blocks': 200,      # WITNESS artifacts with the VM program's block
     'ladder-moved': 1,      # UNROLL_K_WHY "size-model" (the ladder ran)
     'refused': 1,           # both sides refused alike, stderr included
+    'simd-form': 5,         # R-13: artifacts whose MEMFN_FORMS names a SIMD row (simd arm; 6 measured)
 }
 
 
@@ -190,12 +195,17 @@ def main():
         sites = [] if fm[0] == b'none' else fm[0].decode().split(',')
         total = 0
         for site in sites:
-            form = site.split('@')[0]
-            if form not in bounds:
-                rec['issues'].append('MEMFN_FORMS token %r has no declared bound (UNDECLARED)' % site)
-            total += bounds.get(form, 0)
+            # `FORM@L1+L2`: one row per rendered level, `FORM-Lk` (R-13)
+            form, _, levels = site.partition('@')
+            for row in (['%s-%s' % (form, lv) for lv in levels.split('+')] if levels else [form]):
+                if row not in bounds:
+                    rec['issues'].append('MEMFN_FORMS token %r: row %r has no declared bound (UNDECLARED)'
+                                         % (site, row))
+                total += bounds.get(row, 0)
         if v > total:
             rec['issues'].append('plain stamp %d exceeds the sum of its rows\' bounds %d' % (v, total))
+        if sites:
+            rec['counts'].append('simd-form')
         if PROG.search(pout):
             rec['counts'].append('vm')
         why = UNROLL_WHY.search(pout)
@@ -206,7 +216,8 @@ def main():
         if len(sw) != 1:
             rec['issues'].append('witness carries %d stamp lines' % len(sw))
             return rec
-        vw = int(sw[0][1], 16)
+        vw = int(sw[0][1], 16) - v   # the witness blocks' share: a real SIMD
+                                      # row's bytes (the `simd` arm) are both builds'
         wstrip, nblk, _ = strip_blocks(wout)
         pstrip, pblk, _ = strip_blocks(pout)
         if pblk:

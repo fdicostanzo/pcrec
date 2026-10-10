@@ -15,6 +15,55 @@ its report is **`G2M7_REPORT.md`**.
 Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
 its report is **`G2M6_REPORT.md`**.
 
+## The SIMD family (lane r13, R-13, R4e' batch 1; MF_SITE_ABI 10)
+
+NOT written blinded: lane r13 wrote the kit's rows and this family both, so
+its independence rests on the oracle (G2's own scalar byte loop over the
+bytes the generator chose) and the compiler, not on the author.
+
+- **g2/g2_simd_gen.c** — the generator: the batch-1 site space (an
+  offset-skip FUNC whose predicate is one RUN term: length 2..32, offset
+  0..3, per-position exact / letter-case / one-bit / arbitrary masks, the
+  scanned position a two-member cube; 1 in 7 under `MF_D_RUN_OVERLAP`) and
+  its negative controls (`fn-memchr` scan, short span, PORTABLE policy,
+  each row's deny, a second term, a run past the shape bound, a sink with no
+  bracket ops), rendered with policy 0 through a sink that OFFERS
+  `simd_open`/`simd_close` and counts the bracketed bytes. A second render
+  of every site at pcrec's placeholder prefix and longest FUNC name
+  measures its guarded bytes. Sites 0 and 1 are the constructed worst cases
+  of `guarded_max`. Since lane rankuse (D157) every site also STATES a
+  generated position ranking (`mf_pred.rank_*`) in one of seven modes (none,
+  one entry on or off the scanned position, whole permutations led by it or
+  by any position, the second entry at the run's ends, partial), rates with
+  ties, entries past `rank_n` filled with positions a reader would choose;
+  one site in five also tries a MALFORMED copy, which must be refused while the same copy WELL-FORMED (its control) is accepted; and
+  a `deny-kb` class (`--memfn=no-vrun-kb`). Writes `g2v_sites.c` and
+  `g2v_meta.tsv` (the stated entries, the copy's verdict, the tie count).
+- **g2/g2_simd.h**, **g2/g2_simd_driver.c** — the site table and the
+  driver: G2's reference (first c >= pos whose run holds, a plain byte
+  loop) against every rendered function, at every span length 0..2*32+T+8,
+  no-hit near-miss subjects, a single hit at every candidate, multi-hit
+  subjects along their restart chain and every pos, in an END-guard layout
+  (`s + n` at a PROT_NONE page), a START-guard layout and every alignment
+  0..31 (POISONED under ASan); a fault is a failure.
+- **run_g2_simd.py** — the runner (run_g2.sh section 4a; alone:
+  `python3 memfn/tests/run_g2_simd.py [--quick]`): each class's MEMFN_FORMS
+  against a hand table; THE RANKING CHECK (rankuse): every rendered
+  helper's whole-block loads, in order, equal the filter the kit's rule
+  gives from the GENERATED entries (KA, then the first stated entry other
+  than KA; KA alone under the deny), every malformed copy refused, floors
+  per ranking mode and per filter shape (a KB, none, KB not the first
+  entry, KB at the run's ends, a rate tie);
+  guarded bytes against `tests/memfn/simd_bounds.tsv`,
+  answers at x86-64 / x86-64-v3 / x86-64-v4 / `-mgeneral-regs-only` and
+  ASan+UBSan, per-path execution floors (its OWN text instrumentation of
+  the rendered file: entry fall-through, whole block, final block, verify),
+  five plants per level (final-block guard, lane mask, lane order, verify
+  skipped, reach one short) red where the level is live and green where it
+  is compiled out, and no PDEP/PEXT/gather in any object. Under `--rows`
+  its generator's REACH lines join the per-row sum (the SIMD rows are
+  reached nowhere else: G2's other sinks offer no bracket ops).
+
 ## The MF_SITE_ABI 8 contract, as G2 tests it (lane g2m6, `G2M6_REPORT.md`)
 
 Written from memfn.h (the ADVANCE hooks, RULED Q-R10-2..5), integration.md section 14 and 15.9's

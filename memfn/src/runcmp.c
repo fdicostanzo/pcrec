@@ -178,7 +178,7 @@ static int rc_row_holds(size_t i, const void *x)
     return rc_holds(rows[i].pred, x);
 }
 
-static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_row_holds };
+static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_row_holds, NULL };
 
 /* The first row that is not denied by the art's denies, that the gate
  * passes, and that applies to run `r` (RUN term `t`): the ONE selection both
@@ -189,7 +189,7 @@ static const kit_table rc_table = { "runcmp", NROWS, rc_ct, NULL, rc_deny, rc_ro
 static const rc_row *rc_row_of(mf_art *art, const mf_term *t, const rc_run *r)
 {
     gate_in in = { NULL, NULL, t };
-    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in };
+    gate_tctx tc = { art, "runcmp", 0, MF_PH_RUN, &in, 0 };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&rc_table, 0, &in, MF_PH_RUN, art->denies, r, &tc, &why);
     if (i < NROWS) return &rows[i];
@@ -446,6 +446,7 @@ static const gate_contract runcmp_ct = {
     [FLD_note_tag]        = MF_ANY,                   /* not read */
     [FLD_indent]          = MF_ANY,                   /* not read: an expression, no statement */
     [FLD_comment_tier]    = MF_ANY,                   /* not read: no comment */
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 }};
 
 const arm runcmp_arm = {

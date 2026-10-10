@@ -29,5 +29,7 @@ SAB_REACH='"$PCREC" --engine=vm -fno-run-overlap -p rx -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-DENIED-RUN-IS-MEMCMP"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (d & denies) {'
-SAB_AFTER='        if (0 && (d & denies)) {   /* SABOTAGE S570 */'
+# Re-aimed by lane r13 (R-13, 2026-10-09): its anchor moved with the R4e' batch 1 seam
+# (kit_walk's per-row step / fn_rows[]'s decl column / the seam's level blocks); same intent.
+SAB_BEFORE='    if ((d & denies) ||'
+SAB_AFTER='    if ((0 && (d & denies)) ||   /* SABOTAGE S570 */'

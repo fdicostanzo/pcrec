@@ -428,6 +428,30 @@ static int cl_span_hi(const gate_in *in)
     return in->s && in->s->span_hi == MF_SPAN_UNBOUNDED ? CL_UNBOUNDED : CL_OTHER;
 }
 
+/* The policy word's single NAMED class (a refusal names one): the most
+ * restrictive bit, PORTABLE over INLOOP over SIZE; NONE for no bit. Its full
+ * class SET, which the gate reads, is policy_classes below. */
+static int cl_policy(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    uint32_t p = in->s->policy;
+    if (p & ~(MF_P_PORTABLE_ONLY | MF_P_INLOOP | MF_P_SIZE_LEANING)) return CL_OTHER;
+    return p & MF_P_PORTABLE_ONLY ? CL_PORTABLE : p & MF_P_INLOOP ? CL_INLOOP
+         : p & MF_P_SIZE_LEANING ? CL_SIZE : CL_NONE;
+}
+
+/* The policy word as the CLASS SET it carries: one class per set bit (a bit
+ * no class names adds OTHER), NONE for the empty word. */
+static uint64_t policy_classes(uint32_t p)
+{
+    uint64_t m = 0;
+    if (p & MF_P_PORTABLE_ONLY) m |= CM(PORTABLE);
+    if (p & MF_P_INLOOP)        m |= CM(INLOOP);
+    if (p & MF_P_SIZE_LEANING)  m |= CM(SIZE);
+    if (p & ~(MF_P_PORTABLE_ONLY | MF_P_INLOOP | MF_P_SIZE_LEANING)) m |= CM(OTHER);
+    return m ? m : CM(NONE);
+}
+
 static int cl_denies(const gate_in *in)
 {
     if (!in->s) return CL_OTHER;
@@ -625,6 +649,15 @@ static int class_of(unsigned f, const gate_in *in)
     return k;
 }
 
+/* The classes field `f` carries in `in`, given its named class `k` (>= 0):
+ * one class for every field but the bit-set `policy`, which carries one per
+ * set bit (R2 holds iff the row serves them all). */
+static uint64_t class_set_of(unsigned f, const gate_in *in, int k)
+{
+    if (f == FLD_policy && in->s) return policy_classes(in->s->policy);
+    return 1ull << k;
+}
+
 /* The fields the row USES at `phase` on the site `in` describes: the union
  * of its `uses` entries whose form and handoff hold the site's classes and
  * whose condition, if any, holds (an unstated condition field holds none). */
@@ -654,7 +687,7 @@ gate_verdict gate_check(const gate_contract *c, unsigned phase, const gate_in *i
         int k = class_of(f, in);
         if (k < 0) {
             if (uses >> f & 1) v.r1 |= 1ull << f;
-        } else if (!(c->serves[f] >> k & 1)) {
+        } else if (class_set_of(f, in, k) & ~c->serves[f]) {
             v.r2 |= 1ull << f;
         }
     }
@@ -821,8 +854,11 @@ void gate_trace_end(const gate_tctx *t, const gate_contract *c, const gate_verdi
     head(t, "END");
     if (!c) {
         /* no row serves: the kit refuses, naming `v`'s fields (the last row
-           the walk declined, its total fallback) */
-        fputs(" chosen=- would_decline=- fields=", stderr);
+           the walk declined, its total fallback); in an OPTIONAL slot (a
+           PREFIX walk, a named rung re-asked: R4e' batch 1) choosing none is
+           the ordinary answer, spelled `none`, never a refusal's `-` */
+        fputs(t->optional ? " chosen=none would_decline=- fields="
+                          : " chosen=- would_decline=- fields=", stderr);
         if (v) put_fields(v, t->in);
         else   fputs("-", stderr);
         put_moved(mc);

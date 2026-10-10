@@ -28,7 +28,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (`mf_define`/`mf_use`/`mf_emit`/`mf_call`; handles checked at use and at
   `mf_art_end`), the vocabulary rules every site must pass (`site_check`,
   `pred_kinds`: out-of-enum fields and every shape integration.md §R4.7
-  rules outside the vocabulary are REFUSED loudly) and their table
+  rules outside the vocabulary are REFUSED loudly; since lane rankuse
+  `rank_ok` refuses a position ranking that is not distinct positions of
+  the RUN term `plan_hint` names, or longer than it or MF_RANK_MAX) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
   `precheck_assign` (one renderer, two rows: N3's split by handoff),
   `runcmp`, the five PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
@@ -48,6 +50,11 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   compare's words count, through `sink->stamp_int`; R4a′: `MEMFN_FORMS
   "none"`, constant until R4f, then `MEMFN_LIBC`, the noted names
   comma-joined or `none`, through `sink->stamp`).
+  Since R4e' batch 1 (R-13) the walk's DENY also reads the site's
+  `--memfn=` string (`no-<row>`, through a table's `opt` accessor and
+  options.c's `kit_opt_denied`), `kit_ask` asks ONE named row the same
+  questions (a PREFIX row's rungs), and an OPTIONAL slot that chooses none
+  traces `chosen=none`, not a refusal's `-` (`gate_tctx.optional`).
 - **generic.c** — THE GENERIC SCALAR ROW (integration.md §14.6): the last
   row of every selection table, rendering every site the vocabulary
   describes as a plain byte loop (GNU C statement expressions for EXPR; a
@@ -95,6 +102,39 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `table_ref`, no `floor`). Trace table `fn`. Its `miss` (stated as `n`) and `floor`
   (none) edge is its CONTRACT's since N3: the ad hoc define and call tests
   (lane m1bfix's K96 fix) are deleted, the gate does both.
+  **Since R4e' batch 1 (lane r13, R-13) the PREFIX slot holds the SIMD
+  rows** (`vrun-w16`; `vrun-w32` above it): a PREFIX row carries an
+  `mf_formdecl` (kit.h) and its predicate is `prefix_holds` over it (walk
+  tests 3-5 of §R4.9.2.3: REACH, OVER, APPLIES, plus "the define sink offers
+  the bracket ops"); its deny is its options.def name (`fn_opt`, walk test
+  1). The seam re-asks the chosen row's NAMED rungs with `kit_ask`, writes
+  one guarded block per rendered rung in ascending level order
+  (`fn_level_block`: `#if <guard>`, the level's `#include` once per art,
+  `fn_head`, the row's body, `#endif`), each bracketed by the sink's
+  `simd_open`/`simd_close`, then the selector with its `#if`/`#elif`/`#else`
+  chain (the chain's guarded part and its `#endif` bracketed, the `#else`
+  call not), and records the FUNC's MEMFN_FORMS token on the art
+  (`fn_note_form`).
+- **vrun.c** — THE FIRST SIMD ROWS (R4e' batch 1, R-13; integration.md
+  §R4.9.7): `vrun-w16` (and `vrun-w32`), the fused run scan R-1 timed as
+  `ffl`, without its lead: a broadcast compare of the scanned cube position
+  over VW candidates, the BODY's own run compare (runcmp.c) as the in-block
+  verify, an overlapped final block, and an entry test falling through by
+  the derived reach VW + T. Each row is an `mf_formdecl` (its options.def
+  deny, level, `over` = `fn-pair`, named rungs, instruction classes, reach,
+  `guarded_max`, APPLIES, render) and a contract (`vrun_*_ct`: the BODY's
+  serves plus `policy` NONE|SIZE). The module comment carries the
+  over-read argument and every constant's D149 label. Since lane rankuse
+  (2026-10-09, D157) the candidate mask ANDs a SECOND position, KB, the
+  first position of pcrec's rarity ranking (`mf_pred.rank_*`) other than KA
+  (`vrun_kb`; none where the ranking states no other), denied by
+  `--memfn=no-vrun-kb`; two positions is an `UNMEASURED DEFAULT` (the
+  form R-1 timed), no distance rule beyond KB != KA (derived).
+- **levels.def**, **levels.c** — the kit's ISA LEVELS (R4e' batch 1):
+  `MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp)`,
+  the one place a level's guard string, intrinsics header, width and stamp
+  token are spelled; `mf_levels()` (memfn.h, for the tests) and
+  `kit_level()` over it.
 - **precheck.c** — a SCALAR ARM, born at R4c (§15.3-§15.5; transcribed from
   pcrec's `emit_req_*`): THE PRE-CHECK COMPOSITE (ALL_PRESENT, ON_MISS or
   ASSIGN): the one-byte gate, each run's call (its offset-skip function and
@@ -202,13 +242,23 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   row's `uses`/`serves`, with a citation per declaration, sits at the end of
   that row's own file (ofsskip.c, precheck.c, runcmp.c, pffind.c, mismatch.c,
   generic.c).
+- **fields.def / gate.c, the `policy` field (R4e' batch 1, R-13,
+  §R4.9.2.3 [r9 F-3])** — the site's MF_P_* word is a stated BIT-SET field:
+  each set bit is its class (PORTABLE, INLOOP, SIZE; NONE for none) and a
+  row must serve every one (gate.c `class_set_of`). Every scalar contract
+  serves MF_ANY; the SIMD rows serve NONE|SIZE, so -fno-memfn-simd and an
+  in-loop site DECLINE them with no new verdict.
 - **options.def** — the kit's option registry, an X-macro
-  `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). BORN EMPTY:
-  each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
+  `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). Born empty;
+  its first rows are R4e' batch 1's SIMD denies (`vrun-w16`, `vrun-w32`),
+  then `vrun-kb` (lane rankuse: the vrun rows' second filter position, an
+  option of a form rather than a row of a table).
+  Each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
   the same commit and raises the floor in `docs/spec/registry.md` §6. See
   `../CLAUDE.md` "The kit's option namespace".
 - **options.c** — `mf_options()` and `mf_opts_check()` over options.def:
-  what `--list-axes` prints and what `--memfn=` accepts are one table.
+  what `--list-axes` prints and what `--memfn=` accepts are one table; and
+  `kit_opt_denied()` (R-13), the walk's read of a site's `no-<name>`.
 
 The scalar arms are the LIVE scalar layer (D147): improvable kit code, each
 change with its own `--memfn=no-NAME` row and, where it moves a byte,

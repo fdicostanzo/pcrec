@@ -1,0 +1,13 @@
+# r13's solo mech rows (bash tests/mech/run_sabotage_matrix.sh SNNN, one at a
+# time, taskset -c 12-15), tree faefecbd (rows S716-S721) and later lane
+# commits (docs/tests only). Written at handback; the chain was still running.
+# Live summary (one line per finished row, then CHAIN-DONE):
+#   /home/pcrec/.claude/jobs/e99da2a5/tmp/mech_r13/summary.txt
+# per-row logs: /home/pcrec/.claude/jobs/e99da2a5/tmp/mech_r13/SNNN.log  (verdict: the row's '== mech run COMPLETE' trailer)
+S716-vrun-final-guard-short	g2simd:10fail/441pass	DETECTED
+S717-vrun-lane-mask-off	g2simd:10fail/441pass	DETECTED
+S718-vrun-reach-short	g2simd:9fail/446pass	DETECTED
+S719-vrun-verify-skipped	g2simd:9fail/446pass	DETECTED
+S720-vrun-lanes-highest-first	g2simd:10fail/441pass	DETECTED
+S721-vrun-over-fn-memchr	g2simd:19fail/432pass	DETECTED
+# OWED at handback (still queued in the chain, in order): S722 S723 S724 S725 S726 S727 S728 S729 S730 S570 S686 S687 S691 S695

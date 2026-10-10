@@ -24,7 +24,7 @@
 
 set -u
 
-C4_ALLOW_FLOOR=15
+C4_ALLOW_FLOOR=27
 
 here="$(cd "$(dirname "$0")" && pwd)"
 root="${1:-$(cd "$here/../.." && pwd)}"

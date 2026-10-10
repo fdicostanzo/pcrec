@@ -338,7 +338,8 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_note]            = MF_ANY,                   /* :166, :243 pcrec's own writer, as given */ \
     [FLD_note_tag]        = MF_ANY,                   /* :113 a comment tag, as given */ \
     [FLD_indent]          = MF_ANY,                   /* :179, :194 pcrec's prefix, as given */ \
-    [FLD_comment_tier]    = MF_ANY,                   /* :112 handed to cmt_open as given */
+    [FLD_comment_tier]    = MF_ANY,                   /* :112 handed to cmt_open as given */ \
+    [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 
 static const gate_contract precheck_ct = {
     "arms", "precheck", precheck_uses, sizeof precheck_uses / sizeof precheck_uses[0], {

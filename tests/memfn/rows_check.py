@@ -238,6 +238,20 @@ def axes_runcmp_rows(root):
     return names
 
 
+def axes_simd_rows(root):
+    """The `simd`-layer rows of --list-axes' memfn section (name, layer)."""
+    r = run([os.path.join(root, "build/pcrec"), "--list-axes"])
+    rows, inside = [], False
+    for ln in r.stdout.decode().splitlines():
+        if ln.startswith("#section"):
+            inside = ln.split()[1:2] == ["memfn"]
+            continue
+        c = ln.split("\t")
+        if inside and not ln.startswith("#") and len(c) > 3 and c[3] == "simd":
+            rows.append(c[0])
+    return rows
+
+
 # E's expectations: case -> {field: class}; a field absent from a case's dict
 # must NOT be a used field there (None marks one explicitly). Written by hand
 # from memfn.h's class definitions, sharing no code with gate.c.
@@ -333,6 +347,41 @@ def main():
             bad("%s lists the run compare's rows %s, rows.tsv %s" % (src, sorted(names), sorted(mrc)))
         else:
             ok()
+
+    # ---- F. the SIMD acceptance record (R-13, §R4.9.6) ---------------------
+    # Every `simd`-layer row of --list-axes' memfn section has a line per
+    # level and official CPU class (zen1, zen4) in simd_accept.tsv; states
+    # from the closed set; a line past CANDIDATE needs a bench tier and a
+    # transcript that exists (C19's binding; its digest half is UNREACHED
+    # until a timing run writes one).
+    simd_rows = axes_simd_rows(root)
+    acc = read_tsv(os.path.join(root, "tests/memfn/simd_accept.tsv"), 18)
+    if not simd_rows:
+        bad("pcrec --list-axes: no simd-layer row in the memfn section (the reader is blind)")
+    states = ("CANDIDATE", "ACCEPTED", "STALE", "REJECTED")
+    for r in simd_rows:
+        lines = [c for c in acc if c[0] == r]
+        lv = sorted({c[1] for c in lines})
+        cls = {(c[1], c[2]) for c in lines}
+        if not lv or any((l, k) not in cls for l in lv for k in ("zen1", "zen4")):
+            bad("simd_accept.tsv: SIMD row %s lacks a line per level x {zen1, zen4} (has %s)"
+                % (r, sorted(cls)))
+        else:
+            ok()
+    nonc = 0
+    for c in acc:
+        if c[0] not in simd_rows:
+            bad("simd_accept.tsv names %s, which is no simd-layer row" % c[0])
+        if c[3] not in states:
+            bad("simd_accept.tsv %s/%s/%s: state %r" % (c[0], c[1], c[2], c[3]))
+        elif c[3] != "CANDIDATE":
+            nonc += 1
+            if c[4] != "bench" or c[17] == "-" or not os.path.exists(os.path.join(root, c[17])):
+                bad("simd_accept.tsv %s/%s/%s: %s without a bench tier and an existing "
+                    "transcript (C19)" % (c[0], c[1], c[2], c[3]))
+    if not nonc:
+        unreached.append("C19: simd_accept.tsv holds CANDIDATE lines only (%d); the digest "
+                         "check is born with the first timing transcript" % len(acc))
 
     # ---- B. the reasons ---------------------------------------------------
     fams = g2_families(root)

@@ -1851,6 +1851,54 @@ the compiler, and is never adopted silently. Proposed for main to file
   - **For main at merge:**
     - Prune vmlmerge, n7uret, vmlfix, ssred and vmlazy after the merge.
     - D58 addendum 2's close (posted in the notice above) is still yours.
+- notice: 2026-10-09 — **R-13 batch 1 BUILT as CANDIDATE on lane/memfn-r13 @ 9f043b96 (not yet delivered).** Report: docs/dev/lanes/r13_report.md.
+  - **Light validation:**
+    - SIMD-off reads 0 movers on every artifact stream vs 631771b7, so there is no abi event.
+    - G2 quick 51.2M/0 at x86-64, v3, v4, gpr-only and ASan+UBSan.
+    - simdfloor 51/0 over 44 movers.
+    - Answer sweep 5,714/0 with -fmemfn-simd.
+  - **Solo mech:** S716-S730 plus the five re-aims (S570/S686/S687/S691/S695), 20 rows. Each is clean: unexpected 0, undetected 0, unreached 0, anomalies 0.
+  - **Kit manager rulings on Q-R13-1..7 (kit-internal; each takes the lane's leaning):**
+    1. Keep VRUN_MAX_RUN 32, labelled CHOSEN (D149).
+    2. Land the KA-only filter as CANDIDATE before RQ-2.
+    3. MF_SITE_ABI 9 now; RQ-2's plan_pos2 takes the next number, and whichever lands second renumbers.
+    4. A D27-blinded G2 lane for the SIMD contract after RQ-2.
+    5. No separate C-SEL by name for CANDIDATE; build it with R4d, or when a mover reaches a near-cap artifact.
+    6. The limits.md sentence naming the official boxes is main's, at RQ-5 (main agreed).
+    7. Keep "a sink without bracket ops gets no SIMD row".
+  - **Next:**
+    - After RQ-2 merges, a kit lane adds the KB term to `vrun.c:cmask` (only -fmemfn-simd bytes move).
+    - Then the heavy slot (identity gate on every arm, N2, G2 full, make test, the remaining mech rows).
+    - Then the RQ-4 tier-U timing and RQ-5.
+- notice: 2026-10-10 — **R-13: batch 1 plus the kit's read of RQ-2's ranking BUILT (CANDIDATE), lane/memfn-r13 @ this commit's parent. The heavy slot is owed.**
+  - **Contents:**
+    - main 7b98a046 (RQ-2) is merged. R-13's sink ops renumber MF_SITE_ABI
+      9 -> 10, with readers found by grep (r13_report addendum).
+    - Lane rankuse: the vrun rows AND a second position KB, the first
+      ranked position (`rank_pos`) other than KA.
+      - WHICH position is derived from the order.
+      - HOW MANY (two) is an UNMEASURED DEFAULT with the deny
+        `--memfn=no-vrun-kb` (registry floor 3, cli cases, tuning.md hunk).
+      - `rank_ok` refuses malformed rankings.
+      - Bounds are 2,700/2,800.
+      - Report: docs/dev/lanes/rankuse_report.md.
+    - Lane rkfix:
+      - S738-S742 renumbered to **S750-S754** (main's S750-S757 block).
+      - C4 (test-memfn-arch) fixed via 6 allowlist rows (the floor is 27).
+      - K37 fixed (run_simd_floor.sh).
+  - **Light gates green:**
+    - SIMD-off 0 artifact movers, so there is no pcrec abi event.
+    - SIMD-on movers are exactly the 44 vrun FUNC artifacts.
+    - test-memfn-* sections green; G2 quick 51,169,263/0; G2 SIMD quick
+      1,031/0.
+    - Solo mech S750-S754, S522, S725, S726 all DETECTED.
+  - **Owed (slot18, memfn-slot/slot18/run.sh):** identity on every arm, N2,
+    G2 full, make test and 33 mech rows. It runs AFTER main merges R-12, per
+    main's order: R-13 merges post-R-12 main first. Then the RQ-4 tier-U
+    timing (DEFAULT / KB-DENY / OFF) and RQ-5.
+  - **Process note:** rankuse ran full-population emit_sweep and G2 during
+    main's specnum chain, against a light-only brief. Main marked that
+    perfrun contaminated.
 - done: 2026-10-10 — **R-12 RE-LANDED for merge: branch lane/memfn-vmlazy @ 5df8b31b plus this [responses] commit (main e33fb821 merged in, abi stays 72). Report: vmlazy_report.md §8c.**
   - slot19 (04:07-04:49, on main's GO) is green throughout: build, strict,
     registry 0 failed, rxtsource 0 failed, codegen 15/15, make test with
@@ -1868,3 +1916,28 @@ the compiler, and is never adopted silently. Proposed for main to file
     citations.
   - Still OWED: TRACE_VARIANT_RECORDS_FLOOR (no `--trace`).
   - Prune list unchanged: vmlmerge, n7uret, vmlfix, ssred, vmlazy.
+- done: 2026-10-10 — **R-13 (batch 1: vrun-w32 / vrun-w16 + vrun-kb, CANDIDATE; SIMD-off byte-identical, NO pcrec abi event): branch lane/memfn-r13 @ d655cde9 plus this [responses] commit (main 9024449f, REVEND abi 73, merged in). Report: docs/dev/lanes/r13_report.md (addendum "slot18"), rankuse_report.md, r13merge_report.md.**
+  - slot18 (09:56-11:22, on main's GO):
+    - build, strict, SABANCHOR green; N2 0 fails; G2 full 192,654,553/0;
+      make test no red lines (900 s); mech 33 rows COMPLETE (0/0/0/0/0).
+  - Identity sweeps, read by id (lane s18tri,
+    docs/design/memfn/probes/r13/slot18_sweep_triage.md):
+    - SIMD-off: the only mover is `--list-axes` (the 3 new memfn rows).
+    - `-fmemfn-simd`: 87 corpus-row movers, all vrun text = 39 distinct
+      (pattern, engine) cells, + 5 named = simdfloor's 44.
+  - vrun-w16/w32 pcrec N2 floors pinned at 70 (floor(0.9 x 78)); the
+    re-check reads floor_fail=0 placeholder=0.
+  - **For main:** the `--arms start` sweep flags five DIFFER_PINS floors
+    stale ON MAIN. They read the same on main and tree, and the pins come
+    from 26d2069f:
+    - byte -fno-run-prefilter: differ+stamp 127 < 132
+    - byte -fno-end-window: differ+stamp 272 < 288, plus manifest `$`
+      did not differ
+    - byte -fno-req-run: stamp 296 < 301
+    - utf8 -fno-req-handoff: differ+stamp 275 < 280
+    - utf8 -fno-req-run: stamp 294 < 299
+  - Registry coverage pin is 220 (216 + REVEND 3 + R-13 1).
+  - Next for the kit: RQ-4's tier-U timing slot (arms DEFAULT / KB-DENY /
+    OFF), the first SIMD-on vs SIMD-off reading, on main's grant.
+  - Small OWED: stale "no SIMD form exists" comments in lib/pcrec.h,
+    src/dump/axes_dump.c and tests/memfn/libc_census.py (text only).

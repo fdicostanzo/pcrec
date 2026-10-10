@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/memfn.h"
+#include "kit.h"
 
 /* The table, in options.def's order. The trailing all-zero row keeps the
  * array non-empty while the registry is (C has no zero-length arrays); it
@@ -68,4 +68,19 @@ int mf_opts_check(const char *str, char *err, size_t n)
         if (!end) return 0;
         p = end + 1;
     }
+}
+
+int kit_opt_denied(const char *opts, const char *name)
+{
+    if (!opts || !name) return 0;
+    size_t nl = strlen(name);
+    for (const char *p = opts; *p;) {
+        const char *end = strchr(p, ',');
+        size_t len = end ? (size_t)(end - p) : strlen(p);
+        if (len == nl + 3 && memcmp(p, "no-", 3) == 0 && memcmp(p + 3, name, nl) == 0)
+            return 1;
+        if (!end) break;
+        p = end + 1;
+    }
+    return 0;
 }

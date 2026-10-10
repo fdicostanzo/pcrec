@@ -10,6 +10,10 @@
   manager never edits it.
 - `journal.md` — the kit's own append-only dated journal (the kit
   session and kit lanes append; nothing is edited away).
+- `ideas.md` — the kit's raw ideas log: unedited, dated observations of
+  possible optimizations noticed in passing, waiting to be evaluated
+  against a measured trigger (D77). Append-only; an evaluation adds a
+  dated `-> evaluated:` line, never an edit. Not a request or a plan row.
 - `trace_format.md` — the `MFTRACE` record format ([MEMFN-ROWCON] N1):
   the selection trace and reach counters gate.c writes to stderr under the
   compile-time switch `MF_TRACE`. The contract between the kit and any

@@ -63,3 +63,8 @@ Maintenance: update this file when files are added/removed or change roles.
   `out/slot17b_movers_by_id.txt` (with `out/slot17b_pin_vs_measured.txt`, the
   VARIANT_PINS re-pin's before/after; report §8b). `out/slot19_movers_by_id.txt`
   is the same read at the re-landing slot over 5570 rows (report §8c).
+- `r13/` — R-13's slot18 evidence (2026-10-10): `slot18_sweep_triage.md`
+  (lane s18tri, read-only. The SIMD-off sweeps move only `--list-axes`. The
+  `start` arm floors fall below pins that are stale on main, the same on both
+  sides. The 87 `-fmemfn-simd` movers are vrun text only = 39 distinct cells,
+  + 5 named = simdfloor's 44) and `slot18_simd_mover_ids.txt` (the 87 ids).
