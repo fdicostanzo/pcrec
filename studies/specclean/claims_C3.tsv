@@ -1,0 +1,344 @@
+C3-0001	1167	N	rx_matchfn is the shared function type ptrdiff_t rx_matchfn(const rx_ctx *ctx), defined in §2.
+C3-0002	1168	N	Every artifact declares ptrdiff_t <prefix>_match(const rx_ctx *ctx).
+C3-0003	1171	N	<prefix>_match matches at exactly ctx->pos: a match starting anywhere else is not reported.
+C3-0004	1172	N	The anchoring promise of <prefix>_match is the semantic a caller can rely on; it is deliberately not a claim about how the artifact is built.
+C3-0005	1174	N	On a VM artifact the <prefix>_match emitter has no search loop.
+C3-0006	1175	N	A DFA artifact's <prefix>_match takes one of two forms, named in <PREFIX>_DFA_MATCH and rx_info.match_form (§6.3).
+C3-0007	1177	M	Measured: the DFA forms of <prefix>_match give the same answers; only the anchoring promise is contractual.
+C3-0008	1180	N	Form "unwrapped": the artifact carries a THIRD machine, the tables of its forward scan WITHOUT the start-anywhere self-loop, run forward from ctx->pos.
+C3-0009	1183	N	Under "unwrapped" there is no later start to reject and no backwards pass to recover a start with.
+C3-0010	1184	N	Under "unwrapped" a failing <prefix>_match probe stops at the first byte that cannot continue a match beginning at ctx->pos.
+C3-0011	1185	N	Under "unwrapped" a succeeding <prefix>_match costs one forward scan rather than a forward and a reverse scan.
+C3-0012	1187	N	The "unwrapped" form reports the same length the "search-filter" form reports, on every input (argued in anchored_match_unwrapped.md §3).
+C3-0013	1191	N	Form "search-filter": <prefix>_match runs the artifact's ordinary UNANCHORED search and rejects any match whose start is not ctx->pos.
+C3-0014	1191	N	"search-filter" is still the <prefix>_match form on some artifacts.
+C3-0015	1194	N	On a failing <prefix>_match under "search-filter" the underlying search does not know the question is anchored and may skim the rest of the subject for a later match the filter discards.
+C3-0016	1197	N	The state-0 memchr skip keeps that failing-probe cost a skim rather than a per-byte walk, where an anchored body fails at the first divergent byte.
+C3-0017	1199	N	A caller issuing many expected-to-fail <prefix>_match probes against long subjects is in the "search-filter" form's worst case, and can read off the artifact whether it is in that form.
+C3-0018	1201	N	Exactly five populations take the "search-filter" form for <prefix>_match.
+C3-0019	1202	N	Population 1 of "search-filter": an artifact whose engine is the per-start attempt loop (<PREFIX>_DFA_SCAN "attempt", i.e. a ^- or \G-bearing pattern).
+C3-0020	1204	N	Population 2 of "search-filter": an artifact that matches nothing (<PREFIX>_DFA_SCAN "empty").
+C3-0021	1205	N	Population 3 of "search-filter": an artifact whose anchored machine exceeded a DFA cap; this is a SELECTION OUTCOME, never a refusal.
+C3-0022	1206	N	Population 4 of "search-filter": any build under -fno-anchored-dfa (tuning.md §2.15).
+C3-0023	1207	N	Population 5 of "search-filter": an artifact whose anchored machine pcrec DROPPED so the artifact fits under an emitted-size cap (limits.md §8 "The optional-contributor drop"), since [K53-SELRETRY].
+C3-0024	1209	N	The size-cap-drop population is the only one where a caller could have had the faster form and lost it to a size limit rather than to the pattern's shape.
+C3-0025	1212	N	The size-cap-drop population is identifiable by <PREFIX>_ENGINE_SEL "size-cap-retry".
+C3-0026	1213	N	Raising --max-emit-bytes gets the anchored machine back for a size-cap-retry artifact.
+C3-0027	1216	N	<prefix>_match returns the matched length (>= 0) on a match at ctx->pos.
+C3-0028	1217	N	<prefix>_match returns 0 for a zero-length match at ctx->pos.
+C3-0029	1217	N	<prefix>_match returns -1 on no match.
+C3-0030	1218	N	<prefix>_match may return a typed give-up code (§4).
+C3-0031	1218	N	<prefix>_match may return one of §3.1's caller refusals at ctx->pos: PCREC_ERR_STARTPOS (K50).
+C3-0032	1219	N	Under -futf-check <prefix>_match returns PCREC_ERR_UTF from the same check at the same position as <prefix>_search, in the same order (guard first) and over the same checked range.
+C3-0033	1222	N	Under -fstartpos-guard=align a misaligned ctx->pos makes <prefix>_match answer -1 (no match begins inside a character), after the check has run from the aligned position.
+C3-0034	1224	N	<prefix>_match delivers no captures: ctx->caps is an input (§5), not an output channel.
+C3-0035	1226	N	<prefix>_match has no parameter to write group offsets into.
+C3-0036	1227	N	A top-level caller of <prefix>_match passes ctx->ncap = 0 and ctx->caps = NULL (self-contained per rx_matchfn's contract).
+C3-0037	1233	N	Every artifact declares ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]).
+C3-0038	1236	N	<prefix>_match_caps has the same anchoring promise as <prefix>_match (match at exactly ctx->pos) and the same two forms (§3.2).
+C3-0039	1237	N	Under "unwrapped" <prefix>_match_caps delegates to <prefix>_match and fills the spans itself.
+C3-0040	1238	N	Under "unwrapped" caps_out[0] is [ctx->pos, ctx->pos + length) by construction rather than by a filter that proved it.
+C3-0041	1240	N	On success <prefix>_match_caps writes all of caps_out[0..<PREFIX>_NCAPS-1] (same completed-match discipline as <prefix>_search).
+C3-0042	1242	N	On success of <prefix>_match_caps, caps_out[0] is [ctx->pos, ctx->pos + length).
+C3-0043	1242	N	On a captures-on build caps_out[k] is capturing group k for k >= 1, in the pattern's own left-to-right numbering.
+C3-0044	1244	N	rx_group_entry.slot exists for a future in which a build delivers a different slot for a group; on today's builds no such indirection is in play and slot == group number.
+C3-0045	1247	N	D61: for the PRIMARY pattern's own groups on a captures-on build, slot == number is PERMANENT.
+C3-0046	1249	N	The different-slot latitude applies only to future ref-bearing rows (§6), whose delivered slots APPEND after the primary prefix and never displace slots 1..ngroups.
+C3-0047	1253	N	On failure <prefix>_match_caps leaves caps_out untouched, and a give-up counts as a failure for this rule.
+C3-0048	1254	N	Every negative return of <prefix>_match_caps leaves the caller's caps_out array exactly as it was.
+C3-0049	1255	N	The generated source states outright: "caps_out is UNTOUCHED on every negative return, give-up included".
+C3-0050	1257	N	The same untouched-on-negative-return rule holds for <prefix>_search's caps.
+C3-0051	1259	N	<prefix>_match_caps reads ctx->caps/ctx->ncap as ordinary rx_ctx input, unrelated to caps_out.
+C3-0052	1260	N	A top-level <prefix>_match_caps call passes ncap=0, caps=NULL exactly like <prefix>_match.
+C3-0053	1263	N	Entry choice: no start position known and/or no captures wanted -> <prefix>_search.
+C3-0054	1264	N	Entry choice: start position known, captures wanted, no search loop wanted -> <prefix>_match_caps.
+C3-0055	1265	N	Entry choice: neither offsets nor a loop wanted -> <prefix>_match.
+C3-0056	1266	N	The discriminator between the entries is whether the start position is KNOWN, never whether captures are wanted.
+C3-0057	1268	N	<prefix>_search delivers full captures when handed a caps buffer (§3.1), so first match plus its groups is one <prefix>_search call.
+C3-0058	1270	N	<prefix>_match_caps is only for the anchored case.
+C3-0059	1274	N	The three entries are not interchangeable views of one answer on the give-up axis.
+C3-0060	1276	N	§4's uniformity is about the CODE SPACE (which values mean what), not about which entry gives up on a given input.
+C3-0061	1278	N	Whether a budget is exhausted is a property of the entry point, because the entries do different amounts of work; it goes both ways.
+C3-0062	1279	M	Measured: (a|aa)+b built --step-budget=3 over "aaaaaaaaaaaaaaaaaaaaX": <prefix>_search returns 0 (its DFA prefilter resolves the question without entering the VM).
+C3-0063	1283	M	Measured: (a|aa)+b built --step-budget=3 over "aaaaaaaaaaaaaaaaaaaaX": <prefix>_match and <prefix>_match_caps both return -2.
+C3-0064	1284	M	Measured: (a|aa)+b-family artifact built --backtrack-frames=1 over "xxaaaaab": <prefix>_search returns -3.
+C3-0065	1286	M	Measured: on that --backtrack-frames=1 artifact over "xxaaaaab" both anchored entries return a clean -1, because anchoring at position 0 fails immediately and spends no frame.
+C3-0066	1288	N	A caller must handle give-ups on whichever entry it actually calls.
+C3-0067	1289	N	A caller must not infer from one entry's clean answer that another entry would give one.
+C3-0068	1295	N	Every artifact declares extern const struct rx_info <prefix>_info.
+C3-0069	1298	N	<prefix>_info is one instance per artifact, a link-time constant, with no runtime cost to build.
+C3-0070	1301	N	<prefix>_info is not strictly .rodata: struct rx_info holds pointers (pattern, engine_why, and others), so the object needs load-time relocation.
+C3-0071	1303	M	CHECK: Measured with readelf on a default build of 'a(b|c)+d' (struct since grown, size is historical): rx_info is a 104-byte object in section .data.rel.ro.local, not .rodata.
+C3-0072	1307	M	CHECK: Measured on that build: .data.rel.ro.local carries exactly two R_X86_64_64 relocations, one per embedded string pointer (pattern, engine_why); struct has since gained more pointer fields.
+C3-0073	1308	M	The strings rx_info points at are in .rodata.
+C3-0074	1309	N	<prefix>_info has no run-time initializer and no constructor; its cost is relocations at load, not zero.
+C3-0075	1315	N	The give-up-collapse-to--1 rule of match_api_m4.md §3 as originally written does not exist in the shipped artifact, on either engine; D49 supersedes D42.3.
+C3-0076	1321	N	A DFA artifact's <prefix>_match is a wrapper that calls <prefix>_search(ctx->subject, ctx->len, ctx->pos, caps) with a local caps[NCAPS][2] and returns found if found < 0.
+C3-0077	1322	N	In a DFA artifact's <prefix>_match, give-up codes PROPAGATE rather than collapsing to -1 (D49).
+C3-0078	1323	N	In a DFA artifact the give-up propagation branch is unreachable (no counter to exhaust) but written uniformly on purpose, because rx_matchfn has one contract and a later engine may share the emitter.
+C3-0079	1331	N	The DFA artifact's <prefix>_match local caps array is zero-initialized (= {{0}}), because of gcc -O1 false maybe-uninitialized (K28).
+C3-0080	1333	N	A DFA artifact's <prefix>_match returns the <prefix>_search result unchanged (cast to ptrdiff_t) when it is negative.
+C3-0081	1334	N	A DFA artifact's <prefix>_match returns -1 if <prefix>_search found != 1 or caps[0][0] != ctx->pos.
+C3-0082	1335	N	A DFA artifact's <prefix>_match otherwise returns caps[0][1] - caps[0][0].
+C3-0083	1345	N	A VM artifact's <prefix>_match returns -1 if ctx->pos > ctx->len.
+C3-0084	1346	N	A VM artifact's <prefix>_match initializes a work struct (<prefix>_work_init) and calls <prefix>_match_impl(ctx, &w, ctx->len).
+C3-0085	1348	N	A VM artifact's <prefix>_match returns the impl's result with no translation and no clamp.
+C3-0086	1349	N	The VM impl's return space is >= 0, -1, or one of the three R_ sentinels, which are the ERR_ codes.
+C3-0087	1356	N	The DFA body's unreachable propagation is evidence that the emitter WRITES the propagation, not that it ever happens; the VM is the live evidence.
+C3-0088	1360	M	Measured: (a|aa)+b built --step-budget=3 returns -2 from <prefix>_match and <prefix>_match_caps.
+C3-0089	1362	M	Measured: (a|aa)+b built --backtrack-frames=1 returns -3 from all three entries, <prefix>_search included, on subject "ab".
+C3-0090	1364	N	The DFA body's found != 1 || caps[0][0] != ctx->pos test is the only thing making that engine honor §3.2's anchoring promise.
+C3-0091	1369	N	The caps initializer in the DFA <prefix>_match is never observed and changes no answer.
+C3-0092	1372	H	A single-dead-state DFA makes rx_search always return 0; gcc -O1 inlines it and reports the caps array maybe-uninitialized though the read is unreachable; the initializer prevents a -Werror consumer build failure (K28).
+C3-0093	1377	N	The same caps declaration and initializer appear in <prefix>_match_caps and in the standalone main().
+C3-0094	1379	M	Measured: restructuring the found != 1 test instead of initializing caps does NOT silence the maybe-uninitialized report.
+C3-0095	1382	N	D49 supersedes D42.3 and rules the uniform-codes contract the artifacts implement.
+C3-0096	1385	N	A caller that only tests r < 0 for did-it-match is unaffected by give-up codes being distinct.
+C3-0097	1386	N	A caller doing an exact == -1 comparison sees give-up codes as distinct values, not folded into -1.
+C3-0098	1389	H	CHECK: An artifact generated before 2026-08-18 carries an emitted rx_matchfn ABI comment saying values < -1 are reserved and none is produced; that comment is false for such artifacts.
+C3-0099	1395	H	Where an old artifact's comment and the spec disagree, the spec is the contract; the artifact's behavior always matched the spec, not its own comment.
+C3-0100	1402	H	The emitted rx_matchfn comment now states the give-up space (§2 quotes it verbatim), and lib/pcrec.h's generated-searcher comment names the negative return space too.
+C3-0101	1413	N	There is no native end-anchored entry: no search-style call meaning match and require the match to reach the subject's end.
+C3-0102	1414	N	§3.1-§3.3's three entries answer does a match exist starting here, never does a match exist covering here to n.
+C3-0103	1416	N	A caller wanting PCRE2_ANCHORED|PCRE2_ENDANCHORED semantics compiles (?:P)\z (P in a non-capturing group followed by \z) and calls any of §3.1-§3.3.
+C3-0104	1419	N	Use \z, not $: $ admits a trailing newline at default options ((?m) off), which is not the subject's end.
+C3-0105	1420	M	Measured: (?:foo)$ compiled --no-captures matches "foo\n" at [0,3), while (?:foo)\z on the identical subject reports no match.
+C3-0106	1423	N	\z is module assertions' unconditional end-of-subject assertion and admits nothing after it.
+C3-0107	1425	N	Of $, \Z, \z only \z admits nothing after the subject end at default options.
+C3-0108	1428	N	Running the anchored entry and testing length == n is SUFFICIENT for end-anchored matching but not NECESSARY.
+C3-0109	1431	N	Leftmost-first preference picks the FIRST alternative that matches, never the one reaching farthest.
+C3-0110	1434	M	Measured: a|ab compiled --no-captures run anchored over "ab" reports [0,1).
+C3-0111	1436	M	Measured: (?:a|ab)\z over "ab" reports [0,2).
+C3-0112	1437	N	\z forces backtracking past the a branch's failure (position 1 is not the subject's end) into the ab branch, so the engine does the end-anchoring search.
+C3-0113	1443	N	The (?:P)\z idiom is a ruled-permanent idiom, not a stopgap awaiting a dedicated generation axis ([OS-4], D77 2026-08-25).
+C3-0114	1445	N	A whole-subject/end-anchored generation axis (single artifact answering both questions, or an emitted skip loop stopping one byte short for \z) is explicitly NOT being built now.
+C3-0115	1451	N	The idiom costs two artifacts (one ordinary compile, one (?:P)\z compile) and leaves a final-byte DFA skip gap, recorded as a general-optimization candidate ([OS-4]).
+C3-0116	1456	N	Any such \z optimization is not scoped to one caller: (?:P)\z benefits identically to every other \z-bearing pattern.
+C3-0117	1459	H	A \z-bearing pattern still selects the DFA, and its <prefix>_match runs the artifact's own anchored machine from ctx->pos rather than the unanchored search with a start filter (the "unwrapped" form), since 2026-08-29.
+C3-0118	1462	M	Measured on the (?:P)\z idiom over the comparative bench's 85 compliance subjects: the matching split goes from 2.074x behind the backtracking VM to 1.031x.
+C3-0119	1465	M	Measured on the same 85 subjects: short valid emails go from 1.223x behind the backtracking VM to 0.482x (ahead of it).
+C3-0120	1466	N	Nothing about the (?:P)\z idiom itself changed; the entry got cheaper.
+C3-0121	1470	M	Verified live: (?:foo|bar)\z (--no-captures) stamps RX_DFA_SCAN "unanchored".
+C3-0122	1473	M	Verified live: (?:foo|bar)\z (--no-captures) stamps RX_DFA_PREFILTER "byte-class-bounded".
+C3-0123	1471	N	The \z wrapper changes the emitted candidate-start filter, not just the trailing assertion; the idiom does not anchor the START, only the end.
+C3-0124	1474	N	"byte-class-bounded" is the bounded form for a $/\Z/\z view, where a skip may not pass the position whose accept has not yet been evaluated (§6.3).
+C3-0125	1476	M	Verified live: (?:foo)\z (single literal, no alternation) stamps the single-candidate form "memchr-bounded".
+C3-0126	1477	N	Neither idiom use produces RX_DFA_SCAN "attempt" by itself; that shape is what a LEADING ^ or \A selects (§6.3), an orthogonal axis.
+C3-0127	1486	N	§4 states the give-up CODES; the numeric trigger defaults (step and work budgets, frame/trail capacities) are limits.md's subject and are not restated in match_api.
+C3-0128	1490	N	limits.md also carries the compile-time state-count ceilings, the two-tier entry's numeric cost model, and the K33/K34 documented-divergence detail.
+C3-0129	1494	N	<prefix>_search, rx_matchfn (hence <prefix>_match and any callout) and <prefix>_match_caps all report engine give-up in the same code space: a negative return strictly below -1.
+C3-0130	1496	N	The same give-up value means the same thing at every entry.
+C3-0131	1497	N	The code-space uniformity says nothing about when a give-up happens; which entry gives up on a given input is a property of that entry.
+C3-0132	1502	N	The step and work budgets bound ONE attempt, and an un-suffixed entry may make TWO attempts.
+C3-0133	1503	N	§10.9's tiered entry re-runs the match on the stamped default after a PCREC_ERR_FRAMES give-up on its fast tier, with both budgets REFILLED.
+C3-0134	1504	N	Refilling both budgets on the deep attempt makes the tiered answer identical to a single-tier artifact's (stated in §10.9).
+C3-0135	1506	N	A single call to <prefix>_search/_match/_match_caps can spend up to TWICE the step budget and twice the work budget before returning.
+C3-0136	1509	N	A returned PCREC_ERR_STEPS still means the deep attempt exhausted a full budget.
+C3-0137	1510	N	The _in entries have no tier and are bounded by one budget.
+C3-0138	1512	N	A caller needing a hard bound on the work ONE call may do uses an _in entry or -fno-tiered-entry (tuning.md §2.12).
+C3-0139	1516	N	PCREC_ERR_STEPS is -2 (step budget exhausted give-up).
+C3-0140	1517	N	PCREC_ERR_FRAMES is -3 (frame capacity exhausted give-up).
+C3-0141	1518	N	PCREC_ERR_WORK is -4 (work budget exhausted give-up).
+C3-0142	1519	N	PCREC_ERR_RECURSE is -5, reserved with no producer yet (D71 item 1, [DD-14]).
+C3-0143	1520	N	PCREC_ERR_FLOOR is -5; give-ups are the range [FLOOR, -2], and values below FLOOR are reserved (D49).
+C3-0144	1521	N	PCREC_ERR_INTERNAL is -6, below PCREC_ERR_FLOOR: NOT a give-up (D71 item 1, [DD-14]).
+C3-0145	1522	N	PCREC_ERR_STARTPOS is -7, below PCREC_ERR_FLOOR: NOT a give-up; a mid-character startpos was REFUSED ([K50]).
+C3-0146	1523	N	PCREC_ERR_UNSET_VAR is -8, below PCREC_ERR_FLOOR: NOT a give-up; an UNSET or ill-formed variable value was REFUSED ([VAR]).
+C3-0147	1524	N	PCREC_ERR_UTF is -9, below PCREC_ERR_FLOOR: NOT a give-up; an ill-formed subject was REFUSED (-futf-check) ([UTF-VALID]).
+C3-0148	1527	H	PCREC_ERR_STEPS/_FRAMES/_WORK/_FLOOR are unprefixed pcrec-CONTRACT constants in the shared PCREC_RX_ABI_H block (§2) (D60); the per-<PREFIX> spelling is DELETED, not aliased.
+C3-0149	1532	N	The PCREC_ERR_* block is byte-identical across prefixes: a -p foo build of the same pattern emits the same lines as -p rx (§1/§2 cross-prefix identity).
+C3-0150	1537	H	PCREC_ERR_RECURSE is reserved now; the recursion-depth counter that would produce it is NOT in the default artifact (D71 item 1; a future [V-H] diagnostic-generation axis, a separate emitted variant, not a runtime flag).
+C3-0151	1543	N	No arm in any emitter returns PCREC_ERR_RECURSE today; it is unreachable on every artifact.
+C3-0152	1547	N	PCREC_ERR_INTERNAL is BELOW the floor and is NOT a give-up.
+C3-0153	1548	N	D49 reserves everything strictly below PCREC_ERR_FLOOR for a future abort semantic; PCREC_ERR_INTERNAL is that semantic's first producer.
+C3-0154	1551	N	PCREC_ERR_INTERNAL means the artifact detected its OWN inconsistency (a compile-time width analysis pcrec_maxw disagreeing with what the emitter walked), never a runtime resource give-up.
+C3-0155	1553	N	PCREC_ERR_INTERNAL's one producer today is module lookaround's negative-polarity lookbehind END-CHECK ((?<!X)).
+C3-0156	1554	N	On negative-polarity lookbehind a declined branch is the assertion succeeding, so a width disagreement would be a FALSE MATCH; the hard PCREC_ERR_INTERNAL return prevents it.
+C3-0157	1556	N	PCREC_ERR_INTERNAL has never been observed on a correctly analyzed pattern; the check is provably redundant for the width class lookaround ships and is emitted as a self-consistency guard.
+C3-0158	1559	N	A top-level entry (<prefix>_search, <prefix>_match, <prefix>_match_caps) PROPAGATES PCREC_ERR_INTERNAL to its caller exactly like a give-up and does not trap.
+C3-0159	1562	N	The trap on below-the-floor codes belongs at composed call sites, not at top-level entries.
+C3-0160	1565	M	Verified on a DFA-only artifact (--no-captures; no counter exists; give-up codes reserved-but-unreachable) and a captures-default VM artifact (RX_STEP_BUDGET/RX_WORK_BUDGET/RX_BT_FRAMES/RX_TRAIL_FRAMES present, counters live).
+C3-0161	1568	N	A DFA-compiled artifact never RETURNS PCREC_ERR_STEPS/FRAMES/WORK (no counter to exhaust).
+C3-0162	1570	N	The PCREC_ERR_* constants are defined in every artifact, DFA included.
+C3-0163	1571	M	Measured: a DFA artifact built --no-captures --emit-main emits the three-way handler text (if (rc == PCREC_ERR_STEPS), PCREC_ERR_FRAMES, PCREC_ERR_WORK).
+C3-0164	1574	N	Emitting the constants and handler text on a DFA artifact is deliberate: it lets a caller's switch written today survive a later compile of the same pattern selecting the VM.
+C3-0165	1578	N	Every generated call site that invokes an rx_matchfn (a callout, a composed submatcher) must enforce if (ret < PCREC_ERR_FLOOR) __builtin_trap();.
+C3-0166	1580	N	The below-the-floor trap binds call sites that call INTO another rx_matchfn, not an exported entry's own internal return.
+C3-0167	1582	N	No such composed/callout call sites are emitted by pcrec today (callout code generation has no producer yet).
+C3-0168	1585	N	Trapping on PCREC_ERR_INTERNAL at a composed call site is the design, not a gap.
+C3-0169	1588	N	PCREC_ERR_STARTPOS is the second below-the-floor code and a REFUSAL of the call rather than a report about the engine.
+C3-0170	1590	N	Every value in [PCREC_ERR_FLOOR, -2] says the engine ran and exhausted something.
+C3-0171	1592	N	PCREC_ERR_STARTPOS says the caller named a startpos (or ctx->pos) that is not a character boundary of the artifact's encoding; no attempt was made and no budget was touched.
+C3-0172	1599	N	Every artifact DEFINES PCREC_ERR_STARTPOS and only some can RETURN it.
+C3-0173	1600	N	Under the byte encoding every position is a character boundary, so no startpos guard is emitted and PCREC_ERR_STARTPOS is unreachable.
+C3-0174	1603	N	The PCREC_ERR_STARTPOS constant is emitted on byte-encoding artifacts anyway so a caller's switch survives a later compile under a different encoding.
+C3-0175	1605	N	A composed call site TRAPS on PCREC_ERR_STARTPOS, by the below-the-floor rule.
+C3-0176	1606	N	After K50 every position an ENGINE generates is a character boundary, so a composed callee handed a non-boundary means the engine broke its own rule.
+C3-0177	1609	N	PCREC_ERR_STARTPOS renumbers nothing: PCREC_ERR_FLOOR is unchanged at -5 and the give-up partition is unchanged.
+C3-0178	1613	N	PCREC_ERR_UTF (-9) is the third caller refusal and the first below-the-floor code a composed call site propagates.
+C3-0179	1615	N	PCREC_ERR_UTF means an artifact compiled with -futf-check found an ill-formed sequence beginning in the checked range [startpos - LB, n) (§3.1); the call was refused before any attempt.
+C3-0180	1618	N	On PCREC_ERR_UTF the caller's caps are untouched.
+C3-0181	1618	N	On PCREC_ERR_UTF, <prefix>_valid_upto(s, n, startpos) (§3.1.2) gives the offset of the ill-formedness.
+C3-0182	1619	N	PCREC_ERR_UTF is one code for every kind of ill-formedness; pcrec owes the refusal and the offset, not PCRE2's twenty PCRE2_ERROR_UTF8_* values (D26).
+C3-0183	1622	N	Every artifact DEFINES PCREC_ERR_UTF; only a -futf-check artifact under an encoding with ill-formed byte strings can RETURN it.
+C3-0184	1626	N	A composed call site PROPAGATES PCREC_ERR_UTF and does NOT trap (D133 Q11); this is the one exception to the below-the-floor trap rule.
+C3-0185	1628	N	-6 and -7 at a composed callee mean the ENGINE broke its own rule, but -9 is caused by the CALLER'S DATA: a checking callee's LB may reach before the outer call's range.
+C3-0186	1631	N	The composed-call-site trap is if (ret < PCREC_ERR_FLOOR && ret != PCREC_ERR_UTF) __builtin_trap(); and a -9 is returned outward unchanged.
+C3-0187	1632	N	No composed call sites are emitted today; the PCREC_ERR_UTF trap line is recorded so the first producer inherits it.
+C3-0188	1634	N	PCREC_ERR_UTF renumbers nothing: it is a new value in the region D49 reserved, below PCREC_ERR_UNSET_VAR (-8).
+C3-0189	1637	N	PCREC_ERR_FRAMES names a RESOURCE, not an array and not an owner.
+C3-0190	1638	N	Two distinct capacities can exhaust and both report PCREC_ERR_FRAMES: the resume stack (<PREFIX>_RESUME_FRAMES) and its sibling undo trail (<PREFIX>_TRAIL_FRAMES).
+C3-0191	1640	N	Which capacity ran out is not reported; a caller must not assume it was the one whose macro is named frames.
+C3-0192	1641	M	Measured on ^(a(?1)?b)$: the artifact gives up with the trail full and TWO THIRDS of its resume stack still unused (frame_buffer_design.md §4).
+C3-0193	1644	N	PCREC_ERR_FRAMES, with the same meaning, also covers a caller-supplied buffer ([DD-14.FB], §10.3), and does not say whose buffer it was.
+C3-0194	1647	N	<prefix>_search's 1/0 contract is unchanged: the give-up reservation adds outcomes and does not renumber match/no-match.
+C3-0195	1649	N	<prefix>_search's return is not two-valued, so if (<prefix>_search(...)) reads a give-up as a match; a caller must test == 1 for matched (§3.1).
+C3-0196	1657	N	rx_ctx.caps is declared const ptrdiff_t (*caps)[2], half-open [start, end) pairs.
+C3-0197	1658	N	<PREFIX>_NCAPS is a per-artifact compile-time constant.
+C3-0198	1659	N	PCREC_UNSET is ((ptrdiff_t)-1), a pcrec-contract unprefixed constant (§2, D60).
+C3-0199	1662	H	PCREC_UNSET is emitted once in the shared PCREC_RX_ABI_H block (§2); the per-<PREFIX> spelling <PREFIX>_UNSET is DELETED, not aliased.
+C3-0200	1666	N	<PREFIX>_NCAPS stays per-prefix because its VALUE varies per artifact.
+C3-0201	1669	N	Unset capture representation is {-1, -1} in BOTH slots of a pair.
+C3-0202	1670	N	caps[k][0] < 0 is a sufficient unset test.
+C3-0203	1671	N	Index 0 of caps is always the whole match.
+C3-0204	1671	N	<PREFIX>_NCAPS >= 1 always.
+C3-0205	1672	N	<PREFIX>_NCAPS is a property of the compiled ARTIFACT, not of the pattern text.
+C3-0206	1673	N	A DFA-compiled artifact, capture-bearing pattern or not, always emits <PREFIX>_NCAPS 1.
+C3-0207	1674	N	<PREFIX>_NCAPS > 1 implies the VM engine was selected.
+C3-0208	1675	M	Verified: 'a(b|c)+d' compiled --no-captures emits RX_NCAPS 1 with rx_info.ngroups == 1 (the pattern has a group; the artifact delivers no slot for it).
+C3-0209	1677	M	Verified: 'a(b|c)+d' compiled with captures on (default since M4.5) emits RX_NCAPS 2.
+C3-0210	1679	N	rx_info.ncaps == <PREFIX>_NCAPS always (a structural invariant of the build).
+C3-0211	1681	N	Every pair 0..<PREFIX>_NCAPS-1 is written on a completed match; no watermark is needed at read time.
+C3-0212	1683	N	On a failed match the caller's caps array is left untouched, and an engine give-up is a failure for this rule.
+C3-0213	1685	N	Every negative return from an anchored entry, and a 0 or a give-up code from <prefix>_search, leaves the caps array exactly as the caller left it.
+C3-0214	1687	N	No attempt is made to write {-1,-1} into the caps array on failure; the return value alone communicates failure.
+C3-0215	1691	N	The caps array is caller-owned, fixed-size and compile-time-sized: a caller declares ptrdiff_t caps[<PREFIX>_NCAPS][2] on the stack.
+C3-0216	1693	N	Nothing in the generated contract allocates.
+C3-0217	1694	N	ctx->caps handed to a callout mid-match is valid for the duration of that one call only.
+C3-0218	1695	N	The engine rewrites the same ctx->caps storage after the callout call (trail-based undo); a callout retaining the pointer and reading it later is the embedder's bug, not a pcrec contract violation.
+C3-0219	1699	N	A completed match's caps are stable until the next match call reusing the same buffer.
+C3-0220	1700	N	The matcher may overwrite the caps buffer between separate calls, but never mid-splice.
+C3-0221	1705	N	Every capture slot 0..ncaps-1 is written on a completed match.
+C3-0222	1708	M	The two §5.1 capture-value rules were measured three-way unanimous (python re, libpcre2, pcrec agree) and are part of the shipped contract.
+C3-0223	1710	N	Cross-iteration retention: a group inside a quantifier that did not run in the FINAL iteration retains its value from the last iteration in which it did run.
+C3-0224	1714	M	((a)|(b))* matched against "ab" reports group 2 as [0,1), not unset.
+C3-0225	1716	N	Unset means never participated in the whole match, not did not participate in the match's last iteration.
+C3-0226	1718	N	An empty final iteration still overwrites: an empty iteration's write is a write.
+C3-0227	1718	M	(a*)* and (a?)* matched against "aaa" both report group 1 as [3,3).
+C3-0228	1722	N	A caller reading caps[k] after a successful match need not reason about which iteration produced the value; the slot holds the group's last-executed span or is genuinely unset.
+C3-0229	1726	N	A slot is unset only if the group never ran at all, in any iteration, anywhere in the match.
+C3-0230	1728	N	The §5.2 non-requirements are scoped to the MATCH path (generated matcher and its caps buffers); the library's compile path does allocate and has a lifecycle (§8 pcrec_output/pcrec_output_free) that must still be honored.
+C3-0231	1736	N	Non-requirement: no ovector sizing negotiation; the group count is a compile-time fact.
+C3-0232	1737	N	Non-requirement: no match-data object, no allocation, no lifecycle to manage on the match path.
+C3-0233	1738	N	Non-requirement: no run-time does-group-N-exist query; a compile-time check is the caller's own business.
+C3-0234	1740	N	Non-requirement: no run-time name lookup for template resolution; a future substitution compiler resolves ${name} at pcrec-compile time.
+C3-0235	1742	N	Non-requirement: no partial-match or streaming window state.
+C3-0236	1743	N	Non-requirement: no callout/callback context beyond what rx_ctx itself carries.
+C3-0237	1744	N	A callout binding's user data lives entirely in the rx_callout_ref the binding declares.
+C3-0238	1745	N	Nothing about which callout is firing is visible to rx_matchfn's own signature.
+C3-0239	1750	N	A generated matcher holds no mutable state of its own.
+C3-0240	1751	N	Every entry point's working state lives in its own stack frame and in the caller's caps buffer; tables, bitmaps and the rx_info instance are const.
+C3-0241	1755	N	Any number of threads may call the same artifact's entry points concurrently, provided each call has its own caps/caps_out buffer.
+C3-0242	1757	N	Sharing one caps buffer between concurrent calls is a data race in the CALLER's code; the matcher does not serialize it.
+C3-0243	1760	N	One thread may re-enter a matcher (e.g. from a callout), subject to the same distinct-buffer rule.
+C3-0244	1762	N	<prefix>_info is read-only and may be read from anywhere at any time.
+C3-0245	1764	N	Reentrancy/thread-safety is a CONTRACT binding on future emitters, not an observation about today's output.
+C3-0246	1766	N	An engine that wanted a mutable scratch buffer would have to change the spec first.
+C3-0247	1769	N	The thread-safety promise says nothing about how much STACK each concurrent call needs.
+C3-0248	1771	N	An artifact whose frame requirement is not statically bounded declares its whole run state as a local of the entry it was called through.
+C3-0249	1785	H	The tiered entry (§10.9) moves the stamped default storage off the entry's own frame onto a non-inlined internal function only a PCREC_ERR_FRAMES give-up reaches.
+C3-0250	1786	M	Measured on a -p rx --features all build of ^(a(?1)?b)$: <prefix>_search's stack frame is 3,184 bytes and the internal deep function's is 131,216 bytes.
+C3-0251	1778	M	Measured: a statically-bounded pattern pays nothing: a(b|c)+d's entry frame is 208 bytes.
+C3-0252	1780	M	A glibc-default 8 MB main thread is unaffected by the 131 KB frame class.
+C3-0253	1788	N	The fit criterion for a call is free STACK HEADROOM AT THE CALL SITE (entry + deep, 134,400 bytes for this artifact class), not thread-stack size as such.
+C3-0254	1790	N	A thread's nominal stack size equals the headroom available to a call only when the call happens at depth ~0 (limits.md §5).
+C3-0255	1792	M	Measured: at depth ~0 on a musl-default 128 KB thread, the ^(a(?1)?b)$ --features all artifact matches every subject the fast tier holds and faults only on one deep enough to escalate.
+C3-0256	1796	N	The remedy for small-stack callers is still the _in entries, and it is the only way to get a guarantee.
+C3-0257	1797	N	Which subjects escalate to the deep tier is a property of the pattern and the subject, not something a caller can bound in advance.
+C3-0258	1799	N	known_issues.md K33 carries the narrowed statement of the stack limitation.
+C3-0259	1800	N	tests/thread/run_stackdepth_tests.sh pins both halves: the small entry frame, and the deep tier still dying on a small stack.
+C3-0260	1803	N	The remedy SHIPS as §10's _in entries ([DD-14.FB], D71 item 2).
+C3-0261	1805	M	Measured: the _in entries' own frame is 144 bytes at -O2, 312 including the two statics they call through, and 224 at -O3 where gcc inlines the statics into both entries.
+C3-0262	1807	N	The 131 KB of default storage never reaches the _in entry's frame.
+C3-0263	1808	N	A caller on a small thread stack supplies its own storage via _in, so the arrays are not on that stack at all.
+C3-0264	1809	N	A caller who cannot use _in must size the thread for the artifact or compile with a smaller --backtrack-frames.
+C3-0265	1811	N	The default (un-suffixed) path is unchanged and still does not fit a small thread stack, deliberately: D73 keeps the stamped 2048/3072 capacities.
+C3-0266	1813	N	A caller who calls the un-suffixed entry of this artifact class from a small-stack thread has a live limitation (K33).
+C3-0267	1816	M	tests/thread/run_stackdepth_tests.sh reproduces on every run: the default entry dying on a 128 KB thread, and _search_in matching the same subject on the same thread.
+C3-0268	1820	N	Thread safety is GUARDED by shipped checks in make test (TS-1, TS-2) plus TS-3 for the library.
+C3-0269	1823	N	TS-1 (D19) is static: it scans every emitted file across nine emission shapes and fails on any non-const static object or any reference to a non-reentrant or allocating libc symbol.
+C3-0270	1826	N	TS-2 is dynamic under ThreadSanitizer: eight threads share ONE compiled matcher and search DIFFERENT subjects concurrently, across five patterns hitting five differently shaped emitted engines.
+C3-0271	1829	N	TS-2 requires every threaded result to equal a single-threaded baseline recorded before any thread was spawned.
+C3-0272	1831	N	TS-2's sabotage arm: a planted race in a scratch copy of the driver must be caught, or the check fails itself.
+C3-0273	1835	N	TS-3 runs eight threads each compiling its own pattern through pcrec_compile() concurrently, byte-matching a single-threaded baseline, TSan-instrumented and sabotage-validated.
+C3-0274	1838	N	pcrec_compile() is safe to call concurrently (§8 assumes it; TS-3 is the evidence).
+C3-0275	1843	N	struct rx_info is the reflection structure of an artifact.
+C3-0276	1847	N	rx_info.abi is an unsigned layout version, bump-on-change.
+C3-0277	1848	N	rx_info.flags is a uint64_t of PCREC_* option bits exactly as compiled.
+C3-0278	1849	N	rx_info.encoding is an int holding a PCREC_ENC_* value.
+C3-0279	1850	N	rx_info.ncaps is an int equal to <PREFIX>_NCAPS: this artifact's caps[] slot count, all-in.
+C3-0280	1852	N	rx_info.ngroups is an int counting capturing groups in the PATTERN TEXT: a lexical fact, independent of --no-captures and of engine selection.
+C3-0281	1855	N	On a COMPOSED artifact rx_info.ngroups is the TARGET pattern's own count; a bound definition's groups sit above it (D61, [DD-13b.W1.3]).
+C3-0282	1859	N	rx_info.nnames is an int: the number of rows in groups[] the PRIMARY pattern declared, always a PREFIX of the array.
+C3-0283	1861	N	rx_info.nnames is 0 when the pattern text declares no named group.
+C3-0284	1862	N	rx_info.nnames is 0 when module 'named-groups' is not ENABLED for this compile; this is a different reason from the pattern declaring none.
+C3-0285	1867	N	rx_info.nentries is the whole groups[] array's length; nnames counts only the primary pattern's rows.
+C3-0286	1868	N	rx_info.engine is an unsigned: PCREC_ENGINE_DFA = 1, PCREC_ENGINE_VM = 2.
+C3-0287	1870	N	rx_info.step_budget is an int64_t; -1 means none.
+C3-0288	1871	N	rx_info.work_budget is an int64_t; -1 means none.
+C3-0289	1871	N	rx_info.work_budget is the THIRD bound (D47 second addendum): forward work the fail label never sees, counted separately from step_budget.
+C3-0290	1875	N	rx_info.frame_capacity is an int64_t; -1 means unbounded.
+C3-0291	1876	N	rx_info.frame_capacity's -1 sentinel is NOT the sentinel the same-named pcrec_options field uses (asymmetry note).
+C3-0292	1879	N	rx_info.subject_ceiling is an int64_t; 0 means unset/not applicable.
+C3-0293	1880	N	A nonzero rx_info.subject_ceiling is the stamped honest ceiling for a residually-unbounded capture body.
+C3-0294	1882	N	rx_info.resume_frames is an int64_t: the stamped DEFAULT resume capacity in frames ([DD-14.FB]).
+C3-0295	1884	N	rx_info.resume_frames is 0 when the artifact has no resume stack (every DFA artifact).
+C3-0296	1886	N	rx_info.trail_frames is an int64_t: the stamped default trail capacity in trail entries.
+C3-0297	1887	N	rx_info.resume_frame_size is an int32_t: bytes per resume frame for THIS artifact.
+C3-0298	1888	N	rx_info.resume_frame_size is 0 on a DFA artifact.
+C3-0299	1889	N	rx_info.trail_frame_size is an int32_t: bytes per trail entry.
+C3-0300	1890	N	rx_info.pattern is a const char * holding the source pattern text as given to pcrec_compile().
+C3-0301	1892	N	rx_info.pattern_len is a size_t companion length of rx_info.pattern (§7).
+C3-0302	1893	N	rx_info.groups is a const rx_group_entry * that is NULL until the pattern text declares at least one named group.
+C3-0303	1895	N	When non-NULL, rx_info.groups is sorted by NAME (strcmp).
+C3-0304	1897	N	rx_info.engine_why is a const char * naming the forcing construct/reason, or NULL.
+C3-0305	1898	N	rx_info.engine_why also carries a prefilter note on hybrid-eligible artifacts.
+C3-0306	1901	N	rx_info.scan is a const char * ([DD-13c]): the DFA scan the artifact CONTAINS, "unanchored" / "attempt" / "empty", mirroring <PREFIX>_DFA_SCAN.
+C3-0307	1905	N	rx_info.scan is NULL when the artifact contains no DFA scan.
+C3-0308	1906	N	rx_info.prefilter is a const char * ([DD-13c]): the artifact's candidate-start mechanism, in whichever engine's vocabulary applies.
+C3-0309	1909	N	rx_info.prefilter is never NULL.
+C3-0310	1910	N	rx_info.match_form is a const char * ([ENG-ABS]): HOW <prefix>_match answers, "unwrapped" / "search-filter", mirroring <PREFIX>_DFA_MATCH.
+C3-0311	1913	N	rx_info.match_form is NULL on every artifact whose _match the DFA emitter did not write: every VM artifact, HYBRIDS INCLUDED (§6.3).
+C3-0312	1918	N	rx_info.name is a const char * ([DD-13b.W1.2]): this artifact's own name.
+C3-0313	1920	N	rx_info.name is NEVER NULL; a build that names nothing stamps its own <prefix>.
+C3-0314	1922	N	rx_info.nentries is an int ([DD-13b.W1.2]): the number of rows in groups[], ALL of them.
+C3-0315	1923	N	nnames counts the PRIMARY pattern's own rows, which are a prefix of the groups[] array.
+C3-0316	1926	N	On a COMPOSED artifact nentries and nnames DIFFER: the rows past nnames are a bound definition's delivered groups ([DD-13b.W1.3]).
+C3-0317	1929	N	Each groups[] row past nnames on a composed artifact carries a non-NULL ref.
+C3-0318	1931	N	rx_info.search_form is a const char * ([OPT-5 STEP 2]): HOW <prefix>_search recovers the match START, mirroring <PREFIX>_DFA_START.
+C3-0319	1933	N	rx_info.search_form "pinned": the start is search_from by compile-time proof, and the artifact carries no reverse machine at all.
+C3-0320	1937	N	rx_info.search_form "reverse-pass": the match start is recovered by a second, backwards scan.
+C3-0321	1941	N	rx_info.search_form is NON-NULL on every artifact that CONTAINS a DFA scan, a VM HYBRID INCLUDED.
+C3-0322	1943	N	rx_info.search_form's guard differs from match_form's (which is "the DFA emitter wrote _match").
+C3-0323	1945	N	rx_info.search_form is NULL only on a plain VM artifact (§6.3).
+C3-0324	1947	N	rx_info.vars is a const char *const * ([VAR]): the variable NAMES the pattern mentions, in first-mention order.
+C3-0325	1949	N	rx_info.vars is NULL when the pattern mentions no variable.
+C3-0326	1950	N	rx_info.nvars is an int: the number of entries in vars[].
+C3-0327	1951	N	rx_info.findings is a const char * ([FINDINGS] B1) mirroring <PREFIX>_FINDINGS: which findings each query this compile asked was answered from (§6.3, findings.md §5).
+C3-0328	1956	N	rx_info.findings is NEVER NULL: it is "" when the compile asked nothing.
+C3-0329	1961	H	rx_info.findings is appended after nvars (the last member): no existing member's offset moved.
+C3-0330	1964	N	rx_info is the canonical machine-readable record (D43), so the <PREFIX>_FINDINGS macro alone would be invisible to a linked binary; hence the findings mirror.
+C3-0331	1965	N	The rx_info.findings value names the analysis a byte-rate came from in plain text, so a shipped binary discloses the analysis name it was built under (findings.md §5; name bundles neutrally).
+C3-0332	1969	H	rx_info.name and rx_info.nentries are appended after match_form: no existing member's offset moved.
+C3-0333	1974	N	rx_info.name answers a different question from <prefix> and is not derivable from it: <prefix> says what the symbols are called; name says what the artifact IS.
+C3-0334	1977	N	A .rxt target <prefix> = <definition> whose definition may carry its own name: one definition built under three configs is three artifacts, three prefixes and ONE name.
+C3-0335	1982	N	rx_info.name lets a consumer walking several <prefix>_info symbols in one binary say these are the same matcher, built differently.
+C3-0336	1984	N	rx_info.name being never NULL is a CONTRACT: a compile that supplies no name stamps its own <prefix>, so a caller needs no NULL branch.
+C3-0337	1987	N	rx_info.name is arbitrary text, not an identifier; nothing derives a symbol from it.
+C3-0338	1988	N	.rxt's own name grammar is stricter than rx_info.name; that is the .rxt format's rule, not this field's.
+C3-0339	1991	N	§6.0's caller algorithm bsearches groups[0 .. nnames).
+C3-0340	1992	N	nnames is the count of the PRIMARY pattern's own named groups, and those rows are a genuine PREFIX of groups[].
+C3-0341	1994	N	nentries is the length of the whole groups[] array.
+C3-0342	1995	N	nnames == nentries on every artifact built from a single pattern, because nothing puts a row in groups[] that the pattern did not declare.
+C3-0343	1996	N	nnames and nentries DIFFER on a composed artifact ([DD-13b.W1.3]).
+C3-0344	1998	N	A caller that wants only the pattern's own names keeps reading nnames; a caller that wants everything in the array reads nentries.
