@@ -1627,3 +1627,21 @@ build. A library caller that wants composition gets it through [LIB].
 - `axes.def`'s contract-axes block: the startpos-guard row gained its force
   column (`PCREC_FORCE_STARTPOS_ALIGN`, `-fstartpos-guard=align`) and the
   new `PCREC_FORCE_UTF_CHECK` row (`-futf-check`, DEFAULT_OFF, no deny).
+
+
+## [FLAG-ACCESS] the option word's accessors (lane flagacc, 2026-10-10)
+
+`internal.h` carries ONE read site for `pcrec_options.flags`:
+`pcrec_flags_has(flags, key)`, `pcrec_opt_has(opt, key)`,
+`pcrec_flags_masked(flags, key)` and `pcrec_flags_without(flags, key)`,
+bracketed by `FLAG-ACCESS-BEGIN/END`. Every one of the 65 former raw reads in
+15 files (`flags & PCREC_X`, `r->deny & flags`, `flags & ~mask`) now goes
+through them, so the representation (one `uint64_t` of `PCREC_BIT(n)` keys
+today) is named in that block and in `lib/pcrec.h`'s key macros only.
+`compile.c` static-asserts, off `axes.def`, that every deny/force key is a
+single bit. Writes (`|=`, `&= ~`) are NOT behind the block: they are the
+CLI's and the compiler's construction of the word. The word still travels as
+a `uint64_t` parameter (`cand_select`, `DFA_SELECT`, the memfn/clskit deny
+maps) and `emit_dfa.c` still prints it as a number into `.flags = N`; those
+are the residue an [IFACE-PUSH] representation change must still touch. The
+gate is `tests/core/flag_access_check.py`; no abi event, no byte moved.

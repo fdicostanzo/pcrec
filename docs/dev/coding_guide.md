@@ -109,6 +109,13 @@ joined over the built objects) against the include graph's 0. So a new
 cross-layer call is invisible to every check in the tree — decide its
 direction yourself, at the point you write it.
 
+### 1.10 Read the option word through the accessors ([FLAG-ACCESS])
+
+`pcrec_options.flags` is read ONLY through `pcrec_opt_has` / `pcrec_flags_has` /
+`pcrec_flags_masked` / `pcrec_flags_without` (`src/core/internal.h`). A raw
+`flags & PCREC_X` fails `tests/core/flag_access_check.py` (`make test-core`).
+Writes (`|=`, `&= ~`) are the CLI's and the driver's own and stay raw.
+
 ---
 
 ## 2. Taught primitives — reach for these, in their state TODAY

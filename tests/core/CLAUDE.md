@@ -357,4 +357,17 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   semantics are `tests/vars/`'s oracle. A reader who takes this file as
   covering the feature would be wrong about exactly half of it.
 
+- **flag_access_check.py** -- [FLAG-ACCESS] (lane flagacc, 2026-10-10): THE
+  OPTION WORD'S READER CENSUS AS A GATE, run as the last section of
+  `run_core_tests.sh` (a source scan, no build). No raw read of
+  `pcrec_options.flags` (`flags & PCREC_X`, `x & PCREC_X`, `deny & flags`,
+  `flags & ~mask`) may appear under `src/`, `cli/` or `lib/` outside the
+  accessor block in `src/core/internal.h`, which is bracketed by
+  `FLAG-ACCESS-BEGIN/END` comments. Its control shares nothing with the
+  accessors: the key population comes from `lib/pcrec.h`'s `PCREC_BIT(n)`
+  definitions, the detector is proved on literal MUST_FLAG / MUST_PASS
+  fixtures before the tree is scanned, and two population floors (option
+  keys parsed, accessor uses seen) make a scan that reached nothing a
+  failure. Sabotage row S792 plants a raw read in `callgraph.c`.
+
 Maintenance: update this file when files are added/removed or their roles change.
