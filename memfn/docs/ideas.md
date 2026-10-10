@@ -60,3 +60,41 @@ evaluating.
    trigger cells: exact window with a rare pick, exact window with a dense
    pick, and OFS run-pinned (`/user|/users`). This entry adds nothing new
    beyond that row.
+
+## 2026-10-10 — a vector filter over a byte plus a class at another offset (ipv4 shape)
+
+Frank's question: what if the picks differ, e.g. `.` plus a digit (an ipv4
+regex)? Can the class be checked in SIMD?
+- What pcrec emits today (lane/memfn-r13 build, `-fmemfn-simd`):
+  - `[0-9]\.[0-9]`: OFS `offset-set`. A scalar `memchr('.')` runs, then a
+    256-entry table checks the byte before it for a digit (`rx_ofs_k0`), and
+    each failure restarts `memchr`. `MEMFN_FORMS "none"`: offset-set is
+    out of batch 1 ("set terms only, no run", integration.md §R4.9
+    site table).
+  - `\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}` and `\b\d+\.\d+\.\d+\.\d+\b`: only an
+    entry check that some `.` exists (`!memchr(..., 46, ...)`), then the DFA
+    with `byte-class` prefilter and inline digit-run loops
+    (`(unsigned)(c - 48) <= 9u`). There is no candidate filter that combines
+    `.` with digits at all.
+- The vector form is cheap:
+  - A range class is 3 ops per block in SSE2:
+    `t = sub_epi8(x, '0'); cmpeq(min_epu8(t, 9), t)`.
+  - A small union of ranges is a few more.
+  - An arbitrary class is a nibble-table shuffle (pshufb lo/hi lookup, AND):
+    SSSE3+, so a w16-level question.
+  - Combined per block: `cmpeq(load(i+k), '.') & digit(load(i+k-1)) &
+    digit(load(i+k+1))`, then movemask, then verify. This is the vrun shape
+    with cubes generalised to classes.
+- Why this may beat the scalar twin even though `.` alone is the glibc trap:
+  `.` is DENSE in text, so scalar `memchr('.')` restarts on every dot that is
+  not between digits. The vector filter rejects those in-register. That is
+  the same restart-churn argument that made `fn-pair` batch 1's site.
+- Two layers:
+  - Kit: a set-capable vrun (class predicate per position) over OFS
+    offset-set FUNCs, which already exist.
+  - pcrec: for the ipv4-style patterns there is no such site today, only
+    "a `.` exists". pcrec would have to state a multi-position
+    candidate fact (D157) for the DFA prefilter.
+- First guess: medium for log/text scanning workloads (ipv4, dates
+  `\d+-\d+`, versions `\d+\.\d+`). Needs a dense-dot cell to judge against
+  memchr + table.
