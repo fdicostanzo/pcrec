@@ -453,10 +453,10 @@ fresh threads, and F1), so `p*` exists and `p* ≤ q < e`. Consider position
   for `[search_from, L)`, F1 for `[L, p*)`), so `p*` is the leftmost start, `e` is its
   priority end, and the reverse pass returns `p*`. ∎
 
-Minimization does not change this. A state F might merge into state 0 while threads
-from `[L, p*)` are alive is merged only if those threads never accept (they do not),
-so an earlier re-landing can only move `L` forward over doomed threads; the claims hold
-for whichever landing is final.
+Minimization does not change this. A state holding threads from `[L, p*)` can be
+merged into state 0 only if those threads never accept (they do not), so such a merge
+can only re-land earlier over doomed threads; the claims hold for whichever landing is
+final.
 
 **This is SL-G1's sketch written out**: "any well-formed `p` in `(L, s)` is dead,
 contradicting finality, or accepting, contradicting leftmostness". The guard is the ⊥
@@ -512,8 +512,7 @@ n = 45) reads:
 The skip is the pick: it is faster where the bench measures, in all four comparisons
 and in slcrit1's own measurement (5.35 vs 5.65 ms on `.`), and, which decides it where
 the timing alone does not, it puts nothing on the hot path, adds no re-entry edge and
-changes no NEXT emitter. Fix A is
-the recorded alternative; it becomes the better form only if a regime with mostly
+changes no NEXT emitter. Fix A is the recorded alternative; it becomes the better form only if a regime with mostly
 ill-formed input is ever measured as material (none is on the bench).
 
 Revision 1's restart (`landing + 1`, re-enter the forward scan) is withdrawn: on
