@@ -597,8 +597,8 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "", "always (fallback) — no bound derivable, or the axis denied");
     }
     /* vm-prefilter — §2.5, the ONE force pair; RX_VM_PREFILTER's own values.
-     * NOT the same axis as "prefilter" above (docs/spec/tuning.md §3.1: "the
-     * two prefilter macros are two different selections") — this one is
+     * NOT the same axis as "prefilter" above (docs/spec/tuning.md §3.1¶3: "the
+     * two prefilter stamps are two different selections") — this one is
      * whether the VM runs a capture-erased DFA ahead of its program at all. */
     {
         PredAxis p = { "vm-prefilter", NULL, "RX_VM_PREFILTER", "", 0, NULL, 0, NULL, NULL, NULL };

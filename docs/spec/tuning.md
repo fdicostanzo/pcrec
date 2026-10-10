@@ -66,7 +66,7 @@
 
 <a id="s0-p2"></a>[0¶2] Each axis's option bit is declared once, in `lib/pcrec.h`. Its CLI spellings and its default polarity are one row of `src/core/axes.def`, and every reader is derived from that row: the parser's whole `-f` grammar, and the `deny_macro`, `deny_bit`, `force_macro`, `force_bit` and `cli_flag` columns of `--list-axes`. A spelling in this document, in the listing and in the parser is therefore one fact.
 
-<a id="s0-p3"></a>[0¶3] `pcrec --list-axes` is the machine-readable view of the axes: one row per (axis, candidate) for every bit-flag axis below, plus the DFA layer-1 axes that have no flag (`table`, `prefilter`, `view`, `seed`, `accept`, `direction`) and the first-match selection tables (`engine-route`, `fallback`, `prefilter-admit`, `req-admit`, `req-use`, `hyb-reseed`). It reports what this build's axes are; this document states what denying or forcing one does.
+<a id="s0-p3"></a>[0¶3] `pcrec --list-axes` is the machine-readable view of the axes: one row per (axis, candidate) for every bit-flag axis below, plus the DFA layer-1 axes (`table`, `prefilter`, `view`, `seed`, `accept`, `direction`; a candidate of these carries a flag only where a section below names one) and the first-match selection tables (`engine-route`, `fallback`, `prefilter-admit`, `req-admit`, `req-use`, `hyb-reseed`). It reports what this build's axes are; this document states what denying or forcing one does.
 
 <a id="s1"></a>
 ## 1. What a tuning flag is

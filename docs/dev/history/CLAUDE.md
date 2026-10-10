@@ -40,6 +40,15 @@ contract. Created by lane specclean (2026-10-09, `[SPEC-CLEAN]`).
   vocabulary was called nine tokens; it is eleven) are only here. The same
   texts are in git at the commit before the rewrite;
   `docs/dev/lanes/specsmall_report.md` carries the claims ledgers.
+- `tuning_record.md` — FROZEN. The complete text `docs/spec/tuning.md`
+  carried until its facts-only rewrite (lane spectune, `[SPEC-CLEAN]`), moved
+  verbatim. The rewritten spec keeps every section number and the
+  contract-bearing facts; the revision notes, measurement transcripts and
+  population counts, dial-row arguments, and statements the code has since
+  overtaken (the "two" engine-selecting axes, the stale `pcrec_options`
+  table) are only here. The same text is in git at the commit before the
+  rewrite; `studies/spectune/claims.tsv` is the claims ledger and
+  `docs/dev/lanes/spectune_report.md` the summary.
 - `abi_changelog.md` — LIVING. The `abi` change log, newest first, one entry
   per bump (D76 addendum [REVW.A1] named its home; it moved here verbatim
   from match_api.md §6). **An `abi` bump adds its entry here in the bump's

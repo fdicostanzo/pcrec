@@ -1,0 +1,443 @@
+# studies/spectune/claims.tsv -- lane spectune's claims ledger: every paragraph unit of
+# docs/spec/tuning.md before its facts-only rewrite (eac53111; frozen in
+# docs/dev/history/tuning_record.md), mapped to the rewrite. Dispositions:
+# KEPT (the fact is stated, at NEW), CONDENSED (stated shorter), SUPERSEDED (the
+# old claim is not the live behaviour; Cn is the correction in
+# docs/dev/lanes/spectune_report.md §3), HISTORY (a past state, ruling or dated
+# narrative: the record only), N/A-DROP (a measurement, count, transcript or
+# line number: not restated). '+' joins the dispositions of a mixed paragraph.
+old_section	old_unit	old_line	old_text	disposition	new	note
+0	1	3	This is the **spec**, not the design record, per `docs/spec/CLAUDE.md`'s	HISTORY+KEPT	0¶1	verification-at-write-time claim is history; design pointers kept as background
+0	2	14	**`pcrec --list-axes` ([CHK-2], `docs/spec/registry.md` §6) is the	KEPT	0¶3	--list-axes as the machine-readable view; 'six layer-1 axes with no CLI flag' SUPERSEDED (C15)
+0	3	21	**WHERE AN AXIS'S BIT AND ITS SPELLING COME FROM ([REVW.4] wave 4, D111,	KEPT+HISTORY	0¶2	axes.def single source kept; the wave narrative and deleted awk passes are history
+1	1	39	A tuning flag is a **generation-time choice** (D18: options are compiled	SUPERSEDED+KEPT	1¶1-1¶5	the class list; 'the two named ENGINE-SELECTING' SUPERSEDED (C1: three kept, plus ctx-node)
+1	2	48	> **Denying (or forcing) a tuning axis must not change what the emitted	KEPT	1¶6	the answer-identity rule
+1	3	54	This is D46's "every strategy-selection point is observable and	CONDENSED	1¶7	D46/D47.3; per-axis differentials named in their sections
+1	4	72	**Who this document is for.** A contributor building or reviewing a	N/A-DROP	-	audience paragraph: not a contract
+1	5	82	**[OPT-DIAL] (2026-09-16) EVERY AXIS BELOW HAS A PER-POSITION DEFAULT, NOT	KEPT+HISTORY	1¶8	per-position default; the dated tag is history
+1	6	92	**EXPLICIT PER-SWITCH FLAGS BEAT THE DIAL — WHERE A SPELLING EXISTS**	KEPT+SUPERSEDED	1¶9	explicit beats the dial where a spelling exists; 'bar is a constant beside size_term_choose' SUPERSEDED (C10)
+2	1	110	Each subsection: what it controls, the default, the stamp it leaves in an	KEPT	2¶1	
+2	2	115	**`make test-axes` ([CHK-2], `tests/axes/run_axes.sh`) is the sweep that	KEPT	2¶2	
+2	3	126	**THE `rx_info.flags` RULE, stated once ([FLAGBITS], 2026-10-06).** Every	KEPT+HISTORY	2¶3	the mask rule; K92's pre-rule incident is history
+2.1	1	143	**Denies** the possessification rewrite (`src/opt/possessify.c`,	KEPT	2.1¶1, 2.1¶2	stamp transcript N/A-DROP
+2.1	2	159	(`0x1u` is `PCREC_VM_STRAT_POSSESSIVE`, `0x2u` is `PCREC_VM_STRAT_BACKTRACKING` — the named bit constants, `li	KEPT+N/A-DROP	2.1¶2	bit names kept; .frame_capacity 3/4 transcript dropped (match_api §6¶16 kept as pointer)
+2.1	3	170	**Answer identity holds under the default budgets; the give-up surface moves	KEPT+N/A-DROP	2.1¶3	two-direction give-up rule kept; 394/1,199 work-budget measurements dropped
+2.1	4	189	**Differential:** `tests/possessify/run_possdiff.sh`. Population,	KEPT+N/A-DROP	2.1¶4	differential named; population tally dropped
+2.1	5	198	**Not on the dial — GATE 3.** Size is measured and wrong-signed (`σ` =	CONDENSED	2.1¶5, 5.4	GATE 3; σ value lives in the design
+2.2	1	205	**Denies** the REVERSE-DETERMINISTIC cursor rung (`docs/design/	KEPT	2.2¶1	RX_VM_RUNGS PCREC_VM_RUNG_REVDET
+2.2	2	218	**Differential:** `tests/rungselect/run_rungdiff.sh`, which reuses	KEPT+N/A-DROP	2.2¶2	tally and timeout narrative dropped
+2.2	3	233	**Not on the dial — GATE 3.** Size is measured and roughly a wash	CONDENSED	2.2¶3, 5.4	
+2.3	1	239	**Denies** the COUNTER rung (`docs/design/counterk_impl/	KEPT	2.3¶1, 2.3¶2	stamp bit added (C12)
+2.3	2	253	**Differential:** `tests/counterk/run_counterkdiff.sh` (same shared	KEPT+N/A-DROP	2.3¶3	tally dropped
+2.3	3	263	**Not on the dial — NOT A RUNG.** The counter rung is a correctness-shaped	CONDENSED	2.3¶4, 5.4	
+2.4	1	270	**Denies** MINIMUM-REMAINING-LENGTH (MRL) pruning (`docs/design/	KEPT	2.4¶1	stamp RX_VM_PRUNES added (C11)
+2.4	2	281	**Differential:** `tests/mrl/run_mrldiff.sh` (same shared driver), which	KEPT+N/A-DROP	2.4¶2	both-engines rule kept; tally dropped
+2.4	3	296	**Not on the dial — NOT A RUNG.** MRL trades nothing: a denied artifact is	CONDENSED	2.4¶3, 5.4	
+2.5	1	302	The D46 close-out for the PREFILTER axis (`fit.prefilter`,	KEPT+SUPERSEDED	2.5¶1	force pair, one verdict; 'auto+captures turns it on' SUPERSEDED (C14: the prefilter-admit table)
+2.5	2	316	Default: auto-selected jointly with the engine. **ANSWER-IDENTITY-	KEPT	2.5¶2	do-or-die direction, masked, RX_VM_PREFILTER; transcript dropped
+2.5	3	333	**It is charged against the emitted-size caps, and `-fprefilter` never	KEPT+N/A-DROP	2.5¶3	charged to caps, never dropped; \p{Xwd} byte figures dropped
+2.5	4	344	**Reason it exists:** the hybrid prefilter (a capture-erased DFA	CONDENSED	2.5¶1	reason condensed into the definition
+2.5	5	350	**Differential:** deliberately **none of its own**	KEPT	2.5¶9	
+2.5	6	362	**Identity is modulo WHICH BUDGET BINDS.** The prefilter changes how much WORK a search does before it answers	KEPT+HISTORY	2.5¶4	budget-bound classification kept; the dated measurement attribution is history
+2.5	7	364	**[SEL-1] (2026-08-28) A THIRD OFF-ROUTE, AND IT IS BEFORE THE TWO FLAG	KEPT+HISTORY	2.5¶5, 2.5¶6	DFA-overflow drop and its no-dfa-overflow listing value kept; tag/date history
+2.5	8	377	**[PF-DROP] (2026-09-30, D135) A FOURTH OFF-ROUTE: THE EMITTED-SIZE CAP.**	KEPT+HISTORY	2.5¶7	size-cap prefilter drop, _WHY text, no-size-cap listing value kept; abi-69 narrative history
+2.5	9	391	**[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**	KEPT+HISTORY	2.5¶6, 2.5¶8, 2.17¶2	collapse rung before the drop; -fprefilter unchanged; 'NOW THE SECOND RUNG' history
+2.5	10	411	**Not on the dial — GATE 3.** The axis is measured only through an	CONDENSED	2.5¶10, 5.4	
+2.6	1	418	**Denies** stage 1 of the ALTERNATION→CLASS normalization pass	KEPT	2.6¶1	
+2.6	2	431	**Not on the dial.** `σ` = −2.40%: wrong-signed (denying this merge costs	KEPT+N/A-DROP	2.6¶2, 2.6¶4, 5.4	GATE 2 refusal-set move kept (K45); σ dropped
+2.7	1	438	**Denies** stage 2 of the same pass: prefix-factoring a maximal run	KEPT+N/A-DROP	2.7¶1	stamp names kept; transcript dropped
+2.7	2	453	**Reason it exists:** same D47.3 claim; two bits because the two rewrite	CONDENSED	2.7¶1	why two bits
+2.7	3	456	**Differential (both bits):** `tests/altcls/run_altdiff.sh` (denies both	KEPT+N/A-DROP	2.7¶2	tally dropped
+2.7	4	467	**Not on the dial.** `σ` = −0.56%: wrong-signed, the same shape as §2.6.	CONDENSED	2.7¶3, 5.4	
+2.8	1	471	**Denies** the FREE DISCHARGE (`docs/design/atomic_groups_design.md`	KEPT+SUPERSEDED	2.8¶1, 2.8¶2	'first of the two axes ... not answer-identity-preserving alone' SUPERSEDED (C1); refusal witness kept
+2.8	2	488	REFUSES — correct, and the flag doing its job (the same do-or-die	KEPT	2.8¶2	kept in rx_info.flags; not gated by -fno-possessify (2.8¶1)
+2.8	3	500	**Differential:** `tests/atomic_groups/run_atomic_diff.sh` §3 (the	KEPT+N/A-DROP	2.8¶4	not-re-run narrative dropped
+2.8	4	509	**Not on the dial — GATE 3.** No two-axis rate exists; the axis it moves	CONDENSED	2.8¶5, 5.4	
+2.8	5	512	The discharge asks the possessify verdict, so the possessify arms (§2.44,	KEPT	2.8¶3	
+2.9	1	519	**Denies** the SPLICE linkage at every eligible subroutine call site	KEPT+SUPERSEDED	2.9¶1, 2.9¶2	'the family's second and last such axis' SUPERSEDED (C1); splice budget named
+2.9	2	536	REFUSES — correct, the discharge's own precedent exactly. **NOT masked	KEPT	2.9¶2, 2.9¶3	.flags 2/8194 kept (needs --emit-main, stated); stamp transcript condensed to values
+2.9	3	556	The stamp is TWO counts, `<PREFIX>_VM_CALL_SPLICED` and	KEPT	2.9¶3	two counts, never one RX_VM_CALLS
+2.9	4	565	**Differential:** `tests/recursion/run_recursion_diff.sh` §5, "`A == B`":	KEPT+N/A-DROP	2.9¶4	tally dropped
+2.9	5	577	**Not on the dial — GATE 4.** The time cost reverses sign with the subject	CONDENSED	2.9¶5, 5.4	
+2.10	1	584	Not a bit in `pcrec_options.flags`; a separate `int unroll_k` field	KEPT+HISTORY	2.10¶1	1..4096, one value per artifact; D47 addendum and [ENG-CLAMP] narrative history
+2.10	2	600	**THE DIAL SETS §2.16's LADDER PARAMETERS, NEVER K DIRECTLY, AND THIS ROW	KEPT	2.10¶3	the dial never sets K
+2.10	3	609	**THE DECLARED-CAPACITY FLOOR (§3.5a) IS A STATED PRECONDITION OF BOTH	KEPT	2.10¶2, 2.10¶3	declared-capacity floor; 512/341 kept with limits.md §8a pointer
+2.11	1	624	Not a `-f`/`-fno-` flag and not primarily a tuning axis — it is D46's own	KEPT	2.11¶1, 2.11¶2, 2.11¶6	do-or-die, prefilter off under vm unless -fprefilter, K18 witness, ENGINE_AUTO enum vs #defines
+2.11	2	658	**[SEL-1] (2026-08-28) `auto`'s DO-OR-DIE POSTURE HAS ONE EXCEPTION, AND IT	KEPT+HISTORY	2.11¶3	auto's DFA-cap exception; tag/date history
+2.11	3	677	**THE COST BOUND** ([OPT-4], 2026-08-29: **at most TWO**, was one): the	KEPT+N/A-DROP	2.11¶4	at most two refused builds, dfa_disabled; 0.52 s transcript and 0.9 s/216 MB figures dropped
+2.11	4	710	`RX_ENGINE_WHY`'s text carries the ordinary `"... at pattern offset N"` suffix	KEPT	2.11¶4	offset-0 suffix, first-wins, run_vm_tests §3b
+2.11	5	720	**A FALLBACK CAN SHIP A VM ARTIFACT THE DFA REFUSAL USED TO SUPPRESS, AND ONLY	KEPT+N/A-DROP	2.11¶5	VM caps bound a fallback; K41's 2 MB / 52.9 s figures dropped
+2.11	6	742	**Not on the dial — GATE 5, and independently GATE 2.** The time cost's	CONDENSED	2.11¶7, 5.4	
+2.12	1	751	**ANSWER-IDENTITY-preserving**, and the strongest such claim in this	KEPT	2.12¶2	
+2.12	2	756	**What it controls.** On an artifact whose stamped default storage does not	KEPT	2.12¶1	
+2.12	3	766	**Reason it exists.** gcc's stack-clash protection probes every page of a	N/A-DROP	2.12¶3	233.8 ns reason dropped; differential kept
+2.12	4	774	**The stamp.** `<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL` (match_api.md	KEPT	2.12¶2	stamp, FAST == RESUME reading, masked
+2.12	5	784	**The stamp anchors on `RX_FAST_`, not on `RX_(FAST|RESUME|TRAIL)`**: the	KEPT+N/A-DROP	2.12¶2	grep anchor kept; transcript dropped
+2.12	6	800	(47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,	N/A-DROP	-	47/71 values
+2.12	7	803	**ON THE DIAL, CONDITIONALLY, AND UNRATIFIED AT EITHER SIZE POSITION	CONDENSED	2.12¶4, 5.4	conditional cells; φ arithmetic lives in the design
+2.13	1	814	**ANSWER-IDENTITY-preserving.** The axis changes the ENCODING of a DFA	KEPT	2.13¶1	
+2.13	2	818	**What it controls.** A DFA scan's transition table normally holds	KEPT+HISTORY	2.13¶1	pre-[OPT-3] narrative history
+2.13	3	829	**Reason it exists.** `[OPT-3]` STEP 1 measured the DFA scan as	N/A-DROP	-	1.276x reason measurement
+2.13	4	839	**The shipped form measures larger than that estimate**: re-measured on	N/A-DROP	-	1.794x measurement
+2.13	5	845	**The bound, and it is not this flag.** The form is REFUSED at generation	KEPT+SUPERSEDED+HISTORY	2.13¶2	bound kept; second conjunct (negative seed cell) added (C8); deleted 16,384 budget is history
+2.13	6	858	**The stamp.** `<PREFIX>_DFA_TABLE` (§3), on every artifact that contains	KEPT+N/A-DROP	2.13¶3	stamp values kept; transcripts and k=12/13 table dropped
+2.13	7	885	**ON THE DIAL — `−2` DENIES UNCONDITIONALLY.** `σ` = 22…25% clears the	CONDENSED	2.13¶5, 5.4	
+2.13	8	894	**[K59-PREMUL] (2026-09-17) `compile_driver` MAY ALSO SET THIS AXIS ITSELF,	KEPT+HISTORY	2.13¶4	drop-premul rung; K59 narrative history
+2.14	1	915	**ANSWER-IDENTITY-preserving.** The axis changes WHERE the forward DFA	KEPT	2.14¶1	
+2.14	2	920	**What it controls.** A DFA artifact's forward scan filters candidate	KEPT+HISTORY	2.14¶1	
+2.14	3	935	**Reason it exists.** `pcrec-bench`'s `loglines@0.1` measured pcrec	N/A-DROP	-	bench 31.8x/12.2x/10.1x reason
+2.14	4	945	**The selection, and it is not this flag.** Whether an artifact gets an	KEPT	2.14¶2	2x, single byte, offset 0 member, PCREC_OFSK_MAX_SET / PCREC_PREFIX_K_MAX named
+2.14	5	955	**The stamps.** `<PREFIX>_DFA_PREFILTER` gains the values	KEPT+N/A-DROP	2.14¶3	stamps, run-pinned removal; transcript dropped
+2.14	6	981	**The denied build and the pre-`[OPT-K]` compiler's output differ by	HISTORY	-	diff against the pre-[OPT-K] compiler
+2.14	7	987	**Not on the dial — measured and flat.** `σ` = 1.30% median, and the	CONDENSED	2.14¶4, 5.4	
+2.15	1	994	**ANSWER-IDENTITY-preserving.** The axis changes which MACHINE	KEPT	2.15¶1	
+2.15	2	1001	**What it controls.** A DFA artifact's `<prefix>_match` and	KEPT+HISTORY	2.15¶1	'used to run' history
+2.15	3	1014	**Reason it exists.** `[OPT-2]` STEP 2	N/A-DROP	-	2.077x/1.046x reason measurements
+2.15	4	1027	**The selection, and it is not this flag.** Whether an artifact gets the	KEPT+SUPERSEDED	2.15¶2	PCREC_ANCHORED_MAX_STATES named (C16)
+2.15	5	1037	**The stamps.** `<PREFIX>_DFA_MATCH` names the chosen form	KEPT+N/A-DROP	2.15¶3	transcript dropped
+2.15	6	1059	**The denied build and the pre-`[ENG-ABS]` compiler's output differ by	HISTORY	-	diff against pre-[ENG-ABS]
+2.15	7	1068	**[K53-SELRETRY] (2026-09-10) PCREC NOW SETS THIS AXIS ITSELF WHEN THE	KEPT+HISTORY	2.15¶4	drop-anchored rung; six unicode-props names history
+2.15	8	1083	**[K59-PREMUL] (2026-09-17) THE LADDER GAINED A SECOND RUNG, SHARING THIS	KEPT+HISTORY	2.15¶4, 2.13¶4	second rung; K59 history
+2.15	9	1096	**ON THE DIAL IN PRINCIPLE — DELIBERATELY EXCLUDED FROM `min-size` AT THE	CONDENSED	2.15¶5, 5.4	three-population argument lives in the design
+2.16	1	1120	**ANSWER-IDENTITY-preserving for match results and captures — and NOT for	KEPT	2.16¶2	give-up figures kept as the witness
+2.16	2	1133	**What it controls.** With the axis ON (the default), an artifact whose	KEPT	2.16¶1	
+2.16	3	1141	**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]	KEPT	2.16¶4	precedence order matches --list-axes
+2.16	4	1149	**What it does NOT control: the two emitted-size caps.** `-fno-size-term`	KEPT	2.16¶3	
+2.16	5	1159	**Masked out of `rx_info.flags`** (the rule above; K92 -- it was the one	KEPT+HISTORY	2.16¶1, 2¶3	K92 incident history
+2.16	6	1164	**The stamp** is `<PREFIX>_UNROLL_K` (the chosen `K`) beside	KEPT	2.16¶4	
+2.16	7	1171	**THE DIAL SETS THIS MECHANISM'S TWO PARAMETERS — NOT A RUNG ITSELF.**	KEPT	2.16¶5	bar/threshold table kept
+2.16	8	1185	The speed side is deliberately em-dashed (`docs/design/opt_dial_design.md`	CONDENSED	5.4	speed side em-dashed; 81-pattern count dropped; floor kept at 2.10¶3
+2.17	1	1200	**ANSWER-IDENTITY-preserving, in both directions and including the give-up	KEPT	2.17¶1	
+2.17	2	1208	**What it controls — FRANK'S RULING B, 2026-08-29.** The DEFAULT builds the	KEPT+HISTORY	2.17¶2	rung table re-keyed to fallback rows; the ruling attribution is history
+2.17	3	1220	**PRECEDENCE, when more than one reading fits (stated since [DEC-FALLBACK]	KEPT+HISTORY	2.17¶3, 2.17¶4	attribution order matches --list-axes; 'used to show' history
+2.17	4	1232	**[OPT-4.1] (2026-08-30) A RUNG IS DECLINED WHEN THE COLLAPSED LANGUAGE IS	KEPT+HISTORY	2.17¶5	
+2.17	5	1239	- on the **[SEL-1]** rung the artifact is the one that rung's absence would have	KEPT	2.17¶7	
+2.17	6	1243	- on the **[OPT-4] size** rung the artifact ships with no prefilter, which is	KEPT+HISTORY	2.17¶7	'used to read selected' history
+2.17	7	1250	- under **`-fprefilter-collapse`** with no rung the prefilter is kept and built	CONDENSED	2.17¶15	LANG_WHY value; unreachable per 2.17 unit 33
+2.17	8	1254	- **`-fprefilter` is do-or-die and is never silently dropped, and what that	KEPT	2.17¶8	
+2.17	9	1266	MEASURED (pcrec-bench O-10, pin 96e44c2, three sets): where structure survives	N/A-DROP	2.17¶14	O-10 bench measurements; nullability point kept
+2.17	10	1274	**[OPT-4.2] (2026-08-31) THE SAME DECLINE, GENERALIZED TO EVERY PREFILTER —	KEPT+HISTORY	2.17¶5, 2.17¶6	
+2.17	11	1289	So the decline is now asked on EVERY prefilter this compiler can build, rung	KEPT	2.17¶6, 2.17¶8	declined-nullable-default; override asymmetry
+2.17	12	1304	MEASURED (pcrec-bench O-10, the analogous collapsed shape): the same 1.2-9.9x	N/A-DROP	-	bench measurement
+2.17	13	1311	**"NULLABLE" HERE MEANS "ADMITS AN UNCONFINED EMPTY MATCH"** ([NULLABLE-ANCH],	KEPT+HISTORY	2.17¶5	empty_admits rule kept; abi 68/69 narrative and nullanch measurements history
+2.17	14	1334	**A NAMED RESIDUAL, so a reader does not mistake this predicate for the whole	HISTORY	-	named residual / flat cells: a measurement note, not a contract
+2.17	15	1347	**A RUNG IS OFFERED ONLY WHERE THE COLLAPSE CAN HELP** ([DEC-COLLAPSE-WASTE],	KEPT	2.17¶9	
+2.17	16	1359	**THERE IS NO STATE-COUNT KNEE.** An earlier design collapsed whenever the	KEPT+HISTORY	2.17¶3	no state-count knee
+2.17	17	1366	**WHAT THE TWO FLAGS DO.**	KEPT	2.17¶10	
+2.17	18	1368	- `-fprefilter-collapse` collapses wherever a collapsible repeat exists AND the	KEPT	2.17¶11	
+2.17	19	1376	- `-fno-prefilter-collapse` denies BOTH rungs. On a pattern whose exact build	KEPT+HISTORY	2.17¶12	PF-DROP outcome kept
+2.17	20	1387	**TWO CONJUNCTS ARE CORRECTNESS AND NEITHER FLAG REACHES THEM.** The collapse	KEPT	2.17¶13	
+2.17	21	1395	**[OPT-4.1] ADDS A THIRD CONJUNCT THAT IS PERFORMANCE RATHER THAN CORRECTNESS,	CONDENSED	2.17¶13	
+2.17	22	1403	**WHY THE EXACT LANGUAGE IS THE DEFAULT, stated because it is a real trade	KEPT	2.17¶14	
+2.17	23	1414	**THE COSTS BELOW ARE `-fprefilter-collapse`'s, NOT THE DEFAULT'S** — that is	N/A-DROP	2.17¶14	cost table measurements: pointer to the design
+2.17	24	1432	**THE TWO COSTS ARE SEPARABLE AND THESE ROWS SEPARATE THEM.** Rows 2 and 3	N/A-DROP	2.17¶14	
+2.17	25	1439	**THE TRADE IS NOT ONE-DIRECTIONAL.** Row 5 is a subject the prefilter	CONDENSED	2.17¶14	non-matching subjects can favour the collapse
+2.17	26	1445	**The first row is the shape to worry about**: a long run of the repeat's	CONDENSED	2.17¶14	worst shape kept
+2.17	27	1453	**AND A FOURTH COST, WHICH IS WHY THIS IS NO LONGER THE DEFAULT.** The lost	KEPT+HISTORY	2.17¶14	step-budget cost kept; reversal narrative history
+2.17	28	1464	**The stamp** is `<PREFIX>_VM_PREFILTER_LANG`, `"exact"` or	KEPT	2.17¶15	
+2.17	29	1475	**And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`	KEPT+HISTORY	2.17¶15	six values kept; stale-value note history
+2.17	30	1491	**THERE IS NO `"denied"` VALUE, and its absence is a measurement rather than an	KEPT	2.17¶16	
+2.17	31	1500	The two lines are two readers of one derivation, written at	KEPT	2.17¶16	
+2.17	32	1507	**There is no budget to document.** `PCREC_PREFILTER_EXACT_NFA_STATES` was the	HISTORY	2.17¶3	
+2.17	33	1513	**[OPT-4.2] STRUCTURAL RETIREMENT (2026-09-01): the `_LANG_WHY` value	CONDENSED+HISTORY	2.17¶15	value documented and not emitted; retirement narrative history
+2.17	34	1527	**Not on the dial — GATE 4, the same shape as §2.9.** The time cost	CONDENSED	2.17¶17, 5.4	
+2.18	1	1534	**What it controls.** Whether a DFA machine's *counted class runs* are	KEPT+HISTORY	2.18¶1, 2.18¶5	preconditions condensed; [OPT-VEDGE] link at 2.37
+2.18	2	1554	Precondition (5)'s threshold — the shortest bounded run worth collapsing — is	KEPT+N/A-DROP	2.18¶5	PCREC_MIN_SCAN_CHAIN kept; measurement history dropped
+2.18	3	1567	**Masked out of `rx_info.flags`** (the rule above; K92 -- `-fno-scan-edge`	KEPT+HISTORY	2.18¶1, 2¶3	masked; K92 history
+2.18	4	1572	**What the artifact does instead.** One `if (state == K) { … }` block per	KEPT	2.18¶2	
+2.18	5	1587	**WHERE THAT BLOCK SITS CHANGED AT [OPT-EDGE] STEP 1, and it is the reason	KEPT+HISTORY	2.18¶3	
+2.18	6	1611	**A SECOND EMITTED SITE READS THE SAME SENTINEL, and it is the loop's ONE	KEPT+HISTORY	2.18¶3	entry test kept; 'was an equality until' history
+2.18	7	1630	Four consequences a caller can see. The emitted state NUMBERS of an	KEPT+HISTORY	2.18¶4	comparison against the pre-[OPT-EDGE] compiler is history
+2.18	8	1638	**WHAT (8) COSTS, MEASURED. At STEP 1 it cost ELEVEN artifacts an edge**, over	N/A-DROP	-	(8)'s cost census
+2.18	9	1656	**Why.** `docs/dev/opt5_step0_profile.md` measured the DFA's ordinary step —	N/A-DROP	-	3.62 ns reason
+2.18	10	1664	**It is the one DFA axis whose denial changes the MACHINE.** The run's	KEPT	2.18¶4	
+2.18	11	1670	**IT IS TWO AXES, and `--list-axes` reports both.** The emitter models the	KEPT	2.18¶6	
+2.18	12	1679	**THE EDGE'S RUN TEST IS THE CLASS-FORM TABLE'S ANSWER** ([CLS-TREE] S2	KEPT	2.18¶7	
+2.18	13	1696	**AT THE DEFAULT POSITIONS A FOLD PAIR IS A TABLE ON THE SCAN EDGE**, as it	CONDENSED	2.18¶7, 2.22¶2	default fold on a scan edge is a table; D138 hold
+2.18	14	1702	**The stamp** is `<PREFIX>_DFA_SCAN_EDGE` (§3 below and `match_api.md` §6.3)	KEPT	2.18¶8	
+2.18	15	1714	**A SIMD FORM IS RESERVED AND IS NOT BUILT.** A SIMD run-extension form —	CONDENSED	2.18¶9	
+2.18	16	1725	**AND THE COUNTED SEQUENCE HAS A PERIOD, WHICH IS 1.** The general shape of	CONDENSED	2.18¶9	
+2.18	17	1737	**The boundary, stated rather than left to be discovered.** A run is collapsed	KEPT+SUPERSEDED	2.18¶5	'each a compare on the generic path' SUPERSEDED (C9); limit named PCREC_MAX_SCAN_EDGES
+2.18	18	1750	**Not on the dial — flat on an inference, not on two independent	CONDENSED	2.18¶10, 5.4	
+2.19	1	1762	**What it controls.** Which of two forms `<prefix>_search`'s post-loop block	KEPT	2.19¶1	
+2.19	2	1766	A DFA search runs TWO scans over the same bytes. The forward one finds where a	KEPT	2.19¶1	
+2.19	3	1771	For a large family of patterns the second scan's answer is a compile-time	KEPT	2.19¶1, 2.19¶2	
+2.19	4	1782	**What the artifact does instead.** The post-loop block becomes two assignments	KEPT	2.19¶1	
+2.19	5	1795	**The `last_accept_position == (size_t)-1` gate above it is LOAD-BEARING and	KEPT	2.19¶3	
+2.19	6	1803	**Why.** The two scans are the residual factor of roughly two between the DFA	N/A-DROP	-	reason measurement; design pointer kept
+2.19	7	1808	**No answer moves either way, and the denied build is a genuine control.**	KEPT	2.19¶4	
+2.19	8	1817	**Deny-only**, `-fno-anchored-dfa`'s shape: the compiler takes the pinned form	KEPT	2.19¶1, 2.19¶6	
+2.19	9	1828	**A VM HYBRID is in scope.** A hybrid inlines this same search body as its	KEPT	2.19¶5	
+2.19	10	1834	**PURE WIN — off the dial because there is nothing for a dial position to	CONDENSED	2.19¶7, 5.4	
+2.20	1	1845	**What it controls.** Which of two shapes `src/gen/emit_vm.c` lowers an	KEPT	2.20¶1	
+2.20	2	1849	Today's `vm_alt` emits an N-way alternation as a CHAIN: one resume frame per	KEPT	2.20¶1	
+2.20	3	1857	**What it applies to, and the predicate is about the LANGUAGE rather than the	KEPT	2.20¶2	
+2.20	4	1867	**What it declines**, each a selection outcome and never a refusal — the	KEPT	2.20¶2	decline table kept; size-factor row added from unit 12
+2.20	5	1879	**THE TWO WIDTH KNEES ARE MEASURED, AND THE DISCRIMINATOR IS PREFIX FREEDOM	KEPT	2.20¶3	
+2.20	6	1887	A PREFIX-FREE island's candidate chain has one entry, so it pushes nothing and	N/A-DROP	-	width-knee measurement table
+2.20	7	1901	So the floor for a pushing island is 4 and the floor for a prefix-free one	N/A-DROP	-	
+2.20	8	1907	**No answer moves either way, and the argument is structural.** Leftmost-first	KEPT	2.20¶4	nfa.c line cite dropped
+2.20	9	1919	**There is no runtime deferred mask, and that is a consequence of the same	KEPT	2.20¶4	
+2.20	10	1925	**IDENTITY IS MODULO WHICH BUDGET BINDS**, exactly as §2.5 states for the	KEPT+N/A-DROP	2.20¶5	fuzz-cell figures dropped
+2.20	11	1934	**THE DIRECTION IS ONE-WAY AND THAT IS WHY IT IS SAFE:** the island does	KEPT+N/A-DROP	2.20¶5	22,407-cell count dropped
+2.20	12	1942	**THE EMITTED SIZE IS BOUNDED AGAINST THE CHAIN, not against a cap.** The	KEPT+HISTORY	2.20¶2, 2.20¶6	size bound; the 897,983-byte incident history
+2.20	13	1955	**Deny-only**, `-fno-altcls-factor`'s shape: the emitter takes the island	KEPT	2.20¶1	
+2.20	14	1959	**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on 	KEPT	2.20¶1, 2.20¶6	
+2.20	15	1967	**VM route only.** The DFA route determinizes the same trie for free (that is	KEPT	2.20¶1	
+2.20	16	1972	**PURE WIN — off the dial for §2.19's own reason.** Max growth 1.03×, 0	CONDENSED	2.20¶7, 5.4	
+2.21	1	1979	Not a bit in `pcrec_options.flags`; a separate `int vm_entry_shape` field	KEPT	2.21¶1	
+2.21	2	1983	**What it selects.** A VM artifact's six entries (`<prefix>_search`,	KEPT+HISTORY	2.21¶1	'what [CC-DIFF] STEP 1(a) shipped' history
+2.21	3	1997	**ANSWER-IDENTICAL across every value**, and the emitted matcher program is	KEPT	2.21¶2	
+2.21	4	2001	**WHAT `make test-axes` ACTUALLY SWEEPS, and it is TIERED.** The answer-identity	KEPT	2.21¶6	
+2.21	5	2016	**A value the artifact cannot honour is a SELECTION OUTCOME, never a	KEPT+N/A-DROP	2.21¶3	1.032 figure dropped
+2.21	6	2030	**AUTO, and the size term.** `VM_INLINE_CHAIN_MAX_BYTES` (`src/core/limits.def`,	KEPT+HISTORY	2.21¶4	abi 54/71 narrative history
+2.21	7	2042	**THE TERM'S VALUE IS MEASURED ON RUN TIME AS WELL AS SIZE, and the second	CONDENSED+N/A-DROP	2.21¶4	ladder figures dropped; report pointer kept
+2.21	8	2057	**Reason it exists, and it is a measurement.** `[CC-DIFF]` STEP 0	N/A-DROP	-	reason measurement
+2.21	9	2068	**What the emitter DID is stamped** — `<PREFIX>_VM_ENTRY_SHAPE` (the token	KEPT	2.21¶5	
+2.21	10	2076	**Not masked out of `rx_info.flags`**, because it is not a flags bit at all;	KEPT	2.21¶2	
+2.21	11	2079	**[OPT-DIAL] NAMES THE TERM, AND ONLY THE TERM — NEVER A RUNG.** `--tune=N`	KEPT	2.21¶7, 5.4	
+2.21	12	2088	The size side is em-dashed: below 4,096 bytes of program the INLINE/SHARED	N/A-DROP	5.4	cell arguments live in the design
+2.21	13	2099	**THE DIAL NAMES THE TERM AND NEVER A RUNG, and that is an allowlist	CONDENSED	2.21¶7, 5.4	explicit flag overrides the dial
+2.22	1	2114	**What it controls.** Which test an ASCII case pair gets wherever the	KEPT+HISTORY	2.22¶1	abi 51 predicate history
+2.22	2	2124	D23 folds a caseless letter into a two-member CLASS at parse time (`(?i)a`	KEPT+HISTORY	2.22¶1, 2.22¶2	D138 hold kept as the default-position rule
+2.22	3	2146	**The measured basis** (`docs/dev/form_char_step0.md` §2, family A;	CONDENSED	2.22¶3	
+2.22	4	2156	**Answer identity is structural**: `(b | 0x20) == (lo | 0x20)` holds for	KEPT	2.22¶3	
+2.22	5	2161	**What it declines**, each a selection outcome and never a refusal — the	KEPT	2.22¶3	
+2.22	6	2171	**`[FORM-CHAR]`'s utf8 objects (4)/(5)** (`utf8-simple-fold`,	N/A-DROP	-	reserved utf8 fold objects: design
+2.22	7	2176	**Deny-only**, `-fno-alt-island`'s shape: the table takes the fold	KEPT	2.22¶1	
+2.22	8	2180	**It is masked by `emit_info_def`'s strategy mask** (derived from `core/axes.def`, so a new axis is masked on 	KEPT	2.22¶4	
+2.22	9	2189	**Wherever the table is read** (D139 item 3). A row's flag denies that row at	KEPT	2.22¶2	
+2.22	10	2196	**NOT A RUNG — off by RULING, not by a gate.** Frank ruled (2026-09-11)	CONDENSED+HISTORY	2.22¶5, 5.4	the ruling attribution is history
+2.23	1	2206	**THIS IS A CONTRACT AXIS: IT IS NOT ANSWER-IDENTITY-PRESERVING, AND EVERY	KEPT	2.23¶1	
+2.23	2	2225	**WHAT THE TWO ARMS ANSWER.** Under an encoding with multi-byte characters:	KEPT	2.23¶2	
+2.23	3	2227	- **guarded (default)** — a `startpos` inside a character is refused with	KEPT+N/A-DROP	2.23¶3	20/20 measurement dropped
+2.23	4	2232	- **permissive (`-fno-startpos-guard`)** — the artifact answers at whatever	KEPT	2.23¶4	
+2.23	5	2239	- **align (`-fstartpos-guard=align`)** — a `startpos > 0` inside a	KEPT	2.23¶5	
+2.23	6	2250	Neither of the first two arms ROUNDS a caller's `startpos > 0` to the next	KEPT	2.23¶6	
+2.23	7	2259	**IT IS NOT MASKED OUT OF `rx_info.flags`,** and with §2.36 it is one of the	KEPT	2.23 table	
+2.23	8	2267	**WHAT IT DOES NOT TOUCH, and this is the half a reader is most likely to get	KEPT	2.23¶7	
+2.23	9	2276	**AND SINCE [K50-NULLGATE] THAT GUARANTEE IS ABOUT WHAT IS REPORTED, NOT ABOUT	KEPT+N/A-DROP	2.23¶7	1.33x figure dropped
+2.23	10	2293	**THE DIFFERENTIAL, and its non-vacuity floor.** `tests/utf8/run_startbnd_diff.sh`	KEPT	2.23¶8	
+2.23	11	2302	**`make test-axes` SWEEPS IT FOR IDENTITY LIKE EVERY OTHER AXIS — BOTH	KEPT	2.23¶8, 2.23¶9	
+2.23	12	2312	- **`tests/utf8/` is the only directory in the tree with `encoding utf8`	KEPT	2.23¶9	
+2.23	13	2315	- **Within `tests/utf8/`, the sweep is CLEAN**: 1,130 cases, `agree=1130`,	N/A-DROP	2.23¶9	1,130-case tally
+2.23	14	2321	So the divergence class is EMPTY here, and an empty population is normally a	CONDENSED	2.23¶9	
+2.23	15	2329	**NOT ON THE DIAL — GATE 1, and a different kind of "no" from §2.22's	CONDENSED	2.23¶10, 5.4	
+2.24	1	2338	**What it controls.** Whether the emitted artifact carries its HUMAN	KEPT	2.24¶1	
+2.24	2	2343	**It is not an optimization axis**, and it is the only member of this section	KEPT	2.24¶1	
+2.24	3	2348	**Pass `-fcomments` when you want to READ the artifact** — the orientation	KEPT	2.24¶2	
+2.24	4	2360	**Measured over the 3,517 compiling corpus patterns** (`.c` + `.h` source	N/A-DROP	-	44.2% measurement
+2.24	5	2366	**THE TWO CLASSES** (D112). A comment is ESSENTIAL or NON-ESSENTIAL, and the	KEPT	2.24¶3	
+2.24	6	2370	- **ESSENTIAL** — PROVENANCE and the EMBEDDER'S CONTRACT, and it is exactly	KEPT+HISTORY	2.24¶4	abi rider history
+2.24	7	2388	- **NON-ESSENTIAL** — everything else, which is most of it. This is what the	KEPT+HISTORY	2.24¶5	levels axis D77 note history
+2.24	8	2393	**IT CANNOT RESCUE OR REFUSE A PATTERN, structurally.**	KEPT	2.24¶6	
+2.24	9	2401	**AND IT IS NOT A PERFORMANCE AXIS.** The object file is byte-identical under	CONDENSED	2.24¶6	
+2.24	10	2408	**A FORCE PAIR, and the only one here whose force flag RESTORES rather than	SUPERSEDED	1¶10, 2.24¶7	'deny wins ... the same precedence every other pair has' SUPERSEDED (C2); 'override in both directions' SUPERSEDED (C3)
+2.24	11	2415	**NO STAMP, deliberately.** The prose's presence is its own record. A	KEPT+N/A-DROP	2.24¶7	no stamp; five-byte detail dropped
+2.24	12	2424	**Where the gate is.** One render-time decision in the emission kit	KEPT	2.24¶8	
+2.25	1	2432	**[OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119).** Denies the VM's	HISTORY	-	row tag
+2.25	2	2435	**What the axis is.** A pattern whose every alternative begins with `^`	KEPT+N/A-DROP	2.25¶1	52,122x measurement dropped
+2.25	3	2445	**Where the fact comes from.** ONE predicate, `pcrec_start_anchor`	KEPT	2.25¶2	
+2.25	4	2455	**What it changes.** On a VM artifact whose answer is not `unanchored`, one	KEPT	2.25¶1	
+2.25	5	2462	**Answer-identity.** Preserved, and in the strongest sense any axis in this	KEPT	2.25¶1	
+2.25	6	2468	**The stamp.** `<PREFIX>_VM_START`, on EVERY VM artifact whatever its value:	KEPT	2.25¶3	
+2.25	7	2475	**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `start_anchor`.	KEPT	2.25¶4	Facts emptied line verbatim; anchored re-seed row added
+2.26	1	2484	**[OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119).** Denies the END-ANCHOR START	HISTORY	-	row tag
+2.26	2	2487	**What the axis is.** When every alternative of a pattern ends in `$`/`\Z`/	KEPT+N/A-DROP	2.26¶1	1,401x measurement dropped
+2.26	3	2499	**It is the position view's SECOND consumer.** `--list-axes`' `view` axis	N/A-DROP	-	position-view consumer note
+2.26	4	2504	**Where the fact comes from.** `pcrec_end_window` (`src/facts/endwin.c`), one	KEPT	2.26¶1, 2.26¶2	
+2.26	5	2508	**The four declines, each structural.** The analysis answers "no window" —	KEPT	2.26¶2	
+2.26	6	2518	**Answer-identity.** Preserved — but UNLIKE its two batch siblings this	KEPT+N/A-DROP	2.26¶3	66-case count dropped
+2.26	7	2526	**The stamp.** `<PREFIX>_END_WINDOW`, on EVERY artifact of both engines:	KEPT	2.26¶4	
+2.26	8	2532	**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `end_window`.	KEPT	2.26¶5	Facts emptied line verbatim
+2.27	1	2538	**[OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119).** Denies the REQUIRED-BYTE	HISTORY	-	row tag
+2.27	2	2541	**What the axis is.** Where every match of a pattern must contain some	KEPT+N/A-DROP	2.27¶1	capability@0.1 figures dropped
+2.27	3	2551	**It extends the prefilter primitive rather than paralleling it.** The DFA	CONDENSED	2.27¶1	VM-route reason
+2.27	4	2558	**How the byte is derived.** A bottom-up walk of the LOWERED AST	KEPT	2.27¶2	
+2.27	5	2567	**Which member of the set the check tests, and it is no longer PCRE2's	KEPT+HISTORY+N/A-DROP	2.27¶3	13.60% population dropped; ratification history
+2.27	6	2583	**The rates are whatever the resolved analysis declares; the default	KEPT	2.27¶3	
+2.27	7	2597	**Unlike PCRE2's fact, the whole window counts.** `LASTCODEUNIT` excludes the	KEPT	2.27¶2	
+2.27	8	2603	**Answer-identity.** Preserved, in its batch siblings' strongest sense: the	CONDENSED	2.27¶1	sabotage note is a check, not a contract
+2.27	9	2609	**The stamp.** `<PREFIX>_REQ_BYTE`, on EVERY artifact of both engines: the	KEPT	2.27¶4	
+2.27	10	2622	**This stamp names the ANALYSIS, not the emission.** Since §2.29 the two can	KEPT	2.27¶4	
+2.27	11	2631	**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_whole_run`, `req_run`, `req_	KEPT	2.27¶5	Facts emptied line verbatim
+2.27	12	2639	**Denying this bit also reaches §2.30.** `-fno-req-byte` empties the `req_run`	KEPT	2.27¶5, 2.30¶3	
+2.28	1	2647	**[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the	HISTORY	-	row tag
+2.28	2	2650	**What the axis is.** §2.27's fact at WORD grain: the longest run of	KEPT+N/A-DROP	2.28¶1	population figures dropped
+2.28	3	2662	**How the run is derived.** The SAME bottom-up walk of the lowered AST as	KEPT	2.28¶3	
+2.28	4	2670	- a class that is not ONE byte or ONE two-member cube contributes nothing	KEPT+HISTORY	2.28¶3, 2.28¶4	'until §2.39' history
+2.28	5	2676	- a quantifier that admits zero iterations breaks contiguity, and this is the	KEPT	2.28¶3	
+2.28	6	2679	- nothing is joined across a repeat's ITERATIONS, so `(?:ab){2,}` reports	KEPT	2.28¶3	
+2.28	7	2683	**Which member the scan tests, and how a long run is truncated.** The member	KEPT+HISTORY	2.28¶5	rightmost tie rule and truncation kept; FIND-TIE narrative and O-60 census history
+2.28	8	2716	**Relation to `-fno-req-byte`, which is an asymmetry and not an implicit.**	KEPT	2.28¶2	
+2.28	9	2723	**Answer-identity.** Preserved in the same strongest sense: the check answers	CONDENSED	2.28¶1	
+2.28	10	2729	**What it costs where it does not pay.** One constant-length `memcmp` per	KEPT+N/A-DROP	2.28¶6	9,070-compare and 5x/8x/3,257x figures dropped
+2.28	11	2739	**A run is a run of POSITIONS** (`[OPT-LITSCAN]` S4 C3, `abi` 59, §2.39). A	KEPT	2.28¶4, 2.28¶5	
+2.28	12	2757	**The stamp.** `<PREFIX>_REQ_RUN`, on EVERY artifact of both engines: the	KEPT	2.28¶7	
+2.28	13	2771	**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run`.	KEPT	2.28¶8	Facts emptied line verbatim
+2.29	1	2779	**[OPT-PRECHECK-ADMIT], `[OPTLOOP.1]` ledger reading §6, ratified 2026-09-23	KEPT+HISTORY	2.29¶1	ratification/abi narrative history
+2.29	2	2795	**Why it exists.** A whole-window pre-check is a pass over the subject. Batch 1	N/A-DROP	-	why-it-exists ledger reading
+2.29	3	2801	**G2 — ADMISSION. Not in front of an exit that is already cheaper.** Where the	KEPT+N/A-DROP	2.29¶2	29-cell measurement dropped
+2.29	4	2815	**G2 needs the one attempt to be LINEAR, and on the VM route that is a second	KEPT+HISTORY	2.29¶2	linearity condition kept; K64 dated narrative history
+2.29	5	2833	**On a VM route with no DFA scan, an emitted pre-check tests the WHOLE	KEPT+HISTORY	2.29¶3	K65 witness narrative history
+2.29	6	2854	**On the same route, a run longer than its window is compared WHOLE**	KEPT+HISTORY	2.29¶4	K66 witness narrative history
+2.29	7	2877	**G1 — DOMINANCE. Not a second pass on a byte already scanned.** Let `p` be	KEPT	2.29¶5	
+2.29	8	2885	- **identity**: `p == q` — the same byte scanned twice. Needs no table, so it	KEPT	2.29¶6	
+2.29	9	2899	- **density**, for the ONE-BYTE pre-check under a `memchr`-form prefilter	KEPT	2.29¶7	
+2.29	10	2904	Measured: 4 ledger cells, all `wild-codegrammar-json-array-begin`, whose	N/A-DROP	-	measured cells
+2.29	11	2909	**Answer-identity.** Preserved, including for give-ups: a declined	KEPT+N/A-DROP	2.29¶9	sabotage-row inventory dropped (a check, not a contract)
+2.29	12	2925	**The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED	KEPT	2.29¶10	
+2.29	13	2936	`"none"` here holds if and only if `<PREFIX>_REQ_BYTE` AND `<PREFIX>_REQ_RUN`	KEPT+HISTORY	2.29¶11	'until §2.39 the spellings were equivalent' history
+2.29	14	2945	**One further emitted consequence.** A declined artifact whose body calls no	KEPT	2.29¶11	
+2.30	1	2950	**`[OPT-LITSCAN]` S1, `abi` 36. ANSWER-IDENTITY-preserving.** Where the	KEPT+HISTORY	2.30¶1, 2.30¶2	abi tag history
+2.30	2	2963	**Why.** Without it the artifact scanned the run's byte twice per call:	CONDENSED	2.30¶1	
+2.30	3	2969	**THE DENY IS TWO BITS, and either removes the rows.** They carry	KEPT	2.30¶3	
+2.30	4	2982	**The pin is a fact about EXACT positions** (it always was: it needs one byte	KEPT+HISTORY	2.30¶4	'it always was' / 'text before §2.39' history
+2.31	1	2993	**`[OPT-LITSCAN]` S2a, `abi` 41 (`docs/design/patfacts/design.md` §8.2).	KEPT+HISTORY	2.31¶1, 2.31¶5	abi 41 framing history
+2.31	2	3002	**[OPT-LITSCAN] F5, `abi` 43 (D127, 2026-09-28): THE FLOOR IS THREE BYTES,	KEPT+HISTORY+N/A-DROP	2.31¶2	floor kept; B108 measurements and the ruling quote history
+2.31	3	3020	**What it is.** In a concatenation, three or more CONSECUTIVE elements that	KEPT	2.31¶1	
+2.31	4	3037	**What ends a run.** Any element that is not one exact byte: a class of two	KEPT	2.31¶3	
+2.31	5	3045	**What it costs, and what it does not move.** The flag is swept by	KEPT	2.31¶4	
+2.32	1	3057	**[UCP] U2, `abi` 46 (`docs/design/ucp_design.md` §0.1 T3, §2.2).	KEPT+HISTORY	2.32¶3	engine-moving and masked; dated measurement history
+2.32	2	3073	**What it is.** T3 is a first-match table of two rows (`pcrec --list-axes`	KEPT	2.32¶1	
+2.32	3	3081	The predicate is over the LANGUAGE, not the spelling: `(?<=a|b)` and	KEPT	2.32¶2	
+2.32	4	3091	**The encoding conjunct.** Row 1 requires every member of the set to be ONE	KEPT	2.32¶2	
+2.32	5	3097	**What it costs, and what it does not move.** Denied, every lookaround keeps	KEPT	2.32¶4	
+2.32	6	3106	**Forced `--engine=dfa` with the denial is refused**, the §2.8 shape	KEPT+HISTORY	2.32¶3	dated verification history
+2.33	1	3115	**[CLS-TREE] S4, `abi` 48 (`docs/design/cls_tree_design.md` §2.2, §6.1;	KEPT+HISTORY	2.33¶1, 2.33¶2	
+2.33	2	3122	**What it is.** The VM decodes ONE character through the encoding's	KEPT	2.33¶2	
+2.33	3	3130	The decoder rejects a truncated sequence, a stray continuation byte, an	KEPT	2.33¶2	
+2.33	4	3135	**Where the bytes stay.** A one-member wide class is a literal (`é`), so it	KEPT	2.33¶2	
+2.33	5	3140	**What it changes.** Most of all, it changes what the VM can BUILD:	CONDENSED	2.33¶6, 2.33¶7	
+2.33	6	3141	- a wide class that was hundreds of kilobytes of alternation is a few	N/A-DROP	-	
+2.33	7	3143	- `\P{Unknown}` and the other large `\p` sets compile under	HISTORY	-	K55 retired
+2.33	8	3145	- a CAPTURED wide class (`(\p{L})`) compiles on the default route wherever	CONDENSED	2.33¶7	
+2.33	9	3148	**The byte tier ([CLS-TREE] S2, `abi` 51; D131 item 5).** At the	KEPT+N/A-DROP	2.33¶3	578 B / -28..+26 B fit figures dropped
+2.33	10	3170	**The DFA scan edge ([CLS-TREE] S2's second event, `abi` 52; D139).** At	KEPT	2.33¶4	
+2.33	11	3179	**The stamp.** `<PREFIX>_VM_CLS_KIT` is the number of distinct matchers	KEPT	2.33¶5	
+2.33	12	3184	**Denied**, every wide class on the VM is the byte alternation this compiler	KEPT+HISTORY	2.33¶6	'before abi 48/51/52' history
+2.33	13	3193	**Denied, the byte alternation is the bytes again, so the K55 refusal returns	KEPT+N/A-DROP	2.33¶7	576,773-byte figures dropped
+2.34	1	3205	**[OPT-CLSPACK], `abi` 48 (D131 item 6; `docs/design/cls_tree_design.md`	KEPT+HISTORY	2.34¶1	
+2.34	2	3212	**What it is.** One ARTIFACT-level choice, made once the program's class	KEPT	2.34¶1	table gains the scan-table row (live TAB_ROWS)
+2.34	3	3221	An ATOM is a set of bytes with identical class membership. Both rows list	KEPT	2.34¶2	
+2.34	4	3224	**Why 11 and 64.** The shared form costs 256 bytes of table plus an 8-byte	KEPT+N/A-DROP	2.34¶2	O-77 timing note dropped
+2.34	5	3231	**What it changes.** `.rodata`: 256 bytes in place of `32N`. The	KEPT	2.34¶2	
+2.34	6	3236	**The stamp.** `<PREFIX>_VM_CLS_ATOMS` is the shared table's atom count,	KEPT	2.34¶3	
+2.34	7	3240	**Denied** (by this flag, or by `-fno-cls-kit`, which denies the whole kit),	KEPT+HISTORY	2.34¶1, 2.33¶6	
+2.35	1	3247	**[OPT-HYB-RESEED], `abi` 49 (`docs/design/hyb_reseed.md`).	KEPT+HISTORY	2.35¶1, 2.35¶4	
+2.35	2	3254	**What it is.** A hybrid seeds each search from its DFA prefilter. When an	KEPT	2.35¶1	
+2.35	3	3257	- it STEPS to the next character and attempts there, or	KEPT	2.35¶1	
+2.35	4	3258	- it RE-SEEDS, asking the prefilter where the next candidate starts.	KEPT	2.35¶1	
+2.35	5	3260	An attempt can only fail at a prefilter answer when the prefilter	KEPT+HISTORY	2.35¶1	'before abi 49' history; row table kept
+2.35	6	3279	**ADAPTIVE** is decided per CALL, from two locals of the search function.	KEPT	2.35¶2	
+2.35	7	3283	- Each re-seed reads how far the prefilter's answer jumped.	KEPT	2.35¶2	
+2.35	8	3284	- A jump shorter than the crossover ARMS the step block. A second short	KEPT	2.35¶2	
+2.35	9	3286	- The block ends in one re-seed, which is the block's PROBE. A short probe	KEPT	2.35¶2	
+2.35	10	3289	- A call starts from its row's state: `adaptive` spends a small step	KEPT	2.35¶2	
+2.35	11	3293	The crossover, the first block, the cap and that first budget are	KEPT+N/A-DROP	2.35¶2	Mac hand-twin calibration note dropped; harness pointer kept
+2.35	12	3301	**What it costs, and what it does not move.** Both arms attempt only	KEPT	2.35¶3	
+2.35	13	3307	A GIVE-UP can move, in ONE direction. The step and work budgets are shared	KEPT	2.35¶3, 2.35¶4	
+2.36	1	3323	**THE SECOND CONTRACT AXIS** ([UTF-VALID], `docs/design/utf_valid_design.md`,	KEPT	2.36¶1	
+2.36	2	3336	**WHAT IT DOES.** Under `-e utf8`, after the §2.23 guard (or alignment), the	KEPT	2.36¶2	
+2.36	3	3344	**WHY IT IS OFF.** One O(n) pass per call — about the cost of a scanning call	KEPT	2.36¶3	
+2.36	4	3351	**`make test-axes` EXCLUDES IT FROM THE IDENTITY SWEEP BY NAME**, with the	KEPT	2.36¶4	
+2.36	5	3361	**NOT ON THE DIAL — GATE 1**, §2.23's reason: its builds disagree about	KEPT	2.36¶5, 5.4	
+2.37	1	3367	**[OPT-VEDGE], `abi` 57 (56 on lane/vedge, renumbered at the lane/r1land landing; `docs/dev/lanes/vedge_report	KEPT+HISTORY	2.37¶1, 2.37¶4	abi 57/56 renumbering history
+2.37	2	3374	**What it is.** §2.18's pass refused any chain that touched a `$`/`\Z`/`\z`	KEPT	2.37¶1	
+2.37	3	3379	1. **A member may carry an END view** (`\z`, and no EOL view), on a machine	KEPT	2.37¶2	
+2.37	4	3388	2. **A chain whose head is another state's view target is trimmed, not	KEPT	2.37¶3	
+2.37	5	3395	**What it buys (Mac scratch, `percall.c`, ns per whole-subject call).**	N/A-DROP+KEPT	2.37¶4	Mac timing figures dropped; the remaining reverse pass kept
+2.38	1	3404	**`[OPT-LITSCAN]` S4 C1, `abi` 58 (`docs/design/litscan_s4.md` §1.3-§1.5,	KEPT+HISTORY	2.38¶1, 2.38¶3, 2.38¶4	
+2.38	2	3415	**What it is.** Every literal-run compare in emitted C — the offset-skip	KEPT+HISTORY	2.38¶1	M1b history
+2.38	3	3443	Each word is loaded by a `static inline uint<8W>_t <prefix>_w<W>(const void *)`	KEPT	2.38¶2	
+2.38	4	3451	**Why those lengths.** gcc lowers a constant-length `memcmp` to ONE load and	KEPT+N/A-DROP	2.38¶2	the alpha/noise-floor shipping argument is design
+2.38	5	3461	**What it costs, and what it does not move.** No answer and no give-up	KEPT	2.38¶3	
+2.38	6	3470	**On the dial: every position, no trade** (§5.4): an `overlap` compare and	CONDENSED	2.38¶5, 5.4	
+2.39	1	3475	**`[OPT-LITSCAN]` S4 C3, `abi` 59 (`docs/design/litscan_s4.md` §2.3).	KEPT	2.39¶1, 2.39¶3	
+2.39	2	3482	**What it is.** A caseless literal is a two-member class at every letter	KEPT+N/A-DROP	2.39¶1	waf_attribution figures dropped
+2.39	3	3493	**What the pre-check emits on a masked run.** The run compare's `words` row	KEPT	2.39¶2	
+2.39	4	3527	**What it changes for each consumer (D124 item 3).** On a DFA artifact and a	KEPT+N/A-DROP	2.39¶3	41-artifact mover census dropped
+2.39	5	3541	**Facts narrowed, not emptied** (`--emit-facts`, `docs/spec/facts_listing.md`):	KEPT+HISTORY	2.39¶4	'abi 58 program apart from its abi digit' history
+2.39	6	3548	**On the dial: every position, no trade** (§5.4): a masked run compare is	CONDENSED	2.39¶5, 5.4	
+2.40	1	3554	**[K82] (A), `abi` 60 (`docs/dev/lanes/k82fix_report.md`).	KEPT+HISTORY	2.40¶2	
+2.40	2	3561	**What it is.** A run pre-check (§2.28) rejects a window that lacks the run,	KEPT	2.40¶1	
+2.40	3	3574	The witness is `wild-secrets-username-password-pair`	CONDENSED	2.40¶1	witness kept, diagnosis history
+2.40	4	3581	**Denied:** the run pre-check alone, the `abi` 59 program apart from the abi	KEPT+HISTORY	2.40¶2	
+2.41	1	3586	**[K82] (B), `abi` 61 (`docs/design/litscan_k82h.md`, revision 2 and Frank's	KEPT+HISTORY	2.41¶1, 2.41¶9	
+2.41	2	3597	**What it is.** A run pre-check (§2.28) finds the first position `c >=	KEPT	2.41¶1	
+2.41	3	3610	- the admission (§2.29) emitted a run pre-check — the row CALLS the	KEPT	2.41¶3	
+2.41	4	3612	- a DFA scan is in front of the body: a DFA artifact (its unanchored scan,	KEPT	2.41¶4	
+2.41	5	3616	- `K` is finite (`req_run_maxoff` is not `unbounded`);	KEPT	2.41¶5	
+2.41	6	3617	- the hybrid's prefilter is not COUNT-COLLAPSED (Frank's Q10 ruling: its	KEPT+HISTORY	2.41¶6	the Q10 ruling attribution is history
+2.41	7	3621	- and not a VM hybrid whose program has a `\G` start family and whose	KEPT	2.41¶7	
+2.41	8	3625	Under a multibyte encoding a moved start is rounded UP to the next character	KEPT	2.41¶8	
+2.41	9	3632	**Denied:** the pre-check only discards, the `abi` 60 program apart from the	KEPT+HISTORY	2.41¶1, 2.41¶9	
+2.42	1	3637	**[START-SET] stage 2, `abi` 62 (`docs/design/startset.md` §2 V, §4.2, §8;	KEPT+HISTORY	2.42¶1	
+2.42	2	3647	**What it is.** A VM artifact with no DFA prefilter starts an attempt at	KEPT	2.42¶1, 2.42¶2	
+2.42	3	3657	- the artifact is a VM artifact with no DFA prefilter (`RX_VM_PREFILTER	KEPT	2.42¶2	
+2.42	4	3660	- the pattern is unanchored (`start_anchor`): an anchored or `\G`-start	KEPT	2.42¶2	
+2.42	5	3662	- `S` is not nullable (the erased language cannot match empty) and has	KEPT	2.42¶2	
+2.42	6	3665	The seek is a 256-entry table walk at any size of `S`; a one-byte `memchr`	KEPT+N/A-DROP	2.42¶2	memchr-slower measurement dropped
+2.42	7	3672	**The give-up surface moves in one direction.** A skipped attempt spends no	KEPT	2.42¶3	
+2.42	8	3679	**Denied:** every position is attempted, the `abi` 61 program apart from the	KEPT+HISTORY	2.42¶6	
+2.42	9	3682	**[START-SET] stage 3, `abi` 64: THE DFA HAT** (`docs/design/startset.md`	KEPT+HISTORY	2.42¶4	
+2.42	10	3690	- **What it is.** The DFA's forward scan skips, while it sits in its start	KEPT	2.42¶4	
+2.42	11	3701	- **Where it applies.** The unanchored forward scan (a DFA artifact, or a VM	KEPT	2.42¶4	
+2.42	12	3712	- **What moves besides the skip.** Three selections that read the scanned	KEPT	2.42¶5	
+2.42	13	3718	- **Denied:** the plain `byte-class-bounded` skip over `E`: the `abi`-62	KEPT+HISTORY	2.42¶6	
+2.43	1	3723	**[MEMFN] R4c, pcrec's ONE axis for the memory-function kit (D147	KEPT+HISTORY	2.43¶1	R4c/hold narrative history
+2.43	2	3731	- **Off (the default):** the kit renders PORTABLE C only (plain C, SWAR on	KEPT	2.43¶2	
+2.43	3	3734	- **On:** the kit MAY render hardware-optimized forms for a specific CPU; such	KEPT	2.43¶3	
+2.43	4	3740	- **Inert before R4e':** no SIMD form exists, so `-fmemfn-simd` and	KEPT+HISTORY	2.43¶4	'before R4e'' framing history
+2.43	5	3746	- **Masked** out of `rx_info.flags`, both bits, by `emit_info_def`'s	KEPT	2.43¶4	
+2.44	1	3755	**Denies** possessify's ARM A ([ART-POSS-ARMS], `docs/design/poss_arms.md`	KEPT	2.44¶1	
+2.44	2	3765	**ENGINE-SELECTING, KEPT in `rx_info.flags`.** The free discharge (§2.8)	KEPT	2.44¶2	
+2.44	3	3777	Measured over 4,132 bench and corpus patterns: 0 default-route engine	KEPT+N/A-DROP	2.44¶3	4,132-pattern census dropped
+2.45	1	3786	**Denies** possessify's ARM B ([ART-POSS-ARMS], `docs/design/poss_arms.md`	KEPT	2.45¶1	
+2.45	2	3793	**ANSWER-IDENTITY-preserving, MASKED from `rx_info.flags`.** A backreference	KEPT	2.45¶2	
+3	1	3805	**CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while	HISTORY+SUPERSEDED	3¶1	the [DD-13] closure is history; the 'abc' transcript SUPERSEDED (C4)
+3	2	3817	`docs/spec/match_api.md` §6.3 is the contract; in short:	KEPT	3¶1	
+3	3	3819	- `RX_ENGINE` is **unconditional** — present on every artifact both engines	KEPT+HISTORY	3¶3	'which §6.3 used to warn' history
+3	4	3822	- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair),	KEPT	3¶1 table	
+3	5	3830	- `RX_DFA_PREFILTER` names the candidate-start mechanism, one of `"none"`,	SUPERSEDED+N/A-DROP	3¶1 table	five-value list SUPERSEDED (C5); 2,772-pattern census dropped
+3	6	3849	- `RX_DFA_PREFILTER_OFFSETS` (`[OPT-K]`, 2026-08-28) names WHICH offsets	KEPT	3¶1 table, 3¶2	
+3	7	3857	- `RX_DFA_TABLE` (`[OPT-3]`, 2026-08-26) names the ENCODING of that scan's	KEPT	3¶1 table, 3¶2	
+3	8	3868	- `RX_DFA_UNIFORM_FOLDS` (`[CC-DIFF]` STEP 1, 2026-09-03) is an INTEGER, not	KEPT	3¶1 table, 3¶2	
+3	9	3886	- `RX_DFA_MATCH` (`[ENG-ABS]`, 2026-08-29) names which of the two forms	KEPT	3¶1 table, 3¶2, 3.1¶2	
+3	10	3899	- `RX_DFA_SCAN_EDGE` (`[OPT-5]`, 2026-08-31) names how that scan tests the	KEPT	3¶1 table, 3¶2	
+3	11	3915	- `RX_DFA_START` (`[OPT-5]` STEP 2, 2026-09-02) names which of the two forms	KEPT	3¶1 table, 3¶2	
+3	12	3931	`RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the	KEPT	3¶3	
+3	13	3935	**`RX_TUNE` ([OPT-DIAL], 2026-09-16) is NOT a `RX_DFA_*` stamp — it belongs	KEPT	3¶3	
+3.1	1	3943	The stamps belong to the MECHANISM, not to the artifact kind that usually	KEPT+SUPERSEDED+HISTORY	3.1¶1	transcript re-run (C6); the email-specimen narrative is history
+3.1	2	3963	**`RX_DFA_MATCH` IS ABSENT ABOVE, AND THAT IS THE ONE `_DFA_*` STAMP A	KEPT	3.1¶2	
+3.1	3	3971	The two prefilter macros are **two different selections**: `_VM_PREFILTER`	KEPT	3.1¶3	
+3.2	1	3979	**For the bench and every other header-less consumer.** The macros above are	KEPT+HISTORY	3.2¶1	
+3.2	2	3991	They mirror `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` exactly, are	KEPT	3.2¶1, 3.2¶2	
+3.2	3	4002	**[OPT-5] STEP 2, 2026-09-02 — a THIRD mirror, and `match_form` was the	HISTORY	-	
+3.2	4	4005	> **`rx_info.search_form`** mirrors `<PREFIX>_DFA_START`. It is the third	KEPT	3.2¶1	
+3.2	5	4015	It is appended at the END of the struct, after `nentries`, so no existing	HISTORY	-	abi 15->16
+3.2	6	4020	**A BENCH ROW CAN NOW BE BUCKETED WITHOUT READING THE ARTIFACT'S SOURCE**, on	HISTORY	-	
+3.2	7	4024	**This is not a `-f` axis and has no CLI spelling.** It is observability of a	KEPT+HISTORY	3.2¶2	abi 3->4 / 5->6 history
+3.2	8	4035	§2.5 (`-fno-prefilter`) governs `RX_VM_PREFILTER`, which is the VM's own	KEPT	3.1¶3	
+4	1	4041	Which `pcrec_options` fields (`lib/pcrec.h`) correspond to which flags in	KEPT	4¶1	
+4	2	4045	**THE TABLE IS EXHAUSTIVE OVER `flags`, and it says so because it once was	SUPERSEDED+HISTORY	4¶1 table	'exhaustive' was false (C7): four axis bits and one non-axis bit missing
+4	3	4100	`step_budget`, `work_budget` and `frame_capacity` are resource-bound	KEPT	4¶3	
+4	4	4106	**The five `flags` bits that are NOT tuning axes**, named here so the	KEPT+SUPERSEDED	4¶2	'five' bits SUPERSEDED: PCREC_SIZE_CAP_REFUSE is the sixth (C7)
+4	5	4125	**`tune` has NO `PCREC_TUNE_SET` bit, and the absence is a recorded	CONDENSED+HISTORY	4¶4	the D77 provenance-trigger argument is design
+5	1	4141	**THIS SECTION IS THE CONTRACT** (`docs/dev/decisions.md` D103; the design	KEPT	5¶1	
+5.1	1	4156	**`--tune=N`, an ordinal `N` in `-2..+2`, `0` the default, with five	KEPT	5.1¶1	
+5.1	2	4168	**A negative value needs the `=` form.** `--tune -2` is refused by name,	KEPT	5.1¶2	
+5.1	3	4178	**A `tune` line in a `.rxt` `config`/`target` block takes the identical	KEPT+CONDENSED	5.1¶3	cli.md §1.1.4 carries the reasoning
+5.1	4	4197	**There is no `--force-tune`.** If a caller needs the command line to win	KEPT	5.1¶4	
+5.2	1	4204	Every number in §5.4's table is stated in exactly one of two quantities.	KEPT	5.2¶1	
+5.2	2	4206	- **`σ` — SIZE, as a fraction of the default artifact.**	KEPT	5.2¶2	
+5.2	3	4211	- **`m` — TIME, as a multiplicative slowdown of end-to-end match time.**	KEPT	5.2¶3	
+5.2	4	4215	A cell citing a bound (`x₁`, `x₂`, `t_mid`) or a floor (`s`) is an `m`	KEPT	5.2¶4	
+5.3	1	4225	`<PREFIX>_TUNE`, a closed five-token string — the alias spelling, never	KEPT	5.3¶1	
+5.3	2	4233	A consumer buckets on the token; a number would invite arithmetic on an	KEPT	5.3¶2	
+5.4	1	4245	**Thirty-two rows: the 23 `tuning.md` §2 axes, `-fno-run-overlap` (§2.38,	SUPERSEDED	5.4¶1	row counts SUPERSEDED/N/A-DROP (C13): the rule 'an axis with no row has no cell' is stated
+5.4	2	4255	**A cell is either a value, or an em-dash meaning the dial does not touch	KEPT	5.4¶2	table kept; why column condensed, values unchanged (run_tune_dial.sh reads them)
+5.4	3	4301	**The seven reason codes**, one per flat row above:	KEPT	5.4¶3	
+5.4	4	4313	**Four rows carry a ratified cell at the first build**: the `[ART-SIZE]`	N/A-DROP	-	counts
+5.4	5	4322	**λ has since been ruled (D131) and BUILT (`[CLS-TREE]` S4, `abi` 48)**,	KEPT+HISTORY	5.4¶4	+2 differs from +1 only on λ
+5.5	1	4329	`--tune`'s acceptance is answer identity across all five positions, over	KEPT	5.5¶1	
