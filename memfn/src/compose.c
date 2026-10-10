@@ -276,8 +276,38 @@ static int in_enum(unsigned v, unsigned last)
     return v <= last;
 }
 
+/* 1 iff the predicate's position ranking (mf_pred.rank_*, D157) is one the
+ * contract describes, else 0 with *why: rank_n 0, or at most MF_RANK_MAX
+ * DISTINCT positions of the RUN term plan_hint names. Only entries below
+ * rank_n are read. The order and the rates are pcrec's facts and are not
+ * checked here; a kit form that reads a ranking (vrun.c) reads only these
+ * validated entries. */
+static int rank_ok(const mf_pred *p, const char **why)
+{
+    if (p->rank_n == 0) return 1;
+    if (p->rank_n > MF_RANK_MAX) { *why = "rank_n > MF_RANK_MAX"; return 0; }
+    if (p->plan_hint >= p->nterm || p->term[p->plan_hint].kind != MF_T_RUN) {
+        *why = "a position ranking whose plan_hint names no RUN term";
+        return 0;
+    }
+    const mf_term *t = &p->term[p->plan_hint];
+    if (p->rank_n > t->run_len) { *why = "rank_n > the RUN term's run_len"; return 0; }
+    for (unsigned i = 0; i < p->rank_n; i++) {
+        if (p->rank_pos[i] >= t->run_len) {
+            *why = "a ranked position outside its RUN term";
+            return 0;
+        }
+        for (unsigned j = 0; j < i; j++)
+            if (p->rank_pos[j] == p->rank_pos[i]) {
+                *why = "a position ranked twice";
+                return 0;
+            }
+    }
+    return 1;
+}
+
 /* Adds the term kinds one predicate uses to *kinds (MF_TK_* bits); 0 if a
- * term is malformed (sets *why). */
+ * term is malformed or its ranking is (sets *why). */
 static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
 {
     if (p->nterm == 0) { *why = "a predicate with no terms (nterm 0)"; return 0; }
@@ -300,7 +330,7 @@ static int pred_kinds(const mf_pred *p, uint32_t *kinds, const char **why)
             return 0;
         }
     }
-    return 1;
+    return rank_ok(p, why);
 }
 
 /* SKIP's predicate rule, NULL iff it holds. RULED Q-G2-9: one SET term at

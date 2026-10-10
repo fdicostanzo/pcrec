@@ -28,7 +28,8 @@
  * scanned position KA (the predicate's `plan_pos`, the cube `fn-pair`
  * scans), `(s[c + KA] & M) == V` for VW candidates at once: one unaligned
  * load at `i + KA`, an AND with the broadcast mask, a bytewise compare with
- * the broadcast byte, a movemask. Each set lane, lowest first, is verified
+ * the broadcast byte, a movemask; where the ranking gives a second position
+ * KB (below), its compare is ANDed in before the movemask. Each set lane, lowest first, is verified
  * by the BODY's own run compare (runcmp.c, the row the walk picks; [r9 C-12]:
  * the `denies` class reaches it as it reaches the floor), and the first
  * that verifies is returned: the leftmost candidate >= `pos` whose whole run
@@ -36,23 +37,45 @@
  * last whole block, ONE overlapped final block ends at `n - T`, its lanes
  * below the next untested candidate masked off.
  *
- * SECOND FILTER POSITION (KB): R-1's form ANDs a second position's compare
- * (D157, amending Q-R9-3 (a): pcrec states the site's candidate positions
- * rarest first with their rates, `rank_n`/`rank_pos`/`rank_ppm`, request
- * RQ-2; the distance rule choosing KB from them is the kit's). RQ-2 is NOT
- * built, so no site states a ranking and the filter is KA alone. The kit
- * picks no KB of its own yet (Q-R9-3's (b)/(c) were rejected): adding it is
- * RQ-2's MF_SITE_ABI bump, a distance rule, and one more `and` in `cmask`
- * below.
- *
+ * SECOND FILTER POSITION (KB): the kit's reading of pcrec's ranking (D157:
+ * `rank_n`/`rank_pos`/`rank_ppm`, the RUN term's positions ordered by
+ * pcrec's prior rate, rarest first; request RQ-2). KB is the FIRST ranked
+ * position other than KA, and its compare is ANDed with KA's before the
+ * movemask (R-1's `ffl`: `vmask(vand(eq_KA, eq_KB))`). No KB (KA alone,
+ * R-13's filter) where the ranking states none: rank_n 0 (no facts), or
+ * every ranked position is KA (rank_n 1). The ranking's ORDER is the only
+ * fact read; its rates are not (a rate threshold would be a tuning constant
+ * with no measurement behind it). compose.c's `rank_ok` refuses a ranking
+ * that is not distinct positions of the scanned RUN term, so every entry
+ * read here is one.
+ *   - KA stays the first position: it is the BODY's scanned cube (pcrec's
+ *     `plan_pos`), the position R-1's four timed cells all filtered on.
+ *     Observed (rq2_report.md §1-2), pcrec's `rank_pos[0]` IS KA on every
+ *     PRE and OFS predicate of the corpus, so KB is then `rank_pos[1]`.
+ *   - HOW MANY: two. UNMEASURED DEFAULT: the pair is the form R-1 timed
+ *     (tb_r4b.c `ffl`); one, two and three positions have not been timed
+ *     against each other. The deny `--memfn=no-vrun-kb` renders KA alone,
+ *     so RQ-4's tier-U slot times the choice as DEFAULT vs that deny.
+ *   - DISTANCE: none required beyond KB != KA. DERIVED for correctness:
+ *     every ranked position lies in the run, so KB <= T and its load sits
+ *     inside the reach R already derived for KA (below). Whether a FAR KB
+ *     beats the rarer near one (adjacent bytes co-occur, so the product of
+ *     their rates overstates the pair's rarity; D157 "Revisit when", the
+ *     joint rates [OPT-REQPOS] measured) is UNMEASURED and has no variant:
+ *     a distance threshold would be a new constant, built when the
+ *     DEFAULT-vs-deny reading shows the pair losing to KA alone.
+ *   - The verify is unchanged: every passing lane is verified by the whole
+ *     run compare, so the answers are exact whichever positions are read.
+
  * OVER-READ / BOUNDARY ARGUMENT (the kit reads only [pos, n)):
  *   - R = VW + T (T = the predicate's highest read, the BODY loop guard's
  *     `maxk`). Below it the entry test falls through, so the vector body
  *     never runs a partial block (§R4.9.3).
- *   - A whole block at i (i + R <= n) loads [i + KA, i + KA + VW): KA <= T,
- *     so its highest byte is <= i + T + VW - 1 < n; i starts at pos.
- *   - The final block f = n - R >= pos (the entry test) loads [f + KA,
- *     f + KA + VW), highest <= n - 1. It is taken when the loop exits with
+ *   - A whole block at i (i + R <= n) loads [i + K, i + K + VW) for K in
+ *     {KA, KB}: K <= T, so its highest byte is <= i + T + VW - 1 < n; K >=
+ *     0 (the term's offset is >= 0, APPLIES) and i starts at pos.
+ *   - The final block f = n - R >= pos (the entry test) loads [f + K,
+ *     f + K + VW), highest <= n - 1. It is taken when the loop exits with
  *     i + T < n (a candidate is left) and then f < i < f + VW, so the lane
  *     shift i - f is 1..VW - 1 (never the register width: no UB).
  *   - A candidate c is a lane of a block at base b with b + R <= n, so
@@ -67,6 +90,9 @@
  *              4x unrolls and the w16-over-scalar / w32-over-w16 cut-overs
  *              above R are tier-U sweeps owed in RQ-4's slot (§R4.9.5 item
  *              10); until then nothing but the derived R is written.
+ *   KB         UNMEASURED DEFAULT: two positions, KB the first ranked other
+ *              than KA, no distance rule (SECOND FILTER POSITION above);
+ *              its deny `no-vrun-kb` is the arm RQ-4's slot times it against.
  *   VRUN_MAX_RUN  CHOSEN shape bound (32), not a tuning constant: the
  *              guarded text holds one run compare, whose text grows with
  *              the run's length, and Q-R9-9 (RULED (a)) bounds each row's
@@ -129,17 +155,55 @@ static int vrun_applies(const mf_site *s, const mf_pred *p)
     return s->op == MF_OP_FIND && &s->pred == p;
 }
 
-/* One block's candidate mask at `base` (C text): `(unsigned)MOVEMASK(EQ(
- * AND(LOAD(subject + base + KA), ma), va))`, the AND elided at an exact KA. */
-static void cmask(mf_sink *o, const vrun_ops *v, const char *base, int ka, int exact)
+/* KB, the second filter position as a read offset from the candidate (the
+ * module comment's SECOND FILTER POSITION): the first ranked position that
+ * is not KA, or -1 for none (no ranking, the ranking is KA alone, or its
+ * deny `no-vrun-kb`). */
+static int vrun_kb(const fn_in *x)
 {
-    kit_out(o, "(unsigned)%s(%s(", v->mmask, v->eq);
+    const mf_pred *p = x->p;
+    if (kit_opt_denied(x->site->opts, "vrun-kb")) return -1;
+    for (unsigned i = 0; i < p->rank_n; i++) {
+        int k = p->term[0].offset + p->rank_pos[i];
+        if (k != x->k) return k;
+    }
+    return -1;
+}
+
+/* One position's compare at `base` (C text): `EQ(AND(LOAD(subject + base
+ * + k), m<c>), v<c>)`, the AND elided at an exact position. */
+static void cpos(mf_sink *o, const vrun_ops *v, const char *base, int k, int exact, char c)
+{
+    kit_out(o, "%s(", v->eq);
     if (!exact) kit_out(o, "%s(", v->and_);
     kit_out(o, "%s((const %s *)(subject + %s", v->load, v->type, base);
-    if (ka) kit_out(o, " + %d", ka);
+    if (k) kit_out(o, " + %d", k);
     o->puts(o->u, "))");
-    if (!exact) o->puts(o->u, ", ma)");
-    o->puts(o->u, ", va))");
+    if (!exact) kit_out(o, ", m%c)", c);
+    kit_out(o, ", v%c)", c);
+}
+
+/* One block's candidate mask at `base` (C text): `(unsigned)MOVEMASK(<KA's
+ * compare>)`, or with a KB `(unsigned)MOVEMASK(AND(<KA's>, <KB's>))`. */
+static void cmask(mf_sink *o, const vrun_ops *v, const char *base, int ka, int exact_a,
+                  int kb, int exact_b)
+{
+    kit_out(o, "(unsigned)%s(", v->mmask);
+    if (kb >= 0) kit_out(o, "%s(", v->and_);
+    cpos(o, v, base, ka, exact_a, 'a');
+    if (kb >= 0) {
+        o->puts(o->u, ", ");
+        cpos(o, v, base, kb, exact_b, 'b');
+        o->puts(o->u, ")");
+    }
+    o->puts(o->u, ")");
+}
+
+/* The broadcast constants of one position (`m<c>` only where masked). */
+static void bcast(mf_sink *o, const vrun_ops *v, int mask, int val, char c)
+{
+    if (mask != 0xFF) kit_out(o, "m%c = %s((char)%d), ", c, v->set1, mask);
+    kit_out(o, "v%c = %s((char)%d)", c, v->set1, val);
 }
 
 /* The helper's body: the entry test, the block loop, the closing brace. Its
@@ -152,26 +216,32 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     const mf_level *lv = kit_level(d->level);
     const vrun_ops *v = &ops_of[d->level];
     const mf_term *t = &x->p->term[0];
-    int ka = x->k, mask = t->mask ? t->mask[ka - t->offset] : 0xFF;
-    int val = t->run[ka - t->offset], exact = mask == 0xFF;
+    int ka = x->k, kb = vrun_kb(x);
+    int ma = t->mask ? t->mask[ka - t->offset] : 0xFF, va = t->run[ka - t->offset];
+    int mb = kb < 0 ? 0xFF : t->mask ? t->mask[kb - t->offset] : 0xFF;
+    int vb = kb < 0 ? 0 : t->run[kb - t->offset];
     unsigned vw = lv->vw, tt = vrun_t(x->p), r = vw + tt;
 
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n", r, fall);
     kit_out(o, "    const %s ", v->type);
-    if (!exact) kit_out(o, "ma = %s((char)%d), ", v->set1, mask);
-    kit_out(o, "va = %s((char)%d);\n", v->set1, val);
+    bcast(o, v, ma, va, 'a');
+    if (kb >= 0) {
+        o->puts(o->u, ", ");
+        bcast(o, v, mb, vb, 'b');
+    }
+    o->puts(o->u, ";\n");
     o->puts(o->u, "    size_t i = pos;\n"
                   "    for (;;) {\n"
                   "        unsigned m;\n");
     kit_out(o,    "        if (i + %u <= n) {\n"
                   "            m = ", r);
-    cmask(o, v, "i", ka, exact);
+    cmask(o, v, "i", ka, ma == 0xFF, kb, mb == 0xFF);
     kit_out(o, ";\n"
                   "        } else {\n"
                   "            if (i + %u >= n) return n;\n"
                   "            size_t f = n - %u;\n"
                   "            m = ", tt, r);
-    cmask(o, v, "f", ka, exact);
+    cmask(o, v, "f", ka, ma == 0xFF, kb, mb == 0xFF);
     o->puts(o->u, " & (~0u << (i - f));\n"
                   "            i = f;\n"
                   "        }\n"

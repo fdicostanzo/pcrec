@@ -33,3 +33,7 @@ MF_OPT("vrun-w32", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
 MF_OPT("vrun-w16", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
        "the 16-byte vector run scan (a SIMD helper over a FUNC whose predicate is one run, "
        "sitting over the two-stream pair body); -fmemfn-simd only")
+MF_OPT("vrun-kb", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
+       "the vector run scan's second filter position (the first position of pcrec's rarity "
+       "ranking other than the scanned one); denied, the vrun rows filter on the scanned "
+       "position alone; -fmemfn-simd only")
