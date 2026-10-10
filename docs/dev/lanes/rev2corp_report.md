@@ -21,21 +21,21 @@ were each caught (1 FAIL, exit 1).
 
 ## Case families -> locate_finish.md risk
 
-| fam | blocks | what it stresses | risk it covers |
+| fam | blocks (by first-letter tag; 118 of 119, one untagged) | what it stresses | risk it covers |
 |---|---|---|---|
-| A | 15 | `$`/`\Z` with a final newline: n vs n-1 ends, `\z` as the n-only control, group that can/cannot take the newline, lazy vs greedy newline, `(a\|a\n)$` vs `(a\n\|a)$` | the n / n-1 seed tie of the reverse walk (§4.3 "seeds only at n/n-1", §4.4); leftmost-first choosing BETWEEN ends, not shortest/longest |
+| A | 16 | `$`/`\Z` with a final newline: n vs n-1 ends, `\z` as the n-only control, group that can/cannot take the newline, lazy vs greedy newline, `(a\|a\n)$` vs `(a\n\|a)$` | the n / n-1 seed tie of the reverse walk (§4.3 "seeds only at n/n-1", §4.4); leftmost-first choosing BETWEEN ends, not shortest/longest |
 | B | 10 | `(a*)ab$`, `(a+)(a?)$`, `(.+?)(\d+)$`, `(a\|ab)(c\|bcd)$`: group placement determined by the remainder | the VM finisher must place groups over the span the locator proved (window identity, E9) |
 | C | 10 | groups in loops: last iteration, alternating arms keep the earlier iteration's other group, nullable group under `*`/`+` | capture retention across iterations on a verified window |
-| D | 8 | optional/unset groups (-1 -1), one-of-three arms, pin in only one arm | unset slots reported correctly; unpinned top-level alternation (`(a)\|b$`, `(a$)\|(b)`) is NOT end-pinned (control) |
-| E | 6 | alternation priority inside groups: prefix arm vs longer arm | priority-end vs max(D) |
+| D | 6 | optional/unset groups (-1 -1), one-of-three arms, pin in only one arm | unset slots reported correctly; unpinned top-level alternation (`(a)\|b$`, `(a$)\|(b)`) is NOT end-pinned (control) |
+| E | 7 | alternation priority inside groups: prefix arm vs longer arm | priority-end vs max(D) |
 | F | 5 | nested groups, nested under a loop, nested optionals | numbering and last-iteration spans of inner groups |
 | G | 8 | empty matches at the end, empty at n-1 vs n, `()$`, `(\b)$` | the empty-window `[s,s]` case; leftmost start for nullable groups |
 | H | 8 | `ms`/`ns`: start offsets at, inside and past the pinned tail, `\b` at the search start | search_from / start offsets near the end (FIN4 `search-from`) |
-| I | 6 | the census's unbounded shapes: `(\d+)$`, `(\w+)\z`, `([^/]+)$`, `(.*)\.txt$`, `([^.]*)\.txt$`, `(\s+)$` | the population the census names (unbounded, start-unanchored) |
-| J | 6 | `\b` and (negative) lookbehind at the match start, lookbehind with an anchor alternative | context before the located start (lookbehind sees bytes before `lo`) |
+| I | 7 | the census's unbounded shapes: `(\d+)$`, `(\w+)\z`, `([^/]+)$`, `(.*)\.txt$`, `([^.]*)\.txt$`, `(\s+)$` | the population the census names (unbounded, start-unanchored) |
+| J | 7 | `\b` and (negative) lookbehind at the match start, lookbehind with an anchor alternative | context before the located start (lookbehind sees bytes before `lo`) |
 | K | 11 | UTF-8: multi-byte last char, 3/4-byte tails, Unicode `\s`/`\d` under UCP, start offsets on char boundaries, mixed-length loop iterations | byte-offset arithmetic at the tail; a reverse walk must not stop mid-character |
 | L | 7 | caseless tails: literal, run, class, NEGATED class, `.TXT`, Kelvin sign and U+00C9 under utf8 | case folding in the reverse tables |
-| M | 8 | pin inside a group, `$` in `(?:$)`, DOTALL, possessive/atomic prefix, `(?m)` and a half-pinned alternation as non-pinned controls | the end-pin predicate's edges (multiline must not take the stage-2 route) |
+| M | 6 | pin inside a group, `$` in `(?:$)`, DOTALL, possessive/atomic prefix, `(?m)` and a half-pinned alternation as non-pinned controls | the end-pin predicate's edges (multiline must not take the stage-2 route) |
 | N | 10 | the design note's named witnesses: LAZY tie `(\s+?){2}$` (E3, the search-from-not-verify-at hazard), `(a\z)+` and `(a+)$` (T5 unbounded), clamped widths `(\d{2,4})$`/`(a{3})$`/`(\w{1,3})\z`, `\K` | §4.3 E3, T5, the clamped-hybrid ENDSET route, X1/`\K` views |
 
 ## Verdicts (Linux dev box, main + this branch, gcc 15.2, libpcre2 10.46)
