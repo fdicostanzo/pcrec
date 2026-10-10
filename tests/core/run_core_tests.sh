@@ -160,7 +160,7 @@ OUT6="$WORKDIR/flag_access_check.out"
 python3 -I "$SCRIPT_DIR/flag_access_check.py" "$ROOT_DIR" | tee "$OUT6"
 bin6_rc="${PIPESTATUS[0]}"
 if [ "$bin6_rc" -eq 0 ]; then
-    ok "flag_access_check: $(tail -1 "$OUT6")"
+    ok "flag_access_check: $(tail -1 "$OUT6" | sed "s/^PASS: flag_access_check: //")"
 else
     bad "flag_access_check: $(grep -c '^FAIL' "$OUT6") finding(s) — see above"
 fi
