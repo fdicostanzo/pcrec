@@ -36,7 +36,7 @@ bytes the generator chose) and the compiler, not on the author.
   one entry on or off the scanned position, whole permutations led by it or
   by any position, the second entry at the run's ends, partial), rates with
   ties, entries past `rank_n` filled with positions a reader would choose;
-  one site in five also tries a MALFORMED copy, which must be refused; and
+  one site in five also tries a MALFORMED copy, which must be refused while the same copy WELL-FORMED (its control) is accepted; and
   a `deny-kb` class (`--memfn=no-vrun-kb`). Writes `g2v_sites.c` and
   `g2v_meta.tsv` (the stated entries, the copy's verdict, the tie count).
 - **g2/g2_simd.h**, **g2/g2_simd_driver.c** — the site table and the
