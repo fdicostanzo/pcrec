@@ -441,7 +441,7 @@ typedef struct {
     const char *probe_construct;
     const char *features;
     const char *list_source;
-    /* [FINDINGS] B2 the two analysis listings (docs/spec/findings.md §6):
+    /* [FINDINGS] B2 the two analysis listings (docs/spec/findings.md §8):
      * `--list-analyses` (the store's names) and `--list-analysis X`, X a
      * bundle NAME or a `.rxt` FILE (the per-target view). */
     int         list_analyses;
@@ -2196,7 +2196,7 @@ static int cli_dispatch(CliState st)
         return 0;
     }
 
-    /* [FINDINGS] B2 THE ANALYSIS LISTINGS (docs/spec/findings.md §6): two
+    /* [FINDINGS] B2 THE ANALYSIS LISTINGS (docs/spec/findings.md §8): two
      * members of the registry-query relation — no pattern, no -o, one query
      * at a time — dispatched here, ahead of that block, because they are the
      * two whose `-I` list this function must free. `--list-analysis`'s

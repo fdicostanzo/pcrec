@@ -1,6 +1,6 @@
 /* src/dump/findings_dump.c — `pcrec --list-analyses` and `pcrec
  * --list-analysis`, the ANALYSIS listings ([FINDINGS] B2;
- * docs/design/findings/design.md §5.2, docs/spec/findings.md §6).
+ * docs/design/findings/design.md §5.2, docs/spec/findings.md §8).
  *
  * THREE VIEWS, one resolver. `--list-analyses` is the NAME LIST: one row per
  * bundle BUILT INTO this library (the store) — `-I` directories are never
