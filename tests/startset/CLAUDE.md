@@ -161,3 +161,11 @@ scripts, any failing fails the section.
   refusal where the deny arm compiles is a FAIL. At the fixes: DFA 153
   distinct pairs (5 collapsed, 151 matching), 1,920,044 cells; VM 423
   distinct pairs (382 matching), 2,486,254 cells; 0 defects.
+
+**Re-pinned at revbuild** (2026-10-10, [OPT-REVEND] L2): `census_s1.py` on
+the lane's build (`-fno-start-set` arm, no bench) moved four corpus rows and
+added 23. `s2_vm_auto` -1 (`stage2_captures.rxt:1453`, whose hybrid
+prefilter now fits the cap, so no VM hat), `s2_vm_forced` +23 (the new
+`tests/assertions/rev_end.rxt` blocks) -1 (`base/anchors.rxt:36`, whose
+dedup twin `rev_end.rxt:355` takes the id), `s3_dfa` -2 (two end-pinned DFA
+bodies whose search is now the walk, so the DFA hat changes nothing).

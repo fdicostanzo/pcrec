@@ -310,6 +310,16 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   emitted-size cap forced a retry and the retry shipped") is exactly this
   event.
 
+  **[OPT-REVEND] L2 (lane revbuild, 2026-10-10; LR-S12): the build gate reads
+  `Ctx.anchored_dropped` (the `drop-anchored` row FIRED, its bit in the fired
+  record), no longer the ordinal `size_drop_rung >= SDR_NO_ANCHORED`.** The
+  row's predicate (`fit_anchored_applies`) declines where dropping the machine
+  does not shrink the path's member set (`pcrec_cand_drop_anchored_shrinks`:
+  a `rev-end` tie without it relocates through the composite and gains the
+  forward machine), so the next rung (`drop-premul`) must not drop it either;
+  the ordinal would have. `tests/codegen/run_rev_end.sh` §3 is the detector
+  (S776 the predicate, S781 the reader).
+
   **IT COSTS ONE EXTRA ATTEMPT, NOT ONE LADDER'S WORTH, AND THAT IS DERIVED.**
   `anchored_ok` implies `fit.chosen == ENGM_DFA`; the size-term ladder runs
   only for `ENGM_VM`; [OPT-4]'s size rung requires `!= ENGM_DFA`. So a drop

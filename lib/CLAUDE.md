@@ -440,3 +440,12 @@ VM-only, which `tests/reject/`'s `reject_engine_dfa_bref_nocaptures`
 tripwires. Each records `<PREFIX>_VM_POSS_ARMS`'s bits (`match_api.md` §6.3).
 Both move the GIVE-UP surface in TWO directions (a STEPS/FRAMES give-up can
 become an answer, a WORK give-up can appear; `tuning.md` §2.1).
+
+## [OPT-REVEND] `PCREC_NO_REV_END` (bit 52, 2026-10-10, abi 72)
+
+The deny bit for LOCATE's `rev-end` row (`src/gen/emit_dfa.c`,
+`docs/design/locate_finish.md` §4.3, D156; `docs/spec/tuning.md` §2.46):
+an end-pinned DFA body, or an exact VM hybrid's inlined prefilter, searches
+backwards from the subject's end. MASKED from `rx_info.flags` (the walk is
+answer-identical, so the deny moves no answer). Bit 52 is this lane's pick,
+the next free one at its branch point; the manager confirms it at merge.

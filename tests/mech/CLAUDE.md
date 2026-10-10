@@ -3673,3 +3673,17 @@ selector written above its helper), all on memfnstamps + memfnarms; S693
 (PCREC_ARTIFACT_ABI left at 69; codegen's [DD-14.FB] ABI_EXPECT). No row
 re-aimed: S687's and S689's anchors and reach lines still resolve (the
 PREFIX render line kept its text; `rx_ofsskip(` is the selector's head).
+
+## [OPT-REVEND] L2 — `dfastamps`, `revend`, `revtwin`, and S758-S781 (lane revbuild, 2026-10-10)
+
+Three arms: `dfastamps` runs `tests/codegen/run_dfa_stamps.sh` (its `[start]`
+check holds `RX_DFA_START` to the text), `revend` runs
+`tests/codegen/run_rev_end.sh` (witnesses, the `-fno-rev-end` sweep, §3 the
+size ladder under a derived cap with a reference compiler, §4 the dead-seed
+X witnesses under `-fsanitize=address,undefined`), `revtwin` runs
+`tests/revend/run_window_twin.sh` (the window twin against libpcre2 10.46).
+The rows are written by `studies/locate_finish/mk_l2_rows.py` from the
+current source (each anchor must occur once); their harness rows target
+`tests/assertions/rev_end.rxt`. S764/S780 (the dead-seed skip deleted) are
+detected by `revend` §4's sanitizer cells, not by the harness: the bytes a
+dead row reads are usually readable and the answer often survives.

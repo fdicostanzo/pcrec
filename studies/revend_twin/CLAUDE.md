@@ -109,3 +109,13 @@ Backs `docs/design/revend.md` revision 2 (§6). Scratch tier, Linux dev box.
   2*(sd_x + sd_y). `results/r2_spread.txt`: median CV ~1% on every arm (p90
   3-5%) at load1 1.4-3.0; C vs today separated and faster on 68/68; C slower
   than B on 17 non-matching cells by ~0.5 ns (the unused tie arm).
+
+## r3 (lane revbuild, 2026-10-10): the window twin, moved to tests/
+
+The r3 twin (`r3_twin.py`, its driver and patterns) became
+`tests/revend/window_twin.py`, `window_twin_driver.c` and
+`window_twin_patterns.tsv` (run by `tests/revend/run_window_twin.sh`,
+`make test-revend-twin`). `results/r3_strata.txt` and `results/r3_results.tsv`
+are its run on the L2 build: exact hybrids 101 patterns, 2,768,435 cells, 0
+window/answer/oracle differences, E-VR 0; superset 3 / 73,812 cells and
+DFA-only 15 / 380,865 cells, 0 differences.

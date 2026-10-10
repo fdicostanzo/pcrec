@@ -327,9 +327,9 @@
 
 <a id="s2-15-p2"></a>[2.15¶2] **The selection is not this flag.** The anchored form needs the one-pass unanchored DFA engine (a `^`- or `\G`-bearing pattern runs on the per-start `attempt` scan and keeps the search-filter form), an artifact that is not the empty engine, and an anchored machine that builds inside the DFA caps (`PCREC_ANCHORED_MAX_STATES`, and the shared caps after the mandatory machines are built). A machine over a cap declines the form; it never refuses a pattern.
 
-<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"` or `"search-filter"`, mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`).
+<a id="s2-15-p3"></a>[2.15¶3] **The stamp** is `<PREFIX>_DFA_MATCH`, `"unwrapped"`, `"search-filter"` or, on the empty engine, `"nomatch"` (`<prefix>_match` returns no match without a scan), mirrored at run time by `rx_info.match_form` (§3). On `^foo` the selection declines without the flag (`RX_DFA_SCAN "attempt"`, `RX_DFA_MATCH "search-filter"`).
 
-<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally.
+<a id="s2-15-p4"></a>[2.15¶4] **pcrec may set this axis itself on a size-cap refusal.** The anchored machine is optional, but its bytes count toward the emitted-size caps. On a size-cap refusal with the machine present, the ladder's `drop-anchored` rung (`limits.md` §8.4) drops it and re-emits; the artifact is the one this flag produces plus `<PREFIX>_ENGINE_SEL "size-cap-retry"`, which tells "pcrec dropped it to fit" apart from "the caller passed the flag" (`"selected"`). If the cap still refuses, §2.13's `drop-premul` rung follows; an artifact whose retry fired both reads `RX_DFA_MATCH "search-filter"` and `RX_DFA_TABLE` off `"premultiplied"`. Passing the flag still denies the machine unconditionally. The rung is skipped where the drop would add a machine (`limits.md` §8.4¶2a).
 
 <a id="s2-15-p5"></a>[2.15¶5] **Dial:** no cell, deliberately excluded from `−2` pending its own measurement (§5.4).
 
@@ -974,6 +974,8 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 <a id="s2-46-p3"></a>[2.46¶3] **ANSWER-IDENTICAL** (`tests/assertions/rev_end.rxt` and `tests/revend/stage2_captures.rxt` against libpcre2 10.46, the latter on the VM hybrid's captures). It also takes the bounded-width patterns §2.26's window would clamp: on an artifact it applies to, no forward scan runs to clamp, and `<PREFIX>_END_WINDOW` reads `"none"` (`match_api.md` §6.3.1¶5a).
 
 <a id="s2-46-p4"></a>[2.46¶4] **The stamp** is `<PREFIX>_DFA_SCAN "rev-end"` (and `rx_info.scan`); the denied build reads `"unanchored"`. On a `"rev-end"` artifact `<PREFIX>_DFA_START` is `"reverse-pass"`, `<PREFIX>_DFA_PREFILTER` and `<PREFIX>_REQ_HANDOFF` read `"none"`, `<PREFIX>_REQ_WHY` reads `"dominated"` where a necessary byte exists (the walk itself proves there is no match), and the table stamps describe the reverse machine (and the anchored one where a tie can run it).
+
+<a id="s2-46-p5"></a>[2.46¶5] **Under the size caps.** Without its anchored machine a walk that can tie relocates through the forward-then-reverse search and so carries the forward machine, a larger artifact; the size-cap ladder's `drop-anchored` rung is skipped there (`limits.md` §8.4¶2a).
 
 <a id="s3"></a>
 ## 3. The DFA scan's stamps

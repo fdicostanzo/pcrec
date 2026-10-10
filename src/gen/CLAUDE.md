@@ -1448,6 +1448,36 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `exact`/`clamped`/`retry-anchored`. `pcrec_vm_prefilter_window` reads the
   lowering's erasure record (`Nfa.erased`, src/ir/nfa.c), and `Vm.mrl_win`
   is the boundary projection `pcrec_cand_lang_exact` (record `boundary`).
+- **emit_dfa.c — LOCATE's `rev-end` row, the generated stamp rule, stage 2**
+  ([OPT-REVEND] L1/L2 with stage 2 folded in, lane revbuild, 2026-10-10;
+  `docs/design/locate_finish.md` §4.3, §5 L1-L3, D156; abi 72; report
+  `docs/dev/lanes/revbuild_report.md`). L1: `emit_reverse_block(c, rev,
+  label, dead_skip)` is the reverse walk parameterized by its label and its
+  dead-seed statement (`DfaForm.lbl`/`dead`). L2.1: `cand_absent[]` and
+  `cand_stamp_absent(cx, slot, route)` are THE GENERATED STAMP RULE — a slot's
+  stamp reads its selection where the path asks the slot (an entry slot on any
+  route) and its ABSENCE value elsewhere; RECOVER's absence is
+  `"attempt-start"` (`pcrec_cand_absence` lists it). L2.2: LOCATE row
+  `rev-end` (A2, deny `PCREC_NO_REV_END`, CR_DFA, predicate
+  `locate_rev_end_applies` = the `end_pin` fact) between `empty` and
+  `composite`; its walk `emit_rev_end` seeds n and n-1 (`$`/`\Z`), skips a
+  dead seed, keeps the smallest start, and on a TIE (`revend_ties`: two seeds
+  and `revend_nl_last` on the built reverse machine) asks FINISH for ENDSET:
+  `verify-at` runs `<p>_match` from the start (T2), `search-from` relocates to
+  the composite (T3). LOCATE rows carry `whole` (answers presence: PRESENCE
+  defers, `REQ_WHY "dominated"`), `recover` and `fin` (the hands they hand
+  FINISH); FINISH rows `take[route]` per route (DFA {AT,ENDSET}, VM
+  {SPAN,AT} for `verify-at`, VM {ENDSET,LOWER} for `search-from`), the new
+  `nomatch` (FIN1) and `report` rows. Stage 2: the walk also runs inside an
+  exact VM hybrid's inlined `<p>_prefilter` (`cand_locate_route` asks LOCATE
+  on the DFA route for an inlined body); a tie there relocates inside the
+  body; `cand_project` is the boundary projection (a superset body's hand is
+  a LOWER bound); `pcrec_cand_finish_vm` is the VM entry's FINISH ask,
+  asserting verify-at iff `mrl_win` (LR-S3). The empty engine's
+  `<p>_match` is the `nomatch` form; machine folds read
+  `dfa_member_machines`. Sabotage S758-S781; checks
+  `tests/codegen/run_rev_end.sh`, `run_dfa_stamps.sh` [start], the answer net
+  `tests/assertions/rev_end.rxt`, the twin `tests/revend/run_window_twin.sh`.
 - **emit_dfa.c — the run pre-check's PAIR ARM** ([OPT-LITSCAN] S4 C3, lane
   c3build, 2026-10-03, abi 59; `docs/design/litscan_s4.md` §2.3.4):
   `OfsTest` gained `run_mask` (the run pre-check's tests only; a prefilter

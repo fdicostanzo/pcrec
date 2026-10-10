@@ -144,3 +144,14 @@ machine.
 Regenerating `rows.tsv.gz` (a new pin, a grown corpus) moves `summary.txt` and
 every population number in `docs/design/locate_finish.md`; no check reads
 these files.
+
+- `l2_movers.py` — [lane revbuild] [OPT-REVEND] L2's MOVER CENSUS: every
+  corpus pattern compiled by two pcrec binaries (parent and change) at one
+  option set, each differing artifact classified by which stamps and
+  `rx_info` fields moved (else `text`). Its runs are cited in
+  `docs/dev/lanes/revbuild_report.md` (L2.1: 638 rows, all
+  `DFA_START`/`search_form` reverse-pass -> attempt-start; L2.2: 274 rows).
+- `mk_l2_rows.py` — [lane revbuild] writes L2's sabotage rows S758-S781
+  (revend.md §9.2's sixteen recast, L2.1's stamp fork, the deference, the
+  size-ladder clause and its reader, stage 2's four) from the CURRENT source:
+  `python3 -I studies/locate_finish/mk_l2_rows.py tests/mech/sabotages`.
