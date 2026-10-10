@@ -1537,7 +1537,7 @@ Could another regime flip a decision?
 - *Leaning:* the hand as masks, built by whichever of `[START-LANDING]` and L2.2 lands
   second; `locate_finish.md` L2.2 carries a note saying so.
 
-**Q4. `end-minus-width` before `landing`.**
+**Q4. `end-minus-width` before `landing`.** **RULED 2026-10-09 (D156 addendum 4): agree: `end-minus-width` first, by dominance (Frank: "they're the same picture"; an answer-free order is the manager's call).**
 - *Forces:* information order says "how much evidence", which puts `landing` (one
   character) before an end subtraction. Cost is equal (measured). The two answer
   identically where both apply, and `end-minus-width` needs strictly less (no record,
