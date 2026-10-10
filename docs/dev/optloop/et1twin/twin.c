@@ -45,7 +45,13 @@ int tw_search(const unsigned char *subject, size_t n, size_t search_from, ptrdif
         size_t j = ET_LANDMARK(subject, n, pos);
         if (j >= n) return 0;
         ptrdiff_t start[RXPL_NCAPS][2];
+#ifdef ET_PLANT_LO0
+        /* failing-direction control: where_to_start.md §2.6's `lo0` mutant
+         * (the walk accepts starts below search_from) */
+        if (rxpl_search(subject, j + ET_LLEN, 0, start) == 1) {
+#else
         if (rxpl_search(subject, j + ET_LLEN, search_from, start) == 1) {
+#endif
             rx_ctx ctx = { .subject = subject, .len = n, .pos = (size_t)start[0][0] };
             ptrdiff_t len = rx_match_caps(&ctx, caps);
             if (len >= 0) return 1;
