@@ -790,8 +790,10 @@ The ROOTS are the entries the artifact emits:
 3. the match-here entry: on `finish ≠ CR_VM` its FINISH ask, with hand `caller ⊓ body`
    (`AT`, or `NOMATCH` on a body whose selected LOCATE row is `empty`, LR-G8); on
    `finish = CR_VM` the VM's own `_match`, which is `FIN3`'s VM hat (VM), until L3
-   routes it through the table. Because the closure follows `cand_nodes`' finite graph and
-visits each (slot, route) once, it terminates; because it evaluates the same
+   routes it through the table.
+
+Because the closure follows `cand_nodes`' finite graph and visits each (slot, route)
+once, it terminates; because it evaluates the same
 `cand_select` the emitters call, it cannot disagree with them about a selection.
 In the trace build `needs ⊆ built` is asserted: a selected row needing an unbuilt
 machine is a defect, never a silent intersection.
@@ -1252,7 +1254,8 @@ names (BOILERPLATE: the kit's reserved ranges are not free).
        §2.7's table re-pointed — LR-S1's three membership readers (the member fold),
        the orientation block (`:10704-10713`, `:10870`), `emit_vm.c:11330`, F-9's four
        spellings (`pcrec_artifact_has_dfa_scan`, `:10713`, `:10922`, `compile.c:2381`),
-       `compile.c:229`, the eight `dfa_engine_is_empty` callers, the ten FINISH reads.
+       `compile.c:229`, the eight `dfa_engine_is_empty` callers (`:7703`'s drop is
+       L0.2's), the ten FINISH reads.
        At L0.1 the match-here root still reads `dfa_matches[]`, the table the next
        commit folds.
   - **L0.2 — the `dfa_matches[]` fold.** FINISH rows `FIN3 verify-at` and `FIN4
