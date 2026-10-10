@@ -17,7 +17,7 @@ SCR="$1"; shift
 rm -rf "$SCR/tree"; mkdir -p "$SCR/tree"
 git -C "$ROOT" archive HEAD | tar -x -C "$SCR/tree"
 F="$SCR/tree/src/gen/emit_dfa.c"
-awk '/^\+\/\* ==== \[START-LANDING\] PROTOTYPE PROBE/{on=1} on{sub(/^\+/,""); print} /^\+\/\* ==== end PROTOTYPE PROBE ==== \*\//{exit}' \
+awk '/^\+\/\* ==== \[START-LANDING\] PROTOTYPE PROBE/{on=1} on{e=($0 ~ /end PROTOTYPE PROBE/); sub(/^\+/,""); print; if (e) exit}' \
     "$ROOT/studies/start_landing/proto.patch" > "$SCR/probe.c"
 grep -q '^static void lp_probe' "$SCR/probe.c"
 python3 - "$F" "$SCR/probe.c" <<'PY'

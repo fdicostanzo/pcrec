@@ -479,6 +479,66 @@ else
     ok "[facts-e3] $nwit3 witnesses: E3 is derived on the unanchored route alone, each other route declines by name, and the walk and pin are the ones written by hand ($nwide widened-domain pin, asked by no pass)"
 fi
 
+# 9. [START-LANDING] SL1 THE HAND-WITNESS TABLE (start_landing.md §7.2,
+# [r2 SL-C8]). `land_char` (Λ, the one-character fact) and `width` (the byte
+# width interval) are listed EXACTLY as written here, by hand, from the
+# definitions (§2.4, §3.1) — never read off either walk, so the table shares no
+# source with the build or with the design's prototype probe. One witness per
+# line, TAB-separated: enc, pattern, land_char (the value `one-char` /
+# `one-char+guard` where it holds, else its `decline:` why), width.
+# `+guard`: a first byte above the encoding's one-byte repertoire, §2.5.
+# `a\bb`'s Λ is `assert-after` by §2.4's definition (an assertion before the
+# accept); the design's table wrote "(empty engine)" there, which names the
+# route RECOVER takes, not the fact. REACH: every decline the fact can name
+# except `dead-start` (a start closure with no consumer, no accept and no
+# assertion, which no pattern this parser builds produces; the decline is the
+# safe answer for a malformed machine) has a witness.
+printf '%s\n' \
+    'byte	\w+	one-char	[1,inf)' \
+    'byte	ab	decline:alive-not-accept	[2,2]' \
+    'byte	\b\w+	decline:assert-at-start	[1,inf)' \
+    'byte	\w+\b	decline:assert-after	[1,inf)' \
+    'byte	x*y	decline:alive-not-accept	[1,inf)' \
+    'byte	abcd	decline:alive-not-accept	[4,4]' \
+    'byte	a\bb	decline:assert-after	[2,2]' \
+    'byte	(?s).+	one-char	[1,inf)' \
+    'byte	a*	decline:nullable	[0,inf)' \
+    'byte	a|bc	decline:alive-not-accept	[1,2]' \
+    'utf8	.	one-char+guard	[1,4]' \
+    'utf8	é	one-char+guard	[2,2]' \
+    'utf8	.{3,8}	decline:alive-not-accept	[3,32]' \
+    'utf8	[a-zé]+	one-char+guard	[1,inf)' \
+    'utf8	\w+	one-char	[1,inf)' > "$WORKDIR/slw"
+nsl=0; slbad=""
+: > "$WORKDIR/slwhy"
+while IFS=$'\t' read -r enc pat wland wwidth; do
+    nsl=$((nsl + 1))
+    case "$wland" in decline:*) echo "$wland" >> "$WORKDIR/slwhy" ;; esac
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all -e "$enc" --emit-facts --pattern "$pat" > "$WORKDIR/sl.l" 2> "$WORKDIR/sl.err"; then
+        slbad="$slbad $enc '$pat': refused ($(head -1 "$WORKDIR/sl.err"));"; continue
+    fi
+    sect "$WORKDIR/sl.l" facts > "$WORKDIR/sl.f"
+    lrow="$(grep -F "$(printf 'fact=land_char\t')" "$WORKDIR/sl.f")"
+    wrow="$(grep -F "$(printf 'fact=width\t')" "$WORKDIR/sl.f")"
+    case "$(col status <<< "$lrow")" in
+        derived)  gland="$(col value <<< "$lrow")" ;;
+        declined) gland="$(col why <<< "$lrow")" ;;
+        *)        gland="[$(col status <<< "$lrow")/$(col why <<< "$lrow")]" ;;
+    esac
+    gwidth="$(col value <<< "$wrow")"
+    [ "$gland" = "$wland" ] || slbad="$slbad $enc '$pat': land_char [$gland], by hand [$wland];"
+    [ "$gwidth" = "$wwidth" ] || slbad="$slbad $enc '$pat': width [$gwidth], by hand [$wwidth];"
+done < "$WORKDIR/slw"
+nslwhy="$(LC_ALL=C sort -u "$WORKDIR/slwhy" | wc -l | tr -d ' ')"
+echo "REACH: $nsl [START-LANDING] witness(es), $nslwhy of 4 reachable land_char decline(s) witnessed"
+if [ "$nsl" -eq 0 ] || [ "$nslwhy" -ne 4 ]; then
+    bad "[facts-sl1] the hand table reaches $nslwhy of the 4 reachable declines — the check is vacuous where it is short"
+elif [ -n "$slbad" ]; then
+    bad "[facts-sl1] land_char/width disagree with the hand table:$slbad"
+else
+    ok "[facts-sl1] $nsl witnesses list land_char and width exactly as the definitions give them (all 4 reachable declines)"
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
