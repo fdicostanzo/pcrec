@@ -17,6 +17,9 @@ reference at most), no other
 directories, no system config. Session-temporary files go in the session
 scratchpad directory named in your environment, never committed. Subagents
 you spawn inherit this mandate — restate it in their briefs.
+`/tmp` IS OUTSIDE THE MANDATE: no backups, plant copies, logs or `-o` outputs
+there, not even briefly (2026-10-10: three lanes in one day). Use your
+worktree's `build/` (gitignored) or the scratchpad.
 Disclosure: you inherit the session-root CLAUDE.md and the manager's memory
 index at spawn; treat them as context, not tasking.
 
