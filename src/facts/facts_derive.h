@@ -148,4 +148,14 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
                    RunPin *pin);
                                                         /* src/facts/kset.c */
 
+/* [START-LANDING] the k-set walk's iterator's two other consumers
+ * (docs/design/start_landing.md §2.7, §3.1): the BYTE WIDTH INTERVAL
+ * `[bmin, bmax]` over the union frontier, assertions passed; and the
+ * ONE-CHARACTER fact Λ over its exact closure, per byte, `PF_WHY_NONE` where it
+ * holds and its decline otherwise. The encoding DESCRIPTOR is a declared
+ * input (carve-out (d)). Both over the wrapped `Job.nfa` from `anch_start`. */
+void      pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax);
+PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide);
+                                                        /* src/facts/kset.c */
+
 #endif /* PCREC_FACTS_DERIVE_H */

@@ -297,3 +297,18 @@ whole walk, a large visible diff — and `tools/review/clone_candidates.py`
 is the review-time instrument. A reviewer looks for it (design §4.2.3).
 
 Maintenance: update this file when a file is added, moved in or removed.
+
+  **[START-LANDING] SL1 (lane slbuild): THE ONE FRONTIER ITERATOR and its
+  two new consumers.** `wclose` is the one closure step (two phases: the
+  exact closure, assertions stopped at, then the passing one), so it also
+  reports `accept_free` (accept on an assertion-free path) and `asrt` (an
+  assertion reached); `wstart`/`wadvance` are the iterator the k-set walk and
+  the width walk share. `pcrec_width_walk` (fact `width`, E3 core) is the
+  BYTE width interval `[bmin, bmax]` over the union frontier, assertions
+  passed, `bmax` unbounded once a frontier is live past the NFA's state count.
+  `pcrec_land_char` (fact `land_char`, E3 core) is Λ, the ONE-CHARACTER fact
+  (docs/design/start_landing.md §2.4): per byte, exact, "mid-character" read
+  off `PcrecEnc.start_cls`, a re-met mid-character frontier a cycle (memo),
+  Λ.2 ASSERTED (K50-NULLGATE). Its two readers are the RECOVER rows
+  `end-minus-width` and `landing` (src/gen/emit_dfa.c). The generation stamp
+  now resets on wrap (the width walk can step more than 255 times).

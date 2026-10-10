@@ -317,6 +317,20 @@ uses for an unbuilt module. axis07 (11 blocks, the "1:n non-matching"
 design) happens to agree with the oracle on every cell already, for its
 own checked reason — see that file's header.
 
+## [START-LANDING] landing_illformed.rxt (lane slbuild, 2026-10-10)
+
+- **landing_illformed.rxt** — the RECOVER row `landing`'s ill-formed cells
+  (docs/design/start_landing.md §7.3 §6): four patterns that take `landing`
+  with the first-character guard (`.`, `\p{L}+`, `[a-zé]+`, `.x?`), 140
+  cells whose subjects put an ill-formed or truncated sequence where a
+  landing falls, at every startpos pcrec accepts. Every expectation is
+  libpcre2 10.46's under PCRE2_UTF|PCRE2_MATCH_INVALID_UTF (`# pcre2-only`).
+  Run by the corpus harness and by `tests/codegen/run_start_landing.sh` under
+  every deny arm; mech S785's harness target.
+- **gen_landing_illformed.py** — its generator (builds a libpcre2 helper
+  under build/gen_landing and writes the file FROM the oracle). Committed as
+  the record of how the file was made.
+
 ## Maintenance
 
 Landing module `unicode-props` (stage 3): axis04, axis05, and the 6

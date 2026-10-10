@@ -327,7 +327,13 @@ PINS = {
     # known --features regression costing exactly 3 of these files
     # (32 -> 29), so this one axis needs maximum sensitivity, not a
     # margin -- any drop at all is worth flagging.
-    "composition_producing_floor": 38,    # measured 38 at C0 and at B1 (was 32)
+    # 38 -> 37 ([START-LANDING] SL2, lane sltri 2026-10-10): slbuild gave
+    # tests/uprops/size_ladder_prefilter_drop.rxt a second `pattern` block
+    # (the PF-DROP rung's new witness `(\p{Xwd})x`), and a file with two
+    # blocks and no `target` line is a definitions library that builds
+    # nothing, where the one-block file built itself (2 artifacts). Main's
+    # tree measures 38 with this file and 37 without it; no other file moved.
+    "composition_producing_floor": 37,    # measured 37 at SL2 (38 at C0 and at B1, was 32)
     "composition_artifacts_floor": 100,   # measured 108 at C0 and at B1 (was 88 / 96); an 8-artifact
                                            # margin (one file's worth, at
                                            # this corpus's measured 3.0

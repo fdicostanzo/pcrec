@@ -3710,3 +3710,19 @@ current source (each anchor must occur once); their harness rows target
 `tests/assertions/rev_end.rxt`. S764/S780 (the dead-seed skip deleted) are
 detected by `revend` §4's sanitizer cells, not by the harness: the bytes a
 dead row reads are usually readable and the answer often survives.
+
+## [START-LANDING] SL2/SL3 — `startlanding`, and S782-S791 (lane slbuild, 2026-10-10)
+
+One arm: `startlanding` runs `tests/codegen/run_start_landing.sh` (the two
+RECOVER rows' witnesses, the corpus sweep with floors, the stamp against the
+text, the answers against the triple-deny build, the hostile-utf8 10 s cell).
+Rows S782-S789 are SL2's (design §7.5 rows 1, 2, 4, 5, 6-7, 9, 11, 12; the
+guard rows S785/S789 target `tests/utf8/landing_illformed.rxt` / §H), S790
+and S791 SL3's (rows 8 and 13: the RECOVER hand filter, the stamp's
+hand-less ask). Row 10 (`recover_on_path` dropped) has no row: an equivalent
+mutant at this pin, because L2.1's generated stamp rule never asks RECOVER
+off the path (docs/dev/lanes/slbuild_report.md). Re-aimed at SL2: S221 (the
+pinned start write is now `emit_search_success`'s argument), S223 (the
+per-action assertion line), S420 (reach on `(\p{Xwd})x`: `(\p{Xwd})` takes
+`landing` and fits), S693 (abi 74), S220/S227 (their reach probes deny the
+new rows: `(?!a)` and `foo\B` take `end-minus-width`).

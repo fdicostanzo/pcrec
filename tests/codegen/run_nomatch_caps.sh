@@ -22,8 +22,9 @@
 #
 # THE POPULATION, and why each part is there:
 #   W  the dead-group WITNESSES below, every DFA search form among them
-#      (reverse-pass, pinned, attempt, empty, and [OPT-REVEND]'s rev-end
-#      walk) — the forms whose success sites
+#      (reverse-pass, pinned, [START-LANDING]'s end-minus-width and landing,
+#      attempt, empty, and [OPT-REVEND]'s rev-end walk) — the forms whose
+#      success sites (since [START-LANDING] one success-site emitter)
 #      each carry their own copy of the fill. Run on four routes: auto,
 #      --engine=vm, -fno-anchored-dfa (the search-filter `_match`), and
 #      -e utf8 (the startpos guard's -7 refusal is another negative return).
@@ -99,9 +100,12 @@ trap 'rm -rf "$TMP"' EXIT
 # The dead-group witnesses, each with the DFA search form it reaches on the
 # auto route (asserted below, so a witness that drifts off its form is loud).
 WITNESSES=(
-    'unanchored/reverse-pass|(?(DEFINE)(?<x>\b))b(?&x)'
-    'unanchored/reverse-pass|(?(DEFINE)(?<g>a))(?&g)b'
-    'unanchored/reverse-pass|(a){0}(b){0}c|d'
+    'unanchored/end-minus-width|(?(DEFINE)(?<x>\b))b(?&x)'
+    'unanchored/end-minus-width|(?(DEFINE)(?<g>a))(?&g)b'
+    'unanchored/end-minus-width|(a){0}(b){0}c|d'
+    'unanchored/landing|(a){0}\w+'
+    'unanchored/reverse-pass|(?(DEFINE)(?<g>a))(?&g)b+'
+    'unanchored/reverse-pass|(a){0}x*y'
     'unanchored/pinned|(?(DEFINE)(?<x>a))b*'
     'unanchored/pinned|(x){0}a*'
     'attempt/attempt-start|^(?(DEFINE)(?<x>a))b(?&x)'
@@ -175,7 +179,7 @@ for w in "${WITNESSES[@]}"; do
         bad "reach: witness $pat is [$st engine=$eng NCAPS=$nc form=$scan/$start] on the auto route, not a DFA dead-group artifact of form $want — re-derive the witness"
     fi
 done
-for f in unanchored/reverse-pass unanchored/pinned attempt/attempt-start empty/attempt-start rev-end/reverse-pass; do
+for f in unanchored/reverse-pass unanchored/pinned unanchored/end-minus-width unanchored/landing attempt/attempt-start empty/attempt-start rev-end/reverse-pass; do
     case "$forms_seen" in *" $f "*) ;; *) bad "reach: no dead-group witness reaches the DFA search form $f" ;; esac
 done
 read -r a n _ _ _ <<< "$(summ '$4=="dfa" && $5>=2')"

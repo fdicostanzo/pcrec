@@ -905,7 +905,12 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
 # THIS CLAIM FOR THE NULLABLE ROW: the deny flag no longer reproduces a rung
 # at all for it — see size_rung_cell's own [OPT-4.2] comment above.
 size_rung_cell '(a|b){0,30000}' none   'alternation nullable'     '-fno-scan-edge'
-size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edge'
+# [START-LANDING] (lane slbuild, 2026-10-10): the twin takes the `landing`
+# start by default, which drops the reverse machine, so its exact hybrid
+# (672,758 B) FITS and no rung fires (a FIT mover, start_landing.md §7). The
+# cell measures the size rung, so it denies the landing row and compiles the
+# reverse-pass artifact it was written against.
+size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edge -fno-start-landing'
 
 # [OPT-4.2] LANDED, 2026-08-31 (lane o42) — this cell used to be a TRIPWIRE
 # pinning a KNOWN gap (see the pcrec_reflog for the retired comment): at the
@@ -1125,10 +1130,11 @@ echo
 # ---------------------------------------------------------------------------
 K67_CPU="${K67_CPU:-20}"
 echo "== [K67] COMPILE-TIME WITNESSES (CPU budget ${K67_CPU}s per compile) =="
-k67_case() {   # $1 pattern, $2 required ENGINE_SEL value or empty
-    local pat="$1" want="$2" out="$WORKDIR/k67.c" log rc
+k67_case() {   # $1 pattern, $2 required ENGINE_SEL value or empty, $3 extra flags
+    local pat="$1" want="$2" extra="${3-}" out="$WORKDIR/k67.c" log rc
     rm -f "$out"
-    log="$("$ROOT_DIR/scripts/watchdog" -l "k67 $pat" -s "$K7_SECS" -c "$K67_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --features all -e utf8 -o "$out" --pattern "$pat" 2>&1)"   # [K37]: the wrapper IS the bound, on ONE line with the binary
+    # shellcheck disable=SC2086
+    log="$("$ROOT_DIR/scripts/watchdog" -l "k67 $pat" -s "$K7_SECS" -c "$K67_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --features all -e utf8 $extra -o "$out" --pattern "$pat" 2>&1)"   # [K37]: the wrapper IS the bound, on ONE line with the binary
     rc=$?
     case $rc in
         0) if [ -n "$want" ] && ! grep -q "_ENGINE_SEL \"$want\"" "$out"; then
@@ -1149,7 +1155,10 @@ k67_case() {   # $1 pattern, $2 required ENGINE_SEL value or empty
         *)   bad "[K67] '$pat' exited $rc, which is not a compile: $(printf '%s' "$log" | head -1)" ;;
     esac
 }
-k67_case '\p{L}+' size-cap-retry
+# [START-LANDING]: `\p{L}+` takes the `landing` start by default and, with
+# no reverse machine, fits WITH its anchored machine (894,606 B), so the
+# ladder never runs. The witness times the ladder, so it denies the row.
+k67_case '\p{L}+' size-cap-retry -fno-start-landing
 k67_case '(?:\p{L}?)+' ''
 
 echo
@@ -1365,7 +1374,15 @@ pfd_emit() {    # pfd_emit <out.c> <label> <pcrec args...> — rc, stderr in <ou
 }
 mkdir -p "$WORKDIR/pfd" "$WORKDIR/pfn"
 PFD_WIT='(\p{Xwd})'
-if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 --pattern "$PFD_WIT"; then
+# [START-LANDING] (lane slbuild, 2026-10-10): the witness takes the `landing`
+# start by default; without its reverse machine the hybrid is 359,103 B and
+# keeps its prefilter, so the last rung never fires (a FIT mover). Every
+# compile of the witness below denies the landing row so it still reaches the
+# rung; `(\p{Xwd})x` and `(\p{Xwd})\b` (no landing) still drop by default.
+# The anchored-drop (`\p{L}`) and premul-drop (`[^\p{C}\p{M}\p{P}]`) /ff
+# witnesses below are one character and take `landing` too, so they deny it.
+PFD_NL=-fno-start-landing
+if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 $PFD_NL --pattern "$PFD_WIT"; then
     pfd_sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/pfd/x.c" | sed 's/.*SEL //;s/"//g')
     pfd_pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/pfd/x.c" | sed 's/.*PREFILTER //;s/"//g')
     pfd_why=$(grep -oE '^#define RX_VM_PREFILTER_WHY .*' "$WORKDIR/pfd/x.c" | sed 's/.*WHY //;s/"//g')
@@ -1388,7 +1405,7 @@ if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 --pattern "$PFD_WIT"; then
     # THE RUNG'S ARTIFACT IS THE CALLER'S OWN `-fno-prefilter` ONE, but for the
     # two stamps that say a cap chose it (same `-o` basename, so the
     # `#include` line cannot differ).
-    if pfd_emit "$WORKDIR/pfn/x.c" "xwd -fno-prefilter" -e utf8 -fno-prefilter --pattern "$PFD_WIT"; then
+    if pfd_emit "$WORKDIR/pfn/x.c" "xwd -fno-prefilter" -e utf8 $PFD_NL -fno-prefilter --pattern "$PFD_WIT"; then
         if cmp -s <(grep -v -e '^#define RX_ENGINE_SEL ' -e '^#define RX_VM_PREFILTER_WHY ' "$WORKDIR/pfd/x.c") \
                   <(grep -v -e '^#define RX_ENGINE_SEL ' "$WORKDIR/pfn/x.c"); then
             ok "[PF-DROP] the rescued artifact is -fno-prefilter's, byte for byte, but for RX_ENGINE_SEL and RX_VM_PREFILTER_WHY"
@@ -1422,13 +1439,13 @@ pfd_ff() {
     fi
 }
 pfd_ff "prefilter drop, (\\p{Xwd}) -e utf8" '^#define RX_VM_PREFILTER_WHY "size cap retry' \
-    -e utf8 --pattern "$PFD_WIT"
+    -e utf8 $PFD_NL --pattern "$PFD_WIT"
 pfd_ff "prefilter collapse, (a|b){1,30000} -fno-scan-edge" '^#define RX_VM_PREFILTER_LANG_WHY "size cap retry' \
-    -fno-scan-edge --pattern '(a|b){1,30000}'
+    -fno-scan-edge $PFD_NL --pattern '(a|b){1,30000}'
 pfd_ff "anchored drop, \\p{L} -e utf8" '^#define RX_DFA_MATCH "search-filter"' \
-    -e utf8 --pattern '\p{L}'
+    -e utf8 $PFD_NL --pattern '\p{L}'
 pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}] -e utf8" '^#define RX_DFA_TABLE "indexed"' \
-    -e utf8 --pattern '[^\p{C}\p{M}\p{P}]'
+    -e utf8 $PFD_NL --pattern '[^\p{C}\p{M}\p{P}]'
 # A PATTERN THAT FITS IS THE SAME ARTIFACT UNDER THE SWITCH: it selects no
 # shape (masked out of `rx_info.flags`, lib/pcrec.h). `(\p{L})` is a VM
 # hybrid at 790 KB, close under the cap, so a switch that leaked into

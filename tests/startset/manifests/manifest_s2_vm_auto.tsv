@@ -297,7 +297,7 @@ tests/startset/vmhat.rxt:486	--features all --engine=vm	283f3a5c47617c622963
 tests/startset/vmhat.rxt:507	--features all --engine=vm	615c4b62
 tests/startset/vmhat.rxt:54	--features all	286162295c31
 tests/ucp/ctxnode.rxt:410	--features all	78283f216129283f216229283f216329283f216429283f216529283f216629283f216729283f216829283f216929283f216a29283f216b29283f216c29283f216d29283f216e29283f216f29283f217029283f217129
-tests/uprops/size_ladder_prefilter_drop.rxt:15	--encoding=utf8	285c707b5877647d29
+tests/uprops/size_ladder_prefilter_drop.rxt:50	--encoding=utf8	285c707b5877647d2978
 tests/utf8/wclass_illformed.rxt:1025	--features all --encoding=utf8 --engine=vm	78283f69295b6b5c787b65397d5d79
 tests/utf8/wclass_illformed.rxt:1048	--features all --encoding=utf8 --engine=vm	7828283f69295b6b5c787b65397d5d2979
 tests/utf8/wclass_illformed.rxt:153	--features all --encoding=utf8 --engine=vm	785c507b4c7d79
@@ -440,3 +440,4 @@ tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f
 tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
 # sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
 # revbuild (2026-10-10, [OPT-REVEND] L2): -1 row: tests/revend/stage2_captures.rxt:1453 `(\p{L}+)$` under utf8, whose hybrid prefilter now fits the size cap (the rev-end walk replaces the composite), so its VM entry carries no start-set hat; census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
+# slbuild (2026-10-10, [START-LANDING] SL2): -1/+1: size_ladder_prefilter_drop.rxt's `(\p{Xwd})` (now :24) takes the landing start and keeps its hybrid prefilter (a FIT mover), so its VM entry carries no hat; the file's new rung witness `(\p{Xwd})x` (:50) drops its prefilter and takes the hat. No other row moved (the startset suite's [vm-movers] diff).

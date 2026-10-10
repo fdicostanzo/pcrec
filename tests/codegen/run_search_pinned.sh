@@ -125,7 +125,11 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says
 # (docs/spec/match_api.md §6.3). A new value needs a spec hunk and a line here,
 # in the same change.
-START_VALUES="pinned reverse-pass attempt-start"
+# [START-LANDING] (abi 74) adds the two rows between `pinned` and the reverse
+# pass, `end-minus-width` and `landing`; tests/codegen/run_start_landing.sh is
+# their own gate, and this file holds them only to the reverse-machine-absent
+# half of §2 and to §9's declined-population identity.
+START_VALUES="pinned end-minus-width landing reverse-pass attempt-start"
 
 emit() { # emit <outfile> <pattern> [extra pcrec args...]
     local out="$1" pat="$2"
@@ -195,7 +199,11 @@ witness "word star"          '\w*'               pinned       n
 witness "optional"           'a?'                pinned       n
 witness "two counted runs"   '[a-z]{0,64}[0-9]{0,8}' pinned   n
 # The declines, one per REASON the note's §1.2 names.
-witness "not nullable"       'abc'               reverse-pass y
+# [START-LANDING] `abc` (W = 3) and `(?!a)` (W = 0) take `end-minus-width` by
+# default; the rows test PINNED's decline reasons, so they are compiled with
+# the two new rows denied, which restores the chain pinned -> reverse-pass
+# (start_landing.md §7.4, S218/S220's reach re-aim).
+witness "not nullable"       'abc'               reverse-pass y -fno-start-width -fno-start-landing
 witness "non-null counted"   '[a-z]{4096,}'      reverse-pass y
 witness "eol view (P1/P2)"   '$'                 reverse-pass y
 witness "multiline eol"      '(?m)a*$'           reverse-pass y
@@ -207,7 +215,7 @@ witness "class context"      '\bx*'              reverse-pass y
 # check is the only guard. Without it these stamp "pinned" and answer
 # `(?!a)` on "a" as 0..1 where the answer is the empty match at 1 (lane
 # r1mtriage, 2026-10-05: S220's witness, which no .rxt cell supplies).
-witness "lookahead view (P2)" '(?!a)'            reverse-pass y
+witness "lookahead view (P2)" '(?!a)'            reverse-pass y -fno-start-width -fno-start-landing
 witness "lookahead after star" 'x*(?!a)'         reverse-pass y
 witness "whole form \\z"     '(?:[a-z]{0,64})\z' reverse-pass y
 witness "attempt engine"     '^a*'               attempt-start n
@@ -438,7 +446,7 @@ one() {
     fi
     [ "$nstart" -eq 1 ] || { echo "DUP-$ax"; echo "BAD: RX_DFA_START appears $nstart times: $pat"; return; }
     echo "HASSTAMP-$ax"
-    case "$start" in pinned|reverse-pass|attempt-start) ;; *) echo "VALUE-$ax"; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
+    case "$start" in pinned|end-minus-width|landing|reverse-pass|attempt-start) ;; *) echo "VALUE-$ax"; echo "BAD: UNDOCUMENTED RX_DFA_START '$start': $pat" ;; esac
     [ "$mir" = "$start" ] || { echo "MIRRBAD-$ax"; echo "BAD: rx_info.search_form '$mir' vs macro '$start': $pat"; }
     [ "$eng" = "vm" ] && echo "HYBRID-$ax" || echo "DFAART-$ax"
 
@@ -453,6 +461,16 @@ one() {
         [ "$gatec" -eq 1 ] || { echo "GATEBAD-$ax"; echo "BAD: a pinned artifact's gate carries no LOAD-BEARING comment — the next reader of a coverage report has nothing to stop them deleting it: $pat"; }
         [ "$eng" = "vm" ] && { [ "$hywin" -eq 1 ] || { echo "HYWINBAD-$ax"; echo "BAD: a PINNED HYBRID does not consume window[0][0] as the attempt start — the span is a BOUND, not an answer, and that shape is the elision's safety argument on a hybrid: $pat"; }; }
         [ "$mf" = "search-filter" ] && echo "PINSF-$ax"
+    elif [ "$start" = "end-minus-width" ] || [ "$start" = "landing" ]; then
+        # [START-LANDING] the other two rows that answer without the reverse
+        # pass: the machine is absent exactly as under `pinned`, and the
+        # no-accept gate is present (their mechanism is run_start_landing.sh's).
+        echo "NOREV-$ax"
+        [ "$rw" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"$start\" but emits a rewind_position: $pat"; }
+        [ "$rtok" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"$start\" but emits the rx_reverse_state accessor block: $pat"; }
+        [ "$rtbl" -eq 0 ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"$start\" but emits an rx_reverse_next_state table: $pat"; }
+        [ "$rr" = "-" ] || { echo "BODYBAD-$ax"; echo "BAD: stamps \"$start\" but a reverse machine's accessor typedef is present: $pat"; }
+        [ "$gate" -eq 1 ] || { echo "GATEBAD-$ax"; echo "BAD: a $start artifact has NO last_accept_position == (size_t)-1 gate: $pat"; }
     else
         echo "REVPASS-$ax"
         # ENG_ATTEMPT and the empty engine legitimately have no reverse pass.
@@ -477,7 +495,9 @@ one() {
     [ "$edge" = "$want_edge" ] || { echo "EDGEBAD-$ax"; echo "BAD: RX_DFA_SCAN_EDGE '$edge' but the artifact's own edges fold to '$want_edge' (fwd $fe/$fb rev $re/$rb anch $ae/$ab match=$mf): $pat"; }
 
     # ---- §9: a DECLINED artifact is byte-identical under the deny flag ----
-    if [ "$start" = "reverse-pass" ] || [ "$start" = "attempt-start" ]; then
+    # [START-LANDING] every artifact the pinned predicate declined, the two
+    # new rows' included: -fno-start-pinned has nothing to act on there.
+    if [ "$start" != "pinned" ]; then
         if pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures $axflags -fno-start-pinned -o - --pattern "$pat" > "$den" 2>/dev/null; then
             if cmp -s "$art" "$den"; then echo "DENYSAME-$ax"; else
                 echo "DENYDIFF-$ax"; echo "BAD: a DECLINED artifact is NOT byte-identical under -fno-start-pinned ($ax) — the flag has an effect on a pattern the axis cannot act on, so the declined population is not a usable reference: $pat"
@@ -734,7 +754,9 @@ while IFS= read -r mp; do
     [ -n "$mp" ] || continue
     if ! emit "$WORKDIR/m.c" "$mp"; then manifest_missing="$manifest_missing[$mp] "; continue; fi
     ms="$(stamp "$WORKDIR/m.c")"
-    if [ "$ms" = "reverse-pass" ]; then manifest_declined=$((manifest_declined + 1))
+    # DECLINED by the PINNED predicate: any stamp but "pinned". [START-LANDING]
+    # `(?m)$` (W = 0) stamps "end-minus-width", which is a decline here.
+    if [ "$ms" != "pinned" ]; then manifest_declined=$((manifest_declined + 1))
     else manifest_accepted="$manifest_accepted[$mp] "; fi
     grep -qE "^pattern \Q$mp\E$" -r "$ROOT_DIR/tests" 2>/dev/null
 done <<EOF
@@ -852,7 +874,11 @@ run_diff() { # run_diff <pattern> <require-c3: y|n>
     rm -rf "$d"; mkdir -p "$d"
     pcrec_run "$PCREC" -p on  --no-captures --features all -fcomments -o "$d/on.c"  --pattern "$pat" >/dev/null 2>&1 \
         || { bad "§10 '$pat' did not compile"; return 1; }
-    pcrec_run "$PCREC" -p off --no-captures --features all -fcomments -fno-start-pinned -o "$d/off.c" --pattern "$pat" >/dev/null 2>&1 \
+    # THE REFERENCE DENIES ALL THREE ROWS THAT ANSWER WITHOUT THE REVERSE PASS
+    # ([START-LANDING] start_landing.md §7.2): a pinned row with W = 0 falls to
+    # `end-minus-width` under -fno-start-pinned alone, so only the product
+    # reaches the independently built reverse machine.
+    pcrec_run "$PCREC" -p off --no-captures --features all -fcomments -fno-start-pinned -fno-start-width -fno-start-landing -o "$d/off.c" --pattern "$pat" >/dev/null 2>&1 \
         || { bad "§10 the -fno-start-pinned build REFUSED a pattern the default build compiled: $pat"; return 1; }
     if [ "$c3" = y ]; then
         grep -q '^#define ON_DFA_START "pinned"' "$d/on.c" \
@@ -899,7 +925,7 @@ done <<EOF
 $DIFF_PATTERNS
 EOF
 [ "$diff_bad" -eq 0 ] \
-    && ok "§10 $diff_n patterns spanning every accept and decline reason answer IDENTICALLY under the default and -fno-start-pinned builds, at every startpos from 0 to n+1, comparing the verdict AND caps[0][0] AND caps[0][1] of search, match and match_caps — the denied build's answer comes from an independently built reverse automaton"
+    && ok "§10 $diff_n patterns spanning every accept and decline reason answer IDENTICALLY under the default build and the build denying all three rows that skip the reverse pass (-fno-start-pinned -fno-start-width -fno-start-landing), at every startpos from 0 to n+1, comparing the verdict AND caps[0][0] AND caps[0][1] of search, match and match_caps — the denied build's answer comes from an independently built reverse automaton"
 
 c3_bad=0; c3_n=0
 while IFS= read -r cp; do

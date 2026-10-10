@@ -21,7 +21,11 @@ SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): harness corpus:19fail/0pass
 SAB_COUNT=1
 # REACH: does the witness still take this rung? Read as the stamp only this
 # rung writes. If `(\p{Xwd})` ever fits unaided, this row certifies nothing.
-SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})" 2>/dev/null | grep -o "size cap retry, hybrid" | head -1'
+# RE-AIMED 2026-10-10 (lane slbuild, [START-LANDING]): `(\p{Xwd})` takes the
+# `landing` start and fits with its prefilter, so the reach probe and the
+# harness target's witness are `(\p{Xwd})x` (no landing; the rung still
+# fires at the default). The resource cells deny the landing row instead.
+SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})x" 2>/dev/null | grep -o "size cap retry, hybrid" | head -1'
 SAB_REACH_EXPECT='size cap retry, hybrid'
 SAB_BEFORE='    return s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&'
 SAB_AFTER='    return false && s->size_drop_rung < SDR_NO_PREFILTER && !s->dfa_disabled &&   /* SABOTAGE S420 */'

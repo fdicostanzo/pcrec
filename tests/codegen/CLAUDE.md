@@ -4058,3 +4058,30 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
   forward scan), `cand_oracle_witnesses.tsv`; `ABI_EXPECT` 73 and its
   ledger message.
 
+
+## [START-LANDING] SL2/SL3 (lane slbuild, 2026-10-10, abi 73 -> 74)
+
+- **run_start_landing.sh** + **landing_hostile_driver.c** — RECOVER's two new
+  rows held to the artifact (`docs/design/start_landing.md` §7.3; its own
+  section, `make test-start-landing`, for `test-search-pinned`'s reason; mech
+  arm `startlanding`). §1 named witnesses per value (`abcd` end-minus-width,
+  `\w+` landing, `[a-z]` both-apply, `(?s).` next-none, `a\bb` absence, the
+  utf8 guard on `.`/`\p{L}+` and its absence under `-futf-check`); §2/§4 a
+  corpus sweep holding each stamp to the text (no reverse machine, the
+  width subtraction, the landing record and its start write) and the
+  deny flags' byte-identity on declined artifacts; §3 floors per value; §5
+  the answers against the triple-deny build through `searchpin_driver.c` at
+  every startpos; §6 reach; §H the STANDING HOSTILE CELL (1 MiB of a lead
+  byte then `a`, find-all, 10 s bound). Sabotage S782-S789.
+- Re-pins at this event: `run_search_pinned.sh` (START_VALUES gains the two
+  values; the `abc`/`(?!a)` witnesses and §10's reference deny all three
+  bits; §8 counts any non-pinned value as declined), `run_nomatch_caps.sh`
+  (three witnesses relabelled `end-minus-width`, `(a){0}\w+` landing and two
+  reverse-pass witnesses added), `run_dfa_stamps.sh` [start] (the two new
+  values read off their text), `run_form_census.sh` (`RX_DFA_START`'s five
+  values tallied and floored), `cand_oracle_witnesses.tsv` (three lines),
+  `run_scan_edge_census.sh` (rows and the VEDGE block compile with
+  `-fno-start-width -fno-start-landing`: they count REVERSE edges), the
+  cpset `EMITTED_BYTES` manifest (six fixed-width rows lose their reverse
+  machine; every row moves by the ABI block's widened `search_form`
+  comment), `ABI_EXPECT` 74 and its ledger message, the FILEPIN.

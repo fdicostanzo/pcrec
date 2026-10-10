@@ -368,7 +368,11 @@ done <<< "$anchored"
 #     zero-initialised payload, so a cand_rows[] row that was never given a
 #     `.u.finish` reads as "no action" and matches no `act ==` test. A tag
 #     ordinal, in the same family as the SDR_* rungs above; nothing is
-#     measured against it).
+#     measured against it), and CRA_SEARCH_FROM (src/gen/emit_dfa.c,
+#     [START-LANDING] SL2 — the first of the four RECOVER action tags
+#     `CandRecover.act` carries (SEARCH_FROM / END_MINUS_W / LANDING /
+#     REVERSE), CAND_FIN_REPORT's shape on the RECOVER slot: its `= 1`
+#     reserves 0 for a zero-initialised payload. A tag ordinal).
 #     These are numbers nothing can be measured against by construction.
 #   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
 #     EW_EOL_SLACK (src/facts/endwin.c, [OPT-ENDWIN]). It is how many bytes
@@ -550,7 +554,8 @@ PCREC_SIMD_WITNESS_PAD
 PCREC_FIND_NBUNDLES
 SCAN_TEST_CALLS
 EM_ANY
-CAND_FIN_REPORT"
+CAND_FIN_REPORT
+CRA_SEARCH_FROM"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

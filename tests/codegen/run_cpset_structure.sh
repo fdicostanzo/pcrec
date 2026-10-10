@@ -917,6 +917,14 @@ fi
 # read `"attempt-start"` (13 bytes) where they read `"reverse-pass"` (12).
 # VERIFIED BY DIFFING `a` against main a15fb77b's compiler at the same `-o`:
 # the abi digits and that comment, nothing else.
+# RE-RECORDED 2026-10-10 at [START-LANDING] SL2 (lane slbuild, abi 73 -> 74):
+# every row +137, one number: the ABI block's ESSENTIAL `search_form` comment
+# names `"end-minus-width"` and `"landing"`. Six rows also lose their reverse
+# machine (`a`, `abc`, `(a)(b)(c)`, `\bword\b`, `(?i)HeLLo`, `(?<=foo)bar`:
+# every match has one byte width, so RECOVER is `end-minus-width`): net
+# -2,546 to -5,160 with the comment. VERIFIED BY DIFFING `a(b|c)+d` against the SL1 compiler (83b4c232,
+# 0 emitted movers against main 06d19c67) at the same `-o`: the abi digits
+# and that comment, nothing else.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

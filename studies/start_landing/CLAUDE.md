@@ -90,6 +90,17 @@ IN THE COPY (scratch, never committed).
   the sabotage rows compile statically, through the probe, with the design's rows
   applied; run-time-built patterns are counted as unparsed per file.
 
+## The build lane's own instruments (lane slbuild, 2026-10-10, main 06d19c67)
+
+- `edit_set_main.tsv` — the edit set RE-DERIVED at the build's pin (abi 73,
+  after [OPT-REVEND] L0/L1/L2), the design's `edit_set.tsv` left at its pin;
+  docs/dev/lanes/slbuild_report.md §0 is the reconciliation.
+- `agree_sl1.sh SCRATCH POP...` + `agree_sl1.py` — SL1's census agreement:
+  the BUILT `land_char`/`width` facts (`--emit-facts`) against this
+  directory's `proto.patch` probe functions, re-anchored into a scratch copy
+  of HEAD, on the same compile of every population pattern. Verdict `capped`
+  is the probe's 4096-byte width cap, counted.
+
 ## Timing (scratch tier, directional)
 
 - `ltime.c` — find-all timing of one artifact, RAW per-run samples.
@@ -135,3 +146,11 @@ PCREC=build/pcrec SUBJ=SCRATCH/subj studies/start_landing/run_timing_guard.sh TI
 studies/start_landing/readers.sh . ../pcrec-bench > readers.tsv
 python3 studies/start_landing/witness_movers.py SCRATCH/tree/build/pcrec . FILES... > movers.tsv
 ```
+- `movers_sl2.py PARENT CHILD POP...` — SL2's mover census: each population
+  compile's `RX_DFA_START` under the parent (the SL1 build) and the child,
+  against the census's predicted row; per-thread scratch. Results:
+  bench 0 mispredict; corpus 1, the `(\p{Xwd})` FIT mover.
+- `guard_timing/` (`run.sh` + `driver.c`) — D156 addendum 4 Q2 (4)'s
+  NO-GUARD ARM: the default `landing` artifact against a copy with the
+  guard block deleted, find-alls over a 1 MiB well-formed UTF-8 subject,
+  arms interleaved; scratch tier.

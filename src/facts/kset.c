@@ -66,6 +66,7 @@
  *     (design §4.5): src/gen/emit_dfa.c reads it through `us_run_pin`,
  *     which applies it. */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -85,8 +86,15 @@ typedef struct {
     unsigned char gen;
     int       *stack;
     int        nstack;
+    int       *defer;     /* the assertions phase 1 stopped at (their t1) */
     int       *cur, ncur; /* the closed frontier: N_CLASS states only */
     bool       accept;    /* N_ACCEPT is in the closure */
+    /* [START-LANDING] the closure's two EXACT flags (start_landing.md §2.7):
+     * N_ACCEPT reached on an ASSERTION-FREE epsilon path, and an assertion
+     * node reached at all. The walks that pass assertions read `accept`; the
+     * one-character fact reads these two as its declines. */
+    bool       accept_free;
+    bool       asrt;
 } Walk;
 
 /* Pushes NFA state `s` onto the frontier walk's stack if in range and not
@@ -99,15 +107,10 @@ static void wpush(Walk *w, int s)
     w->stack[w->nstack++] = s;
 }
 
-/* Close `seeds` over epsilon and assertions, leaving the N_CLASS members in
- * `w->cur` and setting `w->accept` if the match may already be over. */
-static void wclose(Walk *w, const int *seeds, int nseeds)
+/* Drains the stack into the closure. An assertion is PASSED (`pass`) or
+ * stopped at, its successor kept in `defer` for the second phase. */
+static void wdrain(Walk *w, bool pass, int *ndefer)
 {
-    w->gen++;
-    w->nstack = 0;
-    w->ncur = 0;
-    w->accept = false;
-    for (int i = 0; i < nseeds; i++) wpush(w, seeds[i]);
     while (w->nstack > 0) {
         int s = w->stack[--w->nstack];
         const NState *st = &w->nfa->st[s];
@@ -122,12 +125,14 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
             wpush(w, st->t1);
             wpush(w, st->t2);
             break;
+        case N_EPS:
+            wpush(w, st->t1);
+            break;
         /* EVERY ASSERTION IS PASSED. Listing them one by one rather than
          * writing `default:` is deliberate: a new NKind must come here and be
          * classified, and the compiler says so. A new CONSUMING kind treated
          * as an assertion would be the one unsound direction this file has,
          * so the absent `default` is the check that prevents it. */
-        case N_EPS:
         case N_BOT:
         case N_EOL:
         case N_END:
@@ -145,10 +150,58 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
          * because the absent `default:` above requires every kind to be
          * classified, and an unreachable kind still has a right answer. */
         case N_CSTART:
-            wpush(w, st->t1);
+            w->asrt = true;
+            if (pass) wpush(w, st->t1);
+            else      w->defer[(*ndefer)++] = st->t1;
             break;
         }
     }
+}
+
+/* Close `seeds` over epsilon and assertions, leaving the N_CLASS members in
+ * `w->cur` and setting `w->accept` if the match may already be over. ONE
+ * closure, two phases: the exact one (assertions stopped at, which sets
+ * `accept_free`), then the assertions passed — so the set is the passing
+ * closure every frontier walk here reads, and the exact flags come free. */
+static void wclose(Walk *w, const int *seeds, int nseeds)
+{
+    int ndefer = 0;
+    if (++w->gen == 0) {   /* the stamp wrapped: forget every old generation */
+        memset(w->seen, 0, (size_t)w->nfa->n);
+        w->gen = 1;
+    }
+    w->nstack = 0;
+    w->ncur = 0;
+    w->accept = false;
+    w->asrt = false;
+    for (int i = 0; i < nseeds; i++) wpush(w, seeds[i]);
+    wdrain(w, false, &ndefer);
+    w->accept_free = w->accept;
+    for (int i = 0; i < ndefer; i++) wpush(w, w->defer[i]);
+    wdrain(w, true, &ndefer);
+}
+
+/* Allocates walk `w` over `nfa` from `cx`'s arena (zeroed: generation 0 is
+ * no generation) and closes it over the pattern's own anchored start. */
+static void wstart(Ctx *cx, Walk *w, const Nfa *nfa)
+{
+    w->nfa = nfa;
+    w->gen = 0;
+    w->seen  = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
+    w->stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w->defer = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w->cur   = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int seed = nfa->anch_start;
+    wclose(w, &seed, 1);
+}
+
+/* THE ITERATOR'S STEP: the frontier one byte deeper, every consuming state
+ * stepped on every byte it admits (the union), `next` scratch of `nfa->n`. */
+static void wadvance(Walk *w, int *next)
+{
+    int nnext = 0;
+    for (int i = 0; i < w->ncur; i++) next[nnext++] = w->nfa->st[w->cur[i]].t1;
+    wclose(w, next, nnext);
 }
 
 /* The union of the classes the frontier's consuming states read — i.e. the
@@ -178,15 +231,8 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
         return;
 
     Walk w;
-    w.nfa = nfa;
-    w.gen = 0;
-    w.seen  = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
-    w.stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    w.cur   = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    wstart(cx, &w, nfa);
     int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-
-    int seed = nfa->anch_start;
-    wclose(&w, &seed, 1);
 
     /* The walk's own offset 0. `w.accept` here means the pattern matches
      * empty, which makes every offset test vacuous. The selection's caller
@@ -209,9 +255,7 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
          *     which point every further offset is at least as wide and the
          *     walk has nothing left to say. */
         if (w.accept || w.ncur == 0) break;
-        int nnext = 0;
-        for (int i = 0; i < w.ncur; i++) next[nnext++] = w.nfa->st[w.cur[i]].t1;
-        wclose(&w, next, nnext);
+        wadvance(&w, next);
         if (w.accept || w.ncur == 0) break;
 
         uint8_t set[256];
@@ -274,4 +318,190 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
             i++;
         if (i == l) *pin = (RunPin){ true, ro, s0, l, x - s0 };
     }
+}
+
+/* ---- [START-LANDING] THE ITERATOR'S SECOND CONSUMER: THE BYTE WIDTH -------
+ *
+ * Fact `width` (E3, docs/design/start_landing.md §3.1): the interval
+ * `[bmin, bmax]` of the BYTE lengths of the pattern's matches, from the same
+ * union frontier the k-set walk steps, assertions PASSED (they consume
+ * nothing, so passing them yields a superset of paths, and a bound proved on
+ * a superset holds on the set). `bmin` is the first depth whose frontier
+ * reaches accept; `bmax` the last such depth where the frontier empties, or
+ * `PCREC_W_UNBOUNDED` where a frontier is still live past the NFA's state
+ * count: every consuming state consumes one byte, so a path that long repeats
+ * a state, which is a cycle. `bmin` is -1 where no depth accepts. BYTES, from
+ * the NFA, never `pcrec_cwmin`/`pcrec_cwmax` (characters, §3.1's table). */
+void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
+{
+    *bmin = -1;
+    *bmax = -1;
+    if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
+        return;
+    Walk w;
+    wstart(cx, &w, nfa);
+    int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    long long last = -1;
+    for (long long j = 0;; j++) {
+        if (w.accept) {
+            if (*bmin < 0) *bmin = j;
+            last = j;
+        }
+        if (w.ncur == 0) { *bmax = last; return; }
+        if (j > nfa->n) { *bmax = PCREC_W_UNBOUNDED; return; }
+        wadvance(&w, next);
+    }
+}
+
+/* ---- [START-LANDING] THE ONE-CHARACTER FACT, Λ ----------------------------
+ *
+ * Fact `land_char` (E3, docs/design/start_landing.md §2.4): from the
+ * pattern's own anchored start, every one-character path ends DEAD or
+ * UNCONDITIONALLY ACCEPTING, no assertion is reached before that, and the
+ * pattern is not nullable. Under it the forward scan's LAST landing is the
+ * start today's reverse pass returns (the design's Theorem, §2.4; the guard
+ * for an ill-formed character at the landing is §2.5, the emitter's).
+ *
+ * The walk is EXACT, not a superset: Λ needs the successor set PER BYTE (a
+ * union frontier cannot isolate one path, the reason the k-set walk
+ * over-approximates), so it shares the iterator's closure step `wclose` and
+ * reads its two exact flags as declines where the other walks pass. "One
+ * character" is read off the encoding seam, never a UTF-8 literal: a
+ * frontier is MID-CHARACTER when every live consuming state admits only bytes
+ * `E.start_cls` does not admit (precondition P0, self-synchronization), and
+ * the walk continues one byte deeper. A mid-character frontier met again on
+ * the walk is a cycle, never one character, and declines (§2.4 Λ.3: the depth
+ * is bounded by the walk, never by a constant).
+ *
+ * Λ.2 (every first byte is a character start) is an ASSERTION, not a
+ * conjunct: on a non-nullable pattern K50's omission check
+ * (`cstart_check_omission`, src/ir/nfa.c) already refuses a compile with a
+ * first byte outside `start_cls`, over a superset closure, so a violation
+ * here is an internal error naming it, never a decline. */
+typedef struct {
+    Walk  w;
+    int  *seeds;          /* one byte's successors, `nfa->n` */
+    const unsigned char *scls;
+    /* the mid-character frontiers met, each a sorted state list: `done` is
+     * 0 while the walk below it runs (a re-entry is a cycle), 1 once it held */
+    int **memo, *mlen, nmemo, cap;
+    unsigned char *done;
+} LandWalk;
+
+static int land_cmp(const void *a, const void *b)
+{
+    int x = *(const int *)a, y = *(const int *)b;
+    return (x > y) - (x < y);
+}
+
+/* Does `cls` admit a byte the seam's `start_cls` admits (a character start)? */
+static bool land_starts(const uint8_t *cls, const unsigned char *scls)
+{
+    for (int b = 0; b < 256; b++)
+        if (cls_has(cls, (unsigned)b) && cls_has(scls, (unsigned)b)) return true;
+    return false;
+}
+
+static PfWhyCode land_char_from(Ctx *cx, LandWalk *L, const int *front, int nfront);
+
+/* One more byte of the character begun at the landing: the mid-character
+ * frontier `cur` (sorted, `n` states), memoized so a frontier is walked once
+ * and a re-entry is a cycle. */
+static PfWhyCode land_mid(Ctx *cx, LandWalk *L, const int *cur, int n)
+{
+    for (int k = 0; k < L->nmemo; k++)
+        if (L->mlen[k] == n && !memcmp(L->memo[k], cur, sizeof(int) * (size_t)n))
+            return L->done[k] ? PF_WHY_NONE : PF_WHY_ALIVE_NOT_ACCEPT;
+    if (L->nmemo == L->cap) {
+        int ncap = L->cap ? 2 * L->cap : 8;
+        int **m = pcrec_arena_alloc(&cx->arena, sizeof(int *) * (size_t)ncap);
+        int *ml = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)ncap);
+        unsigned char *d = pcrec_arena_alloc(&cx->arena, (size_t)ncap);
+        if (L->nmemo) {
+            memcpy(m, L->memo, sizeof(int *) * (size_t)L->nmemo);
+            memcpy(ml, L->mlen, sizeof(int) * (size_t)L->nmemo);
+            memcpy(d, L->done, (size_t)L->nmemo);
+        }
+        L->memo = m; L->mlen = ml; L->done = d; L->cap = ncap;
+    }
+    int k = L->nmemo++;
+    L->memo[k] = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)(n ? n : 1));
+    memcpy(L->memo[k], cur, sizeof(int) * (size_t)n);
+    L->mlen[k] = n;
+    L->done[k] = 0;
+    PfWhyCode why = land_char_from(cx, L, cur, n);
+    L->done[k] = why == PF_WHY_NONE;
+    return why;
+}
+
+/* Λ.3 from the frontier `front`: for each byte, the states it steps to,
+ * closed exactly. Accepting on an assertion-free path holds; an assertion
+ * declines; dead holds; alive is a whole character not yet accepted, or,
+ * under a multibyte encoding, a mid-character frontier walked one deeper. */
+static PfWhyCode land_char_from(Ctx *cx, LandWalk *L, const int *front, int nfront)
+{
+    const Nfa *nfa = L->w.nfa;
+    for (int b = 0; b < 256; b++) {
+        int ns = 0;
+        for (int i = 0; i < nfront; i++)
+            if (cls_has(nfa->st[front[i]].cls, (unsigned)b))
+                L->seeds[ns++] = nfa->st[front[i]].t1;
+        if (ns == 0) continue;                         /* dead on b */
+        wclose(&L->w, L->seeds, ns);
+        if (L->w.accept_free) continue;                /* unconditionally accepting */
+        if (L->w.asrt) return PF_WHY_ASSERT_AFTER;
+        if (L->w.ncur == 0) continue;                  /* dead */
+        if (!L->scls) return PF_WHY_ALIVE_NOT_ACCEPT;
+        for (int i = 0; i < L->w.ncur; i++)
+            if (land_starts(nfa->st[L->w.cur[i]].cls, L->scls))
+                return PF_WHY_ALIVE_NOT_ACCEPT;
+        /* mid-character: the walk's buffer is the next byte's scratch, so
+         * the frontier is copied and sorted (the memo's key) */
+        int n = L->w.ncur;
+        int *cur = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)n);
+        memcpy(cur, L->w.cur, sizeof(int) * (size_t)n);
+        qsort(cur, (size_t)n, sizeof(int), land_cmp);
+        PfWhyCode why = land_mid(cx, L, cur, n);
+        if (why != PF_WHY_NONE) return why;
+    }
+    return PF_WHY_NONE;
+}
+
+/* `PF_WHY_NONE` where Λ holds over `nfa` under encoding `e`, else the decline
+ * (Λ.1 `nullable` / `assert-at-start` / `dead-start`, Λ.3 `alive-not-accept`
+ * / `assert-after`). `*wide` is set where a first byte of the start closure
+ * lies above `e->onebyte_max`: the character at a landing may then not be
+ * one byte, and the invalid-tolerant contract owes §2.5's guard. */
+PfWhyCode pcrec_land_char(Ctx *cx, const Nfa *nfa, const PcrecEnc *e, bool *wide)
+{
+    *wide = false;
+    if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
+        return PF_WHY_DEAD_START;
+    LandWalk L;
+    memset(&L, 0, sizeof L);
+    L.scls = e->start_cls;
+    L.seeds = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    wstart(cx, &L.w, nfa);
+    if (L.w.accept_free) return PF_WHY_NULLABLE;
+    if (L.w.asrt) return PF_WHY_ASSERT_AT_START;
+    if (L.w.ncur == 0) return PF_WHY_DEAD_START;
+    int n = L.w.ncur;
+    int *start = pcrec_arena_alloc(&cx->arena, sizeof(int) * (size_t)n);
+    memcpy(start, L.w.cur, sizeof(int) * (size_t)n);
+    for (int i = 0; i < n; i++) {
+        const uint8_t *cls = nfa->st[start[i]].cls;
+        for (unsigned b = e->onebyte_max + 1; b < 256; b++)
+            if (cls_has(cls, b)) *wide = true;
+        /* Λ.2, ASSERTED (K50-NULLGATE's checked invariant). */
+        if (L.scls)
+            for (unsigned b = 0; b < 256; b++)
+                if (cls_has(cls, b) && !cls_has(L.scls, b))
+                    pcrec_ctx_fail(cx, 0, "internal error: [K50-NULLGATE] the "
+                                   "one-character fact met a first byte 0x%02x "
+                                   "this encoding does not admit as a character "
+                                   "start on a non-nullable pattern, which K50's "
+                                   "omission check refuses (start_landing.md "
+                                   "§2.4 Λ.2)", b);
+    }
+    return land_char_from(cx, &L, start, n);
 }

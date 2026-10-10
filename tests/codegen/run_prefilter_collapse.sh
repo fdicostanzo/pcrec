@@ -996,7 +996,11 @@ sel_witness overflowed-prefilter -fno-prefilter-collapse -- '(1{0,30}?[^]abc][^a
 # families ([OPT-5] STEP 2's period-k edge will shrink even the (?:[a-z][0-9])
 # shapes — when a natural witness reappears or the route truly empties, this
 # row is the tripwire either way.
-sel_witness size-cap-retry   -fno-scan-edge              -- '(a|b){1,30000}'
+# [START-LANDING] SL2 (abi 74, lane sltri): `-fno-start-landing` ADDED — the
+# witness takes RECOVER's `landing` row by default, drops the reverse machine
+# and fits at 672,758 B (a FIT mover); the masked deny restores the reverse
+# pass and the route.
+sel_witness size-cap-retry   -fno-scan-edge -fno-start-landing -- '(a|b){1,30000}'
 
 printf '\nprefilter-collapse: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

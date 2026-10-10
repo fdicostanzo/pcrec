@@ -160,11 +160,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 73
-#error "pcrec: this artifact (abi 73) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 74
+#error "pcrec: this artifact (abi 74) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 73
+#define PCREC_RX_ABI_H 74
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -447,17 +447,21 @@ all shared with PCRE2:
 <a id="s3-1-p20"></a>[3.1¶20] A pattern with no `\K` is unaffected. `\K` is module-gated (`assertions`) and
 forces the VM engine.
 
-<a id="s3-1-p21"></a>[3.1¶21] **A DFA search takes one of two forms, answer-identical and differing only in
-cost and size** (`<PREFIX>_DFA_START`, §6.3; `tuning.md` §2.19). The
-`"reverse-pass"` form runs a forward scan to find where the match ends and a
-backwards scan over a second machine to find where it began. Where the
-forward machine accepts before reading a byte (`a*`, `.*`, `[a-z]{0,4096}`
-and their family), the compiler proves the start is `startpos` and emits
-neither the backwards scan nor its machine: the `"pinned"` form. Both forms
-write absolute offsets (the pinned form writes `caps[0][0] = startpos`) and
-both keep the zero-length-match-is-a-success convention, on which the pinned
-form depends. The observable difference is cost — roughly a factor of two on
-a counted class run — and size. A pinned search at `startpos > 0` on a
+<a id="s3-1-p21"></a>[3.1¶21] **A DFA search takes one of four forms to recover the match start,
+answer-identical and differing only in cost and size** (`<PREFIX>_DFA_START`,
+§6.3; `tuning.md` §2.19, §2.47, §2.48). The `"reverse-pass"` form runs a
+forward scan to find where the match ends and a backwards scan over a second
+machine to find where it began. The other three emit neither the backwards
+scan nor its machine: where the forward machine accepts before reading a
+byte (`a*`, `.*`, `[a-z]{0,4096}` and their family), the start is `startpos`
+(`"pinned"`); where every match has the same byte width `W` (`abcd`,
+`[a-z]`), the start is the end minus `W` (`"end-minus-width"`); where one
+character from the start decides whether a match can go on (`\w+`, and under
+`-e utf8` `.` and `\p{L}+`), the start is where the forward scan's
+candidate-start skip last landed (`"landing"`). Every form writes absolute
+offsets and keeps the zero-length-match-is-a-success convention, on which the
+pinned form depends. The observable difference is cost — roughly a factor of
+two on a counted class run — and size. A pinned search at `startpos > 0` on a
 machine whose start state depends on the preceding byte (`\b`, `(?m)^`) can
 begin in a state from which nothing matches and returns `0`; the emitted
 artifact keeps that test and marks it load-bearing.
@@ -1207,7 +1211,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `73` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `74` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1231,7 +1235,7 @@ compile time, where one exists.
 | 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"` / `"nomatch"`; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
 | 23 | `name` | `const char *` | the artifact's own name; never `NULL` ([name](#s6-p12)) | — |
 | 24 | `nentries` | `int` | rows in `groups[]`, all of them (§5.4, §5.5) | — |
-| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"reverse-pass"` / `"attempt-start"`; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
+| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"end-minus-width"` / `"landing"` / `"reverse-pass"` / `"attempt-start"`; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
 | 26 | `vars` | `const char *const *` | the variable NAMES the pattern mentions, in first-mention order; `NULL` when none (`docs/spec/vars.md`) | — |
 | 27 | `nvars` | `int` | entries in `vars[]` | `<PREFIX>_NVARS` (var-bearing artifacts) |
 | 28 | `findings` | `const char *` | which findings each query the compile asked was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
@@ -1344,7 +1348,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `73` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `74` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1740,13 +1744,15 @@ reads:
 | `"kit"` | at `--tune=-2`/`-1` only: every edge's class takes a `static inline` kit matcher `<prefix>_<machine>_scankit<N>`, smaller than its 256-byte table (`tuning.md` §2.33). Never at `0`/`+1`/`+2`, never under `-fno-cls-kit` |
 | `"mixed"` | the artifact's edges took more than one form; the choice is per edge, and a machine may carry up to four |
 
-<a id="s6-3-4-p11"></a>[6.3.4¶11] **`<PREFIX>_DFA_START`** — which of two forms the search entry takes to
+<a id="s6-3-4-p11"></a>[6.3.4¶11] **`<PREFIX>_DFA_START`** — which form the search entry takes to
 recover the match START (§3.1); mirrored by `rx_info.search_form`. Its scope is
 the DFA-scan scope, not `_DFA_MATCH`'s.
 
 ```c
-#define RX_DFA_START "pinned"         /* the start is search_from, by compile-time proof */
-#define RX_DFA_START "reverse-pass"   /* a second, backwards scan finds it */
+#define RX_DFA_START "pinned"           /* the start is search_from, by compile-time proof */
+#define RX_DFA_START "end-minus-width"  /* every match is W bytes: the end minus W */
+#define RX_DFA_START "landing"          /* where the candidate-start skip last landed */
+#define RX_DFA_START "reverse-pass"     /* a second, backwards scan finds it */
 #define RX_DFA_START "attempt-start"  /* no start recovery: an attempt began there */
 ```
 
@@ -1754,11 +1760,13 @@ the DFA-scan scope, not `_DFA_MATCH`'s.
 | value | mechanism |
 |---|---|
 | `"pinned"` | the forward machine's start state accepts unconditionally — at every position, under every view, in every class context — so every accept the forward loop records belongs to a thread that began at `search_from`, and the post-loop block writes that offset. The artifact carries NO reverse machine: no transition, accept or byte-class table, no stay or scan-edge tables, no `<prefix>_reverse_*` accessors, no reverse loop |
-| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact whose start state does not accept, or accepts depending on the position or the upcoming byte, or seeds into a state that may be dead, and any such build under `-fno-start-pinned` |
+| `"end-minus-width"` | every match of the pattern has the same byte width `W` (the `width` fact, `facts_listing.md` §4.1.2¶7b), so the start is the verified end minus `W`. The artifact carries NO reverse machine. Not on a `"rev-end"` scan, whose ends are speculative (`tuning.md` §2.47) |
+| `"landing"` | every one-character path from the pattern's start ends dead or accepting (the `land_char` fact, `facts_listing.md` §4.1.2¶7a), so the start is the position the forward scan's candidate-start skip last landed on, stepped forward to the first character start where the character there does not decode (§9). The artifact carries NO reverse machine (`tuning.md` §2.48) |
+| `"reverse-pass"` | the artifact walks its reverse machine backwards from the match end to the furthest-back accepting position. Every `"unanchored"` artifact the three rows above decline (in particular every one whose start state does not accept and whose matches neither have one width nor end one character after their start), every `"rev-end"` artifact, and any such build under the deny flags |
 | `"attempt-start"` | the search recovers no start: its scan is `"attempt"` (each attempt begins at a known position, and a match is reported from the attempt that found it) or `"empty"` (nothing matches). No reverse pass runs (§6.3.1¶5a) |
 
-<a id="s6-3-4-p12"></a>[6.3.4¶12] The two are answer-identical (`docs/design/opt5_step2_twopass.md` is the
-proof; `tuning.md` §2.19 the axis).
+<a id="s6-3-4-p12"></a>[6.3.4¶12] The four forms are answer-identical (`docs/design/opt5_step2_twopass.md` and
+`docs/design/start_landing.md` are the proofs; `tuning.md` §2.19 the axis).
 
 <a id="s6-3-4-p13"></a>[6.3.4¶13] **`<PREFIX>_DFA_MATCH`** — which of §3.2's two forms the artifact's
 `<prefix>_match` and `<prefix>_match_caps` take; mirrored by

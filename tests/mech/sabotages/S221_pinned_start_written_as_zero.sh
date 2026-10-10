@@ -53,6 +53,10 @@ SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pat
 SAB_REACH_EXPECT="REACH-PINNED-WRITES-SEARCH-FROM"
 SAB_REACH_POP="tests/base/start_pinned_startpos.rxt|^(ms|ns) |50"
 SAB_COUNT=1
-SAB_BEFORE='            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)search_from; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"'
-SAB_AFTER='            /* SABOTAGE S221: the absolute-offset trap. */
-            "    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)0; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"'
+# RE-AIMED 2026-10-10 (lane slbuild, [START-LANDING] SL2): every success
+# site of a DFA search body is written by ONE emitter, emit_search_success,
+# so the pinned row's start write is now its call's start argument; the
+# plant writes the literal 0 there, the same trap one level up. Same
+# detector, same reach probe (the emitted text is unchanged).
+SAB_BEFORE='        emit_search_success(cx, c, "search_from", "last_accept_position", "    ");'
+SAB_AFTER='        emit_search_success(cx, c, "0", "last_accept_position", "    ");   /* SABOTAGE S221: the absolute-offset trap. */'
