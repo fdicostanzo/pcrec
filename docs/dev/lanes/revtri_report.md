@@ -93,10 +93,26 @@ Each red section was re-run in this worktree with the fix:
 - Full `make test` once after the revbuild chain's `CHAIN COMPLETE`: the
   verdict is in §3.2.
 
-### 3.1 Section re-runs
+### 3.1 Section re-runs (this worktree, the commits above)
 
-(filled below)
+| section | before (revbuild chain) | after |
+|---|---|---|
+| test-lookaround | red (expansion diff 5/17) | rc 0 (expansion diff 11/0) |
+| test-assertions | red (oracle 13,115 agree / 5 disagree) | rc 0 (all sub-scripts 0 failed, 54/0 run_assertions_tests) |
+| test-premul-table | red (144 failed) | rc 0, 16/0 |
+| test-encoding-checks | red (10/3) | rc 0, 11/0 |
+| test-cand-oracle | red (80/2) | rc 0, 84/0 |
+
+Logs: `worktrees/revtri/build/tri/<section>.2.log` (`test-cand-oracle.log`
+for the last row, which already ran with the witness edit in place).
 
 ### 3.2 Full make test
 
-(filled below)
+OWED at hand-off. The brief allows it only after revbuild's chain prints
+`CHAIN COMPLETE`, and its `make test-axes` was still running when this lane
+finished. It is armed detached: `worktrees/revtri/build/land/waiter.sh`
+polls `worktrees/revbuild/build/land/landing.log` for `CHAIN COMPLETE`, then
+runs `scripts/perfrun --label revtri -- build/land/test.log`. One status line
+per step goes to `worktrees/revtri/build/land/landing.log`, ending
+`REVTRI CHAIN COMPLETE`. The verdict is in `build/land/test.log`:
+`grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`, which should be empty.
