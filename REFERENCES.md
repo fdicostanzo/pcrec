@@ -126,6 +126,21 @@ URL: <https://ccache.dev/manual/latest.html>.
 Accessed 2026-09-30.
 Cited by: `docs/design/artifact_manager.md` §8.
 
+### [Cam14+] Cameron, R. D., Shermer, T. C., Shriraman, A., Herdy, K. S., Lin, D., Hull, B. R., Lin, M. (2014)
+
+Robert D. Cameron, Thomas C. Shermer, Arrvindh Shriraman, Kenneth S. Herdy,
+Dan Lin, Benjamin R. Hull, Meng Lin — "Bitwise Data Parallelism in Regular
+Expression Matching", *PACT '14* (23rd International Conference on Parallel
+Architectures and Compilation), Edmonton, pp. 139-150 (2014). The Parabix
+bitstream method (later icgrep): one bit per subject position per stream,
+Advance = shift with carry, and `MatchStar(M, C) = (((M ∧ C) + C) ⊕ C) ∨ M`
+(addition propagates through character-class repetitions). Title, authors,
+pages, DOI and the MatchStar formula were read from the PDF on 2026-10-10.
+DOI/URL: <https://doi.org/10.1145/2628071.2628079>;
+PDF <https://www2.cs.sfu.ca/~ashriram/papers/2014_PACT_GREP.pdf>.
+Accessed 2026-10-10.
+Cited by: `docs/dev/plan.md` [SPAN-ISEL].
+
 ### [CC04] Champarnaud, J-M. & Coulon, F. (2004)
 
 Jean-Marc Champarnaud, Fabien Coulon — "NFA reduction algorithms by means of
