@@ -99,31 +99,27 @@ contents block).
   §1. Cite by number (`table_contract.md §2¶4`). History:
   `docs/dev/history/table_contract_record.md`.
 
-- `facts_listing.md` — **[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8).**
-  `--emit-facts`' output format: its two `#section` blocks (`facts`,
-  `decisions`) and their columns, the CLOSED `status` (`derived`/`denied`/
-  `declined`/`absent`) and `used` vocabularies, the `why` token grammar
-  (`deny:<flag>`/`decline:<reason>`/`rate:<source>`), the three guarantees
-  (never refuses a compile that succeeded; never changes the compile; one
-  spelling per value, shared with the fact-valued stamps), and what is NOT
-  promised (fact names, reason names, prose). A DEBUG listing with
-  `ir_listing.md`'s status — no `abi` number. The per-flag "Facts emptied"
-  lines it points at live in `tuning.md` §2.25-§2.28 and are what
-  `tests/codegen/run_facts_checks.sh` checks the listing against.
+- `facts_listing.md` — `--emit-facts`' output format, FACTS ONLY and numbered
+  (rewritten by lane specsmall): §1 what the listing is (a debug listing, reads
+  the record and never recomputes it), §2 the query, §3 framing, §4 the two
+  `#section` blocks (§4.1 `facts` with its CLOSED `status` and `used`
+  vocabularies, the `value` spellings at §4.1.2 and the `why` token grammar at
+  §4.1.3; §4.2 `decisions`), §5 the three guarantees, §6 what is NOT promised.
+  The per-flag "Facts emptied" lines it points at live in `tuning.md` §2 and
+  are what `tests/codegen/run_facts_checks.sh` checks the listing against.
+  Cite by number (`facts_listing.md §4.1.3`). History:
+  `docs/dev/history/facts_listing_record.md`.
 
-- `ir_listing.md` — **[DD-8], 2026-09-19.** `--emit-ir`'s output format:
-  its nine `#section` blocks (`summary`, `slots`, `rungs`, `strategies`,
-  `pruning`, `program`, `choicepoints`, `islands`, `callouts`) and their
-  columns, the `prefilter` value vocabulary and the `program` `op`
-  vocabulary, the multi-valued-cell and escaping rules, and the three
-  things the listing is NOT — not an IR anything consumes, not lossless
-  (lossy on operands, by ruling), not a DFA listing. Sits UNDER
-  `table_contract.md` (it conforms to it and adds only what is specific
-  to this listing) and beside `cli.md` §2 (the flag's reference entry).
-  The producer-side rule that an empty population is a ROW rather than a
-  comment lives here, because it follows from the table contract's own
-  header rule rather than from taste. Read it before changing anything
-  `vm_render_listing` prints.
+- `ir_listing.md` — `--emit-ir`'s output format, FACTS ONLY and numbered
+  (rewritten by lane specsmall): §1 what the listing is (a debug listing,
+  VM-only, derived from the emitter's own walk), §2 framing, §3 the nine
+  `#section` blocks (§3.1 `summary` with the `prefilter` token vocabulary at
+  §3.1.1 and `prune-ceiling` at §3.1.2; §3.2 `slots`; §3.3 `rungs`/`strategies`/
+  `pruning`; §3.4 `program` and its `op` vocabulary; §3.5 `choicepoints`; §3.6
+  `islands`; §3.7 `callouts`), §4 consuming it. Sits under `table_contract.md`
+  and beside `cli.md` §2. Read it before changing anything `vm_render_listing`
+  prints. Cite by number (`ir_listing.md §3.1.1`). History:
+  `docs/dev/history/ir_listing_record.md`.
 
 - `limits.md` — the resource-bound contract, FACTS ONLY and numbered (rewritten
   by lane speclim): §1 the guarantee (a give-up is never a false answer), §2 the
@@ -212,15 +208,14 @@ contents block).
   literal from §6¶8, so that paragraph keeps its form (see it). History:
   `docs/dev/history/registry_record.md`.
 
-- `findings.md` — **[FINDINGS] B1, 2026-09-27 (D122/D123/D126).** The
-  findings contract: the terms, the `freq` kind and its row grammar, the
-  closed query/derivation vocabularies, the `unigram` normalization with its
-  test vectors, the per-question-KIND NONE answers and each reader's kind and
-  guarantee, the `<PREFIX>_FINDINGS` stamp grammar with the digest's byte
-  layout and the name-disclosure statement, and the shipped default and store.
-  It grows by step (resolution and the CLI at B2, the analyzer at B3/B6,
-  `run-rarity` at B4, `cpfreq` at B5), and says at each section what is not
-  built yet.
+- `findings.md` — the findings contract, FACTS ONLY and numbered (rewritten by
+  lane specsmall): §1 terms, §2 the data (`freq`, `cpfreq`; `bigram` is
+  vocabulary only), §3 the `unigram` normalization with its test vectors, §3a
+  the `encode-utf8`/`encode-latin1` derivations, §4 the per-question-KIND NONE
+  answers and each reader, §5 the `<PREFIX>_FINDINGS` stamp and its digest, §6
+  the shipped analyses and the store, §7 resolution of a name, §8 the two
+  listings, §9 the `pcrec_options` fields. Cite by number (`findings.md §4`).
+  History: `docs/dev/history/findings_record.md`.
 - `vars.md` — **module `vars`' caller-observable contract** ([VAR], 2026-09-23):
   `${name}` in a pattern, whose bytes the caller supplies per call. The
   spelling and its five bash-shaped operators, the `rx_var` type and the
