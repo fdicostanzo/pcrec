@@ -30,7 +30,8 @@ number here is SCRATCH TIER (one Linux dev box, one pinned core).
 - `build.sh` — emits and builds the three cells (ipv6, kvq, sfx64).
 - `gen_adv.py` — 400 adversarial subjects per cell (landmark edges).
 - `ident.sh` — o vs t vs p2 over bench short + throughput + adversarial
-  subjects; `ident.txt` is its output.
+  subjects; `ident.txt` is its output. `plant_lo0.txt` is the failing-direction
+  control (`twin.c -DET_PLANT_LO0`, the `lo0` mutant) against today's artifact.
 - `time.sh` — the pinned-core interleaved timing; `times.tsv` its raw
   output, `summarize.py` / `times_summary.txt` the per-cell reading.
 

@@ -1,0 +1,37 @@
+cell	regime	subject	n_o_ns	t_ns	t/o	cnt_o	cnt_t
+ipv6	throughput	t-016k-fail.bin	12541.3	5040.1	0.402	cnt=0	cnt=0
+ipv6	throughput	t-016k-hit.bin	12032.9	4978.4	0.414	cnt=3	cnt=3
+ipv6	throughput	t-016k-syslog.bin	11678.7	5394.7	0.462	cnt=0	cnt=0
+ipv6	throughput	t-064k-fail.bin	49522.0	19937.2	0.403	cnt=0	cnt=0
+ipv6	throughput	t-064k-hit.bin	48601.7	19601.5	0.403	cnt=12	cnt=12
+ipv6	throughput	t-064k-syslog.bin	46375.7	21721.8	0.468	cnt=0	cnt=0
+ipv6	throughput	t-1024k-fail.bin	1001690.2	430674.3	0.430	cnt=0	cnt=0
+ipv6	throughput	t-1024k-hit.bin	1004933.6	405097.3	0.403	cnt=193	cnt=193
+ipv6	throughput	t-1024k-syslog.bin	1005563.7	357016.5	0.355	cnt=0	cnt=0
+ipv6	throughput	t-256k-fail.bin	232094.3	92062.2	0.397	cnt=0	cnt=0
+ipv6	throughput	t-256k-hit.bin	237906.6	86720.9	0.365	cnt=48	cnt=48
+ipv6	throughput	t-256k-syslog.bin	237025.8	87992.1	0.371	cnt=0	cnt=0
+kvq	throughput	t-016k-fail.bin	152.8	152.7	0.999	cnt=0	cnt=0
+kvq	throughput	t-016k-hit.bin	804.1	710.4	0.883	cnt=6	cnt=6
+kvq	throughput	t-016k-syslog.bin	87.8	88.1	1.003	cnt=0	cnt=0
+kvq	throughput	t-064k-fail.bin	723.3	723.7	1.001	cnt=0	cnt=0
+kvq	throughput	t-064k-hit.bin	3226.7	2861.7	0.887	cnt=24	cnt=24
+kvq	throughput	t-064k-syslog.bin	406.9	408.2	1.003	cnt=0	cnt=0
+kvq	throughput	t-1024k-fail.bin	12856.9	12816.0	0.997	cnt=0	cnt=0
+kvq	throughput	t-1024k-hit.bin	52492.8	46195.4	0.880	cnt=386	cnt=386
+kvq	throughput	t-1024k-syslog.bin	7630.4	7626.6	1.000	cnt=0	cnt=0
+kvq	throughput	t-256k-fail.bin	2927.2	2919.6	0.997	cnt=0	cnt=0
+kvq	throughput	t-256k-hit.bin	12667.1	11176.0	0.882	cnt=96	cnt=96
+kvq	throughput	t-256k-syslog.bin	1572.4	1575.6	1.002	cnt=0	cnt=0
+sfx64	throughput	t-128k-clean.bin	232500.6	15099.1	0.065	cnt=0	cnt=0
+sfx64	throughput	t-128k-dense.bin	229149.5	17841.9	0.078	cnt=64	cnt=64
+sfx64	throughput	t-128k-sparse.bin	128775.5	15346.7	0.119	cnt=1	cnt=1
+sfx64	throughput	t-512k-sparse.bin	1028695.5	60733.6	0.059	cnt=4	cnt=4
+
+cell	regime	sum_o_ns	sum_t_ns	t/o	worst_subject_ratio
+ipv6	search_short	120359	49172	0.409	0.549 s-006.bin
+ipv6	throughput	3899966	1536237	0.394	0.468 t-064k-syslog.bin
+kvq	search_short	4411	4277	0.970	1.065 s-006.bin
+kvq	throughput	95548	87254	0.913	1.003 t-016k-syslog.bin
+sfx64	search_short	1158	1161	1.003	1.036 l-cnt2.bin
+sfx64	throughput	1619121	109021	0.067	0.119 t-128k-sparse.bin

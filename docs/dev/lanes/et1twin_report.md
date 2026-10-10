@@ -11,7 +11,25 @@ the top K12 cells, counted after G2.
 
 ## 0. Answers first
 
-@@ANSWERS@@
+1. **Recount.** walk_survey's instrument re-run at main `c87d20af`: every K12 cell's `m_gap`
+   is unchanged by [OPT-REVEND] and [START-LANDING] (total 15.786 ms, survey 15.8). Under
+   G2 as `where_to_start.md` §2.4 states it, **5.84 ms survives, and 5.83 ms of it is
+   one pattern, `loglines/ipv6`**. altwide/sfx-64/256/512 (5.82 ms) fail the formula but
+   pass a factor-free refinement (no string of `P` contains `L`; `L` border-free) that is
+   the exact form of §2.2 step 2's own argument. `\S+@\S+` and email fail every arm; two
+   VM hybrids fail G1; eight cells are `^`-anchored. §1.
+2. **Twins.** ipv6, sfx-64 and kv-quoted, each built around its UNMODIFIED artifact plus
+   pcrec's own `(?:P·L)\z` artifact, which [OPT-REVEND] compiles to exactly the reverse
+   walk rev-inner needs. Answer-identical three ways (today, twin, libpcre2 10.46) over
+   1,492 subjects, every startpos; a planted `lo0` mutant is caught. §2.
+3. **Timing (scratch).** ipv6 **−60.6%** throughput / **−59.1%** search_short, every
+   subject; sfx-64 **−93.3%** throughput, search_short flat with a +1 ns entry term;
+   kv-quoted −8.7% / −3.0% over its existing K82 window. §2.4.
+4. **Verdict: stage 1 FIRES (partial)** on ipv6, conditional on reading the split per
+   top-level branch (Q2); sfx-* joins if the factor-free G2 arm is admitted (Q1). §3.
+5. **The build** is one LOCATE row `rev-inner` on `CR_DFA` (locate_finish §4.6 supersedes
+   FIRST `handoff-rev`), whose reverse walk is REVEND's parameterized reverse block over
+   `P·L` seeded at `j + |L|`. §4.
 
 ## 1. Step A — the recount
 
@@ -168,11 +186,60 @@ differs.
 
 ### 2.4 Timing (`times.tsv`, `times_summary.txt`)
 
-@@TIMING@@
+`time.sh`, SCRATCH TIER: Linux dev box (7700X, gcc 15.2 `-O2`), `taskset -c 7`, box
+quiet (load1 0.60 at start, 1.07 at end), today (`o`) and twin (`t`) interleaved per
+subject, 3 rounds; each reading is the median of 7 batches of ≥ 40 ms; the table takes
+the median over rounds. `throughput` = one whole find-all pass over the subject (the
+bench's loop); `search_short` = one `rx_search` from 0 per short subject the regime
+admits (≤ 4096 B loglines, ≤ 512 B altwide). Sums are over the regime's subjects. Every
+twin count equals today's on every line. Round-to-round spread of today's reading: median
+0.3% / max 1.1% (ipv6 short), 1.1% / 14.7% (kv-quoted short, ~35-75 ns calls), 0.0% /
+4.4% (sfx-64 short).
+
+| cell | regime | today Σ ns | twin Σ ns | twin/today | per subject |
+|---|---|---|---|---|---|
+| loglines/ipv6 | throughput (12 subj.) | 3,899,966 | 1,536,237 | **0.394** | 0.355-0.468, every subject |
+| loglines/ipv6 | search_short (112) | 120,359 | 49,172 | **0.409** | all 112 faster, 0.37-0.55 (−95..−1,690 ns/call) |
+| altwide/sfx-64 | throughput (4) | 1,619,121 | 109,021 | **0.067** | 0.059-0.119 (512k-sparse 1.03 ms → 61 µs) |
+| altwide/sfx-64 | search_short (40) | 1,158 | 1,161 | 1.003 | 20 cells +~1.0 ns/call (+2-4%), 4 faster (−0.7..−6.3 ns) |
+| loglines/kv-quoted | throughput (12) | 95,548 | 87,254 | **0.913** | hit subjects 0.88; fail/syslog 1.00 (no `="` → both stop at the pre-check) |
+| loglines/kv-quoted | search_short (112) | 4,411 | 4,277 | 0.970 | 10 faster beyond 2%, 12 slower (+1.5..+2.4 ns on 35-48 ns calls) |
+
+Per-subject throughput table: `times_summary.txt`.
+
+Reading:
+
+- **ipv6**: the forward DFA steps ~0.97 ns/B over syslog text full of `':'`-free bytes
+  between the timestamps; the twin pays one `memchr(':')` per gap and a ≤ 4-byte reverse
+  walk + a ≤ 40-byte anchored verify per `':'` (each `HH:MM:SS` colon is a non-empty
+  `starts` whose verify fails), and still lands at 0.34-0.41 ns/B. The fail subjects win
+  as much as the hit subjects: the gain is the walk K12 counted, not the hits.
+- **sfx-64**: today's K82 handoff scans `ing` ONCE, starts the unanchored DFA at `c − 9`
+  and then never returns to the scan, so on prose containing `-ing` words that are not
+  pattern words the forward DFA walks the rest of the subject at ~1.8-2.0 ns/B (its start
+  set is 25 letters). The twin stays on the `ing` scan. The cell's cost is the K82
+  handoff being single-shot: it hands the body one window and never re-enters the scan.
+- **sfx-64 search_short**: a +1 ns per-call entry term on half the 28-42 ns calls (the
+  twin's extra call layer and the reverse walk's setup when the first `ing` is the match);
+  the same shape as K90's hat entry term. A build that inlines the walk should be re-timed
+  on these cells.
+- **kv-quoted**: EXACT over the K82 WINDOW (`c − 32`) buys 12% on hit subjects; the cell
+  was already a scan, so this is the ceiling of what rev-inner adds where a bounded
+  handoff exists.
 
 ## 3. TRIGGER VERDICT
 
-@@VERDICT@@
+| cell | verdict | why |
+|---|---|---|
+| loglines/ipv6 | **FIRES** | formal G2 holds (`':' ∉ [0-9a-f]`); answer-identical (0 / 275,231 searches vs today and 10.46); −60.6% throughput, −59.1% search_short, every subject. **Precondition: Q2** (the split read per top-level branch) — without it ipv6 is not a P·L·S split and the stage-1 population is empty. |
+| altwide/sfx-64 | **FIRES CONDITIONALLY** | the largest win measured (−93.3% throughput) and answer-identical, but formal G2 FAILS; it is admitted only by the factor-free arm (**Q1**). search_short flat (+1 ns entry term on half the calls). sfx-256/512 share the shape (est. 3.56 ms more), not twinned. |
+| loglines/kv-quoted | **DOES NOT FIRE alone** | −8.7% throughput / −3.0% short over today's K82 window; its K12 population is 8.5 µs. It rides on the row if built, as a control for EXACT over WINDOW. |
+
+**Stage 1 trigger: FIRES (partial)** — on `loglines/ipv6`, the one surviving cell of
+consequence (5.83 ms of the recounted 5.84 ms formal-G2 population), with Q2 as a
+precondition of the build; altwide's 5.82 ms joins on a yes to Q1. The remaining K12
+population (cls-s-uc, email, the VM hybrids, the anchored cells; 4.13 ms) is not stage 1's
+under any arm on file.
 
 ## 4. What stage 1's build is if it fires
 
