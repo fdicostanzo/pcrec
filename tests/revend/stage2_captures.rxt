@@ -1,0 +1,1675 @@
+# See the header comment of tests/revend/stage2_captures.rxt (written by hand
+# above this generated body by gen_stage2.py's caller).
+
+# A: `$` before a final newline: the match ends at n-1, never n (the 'a' run cannot cross the newline)
+# pcre2-only
+pattern (a+)$
+m "aa" 0 2
+g 1 0 2
+m "aa\n" 0 2
+g 1 0 2
+n "aa\n\n"
+m "a\na" 2 3
+g 1 2 3
+m "a\na\n" 2 3
+g 1 2 3
+n "\n"
+n ""
+n "b\n"
+
+# A: `\Z` with an EMPTY-able group: n-1 hit, then the empty tail past a second newline
+# pcre2-only
+pattern (a*)\Z
+features assertions
+m "aa" 0 2
+g 1 0 2
+m "aa\n" 0 2
+g 1 0 2
+m "aa\n\n" 3 3
+g 1 3 3
+m "" 0 0
+g 1 0 0
+m "\n" 0 0
+g 1 0 0
+m "\n\n" 1 1
+g 1 1 1
+m "ab\n" 2 2
+g 1 2 2
+
+# A: `\z` is n only: the same subjects as the `\Z` block, different answers
+# pcre2-only
+pattern (a*)\z
+features assertions
+m "aa" 0 2
+g 1 0 2
+m "aa\n" 3 3
+g 1 3 3
+m "aa\n\n" 4 4
+g 1 4 4
+m "" 0 0
+g 1 0 0
+m "\n" 1 1
+g 1 1 1
+m "\n\n" 2 2
+g 1 2 2
+
+# A: a group that CAN take the final newline: greedy takes it, `$` accepts n
+# pcre2-only
+pattern (\n?)$
+m "" 0 0
+g 1 0 0
+m "\n" 0 1
+g 1 0 1
+m "a" 1 1
+g 1 1 1
+m "a\n" 1 2
+g 1 1 2
+m "a\n\n" 1 2
+g 1 1 2
+m "\n\n" 0 1
+g 1 0 1
+
+# A: lazy newline group: prefers the n-1 end, falls to n only when it must
+# pcre2-only
+pattern (\n??)$
+m "" 0 0
+g 1 0 0
+m "\n" 0 0
+g 1 0 0
+m "a\n" 1 1
+g 1 1 1
+m "a\n\n" 1 2
+g 1 1 2
+
+# A: dot cannot take the newline: n-1 end; an inner newline moves the start
+# pcre2-only
+pattern (.*)$
+m "ab" 0 2
+g 1 0 2
+m "ab\n" 0 2
+g 1 0 2
+m "ab\n\n" 3 3
+g 1 3 3
+m "a\nb" 2 3
+g 1 2 3
+m "a\nb\n" 2 3
+g 1 2 3
+m "\n" 0 0
+g 1 0 0
+m "" 0 0
+g 1 0 0
+
+# A: lazy dot to `$`: shortest group that reaches an accepted end
+# pcre2-only
+pattern (.*?)$
+m "ab" 0 2
+g 1 0 2
+m "ab\n" 0 2
+g 1 0 2
+m "a\nb\n" 2 3
+g 1 2 3
+m "\n" 0 0
+g 1 0 0
+
+# A: alternation PRIORITY between ends: the n-1 arm first, so the shorter end wins
+# pcre2-only
+pattern (a|a\n)$
+m "a\n" 0 1
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+m "a\n\n" 0 2
+g 1 0 2
+m "ba\n" 1 2
+g 1 1 2
+
+# A: the n arm first: it wins whenever it can (leftmost-first, not longest or shortest)
+# pcre2-only
+pattern (a\n|a)$
+m "a\n" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+m "a\n\n" 0 2
+g 1 0 2
+m "ba\n" 1 3
+g 1 1 3
+
+# A: greedy optional newline: n over n-1
+# pcre2-only
+pattern (a\n?)$
+m "a\n" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+m "a\n\n" 0 2
+g 1 0 2
+
+# A: lazy optional newline: n-1 over n
+# pcre2-only
+pattern (a\n??)$
+m "a\n" 0 1
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+m "a\n\n" 0 2
+g 1 0 2
+
+# A: `\z` after an optional newline: only n is accepted, so the newline MUST be taken
+# pcre2-only
+pattern (a)\n?\z
+features assertions
+m "a\n" 0 2
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+n "a\n\n"
+n "a\nb"
+
+# A: `\Z` after an optional newline: both ends accepted, greedy takes n
+# pcre2-only
+pattern (a)\n?\Z
+features assertions
+m "a\n" 0 2
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+m "a\n\n" 0 2
+g 1 0 1
+
+# A: whitespace group and `\Z`: the group may swallow the final newline
+# pcre2-only
+pattern (\s*)\Z
+features assertions,classes
+m "ab \n" 2 4
+g 1 2 4
+m "ab \n\n" 2 5
+g 1 2 5
+m "ab" 2 2
+g 1 2 2
+m "  " 0 2
+g 1 0 2
+m " \n" 0 2
+g 1 0 2
+m "\n \n" 0 3
+g 1 0 3
+
+# A/I (census shape): trailing blanks; `$` n-1 vs n with \s taking the newline
+# pcre2-only
+pattern (\s+)$
+m "a  " 1 3
+g 1 1 3
+m "a \n" 1 3
+g 1 1 3
+m "a \n " 1 4
+g 1 1 4
+m "   " 0 3
+g 1 0 3
+m "\n" 0 1
+g 1 0 1
+n "a"
+n "a b"
+m "a\t\n\n" 1 4
+g 1 1 4
+
+# I (census shape): `\z` with a blank run; the newline is part of the run
+# pcre2-only
+pattern (\s+)\z
+features assertions,classes
+m "a  " 1 3
+g 1 1 3
+m "a \n" 1 3
+g 1 1 3
+m "a \n " 1 4
+g 1 1 4
+m "\n" 0 1
+g 1 0 1
+n "a"
+
+# B: greedy group must give back one 'a' for the literal tail
+# pcre2-only
+pattern (a*)ab$
+m "aaab" 0 4
+g 1 0 2
+m "ab" 0 2
+g 1 0 0
+n "b"
+m "aab\n" 0 3
+g 1 0 1
+n "aaabx"
+m "xaab" 1 4
+g 1 1 2
+n "a"
+
+# B: lazy group: the leftmost START, then the shortest group; still must reach the end
+# pcre2-only
+pattern (a*?)ab$
+m "aaab" 0 4
+g 1 0 2
+m "ab" 0 2
+g 1 0 0
+m "aab\n" 0 3
+g 1 0 1
+m "xab" 1 3
+g 1 1 1
+
+# B: two adjacent groups share a run: the first is greedy, the second gets nothing
+# pcre2-only
+pattern (a+)(a?)$
+m "aaa" 0 3
+g 1 0 3
+g 2 3 3
+m "a" 0 1
+g 1 0 1
+g 2 1 1
+m "aaa\n" 0 3
+g 1 0 3
+g 2 3 3
+m "baa" 1 3
+g 1 1 3
+g 2 3 3
+n ""
+
+# B: greedy-greedy: group 2 is empty at the end
+# pcre2-only
+pattern (a*)(a*)$
+m "aab" 3 3
+g 1 3 3
+g 2 3 3
+m "baa" 1 3
+g 1 1 3
+g 2 3 3
+m "aa\n" 0 2
+g 1 0 2
+g 2 2 2
+m "" 0 0
+g 1 0 0
+g 2 0 0
+
+# B: alternation placement depends on the remainder: 'a'+'bcd' not 'ab'+'c'
+# pcre2-only
+pattern (a|ab)(c|bcd)$
+m "abcd" 0 4
+g 1 0 1
+g 2 1 4
+m "abc" 0 3
+g 1 0 2
+g 2 2 3
+m "abcd\n" 0 4
+g 1 0 1
+g 2 1 4
+m "xabcd" 1 5
+g 1 1 2
+g 2 2 5
+n "abcde"
+
+# B: three groups, remainder-dependent split
+# pcre2-only
+pattern (a|ab)(c|bcd)(d*)$
+m "abcd" 0 4
+g 1 0 1
+g 2 1 4
+g 3 4 4
+m "abcdd" 0 5
+g 1 0 1
+g 2 1 4
+g 3 4 5
+m "abc" 0 3
+g 1 0 2
+g 2 2 3
+g 3 3 3
+m "abcd\n" 0 4
+g 1 0 1
+g 2 1 4
+g 3 4 4
+
+# B: greedy digits give one back to the final digit group
+# pcre2-only
+pattern (\d+)(\d)$
+m "123" 0 3
+g 1 0 2
+g 2 2 3
+n "1"
+m "12" 0 2
+g 1 0 1
+g 2 1 2
+m "ab123\n" 2 5
+g 1 2 4
+g 2 4 5
+n "123a"
+
+# B: lazy then greedy: group 1 is as short as the digit tail allows
+# pcre2-only
+pattern (.+?)(\d+)$
+m "abc123" 0 6
+g 1 0 3
+g 2 3 6
+m "a1b22" 0 5
+g 1 0 3
+g 2 3 5
+m "a1" 0 2
+g 1 0 1
+g 2 1 2
+m "12" 0 2
+g 1 0 1
+g 2 1 2
+n "abc"
+m "ab12\n" 0 4
+g 1 0 2
+g 2 2 4
+
+# B: greedy dot then digit: group 1 takes all but the last digit
+# pcre2-only
+pattern (.*)(\d)$
+m "abc123" 0 6
+g 1 0 5
+g 2 5 6
+m "5" 0 1
+g 1 0 0
+g 2 0 1
+m "a5\n" 0 2
+g 1 0 1
+g 2 1 2
+n "abc"
+
+# B: the second group may be empty at the end
+# pcre2-only
+pattern ([a-z]+)([0-9]*)$
+m "abc123" 0 6
+g 1 0 3
+g 2 3 6
+m "abc" 0 3
+g 1 0 3
+g 2 3 3
+n "123"
+m "abc\n" 0 3
+g 1 0 3
+g 2 3 3
+m "ab1c" 3 4
+g 1 3 4
+g 2 4 4
+
+# C: alternating arms in a loop: each group keeps its LAST participating iteration
+# pcre2-only
+pattern (?:(a)|(b))+$
+m "abab" 0 4
+g 1 2 3
+g 2 3 4
+m "ba" 0 2
+g 1 1 2
+g 2 0 1
+m "aaa" 0 3
+g 1 2 3
+g 2 -1 -1
+m "b" 0 1
+g 1 -1 -1
+g 2 0 1
+n "abx"
+m "ab\n" 0 2
+g 1 0 1
+g 2 1 2
+n ""
+
+# C: one group, last iteration wins
+# pcre2-only
+pattern (a|b)+$
+m "xab" 1 3
+g 1 2 3
+m "ab" 0 2
+g 1 1 2
+m "ba\n" 0 2
+g 1 1 2
+n "x"
+m "aab" 0 3
+g 1 2 3
+
+# C: star over a group, empty iteration count at the end
+# pcre2-only
+pattern (\w\d)*$
+m "a1b2" 0 4
+g 1 2 4
+m "a1b" 3 3
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+m "a1\n" 0 2
+g 1 0 2
+m "xx" 2 2
+g 1 -1 -1
+
+# C: nested capture in a loop; the inner group keeps an EARLIER iteration after an 'x' one
+# pcre2-only
+pattern ((\d)|x)+$
+m "1x" 0 2
+g 1 1 2
+g 2 0 1
+m "x1" 0 2
+g 1 1 2
+g 2 1 2
+m "12" 0 2
+g 1 1 2
+g 2 1 2
+m "xx" 0 2
+g 1 1 2
+g 2 -1 -1
+m "1x\n" 0 2
+g 1 1 2
+g 2 0 1
+
+# C: star of alternating groups at the end
+# pcre2-only
+pattern ((a)|(b))*$
+m "ab" 0 2
+g 1 1 2
+g 2 0 1
+g 3 1 2
+m "ab\n" 0 2
+g 1 1 2
+g 2 0 1
+g 3 1 2
+m "ba" 0 2
+g 1 1 2
+g 2 1 2
+g 3 0 1
+m "c" 1 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+m "" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+
+# C: loop then a literal tail that decides which iteration is last
+# pcre2-only
+pattern (a+|b)*c$
+m "aabc" 0 4
+g 1 2 3
+m "bbc" 0 3
+g 1 1 2
+m "c" 0 1
+g 1 -1 -1
+n "aab"
+m "aabc\n" 0 4
+g 1 2 3
+
+# C: a nullable group under a star: the empty final iteration
+# pcre2-only
+pattern (a*)*$
+m "aab" 3 3
+g 1 3 3
+m "aa" 0 2
+g 1 2 2
+m "" 0 0
+g 1 0 0
+m "baa\n" 1 3
+g 1 3 3
+
+# C: a nullable group under a plus: the empty iteration at the end
+# pcre2-only
+pattern (a*)+$
+m "aab" 3 3
+g 1 3 3
+m "aa" 0 2
+g 1 2 2
+m "" 0 0
+g 1 0 0
+m "b\n" 1 1
+g 1 1 1
+
+# C: bounded group under a plus: how the digits split into iterations
+# pcre2-only
+pattern (\d{1,2})+$
+m "12345" 0 5
+g 1 4 5
+m "1" 0 1
+g 1 0 1
+m "123" 0 3
+g 1 2 3
+m "a12\n" 1 3
+g 1 1 3
+n ""
+
+# C: loop then a literal, last iteration after backtracking
+# pcre2-only
+pattern (ab|a)*b$
+m "ababb" 0 5
+g 1 2 4
+m "abab" 0 4
+g 1 2 3
+m "aab" 0 3
+g 1 1 2
+m "b" 0 1
+g 1 -1 -1
+m "abb\n" 0 3
+g 1 0 2
+
+# D: optional group; unset when the match is the empty tail
+# pcre2-only
+pattern (a)?$
+m "a" 0 1
+g 1 0 1
+m "ba" 1 2
+g 1 1 2
+m "b" 1 1
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+m "a\n" 0 1
+g 1 0 1
+m "ab" 2 2
+g 1 -1 -1
+
+# D: exactly one of three groups is set; the others stay -1
+# pcre2-only
+pattern (?:(a)|(b)|(c))$
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+g 3 -1 -1
+m "b" 0 1
+g 1 -1 -1
+g 2 0 1
+g 3 -1 -1
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 0 1
+m "xb" 1 2
+g 1 -1 -1
+g 2 1 2
+g 3 -1 -1
+n "d"
+m "c\n" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 0 1
+
+# D: two optional groups; all four set/unset combinations
+# pcre2-only
+pattern (x)?(y)?$
+m "xy" 0 2
+g 1 0 1
+g 2 1 2
+m "y" 0 1
+g 1 -1 -1
+g 2 0 1
+m "x" 0 1
+g 1 0 1
+g 2 -1 -1
+m "" 0 0
+g 1 -1 -1
+g 2 -1 -1
+m "xyx" 2 3
+g 1 2 3
+g 2 -1 -1
+m "zxy\n" 1 3
+g 1 1 2
+g 2 2 3
+
+# D: optional compound group; the empty tail
+# pcre2-only
+pattern (?:(a)b)?c?$
+m "abc" 0 3
+g 1 0 1
+m "ab" 0 2
+g 1 0 1
+m "c" 0 1
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+m "xc" 1 2
+g 1 -1 -1
+m "abx" 3 3
+g 1 -1 -1
+
+# D: group set, end-pin only in one arm
+# pcre2-only
+pattern (a)?(?:b|$)
+m "ab" 0 2
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+m "b" 0 1
+g 1 -1 -1
+m "ba" 0 1
+g 1 -1 -1
+m "a\n" 0 1
+g 1 0 1
+
+# D/ctrl: the end pin binds only the second alternative: a match need not reach the end
+# pcre2-only
+pattern (a)|b$
+m "a" 0 1
+g 1 0 1
+m "b" 0 1
+g 1 -1 -1
+m "ab" 0 1
+g 1 0 1
+m "xb" 1 2
+g 1 -1 -1
+m "ba" 1 2
+g 1 1 2
+m "b\n" 0 1
+g 1 -1 -1
+m "xa" 1 2
+g 1 1 2
+
+# D/ctrl: the pin is inside group 1 only
+# pcre2-only
+pattern (a$)|(b)
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+m "ab" 1 2
+g 1 -1 -1
+g 2 1 2
+m "ba" 0 1
+g 1 -1 -1
+g 2 0 1
+m "b" 0 1
+g 1 -1 -1
+g 2 0 1
+m "aa" 1 2
+g 1 1 2
+g 2 -1 -1
+m "a\n" 0 1
+g 1 0 1
+g 2 -1 -1
+
+# D: pinned alternation with a capture in one arm
+# pcre2-only
+pattern (?:x(a)|y)$
+m "xa" 0 2
+g 1 1 2
+m "y" 0 1
+g 1 -1 -1
+n "ya"
+m "xay" 2 3
+g 1 -1 -1
+m "xa\n" 0 2
+g 1 1 2
+n ""
+
+# E: first arm fails at the pin, second arm wins
+# pcre2-only
+pattern (a|ab)$
+m "ab" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+m "xab" 1 3
+g 1 1 3
+m "ab\n" 0 2
+g 1 0 2
+m "aba" 2 3
+g 1 2 3
+
+# E: longer arm first
+# pcre2-only
+pattern (ab|a)$
+m "ab" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+m "xab" 1 3
+g 1 1 3
+m "ab\n" 0 2
+g 1 0 2
+
+# E: prefix arm first, then the longer on pin failure
+# pcre2-only
+pattern (foo|foobar)$
+m "foobar" 0 6
+g 1 0 6
+m "foo" 0 3
+g 1 0 3
+m "xfoobar" 1 7
+g 1 1 7
+m "foobar\n" 0 6
+g 1 0 6
+n "foobarx"
+
+# E: three arms, the leftmost start with any arm
+# pcre2-only
+pattern (foo|foobar|bar)$
+m "foobar" 0 6
+g 1 0 6
+m "foobar\n" 0 6
+g 1 0 6
+m "bar" 0 3
+g 1 0 3
+n "fooba"
+
+# E: alternation of overlapping quantified arms
+# pcre2-only
+pattern (\w+|\w+\.)$
+m "ab" 0 2
+g 1 0 2
+m "ab." 0 3
+g 1 0 3
+n "ab. "
+m "ab\n" 0 2
+g 1 0 2
+n "."
+m "ab.\n" 0 3
+g 1 0 3
+
+# E: outer alternation unstored, inner optional group stored
+# pcre2-only
+pattern (?:a|ab)(c|bcd)?$
+m "abcd" 0 4
+g 1 1 4
+m "ac" 0 2
+g 1 1 2
+m "abc" 0 3
+g 1 2 3
+m "ab" 0 2
+g 1 -1 -1
+m "a" 0 1
+g 1 -1 -1
+
+# F: nested pair, numbering by opening paren
+# pcre2-only
+pattern ((a)(b))$
+m "ab" 0 2
+g 1 0 2
+g 2 0 1
+g 3 1 2
+m "xab" 1 3
+g 1 1 3
+g 2 1 2
+g 3 2 3
+m "ab\n" 0 2
+g 1 0 2
+g 2 0 1
+g 3 1 2
+n "a"
+m "abab" 2 4
+g 1 2 4
+g 2 2 3
+g 3 3 4
+
+# F: nested groups under a loop: all three keep the last iteration
+# pcre2-only
+pattern ((a+)(b+))+$
+m "aabbab" 0 6
+g 1 4 6
+g 2 4 5
+g 3 5 6
+m "ab" 0 2
+g 1 0 2
+g 2 0 1
+g 3 1 2
+m "aabb\n" 0 4
+g 1 0 4
+g 2 0 2
+g 3 2 4
+m "aab" 0 3
+g 1 0 3
+g 2 0 2
+g 3 2 3
+m "abb" 0 3
+g 1 0 3
+g 2 0 1
+g 3 1 3
+
+# F: nested optionals, depth three
+# pcre2-only
+pattern (a(b(c)?)?)$
+m "abc" 0 3
+g 1 0 3
+g 2 1 3
+g 3 2 3
+m "ab" 0 2
+g 1 0 2
+g 2 1 2
+g 3 -1 -1
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+g 3 -1 -1
+m "xab" 1 3
+g 1 1 3
+g 2 2 3
+g 3 -1 -1
+m "abc\n" 0 3
+g 1 0 3
+g 2 1 3
+g 3 2 3
+n "ac"
+
+# F: range-like nesting at the end
+# pcre2-only
+pattern ((\d+)-(\d+))$
+m "1-2" 0 3
+g 1 0 3
+g 2 0 1
+g 3 2 3
+m "10-20\n" 0 5
+g 1 0 5
+g 2 0 2
+g 3 3 5
+m "x10-20" 1 6
+g 1 1 6
+g 2 1 3
+g 3 4 6
+n "10-"
+m "10-20-30" 3 8
+g 1 3 8
+g 2 3 5
+g 3 6 8
+
+# F: triple-nested single group
+# pcre2-only
+pattern (((a)))$
+m "a" 0 1
+g 1 0 1
+g 2 0 1
+g 3 0 1
+m "ba" 1 2
+g 1 1 2
+g 2 1 2
+g 3 1 2
+m "a\n" 0 1
+g 1 0 1
+g 2 0 1
+g 3 0 1
+n "ab"
+
+# G: nullable group: the empty match AT the end when no blank run exists
+# pcre2-only
+pattern (\s*)$
+m "abc" 3 3
+g 1 3 3
+m "abc  " 3 5
+g 1 3 5
+m "abc \n" 3 5
+g 1 3 5
+m "" 0 0
+g 1 0 0
+m "\n" 0 1
+g 1 0 1
+m "abc\n\n" 3 5
+g 1 3 5
+
+# G: empty group, match at n-1 first (leftmost) when a final newline exists
+# pcre2-only
+pattern ()$
+m "" 0 0
+g 1 0 0
+m "a" 1 1
+g 1 1 1
+m "a\n" 1 1
+g 1 1 1
+m "a\n\n" 2 2
+g 1 2 2
+m "\n" 0 0
+g 1 0 0
+
+# G: optional group at `\z`: empty at n unless the last byte is 'a'
+# pcre2-only
+pattern (a?)\z
+features assertions
+m "b" 1 1
+g 1 1 1
+m "a" 0 1
+g 1 0 1
+m "ba" 1 2
+g 1 1 2
+m "ab" 2 2
+g 1 2 2
+m "" 0 0
+g 1 0 0
+m "a\n" 2 2
+g 1 2 2
+
+# G: leftmost start decides: 'baaa' starts at 1, 'aaab' only matches empty at 4
+# pcre2-only
+pattern (a*)$
+m "baaa" 1 4
+g 1 1 4
+m "aaab" 4 4
+g 1 4 4
+m "aaa" 0 3
+g 1 0 3
+m "" 0 0
+g 1 0 0
+m "aaab\n" 4 4
+g 1 4 4
+m "b\n" 1 1
+g 1 1 1
+
+# G: empty match at n-1 vs n: `\Z` accepts both, the leftmost is n-1
+# pcre2-only
+pattern (x*)\Z
+features assertions
+m "ab\n" 2 2
+g 1 2 2
+m "ab\n\n" 3 3
+g 1 3 3
+m "ab" 2 2
+g 1 2 2
+m "xx\n" 0 2
+g 1 0 2
+m "\n" 0 0
+g 1 0 0
+
+# G: empty alternative reached only at the pin
+# pcre2-only
+pattern (?:(x)|)$
+m "x" 0 1
+g 1 0 1
+m "y" 1 1
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+m "yx" 1 2
+g 1 1 2
+m "x\n" 0 1
+g 1 0 1
+m "y\n" 1 1
+g 1 -1 -1
+
+# G: word boundary + end: only after a word char
+# pcre2-only
+pattern (\b)$
+features assertions
+m "ab" 2 2
+g 1 2 2
+n "ab "
+m "ab\n" 2 2
+g 1 2 2
+n ""
+n " "
+m "a b" 3 3
+g 1 3 3
+
+# G: empty alternative last
+# pcre2-only
+pattern (a|)$
+m "a" 0 1
+g 1 0 1
+m "b" 1 1
+g 1 1 1
+m "ba" 1 2
+g 1 1 2
+m "" 0 0
+g 1 0 0
+m "a\n" 0 1
+g 1 0 1
+
+# H/I (census shape): start offsets across a digit tail, with and without a final newline
+# pcre2-only
+pattern (\d+)$
+m "12345" 0 5
+g 1 0 5
+ms 1 "12345" 1 5
+g 1 1 5
+ms 3 "12345" 3 5
+g 1 3 5
+ms 4 "12345" 4 5
+g 1 4 5
+ns 5 "12345"
+m "ab12\n" 2 4
+g 1 2 4
+ms 2 "ab12\n" 2 4
+g 1 2 4
+ms 3 "ab12\n" 3 4
+g 1 3 4
+ns 4 "ab12\n"
+ns 5 "ab12\n"
+ns 1 "\n"
+n "\n"
+
+# H: start == n gives the empty match; start inside the run shortens the group
+# pcre2-only
+pattern (a*)$
+m "aaa" 0 3
+g 1 0 3
+ms 1 "aaa" 1 3
+g 1 1 3
+ms 2 "aaa" 2 3
+g 1 2 3
+ms 3 "aaa" 3 3
+g 1 3 3
+m "aaa\n" 0 3
+g 1 0 3
+ms 3 "aaa\n" 3 3
+g 1 3 3
+ms 4 "aaa\n" 4 4
+g 1 4 4
+
+# H/I (census shape): start in the middle of a word on a word subject
+# pcre2-only
+pattern (\w+)\z
+features assertions,classes
+m "foo bar" 4 7
+g 1 4 7
+ms 4 "foo bar" 4 7
+g 1 4 7
+ms 5 "foo bar" 5 7
+g 1 5 7
+ms 6 "foo bar" 6 7
+g 1 6 7
+ns 7 "foo bar"
+ms 3 "foo bar" 4 7
+g 1 4 7
+n "foo bar\n"
+ns 5 "foo bar\n"
+
+# H/J: `\b` at the search start: no boundary mid-word, so a mid-word start must skip to the next
+# pcre2-only
+pattern (\b\w+)$
+features assertions,classes
+m "foo bar" 4 7
+g 1 4 7
+ms 4 "foo bar" 4 7
+g 1 4 7
+ns 5 "foo bar"
+ns 6 "foo bar"
+ns 7 "foo bar"
+ms 3 "foo bar" 4 7
+g 1 4 7
+ns 2 "ab"
+
+# H: start AT the final newline and past it
+# pcre2-only
+pattern (a)b?$
+m "xa\n" 1 2
+g 1 1 2
+ms 1 "xa\n" 1 2
+g 1 1 2
+ns 2 "xa\n"
+ns 3 "xa\n"
+m "xab" 1 3
+g 1 1 2
+ns 2 "xab"
+ns 3 "xab"
+
+# H/I: start inside a blank run
+# pcre2-only
+pattern (\s+)$
+m "a   " 1 4
+g 1 1 4
+ms 1 "a   " 1 4
+g 1 1 4
+ms 2 "a   " 2 4
+g 1 2 4
+ms 3 "a   " 3 4
+g 1 3 4
+ns 4 "a   "
+ms 2 "a  \n" 2 4
+g 1 2 4
+ns 4 "a  \n"
+
+# H: dot-star to `\z` from every start of a short subject
+# pcre2-only
+pattern (.*)\z
+features assertions
+m "ab" 0 2
+g 1 0 2
+ms 1 "ab" 1 2
+g 1 1 2
+ms 2 "ab" 2 2
+g 1 2 2
+m "a\nb" 2 3
+g 1 2 3
+ms 1 "a\nb" 2 3
+g 1 2 3
+ms 2 "a\nb" 2 3
+g 1 2 3
+ms 3 "a\nb" 3 3
+g 1 3 3
+
+# H: two groups, start between them
+# pcre2-only
+pattern (\d)(\d)?$
+m "12" 0 2
+g 1 0 1
+g 2 1 2
+ms 1 "12" 1 2
+g 1 1 2
+g 2 -1 -1
+ns 2 "12"
+m "123" 1 3
+g 1 1 2
+g 2 2 3
+ms 1 "123" 1 3
+g 1 1 2
+g 2 2 3
+ms 2 "123" 2 3
+g 1 2 3
+g 2 -1 -1
+
+# I (census): digits at end; non-matches and interior runs
+# pcre2-only
+pattern (\d+)$
+m "abc123" 3 6
+g 1 3 6
+n "123abc"
+m "12 34" 3 5
+g 1 3 5
+m "12 34\n" 3 5
+g 1 3 5
+m "1\n" 0 1
+g 1 0 1
+n "\n"
+n ""
+m "007" 0 3
+g 1 0 3
+m "1a2" 2 3
+g 1 2 3
+n "a1\n\n"
+
+# I (census): word at end under `\z`
+# pcre2-only
+pattern (\w+)\z
+features assertions,classes
+m "foo bar" 4 7
+g 1 4 7
+n "foo bar\n"
+n "foo "
+n ""
+m "foo_bar9" 0 8
+g 1 0 8
+n "!"
+m "a b c" 4 5
+g 1 4 5
+
+# I (census): last path segment; the class ALSO matches the newline, so n over n-1
+# pcre2-only
+pattern ([^/]+)$
+m "a/b/c" 4 5
+g 1 4 5
+n "a/b/"
+n "/"
+m "a/b/c\n" 4 6
+g 1 4 6
+m "a" 0 1
+g 1 0 1
+n ""
+m "a/\n" 2 3
+g 1 2 3
+m "\n" 0 1
+g 1 0 1
+
+# I (census): extension strip; greedy group, repeated suffix, dot-star stops at newlines
+# pcre2-only
+pattern (.*)\.txt$
+m "a.txt" 0 5
+g 1 0 1
+m "a.txt\n" 0 5
+g 1 0 1
+m "a.txt.txt" 0 9
+g 1 0 5
+m ".txt" 0 4
+g 1 0 0
+n "a.txtx"
+m "x\na.txt" 2 7
+g 1 2 3
+n "a.TXT"
+n "a.txt\n\n"
+n "txt"
+
+# I: class-star variant of the extension strip
+# pcre2-only
+pattern ([^.]*)\.txt$
+m "a.txt" 0 5
+g 1 0 1
+m "a.b.txt" 2 7
+g 1 2 3
+m ".txt" 0 4
+g 1 0 0
+m "a.txt\n" 0 5
+g 1 0 1
+n "a.tx"
+
+# I (census): trailing whitespace (see also A, H)
+# pcre2-only
+pattern (\s+)$
+m "   " 0 3
+g 1 0 3
+n "a"
+m "a b " 3 4
+g 1 3 4
+m "ab\r\n" 2 4
+g 1 2 4
+m "a\n \n" 1 4
+g 1 1 4
+
+# J: `\b` at the match start
+# pcre2-only
+pattern \b(\w+)$
+features assertions,classes
+m "ab cd" 3 5
+g 1 3 5
+m " cd" 1 3
+g 1 1 3
+m "ab" 0 2
+g 1 0 2
+m "-ab" 1 3
+g 1 1 3
+n "ab-"
+m "ab cd\n" 3 5
+g 1 3 5
+n ""
+
+# J: lookbehind sees the byte before the match start
+# pcre2-only
+pattern (?<=,)(\d+)$
+features assertions,classes,lookaround
+m "1,22" 2 4
+g 1 2 4
+m "1,22\n" 2 4
+g 1 2 4
+n "122"
+m ",5" 1 2
+g 1 1 2
+m "1,2,3" 4 5
+g 1 4 5
+n "1,"
+
+# J: negative lookbehind forces the start past an 'x'
+# pcre2-only
+pattern (?<!x)(a+)$
+features assertions,lookaround
+m "xaa" 2 3
+g 1 2 3
+m "aa" 0 2
+g 1 0 2
+n "xa"
+m "baa" 1 3
+g 1 1 3
+m "xaa\n" 2 3
+g 1 2 3
+n "x"
+
+# J: lookbehind on a class, token at the very end
+# pcre2-only
+pattern (?<=\s)(\S+)\z
+features assertions,classes,lookaround
+m "ab cd" 3 5
+g 1 3 5
+n "ab cd\n"
+n "cd"
+m " cd" 1 3
+g 1 1 3
+m "ab\tcd" 3 5
+g 1 3 5
+n "ab "
+
+# J: lookbehind alternation with an anchor
+# pcre2-only
+pattern (?<=^|,)(\w+)$
+features assertions,classes,lookaround
+m "ab" 0 2
+g 1 0 2
+m "x,ab" 2 4
+g 1 2 4
+m "x,ab\n" 2 4
+g 1 2 4
+n "x;ab"
+n ","
+n "x,"
+
+# J: `\b` just before the pin: a word char at the end
+# pcre2-only
+pattern (\w)\b$
+features assertions,classes
+m "ab" 1 2
+g 1 1 2
+m "ab\n" 1 2
+g 1 1 2
+n "a-"
+n ""
+m "a b" 2 3
+g 1 2 3
+
+# K: a multi-byte final character: the group spans 2 bytes
+# pcre2-only
+pattern (.)$
+encoding utf8
+m "a\xc3\xa9" 1 3
+g 1 1 3
+m "\xc3\xa9" 0 2
+g 1 0 2
+m "\xe6\x97\xa5\xe6\x9c\xac" 3 6
+g 1 3 6
+m "a\xc3\xa9\n" 1 3
+g 1 1 3
+n "\xc3\xa9\n\n"
+m "a" 0 1
+g 1 0 1
+n ""
+
+# K: word run over multi-byte letters (\w is ASCII-only without UCP, so a multi-byte letter ENDS the run)
+# pcre2-only
+pattern (\w+)\z
+encoding utf8
+features assertions,classes
+m "h\xc3\xa9llo" 3 6
+g 1 3 6
+n "x h\xc3\xa9"
+n "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e"
+n "h\xc3\xa9llo\n"
+n "a\xc3\xa9 "
+n "\xc3\xa9-"
+
+# K: path segment with multi-byte characters, 3- and 4-byte
+# pcre2-only
+pattern ([^/]+)$
+encoding utf8
+m "\xe6\x97\xa5/\xe6\x9c\xac" 4 7
+g 1 4 7
+m "a/\xf0\x9f\x98\x80" 2 6
+g 1 2 6
+m "\xf0\x9f\x98\x80" 0 4
+g 1 0 4
+m "\xe6\x97\xa5/\n" 4 5
+g 1 4 5
+m "/\xc3\xa9\n" 1 4
+g 1 1 4
+
+# K: a multi-byte literal under a plus at the end
+# pcre2-only
+pattern (\x{e9}+)$
+encoding utf8
+m "a\xc3\xa9\xc3\xa9" 1 5
+g 1 1 5
+n "\xc3\xa9a"
+m "\xc3\xa9\xc3\xa9\n" 0 4
+g 1 0 4
+m "\xc3\xa9" 0 2
+g 1 0 2
+n ""
+
+# K: Unicode whitespace tail (U+00A0, U+2003): 2- and 3-byte \s under UCP
+# pcre2-only
+pattern (\s+)$
+flags u
+encoding utf8
+m "a\xc2\xa0" 1 3
+g 1 1 3
+m "a\xe2\x80\x83\xe2\x80\x83" 1 7
+g 1 1 7
+m "a\xe2\x80\x83\n" 1 5
+g 1 1 5
+m "a \xc2\xa0 " 1 5
+g 1 1 5
+m "\xc2\xa0" 0 2
+g 1 0 2
+
+# K: Unicode digits at the end (Arabic-Indic, 2 bytes each) under UCP
+# pcre2-only
+pattern (\d+)$
+flags u
+encoding utf8
+m "a\xd9\xa3\xd9\xa4" 1 5
+g 1 1 5
+m "\xd9\xa3" 0 2
+g 1 0 2
+m "12\xd9\xa3" 0 4
+g 1 0 4
+n "\xd9\xa3a"
+m "a\xd9\xa3\n" 1 3
+g 1 1 3
+
+# K: dot-star over multi-byte text before an ASCII suffix
+# pcre2-only
+pattern (.*)\.txt$
+encoding utf8
+m "\xc3\xa9.txt" 0 6
+g 1 0 2
+m "\xe6\x97\xa5\xe6\x9c\xac.txt\n" 0 10
+g 1 0 6
+m "\xc3\xa9.txt.txt" 0 10
+g 1 0 6
+n "\xc3\xa9.txt\xc3\xa9"
+
+# K: a property class at the end
+# pcre2-only
+pattern (\p{L}+)$
+encoding utf8
+m "1\xc3\xa9\xc3\xa8" 1 5
+g 1 1 5
+n "ab1"
+m "\xe6\x97\xa5\xe6\x9c\xac" 0 6
+g 1 0 6
+m "\xe6\x97\xa5\xe6\x9c\xac\n" 0 6
+g 1 0 6
+n "a\xc3\xa9 "
+
+# K: start offsets on character boundaries near the end (\w is ASCII-only: UCP \w is refused under utf8)
+# pcre2-only
+pattern (\w+)$
+encoding utf8
+m "a\xc3\xa9b" 3 4
+g 1 3 4
+ms 1 "a\xc3\xa9b" 3 4
+g 1 3 4
+ms 3 "a\xc3\xa9b" 3 4
+g 1 3 4
+ns 4 "a\xc3\xa9b"
+ns 2 "\xc3\xa9\xc3\xa9"
+ns 4 "\xc3\xa9\xc3\xa9"
+
+# K: `\Z` n-1 vs n with a multi-byte last character before the newline
+# pcre2-only
+pattern (.)\Z
+encoding utf8
+features assertions
+m "\xc3\xa9\n" 0 2
+g 1 0 2
+n "\xc3\xa9\n\n"
+n "\n"
+m "\xe6\x97\xa5" 0 3
+g 1 0 3
+m "a\xe6\x97\xa5\n" 1 4
+g 1 1 4
+
+# K: loop whose iterations differ in byte length: the last iteration's span
+# pcre2-only
+pattern (a|\x{e9})+$
+encoding utf8
+m "a\xc3\xa9" 0 3
+g 1 1 3
+m "\xc3\xa9a" 0 3
+g 1 2 3
+m "\xc3\xa9\xc3\xa9a\n" 0 5
+g 1 4 5
+m "b\xc3\xa9" 1 3
+g 1 1 3
+
+# L: caseless literal tail
+# pcre2-only
+pattern (abc)$
+flags i
+m "xABC" 1 4
+g 1 1 4
+m "abc" 0 3
+g 1 0 3
+m "AbC\n" 0 3
+g 1 0 3
+n "ab"
+n "ABCD"
+
+# L: caseless run under `\z`
+# pcre2-only
+pattern (a+)\z
+flags i
+features assertions
+m "AaA" 0 3
+g 1 0 3
+n "AaA\n"
+m "bAa" 1 3
+g 1 1 3
+n "b"
+n ""
+
+# L: caseless class tail
+# pcre2-only
+pattern ([a-c]+)$
+flags i
+n "xABCx"
+m "xABC" 1 4
+g 1 1 4
+m "CBa\n" 0 3
+g 1 0 3
+n "d"
+m "aBc" 0 3
+g 1 0 3
+
+# L: caseless NEGATED class: neither 'a' nor 'A'
+# pcre2-only
+pattern ([^a]+)$
+flags i
+m "bAb" 2 3
+g 1 2 3
+n "bA"
+m "Ab\n" 1 3
+g 1 1 3
+n "aA"
+m "b" 0 1
+g 1 0 1
+
+# L: caseless extension strip
+# pcre2-only
+pattern (.*)\.TXT$
+flags i
+m "a.txt" 0 5
+g 1 0 1
+m "a.TxT\n" 0 5
+g 1 0 1
+m "a.txt.Txt" 0 9
+g 1 0 5
+n "a.tx"
+
+# L: caseless 'k' in UTF-8 mode: the Kelvin sign U+212A folds to it
+# pcre2-only
+pattern (k)$
+flags i
+encoding utf8
+m "K" 0 1
+g 1 0 1
+m "\xe2\x84\xaa" 0 3
+g 1 0 3
+m "xk" 1 2
+g 1 1 2
+m "\xe2\x84\xaa\n" 0 3
+g 1 0 3
+n "a"
+
+# L: caseless non-ASCII in UTF-8 mode (U+00C9 folds to U+00E9)
+# pcre2-only
+pattern (\x{e9}+)$
+flags i
+encoding utf8
+m "\xc3\x89" 0 2
+g 1 0 2
+m "\xc3\xa9\xc3\x89" 0 4
+g 1 0 4
+m "x\xc3\x89\n" 1 3
+g 1 1 3
+n "e"
+
+# M: the pin inside a group
+# pcre2-only
+pattern ((a)\z)
+features assertions
+m "a" 0 1
+g 1 0 1
+g 2 0 1
+m "ba" 1 2
+g 1 1 2
+g 2 1 2
+n "a\n"
+n "ab"
+
+# M: `$` inside a group
+# pcre2-only
+pattern (a$)
+m "a" 0 1
+g 1 0 1
+m "ba" 1 2
+g 1 1 2
+m "a\n" 0 1
+g 1 0 1
+n "a\n\n"
+
+# M: `$` in a non-capturing group
+# pcre2-only
+pattern (a)(?:$)
+m "a" 0 1
+g 1 0 1
+m "a\n" 0 1
+g 1 0 1
+n "ab"
+
+# M: DOTALL: the group may take the newline, n over n-1 again
+# pcre2-only
+pattern (?s)(.+)$
+m "ab\n" 0 3
+g 1 0 3
+m "a\nb" 0 3
+g 1 0 3
+m "\n" 0 1
+g 1 0 1
+m "ab" 0 2
+g 1 0 2
+
+# M: possessive group before the pin
+# pcre2-only
+pattern (a++)$
+features atomic-groups
+m "aa" 0 2
+g 1 0 2
+n "aab"
+m "aa\n" 0 2
+g 1 0 2
+m "baa" 1 3
+g 1 1 3
+
+# M: atomic prefix then a captured tail
+# pcre2-only
+pattern (?>a+)(b)$
+features atomic-groups
+m "aab" 0 3
+g 1 2 3
+m "ab" 0 2
+g 1 1 2
+n "aabb"
+m "aab\n" 0 3
+g 1 2 3
+n "b"
+
+# M/ctrl: MULTILINE `$` is NOT end-pinned: every line end is a candidate
+# pcre2-only
+pattern (?m)(\d+)$
+features classes,assertions,modifiers
+m "12\n34" 0 2
+g 1 0 2
+m "12\n34\n" 0 2
+g 1 0 2
+m "a1\nb" 1 2
+g 1 1 2
+m "12" 0 2
+g 1 0 2
+n "x\n"
+
+# M/ctrl: a top-level alternation whose second branch is unpinned
+# pcre2-only
+pattern (\d+)$|(x)
+m "a12" 1 3
+g 1 1 3
+g 2 -1 -1
+m "x1" 0 1
+g 1 -1 -1
+g 2 0 1
+m "1x" 1 2
+g 1 -1 -1
+g 2 1 2
+m "12x" 2 3
+g 1 -1 -1
+g 2 2 3
+n "ab"
