@@ -293,7 +293,7 @@ section targets depend on.
   silently parsing whichever header came last. **[MEMFN] R4a:
   `table_main FILE` ("-" = stdin)** selects the LEADING ANONYMOUS TABLE of
   a stream whose main table stays unnamed while named sections follow it
-  (every line before the first `#section`; table_contract.md §4¶5): `--list-axes` gained the kit's `memfn` section, and its consumers
+  (every line before the first `#section`; table_contract.md §4¶6): `--list-axes` gained the kit's `memfn` section, and its consumers
   (axes_registry_check.sh, tests/axes/run_axes.sh, run_comments_axis.sh)
   read pcrec's table through it. **[DD-8], 2026-09-19: the
   file gained its ROW-reading half** — `table_section_rows FILE SECTION`

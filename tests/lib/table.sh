@@ -51,7 +51,7 @@ table__header_line() {
     if grep -q '^#section ' "$file" 2>/dev/null; then has_sections=1; fi
     if [ "$has_sections" -eq 1 ] && [ -z "$section" ]; then
         echo "table: '$file' has multiple #section blocks; a consumer must" >&2
-        echo "       name the section it wants (table_contract.md §4¶4)" >&2
+        echo "       name the section it wants (table_contract.md §4¶5)" >&2
         echo "       rather than parse whichever header came last" >&2
         return 1
     fi
@@ -226,7 +226,7 @@ table_lookup() {
 # with no SECTION argument. The selector for a producer whose main table
 # stays anonymous while named sections follow it (`--list-source`,
 # `--list-axes` since [MEMFN] R4a's `memfn` section; table_contract.md
-# §4¶5). A file with no `#section` line is returned
+# §4¶6). A file with no `#section` line is returned
 # whole. Fails loudly when the main table holds no data row: a consumer that
 # selected an empty main table is reading the wrong stream.
 table_main() {

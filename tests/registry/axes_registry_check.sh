@@ -127,7 +127,7 @@ trap cleanup EXIT
 # [MEMFN] R4a: `--list-axes` is a MULTI-SECTION stream — pcrec's anonymous
 # axis table, then the kit's `memfn` section (docs/spec/registry.md §6). Every
 # check below reads pcrec's table, SELECTED as the leading anonymous table
-# (table_main; table_contract.md §4¶5), so a kit row can never be
+# (table_main; table_contract.md §4¶6), so a kit row can never be
 # read as a pcrec axis; the `memfn` section is read by name in its own block.
 RAW="$WORKDIR/axes.raw.tsv"
 TSV="$WORKDIR/axes.tsv"
