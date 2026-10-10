@@ -1,5 +1,7 @@
 # Encoding data layout — the encoding as the organizing unit (inventory, diagnosis, proposal)
 
+> **STATUS (2026-10-09, D159): [ENC-DATA] CANCELLED. Nothing here is scheduled.** Non-UTF byte encodings are out of scope for pcrec (translation layers outside it). Other UTFs wait for a concrete consumer. This note stays as the reference map such an effort starts from: §1's inventory, §2.3's three sites reading code-point bitmaps as bytes. §7's questions are dissolved by D159, except Q5, which moved to [U8-PICK].
+
 **Lane `encinv`, 2026-10-09, opus, from main `57fe04ef` (abi 71). INVENTORY + PROPOSAL
 ONLY: nothing under `src/`, `cli/`, `lib/`, `tests/`, `third_party/` or `docs/spec/`
 moved.** Frank, 2026-10-09: *"please organize encoding data (it should be to some
