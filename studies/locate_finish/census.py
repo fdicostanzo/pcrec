@@ -23,6 +23,10 @@ Per row, two instruments that share no source:
          narrower marker misread) and for the inlined prefilter
          (`rx_prefilter(`).  The stamp says which pass a reader is TOLD runs;
          the text says which tables are THERE.  Disagreements are counted.
+         [r2.1 LR-G4] Also the forward and anchored machines' identifier
+         families (any `rx_forward_` / `rx_anchored_` identifier), so the
+         machine-MEMBERSHIP rule the L0 path derivation must reproduce
+         (analyze.py control C5) is held against the bytes.
 
 Env: PCREC (build/pcrec), PROBE (the built revend_probe), BENCH (pcrec-bench
 checkout, read-only), CORPUS (this tree), OUT (output dir), JOBS (default 4),
@@ -107,7 +111,9 @@ def text(r):
         src = open(out, "rb").read()
     return {"t_ok": "ok",
             "t_rev": int(b"rx_reverse_" in src),
-            "t_pref": int(b"rx_prefilter(" in src)}
+            "t_pref": int(b"rx_prefilter(" in src),
+            "t_fwd": int(b"rx_forward_" in src),
+            "t_anch": int(b"rx_anchored_" in src)}
 
 
 def kinds(r):
@@ -166,7 +172,8 @@ def main():
         r["endpin"] = int(pinned_view(r))
     keys = ["pop", "id", "suite", "enc", "icase", "status", "view", "cwmax", "minw",
             "lead_unb", "gstart", "f_kinds", "f_start_anchor", "f_end_window", "f_end_window_why"] + STAMPS + \
-        ["refused", "t_ok", "t_rev", "t_pref", "loc", "fin", "endpin", "pattern_hex"]
+        ["refused", "t_ok", "t_rev", "t_pref", "loc", "fin", "endpin", "t_fwd", "t_anch",
+         "pattern_hex"]
     with open(os.path.join(OUT, "rows.tsv"), "w") as fh:
         fh.write("\t".join(keys) + "\n")
         for r in rows:
