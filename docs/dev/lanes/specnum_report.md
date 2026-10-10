@@ -84,7 +84,7 @@ direction control is `scripts/tests/spec_toc.py.test` (17 checks, run by
 - **Dangling numbers found by the new check**, none by the earlier rewrite: three
   `match_api` citations of the OLD numbering (`§2.2` and `§6.0` in dev_journal
   carrying a "now §5.x" note — reworded as "`§2.2` of the old match_api"; `S9b` in
-  a W1 review, which names a spec HUNK, not a section) and one `match_api §11.9`
+  a W1 review, which names a spec HUNK, not a section) and one citation of the doc's section 11.9
   that is the DESIGN note `match_api_m4.md`'s section (a review of that note; now
   spelled `match_api_m4 §1/§11.9`). The tree holds 1,057 citations of `match_api`;
   all resolve.
@@ -107,8 +107,9 @@ scratch tree is `git archive` output with no `.git`).
 
 **Failing direction** (planted into a `git archive` copy of the tree, each vs a clean
 run of 64/0): an unlabeled paragraph → the paragraph-label FAIL; a stale contents
-line → the toc FAIL (with the diff); `match_api.md §9.9` → the dangling FAIL naming
-the file and line; `match_api.md §3.1.3¶77` → the same; `docs/spec/match_api.md:1234` →
+line → the toc FAIL (with the diff); a citation of a section past the last heading → the dangling FAIL naming
+the file and line; a citation of a paragraph number past a section's last → the same; a
+line-number citation of the doc (a colon and a digit after its name) →
 the line-number FAIL; a label changed `[3.2¶2]`→`[3.2¶9]` → label, anchor and order
 FAILs; a deleted section heading → label, toc and dangling (a cited `§3.5`) FAILs.
 A retired-section stub (`### 3.4 — retired`) with a retired paragraph passes.
@@ -120,7 +121,7 @@ does (`SAB_BEFORE`→`SAB_AFTER`, then the arm): 58 pass / 6 fail — the five m
 classes plus the numbering FAIL (the planted paragraph carries no number). It was NOT
 run through `make mech` locally (the chain below does). **A second row is drafted and
 needs an id:** `tests/spec_history/sabotage_row_cites.pending` plants
-`match_api.md §9.9` into `docs/spec/vars.md`; against a scratch tree it gives exactly
+a citation of a nonexistent section of that doc into `docs/spec/vars.md`; against a scratch tree it gives exactly
 one FAIL (the dangling-citation line), 63 pass. **Id requested: one.** Its header says
 how to land it (replace `SXXX`, move to `tests/mech/sabotages/S<id>_spec_cite_dangling.sh`).
 
