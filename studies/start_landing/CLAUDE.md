@@ -146,3 +146,11 @@ PCREC=build/pcrec SUBJ=SCRATCH/subj studies/start_landing/run_timing_guard.sh TI
 studies/start_landing/readers.sh . ../pcrec-bench > readers.tsv
 python3 studies/start_landing/witness_movers.py SCRATCH/tree/build/pcrec . FILES... > movers.tsv
 ```
+- `movers_sl2.py PARENT CHILD POP...` — SL2's mover census: each population
+  compile's `RX_DFA_START` under the parent (the SL1 build) and the child,
+  against the census's predicted row; per-thread scratch. Results:
+  bench 0 mispredict; corpus 1, the `(\p{Xwd})` FIT mover.
+- `guard_timing/` (`run.sh` + `driver.c`) — D156 addendum 4 Q2 (4)'s
+  NO-GUARD ARM: the default `landing` artifact against a copy with the
+  guard block deleted, find-alls over a 1 MiB well-formed UTF-8 subject,
+  arms interleaved; scratch tier.

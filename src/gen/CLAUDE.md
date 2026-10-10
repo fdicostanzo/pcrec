@@ -4102,3 +4102,40 @@ and `first-class-bounded` (deny `PCREC_NO_START_SET`). Four things to know:
   byte moves (`run_object_neutrality.sh`), `RX_VM_PROGRAM_BYTES` and the size
   tallies grow by the added layout bytes.
 
+
+## [START-LANDING] SL2/SL3 — two RECOVER rows that answer without the reverse machine (lane slbuild, 2026-10-10, abi 73 -> 74)
+
+`docs/design/start_landing.md` rev 2 is the design and carries both proofs;
+`docs/spec/tuning.md` §2.47/§2.48 the contract; `docs/dev/lanes/
+slbuild_report.md` the build. RECOVER's rows are now `pinned`,
+`end-minus-width`, `landing`, `reverse-pass`, first match, and the payload is
+an ACTION (`u.recover.act`: `CRA_SEARCH_FROM`/`CRA_END_MINUS_W`/
+`CRA_LANDING`/`CRA_REVERSE`), read through `dfa_search_act` — never a row
+comparison. Five things to know:
+
+- **Only `reverse-pass` needs the reverse machine** (`.needs` = `CAND_MR`),
+  so L0's member fold drops it from every other artifact: no table, accessor
+  block or loop, and the machine stamps fold over what is left. The emitter
+  asserts `rmem == (act == CRA_REVERSE)`.
+- **The new rows take only the `EXISTS` hand.** `rev-end` asks RECOVER with
+  `WINDOW`, a speculative end, so neither row is ever selected there; SL3's
+  self-check (`table-recover-start-unproved`) fails any non-walking row that
+  takes a hand without `CT_START`, and RECOVER's per-hand totality is read
+  off the LOCATE rows' `u.locate.recover` cells (`table-recover-not-total`).
+- **The landing record is ONE statement in `pf_close`**, the NEXT block's
+  one closer, written where `DfaForm.landing` (set from the action); a ninth
+  NEXT form cannot be added without it. The search body declares
+  `landing_position` from the forward walk's start.
+- **The guard is POST-LOOP** (`pcrec_dfa_landing_guard`: landing, a first
+  byte above `onebyte_max` per the `land_char` fact's `wide`, a DECODE row,
+  and not `-futf-check`): one `<prefix>_decode` at the landing, predicted not
+  taken, and a forward step to the first decodable position only when it
+  fails. Nothing of it is in the scan loop. Both entry masks OR
+  `PCREC_ENCE_DECODE` before the prologue (`pcrec_emit_dfa`, `emit_vm.c`'s
+  hybrid), so the `static inline` decode is emitted ahead of the body.
+- **Every success site is `emit_search_success`** (`caps[0]`, K78's
+  dead-group fill, `return 1`): the four RECOVER actions and the `rev-end`
+  walk's report. A new action cannot omit the fill.
+
+The ABI block's ESSENTIAL `search_form` comment names the two new values,
+which moves every artifact (the cpset manifest's re-record).

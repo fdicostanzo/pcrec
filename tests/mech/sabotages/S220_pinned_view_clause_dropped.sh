@@ -180,7 +180,10 @@ SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant appl
 # under [UCP] U2's context atoms: the population is SEVEN, the manifest's
 # header carries the method and the split (four seed-needing, three
 # P2-sole-guard), and the selector is `^[^#]` (every non-comment line).
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/q.c" --pattern "(?!a)" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/q.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
+# RE-AIMED 2026-10-10 (lane slbuild, [START-LANDING] SL2): `(?!a)` has fixed
+# width 0 and takes `end-minus-width` by default, so the reach probe compiles it
+# with both new RECOVER rows denied, as run_search_pinned.sh §1's witness does.
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/q.c" -fno-start-width -fno-start-landing --pattern "(?!a)" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/q.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
 SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
 SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^[^#]|7"
 SAB_COUNT=1

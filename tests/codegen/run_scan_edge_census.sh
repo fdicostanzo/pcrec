@@ -168,8 +168,11 @@ for row in "${MANIFEST[@]}"; do
     # [OPT-REVEND] the rows count the FORWARD (composite) machine's edges; an
     # end-pinned row walks back from the end by default and carries no
     # forward machine, so the census compiles every row with that row denied
-    # (byte-identical on a pattern it does not reach).
-    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+    # (byte-identical on a pattern it does not reach). [START-LANDING]: a
+    # fixed-width or one-character row (`foo\B`, `[0-9]{3}\z`) recovers its
+    # start without the REVERSE machine whose edges it counts, so both new
+    # RECOVER rows are denied too (byte-identical where they do not apply).
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -fno-start-width -fno-start-landing -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
         bad "'$pat' failed to compile: $(head -1 "$TMP/err")"
         continue
     fi
@@ -324,7 +327,7 @@ for row in "${VEDGE[@]}"; do
         continue
     fi
     for deny in "" -fno-view-edge; do
-        if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx --features all -fcomments -fno-rev-end -fno-start-width -fno-start-landing $deny -o "$TMP/v.c" --pattern "$pat" >"$TMP/err" 2>&1; then
             bad "'$pat' $deny failed to compile: $(head -1 "$TMP/err")"
             continue
         fi

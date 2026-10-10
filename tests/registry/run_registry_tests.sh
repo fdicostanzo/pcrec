@@ -679,16 +679,19 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # vrun-w32, vrun-kb) landed with their `memfn` section floor
 # (docs/spec/registry.md §6¶8b), so the `[memfn floor]` arm prints PASS
 # where it printed UNREACHED. 216 + 3 + 1.
-if [ "$axesn" -ne 220 ]; then
+# 220 -> 226 at [START-LANDING] SL2 (lane slbuild, 2026-10-10): the
+# `search-start` axis gains `end-minus-width` and `landing`, each with a deny
+# bit (PCREC_NO_START_WIDTH 53, PCREC_NO_START_LANDING 54), 3 checks each.
+if [ "$axesn" -ne 226 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 220." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 226." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (220 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (226 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 220 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 226 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

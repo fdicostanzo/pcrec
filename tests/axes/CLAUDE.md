@@ -594,3 +594,15 @@ turn a STEPS/FRAMES give-up into a WORK one (`tuning.md` §2.1). The two arm
 axes (`-fno-poss-ctx-follow`, `-fno-poss-bref-first`) join the sweep through
 `--list-axes`; any one-sided give-up they show needs a GIVEUP1_ALLOWANCE entry
 derived from a run.
+
+## [START-LANDING] — the PRODUCT ARM `-fno-start-width -fno-start-landing` (lane slbuild, 2026-10-10)
+
+`docs/design/start_landing.md` §7.2 [r2 SL-C7]. Where both new RECOVER rows
+apply, each single deny lands on the OTHER row, so only the product job
+compares their starts against the independently built reverse machine. It is
+a job against the default baseline (selected by an empty `AXES=` or either
+flag); below the job loop `startset_arm.py` counts the baseline's cases whose
+block is in **start_landing_movers.tsv** (the corpus blocks whose default
+compile selects `end-minus-width` or `landing`, generated from
+`studies/start_landing/movers_sl2.py`'s output), held to `SL_MOVER_FLOOR`
+(4,000: half the manifest blocks' 8,149 static case lines).

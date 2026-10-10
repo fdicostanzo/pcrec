@@ -2300,8 +2300,10 @@ static void emit_rx_abi_types(StrBuf *sb)
          * trailing multi-line comment are counted as CODE in every artifact
          * in the corpus. */
         "    /* [OPT-5 STEP 2] HOW <prefix>_search recovers the match START:\n"
-        "       \"pinned\" (the start is search_from by compile-time proof, and\n"
-        "       this artifact carries no reverse machine at all) or\n"
+        "       \"pinned\" (the start is search_from by compile-time proof),\n"
+        "       \"end-minus-width\" (every match is W bytes: the end minus W),\n"
+        "       \"landing\" (where the forward scan's candidate skip last\n"
+        "       landed) -- these three carry no reverse machine at all -- or\n"
         "       \"reverse-pass\" (the second, backwards scan), or\n"
         "       \"attempt-start\" (no recovery: an attempt loop's own start,\n"
         "       or the empty engine), mirroring <PREFIX>_DFA_START. The\n"

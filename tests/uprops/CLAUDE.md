@@ -31,7 +31,11 @@ is everything those corpora structurally cannot express.
   `(\p{Xwd})` under `-e utf8`, a VM hybrid refused at default axes before
   the size-cap ladder gained its prefilter-drop rung; spans and group 1,
   verified against libpcre2 10.46 and 10.48. Run by the corpus harness; mech
-  S420's target.
+  S420's target. **[START-LANDING] (lane slbuild, 2026-10-10):** `(\p{Xwd})`
+  now takes the `landing` start and fits with its prefilter (a FIT mover), so
+  the file's second block, `(\p{Xwd})x` (no landing; libpcre2 10.46), is the
+  rung's corpus witness and S420's reach; §5 of run_uprops_tests.sh compiles
+  `(\p{Xwd})` with `-fno-start-landing` to keep sweeping the rung's artifact.
 - **uprops_compare.py** — the comparator, and the ONE place the
   Unicode-version drift policy is written down. **[ORWIRE] (2026-09-10):**
   the utf8 arm now ALSO consults the COMMITTED `oracle_store/

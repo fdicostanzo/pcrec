@@ -480,9 +480,9 @@ return 1;
 
 <a id="s2-19-p6"></a>[2.19¶6] **The stamp** is `<PREFIX>_DFA_START`, `"pinned"` or `"reverse-pass"` (or `"end-minus-width"`/`"landing"` where §2.47/§2.48 take the start, or `"attempt-start"` where the search recovers no start at all, `match_api.md` §6.3.4¶11), mirrored at run time by `rx_info.search_form` (§3, §3.2).
 
-<a id="s2-19-p8"></a>[2.19¶8] **The axis `search-start` has four rows, first match**: `pinned` (the start is `search_from`), `end-minus-width` (§2.47), `landing` (§2.48), and the reverse pass, which no flag denies. Each deny removes its row and the walk falls to the next; where both §2.47 and §2.48 apply only the two flags together reach the reverse pass, and only the three together reach it from a `pinned` artifact whose width is 0.
-
 <a id="s2-19-p7"></a>[2.19¶7] **Dial:** no cell, PURE WIN (§5.4).
+
+<a id="s2-19-p8"></a>[2.19¶8] **The axis `search-start` has four rows, first match**: `pinned` (the start is `search_from`), `end-minus-width` (§2.47), `landing` (§2.48), and the reverse pass, which no flag denies. Each deny removes its row and the walk falls to the next; where both §2.47 and §2.48 apply only the two flags together reach the reverse pass, and only the three together reach it from a `pinned` artifact whose width is 0.
 
 <a id="s2-20"></a>
 ### 2.20 `-fno-alt-island` — `PCREC_NO_ALT_ISLAND` (bit 23)
