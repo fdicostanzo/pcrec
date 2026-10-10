@@ -208,7 +208,7 @@ Readers found BY GREP of the current number, and their dispositions:
 |---|---|
 | `src/gen/emit_dfa.c:51` `PCREC_ARTIFACT_ABI` | 30 → 31 |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` | 30 → 31, and the bump appended to the `[DD-14.FB]` narrative |
-| `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]) | new `31` entry; the old `30` entry re-headed "was"; **and its "gap-free from `2` to `29`" sentence corrected to `31`** — pre-existing drift, batch 2 bumped the log and not that sentence |
+| `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]; now `docs/dev/history/abi_changelog.md`) | new `31` entry; the old `30` entry re-headed "was"; **and its "gap-free from `2` to `29`" sentence corrected to `31`** — pre-existing drift, batch 2 bumped the log and not that sentence |
 | `tests/codegen/run_recursion_identity.sh` `RECURSION_IDENTITY_FILEPIN` | **OWED to the manager at merge**, deliberately: D76's (B) pin must name a commit reachable AFTER the merge, which a lane branch's is not (opt5i/ccdiff1/optimpl2 precedent). Comparison (B) is therefore RED on this branch, by design. **It surfaces in neither `make test` nor `make test-codegen`**: `run_recursion_identity.sh` is `make test-recursion-identity`, an on-demand gate absent from `TEST_SECTIONS`, so the manager must run it deliberately after re-pinning |
 | `tests/rxtsource/run_rxtsource_tests.sh:1457` `n30` | NOT a reader — a 30-word keyword census that collides with the digit |
 | `src/gen/CLAUDE.md`, `docs/dev/decisions.md` | pointers only, by [REVW.A1]'s own cut; no digit to move |
@@ -374,7 +374,7 @@ stamp and moves the emission reads UNREACHED rather than green.
   four-token stamp table, and the `<string.h>` consequence. §2.27 and §2.28
   each gain one paragraph saying their stamp names the ANALYSIS and pointing at
   §2.29.
-- **`docs/spec/match_api.md` §6** — the new `abi` 31 entry at the head of the
+- **`docs/spec/match_api.md` §6** (now `docs/dev/history/abi_changelog.md`) — the new `abi` 31 entry at the head of the
   one change log, the `30` entry re-headed, the log's own range sentence
   corrected.
 - **`docs/spec/match_api.md` §6.3** — `<PREFIX>_REQ_WHY`'s full entry, and two

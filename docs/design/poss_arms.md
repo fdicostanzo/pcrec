@@ -1475,8 +1475,8 @@ the general paragraphs):
     backreference is VM-routed);
   - the `VM_POSS_ARMS` bit it clears;
   - its witness.
-- `match_api.md` §6's abi change-log paragraph, plus the `VM_POSS_ARMS`
-  stamp's entry in the stamp table.
+- `docs/dev/history/abi_changelog.md` (the abi change-log; was `match_api.md` §6's paragraph), plus the `VM_POSS_ARMS`
+  stamp's entry in the stamp table (`match_api.md#stamp-vm-masks`).
 - `eng_brep_design.md` §2.5 (the assertion rule) gains a pointer here: "an
   assertion in the follow widens FOLLOW to all bytes" stops being true for
   `A_CTX`.

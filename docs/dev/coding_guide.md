@@ -233,7 +233,7 @@ site and do not add a third field.
 layout, whitespace — all of it (D76/D94). The change carries the bump, the
 identity-gate re-pin and the spec hunk in ONE commit; the current value is
 `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:51`) and the change log is
-`docs/spec/match_api.md` §6, which the ritual maintains and which is the ONLY
+`docs/dev/history/abi_changelog.md` (the abi RULE and current number: `docs/spec/match_api.md#abi`), which the ritual maintains and which is the ONLY
 home (D76 addendum, [REVW.A1]). Find readers **by grep**, never by memory — a
 hand-enumerated "four sites" list missed a fifth in `match_api.md` (D94). And grep
 for the digit is not sufficient on its own: a manifest whose rows never cite an
@@ -312,7 +312,7 @@ must not break (L4-C1). Most of that text already exists inside the body and can
 hoisted rather than composed. Wave narratives, panel citations and change logs
 belong in `docs/` — the `abi` change log lived in four homes, three of them
 drifting, with two transitions recorded in only one of them (L4-A1). [REVW.A1]
-cut it to one: `docs/spec/match_api.md` §6, maintained by the bump ritual
+cut it to one: `docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6), maintained by the bump ritual
 itself. A 449-line change log in `emit_dfa.c` is what the alternative cost.
 **[HDR-1] (Frank, 2026-09-20) extends this rule from "≥50-line functions" to
 EVERY function**: a small helper still gets a header, just sized down — ONE

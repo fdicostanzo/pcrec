@@ -35,7 +35,7 @@ NOT merged; the full `make test` and the Linux bake-off are the manager's.
 |---|---|
 | `src/gen/emit_vm.c` | `VRS_P_ANCHORED`, row `anchored` (table comment says why undeniable), its `vm_reseed_holds` arm |
 | `src/gen/emit_dfa.c` | `PCREC_ARTIFACT_ABI` 55 -> 56 |
-| `docs/spec/match_api.md` | §2's quoted guard block (3 digits), the §6 abi change log (new top entry), §6.3's `RX_VM_RESEED` value table (`"anchored"` row) |
+| `docs/spec/match_api.md` | #abi-guard's quoted guard block (3 digits), the abi change log in docs/dev/history/abi_changelog.md (new top entry), §6.3's `RX_VM_RESEED` value table (`"anchored"` row) |
 | `docs/spec/tuning.md` | §2.35's table gains row 3 `anchored` (rows renumbered 4-6) and a sentence on the deny |
 | `tests/codegen/run_codegen_tests.sh` | `ABI_EXPECT=56` plus its log message (copied from §6); the `[OPT-HYB-RESEED]` block gains check (5): witnesses `anchored` (`^(?>a\|ab): (.*)$`), `gstart` (`\G(?>a\|ab)c`) and the control `unbound` (the `^` pattern under `-fno-vm-anchor-bound`, which reads `adaptive-dense` with the framed calibration), plus the two byte-equality checks against `-fno-hyb-reseed` |
 | `tests/codegen/run_recursion_identity.sh` | FILEPIN re-pinned 35a9e2b4 -> `376d7250`, this lane's src commit (the self-pin convention) |
@@ -46,9 +46,9 @@ NOT merged; the full `make test` and the Linux bake-off are the manager's.
 **abi readers, found by grep** (`git grep -E "abi[ =-]*55|ABI_H \+ 0\) != 55|ABI_H 55|ABI_EXPECT"`
 outside history docs):
 - `emit_dfa.c:52`
-- `match_api.md:301/302/305`
+- `match_api.md#abi-guard`
 - `run_codegen_tests.sh` `ABI_EXPECT`
-- the §6 change log
+- the change log (docs/dev/history/abi_changelog.md)
 
 The rest are dated history (design notes, reviews, known_issues, the
 `run_nomatch_caps.sh` comment, the S439 comment, xcall.md's "abi 55 at

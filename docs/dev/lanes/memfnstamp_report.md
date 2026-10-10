@@ -251,7 +251,7 @@ test-registry, test-rxtsource, test-cli.
 - `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT`;
 - `tests/codegen/run_recursion_identity.sh` FILEPIN (again: the bump is a
   `src/` change; the `ABI_SUBJ`/`ABI_PIN` tripwire fires until it moves);
-- `docs/spec/match_api.md`: the K80 `#error` text (`(abi N)`), §6's
+- `docs/spec/match_api.md`: the K80 `#error` text (`(abi N)`), the abi paragraph's (match_api.md#abi; entry in docs/dev/history/abi_changelog.md)
   "`rx_info.abi` is `N`" paragraph and its change-log entry for R4a′, and
   the new §6.3 entry's heading "(the stamps' own `abi` event)", which gains
   the number;
@@ -275,7 +275,7 @@ At the bump commit, with `N` = main's abi after the merge (62 expected) and
    (substitute the digit for `N`). Provenance comments "(abi N)" in
    CLAUDE.md files and design docs do not move.
 2. Edit: `PCREC_ARTIFACT_ABI M`; `ABI_EXPECT=M` with the bump's cause in
-   its message (copied FROM §6); `match_api.md` §6's paragraph ("is `M` …
+   its message (copied FROM §6); `match_api.md#abi` paragraph ("is `M` …
    [MEMFN] R4a′ added the two kit stamps") and change log, the K80 `#error`
    example, and §6.3's R4a′ heading gains "`abi` M".
 3. Commit the src change, then re-pin `run_recursion_identity.sh` FILEPIN to

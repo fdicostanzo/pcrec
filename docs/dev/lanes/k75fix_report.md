@@ -8,7 +8,7 @@ changed, no emitted byte moves, no abi event.** Not pushed, not merged.
 ## Sites changed (found by grep, not from the measurement doc's list alone)
 
 Spec / docs (D80):
-- `docs/spec/match_api.md` §3.1 — the loop's non-empty arm; a paragraph stating
+- `docs/spec/match_api.md` §3.1 (#find-all; boundary rule is §9.2 #startpos) — the loop's non-empty arm; a paragraph stating
   the alignment is a no-op on a well-formed subject and why the subtraction
   cannot underflow; the three-sentence boundary rule (a caller's `startpos`
   must be a boundary and is refused otherwise; positions the loop computes are

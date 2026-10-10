@@ -10,7 +10,7 @@ of `docs/dev/reviews/2026-10-03-r1-litscan-s4-c3.md`.
 
 | item | value |
 |---|---|
-| abi | **58 -> 59** (`PCREC_ARTIFACT_ABI`, `ABI_EXPECT`, `match_api.md` §2 guard quote + §6 log, recursion-identity (B) FILEPIN `cc342ddc`) |
+| abi | **58 -> 59** (`PCREC_ARTIFACT_ABI`, `ABI_EXPECT`, `match_api.md` §2 guard quote (now `#abi-guard`) + §6 log (now `docs/dev/history/abi_changelog.md`), recursion-identity (B) FILEPIN `cc342ddc`) |
 | deny bit | **44**, `-fno-req-run-fold` (`PCREC_NO_REQ_RUN_FOLD`), fact-level, masked out of `rx_info.flags` |
 | tuning section | **§2.39** (new); §2.27-§2.30, §2.38, §4, §5.4 amended |
 | limits.def | `PCREC_MIN_REQ_RUN_BITS` 16 (`bits`, a new unit token), `PCREC_MAX_REQ_RUN_POS_SET` 2; `PCREC_MAX_REQ_RUN_EMIT`'s unit `bytes` -> `positions`; manifest 70 -> 72 |
@@ -119,8 +119,8 @@ S266, S268, S277, S280, S285, S289, S316, S329. `scripts/m6read_check_sab_anchor
 ## Readers re-pinned (found by grep, D94)
 
 - abi: `src/gen/emit_dfa.c`, `run_codegen_tests.sh` (`ABI_EXPECT` + the
-  narrative message's 58->59 clause), `match_api.md` §2's guard quote and §6
-  (new "is 59" entry; s4build's became "was 58"), `run_recursion_identity.sh`
+  narrative message's 58->59 clause), `match_api.md` §2's guard quote (now `#abi-guard`) and §6
+  (now `docs/dev/history/abi_changelog.md`; new "is 59" entry; s4build's became "was 58"), `run_recursion_identity.sh`
   (B) FILEPIN -> `cc342ddc` (the lane's last `src/` commit; (A) is untouched:
   the pre-check sits outside the program region), CHANGELOG.
 - limits: `limits_check.sh` manifest (70 -> 72 names + count).
@@ -173,7 +173,7 @@ S266, S268, S277, S280, S285, S289, S316, S329. `scripts/m6read_check_sab_anchor
   31220 (+1115, a class-A1 mover), diff-verified; the other 11 unmoved.
 - `run_axes.sh`: GROUP F2.
 - Spec (D80): `tuning.md` §2.27-§2.30, §2.38 (rows table + example), §2.39,
-  §4, §5.4; `match_api.md` §6 + §6.3 (REQ_BYTE, REQ_RUN suffix grammar and
+  §4, §5.4; `match_api.md` §6 (abi log, now `docs/dev/history/abi_changelog.md`) + §6.3 (REQ_BYTE, REQ_RUN suffix grammar and
   example, REQ_WHY iff, RUN_WORDS); `findings.md` §4; `facts_listing.md`'s
   value column (mask suffix, `o:at+len`); `limits.md` §3.4a (the `bits` unit;
   the knees carry no anchor, §8b's rule); `findings/design.md` §6.1/§6.2

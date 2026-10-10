@@ -145,7 +145,7 @@ columns (`start`, `armed`):
   stepped every position after a failure, so an adaptive retry's attempts
   are a SUBSET of today's, in the same order. A give-up can become an
   answer; an answer cannot become a give-up or change. That one-direction
-  property is what `match_api.md` §6's abi-49 paragraph states.
+  property is what the abi-49 entry of `docs/dev/history/abi_changelog.md` states.
 
 **Row 3 is the brief's "a findings bundle present" row**, rewritten to obey
 D126 Q4: a reader never tests the prior's NONE. The predicate hands the

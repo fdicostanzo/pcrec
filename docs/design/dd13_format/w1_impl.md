@@ -130,7 +130,7 @@ all CLOSED; B1's DIAGNOSIS closed but its REMEDY refuted):
 | **sem N3** — where the delivering bit lives | §2.4: ON the `A_CALL` node (a bare `const Ast *` walker cannot reach a memo), written EXPLICITLY on every call, because the arena zero is the unsound direction — `link`'s own situation and `link`'s own answer (`callgraph.c:246`, `:337`) |
 | **sem N4** — the sub-parse's pending list | §2.5: the list is CAPTURED into the scope record, not overwritten by the restore; the re-basing is TWO passes (a tree walk for `A_CAP`, a pass over the captured list) rather than one |
 | **sem N5** — the region start vs the first delivered group | §4's S9b: the region starts at `ngroups+1` with the wrapper there; the first delivered GROUP is at `ngroups+2`. Revision 2.1 said the second and implied the first |
-| **sem N6** — `match_api.md:1504` becomes reachable-false | §4's S9c, and noted as the SECOND instance of §1.6's staleness shape in one struct's docs |
+| **sem N6** — `match_api.md#rx-info-fields` becomes reachable-false | §4's S9c, and noted as the SECOND instance of §1.6's staleness shape in one struct's docs |
 
 **Revision 2.3** is a CORRECTION OF THIS NOTE'S OWN ERROR, from admin1's
 read-only survey (manager, 2026-08-30):
@@ -338,7 +338,7 @@ sites agree, and r45gram 8 verified all four independently:
 |---|---|---|
 | 1 | `src/gen/emit_dfa.c:1375` | `.abi = 12` → `13`; the emitted `rx_info` struct text (`:596-660`) gains `const char *name` and `int nentries` |
 | 2 | `tests/codegen/run_codegen_tests.sh:2707` | `ABI_EXPECT=12` → `13`, and the bump ledger in the `bad` message at `:2709` |
-| 3 | `docs/spec/match_api.md:159` **and** §6's struct (~`:1340`) | the "`abi` is `12`" sentence, the two new members, and B4's §6 algorithm hunk |
+| 3 | `docs/spec/match_api.md#abi` **and** §6's struct (`#rx-info-fields`) | the "`abi` is `12`" sentence, the two new members, and B4's §5.4 (`#dup-name-algorithm`) algorithm hunk |
 | 4 | `tests/codegen/run_recursion_identity.sh:456` | `FILEPIN="${…:-c275aef}"` → the abi-13 change's last src-touching commit |
 
 **Site 4's rule is per-ABI, not per-step (r45chk F8).** The file states it
@@ -873,8 +873,8 @@ while `groups[]` holds every row. r45sem showed that is an ABI break:
 `emit_dfa.c:1156-1166` builds the array from ALL of `cx->named_groups`
 sorted by `(name, number)` and `:1493` emits `.nnames =
 cx->n_named_groups`, so today `nnames` IS the array length — and
-`match_api.md:1349` documents it as *"entries in groups[]"*, with
-`:1684-1695` giving the caller a bsearch that walks BACK to a name run's
+`match_api.md#rx-info-counts` documents it as *"entries in groups[]"*, with
+`match_api.md#dup-name-algorithm` giving the caller a bsearch that walks BACK to a name run's
 first row and FORWARD to the first row that participated. If injected
 rows sort AMONG the primary's while `nnames` counts only the primary's, a
 caller can miss its own name or land on a library's private group —
@@ -886,7 +886,7 @@ composer enforces it.
 1. **The sort key becomes `(ref-is-NULL first, name, number)`**, so the
    primary's rows are a genuine PREFIX of `groups[]`.
 2. **`nnames` keeps its meaning** — the primary's entries — and a caller
-   that ignores composition runs `match_api.md` §6's algorithm unchanged
+   that ignores composition runs `match_api.md` §5.4's (`#dup-name-algorithm`) algorithm unchanged
    over `groups[0..nnames)`, correctly, forever.
 3. **A NEW `int nentries`** (total rows) rides the abi-13 bump, for a
    caller that wants the injected rows.
@@ -1806,7 +1806,7 @@ end. A parser landing without its spec hunk is rejected on sight.
 | **S10** `limits.md`'s "Handling an oversized artifact" item 1 stops being a forward reference | `limits.md` | W1.1 |
 | **S11** `--source`, `--target`, `--lib-path`, `--emit-composed`, `--list-source`, and §1.5's output-naming rule | `cli.md` | W1.2 (`--emit-composed` with .3) |
 | **S9** `rx_info.name`; **`nentries`**; the `abi` 12→13 sentence | `match_api.md` §6 | W1.2 — one of D76's four sites |
-| **S9c** **NEW (B4)**: the `groups[]` SORT KEY becomes (ref-is-NULL, name, number); the primary's rows are a genuine PREFIX; §6's caller algorithm is unchanged over `groups[0..nnames)`; `nentries` is how a caller reaches injected rows. **Plus N6**: `match_api.md:1504` says `groups`/`nnames` stay `NULL`/`0` *"for every pattern until module `named-groups` is enabled"* — under composition an injected definition's names populate `groups[]`, so that sentence becomes REACHABLE-FALSE and is corrected here. **It is the same staleness shape as the `nnames` comment §1.6 already fixes** — it too carries a live verification (`'(?<g>a)'` still refuses) that keeps reproducing while the claim it supports rots, because the module is GATED rather than absent. Two instances of one pattern, in one struct's documentation | `match_api.md` §6 | W1.3 |
+| **S9c** **NEW (B4)**: the `groups[]` SORT KEY becomes (ref-is-NULL, name, number); the primary's rows are a genuine PREFIX; §5.4's (`#dup-name-algorithm`) caller algorithm is unchanged over `groups[0..nnames)`; `nentries` is how a caller reaches injected rows. **Plus N6**: `match_api.md#rx-info-fields` says `groups`/`nnames` stay `NULL`/`0` *"for every pattern until module `named-groups` is enabled"* — under composition an injected definition's names populate `groups[]`, so that sentence becomes REACHABLE-FALSE and is corrected here. **It is the same staleness shape as the `nnames` comment §1.6 already fixes** — it too carries a live verification (`'(?<g>a)'` still refuses) that keeps reproducing while the claim it supports rots, because the module is GATED rather than absent. Two instances of one pattern, in one struct's documentation | `match_api.md` §6 | W1.3 |
 | **S2** "Composition": the AST-level model, D87 rule 7(a)-(j), lexical-scope-wins with qualification, the visited-set closure, the five namespaces, **DECIDED (7)'s file-namespace rule and `(?&self)`**, and that a composed block's oracle is necessarily `pcre2` | `rxt_format.md` | W1.3 |
 | **S2b** the three pattern extensions with the "no legal PCRE2 pattern changes meaning" constraint and §1.4's measurement; the three registry rows | `docs/spec/` + `--list-syntax` | W1.3 |
 | **S9b** D61 made concrete by its first producer: `ngroups`/`nnames` are the PRIMARY's own; **the delivered REGION starts at `ngroups+1`, and the definition's WRAPPER sits there, so the first delivered GROUP is at `ngroups+2`** (N5; Q-W1, r45sem's correction — the region's start and the first readable group are two different numbers and revision 2.1 conflated them in one sentence); `RX_NCAPS` may move across library versions while `1..ngroups` holds still; and the difference between `--source` composition and handing composed TEXT to plain `-p` | `match_api.md` §2/§5 | W1.3 |
@@ -2272,7 +2272,7 @@ would be useless against.
 | id | what it proves | its source | what it must NOT share |
 |---|---|---|---|
 | **W1.3-A** | injection is SORTED correctly: the primary's rows are a genuine prefix of `groups[]` and `(ref, name, number)` is non-decreasing | the EMITTED ARTIFACT, read as text by `tests/codegen` | it never asks the composer what it wrote. [M6.5-DUPNAMES]'s existing row is the same shape and its expectation MOVES in this change |
-| **W1.3-B** | `nentries > nnames` for the first time, and `nnames` still counts exactly the rows a `match_api.md` §6 caller may bsearch | the artifact's two numbers vs a COUNT OF EMITTED ROWS with `.ref == NULL` | comparing `nnames` to `cx->n_named_groups` would be the composer checking itself |
+| **W1.3-B** | `nentries > nnames` for the first time, and `nnames` still counts exactly the rows a `match_api.md` §5.4 (`#dup-name-algorithm`) caller may bsearch | the artifact's two numbers vs a COUNT OF EMITTED ROWS with `.ref == NULL` | comparing `nnames` to `cx->n_named_groups` would be the composer checking itself |
 | **W1.3-C** | delivery BY NAME works end to end: a composed matcher's delivered slot holds the right offsets | `tests/definitions`' `.rxt` cases through the ordinary driver | the oracle is python `re` on the FLAT pattern, not on the composed one |
 | **W1.3-D** | the composed artifact is ANSWER-IDENTICAL to the flat one (C1's identity proof extended) | two artifacts, two `--source`-free and `--source` compiles, the same case list | the flat pattern is written BY HAND in the fixture, never generated by `--emit-composed` |
 | **W1.3-E** | the collision refusal fires | the reject table: two names mapping to one prefix, one `.rxtin` fixture per shape | the diagnostic names BOTH names, so a refusal that names only the prefix is a red |
@@ -2303,8 +2303,8 @@ counted rows would call one of them green.
 |---|---|---|
 | S13a | `docs/spec/rxt_format.md` | the `name` line's grammar admits `-`/`.`; the mapping to a C prefix; `target = <name>`; the collision refusal; that a `-`/`.` name is not callable from a pattern |
 | S13b | `docs/spec/rxt_format.md` | `lib` files are READ, not merely resolved: the closure, its order, its dedup, and the duplicate-definition refusal |
-| S13c | `docs/spec/match_api.md` §6 | **S9b as D89 revised it**: `ngroups`/`nnames` are the primary's own; `nentries` may exceed `nnames`; `groups[0..nnames)` is the primary's rows and is what §6's algorithm walks; `groups[nnames..nentries)` are DELIVERED library groups, addressed BY NAME, with `.ref` naming the definition; the wrapper's number is internal and appears in NO row; `RX_NCAPS` may move across library versions while `1..ngroups` holds still |
-| S13d | `docs/spec/match_api.md` §6 | the three tiers, stated as what a caller can and cannot see |
+| S13c | `docs/spec/match_api.md` §5.5 (`#composition`) | **S9b as D89 revised it**: `ngroups`/`nnames` are the primary's own; `nentries` may exceed `nnames`; `groups[0..nnames)` is the primary's rows and is what §5.4's (`#dup-name-algorithm`) algorithm walks; `groups[nnames..nentries)` are DELIVERED library groups, addressed BY NAME, with `.ref` naming the definition; the wrapper's number is internal and appears in NO row; `RX_NCAPS` may move across library versions while `1..ngroups` holds still |
+| S13d | `docs/spec/match_api.md` §5.5 (`#composition`) | the three tiers, stated as what a caller can and cannot see |
 | S13e | `docs/spec/cli.md` | `--source` composes: what a definition is, where it is looked up, `--lib-path`'s role now that libs are read |
 | S13f | `docs/spec/table_contract.md` | nothing — `--list-source` still reports the file AS WRITTEN, and composition is not a column |
 
@@ -2346,14 +2346,14 @@ filtered to the readers of the CURRENT VALUE, which today is **17**:
 | 1 | `src/gen/emit_dfa.c:1652` | `pcrec_sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
 | 2 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` | YES |
 | 3 | `tests/codegen/run_codegen_tests.sh:2760` | the BUMP LEDGER inside that check's `bad` message — one clause per event since abi 2 | YES, one clause appended |
-| 4 | `docs/spec/match_api.md:159` | *"`rx_info.abi` is `17`"* in §1's general-rule paragraph | YES |
-| 5 | `docs/spec/match_api.md:1754` | *"`rx_info.abi` is `17` on every artifact today"* in the struct section | YES |
+| 4 | `docs/spec/match_api.md#abi` | *"`rx_info.abi` is `17`"* in §1's general-rule paragraph | YES |
+| 5 | `docs/spec/match_api.md#abi` | *"`rx_info.abi` is `17` on every artifact today"* in the struct section | YES |
 | 6 | `tests/codegen/run_recursion_identity.sh:555` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a3f40b1}"` — the gate's (B) pin | YES, to **this step's LAST src-touching commit**, never its first (that file's own rule at `:394-406`; getting it backwards cost 952 falsely-differing artifacts once) |
-| — | `docs/spec/match_api.md:2208` | *"the abi-17 …"* — names the EVENT at which the always-inline spelling landed | **NO.** A historical reference to when something happened, not a claim about the current number |
+| — | `docs/dev/history/abi_changelog.md` | *"the abi-17 …"* — names the EVENT at which the always-inline spelling landed | **NO.** A historical reference to when something happened, not a claim about the current number |
 | — | `src/gen/CLAUDE.md:2399` etc. | one dated section per past bump | NO — a bump ADDS a section, it does not edit the old ones |
 
 **Six readers, and a hand-enumerated four would have missed two of them**
-— `match_api.md:1754` and the ledger clause — which is D94's own lesson
+— `match_api.md#abi` and the ledger clause — which is D94's own lesson
 reproduced on the very next bump after the ruling. The seventh and eighth
 rows are the other half of the discipline: the grep finds text that
 CONTAINS the number and is not a reader of it, and a list that silently

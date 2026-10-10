@@ -19,7 +19,7 @@ worktree and `git` are what this lane does until then.
   design note (which predates [OPT-5]):
   1. `src/gen/emit_dfa.c` `.abi` — **13** today.
   2. `tests/codegen/run_codegen_tests.sh:2707` `ABI_EXPECT=13`.
-  3. `docs/spec/match_api.md:159` and `:1602` — "abi is 13".
+  3. `docs/spec/match_api.md#abi-guard` and `#abi` (were `:159` and `:1602`) — "abi is 13".
   4. `tests/codegen/run_recursion_identity.sh:473` `FILEPIN="${...:-dc2c8ef}"`
      — the design note's `c275aef` is stale.
   This lane's bump is therefore **13 -> 14**; the manager assigns the final

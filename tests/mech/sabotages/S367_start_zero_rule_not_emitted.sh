@@ -21,7 +21,7 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="startbnd harness"
 SAB_HARNESS_TARGET="tests/utf8/k73_startskip.rxt"
 SAB_DESC="pcrec_emit_start_zero writes nothing, so every caller-facing body attempts a match at offset 0 on a subject that begins with a continuation byte — K73 restored at every site at once"
-SAB_DOC_FIGURE="docs/dev/known_issues.md K73; docs/spec/match_api.md 3.1's offset-0 bullet; docs/dev/lanes/k73utf_report.md"
+SAB_DOC_FIGURE="docs/dev/known_issues.md K73; docs/spec/match_api.md 9.3 (#offset-zero); docs/dev/lanes/k73utf_report.md"
 SAB_COUNT=1
 # REACH: a nullable pattern under -e utf8 must carry the rule at all.
 SAB_REACH='"$PCREC" -p rx -e utf8 -o - --pattern "x*" | grep -c "search_from == 0 && !(" | head -1'

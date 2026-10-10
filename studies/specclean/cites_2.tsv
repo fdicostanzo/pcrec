@@ -1,0 +1,219 @@
+docs/design/patfacts/design.md	1289	`match_api.md` §6.3's)	same	VALID	stamp vocabularies are 6.3
+docs/design/poss_arms.md	1478	`match_api.md` §6's abi change-log paragraph	`docs/dev/history/abi_changelog.md` (the abi change-log; was `match_api.md` §6's paragraph), plus the `VM_POSS_ARMS`   stamp's entry in the stamp table (`match_api.md#stamp-vm-masks`).	REPOINTED	abi change log moved to history file; stamp entry is in #stamp-vm-masks
+docs/design/prefilter_count_independence.md	271	`docs/spec/match_api.md` §6's "abi is N" sentence	`docs/spec/match_api.md#abi` (§6)'s "abi is N" sentence	REPOINTED	abi rule/current number is #abi
+docs/design/premultiplied_dfa_table.md	467	`docs/spec/match_api.md` §6.3's (a)/(b) split	`docs/spec/match_api.md` §6.3's (a)/(b) split (`#stamp-scoping`)	REPOINTED	two-families rule is in 6.3.1 #stamp-scoping
+docs/design/premultiplied_dfa_table.md	621	`docs/spec/match_api.md` §6 — the "`rx_info.abi` is `7`" sentence (two sites:    the §1 note and §6's bullet)	`docs/spec/match_api.md#abi` — the "`rx_info.abi` is `7`" sentence (two sites:    the §1 note and §6's bullet)	REPOINTED	abi sentence now #abi (historical abi 7)
+docs/design/replace_design.md	45	`docs/spec/match_api.md` §2, with its	same	VALID	rx_renderfn is in section 2 (#abi-types)
+docs/design/replace_design.md	215	`docs/spec/match_api.md` §2 carries it today	same	VALID	rx_renderfn in section 2
+docs/design/replace_design.md	354	`docs/spec/match_api.md` §3.1's *caller-driven* find-all loop	`docs/spec/match_api.md` §3.1's (`#find-all-lossy`) *caller-driven* find-all loop	REPOINTED	lossy-loop paragraph has its own anchor
+docs/design/replace_design.md	607	`docs/spec/match_api.md` §2 today	same	VALID	rx_renderfn in section 2
+docs/design/reqpos_2b.md	292	`docs/spec/match_api.md` §6's precedent	`docs/spec/match_api.md#abi` (§6)'s precedent	REPOINTED	abi rule is #abi
+docs/design/reqpos_2b.md	373	`match_api.md`   §3.1 permits a legal empty subject	`match_api.md`   §3.1 (`#search-conventions`) permits a legal empty subject	REPOINTED	s may be NULL only when n==0 is in #search-conventions
+docs/design/revend.md	436	match_api.md:302,305 / :2318 / §6's change log	`docs/spec/match_api.md#abi-guard` (the TU-guard example), `#abi` (the abi sentence), and   `docs/dev/history/abi_changelog.md` (the change log)	REPOINTED	line cites -> anchors; abi change log moved
+docs/design/revend.md	464	`match_api.md`	same	VALID	bare file mention, no section
+docs/design/revend.md	753	`match_api.md` `END_WINDOW` vocabulary ..., the abi sentence and TU-guard example	`match_api.md` `END_WINDOW` vocabulary (`#stamp-end-window`) + `"rev-end"`, the abi sentence (`#abi`) and TU-guard example (`#abi-guard`)	REPOINTED	added anchors
+docs/design/revend.md	755	`match_api.md`: the downstream search stamps ... (§5.2)	same	VALID	no match_api section cited; (§5.2) is revend.md own section
+docs/design/startset.md	499	(`match_api.md` §3.1, k82h Claim 3)	(`match_api.md` §3.1, `#search-skips`, k82h Claim 3)	REPOINTED	skip premise is #search-skips in 3.1
+docs/design/startset.md	962	`match_api.md`'s value table;	`match_api.md`'s value table (`#stamp-inventory`);	REPOINTED	stamp inventory anchor
+docs/design/startset.md	1460	match_api.md (abi sentence, #error example at :302, change log)	`docs/spec/match_api.md` (the abi sentence `#abi`, the `#error` example `#abi-guard`,     the change log `docs/dev/history/abi_changelog.md`);	REPOINTED	line cite :302 -> #abi-guard; change log moved
+docs/design/startset.md	1486	- `match_api.md` gains:	same	VALID	bare file mention
+docs/design/startset.md	1489	the §3.1 give-up sentence	the §3.1 give-up sentence (`match_api.md#search-skips`; k82h's	REPOINTED	give-up sentence lives in #search-skips
+docs/design/start_table.md	408	the caller-driven loop, `match_api.md` §3.1;	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/design/start_table.md	432	(`match_api.md` §3.1, "The empty-match advance rule",   `:885`)	(`match_api.md` §3.1, "The empty-match advance",   `#find-all`)	REPOINTED	line cite :885 -> #find-all; rule heading is now "The empty-match advance"
+docs/design/start_table.md	862	`docs/spec/match_api.md:4686-4703` documents the value	`docs/spec/match_api.md#stamp-dfa-start` documents the value	REPOINTED	DFA_START text, topic per citing text
+docs/design/start_table.md	1027	match_api.md:2348, :2441	`docs/spec/match_api.md` (formerly `:2348`, `:2441`; the rewritten doc no longer names `dfa_pfs[]`) and `docs/spec/tuning.md:2530` name `dfa_pfs[]`	REPOINTED	line cites stale; new doc has no dfa_pfs mention (grep)
+docs/design/start_table.md	1925	with the D80 spec hunk fixing `match_api.md:4686-4703`'s contradiction	with the D80 spec hunk fixing `match_api.md#stamp-dfa-start`'s contradiction	REPOINTED	line cite -> #stamp-dfa-start (new text lists attempt/empty under reverse-pass)
+docs/design/start_table.md	1926	spec hunk correcting `match_api.md:4686-4703`'s	spec hunk correcting `match_api.md#stamp-dfa-start`'s	REPOINTED	line cite -> #stamp-dfa-start
+docs/design/start_table.md	1969	`match_api.md` §6.3 vocabularies	same	VALID	stamp vocabularies are 6.3
+docs/design/two_tier_entry.md	199	`match_api.md` §3, §5.3, §10.4, new §10.9;	same	VALID	all remain same topics; 10.9 is #tiered-entry
+docs/design/subroutines_design.md	1928	match_api.md:171, 209, 213, 222, 822, 850	`docs/spec/match_api.md#abi-types` (§2's constants block), `#giveup-codes` (§4), `#composed-call-sites`	REPOINTED	line cites -> ERR_FLOOR in the shared block (#abi-types), the code table (#giveup-codes) and the __builtin_trap obligation (#composed-call-sites)
+docs/design/subroutines_design.md	1931	docs/design/match_api_m4.md:303,...	same	VALID	different file (match_api_m4.md), not a citation of match_api.md
+docs/design/utf8_design.md	1141	`docs/spec/match_api.md` §3.1 needs to gain under D80:	`docs/spec/match_api.md` §3.1 needs to gain under D80 (it landed as §9.2, `#startpos`):	REPOINTED	per-entry startpos promise now 9.2 #startpos
+docs/design/utf8_design.md	1146	(`match_api.md` §3.1) | **YES**	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/design/utf8_design.md	1163	`docs/spec/match_api.md` §3.1 in stage 2's own change (§13 obligation 1)	`docs/spec/match_api.md` §3.1 in stage 2's own change (§13 obligation 1; it landed as §9.2, `#startpos`)	REPOINTED	startpos-must-be-boundary contract sentence now 9.2 #startpos
+docs/design/utf8_design.md	2042	`docs/spec/match_api.md` §3.1's find-all loop is already final.	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/design/utf8_design.md	4134	Stage 2 alone touches `match_api.md` §3.1.1	same	VALID	3.1.1 next_pos unchanged; 8.2 unchanged
+docs/design/utf8_design.md	4210	`docs/spec/match_api.md` (no section)	user-visible semantic and belongs in `docs/spec/match_api.md` (§9, `#encodings`) in stage 2's	REPOINTED	invalid-tolerant / startpos semantics are now section 9
+docs/design/xcall.md	76	(match_api.md §3.6)	same	VALID	3.6 unchanged
+docs/design/xcall.md	239	`match_api.md` §6.3's value set	same	VALID	6.3 unchanged
+docs/design/xcall.md	271	(match_api.md §6, the abi-49 paragraph)	(`docs/dev/history/abi_changelog.md`, the abi-49 paragraph; was match_api.md §6)	REPOINTED	abi change log moved to history file
+docs/design/xcall.md	317	CONTRADICTS match_api.md §3.1's "no batch find-all primitive	CONTRADICTS match_api.md §3.1's (`#find-all`) "no batch find-all primitive	REPOINTED	new text: "There is no batch find-all primitive." (#find-all); the "none is planned for v1" half is no longer stated
+docs/design/xcall.md	322	(match_api.md §2's   fixed ABI types)	same	VALID	2 unchanged
+docs/design/variables_common.md	180	`docs/spec/match_api.md` §5.3 forbids	same	VALID	5.3 concurrency, no-mutable-state sentence is there (#concurrency)
+docs/design/variables_common.md	324	`docs/spec/match_api.md` §4 already defines	same	VALID	4 unchanged
+docs/design/variables_common.md	339	`docs/spec/match_api.md` §5: `PCREC_UNSET	same	VALID	5 unchanged
+docs/design/variables_common.md	550	`docs/spec/match_api.md`'s own `<prefix>_search_in` = the un-suffixed twin	same	VALID	bare mention, no section
+docs/design/variables_common.md	564	`docs/spec/match_api.md` §5.3 is    a binding contract	same	VALID	5.3 unchanged
+docs/design/variables_common.md	566	§10.5	same	VALID	cites section number only, in the match_api.md context of the previous cite; 10.5 unchanged (#buffers-concurrency)
+docs/design/variables_pattern.md	423	match_api.md:915-918; match_api.md:1238	(`docs/spec/match_api.md#abi-types`; `match_api.md#abi-block`/`lib/pcrec.h:1326`	REPOINTED	line cites -> rx_matchfn fixed-literal ABI type (#abi-types) and the shared ABI block (#abi-block)
+docs/design/variables_pattern.md	478	**Why a bound state is refused, in one line each:** `docs/spec/match_api.md` §5.3 is	same	VALID	5.3 unchanged
+docs/design/variables_pattern.md	554	`docs/spec/match_api.md` hunk	same	VALID	bare mention, no section
+docs/design/variables_pattern.md	630	match_api.md` §4 defines a class *below*	same	VALID	4 unchanged
+docs/design/variables_pattern.md	640	match_api.md:178-179	`docs/dev/history/abi_changelog.md` (the K50 entry; was `match_api.md:178-179`) records moving abi 24→25	REPOINTED	line cite -> abi change log, now in history file (STARTPOS (-7) entry at changelog line 1057)
+docs/design/variables_pattern.md	822	`docs/spec/match_api.md` §3.1's loop passes `vars`	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/design/variables_roadmap.md	54	`docs/spec/match_api.md` §2, **reserved	same	VALID	2 unchanged
+docs/design/variables_roadmap.md	113	the `docs/spec/match_api.md` hunk, `rx_info.nvars` appended	same	VALID	bare mention, no section
+docs/design/variables_roadmap.md	167	`docs/spec/match_api.md` vars hunk and	same	VALID	bare mention, no section
+docs/design/variables_roadmap.md	349	**not** `match_api.md` §3.1's caller loop	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/design/utf_valid_design.md	233	match_api §3.1	same	VALID	find-all loop stays 3.1
+docs/design/utf_valid_design.md	254	match_api §3.1	tolerance, match_api §9.4, `#utf-check`)	REPOINTED	invalid-tolerant default is now 9.4 (and #stamp-utf-check)
+docs/design/utf_valid_design.md	400	match_api §1	same	VALID	1 unchanged
+docs/design/utf_valid_design.md	410	match_api (no section)	The spec hunk says so, as match_api   (§4, `#composed-call-sites`) already does for `PCREC_ERR_INTERNAL`.	REPOINTED	INTERNAL propagation at composed sites is in 4 #composed-call-sites
+docs/design/utf_valid_design.md	448	match_api §4	same	VALID	4 unchanged
+docs/design/utf_valid_design.md	464	match_api §3.1	same	VALID	find-all loop stays 3.1
+docs/design/utf_valid_design.md	562	match_api §1, §3.1/§3.2/§3.3, §3.1.1, §4, §6, §10	same	VALID	spec-hunk plan list: sections 1, 3.1-3.3, 3.1.1, 4, 6, 10 all unchanged topics
+docs/design/utf_valid_design.md	653	match_api §10	same	VALID	10 unchanged
+docs/design/start_table/reader_grep.txt	2	docs/spec/match_api.md:2360	same	LEFT-GENERATED	probe output (reader_grep.sh); stale line cite is the data
+docs/design/start_table/reader_grep.txt	3	docs/spec/match_api.md:2453	same	LEFT-GENERATED	probe output (reader_grep.sh); stale line cite is the data
+docs/design/subroutines_measurements/out/premises.txt	108	./docs/spec/match_api.md:171	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/subroutines_measurements/out/premises.txt	109	./docs/spec/match_api.md:209	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/subroutines_measurements/out/premises.txt	110	./docs/spec/match_api.md:213	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/subroutines_measurements/out/premises.txt	111	./docs/spec/match_api.md:222	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/subroutines_measurements/out/premises.txt	112	./docs/spec/match_api.md:822	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/subroutines_measurements/out/premises.txt	113	./docs/spec/match_api.md:850	same	LEFT-GENERATED	generated under out/ (grep output)
+docs/design/utf8_measurements/out/startbnd.txt	179	match_api.md §3.1	same	LEFT-GENERATED	generated under out/; cite VALID (startpos > n returns 0 is #search-conventions, section 3.1)
+docs/design/utf8_measurements/probes/probe_startbnd.py	134	match_api.md §3.1	same	VALID	print string that generates startbnd.txt; startpos > n returns 0 is still 3.1 (#search-conventions); left unchanged so it matches the generated output
+docs/design/subroutines_measurements/out/premises.txt	138	subroutines_design.md:1122 (row quoting match_api.md:171,209,...)	same	LEFT-GENERATED	generated under out/
+docs/dev/coding_guide.md	235	`docs/spec/match_api.md` §6 (change log)	the change log is `docs/dev/history/abi_changelog.md` (the abi RULE and current number: `docs/spec/match_api.md#abi`), which the ritual maintains and which is the ONLY home (D76 addendum, [REVW.A1]).	REPOINTED	abi change log moved out of the spec to the history file
+docs/dev/coding_guide.md	237	`match_api.md` (D94)	same	VALID	bare file mention, no section
+docs/dev/coding_guide.md	315	`docs/spec/match_api.md` §6	cut it to one: `docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6), maintained by the bump ritual	REPOINTED	abi change log moved to the history file
+docs/dev/k75_measurement.md	38	(a stated divergence, match_api.md §3.1).	(a stated divergence, match_api.md §9.2, `#startpos`).	REPOINTED	startpos-boundary refusal contract is 9.2 (#startpos); the PCRE2_ANCHORED divergence sits there (line ~2785)
+docs/dev/k75_measurement.md	80	the spec find-all loop (match_api.md §3.1) handing	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/dev/k75_measurement.md	123	`docs/spec/match_api.md` §3.1 (the loop and the empty-arm	same	VALID	find-all loop and empty-match advance stay 3.1 (#find-all)
+docs/dev/lanes/admitimpl_report.md	10	`match_api.md`	same	VALID	bare file mention, no section
+docs/dev/lanes/admitimpl_report.md	211	| `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]) |	| `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]; now `docs/dev/history/abi_changelog.md`) |	REPOINTED	abi change log moved to history file
+docs/dev/lanes/admitimpl_report.md	377	- **`docs/spec/match_api.md` §6** — the new `abi` 31 entry	- **`docs/spec/match_api.md` §6** (now `docs/dev/history/abi_changelog.md`) — the new `abi` 31 entry	REPOINTED	abi change log moved to history file
+docs/dev/lanes/admitimpl_report.md	380	- **`docs/spec/match_api.md` §6.3** — `<PREFIX>_REQ_WHY`'s full entry	same	VALID	6.3 stamp entry stays (#stamp-req-why)
+docs/dev/lanes/artmgr_report.md	29	(match_api.md §10.2)	same	VALID	10.2 unchanged (#buffers-entries)
+docs/dev/lanes/c3build_report.md	13	`match_api.md` §2 guard quote + §6 log	`match_api.md` §2 guard quote (now `#abi-guard`) + §6 log (now `docs/dev/history/abi_changelog.md`)	REPOINTED	guard example now #abi-guard; abi log moved to history
+docs/dev/lanes/c3build_report.md	122	`match_api.md` §2's guard quote and §6   (new "is 59" entry	`match_api.md` §2's guard quote (now `#abi-guard`) and §6   (now `docs/dev/history/abi_changelog.md`; new "is 59" entry	REPOINTED	guard example now #abi-guard; abi log moved to history
+docs/dev/lanes/c3build_report.md	176	`match_api.md` §6 + §6.3 (REQ_BYTE, REQ_RUN	`match_api.md` §6 (abi log, now `docs/dev/history/abi_changelog.md`) + §6.3 (REQ_BYTE, REQ_RUN	REPOINTED	§6 here is the abi log entry (moved); 6.3 stamps stay
+docs/dev/lanes/ccd2_report.md	451	match_api.md:159	| `docs/spec/match_api.md#abi` (was `:159`) | "`rx_info.abi` is `20`" |	REPOINTED	line cite: the abi sentence is #abi
+docs/dev/lanes/ccd2_report.md	452	match_api.md:1801	| `docs/dev/history/abi_changelog.md` (was `match_api.md:1801`) | "`rx_info.abi` is `20` on every artifact today	REPOINTED	line cite: the abi event list moved to the history file
+docs/dev/lanes/ccd2_report.md	463	- `docs/spec/match_api.md` **§6.3**: the two new family-(b)	same	VALID	6.3 unchanged
+docs/dev/lanes/ccd2_report.md	904	That cost is stated in `match_api.md` §6.3's IFF.	same	VALID	6.3 unchanged
+docs/dev/lanes/ccd2_report.md	909	match_api.md (§159 and §1801)	`match_api.md`'s two sentences (`#abi`, was §159, and the event list, was §1801, now `docs/dev/history/abi_changelog.md`).	REPOINTED	line cites -> #abi and history file
+docs/dev/lanes/ccdiff1_report.md	119	match_api.md:159-166	| `match_api.md#abi` (was `:159-166`) | `` `17` `` |	REPOINTED	abi paragraph is #abi
+docs/dev/lanes/ccdiff1_report.md	120	match_api.md:1691-1725	| `match_api.md#stamp-scoping` (was `:1691-1725`) | rewritten with the (a)/(b) split	REPOINTED	(a)/(b) split is 6.3.1 #stamp-scoping
+docs/dev/lanes/ccdiff1_report.md	121	match_api.md:2018-2033	| `match_api.md#stamp-dfa-table` (was `:2018-2033`) | new paragraph: the encoding stamp	REPOINTED	RX_DFA_TABLE entry is #stamp-dfa-table
+docs/dev/lanes/ccdiff1_report.md	122	match_api.md:2060-2100	| `match_api.md#stamp-dfa-uniform-folds` (was `:2060-2100`) | new (b)-family macro entry	REPOINTED	RX_DFA_UNIFORM_FOLDS entry
+docs/dev/lanes/ccdiff1_report.md	123	match_api.md:2142-2153	| `match_api.md#stamp-vm-frameless` (was `:2142-2153`) | records that `1` now ALSO	REPOINTED	RX_VM_FRAMELESS entry
+docs/dev/lanes/ccdiff1_report.md	119	`docs/spec/match_api.md` §6 caller-facing `abi` paragraph	`docs/spec/match_api.md` §6 (`#abi`) caller-facing `abi` paragraph	REPOINTED	abi paragraph anchor added
+docs/dev/lanes/ccdiff1_report.md	161	alongside its `docs/spec/match_api.md` §6.3 contract entry	same	VALID	6.3 unchanged
+docs/dev/lanes/ccdiff1_report.md	161	match_api.md is the contract (D80's minimum)	same	VALID	bare file mention
+docs/dev/lanes/ccdiff1_report.md	163	`RX_DFA_UNIFORM_FOLDS` had a match_api.md §6.3 entry	same	VALID	6.3 unchanged
+docs/dev/lanes/CLAUDE.md	481	`match_api.md` §3.1's shipped protocol by reference	same	VALID	find-all loop stays 3.1
+docs/dev/lanes/CLAUDE.md	1609	`match_api.md` §8.0's worked example gains	same	VALID	8.0 unchanged
+docs/dev/lanes/CLAUDE.md	2161	change log is cut from four homes to one, `match_api.md` §6, with	change log is cut from four homes to one, `match_api.md` §6 (now `docs/dev/history/abi_changelog.md`), with	REPOINTED	abi change log moved to history file
+docs/dev/lanes/CLAUDE.md	2773	match_api.md §6 change log) or is a deliberate	match_api.md §6 change log, now `docs/dev/history/abi_changelog.md`) or is a deliberate	REPOINTED	abi change log moved to history file
+docs/dev/lanes/CLAUDE.md	2874	carried in `docs/spec/match_api.md` §2, and reserved with no producer.	same	VALID	rx_renderfn in section 2
+docs/dev/lanes/CLAUDE.md	3274	Full D76/D94 ritual (match_api.md   §6,	Full D76/D94 ritual (match_api.md   §6 (`#abi`; the change log is now `docs/dev/history/abi_changelog.md`),	REPOINTED	abi rule is #abi; log moved
+docs/dev/lanes/CLAUDE.md	3600	Spec hunks (match_api.md §3.1, rxt_format.md `mc`)	same	VALID	find-all loop and K75 advance stay 3.1 (#find-all)
+docs/dev/lanes/CLAUDE.md	3678	match_api §6.3 hunk, mover-census	same	VALID	6.3 unchanged
+docs/dev/lanes/CLAUDE.md	3679	readers by six greps with hit counts, match_api §6 change-log entry.	readers by six greps with hit counts, match_api §6 change-log entry (now `docs/dev/history/abi_changelog.md`).	REPOINTED	abi change log moved to history file
+docs/dev/lanes/CLAUDE.md	3692	match_api C11	same	VALID	"C11" is the memfn stamps check name (match_api.md "Checked by C11"), not a section
+docs/dev/lanes/clspack_report.md	63	`match_api.md` §6 (the abi log) and §6.3 (the stamp)	`match_api.md` §6 (the abi log, now `docs/dev/history/abi_changelog.md`) and §6.3 (the stamp)	REPOINTED	abi change log moved to history file
+docs/dev/lanes/clspack_report.md	163	- `docs/spec/tuning.md`, `docs/spec/match_api.md`	same	VALID	bare file mention
+docs/dev/lanes/clss2_report.md	78	3. `docs/spec/match_api.md` §6's "is `N` today" paragraph.	3. `docs/spec/match_api.md` §6's (`#abi`) "is `N` today" paragraph.	REPOINTED	abi sentence is #abi
+docs/dev/lanes/clss2_report.md	100	- `docs/spec/match_api.md`:   - §6: the abi 51 and 52 entries.	- `docs/spec/match_api.md`:   - §6: the abi 51 and 52 entries (now in `docs/dev/history/abi_changelog.md`).	REPOINTED	abi entries moved to history file
+docs/dev/lanes/clss2_report.md	379	| tuning.md §2.22/§2.33, lib/pcrec.h, match_api §6.3 |	same	VALID	6.3 unchanged
+docs/dev/lanes/clss2_report.md	380	| match_api §6 "is 53 / was 52 / was 51" |	| match_api §6 (`#abi`; the was-entries now in `docs/dev/history/abi_changelog.md`) "is 53 / was 52 / was 51" |	REPOINTED	abi sentence #abi; was-entries moved to history file
+docs/dev/lanes/clss2_report.md	417	- `docs/spec/match_api.md`: §6 "is 53", §6.3	- `docs/spec/match_api.md`: §6 "is 53" (`#abi`), §6.3	REPOINTED	abi sentence is #abi
+docs/dev/lanes/clss2_report.md	430	- `match_api.md` §6; - `run_recursion_identity.sh`	- `match_api.md` §6 (`#abi`); - `run_recursion_identity.sh`	REPOINTED	abi sentence is #abi
+docs/dev/lanes/clss2_report.md	518	`match_api.md` §6 (S2's three entries kept on top	`match_api.md` §6 (now `docs/dev/history/abi_changelog.md`; S2's three entries kept on top	REPOINTED	abi change log moved to history file
+docs/dev/lanes/clss2_report.md	526	(grep: lanes/CLAUDE.md, match_api.md)	same	VALID	bare file mention
+docs/dev/known_issues.md	129	`match_api.md` §6 change log. Check: `tests/codegen/run_prechecks.sh`	`match_api.md` §6 change log (now `docs/dev/history/abi_changelog.md`). Check: `tests/codegen/run_prechecks.sh`	REPOINTED	abi change log moved to history file
+docs/dev/known_issues.md	287	a NO-MATCH, against match_api.md §3.1 	a NO-MATCH, against match_api.md §3.1 (`#search-conventions`) 	REPOINTED	caps untouched on non-1 return is in #search-conventions (3.1)
+docs/dev/known_issues.md	291	match_api.md §3.1 and §6	Spec: match_api.md §3.1 (a sentence; `#search-conventions`) and §6 (the abi 55 entry, now in `docs/dev/history/abi_changelog.md`).	REPOINTED	3.1 sentence stays; abi log moved to history file
+docs/dev/known_issues.md	299	match_api.md §2 and §6	Spec: match_api.md §2 and §6 (the guard example is now `#abi-guard`; the abi log is `docs/dev/history/abi_changelog.md`). Check: run_codegen_tests.sh K80-a/-b/-c	REPOINTED	guard text is #abi-guard (section 1); abi log moved to history file
+docs/dev/known_issues.md	307	limits.md §8 "Size limits and the prefix", match_api.md §6.3, tuning.md §2.21.	same	VALID	6.3 unchanged
+docs/dev/known_issues.md	324	(the match_api.md protocol: next startpos = previous end)	same	VALID	find-all protocol stays 3.1 (#find-all); no section cited
+docs/dev/known_issues.md	326	the find-all loop of match_api.md §3.1 resumes at	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/dev/known_issues.md	326	§3.1 now states the rule outright	and §3.1 now states the rule outright (caller startpos must be a boundary; now §9.2 `#startpos`;	REPOINTED	startpos-must-be-boundary rule is 9.2 #startpos (bare §3.1 in match_api context)
+docs/dev/known_issues.md	326	match_api.md §3.1 (+ the startpos bullet)	Sites: match_api.md §3.1 `#find-all` (+ the startpos bullet, now §9.2 `#startpos`), rxt_format.md `mc`	REPOINTED	find-all stays 3.1; startpos rule moved to 9.2
+docs/dev/known_issues.md	349	It is the same rule as `docs/spec/match_api.md` §3.1.1's	same	VALID	3.1.1 next_pos unchanged
+docs/dev/known_issues.md	354	§3.1's "every position the ENGINE generates"	contradicting §3.1's (now §9.5, `#engine-positions`) "every position the ENGINE generates is a character boundary".	REPOINTED	bare §3.1 in match_api context: engine-generated positions are 9.5
+docs/dev/known_issues.md	357	§3.1 says "neither arm ROUNDS"	rounds a `startpos` where §3.1 (now §9.2, `#startpos`) says "neither arm ROUNDS the caller's startpos"	REPOINTED	bare §3.1 in match_api context: startpos rounding statement is 9.2
+docs/dev/known_issues.md	380	match_api.md §3.1 (two bullets) and §6	Spec: `docs/spec/match_api.md` §3.1 (two bullets; now §9.3 `#offset-zero` and §9.2 `#startpos`) and §6 (the abi entry, now `docs/dev/history/abi_changelog.md`; `#stamp-startpos-guard`), `docs/spec/tuning.md` §2.23.	REPOINTED	offset-0 rule is 9.3; startpos rule 9.2; abi entry moved to history file (§6 reading best-guess: abi entry)
+docs/dev/known_issues.md	645	`match_api.md` §6's change-log entry, `run_recursion_identity.sh`'s	`match_api.md` §6's change-log entry (now `docs/dev/history/abi_changelog.md`), `run_recursion_identity.sh`'s	REPOINTED	abi change log moved to history file
+docs/dev/known_issues.md	660	`docs/spec/match_api.md` §6.3's rule is that `flags` records the REQUEST	`docs/spec/match_api.md` §6.3's (`#flags`, in §6) rule is that `flags` records the REQUEST	REPOINTED	the flags-records-the-REQUEST rule is the #flags paragraph of section 6
+docs/dev/known_issues.md	1025	`docs/spec/match_api.md`'s "It never abort()s ..." promise	same	VALID	promise now in section 8.1 (#compile-guarantees); bare file mention, no section
+docs/dev/known_issues.md	1056	**`docs/spec/match_api.md`'s promise is UNCHANGED	same	VALID	bare file mention; promise in 8.1 (#compile-guarantees)
+docs/dev/known_issues.md	3997	docs/spec/match_api.md §3.1 states — correctly, and now with measurement — that `s` may be NULL	same	VALID	NULL when n==0 is in 3.1 (#search-conventions)
+docs/dev/known_issues.md	4417	`docs/spec/match_api.md` §5.3's concurrency	same	VALID	5.3 unchanged
+docs/dev/known_issues.md	4434	(`docs/spec/match_api.md` §10). MEASURED on the shipped emitter	same	VALID	10 unchanged
+docs/dev/known_issues.md	5483	`docs/spec/match_api.md` §3.1.1) before retrying	same	VALID	3.1.1 unchanged
+docs/dev/known_issues.md	5532	`docs/spec/match_api.md` never licensed a reported	same	VALID	bare mention
+docs/dev/known_issues.md	5533	§3.1	same	VALID	find-all protocol stays 3.1 (bare §3.1)
+docs/dev/known_issues.md	5900	still returns `0` as `match_api.md` §3.1 has always promised	same	VALID	startpos > n returns 0 is 3.1 (#search-conventions)
+docs/dev/decisions.md	4714	docs/spec/match_api.md ... spec's §2/§6 text	same	VALID	struct-tag spelling is #rx-info-tag (section 2); 2/6 unchanged
+docs/dev/decisions.md	4719	**Consequence.** docs/spec/match_api.md's note that this spelling was	same	VALID	bare mention, historical
+docs/dev/decisions.md	4788	(match_api.md §2's own wording)	same	VALID	rx_group_entry.ref comment is in section 2
+docs/dev/decisions.md	4806	(match_api.md §2 — "NULL/empty for the primary's own groups...	same	VALID	rx_group_entry.ref in section 2 (the "labeled insertion path" wording is not in the new doc; section still right)
+docs/dev/decisions.md	4954	(match_api.md §2's "labeled insertion path")	same	VALID	section 2 rx_group_entry.ref; wording of the insertion-path sentence no longer in the new doc
+docs/dev/decisions.md	5376	decided at    docs/spec/match_api.md under D40	same	VALID	bare mention, historical
+docs/dev/decisions.md	5620	and it is `docs/spec/match_api.md` §6 ([REVW.A1], 2026-09-19)	and it is `docs/spec/match_api.md` §6 [since moved: `docs/dev/history/abi_changelog.md`] ([REVW.A1], 2026-09-19)	REPOINTED	heading names the changelog home; it moved to the history file
+docs/dev/decisions.md	5631	| `docs/spec/match_api.md` §6 | **complete and gap-free	| `docs/spec/match_api.md` §6 [now `docs/dev/history/abi_changelog.md`] | **complete and gap-free	REPOINTED	abi change log moved to history file
+docs/dev/decisions.md	5639	**THE RULING.** `docs/spec/match_api.md` §6 is THE `abi` change log	**THE RULING.** `docs/spec/match_api.md` §6 [now `docs/dev/history/abi_changelog.md`] is THE `abi` change log	REPOINTED	abi change log moved to history file
+docs/dev/decisions.md	5754	`docs/spec/match_api.md` §10 states the contract exactly	same	VALID	10 unchanged
+docs/dev/decisions.md	5784	**Context.** match_api.md §6.3 ruled the D46 macros VM-only	same	VALID	6.3 unchanged
+docs/dev/decisions.md	5829	emit_dfa.c (`.abi = 4`), match_api.md §6, run_codegen_tests.sh's	emit_dfa.c (`.abi = 4`), match_api.md §6 (`#abi`), run_codegen_tests.sh's	REPOINTED	abi sentence is #abi
+docs/dev/decisions.md	6551	docs/spec/match_api.md §3-area "abi is N" sentence at ~line 159	(docs/spec/match_api.md's "abi is N" sentence, then at ~line 159, now `#abi`)	REPOINTED	abi sentence is #abi
+docs/dev/decisions.md	6661	docs/spec/match_api.md "abi is N" sentence	(docs/spec/match_api.md's own "abi is N" sentence, now `#abi`)	REPOINTED	abi sentence is #abi
+docs/dev/decisions.md	6666	the `match_api.md` history-chain sentences)	the `match_api.md` history-chain sentences, now `docs/dev/history/abi_changelog.md`)	REPOINTED	abi history chain moved to history file
+docs/dev/decisions.md	6727	i.e. docs/spec/ match_api.md's contract	same	VALID	bare mention (the spec as contract)
+docs/dev/decisions.md	6844	Consequence, stated in match_api.md §4 as a contract: composed call sites trap below the floor	same	VALID	4 unchanged (#composed-call-sites)
+docs/dev/decisions.md	7188	keeping match_api.md §8.2's exception list exhaustive.	keeping match_api.md §8.2's exception list (now §1, `#library-surface`) exhaustive.	REPOINTED	PCREC_* naming-exception list is now in section 1 #library-surface
+docs/dev/decisions.md	7864	docs/spec/cli.md (the flag) + docs/spec/match_api.md §6 (the abi log entry and the stamp line's wording), D80.	docs/spec/cli.md (the flag) + docs/spec/match_api.md §6 (the abi log entry, now `docs/dev/history/abi_changelog.md`, and the stamp line's wording, `#abi`), D80.	REPOINTED	abi log moved to history file; provenance/stamp line wording is in #abi
+docs/dev/decisions.md	8229	match_api.md §2 hunk under    D80)	same	VALID	2 unchanged
+docs/dev/decisions.md	8248	forbidden by match_api.md §5.3)	same	VALID	5.3 unchanged
+docs/dev/decisions.md	8829	spec find-all loop (match_api.md §3.1) resume ON that byte	same	VALID	find-all loop stays 3.1 (#find-all)
+docs/dev/decisions.md	9199	fixing `match_api.md:4686-4703`'s contradiction	fixing `match_api.md#stamp-dfa-start`'s contradiction	REPOINTED	line cite -> #stamp-dfa-start
+docs/dev/dev_journal.md	8825	the owed match_api §2.2 contract-text wording pass	the owed match_api §2.2 (now §5.1, `#r22`) contract-text wording pass	REPOINTED	cross-iteration retention / empty-final-iteration overwrite are 5.1 #r22
+docs/dev/dev_journal.md	9981	authored `docs/spec/match_api.md` end to end	same	VALID	bare mention (file named as deliverable)
+docs/dev/dev_journal.md	10082	docs/spec/match_api.md is the project's first contract	same	VALID	bare mention
+docs/dev/dev_journal.md	10129	The R29 panel over `docs/spec/match_api.md` (three lenses	same	VALID	bare mention
+docs/dev/dev_journal.md	10244	the R29 D6 panel over docs/spec/match_api.md, the	same	VALID	bare mention
+docs/dev/dev_journal.md	10425	discharges docs/spec/match_api.md §6's long-open "sort key not yet fixed" paragraph	discharges docs/spec/match_api.md §6's (now §5.4, `#named-groups`) long-open "sort key not yet fixed" paragraph	REPOINTED	sort key / named-group index is 5.4 #named-groups
+docs/dev/dev_journal.md	10773	§4.3's spec sentence in match_api.md.	same	VALID	bare mention
+docs/dev/dev_journal.md	10929	allowlist docs/testing.md + docs/spec/match_api.md + build/	same	VALID	bare mention
+docs/dev/dev_journal.md	12048	(match_api.md §6.0 with the (name asc, number asc) key and the dup-run caller algorithm;	(match_api.md §6.0 (now §5.4, `#named-groups` / `#dup-name-algorithm`) with the (name asc, number asc) key and the dup-run caller algorithm;	REPOINTED	old 6.0 duplicate names -> #dup-name-algorithm / #named-groups
+docs/dev/dev_journal.md	13090	frame buffer's API shape at match_api.md;	same	VALID	bare mention
+docs/dev/dev_journal.md	13542	docs/design/frame_buffer_design.md (751 lines) + match_api.md §10 (+331)	same	VALID	10 unchanged
+docs/dev/dev_journal.md	15298	[SPEC-1.4] match_api patches (after srStamp	same	VALID	bare mention
+docs/dev/dev_journal.md	15373	match_api.md:1506	match_api.md:1506 (now `#stamp-scoping`) contradicting §6.3's own split (A4)	REPOINTED	line cite; topic is the 6.3 (a)/(b) split -> #stamp-scoping (the contradicting text is gone)
+docs/dev/dev_journal.md	15484	nor match_api.md §6's "abi is 4" sentence;	nor match_api.md §6's (`#abi`) "abi is 4" sentence;	REPOINTED	abi sentence is #abi
+docs/dev/dev_journal.md	15505	match_api.md §6's provenance paragraph (4→5 [OPT-1], 5→6 [DD-13c]).	match_api.md §6's provenance paragraph (now `docs/dev/history/abi_changelog.md`) (4→5 [OPT-1], 5→6 [DD-13c]).	REPOINTED	abi provenance/change log moved to history file
+docs/dev/dev_journal.md	16042	(docs/spec/match_api.md patches), same lane.	same	VALID	bare mention
+docs/dev/dev_journal.md	16044	five surgical match_api.md patches, every claim	same	VALID	bare mention
+docs/dev/dev_journal.md	16046	Read docs/dev/spec_survey.md's five rows (D3, C2, C4, F6, F9), docs/spec/CLAUDE.md's revision-log convention, and the full docs/spec/match_api.md (2,460 lines)	same	VALID	bare mention
+docs/dev/dev_journal.md	16052	D3: match_api.md's §4 (the give-up code	same	VALID	4 unchanged
+docs/dev/dev_journal.md	16109	docs/spec/CLAUDE.md's match_api.md bullet gained	same	VALID	bare mention
+docs/dev/dev_journal.md	16149	five match_api.md hunks each verified against a fresh build (§4 → limits.md; C2 verified current; §6 caller-facing abi paragraph;	five match_api.md hunks each verified against a fresh build (§4 → limits.md; C2 verified current; §6 (`#abi`) caller-facing abi paragraph;	REPOINTED	abi paragraph is #abi (other hunk sections 8.2, 3.6 unchanged)
+docs/dev/dev_journal.md	16334	`match_api.md` §6's two sentences, and `run_recursion_identity.sh`	`match_api.md` §6's two sentences (`#abi`; the history sentence now in `docs/dev/history/abi_changelog.md`), and `run_recursion_identity.sh`	REPOINTED	abi sentence #abi; abi history moved to history file
+docs/dev/dev_journal.md	16645	stamp `docs/spec/match_api.md` §6.3 documents	same	VALID	6.3 unchanged
+docs/dev/dev_journal.md	16918	limits.md §3.3, match_api.md; K40;	same	VALID	bare mention
+docs/dev/dev_journal.md	16937	the stamp-VALUE direction against match_api.md §6.3,	same	VALID	6.3 unchanged
+docs/dev/dev_journal.md	17252	match_api §6.3's stamp bullet	same	VALID	6.3 unchanged
+docs/dev/dev_journal.md	17278	spec hunks in match_api.md §3.2/§3.3/§3.6/§6/§10	same	VALID	all remain same topics
+docs/dev/dev_journal.md	18216	`nnames`/`groups[]` breaks match_api §6's own lookup	`nnames`/`groups[]` breaks match_api §6's (now §5.4, `#named-groups`) own lookup	REPOINTED	named-group index lookup is 5.4 #named-groups
+docs/dev/dev_journal.md	18329	match_api.md's nnames sentence)	match_api.md's nnames sentence, now `#rx-info-counts`)	REPOINTED	nnames/ngroups counts are #rx-info-counts
+docs/dev/dev_journal.md	20136	match_api.md:2429	already exist (match_api.md#stamp-altcls).	REPOINTED	line cite -> #stamp-altcls
+docs/dev/dev_journal.md	20371	spec hunks in tuning.md §2.20 / match_api.md / cli.md	same	VALID	bare mention
+docs/dev/dev_journal.md	20403	spec hunks in rxt_format.md, match_api.md §6, cli.md;	spec hunks in rxt_format.md, match_api.md §6 (groups[] sort: now §5.4, `#named-groups`), cli.md;	REPOINTED	groups[] sort order is 5.4 #named-groups
+docs/dev/dev_journal.md	20825	match_api.md:2148	match_api.md:2148 (now in `docs/dev/history/abi_changelog.md`) correctly LEFT (a cross-reference to abi 17's own entry);	REPOINTED	line cite; abi-entry cross-reference lives in the abi change log (history file)
+docs/dev/dev_journal.md	20934	match_api.md's abi paragraphs) — then its chain	match_api.md's abi paragraphs, now `docs/dev/history/abi_changelog.md`) — then its chain	REPOINTED	abi paragraphs moved to history file / #abi
+docs/dev/dev_journal.md	20942	match_api.md's 19 entry atop the 18 entry (re-headed "the 18 it replaces"), and §6's opening sentence naming all three events.	match_api.md's 19 entry atop the 18 entry (re-headed "the 18 it replaces"), and §6's opening sentence naming all three events (now `docs/dev/history/abi_changelog.md` / `#abi`).	REPOINTED	abi entries moved to history file; opening sentence is #abi
+docs/dev/dev_journal.md	20953	match_api.md (the abi paragraphs), src/gen/CLAUDE.md	match_api.md (the abi paragraphs, now `docs/dev/history/abi_changelog.md`), src/gen/CLAUDE.md	REPOINTED	abi paragraphs moved to history file
+docs/dev/dev_journal.md	22559	CALL-SITE HEADROOM (limits.md §5, match_api §5.3)	same	VALID	5.3 unchanged (#stack-headroom)
+docs/dev/dev_journal.md	22920	so mc's rule is match_api §3.1 by reference	same	VALID	find-all loop stays 3.1
+docs/dev/dev_journal.md	23899	the match_api.md hunk all say the legend class	same	VALID	bare mention
+docs/dev/dev_journal.md	24186	stated in tuning.md/ match_api.md.	same	VALID	bare mention
+docs/dev/dev_journal.md	24286	A1's home = match_api.md §6).	A1's home = match_api.md §6, now `docs/dev/history/abi_changelog.md`).	REPOINTED	abi change log moved to history file
+docs/dev/dev_journal.md	24317	[REVW.A1] landed (match_api.md §6 the one abi log, D76 addendum)	[REVW.A1] landed (match_api.md §6 the one abi log [now `docs/dev/history/abi_changelog.md`], D76 addendum)	REPOINTED	abi change log moved to history file
+docs/dev/dev_journal.md	24441	against match_api.md's promise (→ TOUR-4)	same	VALID	bare mention; promise in 8.1
+docs/dev/dev_journal.md	24479	match_api.md's stale "two abort()s" → one	same	VALID	bare mention
+docs/dev/dev_journal.md	24668	cli.md + match_api.md §6 hunks.	cli.md + match_api.md §6 hunks (the abi 27→28 entry; now `docs/dev/history/abi_changelog.md`).	REPOINTED	abi entry moved to history file
+docs/dev/dev_journal.md	24706	ABI_EXPECT, match_api §6);	ABI_EXPECT, match_api §6 (`#abi`));	REPOINTED	abi sentence #abi
+docs/dev/dev_journal.md	26548	(D43, match_api §6.3)	(D43, match_api §6.3; `#flags`)	REPOINTED	flags-is-the-request rule is the #flags paragraph (section 6)
+docs/dev/dev_journal.md	26752	The one stale line (match_api.md declined-nullable-default row)	same	VALID	bare mention (a stamp-table row, 6.3)

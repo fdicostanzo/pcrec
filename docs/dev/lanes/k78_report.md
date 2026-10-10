@@ -109,9 +109,9 @@ scripts Makefile tools, filtered to abi contexts:
    header line, the valued guard and the `#error`).
 2. `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT=55`, plus a 54->55 clause
    at the end of its failure message.
-3. `docs/spec/match_api.md` §2's quoted guard block (`!= 55`, `abi 55`,
+3. `docs/spec/match_api.md#abi-guard`'s quoted guard block (`!= 55`, `abi 55`,
    `#define PCREC_RX_ABI_H 55`), because it shows the current emitted text.
-4. `docs/spec/match_api.md` §6: a new `rx_info.abi is 55` entry above the 54
+4. `docs/dev/history/abi_changelog.md`: a new `rx_info.abi is 55` entry above the 54
    one, which becomes "was 54".
 5. `tests/codegen/run_recursion_identity.sh`: the (B) `FILEPIN` is re-pinned
    to `6b86a29b`, this lane's last `src/` code commit (the self-pin
@@ -133,7 +133,7 @@ dead-group DFA artifacts change in length.
   whole `caps` array untouched, on every engine and every caps-taking entry,
   and that includes dead-group artifacts, whose slots are written only on a
   success (K78, abi 55).
-- match_api.md §6: the abi 55 change-log entry.
+- docs/dev/history/abi_changelog.md: the abi 55 change-log entry.
 
 ## 7. Light validation (Mac, gcc-16)
 
@@ -176,7 +176,7 @@ journal) plus the k7980tri fix a111a150.
 - **abi.** It stays 55, with no conflict. S2's 50->53 and K79/K80's 54 were
   already under k78's base 44fc6ad5. The merge brings no emitted-scaffolding
   change. Readers checked by grep: `PCREC_ARTIFACT_ABI 55`, `ABI_EXPECT=55`,
-  and match_api.md §2's guard block (`!= 55` / `abi 55` /
+  and match_api.md#abi-guard guard block (`!= 55` / `abi 55` /
   `PCREC_RX_ABI_H 55`).
 - **Composition with a111a150.** The only incoming `src/` change is
   `src/gen/emit_vm.c`'s `--emit-ir` caps cell, which now reads

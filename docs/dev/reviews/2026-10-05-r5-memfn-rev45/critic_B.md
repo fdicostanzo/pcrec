@@ -37,7 +37,7 @@ B9 MINOR. Wait-status ownership stated two ways: R4.5.2/R4.5.5 declare wait 2 ME
 
 B10 MINOR. Stale lines: memfn/CLAUDE.md:14 "(rev 4.4; read its R4.4, then R4.3, first)" -> rev 4.5, R4.5 first. memfn/docs/wake.md (template, low priority): s2 item 4 "R4.4 and R4.3 first"; s4 "Open requests: R-1 (R4b measurement)", "Last journal entry ... (subtree set up)" now false. 10.5 C11 row "movers non-none" (B3). No --memfn-deny/mf_switches stragglers outside annotated history; "R4b pending" (~3729) is history annotated at 22's head; docs/design/memfn/CLAUDE.md is current at 4.5.
 
-B11 NOTE. M5' planner output is not wholly stamp-invisible: the chosen offset-set shows in <PREFIX>_DFA_PREFILTER_OFFSETS (match_api.md:2816). Q55 text should say so; it narrows what a bench consumer misses.
+B11 NOTE. M5' planner output is not wholly stamp-invisible: the chosen offset-set shows in <PREFIX>_DFA_PREFILTER_OFFSETS (match_api.md#stamp-dfa-prefilter-offsets, was :2816). Q55 text should say so; it narrows what a bench consumer misses.
 
 VERDICTS
 Q53: spelling (separate line) stands: addendum 3 forbids folding libc into FORMS; a marker in FORMS would also make C11 compare one value against two references. Definition does not: B4, B5. Missed options: whole-artifact record; exclude idiom memcpy; nm-based control. Needed before build: B4's control change plus sabotage rows beyond memchr.

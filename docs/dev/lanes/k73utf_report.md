@@ -76,7 +76,7 @@ The readers were found by grep for `PCREC_ARTIFACT_ABI`, `ABI_EXPECT`,
 `FILEPIN` and the digit, re-checking the ucpu1 bump's own list:
 
 - `src/gen/emit_dfa.c:51`.
-- `docs/spec/match_api.md` §6: the new entry, with U2's 46 now "was".
+- `docs/dev/history/abi_changelog.md`: the new entry, with U2's 46 now "was".
 - `tests/codegen/run_codegen_tests.sh`: `ABI_EXPECT`, and its §6-copied
   failure message, which gains a 46->47 clause after U2's.
 - `tests/codegen/run_recursion_identity.sh` (B) FILEPIN: `7e8ab18a` ->
@@ -126,9 +126,9 @@ plants' state); the mech solo runs themselves are OWED (see Validation).
 
 ### Spec hunks (D80)
 
-`docs/spec/match_api.md` §3.1 (the "neither arm rounds" sentence scoped to
+`docs/spec/match_api.md` §9.2-§9.5 (#startpos-align, #offset-zero, #engine-positions) (the "neither arm rounds" sentence scoped to
 `startpos > 0`; two new bullets: offset 0, anchored entries; the
-engine-positions paragraph), §6 (abi 46); `docs/spec/tuning.md` §2.23;
+engine-positions paragraph), docs/dev/history/abi_changelog.md (abi 46); `docs/spec/tuning.md` §2.23;
 `docs/spec/rxt_format.md`'s `mc` paragraph. `known_issues.md` K73 FIXED.
 
 ## Findings (Part 1)

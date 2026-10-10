@@ -41,7 +41,7 @@ outbox O-15, with pcrec's own answer I-39 cited where it settles an ask.
   `[ENG-ISL]`'s first named island candidate, now with a measured need;
   I-39 (i) confirms the attribution stamps (`RX_ALTCLS_MERGES`,
   `RX_ALTCLS_FACTORED`) already exist in the common stamp block
-  (`src/gen/emit_dfa.c:285-286`, `docs/spec/match_api.md:2429`), so
+  (`src/gen/emit_dfa.c:285-286`, `docs/spec/match_api.md#stamp-altcls`), so
   candidate 2's mechanism can now be attributed, not just observed.
 
 - **Under the raised cap the flat DFA line holds to the widest rung
@@ -235,7 +235,7 @@ only a raw-log audit caught it.
 **(a) The bench's five asks, with I-39's answer:**
 
 - (i) ALTCLS stamps: already exist (`src/gen/emit_dfa.c:285-286`,
-  `docs/spec/match_api.md:2429`); no pcrec change owed.
+  `docs/spec/match_api.md#stamp-altcls`); no pcrec change owed.
 - (ii) Does a raised cap move a DFA-side size term: no; the DFA route has
   no unroll-style ladder, only count-driven choices a cap cannot move.
 - (iii) Does `(?i)` select the bitmap edge on `ci-256`: yes, confirmed

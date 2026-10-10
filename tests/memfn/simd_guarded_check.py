@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """tests/memfn/simd_guarded_check.py -- [MEMFN] RQ-3's check (D155 item 9 +
-addendum 2; docs/spec/match_api.md §6.3 `<PREFIX>_SIMD_GUARDED_BYTES`,
+addendum 2; docs/spec/match_api.md §6.3 `<PREFIX>_SIMD_GUARDED_BYTES` (#stamp-simd-guarded-bytes),
 docs/spec/limits.md "Size limits and SIMD-guarded bytes"). Driven by
 tests/memfn/run_simd_guarded.sh, which builds the WITNESS compiler.
 

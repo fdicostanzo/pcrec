@@ -1,0 +1,203 @@
+docs/dev/reviews/lens_reports/synthesis_collation.md	101	`docs/spec/match_api.md` §6.3 (a home that already exists)	`docs/dev/history/abi_changelog.md` (a home that already exists)	REPOINTED	
+docs/dev/reviews/lens_reports/synthesis_collation.md	153	match_api.md` §8.2	same	VALID	
+docs/dev/reviews/lens_reports/synthesis_collation.md	153	`match_api.md:3319-3335`	`match_api.md#options`	REPOINTED	
+docs/dev/reviews/lens_reports/synthesis_collation.md	156	match_api.md` §8.2	same	VALID	
+docs/dev/reviews/lens_reports/synthesis_collation.md	156	match_api.md` §8.2	same	VALID	
+docs/dev/reviews/lens_reports/synthesis_collation.md	554	match_api.md` §8.0	same	VALID	
+docs/dev/reviews/lens_reports/synthesis_collation.md	678	match_api.md` §8.0	same	VALID	
+docs/dev/spec_survey.md	6	match_api.md`	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	10	match_api.md's own discipline,	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	29	match_api.md` §2	same	VALID	
+docs/dev/spec_survey.md	30	match_api.md references engine but does 	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	31	match_api.md §4	same	VALID	
+docs/dev/spec_survey.md	31	match_api.md` §4	same	VALID	
+docs/dev/spec_survey.md	32	match_api.md §10	same	VALID	
+docs/dev/spec_survey.md	32	match_api.md §10.1	same	VALID	
+docs/dev/spec_survey.md	46	match_api.md §8	same	VALID	
+docs/dev/spec_survey.md	46	(lines 1554-1755)	(`match_api.md#library`)	REPOINTED	
+docs/dev/spec_survey.md	47	match_api.md §8.2	same	VALID	
+docs/dev/spec_survey.md	47	§8.2 explicitly documents the D58	§9.1 (`#encodings-compiled`) explicitly documents the D58	REPOINTED	
+docs/dev/spec_survey.md	48	match_api.md doesn't dedicate a number	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	48	note in §9 (Provenance/status)	note in `match_api.md#pre-v1` (Provenance/status)	REPOINTED	
+docs/dev/spec_survey.md	49	match_api.md §8	same	VALID	
+docs/dev/spec_survey.md	50	match_api.md references them) + CODE (	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	50	match_api.md, since D46/D47.3 frame them	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	52	match_api.md §8	same	VALID	
+docs/dev/spec_survey.md	52	match_api.md is the wrong file for them 	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	52	match_api.md.	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	58	match_api.md` §6.3	same	VALID	
+docs/dev/spec_survey.md	59	match_api.md §6.3	same	VALID	
+docs/dev/spec_survey.md	59	match_api.md §6.3	same	VALID	
+docs/dev/spec_survey.md	60	match_api.md §6	same	VALID	
+docs/dev/spec_survey.md	61	match_api.md §6	same	VALID	
+docs/dev/spec_survey.md	61	match_api.md` §6	same	VALID	
+docs/dev/spec_survey.md	62	match_api.md §10	same	VALID	
+docs/dev/spec_survey.md	62	(match_api.md:1776-1793)	(`match_api.md#buffers`)	REPOINTED	
+docs/dev/spec_survey.md	63	match_api.md — small, one paragraph: arg	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	64	match_api.md §2	same	VALID	
+docs/dev/spec_survey.md	71	match_api.md §4	same	VALID	
+docs/dev/spec_survey.md	72	match_api.md §4	same	VALID	
+docs/dev/spec_survey.md	72	match_api.md §4	same	VALID	
+docs/dev/spec_survey.md	74	match_api.md §10	same	VALID	
+docs/dev/spec_survey.md	86	belongs in match_api.md §6 (the reflection structure)	belongs in match_api.md §5.4 (`#named-groups`)	REPOINTED	
+docs/dev/spec_survey.md	86	match_api.md §6 (per its [M6.3] revision note)	match_api.md §5.4 (`#named-groups`; per its [M6.3] revision note)	REPOINTED	
+docs/dev/spec_survey.md	86	match_api.md's own revision log — verify	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	105	match_api.md mentions the encoding seam 	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	105	`docs/spec/match_api.md` §8.2 (already exists	`docs/spec/match_api.md` §9.1 (`#encodings-compiled`) (already exists	REPOINTED	
+docs/dev/spec_survey.md	106	match_api.md could restate the backrefs-	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	107	match_api.md` or a new `docs/spec/patter	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	108	match_api.md` (a new §3.	same	VALID	proposal of a NEW section (§3.x); no existing cite
+docs/dev/spec_survey.md	114	match_api.md's existence**, so this is	same	VALID	no section/line cited (link or prose)
+docs/dev/spec_survey.md	114	`docs/spec/match_api.md` §9 ("Provenance and status")	`docs/spec/match_api.md#pre-v1` ("Provenance and status")	REPOINTED	
+docs/dev/spec_survey.md	125	match_api.md` §10	same	VALID	
+docs/dev/spec_survey.md	134	§8.2 explicit	§9.1 explicit	REPOINTED	
+docs/dev/spec_survey.md	152	match_api.md patches** — the five additi	same	VALID	no section/line cited (link or prose)
+docs/dev/summaries/2026-09-03-exec-bench-altwide-noedge-ccrerun-1989c62.md	44	`docs/spec/match_api.md:2429`	`docs/spec/match_api.md#stamp-altcls`	REPOINTED	
+docs/dev/summaries/2026-09-03-exec-bench-altwide-noedge-ccrerun-1989c62.md	238	`docs/spec/match_api.md:2429`	`docs/spec/match_api.md#stamp-altcls`	REPOINTED	
+docs/guide/encodings-and-subjects.md	17	§3.1/§3.1.2	§9.4 (`#utf-check`)/§3.1.2	REPOINTED	
+docs/guide/using-the-matcher-from-c.md	5	match_api.md`](../spec/match_api.md) is 	same	VALID	no section/line cited (link or prose)
+docs/guide/using-the-matcher-from-c.md	5	match_api.md) is the exact contract —	same	VALID	no section/line cited (link or prose)
+docs/guide/using-the-matcher-from-c.md	20	match_api.md` §2	same	VALID	
+docs/guide/using-the-matcher-from-c.md	93	match_api.md`](../spec/match_api.md) §10	same	VALID	
+docs/guide/using-the-matcher-from-c.md	93	match_api.md) §10	same	VALID	
+docs/guide/using-the-matcher-from-c.md	106	match_api.md`](../spec/match_api.md) §6	same	VALID	
+docs/guide/using-the-matcher-from-c.md	106	match_api.md) §6	same	VALID	
+docs/pcre2_compliance_annotations.txt	536	docs/spec/match_api.md §6 had left	docs/spec/match_api.md §5.4 (`#named-groups`) had left	REPOINTED	
+docs/pcre2_compliance_annotations.txt	697	`docs/spec/match_api.md` §6's caller algorithm	`docs/spec/match_api.md` §5.4's (`#dup-name-algorithm`) caller algorithm	REPOINTED	
+docs/pcre2_compliance.md	953	docs/spec/match_api.md §6 had left	docs/spec/match_api.md §5.4 (`#named-groups`) had left	REPOINTED	
+docs/pcre2_compliance.md	1152	`docs/spec/match_api.md` §6's caller algorithm	`docs/spec/match_api.md` §5.4's (`#dup-name-algorithm`) caller algorithm	REPOINTED	
+docs/spec/CLAUDE.md	19	match_api.md` — the match-API contract	same	VALID	no section/line cited (link or prose)
+docs/spec/CLAUDE.md	23	match_api.md S3.1	same	VALID	
+docs/spec/CLAUDE.md	31	match_api.md#find-all`), never by line	same	VALID	no section/line cited (link or prose)
+docs/spec/CLAUDE.md	80	match_api.md` §4	same	VALID	
+docs/spec/CLAUDE.md	86	match_api.md` §10.1	same	VALID	
+docs/spec/CLAUDE.md	244	match_api.md` §2	same	VALID	
+docs/spec/cli.md	50	match_api.md` §6	same	VALID	
+docs/spec/cli.md	54	match_api.md` §6	same	VALID	
+docs/spec/cli.md	81	match_api.md` §8.2	same	VALID	
+docs/spec/cli.md	97	match_api.md` §3	same	VALID	
+docs/spec/cli.md	129	match_api.md` §3.1	same	VALID	
+docs/spec/cli.md	149	§8.2 states the library-level rule	§9.1 (`#encodings-compiled`) states the library-level rule	REPOINTED	
+docs/spec/cli.md	198	match_api.md` §3.1.1	same	VALID	
+docs/spec/cli.md	299	match_api.md` or a future codegen note o	same	VALID	no section/line cited (link or prose)
+docs/spec/cli.md	502	match_api.md` §8.2	same	VALID	
+docs/spec/cli.md	646	(`match_api.md` §3.1)	(`match_api.md` §9.2, `#startpos-align`)	REPOINTED	
+docs/spec/cli.md	765	§6's composition subsection	§5.5's (`#composition`) composition subsection	REPOINTED	
+docs/spec/cli.md	902	match_api.md` §6	same	VALID	
+docs/spec/cli.md	1198	match_api.md` §4	same	VALID	
+docs/spec/cli.md	1356	`docs/spec/match_api.md` §6's.	`docs/spec/match_api.md` §5.5's (`#composition`).	REPOINTED	
+docs/spec/facts_listing.md	97	match_api.md` §6.3	same	VALID	
+docs/spec/facts_listing.md	150	match_api.md` §6.3	same	VALID	
+docs/spec/findings.md	145	match_api.md` §6	same	VALID	
+docs/spec/limits.md	5	match_api.md` and	same	VALID	no section/line cited (link or prose)
+docs/spec/limits.md	19	match_api.md` §4	same	VALID	
+docs/spec/limits.md	40	match_api.md` §4	same	VALID	
+docs/spec/limits.md	46	match_api.md` §4.	same	VALID	
+docs/spec/limits.md	73	match_api.md`) as `-1` when disabled, a 	same	VALID	no section/line cited (link or prose)
+docs/spec/limits.md	105	match_api.md` §10.4	same	VALID	
+docs/spec/limits.md	122	match_api.md` §6.3(b)	same	VALID	
+docs/spec/limits.md	326	match_api.md` §10.4	same	VALID	
+docs/spec/limits.md	554	match_api.md` §10.1	same	VALID	
+docs/spec/limits.md	566	match_api.md` §4	same	VALID	
+docs/spec/limits.md	574	match_api.md` §10.9	same	VALID	
+docs/spec/limits.md	639	match_api.md` §10	same	VALID	
+docs/spec/limits.md	811	match_api.md` §6.3	same	VALID	
+docs/spec/limits.md	893	match_api.md` §6.3	same	VALID	
+docs/spec/registry.md	367	match_api.md` §6.3	same	VALID	
+docs/spec/registry.md	499	match_api.md` §6.3	same	VALID	
+docs/spec/rxt_format.md	133	§6's "Composition"	§5.5's "Composition" (`#composition`)	REPOINTED	
+docs/spec/rxt_format.md	187	match_api.md` §6	same	VALID	
+docs/spec/rxt_format.md	600	`docs/spec/match_api.md` §6)	`docs/spec/match_api.md` §5.5, `#composition`)	REPOINTED	
+docs/spec/rxt_format.md	759	match_api.md` §3.1	same	VALID	
+docs/spec/rxt_format.md	783	match_api.md` §3.1.1	same	VALID	
+docs/spec/rxt_format.md	804	(`match_api.md` §3.1)	(`match_api.md` §9.2, `#startpos`)	REPOINTED	
+docs/spec/rxt_format.md	809	§3.1's offset-0 bullet	§9.3 (`#offset-zero`)	REPOINTED	
+docs/spec/rxt_format.md	1601	match_api.md` §3.1	same	VALID	
+docs/spec/tuning.md	165	§6.3 records the same effect	§6 (`#flags`) records the same effect	REPOINTED	
+docs/spec/tuning.md	754	match_api.md` §10.9	same	VALID	
+docs/spec/tuning.md	774	match_api.md §6.3	same	VALID	
+docs/spec/tuning.md	959	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	997	match_api.md` §3.2	same	VALID	
+docs/spec/tuning.md	1039	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	1205	§6.3's H1/H2/H3	§6.3 (`#stamp-vm-prefilter-lang`)	REPOINTED	
+docs/spec/tuning.md	1248	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	1291	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	1407	§6.3, H3)	§6.3, `#stamp-vm-prefilter-lang`)	REPOINTED	
+docs/spec/tuning.md	1473	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	1702	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	1964	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	2070	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	2186	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	2217	(`docs/spec/match_api.md` §3.1)	(`docs/spec/match_api.md` §9.2, `#startpos`)	REPOINTED	
+docs/spec/tuning.md	2228	match_api.md` §4	same	VALID	
+docs/spec/tuning.md	2252	`match_api.md` §3.1 says why	`match_api.md` §9.2 (`#startpos-align`) says why	REPOINTED	
+docs/spec/tuning.md	2256	(`match_api.md` §3.1's offset-0 bullet)	(`match_api.md` §9.3, `#offset-zero`)	REPOINTED	
+docs/spec/tuning.md	2377	match_api.md` names as the doc-comments 	same	VALID	no section/line cited (link or prose)
+docs/spec/tuning.md	2997	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3123	§6 of `match_api.md`)	§6.3 of `match_api.md`, `#stamp-vm-cls-kit`)	REPOINTED	
+docs/spec/tuning.md	3175	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3238	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3251	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3329	(`docs/spec/match_api.md` §3.1)	(`docs/spec/match_api.md` §9.4, `#utf-check`)	REPOINTED	
+docs/spec/tuning.md	3339	`match_api.md` §3.1 states the range	`match_api.md` §9.4 (`#utf-check`) states the range	REPOINTED	
+docs/spec/tuning.md	3347	match_api.md` §3.1.2	same	VALID	
+docs/spec/tuning.md	3376	match_api.md` §3.6	same	VALID	
+docs/spec/tuning.md	3409	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3594	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3645	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3675	match_api.md` §3.1	same	VALID	
+docs/spec/tuning.md	3686	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3750	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3780	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3817	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3853	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3859	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3866	match_api.md §6.3	same	VALID	
+docs/spec/tuning.md	3874	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3892	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3906	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3921	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	3975	match_api.md` §6.3	same	VALID	
+docs/spec/tuning.md	4000	match_api.md` §6.	same	VALID	
+docs/spec/tuning.md	4042	match_api.md` §8.2	same	VALID	
+docs/spec/tuning.md	4104	match_api.md` §8.2.	same	VALID	
+docs/spec/tuning.md	4109	match_api.md` §8.2	same	VALID	
+docs/testing.md	561	match_api.md` §6.3	same	VALID	
+docs/testing.md	586	match_api.md` §6	same	VALID	
+docs/testing.md	760	match_api.md §3.1	same	VALID	
+docs/testing.md	1330	match_api.md` §10	same	VALID	
+docs/testing.md	3333	match_api.md` §3.1	same	VALID	
+docs/testing.md	3380	match_api.md` §3.1	same	VALID	
+docs/testing.md	3503	match_api.md` §6.3	same	VALID	
+docs/testing.md	3522	match_api.md` §6.3	same	VALID	
+docs/testing.md	3539	match_api.md`'s tables sit indented two 	same	LEFT-UNRESOLVED	narrative of a past extraction bug: states old layout (tables indented under bullets) of match_api.md, not a locator; historical, prose left
+docs/testing.md	3561	match_api.md` with `RX_DFA_PREFILTER`'s	same	VALID	no section/line cited (link or prose)
+docs/testing.md	3565	match_api.md §6.3	same	VALID	
+docs/testing.md	3598	match_api.md` §6.3	same	VALID	
+docs/testing.md	3609	match_api.md` §6.3	same	VALID	
+docs/testing.md	3806	match_api.md` §6.3	same	VALID	
+docs/testing.md	5132	match_api.md` §6.3	same	VALID	
+docs/testing.md	3526	§6.3's own `[ABI-NS]`	§1's `[ABI-NS]` (`match_api.md#abi-block`)	REPOINTED	continuation line of a wrapped citation
+lib/CLAUDE.md	139	match_api.md §6.3	same	VALID	
+lib/CLAUDE.md	178	match_api.md` as the authoritative contr	same	VALID	no section/line cited (link or prose)
+lib/CLAUDE.md	194	docs/spec/match_api.md §9's pre-v1 posture	docs/spec/match_api.md#pre-v1's pre-v1 posture	REPOINTED	
+lib/CLAUDE.md	208	match_api.md §3.1.1	same	VALID	
+lib/CLAUDE.md	242	match_api.md` §6	same	VALID	
+lib/CLAUDE.md	275	match_api.md §10.	same	VALID	
+lib/CLAUDE.md	303	match_api.md` §6	same	VALID	
+lib/CLAUDE.md	342	match_api.md` §8.2	same	VALID	
+lib/CLAUDE.md	427	match_api.md` §3.1	same	VALID	
+lib/CLAUDE.md	440	match_api.md` §6.3	same	VALID	
+lib/pcrec.h	16	match_api.md §6	same	VALID	
+lib/pcrec.h	28	match_api.md §9's announced-boundary	match_api.md#pre-v1's announced-boundary	REPOINTED	
+lib/pcrec.h	37	docs/spec/match_api.md §8.2 is the contract	docs/spec/match_api.md §9.1 (#encodings-compiled) is the contract	REPOINTED	
+lib/pcrec.h	584	match_api.md §6.3	same	VALID	
+lib/pcrec.h	621	match_api.md * §6.3	same	VALID	
+lib/pcrec.h	626	docs/spec/match_api.md §3.1; docs/spec/tuning.md	docs/spec/match_api.md §9.2 (#startpos); docs/spec/tuning.md	REPOINTED	
+lib/pcrec.h	1000	match_api.md §3.1.2	same	VALID	
+lib/pcrec.h	1113	match_api.md §3.1	same	VALID	
+lib/pcrec.h	1606	match_api.md §4	same	VALID	
+lib/pcrec.h	1656	match_api.md §10.	same	VALID	
+lib/pcrec.h	1662	match_api.md §6	same	VALID	
+lib/pcrec.h	1668	match_api.md * §3.1	same	VALID	
+lib/pcrec.h	1680	match_api.md, which is authoritative;	same	VALID	no section/line cited (link or prose)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """tests/utfcheck/check.py -- [UTF-VALID]'s differential and its guards
-(docs/design/utf_valid_design.md §7; docs/spec/match_api.md §3.1/§3.1.2).
+(docs/design/utf_valid_design.md §7; docs/spec/match_api.md#utf-check (§9.4) and #valid-upto (§3.1.2)).
 
 Usage: check.py PCREC WORKDIR   (run_utfcheck.sh passes both; the C compiler
 is $CC, resolved by tests/lib/cc_resolve.sh; every compile it runs is

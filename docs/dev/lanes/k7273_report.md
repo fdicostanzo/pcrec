@@ -50,7 +50,7 @@ pattern whose first attempt would begin on the continuation byte.
 **Why pcrec differs.** `enc_utf8`'s emitted start guard exempts 0
 (`search_from == 0 || ...`, `rx_search` head), so the first candidate on a
 subject that begins with continuation bytes is a non-boundary — which
-contradicts `match_api.md` §3.1's "every position the ENGINE generates is a
+contradicts `match_api.md` §9.5's (#engine-positions) "every position the ENGINE generates is a
 character boundary of the encoding" and disagrees with §3.1.1's own normative
 advance (skip 0x80-0xBF).
 

@@ -36,7 +36,7 @@ is classified from the subject alone:
 Anchored ("IA") advances too: `a` on `61 80 61` from 1 answers (2,3) with
 `PCRE2_ANCHORED`. pcrec's anchored contract reports only a match beginning at
 `ctx->pos`, so its `_match` refuses at these offsets (a stated divergence,
-match_api.md §3.1).
+match_api.md §9.2, `#startpos`).
 
 Representative rows (PCRE2 I / pcrec search), the full grid is `raw.tsv`:
 

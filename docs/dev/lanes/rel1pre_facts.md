@@ -95,7 +95,7 @@ Makefile` empty). `git tag -l` returns nothing — no tags exist yet.
 The `abi` number (unrelated to a product version — it versions emitted
 scaffolding, not the tool) is emitted per-artifact and is currently 27
 (`[EMIT-VERB]`, `docs/dev/lanes/emitverb_report.md`). It is documented at
-`docs/spec/match_api.md` §6 (the single home for the abi change log per
+`docs/dev/history/abi_changelog.md` (the single home for the abi change log per
 `docs/dev/lanes/w5_report.md`'s D76 addendum) and governed by D76/D94 (grep-
 by-number re-pin ritual, `CLAUDE.md`'s situation-index row). **The 0.1 beta
 must NOT reset this number** — D113/D114 rule that explicitly (§1 above).

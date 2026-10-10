@@ -130,12 +130,12 @@ Verification of equivalence: the same 200-pattern sweep before and after
 - abi ritual, readers found by grep (the litscan_k82h.md recipe:
   `git grep -nE 'PCREC_ARTIFACT_ABI [0-9]|ABI_EXPECT=|abi 64|ABI_SUBJ|FILEPIN|...'`
   over `src lib cli tests docs/spec Makefile scripts`): `run_codegen_tests.sh`
-  (`ABI_EXPECT=65` + ledger clause), `match_api.md` §6 change-log entry and
+  (`ABI_EXPECT=65` + ledger clause), `docs/dev/history/abi_changelog.md` entry and
   the K80 `#error` example (3 digits), `run_recursion_identity.sh` (B) FILEPIN
   self-pinned to `c59fa836`, `tests/codegen/CLAUDE.md` entry. The digit is the
   same width, so no `EMITTED_BYTES` manifest moves at default flags.
 - D80 spec hunks: `tuning.md` §2 ("THE `rx_info.flags` RULE", stated once),
-  §2.16, §2.18; `match_api.md` round-trip paragraph; `lib/pcrec.h` comments on
+  §2.16, §2.18; `match_api.md#flags` round-trip paragraph; `lib/pcrec.h` comments on
   bits 18 and 21; `src/gen/CLAUDE.md`, `lib/CLAUDE.md`.
 - `tests/codegen/run_prechecks.sh` section 6b: every `-f` spelling `--list-axes`
   carries (42, counted from the registry, floor 40), two witnesses (`abc`,

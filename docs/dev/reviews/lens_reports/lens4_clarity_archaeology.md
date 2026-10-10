@@ -247,7 +247,7 @@ decisions.md` has 106 D-rows and none governs in-code change history
 
 **Suggestion, and it is deliberately not "delete it".** Three parts:
 
-1. **One home, and it is `docs/spec/match_api.md` §6.3** — the abi number is a
+1. **One home, and it is `docs/spec/match_api.md` §6.3** (the abi log itself now lives at `docs/dev/history/abi_changelog.md`) — the abi number is a
    caller-observable contract, so D80 already puts its history in the spec
    tier. Move the per-event narratives there as a versioned table.
 2. **The code keeps ~8 lines**: what `abi` means, the D76/D94 ritual in one
@@ -325,7 +325,7 @@ Per-file, with the docs destination named and whether that home exists today.
 
 | file | span | lines | kind | destination | home exists? |
 |---|---|---|---|---|---|
-| `src/gen/emit_dfa.c` | 1534-1964 | 431 | 18 serial `abi` bump narratives above `.abi = 26` | `docs/spec/match_api.md` §6.3 (the abi contract's own section) | **yes** — and it must absorb `run_codegen_tests.sh:2795` and `src/gen/CLAUDE.md`'s per-milestone sections in the same change, since all three disagree (finding A1) |
+| `src/gen/emit_dfa.c` | 1534-1964 | 431 | 18 serial `abi` bump narratives above `.abi = 26` | `docs/spec/match_api.md` §6.3 (the abi contract's own section; the log is now `docs/dev/history/abi_changelog.md`) | **yes** — and it must absorb `run_codegen_tests.sh:2795` and `src/gen/CLAUDE.md`'s per-milestone sections in the same change, since all three disagree (finding A1) |
 | `src/gen/emit_vm.c` | 69-99 | 31 | calibration history of four constants this file no longer declares | the four rows' `anchor` text in `src/core/limits.def` | **yes** (the `anchor` field is the mechanism) |
 | `src/core/internal.h` | 1741-1771 | 31 | `ESEL_*` value-addition log ([OPT-4] → [OPT-4.1] → [OPT-4.2]) | `docs/spec/match_api.md` §6.3's `_ENGINE_SEL` token table | **yes** |
 

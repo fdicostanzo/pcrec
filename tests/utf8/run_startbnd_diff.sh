@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/utf8/run_startbnd_diff.sh — [K50]'s CALLER-STARTPOS DIFFERENTIAL, the
 # primary instrument for the `-fno-startpos-guard` axis (docs/spec/tuning.md
-# §2.23, docs/spec/match_api.md §3.1, docs/dev/known_issues.md K50).
+# §2.23, docs/spec/match_api.md#startpos (§9.2), docs/dev/known_issues.md K50).
 #
 # THE SHAPE IS possessify/altcls's — one witness family, both arms in ONE
 # translation unit, swept — AND THE CLAIM IS THE OPPOSITE ONE. Every other
@@ -245,7 +245,7 @@ fi
 #                      illegal one is still not a character start)
 #   E4B8AD61CEB1  3   (indices 1, 2, 5)
 #   B161          0   -- index 0 IS a continuation byte and is NOT refused:
-#   8080          1      offset 0 is never refused (match_api.md 3.1), so
+#   8080          1      offset 0 is never refused (match_api.md#offset-zero, 9.3), so
 #                        8080 contributes only its index 1. These two exist
 #                        to exercise that clause, and a run in which they
 #                        started contributing 1 and 2 would mean the guard had

@@ -1242,10 +1242,10 @@ Readers known at `c231ffc1`, a floor and not the list:
 - `tests/codegen/run_codegen_tests.sh` (`ABI_EXPECT=55`, plus the
   `[DD-14.FB]` narrative string's next transition).
 - `docs/spec/match_api.md`:
-  - §6's changelog: "is 55" → "was 55", plus a new entry stating the
+  - `docs/dev/history/abi_changelog.md` (was §6's changelog): "is 55" → "was 55", plus a new entry stating the
     mechanism, the mover manifest and the invariants;
-  - line 302, the shared block's mixed-abi `#error` text (D143);
-  - line 2299, `rx_info.abi`'s sentence.
+  - `#abi-guard`, the shared block's mixed-abi `#error` text (D143);
+  - `#abi`, `rx_info.abi`'s sentence.
 - `tests/codegen/run_recursion_identity.sh`: the (B) `FILEPIN` re-pin to
   the commit's own last `src/` change (the k73utf convention), and (A)'s
   excuse axes.

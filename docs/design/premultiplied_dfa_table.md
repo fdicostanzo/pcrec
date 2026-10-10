@@ -464,7 +464,7 @@ the stamp cannot disagree with the loop unless the predicate itself is wrong,
 in which case the loop is wrong too.
 
 **Is a runtime mirror in `rx_info` owed? Decided here: NO, with a named
-trigger.** `docs/spec/match_api.md` §6.3's (a)/(b) split is a rule about
+trigger.** `docs/spec/match_api.md` §6.3's (a)/(b) split (`#stamp-scoping`) is a rule about
 MACROS: (a) selection facts are unconditional (scoped to the mechanism that owns
 them), (b) capacity and activity macros stay VM-only. `RX_DFA_TABLE` is
 squarely (a), and §6.3 makes the macro owed. It says nothing about the struct.
@@ -618,7 +618,7 @@ change:
 
 1. `src/gen/emit_dfa.c` — `.abi = 7`, with the paragraph saying which bytes move.
 2. `tests/codegen/run_codegen_tests.sh` — the [DD-14.FB] §10.4 `ABI_EXPECT`.
-3. `docs/spec/match_api.md` §6 — the "`rx_info.abi` is `7`" sentence (two sites:
+3. `docs/spec/match_api.md#abi` — the "`rx_info.abi` is `7`" sentence (two sites:
    the §1 note and §6's bullet).
 4. `tests/codegen/run_recursion_identity.sh` — comparison (B)'s `FILEPIN`,
    re-pinned to this change's last `src`/`lib`/`cli` commit.

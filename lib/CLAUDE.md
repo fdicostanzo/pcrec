@@ -191,7 +191,7 @@ old name also asserted something false, since this encoding treats every
 byte as a character (`0x80` and up included, with no case and no meaning
 attached), which is precisely what "ASCII" does not say. D58's own ruling
 text names the encoding `byte`. Taken as one announced boundary under
-docs/spec/match_api.md §9's pre-v1 posture.
+docs/spec/match_api.md#pre-v1's pre-v1 posture.
 
 The enum's comment now also states the PER-COMPILE-CALL rule (D58 ruling 2,
 DD-12 (8)): the encoding is this field and nothing else — no process

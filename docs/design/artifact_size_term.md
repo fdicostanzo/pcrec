@@ -1692,7 +1692,7 @@ The rung is 0x10 at every K, so this is chunking, via the once-per-trip MRL
 guard (`:4245-4260`). Note the direction on frames: **descending K RAISES the
 frame requirement by 39 %**, so the size term can make a tuned caller's
 capacity verdict worse, not only better. And `RX_TRAIL_FRAMES` is a macro
-`match_api.md:1083` names as caller-read.
+`match_api.md#buffers-sizing` names as caller-read.
 
 **Answers under the DEFAULT budgets are identical** (checked). So the claim is
 exactly: *match results and captures are invariant; the give-up surface and the
@@ -1864,7 +1864,7 @@ list was short by two):
 |---|---|---|
 | 1 | `docs/spec/tuning.md` | new **§2.16** in §2.14's deny-only shape, in the §2 block in bit order (§2's "count" hunk withdrawn — see above, there is no such sentence) |
 | 2 | **`docs/spec/cli.md:218-224`** | the hand-enumerated `-fno-` axis list, which runs through `-fno-offset-skip` and must gain `-fno-size-term` |
-| 3 | **`docs/spec/match_api.md` §6.3** | a per-mechanism bullet for the two macros, on the `_DFA_SCAN`/`_DFA_PREFILTER` precedent at `match_api.md:1659-1720`, scoped VM-artifact-only |
+| 3 | **`docs/spec/match_api.md` §6.3** | a per-mechanism bullet for the two macros, on the `_DFA_SCAN`/`_DFA_PREFILTER` precedent at `match_api.md#stamp-dfa-scan`/`#stamp-dfa-prefilter`, scoped VM-artifact-only |
 | 4 | `docs/spec/match_api.md` §6 | the `abi` sentences, 9 → 10 (§8) |
 | 5 | `docs/spec/limits.md` | `PCREC_MAX_VM_EMIT_CODE_BYTES` and `PCREC_MAX_EMIT_BYTES` with their units and `.o` equivalences (§4.0), both refusals (§4.6), the note that the size term can change a tuned caller's budget verdict (S2), §7's compile-time sentence (S7), and the new "Handling an oversized artifact" section |
 

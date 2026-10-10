@@ -147,7 +147,7 @@ separately: it is part of the +385-byte uncut growth (§3).
 
 1. `src/gen/emit_dfa.c` `PCREC_ARTIFACT_ABI` 39 -> 40 (c5).
 2. `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT=40`, plus its narrative clause.
-3. `docs/spec/match_api.md` §6 change log: "gap-free from 2 to 40" and the new 39 -> 40 entry.
+3. `docs/dev/history/abi_changelog.md`: "gap-free from 2 to 40" and the new 39 -> 40 entry.
 4. `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` re-pinned to `93e80da7`, the first B1 tree that compiles with no build step (§4.1). (A) is untouched.
 
 **Readers no digit grep reaches**, found by running the suites:

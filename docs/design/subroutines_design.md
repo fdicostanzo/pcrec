@@ -1925,7 +1925,7 @@ evidence of a past emission and are **not** edited):
 | 5a | **`src/gen/emit_vm.c:5833`** `<prefix>_run_state_init` | **NOT an `ERR_FLOOR` site — a MISSING INITIALISER.** It sets `resume_depth`, `trail_depth` and the budgets; it must also set **`call_top = CALL_TOP_NONE`** and **`call_depth = 0`**. Without the first, the very first `RX_RETURN` of a search reads `resume_stack[garbage]`. `prototype/callproto.c` sets the sentinel by hand in `main()`, which is exactly the kind of scaffolding a prototype hides behind — R34's LENS2-7 found it |
 | 5b | **`src/gen/emit_vm.c:5848`** `<prefix>_reset_for_next_attempt` | the per-START-POSITION reset. It rewinds the trail and zeroes `resume_depth` **without resetting the budgets, deliberately**; `call_top` and `call_depth` join the first group, not the second — a bump-along must not inherit the previous attempt's activation, and must not inherit its recursion depth either |
 | 6 | `lib/pcrec.h:380` | the ABI prose naming `[<PREFIX>_ERR_FLOOR, -2]` |
-| 7 | `docs/spec/match_api.md:171, 209, 213, 222, 822, 850` | the authoritative contract, including the `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` obligation |
+| 7 | `docs/spec/match_api.md#abi-types` (§2's constants block), `#giveup-codes` (§4), `#composed-call-sites` | the authoritative contract, including the `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` obligation |
 | 8 | `tests/codegen/run_codegen_tests.sh:848, 883` | the two name lists the `[ABI-NS]` check reads |
 
 plus `docs/design/match_api_m4.md:303, 464, 510, 516` and

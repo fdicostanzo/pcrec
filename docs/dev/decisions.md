@@ -5617,7 +5617,7 @@ that changes emitted scaffolding without bumping `abi` fails (B) and is
 told why. Plan row [TT-11] charters the change. `docs/testing.md` and
 `tests/codegen/CLAUDE.md` state the two owners.
 
-### D76 addendum — the bump ritual maintains ONE change log, and it is `docs/spec/match_api.md` §6 ([REVW.A1], 2026-09-19)
+### D76 addendum — the bump ritual maintains ONE change log, and it is `docs/spec/match_api.md` §6 [since moved: `docs/dev/history/abi_changelog.md`] ([REVW.A1], 2026-09-19)
 
 D76 rules what a bump IS and what it re-pins; it never named where the
 HISTORY is written, so the history grew four homes and three of them
@@ -5628,7 +5628,7 @@ drifted. Measured at `abi` 27:
 | `src/gen/emit_dfa.c`'s comment log (449 lines) | **8 transitions missing**, entries out of numerical order |
 | `tests/codegen/run_codegen_tests.sh`'s failure message | missing `20->21` and `21->22` |
 | `src/gen/CLAUDE.md`'s `##` sections | last abi-numbered section is `17->18`; never a log, read as one |
-| `docs/spec/match_api.md` §6 | **complete and gap-free, `2` through `27`** |
+| `docs/spec/match_api.md` §6 [now `docs/dev/history/abi_changelog.md`] | **complete and gap-free, `2` through `27`** |
 
 The fourth is the one lens 4's A1 finding did not count (a population
 nobody censused — `docs/dev/learnings.md` §3's own shape). It is complete
@@ -5636,7 +5636,7 @@ BECAUSE every bump's D76/D94 ritual already touches it: the spec hunk is
 part of the ritual, so §6 is maintained by the same act that takes the
 bump, while the three narrative copies were maintained by nothing.
 
-**THE RULING.** `docs/spec/match_api.md` §6 is THE `abi` change log, and a
+**THE RULING.** `docs/spec/match_api.md` §6 [now `docs/dev/history/abi_changelog.md`] is THE `abi` change log, and a
 bump's ritual maintains it and no other. The `emit_dfa.c` log is cut to a
 pointer; `src/gen/CLAUDE.md` gains a pointer and keeps its per-milestone
 DESIGN sections, which are topic record and explicitly not a log. The
@@ -5826,7 +5826,7 @@ the old pin 8fc1e51 ("'.abi = 4' vs '.abi = 3'") before any sweep — its
 first real event. A future scaffolding-only change must expect (A) green
 against its ancient pin AND a (B) re-pin, and must not read (A)'s
 greenness as licence to skip the bump. Sites carrying the number:
-emit_dfa.c (`.abi = 4`), match_api.md §6, run_codegen_tests.sh's
+emit_dfa.c (`.abi = 4`), match_api.md §6 (`#abi`), run_codegen_tests.sh's
 [DD-14.FB] §10.4 check. The merge was `--no-ff`, so 5991d4c survives as
 the pin.
 
@@ -6548,8 +6548,8 @@ them; the CLAUDE.md situation-index row says so.
 
 Why: the four-site checklist was hand-enumerated and drifted from its
 subject exactly the way this project's hand-copied counts always have —
-lane opt5d found a FIFTH reader (docs/spec/match_api.md's §3-area "abi is
-N" sentence at ~line 159) already stale at 13 after [CC-CLANG]'s bump to
+lane opt5d found a FIFTH reader (docs/spec/match_api.md's "abi is
+N" sentence, then at ~line 159, now `#abi`) already stale at 13 after [CC-CLANG]'s bump to
 14, while the enumerated four all moved. learnings §3's one-derivation
 rule applied to a checklist: enumerate by search, not by memory.
 
@@ -6658,13 +6658,13 @@ the §1.5 libpcre2-refusal measurement before adoption, like `site=`.
 D94's original 2026-09-01 lesson was that the abi-bump re-pin ritual's
 site list is "every reader of the number, found by grep" rather than a
 hand-enumerated checklist — because a hand-enumerated four missed a
-fifth reader (docs/spec/match_api.md's own "abi is N" sentence). The
+fifth reader (docs/spec/match_api.md's own "abi is N" sentence, now `#abi`). The
 grep half of that fix has a gap of its own, found live rather than by
 inspection: `e1bf0025`'s already-ratified `[PORTFIX]` fix (the
 gcc-vs-clang21 label-declaration fix, abi 24→25) re-pinned every site
 its own grep found by searching for the literal old abi digit and the
 two known abi-citing strings (`.abi = 24`, `ABI_EXPECT=24`, the
-`match_api.md` history-chain sentences) — and that sweep, BY
+`match_api.md` history-chain sentences, now `docs/dev/history/abi_changelog.md`) — and that sweep, BY
 CONSTRUCTION, cannot find a manifest whose rows never cite an abi
 number at all but whose recorded VALUES move anyway as a consequence of
 the same scaffolding change.
@@ -7186,7 +7186,7 @@ names as its trigger — this row deliberately does not pre-empt it.
 The P5 rider rides the same wave: `PCREC_DEFAULT_FEATURES` (an
 exported data symbol, the naming rule's second unstated exception)
 renames to `pcrec_default_features`, keeping match_api.md §8.2's
-exception list exhaustive.
+exception list (now §1, `#library-surface`) exhaustive.
 
 **Revisit when:** the v1 versioning event arrives (localization
 reopens there as a deliberate design), or a new unprefixed export
@@ -7862,8 +7862,8 @@ the `.abi` stamp, the identity gates' (B) pin, the resource suite's
 byte-size figures, every spec sentence); the alternative — an artifact
 that cannot say which pcrec produced it — is worse for a support page
 that asks users to report versions. The spec hunk is docs/spec/cli.md
-(the flag) + docs/spec/match_api.md §6 (the abi log entry and the stamp
-line's wording), D80.
+(the flag) + docs/spec/match_api.md §6 (the abi log entry, now `docs/dev/history/abi_changelog.md`, and the stamp
+line's wording, `#abi`), D80.
 
 ## D116 — The public root CLAUDE.md keeps its content behind a three-line preface; the README is BRIEF AND FRIENDLY with no drifting numbers, and the user guide waits on an interface discussion (Frank, 2026-09-21, seventy-fifth session)
 
@@ -9196,7 +9196,7 @@ Also owed before any build: the soundness model re-run once against the 10.46 re
 
 **D151 addendum 2 — three rulings recorded (Frank, 2026-10-06, the start-table lane's questions Q3-Q5).** (1) Decision families: [DEC-FALLBACK] keeps today's tokens, a pure no-mover; separating the name token from the why token is a later, separate abi row. (2) Streamlining: two serial no-mover refactors, A = the start-table fold (C0, C1-C7 + C5b, `cand_route_of`, the checked handoff graph) and B = [DEC-FALLBACK] (`fit_rungs[]` plus [SEL-1]'s overflow rungs, tokens kept); B ABSORBS the note's Q8 (the prefilter admission ternary, `select_engine.c:862`), which is folded into [DEC-FALLBACK] and not its own row; order A first, B's STEP 0 census after A's C7 merges; the movers (G1 declines EXACTPRED, attempt-start, D-2b, [TIE-ALIGN]/D-4, [DEC-POSDOM], token separation) are later separate rows, never folded into A or B. (3) memfn sequencing: the kit's R4c (`memfn/docs/requests.md` R-4, main `05c33ce0`; the composite PRE site and the offset-skip trio's search TEXT move behind memfn, zero movers) lands BEFORE C1-C7, and C0 (the `emit_sweep` extension, no `src/`) runs in parallel with it; C1-C7 re-derive their edit set (instruments re-run) on post-R4c main; after R4c, edits to migrated emitter text are kit work (D146/D147) while start DECISION reads stay pcrec-side, the kit listing 18 such reads (B1-B18) inside the migrated emitters, which the fold's edit set takes as input; the kit awaits C0's full I2 (every axis x both comment tiers), so ping the kit when C0 merges. Recorded in docs/design/start_table.md §3.2, §6 (R-Q3..R-Q5) and §R.1.
 
-**D151 addendum 3 — the start-table note's remaining open questions ruled (Frank, 2026-10-06, docs/design/start_table.md §6 Q2-Q7, Q10; Q1, Q8, Q9 were already ruled).** (Q2) ONE single `cand_rows[]` for every slot, each row tagged with a `slot` field, the walk takes a slot; NOT per-slot arrays. Frank: "otherwise logic is spread around which is the opposite of what we want". (Q3) The compile-time selection trace `-DPCREC_CAND_TRACE`: YES, CONDITIONAL on an experiment in C0 ("test the theory, seems brittle"): (1) detection, planted selection changes on a scratch branch (row-order swap, predicate flip, route mis-key, a row change where the bytes stay identical), recording trace-diff vs byte-sweep detection per plant; (2) brittleness, across selection-neutral commits (rename, function move, emitter reformat) any trace diff is a false alarm; (3) bar: catches every plant, zero false alarms, else the refactor drops the trace and relies on bytes + deny-delta counts and the note says why. (Q4, D-1) G1 declines `EXACTPRED` rows (option 1) as its OWN later row after C7, GATED ON MEASURING the 33 artifacts (27 DFA + 6 HYB, auto/byte) first (D77); if restoring the pre-check is slower, the right fix may be a correct dominance argument for predecessor scans instead; nothing inside the fold. The note's illustration is corrected: N9 `memchr` does not fire on a plain literal such as `ERROR` (`offset-set`, offsets `0,1*`, rarity-picked); it fires for e.g. `E[0-9]+`. (Q5, D-2) Option (a): a third value `attempt-start`, a later LOW-priority row batched with the next abi event (no standalone bump), with the D80 spec hunk fixing `match_api.md:4686-4703`'s contradiction and a bench adapter note. (Q6, D-2b) FILE, don't fix; the D77 trigger is a bench or real-world pattern that pays for the full-position search. (Q7) Census scripts: `call_graph.py` + `inventory.tsv` + `inventory_check.py` move to `tests/codegen/` as a standing check (a new start decision fails `make test-codegen` until dispositioned), WITH its run time measured at landing, its own sabotage row (an undispositioned decision planted must FAIL) and a robustness verdict on `call_graph.py`'s parse (not robust enough to gate on: it stays design evidence); `deny_census.py`'s DIFFER counts become C0's `emit_sweep` floors; `row_census.py` goes to `tests/codegen/` as the trace hit-counter's cross-check if the trace passes Q3's experiment, arms pinned as floors; `sabotage_anchors.py`, `refactor_edit_set.tsv`, `anchor_agree.py` stay as design evidence. (Q10, D-4) YES: [TIE-ALIGN] is re-scoped to ONE landmark-candidate ranking with ONE tie rule, read by the run reader, the run pin and `prefix_k`; a form mover (answers identical), its own abi event after C7, gated on D119's bench bar; census = D-4's utf8 families plus the byte-arm `\d\dxyz` shapes. It fits [PATFACTS] (manager's answer to Frank's question) as ONE `PF_DERIVED` fact ("a function of core facts and the byte-rate"): the run pin already lives in facts (`src/facts/facts.c:265` calls `pcrec_run_pin` with `pcrec_find_byte_rate`) and `prefix_k`'s pick (`src/opt/prefix_k.c`) is the outside re-ranker that creates D-4. STEP 0 read: `prefix_k.c` reads no compile option (its inputs are the byte-rate via `pcrec_find_set_ppm` and the `kset_walk` fact), so no `--tune` effect needs routing today; if the cost model gains one, it enters via the fact's deny/input mechanism or stays outside facts as policy over the fact-provided ranking. Recorded in docs/design/start_table.md §6 and §R.1.
+**D151 addendum 3 — the start-table note's remaining open questions ruled (Frank, 2026-10-06, docs/design/start_table.md §6 Q2-Q7, Q10; Q1, Q8, Q9 were already ruled).** (Q2) ONE single `cand_rows[]` for every slot, each row tagged with a `slot` field, the walk takes a slot; NOT per-slot arrays. Frank: "otherwise logic is spread around which is the opposite of what we want". (Q3) The compile-time selection trace `-DPCREC_CAND_TRACE`: YES, CONDITIONAL on an experiment in C0 ("test the theory, seems brittle"): (1) detection, planted selection changes on a scratch branch (row-order swap, predicate flip, route mis-key, a row change where the bytes stay identical), recording trace-diff vs byte-sweep detection per plant; (2) brittleness, across selection-neutral commits (rename, function move, emitter reformat) any trace diff is a false alarm; (3) bar: catches every plant, zero false alarms, else the refactor drops the trace and relies on bytes + deny-delta counts and the note says why. (Q4, D-1) G1 declines `EXACTPRED` rows (option 1) as its OWN later row after C7, GATED ON MEASURING the 33 artifacts (27 DFA + 6 HYB, auto/byte) first (D77); if restoring the pre-check is slower, the right fix may be a correct dominance argument for predecessor scans instead; nothing inside the fold. The note's illustration is corrected: N9 `memchr` does not fire on a plain literal such as `ERROR` (`offset-set`, offsets `0,1*`, rarity-picked); it fires for e.g. `E[0-9]+`. (Q5, D-2) Option (a): a third value `attempt-start`, a later LOW-priority row batched with the next abi event (no standalone bump), with the D80 spec hunk fixing `match_api.md#stamp-dfa-start`'s contradiction and a bench adapter note. (Q6, D-2b) FILE, don't fix; the D77 trigger is a bench or real-world pattern that pays for the full-position search. (Q7) Census scripts: `call_graph.py` + `inventory.tsv` + `inventory_check.py` move to `tests/codegen/` as a standing check (a new start decision fails `make test-codegen` until dispositioned), WITH its run time measured at landing, its own sabotage row (an undispositioned decision planted must FAIL) and a robustness verdict on `call_graph.py`'s parse (not robust enough to gate on: it stays design evidence); `deny_census.py`'s DIFFER counts become C0's `emit_sweep` floors; `row_census.py` goes to `tests/codegen/` as the trace hit-counter's cross-check if the trace passes Q3's experiment, arms pinned as floors; `sabotage_anchors.py`, `refactor_edit_set.tsv`, `anchor_agree.py` stay as design evidence. (Q10, D-4) YES: [TIE-ALIGN] is re-scoped to ONE landmark-candidate ranking with ONE tie rule, read by the run reader, the run pin and `prefix_k`; a form mover (answers identical), its own abi event after C7, gated on D119's bench bar; census = D-4's utf8 families plus the byte-arm `\d\dxyz` shapes. It fits [PATFACTS] (manager's answer to Frank's question) as ONE `PF_DERIVED` fact ("a function of core facts and the byte-rate"): the run pin already lives in facts (`src/facts/facts.c:265` calls `pcrec_run_pin` with `pcrec_find_byte_rate`) and `prefix_k`'s pick (`src/opt/prefix_k.c`) is the outside re-ranker that creates D-4. STEP 0 read: `prefix_k.c` reads no compile option (its inputs are the byte-rate via `pcrec_find_set_ppm` and the `kset_walk` fact), so no `--tune` effect needs routing today; if the cost model gains one, it enters via the fact's deny/input mechanism or stays outside facts as policy over the fact-provided ranking. Recorded in docs/design/start_table.md §6 and §R.1.
 
 ## D152 — Why pcrec uses first-match decision tables (the standing rationale; Frank asked for it so tables are built for a reason, not by fiat; 2026-10-06)
 

@@ -1519,7 +1519,7 @@ fi
 # THE FACT. `rx_info.groups` is documented "sorted, bsearch-able", and with
 # `(?J)` the table can now hold ADJACENT ROWS WITH EQUAL NAMES. libpcre2's own
 # `PCRE2_INFO_NAMETABLE` is sorted (name ASCENDING, then number ASCENDING) —
-# measured over ten patterns — and `docs/spec/match_api.md` §6's caller
+# measured over ten patterns — and `docs/spec/match_api.md` §5.4's caller
 # algorithm (bsearch, walk BACK to the run's first row, then FORWARD to the
 # first participating one) selects the LOWEST-numbered participating member
 # ONLY IF the within-name order is ascending. Get it backwards and the table
@@ -1572,7 +1572,7 @@ while IFS=$'\t' read -r nm feats pat; do
         { pn = $1; pv = $2 }
         END { exit bad }
     ' "$WORKDIR/$nm.rows"); then
-        bad "[M6.5-DUPNAMES] '$pat': the emitted rx_group_entry rows are not STRICTLY increasing in (name, number) — $out. A caller doing match_api.md §6's bsearch-then-walk would select the wrong member of a duplicated name's run, which is the resolution rule §8.3's \"xyy\" cell rules out"
+        bad "[M6.5-DUPNAMES] '$pat': the emitted rx_group_entry rows are not STRICTLY increasing in (name, number) — $out. A caller doing match_api.md §5.4's (#dup-name-algorithm) bsearch-then-walk would select the wrong member of a duplicated name's run, which is the resolution rule §8.3's \"xyy\" cell rules out"
         dup_bad=$((dup_bad + 1))
     fi
     # TAB-separated: name, features, pattern.
@@ -3118,7 +3118,7 @@ fi
 
 # `nentries` == `nnames` on every artifact pcrec emits today, and BOTH must
 # be present. The equality is the honest state of an uncomposed artifact
-# (docs/spec/match_api.md §6) and the composer is what will separate them;
+# (docs/spec/match_api.md §6, #rx-info-counts) and the composer is what will separate them;
 # what this pins is that the field EXISTS and is not, say, hard-wired to 0
 # while `nnames` reports a real count -- which is the shape a caller
 # switching to `nentries` would silently lose every row to.
@@ -3138,7 +3138,7 @@ done
 if [ -n "$w12_ne_bad" ]; then
     bad "[DD-13b.W1.2]: rx_info.nentries is wrong or absent:$w12_ne_bad"
 else
-    ok "[DD-13b.W1.2]: rx_info.nentries is emitted and equals nnames on every artifact pcrec emits today (0 and 2 named groups; the composer is what will separate them -- match_api.md section 6)"
+    ok "[DD-13b.W1.2]: rx_info.nentries is emitted and equals nnames on every artifact pcrec emits today (0 and 2 named groups; the composer is what will separate them -- match_api.md section 6, #rx-info-counts)"
 fi
 
 # ===========================================================================

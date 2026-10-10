@@ -251,7 +251,7 @@ first call refuses. The character at `e` is also the one a trailing `\b`,
   hazard.
 - **It runs the engine on possibly ill-formed input.** That is legal only
   because pcrec's semantics are defined on every byte string (invalid
-  tolerance, match_api §3.1). PCRE2 cannot offer this shape, because its
+  tolerance, match_api §9.4, `#utf-check`). PCRE2 cannot offer this shape, because its
   NO_UTF_CHECK on an invalid subject is undefined behaviour. So it is a
   pcrec-only contract, stated as ours, not PCRE2's.
 
@@ -408,7 +408,7 @@ cells, for a start). It is excluded by name, with an asserted-present guard
   `_run` bodies. Every other entry DELEGATES and PROPAGATES the code:
   `_match_caps` over `_match` on the DFA, and the `_in` forms over their
   plain forms or the same `_run`. The spec hunk says so, as match_api
-  already does for `PCREC_ERR_INTERNAL`. A VM FRAMES-escalation restart
+  (§4, `#composed-call-sites`) already does for `PCREC_ERR_INTERNAL`. A VM FRAMES-escalation restart
   ([OPT-1], §10.9) re-enters `_run`. The build lane must place the check so
   a restart does not validate twice, or state the double pass as cost.
 - **Composed call sites (F7.4).** The below-the-floor rule says a composed

@@ -1185,8 +1185,8 @@ the rule is the right shape:
 | `src/gen/emit_dfa.c:1514` | the `.abi = 15` stamp itself |
 | `tests/codegen/run_codegen_tests.sh:2735` | `ABI_EXPECT=15` |
 | `tests/codegen/run_codegen_tests.sh:2737` | the `[DD-14.FB]` §10.4 narrative sentence, one clause per bump — STEP 2 appends its own |
-| `docs/spec/match_api.md:159` | the §3-area "`rx_info.abi` is `15`" sentence |
-| `docs/spec/match_api.md:1647` | the §6 "`rx_info.abi` is `15` on every artifact today" sentence |
+| `docs/spec/match_api.md#abi` | the §3-area "`rx_info.abi` is `15`" sentence |
+| `docs/spec/match_api.md#abi` | the §6 "`rx_info.abi` is `15` on every artifact today" sentence |
 | `tests/codegen/run_recursion_identity.sh:515` | `FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6dbdf41}"` — the (B) pin, re-pinned to STEP 2's last `src`-touching commit |
 
 **Do not copy that table into the implementation.** It is a snapshot taken
@@ -1195,8 +1195,8 @@ its own tree, and moves whatever it returns. `make test-codegen` before
 delivering.
 
 **F5 and Q6 are DISCHARGED and revision 2 deletes rev 1's text about them**
-(r49 item 17 / cons F-C, sound E1). Rev 1 found `match_api.md:159` stale at
-`13` while `:1602` read `14`, and recommended fixing it plus amending the
+(r49 item 17 / cons F-C, sound E1). Rev 1 found `match_api.md#abi` stale at
+`13` while the struct-section sentence read `14`, and recommended fixing it plus amending the
 ritual. Both halves landed: the w12 merge renumbered `:159` (it now reads
 `15`, VERIFIED by the grep above), and the ritual amendment is **D94**, already
 in `docs/dev/decisions.md` and in `CLAUDE.md`'s situation index. Nothing is
@@ -1779,7 +1779,7 @@ skipping the build is a separate compiler-CPU optimization with its own trigger
 **Q6 — The fifth `abi` site.**
 **RULED AND CLOSED — this is D94.** Frank: "agree. this is the right
 direction". The ritual now says "every reader of the number, found by grep",
-`CLAUDE.md`'s situation-index row says so, and the stale `match_api.md:159`
+`CLAUDE.md`'s situation-index row says so, and the stale `match_api.md#abi`
 was fixed at the w12 merge. **Revision 2 deletes rev 1's recommendation text
 and replaces §4.4 with the grep** (r49 item 17). Nothing is owed.
 
@@ -1816,7 +1816,7 @@ For the manager's merge review; each is argued in place above.
   `large-subject-throughput` (find-all) band, not a `match` band — the charter
   brief's wording; ledger §3's own table heading is the source.
 - **F5** (§4.4) The `abi` ritual's "FOUR sites" is incomplete: a fifth reader,
-  `docs/spec/match_api.md:159`, was already stale at `13` after `[CC-CLANG]`'s
+  `docs/spec/match_api.md#abi`, was already stale at `13` after `[CC-CLANG]`'s
   bump to 14. **DISCHARGED**: ruled as **D94** (the site list is every reader
   of the number, found by grep) and the stale site fixed at the w12 merge; the
   grep now returns five readers plus the (B) pin (§4.4).
@@ -1882,7 +1882,7 @@ verify item by item without re-reading the note.
 | 14 | [sound B5] §5.5's size prediction narrows; the views-OR cleanup is its own change | **WORKED** | §5.5 | The prediction is narrowed to **the reverse machine's tables and accessor block only** — enumerated — with the reason (`views`/`viewsel` are ORs over both machines, `:2487-2503`; `emit_machine_tables` `:4646-4656` emits view tables regardless of which machine set the flag; witness (ii) shows the demoted accept order survives). The views-OR narrowing is recorded as **its own candidate change** with no row and no trigger, and the note says folding it in is how a correctness change ships under a performance heading. |
 | 15 | [sound D2] §1.3's impossibility prose becomes a cost argument | **WORKED** | §1.3 | The bullet now reads *"Tracking the origin forward on a multi-origin machine is SOUND and NOT FREE — a COST argument, not an impossibility one"*, names Laurikari-style TDFA explicitly, states the cost (a register copy per transition, a larger build — the very per-step cost STEP 2 removes), and carries the **D77 trigger: re-evaluate WHEN STEP 3 lands**. Added sentence: *"Nobody should carry away 'forward origin tracking is unsound'; it is untaken, on cost."* Prose and table now agree. |
 | 16 | [sound E4] the two stamp folds must drop the reverse machine; movements go in a prediction table | **WORKED** | §4.2, §5.4(4) | The two sites are cited in a table (`dfa_table_name` `:2664-2666`, the `rdfa` read at `:2664`; `dfa_scan_edge_name` `:2706-2715`, the fold at `:2711`). A **PREDICTED STAMP MOVEMENTS** table follows, written before the change, with five artifact classes including the `"mixed"` → form-name movements and the `mc2` scan-edge case. §5.4(4) asserts the negative form. |
-| 17 | [cons F-C/F-D/E1 + Q3] staleness sweep; §0 adopts the two-instrument frame with the O-13/O-14 rule | **WORKED — with one deviation, flagged** | §0, §4.4, §8 Q6, §9 F5 | §4.4 is rewritten around **D94's grep** (the two grep commands are given; the five readers plus the (B) pin are shown as a dated snapshot the implementation must NOT copy). abi is 15, STEP 2 writes 16, and the serialization ambiguity is gone. F5/Q6 are marked DISCHARGED, naming what discharged them (the w12 merge fixed `match_api.md:159`; D94 amended the ritual). §0 becomes a two-instrument table with the CONTROL/CUSTOMER split and a provenance rule. **DEVIATION: the review carries r49cons's frame table only as a Q3 SUMMARY, not verbatim** — the verbatim table is not in the review file — so §0's table is reconstructed from that summary plus O-13 §2/§2(c) and this build's own stamp probes. **`[O-14 PENDING — manager fills at merge]` markers are in place: O-14 had NOT landed** (outbox last written 2026-09-01 18:47, newest message `## O-13`). |
+| 17 | [cons F-C/F-D/E1 + Q3] staleness sweep; §0 adopts the two-instrument frame with the O-13/O-14 rule | **WORKED — with one deviation, flagged** | §0, §4.4, §8 Q6, §9 F5 | §4.4 is rewritten around **D94's grep** (the two grep commands are given; the five readers plus the (B) pin are shown as a dated snapshot the implementation must NOT copy). abi is 15, STEP 2 writes 16, and the serialization ambiguity is gone. F5/Q6 are marked DISCHARGED, naming what discharged them (the w12 merge fixed `match_api.md#abi`; D94 amended the ritual). §0 becomes a two-instrument table with the CONTROL/CUSTOMER split and a provenance rule. **DEVIATION: the review carries r49cons's frame table only as a Q3 SUMMARY, not verbatim** — the verbatim table is not in the review file — so §0's table is reconstructed from that summary plus O-13 §2/§2(c) and this build's own stamp probes. **`[O-14 PENDING — manager fills at merge]` markers are in place: O-14 had NOT landed** (outbox last written 2026-09-01 18:47, newest message `## O-13`). |
 | 18 | [sound A6] state the `fs == s1u[PLAIN]` routing dependency | **WORKED** | §1.2 P0 (new), §5.4(9) | A new predicate clause **P0** states the dependency with its citations (`src/core/compile.c:1096`, `src/ir/nfa.c:990-993`, `src/ir/dfa.c:1249-1258`) and the reason it must be written rather than inherited: `dfa_needs_seed` (`:2161-2166`) compares only `s1u[u]` across `u` and would not notice an `s0 != s1u[PLAIN]` split, and `seed_emit_constant` (`:3496-3502`) then emits `s0` unconditionally. Added sentence: *"A future engine-selection change that routed a BOT-bearing machine here would break the elision silently."* Check **5.4(9)** asserts it in the compiler. |
 
 ### MINOR

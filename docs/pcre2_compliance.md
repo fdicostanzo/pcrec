@@ -950,7 +950,7 @@ populated, sorted by NAME (strcmp, byte-exact and case-sensitive —
 "name"/"NAME" are two distinct groups, even under `(?i)`, measured both
 oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way,
 measured directly (tests/probes/probe_named_groups.c), which is this
-module's own evidence for the sort key docs/spec/match_api.md §6 had left
+module's own evidence for the sort key docs/spec/match_api.md §5.4 (`#named-groups`) had left
 open (fixed only for today's ref-empty rows — see D59). A duplicate name
 is a compile error (PCRE2 error 143) **unless `(?J)` is in force at that
 declaration** — DUPNAMES SHIPPED 2026-08-22 ([M6.5.2]) and the split is:
@@ -1149,7 +1149,7 @@ candidate rules over eighteen cells, and swept over name-runs of size 1..4
 with every subset participating. `rx_info.groups` may now hold adjacent rows
 with equal names, sorted (name asc, then NUMBER asc) — libpcre2's own
 `PCRE2_INFO_NAMETABLE` order, measured — because
-`docs/spec/match_api.md` §6's caller algorithm selects the lowest-numbered
+`docs/spec/match_api.md` §5.4's (`#dup-name-algorithm`) caller algorithm selects the lowest-numbered
 participating member only if that order holds.
 
 `(?-J)` accepted, and it really does turn the state back off. With `backrefs`

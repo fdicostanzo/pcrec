@@ -25,7 +25,7 @@
  *
  * `PCREC_ENC_BYTE` was spelled `PCREC_ENC_ASCII` before [M5-SEAM], and the
  * CLI spelled it `-e ascii`. RENAMED, not aliased (pre-v1, docs/spec/
- * match_api.md §9's announced-boundary form): the semantics were always
+ * match_api.md#pre-v1's announced-boundary form): the semantics were always
  * "every byte is a character, 8-bit clean" — bytes >= 0x80 are ordinary
  * bytes with no case and no meaning, which is precisely NOT what "ASCII"
  * says — and D58 names the encoding `byte` in the ruling text itself. Two
@@ -34,7 +34,7 @@
 enum {
     PCREC_ENC_BYTE = 0,   /* byte semantics, 8-bit clean; the default */
     PCREC_ENC_UTF8 = 1    /* UTF-8; a character is 1-4 bytes ([M5.0] stage 2).
-                             docs/spec/match_api.md §8.2 is the contract. */
+                             docs/spec/match_api.md §9.1 (#encodings-compiled) is the contract. */
 };
 
 /* [M4.4] (D43.2/D44.8): pcrec's own boolean options, one bit each in
@@ -623,7 +623,7 @@ enum {
     PCREC_NO_CLS_FOLD = PCREC_BIT(24),
 
     /* [K50] `-fno-startpos-guard` — deny the emitted entries' CALLER-STARTPOS
-     * BOUNDARY GUARD (docs/spec/match_api.md §3.1; docs/spec/tuning.md §2.23;
+     * BOUNDARY GUARD (docs/spec/match_api.md §9.2 (#startpos); docs/spec/tuning.md §2.23;
      * docs/dev/known_issues.md K50).
      *
      * **THIS IS THE FIRST MEMBER OF THIS ENUM THAT CHANGES AN ANSWER, AND

@@ -33,7 +33,7 @@ stamped in the emitted header, seeding a root `CHANGELOG.md`.
   sentence for the bump, not a separate errand).
 - **`docs/spec/cli.md`** — new `### --version` subsection (§1, beside
   `-o FILE`), a Revision-history entry.
-- **`docs/spec/match_api.md`** §6 — new top change-log entry (`rx_info.abi`
+- **`docs/dev/history/abi_changelog.md`** — new top change-log entry (`rx_info.abi`
   is `28`... bumped from 27, D115), the prior `27` entry re-chained as
   "the bump before it was [EMIT-VERB]"; "gap-free from `2` to `27`" ->
   "to `28`"; the provenance-line description ("WHAT A DEFAULT ARTIFACT
@@ -50,7 +50,7 @@ stamped in the emitted header, seeding a root `CHANGELOG.md`.
 - **CLAUDE.md updates**: `cli/CLAUDE.md`, `lib/CLAUDE.md`,
   `docs/spec/CLAUDE.md` each gained an entry. `src/gen/CLAUDE.md` and
   `tests/codegen/CLAUDE.md` needed NO edit — both explicitly state the abi
-  change log lives ONLY at `docs/spec/match_api.md` §6 (D76 addendum,
+  change log lives ONLY at `docs/dev/history/abi_changelog.md` (D76 addendum,
   [REVW.A1]) and their own `##`-titled sections are milestone design
   records, not a log a bump must append to. No root file inventory exists
   outside CLAUDE.md itself (checked `docs/CLAUDE.md` — docs/-scoped only);
@@ -151,7 +151,7 @@ CLAUDE.md ritual note), plus a second pass for `PCREC_ARTIFACT_ABI`/
 | `tests/registry/run_registry_tests.sh:531` "deny bit 26 ... force bit 27" | AXIS BIT numbers (`PCREC_NO_COMMENTS`/`PCREC_FORCE_COMMENTS`), not `abi` | not-a-reader (different namespace) |
 | `tests/registry/limits_check.sh:321-323,468` | names `PCREC_ARTIFACT_ABI` as a SCHEMA VERSION allowlist entry, no numeric value | not-a-reader |
 | `docs/spec/tuning.md:2105` "bit 26 ... bit 27" | axis bit numbers, same as above | not-a-reader |
-| `docs/spec/match_api.md:2026` §6 | the abi change log | **RE-PINNED** (new top entry; "gap-free from 2 to 27" -> "to 28"; provenance-line description gains `PCREC_VERSION`) |
+| `docs/dev/history/abi_changelog.md` | the abi change log | **RE-PINNED** (new top entry; "gap-free from 2 to 27" -> "to 28"; provenance-line description gains `PCREC_VERSION`) |
 | `docs/dev/plan.md:573` "Runs after abi 27 lands" | [PLAN-AUDIT] historical gating note | historical-untouched (manager-owned file, not edited by this lane) |
 | `docs/dev/plan.md:578` | this lane's own [REL-1.4] row | manager-owned, not edited |
 | `docs/dev/decisions.md:7686,7727,7815` | D113/D104-addendum/D115 text, all append-only ADR entries | historical-untouched (decisions.md is append-only; D115's own text at :7815 already correctly anticipated this exact 27->28 bump) |

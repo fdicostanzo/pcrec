@@ -1,0 +1,181 @@
+Makefile	716	match_api.md [next line: §6.3]	same	VALID	section on next line
+Makefile	1195	match_api.md [S3.1 on next line]	same	VALID	section on next line (find-all loop, stays 3.1)
+Makefile	1825	match_api.md §6.3	same	VALID	
+memfn/docs/journal.md	219	match_api §6.3.	same	VALID	
+src/core/CLAUDE.md	1512	match_api.md` §10	same	VALID	
+src/core/compile_defs.c	23	match_api.md` §8.0	same	VALID	
+src/core/internal.h	559	match_api.md` §3.1	same	VALID	
+src/core/internal.h	2710	match_api.md §3.1	same	VALID	
+src/core/internal.h	2826	match_api.md §6	match_api.md §5.4 (#named-groups)	REPOINTED	nnames/groups[] bsearch -> named groups
+src/core/internal.h	2844	match_api.md §6	match_api.md §5.4 (#named-groups)	REPOINTED	nnames prefix/bsearch -> named groups
+src/core/internal.h	3241	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4 (#named-groups)	REPOINTED	sorted rx_group_entry array, sort key
+src/core/internal.h	6496	match_api.md §6.3	same	VALID	
+src/core/internal.h	6834	match_api.md §6.3	same	VALID	
+src/core/internal.h	6846	match_api.md §6.3	same	VALID	
+src/core/internal.h	6885	match_api.md §10.4	same	VALID	
+src/dump/axes_dump.c	358	match_api.md` §6.3	same	VALID	
+src/dump/axes_dump.c	386	match_api.md §6.3	same	VALID	
+src/dump/axes_dump.c	519	match_api.md §6.3	same	VALID	
+src/dump/axes_dump.c	560	match_api.md §6.3	same	VALID	
+src/dump/axes_dump.c	833	match_api.md §3.1.2	same	VALID	
+src/dump/axes_dump.c	855	match_api.md [no section]	same	VALID	no section number given
+src/dump/axes_dump.c	856	match_api.md [no section]	same	VALID	no section number given
+src/dump/axes_dump.c	923	match_api.md §10.9	same	VALID	
+src/enc/CLAUDE.md	459	match_api.md §3.1	same	VALID	
+src/enc/CLAUDE.md	608	match_api.md` §3.1.2	same	VALID	
+src/enc/enc_byte.c	30	match_api.md S3.1	match_api.md S3.1	LEFT-EMITTED	emitted string in src/; section still valid, not touched
+src/enc/enc_byte.c	268	match_api.md S3.1.2	match_api.md S3.1.2	LEFT-EMITTED	emitted string in src/; section still valid, not touched
+src/enc/enc.h	145	match_api.md §3.1	same	VALID	
+src/enc/enc.h	206	match_api.md §3.1.2	same	VALID	
+src/enc/enc_utf8.c	40	match_api.md S3.1	match_api.md S3.1	LEFT-EMITTED	emitted string in src/; section still valid, not touched
+src/enc/enc_utf8.c	421	match_api.md S3.1.2	match_api.md S3.1.2	LEFT-EMITTED	emitted string in src/; section still valid, not touched
+src/enc/enc_utf8.c	576	match_api.md §3.1	same	VALID	
+src/gen/CLAUDE.md	38	match_api.md` §6	same	VALID	
+src/gen/CLAUDE.md	843	match_api.md §6.3	same	VALID	
+src/gen/CLAUDE.md	856	match_api.md` §6.3	same	VALID	
+src/gen/CLAUDE.md	917	match_api.md` §6.3	same	VALID	
+src/gen/CLAUDE.md	1045	match_api.md` §6.3	same	VALID	
+src/gen/CLAUDE.md	1113	match_api.md` §6.3	same	VALID	
+src/gen/CLAUDE.md	2364	match_api.md §3.1.1	same	VALID	
+src/gen/CLAUDE.md	2452	match_api.md §3.1	same	VALID	
+src/gen/CLAUDE.md	2680	match_api.md` §10.9	same	VALID	
+src/gen/CLAUDE.md	2867	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4 (#named-groups)	REPOINTED	nnames caller algorithm
+src/gen/CLAUDE.md	3039	match_api.md` [next line: §6.3]	same	VALID	section on next line
+src/gen/CLAUDE.md	3478	match_api.md` §6.3	same	VALID	
+src/gen/CLAUDE.md	3507	match_api.md §6	match_api.md §5.4 (#named-groups)	REPOINTED	nnames as entries in groups[]
+src/gen/CLAUDE.md	3569	match_api.md` §6	same	VALID	
+src/gen/emit_dfa.c	253	match_api.md §6.3	same	VALID	
+src/gen/emit_dfa.c	436	match_api.md §6.3	same	VALID	
+src/gen/emit_dfa.c	697	match_api.md` [next line: §3.1]	same	VALID	section on next line
+src/gen/emit_dfa.c	1570	match_api.md` §3.1	same	VALID	
+src/gen/emit_dfa.c	1633	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	1672	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	1833	match_api.md [no section]	same	VALID	no section number given
+src/gen/emit_dfa.c	1855	match_api.md §6	match_api.md §1 (#abi-guard)	REPOINTED	mixed-abi translation unit guard (comment)
+src/gen/emit_dfa.c	2116	match_api.md S6.3	same	VALID	
+src/gen/emit_dfa.c	2285	docs/spec/match_api.md S6	docs/spec/match_api.md §2 (#abi-types)	REPOINTED	only emitted names PCREC_ENGINE_*; source comment
+src/gen/emit_dfa.c	2337	match_api.md S3.1.	match_api.md S3.1.	LEFT-EMITTED	emitted string in src/; section still valid, not touched
+src/gen/emit_dfa.c	2748	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4 (#named-groups)	REPOINTED	bsearch-able groups array
+src/gen/emit_dfa.c	2764	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4 (#dup-name-algorithm)	REPOINTED	caller algorithm for duplicated names
+src/gen/emit_dfa.c	2794	match_api.md §6	match_api.md §5.4 (#named-groups)	REPOINTED	nnames as entries in groups[]
+src/gen/emit_dfa.c	2844	match_api.md` §6	same	VALID	
+src/gen/emit_dfa.c	2933	match_api.md` §6	same	VALID	
+src/gen/emit_dfa.c	4394	match_api.md §6.3	same	VALID	
+src/gen/emit_dfa.c	4421	match_api.md §6.3	same	VALID	
+src/gen/emit_dfa.c	5813	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	6112	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	6803	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	7759	match_api.md §3.1	same	VALID	
+src/gen/emit_dfa.c	11403	match_api.md §6.3	same	VALID	
+src/gen/emit_dfa.c	11529	match_api.md` §6.3	same	VALID	
+src/gen/emit_vm.c	8359	match_api.md §3.1	same	VALID	
+src/gen/emit_vm.c	8878	match_api.md [next line: §3.1.]	same	VALID	section on next line
+src/gen/emit_vm.c	10586	match_api.md §3.1	same	VALID	
+src/gen/emit_vm.c	11129	match_api.md §6.3	same	VALID	
+src/gen/emit_vm.c	11671	match_api.md [next line: §10.4]	same	VALID	section on next line
+src/gen/memfn_stamps.c	4	match_api.md §6.3	same	VALID	
+src/ir/dfa.c	428	match_api.md §8.1	same	VALID	
+src/opt/CLAUDE.md	1685	match_api.md` §6.3	same	VALID	
+src/parse/CLAUDE.md	790	match_api.md §3.1	same	VALID	
+src/parse/mod_assertions.c	143	match_api.md §3.1	same	VALID	
+src/parse/rxt_compose.c	936	match_api.md §6	match_api.md §5.4	REPOINTED	bsearch of named groups
+src/parse/rxt_compose.c	993	match_api.md §6	match_api.md §5.4 (#named-groups)	REPOINTED	bsearch of named groups
+studies/artrev/fixtures/a09_pin57db5152/artifact.h	191	match_api.md S3.1.	match_api.md S3.1.	LEFT-GENERATED	generated/emitted artifact text; S3.1 still valid
+studies/artrev/shim.c	8	match_api.md [no section]	same	VALID	no section number given
+studies/artrev/shim.c	60	match_api.md 10	same	VALID	
+studies/artrev/shim.c	71	match_api 10.4	same	VALID	
+studies/revend_twin/gen/digits.h	191	match_api.md S3.1.	match_api.md S3.1.	LEFT-GENERATED	generated/emitted artifact text; S3.1 still valid
+studies/revend_twin/gen/u_word.h	191	match_api.md S3.1.	match_api.md S3.1.	LEFT-GENERATED	generated/emitted artifact text; S3.1 still valid
+tests/assertions/CLAUDE.md	261	match_api.md §3.1	same	VALID	
+tests/assertions/CLAUDE.md	288	match_api.md §3.1	same	VALID	
+tests/assertions/CLAUDE.md	354	match_api.md, [no section]	same	VALID	no section number given
+tests/assertions/d27/anchors_abs.rxt	14	match_api.md S3.1	same	VALID	
+tests/assertions/d27/gstart.rxt	4	match_api.md S3.1	same	VALID	
+tests/assertions/d27/gstart.rxt	11	match_api.md's [no section]	same	VALID	no section number given
+tests/assertions/d27/gstart.rxt	39	match_api.md S3.1	same	VALID	
+tests/assertions/d27/kreset.rxt	68	match_api.md S3.1	same	VALID	
+tests/assertions/d27/kreset.rxt	73	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	161	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	276	match_api.md's [no section]	same	VALID	no section number given
+tests/assertions/d27/mkcorpus.py	450	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	455	match_api.md's [no section]	same	VALID	no section number given
+tests/assertions/d27/mkcorpus.py	507	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	514	match_api.md's [no section]	same	VALID	no section number given
+tests/assertions/d27/mkcorpus.py	532	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	610	match_api.md S3.1	same	VALID	
+tests/assertions/d27/mkcorpus.py	614	match_api.md S3.1	same	VALID	
+tests/assertions/d27/README.md	155	match_api.md` §3.1	same	VALID	
+tests/assertions/d27/README.md	163	match_api.md`'s [no section]	same	VALID	no section number given
+tests/assertions/d27/README.md	277	match_api.md`, [no section]	same	VALID	no section number given
+tests/assertions/d27/README.md	305	match_api.md`, [no section]	same	VALID	no section number given
+tests/assertions/gpos.rxt	23	match_api.md` §3.1	same	VALID	
+tests/assertions/run_gstart_diff.sh	7	match_api.md §3.1	same	VALID	
+tests/assertions/run_kreset_diff.sh	528	match_api.md §3.1	same	VALID	
+tests/assertions/run_kreset_diff.sh	598	match_api.md §3.1	same	VALID	
+tests/atomic_groups/d27/captures_under_cut.rxt	7	match_api.md S5.1	same	VALID	
+tests/atomic_groups/d27/captures_under_cut.rxt	66	match_api.md S5.1	same	VALID	
+tests/atomic_groups/d27/find_all_loop.rxt	3	match_api.md S3.1	same	VALID	
+tests/atomic_groups/d27/interactions.rxt	58	match_api.md S3.1	same	VALID	
+tests/atomic_groups/d27/README.md	8	match_api.md`, [no section]	same	VALID	no section number given
+tests/atomic_groups/d27/README.md	80	match_api.md` S3.1	same	VALID	
+tests/axes/run_axes.sh	993	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1010	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1011	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1012	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1013	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1014	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1015	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1016	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1017	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1018	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1019	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1020	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1021	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1022	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1023	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1024	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1025	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1026	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1027	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1028	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1029	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1030	match_api.md §3.1	same	VALID	
+tests/axes/run_axes.sh	1031	match_api.md §3.1	same	VALID	
+tests/backrefs/d27/README.md	8	match_api.md`, [no section]	same	VALID	no section number given
+tests/backrefs/d27/README.md	271	match_api.md` §3.1	same	VALID	
+tests/backrefs/run_backref_diff.sh	37	match_api.md §3.1	same	VALID	
+tests/backrefs/run_backref_diff.sh	411	match_api.md §3.1	same	VALID	
+tests/CLAUDE.md	317	match_api.md §3.1	same	VALID	
+tests/CLAUDE.md	556	match_api.md §3.1	same	VALID	
+tests/codegen/CLAUDE.md	134	match_api.md §3.1	same	VALID	
+tests/codegen/CLAUDE.md	582	match_api.md` §6.3	same	VALID	
+tests/codegen/CLAUDE.md	1013	match_api.md` §3.1	same	VALID	
+tests/codegen/CLAUDE.md	1328	match_api.md` §6.3	same	VALID	
+tests/codegen/CLAUDE.md	1360	match_api.md` §10.9	same	VALID	
+tests/codegen/CLAUDE.md	2016	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4 (#dup-name-algorithm)	REPOINTED	caller algorithm for duplicated names
+tests/codegen/CLAUDE.md	2203	docs/spec/match_api.md §6	docs/spec/match_api.md §6 (#rx-info-counts)	REPOINTED	nentries == nnames; section number kept, anchor added
+tests/codegen/CLAUDE.md	2658	match_api.md §3.1	same	VALID	
+tests/codegen/CLAUDE.md	2685	match_api.md §3.1	same	VALID	
+tests/codegen/CLAUDE.md	3299	match_api.md` §6.3	same	VALID	
+tests/codegen/CLAUDE.md	3924	match_api.md` §6.3	same	VALID	
+tests/codegen/CLAUDE.md	3984	match_api's [no section]	same	VALID	no section number given
+tests/codegen/entry_shape_driver.c	16	match_api.md S3.1	same	VALID	
+tests/codegen/nomatch_caps_driver.c	1	match_api.md §3.1	same	VALID	
+tests/codegen/run_anchored_match.sh	9	match_api.md §3.2	same	VALID	
+tests/codegen/run_anchored_match.sh	99	match_api.md §6.3	same	VALID	
+tests/codegen/run_anchored_match.sh	136	match_api.md §3.2	same	VALID	
+tests/codegen/run_anchored_match.sh	562	match_api.md §6.3	same	VALID	
+tests/codegen/run_anchored_match.sh	682	match_api.md §6.3	same	VALID	
+tests/codegen/run_codegen_tests.sh	971	§1 of docs/spec/match_api.md	same	VALID	section precedes the file name (§1 ABI-types block)
+tests/codegen/run_codegen_tests.sh	1187	match_api.md §1	same	VALID	
+tests/codegen/run_codegen_tests.sh	1522	docs/spec/match_api.md §6	docs/spec/match_api.md §5.4	REPOINTED	caller algorithm for duplicated names (comment)
+tests/codegen/run_codegen_tests.sh	1575	match_api.md §6	match_api.md §5.4 (#dup-name-algorithm)	REPOINTED	bad message string (human-readable, not compared)
+tests/codegen/run_codegen_tests.sh	1593	match_api.md §3.1	same	VALID	
+tests/codegen/run_codegen_tests.sh	2354	match_api.md §6.3	same	VALID	
+tests/codegen/run_codegen_tests.sh	3034	match_api.md` §6	same	VALID	
+tests/codegen/run_codegen_tests.sh	3045	match_api section 6	same	VALID	
+tests/codegen/run_codegen_tests.sh	3045	match_api.md §6	same	VALID	
+tests/codegen/run_codegen_tests.sh	3045	match_api.md §6	same	VALID	
+tests/codegen/run_codegen_tests.sh	3121	docs/spec/match_api.md §6	docs/spec/match_api.md §6 (#rx-info-counts)	REPOINTED	nentries == nnames (comment)
+tests/codegen/run_codegen_tests.sh	3141	match_api.md section 6	match_api.md section 6, #rx-info-counts	REPOINTED	ok message string (human-readable, not compared)
+tests/codegen/run_codegen_tests.sh	3509	match_api.md §6.3	same	VALID	

@@ -237,7 +237,7 @@ rules). Re-score S480-S490/S504 at the shipping head.
   - R4a′ is finished at abi 63 on `lane/memfn-r4a2`/`lane/memfnbump`, not
     merged.
   - Both branches touch the same `#define`, `ABI_EXPECT`, the K80
-    example, match_api §6, `FILEPIN`, and
+    example, docs/dev/history/abi_changelog.md (then match_api §6), `FILEPIN`, and
     `run_cpset_structure.sh`/`run_resource_tests.sh` byte pins. Both also
     regenerate `docs/dev/artifact_size_log.tsv` in full: 8,168 diff lines
     here, which must be regenerated after the merge, not hand-resolved.
@@ -248,9 +248,9 @@ rules). Re-score S480-S490/S504 at the shipping head.
   - No check enforces abi MONOTONICITY. `ABI_EXPECT` is an equality. If
     stage 3 lands first, a "take theirs" resolution of R4a′'s `62 -> 63`
     produces 63 after 64, and nothing fails. The ledger sentence "63 is the
-    memfn kit's R4a′" (match_api §6, codegen ledger) also assumes R4a′ lands
+    memfn kit's R4a′" (docs/dev/history/abi_changelog.md, then match_api §6; codegen ledger) also assumes R4a′ lands
     first.
-- **m7. A spec sentence is wrong.** `docs/spec/match_api.md` §6's new entry
+- **m7. A spec sentence is wrong.** `docs/dev/history/abi_changelog.md` (then `docs/spec/match_api.md` §6)'s new entry
   says "`-fno-start-set` restores the `abi`-62 program apart from the abi
   digits". The abi-62 default carried the VM hat, and `-fno-start-set` at 64
   removes it as well. It restores abi 62's `-fno-start-set` program, which is

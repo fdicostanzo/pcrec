@@ -170,7 +170,7 @@ and the deny arm (no word left, each word compare restored to exactly one
 - `docs/spec/tuning.md` §2.37 (new), §2.31's compare sentence, §4's mirror
   table, §5.4's policy table (a `-fno-run-overlap` row, NOT A RUNG, and the
   row counts 27 -> 28 / 23 -> 24 / 20 -> 21).
-- `docs/spec/match_api.md` §6: the abi-56 entry (mechanism, movers,
+- `docs/dev/history/abi_changelog.md`: the abi-56 entry (mechanism, movers,
   invariants), the K80 block quote's digits, and §6.3's `RUN_WORDS` entry plus
   `VM_LIT_RUNS`' compare sentence.
 - `docs/design/compare_stack.md` §2/§4/§5 kept true (P2 created, P4 is the

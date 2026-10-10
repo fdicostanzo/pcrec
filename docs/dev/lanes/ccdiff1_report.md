@@ -116,11 +116,11 @@ updated by ccdiff1:
 | the identity gate's (B) pin VALUE | `tests/codegen/run_recursion_identity.sh` `FILEPIN` | left at `da4fe60` (abi 16) deliberately — the manager's to re-pin at merge (D76/D94, opt5i's precedent) |
 | the identity gate's (B) pin COMMENT + the new (A) structural note | `tests/codegen/run_recursion_identity.sh:505-543` | narrates 16→17 in kind alongside every prior bump; ccdiff1b ADDED a structural correction here (§3 below) |
 | the test's own `ABI_EXPECT` literal + narrative | `tests/codegen/run_codegen_tests.sh:2748-2750` | `ABI_EXPECT=17`, narrative extended with the `(16->17 -- ...)` clause |
-| `docs/spec/match_api.md` §6 caller-facing `abi` paragraph | `match_api.md:159-166` | `` `17` `` |
-| `docs/spec/match_api.md` §6.3's `rx_info.abi` prose paragraph | `match_api.md:1691-1725` | rewritten with the (a)/(b) split, "No answer moves on either half" |
-| `docs/spec/match_api.md` §6.3's `RX_DFA_TABLE` cross-reference | `match_api.md:2018-2033` | new paragraph: the encoding stamp survives a full fold |
-| `docs/spec/match_api.md` §6.3's new `RX_DFA_UNIFORM_FOLDS` entry | `match_api.md:2060-2100` | new (b)-family macro entry |
-| `docs/spec/match_api.md` §6.3's `RX_VM_FRAMELESS` entry, second-fact addendum | `match_api.md:2142-2153` | records that `1` now ALSO means the entry chain is inlined; `_VM_INLINE_CHAIN` REJECTED |
+| `docs/spec/match_api.md` §6 (`#abi`) caller-facing `abi` paragraph | `match_api.md#abi` (was `:159-166`) | `` `17` `` |
+| `docs/spec/match_api.md` §6.3's `rx_info.abi` prose paragraph | `match_api.md#stamp-scoping` (was `:1691-1725`) | rewritten with the (a)/(b) split, "No answer moves on either half" |
+| `docs/spec/match_api.md` §6.3's `RX_DFA_TABLE` cross-reference | `match_api.md#stamp-dfa-table` (was `:2018-2033`) | new paragraph: the encoding stamp survives a full fold |
+| `docs/spec/match_api.md` §6.3's new `RX_DFA_UNIFORM_FOLDS` entry | `match_api.md#stamp-dfa-uniform-folds` (was `:2060-2100`) | new (b)-family macro entry |
+| `docs/spec/match_api.md` §6.3's `RX_VM_FRAMELESS` entry, second-fact addendum | `match_api.md#stamp-vm-frameless` (was `:2142-2153`) | records that `1` now ALSO means the entry chain is inlined; `_VM_INLINE_CHAIN` REJECTED |
 | `docs/spec/tuning.md` §3's DFA-stamp catalog | `tuning.md` (after the `RX_DFA_TABLE` bullet) | **MISSING at 37549a1 — ADDED by ccdiff1b** (§3 below): every other `RX_DFA_*` stamp (`_SCAN`, `_PREFILTER`, `_TABLE`, `_MATCH`, `_SCAN_EDGE`, `_START`) has a §3 catalog bullet with its own axis/population census; `_DFA_UNIFORM_FOLDS` had none |
 | `src/gen/CLAUDE.md` | new `## [CC-DIFF] STEP 1` section | present, reviewed, accurate (spot-measured, §4 below) |
 | `tests/codegen/CLAUDE.md` | `run_dfa_uniform_fold.sh` entry | present, reviewed against the script — accurate |

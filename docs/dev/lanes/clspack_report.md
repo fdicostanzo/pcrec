@@ -60,7 +60,7 @@ there. Per-site bitmaps stay below that N." abi 47 -> 48.
 | The VM side: `vm_cls_read` (the one renderer of both table-read spellings), `vm_cls_note_read`, `vm_cls_tables` (builds the byte sets of the pool's BITMAP-shaped classes, maps `-fno-cls-pack`, selects), `vm_cls_respell`; table emission writes `<prefix>_class_atoms[256]` + one `static inline <prefix>_class_atom<N>` per class via the kit's `pcrec_clskit_emit_atom_table`/`_atom` (reused, no parallel mechanism); `VmEntry.program_bytes`. | `src/gen/emit_vm.c` |
 | `-fno-cls-pack` = `PCREC_NO_CLS_PACK`, bit 38; axes.def row; masked out of `rx_info.flags` (`strategy_denials`); `cls-pack` predicate-axis rows in `--list-axes`. | `lib/pcrec.h`, `src/core/axes.def`, `src/gen/emit_dfa.c`, `src/dump/axes_dump.c` |
 | `<PREFIX>_VM_CLS_ATOMS`; abi 47 -> 48 | `src/gen/emit_vm.c`, `src/gen/emit_dfa.c` |
-| Spec: `tuning.md` §2.35 (+ the flags table row), `match_api.md` §6 (the abi log) and §6.3 (the stamp) | `docs/spec/` |
+| Spec: `tuning.md` §2.35 (+ the flags table row), `match_api.md` §6 (the abi log, now `docs/dev/history/abi_changelog.md`) and §6.3 (the stamp) | `docs/spec/` |
 
 The selection's shape follows the brief: the per-set shape choice
 (`vm_cls_shape`: ALL/SINGLE/RANGE/FOLD/BITMAP) is unchanged and decides WHICH

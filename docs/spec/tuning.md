@@ -163,7 +163,7 @@ between the two builds except `frame_capacity`, which grows because a
 backtracking build needs a frame the possessive one does not — verified
 on this same pattern: `.frame_capacity = 3` possessified,
 `.frame_capacity = 4` under `-fno-possessify`; `docs/spec/match_api.md`
-§6.3 records the same effect on its own example.) **Reason it exists:** possessification is
+§6 (`#flags`) records the same effect on its own example.) **Reason it exists:** possessification is
 a rewrite whose entire claim is "changes no answer", and a claim that
 cannot be turned off cannot be differentially tested (D47.3).
 
@@ -1202,7 +1202,7 @@ surface.** The axis changes only the LANGUAGE the VM hybrid's inlined DFA
 recognises, and that DFA is a FILTER: what it owes the VM is a sound
 rejection and a lower bound on the match start, both of which a superset
 supplies, with the VM re-deriving the answer from every candidate it is
-handed (`§2.5`'s hybrid, and `match_api.md` §6.3's H1/H2/H3). The prefilter
+handed (`§2.5`'s hybrid, and `match_api.md` §6.3 (`#stamp-vm-prefilter-lang`)). The prefilter
 is answer-identity-preserving by D46's rule; this is a selection WITHIN it.
 
 **What it controls — FRANK'S RULING B, 2026-08-29.** The DEFAULT builds the
@@ -1404,7 +1404,7 @@ the DFA ENGINE, and every flag can be told to build a useless one.
 and the trade went the other way once.** The exact prefilter is a SHARPER
 filter: it seeds the VM at the true leftmost start where the collapsed one
 seeds a lower bound the VM must walk forward from, and — because a superset's
-span END is not an upper bound (`match_api.md` §6.3, H3) — a collapsed
+span END is not an upper bound (`match_api.md` §6.3, `#stamp-vm-prefilter-lang`) — a collapsed
 artifact carries no `<PREFIX>_VM_PRUNE_CEILING "prefilter-window"`, reading
 `subject-end` instead. Both cost match time on some subjects; the second also
 costs step-budget headroom (see the fourth cost below). What the collapse buys
@@ -2214,7 +2214,7 @@ tuning flag's spelling.
 
 | | |
 |---|---|
-| **What it controls** | what the emitted entries do with a caller `startpos` (or `ctx->pos`) inside a character (`docs/spec/match_api.md` §3.1) |
+| **What it controls** | what the emitted entries do with a caller `startpos` (or `ctx->pos`) inside a character (`docs/spec/match_api.md` §9.2, `#startpos`) |
 | **Default** | refuse: the guard is ON |
 | **Values** | refuse (default); honour (`-fno-startpos-guard`); ALIGN forward (`-fstartpos-guard=align`, [UTF-VALID], D133). The two non-default spellings are refused together |
 | **Stamp** | `<PREFIX>_STARTPOS_GUARD`, a closed token: `"guarded"`, `"permissive"` or `"align"` |
@@ -2249,11 +2249,11 @@ tuning flag's spelling.
 
 Neither of the first two arms ROUNDS a caller's `startpos > 0` to the next
 boundary; the third does, and only because it is asked for by name —
-`match_api.md` §3.1 says why rounding is never silent. OFFSET 0 IS NOT THIS
+`match_api.md` §9.2 (`#startpos-align`) says why rounding is never silent. OFFSET 0 IS NOT THIS
 AXIS'S: it is never refused
 under either arm, and since [K73] a subject that begins with continuation
 bytes is searched from its first non-continuation byte under BOTH arms alike
-(`match_api.md` §3.1's offset-0 bullet) — an engine rule with no flag, which is
+(`match_api.md` §9.3, `#offset-zero`) — an engine rule with no flag, which is
 why the two builds still agree there.
 
 **IT IS NOT MASKED OUT OF `rx_info.flags`,** and with §2.36 it is one of the
@@ -3120,7 +3120,7 @@ flag is inert there. Deny-only, and MASKED out of `rx_info.flags`
 (`strategy_denials`) for that mask's own reason.
 
 **What it is.** The VM decodes ONE character through the encoding's
-`<prefix>_decode` (a `static inline` entry, §6 of `match_api.md`). It then
+`<prefix>_decode` (a `static inline` entry, §6.3 of `match_api.md`, `#stamp-vm-cls-kit`). It then
 tests the character with `<prefix>_wcls<N>`, a `static inline` class-matcher
 function. There is one matcher per distinct set per artifact. The matcher's
 FORM is chosen by λ's row of the `--tune` table (§5.4), whose rows are
@@ -3326,7 +3326,7 @@ ill-formed subject, not which shape finds it.
 
 | | |
 |---|---|
-| **What it controls** | whether every entry that takes a subject refuses an ill-formed one before any attempt (`docs/spec/match_api.md` §3.1) |
+| **What it controls** | whether every entry that takes a subject refuses an ill-formed one before any attempt (`docs/spec/match_api.md` §9.4, `#utf-check`) |
 | **Default** | OFF: invalid-tolerant, an ill-formed sequence matches nothing and is not reported (`PCRE2_MATCH_INVALID_UTF`'s semantics) |
 | **Stamp** | `<PREFIX>_UTF_CHECK`, a closed token: `"off"`, `"whole"`, or `"inert"` |
 | **Answer-identical?** | **NO** — it is a contract |
@@ -3336,7 +3336,7 @@ ill-formed subject, not which shape finds it.
 **WHAT IT DOES.** Under `-e utf8`, after the §2.23 guard (or alignment), the
 call is refused with `PCREC_ERR_UTF` when an ill-formed sequence begins in
 `[startpos − LB, n)` — PCRE2's own `PCRE2_UTF` contract, with LB PCRE2's
-`max_lookbehind` fact. `match_api.md` §3.1 states the range, the order and
+`max_lookbehind` fact. `match_api.md` §9.4 (`#utf-check`) states the range, the order and
 the step-back; §3.1.2 is `<prefix>_valid_upto`, the offset, which every
 artifact carries whatever this flag says. `-futf-check=extent` is RESERVED
 (the design's §2.2, recorded not built) and refused by name.

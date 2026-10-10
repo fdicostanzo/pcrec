@@ -433,8 +433,8 @@ over `src lib cli tests docs/spec memfn scripts` plus the `start_table/`/`dec_fa
 data):
 - `src/gen/emit_dfa.c:54` (the constant; `:138`, `:1863`, `:2946` read it);
 - `lib/pcrec.h:12`, `lib/CLAUDE.md:298`, `src/gen/CLAUDE.md:48`;
-- `docs/spec/match_api.md:302,305` (the TU-guard example), `:2318` (the abi sentence), §6's
-  change log;
+- `docs/spec/match_api.md#abi-guard` (the TU-guard example), `#abi` (the abi sentence), and
+  `docs/dev/history/abi_changelog.md` (the change log);
 - `tests/codegen/run_codegen_tests.sh:3042` (`ABI_EXPECT=71`);
 - `tests/codegen/run_recursion_identity.sh:1226` (the (B) FILEPIN self-pin);
 - `tests/registry/limits_check.sh:530`;
@@ -750,7 +750,7 @@ gains the `$` family.
 ### 9.4 Spec hunks (D80)
 
 As revision 1 (`tuning.md` §2.x `-fno-rev-end`, §2.26's W1 line, the flags index;
-`match_api.md` `END_WINDOW` vocabulary + `"rev-end"`, the abi sentence and TU-guard example;
+`match_api.md` `END_WINDOW` vocabulary (`#stamp-end-window`) + `"rev-end"`, the abi sentence (`#abi`) and TU-guard example (`#abi-guard`);
 `registry.md` axis counts; `facts_listing.md` `end_pin`; `cli.md` where it lists axes), plus:
 - `match_api.md`: the downstream search stamps' `"none"`/`"rev-end"` values on admitted
   artifacts (§5.2), and `rx_info.search_form`;
