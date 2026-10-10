@@ -237,3 +237,58 @@ readings:
 - `1388626a`: the WIP harness (cells, driver, runner, table).
 - The final commit: the KA/KB extraction by register name (exact KB has no
   `mb`), the CLAUDE.md files, and this report.
+
+## Addendum (2026-10-10, kit manager): slot20, the RQ-4 reading (TIER U, directional, not a verdict)
+
+slot20 16:01-17:10 on main's GO (quiet box, main's lanes held), lane/memfn-rq4
+@ f1ebe5a0, Zen 4 7700X, cores 12-15 (siblings 4-7 recorded), governor
+performance, glibc 2.43, gcc 15.2. 15,696 readings, fails=0 (answers equal
+across arms). 52 readings dropped for sibling busy > 5%. Full table:
+`docs/design/memfn/probes/rq4/out/slot20_table.md`; raw TSVs are in
+worktrees/memfn-slot/slot20/run (scratch, not committed).
+
+**SIMD-on (DEFAULT) vs SIMD-off (OFF), 1396 comparisons:**
+- THROUGHPUT: v1 (w16) 219 WIN / 22 NULL / 5 LOSS; v3 (w32) 239 / 3 / 4.
+- DENSITY: v1 239 / 0 / 0; v3 239 / 0 / 0.
+- PER-CALL: v1 175 / 3 / 27; v3 165 / 13 / 27.
+- BENCH: 8 / 0 / 0 at each level.
+- Size of the wins: `(?i)cat` 1 MiB gate is -81% at v1 and -91% at v3
+  (213 us -> 40 us -> 19 us). The KB cell (KA's byte common) is -96% / -98%.
+- The 63 losses:
+  - Almost all are pc16, the 16-byte per-call span, at +0.15..+1.5 ns.
+    That is the dispatch/setup cost on spans too short for a vector block.
+  - Plus the sparse-pick cell below and v14, `(?i)sel(?:ab)*ect --engine=vm`.
+    At v3 v14 loses 5-10% on gate/sparse throughput (a VM entry check;
+    unexplained, a single cell).
+
+**The sparse-pick risk (§R4.9.7.1) is CONFIRMED at w16.** `(?i)azqb`, with
+two rare letters picked, LOSES to the two-memchr scalar at v1 on sparse
+subjects: gate +79% (64 KiB) / +63% (1 MiB), sweep-sparse +55% / +6%,
+pc1024 +18 ns. At v3 (w32) the same cell WINS (-9..-46%). On dense
+subjects it wins at both levels (-73..-94%). The kit cannot see density,
+so per §R4.9.7.1 the fix is a pcrec-stated fact (the picks' prior rates are
+already in `mf_pred.rank_ppm`). Leaning: the w16 arm declines when both
+picks are rare, a distance rule over rank_ppm. This needs a cut-over measurement.
+
+**KB (DEFAULT vs KB-DENY), 1396 comparisons:**
+- THROUGHPUT: v1 188 WIN / 52 NULL / 6 LOSS; v3 189 / 49 / 8.
+- DENSITY: v1 76 / 116 / 47; v3 65 / 121 / 53.
+- PER-CALL: v1 124 / 45 / 36; v3 146 / 30 / 29.
+- BENCH: 8 / 0 / 0.
+- Where KB wins, it wins big: `(?i)cat` 1 MiB -76% (v1) / -55% (v3);
+  KB cell -90% / -92%.
+- Its 179 losses sit mostly in the hit-spacing ladder (space8-space128,
+  +2..+11%) and pc16/short75 (+0.1..+0.7 ns). That is where hits are dense
+  enough that the second load and AND cost more than the false candidates
+  they remove.
+- §6's rule ("KB stays default only if it never loses past the floor") is
+  NOT met. KB loses past the floor in 179 of 1396 comparisons. The losses
+  are small and confined to dense/short regimes, and the wins are large in
+  the throughput regimes.
+
+**Status:** the `UNMEASURED DEFAULT:` label for HOW MANY = two can become
+`MEASURED-UNOFFICIAL (zen4)`, with the reading above. Keeping KB on by
+default despite §6's never-loses rule is a ruling, Q-RQ4-1, for Frank via
+main. Leaning: keep KB. The density losses are a few percent against wins
+up to ~10x, and a density-aware distance rule (decline KB when the picks'
+ppm says hits are dense) is the general fix, filed rather than built.

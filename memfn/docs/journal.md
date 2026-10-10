@@ -1341,3 +1341,18 @@ pointer when a kit change merges to main.
   worktrees/rq4. A tiny dry run there is green (11:43-11:44, not a reading).
   Full slot ~75-105 min; it needs cores 12-15 and their SMT siblings 4-7
   quiet.
+
+## 2026-10-10 — slot20: the RQ-4 reading (tier U)
+
+- On main's GO (box quiet, main's lanes held) slot20 ran 16:01-17:10:
+  15,696 readings, fails=0. Summary in rq4h_report.md's addendum; table at
+  probes/rq4/out/slot20_table.md.
+- SIMD-on vs OFF: wins dominate (throughput 458 W / 9 L over both levels;
+  `(?i)cat` 1 MiB -81% w16, -91% w32). Losses are pc16 per-call setup
+  (+0.15..1.5 ns), the sparse-pick cell `(?i)azqb` at w16 (+55..79% on
+  sparse subjects: the §R4.9.7.1 risk CONFIRMED; it wins at w32), and v14
+  (VM, unexplained, a single cell).
+- KB: large throughput wins (to -92%), 179 small losses in the dense-hit and
+  short-span regimes. §6's never-loses rule is not met, so Q-RQ4-1 goes to
+  Frank via main (leaning: keep KB; a density-aware distance rule over
+  rank_ppm is the general fix, filed rather than built).

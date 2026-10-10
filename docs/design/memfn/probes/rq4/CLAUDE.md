@@ -29,3 +29,6 @@ never a verdict. Never built or run by pcrec's make. Report:
   counts.
 
 Maintenance: update this file when files are added/removed or change roles.
+- `out/slot20_table.md`, `out/slot20_verdict.txt` — the RQ-4 tier-U reading
+  (slot20, 2026-10-10, f1ebe5a0, Zen 4 7700X); summary in
+  docs/dev/lanes/rq4h_report.md's addendum.
