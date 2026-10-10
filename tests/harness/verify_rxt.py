@@ -1065,6 +1065,9 @@ def parse_rxt(path):
             v = line[len('oracle '):].strip()
             # [RXT-READERS] the engine half is a defname (`pcre2-dfa`), and
             # `none <reason>` is the counted skip -- leg A's grammar.
+            if v == 'none':
+                _fail(path, lineno, 'value-shape',
+                      "'oracle none' needs a reason after it")
             if not (re.match(r'^none\s+\S', v) or re.match(
                     r'^[A-Za-z_][A-Za-z0-9_.-]*(/[A-Za-z0-9._-]+)?$', v)):
                 _fail(path, lineno, 'value-shape',
