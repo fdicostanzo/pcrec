@@ -600,7 +600,10 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **spec_history/** — `make test-spec-history` (in `make test`): flags build
   history (dates, ADDENDUM, walkbacks, panel/ruling narrative, row-tag-opened
   paragraphs) in docs/spec/*.md against an allowlist and a known-debt
-  baseline; lane specclean, 2026-10-09. See its CLAUDE.md.
+  baseline; lane specclean, 2026-10-09. Since lane specnum the same section
+  holds the numbered-spec checks: paragraph numbering, the generated
+  contents, and every `match_api.md §N` citation in the tree. See its
+  CLAUDE.md.
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
   and a black-box `build/pcrec` were the only inputs). NOT part of `make

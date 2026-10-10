@@ -455,10 +455,11 @@
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
-#     docs/spec/: the history-marker check (allowlist + known-debt baseline).
+#     docs/spec/: the history-marker check (allowlist + known-debt baseline)
+#     and, since lane specnum, the numbered-spec checks (paragraph numbers,
+#     the generated contents, every citation of a numbered doc in the tree).
 #     Its own arm because it reads spec TEXT, which no other suite reads for
-#     this property. Registered before its row (pending an id:
-#     tests/spec_history/sabotage_row.pending). Verdict: the script's
+#     this property. Row: S748. Verdict: the script's
 #     `checks passed:`/`checks failed:` summary.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the

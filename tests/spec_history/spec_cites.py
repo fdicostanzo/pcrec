@@ -195,7 +195,8 @@ def tree_files(root):
         pass
     files = []
     for dp, dns, fns in os.walk(root):
-        dns[:] = [d for d in dns if d not in SKIP_DIRS and not d.startswith("build")]
+        top = os.path.realpath(dp) == os.path.realpath(root)
+        dns[:] = [d for d in dns if d not in SKIP_DIRS and not (top and d.startswith("build"))]
         for fn in fns:
             files.append(os.path.relpath(os.path.join(dp, fn), root))
     return files
