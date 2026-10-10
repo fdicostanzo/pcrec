@@ -1633,7 +1633,7 @@ apart. Mirrored by `rx_info.scan`.
 <!-- value-set: RX_DFA_SCAN -->
 | value | mechanism |
 |---|---|
-| `"unanchored"` | the O(n) forward+reverse table pair (D7) |
+| `"unanchored"` | the O(n) forward scan from `search_from` (D7), followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"` |
 | `"attempt"` | the per-start-position computed-goto loop a `^`/`\A`-bearing pattern takes |
 | `"empty"` | the start analysis proves the pattern matches nothing (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored spellings): the search body is one `return 0` with no table, loop or skip, on either engine |
 

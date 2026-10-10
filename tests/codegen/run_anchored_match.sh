@@ -773,7 +773,8 @@ exit 0
 #     harness and `make test-axes` are what go red. Recorded here so nobody
 #     reads §1-§5 as covering the accept rule.
 #
-#   PLANT 2 -- THE SELECTION NEVER FIRES (`match_unwrapped_applies` returns
+#   PLANT 2 -- THE SELECTION NEVER FIRES (`match_unwrapped_applies`, since
+#     [OPT-REVEND] L0 FINISH `verify-at`'s `finish_verify_at_applies`, returns
 #     false). MEASURED: this file 6 / 8 — §1's five unwrapped witnesses, §1's
 #     negative control, §2's three sections and §5's unwrapped floor — while
 #     the corpus stays GREEN and `make test-axes` stays green, because with

@@ -361,7 +361,14 @@ done <<< "$anchored"
 #     emit_scan_edge WRITES an edge's run test, the multiplicity the class
 #     table prices a kit matcher at: a count of a code shape, forced by the
 #     loop's layout, that no pattern, subject or policy can be measured
-#     against).
+#     against), and CAND_FIN_REPORT (src/gen/emit_dfa.c, [OPT-REVEND] L0 —
+#     the first of the four FINISH action tags `CandFinish.act` carries
+#     (REPORT / NOMATCH / VERIFY / SEARCH). Its `= 1` is the enum's only
+#     literal, the other three follow it implicitly: it reserves 0 for a
+#     zero-initialised payload, so a cand_rows[] row that was never given a
+#     `.u.finish` reads as "no action" and matches no `act ==` test. A tag
+#     ordinal, in the same family as the SDR_* rungs above; nothing is
+#     measured against it).
 #     These are numbers nothing can be measured against by construction.
 #   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
 #     EW_EOL_SLACK (src/facts/endwin.c, [OPT-ENDWIN]). It is how many bytes
@@ -542,7 +549,8 @@ PCREC_FIND_NTBL
 PCREC_SIMD_WITNESS_PAD
 PCREC_FIND_NBUNDLES
 SCAN_TEST_CALLS
-EM_ANY"
+EM_ANY
+CAND_FIN_REPORT"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

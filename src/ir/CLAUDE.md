@@ -4,7 +4,13 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
 
 ## Files
 
-- **nfa.c** — Thompson NFA construction from AST; **[M4.5b]: `A_CAP` is
+- **nfa.c** — Thompson NFA construction from AST. **[OPT-REVEND] L0
+  (`docs/design/locate_finish.md` §1.2, LR-G3): each arm that WIDENS the
+  machine's language records itself in `Nfa.erased`** (`NFA_ERASED_LOOK` at
+  `A_LOOK`, `_ATOMIC` at `A_ATOMIC`, `_COUNT` where the collapse fires),
+  reset by each build, so exactness is a recorded fact of the machine
+  (`pcrec_vm_prefilter_window` reads `erased == 0`); a relaxation added later
+  records its own bit in its arm. **[M4.5b]: `A_CAP` is
   INVISIBLE here** (`ast_bare`, applied at compile_ast's entry, at trie_key's
   spine head and leaves, and at both spine flattenings). That is load-bearing
   twice over: it re-applies D31's erasure so the machine built for `(a|b)+c`

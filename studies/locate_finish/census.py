@@ -28,7 +28,18 @@ Per row, two instruments that share no source:
          machine-MEMBERSHIP rule the L0 path derivation must reproduce
          (analyze.py control C5) is held against the bytes.
 
-Env: PCREC (build/pcrec), PROBE (the built revend_probe), BENCH (pcrec-bench
+[OPT-REVEND] L0 (lane lfl0): with PCREC_TRACE set to a trace build
+(-DPCREC_CAND_TRACE) of the same tree, a THIRD instrument per compiled row:
+  PATH   the trace build's `CANDPATH` record (the L0 path derivation's own
+         finisher/locate routes, member set and asked cells, and on a hybrid
+         the recorded erasure set beside the conjuncts it replaced) and its
+         `CANDROW ... ask` hits (the cells the EMITTERS asked).  analyze.py's
+         C5-L0 holds the derivation's members against the TEXT columns, C6
+         the derivation's asks against the emitters', C7 the erasure record
+         against the old conjuncts.  The trace build's selections are the
+         default build's (the emit sweep's --trace stream holds that).
+
+Env: PCREC (build/pcrec), PCREC_TRACE (optional, the trace build), PROBE (the built revend_probe), BENCH (pcrec-bench
 checkout, read-only), CORPUS (this tree), OUT (output dir), JOBS (default 4),
 REVEND_CENSUS (path to docs/dev/optloop/revend/census.py), TMP (scratch dir).
 
@@ -116,6 +127,39 @@ def text(r):
             "t_anch": int(b"rx_anchored_" in src)}
 
 
+def path(r):
+    """[OPT-REVEND] L0 the trace build's CANDPATH record and CANDROW asks."""
+    with tempfile.TemporaryDirectory(dir=TMP) as td:
+        out = os.path.join(td, "a.c")
+        cmd = TIMEOUT + [E["PCREC_TRACE"]] + base_cmd(r)[1:] + ["-p", "rx", "-o", out,
+                                                                "--pattern", r["pat"]]
+        try:
+            p = subprocess.run(cmd, capture_output=True, timeout=180)
+        except subprocess.TimeoutExpired:
+            return {"p_ok": "timeout"}
+    err = p.stderr.decode("utf8", "replace").split("\n")
+    d = {"p_ok": "ok" if p.returncode == 0 else "rc%d" % p.returncode}
+    if any(l.startswith("CANDORACLE") for l in err):
+        d["p_ok"] = "abort:" + next(l for l in err if l.startswith("CANDORACLE")).replace("\t", " ")
+    # One CANDPATH per EMISSION ATTEMPT, printed at its end: a compile the
+    # driver retries (a size-cap ladder rung) emits twice in one process, so
+    # the asks are segmented per attempt and the LAST attempt's (the artifact
+    # shipped) are compared with its CANDPATH; asks after it join it.
+    asks, seg = set(), set()
+    for l in err:
+        f = l.split("\t")
+        if f[0] == "CANDPATH" and len(f) >= 5:
+            d["p_finish"], d["p_locate"], d["p_members"], d["p_asks"] = f[1], f[2], f[3], f[4]
+            d["p_erased"] = d["p_oldexact"] = ""
+            if len(f) >= 7:
+                d["p_erased"], d["p_oldexact"] = f[5], f[6]
+            asks, seg = seg, set()
+        elif f[0] == "CANDROW" and len(f) >= 6 and f[5] == "ask":
+            seg.add("%s@%s" % (f[1], f[2]))
+    d["t_asks"] = ",".join(sorted(asks | seg)) or "-"
+    return d
+
+
 def kinds(r):
     return set((r.get("f_kinds") or "").split(",")) - {""}
 
@@ -167,6 +211,10 @@ def main():
     with cf.ThreadPoolExecutor(max_workers=JOBS) as ex:
         for r, d in zip(comp, ex.map(text, comp)):
             r.update(d)
+    if E.get("PCREC_TRACE"):
+        with cf.ThreadPoolExecutor(max_workers=JOBS) as ex:
+            for r, d in zip(comp, ex.map(path, comp)):
+                r.update(d)
     for r in rows:
         r["loc"], r["fin"] = classify(r)
         r["endpin"] = int(pinned_view(r))
@@ -174,6 +222,9 @@ def main():
             "lead_unb", "gstart", "f_kinds", "f_start_anchor", "f_end_window", "f_end_window_why"] + STAMPS + \
         ["refused", "t_ok", "t_rev", "t_pref", "loc", "fin", "endpin", "t_fwd", "t_anch",
          "pattern_hex"]
+    if E.get("PCREC_TRACE"):   # [OPT-REVEND] L0: appended, every earlier column unchanged
+        keys += ["p_ok", "p_finish", "p_locate", "p_members", "p_asks", "p_erased",
+                 "p_oldexact", "t_asks"]
     with open(os.path.join(OUT, "rows.tsv"), "w") as fh:
         fh.write("\t".join(keys) + "\n")
         for r in rows:

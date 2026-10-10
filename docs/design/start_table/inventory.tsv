@@ -31,8 +31,8 @@ pcrec_emit_req_byte_check	READER	FIRST	[C1 re-derivation, post-R4c] now only the
 emit_info_def	PROJ	NEXT, RECOVER	rx_info.prefilter / rx_info.search_form mirrors
 attempt_cand	PRED	NEXT N12	ATTEMPT route's predicate + CandSet; [C5b] its `anchored` loop is gone: it reads BOUND(CR_ATTEMPT) through CAND_BOUND_ONE on its own CandSel
 attempt_next_of	WALK	NEXT (CR_ATTEMPT)	[C3] N12's four readers' walk: cand_select(NEXT) on CAND_ROUTE_ATTEMPT, the candidate set left in CandSel.cand
-dfa_engine_is_empty	ROUTE	EMPTY	the empty-machine distinction re-tested inside F1/S1 (n4)
-dfa_table_name	NOTSTART	(reads RECOVER)	machine census for the table stamp; reads dfa_search_is_pinned only to know whether a reverse machine exists
+dfa_engine_is_empty	ROUTE	LOCATE	[OPT-REVEND] L0: reads LOCATE's selection (`empty`'s static NOMATCH); the old body is `locate_empty_applies`; the meet caller ⊓ body reads it
+dfa_table_name	NOTSTART	(reads the path)	[OPT-REVEND] L0: machine census for the table stamp, folded over the path's members (F/R/A), never a FINISH selection (LR-S1)
 dfa_scan_edge_name	NOTSTART	(reads RECOVER)	scan-edge stamp; same machine census
 dfa_uniform_folds	NOTSTART	(reads RECOVER)	fold count; same machine census
 pf_memchr_bounded_applies	PRED	NEXT N8
@@ -82,10 +82,8 @@ req_lead_byte	READER	PRESENCE	reads P's verdict for the set lead
 req_handoff_applies	PRED	FIRST F1	reads PRESENCE (req_admit) and the route
 req_use	WALK	FIRST	[C4] cand_select(FIRST) on CAND_ROUTE_DFA (req_uses[] deleted into cand_rows[])
 req_handoff_stamp	PROJ	FIRST	RX_REQ_HANDOFF
-match_unwrapped_applies	NOTSTART	match axis	dfa_matches[]: the caller supplies the start (§2.5)
-dfa_matches	NOTSTART	match axis
-dfa_match_of	NOTSTART	match axis
-dfa_match_is_unwrapped	NOTSTART	match axis
+dfa_match_of	WALK	FINISH	[OPT-REVEND] L0: the match-here entry's FINISH ask, cand_select(FINISH, path.finish, hand = caller ⊓ body, point); was the axis-G walk over dfa_matches[] (folded, §3.4)
+dfa_match_is_unwrapped	PROJ	FINISH	[OPT-REVEND] L0: the selected FINISH row's u.finish.act == CAND_FIN_VERIFY (F-2: no row-pointer compare); the _match dispatch's one reader
 start_pinned_applies	PRED	RECOVER S1
 dfa_search_start_of	WALK	RECOVER
 dfa_search_start_name	PROJ	RECOVER	RX_DFA_START
@@ -97,14 +95,13 @@ emit_attempt	BODY	DFA-ATTEMPT (and HYB-ATTEMPT's inlined prefilter)	holds B1/B2/
 emit_orientation_block	NOTSTART	comment text	reads the table stamp only
 pcrec_emit_prologue	READER	PRESENCE, NEXT N12	the <string.h> decision reads P's verdict and N12
 pcrec_emit_info	PLAN
-pcrec_emit_dfa_engine	ROUTE	the hybrid prefilter's route	dispatches on job->engine (UNANCH vs ATTEMPT): the M1 route, NOT fit.chosen
+pcrec_emit_dfa_engine	ROUTE	the hybrid prefilter's route	[OPT-REVEND] L0: asks LOCATE on the body's route (cand_locate_emit) and writes the row's walk by route (composite: emit_unanchored/emit_attempt; empty: emit_empty_*); was dispatch on job->engine
 dfa_scan_name	PROJ	route	RX_DFA_SCAN
 dfa_prefilter_name	PROJ	NEXT	RX_DFA_PREFILTER (N12 as "memchr": D-1)
 dfa_prefilter_offsets	PROJ	NEXT N1-N4	RX_DFA_PREFILTER_OFFSETS
 pcrec_emit_dfa_scan_stamps	PROJ	NEXT, RECOVER	the DFA stamp block
 emit_dfa_stamps	PLAN
 pcrec_emit_dfa	PLAN
-pcrec_vm_prefilter_window	READER	NEXT->RETRY/VM	the WINDOW handoff: the prefilter's span end handed to the VM as a ceiling (mrl_win)
 vm_render_listing	PROJ	WIDTH H1, RETRY	--emit-ir root-minw / prefilter rows (reads the fact today; reads the row after C5, [r2 sound-m1])
 vm_init	LANDMARK	WIDTH, RETRY	computes root_minw, mrl_win, nclamp: the VM program properties rows read
 vm_plan_reseed	WALK	RETRY (CR_VM)	[C5] cand_select(RETRY) on CAND_ROUTE_VM through pcrec_cand_select_vm (pcrec_reseed_rows[] deleted into cand_rows[]); the row and its u.reseed state into VmReseed
@@ -137,7 +134,6 @@ DfaCand	TYPE	every slot	the common leading member: c.name / c.deny / c.applies (
 PfScan	TYPE	NEXT	the scan-kind enum DfaPf embeds -> the `scan` column (§1.1)
 ReqAdmit	TYPE	PRESENCE	the verdict enum CandAdmit embeds (ReqAdmitRow's until C4)
 ReqUse	TYPE	FIRST	the use enum CandUse embeds (ReqUseRow's until C4)
-DfaMatch	NOTSTART	match axis	dfa_matches[]'s row type; the match-here entry stays outside (§2.5)
 cand_rows	TABLE	every slot (37 rows)	[C2] THE one start table, built beside the old tables; no reader until C3 (call_graph.py's TABLE_ROOTS puts it in the family the commit that builds it)
 cand_select	WALK	every slot	[C2] THE one walk, cand_select(slot, sel, flags); [C3] decides NEXT and RECOVER; [C4] PRESENCE and FIRST; [C5] every slot
 CandRow	TYPE	every slot	[C2] the row contract (§1.1): c, slot, routes, tok, map, giveup, hands, list[route], was (the oracle's link, deleted with the old tables); [C3] u (u.pf, u.recover)
@@ -172,3 +168,23 @@ vm_cand_facts	PLAN	RETRY, WIDTH, BOUND (CR_VM)	[C2 trace-only; C5 unconditional]
 attempt_next_read	WALK	NEXT (CR_ATTEMPT)	[C6] attempt_next_of's selection as a READ (cand_read) by G1 (PRESENCE) and R4 (RETRY), through dfa_cand_scan; prints `NEXT attempt <row> attempt-next`, C6's declared trace addition
 dfa_pf_read	WALK	NEXT (CR_DFA)	[C6] dfa_pf_of's selection as a READ (cand_read) by G1 (PRESENCE) and R4 (RETRY), through dfa_cand_scan and pcrec_dfa_cand_ppm; its record is dfa_pf_of's (site pf-of)
 req_admit_read	WALK	PRESENCE (CR_DFA)	[C6] req_admit's selection as a READ (cand_read) by F1 (FIRST's handoff); its record is req_admit's (site req-admit), plus the entry slots' cross-route check
+locate_empty_applies	PRED	LOCATE A1 `empty`	[OPT-REVEND] L0: dfa_engine_is_empty's old body, the `empty` row's predicate (ROUTE engine-empty record)
+finish_verify_at_applies	PRED	FINISH FIN3 `verify-at`	[OPT-REVEND] L0: match_unwrapped_applies minus its !empty conjunct (LR-G8): the anchored machine was built
+cand_locate_sel	WALK	LOCATE	[OPT-REVEND] L0: LOCATE's row on the search entry's route, no record
+cand_locate_of	WALK	LOCATE	[OPT-REVEND] L0: LOCATE's row, no record (the readers: dfa_engine_is_empty, cand_recover_asked, dfa_scan_name, the path)
+cand_locate_emit	WALK	LOCATE	[OPT-REVEND] L0: LOCATE asked by an emitter (record `locate`, hit): pcrec_emit_dfa_engine, pcrec_cand_locate_vm
+pcrec_cand_locate_vm	READER	LOCATE (CR_VM)	[OPT-REVEND] L0: a VM artifact with no DFA body asks LOCATE once on the VM route (LR-S6)
+cand_locate_route	ROUTE	route	[OPT-REVEND] L0: the path's locate field: the body's route where a DFA body exists, else CR_VM
+cand_recover_asked	READER	LOCATE -> RECOVER	[OPT-REVEND] L0: is RECOVER on the path (the LOCATE row's needs cells); RECOVER's P4 and the orientation block read it
+cand_fallback	WALK	any slot	[OPT-REVEND] L0: the last routed row of a slot (its fallback); the path's VM-entry root and the progress rank check
+cand_path_of	PLAN	the path	[OPT-REVEND] L0: §2.7's derivation: body/locate/finish, built, needs, members, asks; quiet in the trace build
+cand_path_row	WALK	LOCATE, RECOVER, FINISH	[OPT-REVEND] L0: the closure selects only in the slots whose rows declare needs, through the readers the emitters use
+cand_path_visit	PLAN	the path	[OPT-REVEND] L0: visits one (slot, route) cell once
+cand_path_follow	PLAN	the path	[OPT-REVEND] L0: adds a row's needs (machines, cells, a LOCATE row's front)
+cand_path_members	READER	the path	[OPT-REVEND] L0: the members (needs ∩ built): dfa_table_name, dfa_scan_edge_name, dfa_uniform_folds, req_handoff_applies
+emit_empty_unanchored	BODY	LOCATE `empty` on CR_DFA	[OPT-REVEND] L0: emit_unanchored's old empty exit, the `empty` row's walk
+emit_empty_attempt	BODY	LOCATE `empty` on CR_ATTEMPT	[OPT-REVEND] L0: emit_attempt's old empty exit after the shared front
+attempt_entry	BODY	DFA-ATTEMPT front (W/P/F)	[OPT-REVEND] L0: emit_attempt's front, shared with emit_empty_attempt; asks W/P/F only on a DFA finisher
+CandLocate	TYPE	LOCATE	[OPT-REVEND] L0: u.locate (emit/scan per route, nomatch)
+CandFinish	TYPE	FINISH	[OPT-REVEND] L0: u.finish (act, take[route][] CT_* hand masks)
+CandNeeds	TYPE	every walked slot	[OPT-REVEND] L0: needs[route] (mach, cells, front), §2.7's declaration

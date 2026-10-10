@@ -967,7 +967,7 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 
 | stamp | names | axis | `rx_info` mirror |
 |---|---|---|---|
-| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the forward and reverse table pair), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | none: the engine's own selection | `rx_info.scan` |
+| `<PREFIX>_DFA_SCAN` | the scan shape: `"unanchored"` (the O(n) forward scan, followed by a reverse pass that recovers the match start unless `RX_DFA_START` is `"pinned"`), `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern takes) or `"empty"` (the pattern provably matches nothing) | none: the engine's own selection | `rx_info.scan` |
 | `<PREFIX>_DFA_PREFILTER` | the candidate-start mechanism | §2.14, §2.30, §2.42; the plain forms have no flag | `rx_info.prefilter` |
 | `<PREFIX>_DFA_PREFILTER_OFFSETS` | the offsets an `offset-set` or `run-pinned` filter tests | §2.14, §2.30 | none |
 | `<PREFIX>_DFA_TABLE` | the transition tables' encoding | §2.13 | none |

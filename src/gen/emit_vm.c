@@ -3636,15 +3636,21 @@ static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
  * END — the `prefilter-window` ceiling, `Vm.mrl_win`? A prefilter exists, and
  * its language is not widened past the pattern's by a cut it cannot express
  * (atomic), an assertion it erases (lookaround) or a count it collapses. The
- * three conjuncts' reasons are at `Vm.mrl_win`'s one assignment in
+ * three erasures' reasons are at `Vm.mrl_win`'s one assignment in
  * `pcrec_emit_vm`; this is its ONE derivation, which the handoff's (d')
- * decline (src/gen/emit_dfa.c, `req_handoff_applies`) reads too, so the two
- * cannot disagree about which artifacts carry the ceiling. */
+ * decline (src/gen/emit_dfa.c, `req_handoff_applies`) and the boundary
+ * projection (`pcrec_cand_lang_exact`) read too, so none can disagree about
+ * which artifacts carry the ceiling.
+ *
+ * [OPT-REVEND] L0 (locate_finish.md §1.2, LR-G3): the erasures are READ OFF
+ * THE MACHINE, `Nfa.erased`, which the lowering records in the arm that
+ * applies each one, rather than listed here as the `kinds` fact's atomic and
+ * lookaround bits and the collapse flag. A relaxation added to the lowering
+ * later (a backreference, a variable) records itself and reads inexact here
+ * with no edit; the list could not have seen it. */
 bool pcrec_vm_prefilter_window(Ctx *cx)
 {
-    return cx->job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
-                                  && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
-                                  && !cx->job->fit.prefilter_collapsed;
+    return cx->job->fit.prefilter && !cx->job->nfa.erased;
 }
 
 /* The saturating add the follow-min accumulator needs. pcrec_minw saturates
@@ -10365,7 +10371,15 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * because either alone is satisfiable by a half-done edit; S-LA13 is the
      * row, and it sabotages the two BUILDERS while leaving the stamp reading
      * the flag. */
-    v->mrl_win = pcrec_vm_prefilter_window(cx);
+    /* [OPT-REVEND] L0 THE LOCATE -> FINISH BOUNDARY's ONE SITE
+     * (locate_finish.md §1.2, LR-S2): the inlined body's span is the match's
+     * (`SPAN`) where its language is the pattern's, and only a lower bound
+     * (`LOWER`) where an erasure widened it. The entry, the RETRY recompute
+     * and the adaptive re-seed all read this field, so the projection covers
+     * the three window consumers by construction. */
+    v->mrl_win = pcrec_cand_lang_exact(cx);
+    if (pcrec_artifact_has_dfa_scan(cx))
+        PCREC_CAND_TRACE_REC("BOUNDARY", "vm", v->mrl_win ? "SPAN" : "LOWER", "boundary");
     v->fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, g);
@@ -11216,8 +11230,11 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en,
      * knee) must stamp `"exact"`, because the artifact reports what the
      * emitter DID. */
     if (job->fit.prefilter) {
+        /* [OPT-REVEND] L0 the machine's recorded COUNT erasure, the one
+         * member this vocabulary names (atomic and lookaround erasures stamp
+         * "exact" here: F-13, a vocabulary mover filed for a later abi). */
         pcrec_sb_stamp_str(c, v->up, "VM_PREFILTER_LANG",
-                     job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+                     (job->nfa.erased & NFA_ERASED_COUNT) ? "count-collapsed" : "exact");
         /* [OPT-4] AND WHY (D81's `_WHY` convention, `_UNROLL_K_WHY`'s shape).
          * The LANG line above says which language was built; without this one
          * an artifact stamping `"exact"` cannot be told apart into the three
@@ -13964,7 +13981,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en, &rs);
     vm_emit_storage(&v, &pl);
+    /* [OPT-REVEND] L0 a VM artifact with no DFA body asks LOCATE on the VM
+     * route; a hybrid asked it from its inlined body (`pcrec_emit_dfa_engine`). */
+    if (!pcrec_artifact_has_dfa_scan(cx)) pcrec_cand_locate_vm(cx);
     vm_emit_search_body(&v, &g, &pl, &en, &rs);
     vm_emit_entries(&v, &g, &pl, &en);
     vm_emit_epilogue(&v, &g, &pl);
+#ifdef PCREC_CAND_TRACE
+    pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */
+#endif
 }

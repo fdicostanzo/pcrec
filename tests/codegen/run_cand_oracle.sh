@@ -29,6 +29,17 @@
 # source (`.c = { "<identity>"` inside `static const CandRow cand_rows[]`)
 # must have a witness line, and the table must have at least one row.
 #
+# [OPT-REVEND] L0 THE FINISH TAKE CELLS (docs/design/locate_finish.md §2.3,
+# [r2 C4]). A FINISH row is selected per (route, hand), so a row reached on
+# one cell says nothing about its others: every take cell the table declares
+# (`.take = { [CAND_ROUTE_X] = { CAND_HAND_Y, ... } }` on a FINISH row, read
+# off the source) must be REACHED by some witness — a `CANDROW FINISH` hit
+# naming the row, the route and the hand — or be listed in the DECLARED-
+# UNREACHED allowance cand_oracle_unreached.tsv (one cell per line, with the
+# argument why nothing reaches it yet and the commit that gives it a
+# producer). An allowance cell that IS reached fails: the declaration is
+# stale. Empty at L0, whose cells all have producers.
+#
 # WHAT IT CANNOT SEE. A row whose witness takes it on one compile only is
 # checked on that compile; the corpus-wide byte and trace sweeps against the
 # parent are each commit's gate (start_table.md §3.3), not this file's. A
@@ -52,6 +63,7 @@ TREE="$(cd "${1:-$SCRIPT_DIR/../..}" && pwd)"
 . "$TREE/tests/lib/timeout_bin.sh"
 . "$TREE/tests/lib/cc_resolve.sh"
 WIT="$TREE/tests/codegen/cand_oracle_witnesses.tsv"
+UNR="$TREE/tests/codegen/cand_oracle_unreached.tsv"
 EMIT="$TREE/src/gen/emit_dfa.c"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/candoracle.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
@@ -91,8 +103,10 @@ stale="$(comm -13 <(printf '%s\n' "$rows") <(printf '%s\n' "$wrows") | grep . ||
 if [ -z "$stale" ]; then ok "[cand-oracle-coverage] every witness names a row of cand_rows[]"
 else bad "[cand-oracle-coverage] witnesses naming no row: $(echo $stale)"; fi
 
-# Each witness, on the trace build.
+# Each witness, on the trace build. Every witness's FINISH hits accumulate
+# in $WORK/cells as `row route hand`.
 nwit=0
+: > "$WORK/cells"
 while IFS=$'\t' read -r row flags pat; do
     case "$row" in ''|'#'*) continue ;; esac
     nwit=$((nwit + 1))
@@ -109,7 +123,62 @@ while IFS=$'\t' read -r row flags pat; do
     else
         ok "[cand-oracle] $flags $pat reaches '$row', self-check clean"
     fi
+    awk -F'\t' '$1=="CANDROW" && $2=="FINISH" {print $4" "$3" "$7}' "$WORK/err" >> "$WORK/cells"
 done < "$WIT"
+
+# [OPT-REVEND] L0 THE BOUNDARY PROJECTION (locate_finish.md §1.2, LR-S2): a
+# hybrid whose prefilter's language is the pattern's records `BOUNDARY vm
+# SPAN`, one whose lowering erased something records `LOWER`. Both
+# directions, so neither a projection that always says SPAN nor one that
+# always says LOWER passes.
+for bw in "SPAN	(a+)b" 'LOWER	\w{1,2}(?:(?=)|)$' 'LOWER	(?>a|ab)c(d)'; do
+    want="${bw%%	*}"; pat="${bw#*	}"
+    "$TIMEOUT_BIN" 60 "$BIN" -p rx --features all -o "$WORK/w.c" --pattern "$pat" \
+        > /dev/null 2> "$WORK/err"
+    got="$(awk -F'\t' '$1=="CANDTRACE" && $2=="BOUNDARY" {print $4}' "$WORK/err" | sort -u | tr '\n' ' ')"
+    if grep -q '^CANDORACLE' "$WORK/err"; then
+        bad "[cand-oracle-boundary] $(grep -m1 '^CANDORACLE' "$WORK/err" | tr '\t' ' ') on $pat"
+    elif [ "$got" = "$want " ]; then ok "[cand-oracle-boundary] $pat records BOUNDARY vm $want"
+    else bad "[cand-oracle-boundary] $pat records '${got:-nothing}', want BOUNDARY vm $want"; fi
+done
+
+# The FINISH take cells, read off the table's source: every one reached or
+# declared unreached, and no declared one reached.
+decl="$(awk '/^static const CandRow cand_rows\[\] = \{/{f=1;next} f&&/^\};/{f=0} f' "$EMIT" \
+        | python3 -c '
+import re, sys
+src = sys.stdin.read()
+for row in re.split(r"\n    \{ \.c = ", src)[1:]:
+    if "CAND_SLOT_FINISH" not in row:
+        continue
+    name = re.match(r"\{ \"([^\"]+)\"", row).group(1)
+    take = row[row.index(".take"):] if ".take" in row else ""
+    for rt, hs in re.findall(r"\[CAND_ROUTE_(\w+)\]\s*=\s*\{([^}]*)\}", take):
+        for h in re.findall(r"CAND_HAND_(\w+)", hs):
+            print(name, rt.lower(), h)
+')"
+ncell=$(printf '%s\n' "$decl" | grep -c . || true)
+if [ "$ncell" -ge 1 ]; then ok "[cand-oracle-cells] $ncell FINISH take cells declared in cand_rows[]"
+else bad "[cand-oracle-cells] no FINISH take cell read from cand_rows[] (table moved or renamed?)"; fi
+allowed="$(grep -v '^#' "$UNR" 2>/dev/null | grep . | awk -F'\t' '{print $1" "$2" "$3}' || true)"
+reached="$(sort -u "$WORK/cells")"
+while read -r cell; do
+    [ -n "$cell" ] || continue
+    if printf '%s\n' "$reached" | grep -qxF "$cell"; then
+        if printf '%s\n' "$allowed" | grep -qxF "$cell"; then
+            bad "[cand-oracle-cells] '$cell' is declared unreached but a witness reaches it (stale allowance)"
+        else ok "[cand-oracle-cells] '$cell' reached"; fi
+    elif printf '%s\n' "$allowed" | grep -qxF "$cell"; then
+        ok "[cand-oracle-cells] '$cell' declared unreached (cand_oracle_unreached.tsv)"
+    else
+        bad "[cand-oracle-cells] take cell '$cell' is reached by no witness and not declared unreached"
+    fi
+done <<< "$decl"
+while read -r cell; do
+    [ -n "$cell" ] || continue
+    printf '%s\n' "$decl" | grep -qxF "$cell" ||
+        bad "[cand-oracle-cells] allowance '$cell' names no take cell of cand_rows[]"
+done <<< "$allowed"
 if [ "$nwit" -ge "$nrows" ]; then ok "[cand-oracle-population] $nwit witness lines for $nrows rows"
 else bad "[cand-oracle-population] $nwit witness lines for $nrows rows"; fi
 
