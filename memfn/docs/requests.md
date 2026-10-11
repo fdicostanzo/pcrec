@@ -358,3 +358,15 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** migration thread; after slot21.
 
 **Sabotage ids:** S800-S804 (allocated 2026-10-11; next free S805).
+
+## R-16 (2026-10-11, pcrec manager) — KB AT w32 ONLY: w16 vrun filters on KA alone
+
+**Customer:** `[OPT-SIMD]`; Frank's Q-R14-1 ruling, D147 addendum 16.
+
+**Trigger:** slot21's reading after R-14 (w16 KB throughput 133 W / 59 L; w32 still wins).
+
+**Deliverable:** w16 vrun renders KA only; w32 keeps KA+KB. SIMD-off byte-identical (identity gate on every arm), so no pcrec abi event. `vrun-kb` deny unchanged. G2 and simdfloor green. Fold in the triage of slot21's 11 D-F comparisons losing >= 10% (w32 sparse throughput, m10/m12/v03/v05/v11) if it concerns the same rows. Any re-timing is a heavy slot on main's GO.
+
+**Capacity:** the SIMD thread; after R-15.
+
+**Sabotage ids:** S815-S819 (allocated 2026-10-11; next free S820).
