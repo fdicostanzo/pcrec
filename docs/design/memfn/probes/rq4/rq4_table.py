@@ -52,6 +52,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import rq4_arms  # noqa: E402
 
+PRIOR_SIB_MAX = 5.0   # the prior run is read as its own table read it (slot20: the default 5), whatever --sib-max says
 CLASS_ORDER = ("THROUGHPUT", "DENSITY", "PER-CALL", "BENCH")
 LEGACY_VERDICT = {"D-K": "KB verdict", "ON-OFF": "SIMD verdict"}   # slot20's column headers
 
@@ -290,16 +291,19 @@ def reread(run, prior, w):
             continue
         for k in lost:
             if k in run.rcls:
-                cnt[name][run.cmp(pair, k)[2]] += 1
-    w("| this run's comparison on those %d | LOSS (persists) | NULL | WIN | other |" % len(lost))
-    w("|---|---|---|---|---|")
+                d, _, v = run.cmp(pair, k)
+                cnt[name][v] += 1
+                if d is not None and d > 0:
+                    cnt[name]["+"] += 1   # same sign as the prior's (every prior LOSS has delta > 0), past the floor or not
+    w("| this run's comparison on those %d | LOSS (persists) | NULL | WIN | other | delta > 0 (the prior's sign) |" % len(lost))
+    w("|---|---|---|---|---|---|")
     for name, pair in (("D-K", dk), ("F-K", fk), ("F-FK", ffk)):
         if pair is None:
-            w("| %s | not run | | | |" % name)
+            w("| %s | not run | | | | |" % name)
             continue
         c = cnt[name]
-        oth = sum(v for k2, v in c.items() if k2 not in ("LOSS", "NULL", "WIN"))
-        w("| %s | %d | %d | %d | %d |" % (name, c["LOSS"], c["NULL"], c["WIN"], oth))
+        oth = sum(v for k2, v in c.items() if k2 not in ("LOSS", "NULL", "WIN", "+"))
+        w("| %s | %d | %d | %d | %d | %d |" % (name, c["LOSS"], c["NULL"], c["WIN"], oth, c["+"]))
     w("")
     if dk:
         new = [k for k in run.order if k not in set(lost) and run.cmp(dk, k)[2] == "LOSS"]
@@ -326,7 +330,7 @@ def main():
     run = Run(a.run, a.sib_max)
     out = render(run, a)
     if a.prior:
-        reread(run, Run(a.prior, a.sib_max), out.append)
+        reread(run, Run(a.prior, PRIOR_SIB_MAX), out.append)
     text = "\n".join(out) + "\n"
     if a.out:
         open(a.out, "w").write(text)
