@@ -454,6 +454,12 @@ and does not need a bench cell to justify a fix.
 - Treating `(?:^)?`-redundant START classes as dropped.
 - Leaving anchors inside lookarounds unclassified until counted.
 
+### 5.1 Frank's rulings (2026-10-11, session 108)
+
+- **Q1 RULED: pin classes only for now.** Landmark classes stay later rows behind their own soundness argument and trigger.
+- **Q2 ANSWERED by Frank's find-all walk-through, sharpened by the manager.** On a pattern with NO free class (trim `^\s+|\s+$`, the wrapper strip), find-all needs no state: call 1 runs the START class at 0 and returns; call 2 arrives with `search_from > 0`, the START class is dead by arithmetic (no `\G`, no line pin), so only the END class remains and its reverse walk runs once from n and stops where the reverse END machine dies (the trailing run, not n); call 3 starts at n and ends. At most a few calls, each linear in what it consumes: K106's fix needs no API change and no admission predicate. The repeated-END-walk cost of §3 exists only when a FREE class is also present: every free match before the end can make the next call re-walk the same suffix. For those mixed patterns: run the free locator first, and consult END only when its earliest possible start lies before the free candidate (bounded end arm: start >= n - max width, a cheap test); an UNBOUNDED end arm (`[^\n]*$`) is admitted only when the expected suffix walk (`stay_len` under the prior) is short. The caller-carried cache stays a candidate for [IFACE-PUSH], not needed for the pin-only first build.
+- **Build order (manager):** pin-only patterns first (START + END with no free class: K106, the wrapper strip), then START + FREE (concat-sqli), then END + FREE behind the admission above.
+
 ## 6. The survey design (STEP 0; designed here, NOT run)
 
 ### 6.1 Populations, reported separately (K35: every denominator printed)
