@@ -38,3 +38,22 @@ revision lane `lrrev` applies them to fixes.md (revision 2) and runs the no-cloc
 - The round's WEIGHTING rule: the manager's lean is owner-actionable and certain first (a cheap
   confirmed step gate), then total ns, with cell count and worst ratio as tie-breaks.
 - Q4 (VM-hat half only) and Q6 (round order).
+
+## Manager decisions after revision 2 (lane lrrev, merged)
+
+- **Q3 (seam export): DROP the export** (`inline_def`) and re-home the three
+  `tests/backrefs/fold_agreement*_check.c` readers in the same change. One body,
+  no wrapper kept alive for test convenience; match_api.md §3¶2 already says these
+  are not caller entries.
+- **Q5: YES** — [START-DENSE]'s scope widens to every table-skip NEXT row plus the
+  VM hat; `pick_skip_states` stays with [OPT-3-RUNEND](a).
+- **Pair-skip twin: BUILD it for the step-0 slot.** The trigger is met on
+  json-constant (0.195) and near on hex8 (0.391); a twin is cheap, and it is the
+  only arm that addresses both DENSE-SKIP explanations at once.
+- **Stay twins stay in the slot but are expected to lose** (mean stay run
+  4.05-4.37 B, under RUNEND's ~5 B break-even; derived, not timed).
+- **The R-n for ONE SWAR set/cube FIND row** is filed when the kit's slot23 is
+  under way (after the L1 merge), not before: the kit is idle-waiting on main's
+  GO, and the request rides that hand-off.
+- Owed (no-clock, after the chain): cand 1 / cand 7 population counts and the F3
+  per-attempt call-site census.
