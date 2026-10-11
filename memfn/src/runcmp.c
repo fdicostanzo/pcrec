@@ -220,32 +220,52 @@ static int rc_kword_is(const rc_run *r, int at, int w, int v)
     return 1;
 }
 
+/* Is run position `i` one the caller proved (`proven[0..np)`; NULL: none)? */
+static int rc_proven(const int *proven, unsigned np, int i)
+{
+    for (unsigned j = 0; proven && j < np; j++)
+        if (proven[j] == i) return 1;
+    return 0;
+}
+
 /* The words form: `<p>_w<W>(base + o) == <p>_w<W>("<t[o..o+W)>")` for each
  * window of D(L) (offsets 0, W, 2W, ... while a whole word fits, then the
  * last word moved back to end exactly at L), joined by `&&`. A word with a
  * mask is `(<p>_w<W>(base + o) & <p>_w<W>("<k>")) == <p>_w<W>("<t>")`; one
  * whose K is all 0xFF is the unmasked text, and one whose K is all 0x00 is
- * not loaded at all (pay for what you use, at word grain). */
+ * not loaded at all (pay for what you use, at word grain).
+ * TRIMMED (`proven` given, run_cmp_render_trim): a proven position, and one
+ * an earlier window already compared (the last word's overlap), is a
+ * don't-care of its window, so a window left with none is not loaded. The
+ * width stays the full run's: the one helper run_cmp_prepare declared. */
 static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
-                          const rc_run *r)
+                          const rc_run *r, const int *proven, unsigned np)
 {
     const char *p = art->prefix;
-    int w = rc_width(r->len), nw = 0;
+    int w = rc_width(r->len), nw = 0, done = 0;
     for (int o = 0; o < r->len; o += w) {
         int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */
-        int exact = rc_kword_is(r, at, w, 0xFF);
-        if (!exact && rc_kword_is(r, at, w, 0x00)) continue;
+        uint8_t k[8], t[8];
+        for (int i = 0; i < w; i++) {
+            int skip = proven && (at + i < done || rc_proven(proven, np, at + i));
+            k[i] = skip ? 0x00 : r->k ? r->k[at + i] : 0xFF;
+            t[i] = skip ? 0x00 : r->t[at + i];
+        }
+        done = at + w;
+        rc_run win = { t, k, w };
+        int exact = rc_kword_is(&win, 0, w, 0xFF);
+        if (!exact && rc_kword_is(&win, 0, w, 0x00)) continue;
         if (nw++) c->puts(c->u, " && ");
         if (!exact) c->puts(c->u, "(");
         kit_out(c, "%s_w%d(", p, w);
         rc_base(c, base, off + at);
         if (!exact) {   /* `(w(b + o) & w("<K>")` -- the mask, the same load of a literal */
             kit_out(c, ") & %s_w%d(\"", p, w);
-            c->cstr(c->u, r->k + at, (size_t)w);
+            c->cstr(c->u, k, (size_t)w);
             c->puts(c->u, "\")");
         }
         kit_out(c, ") == %s_w%d(\"", p, w);
-        c->cstr(c->u, r->t + at, (size_t)w);
+        c->cstr(c->u, t, (size_t)w);
         c->puts(c->u, "\")");
     }
     if (nw == 0) c->puts(c->u, "1");   /* every position a don't-care */
@@ -254,14 +274,15 @@ static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
 }
 
 /* The bytes form: `(base)[off + i] == T` or `((base)[off + i] & K) == T` per
- * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded. */
+ * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded,
+ * and so is a position the caller proved (`proven`, as rc_emit_words). */
 static void rc_emit_bytes(mf_sink *c, const char *base, int off,
-                          const rc_run *r)
+                          const rc_run *r, const int *proven, unsigned np)
 {
     int nb = 0;
     for (int i = 0; i < r->len; i++) {
         int k = r->k ? r->k[i] : 0xFF;
-        if (k == 0x00) continue;
+        if (k == 0x00 || rc_proven(proven, np, i)) continue;
         if (nb++) c->puts(c->u, " && ");
         if (k == 0xFF) kit_out(c, "(%s)[%d] == %d", base, off + i, r->t[i]);
         else kit_out(c, "((%s)[%d] & %d) == %d", base, off + i, k, r->t[i]);
@@ -277,8 +298,10 @@ int run_cmp_sat(const mf_term *t)
     return 1;
 }
 
-int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
-                   int32_t off, mf_sink *c)
+/* The compare of run `t` at `base + off` by the row the walk picks, skipping
+ * the run positions `proven[0..np)` (NULL: the whole run). */
+static int rc_render(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                     const int *proven, unsigned np, mf_sink *c)
 {
     rc_run r = rc_of(t);
     const rc_row *row = rc_row_of(art, t, &r);
@@ -286,15 +309,18 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
     if (kit_sink_ok(art, c, "runcmp")) return -1;
     if (row->form != RC_F_BYTES && !c->cstr)
         return kit_fail(art, "runcmp: the sink offers no cstr op");
-    switch (row->form) {
+    /* a trimmed exact run is compared byte by byte: its uncovered positions
+       are no longer one constant-length string */
+    int form = proven && row->form == RC_F_MEMCMP ? RC_F_BYTES : row->form;
+    switch (form) {
     case RC_F_WORDS:
-        rc_emit_words(art, c, base, off, &r);
+        rc_emit_words(art, c, base, off, &r, proven, np);
         /* the helpers' memcpy: a constant 2-8 byte load, the record's one
            exclusion (§R4.3.3), so nothing is noted */
         art->includes |= MF_INC_STRING_H;
         break;
     case RC_F_BYTES:
-        rc_emit_bytes(c, base, off, &r);
+        rc_emit_bytes(c, base, off, &r, proven, np);
         break;
     case RC_F_MEMCMP:
         c->puts(c->u, "!memcmp(");
@@ -307,6 +333,26 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
         break;
     }
     return 0;
+}
+
+int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
+                   int32_t off, mf_sink *c)
+{
+    return rc_render(art, t, base, off, NULL, 0, c);
+}
+
+int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
+                        int32_t off, const int *proven, unsigned np, mf_sink *c)
+{
+    return rc_render(art, t, base, off, proven, np, c);
+}
+
+int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np)
+{
+    for (uint32_t i = 0; i < t->run_len; i++)
+        if ((t->mask ? t->mask[i] : 0xFF) != 0x00 && !rc_proven(proven, np, (int)i))
+            return 0;
+    return 1;
 }
 
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c)

@@ -206,9 +206,24 @@ static void bcast(mf_sink *o, const vrun_ops *v, int mask, int val, char c)
     kit_out(o, "v%c = %s((char)%d)", c, v->set1, val);
 }
 
+/* The run positions the filter proved, as indices into the run: KA always,
+ * KB when the mask reads it; `np` gets their count, 0 under the deny
+ * `no-vrun-trim` (the verify is then the whole run, as before R-14). */
+static unsigned vrun_proven(const fn_in *x, int k2, int proven[2])
+{
+    if (kit_opt_denied(x->site->opts, "vrun-trim")) return 0;
+    int off = x->p->term[0].offset;
+    unsigned np = 0;
+    proven[np++] = x->k - off;
+    if (k2 >= 0) proven[np++] = k2 - off;
+    return np;
+}
+
 /* The helper's body: the entry test, the block loop, the closing brace. Its
- * verify is the BODY's run compare; the compare's RUN_WORDS count is not
- * taken here (the stamp counts unbracketed text only, §R4.9.2.4). */
+ * verify is the BODY's run compare less the positions the mask proved
+ * (VERIFY TRIM, the module comment); where that leaves nothing, the lowest
+ * set lane is the answer. The compare's RUN_WORDS count is not taken here
+ * (the stamp counts unbracketed text only, §R4.9.2.4). */
 static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
                        const mf_formdecl *d, const char *fall, mf_sink *o)
 {
@@ -221,6 +236,8 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     int mb = k2 < 0 ? 0xFF : t->mask ? t->mask[k2 - t->offset] : 0xFF;
     int vb = k2 < 0 ? 0 : t->run[k2 - t->offset];
     unsigned vw = lv->vw, tt = vrun_t(x->p), r = vw + tt;
+    int proven[2];
+    unsigned np = vrun_proven(x, k2, proven);
 
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n", r, fall);
     kit_out(o, "    const %s ", v->type);
@@ -244,20 +261,25 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
     o->puts(o->u, " & (~0u << (i - f));\n"
                   "            i = f;\n"
-                  "        }\n"
-                  "        while (m) {\n"
-                  "            size_t cand = i + (size_t)__builtin_ctz(m);\n"
-                  "            if (");
-    long long words = art->words;
-    int rc = run_cmp_render(art, t, "subject + cand", t->offset, o);
-    art->words = words;
-    if (rc) return -1;
-    kit_out(o, ") return cand;\n"
-                  "            m &= m - 1;\n"
-                  "        }\n"
-                  "        i += %u;\n"
-                  "    }\n"
-                  "}\n", vw);
+                  "        }\n");
+    if (np && run_cmp_trim_none(t, proven, np)) {
+        o->puts(o->u, "        if (m) return i + (size_t)__builtin_ctz(m);\n");
+    } else {
+        o->puts(o->u, "        while (m) {\n"
+                      "            size_t cand = i + (size_t)__builtin_ctz(m);\n"
+                      "            if (");
+        long long words = art->words;
+        int rc = np ? run_cmp_render_trim(art, t, "subject + cand", t->offset, proven, np, o)
+                    : run_cmp_render(art, t, "subject + cand", t->offset, o);
+        art->words = words;
+        if (rc) return -1;
+        o->puts(o->u, ") return cand;\n"
+                      "            m &= m - 1;\n"
+                      "        }\n");
+    }
+    kit_out(o, "        i += %u;\n"
+               "    }\n"
+               "}\n", vw);
     return 0;
 }
 

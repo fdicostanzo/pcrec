@@ -398,6 +398,8 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 #define run_cmp_render  MF_NS(run_cmp_render)
 #define run_cmp_prepare MF_NS(run_cmp_prepare)
 #define run_cmp_sat     MF_NS(run_cmp_sat)
+#define run_cmp_render_trim MF_NS(run_cmp_render_trim)
+#define run_cmp_trim_none   MF_NS(run_cmp_trim_none)
 
 /* Writes a C boolean expression, true iff the RUN term `t`'s bytes at
  * `base + off` hold (masked where `t->mask` is given). Reads exactly those
@@ -405,6 +407,15 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
  * a caller may only conjoin it. */
 int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
                    int32_t off, mf_sink *c);
+/* The same compare with the run positions `proven[0..np)` (indices into the
+ * run) left out: the caller has already tested them, under the same mask.
+ * The row is the whole run's (so is its word width, the helper
+ * run_cmp_prepare declared); a trimmed exact run is compared byte by byte. */
+int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
+                        int32_t off, const int *proven, unsigned np, mf_sink *c);
+/* 1 iff the trimmed compare tests nothing: every position of `t` is proven
+ * or a don't-care (mask 0x00). */
+int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np);
 /* A FUNC definition's call before its own text: records the word widths the
  * RUN terms of `p` will load and declares every pending helper into `c`. */
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);

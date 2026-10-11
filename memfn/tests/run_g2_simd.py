@@ -78,6 +78,7 @@ CLASS_EXPECT = {
     'neg-long': 'none',
     'neg-nobrackets': 'none',
     'deny-kb': 'vrun@w32+w16',
+    'deny-trim': 'vrun@w32+w16',
 }
 CLASS_FLOOR = 8          # sites per class (each negative class is 1 in 20)
 POS_FLOOR = 200          # positive sites
@@ -97,6 +98,16 @@ SHAPE_FLOOR = {          # rendered sites per filter shape
     'ties': 108,         # a rate tie among the stated entries (135)
 }
 BADRANK_FLOOR = 64       # malformed copies refused (80)
+# the verify's shapes among rendered helpers (R-14, VERIFY TRIM), literals
+# measured at the same seed and sites (Linux dev box, 2026-10-11), each floor
+# ~80% of its measurement: a helper per rendered level of a rendered site
+VSHAPE_FLOOR = {
+    'none': 0,      # nothing left to verify: the lowest lane is the hit
+    'gap': 0,        # the positions left are not contiguous (a filter position inside)
+    'whole': 0,    # the whole run (deny-trim)
+    'bytes': 0,    # trimmed, the bytes form (MF_D_RUN_OVERLAP)
+    'words': 0,    # trimmed, the words form
+}
 # the level a build makes live (top first), and whether w16/w32 is live
 BUILDS = [
     # name,        flags,                      live levels
@@ -174,7 +185,8 @@ def instrument(body, li):
                        r') { g2v_path[%d]++; return \2 }' % b, body, count=1)
     body, n1 = re.subn(r'(        if \(i \+ \d+ <= n\) \{)', r'\1 g2v_path[%d]++;' % (b + 1), body)
     body, n2 = re.subn(r'(            size_t f = n - \d+;)', r'g2v_path[%d]++; \1' % (b + 2), body)
-    body, n3 = re.subn(r'\) return cand;', r') { g2v_path[%d]++; return cand; }' % (b + 3), body)
+    body, n3 = re.subn(r'\) return (cand|i \+ \(size_t\)__builtin_ctz\(m\));',
+                       r') { g2v_path[%d]++; return \1; }' % (b + 3), body)
     if (n0, n1, n2, n3) != (1, 1, 1, 1):
         raise RuntimeError('instrumentation found %r edit points, not one each' % ((n0, n1, n2, n3),))
     return body
@@ -182,6 +194,8 @@ def instrument(body, li):
 
 PLANTS = [
     # name, the helper edit (regex, replacement), expectation: 'red' or 'fault'
+    # (`no-verify` edits only the helpers that verify: a trimmed verify
+    # that leaves nothing has none, VERIFY TRIM)
     ('final-guard', r'if \(i \+ (\d+) >= n\) return n;', r'if (i + \1 + 1 >= n) return n;', 'red'),
     ('lane-mask',   r'\(~0u << \(i - f\)\)', r'(~0u << (i - f + 1))', 'red'),
     ('lane-order',  r'__builtin_ctz\(m\)', r'(31 - __builtin_clz(m))', 'red'),
@@ -205,12 +219,17 @@ def plant_text(text, plant, level):
     name, pat, rep, _ = plant
     if pat is None:
         return edit_helpers(text, level, reach_short)
+    edits = [0]
     def f(body, li):
         nb, k = re.subn(pat, rep, body, count=1)
-        if k != 1:
+        if k != 1 and not (name == 'no-verify' and 'return cand;' not in body):
             raise RuntimeError('plant %s: no edit point' % name)
+        edits[0] += k
         return nb
-    return edit_helpers(text, level, f)
+    out = edit_helpers(text, level, f)
+    if not edits[0]:
+        raise RuntimeError('plant %s: no helper edited' % name)
+    return out
 
 
 _CACHE = {}
@@ -261,6 +280,70 @@ def helper_loads(text):
                      and 'subject + i' in l), None)
         out[(int(fn[5:]), lvl)] = ([int(k or 0) for k in LOAD.findall(line)] if line else None)
     return out
+
+
+HELPER_TEXT = {}   # (site id, level) -> the helper's text (run(), below)
+CSTR = re.compile(r'\\([0-7]{1,3}|.)|(.)', re.S)
+
+
+def cstr_bytes(lit):
+    """The bytes of a C string literal's body as the kit's cstr op writes it."""
+    out = []
+    for m in CSTR.finditer(lit):
+        if m.group(1) is None:
+            out.append(ord(m.group(2)))
+        elif m.group(1)[0] in '01234567':
+            out.append(int(m.group(1), 8))
+        else:
+            out.append(ord(m.group(1)))
+    return out
+
+
+WORD_M = re.compile(r'^\(\w+_w(\d)\(subject \+ cand(?: \+ (\d+))?\) & \w+_w\d\("((?:[^"\\]|\\.)*)"\)\) == ')
+WORD_X = re.compile(r'^\w+_w(\d)\(subject \+ cand(?: \+ (\d+))?\) == ')
+BYTE_M = re.compile(r'^\(\(subject \+ cand\)\[(\d+)\] & \d+\) == \d+$')
+BYTE_X = re.compile(r'^\(subject \+ cand\)\[(\d+)\] == \d+$')
+
+
+def verify_reads(body):
+    """(shape, the set of read offsets from cand the helper's verify COMPARES,
+    i.e. under a nonzero mask byte), parsed from its text; shape is 'none'
+    (no verify: the lowest lane is returned), 'words' or 'bytes'."""
+    m = re.search(r'^            if \((.*)\) return cand;$', body, re.M)
+    if not m:
+        if re.search(r'^        if \(m\) return i \+ \(size_t\)__builtin_ctz\(m\);$', body, re.M):
+            return 'none', set()
+        return None, None
+    reads, shape = set(), 'bytes'
+    for c in m.group(1).split(' && '):
+        w = WORD_M.match(c)
+        if w:
+            o = int(w.group(2) or 0)
+            reads |= {o + j for j, k in enumerate(cstr_bytes(w.group(3))) if k}
+            shape = 'words'
+            continue
+        w = WORD_X.match(c)
+        if w:
+            o = int(w.group(2) or 0)
+            reads |= set(range(o, o + int(w.group(1))))
+            shape = 'words'
+            continue
+        w = BYTE_M.match(c) or BYTE_X.match(c)
+        if w:
+            reads.add(int(w.group(1)))
+            continue
+        if c == '1':
+            continue
+        return None, None
+    return shape, reads
+
+
+def expect_verify(cls, off, masks, want_filter):
+    """The rule (memfn/src/vrun.c, VERIFY TRIM), from the generated run: the
+    verify compares every position whose mask is not 0x00 less the filter's
+    positions; under `no-vrun-trim` (deny-trim) all of them."""
+    every = {off + j for j, k in enumerate(masks) if k}
+    return every if cls == 'deny-trim' else every - set(want_filter)
 
 
 def expect_filter(cls, off, pp, rank):
@@ -333,13 +416,17 @@ def run(a, root, work):
     sites_c = os.path.join(work, 'g2v_sites.c')
     text = open(sites_c).read()
     loads = helper_loads(text)
-    rmodes, shapes, nbad = {}, {}, 0
+    for m in HELPER.finditer(text):
+        if m.group(1).startswith('g2v_f'):
+            HELPER_TEXT[(int(m.group(1)[5:]), m.group(2))] = m.group(0)
+    rmodes, shapes, nbad, vshapes = {}, {}, 0, {}
     with open(os.path.join(work, 'g2v_meta.tsv')) as f:
         for line in f:
             if line.startswith('#'):
                 continue
             (sid, cls, L, off, pp, forms, gb, a16, a32, rmode, rank, badrank,
-             ties) = line.rstrip('\n').split('\t')
+             ties, masks) = line.rstrip('\n').split('\t')
+            masks = bytes.fromhex(masks)
             gb = int(gb)
             # 1b: the malformed copy, and the filter the rule gives
             if badrank != '-':
@@ -359,6 +446,19 @@ def run(a, root, work):
                             % (sid, cls, rmode, rank, lvl, got, want))
                     else:
                         ok()
+                    # 1c: the verify compares exactly what the filter did not prove
+                    vshape, vgot = verify_reads(HELPER_TEXT.get((int(sid), lvl), ''))
+                    vwant = expect_verify(cls, int(off), masks, want)
+                    if vgot != vwant or (vshape == 'none') != (not vwant):
+                        bad('site %s (%s, rank %s): %s verify compares %r (%s), the rule gives %r'
+                            % (sid, cls, rank, lvl, sorted(vgot) if vgot is not None else None,
+                               vshape, sorted(vwant)))
+                    else:
+                        ok()
+                        k = ('whole' if cls == 'deny-trim' else vshape)
+                        vshapes[k] = vshapes.get(k, 0) + 1
+                        if vwant and max(vwant) - min(vwant) + 1 != len(vwant):
+                            vshapes['gap'] = vshapes.get('gap', 0) + 1
                 rmodes[rmode] = rmodes.get(rmode, 0) + 1
                 kb = want[1] - int(off) if len(want) > 1 else None
                 for shp, hit in (('kb', kb is not None), ('no-kb', kb is None),
@@ -413,6 +513,12 @@ def run(a, root, work):
         print('filter shape %-12s %4d rendered sites (floor %d)' % (shp, shapes.get(shp, 0), fl))
         if shapes.get(shp, 0) < fl:
             bad('filter shape %s: %d rendered sites < floor %d' % (shp, shapes.get(shp, 0), fl))
+        else:
+            ok()
+    for shp, fl in VSHAPE_FLOOR.items():
+        print('verify shape %-6s %4d rendered helpers (floor %d)' % (shp, vshapes.get(shp, 0), fl))
+        if vshapes.get(shp, 0) < fl:
+            bad('verify shape %s: %d rendered helpers < floor %d' % (shp, vshapes.get(shp, 0), fl))
         else:
             ok()
     print('malformed rankings refused: %d (floor %d)' % (nbad, BADRANK_FLOOR))
