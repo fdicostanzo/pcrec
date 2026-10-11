@@ -2068,3 +2068,24 @@ the compiler, and is never adopted silently. Proposed for main to file
     mostly w32 gate/sparse throughput on m10, m12, v03, v05, v11. Sparse
     cells barely run the verify, so suspect the main-guard margin (E
     extra bytes) or noise. Kit triage lane on the slot21 data, no box time.
+- done: 2026-10-11 — **R-15 (`precheck_assign_byte`, memchr ASSIGN for the one-byte gate site; the kit's first SCALAR deny `--memfn=no-precheck-assign-byte`; ZERO movers on main, no abi): branch lane/memfn-r15 @ this commit. Report: docs/dev/lanes/r15b_report.md; slot22 evidence docs/design/memfn/probes/r15/.**
+  - Serves the site: under a scratch merge into lane/rlhbuild, ipv6, ipv4
+    and dotted4 render memchr ASSIGN at entry AND re-entry. The deny equals
+    rlhbuild's generic text byte for byte. Answers equal (handoff.rxt
+    4908/0 both ways).
+  - slot22, all stages:
+    - identity sweeps (plain, start, variants, simd) 0 artifact movers;
+    - deny sweeps 0; N2 clean (row chosen 0 on main); G2 full
+      199,850,927/0;
+    - mech 13 rows COMPLETE 0/0/0/0/0.
+  - Reds, each triaged and closed:
+    - G2 quick's two g2m4 population floors: a subsample phase shift.
+      Re-pinned to 98000 / 48000; quick re-run 52,987,686/0.
+    - test-axes: -fno-hyb-reseed and -fno-cls-pack lost cases in a loaded
+      window (0 mismatches). A quiet re-run of both is green. The kit's
+      --memfn rows are not swept by test-axes.
+  - **For main:**
+    - the variants sweep's 26 tag-population floor lines are PRE-EXISTING
+      (byte-identical in slot21) and need a re-pin on main;
+    - at L1's merge, flip the three stale items (r15b_report §7).
+  - Next for the kit: R-16 (KB at w32 only, S815-S819).
