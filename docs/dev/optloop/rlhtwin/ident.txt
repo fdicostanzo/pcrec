@@ -1,0 +1,2 @@
+ipv6	subjects=524	findall_matches=3193	startpos_hits/searches=88701/287464	diff(o,h1)=0	diff(o,h1m)=0	diff(o,h2)=0	diff(o,r)=0	diff(o,p2)=0
+ipv4	subjects=524	findall_matches=2716	startpos_hits/searches=72851/271336	diff(o,h1)=0	diff(o,h1m)=0	diff(o,h2)=0	diff(o,r)=0	diff(o,p2)=0

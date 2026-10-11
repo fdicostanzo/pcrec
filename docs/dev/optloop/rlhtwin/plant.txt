@@ -1,0 +1,6 @@
+ipv6	K=4	planted=3	subjects=512	differing(o,plant)=0
+ipv6	K=4	planted=1	subjects=512	differing(o,plant)=0
+ipv6	K=4	planted=0	subjects=512	differing(o,plant)=381
+ipv4	K=3	planted=2	subjects=512	differing(o,plant)=0
+ipv4	K=3	planted=1	subjects=512	differing(o,plant)=0
+ipv4	K=3	planted=0	subjects=512	differing(o,plant)=364
