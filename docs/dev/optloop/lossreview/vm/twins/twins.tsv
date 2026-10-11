@@ -1,0 +1,21 @@
+name	cell	kind	spec	cause	question the timing answers	answer check (2026-10-11, main f2fcffb4)
+bak2-static-seam	syntax/bak-2	transform	static_seam	C1a	what the PLT call to rx_span_match costs per attempt under -O2 -fPIC	identical, 45 subjects / 197 matches
+bak2-trail-free	syntax/bak-2	transform	trail_free	C1b	what the frameless trail push + per-attempt undo costs	identical, 45 / 197
+bak2-both	syntax/bak-2	transform	static_seam,trail_free	C1a+b	the two together (does it close the x1.55 to jit?)	identical, 45 / 197
+bak2-no-start-set	syntax/bak-2	flags	-fno-start-set	C1c	is the 10-05 -> 10-11 growth (13.17 -> 15.48 ms) the dense VM hat	identical, 45 / 197
+bak1-static-seam	syntax/bak-1	transform	static_seam	C1a	the seam call on the (\w+) \1 family	identical, 45 / 8105
+bak1-both	syntax/bak-1	transform	static_seam,trail_free	C1a+b	the family's whole fix-existing share	identical, 45 / 8105
+phone-both	capability/phone-palindrome-6	transform	static_seam,trail_free	C1a+b	capability's backref cell	identical, 86 / 5
+phone-no-start-set	capability/phone-palindrome-6	flags	-fno-start-set	C1c	the VM hat on a 10-member digit set at low density (control: should be ~neutral or a win)	identical, 86 / 5
+modj-static-seam	syntax/mod-j-uc	transform	static_seam	C1a	the framed backref cell's seam share	identical, 45 / 8105
+quoted-seek	capability/quoted-delim-match	transform	seek_memchr	C2	the VM hat's 2-member table walk vs a two-stream memchr leapfrog	identical, 88 / 4149
+quoted-seek-seam	capability/quoted-delim-match	transform	seek_memchr,static_seam	C2+C1a	both levers on the cell	identical, 88 / 4149
+parens-seek	capability/balanced-parens-rec	transform	seek_memchr	C2	the VM hat's 1-member table walk vs memchr	identical, 88 / 7866
+kname-seek	syntax/bak-k-named	transform	seek_memchr,static_seam	C2+C1a	the 1-member hat as memchr, plus the seam	identical, 46 / 5491
+ctx64-stay22	bounded/ctx-lazy-64	transform	stay=22	C5	a stay loop on the \b word-wait state (M2.1 threshold) on letters	identical, 61 / 131
+moment-precheck	capability/wild-datetime-moment-iso8601	transform	precheck=45	C7	G2's declined memchr('-') pre-check on the hazard subjects	identical, 99 / 10
+possq-stepset	syntax/qnt-poss-quest	transform	stepset=97	C4	the adaptive retry stepping through the start set {a}, not every byte	identical, 47 / 279
+possq-no-reseed	syntax/qnt-poss-quest	flags	-fno-hyb-reseed	C4	the re-seed machine's own share (fixed retry)	identical, 47 / 279
+possq-aa	syntax/qnt-poss-quest	pattern	aa	C4	a?+a's language IS `aa`: the possessive-to-regular rewrite's ceiling	identical, 47 / 279
+atomicalt-ac	syntax/grp-atomic-alt	pattern	ac	C4	(?>a|ab)c's language IS `ac`: the atomic dead-branch rewrite's ceiling	identical, 46 / 6013
+pwd-rewind	capability/pwd-strength-chain	transform	rewind	C6	the cursor rung seeking its follow byte instead of one frame per position	identical, 167 / 29
