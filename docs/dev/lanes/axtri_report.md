@@ -135,3 +135,140 @@ Pass = rc 0, and in axes.log's summary: `-fno-req-byte ...|OK|... giveup1=64
 own oracle): OK — utfcheck arm: ... fail=0`. Expected ~30-40 min
 (baseline ~330 s + one axis ~510 s + the utfcheck arm + the fixed
 oracle/DIAL sections).
+
+---
+
+# Section 2 — a SECOND lane `axtri` (2026-10-11): triage of lane/rlhbuild's red `make test-axes`
+
+Same lane name, different red; kept as a second section on the axtriage_report.md precedent.
+
+Branch `lane/axtri` off `lane/rlhbuild` 43e1575b ([REQ-HANDOFF-L1], abi 75).
+Input log: `worktrees/rlhbuild/build/land/axes.log` (chain stage, 16:40,
+`make: *** [Makefile:1869: test-axes] Error 1`).
+
+### The red, axis by axis
+
+Seven axes FAIL, all on ONE file, `tests/utf8/axis01_encoded_length.rxt`,
+every failing key an "UNDOCUMENTED refusal" whose text is
+`gnutimeout: the monitored command dumped core` (pcrec itself crashed):
+
+| axis | undocumented refusals | keys (rxt line) |
+|---|---|---|
+| `-fno-offset-skip` | 56 | 270 322 323 376 386 388 478-480 530 531 584 594 595 740 776 777 791 792 805 (20 printed) |
+| `--analysis=fire-c1` | 24 | 477-480 529-531 568 569 571 581-584 594-597 776 777 (20 printed) |
+| `--analysis=fire-c2a` | 56 | same population as `-fno-offset-skip` |
+| `--analysis=fire-c3` | 24 | same population as fire-c1 |
+| `--analysis=fire-c4` | 56 | " |
+| `--analysis=floor-but-one` | 56 | " |
+| `--analysis=onehot-80` | 56 | " |
+| `--analysis=onehot-e` | 56 | " |
+
+(The log's AXIS FAIL lines print the first 20 keys per axis.) No axis had a
+mismatch, a lost case or an unallowed one-sided give-up; every other axis
+and every tail check (oracle cross-check, DIAL-S3, utfcheck arm, START-LANDING
+/ START-SET arms) is OK.
+
+### Fix 1 — the only cause: a selection-read recursion L1 closed (REAL regression, fixed)
+
+**Repro.** `build/pcrec -e utf8 -fno-offset-skip -p rx --emit-main -o o.c
+--pattern '€+'` → SIGSEGV on lane/rlhbuild; rc 0 on main 9683488b (scratch
+worktree `worktrees/axtri-main`, built at main's tip). The analysis axes are
+the same crash (`-I tests/findings/adversarial --analysis=fire-c1 -e utf8
+--pattern '€+'` → 139 pre-fix, 0 post-fix): their priors move NEXT off the
+`offset-set` row, exactly as `-fno-offset-skip` denies it.
+
+**Cause (gdb, ~90k frames).** A four-edge cycle of selection reads:
+
+- RECOVER `landing` (`start_landing_applies`) reads NEXT (`dfa_pf_read`);
+- NEXT `handoff-reentry` (`pf_handoff_applies`, **new in L1**) reads FIRST
+  (`req_use_read`);
+- FIRST `handoff` (`req_handoff_applies`) reads the PATH
+  (`cand_path_members`, pre-existing on main);
+- the path walk (`cand_path_of` → `dfa_search_start_of`) selects RECOVER,
+  whose `landing` predicate reads NEXT again.
+
+It fires wherever the NEXT walk reaches the handoff row (no exact-start row
+applies first) while FIRST's admission emits and Λ (`land_char`) holds — a
+`utf8` single-character pattern with offset-skip off is the corpus witness.
+L1's report found and broke a DIFFERENT cycle (NEXT→FIRST→PRESENCE→NEXT, via
+`CandNode.under/by`); this one was invisible to the trace build's
+`table-read-cycle` self-check because FIRST's read of the PATH is not a
+declared `cand_nodes[].reads` edge (see Open item 1).
+
+**Fix (commit 9dec5e6f).** RECOVER's node gains
+`.under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF }` — the mechanism L1
+itself introduced for G1: `landing` asks NEXT for the row below the
+re-entry. Sound in the declining direction: `landing` only asks whether the
+NEXT row has a block to record in (`u.pf.emit != NULL`); the handoff row has
+one (its emitter sits inside `pf_open`/`pf_close`, so the landing record is
+written unchanged — rlhbuild_report §1.3), so reading the row below can only
+make `landing` decline where that row is `next-none`, never apply where it
+should not.
+
+**Byte-neutral on every compile that did not crash**, by argument (on a
+non-crashing compile the handoff predicate, if reached from `landing`, was
+false before its FIRST read returned handoff, so denying the row selects the
+same row) and by measurement (`scripts/emit_sweep.py --ref-bin` = pre-fix
+43e1575b build, `--bin` = this branch, streams c-default + c-vm):
+
+| arm | c-default | c-vm |
+|---|---|---|
+| byte, default | 5194 both-ok, movers 0, asymmetric 0 | 5195, 0, 0 |
+| byte, `-fno-offset-skip` | 5194, 0, 0 | 5195, 0, 0 |
+| `-e utf8` | 5221, 0, 0 | 5224, 0, 0 |
+| `-e utf8 -fno-offset-skip` | 5192, **movers 0, asymmetric 29** | 5224, 0, 0 |
+
+The 29 asymmetric rows are the crash population: the reference refuses
+(cores), the working side compiles, and its both-ok+asymmetric = 5221, the
+`-e utf8` default-axis population exactly. (That run's rc=1 is the arms
+family's "no differ floor pinned" bookkeeping for an ad-hoc `--extra` arm,
+not a finding.)
+
+**Re-validation.**
+
+- `TMPDIR=… SKIP_ORACLE=1 PROCS=4 AXES="-fno-offset-skip --analysis=fire-c1
+  --analysis=fire-c2a --analysis=fire-c3 --analysis=fire-c4
+  --analysis=floor-but-one --analysis=onehot-80 --analysis=onehot-e" bash
+  tests/axes/run_axes.sh tests/utf8/axis01_encoded_length.rxt` → all 7 axes
+  OK, 256/256 agree each, 0 refused; "all axes answer-identical to default";
+  rc 0 (`build/axtri/axes_fix.log` in this worktree).
+- `make test-cand-oracle` (trace build; self-check incl. the state-based
+  `table-read-cycle` with the new `under` bits) → 91 passed / 0 failed.
+- `make strict` → clean.
+
+**NEWLY REACHABLE, and what covers it.** `landing` + NEXT `handoff` now
+co-select (e.g. `€+` `-e utf8 -fno-offset-skip`: `RX_DFA_PREFILTER
+"handoff"`, `RX_DFA_START "landing"`, `RX_REQ_HANDOFF "0"`). On rlhbuild that
+combination could never compile (it is exactly the crash), so no gate has
+yet measured its answers beyond the axis01 run above (256 cases x 7 axes,
+identical to default). The L1 design intended it (the handoff emitter is
+inside `pf_open`/`pf_close` "so the `landing` record works unchanged"). The
+full `make test-axes` at merge is the population check; OWED, not run here
+(the box was running rlhbuild's chain).
+
+### Open items (not fixed here — design/check questions for the manager)
+
+1. **The selection-read graph does not model PATH reads.** FIRST's `handoff`
+   (`req_handoff_applies`, emit_dfa.c:7705) and LOCATE's `empty`
+   (`locate_empty_applies` region, :4610) call `cand_path_members`, whose
+   walk selects LOCATE/RECOVER/FINISH; none of that is a `cand_nodes[].reads`
+   edge, so `cand_read_cycle` could not see this cycle and the
+   `undeclared-read` trace check does not fire on it. Leaning: declare a
+   path read as reads of every slot the path selects (FIRST →
+   RECOVER/LOCATE/FINISH on CR_DFA), which with today's `under` bits stays
+   acyclic and would have failed `table-read-cycle` on rlhbuild before this
+   fix. That is a check change (learnings §3) with its own sabotage row (a
+   dropped `under` on RECOVER should go red in the self-check, not only as a
+   SIGSEGV in test-axes), so it is filed, not built.
+2. **The cost of the cut**: `landing` now declines where NEXT is `handoff`
+   and the row below it is `next-none` (no start-byte row). Unmeasured; zero
+   corpus movers at default/`-fno-offset-skip` x byte/utf8 says the
+   population is empty in the corpus today.
+
+### Housekeeping
+
+- Scratch worktree `worktrees/axtri-main` (detached, now at 43e1575b, used as
+  the pre-fix reference build) is not a lane branch; prune it with
+  `scripts/wtprune` when convenient.
+- test-encoding-checks (the other known rlhbuild red) is lane/rlhtri's
+  52564f83 and was not touched.
