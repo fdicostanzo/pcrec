@@ -481,3 +481,19 @@ than a bit-vector regex engine."
     leading path up to 24 offsets and stops at an any-byte. The kit needs
     per-position sets at an offset from the anchor (-26..+90 measured) and
     a union-vs-exact flag.
+- Frank, same day: negated classes belong in a span too (`[^a]`,
+  `[^\d]`, `[^"]`). In the masked-range form a negated range is ONE more
+  op: a per-lane invert vector N (0xFF on negated lanes, 0x00 elsewhere),
+  `ok = cmpeq(min_epu8(t, W), t) ^ N`. So the complement of any single
+  masked range is tier A, not tier B. That moves the survey's `[^"]`-style
+  spans from B to A and raises the "masked range alone" share above 44%.
+- Frank's ruling (2026-10-11): gather information, but the span work does
+  not take kit build time; better candidates come first. Everything here
+  goes to an UNSCHEDULED item under [SPAN-ISEL]: the surveys (done), the
+  ideas above, and a DESIGNED SPIKE to put real numbers on it.
+  - The spike: on loglines/uuid, hex32-id and iso-ts (the strict-span
+    filter form) and on bounded/dotted4 (the anchored-core verify form),
+    time today's search against a hand-written span filter/verify (SSE2
+    and AVX2, masked range + invert), at tier U, both layers.
+  - It needs no pcrec change (hand-written twin, the rlhtwin way). Run it
+    when a quiet box and spare capacity coincide. It is not scheduled.
