@@ -679,10 +679,15 @@ def run(a, root, work):
     # every build of sections 3-5, prefetched concurrently (each driver run is
     # pinned to G2V_CPUS; the results are judged below in order)
     inst = os.path.join(work, 'g2v_sites_paths.c')
-    open(inst, 'w').write(edit_helpers(text, None, instrument))
+    try:
+        open(inst, 'w').write(edit_helpers(text, None, instrument))
+    except RuntimeError as e:   # a rendered shape the instrumentation does not know: red
+        bad('instrumentation: %s' % e)
+        inst = None
     jobs = [(n, sites_c, f, False) for n, f, _ in BUILDS]
     jobs += [(n, sites_c, f, True) for n, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)]
-    jobs += [('paths-' + n, inst, f, False) for n, f, _ in BUILDS if n != 'x86-64-v4']
+    if inst:
+        jobs += [('paths-' + n, inst, f, False) for n, f, _ in BUILDS if n != 'x86-64-v4']
     levels = sorted({lv for _, _, live in BUILDS for lv in live})
     plant_files = {}
     for plant in PLANTS:
@@ -726,7 +731,7 @@ def run(a, root, work):
         else:
             ok()
     # 4: paths
-    for name, flags, live in BUILDS[:2] + BUILDS[3:]:
+    for name, flags, live in (BUILDS[:2] + BUILDS[3:]) if inst else ():
         r, err = build_run(work, root, 'paths-' + name, inst, flags)
         if err:
             bad('paths %s: %s' % (name, err))
