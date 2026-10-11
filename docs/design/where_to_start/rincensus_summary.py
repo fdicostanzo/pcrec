@@ -17,7 +17,8 @@ _spec = importlib.util.spec_from_file_location("rincensus", os.path.join(HERE, "
 RC = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(RC)
 
 ROWS, WSDIR = sys.argv[1], sys.argv[2]
-rows = list(csv.DictReader(gzip.open(ROWS, "rt"), delimiter="\t"))
+SAB = sys.argv[3:]          # optional: ROWS_no-border.tsv.gz ROWS_no-factor.tsv.gz (the census re-run with an arm conjunct blind)
+rows = list(csv.DictReader(gzip.open(ROWS, "rt"), delimiter="\t", quoting=csv.QUOTE_NONE))
 W, CELLS = RC.weights(WSDIR)
 k12 = [r["pid"] for r in csv.DictReader(open(os.path.join(WSDIR, "k12_bench.tsv")), delimiter="\t") if r["k12"] == "1"]
 ctl = sum(W.get(p, 0) for p in k12)
@@ -152,20 +153,28 @@ P()
 def detail(v):
     P("## DETAIL for the %s reading (variant %s), DFA route" % (VNAME[v], v))
     P()
-    P("### by arm, F = 2 (F = 1 in brackets); arm = first-match arm admitting the pattern (fixed, disj, ffree; several branches: the weakest any branch needs)")
+    P("### by arm; arm = first-match arm admitting the pattern (fixed, disj, ffree; several branches: the weakest any branch needs)")
     P("`ffree needed` = the pattern is composition-safe only through the factor-free arm (single branch: the sole arm; several branches: no all-disj and no equal-fixed-width composition exists): it exists only because of D151 add. 5.")
     P()
-    P("| population | eligible | fixed | disj | ffree first-match | ffree needed | single branch | several branches | equal P_i | mixed P_i | comp-safe |")
-    P("|---|---|---|---|---|---|---|---|---|---|---|")
+    P("| population | F | eligible | fixed | disj | ffree first-match | ffree needed | single branch | several branches | equal P_i | mixed P_i | comp-safe | shape: sep / word / other |")
+    P("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+
+    def shape(r):
+        L = bytes.fromhex(r["lhex_" + v])
+        if len(L) == 1 and not chr(L[0]).isalnum():
+            return "sep"
+        return "word" if all(chr(x).isalnum() for x in L) else "other"
     for pop in POPS:
-        E = [r for r in routeof(pop, "dfa") if elig(r, v, 2)]
-        E1 = [r for r in routeof(pop, "dfa") if elig(r, v, 1)]
-        arm = collections.Counter(r["arm_" + v] for r in E)
-        only = [r for r in E if r["nff_" + v] == "1"]
-        P("| %s | %d (%d) | %d | %d | %d | %d | %d | %d | %d | %d | %d |" % (
-            pop, len(E), len(E1), arm["fixed"], arm["disj"], arm["ffree"], len(only),
-            sum(int(r["nbr_" + v]) == 1 for r in E), sum(int(r["nbr_" + v]) > 1 for r in E),
-            sum(r["uniform_" + v] == "1" for r in E), sum(r["uniform_" + v] == "0" for r in E), sum(r["comp_" + v] == "1" for r in E)))
+        for F in (2, 1):
+            E = [r for r in routeof(pop, "dfa") if elig(r, v, F)]
+            arm = collections.Counter(r["arm_" + v] for r in E)
+            only = [r for r in E if r["nff_" + v] == "1"]
+            sh = collections.Counter(shape(r) for r in E)
+            P("| %s | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d | %d / %d / %d |" % (
+                pop, F, len(E), arm["fixed"], arm["disj"], arm["ffree"], len(only),
+                sum(int(r["nbr_" + v]) == 1 for r in E), sum(int(r["nbr_" + v]) > 1 for r in E),
+                sum(r["uniform_" + v] == "1" for r in E), sum(r["uniform_" + v] == "0" for r in E), sum(r["comp_" + v] == "1" for r in E),
+                sh["sep"], sh["word"], sh["other"]))
     P()
     P("### by family (DFA route, F = 2, not served by rev-end/landing in brackets)")
     for pop in POPS:
@@ -228,4 +237,31 @@ for pop in POPS:
     for vv in ("max_peel", "sub_peel"):
         P("%s %s: %s" % (pop, vv, dict(collections.Counter(r["stage_" + vv] for r in U))))
         P("   G2 declines by the factor-free arm's reason: " + str(dict(collections.Counter(r["ffwhy_" + vv] for r in U if r["stage_" + vv] == "G2"))))
+P()
+c2 = [r for r in rows if r.get("c2_checked")]
+P("## Controls")
+P("C2 (necessity against pcrec's own req_set, no shared code): %d patterns, %d landmark bytes checked, %d violations (must be 0)" % (
+    len(c2), sum(int(r["c2_checked"]) for r in c2), sum(int(r["c2_viol"]) for r in c2)))
+assert sum(int(r["c2_viol"]) for r in c2) == 0
+P("C1 (hand-classified patterns) and C2' (arms vs rinner_model.py's own bookkeeping and factor_witness, 2,491 cases): rincensus.py --selftest")
+P("C3 (sabotage): the table below; and rincensus.py --selftest --sabotage no-border|no-factor must FAIL (3 and 806 failures)")
+P("weights control: walk_survey's K12 total reproduced to the third decimal (asserted at the top of this script)")
+P()
+P("## Unparsed and refused (the census's blind spot, listed rather than dropped)")
+for pop in ("bench",):
+    P("%s unparsed (%d): %s" % (pop, sum(r["outcome"] == "unparsed" for r in rows if r["pop"] == pop),
+                               ", ".join("%s[%s]" % (r["id"], r.get("why", "")) for r in rows if r["pop"] == pop and r["outcome"] == "unparsed")))
+    P("%s refused by pcrec itself (%d): %s" % (pop, sum(r["outcome"] == "refused" for r in rows if r["pop"] == pop),
+                                               ", ".join(r["id"] for r in rows if r["pop"] == pop and r["outcome"] == "refused")))
+if SAB:
+    P()
+    P("## SABOTAGE: the census re-run with one arm conjunct blind (K35: the arm must be load-bearing in the COUNT, and must be able to fail)")
+    P("`no-border` makes every L border-free; `no-factor` makes every P factor-free.  Eligible = DFA route, pair, F = 2 | F = 1; reading in brackets.")
+    P()
+    P("| run | population | max_peel F=2 | max_peel F=1 | sub_peel F=2 | sub_peel F=1 |"); P("|---|---|---|---|---|---|")
+    for lbl, path in [("normal", ROWS)] + [(os.path.basename(x).split("_rows_")[-1].replace(".tsv.gz", ""), x) for x in SAB]:
+        rr = list(csv.DictReader(gzip.open(path, "rt"), delimiter="\t", quoting=csv.QUOTE_NONE))
+        for pop in POPS:
+            sel = [r for r in rr if r["pop"] == pop and r.get("route") == "dfa"]
+            P("| %s | %s | %d | %d | %d | %d |" % (lbl, pop, *[sum(elig(r, vv, F) for r in sel) for vv in ("max_peel", "sub_peel") for F in (2, 1)]))
 print("\n".join(OUTL))

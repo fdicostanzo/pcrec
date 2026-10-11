@@ -1,0 +1,276 @@
+provenance: pcrec ef57dbb0 (pcrec 0.2.0-beta), bench d359564f (read only), libpcre2 10.46 2025-08-27, python 3.14.4, walk_survey results 088a752f
+rincensus_summary: provenance rows=build/rc2/rincensus_rows.tsv.gz; weights control: walk_survey K12 total 15.786 ms (24 patterns) reproduced
+
+Readings of `ONE common L`: STRICT = L is a maximal literal run of the flattened spine and the SAME run in every branch;
+GENEROUS = L may be any contiguous sub-run of the branches' maximal runs (altwide/sfx-* needs this: its `ing` is the tail of each
+branch's whole-word literal).  `peel` splices the first iteration of a mandatory single-alternative group repeat
+(loglines/ipv6 needs this: `(?:H:){4,7}` = `H:(?:H:){3,6}`).  `pair` = the ruled text (every branch passes G2 with its own P_i);
+`comp` = pair AND the branches compose (all strong arms disj/ffree/empty, or all fixed at the SAME width; rincensus_report.md section 2).
+
+## 1. The funnel (DFA route, STRICT reading; cumulative: a pattern counts at a stage if its best candidate reached it)
+
+| population | patterns | compiled | parsed | DFA route | unanchored | landmark | common L | P non-empty | G1 | G2 | G3 F=1 | G3 F=2 | G3 F=8 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench | 367 | 342 | 330 | 261 | 245 | 158 | 115 | 41 | 36 | 32 | 21 | 13 | 7 |
+| corpus | 4714 | 4342 | 3904 | 2096 | 1967 | 989 | 858 | 353 | 270 | 209 | 186 | 135 | 38 |
+| catalog | 42 | 42 | 42 | 36 | 36 | 27 | 27 | 23 | 23 | 23 | 20 | 18 | 13 |
+
+unparsed by reason (all routes): bench: {'unsupported-syntax': 8, '\\K': 1, 'group-kind': 3}; corpus: {'\\K': 80, 'stray': 59, 'group-kind': 149, 'class-escape': 31, '\\g': 1, 'verb': 31, 'unsupported-syntax': 83, 'escape': 4}; catalog: {}
+`refused` = pcrec itself refuses the pattern (not compiled under --features all).
+
+## 2. ELIGIBLE counts, DFA route (the decision tables)
+pair = the ruled text; comp = pair AND composition-safe.  `outside` = excluding loglines/ipv6 and altwide/sfx-*.
+`not served` = also excluding patterns whose start is already exact without a reverse search (RX_DFA_SCAN rev-end, RX_DFA_START
+end-minus-width / landing).  `live` = also excluding patterns whose forward scan is already an EXACT row at the landmark (offset-set /
+run-pinned): reverse-inner has nothing to add there.  G3 at F = 1 and F = 2 (F = 8 last column, live outside only).
+
+### F = 2
+
+| population | reading | eligible pair / comp | outside | outside, not served | outside, LIVE | LIVE at F=8 |
+|---|---|---|---|---|---|---|
+| bench | max | 9 / 9 | 9 | 5 | 3 | 1 |
+| bench | max_peel | 13 / 13 | 12 | 8 | 6 | 2 |
+| bench | sub | 14 / 14 | 14 | 6 | 4 | 2 |
+| bench | sub_peel | 18 / 18 | 17 | 9 | 7 | 3 |
+| corpus | max | 134 / 134 | 134 | 90 | 78 | 22 |
+| corpus | max_peel | 135 / 135 | 135 | 91 | 79 | 22 |
+| corpus | sub | 166 / 166 | 166 | 96 | 82 | 24 |
+| corpus | sub_peel | 167 / 167 | 167 | 97 | 83 | 24 |
+| catalog | max | 16 / 16 | 16 | 9 | 8 | 5 |
+| catalog | max_peel | 18 / 18 | 18 | 11 | 10 | 6 |
+| catalog | sub | 16 / 16 | 16 | 9 | 8 | 5 |
+| catalog | sub_peel | 18 / 18 | 18 | 11 | 10 | 6 |
+
+### F = 1
+
+| population | reading | eligible pair / comp | outside | outside, not served | outside, LIVE | LIVE at F=8 |
+|---|---|---|---|---|---|---|
+| bench | max | 17 / 17 | 17 | 11 | 6 | 1 |
+| bench | max_peel | 21 / 21 | 20 | 14 | 9 | 2 |
+| bench | sub | 76 / 69 | 73 | 27 | 13 | 2 |
+| bench | sub_peel | 82 / 75 | 78 | 32 | 16 | 3 |
+| corpus | max | 183 / 183 | 183 | 127 | 114 | 22 |
+| corpus | max_peel | 186 / 186 | 186 | 130 | 117 | 22 |
+| corpus | sub | 334 / 334 | 334 | 151 | 133 | 24 |
+| corpus | sub_peel | 354 / 354 | 354 | 167 | 138 | 24 |
+| catalog | max | 18 / 18 | 18 | 10 | 9 | 5 |
+| catalog | max_peel | 20 / 20 | 20 | 12 | 11 | 6 |
+| catalog | sub | 18 / 18 | 18 | 10 | 9 | 5 |
+| catalog | sub_peel | 21 / 21 | 21 | 13 | 11 | 6 |
+
+
+control: STRICT eligible set is a subset of GENEROUS for every population (asserted).
+
+## DETAIL for the STRICT (maximal literal runs, mandatory group repeats peeled) reading (variant max_peel), DFA route
+
+### by arm; arm = first-match arm admitting the pattern (fixed, disj, ffree; several branches: the weakest any branch needs)
+`ffree needed` = the pattern is composition-safe only through the factor-free arm (single branch: the sole arm; several branches: no all-disj and no equal-fixed-width composition exists): it exists only because of D151 add. 5.
+
+| population | F | eligible | fixed | disj | ffree first-match | ffree needed | single branch | several branches | equal P_i | mixed P_i | comp-safe | shape: sep / word / other |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench | 2 | 13 | 4 | 9 | 0 | 0 | 11 | 2 | 12 | 1 | 13 | 9 / 4 / 0 |
+| bench | 1 | 21 | 5 | 15 | 1 | 1 | 19 | 2 | 20 | 1 | 21 | 10 / 8 / 3 |
+| corpus | 2 | 135 | 44 | 91 | 0 | 0 | 135 | 0 | 135 | 0 | 135 | 19 / 115 / 1 |
+| corpus | 1 | 186 | 55 | 131 | 0 | 0 | 185 | 1 | 185 | 1 | 186 | 21 / 155 / 10 |
+| catalog | 2 | 18 | 7 | 11 | 0 | 0 | 18 | 0 | 18 | 0 | 18 | 16 / 1 / 1 |
+| catalog | 1 | 20 | 8 | 11 | 1 | 1 | 20 | 0 | 20 | 0 | 20 | 16 / 1 / 3 |
+
+### by family (DFA route, F = 2, not served by rev-end/landing in brackets)
+bench: 13 eligible; loglines 5 (4), bounded 2 (2), capability 2 (1), syntax 2 (1), utf8 2 (1)
+corpus: 135 eligible; tests/possessify 52 (46), tests/base 37 (19), tests/mrl 10 (8), tests/assertions 9 (5), tests/modifiers 7 (1), tests/offsetskip 6 (2), tests/litscan 4 (2), tests/counterk 3 (2), tests/altcls 2 (2), tests/startset 2 (2), tests/classes 1 (1), tests/quoting 1 (0), tests/utf8 1 (1)
+catalog: 18 eligible; catalog 18 (11)
+
+### OUTSIDE loglines/ipv6 and altwide/sfx-* (every one listed for bench and catalog; corpus by family)
+
+(F = 1 list: every bench pattern eligible at F >= 1, ratio shown; ratio < 2 rows are F=1-only)
+| id | L | ratio | arm | arms | br | comp | served | keyed | LIVE | dfa_scan / dfa_start / prefilter / handoff | weight ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| loglines/ipv4 | `.` | 7.50 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 2.2986 |
+| syntax/qnt-plus | `b` | 5.48 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0897 |
+| syntax/cls-s-lc | `sat` | 1.00 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0531 |
+| capability/wild-waf-crs-942160-sleep-benchmark | `(` | 34.38 | disj | disj/ffree | 2 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 0.0416 |
+| loglines/iso-ts | `-` | 15.00 | fixed | disj/ffree/fixed | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / none | 0.0140 |
+| loglines/kv-quoted | `="` | 1.00 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / first-class-bounded / 32 | 0.0085 |
+| syntax/mod-s | `done` | 1.00 | fixed | ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 5 | 0.0069 |
+| syntax/cls-v | `done` | 1.00 | disj | disj/ffree | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / none | 0.0058 |
+| syntax/cls-h | `=` | 1.95 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0051 |
+| loglines/uuid | `-` | 57.07 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set-bounded / none | 0.0010 |
+| loglines/stack-frame | `(` | 32.61 | disj | disj/ffree | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set-bounded / 0 | 0.0009 |
+| bounded/dotted4 | `.` | 7.50 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 0.0001 |
+| utf8/cls-s-nbsp | `b` | 5.48 | disj | disj/ffree | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / none | 0.0001 |
+| syntax/cls-n-uc | `m` | 2.89 | fixed | fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0001 |
+| bounded/csv5 | `,` | 148.97 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0000 |
+| capability/wild-validator-uuid-grok | `-` | 61.28 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / none | 0.0000 |
+| utf8/cls-s-ucp | `b` | 5.48 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0000 |
+
+catalog (realistic_patterns.txt), eligible at F >= 1:
+  realistic_patterns.txt:13 L=`-` ratio 15.00 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:14 L=`Z` ratio 1495.20 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:15 L=`/` ratio 18.00 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:16 L=`:` ratio 11.25 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:19 L=`:` ratio 11.25 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:21 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:23 L=`:` ratio 45.95 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:24 L=`://` ratio 3.08 arm disj (disj/ffree) served=False keyed=True LIVE=False
+  realistic_patterns.txt:26 L=`-` ratio 57.07 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:32 L=`-` ratio 13.31 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:36 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:38 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:40 L=`,` ratio 149.47 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:41 L=`\x09` ratio 400.28 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:42 L=`"` ratio 300.93 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:47 L=` HTTP/` ratio 1.00 arm ffree (ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:48 L=`@` ratio 1213.54 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:52 L=`) ` ratio 1.00 arm fixed (disj/ffree/fixed) served=True keyed=False LIVE=False
+  realistic_patterns.txt:54 L=`,` ratio 11.25 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:57 L=` ` ratio 5.86 arm disj (disj/ffree) served=False keyed=False LIVE=True
+
+corpus, eligible at F = 2, LIVE, by family: tests/possessify 43, tests/base 14, tests/mrl 6, tests/assertions 5, tests/altcls 2, tests/counterk 2, tests/offsetskip 2, tests/startset 2, tests/classes 1, tests/litscan 1, tests/utf8 1
+corpus, eligible at F = 1, LIVE, by family: tests/possessify 46, tests/litscan 27, tests/base 18, tests/mrl 6, tests/assertions 5, tests/startset 5, tests/altcls 2, tests/counterk 2, tests/island 2, tests/offsetskip 2, tests/classes 1, tests/utf8 1
+
+### bench weights (upper estimates, ms; walk_survey's K12 formula on any pattern)
+(F = 2 line first, then F = 1 and F = 8)
+eligible (F = 2): 13 patterns, 8.275 ms; ipv6 + sfx-*: 5.829 ms; OUTSIDE them: 2.446 ms (2.430 ms LIVE: not served, not keyed); ffree-only members: 0.000 ms
+  F = 1: 21 patterns, 8.355 ms (ipv6 + sfx-* 5.829 ms; outside 2.525 ms, of which LIVE 2.497 ms)
+  F = 8: 7 patterns, 5.887 ms (ipv6 + sfx-* 5.829 ms; outside 0.057 ms, of which LIVE 0.042 ms)
+top-weighted eligible: loglines/ipv6 5.829, loglines/ipv4 2.299, syntax/qnt-plus 0.090, capability/wild-waf-crs-942160-sleep-benchmark 0.042, loglines/iso-ts 0.014, loglines/uuid 0.001, loglines/stack-frame 0.001, bounded/dotted4 0.000, utf8/cls-s-nbsp 0.000, syntax/cls-n-uc 0.000
+
+## DETAIL for the GENEROUS (common L may be any contiguous sub-run, peeled) reading (variant sub_peel), DFA route
+
+### by arm; arm = first-match arm admitting the pattern (fixed, disj, ffree; several branches: the weakest any branch needs)
+`ffree needed` = the pattern is composition-safe only through the factor-free arm (single branch: the sole arm; several branches: no all-disj and no equal-fixed-width composition exists): it exists only because of D151 add. 5.
+
+| population | F | eligible | fixed | disj | ffree first-match | ffree needed | single branch | several branches | equal P_i | mixed P_i | comp-safe | shape: sep / word / other |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench | 2 | 18 | 9 | 9 | 0 | 0 | 16 | 2 | 17 | 1 | 18 | 11 / 5 / 2 |
+| bench | 1 | 82 | 68 | 14 | 0 | 2 | 66 | 16 | 71 | 11 | 75 | 23 / 42 / 17 |
+| corpus | 2 | 167 | 77 | 90 | 0 | 0 | 158 | 9 | 160 | 7 | 167 | 30 / 136 / 1 |
+| corpus | 1 | 354 | 224 | 130 | 0 | 0 | 337 | 17 | 343 | 11 | 354 | 66 / 253 / 35 |
+| catalog | 2 | 18 | 7 | 11 | 0 | 0 | 18 | 0 | 18 | 0 | 18 | 16 / 1 / 1 |
+| catalog | 1 | 21 | 9 | 11 | 1 | 1 | 21 | 0 | 21 | 0 | 21 | 16 / 2 / 3 |
+
+### by family (DFA route, F = 2, not served by rev-end/landing in brackets)
+bench: 18 eligible; utf8 7 (2), loglines 5 (4), bounded 2 (2), capability 2 (1), syntax 2 (1)
+corpus: 167 eligible; tests/possessify 52 (46), tests/base 41 (20), tests/litscan 14 (4), tests/assertions 12 (7), tests/utf8 12 (1), tests/mrl 10 (8), tests/modifiers 8 (1), tests/offsetskip 6 (2), tests/quoting 4 (1), tests/counterk 3 (2), tests/altcls 2 (2), tests/startset 2 (2), tests/classes 1 (1)
+catalog: 18 eligible; catalog 18 (11)
+
+### OUTSIDE loglines/ipv6 and altwide/sfx-* (every one listed for bench and catalog; corpus by family)
+
+(F = 1 list: every bench pattern eligible at F >= 1, ratio shown; ratio < 2 rows are F=1-only)
+| id | L | ratio | arm | arms | br | comp | served | keyed | LIVE | dfa_scan / dfa_start / prefilter / handoff | weight ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| loglines/ipv4 | `.` | 7.50 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 2.2986 |
+| utf8/ci-moskva | `\xbe\xd1` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.2237 |
+| syntax/qnt-plus | `b` | 5.48 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0897 |
+| syntax/cls-s-lc | `s` | 1.00 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0531 |
+| altwide/sh1-512 | `k` | 1.00 | fixed | fixed | 512 | 0 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0504 |
+| altwide/sh1-256 | `k` | 1.00 | fixed | fixed | 256 | 0 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0433 |
+| capability/wild-waf-crs-942160-sleep-benchmark | `(` | 34.38 | disj | disj/ffree | 2 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 0.0416 |
+| altwide/sh1-64 | `k` | 1.00 | fixed | fixed | 64 | 0 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0364 |
+| litrun/lit-l16 | `hijklmn` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / run-pinned / none | 0.0303 |
+| utf8/ci-strasse | `TRA\xc3\x9fE` | 23119.50 | fixed | disj/ffree/fixed | 1 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / 2 | 0.0216 |
+| litrun/lit-l40 | `EFGHIJKLM` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 31 | 0.0157 |
+| syntax/anc-m-caret | `tem` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | n | n | **y** | attempt / attempt-start / memchr / 0 | 0.0150 |
+| loglines/iso-ts | `-` | 15.00 | fixed | disj/ffree/fixed | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / none | 0.0140 |
+| utf8/ci-e-acute | `\xa9` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | y | n | n | unanchored / end-minus-width / memchr / none | 0.0095 |
+| loglines/kv-quoted | `="` | 1.00 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / first-class-bounded / 32 | 0.0085 |
+| syntax/mod-s | `tem` | 1.77 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 5 | 0.0069 |
+| syntax/cls-v | `tem` | 1.77 | fixed | disj/ffree/fixed | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / none | 0.0058 |
+| syntax/cls-h | `=` | 1.95 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0051 |
+| utf8/asr-b-ascii | `at` | 1.11 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set-bounded / 0 | 0.0045 |
+| utf8/alt-shared-char | `\x97\xa5` | 1.00 | fixed | disj/ffree/fixed | 3 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0015 |
+| utf8/qnt-counted-3b | `\x97\xa5\xe6\x9c` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / 0 | 0.0014 |
+| utf8/alt-nearmiss | `\x97\xa5\xe6\x9c` | 1.00 | fixed | disj/ffree/fixed | 2 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0013 |
+| utf8/qnt-bounded-4b | `\x98\x80` | 1.00 | fixed | disj/ffree/fixed | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set / 0 | 0.0011 |
+| loglines/uuid | `-` | 57.07 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set-bounded / none | 0.0010 |
+| loglines/stack-frame | `(` | 32.61 | disj | disj/ffree | 1 | 1 | n | y | n | unanchored / reverse-pass / offset-set-bounded / 0 | 0.0009 |
+| bounded/dotted4 | `.` | 7.50 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / byte-class / none | 0.0001 |
+| utf8/cls-s-nbsp | `b` | 5.48 | disj | disj/ffree | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / none | 0.0001 |
+| syntax/cls-n-uc | `m` | 2.89 | fixed | fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0001 |
+| utf8/ci-sigma | `\x83` | 2.00 | fixed | disj/ffree/fixed | 1 | 1 | y | n | n | unanchored / end-minus-width / byte-class / none | 0.0000 |
+| bounded/csv5 | `,` | 148.97 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0000 |
+| capability/wild-validator-uuid-grok | `-` | 61.28 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / none | 0.0000 |
+| utf8/ci-ascii-control | `B` | 5.48 | fixed | disj/ffree/fixed | 1 | 1 | y | n | n | unanchored / end-minus-width / byte-class / 0 | 0.0000 |
+| utf8/cls-s-ucp | `b` | 5.48 | disj | disj/ffree | 1 | 1 | n | n | **y** | unanchored / reverse-pass / memchr / none | 0.0000 |
+| utf8/lit-offset-at-tail | `\xa9` | 332.50 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0000 |
+| utf8/lit-sharp-s | `ra\xc3\x9f` | 42117.50 | fixed | disj/ffree/fixed | 1 | 1 | y | y | n | unanchored / end-minus-width / offset-set / 0 | 0.0000 |
+
+catalog (realistic_patterns.txt), eligible at F >= 1:
+  realistic_patterns.txt:13 L=`-` ratio 15.00 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:14 L=`Z` ratio 1495.20 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:15 L=`/` ratio 18.00 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:16 L=`:` ratio 11.25 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:19 L=`:` ratio 11.25 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:21 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:23 L=`:` ratio 45.95 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:24 L=`:/` ratio 3.08 arm disj (disj/ffree) served=False keyed=True LIVE=False
+  realistic_patterns.txt:26 L=`-` ratio 57.07 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:32 L=`-` ratio 13.31 arm fixed (disj/ffree/fixed) served=True keyed=True LIVE=False
+  realistic_patterns.txt:36 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:38 L=`.` ratio 7.50 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:40 L=`,` ratio 149.47 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:41 L=`\x09` ratio 400.28 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:42 L=`"` ratio 300.93 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:47 L=` HTTP/` ratio 1.00 arm ffree (ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:48 L=`@` ratio 1213.54 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:52 L=`) ` ratio 1.00 arm fixed (disj/ffree/fixed) served=True keyed=False LIVE=False
+  realistic_patterns.txt:54 L=`,` ratio 11.25 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:57 L=` ` ratio 5.86 arm disj (disj/ffree) served=False keyed=False LIVE=True
+  realistic_patterns.txt:60 L=`b` ratio 1.00 arm fixed (disj/ffree/fixed) served=False keyed=True LIVE=False
+
+corpus, eligible at F = 2, LIVE, by family: tests/possessify 43, tests/base 14, tests/assertions 7, tests/mrl 6, tests/litscan 3, tests/altcls 2, tests/counterk 2, tests/offsetskip 2, tests/startset 2, tests/classes 1, tests/utf8 1
+corpus, eligible at F = 1, LIVE, by family: tests/possessify 46, tests/litscan 30, tests/base 22, tests/assertions 10, tests/utf8 9, tests/mrl 6, tests/startset 5, tests/altcls 2, tests/counterk 2, tests/island 2, tests/offsetskip 2, tests/classes 1, tests/ucp 1
+
+### bench weights (upper estimates, ms; walk_survey's K12 formula on any pattern)
+(F = 2 line first, then F = 1 and F = 8)
+eligible (F = 2): 18 patterns, 8.297 ms; ipv6 + sfx-*: 5.829 ms; OUTSIDE them: 2.468 ms (2.452 ms LIVE: not served, not keyed); ffree-only members: 0.000 ms
+  F = 1: 82 patterns, 14.627 ms (ipv6 + sfx-* 11.646 ms; outside 2.981 ms, of which LIVE 2.887 ms)
+  F = 8: 10 patterns, 5.908 ms (ipv6 + sfx-* 5.829 ms; outside 0.079 ms, of which LIVE 0.063 ms)
+top-weighted eligible: loglines/ipv6 5.829, loglines/ipv4 2.299, syntax/qnt-plus 0.090, capability/wild-waf-crs-942160-sleep-benchmark 0.042, utf8/ci-strasse 0.022, loglines/iso-ts 0.014, loglines/uuid 0.001, loglines/stack-frame 0.001, bounded/dotted4 0.000, utf8/cls-s-nbsp 0.000
+
+## OFF-ROUTE (stage 2) populations, same gates, F = 2
+bench hybrid: strict 1, generous 1
+bench vm-only: strict 4, generous 4
+corpus hybrid: strict 123, generous 131
+corpus vm-only: strict 26, generous 34
+catalog hybrid: strict 3, generous 3
+catalog vm-only: strict 0, generous 0
+
+## Declines (DFA route, parsed, unanchored; best candidate's furthest gate), STRICT and GENEROUS
+bench max_peel: {'no-landmark': 87, 'no-common-L': 43, 'P-empty': 74, 'ok': 32, 'G1': 5, 'G2': 4}
+   G2 declines by the factor-free arm's reason: {'P-contains-L': 4}
+bench sub_peel: {'no-landmark': 87, 'no-common-L': 24, 'P-empty': 17, 'ok': 109, 'G1': 5, 'G2': 3}
+   G2 declines by the factor-free arm's reason: {'P-contains-L': 3}
+corpus max_peel: {'no-common-L': 131, 'no-landmark': 978, 'ok': 209, 'P-empty': 505, 'G1': 83, 'G2': 61}
+   G2 declines by the factor-free arm's reason: {'P-contains-L': 61}
+corpus sub_peel: {'no-common-L': 91, 'no-landmark': 978, 'ok': 423, 'P-empty': 328, 'G1': 88, 'G2': 59}
+   G2 declines by the factor-free arm's reason: {'P-contains-L': 59}
+catalog max_peel: {'ok': 23, 'no-landmark': 9, 'P-empty': 4}
+   G2 declines by the factor-free arm's reason: {}
+catalog sub_peel: {'ok': 23, 'no-landmark': 9, 'P-empty': 4}
+   G2 declines by the factor-free arm's reason: {}
+
+## Controls
+C2 (necessity against pcrec's own req_set, no shared code): 1857 patterns, 6008 landmark bytes checked, 0 violations (must be 0)
+C1 (hand-classified patterns) and C2' (arms vs rinner_model.py's own bookkeeping and factor_witness, 2,491 cases): rincensus.py --selftest
+C3 (sabotage): the table below; and rincensus.py --selftest --sabotage no-border|no-factor must FAIL (3 and 806 failures)
+weights control: walk_survey's K12 total reproduced to the third decimal (asserted at the top of this script)
+
+## Unparsed and refused (the census's blind spot, listed rather than dropped)
+bench unparsed (12): capability/bracket-array-define[unsupported-syntax], capability/codegrammar-xflag[unsupported-syntax], capability/wild-codegrammar-json-number-extended[unsupported-syntax], capability/wild-codegrammar-json-stringcontent-escape[unsupported-syntax], capability/wild-waf-crs-942360-concat-sqli[unsupported-syntax], sentinel/wild-waf-crs-942360-concat-sqli[unsupported-syntax], syntax/asr-k-uc[\K], syntax/bak-py[group-kind], syntax/lka-nonatomic[group-kind], syntax/lka-verb[group-kind], syntax/mod-x[unsupported-syntax], syntax/rec-define[unsupported-syntax]
+bench refused by pcrec itself (25): altwide/clsa-1024, altwide/clsd-1024, altwide/s-4096, altwide/w-1024, altwide/w-2048, bounded/cls-upto-65535, capability/mojibake-curly-quote, capability/negation-scope-lookbehind-var, capability/wild-datetime-datefinder-alternation, syntax/cnd-group, syntax/esc-ctrl, syntax/esc-octal-o, syntax/grp-branch-reset, syntax/grp-callout, syntax/grp-comment, syntax/msc-c-uc, syntax/msc-r-uc, syntax/msc-x-uc, syntax/vrb-accept, syntax/vrb-skip, syntax/xcl-minus, utf8/asr-b-cyr-ucp, utf8/cls-w-ucp, utf8/prp-ingreek, utf8/prp-l-anchored
+
+## SABOTAGE: the census re-run with one arm conjunct blind (K35: the arm must be load-bearing in the COUNT, and must be able to fail)
+`no-border` makes every L border-free; `no-factor` makes every P factor-free.  Eligible = DFA route, pair, F = 2 | F = 1; reading in brackets.
+
+| run | population | max_peel F=2 | max_peel F=1 | sub_peel F=2 | sub_peel F=1 |
+|---|---|---|---|---|---|
+| normal | bench | 13 | 21 | 18 | 82 |
+| normal | corpus | 135 | 186 | 167 | 354 |
+| normal | catalog | 18 | 20 | 18 | 21 |
+| no-border | bench | 13 | 21 | 18 | 82 |
+| no-border | corpus | 135 | 186 | 167 | 354 |
+| no-border | catalog | 18 | 20 | 18 | 21 |
+| no-factor | bench | 15 | 28 | 20 | 89 |
+| no-factor | corpus | 170 | 245 | 202 | 413 |
+| no-factor | catalog | 18 | 21 | 18 | 22 |

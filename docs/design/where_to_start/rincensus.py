@@ -734,7 +734,7 @@ def decide(tree, utf8, icase, key_ppm, mode="max", peel=False):
         needs_ffree = st == "ok" and comp and not comp_nf
         cand = dict(stage=st, comp_ok=(comp and st == "ok"), needs_ffree=needs_ffree, nbr=len(branches), ratio=ratio, key=key, nbranch=len(branches),
                     arms=[arm_names(a) if k == "ok" else [] for k, a, _ in bres], uniformP=(len(pcanon) == 1),
-                    union_ok=u_ok, union_arms=u_arms, L="".join(("\\x%02x" % min(r)) if not 32 <= min(r) < 127 or min(r) == 92 else chr(min(r)) for r in run),
+                    union_ok=u_ok, union_arms=u_arms, lhex="".join("%02x" % min(r) for r in run), single=[min(r) for r in run if len(r) == 1], L="".join(("\\x%02x" % min(r)) if not 32 <= min(r) < 127 or min(r) == 92 else chr(min(r)) for r in run),
                     ffree_why=[a.get("ffree_why", "") for _, a, _ in bres], pmin=[a["pmin"] for _, a, _ in bres],
                     pmax=[a["pmax"] for _, a, _ in bres])
         rank = {"P-empty": 0, "G1": 1, "G2": 2, "ok": 3}[st]
@@ -803,8 +803,19 @@ def pattern_row(r):
         o["nff_" + v] = int(d["needs_ffree"]) if "needs_ffree" in d else ""
         o["nbr_" + v] = d.get("nbr", "")
         o["L_" + v] = d.get("L", "")
+        o["lhex_" + v] = d.get("lhex", "")
         o["ffwhy_" + v] = ",".join(sorted({w for w in d.get("ffree_why", []) if w}))
         o["arms_all_" + v] = "/".join(sorted({a for br in d.get("arms", []) for a in br}))
+    # C2 (K35): the landmark's bytes must be NECESSARY according to pcrec's own req_set (src/facts/req.c, no shared code),
+    # checked for every candidate L the readings chose, on case-sensitive byte patterns where pcrec derived a set
+    req = G.intlist(f.get("req_set", "")) if f.get("req_set", "none") not in ("none", "") else []
+    if req and not r["icase"] and not ut:
+        chk = viol = 0
+        for v, d in decs.items():
+            if d.get("lhex") and d["stage"] in ("ok", "G2", "G1"):
+                lb = set(d["single"])                # case-pair positions are skipped: req_set holds one case
+                chk += len(lb); viol += len(lb - set(req))
+        o["c2_checked"] = chk; o["c2_viol"] = viol
     dec = decs[HEADLINE]
     o["stage"] = dec["stage"]
     if dec["stage"] in ("no-landmark", "no-common-L"):

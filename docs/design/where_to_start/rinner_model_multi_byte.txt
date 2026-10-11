@@ -34,7 +34,3 @@ cases: comp 429, gate_off 803, pair_not_comp 268
 distinct: 6000 cases, each branch admitted alone in 1275
 distinct-landmark scan                88382         15  ('(?:(?:a)Xa(?:^b)|(?:a+((?:a))?|\\bb)X(?:a*+b|a++$))', b'b\nbaaaXa', 0, (3, 8), (5, 8))
 selftest: PASS
-
-real	0m6.679s
-user	0m6.663s
-sys	0m0.015s

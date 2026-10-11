@@ -1,0 +1,80 @@
+== rincensus.py --selftest
+ok   [0-9]{3}-x                                 want fixed        got fixed
+ok   \d+@x                                      want disj         got disj
+ok   [a-z]+xy                                   want G2           got G2
+ok   (?:abcin|gnb|xyzg)ing                      want ffree        got ffree
+ok   (?:sing|abc)ing                            want G2           got G2
+ok   (?:abcin|xyzn)nin                          want G2           got G2
+ok   (?:abcin|xyzg)ing                          want ffree        got ffree
+ok   [a-z]+nin                                  want G2           got G2
+ok   (?i)(?:xb*a|b)aA                           want G2           got G2
+ok   (?:xb*a|b)aa                               want G2           got G2
+ok   (?:[a-f]+|[0-9]+)ing                       want disj         got disj
+ok   (?:\bfoo)bar                               want P-empty      got P-empty
+ok   (a+)\1x                                    want G1           got G1
+ok   (?>a+)@x                                   want G1           got G1
+ok   (?=a)b+@x                                  want G1           got G1
+ok   abc                                        want P-empty      got P-empty
+ok   \w+                                        want no-landmark  got no-landmark
+ok   (?:(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:[0-9a-f]{0,4}) want disj         got disj
+ok   [0-9a-f]{1,4}:x|[0-9a-f]{1,4}:y            want no-common-L  got no-common-L
+ok   yab|[xy]*abc                               want no-common-L  got no-common-L
+ok   x[a-y]*z|cq                                want no-common-L  got no-common-L
+ok   mixedP not uniform
+ok   equalP uniform
+C2 arms (factor+border, fixed width, alphabet) vs rinner_model.py's own bookkeeping and factor_witness: 2491 cases (804 with a factor), 0 disagreements
+selftest: 0 failed
+
+== rincensus.py --selftest --sabotage no-border  (must FAIL)
+ok   [0-9]{3}-x                                 want fixed        got fixed
+ok   \d+@x                                      want disj         got disj
+ok   [a-z]+xy                                   want G2           got G2
+ok   (?:abcin|gnb|xyzg)ing                      want ffree        got ffree
+ok   (?:sing|abc)ing                            want G2           got G2
+FAIL (?:abcin|xyzn)nin                          want G2           got ffree
+ok   (?:abcin|xyzg)ing                          want ffree        got ffree
+ok   [a-z]+nin                                  want G2           got G2
+FAIL (?i)(?:xb*a|b)aA                           want G2           got ffree
+FAIL (?:xb*a|b)aa                               want G2           got ffree
+ok   (?:[a-f]+|[0-9]+)ing                       want disj         got disj
+ok   (?:\bfoo)bar                               want P-empty      got P-empty
+ok   (a+)\1x                                    want G1           got G1
+ok   (?>a+)@x                                   want G1           got G1
+ok   (?=a)b+@x                                  want G1           got G1
+ok   abc                                        want P-empty      got P-empty
+ok   \w+                                        want no-landmark  got no-landmark
+ok   (?:(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:[0-9a-f]{0,4}) want disj         got disj
+ok   [0-9a-f]{1,4}:x|[0-9a-f]{1,4}:y            want no-common-L  got no-common-L
+ok   yab|[xy]*abc                               want no-common-L  got no-common-L
+ok   x[a-y]*z|cq                                want no-common-L  got no-common-L
+ok   mixedP not uniform
+ok   equalP uniform
+C2 arms (factor+border, fixed width, alphabet) vs rinner_model.py's own bookkeeping and factor_witness: 2491 cases (804 with a factor), 0 disagreements
+selftest: 3 failed
+
+== rincensus.py --selftest --sabotage no-factor  (must FAIL)
+ok   [0-9]{3}-x                                 want fixed        got fixed
+ok   \d+@x                                      want disj         got disj
+FAIL [a-z]+xy                                   want G2           got ffree
+ok   (?:abcin|gnb|xyzg)ing                      want ffree        got ffree
+FAIL (?:sing|abc)ing                            want G2           got ffree
+ok   (?:abcin|xyzn)nin                          want G2           got G2
+ok   (?:abcin|xyzg)ing                          want ffree        got ffree
+ok   [a-z]+nin                                  want G2           got G2
+ok   (?i)(?:xb*a|b)aA                           want G2           got G2
+ok   (?:xb*a|b)aa                               want G2           got G2
+ok   (?:[a-f]+|[0-9]+)ing                       want disj         got disj
+ok   (?:\bfoo)bar                               want P-empty      got P-empty
+ok   (a+)\1x                                    want G1           got G1
+ok   (?>a+)@x                                   want G1           got G1
+ok   (?=a)b+@x                                  want G1           got G1
+ok   abc                                        want P-empty      got P-empty
+ok   \w+                                        want no-landmark  got no-landmark
+ok   (?:(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:[0-9a-f]{0,4}) want disj         got disj
+ok   [0-9a-f]{1,4}:x|[0-9a-f]{1,4}:y            want no-common-L  got no-common-L
+ok   yab|[xy]*abc                               want no-common-L  got no-common-L
+ok   x[a-y]*z|cq                                want no-common-L  got no-common-L
+ok   mixedP not uniform
+ok   equalP uniform
+C2 arms (factor+border, fixed width, alphabet) vs rinner_model.py's own bookkeeping and factor_witness: 2491 cases (804 with a factor), 804 disagreements
+selftest: 806 failed
