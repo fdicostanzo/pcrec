@@ -409,7 +409,7 @@ trailer `== rlhbuild chain COMPLETE`): `make`, `make strict`, the FULL
 `make test` through `scripts/perfrun --label rlhbuild` (`build/land/test.log`;
 verdict `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`), `make test-axes`
 (`axes.log`), `make test-recursion-identity` (`recid.log`; FILEPIN self-pinned
-to `e20b4bbc`, this lane's last src commit), `scripts/emit_sweep.py --ref HEAD
+to `a6dfa071`, this lane's last src commit), `scripts/emit_sweep.py --ref HEAD
 --arms start` (`sweep.log`: the start-arm DIFFER floors; `-fno-req-handoff`'s
 differ count RISES with the byte landmarks, a floor is a minimum, and
 `-fno-start-set`'s may FALL where the re-entry now outranks a hat, which would
