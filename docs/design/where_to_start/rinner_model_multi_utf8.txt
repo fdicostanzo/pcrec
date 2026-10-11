@@ -1,0 +1,28 @@
+# rinner_model_multi.py: libpcre2 10.46 2025-08-27, seed 2
+multi: 4000 cases compiled (uncompilable 0), seed 2, UTF
+  gate:comp                                        715
+  gate:comp-needs-strong-arm                       617
+  gate:g1                                         1715
+  gate:mixed-P (not all P_i equal text)            707
+  gate:pair                                        904
+  gate:pair-not-comp                               189
+  gate:samew                                        98
+  gate:strong                                      672
+variant                              checks   mismatch  first witness (R, subject, startpos, truth, model)
+floor[strong]                         46598          0  
+floor[strong]/findall                  8064          0  
+floor_bytehit[strong]                 46598         82  ('(?:(?:é+?é?|(éb{2}|éa[ab])éX*)Xé(?:.++a{2}|(?!X)(?!b))|(?:é)Xé(?:(?<!X)X|[aX]?b[^X]{0,2})|(?:[ab]b{0,2})Xé(?:X))', b'b\xc3\xa9X\xc3\xa9', 0, (1, 6), None)
+floor_bytehit[strong]/findall          8064         31  ('(?:(?:é+?é?|(éb{2}|éa[ab])éX*)Xé(?:.++a{2}|(?!X)(?!b))|(?:é)Xé(?:(?<!X)X|[aX]?b[^X]{0,2})|(?:[ab]b{0,2})Xé(?:X))', b'b\xc3\xa9X\xc3\xa9', 0, [(1, 6)], [])
+floor_end[strong]                     46598          5  ('(?:(?:é[aX]|[^X]é[aX]+?)Xé(?:[^X]*|(X*+)é?é+?)|(?:a^é+|[ab]{0,2}?)Xé(?:b+b*?é))', b'XbX\xc3\xa9XX\xc3\xa9X', 0, (3, 9), None)
+floor_end[strong]/findall              8064          1  ('(?:(?:é[aX]|[^X]é[aX]+?)Xé(?:[^X]*|(X*+)é?é+?)|(?:a^é+|[ab]{0,2}?)Xé(?:b+b*?é))', b'XbX\xc3\xa9XX\xc3\xa9X', 0, [(3, 9)], [])
+gate_off[split-ambiguous]             56229          9  ('(?:(?:b[ab]?X+|X*(?:.{2})*)é(?:a*)|(?:ab{2}X|aX)é(?:^X^)|(?:é[^X]*)é(?:é{1,3}+(éa|bb{2}b){0,2}é))', b'a\xc3\xa9\nX\nb\xc3\xa9\xc3\xa9a', 3, (6, 12), (7, 9))
+gate_off[split-ambiguous]/findall       9732          3  ('(?:(?:b[ab]?X+|X*(?:.{2})*)é(?:a*)|(?:ab{2}X|aX)é(?:^X^)|(?:é[^X]*)é(?:é{1,3}+(éa|bb{2}b){0,2}é))', b'a\xc3\xa9\nX\nb\xc3\xa9\xc3\xa9a', 0, [(1, 3), (6, 12)], [(1, 3), (7, 9), (9, 12)])
+pair_not_comp                         13175          0  
+pair_not_comp/findall                  2268          0  
+tactic[comp]                          49617          0  
+tactic[comp]/findall                   8580          0  
+unionmin[comp]                        49617         56  ('(?:(?:Xb{2}X|a)Xé(?:\\bX)|(?:(a?a(é{1,3}|$b)*?)|[ab])Xé(?:aX))', b'\xc3\xa9XaaaX\xc3\xa9X', 0, (5, 10), None)
+unionmin[comp]/findall                 8580         22  ('(?:(?:Xb{2}X|a)Xé(?:\\bX)|(?:(a?a(é{1,3}|$b)*?)|[ab])Xé(?:aX))', b'\xc3\xa9XaaaX\xc3\xa9X', 0, [(5, 10)], [])
+distinct: 4000 cases, each branch admitted alone in 893
+distinct-landmark scan                61562          5  ('(?:(?:Xa*|$)Xé(?:X?a)|(?:a|X*?\\bb{0,2})é(?:a++Xa{1,3}?|é*a))', b'\n\xc3\xa9aXXX\xc3\xa9aa', 0, (4, 10), (5, 10))
+selftest: PASS

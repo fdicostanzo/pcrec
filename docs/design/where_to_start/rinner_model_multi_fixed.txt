@@ -1,0 +1,47 @@
+# rinner_model_multi.py: libpcre2 10.46 2025-08-27, seed 1
+== F4 (?i)(?:xb*a|b)aA   subject b'xbaaa'   libpcre2 truth from 0: (0, 5)
+   gate: pair=False comp=False strong=False samew=False; arms per branch: [{'fixed': False, 'disj': False, 'ffree': False, 'empty': False}]  (fold variants of L: ['AA', 'Aa', 'aA', 'aa'])
+   plain          from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor          from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor_end      from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor_bytehit  from 0: None       startpos mismatches 2, find-all WRONG
+   -> declined by the gate: True
+== F4' (?:xb*a|b)aa   subject b'xbaaa'   libpcre2 truth from 0: (0, 5)
+   gate: pair=False comp=False strong=False samew=False; arms per branch: [{'fixed': False, 'disj': False, 'ffree': False, 'empty': False}]
+   plain          from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor          from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor_end      from 0: (1, 4)     startpos mismatches 1, find-all WRONG
+   floor_bytehit  from 0: None       startpos mismatches 2, find-all WRONG
+   -> declined by the gate: True
+== F3 b[ax]+ab   subject b'abxab'   libpcre2 truth from 0: (1, 5)
+   gate: pair=True comp=True strong=True samew=False; arms per branch: [{'fixed': False, 'disj': False, 'ffree': True, 'empty': False}]
+   plain          from 0: (1, 5)     startpos mismatches 0, find-all ok
+   floor          from 0: (1, 5)     startpos mismatches 0, find-all ok
+   floor_end      from 0: None       startpos mismatches 1, find-all WRONG
+   floor_bytehit  from 0: None       startpos mismatches 2, find-all WRONG
+== F3' (?:dog|cat)ing   subject b'doging'   libpcre2 truth from 0: (0, 6)
+   gate: pair=True comp=True strong=True samew=True; arms per branch: [{'fixed': True, 'disj': True, 'ffree': True, 'empty': False}]
+   plain          from 0: (0, 6)     startpos mismatches 0, find-all ok
+   floor          from 0: (0, 6)     startpos mismatches 0, find-all ok
+   floor_end      from 0: (0, 6)     startpos mismatches 0, find-all ok
+   floor_bytehit  from 0: None       startpos mismatches 1, find-all WRONG
+== F1 (?:[ab]+:x|b:y)   subject b'ab:y'   libpcre2 truth from 0: (1, 4)
+   gate: pair=True comp=True strong=True samew=False; arms per branch: [{'fixed': False, 'disj': True, 'ffree': True, 'empty': False}, {'fixed': True, 'disj': True, 'ffree': True, 'empty': False}]
+   plain          from 0: (1, 4)     startpos mismatches 0, find-all ok
+   floor          from 0: (1, 4)     startpos mismatches 0, find-all ok
+   floor_end      from 0: (1, 4)     startpos mismatches 0, find-all ok
+   floor_bytehit  from 0: (1, 4)     startpos mismatches 0, find-all ok
+   unionmin       from 0: None       startpos mismatches 1, find-all WRONG
+== C  (?:aq|[abq]{5}q)   subject b'bbaqbq'   libpcre2 truth from 0: (0, 6)
+   gate: pair=True comp=False strong=False samew=False; arms per branch: [{'fixed': True, 'disj': True, 'ffree': True, 'empty': False}, {'fixed': True, 'disj': False, 'ffree': False, 'empty': False}]
+   plain          from 0: (2, 4)     startpos mismatches 1, find-all WRONG
+   floor          from 0: (2, 4)     startpos mismatches 1, find-all WRONG
+   floor_end      from 0: (2, 4)     startpos mismatches 1, find-all WRONG
+   floor_bytehit  from 0: (2, 4)     startpos mismatches 1, find-all WRONG
+   unionmin       from 0: (2, 4)     startpos mismatches 1, find-all WRONG
+   -> declined by the gate: True
+== F2 yab|[xy]*abc   subject b'xyabc'   truth (0, 5)   one scan over the distinct landmarks ['yab', 'abc'] -> (1, 4)
+   -> each branch alone is admitted: [True, True]; common L across the branches: none -> DECLINED by the common-L rule
+== F2 x[a-y]*z|cq   subject b'xcqz'   truth (0, 4)   one scan over the distinct landmarks ['z', 'cq'] -> (1, 3)
+   -> each branch alone is admitted: [True, True]; common L across the branches: none -> DECLINED by the common-L rule
+selftest: PASS
