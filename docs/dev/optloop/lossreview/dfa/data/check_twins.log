@@ -1,0 +1,26 @@
+SAME   hex8-bounded__plain: 87/87 subjects, 923 matches (base = twin = libpcre2 10.46, span for span)
+SAME   wild-waf-crs-942140-dbnames__plain: 87/87 subjects, 8 matches (base = twin = libpcre2 10.46, span for span)
+SAME   wild-codegrammar-json-constant__plain: 87/87 subjects, 1 matches (base = twin = libpcre2 10.46, span for span)
+SAME   hex8-bounded__nostart: 87/87 subjects, 923 matches (base = twin = libpcre2 10.46, span for span)
+SAME   wild-waf-crs-942140-dbnames__nostart: 87/87 subjects, 8 matches (base = twin = libpcre2 10.46, span for span)
+SAME   wild-codegrammar-json-constant__nostart: 87/87 subjects, 1 matches (base = twin = libpcre2 10.46, span for span)
+SAME   union-select__select_c: 87/87 subjects, 10 matches (base = twin = libpcre2 10.46, span for span)
+SAME   union-select__from_m: 87/87 subjects, 10 matches (base = twin = libpcre2 10.46, span for span)
+SAME   union-select__from_f: 87/87 subjects, 10 matches (base = twin = libpcre2 10.46, span for span)
+SAME   union-select__union_u: 87/87 subjects, 10 matches (base = twin = libpcre2 10.46, span for span)
+SAME   mod-i__k101: 45/45 subjects, 8075 matches (base = twin = libpcre2 10.46, span for span)
+SAME   mod-r__k101: 45/45 subjects, 8075 matches (base = twin = libpcre2 10.46, span for span)
+SAME   email-owasp__precheck: 87/87 subjects, 1 matches (base = twin = libpcre2 10.46, span for span)
+SAME   email-owasp__deferpre: 87/87 subjects, 1 matches (base = twin = libpcre2 10.46, span for span)
+SAME   line-80__land: 54/54 subjects, 19 matches (base = twin = libpcre2 10.46, span for span)
+SAME   cls-atleast-4096__land: 54/54 subjects, 3 matches (base = twin = libpcre2 10.46, span for span)
+SAME   concat-sqli__split: 87/87 subjects, 12 matches (base = twin = libpcre2 10.46, span for span)
+SAME   high-byte-run__hiskip: 87/87 subjects, 2 matches (base = twin = libpcre2 10.46, span for span)
+  DIFF mod-i__k101PLANT t-1m.bin: base matches=6030 twin matches=5694 p2 matches=6030
+  DIFF mod-i__k101PLANT t-256k.bin: base matches=1632 twin matches=1557 p2 matches=1632
+  DIFF mod-i__k101PLANT t-64k.bin: base matches=400 twin matches=377 p2 matches=400
+  DIFF mod-i__k101PLANT f-cat-mixed.bin: base matches=1 twin matches=0 p2 matches=1
+  DIFF mod-i__k101PLANT f-cat-uc.bin: base matches=1 twin matches=0 p2 matches=1
+  DIFF mod-i__k101PLANT l-case.bin: base matches=7 twin matches=4 p2 matches=7
+DIFF   mod-i__k101PLANT: 6 of 45
+CONTROL OK: the planted twin is caught
