@@ -160,8 +160,10 @@
 | `vrun-w16` | the 16-byte vector run scan that `-fmemfn-simd` adds to a FUNC whose predicate is one run (`tuning.md` §2.43) |
 | `vrun-w32` | the same form a level up, the 32-byte arm; its short spans fall to `vrun-w16` where both render. Denied, `vrun-w16` is the site's top arm |
 | `vrun-kb` | the vrun rows' second filter position, which the kit takes from pcrec's rarity ranking (`mf_pred.rank_*`, D157). Denied, both rows filter on the scanned position alone |
+| `vrun-trim` | the vrun rows' trimmed verify: each candidate's run compare skips the positions the candidate mask already tested (the scanned position, and the second filter position where `vrun-kb` is not denied). Denied, both rows verify every candidate over the whole run |
+| `vrun-pad` | the vrun rows' padded verify: in the main block loop, a run of 3 or 5 to 7 bytes is verified as ONE wider masked word (4 or 8 bytes, its bytes past the run masked off), the loop holding the bytes past the run that word reads. Denied, both rows verify by the run compare's words, as `vrun-trim` describes |
 
-<a id="s6-p8b"></a>[6¶8b] `memfn` section floor: 3
+<a id="s6-p8b"></a>[6¶8b] `memfn` section floor: 5
 
 <a id="s6-p9"></a>[6¶9] **Reachability of the multi-row values.** On a stock build, `default` (`a(b|c)+d`), `option` (`a(b|c)+d --unroll=4`), `denied` (`a(b|c)+d -fno-size-term`) and `size-model` (the nested-repeat pattern `tests/codegen/run_size_term.sh` calls `NEST8`, with `--features all`) are reached directly, and `table`'s `none` (`\B\b` with `--features all`, a proven-empty engine, `RX_DFA_SCAN "empty"`) and `mixed` (`[01]*1[01]{13}`) likewise. `cap-rescue` and `capacity-declined` are reached by no pattern-and-flags combination on a stock build; `tests/codegen/run_size_term.sh` reaches them through a reference compiler built with a lowered `PCREC_SIZE_TERM_THRESHOLD`/`PCREC_MAX_VM_EMIT_CODE_BYTES`, because the CLI can only raise those limits. `size-model-declined` has no cited natural witness.
 

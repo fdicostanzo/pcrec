@@ -47,6 +47,31 @@
  * word's offset is `L - W`, so the compare never reads past the bytes the
  * caller bounded.
  *
+ * THE TRIMMED COMPARE (`run_cmp_render_trim`, R-14: vrun.c's verify) is the
+ * same row's text less positions its caller already tested under the same
+ * mask: the row and the word width are the whole run's, a proven position
+ * (and in the words form one an earlier window compared) is a don't-care of
+ * its window, and a window left with none is not loaded. An exact run
+ * trimmed is compared byte by byte (the `memcmp` row compares one string).
+ *
+ * THE PADDED COMPARE (`run_cmp_render_pad`, R-14 follow-up: vrun.c's main
+ * path) reads MORE than the run: ONE word of the smallest width of 4 and 8
+ * that covers a run the words row would split into two (L in {3, 5, 6, 7};
+ * at L in {2, 4, 8} that row's one word is already the whole run), masked
+ * to 0x00 past the run's end and at the positions the caller proved, and
+ * compared against the run's bytes padded with zeros. It is not a row of the
+ * table: it is the words form's spelling where the caller STATES how many
+ * bytes past the run it may read (`over`, an argument with no default;
+ * `run_cmp_pad_over` says how many the form needs), so it applies only where
+ * the walk picked a words-form row (MF_D_RUN_OVERLAP reaches it as it
+ * reaches those). Its width is no helper `run_cmp_prepare` declared, and a
+ * helper declared under the caller's guard would mark the width emitted for
+ * a later scalar use (vrun.c, the floor rule), so the form loads through
+ * locals the caller's function declares (`run_cmp_pad_decl`): `pk`/`pt`, the
+ * mask and the padded run by `memcpy` from string literals (folded to
+ * immediates: endian-neutral, as the words form), and `pw`, the subject's
+ * word.
+ *
  * THE HELPERS are the art's: a width is RECORDED when a words compare uses
  * it (`wused`), DECLARED once (`wemitted`) by `mf_flush_helpers` or by a FUNC
  * definition's `run_cmp_prepare`, which declares every pending width ahead
@@ -220,32 +245,52 @@ static int rc_kword_is(const rc_run *r, int at, int w, int v)
     return 1;
 }
 
+/* Is run position `i` one the caller proved (`proven[0..np)`; NULL: none)? */
+static int rc_proven(const int *proven, unsigned np, int i)
+{
+    for (unsigned j = 0; proven && j < np; j++)
+        if (proven[j] == i) return 1;
+    return 0;
+}
+
 /* The words form: `<p>_w<W>(base + o) == <p>_w<W>("<t[o..o+W)>")` for each
  * window of D(L) (offsets 0, W, 2W, ... while a whole word fits, then the
  * last word moved back to end exactly at L), joined by `&&`. A word with a
  * mask is `(<p>_w<W>(base + o) & <p>_w<W>("<k>")) == <p>_w<W>("<t>")`; one
  * whose K is all 0xFF is the unmasked text, and one whose K is all 0x00 is
- * not loaded at all (pay for what you use, at word grain). */
+ * not loaded at all (pay for what you use, at word grain).
+ * TRIMMED (`proven` given, run_cmp_render_trim): a proven position, and one
+ * an earlier window already compared (the last word's overlap), is a
+ * don't-care of its window, so a window left with none is not loaded. The
+ * width stays the full run's: the one helper run_cmp_prepare declared. */
 static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
-                          const rc_run *r)
+                          const rc_run *r, const int *proven, unsigned np)
 {
     const char *p = art->prefix;
-    int w = rc_width(r->len), nw = 0;
+    int w = rc_width(r->len), nw = 0, done = 0;
     for (int o = 0; o < r->len; o += w) {
         int at = o + w <= r->len ? o : r->len - w;   /* the last word ends at L */
-        int exact = rc_kword_is(r, at, w, 0xFF);
-        if (!exact && rc_kword_is(r, at, w, 0x00)) continue;
+        uint8_t k[8], t[8];
+        for (int i = 0; i < w; i++) {
+            int skip = proven && (at + i < done || rc_proven(proven, np, at + i));
+            k[i] = skip ? 0x00 : r->k ? r->k[at + i] : 0xFF;
+            t[i] = skip ? 0x00 : r->t[at + i];
+        }
+        done = at + w;
+        rc_run win = { t, k, w };
+        int exact = rc_kword_is(&win, 0, w, 0xFF);
+        if (!exact && rc_kword_is(&win, 0, w, 0x00)) continue;
         if (nw++) c->puts(c->u, " && ");
         if (!exact) c->puts(c->u, "(");
         kit_out(c, "%s_w%d(", p, w);
         rc_base(c, base, off + at);
         if (!exact) {   /* `(w(b + o) & w("<K>")` -- the mask, the same load of a literal */
             kit_out(c, ") & %s_w%d(\"", p, w);
-            c->cstr(c->u, r->k + at, (size_t)w);
+            c->cstr(c->u, k, (size_t)w);
             c->puts(c->u, "\")");
         }
         kit_out(c, ") == %s_w%d(\"", p, w);
-        c->cstr(c->u, r->t + at, (size_t)w);
+        c->cstr(c->u, t, (size_t)w);
         c->puts(c->u, "\")");
     }
     if (nw == 0) c->puts(c->u, "1");   /* every position a don't-care */
@@ -254,19 +299,41 @@ static void rc_emit_words(mf_art *art, mf_sink *c, const char *base, int off,
 }
 
 /* The bytes form: `(base)[off + i] == T` or `((base)[off + i] & K) == T` per
- * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded. */
+ * position, joined by `&&`; a K-0x00 position is a don't-care, not loaded,
+ * and so is a position the caller proved (`proven`, as rc_emit_words). */
 static void rc_emit_bytes(mf_sink *c, const char *base, int off,
-                          const rc_run *r)
+                          const rc_run *r, const int *proven, unsigned np)
 {
     int nb = 0;
     for (int i = 0; i < r->len; i++) {
         int k = r->k ? r->k[i] : 0xFF;
-        if (k == 0x00) continue;
+        if (k == 0x00 || rc_proven(proven, np, i)) continue;
         if (nb++) c->puts(c->u, " && ");
         if (k == 0xFF) kit_out(c, "(%s)[%d] == %d", base, off + i, r->t[i]);
         else kit_out(c, "((%s)[%d] & %d) == %d", base, off + i, k, r->t[i]);
     }
     if (nb == 0) c->puts(c->u, "1");
+}
+
+/* The padded word's width for run `r` (the smallest of 4 and 8 that covers
+ * it), or 0 where the padded form does not apply: a run longer than 8, or
+ * one whose length is a word width (the words form's one word). */
+static int rc_pad_width(const rc_run *r)
+{
+    if (r->len > 8 || rc_width(r->len) == r->len) return 0;
+    return r->len <= 4 ? 4 : 8;
+}
+
+/* The padded word's mask `k` and value `t` (`w` bytes): the run's, 0x00 past
+ * its end and at a proven position. */
+static void rc_pad_bytes(const rc_run *r, const int *proven, unsigned np, int w,
+                         uint8_t *k, uint8_t *t)
+{
+    for (int i = 0; i < w; i++) {
+        int in = i < r->len && !rc_proven(proven, np, i);
+        k[i] = in ? r->k ? r->k[i] : 0xFF : 0x00;
+        t[i] = in ? r->t[i] : 0x00;
+    }
 }
 
 int run_cmp_sat(const mf_term *t)
@@ -277,8 +344,10 @@ int run_cmp_sat(const mf_term *t)
     return 1;
 }
 
-int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
-                   int32_t off, mf_sink *c)
+/* The compare of run `t` at `base + off` by the row the walk picks, skipping
+ * the run positions `proven[0..np)` (NULL: the whole run). */
+static int rc_render(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                     const int *proven, unsigned np, mf_sink *c)
 {
     rc_run r = rc_of(t);
     const rc_row *row = rc_row_of(art, t, &r);
@@ -286,15 +355,18 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
     if (kit_sink_ok(art, c, "runcmp")) return -1;
     if (row->form != RC_F_BYTES && !c->cstr)
         return kit_fail(art, "runcmp: the sink offers no cstr op");
-    switch (row->form) {
+    /* a trimmed exact run is compared byte by byte: its uncovered positions
+       are no longer one constant-length string */
+    int form = proven && row->form == RC_F_MEMCMP ? RC_F_BYTES : row->form;
+    switch (form) {
     case RC_F_WORDS:
-        rc_emit_words(art, c, base, off, &r);
+        rc_emit_words(art, c, base, off, &r, proven, np);
         /* the helpers' memcpy: a constant 2-8 byte load, the record's one
            exclusion (§R4.3.3), so nothing is noted */
         art->includes |= MF_INC_STRING_H;
         break;
     case RC_F_BYTES:
-        rc_emit_bytes(c, base, off, &r);
+        rc_emit_bytes(c, base, off, &r, proven, np);
         break;
     case RC_F_MEMCMP:
         c->puts(c->u, "!memcmp(");
@@ -307,6 +379,71 @@ int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
         break;
     }
     return 0;
+}
+
+int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
+                   int32_t off, mf_sink *c)
+{
+    return rc_render(art, t, base, off, NULL, 0, c);
+}
+
+int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
+                        int32_t off, const int *proven, unsigned np, mf_sink *c)
+{
+    return rc_render(art, t, base, off, proven, np, c);
+}
+
+int run_cmp_pad_over(mf_art *art, const mf_term *t)
+{
+    rc_run r = rc_of(t);
+    const rc_row *row = rc_row_of(art, t, &r);
+    if (!row) return -1;    /* rc_row_of recorded the refusal */
+    int w = row->form == RC_F_WORDS ? rc_pad_width(&r) : 0;
+    return w ? w - r.len : 0;
+}
+
+int run_cmp_pad_decl(mf_art *art, const mf_term *t, const int *proven, unsigned np,
+                     const char *indent, mf_sink *c)
+{
+    rc_run r = rc_of(t);
+    int w = rc_pad_width(&r);
+    if (!w) return kit_fail(art, "runcmp: no padded form for a run of %d bytes", r.len);
+    if (kit_sink_ok(art, c, "runcmp")) return -1;
+    if (!c->cstr) return kit_fail(art, "runcmp: the sink offers no cstr op");
+    uint8_t k[8], v[8];
+    rc_pad_bytes(&r, proven, np, w, k, v);
+    kit_out(c, "%suint%d_t pw, pk, pt;\n%smemcpy(&pk, \"", indent, 8 * w, indent);
+    c->cstr(c->u, k, (size_t)w);
+    kit_out(c, "\", %d);\n%smemcpy(&pt, \"", w, indent);
+    c->cstr(c->u, v, (size_t)w);
+    kit_out(c, "\", %d);\n", w);
+    /* the memcpy of 4/8 bytes: the helpers' idiom, not noted (§R4.3.3) */
+    art->includes |= MF_INC_STRING_H;
+    return 0;
+}
+
+int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                       unsigned over, mf_sink *c)
+{
+    int need = run_cmp_pad_over(art, t);
+    if (need < 0) return -1;
+    if (need == 0 || (unsigned)need > over)
+        return kit_fail(art, "runcmp: the padded compare reads %d byte(s) past the run, "
+                        "the caller states %u", need, over);
+    if (kit_sink_ok(art, c, "runcmp")) return -1;
+    rc_run r = rc_of(t);
+    kit_out(c, "((memcpy(&pw, ");
+    rc_base(c, base, off);
+    kit_out(c, ", %d), pw) & pk) == pt", rc_pad_width(&r));
+    return 0;
+}
+
+int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np)
+{
+    for (uint32_t i = 0; i < t->run_len; i++)
+        if ((t->mask ? t->mask[i] : 0xFF) != 0x00 && !rc_proven(proven, np, (int)i))
+            return 0;
+    return 1;
 }
 
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c)

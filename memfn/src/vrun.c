@@ -31,9 +31,10 @@
  * the broadcast byte, a movemask; where the ranking gives a second position
  * KB (below), its compare is ANDed in before the movemask. Each set lane, lowest first, is verified
  * by the BODY's own run compare (runcmp.c, the row the walk picks; [r9 C-12]:
- * the `denies` class reaches it as it reaches the floor), and the first
- * that verifies is returned: the leftmost candidate >= `pos` whose whole run
- * holds, THE CONTRACT ofsskip.c's header states. Blocks ascend; past the
+ * the `denies` class reaches it as it reaches the floor) less the positions
+ * the mask proved (VERIFY TRIM, below), and the first that verifies is
+ * returned: the leftmost candidate >= `pos` whose whole run holds, THE
+ * CONTRACT ofsskip.c's header states. Blocks ascend; past the
  * last whole block, ONE overlapped final block ends at `n - T`, its lanes
  * below the next untested candidate masked off.
  *
@@ -64,8 +65,48 @@
  *     joint rates [OPT-REQPOS] measured) is UNMEASURED and has no variant:
  *     a distance threshold would be a new constant, built when the
  *     DEFAULT-vs-deny reading shows the pair losing to KA alone.
- *   - The verify is unchanged: every passing lane is verified by the whole
- *     run compare, so the answers are exact whichever positions are read.
+ *   - The answers are exact whichever positions are read: the verify
+ *     covers every run position the mask did not (VERIFY TRIM).
+
+ * VERIFY TRIM (request R-14, D147 addendum 15). A set lane has already
+ * passed `(s[c + K] & M) == V` at KA, and at KB where the mask reads one:
+ * the run compare's own test of those positions, under the same mask. The
+ * verify therefore compares only the OTHER positions (runcmp.c's
+ * `run_cmp_render_trim`: the row the whole run's walk picks, at its word
+ * width, the proven positions and those an earlier word compared made
+ * don't-cares, a word left with none not loaded). Where nothing is left
+ * (a two-byte run read at both positions, or every other position a
+ * don't-care), the lowest set lane IS the answer and the loop returns it
+ * with no verify. DERIVED: dropping a position the filter tested under the
+ * same mask cannot change an answer. The scalar `__body` is unchanged: its
+ * `memchr` stream proves KA's two members only. The deny `no-vrun-trim`
+ * verifies the whole run (R-13's and rankuse's verify byte for byte), the
+ * arm R-14's re-timing measures the trim against.
+
+ * PADDED VERIFY (R-14 follow-up, Frank 2026-10-11: a verify costs loads and
+ * branches, not bytes). The run compare's words never read past the run, so
+ * a run of 3 or 5-7 bytes is two overlapping words (two loads, two
+ * branches). In the MAIN path it is ONE word of the next width up (4 or 8),
+ * masked to 0x00 past the run's end and at the proven positions (runcmp.c's
+ * `run_cmp_render_pad`): one load, one branch. Re-comparing a proven byte
+ * would cost nothing inside the word, but zeroing it costs nothing either.
+ *   - THE MARGIN. A main block at i is taken when i + R + E <= n. Its lane
+ *     j's candidate c = i + j has its run end at c + T, so the bytes
+ *     readable past the run are n - 1 - (c + T) >= (VW - 1 - j) + E. The
+ *     block loop alone (E = 0) leaves lane VW - 1 NO byte past the run: the
+ *     loop's `i + R <= n` guarantees bytes ahead of the LOW lanes only. So
+ *     the main guard holds E = P - L more (P the padded width, E <= 3:
+ *     L 3 -> 1, 5 -> 3, 6 -> 2, 7 -> 1), and the padded compare is given
+ *     `over` = E, the bytes the guard guarantees at the top lane.
+ *   - THE FINAL BLOCK keeps the trimmed compare. A block the main guard no
+ *     longer takes but that still lies inside the subject (n - R - E < i <=
+ *     n - R) is final with f = i (nothing masked); then the overlapped
+ *     block at n - R as before. Each reads only [pos, n).
+ *   - WHERE NOT: the deny `no-vrun-pad` (the text above, byte for byte);
+ *     L in {2, 4, 8} (the words form is one word already), L > 8 (one word
+ *     does not cover it; a vector verify would, the report's note);
+ *     MF_D_RUN_OVERLAP (the walk picks no words-form row); nothing left to
+ *     verify. The scalar `__body` is unchanged.
 
  * OVER-READ / BOUNDARY ARGUMENT (the kit reads only [pos, n)):
  *   - R = VW + T (T = the predicate's highest read, the BODY loop guard's
@@ -80,7 +121,10 @@
  *     shift i - f is 1..VW - 1 (never the register width: no UB).
  *   - A candidate c is a lane of a block at base b with b + R <= n, so
  *     c + T <= b + VW - 1 + T <= n - 1: the run compare's reads [c + off,
- *     c + T] lie inside the subject.
+ *     c + T] lie inside the subject. The padded compare's reads end at
+ *     c + T + E, and its block has b + R + E <= n (PADDED VERIFY's margin).
+ *   - With E > 0 a final block at f = i < n - R (clamped) loads as a whole
+ *     block does (i + R <= n), and the lane shift i - f is 0..VW - 1.
  *
  * D149, every constant of the form:
  *   VW         DERIVED: the level's register width (levels.def).
@@ -90,6 +134,16 @@
  *              4x unrolls and the w16-over-scalar / w32-over-w16 cut-overs
  *              above R are tier-U sweeps owed in RQ-4's slot (§R4.9.5 item
  *              10); until then nothing but the derived R is written.
+ *   the trim   DERIVED (VERIFY TRIM above); its word width is the whole
+ *              run's, the one helper run_cmp_prepare declared ahead of the
+ *              FUNC outside any guard (a narrower helper would need a
+ *              declaration the SIMD-off text lacks: the floor rule).
+ *   E, P       DERIVED: P the smallest of 4, 8 covering the run, E = P - L
+ *              the bytes the padded word reads past it (a correctness bound
+ *              on the main guard, PADDED VERIFY); the padded form itself is
+ *              DERIVED to cost one load and one branch where the words form
+ *              costs two, and its deny `no-vrun-pad` is the arm a re-timing
+ *              measures it against.
  *   KB         UNMEASURED DEFAULT: two positions, KB the first ranked other
  *              than KA, no distance rule (SECOND FILTER POSITION above);
  *              its deny `no-vrun-kb` is the arm RQ-4's slot times it against.
@@ -206,9 +260,63 @@ static void bcast(mf_sink *o, const vrun_ops *v, int mask, int val, char c)
     kit_out(o, "v%c = %s((char)%d)", c, v->set1, val);
 }
 
+/* The run positions the filter proved, as indices into the run: KA always,
+ * KB when the mask reads it; `np` gets their count, 0 under the deny
+ * `no-vrun-trim` (the verify is then the whole run, as before R-14). */
+static unsigned vrun_proven(const fn_in *x, int k2, int proven[2])
+{
+    if (kit_opt_denied(x->site->opts, "vrun-trim")) return 0;
+    int off = x->p->term[0].offset;
+    unsigned np = 0;
+    proven[np++] = x->k - off;
+    if (k2 >= 0) proven[np++] = k2 - off;
+    return np;
+}
+
+/* E, the bytes past the run's end the main path's verify reads (PADDED
+ * VERIFY, the module comment): the padded compare's need, or 0 where it is
+ * not used (its deny `no-vrun-pad`, a run it does not apply to, or nothing
+ * left to verify); -1 on a refusal. */
+static int vrun_pad(mf_art *art, const fn_in *x, const int *proven, unsigned np)
+{
+    const mf_term *t = &x->p->term[0];
+    if (kit_opt_denied(x->site->opts, "vrun-pad")) return 0;
+    if (np && run_cmp_trim_none(t, proven, np)) return 0;
+    return run_cmp_pad_over(art, t);
+}
+
+/* One block's verify loop behind `ind`: each set lane, lowest first, by the
+ * padded compare where `over` is nonzero (the main path's margin, E), else
+ * by the run compare less the proven positions; where nothing is left, the
+ * lowest set lane is the answer. The compare's RUN_WORDS count is not taken
+ * here (the stamp counts unbracketed text only, §R4.9.2.4). */
+static int vrun_verify(mf_art *art, const mf_term *t, const int *proven, unsigned np,
+                       unsigned over, const char *ind, mf_sink *o)
+{
+    if (np && run_cmp_trim_none(t, proven, np)) {
+        kit_out(o, "%sif (m) return i + (size_t)__builtin_ctz(m);\n", ind);
+        return 0;
+    }
+    kit_out(o, "%swhile (m) {\n"
+               "%s    size_t cand = i + (size_t)__builtin_ctz(m);\n"
+               "%s    if (", ind, ind, ind);
+    long long words = art->words;
+    int rc = over ? run_cmp_render_pad(art, t, "subject + cand", t->offset, over, o)
+           : np ? run_cmp_render_trim(art, t, "subject + cand", t->offset, proven, np, o)
+                : run_cmp_render(art, t, "subject + cand", t->offset, o);
+    art->words = words;
+    if (rc) return -1;
+    kit_out(o, ") return cand;\n"
+               "%s    m &= m - 1;\n"
+               "%s}\n", ind, ind);
+    return 0;
+}
+
 /* The helper's body: the entry test, the block loop, the closing brace. Its
- * verify is the BODY's run compare; the compare's RUN_WORDS count is not
- * taken here (the stamp counts unbracketed text only, §R4.9.2.4). */
+ * verify is the BODY's run compare less the positions the mask proved
+ * (VERIFY TRIM, the module comment); where the padded compare is used
+ * (PADDED VERIFY), the main path verifies by it and holds E more bytes,
+ * and the final block verifies by the trimmed compare. */
 static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
                        const mf_formdecl *d, const char *fall, mf_sink *o)
 {
@@ -221,6 +329,10 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     int mb = k2 < 0 ? 0xFF : t->mask ? t->mask[k2 - t->offset] : 0xFF;
     int vb = k2 < 0 ? 0 : t->run[k2 - t->offset];
     unsigned vw = lv->vw, tt = vrun_t(x->p), r = vw + tt;
+    int proven[2];
+    unsigned np = vrun_proven(x, k2, proven);
+    int e = vrun_pad(art, x, proven, np);
+    if (e < 0) return -1;
 
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n", r, fall);
     kit_out(o, "    const %s ", v->type);
@@ -230,34 +342,44 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
         bcast(o, v, mb, vb, 'b');
     }
     o->puts(o->u, ";\n");
+    if (e && run_cmp_pad_decl(art, t, proven, np, "    ", o)) return -1;
     o->puts(o->u, "    size_t i = pos;\n"
                   "    for (;;) {\n"
                   "        unsigned m;\n");
     kit_out(o,    "        if (i + %u <= n) {\n"
-                  "            m = ", r);
+                  "            m = ", r + (unsigned)e);
     cmask(o, v, "i", ka, ma == 0xFF, k2, mb == 0xFF);
-    kit_out(o, ";\n"
-                  "        } else {\n"
-                  "            if (i + %u >= n) return n;\n"
-                  "            size_t f = n - %u;\n"
-                  "            m = ", tt, r);
-    cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
-    o->puts(o->u, " & (~0u << (i - f));\n"
-                  "            i = f;\n"
-                  "        }\n"
-                  "        while (m) {\n"
-                  "            size_t cand = i + (size_t)__builtin_ctz(m);\n"
-                  "            if (");
-    long long words = art->words;
-    int rc = run_cmp_render(art, t, "subject + cand", t->offset, o);
-    art->words = words;
-    if (rc) return -1;
-    kit_out(o, ") return cand;\n"
-                  "            m &= m - 1;\n"
-                  "        }\n"
-                  "        i += %u;\n"
-                  "    }\n"
-                  "}\n", vw);
+    if (e) {
+        /* the main path's own verify, then the final block below it: a
+           block at i < n - R the main guard no longer takes is final
+           (f = i, nothing masked) */
+        o->puts(o->u, ";\n");
+        if (vrun_verify(art, t, proven, np, (unsigned)e, "            ", o)) return -1;
+        kit_out(o, "            i += %u;\n"
+                   "            continue;\n"
+                   "        }\n"
+                   "        if (i + %u >= n) return n;\n"
+                   "        size_t f = n - %u;\n"
+                   "        if (f > i) f = i;\n"
+                   "        m = ", vw, tt, r);
+        cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
+        o->puts(o->u, " & (~0u << (i - f));\n"
+                      "        i = f;\n");
+    } else {
+        kit_out(o, ";\n"
+                      "        } else {\n"
+                      "            if (i + %u >= n) return n;\n"
+                      "            size_t f = n - %u;\n"
+                      "            m = ", tt, r);
+        cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
+        o->puts(o->u, " & (~0u << (i - f));\n"
+                      "            i = f;\n"
+                      "        }\n");
+    }
+    if (vrun_verify(art, t, proven, np, 0, "        ", o)) return -1;
+    kit_out(o, "        i += %u;\n"
+               "    }\n"
+               "}\n", vw);
     return 0;
 }
 
@@ -273,7 +395,12 @@ static const char *const vrun_no_rungs[] = { NULL };
  * of g2_simd_gen.c (a 32-byte run of three-digit masks compared byte by
  * byte under MF_D_RUN_OVERLAP, filtered on two masked positions since lane
  * rankuse's KB), is 2,661 bytes at w16 and 2,721 at w32; both rendered,
- * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). */
+ * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). Those are
+ * the whole-run verify's, `no-vrun-trim`; the trimmed verify (R-14, lane
+ * r14b, 2026-10-11) writes 2,583 / 2,643 / 5,214 there, so the bound, the
+ * larger of the two arms, did not move. The padded verify (lane r14p) is
+ * rendered for runs of 3 or 5-7 bytes only, far below that site's text; G2
+ * takes the alone maximum over all four trim x pad arms. */
 #define VRUN_W16_GUARDED_MAX 2700
 #define VRUN_W32_GUARDED_MAX 2800
 

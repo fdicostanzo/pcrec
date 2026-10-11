@@ -25,4 +25,7 @@ extern const unsigned g2v_nsites;
 /* per-path execution counters, [4 * level + path] (w16 0-3, w32 4-7): the
  * runner's text instrumentation of the rendered file, never the kit's */
 extern unsigned long g2v_path[8];
+/* main-path padded verifies whose word ends at s[n - 1], [2 * level]
+ * evaluated and [2 * level + 1] verified (the runner's instrumentation) */
+extern unsigned long g2v_edge[4];
 #endif
