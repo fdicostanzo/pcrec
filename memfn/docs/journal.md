@@ -1399,3 +1399,14 @@ pointer when a kit change merges to main.
   KB's w16 value shrinks (w16 throughput D-K 133 W / 59 L vs 188 / 6), and
   w32 still wins (190 / 18). Q-R14-1 goes to Frank: KB at w16?
 - done: R-14 posted.
+
+## 2026-10-11 — Q-R14-1 ruled by Frank: KB at w32 only
+
+- Frank: "agree" to KB at w32 only (the kit's distance rule; no pcrec fact).
+  Posted as a responses notice for main to file and request. The dense-KA
+  w16 refinement is filed.
+- Loss sizes from slot21, given to Frank:
+  - D-K at w16: median 6%, max 35% (the ruling removes these);
+  - D-K at w32: median 5%, max 18%;
+  - D-F: median ~4%, but 11 comparisons at >= 10%, mostly w32 sparse
+    throughput. These need a read-only triage lane.
