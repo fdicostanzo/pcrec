@@ -311,7 +311,14 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   CHANGE DETECTOR: a kit change
   that moves an arm re-pins its rows in its own commit (D94's grep finds
   this file).
-- **run_arm_pins.sh** — C5 (`make test-memfn-arms`, in TEST_SECTIONS):
+- **run_arm_pins.sh** — C5 (`make test-memfn-arms`, in TEST_SECTIONS).
+  Check 14 (R-15, lane r15b) runs the `pre-landmark-byte` fixture (the row
+  precheck_assign_byte) and `pre-landmark-byte-deny` (the generic row, same
+  site) on every subject of length 0..6 over { '.', 'a' } from every lo and
+  on a NULL subject at n = 0, built with -fsanitize=undefined, against a
+  loop written from memfn.h's ALL_PRESENT/ASSIGN (`LANDMARK_CASES` 770); the
+  R-15 fixtures are pinned (`ARMS_ROW_FLOOR` 112) and five landmark gate
+  cases join check 6 (`GATE_CASE_FLOOR` 79). The rest, in order of arrival:
   builds the driver against `build/libpcrec.a`, checks each fixture renders
   through its pinned arm, each part's digest, a K35 floor
   (`ARMS_ROW_FLOOR`, a literal) and an arm list (`ARMS_EXPECTED`), and that
@@ -396,7 +403,11 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   `fn_rows[]`: `fn-pair` (witness `(?i)cat`, control `-fno-req-run-fold`)
   and `fn-memchr` (witness `abc[0-9]+xyz`, control `-fno-req-run
   -fno-offset-skip`), g2 floors 10422/18981 measured 2026-10-09, pcrec
-  floors PLACEHOLDER until the slot census). Each line gives the
+  floors PLACEHOLDER until the slot census; 20 since R-15, lane r15b, added
+  `precheck_assign_byte`, reach `pending-site:REQ-HANDOFF-L1` on its fixture
+  `pre-landmark-byte`, control `pre-landmark-byte-deny` (the deny in the
+  site's opts), pcrec floor `-`, g2 floor 721 from G2's landmark sites,
+  ROWS_FLOOR 20, FIXTURE_FLOOR 34). Each line gives the
   row's reach reason from a CLOSED set (`pcrec`, `total-fallback`,
   `pending-site:<trigger>`, `contract-reach:<G2 family>`; anything else is
   red, D77), its witness (a pcrec pattern + flags for `pcrec`, an

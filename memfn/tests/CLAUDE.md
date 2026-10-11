@@ -15,6 +15,32 @@ its report is **`G2M7_REPORT.md`**.
 Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
 its report is **`G2M6_REPORT.md`**.
 
+## The landmark gate sites (lane r15b, R-15)
+
+NOT written blinded (the row's author wrote them; a D27-blinded pass over
+the same space stays a recommendation, r15scope §5.2): their independence
+rests on G2's reference (g2_ref.c) and on writing them from memfn.h and
+r15scope §3.2/§5.2's contract list, not from precheck.c.
+
+- **g2_gen.c `landmark_one`** — part of family `gate` (section (5), both
+  batches, NOT the style passes), its own RNG stream and id range 2000000:
+  the §15.5 gate whose ret_pred is preds[0], ONE singleton REQUIRED SET at
+  offset 0 in a REQUIRED predicate ([REQ-HANDOFF-L1]'s byte landmark), now
+  and then followed by a run with a fn_ref or a set rest; empty MISS; miss
+  stated as n three ways; on_miss_leaves mostly 1; the member stepping
+  through all 256 bytes. Half the sites are near-misses, one field off:
+  2/3/255/256 members, offset 1 and -1, an OPTIONAL term or predicate,
+  ret_pred a later byte, end_back 1, empty NOP/EXCLUDED/AT_N, a stated
+  floor, a miss other than n. Census line `LMSITES`.
+- **`g2_gen --gate-only 1`** generates the gate family alone (gate_one and
+  the landmark sites, both batches).
+- **run_g2_gate.sh** — that family standalone (~30 s): plain and
+  ASan+UBSan runs against the reference, the LMSITES census floors, the row
+  `precheck_assign_byte` chosen by trace (`build/libpcrec_mftrace.a`), and a
+  CONTROL (W2 mutation 2 over the same space must kill >= 80% of the
+  mutated sites; measured 345/388). Mech arm `g2gate`. `make test-memfn-g2`
+  runs the same landmark sites inside its own space (`FLOOR_ROWS` 20).
+
 ## The SIMD family (lane r13, R-13, R4e' batch 1; MF_SITE_ABI 10)
 
 NOT written blinded: lane r13 wrote the kit's rows and this family both, so

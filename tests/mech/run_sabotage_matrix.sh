@@ -431,6 +431,14 @@
 #     another row, or not at all, moves no pcrec answer and no artifact byte
 #     (S617-S619: the `+ k` store, the read-bounded range, LOOP_EXIT).
 #     Links the sabotaged tree's build/libpcrec.a. Registered before S617.
+#   g2gate — added 2026-10-11 ([MEMFN] R-15, lane r15b); runs
+#     memfn/tests/run_g2_gate.sh: G2's gate family ALONE (`g2_gen
+#     --gate-only 1`: the §15.5 composite and R-15's landmark sites and their
+#     near-misses) against G2's own reference, plain and ASan+UBSan, the
+#     landmark census, the row's reach by trace and a W2 control (~30 s).
+#     Its own arm because the R-15 row has no pcrec site until
+#     [REQ-HANDOFF-L1] lands and make test-memfn-g2's quick tier is a much
+#     longer run than these rows need. Registered before S800-S804.
 #   memfndeleg — added 2026-10-09 ([MEMFN] M6 follow-up, kit session);
 #     runs tests/memfn/run_deleg_sites.sh, C10: every DELEG_SITES row against
 #     D91's use ceiling, the vocabulary probe and the planted control. Its own
@@ -2998,6 +3006,16 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/memfnarms.log" | grep -oE '[0-9]+')"
                 score_arm "$work/memfnarms.log" "$f" "memfnarms:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            g2gate)
+                # [MEMFN] R-15 memfn/tests/run_g2_gate.sh — see the
+                # vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a (and builds its libpcrec_mftrace.a).
+                CC="$CC" TMPDIR="$work" bash "$tree/memfn/tests/run_g2_gate.sh" \
+                    > "$work/g2gate.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2gate.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2gate.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2gate.log" "$f" "g2gate:${f:-ERR}fail/${p:-?}pass"
                 ;;
             memfndeleg)
                 # [MEMFN] C10 tests/memfn/run_deleg_sites.sh — see the

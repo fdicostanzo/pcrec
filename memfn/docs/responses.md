@@ -2052,3 +2052,40 @@ the compiler, and is never adopted silently. Proposed for main to file
     - (5) the vector neighbour filter (ideas.md entry 4) needs a pcrec
       conjunction fact, so it is filed as an L1 unlock.
   - The R-15 build waits for Q-R15-1 and the h2g reading.
+- notice: 2026-10-11 — **Q-R14-1 RULED by Frank (direct to the kit, "agree"): KB is rendered at w32 only.** Main, please file it (a D147 addendum) and a request for the change.
+  - Basis: slot21 (r14p_report addendum). With R-14's cheap verify, KB at
+    w16 gives throughput 133 W / 59 L, with losses of median 6% and up to
+    35% (m15, m19, m07, m05, m08 gate/sparse). At w32 it still wins 190 /
+    18, losses median 5%, max 18%.
+  - The change, kit-local: the vrun distance rule renders the KB filter in
+    the w32 arm only; w16 filters on KA alone. SIMD-off is byte-identical
+    (no abi). The `vrun-kb` deny keeps its meaning (no KB at any level).
+  - Filed, not built: KB at w16 when pcrec's `rank_ppm` says KA is dense
+    (KB's own case), and a look at KB's remaining w32 losses (75; median
+    5%, max 18%).
+  - Also from slot21, for triage before anyone relies on it: 11 D-F
+    comparisons (padded+trim vs R-13's verify) lose >= 10% (up to +23%),
+    mostly w32 gate/sparse throughput on m10, m12, v03, v05, v11. Sparse
+    cells barely run the verify, so suspect the main-guard margin (E
+    extra bytes) or noise. Kit triage lane on the slot21 data, no box time.
+- done: 2026-10-11 — **R-15 (`precheck_assign_byte`, memchr ASSIGN for the one-byte gate site; the kit's first SCALAR deny `--memfn=no-precheck-assign-byte`; ZERO movers on main, no abi): branch lane/memfn-r15 @ this commit. Report: docs/dev/lanes/r15b_report.md; slot22 evidence docs/design/memfn/probes/r15/.**
+  - Serves the site: under a scratch merge into lane/rlhbuild, ipv6, ipv4
+    and dotted4 render memchr ASSIGN at entry AND re-entry. The deny equals
+    rlhbuild's generic text byte for byte. Answers equal (handoff.rxt
+    4908/0 both ways).
+  - slot22, all stages:
+    - identity sweeps (plain, start, variants, simd) 0 artifact movers;
+    - deny sweeps 0; N2 clean (row chosen 0 on main); G2 full
+      199,850,927/0;
+    - mech 13 rows COMPLETE 0/0/0/0/0.
+  - Reds, each triaged and closed:
+    - G2 quick's two g2m4 population floors: a subsample phase shift.
+      Re-pinned to 98000 / 48000; quick re-run 52,987,686/0.
+    - test-axes: -fno-hyb-reseed and -fno-cls-pack lost cases in a loaded
+      window (0 mismatches). A quiet re-run of both is green. The kit's
+      --memfn rows are not swept by test-axes.
+  - **For main:**
+    - the variants sweep's 26 tag-population floor lines are PRE-EXISTING
+      (byte-identical in slot21) and need a re-pin on main;
+    - at L1's merge, flip the three stale items (r15b_report §7).
+  - Next for the kit: R-16 (KB at w32 only, S815-S819).

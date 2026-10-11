@@ -285,4 +285,5 @@ const arm mismatch_inplace_arm = {
     inplace_define,
     inplace_use,
     &inplace_ct,
+    NULL,
 };

@@ -3097,6 +3097,102 @@ static void gate_one(int k)
 }
 static void gen_fam_gate(int count) { for (int k = 0; k < count; k++) gate_one(k); }
 
+/* §15.5 + R-15 (lane r15b): the gate whose ret_pred is its LANDMARK BYTE,
+ * [REQ-HANDOFF-L1]'s shape, which gate_one never makes (its ret_pred is
+ * always the RUN window). STMT/ALL_PRESENT/ASSIGN, preds[0] ONE singleton SET
+ * term at offset 0, REQUIRED term and predicate, ret_pred 0, empty MISS,
+ * and now and then later parts the composite admits (a run with a fn_ref,
+ * singleton set-rest bytes). Written from the contract (memfn.h's mf_site,
+ * integration.md §14.3-§14.5) and r15scope §3.2/§5.2's list, never from the
+ * kit's text: the answers are g2_ref's. Half the sites are that shape, its
+ * member stepping through all 256 bytes over the two batches; the other half
+ * are its boundary NEAR-MISSES, one field off (2, 3, 255 and 256 members;
+ * offset 1 and -1; an OPTIONAL term or predicate; ret_pred a later part;
+ * end_back 1; empty NOP, EXCLUDED, AT_N; a stated floor; a miss other than
+ * n), whose answer must be right through whatever row renders them. Its own
+ * random stream and id range (st_enter's idiom), so the sites before and
+ * after it are the sites they were. */
+#define LM_SITES 256
+static uint64_t lm_rng = 0x6c616e646d61726bULL, lm_rng2 = 0x4c414e444d41524bULL;
+static uint32_t lm_ids = 2000000;
+static unsigned lm_member;                  /* the next hard site's byte */
+static long lm_hard, lm_near[16];           /* census, printed as LMSITES */
+static void landmark_one(int k)
+{
+    uint64_t r1 = rng_state, r2 = rng2_state;
+    uint32_t id = next_id;
+    rng_state = lm_rng; rng2_state = lm_rng2; next_id = lm_ids;
+    gsite g;
+    int hard = k % 2 == 0, v = (k / 2) % 15;
+    int later = hard ? (k / 2) % 4 : 0;     /* 0, 0, a run, a set rest */
+    if (later == 1) later = 0;
+    int nrest = later == 3 ? 1 + (int)rn(3) : 0;
+    int npred = 1 + (later == 2) + nrest + (!hard && v == 8);
+    fam_site(&g, G2_OP_ALL, G2_H_ASSIGN, G2_FORM_STMT, G2_FAM_GATE);
+    alloc_preds(&g, npred);
+    unsigned b = hard ? lm_member++ & 255 : rn(256);
+    g.preds[0].nterm = 1;
+    g.preds[0].need = G2_REQ;
+    gen_term(&g, 0, 0, G2_T_SET, 0, 0, -1, G2_REQ, 0, 0);
+    set_add(g.preds[0].t[0].set, b);
+    g.php[0] = rn(2) ? 0 : MF_NO_PRED;
+    int idx = 1;
+    if (later == 2) {                       /* a run part after the landmark */
+        uint32_t wlen = 1 + rn(24);
+        g.preds[idx].nterm = 1;
+        g.preds[idx].need = G2_REQ;
+        fam_run(&g, idx, 0, 0, wlen, rn(3) ? 0 : 1, G2_REQ);
+        g.php[idx] = 0;
+        g.ppp[idx] = (uint16_t)rn(wlen);
+        g.fnr[idx] = (uint32_t)idx + 1;
+        idx++;
+    }
+    for (int r = 0; r < nrest; r++, idx++) {   /* the set rest */
+        g.preds[idx].nterm = 1;
+        g.preds[idx].need = G2_REQ;
+        gen_term(&g, idx, 0, G2_T_SET, 0, 0, -1, G2_REQ, 0, 0);
+        set_add(g.preds[idx].t[0].set, (b + 1 + rn(255)) & 255);
+        g.php[idx] = rn(2) ? 0 : MF_NO_PRED;
+    }
+    g.d.ret_pred = 0;
+    g.d.use = G2_USE_POSITION;
+    static const int nmiss[3] = { 4, 6, 0 };   /* n, three ways: the token, the hook's text, "n" */
+    fam_finish(&g, G2_EMPTY_MISS, nmiss[rn(3)]);
+    fam_leaves(&g, rn(4) != 0);
+    if (hard) lm_hard++;
+    else {
+        lm_near[v]++;
+        g2_term *T = &g.preds[0].t[0];
+        static const int wide[4] = { 2, 3, 255, 256 };
+        switch (v) {
+        case 0: case 1: case 2: case 3:     /* more members than one */
+            while (set_count(T->set) < wide[v]) set_add(T->set, rn(256));
+            break;
+        case 4: T->off = 1; break;
+        case 5: T->off = -1; break;
+        case 6: T->need = G2_OPT; break;
+        case 7: g.preds[0].need = G2_OPT; break;
+        case 8:                             /* ret_pred a later byte of the rest */
+            g.preds[npred - 1].nterm = 1;
+            g.preds[npred - 1].need = G2_REQ;
+            gen_term(&g, npred - 1, 0, G2_T_SET, 0, 0, -1, G2_REQ, 0, 0);
+            set_add(g.preds[npred - 1].t[0].set, (b + 1 + rn(255)) & 255);
+            g.d.ret_pred = (uint8_t)(npred - 1);
+            break;
+        case 9: g.d.end_back = 1; break;
+        case 10: g.d.empty = G2_EMPTY_NOP; g.result_decl = 0; break;
+        case 11: g.d.empty = G2_EMPTY_EXCLUDED; g.d.span_lo = 1; break;
+        case 12: g.d.empty = G2_EMPTY_AT_N; break;
+        case 13: g.floor_null = 0; break;   /* a stated floor */
+        default: g.d.miss_mode = 1; break;  /* a miss other than n */
+        }
+    }
+    g_fam_out(&g);
+    lm_rng = rng_state; lm_rng2 = rng2_state; lm_ids = next_id;
+    rng_state = r1; rng2_state = r2; next_id = id;
+}
+static void gen_fam_landmark(int count) { for (int k = 0; k < count; k++) landmark_one(k); }
+
 /* §15.4: N4's set rest. STMT/ALL_PRESENT/ON_MISS, one singleton SET
  * predicate per member, ascending, ALL REQUIRED; empty EXCLUDED (now and
  * then MISS, the composite's); on_miss_leaves at both values */
@@ -4526,7 +4622,7 @@ int main(int argc, char **argv)
     if (argc < 2) { fprintf(stderr, "usage: g2_gen OUTDIR [--seed N] [--batch N] [--mutate K] [--sites N]\n"); return 2; }
     const char *outdir = argv[1];
     uint64_t seed = 20261005;
-    int batch = 120, extra = 1200, mm_only = 0, stride_only = 0;
+    int batch = 120, extra = 1200, mm_only = 0, stride_only = 0, gate_only = 0;
     for (int i = 2; i + 1 < argc; i += 2) {
         if (!strcmp(argv[i], "--seed")) seed = strtoull(argv[i + 1], 0, 10);
         else if (!strcmp(argv[i], "--batch")) batch = atoi(argv[i + 1]);
@@ -4534,6 +4630,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--sites")) extra = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--mm-only")) mm_only = atoi(argv[i + 1]);
         else if (!strcmp(argv[i], "--stride-only")) stride_only = atoi(argv[i + 1]);
+        else if (!strcmp(argv[i], "--gate-only")) gate_only = atoi(argv[i + 1]);
         else { fprintf(stderr, "g2_gen: unknown option %s\n", argv[i]); return 2; }
     }
     if (g_mutate >= 9 && g_mutate <= 11) mm_only = 1;     /* lane g2m7: W2 9-11 mutate MISMATCH sites only */
@@ -4587,7 +4684,17 @@ int main(int argc, char **argv)
     int gcombo[NCOMBO], ngc = 0;
     for (int c = 0; c < NCOMBO; c++) if (COMBOS[c].op != G2_OP_SKIP) gcombo[ngc++] = c;
 
-    if (!mm_only && !stride_only) {
+    /* lane r15b: --gate-only 1, the gate family (gate_one and the landmark
+     * sites) ALONE, both batches, as section (5) makes it: its section
+     * standalone, for a lane whose box budget is not a whole G2 run */
+    if (gate_only) {
+        for (int dn = 0; dn < 2; dn++) {
+            force_batch(dn ? MF_D_RUN_OVERLAP : 0);
+            gen_fam_gate(160);
+            gen_fam_landmark(LM_SITES);
+        }
+    }
+    if (!mm_only && !stride_only && !gate_only) {
     /* (1) the TERM CELLS, each the focus term of at least one site:
      *     SET: offsets -8..8 x every set kind; RUN: offsets -8..8 x run
      *     lengths 1..33 x masks NULL/0/1/2 free bits (and 8, all-free),
@@ -4743,6 +4850,7 @@ int main(int argc, char **argv)
         gen_fam_stmt(200, &frot);
         gen_fam_onebyte(40);
         gen_fam_gate(160);
+        gen_fam_landmark(LM_SITES);
         gen_fam_setrest(30);
         gen_fam_vmrun();
     }
@@ -4775,10 +4883,10 @@ int main(int argc, char **argv)
     gen_fam_mline();
     }   /* !mm_only && !stride_only */
     /* (6d) lane g2m7: the MISMATCH shape (integration.md 15.8 [M7]): the span compare */
-    if (!stride_only) gen_fam_mismatch();
+    if (!stride_only && !gate_only) gen_fam_mismatch();
     /* (6e) lane g2m6: the STRIDED ADVANCE (integration.md 15.9 [M6]) */
-    if (!mm_only) gen_fam_stride();
-    if (!mm_only && !stride_only) {
+    if (!mm_only && !gate_only) gen_fam_stride();
+    if (!mm_only && !stride_only && !gate_only) {
     /* (7) lane g2u: the semantic differential, its groups half without and
      *     half with MF_D_RUN_OVERLAP */
     force_batch(0);
@@ -4821,6 +4929,9 @@ int main(int argc, char **argv)
             mm_kind_sites[0], mm_kind_sites[1], mm_kind_sites[2], mm_shape_sites[0], mm_shape_sites[1], mm_res_sites[0], mm_res_sites[1],
             mm_res_sites[2], mm_goto_sites, mm_arith_sites, mm_style_sites[0], mm_style_sites[1], mm_style_sites[2], mm_nonidem_sites,
             mm_sp_sites[0], mm_sp_sites[1], mm_sp_sites[2], mm_sp_sites[3]);
+    fprintf(g_res, "LMSITES hard=%ld near=", lm_hard);   /* lane r15b: the landmark gate sites */
+    for (int i = 0; i < 15; i++) fprintf(g_res, "%s%ld", i ? "," : "", lm_near[i]);
+    fprintf(g_res, " members_covered=%u\n", lm_member >= 256 ? 256 : lm_member);
     fprintf(g_res, "STSITES constructed=%ld", st_n_sites);
     for (int i = 0; i < 9; i++) fprintf(g_res, " w%d=%ld", ST_W[i], st_n_w[i]);
     for (int i = 0; i < 7; i++) fprintf(g_res, " spk%d=%ld", i, st_n_spk[i]);

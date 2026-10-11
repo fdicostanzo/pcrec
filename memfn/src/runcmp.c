@@ -593,6 +593,7 @@ const arm runcmp_arm = {
     runcmp_define,
     runcmp_use,
     &runcmp_ct,
+    NULL,
 };
 
 /* Every row reads the term's bytes, mask and length (rc_of, :123-127). */

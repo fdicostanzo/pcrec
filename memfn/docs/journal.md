@@ -1399,3 +1399,41 @@ pointer when a kit change merges to main.
   KB's w16 value shrinks (w16 throughput D-K 133 W / 59 L vs 188 / 6), and
   w32 still wins (190 / 18). Q-R14-1 goes to Frank: KB at w16?
 - done: R-14 posted.
+
+## 2026-10-11 — Q-R14-1 ruled by Frank: KB at w32 only
+
+- Frank: "agree" to KB at w32 only (the kit's distance rule; no pcrec fact).
+  Posted as a responses notice for main to file and request. The dense-KA
+  w16 refinement is filed.
+- Loss sizes from slot21, given to Frank:
+  - D-K at w16: median 6%, max 35% (the ruling removes these);
+  - D-K at w32: median 5%, max 18%;
+  - D-F: median ~4%, but 11 comparisons at >= 10%, mostly w32 sparse
+    throughput. These need a read-only triage lane.
+
+## 2026-10-11 — R-15 built (precheck_assign_byte), slot22 read, delivered
+
+- Main met R-15's D77 trigger (the L1 build through generic regresses: ipv6
+  x1.87, ipv4 x4.48, dotted4 x46; a memchr gate restores the wins). Lane r15b
+  (opus) built `precheck_assign_byte` (memchr ASSIGN, a third row of
+  precheck.c's renderer before generic) and the kit's first SCALAR deny. It
+  shows zero movers on main, and under a scratch rlhbuild merge the row
+  serves entry + re-entry; deny == generic byte for byte.
+- slot22 (08:31-12:51):
+  - every identity sweep: 0 artifact movers (dumps only); deny sweeps 0;
+    N2 clean; G2 full 199.9M/0; mech 13 rows COMPLETE zero.
+  - Reds, each triaged:
+    - G2 quick: 2 g2m4 POPULATION floors crossed by a subsample phase shift
+      from R-15's landmark sites (no answer failed). Re-pinned 98000 / 48000
+      by the file's rule; quick re-run green (ee365ab1).
+    - test-axes: two EXISTING axes (-fno-hyb-reseed, -fno-cls-pack) lost
+      cases in a slow/loaded window (1265 s vs ~252 s per axis); the
+      kit's --memfn rows are not in test-axes. A quiet re-run of those two
+      axes is green.
+    - The variants sweep's 26 tag-floor lines are PRE-EXISTING (identical in
+      slot21, before R-15). Floors are stale on main; reported to main.
+- done: R-15 posted. Next is R-16 (KB at w32 only).
+- Side thread with Frank (no kit time; UNSCHEDULED under [SPAN-ISEL]): the
+  loss survey (accepted), the span surveys, negation as a wrap-around range,
+  captures as span offsets, the four-engine taxonomy and cached class truth
+  vectors for the VM. All in ideas.md on lane/memfn-ideas3.
