@@ -1,0 +1,77 @@
+cells 69
+  calls    5.3086 ns
+  memchr   9.0385 ns
+  memcmp   2.8701 ns
+  scan_B   0.0182 ns
+  step_B   2.0704 ns
+  skip_B   0.4443 ns
+pred/bench median 0.894  p10 0.674  p90 1.202
+alt-distinct-lead        bench    2775950 pred    1479697  x0.53
+prp-notl                 bench    5073691 pred    2891594  x0.57
+alt-mixed-width          bench    2550098 pred    1495138  x0.59
+asr-lb-varwidth          bench     102046 pred      65758  x0.64
+prp-zs                   bench    4112840 pred    2675419  x0.65
+ci-class-range           bench    4400241 pred    2923132  x0.66
+alt-cyr-64               bench    3157698 pred    2129259  x0.67
+prp-lu                   bench    2591013 pred    1800626  x0.69
+cls-boundary-range       bench    4176194 pred    2936223  x0.70
+prp-latin                bench    4073295 pred    2879661  x0.71
+cls-mixed                bench    5832264 pred    4172383  x0.72
+asr-lb-class             bench    6777926 pred    4913996  x0.72
+prp-l                    bench    6077654 pred    4693664  x0.77
+ci-strasse               bench     946212 pred     733472  x0.78
+ci-ascii-control         bench     405107 pred     316090  x0.78
+asr-b-midchar            bench   12031114 pred    9419394  x0.78
+asr-lb-fixed             bench      78462 pred      62095  x0.79
+prp-n                    bench    1122155 pred     892384  x0.80
+alt-nearmiss             bench     141249 pred     112427  x0.80
+qnt-counted-3b           bench     140999 pred     112341  x0.80
+prp-han                  bench    1779226 pred    1419290  x0.80
+cls-high-range           bench    2391009 pred    1962678  x0.82
+prp-cyrillic             bench    2401228 pred    1978712  x0.82
+asr-lb-neg               bench     133042 pred     110458  x0.83
+cls-s-nbsp               bench     137303 pred     115475  x0.84
+cls-w-ascii              bench    3723987 pred    3158786  x0.85
+cls-posix-alpha          bench    3684684 pred    3142505  x0.85
+lit-offset-at-head       bench     226573 pred     195846  x0.86
+alt-shared-char          bench     129767 pred     112889  x0.87
+ci-long-s                bench    1272211 pred    1114104  x0.88
+lit-1ch-3b               bench     155207 pred     136258  x0.88
+asr-b-cyr                bench      95603 pred      84188  x0.88
+lit-cyr-run              bench      94976 pred      84163  x0.89
+lit-1ch-2b               bench     354995 pred     317159  x0.89
+qnt-bounded-4b           bench     193362 pred     172783  x0.89
+ci-turkish-i             bench    1261955 pred    1138914  x0.90
+ci-e-acute               bench     501887 pred     459241  x0.92
+qnt-plus-2b              bench     361817 pred     331523  x0.92
+qnt-lazy-2b              bench     361600 pred     331523  x0.92
+lit-nfc-pair             bench     234249 pred     218334  x0.93
+asr-b-ascii              bench     501573 pred     469335  x0.94
+qnt-class-run            bench    2611687 pred    2460574  x0.94
+lit-1ch-4b               bench     204841 pred     204085  x1.00
+asr-dollar-ml            bench      40625 pred      40547  x1.00
+lit-mixed-ascii          bench      72006 pred      74223  x1.03
+cls-neg-cjk              bench    3048437 pred    3143256  x1.03
+lit-run-3                bench      40519 pred      42701  x1.05
+lit-nearmiss-run         bench      40500 pred      42701  x1.05
+prp-greek                bench     700280 pred     756712  x1.08
+floor                    bench      27575 pred      29856  x1.08
+cls-neg-single           bench   12793547 pred   13853166  x1.08
+ci-neg-fold              bench   12792901 pred   13853166  x1.08
+lit-offset-at-tail       bench      27549 pred      29856  x1.08
+cls-neg-allhigh          bench    2788143 pred    3023359  x1.08
+asr-caret-ml             bench      27577 pred      29913  x1.08
+ci-greek-run             bench      27512 pred      29855  x1.09
+alt-shared-lead          bench      27512 pred      29856  x1.09
+cls-dot                  bench   12802228 pred   13951842  x1.09
+ci-kelvin                bench     709467 pred     781152  x1.10
+asr-a-z                  bench         48 pred         54  x1.12
+lit-anchored-run         bench         47 pred         54  x1.14
+prp-greek-sc             bench     637792 pred     741689  x1.16
+cls-d-ascii              bench     617887 pred     742516  x1.20
+qnt-dot-bounded          bench    6512572 pred    7987060  x1.23
+ci-sigma                 bench     572998 pred     727948  x1.27
+cls-lead-pair            bench     572768 pred     727948  x1.27
+lit-sharp-s              bench     622081 pred     929721  x1.49
+ci-moskva                bench    1297344 pred    2008213  x1.55
+cls-dot-rep              bench         89 pred        174  x1.95
