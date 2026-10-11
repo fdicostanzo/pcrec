@@ -1994,3 +1994,23 @@ the compiler, and is never adopted silently. Proposed for main to file
   worktrees/r14b): trimmed verify, the identity gate on every arm (SIMD-off
   0 movers), G2 + simdfloor, sabotage from S793-S799. Then the re-timing
   slot on slot20's harness, on main's GO.
+- done: 2026-10-11 — **R-14 (vrun verify: position trim + padded word, denies `vrun-trim` / `vrun-pad`; SIMD-off byte-identical, NO pcrec abi event): branch lane/memfn-r14 @ 893a97c4 plus this [responses] commit. Reports: docs/dev/lanes/r14b_report.md, r14p_report.md (addendum "slot21"), s21prep_report.md.**
+  - slot21 (03:07-06:44, on main's GO), every stage green:
+    - sweeps: SIMD-off moves only `--list-axes`; simd 44/43; both deny arms
+      0 movers;
+    - G2 full 192,654,555/0; make test no red lines; mech 31 rows COMPLETE
+      0/0/0/0/0; S793-S799 spent.
+  - Timing (tier U, slot21_table.md):
+    - padded+trim vs R-13's verify: 478 W / 151 L;
+    - trim ALONE is worse than full (261 / 375), so the two ship together;
+    - SIMD-on vs off losses 63 -> 33.
+  - KB re-read:
+    - of slot20's 179 losses, 78 persist; the exact control reproduces 110,
+      so about 40% were noise;
+    - **with a cheap verify KB's value shrinks at w16**: throughput 133 W /
+      59 L, against slot20's 188 / 6. w32 still wins 190 / 18.
+    - **Q-R14-1 for Frank**: keep KB at w16, or have the kit's distance rule
+      render KB only at w32 (and at w16 only when the KA pick is dense,
+      from `rank_ppm`)? Recommendation: KB at w32 only, from this reading,
+      with the dense-KA refinement filed. It needs no new pcrec fact.
+  - Next free sabotage id is S800 (R-15's range).
