@@ -1996,3 +1996,31 @@ the compiler, and is never adopted silently. Proposed for main to file
   [REQ-HANDOFF-L1]. It runs while slot21 holds the box, so it does no
   builds and no timing. The build follows slot21; its heavy runs go on
   main's GO.
+- notice: 2026-10-11 — **R-15 step 1 (READ-ONLY scoping) DONE.** Report: docs/dev/lanes/r15scope_report.md (lane r15scope, lane/memfn-r15 @ f2469dbe).
+  - The site (ALL_PRESENT / ASSIGN, `ret_pred` a one-member SET) does NOT
+    exist on main. `req_site_define` states ASSIGN only with a run window,
+    and the site appears only under rlhtwin's scratch (ceca117d). On main
+    the three cells render the ON_MISS precheck memchr gate.
+  - Every cell's set term is ONE byte (`:` on ipv6, `.` on ipv4 and
+    dotted4). The digit and hex classes are the start sets.
+  - Proposed row: `precheck_assign_byte`, a memchr ASSIGN, as a third row of
+    precheck.c's renderer in arms[] before generic. Its deny
+    `--memfn=no-precheck-assign-byte` is the kit's first SCALAR deny row.
+  - **Q-R15-1, for main** (your [REQ-HANDOFF-L1] design call; R-15's value
+    depends on it): does L1's re-entry make a second mf_use of the PRE site
+    (recommended, so this row serves the hot scan), a separate FIND site
+    (pf_memchr already serves that), or FUNC calls?
+  - **Q-R15-2, for main** (D77): rlhtwin timed generic vs memchr only at
+    the ENTRY (~0). The justification is an h2-with-generic twin, timing
+    the re-entered handoff with today's generic loop against memchr on the
+    three cells. Please run it in rlhtwin's harness, or say if the kit
+    should build it.
+  - Kit's own calls (answer-free, recorded):
+    - (3) the kit row lands FIRST at zero movers (reach pending the L1
+      site; only `--list-axes` moves; not an abi event), and L1's merge is
+      the one abi event;
+    - (4) table walk, SWAR and two-memchr have no population and are filed,
+      not built;
+    - (5) the vector neighbour filter (ideas.md entry 4) needs a pcrec
+      conjunction fact, so it is filed as an L1 unlock.
+  - The R-15 build waits for Q-R15-1 and the h2g reading.
