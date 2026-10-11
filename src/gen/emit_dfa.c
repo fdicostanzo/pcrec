@@ -8674,7 +8674,8 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * machine on the same route. */
     [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER | CT_UPPER | CT_START,
                              CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
-                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) } },
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
      * relocate to LOCATE (E-FL, `rank`; E-FC, the match-here entry's search,
