@@ -188,3 +188,21 @@ generic	adv-vmstride-range	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934
 generic	adv-vmstride-range	use	213	88e4dfa6f0b01464a4dded3fab58de68525bfedea909f15a6f1268dab927711e
 generic	adv-vmstride-own	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 generic	adv-vmstride-own	use	318	e100c8a4827ff961244a06e2460da295de994a20e70b8e777ad0c44ec578c7a1
+# R-15 ADDED (lane r15b; no row re-pinned): the row precheck_assign_byte,
+# the pre-check's first byte KEPT by the handoff (form id precheck):
+# pre-landmark-byte; its deny `--memfn=no-precheck-assign-byte` stated in
+# the site's opts (pre-landmark-byte-deny, the generic row's text for the
+# same site, D147's OFF arm); and three near-misses pinned to `generic`: a
+# two-member set (pre-landmark-two-members), an OPTIONAL predicate
+# (pre-landmark-optional) and a later part as ret_pred (pre-landmark-later).
+# Check 14 runs the first two on fixed subjects.
+precheck	pre-landmark-byte	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+precheck	pre-landmark-byte	use	338	1691b48c4f279871bbe0946365d257c58a68cb66ff75849a0f5cde58062a97e8
+generic	pre-landmark-byte-deny	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pre-landmark-byte-deny	use	571	b0734348233bcaa54d7c556f7d0bf73ba6283993361bc756bd0f8a3abf1b5c4b
+generic	pre-landmark-two-members	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pre-landmark-two-members	use	600	3928d2c87f5ee1737217fe32e64e32e77f4a629e1a3fd10da531d577c3bd7774
+generic	pre-landmark-optional	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pre-landmark-optional	use	571	b0734348233bcaa54d7c556f7d0bf73ba6283993361bc756bd0f8a3abf1b5c4b
+generic	pre-landmark-later	def	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+generic	pre-landmark-later	use	867	7e251d6b758ce9a1b2771db41d1e6ca66965dabc1a5c6955596bf8d53d12c65e

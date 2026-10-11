@@ -86,6 +86,12 @@
 #      final cursor c0 + j*W and the counter j, where j is the least with
 #      c0 + (j+1)*W > B, or j = the cap, or some position i failing its set.
 #      K35: the call count must reach STRIDE_CALL_FLOOR.
+#  14. THE KEPT LANDMARK (R-15): pre-landmark-byte (the row
+#      precheck_assign_byte) and its deny's generic rendering run on every
+#      short subject over { '.', 'a' } from every lo, and on a NULL subject at
+#      n = 0, under -fsanitize=undefined, against a loop written from
+#      memfn.h's ALL_PRESENT/ASSIGN (the leftmost byte kept; none, on_miss).
+#      K35: the case count is a literal (LANDMARK_CASES).
 # WHAT IT DOES NOT SEE: an arm no fixture reaches (each new arm adds its own
 # fixtures and its id to ARMS_EXPECTED in the change that adds it), and a hook
 # pcrec passes that differs from the driver's stand-in (I1 at a migration's
@@ -95,7 +101,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LIB="${LIB:-$ROOT_DIR/build/libpcrec.a}"
 PINS="$ROOT_DIR/tests/memfn/pins/arms.tsv"
 CC="${CC:-cc}"
-ARMS_ROW_FLOOR=102
+ARMS_ROW_FLOOR=112
 ARMS_EXPECTED="ofsskip precheck runcmp pf_memchr pf_walk mismatch_inplace"
 
 pass=0; fail=0
@@ -209,7 +215,7 @@ if grep -q '^BAD' "$T/libc.res"; then
 else ok; fi
 
 # 6: the gate (N3). <case> <RENDER form-id | REFUSE field>
-GATE_CASE_FLOOR=74
+GATE_CASE_FLOOR=79
 GATE_EXPECT='ofs-call-floor REFUSE floor
 ofs-call-miss-other REFUSE miss
 ofs-call-miss-unstated REFUSE miss
@@ -229,6 +235,11 @@ pre-use-floor REFUSE floor
 pre-define-floor RENDER generic
 pre-define-nonident RENDER generic
 pre-use-nonident REFUSE s
+pre-landmark-miss-token RENDER precheck
+pre-landmark-miss-unstated REFUSE miss
+pre-landmark-miss-other RENDER generic
+pre-landmark-define-floor RENDER generic
+pre-landmark-define-nonident RENDER generic
 run-nonident RENDER generic
 adv-caller-count RENDER generic
 adv-caller-count-unstated REFUSE count
@@ -725,7 +736,82 @@ else
     cat "$T/st.err"; bad "the strided ADVANCE program does not build"
 fi
 
-echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt; n7 targets: $n7tgt; m6 targets: $m6tgt; mismatch calls: ${mcalls:-0}; strided calls: ${scalls:-0}"
+# 14: THE KEPT LANDMARK (R-15). pre-landmark-byte (precheck_assign_byte) and
+# pre-landmark-byte-deny (the generic row, the same site) inside one function
+# each, the pre-check's shape: the text, then the kept position returned (a
+# miss runs the fixtures' on_miss, `return 0;`). Each runs on every subject
+# of length 0..6 over { '.', 'a' } from every lo in [0, n], and on a NULL
+# subject at n = 0 (legal, match_api §3.1), against `ref`, a loop written
+# from memfn.h's ALL_PRESENT/ASSIGN: the LEFTMOST '.' in [lo, n) kept, none
+# a miss. Built with -fsanitize=undefined, so a `memchr` handed the NULL
+# subject (an empty test dropped) is red too. K35: the case count is a
+# literal and every case must run. Without libubsan the program is built
+# plain and the check says so (the NULL case then proves less).
+LANDMARK_CASES=770
+cat > "$T/lm.c" <<'EOF7'
+#include <stdio.h>
+#include <string.h>
+static int ref(const unsigned char *s, size_t n, size_t lo, size_t *out)
+{
+    for (size_t c = lo; c < n; c++) if (s[c] == '.') { *out = c; return 1; }
+    return 0;
+}
+static int row(const unsigned char *subject, size_t subject_length, size_t search_from,
+               size_t *out)
+{
+#include "out/pre-landmark-byte.use"
+    *out = handoff_position;
+    return 1;
+}
+static int gen(const unsigned char *subject, size_t subject_length, size_t search_from,
+               size_t *out)
+{
+#include "out/pre-landmark-byte-deny.use"
+    *out = handoff_position;
+    return 1;
+}
+static long ran, bad;
+static void one(const unsigned char *s, size_t n, size_t lo)
+{
+    size_t r = 0, a = 0, g = 0;
+    int hr = ref(s, n, lo, &r), ha = row(s, n, lo, &a), hg = gen(s, n, lo, &g);
+    ran++;
+    if (ha != hr || (hr && a != r) || hg != hr || (hr && g != r)) {
+        if (bad++ < 5)
+            printf("BAD n %zu lo %zu: ref %d/%zu row %d/%zu generic %d/%zu\n",
+                   n, lo, hr, r, ha, a, hg, g);
+    }
+}
+int main(void)
+{
+    unsigned char buf[6];
+    one(NULL, 0, 0);
+    for (size_t n = 0; n <= 6; n++)
+        for (unsigned m = 0; m < (1u << n); m++) {
+            for (size_t i = 0; i < n; i++) buf[i] = (m >> i) & 1 ? '.' : 'a';
+            for (size_t lo = 0; lo <= n; lo++) one(buf, n, lo);
+        }
+    printf("RAN %ld BAD %ld\n", ran, bad);
+    return bad != 0;
+}
+EOF7
+LMSAN="-fsanitize=undefined -fno-sanitize-recover=all"
+echo 'int main(void) { return 0; }' > "$T/lmprobe.c"
+if ! "$CC" -std=gnu11 $LMSAN "$T/lmprobe.c" -o "$T/lmprobe" 2>/dev/null || ! "$T/lmprobe"; then
+    echo "NOTE: kept landmark: $CC has no -fsanitize=undefined here; built plain"
+    LMSAN=""
+fi
+if "$CC" -std=gnu11 -O1 -Wall -Wextra -Werror $LMSAN -I"$T" "$T/lm.c" -o "$T/lm" 2>"$T/lm.err"; then
+    "$T/lm" > "$T/lm.out" 2>&1; lrc=$?
+    grep '^BAD n' "$T/lm.out" | sed 's/^BAD/FAIL: kept landmark:/'
+    grep 'runtime error' "$T/lm.out" | head -3 | sed 's/^/FAIL: kept landmark: /'
+    if [ "$lrc" -eq 0 ] && grep -qx "RAN $LANDMARK_CASES BAD 0" "$T/lm.out"; then ok
+    else bad "the kept landmark answered wrong, faulted or ran short ($(tail -1 "$T/lm.out"))"; fi
+else
+    cat "$T/lm.err"; bad "the kept-landmark program does not build"
+fi
+
+echo "arm pins: $rows rows over $(wc -l < "$T/ids" | tr -d ' ') fixtures; gate cases: $ncase; r4h targets: $ntgt; n7 targets: $n7tgt; m6 targets: $m6tgt; mismatch calls: ${mcalls:-0}; strided calls: ${scalls:-0}; landmark cases: $(awk '/^RAN/ { print $2 }' "$T/lm.out" 2>/dev/null)"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
