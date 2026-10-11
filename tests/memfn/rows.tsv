@@ -52,6 +52,7 @@
 arms	ofsskip	pcrec	pattern	-	abc[0-9]+xyz	rx_ofsskip(const unsigned char *subject, size_t n,	-fno-offset-skip	=
 arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
 arms	precheck_assign	pcrec	pattern	-	(ab)c?userpass	 = rx_reqrun(	-fno-req-handoff	=
+arms	precheck_assign_byte	pending-site:REQ-HANDOFF-L1	fixture	-	pre-landmark-byte	_q = subject_length > search_from ? memchr(	-	pre-landmark-byte-deny
 arms	runcmp	pcrec	pattern	--engine=vm	abc[0-9]+xyz	rx_w2(subject + scan_position)	--engine=vm -fno-lit-run	=
 arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - scan_position);	-	=
 arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff	(?!x)abc	subject_length - 1 - scan_position)	-	=

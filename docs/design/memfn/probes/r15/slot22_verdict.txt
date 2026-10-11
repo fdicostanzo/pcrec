@@ -1,0 +1,23 @@
+START 2026-10-11T08:31:56-04:00 tip 62261bc3 ref f18935d4
+BUILD rc=0
+STRICT rc=0
+SABANCHOR rc=0 :: all anchors resolve
+SWEEP plain rc=1 :: c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=1 0 floor-lines
+SWEEP start rc=1 :: c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=1 0 floor-lines
+SWEEP variants rc=1 :: c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 dumps=1 c-default=0 c-vm=0 emit-ir-vm=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 dumps=1 c-default=0 c-vm=0 emit-ir-vm=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 dumps=1 c-default=0 c-vm=0 emit-ir-vm=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 dumps=1 c-default=0 c-vm=0 emit-ir-vm=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 dumps=1 c-default=0 c-vm=0 emit-ir-vm=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 26 floor-lines
+SWEEP simd rc=1 :: c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=0 c-default=0 c-vm=0 emit-ir-vm=0 facts=0 emit-ir-auto=0 emit-ir-auto[-fno-prefilter]=0 emit-ir-auto[-fprefilter]=0 emit-ir-auto[-fno-prefilter-collapse]=0 stderr=0 composition=0 dumps=1 0 floor-lines
+SWEEP deny rc=0 :: c-default=0 c-vm=0 c-default=0 c-vm=0 0 floor-lines
+SWEEP denysimd rc=0 :: c-default=0 c-vm=0 c-default=0 c-vm=0 0 floor-lines
+N2 rc=0 :: == N2 DONE rc=0 would_decline=0 noend=0 floors=floor_fail=0,floor_placeholder=0,reason_stale=0,reach_dropped=0 ==
+G2Q rc=2 :: checks passed: 52987686 checks failed: 2 
+G2 rc=0 :: checks passed: 199850927 checks failed: 0 
+MAKE_TEST rc=2 wall=1094s
+make[1]: *** [Makefile:1367: test-memfn-g2] Error 1
+RED_LINES make_test
+AXES rc=2 wall=10429s
+make: *** [Makefile:1869: test-axes] Error 1
+RED_LINES axes
+MECH_START 2026-10-11T12:45:53-04:00
+MECH rc=0 :: == mech run COMPLETE: 13 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)
+MECH_WALL 327s
+SLOT22_DONE 2026-10-11T12:51:20-04:00

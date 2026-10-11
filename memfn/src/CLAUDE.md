@@ -32,7 +32,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `rank_ok` refuses a position ranking that is not distinct positions of
   the RUN term `plan_hint` names, or longer than it or MF_RANK_MAX) and their table
   (`mf_vocab_has`), the FIRST-MATCH arm table (`ofsskip`, `precheck`,
-  `precheck_assign` (one renderer, two rows: N3's split by handoff),
+  `precheck_assign`, `precheck_assign_byte` (one renderer, three rows:
+  N3's split by handoff, and R-15's by what ret_pred names),
   `runcmp`, the five PF rows (`pf_memchr`, `pf_memchr_bounded`, `pf_walk`,
   `pf_walk_bounded`: R4g; `pf_memchr_back`: M4 prep), `mismatch_inplace`
   (M7 prep), then the generic row; each arm's `ct` is its contract, which
@@ -129,7 +130,17 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   first position of pcrec's rarity ranking (`mf_pred.rank_*`) other than KA
   (`vrun_kb`; none where the ranking states no other), denied by
   `--memfn=no-vrun-kb`; two positions is an `UNMEASURED DEFAULT` (the
-  form R-1 timed), no distance rule beyond KB != KA (derived).
+  form R-1 timed), no distance rule beyond KB != KA (derived). Since lane
+  r14b (R-14, D147 addendum 15) each candidate's verify skips the
+  positions the mask tested (`vrun_proven`; runcmp.c's
+  `run_cmp_render_trim`), and a run the mask covers whole is returned with
+  no verify; the deny `--memfn=no-vrun-trim` verifies the whole run.
+  Since lane r14p (the R-14 follow-up) the MAIN path verifies a run of 3
+  or 5-7 bytes by ONE padded word (runcmp.c's `run_cmp_render_pad`, its
+  locals by `run_cmp_pad_decl`), its main guard holding the E = P - L bytes
+  that word reads past the run (`vrun_pad`; the margin argument is the
+  module comment's PADDED VERIFY); the final block keeps the trimmed
+  compare; the deny `--memfn=no-vrun-pad` is the r14b text.
 - **levels.def**, **levels.c** — the kit's ISA LEVELS (R4e' batch 1):
   `MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp)`,
   the one place a level's guard string, intrinsics header, width and stamp
@@ -143,7 +154,16 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `precheck_arm` (ON_MISS) and `precheck_assign_arm` (ASSIGN), both form id
   `precheck`: an ON_MISS site never reads `miss`, an ASSIGN site tests the
   run call's result against `n`, so the rows serve different `miss` classes
-  (and each predicate tests its own handoff).
+  (and each predicate tests its own handoff). R-15 (lane r15b) adds the
+  third row, `precheck_assign_byte_arm`: an ASSIGN site whose ret_pred is
+  part 0, ONE REQUIRED byte (the `byte_landmark` predicate; the parts
+  themselves are `precheck_parts`, shared), its position KEPT by one
+  `memchr` behind the empty test in a statement expression (`landmark`;
+  local `<prefix>_mf<handle>_q`), `n` on a miss, then pcrec's `on_miss`. It
+  is the kit's first SCALAR row with a deny of its own (`opt`
+  "precheck-assign-byte"); denied, the generic row renders the site. pcrec
+  states the shape only from [REQ-HANDOFF-L1], so on main it renders
+  nothing (reach `pending-site:REQ-HANDOFF-L1`).
 - **runcmp.c** — a SCALAR ARM, born at M1b (integration.md §15.6, §R4.8;
   transcribed from pcrec's `src/gen/runcmp.c`): THE RUN COMPARE, one
   first-match row table (`words`, `overlap`, `bytes`, `memcmp`; the first
@@ -152,7 +172,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   RUN term of the offset-skip function's verify chain and the body of
   `runcmp_arm` (VERIFY/EXPR/BOOL behind the caller's guard: pcrec's VM
   literal runs); `run_cmp_prepare` declares a FUNC definition's word-load
-  helpers ahead of it; `mf_flush_helpers` writes the pending ones (the art
+  helpers ahead of it; `run_cmp_render_trim` (R-14) is the same row's text
+  less positions the caller tested (vrun.c's verify) and `run_cmp_trim_none`
+  says whether anything is left; `mf_flush_helpers` writes the pending ones (the art
   records the widths used/declared and the words count `mf_stamps` writes
   as `RUN_WORDS`); `mf_run_rows` is the rows' accessor (`--list-axes`).
   The overlap lengths and the width rule are DERIVED (D149).
@@ -252,7 +274,12 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). Born empty;
   its first rows are R4e' batch 1's SIMD denies (`vrun-w16`, `vrun-w32`),
   then `vrun-kb` (lane rankuse: the vrun rows' second filter position, an
-  option of a form rather than a row of a table).
+  option of a form rather than a row of a table), `vrun-trim` (lane
+  r14b: their trimmed verify, the same kind of option) and `vrun-pad`
+  (lane r14p: their padded main-path verify, likewise); the first SCALAR
+  row is `precheck-assign-byte` (lane r15b, R-15: the precheck renderer's
+  kept-landmark row, `MF_B_ANY`, live at both SIMD settings), denied
+  through the arm's `opt` and `arm_table`'s accessor (compose.c `arm_opt`).
   Each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
   the same commit and raises the floor in `docs/spec/registry.md` §6. See
   `../CLAUDE.md` "The kit's option namespace".

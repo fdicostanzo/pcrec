@@ -34,7 +34,9 @@
  *
  * Prints `G2V checks=N fail=M faults=F` and per-class counts; exit 1 on any
  * failure. `g2v_path[]` is the runner's per-path instrumentation (-DG2V_PATHS
- * text edits of the rendered file, never the kit's).
+ * text edits of the rendered file, never the kit's), and `g2v_edge[]` its
+ * count of main-path padded verifies whose word ends at the subject's last
+ * byte (the guard page right after it in layout E).
  */
 #define _GNU_SOURCE
 #include <setjmp.h>
@@ -55,6 +57,7 @@
 #endif
 
 unsigned long g2v_path[8];
+unsigned long g2v_edge[4];
 
 static unsigned long checks, fails, faults;
 static sigjmp_buf jb;
@@ -249,5 +252,8 @@ int main(int argc, char **argv)
         printf("G2V paths level=w%d entry_fallthrough=%lu whole_block=%lu final_block=%lu verified=%lu\n",
                16 << l, g2v_path[4 * l], g2v_path[4 * l + 1], g2v_path[4 * l + 2],
                g2v_path[4 * l + 3]);
+    for (int l = 0; l < 2; l++)
+        printf("G2V edge level=w%d evaluated=%lu verified=%lu\n",
+               16 << l, g2v_edge[2 * l], g2v_edge[2 * l + 1]);
     return fails ? 1 : 0;
 }

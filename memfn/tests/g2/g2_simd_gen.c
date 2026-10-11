@@ -21,8 +21,12 @@
  *                     denied), the measurement each row's bound rests on;
  *                     then the ranking's mode, its STATED entries (rank_pos
  *                     below rank_n, `-` for none), the malformed copy's
- *                     verdict (`refused`/`accepted`, `-` untested) and the
- *                     count of rate ties among the stated entries.
+ *                     verdict (`refused`/`accepted`, `-` untested), the
+ *                     count of rate ties among the stated entries and the
+ *                     run's GENERATED masks (hex, one byte per position:
+ *                     the runner derives the verify's positions from them)
+ *                     and whether the site states MF_D_RUN_OVERLAP (1/0:
+ *                     the runner's padded-verify expectation reads it).
  * The space: run length 2..32 (every length, weighted short), term offset
  * 0..3, per-position masks (exact, a letter's case bit, another one-bit
  * cube, all four mixed), the scanned position a two-member cube; and its
@@ -30,8 +34,11 @@
  * position exact (`fn-memchr`, the OVER test), a span proven shorter than the
  * reach (REACH), the policy PORTABLE (-fno-memfn-simd), each row's own deny,
  * two terms (APPLIES), a run longer than VRUN_MAX_RUN, and a sink without
- * the bracket ops. The classes go in the meta file; the runner holds each
- * to its expectation.
+ * the bracket ops; and `deny-trim` (R-14), a positive site rendered under
+ * `no-vrun-trim`, whose verify is the whole run, and `deny-pad` (R-14
+ * follow-up), one rendered under `no-vrun-pad`, whose main path verifies by
+ * the run compare's words. The classes go in the meta
+ * file; the runner holds each to its expectation.
  * THE RANKING (D157, `mf_pred.rank_*`): every site states one, GENERATED
  * here in one of RM_N modes (none, one entry that is the scanned position,
  * one that is not, a whole permutation led by the scanned position as
@@ -132,10 +139,10 @@ static unsigned rnd(unsigned n)
 
 /* site classes: POS renders SIMD; every other class must render none */
 enum { C_POS, C_EXACT, C_SHORT, C_PORTABLE, C_DENY16, C_DENY32, C_TWO, C_LONG,
-       C_NOBRK, C_DENYKB, C_NCLASS };
+       C_NOBRK, C_DENYKB, C_DENYTRIM, C_DENYPAD, C_NCLASS };
 static const char *const class_name[C_NCLASS] = {
     "pos", "neg-exact", "neg-short", "neg-portable", "deny-w16", "deny-w32",
-    "neg-two", "neg-long", "neg-nobrackets", "deny-kb" };
+    "neg-two", "neg-long", "neg-nobrackets", "deny-kb", "deny-trim", "deny-pad" };
 
 /* ranking modes (the module comment's THE RANKING) */
 enum { RM_NONE, RM_ONE_KA, RM_ONE_OTHER, RM_FULL_KA, RM_FULL_ANY, RM_END, RM_PARTIAL, RM_N };
@@ -310,7 +317,8 @@ static void build_site(vsite *v)
     if (v->cls == C_SHORT) s->span_hi = 16 + v->off + v->L - 2;   /* < every reach */
     s->policy = v->cls == C_PORTABLE ? MF_P_PORTABLE_ONLY : 0;
     s->opts = v->cls == C_DENY16 ? "no-vrun-w16" : v->cls == C_DENY32 ? "no-vrun-w32"
-            : v->cls == C_DENYKB ? "no-vrun-kb" : NULL;
+            : v->cls == C_DENYKB ? "no-vrun-kb" : v->cls == C_DENYTRIM ? "no-vrun-trim"
+            : v->cls == C_DENYPAD ? "no-vrun-pad" : NULL;
 }
 
 /* 1 iff mf_define accepts site `s` under the name `name` (the hook reads
@@ -379,16 +387,20 @@ int main(int argc, char **argv)
           "#include <stddef.h>\n#include <stdint.h>\n#include <string.h>\n"
           "#include \"g2_simd.h\"\n\n", c);
     fputs("# id\tclass\tL\toff\tplan_pos\tforms\tguarded_bytes\tw16_alone\tw32_alone"
-          "\trmode\trank\tbadrank\tties\n", m);
+          "\trmode\trank\tbadrank\tties\tmask\toverlap\n", m);
     vsite *v = calloc(nsites, sizeof *v);
     tb all = { 0 };
     int fails = 0;
     for (unsigned i = 0; i < nsites; i++) {
         v[i].id = i;
-        /* the first 64 and 11 in every 20 after are positive; the other 9
-           in 20 cycle through the other classes, one each */
+        /* the first 64 and 9 in every 20 after are positive; the 10th is
+           deny-pad (R-14 follow-up: a positive site whose main path verifies
+           by the run compare's words), the 11th deny-trim (R-14: a positive
+           site whose verify is the whole run), and the other 9 in 20 cycle
+           through the other classes, one each */
         unsigned k = i % 20;
-        v[i].cls = i < 64 || k < 11 ? C_POS : C_EXACT + (k - 11);
+        v[i].cls = i < 64 || k < 9 ? C_POS : k == 9 ? C_DENYPAD : k == 10 ? C_DENYTRIM
+                 : C_EXACT + (k - 11);
         gen_run(&v[i], v[i].cls == C_LONG ? 33 + rnd(8) : run_len_of(i), v[i].cls == C_EXACT);
         if (i == 0) {
             /* THE WORST CASE for guarded_max: the longest run the rows take
@@ -447,18 +459,27 @@ int main(int argc, char **argv)
             fails++;
             continue;
         }
-        /* renders 3 and 4: each row ALONE (the other denied), measured the
+        /* renders 3 to 6: each row ALONE (the other denied), measured the
            same way: a row's own bound covers its block, its arm and the
-           selector's #else/#endif (-1: the site's class already denies) */
+           selector's #else/#endif (-1: the site's class already denies).
+           Each is the largest over the verify's arms, trimmed or the whole
+           run's (`no-vrun-trim`), padded or not (`no-vrun-pad`): the bound
+           holds whichever arm a caller picks */
         long alone[2] = { -1, -1 };
-        static const char *const deny_other[2] = { "no-vrun-w32", "no-vrun-w16" };
+        static const char *const deny_other[2][4] = {
+            { "no-vrun-w32", "no-vrun-w32,no-vrun-trim", "no-vrun-w32,no-vrun-pad",
+              "no-vrun-w32,no-vrun-trim,no-vrun-pad" },
+            { "no-vrun-w16", "no-vrun-w16,no-vrun-trim", "no-vrun-w16,no-vrun-pad",
+              "no-vrun-w16,no-vrun-trim,no-vrun-pad" } };
         for (int r = 0; r < 2 && !v[i].site.opts && v[i].cls == C_POS; r++) {
-            tb adef = { 0 }, acall = { 0 };
-            v[i].site.opts = deny_other[r];
-            if (render(&v[i], "\x01q", &adef, &acall, 1, NULL)) fails++;
-            else alone[r] = adef.guarded;
-            v[i].site.opts = NULL;
-            free(adef.p); free(acall.p);
+            for (int t = 0; t < 4; t++) {
+                tb adef = { 0 }, acall = { 0 };
+                v[i].site.opts = deny_other[r][t];
+                if (render(&v[i], "\x01q", &adef, &acall, 1, NULL)) fails++;
+                else if (adef.guarded > alone[r]) alone[r] = adef.guarded;
+                v[i].site.opts = NULL;
+                free(adef.p); free(acall.p);
+            }
         }
         fprintf(m, "%u\t%s\t%u\t%u\t%u\t%s\t%ld\t%ld\t%ld\t%s\t", i, class_name[v[i].cls],
                 v[i].L, v[i].off, v[i].pp, forms, mdef.guarded, alone[0], alone[1],
@@ -466,7 +487,9 @@ int main(int argc, char **argv)
         for (unsigned j = 0; j < v[i].rank_n; j++) fprintf(m, "%s%u", j ? "," : "", v[i].rank[j]);
         unsigned ties = 0;   /* adjacent stated entries of equal rate */
         for (unsigned j = 1; j < v[i].rank_n; j++) ties += v[i].ppm[j] == v[i].ppm[j - 1];
-        fprintf(m, "%s\t%s\t%u\n", v[i].rank_n ? "" : "-", badrank, ties);
+        fprintf(m, "%s\t%s\t%u\t", v[i].rank_n ? "" : "-", badrank, ties);
+        for (unsigned j = 0; j < v[i].L; j++) fprintf(m, "%02x", v[i].mask[j]);
+        fprintf(m, "\t%d\n", !!(v[i].site.denies & MF_D_RUN_OVERLAP));
         free(def.p); free(call.p); free(mdef.p); free(mcall.p);
     }
     fputs(all.p ? all.p : "", c);

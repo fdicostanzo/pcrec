@@ -244,7 +244,8 @@ pcrec emitter are kit work here, not edits under `src/gen/`.
   row per file under `include/` and `src/` (C16 compares the two).
 - `include/` — `memfn.h`, the one header pcrec includes (R4a).
 - `src/` — K2 composer, the generic scalar row, K1 reference functions,
-  `options.def` (born empty) and its accessor/parser (R4a); the scalar
+  `options.def` (born empty; SIMD rows since R-13, the first scalar row,
+  `precheck-assign-byte`, since R-15) and its accessor/parser (R4a); the scalar
   arms arrive with the migration steps.
 - `tests/` — G2, the kit's own tests (R4a's blinded lane).
 

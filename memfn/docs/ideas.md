@@ -261,3 +261,293 @@ thirds of the pattern; does it recheck the whole span?"). Yes. For `(?i)cat`
     cheap per hit, and it matters only for dense hits.
 - Note: (2) is shared by every SIMD arm and by the scalar body, so it is
   part of the pc16 per-call loss against OFF as well.
+
+## 2026-10-11 — from the vrun loss survey: KB off when KA is very rare at w32 (hypothesis)
+
+Lane losssurv (report kept at worktrees/memfn-slot/losssurv/report.md;
+read-only over slot20/slot21). This is the one emit-time predicate with a
+reason behind it. At w32, render KA alone when 32 * rank_ppm[KA] / 1e6 <
+theta, with theta about 0.035 (rank_ppm[KA] up to ~1,100). KB costs a fixed
+load + AND per block and pays only through the KA false candidates it
+removes. When KA almost never fires, there is nothing to remove. Support is
+ONE cell (`sp`, `(?i)azqb`), with v17 at break-even. Promoting it needs a
+ladder of cells whose KA rates span ~1k-11k ppm, timed at w32. Frank ruled
+2026-10-11: accept the survey, build nothing now.
+
+## 2026-10-11 — 16-byte calls under w32 pay ~0.3 ns, systematically
+
+Survey residue. At w32, 26-30 of 41 cells lose about +0.3 ns on pc16 in
+BOTH runs (at w16 it is a coin flip). Unverified guess: a 16-byte call
+under the w32 dispatcher goes through two nested length checks, `__w32`'s
+`n - pos < 34` and then `__w16`'s `n - pos < 18`, before reaching
+`__body`. One check that routes straight to the body for spans below the
+smallest arm's minimum may remove it. Cheap if true; check the emitted text
+first.
+
+## 2026-10-11 — pcrec could tell the kit more of what it already knows about the workload (density and more)
+
+Frank: the survey's unexplained losses are mostly about the SUBJECT, which
+the kit cannot see. pcrec could pass more of what is known about it as
+facts (D157: facts, never methods). Today the only prior is `rank_ppm`,
+each candidate position's byte rate from a reference profile. Examples of
+facts that would have split the losses the survey could not:
+- **Hit density / candidate density prior**: expected run (or KA) hits per
+  KiB, beyond the per-byte rate. KB at w32 loses +3..+9% on dense-hit
+  subjects and wins 30-45% on sparse ones. Same cells, same kit facts; only
+  density separates them.
+- **Subject-length class**: typical call span (short calls of 16 bytes vs
+  1 MiB scans). pc16 losses (entry above) and the w16-vs-w32 cut-over both
+  depend on it. A caller that only ever matches short fields would want
+  the scalar body.
+- **Alphabet / byte-frequency profile of the actual workload**, not a
+  generic text prior: the `(?i)azqb` w16 loss (+33..+83% on sparse subjects,
+  -75..-95% on dense) flips on whether `z`/`q` are rare in THIS data.
+- **Call pattern**: first match only vs all matches (find-all). A held
+  candidate mask (entry 5) pays only under find-all, and re-entry
+  (REQ-HANDOFF-L1) changes which sites are hot.
+- **Min bytes from run start to pattern end** (entry 1) and the post-run
+  DFA state (2026-10-11 entry). These are pattern facts pcrec already has.
+Where the data could come from: pcrec already has a measured source.
+`pcrec-analyze` (analyze/, [FINDINGS] B6) counts an exemplar file into an
+`analysis` bundle (shipped `log` / `weblog` bundles). A user-supplied
+exemplar, or a named bundle (`--analysis NAME`), could carry the density,
+length class and byte profile into `mf_pred`, the same way rank priors
+travel. The kit's distance rules then pick per workload, not per guess.
+- Shape: new `mf_pred` fields (an `MF_SITE_ABI` bump, a request to main).
+  Unset = unknown, and the kit falls back to today's rule (no silent
+  defaults: unknown is a stated value, not a guess).
+- First guess: medium-high value if users supply exemplars. It turns
+  "accept the residue" into a choice per workload. It needs a [FINDINGS]
+  owner decision about what a bundle carries; that is main's design.
+
+## 2026-10-11 — a "memcasecmp" for runtime folded spans (caseless backreferences and variables)
+
+Frank asked whether there is a memcmp replacement for folded spans.
+- CONSTANT folded runs (a `(?i)` literal) are served: runcmp's `words` row
+  renders masked word compares, e.g. `(rx_w8(s+cand) & 0xDF..DF) ==
+  rx_w8("JKLMNOPQ")`, and R-14 adds the padded single word inside vrun.
+- RUNTIME folded spans are not. The byte-encoding caseless backreference
+  (`(?i)(\w+) \1`, current main build) calls `rx_span_match_caseless`, a
+  per-byte loop with two branchy A-Z folds and a compare per byte. It
+  returns the first mismatch index as `-(i)-1`. It is an encoding residual,
+  not a kit site.
+  - Filed so far: only the utf8 ASCII fast path ([MEMFN-CI-ASCII],
+    D147 add. 14, trigger: a measured cell) and [BREF-FOLD-ONCE]
+    (boonies). The byte-mode loop itself is not filed.
+- Obvious form, SWAR first (D144):
+  - Load 8 bytes of each side.
+  - Fold A-Z in-register with the classic range test:
+    `((x + 0x3F..3F) ^ (x + 0x25..25)) & ~x & 0x80..80` marks A-Z, then
+    shift right by 2 to get 0x20 per marked lane, and OR it in.
+  - XOR the two folded words. If nonzero, the first mismatch index is
+    ctz/8 (little-endian).
+  - Finish the tail bytewise, with the subject-end guard handled exactly as
+    today.
+  - SIMD (16/32 lanes: cmpgt range mask, OR 0x20, cmpeq, movemask) as a
+    later candidate under -fmemfn-simd.
+  - It must keep the contract: the first mismatch index, and the miss when
+    the subject ends.
+- First guess: niche (caseless backrefs/variables are rare in the bench).
+  It becomes worth it when a measured cell shows the compare cost. The same
+  trigger as [MEMFN-CI-ASCII], so file them together. If delegated, it is a
+  kit site (a byte-domain masked span compare), which is main's call
+  (DELEG_SITES).
+
+## 2026-10-11 — a fixed-width MIXED span compare: bytes, folded letters and classes in one vector test
+
+Frank: given a static span of mixed items, e.g. `abcd[0-9]{4}(?i)xyz` (11
+positions: 4 exact bytes, 4 digits, 3 folded letters), load the stretch
+once, mask to fold or hide what needs it, do one compare, and check the
+class positions with a parallel range test. "More than memfn's usual, less
+than a bit-vector regex engine."
+- Unifying observation (kit manager): every position kind is a MASKED
+  RANGE.
+  - exact byte b: mask 0xFF, range [b, b];
+  - folded letter: mask 0xDF, range [B, B];
+  - a contiguous class such as `[0-9]`: mask 0xFF, range [0x30, 0x39];
+  - a folded range such as `(?i)[a-f]`: mask 0xDF, range [A, F];
+  - don't-care and lanes past the span: range [0, 255].
+  So one per-lane formula covers the whole span, with constant vectors
+  M, LO and W = hi - lo:
+  `t = sub(and(x, M), LO); ok = cmpeq(min_epu8(t, W), t)`, then movemask
+  == all-ones. On SSE2 that is 4 ops + movemask for up to 16 positions; at
+  w32 it is 32 positions. Today's padded word (R-14) is the special case
+  W = 0.
+- What the unification does not cover: non-contiguous sets (`[aeiou]`,
+  `[\w-]` as several ranges). Those take a nibble-table shuffle (pshufb,
+  SSSE3+; vtbl on NEON), or a two-range OR when there are only two ranges.
+- The arch arms differ completely, as Frank expects, which is why the
+  method stays the kit's:
+  - SSE2/AVX2: the min_epu8 trick (no unsigned byte compare);
+  - AVX-512BW: `vpcmpub` with per-lane predicates straight into a k-mask;
+  - NEON: `vcleq_u8` directly, `vtbl` for sets;
+  - scalar SWAR: the same masked range on 8 lanes with borrow isolation,
+    exact for 7-bit data.
+- Where it plugs in, smallest first:
+  1. As the VERIFY of a candidate the kit already found (vrun / memchr),
+     when the run grows into a fixed-width span around the anchor. A date
+     `\d{4}-\d{2}-\d{2}`, a UUID or hex id, a timestamp or a log prefix
+     becomes one load + one span test per candidate instead of a DFA or
+     VM walk over those bytes.
+  2. As the candidate FILTER itself: the vrun shape with KA/KB generalised
+     from cubes to ranges (entry 4, the ipv4 `.` + digit case, is the
+     2-position version).
+  3. Not a matcher: the span must be fixed-width and contiguous. `\d+` or
+     alternation ends it. That is the line between this and a bit-vector
+     engine (shift-and / Glushkov), which handles variable width but is
+     an engine.
+- What pcrec would have to state (D157 facts): today a run is a sequence of
+  CUBES (mask + value), with the classes elsewhere (SETREST / offset-set
+  terms as separate predicates). The span form needs ONE fact: a fixed-length
+  sequence of per-position byte sets, anchored at a known offset from the
+  candidate. That is a new `mf_pred` shape (an `MF_SITE_ABI` event and a
+  request to main). The kit classifies each set (masked range / two ranges
+  / table) and picks the arm.
+- First guess: potentially high value for log/structured-text workloads (the
+  same family as entries 4 and 6, and the [REQ-HANDOFF-L1] ipv4/ipv6/dotted4
+  cells). It is a design item (contract shape, pcrec facts, D6 panel)
+  before any build, triggered by a measured cell where verifying a
+  fixed-width structured token is the cost.
+- Follow-up the same day (Frank): with ANCHORED CORES (from a required
+  literal, extend through each neighbouring repeat's MANDATORY part only:
+  `\d{2,3}\.\d{2,3}` has the core `\d\d\.\d\d` at -2..+2 from the `.`), a
+  bounded-repeat token becomes a short sequence of span tests:
+  1. try the core span;
+  2. on a miss, try again shifted by one digit (the {m,n} slack);
+  3. eat `\d?\.`;
+  4. repeat 1-2 for the next group;
+  5. eat the trailing `\d?`.
+  Kit manager's addition: ipv4's maximum width is 15, so the WHOLE token fits
+  one 16-byte load. Classify the window once into per-class bitmasks (D =
+  digit lanes, P = dot lanes; pshufb or the masked range), and the steps
+  above become bit arithmetic: the digit-run length before a dot is
+  `ctz(~D >> p)`, then check 1 <= len <= 3, P at the next bit, and so on,
+  with no reloads. That is the simdjson "classify, then reason on masks"
+  pattern, sized to one token.
+  - Semantics: leftmost-first start (`1234.5.6.7` matches from `234`)
+    falls out of choosing the earliest start whose run lengths fit. The
+    captures and the exact end follow greedy {m,n}.
+  - Where it sits: this is no longer a fixed span compare. It is a FINISH
+    or verify form for a bounded token (D156 LOCATE x FINISH). Either pcrec
+    renders it, or pcrec states the token (a sequence of (set, m, n)
+    items, max width <= register) as a new fact and the kit renders it.
+    That is a design question for main, and its trigger is a bench cell
+    where such a token's finish is the cost (the R-15 ipv4/ipv6/dotted4
+    cells are the obvious first look).
+  - The survey (lane spansurv) also counts these BOUNDED TOKENS: max width
+    <= 16 / 32, the number of distinct sets, and the slack sum (n - m).
+- Kit manager's note the same day: the fixed-length class span above IS
+  plan.md [SPAN-ISEL]'s "special case, the original filing" (Frank,
+  2026-10-10: per-position byte sets as a pcrec fact, a kit-side selector
+  builds the check). These entries add the masked-range unification, the
+  anchored cores and the bounded-token walk to it; they do not open a new
+  row. [SPAN-ISEL] is SAVED FOR LATER, after the low-hanging fruit (Frank).
+- Frank, on the bounded-token walk: it is a FOURTH engine type, the VM
+  analog to the vector engine's DFA analog. The two axes:
+
+  | | simulate a set of states (no backtracking) | control flow per candidate (choices, greedy, captures) |
+  |---|---|---|
+  | sequential over bytes | DFA (shift-and is its state-bit form) | the backtracking VM |
+  | parallel over positions (class bitmasks) | the bitstream engine, [SPAN-ISEL] / [Cam14+] (MatchStar, Advance) | classify once, then walk the masks (this entry) |
+
+  Both position-parallel cells share stage 1: classify a block into per-class
+  bitmasks (SIMD compares + movemask). They differ in stage 2: the bitstream
+  engine is straight-line bit algebra over all positions and outputs match
+  ENDS (a LOCATOR in D156's locate x finish). The mask walk is control
+  flow on one candidate's masks and outputs the leftmost-greedy span and
+  captures (a FINISHER). So they complement each other: bitstream locate,
+  then mask-walk finish. The interim wins (span verify, class filters,
+  ideas entries 4 and 6 and this one) all build stage 1, so they are
+  groundwork for either engine, not throwaway.
+- Survey result (2026-10-11; lanes spansurv and spansurv2, read-only; reports
+  kept at worktrees/memfn-slot/spansurv/), over pcrec-bench (336 patterns)
+  and the test corpus:
+  - STRICT fixed spans: 38 bench patterns. loglines uuid (36), hex32-id
+    (32), iso-ts (19) and http-5xx (14) cover ~36% of loglines cells, plus 6
+    `wild-*` capability patterns. Mostly the FILTER form: uuid, hex32 and
+    iso-ts have no req_run, and only 9 of 41 spans contain the anchor.
+    Tiers: masked range alone 44%, +1 ORed range 80%, table 20%.
+  - ANCHORED CORES: 28 bench patterns, 2,884 cells, and 26 of the 28 are
+    VERIFY-READY today (anchored on pcrec's stated req_run or req_byte).
+    New over strict spans: bounded/dotted4, float-literal-bound,
+    tail-ext-lower-txt and 5 syntax cells. Cores are short (3-5 positions)
+    = verify-after-candidate.
+  - NOT reached by either: loglines/ipv4 (unequal-width octet
+    alternations) and loglines/ipv6 (a top-level alternation).
+  - BOUNDED TOKENS (max width <= 32): 46 bench patterns, 4,820 cells, but
+    realworld only loglines/bignum (`[0-9]{10,19}`). Only 5 tokens use
+    exactly 2 sets. A full ipv6 is max 39.
+  - Facts gap: pcrec states exact/cube bytes only; `kset_walk` covers the
+    leading path up to 24 offsets and stops at an any-byte. The kit needs
+    per-position sets at an offset from the anchor (-26..+90 measured) and
+    a union-vs-exact flag.
+- Frank, same day: negated classes belong in a span too (`[^a]`,
+  `[^\d]`, `[^"]`). In the masked-range form a negated range is ONE more
+  op: a per-lane invert vector N (0xFF on negated lanes, 0x00 elsewhere),
+  `ok = cmpeq(min_epu8(t, W), t) ^ N`. So the complement of any single
+  masked range is tier A, not tier B. That moves the survey's `[^"]`-style
+  spans from B to A and raises the "masked range alone" share above 44%.
+- Frank's ruling (2026-10-11): gather information, but the span work does
+  not take kit build time; better candidates come first. Everything here
+  goes to an UNSCHEDULED item under [SPAN-ISEL]: the surveys (done), the
+  ideas above, and a DESIGNED SPIKE to put real numbers on it.
+  - The spike: on loglines/uuid, hex32-id and iso-ts (the strict-span
+    filter form) and on bounded/dotted4 (the anchored-core verify form),
+    time today's search against a hand-written span filter/verify (SSE2
+    and AVX2, masked range + invert), at tier U, both layers.
+  - It needs no pcrec change (hand-written twin, the rlhtwin way). Run it
+    when a quiet box and spare capacity coincide. It is not scheduled.
+- Frank's better form for negation (same day): treat the complement as a
+  WRAP-AROUND range. `[^lo-hi]` is the range [hi+1, lo-1] mod 256, so use
+  LO = hi+1 and W = 255 - (hi - lo + 1), with the subtraction wrapping
+  mod 256. Then it is the SAME `t = sub(and(x, M), LO); ok = cmpeq(min_epu8(t,
+  W), t)` with different constants: ZERO extra ops, and no invert vector.
+  Every lane is then one formula: exact, folded, range, folded range, and
+  their complements; don't-care is W = 255. Edge cases fall out modularly
+  (`[^\x00]`, `[^\xff]`). With mask 0xDF a folded complement such as
+  `(?i)[^a]` stays exact, because only 0x41/0x61 map to 0x41 under 0xDF.
+  This supersedes the XOR form above.
+- Frank, same day: `abcd(\d{4})` must not split at the group. A span is
+  "prove a run of x bytes", and capture boundaries inside it are just
+  constant OFFSETS (group 1 = [cand+4, cand+8)). So a fixed-width span also
+  FINISHES its own captures with no walk. Checked: the survey's parser
+  (spanlib.py: capture groups parse to ('grp', body) and are emitted
+  inline) already treats groups as transparent, so its counts did not split
+  at captures. For the pcrec fact design, the span (and pcrec's own run
+  extraction) must be computed THROUGH groups, with the capture marks
+  stated as offsets in the span, not as span boundaries.
+
+## 2026-10-11 — the VM reads precomputed class truth vectors instead of testing bytes
+
+Frank: for ipv4-like patterns, run two wide "proofs" over a stretch of the
+subject: A = "is `.`" and B = "is a digit", each giving a truth vector (one
+bit per position). The VM then looks up the bit for the current position
+instead of re-testing the byte every time it visits it.
+- One test: no gain. `(D >> (p - blk)) & 1` costs about the same as
+  `(unsigned)(c - '0') <= 9`.
+- Where it does gain:
+  1. RUNS: "eat `\d+`" or `\d{1,3}` becomes `ctz(~D >> p)`, one op for the
+     whole run instead of a byte loop (the VMSPAN/VMSTRIDE advance sites);
+  2. RE-VISITS: backtracking and the attempt loop re-test the same positions
+     many times, and the classification is paid once per block;
+  3. EXPENSIVE classes: large sets, `\w` tables and utf8 classes cost more
+     per test than a bit lookup.
+- Why it differs from the per-call SIMD advance that was measured to lose on
+  short spans (integration.md: AVX2 without a 16 B tier costs 8-16 ns at
+  16): there the vector setup is paid on EVERY call. Here a block is
+  classified ONCE, lazily, the first time the VM touches it, and the masks
+  stay valid for every later instruction and attempt in that block. The
+  cost is amortised over the search, not per instruction.
+- Costs and limits: classifying a 64-byte block per hot class even if the VM
+  visits only a few positions in it (the prefilter often lands the VM on a
+  short match); keep it to the classes the program actually tests in loops;
+  block-boundary handling; k classes x n/64 words of state (or a small ring
+  of recent blocks).
+- Placement: pcrec's VM (engine work), or the kit if the VMSPAN/VMSTRIDE
+  advance sites gain a "cached block mask" contract (the site would need
+  state across calls, like entry 5's held mask). Either way it is the
+  fourth-engine idea (classify once, walk masks) applied to the whole VM,
+  not just to one bounded token.
+- Ruling context: the span thread is UNSCHEDULED under [SPAN-ISEL] (Frank,
+  2026-10-11). This entry joins it. The designed spike could add one cell:
+  ipv4 through the VM with and without cached digit/dot masks.

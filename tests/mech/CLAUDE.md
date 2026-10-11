@@ -473,6 +473,13 @@ is EXPECTED to time out"*, and neither would a separate arm.
   double-counts (S573). Re-pointed into the kit by the same change: S267,
   S443, S444, S445, S285 (`memfn/src/runcmp.c`), S279, S454
   (`memfn/src/ofsskip.c`).
+- `g2gate` → `memfn/tests/run_g2_gate.sh` ([MEMFN] R-15, lane r15b,
+  2026-10-11): G2's gate family ALONE (`g2_gen --gate-only 1`: the §15.5
+  composite and R-15's landmark sites with their near-misses) against G2's
+  own reference, plain and ASan+UBSan, the landmark census, the row
+  `precheck_assign_byte`'s reach by trace and a W2 control; ~30 s. Links the
+  sabotaged tree's `build/libpcrec.a` (and builds its `libpcrec_mftrace.a`).
+  Rows S802, S804.
 - `memfndeleg` → `tests/memfn/run_deleg_sites.sh` ([MEMFN] M6 follow-up,
   kit session, 2026-10-09): C10, the DELEG_SITES rows against D91's use
   ceiling. S683 named it from M6 before the arm existed (slot14 scored it
@@ -3726,6 +3733,19 @@ pinned start write is now `emit_search_success`'s argument), S223 (the
 per-action assertion line), S420 (reach on `(\p{Xwd})x`: `(\p{Xwd})` takes
 `landing` and fits), S693 (abi 74), S220/S227 (their reach probes deny the
 new rows: `(?!a)` and `foo\B` take `end-minus-width`).
+
+## [MEMFN] R-15 — `g2gate`, and S800-S804 (lane r15b, 2026-10-11)
+
+The row `precheck_assign_byte` (memfn/src/precheck.c: the pre-check's first
+byte KEPT by the handoff, one `memchr`) has no pcrec site until
+[REQ-HANDOFF-L1] lands, so every row here is seen by the kit's checks only:
+`memfnarms` (C5's pre-landmark-* fixtures, pins and check 14, the kept
+landmark run on short subjects and a NULL one under UBSan) and, for the two
+r15scope §5.1 names as invisible to pcrec's corpus by construction, the new
+arm `g2gate`. S800 later occurrence (search from lo + 1), S801 empty test
+dropped (UBSan's nonnull check on the NULL subject), S802 miss stores lo
+and falls through, S803 the deny unwired (`opt` NULL), S804 `single_byte`
+widened to any non-empty set. Solo verdicts: docs/dev/lanes/r15b_report.md §5.
 
 **[REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 75), S805-S814.** The
 landmark-K facts and the re-entered handoff (docs/dev/lanes/rlhbuild_report.md

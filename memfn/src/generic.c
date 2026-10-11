@@ -861,4 +861,5 @@ const arm generic_arm = {
     generic_define,
     generic_use,
     &generic_ct,
+    NULL,       /* no deny: the total fallback (§14.6) */
 };

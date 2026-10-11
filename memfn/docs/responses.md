@@ -1987,6 +1987,34 @@ the compiler, and is never adopted silently. Proposed for main to file
     - Out of scope, filed in ideas.md: N >= 3 positions (a mask-is-verify
       run) and handing the DFA the post-run state (pcrec-side).
 
+## R-14 — VRUN VERIFY TRIM: verify only the run positions the filter did not prove; re-time KB's losing regimes
+
+- ack: 2026-10-11 — **R-14 taken** (SIMD thread). Kit branch
+  lane/memfn-r14 (cut from main 76428e05). Build lane r14b (opus, worktree
+  worktrees/r14b): trimmed verify, the identity gate on every arm (SIMD-off
+  0 movers), G2 + simdfloor, sabotage from S793-S799. Then the re-timing
+  slot on slot20's harness, on main's GO.
+- done: 2026-10-11 — **R-14 (vrun verify: position trim + padded word, denies `vrun-trim` / `vrun-pad`; SIMD-off byte-identical, NO pcrec abi event): branch lane/memfn-r14 @ 893a97c4 plus this [responses] commit. Reports: docs/dev/lanes/r14b_report.md, r14p_report.md (addendum "slot21"), s21prep_report.md.**
+  - slot21 (03:07-06:44, on main's GO), every stage green:
+    - sweeps: SIMD-off moves only `--list-axes`; simd 44/43; both deny arms
+      0 movers;
+    - G2 full 192,654,555/0; make test no red lines; mech 31 rows COMPLETE
+      0/0/0/0/0; S793-S799 spent.
+  - Timing (tier U, slot21_table.md):
+    - padded+trim vs R-13's verify: 478 W / 151 L;
+    - trim ALONE is worse than full (261 / 375), so the two ship together;
+    - SIMD-on vs off losses 63 -> 33.
+  - KB re-read:
+    - of slot20's 179 losses, 78 persist; the exact control reproduces 110,
+      so about 40% were noise;
+    - **with a cheap verify KB's value shrinks at w16**: throughput 133 W /
+      59 L, against slot20's 188 / 6. w32 still wins 190 / 18.
+    - **Q-R14-1 for Frank**: keep KB at w16, or have the kit's distance rule
+      render KB only at w32 (and at w16 only when the KA pick is dense,
+      from `rank_ppm`)? Recommendation: KB at w32 only, from this reading,
+      with the dense-KA refinement filed. It needs no new pcrec fact.
+  - Next free sabotage id is S800 (R-15's range).
+
 ## R-15 — the byte gate's ASSIGN over ONE set term: a hot scan site under [REQ-HANDOFF-L1]'s re-entry
 
 - ack: 2026-10-11 — **R-15 taken** (migration thread). Kit branch
@@ -2024,3 +2052,49 @@ the compiler, and is never adopted silently. Proposed for main to file
     - (5) the vector neighbour filter (ideas.md entry 4) needs a pcrec
       conjunction fact, so it is filed as an L1 unlock.
   - The R-15 build waits for Q-R15-1 and the h2g reading.
+- notice: 2026-10-11 — **Q-R14-1 RULED by Frank (direct to the kit, "agree"): KB is rendered at w32 only.** Main, please file it (a D147 addendum) and a request for the change.
+  - Basis: slot21 (r14p_report addendum). With R-14's cheap verify, KB at
+    w16 gives throughput 133 W / 59 L, with losses of median 6% and up to
+    35% (m15, m19, m07, m05, m08 gate/sparse). At w32 it still wins 190 /
+    18, losses median 5%, max 18%.
+  - The change, kit-local: the vrun distance rule renders the KB filter in
+    the w32 arm only; w16 filters on KA alone. SIMD-off is byte-identical
+    (no abi). The `vrun-kb` deny keeps its meaning (no KB at any level).
+  - Filed, not built: KB at w16 when pcrec's `rank_ppm` says KA is dense
+    (KB's own case), and a look at KB's remaining w32 losses (75; median
+    5%, max 18%).
+  - Also from slot21, for triage before anyone relies on it: 11 D-F
+    comparisons (padded+trim vs R-13's verify) lose >= 10% (up to +23%),
+    mostly w32 gate/sparse throughput on m10, m12, v03, v05, v11. Sparse
+    cells barely run the verify, so suspect the main-guard margin (E
+    extra bytes) or noise. Kit triage lane on the slot21 data, no box time.
+- done: 2026-10-11 — **R-15 (`precheck_assign_byte`, memchr ASSIGN for the one-byte gate site; the kit's first SCALAR deny `--memfn=no-precheck-assign-byte`; ZERO movers on main, no abi): branch lane/memfn-r15 @ this commit. Report: docs/dev/lanes/r15b_report.md; slot22 evidence docs/design/memfn/probes/r15/.**
+  - Serves the site: under a scratch merge into lane/rlhbuild, ipv6, ipv4
+    and dotted4 render memchr ASSIGN at entry AND re-entry. The deny equals
+    rlhbuild's generic text byte for byte. Answers equal (handoff.rxt
+    4908/0 both ways).
+  - slot22, all stages:
+    - identity sweeps (plain, start, variants, simd) 0 artifact movers;
+    - deny sweeps 0; N2 clean (row chosen 0 on main); G2 full
+      199,850,927/0;
+    - mech 13 rows COMPLETE 0/0/0/0/0.
+  - Reds, each triaged and closed:
+    - G2 quick's two g2m4 population floors: a subsample phase shift.
+      Re-pinned to 98000 / 48000; quick re-run 52,987,686/0.
+    - test-axes: -fno-hyb-reseed and -fno-cls-pack lost cases in a loaded
+      window (0 mismatches). A quiet re-run of both is green. The kit's
+      --memfn rows are not swept by test-axes.
+  - **For main:**
+    - the variants sweep's 26 tag-population floor lines are PRE-EXISTING
+      (byte-identical in slot21) and need a re-pin on main;
+    - at L1's merge, flip the three stale items (r15b_report §7).
+  - Next for the kit: R-16 (KB at w32 only, S815-S819).
+- notice: 2026-10-11 — **Frank's ruling on the span ideas (direct to the kit): gather information, but no kit build time; file it UNSCHEDULED.** Main, please record it under [SPAN-ISEL] as an unscheduled item:
+  - the two read-only surveys (strict spans, anchored cores, bounded
+    tokens; summary in memfn/docs/ideas.md 2026-10-11, reports kept at
+    worktrees/memfn-slot/spansurv/);
+  - the masked-range span form with negation (one XOR per lane);
+  - a DESIGNED SPIKE: hand-written span filter/verify vs today's search
+    on loglines/uuid, hex32-id, iso-ts and bounded/dotted4, at tier U,
+    both layers, no pcrec change. It runs opportunistically on a quiet box
+    and is not scheduled.

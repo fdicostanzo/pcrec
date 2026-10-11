@@ -76,3 +76,6 @@ Maintenance: update this file when files are added/removed or change roles.
   interleaved `taskset` timing) and the table (`rq4_table.py`: D−K and
   ON−OFF against null bands). Run by `worktrees/memfn-slot/slot20/run.sh`.
   Report: `docs/dev/lanes/rq4h_report.md`. Own CLAUDE.md.
+- `r15/` — R-15's slot22 evidence (2026-10-11): `slot22_verdict.txt` and the two
+  triage reports (G2 quick's phase-shifted population floors; test-axes'
+  two load-window axes and the variants sweep's pre-existing tag floors).

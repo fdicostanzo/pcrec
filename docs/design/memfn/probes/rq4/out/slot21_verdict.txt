@@ -1,0 +1,28 @@
+START 2026-10-11T03:07:55-04:00 mode full tip ea14761f ref 76428e05 ref9 9fefd983 ref14b 14143d53 tree /home/pcrec/projects/pcrec/worktrees/r14 cpus 12-15 armset slot21x dirty=0
+PREFLIGHT ok harness=docs/design/memfn/probes/rq4/rq4_arms.py
+BUILD rc=0
+STRICT rc=0
+SABANCHOR rc=0 :: all anchors resolve
+SWEEP plain rc=1 wall=67s :: c-default=0 c-vm=0 emit-ir-vm=0 other=0 composition=0 dumps=1 
+JUDGE plain ok
+SWEEP start rc=1 wall=269s :: c-default=0 c-vm=0 emit-ir-vm=0 other=0 composition=0 dumps=1 arms=68 armsmis=0
+JUDGE start ok
+SWEEP variants rc=1 wall=433s :: plain/c-default=0 plain/c-vm=0 plain/emit-ir-vm=0 plain/other=0 plain/dumps=1 lowsize/c-default=0 lowsize/c-vm=0 lowsize/emit-ir-vm=0 lowsize/other=0 lowsize/dumps=1 lowdfa/c-default=0 lowdfa/c-vm=0 lowdfa/emit-ir-vm=0 lowdfa/other=0 lowdfa/dumps=1 lowboth/c-default=0 lowboth/c-vm=0 lowboth/emit-ir-vm=0 lowboth/other=0 lowboth/dumps=1 lowthr/c-default=0 lowthr/c-vm=0 lowthr/emit-ir-vm=0 lowthr/other=0 lowthr/dumps=1 
+JUDGE variants ok
+SWEEP simd rc=1 wall=74s :: c-default=44 c-vm=43 emit-ir-vm=0 other=0 composition=0 dumps=1 arms=4 armsmis=0
+JUDGE simd ok
+SWEEP deny_full rc=0 wall=29s :: c-default=0 c-vm=0 arms=4 armsmis=0
+JUDGE deny_full ok
+SWEEP deny_pad rc=0 wall=29s :: c-default=0 c-vm=0 arms=4 armsmis=0
+JUDGE deny_pad ok
+G2 rc=0 :: checks passed: 192654555 checks failed: 0 
+MAKE_TEST rc=0 wall=1066s
+NO_RED_LINES
+MECH_ROWS 31 rows == the 31 s21prep found (2026-10-11)
+MECH_START 2026-10-11T04:02:59-04:00
+MECH rc=0 wall=1483s :: == mech run COMPLETE: 31 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)
+SUBJECTS rc=0 :: subjects: -> /home/pcrec/projects/pcrec/worktrees/memfn-slot/slot21/subjects, sha256 mismatches 0
+ESTIMATE arms DEFAULT,NOPAD,FULL,KBDENY,FULLKB,OFF: 51 cells, 872 cell-regimes, 3 launches x 2 levels x 6 arms = 31392 readings, ~8209 s (137 min) at 0.2615 s/reading (+ ~30 s emit/build/check, + up to 600 s per launch if --wait-load holds)
+RQ4 rc=0 wall=8233s :: RQ4-RUN COMPLETE /home/pcrec/projects/pcrec/worktrees/memfn-slot/slot21/run fails=0 readings=31392 wall=8232s
+TABLE rc=0 :: /home/pcrec/projects/pcrec/worktrees/memfn-slot/slot21/table.md (prior /home/pcrec/projects/pcrec/worktrees/memfn-slot/slot20/run)
+SLOT21_DONE 2026-10-11T06:44:59-04:00 red=0

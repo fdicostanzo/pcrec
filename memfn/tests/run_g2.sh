@@ -150,10 +150,15 @@ FLOOR_LOOPX_MUT=115      # W2 mutation 8: LOOP_EXIT sites mutated (measured 130;
 #   Q-R7-1 read-bounded range: reads-below FIND sites (458), their checks (1.67M),
 #     checks whose planted hit IS the candidate n (304k), answers that ARE a hit at n (125k)
 #   Q-R7-2 AT_N: sites (454), checks (1.65M), checks run with lo == n (67k)
+#   2026-10-11 (R-15, kit manager): RB_HIT_N 98000 and ATN_LO_N 48000 = floor(0.9 x
+#     109527 / 53998), measured on the QUICK tier at lane/memfn-r15 62261bc3 (slot22). R-15's
+#     256 landmark sites per batch shift the layout-2 subsample counter's phase
+#     (g2_driver.c), so these two QUICK counts are PHASE-SENSITIVE: any change to the
+#     site stream can move them (sites and checks did not move; no answer failed).
 #   Q-R7-3 LOOP_EXIT: sites (130), checks (467k), checks that took the break (26k) and
 #     that fell through (441k)
-FLOOR_RB_SITES=410;   FLOOR_RB_CHECKS=1500000; FLOOR_RB_PLANT_N=270000; FLOOR_RB_HIT_N=110000
-FLOOR_ATN_SITES=410;  FLOOR_ATN_CHECKS=1480000; FLOOR_ATN_LO_N=60000
+FLOOR_RB_SITES=410;   FLOOR_RB_CHECKS=1500000; FLOOR_RB_PLANT_N=270000; FLOOR_RB_HIT_N=98000
+FLOOR_ATN_SITES=410;  FLOOR_ATN_CHECKS=1480000; FLOOR_ATN_LO_N=48000
 FLOOR_LX_SITES=115;   FLOOR_LX_CHECKS=420000;  FLOOR_LX_BREAK=23000; FLOOR_LX_FALL=390000
 # lane g2m7, MF_SITE_ABI 7: MF_OP_MISMATCH (R-8, M7). G2 GENERATES the fold maps (identity, ASCII /
 # Latin-1 lower, upper, per-pair random representative, and a bijection after a representative: the
@@ -952,7 +957,7 @@ grep -E '^(class|build|paths|guarded bytes)' "$work/simd.log" | sed 's/^/   /'
 # driver output, and FLOOR_ROWS below is a literal measured once.
 MM_ROW_FLOORS="arms:generic:600 arms:mismatch_inplace:300"   # (f): the MISMATCH-only process, measured less ~10%
 ST_ROW_FLOORS="arms:generic:4100"   # (g): the STRIDE-only process, measured less ~10% (lane g2m6)
-FLOOR_ROWS=19   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below)
+FLOOR_ROWS=20   # distinct (table,row) pairs in the registry (lane g2m4: 14, with arms/pf_memchr_back; lane g2m7: 15, with arms/mismatch_inplace; lane r4e0: 17, with fn/fn-pair and fn/fn-memchr; lane r13: 19, with fn/vrun-w16 and fn/vrun-w32, reached by the SIMD family's process below; lane r15b: 20, with arms/precheck_assign_byte, reached by the gate family's landmark sites)
 reach_pass() { echo "PASS: $1"; passed=$((passed + 1)); }
 reach_fail() { echo "FAIL: $1"; note_fail 1 "rows: $1"; }
 # reach_lines FILE: the chosen-lines of one process

@@ -15,6 +15,32 @@ its report is **`G2M7_REPORT.md`**.
 Lane g2m6 brought G2 to MF_SITE_ABI 8 (R-10, M6: the STRIDED ADVANCE, `MF_MAX_TERM` 32):
 its report is **`G2M6_REPORT.md`**.
 
+## The landmark gate sites (lane r15b, R-15)
+
+NOT written blinded (the row's author wrote them; a D27-blinded pass over
+the same space stays a recommendation, r15scope §5.2): their independence
+rests on G2's reference (g2_ref.c) and on writing them from memfn.h and
+r15scope §3.2/§5.2's contract list, not from precheck.c.
+
+- **g2_gen.c `landmark_one`** — part of family `gate` (section (5), both
+  batches, NOT the style passes), its own RNG stream and id range 2000000:
+  the §15.5 gate whose ret_pred is preds[0], ONE singleton REQUIRED SET at
+  offset 0 in a REQUIRED predicate ([REQ-HANDOFF-L1]'s byte landmark), now
+  and then followed by a run with a fn_ref or a set rest; empty MISS; miss
+  stated as n three ways; on_miss_leaves mostly 1; the member stepping
+  through all 256 bytes. Half the sites are near-misses, one field off:
+  2/3/255/256 members, offset 1 and -1, an OPTIONAL term or predicate,
+  ret_pred a later byte, end_back 1, empty NOP/EXCLUDED/AT_N, a stated
+  floor, a miss other than n. Census line `LMSITES`.
+- **`g2_gen --gate-only 1`** generates the gate family alone (gate_one and
+  the landmark sites, both batches).
+- **run_g2_gate.sh** — that family standalone (~30 s): plain and
+  ASan+UBSan runs against the reference, the LMSITES census floors, the row
+  `precheck_assign_byte` chosen by trace (`build/libpcrec_mftrace.a`), and a
+  CONTROL (W2 mutation 2 over the same space must kill >= 80% of the
+  mutated sites; measured 345/388). Mech arm `g2gate`. `make test-memfn-g2`
+  runs the same landmark sites inside its own space (`FLOOR_ROWS` 20).
+
 ## The SIMD family (lane r13, R-13, R4e' batch 1; MF_SITE_ABI 10)
 
 NOT written blinded: lane r13 wrote the kit's rows and this family both, so
@@ -37,8 +63,14 @@ bytes the generator chose) and the compiler, not on the author.
   by any position, the second entry at the run's ends, partial), rates with
   ties, entries past `rank_n` filled with positions a reader would choose;
   one site in five also tries a MALFORMED copy, which must be refused while the same copy WELL-FORMED (its control) is accepted; and
-  a `deny-kb` class (`--memfn=no-vrun-kb`). Writes `g2v_sites.c` and
-  `g2v_meta.tsv` (the stated entries, the copy's verdict, the tie count).
+  a `deny-kb` class (`--memfn=no-vrun-kb`); since lane r14b (R-14) a
+  `deny-trim` class (`--memfn=no-vrun-trim`, the whole-run verify; the
+  11th of every 20 sites); since lane r14p (the R-14 follow-up) a
+  `deny-pad` class (`--memfn=no-vrun-pad`, the 10th of every 20), and each
+  row's ALONE measurement is the largest over the trim and pad arms (four
+  renderings). Writes `g2v_sites.c` and `g2v_meta.tsv` (the stated
+  entries, the copy's verdict, the tie count, the generated per-position
+  masks, whether the site states MF_D_RUN_OVERLAP).
 - **g2/g2_simd.h**, **g2/g2_simd_driver.c** — the site table and the
   driver: G2's reference (first c >= pos whose run holds, a plain byte
   loop) against every rendered function, at every span length 0..2*32+T+8,
@@ -53,13 +85,24 @@ bytes the generator chose) and the compiler, not on the author.
   gives from the GENERATED entries (KA, then the first stated entry other
   than KA; KA alone under the deny), every malformed copy refused, floors
   per ranking mode and per filter shape (a KB, none, KB not the first
-  entry, KB at the run's ends, a rate tie);
+  entry, KB at the run's ends, a rate tie); THE VERIFY CHECK (r14b):
+  every rendered helper's verify, parsed from its text, compares exactly
+  the positions the rule gives from the GENERATED masks and filter (every
+  position whose mask is not 0x00, less the filter's; all of them under
+  `deny-trim`), and has no verify iff that set is empty, with floors per
+  verify shape (none, a gap, whole, bytes, words); THE PADDED VERIFY
+  (r14p): where the rule gives one, two verifies, the main path's ONE word
+  of the rule's width at the run's offset (its padding compared nowhere)
+  and the final block's run compare loading nothing past the run, and the
+  main guard VW + T + E; a floor on padded helpers and, per live level,
+  on main-path padded verifies whose word ends at the subject's last byte
+  (the instrumented build's `g2v_edge`);
   guarded bytes against `tests/memfn/simd_bounds.tsv`,
   answers at x86-64 / x86-64-v3 / x86-64-v4 / `-mgeneral-regs-only` and
   ASan+UBSan, per-path execution floors (its OWN text instrumentation of
   the rendered file: entry fall-through, whole block, final block, verify),
-  five plants per level (final-block guard, lane mask, lane order, verify
-  skipped, reach one short) red where the level is live and green where it
+  six plants per level (final-block guard, lane mask, lane order, verify
+  skipped, reach one short, the padded verify's margin one short) red where the level is live and green where it
   is compiled out, and no PDEP/PEXT/gather in any object. Under `--rows`
   its generator's REACH lines join the per-row sum (the SIMD rows are
   reached nowhere else: G2's other sinks offer no bracket ops).

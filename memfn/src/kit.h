@@ -215,12 +215,17 @@ typedef struct arm {
     int (*define)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *file);
     int (*use)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body);
     const gate_contract *ct;    /* its uses and serves ([MEMFN-ROWCON])     */
+    const char *opt;    /* its options.def name, denied by `no-<opt>` in the
+                           site's `opts` (D144 item 4); NULL on the rows
+                           transcribed from pcrec, which moved no byte and
+                           carry no deny, and on the generic row            */
 } arm;
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
 #define precheck_arm        MF_NS(precheck_arm)
 #define precheck_assign_arm MF_NS(precheck_assign_arm)
+#define precheck_assign_byte_arm MF_NS(precheck_assign_byte_arm)
 #define runcmp_arm          MF_NS(runcmp_arm)
 #define pf_memchr_arm         MF_NS(pf_memchr_arm)
 #define pf_memchr_bounded_arm MF_NS(pf_memchr_bounded_arm)
@@ -231,12 +236,15 @@ typedef struct arm {
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
-/* precheck.c: the pre-check composite (§15.5), ONE renderer as TWO rows
+/* precheck.c: the pre-check composite (§15.5), ONE renderer as THREE rows
  * (N3's split): its ON_MISS sites never read `miss`, its ASSIGN sites test
- * the run call's miss, which is `n`, so the two serve different `miss`
- * classes. Both report the form id `precheck`. */
+ * the kept position against `n`, so the two serve different `miss`
+ * classes; an ASSIGN site keeps a run's position (a call) or, R-15, its
+ * first byte's (a `memchr`, the kit's first scalar row with a deny). All
+ * report the form id `precheck`. */
 extern const arm precheck_arm;          /* ON_MISS                            */
-extern const arm precheck_assign_arm;   /* ASSIGN                             */
+extern const arm precheck_assign_arm;   /* ASSIGN, ret_pred a run             */
+extern const arm precheck_assign_byte_arm; /* ASSIGN, ret_pred the first byte */
 extern const arm runcmp_arm;    /* runcmp.c: the run compare EXPR (§15.6)     */
 /* pffind.c: the prefilter FIND (§15.7, R4g), TWO renderers as FIVE rows
  * (N3's split, by end_back and by the term's offset): `memchr` over a
@@ -398,6 +406,11 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
 #define run_cmp_render  MF_NS(run_cmp_render)
 #define run_cmp_prepare MF_NS(run_cmp_prepare)
 #define run_cmp_sat     MF_NS(run_cmp_sat)
+#define run_cmp_render_trim MF_NS(run_cmp_render_trim)
+#define run_cmp_trim_none   MF_NS(run_cmp_trim_none)
+#define run_cmp_pad_over    MF_NS(run_cmp_pad_over)
+#define run_cmp_pad_decl    MF_NS(run_cmp_pad_decl)
+#define run_cmp_render_pad  MF_NS(run_cmp_render_pad)
 
 /* Writes a C boolean expression, true iff the RUN term `t`'s bytes at
  * `base + off` hold (masked where `t->mask` is given). Reads exactly those
@@ -405,6 +418,31 @@ int ofs_fn_call(mf_art *art, const mf_hooks *h, const mf_pred *p,
  * a caller may only conjoin it. */
 int run_cmp_render(mf_art *art, const mf_term *t, const char *base,
                    int32_t off, mf_sink *c);
+/* The same compare with the run positions `proven[0..np)` (indices into the
+ * run) left out: the caller has already tested them, under the same mask.
+ * The row is the whole run's (so is its word width, the helper
+ * run_cmp_prepare declared); a trimmed exact run is compared byte by byte. */
+int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
+                        int32_t off, const int *proven, unsigned np, mf_sink *c);
+/* 1 iff the trimmed compare tests nothing: every position of `t` is proven
+ * or a don't-care (mask 0x00). */
+int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np);
+/* THE PADDED COMPARE (runcmp.c's header): how many bytes past the run's end
+ * it reads, 0 where it does not apply (the walk picked no words-form row,
+ * the run is longer than 8 or one word already), -1 on a refusal. */
+int run_cmp_pad_over(mf_art *art, const mf_term *t);
+/* Its locals, declared at the head of the caller's function, one statement
+ * per line behind `indent`: `pw`, and `pk`/`pt`, the padded word's mask and
+ * value less the positions `proven[0..np)`. The caller uses no other name
+ * `pw`, `pk` or `pt`. */
+int run_cmp_pad_decl(mf_art *art, const mf_term *t, const int *proven, unsigned np,
+                     const char *indent, mf_sink *c);
+/* Its expression at `base + off`, after run_cmp_pad_decl in the same
+ * function. `over` is the count of bytes past the run's end the caller
+ * guarantees readable: no default; a refusal where it is short of
+ * run_cmp_pad_over's. */
+int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                       unsigned over, mf_sink *c);
 /* A FUNC definition's call before its own text: records the word widths the
  * RUN terms of `p` will load and declares every pending helper into `c`. */
 int run_cmp_prepare(mf_art *art, const mf_pred *p, mf_sink *c);

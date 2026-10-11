@@ -1368,3 +1368,89 @@ pointer when a kit change merges to main.
   the dense-hit / short-span regimes are re-timed before KB's losses are
   called final. Posted as a responses notice with proposed D-entry text
   and a proposed request for main to file.
+
+## 2026-10-11 — R-14 built (trim + padded word), slot21 prepared
+
+- R-14 filed by main (D147 addendum 15) and acked. Lane r14b (opus): the
+  position-trimmed vrun verify, deny `vrun-trim`, S793-S796. Frank then
+  asked whether one wide masked compare beats single-byte checks. It does:
+  the cost is loads and branches. A mid-run design-change message to r14b was
+  MISSED (its report never mentions it; see memory
+  pcrec-no-addenda-to-running-lanes), so a fresh lane, r14p (opus), built
+  the padded word on top: one w4/w8 over the whole run in the main path,
+  deny `vrun-pad`, S797-S799. r14p corrected my premise: the top lane has 0
+  bytes past its run, so the main guard now reserves E = P - L extra bytes.
+- Both merged into lane/memfn-r14 (74b8e0fd); light suites green in both
+  lanes.
+- Lane s21prep (sonnet): rq4 harness generalised to arm sets (3-arm mode
+  reproduces slot20 byte for byte), plus the slot21 script: the heavy chain
+  + 6-arm timing (slot21x: DEFAULT/NOPAD/FULL/KBDENY/FULLKB/OFF; FULLKB
+  makes F-FK slot20's exact D-K control). Merged (bae70443). Dry run against
+  worktrees/r14 green (02:52). Estimate ~3 h 50 min, timing last (137 min).
+
+## 2026-10-11 — slot21: R-14 validated; the 6-arm reading re-opens KB at w16
+
+- slot21 03:07-06:44 is green in every stage (r14p_report addendum).
+- Padded word + trim beats R-13's full verify (478 W / 151 L). Trim alone
+  is WORSE than full (261 / 375), so pad is required. SIMD-on vs off
+  losses went from 63 to 33.
+- KB: of slot20's 179 losses, 78 persist under R-14's verify. The exact
+  control reproduces 110, so about 40% were noise. With a cheap verify,
+  KB's w16 value shrinks (w16 throughput D-K 133 W / 59 L vs 188 / 6), and
+  w32 still wins (190 / 18). Q-R14-1 goes to Frank: KB at w16?
+- done: R-14 posted.
+
+## 2026-10-11 — Q-R14-1 ruled by Frank: KB at w32 only
+
+- Frank: "agree" to KB at w32 only (the kit's distance rule; no pcrec fact).
+  Posted as a responses notice for main to file and request. The dense-KA
+  w16 refinement is filed.
+- Loss sizes from slot21, given to Frank:
+  - D-K at w16: median 6%, max 35% (the ruling removes these);
+  - D-K at w32: median 5%, max 18%;
+  - D-F: median ~4%, but 11 comparisons at >= 10%, mostly w32 sparse
+    throughput. These need a read-only triage lane.
+
+## 2026-10-11 — R-15 built (precheck_assign_byte), slot22 read, delivered
+
+- Main met R-15's D77 trigger (the L1 build through generic regresses: ipv6
+  x1.87, ipv4 x4.48, dotted4 x46; a memchr gate restores the wins). Lane r15b
+  (opus) built `precheck_assign_byte` (memchr ASSIGN, a third row of
+  precheck.c's renderer before generic) and the kit's first SCALAR deny. It
+  shows zero movers on main, and under a scratch rlhbuild merge the row
+  serves entry + re-entry; deny == generic byte for byte.
+- slot22 (08:31-12:51):
+  - every identity sweep: 0 artifact movers (dumps only); deny sweeps 0;
+    N2 clean; G2 full 199.9M/0; mech 13 rows COMPLETE zero.
+  - Reds, each triaged:
+    - G2 quick: 2 g2m4 POPULATION floors crossed by a subsample phase shift
+      from R-15's landmark sites (no answer failed). Re-pinned 98000 / 48000
+      by the file's rule; quick re-run green (ee365ab1).
+    - test-axes: two EXISTING axes (-fno-hyb-reseed, -fno-cls-pack) lost
+      cases in a slow/loaded window (1265 s vs ~252 s per axis); the
+      kit's --memfn rows are not in test-axes. A quiet re-run of those two
+      axes is green.
+    - The variants sweep's 26 tag-floor lines are PRE-EXISTING (identical in
+      slot21, before R-15). Floors are stale on main; reported to main.
+- done: R-15 posted. Next is R-16 (KB at w32 only).
+- Side thread with Frank (no kit time; UNSCHEDULED under [SPAN-ISEL]): the
+  loss survey (accepted), the span surveys, negation as a wrap-around range,
+  captures as span offsets, the four-engine taxonomy and cached class truth
+  vectors for the VM. All in ideas.md on lane/memfn-ideas3.
+
+## 2026-10-11 — the vrun loss survey (one pass, accepted)
+
+- Frank: no compiler-flag fixes for the residual losses. Survey the loss
+  items for an emit-time decline predicate, ONE effort, then accept and move
+  on (the losses are only slightly above noise).
+- Lane losssurv (opus, read-only) found:
+  - no predicate for the padded-verify losses (layout);
+  - none for KB's w32 dense-hit losses (density, which the kit cannot see);
+  - the `(?i)azqb` w16 decline is reproducible but a net regression;
+  - one hypothesis row, KB off when KA is very rare at w32 (one cell).
+  It also corrected the slot21 "exact control" claim (RX_DFA_START changed
+  on 20 cells).
+- Frank accepted: build nothing; ideas.md gains the hypothesis, the pc16
+  nested-check residue, and (Frank's addition) pcrec passing the kit more
+  workload knowledge: density, subject length, byte profile, call pattern,
+  from pcrec-analyze bundles. r14p_report gains the correction.

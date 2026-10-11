@@ -842,6 +842,24 @@ static void gate_cases(void)
     gate_case("pre-define-nonident", &po, &hd, &hu);
     gate_hooks(&od, &ou, &hd, &hu, NULL, NULL, NULL, NULL, NULL, NONID);
     gate_case("pre-use-nonident", &po, &hd, &hu);
+    /* precheck_assign_byte (R-15): the kept byte's row shares the ASSIGN
+       row's declarations: a miss stated as n renders it, another miss, a
+       stated floor or a non-identifier s at define leave the site to
+       generic, an unstated miss is refused */
+    mf_pred lb[1];
+    p_byte(&lb[0], 46);
+    mf_site pl = pre_site(lb, 1, 0);
+    Fx ld = { &pl, "rx_reqrun", NULL }, lu = { &pl, "rx_reqrun", "    " };
+    gate_hooks(&ld, &lu, &hd, &hu, NULL, NULL, NULL, MF_MISS_N, NULL, "subject");
+    gate_case("pre-landmark-miss-token", &pl, &hd, &hu);
+    gate_hooks(&ld, &lu, &hd, &hu, NULL, NULL, NULL, NULL, NULL, "subject");
+    gate_case("pre-landmark-miss-unstated", &pl, &hd, &hu);
+    gate_hooks(&ld, &lu, &hd, &hu, "((size_t)-1)", NULL, NULL, "((size_t)-1)", NULL, "subject");
+    gate_case("pre-landmark-miss-other", &pl, &hd, &hu);
+    gate_hooks(&ld, &lu, &hd, &hu, NULL, "search_floor", NULL, MF_MISS_N, "search_floor", "subject");
+    gate_case("pre-landmark-define-floor", &pl, &hd, &hu);
+    gate_hooks(&ld, &lu, &hd, &hu, NULL, NULL, NONID, MF_MISS_N, NULL, NONID);
+    gate_case("pre-landmark-define-nonident", &pl, &hd, &hu);
 
     /* runcmp: F1 through mf_emit's one hook set */
     mf_site r = run_site("abcdefgh", NULL, 0, 0);
@@ -1162,6 +1180,31 @@ int main(int argc, char **argv)
     p_run(&w[0], "dog", NULL, 2, 1);
     s = pre_site(w, 1, 0);
     bad |= render(dir, "pre-window-handoff", &s, "rx_reqrun");
+
+    /* precheck_assign_byte (R-15): the gate's one byte KEPT by the handoff
+     * ([REQ-HANDOFF-L1]'s byte landmark), its deny (the generic row renders
+     * the same site), and three near-misses the row must leave to generic: a
+     * two-member set, an OPTIONAL predicate, a later part as ret_pred.
+     * run_arm_pins.sh check 14 runs the first two's text on fixed subjects. */
+    mf_pred lm[2];
+    p_byte(&lm[0], 46);
+    s = pre_site(lm, 1, 0);
+    bad |= render(dir, "pre-landmark-byte", &s, "rx_reqrun");
+    s.opts = "no-precheck-assign-byte";
+    bad |= render(dir, "pre-landmark-byte-deny", &s, "rx_reqrun");
+    p_byte(&lm[0], 46);
+    t_set(&lm[0].term[0], 0, ".:", 0);
+    lm[0].term[0].need = MF_REQUIRED;
+    s = pre_site(lm, 1, 0);
+    bad |= render(dir, "pre-landmark-two-members", &s, "rx_reqrun");
+    p_byte(&lm[0], 46);
+    lm[0].need = MF_OPTIONAL;
+    s = pre_site(lm, 1, 0);
+    bad |= render(dir, "pre-landmark-optional", &s, "rx_reqrun");
+    p_run(&lm[0], "dog", NULL, 2, 1);
+    p_byte(&lm[1], 46);
+    s = pre_site(lm, 2, 1);
+    bad |= render(dir, "pre-landmark-later", &s, "rx_reqrun");
 
     /* runcmp (M1b): the four rows and the deny, one fixture each */
     static const uint8_t ci4[] = { 0xDF, 0xFF, 0xDF, 0x00 };      /* cube, exact, cube, don't-care */
