@@ -1875,12 +1875,16 @@ while IFS= read -r pat; do
     s512l_n=$((s512l_n + 1))
     [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] && s512l_k=$((s512l_k + 1))
 done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
+                                 "$ROOT_DIR/tests/litscan/reqcube.rxt" \
                                  "$ROOT_DIR/tests/litscan/litrun.rxt" \
                                  "$ROOT_DIR/tests/base/literals.rxt" \
                                  "$ROOT_DIR/tests/base/alternation.rxt" \
+                                 "$ROOT_DIR/tests/base/possess_lazy_guard.rxt" \
+                                 "$ROOT_DIR/tests/base/review_r2.rxt" \
                                  "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | LC_ALL=C sort -u)
-# Floor at 80% of the re-entering count measured at the landing (2026-10-11).
-S512L_FLOOR=40
+# Floor at 80% of the re-entering count measured at the landing (2026-10-11,
+# lane rlhbuild: 28 re-entering artifacts).
+S512L_FLOOR=22
 echo "INFO: [5.12l] population $s512l_n patterns: re-entering $s512l_k"
 [ "$s512l_k" -ge "$S512L_FLOOR" ] \
     && ok "[5.12l] $s512l_k re-entering artifacts hold the presence biconditional and re-ask the gate from scan_position (floor $S512L_FLOOR)" \

@@ -39,6 +39,10 @@
 #              another pattern, or another fixture. In the control artifact
 #              the row must NOT be chosen and the signature must be ABSENT.
 #
+# [REQ-HANDOFF-L1] (abi 75): the two bounded start-scan rows' witnesses add
+# `-fno-req-handoff`; their pattern's pre-check handoff otherwise re-enters
+# (NEXT's `handoff` row ranks above the start-byte rows).
+#
 # The control is what makes a signature mean something (learnings §3): a
 # literal that also appears where the row is not chosen proves nothing.
 # run_rows.sh also holds every signature to EVERY artifact it compiled and
@@ -50,9 +54,9 @@ arms	precheck	pcrec	pattern	-	abc[0-9]+xyz	if (rx_reqrun(	-fno-req-byte	=
 arms	precheck_assign	pcrec	pattern	-	(ab)c?userpass	 = rx_reqrun(	-fno-req-handoff	=
 arms	runcmp	pcrec	pattern	--engine=vm	abc[0-9]+xyz	rx_w2(subject + scan_position)	--engine=vm -fno-lit-run	=
 arms	pf_memchr	pcrec	pattern	-fno-offset-skip	abc[0-9]+xyz	, subject_length - scan_position);	-	=
-arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip	(?!x)abc	subject_length - 1 - scan_position)	-	=
+arms	pf_memchr_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff	(?!x)abc	subject_length - 1 - scan_position)	-	=
 arms	pf_walk	pcrec	pattern	-fno-offset-skip	[a-z]+@[a-z]+\.com	while (scan_position < subject_length && !	-fno-offset-skip	abc[0-9]+xyz
-arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	-	=
+arms	pf_walk_bounded	pcrec	pattern	-fno-offset-skip -fno-req-handoff	\b\.[0-9]{4}Z	while (scan_position + 1 < subject_length && !	-	=
 arms	pf_memchr_back	pcrec	pattern	-	(?m)^abc	 - subject) + 1;	-	abc[0-9]+xyz
 arms	mismatch_inplace	pcrec	pattern	-	(?i)(ab)\1	unsigned char x, y;	-	(ab)\1
 arms	generic	pcrec	pattern	-	a[^x]*	subject_length) && (	-	abc

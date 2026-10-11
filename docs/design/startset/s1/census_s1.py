@@ -75,7 +75,10 @@ def vm_args(args):
 
 
 def arm(b, args, td, want_c):
-    args = [*args, "-fno-start-set"]
+    # [REQ-HANDOFF-L1] (abi 75) and `-fno-req-handoff`: the re-entered
+    # handoff ranks above the hat rows; the hat suites deny it on both arms
+    # (tests/startset/dfahat_checks.py, NO_HANDOFF), so the census does too.
+    args = [*args, "-fno-start-set", "-fno-req-handoff"]
     try:
         r = subprocess.run([PCREC, *args, "--emit-facts", "--pattern", b["pattern"]],
                            capture_output=True, timeout=300)
