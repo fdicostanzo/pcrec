@@ -326,3 +326,21 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** the SIMD thread's item under the 2:1 split. Heavy slots come through main, one at a time.
 
 **Sabotage ids:** S716-S730. The R-13 follow-up (lane rankuse, the kit's use of `mf_pred.rank_*`, D157) holds S750-S757 (allocated 2026-10-09; next free S758).
+
+## R-14 (2026-10-11, pcrec manager) — VRUN VERIFY TRIM: verify only the run positions the filter did not prove; re-time KB's losing regimes
+
+**Customer:** `[OPT-SIMD]`; Frank's Q-RQ4-1 ruling, D147 addendum 15 (kit notice 46499759).
+
+**Trigger:** RQ-4's measured KB losses (slot20: 179 of 1,396 comparisons, +2..11% in the dense-hit and short-span regimes; `docs/dev/lanes/rq4h_report.md` addendum, `docs/design/memfn/probes/rq4/out/slot20_table.md`).
+
+**Deliverable:**
+- vrun's per-candidate verify checks only the run positions NOT covered by the filter (KA, plus KB when rendered).
+- It is kit-local and changes no SIMD-off byte: prove that with the identity gate on every arm, so there is no pcrec abi event. SIMD-on text moves. If the trimmed verify is its own form, it gets its own deny row per the `options.def` rule.
+- G2 and simdfloor stay green.
+- A re-timing pass on slot20's harness (`RQ4` cells: dense-hit, the spacing ladder, pc16/short75), at both levels and both layers. It is a heavy slot, so ask main for the GO. Report the 179 losing comparisons before and after.
+
+**Out of scope:** N >= 3 positions (a mask-is-verify run) and handing the DFA the post-run state (pcrec-side); both are logged in memfn/docs/ideas.md.
+
+**Capacity:** the SIMD thread's item under the 2:1 split.
+
+**Sabotage ids:** S793-S799 (allocated 2026-10-11; next free S800).
