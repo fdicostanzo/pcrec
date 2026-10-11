@@ -224,6 +224,6 @@ Full tables: `summary_run2.txt` (of record) and `summary_run1.txt`.
 
 - Identity: COMPLETE, 0 differences (`docs/dev/optloop/rewtwin/identity.log`).
 - Timing: COMPLETE, two runs, transcripts in the same directory.
-- `make test-spec-history`: run at delivery (the docs this lane adds). Its
-  result is in the handback message.
+- `make test-spec-history`: COMPLETE, 145 passed / 0 failed, rc 0, on this
+  branch's tip after the docs landed.
 - No `make test`: nothing under `src/` on `lane/rewtwin`.
