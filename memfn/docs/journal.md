@@ -1356,3 +1356,15 @@ pointer when a kit change merges to main.
   short-span regimes. §6's never-loses rule is not met, so Q-RQ4-1 goes to
   Frank via main (leaning: keep KB; a density-aware distance rule over
   rank_ppm is the general fix, filed rather than built).
+
+## 2026-10-11 — Frank's ruling on Q-RQ4-1 (direct to the kit)
+
+- Q-RQ4-1 (KB loses small in 179 of 1396 RQ-4 comparisons, so rankuse §6's
+  never-loses rule is not met). Frank asked whether a hit re-checks the whole
+  run. It does, three times for `(?i)cat`: the filter, a full scalar
+  verify, and the DFA restarting at state 0 (ideas.md 2026-10-11).
+- RULING (Frank, 2026-10-11, "Ok. I agree"): KB stays the default. The
+  vrun verify is trimmed to the positions the filter did not prove, and
+  the dense-hit / short-span regimes are re-timed before KB's losses are
+  called final. Posted as a responses notice with proposed D-entry text
+  and a proposed request for main to file.
