@@ -1,0 +1,50 @@
+diff --git a/src/gen/emit_dfa.c b/src/gen/emit_dfa.c
+index 2a8f09e6..1ef3c627 100644
+--- a/src/gen/emit_dfa.c
++++ b/src/gen/emit_dfa.c
+@@ -11341,6 +11341,45 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
+     pcrec_emit_start_zero(cx, c, "    ", "search_from", "subject",
+                           "subject_length", PCREC_START0_SEEK);
+     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
++    /* SCRATCH TWIN (lane rewtwin, NOT FOR MERGE): `rev-end-width`. A fixed
++     * byte width W puts every match ending at e in [e - W, e), so the leftmost
++     * start is the first of n-1-W (eol seed, s[n-1] == '\n') and n-W whose
++     * anchored run (FIN3 verify-at, the artifact's own match-here entry)
++     * matches; no reverse walk. DFA-hat entries only (a VM hybrid's inlined
++     * body keeps the walk), byte-boundary encodings only. */
++    {
++        const WidthIv *w = pcrec_fact_width(cx);
++        const PcrecEnc *we = pcrec_enc_by_id(cx->opt->encoding);
++        /* n - W may sit inside a character where the encoding has
++         * non-boundary positions; the match-here entry refuses such a
++         * position (PCREC_ERR_STARTPOS), so the twin is byte-boundary
++         * encodings only (the end window's own `start_cls` decline). */
++        if (entry && !relocate && we && !we->start_cls && w->bmin >= 0 && w->bmin == w->bmax) {
++            pcrec_gen_names(cx, &g);
++            pcrec_sb_printf(c, "    for (int revend_seed = %d; revend_seed >= 0; revend_seed--) {\n"
++                       "        size_t match_end_position = subject_length;\n", eol ? 1 : 0);
++            if (eol)
++                pcrec_sb_puts(c, "        if (revend_seed == 1) {\n"
++                           "            if (subject_length == 0 || subject[subject_length - 1] != '\\n') continue;\n"
++                           "            match_end_position = subject_length - 1;\n"
++                           "        }\n");
++            pcrec_sb_printf(c, "        if (match_end_position < %lluULL) continue;\n"
++                       "        size_t revend_start = match_end_position - %lluULL;\n"
++                       "        if (revend_start < search_from) continue;\n"
++                       "        rx_ctx revend_ctx = { .subject = subject, .len = subject_length,"
++                       " .pos = revend_start };\n"
++                       "        ptrdiff_t revend_len = %s(&revend_ctx);\n"
++                       "        if (revend_len < -1) return (int)revend_len;\n"
++                       "        if (revend_len < 0) continue;\n"
++                       "        size_t revend_end = revend_start + (size_t)revend_len;\n",
++                       (unsigned long long)w->bmin, (unsigned long long)w->bmin, g.matchfn);
++            emit_search_success(cx, c, "revend_start", "revend_end", "        ");
++            pcrec_sb_puts(c, "    }\n"
++                       "    return 0;\n"
++                       "}\n");
++            return;
++        }
++    }
+     if (relocate) emit_machine_tables(c, &fwd);
+     emit_machine_tables(c, &rev);
+     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
