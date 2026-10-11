@@ -4085,3 +4085,27 @@ returning `selected` for `forced`, and a changed PFLW stamp text.
   cpset `EMITTED_BYTES` manifest (six fixed-width rows lose their reverse
   machine; every row moves by the ABI block's widened `search_form`
   comment), `ABI_EXPECT` 74 and its ledger message, the FILEPIN.
+
+## [REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 74 -> 75)
+
+- **run_prechecks.sh** §5.12 reads the LANDMARK's K (`req_landmark_maxoff`) and
+  a byte or run gate (`size_t handoff_position = ...`), gains seven hand-K rows
+  for byte landmarks, and §5.12l-q: the re-entry's presence biconditional over a
+  population (floor 22 of 28), the K admission's cells, the reseed and the utf8
+  round-up inside the moving branch, the deny, the VM hybrid's non-re-entry.
+  §3.1 reads the byte gate's ASSIGN form where a byte is handed off; §4.4 and
+  §5.10's deny rows add `-fno-req-handoff`.
+- **run_dfa_stamps.sh** — `RX_DFA_PREFILTER` value `handoff`, its text marker
+  (`if (landmark_position < scan_position) {`) and a witness.
+- **run_encoding_checks.sh** (DD12a(i)) — the byte gate and the re-entry's move
+  and kept hit are encoding-owned regions; `handoff` vs a start-byte form is a
+  prior-keyed selection.
+- **cand_oracle_witnesses.tsv** — `handoff-reentry` witnesses (byte and run
+  landmark) and the deny's landing row; the self-check's read-cycle test is
+  over (slot, deny-bits) states (`cand_read_cycle`).
+- Re-pins: `ABI_EXPECT` 75 and its ledger message; the FILEPIN; SEL-1's
+  `--no-captures` fallback 2 -> 3 (the hostile cell `a.{1,50000}z`, a corpus
+  event); the size-term rescue cap 32,300 -> 33,200 (the byte gate's +571 B);
+  the cpset stamp manifest's `(?i)HeLLo` row; `run_facts_checks.sh`'s widened-
+  domain witness `\zabc` under `-fno-req-handoff`; `run_offset_skip.sh`'s uuid
+  guard adds `-fno-req-handoff`.

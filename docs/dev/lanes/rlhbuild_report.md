@@ -361,7 +361,20 @@ Reading, in order of consequence:
 
 ### 5.2 search_short (one `rx_search` from 0, short subjects <= 4 KiB)
 
-SHORT_TABLE_PLACEHOLDER
+| cell | n | new/base | newm/base | deny/base | new/newm | worst new/base | slower than main by >3% |
+|---|---|---|---|---|---|---|---|
+| loglines/ipv6 | 112 | 0.576 | **0.325** | 1.000 | 1.77 | 0.801 | 0 of 112 |
+| loglines/ipv4 | 112 | OWED | OWED | OWED | OWED | OWED | OWED |
+| bounded/dotted4 | <= 4 KiB subjects | OWED | OWED | OWED | OWED | OWED | OWED |
+
+ipv6 short calls: rlhtwin's h2 read 0.319; the memchr build reads 0.325, the
+generic build 0.576, every one of the 112 calls faster than main either way.
+**ipv4 and dotted4 were still running at hand-back** (the same detached
+`time.sh`, `REGIMES=search_short`, writing `times_short.tsv`; completion line
+`== rlhbuild time COMPLETE`); the chain (§6) waits for that line before
+lifting and writes `times_short_summary.txt` with
+`python3 docs/dev/optloop/rlhbuild/summarize.py times_short.tsv`. Fill these
+two rows from it.
 
 ### 5.3 The R-15 delta, stated for the kit (R-15's D77 reading)
 
