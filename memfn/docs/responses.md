@@ -1986,3 +1986,11 @@ the compiler, and is never adopted silently. Proposed for main to file
     - Trigger: RQ-4's measured KB losses.
     - Out of scope, filed in ideas.md: N >= 3 positions (a mask-is-verify
       run) and handing the DFA the post-run state (pcrec-side).
+
+## R-14 — VRUN VERIFY TRIM: verify only the run positions the filter did not prove; re-time KB's losing regimes
+
+- ack: 2026-10-11 — **R-14 taken** (SIMD thread). Kit branch
+  lane/memfn-r14 (cut from main 76428e05). Build lane r14b (opus, worktree
+  worktrees/r14b): trimmed verify, the identity gate on every arm (SIMD-off
+  0 movers), G2 + simdfloor, sabotage from S793-S799. Then the re-timing
+  slot on slot20's harness, on main's GO.
