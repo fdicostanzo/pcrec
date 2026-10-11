@@ -40,16 +40,16 @@ ARMSETS = {
 ARMSETS["slot21x"] = ARMSETS["slot21"][:4] + [
     ("FULLKB", [SIMD, "--memfn=no-vrun-pad,no-vrun-trim,no-vrun-kb"])] + ARMSETS["slot21"][4:]
 
-# (x, y, short name, verdict column header); delta = x - y, + = x costs.
-# D-K and ON-OFF keep slot20's names and headers so a slot20 run re-renders
+# (x, y, short name, description); delta = x - y, + = x costs. D-K and ON-OFF keep
+# slot20's names (and the table its two column headers) so a slot20 run re-renders
 # byte-identically.
-PAIRS = [("DEFAULT", "FULL", "D-F", "R-14 verify vs R-13 verify"),
-         ("NOPAD", "FULL", "N-F", "trim vs R-13 verify"),
-         ("DEFAULT", "NOPAD", "D-N", "pad vs trim"),
-         ("DEFAULT", "KBDENY", "D-K", "KB verdict"),
-         ("FULL", "KBDENY", "F-K", "R-13 verify vs KA-alone R-14"),
-         ("FULL", "FULLKB", "F-FK", "slot20 KB question"),
-         ("DEFAULT", "OFF", "ON-OFF", "SIMD verdict")]
+PAIRS = [("DEFAULT", "FULL", "D-F", "R-14 verify (trim + pad) vs R-13's whole-run verify"),
+         ("NOPAD", "FULL", "N-F", "r14b's trim alone vs R-13's whole-run verify"),
+         ("DEFAULT", "NOPAD", "D-N", "r14p's padded word on top of the trim"),
+         ("DEFAULT", "KBDENY", "D-K", "KB, trim + pad on in both (slot20's KB question on R-14's verify)"),
+         ("FULL", "KBDENY", "F-K", "R-13's verify with KA+KB vs KA alone with trim + pad on (approximates slot20's D-K)"),
+         ("FULL", "FULLKB", "F-FK", "R-13's verify with KA+KB vs KA alone, both whole-run (slot20's D-K, text for text)"),
+         ("DEFAULT", "OFF", "ON-OFF", "SIMD on vs the scalar layer")]
 
 # slot20's meta.tsv names for its three pairs (any other pair is id_<x>_<y>)
 LEGACY_ID = {("DEFAULT", "KBDENY"): "id_DK", ("DEFAULT", "OFF"): "id_DO", ("KBDENY", "OFF"): "id_KO"}

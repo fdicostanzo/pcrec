@@ -53,6 +53,7 @@ sys.path.insert(0, HERE)
 import rq4_arms  # noqa: E402
 
 CLASS_ORDER = ("THROUGHPUT", "DENSITY", "PER-CALL", "BENCH")
+LEGACY_VERDICT = {"D-K": "KB verdict", "ON-OFF": "SIMD verdict"}   # slot20's column headers
 
 
 def rows(path):
@@ -165,6 +166,12 @@ def render(run, a):
         w(open(hdr).read().rstrip())
         w("```")
         w("")
+    if any(p[2] not in LEGACY_VERDICT for p in run.pairs):
+        w("Pairs (delta = first - second; + = the first costs):")
+        w("")
+        for x, y, pname, desc in run.pairs:
+            w("- %s = %s - %s: %s" % (pname, x, y, desc))
+        w("")
     w("Readings kept / dropped (sibling busy > %.1f%%): %s" %
       (a.sib_max, ", ".join("%s %d/%d" % (arm, run.kept[arm], run.dropped[arm]) for arm in run.arms)))
     w("")
@@ -205,8 +212,7 @@ def render(run, a):
            m["ka"], m["kb"], m["live_v1"], m["live_v3"]))
         w("")
         w("| regime | lvl | %s | spread%% | %s |" %
-          (" | ".join(run.arms), " | ".join("%s | band | %s verdict" % (p[2], p[3]) if p[2] not in ("D-K", "ON-OFF")
-                                            else "%s | band | %s" % (p[2], {"D-K": "KB verdict", "ON-OFF": "SIMD verdict"}[p[2]])
+          (" | ".join(run.arms), " | ".join("%s | band | %s" % (p[2], LEGACY_VERDICT.get(p[2], p[2] + " verdict"))
                                             for p in run.pairs)))
         w("|---|---|%s---|%s" % ("---|" * len(run.arms), "---|---|---|" * len(run.pairs)))
         for key in keys:
