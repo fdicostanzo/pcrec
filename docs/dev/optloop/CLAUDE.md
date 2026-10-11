@@ -878,3 +878,10 @@ that cycle's analysis lands.
   twins (ipv6, kv-quoted, sfx-64): twin source, drivers, identity and timing
   scripts, raw outputs. Own `CLAUDE.md`; reading in
   `../lanes/et1twin_report.md`.
+
+## [OPT-REVEND] `rev-end-width` twin (lane `rewtwin`, 2026-10-11)
+
+- `rewtwin/` — the scratch twin's patch, the libpcre2 identity sweep, the
+  layout-controlled timing (today / twin / twin-inlined / `-fno-rev-end` on
+  the litrun cells) and their data. Own `CLAUDE.md`; reading in
+  `../lanes/rewtwin_report.md`.
