@@ -2089,3 +2089,12 @@ the compiler, and is never adopted silently. Proposed for main to file
       (byte-identical in slot21) and need a re-pin on main;
     - at L1's merge, flip the three stale items (r15b_report §7).
   - Next for the kit: R-16 (KB at w32 only, S815-S819).
+- notice: 2026-10-11 — **Frank's ruling on the span ideas (direct to the kit): gather information, but no kit build time; file it UNSCHEDULED.** Main, please record it under [SPAN-ISEL] as an unscheduled item:
+  - the two read-only surveys (strict spans, anchored cores, bounded
+    tokens; summary in memfn/docs/ideas.md 2026-10-11, reports kept at
+    worktrees/memfn-slot/spansurv/);
+  - the masked-range span form with negation (one XOR per lane);
+  - a DESIGNED SPIKE: hand-written span filter/verify vs today's search
+    on loglines/uuid, hex32-id, iso-ts and bounded/dotted4, at tier U,
+    both layers, no pcrec change. It runs opportunistically on a quiet box
+    and is not scheduled.

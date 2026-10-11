@@ -1437,3 +1437,20 @@ pointer when a kit change merges to main.
   loss survey (accepted), the span surveys, negation as a wrap-around range,
   captures as span offsets, the four-engine taxonomy and cached class truth
   vectors for the VM. All in ideas.md on lane/memfn-ideas3.
+
+## 2026-10-11 — the vrun loss survey (one pass, accepted)
+
+- Frank: no compiler-flag fixes for the residual losses. Survey the loss
+  items for an emit-time decline predicate, ONE effort, then accept and move
+  on (the losses are only slightly above noise).
+- Lane losssurv (opus, read-only) found:
+  - no predicate for the padded-verify losses (layout);
+  - none for KB's w32 dense-hit losses (density, which the kit cannot see);
+  - the `(?i)azqb` w16 decline is reproducible but a net regression;
+  - one hypothesis row, KB off when KA is very rare at w32 (one cell).
+  It also corrected the slot21 "exact control" claim (RX_DFA_START changed
+  on 20 cells).
+- Frank accepted: build nothing; ideas.md gains the hypothesis, the pc16
+  nested-check residue, and (Frank's addition) pcrec passing the kit more
+  workload knowledge: density, subject length, byte profile, call pattern,
+  from pcrec-analyze bundles. r14p_report gains the correction.

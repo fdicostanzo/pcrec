@@ -435,3 +435,17 @@ Zen 4 7700X, cores 12-15.
       filters.
     - At w32 KB still wins broadly (`(?i)cat` 1 MiB -31%).
   - This re-opens the KB default at w16, Q-R14-1 for Frank.
+
+### Correction (2026-10-11, kit manager, from lane losssurv)
+
+The addendum above calls slot21's F-FK "the exact slot20 control". It is
+not like-for-like on 20 of 51 cells. Between the runs (pcrec abi 73 -> 74,
+main's REVEND) `RX_DFA_START` changed from `reverse-pass` to
+`end-minus-width` on every vrun cell that hands off to the DFA, and on 3
+null cells. So part of "~40% of slot20's KB losses did not reproduce" is that
+change, not noise: KB losses reproduce 71% on text-identical cells and 46%
+on changed ones. slot20's -38% KB "wins" on `sp` came from its KA-only arm
+running 1.6x slower inside the reverse-pass file. The survey found NO
+emit-time predicate for the padded-verify losses (identical facts and
+identical `rx_reqrun*` text split win/loss: layout). Frank accepted the
+result (one pass, then move on). See memfn/docs/ideas.md 2026-10-11.
