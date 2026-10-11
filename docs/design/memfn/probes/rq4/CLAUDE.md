@@ -54,3 +54,6 @@ Maintenance: update this file when files are added/removed or change roles.
 - `out/slot20_table.md`, `out/slot20_verdict.txt` — the RQ-4 tier-U reading
   (slot20, 2026-10-10, f1ebe5a0, Zen 4 7700X); summary in
   docs/dev/lanes/rq4h_report.md's addendum.
+- `out/slot21_table.md`, `out/slot21_verdict.txt` — R-14's 6-arm reading
+  (slot21, 2026-10-11, ea14761f); summary in docs/dev/lanes/r14p_report.md's
+  addendum.

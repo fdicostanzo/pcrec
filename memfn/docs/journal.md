@@ -1387,3 +1387,15 @@ pointer when a kit change merges to main.
   + 6-arm timing (slot21x: DEFAULT/NOPAD/FULL/KBDENY/FULLKB/OFF; FULLKB
   makes F-FK slot20's exact D-K control). Merged (bae70443). Dry run against
   worktrees/r14 green (02:52). Estimate ~3 h 50 min, timing last (137 min).
+
+## 2026-10-11 — slot21: R-14 validated; the 6-arm reading re-opens KB at w16
+
+- slot21 03:07-06:44 is green in every stage (r14p_report addendum).
+- Padded word + trim beats R-13's full verify (478 W / 151 L). Trim alone
+  is WORSE than full (261 / 375), so pad is required. SIMD-on vs off
+  losses went from 63 to 33.
+- KB: of slot20's 179 losses, 78 persist under R-14's verify. The exact
+  control reproduces 110, so about 40% were noise. With a cheap verify,
+  KB's w16 value shrinks (w16 throughput D-K 133 W / 59 L vs 188 / 6), and
+  w32 still wins (190 / 18). Q-R14-1 goes to Frank: KB at w16?
+- done: R-14 posted.

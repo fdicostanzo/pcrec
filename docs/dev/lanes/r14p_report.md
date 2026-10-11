@@ -395,3 +395,43 @@ the re-timing's question: the dense-hit cells are where verify cost shows.
 | S797-S799 solo DETECTED | §5.4 |
 | before/after for (?i)cat, (?i)union, (?i)eqeeez, (?i)select at w16/w32, KB on/off; load/branch counts full/trim/padded | §4 |
 | OWED heavy list | §7 |
+
+## Addendum (2026-10-11, kit manager): slot21, R-14's heavy chain and the 6-arm reading (TIER U)
+
+slot21 03:07-06:44, on main's GO, lane/memfn-r14 @ ea14761f (ref 76428e05),
+Zen 4 7700X, cores 12-15.
+- Validation: build, strict, SABANCHOR green. Sweeps judged ok:
+  - plain / start / variants: SIMD-off moves only `--list-axes`;
+  - simd: 44/43, as R-13;
+  - deny_full (`no-vrun-pad,no-vrun-trim` vs 9fefd983) and deny_pad
+    (vs 14143d53): 0 movers.
+  - G2 full 192,654,555/0. make test: no red lines (1066 s). mech: 31 rows
+    COMPLETE 0/0/0/0/0.
+- Timing: 31,392 readings, fails=0. Table:
+  `docs/design/memfn/probes/rq4/out/slot21_table.md`. Pairs (W/N/L summed
+  over all classes and both levels, of 1396):
+  - D-F, padded+trim vs R-13's full verify: 478 W / 767 N / 151 L. Big
+    where hits are frequent: `(?i)cat` 1 MiB gate -30% (w16) / -14% (w32).
+  - N-F, trim alone vs full: 261 / 757 / 375. **Trim ALONE is often slower
+    than the full verify** (byte-by-byte exact compares, masked words). Do
+    not ship trim without pad. DEFAULT keeps both.
+  - D-N, pad vs trim: 427 / 798 / 69. The padded word earns its keep.
+  - ON-OFF, SIMD-on vs off: 1260 / 103 / 33. Losses fell from slot20's 63,
+    and w32 per-call is now 0 losses.
+- **KB, re-read** on slot20's 179 KB losses:
+  - With R-14's verify (D-K): 78 persist, 91 are NULL, 10 flip to WIN.
+  - The exact slot20 control (F-FK, R-13's verify) reproduces only 110 of
+    the 179. So about 40% of the original 179 were run-to-run noise at
+    this band width, and the verify change removed about 30% of the real
+    ones (110 -> 78).
+  - **New finding: with a cheap verify, KB's value shrinks at w16.**
+    - D-K now: w16 throughput 133 W / 59 L (slot20: 188 / 6); w32 190 W /
+      18 L, still strong.
+    - Example: `(?i)cat` 1 MiB gate at w16, KB-DENY is now 38.9 us vs
+      DEFAULT 38.2 us (NULL); slot20 had KB at -76%.
+    - Example: `(?:(?i:abs)|(?i:ab)S)` w16 gate, KB LOSES +26%.
+    - KB mostly paid for the expensive verify. Once the verify is one load,
+      the 16-byte arm's second load per block often costs more than it
+      filters.
+    - At w32 KB still wins broadly (`(?i)cat` 1 MiB -31%).
+  - This re-opens the KB default at w16, Q-R14-1 for Frank.
