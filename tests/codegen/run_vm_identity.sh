@@ -336,8 +336,13 @@ fi
 # neither the comment axis nor the abi 27 bump is implicated. The cap named
 # is PCREC_MAX_DFA_STATES_TABLE (32000, src/core/limits.def), reached by the
 # DFA build under --no-captures in both cases.
-if [ "$dfafallback" -eq 2 ]; then
-    ok "[SEL-1] --no-captures DFA-cap-overflow fallback pinned at 2:$dfafallbackpats"
+#
+# RE-PINNED 2 -> 3, 2026-10-11 (lane rlhbuild), A CORPUS EVENT: [REQ-HANDOFF-L1]
+# added Frank's K-admission cell `a.{1,50000}z` to tests/litscan/handoff.rxt,
+# which overflows the same cap (>32000 states) by construction and is a
+# count-collapsed hybrid by default.
+if [ "$dfafallback" -eq 3 ]; then
+    ok "[SEL-1] --no-captures DFA-cap-overflow fallback pinned at 3:$dfafallbackpats"
 elif [ "$dfafallback" -eq 0 ]; then
     bad "[SEL-1] the --no-captures DFA-cap-overflow fallback population went to 0 -- the witness pattern stopped reaching its cap (a limits.h budget moved, or the corpus lost the witness); re-derive, do not delete this arm"
 else

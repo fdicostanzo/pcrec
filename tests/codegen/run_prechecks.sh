@@ -846,7 +846,10 @@ fi
 # default build. Both artifacts are written to the SAME basename in different
 # directories, this house's four-times-recorded `-o` trap.
 mkdir -p "$WORKDIR/d1" "$WORKDIR/d2"
-if emit "$WORKDIR/d1/o.c" 'a=b' -fno-offset-skip && emit "$WORKDIR/d2/o.c" 'a=b' -fno-offset-skip -fno-req-run; then   # §4.1's reason
+# [REQ-HANDOFF-L1] `-fno-req-handoff` on both: the byte left standing would
+# otherwise be the handoff's landmark, kept through its ASSIGN gate (§5.12),
+# where this arm reads the discard form.
+if emit "$WORKDIR/d1/o.c" 'a=b' -fno-offset-skip -fno-req-handoff && emit "$WORKDIR/d2/o.c" 'a=b' -fno-offset-skip -fno-req-run -fno-req-handoff; then   # §4.1's reason
     r1="$(stamp "$WORKDIR/d2/o.c" REQ_RUN)"; b1="$(stamp "$WORKDIR/d2/o.c" REQ_BYTE)"
     if [ "$r1" = "none" ] && [ "$b1" = "61" ] \
        && grep -q '!memchr(subject + search_from, 61, subject_length - search_from)' "$WORKDIR/d2/o.c" \
@@ -1529,13 +1532,15 @@ done <<'ROWS'
 in|instanceof%%offset-set%0,1*%dominated%keyword, class A: the model's own selection already verifies in, so it keeps offset-set (sabotage row h: clause 4) and G1 elides
 [ab]/user%%run-pinned%0,1*,2,3,4,5%dominated%class C1: the model scans / at 1, the run's own member there
 foo\b%%run-pinned-bounded%0*,1,2%dominated%B-bounded: the trailing word context bounds the same form
-/user|/users%-fno-run-prefilter%memchr%none%emitted%the deny: today's artifact, the pre-check back (sabotage row i)
-/user|/users%-fno-offset-skip%memchr%none%emitted%the OTHER deny bit removes the run rows too (sabotage row k)
+/user|/users%-fno-run-prefilter -fno-req-handoff%memchr%none%emitted%the deny: today's artifact, the pre-check back (sabotage row i; [REQ-HANDOFF-L1]: without its deny the pre-check's handoff re-enters)
+/user|/users%-fno-offset-skip -fno-req-handoff%memchr%none%emitted%the OTHER deny bit removes the run rows too (sabotage row k)
+/user|/users%-fno-run-prefilter%handoff%none%emitted%[REQ-HANDOFF-L1] the run rows denied, the run pre-check is back and its handoff re-enters
 [ab]/user%-fno-run-prefilter%offset-set%0,1*%emitted%C1 denied falls back to offset-set, whose test does not verify the run
 \Bfoo\B%%offset-set-bounded%0,1*%emitted%class C2: the model scans o at 1, not the pick f, so no run row (sabotage row f: clause 3)
 q[a-z]*qu%%memchr%none%emitted%class D: memchr on q IS the pick, but the run floats, so the scan does not verify it (sabotage row c: the verifies conjunct)
 [ab]\x80[0-9]{3}\x81%%offset-set%0,1*%emitted%a one-byte check on 0x81 beside an offset-set scanning 0x80 of equal ppm: density is a memchr form's alone (sabotage row e)
-/abcd[xy]/user%%memchr%none%emitted%class C0: the run is pinned at 6 but the memchr scans / at 0, so no run row (sabotage row g's witness: the pin must match BYTES)
+/abcd[xy]/user%%handoff%none%emitted%class C0: the run is pinned at 6 but the scan member / sits at 0, so no run row (sabotage row g's witness: the pin must match BYTES); [REQ-HANDOFF-L1] the run pre-check's handoff re-enters
+/abcd[xy]/user%-fno-req-handoff%memchr%none%emitted%class C0 with the handoff denied: the memchr start scan
 (x?)([a-z]+)+Z.@\1%-e byte%-%-%emitted%K65's witness: no DFA scan of any kind, so G1 has no p and the pre-check stays (litscan_s1.md R3-1)
 (x?)([a-z]+)+Z.@\1%-e utf8%-%-%emitted%the same under utf8
 ROWS

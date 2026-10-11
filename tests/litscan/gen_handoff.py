@@ -154,7 +154,7 @@ CASES = [
   "[REQ-HANDOFF-L1] K = 2, the landmark b after a and an optional byte: dense landmarks with no match"),
  ("(?:ab|c):", "byte", ["ab:", "c:", "xab:", "::::c:", "a:b:c:", "abc:"],
   "[REQ-HANDOFF-L1] K = 2 from the WIDER branch (a set member's bound is the farther branch's)"),
- ("\\b\\d{1,3}\\.\\d", "byte", ["1.2", "x1.2 1.2", "a12.3", "1234.5", "12.34", ".1.2"],
+ ("\\b\\d{1,3}\\.\\d", "byte", ["1.2", "x1.2 1.2", "a12.3", "1234.5", "12.34", ".1.2", "1.x 1234.5", "1.x 1234.5 1.2", "1.x x1234.5 1.2"],
   "[REQ-HANDOFF-L1] a SEEDED machine: the re-entry re-seeds the scan state at the moved start (the byte before it decides \\b)"),
  (".{1,3}:", "utf8", ["abc:", "\u00e9\u00e9\u00e9:", "x\u20ac\u20ac\u20acx:", "::\u00e9:", X + X + X + ":", X + "a:"],
   "[REQ-HANDOFF-L1] utf8, K = 12: the moved start rounded up to a character start"),

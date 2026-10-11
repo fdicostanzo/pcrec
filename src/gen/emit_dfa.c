@@ -7747,52 +7747,71 @@ static ReqUse req_use_read(Ctx *cx, CandSlot reader)
     return r->u.use.use;
 }
 
-/* [REQ-HANDOFF-L1] THE K ADMISSION: is the landmark's expected hit gap,
- * under the compile's byte-rate prior, longer than K? The re-entered
- * handoff moves the scan only where the next hit lies more than K bytes
- * ahead; it replaces the start-byte skip below it, so where hits come
- * closer than K it would step every byte that skip passes over
- * (`a.{1,50000}z` over z-dense text). The hit rate is the prior's mass on
- * the byte, or, for a run window, the product of its positions' masses
- * (the prior's independent-byte model, rounded UP at each step: the
- * declining direction). The cut-over `K * rate < 1` (rate a fraction) is
- * where the mean gap `1 / rate` stops clearing K, so it is derived, not
- * set; that the mean-gap point is also where the jump stops PAYING is
- * UNMEASURED (the bench's per-cell timings are its test). Under no
- * byte-rate the mass is cardinality's (`pcrec_find_set_mass`). A member of
- * the prior-cost family G1 (`req_byte_dominated_by`), `set-leads`
- * (`pcrec_find_pick`) and R4 (`cand_rs_dense_applies`) already belong to. */
-static bool req_landmark_admits(Ctx *cx, long long k)
+/* [REQ-HANDOFF-L1] The prior's mass, in ppm, on the LANDMARK's hit: a
+ * byte's own, or for a run window the product of its positions' masses (the
+ * independent-byte model, rounded UP at each step, the declining direction). */
+static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
 {
-    const uint32_t *rate = pcrec_find_byte_rate(cx);
     const ReqRun *r = pcrec_fact_req_run(cx);
     unsigned long long hit = 1000000u;
     uint8_t set[256];
-    if (r->len >= 2) {
-        for (int i = 0; i < r->len; i++) {
-            for (int b = 0; b < 256; b++) set[b] = (b & r->mask[i]) == r->bytes[i];
-            hit = (hit * pcrec_find_set_mass(rate, set) + 999999u) / 1000000u;
-        }
-    } else {
+    if (r->len < 2) {
         memset(set, 0, sizeof set);
         set[pcrec_fact_req_byte(cx)] = 1;
-        hit = pcrec_find_set_mass(rate, set);
+        return pcrec_find_set_mass(rate, set);
     }
-    return (unsigned long long)k * hit < 1000000u;
+    for (int i = 0; i < r->len; i++) {
+        for (int b = 0; b < 256; b++) set[b] = (b & r->mask[i]) == r->bytes[i];
+        hit = (hit * pcrec_find_set_mass(rate, set) + 999999u) / 1000000u;
+    }
+    return hit;
+}
+
+/* [REQ-HANDOFF-L1] THE K ADMISSION: does the re-entered handoff's expected
+ * jump beat the expected skip of the start-byte row it displaces, under the
+ * compile's byte-rate prior (`pcrec_find_byte_rate`; cardinality where there
+ * is none, inside `pcrec_find_set_mass`)? At a restart the re-entry moves the
+ * scan to the landmark's next hit less K: about `1/h - K` bytes, `h` the
+ * hit rate (`req_landmark_hit_ppm`). The row below it, `below` (the slot's
+ * own walk without this row: a start-byte scan, or `none`), moves to the
+ * next byte of the set it scans: about `1/m` bytes, `m` that set's mass, and
+ * one byte (`m` everything) where it scans nothing. Admitted iff
+ * `1/h - K > 1/m`; with no start-byte row that is `K * h < 1`, the mean gap
+ * clearing K (`a.{1,50000}z` over z-dense text never does). Derived from the
+ * prior the other rows read, with no constant of its own; that the mean-gap
+ * comparison is also where the jump stops PAYING in time is UNMEASURED (the
+ * bench's per-cell timings are its test). A member of the prior-cost family
+ * G1 (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4
+ * (`cand_rs_dense_applies`) already belong to. */
+static bool req_landmark_admits(const CandSel *s, long long k)
+{
+    Ctx *cx = s->cx;
+    const uint32_t *rate = pcrec_find_byte_rate(cx);
+    unsigned long long h = req_landmark_hit_ppm(cx, rate), m = 1000000u;
+    const CandRow *below = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
+    if (below->u.pf.scan == PF_SCAN_BYTE || below->u.pf.scan == PF_SCAN_SET) {
+        CandSet cs;
+        pf_scan_set_of(cx, s->d, s->us, below, &cs);
+        m = pcrec_find_set_mass(rate, cs.set);
+    }
+    if (h == 0) return true;                        /* the prior never sees it */
+    if ((unsigned long long)k * h >= 1000000u) return false;
+    return (1000000u - (unsigned long long)k * h) * m > 1000000u * h;
 }
 
 /* [REQ-HANDOFF-L1] NEXT's `handoff` row: the forward search machine of the
  * caller-facing body (never the VM hybrid's inlined prefilter, whose
  * retries are RETRY's), FIRST chose the handoff (so the pre-check is
  * emitted, its site keeps the landmark's position and K is finite: FIRST's
- * own conjunct, not restated), and the K admission passes. FIRST is READ, never restated: one fact, one proof,
- * one deny (`-fno-req-handoff` removes both rows). */
+ * own conjunct, not restated), and the K admission passes against the row
+ * it displaces. FIRST is READ, never restated: one fact, one proof, one deny
+ * (`-fno-req-handoff` removes both rows). */
 static bool pf_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     if (!s->forward || cand_finish_of(cx) == CAND_ROUTE_VM) return false;
     if (req_use_read(cx, CAND_SLOT_NEXT) != REQ_USE_HANDOFF) return false;
-    return req_landmark_admits(cx, pcrec_fact_req_landmark_maxoff(cx));
+    return req_landmark_admits(s, pcrec_fact_req_landmark_maxoff(cx));
 }
 
 /* `req_reentered` (declared at the top): NEXT's selection for the forward
@@ -8951,7 +8970,7 @@ static const CandRow cand_rows[] = {
     { .c = { "handoff-reentry", PCREC_NO_REQ_HANDOFF, pf_handoff_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "handoff", .map = CM_LOWERBOUND,
       .hands = CT_LOWER, .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "handoff" } },
-      .desc = "forward scan of the caller-facing body where the req-use table chose `handoff` and the landmark's expected hit gap under the byte-rate prior exceeds K (K times the hit rate below one): at each restart (start state, no accept pending) the pre-check's landmark is re-found from the scan position (the kept hit while still ahead; none is NOMATCH) and the scan moves to c - K where that is ahead, rounded up to a character start and re-seeded where the machine seeds ([REQ-HANDOFF-L1])",
+      .desc = "forward scan of the caller-facing body where the req-use table chose `handoff` and, under the byte-rate prior, the landmark's mean gap less K exceeds the mean gap of the start-byte set the row below scans (1/h - K > 1/m; K times h below one where no start-byte row applies): at each restart (start state, no accept pending) the pre-check's landmark is re-found from the scan position (the kept hit while still ahead; none is NOMATCH) and the scan moves to c - K where that is ahead, rounded up to a character start and re-seeded where the machine seeds ([REQ-HANDOFF-L1])",
       .u.pf = { .emit = pf_emit_handoff, .reseeds = true, .scan = PF_SCAN_LANDMARK } },
     /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
     { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },

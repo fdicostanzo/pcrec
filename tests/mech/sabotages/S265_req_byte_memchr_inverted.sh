@@ -60,7 +60,11 @@ SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary de
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree
 # `a.?b` stamps RX_REQ_WHY "emitted" (not "dominated" -- see the header
 # above) and emits the negated memchr this row inverts, on byte 98 ('b').
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a.?b" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_BYTE \"98\"" "$REACH_TMP/o.c" && grep -q "!memchr(subject + search_from, 98, subject_length - search_from)" "$REACH_TMP/o.c" && echo REACH-REQ-BYTE-PRECHECK-EMITTED'
+# RE-POINTED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): `a.?b`'s byte b
+# now has a finite K (2), so its gate keeps its position (the handoff's ASSIGN
+# form) and the discard `!memchr` this row inverts is not emitted. `a.*?b`
+# carries the same byte with an UNBOUNDED K: no handoff, the discard form.
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a.*?b" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_BYTE \"98\"" "$REACH_TMP/o.c" && grep -q "!memchr(subject + search_from, 98, subject_length - search_from)" "$REACH_TMP/o.c" && echo REACH-REQ-BYTE-PRECHECK-EMITTED'
 SAB_REACH_EXPECT="REACH-REQ-BYTE-PRECHECK-EMITTED"
 SAB_COUNT=1
 SAB_BEFORE='        "%sif (%s <= %s ||\n"

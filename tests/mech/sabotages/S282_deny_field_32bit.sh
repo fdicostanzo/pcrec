@@ -13,7 +13,10 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks registry"
 SAB_DESC="DfaCand.deny narrows back to unsigned, so the run-pinned rows' bit-32 deny (PCREC_NO_RUN_PREFILTER) is truncated away: -fno-run-prefilter removes nothing and router still stamps run-pinned under it"
 SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED -- reach:ok(1/1), prechecks:2fail/287pass (§5.10: /user|/users and [ab]/user under -fno-run-prefilter still take the run row), registry:0fail/226pass (the registry arm is tests/registry/registry_check, which does not read --list-axes deny cells; axes_registry_check.sh is not a mech arm). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S282."
-SAB_REACH='"$PCREC" --features all -p rx -fno-run-prefilter -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-RUN-PREFILTER-DENY'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): with the run rows
+# denied the run pre-check's handoff now re-enters (`handoff`), so the probe
+# and its detector row (§5.10) add `-fno-req-handoff` to read today's memchr.
+SAB_REACH='"$PCREC" --features all -p rx -fno-run-prefilter -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-RUN-PREFILTER-DENY'
 SAB_REACH_EXPECT="REACH-RUN-PREFILTER-DENY"
 SAB_COUNT=1
 SAB_BEFORE='    uint64_t    deny;         /* a set bit in cx->opt->flags REMOVES this entry */'

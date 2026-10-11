@@ -15,6 +15,7 @@
 #                            | "run-pinned" | "run-pinned-bounded"   [OPT-LITSCAN] S1
 #                            | "first-memchr-bounded"
 #                            | "first-class-bounded"                 [START-SET] stage 3
+#                            | "handoff"                             [REQ-HANDOFF-L1]
 #
 # ...and, since [DD-13c], the RUNTIME MIRRORS of the last two in the emitted
 # `struct rx_info` (`.scan`, `.prefilter`; docs/spec/match_api.md §6), which
@@ -207,7 +208,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
 SCAN_VALUES="unanchored rev-end attempt empty"
-PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded"
+PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded first-memchr-bounded first-class-bounded handoff"
 
 # ---------------------------------------------------------------------------
 # The per-artifact derivation: read an artifact on stdin, print
@@ -269,6 +270,9 @@ read_artifact() {
         /size_t cand = rx_ofsskip\(subject, subject_length, scan_position/ {
                                                  pf_ofs = 1 }
         /^            if \(cand < subject_length\) \{$/ { ofs_bnd = 1 }         # emit_unanchored: the D11 clamp arm
+        # [REQ-HANDOFF-L1] THE RE-ENTERED HANDOFF: the restart block re-asks the
+        # pre-check gate when its kept hit is behind the scan (pf_emit_handoff).
+        /^ *if \(landmark_position < scan_position\) \{$/ { pf_ho = 1 }
         # [OPT-LITSCAN] S1 the RUN TERM, read off the helper body itself: the
         # one compare an offset-set helper never emits (its verifies are byte
         # compares and table probes), so it tells the run rows apart without
@@ -313,6 +317,7 @@ read_artifact() {
             scan = attempt ? "attempt" : (revend ? "rev-end" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-")))
             if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
             else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
+            else if (pf_ho) pf = "handoff"
             else if (pf_fc && hat) pf = "first-class-bounded"
             else if (pf_mc && hat && bnd) pf = "first-memchr-bounded"
             else if (pf_bc) pf = bnd ? "byte-class-bounded" : "byte-class"
@@ -440,6 +445,8 @@ witness unanchored none               '.*'
 # is a proper subset of the escape set (\b's E is the 63 word bytes).
 witness unanchored first-class-bounded  '\b(?:ab|cd)\b'
 witness unanchored first-memchr-bounded '\B(?<!a)d'
+# [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark at K = 3.
+witness unanchored handoff            '(?:\d{1,3}\.){3}\d{1,3}'
 witness attempt    memchr             '(?m)^ERROR'
 witness attempt    none               '^abc'
 # [DD-13c] (r37 #5) THE EMPTY ENGINE, ON BOTH SIDES OF THE ENG_UNANCH/
