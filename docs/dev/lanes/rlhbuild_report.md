@@ -364,17 +364,19 @@ Reading, in order of consequence:
 | cell | n | new/base | newm/base | deny/base | new/newm | worst new/base | slower than main by >3% |
 |---|---|---|---|---|---|---|---|
 | loglines/ipv6 | 112 | 0.576 | **0.325** | 1.000 | 1.77 | 0.801 | 0 of 112 |
-| loglines/ipv4 | 112 | OWED | OWED | OWED | OWED | OWED | OWED |
-| bounded/dotted4 | <= 4 KiB subjects | OWED | OWED | OWED | OWED | OWED | OWED |
+| loglines/ipv4 | 112 | 1.104 | **0.315** | 0.998 | 3.51 | 2.341 (s-008) | 83 of 112 (generic build) |
+| bounded/dotted4 | 49 | 1.830 | **0.841** | 1.000 | 2.18 | 12.894 (d-01024) | 33 of 49 (generic build) |
 
 ipv6 short calls: rlhtwin's h2 read 0.319; the memchr build reads 0.325, the
 generic build 0.576, every one of the 112 calls faster than main either way.
-**ipv4 and dotted4 were still running at hand-back** (the same detached
-`time.sh`, `REGIMES=search_short`, writing `times_short.tsv`; completion line
-`== rlhbuild time COMPLETE`); the chain (§6) waits for that line before
-lifting and writes `times_short_summary.txt` with
-`python3 docs/dev/optloop/rlhbuild/summarize.py times_short.tsv`. Fill these
-two rows from it.
+ipv4 and dotted4 (filled at integration from `docs/dev/optloop/rlhbuild/
+times_short_summary.txt`, 3 rounds x 5 reps, 273 subject lines, match counts
+equal across all four variants on every line): `new` is the build with the
+GENERIC gate loop, `newm` the scratch memchr ASSIGN (what R-15 now renders).
+With memchr both cells beat main on the summed short calls (ipv4 x0.315,
+dotted4 x0.841); through the generic loop ipv4 is x1.104 and dotted4 x1.830
+(landmark-absent subjects up to x12.9 per call), the regression §5.1 item 2
+and §5.3 record. The deny reproduces main (x0.998 / x1.000).
 
 ### 5.3 The R-15 delta, stated for the kit (R-15's D77 reading)
 
