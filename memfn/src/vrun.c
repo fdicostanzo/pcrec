@@ -239,11 +239,50 @@ static unsigned vrun_proven(const fn_in *x, int k2, int proven[2])
     return np;
 }
 
+/* E, the bytes past the run's end the main path's verify reads (PADDED
+ * VERIFY, the module comment): the padded compare's need, or 0 where it is
+ * not used (its deny `no-vrun-pad`, a run it does not apply to, or nothing
+ * left to verify); -1 on a refusal. */
+static int vrun_pad(mf_art *art, const fn_in *x, const int *proven, unsigned np)
+{
+    const mf_term *t = &x->p->term[0];
+    if (kit_opt_denied(x->site->opts, "vrun-pad")) return 0;
+    if (np && run_cmp_trim_none(t, proven, np)) return 0;
+    return run_cmp_pad_over(art, t);
+}
+
+/* One block's verify loop behind `ind`: each set lane, lowest first, by the
+ * padded compare where `over` is nonzero (the main path's margin, E), else
+ * by the run compare less the proven positions; where nothing is left, the
+ * lowest set lane is the answer. The compare's RUN_WORDS count is not taken
+ * here (the stamp counts unbracketed text only, §R4.9.2.4). */
+static int vrun_verify(mf_art *art, const mf_term *t, const int *proven, unsigned np,
+                       unsigned over, const char *ind, mf_sink *o)
+{
+    if (np && run_cmp_trim_none(t, proven, np)) {
+        kit_out(o, "%sif (m) return i + (size_t)__builtin_ctz(m);\n", ind);
+        return 0;
+    }
+    kit_out(o, "%swhile (m) {\n"
+               "%s    size_t cand = i + (size_t)__builtin_ctz(m);\n"
+               "%s    if (", ind, ind, ind);
+    long long words = art->words;
+    int rc = over ? run_cmp_render_pad(art, t, "subject + cand", t->offset, over, o)
+           : np ? run_cmp_render_trim(art, t, "subject + cand", t->offset, proven, np, o)
+                : run_cmp_render(art, t, "subject + cand", t->offset, o);
+    art->words = words;
+    if (rc) return -1;
+    kit_out(o, ") return cand;\n"
+               "%s    m &= m - 1;\n"
+               "%s}\n", ind, ind);
+    return 0;
+}
+
 /* The helper's body: the entry test, the block loop, the closing brace. Its
  * verify is the BODY's run compare less the positions the mask proved
- * (VERIFY TRIM, the module comment); where that leaves nothing, the lowest
- * set lane is the answer. The compare's RUN_WORDS count is not taken here
- * (the stamp counts unbracketed text only, §R4.9.2.4). */
+ * (VERIFY TRIM, the module comment); where the padded compare is used
+ * (PADDED VERIFY), the main path verifies by it and holds E more bytes,
+ * and the final block verifies by the trimmed compare. */
 static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
                        const mf_formdecl *d, const char *fall, mf_sink *o)
 {
@@ -258,6 +297,8 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     unsigned vw = lv->vw, tt = vrun_t(x->p), r = vw + tt;
     int proven[2];
     unsigned np = vrun_proven(x, k2, proven);
+    int e = vrun_pad(art, x, proven, np);
+    if (e < 0) return -1;
 
     kit_out(o, "    if (pos >= n || n - pos < %u) return %s(subject, n, pos);\n", r, fall);
     kit_out(o, "    const %s ", v->type);
@@ -267,36 +308,41 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
         bcast(o, v, mb, vb, 'b');
     }
     o->puts(o->u, ";\n");
+    if (e && run_cmp_pad_decl(art, t, proven, np, "    ", o)) return -1;
     o->puts(o->u, "    size_t i = pos;\n"
                   "    for (;;) {\n"
                   "        unsigned m;\n");
     kit_out(o,    "        if (i + %u <= n) {\n"
-                  "            m = ", r);
+                  "            m = ", r + (unsigned)e);
     cmask(o, v, "i", ka, ma == 0xFF, k2, mb == 0xFF);
-    kit_out(o, ";\n"
-                  "        } else {\n"
-                  "            if (i + %u >= n) return n;\n"
-                  "            size_t f = n - %u;\n"
-                  "            m = ", tt, r);
-    cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
-    o->puts(o->u, " & (~0u << (i - f));\n"
-                  "            i = f;\n"
-                  "        }\n");
-    if (np && run_cmp_trim_none(t, proven, np)) {
-        o->puts(o->u, "        if (m) return i + (size_t)__builtin_ctz(m);\n");
+    if (e) {
+        /* the main path's own verify, then the final block below it: a
+           block at i < n - R the main guard no longer takes is final
+           (f = i, nothing masked) */
+        o->puts(o->u, ";\n");
+        if (vrun_verify(art, t, proven, np, (unsigned)e, "            ", o)) return -1;
+        kit_out(o, "            i += %u;\n"
+                   "            continue;\n"
+                   "        }\n"
+                   "        if (i + %u >= n) return n;\n"
+                   "        size_t f = n - %u;\n"
+                   "        if (f > i) f = i;\n"
+                   "        m = ", vw, tt, r);
+        cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
+        o->puts(o->u, " & (~0u << (i - f));\n"
+                      "        i = f;\n");
     } else {
-        o->puts(o->u, "        while (m) {\n"
-                      "            size_t cand = i + (size_t)__builtin_ctz(m);\n"
-                      "            if (");
-        long long words = art->words;
-        int rc = np ? run_cmp_render_trim(art, t, "subject + cand", t->offset, proven, np, o)
-                    : run_cmp_render(art, t, "subject + cand", t->offset, o);
-        art->words = words;
-        if (rc) return -1;
-        o->puts(o->u, ") return cand;\n"
-                      "            m &= m - 1;\n"
+        kit_out(o, ";\n"
+                      "        } else {\n"
+                      "            if (i + %u >= n) return n;\n"
+                      "            size_t f = n - %u;\n"
+                      "            m = ", tt, r);
+        cmask(o, v, "f", ka, ma == 0xFF, k2, mb == 0xFF);
+        o->puts(o->u, " & (~0u << (i - f));\n"
+                      "            i = f;\n"
                       "        }\n");
     }
+    if (vrun_verify(art, t, proven, np, 0, "        ", o)) return -1;
     kit_out(o, "        i += %u;\n"
                "    }\n"
                "}\n", vw);

@@ -54,6 +54,24 @@
  * its window, and a window left with none is not loaded. An exact run
  * trimmed is compared byte by byte (the `memcmp` row compares one string).
  *
+ * THE PADDED COMPARE (`run_cmp_render_pad`, R-14 follow-up: vrun.c's main
+ * path) reads MORE than the run: ONE word of the smallest width of 4 and 8
+ * that covers a run the words row would split into two (L in {3, 5, 6, 7};
+ * at L in {2, 4, 8} that row's one word is already the whole run), masked
+ * to 0x00 past the run's end and at the positions the caller proved, and
+ * compared against the run's bytes padded with zeros. It is not a row of the
+ * table: it is the words form's spelling where the caller STATES how many
+ * bytes past the run it may read (`over`, an argument with no default;
+ * `run_cmp_pad_over` says how many the form needs), so it applies only where
+ * the walk picked a words-form row (MF_D_RUN_OVERLAP reaches it as it
+ * reaches those). Its width is no helper `run_cmp_prepare` declared, and a
+ * helper declared under the caller's guard would mark the width emitted for
+ * a later scalar use (vrun.c, the floor rule), so the form loads through
+ * locals the caller's function declares (`run_cmp_pad_decl`): `pk`/`pt`, the
+ * mask and the padded run by `memcpy` from string literals (folded to
+ * immediates: endian-neutral, as the words form), and `pw`, the subject's
+ * word.
+ *
  * THE HELPERS are the art's: a width is RECORDED when a words compare uses
  * it (`wused`), DECLARED once (`wemitted`) by `mf_flush_helpers` or by a FUNC
  * definition's `run_cmp_prepare`, which declares every pending width ahead
@@ -297,6 +315,27 @@ static void rc_emit_bytes(mf_sink *c, const char *base, int off,
     if (nb == 0) c->puts(c->u, "1");
 }
 
+/* The padded word's width for run `r` (the smallest of 4 and 8 that covers
+ * it), or 0 where the padded form does not apply: a run longer than 8, or
+ * one whose length is a word width (the words form's one word). */
+static int rc_pad_width(const rc_run *r)
+{
+    if (r->len > 8 || rc_width(r->len) == r->len) return 0;
+    return r->len <= 4 ? 4 : 8;
+}
+
+/* The padded word's mask `k` and value `t` (`w` bytes): the run's, 0x00 past
+ * its end and at a proven position. */
+static void rc_pad_bytes(const rc_run *r, const int *proven, unsigned np, int w,
+                         uint8_t *k, uint8_t *t)
+{
+    for (int i = 0; i < w; i++) {
+        int in = i < r->len && !rc_proven(proven, np, i);
+        k[i] = in ? r->k ? r->k[i] : 0xFF : 0x00;
+        t[i] = in ? r->t[i] : 0x00;
+    }
+}
+
 int run_cmp_sat(const mf_term *t)
 {
     if (t->kind != MF_T_RUN || !t->run || t->run_len == 0) return 0;
@@ -352,6 +391,51 @@ int run_cmp_render_trim(mf_art *art, const mf_term *t, const char *base,
                         int32_t off, const int *proven, unsigned np, mf_sink *c)
 {
     return rc_render(art, t, base, off, proven, np, c);
+}
+
+int run_cmp_pad_over(mf_art *art, const mf_term *t)
+{
+    rc_run r = rc_of(t);
+    const rc_row *row = rc_row_of(art, t, &r);
+    if (!row) return -1;    /* rc_row_of recorded the refusal */
+    int w = row->form == RC_F_WORDS ? rc_pad_width(&r) : 0;
+    return w ? w - r.len : 0;
+}
+
+int run_cmp_pad_decl(mf_art *art, const mf_term *t, const int *proven, unsigned np,
+                     const char *indent, mf_sink *c)
+{
+    rc_run r = rc_of(t);
+    int w = rc_pad_width(&r);
+    if (!w) return kit_fail(art, "runcmp: no padded form for a run of %d bytes", r.len);
+    if (kit_sink_ok(art, c, "runcmp")) return -1;
+    if (!c->cstr) return kit_fail(art, "runcmp: the sink offers no cstr op");
+    uint8_t k[8], v[8];
+    rc_pad_bytes(&r, proven, np, w, k, v);
+    kit_out(c, "%suint%d_t pw, pk, pt;\n%smemcpy(&pk, \"", indent, 8 * w, indent);
+    c->cstr(c->u, k, (size_t)w);
+    kit_out(c, "\", %d);\n%smemcpy(&pt, \"", w, indent);
+    c->cstr(c->u, v, (size_t)w);
+    kit_out(c, "\", %d);\n", w);
+    /* the memcpy of 4/8 bytes: the helpers' idiom, not noted (§R4.3.3) */
+    art->includes |= MF_INC_STRING_H;
+    return 0;
+}
+
+int run_cmp_render_pad(mf_art *art, const mf_term *t, const char *base, int32_t off,
+                       unsigned over, mf_sink *c)
+{
+    int need = run_cmp_pad_over(art, t);
+    if (need < 0) return -1;
+    if (need == 0 || (unsigned)need > over)
+        return kit_fail(art, "runcmp: the padded compare reads %d byte(s) past the run, "
+                        "the caller states %u", need, over);
+    if (kit_sink_ok(art, c, "runcmp")) return -1;
+    rc_run r = rc_of(t);
+    kit_out(c, "((memcpy(&pw, ");
+    rc_base(c, base, off);
+    kit_out(c, ", %d), pw) & pk) == pt", rc_pad_width(&r));
+    return 0;
 }
 
 int run_cmp_trim_none(const mf_term *t, const int *proven, unsigned np)
