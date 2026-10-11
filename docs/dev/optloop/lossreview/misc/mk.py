@@ -2,7 +2,8 @@
 """lossreview/misc: compile ONE bench pattern the way the bench's pcrec-auto
 testee does, into OUTDIR/rx.c (+ rx.h), print the stamps / facts on request.
 
-    mk.py PCREC BENCH SET PATTERN OUTDIR [nocaps] [-- extra pcrec flags]
+    mk.py PCREC BENCH SET PATTERN OUTDIR [nocaps] [-- extra pcrec flags]   (a `-p PFX` among the extras sets the
+    emitted prefix and the file names PFX.c / PFX.h; default rx)
 
 BENCH is a (git archive) copy of pcrec-bench's tree; the pattern is read
 byte-exactly from BENCH/bench/SET/patterns/PATTERN.rx and passed with
@@ -28,7 +29,12 @@ def main():
     os.makedirs(out, exist_ok=True)
     args = ["--features", "all"] + (["-e", "utf8"] if st == "utf8" else []) + (["--no-captures"] if nocaps else []) + extra
     args += ["--pattern-esc", "--pattern", '"' + esc(b) + '"']
-    r = subprocess.run([pcrec, "-p", "rx", "-o", os.path.join(out, "rx.c")] + args, capture_output=True)
+    pfx = "rx"
+    if "-p" in extra:
+        i = extra.index("-p"); pfx = extra[i + 1]; del extra[i:i + 2]
+        args = [a for a in args]  # extra was already folded into args below
+    args = ["--features", "all"] + (["-e", "utf8"] if st == "utf8" else []) + (["--no-captures"] if nocaps else []) + extra + ["--pattern-esc", "--pattern", '"' + esc(b) + '"']
+    r = subprocess.run([pcrec, "-p", pfx, "-o", os.path.join(out, pfx + ".c")] + args, capture_output=True)
     sys.stderr.write(r.stderr.decode("utf8", "replace"))
     sys.exit(r.returncode)
 

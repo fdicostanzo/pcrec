@@ -9,7 +9,9 @@ split over characters of 2/3/4 bytes 40/50/10 (an assumption), then
   - every lead byte of a length class gets the class's lead mass divided by
     the number of leads it is spread over: MODE u = all leads of the class
     (30/16/5, 'script-neutral uniform'), MODE c = a CONCENTRATED 3/3/2 (real
-    text uses few leads: Latin C3, Cyrillic D0/D1, kana/CJK E3-E9).
+    text uses few leads: Latin C3, Cyrillic D0/D1, kana/CJK E3-E9), MODE o =
+    ORDERED by length 3/8/5 (2-byte leads common, 4-byte leads rarer than a
+    continuation byte: longer sequences are rarer in running text).
 It is a TWIN-STUDY INSTRUMENT: the shares are the study's variable. Output
 OUT_DIR/NAME.rxt, used as `--analysis NAME -I OUT_DIR`.
 """
@@ -23,7 +25,7 @@ rows = {b: max(1, int(c * SCALE * (1 - f) / tot)) for b, c in asc.items()}
 s2, s3, s4 = 0.4, 0.5, 0.1
 cont_mass = f * (s2 * 1 + s3 * 2 + s4 * 3) * SCALE
 for b in range(0x80, 0xC0): rows[b] = max(1, int(cont_mass / 64))
-k2, k3, k4 = (30, 16, 5) if mode == 'u' else (3, 3, 2)
+k2, k3, k4 = {'u': (30, 16, 5), 'c': (3, 3, 2), 'o': (3, 8, 5)}[mode]
 for b in range(0xC2, 0xE0): rows[b] = max(1, int(f * s2 * SCALE / k2))
 for b in range(0xE0, 0xF0): rows[b] = max(1, int(f * s3 * SCALE / k3))
 for b in range(0xF0, 0xF5): rows[b] = max(1, int(f * s4 * SCALE / k4))
