@@ -385,3 +385,11 @@ OUT=$PWD/build/rlh/cells BENCHCOPY=$PWD/$W $D/time.sh > $D/times.tsv
 python3 $D/summarize.py $D/times.tsv > $D/times_summary.txt
 for m in build ident time; do PCREC=$PWD/build/pcrec BENCH=$B BENCHCOPY=$PWD/$W OUT=$PWD/build/rlh/extra $D/extra.sh $m; done
 ```
+
+## 7. Validation
+
+`make test-spec-history` on this branch: 145 passed / 0 failed (log
+`build/rlh/spec_history.log`). Nothing under `src/` moves on `lane/rlhtwin`, so no other
+suite is owed. The scratch branch `lane/rlhtwin-scratch` (`ceca117d`) was built and used
+only for the twin; it has no suite run and is NOT FOR MERGE. `extra_ident.txt` is
+`extra.sh ident`'s output.
