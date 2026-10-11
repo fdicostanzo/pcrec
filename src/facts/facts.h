@@ -115,6 +115,13 @@ typedef struct {
      * has no order, so it is carried beside the bits rather than recovered
      * from them ([PATFACTS] step 3.0: the core/derived split). */
     int rightmost;
+    /* [REQ-HANDOFF-L1] per MEMBER, the largest byte offset from the attempt
+     * start at which some guaranteed occurrence of it begins, or
+     * `PCREC_W_UNBOUNDED` (the walk's `RbSet.off`, published by the core
+     * fact `req_set_maxoff`, not by `req_set`, whose text a stamp renders).
+     * Unread for a non-member. Invariant F at one byte: every successful
+     * attempt at `p` holds member `b` at some `q` in `[p, p + maxoff[b]]`. */
+    long long maxoff[256];
 } ReqSet;
 
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
@@ -342,6 +349,9 @@ typedef struct {
      * run's scan member where a run shipped, the set's pick otherwise), or
      * -1; -1 under `-fno-req-byte`. */
     int       req_byte;
+    /* [REQ-HANDOFF-L1] E2 derived: the landmark's K
+     * (`pcrec_fact_req_landmark_maxoff`), -1 where there is no landmark. */
+    long long req_landmark_maxoff;
     /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
      * over the wrapped forward NFA from its anchored start. The offset-k
      * selection (src/opt/prefix_k.c) reads it; no deny — each USE has its
@@ -412,6 +422,13 @@ const ReqRun  *pcrec_fact_req_run(Ctx *cx);
  * did ([K82]). `PCREC_W_UNBOUNDED` reads as "no bound". */
 long long      pcrec_fact_req_run_maxoff(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
+/* E2 core: `ReqSet.maxoff` ([REQ-HANDOFF-L1]); the set it annotates. */
+const ReqSet  *pcrec_fact_req_set_maxoff(Ctx *cx);
+/* E2 derived ([REQ-HANDOFF-L1]): THE LANDMARK's K — the pre-check gate's
+ * needle, whatever its length — the run window's `maxoff` where a run
+ * shipped, else the `req_byte` member's; -1 where the gate has no needle.
+ * `PCREC_W_UNBOUNDED` reads as "no bound". */
+long long      pcrec_fact_req_landmark_maxoff(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 const LandChar *pcrec_fact_land_char(Ctx *cx);   /* E3 [START-LANDING] */

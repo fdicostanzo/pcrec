@@ -61,8 +61,19 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root, int pin,
 
 /* A set of necessary bytes plus the member the emitter will use. `pick` is
  * -1 exactly when the set is empty, and is always a member of the set when it
- * is not — an invariant every operation below restores rather than assumes. */
-typedef struct { unsigned char bits[32]; int pick; } RbSet;
+ * is not — an invariant every operation below restores rather than assumes.
+ *
+ * [REQ-HANDOFF-L1] `off[b]`, for a member `b`: the largest byte offset from
+ * the subtree's start at which SOME guaranteed occurrence of `b` begins, the
+ * run walk's own offset rules applied to the set (src/facts/req.c's
+ * `rb_union`). 32 bits saturating at `RB_OFF_UNBOUNDED` rather than the
+ * `long long` the run's single offset uses: the set carries 256 of them per
+ * walk frame, and the walk recurses once per paren level
+ * (`PCREC_MAX_GROUP_DEPTH`). Unread for a non-member. */
+typedef struct { unsigned char bits[32]; int pick; uint32_t off[256]; } RbSet;
+/* `RbSet.off`'s "no static bound": an offset at or above it reads as
+ * `PCREC_W_UNBOUNDED` when the fact is published (the safe direction). */
+#define RB_OFF_UNBOUNDED UINT32_MAX
 
 /* A necessary CONTIGUOUS run of POSITIONS, bounded so the walk's per-frame
  * state cannot grow with the pattern (`PCREC_MAX_REQ_RUN_SCAN`'s limits.def

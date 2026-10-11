@@ -160,6 +160,7 @@ static RbSet rb_empty(void)
 {
     RbSet s;
     memset(s.bits, 0, sizeof s.bits);
+    memset(s.off, 0, sizeof s.off);
     s.pick = -1;
     return s;
 }
@@ -176,10 +177,25 @@ static RbSet rb_single(int b)
  * whole. `r` is the factor to the RIGHT, so its pick wins — that is the
  * "rightmost" rule, applied at the one node kind that has a left and a right
  * in subject order, and it is the TIEBREAK the frequency argmin falls back on
- * (and the whole answer under every encoding but `byte`). */
-static RbSet rb_union(RbSet l, RbSet r)
+ * (and the whole answer under every encoding but `byte`).
+ *
+ * [REQ-HANDOFF-L1] THE OFFSETS, `RbRun.off`'s rule for a right factor: `r`
+ * begins at most `lmaxw` bytes in (the left factor's maximum width), so a
+ * member only `r` carries sits at `lmaxw + off_r`. A member BOTH carry has
+ * two guaranteed occurrences, either of which is a first-occurrence bound,
+ * so the nearer one holds. Every arm that puts width to the left of the
+ * accumulated right-hand side calls this with that width and an empty `l`,
+ * which is a pure shift. */
+static RbSet rb_union(RbSet l, RbSet r, long long lmaxw)
 {
     int i;
+    for (i = 0; i < 256; i++) {
+        long long ro;
+        if (!rb_has(&r, i)) continue;
+        ro = pcrec_sat_add(lmaxw, r.off[i], PCREC_W_UNBOUNDED);
+        if (ro >= RB_OFF_UNBOUNDED) ro = RB_OFF_UNBOUNDED;
+        if (!rb_has(&l, i) || ro < l.off[i]) l.off[i] = (uint32_t)ro;
+    }
     for (i = 0; i < 32; i++) l.bits[i] |= r.bits[i];
     if (r.pick >= 0) l.pick = r.pick;
     return l;
@@ -187,12 +203,15 @@ static RbSet rb_union(RbSet l, RbSet r)
 
 /* ALTERNATION: only a byte necessary for BOTH branches is necessary for the
  * alternation. The pick rule is stated in the header; the final fallback
- * scans DOWN so "the largest surviving byte" is reached in one pass. */
+ * scans DOWN so "the largest surviving byte" is reached in one pass.
+ * [REQ-HANDOFF-L1] Either branch may be the one that matched, so a member's
+ * bound is the FARTHER of its two. */
 static RbSet rb_intersect(RbSet l, RbSet r)
 {
     RbSet out;
     int i;
     for (i = 0; i < 32; i++) out.bits[i] = (unsigned char)(l.bits[i] & r.bits[i]);
+    for (i = 0; i < 256; i++) out.off[i] = l.off[i] > r.off[i] ? l.off[i] : r.off[i];
     out.pick = -1;
     if (rb_has(&out, r.pick))       out.pick = r.pick;
     else if (rb_has(&out, l.pick))  out.pick = l.pick;
@@ -479,7 +498,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              * the LEFT of everything in `acc`, which is why the union and the
              * concatenation are spelled in this order and not the other. */
             RbVal r = rb_walk(w, a->r);
-            acc.set  = rb_union(r.set, acc.set);
+            acc.set  = rb_union(r.set, acc.set, r.runs.maxw);
             acc.runs = rr_cat(r.runs, acc.runs);
             a = a->l;
             continue;
@@ -507,7 +526,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
             b = rb_walk(w, t);
             r.set  = rb_intersect(b.set, r.set);
             r.runs = rr_alt(w, b.runs, r.runs);
-            acc.set  = rb_union(r.set, acc.set);
+            acc.set  = rb_union(r.set, acc.set, r.runs.maxw);
             acc.runs = rr_cat(r.runs, acc.runs);
             return acc;
         }
@@ -529,7 +548,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
                 /* [K82] the body's run at its own offset: the FIRST
                  * iteration begins where the repeat does. */
                 rep.best = b.runs.best;
-                acc.set  = rb_union(b.set, acc.set);
+                acc.set  = rb_union(b.set, acc.set, rep.maxw);
                 acc.runs = rr_cat(rep, acc.runs);
                 return acc;
             }
@@ -546,10 +565,12 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
              *
              * [K82] The body is still walked, for its WIDTH alone: a min-0
              * repeat contributes no byte and no run, but it does move every
-             * run to its right. */
-            acc.runs = rr_cat(rr_none(rr_rep_w(a->u.rep.rmax,
-                                               rb_walk(w, a->l).runs.maxw)),
-                              acc.runs);
+             * run (and [REQ-HANDOFF-L1] every set member) to its right. */
+            {
+                long long rw = rr_rep_w(a->u.rep.rmax, rb_walk(w, a->l).runs.maxw);
+                acc.set  = rb_union(rb_empty(), acc.set, rw);
+                acc.runs = rr_cat(rr_none(rw), acc.runs);
+            }
             return acc;
         case A_CLASS: {
             int b = pcrec_cls_single(w->cx, a);
@@ -561,12 +582,13 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
                  * contiguity for everything around it — which `rr_none`'s
                  * cleared `all` is exactly what says. One byte wide: the
                  * tree is lowered. */
+                acc.set  = rb_union(rb_empty(), acc.set, 1);
                 acc.runs = rr_cat(rr_none(1), acc.runs);
                 return acc;
             }
             /* Only a single byte is a member of the necessary SET; a cube
              * position is one the RUN carries (litscan_s4.md §2.3.1). */
-            if (b >= 0) acc.set = rb_union(rb_single(b), acc.set);
+            acc.set = rb_union(b >= 0 ? rb_single(b) : rb_empty(), acc.set, 1);
             acc.runs = rr_cat(rr_pos(w, t, k), acc.runs);
             return acc;
         }
@@ -599,6 +621,7 @@ static RbVal rb_walk(const RbWalk *w, const Ast *a)
         case A_BREF:
         case A_VAR:
         case A_CALL:
+            acc.set  = rb_union(rb_empty(), acc.set, PCREC_W_UNBOUNDED);
             acc.runs = rr_cat(rr_none(PCREC_W_UNBOUNDED), acc.runs);
             return acc;
         }
