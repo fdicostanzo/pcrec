@@ -344,3 +344,17 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** the SIMD thread's item under the 2:1 split.
 
 **Sabotage ids:** S793-S799 (allocated 2026-10-11; next free S800).
+
+## R-15 (2026-10-11, pcrec manager) — the byte gate's ASSIGN over ONE set term becomes a hot scan site under [REQ-HANDOFF-L1]'s re-entry
+
+**Customer:** `[REQ-HANDOFF-L1]` (plan.md), measured by lane rlhtwin (`docs/dev/lanes/rlhtwin_report.md` §5 Q4).
+
+**Facts:** the req byte gate site with mode (ALL_PRESENT, ASSIGN, SET) and exactly ONE byte term, where the matched position is KEPT, not just tested. Today it renders through the generic per-byte loop. Under the re-entered handoff, this site runs at every restart of the unanchored body, so it becomes the hot scan of the search. Cells: loglines/ipv6, loglines/ipv4, bounded/dotted4.
+
+**Deliverable:** a row serving that site shape (the kit's method). SIMD-off bytes may move only on the sites this row serves, and they move together with pcrec's [REQ-HANDOFF-L1] merge (one abi event, sequenced by main). Prove identity on every other site.
+
+**Trigger:** rlhtwin's twins: the re-entered handoff captures 109-120% of reverse-inner's win on ipv6/ipv4 with the scan on this site.
+
+**Capacity:** migration thread; after slot21.
+
+**Sabotage ids:** S800-S804 (allocated 2026-10-11; next free S805).
