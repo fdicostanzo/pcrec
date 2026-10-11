@@ -127,16 +127,16 @@ them). The figure vs the best non-vectorscan peer is given where it differs.
 
 | rank | cause | cells | total lost vs jit (ns) | vs best peer | algorithmic (scalar peer or interp also wins)? |
 |---|---|---|---|---|---|
-| 1 | **C1 BACKREF-ATTEMPT**: per-attempt overhead in backreference programs. (a) The seam compare `<prefix>_span_match` is an exported function, called through the PLT under `-fPIC`. (b) A frameless program trails every slot write and undoes 4-8 trail entries per failed attempt. (c) START-SET's VM hat seeks on a dense `\w` set. (d) Attempts inside a possessive word run fail at a start-independent test and are rescanned | mod-j-uc, bak-2, bak-py, bak-g-rel, bak-1, phone-palindrome-6 (x2 regimes) | **27,193,673** | same | no (interp 6-8x slower) |
+| 1 | **C1 BACKREF-ATTEMPT**: per-attempt overhead in backreference programs. (a) The seam compare `<prefix>_span_match` is an exported function, called through the PLT under `-fPIC`. (b) A frameless program trails every slot write and undoes 4-8 trail entries per failed attempt. (c) START-SET's VM hat seeks on a dense `\w` set. (d) Attempts inside a possessive word run fail at a start-independent test and are rescanned | mod-j-uc, bak-2, bak-py, bak-g-rel, bak-1, phone-palindrome-6 (x2 regimes) | **27,194,692** | same | no (interp 6-8x slower) |
 | 2 | **C2 VM-HAT TABLE FORM**: the VM hat's seek walks a 256-entry table byte by byte even where `|S|` is 1 or 2 and sparse | quoted-delim, bak-k-named, balanced-parens | **2,583,534** | same | no |
-| 3 | **C3 ONE-BYTE MEMCHR RESTART**: a literal-run prefilter or pre-check scans one byte with memchr and restarts the call per hit; JIT scans a char PAIR with SIMD | lkb-pos, lkb-neg, lka-pos, lka-verb, lka-neg, lka-nonatomic, slack | **1,990,060** (+ grp-atomic-alt's scan, counted in C4) | same | no |
+| 3 | **C3 ONE-BYTE MEMCHR RESTART**: a literal-run prefilter or pre-check scans one byte with memchr and restarts the call per hit; JIT scans a char PAIR with SIMD | lkb-pos, lkb-neg, lka-pos, lka-verb, lka-neg, lka-nonatomic, slack | **1,990,832** (+ grp-atomic-alt's scan, counted in C4) | same | no |
 | 4 | **C4 VM-FORCED REGULAR LANGUAGE**: a possessive / atomic construct forces the VM where the language is a plain literal, and the hybrid's adaptive retry steps every byte | qnt-poss-quest, grp-atomic-alt | **1,834,502** | same | no |
 | 5 | **C8 DENSE (route-independent)**: lrdfa's DENSE cause under a VM hybrid; the VM's capture share is 3% | grp-cap, grp-named, grp-named-quote | 414,024 | same | no |
 | 6 | **C6 CURSOR-RUNG REWIND**: a greedy span retreats one resume frame per position even when the follow atom is a one-byte test | pwd-strength-chain (x2 regimes) | 266,811 | same | no |
-| 7 | **C5 WORD-WAIT STAY THRESHOLD**: M2.1's 192-of-256-byte stay rule declines the `\b` word-wait state, so the DFA steps every byte of a word | ctx-lazy-64/256/1024, ctx-greedy-256 (+ the short cell) | 256,730 | **584,735** vs rust | rust only (SIMD literal prefilter) |
+| 7 | **C5 WORD-WAIT STAY THRESHOLD**: M2.1's 192-of-256-byte stay rule declines the `\b` word-wait state, so the DFA steps every byte of a word | ctx-lazy-64/256/1024, ctx-greedy-256 (+ the short cell) | 256,730 | **587,735** vs rust | rust only (SIMD literal prefilter) |
 | 8 | **C7 G2 REACH-BLIND DECLINE**: G2 declines the necessary-byte pre-check on a one-attempt route even when the attempt can read an unbounded run before reaching that byte | moment-iso8601 (+ email-owasp, DFA route, 39,731) | 62,659 | 67,392 vs re2 | **yes** (re2 x39.8, interp x1.45) |
 
-Total VM-route loss vs jit: **34,643,515 ns**. C1 is 78% of it.
+Total VM-route loss vs jit: **34,603,784 ns** (email-owasp, DFA route, excluded). C1 is 79% of it.
 
 ## 4. Phase-2 seeds (fix-existing first)
 
