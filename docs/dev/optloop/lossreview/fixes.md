@@ -725,6 +725,15 @@ This candidate is two halves of one table: F1's "whether" and F2's "how".
   where evidence already goes against (i). Whether 0.39 is close enough on
   hex8 to build arm (E) is the manager's call.
 
+  **Manager, 2026-10-11 (after the panel):** arm (E) IS built for the step-0 slot.
+  **Frank's extension (session 108), the general form:** `\b` is a CLASS PAIR AT AN OFFSET, so it belongs in the
+  offset-set row's vocabulary (`kset_walk`: test the rarest offset, verify the rest) as a new TERM KIND beside byte sets.
+  On a FIXED-WIDTH pattern both boundaries sit at known offsets: `\b[0-9a-f]{8}\b` needs NW at p-1 and at p+8 (a word of
+  exactly 8 bytes), which rejects nearly every word start before any DFA work. Customers: a leading `\b`, a trailing `\b` at
+  a fixed offset, and a one-character lookbehind (`(?<=x)` = a pair at offset -1; `lookaround_census.md` shape (a), ~35% of the
+  lookaround-only VM population). It supersedes the stay loop for `\b`-led patterns (no mid-word entry, so no word-wait state).
+  TRIGGER: arm (E)'s timing on hex8/json-constant; then a no-clock count of both-end pair stops on hex8's subjects.
+
 - **Risk:**
   - Answers: identical (skip forms only).
   - abi: events on both sides.
