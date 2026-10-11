@@ -878,3 +878,10 @@ that cycle's analysis lands.
   twins (ipv6, kv-quoted, sfx-64): twin source, drivers, identity and timing
   scripts, raw outputs. Own `CLAUDE.md`; reading in
   `../lanes/et1twin_report.md`.
+
+## [REQ-HANDOFF-L1]'s twins (lane `rlhtwin`, 2026-10-11)
+
+- `rlhtwin/` — the one-byte K82 handoff twins (entry and re-entered) on loglines/ipv6 +
+  ipv4, plus the re-entered run handoff on sfx-64/kv-quoted: build, identity, plant,
+  census and timing scripts with raw outputs. Own `CLAUDE.md`; reading in
+  `../lanes/rlhtwin_report.md`.

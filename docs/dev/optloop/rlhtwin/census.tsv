@@ -1,0 +1,7 @@
+pattern	today_handoff	scratch_handoff	req_byte	req_run	engine	dfa_scan	dfa_start
+bounded/dotted4	none	3	46	none	dfa	unanchored	reverse-pass
+loglines/ipv4	none	3	46	none	dfa	unanchored	reverse-pass
+loglines/ipv6	none	4	58	none	dfa	unanchored	reverse-pass
+syntax/grp-atomic-alt	none	2	99	none	vm	unanchored	reverse-pass
+syntax/qnt-poss-brace	none	2	98	none	dfa	unanchored	reverse-pass
+# patterns=367 today-compile-failures=27 handoff-movers=5

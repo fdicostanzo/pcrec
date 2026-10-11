@@ -1,0 +1,23 @@
+cell	regime	subject	o	h2	h2/o
+kvq	throughput	t-016k-fail.bin	153	154	1.010
+kvq	throughput	t-016k-hit.bin	803	816	1.017
+kvq	throughput	t-016k-syslog.bin	88	88	1.002
+kvq	throughput	t-064k-fail.bin	726	725	0.998
+kvq	throughput	t-064k-hit.bin	3229	3279	1.015
+kvq	throughput	t-064k-syslog.bin	407	408	1.002
+kvq	throughput	t-1024k-fail.bin	12728	12925	1.015
+kvq	throughput	t-1024k-hit.bin	52445	53155	1.014
+kvq	throughput	t-1024k-syslog.bin	7613	7627	1.002
+kvq	throughput	t-256k-fail.bin	2939	2928	0.996
+kvq	throughput	t-256k-hit.bin	12680	12918	1.019
+kvq	throughput	t-256k-syslog.bin	1576	1577	1.001
+sfx64	throughput	t-128k-clean.bin	234156	15166	0.065
+sfx64	throughput	t-128k-dense.bin	229634	18322	0.080
+sfx64	throughput	t-128k-sparse.bin	128191	15452	0.121
+sfx64	throughput	t-512k-sparse.bin	1032675	60981	0.059
+
+cell	regime	sum_o	sum_h2	h2/o
+kvq	throughput	95386	96600	1.013
+sfx64	throughput	1624656	109921	0.068
+
+count check: 16 subject lines, 0 with differing match counts across variants
