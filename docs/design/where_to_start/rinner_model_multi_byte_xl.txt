@@ -1,0 +1,36 @@
+# rinner_model_multi.py: libpcre2 10.46 2025-08-27, seed 7
+multi: 20000 cases compiled (uncompilable 0), seed 7
+  gate:comp                                       3315
+  gate:comp-needs-strong-arm                      2861
+  gate:g1                                         8511
+  gate:mixed-P (not all P_i equal text)           3262
+  gate:pair                                       4321
+  gate:pair-not-comp                              1006
+  gate:samew                                       454
+  gate:strong                                     3113
+variant                              checks   mismatch  first witness (R, subject, startpos, truth, model)
+floor[strong]                        215868          0  
+floor[strong]/findall                 37356          0  
+floor_bytehit[strong]                215868       1253  ('(?:(?:[aX][^X]|\\bb)bX(?:a*|b)|(?:$([aX]b{2}))bX(?:[^X]{0,2}+[aX]{2}a))', b'XabXXXXaX', 0, (0, 4), None)
+floor_bytehit[strong]/findall         37356        448  ('(?:(?:[aX][^X]|\\bb)bX(?:a*|b)|(?:$([aX]b{2}))bX(?:[^X]{0,2}+[aX]{2}a))', b'XabXXXXaX', 0, [(0, 4)], [])
+floor_end[strong]                    215868        139  ('(?:(?:.?|X)ab(?:\\b)|(?:$)ab(?:b??(a|b+?){0,2}+))', b'bXXabab', 0, (4, 7), (5, 7))
+floor_end[strong]/findall             37356         52  ('(?:(?:.?|X)ab(?:\\b)|(?:$)ab(?:b??(a|b+?){0,2}+))', b'bXXabab', 0, [(4, 7)], [(5, 7)])
+gate_off[split-ambiguous]            289910        109  ('(?:(?:b{0,2}?)aa(?:X*+|[ab]+)|(?:Xa+)aa(?:b(?:a*?)))', b'\nXaaab', 0, (1, 6), (2, 4))
+gate_off[split-ambiguous]/findall      50280         47  ('(?:(?:b{0,2}?)aa(?:X*+|[ab]+)|(?:Xa+)aa(?:b(?:a*?)))', b'\nXaaab', 0, [(1, 6)], [(2, 4)])
+pair_not_comp                         69472          0  
+pair_not_comp/findall                 12072          0  
+tactic[comp]                         229980          0  
+tactic[comp]/findall                  39780          0  
+unionmin[comp]                       229980        535  ('(?:(?:b{1,3})a(?:(?:a(?<!X))\\b|X++(?:bb|a??a{0,2}?){0,2}?)|(?:Xb)a(?:b))', b'\nbbXXbaXb', 0, (5, 8), None)
+unionmin[comp]/findall                39780        205  ('(?:(?:b{1,3})a(?:(?:a(?<!X))\\b|X++(?:bb|a??a{0,2}?){0,2}?)|(?:Xb)a(?:b))', b'\nbbXXbaXb', 0, [(5, 8)], [])
+shaped composition: seed 7, 5000 cases
+class                                                    checks   mismatch  first witness (R, subject, startpos, truth, model)
+comp                                                     385427          0  
+gate_off                                                 697589        485  ('(?:(?:[abq]{4})q(?:)|(?:a[abq]*)q(?:a))', b'bbaqbaqqa', 3, (3, 8), (5, 9))
+pair_not_comp                                            244701       1430  ('(?:(?:[abq]{5})q(?:)|(?:[abq]{3})q(?:))', b'aaaaqqqa', 0, (0, 6), (1, 7))
+pair_not_comp[fixed+strong]                              167084       1120  ('(?:(?:b+)q(?:a)|(?:[abq]{4})q(?:)|(?:[abq]{3})q(?:))', b'bqbqqqa', 1, (1, 6), (2, 6))
+pair_not_comp[fixed]                                      77617        310  ('(?:(?:[abq]{5})q(?:)|(?:[abq]{3})q(?:))', b'aaaaqqqa', 0, (0, 6), (1, 7))
+cases: comp 1453, gate_off 2627, pair_not_comp 920
+distinct: 6000 cases, each branch admitted alone in 1327
+distinct-landmark scan                91959          8  ('(?:(?:X{1,3}a+?|b{0,2}?(?:bX))ab(?:b[aX])|(?:([ab]??){0,2}?|bb)Xa(?:abX|b+))', b'XXaabbab', 0, (0, 7), (1, 7))
+selftest: PASS

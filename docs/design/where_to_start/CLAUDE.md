@@ -52,3 +52,20 @@ any check. Compile-side and libpcre2-side only; no clock is read.
 - `twin_dup_param/` — the D77 trigger twin (D151 item 2): twin patch, ledger, identity logs, the two ubuntubudu timing
   runs (summary + raw TSVs), scratch scripts, README with the verdict (NOT MET: the bench cell is at the memchr floor).
 
+- `rincensus.py` — lane `rincensus` (2026-10-11): stage 1's DECIDING CENSUS. Counts the patterns eligible for reverse-inner
+  stage 1 under the ruled gates (DFA route, not start-anchored, ONE common L across top-level branches, G1, G2's three arms per
+  (P_i, L) with the factor/border tests over L's fold variants decided on P_i's NFA x a shift-and automaton, G3 at F = 1/2/8) over
+  bench `patterns/*.rx`, the whole `.rxt` corpus and `docs/design/eng_brep_measurements/probes/realistic_patterns.txt`. Four
+  readings (strict/generous common L x peel) and a pair/comp (composition-safe) outcome per pattern. `--selftest` = C1 rows plus
+  C2 (the arms against `rinner_model.py`'s own bookkeeping and `factor_witness`), `--sabotage no-border|no-factor` must FAIL it.
+  Imports the Reader/loaders from `census.py`'s lineage (artrev census loaded by path).
+- `rincensus_summary.py` — reads the rows, adds walk_survey's m_gap weights for the bench (control: its K12 total 15.786 ms is
+  asserted), the "served" and "keyed" classes read off stamps, the C2 necessity control against pcrec's `req_set` and the sabotage
+  table; its output is `rincensus_summary.txt`. `rincensus_rows.tsv.gz` is one row per pattern (no pattern text). `rincensus_run.sh
+  BENCH SCRATCH` regenerates every rincensus artifact here in about a minute; `rincensus_selftest.txt` is the selftest transcripts.
+- `rinner_model_multi.py` — lane `rincensus`: the model's second half (critic r1 F1-F4/F6). Imports `rinner_model.py` (same libpcre2
+  instrument) and adds the per-branch form (ii) tactic, the `unionmin`, `floor_end`, `floor_bytehit` mutants, a caseless L, the
+  distinct-landmark scan, the COMPOSITION gate (branches compose iff all strong, or all fixed at the same width) and the planted rows
+  (`--fixed`). `--multi N`, `--distinct N`, `--shaped N` populations; `--selftest` asserts gated rows 0 wrong and every mutant and
+  control detected. Transcripts: `rinner_model_multi_fixed.txt`, `_byte.txt` (seed 1), `_utf8.txt` (seed 2), `_byte_xl.txt` (seed 7).
+  Report: `../../dev/lanes/rincensus_report.md`.
