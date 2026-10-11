@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """docs/design/memfn/probes/rq4/rq4_table.py -- renders an rq4.py run (raw.tsv
-+ meta.tsv + header.txt) as the RQ-4 tier-U reading (lane rq4h).
++ meta.tsv + header.txt + arms.tsv) as the RQ-4 tier-U reading (lane rq4h;
+arm list and prior re-read by lane s21prep).
 
-    python3 rq4_table.py RUNDIR [--sib-max 5] [--out FILE]
+    python3 rq4_table.py RUNDIR [--sib-max 5] [--out FILE] [--prior RUNDIR]
 
-Per (cell, regime, level): the three arms' medians over launches (ns), the
-largest launch spread among them, then two deltas, each against its own null
-band, each with a sign verdict:
-  DEFAULT - KBDENY   the KB question (rankuse_report.md §6); + = KB costs
-  DEFAULT - OFF      SIMD-on against SIMD-off (D147: both layers);  + = SIMD costs
-Verdict: LOSS if delta > +floor, WIN if delta < -floor, NULL otherwise;
+The run's arms come from arms.tsv (a slot20 run has none: they are read off
+meta.tsv's `forms_<ARM>` columns, which is the same list). Per (cell, regime,
+level): every arm's median over launches (ns), the largest launch spread
+among them, then one delta per PAIR (rq4_arms.PAIRS, those whose two arms
+were run), each against its own null band, each with a sign verdict. Slot20's
+D-K (DEFAULT - KBDENY, "KB verdict": + = KB costs) and ON-OFF (DEFAULT - OFF,
+"SIMD verdict": + = SIMD costs) keep their names; slot21 adds D-F (R-14 verify
+vs R-13's), N-F (trim vs R-13's), D-N (pad vs trim), F-K, and with slot21x
+F-FK. Verdict: LOSS if delta > +floor, WIN if delta < -floor, NULL otherwise;
 NO-BAND where the regime has no null cell. A row whose arms disagree on the
 answer (hits, subject hash, position sum) reads ANSWER-MISMATCH and gets no
 verdict.
 
 THE NULL BAND (integration.md §R4.9.5 item 5). For a pair (X, Y) the null
 population is every cell whose X and Y artifacts are BYTE-IDENTICAL (meta.tsv
-id_DK / id_DO, set by rq4.py's facts stage, not by the cells.tsv class): the
+`id_*` columns, set by rq4.py's facts stage, not by the cells.tsv class): the
 same text timed as two arms in the same run, same binaries set, same
 interleave. Per (regime, level) its delta is computed exactly as a mover's,
 and the FLOOR is the maximum |delta| over those cells (`UNMEASURED DEFAULT:`
@@ -28,6 +32,15 @@ floor; a ratio only well above the timer floor).
 Readings whose SMT siblings were busier than --sib-max % (`UNMEASURED
 DEFAULT:` 5, §R4.9.5 item 2) are discarded before the median; the count is
 reported per arm.
+
+--prior RUNDIR (slot21's re-read of slot20): RUNDIR is a finished earlier run
+(slot20's `run/`). Its D-K LOSS comparisons are listed, each next to this
+run's D-K, F-K and F-FK on the same (cell, regime, level), with the count that
+remain. This run's DEFAULT differs from the prior's (R-14's trim and pad), so
+the prior's D-K is a different question from this run's D-K; the comparison
+that restates it is F-FK (slot21x) -- FULL is R-13's verify and FULLKB is
+slot20's KBDENY -- and F-K (slot21) approximates it with KBDENY's trim and pad
+still on.
 """
 import argparse
 import os
@@ -35,8 +48,11 @@ import statistics
 import sys
 from collections import defaultdict
 
-PAIRS = [("DEFAULT", "KBDENY", "id_DK", "D-K"), ("DEFAULT", "OFF", "id_DO", "ON-OFF")]
-ARMS = ("DEFAULT", "KBDENY", "OFF")
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import rq4_arms  # noqa: E402
+
+CLASS_ORDER = ("THROUGHPUT", "DENSITY", "PER-CALL", "BENCH")
 
 
 def rows(path):
@@ -54,79 +70,118 @@ def unit(rclass):
     return "ns" if rclass == "PER-CALL" else "%"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("run")
-    ap.add_argument("--sib-max", type=float, default=5.0)
-    ap.add_argument("--out", default="")
-    a = ap.parse_args()
-    meta = {m["cell"]: m for m in rows(os.path.join(a.run, "meta.tsv"))}
-    ns = defaultdict(list)          # (cell, rlabel, level, arm) -> [ns]
-    ans = defaultdict(set)          # (cell, rlabel, level) -> {(hits, fnv, possum)}
-    rcls, order, dropped, kept = {}, [], defaultdict(int), defaultdict(int)
-    for r in rows(os.path.join(a.run, "raw.tsv")):
-        key = (r["cell"], r["rlabel"], r["level"])
-        if key not in rcls:
-            rcls[key] = r["rclass"]
-            order.append(key)
-        ans[key].add((r["hits"], r["fnv"], r["possum"]))
-        if float(r["sib_busy"]) > a.sib_max:
-            dropped[r["arm"]] += 1
-            continue
-        kept[r["arm"]] += 1
-        ns[key + (r["arm"],)].append(float(r["ns"]))
+class Run:
+    """one rq4.py run: medians, answers, null bands and the per-pair verdicts"""
 
-    def med(key, arm):
-        v = ns.get(key + (arm,))
+    def __init__(self, path, sib_max):
+        self.path = path
+        mpath = os.path.join(path, "meta.tsv")
+        self.meta = {m["cell"]: m for m in rows(mpath)}
+        with open(mpath, encoding="utf-8") as f:
+            self.mcols = f.readline().rstrip("\n").split("\t")
+        apath = os.path.join(path, "arms.tsv")
+        if os.path.exists(apath):
+            self.arms = [r["arm"] for r in rows(apath)]
+        else:
+            self.arms = [c[len("forms_"):] for c in self.mcols if c.startswith("forms_")]
+        self.pairs = [p for p in rq4_arms.PAIRS if p[0] in self.arms and p[1] in self.arms]
+        self.ns = defaultdict(list)     # (cell, rlabel, level, arm) -> [ns]
+        self.ans = defaultdict(set)     # (cell, rlabel, level) -> {(hits, fnv, possum)}
+        self.rcls, self.order = {}, []
+        self.dropped, self.kept = defaultdict(int), defaultdict(int)
+        for r in rows(os.path.join(path, "raw.tsv")):
+            key = (r["cell"], r["rlabel"], r["level"])
+            if key not in self.rcls:
+                self.rcls[key] = r["rclass"]
+                self.order.append(key)
+            self.ans[key].add((r["hits"], r["fnv"], r["possum"]))
+            if float(r["sib_busy"]) > sib_max:
+                self.dropped[r["arm"]] += 1
+                continue
+            self.kept[r["arm"]] += 1
+            self.ns[key + (r["arm"],)].append(float(r["ns"]))
+        self.band = {}                  # (pair short, rlabel, level) -> (floor, n)
+        for x, y, pname, _ in self.pairs:
+            acc = defaultdict(list)
+            for key in self.order:
+                cell, rl, lv = key
+                if self.is_null(cell, x, y) is not True or len(self.ans[key]) != 1:
+                    continue
+                mx, my = self.med(key, x), self.med(key, y)
+                if mx is not None and my is not None:
+                    acc[(rl, lv)].append(abs(delta(self.rcls[key], mx, my)))
+            for k, v in acc.items():
+                self.band[(pname,) + k] = (max(v), len(v))
+
+    def is_null(self, cell, x, y):
+        """True if the cell's x and y artifacts are byte-identical, False if not, None if meta lacks the column"""
+        for col in (rq4_arms.id_col(x, y), rq4_arms.id_col(y, x)):
+            if col in self.meta[cell]:
+                return self.meta[cell][col] == "1"
+        return None
+
+    def med(self, key, arm):
+        v = self.ns.get(key + (arm,))
         return statistics.median(v) if v else None
 
-    def spread(key):
+    def spread(self, key):
         s = 0.0
-        for arm in ARMS:
-            v = ns.get(key + (arm,))
+        for arm in self.arms:
+            v = self.ns.get(key + (arm,))
             if v and len(v) > 1:
                 s = max(s, 100.0 * (max(v) - min(v)) / statistics.median(v))
         return s
 
-    # null bands: (pair, rlabel, level) -> (floor, n)
-    band = {}
-    for x, y, idk, pname in PAIRS:
-        acc = defaultdict(list)
-        for key in order:
-            cell, rl, lv = key
-            if meta[cell][idk] != "1" or len(ans[key]) != 1:
-                continue
-            mx, my = med(key, x), med(key, y)
-            if mx is not None and my is not None:
-                acc[(rl, lv)].append(abs(delta(rcls[key], mx, my)))
-        for k, v in acc.items():
-            band[(pname,) + k] = (max(v), len(v))
+    def cmp(self, pair, key):
+        """(delta or None, floor or None, verdict) of one pair at one (cell, regime, level)"""
+        x, y, pname, _ = pair
+        if len(self.ans[key]) != 1:
+            return None, None, "ANSWER-MISMATCH"
+        mx, my = self.med(key, x), self.med(key, y)
+        if mx is None or my is None:
+            return None, None, "NO-DATA"
+        rc = self.rcls[key]
+        d = delta(rc, mx, my)
+        b = self.band.get((pname, key[1], key[2]))
+        fl = b[0] if b else None
+        if self.is_null(key[0], x, y):
+            return d, fl, "null-cell"
+        if not b:
+            return d, None, "NO-BAND"
+        return d, fl, "LOSS" if d > fl else "WIN" if d < -fl else "NULL"
 
+
+def short_names(arms):
+    ini = [a[0] for a in arms]
+    return ini if len(set(ini)) == len(ini) else list(arms)
+
+
+def render(run, a):
     out = []
     w = out.append
-    hdr = os.path.join(a.run, "header.txt")
+    hdr = os.path.join(run.path, "header.txt")
     if os.path.exists(hdr):
         w("```")
         w(open(hdr).read().rstrip())
         w("```")
         w("")
     w("Readings kept / dropped (sibling busy > %.1f%%): %s" %
-      (a.sib_max, ", ".join("%s %d/%d" % (arm, kept[arm], dropped[arm]) for arm in ARMS)))
+      (a.sib_max, ", ".join("%s %d/%d" % (arm, run.kept[arm], run.dropped[arm]) for arm in run.arms)))
     w("")
     w("## Null bands (floor = max |delta| over byte-identical cells; n = null cells)")
     w("")
-    w("| regime | level | D-K floor | n | ON-OFF floor | n |")
-    w("|---|---|---|---|---|---|")
+    w("| regime | level | %s |" % " | ".join("%s floor | n" % p[2] for p in run.pairs))
+    w("|---|---|" + "---|---|" * len(run.pairs))
     seen = []
-    for cell, rl, lv in order:
+    for cell, rl, lv in run.order:
         if (rl, lv) not in seen:
             seen.append((rl, lv))
-    cls_of = {(rl, lv): rcls[(c, rl, lv)] for c, rl, lv in order}
+    cls_of = {(rl, lv): run.rcls[(c, rl, lv)] for c, rl, lv in run.order}
     for rl, lv in seen:
         u = unit(cls_of[(rl, lv)])
         cells = []
-        for pname in ("D-K", "ON-OFF"):
-            b = band.get((pname, rl, lv))
+        for p in run.pairs:
+            b = run.band.get((p[2], rl, lv))
             cells += ["%.2f %s" % (b[0], u), str(b[1])] if b else ["-", "0"]
         w("| %s | %s | %s |" % (rl, lv, " | ".join(cells)))
     w("")
@@ -136,55 +191,52 @@ def main():
     tested = defaultdict(int)
     w("## Per cell (medians over launches, ns; spread = largest launch spread among the arms)")
     by_cell = defaultdict(list)
-    for key in order:
+    for key in run.order:
         by_cell[key[0]].append(key)
+    sn = dict(zip(run.arms, short_names(run.arms)))
     for cell, keys in by_cell.items():
-        m = meta[cell]
+        m = run.meta[cell]
         w("")
         w("### %s (%s, engine %s) `%s`" % (cell, m["class"], m["engine"], m["pattern"]))
-        w("FORMS D/K/O = %s / %s / %s; identical D=K %s, D=O %s; KA %s, KB %s; live v1 %s; v3 %s" %
-          (m["forms_DEFAULT"], m["forms_KBDENY"], m["forms_OFF"], m["id_DK"], m["id_DO"], m["ka"], m["kb"],
-           m["live_v1"], m["live_v3"]))
+        w("FORMS %s = %s; identical %s; KA %s, KB %s; live v1 %s; v3 %s" %
+          ("/".join(sn[x] for x in run.arms), " / ".join(m["forms_" + x] for x in run.arms),
+           ", ".join("%s=%s %s" % (sn[p[0]], sn[p[1]], "?" if run.is_null(cell, p[0], p[1]) is None
+                                    else int(run.is_null(cell, p[0], p[1]))) for p in run.pairs),
+           m["ka"], m["kb"], m["live_v1"], m["live_v3"]))
         w("")
-        w("| regime | lvl | DEFAULT | KBDENY | OFF | spread% | D-K | band | KB verdict | ON-OFF | band | SIMD verdict |")
-        w("|---|---|---|---|---|---|---|---|---|---|---|---|")
+        w("| regime | lvl | %s | spread%% | %s |" %
+          (" | ".join(run.arms), " | ".join("%s | band | %s verdict" % (p[2], p[3]) if p[2] not in ("D-K", "ON-OFF")
+                                            else "%s | band | %s" % (p[2], {"D-K": "KB verdict", "ON-OFF": "SIMD verdict"}[p[2]])
+                                            for p in run.pairs)))
+        w("|---|---|%s---|%s" % ("---|" * len(run.arms), "---|---|---|" * len(run.pairs)))
         for key in keys:
             _, rl, lv = key
-            rc = rcls[key]
+            rc = run.rcls[key]
             u = unit(rc)
-            md = {arm: med(key, arm) for arm in ARMS}
-            line = [rl, lv] + ["%.1f" % md[arm] if md[arm] is not None else "-" for arm in ARMS]
-            line.append("%.1f" % spread(key))
-            for x, y, idk, pname in PAIRS:
-                if len(ans[key]) != 1:
-                    line += ["-", "-", "ANSWER-MISMATCH"]
+            line = [rl, lv] + ["%.1f" % run.med(key, arm) if run.med(key, arm) is not None else "-"
+                               for arm in run.arms]
+            line.append("%.1f" % run.spread(key))
+            for p in run.pairs:
+                d, fl, v = run.cmp(p, key)
+                if d is None:
+                    line += ["-", "-", v]
                     continue
-                if md[x] is None or md[y] is None:
-                    line += ["-", "-", "NO-DATA"]
-                    continue
-                d = delta(rc, md[x], md[y])
-                b = band.get((pname, rl, lv))
-                if m[idk] == "1":
-                    v = "null-cell"
-                elif not b:
-                    v = "NO-BAND"
-                else:
-                    v = "LOSS" if d > b[0] else "WIN" if d < -b[0] else "NULL"
-                    tally[pname][(rc, lv, v)] += 1
-                    tested[pname] += 1
+                if v in ("LOSS", "WIN", "NULL"):
+                    tally[p[2]][(rc, lv, v)] += 1
+                    tested[p[2]] += 1
                     if v == "LOSS":
-                        losses[pname].append("%s %s %s %+.2f%s (floor %.2f)" % (cell, rl, lv, d, u, b[0]))
-                line += ["%+.2f %s" % (d, u), "%.2f" % b[0] if b else "-", v]
+                        losses[p[2]].append("%s %s %s %+.2f%s (floor %.2f)" % (cell, rl, lv, d, u, fl))
+                line += ["%+.2f %s" % (d, u), "%.2f" % fl if fl is not None else "-", v]
             w("| " + " | ".join(line) + " |")
     w("")
     w("## Summary (comparisons tested per pair, so the multiple-comparison exposure is visible)")
-    for x, y, idk, pname in PAIRS:
+    for x, y, pname, _ in run.pairs:
         w("")
         w("### %s (%s - %s): %d comparisons" % (pname, x, y, tested[pname]))
         w("")
         w("| class | level | WIN | NULL | LOSS |")
         w("|---|---|---|---|---|")
-        for rc in ("THROUGHPUT", "DENSITY", "PER-CALL", "BENCH"):
+        for rc in CLASS_ORDER:
             for lv in ("v1", "v3"):
                 t = tally[pname]
                 if any(t[(rc, lv, v)] for v in ("WIN", "NULL", "LOSS")):
@@ -194,6 +246,81 @@ def main():
         w("LOSS past the floor (%d):" % len(losses[pname]))
         for s in losses[pname]:
             w("- " + s)
+    return out
+
+
+def fmt(run, pair, key):
+    """'+0.26ns LOSS' style cell of one comparison, or '-' where the pair was not run"""
+    if pair is None:
+        return "-"
+    d, fl, v = run.cmp(pair, key)
+    if d is None:
+        return v
+    return "%+.2f%s %s" % (d, unit(run.rcls[key]), v)
+
+
+def reread(run, prior, w):
+    """slot21's re-read of slot20's D-K LOSS comparisons"""
+    pk = next((p for p in prior.pairs if p[2] == "D-K"), None)
+    if pk is None:
+        w("(the prior run has no D-K pair: nothing to re-read)")
+        return
+    pick = lambda r, n: next((p for p in r.pairs if p[2] == n), None)
+    dk, fk, ffk = pick(run, "D-K"), pick(run, "F-K"), pick(run, "F-FK")
+    lost = [k for k in prior.order if prior.cmp(pk, k)[2] == "LOSS"]
+    w("## Re-read of the prior run's KB losses (%s)" % prior.path)
+    w("")
+    w("The prior run's D-K = DEFAULT - KBDENY on R-13's whole-run verify (trim and pad did not exist). This run's "
+      "D-K is the same arms on R-14's verify (trim + pad ON in both). F-K = FULL - KBDENY (FULL is R-13's verify with "
+      "KA and KB; this run's KBDENY keeps trim and pad, so F-K approximates the prior D-K but is not text-identical "
+      "to it). F-FK = FULL - FULLKB (slot21x only; FULLKB is the prior KBDENY's text): the prior D-K restated.")
+    w("")
+    w("Prior D-K LOSS comparisons: %d. Present in this run (same cell, regime, level): %d." %
+      (len(lost), sum(1 for k in lost if k in run.rcls)))
+    w("")
+    cnt = defaultdict(lambda: defaultdict(int))
+    for name, pair in (("D-K", dk), ("F-K", fk), ("F-FK", ffk)):
+        if pair is None:
+            continue
+        for k in lost:
+            if k in run.rcls:
+                cnt[name][run.cmp(pair, k)[2]] += 1
+    w("| this run's comparison on those %d | LOSS (persists) | NULL | WIN | other |" % len(lost))
+    w("|---|---|---|---|---|")
+    for name, pair in (("D-K", dk), ("F-K", fk), ("F-FK", ffk)):
+        if pair is None:
+            w("| %s | not run | | | |" % name)
+            continue
+        c = cnt[name]
+        oth = sum(v for k2, v in c.items() if k2 not in ("LOSS", "NULL", "WIN"))
+        w("| %s | %d | %d | %d | %d |" % (name, c["LOSS"], c["NULL"], c["WIN"], oth))
+    w("")
+    if dk:
+        new = [k for k in run.order if k not in set(lost) and run.cmp(dk, k)[2] == "LOSS"]
+        w("D-K LOSS in this run that were NOT among the prior's: %d" % len(new))
+        w("")
+    w("| cell | regime | lvl | prior D-K | this D-K | this F-K | this F-FK |")
+    w("|---|---|---|---|---|---|---|")
+    for k in lost:
+        if k not in run.rcls:
+            w("| %s | %s | %s | %s | (cell/regime not run) | | |" % (k[0], k[1], k[2], fmt(prior, pk, k)))
+            continue
+        w("| %s | %s | %s | %s | %s | %s | %s |" %
+          (k[0], k[1], k[2], fmt(prior, pk, k), fmt(run, dk, k), fmt(run, fk, k), fmt(run, ffk, k)))
+    w("")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("run")
+    ap.add_argument("--sib-max", type=float, default=5.0)
+    ap.add_argument("--out", default="")
+    ap.add_argument("--prior", default="", help="a finished earlier run (slot20's run/) whose D-K losses to re-read")
+    a = ap.parse_args()
+    run = Run(a.run, a.sib_max)
+    out = render(run, a)
+    if a.prior:
+        reread(run, Run(a.prior, a.sib_max), out.append)
     text = "\n".join(out) + "\n"
     if a.out:
         open(a.out, "w").write(text)
