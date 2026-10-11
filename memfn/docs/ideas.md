@@ -459,3 +459,25 @@ than a bit-vector regex engine."
   then mask-walk finish. The interim wins (span verify, class filters,
   ideas entries 4 and 6 and this one) all build stage 1, so they are
   groundwork for either engine, not throwaway.
+- Survey result (2026-10-11; lanes spansurv and spansurv2, read-only; reports
+  kept at worktrees/memfn-slot/spansurv/), over pcrec-bench (336 patterns)
+  and the test corpus:
+  - STRICT fixed spans: 38 bench patterns. loglines uuid (36), hex32-id
+    (32), iso-ts (19) and http-5xx (14) cover ~36% of loglines cells, plus 6
+    `wild-*` capability patterns. Mostly the FILTER form: uuid, hex32 and
+    iso-ts have no req_run, and only 9 of 41 spans contain the anchor.
+    Tiers: masked range alone 44%, +1 ORed range 80%, table 20%.
+  - ANCHORED CORES: 28 bench patterns, 2,884 cells, and 26 of the 28 are
+    VERIFY-READY today (anchored on pcrec's stated req_run or req_byte).
+    New over strict spans: bounded/dotted4, float-literal-bound,
+    tail-ext-lower-txt and 5 syntax cells. Cores are short (3-5 positions)
+    = verify-after-candidate.
+  - NOT reached by either: loglines/ipv4 (unequal-width octet
+    alternations) and loglines/ipv6 (a top-level alternation).
+  - BOUNDED TOKENS (max width <= 32): 46 bench patterns, 4,820 cells, but
+    realworld only loglines/bignum (`[0-9]{10,19}`). Only 5 tokens use
+    exactly 2 sets. A full ipv6 is max 39.
+  - Facts gap: pcrec states exact/cube bytes only; `kset_walk` covers the
+    leading path up to 24 offsets and stops at an any-byte. The kit needs
+    per-position sets at an offset from the anchor (-26..+90 measured) and
+    a union-vs-exact flag.
