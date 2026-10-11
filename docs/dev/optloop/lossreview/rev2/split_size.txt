@@ -1,0 +1,11 @@
+arms 5 u 287 a 1168
+== full  .c=389031  .text=46879 .data=149960 .o_total=196839
+#define RX_ENGINE "dfa" #define RX_DFA_SCAN "attempt" #define RX_DFA_PREFILTER "none" #define RX_DFA_TABLE "none" #define RX_DFA_SCAN_EDGE "none"     const size_t start_max = subject_length;
+== u  .c=149274  .text=41923 .data=200 .o_total=42123
+#define RX_ENGINE "dfa" #define RX_DFA_SCAN "unanchored" #define RX_DFA_PREFILTER "byte-class-bounded" #define RX_DFA_TABLE "premultiplied" #define RX_DFA_SCAN_EDGE "none" 
+== a  .c=282118  .text=34055 .data=104904 .o_total=138959
+#define RX_ENGINE "dfa" #define RX_DFA_SCAN "attempt" #define RX_DFA_PREFILTER "none" #define RX_DFA_TABLE "none" #define RX_DFA_SCAN_EDGE "none"     const size_t start_max = 0 /* fully ^-anchored */;
+.o  row construction (original + u): 238962 = 1.214x of original 196839
+.o  exact twin (a + u):              181082 = 0.920x of original
+.c  row construction (original + u): 538305 = 1.384x of original 389031
+.c  exact twin (a + u):              431392 = 1.109x of original

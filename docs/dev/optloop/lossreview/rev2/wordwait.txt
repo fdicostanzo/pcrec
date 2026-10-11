@@ -1,0 +1,42 @@
+=== hex8-bounded (stayprobe.py)
+machine rx_forward_ classes 3 premul True stay tables []
+  state     3 visits  3111185 (66.5%) self-loop bytes  63  stay-table no
+  state     0 visits   925192 (19.8%) self-loop bytes 193  stay-table no
+  state     6 visits   267038 (5.7%) self-loop bytes   0  stay-table no
+  state     9 visits   122972 (2.6%) self-loop bytes   0  stay-table no
+  state    12 visits   119781 (2.6%) self-loop bytes   0  stay-table no
+=== hex8-bounded (wordwait.py)
+machine rx_forward_ classes 3 premul True stay tables [] steps 4681573
+state	visits	share	selfloop_bytes	stay_table	stay_runs	mean_run	steps_in_runs
+3	3111185	66.46%	63	no	586111	4.29	2514892
+0	925192	19.76%	193	no	93876	2.12	199373
+6	267038	5.70%	0	no	0	0.00	0
+9	122972	2.63%	0	no	0	0.00	0
+12	119781	2.56%	0	no	0	0.00	0
+=== wild-codegrammar-json-constant (stayprobe.py)
+machine rx_forward_ classes 11 premul True stay tables []
+  state    11 visits  3695589 (78.9%) self-loop bytes  63  stay-table no
+  state     0 visits   925321 (19.8%) self-loop bytes 193  stay-table no
+  state    44 visits    38739 (0.8%) self-loop bytes   0  stay-table no
+  state    22 visits    19084 (0.4%) self-loop bytes   0  stay-table no
+  state    33 visits     2832 (0.1%) self-loop bytes   0  stay-table no
+=== wild-codegrammar-json-constant (wordwait.py)
+machine rx_forward_ classes 11 premul True stay tables [] steps 4681573
+state	visits	share	selfloop_bytes	stay_table	stay_runs	mean_run	steps_in_runs
+11	3695589	78.94%	63	no	679884	4.37	2969749
+0	925321	19.77%	193	no	93975	2.12	199476
+=== wild-waf-crs-942140-dbnames (stayprobe.py)
+machine rx_forward_ classes 29 premul True stay tables [95, 110]
+  state    29 visits  3453240 (73.8%) self-loop bytes  63  stay-table no
+  state     0 visits   925321 (19.8%) self-loop bytes 193  stay-table no
+  state   203 visits   130364 (2.8%) self-loop bytes   0  stay-table no
+  state   232 visits    43157 (0.9%) self-loop bytes   0  stay-table no
+  state    87 visits    26769 (0.6%) self-loop bytes   0  stay-table no
+=== wild-waf-crs-942140-dbnames (wordwait.py)
+machine rx_forward_ classes 29 premul True stay tables [95, 110] steps 4681573
+state	visits	share	selfloop_bytes	stay_table	stay_runs	mean_run	steps_in_runs
+29	3453240	73.76%	63	no	674042	4.05	2733239
+0	925321	19.77%	193	no	93975	2.12	199476
+203	130364	2.78%	0	no	0	0.00	0
+shipped stay95: state 2755 visits 0 stay_runs 0 mean_run 0.00
+shipped stay110: state 3190 visits 0 stay_runs 0 mean_run 0.00
