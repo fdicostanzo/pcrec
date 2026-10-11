@@ -507,3 +507,12 @@ than a bit-vector regex engine."
   (`[^\x00]`, `[^\xff]`). With mask 0xDF a folded complement such as
   `(?i)[^a]` stays exact, because only 0x41/0x61 map to 0x41 under 0xDF.
   This supersedes the XOR form above.
+- Frank, same day: `abcd(\d{4})` must not split at the group. A span is
+  "prove a run of x bytes", and capture boundaries inside it are just
+  constant OFFSETS (group 1 = [cand+4, cand+8)). So a fixed-width span also
+  FINISHES its own captures with no walk. Checked: the survey's parser
+  (spanlib.py: capture groups parse to ('grp', body) and are emitted
+  inline) already treats groups as transparent, so its counts did not split
+  at captures. For the pcrec fact design, the span (and pcrec's own run
+  extraction) must be computed THROUGH groups, with the capture marks
+  stated as offsets in the span, not as span boundaries.
