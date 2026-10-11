@@ -506,3 +506,38 @@ pins that this lane's section runs did not reach.
 > 3. A cell where the re-entered handoff leaves a measured gap to rev-inner
 >    (the re-worded [ENG-TACTICS] trigger): kv-quoted's -8.7% stays the
 >    standing candidate.
+
+## 9. Integration addendum (lane rlhland, 2026-10-11)
+
+- Merged main (677762be, kit R-15) into lane/rlhbuild; `git merge` alone.
+  Conflicts (3, all append-only text): docs/dev/lanes/CLAUDE.md and
+  tests/mech/CLAUDE.md kept both sides; docs/dev/plan.md kept main's new
+  [PRIOR-COST-UNIFY] row and the lane's [REQ-HANDOFF-L1] row plus main's
+  REFINEMENT sentence and the hcolon_in file-at-merge note. `make strict`
+  clean before the merge commit.
+- Movers re-pinned (abi stays 75; test-codegen's abi readers were already
+  green): tests/codegen/run_prechecks.sh `[5.12l]` (28 re-entering artifacts)
+  accepts the memchr ASSIGN rendering of the re-entry gate (it was red on all
+  28). tests/memfn/site_manifest.tsv PRE row gained `emit_req_reentry_use`
+  (no new row).
+- R-15's three stale items flipped: the cli case now asserts the deny
+  reproduces the generic gate loop on dotted4 (both simd settings) and still
+  moves nothing on `(ab)c?userpass`; the registry.md / tuning.md sentences;
+  rows.tsv `precheck_assign_byte` reach `pcrec` (witness dotted4, cflags the
+  deny, control `=`). Its pcrec_floor is PLACEHOLDER (legal): the N2 census
+  that reads it is OWED, a slot.
+- Variants sweep: 13 tag floors (26 FLOOR lines) in scripts/emit_sweep.py
+  VARIANT_PINS lowered to slot22's measured values. NOT done: the two thin-tag
+  MANIFEST reds in the same log (`(\p{Xwd})`, `((a)+)+` no longer carry
+  no-size-cap / stderr-default) need a tree-measured `--emit-pins` run; this
+  branch's own variants sweep is OWED to the manager.
+- §5.2 ipv4/dotted4 rows filled.
+- Quick checks green on the branch: strict, test-codegen, test-cli,
+  test-prechecks, test-memfn-{manifest,rows,reach,stamps,arms,deleg,g2},
+  test-registry, test-startset, test-entry-shape-identity,
+  test-rxtsource, test-spec-history. `make test-spec` fails here on
+  `pcre2_compile_8` link errors (environment: it is not part of the chain's
+  evidence; not investigated).
+- Chain: build/land/chain.sh, PID 2287504, SID 2287504 (the lane shell's SID
+  differs), log build/land/chain.log, trailer `== rlhbuild chain COMPLETE`.
+  `.lift` created at the end of this lane.
