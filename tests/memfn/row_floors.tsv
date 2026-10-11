@@ -46,6 +46,7 @@
 arms	ofsskip	50493	20190
 arms	precheck	253352	2061
 arms	precheck_assign	15956	2241
+arms	precheck_assign_byte	-	PLACEHOLDER
 arms	runcmp	56617	17829
 arms	pf_memchr	80268	3306
 arms	pf_memchr_bounded	25484	2842

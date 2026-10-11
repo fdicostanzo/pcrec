@@ -2508,6 +2508,30 @@ if mfpad_w16 "$WORKDIR/mfs2.c" | grep -q '^    memcpy(&pk, "\\000\\000\\337\\000
 else
     fail "the vrun padded verify (or its deny) is not as ruled on (?i)cat"
 fi
+# ... and `--memfn=no-precheck-assign-byte` (lane r15b, R-15): the kit's
+# FIRST SCALAR row, the pre-check's kept one-byte landmark. No pcrec site of
+# its shape exists until [REQ-HANDOFF-L1] lands, so on this tree the deny is
+# accepted and moves no artifact at EITHER setting of -fmemfn-simd (a scalar
+# row is live at both): on the byte-landmark cell (ON_MISS today) and on a
+# run-landmark ASSIGN pre-check (the existing precheck_assign row). Its force
+# spelling is refused, with the kit's own text: a deny-only row.
+for mfp in '(?:\d{1,3}\.){3}\d{1,3}' '(ab)c?userpass'; do
+    for mfsimd in -fno-memfn-simd -fmemfn-simd; do
+        pcrec_run "$PCREC" -p rx $mfsimd -o - --pattern "$mfp" 2>/dev/null >"$WORKDIR/mfb0.c"
+        pcrec_run "$PCREC" -p rx $mfsimd --memfn=no-precheck-assign-byte -o - --pattern "$mfp" 2>/dev/null >"$WORKDIR/mfb1.c"
+        if [ -s "$WORKDIR/mfb1.c" ] && cmp -s "$WORKDIR/mfb0.c" "$WORKDIR/mfb1.c"; then
+            pass "--memfn=no-precheck-assign-byte at $mfsimd is accepted and moves nothing on $mfp"
+        else
+            fail "--memfn=no-precheck-assign-byte at $mfsimd moved the artifact or did not compile on $mfp"
+        fi
+    done
+done
+werr="$(pcrec_run "$PCREC" -p rx --memfn=precheck-assign-byte -o "$WORKDIR/mfb2.c" --pattern a 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -ne 0 ] && printf '%s' "$werr" | grep -q "^pcrec: --memfn=: option can only be denied (no-NAME): 'precheck-assign-byte'"; then
+    pass "--memfn=precheck-assign-byte (force) is refused with the kit's own text"
+else
+    fail "--memfn=precheck-assign-byte (force) was not refused with the kit's text (rc $wrc)" "$werr"
+fi
 
 echo "cases failed: $total_fail"
 
