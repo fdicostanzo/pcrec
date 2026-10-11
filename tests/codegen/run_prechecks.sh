@@ -1700,12 +1700,14 @@ ab.*xyzw%-e byte%unbounded%none%.* (S467)
 a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byte
 (?:\d{1,3}\.){3}\d{1,3}%-e byte%3%3%[REQ-HANDOFF-L1] dotted4: three digits before the first dot (the repeat's FIRST iteration)
 (?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}%-e byte%4%4%[REQ-HANDOFF-L1] ipv6-shaped: four hex digits before the first colon
-(?:ab|c):%-e byte%2%2%[REQ-HANDOFF-L1] the colon after the WIDER branch ab (a set member's bound, not the left branch's)
+(?:ab|c):%-e byte%2%2%[REQ-HANDOFF-L1] the colon after the WIDER branch ab (the alternation's maximum width shifts it)
+(?:ab:|c:)%-e byte%2%2%[REQ-HANDOFF-L1] a member BOTH branches carry takes the FARTHER bound, ab's colon at 2 not c's at 1 (S806)
+\w*:%-e byte%unbounded%none%[REQ-HANDOFF-L1] a min-0 UNBOUNDED repeat still shifts the colon (a bounded min-0 repeat is lowered to alternations; S807)
 .{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
 \w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run
 [a-y]\d{0,150}:%-e byte%151%151%[REQ-HANDOFF-L1] K ADMISSION's witness: the ENTRY hands off at any finite K (the re-entry declines, 5.12m)
 ROWS
-[ "$s512_n" -ge 20 ] \
+[ "$s512_n" -ge 22 ] \
     && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
     || bad "[5.12a] only $s512_n hand pin rows compiled"
 
