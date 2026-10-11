@@ -2118,3 +2118,15 @@ the compiler, and is never adopted silently. Proposed for main to file
     unexplained. The guard-margin hypothesis is rejected by arithmetic. By
     the one-pass rule (Frank, 2026-10-11) the kit builds nothing for it.
     The report is committed with R-16's delivery.
+- notice: 2026-10-11 — **R-16 built, merged into lane/memfn-r16, light-green; slot23 STAGED and waiting on main's GO** (the rlhbuild chain, the rlhtri fix, then the L1 merge first). Report: docs/dev/lanes/r16b_report.md.
+  - SIMD-off: 0 movers, so no abi event. -fmemfn-simd moves only the w16
+    helpers and the guarded stamp. S815-S819 are all detected. Spec hunks:
+    limits.md §8.3 (w16 bound 2700 -> 2400), registry §6¶8a and tuning
+    §2.43¶3b (SIMD-on text).
+  - Before the slot the kit merges main (post-L1) into lane/memfn-r16. The
+    sweeps' ref is that merge-base.
+  - Chain: worktrees/memfn-slot/slot23/run.sh. Verdict in verdict.txt;
+    DONE or FAILED marks the end.
+  - For main: the variants sweep writes --emit-pins
+    slot23/variant_pins.py, which carries the thin-tag pins `(\p{Xwd})` and
+    `((a)+)+`. They are valid for main as-is (R-16 is SIMD-off identical).
