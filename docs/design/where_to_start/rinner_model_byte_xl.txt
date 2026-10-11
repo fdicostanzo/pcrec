@@ -1,0 +1,101 @@
+# rinner_model.py: libpcre2 10.46 2025-08-27, seed 3, 6000 generated R = P.L.S, XL literals
+cases compiled 5903 (uncompilable 97); gate applies 3103
+gate reasons: P-atomic+split-ambiguous 689, P-atomic+split-clean 611, P-cannot-contain-L 1077, P-factor-free 200, P-fixed-width 1826, P-lookaround+split-ambiguous 152, P-lookaround+split-clean 353, split-ambiguous 995
+G2 arms among G1-passing cases (cases / single-search checks; arms overlap):
+  fixed-width              1826 cases    126644 checks
+  cannot-contain-L         2389 cases    165852 checks
+  factor-free              1687 cases    117302 checks
+  either literal arm       2903 cases
+  factor-free ONLY          200 cases     13733 checks   <- splits admitted by the factor-free arm and by NEITHER literal arm
+variant                            checks   mismatch  first witness (R, subject, startpos, truth, model)
+tactic                             201429          0  
+tactic/findall                      34836          0  
+tactic[factor-free]                 13733          0  
+tactic[factor-free]/findall          2400          0  
+gate_off[P-atomic+split-ambiguous]      47914          4  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, (3, 7), (4, 7))
+gate_off[P-atomic+split-ambiguous]/findall       8268          1  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, [(3, 7)], [(4, 7)])
+gate_off[P-atomic+split-clean]      42386          0  
+gate_off[P-atomic+split-clean]/findall       7332          0  
+gate_off[P-lookaround+split-ambiguous]      10594          0  
+gate_off[P-lookaround+split-ambiguous]/findall       1824          0  
+gate_off[P-lookaround+split-clean]      24331          0  
+gate_off[P-lookaround+split-clean]/findall       4236          0  
+gate_off[split-ambiguous]           68964          0  
+gate_off[split-ambiguous]/findall      11940          0  
+lowerbound                         201429          0  
+lowerbound/findall                  34836          0  
+lowerbound[factor-free]             13733          0  
+lowerbound[factor-free]/findall       2400          0  
+lowerbound_gate_off[P-atomic+split-ambiguous]      47914          4  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, (3, 7), (4, 7))
+lowerbound_gate_off[P-atomic+split-ambiguous]/findall       8268          1  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, [(3, 7)], [(4, 7)])
+lowerbound_gate_off[P-atomic+split-clean]      42386          0  
+lowerbound_gate_off[P-atomic+split-clean]/findall       7332          0  
+lowerbound_gate_off[P-lookaround+split-ambiguous]      10594          0  
+lowerbound_gate_off[P-lookaround+split-ambiguous]/findall       1824          0  
+lowerbound_gate_off[P-lookaround+split-clean]      24331          0  
+lowerbound_gate_off[P-lookaround+split-clean]/findall       4236          0  
+lowerbound_gate_off[split-ambiguous]      68964          0  
+lowerbound_gate_off[split-ambiguous]/findall      11940          0  
+rust_guard                         201429          0  
+rust_guard/findall                  34836          0  
+rust_guard[factor-free]             13733          0  
+rust_guard[factor-free]/findall       2400          0  
+rust_guard_gate_off[P-atomic+split-ambiguous]      47914          4  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, (3, 7), (4, 7))
+rust_guard_gate_off[P-atomic+split-ambiguous]/findall       8268          1  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, [(3, 7)], [(4, 7)])
+rust_guard_gate_off[P-atomic+split-clean]      42386          0  
+rust_guard_gate_off[P-atomic+split-clean]/findall       7332          0  
+rust_guard_gate_off[P-lookaround+split-ambiguous]      10594          0  
+rust_guard_gate_off[P-lookaround+split-ambiguous]/findall       1824          0  
+rust_guard_gate_off[P-lookaround+split-clean]      24331          0  
+rust_guard_gate_off[P-lookaround+split-clean]/findall       4236          0  
+rust_guard_gate_off[split-ambiguous]      68964          0  
+rust_guard_gate_off[split-ambiguous]/findall      11940          0  
+fallback                           201429          0  
+fallback/findall                    34836          0  
+fallback[factor-free]               13733          0  
+fallback[factor-free]/findall        2400          0  
+fallback_gate_off[P-atomic+split-ambiguous]      47914          4  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, (3, 7), (4, 7))
+fallback_gate_off[P-atomic+split-ambiguous]/findall       8268          1  ('(?:a*.X|ba*?(b|ba+){0,2}+)X(?:.*?|X{0,2}X{0,2}?)', b'aa\nabXXXa', 0, [(3, 7)], [(4, 7)])
+fallback_gate_off[P-atomic+split-clean]      42386          0  
+fallback_gate_off[P-atomic+split-clean]/findall       7332          0  
+fallback_gate_off[P-lookaround+split-ambiguous]      10594          0  
+fallback_gate_off[P-lookaround+split-ambiguous]/findall       1824          0  
+fallback_gate_off[P-lookaround+split-clean]      24331          0  
+fallback_gate_off[P-lookaround+split-clean]/findall       4236          0  
+fallback_gate_off[split-ambiguous]      68964          0  
+fallback_gate_off[split-ambiguous]/findall      11940          0  
+erase_atomic                        42386          2  ('(?:(a??|$a)*+b{0,2}?)abX(?:X|.?b?)', b'baabXab', 0, (2, 7, 2, 2), None)
+erase_atomic/findall                 7332          1  ('(?:(a??|$a)*+b{0,2}?)abX(?:X|.?b?)', b'baabXab', 0, [(2, 7, 2, 2)], [])
+max_start                          215162        325  ('(?:X{0,2}?a?)bX(?:.)', b'abXXba\n', 0, (0, 4), (1, 4))
+max_start/findall                   37236        119  ('(?:X{0,2}?a?)bX(?:.)', b'abXXba\n', 0, [(0, 4)], [(1, 4)])
+lo0                                215162        951  ('(?:X)X(?:a{1,3}X)', b'XXaXXa', 1, None, (0, 4))
+lo0/findall                         37236         19  ('(?:X|.)a(?:b{1,3}?([^X]{2}bb)?+|a{0,2}b)', b'b\nXaabaab', 0, [(2, 6), (6, 9)], [(2, 6), (5, 9)])
+slice                              215162        247  ('(?:\\B)Xa(?:b$|a)', b'bbXaaaa', 2, (2, 5), None)
+slice/findall                       37236          7  ('(?:\\B)X(?:b??a{0,2}|$\\BX*)', b'Xba\naXX\n\n', 0, [(5, 6), (6, 7)], [(5, 6)])
+noverify                           215162       7733  ('(?:b)X(?:^a)', b'XbXXXbbb', 0, None, (1, 3))
+noverify/findall                    37236       2239  ('(?:b)X(?:^a)', b'XbXXXbbb', 0, [], [(1, 3)])
+skipL                              215162         57  ('(?:a*)bb(?:X)', b'\nbbbX\nb', 0, (2, 5), None)
+skipL/findall                       37236         15  ('(?:a*)bb(?:X)', b'\nbbbX\nb', 0, [(2, 5)], [])
+restart_s1                         215162          0  
+restart_s1/findall                  37236        176  ('(?:X|.)a(?:b{1,3}?([^X]{2}bb)?+|a{0,2}b)', b'b\nXaabaab', 0, [(2, 6), (6, 9)], [(2, 6), (3, 6), (5, 9), (6, 9)])
+c_end                                3238          0  
+c_end[factor-free]                     86          0  
+c_end_gate_off                       4737        222  ('(?:X?a?|[^X]??)Xa(?:b{1,3}?)', b'XXbXaXaba', 0, (3, 8), None)
+floor                               74785          0  
+floor/findall                       12924          0  
+floor[factor-free]                  13733          0  
+floor[factor-free]/findall           2400          0  
+floor_end[factor-free]              13733          0  
+floor_end[factor-free]/findall       2400          0  
+floor_end[literal]                  74785         23  ('(?:a*)bb(?:X)', b'\nbbbX\nb', 0, (2, 5), None)
+floor_end[literal]/findall          12924          7  ('(?:a*)bb(?:X)', b'\nbbbX\nb', 0, [(2, 5)], [])
+neg_factor                          31323          0  
+neg_factor/findall                   5400          0  
+neg_factor_floor                    31323        256  ('(?:aa*)a(?:(?!a)a^|(?<!X)(a*+$){0,2})', b'X\naa\nbab', 0, (2, 4), None)
+neg_factor_floor/findall             5400         88  ('(?:aa*)a(?:(?!a)a^|(?<!X)(a*+$){0,2})', b'X\naa\nbab', 0, [(2, 4)], [])
+neg_border                          18158          0  
+neg_border/findall                   3156          0  
+neg_border_floor                    18158         18  ('(?:b|ba)bb(?:X?)', b'abXabbbXX', 0, (4, 8), None)
+neg_border_floor/findall             3156          7  ('(?:b|ba)bb(?:X?)', b'abXabbbXX', 0, [(4, 8)], [])
+reverse-walk bytes over accepted candidates (tactic+mutants): 57735; rust-guard fallbacks: 5108
+selftest: PASS
