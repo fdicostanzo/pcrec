@@ -2979,6 +2979,29 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     generated sibling bundle does not work, because the chain terminal does not
     follow its own `include`.
   - **§6** answers the standing questions; **§7** has six questions for Frank.
+- `match_split_requirements.md` — **[MATCH-SPLIT] REQUIREMENTS, COSTING, QUESTIONS
+  AND THE SURVEY DESIGN, a thinking note** (lane `msthink`, 2026-10-11, from main
+  `e3e78eab`, abi 74; nothing built, nothing measured on a clock, no census run).
+  - **§1 the problem.** It has worked examples with today's route read from
+    single compiles. Frank's wrapper strip `^\s*\{|\}\s*$` and the trim idiom take
+    the attempt loop at every position. Trim's end arm is O(k²) on an internal
+    whitespace run, read from the emitted loop and not measured.
+  - **§2 requirements.** These cover leftmost-across-classes, FINISH always by the
+    full machine for priority, empty matches, `search_from`, `\G`, `(?m)` pins,
+    `\Z` seeds, context, captures, utf8, and give-ups as a subset-of-attempts
+    property. A class is defined on PATHS: absolute anchors pin anywhere, line
+    anchors only at the edge, and the free part is the machine with pin edges
+    deleted.
+  - **§3 costing.** Locator costs differ in kind. The union is a min. Forward
+    locators amortize under find-all, but the END reverse walk does not under the
+    stateless API, so it can turn quadratic. The decision reads [PRIOR-COST-UNIFY]'s
+    `run_len`/`stay_len`.
+  - **§4 the family.** Every single-class start row becomes a degenerate case. It
+    is one LOCATE combinator `split`.
+  - **§5 and §6.** §5 has five questions for Frank. §6 is the survey design:
+    populations, the class-mix taxonomy, the counts, the D77 triggers, the bench
+    wishlist family `anc-wrap`, and controls C1-C6 with libpcre2 as the
+    independent oracle.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
