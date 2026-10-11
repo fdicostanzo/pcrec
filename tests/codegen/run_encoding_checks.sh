@@ -712,6 +712,10 @@ def excise_handoff(text, counts):
             j = i + 1
             if j < n and HANDOFF_BYTE_MISS_RE.match(lines[j].rstrip('\n')):
                 j += 3
+            elif j < n and HANDOFF_RET_RE.match(lines[j].rstrip('\n')):
+                # R-15's ASSIGN rendering: the miss test is the one-line
+                # `if (handoff_position >= subject_length) return 0;`.
+                j += 1
             out.append("/* [REQ-HANDOFF-L1] one-byte gate excised for comparison */\n")
             if mb.group(1).startswith('size_t'):
                 counts['handoff_gate'] += 1
