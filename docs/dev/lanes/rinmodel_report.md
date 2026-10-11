@@ -129,7 +129,20 @@ alphabet 26, no string of P contains `ing`, `ing` border-free) and reports
 
 ## 5. Sabotage rows (the model's own)
 
-SABOTAGE-PLACEHOLDER
+Both conjuncts were disabled in scratch copies (`build/`, not committed) and the
+byte seed-1 / XL seed-3 populations re-run; `--selftest` must go red and the
+`[factor-free]` rows must find wrong answers:
+
+| sabotage | where | result |
+|---|---|---|
+| factor test blind (`factor_witness` never reaches its accepting target, so every P is "factor-free") | byte 1 x 6000: arm-3 admits 3,503 cases (was 2,235) | `tactic[factor-free]` **19** wrong / 74,383 (find-all 6 / 12,840), `floor[factor-free]` **702** / 74,383 (find-all 225); selftest FAIL |
+| border test blind (`border_free` always true) | XL 3 x 6000: arm-3 admits 3,129 cases (was 1,687) | `tactic[factor-free]` 0, `floor[factor-free]` **18** / 31,891 (find-all 7); selftest FAIL (gated floor, gated c_end, neg_border never wrong) |
+| `factor_witness` blind, `--check-arm` | 1,500 cases | factor-present 0 vs 288, FAIL |
+
+(The sabotage runs exposed one model defect, fixed: `find_all` could loop forever on a
+WRONG variant whose answers do not advance, which blind-factor made reachable; it now caps
+the list at `4*len(subject)+8` entries. A sound variant yields at most `len+1`; both
+committed transcripts regenerate byte-identically with the cap.)
 
 ## 6. Validation
 
@@ -137,7 +150,7 @@ SABOTAGE-PLACEHOLDER
   detected, ungated wrong at least once, arm-3 population non-empty, `neg_factor` wrong
   somewhere; XL runs also require `neg_border` wrong somewhere).
 - `--shaped 200 --seed 7` PASS; `--check-arm` PASS x2.
-- `make test-spec-history`: SPECHIST-PLACEHOLDER
+- `make test-spec-history`: `make test-spec-history` 145 passed / 0 failed (run async, `build/spechist2.log`, after the report and both CLAUDE.md edits).
 
 Re-run: `PCRE2_LIB=<10.46 so> python3 docs/design/where_to_start/rinner_model.py --n 6000 --seed 1 --selftest`
 (~15 s); `--n 4000 --seed 2 --utf8`; `--xl` with seeds 3 / `--utf8` 5 (6000); `--shaped 200 --seed 7`;

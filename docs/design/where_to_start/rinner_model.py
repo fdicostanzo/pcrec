@@ -453,6 +453,8 @@ def find_all(fn, subj):
             break
         out.append(r)
         frm = r[1] if r[1] > r[0] else r[0] + 1
+        if len(out) > 4 * len(subj) + 8:
+            break                       # a WRONG variant whose answers do not advance: stop (a sound one yields <= len+1)
     return out
 
 
