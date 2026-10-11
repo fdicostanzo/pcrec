@@ -408,3 +408,31 @@ than a bit-vector regex engine."
   cells). It is a design item (contract shape, pcrec facts, D6 panel)
   before any build, triggered by a measured cell where verifying a
   fixed-width structured token is the cost.
+- Follow-up the same day (Frank): with ANCHORED CORES (from a required
+  literal, extend through each neighbouring repeat's MANDATORY part only:
+  `\d{2,3}\.\d{2,3}` has the core `\d\d\.\d\d` at -2..+2 from the `.`), a
+  bounded-repeat token becomes a short sequence of span tests:
+  1. try the core span;
+  2. on a miss, try again shifted by one digit (the {m,n} slack);
+  3. eat `\d?\.`;
+  4. repeat 1-2 for the next group;
+  5. eat the trailing `\d?`.
+  Kit manager's addition: ipv4's maximum width is 15, so the WHOLE token fits
+  one 16-byte load. Classify the window once into per-class bitmasks (D =
+  digit lanes, P = dot lanes; pshufb or the masked range), and the steps
+  above become bit arithmetic: the digit-run length before a dot is
+  `ctz(~D >> p)`, then check 1 <= len <= 3, P at the next bit, and so on,
+  with no reloads. That is the simdjson "classify, then reason on masks"
+  pattern, sized to one token.
+  - Semantics: leftmost-first start (`1234.5.6.7` matches from `234`)
+    falls out of choosing the earliest start whose run lengths fit. The
+    captures and the exact end follow greedy {m,n}.
+  - Where it sits: this is no longer a fixed span compare. It is a FINISH
+    or verify form for a bounded token (D156 LOCATE x FINISH). Either pcrec
+    renders it, or pcrec states the token (a sequence of (set, m, n)
+    items, max width <= register) as a new fact and the kit renders it.
+    That is a design question for main, and its trigger is a bench cell
+    where such a token's finish is the cost (the R-15 ipv4/ipv6/dotted4
+    cells are the obvious first look).
+  - The survey (lane spansurv) also counts these BOUNDED TOKENS: max width
+    <= 16 / 32, the number of distinct sets, and the slack sum (n - m).
