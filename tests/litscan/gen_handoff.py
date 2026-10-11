@@ -129,6 +129,43 @@ CASES = [
   "the VM hybrid's handoff, RX_REQ_HANDOFF 1"),
  ("(?i)(cat)s?dog", "byte", ["CATsDOG", "catdog", "zcatsdog", "CatSdog", "catsdo"],
   "the VM hybrid's handoff through the PAIR arm of the offset-skip form (a two-member cube at the scanned offset)"),
+ # ---- [REQ-HANDOFF-L1] THE BYTE LANDMARK, at the entry and RE-ENTERED at
+ # each restart of the forward scan (tuning.md §2.41¶8a): the landmark at
+ # exactly K / K+1 after a start-set run, start-set runs longer than K before
+ # it (the match begins K bytes before it, never at the run's start), many
+ # dead landmarks between matches (the restart fires again and again), the
+ # landmark as the first and last byte. The movers' shapes: ipv6, ipv4,
+ # dotted4. ----
+ ("(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}", "byte",
+  ["fe80:1:2:3:4", "12345:1:2:3:4", "abcd:ef01:2:3:4", ":1:2:3:4:5", "12:30:45 fe80:0:0:1:2 x",
+   "a:b:c: 1:2:3:4:5:6:7:8:9", "::::1:2:3:4", "10:20:30 11:22:33 1:2:3:4", "1:2:3:4:"],
+  "[REQ-HANDOFF-L1] ipv6-shaped, byte landmark ':' at K = 4: a hex run longer than K before it, dead colons (timestamps) before the match, the re-entry at each"),
+ ("(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:[0-9a-f]{0,4}", "byte",
+  ["fe80::1", "12:30:45 fe80::1", "1:2:3:4:5", "x::", "ab:cd::ef 1::", "12345::1"],
+  "[REQ-HANDOFF-L1] the loglines ipv6 pattern itself: two top-level branches, K = 4 for both"),
+ ("(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])", "byte",
+  ["10.0.0.1", "1234.5.6.7", "v1.2.3 10.0.0.1", "....1.2.3.4", "999.1.2.3.4", "1.2.3", "a.b.c 256.1.2.3",
+   "12.34.56.78.90", "1.2.3.4."],
+  "[REQ-HANDOFF-L1] the loglines ipv4 pattern, byte landmark '.' at K = 3: digit runs longer than K, dead dots (versions), an out-of-range octet"),
+ ("(?:\\d{1,3}\\.){3}\\d{1,3}", "byte",
+  ["1.2.3.4", "1234.5.6.7", "12.34.56.78.9", "a.b 1.2.3.4", "1.2.3", "...1.2.3.4", "9.9.9.9.9.9", "x1.2.3.44"],
+  "[REQ-HANDOFF-L1] dotted4 (bounded set), '.' at K = 3"),
+ ("a.?b", "byte", ["ab", "axb", "xxab", "bbbbab", "abab", "b", "aab"],
+  "[REQ-HANDOFF-L1] K = 2, the landmark b after a and an optional byte: dense landmarks with no match"),
+ ("(?:ab|c):", "byte", ["ab:", "c:", "xab:", "::::c:", "a:b:c:", "abc:"],
+  "[REQ-HANDOFF-L1] K = 2 from the WIDER branch (a set member's bound is the farther branch's)"),
+ ("\\b\\d{1,3}\\.\\d", "byte", ["1.2", "x1.2 1.2", "a12.3", "1234.5", "12.34", ".1.2"],
+  "[REQ-HANDOFF-L1] a SEEDED machine: the re-entry re-seeds the scan state at the moved start (the byte before it decides \\b)"),
+ (".{1,3}:", "utf8", ["abc:", "\u00e9\u00e9\u00e9:", "x\u20ac\u20ac\u20acx:", "::\u00e9:", X + X + X + ":", X + "a:"],
+  "[REQ-HANDOFF-L1] utf8, K = 12: the moved start rounded up to a character start"),
+ (".{1,3}:", "utf8", [b"\x80\x80\x80\x80\x80:", b"ab\x80\x80\x80\x80:", b"\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80x:"],
+  "[REQ-HANDOFF-L1] utf8, ill-formed text before the landmark: c - K among continuation bytes"),
+ ("[a-y]\\d{0,100}:", "byte", ["a1:", "::::b:", "a" + "1" * 100 + ":", "a" + "1" * 101 + ":", "1:2:3:a9:"],
+  "[REQ-HANDOFF-L1] the K ADMISSION's admitted witness (K = 101): a digit run of exactly K - 1 and K before the colon"),
+ ("[a-y]\\d{0,150}:", "byte", ["a1:", "::::b:", "a" + "1" * 150 + ":", "a" + "1" * 151 + ":", "1:2:3:a9:"],
+  "[REQ-HANDOFF-L1] the K ADMISSION's declined witness (K = 151): the entry still hands off"),
+ ("a.{1,50000}z", "byte", ["az", "axz", "zzzzazz", "zazazaz", "z" * 40 + "a" + "z" * 40, "aaz"],
+  "[REQ-HANDOFF-L1] Frank's hostile cell over z-dense text: declined (a count-collapsed hybrid takes no handoff), linear"),
 ]
 
 
@@ -213,7 +250,11 @@ def main():
         "# routes), two occurrences (the gate's leftmost contract), a decoy, multibyte",
         "# width, ill-formed text before the window, seeded starts, \\G on the attempt",
         "# route and on the hybrid (whose prefilter reads its third argument as \\G),",
-        "# \\K, find-all subjects (dense and overlapping) and two unbounded controls.",
+        "# \\K, find-all subjects (dense and overlapping) and two unbounded controls;",
+        "# and [REQ-HANDOFF-L1]'s BYTE landmarks (ipv6-, ipv4- and dotted4-shaped,",
+        "# seeded, utf8, ill-formed) whose forward scan RE-ENTERS the handoff at each",
+        "# restart, the K admission's admitted and declined witnesses, and Frank's",
+        "# hostile cell a.{1,50000}z over z-dense text.",
         ""]
     tmp = tempfile.mkdtemp(dir=os.environ.get("TMPDIR"))
     mismatches = 0

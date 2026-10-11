@@ -453,6 +453,21 @@ while IFS='%' read -r pat _sep want wantrun; do
                 && ok "[3.1b] $pat: the run's pair position is scanned on both members ($(run_scan_members "$gotrun"))" \
                 || bad "[3.1b] $pat: run \"$gotrun\" has a pair scan position but the block does not scan both members"
         fi
+    elif [ "$(stamp "$a" REQ_HANDOFF)" != "none" ]; then
+        # [REQ-HANDOFF-L1] THE ONE-BYTE GATE KEEPS ITS POSITION (the handoff's
+        # ASSIGN form, written by the kit): the byte is what it searches for,
+        # and a miss -- the position read as the subject's length -- answers
+        # NOMATCH. tuning.md §2.41.
+        grep -qE "^ *size_t handoff_position = .*(== ${got}\)|memchr\(subject \+ search_from, ${got},)" "$a" \
+            && ok "[3.1b] $pat: the handoff's one-byte gate searches for the stamped byte $got" \
+            || bad "[3.1b] $pat: stamps \"$got\" with a handoff but the gate does not search for that byte"
+        awk '/^ *size_t handoff_position = / { on = 1; next }
+             on { if ($0 ~ /handoff_position (==|>=) \(?subject_length\)?/) cond = 1
+                  if (cond && $0 ~ /return 0;/) { good = 1; exit }
+                  if (++n > 3) exit }
+             END { exit !good }' "$a" \
+            && ok "[3.1c] $pat: the handoff's gate returns NOMATCH when the byte is ABSENT" \
+            || bad "[3.1c] $pat: the handoff's gate does not answer NOMATCH on a miss"
     else
         grep -q "memchr(subject + search_from, ${got}, subject_length - search_from)" "$a" \
             && ok "[3.1b] $pat: the memchr carries the stamped byte $got" \
@@ -1577,7 +1592,8 @@ ROWS
 #
 # Where the `req-use` table's `handoff` row applies, the run pre-check's first
 # window hit `c` is KEPT and the body's scan begins at `max(search_from,
-# c - K)`, K the `req_run_maxoff` fact; `<PREFIX>_REQ_HANDOFF` carries K or
+# c - K)`, K the `req_landmark_maxoff` fact (the run window's, else
+# [REQ-HANDOFF-L1] the one byte's); `<PREFIX>_REQ_HANDOFF` carries K or
 # "none" on every artifact. Every assertion below reads the EMITTED TEXT and
 # holds it to the stamp or to a HAND value, never to the walk that computed K:
 # the manifest (docs/dev/optloop/s4/k82hbuild/k82h_movers.py) predicts K from
@@ -1597,7 +1613,8 @@ ROWS
 #   (d) THE RUN CHOICE: `req_whole_run` is the walk's MOST INFORMATIVE run,
 #       never the bounded one (S474).
 #   (e) THE CROSS-TABLE CHECK (r1 C-C10): a handoff only where `REQ_WHY`
-#       reads "emitted" and `REQ_RUN` is not "none".
+#       reads "emitted" and there is a landmark: `REQ_RUN` or ([REQ-HANDOFF-L1])
+#       `REQ_BYTE` is not "none".
 #   (f) ONE START SITE PER BODY: the unanchored scan's position and its seed,
 #       the attempt loop's first start, the hybrid's FIRST prefilter call.
 #   (g) THE `\G` READERS (r1 S-F3): ENG_ATTEMPT's `start == search_from` and
@@ -1617,8 +1634,10 @@ fact() {   # fact NAME PATTERN [args...]: the --emit-facts value of NAME
         | awk -F'\t' -v f="$f" '$2 == f { print $7; exit }'
 }
 # handoff_block FILE: the gate and the block that moves the start, as emitted
+# ([REQ-HANDOFF-L1]: the gate is the run block's call or the one-byte gate's
+# kit text; either declares `handoff_position`)
 handoff_block() {
-    awk '/size_t handoff_position = rx_reqrun\(/ { on = 1 }
+    awk '/size_t handoff_position = / { on = 1 }
          on { print }
          on && /^ *handoff_position = search_from;$/ { exit }
          on && /static const|scan_position|for \(start|_prefilter\(/ { exit }' "$1"
@@ -1627,7 +1646,7 @@ handoff_block() {
 s512_presence() {
     local a="$1" lbl="$2" st nd
     st="$(stamp "$a" REQ_HANDOFF)"
-    nd="$(grep -c 'size_t handoff_position = rx_reqrun(subject, subject_length, search_from);' "$a")"
+    nd="$(grep -c '^ *size_t handoff_position = ' "$a")"
     if [ -z "$st" ]; then bad "[5.12b] $lbl: no RX_REQ_HANDOFF stamp at all (it is on every artifact)"; return; fi
     if [ "$st" = "none" ]; then
         [ "$nd" -eq 0 ] && ! grep -q 'handoff_position' "$a" \
@@ -1652,11 +1671,11 @@ while IFS='%' read -r pat flags handk wantst why; do
     # shellcheck disable=SC2086  # $flags is a word list on purpose
     if ! emit "$a" "$pat" $flags; then bad "[5.12a] $pat [$flags]: refused"; continue; fi
     # shellcheck disable=SC2086
-    gk="$(fact req_run_maxoff "$pat" $flags)"
+    gk="$(fact req_landmark_maxoff "$pat" $flags)"
     gst="$(stamp "$a" REQ_HANDOFF)"
     [ "$gk" = "$handk" ] && [ "$gst" = "$wantst" ] \
-        && ok "[5.12a] $pat [$flags] -> req_run_maxoff $gk, REQ_HANDOFF \"$gst\" ($why)" \
-        || bad "[5.12a] $pat [$flags]: req_run_maxoff $gk, REQ_HANDOFF \"$gst\"; the hand derivation says $handk / \"$wantst\" ($why)"
+        && ok "[5.12a] $pat [$flags] -> req_landmark_maxoff $gk, REQ_HANDOFF \"$gst\" ($why)" \
+        || bad "[5.12a] $pat [$flags]: req_landmark_maxoff $gk, REQ_HANDOFF \"$gst\"; the hand derivation says $handk / \"$wantst\" ($why)"
     s512_presence "$a" "$pat [$flags]"
     s512_n=$((s512_n + 1))
 done <<'ROWS'
@@ -1673,8 +1692,15 @@ ab(?:cdef|xyzdef)g%-e utf8%5%5%the run defg after ab and the wider branch's xyz
 (?:\Gab|x)(cat)dog%-e byte%2%none%the same K, declined: the hybrid's prefilter window is its ceiling ((d'), Q9)
 a.*?(?i)select%-e byte%unbounded%none%.*? (S467)
 ab.*xyzw%-e byte%unbounded%none%.* (S467)
+a.?b%-e byte%2%2%[REQ-HANDOFF-L1] a BYTE landmark b, after a and an optional byte
+(?:\d{1,3}\.){3}\d{1,3}%-e byte%3%3%[REQ-HANDOFF-L1] dotted4: three digits before the first dot (the repeat's FIRST iteration)
+(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}%-e byte%4%4%[REQ-HANDOFF-L1] ipv6-shaped: four hex digits before the first colon
+(?:ab|c):%-e byte%2%2%[REQ-HANDOFF-L1] the colon after the WIDER branch ab (a set member's bound, not the left branch's)
+.{1,3}:%-e utf8%12%12%[REQ-HANDOFF-L1] three characters of up to four bytes before the colon
+\w+:%-e byte%unbounded%none%[REQ-HANDOFF-L1] the colon after an unbounded run
+[a-y]\d{0,150}:%-e byte%151%151%[REQ-HANDOFF-L1] K ADMISSION's witness: the ENTRY hands off at any finite K (the re-entry declines, 5.12m)
 ROWS
-[ "$s512_n" -ge 13 ] \
+[ "$s512_n" -ge 20 ] \
     && ok "[5.12a] the hand pin table's $s512_n rows all compiled" \
     || bad "[5.12a] only $s512_n hand pin rows compiled"
 
@@ -1762,17 +1788,17 @@ while IFS= read -r pat; do
     s512_tot=$((s512_tot + 1))
     a="$WORKDIR/s512_p.c"
     emit "$a" "$pat" || continue
-    st="$(stamp "$a" REQ_HANDOFF)"; k="$(fact req_run_maxoff "$pat")"
+    st="$(stamp "$a" REQ_HANDOFF)"; k="$(fact req_landmark_maxoff "$pat")"
     s512_presence "$a" "$pat"
     if [ "$st" != "none" ]; then
         s512_mov=$((s512_mov + 1)); [ "$st" -gt 0 ] && s512_kpos=$((s512_kpos + 1))
-        { [ "$(stamp "$a" REQ_WHY)" = "emitted" ] && [ "$(stamp "$a" REQ_RUN)" != "none" ]; } \
-            || bad "[5.12e] $pat: REQ_HANDOFF \"$st\" with REQ_WHY \"$(stamp "$a" REQ_WHY)\" / REQ_RUN \"$(stamp "$a" REQ_RUN)\" — the two tables disagree"
-        [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_run_maxoff $k"
+        { [ "$(stamp "$a" REQ_WHY)" = "emitted" ] && { [ "$(stamp "$a" REQ_RUN)" != "none" ] || [ "$(stamp "$a" REQ_BYTE)" != "none" ]; }; } \
+            || bad "[5.12e] $pat: REQ_HANDOFF \"$st\" with REQ_WHY \"$(stamp "$a" REQ_WHY)\" / REQ_RUN \"$(stamp "$a" REQ_RUN)\" / REQ_BYTE \"$(stamp "$a" REQ_BYTE)\" — the two tables disagree"
+        [ "$k" = "$st" ] || bad "[5.12b] $pat: REQ_HANDOFF \"$st\" but req_landmark_maxoff $k"
     fi
     if [ "$k" = "unbounded" ] && [ "$(stamp "$a" REQ_WHY)" = "emitted" ]; then
         s512_unb=$((s512_unb + 1))
-        [ "$st" = "none" ] || bad "[5.12c] $pat: req_run_maxoff unbounded but REQ_HANDOFF \"$st\" (S467)"
+        [ "$st" = "none" ] || bad "[5.12c] $pat: req_landmark_maxoff unbounded but REQ_HANDOFF \"$st\" (S467)"
     fi
 done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
                                  "$ROOT_DIR/tests/litscan/reqcube.rxt" \
@@ -1788,6 +1814,128 @@ echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512
 [ "$s512_unb" -ge "$S512_UNB_FLOOR" ] \
     && ok "[5.12c] $s512_unb unbounded-run artifacts with an emitted pre-check, none handed off (floor $S512_UNB_FLOOR)" \
     || bad "[5.12c] only $s512_unb unbounded-run artifacts, floor $S512_UNB_FLOOR — the bounded check may be vacuous (S467)"
+
+# (l)-(q) [REQ-HANDOFF-L1] THE RE-ENTRY (tuning.md §2.41¶8a): the forward
+# scan's NEXT row `handoff`, `<PREFIX>_DFA_PREFILTER "handoff"`. Read off the
+# EMITTED TEXT against the stamps and hand values, never against the walk.
+#   (l) PRESENCE: "handoff" iff the entry keeps `landmark_position`; the
+#       restart block re-asks the gate FROM `scan_position` into
+#       `landmark_position` (the pre-check site's second use) only where the
+#       kept hit is behind, and moves by the stamp's K; over the population
+#       with a floor (K35).
+#   (m) THE K ADMISSION, around the colon's cut-over under the built-in
+#       prior: `[a-y]\d{0,100}:` re-enters, `[a-y]\d{0,150}:` does not (its
+#       ENTRY still hands off, 5.12a); Frank's `a.{1,50000}z` keeps its
+#       memchr start scan and no handoff at all (a count-collapsed hybrid,
+#       Q10). Detects S811 (the admission dropped) and S812 (inverted).
+#   (n) THE RESEED: on a seeded machine the reseed sits INSIDE the `> K`
+#       branch, the one place the scan moved (S813).
+#   (o) THE ROUND-UP: under utf8, inside the `> K` branch, bounded by the
+#       subject's end.
+#   (p) THE DENY: `-fno-req-handoff` keeps no landmark and the start-byte row.
+#   (q) A VM HYBRID's prefilter body never re-enters (its retries are RETRY's).
+# reentry_block FILE: the forward scan's restart block, as emitted
+reentry_block() {
+    awk '/^ *if \(forward_state == [0-9]+ && last_accept_position == \(size_t\)-1\) \{$/ { on = 1; ind = index($0, "if") }
+         on { print }
+         on && index($0, "}") == ind && $0 ~ /^ *\}$/ { exit }' "$1"
+}
+# s512_reentry FILE LABEL: (l)'s biconditional and constants on one artifact
+s512_reentry() {
+    local a="$1" lbl="$2" pf st nd b
+    pf="$(stamp "$a" DFA_PREFILTER)"; st="$(stamp "$a" REQ_HANDOFF)"
+    nd="$(grep -c '^ *size_t landmark_position = handoff_position;$' "$a")"
+    if [ "$pf" != "handoff" ]; then
+        [ "$nd" -eq 0 ] && ! grep -q landmark_position "$a" \
+            || bad "[5.12l] $lbl: DFA_PREFILTER \"$pf\" but the text keeps landmark_position"
+        return 0
+    fi
+    [ "$nd" -eq 1 ] && [ "$st" != "none" ] \
+        || { bad "[5.12l] $lbl: DFA_PREFILTER \"handoff\" with $nd landmark declarations / REQ_HANDOFF \"$st\""; return 0; }
+    b="$(reentry_block "$a")"
+    printf '%s\n' "$b" | grep -qx ' *if (landmark_position < scan_position) {' \
+        && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*size_t rx_mf1_lo = scan_position;)' \
+        && printf '%s\n' "$b" | grep -qx " *if (landmark_position - scan_position > $st) {" \
+        && { [ "$st" -eq 0 ] || printf '%s\n' "$b" | grep -qx " *scan_position = landmark_position - $st;"; } \
+        || bad "[5.12l] $lbl: the restart block does not re-ask the gate from scan_position, or does not move by the stamp's K $st:
+$b"
+    return 0
+}
+s512l_n=0; s512l_k=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s512_l.c"
+    emit "$a" "$pat" || continue
+    s512_reentry "$a" "$pat"
+    s512l_n=$((s512l_n + 1))
+    [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] && s512l_k=$((s512l_k + 1))
+done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
+                                 "$ROOT_DIR/tests/litscan/litrun.rxt" \
+                                 "$ROOT_DIR/tests/base/literals.rxt" \
+                                 "$ROOT_DIR/tests/base/alternation.rxt" \
+                                 "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | LC_ALL=C sort -u)
+# Floor at 80% of the re-entering count measured at the landing (2026-10-11).
+S512L_FLOOR=40
+echo "INFO: [5.12l] population $s512l_n patterns: re-entering $s512l_k"
+[ "$s512l_k" -ge "$S512L_FLOOR" ] \
+    && ok "[5.12l] $s512l_k re-entering artifacts hold the presence biconditional and re-ask the gate from scan_position (floor $S512L_FLOOR)" \
+    || bad "[5.12l] only $s512l_k re-entering artifacts, floor $S512L_FLOOR — the presence check may be vacuous"
+for w in 'a.?b' '(?:\d{1,3}\.){3}\d{1,3}' '(?:[0-9a-f]{1,4}:){4,7}[0-9a-f]{1,4}' '\b\d{1,3}\.\d'; do
+    a="$WORKDIR/s512_lw.c"; emit "$a" "$w"
+    [ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] \
+        && ok "[5.12l] $w re-enters the handoff" \
+        || bad "[5.12l] $w: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\", expected \"handoff\""
+    s512_reentry "$a" "$w"
+done
+
+# (m) THE K ADMISSION
+a="$WORKDIR/s512_m1.c"; emit "$a" '[a-y]\d{0,100}:'
+[ "$(stamp "$a" DFA_PREFILTER)" = "handoff" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "101" ] \
+    && ok "[5.12m] [a-y]\\d{0,100}: K 101 times the colon's prior rate is below one: re-enters" \
+    || bad "[5.12m] [a-y]\\d{0,100}: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" / REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\", expected handoff / 101 (S812)"
+a="$WORKDIR/s512_m2.c"; emit "$a" '[a-y]\d{0,150}:'
+[ "$(stamp "$a" DFA_PREFILTER)" = "byte-class" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "151" ] \
+    && ! grep -q landmark_position "$a" \
+    && ok "[5.12m] [a-y]\\d{0,150}: K 151 against the colon's expected gap declines the re-entry; the entry still hands off" \
+    || bad "[5.12m] [a-y]\\d{0,150}: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" / REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\", expected byte-class / 151 and no landmark_position (S811)"
+a="$WORKDIR/s512_m3.c"; emit "$a" 'a.{1,50000}z'
+[ "$(stamp "$a" DFA_PREFILTER)" = "memchr" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "none" ] \
+    && ! grep -q landmark_position "$a" \
+    && ok "[5.12m] a.{1,50000}z: no handoff and no re-entry (count-collapsed hybrid); its start scan is the memchr for a" \
+    || bad "[5.12m] a.{1,50000}z: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" / REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\", expected memchr / none"
+
+# (n) THE RESEED, inside the moving branch only
+a="$WORKDIR/s512_n.c"; emit "$a" '\b\d{1,3}\.\d'
+reentry_block "$a" | awk '/if \(landmark_position - scan_position > 3\) \{$/ { inb = 1; next }
+        inb && /^ *\}$/ { inb = 0 }
+        /forward_state = scan_position \? rx_forward_seed_state\[/ { if (inb) good++; else badr++ }
+        END { exit !(good == 1 && badr == 0) }' \
+    && ok "[5.12n] seeded: the re-entry re-seeds inside the > K branch, the one place the scan moved (S813)" \
+    || bad "[5.12n] seeded: the re-entry's reseed is missing or outside the moving branch (S813):
+$(reentry_block "$a")"
+
+# (o) THE ROUND-UP
+a="$WORKDIR/s512_o.c"; emit "$a" '.{1,3}:' -e utf8
+reentry_block "$a" | awk '/if \(landmark_position - scan_position > 12\) \{$/ { inb = 1; next }
+        inb && /^ *\}$/ { inb = 0 }
+        /while \(!\(scan_position >= subject_length \|\| \(subject\[scan_position\] & 0xC0\) != 0x80\)\) scan_position\+\+;/ { if (inb) good++; else badw++ }
+        END { exit !(good == 1 && badw == 0) }' \
+    && ok "[5.12o] utf8: the re-entry rounds a moved start up to a character start, inside the > K branch" \
+    || bad "[5.12o] utf8: the re-entry's round-up is missing or outside the moving branch:
+$(reentry_block "$a")"
+
+# (p) THE DENY
+a="$WORKDIR/s512_p.c"; emit "$a" '(?:\d{1,3}\.){3}\d{1,3}' -fno-req-handoff
+[ "$(stamp "$a" DFA_PREFILTER)" = "byte-class" ] && ! grep -q landmark_position "$a" \
+    && ok "[5.12p] -fno-req-handoff: no re-entry, the start-byte row" \
+    || bad "[5.12p] -fno-req-handoff: DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\" or a landmark_position remains"
+
+# (q) A VM HYBRID never re-enters
+a="$WORKDIR/s512_q.c"; emit "$a" '(?>a|ab)c'
+[ "$(stamp "$a" ENGINE)" = "vm" ] && [ "$(stamp "$a" REQ_HANDOFF)" = "2" ] \
+    && [ "$(stamp "$a" DFA_PREFILTER)" != "handoff" ] && ! grep -q landmark_position "$a" \
+    && ok "[5.12q] the VM hybrid hands off at its first prefilter call and never re-enters inside the prefilter" \
+    || bad "[5.12q] (?>a|ab)c: ENGINE \"$(stamp "$a" ENGINE)\" REQ_HANDOFF \"$(stamp "$a" REQ_HANDOFF)\" DFA_PREFILTER \"$(stamp "$a" DFA_PREFILTER)\": the hybrid re-enters, or the witness moved"
 
 # =========================================================================
 # SECTION 6 — [K68]: rx_info.flags IS BYTE-IDENTICAL TO BASELINE UNDER EACH
