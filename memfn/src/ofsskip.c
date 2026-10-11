@@ -799,6 +799,7 @@ const arm ofsskip_arm = {
     ofsskip_define,
     ofsskip_use,
     &ofsskip_ct,
+    NULL,
 };
 
 /* ---- fn_rows[]' contracts ------------------------------------------------

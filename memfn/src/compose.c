@@ -114,16 +114,19 @@ void kit_out(mf_sink *o, const char *fmt, ...)
 
 /* ---- the selection table --------------------------------------------------
  *
- * First passing row wins (the house's first-match idiom). Every row before
- * the last will carry its own `--memfn=no-NAME` deny when it lands (D144
- * item 4); the generic row has none, so no deny can leave a site without
- * code (§14.6). The rows above it are the SCALAR ARMS born at R4c's, M1b's
- * and R4g's migrations (integration.md §15, §16, §R4.8): pcrec's offset-skip
- * block, its pre-check, its run compare and its prefilter find, transcribed. They are not
- * byte-moving changes, so they carry no deny of their own: the artifacts
- * they render are the ones pcrec wrote before them, and the identity gates
- * say so (§9.3). The pre-check is one renderer as two rows (N3's split, by
- * handoff: precheck.c), each with its own contract; the prefilter find is
+ * First passing row wins (the house's first-match idiom). A row the kit
+ * adds as a byte-moving change carries its own `--memfn=no-NAME` deny
+ * (D144 item 4; the arm's `opt`); the generic row has none, so no deny can
+ * leave a site without code (§14.6). The rows above it are the SCALAR ARMS
+ * born at R4c's, M1b's and R4g's migrations (integration.md §15, §16, §R4.8):
+ * pcrec's offset-skip block, its pre-check, its run compare and its prefilter
+ * find, transcribed. They are not byte-moving changes, so they carry no deny
+ * of their own: the artifacts they render are the ones pcrec wrote before
+ * them, and the identity gates say so (§9.3). The pre-check is one renderer
+ * as three rows (N3's split, by handoff and by what ret_pred names:
+ * precheck.c), each with its own contract; the third, R-15's
+ * `precheck_assign_byte`, is the first row with a deny of its own (the kit's
+ * first scalar options.def row). The prefilter find is
  * two renderers as five rows (split by end_back and the term's offset:
  * pffind.c; M4 added pf_memchr_back, R-7). The MISMATCH (M7, R-8) is ONE
  * renderer (mismatch.c) as two rows: `mismatch_inplace` here for the
@@ -132,6 +135,7 @@ static const arm *const arms[] = {
     &ofsskip_arm,
     &precheck_arm,
     &precheck_assign_arm,
+    &precheck_assign_byte_arm,
     &runcmp_arm,
     &pf_memchr_arm,
     &pf_memchr_bounded_arm,
@@ -235,7 +239,13 @@ static int arm_row_holds(size_t i, const void *x)
     return arm_holds(arms[i], in->s, in->h);
 }
 
-static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_holds, NULL };
+/* Row i's options.def name (NULL: no deny). */
+static const char *arm_opt(size_t i)
+{
+    return arms[i]->opt;
+}
+
+static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_holds, arm_opt };
 
 /* The first row the gate passes AND whose predicate holds (kit_walk). NULL
  * when no row serves; `*why` is then the last declined row's verdict (the
@@ -244,8 +254,8 @@ static const kit_table arm_table = { "arms", NARMS, arm_ct, NULL, NULL, arm_row_
  * mf_define; MF_PH_DEFINE | MF_PH_USE for a one-call entry (mf_emit), which
  * holds the use hooks at selection time, so a row whose use-time fields the
  * hooks fail to serve is DECLINED here instead of chosen and then refused by
- * mf_use's re-check. The trace still labels the walk `define`. No arm has a
- * deny of its own yet (each byte-moving row brings one, D144 item 4). */
+ * mf_use's re-check. The trace still labels the walk `define`. A row with an
+ * `opt` is DENIED by `no-<opt>` in the site's `--memfn=` string (kit_walk). */
 static const arm *select_arm(const mf_art *art, const mf_site *s,
                              const mf_hooks *def, unsigned gphases,
                              gate_verdict *why)

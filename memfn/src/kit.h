@@ -215,12 +215,17 @@ typedef struct arm {
     int (*define)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *file);
     int (*use)(mf_art *art, uint32_t handle, const mf_hooks *h, mf_sink *body);
     const gate_contract *ct;    /* its uses and serves ([MEMFN-ROWCON])     */
+    const char *opt;    /* its options.def name, denied by `no-<opt>` in the
+                           site's `opts` (D144 item 4); NULL on the rows
+                           transcribed from pcrec, which moved no byte and
+                           carry no deny, and on the generic row            */
 } arm;
 
 #define generic_arm         MF_NS(generic_arm)
 #define ofsskip_arm         MF_NS(ofsskip_arm)
 #define precheck_arm        MF_NS(precheck_arm)
 #define precheck_assign_arm MF_NS(precheck_assign_arm)
+#define precheck_assign_byte_arm MF_NS(precheck_assign_byte_arm)
 #define runcmp_arm          MF_NS(runcmp_arm)
 #define pf_memchr_arm         MF_NS(pf_memchr_arm)
 #define pf_memchr_bounded_arm MF_NS(pf_memchr_bounded_arm)
@@ -231,12 +236,15 @@ typedef struct arm {
 
 extern const arm generic_arm;   /* generic.c: every site (§14.6)              */
 extern const arm ofsskip_arm;   /* ofsskip.c: the offset-skip FUNC (§15.1)    */
-/* precheck.c: the pre-check composite (§15.5), ONE renderer as TWO rows
+/* precheck.c: the pre-check composite (§15.5), ONE renderer as THREE rows
  * (N3's split): its ON_MISS sites never read `miss`, its ASSIGN sites test
- * the run call's miss, which is `n`, so the two serve different `miss`
- * classes. Both report the form id `precheck`. */
+ * the kept position against `n`, so the two serve different `miss`
+ * classes; an ASSIGN site keeps a run's position (a call) or, R-15, its
+ * first byte's (a `memchr`, the kit's first scalar row with a deny). All
+ * report the form id `precheck`. */
 extern const arm precheck_arm;          /* ON_MISS                            */
-extern const arm precheck_assign_arm;   /* ASSIGN                             */
+extern const arm precheck_assign_arm;   /* ASSIGN, ret_pred a run             */
+extern const arm precheck_assign_byte_arm; /* ASSIGN, ret_pred the first byte */
 extern const arm runcmp_arm;    /* runcmp.c: the run compare EXPR (§15.6)     */
 /* pffind.c: the prefilter FIND (§15.7, R4g), TWO renderers as FIVE rows
  * (N3's split, by end_back and by the term's offset): `memchr` over a

@@ -25,7 +25,8 @@
  * (request R-13, integration.md §R4.9.2.3 "The deny, per row"), one per
  * (form, width), Q-R9-7: each is its row's OFF arm at -fmemfn-simd, and is
  * accepted and inert at -fno-memfn-simd (the layer switch already declines
- * every SIMD row through `policy`).
+ * every SIMD row through `policy`). The first SCALAR row is R-15's
+ * `precheck-assign-byte` (request R-15): live at both switch positions.
  */
 MF_OPT("vrun-w32", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
        "the 32-byte vector run scan (vrun-w16's form a level up; its short spans fall to "
@@ -46,3 +47,6 @@ MF_OPT("vrun-pad", MF_OPT_DENY, MF_B_SCAN, MF_L_SIMD,
        "is compared as one wider masked word, the loop holding the bytes past the run it "
        "reads); denied, every candidate is verified by the run compare's words; "
        "-fmemfn-simd only")
+MF_OPT("precheck-assign-byte", MF_OPT_DENY, MF_B_ANY, MF_L_SCALAR,
+       "the pre-check's kept one-byte landmark as one memchr (an ASSIGN pre-check whose kept "
+       "position is its first byte's); denied, the generic row renders the site")
