@@ -1859,7 +1859,7 @@ s512_reentry() {
         || { bad "[5.12l] $lbl: DFA_PREFILTER \"handoff\" with $nd landmark declarations / REQ_HANDOFF \"$st\""; return 0; }
     b="$(reentry_block "$a")"
     printf '%s\n' "$b" | grep -qx ' *if (landmark_position < scan_position) {' \
-        && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*size_t rx_mf1_lo = scan_position;)' \
+        && printf '%s\n' "$b" | grep -qE '(landmark_position = rx_reqrun\(subject, subject_length, scan_position\);|landmark_position = \(\{.*(size_t rx_mf1_lo = scan_position;|rx_mf1_q = subject_length > scan_position \? memchr\(subject \+ scan_position, ))' \
         && printf '%s\n' "$b" | grep -qx " *if (landmark_position - scan_position > $st) {" \
         && { [ "$st" -eq 0 ] || printf '%s\n' "$b" | grep -qx " *scan_position = landmark_position - $st;"; } \
         || bad "[5.12l] $lbl: the restart block does not re-ask the gate from scan_position, or does not move by the stamp's K $st:
