@@ -144,7 +144,7 @@
 | 2.38 | `-fno-run-overlap` | 43 | on | answer-identical | masked | `<PREFIX>_RUN_WORDS` |
 | 2.39 | `-fno-req-run-fold` | 44 | on | answer-identical | masked | `<PREFIX>_REQ_RUN` |
 | 2.40 | `-fno-req-set-lead` | 45 | on | answer-identical | masked | none (the emitted text) |
-| 2.41 | `-fno-req-handoff` | 46 | on | answer-identical | masked | `<PREFIX>_REQ_HANDOFF` |
+| 2.41 | `-fno-req-handoff` | 46 | on | answer-identical | masked | `<PREFIX>_REQ_HANDOFF`, `<PREFIX>_DFA_PREFILTER` |
 | 2.42 | `-fno-start-set` | 47 | on | answer-identical | masked | `<PREFIX>_VM_START_SCAN`, `<PREFIX>_DFA_PREFILTER` |
 | 2.43 | `-fno-memfn-simd` / `-fmemfn-simd` | 48 / 49 | off | answer-identical | masked | `<PREFIX>_MEMFN_FORMS` |
 | 2.44 | `-fno-poss-ctx-follow` | 50 | on | engine-selecting | kept | `<PREFIX>_VM_POSS_ARMS` |
@@ -911,19 +911,21 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 <a id="s2-41"></a>
 ### 2.41 `-fno-req-handoff` — `PCREC_NO_REQ_HANDOFF` (bit 46)
 
-<a id="s2-41-p1"></a>[2.41¶1] **Denies** the `handoff` row of the pre-check's USE table, axis `req-use` in `--list-axes` (the first rows of the start table `cand_rows[]`): what a search body does with an emitted run pre-check's answer (design `docs/design/litscan_k82h.md`). A run pre-check finds the least position `c >= startpos` at which the run's window occurs. Every match begins at most `K` bytes before an occurrence of the window, where `K` is the window's maximum byte offset from the attempt start — the core fact `req_run_maxoff` (`facts_listing.md`), counted in bytes on the encoding-lowered pattern (`(?i)straße` under `-e utf8` has `K = 2`: `(?i)s` matches U+017F, two bytes). So no match begins in `[startpos, c − K)`, and the body may begin its scan at `max(startpos, c − K)` and answer exactly what it answers from `startpos`. Denied, the body discards `c` and scans from `startpos`.
+<a id="s2-41-p1"></a>[2.41¶1] **Denies** the `handoff` row of the pre-check's USE table, axis `req-use` in `--list-axes` (the first rows of the start table `cand_rows[]`): what a search body does with an emitted pre-check's answer (design `docs/design/litscan_k82h.md`). The pre-check's LANDMARK is the run's window where a run shipped (`<PREFIX>_REQ_RUN`), else the one necessary byte (`<PREFIX>_REQ_BYTE`). The pre-check finds the least position `c >= startpos` at which the landmark occurs. Every match begins at most `K` bytes before an occurrence of the landmark, where `K` is the landmark's maximum byte offset from the attempt start — the fact `req_landmark_maxoff` (`facts_listing.md`; for a byte, its `req_set_maxoff` entry), counted in bytes on the encoding-lowered pattern (`(?i)straße` under `-e utf8` has `K = 2`: `(?i)s` matches U+017F, two bytes; `(?:\d{1,3}\.){3}\d{1,3}` has `K = 3`). So no match begins in `[startpos, c − K)`, and the body may begin its scan at `max(startpos, c − K)` and answer exactly what it answers from `startpos`. Denied, the body discards `c` and scans from `startpos`.
 
 <a id="s2-41-p2"></a>[2.41¶2] The row applies where, in order:
 
-- <a id="s2-41-p3"></a>[2.41¶3] the admission (§2.29) emitted a run pre-check — the row calls the admission, so `req-admit`'s verdict reaches it unchanged;
+- <a id="s2-41-p3"></a>[2.41¶3] the admission (§2.29) emitted a pre-check — the row calls the admission, so `req-admit`'s verdict reaches it unchanged;
 - <a id="s2-41-p4"></a>[2.41¶4] a DFA scan is in front of the body: a DFA artifact (its unanchored scan, whose forward seed reads the byte before the moved start, or its attempt loop's first start), or a VM hybrid, whose first prefilter call starts there; a VM artifact with no DFA scan never takes it;
-- <a id="s2-41-p5"></a>[2.41¶5] `K` is finite (`req_run_maxoff` is not `unbounded`);
+- <a id="s2-41-p5"></a>[2.41¶5] `K` is finite (`req_landmark_maxoff` is not `unbounded`);
 - <a id="s2-41-p6"></a>[2.41¶6] the hybrid's prefilter is not count-collapsed: its answers may sit below `c − K`, so there the handoff could move a budget-limited search from a give-up to a match;
 - <a id="s2-41-p7"></a>[2.41¶7] and the artifact is not a VM hybrid whose program has a `\G` start family and whose prefilter span end is its match ceiling (`<PREFIX>_VM_PRUNE_CEILING "prefilter-window"`).
 
 <a id="s2-41-p8"></a>[2.41¶8] Under a multibyte encoding a moved start is rounded up to the next character start, through the encoding backend's start predicate and bounded only by the subject's end; a start that did not move is used as the caller gave it, so `-fno-startpos-guard`'s semantics are unchanged. `\G` keeps asserting at `startpos`, and the DFA's reverse pass keeps `startpos` as its lower bound.
 
-<a id="s2-41-p9"></a>[2.41¶9] Default: on. ANSWER-IDENTICAL and give-up-preserving: the excluded rows above are the ones where the move could change a give-up. Masked out of `rx_info.flags`. Deny-only. **The stamp** is `<PREFIX>_REQ_HANDOFF`, the `K` or `"none"`, on every artifact; `"none"` under the flag.
+<a id="s2-41-p8a"></a>[2.41¶8a] **The re-entry.** The same flag denies the forward scan's prefilter row `handoff` (axis `prefilter`, `<PREFIX>_DFA_PREFILTER "handoff"`), which re-enters the handoff wherever the forward scan of a DFA artifact's search body is back at its start state with nothing accepted — a fresh search from the scan position, so the same argument applies there. It finds the landmark's least occurrence `c` at or after the scan position (the occurrence last found, while it is still ahead, else the same pre-check search re-asked; none answers no match) and moves the scan to `c − K` where that is ahead, rounded up to a character start under a multibyte encoding and re-seeded where the machine carries a context seed. The scan only moves forward. The row is ranked below the offset-set and run-pinned rows and above the start-byte rows, which it replaces where it applies; it applies where the `handoff` row above applies on the artifact's own search body (never inside a VM hybrid's prefilter) and the landmark's expected gap under the byte-rate prior (`<PREFIX>_FINDINGS`; cardinality where there is none) exceeds `K`: `K` times the landmark's hit rate (a byte's, or the product of a run window's positions') is below one. The prior's PICK of the necessary byte (§2.27) never reads `K`.
+
+<a id="s2-41-p9"></a>[2.41¶9] Default: on. ANSWER-IDENTICAL and give-up-preserving: the excluded rows above are the ones where the move could change a give-up. Masked out of `rx_info.flags`. Deny-only. **The stamps** are `<PREFIX>_REQ_HANDOFF`, the `K` or `"none"`, on every artifact, `"none"` under the flag; and `<PREFIX>_DFA_PREFILTER "handoff"` where the re-entry applies, the start-byte row under the flag.
 
 <a id="s2-41-p10"></a>[2.41¶10] **Dial:** no cell, NOT A RUNG (§5.4).
 

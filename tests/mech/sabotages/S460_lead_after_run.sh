@@ -18,6 +18,7 @@ SAB_REACH_EXPECT="REACH-SET-LEADS"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    if (gate >= 0) {
+        if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
         p[np].need = gate_need;
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
@@ -31,7 +32,11 @@ SAB_AFTER='    for (int i = 0; i < nrun; i++) {   /* SABOTAGE S460: lead after *
         ofs_pred_of(cx, &t[i], &p[np++], (uint32_t)i + 1);
     }
     if (gate >= 0) {
+        if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
         p[np].need = gate_need;
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
     }'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): the gate block gained
+# the byte landmark's `ret_pred` line (inert where a run ships, `nrun > 0`);
+# both texts carry it unchanged. Intent unchanged: the lead after the run.

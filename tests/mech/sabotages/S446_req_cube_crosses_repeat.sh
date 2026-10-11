@@ -20,12 +20,12 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(?i)sel(
 SAB_REACH_EXPECT="REACH-MIN0-SPLIT"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='             * run to its right. */
-            acc.runs = rr_cat(rr_none(rr_rep_w(a->u.rep.rmax,
-                                               rb_walk(w, a->l).runs.maxw)),
-                              acc.runs);'
-SAB_AFTER='             * run to its right. */
-            acc.runs = rr_cat(rb_walk(w, a->l).runs, acc.runs);   /* SABOTAGE S446 */'
+SAB_BEFORE='                acc.runs = rr_cat(rr_none(rw), acc.runs);'
+SAB_AFTER='                acc.runs = rr_cat(rb_walk(w, a->l).runs, acc.runs);   /* SABOTAGE S446 */'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): the min-0 repeat's
+# arm now also shifts the SET's offsets (`rb_union(rb_empty(), acc.set, rw)`)
+# and names the width `rw`; the plant still joins the body's runs across the
+# zero-iteration repeat, the set shift kept.
 # RE-ANCHORED 2026-10-05 ([K82] (B), lane k82hbuild), INTENT RE-VERIFIED: the
 # min-0 repeat's `rr_none` now carries the body's WIDTH (the run offset walk);
 # the plant still joins the body's runs across the zero-iteration repeat.
