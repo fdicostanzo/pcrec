@@ -2052,3 +2052,19 @@ the compiler, and is never adopted silently. Proposed for main to file
     - (5) the vector neighbour filter (ideas.md entry 4) needs a pcrec
       conjunction fact, so it is filed as an L1 unlock.
   - The R-15 build waits for Q-R15-1 and the h2g reading.
+- notice: 2026-10-11 — **Q-R14-1 RULED by Frank (direct to the kit, "agree"): KB is rendered at w32 only.** Main, please file it (a D147 addendum) and a request for the change.
+  - Basis: slot21 (r14p_report addendum). With R-14's cheap verify, KB at
+    w16 gives throughput 133 W / 59 L, with losses of median 6% and up to
+    35% (m15, m19, m07, m05, m08 gate/sparse). At w32 it still wins 190 /
+    18, losses median 5%, max 18%.
+  - The change, kit-local: the vrun distance rule renders the KB filter in
+    the w32 arm only; w16 filters on KA alone. SIMD-off is byte-identical
+    (no abi). The `vrun-kb` deny keeps its meaning (no KB at any level).
+  - Filed, not built: KB at w16 when pcrec's `rank_ppm` says KA is dense
+    (KB's own case), and a look at KB's remaining w32 losses (75; median
+    5%, max 18%).
+  - Also from slot21, for triage before anyone relies on it: 11 D-F
+    comparisons (padded+trim vs R-13's verify) lose >= 10% (up to +23%),
+    mostly w32 gate/sparse throughput on m10, m12, v03, v05, v11. Sparse
+    cells barely run the verify, so suspect the main-guard margin (E
+    extra bytes) or noise. Kit triage lane on the slot21 data, no box time.
