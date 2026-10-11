@@ -116,16 +116,103 @@ The w32 helper still loads at `i` and `i + 1` on (?i)cat.
 
 ## 4. Validation (light; this box, `taskset -c 12-15`, `-j4`, gcc 15.2)
 
-Logs: `build/r16b-logs/` in the worktree (gitignored). `g2s1.log` is the
-G2 SIMD run, `light/` the chain (`light/chain.log` is its summary).
+Logs: `/home/pcrec/projects/pcrec/worktrees/r16b/build/r16b-logs/`
+(gitignored). `g2s1.log` is the first G2 SIMD run, `light/` the chain
+(`light/chain.log` is its summary).
 
-### 4.1 G2 SIMD family, `--quick` (`run_g2_simd.py`, g2s1.log, on fb77abac + the G2 edit, floors MEASURING)
+### 4.1 G2 SIMD family (`run_g2_simd.py`, quick)
 
-RESULTS_G2
+- **1,616 passed / 0 failed** at the final tip (`light/test-memfn-g2.log`,
+  inside the G2 quick tier). The first run (`g2s1.log`, before the floor
+  re-pin) was 1,615 / 1: `verify shape none 10 < floor 19`, the expected
+  move, re-pinned (§5).
+- Every build: 19,250,552 answer checks, 0 fails, 0 faults (x86-64,
+  x86-64-v3, x86-64-v4, gpr-only, asan-x86-64-v3). Every plant RED where its
+  level is live, green where compiled out.
+- Filter rule (1b), now per level, whole AND final block: green on every
+  rendered helper. Per-level populations: `kb-read-w32` 192,
+  `kb-dropped-w16` 191, `kb-dropped-rung` 178 (floors 154 / 153 / 142).
+  Filter-shape populations unchanged: 205 / 93 / 82 / 109 / 135.
+- Verify shapes: none 10, gap 342, whole 34, bytes 71, words 447, padded 172.
+- Guarded bytes: alone w16 2,383 (bound now 2,400), alone w32 2,721 (2,800),
+  `vrun@w16` 1,683, `vrun@w32` 2,289, `vrun@w32+w16` 4,975 (bound 5,200).
 
 ### 4.2 Suites, identity sample, sabotage
 
-RESULTS_CHAIN
+Chain `build/r16b-logs/chain.sh`, summary `light/chain.log`, at 115f8c58
+(the code is unchanged since; the only later commit is this report). All
+runs used TMPDIR in the worktree.
+
+| check | time (EDT) | verdict |
+|---|---|---|
+| `make -j4` | 13:21:37 | rc 0 |
+| `make strict` | 13:21:37-13:21:48 | rc 0 |
+| `make test-cli` | 13:21:48-13:22:01 | rc 0, 284 passed / 0 failed |
+| `make test-memfn-rows` | -13:22:02 | rc 0, 157/0 (check F: the vrun-kb w32 lines) |
+| `make test-memfn-forms` | -13:22:02 | rc 0, 5/0 (`run_form_checks.sh`) |
+| `make test-memfn-arms` | -13:22:03 | rc 0, 364/0 |
+| `make test-memfn-deleg` | -13:22:03 | rc 0, 5/0 |
+| `make test-memfn-arch` | -13:22:11 | rc 0, 15/0 |
+| `make test-memfn-stamps` | -13:22:37 | rc 0, 25/0 |
+| `make test-memfn-guarded` | -13:24:00 | rc 0, 10/0 |
+| `make test-memfn-simdfloor` | -13:24:46 | rc 0, 51/0 (`run_simd_floor.sh`) |
+| `make test-memfn-rank` | -13:25:02 | rc 0, 11/0 |
+| `make test-spec-history` | -13:25:05 | rc 0, 145/0 |
+| `make test-registry` | -13:25:56 | rc 0, 79/0 |
+| `make test-codegen` | -13:30:04 | rc 0, 27/0; [SABANCHOR] all 687 rows resolve |
+| `make test-memfn-g2` (G2 quick, ~7 min here) | 13:30:04-13:37:16 | rc 0, 52,987,686 / 0 |
+
+The first chain at fb77abac+G2 went red twice:
+
+- **test-cli, 2 cases.** The r14b/r14p trim and pad cases read the w16
+  helper's verify, and the w16 verify now compares KB's position. The cases
+  now read the w32 helper, which keeps both filter positions, and the trim
+  case asserts the w16 verify reads both A and T.
+- **test-memfn-arch (C4), 5 hits.** The first S815/S816/S819 anchors quoted
+  intrinsic names and `LV_X86_*`. The fix gave `npos` its own commented line
+  so the anchors are arch-free. No allowlist row was added.
+
+**Identity, light tier** (`scripts/emit_sweep.py --ref-bin <afc74283 build>
+--every 8`):
+
+- **SIMD-off** (`light/sweep_off.log`): 0 artifact movers on c-default,
+  c-vm and emit-ir-vm. The streams run the whole argv population (5,621
+  rows, reach 5,170 / 5,171). The 7 registry dumps also have 0 movers, so
+  `--list-axes` is unchanged. Self-check passed.
+- **`--extra=-fmemfn-simd`** (`light/sweep_on.log`): 44 movers on
+  c-default, 43 on c-vm, 0 asymmetric. rc 1 is the expected mover verdict.
+  The classifier `docs/dev/lanes/r16b_movers.py` covers every distinct
+  corpus pattern (4,531), both engines (8,307 pairs); its log is
+  `light/movers_full2.log`:
+  - 39 movers;
+  - 39 base artifacts have a w16 KB, and all of them moved;
+  - every changed line is inside a `__w16(` helper (230 lines) or the
+    guarded stamp (39);
+  - 0 bad.
+  The sweep counts more movers than the classifier because its population
+  is argv rows with per-block flags.
+  - The first classifier run flagged 3 movers as having no w16 KB. That was
+    a classifier bug: an exact KB position broadcasts `vb` with no `mb`. The
+    fixed run is the one cited above.
+- **`--extra="-fmemfn-simd --memfn=no-vrun-kb"`** (`light/sweep_deny.log`):
+  0 movers on both streams. The deny arm is the pre-R-16 rendering.
+
+**Sabotage**: `PROCS=1 bash tests/mech/run_sabotage_matrix.sh SNNN`, solo,
+at 115f8c58 (`light/sab_SNNN.log`). Every row's mech trailer reads
+`unexpected 0, undetected 0, unreached 0, anomalies 0`.
+
+| id | plant | arms | verdict |
+|---|---|---|---|
+| S815 | w16 `npos` 2: KB back at w16 | cli g2simd | DETECTED, cli 2 fail / 284 pass, g2simd 376 / 1,241 |
+| S816 | w32 `npos` 1: KB at no level | cli g2simd | DETECTED, cli 3 / 284, g2simd 376 / 1,240 |
+| S817 | KA alone only where vrun-w32 is denied: the w16 rung keeps KB | cli g2simd | DETECTED, cli 2 / 284, g2simd 349 / 1,267 |
+| S818 | the final block's mask drops KB, the verify still trims it | g2simd | DETECTED, g2simd 196 / 1,420 |
+| S819 | the trim takes the ranking's KB as proven at w16 | g2simd | DETECTED, g2simd 191 / 1,425 |
+| S753 | (rankuse, re-run) the vrun-kb deny ignored: the deny-at-w32 fault | cli g2simd | DETECTED, cli 1 / 284, g2simd 22 / 1,594 |
+
+Only the structural check (1b) can see S815 and S817. Their answers stay
+right, because KB is a run position and the verify covers it. S818 and S819
+are also wrong-answer faults.
 
 ## 5. Re-pins, each with its reason
 
@@ -168,4 +255,21 @@ These did NOT move:
 
 ## 7. Charter vs committed
 
-CHECKLIST
+| promise (brief) | artifact / status |
+|---|---|
+| KB rendered only at w32; w16 KA alone, standalone and as w32's rung | DONE. vrun.c `ops_of[].npos` keyed by the levels.def id; §3, S815/S817 |
+| no magic constant, no separate mechanism | DONE. The per-level table the level's text already comes from (§1) |
+| module comment: SECOND FILTER POSITION, D149 KB row RULED (D147 add. 16), reach/guard text | DONE (§1) |
+| `--memfn=no-vrun-kb` keeps its meaning (no KB at any level) | DONE. Deny sweep 0 movers; S753 DETECTED |
+| guarded-bytes figures re-derived, re-pinned by their rules | DONE. w16 2,700 → 2,400 in vrun.c, simd_bounds.tsv and limits.md §8.3¶3; w32 unchanged (§5) |
+| `make -j4`, `make strict` | DONE, rc 0 |
+| SIMD-off byte-identical, no abi event | DONE light (every-8 sample, 0 movers on 3 artifact streams + dumps). Full sweep: OWED to the kit manager's slot (§6 item 1) |
+| SIMD-on: only the w16 helpers move | DONE. Seven witnesses (§3) plus the whole-corpus classifier, 0 bad (§4.2) |
+| test-memfn-rows, form checks, run_simd_floor.sh | DONE, green (§4.2); no floor in them moved |
+| G2 quick tier | DONE, 52,987,686 / 0 (light enough here, ~7 min); G2 `none` floor re-pinned |
+| structural check counting populations, control independent of the renderer | DONE in G2 1b (`KB_LEVELS`, whole + final block, `KBLVL_FLOOR`), with the cli (?i)cat witness (§2) |
+| sabotage S815-S819, as many as real faults, figures recorded | DONE, all five used, all DETECTED solo (§4.2); S753 re-run |
+| no --list-axes / options.def change | DONE. None (dumps 0 movers) |
+| CLAUDE.md updates (memfn, memfn/src, memfn/tests, tests/mech) | DONE |
+| docs/spec only if caller-observable | DONE. Three hunks for the SIMD-on artifact text and the w16 bound (§1); nothing SIMD-off moves |
+| full identity sweeps every arm, G2 full, mech, make test, re-timing | OWED: kit manager's slot on main's GO (§6) |
