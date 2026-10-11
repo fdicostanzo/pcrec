@@ -516,3 +516,38 @@ than a bit-vector regex engine."
   at captures. For the pcrec fact design, the span (and pcrec's own run
   extraction) must be computed THROUGH groups, with the capture marks
   stated as offsets in the span, not as span boundaries.
+
+## 2026-10-11 — the VM reads precomputed class truth vectors instead of testing bytes
+
+Frank: for ipv4-like patterns, run two wide "proofs" over a stretch of the
+subject: A = "is `.`" and B = "is a digit", each giving a truth vector (one
+bit per position). The VM then looks up the bit for the current position
+instead of re-testing the byte every time it visits it.
+- One test: no gain. `(D >> (p - blk)) & 1` costs about the same as
+  `(unsigned)(c - '0') <= 9`.
+- Where it does gain:
+  1. RUNS: "eat `\d+`" or `\d{1,3}` becomes `ctz(~D >> p)`, one op for the
+     whole run instead of a byte loop (the VMSPAN/VMSTRIDE advance sites);
+  2. RE-VISITS: backtracking and the attempt loop re-test the same positions
+     many times, and the classification is paid once per block;
+  3. EXPENSIVE classes: large sets, `\w` tables and utf8 classes cost more
+     per test than a bit lookup.
+- Why it differs from the per-call SIMD advance that was measured to lose on
+  short spans (integration.md: AVX2 without a 16 B tier costs 8-16 ns at
+  16): there the vector setup is paid on EVERY call. Here a block is
+  classified ONCE, lazily, the first time the VM touches it, and the masks
+  stay valid for every later instruction and attempt in that block. The
+  cost is amortised over the search, not per instruction.
+- Costs and limits: classifying a 64-byte block per hot class even if the VM
+  visits only a few positions in it (the prefilter often lands the VM on a
+  short match); keep it to the classes the program actually tests in loops;
+  block-boundary handling; k classes x n/64 words of state (or a small ring
+  of recent blocks).
+- Placement: pcrec's VM (engine work), or the kit if the VMSPAN/VMSTRIDE
+  advance sites gain a "cached block mask" contract (the site would need
+  state across calls, like entry 5's held mask). Either way it is the
+  fourth-engine idea (classify once, walk masks) applied to the whole VM,
+  not just to one bounded token.
+- Ruling context: the span thread is UNSCHEDULED under [SPAN-ISEL] (Frank,
+  2026-10-11). This entry joins it. The designed spike could add one cell:
+  ipv4 through the VM with and without cached digit/dot masks.
