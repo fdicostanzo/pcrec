@@ -319,3 +319,36 @@ travel. The kit's distance rules then pick per workload, not per guess.
 - First guess: medium-high value if users supply exemplars. It turns
   "accept the residue" into a choice per workload. It needs a [FINDINGS]
   owner decision about what a bundle carries; that is main's design.
+
+## 2026-10-11 — a "memcasecmp" for runtime folded spans (caseless backreferences and variables)
+
+Frank asked whether there is a memcmp replacement for folded spans.
+- CONSTANT folded runs (a `(?i)` literal) are served: runcmp's `words` row
+  renders masked word compares, e.g. `(rx_w8(s+cand) & 0xDF..DF) ==
+  rx_w8("JKLMNOPQ")`, and R-14 adds the padded single word inside vrun.
+- RUNTIME folded spans are not. The byte-encoding caseless backreference
+  (`(?i)(\w+) \1`, current main build) calls `rx_span_match_caseless`, a
+  per-byte loop with two branchy A-Z folds and a compare per byte. It
+  returns the first mismatch index as `-(i)-1`. It is an encoding residual,
+  not a kit site.
+  - Filed so far: only the utf8 ASCII fast path ([MEMFN-CI-ASCII],
+    D147 add. 14, trigger: a measured cell) and [BREF-FOLD-ONCE]
+    (boonies). The byte-mode loop itself is not filed.
+- Obvious form, SWAR first (D144):
+  - Load 8 bytes of each side.
+  - Fold A-Z in-register with the classic range test:
+    `((x + 0x3F..3F) ^ (x + 0x25..25)) & ~x & 0x80..80` marks A-Z, then
+    shift right by 2 to get 0x20 per marked lane, and OR it in.
+  - XOR the two folded words. If nonzero, the first mismatch index is
+    ctz/8 (little-endian).
+  - Finish the tail bytewise, with the subject-end guard handled exactly as
+    today.
+  - SIMD (16/32 lanes: cmpgt range mask, OR 0x20, cmpeq, movemask) as a
+    later candidate under -fmemfn-simd.
+  - It must keep the contract: the first mismatch index, and the miss when
+    the subject ends.
+- First guess: niche (caseless backrefs/variables are rare in the bench).
+  It becomes worth it when a measured cell shows the compare cost. The same
+  trigger as [MEMFN-CI-ASCII], so file them together. If delegated, it is a
+  kit site (a byte-domain masked span compare), which is main's call
+  (DELEG_SITES).
