@@ -37,6 +37,17 @@ WHAT IT CHECKS, AND AGAINST WHAT
      them in the `deny-trim` class, `no-vrun-trim`); a helper has no verify
      (it returns the lowest lane) iff that set is empty. Floors per verify
      shape (K35).
+  1d. THE PADDED VERIFY (R-14 follow-up, vrun.c's PADDED VERIFY): where the
+     rule derived HERE gives one (a run of 3 or 5-7 bytes, no
+     MF_D_RUN_OVERLAP in the meta, something left to verify, not
+     `deny-pad`), the helper has TWO verifies: the main path's, ONE word at
+     the run's offset of the width the rule gives (4 or 8), its mask
+     (`pk`'s literal) compared nowhere past the run (the 1c set), and the
+     final block's, the run compare loading nothing past the run; and the
+     main guard is VW + T + E (E = width - L), VW + T elsewhere. A load past
+     the run anywhere but the main path's padded word is red. The edge
+     (a padded word ending at the subject's last byte, the guard page next)
+     is counted per live level by the instrumented build, with floors.
   2. GUARDED_MAX: every rendering's guarded bytes, measured by G2's own
      counting sink at pcrec's placeholder prefix and longest FUNC name, are
      at most the sum of tests/memfn/simd_bounds.tsv's bounds of the levels
@@ -54,8 +65,9 @@ WHAT IT CHECKS, AND AGAINST WHAT
      path >= PATH_FLOOR, and a compiled-out level's paths EXACTLY 0.
   5. PLANTS, per path and level: the rendered text mutated (the final block's
      guard off by one, the lane mask off by one, lanes highest first, the
-     verify skipped, the reach one short); each must be RED where its level is
-     live and GREEN where it is compiled out; the reach plant must FAULT.
+     verify skipped, the reach one short, the padded verify's margin E one
+     short); each must be RED where its level is live and GREEN where it is
+     compiled out; the reach and pad-margin plants must FAULT.
   6. INSTRUCTION CLASSES: no PDEP/PEXT and no gather in any level's object
      (levels.def's `forbid`, [r9 M-11]), read with objdump.
 
@@ -87,6 +99,7 @@ CLASS_EXPECT = {
     'neg-nobrackets': 'none',
     'deny-kb': 'vrun@w32+w16',
     'deny-trim': 'vrun@w32+w16',
+    'deny-pad': 'vrun@w32+w16',
 }
 CLASS_FLOOR = 8          # sites per class (each negative class is 1 in 20)
 POS_FLOOR = 200          # positive sites
@@ -115,7 +128,12 @@ VSHAPE_FLOOR = {
     'whole': 27,     # the whole run, deny-trim (34)
     'bytes': 53,     # trimmed, the bytes form under MF_D_RUN_OVERLAP (67)
     'words': 349,    # trimmed, the words form (437)
+    'padded': 137,   # the main path verifies by one padded word (172)
 }
+# the padded verify's edge (R-14 follow-up, PADDED VERIFY): main-path padded
+# verifies whose word ends at the subject's last byte, per live level, from
+# the instrumented build (layout E puts the guard page right after it)
+EDGE_FLOOR = (1650, 640)   # (evaluated, verified): min measured 2078 / 804 (w32 at x86-64-v3)
 # the level a build makes live (top first), and whether w16/w32 is live
 BUILDS = [
     # name,        flags,                      live levels
@@ -178,25 +196,48 @@ HELPER = re.compile(r'^static inline size_t (\w+)__(w16|w32)\(.*?^\}\n', re.M | 
 
 
 def edit_helpers(text, level, fn):
-    """Applies fn(body, lvl_index) to every helper of `level` ('w16', 'w32',
-    or None for both)."""
+    """Applies fn(body, lvl_index, helper name) to every helper of `level`
+    ('w16', 'w32', or None for both)."""
     def sub(m):
         if level and m.group(2) != level:
             return m.group(0)
-        return fn(m.group(0), 0 if m.group(2) == 'w16' else 1)
+        return fn(m.group(0), 0 if m.group(2) == 'w16' else 1, m.group(1))
     return HELPER.sub(sub, text)
 
 
-def instrument(body, li):
+def pad_width(L):
+    """The padded word's width the rule gives (memfn/src/vrun.c, PADDED
+    VERIFY): the smallest of 4 and 8 that covers a run of 3 or 5-7 bytes;
+    None where the rule takes no padded word."""
+    return 4 if L == 3 else 8 if L in (5, 6, 7) else None
+
+
+SITE_RUN = {}   # site id -> (off, L), from the generated meta (run(), below)
+PADLINE = re.compile(r'^( +)if \((\(\(memcpy\(&pw, [^\n]*)\) return cand;$', re.M)
+
+
+def instrument(body, li, name):
     b = 4 * li
     body, n0 = re.subn(r'(\) return )(\w+\(subject, n, pos\);)',
                        r') { g2v_path[%d]++; return \2 }' % b, body, count=1)
     body, n1 = re.subn(r'(        if \(i \+ \d+ <= n\) \{)', r'\1 g2v_path[%d]++;' % (b + 1), body)
-    body, n2 = re.subn(r'(            size_t f = n - \d+;)', r'g2v_path[%d]++; \1' % (b + 2), body)
+    body, n2 = re.subn(r'( +size_t f = n - \d+;)', r'g2v_path[%d]++; \1' % (b + 2), body)
+    # the padded verify's edge: its word [cand + off, cand + off + P) ends at
+    # s[n - 1], P and off from the GENERATED run
+    npad = 0
+    if name.startswith('g2v_f') and int(name[5:]) in SITE_RUN:
+        off, L = SITE_RUN[int(name[5:])]
+        if pad_width(L):
+            d = off + pad_width(L)
+            body, npad = PADLINE.subn(
+                r'\1if (cand + %d == n) g2v_edge[%d]++;\n'
+                r'\1if (\2) { if (cand + %d == n) g2v_edge[%d]++; g2v_path[%d]++; return cand; }'
+                % (d, 2 * li, d, 2 * li + 1, b + 3), body)
     body, n3 = re.subn(r'\) return (cand|i \+ \(size_t\)__builtin_ctz\(m\));',
                        r') { g2v_path[%d]++; return \1; }' % (b + 3), body)
-    if (n0, n1, n2, n3) != (1, 1, 1, 1):
-        raise RuntimeError('instrumentation found %r edit points, not one each' % ((n0, n1, n2, n3),))
+    if (n0, n1, n2) != (1, 1, 1) or n3 + npad not in (1, 2) or npad > 1:
+        raise RuntimeError('instrumentation found %r edit points, not one each (verified: one '
+                           'or two, the padded one at most once)' % ((n0, n1, n2, n3, npad),))
     return body
 
 
@@ -209,26 +250,45 @@ PLANTS = [
     ('lane-order',  r'__builtin_ctz\(m\)', r'(31 - __builtin_clz(m))', 'red'),
     ('no-verify',   r'if \((?:\(|\w)[^\n]*\) return cand;', r'if (1) return cand;', 'red'),
     ('reach-short', None, None, 'fault'),
+    # the padded verify's margin E one short (PADDED VERIFY): the main path
+    # then reads a byte past n at the top lane; helpers with no padded
+    # verify are not edited
+    ('pad-margin', None, None, 'fault'),
 ]
 
 
-def reach_short(body, li):
-    """Every use of the reach R (VW + T) becomes R - 1: the vector body then
-    reads one byte past n at the shortest span it accepts."""
+def pad_margin(body, li, fn):
+    """The main guard one short in a helper with a padded verify."""
+    if 'memcpy(&pw, ' not in body:
+        return body
+    return re.sub(r'if \(i \+ (\d+) <= n\)', lambda g: 'if (i + %d <= n)' % (int(g.group(1)) - 1),
+                  body, count=1)
+
+
+def reach_short(body, li, name):
+    """Every use of the reach R (VW + T) becomes R - 1, and the main guard
+    (R + E, PADDED VERIFY) one short too: the vector body then reads one
+    byte past n at the shortest span it accepts."""
     m = re.search(r'n - pos < (\d+)\)', body)
     r = int(m.group(1))
     body = body.replace('n - pos < %d)' % r, 'n - pos < %d)' % (r - 1))
-    body = body.replace('if (i + %d <= n)' % r, 'if (i + %d <= n)' % (r - 1))
+    body = re.sub(r'if \(i \+ (\d+) <= n\)', lambda g: 'if (i + %d <= n)' % (int(g.group(1)) - 1),
+                  body, count=1)
     body = body.replace('size_t f = n - %d;' % r, 'size_t f = n - %d;' % (r - 1))
     return body
 
 
 def plant_text(text, plant, level):
     name, pat, rep, _ = plant
+    if name == 'pad-margin':
+        out = edit_helpers(text, level, pad_margin)
+        if out == text:
+            raise RuntimeError('plant pad-margin: no helper edited')
+        return out
     if pat is None:
         return edit_helpers(text, level, reach_short)
     edits = [0]
-    def f(body, li):
+    def f(body, li, fn):
         nb, k = re.subn(pat, rep, body, count=1)
         if k != 1 and not (name == 'no-verify' and 'return cand;' not in body):
             raise RuntimeError('plant %s: no edit point' % name)
@@ -313,37 +373,72 @@ BYTE_M = re.compile(r'^\(\(subject \+ cand\)\[(\d+)\] & \d+\) == \d+$')
 BYTE_X = re.compile(r'^\(subject \+ cand\)\[(\d+)\] == \d+$')
 
 
-def verify_reads(body):
-    """(shape, the set of read offsets from cand the helper's verify COMPARES,
-    i.e. under a nonzero mask byte), parsed from its text; shape is 'none'
-    (no verify: the lowest lane is returned), 'words' or 'bytes'."""
-    m = re.search(r'^            if \((.*)\) return cand;$', body, re.M)
-    if not m:
-        if re.search(r'^        if \(m\) return i \+ \(size_t\)__builtin_ctz\(m\);$', body, re.M):
-            return 'none', set()
-        return None, None
-    reads, shape = set(), 'bytes'
-    for c in m.group(1).split(' && '):
+PAD_X = re.compile(r'^\(\(memcpy\(&pw, subject \+ cand(?: \+ (\d+))?, (\d)\), pw\) & pk\) == pt$')
+PAD_K = re.compile(r'^    uint(\d+)_t pw, pk, pt;\n    memcpy\(&pk, "((?:[^"\\]|\\.)*)", (\d)\);$', re.M)
+
+
+def verify_one(expr, body):
+    """(shape, the set of offsets from cand one verify expression COMPARES
+    (under a nonzero mask byte), the byte span [lo, hi) it LOADS) parsed
+    from its text; shape 'words', 'bytes' or 'padded'."""
+    w = PAD_X.match(expr)
+    if w:
+        o, width = int(w.group(1) or 0), int(w.group(2))
+        k = PAD_K.search(body)
+        if not k or int(k.group(1)) != 8 * width or int(k.group(3)) != width:
+            return None, None, None
+        kb = cstr_bytes(k.group(2))
+        if len(kb) != width:
+            return None, None, None
+        return 'padded', {o + j for j, x in enumerate(kb) if x}, (o, o + width)
+    reads, shape, lo, hi = set(), 'bytes', None, None
+    for c in expr.split(' && '):
         w = WORD_M.match(c)
         if w:
-            o = int(w.group(2) or 0)
+            o, width = int(w.group(2) or 0), int(w.group(1))
             reads |= {o + j for j, k in enumerate(cstr_bytes(w.group(3))) if k}
-            shape = 'words'
-            continue
-        w = WORD_X.match(c)
+        else:
+            w = WORD_X.match(c)
+            if w:
+                o, width = int(w.group(2) or 0), int(w.group(1))
+                reads |= set(range(o, o + width))
         if w:
-            o = int(w.group(2) or 0)
-            reads |= set(range(o, o + int(w.group(1))))
             shape = 'words'
-            continue
-        w = BYTE_M.match(c) or BYTE_X.match(c)
-        if w:
-            reads.add(int(w.group(1)))
-            continue
-        if c == '1':
-            continue
-        return None, None
-    return shape, reads
+        else:
+            w = BYTE_M.match(c) or BYTE_X.match(c)
+            if w:
+                o, width = int(w.group(1)), 1
+                reads.add(o)
+            elif c == '1':
+                continue
+            else:
+                return None, None, None
+        lo = o if lo is None else min(lo, o)
+        hi = o + width if hi is None else max(hi, o + width)
+    return shape, reads, (lo, hi) if lo is not None else None
+
+
+def verify_reads(body):
+    """The helper's verifies, in text order (the main path's padded one
+    first where it has one), each (shape, compared offsets, loaded span),
+    and its main guard's constant (`if (i + G <= n)`). A helper with no
+    verify (it returns the lowest lane) gives [('none', set(), None)]."""
+    g = re.search(r'^        if \(i \+ (\d+) <= n\) \{$', body, re.M)
+    guard = int(g.group(1)) if g else None
+    out = [verify_one(m.group(1), body)
+           for m in re.finditer(r'^ +if \((.*)\) return cand;$', body, re.M)]
+    if not out and re.search(r'^        if \(m\) return i \+ \(size_t\)__builtin_ctz\(m\);$',
+                             body, re.M):
+        out = [('none', set(), None)]
+    return out, guard
+
+
+def expect_pad(cls, L, overlap, vwant):
+    """The rule (memfn/src/vrun.c, PADDED VERIFY), from the generated run:
+    the main path verifies by one padded word where the run is 3 or 5-7
+    bytes, the site states no MF_D_RUN_OVERLAP, something is left to verify
+    and `no-vrun-pad` (deny-pad) is not given."""
+    return cls != 'deny-pad' and pad_width(L) is not None and not overlap and bool(vwant)
 
 
 def expect_verify(cls, off, masks, want_filter):
@@ -352,6 +447,38 @@ def expect_verify(cls, off, masks, want_filter):
     positions; under `no-vrun-trim` (deny-trim) all of them."""
     every = {off + j for j, k in enumerate(masks) if k}
     return every if cls == 'deny-trim' else every - set(want_filter)
+
+
+def verify_check(vlist, guard, vwant, pad, off, L, lvl):
+    """'' if the helper's verifies are the rules' (VERIFY TRIM and PADDED
+    VERIFY, memfn/src/vrun.c), else why not. Every expectation is derived
+    here from the generated run (off, L, its masks via vwant)."""
+    vw = 16 if lvl == 'w16' else 32
+    t = off + L - 1
+    e = pad_width(L) - L if pad else 0
+    if guard != vw + t + e:
+        return 'main guard i + %r, the rule gives i + %d (VW + T + E)' % (guard, vw + t + e)
+    if any(v[0] is None for v in vlist):
+        return 'a verify the parser does not know'
+    if not vwant:
+        return '' if [v[0] for v in vlist] == ['none'] else 'a verify where nothing is left'
+    if len(vlist) != (2 if pad else 1):
+        return '%d verifies, the rule gives %d' % (len(vlist), 2 if pad else 1)
+    for j, (shape, got, span) in enumerate(vlist):
+        main_pad = pad and j == 0
+        if (shape == 'padded') != main_pad:
+            return 'verify %d is %s, the rule gives %s' % (j, shape, 'padded' if main_pad else
+                                                          'the run compare')
+        if got != vwant:
+            return 'verify %d compares %r, the rule gives %r' % (j, sorted(got), sorted(vwant))
+        # a load past the run: the padded word in the main path only, and by
+        # exactly its width (its padding compared nowhere: `got` above)
+        hi = off + (pad_width(L) if main_pad else L)
+        if span is None or span[0] < off or span[1] > hi:
+            return 'verify %d loads %r, outside [%d, %d)' % (j, span, off, hi)
+        if main_pad and span != (off, hi):
+            return 'the padded word loads %r, the rule gives [%d, %d)' % (span, off, hi)
+    return ''
 
 
 def expect_filter(cls, off, pp, rank):
@@ -371,6 +498,8 @@ def parse(out):
     for p in re.finditer(r'G2V paths level=(w\d+) entry_fallthrough=(\d+) whole_block=(\d+) '
                          r'final_block=(\d+) verified=(\d+)', out):
         paths[p.group(1)] = tuple(int(x) for x in p.groups()[1:])
+    for p in re.finditer(r'G2V edge level=(w\d+) evaluated=(\d+) verified=(\d+)', out):
+        paths['edge-' + p.group(1)] = (int(p.group(2)), int(p.group(3)))
     return (tuple(int(x) for x in m.groups()) if m else None), paths
 
 
@@ -433,7 +562,8 @@ def run(a, root, work):
             if line.startswith('#'):
                 continue
             (sid, cls, L, off, pp, forms, gb, a16, a32, rmode, rank, badrank,
-             ties, masks) = line.rstrip('\n').split('\t')
+             ties, masks, overlap) = line.rstrip('\n').split('\t')
+            SITE_RUN[int(sid)] = (int(off), int(L))
             masks = bytes.fromhex(masks)
             gb = int(gb)
             # 1b: the malformed copy, and the filter the rule gives
@@ -454,19 +584,27 @@ def run(a, root, work):
                             % (sid, cls, rmode, rank, lvl, got, want))
                     else:
                         ok()
-                    # 1c: the verify compares exactly what the filter did not prove
-                    vshape, vgot = verify_reads(HELPER_TEXT.get((int(sid), lvl), ''))
+                    # 1c: the verify compares exactly what the filter did not
+                    # prove; 1d: the padded one, in the main path only, its
+                    # padding masked out, the main guard holding what it reads
+                    vlist, guard = verify_reads(HELPER_TEXT.get((int(sid), lvl), ''))
                     vwant = expect_verify(cls, int(off), masks, want)
-                    if vgot != vwant or (vshape == 'none') != (not vwant):
-                        bad('site %s (%s, rank %s): %s verify compares %r (%s), the rule gives %r'
-                            % (sid, cls, rank, lvl, sorted(vgot) if vgot is not None else None,
-                               vshape, sorted(vwant)))
+                    pad = expect_pad(cls, int(L), int(overlap), vwant)
+                    why = verify_check(vlist, guard, vwant, pad, int(off), int(L), lvl)
+                    if why:
+                        bad('site %s (%s, L=%s, rank %s): %s verify: %s; texts %r'
+                            % (sid, cls, L, rank, lvl, why,
+                               [(v[0], sorted(v[1]) if v[1] is not None else None, v[2])
+                                for v in vlist]))
                     else:
                         ok()
+                        vshape = vlist[-1][0]
                         k = ('whole' if cls == 'deny-trim' else vshape)
                         vshapes[k] = vshapes.get(k, 0) + 1
                         if vwant and max(vwant) - min(vwant) + 1 != len(vwant):
                             vshapes['gap'] = vshapes.get('gap', 0) + 1
+                        if pad:
+                            vshapes['padded'] = vshapes.get('padded', 0) + 1
                 rmodes[rmode] = rmodes.get(rmode, 0) + 1
                 kb = want[1] - int(off) if len(want) > 1 else None
                 for shp, hit in (('kb', kb is not None), ('no-kb', kb is None),
@@ -600,6 +738,15 @@ def run(a, root, work):
                 bad('paths %s %s: a path below floor %d: %r' % (name, lv, PATH_FLOOR, p))
             elif lv not in live and any(p):
                 bad('paths %s %s: a compiled-out level ran: %r' % (name, lv, p))
+            else:
+                ok()
+            e = paths.get('edge-' + lv, (0, 0))
+            print('edge  %-10s %s padded verify at the subject end: evaluated=%d verified=%d '
+                  '(floor %d/%d)' % ((name, lv) + e + EDGE_FLOOR))
+            if lv in live and (e[0] < EDGE_FLOOR[0] or e[1] < EDGE_FLOOR[1]):
+                bad('edge %s %s: %r below floor %r' % (name, lv, e, EDGE_FLOOR))
+            elif lv not in live and any(e):
+                bad('edge %s %s: a compiled-out level ran: %r' % (name, lv, e))
             else:
                 ok()
     # 5: plants

@@ -16,9 +16,11 @@
 # and check F says the C19 half is UNREACHED.
 #
 # row	level	cpu_class	state	tier	bins	prereg	bench_run_id	bench_commit	bench_gcc	bench_glibc	pcrec_commit	kit_commit	comparator_digest	transcript_comparator_digest	march	verdict	transcript
-# vrun-kb (lane rankuse, 2026-10-09) and vrun-trim (lane r14b, 2026-10-11,
-# R-14) are not level rows but options of both: the vrun rows' second filter
-# position and their trimmed verify. Their lines are the levels they move.
+# vrun-kb (lane rankuse, 2026-10-09), vrun-trim (lane r14b, 2026-10-11,
+# R-14) and vrun-pad (lane r14p, 2026-10-11, R-14 follow-up) are not level
+# rows but options of both: the vrun rows' second filter position, their
+# trimmed verify and their padded main-path verify. Their lines are the
+# levels they move.
 vrun-w16	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-w16	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-w32	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
@@ -31,3 +33,7 @@ vrun-trim	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=gene
 vrun-trim	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-trim	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
 vrun-trim	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
+vrun-pad	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-pad	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
+vrun-pad	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
+vrun-pad	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-

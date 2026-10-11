@@ -83,6 +83,31 @@
  * verifies the whole run (R-13's and rankuse's verify byte for byte), the
  * arm R-14's re-timing measures the trim against.
 
+ * PADDED VERIFY (R-14 follow-up, Frank 2026-10-11: a verify costs loads and
+ * branches, not bytes). The run compare's words never read past the run, so
+ * a run of 3 or 5-7 bytes is two overlapping words (two loads, two
+ * branches). In the MAIN path it is ONE word of the next width up (4 or 8),
+ * masked to 0x00 past the run's end and at the proven positions (runcmp.c's
+ * `run_cmp_render_pad`): one load, one branch. Re-comparing a proven byte
+ * would cost nothing inside the word, but zeroing it costs nothing either.
+ *   - THE MARGIN. A main block at i is taken when i + R + E <= n. Its lane
+ *     j's candidate c = i + j has its run end at c + T, so the bytes
+ *     readable past the run are n - 1 - (c + T) >= (VW - 1 - j) + E. The
+ *     block loop alone (E = 0) leaves lane VW - 1 NO byte past the run: the
+ *     loop's `i + R <= n` guarantees bytes ahead of the LOW lanes only. So
+ *     the main guard holds E = P - L more (P the padded width, E <= 3:
+ *     L 3 -> 1, 5 -> 3, 6 -> 2, 7 -> 1), and the padded compare is given
+ *     `over` = E, the bytes the guard guarantees at the top lane.
+ *   - THE FINAL BLOCK keeps the trimmed compare. A block the main guard no
+ *     longer takes but that still lies inside the subject (n - R - E < i <=
+ *     n - R) is final with f = i (nothing masked); then the overlapped
+ *     block at n - R as before. Each reads only [pos, n).
+ *   - WHERE NOT: the deny `no-vrun-pad` (the text above, byte for byte);
+ *     L in {2, 4, 8} (the words form is one word already), L > 8 (one word
+ *     does not cover it; a vector verify would, the report's note);
+ *     MF_D_RUN_OVERLAP (the walk picks no words-form row); nothing left to
+ *     verify. The scalar `__body` is unchanged.
+
  * OVER-READ / BOUNDARY ARGUMENT (the kit reads only [pos, n)):
  *   - R = VW + T (T = the predicate's highest read, the BODY loop guard's
  *     `maxk`). Below it the entry test falls through, so the vector body
@@ -96,7 +121,10 @@
  *     shift i - f is 1..VW - 1 (never the register width: no UB).
  *   - A candidate c is a lane of a block at base b with b + R <= n, so
  *     c + T <= b + VW - 1 + T <= n - 1: the run compare's reads [c + off,
- *     c + T] lie inside the subject.
+ *     c + T] lie inside the subject. The padded compare's reads end at
+ *     c + T + E, and its block has b + R + E <= n (PADDED VERIFY's margin).
+ *   - With E > 0 a final block at f = i < n - R (clamped) loads as a whole
+ *     block does (i + R <= n), and the lane shift i - f is 0..VW - 1.
  *
  * D149, every constant of the form:
  *   VW         DERIVED: the level's register width (levels.def).
@@ -110,6 +138,12 @@
  *              run's, the one helper run_cmp_prepare declared ahead of the
  *              FUNC outside any guard (a narrower helper would need a
  *              declaration the SIMD-off text lacks: the floor rule).
+ *   E, P       DERIVED: P the smallest of 4, 8 covering the run, E = P - L
+ *              the bytes the padded word reads past it (a correctness bound
+ *              on the main guard, PADDED VERIFY); the padded form itself is
+ *              DERIVED to cost one load and one branch where the words form
+ *              costs two, and its deny `no-vrun-pad` is the arm a re-timing
+ *              measures it against.
  *   KB         UNMEASURED DEFAULT: two positions, KB the first ranked other
  *              than KA, no distance rule (SECOND FILTER POSITION above);
  *              its deny `no-vrun-kb` is the arm RQ-4's slot times it against.
@@ -364,7 +398,9 @@ static const char *const vrun_no_rungs[] = { NULL };
  * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). Those are
  * the whole-run verify's, `no-vrun-trim`; the trimmed verify (R-14, lane
  * r14b, 2026-10-11) writes 2,583 / 2,643 / 5,214 there, so the bound, the
- * larger of the two arms, did not move. */
+ * larger of the two arms, did not move. The padded verify (lane r14p) is
+ * rendered for runs of 3 or 5-7 bytes only, far below that site's text; G2
+ * takes the alone maximum over all four trim x pad arms. */
 #define VRUN_W16_GUARDED_MAX 2700
 #define VRUN_W32_GUARDED_MAX 2800
 
