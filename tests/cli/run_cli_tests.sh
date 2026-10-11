@@ -2458,10 +2458,11 @@ else
     fail "the vrun filter's second position (w32 only, D147 add. 16) or its deny is not as ruled on (?i)cat"
 fi
 # ... and `--memfn=no-vrun-trim` (lane r14b, R-14): the rows' trimmed
-# verify. On (?i)cat the mask proves C at 0 and A at 1, so the default
-# verify compares T alone (one masked word at cand + 1 whose first byte is a
-# don't-care); the deny verifies the whole run (two words, both masks whole).
-# Inert at -fno-memfn-simd.
+# verify. On (?i)cat the w32 mask proves C at 0 and A at 1, so the default
+# w32 verify compares T alone (one masked word at cand + 1 whose first byte
+# is a don't-care), while the w16 mask proves C alone (KB at w32 only, D147
+# addendum 16), so its verify compares A and T; the deny verifies the whole
+# run (two words, both masks whole). Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs8.c"
 pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
 if [ -s "$WORKDIR/mfs8.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs8.c"; then
@@ -2469,13 +2470,14 @@ if [ -s "$WORKDIR/mfs8.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs8.c"; then
 else
     fail "--memfn=no-vrun-trim at -fno-memfn-simd moved the artifact or did not compile"
 fi
-mftrim_verify() {   # the w16 helper's final-block verify line (its last)
-    sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1" | grep ') return cand;$' | tail -n 1
+mftrim_verify() {   # helper ${2:-w32}'s final-block verify line (its last)
+    sed -n "/^static inline size_t rx_reqrun__${2:-w32}(/,/^}/p" "$1" | grep ') return cand;$' | tail -n 1
 }
 mftrim_reads() {   # its loads, one per line
-    mftrim_verify "$1" | grep -o '(subject + cand[ +0-9]*)' | tr -d ' '
+    mftrim_verify "$1" "${2:-w32}" | grep -o '(subject + cand[ +0-9]*)' | tr -d ' '
 }
 if [ "$(mftrim_reads "$WORKDIR/mfs2.c")" = '(subject+cand+1)' ] \
+   && [ "$(mftrim_reads "$WORKDIR/mfs2.c" w16 | tr '\n' ' ')" = '(subject+cand) (subject+cand+1) ' ] \
    && mftrim_verify "$WORKDIR/mfs2.c" | grep -q '"\\000\\337")) == rx_w2("\\000T")' \
    && [ "$(mftrim_reads "$WORKDIR/mfs9.c" | tr '\n' ' ')" = '(subject+cand) (subject+cand+1) ' ] \
    && ! mftrim_verify "$WORKDIR/mfs9.c" | grep -q '000' \
@@ -2485,11 +2487,11 @@ else
     fail "the vrun verify (or its trim deny) is not as ruled on (?i)cat"
 fi
 # ... and `--memfn=no-vrun-pad` (lane r14p, R-14 follow-up): the rows'
-# padded verify. On (?i)cat (L 3) the main path verifies by ONE 4-byte word
-# whose mask keeps T alone (C and A proven, the fourth byte past the run
-# zeroed), and its guard holds that byte: i + 16 + 2 + 1. The final block
+# padded verify. On (?i)cat (L 3) the w32 main path verifies by ONE 4-byte
+# word whose mask keeps T alone (C and A proven, the fourth byte past the run
+# zeroed), and its guard holds that byte: i + 32 + 2 + 1. The final block
 # keeps the trimmed compare. The deny is the r14b text: one verify, guard
-# i + 18. Inert at -fno-memfn-simd.
+# i + 34. Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs10.c"
 pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-pad -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs11.c"
 if [ -s "$WORKDIR/mfs10.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs10.c"; then
@@ -2497,16 +2499,16 @@ if [ -s "$WORKDIR/mfs10.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs10.c"; the
 else
     fail "--memfn=no-vrun-pad at -fno-memfn-simd moved the artifact or did not compile"
 fi
-mfpad_w16() {   # the w16 helper
-    sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1"
+mfpad_w32() {   # the w32 helper (the level that reads KB, so T alone is left)
+    sed -n '/^static inline size_t rx_reqrun__w32(/,/^}/p' "$1"
 }
-if mfpad_w16 "$WORKDIR/mfs2.c" | grep -q '^    memcpy(&pk, "\\000\\000\\337\\000", 4);$' \
-   && mfpad_w16 "$WORKDIR/mfs2.c" | grep -q '^                if (((memcpy(&pw, subject + cand, 4), pw) & pk) == pt) return cand;$' \
-   && mfpad_w16 "$WORKDIR/mfs2.c" | grep -q '^        if (i + 19 <= n) {$' \
-   && [ "$(mfpad_w16 "$WORKDIR/mfs2.c" | grep -c ') return cand;$')" = 2 ] \
-   && [ "$(mfpad_w16 "$WORKDIR/mfs11.c" | grep -c ') return cand;$')" = 1 ] \
+if mfpad_w32 "$WORKDIR/mfs2.c" | grep -q '^    memcpy(&pk, "\\000\\000\\337\\000", 4);$' \
+   && mfpad_w32 "$WORKDIR/mfs2.c" | grep -q '^                if (((memcpy(&pw, subject + cand, 4), pw) & pk) == pt) return cand;$' \
+   && mfpad_w32 "$WORKDIR/mfs2.c" | grep -q '^        if (i + 35 <= n) {$' \
+   && [ "$(mfpad_w32 "$WORKDIR/mfs2.c" | grep -c ') return cand;$')" = 2 ] \
+   && [ "$(mfpad_w32 "$WORKDIR/mfs11.c" | grep -c ') return cand;$')" = 1 ] \
    && ! grep -q 'memcpy(&pw' "$WORKDIR/mfs11.c" \
-   && mfpad_w16 "$WORKDIR/mfs11.c" | grep -q '^        if (i + 18 <= n) {$' \
+   && mfpad_w32 "$WORKDIR/mfs11.c" | grep -q '^        if (i + 34 <= n) {$' \
    && [ "$(mftrim_verify "$WORKDIR/mfs11.c")" = "$(mftrim_verify "$WORKDIR/mfs2.c")" ] \
    && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs11.c"; then
     pass "-fmemfn-simd verifies the main path by one padded word; --memfn=no-vrun-pad by the run compare"

@@ -7,5 +7,5 @@ SAB_DESC='the w16 level reads two filter positions: its helper ANDs KB into the 
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S815. docs/dev/lanes/r16b_report.md carries the lane run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                     "_mm_cmpeq_epi8", "_mm_movemask_epi8", 1 },'
-SAB_AFTER='                     "_mm_cmpeq_epi8", "_mm_movemask_epi8", 2 },   /* SABOTAGE S815 */'
+SAB_BEFORE='                     1 /* KA alone, D147 addendum 16 */ },'
+SAB_AFTER='                     2 /* KA alone, D147 addendum 16 */ },   /* SABOTAGE S815 */'

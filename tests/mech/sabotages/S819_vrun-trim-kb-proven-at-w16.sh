@@ -8,4 +8,4 @@ SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    unsigned np = vrun_proven(x, k2, proven);'
-SAB_AFTER='    unsigned np = vrun_proven(x, vrun_kb(x, &ops_of[LV_X86_W32]), proven);   /* SABOTAGE S819 */'
+SAB_AFTER='    unsigned np = vrun_proven(x, vrun_kb(x, &ops_of[MF_NLEVEL - 1]), proven);   /* SABOTAGE S819 */'

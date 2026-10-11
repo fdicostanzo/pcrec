@@ -181,9 +181,11 @@ typedef struct {
 
 static const vrun_ops ops_of[MF_NLEVEL] = {
     [LV_X86_W16] = { "__m128i", "_mm_set1_epi8", "_mm_loadu_si128", "_mm_and_si128",
-                     "_mm_cmpeq_epi8", "_mm_movemask_epi8", 1 },
+                     "_mm_cmpeq_epi8", "_mm_movemask_epi8",
+                     1 /* KA alone, D147 addendum 16 */ },
     [LV_X86_W32] = { "__m256i", "_mm256_set1_epi8", "_mm256_loadu_si256", "_mm256_and_si256",
-                     "_mm256_cmpeq_epi8", "_mm256_movemask_epi8", 2 },
+                     "_mm256_cmpeq_epi8", "_mm256_movemask_epi8",
+                     2 /* KA and KB */ },
 };
 
 /* T: the highest byte offset from the candidate any term reads (ofsskip.c's
