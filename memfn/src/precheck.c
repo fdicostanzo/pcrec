@@ -2,7 +2,8 @@
  * Provenance: pcrec 691a8b7c (relicensed 0BSD by its author, D145 addendum 1):
  *   src/gen/emit_dfa.c (emit_req_one_byte, emit_req_run_check's call lines,
  *   emit_req_handoff's declaration and miss test, emit_req_set_rest's block,
- *   pcrec_emit_req_run_blocks' comment), transcribed (memfn/PROVENANCE.md).
+ *   pcrec_emit_req_run_blocks' comment), transcribed (memfn/PROVENANCE.md);
+ *   `landmark` (R-15, lane r15b) is original kit text.
  *
  * memfn/src/precheck.c — THE PRE-CHECK COMPOSITE, a scalar arm born at R4c
  * (integration.md §15.3-§15.5): one ALL_PRESENT site whose predicates are,
@@ -316,14 +317,14 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * unstated; `serves`: per field, the classes the text is right for (MF_ANY:
  * irrelevant to the text). Each cites the line above that justifies it.
  * Read only for some shapes, and so held by the predicate rather than
- * declared: `fn_name` (a FUNC part only, :186-188; run_part needs it, :69).
+ * declared: `fn_name` (a FUNC part only, :187-189; run_part needs it, :70).
  * The run compare's own fields are its rows' (runcmp.c).
  *
  * THE SPLIT (N3, row_contracts.md §5: "a shape-dependent row is split"). The
  * text depends on `miss` by handoff: an ON_MISS site writes no value, so its
  * text is right for EVERY stated miss (the row serves a stated miss rather
  * than declining it, R2's reading of a field it never reads); an ASSIGN site
- * tests the run call's result against `n` (:272), right only for a miss
+ * tests the run call's result against `n` (:273), right only for a miss
  * stated as `n`. A `serves` is per field, not per handoff, so the one
  * renderer is two rows, `precheck` (ON_MISS) and `precheck_assign`, each
  * with its own contract and both reporting the form id `precheck`. R-15
@@ -332,16 +333,16 @@ static int precheck_use(mf_art *art, uint32_t handle, const mf_hooks *h,
  * declarations, a predicate of its own, and the kit's first scalar deny.
  * Their common declarations are PRECHECK_SERVES below. */
 static const gate_use precheck_uses[] = {
-    /* :287-288 refuses a use without s, n, lo, indent or on_miss */
+    /* :288-289 refuses a use without s, n, lo, indent or on_miss */
     { CM(STMT), CM(ON_MISS), MF_PH_USE,
       FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss), GATE_ALWAYS },
 };
 
 static const gate_use precheck_assign_uses[] = {
-    /* :287-288, as precheck's */
+    /* :288-289, as precheck's */
     { CM(STMT), CM(ASSIGN), MF_PH_USE,
       FM(s) | FM(n) | FM(lo) | FM(indent) | FM(on_miss), GATE_ALWAYS },
-    /* :267-268 refuses an ASSIGN without result; :272 tests `result >= n`,
+    /* :268-269 refuses an ASSIGN without result; :273 tests `result >= n`,
        right only for a miss STATED as `n` (S1; R1 declines an unstated one) */
     { CM(STMT), CM(ASSIGN), MF_PH_USE, FM(result) | FM(miss), GATE_ALWAYS },
 };
@@ -349,33 +350,33 @@ static const gate_use precheck_assign_uses[] = {
 /* The rows' common `serves`: every field but handoff, ret_pred, miss,
  * result and result_decl, which each row states itself. */
 #define PRECHECK_SERVES \
-    [FLD_form]            = CM(STMT),                 /* :78 */ \
-    [FLD_op]              = CM(ALL_PRESENT),          /* :78 */ \
-    [FLD_reverse]         = CM(NO),                   /* :80 */ \
-    [FLD_empty]           = CM(E_MISS),               /* :80; the gate's `n <= lo` misses, :209 */ \
-    [FLD_end_back]        = CM(ZERO),                 /* :80 */ \
-    [FLD_pred]            = MF_ANY,                   /* not read: ALL_PRESENT reads preds, :85 */ \
-    [FLD_preds]           = CM(NONNEG),               /* :57, :68: every part at offset 0 */ \
+    [FLD_form]            = CM(STMT),                 /* :79 */ \
+    [FLD_op]              = CM(ALL_PRESENT),          /* :79 */ \
+    [FLD_reverse]         = CM(NO),                   /* :81 */ \
+    [FLD_empty]           = CM(E_MISS),               /* :81; the gate's `n <= lo` misses, :210 */ \
+    [FLD_end_back]        = CM(ZERO),                 /* :81 */ \
+    [FLD_pred]            = MF_ANY,                   /* not read: ALL_PRESENT reads preds, :86 */ \
+    [FLD_preds]           = CM(NONNEG),               /* :58, :69: every part at offset 0 */ \
     [FLD_guard_by_caller] = MF_ANY,                   /* not read; 0 off EXPR VERIFY (site_check) */ \
     [FLD_on_miss_leaves]  = CM(YES),                  /* the miss_leaves column below (select_arm) */ \
     [FLD_span_hi]         = MF_ANY,                   /* not read: a proven fact the text needs not */ \
-    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :196 renders run parts through the run \
+    [FLD_denies]          = CM(NONE) | CM(RUN_OVERLAP), /* :197 renders run parts through the run \
                                                          compare, whose walk reads them with a \
                                                          fallback per domain (runcmp.c rows[]) */ \
-    [FLD_fn_ref]          = MF_ANY,                   /* not read: each part's own fn_ref, :186, is \
-                                                         the predicate's (:68, :88) */ \
+    [FLD_fn_ref]          = MF_ANY,                   /* not read: each part's own fn_ref, :187, is \
+                                                         the predicate's (:69, :89) */ \
     [FLD_table_ref]       = MF_ANY,                   /* not read: a byte part reads its set bits, \
-                                                         :47-52; a run part has no SET term */ \
-    [FLD_s]               = CM(IDENT),                /* :210, :250 raw in `%s + %s` (S2) */ \
-    [FLD_n]               = CM(IDENT),                /* :209-210, :250 raw in `%s <= %s`, \
+                                                         :48-53; a run part has no SET term */ \
+    [FLD_s]               = CM(IDENT),                /* :211, :251 raw in `%s + %s` (S2) */ \
+    [FLD_n]               = CM(IDENT),                /* :210-211, :251 raw in `%s <= %s`, \
                                                          `%s - %s` (S3) */ \
-    [FLD_lo]              = CM(IDENT),                /* :209-210, :250 raw, as n (S4) */ \
+    [FLD_lo]              = CM(IDENT),                /* :210-211, :251 raw, as n (S4) */ \
     [FLD_floor]           = 0,                        /* a run part's function reads nothing \
                                                          below `pos` and takes no floor \
                                                          (ofsskip.c ofs_fn_applies): a stated \
                                                          floor is declined at define and refused \
                                                          at the use (R2) */ \
-    [FLD_on_miss]         = CM(JUMP) | CM(BRACED),    /* :211, :251, :272, :277 the `if`'s ONE \
+    [FLD_on_miss]         = CM(JUMP) | CM(BRACED),    /* :212, :252, :273, :278 the `if`'s ONE \
                                                          statement, unbraced: one jump or one \
                                                          block is that statement (S5) */ \
     [FLD_step]            = MF_ANY,                   /* not read (ADVANCE's) */ \
@@ -389,23 +390,23 @@ static const gate_use precheck_assign_uses[] = {
     [FLD_on_cand]         = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_on_cand_reach]   = MF_ANY,                   /* not read (ON_CAND's) */ \
     [FLD_member]          = MF_ANY,                   /* not read: a byte part is one memchr, \
-                                                         :210, :250 */ \
+                                                         :211, :251 */ \
     [FLD_table_name]      = MF_ANY,                   /* not read: no part has a SET term to name \
                                                          (ofsskip.c table_params) */ \
-    [FLD_fn_name]         = MF_ANY,                   /* :189 names each part, any name */ \
-    [FLD_note]            = MF_ANY,                   /* :194, :292 pcrec's own writer, as given */ \
-    [FLD_note_tag]        = MF_ANY,                   /* :141 a comment tag, as given */ \
-    [FLD_indent]          = MF_ANY,                   /* :207, :243 pcrec's prefix, as given */ \
-    [FLD_comment_tier]    = MF_ANY,                   /* :140 handed to cmt_open as given */ \
+    [FLD_fn_name]         = MF_ANY,                   /* :190 names each part, any name */ \
+    [FLD_note]            = MF_ANY,                   /* :195, :293 pcrec's own writer, as given */ \
+    [FLD_note_tag]        = MF_ANY,                   /* :142 a comment tag, as given */ \
+    [FLD_indent]          = MF_ANY,                   /* :208, :244 pcrec's prefix, as given */ \
+    [FLD_comment_tier]    = MF_ANY,                   /* :141 handed to cmt_open as given */ \
     [FLD_policy]          = MF_ANY,                   /* scalar: right under every policy (R4e' batch 1) */
 
 static const gate_contract precheck_ct = {
     "arms", "precheck", precheck_uses, sizeof precheck_uses / sizeof precheck_uses[0], {
     PRECHECK_SERVES
-    [FLD_handoff]         = CM(ON_MISS),              /* :79 */
-    [FLD_ret_pred]        = CM(NONE),                 /* :100; an ON_MISS site names none
+    [FLD_handoff]         = CM(ON_MISS),              /* :80 */
+    [FLD_ret_pred]        = CM(NONE),                 /* :101; an ON_MISS site names none
                                                          (site_check) */
-    [FLD_result]          = MF_ANY,                   /* not read: no part is ret_pred, :266 */
+    [FLD_result]          = MF_ANY,                   /* not read: no part is ret_pred, :267 */
     [FLD_result_decl]     = MF_ANY,                   /* not read, as result */
     [FLD_miss]            = MF_ANY,                   /* not read: an ON_MISS site writes no
                                                          value on a miss, it runs on_miss */
@@ -415,12 +416,12 @@ static const gate_contract precheck_assign_ct = {
     "arms", "precheck_assign", precheck_assign_uses,
     sizeof precheck_assign_uses / sizeof precheck_assign_uses[0], {
     PRECHECK_SERVES
-    [FLD_handoff]         = CM(ASSIGN),               /* :79 */
-    [FLD_ret_pred]        = CM(PRED),                 /* :100, :266 */
-    [FLD_result]          = MF_ANY,                   /* :269, :272 an lvalue, which binds tighter
+    [FLD_handoff]         = CM(ASSIGN),               /* :80 */
+    [FLD_ret_pred]        = CM(PRED),                 /* :101, :267 */
+    [FLD_result]          = MF_ANY,                   /* :270, :273 an lvalue, which binds tighter
                                                          than the `>=` it is pasted before */
-    [FLD_result_decl]     = MF_ANY,                   /* :269 a declaration prefix, as given */
-    [FLD_miss]            = CM(MISS_N),               /* :272 tests `>= n`: the run call's miss is
+    [FLD_result_decl]     = MF_ANY,                   /* :270 a declaration prefix, as given */
+    [FLD_miss]            = CM(MISS_N),               /* :273 tests `>= n`: the run call's miss is
                                                          its n (ofsskip.c ofs_fn_define) */
 }};
 
