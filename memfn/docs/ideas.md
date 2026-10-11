@@ -261,3 +261,61 @@ thirds of the pattern; does it recheck the whole span?"). Yes. For `(?i)cat`
     cheap per hit, and it matters only for dense hits.
 - Note: (2) is shared by every SIMD arm and by the scalar body, so it is
   part of the pc16 per-call loss against OFF as well.
+
+## 2026-10-11 — from the vrun loss survey: KB off when KA is very rare at w32 (hypothesis)
+
+Lane losssurv (report kept at worktrees/memfn-slot/losssurv/report.md;
+read-only over slot20/slot21). This is the one emit-time predicate with a
+reason behind it. At w32, render KA alone when 32 * rank_ppm[KA] / 1e6 <
+theta, with theta about 0.035 (rank_ppm[KA] up to ~1,100). KB costs a fixed
+load + AND per block and pays only through the KA false candidates it
+removes. When KA almost never fires, there is nothing to remove. Support is
+ONE cell (`sp`, `(?i)azqb`), with v17 at break-even. Promoting it needs a
+ladder of cells whose KA rates span ~1k-11k ppm, timed at w32. Frank ruled
+2026-10-11: accept the survey, build nothing now.
+
+## 2026-10-11 — 16-byte calls under w32 pay ~0.3 ns, systematically
+
+Survey residue. At w32, 26-30 of 41 cells lose about +0.3 ns on pc16 in
+BOTH runs (at w16 it is a coin flip). Unverified guess: a 16-byte call
+under the w32 dispatcher goes through two nested length checks, `__w32`'s
+`n - pos < 34` and then `__w16`'s `n - pos < 18`, before reaching
+`__body`. One check that routes straight to the body for spans below the
+smallest arm's minimum may remove it. Cheap if true; check the emitted text
+first.
+
+## 2026-10-11 — pcrec could tell the kit more of what it already knows about the workload (density and more)
+
+Frank: the survey's unexplained losses are mostly about the SUBJECT, which
+the kit cannot see. pcrec could pass more of what is known about it as
+facts (D157: facts, never methods). Today the only prior is `rank_ppm`,
+each candidate position's byte rate from a reference profile. Examples of
+facts that would have split the losses the survey could not:
+- **Hit density / candidate density prior**: expected run (or KA) hits per
+  KiB, beyond the per-byte rate. KB at w32 loses +3..+9% on dense-hit
+  subjects and wins 30-45% on sparse ones. Same cells, same kit facts; only
+  density separates them.
+- **Subject-length class**: typical call span (short calls of 16 bytes vs
+  1 MiB scans). pc16 losses (entry above) and the w16-vs-w32 cut-over both
+  depend on it. A caller that only ever matches short fields would want
+  the scalar body.
+- **Alphabet / byte-frequency profile of the actual workload**, not a
+  generic text prior: the `(?i)azqb` w16 loss (+33..+83% on sparse subjects,
+  -75..-95% on dense) flips on whether `z`/`q` are rare in THIS data.
+- **Call pattern**: first match only vs all matches (find-all). A held
+  candidate mask (entry 5) pays only under find-all, and re-entry
+  (REQ-HANDOFF-L1) changes which sites are hot.
+- **Min bytes from run start to pattern end** (entry 1) and the post-run
+  DFA state (2026-10-11 entry). These are pattern facts pcrec already has.
+Where the data could come from: pcrec already has a measured source.
+`pcrec-analyze` (analyze/, [FINDINGS] B6) counts an exemplar file into an
+`analysis` bundle (shipped `log` / `weblog` bundles). A user-supplied
+exemplar, or a named bundle (`--analysis NAME`), could carry the density,
+length class and byte profile into `mf_pred`, the same way rank priors
+travel. The kit's distance rules then pick per workload, not per guess.
+- Shape: new `mf_pred` fields (an `MF_SITE_ABI` bump, a request to main).
+  Unset = unknown, and the kit falls back to today's rule (no silent
+  defaults: unknown is a stated value, not a guess).
+- First guess: medium-high value if users supply exemplars. It turns
+  "accept the residue" into a choice per workload. It needs a [FINDINGS]
+  owner decision about what a bundle carries; that is main's design.
