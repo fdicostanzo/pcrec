@@ -436,3 +436,26 @@ than a bit-vector regex engine."
     cells are the obvious first look).
   - The survey (lane spansurv) also counts these BOUNDED TOKENS: max width
     <= 16 / 32, the number of distinct sets, and the slack sum (n - m).
+- Kit manager's note the same day: the fixed-length class span above IS
+  plan.md [SPAN-ISEL]'s "special case, the original filing" (Frank,
+  2026-10-10: per-position byte sets as a pcrec fact, a kit-side selector
+  builds the check). These entries add the masked-range unification, the
+  anchored cores and the bounded-token walk to it; they do not open a new
+  row. [SPAN-ISEL] is SAVED FOR LATER, after the low-hanging fruit (Frank).
+- Frank, on the bounded-token walk: it is a FOURTH engine type, the VM
+  analog to the vector engine's DFA analog. The two axes:
+
+  | | simulate a set of states (no backtracking) | control flow per candidate (choices, greedy, captures) |
+  |---|---|---|
+  | sequential over bytes | DFA (shift-and is its state-bit form) | the backtracking VM |
+  | parallel over positions (class bitmasks) | the bitstream engine, [SPAN-ISEL] / [Cam14+] (MatchStar, Advance) | classify once, then walk the masks (this entry) |
+
+  Both position-parallel cells share stage 1: classify a block into per-class
+  bitmasks (SIMD compares + movemask). They differ in stage 2: the bitstream
+  engine is straight-line bit algebra over all positions and outputs match
+  ENDS (a LOCATOR in D156's locate x finish). The mask walk is control
+  flow on one candidate's masks and outputs the leftmost-greedy span and
+  captures (a FINISHER). So they complement each other: bitstream locate,
+  then mask-walk finish. The interim wins (span verify, class filters,
+  ideas entries 4 and 6 and this one) all build stage 1, so they are
+  groundwork for either engine, not throwaway.
