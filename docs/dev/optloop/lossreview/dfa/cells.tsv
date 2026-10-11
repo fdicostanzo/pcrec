@@ -1,0 +1,80 @@
+set	pattern	regime	tier	group	auto_ns	best_nonsimd	best_ns	ratio_best	lost_ns	jit_ratio	rust_ratio	RX_DFA_SCAN	RX_DFA_PREFILTER	RX_DFA_START	RX_REQ_WHY	ns_B	loads_B	fwd_B	skip_B	pre_B	rev_B	calls	matches	memchr_calls	memchr_B	ns_per_call	lost_per_call	ns_per_memchr
+bounded	cls-atleast-4096	large-subject-throughput	A	BCLS	87600	libpcre2:jit-caps	59555	1.47	28046	1.47	0.0	unanchored	byte-class	reverse-pass	none	0.823	1.808	0.808	0.192	0.000	0.808	8	3	0	0.000	10950.0	3505.8	-
+bounded	cls-atleast-4096	match-compliance	C	BCLS	2116	rust:default-caps(SIMD-only)	276	7.67	1840	-	7.67	unanchored	byte-class	reverse-pass	none
+bounded	cls-atleast-4096	short-subject-search	C	BCLS	2342	rust:default-caps(SIMD-only)	259	9.05	2083	1.19	9.05	unanchored	byte-class	reverse-pass	none
+bounded	floor	match-compliance	C	CALL-FLOOR	434	rust:default-caps(SIMD-only)	295	1.47	139	-	1.47	unanchored	memchr	end-minus-width	dominated
+bounded	line-80	large-subject-throughput	A	BCLS	75408	libpcre2:jit-caps	32187	2.34	43221	2.34	0.07	unanchored	byte-class	reverse-pass	none	0.708	2.000	1.000	0.000	0.000	1.000	10	5	0	0.000	7540.8	4322.1	-
+bounded	pw-8-64	large-subject-throughput	A	BCLS	192612	libpcre2:jit-caps	129627	1.49	62985	1.49	0.3	unanchored	byte-class	reverse-pass	none	1.809	2.031	1.016	0.016	0.000	1.000	1669	1664	0	0.000	115.4	37.7	-
+capability	file-ext-order	large-subject-throughput	A	SCAN-SIMD	796187	libpcre2:jit-caps	265283	3.0	530904	3.0	4.46	unanchored	run-pinned	reverse-pass	dominated	0.170	1.031	0.000	1.031	0.000	0.000	11	0	71506	1.000	72380.6	48264.0	11.13
+capability	hex8-bounded	large-subject-throughput	A	FS-DFA	15094255	re2:default-caps	7799870	1.94	7294385	0.74	1.8	unanchored	first-class-bounded	end-minus-width	none	3.224	1.243	0.843	0.400	0.000	0.000	932	921	0	0.000	16195.6	7826.6	-
+capability	high-byte-run	large-subject-throughput	A	BCLS	1642747	libpcre2:jit-caps	1385369	1.19	257378	1.19	0.2	unanchored	byte-class	reverse-pass	none	0.351	1.000	0.000	1.000	0.000	0.000	11	0	0	0.000	149340.6	23398.0	-
+capability	keyword-prefix-order	large-subject-throughput	A	DENSE	2278895	libpcre2:jit-caps	1430637	1.59	848258	1.59	2.39	unanchored	offset-set	reverse-pass	dominated	0.487	1.061	0.016	1.030	0.000	0.016	24541	24530	164806	0.995	92.9	34.6	13.83
+capability	router-prefix-order	large-subject-throughput	A	SCAN-SIMD	396344	libpcre2:jit-caps	276268	1.43	120077	1.43	2.34	unanchored	run-pinned	reverse-pass	dominated	0.085	1.034	0.000	1.033	0.000	0.000	323	312	39130	1.000	1227.1	371.8	10.13
+capability	utf8-lead-no-cont	large-subject-throughput	A	LKA	1660680	libpcre2:jit-caps	1475053	1.13	185627	1.13	-	unanchored	byte-class-bounded	end-minus-width	none	0.355	1.000	0.000	1.000	0.000	0.000	11	0	0	0.000	150970.9	16875.2	-
+capability	wild-codegrammar-json-constant	large-subject-throughput	A	FS-DFA	8619128	re2:default-caps	7587000	1.14	1032127	1.06	9.04	unanchored	first-class-bounded	reverse-pass	none	1.841	1.127	0.371	0.756	0.000	0.000	11	0	0	0.000	783557.1	93829.7	-
+capability	wild-semdiv-altorder-foo-foobar-rustregex	large-subject-throughput	A	SCAN-SIMD	1267087	libpcre2:jit-caps	313902	4.04	953185	4.04	6.9	unanchored	run-pinned	reverse-pass	dominated	0.271	1.042	0.000	1.042	0.000	0.000	15	4	94788	1.000	84472.5	63545.7	13.37
+capability	wild-validator-email-owasp	large-subject-throughput	B	ANCH-ATTEMPT	46121	libpcre2:jit-caps	6390	7.22	39731	7.22	0.33	attempt	none	attempt-start	one-attempt	0.010	0.017	0.017	0.000	0.000	0.000	11	0	0	0.000	4192.8	3611.9	-
+capability	wild-waf-crs-942140-dbnames	large-subject-throughput	A	FS-DFA	12498823	re2:longest-caps	7593188	1.65	4905636	0.67	1.5	unanchored	first-class-bounded	reverse-pass	none	2.670	1.160	0.613	0.547	0.000	0.000	11	0	0	0.000	1136256.6	445966.9	-
+capability	wild-waf-crs-942270-union-select	large-subject-throughput	A	CI	1965675	libpcre2:jit-caps	207226	9.49	1758450	9.49	2.06	unanchored	byte-class	reverse-pass	emitted	0.420	2.115	0.000	0.000	2.115	0.000	11	0	134706	2.000	178697.7	159859.1	14.59
+capability	wild-waf-crs-942360-concat-sqli	large-subject-throughput	A	CARET	36466915	re2:default-caps	7597473	4.8	28869442	0.03	4.38	attempt	none	attempt-start	none	7.789	3.145	3.145	0.000	0.000	0.000	11	0	0	0.000	3315174.1	2624494.7	-
+capability	wild-waf-crs-942360-concat-sqli	short-subject-search	C	CARET	7419	rust:default-caps(SIMD-only)	4764	1.55	2654	0.44	1.55	attempt	none	attempt-start	none
+litrun	alt-foo-tails	large-subject-throughput	A	SCAN-SIMD	555689	libpcre2:jit-caps	67762	8.2	487927	8.2	-	unanchored	run-pinned	reverse-pass	dominated
+litrun	lit-l16	large-subject-throughput	A	SEL-LIT	734727	libpcre2:jit-caps	580786	1.27	153941	1.27	-	unanchored	run-pinned	end-minus-width	dominated
+litrun	lit-l31	large-subject-throughput	A	SEL-LIT	523008	libpcre2:jit-caps	310440	1.68	212567	1.68	-	unanchored	offset-set	end-minus-width	emitted
+litrun	lit-l40	large-subject-throughput	A	SEL-LIT	346286	libpcre2:jit-caps	143007	2.42	203279	2.42	-	unanchored	offset-set	end-minus-width	emitted
+litrun	lit-l8	large-subject-throughput	A	SEL-LIT	2411137	libpcre2:jit-caps	1763074	1.37	648063	1.37	-	unanchored	run-pinned	end-minus-width	dominated
+loglines	hex32-id	large-subject-throughput	A	FS-DFA	11052363	rust:default-caps(SIMD-only)	7465417	1.48	3586946	0.72	1.48	unanchored	first-class-bounded	end-minus-width	none	2.645	1.246	0.847	0.400	0.000	0.000	268	256	0	0.000	41240.2	13384.1	-
+loglines	ipv6	large-subject-throughput	A	SCAN-SIMD	10616541	rust:default-caps(SIMD-only)	7477277	1.42	3139263	0.33	1.42	unanchored	byte-class	reverse-pass	emitted	2.541	1.194	0.647	0.543	0.001	0.002	268	256	268	0.001	39614.0	11713.7	39613.96
+loglines	iso-ts	large-subject-throughput	A	SCAN-SIMD	1152509	libpcre2:jit-caps	962035	1.2	190474	1.2	0.2	unanchored	offset-set	reverse-pass	dominated	0.276	1.025	0.014	1.010	0.000	0.002	268	256	73531	0.992	4300.4	710.7	15.67
+loglines	stack-frame	large-subject-throughput	A	FS-DFA	1307579	libpcre2:jit-caps	475091	2.75	832488	2.75	2.38	unanchored	offset-set-bounded	reverse-pass	emitted	0.313	1.098	0.015	0.000	1.068	0.014	906	894	90225	1.023	1443.2	918.9	14.49
+loglines	stack-frame	short-subject-search	B	FS-DFA	33359	libpcre2:jit-caps	17535	1.9	15823	1.9	2.58	unanchored	offset-set-bounded	reverse-pass	emitted
+syntax	alt-nested	large-subject-throughput	A	DENSE	1954538	libpcre2:jit-caps	1198517	1.63	756021	1.63	2.19	unanchored	byte-class	end-minus-width	none	1.420	1.076	0.171	0.906	0.000	0.000	11395	11392	0	0.000	171.5	66.3	-
+syntax	alt-two	large-subject-throughput	A	DENSE	1765703	libpcre2:jit-caps	1158949	1.52	606753	1.52	2.03	unanchored	byte-class	end-minus-width	none	1.283	1.078	0.161	0.917	0.000	0.000	11395	11392	0	0.000	155.0	53.2	-
+syntax	anc-m-caret	large-subject-throughput	A	SCAN-SIMD	389260	libpcre2:jit-caps	189762	2.05	199498	2.05	1.62	attempt	memchr	attempt-start	emitted	0.283	1.040	0.038	0.000	0.984	0.000	344	341	28020	0.981	1131.6	579.9	13.89
+syntax	anc-m-dollar	large-subject-throughput	A	SCAN-SIMD	519086	libpcre2:jit-caps	220210	2.36	298876	2.36	2.19	unanchored	offset-set-bounded	end-minus-width	emitted	0.377	1.036	0.014	0.961	0.062	0.000	195	192	42040	0.990	2662.0	1532.7	12.35
+syntax	asr-nwb	large-subject-throughput	A	FS-DFA	919497	libpcre2:jit-caps	368396	2.5	551101	2.5	1.57	unanchored	offset-set-bounded	end-minus-width	emitted	0.668	1.089	0.051	0.745	0.293	0.000	2054	2051	79737	0.967	447.7	268.3	11.53
+syntax	asr-wb	large-subject-throughput	A	FS-DFA	925799	libpcre2:jit-caps	392820	2.36	532978	2.36	1.53	unanchored	offset-set-bounded	end-minus-width	emitted	0.673	1.088	0.059	0.772	0.257	0.000	1862	1859	81011	0.959	497.2	286.2	11.43
+syntax	cls-dot	large-subject-throughput	A	DENSE	730432	libpcre2:jit-caps	444716	1.64	285717	1.64	0.43	unanchored	memchr	end-minus-width	dominated	0.531	1.037	0.098	0.938	0.000	0.000	7631	7628	42663	0.938	95.7	37.4	17.12
+syntax	cls-fold-pair	large-subject-throughput	A	DENSE	735973	libpcre2:jit-caps	436864	1.68	299109	1.68	1.1	unanchored	memchr	end-minus-width	emitted	0.535	1.094	0.022	0.006	1.066	0.000	7631	7628	50291	0.994	96.4	39.2	14.63
+syntax	cls-h	large-subject-throughput	A	SCAN-SIMD	260661	libpcre2:jit-caps	132217	1.97	128445	1.97	-	unanchored	memchr	reverse-pass	emitted	0.189	1.090	0.023	0.985	0.080	0.001	154	151	11615	1.064	1692.6	834.1	22.44
+syntax	cls-i-class	large-subject-throughput	A	CI	1297101	rust:default-caps(SIMD-only)	926052	1.4	371049	0.96	1.4	unanchored	byte-class	end-minus-width	none	0.942	1.039	0.090	0.948	0.000	0.000	8065	8062	0	0.000	160.8	46.0	-
+syntax	cls-n-uc	large-subject-throughput	A	SCAN-SIMD	586587	libpcre2:jit-caps	300586	1.95	286001	1.95	-	unanchored	offset-set	end-minus-width	emitted	0.426	1.185	0.013	0.352	0.820	0.000	3596	3593	43816	1.122	163.1	79.5	13.39
+syntax	cls-pair-ctl	large-subject-throughput	A	SCAN-SIMD	735578	rust:default-caps(SIMD-only)	647727	1.14	87850	0.64	1.14	unanchored	memchr	end-minus-width	emitted	0.534	1.094	0.022	0.006	1.066	0.000	7631	7628	50291	0.994	96.4	11.5	14.63
+syntax	cls-s-lc	large-subject-throughput	A	SCAN-SIMD	721183	libpcre2:jit-caps	286720	2.52	434462	2.52	2.09	unanchored	memchr	reverse-pass	emitted	0.524	1.044	0.076	0.954	0.013	0.000	16	13	42888	0.967	45073.9	27153.9	16.82
+syntax	cls-v	large-subject-throughput	A	SCAN-SIMD	440025	libpcre2:jit-caps	170296	2.58	269729	2.58	-	unanchored	offset-set	reverse-pass	emitted	0.320	1.026	0.013	1.011	0.001	0.000	5	2	30295	0.991	88005.0	53945.8	14.52
+syntax	esc-hex	large-subject-throughput	A	DENSE	664418	libpcre2:jit-caps	514904	1.29	149514	1.29	1.92	unanchored	run-pinned	end-minus-width	dominated	0.483	1.089	0.022	1.066	0.000	0.000	7631	7628	42663	0.989	87.1	19.6	15.57
+syntax	esc-nl	large-subject-throughput	A	SCAN-SIMD	331369	libpcre2:jit-caps	166740	1.99	164630	1.99	4.64	unanchored	run-pinned	end-minus-width	dominated	0.241	1.021	0.000	1.021	0.000	0.000	5	2	27666	1.000	66273.8	32926.0	11.98
+syntax	esc-octal-0	large-subject-throughput	A	SCAN-SIMD	403357	libpcre2:jit-caps	168150	2.4	235206	2.4	-	unanchored	run-pinned	end-minus-width	dominated	0.293	1.034	0.000	1.034	0.000	0.000	39	36	30413	1.000	10342.5	6030.9	13.26
+syntax	esc-quote	large-subject-throughput	A	SCAN-SIMD	143396	libpcre2:jit-caps	106124	1.35	37272	1.35	-	unanchored	offset-set	end-minus-width	emitted	0.104	1.010	0.000	0.000	1.009	0.000	75	72	12462	1.000	1911.9	497.0	11.51
+syntax	esc-tab	large-subject-throughput	A	SCAN-SIMD	65142	rust:default-caps(SIMD-only)	56460	1.15	8682	0.57	1.15	unanchored	run-pinned	end-minus-width	dominated	0.047	1.004	0.000	1.004	0.000	0.000	28	25	3565	1.000	2326.5	310.1	18.27
+syntax	floor	match-compliance	C	CALL-FLOOR	372	rust:default-caps(SIMD-only)	239	1.56	133	-	1.56	unanchored	memchr	end-minus-width	dominated
+syntax	grp-noncap	large-subject-throughput	A	DENSE	206181	libpcre2:jit-caps	163637	1.26	42544	1.26	0.91	unanchored	offset-set	reverse-pass	dominated	0.150	1.015	0.004	1.006	0.000	0.004	1983	1980	10924	0.999	104.0	21.5	18.87
+syntax	lit-cat	large-subject-throughput	A	DENSE	663117	libpcre2:jit-caps	514768	1.29	148349	1.29	1.92	unanchored	run-pinned	end-minus-width	dominated	0.482	1.089	0.022	1.066	0.000	0.000	7631	7628	42663	0.989	86.9	19.4	15.54
+syntax	mod-i	large-subject-throughput	A	CI	1024504	libpcre2:jit-caps	565430	1.81	459074	1.81	1.24	unanchored	byte-class	end-minus-width	emitted	0.744	5.149	0.023	0.006	5.120	0.000	8065	8062	53301	5.038	127.0	56.9	19.22
+syntax	mod-n	large-subject-throughput	A	DENSE	662365	libpcre2:jit-caps	521149	1.27	141216	1.27	-	unanchored	run-pinned	end-minus-width	dominated	0.481	1.089	0.022	1.066	0.000	0.000	7631	7628	42663	0.989	86.8	18.5	15.53
+syntax	mod-r	large-subject-throughput	A	CI	1023083	libpcre2:jit-caps	565790	1.81	457293	1.81	-	unanchored	byte-class	end-minus-width	emitted	0.743	5.149	0.023	0.006	5.120	0.000	8065	8062	53301	5.038	126.9	56.7	19.19
+syntax	mod-reset	large-subject-throughput	A	DENSE	952377	libpcre2:jit-caps	738167	1.29	214210	1.29	-	unanchored	run-pinned	end-minus-width	dominated	0.692	1.096	0.023	1.073	0.000	0.000	8065	8062	93897	0.988	118.1	26.6	10.14
+syntax	mod-s	large-subject-throughput	A	SCAN-SIMD	446065	libpcre2:jit-caps	169776	2.63	276290	2.63	2.54	unanchored	offset-set	end-minus-width	emitted	0.324	1.027	0.016	0.994	0.017	0.000	41	38	30444	0.988	10879.6	6738.8	14.65
+syntax	mod-unset	large-subject-throughput	A	DENSE	951088	libpcre2:jit-caps	740251	1.28	210837	1.28	1.37	unanchored	run-pinned	end-minus-width	dominated	0.691	1.096	0.023	1.073	0.000	0.000	8065	8062	93897	0.988	117.9	26.1	10.13
+syntax	mod-x	large-subject-throughput	A	DENSE	663008	libpcre2:jit-caps	513013	1.29	149995	1.29	1.91	unanchored	run-pinned	end-minus-width	dominated	0.482	1.089	0.022	1.066	0.000	0.000	7631	7628	42663	0.989	86.9	19.7	15.54
+syntax	qnt-quest	large-subject-throughput	A	SCAN-SIMD	597721	libpcre2:jit-caps	445788	1.34	151933	1.34	1.37	unanchored	offset-set	reverse-pass	emitted	0.434	1.099	0.015	0.004	1.064	0.015	3032	3029	45692	0.991	197.1	50.1	13.08
+syntax	qnt-quest	match-compliance	C	SCAN-SIMD	386	rust:default-caps(SIMD-only)	271	1.42	115	-	1.42	unanchored	offset-set	reverse-pass	emitted
+utf8	alt-distinct-lead	large-subject-throughput	A	WIDE-ALT	2775951	rust:default-caps(SIMD-only)	377744	7.35	2398206	0.7	7.35	unanchored	byte-class	reverse-pass	none
+utf8	alt-nearmiss	large-subject-throughput	A	U8-PICK	141249	rust:default-caps(SIMD-only)	76455	1.85	64794	0.06	1.85	unanchored	offset-set	end-minus-width	emitted
+utf8	asr-b-ascii	large-subject-throughput	A	FS-DFA	501573	rust:default-caps(SIMD-only)	99322	5.05	402251	0.2	5.05	unanchored	offset-set-bounded	end-minus-width	emitted
+utf8	ci-ascii-control	large-subject-throughput	A	CI	405107	rust:default-caps(SIMD-only)	242638	1.67	162469	0.16	1.67	unanchored	byte-class	end-minus-width	emitted
+utf8	ci-kelvin	large-subject-throughput	A	CI	709467	rust:default-caps(SIMD-only)	364201	1.95	345265	0.19	1.95	unanchored	byte-class	landing	none
+utf8	ci-moskva	large-subject-throughput	A	CI	1297344	rust:default-caps(SIMD-only)	481035	2.7	816310	0.49	2.7	unanchored	memchr	reverse-pass	dominated
+utf8	ci-sigma	large-subject-throughput	A	CI	572998	rust:default-caps(SIMD-only)	167062	3.43	405936	0.2	3.43	unanchored	byte-class	end-minus-width	none
+utf8	ci-strasse	large-subject-throughput	A	CI	946212	rust:default-caps(SIMD-only)	394967	2.37	551245	0.23	2.37	unanchored	byte-class	reverse-pass	emitted
+utf8	ci-turkish-i	large-subject-throughput	A	CI	1261955	rust:default-caps(SIMD-only)	1113161	1.13	148794	0.29	1.13	unanchored	byte-class	end-minus-width	none
+utf8	cls-dot-rep	large-subject-throughput	C	ENDWIN-ENC	89	rust:default-caps(SIMD-only)	42	2.12	47	0.0	2.12	attempt	none	attempt-start	none
+utf8	lit-1ch-3b	large-subject-throughput	A	U8-PICK	155207	rust:default-caps(SIMD-only)	114856	1.35	40351	0.06	1.35	unanchored	offset-set	end-minus-width	emitted
+utf8	lit-1ch-4b	large-subject-throughput	A	U8-PICK	204841	re2:default-caps	70471	2.91	134371	0.08	2.29	unanchored	offset-set	end-minus-width	emitted
+utf8	lit-cyr-run	large-subject-throughput	A	U8-PICK	94976	rust:default-caps(SIMD-only)	59623	1.59	35353	0.04	1.59	unanchored	offset-set	end-minus-width	emitted
+utf8	lit-mixed-ascii	large-subject-throughput	A	U8-PICK	72006	rust:default-caps(SIMD-only)	59728	1.2	12278	0.03	1.2	unanchored	offset-set	reverse-pass	emitted
+utf8	lit-nfc-pair	large-subject-throughput	A	U8-PICK	234249	rust:default-caps(SIMD-only)	81810	2.86	152439	0.09	2.86	unanchored	offset-set	end-minus-width	emitted
+utf8	lit-offset-at-head	large-subject-throughput	A	U8-PICK	226573	re2:default-caps	28334	8.0	198239	0.09	4.63	unanchored	offset-set	end-minus-width	emitted
+utf8	lit-sharp-s	large-subject-throughput	A	U8-PICK	622081	re2:default-caps	59694	10.42	562388	0.26	10.55	unanchored	offset-set	end-minus-width	emitted
+utf8	qnt-bounded-4b	large-subject-throughput	A	U8-PICK	193362	rust:default-caps(SIMD-only)	89289	2.17	104073	0.08	2.17	unanchored	offset-set	reverse-pass	emitted
+utf8	qnt-counted-3b	large-subject-throughput	A	U8-PICK	140999	rust:default-caps(SIMD-only)	66651	2.11	74348	0.06	2.11	unanchored	offset-set	reverse-pass	emitted

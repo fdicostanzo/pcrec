@@ -10,6 +10,6 @@ same-named instrument directory (own CLAUDE.md); coordination is by file name on
   the per-cause roll-up ranked by total loss, the phase-2 seeds (fix-existing first) and 20 owed twins.
 - `misc.md` + `misc/` — lane `lrmisc` (utf8 and litrun trailing cells, K103, K104, `tail-dotstar-txt`,
   the rlhbuild hcolon items, the D160 prior-shape sweep).
-- `dfa.md` + `dfa/` — the DFA-route share (lane `lrdfa`).
+- `dfa.md` + `dfa/` — **the DFA-route share** (lane `lrdfa`, 2026-10-11): 55 cells (29 attributed, 26 SIMD/rust-only listed), causes by total loss, phase-2 seeds and 19 answer-checked twins with `dfa/twins/time_twins.sh` owed.
 
 Phases 2 and 3 (general fixes, the D6 panel, the ranked list to Frank) read these files.

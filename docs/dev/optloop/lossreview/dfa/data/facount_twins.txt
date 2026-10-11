@@ -1,0 +1,13 @@
+mod-i.base	bytes=1376256	calls=8065	matches=8062	memchr_calls=53301	memchr_B/B=5.038	memcmp=0
+mod-i.k101	bytes=1376256	calls=8065	matches=8062	memchr_calls=88333	memchr_B/B=1.956	memcmp=0
+mod-i.deny-fold	bytes=1376256	calls=8065	matches=8062	memchr_calls=0	memchr_B/B=0.000	memcmp=0
+union.base	bytes=4681573	calls=11	matches=0	memchr_calls=134706	memchr_B/B=2.000	memcmp=0
+union.select_c	bytes=4681573	calls=11	matches=0	memchr_calls=134706	memchr_B/B=2.000	memcmp=0
+union.from_m	bytes=4681573	calls=11	matches=0	memchr_calls=55102	memchr_B/B=2.000	memcmp=0
+union.from_f	bytes=4681573	calls=11	matches=0	memchr_calls=98773	memchr_B/B=2.000	memcmp=0
+union.union_u	bytes=4681573	calls=11	matches=0	memchr_calls=181175	memchr_B/B=2.000	memcmp=0
+email.base	bytes=4681573	calls=11	matches=0	memchr_calls=0	memchr_B/B=0.000	memcmp=0
+email.precheck	bytes=4681573	calls=11	matches=0	memchr_calls=11	memchr_B/B=1.000	memcmp=0
+concat.base	bytes=4681573	calls=11	matches=0	memchr_calls=0	memchr_B/B=0.000	memcmp=0
+concat.split	bytes=4681573	calls=11	matches=0	memchr_calls=0	memchr_B/B=0.000	memcmp=0
+email.deferpre	bytes=4681573	calls=11	matches=0	memchr_calls=2	memchr_B/B=0.017	memcmp=0
