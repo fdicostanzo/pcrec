@@ -1368,3 +1368,22 @@ pointer when a kit change merges to main.
   the dense-hit / short-span regimes are re-timed before KB's losses are
   called final. Posted as a responses notice with proposed D-entry text
   and a proposed request for main to file.
+
+## 2026-10-11 — R-14 built (trim + padded word), slot21 prepared
+
+- R-14 filed by main (D147 addendum 15) and acked. Lane r14b (opus): the
+  position-trimmed vrun verify, deny `vrun-trim`, S793-S796. Frank then
+  asked whether one wide masked compare beats single-byte checks. It does:
+  the cost is loads and branches. A mid-run design-change message to r14b was
+  MISSED (its report never mentions it; see memory
+  pcrec-no-addenda-to-running-lanes), so a fresh lane, r14p (opus), built
+  the padded word on top: one w4/w8 over the whole run in the main path,
+  deny `vrun-pad`, S797-S799. r14p corrected my premise: the top lane has 0
+  bytes past its run, so the main guard now reserves E = P - L extra bytes.
+- Both merged into lane/memfn-r14 (74b8e0fd); light suites green in both
+  lanes.
+- Lane s21prep (sonnet): rq4 harness generalised to arm sets (3-arm mode
+  reproduces slot20 byte for byte), plus the slot21 script: the heavy chain
+  + 6-arm timing (slot21x: DEFAULT/NOPAD/FULL/KBDENY/FULLKB/OFF; FULLKB
+  makes F-FK slot20's exact D-K control). Merged (bae70443). Dry run against
+  worktrees/r14 green (02:52). Estimate ~3 h 50 min, timing last (137 min).
