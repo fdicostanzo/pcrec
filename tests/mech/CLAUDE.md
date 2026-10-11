@@ -3746,3 +3746,15 @@ arm `g2gate`. S800 later occurrence (search from lo + 1), S801 empty test
 dropped (UBSan's nonnull check on the NULL subject), S802 miss stores lo
 and falls through, S803 the deny unwired (`opt` NULL), S804 `single_byte`
 widened to any non-empty set. Solo verdicts: docs/dev/lanes/r15b_report.md §5.
+
+## [MEMFN] R-16 — S815-S819 (lane r16b, 2026-10-11)
+
+KB (vrun.c's second filter position) at w32 only, D147 addendum 16: a
+PERFORMANCE choice, so the rows are held by G2's SIMD family's per-level
+filter rule (`run_g2_simd.py`'s `KB_LEVELS`, whole- and final-block loads,
+`KBLVL_FLOOR`) and the cli `(?i)cat` case, not by answers. S815 KB back at
+w16, S816 KB dropped at w32, S817 the w16 rung under a w32 helper keeps KB
+(KA alone only where vrun-w32 is denied), S818 the final block's mask drops
+KB while the verify still trims it, S819 the trim takes KB as proven at
+w16. S753 (rankuse's deny-ignored row) is the deny-at-w32 fault and was
+re-run. Solo verdicts: docs/dev/lanes/r16b_report.md.

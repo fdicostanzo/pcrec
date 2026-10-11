@@ -28,8 +28,9 @@
  * scanned position KA (the predicate's `plan_pos`, the cube `fn-pair`
  * scans), `(s[c + KA] & M) == V` for VW candidates at once: one unaligned
  * load at `i + KA`, an AND with the broadcast mask, a bytewise compare with
- * the broadcast byte, a movemask; where the ranking gives a second position
- * KB (below), its compare is ANDed in before the movemask. Each set lane, lowest first, is verified
+ * the broadcast byte, a movemask; at w32, where the ranking gives a second
+ * position KB (below), its compare is ANDed in before the movemask. Each
+ * set lane, lowest first, is verified
  * by the BODY's own run compare (runcmp.c, the row the walk picks; [r9 C-12]:
  * the `denies` class reaches it as it reaches the floor) less the positions
  * the mask proved (VERIFY TRIM, below), and the first that verifies is
@@ -43,8 +44,9 @@
  * pcrec's prior rate, rarest first; request RQ-2). KB is the FIRST ranked
  * position other than KA, and its compare is ANDed with KA's before the
  * movemask (R-1's `ffl`: `vmask(vand(eq_KA, eq_KB))`). No KB (KA alone,
- * R-13's filter) where the ranking states none: rank_n 0 (no facts), or
- * every ranked position is KA (rank_n 1). The ranking's ORDER is the only
+ * R-13's filter) at a level that reads one position (w16, below), or where
+ * the ranking states none: rank_n 0 (no facts), or every ranked position is
+ * KA (rank_n 1). The ranking's ORDER is the only
  * fact read; its rates are not (a rate threshold would be a tuning constant
  * with no measurement behind it). compose.c's `rank_ok` refuses a ranking
  * that is not distinct positions of the scanned RUN term, so every entry
@@ -53,11 +55,19 @@
  *     `plan_pos`), the position R-1's four timed cells all filtered on.
  *     Observed (rq2_report.md §1-2), pcrec's `rank_pos[0]` IS KA on every
  *     PRE and OFS predicate of the corpus, so KB is then `rank_pos[1]`.
- *   - HOW MANY: two. UNMEASURED DEFAULT: the pair is the form R-1 timed
- *     (tb_r4b.c `ffl`); one, two and three positions have not been timed
- *     against each other. The deny `--memfn=no-vrun-kb` renders KA alone,
- *     so RQ-4's tier-U slot times the choice as DEFAULT vs that deny.
- *   - DISTANCE: none required beyond KB != KA. DERIVED for correctness:
+ *   - HOW MANY: per level, the level's `npos` (ops_of[]). RULED (D147
+ *     addendum 16, Q-R14-1): two at w32, one at w16. MEASURED-UNOFFICIAL
+ *     (slot21, dev box zen4, after R-14's trimmed and padded verify): KB at
+ *     w16 won throughput 133 / lost 59 against KA alone, while w32's KB
+ *     still won 190 / lost 18 (docs/dev/lanes/r14p_report.md). The w16
+ *     helper reads KA alone wherever it renders: standalone (vrun-w16) and
+ *     as vrun-w32's rung (the w32 helper falls through to it). The pair is
+ *     the form R-1 timed (tb_r4b.c `ffl`); three positions have not been
+ *     timed. The deny `--memfn=no-vrun-kb` renders KA alone at every level;
+ *     the official verdict is the bench's on the target hardware (D144
+ *     addendum 4).
+ *   - DISTANCE: none required beyond KB != KA (the level, not the distance,
+ *     decides whether KB is read). DERIVED for correctness:
  *     every ranked position lies in the run, so KB <= T and its load sits
  *     inside the reach R already derived for KA (below). Whether a FAR KB
  *     beats the rarer near one (adjacent bytes co-occur, so the product of
@@ -113,7 +123,7 @@
  *     `maxk`). Below it the entry test falls through, so the vector body
  *     never runs a partial block (§R4.9.3).
  *   - A whole block at i (i + R <= n) loads [i + K, i + K + VW) for K in
- *     {KA, KB}: K <= T, so its highest byte is <= i + T + VW - 1 < n; K >=
+ *     {KA, KB} ({KA} at w16): K <= T, so its highest byte is <= i + T + VW - 1 < n; K >=
  *     0 (the term's offset is >= 0, APPLIES) and i starts at pos.
  *   - The final block f = n - R >= pos (the entry test) loads [f + K,
  *     f + K + VW), highest <= n - 1. It is taken when the loop exits with
@@ -144,9 +154,10 @@
  *              DERIVED to cost one load and one branch where the words form
  *              costs two, and its deny `no-vrun-pad` is the arm a re-timing
  *              measures it against.
- *   KB         UNMEASURED DEFAULT: two positions, KB the first ranked other
- *              than KA, no distance rule (SECOND FILTER POSITION above);
- *              its deny `no-vrun-kb` is the arm RQ-4's slot times it against.
+ *   KB         RULED (D147 addendum 16): two positions at w32 (KB the first
+ *              ranked other than KA), one at w16 (the level's `npos`), no
+ *              distance rule (SECOND FILTER POSITION above); its deny
+ *              `no-vrun-kb` renders KA alone at every level.
  *   VRUN_MAX_RUN  CHOSEN shape bound (32), not a tuning constant: the
  *              guarded text holds one run compare, whose text grows with
  *              the run's length, and Q-R9-9 (RULED (a)) bounds each row's
@@ -160,16 +171,21 @@
 
 #define VRUN_MAX_RUN 32
 
-/* The level's intrinsic spellings: the only per-level text of the form. */
+/* The level's intrinsic spellings and how many filter positions it reads:
+ * the only per-level text and choice of the form. `npos` is 1 (KA alone) or
+ * 2 (KA and KB); KB at w32 only is D147 addendum 16 (SECOND FILTER POSITION). */
 typedef struct {
     const char *type, *set1, *load, *and_, *eq, *mmask;
+    int npos;
 } vrun_ops;
 
 static const vrun_ops ops_of[MF_NLEVEL] = {
     [LV_X86_W16] = { "__m128i", "_mm_set1_epi8", "_mm_loadu_si128", "_mm_and_si128",
-                     "_mm_cmpeq_epi8", "_mm_movemask_epi8" },
+                     "_mm_cmpeq_epi8", "_mm_movemask_epi8",
+                     1 /* KA alone, D147 addendum 16 */ },
     [LV_X86_W32] = { "__m256i", "_mm256_set1_epi8", "_mm256_loadu_si256", "_mm256_and_si256",
-                     "_mm256_cmpeq_epi8", "_mm256_movemask_epi8" },
+                     "_mm256_cmpeq_epi8", "_mm256_movemask_epi8",
+                     2 /* KA and KB */ },
 };
 
 /* T: the highest byte offset from the candidate any term reads (ofsskip.c's
@@ -211,11 +227,12 @@ static int vrun_applies(const mf_site *s, const mf_pred *p)
 
 /* KB, the second filter position as a read offset from the candidate (the
  * module comment's SECOND FILTER POSITION): the first ranked position that
- * is not KA, or -1 for none (no ranking, the ranking is KA alone, or its
- * deny `no-vrun-kb`). */
-static int vrun_kb(const fn_in *x)
+ * is not KA, or -1 for none (a level reading KA alone, no ranking, the
+ * ranking is KA alone, or its deny `no-vrun-kb`). */
+static int vrun_kb(const fn_in *x, const vrun_ops *v)
 {
     const mf_pred *p = x->p;
+    if (v->npos < 2) return -1;
     if (kit_opt_denied(x->site->opts, "vrun-kb")) return -1;
     for (unsigned i = 0; i < p->rank_n; i++) {
         int k = p->term[0].offset + p->rank_pos[i];
@@ -324,7 +341,7 @@ static int vrun_render(mf_art *art, const mf_hooks *h, const fn_in *x,
     const mf_level *lv = kit_level(d->level);
     const vrun_ops *v = &ops_of[d->level];
     const mf_term *t = &x->p->term[0];
-    int ka = x->k, k2 = vrun_kb(x);
+    int ka = x->k, k2 = vrun_kb(x, v);
     int ma = t->mask ? t->mask[ka - t->offset] : 0xFF, va = t->run[ka - t->offset];
     int mb = k2 < 0 ? 0xFF : t->mask ? t->mask[k2 - t->offset] : 0xFF;
     int vb = k2 < 0 ? 0 : t->run[k2 - t->offset];
@@ -400,8 +417,11 @@ static const char *const vrun_no_rungs[] = { NULL };
  * r14b, 2026-10-11) writes 2,583 / 2,643 / 5,214 there, so the bound, the
  * larger of the two arms, did not move. The padded verify (lane r14p) is
  * rendered for runs of 3 or 5-7 bytes only, far below that site's text; G2
- * takes the alone maximum over all four trim x pad arms. */
-#define VRUN_W16_GUARDED_MAX 2700
+ * takes the alone maximum over all four trim x pad arms. Since R-16 (lane
+ * r16b, D147 addendum 16) the w16 helper reads KA alone at every arm: its
+ * alone maximum is 2,383 again (w32 2,721, unchanged; `vrun@w32+w16` 4,975
+ * over G2's space), so the w16 bound is re-pinned to 2,400. */
+#define VRUN_W16_GUARDED_MAX 2400
 #define VRUN_W32_GUARDED_MAX 2800
 
 /* guarded_max: the bound on the guarded bytes ONE rendering of the row

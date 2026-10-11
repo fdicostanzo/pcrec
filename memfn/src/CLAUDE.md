@@ -129,8 +129,11 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   (2026-10-09, D157) the candidate mask ANDs a SECOND position, KB, the
   first position of pcrec's rarity ranking (`mf_pred.rank_*`) other than KA
   (`vrun_kb`; none where the ranking states no other), denied by
-  `--memfn=no-vrun-kb`; two positions is an `UNMEASURED DEFAULT` (the
-  form R-1 timed), no distance rule beyond KB != KA (derived). Since lane
+  `--memfn=no-vrun-kb`; no distance rule beyond KB != KA (derived). Since
+  lane r16b (R-16, D147 addendum 16, RULED) KB is read at w32 ONLY: the
+  level's `npos` in vrun.c's per-level table `ops_of[]` (1 at w16, 2 at
+  w32), so the w16 helper, standalone or as the w32 helper's rung, filters
+  on KA alone; the deny still drops KB at every level. Since lane
   r14b (R-14, D147 addendum 15) each candidate's verify skips the
   positions the mask tested (`vrun_proven`; runcmp.c's
   `run_cmp_render_trim`), and a run the mask covers whole is returned with
