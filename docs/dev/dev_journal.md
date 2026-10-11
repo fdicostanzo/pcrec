@@ -26943,3 +26943,11 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - **Discussion filed:** [SPAN-ISEL] (the bitstream locator [Cam14+], saved for later), [BITSTREAM-GPU] (boonies).
 - **Next:** after slot21 reports, launch the [REQ-HANDOFF-L1] build lane (opus; fact -> entry -> re-entry, K ceiling, hostile a.{1,50000}z cell, sabotage planting K=0 or a later occurrence).
 - **Lessons:** each critic round on rev-inner found a new unsound case: the signal to step back to an existing general mechanism, which Frank supplied. Measure the cheapest generalization of what exists before chartering a new tactic.
+
+## 2026-10-11 — session 106 — CLOSE (Frank's /close, ~09:30 EDT)
+
+- **Since the overnight interim:** rlhbuild BUILT [REQ-HANDOFF-L1] (lane/rlhbuild 39684936, abi 74->75, NOT merged): the fact (req_landmark_maxoff), ENTRY generalized to 1..n bytes, the RE-ENTRY NEXT-slot row (same PRE site, second mf_use), and a derived K admission (`1/h - K > 1/m`, no constant). Through today's generic kit gate loop, landmark-absent subjects regress x35-53, so the kit's R-15 (memchr ASSIGN row) is a PRECONDITION. With memchr it reproduces rlhtwin: ipv6 x0.305, ipv4 x0.196, sfx-64 x0.068; it beats rev-inner on ipv6/ipv4, ties on sfx-64, and loses 9% on kv-quoted. Light suites green; the heavy chain is ARMED and HELD on worktrees/rlhbuild/.lift.
+- **Kit:** R-14 merged f18935d4 (padded+trimmed verify; slot21 green). R-15 built (lane/memfn-r15 62261bc3), slot22 running from 08:31 (hours). Frank ruled Q-R14-1: D147 addendum 16 (KB at w32 only), R-16 filed (S815-S819).
+- **Filed:** [PRIOR-COST-UNIFY] (four prior-reading admission predicates), QUEUED by Frank after [REQ-HANDOFF-L1]. The two-landmark unlock refined (Frank): the rarest byte at a known offset, i.e. the offset-set row bounded by the window.
+- **Slip:** a plan-row edit cited a tuning.md paragraph that exists only on the R-15 branch (7f4f765e, pushed unchecked); later the manager chained a push with `;` after a red test-spec-history (2a295992). Main was red for minutes; fixed 113fcef0. Rule: gate every push with `&&` on the check's verdict.
+- **Manager cwd slip:** one `cd` into worktrees/rlhbuild for a read (corrected at once).
