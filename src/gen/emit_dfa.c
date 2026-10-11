@@ -9422,17 +9422,24 @@ static void cand_oracle_fail(const char *what, const char *a, const char *b,
  * need nothing); and a `needs` entry on a route the row is not routed on, or
  * naming a cell its route never asks. */
 static void cand_path_selfcheck(void);
-/* Does slot `from`'s selection, asked under the deny bits `mask`, READ slot
- * `target` (transitively, within `depth` more edges)? An edge `from -> t` is
- * followed only where `mask` does not deny the rows that make it
- * (`CandNode.by`), and it adds its own `under` bits ([REQ-HANDOFF-L1]). */
-static bool cand_read_reaches(int from, int target, uint64_t mask, int depth)
+/* Is there a CYCLE in the selection reads from slot `sl`, asked under the
+ * deny bits `mask` ([REQ-HANDOFF-L1])? A walk re-entering a slot under MORE
+ * deny bits walks fewer rows and ends (G1 reads NEXT without the handoff's
+ * row, the one reader of FIRST); only a repeated (slot, bits) STATE is a
+ * walk re-entering itself. An edge `sl -> t` is followed only where the bits
+ * do not deny the rows that make it (`CandNode.by`), and adds its own
+ * `under` bits. `ps`/`pm` hold the path; a path longer than 64 states
+ * cannot avoid a repeat (12 slots x the subsets of the few `under` bits). */
+static bool cand_read_cycle(int sl, uint64_t mask, int *ps, uint64_t *pm, int depth)
 {
-    if (depth > CAND_NSLOTS) return false;
+    for (int k = 0; k < depth; k++)
+        if (ps[k] == sl && pm[k] == mask) return true;
+    if (depth >= 64) return true;
+    ps[depth] = sl;
+    pm[depth] = mask;
     for (int t = 0; t < CAND_NSLOTS; t++) {
-        if (!cand_nodes[from].reads[t] || (cand_nodes[from].by[t] & mask)) continue;
-        if (t == target ||
-            cand_read_reaches(t, target, mask | cand_nodes[from].under[t], depth + 1))
+        if (!cand_nodes[sl].reads[t] || (cand_nodes[sl].by[t] & mask)) continue;
+        if (cand_read_cycle(t, mask | cand_nodes[sl].under[t], ps, pm, depth + 1))
             return true;
     }
     return false;
@@ -9447,9 +9454,12 @@ static void cand_rows_selfcheck(void)
                 cand_oracle_fail("table-read-unasked", cand_nodes[sl].name,
                                  cand_nodes[t].name, "selfcheck");
         }
-    for (int sl = 0; sl < CAND_NSLOTS; sl++)
-        if (cand_read_reaches(sl, sl, 0, 0))
+    for (int sl = 0; sl < CAND_NSLOTS; sl++) {
+        int ps[64];
+        uint64_t pm[64];
+        if (cand_read_cycle(sl, 0, ps, pm, 0))
             cand_oracle_fail("table-read-cycle", cand_nodes[sl].name, "-", "selfcheck");
+    }
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         const CandNode *n = &cand_nodes[r->slot];

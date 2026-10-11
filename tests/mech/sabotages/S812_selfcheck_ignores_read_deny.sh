@@ -13,5 +13,5 @@ SAB_DESC='the start table'\''s structural self-check ignores the deny bits a slo
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/rlhbuild_report.md §5); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S812.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='        if (!cand_nodes[from].reads[t] || (cand_nodes[from].by[t] & mask)) continue;'
-SAB_AFTER='        if (!cand_nodes[from].reads[t]) continue;   /* SABOTAGE S812 */'
+SAB_BEFORE='        if (!cand_nodes[sl].reads[t] || (cand_nodes[sl].by[t] & mask)) continue;'
+SAB_AFTER='        if (!cand_nodes[sl].reads[t]) continue;   /* SABOTAGE S812 */'

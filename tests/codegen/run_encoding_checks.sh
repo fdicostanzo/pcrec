@@ -676,7 +676,8 @@ HANDOFF_DECL_RE = re.compile(r'^(\s*)size_t handoff_position = rx_reqrun\(subjec
 # the kept hit (`size_t landmark_position = handoff_position;`) and the
 # restart block's MOVE (`if (landmark_position - scan_position > K) { ... }`,
 # K and the utf8 round-up), at most HANDOFF_MAX_LINES long.
-HANDOFF_BYTE_DECL_RE = re.compile(r'^\s*size_t handoff_position = \(\{ .*\}\);$')
+HANDOFF_BYTE_DECL_RE = re.compile(r'^\s*(size_t handoff_position|landmark_position) = \(\{ .*\}\);$')
+HANDOFF_BYTE_MISS_RE = re.compile(r'^\s*if \((handoff|landmark)_position == \(subject_length\)\) \{$')
 REENTRY_KEEP_RE = re.compile(r'^\s*size_t landmark_position = handoff_position;$')
 REENTRY_OPEN_RE = re.compile(r'^(\s*)if \(landmark_position - scan_position > \d+\) \{$')
 HANDOFF_RET_RE = re.compile(r'^\s*if \(handoff_position >= subject_length\) return 0;$')
@@ -702,10 +703,20 @@ def excise_handoff(text, counts):
             counts['handoff_gate'] += 1
             i += 2
             continue
-        if HANDOFF_BYTE_DECL_RE.match(ln):
-            out.append(lines[i].replace('handoff_position', 'search_from'))
-            counts['handoff_gate'] += 1
-            i += 1
+        mb = HANDOFF_BYTE_DECL_RE.match(ln)
+        if mb:
+            # The one-byte gate searches for the PICKED byte, a byte-keyed
+            # prior's choice, so its text is excised as the discard form's is
+            # ([OPT-REQBYTE] below): the line and its miss test (`if (... ==
+            # (subject_length)) {`, `return 0;`, `}`).
+            j = i + 1
+            if j < n and HANDOFF_BYTE_MISS_RE.match(lines[j].rstrip('\n')):
+                j += 3
+            out.append("/* [REQ-HANDOFF-L1] one-byte gate excised for comparison */\n")
+            if mb.group(1).startswith('size_t'):
+                counts['handoff_gate'] += 1
+                counts['req_check'] += 1
+            i = j
             continue
         if REENTRY_KEEP_RE.match(ln):
             out.append("/* [REQ-HANDOFF-L1] kept hit excised for comparison */\n")
