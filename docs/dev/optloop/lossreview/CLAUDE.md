@@ -16,5 +16,7 @@ same-named instrument directory (own CLAUDE.md); coordination is by file name on
   (one priced decision, the scan kernel's form, VM per-attempt overhead, route shape) with each family's dispersed members by
   file:function, the `\b` word-wait finding, ten candidates fix-existing first with reach / gain / risk / overlap / D77 / owed twins,
   the proposed order, the weighting caveat, questions for Frank and the D6 panel's attack list.
+  **REVISION 2** (lane `lrrev`, 2026-10-11) applies the r2 D6 panel (`../../reviews/2026-10-11-r2-lossreview-fixes.md`): corrected arithmetic, candidate 1 restated with per-cell bands, DENSE-SKIP as a five-arm design, candidate 6 folded into [OPT-3-RUNEND], the pricing split (pcrec prices its consumer side, the kit picks the form), [PRIOR-COST-UNIFY] as the generalization of `model_cost`, all three orderings, and §6 = what remains open.
+- `rev2/` — **fixes.md revision 2's no-clock instruments** (lane `lrrev`, 2026-10-11): the ATTEMPT-SPLIT size census, the word-wait `stayprobe` counts on hex8 / dbnames / json-constant and the boundary-pair stop count; raw outputs beside the scripts.
 
 Phases 2 and 3 (general fixes, the D6 panel, the ranked list to Frank) read these files.
