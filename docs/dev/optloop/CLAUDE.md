@@ -807,6 +807,7 @@ that cycle's analysis lands.
     throughput subject set, so those cells are SUBJECTS-CHANGED, not movement).
   - **New groups**: ANCH-ATTEMPT (moment-iso8601, email-owasp; only on capability@0.2's hazard
     subjects) and REVEND-TAIL (closed at b8337c33).
+- `lossreview_charter.md` — **[LOSS-REVIEW]'s charter** (Frank, 2026-10-11): attribute every losing cell of the 10-11 gap report plus the internal loss items, rank causes by total loss, then general fixes (fix-existing first), D6 panel, ranked list. Lane outputs land under `lossreview/`.
 - `judgement_gapreport_2026-10-11.md` — that instance's LANE DRAFT judgement (owner rows,
   caveats, relay questions, the manager's call list); the manager replaces or extends it.
 - `sellit_read.md` — **SEL-LIT desk read** (lane `sellit`, 2026-10-05,
