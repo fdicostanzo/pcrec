@@ -497,3 +497,13 @@ than a bit-vector regex engine."
     and AVX2, masked range + invert), at tier U, both layers.
   - It needs no pcrec change (hand-written twin, the rlhtwin way). Run it
     when a quiet box and spare capacity coincide. It is not scheduled.
+- Frank's better form for negation (same day): treat the complement as a
+  WRAP-AROUND range. `[^lo-hi]` is the range [hi+1, lo-1] mod 256, so use
+  LO = hi+1 and W = 255 - (hi - lo + 1), with the subtraction wrapping
+  mod 256. Then it is the SAME `t = sub(and(x, M), LO); ok = cmpeq(min_epu8(t,
+  W), t)` with different constants: ZERO extra ops, and no invert vector.
+  Every lane is then one formula: exact, folded, range, folded range, and
+  their complements; don't-care is W = 255. Edge cases fall out modularly
+  (`[^\x00]`, `[^\xff]`). With mask 0xDF a folded complement such as
+  `(?i)[^a]` stays exact, because only 0x41/0x61 map to 0x41 under 0xDF.
+  This supersedes the XOR form above.
