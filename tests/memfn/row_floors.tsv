@@ -41,12 +41,18 @@
 # counts as chosen). Their pcrec floors are floor(0.9 x 78) = 70 each, from
 # slot18's full census (lane/memfn-r13 2a44386a, 2026-10-10). Its
 # -fmemfn-simd arm is the only one reaching them.
+# The row `precheck_assign_byte` (lane r15b, R-15): reach pending-site, so its
+# pcrec floor is `-` until [REQ-HANDOFF-L1] lands. Its g2 floor is floor(0.9 x
+# 802), the row's chosen count in a Linux run of G2's landmark sites (seed
+# 20261005, `memfn/tests/run_g2_gate.sh`, 2026-10-11): those sites draw from
+# their own stream, so the quick tier's generator renders the same ones and
+# its count is at least that; a quick-tier reading is owed.
 #
 # table	row	pcrec_floor	g2_floor
 arms	ofsskip	50493	20190
 arms	precheck	253352	2061
 arms	precheck_assign	15956	2241
-arms	precheck_assign_byte	-	PLACEHOLDER
+arms	precheck_assign_byte	-	721
 arms	runcmp	56617	17829
 arms	pf_memchr	80268	3306
 arms	pf_memchr_bounded	25484	2842
