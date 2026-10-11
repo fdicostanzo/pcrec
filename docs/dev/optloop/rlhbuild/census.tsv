@@ -1,0 +1,18 @@
+pattern	base_handoff	new_handoff	base_prefilter	new_prefilter	base_libc	new_libc	req_byte	req_run	engine
+altwide/sfx-256	9	9	byte-class	handoff	memchr	memchr	103	696e67@2	dfa
+altwide/sfx-512	9	9	byte-class	handoff	memchr	memchr	103	696e67@2	dfa
+altwide/sfx-64	9	9	byte-class	handoff	memchr	memchr	103	696e67@2	dfa
+bounded/dotted4	none	3	byte-class	handoff	memchr	none	46	none	dfa
+loglines/ipv4	none	3	byte-class	handoff	memchr	none	46	none	dfa
+loglines/ipv6	none	4	byte-class	handoff	memchr	none	58	none	dfa
+loglines/kv-quoted	32	32	first-class-bounded	handoff	memchr,memcmp	memchr,memcmp	34	3d22@1	dfa
+syntax/cls-fold-pair	0	0	memchr	handoff	memchr	memchr	99	634174@0/ffdfff	dfa
+syntax/cls-pair-ctl	0	0	memchr	handoff	memchr	memchr	99	636174@0/fffdff	dfa
+syntax/grp-atomic-alt	none	2	memchr	memchr	memchr	memchr	99	none	vm
+syntax/mod-i	0	0	byte-class	handoff	memchr	memchr	none	434154@0/dfdfdf	dfa
+syntax/mod-r	0	0	byte-class	handoff	memchr	memchr	none	434154@0/dfdfdf	dfa
+syntax/qnt-poss-brace	none	2	memchr	handoff	memchr	none	98	none	dfa
+utf8/ci-ascii-control	0	0	byte-class	handoff	memchr	memchr	none	414243@2/dfdfdf	dfa
+utf8/ci-strasse	2	2	byte-class	handoff	memchr	memchr	none	545241@2/dfdfdf	dfa
+utf8/cls-s-ucp	none	4	memchr	memchr	memchr	memchr	98	none	dfa
+# patterns=367 base-compile-failures=24 movers=16 re-entering=14 handoff-stamp-movers=6
