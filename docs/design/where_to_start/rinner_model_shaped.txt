@@ -1,0 +1,55 @@
+# rinner_model.py --shaped: libpcre2 10.46 2025-08-27, seed 7, 200 subjects per case
+== sfx-64-shaped: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=False, ONLY by arm 3=True
+   plain      single   3761 mismatch    0 | findall   200 mismatch    0
+   floor      single   3761 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   3761 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   3761 mismatch    0 | findall   200 mismatch    0
+== sfx-64-shaped-hot: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=False, ONLY by arm 3=True
+   plain      single   2054 mismatch    0 | findall   200 mismatch    0
+   floor      single   2054 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   2054 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   2054 mismatch    0 | findall   200 mismatch    0
+== sfx-256-shaped: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=False, ONLY by arm 3=True
+   plain      single   3936 mismatch    0 | findall   200 mismatch    0
+   floor      single   3936 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   3936 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   3936 mismatch    0 | findall   200 mismatch    0
+== sfx-256-shaped-hot: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=False, ONLY by arm 3=True
+   plain      single   2240 mismatch    0 | findall   200 mismatch    0
+   floor      single   2240 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   2240 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   2240 mismatch    0 | findall   200 mismatch    0
+== sfx-64-NEG-stem-has-ing: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: 4 bytes; L border-free=True -> factor-free arm=False; admitted by literal arms=False, ONLY by arm 3=False
+   plain      single   2879 mismatch    0 | findall   200 mismatch    0
+   floor      single   2879 mismatch   14 | findall   200 mismatch    4  first: b'ingsingingsinging3' from 0 truth (10, 18) got None
+   floor_end  single   2879 mismatch   14 | findall   200 mismatch    4  first: b'ingsingingsinging3' from 0 truth (10, 18) got None
+   lowerbound single   2879 mismatch    0 | findall   200 mismatch    0
+== sfx-64-NEG-bordered-L: P width (3,9), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: none; L border-free=False -> factor-free arm=False; admitted by literal arms=False, ONLY by arm 3=False
+   plain      single   1976 mismatch    0 | findall   200 mismatch    0
+   floor      single   1976 mismatch   17 | findall   200 mismatch    8  first: b'3kaninin7kanikani' from 0 truth (1, 9) got None
+   floor_end  single   1976 mismatch   17 | findall   200 mismatch    8  first: b'3kaninin7kanikani' from 0 truth (1, 9) got None
+   lowerbound single   1976 mismatch    0 | findall   200 mismatch    0
+== [a-z]+xy: P width (1,inf), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: 2 bytes; L border-free=True -> factor-free arm=False; admitted by literal arms=False, ONLY by arm 3=False
+   plain      single   1202 mismatch    0 | findall   200 mismatch    0
+   floor      single   1202 mismatch   21 | findall   200 mismatch   11  first: b'3xyxyyxy3' from 0 truth (1, 9) got (2, 9)
+   floor_end  single   1202 mismatch   21 | findall   200 mismatch   11  first: b'3xyxyyxy3' from 0 truth (1, 9) got (5, 9)
+   lowerbound single   1202 mismatch    0 | findall   200 mismatch    0
+== [a-z]+xy-NEG-S-empty: P width (1,inf), |alphabet(P)|=26; fixed-width=False, cannot-contain-L=False; shortest P-string containing L: 2 bytes; L border-free=True -> factor-free arm=False; admitted by literal arms=False, ONLY by arm 3=False
+   plain      single   1186 mismatch    0 | findall   200 mismatch    0
+   floor      single   1186 mismatch   77 | findall   200 mismatch   30  first: b'277xyoxy' from 0 truth (3, 8) got (4, 8)
+   floor_end  single   1186 mismatch   77 | findall   200 mismatch   30  first: b'277xyoxy' from 0 truth (3, 8) got (5, 8)
+   lowerbound single   1186 mismatch    0 | findall   200 mismatch    0
+== [a-wz]+xy: P width (1,inf), |alphabet(P)|=24; fixed-width=False, cannot-contain-L=True; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=True, ONLY by arm 3=False
+   plain      single   1203 mismatch    0 | findall   200 mismatch    0
+   floor      single   1203 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   1203 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   1203 mismatch    0 | findall   200 mismatch    0
+== [a-w]+xy-ing-S: P width (1,inf), |alphabet(P)|=23; fixed-width=False, cannot-contain-L=True; shortest P-string containing L: none; L border-free=True -> factor-free arm=True; admitted by literal arms=True, ONLY by arm 3=False
+   plain      single   1169 mismatch    0 | findall   200 mismatch    0
+   floor      single   1169 mismatch    0 | findall   200 mismatch    0
+   floor_end  single   1169 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   1169 mismatch    0 | findall   200 mismatch    0
+== [a-z]{3}xy: P width (3,3), |alphabet(P)|=26; fixed-width=True, cannot-contain-L=False; shortest P-string containing L: 3 bytes; L border-free=True -> factor-free arm=False; admitted by literal arms=True, ONLY by arm 3=False
+   plain      single   1422 mismatch    0 | findall   200 mismatch    0
+   lowerbound single   1422 mismatch    0 | findall   200 mismatch    0
+shaped: PASS

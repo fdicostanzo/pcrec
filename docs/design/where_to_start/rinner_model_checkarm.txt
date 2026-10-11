@@ -1,0 +1,10 @@
+# check_arm: libpcre2 not used; python re 3.14.4; seed 5, 3000 cases
+bookkeeping                                                            3000
+brute                                                                  1627
+factor-present                                                         610
+check_arm: PASS
+# check_arm: libpcre2 not used; python re 3.14.4; seed 6, 3000 cases, UTF alphabet
+bookkeeping                                                            3000
+brute                                                                  1624
+factor-present                                                         543
+check_arm: PASS
