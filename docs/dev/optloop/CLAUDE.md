@@ -886,6 +886,13 @@ that cycle's analysis lands.
   census and timing scripts with raw outputs. Own `CLAUDE.md`; reading in
   `../lanes/rlhtwin_report.md`.
 
+## [REQ-HANDOFF-L1] as built (lane `rlhbuild`, 2026-10-11)
+
+- `rlhbuild/` — identity and timing of the built row family (base / new /
+  `-fno-req-handoff` / the memchr-gate R-15 twin / libpcre2) on ipv6, ipv4,
+  dotted4, sfx-64, kv-quoted and the K-admission cells. Own `CLAUDE.md`; reading
+  in `../lanes/rlhbuild_report.md`.
+
 ## [OPT-REVEND] `rev-end-width` twin (lane `rewtwin`, 2026-10-11)
 
 - `rewtwin/` — the scratch twin's patch, the libpcre2 identity sweep, the
