@@ -10,6 +10,7 @@ import statistics, sys
 from collections import defaultdict
 
 rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1]) if l.strip() and not l.startswith("#")]
+rows = [r for r in rows if len(r) == len(rows[0])]
 h = {k: i for i, k in enumerate(rows[0])}
 v = defaultdict(list); cnt = defaultdict(set)
 for r in rows[1:]:
@@ -17,7 +18,7 @@ for r in rows[1:]:
     v[k].append(float(r[h["ns_call"]].split()[0]))
     cnt[k[:3]].add(r[h["cnt"]])
 vars_ = [x for x in ["o", "h1", "h1m", "h2", "r"] if any(k[3] == x for k in v)]
-subj = sorted({k[:3] for k in v})
+subj = sorted(s for s in {k[:3] for k in v} if all(s + (x,) in v for x in vars_))
 bad = [s for s in subj if len(cnt[s]) != 1]
 tot = defaultdict(lambda: defaultdict(float))
 print("cell\tregime\tsubject\t" + "\t".join(vars_) + "\t" + "\t".join(x + "/o" for x in vars_[1:]))
@@ -28,14 +29,16 @@ for s in subj:
         print("\t".join(s) + "\t" + "\t".join("%.0f" % med[x] for x in vars_) + "\t" +
               "\t".join("%.3f" % (med[x] / med["o"]) for x in vars_[1:]))
 print()
+hasr = "r" in vars_
+caps = [x for x in vars_[1:] if x != "r"] if hasr else []
 print("cell\tregime\t" + "\t".join("sum_" + x for x in vars_) + "\t" +
-      "\t".join(x + "/o" for x in vars_[1:]) + "\t" +
-      "\t".join("capture_" + x for x in vars_[1:-1]))
+      "\t".join(x + "/o" for x in vars_[1:]) +
+      "".join("\tcapture_" + x for x in caps))
 for (c, rg), t in sorted(tot.items()):
-    o, r = t["o"], t["r"]
+    o = t["o"]
     print("%s\t%s\t" % (c, rg) + "\t".join("%.0f" % t[x] for x in vars_) + "\t" +
-          "\t".join("%.3f" % (t[x] / o) for x in vars_[1:]) + "\t" +
-          "\t".join("%.2f" % ((o - t[x]) / (o - r)) if o != r else "-" for x in vars_[1:-1]))
+          "\t".join("%.3f" % (t[x] / o) for x in vars_[1:]) +
+          "".join("\t%.2f" % ((o - t[x]) / (o - t["r"])) if o != t["r"] else "\t-" for x in caps))
 print()
 print("count check: %d subject lines, %d with differing match counts across variants%s"
       % (len(subj), len(bad), (": " + ", ".join("/".join(b) for b in bad)) if bad else ""))

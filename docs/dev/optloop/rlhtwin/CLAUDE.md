@@ -30,6 +30,9 @@ path; nothing is copied.
 - `census.sh` — compile-only: every bench pattern through today's pcrec and
   the scratch emitter, the patterns whose `RX_REQ_HANDOFF` moves;
   `census.tsv` its output.
+- `extra.sh` — the RE-ENTERED handoff (`mktwin.py reenter-run`) on the two cells whose
+  run handoff already ships (kv-quoted K = 32, sfx-64 K = 9): build / ident / time;
+  `extra_times.tsv` and `extra_summary.txt` are its timing.
 - `time.sh` — pinned-core interleaved timing, both regimes; `times.tsv` raw;
   `summarize.py` / `times_summary.txt` the per-cell reading, including
   each handoff variant's CAPTURE of the reverse-inner saving.
