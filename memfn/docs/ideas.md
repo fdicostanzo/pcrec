@@ -233,3 +233,31 @@ inside K87's loop-alignment band.
 - First guess at impact: only long matching runs to the subject end (trim-like
   `\s+$`, `\w+\z` on long bodies). That is the tail family's whole remaining cost
   (O-96 (b)), but only on one subject per cell.
+
+## 2026-10-11 — a vrun hit is checked three times; verify only what the filter did not prove
+
+Frank, on the KB losses ("they look like overhead; for `cat` the filter is two
+thirds of the pattern; does it recheck the whole span?"). Yes. For `(?i)cat`
+(lane/memfn-r13 build, `-fmemfn-simd`):
+1. The vector filter proves `c` (KA, offset 0) and `a` (KB, offset 1) for
+   every set bit.
+2. The scalar verify re-reads ALL of `cat` for each bit:
+   `(rx_w2(s+cand) & 0xDFDF) == "CA" && (rx_w2(s+cand+1) & 0xDFDF) == "AT"`.
+   That is two 2-byte loads, and only `t` is new information.
+3. On the DFA route `rx_search` then starts the DFA at state 0 at
+   `handoff_position` and steps `c`, `a`, `t` again.
+- Ideas, smallest first:
+  - Verify only the positions the filter did not cover: for `cat`, just
+    `t`. This is kit-local and has no contract change. It only helps the
+    KB arm (KB-DENY must still verify `a`), so it moves DEFAULT-KB-DENY in
+    KB's favour exactly in the dense-hit regime where KB lost (179 small
+    losses, rq4h_report addendum). Re-time before re-ruling.
+  - When the run is short enough that the filter can cover every position
+    (3 for `cat`), the mask IS the verify. The cost is an Nth load + AND
+    per block, against zero verify per hit. rankuse §5 already files "N >= 3
+    positions"; this is its natural trigger cell.
+  - Hand the DFA a state AFTER the run (start at `cand + len` in the state
+    reached by the run) instead of re-stepping it from state 0. pcrec-side,
+    cheap per hit, and it matters only for dense hits.
+- Note: (2) is shared by every SIMD arm and by the scalar body, so it is
+  part of the pc16 per-call loss against OFF as well.

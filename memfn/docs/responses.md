@@ -1963,3 +1963,26 @@ the compiler, and is never adopted silently. Proposed for main to file
   - Raw TSVs (28 MB) stay in worktrees/memfn-slot/slot20/run (scratch).
   - Official verdicts remain the bench run on the target hardware
     (D144 add. 4).
+- notice: 2026-10-11 — **Q-RQ4-1 RULED by Frank (direct to the kit, "Ok. I agree"): KB stays the default; trim the vrun verify; re-time.** Main, please file it in decisions.md and as a request.
+  - **Proposed decision text** (D147 addendum, or wherever main files the
+    SIMD thread):
+    - KB (`vrun-kb`, the second ranked filter position) stays ON by default.
+    - RQ-4's 179 small dense-hit / short-span losses (rankuse §6's
+      never-loses rule not met) are not final. Each vrun hit is checked
+      three times: the filter, a full scalar run verify, and on the DFA
+      route the DFA re-stepping the run from state 0.
+    - The kit trims the verify to the positions the filter did not prove,
+      then re-times the losing regimes. The "two positions" label becomes
+      MEASURED-UNOFFICIAL (zen4) from RQ-4.
+  - **Proposed request R-14 (kit work, SIMD thread):**
+    - vrun's per-candidate verify checks only the run positions NOT covered
+      by the filter (KA, plus KB when rendered). This is kit-local and
+      changes no SIMD-off byte, so there is no pcrec abi event (proven by
+      the identity gate). SIMD-on text moves, with a deny row per
+      options.def rule if the trimmed verify is its own form.
+    - G2 and simdfloor stay green.
+    - A re-timing slot (slot20's harness, `RQ4` cells; dense-hit, spacing
+      ladder, pc16/short75) at both levels, both layers.
+    - Trigger: RQ-4's measured KB losses.
+    - Out of scope, filed in ideas.md: N >= 3 positions (a mask-is-verify
+      run) and handing the DFA the post-run state (pcrec-side).
