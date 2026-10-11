@@ -1,0 +1,68 @@
+cause	cells	patterns	lost_ns_total	of_which_vs_scalar
+ATTEMPT-SHAPE	1	1	28869442	28869442
+DENSE-SKIP	3	3	13232148	13232148
+LIST-SCAN-SIMD	17	16	7416360	0
+HIT-RESTART	14	13	4422139	0
+LIST-RUST	9	7	4061376	0
+RUN-PICK	1	1	1758450	0
+PAIR-SKIP	2	2	1362774	0
+K101	2	2	916367	0
+RANGE-SKIP	2	2	443005	0
+REV-PASS	3	3	134252	0
+ATTEMPT-STEP	1	1	39731	0
+
+ATTEMPT-SHAPE	capability	wild-waf-crs-942360-concat-sqli	large-subject-throughput	A	re2:default-caps	4.8	28869442
+ATTEMPT-STEP	capability	wild-validator-email-owasp	large-subject-throughput	B	libpcre2:jit-caps	7.22	39731
+DENSE-SKIP	capability	hex8-bounded	large-subject-throughput	A	re2:default-caps	1.94	7294385
+DENSE-SKIP	capability	wild-waf-crs-942140-dbnames	large-subject-throughput	A	re2:longest-caps	1.65	4905636
+DENSE-SKIP	capability	wild-codegrammar-json-constant	large-subject-throughput	A	re2:default-caps	1.14	1032127
+HIT-RESTART	capability	keyword-prefix-order	large-subject-throughput	A	libpcre2:jit-caps	1.59	848258
+HIT-RESTART	loglines	stack-frame	large-subject-throughput	A	libpcre2:jit-caps	2.75	832488
+HIT-RESTART	syntax	asr-nwb	large-subject-throughput	A	libpcre2:jit-caps	2.5	551101
+HIT-RESTART	syntax	asr-wb	large-subject-throughput	A	libpcre2:jit-caps	2.36	532978
+HIT-RESTART	syntax	cls-fold-pair	large-subject-throughput	A	libpcre2:jit-caps	1.68	299109
+HIT-RESTART	syntax	cls-dot	large-subject-throughput	A	libpcre2:jit-caps	1.64	285717
+HIT-RESTART	syntax	mod-reset	large-subject-throughput	A	libpcre2:jit-caps	1.29	214210
+HIT-RESTART	syntax	mod-unset	large-subject-throughput	A	libpcre2:jit-caps	1.28	210837
+HIT-RESTART	syntax	mod-x	large-subject-throughput	A	libpcre2:jit-caps	1.29	149995
+HIT-RESTART	syntax	esc-hex	large-subject-throughput	A	libpcre2:jit-caps	1.29	149514
+HIT-RESTART	syntax	lit-cat	large-subject-throughput	A	libpcre2:jit-caps	1.29	148349
+HIT-RESTART	syntax	mod-n	large-subject-throughput	A	libpcre2:jit-caps	1.27	141216
+HIT-RESTART	syntax	grp-noncap	large-subject-throughput	A	libpcre2:jit-caps	1.26	42544
+HIT-RESTART	loglines	stack-frame	short-subject-search	B	libpcre2:jit-caps	1.9	15823
+K101	syntax	mod-i	large-subject-throughput	A	libpcre2:jit-caps	1.81	459074
+K101	syntax	mod-r	large-subject-throughput	A	libpcre2:jit-caps	1.81	457293
+LIST-RUST	loglines	hex32-id	large-subject-throughput	A	rust:default-caps(SIMD-only)	1.48	3586946
+LIST-RUST	syntax	cls-i-class	large-subject-throughput	A	rust:default-caps(SIMD-only)	1.4	371049
+LIST-RUST	syntax	cls-pair-ctl	large-subject-throughput	A	rust:default-caps(SIMD-only)	1.14	87850
+LIST-RUST	syntax	esc-tab	large-subject-throughput	A	rust:default-caps(SIMD-only)	1.15	8682
+LIST-RUST	capability	wild-waf-crs-942360-concat-sqli	short-subject-search	C	rust:default-caps(SIMD-only)	1.55	2654
+LIST-RUST	bounded	cls-atleast-4096	short-subject-search	C	rust:default-caps(SIMD-only)	9.05	2083
+LIST-RUST	bounded	cls-atleast-4096	match-compliance	C	rust:default-caps(SIMD-only)	7.67	1840
+LIST-RUST	bounded	floor	match-compliance	C	rust:default-caps(SIMD-only)	1.47	139
+LIST-RUST	syntax	floor	match-compliance	C	rust:default-caps(SIMD-only)	1.56	133
+LIST-SCAN-SIMD	loglines	ipv6	large-subject-throughput	A	rust:default-caps(SIMD-only)	1.42	3139263
+LIST-SCAN-SIMD	capability	wild-semdiv-altorder-foo-foobar-rustregex	large-subject-throughput	A	libpcre2:jit-caps	4.04	953185
+LIST-SCAN-SIMD	capability	file-ext-order	large-subject-throughput	A	libpcre2:jit-caps	3.0	530904
+LIST-SCAN-SIMD	syntax	cls-s-lc	large-subject-throughput	A	libpcre2:jit-caps	2.52	434462
+LIST-SCAN-SIMD	syntax	anc-m-dollar	large-subject-throughput	A	libpcre2:jit-caps	2.36	298876
+LIST-SCAN-SIMD	syntax	cls-n-uc	large-subject-throughput	A	libpcre2:jit-caps	1.95	286001
+LIST-SCAN-SIMD	syntax	mod-s	large-subject-throughput	A	libpcre2:jit-caps	2.63	276290
+LIST-SCAN-SIMD	syntax	cls-v	large-subject-throughput	A	libpcre2:jit-caps	2.58	269729
+LIST-SCAN-SIMD	syntax	esc-octal-0	large-subject-throughput	A	libpcre2:jit-caps	2.4	235206
+LIST-SCAN-SIMD	syntax	anc-m-caret	large-subject-throughput	A	libpcre2:jit-caps	2.05	199498
+LIST-SCAN-SIMD	loglines	iso-ts	large-subject-throughput	A	libpcre2:jit-caps	1.2	190474
+LIST-SCAN-SIMD	syntax	esc-nl	large-subject-throughput	A	libpcre2:jit-caps	1.99	164630
+LIST-SCAN-SIMD	syntax	qnt-quest	large-subject-throughput	A	libpcre2:jit-caps	1.34	151933
+LIST-SCAN-SIMD	syntax	cls-h	large-subject-throughput	A	libpcre2:jit-caps	1.97	128445
+LIST-SCAN-SIMD	capability	router-prefix-order	large-subject-throughput	A	libpcre2:jit-caps	1.43	120077
+LIST-SCAN-SIMD	syntax	esc-quote	large-subject-throughput	A	libpcre2:jit-caps	1.35	37272
+LIST-SCAN-SIMD	syntax	qnt-quest	match-compliance	C	rust:default-caps(SIMD-only)	1.42	115
+PAIR-SKIP	syntax	alt-nested	large-subject-throughput	A	libpcre2:jit-caps	1.63	756021
+PAIR-SKIP	syntax	alt-two	large-subject-throughput	A	libpcre2:jit-caps	1.52	606753
+RANGE-SKIP	capability	high-byte-run	large-subject-throughput	A	libpcre2:jit-caps	1.19	257378
+RANGE-SKIP	capability	utf8-lead-no-cont	large-subject-throughput	A	libpcre2:jit-caps	1.13	185627
+REV-PASS	bounded	pw-8-64	large-subject-throughput	A	libpcre2:jit-caps	1.49	62985
+REV-PASS	bounded	line-80	large-subject-throughput	A	libpcre2:jit-caps	2.34	43221
+REV-PASS	bounded	cls-atleast-4096	large-subject-throughput	A	libpcre2:jit-caps	1.47	28046
+RUN-PICK	capability	wild-waf-crs-942270-union-select	large-subject-throughput	A	libpcre2:jit-caps	9.49	1758450

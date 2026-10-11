@@ -1,0 +1,31 @@
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__hex8-bounded__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+   46 | unsigned long long lr_entries, lr_skipped, lr_seeds, lr_steps;
+      | ^~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__hex8-bounded__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__hex8-bounded__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__hex8-bounded__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+hex8-bounded                       bytes=4681573 calls=932 matches=921 entries=682437 (0.146/B) skipped=0.255/B mean_skip=1.75 seeds=453062 steps=0.746/B
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-waf-crs-942140-dbnames__cnt.c:56:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+   56 | unsigned long long lr_entries, lr_skipped, lr_seeds, lr_steps;
+      | ^~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-waf-crs-942140-dbnames__cnt.c:56:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-waf-crs-942140-dbnames__cnt.c:56:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-waf-crs-942140-dbnames__cnt.c:56:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+wild-waf-crs-942140-dbnames        bytes=4681573 calls=11 matches=0 entries=445565 (0.095/B) skipped=0.452/B mean_skip=4.75 seeds=302719 steps=0.548/B
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-codegrammar-json-constant__cnt.c:55:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+   55 | unsigned long long lr_entries, lr_skipped, lr_seeds, lr_steps;
+      | ^~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-codegrammar-json-constant__cnt.c:55:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-codegrammar-json-constant__cnt.c:55:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/capability__wild-codegrammar-json-constant__cnt.c:55:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+wild-codegrammar-json-constant     bytes=4681573 calls=11 matches=0 entries=311524 (0.067/B) skipped=0.689/B mean_skip=10.36 seeds=283946 steps=0.311/B
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/loglines__hex32-id__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+   46 | unsigned long long lr_entries, lr_skipped, lr_seeds, lr_steps;
+      | ^~~~~~~~
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/loglines__hex32-id__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/loglines__hex32-id__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+/home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/loglines__hex32-id__cnt.c:46:1: warning: ‘noclone’ attribute ignored [-Wattributes]
+hex32-id                           bytes=4178453 calls=268 matches=256 entries=722841 (0.173/B) skipped=0.227/B mean_skip=1.31 seeds=306567 steps=0.773/B
+AssertionError: skip block
+cc1: fatal error: /home/pcrec/projects/pcrec/worktrees/lrdfa/build/lr/tw/loglines__ipv6__cnt.c: No such file or directory
+compilation terminated.
