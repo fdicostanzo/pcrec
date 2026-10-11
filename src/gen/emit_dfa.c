@@ -6892,8 +6892,8 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
  * and RESEEDED where the machine seeds, as the offset-set rows reseed: the
  * jumped bytes begin no match (Claim 1), so the landing state is the fresh
  * one at the landing. The reseed runs only where the scan MOVED, which the
- * `> K` test makes true by construction (the conditional-reseed rule, the
- * `(?:\b|xy)a` witness above). An in-flight thread the start state carries
+ * `> K` test makes true by construction (the conditional-reseed rule and
+ * its `(?:\b|xy)a` witness, in the DFA hat's section below). An in-flight thread the start state carries
  * there completes only with a landmark at or after `scan_position`, so a
  * move happens only past every such thread's own reach. */
 static void pf_emit_handoff(StrBuf *c, const DfaForm *f)

@@ -55,8 +55,17 @@ Measurement instruments: `docs/dev/optloop/rlhbuild/` (own `CLAUDE.md`).
    subjects, 1.15M startpos searches); `tests/litscan/handoff.rxt` grows 24
    oracled blocks (python3 `re` AND libpcre2 must agree on byte blocks) and
    passes under the lane's build. §3.
-5. **Timing and the R-15 delta**: §5 (OWED at this commit if the section says
-   so; the numbers are scratch tier).
+5. **Timing and the R-15 delta (§5, scratch tier): DO NOT MERGE AHEAD OF
+   R-15.** With the byte gate as a `memchr` ASSIGN (the scratch twin `newm`,
+   what R-15's row renders) the build reproduces rlhtwin's win: throughput
+   ipv6 x0.305, ipv4 x0.196, sfx-64 x0.068, kv-quoted x1.007, dotted4 and the
+   landmark-absent subjects at parity. Through TODAY's generic kit loop (the
+   build as committed) the same re-entry gives most of it back (ipv6 x0.571,
+   ipv4 x0.877 with six of twelve subjects up to x1.43 SLOWER than main), and
+   every landmark-ABSENT subject regresses x35-x53 against main's one discard
+   `memchr` (dotted4 over its own throughput texts; hcolon/hcolon_in over z
+   text). The R-15 delta (generic over memchr): x1.87 / x4.48 / x46 on
+   ipv6 / ipv4 / dotted4 throughput.
 6. **Validation**: the full chain is ARMED, not run, at hand-back (§6): make,
    make strict, FULL make test, make test-axes, mech S805-S814 (+ the re-aimed
    rows), emit_sweep start-arm floors, make test-spec-history. The sections I
@@ -66,7 +75,8 @@ Measurement instruments: `docs/dev/optloop/rlhbuild/` (own `CLAUDE.md`).
    where it was a discard `memchr`; `RX_MEMFN_LIBC` drops `memchr` on the
    movers whose only memchr it was (bench: dotted4, ipv4, ipv6,
    qnt-poss-brace), and the code grows ~570 B per gate (the size-term rescue
-   witness, §2.3). The re-entered gate is the same text. §5 measures it.
+   witness, §2.3). The re-entered gate is the same text. §5 measures it, and
+   answer 5 is what it costs.
 
 ## 1. Design as built
 
@@ -252,8 +262,9 @@ startpos per subject, hashed; base = main 48343196):
 Subjects: each cell's bench short + throughput subjects (regenerated in a
 `git archive` copy of pcrec-bench d359564f) + 400 adversarial (rlhtwin's
 generator for ipv6/ipv4/dotted4, et1twin's for kvq/sfx64) or gen_hostile.py's.
-(Measured with the first-cut admission; the later comparative admission only
-narrows which artifacts re-enter, and every artifact is held by the suites below.)
+(Measured on the first-cut admission's build; the final compiler emits these
+eight artifacts identical but for the two abi digits, diffed, so the result
+stands for the final build.)
 
 handoff.rxt: 48 cases x 2 routes, `gen_handoff.py --check-pcrec` 0 mismatches;
 the harness on it reads `cases failed: 0`. The answer-identity sweep over the
@@ -281,10 +292,202 @@ Re-aimed (intent re-verified): S446, S460, S463, S606, S693. Reach re-pointed:
 S265 (`a.*?b`), S280, S282, S283, S610. Every row's reach probe was re-run on
 the lane's build against main's: no row stops reaching.
 
-## 5. Timing — SEE §5 BELOW (filled after the run)
+## 5. Timing, and the R-15 delta (SCRATCH TIER)
+
+`time.sh` (et1twin's/rlhtwin's method): `taskset -c 7`, the four C variants
+interleaved per subject, 3 rounds, each line etdrv's median of 5 batches of
+>= 40 ms, the table the median over rounds; raw `times.tsv` (throughput) and
+`times_short.tsv` (search_short), reading `times_summary.txt` /
+`times_short_summary.txt`. load1 ~0.5-1.0 throughout (no other heavy run of
+mine; the box was otherwise idle by `/proc/loadavg`). Every variant's match
+count equals base's on every subject line. `base` = main 48343196; `new` =
+the lane as built (the byte gate is the kit's GENERIC loop at the entry AND the
+re-entry); `deny` = the lane under `-fno-req-handoff`; `newm` = `new` with both
+byte-gate sites hand-edited to a libc `memchr` ASSIGN (`mkmemchr.py`, SCRATCH,
+NOT the lane's text: what R-15's row would render). Run landmarks (sfx64, kvq)
+have no generic loop, so `newm` = `new` there.
+
+### 5.1 Throughput (find-all over each cell's throughput subjects)
+
+| cell | n | new/base | newm/base | deny/base | **new/newm (the R-15 delta)** | per-subject new/base | per-subject newm/base |
+|---|---|---|---|---|---|---|---|
+| loglines/ipv6 | 12 | 0.571 | **0.305** | 1.000 | **1.87** | 0.551-0.730 | 0.260-0.345 |
+| loglines/ipv4 | 12 | 0.877 | **0.196** | 0.996 | **4.48** | 0.685-**1.429** | 0.060-0.342 |
+| bounded/dotted4 | 5 | **46.4** | 1.003 | 1.000 | **46.3** | 35.4-52.8 | 1.000-1.005 |
+| altwide/sfx-64 | 4 | **0.068** | 0.068 | 1.166 | 1.00 | 0.059-0.120 | same |
+| loglines/kv-quoted | 12 | 1.012 | 1.007 | **13.78** | 1.00 | 0.998-1.015 | same |
+| hostile `a.{1,50000}z` | 6 | 1.000 | 1.001 | 1.001 | 1.00 | 0.996-1.002 | same |
+| hcolon `[a-y]\d{0,150}:` (re-entry declined) | 6 | 1.217 | 1.134 | 1.002 | 1.07 | 1.07-1.14 colon / **35-46** z | 1.13-1.25 colon / 1.00 z |
+| hcolon_in `[a-y]\d{0,100}:` (re-entry admitted) | 6 | 1.537 | 1.501 | 1.000 | 1.02 | 1.26-1.49 colon / **35-46** z | 1.47-1.52 colon / 1.00 z |
+
+Reading, in order of consequence:
+
+1. **The re-entry delivers rlhtwin's win when the gate is memchr, and gives
+   most of it back through the generic loop.** ipv6 0.305 (rlhtwin's h2: 0.334),
+   ipv4 0.196 (h2: 0.196), sfx-64 0.068 (h2: 0.068, a run landmark, no generic
+   loop). Through today's generic ASSIGN loop: ipv6 0.571, ipv4 0.877 with SIX
+   of twelve subjects slower than main (up to x1.43 on the syslog subjects,
+   whose `.` landmarks are dense and dead), because the re-entry re-asks the
+   gate once per restart and each ask is a byte-at-a-time loop.
+2. **A LANDMARK-ABSENT subject is a regression of x35-x53 through the generic
+   loop**: dotted4 over letters/digits text (no `.`), and hcolon/hcolon_in over
+   z text (no `:`). Main rejected these calls with ONE discard `memchr`
+   (~0.02 ns/B); the build's entry gate is the generic loop over the whole
+   window (~1 B/cycle). `newm` is at parity (1.000-1.006). This is not the
+   re-entry's cost: hcolon declines the re-entry and pays it at the ENTRY.
+   **The build must not land on main ahead of R-15's memchr ASSIGN row** (or an
+   equivalent kit rendering of the one-member ASSIGN gate), or every
+   byte-landmark artifact (bench: dotted4, ipv4, ipv6, qnt-poss-brace,
+   grp-atomic-alt, cls-s-ucp) regresses on landmark-sparse subjects. R-15's
+   own §4 sequencing (the kit row first at zero movers, L1's merge the one abi
+   event) is exactly the order that avoids it.
+3. **kv-quoted: the re-entry costs +1.2%** (rlhtwin measured +1.3%), and the
+   entry handoff it keeps is worth x11-x19 on the hit subjects (`deny`/base:
+   `-fno-req-handoff` now removes the entry too, so the deny arm is the
+   no-handoff artifact, slower than main on exactly the subjects K82 cured).
+4. **The K admission behaves as derived and the hostile cells stay linear.**
+   Frank's `a.{1,50000}z` takes no handoff at all (a count-collapsed hybrid,
+   Q10) and is unchanged (1.000 on z-dense text, 4 KiB-1 MiB, ns/B flat).
+   `[a-y]\d{0,150}:` declines the re-entry; `[a-y]\d{0,100}:` admits it, and
+   over COLON-DENSE text (which contradicts the prior that admitted it) it
+   costs x1.47-1.52 against main, flat in n (linear: the scan never moves
+   back). That is the prior being wrong about the subject, not a K blow-up;
+   the admission's job is K against the prior's gap, and the bench's text is
+   the test of whether the prior's gap is right.
+5. hcolon's ENTRY-only handoff costs +13% even through memchr on colon-dense
+   text (1.13-1.25): a find-all call per match pays the ASSIGN gate, the
+   compare and the clamp where main paid a discard `memchr`; small and
+   UNEXPLAINED beyond that (no attribution run).
+
+### 5.2 search_short (one `rx_search` from 0, short subjects <= 4 KiB)
+
+SHORT_TABLE_PLACEHOLDER
+
+### 5.3 The R-15 delta, stated for the kit (R-15's D77 reading)
+
+On ipv6 / ipv4 / dotted4 the built re-entry with today's GENERIC gate loop
+against the scratch memchr ASSIGN at both sites, pinned and interleaved:
+**throughput x1.87 / x4.48 / x46 slower through the generic loop** (per
+subject x1.60-2.38 / x2.73-16.8 / x35-53); search_short in §5.2. R-15's
+Q-R15-2 asked exactly this ("Build only if S1 beats h2g on the three cells");
+it does, by a wide margin on every cell, and the dotted4 / landmark-absent
+cases show the generic loop is also a regression against MAIN (§5.1 item 2),
+not only a missed win.
+
+
 
 ## 6. Validation
 
+**Run by this lane, on the lane's tree (Linux dev box, solo, nothing else of
+mine running):**
+
+| check | verdict |
+|---|---|
+| `make -j16`, `make strict` | clean (gcc 15.2, `-Werror -Wshadow`) |
+| `make test-codegen` | 16/16 scripts, 743 PASS |
+| `make test-vm` | 3/3 (after SEL-1 re-pin 2 -> 3: the hostile cell, a corpus event) |
+| `make test-prechecks` (`run_prechecks.sh`) | green, 392+ PASS (5.12a/b/c/e/l-q included) |
+| `make test-startset` | green (the hat suites deny the handoff on both arms; manifests re-pinned) |
+| `make test-registry`, `test-cpset-structure`, `test-rxtsource` | green after the re-pins in §1.5 (axes 229, the `(?i)HeLLo` manifest row, census +24 blocks) |
+| `make test-encoding-checks` | 11/0 (DD12a(i) excises the byte gate and the re-entry move; prior-keyed `handoff` form); main's own run 11/0 |
+| `make test-memfn-rows`, `test-memfn-reach` | 4/0 and 3/3 |
+| `make test-cand-oracle` (trace build, both walks' successor) | 91/0, the self-check's state-based cycle test included |
+| `tests/harness/run.sh tests/litscan/handoff.rxt` | 4,824+/0 (regenerated after; `gen_handoff.py --check-pcrec` 0 mismatches) |
+| identity (§3) | 0 diffs, 8 cells, vs main / deny / libpcre2 10.46 |
+| sabotage anchors (every row's `SAB_BEFORE` count) | all match; every REACH probe reaches as on main |
+
+**OWED — armed, NOT run** (the BOILERPLATE's never-idle-wait rule: the chain is
+detached behind a `.lift` waiter, ONE waiter in this worktree):
+
+```
+nohup setsid bash /home/pcrec/projects/pcrec/worktrees/rlhbuild/build/land/chain.sh &   # armed by the lane
+touch /home/pcrec/projects/pcrec/worktrees/rlhbuild/.lift                               # the manager lifts
+```
+
+It runs, logging one line per step to `build/land/chain.log` (completion
+trailer `== rlhbuild chain COMPLETE`): `make`, `make strict`, the FULL
+`make test` through `scripts/perfrun --label rlhbuild` (`build/land/test.log`;
+verdict `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`), `make test-axes`
+(`axes.log`), `make test-recursion-identity` (`recid.log`; FILEPIN self-pinned
+to `e20b4bbc`, this lane's last src commit), `scripts/emit_sweep.py --ref HEAD
+--arms start` (`sweep.log`: the start-arm DIFFER floors; `-fno-req-handoff`'s
+differ count RISES with the byte landmarks, a floor is a minimum, and
+`-fno-start-set`'s may FALL where the re-entry now outranks a hat, which would
+be a reviewed re-pin), `make test-spec-history` (`spechist.log`), and the mech
+rows S805-S814 plus every re-aimed/re-pointed row (S265 S280 S282 S283 S446
+S460 S463 S606 S610 S693), each `mech_SNNN.log`.
+
+Expected reds a fresh agent should read before calling anything a regression:
+the start-arm floors above; any rxtsource/startset manifest the full suite
+pins that this lane's section runs did not reach.
+
 ## 7. Open items, filed rather than built
 
-## 8. BENCH RELAY DRAFT
+1. **R-15 is a precondition of the merge, not a follow-up** (§5.1 item 2,
+   §5.3): through the generic loop the build regresses landmark-absent and
+   landmark-dense byte cells against main by x35-53 and up to x1.43. Main files
+   R-15's step 2 against this lane's measurement; the kit's row lands first at
+   zero movers, then this branch.
+2. **The prior-cost family has four members now** (memory
+   `pcrec-forest-for-trees`): G1's `req_byte_dominated_by` (a COMPARE),
+   `set-leads`' `pcrec_find_pick` (a PICK), R4's `cand_rs_dense_applies` (a
+   density threshold) and the re-entry's `req_landmark_admits` (an expected
+   jump against an expected skip). All four read `pcrec_find_byte_rate`
+   through findings.c's primitives and decide "which scan pays" between a
+   landmark and a start-byte set. A unifying PRIMITIVE ("expected advance per
+   stop of scan X", `1/mass`) would make G1, set-leads and this admission one
+   comparison; proposed, not built (no measured disagreement among them yet).
+3. **The admission reads the prior only.** hcolon_in shows a prior-admitted
+   re-entry costing x1.5 on text that contradicts the prior (linear). Whether
+   the bench's text contradicts the default prior on any real cell is the
+   bench's question (§8, Q2).
+4. **ENTRY-only +13% on hcolon's colon-dense find-all, through memchr**
+   (§5.1 item 5): unexplained; small; a placement/attribution question for the
+   bench's numbers before anyone builds on it.
+5. **The re-entry only fires at the start state s0.** On a seeded machine
+   (`\b...`) the restart often sits in a seed state that is not s0 (the
+   `seed[nonword]` cell), so the re-entry fires less there than on unseeded
+   machines; the existing start-set rows share the same condition (`pf_open`).
+   Not measured beyond the corpus answers.
+6. **Two-landmark window (Frank's UNLOCK)**: not built, as ruled.
+7. **VM hybrids get the ENTRY generalization only** (grp-atomic-alt, K 2):
+   their retries are RETRY's; no re-entry inside the prefilter function.
+
+## 8. BENCH RELAY DRAFT (for main to send; not sent)
+
+> **[REQ-HANDOFF-L1] built on lane/rlhbuild (pcrec abi 74 -> 75).** Stamp and
+> vocabulary changes a bench reader sees:
+>
+> - `<PREFIX>_REQ_HANDOFF` (unchanged vocabulary: a decimal K or `"none"`) now
+>   also carries a K for a ONE-BYTE landmark: K is the maximum byte offset of
+>   the pre-check's needle (the run window where `REQ_RUN` is not `"none"`,
+>   else the byte `REQ_BYTE`) from the match start. New values on bench
+>   patterns: loglines/ipv6 `"4"`, loglines/ipv4 `"3"`, bounded/dotted4 `"3"`,
+>   syntax/qnt-poss-brace `"2"`, syntax/grp-atomic-alt `"2"`, utf8/cls-s-ucp `"4"`.
+> - `<PREFIX>_DFA_PREFILTER` gains the value **`"handoff"`**: the forward scan
+>   RE-ENTERS the handoff at each restart (re-finds the landmark, moves to
+>   hit - K when ahead). Bench patterns moving to it: loglines/ipv6, ipv4,
+>   kv-quoted; bounded/dotted4; altwide/sfx-64, sfx-256, sfx-512;
+>   syntax/cls-fold-pair, cls-pair-ctl, mod-i, mod-r, qnt-poss-brace;
+>   utf8/ci-ascii-control, ci-strasse (14).
+> - `<PREFIX>_MEMFN_LIBC` drops `"memchr"` on dotted4, ipv4, ipv6 and
+>   qnt-poss-brace (their one-byte gate renders through the kit's generic loop
+>   until R-15's row lands).
+> - `--emit-facts` gains `req_set_maxoff` and `req_landmark_maxoff`.
+> - Deny: `-fno-req-handoff` removes BOTH the entry handoff and the re-entry
+>   (no new flag bit). `--list-axes` lists `handoff` on the `prefilter` axis
+>   with that deny.
+>
+> Asks:
+> 1. When R-15's memchr row has landed with it, time BASE (abi 74) vs NEW vs
+>    `-fno-req-handoff` on loglines/ipv6, ipv4, kv-quoted, bounded/dotted4
+>    (throughput + search_short) and altwide/sfx-64 (throughput). Scratch
+>    predictions (Linux dev box, memchr gate): ipv6 x0.31 / ipv4 x0.20 /
+>    dotted4 x1.00 (its throughput text has no `.`) / sfx-64 x0.07 /
+>    kv-quoted x1.01 throughput; search_short in the lane report §5.2.
+> 2. Does any bench cell's subject carry a byte-landmark DENSER than the
+>    default byte prior predicts (the case where an admitted re-entry costs
+>    up to x1.5, linearly)? The candidates are the 14 movers above.
+> 3. A cell where the re-entered handoff leaves a measured gap to rev-inner
+>    (the re-worded [ENG-TACTICS] trigger): kv-quoted's -8.7% stays the
+>    standing candidate.
