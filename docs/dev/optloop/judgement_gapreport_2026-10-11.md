@@ -130,3 +130,21 @@ g. SIMD list (section 8) is ready for the SIMD thread; ask the bench for the alt
    thread opens.
 h. Whether to adopt `--peer-group` / sections 7-9 as the instrument going forward and bless the fixture
    change.
+
+**MANAGER CALLS (2026-10-11, session 107).** Priority proposal goes to Frank; the calls below are the manager's.
+
+a. RE-RANKED by what an owner row can act on, then size: (1) CI / union-select x9.49 (stuck across three pins);
+   (2) START-SET remainder (quoted-delim x3.79, syntax asr-* x2.4); (3) U8-PICK (gated on Frank's prior
+   question); (4) ANCH-ATTEMPT (largest single ratio, cause unknown); (5) CARET. Every item waits behind
+   [REQ-HANDOFF-L1] and Frank's queued [PRIOR-COST-UNIFY] where it touches their sites (D153 remodel-first).
+b. ANCH-ATTEMPT: HOLD; relay Q2 (per-subject split) rides I-147. A row is filed when the split names a cause.
+c. CI: [WORD-FOLD] is already a member of [OPT-LITSCAN] S4, so there is no ordering choice. The next step is a
+   read-only attribution of why C3's measured -0.4..-0.52 ns/B did not move union-select's verdict against jit
+   (per-subject split, relay Q2), before any build.
+d. START-SET remainder: [OPT-VMSEED] (stage 2's VM hat did not build the row's own necessary-run seed, so it
+   is NOT discharged); [START-DENSE] stays gated on its own trigger.
+e. U8-PICK: put to Frank again with the report.
+f. DENSE (<= x1.68) and BCLS: leave UNFILED (near-noise sizes, cross-window data; revisit on a same-window peer run).
+g. SIMD list: held for the SIMD thread; altwide refresh asked when it opens.
+h. `--peer-group`, `--prev-dir` and sections 7-9 ADOPTED; the fixture change blessed.
+NEXT INSTANCE: ask the bench for a same-window peer run at post-L1 main (relay Q1), so the next report is not cross-window.
