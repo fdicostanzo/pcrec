@@ -2431,9 +2431,11 @@ else
 fi
 # ... and `--memfn=no-vrun-kb` (lane rankuse): the rows' second filter
 # position, the first position of pcrec's rarity ranking (mf_pred.rank_*)
-# other than the scanned one. On (?i)cat (scanned C at 0) the default mask
-# loads at i and i + 1; the deny keeps both rows and loads at i alone. Inert
-# at -fno-memfn-simd.
+# other than the scanned one, read at w32 ONLY (D147 addendum 16, R-16:
+# the w16 helper, standalone or the w32 helper's rung, reads the scanned
+# one alone). On (?i)cat (scanned C at 0) the default w32 mask loads at i
+# and i + 1 and the w16 mask at i; the deny keeps both rows and loads at i
+# alone in each. Inert at -fno-memfn-simd.
 pcrec_run "$PCREC" -p rx --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs6.c"
 pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-kb -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs7.c"
 if [ -s "$WORKDIR/mfs6.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs6.c"; then
@@ -2441,16 +2443,19 @@ if [ -s "$WORKDIR/mfs6.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs6.c"; then
 else
     fail "--memfn=no-vrun-kb at -fno-memfn-simd moved the artifact or did not compile"
 fi
-mfkb_loads() {   # the w16 helper's whole-block mask line: its load count
-    sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1" \
+mfkb_loads() {   # helper $2's whole-block mask line in file $1: its load count
+    sed -n "/^static inline size_t rx_reqrun__$2(/,/^}/p" "$1" \
         | grep 'm = (unsigned)' | grep -o '(subject + i[ +0-9]*))' | wc -l | tr -d ' '
 }
-if [ "$(mfkb_loads "$WORKDIR/mfs2.c")" = 2 ] && grep -q 'subject + i + 1))' "$WORKDIR/mfs2.c" \
-   && [ "$(mfkb_loads "$WORKDIR/mfs7.c")" = 1 ] && ! grep -q 'subject + i + 1))' "$WORKDIR/mfs7.c" \
+if [ "$(mfkb_loads "$WORKDIR/mfs2.c" w32)" = 2 ] && [ "$(mfkb_loads "$WORKDIR/mfs2.c" w16)" = 1 ] \
+   && [ "$(grep -c 'subject + i + 1))' "$WORKDIR/mfs2.c")" = 1 ] \
+   && [ "$(mfkb_loads "$WORKDIR/mfs7.c" w32)" = 1 ] && [ "$(mfkb_loads "$WORKDIR/mfs7.c" w16)" = 1 ] \
+   && ! grep -q 'subject + i + 1))' "$WORKDIR/mfs7.c" \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs2.c" \
    && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs7.c"; then
-    pass "-fmemfn-simd filters on two ranked positions; --memfn=no-vrun-kb on the scanned one alone"
+    pass "-fmemfn-simd filters on two ranked positions at w32 and the scanned one at w16; --memfn=no-vrun-kb on the scanned one alone at both"
 else
-    fail "the vrun filter's second position (or its deny) is not as ruled on (?i)cat"
+    fail "the vrun filter's second position (w32 only, D147 add. 16) or its deny is not as ruled on (?i)cat"
 fi
 # ... and `--memfn=no-vrun-trim` (lane r14b, R-14): the rows' trimmed
 # verify. On (?i)cat the mask proves C at 0 and A at 1, so the default

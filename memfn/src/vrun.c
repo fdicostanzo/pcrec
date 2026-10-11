@@ -415,8 +415,11 @@ static const char *const vrun_no_rungs[] = { NULL };
  * r14b, 2026-10-11) writes 2,583 / 2,643 / 5,214 there, so the bound, the
  * larger of the two arms, did not move. The padded verify (lane r14p) is
  * rendered for runs of 3 or 5-7 bytes only, far below that site's text; G2
- * takes the alone maximum over all four trim x pad arms. */
-#define VRUN_W16_GUARDED_MAX 2700
+ * takes the alone maximum over all four trim x pad arms. Since R-16 (lane
+ * r16b, D147 addendum 16) the w16 helper reads KA alone at every arm: its
+ * alone maximum is 2,383 again (w32 2,721, unchanged; `vrun@w32+w16` 4,975
+ * over G2's space), so the w16 bound is re-pinned to 2,400. */
+#define VRUN_W16_GUARDED_MAX 2400
 #define VRUN_W32_GUARDED_MAX 2800
 
 /* guarded_max: the bound on the guarded bytes ONE rendering of the row

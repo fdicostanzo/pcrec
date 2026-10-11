@@ -24,9 +24,12 @@ WHAT IT CHECKS, AND AGAINST WHAT
      whole permutations, the second entry at the run's ends, partial; rate
      ties; entries past rank_n that a reader of them would choose). The
      filter positions the kit's rule gives (memfn/src/vrun.c, SECOND FILTER
-     POSITION: KA, then the first STATED entry other than KA, none under
-     `no-vrun-kb`) are derived HERE from the generated entries and every
-     rendered helper's loads are held to them, in order. Each malformed copy
+     POSITION: KA, then at w32 ONLY the first STATED entry other than KA,
+     none under `no-vrun-kb`; KB_LEVELS below, D147 addendum 16) are derived
+     HERE from the generated entries and every rendered helper's loads, in
+     its whole-block mask AND its final-block mask, are held to them, in
+     order: a w16 helper reads KA alone, standalone or as the w32 helper's
+     rung. Each malformed copy
      (rank_n past the run or MF_RANK_MAX, a position outside the run or twice)
      must be refused by mf_define. Floors per mode and per shape (K35).
   1c. THE VERIFY (R-14, vrun.c's VERIFY TRIM): every rendered helper's
@@ -119,15 +122,32 @@ SHAPE_FLOOR = {          # rendered sites per filter shape
     'ties': 108,         # a rate tie among the stated entries (135)
 }
 BADRANK_FLOOR = 64       # malformed copies refused (80)
+# the levels whose helpers read KB (D147 addendum 16, Frank 2026-10-11: KB
+# at w32 only, w16 filters on KA alone), a literal written HERE from the
+# ruling, sharing no source with vrun.c's per-level table
+KB_LEVELS = {'w32'}
+# the per-level KB populations among rendered HELPERS (R-16), literals
+# measured at the same seed and sites (Linux dev box, 2026-10-11), each
+# floor ~80% of its measurement
+KBLVL_FLOOR = {
+    'kb-read-w32': 154,      # a w32 helper whose mask reads KB (192)
+    'kb-dropped-w16': 153,   # a w16 helper of a site whose ranking gives a
+                             # KB, reading KA alone (191)
+    'kb-dropped-rung': 142,  # the same, where the site also rendered w32:
+                             # the w32 helper's fall-through rung (178)
+}
 # the verify's shapes among rendered helpers (R-14, VERIFY TRIM), literals
 # measured at the same seed and sites (Linux dev box, 2026-10-11), each floor
-# ~80% of its measurement: a helper per rendered level of a rendered site
+# ~80% of its measurement: a helper per rendered level of a rendered site.
+# Re-measured at R-16 (lane r16b: KB at w32 only, so a w16 helper no longer
+# covers a two-byte run whole): none 24 -> 10 (floor re-pinned 19 -> 8), gap
+# 344 -> 342, bytes 67 -> 71, words 437 -> 447 (floors held)
 VSHAPE_FLOOR = {
-    'none': 19,      # nothing left to verify: the lowest lane is the hit (24)
-    'gap': 275,      # the positions left are not contiguous: a filter position inside (344)
+    'none': 8,       # nothing left to verify: the lowest lane is the hit (10)
+    'gap': 275,      # the positions left are not contiguous: a filter position inside (342)
     'whole': 27,     # the whole run, deny-trim (34)
-    'bytes': 53,     # trimmed, the bytes form under MF_D_RUN_OVERLAP (67)
-    'words': 349,    # trimmed, the words form (437)
+    'bytes': 53,     # trimmed, the bytes form under MF_D_RUN_OVERLAP (71)
+    'words': 349,    # trimmed, the words form (447)
     'padded': 137,   # the main path verifies by one padded word (172)
 }
 # the padded verify's edge (R-14 follow-up, PADDED VERIFY): main-path padded
@@ -334,20 +354,20 @@ def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
     return r, None
 
 
-LOAD = re.compile(r'_loadu_si(?:128|256)\(\(const __m\d+i \*\)\(subject \+ i(?: \+ (\d+))?\)\)')
+LOAD = re.compile(r'_loadu_si(?:128|256)\(\(const __m\d+i \*\)\(subject \+ [if](?: \+ (\d+))?\)\)')
 
 
 def helper_loads(text):
-    """{(site id, level): [load offsets of the whole-block mask, in order]}
-    over every rendered helper `g2v_f<id>__<lvl>`."""
+    """{(site id, level): [[load offsets of one mask, in order] per mask
+    line, the whole block's (`subject + i`) then the final block's
+    (`subject + f`)]} over every rendered helper `g2v_f<id>__<lvl>`."""
     out = {}
     for m in HELPER.finditer(text):
         fn, lvl = m.group(1), m.group(2)
         if not fn.startswith('g2v_f'):
             continue
-        line = next((l for l in m.group(0).splitlines() if 'm = (unsigned)' in l
-                     and 'subject + i' in l), None)
-        out[(int(fn[5:]), lvl)] = ([int(k or 0) for k in LOAD.findall(line)] if line else None)
+        out[(int(fn[5:]), lvl)] = [[int(k or 0) for k in LOAD.findall(l)]
+                                   for l in m.group(0).splitlines() if 'm = (unsigned)' in l]
     return out
 
 
@@ -482,11 +502,11 @@ def verify_check(vlist, guard, vwant, pad, off, L, lvl):
     return ''
 
 
-def expect_filter(cls, off, pp, rank):
-    """The rule, from the generated entries: KA, then the first stated entry
-    other than KA (none under the deny)."""
+def expect_filter(cls, off, pp, rank, lvl):
+    """The rule, from the generated entries: KA, then at a KB_LEVELS level
+    the first stated entry other than KA (none under the deny)."""
     want = [off + pp]
-    if cls != 'deny-kb':
+    if cls != 'deny-kb' and lvl in KB_LEVELS:
         kb = next((r for r in rank if r != pp), None)
         if kb is not None:
             want.append(off + kb)
@@ -557,7 +577,7 @@ def run(a, root, work):
     for m in HELPER.finditer(text):
         if m.group(1).startswith('g2v_f'):
             HELPER_TEXT[(int(m.group(1)[5:]), m.group(2))] = m.group(0)
-    rmodes, shapes, nbad, vshapes = {}, {}, 0, {}
+    rmodes, shapes, nbad, vshapes, kblvl = {}, {}, 0, {}, {}
     with open(os.path.join(work, 'g2v_meta.tsv')) as f:
         for line in f:
             if line.startswith('#'):
@@ -577,14 +597,25 @@ def run(a, root, work):
                     nbad += 1
             if forms != 'none':
                 rank = [] if rank == '-' else [int(x) for x in rank.split(',')]
-                want = expect_filter(cls, int(off), int(pp), rank)
-                for lvl in forms.partition('@')[2].split('+'):
+                # the site's KB as the ranking gives it (the w32 rule): the
+                # filter shapes below are the ranking's, whatever rendered
+                kbsite = expect_filter(cls, int(off), int(pp), rank, 'w32')
+                lvls = forms.partition('@')[2].split('+')
+                for lvl in lvls:
+                    want = expect_filter(cls, int(off), int(pp), rank, lvl)
                     got = loads.get((int(sid), lvl))
-                    if got != want:
-                        bad('site %s (%s, %s, rank %s): %s filter loads %r, the rule gives %r'
+                    if got != [want, want]:
+                        bad('site %s (%s, %s, rank %s): %s filter loads %r (whole block, '
+                            'final block), the rule gives %r in each'
                             % (sid, cls, rmode, rank, lvl, got, want))
                     else:
                         ok()
+                        if len(want) > 1:
+                            kblvl['kb-read-' + lvl] = kblvl.get('kb-read-' + lvl, 0) + 1
+                        elif len(kbsite) > 1:
+                            kblvl['kb-dropped-' + lvl] = kblvl.get('kb-dropped-' + lvl, 0) + 1
+                            if lvl == 'w16' and 'w32' in lvls:
+                                kblvl['kb-dropped-rung'] = kblvl.get('kb-dropped-rung', 0) + 1
                     # 1c: the verify compares exactly what the filter did not
                     # prove; 1d: the padded one, in the main path only, its
                     # padding masked out, the main guard holding what it reads
@@ -607,7 +638,7 @@ def run(a, root, work):
                         if pad:
                             vshapes['padded'] = vshapes.get('padded', 0) + 1
                 rmodes[rmode] = rmodes.get(rmode, 0) + 1
-                kb = want[1] - int(off) if len(want) > 1 else None
+                kb = kbsite[1] - int(off) if len(kbsite) > 1 else None
                 for shp, hit in (('kb', kb is not None), ('no-kb', kb is None),
                                  ('kb-not-rank0', kb is not None and kb == rank[0]),
                                  ('kb-at-end', kb in (0, int(L) - 1)),
@@ -662,6 +693,17 @@ def run(a, root, work):
             bad('filter shape %s: %d rendered sites < floor %d' % (shp, shapes.get(shp, 0), fl))
         else:
             ok()
+    for shp, fl in KBLVL_FLOOR.items():
+        print('kb per level %-15s %4d rendered helpers (floor %d)' % (shp, kblvl.get(shp, 0), fl))
+        if kblvl.get(shp, 0) < fl:
+            bad('kb per level %s: %d rendered helpers < floor %d' % (shp, kblvl.get(shp, 0), fl))
+        else:
+            ok()
+    for k in sorted(kblvl):
+        if k not in KBLVL_FLOOR:
+            # a KB read at a level outside KB_LEVELS fails the filter check
+            # above; a population this table does not name is a new level
+            bad('kb per level: population %s (%d) has no floor' % (k, kblvl[k]))
     for shp, fl in VSHAPE_FLOOR.items():
         print('verify shape %-6s %4d rendered helpers (floor %d)' % (shp, vshapes.get(shp, 0), fl))
         if vshapes.get(shp, 0) < fl:
