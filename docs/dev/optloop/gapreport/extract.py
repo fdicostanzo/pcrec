@@ -7,7 +7,13 @@ of each report group named on the command line, and keeps every testee's
 median/min/max/status per timing cell.  Nothing is re-derived from the
 bench's raw ledgers or store (D144 addendum 2 item 1).
 
-    python3 extract.py OUT.json REPORT.tsv [REPORT.tsv ...]
+    python3 extract.py OUT.json REPORT.tsv [REPORT.tsv ...] [--peers PEERREPORT.tsv ...]
+
+CROSS-WINDOW input ([OPT-GAPREPORT] third instance): reports after `--peers`
+contribute their NON-pcrec testees only, overwriting the same testees from the
+main reports.  Use it when the newest pcrec window did not re-run the peers:
+the main reports carry pcrec, the peer reports the latest peer measurements.
+A peer report for a set with no main report is ignored (no pcrec side).
 
 A cell key is (subbench, pattern, regime, form, fact).  `n` is the number of
 subjects the set-grain median sums over (the bench's set-grain median is the
@@ -37,19 +43,29 @@ def testee_short(t):
 
 def main():
     out, paths = sys.argv[1], sys.argv[2:]
+    peers = []
+    if "--peers" in paths:
+        i = paths.index("--peers")
+        paths, peers = paths[:i], paths[i + 1:]
     cells = {}
     meta = {}
-    for p in paths:
+    for p in paths + peers:
+        is_peer = p in peers
         with open(p, encoding="utf8") as fh:
             head = fh.readline()
             sb = re.search(r"subbench=([^,;]+)", head).group(1)
             ver = re.search(r"version=([^,;]+)", head).group(1)
             floor = re.search(r"floor_pattern: ([^;]+)", head)
-            meta[sb] = {"version": ver, "report": p.rsplit("/", 1)[-1],
-                        "floor_pattern": floor.group(1).strip() if floor else None}
+            if is_peer:
+                if sb not in meta:
+                    continue
+                meta[sb]["peer_report"] = p.rsplit("/", 1)[-1]
+            else:
+                meta[sb] = {"version": ver, "report": p.rsplit("/", 1)[-1],
+                            "floor_pattern": floor.group(1).strip() if floor else None}
             ppins = set(re.findall(r"testee=pcrec_([^_,;]+)_", head))
             keep = None
-            if len(ppins) > 1:
+            if len(ppins) > 1 and not is_peer:
                 nb = re.search(r"null_band: pcrec (\S+) -> (\S+?)[:;,\s]", head)
                 if not nb or nb.group(2) not in ppins:
                     sys.exit(f"extract: {p}: pcrec at {sorted(ppins)} and no "
@@ -62,6 +78,8 @@ def main():
                 if len(f) < 13 or f[0] != "rank":
                     continue
                 pat, _subj, regime, form, fact, testee, status = f[1:8]
+                if is_peer and testee.startswith("pcrec_"):
+                    continue
                 if keep and testee.startswith("pcrec_") and testee.split("_")[1] != keep:
                     continue
                 metric, value, n = f[10], f[11], f[12]

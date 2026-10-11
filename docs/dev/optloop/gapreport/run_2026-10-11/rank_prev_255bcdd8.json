@@ -1,0 +1,729 @@
+{
+ "census": {
+  "capability\tahead": 111,
+  "capability\tbehind": 15,
+  "capability\tno-pcrec": 4,
+  "capability\tno-peer": 3,
+  "capability\tnull": 8
+ },
+ "groups": {
+  "ANCH-ATTEMPT": {
+   "breadth": 2,
+   "ceiling": [
+    {
+     "auto_caps_ns": 69137.853502,
+     "auto_nocaps_ns": 69055.769361,
+     "bytes": 4681573,
+     "cmp": "re2:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 1735.102272,
+     "pattern": "wild-datetime-moment-iso8601",
+     "ratio": 39.846558106518344,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "B",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [
+    {
+     "auto_caps_ns": 69137.853502,
+     "auto_nocaps_ns": 69055.769361,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 6468.721412,
+     "pattern": "wild-datetime-moment-iso8601",
+     "ratio": 10.688024587632373,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "B",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 46113.056084,
+     "auto_nocaps_ns": 46113.729563,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 6390.16315,
+     "pattern": "wild-validator-email-owasp",
+     "ratio": 7.216256455674375,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "B",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [
+    [
+     "wild-datetime-moment-iso8601",
+     "large-subject-throughput",
+     "re2:default-caps",
+     39.85
+    ]
+   ],
+   "score_ceiling": 3.987,
+   "score_peer": 4.702,
+   "sets": [
+    "capability"
+   ]
+  },
+  "BACKTRACK": {
+   "breadth": 1,
+   "ceiling": [],
+   "peer": [
+    {
+     "auto_caps_ns": 9467412.96,
+     "auto_nocaps_ns": 9483570.691139,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 1,
+     "n": 11,
+     "ns": 6755482.517007,
+     "pattern": "phone-palindrome-6",
+     "ratio": 1.401441412388484,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [],
+   "score_ceiling": 0.0,
+   "score_peer": 0.365,
+   "sets": [
+    "capability"
+   ]
+  },
+  "BCLS": {
+   "breadth": 1,
+   "ceiling": [],
+   "peer": [
+    {
+     "auto_caps_ns": 1642376.437411,
+     "auto_nocaps_ns": 1642177.764512,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 1385368.899408,
+     "pattern": "high-byte-run",
+     "ratio": 1.1855155966853488,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [],
+   "score_ceiling": 0.0,
+   "score_peer": 0.184,
+   "sets": [
+    "capability"
+   ]
+  },
+  "CARET": {
+   "breadth": 2,
+   "ceiling": [
+    {
+     "auto_caps_ns": 36452931.178571,
+     "auto_nocaps_ns": 36474443.658824,
+     "bytes": 4681573,
+     "cmp": "re2:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 7597472.953271,
+     "pattern": "wild-waf-crs-942360-concat-sqli",
+     "ratio": 4.798033688672315,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 7389.734234,
+     "auto_nocaps_ns": 7393.68797,
+     "cmp": "rust:default-caps",
+     "delta_ns_call": 35.00618053333333,
+     "form": "plain",
+     "n": 75,
+     "ns": 4764.270694,
+     "pattern": "wild-waf-crs-942360-concat-sqli",
+     "ratio": 1.5510735448568111,
+     "regime": "short-subject-search",
+     "set": "capability",
+     "tier": "C",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [],
+   "rust_only": 1,
+   "scalar_wins": [
+    [
+     "wild-waf-crs-942360-concat-sqli",
+     "large-subject-throughput",
+     "re2:default-caps",
+     4.8
+    ]
+   ],
+   "score_ceiling": 1.697,
+   "score_peer": 0.0,
+   "sets": [
+    "capability"
+   ]
+  },
+  "CI": {
+   "breadth": 2,
+   "ceiling": [
+    {
+     "auto_caps_ns": 1966204.638132,
+     "auto_nocaps_ns": 1966615.823529,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 953659.225558,
+     "pattern": "wild-waf-crs-942270-union-select",
+     "ratio": 2.0617476195247257,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [
+    {
+     "auto_caps_ns": 396746.280246,
+     "auto_nocaps_ns": 397172.521122,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 176146.413898,
+     "pattern": "wild-secrets-slack-webhook-url",
+     "ratio": 2.2523664914106134,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 1966204.638132,
+     "auto_nocaps_ns": 1966615.823529,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 207225.848339,
+     "pattern": "wild-waf-crs-942270-union-select",
+     "ratio": 9.48822096225898,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [
+    [
+     "wild-waf-crs-942270-union-select",
+     "large-subject-throughput",
+     "re2:longest-caps",
+     1.33
+    ]
+   ],
+   "score_ceiling": 0.783,
+   "score_peer": 3.313,
+   "sets": [
+    "capability"
+   ]
+  },
+  "DENSE": {
+   "breadth": 1,
+   "ceiling": [
+    {
+     "auto_caps_ns": 2330783.564863,
+     "auto_nocaps_ns": 2330882.102041,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 24530,
+     "n": 11,
+     "ns": 947371.82136,
+     "pattern": "keyword-prefix-order",
+     "ratio": 2.460262710280999,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [
+    {
+     "auto_caps_ns": 2330783.564863,
+     "auto_nocaps_ns": 2330882.102041,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 24530,
+     "n": 11,
+     "ns": 1430637.458986,
+     "pattern": "keyword-prefix-order",
+     "ratio": 1.6291923227810639,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 1,
+   "scalar_wins": [],
+   "score_ceiling": 0.974,
+   "score_peer": 0.528,
+   "sets": [
+    "capability"
+   ]
+  },
+  "FS-DFA": {
+   "breadth": 4,
+   "ceiling": [
+    {
+     "auto_caps_ns": 15422802.361386,
+     "auto_nocaps_ns": 15426462.819905,
+     "bytes": 4681573,
+     "cmp": "re2:default-caps",
+     "form": "plain",
+     "matches": 921,
+     "n": 11,
+     "ns": 7799870.02521,
+     "pattern": "hex8-bounded",
+     "ratio": 1.9773153028881099,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 8605178.943452,
+     "auto_nocaps_ns": 8634540.57561,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 953795.899794,
+     "pattern": "wild-codegrammar-json-constant",
+     "ratio": 9.022033901918157,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 180313.679993,
+     "auto_nocaps_ns": 179567.570986,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 162541.664874,
+     "pattern": "wild-secrets-github-pat",
+     "ratio": 1.1047479495500323,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 12495946.945736,
+     "auto_nocaps_ns": 12505176.543726,
+     "bytes": 4681573,
+     "cmp": "re2:longest-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 7593187.5625,
+     "pattern": "wild-waf-crs-942140-dbnames",
+     "ratio": 1.6456786880188434,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [],
+   "rust_only": 1,
+   "scalar_wins": [
+    [
+     "hex8-bounded",
+     "large-subject-throughput",
+     "re2:default-caps",
+     1.98
+    ],
+    [
+     "wild-codegrammar-json-constant",
+     "large-subject-throughput",
+     "re2:default-caps",
+     1.13
+    ],
+    [
+     "wild-waf-crs-942140-dbnames",
+     "large-subject-throughput",
+     "re2:longest-caps",
+     1.65
+    ]
+   ],
+   "score_ceiling": 3.765,
+   "score_peer": 0.0,
+   "sets": [
+    "capability"
+   ]
+  },
+  "FS-VM": {
+   "breadth": 2,
+   "ceiling": [],
+   "peer": [
+    {
+     "auto_caps_ns": 1194225.996381,
+     "auto_nocaps_ns": 1193769.546911,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 7861,
+     "n": 11,
+     "ns": 780604.703101,
+     "pattern": "balanced-parens-rec",
+     "ratio": 1.5298729198490144,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 2286537.312303,
+     "auto_nocaps_ns": 2276811.10625,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 3864,
+     "n": 11,
+     "ns": 589344.906015,
+     "pattern": "quoted-delim-match",
+     "ratio": 3.8797948178834405,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [],
+   "score_ceiling": 0.0,
+   "score_peer": 1.927,
+   "sets": [
+    "capability"
+   ]
+  },
+  "LKA": {
+   "breadth": 3,
+   "ceiling": [],
+   "peer": [
+    {
+     "auto_caps_ns": 533740.122159,
+     "auto_nocaps_ns": 533678.623784,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 270815.981467,
+     "pattern": "pwd-strength-chain",
+     "ratio": 1.9708590285837264,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 12107.91795,
+     "auto_nocaps_ns": 12139.165748,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "n": 75,
+     "ns": 8343.964065,
+     "pattern": "pwd-strength-chain",
+     "ratio": 1.451099004703108,
+     "regime": "short-subject-search",
+     "set": "capability",
+     "tier": "B",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 1660881.8557,
+     "auto_nocaps_ns": 1660317.909091,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 1475053.023595,
+     "pattern": "utf8-lead-no-cont",
+     "ratio": 1.1259811200902445,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 0,
+   "scalar_wins": [],
+   "score_ceiling": 0.0,
+   "score_peer": 1.265,
+   "sets": [
+    "capability"
+   ]
+  },
+  "REVEND-TAIL": {
+   "breadth": 5,
+   "ceiling": [
+    {
+     "auto_caps_ns": 10379.842162,
+     "auto_nocaps_ns": 10442.796646,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 15,
+     "n": 11,
+     "ns": 6966.543823,
+     "pattern": "letters-bounded-tail-z",
+     "ratio": 1.489955769420558,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "B",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 857810.331001,
+     "auto_nocaps_ns": 857869.916714,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "delta_ns_call": 77941.17413736363,
+     "form": "plain",
+     "matches": 1,
+     "n": 11,
+     "ns": 457.41549,
+     "pattern": "tail-dotstar-txt",
+     "ratio": 1875.3416745921745,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "C",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 8778161.205074,
+     "auto_nocaps_ns": 8779912.408705,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "delta_ns_call": 797978.1776069999,
+     "form": "plain",
+     "matches": 1,
+     "n": 11,
+     "ns": 401.251397,
+     "pattern": "tail-ext-lower-txt",
+     "ratio": 21876.961103948503,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "C",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 7864831.750685,
+     "auto_nocaps_ns": 7857051.993464,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 5,
+     "n": 11,
+     "ns": 327577.142036,
+     "pattern": "tail-space-eol",
+     "ratio": 23.98534874756471,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 9821784.776786,
+     "auto_nocaps_ns": 9843456.949254,
+     "bytes": 4681573,
+     "cmp": "re2:default-caps",
+     "form": "plain",
+     "matches": 5,
+     "n": 11,
+     "ns": 126385.828826,
+     "pattern": "tail-word-eoz",
+     "ratio": 77.7127061476806,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [],
+   "rust_only": 2,
+   "scalar_wins": [
+    [
+     "tail-dotstar-txt",
+     "large-subject-throughput",
+     "re2:default-caps",
+     697.74
+    ],
+    [
+     "tail-ext-lower-txt",
+     "large-subject-throughput",
+     "re2:default-caps",
+     7239.86
+    ],
+    [
+     "tail-word-eoz",
+     "large-subject-throughput",
+     "re2:default-caps",
+     77.71
+    ]
+   ],
+   "score_ceiling": 8.58,
+   "score_peer": 0.0,
+   "sets": [
+    "capability"
+   ]
+  },
+  "SCAN-SIMD": {
+   "breadth": 3,
+   "ceiling": [
+    {
+     "auto_caps_ns": 795656.971648,
+     "auto_nocaps_ns": 795721.772089,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 178277.005457,
+     "pattern": "file-ext-order",
+     "ratio": 4.463037561172804,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 396258.403625,
+     "auto_nocaps_ns": 396285.137919,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 312,
+     "n": 11,
+     "ns": 169546.381438,
+     "pattern": "router-prefix-order",
+     "ratio": 2.337168155782224,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 1268479.941019,
+     "auto_nocaps_ns": 1266205.994901,
+     "bytes": 4681573,
+     "cmp": "rust:default-caps",
+     "form": "plain",
+     "matches": 4,
+     "n": 11,
+     "ns": 183675.918044,
+     "pattern": "wild-semdiv-altorder-foo-foobar-rustregex",
+     "ratio": 6.893696290646428,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "peer": [
+    {
+     "auto_caps_ns": 795656.971648,
+     "auto_nocaps_ns": 795721.772089,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 0,
+     "n": 11,
+     "ns": 265283.360997,
+     "pattern": "file-ext-order",
+     "ratio": 2.999272056331485,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 396258.403625,
+     "auto_nocaps_ns": 396285.137919,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 312,
+     "n": 11,
+     "ns": 276267.837461,
+     "pattern": "router-prefix-order",
+     "ratio": 1.4343269461503592,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    },
+    {
+     "auto_caps_ns": 1268479.941019,
+     "auto_nocaps_ns": 1266205.994901,
+     "bytes": 4681573,
+     "cmp": "libpcre2:jit-caps",
+     "form": "plain",
+     "matches": 4,
+     "n": 11,
+     "ns": 313902.208901,
+     "pattern": "wild-semdiv-altorder-foo-foobar-rustregex",
+     "ratio": 4.041003551583988,
+     "regime": "large-subject-throughput",
+     "set": "capability",
+     "tier": "A",
+     "verdict": "behind"
+    }
+   ],
+   "rust_only": 3,
+   "scalar_wins": [],
+   "score_ceiling": 4.626,
+   "score_peer": 3.09,
+   "sets": [
+    "capability"
+   ]
+  }
+ },
+ "unassigned": []
+}

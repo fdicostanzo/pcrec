@@ -30,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import gap  # noqa: E402  (compare/med: the cross-form view reuses the metric)
 import gapconfig as cfg  # noqa: E402
+import extras  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 FIXTURE = os.path.join(HERE, "fixture")
@@ -78,10 +79,19 @@ def pick_group(groups, want):
                                       len(groups[g]), g))
 
 
-def fetch(remote, group, scratch):
+def fetch(remote, group, scratch, peer_groups=()):
     groups = list_groups(remote)
     group = pick_group(groups, group)
     files = {sb: fn for sb, (_d, fn) in groups[group].items()}
+    # CROSS-WINDOW: per set, the newest report among the peer groups supplies
+    # the non-pcrec testees (extract.py --peers); the main group supplies pcrec.
+    peer_files = {}
+    for pg in peer_groups:
+        if pg not in groups:
+            sys.exit(f"gapreport: no peer report group {pg!r}")
+        for sb, (d, fn) in groups[pg].items():
+            if sb not in peer_files or peer_files[sb][0] < d:
+                peer_files[sb] = (d, fn)
     want = {"email-specimen" if s == "email" else s for s in cfg.SETS}
     if want - set(files):
         say("WARNING group %s lacks report(s) for: %s" % (group, ", ".join(sorted(want - set(files)))))
@@ -90,12 +100,18 @@ def fetch(remote, group, scratch):
     for d in (rep, ben):
         shutil.rmtree(d, ignore_errors=True)
         os.makedirs(d)
-    names = " ".join(shlex.quote(f) for f in sorted(files.values()))
-    p = subprocess.Popen(ssh_cmd(remote, f"cd {shlex.quote(cfg.REMOTE_BENCH)}/reports && tar -cf - {names}"),
-                         stdout=subprocess.PIPE)
-    run(["tar", "-xf", "-", "-C", rep], stdin=p.stdout)
-    if p.wait():
-        sys.exit("gapreport: report fetch failed")
+    for want_files, dest in ((sorted(files.values()), rep),
+                             (sorted(fn for _d, fn in peer_files.values()), os.path.join(scratch, "peers"))):
+        if not want_files:
+            continue
+        shutil.rmtree(dest, ignore_errors=True) if dest != rep else None
+        os.makedirs(dest, exist_ok=True)
+        names = " ".join(shlex.quote(f) for f in want_files)
+        p = subprocess.Popen(ssh_cmd(remote, f"cd {shlex.quote(cfg.REMOTE_BENCH)}/reports && tar -cf - {names}"),
+                             stdout=subprocess.PIPE)
+        run(["tar", "-xf", "-", "-C", dest], stdin=p.stdout)
+        if p.wait():
+            sys.exit("gapreport: report fetch failed")
     items = " ".join(f"{s}/manifest_throughput.tsv {s}/expectations.tsv {s}/patterns" for s in cfg.SETS)
     p = subprocess.Popen(ssh_cmd(remote, f"cd {shlex.quote(cfg.REMOTE_BENCH)}/bench && tar -cf - {items}"),
                          stdout=subprocess.PIPE)
@@ -121,8 +137,9 @@ def pipeline(rep, ben, pcrec, scratch, baseline, causes, stamps_timeout, quiet=F
     if not reports:
         sys.exit("gapreport: no report .tsv files in " + rep)
     say(f"1/4 extract ({len(reports)} reports)")
-    run([sys.executable, os.path.join(HERE, "extract.py"), a["cells.json"]] + reports,
-        stderr=subprocess.DEVNULL)
+    peers = sorted(glob.glob(os.path.join(scratch, "peers", "*.tsv")))
+    run([sys.executable, os.path.join(HERE, "extract.py"), a["cells.json"]] + reports
+        + (["--peers"] + peers if peers else []), stderr=subprocess.DEVNULL)
     say("2/4 stamps (serial compile of every bench pattern; slow)")
     stamp_out = os.path.join(scratch, "stamp_art")
     step("stamps.py", ["current"], a["stamps.json"], timeout=stamps_timeout,
@@ -237,7 +254,7 @@ def selection_diff(cur, base):
     return moves, only
 
 
-def render(a, group, date, causes, judgement, baseline, provenance):
+def render(a, group, date, causes, judgement, baseline, provenance, prev=None):
     rows = json.load(open(a["gap_rows.json"]))
     rk = json.load(open(a["rank.json"]))
     cells = json.load(open(a["cells.json"]))
@@ -293,7 +310,8 @@ def render(a, group, date, causes, judgement, baseline, provenance):
     w("|---|---|---|")
     for sb in sorted(cells["meta"]):
         m = cells["meta"][sb]
-        w(f"| {sb} | `{m['report']}` | version {m['version']} |")
+        peer = f"; peers from `{m['peer_report']}`" if m.get("peer_report") else ""
+        w(f"| {sb} | `{m['report']}` | version {m['version']}{peer} |")
     pins = sorted({v["id"].split("_")[1] for c in cells["cells"].values()
                    for t, v in c["t"].items() if t.startswith("pcrec:")})
     w("")
@@ -406,6 +424,40 @@ def render(a, group, date, causes, judgement, baseline, provenance):
     else:
         w("None: every losing cell has a cause group.")
     w("")
+    w("## 7. Census against the best comparator, not only jit\n")
+    w("A cell trails if any comparator of the view's roles is behind past its band, leads if every one is "
+      "ahead, else level (like-for-like cells with a jit peer; tier C cells keep their delta verdicts).\n")
+    w("| view | set | lead | level | trail |")
+    w("|---|---|---|---|---|")
+    for name, cnt in extras.best_peer_census(rows):
+        tl = collections.Counter()
+        for sb in sorted(cnt):
+            c = cnt[sb]
+            tl.update(c)
+            w(f"| {name} | {sb} | {c['lead']} | {c['level']} | {c['trail']} |")
+        w(f"| **{name}** | **all** | **{tl['lead']}** | **{tl['level']}** | **{tl['trail']}** |")
+    w("")
+    w("## 8. SIMD-attributable gaps (kept apart; pcrec ships `-fmemfn-simd` OFF)\n")
+    sc = extras.simd_cells(rows)
+    w(f"{len(sc)} trailing cell(s) (tier A/B) where ONLY a SIMD-role comparator "
+      f"({', '.join(t for t, _c, r, _f in cfg.COMPARATORS if r == 'simd')}) is behind: no jit, no scalar engine "
+      "beats auto there.\n")
+    for r, x in sorted(sc, key=lambda z: -z[1]):
+        w(f"- {r['sb']} `{r['pattern']}` {r['regime']}: x{x:.2f} behind rust; auto {r['auto_caps']:.0f} ns")
+    w("")
+    w("Groups the cause table dispositions as SIMD-phase: " + ", ".join(extras.SIMD_GROUPS) + ".\n")
+    for g in extras.SIMD_GROUPS:
+        if g in groups:
+            G = groups[g]
+            w(f"- {g}: breadth {G['breadth']}; worst vs jit {worst(G['peer'])}; worst vs ceiling {worst(G['ceiling'])}")
+    w("")
+    for i, pv in enumerate(prev or [], 1):
+        label, _, pv = pv.rpartition("=") if "=" in pv else ("", "", pv)
+        w("## 9.%d Movement since the earlier run %s\n" % (i, label or "in `%s`" % os.path.basename(pv.rstrip("/"))))
+        o_rows = json.load(open(os.path.join(pv, "gap_rows.json")))
+        o_rk = json.load(open(os.path.join(pv, "rank.json")))
+        for ln in extras.movement(o_rows, rows, o_rk, rk, None, cfg.GROUP_MERGE):
+            w(ln)
     w("## MANAGER JUDGEMENT\n")
     w(MARK_BEGIN % (os.path.basename(judgement) if os.path.exists(judgement) else judgement))
     if os.path.exists(judgement):
@@ -452,6 +504,12 @@ def main():
     ap.add_argument("--out", help="report path (default docs/dev/optloop/gapreport_<date>.md)")
     ap.add_argument("--date", help="report date (default: today)")
     ap.add_argument("--scratch", help="scratch dir (default: a fresh mkdtemp under $TMPDIR)")
+    ap.add_argument("--peer-group", default="",
+                    help="CROSS-WINDOW: comma-separated report groups supplying the non-pcrec testees "
+                         "(per set, the newest report among them); --group then supplies pcrec only")
+    ap.add_argument("--prev-dir", action="append", default=[],
+                    help="scratch dir of an earlier run (gap_rows.json, rank.json): adds a Movement "
+                         "section; repeatable (one section per earlier run); LABEL=DIR names the section")
     ap.add_argument("--no-fetch", action="store_true", help="reuse reports/ and bench/ already in --scratch")
     ap.add_argument("--pcrec", default=os.path.join(REPO, "build", "pcrec"))
     ap.add_argument("--baseline", default=os.path.join(HERE, "stamps_main.json"),
@@ -481,14 +539,15 @@ def main():
     if o.no_fetch:
         group, rep, ben = o.group, os.path.join(scratch, "reports"), os.path.join(scratch, "bench")
     else:
-        group, rep, ben = fetch(o.remote, o.group, scratch)
+        group, rep, ben = fetch(o.remote, o.group, scratch, [g for g in o.peer_group.split(",") if g])
     say(f"group {group}; scratch {scratch}")
     ver = run([o.pcrec, "--version"], capture_output=True, text=True).stdout.strip()
     sha = subprocess.run(["git", "-C", REPO, "rev-parse", "--short", "HEAD"],
                          capture_output=True, text=True).stdout.strip()
     a = pipeline(rep, ben, o.pcrec, scratch, o.baseline, o.causes, o.stamps_timeout)
     text, unassigned = render(a, group, date, o.causes, judgement, o.baseline,
-                              f"{ver} (repo {sha}, {os.path.relpath(o.pcrec, REPO) if o.pcrec.startswith(REPO) else o.pcrec})")
+                              f"{ver} (repo {sha}, {os.path.relpath(o.pcrec, REPO) if o.pcrec.startswith(REPO) else o.pcrec})",
+                              o.prev_dir)
     open(out, "w").write(text)
     say(f"wrote {out}")
     if o.save_stamps:

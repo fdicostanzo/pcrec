@@ -77,6 +77,27 @@ tier-C cell, one refusal) and diffs the rendered report against
 intended change to the renderer or the criteria, `--check --bless` rewrites
 `expected.md`; read the diff in git before committing it.
 
+## Cross-window and movement (third instance, 2026-10-11)
+
+    gapreport.sh --group landing-b8337c33 --peer-group round1-c4c70f2c,first-255bcdd8 \
+        --remote duxevents@192.168.1.100 --prev-dir "vs 10-05=SCRATCH0510" --prev-dir "vs 255bcdd8=SCRATCH1008" \
+        --out docs/dev/optloop/gapreport_2026-10-11.md
+
+- `--group` supplies pcrec; `--peer-group` (comma-separated groups) supplies the NON-pcrec testees,
+  per set the newest report among them (`extract.py --peers`; a peer report for a set with no pcrec
+  report is ignored). Section 1 names each set's peer report. Use it when the newest pcrec window did
+  not re-run the peers, and state the drift bound in the judgement.
+- `--prev-dir [LABEL=]DIR` (repeatable) adds a movement section per earlier run: DIR is that run's
+  `--scratch` (`gap_rows.json`, `rank.json`). `extras.py` compares per cell vs jit (x1.15 band, same
+  subject count `n` only: a changed `n` is SUBJECTS-CHANGED, never movement) and per cause group.
+- `extras.py` also renders section 7 (lead/level/trail vs jit, vs the best jit-or-scalar peer, vs the
+  best incl. rust) and section 8 (cells where only a SIMD-role comparator is ahead, plus the SCAN-SIMD
+  and WIDE-ALT groups).
+- The default `--remote` (tailnet address) does not answer from the Linux dev box; pass the LAN address.
+- `run_2026-10-11/` keeps the three `rank.json` files behind that instance (current, the 10-05 run
+  re-rendered, the 255bcdd8 window); `stamps_e878687b.json` is the stamp census at main e878687b
+  (abi 74), the baseline to pass next time.
+
 ## Files
 
 - `extract.py` — reads the report `.tsv` (the `rank` section) into
@@ -114,7 +135,7 @@ intended change to the renderer or the criteria, `--check --bless` rewrites
   SEL-LIT and K82-AT-PIN, and litrun's cells): each losing (set, pattern) gets
   one cause group. The groups are defined in `../gapreport_2026-10-03.md`
   §2. `rank.py` reports any losing cell without a group as `unassigned`,
-  and this instance has 0.
+  and the 10-05 instance had 0. The 2026-10-11 instance added ANCH-ATTEMPT and REVEND-TAIL and assigned four capability@0.2 cells.
 - `rank.py` → `rank.json` — per group:
   - the peer cells and the ceiling cells;
   - the realism-weighted log2 scores (tier A/B only);
@@ -125,6 +146,7 @@ intended change to the renderer or the criteria, `--check --bless` rewrites
 - `u8pick_probe.txt` — the compile-side probe behind the U8-PICK finding.
   Seven literals, each in byte mode and under `-e utf8`, with their
   `RX_DFA_PREFILTER*` and `RX_REQ_*` stamps.
+- `extras.py` — sections 7-9 (best-peer census, SIMD-attributable cells, movement); see above.
 - `gapreport.sh` / `gapreport.py` — the one-command driver (see Usage):
   fetch, the four steps, render, `--check`. Stdlib only.
 - `gapconfig.py` — the declared first-match criteria tables.
