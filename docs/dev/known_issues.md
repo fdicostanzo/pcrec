@@ -11,6 +11,13 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K104 — OPEN (filed 2026-10-11, manager, session 106, from lane rewtwin's side finding; owned by [OPT-REVEND]'s remainder) — PERFORMANCE: rev-end walks a long class TAIL before reaching a selective HEAD
+
+**Witness (scratch tier, dev box, rewtwin_report.md):** `wild-secrets-github-pat` (head `github_pat_`, then an 82-byte `[0-9a-zA-Z_]` tail, end-pinned). The reverse walk reads the whole class tail before it can test the selective head: short subjects x1.24 vs `-fno-rev-end` (bench O-96 (c)2 read x1.022); subjects that are long class runs 32.9 ns vs 3.3 ns (x10). It also holds on AUTO (VM hybrid 34.2 vs 3.4 ns).
+**Cause:** rev-end's admission does not weigh WHERE the pattern's selective part sits. A forward route that dismisses on the head is cheaper when the tail is a dense class.
+**Fix shapes (not built):** rev-end-width (fixed W = 93 here: one verify at n-W, measured -72% nocaps); or an admission term on head selectivity vs tail density.
+**Interim:** `-fno-rev-end`.
+
 ## K103 — OPEN, ACCEPTED/UNSCHEDULED (filed 2026-10-10, manager, session 106, from bench O-96 (c)1+(c)2; owned by [OPT-REVEND]'s remainder) — PERFORMANCE: REV-END ENTRY FLOOR: a rev-end search call costs ~9 ns where the forward route it replaced cost 3.8 ns (a memchr dismissal) or a clamped window
 
 **Witness:** O-96 (c)1: `.*\.txt$` x short-subject-search, 66 of 75 subjects +5.5 ns each (3.8 -> 9.3 ns). O-96 (c)2: litrun whole-subject forms (`alt-foo-tails` x1.077, `lit-l4` x1.034, `lit-l2` x1.032), where `end_window 2..16 -> none`; longer literals (`lit-l31`, `lit-l40`) win 2%.
@@ -19,6 +26,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 **Interim:** `-fno-rev-end` (bit 52, tuning.md §2.46).
 **Fix shapes (not built):** (a) a single-seed fast path when `s[n-1] != '\n'`; (b) the filed `rev-end-width` sibling in [OPT-REVEND] (AT(n-W), no walk), whose chosen 10% trigger these cells are the first evidence for; (c) a last-byte or required-byte test ahead of the walk, only if it beats ~9 ns.
 **Trigger to build (D77):** a short-subject cell where the entry floor is the cost at rank.
+**2026-10-11 (lane rewtwin, scratch tier, Zen 4 / gcc 15.2):** the floor does NOT reproduce on the dev box: today's rev-end is 1.7-2.6x FASTER than `-fno-rev-end` on every O-96 (c)2 cell except github-pat (K104). Fix (b) rev-end-width, measured as a twin with the verify inlined: abc$ -21% (the `$` two-seed loop), lit-l31 -24%, lit-l40 -31%, aws nocaps -44%, github-pat nocaps -72%; W <= 4 literals +1..6%; a CALLED verify loses 27-35% (a build must inline). Its shape: a guard relaxation plus a hand on RECOVER `end-minus-width` (WINDOW -> FINISH AT); under utf8, n-W may be mid-character (a boundary test or a decline). Relay: is the +2..8% the Zen 1 box or the a15fb77b pin?
 
 ## K102 — ACCEPTED (filed 2026-10-09, manager, session 103, from D158; owned by [EFFORT-BUDGET]) — BUDGET COMPLETION: possessification can make a `PCREC_ERR_WORK` give-up APPEAR where the denied build answers
 
