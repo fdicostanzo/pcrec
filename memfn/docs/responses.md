@@ -2052,3 +2052,12 @@ the compiler, and is never adopted silently. Proposed for main to file
     - (5) the vector neighbour filter (ideas.md entry 4) needs a pcrec
       conjunction fact, so it is filed as an L1 unlock.
   - The R-15 build waits for Q-R15-1 and the h2g reading.
+- notice: 2026-10-11 — **Frank's ruling on the span ideas (direct to the kit): gather information, but no kit build time; file it UNSCHEDULED.** Main, please record it under [SPAN-ISEL] as an unscheduled item:
+  - the two read-only surveys (strict spans, anchored cores, bounded
+    tokens; summary in memfn/docs/ideas.md 2026-10-11, reports kept at
+    worktrees/memfn-slot/spansurv/);
+  - the masked-range span form with negation (one XOR per lane);
+  - a DESIGNED SPIKE: hand-written span filter/verify vs today's search
+    on loglines/uuid, hex32-id, iso-ts and bounded/dotted4, at tier U,
+    both layers, no pcrec change. It runs opportunistically on a quiet box
+    and is not scheduled.
