@@ -47,6 +47,13 @@
  * word's offset is `L - W`, so the compare never reads past the bytes the
  * caller bounded.
  *
+ * THE TRIMMED COMPARE (`run_cmp_render_trim`, R-14: vrun.c's verify) is the
+ * same row's text less positions its caller already tested under the same
+ * mask: the row and the word width are the whole run's, a proven position
+ * (and in the words form one an earlier window compared) is a don't-care of
+ * its window, and a window left with none is not loaded. An exact run
+ * trimmed is compared byte by byte (the `memcmp` row compares one string).
+ *
  * THE HELPERS are the art's: a width is RECORDED when a words compare uses
  * it (`wused`), DECLARED once (`wemitted`) by `mf_flush_helpers` or by a FUNC
  * definition's `run_cmp_prepare`, which declares every pending width ahead

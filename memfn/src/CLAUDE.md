@@ -129,7 +129,11 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   first position of pcrec's rarity ranking (`mf_pred.rank_*`) other than KA
   (`vrun_kb`; none where the ranking states no other), denied by
   `--memfn=no-vrun-kb`; two positions is an `UNMEASURED DEFAULT` (the
-  form R-1 timed), no distance rule beyond KB != KA (derived).
+  form R-1 timed), no distance rule beyond KB != KA (derived). Since lane
+  r14b (R-14, D147 addendum 15) each candidate's verify skips the
+  positions the mask tested (`vrun_proven`; runcmp.c's
+  `run_cmp_render_trim`), and a run the mask covers whole is returned with
+  no verify; the deny `--memfn=no-vrun-trim` verifies the whole run.
 - **levels.def**, **levels.c** — the kit's ISA LEVELS (R4e' batch 1):
   `MF_LEVEL(token, family, guard, header, vw, test_march, forbid, stamp)`,
   the one place a level's guard string, intrinsics header, width and stamp
@@ -152,7 +156,9 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   RUN term of the offset-skip function's verify chain and the body of
   `runcmp_arm` (VERIFY/EXPR/BOOL behind the caller's guard: pcrec's VM
   literal runs); `run_cmp_prepare` declares a FUNC definition's word-load
-  helpers ahead of it; `mf_flush_helpers` writes the pending ones (the art
+  helpers ahead of it; `run_cmp_render_trim` (R-14) is the same row's text
+  less positions the caller tested (vrun.c's verify) and `run_cmp_trim_none`
+  says whether anything is left; `mf_flush_helpers` writes the pending ones (the art
   records the widths used/declared and the words count `mf_stamps` writes
   as `RUN_WORDS`); `mf_run_rows` is the rows' accessor (`--list-axes`).
   The overlap lengths and the width rule are DERIVED (D149).
@@ -252,7 +258,8 @@ R4g (M2), a fourth, the prefilter find (PF, pffind.c).
   `MF_OPT(name, kind, budget, layer, doc)` (D147 addendum 9). Born empty;
   its first rows are R4e' batch 1's SIMD denies (`vrun-w16`, `vrun-w32`),
   then `vrun-kb` (lane rankuse: the vrun rows' second filter position, an
-  option of a form rather than a row of a table).
+  option of a form rather than a row of a table) and `vrun-trim` (lane
+  r14b: their trimmed verify, the same kind of option).
   Each byte-moving kit change adds its own deny row (`--memfn=no-NAME`) in
   the same commit and raises the floor in `docs/spec/registry.md` §6. See
   `../CLAUDE.md` "The kit's option namespace".

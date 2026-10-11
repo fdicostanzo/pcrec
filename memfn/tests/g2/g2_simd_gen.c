@@ -21,8 +21,10 @@
  *                     denied), the measurement each row's bound rests on;
  *                     then the ranking's mode, its STATED entries (rank_pos
  *                     below rank_n, `-` for none), the malformed copy's
- *                     verdict (`refused`/`accepted`, `-` untested) and the
- *                     count of rate ties among the stated entries.
+ *                     verdict (`refused`/`accepted`, `-` untested), the
+ *                     count of rate ties among the stated entries and the
+ *                     run's GENERATED masks (hex, one byte per position:
+ *                     the runner derives the verify's positions from them).
  * The space: run length 2..32 (every length, weighted short), term offset
  * 0..3, per-position masks (exact, a letter's case bit, another one-bit
  * cube, all four mixed), the scanned position a two-member cube; and its
@@ -30,8 +32,9 @@
  * position exact (`fn-memchr`, the OVER test), a span proven shorter than the
  * reach (REACH), the policy PORTABLE (-fno-memfn-simd), each row's own deny,
  * two terms (APPLIES), a run longer than VRUN_MAX_RUN, and a sink without
- * the bracket ops. The classes go in the meta file; the runner holds each
- * to its expectation.
+ * the bracket ops; and `deny-trim` (R-14), a positive site rendered under
+ * `no-vrun-trim`, whose verify is the whole run. The classes go in the meta
+ * file; the runner holds each to its expectation.
  * THE RANKING (D157, `mf_pred.rank_*`): every site states one, GENERATED
  * here in one of RM_N modes (none, one entry that is the scanned position,
  * one that is not, a whole permutation led by the scanned position as

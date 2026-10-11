@@ -29,6 +29,14 @@ WHAT IT CHECKS, AND AGAINST WHAT
      rendered helper's loads are held to them, in order. Each malformed copy
      (rank_n past the run or MF_RANK_MAX, a position outside the run or twice)
      must be refused by mf_define. Floors per mode and per shape (K35).
+  1c. THE VERIFY (R-14, vrun.c's VERIFY TRIM): every rendered helper's
+     verify is parsed from its text into the set of positions it COMPARES
+     (a byte under a nonzero mask byte), which must equal the rule's set
+     derived HERE from the generated masks and the 1b filter: every
+     position whose mask is not 0x00, less the filter's positions (all of
+     them in the `deny-trim` class, `no-vrun-trim`); a helper has no verify
+     (it returns the lowest lane) iff that set is empty. Floors per verify
+     shape (K35).
   2. GUARDED_MAX: every rendering's guarded bytes, measured by G2's own
      counting sink at pcrec's placeholder prefix and longest FUNC name, are
      at most the sum of tests/memfn/simd_bounds.tsv's bounds of the levels
@@ -102,11 +110,11 @@ BADRANK_FLOOR = 64       # malformed copies refused (80)
 # measured at the same seed and sites (Linux dev box, 2026-10-11), each floor
 # ~80% of its measurement: a helper per rendered level of a rendered site
 VSHAPE_FLOOR = {
-    'none': 0,      # nothing left to verify: the lowest lane is the hit
-    'gap': 0,        # the positions left are not contiguous (a filter position inside)
-    'whole': 0,    # the whole run (deny-trim)
-    'bytes': 0,    # trimmed, the bytes form (MF_D_RUN_OVERLAP)
-    'words': 0,    # trimmed, the words form
+    'none': 19,      # nothing left to verify: the lowest lane is the hit (24)
+    'gap': 275,      # the positions left are not contiguous: a filter position inside (344)
+    'whole': 27,     # the whole run, deny-trim (34)
+    'bytes': 53,     # trimmed, the bytes form under MF_D_RUN_OVERLAP (67)
+    'words': 349,    # trimmed, the words form (437)
 }
 # the level a build makes live (top first), and whether w16/w32 is live
 BUILDS = [

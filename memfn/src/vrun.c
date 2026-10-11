@@ -31,9 +31,10 @@
  * the broadcast byte, a movemask; where the ranking gives a second position
  * KB (below), its compare is ANDed in before the movemask. Each set lane, lowest first, is verified
  * by the BODY's own run compare (runcmp.c, the row the walk picks; [r9 C-12]:
- * the `denies` class reaches it as it reaches the floor), and the first
- * that verifies is returned: the leftmost candidate >= `pos` whose whole run
- * holds, THE CONTRACT ofsskip.c's header states. Blocks ascend; past the
+ * the `denies` class reaches it as it reaches the floor) less the positions
+ * the mask proved (VERIFY TRIM, below), and the first that verifies is
+ * returned: the leftmost candidate >= `pos` whose whole run holds, THE
+ * CONTRACT ofsskip.c's header states. Blocks ascend; past the
  * last whole block, ONE overlapped final block ends at `n - T`, its lanes
  * below the next untested candidate masked off.
  *
@@ -64,8 +65,23 @@
  *     joint rates [OPT-REQPOS] measured) is UNMEASURED and has no variant:
  *     a distance threshold would be a new constant, built when the
  *     DEFAULT-vs-deny reading shows the pair losing to KA alone.
- *   - The verify is unchanged: every passing lane is verified by the whole
- *     run compare, so the answers are exact whichever positions are read.
+ *   - The answers are exact whichever positions are read: the verify
+ *     covers every run position the mask did not (VERIFY TRIM).
+
+ * VERIFY TRIM (request R-14, D147 addendum 15). A set lane has already
+ * passed `(s[c + K] & M) == V` at KA, and at KB where the mask reads one:
+ * the run compare's own test of those positions, under the same mask. The
+ * verify therefore compares only the OTHER positions (runcmp.c's
+ * `run_cmp_render_trim`: the row the whole run's walk picks, at its word
+ * width, the proven positions and those an earlier word compared made
+ * don't-cares, a word left with none not loaded). Where nothing is left
+ * (a two-byte run read at both positions, or every other position a
+ * don't-care), the lowest set lane IS the answer and the loop returns it
+ * with no verify. DERIVED: dropping a position the filter tested under the
+ * same mask cannot change an answer. The scalar `__body` is unchanged: its
+ * `memchr` stream proves KA's two members only. The deny `no-vrun-trim`
+ * verifies the whole run (R-13's and rankuse's verify byte for byte), the
+ * arm R-14's re-timing measures the trim against.
 
  * OVER-READ / BOUNDARY ARGUMENT (the kit reads only [pos, n)):
  *   - R = VW + T (T = the predicate's highest read, the BODY loop guard's
@@ -90,6 +106,10 @@
  *              4x unrolls and the w16-over-scalar / w32-over-w16 cut-overs
  *              above R are tier-U sweeps owed in RQ-4's slot (§R4.9.5 item
  *              10); until then nothing but the derived R is written.
+ *   the trim   DERIVED (VERIFY TRIM above); its word width is the whole
+ *              run's, the one helper run_cmp_prepare declared ahead of the
+ *              FUNC outside any guard (a narrower helper would need a
+ *              declaration the SIMD-off text lacks: the floor rule).
  *   KB         UNMEASURED DEFAULT: two positions, KB the first ranked other
  *              than KA, no distance rule (SECOND FILTER POSITION above);
  *              its deny `no-vrun-kb` is the arm RQ-4's slot times it against.

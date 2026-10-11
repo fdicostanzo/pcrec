@@ -2452,6 +2452,33 @@ if [ "$(mfkb_loads "$WORKDIR/mfs2.c")" = 2 ] && grep -q 'subject + i + 1))' "$WO
 else
     fail "the vrun filter's second position (or its deny) is not as ruled on (?i)cat"
 fi
+# ... and `--memfn=no-vrun-trim` (lane r14b, R-14): the rows' trimmed
+# verify. On (?i)cat the mask proves C at 0 and A at 1, so the default
+# verify compares T alone (one masked word at cand + 1 whose first byte is a
+# don't-care); the deny verifies the whole run (two words, both masks whole).
+# Inert at -fno-memfn-simd.
+pcrec_run "$PCREC" -p rx --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs8.c"
+pcrec_run "$PCREC" -p rx -fmemfn-simd --memfn=no-vrun-trim -o - --pattern '(?i)cat' 2>/dev/null >"$WORKDIR/mfs9.c"
+if [ -s "$WORKDIR/mfs8.c" ] && cmp -s "$WORKDIR/mfs0.c" "$WORKDIR/mfs8.c"; then
+    pass "--memfn=no-vrun-trim at -fno-memfn-simd is accepted and inert"
+else
+    fail "--memfn=no-vrun-trim at -fno-memfn-simd moved the artifact or did not compile"
+fi
+mftrim_verify() {   # the w16 helper's verify line
+    sed -n '/^static inline size_t rx_reqrun__w16(/,/^}/p' "$1" | grep ') return cand;$'
+}
+mftrim_reads() {   # its loads, one per line
+    mftrim_verify "$1" | grep -o '(subject + cand[ +0-9]*)' | tr -d ' '
+}
+if [ "$(mftrim_reads "$WORKDIR/mfs2.c")" = '(subject+cand+1)' ] \
+   && mftrim_verify "$WORKDIR/mfs2.c" | grep -q '"\\000\\337")) == rx_w2("\\000T")' \
+   && [ "$(mftrim_reads "$WORKDIR/mfs9.c" | tr '\n' ' ')" = '(subject+cand) (subject+cand+1) ' ] \
+   && ! mftrim_verify "$WORKDIR/mfs9.c" | grep -q '000' \
+   && grep -q '^#define RX_MEMFN_FORMS "vrun@w32+w16"$' "$WORKDIR/mfs9.c"; then
+    pass "-fmemfn-simd verifies only what the filter did not prove; --memfn=no-vrun-trim the whole run"
+else
+    fail "the vrun verify (or its trim deny) is not as ruled on (?i)cat"
+fi
 
 echo "cases failed: $total_fail"
 
