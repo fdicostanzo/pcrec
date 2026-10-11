@@ -352,3 +352,59 @@ Frank asked whether there is a memcmp replacement for folded spans.
   trigger as [MEMFN-CI-ASCII], so file them together. If delegated, it is a
   kit site (a byte-domain masked span compare), which is main's call
   (DELEG_SITES).
+
+## 2026-10-11 — a fixed-width MIXED span compare: bytes, folded letters and classes in one vector test
+
+Frank: given a static span of mixed items, e.g. `abcd[0-9]{4}(?i)xyz` (11
+positions: 4 exact bytes, 4 digits, 3 folded letters), load the stretch
+once, mask to fold or hide what needs it, do one compare, and check the
+class positions with a parallel range test. "More than memfn's usual, less
+than a bit-vector regex engine."
+- Unifying observation (kit manager): every position kind is a MASKED
+  RANGE.
+  - exact byte b: mask 0xFF, range [b, b];
+  - folded letter: mask 0xDF, range [B, B];
+  - a contiguous class such as `[0-9]`: mask 0xFF, range [0x30, 0x39];
+  - a folded range such as `(?i)[a-f]`: mask 0xDF, range [A, F];
+  - don't-care and lanes past the span: range [0, 255].
+  So one per-lane formula covers the whole span, with constant vectors
+  M, LO and W = hi - lo:
+  `t = sub(and(x, M), LO); ok = cmpeq(min_epu8(t, W), t)`, then movemask
+  == all-ones. On SSE2 that is 4 ops + movemask for up to 16 positions; at
+  w32 it is 32 positions. Today's padded word (R-14) is the special case
+  W = 0.
+- What the unification does not cover: non-contiguous sets (`[aeiou]`,
+  `[\w-]` as several ranges). Those take a nibble-table shuffle (pshufb,
+  SSSE3+; vtbl on NEON), or a two-range OR when there are only two ranges.
+- The arch arms differ completely, as Frank expects, which is why the
+  method stays the kit's:
+  - SSE2/AVX2: the min_epu8 trick (no unsigned byte compare);
+  - AVX-512BW: `vpcmpub` with per-lane predicates straight into a k-mask;
+  - NEON: `vcleq_u8` directly, `vtbl` for sets;
+  - scalar SWAR: the same masked range on 8 lanes with borrow isolation,
+    exact for 7-bit data.
+- Where it plugs in, smallest first:
+  1. As the VERIFY of a candidate the kit already found (vrun / memchr),
+     when the run grows into a fixed-width span around the anchor. A date
+     `\d{4}-\d{2}-\d{2}`, a UUID or hex id, a timestamp or a log prefix
+     becomes one load + one span test per candidate instead of a DFA or
+     VM walk over those bytes.
+  2. As the candidate FILTER itself: the vrun shape with KA/KB generalised
+     from cubes to ranges (entry 4, the ipv4 `.` + digit case, is the
+     2-position version).
+  3. Not a matcher: the span must be fixed-width and contiguous. `\d+` or
+     alternation ends it. That is the line between this and a bit-vector
+     engine (shift-and / Glushkov), which handles variable width but is
+     an engine.
+- What pcrec would have to state (D157 facts): today a run is a sequence of
+  CUBES (mask + value), with the classes elsewhere (SETREST / offset-set
+  terms as separate predicates). The span form needs ONE fact: a fixed-length
+  sequence of per-position byte sets, anchored at a known offset from the
+  candidate. That is a new `mf_pred` shape (an `MF_SITE_ABI` event and a
+  request to main). The kit classifies each set (masked range / two ranges
+  / table) and picks the arm.
+- First guess: potentially high value for log/structured-text workloads (the
+  same family as entries 4 and 6, and the [REQ-HANDOFF-L1] ipv4/ipv6/dotted4
+  cells). It is a design item (contract shape, pcrec facts, D6 panel)
+  before any build, triggered by a measured cell where verifying a
+  fixed-width structured token is the cost.
