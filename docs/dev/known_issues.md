@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K105 — OPEN (filed 2026-10-11, manager, session 107, from lane lrmisc ([LOSS-REVIEW] phase 1, docs/dev/optloop/lossreview/misc.md §5.5); owned by [REQ-HANDOFF-L1]) — PERFORMANCE: the hand-off re-entry's admission reads the byte-rate PRIOR only
+
+Witness (scratch tier, Zen 4, lane/rlhbuild): `[a-y]\d{0,100}:` over ':'-dense digit text costs x1.537 against main (3,871 -> 5,949 µs, flat in n, linear); counted work +200,451 memchr calls and +430,172 DFA steps on 1.12 MB. Cause: `req_landmark_admits` admits on `1/h - K > 1/m` with h from the default prior; the prior gives ':' a mean gap longer than K while the text has one every ~3 bytes. Same family as hcolon (K=151), whose ENTRY-only form still costs +13% with counted work identical to main — a data dependency created by `scan_position = handoff_position` (the DFA's first load waits on memchr; lrmisc twin T3 cuts it, identity 0/167,342, timing owed). Fix shapes (not built): an adaptive-dense arm like `pcrec_reseed_rows`' (`exact / adaptive-dense / adaptive / fixed`) for entry and re-entry, or price the entry form's dependency into the admission; folds into [PRIOR-COST-UNIFY]. Trigger (D77): a bench cell with a landmark denser than its prior.
+
 ## K104 — OPEN (filed 2026-10-11, manager, session 106, from lane rewtwin's side finding; owned by [OPT-REVEND]'s remainder) — PERFORMANCE: rev-end walks a long class TAIL before reaching a selective HEAD
 
 **Witness (scratch tier, dev box, rewtwin_report.md):** `wild-secrets-github-pat` (head `github_pat_`, then an 82-byte `[0-9a-zA-Z_]` tail, end-pinned). The reverse walk reads the whole class tail before it can test the selective head: short subjects x1.24 vs `-fno-rev-end` (bench O-96 (c)2 read x1.022); subjects that are long class runs 32.9 ns vs 3.3 ns (x10). It also holds on AUTO (VM hybrid 34.2 vs 3.4 ns).
