@@ -147,7 +147,7 @@ of 400) is unchanged. At the pcrec level, the deny arm against the base at
 Logs: `/home/pcrec/.claude/jobs/e99da2a5/tmp/r14b/` (`light/`, `g2s*.log`,
 `sweep_*.log`, `sab_*.log`).
 
-### 5.1 Suites (tree 74e6ceb7's content; times are 2026-10-11 EDT)
+### 5.1 Suites (tree a3ef3ff9, with 74e6ceb7's comment-only edits landing mid-chain; times are 2026-10-11 EDT)
 
 | check | start-end | verdict |
 |---|---|---|
