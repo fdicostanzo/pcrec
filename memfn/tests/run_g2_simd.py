@@ -244,11 +244,12 @@ def instrument(body, li, name):
 PLANTS = [
     # name, the helper edit (regex, replacement), expectation: 'red' or 'fault'
     # (`no-verify` edits only the helpers that verify: a trimmed verify
-    # that leaves nothing has none, VERIFY TRIM)
+    # that leaves nothing has none, VERIFY TRIM; it keeps the expression,
+    # short-circuited, so the padded verify's locals stay used)
     ('final-guard', r'if \(i \+ (\d+) >= n\) return n;', r'if (i + \1 + 1 >= n) return n;', 'red'),
     ('lane-mask',   r'\(~0u << \(i - f\)\)', r'(~0u << (i - f + 1))', 'red'),
     ('lane-order',  r'__builtin_ctz\(m\)', r'(31 - __builtin_clz(m))', 'red'),
-    ('no-verify',   r'if \((?:\(|\w)[^\n]*\) return cand;', r'if (1) return cand;', 'red'),
+    ('no-verify',   r'if \(((?:\(|\w)[^\n]*)\) return cand;', r'if (1 || (\1)) return cand;', 'red'),
     ('reach-short', None, None, 'fault'),
     # the padded verify's margin E one short (PADDED VERIFY): the main path
     # then reads a byte past n at the top lane; helpers with no padded
