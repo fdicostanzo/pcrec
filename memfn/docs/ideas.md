@@ -217,3 +217,19 @@ compare + dispatch per byte (the [WORD-FOLD] baseline).
   per-position rung) over the bench's patterns. Cost-model constants must be
   derived (uops tables per uarch) or measured, never hand-set. AVX-512 is
   not on the bench box (Zen 1), only the dev box (Zen 4).
+
+## 2026-10-10 — rev-end's run loop: a backward vector scan for the first byte OUTSIDE the class
+
+Seen in main's artifacts (abi 74) for `\s+$` / `\w+\z`, answering bench O-96 (b)
+(lane o96ans). Once the reverse walk enters its self-loop state, it steps back one
+byte at a time over a 256-entry run table:
+`while (rewind_position > search_from && rx_reverse_scan2[subject[rewind_position - 1]]) rewind_position--;`.
+On a 61,440-byte body that matches from byte 0 this is ~0.354 ns/B
+(21.8 us/call on the bench box). It is throughput-bound (no dependent state chain),
+inside K87's loop-alignment band.
+- A backward vector scan for the first byte NOT in the class (the class test of
+  entry 4, complemented, movemask, clz) replaces the loop at 16/32 B per step.
+- It is a scan-site shape, so it would be a kit request, not a REVEND edit.
+- First guess at impact: only long matching runs to the subject end (trim-like
+  `\s+$`, `\w+\z` on long bodies). That is the tail family's whole remaining cost
+  (O-96 (b)), but only on one subject per cell.

@@ -11,6 +11,15 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K103 — OPEN, ACCEPTED/UNSCHEDULED (filed 2026-10-10, manager, session 106, from bench O-96 (c)1+(c)2; owned by [OPT-REVEND]'s remainder) — PERFORMANCE: REV-END ENTRY FLOOR: a rev-end search call costs ~9 ns where the forward route it replaced cost 3.8 ns (a memchr dismissal) or a clamped window
+
+**Witness:** O-96 (c)1: `.*\.txt$` x short-subject-search, 66 of 75 subjects +5.5 ns each (3.8 -> 9.3 ns). O-96 (c)2: litrun whole-subject forms (`alt-foo-tails` x1.077, `lit-l4` x1.034, `lit-l2` x1.032), where `end_window 2..16 -> none`; longer literals (`lit-l31`, `lit-l40`) win 2%.
+**Cause (read from main's artifact, not instrumented; lane o96ans):** rev-end replaces the memchr prefilter (`RX_REQ_WHY "dominated"`, match_api.md §6.3) and the clamped window with a fixed per-call entry: the two-seed loop (the `$` tie seed at n-1), the eol-view check and the tie bookkeeping, all before a walk that usually dies on the first byte. The 1 MiB no-match cells show the same floor (7.97-9.54 ns).
+**Disposition (D144):** an issue row, not a revert; the tail family's wins (O-96 (a): x2,898..x337,939) buy it.
+**Interim:** `-fno-rev-end` (bit 52, tuning.md §2.46).
+**Fix shapes (not built):** (a) a single-seed fast path when `s[n-1] != '\n'`; (b) the filed `rev-end-width` sibling in [OPT-REVEND] (AT(n-W), no walk), whose chosen 10% trigger these cells are the first evidence for; (c) a last-byte or required-byte test ahead of the walk, only if it beats ~9 ns.
+**Trigger to build (D77):** a short-subject cell where the entry floor is the cost at rank.
+
 ## K102 — ACCEPTED (filed 2026-10-09, manager, session 103, from D158; owned by [EFFORT-BUDGET]) — BUDGET COMPLETION: possessification can make a `PCREC_ERR_WORK` give-up APPEAR where the denied build answers
 
 D158 (Frank): an optimization never reduces any pattern's ability to complete. Possessification violates that today under a caller-tuned `--work-budget`, and the spec documents the violation as a trade rather than a defect: `docs/spec/tuning.md` §2.1 ("the give-up surface moves in TWO directions") and `docs/spec/limits.md` §7 ("Possessification trades one counter for another").
@@ -64,7 +73,7 @@ D158 (Frank): an optimization never reduces any pattern's ability to complete. P
 
 `cli/main.c` returns for `--emit-ir` (:1988) and `--emit-facts` (:2021) BEFORE the `--pattern-esc` decode (:2359). The listing then describes the RAW escaped text with rc 0. Example: `--pattern-esc '\x28a\x29b' --emit-ir` lists `RX_ENGINE "dfa"` (the literal text `\x28a\x29b`), while the .c compile of the decoded `(a)b` is a VM artifact. A caller-observable wrong answer on a listing surface, with no artifact affected. Tooling impact: emit_sweep already passes decoded bytes; refactor B's B0 streams must too. Fix: decode before the listing early-returns (one move), with a CLI test in both directions. Not scheduled. **FIXED** (lane k100): `main` decodes `--pattern-esc` once, after the conflicts every mode shares, into an arena it frees after `cli_dispatch` (the modes) returns; the late decode above the compile is gone. `--count-groups` had the same defect and is fixed by the same move (`"\x28a\x29b"` counted 0 groups). Spec: `docs/spec/cli.md` `--pattern-esc` (the "inert" sentence no longer covers `--emit-ir`). Tests: `tests/cli/run_cli_tests.sh` `K98`, nine checks (each mode identical to the decoded pattern and different from the raw text, the group count oracle-read from python `re`, the decoder's refusal in every mode); six fail against a pre-fix binary.
 
-## K97 — OPEN (filed 2026-10-08, lane nullanch1; deferred, D77: no measured loss on a bench cell) — PERFORMANCE: the [NULLABLE-ANCH] admission taxes a LONG all-MATCHING subject ~2-3x
+## K97 — OPEN (filed 2026-10-08, lane nullanch1; deferred under D77 until a measured bench loss — TRIGGER MET 2026-10-10 by bench O-91 (b) (auto-caps x3.06 evil / x2.18 trim vs forced VM; pcrec I-144); scheduling is Frank's call) — PERFORMANCE: the [NULLABLE-ANCH] admission taxes a LONG all-MATCHING subject ~2-3x
 
 Since abi 68 a nullable pattern whose every empty path crosses a non-multiline start AND end anchor keeps its exact hybrid prefilter (`tuning.md` §2.17). On a near-miss that is the point (`^(([a-z]+)*)+$` on 17 letters + `!`: a ~2.3 s `PCREC_ERR_STEPS` give-up becomes a 24 ns `nomatch`). On a subject the pattern MATCHES end to end, the forward DFA pass walks the whole subject and then the VM walks it again, so the hybrid pays both. Repro (scratch tier, one core, `taskset -c 3`, median of 5; `docs/dev/optloop/nullanch/timing1.sh` -> `timing1_results.tsv`, main e6b6c25f vs lane/nullanch1):
 
