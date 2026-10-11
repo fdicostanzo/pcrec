@@ -1454,3 +1454,32 @@ pointer when a kit change merges to main.
   nested-check residue, and (Frank's addition) pcrec passing the kit more
   workload knowledge: density, subject length, byte profile, call pattern,
   from pcrec-analyze bundles. r14p_report gains the correction.
+
+## 2026-10-11 — R-16 taken, built (lane r16b), merged into lane/memfn-r16
+
+- R-15 and lane/memfn-ideas3 merged by main. R-16 acked (afc74283). The
+  slot21 D-F triage the request asks to fold in was already done read-only
+  (dftri_report, committed). It is not R-16's rows: 7 losses track the hot
+  loop's layout, 3 are noise, and v05 shows a small 64k-only per-call cost.
+  One-pass rule: no build.
+- Lane r16b (opus): ops_of[] gains `npos` (1 at w16, 2 at w32), so
+  vrun_kb() reads KB at w32 only (D147 add. 16). The w16 helper reads KA
+  alone, standalone and as w32's rung. The deny is unchanged.
+  - Re-pins: VRUN_W16_GUARDED_MAX 2700 -> 2400 (limits.md §8.3 hunk), G2
+    VSHAPE_FLOOR none 19 -> 8, and simd_accept loses vrun-kb's w16 lines.
+  - Check: G2 SIMD family 1b, KB_LEVELS={'w32'}, now also on the final
+    block; three K35 populations.
+  - S815-S819 all DETECTED; S753 still detected.
+  - Light evidence: SIMD-off 0 movers; -fmemfn-simd movers are only w16
+    helpers + the guarded stamp (classifier, every 8th pattern, bad 0);
+    no-vrun-kb 0 movers; G2 quick 52,987,686/0. No abi event.
+- Reviewed and merged (a8edd0f3); strict rc 0. The slot23 chain is staged at
+  worktrees/memfn-slot/slot23/run.sh: identity sweeps on every arm plus
+  simd and simd+no-vrun-kb, the classifier over EVERY pattern, G2 quick +
+  full, make test, mech S815-S819 + S753.
+- My calls (answer-free, same measured cost):
+  - no test-axes: SIMD-off is identical and it sweeps no --memfn row;
+  - no N2: applicability is unchanged;
+  - no re-timing: the w16 text now IS the no-vrun-kb text, already timed in
+    slot21, and the w32 helper did not move.
+- Waiting on main's GO, which comes after the rlhbuild chain + L1 merge.
