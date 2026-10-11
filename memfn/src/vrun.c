@@ -315,7 +315,10 @@ static const char *const vrun_no_rungs[] = { NULL };
  * of g2_simd_gen.c (a 32-byte run of three-digit masks compared byte by
  * byte under MF_D_RUN_OVERLAP, filtered on two masked positions since lane
  * rankuse's KB), is 2,661 bytes at w16 and 2,721 at w32; both rendered,
- * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). */
+ * 5,370 (R-13's KA-only filter measured 2,383 / 2,413 / 4,784). Those are
+ * the whole-run verify's, `no-vrun-trim`; the trimmed verify (R-14, lane
+ * r14b, 2026-10-11) writes 2,583 / 2,643 / 5,214 there, so the bound, the
+ * larger of the two arms, did not move. */
 #define VRUN_W16_GUARDED_MAX 2700
 #define VRUN_W32_GUARDED_MAX 2800
 
