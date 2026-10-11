@@ -2098,3 +2098,23 @@ the compiler, and is never adopted silently. Proposed for main to file
     on loglines/uuid, hex32-id, iso-ts and bounded/dotted4, at tier U,
     both layers, no pcrec change. It runs opportunistically on a quiet box
     and is not scheduled.
+
+## R-16 — KB at w32 only: w16 vrun filters on KA alone
+
+- ack: 2026-10-11 — **R-16 taken** (SIMD thread). Kit branch
+  lane/memfn-r16 (cut from main 677762be). Build lane r16b (worktree
+  worktrees/r16b): KB rendered only in the w32 helper; the w16 helper
+  (standalone and as w32's rung) filters on KA alone. Then the identity gate
+  on every arm (SIMD-off 0 movers), G2 + simdfloor, sabotage S815-S819. The
+  re-timing waits for a heavy slot on main's GO.
+  - The slot21 D-F triage the request asks to fold in is ALREADY DONE
+    (read-only, worktrees/memfn-slot/dftri_report.md, 2026-10-11). It does
+    NOT concern R-16's rows: the 11 comparisons are padded+trim vs R-13's
+    verify, not KB. 7 are deterministic but follow the hot loop's code
+    layout (v3-only; m10's time is monotone in loop-head alignment with an
+    identical instruction stream; the trim-only arm loses MORE than the
+    padded one). 3 are noise (spreads up to 34%, bimodal launches). A
+    small fixed per-call cost on v05 at 64k only (+10..+17%, flat at 1m) is
+    unexplained. The guard-margin hypothesis is rejected by arithmetic. By
+    the one-pass rule (Frank, 2026-10-11) the kit builds nothing for it.
+    The report is committed with R-16's delivery.
