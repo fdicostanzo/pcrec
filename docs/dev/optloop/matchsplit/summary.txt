@@ -23,6 +23,9 @@ refusal reasons (pcrec's own diagnostics, first 60 bytes), all populations:
      11  pcrec: quantifier does not follow a repeatable item (pattern offset 4)
      10  pcrec: a relative reference of zero is not allowed (pattern offset 4)
 
+recipe control: rows msprobe REFUSED to parse that pcrec's own compile ACCEPTED: 0 (0 = the probe's parse recipe never rejects what the compiler takes)
+rows msprobe parsed that pcrec's compile then refused (size caps, module gates): 20
+
 Every table below counts the `ok` patterns of its population (the `ok` column above).
 corpus-d27 = composition_d27.rxt and the d27/ and matrix.rxt adversarial files, reported separately.
 
@@ -86,9 +89,9 @@ S+LS                0            0            0            0            0       
 F                 233           39           18            0            0            0            0            0
 S                   0            0            1           17           15            0            0            0
 E                   0            0            0            0            0           12            0            0
+LS                  0            0            0            0            0            0            2            0
 LE                  2            0            0            0            0            0            0            0
 S+F                 0            0            0            0            0            0            2            0
-LS                  0            0            0            0            0            0            2            0
 G                   0            0            0            0            0            0            0            1
 
 -- corpus (n=3603)
@@ -152,8 +155,8 @@ LS+LE               0            2            0            0            4
 E+LE                0            3            0            0            0
 G+LS                0            2            0            0            0
 G+E                 0            1            0            0            0
-S+LS                0            1            0            0            0
 S+LE                0            1            0            0            0
+S+LS                0            1            0            0            0
 
 by today's route (all populations):
          dfa-attempt[subject_length] dfa-unanchored hybrid-attempt[subject_length]
@@ -162,8 +165,8 @@ LS+LE               6            0            0
 E+LE                0            3            0
 G+LS                2            0            0
 G+E                 1            0            0
-S+LS                1            0            0
 S+LE                0            0            1
+S+LS                1            0            0
 
 the S+E/LS+E/S+LE/LS+LE sub-population on the ATTEMPT route with start_max = subject_length (the gratuitous forward scan):
   32 of 35 pin-only
@@ -227,8 +230,8 @@ DFA or hybrid artifacts on the attempt route with start_max = subject_length: 16
                 bench       corpus   corpus-d27      catalog       idioms
 LS                  2           24           18            0           10
 G+F                 0           18            2            0            1
-S+F                 2           10            3            0            6
 S+E                 0            1            0            0           20
+S+F                 2           10            3            0            6
 -                   0            2           10            0            0
 LS+F                0            8            0            0            0
 S                   0            2            5            0            0
@@ -238,8 +241,8 @@ S+E+F               0            0            0            0            4
 G                   0            2            1            0            0
 G+LS                0            2            0            0            0
 G+E                 0            1            0            0            0
-S+LS                0            1            0            0            0
 S+LE                0            1            0            0            0
+S+LS                0            1            0            0            0
 
 TOTAL                   4           80           40            0           45
 
@@ -251,17 +254,17 @@ E                   0           37            8            0            0
 S+F                 0            2            0            0            3
 LE                  0            4            0            0            0
 G+F                 0            2            0            0            0
-E+F                 0            2            0            0            0
 G                   0            2            0            0            0
+E+F                 0            2            0            0            0
 
 ====================================================================================================
 5. (d) QUADRATIC-RISK population: an END path whose first consuming atom sits in an unbounded repeat (lu_E), by route
 ====================================================================================================
 patterns with an E/LE path led by an unbounded repeat: 190 of 5703 ok
-          dfa-rev-end hybrid-rev-end dfa-unanchored      vm-only dfa-attempt[subject_length] hybrid-unanchored hybrid-attempt[subject_length]
+          dfa-rev-end hybrid-rev-end dfa-unanchored      vm-only dfa-attempt[subject_length] hybrid-attempt[subject_length] hybrid-unanchored
 E                  79           62            3           16            0            0            0
-LE                  0            0           10            0            0            1            0
-S+E                 0            0            0            0           10            0            1
+S+E                 0            0            0            0           10            1            0
+LE                  0            0           10            0            0            0            1
 E+F                 0            0            6            0            0            0            0
 LS+LE               0            0            0            0            2            0            0
 

@@ -622,3 +622,5 @@ Peers: RE2/rust (linear) and jit (backtracking, which shares the quadratic class
 - **F3** `^(?:a|b$)` correctly gets `start_max = 0`, so the `must` analysis already
   exists for whole-pattern `^`. The new fact generalizes it to `has`/`must`/`free_live`
   per kind. It is not a parallel derivation.
+
+- **Survey run (STEP 0, lane mssurvey, 2026-10-12):** see `docs/dev/lanes/mssurvey_report.md` (counts, trigger verdict, controls); instruments and outputs in `docs/dev/optloop/matchsplit/`.

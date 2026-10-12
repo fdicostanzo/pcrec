@@ -1,0 +1,150 @@
+QUADRATIC-RISK population measured: 30 patterns (lu_E, route tries each start, non-D27);  controls (rev-end routes): 6
+work = subject-byte loads of a whole find-all (qdrv.c); growth16k/4k ~ 4 linear, ~ 16 quadratic
+
+---- RISK ----
+E                 vm-only        (a*)$   run='a' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)\Z   run='a' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)\z   run='a' term='Q'
+    internal  T(1k)=501502     T(4k)=8006002     T(16k)=128024002    growth16k/4k=15.99  T/n@16k=  8000.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (.*)$   run='\n' term='Q'
+    internal  T(1k)=2006       T(4k)=8006        T(16k)=32006        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    trailing  T(1k)=2005       T(4k)=8005        T(16k)=32005        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=2001       T(4k)=8001        T(16k)=32001        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (.*?)$   run='\n' term='Q'
+    internal  T(1k)=2007       T(4k)=8007        T(16k)=32007        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    trailing  T(1k)=2003       T(4k)=8003        T(16k)=32003        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1999       T(4k)=7999        T(16k)=31999        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (\s*)\Z   run='\t' term='Q'
+    internal  T(1k)=1004005    T(4k)=16016005    T(16k)=256064005    growth16k/4k=15.99  T/n@16k= 16002.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=2002       T(4k)=8002        T(16k)=32002        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=2000       T(4k)=8000        T(16k)=32000        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)(a*)$   run='a' term='Q'
+    internal  T(1k)=168671505  T(4k)=1001530065  T(16k)=1000393777   growth16k/4k= 1.00  T/n@16k= 62516.8  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (\w\d)*$   run='0' term='Q'
+    internal  T(1k)=753504     T(4k)=12014004    T(16k)=192056004    growth16k/4k=15.99  T/n@16k= 12002.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=3001       T(4k)=12001       T(16k)=48001        growth16k/4k= 4.00  T/n@16k=     3.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1500       T(4k)=6000        T(16k)=24000        growth16k/4k= 4.00  T/n@16k=     1.5  calls@16k=2  attempts@16k=n/a
+E                 vm-only        ((a)|(b))*$   run='b' term='Q'
+    internal  T(1k)=2505505    T(4k)=40022005    T(16k)=640088005    growth16k/4k=15.99  T/n@16k= 40000.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=5002       T(4k)=20002       T(16k)=80002        growth16k/4k= 4.00  T/n@16k=     5.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=5000       T(4k)=20000       T(16k)=80000        growth16k/4k= 4.00  T/n@16k=     5.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)*$   run='a' term='Q'
+    internal  (a run failed)
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)+$   run='a' term='Q'
+    internal  (a run failed)
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (\s*)$   run='\t' term='Q'
+    internal  T(1k)=1004005    T(4k)=16016005    T(16k)=256064005    growth16k/4k=15.99  T/n@16k= 16002.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=2002       T(4k)=8002        T(16k)=32002        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=2000       T(4k)=8000        T(16k)=32000        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)$   run='a' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (x*)\Z   run='x' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (a*)$   run='a' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 vm-only        (.*)\z   run='\n' term='Q'
+    internal  T(1k)=2006       T(4k)=8006        T(16k)=32006        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=n/a
+    trailing  T(1k)=2004       T(4k)=8004        T(16k)=32004        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=1  attempts@16k=n/a
+    whole     T(1k)=2000       T(4k)=8000        T(16k)=32000        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=1  attempts@16k=n/a
+LE                hybrid-unanchored (?m)(\d+)$   run='0' term='Q'
+    internal  T(1k)=1003       T(4k)=4003        T(16k)=16003        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=3004       T(4k)=12004       T(16k)=48004        growth16k/4k= 4.00  T/n@16k=     3.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=3001       T(4k)=12001       T(16k)=48001        growth16k/4k= 4.00  T/n@16k=     3.0  calls@16k=2  attempts@16k=n/a
+S+E               dfa-attempt    ^\s+|\s+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+LS+LE             dfa-attempt    (?m)^\s+|\s+$   run='\t' term='Q'
+    internal  T(1k)=502504     T(4k)=8010004     T(16k)=128040004    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1003       T(4k)=4003        T(16k)=16003        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^[ \t]+|[ \t]+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^\s*|\s*$   run='\t' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=2  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=3  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^[\s\x{a0}]+|[\s\x{a0}]+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^[\s\x{200c}]+|[\s\x{200c}]+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^[\s\x{a0}]+|[\s\x{a0}]+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^\W+|\W+$   run='\t' term='Q'
+    internal  T(1k)=502502     T(4k)=8010002     T(16k)=128040002    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+S+E               dfa-attempt    ^\s*\{|\}\s*$   run='}' term='Q'
+    internal  T(1k)=2003       T(4k)=8003        T(16k)=32003        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=2001       T(4k)=8001        T(16k)=32001        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=16002
+    whole     T(1k)=2000       T(4k)=8000        T(16k)=32000        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=16001
+S+E               hybrid-attempt ^(\s*)\{|\}(\s*)$   run='}' term='Q'
+    internal  T(1k)=2003       T(4k)=8003        T(16k)=32003        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=2002       T(4k)=8002        T(16k)=32002        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=16002
+    whole     T(1k)=2001       T(4k)=8001        T(16k)=32001        growth16k/4k= 4.00  T/n@16k=     2.0  calls@16k=2  attempts@16k=16001
+S+E               dfa-attempt    ^/+|/+$   run='/' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16002
+    trailing  T(1k)=1003       T(4k)=4003        T(16k)=16003        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=1
+    whole     T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=1
+S+E               dfa-attempt    ^\.+|\.+$   run='.' term='Q'
+    internal  T(1k)=502503     T(4k)=8010003     T(16k)=128040003    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16002
+    trailing  T(1k)=1003       T(4k)=4003        T(16k)=16003        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=1
+    whole     T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=1
+LS+LE             dfa-attempt    (?m)^\s*(?:#|//).*$|\s+$   run='\t' term='Q'
+    internal  T(1k)=502504     T(4k)=8010004     T(16k)=128040004    growth16k/4k=15.99  T/n@16k=  8001.5  calls@16k=1  attempts@16k=16003
+    trailing  T(1k)=1003       T(4k)=4003        T(16k)=16003        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=3
+    whole     T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=2
+
+---- CONTROLS (rev-end routes: the walk starts at n) ----
+E                 dfa-rev-end    \d+$   run='\t' term='Q'
+    internal  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    whole     T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+E                 dfa-rev-end    .*\.txt$   run='\t' term='Q'
+    internal  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    whole     T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+E                 dfa-rev-end    [a-z]+\.txt$   run='\t' term='Q'
+    internal  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    whole     T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+E                 dfa-rev-end    \s+$   run='\t' term='Q'
+    internal  T(1k)=2          T(4k)=2           T(16k)=2            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1004       T(4k)=4004        T(16k)=16004        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 dfa-rev-end    \w+\z   run='0' term='Q'
+    internal  T(1k)=1002       T(4k)=4002        T(16k)=16002        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    trailing  T(1k)=1001       T(4k)=4001        T(16k)=16001        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+    whole     T(1k)=1000       T(4k)=4000        T(16k)=16000        growth16k/4k= 4.00  T/n@16k=     1.0  calls@16k=2  attempts@16k=n/a
+E                 dfa-rev-end    a*\z   run='\t' term='Q'
+    internal  T(1k)=1          T(4k)=1           T(16k)=1            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    trailing  T(1k)=1          T(4k)=1           T(16k)=1            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
+    whole     T(1k)=1          T(4k)=1           T(16k)=1            growth16k/4k= 1.00  T/n@16k=     0.0  calls@16k=1  attempts@16k=n/a
