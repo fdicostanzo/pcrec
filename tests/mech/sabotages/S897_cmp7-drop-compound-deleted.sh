@@ -5,7 +5,7 @@ SAB_ID='S897-cmp7-drop-compound-deleted'
 SAB_FILE='src/core/compile.c'
 SAB_SUITES='compound'
 SAB_DESC='fit_rungs[] loses its drop-compound row, so a compound over an emitted-size cap whose plain artifact fits is refused (or degrades P'\''s own machine) instead of shipping the plain artifact'
-SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): @@FIG897@@. The matrix figure is owed at the slot.'
+SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): compound arm 1 FAIL line (run_shell_checks.sh (3): under a cap of 23,308, between the plain 15,706 and the compound 30,911, the compile is REFUSED). The matrix figure is owed at the slot.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    { .name = "drop-compound",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,

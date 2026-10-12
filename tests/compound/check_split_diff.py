@@ -27,7 +27,7 @@ generated subjects must produce at least one match (chk M3), and the
 admitted population must reach its floor (K35): a compiler that stopped
 admitting would otherwise pass on nothing. Exit 1 on any difference.
 """
-import concurrent.futures as cf, itertools, os, random, re, shutil, subprocess, sys
+import concurrent.futures as cf, itertools, os, random, re, shutil, signal, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CC = os.environ.get("CC", "gcc")
@@ -164,6 +164,11 @@ def run_case(job):
     if g4:
         return cid, arm, "FAIL", "G4: " + g4
     line = o.stdout.decode().strip()
+    if o.returncode < 0:
+        # a signal: a call-site trap (compound.md §A.14 row 8, `__builtin_trap`,
+        # SIGILL) fires where a part returned a code its call site holds dead
+        return cid, arm, "FAIL", "%s: the run died on signal %d%s" % (
+            st, -o.returncode, " (SIGILL: a call-site trap fired)" if -o.returncode == signal.SIGILL else "")
     kv = dict(x.split("=", 1) for x in line.split(" FIRST:")[0].split())
     bad = sum(int(kv[k]) for k in ("d_search", "d_match", "d_oracle", "d_findall"))
     if o.returncode or bad:

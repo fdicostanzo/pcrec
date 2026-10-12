@@ -4,7 +4,7 @@ SAB_ID='S908-cmp18-giveup-row-on-dfa-part'
 SAB_FILE='src/gen/emit_compound.c'
 SAB_SUITES='compound'
 SAB_DESC='the call-site table emits its give-up row under a DFA part, a row for a code the callee cannot return'
-SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): @@FIG908@@. The matrix figure is owed at the slot.'
+SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): compound arm 1 FAIL line (run_shell_checks.sh (1): 4 rows a DFA guards-off callee cannot return, one under each of the 4 part calls). The matrix figure is owed at the slot.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    { "give-up",   CS_PROPAGATE, cs_vm,      "r >= PCREC_ERR_FLOOR && r <= -2" },'

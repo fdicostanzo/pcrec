@@ -5,7 +5,7 @@ SAB_ID='S903-cmp13-align-raw-from'
 SAB_FILE='src/gen/emit_compound.c'
 SAB_SUITES='compound'
 SAB_DESC='under -fstartpos-guard=align the controller hands F the caller'\''s RAW start position, not the aligned one, so a floor match at the aligned position is missed'
-SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): @@FIG903@@. The matrix figure is owed at the slot.'
+SAB_DOC_FIGURE='HAND-MEASURED by lane cpb4 2026-10-12 (plant applied to the lane tip, tree rebuilt): compound arm 8 FAIL lines (B1'\''s utf8 align arm with -futf-check: a floor match at the aligned position is lost; G2'\''s align arm). The matrix figure is owed at the slot.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_printf(c, "        int r = %s(subject, subject_length, search_from, capture_spans);\n", a);'

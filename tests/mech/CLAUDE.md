@@ -3802,3 +3802,16 @@ arm `candoracle`. REACH shown by hand: unplanted trace-build
 `CANDORACLE undeclared-read FIRST LOCATE` (dfa/attempt/vm witnesses). It is the
 sibling of S844: S844 plants the cycle the declared edges expose, S845 the
 undeclared edge itself.
+
+**S891-S910 (lane cpb4, 2026-10-12, [COMPOUND] B4, abi 77): compound.md
+§E.4's CMP-1..CMP-18, the namespace table's `harness-lever` row (S909) and the
+stamp catalogue (S910).** New arm `compound` (`tests/compound/run_compound_unit.sh`
+from the sabotaged tree; vocabulary note in run_sabotage_matrix.sh). Sixteen
+rows hand-measured DETECTED on the lane tip (each row's SAB_DOC_FIGURE); four
+declared UNREACHED with a REACH probe that reads NOW REACHED the day the
+witness ships a compound: S891 (CMP-1, `(?>^a|ab)c`), S895 (CMP-5, `^(a)|b$`),
+S901 (CMP-11, `^(?<=xy)a|b$`: as built every admitted P and Q stamp the same
+`_VALID_LB`, so the twin's plant 2 has no DFA population) and S904 (CMP-14,
+`(?:^(a)|b)(?1)`). S893 is detected by the compound arm only: the plant makes
+the part refuse, the row declines at A2 and every answer stays right. S627-S636
+were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.
