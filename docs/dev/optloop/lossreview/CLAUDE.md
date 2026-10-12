@@ -18,5 +18,6 @@ same-named instrument directory (own CLAUDE.md); coordination is by file name on
   the proposed order, the weighting caveat, questions for Frank and the D6 panel's attack list.
   **REVISION 2** (lane `lrrev`, 2026-10-11) applies the r2 D6 panel (`../../reviews/2026-10-11-r2-lossreview-fixes.md`): corrected arithmetic, candidate 1 restated with per-cell bands, DENSE-SKIP as a five-arm design, candidate 6 folded into [OPT-3-RUNEND], the pricing split (pcrec prices its consumer side, the kit picks the form), [PRIOR-COST-UNIFY] as the generalization of `model_cost`, all three orderings, and §6 = what remains open.
 - `rev2/` — **fixes.md revision 2's no-clock instruments** (lane `lrrev`, 2026-10-11): the ATTEMPT-SPLIT size census, the word-wait `stayprobe` counts on hex8 / dbnames / json-constant and the boundary-pair stop count; raw outputs beside the scripts.
+- `twintime/` — **the quiet-box twin timing slot** (lane `twintime`, 2026-10-11): candidate 1's seam-helper twins (bak-2, bak-1, mod-j-uc, phone, bak-py, bak-g-rel, plus the noinline PLT-vs-specialization arms) and T5 (D160 `fo20` vs today on the utf8 cells), scratch tier on Zen 4 with a base-vs-base null and 8 code layouts; `summary.md` has the verdict table, `docs/dev/lanes/twintime_report.md` the delivery.
 
 Phases 2 and 3 (general fixes, the D6 panel, the ranked list to Frank) read these files.

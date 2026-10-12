@@ -15,7 +15,7 @@ PAD = 0,16,...,112 (8 layouts) for every C1 arm and base. `base_b` is a SECOND c
 run interleaved with `base`: it is the null band (base vs base re-run). Answer identity: `run_twin.sh`'s
 per-subject find-all match count + span checksum over throughput, short and constructed subjects
 (ANSWERS IDENTICAL for all five new twins), and `timeit.py` aborts on any per-subject checksum difference
-against base on every one of the ~25,000 timed runs. "gain" = (base - arm) / base, so positive = faster.
+against base on every timed run (about 5,000 driver runs). "gain" = (base - arm) / base, so positive = faster.
 Replicated: a first full run at 4 layouts (`raw/c1_throughput_run1_4pads.tsv`) agrees with the 8-layout run to
 0.1 pp on every cell.
 
