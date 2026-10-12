@@ -159,7 +159,8 @@ def main():
             continue
         te, ue = r['today_e'], r['untag_e']
         rec = dict(id=row['id'], pop=row['pop'], pat=row['pat'].decode('latin-1')[:70], enc=row['enc'],
-                   tie=bool(te and te.get('tie')), today_m=int(p['today']), untag_m=int(p['untagged']),
+                   tie=bool(te and te.get('tie')), today_raw=int(p['today']), untag_raw=int(p['untagged']),
+                   today_m=int(p['today_post']), untag_m=int(p['untag_post']),
                    or_min=int(p['or_min']), tag=int(p['tag_min']), tag_trim=int(p['tag_trim']),
                    ncls_tag=int(p['ncls_tag']), cls_untag=int(p['cls_untag']),
                    today_e=te['states'] if te else None, untag_e=ue['states'] if ue else None,
@@ -198,10 +199,12 @@ def main():
     for x in mism[:30]:
         print('      MISMATCH %s  %s  model %d emitted %d' % (x['id'], x['pat'], x['untag_m'], x['untag_e']))
     print('== CONTROL 3: tag product with OR output vs untagged machine')
-    mism = [x for x in recs if x['or_min'] != x['untag_m']]
+    mism = [x for x in recs if x['or_min'] != x['untag_raw']]
     print('   compared %d equal %d MISMATCH %d' % (len(recs), len(recs) - len(mism), len(mism)))
     for x in mism[:30]:
-        print('      MISMATCH %s  %s  or %d untagged %d' % (x['id'], x['pat'], x['or_min'], x['untag_m']))
+        print('      MISMATCH %s  %s  or %d untagged(raw) %d' % (x['id'], x['pat'], x['or_min'], x['untag_raw']))
+    print('== scan-edge (post-pass) vs raw: today %d artifacts shrink (the emitted count is post), untagged proxy %d' % (
+        sum(x['today_m'] != x['today_raw'] for x in recs), sum(x['untag_m'] != x['untag_raw'] for x in recs)))
     print('== (tagged trimmed of dead-language states differs from untrimmed on %d)' %
           sum(x['tag'] != x['tag_trim'] for x in recs))
 
@@ -221,9 +224,20 @@ def main():
     for pop in ('bench', 'corpus'):
         table(pop, [x for x in recs if x['pop'] == pop])
     table('all', recs)
+    for x in recs: x['ver'] = x['or_min'] == x['untag_raw']
+    table('verified (ctl3)', [x for x in recs if x['ver']])
+    table('ctx-unverified', [x for x in recs if not x['ver']])
+    table('scan-edge today', [x for x in recs if x['today_m'] != x['today_raw']])
+    table('no scan-edge', [x for x in recs if x['today_m'] == x['today_raw']])
     table('with tie code', [x for x in recs if x['tie']])
     table('no tie code', [x for x in recs if not x['tie']])
     table('utf8', [x for x in recs if x['enc'] == 'utf8'])
+    rr = [x['tag'] / x['today_raw'] for x in recs]
+    print('   (sensitivity, tagged / today BEFORE the scan-edge pass: median %.2f p90 %.2f max %.2f)' % (
+        statistics.median(rr), pct(rr, .9), max(rr)))
+    sh = [x for x in recs if x['today_m'] != x['today_raw']]
+    print('   scan-edge artifacts (today shrinks after the pass; the lowered forms do not): n=%d  today %d  tagged %d (%.2fx)' % (
+        len(sh), sum(x['today_m'] for x in sh), sum(x['tag'] for x in sh), sum(x['tag'] for x in sh) / max(1, sum(x['today_m'] for x in sh))))
     print('\n== TABLE BYTES (emitted reverse-role static arrays; tagged = untagged proxy rescaled, see report)')
     for pop in ('bench', 'corpus', 'all'):
         rs = [x for x in recs if (pop == 'all' or x['pop'] == pop) and x.get('tag_b') and x['today_b'] and x['untag_b']]
@@ -252,8 +266,11 @@ def main():
     over = sorted([x for x in recs if x['tag'] / x['today_m'] > 2.0], key=lambda x: -x['tag'] / x['today_m'])
     print('\n== EVERY artifact over 2x today (tagged), n=%d' % len(over))
     for x in over:
-        print('   %-7s %-34s %-50s %4d %4d %4d  %.2fx' % (x['pop'], x['id'], x['pat'][:50], x['today_m'],
-              x['untag_m'], x['tag'], x['tag'] / x['today_m']))
+        print('   %-7s %-34s %-50s %4d %4d %4d  %.2fx  (today before scan-edge %d; tagged/untagged %.2f)%s' % (
+              x['pop'], x['id'], x['pat'][:50], x['today_m'], x['untag_m'], x['tag'], x['tag'] / x['today_m'],
+              x['today_raw'], x['tag'] / x['untag_m'], '' if x['ver'] else '  [ctl3 unverified]'))
+    print('   over 2x counting today BEFORE the scan-edge pass: %d;  tagged/untagged > 2x: %d' % (
+        sum(1 for x in recs if x['tag'] > 2 * x['today_raw']), sum(1 for x in recs if x['tag'] > 2 * x['untag_m'])))
     print('\n== shrinkers / equal (tagged <= today): %d' % sum(1 for x in recs if x['tag'] <= x['today_m']))
     print('\n== PER-ARTIFACT TSV: pop id today untagged tagged today_b untag_b tag_b tie pattern')
     for x in recs:

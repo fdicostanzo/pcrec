@@ -32,7 +32,7 @@ typedef struct {
     Dfa d;
 } M;
 
-static void build(const char *pat, int enc, M *m)
+static void build(const char *pat, int enc, M *m, int se)
 {
     memset(m, 0, sizeof *m);
     Ctx *cx = calloc(1, sizeof *cx);
@@ -52,18 +52,19 @@ static void build(const char *pat, int enc, M *m)
         root = pcrec_parse_info(cx, NULL);
         if (root) root = pcrec_altcls(cx, root);
         if (root) root = pcrec_discharge_atomic(cx, root);
+        if (root) { pcrec_callgraph_build(cx, root); pcrec_facts_seal_e1(cx, root); pcrec_select_engine(cx, root); }
         if (root) pcrec_postresolve(cx, root);
         if (root) root = pcrec_lower_enc(cx, root);
         if (root) {
             pcrec_build_nfa(cx, root, &cx->job->rnfa, true, false);
             pcrec_build_min_dfa(cx, &cx->job->rnfa, &cx->job->rdfa, false, true,
                                 PCREC_MAX_DFA_STATES_TABLE, cx->job->rnfa.start, false);
+            if (se) pcrec_scanedge_dfa(cx, &cx->job->rdfa, false, false);
             if (!cx->job->rdfa.overflowed) {
                 m->d = cx->job->rdfa;
                 m->n = m->d.n;
                 m->ncls = m->d.ncls;
-                m->ok = (m->d.natoms <= 1 && !m->d.clsctx);
-                if (m->d.natoms > 1 || m->d.clsctx) m->ok = -1;
+                m->ok = 1;
             }
         }
     }
@@ -91,6 +92,12 @@ static int product(const M *A, const M *B, int mode, int cap, int *reach, int *t
         pa[b] = f;
     }
     (void)pa; (void)cc; (void)rep;
+    int jat_a[256], jat_b[256], nj = 0;   /* joint context atoms: distinct (atomA, atomB) over bytes */
+    for (int b = 0; b < 256; b++) {
+        int x = A->d.natoms > 1 ? A->d.catom[b] : 0, y = B->d.natoms > 1 ? B->d.catom[b] : 0, f = 0;
+        for (int i = 0; i < nj; i++) if (jat_a[i] == x && jat_b[i] == y) { f = 1; break; }
+        if (!f) { jat_a[nj] = x; jat_b[nj] = y; nj++; }
+    }
     int nsz = 1024, n = 0;
     int *sa = malloc(sizeof(int) * nsz), *sb = malloc(sizeof(int) * nsz);
     int *tr = malloc(sizeof(int) * (size_t)nsz * nrep);
@@ -113,8 +120,17 @@ static int product(const M *A, const M *B, int mode, int cap, int *reach, int *t
         } else (out) = h[k];                                                     \
     } while (0)
     int st1, st2, st3, st4;
-    FIND(A->d.s0, B->d.s0, st1);
-    FIND(view_of(&A->d), view_of(&B->d), st2);
+    {
+        for (int k = -1; k < nj; k++) {
+            int xa = k < 0 ? A->d.s0 : A->d.s1u[jat_a[k]], xb = k < 0 ? B->d.s0 : B->d.s1u[jat_b[k]];
+            if (xa < 0 || xb < 0) continue;
+            FIND(xa, xb, st1);
+            const DState *pa = &A->d.st[xa], *pb = &B->d.st[xb];
+            int va = pa->endvar >= 0 ? pa->endvar : pa->eolvar >= 0 ? pa->eolvar : -1;
+            int vb = pb->endvar >= 0 ? pb->endvar : pb->eolvar >= 0 ? pb->eolvar : -1;
+            if (va >= 0 && vb >= 0) FIND(va, vb, st2);
+        }
+    }
     (void)st3; (void)st4;
     for (int i = 0; i < n && !overflow; i++) {
         for (int c = 0; c < nrep; c++) {
@@ -129,10 +145,16 @@ static int product(const M *A, const M *B, int mode, int cap, int *reach, int *t
     *reach = n;
     /* outputs */
     int *part = malloc(sizeof(int) * (n + 1)), *np = malloc(sizeof(int) * (n + 1));
-    for (int i = 0; i < n; i++) {
-        int a0 = sa[i] >= 0 && A->d.st[sa[i]].up[0].accept;
-        int a1 = sb[i] >= 0 && B->d.st[sb[i]].up[0].accept;
-        part[i] = mode == 0 ? (a0 | a1 << 1) : (a0 | a1);
+    {
+        for (int i = 0; i < n; i++) {
+            int o = 0;
+            for (int a = 0; a < nj; a++) {
+                int a0 = sa[i] >= 0 && A->d.st[sa[i]].up[jat_a[a]].accept;
+                int a1 = sb[i] >= 0 && B->d.st[sb[i]].up[jat_b[a]].accept;
+                o = o * 4 + (mode == 0 ? (a0 | a1 << 1) : (a0 | a1));
+            }
+            part[i] = o;
+        }
     }
     part[n] = -7;   /* dead sink: its own block id below */
     int nb = 0;
@@ -218,7 +240,7 @@ int main(void)
 {
     char err[256];
     if (pcrec_enabled_set_spec("all", err, sizeof err) != 0) { fprintf(stderr, "features: %s\n", err); return 2; }
-    printf("id\tstatus\ttoday\tuntagged\tt0\tt1\tcls_today\tcls_untag\ttag_reach\ttag_min\ttag_trim\tor_reach\tor_min\tor_trim\tncls_tag\n");
+    printf("id\tstatus\ttoday\tuntagged\tt0\tt1\tcls_today\tcls_untag\ttag_reach\ttag_min\ttag_trim\tor_reach\tor_min\tor_trim\tncls_tag\ttoday_post\tuntag_post\n");
     char *line = NULL; size_t capn = 0; ssize_t got;
     while ((got = getline(&line, &capn, stdin)) > 0) {
         if (got && line[got - 1] == '\n') line[--got] = 0;
@@ -227,18 +249,20 @@ int main(void)
         if (nf < 6) continue;
         int enc = strcmp(f[1], "utf8") == 0 ? PCREC_ENC_UTF8 : PCREC_ENC_BYTE;
         M m[4];
-        for (int i = 0; i < 4; i++) { char *p = unhex(f[2 + i]); build(p, enc, &m[i]); free(p); }
+        for (int i = 0; i < 4; i++) { char *p = unhex(f[2 + i]); build(p, enc, &m[i], 0); free(p); }
+        M post[2];
+        for (int i = 0; i < 2; i++) { char *p = unhex(f[2 + i]); build(p, enc, &post[i], 1); free(p); }
         int allok = 1, st = 0;
         for (int i = 0; i < 4; i++) { if (m[i].n == 0) allok = 0; if (m[i].ok < 0) st = 1; }
         if (!allok) { printf("%s\tbuild-failed\t%d\t%d\t%d\t%d\n", f[0], m[0].n, m[1].n, m[2].n, m[3].n); fflush(stdout); continue; }
-        if (st || !m[2].ok || !m[3].ok) {
+        if (0) {
             printf("%s\tunmodelled(ctx)\t%d\t%d\t%d\t%d\n", f[0], m[0].n, m[1].n, m[2].n, m[3].n); fflush(stdout); continue;
         }
         int r1, t1, r2, t2, nct = 0;
         int tag = product(&m[2], &m[3], 0, 30000, &r1, &t1, &nct);
         int orr = product(&m[2], &m[3], 1, 30000, &r2, &t2, NULL);
-        printf("%s\tok\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", f[0], m[0].n, m[1].n, m[2].n, m[3].n,
-               m[0].ncls, m[1].ncls, tag < 0 ? -1 : r1, tag, tag < 0 ? -1 : t1, orr < 0 ? -1 : r2, orr, orr < 0 ? -1 : t2, nct);
+        printf("%s\tok\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", f[0], m[0].n, m[1].n, m[2].n, m[3].n,
+               m[0].ncls, m[1].ncls, tag < 0 ? -1 : r1, tag, tag < 0 ? -1 : t1, orr < 0 ? -1 : r2, orr, orr < 0 ? -1 : t2, nct, post[0].n, post[1].n);
         fflush(stdout);
     }
     return 0;
