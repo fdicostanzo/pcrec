@@ -19,3 +19,6 @@ possq-no-reseed	syntax/qnt-poss-quest	flags	-fno-hyb-reseed	C4	the re-seed machi
 possq-aa	syntax/qnt-poss-quest	pattern	aa	C4	a?+a's language IS `aa`: the possessive-to-regular rewrite's ceiling	identical, 47 / 279
 atomicalt-ac	syntax/grp-atomic-alt	pattern	ac	C4	(?>a|ab)c's language IS `ac`: the atomic dead-branch rewrite's ceiling	identical, 46 / 6013
 pwd-rewind	capability/pwd-strength-chain	transform	rewind	C6	the cursor rung seeking its follow byte instead of one frame per position	identical, 167 / 29
+bak2-static-noinline	syntax/bak-2	transform	static_noinline	C1a	PLT removal ONLY (direct call, not inlined): splits PLT cost from specialization on bak-2 (twintime)	(twintime 2026-10-11, see twintime/)
+bak2-static-noinline-noclone	syntax/bak-2	transform	static_noinline_noclone	C1a	strict PLT-only arm: noinline + noclone (the plain noinline arm gets a .constprop clone)	(twintime 2026-10-11)
+phone-static-seam	capability/phone-palindrome-6	transform	static_seam	C1a	phone cell seam share (r2 panel band 5.7-11.3%; twintime)	(twintime 2026-10-11)
