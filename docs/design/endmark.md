@@ -6,6 +6,617 @@
 The `.rxt`/pcrec checks this note asks for are build work (§6). Read §0, then §1.3
 (the rule) and §2.3 (where D164's own wording is too strong).
 
+**REVISION 2 for B3 (lane `b3rev`, 2026-10-12): read §R first for anything about
+the rev-end walk.** It applies the r3 panel (S1-S10, C1-C8) and D164 addendum 4,
+tags only where the artifact can tie (Frank, session 110), and supersedes the B3
+parts of §0 items 4-5, §2.3, §4.3's `end_pin` row, §5.6 S-EM8..S-EM10 and §6 E3.
+
+## §R. B3 REVISION 2: TAG ONLY WHERE THE ARTIFACT CAN TIE (lane `b3rev`, 2026-10-12)
+
+**Status: PROPOSED, build-ready design; nothing under `src/` changes.** From main
+`e8ca1252`, abi 76. Binding inputs: D164 and addenda 1-4, the light D6 panel
+`../dev/reviews/2026-10-12-r3-b3-endmark-revend.md` (S1-S10, C1-C8), lanes
+b3cost/b3meas. Frank approved the direction (session 110): tag only where the
+artifact can tie. Instruments and raw results: `endmark/b3rev/` (own CLAUDE.md),
+`endmark/b3rev/timing/` for the clock. This section supersedes the B3 parts of
+§0 item 4-5, §2.3, §4.3's `end_pin` row, §5.6 S-EM8..S-EM10 and §6 E3; those
+sections stay as the record of the first design and are annotated where they
+moved.
+
+### §R.0 Panel finding → where it is answered
+
+| id | finding (short) | answered in |
+|---|---|---|
+| S1 | mixed artifact: view-based forward machine seeds a lowered reverse machine | §R.2 (one lowering per artifact, by NFA-build parameter), §R.2.1 table |
+| S2 | the tie set depends on the previous byte's class | §R.1.2 (D(q,a) per context atom, the absent atom included); witness `(?:\Bx\n\|x)$` §R.6 |
+| S3 | scan-edge / stay skips merge on accept BIT | §R.3 (the accept value IS the distance set; four comparison sites compare values); witness `\n{1,4}$` |
+| S4 | tagged builds can create refusals | §R.1 rows `overflow`, §R.5 (optional builds + fit rung `drop-end-mark`), §R.4.4 refusal-set compare |
+| S5 | an unmarked thread carries d = 0 | §R.1.2 (definition); instrument fixed (`endmark/b3rev/b3rev.py` `rw`), 3 such artifacts |
+| S6 | the VM's `$` under the mark is ambiguous | §R.2.3: the VM KEEPS the assertion |
+| S7 | `mark_prio`'s forward-NFA cost unstated | §R.1.4: measured, total 230 states over 38 artifacts, max 39 |
+| S8 | held cases | §R.6 witness list carries each |
+| S9 | the `\n?` tail is hard-coded | §R.2.4: the tail is read from `\Z`'s definitions row |
+| S10 | the end-distance fact is encoded ~7 ways | §R.8 (sibling family; leaning: B3 builds the ONE representation, the accept value as a distance set, and `mark_prio` becomes FINISH row `prio-const`) |
+| C1 | the win is a few cells; "~40 lines deleted" | §R.4.1 (cell table per class), §R.4.7 (net code: B3 now ADDS code; nothing is deleted) |
+| C2 | "at most 2x" is a census maximum | §R.4.3 (N-sweep) |
+| C3 | the population is what compiles today | §R.4.4 (refusal-set compare, plain/lowsize/lowboth) |
+| C4 | weak gates; tagged scan-edge unmeasured | §R.4.2 (the spike), §R.6.1 (per-artifact gates on emitted states, exemption list, literal floors) |
+| C5 | ctx/utf8 figures guessed | §R.4 controls C1-C13 (ctx rows named), utf8 lines |
+| C6 | selective tagging uncosted | it IS this design (§R.1) |
+| C7 | six mech plants with SAB_REACH | §R.7.2 (ten plants) |
+| C8 | movers: re-aims, abi readers, `end_pin`'s two answers | §R.7.3, §R.7.4 (`end_pin` keeps ONE answer, `eol`) |
+
+### §R.1 The selection, as a first-match table
+
+Asked once per compile, after today's three machines are built and LOCATE has
+selected `rev-end` on an `end_pin = eol` body (a `$`/`\Z` artifact; a `\z`-only
+artifact is unchanged). Rows are data beside `cand_rows[]`'s `rev-end` row
+(`start_table.md` §0a), listable as the sub-axis `rev-end-form`.
+
+| # | row | applies when | the walk | machines (NFA build) | a tie is decided by |
+|---|---|---|---|---|---|
+| F0 | `denied` | `-fno-rev-end-onewalk` (new deny, bit 55; §R.9 Q1) | today's two-seed walk | today's (`$` as a view) | today's tie code where `nl_last` |
+| F1 | `one-seed` | `nl_last` is false on today's reverse machine (`revend_nl_last`, unchanged) | ONE seed: `n−1` if `s[n−1]` is in the tail's first-byte set (`'\n'`), else `n`; when the `n−1` walk finds no accept, the seed state's accept AT `n` is probed (a zero-length match at `n`: `\B$` on `"a\n"` is (2,2)) | today's | (no tie is possible) |
+| F2 | `tagged` | the TIE FACT holds (§R.1.2) and every lowered machine fit (§R.5) | ONE walk from `n` over the TAGGED reverse machine; at `s*`, D = the accept value read with `s[s*−1]`'s context atom (absent atom at 0 / at the startpos boundary) | LOWERED forward, reverse (tagged), anchored (§R.2) | \|D\| = 1: end = `n − d`; \|D\| ≥ 2: FINISH row `prio-const` (end = `n − c`) when `mark_prio` is `const c`, else `verify-at`, else `search-from` (today's rows) |
+| F3 | `two-seed` | the tagged machine was built, fit, and no (state, atom) carries two distances | today's two-seed walk WITHOUT tie code (a tie is proven impossible) | today's | (none) |
+| F4 | `overflow` | otherwise: a lowered/tagged build overflowed | today's two-seed walk | today's | today's tie code |
+
+Why F1 needs no tag. `nl_last` false means the seed state at `n` and its views
+die on the tail's first byte, so when `s[n−1] = '\n'` the only accept seed `n`
+can still reach is AT `n` itself; every start seed `n−1` finds is `≤ n−1`, so
+it wins. When `s[n−1] ≠ '\n'`, seed `n−1` does not exist. The end is then a
+function of the last byte. This is b3meas §4's argued fix, now built as a twin
+(arm U, §R.4.6) and answer-checked (0 wrong of 71,330,165 cells).
+
+Why F3 exists. The brief's binary "non-singleton vs the rest" leaves a gap: an
+artifact whose X can consume a final newline (`nl_last` true) but whose
+distance at every accepting state is single — `a\n$`, `(?:a|b\n)+$`,
+`(?:\n\n|a){0,4}$` — cannot tie, yet its end is NOT a function of the last byte
+(`a\n$` on `"a\n"` ends at 2 = `n`, on `"a\n\n"` at 2 = `n−1`). Tagging it would
+be correct but spends states on an artifact that cannot tie, against Frank's
+direction; the last-byte rule would be wrong. So it keeps today's two seeds,
+minus the tie code today emits for it (today's tie code is keyed on `nl_last`,
+which over-claims here). Population: 0 shipped (§R.4.0), 3 synthetic witnesses.
+
+**Populations (census at `e8ca1252`, `endmark/b3rev/results/census.txt`):** of the
+266 rev-end `$`/`\Z` artifacts (bench 9, corpus 257): F1 `one-seed` **223**
+(bench 8, utf8 13), F2 `tagged` **43** (bench 1, `capability/tail-space-eol`;
+utf8 3), F3 **0**, F4 **0**. The 43 are exactly today's 43 tie-code artifacts
+(control C13: today's emitted `revend_tie` == the probe's `nl_last`, 266/266),
+and every one of them carries a tie: today's `nl_last` is exact on the shipped
+population and over-claims only on the F3 witnesses.
+
+#### §R.1.2 The tie fact, defined exactly (S2, S5)
+
+Let the lowered body be `X·M·T` (T = the tail, `\n?\z` today, §R.2.4) with
+`L = maxw(T')` (1 for `$`/`\Z`). Build the REVERSE subset construction (prune
+off, as D7's reverse machine already is) over pairs (NFA state, d): a thread
+starts at the seed `n` with d = 0 and d grows by one per byte the TAIL consumes;
+crossing M freezes it. A thread that reaches ACCEPT without crossing any M (an
+unmarked path end: `b\z` in `a$|b\z`, `\w+\z` in `\d+$|\w+\z`) carries **d = 0**:
+its reported end is its consumed end, `n` (S5; 3 shipped artifacts carry such an
+arm, `ab\z|b\Z`, `\d+$|\w+\z`, `\s*$|x\z`). A tagged state q is the set of its
+pairs. For each context atom a — the atoms of `Dfa.natoms` (the previous byte's
+class-axis context) **plus the absent atom** (position 0, and the walk's
+termination boundary at `startpos`, assertions_design.md §3.8.3.1) — define
+
+    D(q, a) = { d : (ACCEPT, d) is in q's closure under context a }.
+
+The walk reads D(q, a) where it reads today's accept cell. **The tie fact** is
+"some reachable q and some a have |D(q, a)| ≥ 2". It is a property of the BUILT
+tagged machine, computed while building it (one OR over the accept cells), never
+a separate walk. Measured on the 43: every tie occurs under every atom including
+the absent one (class-dependent ties: 0); the S2 witness `(?:\Bx\n|x)$` is
+class-dependent (a tie under the word atom only) and must be in the witness file
+(§R.6), since the population has none.
+
+Built how. As ONE tagged subset construction in `src/ir/dfa.c` (a thread carries
+d; pairs intern as the state), not as the probe's product of L+1 untagged
+machines: the product needs L+1 builds and a product pass, and its
+non-accepting junk states (an unmarked arm in the d = 1 machine) need a trim
+the direct construction never creates. The probe's product is the build's
+INDEPENDENT CONTROL (§R.6.2): two constructions, one answer.
+
+#### §R.1.3 The walk at `s*`
+
+`s*` is the smallest accepting position (today's rule, unchanged). The accept
+cell at `s*` holds D as a bitmask (§R.3). |D| = 1 (bit d): end = `n − d`, SPAN.
+|D| ≥ 2: ENDSET, which FINISH takes by first match: `prio-const` (new, §R.8),
+`verify-at`, `search-from` — today's two rows, unchanged. On a VM hybrid's
+inlined body the hand is projected as today (`cand_project`); a SPAN reaches the
+VM's `verify-at` with the window ceiling at the reported end, exactly as today's
+seed position does (§R.2.3).
+
+#### §R.1.4 `mark_prio`, the fact (S7)
+
+Computed over the UNPRUNED anchored forward machine of the lowered NFA
+(`pcrec_build_dfa`, prune off, root `anch_start`), on demand, only for an F2
+artifact: at every pre-set's END closure the accepting distances are listed in
+priority order; where two or more distinct distances appear the FIRST is
+recorded; one recorded value is `const c`, none is `none` (impossible on F2 by
+the tie fact), more is `state-dependent`. Overflow of its cap answers
+`state-dependent` (the safe side: FINISH runs). A context atom is evaluated per
+atom (the build's DFA already carries atoms); the probe does not model it and
+reports those 5 artifacts as unmodelled.
+
+**Measured** (`b3rev_probe.c`, exact over pcrec's own NFA and DFA): on the 38
+modelled F2 artifacts `mark_prio` is `const 0` on 28 and `const 1` on 10;
+`state-dependent` on none (b3meas's empirical classification agrees: all 30 of
+its tie artifacts const). **Cost: 230 unpruned states in total, median 4, max 39**
+(`([^/]+)$` under utf8) against the 32,000 cap; at N = 2048 in the sweep
+(§R.4.3) it is N + 4. The synthetic `(?:\s+|x\s*?)$` reads `state-dependent`, the
+witness for FINISH's verify-at arm. The probe's classification is checked
+against libpcre2's choice on every observed tie by b3meas's method (§R.6.2).
+
+### §R.2 One lowering per artifact (S1, D164 addendum 4)
+
+**The decision.** `$`/`\Z` lowering is an NFA-BUILD PARAMETER, not a second tree.
+The endmark pass (§4.1) marks each path-final `$`/`\Z` node (`A_EOL` with a tail
+bit, from the tail walk §1.1) and does NOT rewrite it. `pcrec_build_nfa` gains a
+`lower_eol` argument: under it, a tail-bit `A_EOL` builds `M·T` with an
+`ACC(d)` accept per tail length (§2.2's mechanism); without it, today's N_EOL.
+One tree; per artifact the selection decides which build every machine uses.
+That keeps §2.2's D7 argument true as written: every machine of an F2 artifact
+reads ONE language. (Multi-character trailing lookaheads, E2, stay an AST
+rewrite: they have no "today's machine" to keep.)
+
+#### §R.2.1 Which machine is built from which NFA, per form
+
+| form | forward `dfa` | reverse `rdfa` | anchored `adfa` | VM program (hybrid) |
+|---|---|---|---|---|
+| F0 `denied`, F1, F3, F4 | today's (`$` view) | today's | today's | today's (`$` assertion) |
+| F2 `tagged` | `lower_eol`, ACC(d) → accept value {d} (§R.3) | `lower_eol`, TAGGED (§R.1.2) | `lower_eol`, ACC(d) | today's (`$` assertion, §R.2.3) |
+| `-fno-rev-end` (no rev-end walk) | today's | today's | today's | today's |
+
+- **The relocate** (`search-from`, F2's tie arm when the anchored machine is
+  absent: `-fno-anchored-dfa` or its optional build overflowed): the composite
+  from `s*` runs the LOWERED forward machine (its END accept value gives `back`)
+  and the tagged reverse machine (the composite reads its accept TRUTH, ignoring
+  D). This is S1's cell: `(?:\s+|x\s*?)$` on `"x\n"` reads (0,1) because the
+  forward machine now carries the tail.
+- **`-fno-rev-end`** never selects the walk, so no machine uses the mark and
+  D164 addendum 3 stands: today's artifact, byte for byte.
+- **Order.** compile.c builds today's three machines (unchanged), LOCATE and the
+  form row are asked, and only F2 builds the lowered three as OPTIONAL machines
+  (§R.5); on F2 they replace today's in the Job; on any overflow today's stay.
+
+#### §R.2.2 Measured: addendum 4's forward and anchored growth (`results/census.txt`)
+
+On the F2 set (43; 38 modelled for the tagged figures, 5 context-atom artifacts
+unmodelled): forward machine emitted states **216 → 290 (+34%), per artifact max
++3**; anchored **163 → 215 (+32%), max +6** (`[^c]{0,4}?$`, 6 → 12). The tag
+itself costs the forward/anchored machines NOTHING: the Moore minimization with
+`back` as an output equals the untagged lowered count on every modelled
+artifact (C8/C9, 220/220), because D3's accept-pruning already leaves one
+winning distance per accepting state; one artifact outside F2 (`ab\z|b\Z`, an F1
+row that is never lowered) has pre-sets that disagree on `back` and would need a
+split. Over all 266 (the counterfactual "lower everywhere"): forward 2,015 →
+2,751 (+37%), max +5. The SWEEP (§R.4.3): forward + 3 and anchored + 2 at every N.
+
+**Time on the tie path** (`timing/results/report.txt` §A; today's `X$` artifact
+vs the lowered `X(?:\n)?\z`, same flags, from `s*`, nl-m subjects; 782 subjects ×
+6 arms answer-checked, 0 wrong): verify-at (`_match`) today/lowered **1.09-1.31**
+class geomean (the LOWERED machine is FASTER: no `$` view probe per step); the
+relocate (`-fno-rev-end` `_search` from `s*`) **0.97-1.07**, per cell p5-p95
+0.73-1.38, A/A 0.87-1.20. Addendum 4's "not slower" holds.
+
+#### §R.2.3 The VM keeps the assertion (S6)
+
+On a hybrid the VM program keeps `$` as today's assertion (`N_EOL`'s VM arm). The
+reasons, in order:
+
+1. At a given position m, `\n?\z` succeeds in at most one way (§1.2), so the
+   lowered tail and the assertion are the same test; the mark position IS the
+   assertion position. Writing it as `\n?` would add a choice point that
+   frames frameless `X$` programs (VM_FRAMELESS, the tier, STEPS give-ups,
+   possessify's follow sets: the panel's D158 concern) for no answer; writing it
+   as a deterministic tail test would move emitted VM text on every `$` program
+   for the same answer.
+2. Addendum 4's rule is about machines that answer "where does the match end"
+   FROM AN AUTOMATON (the D7 seeding argument). The VM answers it from its own
+   leftmost-first run, and its window ceiling (§2.2 F3) is the reported end it
+   is handed — today's seed position, F2's `n − d` — which is the assertion's
+   position. Nothing the VM reads changes meaning.
+3. D158: the give-up surface does not move (no program changes).
+
+The VM's slot-1 mark (§2.1) remains E2's, for multi-character lookaheads.
+**This is a reading of addendum 4 for Frank to confirm (§R.9 Q3).**
+
+#### §R.2.4 The tail comes from one definition (S9)
+
+`T` is `plain(Y)` of `\Z`'s definitions row (`src/parse/registry.c`'s `z_def`,
+`(?=\n?\z)`; `$` chains to it by `DEFK_ROW`), parsed once per compile, never a
+hard-coded `'\n'`. Everything that reads the tail derives from it: L = maxw(T'),
+the distance domain 0..L, F1's first-byte set, and `nl_last`'s byte class. A
+newline convention (DD-11) is then a different definition row, not new code:
+CRLF gives L = 2 and D ⊆ {0, 2}; ANYCRLF D ⊆ {0, 1, 2}. NOTEOL is a match-time
+option pcrec does not have (`docs/pcre2_options.md`); the trigger is a request.
+
+### §R.3 The accept value IS the distance set (S3)
+
+`DView.accept` (a `uint8_t`, today 0/1) carries the distance set as a bitmask
+(bit d) on an F2 machine: the tagged reverse machine's cells hold D(q, a); the
+lowered forward and anchored machines' END-view cells hold {b} (one winner, by
+D3's pruning). Every machine that is not F2 keeps 0/1, i.e. the set {0}. Readers
+that TEST an accept stay truth tests; the four readers that COMPARE two accepts
+compare VALUES:
+
+| site | today | after |
+|---|---|---|
+| `src/opt/minimize.c:133` initial partition key | `if (accept) a \|= 1u << u` | keyed by the value |
+| `src/opt/scanedge.c:287` `acc_of` (and `end_acc_of`, which calls it) | `accept != 0` | the value |
+| `src/ir/dfa.c:1204` `view_same`, view equality at interning | `(bool)a->accept == (bool)b->accept` | values equal |
+| `src/gen/emit_dfa.c:3992` `state_acc_varies` (the stay skip's eligibility; callers :4121, :4833, :12447) | `(bool)` compare | values |
+
+`scanedge.c:222` (`class_invariant`) already compares values. The census is
+`grep -n '\.accept' src` (40 reads in 5 files); the build re-greps it and
+classifies every read as TEST or COMPARE.
+
+On a 0/1 machine a value compare IS the truth compare, so every non-F2 artifact
+is byte-identical by construction (the B3.0 commit's zero-mover claim, §R.7.1; today every accept is set from a `bool`, `src/ir/dfa.c:978/1374/1495`).
+The emitted accept table is already a `u8` per cell (timing/ E1), so the set
+rides the existing table: no new array, no separate `back` table. The walk reads
+`d` as the cell's lowest set bit (F2's SPAN) or the whole mask (ENDSET).
+
+**Measured** (`b3rev_probe.c` links a probe-local copy of scanedge.c with
+`acc_of` reading the value, beside the shipped pass): on the 266 the two passes
+produce the same machine (0 artifacts differ), so S3 has no shipped witness; the
+synthetic `\n{1,4}$` (tagged 7 states: shipped pass 4, value pass 5) and
+`\n\n?$` (4 vs 5) are where the shipped pass merges differing distance sets: the
+sabotage witnesses. The stay skip records its landing position's cell (read with
+that position's atom), so a value-compared `state_acc_varies` is conservative
+(a class-varying D declines the skip); population 0.
+
+### §R.4 What was measured
+
+All counts are pcrec's own machines (`b3rev_probe.c` links `libpcrec.a`);
+"post" is after the scan-edge pass, i.e. the emitted count. Controls
+(`results/census.txt`): C1 reverse today probe == emitted 266/266; C2/C3 forward
+and anchored today == emitted (`-fno-rev-end`) 265/265, 169/169; C4/C5 the
+patched-NFA lowered machines == the CLI-emitted `X(?:\n)?\z` artifacts 264/265
+(the miss, `(?s)(.+)$`, emits no forward table under `-fno-rev-end`), 169/169;
+C6/C7 the tagged product with an OR output == the untagged machine 254/266 (the
+12 misses are context-atom patterns, `\bfoo$`-shaped, all outside F2: the product
+does not carry the class context in its state, b3cost's known 22); C8-C12 the
+forward/anchored tagged model with `back` ignored == pcrec's minimizer, its
+closure accept == pcrec's END accept, rebuilt post == pcrec post, 220/220 each;
+C13 today's emitted tie code == the probe's `nl_last` 266/266.
+
+#### §R.4.0 Populations and literal floors
+
+rev-end `$`/`\Z` artifacts **266** (bench **9**, corpus **257**); F1 **223**; F2
+**43** (bench **1**); mark_prio const0 **28**, const1 **10**, context-atom **5**;
+unmarked-arm (S5) **3**; utf8 F2 **3**; F2 reverse growth over 2× today + 1: **2**
+(`[^c]{0,4}?$`, `[^c]{0,4}$`). Re-counted by the probe at every build step (K35),
+never copied.
+
+#### §R.4.1 The cells, per class (C1)
+
+ns/call class geomeans, Linux dev box, `taskset -c 2`, A/A per-cell p5-p95
+0.87-1.27 (b3meas §2 for B/today; `timing/` for U, W and the F2 finishers).
+"m" = matching, "n" = not; "nl" = the subject ends in `'\n'`.
+
+| class (artifacts) | form | nl-m | nl-n | nonl-m | nonl-n |
+|---|---|---|---|---|---|
+| F1 no tie (109 twinned) | U (today's text, one seed) vs today | **0.72x** | **0.67-0.71x** | 0.92x | 0.98-1.00x |
+| F1 no tie | W (form W, §R.4.6) vs today | **0.61x** | **0.53x** | 0.68x | 0.66x |
+| F2 const, bounded X (12) | tagged (plain) vs today | **0.38x** (T/B 2.56-2.66) | (b3meas 0.50x) | 0.66x | (0.75x) |
+| F2 const, unbounded X (17) | tagged vs today | **0.37x** (T/B 2.67-2.77) | (0.54x) | 0.70-0.76x | (0.72x) |
+| F2 state-dependent (1, synthetic) | tagged + verify-at vs today | 0.54-0.68x | — | 0.73-0.76x | — |
+
+The split C1 asked for: the 3.00× → 1.00× pass lands only on F2 cells whose
+subject ends in a newline (the per-line regime), 2.4-2.8× faster there; on F2
+cells without a final newline the tagged walk is still 1.3-1.5× faster (the
+dropped seed-loop and view probes); on F1 cells the one-seed rule alone is
+1.4× on nl cells and neutral otherwise. Bench: 1 of 9 artifacts is F2
+(`tail-space-eol`), 8 are F1.
+
+#### §R.4.2 The spike C4 asked for: the tagged machine after scan-edge
+
+On the F2 set the scan-edge pass compacts NOTHING: tagged reverse **281 → 281**
+states (today's pass took today's machines 160 → 151). Tagged post vs today
+post: **151 → 281 (1.86x), per artifact median 1.75, p90 2.25, max 2.75, +7
+states max**. Over 2× today: the `[^c]{1,3}` family (4 → 9, = 2×4+1) and
+`[^c]{0,4}`/`[^c]{0,4}?` (4 → 11): today's pass collapses their counted run, the
+tagged machine's run has two live classes (`'\n'` and the rest) and is not
+scan-shaped. The counterfactual "tag all 266" is 1,505 → 2,741 post (1.82x); the
+pass buys 4% there. So selective tagging also avoids the one place tags cost
+the most: compacted bounded runs (the sweep below).
+
+#### §R.4.3 The N-sweep (C2; `results/sweep.txt`)
+
+| family | today reverse post | tagged reverse post | forward today → lowered | anchored | mark_prio states |
+|---|---|---|---|---|---|
+| `\s{0,N}$` | **4** (constant: scan-edge) | **2N + 3** (no compaction) | 3N+2 → +3 | 2N+2 → +2 | 2N + 4 |
+| `[a-z]{0,N}\s{0,N}$` | 2N + 2 | 3N + 6 (N ≥ 2) | 6N+2 → +3 | 4N+2 → +2 | 4N + 4 |
+| `\w{1,N}\s{0,N}$` | N + 4 | 2N + 9 | 6N → +3 | 4N+1 → +2 | 4N + 3 |
+| `(?s).{0,N}$` | N + 2 | 2N + 3 | 3N+2 → +3 | 2N+2 → +2 | 2N + 4 |
+
+C2's worry, `|Q|²` pairs, does not appear: every family is LINEAR in N (the d = 0
+and d = 1 threads stay in lock-step). Two real findings instead. (1) The
+tagged reverse machine is never larger than today's FORWARD machine (3N+2 to
+6N+2), which is built today on every rev-end artifact and reaches the 32,000
+state cap first; so no family here reaches the cap through the tag (§R.4.4).
+(2) The tag DEFEATS scan-edge compaction: `\s{0,N}$` goes from 4 states to 2N+3,
+a linear table where today's is constant, and its emitted bytes grow with it
+(predicted 528 KB → 1.49 MB at N = 6144). That is a BYTE-cap event, not a state
+one: §R.4.4 counts it, §R.5 declines it.
+
+#### §R.4.4 The refusal-SET compare (C3; `results/refusal.txt`)
+
+Keys = (population, pattern, variant) → `ok` | the refusal class. Population:
+the 266, the four sweep families at N up to 16,384, and the 21
+`tests/resource` witnesses each with `$` and `\s*$` appended (360 keys per
+variant); variants: shipped (`plain`), emit_sweep's `lowsize` and `lowboth`
+reference builds (60,000-byte cap; `lowboth` adds the 3,000-element DFA budget).
+By design B3 never refuses (§R.5), so the shipped refusal set is unchanged by
+construction; what is counted is the set the declines must catch: keys that
+WOULD join the refusal set if B3 had no decline, from the probe's tagged states
+and today's bytes per state.
+
+**Shipped caps (`plain`).** Of the 84 F2 keys that compile today, the tagged form
+would push **10** over the 1,000,000-byte cap and **none** over a state cap
+(§R.4.3's finding (1): the tag never outgrows today's forward machine): the
+sweep's `\s{0,6144}$` (528 KB today → about 1.49 MB predicted), `[a-z]{0,N}\s{0,N}$`
+at N = 3072 and 4096 and `\w{1,N}\s{0,N}$` at N = 3328 and 3584 (0.88-0.95 MB →
+1.01-1.09 MB), `((a)|bc){0,4000}d\s*$` (615 KB → 1.2 MB), and four utf8
+`\p{L}`-family witnesses with `\s*$` appended (`\p{L}+\s*$`, `(?:\p{L}?)+\s*$`,
+`\p{L}\s*$`, `(\p{L})\s*$`: 0.80-0.83 MB → 1.30-1.34 MB). With `drop-end-mark`
+(§R.5) each compiles exactly as today (F4's machines, one extra compile
+attempt), so the refusal set moves by **+0 keys**; without the decline it would
+move by +10. **`lowsize`/`lowboth`:** today refuses 51 / 21 keys; the 33 F2 keys
+that compile there stay under the 60,000-byte cap when tagged: +0 either way.
+The figures are predictions (the probe's tagged and lowered state counts × the
+per-state bytes of today's reverse and anchored tables); the build measures
+them (gate G3, §R.6.1). `\p{L}+\s*$` is a realistic shape (trailing blanks after
+a word): under the shipped cap B3 declines it, i.e. it keeps today's walk.
+
+#### §R.4.5 The utf8 and context-atom lines (C5)
+
+utf8 F2: 3 artifacts (`\s+?$`, `([^/]+)$`, `(\s+)$`), reverse 3/8/3 → 5/15/5,
+mark_prio const on all three (`([^/]+)$`: 39 unpruned states, the population's
+max). `(\p{L}+)$`, b3cost's outlier (454 → 907), is F1: it cannot tie, it is
+never tagged. Context-atom F2 artifacts: 5 (`\W{0,2}?(?:\B|)$` and siblings);
+their tagged reverse figures pass the product control (C6), their
+forward/anchored tagged figures and `mark_prio` are unmodelled by the probe and
+owed to the build's own census check (§R.6.2).
+
+#### §R.4.6 [REVEND-WALK-FORM]: the form, decided once
+
+`timing/` built and answer-checked (0 wrong over 90,962,254 cells, every arm) nine
+arms on b3meas's population: T today; R today's algorithm in plain table style;
+V = R plus today's per-iteration view probe; S = R plus today's stay placement;
+U = today's text with the one-seed rule; P = U's algorithm in R's style; W = P
+with the views resolved at the seed and the first step peeled; B and Q = the
+tagged walk plain and in today's step shape. Findings:
+
+- **The whole style gap is the per-iteration view probe** at the loop top
+  (`rewind + 1 >= n` plus the view-state copy): V/R 1.30-1.71 reproduces T/R
+  1.22-1.60, T/V 0.92-0.96, and per-artifact fits `ns = a + b·loads` give T−R
+  `a` +0.93 ns per call with `b` unchanged (ratio 1.006): a per-CALL constant,
+  not a per-byte one. The stay placement costs nothing (S/R 0.98-1.00), nor
+  does the step shape on the tagged walk (Q/B 0.95-1.01).
+- **Form W is the fastest one-seed form**: W/R 0.79-0.96, U/W 1.20-1.50,
+  T/W 1.47-1.90 (L regimes; K4/M1 within ±0.05).
+
+**Decision: the B3 build emits F1's and F2's walks in form W**: the seed's views
+are resolved once before the loop (the seed IS the view state), the first step
+is peeled, and the loop body carries no view probe. The probe sits in the shared
+`emit_reverse_block`, so RECOVER's reverse pass (every ENG_UNANCH composite)
+pays the same ~1 ns per call; moving it there changes every composite artifact,
+so it is FILED as `[REVBLOCK-VIEW]` (trigger: the next reverse-block emission
+change, or a bench reverse-pass cell at rank), not folded into B3.
+
+#### §R.4.7 Net code (C1)
+
+Under selective tagging NOTHING is deleted: today's two-seed walk and its tie
+code remain as F0, F3 and F4, and `revend_nl_last` becomes F1's predicate. Added:
+the form table (5 rows), F1's one-seed walk, the `lower_eol` build parameter and
+`ACC(d)`, the tagged subset construction, the tie fact, `mark_prio`, FINISH's
+`prio-const` row, the value compares (4 sites), the `drop-end-mark` rung, the
+deny and its axes row. No net-simplification claim is made.
+
+### §R.5 Declines, never refusals (S4)
+
+Every machine F2 adds is built OPTIONAL (`Dfa.optional`, the anchored machine's
+mechanism, `anchored_match_unwrapped.md` §5.2): an overflow of a state cap or of
+the DFA element budget records and returns, and the form row falls to F4
+(today's machines, today's tie code). The optional builds are charged to their
+own caps and never to the engine-selection budget, so the engine route cannot
+move. After emission, an F2 artifact over a byte cap takes a new `fit_rungs[]`
+row **`drop-end-mark`** (label `size`, the FIRST size rung: it costs no answer
+and no other optimization), which retries the compile with the form pinned to
+F4. One ladder (D163): no second fallback mechanism. `COMPILE_MAX_ATTEMPTS`'s
+table check (dec_fallback.md) covers the new row.
+
+### §R.6 Checks
+
+#### §R.6.1 Gates, per artifact, on EMITTED states and size_bytes (C4)
+
+Each gate's expectation comes from the probe (`b3rev_probe.c`, re-run on the
+built tree), which shares no code with the emitter's walk:
+
+| gate | predicate (every F2 artifact) | exemptions (named) | measured |
+|---|---|---|---|
+| G1 reverse | emitted reverse states ≤ 2 × today's + 1 | `[^c]{0,4}?$`, `[^c]{0,4}$` (4 → 11: today's run is scan-compacted) | 41 of 43 within |
+| G2 forward, anchored | emitted states ≤ 2 × today's + 4, each machine | none | max 6 → 12 |
+| G3 bytes | emitted size_bytes ≤ today's + (probe Δstates × today's per-state bytes per role) × 1.10 + 512 | none | owed at build |
+| G4 identity | every F1 artifact: forward and anchored tables byte-identical to today's; F3/F4/F0 artifacts byte-identical to today's except F3's dropped tie code | none | — |
+
+Floors (§R.4.0) are literal and re-counted.
+
+#### §R.6.2 Independent controls and witnesses
+
+1. **Oracle-first witnesses, green on today before the build** (`rev2corp`
+   precedent): `tests/endmark/b3_rows.rxt`, one block per row and class:
+   F1 (`\d+$`, `\B$` on `"a\n"` → (2,2), the startpos cells); F2 const0
+   (`\s+$`), const1 (`\s*?$`), state-dependent (`(?:\s+|x\s*?)$`, `"x\n"` →
+   (0,1), and under `-fno-anchored-dfa`: the relocate, S1's cell); S2
+   (`(?:\Bx\n|x)$` on `"ax\n"`, `" x\n"`); S3 (`\n{1,4}$`, `\n\n?$`); S5
+   (`ab\z|b\Z`, `\d+$|\w+\z`, `\s*$|x\z`); F3 (`(?:a|b\n)+$`, `a\n$`,
+   `(?:\n\n|a){0,4}$`); F4 (a near-cap synthetic under a lowered-cap reference
+   build); S8's held cases (`$` find-all on `"\n"`, `\s*?$` find-all,
+   startpos > 0, `\Z` = `$`, `\z` unmarked, `(?m)$` never rev-end, a utf8
+   block). Expectations from libpcre2 10.46.
+2. **The tie fact and `mark_prio` against an independent construction**: a
+   census check runs `b3rev_probe.c` (the PRODUCT of two untagged builds, and
+   the closure over pcrec's NFA) and compares its row, tie fact and
+   `mark_prio` with the build's `--emit-ir` lines on the whole population; the
+   probe's `mark_prio` is itself checked against libpcre2's choice on every
+   observed tie (b3meas's empirical method).
+3. **The deny arm** in `make test-axes`: default vs `-fno-rev-end-onewalk`,
+   answer identity over the corpus plus the give-up differential (D158).
+4. **emit_sweep**: the mover manifest is exactly the F1 + F2 set (266 rows),
+   and every other artifact is byte-identical (B3.1/B3.2), zero movers at B3.0.
+
+### §R.7 The build: steps, sabotage, movers
+
+#### §R.7.1 Steps
+
+| step | content | movers / abi |
+|---|---|---|
+| E0 | `tests/endmark/b3_rows.rxt` (§R.6.2 item 1), green on today; the probe census check | none |
+| B3.0 | the value compares (§R.3, four sites, an assertion that every non-F2 accept is 0/1); the `--emit-ir` summary row `rev-end-form` and the `--emit-facts` fact `end_mark`; the form table with only F0 reachable | zero (emit_sweep); spec: `ir_listing.md`, `facts_listing.md` |
+| B3.1 | F1 `one-seed` in form W | the 223 F1 artifacts; abi event |
+| B3.2 | `lower_eol` + ACC(d), the tagged construction, the tie fact, F2/F3/F4, `mark_prio` + FINISH `prio-const`, the optional builds, `drop-end-mark`, the deny (bit 55, `axes.def`) | the 43 F2 artifacts (+ F3/F4 where reachable); abi event; spec: `tuning.md` deny row, `limits.md` rung |
+
+#### §R.7.2 Sabotage plan (C7): ten plants, ids to be issued by main
+
+Each row's SAB_REACH reads the new `--emit-ir` summary row (`rev-end-form`,
+`mark_prio`) or a stamp, never emitted-text greps.
+
+| plant | what it does wrong | witness / detector | SAB_REACH |
+|---|---|---|---|
+| P1 | tags dropped: F2's accept value collapsed to truth | `\s*?$` on `" \n"` reports (0,2), PCRE2 (0,1) | `--emit-ir` `rev-end-form tagged` on `\s*?$` |
+| P2 | `mark_prio` returns the second distance | `\s+$` / `\s*?$` nl cells | `mark_prio const0` on `\s+$` |
+| P3 | F1 skips the zero-length probe at `n` | `\B$` on `"a\n"` → (2,2) lost | `rev-end-form one-seed` on `\B$` |
+| P4 | `mark_prio` computed on the PRUNED machine | `(?:\s+\|x\s*?)$` reads const; `"x\n"` | `mark_prio state-dependent` |
+| P5 | `mark_prio`'s cap overflow answers const | lowered-cap reference build, the sweep's `\s{0,N}$` | `mark_prio` line under the reference build |
+| P6 | the hybrid consults the fact (VM ceiling below the reported end) | a captures witness, `(\s*?)$` on `"a \n"` | `RX_VM_PREFILTER` hybrid + `rev-end-form tagged` |
+| P7 | D read class-blind (union over atoms) | `(?:\Bx\n\|x)$` on `"ax\n"` → (1,3), `" x\n"` → (1,2) | `rev-end-form tagged` on it |
+| P8 | scan-edge compares accept truth (S3) | `\n{1,4}$` nl cells | `rev-end-form tagged` on `\n{1,4}$` |
+| P9 | a lowered build overflow REFUSES instead of declining | the F4 witness under the reference build compiles today | `rev-end-form overflow` |
+| P10 | F2's forward machine built without `lower_eol` (S1, the split) | `(?:\s+\|x\s*?)$` on `"x\n"` under `-fno-anchored-dfa` → (0,1) | `rev-end-form tagged` + `finish search-from` |
+
+**Request: a range of 10 sabotage ids from main** (none invented here).
+
+#### §R.7.3 Movers (C8)
+
+The ten rows that grep `for (int revend_seed` (S758-S760, S767, S771-S773) or
+`revend_seed` (S769, S778, S779) lose their reach on `\s+$` (now F2) and on the
+hybrid witnesses (now F1). Each re-aim, intent re-verified against the row's own
+header:
+
+| row | intent | re-aimed at |
+|---|---|---|
+| S758 n−1 seed dropped | a match ending before a final newline is lost | F1's n−1 choice; its own detectors (`\d+$` on `"abc123\n"`, `a*$` on `"aa\n"`) are F1 artifacts; reach `rev-end-form one-seed` |
+| S759 first accepting seed, not the smallest | smallest start over two seeds | F0 (`-fno-rev-end-onewalk` on `\s*$\|x\z`) and the F3 witness; reach `rev-end-form denied`/`two-seed` |
+| S760 seed guard deleted | a seed below `startpos` walks | F1's guard (one guard per seed form); reach `one-seed` |
+| S767 `nl_last` says no tie | a tie-capable artifact loses its tie handling | now: every artifact takes F1, so `\s+$`-family nl cells answer wrong; reach `rev-end-form tagged` on `\s+$` (the row the plant removes) |
+| S769, S779 hybrid conjuncts | the hybrid's inlined body walks | reach `rev-end-form one-seed` on `(\d+)$` with `RX_VM_PREFILTER "hybrid"` |
+| S771 deny unplumbed | `-fno-rev-end` inert | reach any `rev-end-form` row |
+| S772 search-from ahead of verify-at | a tie relocates where the anchored machine exists | F0 on `\s+$` (today's tie) and F2 state-dependent `(?:\s+\|x\s*?)$` |
+| S773 DFA_SCAN stamp forked | the stamp vs LOCATE's selection | reach any `rev-end-form` row |
+| S778 superset span | `\w{1,2}(?:(?=)\|)$` (F1) | reach `rev-end-form one-seed` |
+
+S765/S766 (endmark.md §5.3) re-aim to the F2 tag arm and FINISH's `prio-const`.
+Plus: form-census floors, `DIFFER_PINS`, cpset manifests, FILEPINs,
+`VARIANT_PINS`, the startset manifests, `tests/codegen/run_rev_end.sh`,
+`run_dfa_stamps.sh`, `run_premul_table.sh` (the byte-count class is RUN, not
+grepped: §5.3).
+
+**abi readers by grep** of `PCREC_ARTIFACT_ABI` (76, `src/gen/emit_dfa.c:54`)
+at `e8ca1252`: 17 files — `src/gen/emit_dfa.c`, `src/enc/CLAUDE.md`,
+`tests/memfn/site_manifest.tsv`, `tests/mech/sabotages/S825_span_match_exported.sh`,
+`tests/mech/sabotages/S693_abi_not_bumped.sh`, `tests/mech/CLAUDE.md`,
+`tests/backrefs/run_backref_diff.sh`, `tests/backrefs/CLAUDE.md`,
+`tests/backrefs/fold_agreement_check.c`, `..._utf8_check.c`, `..._ucp_check.c`,
+`docs/spec/match_api.md`, `tests/codegen/run_codegen_tests.sh`,
+`tests/codegen/run_encoding_checks.sh`, `tests/codegen/run_recursion_identity.sh`,
+`tests/codegen/CLAUDE.md`, `scripts/emit_sweep.py`. The build re-greps at each
+abi event (B3.1, B3.2) and runs the suites that count (registry, codegen,
+rxtsource).
+
+#### §R.7.4 `end_pin` has one answer (C8)
+
+`end_pin` stays a TREE fact over the unlowered tree: `eol` for every `$`/`\Z`
+artifact, on every form row. §2.3's "the pin is `z`" is withdrawn: with `$`'s
+lowering an NFA-build parameter (§R.2), the tree never says `\z`. Its five
+readers are unchanged; F2 reads `end_pin = eol` AND its own form row.
+
+### §R.8 The sibling family (S10: one `EndDist` fact)
+
+The match-end offset is encoded today as: `eolvar`/`endvar` views; the
+forward `ACC(back)` (§2.2); the reverse tags (§R.1.2); ENDSET's `D`;
+`EW_EOL_SLACK` (W1); `nl_last`; FINISH's tie rows. **Leaning: yes, B3 builds the
+first reader of ONE representation, now**: the accept value as the distance set
+(§R.3) on every machine, with today's machines as the {0} case. It costs B3
+nothing extra (it is how F2 stores D) and it is what makes S3's fix structural.
+And `mark_prio` is a FINISH row `prio-const` ahead of `verify-at`/`search-from`
+(S10's own proposal), so the tie decision lives in one first-match table.
+
+Not migrated now (D77), each with its trigger:
+
+| member | stays because | trigger |
+|---|---|---|
+| `eolvar`/`endvar` views on non-F2 machines | addendum 3 (forward `$` keeps its view) | a measured cost of the view (`[REVBLOCK-VIEW]`'s ~1 ns/call is the first) |
+| `EW_EOL_SLACK` | W1 reads widths, not ends | W1 on an F2 artifact |
+| `nl_last` | F1's cheap predicate (no tagged build needed) | the tagged build becoming as cheap as the predicate |
+| ENDSET `D` | FINISH's hand type, already a set | none: it already IS this representation |
+
+Unlocks (with triggers): (A) a DFA door for `\K`: START_MARK, the same tagged
+construction run forward (trigger: a bench cell VM-forced only by `\K`); (B)
+newline conventions as tail data (§R.2.4; trigger: a NEWLINE request); (C)
+rev-inner reports an end through a bounded tail with tags (trigger: the
+rev-inner build); (D) E2's forward `ACC(b)` rides the same accept value, so the
+VM → DFA trailing-lookahead set needs no `back` table either (trigger: E2);
+(E) F1's last-byte rule generalizes to a CRLF tail by the last two bytes
+(trigger: DD-11 CRLF).
+
+### §R.9 Questions for Frank (discussion)
+
+**Q1. A deny flag spends a bit.** 55 of 64 used; F0 makes it 56 (8 left;
+`[IFACE-PUSH]`'s hard trigger is ≤ 4). The alternative is D164's own shape, a
+harness-only lever with no bit. *Forces:* every other start/scan selection
+row is deniable (D46, test-axes' answer identity runs on deny arms); the lever
+is a lowering-pass control. *Leaning:* the deny flag, because F1/F2 are
+selections, not a lowering.
+
+**Q2. Selective tagging deletes nothing.** The two-seed walk stays as three rows
+(F0/F3/F4). *Forces:* Frank's direction (tag only where it can tie) vs the first
+design's "~40 lines deleted". *Leaning:* accept: the rows are data, and the
+two-seed walk is the decline every optional build needs anyway.
+
+**Q3. The VM keeps `$` as an assertion (§R.2.3).** A reading of addendum 4
+(machines that answer the end from an automaton) for Frank to confirm.
+
+**Q4. [REVBLOCK-VIEW].** The ~1 ns/call view probe also sits in every
+composite's reverse pass. *Leaning:* file it (every ENG_UNANCH artifact moves),
+B3 takes form W for its own walks only.
+
+### §R.10 The standing questions (`docs/design/CLAUDE.md`)
+
+1. **Measurement regime: relevant.** Counts: exact, pcrec's own builds at
+   `e8ca1252`, gcc 15.2.0 on the Linux dev box, 13 controls. Clock: the Linux
+   dev box (Ryzen 7 7700X), gcc 15.2 `-O2`, `taskset -c 2`, warm back-to-back
+   calls over 2-24 subjects (latency of dependent calls), A/A per-cell p5-p95
+   0.87-1.27, two runs agreeing. The SELECTION reads no timing (it is
+   structural), so no regime can flip a row; the form decision (W) rests on a
+   per-call ~1 ns constant consistent across L/K4/M1; a Zen 1 box (ubuntubudu)
+   is unmeasured and the official verdict is the bench's (D144 add. 4).
+2. **Independent control: relevant.** §R.6.2: libpcre2 10.46 on the ORIGINAL
+   pattern for every witness; the probe's product of untagged builds against
+   the build's direct tagged construction; `mark_prio` against libpcre2's
+   observed tie choices; the deny arm. Populations counted by the probe (K35);
+   every SAB_REACH reads an `--emit-ir` line on the witness the detector uses.
+3. **What moves when data is regenerated: relevant only as emitted text.** No
+   table or calibration: the tie fact, D and `mark_prio` are derived per compile.
+   B3.1 and B3.2 are abi events (readers §R.7.3); spec hunks: `tuning.md` (the
+   deny), `ir_listing.md` (`rev-end-form`, `mark_prio`), `facts_listing.md`
+   (`end_mark`), `limits.md` (`drop-end-mark`).
+
+---
+
 ## 0. Answers first
 
 1. **The lowering is exact.** It fires where a POSITIVE lookahead ends its path, and
@@ -267,6 +878,10 @@ end, never the reported one. A ceiling at the mark would starve Y and lose match
 
 ### 2.3 The reverse walk (rev-end): this is B3
 
+> **[b3rev] Superseded for the build by §R** (§R.1 the form table, §R.1.2 the tie
+> fact per context atom, §R.2 one lowering per artifact by NFA-build parameter, so
+> the `end_pin = z` reading below is withdrawn, §R.7.4). Kept as the first design.
+
 After lowering, a path-final `$` reads `X END_MARK \n? \z`. The `end_pin` fact sees
 `\z` at every path end and answers `z`. There is ONE seed, at `n`. The walk reads the
 reversed lowered language: optionally the final `'\n'` (the tail), then the mark,
@@ -453,7 +1068,7 @@ The rule is the invariant in §0 item 7: facts speak consumption.
 
 | fact | after the lowering |
 |---|---|
-| `end_pin` (`src/facts/endwin.c`) | a lowered `$` path ends in `\z`, so the pin is `z`. `PCREC_EPIN_EOL` keeps producers only where `$` did not lower (a mid-path `$` followed by `\z`). Its 5 readers are re-derived (§5.3). |
+| `end_pin` (`src/facts/endwin.c`) | **[b3rev §R.7.4: withdrawn; `end_pin` stays `eol`, `$`'s lowering is an NFA-build parameter]** a lowered `$` path ends in `\z`, so the pin is `z`. `PCREC_EPIN_EOL` keeps producers only where `$` did not lower (a mid-path `$` followed by `\z`). Its 5 readers are re-derived (§5.3). |
 | `end_window` (W1) | consumed width = X's plus the tail's 1 = today's `EW_EOL_SLACK`. Same numbers. |
 | `width` / `minw` / `nullable` / `empty_admits` | consumption. `(?=ab)` stops being nullable. That is right for every reader (the prefilter's nullable decline, the attempt bound), because the match cannot begin without reading `ab`. The reported span is empty, and only the caller's find-all reads that, from `caps`. |
 | `kinds` (E1) | gains an `ENDMARK` bit. `LOOK` clears where every lookahead lowered. |
@@ -595,7 +1210,7 @@ each commit's diff, not hand-listed.
 | **E0** | `tests/endmark/*.rxt` (oracle-first) and the probe promoted to a census check | none |
 | **E1** | `A_ENDMARK` with every switch arm; the pass behind the lever, default OFF; VM slot 1, report and ancestor rule; NFA `ACC(b)`; the DFA back table | zero movers: emit_sweep, every stream and variant, against main |
 | **E2** | the pass ON for L7 over `A_LOOK` (the multi-character lookaheads) | the VM → DFA set, about 30 corpus and 2 bench lowered programs, Y-run gains. abi event |
-| **E3** | `$`/`\Z`/`(?m)$` lowered; rev-end's one tagged walk; `mark_prio`; the second seed and `revend_tie` deleted (B3) | 266 rev-end artifacts (Q1: plus the forward `$` machines). abi event. Gate: the forward state counts on §3.3's population do not grow by more than one per machine |
+| **E3** | **[b3rev: replaced by §R.7.1's E0/B3.0-B3.2]** `$`/`\Z`/`(?m)$` lowered; rev-end's one tagged walk; `mark_prio`; the second seed and `revend_tie` deleted (B3) | 266 rev-end artifacts (Q1: plus the forward `$` machines). abi event. Gate: the forward state counts on §3.3's population do not grow by more than one per machine |
 | **E4** | the per-node stamp offset (§4.3) | none if folded into E2 |
 
 E2 and E3 are separable. E3 is what compound's B4 waits for.

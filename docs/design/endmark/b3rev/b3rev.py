@@ -488,12 +488,17 @@ def refkey(comp, pat, enc, icase, tag):
             except OSError: pass
     d = cost.stamps(txt)
     body = COMMENT.sub(b'', txt)
-    roles = collections.defaultdict(lambda: [0, 0])     # role -> [init bytes, next_state cells]
+    # per-STATE bytes of each role: the arrays whose length scales with the
+    # state count (next_state, the accept tables, the view rows); fixed
+    # tables (byte_class[256], scan tables) do not grow with a state
+    roles = collections.defaultdict(int)
     for m in INIT.finditer(body):
-        roles[m.group(1).decode()][0] += len(m.group(0))
+        nm = m.group(2).decode()
+        if nm == 'next_state' or 'accept' in nm or nm.endswith('_view'):
+            roles[m.group(1).decode()] += len(m.group(0))
     mach = cost.machines(txt)
     return dict(key='ok', scan=d['DFA_SCAN'], tie=d['revend_tie'], bytes=len(body),
-                rb={k: v[0] for k, v in roles.items()}, rs={k: v['states'] for k, v in mach.items()})
+                rb=dict(roles), rs={k: v['states'] for k, v in mach.items()})
 
 
 def refusal():
@@ -517,7 +522,12 @@ def refusal():
     for k, (src, ident, pat, enc, icase) in enumerate(pop):
         v = variants(pat)
         if v: items.append((k, enc, icase, pat, v))
-    pres = run_probe(items)
+    cache = os.path.join(OUT, 'refusal_probe.json')
+    if os.path.exists(cache):
+        pres = json.load(open(cache))
+    else:
+        pres = run_probe(items)
+        json.dump(pres, open(cache, 'w'))
 
     def job(a):
         k, name = a
