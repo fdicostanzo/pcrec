@@ -28,3 +28,15 @@ Offsets are taken from `cx->pos` at parse time (user text) and never recomputed,
 ## Validation
 - `make` and `make strict` clean. `tests/vm/run_vm_tests.sh` 58/0 (pre-fix compiler: 7 of the 10 K110 rows red).
 - Full `make test` (perfrun, `-j4 PROCS=3`, detached; log `build/k110/test.log`, verdict `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`): at 13:39 the only red line was `test-codegen`'s `[SABANCHOR]`: three sabotage rows (S93, S96, S117) quoted `pcrec_ast_stamp(cx, ...`, a text this change edits. Re-aimed (commit after the code), `m6read_check_sab_anchors.py` reports 700 rows, all anchors resolve. The suite was still running when this report was written: OWED are (1) the remaining sections' verdict, (2) `make test-codegen` re-run after the anchor fix, (3) solo mech rows S93/S96/S117 (`bash tests/mech/run_sabotage_matrix.sh S93` etc.; AFTER texts are unchanged and only the BEFORE anchor moved).
+
+## Landing validation (lane k110fin, 2026-10-12)
+- Tree of the full run: `d38db367b` (13:24), the re-aim `6bad4d92f` (13:35) came AFTER it, so the one red (`test-codegen` [SABANCHOR] S93/S96/S117) was a stale pin from before the re-aim, not a regression.
+- `make test-codegen` at ff619b954 (log `build/k110/codegen2.log`): `run_group: 16/16 scripts passed`, no `*** [..test-` line, [SABANCHOR] clean. GREEN.
+- Mech rows solo (`TMPDIR=build/k110/tmp`, logs `build/k110/mech_S{93,96,117}.log`, each `== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0 ...)`, rc 0), all DETECTED as expected:
+  - S93 `codegen:2fail/329pass,corpus:29fail/234pass,atomicdiff:16fail/5pass,registry:6fail/229pass+compliance-FAIL`
+  - S96 `registry:1fail/230pass,codegen:5fail/326pass,corpus:12fail/114pass,atomicdiff:5fail/5pass`
+  - S117 `registry:12fail/230pass,brefdiff:35fail/11pass,corpus:0fail/88pass`
+- Intent re-verified: the re-aim only drops the `cx,` argument; the plants still skip/neutralize exactly the stamp (S93 no A_ATOMIC wrapper, S96/S117 node left unstamped), and the detectors are the ones the rows name (registry `check_engine_capability`, atomicdiff, brefdiff). None of the three declares `SAB_REACH`, so there was no reach line to re-aim. S96's `SAB_DOC_FIGURE` predicted a green default-engine corpus; measured `corpus:12fail` (the harness target's `--engine=dfa` refusal cells). The figure text is still marked PREDICTED and was left alone.
+- `git merge main` (alone): clean, docs-only (13 files, no src/tests). `make strict`: rc 0, "whole tree compiles clean".
+- Not rerun: the other full `make test` sections (they ran green on d38db367, which has the identical src; the re-aim touched only three sabotage rows, and the merge brought docs only).
+- Note: the first mech launch defaulted its scratch root to /tmp; it was stopped with safekill, its scratch dir removed, and the rows re-run with TMPDIR inside the worktree.
