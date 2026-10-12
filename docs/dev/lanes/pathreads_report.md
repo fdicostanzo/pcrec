@@ -194,3 +194,16 @@ strict` clean; `make test-registry` rc 0 (every section `checks failed: 0`);
 `make test-codegen` rc 0 ("run_group: 16/16 scripts passed", no make error line). The default-build
 .text claim for `emit_dfa.o`/`compile.o` is not touched by this change (only
 `tests/` moved).
+
+## s845row (2026-10-12, lane s845row)
+
+The second plant of section 3 is now a row, S845
+(`tests/mech/sabotages/S845_first_drops_path_reads.sh`, arm `candoracle`,
+modelled on S844): one anchor line, `CAND_PATH_READS } },` in FIRST's `reads`.
+
+REACH (by hand, trace build via `tests/codegen/run_cand_oracle.sh`): unplanted
+tree 92 passed / 0 failed; the same tree planted (scratch `git archive` copy)
+69 passed / 23 failed, all 23 `CANDORACLE undeclared-read FIRST LOCATE`.
+Anchors: `scripts/m6read_check_sab_anchors.py` 700 rows / 721 sites, all resolve.
+Matrix verdicts: see the handback (logs `build/mech_s845.log`,
+`build/mech_s844.log` in the worktree).

@@ -3794,3 +3794,11 @@ pathreads_report.md). S844 drops RECOVER's `.under[NEXT] = PCREC_NO_REQ_HANDOFF`
 (the 9dec5e6f fix): arm `candoracle`, every witness aborts `table-read-cycle`.
 Re-anchored: S607 (FIRST's `reads` gained `CAND_PATH_READS`; the plant keeps it
 and drops PRESENCE), hand-verified DETECTED (`undeclared-read FIRST PRESENCE`).
+
+**S845 (lane s845row, 2026-10-12), [CAND-PATH-READS]'s second plant.** Drops
+`CAND_PATH_READS` from FIRST's `reads` (one anchor line in `cand_nodes[]`);
+arm `candoracle`. REACH shown by hand: unplanted trace-build
+`run_cand_oracle.sh` 92 passed / 0 failed, planted 69 / 23, every failure
+`CANDORACLE undeclared-read FIRST LOCATE` (dfa/attempt/vm witnesses). It is the
+sibling of S844: S844 plants the cycle the declared edges expose, S845 the
+undeclared edge itself.
