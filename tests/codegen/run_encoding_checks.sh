@@ -629,6 +629,7 @@ PF_BYTE_RE = re.compile(r'^(?:run-pinned|memchr)(?:-bounded)?$')
 PF_UTF8_RE = re.compile(r'^offset-set(?:-bounded)?$')
 PRIOR_FORM_STAMPS = ('DFA_PREFILTER', 'DFA_PREFILTER_OFFSETS')
 RUNPIN_RE = re.compile(r'^run-pinned(?:-bounded)?$')
+START_BYTE_RE = re.compile(r'^(?:memchr|byte-class|first-memchr|first-class)(?:-bounded)?$|^none$')
 
 def prior_form(tb, tu, moved):
     if not moved or any(k not in PRIOR_FORM_STAMPS for k in moved):
@@ -639,6 +640,12 @@ def prior_form(tb, tu, moved):
         return False
     pb = (a.get('DFA_PREFILTER') or '').strip('"')
     pu = (b.get('DFA_PREFILTER') or '').strip('"')
+    # [REQ-HANDOFF-L1] (abi 75) THE RE-ENTRY'S K ADMISSION reads the same
+    # prior (the landmark's hit rate against the displaced start-byte row's
+    # mass), so `handoff` on one side and a start-byte form on the other is
+    # the same declared, prior-keyed selection, in either orientation.
+    if (pb == 'handoff') != (pu == 'handoff') and START_BYTE_RE.match(pu if pb == 'handoff' else pb):
+        return True
     return bool((PF_BYTE_RE.match(pb) and PF_UTF8_RE.match(pu)) or
                 (PF_UTF8_RE.match(pb) and RUNPIN_RE.match(pu)))
 REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_length, search_from\) >= subject_length\) return 0;$', re.M)
@@ -661,12 +668,24 @@ REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_l
 # `REQ_WHY` or `REQ_RUN` differs by encoding. The both-sides population is
 # counted and FLOORED (K35).
 HANDOFF_DECL_RE = re.compile(r'^(\s*)size_t handoff_position = rx_reqrun\(subject, subject_length, search_from\);$')
+# [REQ-HANDOFF-L1] (abi 75) THE LANDMARK MAY BE ONE BYTE: its gate keeps its
+# position through the kit's ASSIGN text (one statement-expression line, then
+# the miss test, `return 0;` and its close). The same on both sides, it is
+# kept as written; it counts as the side's handoff gate and pre-check. The
+# re-entry's two encoding-owned pieces are excised like the entry's block:
+# the kept hit (`size_t landmark_position = handoff_position;`) and the
+# restart block's MOVE (`if (landmark_position - scan_position > K) { ... }`,
+# K and the utf8 round-up), at most HANDOFF_MAX_LINES long.
+HANDOFF_BYTE_DECL_RE = re.compile(r'^\s*(size_t handoff_position|landmark_position) = \(\{ .*\}\);$')
+HANDOFF_BYTE_MISS_RE = re.compile(r'^\s*if \((handoff|landmark)_position == \(subject_length\)\) \{$')
+REENTRY_KEEP_RE = re.compile(r'^\s*size_t landmark_position = handoff_position;$')
+REENTRY_OPEN_RE = re.compile(r'^(\s*)if \(landmark_position - scan_position > \d+\) \{$')
 HANDOFF_RET_RE = re.compile(r'^\s*if \(handoff_position >= subject_length\) return 0;$')
 HANDOFF_OPEN_RE = re.compile(r'^\s*if \(handoff_position - search_from > \d+\) \{$')
 HANDOFF_CLOSE_RE = re.compile(r'^\s*handoff_position = search_from;$')
 HANDOFF_STAMP_RE = re.compile(r'^(#define RX_REQ_HANDOFF ")[^"]*(")$')
 HANDOFF_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_HANDOFF "([^"]*)"$', re.M)
-HANDOFF_GATE_RE = re.compile(r'^\s*size_t handoff_position = rx_reqrun\(subject, subject_length, search_from\);$', re.M)
+HANDOFF_GATE_RE = re.compile(r'^\s*size_t handoff_position = (?:rx_reqrun\(subject, subject_length, search_from\)|\(\{ .*\}\));$', re.M)
 HANDOFF_MAX_LINES = 8
 
 
@@ -683,6 +702,40 @@ def excise_handoff(text, counts):
             out.append(md.group(1) + "if (rx_reqrun(subject, subject_length, search_from) >= subject_length) return 0;\n")
             counts['handoff_gate'] += 1
             i += 2
+            continue
+        mb = HANDOFF_BYTE_DECL_RE.match(ln)
+        if mb:
+            # The one-byte gate searches for the PICKED byte, a byte-keyed
+            # prior's choice, so its text is excised as the discard form's is
+            # ([OPT-REQBYTE] below): the line and its miss test (`if (... ==
+            # (subject_length)) {`, `return 0;`, `}`).
+            j = i + 1
+            if j < n and HANDOFF_BYTE_MISS_RE.match(lines[j].rstrip('\n')):
+                j += 3
+            elif j < n and HANDOFF_RET_RE.match(lines[j].rstrip('\n')):
+                # R-15's ASSIGN rendering: the miss test is the one-line
+                # `if (handoff_position >= subject_length) return 0;`.
+                j += 1
+            out.append("/* [REQ-HANDOFF-L1] one-byte gate excised for comparison */\n")
+            if mb.group(1).startswith('size_t'):
+                counts['handoff_gate'] += 1
+                counts['req_check'] += 1
+            i = j
+            continue
+        if REENTRY_KEEP_RE.match(ln):
+            out.append("/* [REQ-HANDOFF-L1] kept hit excised for comparison */\n")
+            i += 1
+            continue
+        mo = REENTRY_OPEN_RE.match(ln)
+        if mo:
+            j = i + 1
+            while j < n and lines[j].rstrip('\n') != mo.group(1) + "}":
+                j += 1
+            if j - i + 1 > HANDOFF_MAX_LINES:
+                counts['handoff_overlong'] += 1
+            out.append("/* [REQ-HANDOFF-L1] re-entry move excised for comparison */\n")
+            counts['reentry_block'] += 1
+            i = j + 1
             continue
         if HANDOFF_OPEN_RE.match(ln):
             j = i
@@ -943,7 +996,7 @@ def excise(text, label, drop_run=False):
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
               'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
               'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-              'handoff_overlong': 0}
+              'handoff_overlong': 0, 'reentry_block': 0}
     text = excise_handoff(text, counts)
     lines = text.splitlines(keepends=True)
     out = []
@@ -1265,7 +1318,7 @@ def main():
            'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0,
            'start_zero': 0, 'findings_stamp': 0, 'req_run_asym': 0,
            'handoff_gate': 0, 'handoff_block': 0, 'handoff_stamp': 0,
-           'handoff_overlong': 0}
+           'handoff_overlong': 0, 'reentry_block': 0}
     nselect_bad = 0
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0

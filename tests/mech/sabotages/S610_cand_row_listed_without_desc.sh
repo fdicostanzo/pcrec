@@ -12,7 +12,9 @@ SAB_FILE='src/gen/emit_dfa.c'
 SAB_SUITES='candoracle registry'
 SAB_DESC='a listed cand_rows[] row (memchr) loses the desc the listing projects; the self-check and the axis registry check must fail'
 SAB_DOC_FIGURE='Validated by plant at landing (docs/dev/lanes/stc67_report.md §2); read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S610.'
-SAB_REACH='"$PCREC" --list-axes | grep -qP "^prefilter\t9\tmemchr\t" && echo REACH-LISTED'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): the prefilter axis
+# gained `handoff` at order 5, so `memchr` lists at 10; same row, same plant.
+SAB_REACH='"$PCREC" --list-axes | grep -qP "^prefilter\t10\tmemchr\t" && echo REACH-LISTED'
 SAB_REACH_EXPECT='REACH-LISTED'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1

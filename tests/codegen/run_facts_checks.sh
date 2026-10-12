@@ -415,13 +415,16 @@ fi
 # is narrower than the run window (C3, docs/spec/facts_listing.md). Since C3
 # (abi 59) `/abcd[xy]/user`'s run is the 8-byte masked window `/abcd[xy]/u`
 # (the {x,y} cube joins it), so its pin at 6 keeps the exact stretch `/u`
-# (6:6+2) where abi 58's exact run `/user` read `6`.
+# (6:6+2) where abi 58's exact run `/user` read `6`. `\zabc` is the widened-
+# domain witness (a pin on an artifact whose NEXT row is `none`); since
+# [REQ-HANDOFF-L1] (abi 75) its run handoff re-enters (`handoff`), so it is
+# compiled under `-fno-req-handoff` to stay on that domain.
 printf '%s\n' \
     'E3W	-	abc	unanchored	97,98,99	0' \
     'E3W	-	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6:6+2' \
     'E3W	-fno-req-run	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
     'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
-    'E3W	-	\zabc	unanchored	97,98,99	0' \
+    'E3W	-fno-req-handoff	\zabc	unanchored	97,98,99	0' \
     'E3W	-	^abc	attempt	-	-' \
     'E3W	--engine=vm -fprefilter	^foo(?=bar)baz	attempt	-	-' \
     'E3W	-	(a)\1b	none	-	-' > "$WORKDIR/e3w"

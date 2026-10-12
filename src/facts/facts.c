@@ -75,6 +75,9 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
         pf->req_set.rightmost = -1;
         break;
+    case PF_REQ_SET_MAXOFF:
+        memset(pf->req_set.maxoff, 0, sizeof pf->req_set.maxoff);
+        break;
     case PF_REQ_WHOLE_RUN:
         memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
         memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
@@ -91,6 +94,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         break;
     case PF_REQ_RUN_MAXOFF: pf->req_run.maxoff = 0; break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
+    case PF_REQ_LANDMARK_MAXOFF: pf->req_landmark_maxoff = -1; break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
     case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0, 0, 0, 0 }; break;
     case PF_LAND_CHAR:    pf->land_char = (LandChar){ false, false }; break;
@@ -199,6 +203,14 @@ static void pf_derive_req_walk(Ctx *cx)
         pf->req_set.rightmost = set.pick;
         pf_done(pf, PF_REQ_SET);
     }
+    if (pf_enter(cx, PF_REQ_SET_MAXOFF, false)) {
+        /* [REQ-HANDOFF-L1] the walk's 32-bit saturation reads as the one
+         * "no static bound" every reader tests. */
+        for (int b = 0; b < 256; b++)
+            pf->req_set.maxoff[b] = set.off[b] >= RB_OFF_UNBOUNDED ? PCREC_W_UNBOUNDED
+                                                                   : (long long)set.off[b];
+        pf_done(pf, PF_REQ_SET_MAXOFF);
+    }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
         memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
         memset(pf->req_run.whole_mask, 0, sizeof pf->req_run.whole_mask);
@@ -252,6 +264,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
                                           (PfWhyCode)pf->why[PF_END_PIN].code, &why);
         break;
     case PF_REQ_SET:
+    case PF_REQ_SET_MAXOFF:
     case PF_REQ_WHOLE_RUN:
         pf_derive_req_walk(cx);
         return;
@@ -270,6 +283,16 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_ask(cx, PF_REQ_SET, false);
         pf_ask(cx, PF_REQ_RUN, false);
         pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run, &why);
+        break;
+    case PF_REQ_LANDMARK_MAXOFF:
+        /* [REQ-HANDOFF-L1] the gate's needle: the run window where one
+         * shipped (its K is the window's), else the one byte. */
+        pf_ask(cx, PF_REQ_SET_MAXOFF, false);
+        pf_ask(cx, PF_REQ_RUN_MAXOFF, false);
+        pf_ask(cx, PF_REQ_BYTE, false);
+        pf->req_landmark_maxoff = pf->req_run.len >= 2 ? pf->req_run.maxoff
+                                : pf->req_byte >= 0 ? pf->req_set.maxoff[pf->req_byte] : -1;
+        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) why = PF_WHY_UNBOUNDED;
         break;
     case PF_KSET_WALK:
         /* The machine E3 sealed: `Job.nfa`, wrapped, never rebuilt after. */
@@ -440,6 +463,18 @@ int pcrec_fact_req_byte(Ctx *cx)
     return cx->job->pf.req_byte;
 }
 
+const ReqSet *pcrec_fact_req_set_maxoff(Ctx *cx)
+{
+    pf_ask(cx, PF_REQ_SET_MAXOFF, true);
+    return &cx->job->pf.req_set;
+}
+
+long long pcrec_fact_req_landmark_maxoff(Ctx *cx)
+{
+    pf_ask(cx, PF_REQ_LANDMARK_MAXOFF, true);
+    return cx->job->pf.req_landmark_maxoff;
+}
+
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx)
 {
     pf_ask(cx, PF_KSET_WALK, true);
@@ -587,6 +622,24 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         pcrec_sb_free(&sb);
         return t;
     }
+    case PF_REQ_SET_MAXOFF: {
+        /* [REQ-HANDOFF-L1] `byte:K` per member, byte order, as `req_set`
+         * lists them; `byte:unbounded` where no static bound exists. */
+        StrBuf sb = { 0 };
+        const char *t;
+        int n = 0;
+        sb.cx = cx;
+        for (int b = 0; b < 256; b++) {
+            if (!((pf->req_set.bits[b >> 3] >> (b & 7)) & 1)) continue;
+            if (pf->req_set.maxoff[b] >= PCREC_W_UNBOUNDED)
+                pcrec_sb_printf(&sb, "%s%d:unbounded", n++ ? "," : "", b);
+            else
+                pcrec_sb_printf(&sb, "%s%d:%lld", n++ ? "," : "", b, pf->req_set.maxoff[b]);
+        }
+        t = n ? pcrec_sb_fragf(&cx->arena, "%s", sb.p) : "none";
+        pcrec_sb_free(&sb);
+        return t;
+    }
     case PF_REQ_WHOLE_RUN:
         if (pf->req_run.whole_len < 2) return "none";
         return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_mask,
@@ -603,6 +656,10 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     case PF_REQ_BYTE:
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
+    case PF_REQ_LANDMARK_MAXOFF:
+        if (pf->req_landmark_maxoff < 0) return "none";
+        if (pf->req_landmark_maxoff >= PCREC_W_UNBOUNDED) return "unbounded";
+        return pcrec_sb_fragf(&cx->arena, "%lld", pf->req_landmark_maxoff);
     case PF_KSET_WALK: {
         /* One item per offset, offset order: a singleton as its byte in
          * decimal, a wider set as `[N]`, its member count. */

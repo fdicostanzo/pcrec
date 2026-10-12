@@ -12,7 +12,9 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks"
 SAB_DESC="the run-pinned rows lose PCREC_NO_OFFSET_SKIP from their deny mask, so -fno-offset-skip leaves router on run-pinned (the offset-skip block still emitted) instead of the pre-[OPT-K] memchr artifact"
 SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED -- reach:ok(1/1), prechecks:20fail/269pass (§5.10 row k, plus every §3.4b/§4.x arm that reads the run check under -fno-offset-skip). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S283."
-SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/p.c" && echo REACH-OFFSET-SKIP-DENIES-RUN-ROWS'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): as S282, the deny
+# probe adds `-fno-req-handoff` (the re-entry outranks memchr otherwise).
+SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -fno-req-handoff -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/p.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/p.c" && echo REACH-OFFSET-SKIP-DENIES-RUN-ROWS'
 SAB_REACH_EXPECT="REACH-OFFSET-SKIP-DENIES-RUN-ROWS"
 # RE-AIMED 2026-10-07 (lane stc3, [START-TABLE] C3, start_table.md §3.5):
 # `dfa_pfs[]` is deleted into `cand_rows[]`, whose two run rows break the

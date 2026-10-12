@@ -1241,7 +1241,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 2026-10-09), abi 71 -> 72 (71 is RQ-3's, landed first): the VM cursor
 # rung's lazy rmin prefix is spelled as a span scan capped at rmin plus the
 # reach test; only lazy-cursor-prefix artifacts move beyond the abi digits.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-5b3dd37b}"   # [START-LANDING] SL2 SELF-PIN (lane slbuild, 2026-10-10), abi 73 -> 74: the lane's last src commit (the ABI block's search_form comment) (was be4b8dd2, revbuild's abi-73 self-pin)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-9dec5e6f}"   # [REQ-HANDOFF-L1] SELF-PIN re-aimed (lane l1tri, 2026-10-11), abi 75: the branch's last src commit (axtri's RECOVER under-mask, byte-neutral). a6dfa071 predated the kit R-15 merge (2d8d4cfb), whose memchr ASSIGN renders the handoff/landmark gate: 176 default artifacts differed in exactly those lines + RX_MEMFN_LIBC (l1tri_report.md) (was a6dfa071, rlhbuild's; 5b3dd37b, slbuild's abi-74 self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

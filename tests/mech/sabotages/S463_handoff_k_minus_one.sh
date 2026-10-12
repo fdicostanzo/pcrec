@@ -17,7 +17,18 @@ SAB_REACH_EXPECT='REACH-HANDOFF-K5'
 SAB_REACH_POP='tests/litscan/handoff.rxt|^pattern \(\?m\)\^x\{2,5\}|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    long long k = pcrec_fact_req_run_maxoff(cx);
-    StrBuf round = { 0 };'
-SAB_AFTER='    long long k = pcrec_fact_req_run_maxoff(cx) - (pcrec_fact_req_run_maxoff(cx) > 0); /* SABOTAGE S463 */
-    StrBuf round = { 0 };'
+SAB_BEFORE='    long long k = pcrec_fact_req_landmark_maxoff(cx);
+    StrBuf round = { 0 };
+    round.cx = cx;
+    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
+                          "handoff_position",'
+SAB_AFTER='    long long k = pcrec_fact_req_landmark_maxoff(cx) - (pcrec_fact_req_landmark_maxoff(cx) > 0); /* SABOTAGE S463 */
+    StrBuf round = { 0 };
+    round.cx = cx;
+    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
+                          "handoff_position",'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): K is the LANDMARK's
+# (`req_landmark_maxoff`, the run window's where a run ships, so every run
+# witness reads the same K); the anchor carries the entry's round-up target
+# so it cannot land on the re-entry's own K read (`pf_emit_handoff`). Intent
+# unchanged: the ENTRY starts one byte too late.
