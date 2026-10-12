@@ -100,18 +100,21 @@ def forms_of(sp, prior, pairs=True):
 
 # ---- form prices: the KIT's own knowledge (not a contract input) -----------
 def scan_price(f):
-    """Per-subject-byte scan cost, kit-internal and UNMEASURED (D149 label):
-    memchr of one byte 1, a class of <=3 bytes 1.5 (memchr2/3), a larger
-    class 4 (table loop), a pair +0.5 over its dearer anchor's form."""
+    """Per-subject-byte scan cost in units of ONE DFA TRANSITION STEP,
+    kit-internal and UNMEASURED (D149 label). Order of magnitude only: the
+    bench's floor-byte row puts a memchr-class pass near 0.017 ns/B while a
+    table-driven DFA step costs tens of times that, so memchr of one byte
+    0.03, of <= 3 bytes (memchr2/3) 0.06, a larger class (a table loop, close
+    to a DFA step) 0.7, a pair +0.03 over its dearer anchor's form."""
     def one(m):
         n = SP.popc(m)
-        return 1.0 if n == 1 else (1.5 if n <= 3 else 4.0)
+        return 0.03 if n == 1 else (0.06 if n <= 3 else 0.7)
     if len(f.anchors) == 1:
         return one(f.classes[f.anchors[0]])
-    return max(one(f.classes[a]) for a in f.anchors) + 0.5
+    return max(one(f.classes[a]) for a in f.anchors) + 0.03
 
 
-VERIFY_PER_STOP = 2.0        # UNMEASURED: per-stop span verify + re-entry
+VERIFY_PER_STOP = 10.0       # UNMEASURED: per-stop span verify + scan re-entry
 
 
 # ---- consumers: what the contract does NOT carry ---------------------------
@@ -120,6 +123,8 @@ CONSUMERS = {
     "none": (0.0, 0.0, 0.0),          # D161 as written: no consumer price
     "dfa": (20.0, 1.0, 0.0),          # forward DFA from the window beginning
     "vm": (40.0, 0.0, 60.0),          # anchored attempt per possible start
+    # all in units of one DFA transition step; UNMEASURED (D149), chosen only
+    # to have the right SHAPE (bytes against starts) and order of magnitude
 }
 
 
