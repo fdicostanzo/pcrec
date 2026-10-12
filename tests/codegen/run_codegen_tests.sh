@@ -1587,8 +1587,10 @@ while IFS=$'\t' read -r nm pat extra; do
         bad "[LOSS-REVIEW c1] '$pat' ($extra): the object exports no rx_next_pos — the positive control failed, so nm's answer cannot certify an absence"
         exp_bad=$((exp_bad + 1)); continue
     fi
-    # The fixture must CARRY an inline entry (reach), else it certifies nothing.
-    if [ -z "$(inline_entries "$WORKDIR/$nm.c")" ]; then
+    # The fixture must DEFINE one of the seam entries, inline or not (reach),
+    # else it certifies nothing; whether the definition is inline is what the
+    # symbol check below decides, so reach must not depend on it.
+    if ! grep -Eq "^[a-z ]*(ptrdiff_t|size_t) ($(printf '%s' "$INLINE_RESID" | tr ' ' '|'))\(" "$WORKDIR/$nm.c"; then
         bad "[LOSS-REVIEW c1] '$pat' ($extra): the artifact defines none of [$INLINE_RESID] — this fixture no longer reaches the property"
         exp_bad=$((exp_bad + 1)); continue
     fi
