@@ -931,6 +931,16 @@ fi
 # scan (`RX_DFA_PREFILTER "handoff"`, NEXT's row above the start-byte rows,
 # admitted against `byte-class`), which drops the `can_begin_match` table:
 # 26,586 -> 25,324.
+#
+# RE-RECORDED 2026-10-11 at [LOSS-REVIEW] candidate 1 (lane seambuild, abi
+# 75 -> 76): the two rows whose artifacts carry an encoding-seam entry move,
+# and both are the ruling. `(\w+)\s+\1` 28,966 -> 28,897 (-69): the exported
+# `rx_span_match` declaration (2 lines) and its epilogue definition go, the
+# definition reappears `static inline` ahead of the VM body with its
+# parameters re-wrapped. `(?<=foo)bar` 30,325 -> 30,296 (-29): the same for
+# `rx_back_step`, with `rx_BACK_STEP_NONE` moving from the declarations to
+# just above the definition. Diffed at the same `-o` against a build of main;
+# nothing else in either artifact moves but the same-width abi digits.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
