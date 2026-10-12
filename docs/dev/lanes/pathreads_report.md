@@ -162,3 +162,35 @@ cherry-pick 4936c259, into `lane/pathreads` before the detached chain's
 remaining stages are read; the stages already run need no repeat, the
 `main+arms+trace` stage does not use the new table). The chain's recursion
 identity, `make test` and mech are untouched by this change.
+
+## pathtri2 (2026-10-12, lane pathtri2, sonnet): triage of the d2650157 `make test` reds
+
+Two reds, both LANE-CAUSED (main 23fb7a52 has neither: it has no
+`CAND_EVAL_MAX`, and its `cand_select` calls `r->c.applies(s)` directly), both
+CHECK-side, no `src/` change, no emitted byte moved (no abi event).
+
+- **`test-registry` (`limits_check.sh` `[code]`, the D107 numeric-constant
+  scan)**: `#define CAND_EVAL_MAX 64` (the trace build's stack of running
+  selection predicates, `src/gen/emit_dfa.c`) is a new numeric `#define` on
+  neither allowlist. It is the instrument's own overflow guard and fails the
+  trace build loudly rather than overrunning; nothing a caller or pattern is
+  measured against. Disposed on the LIMIT allowlist beside `LEGEND_MAX_*`
+  (a debug-shaped bound), with its reason in the check's header. The scan's
+  own pin is unchanged (3a is one PASS line; the registry's 37 stands).
+- **`test-codegen` (`run_cand_rows.sh` -> `cand_rows_check.py`
+  `[cand-route-walk]`)**: the check located `cand_select`'s predicate call by
+  the literal `.applies(`; the lane routed that call through `cand_applies`
+  (a trace-build function and a default-build macro), so the literal left the
+  body and the check reported "not found". Re-aimed at `cand_applies(` AND
+  made to read both definitions of it (each must still reach `.applies(`), so
+  the indirection cannot become a way for the walk to stop asking the row.
+  Failing direction, on a scratch copy of the tree: the default macro
+  rewritten to `(1)` -> red (2 definitions found, one does not call
+  `.applies(`); the route test removed from the body -> red (route test not
+  before the applies call). Unplanted: green.
+
+Validated on this branch (lane/pathtri2, tip below): `make -j16`, `make
+strict` clean; `make test-registry` rc 0 (every section `checks failed: 0`);
+`make test-codegen` -- see the handback for the verdict line. The default-build
+.text claim for `emit_dfa.o`/`compile.o` is not touched by this change (only
+`tests/` moved).
