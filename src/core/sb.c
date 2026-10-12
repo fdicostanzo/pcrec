@@ -549,7 +549,18 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
 {
     pcrec_sb_printf(c, "#define %s_%-*s ", upper, namew, name);
-    pcrec_sb_vprintf(c, valfmt, ap);
+    if (c->cx && c->cx->stamp_filter) {
+        /* [COMPOUND] the compile's stamp filter (`Ctx.stamp_filter`) sees
+         * the formatted value and answers the one to write; the line's shape
+         * is this function's either way. */
+        StrBuf v = { .cx = c->cx };
+        pcrec_sb_vprintf(&v, valfmt, ap);
+        const char *nv = c->cx->stamp_filter(c->cx, name, v.p ? v.p : "");
+        pcrec_sb_puts(c, nv ? nv : v.p ? v.p : "");
+        pcrec_sb_free(&v);
+    } else {
+        pcrec_sb_vprintf(c, valfmt, ap);
+    }
     pcrec_sb_putc(c, '\n');
 }
 

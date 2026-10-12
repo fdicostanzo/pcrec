@@ -102,6 +102,23 @@ typedef struct {
     bool has_g;            /* P carries a `\G` */
 } PcrecDeriveReport;
 
+/* [COMPOUND] What a part's compile reports (defined in the driver group). */
+typedef struct PcrecPartFacts PcrecPartFacts;
+
+/* [COMPOUND] THE HARNESS-ONLY OPTIONS (compound.md §A.11, D163 add. 2 item
+ * 2): outside `pcrec_options` and outside the caller contract, reached only
+ * through `pcrec_harness_compile` by `build/pcrec-harness`. `compound_off`
+ * force-declines the whole compound family: the walk runs the complete
+ * admission and ships the plain text, stamped "forced-off" exactly where
+ * the default build would have shipped a row name. */
+typedef struct {
+    unsigned compound_off : 1;
+} PcrecHarnessOptions;
+/* The lever's RESERVED symbol prefix: the namespace table refuses a user
+ * prefix beginning with it, and the archive carries exactly one global
+ * under it (the lever fence). Not part of the caller contract. */
+#define PCREC_HARNESS_PREFIX "pcrec_harness_"
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -117,6 +134,14 @@ typedef struct {
      * the caller wants one, goes to `derive_report`. */
     PcrecComposeFn derive;
     PcrecDeriveReport *derive_report;
+    /* [COMPOUND] the text is SPLICED into another compile's text, which
+     * validates and renders the prefix itself: this compile keeps the
+     * placeholder (K79 holds across the whole compound). */
+    bool unrendered;
+    /* [COMPOUND] the part's facts, written at success (NULL: not wanted). */
+    PcrecPartFacts *facts;
+    /* [COMPOUND] the harness lever (NULL on every shipped path). */
+    const PcrecHarnessOptions *harness;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -2963,6 +2988,10 @@ typedef struct {
      * `entry_shaped` says it has been. */
     unsigned entry_exported, entry_static;
     bool entry_shaped;
+    /* [COMPOUND] the compound this attempt emits in place of the plain
+     * artifact's engine and entries (compound.md §A.3, §A.5), or NULL: the
+     * walk's record, owned here (`job_cleanup` frees it with its texts). */
+    struct PcrecCompShell *comp_shell;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -3513,6 +3542,21 @@ struct Ctx {
     /* [EMIT-ENTRIES] the driver-tier emission input (PcrecEmitIn above), or
      * NULL: the default request. Read only through `pcrec_entry_linkage`. */
     const PcrecEmitIn   *emit_in;
+    /* [COMPOUND] THE STAMP FILTER (compound.md §A.7): when set, every stamp
+     * the primitives write (`pcrec_sb_stampf` and its siblings, any buffer
+     * whose `.cx` is this compile) is handed to it with its formatted value,
+     * and it answers the value to write, NULL keeping it. A compound's shell
+     * sets `pcrec_stamp_compound_filter` (src/gen/stamp_kinds.c): a
+     * pattern-level stamp keeps P's value, a machine-level one takes its
+     * declared compound value, an unclassified one is an internal error. */
+    const char *(*stamp_filter)(Ctx *cx, const char *name, const char *value);
+    /* [COMPOUND] `<PREFIX>_COMPOUND`'s value on this attempt ("none", a row
+     * name, "forced-off"), set by `compile_driver` from the walk; NULL reads
+     * "none". */
+    const char          *comp_stamp;
+    /* [COMPOUND] the arrival label of an emitted-size refusal of an
+     * ASSEMBLED compound: `fit_rungs[]`' `drop-compound` row reads it. */
+    bool                 comp_assembled;
     Job                 *job;
 };
 
@@ -7291,6 +7335,140 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
                        const CompPart *part, PcrecDeriveReport *report,
                        pcrec_output *out, pcrec_error *err);
 
+/* What a part's compile reports to the walk at its success: a declared
+ * projection of the part's own selections (A4/A5 read it, the controller's
+ * pad reads `ncaps`), never a parse of its text. */
+struct PcrecPartFacts {
+    bool dfa;               /* the DFA emitter wrote it (`fit.chosen`) */
+    bool degraded;          /* a fallback-table row fired on its compile */
+    const char *locate;     /* LOCATE's row on its body's route (static) */
+    int ncaps;              /* its `<P>_NCAPS` */
+    bool guarded;           /* its entries refuse a mid-character position */
+    bool utf_check;         /* its entries run the subject check */
+    size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
+    PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
+};
+
+/* ---- [COMPOUND] THE ROW TABLE (src/core/compound.c; compound.md §A.1-§A.3)
+ *
+ * `compound_rows[]` is a first-match table at the driver tier: a client is a
+ * row, its admission a LIST of named conjuncts (D163 add. 4 (b)) the walk
+ * runs in table order -- every `CC_PRE` one, then the parts' compiles, then
+ * every `CC_POST` one -- the first failing conjunct ending the row by `id`.
+ * Its parts are `CompPart`s; its controller a COMBINATOR over them
+ * (`CompComb`, written by src/gen/emit_compound.c, never by the row). */
+typedef enum { CC_UNSTATED = 0, CC_PRE, CC_POST } CompPhase;
+
+/* The controller's combinator (compound.md §A.2). Only `first-nonzero`
+ * has a client; the others arrive with theirs (§D). */
+typedef enum { COMB_UNSTATED = 0, COMB_FIRST_NONZERO } CompComb;
+
+/* The walk's state, which a conjunct reads (compound.c). */
+typedef struct CompWalk CompWalk;
+
+/* A declared projection read of the plain compile's selection: a `CandSlot`
+ * on a `CandRoute` (arch S5); the trace build holds every read a conjunct
+ * makes to its declared set. */
+typedef struct { int slot; int route; } CompRead;
+
+typedef struct {
+    const char *id;          /* "A1".., stable: the listing and the controls */
+    const char *name;        /* the words the listing shows */
+    CompPhase phase;
+    bool (*holds)(CompWalk *w);
+    const CompRead *reads;   /* the plain-selection reads it may make */
+    int nreads;
+} CompConj;
+
+typedef struct {
+    const char *name;        /* stamped `<PREFIX>_COMPOUND "<name>"` */
+    const CompConj *conj;
+    int nconj;
+    const CompPart *parts;
+    int nparts;
+    CompComb comb;           /* the controller: comb(parts[arg[0]], parts[arg[1]]) */
+    int arg[2];
+    unsigned state_words;    /* compound.md §C; 0 until [FINDALL-NEXT] */
+} CompRow;
+
+/* THE TABLES' SELF-CHECK (compound.md §A.1, §A.2): every part stated
+ * (`pcrec_comp_part_check`), placed as a part by `compound_place[]` (rows
+ * 1-2; row 3 is an in-Job row mis-placed), every row's conjunct list stated,
+ * non-empty, unique by id and `CC_PRE` before `CC_POST`, its combinator
+ * type-checked against its parts' entry types, and every group map one the
+ * build has. NULL when the tables hold, else what fails (static text). */
+const char *pcrec_compound_tables_check(void);
+/* The `i`th row of `compound_rows[]`, NULL past the last (the unit drive's
+ * view of the table). */
+const CompRow *pcrec_compound_row(int i);
+/* `compound_place[]`'s row for `part`: 1 `different-tree`, 2
+ * `different-options`, 3 `erasure-only` (an in-Job row, never a part). */
+int pcrec_compound_place(const CompPart *part);
+
+/* THE WALK (compound.md §A.3): for P's plain compile `cx`, its machines
+ * built and nothing emitted yet, and P's tree `root`, walks
+ * `compound_rows[]` and sets `cx->job->comp_shell` to the first admitted
+ * row's shell, or leaves it NULL (the plain artifact ships). A part that
+ * refuses, a conjunct that fails or a row whose type check fails declines
+ * the row; nothing here refuses the compile. */
+void pcrec_compound_walk(Ctx *cx, const struct Ast *root);
+
+/* THE SHELL: what the walk hands the DFA emitter when a row admits
+ * (compound.md §A.5, §B.2). The emitter writes P's own prologue, stamps,
+ * residuals, `rx_info` and `main` -- the compound's ONE artifact -- and in
+ * place of P's engine and entries the parts' texts and the controller
+ * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the texts are heap
+ * (`pcrec_output.c_src`) and `job_cleanup` frees them. */
+#define PCREC_COMP_MAXPARTS 2
+typedef struct PcrecCompShell {
+    const char *row;                          /* the admitted row's name */
+    CompComb comb;
+    const char *role[PCREC_COMP_MAXPARTS];    /* comb's operands, in order */
+    char *text[PCREC_COMP_MAXPARTS];          /* NULL: the operand is never */
+    PcrecPartFacts facts[PCREC_COMP_MAXPARTS];
+    bool floor_any;     /* the first operand is asked at every position
+                         * (P carries `\G`), not only at offset 0 */
+    int ncaps;          /* the caller's slot count (P's `<P>_NCAPS`) */
+} PcrecCompShell;
+
+/* src/gen/emit_compound.c -- the shell's body: the parts' texts (their
+ * CPU-guarded byte records carried into `csb`) and the controller's three
+ * matcher entries, `<p>_search`, `<p>_match`, `<p>_match_caps`, each part
+ * call handled by the ONE call-site code table (compound.md §A.14). */
+void pcrec_emit_compound_body(Ctx *cx, const PcrecCompShell *sh,
+                              const char *searchfn, const char *matchfn,
+                              const char *matchcapsfn, const char *upper);
+
+/* src/gen/emit_dfa.c -- the DFA search entry's head (K24's `noclone`, the
+ * signature, P's caller-position prologue), shared with the controller. */
+void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, const char *storage);
+
+/* src/gen/stamp_kinds.c -- THE STAMP CATALOGUE (compound.md §A.7): every
+ * stamp an emitter writes, PATTERN-level (true of the pattern and the caller
+ * contract whichever machine runs: P's value on a compound) or MACHINE-level
+ * (one machine's route or strategy: its declared compound value). The
+ * `Ctx.stamp_filter` a compound shell sets; an unclassified stamp is an
+ * internal error. */
+const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name,
+                                        const char *value);
+
+/* src/gen/emit_dfa.c -- [COMPOUND] THE PLAIN COMPILE's SELECTION PROJECTION
+ * (compound.md §A.3, arch S5): the `--list`/stamp name of the row slot
+ * `slot` selects on route `route` for this compile's DFA body, asked quietly
+ * (no trace record, no hit), before or after emission. A conjunct's read;
+ * the trace build holds it to the running conjunct's declared reads. */
+const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route);
+/* The same compile's body route (`CandRoute`: the engine of the machine it
+ * runs) and its `<P>_NCAPS`; the LOCATE row's name on the body's route. */
+int pcrec_cand_body_route(Ctx *cx);
+int pcrec_dfa_ncaps(Ctx *cx);
+const char *pcrec_cand_locate_name(Ctx *cx);
+#ifdef PCREC_CAND_TRACE
+/* The trace build's declared-read check: the running conjunct's reads
+ * (compound.c sets it around `holds`), NULL outside one. */
+extern _Thread_local const CompConj *pcrec_comp_reading;
+#endif
+
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse
  * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
  * on the same refusal pcrec_compile would give. Internal, like the dumps. */
@@ -7315,6 +7493,13 @@ int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          const RxtDefs *defs, PcrecComposeFn compose,
                          PcrecFactsHook facts_hook, void *facts_ud,
                          const PcrecEmitIn *emit_in);
+
+/* src/core/compile.c — [COMPOUND] the harness lever's entry (compound.md
+ * §A.11): `pcrec_compile` under the harness-only options. Declared here and
+ * in no header a caller includes. */
+int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
+                          const PcrecHarnessOptions *hopt, pcrec_output *out,
+                          pcrec_error *err);
 
 /* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
  * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
