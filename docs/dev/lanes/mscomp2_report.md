@@ -43,7 +43,7 @@ row [COMPOUND].
 | id | disposition | where |
 |---|---|---|
 | chk B1 | DONE: first build PIN-ONLY (A5: Q `rev-end` or never); S+F waits for a bench reading of concat-sqli on its own subjects; the match-density cost conjunct's shape sketched, designed at the trigger; matching pin-only cells counted | §B.4, §B.5, §B.7, §F B4/B5 |
-| chk B2 | DONE: B3 = lane `revb3`, `revend_onepass.md`, not designed here; the post-B3 factor dependency stated; G3's bound for the shape is B3's | §B.5, §E.3, §F B3 |
+| chk B2 | DONE: B3 = lane `revb3`, `revend_onepass.md`, not designed here (**manager, post-merge: superseded by D164's match-end mark; the lane missed the mid-run ruling; compound.md patched**); the post-B3 factor dependency stated; G3's bound for the shape is B3's | §B.5, §E.3, §F B3 |
 | sem MF1 | DONE: one prologue, `-futf-check` with P's reach; plant 2 detects | §A.6, §E.2 |
 | sem MF2 | DONE: floor-only compound keeps P's `-7`/`-9` (prologue); plant 3 detects | §A.6, §E.4 CMP-12 |
 | sem MF3 | DONE: F = a BOUND on P's attempt (`PB_ONE_ATTEMPT`), no tree wrap; twin `^x\|a(?R)?b` 0 diffs | §B.1, §J-3 |

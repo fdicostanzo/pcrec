@@ -24,7 +24,7 @@ historical review files keep the old word.
 Rulings read: D163 with addenda 1 and 2, D88 addendum 1, D156 (and `locate_finish.md` rev 2.1,
 its typed vocabulary), D158, D135, D76/D94, D80, D104, D144 addendum 4, D155 addenda 4/4.1.
 Plan rows: [COMPOUND], [MATCH-SPLIT], [EMIT-ENTRIES], [FINDALL-NEXT], [OPT-ATTEMPT-SPLIT],
-[OPT-REVEND] (B3, lane `revb3`, `revend_onepass.md`), [ADAPTIVE-ARM], [V-E], [IFACE-PUSH].
+[OPT-REVEND] (B3 = the match-end mark, D164), [ADAPTIVE-ARM], [V-E], [IFACE-PUSH].
 
 Read §0 first. §A is the tool, §B the first client, §C the cross-call hook, §D the clients
 (captures on demand first), §E the checks, §F the build plan, §G the open questions, §H the
@@ -35,7 +35,7 @@ unlocks, §I the standing questions, §J the findings.
 | id | where addressed | what changed |
 |---|---|---|
 | chk B1 | §B.4 (A6), §B.7, §F B4/B5 | The first build is PIN-ONLY: Q is end-pinned (route `rev-end`) or never. A pin-only subject has a floor match plus at most the end matches, so there is no many-match term. S+F (concat-sqli) waits for its trigger, a bench reading of concat-sqli on its own subjects; the derived match-density cost conjunct is sketched in §B.7 and designed at that trigger. Counted on matching pin-only subjects (§B.5). |
-| chk B2 | §B.5, §F B3 | B3 is the separate design lane `revb3` (`revend_onepass.md`): rev-end's one-pass two-seed walk plus a finish skip when the end is decided and no captures are asked. This note does not design it. §B.5 states the dependency: the final-newline shape costs 3.00× today; after B3 its factor is whatever `revend_onepass.md` measures, and G3's bound for that shape is that factor. |
+| chk B2 | §B.5, §F B3 | B3 is a consequence of D164's MATCH-END MARK (internal END_MARK; `X$` lowers to `X END_MARK \n? \z`, so the reverse DFA walks once from n with no seeds, tags or tie special case); its design lane follows this note. (Revision 2 originally named lane revb3's tagged two-seed walk here; that design was rejected by Frank and the lane stopped before delivering.) This note does not design it. §B.5 states the dependency: the final-newline shape costs 3.00× today; after B3 its factor is whatever `revend_onepass.md` measures, and G3's bound for that shape is that factor. |
 | sem MF1/MF2/MF4, arch M5 | §A.6 | ONE controller prologue computed from P: range, boundary guard (refuse / align / none, P's option), `-futf-check` with P's lookbehind reach. Parts are compiled guards-off. The floor is the ALIGNED `from`; `qf = next_pos(f)`. Twin: all six utf8 option arms, 0 differences; plants 2 and 3 fire. |
 | sem MF3 | §B.1 | F is a BOUND on P's own attempt (`start_max = search_from`, a part option), not a tree wrap. `(?R)`/`(?0)` keep P's root. Twin: F built that way; `^x|a(?R)?b` 0 differences. |
 | sem S1 | §B.1 | The prune keeps called groups' bodies, referenced groups, and groups named by a condition. In the DFA-only first build any such pattern declines (calls and backreferences route VM anyway); the DEFINE-style keep is designed for B6. |
@@ -106,7 +106,7 @@ unlocks, §I the standing questions, §J the findings.
 8. **Cost by counted loads** (§B.5): K106 128,040,002 → 3; wrapper 16,003 → 6 with both
    matches; floor-only `a{0,4}\A` 63,994 → 4; trailing matches 1.0001×. Two shapes read
    3.00×, both the final-newline two-seed walk (`\s+$`, `\s*?$`), which is rev-end's own cost
-   and B3's (lane `revb3`). G3 is RED on them until B3 lands, by design.
+   and B3's (the match-end mark, D164). G3 is RED on them until B3 lands, by design.
 9. **Stamps.** `<PREFIX>_COMPOUND` on every artifact (`"none"`, a row name, or
    `"forced-off"`). Every stamp is classified pattern-level (P's) or machine-level (the
    compound's defined value: `"compound"` for the route family; per-stamp sentinels for the
@@ -115,7 +115,7 @@ unlocks, §I the standing questions, §J the findings.
     a `--no-captures` part; otherwise P's VM part)`, triggered by the persisting caps/nocaps
     class gap (D119 ledgers: `auto-nocaps` carried 65 of cycle 1's 91 win/tie rows).
 11. **Build (§F):** B0 EMIT-ENTRIES internal → B1 part mode and options → B2 derivation →
-    B3 rev-end one-pass (`revb3`, its own abi event) → B4 the compound driver, split pin-only,
+    B3 the match-end mark (D164, its own abi event) → B4 the compound driver, split pin-only,
     the stamp (THE abi event) → B5 S+F on its trigger → B6 VM parts → B7 captures on demand
     on its trigger → B8 the cross-call hook with [FINDALL-NEXT].
 
@@ -615,11 +615,11 @@ bounded. Calls and matches are equal on every row (asserted). k = 16,000 unless 
   floor match, an end match or both read today + 1 or + 2 loads (one per Q call).
 - **The only regressions are the final-newline two-seed walk**, `\s+$` and the lazy `\s*?$`,
   at 3.00×: Q's rev-end walks back from `n` and from `n−1` and resolves the tie with a forward
-  run. It is rev-end's own cost, carried by every rev-end artifact today. B3 (lane `revb3`,
-  `revend_onepass.md`) designs the one-pass two-seed walk and the finish skip when the end is
-  decided and no captures are asked. **The post-B3 factor is that note's measurement, not
-  this one's**: if the finish is skipped, the shape should read about 1.0×; if only the second
-  reverse walk is removed, about 2.0× (reverse plus the forward tie). G3's bound for this shape
+  run. It is rev-end's own cost, carried by every rev-end artifact today. B3 (the match-end mark,
+  D164) removes the second walk, and the $-ends become ordinary ends under the DFA's
+  existing priority handling. **The post-B3 factor is the match-end mark design's measurement,
+  not this one's**: expected about 1.0× where no forward finish is needed (no captures asked),
+  higher where captures need a forward run. G3's bound for this shape
   is whatever B3's gate states (§E.3).
 - **With `_match` as F** (the wrong form, finding J-2) the same harness read K106 at
   128,040,004 and the end-match cell at 32,004 (2.00×): the search-filter `_match` runs the
@@ -892,7 +892,7 @@ python3 scripts/sabotage_anchors.py --step <B4 commit>
 | **B0** | [EMIT-ENTRIES] internal: entry table, dependency edges, `pcrec_entry_linkage` at every definition/declaration site; the hybrid's `"static "` re-expressed through it | a unit check: an internal `{keep: search}` request compiles `-Werror` and leaves exactly the closure, the expected set from the plain artifact's `nm -g`; the hybrid's text byte-identical; emit_sweep 0 movers | zero movers; not abi |
 | **B1** | part mode and `CompPart` options (names, `__`, omitted blocks, `PB_ONE_ATTEMPT`, guards-off) | a unit drive: F and Q of 6 witnesses plus a hand controller compile in one TU `-Werror`, long-prefix 60 bytes, K79 invariance; emit_sweep 0 movers | zero movers; not abi |
 | **B2** | the derivation hook list and `src/opt/derive.c` (kill, prune, the group-keep rule, the registry attempt-scope column) | `derive` against `twin2.derive` on the twin's case list: two independent implementations, compared by language (the differential), not by text; G5's tree property | zero movers; not abi |
-| **B3** | [OPT-REVEND]'s one-pass two-seed walk and the finish skip (lane `revb3`, `revend_onepass.md`) | its own panel and gate | its own abi event; movers = every `$`-pinned rev-end artifact |
+| **B3** | the match-end mark (D164): END_MARK lowering of path-final lookaheads; rev-end walks once | its own panel and gate | its own abi event; movers = every `$`-pinned rev-end artifact |
 | **B4** | `src/core/compound.c`: `compound_rows[]` (split, pin-only), the combinators, the prologue, the assembly, `drop-compound`, the harness lever and `build/pcrec-harness`, `<PREFIX>_COMPOUND` on every artifact, the stamp classification and sentinels, the `__` refusal; G1-G6, the lever arm, CMP rows. Spec: `match_api.md` §1¶2 (`__` reserved), §3¶1, §3.2 (`_match` on a compound), §6 route values `"compound"`, §6.3 the stamp, its three values and the sentinel table; `limits.md` (caps on the assembled text, `drop-compound`); `ir_listing.md`/`facts_listing.md` (the compound listing); `cli.md` (the `__` refusal) | **the abi event**: every artifact by one stamp line; the ~30 admitted by ID; bench 0 (G6) |
 | **B5** | S+F/G+F: A5 widened to an unanchored Q under the cost conjunct (§B.7) | its trigger first; then G2/G3 on the new population with matching cells (chk B1's) | the admitted by ID; not abi |
 | **B6** | VM parts: budgets, caller buffers, the DEFINE-style group keep | the give-up differential | the admitted by ID |
