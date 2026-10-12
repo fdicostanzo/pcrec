@@ -41,6 +41,80 @@ typedef struct Ast *(*PcrecComposeFn)(Ctx *cx, struct Ast *root);
 typedef void (*PcrecFactsHook)(Ctx *cx, const char *artifact, size_t len,
                                void *ud);
 
+/* ---- [EMIT-ENTRIES] the artifact's entry table (src/gen/entries.c) -------
+ *
+ * Every function or object an artifact defines that another definition, or
+ * a caller, can name. The PUBLIC rows are the caller-facing set
+ * (docs/spec/match_api.md §3¶1 plus `--emit-main`'s `main`); the INTERNAL
+ * rows are definitions an entry calls that a request can never export
+ * (the VM's per-entry `_run` bodies, the hybrid's embedded DFA search).
+ * Declared this early because `Ctx` carries the request. Design:
+ * docs/design/compound.md §A.4 (B0). */
+typedef enum {
+    PCREC_ENTRY_SEARCH, PCREC_ENTRY_SEARCH_IN,
+    PCREC_ENTRY_MATCH, PCREC_ENTRY_MATCH_IN,
+    PCREC_ENTRY_MATCH_CAPS, PCREC_ENTRY_MATCH_CAPS_IN,
+    PCREC_ENTRY_NEXT_POS, PCREC_ENTRY_VALID_UPTO, PCREC_ENTRY_VAR_VALID,
+    PCREC_ENTRY_INFO, PCREC_ENTRY_MAIN,
+    PCREC_ENTRY_PUBLIC_N,                  /* rows below are internal */
+    PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
+    PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
+    PCREC_ENTRY_PREFILTER,
+    PCREC_ENTRY_N
+} PcrecEntry;
+
+#define PCREC_ENTRY_BIT(e) (1u << (e))
+
+/* A linkage request: the entries to EXPORT and the entries to KEEP static
+ * whether or not an exported one reaches them. Everything else an exported
+ * or kept entry reaches through the dependency edges is kept static too;
+ * the rest is OMITTED. Masks of PCREC_ENTRY_BIT. */
+typedef struct {
+    unsigned exported;
+    unsigned kept;
+} PcrecEntryReq;
+
+/* [COMPOUND] A part's BOUND (compound.md §A.5): `PCREC_PB_ONE_ATTEMPT` makes
+ * the part's search one attempt at `search_from` (the BOUND slot's
+ * `attempt-gstart` row, whatever the pattern's own BOUND would be). The zero
+ * value is UNSTATED, which a part may not be. */
+typedef enum {
+    PCREC_PB_UNSTATED = 0,
+    PCREC_PB_NONE,
+    PCREC_PB_ONE_ATTEMPT
+} PcrecPartBound;
+
+/* What a compile's EMISSION is asked for beyond the caller's options: the
+ * driver-tier input the compound tool sets (compound.md §A.3-§A.5) and no
+ * `pcrec_options` field carries. NULL on every public compile, which is the
+ * default request (the public default set exported) and no part mode. */
+/* [COMPOUND] What a derivation reports (src/opt/derive.c): written through
+ * `PcrecEmitIn.derive_report` when the caller asks, on every attempt. */
+typedef struct {
+    const char *decline;   /* NULL, or why the part refuses (A2) */
+    int killed;            /* floor anchors killed: P's count less Q's */
+    int killed_g;          /* of which `\G` */
+    int pruned_arms;       /* never alternatives dropped */
+    int kept_never;        /* never alternatives kept for a reachable group */
+    bool never;            /* Q matches nothing: the floor-only form */
+    bool has_g;            /* P carries a `\G` */
+} PcrecDeriveReport;
+
+typedef struct {
+    const PcrecEntryReq *req;     /* NULL: the default request */
+    /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
+     * `<prefix>__<role>` of a compound -- no shared blocks (the ABI block,
+     * its includes, the feature macros), and `bound` read by the BOUND
+     * slot. NULL: an ordinary artifact, `bound` unread. */
+    const char *part_role;
+    PcrecPartBound part_bound;
+    /* THE DERIVATION (compound.md §B.1): a tree rewrite the driver runs after
+     * the composer, the hook list's second entry; NULL none. Its report, if
+     * the caller wants one, goes to `derive_report`. */
+    PcrecComposeFn derive;
+    PcrecDeriveReport *derive_report;
+} PcrecEmitIn;
+
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
 typedef struct ABlock {
@@ -2879,6 +2953,12 @@ typedef struct {
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
+    /* [EMIT-ENTRIES] the linkage closure (src/gen/entries.c): PcrecEntry
+     * bits EXPORTED and kept STATIC; every other entry is OMITTED. Written
+     * once per attempt by `pcrec_entry_shape`, before the first entry;
+     * `entry_shaped` says it has been. */
+    unsigned entry_exported, entry_static;
+    bool entry_shaped;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -3426,6 +3506,9 @@ struct Ctx {
      * `pcrec_sb_render_prefix` and `pcrec_ctx_fail`'s message render put
      * back. NULL on a compile that emits nothing (`pcrec_count_groups`). */
     const char          *user_prefix;
+    /* [EMIT-ENTRIES] the driver-tier emission input (PcrecEmitIn above), or
+     * NULL: the default request. Read only through `pcrec_entry_linkage`. */
+    const PcrecEmitIn   *emit_in;
     Job                 *job;
 };
 
@@ -3827,7 +3910,17 @@ enum {
      *
      * registry_check asserts BOTH halves: every RF_INDEX row has a `tail` and
      * a `family`, and no (kind, sel, text) arbitration anywhere returns one. */
-    RF_INDEX = 1u << 6
+    RF_INDEX = 1u << 6,
+
+    /* [COMPOUND] THE ATTEMPT-SCOPE COLUMN (docs/design/compound.md §B.8): the
+     * construct's effect spans attempts or observes their order, so a
+     * compound, whose controller runs the pattern's attempts as separate
+     * calls, must decline it (`pcrec_ast_crosses_attempts`, admission A3).
+     * Set on the callout row. The four attempt-crossing backtracking verbs,
+     * (*COMMIT) (*SKIP) (*PRUNE) (*THEN), are ROADMAP_NEVER and refused at
+     * parse, so no node carries them; a verb producer would stamp its node
+     * with a row stating this column per name. A new row states it here. */
+    RF_CROSSES_ATTEMPTS = 1u << 7
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -6882,6 +6975,59 @@ typedef struct {
 
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 
+/* ---- [EMIT-ENTRIES] src/gen/entries.c: linkage through the closure ------
+ *
+ * The facts about THIS artifact's emitted shape that decide which entry calls
+ * which (compound.md §A.4's per-engine dependency edges). The emitter states
+ * them once, through `pcrec_entry_shape`, before it writes any entry or
+ * declaration; every later linkage answer is the closure over them. */
+typedef struct {
+    bool vm;            /* the VM emitter writes the entries */
+    bool fwd;           /* VM: the un-suffixed entries forward to `_in` */
+    bool hybrid;        /* VM: the embedded DFA search is emitted */
+    bool match_own;     /* DFA: `_match` has its own body (anchored or
+                         * nomatch form) and `_match_caps` calls it; else
+                         * both wrap `_search` */
+    bool search_match;  /* DFA: `_search` calls `_match` (a `rev-end` tie
+                         * verified at its start) */
+    bool utf_check;     /* the entries' prologue calls `<p>_valid_upto` */
+    bool vars;          /* VM: the `_run` bodies call `<p>_var_valid` */
+} PcrecEntryShape;
+
+typedef enum {
+    PCREC_LINK_OMITTED,     /* not emitted: nothing requested reaches it */
+    PCREC_LINK_STATIC,      /* defined `static`, declared in no header */
+    PCREC_LINK_EXPORTED     /* defined and declared as today */
+} PcrecLinkage;
+
+/* States this artifact's shape and computes the closure of the compile's
+ * request over the edges it enables (`Ctx.emit_in`; NULL is the default
+ * request). Refuses, as an internal error, a request whose closure reaches
+ * no matcher entry or keeps `info`/`main` static. */
+void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape);
+/* [COMPOUND] True iff this compile renders a PART of a compound
+ * (`PcrecEmitIn.part_role`), and iff that part's bound is one attempt. */
+static inline bool pcrec_is_part(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->part_role;
+}
+static inline bool pcrec_part_one_attempt(const Ctx *cx)
+{
+    return pcrec_is_part(cx) && cx->emit_in->part_bound == PCREC_PB_ONE_ATTEMPT;
+}
+
+/* `e`'s linkage under the closure `pcrec_entry_shape` computed. */
+PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
+/* `e`'s storage-class text for its definition: "" exported, "static "
+ * kept. Only asked of an entry that is not OMITTED. */
+const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e);
+/* True iff `e` is emitted at all (not OMITTED). */
+bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
+/* The residual (src/enc/) entries' masks: `pcrec_enc` ids whose entry is
+ * OMITTED (to drop from the artifact's mask) and kept STATIC. */
+unsigned pcrec_entry_enc_omit(const Ctx *cx);
+unsigned pcrec_entry_enc_static(const Ctx *cx);
+
 /* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
@@ -7050,6 +7196,74 @@ int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
                        pcrec_error *err);
 
+/* ---- [COMPOUND] derivations (src/opt/derive.c) ---------------------------
+ *
+ * `pcrec_derive_split_q`: [MATCH-SPLIT]'s Q -- P with its floor anchors
+ * killed and pruned (compound.md §B.1). A tree-hook (PcrecComposeFn); a
+ * decline refuses the compile. `pcrec_ast_crosses_attempts`: does a node
+ * carry a row with RF_CROSSES_ATTEMPTS (admission A3). */
+struct Ast *pcrec_derive_split_q(Ctx *cx, struct Ast *root);
+bool pcrec_ast_crosses_attempts(const struct Ast *root);
+
+/* ---- [COMPOUND] the compound tool's parts (src/core/compound.c) ----------
+ *
+ * docs/design/compound.md §A.1/§A.5. A PART is the unchanged pipeline run on
+ * a derived input, rendered as `<prefix>__<role>` inside a compound's one
+ * artifact. Its OPTIONS are the parent's with `flags_set` OR-ed in and
+ * `flags_clear` masked out, its engine and bound stated, and nothing else
+ * inherited by accident: every field below is stated by every part, and
+ * `pcrec_comp_part_check` refuses one that is not. */
+
+/* A derivation: an AST rewrite at the composer hook. `pcrec_derive_none` is
+ * the explicit "no derivation", so a NULL pointer can only mean unstated. */
+typedef struct {
+    const char *name;
+    PcrecComposeFn fn;      /* NULL only on `pcrec_derive_none` */
+} PcrecDerive;
+extern const PcrecDerive pcrec_derive_none;
+extern const PcrecDerive pcrec_derive_split_q_row;   /* src/opt/derive.c */
+
+/* A part's engine, stated: the zero value is UNSTATED, never AUTO. */
+typedef enum {
+    PCREC_PE_UNSTATED = 0,
+    PCREC_PE_AUTO,
+    PCREC_PE_DFA,
+    PCREC_PE_VM
+} PcrecPartEngine;
+
+/* What the controller reads from a part: the closure's kept roots. */
+#define PCREC_PART_NEED_SEARCH      (1u << 0)
+#define PCREC_PART_NEED_MATCH_CAPS  (1u << 1)
+#define PCREC_PART_NEED_NEXT_POS    (1u << 2)
+#define PCREC_PART_NEED_VALID_UPTO  (1u << 3)
+#define PCREC_PART_NEED_ALL         ((1u << 4) - 1u)
+
+/* The longest role: a part prefix is the parent's plus `__` and the role. */
+#define PCREC_PART_ROLE_MAX 3
+
+typedef struct {
+    const char *role;            /* 1..3 of [a-z0-9]: the part's `__<role>` */
+    const PcrecDerive *derive;   /* &pcrec_derive_none, or a derivation */
+    uint64_t flags_set;          /* option flags forced ON for this part */
+    uint64_t flags_clear;        /* ... forced OFF */
+    PcrecPartEngine engine;      /* stated, never inherited */
+    PcrecPartBound bound;        /* PCREC_PB_NONE or PCREC_PB_ONE_ATTEMPT */
+    unsigned need;               /* PCREC_PART_NEED_*: what the controller reads */
+} CompPart;
+
+/* THE TABLE-BUILD SELF-CHECK for one part: NULL when every field is stated
+ * and consistent, else the first field that is not (a static string). */
+const char *pcrec_comp_part_check(const CompPart *part);
+
+/* Compiles `pattern` as part `part` of a compound whose parent options are
+ * `parent` (its `prefix` the compound's), into `out->c_src` (self-contained
+ * text, no header); the part's derivation reports to `report` (or NULL). Returns 0, or -1 with `err` filled: a part the pattern
+ * cannot compile under its options REFUSES, which declines its row. An
+ * unstated or inconsistent part is an internal-error refusal. */
+int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
+                       const CompPart *part, PcrecDeriveReport *report,
+                       pcrec_output *out, pcrec_error *err);
+
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse
  * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
  * on the same refusal pcrec_compile would give. Internal, like the dumps. */
@@ -7072,7 +7286,8 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err);
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
                          const RxtDefs *defs, PcrecComposeFn compose,
-                         PcrecFactsHook facts_hook, void *facts_ud);
+                         PcrecFactsHook facts_hook, void *facts_ud,
+                         const PcrecEmitIn *emit_in);
 
 /* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
  * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with

@@ -1551,7 +1551,8 @@ static const char *fit_trace_labels(const Ctx *cx)
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
                           const RxtDefs *defs, PcrecComposeFn compose,
-                          PcrecFactsHook facts_hook, void *facts_ud)
+                          PcrecFactsHook facts_hook, void *facts_ud,
+                          const PcrecEmitIn *emit_in)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -1592,6 +1593,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * first `setjmp`, and never written again. */
     const char *const user_prefix = defo.prefix;
     defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+    /* [COMPOUND] PART MODE (compound.md §A.5): the emitters see the
+     * placeholder plus `__<role>`, a fixed length, so K79's invariant holds
+     * per part; the render then writes `<prefix>__<role>`. The role was
+     * checked by `pcrec_compile_part` (`pcrec_comp_part_check`). */
+    char part_prefix[sizeof PCREC_PREFIX_PLACEHOLDER + 2 + PCREC_PART_ROLE_MAX];
+    if (emit_in && emit_in->part_role) {
+        snprintf(part_prefix, sizeof part_prefix, "%s__%s",
+                 PCREC_PREFIX_PLACEHOLDER, emit_in->part_role);
+        defo.prefix = part_prefix;
+    }
     /* [K100] the caller's `--unroll=K` (0: none), which the size term's
      * ladder and FINAL attempts overwrite in `defo.unroll_k` and a
      * restarting row's `sets` routine puts back. */
@@ -1789,6 +1800,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.err = err;
         cx.opt = &defo;
         cx.user_prefix = user_prefix;
+        /* [EMIT-ENTRIES] the driver-tier emission input (NULL: the default
+         * request), the same on every attempt of this compile. */
+        cx.emit_in = emit_in;
         /* [REL-1.11] copied from the ONE resolution above — every retry
          * attempt of this same compile gets the identical resolved values,
          * never a re-resolve, and nothing here touches src/parse/enabled.c's
@@ -2223,7 +2237,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * returns from immediately — which is what lets `emit_dfa.c` read it
          * unconditionally instead of asking whether composition happened. */
         cx.ncap_primary = cx.ncap;
-        if (cx.compose) root = cx.compose(&cx, root);
+        /* [COMPOUND] THE TREE-HOOK LIST, in order: the composer, then the
+         * derivation (compound.md §B.1). One position for both, for the
+         * composer's reasons above: the group numbers are the parse's and
+         * the rewritten tree gets every pass after. */
+        {
+            const PcrecComposeFn hooks[] = {
+                cx.compose, emit_in ? emit_in->derive : NULL,
+            };
+            for (size_t h = 0; h < sizeof hooks / sizeof *hooks; h++)
+                if (hooks[h]) root = hooks[h](&cx, root);
+        }
 
         root = pcrec_altcls(&cx, root);
 
@@ -2968,7 +2992,8 @@ facts_force:
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
-    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL);
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
+                          NULL);
 }
 
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
@@ -2986,10 +3011,11 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
                          const RxtDefs *defs, PcrecComposeFn compose,
-                         PcrecFactsHook facts_hook, void *facts_ud)
+                         PcrecFactsHook facts_hook, void *facts_ud,
+                         const PcrecEmitIn *emit_in)
 {
     return compile_driver(pattern, opt, out, err, ir_out, defs, compose,
-                          facts_hook, facts_ud);
+                          facts_hook, facts_ud, emit_in);
 }
 
 /* DD-8's listing entry. It runs a REAL compile and throws the C away, because
@@ -3010,7 +3036,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     defo.header_name = NULL;
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-                             NULL, NULL, NULL) != 0) {
+                             NULL, NULL, NULL, NULL) != 0) {
         free(text);
         return NULL;
     }

@@ -278,6 +278,11 @@
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
+/* as GROUP, for a construct whose effect spans attempts or observes their
+ * order: [COMPOUND]'s attempt-scope column (RF_CROSSES_ATTEMPTS, internal.h;
+ * docs/design/compound.md §B.8). */
+#define GROUP_XA(sel, syn, mod, eng, note, q) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CROSSES_ATTEMPTS, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
 /* as GROUP, but the construct is OUT-OF-SCOPE in docs/pcre2_compliance.md and
  * the diagnostic must not promise the module (K14, design Â§17.2). The module
  * and feature stay as CLASSIFICATION -- which doorway family owns the row --
@@ -1016,7 +1021,7 @@ GROUP_LEXICAL('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discard
  * priority, parked behind the M4 VM engine that hosts the behavior (step 2,
  * separately scoped). This row only changes disposition; the syntax and
  * PCRE2 semantics it describes are unchanged. */
-GROUP('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at", QF_NO),
+GROUP_XA('C', "(?C1)", callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at", QF_NO),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),

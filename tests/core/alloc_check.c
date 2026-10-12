@@ -593,7 +593,7 @@ static long long w5_profile(int mode, Trace *t)
     } else {
         pcrec_output out; memset(&out, 0, sizeof out);
         ok_run = pcrec_compile_driver(w5_pattern, &o, &out, &err, NULL, NULL, NULL,
-                                      mode == 1 ? w5_hook : NULL, NULL) == 0;
+                                      mode == 1 ? w5_hook : NULL, NULL, NULL) == 0;
         if (ok_run) pcrec_output_free(&out);
     }
     trace_on = 0;

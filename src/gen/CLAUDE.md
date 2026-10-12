@@ -1109,6 +1109,30 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Files
 
+- **entries.c** — [EMIT-ENTRIES] internal, [COMPOUND] build step B0 (lane
+  cpb02, 2026-10-12; `docs/design/compound.md` §A.4): THE ENTRY TABLE AND ITS
+  LINKAGE CLOSURE. Every entry an artifact defines (`PcrecEntry`,
+  core/internal.h: the public default set, `main`, and the internal rows the
+  entries call — the VM's three `_run` bodies and the hybrid's embedded DFA
+  search) is EXPORTED, kept STATIC, or OMITTED: exported if the request
+  exports it, static if it is kept or reachable through the dependency edges
+  from an exported or kept entry, else omitted. The request is
+  `Ctx.emit_in->req` (the driver-tier `PcrecEmitIn`, never a `pcrec_options`
+  field); NULL is the DEFAULT request, the public default set exported, which
+  reproduces every linkage an artifact had before the table, byte for byte.
+  The edges are a table of `(from, to, when)` rows whose `when` reads a
+  `PcrecEntryShape` the emitter states once before its first declaration
+  (`pcrec_entry_shape`): the VM's forward rung, the hybrid, the DFA `_match`
+  form, a `rev-end` tie that verifies with `_match`, the subject check, the
+  variables. Every definition and declaration site asks
+  `pcrec_entry_linkage`/`_storage`/`_emitted` (emit_dfa.c's
+  `emit_entry_decls`, the definition emitters, `emit_vm.c`'s entry helpers,
+  and the src/enc/ residuals through `pcrec_entry_enc_omit`/`_static`). The
+  VM hybrid's embedded search is the first customer: its old hard-coded
+  `"static "` is now its closure answer. A request this table cannot honour
+  (an internal row exported, `info`/`main` kept static, a closure without the
+  search entry) is an internal error. Check: `tests/compound/` (B0).
+
 - **memfn_stamps.c** — [MEMFN] R4a′ (lane memfnstamp, 2026-10-05; abi 62 -> 63 at lane memfnbump;
   `docs/design/memfn/integration.md` §R4.3.3, §18; D147 addendum 10): the
   kit's two every-artifact stamps, `<PREFIX>_MEMFN_FORMS` and

@@ -3417,6 +3417,7 @@ k37_allow_re=(
     '[$]PCREC = clean binary'
     '^[^:]*:[0-9]+:exec "[$]PCREC" "\\[$]@"'
     '^[^:]*:[0-9]+:[[:space:]]*"[$]PCREC" "[$]ROOT_DIR" "[$]OUT_TSV" "[$]CC"'
+    '^tests/compound/run_compound_unit[.]sh:[0-9]+:CC="[$]CC" python3 .*check_entries[.]py'
 )
 k37_allow_reason=(
     "a MESSAGE naming the PCREC variable in prose (a missing-binary echo/bad/die diagnostic), never a command word"
@@ -3429,6 +3430,7 @@ k37_allow_reason=(
     "run_bench.sh's COMPILE-SPEED loop: the PCREC variable is a POSITIONAL ARGUMENT to a bash -c heredoc already wrapped in ONE outer \"\$TIMEOUT_BIN\" for the whole loop -- the script's own comment states why per-pattern wrapping was rejected (timeout's fork/exec cost exceeds a base-tier compile)"
     "tests/rxtsource's COUNTING WRAPPER, which execs the real compiler: the wrapper IS the binary for the script under test, and that script bounds its own calls, so the exec adds no unbounded invocation of its own ([DD-13b.W1.1], C0a's external invocation count)"
     "run_longprefix_sweep.sh's python3 continuation line ([REVW.1] stage 0): the PCREC variable is sys.argv[1] to docs/dev/w1stage0_evidence/longprefix_sweep.py, whose every subprocess.run() carries timeout=TIMEOUT_S python-side -- the same recorded python-side-gap class as the compliance_section.py/vm_oracle.py entries above, never a bash command word"
+    "run_compound_unit.sh's B0 python3 line ([COMPOUND] B0): the PCREC variable is argv[2] to tests/compound/check_entries.py, whose every compile of an emitted entry carries timeout=GEN_TIMEOUT (tests/lib/gen_timeout.sh's own number) and whose compound_drive call carries timeout=3600 python-side -- the same recorded python-side-bound shape as the longprefix line above"
 )
 while IFS= read -r k37_hit; do
     [ -n "$k37_hit" ] || continue

@@ -335,7 +335,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank \
-      test-spec-history
+      test-spec-history test-compound
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1379,6 +1379,14 @@ test-memfn-g2-full: all $(BUILD_DIR)/libpcrec_mftrace.a
 # its fixtures, the stamp/route/re-seed/table/deny/mover-manifest checks and
 # the same differential under HAT=dfa. All three run; any failing fails the
 # section.
+# [COMPOUND] the compound tool's build-step unit checks (docs/design/
+# compound.md §F; tests/compound/CLAUDE.md). B0: an [EMIT-ENTRIES] request
+# leaves exactly its closure. `EVERY=8` keeps every 8th distinct corpus
+# pattern (the full corpus is `EVERY=1`, ~6 min on the Linux dev box).
+test-compound: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-compound.ran"; fi
+	EVERY=$${EVERY:-8} bash tests/compound/run_compound_unit.sh
+
 test-startset: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startset.ran"; fi
 	@rc=0; bash tests/startset/run_startset_checks.sh || rc=1; \
@@ -1925,6 +1933,6 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history \
+        test-startset test-spec-history test-compound \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

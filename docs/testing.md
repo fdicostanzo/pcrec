@@ -647,6 +647,13 @@ capture-expectation machinery at [M4.5a]; the ratchet now pays for it on one
 `.rxt` file. That is worth someone's attention on its own terms and is
 recorded here rather than fixed by this lane, which does not own the harness.
 
+**`test-compound` ([COMPOUND], 2026-10-12, lane cpb02)** runs
+`tests/compound/run_compound_unit.sh`, the compound tool's build-step unit
+checks (`docs/design/compound.md` §F; `tests/compound/CLAUDE.md`). It keeps
+every 8th distinct corpus pattern by default (`EVERY=1` is the whole corpus):
+MEASURED on the Linux dev box at 16 workers, 25 s at `EVERY=8` and about
+6 min at `EVERY=1`.
+
 Each target depends on `all`, so a stale binary never reads as a pass.
 `make mech`, `make bench`, `make fuzz`, and `make strict` already had their
 own top-level targets before TT-1 and are untouched — they are not `test:`

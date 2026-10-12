@@ -193,7 +193,7 @@ char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
         pcrec_output out;
         o.encoding = encs[i];
         if (pcrec_compile_driver(pattern, &o, &out, err, NULL, NULL, NULL,
-                                 fd_hook, &r) != 0) {
+                                 fd_hook, &r, NULL) != 0) {
             pcrec_sb_free(&r.facts);
             pcrec_sb_free(&r.dec);
             return NULL;
