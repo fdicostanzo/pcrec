@@ -178,15 +178,14 @@ syntax	cls-negset	syntax__t-256k	0	one	one#0{c[251]t}@a=0,mb=0,ov=0	3	0	0	0.0184
 syntax	cls-negset	syntax__t-256k	0	pair	pair#0{c[251]t}@a=0,2,mb=0,ov=0	3	0	0	0.00111	0.000828	1557	0	0	0	396330	396330	396330
 syntax	cls-pair-ctl	syntax__t-256k	0	one	one#0{c[2]t}@a=0,mb=0,ov=0	3	0	0	0.0184	8.04e-05	8221	1557	4671	1557	278586	314397	434286
 syntax	cls-pair-ctl	syntax__t-256k	0	pair	pair#0{c[2]t}@a=0,2,mb=0,ov=0	3	0	0	0.00111	8.04e-05	1557	1557	4671	1557	396330	432141	552030
-syntax	cls-posix	syntax__t-256k	0	one	one#0{[6]\x5d}@a=1,mb=0,ov=0	2	0	0	0.00166	0.000236	0	0	0	0	262144	262144	262144
-syntax	cls-posix	syntax__t-256k	0	pair	pair#0{[6]\x5d}@a=0,1,mb=0,ov=0	2	0	0	0.000236	0.000236	0	0	0	0	1179648	1179648	1179648
+syntax	cls-posix	syntax__t-256k	0	one	one#0{[52]}@a=0,mb=0,ov=0	1	0	0	0.73	0.73	182412	182412	182412	182412	1413400	5244052	19654600
 syntax	cls-range	syntax__t-256k	0	one	one#0{0x[22]}@a=1,mb=0,ov=0	3	0	0	0.000997	2.28e-06	2389	748	2244	748	266922	284126	341722
 syntax	cls-range	syntax__t-256k	0	pair	pair#0{0x[22]}@a=0,1,mb=0,ov=0	3	0	0	7.45e-06	2.28e-06	748	748	2244	748	394712	411916	469512
 syntax	cls-s-lc	syntax__t-256k	0	one	one#0{cat\s}@a=0,mb=0,ov=0	4	0	0	0.0184	8.27e-06	8221	334	1336	334	278586	286602	311986
 syntax	cls-s-lc	syntax__t-256k	0	pair	pair#0{cat\s}@a=0,1,mb=0,ov=0	4	0	0	0.000999	8.27e-06	2133	334	1336	334	397482	405498	430882
 syntax	cls-s-uc	syntax__t-256k	0	one	one#0{\S}@a=0,mb=0,ov=0	1	0	0	0.862	0.862	217841	217841	217841	217841	1484258	6058919	23268358
-syntax	cls-v	syntax__t-256k	0	one	one#0{item\x0b}@a=4,mb=0,ov=0	5	0	0	2e-06	7.44e-12	0	0	0	0	262144	262144	262144
-syntax	cls-v	syntax__t-256k	0	pair	pair#0{item\x0b}@a=3,4,mb=0,ov=0	5	0	0	3.19e-08	7.44e-12	0	0	0	0	393216	393216	393216
+syntax	cls-v	syntax__t-256k	0	one	one#0{item[5]}@a=4,mb=0,ov=0	5	0	0	0.0108	4.02e-08	5254	35	175	35	1059084	1059959	1062584
+syntax	cls-v	syntax__t-256k	0	pair	pair#0{item[5]}@a=3,4,mb=0,ov=0	5	0	0	0.000172	4.02e-08	110	35	175	35	1179868	1180743	1183368
 syntax	cls-w	syntax__t-256k	0	one	one#0{\w}@a=0,mb=0,ov=0	1	0	0	0.807	0.807	200205	200205	200205	200205	1448986	5653291	21469486
 syntax	cnd-group	syntax__t-256k	0	one	one#0{item}@a=3,mb=1,ov=1	4	1	1	0.0159	3.72e-06	5790	681	3405	1362	273724	290749	382684
 syntax	cnd-group	syntax__t-256k	0	pair	pair#0{item}@a=0,3,mb=1,ov=1	4	1	1	0.000735	3.72e-06	711	681	3405	1362	394638	411663	503598
@@ -299,6 +298,7 @@ corpus	c022	capability__t-256k	0	one	one#0{b}@a=0,mb=4,ov=4	1	4	4	0.00989	0.0098
 corpus	c023	capability__t-256k	0	one	one#0{a}@a=0,mb=0,ov=0	1	0	0	0.0542	0.0542	9607	9607	9607	9607	281358	483105	1242058
 corpus	c026	capability__t-256k	0	one	one#0{O}@a=0,mb=0,ov=0	1	0	0	0.00499	0.00499	1099	1099	1099	1099	264342	287421	374242
 corpus	c031	capability__t-256k	0	one	one#0{[2]}@a=0,mb=0,ov=0	1	0	0	0.064	0.064	10847	10847	10847	10847	414910	642697	1499610
+corpus	c032	capability__t-256k	0	one	one#0{[251]}@a=0,mb=0,ov=0	1	0	0	0.989	0.989	256250	256250	256250	256250	1561076	6942326	27186076
 corpus	c036	capability__t-256k	0	one	one#0{xx}@a=0,mb=0,ov=0	2	0	0	0.000997	9.94e-07	2626	0	0	0	267396	267396	267396
 corpus	c036	capability__t-256k	0	pair	pair#0{xx}@a=0,1,mb=0,ov=0	2	0	0	9.94e-07	9.94e-07	0	0	0	0	393216	393216	393216
 corpus	c036	capability__t-256k	1	one	one#1{[2][2][2]}@a=0,mb=5,ov=3	3	5	3	0.0203	7.98e-05	5853	0	0	0	404922	404922	404922
@@ -353,8 +353,7 @@ corpus	c100	capability__t-256k	0	pair	pair#0{x.y}@a=0,2,mb=0,ov=0	3	0	0	1.31e-05
 corpus	c101	capability__t-256k	0	one	one#0{[2]}@a=0,mb=0,ov=0	1	0	0	0.064	0.064	10847	10847	10847	10847	414910	642697	1499610
 corpus	c102	capability__t-256k	0	one	one#0{\s\s\w}@a=0,mb=0,ov=0	3	0	0	0.138	0.0153	36527	0	0	0	1121630	1121630	1121630
 corpus	c102	capability__t-256k	0	pair	pair#0{\s\s\w}@a=0,1,mb=0,ov=0	3	0	0	0.019	0.0153	746	0	0	0	1181140	1181140	1181140
-corpus	c103	capability__t-256k	0	one	one#0{[10]\x5d}@a=1,mb=0,ov=0	2	0	0	0.00166	0.000297	1449	0	0	0	265042	265042	265042
-corpus	c103	capability__t-256k	0	pair	pair#0{[10]\x5d}@a=0,1,mb=0,ov=0	2	0	0	0.000297	0.000297	0	0	0	0	1179648	1179648	1179648
+corpus	c103	capability__t-256k	0	one	one#0{[52]}@a=0,mb=0,ov=0	1	0	0	0.73	0.73	169563	169563	169563	169563	1387702	4948525	18344002
 corpus	c106	capability__t-256k	0	one	one#0{aaa}@a=0,mb=0,ov=0	3	0	0	0.0542	0.000159	9607	0	0	0	281358	281358	281358
 corpus	c106	capability__t-256k	0	pair	pair#0{aaa}@a=0,1,mb=0,ov=0	3	0	0	0.00293	0.000159	0	0	0	0	393216	393216	393216
 corpus	c108	capability__t-256k	0	one	one#0{z}@a=0,mb=12,ov=12	1	12	12	0.000498	0.000498	0	0	0	0	262144	262144	262144
@@ -373,8 +372,7 @@ corpus	c125	capability__t-256k	0	one	one#0{[2]}@a=0,mb=0,ov=0	1	0	0	0.0591	0.059
 corpus	c125	capability__t-256k	1	one	one#1{b}@a=0,mb=2,ov=1	1	2	1	0.00989	0.00989	1240	1240	3720	2480	264624	293144	463024
 corpus	c127	capability__t-256k	0	one	one#0{za}@a=0,mb=0,ov=0	2	0	0	0.000498	2.7e-05	0	0	0	0	262144	262144	262144
 corpus	c127	capability__t-256k	0	pair	pair#0{za}@a=0,1,mb=0,ov=0	2	0	0	2.7e-05	2.7e-05	0	0	0	0	393216	393216	393216
-corpus	c128	capability__t-256k	0	one	one#0{[12][2]\x5d}@a=1,mb=0,ov=0	3	0	0	0.0011	4.48e-07	2626	0	0	0	398468	398468	398468
-corpus	c128	capability__t-256k	0	pair	pair#0{[12][2]\x5d}@a=1,2,mb=0,ov=0	3	0	0	1.82e-06	4.48e-07	0	0	0	0	524288	524288	524288
+corpus	c128	capability__t-256k	0	one	one#0{[52]}@a=0,mb=0,ov=0	1	0	0	0.73	0.73	169563	169563	169563	169563	1387702	4948525	18344002
 corpus	c129	capability__t-256k	0	one	one#0{[3]}@a=0,mb=0,ov=0	1	0	0	0.0825	0.0825	16497	16497	16497	16497	426210	772647	2075910
 corpus	c130	capability__t-256k	0	one	one#0{[146]}@a=0,mb=0,ov=0	1	0	0	0.334	0.334	112444	112444	112444	112444	1273464	3634788	12517864
 corpus	c132	capability__t-256k	0	one	one#0{\x80}@a=0,mb=0,ov=0	1	0	0	2e-06	2e-06	0	0	0	0	262144	262144	262144

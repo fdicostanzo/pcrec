@@ -108,11 +108,11 @@ syntax	cls-mixed-case	ok	-	False	1	1	3/0	dfa	memchr	none	none	none	c[52]t@mb=0,o
 syntax	cls-n-uc	ok	-	False	1	1	4/0	dfa	offset-set	0,3*	6974@0	0	it.m@mb=0,ov=0
 syntax	cls-negset	ok	-	False	1	1	3/0	dfa	memchr	none	none	none	c[251]t@mb=0,ov=0
 syntax	cls-pair-ctl	ok	-	False	1	1	3/0	dfa	handoff	none	636174@0/fffdff	0	c[2]t@mb=0,ov=0
-syntax	cls-posix	ok	-	False	1	1	0/1	dfa	byte-class	none	none	none	[6]\x5d@mb=0,ov=0
+syntax	cls-posix	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[52]@mb=0,ov=0
 syntax	cls-range	ok	-	False	1	1	3/0	dfa	offset-set	0,1*	3078@1	none	0x[22]@mb=0,ov=0
 syntax	cls-s-lc	ok	-	False	2	1	4/0	dfa	memchr	none	736174@0	none	cat\s@mb=0,ov=0 sat@mb=inf,ov=inf
 syntax	cls-s-uc	ok	-	False	2	1	1/0	dfa	byte-class	none	none	none	\S@mb=0,ov=0 @\S@mb=inf,ov=inf
-syntax	cls-v	ok	-	False	2	1	4/1	dfa	offset-set	0,3*	646f6e65@0	none	item\x0b@mb=0,ov=0 done@mb=inf,ov=inf
+syntax	cls-v	ok	-	False	2	1	5/0	dfa	offset-set	0,3*	646f6e65@0	none	item[5]@mb=0,ov=0 done@mb=inf,ov=inf
 syntax	cls-w	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	\w@mb=0,ov=0
 syntax	cnd-group	ok	alt-dropped,conditional	False	1	1	-	?	-	-	-	-	item@mb=1,ov=1
 syntax	esc-cr	ok	-	False	1	1	10/0	dfa	run-pinned	0,1,2,3,4*,5,6,7,8	74656d0d0a646f6e@3	none	item\x0d\x0adone@mb=0,ov=0
@@ -208,7 +208,7 @@ corpus	c028	ok	assertion,backref	False	0	0	-	vm	-	-	none	none
 corpus	c029	ok	-	False	0	0	-	vm	-	-	none	none	
 corpus	c030	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	[2]@mb=0,ov=0
 corpus	c031	ok	alt-dropped	False	1	1	1/0	dfa	memchr	none	none	none	[2]@mb=0,ov=0
-corpus	c032	unparsed:bad escape \V at position 0	-	-	0	0	-	dfa	byte-class	none	none	none	
+corpus	c032	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[251]@mb=0,ov=0
 corpus	c033	ok	backref	False	1	0	-	vm	-	-	none	none	a@mb=inf,ov=inf
 corpus	c034	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	a@mb=0,ov=0
 corpus	c035	unparsed:unicode-escape	-	-	0	0	-	?	-	-	-	-	
@@ -279,7 +279,7 @@ corpus	c099	ok	assertion,backref	True	1	1	0/0	vm	-	-	6162@1	none	ab@mb=0,ov=0
 corpus	c100	ok	-	False	1	1	3/0	vm	memchr	none	none	none	x.y@mb=0,ov=0
 corpus	c101	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[2]@mb=0,ov=0
 corpus	c102	ok	assertion	False	1	1	3/0	dfa	none	none	none	none	\s\s\w@mb=0,ov=0
-corpus	c103	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[10]\x5d@mb=0,ov=0
+corpus	c103	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[52]@mb=0,ov=0
 corpus	c104	ok	gstart	True	1	1	0/0	dfa	none	none	none	none	x@mb=0,ov=0
 corpus	c105	unparsed:missing : at position 9	-	-	0	0	-	dfa	offset-set	0,1*	none	none	
 corpus	c106	ok	-	False	1	1	3/0	dfa	offset-set	0,1*	none	none	aaa@mb=0,ov=0
@@ -294,7 +294,7 @@ corpus	c114	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none
 corpus	c115	ok	alt-dropped,assertion,lookaround,recursion	True	1	1	-	?	-	-	-	-	ab@mb=0,ov=0
 corpus	c116	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[3]@mb=0,ov=0
 corpus	c117	ok	assertion	False	1	0	-	dfa	memchr-bounded	none	none	none	a@mb=inf,ov=inf
-corpus	c118	ok	assertion	True	1	1	0/0	dfa	none	none	none	none	[8]\x5d@mb=0,ov=0
+corpus	c118	unparsed:posix class '^lower'	-	-	0	0	-	dfa	none	none	none	none	
 corpus	c119	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
 corpus	c120	ok	assertion,recursion	True	1	1	0/0	vm	none	none	none	none	[2]@mb=0,ov=0
 corpus	c121	unparsed:unknown extension ?J at position 1	-	-	0	0	-	vm	-	-	none	none	
@@ -304,7 +304,7 @@ corpus	c124	ok	assertion,recursion	False	2	1	0/0	vm	-	-	none	none	a@mb=0,ov=0 A@
 corpus	c125	ok	lookaround,rep-right	False	2	2	1/0	dfa	memchr-bounded	none	none	none	[2]@mb=0,ov=0 b@mb=2,ov=1
 corpus	c126	ok	alt-dropped,assertion,recursion	True	1	0	-	vm	none	none	none	none	c@mb=inf,ov=inf
 corpus	c127	ok	rep-right	False	1	1	2/0	vm	memchr	none	none	none	za@mb=0,ov=0
-corpus	c128	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[12][2]\x5d@mb=0,ov=0
+corpus	c128	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[52]@mb=0,ov=0
 corpus	c129	ok	assertion,rep-right	False	1	1	1/0	dfa	none	none	none	none	[3]@mb=0,ov=0
 corpus	c130	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[146]@mb=0,ov=0
 corpus	c131	unparsed:nothing to repeat at position 2	-	-	0	0	-	?	-	-	-	-	
