@@ -11,6 +11,13 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K107 — OPEN (filed 2026-10-11, manager, session 108, from lane pcurev's finding F-8, docs/design/prior_cost_unify.md rev 2; reproduced by the manager on main 4a9748bb+; owned by [EFFORT-BUDGET]) — BUDGET COMPLETION: the alternation island makes a `PCREC_ERR_WORK` give-up APPEAR where the island-denied build answers (D158's second violator, K102's class)
+
+**Witness:** `(foo|bar|baz)q` on `fooq`, `--work-budget=2`, auto (VM) and `--engine=vm`: the default build returns the `work` give-up; `-fno-alt-island` answers (0,4). Reproduce: `bash docs/design/prior_cost_unify/island_work.sh build/pcrec OUTDIR`.
+**Cause:** the [ENG-ISL] trie island charges WORK per trie byte where the denied alternation spends STEPS on resumes (`docs/design/prior_cost_unify/meter_sites.tsv`: work +6, push -2) — a re-categorization of effort, like K102's possessify charge. Under a caller budget on the work counter alone, the island loses an answer.
+**Rule:** D158 (an optimization may never turn an answer into a give-up under any caller budget setting); D158 addendum 1 accepts K102 only, so this is a defect unless Frank extends the allowance.
+**Fix shapes:** (a) a single effort budget ([EFFORT-BUDGET]) dissolves the class; (b) charge the island's bytes to the counter the denied form would have charged; (c) an exact-key allowance beside K102 (Frank's call). Checked by [PRIOR-COST-UNIFY]'s per-counter D158 vector check once built (rev 2, meter column on axes.def).
+
 ## K106 — OPEN (filed 2026-10-11, manager, session 108, from lane msthink's finding F1 (docs/design/match_split_requirements.md), CONFIRMED by lane trimq by step counts; owned by [MATCH-SPLIT]) — PERFORMANCE: QUADRATIC TRIM on the attempt route
 
 **Witness (counts, not clock; abi 74 main):** `^\s+|\s+$` compiles to `RX_DFA_SCAN "attempt"`, `RX_DFA_PREFILTER "none"`, `start_max = subject_length`. On `"a" + " "*k + "b"` one `rx_search` costs k²/2 + 1.5k + 2 DFA steps (k = 1000: 501,502; k = 16000: 128,024,002; ratio 4.00 per doubling): every start inside the run walks to the run's end and dies on `b`. On `" "*k + "a" + " "*k + "b" + " "*k` the FIRST search is cheap (the `^` arm matches at once) and find-all pays the quadratic on its next call. Answers agree with libpcre2 10.46 on every cell.
