@@ -26,6 +26,7 @@ Revision 2 (cited by the note):
 - `probes2.py` — the generators revision 1 lacked: `sizes` (linked bytes,
   today vs compound) and `one-tu` (the one-translation-unit `-Werror` probe).
 - `results/cases2.tsv` (revision 1's 94 cases + 18 panel witnesses),
+- `results/cases2_owed.tsv` + `results/cases2_owed_run.tsv` (revision 2.1: CMP-13's `\Ga$|b$` as a utf8 case, so its six option arms run; owed to fold into `cases2.tsv` at the next differential re-run, kept apart so revision 2's 177 case-arms / 2,170,123 cells stay true of `cases2.tsv`; the run file is its one-off result, 0 differences),
   `split_differential2.tsv` (177 case-arms, 2,170,123 cells, 0 differences),
   `plants.tsv`, `split_loads2.tsv`, `sizes2.tsv`, `one_tu_probe2.txt`.
 

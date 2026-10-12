@@ -1,4 +1,4 @@
-# [COMPOUND] — the compound artifact as a general tool; first client [MATCH-SPLIT] (DESIGN NOTE, REVISION 2)
+# [COMPOUND] — the compound artifact as a general tool; first client [MATCH-SPLIT] (DESIGN NOTE, REVISION 2.1)
 
 **Revision 2**: lane `mscomp2`, 2026-10-12, from main `21641979` (abi 76). It applies the D6
 panel r1 on revision 1 (`../dev/reviews/2026-10-12-r2-composite.md`; read its dispositions
@@ -29,6 +29,18 @@ Plan rows: [COMPOUND], [MATCH-SPLIT], [EMIT-ENTRIES], [FINDALL-NEXT], [OPT-ATTEM
 Read §0 first. §A is the tool, §B the first client, §C the cross-call hook, §D the clients
 (captures on demand first), §E the checks, §F the build plan, §G the open questions, §H the
 unlocks, §I the standing questions, §J the findings.
+
+## §R2.1. Revision 2.1 (lane `cpfix`, 2026-10-12): the light re-check's five findings
+
+Text only; no `src/`. Revision 2's design is unchanged.
+
+| id | where | what changed |
+|---|---|---|
+| MUST-FIX-1 | §A.11, §E.3 G7, §E.4 CMP-17, §F B4 | The lever fence's host was wrong: `tests/spec_mod0/check01_isolation.sh` is the enabled-set isolation check and its named-exception count is pinned at exactly 1. Verified by grep that no export-surface allowlist check exists (`tests/memfn/run_link_checks.sh` C15 checks the `pcrec_` prefix only). NEW check `tests/compound/run_symbol_allowlist.sh`: every global of `build/libpcrec.a` outside `lib/pcrec.h`'s declarations is on `symbol_allowlist.tsv` with a reason (measured: 566 globals, 6 public); the lever's internal entry is one allowlisted name. Added at B4 with the lever. |
+| MUST-FIX-2 | §A.11 | `visibility("hidden")` does NOT fence the shipped static archive (measured with a probe: `nm -g` lists the symbol, an executable linking the `.a` calls it). The fences are the unadvertised name, the allowlist check, and `run_lever_fence.sh` with its grep scope widened to `tests/`, `scripts/`, `cli/` (allowlisting the harness's own uses). |
+| SHOULD-1 | §E.5 | The abi greps read the current number from `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c`) instead of hard-coding 76. |
+| SHOULD-2 | §A.11, §A.7, §E.3, CMP-15 | The lever stamps `"forced-off"` ONLY when the default build would have shipped a row name (the lever runs the complete admission, caps and `drop-compound` included, and replaces only "ship the compound"). A `pre_admits` pass alone could mark an artifact the lever changed nothing about. "The lever moves nothing else" is now an exact two-directional property. |
+| SHOULD-3 | §A.6 | One sentence: the DFA reach of the `qf = next_pos(aligned f)` correction is CMP-13's `\Ga$|b$` under `-fstartpos-guard=align`. Checked by grep: that witness is in the twin's case list for `byte` only (`hand:g1`; `tests/assertions/rev_end.rxt:338`), so its utf8 × align arm was ABSENT. OWED item added as `docs/design/compound/twin/results/cases2_owed.tsv` (kept apart from `cases2.tsv` so revision 2's recorded 177 case-arms / 2,170,123 cells stay true of the file that produced them; folded in when the differential is next re-run). Cheap, so run once (4 cores, GNU timeout, 0.8 s): 6 arms, 13,523 cells each, 0 differences (`results/cases2_owed_run.tsv`). The twin has no plant that hands F the raw `from`, noted in §A.6. |
 
 ## §R2. What revision 2 changed, by panel id
 
@@ -313,7 +325,14 @@ int <p>_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[
 - **The aligned floor** (sem MF4): under `align`, `f` is the aligned position, F's bounded
   attempt sees `\G` at `f` (as P does), and `qf = next_pos(f)`. Revision 1 passed the raw
   `from`, which re-opened the atomic witness `(?>\Ga|ab)c` on `c3 a9 61 62 63`. Twin: 0
-  differences on all six arms of that witness.
+  differences on all six arms of that witness. That witness is a VM P; the `qf = next_pos(aligned f)`
+  correction reaches the DFA route through CMP-13's `\Ga$|b$` (rev-end Q) under
+  `-fstartpos-guard=align`. That witness is in the twin's case list for `byte` only
+  (`hand:g1`, `results/cases2.tsv`, plus `tests/assertions/rev_end.rxt:338`), where the align
+  arm does not exist; its utf8 × align arm was ABSENT from the list and is OWED: the row is in
+  `results/cases2_owed.tsv` (§R2.1); one run (6 arms, 13,523 cells, 0 differences) is recorded
+  in `results/cases2_owed_run.tsv`, and the twin has no plant that hands F the raw `from` (plants 1-3 only), so CMP-13's
+  DFA detection is by the answer suites, not yet by a twin plant.
 - **No double check.** Revision 1 checked validity in every part; now it is checked once.
 - **Measured** (sem MF1's witness): `\A\s+|\s+\z` under `-e utf8 -futf-check` has P's reach > 0
   (`\A` raises it) and Q = `\s+\z` none, so a check with Q's reach answers where P refuses;
@@ -344,8 +363,8 @@ this path", stated per stamp in `match_api.md` §6.3). No reader infers a fact f
 macro NAME (§E.5).
 
 **The policy stamp.** `<PREFIX>_COMPOUND` on every artifact: `"none"` (no row admitted),
-the row name (`"split"`), or `"forced-off"` (the harness lever was set and some row's
-`pre_admits` passed, §A.11). It is pattern-level.
+the row name (`"split"`), or `"forced-off"` (the harness lever was set and the default build would have shipped a row
+name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
 
 ### A.8 Size: the caps, and `drop-compound` as a T1 row (arch M4)
 
@@ -413,20 +432,55 @@ the row name (`"split"`), or `"forced-off"` (the harness lever was set and some 
 
 - **Library.** An internal options struct, declared in `src/core/internal.h` only:
   `typedef struct { unsigned compound_off : 1; } PcrecHarnessOptions;` and one entry
-  `pcrec_compile_harness(pattern, const pcrec_options *, const PcrecHarnessOptions *, ...)`
-  with `__attribute__((visibility("hidden")))`. It is not in `lib/pcrec.h` (the contract), so
-  `tests/spec_mod0/check01_isolation.sh` gains one allowlist row for it ("internal, harness
-  only"). In a static `libpcrec.a` the in-tree harness binary can link it; a shared build
-  would not export it.
+  `pcrec_compile_harness(pattern, const pcrec_options *, const PcrecHarnessOptions *, ...)`,
+  an unadvertised name that no header a caller includes declares (it is not in `lib/pcrec.h`,
+  the contract). It carries `__attribute__((visibility("hidden")))` as hygiene for a shared
+  build only. **Hidden visibility does NOT fence the shipped static archive.** `libpcrec.a`
+  ships; visibility is a dynamic-symbol-table property, so the archive member keeps the
+  symbol global (`nm -g --defined-only` lists it, measured on a hidden-attribute probe) and an
+  executable that links the archive resolves it statically: a caller who declares the
+  prototype can call it. The fences that hold are the three below, none of them the
+  attribute:
+  1. **The obscure name**: unadvertised, in no public header, in no spec or guide sentence.
+  2. **The symbol-allowlist check** (NEW; `tests/compound/run_symbol_allowlist.sh`, a
+     `make test` section, built at B4). Verified by grep that no such check exists:
+     `tests/memfn/run_link_checks.sh` C15 asserts only that every global of `build/libpcrec.a`
+     begins `pcrec_` (`pcrec_compile_harness` passes it), and
+     `tests/spec_mod0/check01_isolation.sh` is the enabled-set isolation `nm` check, whose
+     named-exception count is pinned at exactly 1 (a lever row there would break that pin and
+     is the wrong host). The new check: read `nm -g --defined-only build/libpcrec.a`; the
+     PUBLIC SET is the names `lib/pcrec.h` declares (derived from the header by the same
+     extraction the registry tests use, never hand-listed); every other global must be a row
+     of `tests/compound/symbol_allowlist.tsv` (`symbol<TAB>reason`, a non-empty reason per
+     entry). It fails on a global with no row (a new export), on a row naming no global
+     (stale), and on an empty reason. Population: today's archive has 566 globals of which 6
+     are public, so the list is born with about 560 rows, generated once from `nm` with the
+     declaring internal header as each row's reason; the lever's row is one of them and its
+     reason is hand-written ("harness lever, `build/pcrec-harness` only"). Controls: a planted
+     undeclared global is flagged; a planted stale row is flagged; floors on both
+     populations (K35). Its sabotage row is CMP-17 (§E.4).
+  3. **`run_lever_fence.sh`** (described next), with its grep scope widened to `tests/`, `scripts/`
+     and `cli/` as well as the prose directories, allowlisting the harness's own legitimate
+     uses (the `-DPCREC_HARNESS` object of `cli/main.c`, `build/pcrec-harness`'s callers, the
+     lever arm of `tests/axes/run_axes.sh`, the emit_sweep lever arm, `tests/compound/`).
 - **CLI.** `cli/main.c` compiled a second time with `-DPCREC_HARNESS` into
   `build/pcrec-harness`, which accepts one extra option `--harness=no-compound` and calls the
   harness entry. The shipped `build/pcrec` has no such option: in a normal build the word is
   an unknown option. `make` builds both (the second is one more object of `main.c`).
-- **The artifact marks itself.** Under the lever the walk still evaluates each row's
-  `pre_admits` (cheap: the plain selections and the derivation, no part compiles). If one
-  passes, the plain output ships with `<PREFIX>_COMPOUND "forced-off"`; otherwise `"none"`.
-  So an artifact the lever changed can never pass for a shipped one, and every artifact the
-  lever did not touch is byte-identical to the default build.
+- **The artifact marks itself, exactly when the lever changed it.** `pre_admits` passing is
+  NOT "the default build admitted a row": admission continues through Q's derivation, Q's own
+  ladder check (A4/S12) and the assembled text's caps, and `drop-compound` (§A.8) can still
+  reject the row after `pre_admits` passed. Stamping `"forced-off"` on a `pre_admits` pass
+  alone would mark an artifact whose default build ships plain with `"none"`, so the lever
+  would move a stamp line on an artifact it changed nothing about. So under the lever the
+  walk runs the COMPLETE admission, the same code as the default build, including the part
+  compiles and the caps, and replaces only the last step (ship the compound text) with ship
+  the plain text. The stamp is `"forced-off"` ONLY when the default build WOULD have shipped a
+  row name, and `"none"` otherwise. Hence the exact property: (a) wherever the default stamp
+  is `"none"` the lever output is byte-identical to the default output; (b) wherever the
+  default stamp is a row name the lever output is the plain output plus `"forced-off"` (and
+  the `-o`-basename-independent stamp line, nothing else); (c) no artifact the lever changed
+  can pass for a shipped one. The lever build pays the part compiles (harness only).
 
 **How the harness uses it.**
 
@@ -434,8 +488,10 @@ the row name (`"split"`), or `"forced-off"` (the harness lever was set and some 
   lever is a separately DECLARED internal arm (`INTERNAL_ARMS=(no-compound)`) run through
   `build/pcrec-harness`. Answer identity is checked exactly as for an axis. Its population
   floor is the count of artifacts whose default build stamps a row name (K35), and it asserts
-  that every artifact whose lever build stamps `"none"` is byte-identical to the default
-  build (the lever moves nothing else).
+  the exact property above both ways: lever `"none"` ⇔ default `"none"` and byte-identical
+  (the lever moves nothing else); lever `"forced-off"` ⇔ default stamps a row name, with the
+  stamp line the only difference from the plain output. A `"forced-off"` where the default
+  stamps `"none"`, or a `"none"` where the default stamps a row, is a failure (CMP-15).
 - **Bisects and triage.** "Is the compound responsible?" is `pcrec` vs `pcrec-harness
   --harness=no-compound` on the failing cell.
 - **emit_sweep** gains a lever arm (G6's comparison, §E.3).
@@ -443,7 +499,10 @@ the row name (`"split"`), or `"forced-off"` (the harness lever was set and some 
 **Kept from becoming a de-facto public flag:** it is not in the shipped binary, not in the
 public header, not in any `--help` or listing; the artifact self-marks; and a check
 (`tests/compound/run_lever_fence.sh`) fails if `--harness=` or `pcrec_compile_harness` appears
-in `docs/spec/`, `docs/guide/`, `README.md`, `examples/` or `lib/`. The only spec sentence is
+in `docs/spec/`, `docs/guide/`, `README.md`, `examples/`, `lib/`, `tests/`, `scripts/` or
+`cli/`, outside an explicit allowlist of the harness's own uses (listed in fence 3 above);
+and `run_symbol_allowlist.sh` holds the library's export surface to the public header plus a
+reasoned allowlist. The only spec sentence is
 the `"forced-off"` value in `match_api.md` §6.3's `_COMPOUND` value set ("an artifact built by
 the harness with the compound family declined"), because a stamp value is caller-observable
 (D80).
@@ -822,8 +881,16 @@ Reproduction: `twin/CLAUDE.md` (one command per result file, including revision 
   `wild-validator-email-owasp`, `winpath` near-miss; syntax `anc-a-uc`, `anc-caret`,
   `anc-g-uc`; utf8 `asr-a-z`, `cls-dot-rep`, `lit-anchored-run`: BOUND `bot`, A1 false) and the
   2 concat-sqli rows (S+F, A5 false).
+- **G7 export surface** (`tests/compound/run_symbol_allowlist.sh`, §A.11, new at B4): every
+  global of `build/libpcrec.a` outside `lib/pcrec.h`'s declarations is a row of
+  `symbol_allowlist.tsv` with a reason; stale rows and empty reasons fail; floors on both
+  populations; the planted-global control (CMP-17).
+- **The lever fence** (`tests/compound/run_lever_fence.sh`): the grep above, scope widened to
+  `tests/`, `scripts/`, `cli/`.
 - **The lever arm** (§A.11): answer identity default vs lever over the whole corpus, the
-  population floor, the "lever moves nothing else" byte check.
+  population floor, the "lever moves nothing else" byte check, made exact: `"forced-off"` iff
+  the default build admitted a row (the stamp pair compared artifact by artifact, both
+  directions), `"none"` artifacts byte-identical.
 - **The B6 give-up differential:** compound vs lever at lowered budgets on every VM-bearing
   candidate; 0 cells where the lever answers and the compound gives up.
 - **Long prefix and K79:** `run_longprefix_sweep.sh` at 60 bytes and
@@ -854,7 +921,8 @@ allocation). Each row names its witness and its reach.
 | CMP-12 | parts compiled with the guards on, prologue removed | answer | `a{0,4}\A`, utf8, `-futf-check`, from 1/2 (floor-only, DFA): the `-7`/`-9` refusals vanish |
 | CMP-13 | the align arm passes the raw `from` to F | answer | `(?>\Ga\|ab)c`: VM, **UNREACHED**; DFA witness `\Ga$\|b$` under `-fstartpos-guard=align` |
 | CMP-14 | the prune deletes a called group | answer / decline | `(?:^(a)\|b)(?1)`: VM; in the first build the decline reason (A2) is asserted instead |
-| CMP-15 | the lever stamps `"none"` | lever fence | the lever arm's byte check |
+| CMP-15 | the lever stamps `"none"`, or stamps `"forced-off"` on a `pre_admits` pass that `drop-compound` or the caps would have rejected | lever fence | the lever arm's byte check, both directions; witness for the second plant: a lowered-cap variant where the compound overflows and the plain fits (CMP-7's) |
+| CMP-17 | a new unlisted global in the library (an undeclared export, e.g. the lever entry without its allowlist row) | export fence | `run_symbol_allowlist.sh` (§A.11); control: a planted undeclared global |
 | CMP-16 | `__` prefix refusal removed | refusal set | `-p a__f` on a compound |
 
 Every decline control records and asserts its reason (chk M5): `^a(*COMMIT)b|c` (A3),
@@ -868,8 +936,10 @@ Run at B4 on the branch. The new stamp and the new route value move every reader
 family, so the grep is by macro and field NAME, not by route value:
 
 ```
-# abi readers (D94)
-grep -rn 'PCREC_ARTIFACT_ABI\|abi 76\|\.abi = 76\|PCREC_RX_ABI_H 76' src tests docs/spec scripts docs/dev/history
+# abi readers (D94): the current number is READ from PCREC_ARTIFACT_ABI (src/gen/emit_dfa.c),
+# never typed here; the greps below take it as $ABI
+ABI=$(sed -n 's/^#define PCREC_ARTIFACT_ABI \([0-9]*\).*/\1/p' src/gen/emit_dfa.c)
+grep -rn "PCREC_ARTIFACT_ABI\|abi $ABI\|\.abi = $ABI\|PCREC_RX_ABI_H $ABI" src tests docs/spec scripts docs/dev/history
 # readers of the route family by NAME (they meet "compound")
 grep -rln '_DFA_SCAN\|_DFA_PREFILTER\|_DFA_START\|_DFA_MATCH' tests scripts docs/spec memfn
 grep -rln '\.scan\b\|\.prefilter\b\|search_form\|match_form' tests scripts docs/spec lib/pcrec.h
@@ -893,7 +963,7 @@ python3 scripts/sabotage_anchors.py --step <B4 commit>
 | **B1** | part mode and `CompPart` options (names, `__`, omitted blocks, `PB_ONE_ATTEMPT`, guards-off) | a unit drive: F and Q of 6 witnesses plus a hand controller compile in one TU `-Werror`, long-prefix 60 bytes, K79 invariance; emit_sweep 0 movers | zero movers; not abi |
 | **B2** | the derivation hook list and `src/opt/derive.c` (kill, prune, the group-keep rule, the registry attempt-scope column) | `derive` against `twin2.derive` on the twin's case list: two independent implementations, compared by language (the differential), not by text; G5's tree property | zero movers; not abi |
 | **B3** | the match-end mark (D164): END_MARK lowering of path-final lookaheads; rev-end walks once | its own panel and gate | its own abi event; movers = every `$`-pinned rev-end artifact |
-| **B4** | `src/core/compound.c`: `compound_rows[]` (split, pin-only), the combinators, the prologue, the assembly, `drop-compound`, the harness lever and `build/pcrec-harness`, `<PREFIX>_COMPOUND` on every artifact, the stamp classification and sentinels, the `__` refusal; G1-G6, the lever arm, CMP rows. Spec: `match_api.md` §1¶2 (`__` reserved), §3¶1, §3.2 (`_match` on a compound), §6 route values `"compound"`, §6.3 the stamp, its three values and the sentinel table; `limits.md` (caps on the assembled text, `drop-compound`); `ir_listing.md`/`facts_listing.md` (the compound listing); `cli.md` (the `__` refusal) | **the abi event**: every artifact by one stamp line; the ~30 admitted by ID; bench 0 (G6) |
+| **B4** | `src/core/compound.c`: `compound_rows[]` (split, pin-only), the combinators, the prologue, the assembly, `drop-compound`, the harness lever and `build/pcrec-harness` (with `tests/compound/run_symbol_allowlist.sh` + `symbol_allowlist.tsv`, born with the lever's entry, and `run_lever_fence.sh` at its widened scope), `<PREFIX>_COMPOUND` on every artifact, the stamp classification and sentinels, the `__` refusal; G1-G6, the lever arm, CMP rows. Spec: `match_api.md` §1¶2 (`__` reserved), §3¶1, §3.2 (`_match` on a compound), §6 route values `"compound"`, §6.3 the stamp, its three values and the sentinel table; `limits.md` (caps on the assembled text, `drop-compound`); `ir_listing.md`/`facts_listing.md` (the compound listing); `cli.md` (the `__` refusal) | **the abi event**: every artifact by one stamp line; the ~30 admitted by ID; bench 0 (G6) |
 | **B5** | S+F/G+F: A5 widened to an unanchored Q under the cost conjunct (§B.7) | its trigger first; then G2/G3 on the new population with matching cells (chk B1's) | the admitted by ID; not abi |
 | **B6** | VM parts: budgets, caller buffers, the DEFINE-style group keep | the give-up differential | the admitted by ID |
 | **B7** | captures on demand (§D.1) | its trigger; the N-vs-C span gate | the admitted by ID |

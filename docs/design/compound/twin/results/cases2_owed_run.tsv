@@ -1,0 +1,6 @@
+hand3:cmp13	utf8	grefuse	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=1381 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1354 diff_findall=0
+hand3:cmp13	utf8	grefuse-uc	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=585 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1230 diff_findall=0
+hand3:cmp13	utf8	gnone	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=1639 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1354 diff_findall=0
+hand3:cmp13	utf8	gnone-uc	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=585 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1230 diff_findall=0
+hand3:cmp13	utf8	galign	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=1686 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1354 diff_findall=0
+hand3:cmp13	utf8	galign-uc	plain=dfa/attempt	q=dfa/rev-end	f=bounded	ok killed=1 pruned=1 keepcap=0	cells=13523 matches=725 diff_comp_plain=0 diff_plain_pcre2=0 findall_steps=1230 diff_findall=0
