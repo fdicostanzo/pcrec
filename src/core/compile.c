@@ -2237,7 +2237,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * returns from immediately — which is what lets `emit_dfa.c` read it
          * unconditionally instead of asking whether composition happened. */
         cx.ncap_primary = cx.ncap;
-        if (cx.compose) root = cx.compose(&cx, root);
+        /* [COMPOUND] THE TREE-HOOK LIST, in order: the composer, then the
+         * derivation (compound.md §B.1). One position for both, for the
+         * composer's reasons above: the group numbers are the parse's and
+         * the rewritten tree gets every pass after. */
+        {
+            const PcrecComposeFn hooks[] = {
+                cx.compose, emit_in ? emit_in->derive : NULL,
+            };
+            for (size_t h = 0; h < sizeof hooks / sizeof *hooks; h++)
+                if (hooks[h]) root = hooks[h](&cx, root);
+        }
 
         root = pcrec_altcls(&cx, root);
 

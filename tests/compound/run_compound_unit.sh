@@ -8,6 +8,9 @@
 #       client's F and Q of six witnesses plus a hand controller in one
 #       TU -Werror, run against the plain artifact; the 60-byte prefix; K79;
 #       the table-build self-check.
+#   B2  check_derive.py: the split derivation (src/opt/derive.c) against the
+#       twin's (docs/design/compound/twin/twin2.py) by LANGUAGE over the
+#       twin's case list; the registry's attempt-scope column (selfcheck).
 #
 # The internal driver (compound_drive.c) links build/libpcrec.a through
 # tests/lib/unit_cc.sh. Env: PCREC, CC, JOBS (default PROCS, else
@@ -35,5 +38,7 @@ CC="$CC" python3 "$SCRIPT_DIR/check_entries.py" "$DRIVE" "$PCREC" "$ROOT_DIR" \
     "$WORKDIR/b0" --every "$EVERY" --jobs "$JOBS" || rc=1
 echo "== B1: part mode, the parts' options, one TU =="
 CC="$CC" python3 "$SCRIPT_DIR/check_parts.py" "$DRIVE" "$WORKDIR/b1" || rc=1
+echo "== B2: the split derivation against the twin's, by language =="
+CC="$CC" python3 "$SCRIPT_DIR/check_derive.py" "$DRIVE" "$ROOT_DIR" "$WORKDIR/b2" || rc=1
 [ "$rc" -eq 0 ] && echo "test-compound: PASS" || echo "test-compound: FAIL"
 exit $rc

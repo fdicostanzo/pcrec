@@ -18,7 +18,9 @@
  * `flags_clear` masked out; `tune`, `analysis`, `features`, `encoding` and
  * every cap are the parent's by that one written rule. B4's compound_rows[]
  * runs `pcrec_comp_part_check` over every part of every row at table build;
- * until then its callers are the unit drive and `pcrec_compile_part`. */
+ * until then its callers are the unit drive and `pcrec_compile_part`.
+ * A part's derivation runs as the driver's tree-hook (B2); its report goes
+ * to the caller's `report` (NULL: none wanted). */
 #include "core/internal.h"
 
 #include <stdio.h>
@@ -65,12 +67,10 @@ const char *pcrec_comp_part_check(const CompPart *part)
 }
 
 int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
-                       const CompPart *part, pcrec_output *out,
-                       pcrec_error *err)
+                       const CompPart *part, PcrecDeriveReport *report,
+                       pcrec_output *out, pcrec_error *err)
 {
     const char *why = pcrec_comp_part_check(part);
-    if (!why && part->derive->fn)
-        why = "derive: the derivation hook list is not built yet";
     if (why) {
         if (out) memset(out, 0, sizeof *out);
         if (err) {
@@ -87,7 +87,8 @@ int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
     o.engine = part_engine[part->engine];
     o.header_name = NULL;
     const PcrecEntryReq req = { 0, part_kept(part->need) };
-    const PcrecEmitIn in = { &req, part->role, part->bound };
+    const PcrecEmitIn in = { &req, part->role, part->bound, part->derive->fn,
+                             report };
     return pcrec_compile_driver(pattern, &o, out, err, NULL, NULL, NULL, NULL,
                                 NULL, &in);
 }

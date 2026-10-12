@@ -44,3 +44,9 @@ Reproduce revision 2 from the worktree root (TMPDIR inside the worktree; about
 `python3 docs/design/compound/twin/twin2.py build/pcrec CASES build/sc/pl --plant N`
 `python3 docs/design/compound/twin/cost2.py build/pcrec build/sc/cost2`
 `python3 docs/design/compound/twin/probes2.py build/pcrec build/sc/pr sizes|one-tu`
+
+A GATE READS `twin2.py`: `tests/compound/check_derive.py` (`make
+test-compound`, B2) imports its `derive` and `subjects` as the independent
+derivation the build's `src/opt/derive.c` is compared with, over
+`results/cases2.tsv` and `results/cases2_owed.tsv`. A change to either
+function or file moves that gate's population.

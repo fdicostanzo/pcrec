@@ -9,6 +9,7 @@
  *   compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS
  *   compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES
  *   compound_drive selfcheck
+ *   compound_drive derive OUTDIR < CASES
  *
  * PATTERNS is `id<TAB>hex-pattern` per line. For each pattern it writes the
  * plain artifact (`OUTDIR/<id>.plain.c/.h`, the default request) and one
@@ -32,6 +33,19 @@
  * `selfcheck` (B1): `pcrec_comp_part_check` over parts that state every
  * field and parts that leave one unstated or inconsistent, each expected
  * verdict asserted; and `pcrec_compile_part` refusing an unstated part.
+ * (B2) the registry's attempt-scope column: every row stating it, by name,
+ * and `pcrec_ast_crosses_attempts` over a node carrying such a row and one
+ * that does not.
+ *
+ * `derive` (B2, compound.md §B.1): CASES is `id<TAB>enc<TAB>P-hex<TAB>TQ-hex|-`
+ * per line, TQ the twin's own derivation of Q (`-`: the twin says never or
+ * declines). For each it compiles Q AS A PART with the split derivation
+ * (`<id>.q.c`, prefix `rq`, engine AUTO so a VM-routed Q still compiles for
+ * the comparison) and, where given, the twin's Q text as a plain artifact
+ * (`<id>.tq.c`, prefix `tq`), both guards-off at `--features all`. Each line
+ * of stdout is `id<TAB>ok|declined|refused<TAB>killed<TAB>killed_g<TAB>
+ * pruned<TAB>kept_never<TAB>never<TAB>has_g<TAB>msg<TAB>p_ok`, the
+ * derivation's own report and whether P compiles plainly at all.
  *
  * Exit 0 unless the driver itself breaks (a refusal is a row, not an error;
  * `selfcheck` exits 1 on a wrong verdict); 2 on bad usage or I/O. */
@@ -107,7 +121,7 @@ static int compile_one(const char *dir, const char *id, const char *tag,
     snprintf(cname, sizeof cname, "%s.%s.c", id, tag);
     pcrec_options o = *base;
     o.header_name = hname;
-    PcrecEmitIn in = { req, NULL, PCREC_PB_UNSTATED };
+    PcrecEmitIn in = { req, NULL, PCREC_PB_UNSTATED, NULL, NULL };
     pcrec_output out;
     if (pcrec_compile_driver(pat, &o, &out, err, NULL, NULL, NULL, NULL, NULL,
                              req ? &in : NULL) != 0)
@@ -191,7 +205,7 @@ static void drive_part(const char *dir, const char *id, const char *tag,
 {
     pcrec_output out;
     pcrec_error err;
-    int rc = part ? pcrec_compile_part(pat, o, part, &out, &err)
+    int rc = part ? pcrec_compile_part(pat, o, part, NULL, &out, &err)
                   : pcrec_compile(pat, o, &out, &err);
     printf("%s\t%s\t%s\t%s\n", id, tag, rc ? "refused" : "ok", rc ? err.msg : "-");
     if (rc) return;
@@ -253,6 +267,67 @@ static int drive_parts(int argc, char **argv)
     return ioerr ? 2 : 0;
 }
 
+/* The `derive` subcommand (B2). */
+static int drive_derive(int argc, char **argv)
+{
+    if (argc != 1) return 2;
+    const char *dir = argv[0];
+    const CompPart cmp_q = {
+        "q", &pcrec_derive_split_q_row, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
+        PCREC_PE_AUTO, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+    };
+    char line[1 << 16];
+    int ioerr = 0;
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *f[4] = { line, NULL, NULL, NULL };
+        for (int i = 1; i < 4; i++) {
+            f[i] = strchr(f[i - 1], '\t');
+            if (!f[i]) break;
+            *f[i]++ = 0;
+        }
+        if (!f[3]) continue;
+        char *p = unhex(f[2]), *tq = strcmp(f[3], "-") ? unhex(f[3]) : NULL;
+        if (!p) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
+        pcrec_options o;
+        pcrec_default_options(&o);
+        o.features = "all";
+        if (!strcmp(f[1], "utf8")) o.encoding = PCREC_ENC_UTF8;
+        o.prefix = "rq";
+        PcrecDeriveReport rep;
+        memset(&rep, 0, sizeof rep);
+        pcrec_output out;
+        pcrec_error err;
+        /* Does P compile at all: a part refusal only counts as P's when the
+         * plain compile refuses too. */
+        int p_ok = pcrec_compile(p, &o, &out, &err) == 0;
+        if (p_ok) pcrec_output_free(&out);
+        int rc = pcrec_compile_part(p, &o, &cmp_q, &rep, &out, &err);
+        printf("%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\n", f[0],
+               !rc ? "ok" : rep.decline ? "declined" : "refused", rep.killed,
+               rep.killed_g, rep.pruned_arms, rep.kept_never, rep.never, rep.has_g,
+               rc ? err.msg : "-", p_ok);
+        char name[512];
+        if (!rc) {
+            snprintf(name, sizeof name, "%.200s.q.c", f[0]);
+            if (put_file(dir, name, out.c_src)) ioerr = 1;
+            pcrec_output_free(&out);
+        }
+        if (tq) {
+            o.prefix = "tq";
+            o.flags |= SPLIT_GUARDS_OFF_SET;
+            if (pcrec_compile(tq, &o, &out, &err) == 0) {
+                snprintf(name, sizeof name, "%.200s.tq.c", f[0]);
+                if (put_file(dir, name, out.c_src)) ioerr = 1;
+                pcrec_output_free(&out);
+            }
+        }
+        free(p);
+        free(tq);
+    }
+    return ioerr ? 2 : 0;
+}
+
 /* The `selfcheck` subcommand (B1): every unstated or inconsistent field is
  * refused by the table-build self-check, the two split parts pass it, and
  * the part compile refuses an unstated part rather than compiling it. */
@@ -289,10 +364,44 @@ static int drive_selfcheck(void)
     pcrec_default_options(&o);
     pcrec_output out;
     pcrec_error err;
-    int rc = pcrec_compile_part("abc", &o, &bad[0], &out, &err);
+    int rc = pcrec_compile_part("abc", &o, &bad[0], NULL, &out, &err);
     printf("%s\tcompile of an unstated part\t%s\n", rc ? "refused" : "COMPILED",
            rc ? err.msg : "-");
     if (!rc) { fails++; pcrec_output_free(&out); }
+
+    /* B2: the attempt-scope column, read off the registry, and the predicate
+     * that reads it off a node's row. */
+    const RegRow *xa = NULL, *plain_row = NULL;
+    int nxa = 0;
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t nr;
+        const RegRow *rows = pcrec_registry((RegKind)k, &nr);
+        for (size_t i = 0; rows && i < nr; i++) {
+            if (rows[i].flags & RF_CROSSES_ATTEMPTS) {
+                printf("column\t%s\t%s\n", rows[i].syntax ? rows[i].syntax : "?",
+                       rows[i].module ? rows[i].module : "?");
+                nxa++;
+                xa = &rows[i];
+            } else if (!plain_row) {
+                plain_row = &rows[i];
+            }
+        }
+    }
+    if (nxa < 1) { printf("FAIL\tno row states the attempt-scope column\n"); fails++; }
+    if (xa && plain_row) {
+        Ast leaf, cat;
+        memset(&leaf, 0, sizeof leaf);
+        memset(&cat, 0, sizeof cat);
+        leaf.k = A_EMPTY;
+        cat.k = A_CAT; cat.l = &leaf; cat.r = &leaf;
+        leaf.reg = plain_row;
+        bool off = pcrec_ast_crosses_attempts(&cat);
+        leaf.reg = xa;
+        bool on = pcrec_ast_crosses_attempts(&cat);
+        printf("%s\tcrosses_attempts reads the column (off=%d on=%d)\n",
+               !off && on ? "ok" : "FAIL", off, on);
+        if (off || !on) fails++;
+    }
     return fails ? 1 : 0;
 }
 
@@ -301,8 +410,10 @@ int main(int argc, char **argv)
     if (argc >= 2 && !strcmp(argv[1], "entries")) return drive_entries(argc - 2, argv + 2);
     if (argc >= 2 && !strcmp(argv[1], "parts")) return drive_parts(argc - 2, argv + 2);
     if (argc == 2 && !strcmp(argv[1], "selfcheck")) return drive_selfcheck();
+    if (argc >= 2 && !strcmp(argv[1], "derive")) return drive_derive(argc - 2, argv + 2);
     fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n"
                     "       compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES\n"
-                    "       compound_drive selfcheck\n");
+                    "       compound_drive selfcheck\n"
+                    "       compound_drive derive OUTDIR < CASES\n");
     return 2;
 }

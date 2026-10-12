@@ -42,6 +42,22 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   MEASURED: a controller with no prologue goes red on every utf8 arm (the
   answers lose the startpos refusal, and under `-futf-check` F's kept
   validator becomes an unused static).
+- **check_derive.py** — B2 (compound.md §B.1, §E.3 G5): the build's split
+  derivation (an AST rewrite at the tree-hook, `compound_drive derive`,
+  through `pcrec_compile_part`) against the twin's (`docs/design/compound/
+  twin/twin2.py`'s `derive`, a text rewrite over its own parser), over the
+  twin's case list, compared by LANGUAGE: both Qs answer the same at every
+  startpos (verdict, caps[0]) on the twin's own subject generator. Cells:
+  both-q, both-never, both-decline (same reason), refused-p (P's plain
+  compile refuses too; a part that refuses where P compiles is a FAILURE),
+  twin-limit, and `wider` — the build reads each `^`'s own `(?m)` scope and
+  `\A` as never multiline, so it kills anchors the twin's "`(?m)` anywhere"
+  rule cannot (`(?:(?m:^a)|^b)`, `^x|\n(?m:^)a$`, a `(?m)` pattern's `\A`).
+  G5's tree property is asserted inside the derivation by an independent
+  walk (an internal error fails the case). MEASURED: a kill that also kills
+  `(?m)^` fails two cases (never disagrees); a kill that skips `\G` fails 29
+  (G5's walk). `compound_drive selfcheck` also asserts the registry's
+  attempt-scope column and `pcrec_ast_crosses_attempts` reading it.
 - **run_compound_unit.sh** — the section script. `EVERY` (default 1 here,
   8 from the Makefile), `JOBS`, `KEEP=1`.
 

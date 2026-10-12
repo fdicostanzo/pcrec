@@ -108,8 +108,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the emitters drop the shared blocks (`pcrec_is_part`) and the BOUND slot
   reads the one-attempt bound (`pcrec_part_one_attempt`, emit_dfa.c). A
   part a pattern cannot honour REFUSES (one attempt off the DFA attempt
-  route). Derivations arrive with B2's hook list. Check: `tests/compound/`
-  (B1).
+  route). A part's DERIVATION (B2) is `PcrecEmitIn.derive`, which
+  `compile_driver` runs as the second entry of its TREE-HOOK LIST, after the
+  composer, at the composer's position; its report goes to the caller's
+  `PcrecDeriveReport`. Check: `tests/compound/` (B1, B2).
 
 - **internal.h / compile.c ([COMPOUND] B0, lane cpb02, 2026-10-12)** —
   `PcrecEntry`, `PcrecEntryReq` and `PcrecEmitIn` are declared at the top of

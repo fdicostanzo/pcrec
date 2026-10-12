@@ -88,6 +88,18 @@ typedef enum {
  * driver-tier input the compound tool sets (compound.md §A.3-§A.5) and no
  * `pcrec_options` field carries. NULL on every public compile, which is the
  * default request (the public default set exported) and no part mode. */
+/* [COMPOUND] What a derivation reports (src/opt/derive.c): written through
+ * `PcrecEmitIn.derive_report` when the caller asks, on every attempt. */
+typedef struct {
+    const char *decline;   /* NULL, or why the part refuses (A2) */
+    int killed;            /* floor anchors killed: P's count less Q's */
+    int killed_g;          /* of which `\G` */
+    int pruned_arms;       /* never alternatives dropped */
+    int kept_never;        /* never alternatives kept for a reachable group */
+    bool never;            /* Q matches nothing: the floor-only form */
+    bool has_g;            /* P carries a `\G` */
+} PcrecDeriveReport;
+
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
@@ -96,6 +108,11 @@ typedef struct {
      * slot. NULL: an ordinary artifact, `bound` unread. */
     const char *part_role;
     PcrecPartBound part_bound;
+    /* THE DERIVATION (compound.md §B.1): a tree rewrite the driver runs after
+     * the composer, the hook list's second entry; NULL none. Its report, if
+     * the caller wants one, goes to `derive_report`. */
+    PcrecComposeFn derive;
+    PcrecDeriveReport *derive_report;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -3893,7 +3910,17 @@ enum {
      *
      * registry_check asserts BOTH halves: every RF_INDEX row has a `tail` and
      * a `family`, and no (kind, sel, text) arbitration anywhere returns one. */
-    RF_INDEX = 1u << 6
+    RF_INDEX = 1u << 6,
+
+    /* [COMPOUND] THE ATTEMPT-SCOPE COLUMN (docs/design/compound.md §B.8): the
+     * construct's effect spans attempts or observes their order, so a
+     * compound, whose controller runs the pattern's attempts as separate
+     * calls, must decline it (`pcrec_ast_crosses_attempts`, admission A3).
+     * Set on the callout row. The four attempt-crossing backtracking verbs,
+     * (*COMMIT) (*SKIP) (*PRUNE) (*THEN), are ROADMAP_NEVER and refused at
+     * parse, so no node carries them; a verb producer would stamp its node
+     * with a row stating this column per name. A new row states it here. */
+    RF_CROSSES_ATTEMPTS = 1u << 7
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -7169,6 +7196,15 @@ int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
                        pcrec_error *err);
 
+/* ---- [COMPOUND] derivations (src/opt/derive.c) ---------------------------
+ *
+ * `pcrec_derive_split_q`: [MATCH-SPLIT]'s Q -- P with its floor anchors
+ * killed and pruned (compound.md §B.1). A tree-hook (PcrecComposeFn); a
+ * decline refuses the compile. `pcrec_ast_crosses_attempts`: does a node
+ * carry a row with RF_CROSSES_ATTEMPTS (admission A3). */
+struct Ast *pcrec_derive_split_q(Ctx *cx, struct Ast *root);
+bool pcrec_ast_crosses_attempts(const struct Ast *root);
+
 /* ---- [COMPOUND] the compound tool's parts (src/core/compound.c) ----------
  *
  * docs/design/compound.md §A.1/§A.5. A PART is the unchanged pipeline run on
@@ -7185,6 +7221,7 @@ typedef struct {
     PcrecComposeFn fn;      /* NULL only on `pcrec_derive_none` */
 } PcrecDerive;
 extern const PcrecDerive pcrec_derive_none;
+extern const PcrecDerive pcrec_derive_split_q_row;   /* src/opt/derive.c */
 
 /* A part's engine, stated: the zero value is UNSTATED, never AUTO. */
 typedef enum {
@@ -7220,12 +7257,12 @@ const char *pcrec_comp_part_check(const CompPart *part);
 
 /* Compiles `pattern` as part `part` of a compound whose parent options are
  * `parent` (its `prefix` the compound's), into `out->c_src` (self-contained
- * text, no header). Returns 0, or -1 with `err` filled: a part the pattern
+ * text, no header); the part's derivation reports to `report` (or NULL). Returns 0, or -1 with `err` filled: a part the pattern
  * cannot compile under its options REFUSES, which declines its row. An
  * unstated or inconsistent part is an internal-error refusal. */
 int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
-                       const CompPart *part, pcrec_output *out,
-                       pcrec_error *err);
+                       const CompPart *part, PcrecDeriveReport *report,
+                       pcrec_output *out, pcrec_error *err);
 
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse
  * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled

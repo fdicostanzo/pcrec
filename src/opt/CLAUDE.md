@@ -154,6 +154,26 @@ construction (src/ir) and emission (src/gen).
   it is widened into exactly this propagation. One mechanism instead of two,
   with a cell for each half in `tests/recursion/inlookaround.rxt`.
 
+- **derive.c** — [COMPOUND] build step B2 (lane cpb02, 2026-10-12;
+  `docs/design/compound.md` §B.1, §B.8, §E.3 G5): DERIVATIONS, tree rewrites
+  that make a compound's part from its parent, run as the driver's tree-hook
+  list's second entry (after the composer, before `pcrec_altcls`).
+  `pcrec_derive_split_q` is [MATCH-SPLIT]'s Q: KILL every `\G` (required) and
+  every `^`/`\A` with no `(?m)` (route only) to the never node (an empty
+  `A_CLASS`), except inside a lookbehind or a group called (transitively)
+  from one, where a `\G` DECLINES; then PRUNE bottom-up (a never `CAT` item,
+  a never `ALT` arm dropped, `REP{>=1}`/positive `LOOK`/groups of never are
+  never, `REP{0,...}`/negative `LOOK` of never are EMPTY) under the
+  GROUP-KEEP RULE (a call or backreference target is never deleted: its arm
+  stays as a never arm, counted for A2). Spines iterative, no `.body`
+  descent, no `default:`. An independent walk of P and of Q checks G5 (no
+  `\G` survives, every surviving `^`/`\A` in a lookbehind region, no kept
+  group deleted) and gives the killed count as P's anchors less Q's; "nothing
+  killed" declines. The report (`PcrecDeriveReport`) goes to
+  `PcrecEmitIn.derive_report`. `pcrec_ast_crosses_attempts` reads the
+  registry's attempt-scope column (`RF_CROSSES_ATTEMPTS`) off a node's row
+  (A3, B4's). Check: `tests/compound/` (B2, against the twin by language).
+
 - **lower_enc.c** — [M5.0] THE ENCODING LOWERING: the AST→AST rewrite that
   turns a tree of CODE-POINT classes into one the byte tier can express, and
   the one pass in this compiler that knows how an encoding spells a character.
