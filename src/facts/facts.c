@@ -71,6 +71,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         break;
     case PF_END_PIN:      pf->end_pin = PCREC_EPIN_NONE; break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
+    case PF_END_MARK:     pf->end_mark = (EndMark){ 0, false, NULL }; break;
     case PF_REQ_SET:
         memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
         pf->req_set.rightmost = -1;
@@ -164,7 +165,7 @@ static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
                 code == PF_WHY_GSTART || code == PF_WHY_UNBOUNDED ||
                 code == PF_WHY_NULLABLE || code == PF_WHY_ASSERT_AT_START ||
                 code == PF_WHY_DEAD_START || code == PF_WHY_ALIVE_NOT_ACCEPT ||
-                code == PF_WHY_ASSERT_AFTER;
+                code == PF_WHY_ASSERT_AFTER || code == PF_WHY_CALL;
     pf->have |= pf_bit(f);
     pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
                           (unsigned char)code, 0 };
@@ -262,6 +263,20 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
                                           pf->root, pf->end_pin,
                                           (PfWhyCode)pf->why[PF_END_PIN].code, &why);
+        break;
+    case PF_END_MARK:
+        /* The pin is asked along the DEPENDS-ON edge: only an `eol` pin has
+         * `$`/`\Z` ends to mark, and its decline reason is this fact's. */
+        pf_ask(cx, PF_END_PIN, false);
+        if (pf->end_pin != PCREC_EPIN_EOL) {
+            /* A `\z` pin has no `$` to mark (a plain empty answer); no pin
+             * at all declines with the pin's own reason. */
+            pf->end_mark = (EndMark){ 0, false, NULL };
+            if (pf->end_pin == PCREC_EPIN_NONE)
+                why = (PfWhyCode)pf->why[PF_END_PIN].code;
+            break;
+        }
+        why = pcrec_end_mark(&cx->arena, pf->root, &pf->end_mark);
         break;
     case PF_REQ_SET:
     case PF_REQ_SET_MAXOFF:
@@ -431,6 +446,12 @@ long long pcrec_fact_end_window(Ctx *cx)
 {
     pf_ask(cx, PF_END_WINDOW, true);
     return cx->job->pf.end_window;
+}
+
+const EndMark *pcrec_fact_end_mark(Ctx *cx)
+{
+    pf_ask(cx, PF_END_MARK, true);
+    return &cx->job->pf.end_mark;
 }
 
 const ReqSet *pcrec_fact_req_set(Ctx *cx)
@@ -610,6 +631,22 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     case PF_END_WINDOW:
         if (pf->end_window < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%lld", pf->end_window);
+    case PF_END_MARK: {
+        /* `<n>:complete|partial`, then the walk FORM the compile chose from
+         * it and, on `tagged`, `mark_prio` (D164 add. 2 Q4: the mark is
+         * internal bookkeeping, visible in pcrec's own listings only). */
+        const Job *job = cx->job;
+        const char *t;
+        if (pf->end_mark.ntails == 0) t = "none";
+        else t = pcrec_sb_fragf(&cx->arena, "%d:%s", pf->end_mark.ntails,
+                                pf->end_mark.complete ? "complete" : "partial");
+        if (job->revend_form != RF_UNASKED)
+            t = pcrec_sb_fragf(&cx->arena, "%s,form=%s", t,
+                               pcrec_revend_form_name(job->revend_form));
+        if (job->mark_prio != MP_UNASKED)
+            t = pcrec_sb_fragf(&cx->arena, "%s,prio=%s", t, pcrec_mark_prio_name(cx));
+        return t;
+    }
     case PF_REQ_SET: {
         StrBuf sb = { 0 };
         const char *t;

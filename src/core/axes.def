@@ -178,6 +178,8 @@ PCREC_AXIS(PCREC_NO_START_WIDTH,  "-fno-start-width",  0, "", PCREC_AXIS_DEFAULT
 PCREC_AXIS(PCREC_NO_START_LANDING, "-fno-start-landing", 0, "", PCREC_AXIS_DEFAULT_ON)
 /* [OPT-REVEND] the reverse-from-end LOCATE row (`rev-end`). */
 PCREC_AXIS(PCREC_NO_REV_END,      "-fno-rev-end",      0, "", PCREC_AXIS_DEFAULT_ON)
+/* [D164 B3] the `rev-end` walk's one-walk forms (`rev-end-form`). */
+PCREC_AXIS(PCREC_NO_REV_END_ONEWALK, "-fno-rev-end-onewalk", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the CONTRACT axes ([K50], [UTF-VALID]) -----------------------------
  * Axes whose settings describe different real SEMANTICS for one input class,

@@ -2272,6 +2272,17 @@ typedef struct {
      * search-and-filter fallback. Never set on a mandatory machine — that
      * path still `pcrec_ctx_fail`s. */
     bool     overflowed;
+    /* D164 B3 IS EVERY ACCEPT CELL A DISTANCE SET (docs/design/endmark.md
+     * §R.3): `DView.accept` holds bit d for each mark distance d that can
+     * accept there, where an untagged machine holds 0/1, i.e. the set {0}.
+     * Set by `pcrec_build_dfa` from its NFA (an `N_ACCEPT` with `dist > 0`
+     * exists only in a machine built with the end mark lowered), so it is a
+     * fact of the build, never a caller's claim; the four sites that COMPARE
+     * two accepts compare values on every machine, and every other reader
+     * tests truth. False on every machine a non-F2 artifact carries, which
+     * the build checks (an untagged machine with a value above 1 is an
+     * internal error). */
+    bool     tagged;
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
 } Dfa;
@@ -2813,6 +2824,29 @@ typedef struct {
  * branch, after the E3 seal: the walk is an E3 fact. */
 void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o);
 
+/* D164 B3 THE `rev-end` WALK's FORM: the rows of `revend_forms[]`
+ * (src/gen/emit_dfa.c; docs/design/endmark.md §R.1), in table order.
+ * `RF_UNASKED` is zero so a fresh `Job` holds it: the table is asked only on
+ * an `end_pin = eol` body whose LOCATE row is `rev-end`. */
+typedef enum {
+    RF_UNASKED = 0,
+    RF_DENIED,      /* F0: -fno-rev-end-onewalk: today's two-seed walk */
+    RF_ONE_SEED,    /* F1: no tie possible: one seed chosen by the last byte */
+    RF_TAGGED,      /* F2: the lowered machines, one walk, the distance set */
+    RF_TWO_SEED,    /* F3: can consume a final newline, cannot tie */
+    RF_OVERFLOW     /* F4: otherwise (a lowered build declined) */
+} RevendForm;
+
+/* D164 B3 `mark_prio` (endmark.md §R.1.4): which distance leftmost-first
+ * priority picks wherever several accept, over the unpruned anchored machine
+ * of the lowered NFA. Asked only on F2. */
+typedef enum {
+    MP_UNASKED = 0,
+    MP_NONE,        /* no reachable END closure holds two distances */
+    MP_CONST,       /* one recorded value, `Job.mark_prio_c` */
+    MP_STATE        /* more than one (or the probe's cap overflowed) */
+} MarkPrio;
+
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
     Nfa    nfa;      /* forward NFA (unanchored-wrapped for ENG_UNANCH) */
@@ -2831,6 +2865,17 @@ typedef struct {
      * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
      * this predicate; false selects the search-and-filter fallback. */
     bool   anchored_ok;
+    /* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1), asked
+     * once per compile by the driver after the three machines are built
+     * (`pcrec_revend_form`). The four bools are the rows' inputs, written by
+     * the driver: `nl_last` off TODAY's reverse machine, before anything is
+     * replaced; then whether the lowered machines were built, all fit, and
+     * whether the tagged one carries a tie (§R.1.2). `mark_prio` and its
+     * constant are F2's FINISH fact (§R.1.4). */
+    RevendForm revend_form;
+    bool   revend_nl_last, revend_built, revend_fit, revend_tie;
+    MarkPrio mark_prio;
+    int    mark_prio_c;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
@@ -7130,6 +7175,19 @@ typedef struct {
     const char *desc;
 } PcrecCandListRow;
 bool pcrec_cand_list_row(const char *axis, int i, PcrecCandListRow *out);
+
+/* D164 B3 THE `rev-end` WALK's FORM (src/gen/emit_dfa.c's `revend_forms[]`,
+ * docs/design/endmark.md §R.1): whether the table applies to this compile (an
+ * `end_pin = eol` body whose LOCATE row is `rev-end`), `nl_last` off the
+ * reverse machine the Job holds now, the first-match walk over the
+ * `Job.revend_*` inputs, and a form's row name. */
+bool        pcrec_revend_form_asked(Ctx *cx);
+bool        pcrec_revend_nl_last(Ctx *cx);
+RevendForm  pcrec_revend_form(Ctx *cx);
+const char *pcrec_revend_form_name(RevendForm f);
+/* The compile's `mark_prio` as the listings spell it: `const<c>`, `none`,
+ * `state-dependent`, or `unasked`. Arena text. */
+const char *pcrec_mark_prio_name(Ctx *cx);
 
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 

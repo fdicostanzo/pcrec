@@ -9477,6 +9477,17 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         pf_note = vm_rolef(v, pfa->note, cx->dfa_overflow_why);
     }
     vm_row3(o, "prefilter", pf_val, pf_note);
+    /* D164 B3 the prefilter body's `rev-end` walk FORM and, on `tagged`, the
+     * `mark_prio` fact (docs/design/endmark.md §R.1, D164 add. 2 Q4: the mark is
+     * internal bookkeeping, visible only in pcrec's own listings). Listed only
+     * where the form table was asked, `root-minw`'s shape. */
+    if (cx->job->revend_form != RF_UNASKED) {
+        vm_row3(o, "rev-end-form", pcrec_revend_form_name(cx->job->revend_form),
+                "the prefilter body's reverse-from-end walk (endmark.md R.1)");
+        if (cx->job->mark_prio != MP_UNASKED)
+            vm_row3(o, "mark-prio", pcrec_mark_prio_name(cx),
+                    "which mark distance priority picks where several accept (R.1.4)");
+    }
     /* [DD-14.EMPTY] the ROOT MINIMUM WIDTH, listed only when it reached the
      * analysis ceiling -- the debug-listing half of the artifact stamp
      * `<PREFIX>_VM_ROOT_MINW`, off the SAME `root_minw` value the emitted

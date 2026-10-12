@@ -279,6 +279,17 @@ static void build_anchored_dfa(Ctx *cx)
     cx->job->anchored_ok = true;
 }
 
+/* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1, §R.2.1),
+ * decided once the forward, reverse and anchored machines exist: `nl_last` is
+ * read off TODAY's reverse machine and the first-match table
+ * (`pcrec_revend_form`, src/gen/emit_dfa.c) is walked. */
+static void revend_choose_form(Ctx *cx)
+{
+    Job *job = cx->job;
+    job->revend_nl_last = pcrec_revend_nl_last(cx);
+    job->revend_form = pcrec_revend_form(cx);
+}
+
 /* [M4.5c] ONE driver, two callers. `pcrec_compile` and DD-8's `pcrec_emit_ir`
  * differ only in whether the VM emitter also renders its program listing, and
  * that difference is a single bool — so they share this function rather than
@@ -2589,6 +2600,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
                                    pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
                 build_anchored_dfa(&cx);
+                /* D164 B3 the `rev-end` walk's form, once the three machines
+                 * exist (endmark.md §R.2.1's order). */
+                if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the

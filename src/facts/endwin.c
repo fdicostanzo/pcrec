@@ -60,6 +60,8 @@
  * (4) and the walk are the pin's; (1) and (2) stay the window's, and the
  * window READS the pin, so the two cannot drift. */
 
+#include <string.h>
+
 #include "core/internal.h"
 #include "enc/enc.h"
 #include "facts/facts_derive.h"
@@ -76,14 +78,24 @@ enum { EW_NONE = 0, EW_EOL, EW_Z };
  * number and nothing else). `\z` allows nothing. */
 #define EW_EOL_SLACK 1
 
-/* Which end-anchor does EVERY match of `a` satisfy at its own end?
+/* D164 B3 the end mark's tail set (`EndMark.tail`): is `a` one of them? */
+static bool em_is_tail(const EndMark *em, const Ast *a)
+{
+    for (int i = 0; em && i < em->ntails; i++)
+        if (em->tail[i] == a) return true;
+    return false;
+}
+
+/* Which end-anchor does EVERY match of `a` satisfy at its own end? With `em`
+ * (D164 B3), a `$`/`\Z` in the end mark's tail set answers `\z`: the view of
+ * the tree with those tails lowered to `\n?\z`, the question `complete` asks.
  *
  * The `A_CAT` spine is walked ITERATIVELY down `->r` for `src/opt/mrl.c`'s
  * reason. A left-leaning concatenation puts the long spine on `->l`, so this
  * walk's iteration is the CHEAP direction and its recursion the expensive
  * one — the mirror image of `src/facts/startanch.c`'s, which is why the two are
  * separate functions rather than one with a direction parameter. */
-static int ew_walk(const Ast *a)
+static int ew_walk_marked(const Ast *a, const EndMark *em)
 {
     for (;;) {
         switch (a->k) {
@@ -94,10 +106,10 @@ static int ew_walk(const Ast *a)
              * exact test for "always zero-width"; `pcrec_minw(r) == 0` would
              * be "zero-width on SOME path" and would let `abc$(?:x|)` claim
              * the anchor on the path that consumed the `x`. */
-            int r = ew_walk(a->r);
+            int r = ew_walk_marked(a->r, em);
             if (pcrec_cwmax(a->r) != 0) return r;
             if (r == EW_Z) return EW_Z;
-            { int l = ew_walk(a->l); return l > r ? l : r; }
+            { int l = ew_walk_marked(a->l, em); return l > r ? l : r; }
         }
         case A_CAP:
         case A_ATOMIC:
@@ -110,7 +122,7 @@ static int ew_walk(const Ast *a)
         case A_ALT: {
             /* THE WEAKEST OF THE TWO, because the claim is "every match": a
              * `\z` branch and a `$` branch together promise only `$`. */
-            int l = ew_walk(a->l), r = ew_walk(a->r);
+            int l = ew_walk_marked(a->l, em), r = ew_walk_marked(a->r, em);
             return l < r ? l : r;
         }
         case A_REP:
@@ -123,7 +135,8 @@ static int ew_walk(const Ast *a)
             return EW_Z;
         case A_EOL:
             /* D62 control 3 — decline (4) in the header. */
-            return a->u.anch.multiline ? EW_NONE : EW_EOL;
+            if (a->u.anch.multiline) return EW_NONE;
+            return em_is_tail(em, a) ? EW_Z : EW_EOL;
         /* Consumes a byte, so the match does not end where it began. */
         case A_CLASS:
         /* Zero-width and END-blind: each says something about the start, the
@@ -148,6 +161,9 @@ static int ew_walk(const Ast *a)
         }
     }
 }
+
+/* The plain view: no tail is lowered. */
+static int ew_walk(const Ast *a) { return ew_walk_marked(a, NULL); }
 
 /* `pcrec_ast_visit` callback: did we see a `\G` anywhere? Decline (3). */
 static void ew_see_gstart(void *ud, const Ast *a)
@@ -215,4 +231,108 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root, int pin,
 
     *why = PF_WHY_NONE;
     return w + (pin == PCREC_EPIN_Z ? 0 : EW_EOL_SLACK);
+}
+
+/* ---- D164 B3: THE END MARK's TAILS (docs/design/endmark.md §1.1, §R.2) ---
+ *
+ * A node is in TAIL position when nothing consumes or asserts after it before
+ * the match is accepted: the root; the last element of a concatenation
+ * (trailing empty `(?:)` elements skipped); every arm of an alternation in a
+ * tail; the body of a capture or an atomic group in a tail; the body of a
+ * repeat in a tail whose maximum is 1. A repeat with max > 1 is not a tail for
+ * its body (the body re-enters at the mark, not after the tail: §1.1's
+ * planted `through-rep`). A path-final non-multiline `$`/`\Z` there is
+ * `(?=\n?\z)` in tail position, which lowers EXACTLY to the mark then `\n?\z`
+ * (§1.2): its lowering is an NFA-build parameter (`pcrec_build_nfa_marked`),
+ * never a rewrite of this tree (§R.2). `\z` consumes nothing and is never a
+ * tail; a lookahead is not lowered by B3. */
+
+typedef struct {
+    Arena       *ar;
+    EndMark     *em;
+    int          cap;
+} EmWalk;
+
+/* Appends tail node `a` to the walk's set, growing it in the arena. */
+static void em_push(EmWalk *w, const Ast *a)
+{
+    if (w->em->ntails == w->cap) {
+        int ncap = w->cap ? w->cap * 2 : 4;
+        const Ast **nv = pcrec_arena_alloc(w->ar, (size_t)ncap * sizeof *nv);
+        if (w->em->ntails) memcpy(nv, w->em->tail, (size_t)w->em->ntails * sizeof *nv);
+        w->em->tail = nv;
+        w->cap = ncap;
+    }
+    w->em->tail[w->em->ntails++] = a;
+}
+
+/* Collects the tail `$`/`\Z` nodes under `a`, itself in tail position. The
+ * concatenation spine is LEFT-nested, so its last element is one step down
+ * `->r` and the trailing-empty skip walks `->l` iteratively; an alternation
+ * recurses on `->r` (one arm) and iterates down its `->l` spine. The switch
+ * names every kind (no `default:`, coding_guide §1.3). */
+static void em_tails(const Ast *a, EmWalk *w)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CAT:
+            while (a->k == A_CAT && a->r->k == A_EMPTY) a = a->l;
+            if (a->k == A_CAT) a = a->r;
+            continue;
+        case A_ALT:
+            em_tails(a->r, w);
+            a = a->l;
+            continue;
+        case A_CAP:
+        case A_ATOMIC:
+        case A_WCLASS:
+            a = a->l;
+            continue;
+        case A_REP:
+            if (a->u.rep.rmax != 1) return;   /* the body re-enters at the mark */
+            a = a->l;
+            continue;
+        case A_EOL:
+            if (!a->u.anch.multiline) em_push(w, a);
+            return;
+        /* Consumes, asserts something else, or is not lowered by B3. */
+        case A_END:
+        case A_CLASS:
+        case A_EMPTY:
+        case A_BOL:
+        case A_CTX:
+        case A_GSTART:
+        case A_KRESET:
+        case A_LOOK:
+        case A_BREF:
+        case A_VAR:
+        case A_CALL:
+            return;
+        }
+    }
+}
+
+/* `pcrec_ast_visit` callback: is there a subroutine call anywhere (L3)? */
+static void em_see_call(void *ud, const Ast *a)
+{
+    if (a->k == A_CALL) *(bool *)ud = true;
+}
+
+/* D164 B3 the `end_mark` fact (facts_derive.h): the tail set of `root`, and
+ * whether lowering it completes the pin, i.e. the tail-lowered view of the
+ * tree pins every match at `\z` (`ew_walk_marked`). Asked only on an `eol`
+ * pin. Declines (`PF_WHY_CALL`, `out` empty) where the pattern calls a
+ * subroutine: a call site re-enters a body with another continuation, so no
+ * node in it is path-final for every caller (endmark.md §1.3 L3). */
+PfWhyCode pcrec_end_mark(Arena *ar, const Ast *root, EndMark *out)
+{
+    bool call = false;
+    EmWalk w = { ar, out, 0 };
+
+    *out = (EndMark){ 0, false, NULL };
+    pcrec_ast_visit(root, em_see_call, &call);
+    if (call) return PF_WHY_CALL;
+    em_tails(root, &w);
+    out->complete = out->ntails > 0 && ew_walk_marked(root, out) == EW_Z;
+    return PF_WHY_NONE;
 }

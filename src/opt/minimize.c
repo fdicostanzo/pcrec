@@ -124,18 +124,25 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
          * seen replaces the old 16-entry direct table: at most
          * 2^PCREC_MAX_CTX_ATOMS keys exist in principle, and a machine
          * realizes a handful. */
-        uint32_t *keyseen = malloc((size_t)(n ? n : 1) * sizeof(uint32_t));
+        /* D164 B3 (endmark.md §R.3): the key is the accept VALUES over the
+         * atoms, each key held as the state that first showed it. On a tagged
+         * machine a value is a distance set and two different sets are two
+         * outputs; on every untagged machine a value is 0/1, so the keys and
+         * their first-occurrence ids are exactly the bit-vector keys'. */
+        int *keyseen = malloc((size_t)(n ? n : 1) * sizeof(int));
         if (!keyseen) {
             free(part); free(newpart); free(sig); free(htab); free(keys);
             pcrec_ctx_nomem(cx);
         }
         for (int i = 0; i < n; i++) {
-            uint32_t a = 0;
-            for (int u = 0; u < d->natoms; u++)
-                if (d->st[i].up[u].accept) a |= 1u << u;
             int k = 0;
-            while (k < nparts && keyseen[k] != a) k++;
-            if (k == nparts) keyseen[nparts++] = a;
+            for (; k < nparts; k++) {
+                const DState *r = &d->st[keyseen[k]];
+                int u = 0;
+                while (u < d->natoms && r->up[u].accept == d->st[i].up[u].accept) u++;
+                if (u == d->natoms) break;
+            }
+            if (k == nparts) keyseen[nparts++] = i;
             part[i] = k;
         }
         free(keyseen);

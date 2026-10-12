@@ -47,6 +47,9 @@ void pcrec_start_set(Ctx *cx, const Ast *root, StartSet *out);
  * structural ones), or `PF_WHY_NONE` with a window — the reason is the
  * derivation's to report, never the listing's to infer from `-1`. */
 int       pcrec_end_pin(const Ast *root, PfWhyCode *why);
+/* D164 B3 the end mark's tail walk (src/facts/endwin.c): fills `*out` (tails
+ * in `ar`), or answers the decline reason with `out` empty. */
+PfWhyCode pcrec_end_mark(Arena *ar, const Ast *root, EndMark *out);
 long long pcrec_end_window(const PcrecEnc *e, const Ast *root, int pin,
                            PfWhyCode pinwhy, PfWhyCode *why);
                                                      /* src/facts/endwin.c */

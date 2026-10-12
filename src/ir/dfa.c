@@ -1198,10 +1198,14 @@ static void tab_grow(Ctx *cx, Dfa *d)
     for (int s = 0; s < d->n; s++) tab_insert(d, s);
 }
 
-/* Are two class views the same closure? */
+/* Are two class views the same closure? The accept VALUES are compared, not
+ * their truth (D164 B3, endmark.md §R.3): on a tagged machine the value is
+ * the distance set, and two views with different sets are different states.
+ * Every untagged accept is 0/1, so there the value compare IS the truth
+ * compare. */
 static bool view_same(const DView *a, const DView *b)
 {
-    return a->nlist == b->nlist && (bool)a->accept == (bool)b->accept &&
+    return a->nlist == b->nlist && a->accept == b->accept &&
            (a->nlist == 0 ||
             memcmp(a->list, b->list, (size_t)a->nlist * sizeof(int)) == 0);
 }

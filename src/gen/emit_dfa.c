@@ -4032,11 +4032,14 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
 
 /* Does this state's accept bit depend on the next byte?
  *
- * [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
+ * [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? The
+ * VALUES are compared (D164 B3, endmark.md §R.3): a stay skip records the
+ * cell of the position it lands on, so a distance set that varies with the
+ * class must decline the skip just as a varying bit does. */
 static bool state_acc_varies(const Dfa *d, const DState *st)
 {
     for (int u = UPC_PLAIN + 1; u < d->natoms; u++) {
-        if ((bool)st->up[u].accept != (bool)st->up[UPC_PLAIN].accept)
+        if (st->up[u].accept != st->up[UPC_PLAIN].accept)
             return true;
     }
     return false;
@@ -10418,8 +10421,14 @@ static const char *cand_list_value(const CandRow *r, const CandList *l)
 /* The `i`th row (from 0) of `cand_rows[]` listed under `axis`, projected for
  * `--list-axes` (internal.h). The deny the listing shows is the row's own
  * plus the fact deny its listing names (`CandList.fact_deny`, §3.7). */
+static bool revend_form_list_row(int i, PcrecCandListRow *out);
+
 bool pcrec_cand_list_row(const char *axis, int i, PcrecCandListRow *out)
 {
+    /* D164 B3 the `rev-end` walk's FORM rows (`revend_forms[]`): a sub-axis of
+     * the `rev-end` LOCATE row, with no stamp (the form is internal
+     * bookkeeping, D164 add. 2 Q4; `--emit-ir`/`--emit-facts` show it). */
+    if (!strcmp(axis, "rev-end-form")) return revend_form_list_row(i, out);
     for (size_t k = 0; k < CAND_NROWS; k++) {
         const CandRow *r = &cand_rows[k];
         for (int rt = 0; rt < 3; rt++) {
@@ -11622,11 +11631,114 @@ static bool revend_nl_last(const Dfa *d)
     return ns == 8;   /* the bound reached: answer "can tie", the safe side */
 }
 
-/* Can the `rev-end` walk TIE: two seeds (`$`/`\Z`) and `nl_last`
- * (forward-declared at the top). */
+/* Can the `rev-end` walk TIE, so FINISH is asked for ENDSET (forward-declared
+ * at the top)? It depends on the walk's FORM (D164 B3, endmark.md §R.1):
+ * today's two-seed walk (F0, F4, and before the form is asked) ties where
+ * both seeds are possible (`$`/`\Z`) and `nl_last`; F1 and F3 cannot tie by
+ * their rows' own predicates; F2 ties where the tagged machine carries a
+ * distance set of two or more (the tie fact, §R.1.2). */
 static bool revend_ties(Ctx *cx)
 {
-    return pcrec_fact_end_pin(cx) == PCREC_EPIN_EOL && revend_nl_last(&cx->job->rdfa);
+    const Job *job = cx->job;
+    if (pcrec_fact_end_pin(cx) != PCREC_EPIN_EOL) return false;
+    switch (job->revend_form) {
+    case RF_UNASKED:  return revend_nl_last(&job->rdfa);
+    case RF_DENIED:
+    case RF_OVERFLOW: return job->revend_nl_last;
+    case RF_ONE_SEED:
+    case RF_TWO_SEED: return false;
+    case RF_TAGGED:   return job->revend_tie;
+    }
+    return false;
+}
+
+/* ---- D164 B3: THE WALK's FORM, a first-match table (endmark.md §R.1) -----
+ *
+ * Asked once per compile by the driver (`pcrec_revend_form`), after today's
+ * three machines are built, on an `end_pin = eol` body whose LOCATE row is
+ * `rev-end` (`pcrec_revend_form_asked`); a `\z`-only artifact has one seed and
+ * no form. The rows read the `Job.revend_*` inputs the driver wrote: `nl_last`
+ * off today's reverse machine, then the optional lowered builds' outcome. The
+ * walk is asked twice where it must be: once before anything is built (F0 and
+ * F1 need nothing), and again after the lowered builds (F2-F4). Rows are data,
+ * listable as the `rev-end-form` axis (`pcrec_cand_list_row`). */
+typedef struct {
+    const char *name;
+    uint64_t    deny;
+    bool      (*applies)(const Ctx *cx);
+    RevendForm  form;
+    const char *desc;
+} RevendFormRow;
+
+/* F0's predicate: the deny flag itself, so the listing names the row. */
+static bool rf_denied(const Ctx *cx)
+{ return pcrec_opt_has(cx->opt, PCREC_NO_REV_END_ONEWALK); }
+/* The total fallback. */
+static bool rf_always(const Ctx *cx) { (void)cx; return true; }
+
+static const RevendFormRow revend_forms[] = {
+    { "denied", 0, rf_denied, RF_DENIED,
+      "-fno-rev-end-onewalk: the two-seed walk (n, and n-1 before a final newline) with the tie code where a match can end by consuming the final newline (nl_last)" },
+    { "overflow", 0, rf_always, RF_OVERFLOW,
+      "always (fallback): the two-seed walk with the tie code where nl_last; reached when a lowered or tagged build overflowed its cap" },
+};
+enum { RF_NROWS = (int)(sizeof revend_forms / sizeof revend_forms[0]) };
+
+/* `pcrec_revend_form_asked` (internal.h): is this compile's body the `rev-end`
+ * walk over a `$`/`\Z` pin, i.e. does the form table apply? */
+bool pcrec_revend_form_asked(Ctx *cx)
+{
+    return pcrec_fact_end_pin(cx) == PCREC_EPIN_EOL &&
+           cand_locate_of(cx)->u.locate.emit[CAND_ROUTE_DFA] == emit_rev_end;
+}
+
+/* `pcrec_revend_nl_last` (internal.h): `nl_last` off the reverse machine the
+ * Job holds now (today's, before the driver replaces anything). */
+bool pcrec_revend_nl_last(Ctx *cx)
+{
+    return revend_nl_last(&cx->job->rdfa);
+}
+
+/* `pcrec_revend_form` (internal.h): the first row of `revend_forms[]` whose
+ * deny bit is clear and whose predicate holds over the `Job.revend_*` inputs. */
+RevendForm pcrec_revend_form(Ctx *cx)
+{
+    for (int k = 0; k < RF_NROWS; k++) {
+        const RevendFormRow *r = &revend_forms[k];
+        if (pcrec_flags_has(cx->opt->flags, r->deny)) continue;
+        if (r->applies(cx)) return r->form;
+    }
+    return RF_OVERFLOW;   /* unreachable: the last row always applies */
+}
+
+/* `pcrec_mark_prio_name` (internal.h). */
+const char *pcrec_mark_prio_name(Ctx *cx)
+{
+    switch (cx->job->mark_prio) {
+    case MP_UNASKED: return "unasked";
+    case MP_NONE:    return "none";
+    case MP_CONST:   return pcrec_sb_fragf(&cx->arena, "const%d", cx->job->mark_prio_c);
+    case MP_STATE:   return "state-dependent";
+    }
+    return "unasked";
+}
+
+/* Row `i` of `revend_forms[]` as `--list-axes` lists it, false past the end. */
+static bool revend_form_list_row(int i, PcrecCandListRow *out)
+{
+    if (i < 0 || i >= RF_NROWS) return false;
+    const RevendFormRow *r = &revend_forms[i];
+    *out = (PcrecCandListRow){ .name = r->name, .order = i + 1, .deny = r->deny,
+                               .stamp = "", .value = "", .desc = r->desc };
+    return true;
+}
+
+/* `pcrec_revend_form_name` (internal.h): a form's row name, the listings' token. */
+const char *pcrec_revend_form_name(RevendForm f)
+{
+    for (int k = 0; k < RF_NROWS; k++)
+        if (revend_forms[k].form == f) return revend_forms[k].name;
+    return "none";
 }
 
 /* Does this compile's body walk ask FINISH for a tie: `rev-end` is its

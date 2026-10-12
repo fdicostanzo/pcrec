@@ -1076,6 +1076,8 @@ char *pcrec_axes_tsv(void)
     /* [OPT-REVEND] L2 the LOCATE rows that are a choice (`rev-end`, the
      * composite): which walk produces the search's result. */
     emit_cand_axis(&sb, "locate");
+    /* D164 B3 the `rev-end` row's walk FORMS (`revend_forms[]`). */
+    emit_cand_axis(&sb, "rev-end-form");
     emit_dfa_list_axis(&sb, "table", "list", pcrec_dfa_axis_table_cands);
     emit_table_composite_rows(&sb);
     emit_cand_axis(&sb, "prefilter");

@@ -1181,6 +1181,17 @@ enum {
 #define PCREC_NO_START_WIDTH   PCREC_BIT(53)
 #define PCREC_NO_START_LANDING PCREC_BIT(54)
 
+/* [D164 B3] `-fno-rev-end-onewalk` -- deny the ONE-WALK forms of the `rev-end`
+ * locator (docs/spec/tuning.md §2.50; docs/design/endmark.md §R.1): `one-seed`
+ * (one seed chosen by the subject's last byte, where no match can end by
+ * consuming a final newline), `tagged` (the match-end mark lowered in every
+ * machine, one walk whose accept carries the mark distance) and `two-seed`
+ * without tie code. Denied, a `$`/`\Z` artifact keeps the two-seed walk with
+ * its tie code. Answer-identical, so the bit joins the derived strategy mask
+ * (masked out of `rx_info.flags`). Deny only. A `#define` for bit 32's
+ * reason. Bit 55 is the kit's (`-fno-kit-size-drop`, R17-b). */
+#define PCREC_NO_REV_END_ONEWALK PCREC_BIT(56)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every
