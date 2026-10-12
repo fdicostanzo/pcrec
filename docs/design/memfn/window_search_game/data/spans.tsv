@@ -1,0 +1,328 @@
+set	name	status	notes	anch_start	nspans	nbounded	kset_agree	engine	prefilter	offsets	req_run	handoff	spans
+capability	balanced-parens-rec	ok	alt-dropped,recursion	False	2	1	0/0	vm	-	-	none	none	(@mb=0,ov=0 )@mb=inf,ov=inf
+capability	base10num-near-miss	ok	assertion	True	1	1	-	dfa	none	none	none	none	\d@mb=1,ov=1
+capability	bracket-array-define	unparsed:unknown group name 'DEFINE' at position 8 (line 2, column 4)	-	-	0	0	-	vm	-	-	none	none	
+capability	codegrammar-flat	ok	-	False	3	1	2/0	vm	memchr	none	none	none	"[254]@mb=0,ov=0 "@mb=inf,ov=inf :@mb=inf,ov=inf
+capability	codegrammar-xflag	ok	-	False	3	1	2/0	vm	memchr	none	none	none	"[254]@mb=0,ov=0 "@mb=inf,ov=inf :@mb=inf,ov=inf
+capability	currency-lookbehind-fixed	ok	assertion,lookaround	False	1	1	1/0	dfa	memchr-bounded	none	none	none	\d@mb=0,ov=0
+capability	date-nested-plus	ok	assertion	True	2	1	0/0	vm	none	none	none	none	\d@mb=0,ov=0 [2]@mb=inf,ov=inf
+capability	doubled-word	ok	assertion,backref	False	2	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0 \s@mb=inf,ov=inf
+capability	dup-param-detect	ok	assertion,backref	False	4	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0 =@mb=inf,ov=inf &@mb=inf,ov=inf =@mb=inf,ov=inf
+capability	email-local-nodup	ok	lookaround	True	1	1	0/0	vm	none	none	none	none	[63]@mb=0,ov=0
+capability	email-nested-plus	ok	-	True	2	1	0/0	vm	none	none	none	none	[67]@mb=0,ov=0 @@mb=inf,ov=inf
+capability	evil-alt-nested	ok	assertion	True	0	0	-	vm	none	none	none	none	
+capability	file-ext-order	ok	alt-dropped	False	1	1	4/0	dfa	run-pinned	0*,1,2,3	2e746172@0	none	\x2etar@mb=0,ov=0
+capability	float-literal-bound	ok	lookaround	False	2	1	1/0	dfa	first-class-bounded	none	none	none	\d@mb=0,ov=0 \x2e\d@mb=inf,ov=inf
+capability	floor-byte	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	~@mb=0,ov=0
+capability	hex8-bounded	ok	assertion	False	1	1	8/0	dfa	first-class-bounded	none	none	none	[16][16][16][16][16][16][16][16]@mb=0,ov=0
+capability	high-byte-run	ok	rep-right	False	1	1	2/0	dfa	byte-class	none	none	none	[128][128]@mb=0,ov=0
+capability	ipv4-near-miss	ok	alt-dropped,assertion	True	4	4	-	dfa	none	none	none	none	\d\x2e@mb=2,ov=2 \d\x2e@mb=6,ov=4 \d\x2e@mb=10,ov=6 \d@mb=14,ov=8
+capability	keyword-prefix-order	ok	alt-dropped	False	1	1	2/0	dfa	offset-set	0,1*	696e@1	none	in@mb=0,ov=0
+capability	letters-bounded-tail-z	ok	assertion	False	0	0	-	dfa	none	none	none	none	
+capability	logparse-atomic-removed	ok	alt-dropped,assertion	True	3	3	0/0	vm	none	none	3a20@0	none	[7][6][6][5]@mb=0,ov=0 \x2e[7][7][6]@mb=6,ov=2 :\x20@mb=14,ov=6
+capability	logparse-atomic	ok	alt-dropped,assertion	True	3	3	0/0	vm	none	none	3a20@0	none	[7][6][6][5]@mb=0,ov=0 \x2e[7][7][6]@mb=6,ov=2 :\x20@mb=14,ov=6
+capability	mojibake-curly-quote	ok	-	False	2	1	1/0	dfa	memchr	none	none	none	\x93@mb=0,ov=0 \x94@mb=inf,ov=inf
+capability	negation-scope-lookbehind-var	ok	assertion,lookaround	False	1	1	-	?	-	-	-	-	available@mb=0,ov=0
+capability	nested-comment-rec	ok	alt-dropped,lookaround,recursion	False	2	1	0/0	vm	-	-	2a2f@0	none	/*@mb=0,ov=0 */@mb=inf,ov=inf
+capability	numeric-id-nested-plus	ok	assertion	True	1	1	0/0	vm	none	none	none	none	\d@mb=0,ov=0
+capability	phone-list-nested-plus	ok	assertion	True	1	1	0/0	vm	none	none	none	none	\d@mb=0,ov=0
+capability	phone-palindrome-6	ok	backref	False	1	1	0/0	vm	-	-	none	none	\d\d\d@mb=0,ov=0
+capability	pwd-strength-chain	ok	assertion,lookaround	True	1	1	0/0	vm	none	none	none	none	........@mb=0,ov=0
+capability	quoted-delim-match	ok	alt-dropped,backref,lookaround	False	1	1	0/0	vm	-	-	none	none	[2]@mb=0,ov=0
+capability	router-prefix-order	ok	alt-dropped	False	1	1	5/0	dfa	run-pinned	0*,1,2,3,4	2f75736572@0	none	/user@mb=0,ov=0
+capability	tag-depth3-bound	ok	alt-dropped,backref	False	4	1	0/0	vm	-	-	3c2f@0	none	<\w@mb=0,ov=0 >@mb=inf,ov=inf </@mb=inf,ov=inf >@mb=inf,ov=inf
+capability	tag-pair-match	ok	backref	False	4	1	0/0	vm	-	-	3c2f@0	none	<[52]@mb=0,ov=0 >@mb=inf,ov=inf </@mb=inf,ov=inf >@mb=inf,ov=inf
+capability	tail-digits-eol	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	\d@mb=0,ov=0
+capability	tail-dotstar-txt	ok	assertion	False	1	0	-	dfa	none	none	2e747874@2	none	\x2etxt@mb=inf,ov=inf
+capability	tail-ext-lower-txt	ok	assertion	False	2	1	1/0	dfa	none	none	2e747874@2	none	[26]@mb=0,ov=0 \x2etxt@mb=inf,ov=inf
+capability	tail-space-eol	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	\s@mb=0,ov=0
+capability	tail-word-eoz	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	\w@mb=0,ov=0
+capability	trim-nested-star	ok	assertion	True	0	0	-	vm	none	none	none	none	
+capability	utf8-lead-no-cont	ok	lookaround	False	1	1	1/0	dfa	byte-class-bounded	none	none	none	[30]@mb=0,ov=0
+capability	uuid-near-miss	ok	assertion	True	1	1	0/0	dfa	none	none	none	none	[22][22][22][22][22][22][22][22]-[22][22][22][22]-[5][22][22][22]-[6][22][22][22]-[22][22][22][22][22][22][22][22][22][22][22][22]@mb=0,ov=0
+capability	wild-codegrammar-json-array-begin	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	\x5b@mb=0,ov=0
+capability	wild-codegrammar-json-constant	ok	alt-dropped,assertion	False	1	1	4/0	dfa	first-class-bounded	none	none	none	[3][3][2][3]@mb=0,ov=0
+capability	wild-codegrammar-json-number-extended	ok	-	False	1	1	-	dfa	byte-class	none	none	none	\d@mb=1,ov=1
+capability	wild-codegrammar-json-object-begin	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	{@mb=0,ov=0
+capability	wild-codegrammar-json-stringcontent-escape	ok	alt-dropped	False	1	1	2/0	dfa	memchr	none	none	none	\[9]@mb=0,ov=0
+capability	wild-datetime-datefinder-alternation	ok	alt-dropped,rep-right	False	0	0	-	?	-	-	-	-	
+capability	wild-datetime-moment-iso8601	ok	alt-dropped,assertion	True	2	0	-	vm	none	none	none	none	[12]\d\d\d@mb=inf,ov=inf -[11]\d@mb=inf,ov=inf
+capability	wild-logparse-base10num-grok	ok	alt-dropped,lookaround	False	1	1	-	vm	byte-class-bounded	none	none	none	[11]@mb=1,ov=1
+capability	wild-logparse-base10num-noatomic	ok	alt-dropped,lookaround	False	1	1	-	dfa	byte-class-bounded	none	none	none	[11]@mb=1,ov=1
+capability	wild-logparse-quotedstring-grok	ok	alt-dropped,lookaround	False	1	1	1/0	vm	first-class-bounded	none	none	none	[3][any]@mb=0,ov=0
+capability	wild-logparse-quotedstring-noatomic	ok	alt-dropped,lookaround	False	1	1	1/0	dfa	first-class-bounded	none	none	none	[3][any]@mb=0,ov=0
+capability	wild-logparse-syslogbase-expanded	ok	alt-dropped,assertion,lookaround,rep-right	False	9	2	1/0	vm	first-class-bounded	none	none	none	[16]@mb=0,ov=0 \x20@mb=9,ov=7 \d@mb=inf,ov=inf \x20@mb=inf,ov=inf \d:[6]\d:@mb=inf,ov=inf \d@mb=inf,ov=inf \x20@mb=inf,ov=inf \x20[92]@mb=inf,ov=inf :@mb=inf,ov=inf
+capability	wild-logparse-winpath-grok	ok	alt-dropped	False	2	1	1/0	vm	byte-class	none	none	none	[53]@mb=0,ov=0 \@mb=inf,ov=inf
+capability	wild-secrets-aws-access-key-id	ok	assertion	False	1	1	20/0	vm	first-memchr-bounded	none	none	none	A[7][6][36][36][36][36][36][36][36][36][36][36][36][36][36][36][36][36][36]@mb=0,ov=0
+capability	wild-secrets-github-pat	ok	assertion	False	1	1	24/0	vm	offset-set-bounded	0,6*	6875625f7061745f@7	3	github_pat_\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w@mb=0,ov=0
+capability	wild-secrets-slack-webhook-url	ok	rep-right	False	2	2	24/0	vm	offset-set	0,6*	5256494345532f54@6/dfdfdfdfdfdfffdf	26	[2][2][2][2][2]://[2][2][2][2][2].[2][2][2][2][2].[2][2][2]/[2][2][2][2][2][2][2][2]/[2]\w\w\w\w\w\w\w\w/[2]\w\w\w\w\w\w\w\w@mb=0,ov=0 /\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w\w@mb=56,ov=4
+capability	wild-secrets-username-password-pair	ok	alt-dropped,rep-right	False	8	1	4/0	vm	byte-class	none	55534552@0/dfdfdfdf	0	[2][2][2][2]@mb=0,ov=0 =@mb=inf,ov=inf [2][67][67][67]@mb=inf,ov=inf [2]@mb=inf,ov=inf [2][2][2][2]@mb=inf,ov=inf =@mb=inf,ov=inf [2][254][254][254][254][254]@mb=inf,ov=inf [2]@mb=inf,ov=inf
+capability	wild-semdiv-altorder-foo-foobar-rustregex	ok	alt-dropped	False	1	1	3/0	dfa	run-pinned	0*,1,2	666f6f@0	none	foo@mb=0,ov=0
+capability	wild-semdiv-dollar-trailing-newline-pcre2	ok	assertion	False	1	1	3/0	dfa	none	none	616263@1	none	abc@mb=0,ov=0
+capability	wild-semdiv-empty-alt-repeat-pcre2	ok	alt-dropped	False	1	0	-	vm	byte-class	none	none	none	\d@mb=inf,ov=inf
+capability	wild-validator-email-owasp	ok	assertion	True	4	1	0/0	dfa	none	none	none	none	[67]@mb=0,ov=0 @[63]@mb=inf,ov=inf \x2e@mb=inf,ov=inf [52][52]@mb=inf,ov=inf
+capability	wild-validator-ipv4-owasp	ok	alt-dropped,assertion	True	3	3	-	vm	none	none	none	none	\x2e@mb=3,ov=2 \x2e@mb=7,ov=4 \x2e@mb=11,ov=6
+capability	wild-validator-us-zip-owasp	ok	assertion	True	1	1	0/0	vm	none	none	none	none	\d\d\d\d\d@mb=0,ov=0
+capability	wild-validator-uuid-grok	ok	-	False	1	1	24/0	dfa	offset-set	0,8*,13	none	none	[22][22][22][22][22][22][22][22]-[22][22][22][22]-[22][22][22][22]-[22][22][22][22]-[22][22][22][22][22][22][22][22][22][22][22][22]@mb=0,ov=0
+capability	wild-waf-crs-942140-dbnames	ok	alt-dropped,assertion	False	1	1	4/0	dfa	first-class-bounded	none	none	none	[14][20][19][23]@mb=0,ov=0
+capability	wild-waf-crs-942160-sleep-benchmark	ok	alt-dropped	False	2	1	5/0	dfa	byte-class	none	none	none	[4][4][4][4][4]@mb=0,ov=0 )@mb=inf,ov=inf
+capability	wild-waf-crs-942270-union-select	ok	-	False	3	1	5/0	dfa	byte-class	none	53454c454354@4/dfdfdfdfdfdf	none	[2][2][2][2][2]@mb=0,ov=0 [2][2][2][2][2][2]@mb=inf,ov=inf [2][2][2][2]@mb=inf,ov=inf
+capability	wild-waf-crs-942360-concat-sqli	ok	alt-dropped,assertion	True	0	0	-	dfa	none	none	none	none	
+capability	wild-waf-crs-942500-comment-obfuscation	ok	-	False	3	1	2/0	dfa	offset-set	0,1*	2a2f@0	none	/*@mb=0,ov=0 [2]@mb=inf,ov=inf */@mb=inf,ov=inf
+capability	winpath-near-miss	ok	assertion	True	2	1	0/0	dfa	none	none	3a5c@1	none	[52]:\@mb=0,ov=0 [247]@mb=inf,ov=inf
+loglines	bignum	ok	assertion,rep-right	False	1	1	10/0	dfa	first-class-bounded	none	none	none	\d\d\d\d\d\d\d\d\d\d@mb=0,ov=0
+loglines	floor	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	:@mb=0,ov=0
+loglines	hex32-id	ok	assertion	False	1	1	24/0	dfa	first-class-bounded	none	none	none	[16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16][16]@mb=0,ov=0
+loglines	http-5xx	ok	alt-dropped,assertion	False	3	2	4/0	dfa	memchr-bounded	none	5454502f312e3022@2/fffffffffffffeff	none	"[4][4][4]@mb=0,ov=0 \x20[254]@mb=7,ov=3 \x20HTTP/1\x2e[2]"\x205\d\d@mb=inf,ov=inf
+loglines	ipv4	ok	alt-dropped	False	4	4	-	dfa	handoff	none	none	3	\d\x2e@mb=2,ov=2 \d\x2e@mb=6,ov=4 \d\x2e@mb=10,ov=6 \d@mb=14,ov=8
+loglines	ipv6	ok	alt-dropped,rep-right	False	1	1	1/0	dfa	handoff	none	none	4	[16]@mb=0,ov=0
+loglines	iso-ts	ok	alt-dropped,rep-right	False	1	1	19/0	dfa	offset-set	0,4*	none	none	\d\d\d\d-\d\d-\d\d[2]\d\d:\d\d:\d\d@mb=0,ov=0
+loglines	kv-quoted	ok	alt-dropped,assertion	False	3	2	1/0	dfa	handoff	none	3d22@1	32	[27]@mb=0,ov=0 ="@mb=32,ov=31 "@mb=inf,ov=inf
+loglines	level-context	ok	alt-dropped,assertion	False	2	2	4/0	vm	first-class-bounded	none	none	none	[3][2][3][3]@mb=0,ov=0 [4][3][4][3][5][5]@mb=205,ov=201
+loglines	stack-frame	ok	alt-dropped,assertion	False	6	1	4/0	dfa	offset-set-bounded	0,1*	617420@0	0	at\x20[54]@mb=0,ov=0 \x2e[54]@mb=inf,ov=inf \x2e@mb=inf,ov=inf [54]@mb=inf,ov=inf ([64]@mb=inf,ov=inf )@mb=inf,ov=inf
+loglines	uuid	ok	assertion	False	1	1	24/0	dfa	offset-set-bounded	0,8*,13	none	none	[16][16][16][16][16][16][16][16]-[16][16][16][16]-[5][16][16][16]-[4][16][16][16]-[16][16][16][16][16][16][16][16][16][16][16][16]@mb=0,ov=0
+syntax	alt-nested	ok	-	False	1	1	3/0	dfa	byte-class	none	none	none	[2][2][2]@mb=0,ov=0
+syntax	alt-two	ok	-	False	1	1	3/0	dfa	byte-class	none	none	none	[2][2][2]@mb=0,ov=0
+syntax	anc-a-uc	ok	-	True	1	1	0/0	dfa	none	none	6974656d@3	none	item@mb=0,ov=0
+syntax	anc-caret	ok	-	True	1	1	0/0	dfa	none	none	6974656d@3	none	item@mb=0,ov=0
+syntax	anc-dollar	ok	assertion	False	1	1	4/0	dfa	none	none	646f6e65@0	none	done@mb=0,ov=0
+syntax	anc-g-uc	ok	gstart	True	1	1	0/0	dfa	none	none	6974656d@3	none	item@mb=0,ov=0
+syntax	anc-m-caret	ok	anchor-line	False	1	1	0/0	dfa	memchr	none	6974656d@3	0	item@mb=0,ov=0
+syntax	anc-m-dollar	ok	assertion	False	1	1	4/0	dfa	offset-set-bounded	0,2*	646f6e65@0	0	done@mb=0,ov=0
+syntax	anc-z-lc	ok	assertion	False	1	1	4/0	dfa	none	none	646f6e65@0	none	done@mb=0,ov=0
+syntax	anc-z-uc	ok	assertion	False	1	1	4/0	dfa	none	none	646f6e65@0	none	done@mb=0,ov=0
+syntax	asr-k-uc	ok	kreset	False	1	1	5/0	vm	run-pinned	0,1,2,3*	6b65793d@3	none	key=\w@mb=0,ov=0
+syntax	asr-nwb	ok	assertion	False	1	1	3/0	dfa	offset-set-bounded	0,1*	636174@0	0	cat@mb=0,ov=0
+syntax	asr-wb	ok	assertion	False	1	1	3/0	dfa	offset-set-bounded	0,1*	636174@0	0	cat@mb=0,ov=0
+syntax	bak-1	ok	backref	False	2	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0 \x20@mb=inf,ov=inf
+syntax	bak-2	ok	backref	False	1	1	0/0	vm	-	-	none	none	\w\w@mb=0,ov=0
+syntax	bak-g-rel	ok	backref	False	2	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0 \x20@mb=inf,ov=inf
+syntax	bak-k-named	ok	backref	False	4	1	0/0	vm	-	-	3c2f@0	none	<\w@mb=0,ov=0 >@mb=inf,ov=inf </@mb=inf,ov=inf >@mb=inf,ov=inf
+syntax	bak-py	ok	backref	False	2	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0 \x20@mb=inf,ov=inf
+syntax	cls-d	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	\d@mb=0,ov=0
+syntax	cls-dot	ok	-	False	1	1	3/0	dfa	memchr	none	none	none	c.t@mb=0,ov=0
+syntax	cls-fold-pair	ok	-	False	1	1	3/0	dfa	handoff	none	634174@0/ffdfff	0	c[2]t@mb=0,ov=0
+syntax	cls-h	ok	-	False	3	1	3/0	dfa	memchr	none	76616c7565@0	none	key@mb=0,ov=0 =@mb=inf,ov=inf value@mb=inf,ov=inf
+syntax	cls-i-class	ok	-	False	1	1	3/0	dfa	byte-class	none	none	none	[2][10][2]@mb=0,ov=0
+syntax	cls-mixed-case	ok	-	False	1	1	3/0	dfa	memchr	none	none	none	c[52]t@mb=0,ov=0
+syntax	cls-n-uc	ok	-	False	1	1	4/0	dfa	offset-set	0,3*	6974@0	0	it.m@mb=0,ov=0
+syntax	cls-negset	ok	-	False	1	1	3/0	dfa	memchr	none	none	none	c[251]t@mb=0,ov=0
+syntax	cls-pair-ctl	ok	-	False	1	1	3/0	dfa	handoff	none	636174@0/fffdff	0	c[2]t@mb=0,ov=0
+syntax	cls-posix	ok	-	False	1	1	0/1	dfa	byte-class	none	none	none	[6]\x5d@mb=0,ov=0
+syntax	cls-range	ok	-	False	1	1	3/0	dfa	offset-set	0,1*	3078@1	none	0x[22]@mb=0,ov=0
+syntax	cls-s-lc	ok	-	False	2	1	4/0	dfa	memchr	none	736174@0	none	cat\s@mb=0,ov=0 sat@mb=inf,ov=inf
+syntax	cls-s-uc	ok	-	False	2	1	1/0	dfa	byte-class	none	none	none	\S@mb=0,ov=0 @\S@mb=inf,ov=inf
+syntax	cls-v	ok	-	False	2	1	4/1	dfa	offset-set	0,3*	646f6e65@0	none	item\x0b@mb=0,ov=0 done@mb=inf,ov=inf
+syntax	cls-w	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	\w@mb=0,ov=0
+syntax	cnd-group	ok	alt-dropped,conditional	False	1	1	-	?	-	-	-	-	item@mb=1,ov=1
+syntax	esc-cr	ok	-	False	1	1	10/0	dfa	run-pinned	0,1,2,3,4*,5,6,7,8	74656d0d0a646f6e@3	none	item\x0d\x0adone@mb=0,ov=0
+syntax	esc-ctrl	ok	-	False	1	1	-	?	-	-	-	-	bell\x07end@mb=0,ov=0
+syntax	esc-hex-braced	ok	-	False	1	1	4/0	dfa	run-pinned	0,1,2,3*	636166e9@3	none	caf\xe9@mb=0,ov=0
+syntax	esc-hex	ok	-	False	1	1	3/0	dfa	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	esc-nl	ok	-	False	1	1	9/0	dfa	run-pinned	0,1,2,3,4*,5,6,7	6974656d0a646f6e@4	none	item\x0adone@mb=0,ov=0
+syntax	esc-octal-0	ok	-	False	1	1	9/0	dfa	run-pinned	0,1,2,3*,4,5,6,7	6974656d20646f6e@3	none	item\x20done@mb=0,ov=0
+syntax	esc-octal-o	ok	-	False	1	1	-	?	-	-	-	-	cat@mb=0,ov=0
+syntax	esc-quote	ok	-	False	1	1	4/0	dfa	offset-set	0,1*	66287829@2	0	f(x)@mb=0,ov=0
+syntax	esc-tab	ok	-	False	1	1	9/0	dfa	run-pinned	0,1,2,3*,4,5,6,7	6b65790976616c75@3	none	key\x09value@mb=0,ov=0
+syntax	floor	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	#@mb=0,ov=0
+syntax	grp-atomic-alt	ok	alt-dropped	False	2	2	1/0	vm	memchr	none	none	2	a@mb=0,ov=0 c@mb=2,ov=1
+syntax	grp-atomic-rep	ok	-	False	2	1	1/0	dfa	memchr	none	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf
+syntax	grp-branch-reset	ok	-	False	1	1	-	?	-	-	-	-	[2][2][2]@mb=0,ov=0
+syntax	grp-callout	ok	-	False	1	1	-	?	-	-	-	-	cat@mb=0,ov=0
+syntax	grp-cap	ok	-	False	1	1	3/0	vm	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	grp-comment	ok	-	False	1	1	-	?	-	-	-	-	cat@mb=0,ov=0
+syntax	grp-named-quote	ok	-	False	1	1	3/0	vm	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	grp-named	ok	-	False	1	1	3/0	vm	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	grp-noncap	ok	-	False	1	1	2/0	dfa	offset-set	0,1*	6162@1	none	ab@mb=0,ov=0
+syntax	lit-cat	ok	-	False	1	1	3/0	dfa	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	lka-neg	ok	lookaround	False	1	1	4/0	vm	run-pinned	0,1,2,3*	6974656d@3	none	item@mb=0,ov=0
+syntax	lka-nonatomic	unparsed:unknown extension ?* at position 1	-	-	0	0	-	vm	run-pinned	0,1,2,3*	6974656d@3	none	
+syntax	lka-pos	ok	lookaround	False	1	1	4/0	vm	run-pinned	0,1,2,3*	6974656d@3	none	item@mb=0,ov=0
+syntax	lka-verb	ok	verb	False	1	1	4/0	vm	run-pinned	0,1,2,3*	6974656d@3	none	item@mb=0,ov=0
+syntax	lkb-neg	ok	lookaround	False	1	1	4/0	vm	offset-set	0,2*	646f6e65@0	0	done@mb=0,ov=0
+syntax	lkb-pos	ok	lookaround	False	1	1	4/0	vm	offset-set	0,2*	646f6e65@0	0	done@mb=0,ov=0
+syntax	mod-a	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	\w@mb=0,ov=0
+syntax	mod-i	ok	-	False	1	1	3/0	dfa	handoff	none	434154@0/dfdfdf	0	[2][2][2]@mb=0,ov=0
+syntax	mod-j-uc	unparsed:unknown extension ?J at position 1	-	-	0	0	-	vm	-	-	none	none	
+syntax	mod-n	unparsed:unknown extension ?n at position 1	-	-	0	0	-	dfa	run-pinned	0*,1,2	636174@0	none	
+syntax	mod-r	unparsed:unknown flag at position 3	-	-	0	0	-	dfa	handoff	none	434154@0/dfdfdf	0	
+syntax	mod-reset	unparsed:unknown extension ?^ at position 6	-	-	0	0	-	dfa	run-pinned	0,1*,2	6174@0	none	
+syntax	mod-s	ok	-	False	1	1	4/0	dfa	offset-set	0,3*	646f6e65@0	5	item[any]done@mb=0,ov=0
+syntax	mod-u-uc	unparsed:unknown extension ?U at position 1	-	-	0	0	-	dfa	memchr	none	none	none	
+syntax	mod-unset	unparsed:missing : at position 9	-	-	0	0	-	dfa	run-pinned	0,1*,2	6174@0	none	
+syntax	mod-x	ok	-	False	1	1	3/0	dfa	run-pinned	0*,1,2	636174@0	none	cat@mb=0,ov=0
+syntax	msc-c-uc	ok	-	False	1	1	-	?	-	-	-	-	c[any]t@mb=0,ov=0
+syntax	msc-r-uc	ok	alt-dropped	False	2	2	-	?	-	-	-	-	item[5]@mb=0,ov=0 done@mb=6,ov=1
+syntax	msc-x-uc	unparsed:unicode-escape	-	-	0	0	-	?	-	-	-	-	
+syntax	qnt-lazy	ok	-	False	2	1	1/0	dfa	memchr	none	none	none	"@mb=0,ov=0 "@mb=inf,ov=inf
+syntax	qnt-plus-ctl	ok	-	False	2	1	1/0	dfa	offset-set	0,1*	6162@1	none	a@mb=0,ov=0 ab@mb=inf,ov=inf
+syntax	qnt-plus	ok	-	False	2	1	1/0	dfa	memchr	none	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf
+syntax	qnt-poss-brace	ok	rep-right	False	2	2	1/0	dfa	handoff	none	none	2	a@mb=0,ov=0 b@mb=2,ov=1
+syntax	qnt-poss-plus	ok	-	False	2	1	1/0	vm	offset-set	0,1*	6162@1	none	a@mb=0,ov=0 ab@mb=inf,ov=inf
+syntax	qnt-poss-quest	ok	-	False	1	1	-	vm	memchr	none	none	none	a@mb=1,ov=1
+syntax	qnt-poss-star	ok	-	False	1	0	-	dfa	memchr	none	none	none	b@mb=inf,ov=inf
+syntax	qnt-quest	ok	-	False	2	2	4/0	dfa	offset-set	0,2*	636f6c6f@0	0	colo@mb=0,ov=0 r@mb=5,ov=1
+syntax	qnt-star	ok	-	False	2	1	1/0	dfa	memchr	none	none	none	c@mb=0,ov=0 t@mb=inf,ov=inf
+syntax	rec-1	ok	alt-dropped,recursion	False	2	1	0/0	vm	-	-	none	none	(@mb=0,ov=0 )@mb=inf,ov=inf
+syntax	rec-back	ok	recursion	False	1	1	2/0	vm	byte-class	none	none	none	\d\d@mb=0,ov=0
+syntax	rec-define	unparsed:unknown group name 'DEFINE' at position 3	-	-	0	0	-	dfa	offset-set	0,2*	none	none	
+syntax	rec-fwd	ok	recursion	False	1	0	-	vm	byte-class	none	none	none	\d\d@mb=inf,ov=inf
+syntax	rec-g-angle	ok	recursion	False	1	1	2/0	vm	byte-class	none	none	none	\d\d@mb=0,ov=0
+syntax	rec-name	ok	alt-dropped,recursion	False	2	1	0/0	vm	-	-	none	none	(@mb=0,ov=0 )@mb=inf,ov=inf
+syntax	rec-py	ok	recursion	False	1	1	2/0	vm	byte-class	none	none	none	\d\d@mb=0,ov=0
+syntax	rec-r-uc	ok	alt-dropped,recursion	False	2	1	0/0	vm	-	-	none	none	(@mb=0,ov=0 )@mb=inf,ov=inf
+syntax	unp-p-lc	unparsed:unicode-escape	-	-	0	0	-	dfa	byte-class	none	none	none	
+syntax	unp-p-uc	unparsed:unicode-escape	-	-	0	0	-	dfa	byte-class	none	none	none	
+syntax	vrb-accept	ok	verb	False	1	1	-	?	-	-	-	-	itemdone@mb=0,ov=0
+syntax	vrb-skip	ok	verb	False	2	1	-	?	-	-	-	-	a@mb=0,ov=0 b@mb=inf,ov=inf
+syntax	xcl-minus	unparsed:unknown extension ?[ at position 1	-	-	0	0	-	?	-	-	-	-	
+corpus	c000	ok	lookaround	False	1	1	1/0	vm	memchr	none	none	none	x@mb=0,ov=0
+corpus	c001	unparsed:bad escape \g at position 2	-	-	0	0	-	dfa	none	none	none	none	
+corpus	c002	ok	alt-dropped,kreset	False	2	2	1/0	vm	memchr	none	none	2	a@mb=0,ov=0 c@mb=2,ov=1
+corpus	c003	ok	assertion	False	1	1	1/0	dfa	memchr	none	none	none	b@mb=0,ov=0
+corpus	c004	ok	assertion,lookaround,recursion	True	1	1	0/0	vm	none	none	786263@0	none	xbc@mb=0,ov=0
+corpus	c005	ok	backref	False	2	1	-	vm	-	-	none	none	x@mb=1,ov=1 x@mb=inf,ov=inf
+corpus	c006	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	S@mb=0,ov=0
+corpus	c007	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[11]@mb=0,ov=0
+corpus	c008	ok	assertion	True	1	1	0/0	dfa	none	none	6162@1	none	ab@mb=0,ov=0
+corpus	c009	ok	assertion	False	0	0	-	dfa	none	none	none	none	
+corpus	c010	ok	assertion,recursion	True	1	0	-	vm	-	-	none	none	[2]@mb=inf,ov=inf
+corpus	c011	ok	-	False	1	1	4/0	vm	run-pinned	0*,1,2,3	78617962@0	none	xayb@mb=0,ov=0
+corpus	c012	ok	kreset	False	1	1	-	vm	memchr	none	none	none	b@mb=10,ov=10
+corpus	c013	ok	-	False	1	1	2/0	dfa	handoff	none	c39f@1	0	\xc3\x9f@mb=0,ov=0
+corpus	c014	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	o@mb=0,ov=0
+corpus	c015	ok	assertion,recursion	True	2	1	0/0	vm	-	-	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf
+corpus	c016	ok	-	False	1	1	3/0	vm	offset-set	0,1*	616161@2	0	aaa@mb=0,ov=0
+corpus	c017	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c018	ok	assertion,backref,rep-right	False	3	2	0/0	vm	-	-	none	none	\w@mb=0,ov=0 -@mb=2,ov=1 a@mb=inf,ov=inf
+corpus	c019	ok	rep-right	False	2	2	1/0	vm	byte-class	none	none	3	[2]@mb=0,ov=0 c@mb=3,ov=2
+corpus	c020	ok	assertion	False	1	1	1/0	dfa	byte-class-bounded	none	none	none	\w@mb=0,ov=0
+corpus	c021	ok	backref	False	1	1	0/0	vm	-	-	none	none	[2]@mb=0,ov=0
+corpus	c022	ok	alt-dropped	False	1	1	-	dfa	handoff	none	none	4	b@mb=4,ov=4
+corpus	c023	ok	recursion	False	3	1	1/0	vm	memchr	none	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf a@mb=inf,ov=inf
+corpus	c024	unparsed:nothing to repeat at position 0	-	-	0	0	-	?	-	-	-	-	
+corpus	c025	ok	alt-dropped,assertion,recursion	True	0	0	-	vm	-	-	none	none	
+corpus	c026	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	O@mb=0,ov=0
+corpus	c027	ok	alt-dropped,assertion,recursion	True	0	0	-	vm	-	-	none	none	
+corpus	c028	ok	assertion,backref	False	0	0	-	vm	-	-	none	none	
+corpus	c029	ok	-	False	0	0	-	vm	-	-	none	none	
+corpus	c030	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	[2]@mb=0,ov=0
+corpus	c031	ok	alt-dropped	False	1	1	1/0	dfa	memchr	none	none	none	[2]@mb=0,ov=0
+corpus	c032	unparsed:bad escape \V at position 0	-	-	0	0	-	dfa	byte-class	none	none	none	
+corpus	c033	ok	backref	False	1	0	-	vm	-	-	none	none	a@mb=inf,ov=inf
+corpus	c034	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	a@mb=0,ov=0
+corpus	c035	unparsed:unicode-escape	-	-	0	0	-	?	-	-	-	-	
+corpus	c036	ok	kreset,rep-right	False	2	2	2/0	vm	memchr	none	434154@0/dfdfdf	5	xx@mb=0,ov=0 [2][2][2]@mb=5,ov=3
+corpus	c037	unparsed:unbalanced parenthesis at position 16	-	-	0	0	-	dfa	byte-class	none	none	none	
+corpus	c038	unparsed:global flags not at the start of the expression at position 	-	-	0	0	-	dfa	offset-set	0,1*	none	none	
+corpus	c039	ok	-	False	2	1	1/0	vm	offset-set	0,1*	none	none	a@mb=0,ov=0 a@mb=inf,ov=inf
+corpus	c040	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[64]@mb=0,ov=0
+corpus	c041	ok	lookaround	False	0	0	-	dfa	none	none	none	none	
+corpus	c042	ok	assertion	False	1	1	3/0	dfa	offset-set-bounded	0,1*	666f6f@0	0	foo@mb=0,ov=0
+corpus	c043	ok	assertion	False	1	1	1/0	vm	byte-class-bounded	none	none	none	[2]@mb=0,ov=0
+corpus	c044	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c045	ok	assertion	False	1	0	-	dfa	memchr-bounded	none	none	none	b@mb=inf,ov=inf
+corpus	c046	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	S@mb=0,ov=0
+corpus	c047	ok	lookaround	False	1	1	1/0	vm	memchr	none	none	none	b@mb=0,ov=0
+corpus	c048	ok	assertion,backref	False	1	1	0/0	vm	-	-	none	none	\w@mb=0,ov=0
+corpus	c049	ok	-	False	1	1	24/0	dfa	offset-set	0,1*	535455565758595a@7	18	ABCDEFGHIJKLMNOPQRSTUVWXYZabcde@mb=0,ov=0
+corpus	c050	ok	alt-dropped	False	1	1	4/0	vm	byte-class	none	none	4	[2][2][2][2]@mb=0,ov=0
+corpus	c051	ok	assertion	False	1	1	2/0	dfa	offset-set-bounded	0,1*	none	none	ab@mb=0,ov=0
+corpus	c052	ok	-	False	1	1	18/0	dfa	offset-set	0,11*	4f4e5f534348454d@2/dfdfffdfdfdfdfdf	9	[2][2][2][2][2][2][2][2][2][2][2]_[2][2][2][2][2][2]@mb=0,ov=0
+corpus	c053	ok	assertion	False	0	0	-	dfa	none	none	none	none	
+corpus	c054	ok	assertion,recursion	False	2	1	1/0	vm	none	none	none	none	\w@mb=0,ov=0 x@mb=inf,ov=inf
+corpus	c055	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c056	ok	backref	False	2	1	0/0	vm	-	-	none	none	[32]@mb=0,ov=0 \s@mb=inf,ov=inf
+corpus	c057	unparsed:missing ), unterminated subpattern at position 0	-	-	0	0	-	?	-	-	-	-	
+corpus	c058	unparsed:unknown extension ?J at position 10	-	-	0	0	-	vm	none	none	none	none	
+corpus	c059	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	\D@mb=0,ov=0
+corpus	c060	ok	-	False	2	1	2/0	dfa	offset-set	0,1*	none	none	aa@mb=0,ov=0 a@mb=inf,ov=inf
+corpus	c061	ok	lookaround	False	1	1	1/0	vm	memchr	none	none	none	a@mb=0,ov=0
+corpus	c062	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	a@mb=0,ov=0
+corpus	c063	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	\W@mb=0,ov=0
+corpus	c064	ok	-	False	1	0	-	vm	memchr	none	none	none	c@mb=inf,ov=inf
+corpus	c065	ok	-	False	2	1	3/0	vm	offset-set	0,1*	none	none	aaa@mb=0,ov=0 c@mb=inf,ov=inf
+corpus	c066	ok	assertion	False	0	0	-	dfa	none	none	none	none	
+corpus	c067	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	\w@mb=0,ov=0
+corpus	c068	ok	-	False	1	1	-	vm	memchr	none	none	none	a@mb=4,ov=4
+corpus	c069	ok	alt-dropped	False	1	0	-	dfa	memchr	none	none	none	c@mb=inf,ov=inf
+corpus	c070	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	i@mb=0,ov=0
+corpus	c071	ok	alt-dropped	False	1	1	3/0	dfa	run-pinned	0*,1,2	666f6f@0	none	foo@mb=0,ov=0
+corpus	c072	ok	-	False	0	0	-	vm	-	-	none	none	
+corpus	c073	ok	assertion	True	1	1	0/0	dfa	none	none	none	none	\w@mb=0,ov=0
+corpus	c074	ok	assertion	False	1	0	-	dfa	byte-class-bounded	none	none	none	\w@mb=inf,ov=inf
+corpus	c075	ok	assertion,backref	False	1	0	-	vm	-	-	none	none	-@mb=inf,ov=inf
+corpus	c076	ok	-	False	1	1	-	?	-	-	-	-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@mb=0,ov=0
+corpus	c077	ok	kreset,lookaround	False	1	1	-	?	-	-	-	-	x@mb=0,ov=0
+corpus	c078	unparsed:unknown extension ?<* at position 1	-	-	0	0	-	vm	memchr	none	none	none	
+corpus	c079	ok	alt-dropped	False	1	1	4/0	dfa	run-pinned	0*,1,2	666f6f@0	none	foo.@mb=0,ov=0
+corpus	c080	ok	alt-dropped,assertion,lookaround	True	1	0	-	dfa	none	none	none	none	a@mb=inf,ov=inf
+corpus	c081	ok	backref,recursion	False	3	1	-	vm	-	-	none	none	x@mb=1,ov=1 b@mb=inf,ov=inf x@mb=inf,ov=inf
+corpus	c082	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[253]@mb=0,ov=0
+corpus	c083	ok	-	False	0	0	-	dfa	none	none	none	none	
+corpus	c084	unparsed:unknown extension ?<* at position 1	-	-	0	0	-	vm	-	-	none	none	
+corpus	c085	unparsed:min repeat greater than max repeat at position 6	-	-	0	0	-	?	-	-	-	-	
+corpus	c086	ok	alt-dropped,assertion	False	1	1	-	dfa	handoff	none	none	1	y@mb=1,ov=1
+corpus	c087	ok	-	False	1	1	6/0	dfa	offset-set	0,1*	6162@1	none	ababab@mb=0,ov=0
+corpus	c088	ok	assertion	False	0	0	-	dfa	none	none	none	none	
+corpus	c089	ok	kreset,lookaround,recursion	False	1	1	3/0	vm	run-pinned	0,1*,2	6263@0	none	abc@mb=0,ov=0
+corpus	c090	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	:@mb=0,ov=0
+corpus	c091	ok	assertion,recursion	False	1	0	-	vm	byte-class-bounded	none	none	none	b@mb=inf,ov=inf
+corpus	c092	unparsed:unicode-escape	-	-	0	0	-	dfa	none	none	none	none	
+corpus	c093	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c094	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[3]@mb=0,ov=0
+corpus	c095	ok	alt-dropped,assertion	False	0	0	-	dfa	memchr-bounded	none	none	none	
+corpus	c096	unparsed:unbalanced parenthesis at position 20	-	-	0	0	-	vm	none	none	6101@1	none	
+corpus	c097	ok	-	False	2	1	1/0	vm	memchr	none	none	none	z@mb=0,ov=0 y@mb=inf,ov=inf
+corpus	c098	ok	rep-right	True	1	1	0/0	vm	none	none	none	none	a@mb=0,ov=0
+corpus	c099	ok	assertion,backref	True	1	1	0/0	vm	-	-	6162@1	none	ab@mb=0,ov=0
+corpus	c100	ok	-	False	1	1	3/0	vm	memchr	none	none	none	x.y@mb=0,ov=0
+corpus	c101	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[2]@mb=0,ov=0
+corpus	c102	ok	assertion	False	1	1	3/0	dfa	none	none	none	none	\s\s\w@mb=0,ov=0
+corpus	c103	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[10]\x5d@mb=0,ov=0
+corpus	c104	ok	gstart	True	1	1	0/0	dfa	none	none	none	none	x@mb=0,ov=0
+corpus	c105	unparsed:missing : at position 9	-	-	0	0	-	dfa	offset-set	0,1*	none	none	
+corpus	c106	ok	-	False	1	1	3/0	dfa	offset-set	0,1*	none	none	aaa@mb=0,ov=0
+corpus	c107	ok	assertion,recursion	True	2	1	-	vm	-	-	none	none	a@mb=1,ov=1 b@mb=inf,ov=inf
+corpus	c108	ok	-	False	1	1	-	vm	memchr	none	none	none	z@mb=12,ov=12
+corpus	c109	ok	rep-right	False	2	2	2/0	vm	offset-set	0,3*	none	none	aa@mb=0,ov=0 bb@mb=3,ov=1
+corpus	c110	ok	lookaround	False	0	0	-	vm	-	-	none	none	
+corpus	c111	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[188]@mb=0,ov=0
+corpus	c112	ok	assertion,rep-right	False	2	2	1/0	dfa	none	none	none	none	a@mb=0,ov=0 a@mb=2,ov=1
+corpus	c113	ok	-	False	1	1	2/0	vm	memchr	none	none	none	za@mb=0,ov=0
+corpus	c114	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c115	ok	alt-dropped,assertion,lookaround,recursion	True	1	1	-	?	-	-	-	-	ab@mb=0,ov=0
+corpus	c116	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[3]@mb=0,ov=0
+corpus	c117	ok	assertion	False	1	0	-	dfa	memchr-bounded	none	none	none	a@mb=inf,ov=inf
+corpus	c118	ok	assertion	True	1	1	0/0	dfa	none	none	none	none	[8]\x5d@mb=0,ov=0
+corpus	c119	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c120	ok	assertion,recursion	True	1	1	0/0	vm	none	none	none	none	[2]@mb=0,ov=0
+corpus	c121	unparsed:unknown extension ?J at position 1	-	-	0	0	-	vm	-	-	none	none	
+corpus	c122	unparsed:unknown flag at position 7	-	-	0	0	-	dfa	byte-class	none	none	none	
+corpus	c123	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c124	ok	assertion,recursion	False	2	1	0/0	vm	-	-	none	none	a@mb=0,ov=0 A@mb=inf,ov=inf
+corpus	c125	ok	lookaround,rep-right	False	2	2	1/0	dfa	memchr-bounded	none	none	none	[2]@mb=0,ov=0 b@mb=2,ov=1
+corpus	c126	ok	alt-dropped,assertion,recursion	True	1	0	-	vm	none	none	none	none	c@mb=inf,ov=inf
+corpus	c127	ok	rep-right	False	1	1	2/0	vm	memchr	none	none	none	za@mb=0,ov=0
+corpus	c128	ok	verb	False	1	1	0/1	dfa	byte-class	none	none	none	[12][2]\x5d@mb=0,ov=0
+corpus	c129	ok	assertion,rep-right	False	1	1	1/0	dfa	none	none	none	none	[3]@mb=0,ov=0
+corpus	c130	ok	-	False	1	1	1/0	dfa	byte-class	none	none	none	[146]@mb=0,ov=0
+corpus	c131	unparsed:nothing to repeat at position 2	-	-	0	0	-	?	-	-	-	-	
+corpus	c132	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	\x80@mb=0,ov=0
+corpus	c133	ok	assertion,backref	True	1	1	0/0	vm	-	-	none	none	x@mb=0,ov=0
+corpus	c134	ok	assertion,rep-right	False	2	2	1/0	dfa	byte-class-bounded	none	none	3	[2]@mb=0,ov=0 a@mb=3,ov=2
+corpus	c135	ok	assertion,rep-right	False	1	1	1/0	dfa	none	none	none	none	[255]@mb=0,ov=0
+corpus	c136	ok	backref,lookaround	False	2	1	-	vm	-	-	none	none	b@mb=1,ov=1 b@mb=inf,ov=inf
+corpus	c137	unparsed:unknown extension ?* at position 1	-	-	0	0	-	dfa	memchr-bounded	none	none	none	
+corpus	c138	ok	alt-dropped	False	0	0	-	dfa	none	none	none	none	
+corpus	c139	ok	backref,recursion	False	3	1	0/0	vm	-	-	none	none	ax@mb=0,ov=0 b@mb=inf,ov=inf x@mb=inf,ov=inf
+corpus	c140	ok	alt-dropped,assertion	False	1	0	-	dfa	memchr-bounded	none	none	none	b@mb=inf,ov=inf
+corpus	c141	ok	assertion	True	1	1	0/0	dfa	none	none	none	none	ab@mb=0,ov=0
+corpus	c142	ok	alt-dropped,assertion	False	2	1	1/0	dfa	memchr-bounded	none	none	none	-@mb=0,ov=0 -@mb=inf,ov=inf
+corpus	c143	ok	assertion	False	1	1	1/0	dfa	memchr-bounded	none	none	none	x@mb=0,ov=0
+corpus	c144	ok	assertion	False	2	1	1/0	dfa	byte-class-bounded	none	none	none	\w@mb=0,ov=0 \W@mb=inf,ov=inf
+corpus	c145	unparsed:unicode-escape	-	-	0	0	-	dfa	byte-class	none	none	none	
+corpus	c146	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	O@mb=0,ov=0
+corpus	c147	ok	lookaround,recursion	False	2	1	1/0	vm	memchr	none	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf
+corpus	c148	ok	-	False	1	1	1/0	vm	byte-class	none	none	none	[2]@mb=0,ov=0
+corpus	c149	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	a@mb=0,ov=0
