@@ -503,6 +503,39 @@ static int cl_stride(const gate_in *in)
     return w == 1 ? CL_ONE : w >= 2 && w <= MF_MAX_TERM ? CL_MANY : CL_OTHER;
 }
 
+/* W0 (MF_SITE_ABI 11): read on a forward FIND only (kit_window_site); off
+ * one it is no field of the site's (site_check refuses a stated 1), so it
+ * reads as unstated and no row need serve it. */
+static int cl_window_stated(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    return kit_window_site(in->s) ? flag01(in->s->pred.window_stated) : -1;
+}
+
+/* W1: D_MIN where the window is the candidate, OTHER for any other stated
+ * value (back > 0 or the reserved MF_MOVE_UNBOUNDED); unstated where W0
+ * states nothing. */
+static int cl_move_back(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (!kit_window_site(in->s) || in->s->pred.window_stated != 1) return -1;
+    return in->s->pred.move_back == kit_d_min(&in->s->pred) ? CL_D_MIN : CL_OTHER;
+}
+
+/* W2: ZERO or OTHER; unstated where W0 states nothing. */
+static int cl_overshoot(const gate_in *in)
+{
+    if (!in->s) return CL_OTHER;
+    if (!kit_window_site(in->s) || in->s->pred.window_stated != 1) return -1;
+    return in->s->pred.overshoot == 0 ? CL_ZERO : CL_OTHER;
+}
+
+/* W4: a site fact on every site, 0 a stated value (OBLIG). */
+static int cl_decl_point(const gate_in *in)
+{
+    return in->s ? flag01(in->s->decl_point) : CL_OTHER;
+}
+
 /* `s`, `n`, `lo`: IDENT iff a bare identifier. */
 static int ident_or_other(const char *text)
 {

@@ -5255,7 +5255,9 @@ typedef struct CandPf {
      * token's — the offset-k skip is a loop over the subject and belongs in a
      * function, not inlined three levels deep in the scan. NULL == no block.
      * It is emitted from the same place `repr->emit_token` is, so the VM
-     * hybrid's inlined prefilter gets it by construction. */
+     * hybrid's inlined prefilter gets it by construction. [MEMFN] R17-a the
+     * set rows' block is their FIND's define point (`pf_block_find`), which
+     * writes whatever its form needs ahead of the function, today nothing. */
     void  (*emit_block)(StrBuf *c, DfaForm *f);
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
     /* [OPT-EDGE] STEP 1.1 — DOES THIS FORM WRITE THE STATE VARIABLE?
@@ -5575,6 +5577,17 @@ struct DfaDir {
     const char *scan_back;
 };
 
+/* [MEMFN] R17-a THE DEFINED FIND (setfind.md §11.1): a set FIND defined at
+ * a file-scope point above the function holding its uses, then, in that
+ * function, its storage point (`find_locals`), its table iff the define
+ * reports the form reads it (`reads_table`), and each use (`find_use`). The
+ * builder's record: the site, its handle and the define's report. */
+struct MemfnFind {
+    const mf_site *site;
+    uint32_t       handle;
+    bool           reads_table;
+};
+
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
     /* [OPT-K] the Ctx, originally for `pcrec_ctx_fail` alone. Two arms of the
@@ -5631,6 +5644,15 @@ struct DfaForm {
      * point), which every call of it (`pf_emit_ofs[_bounded]`) uses; 0
      * before the block is written. */
     uint32_t       ofs_site;
+    /* [MEMFN] R17-a the set rows' FIND (`pf_block_find[_bounded]`, the
+     * define point): its record, which the storage point (`unanch_scan`),
+     * the table (`pf_tables_bcls`/`pf_tables_first`, iff `reads_table`) and
+     * the use (`pf_emit_find`) read; all zero where the row defines none.
+     * `pf_stem` is the stem it states (W5), `<fn>_pf` for the body `fn`
+     * holding the forward scan, set by that body's emitter before the
+     * block. */
+    struct MemfnFind pf_find;
+    const char    *pf_stem;
     /* [OPT-REVEND] L1 THE WALK's TWO PARAMETERS beyond its direction
      * (`emit_reverse_block`, revend.md §8): `lbl`, the stem its edge labels
      * are named from (the direction's name, until a second copy of the same
@@ -6439,9 +6461,19 @@ static const char *find_table_name(void *u, uint32_t ref)
     return dfa_fragf(pu->cx, "%s_%s", f->p, find_table_tag[ref]);
 }
 
-/* The site and its hooks for FIND `f` at indent `ind`. */
-static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
-                          PcrecMfU *u)
+/* [MEMFN] R17-a the kit's `fn_name` hook on a storage-offering FIND: the
+ * stem of every identifier the kit declares for the site (W5, setfind.md
+ * §7.6), the holding function's name plus `_pf`. */
+static const char *find_fn_name(void *u, uint32_t fn_ref)
+{
+    (void)fn_ref;
+    return ((const PcrecFind *)((const PcrecMfU *)u)->own)->stem;
+}
+
+/* The site for FIND `f`: its window is its candidate (W0-W2, R17-a), and a
+ * FIND that names a storage stem (`f->stem`, the set sites) offers its
+ * declaration point (W4) and states the stem's hook id (W5). */
+static mf_site *find_site(const PcrecFind *f)
 {
     Ctx *cx = f->cx;
     bool table = f->table != PCREC_FIND_MEMCHR;
@@ -6470,6 +6502,21 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
                              MF_REQUIRED);
     else
         pcrec_memfn_term_byte(&s->pred.term[0], f->offset, f->byte, MF_REQUIRED);
+    pcrec_memfn_window_is_candidate(&s->pred);
+    s->decl_point = f->stem != NULL;
+    s->pred.fn_ref = f->stem != NULL;
+    pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
+    return s;
+}
+
+/* The hooks for FIND `f`, site `s`, at indent `ind` (NULL at a define, which
+ * reads no indent). */
+static void find_hooks(const PcrecFind *f, const mf_site *s, const char *ind,
+                       mf_hooks *h, PcrecMfU *u)
+{
+    Ctx *cx = f->cx;
+    bool table = f->table != PCREC_FIND_MEMCHR;
+    bool back = f->offset < 0;
     *u = (PcrecMfU){ .cx = cx, .site = s, .own = f, .indent = ind };
     /* `miss`: the range's end at offset 0 (MF_MISS_N, or `len - 1` held
      * back). Below the candidate it is NOT stated: there the range reaches
@@ -6481,36 +6528,131 @@ static mf_site *find_site(const PcrecFind *f, const char *ind, mf_hooks *h,
                            : back ? NULL : MF_MISS_N,
                      .on_miss = !table && !f->holdback ? f->on_miss : NULL,
                      .table_name = table ? find_table_name : NULL,
+                     .fn_name = f->stem ? find_fn_name : NULL,
                      .indent = ind, .comment_tier = PCREC_CMT_NONESSENTIAL,
                      .u = u };
-    pcrec_memfn_check_use(cx, s, true);     /* the caller reads `pos` */
-    return s;
 }
 
 void pcrec_emit_find(StrBuf *c, const char *ind, const PcrecFind *f)
 {
     mf_hooks h;
     PcrecMfU u;
-    mf_site *s = find_site(f, ind, &h, &u);
+    if (f->stem)
+        pcrec_ctx_fail(f->cx, 0, "internal error: a FIND that offers a storage "
+                       "point is defined and used, never emitted in one call "
+                       "(src/gen/emit_dfa.c, pcrec_emit_find)");
+    mf_site *s = find_site(f);
+    find_hooks(f, s, ind, &h, &u);
     pcrec_memfn_emit(f->cx, f->site, s, &h, c);
 }
 
-/* The FIND over axis B's candidate set at indent `ind`, its form the ROW's
+/* Defines FIND `f` (its `stem` stated) into `file` and returns its record. */
+static struct MemfnFind find_define(StrBuf *file, const PcrecFind *f)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    mf_result r;
+    struct MemfnFind d = { find_site(f), 0, false };
+    find_hooks(f, d.site, NULL, &h, &u);
+    d.handle = pcrec_memfn_define(f->cx, f->site, d.site, &h, file);
+    pcrec_memfn_defined(f->cx, d.handle, &r);
+    d.reads_table = r.reads_table;
+    return d;
+}
+
+/* Writes defined FIND `d`'s storage point at indent `ind` (nothing, while no
+ * form keeps storage). */
+static void find_locals(StrBuf *c, const char *ind, const PcrecFind *f,
+                        const struct MemfnFind *d)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    find_hooks(f, d->site, ind, &h, &u);
+    pcrec_memfn_locals(f->cx, d->handle, &h, c);
+}
+
+/* Writes one use of defined FIND `d` at indent `ind`; `f` must describe the
+ * site `d` defined (its `end_back` is checked here, loudly). */
+static void find_use(StrBuf *c, const char *ind, const PcrecFind *f,
+                     const struct MemfnFind *d)
+{
+    mf_hooks h;
+    PcrecMfU u;
+    if (d->site->end_back != (f->holdback ? 1 : 0))
+        pcrec_ctx_fail(f->cx, 0, "internal error: a FIND used with a D11 bound "
+                       "its define did not state (src/gen/emit_dfa.c, find_use)");
+    find_hooks(f, d->site, ind, &h, &u);
+    pcrec_memfn_use(f->cx, d->handle, &h, c);
+}
+
+#ifdef PCREC_RANK_PROBE
+#include <stdio.h>
+/* [MEMFN] R17-a N4, THE DOOR ASSERTION (setfind.md §11.1 item 4, C1-13),
+ * compiled only into the probe build `-DPCREC_RANK_PROBE`
+ * (tests/memfn/run_rank.sh): where pcrec emits the table a defined FIND
+ * names, the set it handed the kit is that table's bytes. A difference is
+ * an internal error; an agreement prints one `FINDDOOR` record (the probe's
+ * reach). */
+static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
+                      const uint8_t table[256])
+{
+    const uint8_t *set = d->site->pred.term[0].set;
+    for (int b = 0; b < 256; b++)
+        if (((set[b >> 3] >> (b & 7)) & 1) != (table[b] != 0))
+            pcrec_ctx_fail(cx, 0, "internal error: N4 door: the FIND's set and "
+                           "the emitted `%s` table differ at byte 0x%02x", tag, b);
+    fprintf(stderr, "FINDDOOR\t%s\tok\n", tag);
+}
+#else
+static void find_door(Ctx *cx, const struct MemfnFind *d, const char *tag,
+                      const uint8_t table[256])
+{
+    (void)cx; (void)d; (void)tag; (void)table;
+}
+#endif
+
+/* The description of the FIND over axis B's candidate set, its form the ROW's
  * (`u.pf.scan`: a BYTE row memchr's, a SET row walks the table); the scan position
  * and the subject are the DFA scan's own, `holdback` the D11 bound. `on_miss`
  * is the unbounded memchr's statement on a NULL hit (NULL elsewhere). */
+static PcrecFind pf_find_of(const DfaForm *f, int holdback, const char *on_miss)
+{
+    return (PcrecFind){ .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
+                        .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
+                               : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
+                               : PCREC_FIND_CAN_BEGIN,
+                        .set = f->cand.set,
+                        .byte = f->cand.byte, .pos = "scan_position",
+                        .subject = "subject", .len = "subject_length",
+                        .holdback = holdback, .on_miss = on_miss };
+}
+
+/* [MEMFN] R17-a the set rows' define point (`u.pf.emit_block`, called at
+ * file scope above the body, as `pf_block_ofs` is): the row's FIND, its D11
+ * bound the row's own (`_bounded`: byte-class-bounded, first-class-bounded),
+ * DEFINED with the body's stem, so any text its form needs ahead of the
+ * function is written here and the use point below has its record. */
+static void pf_block_find_at(StrBuf *c, DfaForm *f, int holdback)
+{
+    PcrecFind fd = pf_find_of(f, holdback, NULL);
+    if (!f->pf_stem)
+        pcrec_ctx_fail(f->cx, 0, "internal error: a set prefilter's FIND is "
+                       "defined with no stem (src/gen/emit_dfa.c, pf_block_find)");
+    fd.stem = f->pf_stem;
+    f->pf_find = find_define(c, &fd);
+}
+static void pf_block_find(StrBuf *c, DfaForm *f) { pf_block_find_at(c, f, 0); }
+static void pf_block_find_bounded(StrBuf *c, DfaForm *f) { pf_block_find_at(c, f, 1); }
+
+/* The FIND over axis B's candidate set at indent `ind`: the defined site's
+ * use where the row defined one (the set rows), else the one-call FIND (the
+ * memchr rows). */
 static void pf_emit_find(StrBuf *c, const DfaForm *f, const char *ind, int holdback,
                          const char *on_miss)
 {
-    PcrecFind fd = { .cx = f->cx, .site = DELEG_PF, .p = f->p, .offset = 0,
-                     .table = f->pf->u.pf.scan == PF_SCAN_BYTE ? PCREC_FIND_MEMCHR
-                            : f->pf->u.pf.scan_set ? PCREC_FIND_START_BYTES
-                            : PCREC_FIND_CAN_BEGIN,
-                     .set = f->cand.set,
-                     .byte = f->cand.byte, .pos = "scan_position",
-                     .subject = "subject", .len = "subject_length",
-                     .holdback = holdback, .on_miss = on_miss };
-    pcrec_emit_find(c, ind, &fd);
+    PcrecFind fd = pf_find_of(f, holdback, on_miss);
+    if (f->pf_find.handle) find_use(c, ind, &fd, &f->pf_find);
+    else pcrec_emit_find(c, ind, &fd);
 }
 
 /* AXIS B, `memchr`: while nothing has matched and the machine is still parked
@@ -6709,7 +6851,7 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const CandRow *pf,
     const PrefixKSets *o = &us->ofsk;
     const ReqRun *r = pcrec_fact_req_run(cx);
     memset(t, 0, sizeof *t);
-    if (pf->u.pf.emit_block == NULL) return false;
+    if (pf->u.pf.scan != PF_SCAN_OFS) return false;
     if (!pf->u.pf.run_term) { ofs_test_model(us, t); return true; }
 
     /* THE RUN ROWS. The scan is the run's own scan member at its pinned
@@ -6832,6 +6974,8 @@ static const char *ofsk_tbl_name(Ctx *cx, const char *p, int k)
  * comment that says it is speed only and never changes an answer. */
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 {
+    if (!f->pf_find.reads_table) return;    /* [MEMFN] R17-a: the define's report */
+    find_door(f->cx, &f->pf_find, "can_begin_match", f->cand.set);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
                "     * forward loop uses this to skip over bytes that cannot begin\n"
@@ -6898,6 +7042,7 @@ static uint32_t ofs_site_define(StrBuf *c, const DfaForm *f)
     s->use = MF_USE_POSITION;
     s->consumer = MF_C_ENGINE;
     ofs_pred_of(f->cx, &f->ofs, &s->pred, 1);
+    pcrec_memfn_window_is_candidate(&s->pred);
     PcrecMfU u = { f->cx, s, f, NULL };
     mf_hooks h = {
         .fn_name = ofs_site_fn_name, .table_name = ofs_site_table_name,
@@ -7213,6 +7358,8 @@ static void pf_comment_first(StrBuf *c, const DfaForm *f)
 /* The DFA hat's table: `S` (= `T`), the bytes a match can begin with. */
 static void pf_tables_first(StrBuf *c, const DfaForm *f)
 {
+    if (!f->pf_find.reads_table) return;    /* [MEMFN] R17-a: the define's report */
+    find_door(f->cx, &f->pf_find, "start_bytes", f->cand.set);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    /* 1 for each byte a match can BEGIN with (the start set). The\n"
                "     * forward loop skips over every other byte; speed only, it\n"
@@ -7331,24 +7478,41 @@ static bool pf_vm_start_applies(const CandSel *s)
  * `|S|` (a dense one-byte `S` read by `memchr` per failed attempt measured
  * x0.6 at 80% density; the `|S| = 1 -> memchr` cut-over is an unmeasured
  * default for VM attempts, D149, and is not taken). */
+static PcrecFind vm_hat_find_of(const CandSel *s, const char *p, uint8_t v[256])
+{
+    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+    return (PcrecFind){ .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
+                        .table = PCREC_FIND_START_SET, .set = v,
+                        .pos = "attempt_position", .subject = "subject",
+                        .len = "subject_length", .holdback = 0 };
+}
+
+/* [MEMFN] R17-a THE VM HAT's ONE SITE (setfind.md §7.5, §11.1): defined
+ * once above `<searchfn>_run` (`pcrec_emit_vm_start_define`), its storage
+ * point and its table (iff the define reports the form reads it) at the
+ * ENTRY, then one use there and one at each retry, the same handle. */
 static void pf_vm_emit_first_class(StrBuf *c, const CandSel *s, const char *p,
                                    const char *ind, bool entry)
 {
     uint8_t v[256];
-    PcrecFind fd = { .cx = s->cx, .site = DELEG_PF, .p = p, .offset = 0,
-                     .table = PCREC_FIND_START_SET, .set = v,
-                     .pos = "attempt_position", .subject = "subject",
-                     .len = "subject_length", .holdback = 0 };
-    for (int b = 0; b < 256; b++) v[b] = s->ss->bits[b >> 3] >> (b & 7) & 1;
+    PcrecFind fd = vm_hat_find_of(s, p, v);
+    const struct MemfnFind *d = s->cx->job->mf_vmhat;
+    if (!d)
+        pcrec_ctx_fail(s->cx, 0, "internal error: the VM hat's seek has no "
+                       "defined FIND (pcrec_emit_vm_start_define was skipped)");
     if (entry) {
-        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
-                         "     * An attempt at a position holding any other byte fails, so the\n"
-                         "     * loop starts no attempt there. */\n");
-        pcrec_sb_cmt_close(c);
-        emit_u8_table(c, p, "start_set", v, 256);
+        find_locals(c, ind, &fd, d);
+        if (d->reads_table) {
+            find_door(s->cx, d, "start_set", v);
+            pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+            pcrec_sb_puts(c, "    /* [START-SET] 1 for each byte the first byte of a match can be.\n"
+                             "     * An attempt at a position holding any other byte fails, so the\n"
+                             "     * loop starts no attempt there. */\n");
+            pcrec_sb_cmt_close(c);
+            emit_u8_table(c, p, "start_set", v, 256);
+        }
     }
-    pcrec_emit_find(c, ind, &fd);
+    find_use(c, ind, &fd, d);
     pcrec_sb_printf(c, "%sif (attempt_position >= subject_length) return 0;\n", ind);
 }
 
@@ -7409,6 +7573,19 @@ static const CandRow *vm_start_row(Ctx *cx, CandSel *s)
     PCREC_CAND_TRACE_REC("NEXT", CAND_ROUTE_NAME(s->route), pf->tok, "vm-start");
     CAND_HIT(CAND_SLOT_NEXT, s, pf, "vm-start");
     return pf;
+}
+
+void pcrec_emit_vm_start_define(Ctx *cx, StrBuf *c, const char *p, const char *stem)
+{
+    CandSel s;
+    uint8_t v[256];
+    const CandRow *pf = vm_start_row(cx, &s);
+    if (!pf->u.pf.emit_vm) return;
+    PcrecFind fd = vm_hat_find_of(&s, p, v);
+    fd.stem = stem;
+    struct MemfnFind *d = pcrec_arena_alloc(&cx->arena, sizeof *d);
+    *d = find_define(c, &fd);
+    cx->job->mf_vmhat = d;
 }
 
 /* `<PREFIX>_VM_START_SCAN`'s value: the VM route's row spelling. */
@@ -9172,7 +9349,8 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 7, "first-class-bounded" } },
       .desc = "[START-SET] the DFA hat, as first-memchr-bounded with T of several bytes: a 256-entry start_bytes table walk stopped at n-1, re-seeding where the skip moved",
-      .u.pf = { .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
+      .u.pf = { .emit_tables = pf_tables_first, .emit_block = pf_block_find_bounded,
+                .emit = pf_emit_first_class_bounded,
                 .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set } },
     /* [START-SET] stage 2: the VM hat, routed on the VM route alone (the DFA
      * hat is `-bounded`-only). */
@@ -9197,13 +9375,14 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACT0, .hands = CT_CAND,
       .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class-bounded" } },
       .desc = "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept",
-      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded,
-                .scan = PF_SCAN_SET } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_block = pf_block_find_bounded,
+                .emit = pf_emit_bcls_bounded, .scan = PF_SCAN_SET } },
     { .c = { "byte-class", 0, pf_bcls_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class", .map = CM_EXACT0,
       .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "byte-class" } },
       .desc = "forward scan, several candidate bytes",
-      .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
+      .u.pf = { .emit_tables = pf_tables_bcls, .emit_block = pf_block_find,
+                .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
     /* N12: the ATTEMPT route's predecessor-byte skip; it STAMPS `"memchr"`
      * (D-1) but is not N9, so its identity is its own. No listing. Its scan
      * is one byte (`attempt_cand` is memchr-or-nothing by charter); it emits
@@ -11551,6 +11730,13 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
                "    // position rather than stopping at the first, so the longest\n"
                "    // match wins.\n");
     pcrec_sb_cmt_close(c);
+    /* [MEMFN] R17-a the set FIND's storage point (setfind.md §7.1): here, in
+     * the forward scan's one caller, before the scan loop and so before its
+     * `seedhead` jump, dominating every use in this body. */
+    if (fwd->pf_find.handle) {
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back, NULL);
+        find_locals(c, "    ", &fd, &fwd->pf_find);
+    }
     pcrec_sb_printf(c, "    size_t scan_position = %s;\n"
                "    size_t last_accept_position = (size_t)-1;\n", fwd->from);
     /* D164 B3 a LOWERED forward machine's accept carries the distance back to
@@ -11719,6 +11905,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (rmem) rev.repr->emit_token(c, &rev);
     emit_scan_defs(c, &fwd);
     if (rmem) emit_scan_defs(c, &rev);
+    fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
     if (fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
     /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
      * condition as its call below. */
@@ -12246,6 +12433,7 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     rev.repr->emit_token(c, &rev);
     if (relocate) emit_scan_defs(c, &fwd);
     emit_scan_defs(c, &rev);
+    if (relocate) fwd.pf_stem = dfa_fragf(cx, "%s_pf", fn);
     if (relocate && fwd.pf->u.pf.emit_block) fwd.pf->u.pf.emit_block(c, &fwd);
     PCREC_CAND_TRACE_REC("ROUTE", "dfa", entry ? "entry" : "inlined", "entry-gate");
 

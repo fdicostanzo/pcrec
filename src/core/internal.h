@@ -3053,6 +3053,10 @@ typedef struct {
      * NULL where none. */
     struct mf_art *mf;
     const struct MemfnPre *mf_pre;
+    /* [MEMFN] R17-a the VM hat's FIND, defined above `<searchfn>_run`
+     * (`pcrec_emit_vm_start_define`) for its entry and retry seeks
+     * (src/gen/emit_dfa.c's `struct MemfnFind`); NULL where none. */
+    const struct MemfnFind *mf_vmhat;
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
@@ -6463,6 +6467,12 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
 const char *pcrec_vm_start_scan_name(Ctx *cx);
 void pcrec_emit_vm_start_seek(Ctx *cx, StrBuf *c, const char *p,
                               const char *ind, bool entry);
+/* [MEMFN] R17-a the VM hat's define point (setfind.md §11.1): at file scope
+ * above `<searchfn>_run`, beside the run pre-check's blocks, it DEFINES the
+ * seek's one FIND site with the storage stem `stem` (`<searchfn>_run_pf`)
+ * where the VM route selects a seek, and records it on the Job
+ * (`mf_vmhat`) for both seeks; nothing where the row is `none`. */
+void pcrec_emit_vm_start_define(Ctx *cx, StrBuf *c, const char *p, const char *stem);
 
 /* [MEMFN] R4a′ (src/gen/memfn_stamps.c): the mark both engines write where
  * the kit's `<PREFIX>_MEMFN_FORMS`/`_MEMFN_LIBC` lines go, and the driver's
