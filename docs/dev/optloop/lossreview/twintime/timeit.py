@@ -9,7 +9,7 @@ subject) once per (pad, arm) per round, ONE process at a time, pinned to
 core C, in a shuffled order per round (seeded by the round number, so a rerun
 reproduces the order).  Every row is kept: cell regime pad arm round subject ns
 ck.  Aborts if any arm's per-subject answer checksum differs from base's.
-Env: LR.
+Env: LR; TTROOT (default $LR/tt).
 """
 import os, random, subprocess, sys, glob
 
@@ -26,9 +26,9 @@ def main():
             subj += sorted(glob.glob(a[i])); i += 1
     R, I, core = int(opts['--rounds']), opts['--inner'], opts['--core']
     LR = os.environ['LR']
-    base = os.path.join(LR, 'tt', cell)
-    arms = sorted(d for d in os.listdir(base) if d != 'src')
-    pads = sorted({p for d in arms for p in os.listdir(os.path.join(base, d))}, key=lambda s: int(s[1:]))
+    base = os.path.join(os.environ.get('TTROOT', os.path.join(LR, 'tt')), cell)
+    arms = sorted(d for d in os.listdir(base) if os.path.isdir(os.path.join(base, d)) and d != 'src')
+    pads = sorted({p for d in arms for p in os.listdir(os.path.join(base, d)) if p[1:].isdigit() and p[0] == 'p'}, key=lambda s: int(s[1:]))
     out = open(opts['--out'], 'a')
     ref = {}
     jobs = [(p, ar) for p in pads for ar in arms]
