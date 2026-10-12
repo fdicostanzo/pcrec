@@ -1,0 +1,22 @@
+# census_disp.tsv -- the disposition of every reader census.py derives
+# (rev 2 §1.1, [r3 F5]). name<TAB>class<TAB>member<TAB>reason.
+# class: MEMBER (a decision that reads the prior; member id as rev 2 §1.1),
+#        CARRIER (hands a rate or a pick on; its readers are walked too),
+#        NOT (reads the primitive, decides nothing; reason given).
+# A reader census.py finds and this file does not name is exit 1, and a row
+# here naming no reader is exit 1 (stale). Kept beside the script on purpose:
+# the classification is a hand judgment, the POPULATION is not.
+req_byte_dominated_by	MEMBER	#1	G1 density: COMPARE (pcrec_find_no_commoner)
+req_set_leads_applies	MEMBER	#2	set-leads: PICK over [run scan cube, set pick]
+cand_rs_dense_applies	MEMBER	#3	R4 adaptive-dense: VERDICT (ppm x gap > 10^6), via carrier pcrec_dfa_cand_ppm
+req_landmark_admits	MEMBER	#4	handoff K admission: VERDICT-shaped advance comparison
+pcrec_prefix_ksets	MEMBER	#7	prefix_k offset planner: VERDICT argmin (model_cost)
+pcrec_req_window	MEMBER	#13+#15a	run window start + run scan index: PICK x2 in one function
+pcrec_run_pin	MEMBER	#14	run pin: PICK
+pcrec_req_pick	MEMBER	#15b	req byte (the set's pick unless an exact run member ships): PICK
+ofs_pred_rank	MEMBER	#21	RQ-2 rank facts handed to the kit (D157): a RANKING, the PICK kind's full order
+pcrec_dfa_cand_ppm	CARRIER	-	returns the scanned set's MASS for R4
+req_landmark_hit_ppm	CARRIER	-	returns the landmark's hit rate (ceil-per-step product) for #4
+req_set_pick	CARRIER	-	returns the set's pick for #2 and req_lead_byte (a SECOND spelling of pcrec_req_pick's last line, F-7)
+req_lead_byte	NOT	-	emits the lead byte #2 chose; decides nothing
+pf_derive	NOT	-	the fact epoch's driver: asks the accessor to hand it to pcrec_run_pin (#14)
