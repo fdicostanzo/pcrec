@@ -6,7 +6,7 @@ __pycache__ there). Each subject's sha256 is checked against the bench's own
 committed manifest_throughput.tsv -- the control that these are the bytes the
 bench measures, not a look-alike.
 
-    git -C ../pcrec-bench archive HEAD bench | tar -x -C BENCHCOPY
+    git -C ../pcrec-bench archive HEAD bench pcrecbench | tar -x -C BENCHCOPY
 """
 import hashlib
 import importlib
@@ -27,7 +27,7 @@ def manifest(bench, s):
 
 def load(bench, s, mod):
     sys.path.insert(0, os.path.join(bench, s))
-    sys.path.insert(0, bench)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(bench)))
     m = importlib.import_module(mod)
     sys.path.pop(0)
     sys.path.pop(0)

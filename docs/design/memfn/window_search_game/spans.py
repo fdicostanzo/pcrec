@@ -338,7 +338,7 @@ def fmt_class(m):
     n = popc(m)
     if n == 1:
         b = bytes_of(m)[0]
-        return chr(b) if 0x21 <= b < 0x7F and chr(b) not in "[]|" else "\\x%02x" % b
+        return chr(b) if 0x21 <= b < 0x7F and chr(b) not in "[]|." else "\\x%02x" % b
     if n == 256:
         return "[any]"
     if m == ALL ^ m_of(10):
