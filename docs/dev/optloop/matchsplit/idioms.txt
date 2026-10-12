@@ -1,0 +1,102 @@
+# name <TAB> pattern.  Real-world idioms added by the [MATCH-SPLIT] STEP-0 survey (section 6.1.3):
+# written from memory of the shapes people actually write, which is a bias this file discloses.
+# Groups: trim/strip, comment handling, CSV/TSV fields, word-or-edge, \G tokenizers,
+# line-oriented filters, validators, WAF-style rules, degenerate anchors.
+trim	^\s+|\s+$
+trim_m	(?m)^\s+|\s+$
+trim_blank	^[ \t]+|[ \t]+$
+trim_star	^\s*|\s*$
+trim_nbsp	^[\s\x{a0}]+|[\s\x{a0}]+$
+trim_zwsp	^[\s\x{200c}]+|[\s\x{200c}]+$
+trim_zwsp_u8	^[\s\x{200c}]+|[\s\x{200c}]+$
+trim_nbsp_u8	^[\s\x{a0}]+|[\s\x{a0}]+$
+trim_nonword	^\W+|\W+$
+wrapper_strip	^\s*\{|\}\s*$
+wrapper_strip_cap	^(\s*)\{|\}(\s*)$
+bracket_strip	^\[|\]$
+quote_strip	^"|"$
+quote_strip2	^['"]|['"]$
+paren_strip	^\(|\)$
+slash_strip	^/+|/+$
+dot_strip	^\.+|\.+$
+trailing_slash	/+$
+trailing_ws	\s+$
+trailing_ws_blank	[ \t]+$
+leading_ws	^\s+
+leading_zeros	^0+(?=\d)
+trailing_nl	\n+$
+crlf_end	\r?\n$
+nonprint_tail	[^\x20-\x7e]+$
+comment_line	^#.*$
+comment_strip	^#|//.*$
+comment_semi	;.*$
+comment_tail	\s*#.*$
+comment_m	(?m)^\s*#.*$
+comment_m_mixed	(?m)^\s*(?:#|//).*$|\s+$
+comment_m_semi	(?m)^#|;\s*$
+ini_section	(?m)^\[[^\]]+\]\s*$
+ini_kv	(?m)^([^=;#\s]+)\s*=\s*(.*?)\s*$
+blank_line_m	(?m)^\s*$
+blank_line_nl	(?m)^[ \t]*\n
+trailing_ws_lines	(?m)[ \t]+$
+md_header	(?m)^#{1,6}\s+(.+)$
+md_bullet	(?m)^\s*[-*+]\s+
+shebang	^#!.*
+bom	^\xef\xbb\xbf
+csv_field	(?:^|,)([^,]*)
+csv_field_q	(?:^|,)("(?:[^"]|"")*"|[^,]*)
+tsv_field	(?:^|\t)([^\t]*)
+csv_x	(?:^|,)x
+word_edge	(?:^|\s)foo(?:\s|$)
+word_edge_nonword	(?:^|[^\w])foo(?:[^\w]|$)
+word_edge_sep	(?:^|[\s,;])(?:true|false)(?:$|[\s,;])
+word_lead_edge	(?:^|\s)#\w+
+word_trail_edge	\w+(?:\s|$)
+path_basename	[^/]+$
+path_dirname	^.*/
+file_ext	\.[a-z0-9]+$
+file_ext_i	(?i)\.(?:jpe?g|png|gif)$
+url_scheme	^https?://
+url_host	^(?:https?://)?([^/:]+)
+url_query	\?.*$
+url_fragment	#.*$
+url_tail_slash	^(.*?)/*$
+ws_collapse	\s{2,}
+version_tail	\bv?\d+(?:\.\d+)+$
+ordinal_tail	\s+\(\d+\)$
+title_lead	^(?:The|A|An)\s+
+tok_g_num	\G\s*(\d+|[-+*/()])
+tok_g_alt	\G(?:\s+|(\w+)|([^\w\s]))
+tok_g_ident	\G[A-Za-z_]\w*
+tok_g_or_free	\Gab|cd
+line_kw	(?m)^(?:GET|POST|PUT) 
+line_log_error	(?m)^\d{4}-\d{2}-\d{2} .*ERROR.*$
+line_end_error	(?m)ERROR$
+line_hex	(?m)^[0-9a-f]{8}:
+nginx_ts	^\[\d{2}/\w{3}/\d{4}
+syslog_head	^\w{3}\s+\d+\s+\d\d:\d\d:\d\d\s
+validate_email	^[^@\s]+@[^@\s]+\.[^@\s]+$
+validate_date	^\d{4}-\d{2}-\d{2}$
+validate_uuid	^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+validate_hex_color	^#(?:[0-9a-fA-F]{3}){1,2}$
+validate_int	^-?\d+$
+validate_slug	^[a-z0-9]+(?:-[a-z0-9]+)*$
+crs_path_trav	(?i)(?:^|[\x5c/])\.{2,3}[\x5c/]
+crs_path_trav_end	(?:^|/)\.\.(?:/|$)
+crs_cmd_lead	(?i)(?:^|;|\|)\s*(?:cat|ls|id|whoami)\b
+crs_sqli_comment	(?i)(?:--|#)\s*$|/\*.*\*/
+crs_sqli_lead	(?i)^(?:select|union)\b|\bor\s+1=1\s*$
+crs_http_line	^(?:GET|POST)\s|HTTP/\d\.\d$
+crs_null_or_blank	\x00|^\s*$
+all_line	^.*$
+dot_tail	.*$
+empty_line	^$
+bol_only	^
+eol_only	$
+a_only	\A
+z_only	\z
+zero_width_or	^|$
+zero_width_end	^|end$
+zero_width_m	(?m)^|$
+bol_or_lit	^|x
+# utf8 spellings (name ends _u8): the 2016 outage's pattern needs a code point above 255

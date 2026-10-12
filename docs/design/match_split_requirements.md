@@ -105,7 +105,7 @@ ideal locator plan. "attempt, n" means `RX_DFA_SCAN "attempt"` with
 |---|---|---|---|---|
 | `^\s*\{\|\}\s*$` (Frank's wrapper strip) | START + END | dfa, attempt, n | O(n − search_from) attempts; under `s///g` about 2n in total | try 0 (only if `search_from = 0`); reverse walk from n over `\s`, `}`; no forward scan at all |
 | `^\s+\|\s+$` (trim) | START + END | dfa, attempt, n | O(n) attempts, O(k²) on an internal whitespace run of length k | try 0; reverse walk over trailing `\s` |
-| `(?m)^\s+\|\s+$` | LINE-START + END | dfa, attempt, n | as trim, plus a newline test per attempt | `memchr('\n')` line starts, bounded by the end candidate; reverse walk from n |
+| `(?m)^\s+\|\s+$` | LINE-START + LINE-END (under `(?m)` the `$` is a line end; corrected 2026-10-12, mssurvey) | dfa, attempt, n | as trim, plus a newline test per attempt | `memchr('\n')` line starts; reverse walk per newline |
 | `^#\|//.*$` (comment strip, non-m) | START + END | dfa, attempt, n | O(n) | try 0; the end class: the reverse walk over `.*` runs the whole last line. Its START candidate is `//`'s position, so this end class is a LANDMARK in disguise (§3.2); a free `//` locator may be cheaper |
 | `(?m)^#\|;\s*$` | LINE-START + LINE-END | dfa, attempt, n | O(n) | line-start class by `memchr('\n')`; the line-end arm is a landmark (`;`) and belongs to the free class in practice |
 | `foo\|\s+$` (free + end) | FREE + END | dfa, unanchored, `byte-class-bounded` (first set `{f} ∪ \s`) | O(n), with stops at every whitespace byte | free `memchr('f')`, bounded by the end candidate; reverse walk from n |
@@ -622,3 +622,5 @@ Peers: RE2/rust (linear) and jit (backtracking, which shares the quadratic class
 - **F3** `^(?:a|b$)` correctly gets `start_max = 0`, so the `must` analysis already
   exists for whole-pattern `^`. The new fact generalizes it to `has`/`must`/`free_live`
   per kind. It is not a parallel derivation.
+
+- **Survey run (STEP 0, lane mssurvey, 2026-10-12):** see `docs/dev/lanes/mssurvey_report.md` (counts, trigger verdict, controls); instruments and outputs in `docs/dev/optloop/matchsplit/`.

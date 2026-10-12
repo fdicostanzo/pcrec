@@ -1,0 +1,13 @@
+libpcre2 10.46 2025-08-27
+c-rt-hits                          71073
+c-rt-rows                          1091
+c2-excluded-kreset                 26
+c2-matches                         57040
+c2-rows                            1269
+c2-rows-with-a-match               951
+c3-end-hits                        27657
+c3-end-libpcre2-refuses-text       2
+c3-end-rows                        1111
+c3-free-hits                       7244
+c3-free-rows                       113
+libpcre2-refuses-original          4
