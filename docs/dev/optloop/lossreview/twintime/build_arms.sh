@@ -20,9 +20,12 @@ CELLS=(
  "bak1   syntax/bak-1                   seam=static_seam"
  "modj   syntax/mod-j-uc                seam=static_seam"
  "phone  capability/phone-palindrome-6  seam=static_seam"
+ "bakpy  syntax/bak-py                  seam=static_seam"
+ "bakgrel syntax/bak-g-rel              seam=static_seam"
 )
 for spec in "${CELLS[@]}"; do
   set -- $spec; cell=$1 sp=$2; shift 2
+  case " ${ONLY:-$cell} " in *" $cell "*) ;; *) continue ;; esac
   set_=${sp%/*}; pat=${sp#*/}
   P="$(cat "$BENCHCOPY/bench/$set_/patterns/$pat.rx")"
   B=$LR/tt/$cell; rm -rf "$B"; mkdir -p "$B/src/base" "$B/src/base_b"
