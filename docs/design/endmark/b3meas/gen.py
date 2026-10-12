@@ -221,8 +221,22 @@ def product(A, B):
         for s in range(S):
             ntr[s][colmap[c]] = mtr[s][c]
     bytecls = [colmap[jmap[b]] for b in range(256)]
+    # X unbounded <=> the tagged reverse machine has a cycle among live states
+    color, cyclic = [0] * S, False
+    def dfs(u):
+        nonlocal cyclic
+        color[u] = 1
+        for t in ntr[u]:
+            if t < 0 or cyclic:
+                continue
+            if color[t] == 1:
+                cyclic = True
+            elif color[t] == 0:
+                dfs(t)
+        color[u] = 2
+    dfs(bid[part[0]])
     return dict(S=S, C=C2, seed=bid[part[0]], tr=ntr, acc=macc, bytecls=bytecls,
-                ties=any(a == 3 for a in macc), reach=n)
+                ties=any(a == 3 for a in macc), reach=n, cyclic=cyclic)
 
 # ---------------------------------------------------------------- the twin's C
 
@@ -290,7 +304,7 @@ def twin_body(M, prefix, prio):
         o.append('    }\n')
     o.append('    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)best; capture_spans[0][1] = (ptrdiff_t)end; }\n'
              '    return 1;\n}\n')
-    return ''.join(o), dict(S=S, C=C, runs=len(runs),
+    return ''.join(o), dict(S=S, C=C, runs=len(runs), cyclic=M['cyclic'],
                             bytes=256 + 2 * S * C + S * C + 256 * len(tabs))
 
 
@@ -358,15 +372,15 @@ def subjects(code, rng):
                 s = ln + nl
                 put('L-%s-%s' % ('nl' if nl else 'nonl', cls(s)), s, 24)
     for big, want, nm in ((4096, 6, 'K4'), (1 << 20, 2, 'M1')):
+        lines = []                          # one base text per size; the last line varies
+        tot = 0
+        while tot < big - 220:
+            l = body(rng, rng.randint(40, 200))
+            lines.append(l)
+            tot += len(l) + 1
+        base = ('\n'.join(lines) + '\n').encode()
         for t in TAILS:
-            lines = []
-            tot = 0
-            while tot < big - 220:
-                l = body(rng, rng.randint(40, 200))
-                lines.append(l)
-                tot += len(l) + 1
-            lines.append(body(rng, 60) + t)
-            blob = '\n'.join(lines).encode()
+            blob = base + (body(rng, 60) + t).encode()
             for nl in (b'\n', b''):
                 s = blob + nl
                 put('%s-%s-%s' % (nm, 'nl' if nl else 'nonl', cls(s)), s, want)
@@ -531,12 +545,15 @@ def safe(r, machines):
 
 
 def time_():
-    res = json.load(open(os.path.join(OUT, 'check.json')))
+    res = []
+    for fn in sorted(os.listdir(OUT)):
+        if fn.startswith('check') and fn.endswith('.json'):
+            res += json.load(open(os.path.join(OUT, fn)))
     sel = E.get('SELECT')
     for r in res:
-        if 'skip' in r or r['wrong'] != [0, 0] and r['wrong'] != (0, 0):
+        if 'skip' in r or list(r['wrong']) != [0, 0]:      # a twin that disagrees is not timed
             continue
-        timed = 'bench' in r['pops'] or 'idiom' in r['pops'] or r.get('today_tie')
+        timed = 'bench' in r['pops'] or 'idiom' in r['pops'] or 'synthetic' in r['pops'] or r.get('today_tie')
         if sel and str(r['k']) not in sel.split(','):
             continue
         if not timed:
