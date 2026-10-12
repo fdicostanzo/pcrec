@@ -308,6 +308,92 @@ def twin_body(M, prefix, prio):
                             bytes=256 + 2 * S * C + S * C + 256 * len(tabs))
 
 
+def restyle_body(M, prefix):
+    """The CONTROL R: today's algorithm (seed n, then seed n-1 before a final
+    newline, over today's own minimized reverse machine X$ with its end/eol views,
+    a tie decided by one verify-at run) in twin_body's code style (same table
+    layout, same run-skip on every self-loop state)."""
+    if M['natoms'] > 1 or M['clsctx']:
+        return None
+    S, C = M['n'], M['ncls']
+    tr = [[M['TR'][q * C + c] for c in range(C)] for q in range(S)]
+    runs = []
+    for q in range(S):
+        loop = [b for b in range(256) if tr[q][M['CLS'][b]] == q]
+        if loop:
+            runs.append((q, loop))
+    rs = dict(runs)
+    order = [q for q in range(S) if q not in rs] + [q for q, _ in runs]
+    num = {q: k for k, q in enumerate(order)}
+    stop = (S - len(runs)) * C
+    def pm(t):
+        return 65535 if t < 0 else num[t] * C
+    nxt, accp, eolv = [0] * (S * C), [0] * (S * C), [65535] * S
+    for q in range(S):
+        for c in range(C):
+            nxt[num[q] * C + c] = pm(tr[q][c])
+            accp[num[q] * C + c] = M['ACC'][q]
+        if M['EOL'][q] >= 0:
+            eolv[num[q]] = pm(M['EOL'][q])
+    s0 = M['s0']
+    seed_n = view(M, s0)
+    seed_n1 = M['EOL'][s0] if M['EOL'][s0] >= 0 else s0
+    def arr(ty, name, vals):
+        rows = ['        ' + ', '.join(str(v) for v in vals[i:i + 16]) + ',' for i in range(0, len(vals), 16)]
+        return '    static const %s %s[%d] = {\n%s\n    };\n' % (ty, name, len(vals), '\n'.join(rows))
+    o = ['int %s_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n' % prefix,
+         '    if (search_from > subject_length) return 0;\n',
+         arr('unsigned char', 'r_cls', M['CLS']), arr('unsigned short', 'r_next', nxt),
+         arr('unsigned char', 'r_acc', accp), arr('unsigned short', 'r_eolv', eolv)]
+    tabs = {}
+    for q, loop in runs:
+        if tuple(loop) not in tabs:
+            tabs[tuple(loop)] = num[q]
+            o.append(arr('unsigned char', 'r_run%d' % num[q], [1 if b in loop else 0 for b in range(256)]))
+    o.append('    size_t best = (size_t)-1, bend = 0;\n    int tie = 0;\n'
+             '    for (int seed = 0; seed < 2; seed++) {\n'
+             '        size_t pos = subject_length, mstart = (size_t)-1;\n'
+             '        unsigned st = %du;\n' % pm(seed_n) +
+             '        if (seed == 1) {\n'
+             '            if (subject_length == 0 || subject[subject_length - 1] != \'\\n\') break;\n'
+             '            pos = subject_length - 1;\n'
+             '            st = %du;\n' % pm(seed_n1) +
+             '        }\n'
+             '        if (pos < search_from) break;\n'
+             '        if (seed == 0) {   /* the one step that can land on the eol view at n-1 */\n'
+             '            if (r_acc[st]) mstart = pos;\n'
+             '            if (pos <= search_from) goto seed_done;\n'
+             '            st = r_next[st + r_cls[subject[--pos]]];\n'
+             '            if (st == 65535) goto seed_done;\n'
+             '            if (subject[pos] == \'\\n\' && r_eolv[st / %du] != 65535) st = r_eolv[st / %du];\n' % (C, C) +
+             '        }\n'
+             '        for (;;) {\n'
+             '            if (r_acc[st]) mstart = pos;\n'
+             '            if (pos <= search_from) break;\n'
+             '            st = r_next[st + r_cls[subject[--pos]]];\n'
+             '            if (st < %du) continue;\n' % stop +
+             '            if (st == 65535) break;\n')
+    for q, loop in runs:
+        o.append('            if (st == %du) { while (pos > search_from && r_run%d[subject[pos - 1]]) pos--; continue; }\n'
+                 % (num[q] * C, tabs[tuple(loop)]))
+    o.append('        }\n'
+             '      seed_done:\n'
+             '        if (mstart == (size_t)-1) continue;\n'
+             '        if (mstart < best) { best = mstart; bend = seed ? subject_length - 1 : subject_length; tie = 0; }\n'
+             '        else if (mstart == best) tie = 1;\n'
+             '    }\n'
+             '    if (best == (size_t)-1) return 0;\n'
+             '    if (tie) {\n'
+             '        rx_ctx r_ctx = { .subject = subject, .len = subject_length, .pos = best };\n'
+             '        ptrdiff_t r_len = %s_match(&r_ctx);\n' % prefix +
+             '        if (r_len < 0) return (int)r_len;\n'
+             '        bend = best + (size_t)r_len;\n'
+             '    }\n'
+             '    if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)best; capture_spans[0][1] = (ptrdiff_t)bend; }\n'
+             '    return 1;\n}\n')
+    return ''.join(o)
+
+
 def today_rev_bytes(txt, prefix):
     a, b = search_span(txt, prefix)
     body = txt[a:b]
@@ -429,7 +515,7 @@ def parse_check(txt):
         f = ln.split('\t')
         if f[0] == 'check':
             regs[f[1]] = dict(n=int(f[2]), nm=int(f[3]), tw=int(f[4]), bw=int(f[5]), tl=float(f[6]), bl=float(f[7]),
-                              ties=int(f[8]))
+                              ties=int(f[8]), rw=int(f[9]), rl=float(f[10]))
         elif f[0] == 'ties':
             ties = tuple(int(x) for x in f[1:])
         elif f[0] == 'wrong':
@@ -439,7 +525,7 @@ def parse_check(txt):
     return regs, ties, wrong, exh
 
 
-def artifact(r, machines):
+def artifact(r, machines, tmach):
     d = os.path.join(OUT, 'a%d' % r['k'])
     os.makedirs(d, exist_ok=True)
     res = dict(k=r['k'], pops=r['pops'], nrows=r['nrows'], pat=r['pat'].decode('latin1'), enc=r['enc'],
@@ -480,6 +566,17 @@ def artifact(r, machines):
     write_subjects(subf, subs)
     al = alphabet(r['pat'])
 
+    tm = tmach.get(str(r['k']))
+    Rbody = restyle_body(tm[0], 'R') if tm else None
+    if Rbody is None:
+        res['skip'] = 'restyle-unbuilt'
+        return res
+    Rbase = pcrec(r['pat'], r['icase'], 'R', os.path.join(d, 'Rbase.c'), nocap)
+    a_, b_ = search_span(Rbase, 'R')
+    Rtxt = Rbase[:a_] + Rbody + Rbase[b_:]
+    open(os.path.join(d, 'R.c'), 'w').write(Rtxt)
+    open(os.path.join(d, 'RI.c'), 'w').write(instrument(Rtxt))
+
     def make_twin(prio):
         body, info = twin_body(M, 'B', prio)
         a, b = search_span(Bbase, 'B')
@@ -489,7 +586,7 @@ def artifact(r, machines):
     Btxt, info = make_twin(prio)
     open(os.path.join(d, 'TI.c'), 'w').write(instrument(T))
     open(os.path.join(d, 'BI.c'), 'w').write(instrument(Btxt))
-    exe = build_check(d, [os.path.join(d, 'TI.c'), os.path.join(d, 'BI.c')], [])
+    exe = build_check(d, [os.path.join(d, 'TI.c'), os.path.join(d, 'BI.c'), os.path.join(d, 'RI.c')], [])
     regs, ties, wrong, exh = parse_check(run_check(exe, d, r, subf, al))
     if M['ties']:
         if ties[0] and not ties[1] and not ties[2]:
@@ -503,12 +600,12 @@ def artifact(r, machines):
         if prio in ('const0', 'const1'):
             Btxt, info = make_twin(prio)
             open(os.path.join(d, 'BI.c'), 'w').write(instrument(Btxt))
-            exe = build_check(d, [os.path.join(d, 'TI.c'), os.path.join(d, 'BI.c')], [])
+            exe = build_check(d, [os.path.join(d, 'TI.c'), os.path.join(d, 'BI.c'), os.path.join(d, 'RI.c')], [])
             regs, ties2, wrong, exh = parse_check(run_check(exe, d, r, subf, al))
     res.update(prio=prio, ties_obs=ties, wrong=wrong, exh=exh, regs=regs, twin=info, alphabet=al.decode('latin1'))
     open(os.path.join(d, 'B.c'), 'w').write(Btxt)
     # object sizes of the search functions (measured): today vs twin, -O2
-    for nm, src in (('T', os.path.join(d, 'T.c')), ('B', os.path.join(d, 'B.c'))):
+    for nm, src in (('T', os.path.join(d, 'T.c')), ('B', os.path.join(d, 'B.c')), ('R', os.path.join(d, 'R.c'))):
         o = os.path.join(d, nm + '.o')
         subprocess.run(CC + ['-c', '-o', o, src], check=True, timeout=300)
         sz = subprocess.run(['nm', '-S', '--size-sort', o], capture_output=True, text=True).stdout
@@ -531,15 +628,17 @@ def check():
         pre = b'(?i)' if r['icase'] else b''
         vin.append((str(r['k']), pre + new.replace(MARK, b'\\z'), pre + new.replace(MARK, b'\\n\\z')))
     machines = probe_machines(vin)
+    tmach = probe_machines([(str(r['k']), (b'(?i)' if r['icase'] else b'') + r['pat'],
+                             (b'(?i)' if r['icase'] else b'') + r['pat']) for r in rows])
     with cf.ThreadPoolExecutor(JOBS) as ex:
-        out = list(ex.map(lambda r: safe(r, machines), rows))
+        out = list(ex.map(lambda r: safe(r, machines, tmach), rows))
     with open(os.path.join(OUT, E.get('CHECKOUT', 'check.json')), 'w') as f:
         json.dump(out, f)
 
 
-def safe(r, machines):
+def safe(r, machines, tmach):
     try:
-        return artifact(r, machines)
+        return artifact(r, machines, tmach)
     except Exception as e:     # recorded, never silently dropped
         return dict(k=r['k'], pat=r['pat'].decode('latin1'), skip='error: %s' % str(e)[:300])
 
@@ -561,7 +660,8 @@ def time_():
         d = os.path.join(OUT, 'a%d' % r['k'])
         exe = os.path.join(d, 'time')
         subprocess.run(CC + ['-DTIME', '-o', exe, os.path.join(HERE, 'harness.c'), os.path.join(d, 'T.c'),
-                             os.path.join(d, 'A.c'), os.path.join(d, 'B.c')], check=True, timeout=300)
+                             os.path.join(d, 'A.c'), os.path.join(d, 'B.c'), os.path.join(d, 'R.c')],
+                       check=True, timeout=300)
         p = subprocess.run(['taskset', '-c', E.get('CPU', '7'), exe, os.path.join(d, 'pat'),
                             '1' if r['icase'] else '0', os.path.join(d, 'subjects.bin')],
                            capture_output=True, text=True, timeout=3600)

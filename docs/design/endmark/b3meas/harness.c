@@ -1,14 +1,17 @@
 /* b3meas harness (lane b3meas, 2026-10-12): today's shipped rev-end search vs
  * the B3 hand twin, per artifact.  Built by gen.py, never by make.
  *
- *   -DCHECK  links T = today and B = twin, both LOAD-INSTRUMENTED (every
+ *   R = the RESTYLED control: today's algorithm (two seeds over today's
+ *   machine, its views, verify-at on a tie) emitted in the twin's code style,
+ *   so today/R is emission style and R/B is B3's own effect.
+ *   -DCHECK  links T = today, B = twin and R, all LOAD-INSTRUMENTED (every
  *            `subject[...]` read bumps b3_loads), and libpcre2-8.  Per regime
  *            subject: answers of T and B vs libpcre2 (search_from 0), loads per
  *            call, and on each twin TIE (b3tw_tie) the distance libpcre2 chose
  *            (n - end).  Then an exhaustive cell set (alphabet argv[4], lengths
  *            0..argv[5], EVERY start position) answer-checks both again.
  *   -DTIME   links T = today, A = a second copy of today (the A/A control:
- *            same source, own symbol, own code placement) and B = twin.  Per
+ *            same source, own symbol, own code placement), B = twin and R.  Per
  *            regime: calibrated loops over the regime's subjects, rounds in
  *            rotating order, median ns/call per variant.
  *
@@ -24,9 +27,10 @@
 #include <time.h>
 
 typedef int searchfn(const unsigned char *, size_t, size_t, ptrdiff_t (*)[2]);
-extern searchfn T_search, B_search;
+extern searchfn T_search, B_search, R_search;
 #ifdef TIME
 extern searchfn A_search;
+#define NV 4
 #endif
 
 typedef struct { char name[32]; int n, cap; unsigned char **s; size_t *len; } Reg;
@@ -118,8 +122,8 @@ int main(int argc, char **argv)
     long twrong_all = 0, bwrong_all = 0;
     for (int r = 0; r < nregs; r++) {
         Reg *g = &regs[r];
-        long tw = 0, bw = 0, nm = 0;
-        unsigned long tl = 0, bl = 0;
+        long tw = 0, bw = 0, rw = 0, nm = 0;
+        unsigned long tl = 0, bl = 0, rl = 0;
         long ties = 0;
         for (int k = 0; k < g->n; k++) {
             size_t os = 0, oe = 0;
@@ -133,10 +137,13 @@ int main(int argc, char **argv)
             bl += b3_loads;
             ties += b3tw_tie;
             tie_note(g->len[k], om, oe);
+            b3_loads = 0;
+            rw += !same(R_search, g->s[k], g->len[k], 0, om, os, oe);
+            rl += b3_loads;
         }
-        printf("check\t%s\t%d\t%ld\t%ld\t%ld\t%.2f\t%.2f\t%ld\n", g->name, g->n, nm, tw, bw,
-               (double)tl / g->n, (double)bl / g->n, ties);
-        twrong_all += tw; bwrong_all += bw;
+        printf("check\t%s\t%d\t%ld\t%ld\t%ld\t%.2f\t%.2f\t%ld\t%ld\t%.2f\n", g->name, g->n, nm, tw, bw,
+               (double)tl / g->n, (double)bl / g->n, ties, rw, (double)rl / g->n);
+        twrong_all += tw; bwrong_all += bw + rw;
     }
     if (argc > 5) {
         const char *al = argv[4];
@@ -155,6 +162,7 @@ int main(int argc, char **argv)
                     tw += !same(T_search, s, L, from, om, os, oe);
                     b3tw_tie = 0;
                     bw += !same(B_search, s, L, from, om, os, oe);
+                    bw += !same(R_search, s, L, from, om, os, oe);
                     if (from == 0) tie_note(L, om, oe);
                     cells++;
                 }
@@ -201,7 +209,7 @@ int main(int argc, char **argv)
     load_subjects(argv[3]);
     int rounds = getenv("ROUNDS") ? atoi(getenv("ROUNDS")) : 15;
     double target = getenv("TARGET_NS") ? atof(getenv("TARGET_NS")) : 2e6;
-    searchfn *fv[3] = { T_search, A_search, B_search };
+    searchfn *fv[NV] = { T_search, A_search, B_search, R_search };
     for (int r = 0; r < nregs; r++) {
         Reg *g = &regs[r];
         long iters = 1;
@@ -210,21 +218,21 @@ int main(int argc, char **argv)
             if (ns >= target || iters > (1L << 30)) break;
             iters = ns < target / 64 ? iters * 16 : (long)(iters * target / ns * 1.1) + 1;
         }
-        for (int v = 0; v < 3; v++) run(fv[v], g, iters);   /* warm */
-        double m[3][64];
+        for (int v = 0; v < NV; v++) run(fv[v], g, iters);   /* warm */
+        double m[NV][64];
         for (int k = 0; k < rounds; k++)
-            for (int j = 0; j < 3; j++) {
-                int v = (j + k) % 3;
+            for (int j = 0; j < NV; j++) {
+                int v = (j + k) % NV;
                 m[v][k] = run(fv[v], g, iters);
             }
-        double med[3], lo[3];
-        for (int v = 0; v < 3; v++) {
+        double med[NV], lo[NV];
+        for (int v = 0; v < NV; v++) {
             qsort(m[v], rounds, sizeof(double), cmpd);
             med[v] = m[v][rounds / 2];
             lo[v] = m[v][0];
         }
-        printf("time\t%s\t%d\t%ld\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", g->name, g->n, iters,
-               med[0], med[1], med[2], lo[0], lo[1], lo[2]);
+        printf("time\t%s\t%d\t%ld\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", g->name, g->n, iters,
+               med[0], med[1], med[2], med[3], lo[0], lo[1], lo[2], lo[3]);
         fflush(stdout);
     }
     return 0;
