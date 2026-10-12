@@ -50,6 +50,10 @@ GUARD = b'#if defined(PCREC_RQ3_WITNESS_GUARD)'
 # PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
 # and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
 STAMP = re.compile(rb'^#define ((?:(?!__)\w)+)_SIMD_GUARDED_BYTES (0x[0-9a-f]{16})ULL$', re.M)
+# Every guarded-bytes stamp line, the parts' included: each part measures its
+# own witness blocks, so NEUTRALITY strips every such line (the artifact's own
+# is STAMP's, the one ARITHMETIC reads).
+ANY_STAMP = re.compile(rb'^#define \w+_SIMD_GUARDED_BYTES (0x[0-9a-f]{16})ULL$', re.M)
 FORMS = re.compile(rb'^#define (?:(?!__)\w)+_MEMFN_FORMS "([^"\n]*)"$', re.M)
 PROG = re.compile(rb'^#define (?:(?!__)\w)+_VM_PROGRAM_BYTES (\d+)ULL$', re.M)
 UNROLL_WHY = re.compile(rb'^#define (?:(?!__)\w)+_UNROLL_K_WHY "([^"\n]*)"$', re.M)
@@ -109,7 +113,7 @@ def strip_blocks(text):
         if ln == GUARD:
             inside, n, cur = True, n + 1, [ln]
             continue
-        if STAMP.match(ln):
+        if STAMP.match(ln) or ANY_STAMP.match(ln):
             continue
         out.append(ln)
     return b'\n'.join(out), n, first
