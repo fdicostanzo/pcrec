@@ -22,7 +22,7 @@ What changed from twin.py (revision 1), each a panel finding:
   - Per case: Q's stamp (must read dfa for an admitted first-build case), the
     match count (must be > 0 somewhere), the decline reason.
 
-  twin2.py PCREC CASES.tsv OUTDIR
+  twin2.py PCREC CASES.tsv OUTDIR [--plant N]   (N: ctrl2.c.in's failing-direction plants)
 CASES.tsv: id <TAB> enc <TAB> pattern_hex <TAB> (ignored: revision 1's q column)
 """
 import itertools, os, random, re, subprocess, sys
@@ -211,22 +211,39 @@ def witness_bytes(p, enc):
     return out[:5]
 
 
+# the panel's own witness subjects, added verbatim (sem MF1-MF4/S1, arch M5)
+SEEDS = {
+    rb"\A\s+|\s+\z": [b"\xff\x20", b"\x20\xff\x20"],
+    rb"a{0,4}\A": [b"\xc3\xa9\xff", b"aa"],
+    rb"^x|a(?R)?b": [b"aabb", b"xaabb"],
+    rb"(?>\Ga|ab)c": [b"\xc3\xa9\x61\x62\x63", b"abc"],
+    rb"(?:^(a)|b)(?1)": [b"xba", b"aa"],
+    rb"^(?<=\x{e9})a|b": [b"\xc3\xa9a", b"\xc3\xa9b", b"b"],
+    rb"^\s*\{|\}\s*$": [b"{  }", b"{ }\n", b" { } "],
+}
+
+
 def subjects(p, enc):
     req = witness_bytes(p, enc)
-    lits = sorted(set(ch for ch in p if 32 <= ch < 127 and chr(ch).isalnum()))[:3]
-    alpha = list(req) + [b" ", b"\n"] + [bytes([c]) for c in lits] + [b"x"]
-    if b"{" in p or b"\\s" in p: alpha += [b"{", b"}", b"\t"]
+    esc_punct = re.findall(rb"\\([^A-Za-z0-9])", p)                # \{ is a literal {
+    bare = re.sub(rb"\\x\{[^}]*\}|\\[pPgkN]\{[^}]*\}|\\.|\(\?(?:[a-zA-Z^-]*[:)]|[=!>|]|<[=!]|P?<\w+>|'\w+')|\(\*[^)]*\)|\{\d*,?\d*\}", b"", p)
+    lits = list(dict.fromkeys([e for e in esc_punct if 32 < e[0] < 127]
+                              + [bytes([c]) for c in bare if 32 < c < 127 and chr(c) in
+                                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,;:'\"/#-=@&%!~`<>_"]))[:4]
+    alpha = list(req) + lits + [b" ", b"\n"]
+    if b"\\s" in p: alpha += [b"\t"]
     seen = []
     for a in alpha:
         if a not in seen: seen.append(a)
-    alpha = seen[:8]
+    alpha = seen[:10]
     assert all(r in alpha for r in req), (p, req, alpha)       # chk M4: witness bytes present
     out = [b""]
-    for L in range(1, 5):
+    for L in range(1, 4):
         out += [b"".join(t) for t in itertools.product(alpha, repeat=L)]
     rnd = random.Random(1)
-    for _ in range(300):
-        out.append(b"".join(rnd.choice(alpha) for _ in range(rnd.randint(5, 24))))
+    for _ in range(600):
+        out.append(b"".join(rnd.choice(alpha) for _ in range(rnd.randint(4, 24))))
+    out += SEEDS.get(p, [])
     # chk M3: matches > 0 per ID needs subjects that reach the pattern's words
     # (concat-sqli's keywords never appear in a 7-letter alphabet)
     words = list(dict.fromkeys(re.findall(rb"[A-Za-z_]{3,}", re.sub(rb"\\[a-zA-Z]", b" ", p))))[:24]
@@ -291,7 +308,7 @@ def case(pcrec, cid, enc, pat, wd):
         pst = stamp(f"{wd}/plain.c", "rxp", "ENGINE") + "/" + stamp(f"{wd}/plain.c", "rxp", "DFA_SCAN")
         cc = ["gcc", "-O1", "-std=gnu11", "-w", f"-DUTF={1 if enc == 'utf8' else 0}", f"-DGUARD={gi}",
               f"-DUCHECK={uc}", f"-DHAS_G={1 if has_g else 0}", f"-DQNEVER={1 if q is None else 0}",
-              f"-DFMODE={fmode}", "-I", wd, "-x", "c", "-o", f"{wd}/t", f"{HERE}/diff.c", f"{HERE}/ctrl2.c.in", f"{wd}/floor.c",
+              f"-DFMODE={fmode}", f"-DPLANT={PLANT}", "-I", wd, "-x", "c", "-o", f"{wd}/t", f"{HERE}/diff.c", f"{HERE}/ctrl2.c.in", f"{wd}/floor.c",
               f"{wd}/plain.c"] + ([f"{wd}/q.c"] if q is not None else []) + ["-lpcre2-8"]
         b = run(cc)
         if b.returncode:
@@ -301,8 +318,14 @@ def case(pcrec, cid, enc, pat, wd):
     return rows
 
 
+PLANT = 0
+
+
 def main():
+    global PLANT
     pcrec, cases, out = sys.argv[1:4]
+    if "--plant" in sys.argv:
+        PLANT = int(sys.argv[sys.argv.index("--plant") + 1])
     for ln in open(cases):
         if not ln.strip() or ln.startswith("#"): continue
         f = ln.rstrip("\n").split("\t")

@@ -14,7 +14,10 @@
  *    so it is answer-right and cost-wrong as F: measured, cost2.py.
  *  - The floor is the ALIGNED from, and Q is searched from next_pos(f).
  *  - Q may be never (the floor-only compound): QNEVER=1 compiles no Q.
- * Macros: GUARD (0 none, 1 refuse, 2 align), UCHECK (0/1), UTF, HAS_G, QNEVER, FMODE. */
+ * Macros: GUARD (0 none, 1 refuse, 2 align), UCHECK (0/1), UTF, HAS_G, QNEVER, FMODE.
+ * PLANT (failing-direction controls, twin2.py --plant N): 1 = Q from `from`
+ * (D163's literal text), 2 = -futf-check with Q's lookbehind reach, 3 = no
+ * controller prologue (parts are guards-off, so the guard is simply lost). */
 #include "floor.h"
 #if !QNEVER
 #include "q.h"
@@ -22,13 +25,18 @@
 #include "plain.h"
 int rx_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2])
 {
-#if UTF && GUARD == 1
+#ifndef PLANT
+#define PLANT 0
+#endif
+#if UTF && GUARD == 1 && PLANT != 3
     if (!(from == 0 || from >= n || (s[from] & 0xC0) != 0x80)) return PCREC_ERR_STARTPOS;
-#elif UTF && GUARD == 2
+#elif UTF && GUARD == 2 && PLANT != 3
     if (!(from == 0 || from >= n || (s[from] & 0xC0) != 0x80))
         do from++; while (!(from >= n || (s[from] & 0xC0) != 0x80));
 #endif
-#if UTF && UCHECK
+#if UTF && UCHECK && PLANT == 2 && !QNEVER
+    if (rxq_valid_upto(s, n, from) != n) return PCREC_ERR_UTF;   /* plant: Q's reach */
+#elif UTF && UCHECK && PLANT != 3
     if (rxp_valid_upto(s, n, from) != n) return PCREC_ERR_UTF;
 #endif
     if (from > n) return 0;
@@ -47,7 +55,11 @@ int rx_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2
         }
         if (len != -1) return (int)len;               /* a give-up: returned at once */
 #endif
+#if PLANT == 1
+        qf = from;                                    /* plant: D163's literal text */
+#else
         qf = rxf_next_pos(s, n, from);                /* Q only PAST the floor */
+#endif
     }
 #if QNEVER
     (void)qf;
