@@ -243,7 +243,7 @@ Columns: line | id | state as written (`~x` = colon-less `STATE x`) | chars | cl
 | 860 | [M4-CALLOUTS] | not-started | 257 | STALE | trigger "step 2 awaits M4" is met (M4 shipped 2026-08-18; backlog_triage 09-22 flagged it); AND the row is physically split in two: [MATCH-EVENTS] was inserted at :861 in the middle of its body (:862-896) | repair the split; restate trigger; ask Frank if still wanted |
 | 861 | [MATCH-EVENTS] | not-started | 3840 | LIVE | filed 2026-10-12, not scheduled; wedged inside [M4-CALLOUTS] | keep; move out |
 | 897 | [M4-SUBST] | not-started | 3357 | STALE | trigger "need not wait on M4" - M4 shipped; D38 design of record is docs/design/replace_design.md (variables design set, 09-23) which now names this row as its implementation target; "xmas item" text is a 2026-08-12 note | restate against replace_design.md / [VAR] M9; ask Frank if still wanted |
-| 956 | [DD-2] | not-started | 688 | COMPLETED | VM step/frame budgets shipped: PCREC_ERR_STEPS/_FRAMES (match_api.md:219,387), D42.6/D45; row says "(with M4 design)" and M4 shipped | archive |
+| 956 | [DD-2] | not-started | 688 | COMPLETED | VM step/frame budgets shipped: PCREC_ERR_STEPS/_FRAMES (match_api.md (old line cites 219 and 387)), D42.6/D45; row says "(with M4 design)" and M4 shipped | archive |
 | 957 | [DD-9] | (none) | 734 | JUNK | archive stub; DD-9 decided 2026-08-14 | delete |
 | 958 | [EMIT-DOT] | not-started | 755 | LIVE | filed 2026-09-28 (residual of DD-8) | keep |
 | 959 | [DD-13] | completed | 213 | JUNK | archive stub with FIVE ids in one line ("[DD-13] and its completed children [DD-13a], [DD-13b.W1], ...") and `STATE:completed` (counts as a completed row); also wedges the two live children below it | delete; keep the two children under a [DD-13] heading or as top-level rows |
@@ -327,7 +327,7 @@ Columns: line | id | state as written (`~x` = colon-less `STATE x`) | chars | cl
 | 1325 | [OPT-ENDTERM] | not-started | 1371 | LIVE | filed 2026-10-06, D153; unscheduled, D77 (cross-refs K81 and the archived [OPT-VEDGE]) | keep |
 | 1326 | [DEC-ROUTE] | not-started | 1096 | SUPERSEDED | "ABSORBED by the start table's route column ... Kept only as the pointer; no separate lane"; start table complete (START-TABLE done) | delete |
 | 1327 | [START-D1] | not-started | 532 | LIVE | filed 2026-10-06; gated on measuring the 33 artifacts | keep |
-| 1328 | [START-D2] | not-started | 416 | COMPLETED | `DFA_START "attempt-start"` shipped with L2.1 of [OPT-REVEND] (revbuild_report.md, 4863fc96; match_api.md:1764 shows the value; 638 movers) | archive |
+| 1328 | [START-D2] | not-started | 416 | COMPLETED | `DFA_START "attempt-start"` shipped with L2.1 of [OPT-REVEND] (revbuild_report.md, 4863fc96; match_api.md (old line cite 1764) shows the value; 638 movers) | archive |
 | 1329 | [START-D2B] | not-started | 310 | LIVE | "RULED: FILE, don't fix" 2026-10-06 | keep |
 | 1330 | [DEC-POSDOM] | not-started | 1122 | LIVE | filed 2026-10-06 | keep |
 | 1331 | [EST-REGISTRY] | not-started | 481 | LIVE | chartered unscheduled 2026-09-30 (D141) | keep |
