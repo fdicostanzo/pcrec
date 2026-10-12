@@ -20,7 +20,9 @@ bytes, the panel's subjects verbatim):
     exactly (codes, refusals and every caps slot);
   - the lever's whole-match span against libpcre2;
   - the find-all loop.
-Both builds must agree on compiling at all. Per admitted case-arm the
+G4 rides along on every admitted case-arm: the compound and the plain
+artifact at `-p rx` have the same `.h`, byte for byte, and the same exported
+symbol set, no part symbol global. Both builds must agree on compiling at all. Per admitted case-arm the
 generated subjects must produce at least one match (chk M3), and the
 admitted population must reach its floor (K35): a compiler that stopped
 admitting would otherwise pass on nothing. Exit 1 on any difference.
@@ -100,6 +102,37 @@ def stamp(path):
     return m.group(1).decode() if m else "MISSING"
 
 
+def export_identity(pcrec, harness, d, pat, common):
+    """G4 (compound.md §E.3): the compound at `-p rx` against the lever's
+    plain artifact at `-p rx`, each in its own directory: the `.h` byte for
+    byte, and the object's exported symbol set (`nm -g`, taken from the PLAIN
+    artifact, never from the closure the compiler computed), no part symbol
+    global. None, or what differs."""
+    sets = []
+    for tag, cmd in (("c", [pcrec]), ("p", [harness, "--harness=no-compound"])):
+        dd = os.path.join(d, "g4" + tag)
+        os.makedirs(dd, exist_ok=True)
+        r = subprocess.run(cmd + ["-p", "rx", "-o", os.path.join(dd, "rx.c")] + common +
+                           ["--pattern", pat], capture_output=True, timeout=600)
+        if r.returncode:
+            return "the -p rx compile refused"
+        o = os.path.join(dd, "rx.o")
+        b = subprocess.run([CC, "-O1", "-std=gnu11", "-c", "-I", dd, "-o", o,
+                            os.path.join(dd, "rx.c")], capture_output=True, timeout=600)
+        if b.returncode:
+            return "the -p rx object did not build"
+        nm = subprocess.run(["nm", "-g", "--defined-only", o], capture_output=True, timeout=60)
+        sets.append((open(os.path.join(dd, "rx.h"), "rb").read(),
+                     sorted(l.split()[-1] for l in nm.stdout.decode().splitlines() if l.strip())))
+    if sets[0][0] != sets[1][0]:
+        return "the compound's .h differs from the plain artifact's"
+    if sets[0][1] != sets[1][1]:
+        return "exported symbols %s vs plain %s" % (sets[0][1], sets[1][1])
+    if any("__" in x for x in sets[0][1]):
+        return "a part symbol is global"
+    return None
+
+
 def run_case(job):
     pcrec, harness, wd, cid, pat, arm, args, utf = job
     d = os.path.join(wd, re.sub(r"[^A-Za-z0-9]", "_", cid)[-60:] + "_" + arm)
@@ -124,7 +157,10 @@ def run_case(job):
     if b.returncode:
         return cid, arm, "FAIL", "build: " + b.stderr.decode()[:400]
     o = subprocess.run([exe, pat.hex()], input=subjects(pat, utf), capture_output=True, timeout=900)
+    g4 = export_identity(pcrec, harness, d, pat, common) if st != "none" else None
     shutil.rmtree(d)
+    if g4:
+        return cid, arm, "FAIL", "G4: " + g4
     line = o.stdout.decode().strip()
     kv = dict(x.split("=", 1) for x in line.split(" FIRST:")[0].split())
     bad = sum(int(kv[k]) for k in ("d_search", "d_match", "d_oracle", "d_findall"))

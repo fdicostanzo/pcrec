@@ -1,0 +1,47 @@
+# [COMPOUND] the admitted population (landing_census.py, B4): file<TAB>pattern-hex<TAB>arm<TAB>row. Regenerate with --write-manifest.
+tests/assertions/d27/anchors_abs.rxt	61625c41	-e utf8	split
+tests/assertions/d27/anchors_abs.rxt	61625c41	byte	split
+tests/assertions/d27/anchors_abs.rxt	785c4179	-e utf8	split
+tests/assertions/d27/anchors_abs.rxt	785c4179	byte	split
+tests/assertions/d27/multiline.rxt	283f6d295e61283f2d6d295e62	-e utf8	split
+tests/assertions/d27/multiline.rxt	283f6d295e61283f2d6d295e62	byte	split
+tests/assertions/d27/multiline.rxt	283f6d295e61283f2d6d3a5e6229	-e utf8	split
+tests/assertions/d27/multiline.rxt	283f6d295e61283f2d6d3a5e6229	byte	split
+tests/assertions/gate.rxt	617b302c347d5c41	-e utf8	split
+tests/assertions/gate.rxt	617b302c347d5c41	byte	split
+tests/assertions/gpos.rxt	615c4762	-e utf8	split
+tests/assertions/gpos.rxt	615c4762	byte	split
+tests/assertions/gpos.rxt	615c47627c5c477a	-e utf8	split
+tests/assertions/gpos.rxt	615c47627c5c477a	byte	split
+tests/assertions/gpos.rxt	785c47	-e utf8	split
+tests/assertions/gpos.rxt	785c47	byte	split
+tests/assertions/rev_end.rxt	5c4761247c6224	-e utf8	split
+tests/assertions/rev_end.rxt	5c4761247c6224	byte	split
+tests/base/anchors.rxt	5e617c6224	-e utf8	split
+tests/base/anchors.rxt	5e617c6224	byte	split
+tests/possessify/composition_d27.rxt	2e7b312c337d5c41612a	-e utf8	split
+tests/possessify/composition_d27.rxt	2e7b312c337d5c41612a	byte	split
+tests/possessify/composition_d27.rxt	2e7b312c337d5e612a	-e utf8	split
+tests/possessify/composition_d27.rxt	2e7b312c337d5e612a	byte	split
+tests/possessify/composition_d27.rxt	5b612d5d7b312c327d5c412d	-e utf8	split
+tests/possessify/composition_d27.rxt	5b612d5d7b312c327d5c412d	byte	split
+tests/possessify/composition_d27.rxt	5b612d5d7b327d5e612a	-e utf8	split
+tests/possessify/composition_d27.rxt	5b612d5d7b327d5e612a	byte	split
+tests/possessify/composition_d27.rxt	5b612d635d2a5e612a	-e utf8	split
+tests/possessify/composition_d27.rxt	5b612d635d2a5e612a	byte	split
+tests/possessify/composition_d27.rxt	5b612d635d3f5c4161	-e utf8	split
+tests/possessify/composition_d27.rxt	5b612d635d3f5c4161	byte	split
+tests/possessify/composition_d27.rxt	5b612d635d7b302c7d3f5e61	-e utf8	split
+tests/possessify/composition_d27.rxt	5b612d635d7b302c7d3f5e61	byte	split
+tests/possessify/composition_d27.rxt	5c572a5c4761	-e utf8	split
+tests/possessify/composition_d27.rxt	5c572a5c4761	byte	split
+tests/possessify/composition_d27.rxt	5c642a5c4161	-e utf8	split
+tests/possessify/composition_d27.rxt	5c642a5c4161	byte	split
+tests/possessify/composition_d27.rxt	5c737b327d5e	-e utf8	split
+tests/possessify/composition_d27.rxt	5c737b327d5e	byte	split
+tests/possessify/composition_d27.rxt	5c772a5e5c62	-e utf8	split
+tests/possessify/composition_d27.rxt	5c772a5e5c62	byte	split
+tests/possessify/composition_d27.rxt	617b327d5e2d	-e utf8	split
+tests/possessify/composition_d27.rxt	617b327d5e2d	byte	split
+tests/possessify/possessify.rxt	617b302c347d5e	-e utf8	split
+tests/possessify/possessify.rxt	617b302c347d5e	byte	split
