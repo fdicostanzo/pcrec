@@ -73,6 +73,7 @@ def main():
         ("#3 R4 asked: adaptive rows", cnt(lambda r: r[col["RX_VM_RESEED"]].startswith("adaptive")), "RX_VM_RESEED adaptive*"),
         ("#3 R4 answered dense", cnt(lambda r: r[col["RX_VM_RESEED"]] == "adaptive-dense"), "RX_VM_RESEED adaptive-dense"),
         ("A3: R4 on an offset/run-pinned prefilter", cnt(lambda r: r[col["RX_VM_RESEED"]].startswith("adaptive") and ofs(r[col["RX_DFA_PREFILTER"]])), "adaptive* with RX_DFA_PREFILTER offset-set*/run-pinned*"),
+        ("A5: R4 dense with no forward prefilter scan", cnt(lambda r: r[col["RX_VM_RESEED"]] == "adaptive-dense" and r[col["RX_DFA_PREFILTER"]] in ("", "none")), "adaptive-dense with RX_DFA_PREFILTER none (pcrec_dfa_cand_ppm's 10^6 branches)"),
         ("prior NONE (byte-rate=none)", cnt(lambda r: "byte-rate=none" in r[col["RX_FINDINGS"]]), "RX_FINDINGS byte-rate=none"),
     ]
     for name, v, how in out:
