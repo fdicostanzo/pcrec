@@ -670,5 +670,16 @@ def time_():
                 print('%d\t%s' % (r['k'], ln[5:]), flush=True)
 
 
+def states():
+    """today's reverse machine size (pcrec's minimized X$ DFA, pre-scan-edge) per
+    artifact, beside the tagged twin's, for the cost side."""
+    rows = read_pop()
+    tm = probe_machines([(str(r['k']), (b'(?i)' if r['icase'] else b'') + r['pat'],
+                          (b'(?i)' if r['icase'] else b'') + r['pat']) for r in rows if r['enc'] == 'byte'])
+    out = {k: dict(n=v[0]['n'], ncls=v[0]['ncls']) for k, v in tm.items() if v}
+    with open(os.path.join(OUT, 'states.json'), 'w') as f:
+        json.dump(out, f)
+
+
 if __name__ == '__main__':
-    {'pop': pop, 'check': check, 'time': time_}[sys.argv[1]]()
+    {'pop': pop, 'check': check, 'time': time_, 'states': states}[sys.argv[1]]()
