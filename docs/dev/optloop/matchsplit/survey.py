@@ -256,8 +256,9 @@ def analyze(r, probe_row, ppm):
     present = [x for x in order if x in c["classes"]]
     r["mix"] = "+".join(present) if present else "-"
     r["nlive"] = len(c["elems"])
+    r["elems"] = ";".join("%d:%d:%d:%d" % e for e in c["elems"])
     r["both"] = int(any(sp and ep for (sp, ep, z, lu) in c["elems"]))
-    r["dead"], r["ml_landmark"] = c["dead"], c["ml_landmark"]
+    r["dead"], r["ml_landmark"], r["kreset"] = c["dead"], c["ml_landmark"], c["kreset"]
     r["look_pin"], r["ref"] = ",".join(c["look_pin"]), ",".join(c["ref"])
     red = c["red"]
     r["red"] = "capped" if red is None else ",".join(f"{k}:{v[0]}" for k, v in sorted(red.items()))
@@ -274,12 +275,10 @@ def analyze(r, probe_row, ppm):
 
 def compile_row(r, ppm):
     enc = r["enc"]
-    if r["status"] != "ok":
-        return
     text = text_of(r)
     d = facts_of(text, enc)
     r["refused"] = d["refused"]
-    if d["refused"]:
+    if d["refused"] or r["status"] != "ok":
         return
     for k in ROUTE_KEYS + ("ENGINE_SEL", "VM_START_SCAN", "REQ_RUN", "REQ_WHY", "ENGINE_WHY",
                            "VM_PREFILTER_LANG", "VM_RESEED", "DFA_MATCH", "DFA_SCAN_EDGE", "DFA_PREFILTER_OFFSETS"):
@@ -321,8 +320,8 @@ def compile_row(r, ppm):
             r["en_DFA_START"], r["en_DFA_SCAN"] = f.get("DFA_START", ""), f.get("DFA_SCAN", "")
 
 
-COLS = ["pop", "id", "suite", "enc", "icase", "adv", "status", "view", "refused", "mix", "nlive", "both",
-        "dead", "ml_landmark", "look_pin", "ref", "red", "z_by_class", "lu_E", "free_live", "unparse",
+COLS = ["pop", "id", "suite", "enc", "icase", "adv", "status", "view", "refused", "mix", "nlive", "elems", "both",
+        "dead", "ml_landmark", "kreset", "look_pin", "ref", "red", "z_by_class", "lu_E", "free_live", "unparse",
         "approx", "ast_nodes",
         "ENGINE", "ENGINE_SEL", "ENGINE_WHY", "DFA_SCAN", "DFA_PREFILTER", "DFA_PREFILTER_OFFSETS", "DFA_START",
         "DFA_MATCH", "DFA_SCAN_EDGE", "VM_PREFILTER", "VM_PREFILTER_LANG", "VM_RESEED", "VM_START_SCAN",

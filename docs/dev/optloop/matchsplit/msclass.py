@@ -41,6 +41,7 @@ class Flags:
         self.look_pin = set()  # kinds of lookaround whose body carries a pin
         self.ref = set()       # bref / var / call present
         self.ctx = 0
+        self.kreset = 0
 
 
 def join_z(a, b):
@@ -100,7 +101,10 @@ def summ(n, fl):
         return {(0, 0, z, 0)}
     if k == "cbig":
         return {(0, 0, N, 0)}
-    if k in ("e", "k"):
+    if k == "e":
+        return {(0, 0, Z, 0)}
+    if k == "k":
+        fl.kreset += 1       # \\K moves the REPORTED start, not the attempt start the classes talk about
         return {(0, 0, Z, 0)}
     if k == "ctx":
         fl.ctx += 1
@@ -432,15 +436,26 @@ def texts(n, lead, trail, approx):
         return Texts(at(T.A), at(T.NP), at(T.NE), at(T.E))
     if k == "wc":
         return texts(n[1], lead, trail, approx)
-    if k in ("bref", "var", "call"):
+    if k == "bref" and n[2] == 1:
+        t = ("\\g{%d}" % n[3][0], 2)
+        if n[1]:
+            t = ("(?i:" + t[0] + ")", 2)
+        return Texts(t, t, t, None)
+    if k == "call":
+        t = ("(?R)" if n[1] == 0 else "(?%d)" % n[1], 2)
+        return Texts(t, t, t, None)
+    if k in ("bref", "var"):
         raise Unsupported(k)
     if k == "look":
         behind, neg, atomic = n[1], n[2], n[3]
         body = texts(n[4], False, False, approx).A
-        pre = "(?<" if behind else "(?"
-        pre += "!" if neg else "="
         if atomic:
-            raise Unsupported("look-atomic")
+            pre = "(?<" if behind else "(?"
+            pre += "!" if neg else "="
+        else:       # the non-atomic positive lookarounds, (*napla: and (*naplb:
+            if neg:
+                raise Unsupported("look-nonatomic-neg")
+            pre = "(*naplb:" if behind else "(*napla:"
         t = (pre + (body[0] if body else "(?!)") + ")", 2)
         return Texts(t, t, t, None)
     if k == "rep":
@@ -451,7 +466,7 @@ def texts(n, lead, trail, approx):
         def rp(x, zero_ok):
             if x is None:
                 return ("(?:)", 2) if rmin == 0 else None
-            return (wrap(x, 2) + q, 2)
+            return (wrap(x, 2) + q, 1)     # a quantified atom is not itself repeatable: prec 1
         A = rp(T.A, True)
         NP = rp(T.NP, True)
         NE = rp(T.NE, True)
@@ -472,7 +487,7 @@ def classify(root):
     el = summ(root, fl)
     cl = classes(el)
     d = dict(elems=sorted(el), classes=cl, dead=fl.dead, ml_landmark=fl.ml_landmark,
-             look_pin=sorted(fl.look_pin), ref=sorted(fl.ref), ctx=fl.ctx)
+             look_pin=sorted(fl.look_pin), ref=sorted(fl.ref), ctx=fl.ctx, kreset=fl.kreset)
     d["red"] = redundancy(root)
     return d
 

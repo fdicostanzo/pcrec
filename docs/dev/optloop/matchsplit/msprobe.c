@@ -25,7 +25,7 @@
  *   ["cat",...] ["alt",...] ["c",[[lo,hi],...]] ["cbig",n]
  *   ["rep",rmin,rmax,greedy,possessive,child] ["e"] ["bol",multiline]
  *   ["eol",multiline] ["end"] ["g"] ["k"] ["ctx",anchor,fn,[[lo,hi],...]] ["cap",no,child]
- *   ["atom",child] ["wc",child] ["bref"] ["var"] ["call"]
+ *   ["atom",child] ["wc",child] ["bref",caseless,nrefs,[refs]] ["var"] ["call",target]
  *   ["look",behind,neg,atomic,child]
  */
 #include <stdio.h>
@@ -102,6 +102,7 @@ static Ast *parse_stage(const char *pat, Ctx *cx, pcrec_options *defo, int enc,
     cx->job = calloc(1, sizeof(Job));
     if (!cx->job) { fprintf(stderr, "out of memory\n"); exit(2); }
     cx->arena.cx = cx;
+    cx->want_caps = 1;      /* compile.c:1815's default: captures are ON */
     Ast *root = NULL;
     if (setjmp(cx->jb) == 0) {
         pcrec_parse_mods_init(cx);
@@ -177,9 +178,13 @@ static void dump(const Ast *a)
         break;
     case A_CAP: printf("[\"cap\",%d,", a->u.cap.no); dump(a->l); putchar(']'); break;
     case A_ATOMIC: printf("[\"atom\","); dump(a->l); putchar(']'); break;
-    case A_BREF: printf("[\"bref\"]"); break;
+    case A_BREF:
+        printf("[\"bref\",%d,%d,[", a->u.bref.caseless ? 1 : 0, a->u.bref.nrefs);
+        for (int i = 0; i < a->u.bref.nrefs; i++) printf("%s%d", i ? "," : "", a->u.bref.refs[i]);
+        printf("]]");
+        break;
     case A_VAR: printf("[\"var\"]"); break;
-    case A_CALL: printf("[\"call\"]"); break;
+    case A_CALL: printf("[\"call\",%d]", a->u.call.target); break;
     case A_LOOK:
         printf("[\"look\",%d,%d,%d,", a->u.look.behind ? 1 : 0, a->u.look.neg ? 1 : 0,
                a->u.look.atomic ? 1 : 0);
