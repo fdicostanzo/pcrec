@@ -133,7 +133,7 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
         res.node = pcrec_ast_ctx(cx, w.iv, w.n, rw->sel == 'b'
                                  ? CTXFN_BOUNDARY : CTXFN_NONBOUNDARY);
         res.node->u.ctx.anchor = true;
-        pcrec_ast_stamp(cx, res.node, rw, at);
+        pcrec_ast_stamp(res.node, rw, at);
         return res;
     }
     /* [M6.2 wave D] `\G`, and it is a THIRD kind of question again. `\A`/
@@ -186,13 +186,11 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * VM_ONLY and is what `forces_registry` (src/opt/select_engine.c) reads.
      *
      * IT ALSO REPLACES `Ctx.first_kreset_pos`, which used to be recorded in
-     * the `'K'` case above: `pcrec_ast_stamp` records the offset for any
-     * DFA-excluding row, first-wins, in the same statement that writes the
-     * row — so the `engine_why` text and its offset come from one place. The
-     * old field's own comment ("read ONLY when the walk already found a node,
-     * so it cannot be stale in the direction that matters") carries over
-     * verbatim and is restated at `Ctx.first_vmonly_pos`. */
-    pcrec_ast_stamp(cx, res.node, rw, at);
+     * the `'K'` case above: `pcrec_ast_stamp` records the offset on the
+     * node (`Ast.reg_at`) in the same statement that writes the row — so the
+     * `engine_why` text and its offset come from one place, and a node that
+     * survives a rewrite keeps its own offset ([K110]). */
+    pcrec_ast_stamp(res.node, rw, at);
 
     /* MULTILINE IS PINNED FALSE HERE, DELIBERATELY AND EXPLICITLY — never
      * copied from `cx->mods` the way parse.c's `^`/`$` cases copy it.

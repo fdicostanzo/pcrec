@@ -598,6 +598,47 @@ if build selnc 'a(b|c)+d' --no-captures; then
         || bad "[M4.5b] §5.3: --no-captures still selected engine=$(info_field selnc engine)"
 fi
 
+# ---- 3a. [K110] RX_ENGINE_WHY's offset is the USER's pattern offset of the --
+#          construct that SURVIVES the rewrites ------------------------------
+#
+# The oracle is the byte index of the forcing construct's spelling in the
+# pattern text as written, computed here by the shell from the pattern and the
+# needle alone -- it shares nothing with the compiler's own offset. Each row
+# puts a construct a rewrite DELETES before the one that forces the VM: the
+# free atomic discharge (`a++`, `(?>[^"]*)`) and the linkage's call splice
+# (`(?1)`, `(?&n)`) all leave a VM-only row's offset behind them, so a
+# first-recorded-wins offset names the deleted one. The f-j rows are the
+# controls: nothing is rewritten away, and the earliest forcing construct that
+# SURVIVES wins (h-j: the FIRST of several survivors in pattern order).
+#   fields: pattern <TAB> needle <TAB> token the stamp must name <TAB> flags
+k110_row() {
+    local n="$1" pat="$2" needle="$3" tok="$4"; shift 4
+    local pre want got
+    pre="${pat%%"$needle"*}"
+    want="${#pre}"
+    mkdir -p "$WORKDIR/$n"
+    pcrec_run "$PCREC" -p rx --features all "$@" --emit-main -o "$WORKDIR/$n/gen.c" \
+        --pattern "$pat" >/dev/null 2>"$WORKDIR/$n/err" \
+        || { bad "[K110] $n: '$pat' did not compile: $(cat "$WORKDIR/$n/err")"; return; }
+    got="$(grep -E '^#define RX_ENGINE_WHY ' "$WORKDIR/$n/gen.c")"
+    if printf '%s' "$got" | grep -qF "\"$tok at pattern offset $want\""; then
+        ok "[K110] '$pat' $*: engine_why names $tok at offset $want (the byte index of '$needle')"
+    else
+        bad "[K110] '$pat' $*: expected '$tok at pattern offset $want', stamp is: $got"
+    fi
+}
+K110_LOOK='(\?<=...)'
+k110_row k110a 'a++b(?<=ab)'            '(?<='  "$K110_LOOK"
+k110_row k110b 'x(?>a+)b(?<=ab)'         '(?<='  "$K110_LOOK"
+k110_row k110c '(a)(?1)b(?<=ab)'        '(?<='  "$K110_LOOK" --no-captures
+k110_row k110d '(?<n>a)(?&n)b(?<=ab)'   '(?<='  "$K110_LOOK" --no-captures
+k110_row k110e 'a++\Kb'                 '\K'    '\\K'
+k110_row k110f 'ab(?<=ab)'              '(?<='  "$K110_LOOK"
+k110_row k110g 'a++b(?>a|ab)c'          '(?>'   '(\?>...)'
+k110_row k110h 'a\Kb\Kc'                '\K'    '\\K'
+k110_row k110i 'a\Kb(?<=b)'             '\K'    '\\K'
+k110_row k110j 'x(?<=ab)a++\K'          '(?<='  "$K110_LOOK"
+
 # ---- 3b. [SEL-1] `auto`'s DFA-cap-overflow fallback (plan row [SEL-1], -----
 #          Frank 2026-08-28, bench O-7 item 6) --------------------------------
 #

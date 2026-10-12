@@ -1046,6 +1046,17 @@ struct Ast {
      * trivially; `[ENG-CUT]` inherits the rule. Sabotage row S97. */
     const RegRow *reg;
 
+    /* [K110] THE SOURCE OFFSET OF THE STAMP, in the USER's pattern: the byte
+     * index `pcrec_ast_stamp` was handed with `reg` (the `(?<=` it opens, the
+     * `+` of a possessive suffix). It travels on the node, so every rewrite
+     * that keeps the node keeps the offset, and every rewrite that deletes the
+     * node (the free atomic discharge, a spliced call) takes the offset with
+     * it -- which is what a parse-time `first-wins` counter could not do, and
+     * why `RX_ENGINE_WHY` named a construct the tree no longer carried at an
+     * offset belonging to another. Meaningful only where `reg` is non-NULL;
+     * `engine_why`'s offset is the surviving DFA-excluding node's own. */
+    size_t        reg_at;
+
     /* ---- [D70] THE PER-KIND PAYLOAD UNION ---------------------------------
      *
      * D70 (Frank, 2026-08-23): the per-kind fields — existing AND new — live
@@ -3126,28 +3137,6 @@ struct Ctx {
      * offset, which the AST has no room for (no node carries a source
      * position). It is read ONLY when the walk already found a node, so it
      * cannot be stale in the direction that matters. */
-    /* [M6.4.2 / SR-8, D67] Pattern offset of the FIRST construct whose
-     * registry row EXCLUDES the DFA, or SIZE_MAX if none.
-     *
-     * IT REPLACES `first_kreset_pos` AND `first_atomic_pos`, which is the
-     * retirement D67 asks for: with the consultation generic, a per-construct
-     * position field would be a per-construct home for a fact the ONE stamp
-     * call already has in hand. `pcrec_ast_stamp` is that call and the only
-     * writer, so the offset and the `Ast.reg` it belongs to are recorded in
-     * the same statement.
-     *
-     * IT IS THE DIAGNOSTIC'S SOURCE AND NOT THE VERDICT'S, exactly as
-     * `first_kreset_pos` was. `forces_registry` (src/opt/select_engine.c)
-     * answers "does this POST-DISCHARGE tree carry a DFA-excluding node" by
-     * WALKING, because that is the honest question and because the free
-     * discharge DELETES nodes a parse-time counter would keep counting. This
-     * field only supplies the `engine_why` stamp's offset, which no AST node
-     * carries. It is read ONLY on the path where the walk already found a
-     * node, so it cannot be stale in the direction that matters; on a tree
-     * where a rewrite deleted SOME but not all of them, the offset and the
-     * `why` TEXT (which comes from the surviving node's own row) can name
-     * different occurrences — D26 tier-3 wording, not a verdict. */
-    size_t               first_vmonly_pos;
     /* [UTF-VALID] LB: PCRE2's `max_lookbehind` FACT, the number of
      * CHARACTERS `<prefix>_valid_upto` steps back from `startpos` before it
      * validates (docs/design/utf_valid_design.md §1.4, measured on 10.46).
@@ -4163,15 +4152,15 @@ Ast *pcrec_look_t3(Ctx *cx, const Ast *body, bool behind, bool neg);
  * statement, which is why it is a function and not an assignment: `Ast.reg` is
  * set (so `pcrec_ast_engines` can consult the row's `engines` mask, and so
  * `select_engine.c` can name the construct), and — for a row that EXCLUDES the
- * DFA — `Ctx.first_vmonly_pos` records the offset, first-wins. Doing both here
+ * DFA — `Ast.reg_at` records the offset ON THE NODE ([K110]). Doing both here
  * is what stops the offset and the row from being recorded at different
- * moments and drifting.
+ * moments and drifting, and a node that survives a rewrite keeps its offset.
  *
  * A PRODUCER THAT FORGETS TO CALL IT yields nodes claiming BOTH engines, which
  * is the UNSOUND direction on purpose (D67 contract note 2). What catches that
  * is `tests/registry/registry_check.c`'s generic tripwire — every VM_ONLY row
  * with a producer must refuse `--engine=dfa` BY NAME — not a lucky default. */
-void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at);
+void pcrec_ast_stamp(Ast *a, const RegRow *rw, size_t at);
 /* [M6.2 wave D] The BARE ANCHOR rule, one home, four readers (parse.c's
  * quantifier rejection and group wrap, mod_modifiers.c's `(?i:...)` port,
  * mod_named_groups.c's declaring port). See src/parse/parse.c for the
@@ -5995,7 +5984,7 @@ char      *pcrec_rxt_source_tsv(const RxtSource *src);
  * provenance, and the composer needs the second.
  *
  * `file`/`line` are PROVENANCE and they are the supply for the third state
- * w1_impl §2.2 gives `first_cap_pos`/`first_vmonly_pos` — a diagnostic
+ * w1_impl §2.2 gives `first_cap_pos` and `Ast.reg_at` — a diagnostic
  * raised inside a definition names the definition's own file and line
  * rather than an offset into a pattern the author never wrote. */
 typedef struct {

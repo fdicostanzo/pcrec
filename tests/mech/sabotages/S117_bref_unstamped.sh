@@ -25,5 +25,5 @@ SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="br_node does not call pcrec_ast_stamp, so an A_BREF carries no registry row and SR-8's generic consultation reads it as ANY_ENGINE. '--engine=dfa (a)\\1' then SUCCEEDS instead of refusing by name -- and src/ir/nfa.c has no A_BREF arm, so what the request actually produces is an internal error rather than a matcher. The DEFAULT engine's answers are unmoved, which is why the corpus alone cannot see it"
 SAB_DOC_FIGURE="PREDICTED: registry RED on check_engine_capability for all twelve backrefs witnesses. Canonical figure owed from run_sabotage_matrix.sh S117."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_ast_stamp(cx, a, rw, at);'
+SAB_BEFORE='    pcrec_ast_stamp(a, rw, at);'
 SAB_AFTER='    (void)rw; (void)at;   /* SABOTAGE S117: the node is left unstamped */'

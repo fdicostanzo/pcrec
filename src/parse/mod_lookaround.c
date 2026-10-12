@@ -624,7 +624,7 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * and not a copy of its mask, so `engines` keeps exactly one home and
      * src/opt/select_engine.c can also name the construct. D67 also says
      * STAMP EVERY NODE THE PORT BUILDS; this port builds exactly one. */
-    pcrec_ast_stamp(cx, a, rw, at);
+    pcrec_ast_stamp(a, rw, at);
 
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };

@@ -184,7 +184,7 @@ Ast *pcrec_vars_atom(Ctx *cx, size_t at)
     /* SR-8/D67: the stamp, so `forces_registry` finds the VM_ONLY row and
      * `--engine=dfa` names the construct. The whole engine decline is this
      * one line; the PREFILTER decline is `has_var`'s, in select_engine.c. */
-    pcrec_ast_stamp(cx, a, rw, at);
+    pcrec_ast_stamp(a, rw, at);
 
     cx->pos = pos;
     return a;

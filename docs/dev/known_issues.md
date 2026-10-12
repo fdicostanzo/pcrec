@@ -11,9 +11,11 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K110 — OPEN (filed 2026-10-12, manager, session 109, from lane endmark's finding F4, docs/dev/lanes/endmark_report.md; reproduced by the manager on main) — STAMP: `RX_ENGINE_WHY`'s pattern offset goes stale after the free atomic/possessive discharge
+## K110 — FIXED (2026-10-12, lane k110fix; filed 2026-10-12, manager, session 109, from lane endmark's finding F4, docs/dev/lanes/endmark_report.md; reproduced by the manager on main) — STAMP: `RX_ENGINE_WHY`'s pattern offset goes stale after the free atomic/possessive discharge
 
 **Witness:** `pcrec --features all -p rx --pattern 'a++b(?<=ab)'` stamps `RX_ENGINE_WHY "(\?<=...) at pattern offset 2"` (and `rx_info.engine_why` the same), but the lookbehind starts at offset 4. The discharge rewrites `a++` to `a+` before the forcing construct's offset is read, so the reported offset is in the rewritten text, not the user's pattern. Caller-observable (a diagnostic stamp the spec describes); answers unaffected. Fix: carry the source offset on the node from the parse, rather than recomputing it after a rewrite.
+
+**Fixed:** `Ast.reg_at` carries the stamp's source offset on the node (written by `pcrec_ast_stamp` beside `reg`); `forces_registry` reads the offset off the first surviving DFA-excluding node, `Ctx.first_vmonly_pos` (a first-wins counter, the stale source) is deleted. Same cause on the spliced-call discharge (`(a)(?1)b(?<=ab)`) and the nested atomic discharge; regression `tests/vm/run_vm_tests.sh` §3a (seven rows, oracle = shell byte index of the construct in the pattern text; six red on the pre-fix compiler). Spec: `docs/spec/match_api.md` §6.3.3¶2. Lane report: `docs/dev/lanes/k110fix_report.md`.
 
 ## K109 — OPEN (filed 2026-10-12, manager, session 109, from the [MATCH-SPLIT] 4a panel's semantics critic, docs/dev/reviews/2026-10-12-r1-match-split-pinonly.md sem S1; owned by [MATCH-SPLIT] 4b.2 beside K106's LS+LE shapes) — PERFORMANCE: S+LS / G+LS patterns whose line-start arm can cross a newline are QUADRATIC on the attempt route
 

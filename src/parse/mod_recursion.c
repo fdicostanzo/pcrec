@@ -134,7 +134,7 @@ static Ast *rc_node(Ctx *cx, const RegRow *rw, size_t at, bool root,
                     int number, const char *name, const char *what)
 {
     Ast *a = pcrec_ast_node(cx, A_CALL);
-    pcrec_ast_stamp(cx, a, rw, at);
+    pcrec_ast_stamp(a, rw, at);
     /* [DD-13b.W1.3] N3: `delivers` IS WRITTEN ON EVERY `A_CALL`, and this is
      * the one constructor every spelling reaches — the numeric forms, the
      * relative forms, `(?R)`, and module `backrefs`' `\g<>` arms, which call
@@ -565,7 +565,7 @@ ExtResult pcrec_rcport_define(Ctx *cx, const RegRow *rw, ExtWant want,
      * `(?U)` state `p_rep` reads, so the two spellings produce structurally
      * identical trees and the corpus can assert that rather than assume it. */
     Ast *a = pcrec_ast_node(cx, A_REP);
-    pcrec_ast_stamp(cx, a, rw, at);
+    pcrec_ast_stamp(a, rw, at);
     a->l = body;
     a->u.rep.rmin = 0;
     a->u.rep.rmax = 0;

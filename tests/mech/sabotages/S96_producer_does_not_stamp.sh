@@ -27,5 +27,5 @@ SAB_HARNESS_TARGET="tests/atomic_groups/atomic_basic.rxt"
 SAB_DESC="pcrec_agport_atomic does not call pcrec_ast_stamp, so the A_ATOMIC node carries no registry row and SR-8's generic consultation reads it as ANY_ENGINE. '--engine=dfa (?>a|ab)c' then SUCCEEDS instead of refusing by name, and the DFA artifact runs the UNCUT language -- the default engine's answers are unmoved, which is why the corpus alone cannot see it"
 SAB_DOC_FIGURE="PREDICTED: registry's check_engine_capability RED on the '(?>...)' witness; the DEFAULT-engine corpus GREEN (a cut pattern still reaches the VM there). Canonical figure owed from run_sabotage_matrix.sh S96."
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_ast_stamp(cx, a, rw, at);'
+SAB_BEFORE='    pcrec_ast_stamp(a, rw, at);'
 SAB_AFTER='    (void)rw; (void)at;   /* SABOTAGE S96: the node is left unstamped */'

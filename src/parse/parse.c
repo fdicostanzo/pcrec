@@ -74,14 +74,13 @@ Ast *pcrec_ast_ctx(Ctx *cx, const PcrecCpRange *iv, int n, uint8_t fn)
 /* [M6.4.2 / SR-8, D67] THE STAMP — see its declaration in core/internal.h for
  * the contract. It lives here rather than in a module TU because every module
  * calls it and none of them owns it. */
-void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
+void pcrec_ast_stamp(Ast *a, const RegRow *rw, size_t at)
 {
     a->reg = rw;
-    /* FIRST-WINS, and only for a row that actually excludes the DFA: the
-     * `engine_why` stamp names the FIRST such construct, and a row that lowers
-     * to both engines has no `why` to contribute. */
-    if (rw && !(rw->engines & ENGM_DFA) && cx->first_vmonly_pos == (size_t)-1)
-        cx->first_vmonly_pos = at;
+    /* [K110] The offset rides the node, beside the row it belongs to, so a
+     * rewrite that deletes the node takes the offset with it and `engine_why`
+     * names the offset of the DFA-excluding node that SURVIVED. */
+    a->reg_at = at;
 }
 
 /* ---- the BARE ANCHOR rule, in ONE place ([M6.2] wave D) ------------------
@@ -1996,7 +1995,7 @@ have:
             cx->pos++;                       /* the `+` */
             Ast *at_ = node(cx, A_ATOMIC);
             at_->l = r;
-            pcrec_ast_stamp(cx, at_, rw, plus);
+            pcrec_ast_stamp(at_, rw, plus);
             /* `a` becomes the ATOMIC wrapper, so a second quantifier after it
              * re-enters this loop's `quantified` guard and `a*++` refuses with
              * "multiple quantifiers on the same item" — still a clean tier-2
