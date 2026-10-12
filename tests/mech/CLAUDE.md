@@ -3776,3 +3776,13 @@ S606 (NEXT's `reads` gained FIRST), S693 (abi 75); re-pointed reach probes:
 S265 (`a.*?b`: an unbounded byte keeps the discard form), S280 (the C0 witness
 re-enters), S282/S283 (`-fno-req-handoff` beside the run-row denies), S610
 (`memchr` lists at 10).
+
+**[LOSS-REVIEW] candidate 1 (lane seambuild, 2026-10-11, abi 76), S825.** The
+encoding seam's span compares and back-step became `static inline`
+(`inline_def`). S825 drops `static inline` from the byte exact compare, so
+`rx_span_match` is an exported (interposable, PLT-called) function again and no
+answer moves; arm `codegen` ([M5-SEAM] (1)/(1b) and the [LOSS-REVIEW c1] `nm`
+arm), DETECTED solo `codegen:22fail/328pass`. Re-anchored: S394 (the utf8
+caseless row's `inline_def` column) and S673 (the byte exact compare's
+re-wrapped parameter line; its REACH_POP reads the N7 manifest row's new
+emitter `residual_sites`); S693 re-aimed (AFTER 75).

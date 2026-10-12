@@ -139,19 +139,20 @@ static const char decls_bref_doc[] =
 " *\n"
 " * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
 " * character and the compare is length-preserving. An artifact compiled for\n"
-" * another encoding exports this same entry with that encoding's body. */\n";
-
-static const char decls_bref[] =
-"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
-"                       const unsigned char *ref, size_t reflen, size_t at);\n";
+" * another encoding carries this same entry with that encoding's body.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char defs_bref_doc[] =
 "/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
 " * a prefix count. */\n";
 
 static const char defs_bref[] =
-"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
-"                       const unsigned char *ref, size_t reflen, size_t at)\n"
+"static inline ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                                     const unsigned char *ref,\n"
+"                                     size_t reflen, size_t at)\n"
 "{\n"
 PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
@@ -164,12 +165,11 @@ static const char decls_bref_ci_doc[] =
 " * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
 " * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"
 " * the C locale bytes >= 0x80 have no case, so folding them would be a guess\n"
-" * about a locale the caller owns and pcrec does not. */\n";
-
-static const char decls_bref_ci[] =
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at);\n";
+" * about a locale the caller owns and pcrec does not.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char defs_bref_ci_doc[] =
 "/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
@@ -177,9 +177,10 @@ static const char defs_bref_ci_doc[] =
 " * answers must not change with setlocale(). */\n";
 
 static const char defs_bref_ci[] =
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at)\n"
+"static inline ptrdiff_t $_span_match_caseless(const unsigned char *s,\n"
+"                                              size_t n,\n"
+"                                              const unsigned char *ref,\n"
+"                                              size_t reflen, size_t at)\n"
 "{\n"
 PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
@@ -231,19 +232,21 @@ static const char decls_back_step_doc[] =
 " *\n"
 " * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
 " * character, so the answer is pos - k and the subject is never read. An\n"
-" * artifact compiled for another encoding exports this same entry with that\n"
-" * encoding's body and no engine code changes. */\n";
-
-static const char decls_back_step[] =
-"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k);\n"
-"#define $_BACK_STEP_NONE ((size_t)-1)\n";
+" * artifact compiled for another encoding carries this same entry with that\n"
+" * encoding's body and no engine code changes.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char defs_back_step_doc[] =
 "/* byte encoding: one byte is one character, so k characters before pos is\n"
 " * pos - k and the subject is never read. */\n";
 
 static const char defs_back_step[] =
-"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n"
+"#define $_BACK_STEP_NONE ((size_t)-1)\n"
+"static inline size_t $_back_step(const unsigned char *s, size_t n,\n"
+"                                  size_t pos, size_t k)\n"
 "{\n"
 "    (void)s; (void)n;\n"
 "    return k > pos ? $_BACK_STEP_NONE : pos - k;\n"
@@ -301,9 +304,10 @@ static const char defs_bref_ci_ucp[] =
 "    return c;\n"
 "}\n"
 "\n"
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at)\n"
+"static inline ptrdiff_t $_span_match_caseless(const unsigned char *s,\n"
+"                                              size_t n,\n"
+"                                              const unsigned char *ref,\n"
+"                                              size_t reflen, size_t at)\n"
 "{\n"
 PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_byte) */
 "    return (ptrdiff_t)reflen;\n"
@@ -335,18 +339,23 @@ static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_VALID_UPTO,    false,
       decls_valid_upto_doc, decls_valid_upto, NULL,             defs_valid_upto,
       0, false },
+    /* [LOSS-REVIEW] candidate 1: the span compares and the back-step are
+     * `inline_def` -- called once per reference or lookbehind attempt from
+     * the engine body, so an exported (interposable) definition paid a PLT
+     * call per use under -fPIC. Their contract doc rides with the
+     * definition (enc.h's `decls_doc`). */
     { PCREC_ENCE_SPAN,          true,
-      decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref,
-      0, false },
+      decls_bref_doc,      "",              defs_bref_doc,      defs_bref,
+      0, true },
     { PCREC_ENCE_SPAN_CASELESS, true,
-      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci,
-      0, false },
+      decls_bref_ci_doc,   "",              defs_bref_ci_doc,   defs_bref_ci,
+      0, true },
     { PCREC_ENCE_SPAN_CASELESS_UCP, true,
-      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_ucp_doc, defs_bref_ci_ucp,
-      0, false },
+      decls_bref_ci_doc,   "",              defs_bref_ci_ucp_doc, defs_bref_ci_ucp,
+      0, true },
     { PCREC_ENCE_BACK_STEP,     true,
-      decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step,
-      0, false },
+      decls_back_step_doc, "",              defs_back_step_doc, defs_back_step,
+      0, true },
     /* [VAR] NO `$_var_valid` ROW HERE, and the ABSENCE is the mechanism:
      * every byte string is a valid `byte` string, so this backend has no
      * answer to give and the emitter (asking `pcrec_enc_has_entry`) emits no

@@ -2571,6 +2571,24 @@ single flag disables "everything upstream of the trie" — so a future
 pass with equivalent reach needs the same widened-class treatment applied
 here, not a new reference-build flag.
 
+## [LOSS-REVIEW] candidate 1: the inline seam entries (lane seambuild, 2026-10-11, abi 76)
+
+`run_codegen_tests.sh`'s [M5-SEAM] declared-set check (1) is split in two:
+`residual_names` reads the EXPORTED entries (the `.h` and the
+self-contained `.c`) against the fixture's exported half, and
+`inline_entries` reads the `static inline` definition heads of
+`INLINE_RESID` (`rx_span_match`, `rx_span_match_caseless`, `rx_back_step`)
+in both `.c` forms against its inline half (1b). The per-site call counts
+are unchanged. A new arm, **[LOSS-REVIEW c1]**, compiles seven fixtures
+(byte/ucp/utf8; exact, caseless, back-step; backreference and variable)
+`-O2 -fPIC` and asks `nm -g --defined-only` that none of `INLINE_RESID` is
+global, with `rx_next_pos` as the positive control and a reach check that
+the artifact defines one of the entries whatever its linkage. Sabotage S825
+(the byte exact compare loses `static inline`) reads 21-22 failures here:
+(1)/(1b) on every span-match fixture and the nm arm on `expbref`/`expvar`.
+`run_encoding_checks.sh`'s DD12a(i) `SIG_RE` reads the `static inline
+ptrdiff_t` heads.
+
 ## [M5-SEAM] two additions: the residual/hot-path barrier, and K27's probe
 
 **`[M5-SEAM/DD-12(7)]` — no engine body calls an encoding residual entry.**

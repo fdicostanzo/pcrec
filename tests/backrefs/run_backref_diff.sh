@@ -644,16 +644,17 @@ fi
 # Two spellings of one fact with nothing between them is this project's named
 # failure shape pointed the other way, and `tests/backrefs/fold_agreement_check.c`
 # is the mechanism that discharges it — see that file for both sides'
-# independence. Sabotage row S116.
+# independence. Sabotage row S116. The entry is `static inline` and exported
+# by nothing (abi 76, [LOSS-REVIEW] candidate 1), so each check #includes the
+# artifact's gen.c (its own translation unit) instead of linking it.
 FOLD="$WORKDIR/fold"; mkdir -p "$FOLD"
 if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" --pattern '(?i:(.))(?i:\1)' \
         >/dev/null 2>"$FOLD/pc.log"; then
     bad "§9: pcrec refused the caseless-backreference fixture: $(head -1 "$FOLD/pc.log")"
-elif ! grep -q 'rx_span_match_caseless' "$FOLD/gen.h"; then
-    bad "§9: the fixture artifact carries no rx_span_match_caseless entry — this check has lost the thing it compares against, which is exactly the empty-population shape it exists to avoid"
+elif ! grep -q '^static inline ptrdiff_t rx_span_match_caseless(' "$FOLD/gen.c"; then
+    bad "§9: the fixture artifact carries no static inline rx_span_match_caseless definition — this check has lost the thing it compares against, which is exactly the empty-population shape it exists to avoid"
 elif ! $CC $GENCFLAGS -I"$FOLD" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
-        -o "$FOLD/chk" "$SCRIPT_DIR/fold_agreement_check.c" "$FOLD/gen.c" \
-        "$LIBA" 2>"$FOLD/cc.log"; then
+        -o "$FOLD/chk" "$SCRIPT_DIR/fold_agreement_check.c" "$LIBA" 2>"$FOLD/cc.log"; then
     bad "§9: the fold-agreement check did not compile: $(head -5 "$FOLD/cc.log" | tr '\n' ' ')"
 else
     if foldout=$("$FOLD/chk" 2>&1); then
@@ -677,11 +678,11 @@ FOLDU="$WORKDIR/foldu"; mkdir -p "$FOLDU"
 if ! pcrec_run "$PCREC" -p rx -e utf8 --features "$FEATS" -o "$FOLDU/gen.c" \
         --pattern '(?i:(.))(?i:\1)' >/dev/null 2>"$FOLDU/pc.log"; then
     bad "§9b: pcrec refused the caseless-backreference fixture under -e utf8: $(head -1 "$FOLDU/pc.log")"
-elif ! grep -q 'rx_span_match_caseless' "$FOLDU/gen.h"; then
-    bad "§9b: the utf8 fixture artifact carries no rx_span_match_caseless entry — this check has lost the thing it compares against"
+elif ! grep -q '^static inline ptrdiff_t rx_span_match_caseless(' "$FOLDU/gen.c"; then
+    bad "§9b: the utf8 fixture artifact carries no static inline rx_span_match_caseless definition — this check has lost the thing it compares against"
 elif ! $CC $GENCFLAGS -I"$FOLDU" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
         -o "$FOLDU/chk" "$SCRIPT_DIR/fold_agreement_utf8_check.c" \
-        "$FOLDU/gen.c" "$LIBA" 2>"$FOLDU/cc.log"; then
+        "$LIBA" 2>"$FOLDU/cc.log"; then
     bad "§9b: the utf8 fold-agreement check did not compile: $(head -5 "$FOLDU/cc.log" | tr '\n' ' ')"
 else
     if folduout=$("$FOLDU/chk" 2>&1); then
@@ -704,7 +705,7 @@ elif ! grep -q 'rx_span_ci_fold_pairs' "$FOLDL/gen.c"; then
     bad "§9c: the --ucp fixture artifact carries no Latin-1 fold table — this check has lost the thing it compares against"
 elif ! $CC $GENCFLAGS -I"$FOLDL" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
         -o "$FOLDL/chk" "$SCRIPT_DIR/fold_agreement_ucp_check.c" \
-        "$FOLDL/gen.c" "$LIBA" 2>"$FOLDL/cc.log"; then
+        "$LIBA" 2>"$FOLDL/cc.log"; then
     bad "§9c: the --ucp fold-agreement check did not compile: $(head -5 "$FOLDL/cc.log" | tr '\n' ' ')"
 else
     if foldlout=$("$FOLDL/chk" 2>&1); then

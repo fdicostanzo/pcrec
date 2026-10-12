@@ -597,6 +597,15 @@ Two new `PcrecEncEntry` columns, each recorded against D58:
   `pcrec_enc_emit_defs` skips such entries. The reason is inlining: an
   exported entry is interposable under `-fPIC`, and a per-character decoder
   that does not inline is the cost.
+  **[LOSS-REVIEW] candidate 1 (abi 76, 2026-10-11):** the span compares
+  (`SPAN`, `SPAN_CASELESS`, `SPAN_CASELESS_UCP`) and `BACK_STEP` are
+  `inline_def` too, in both backends. Such a row's `decls_doc`, if any, is
+  the entry's contract doc and is emitted beside the definition (the inline
+  half), never into the `.h`; `$_BACK_STEP_NONE` is defined in the `defs`
+  text above `$_back_step`. Inline entries are emitted in table order, so
+  utf8's `DECODE` row now precedes the caseless compare that requires it.
+  The inline half carries the N7 site too (`pcrec_enc_emit_inline_defs`
+  takes the rendered sites, from `emit_dfa.c`'s `residual_sites`).
 
 `$_var_valid` WAS RE-SPELLED ON `$_valid_upto` at [UTF-VALID] (below), which
 is the one-validator ruling (D133 Q7): the abi event was paying for the move

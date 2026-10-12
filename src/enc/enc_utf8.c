@@ -112,19 +112,20 @@ static const char u8_decls_bref_doc[] =
 " *\n"
 " * THIS artifact was compiled for the `utf8` encoding. UTF-8 is a prefix\n"
 " * code, so equal byte sequences and equal character sequences are one\n"
-" * fact and the exact compare is byte-wise. */\n";
-
-static const char u8_decls_bref[] =
-"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
-"                       const unsigned char *ref, size_t reflen, size_t at);\n";
+" * fact and the exact compare is byte-wise.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char u8_defs_bref_doc[] =
 "/* utf8 encoding: the exact compare is a byte compare (UTF-8 is a prefix\n"
 " * code -- equal characters and equal bytes are the same fact). */\n";
 
 static const char u8_defs_bref[] =
-"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
-"                       const unsigned char *ref, size_t reflen, size_t at)\n"
+"static inline ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                                     const unsigned char *ref,\n"
+"                                     size_t reflen, size_t at)\n"
 "{\n"
 PCREC_ENC_SITE      /* [MEMFN] M7: the kit's compare loop (sites_utf8) */
 "    return (ptrdiff_t)reflen;\n"
@@ -141,12 +142,11 @@ static const char u8_decls_bref_ci_doc[] =
 " * THE RETURN IS A LENGTH AND HERE IS WHERE THAT PAYS. A fold partner may\n"
 " * encode to a different number of bytes, so the subject bytes consumed need\n"
 " * not equal ref_end - ref_start: `^(k)\\1$` on \"k\" + U+212A (KELVIN) is a\n"
-" * match of length 4 -- one byte captured, three consumed. */\n";
-
-static const char u8_decls_bref_ci[] =
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at);\n";
+" * match of length 4 -- one byte captured, three consumed.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char u8_defs_bref_ci_doc[] =
 "/* THE SIMPLE CASE-FOLD MAP, sorted by source code point: {from, to}, where\n"
@@ -188,9 +188,10 @@ static const char u8_defs_bref_ci[] =
 " * reference's character and the subject's may be different byte lengths.\n"
 " * The prefix reported on failure is the SUBJECT bytes that did compare\n"
 " * equal, because that is the work this call actually did. */\n"
-"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
-"                                const unsigned char *ref, size_t reflen,\n"
-"                                size_t at)\n"
+"static inline ptrdiff_t $_span_match_caseless(const unsigned char *s,\n"
+"                                              size_t n,\n"
+"                                              const unsigned char *ref,\n"
+"                                              size_t reflen, size_t at)\n"
 "{\n"
 "    size_t i = 0, j = at;\n"
 "    while (i < reflen) {\n"
@@ -290,17 +291,19 @@ static const char u8_decls_back_step_doc[] =
 " * over continuation bytes and VALIDATES each stepped-over run against its\n"
 " * lead byte's declared length. A malformed run answers $_BACK_STEP_NONE\n"
 " * (\"no such position\"), never a position inside or beyond it -- pcrec's\n"
-" * ill-formed-input rule is that such a subject matches nothing. */\n";
-
-static const char u8_decls_back_step[] =
-"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k);\n"
-"#define $_BACK_STEP_NONE ((size_t)-1)\n";
+" * ill-formed-input rule is that such a subject matches nothing.\n"
+" *\n"
+" * NOT A CALLER ENTRY: `static inline`, declared nowhere, an internal\n"
+" * helper of this artifact's engine (pcrec's docs/spec/match_api.md S3).\n"
+" */\n";
 
 static const char u8_defs_back_step_doc[] =
 "/* utf8 encoding: walk back one length-validated character run per step. */\n";
 
 static const char u8_defs_back_step[] =
-"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n"
+"#define $_BACK_STEP_NONE ((size_t)-1)\n"
+"static inline size_t $_back_step(const unsigned char *s, size_t n,\n"
+"                                  size_t pos, size_t k)\n"
 "{\n"
 "    (void)n;                 /* reads only below pos, as the contract says */\n"
 "    while (k--) {\n"
@@ -493,18 +496,27 @@ static const PcrecEncEntry entries_utf8[] = {
       u8_decls_valid_upto_doc, u8_decls_valid_upto,
       NULL,                    u8_defs_valid_upto,
       0, false },
+    /* [CLS-TREE] S4 the one-character decode: engine-callable, `static
+     * inline`, no declaration. The caseless span compare below requires it,
+     * and an inline entry precedes every inline entry that calls it (the
+     * inline half is emitted in table order). */
+    { PCREC_ENCE_DECODE,        true,
+      NULL,                   "",
+      u8_defs_decode_doc,     u8_defs_decode,
+      0, true },
+    /* [LOSS-REVIEW] candidate 1: `inline_def`, enc_byte.c's reason. */
     { PCREC_ENCE_SPAN,          true,
-      u8_decls_bref_doc,      u8_decls_bref,
+      u8_decls_bref_doc,      "",
       u8_defs_bref_doc,       u8_defs_bref,
-      0, false },
+      0, true },
     { PCREC_ENCE_SPAN_CASELESS, true,
-      u8_decls_bref_ci_doc,   u8_decls_bref_ci,
+      u8_decls_bref_ci_doc,   "",
       u8_defs_bref_ci_doc,    u8_defs_bref_ci,
-      PCREC_ENCE_DECODE, false },
+      PCREC_ENCE_DECODE, true },
     { PCREC_ENCE_BACK_STEP,     true,
-      u8_decls_back_step_doc, u8_decls_back_step,
+      u8_decls_back_step_doc, "",
       u8_defs_back_step_doc,  u8_defs_back_step,
-      0, false },
+      0, true },
     /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
      * resolution calls it, never an engine body -- `next_pos`'s own status,
      * and the [M5-SEAM] check's rule applies to it on the same terms. */
@@ -512,12 +524,6 @@ static const PcrecEncEntry entries_utf8[] = {
       u8_decls_var_valid_doc, u8_decls_var_valid,
       u8_defs_var_valid_doc,  u8_defs_var_valid,
       PCREC_ENCE_VALID_UPTO, false },
-    /* [CLS-TREE] S4 the one-character decode: engine-callable, `static
-     * inline`, no declaration. The caseless span compare above requires it. */
-    { PCREC_ENCE_DECODE,        true,
-      NULL,                   "",
-      u8_defs_decode_doc,     u8_defs_decode,
-      0, true },
     { 0, false, NULL, NULL, NULL, NULL, 0, false }
 };
 

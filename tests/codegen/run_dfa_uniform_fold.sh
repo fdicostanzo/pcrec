@@ -117,7 +117,11 @@ read_art() {
       # table it reads is that machine name plus a fixed suffix, so the two
       # halves of the biconditional are derived from ONE capture and cannot
       # be pointed at different machines by a typo here.
-      /^static inline .*_step\(/ {
+      # [SEAMBUILD] the encoding-seam `static inline size_t <p>_back_step(`
+      # (the lookbehind step-back, now a header-visible inline) also ends in
+      # `_step(` but is no DFA accessor and names no table; a DFA step
+      # returns a `<p>_<dir>_state`, so the declaration is keyed on that.
+      /^static inline [A-Za-z0-9_]+_state [A-Za-z0-9_]+_step\(/ {
           split($0, a, "_step\\("); split(a[1], b, " "); fn = b[length(b)]
           tbl = fn "_next_state"
           if (index($0, "_step(const ")) unf[tbl] = 1; else fld[tbl] = 1

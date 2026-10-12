@@ -100,7 +100,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     if (!e || !e->entries) return;
     mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
-        if (mask & t->id) {
+        if ((mask & t->id) && !t->inline_def) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
             if (t->decls_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
@@ -151,6 +151,13 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         if ((mask & t->id) && t->inline_def == inline_half) {
             if (t->id == PCREC_ENCE_SPAN_CASELESS_UCP)
                 enc_emit_latin1_fold_table(sb, prefix);
+            /* An inline entry has no declaration, so its contract doc
+             * (`decls_doc`) rides with its definition. */
+            if (inline_half && t->decls_doc) {
+                pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
+                pcrec_sb_cmt_close(sb);
+            }
             if (t->defs_doc) {
                 pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->defs_doc, prefix, NULL);
@@ -176,11 +183,13 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 }
 
 /* The `static inline` entries' definitions, placed by the caller ahead of
- * every engine body that calls them. No inline entry carries a site. */
+ * every engine body that calls them, each preceded by its contract doc and
+ * with its site token replaced from `sites` as the epilogue's are. */
 void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                                const char *prefix)
+                                const char *prefix,
+                                const PcrecEncSiteText *sites, size_t nsites)
 {
-    enc_emit_defs(sb, e, mask, prefix, true, NULL, 0);
+    enc_emit_defs(sb, e, mask, prefix, true, sites, nsites);
 }
 
 /* True iff entry `id` in `e`'s table is marked engine_callable; false for an

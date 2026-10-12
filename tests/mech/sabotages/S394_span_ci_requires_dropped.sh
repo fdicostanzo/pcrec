@@ -6,6 +6,10 @@
 # when no wide class did. The plant clears that column: a caseless
 # backreference artifact under utf8 with no wide class calls an undefined
 # static function and does not build.
+# RE-ANCHORED 2026-10-11 (lane seambuild, [LOSS-REVIEW] candidate 1, abi
+# 76): the row's `inline_def` column went false -> true (the caseless compare
+# is `static inline` now, emitted after the decode it requires); the plant
+# still clears only `requires`, the intent and the detector are unchanged.
 SAB_ID="S394-span-ci-requires-dropped"
 SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="wclass"
@@ -14,6 +18,6 @@ SAB_DOC_FIGURE="MEASURED solo 2026-09-30 at the s4build tip: wclass:1fail/16pass
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='      u8_defs_bref_ci_doc,    u8_defs_bref_ci,
-      PCREC_ENCE_DECODE, false },'
+      PCREC_ENCE_DECODE, true },'
 SAB_AFTER='      u8_defs_bref_ci_doc,    u8_defs_bref_ci,
-      0, false },'
+      0, true },'

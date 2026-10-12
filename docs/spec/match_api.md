@@ -160,11 +160,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 75
-#error "pcrec: this artifact (abi 75) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 76
+#error "pcrec: this artifact (abi 76) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 75
+#define PCREC_RX_ABI_H 76
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -338,12 +338,15 @@ not provisional.
 | `<prefix>_valid_upto` | the subject validator | §3.1.2 |
 | `<prefix>_search_in`, `<prefix>_match_in`, `<prefix>_match_caps_in` | the three above with caller-supplied working storage | §10 |
 
-<a id="s3-p2"></a>[3¶2] Some artifacts also export and declare encoding-residual helpers the engine
-calls across the residual seam: `<prefix>_span_match` /
+<a id="s3-p2"></a>[3¶2] Some artifacts also carry encoding-residual helpers the engine calls
+across the residual seam. `<prefix>_span_match` /
 `<prefix>_span_match_caseless` (a backreference- or variable-bearing
-artifact; `docs/spec/vars.md` §7) and `<prefix>_var_valid` (a variable-bearing
-artifact under a multi-byte encoding). They are not caller entries; their
-signatures are not part of this contract.
+artifact; `docs/spec/vars.md` §7) and `<prefix>_back_step` (a
+lookbehind-bearing artifact) are `static inline`, defined ahead of the engine
+body and declared nowhere, so they are not exported. `<prefix>_var_valid` (a
+variable-bearing artifact under a multi-byte encoding) is exported and
+declared. None of them is a caller entry; their signatures are not part of
+this contract.
 
 <a id="s3-p3"></a>[3¶3] The parameter names used in this document (`s`, `n`, `startpos`, `caps`) are
 expository; the emitted declarations spell them `subject`, `subject_length`,
@@ -1211,7 +1214,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `75` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `76` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1348,7 +1351,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `75` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `76` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 

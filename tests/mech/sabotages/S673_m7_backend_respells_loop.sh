@@ -12,6 +12,12 @@
 # seam refuses a rendered loop with no token), which is the seam's own
 # guard, not this row's detector. Arms memfnmanifest, memfnforms. S524's
 # analogue.
+# RE-ANCHORED 2026-10-11 (lane seambuild, [LOSS-REVIEW] candidate 1, abi
+# 76): the exact compare's definition is `static inline` and its parameter
+# lines re-wrapped, so the anchor is the new last parameter line; the N7
+# site now renders from `residual_sites` (the inline half's caller as well
+# as the epilogue's), which the manifest row and REACH_POP name. Intent and
+# detectors unchanged.
 SAB_ID="S673-m7-backend-respells-loop"
 SAB_FILE="src/enc/enc_byte.c"
 SAB_SUITES="memfnmanifest memfnforms"
@@ -19,13 +25,13 @@ SAB_DESC="the byte backend's exact span compare spells its own loop again (s[at 
 SAB_DOC_FIGURE="HAND-MEASURED by lane m7 2026-10-08 (plant applied, tree rebuilt; docs/dev/lanes/m7_report.md section 6): memfnmanifest 1 failed / 12 passed (C17 rule 1), memfnforms 1 failed / 3 passed (C12: a span-index form with no ceiling row). The matrix figure is owed at the slot."
 SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "(a+)\1"'
 SAB_REACH_EXPECT='        if (at + i >= n || s[at + i] != ref[i])'
-SAB_REACH_POP='tests/memfn/site_manifest.tsv|^N7[[:space:]]+pcrec_memfn_span_site,emit_residual_defs[[:space:]].*[[:space:]]delegated[[:space:]]|1'
+SAB_REACH_POP='tests/memfn/site_manifest.tsv|^N7[[:space:]]+pcrec_memfn_span_site,residual_sites[[:space:]].*[[:space:]]delegated[[:space:]]|1'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='"                       const unsigned char *ref, size_t reflen, size_t at)\n"
+SAB_BEFORE='"                                     size_t reflen, size_t at)\n"
 "{\n"
 PCREC_ENC_SITE      /* [MEMFN] M7: the kit'"'"'s compare loop (sites_byte) */'
-SAB_AFTER='"                       const unsigned char *ref, size_t reflen, size_t at)\n"
+SAB_AFTER='"                                     size_t reflen, size_t at)\n"
 "{\n"
 "    size_t i;\n"
 "    for (i = 0; i < reflen; i++) {\n"

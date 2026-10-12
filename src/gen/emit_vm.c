@@ -12717,13 +12717,13 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     /* ---- [CLS-TREE] S4 the decoder and the wide-class matchers ----------
      * The encoding's `static inline` entries (`inline_def`, enc.h) go here,
      * ahead of every engine body that calls them — the one-character decode
-     * the kit test and the utf8 caseless span compare both call — and then
+     * the kit test and the utf8 caseless span compare both call, the span
+     * compares and the back-step ([LOSS-REVIEW] candidate 1) — and then
      * one `static inline` matcher per distinct wide set, its form the one
      * `vm_wcls` selected. `static inline` both, so an unused one costs a
      * build nothing and a used one inlines under -fPIC. */
     {
-        const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
-        pcrec_enc_emit_inline_defs(c, enc, job->enc_mask, cx->opt->prefix);
+        pcrec_emit_residual_inline(cx, c);
         for (int i = 0; i < v->nwcls; i++) {
             const VmWcls *w = &v->wcls[i];
             const char *fn = pcrec_sb_fragf(&cx->arena, "%s_wcls%d", v->p, i);

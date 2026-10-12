@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 75
+#define PCREC_ARTIFACT_ABI 76
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -3346,6 +3346,38 @@ static void emit_residual_decls(Ctx *cx, StrBuf *sb)
     pcrec_enc_emit_decls(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
+/* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the entries in
+ * one half (`inline_half`, enc.h's `inline_def`): every entry this artifact
+ * carries whose backend states site data (PcrecEncSite) has its loop
+ * described to the kit (N7, pcrec_memfn_span_site) and rendered through the
+ * attempt's art; the backend's text carries the token PCREC_ENC_SITE where
+ * the loop goes, and the seam substitutes the rendered string for it. The
+ * backend keeps the rest of its text. Returns the arena array, `*ns` long. */
+static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
+                                              bool inline_half, size_t *ns)
+{
+    unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
+    size_t nt = 0;
+    *ns = 0;
+    for (const PcrecEncEntry *t = enc->entries; t->decls; t++) nt++;
+    PcrecEncSiteText *st = pcrec_arena_alloc(&cx->arena, nt * sizeof *st);
+    for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
+        const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
+        if (!(m & t->id) || t->inline_def != inline_half || !es) continue;
+        StrBuf loop = { 0 };
+        loop.cx = cx;
+        mf_hooks h;
+        mf_site *s = pcrec_memfn_span_site(cx, es, &h);
+        pcrec_memfn_emit(cx, DELEG_N7, s, &h, &loop);
+        char *text = pcrec_arena_alloc(&cx->arena, loop.len + 1);
+        memcpy(text, loop.p, loop.len);
+        text[loop.len] = '\0';
+        pcrec_sb_free(&loop);
+        st[(*ns)++] = (PcrecEncSiteText){ t->id, text };
+    }
+    return st;
+}
+
 /* The encoding's residual helper DEFINITIONS, for the entries this artifact
  * actually calls (`job->enc_mask`). Twin of the declarations above: those go
  * to the `.h`, these to the `.c`, and both emit nothing for an encoding with
@@ -3362,31 +3394,23 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
      * only, beside the definitions that read it. */
     pcrec_sb_printf(sb, "#define %s_VALID_LB %d\n", cx->opt->prefix,
                     cx->lb_max);
-    /* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS: every entry
-     * this artifact carries whose backend states site data (PcrecEncSite)
-     * has its loop described to the kit (N7, pcrec_memfn_span_site) and
-     * rendered through the attempt's art; the backend's text carries the
-     * token PCREC_ENC_SITE where the loop goes, and the seam substitutes the
-     * rendered string for it. The backend keeps the rest of its text. */
-    unsigned m = pcrec_enc_mask_close(enc, cx->job->enc_mask);
-    size_t nt = 0, ns = 0;
-    for (const PcrecEncEntry *t = enc->entries; t->decls; t++) nt++;
-    PcrecEncSiteText *st = pcrec_arena_alloc(&cx->arena, nt * sizeof *st);
-    for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
-        const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
-        if (!(m & t->id) || t->inline_def || !es) continue;
-        StrBuf loop = { 0 };
-        loop.cx = cx;
-        mf_hooks h;
-        mf_site *s = pcrec_memfn_span_site(cx, es, &h);
-        pcrec_memfn_emit(cx, DELEG_N7, s, &h, &loop);
-        char *text = pcrec_arena_alloc(&cx->arena, loop.len + 1);
-        memcpy(text, loop.p, loop.len);
-        text[loop.len] = '\0';
-        pcrec_sb_free(&loop);
-        st[ns++] = (PcrecEncSiteText){ t->id, text };
-    }
+    size_t ns;
+    const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
     pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns);
+}
+
+/* The encoding's `static inline` entries this artifact's mask carries,
+ * written into `sb` ahead of the engine body that calls them, with their
+ * delegated compare loops rendered as the epilogue's are. Nothing for an
+ * encoding with no residual surface. */
+void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
+{
+    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
+    if (!pcrec_enc_ready(enc)) return;
+    size_t ns;
+    const PcrecEncSiteText *st = residual_sites(cx, enc, true, &ns);
+    pcrec_enc_emit_inline_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix,
+                               st, ns);
 }
 
 /* Writes the artifact's whole `.h` into `cx->job->hsb`: the provenance and
@@ -13466,8 +13490,7 @@ void pcrec_emit_dfa(Ctx *cx)
     /* The encoding's `static inline` entries the mask carries (the landing
      * guard's DECODE), ahead of the search body that calls them; nothing on
      * an artifact whose mask holds none. */
-    pcrec_enc_emit_inline_defs(c, pcrec_enc_by_id(cx->opt->encoding), cx->job->enc_mask,
-                               cx->opt->prefix);
+    pcrec_emit_residual_inline(cx, c);
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     pcrec_sb_puts(c, "\n");

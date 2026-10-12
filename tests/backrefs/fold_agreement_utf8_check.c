@@ -51,7 +51,11 @@
 #include <stdio.h>
 
 #include "core/internal.h"
-#include "gen.h"
+/* [LOSS-REVIEW] candidate 1 (abi 76): the span compares are `static inline`
+ * in the artifact and exported by nothing, so this check is compiled IN THE
+ * ARTIFACT'S OWN TRANSLATION UNIT (gen.c, which includes gen.h) and calls the
+ * SHIPPED definition directly rather than linking against an exported one. */
+#include "gen.c"
 
 /* Encode one code point as UTF-8; returns the length, 0 for a surrogate or an
  * out-of-range value. Deliberately written out here rather than borrowed from

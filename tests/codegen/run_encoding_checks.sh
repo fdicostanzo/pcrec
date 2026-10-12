@@ -449,7 +449,10 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # compare), and `entries_byte[]` carries no row for it -- encoding-owned in
 # the same sharpest sense as `var_valid`. `span_ci_decode` stays in the
 # alternation so an artifact from before S4 is still read.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
+# [LOSS-REVIEW] candidate 1 (abi 76): the span compares and the back-step are
+# `static inline` definitions ahead of the VM body now, hence the
+# `static inline ptrdiff_t` head; their regions are excised as before.
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+inline\s+size_t|static\s+inline\s+ptrdiff_t|static\s+const\s+unsigned)\s+rx_(next_pos|valid_upto|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 # [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
 # one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by

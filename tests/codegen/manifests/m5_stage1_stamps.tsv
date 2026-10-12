@@ -57,7 +57,7 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	28612
 (\w+)\s+\1	RX_VM_STRATS	0x1u
 (\w+)\s+\1	RX_VM_ALT_ISLANDS	0
 (\w+)\s+\1	RX_VM_FRAMELESS	1
-(\w+)\s+\1	EMITTED_BYTES	28966
+(\w+)\s+\1	EMITTED_BYTES	28897
 (?<=foo)bar	RX_ENGINE	"vm"
 (?<=foo)bar	RX_ENGINE_SEL	"selected"
 (?<=foo)bar	RX_DFA_TABLE	"premultiplied"
@@ -66,7 +66,7 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	28612
 (?<=foo)bar	RX_VM_ALT_ISLANDS	0
 (?<=foo)bar	RX_VM_FRAMELESS	1
 (?<=foo)bar	RX_DFA_PREFILTER	"run-pinned"
-(?<=foo)bar	EMITTED_BYTES	30325
+(?<=foo)bar	EMITTED_BYTES	30296
 (a(?1)?b)	RX_ENGINE	"vm"
 (a(?1)?b)	RX_ENGINE_SEL	"selected"
 (a(?1)?b)	RX_VM_RUNGS	0x2u
