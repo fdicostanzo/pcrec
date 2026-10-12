@@ -6,7 +6,7 @@
 | capability | 71 | 1 | 19 | 2 | 2 | 5 | 5 | 2 | 19 | 11 | 12 |
 | loglines | 11 | 0 | 0 | 0 | 0 | 4 | 4 | 4 | 3 | 2 | 1 |
 | syntax | 95 | 12 | 3 | 0 | 2 | 6 | 6 | 4 | 20 | 12 | 13 |
-| corpus | 150 | 19 | 20 | 19 | 9 | 16 | 16 | 8 | 25 | 15 | 14 |
+| corpus | 150 | 23 | 20 | 19 | 9 | 16 | 16 | 8 | 25 | 15 | 14 |
 
 ### A2. Loss notes (patterns carrying each)
 
@@ -22,15 +22,11 @@
 | lookaround | 13 | 0 | 4 | 13 |
 | recursion | 2 | 0 | 7 | 17 |
 | rep-right | 5 | 3 | 1 | 11 |
-| verb | 0 | 0 | 3 | 4 |
+| verb | 0 | 0 | 3 | 0 |
 
 ### A3. Control: extractor prefix classes vs pcrec's k-set walk sizes
 
-170 patterns with a fixed prefix span; 582 positions agree, 4 differ (4 patterns).
-- `corpus/c007` 0/1 (notes verb)
-- `corpus/c063` 0/1 (notes verb)
-- `corpus/c103` 0/1 (notes verb)
-- `corpus/c128` 0/1 (notes verb)
+166 patterns with a fixed prefix span; 582 positions agree, 0 differ (0 patterns).
 
 ### B. Which span each policy picks (patterns with >=1 bounded span, unanchored)
 
@@ -39,11 +35,11 @@
 | capability | 51 | 51 | 51 | 44 | 32 | 45 | P4selfprice:7 P5dfa:19 P5vm:5 | P1:4 P2:4 P3:4 P4:4 P5:0 P5:3 |
 | loglines | 11 | 11 | 11 | 9 | 8 | 11 | P4selfprice:2 P5dfa:3 | P1:2 P2:2 P3:2 P4:2 P5:2 P5:2 |
 | syntax | 80 | 80 | 80 | 72 | 62 | 72 | P4selfprice:8 P5dfa:18 P5vm:8 | P1:4 P2:4 P3:4 P4:4 P5:3 P5:4 |
-| corpus | 111 | 111 | 111 | 98 | 74 | 98 | P4selfprice:13 P5dfa:37 P5vm:12 | P1:14 P2:14 P3:14 P4:14 P5:12 P5:13 |
+| corpus | 107 | 107 | 107 | 96 | 74 | 96 | P4selfprice:11 P5dfa:33 P5vm:10 | P1:14 P2:14 P3:14 P4:14 P5:12 P5:13 |
 
 ### B2. Span flips between the consumer-blind and consumer-priced policies
 
-{'P4!=P5-dfa': 47, 'P5-dfa!=P5-vm': 52, 'P4!=P5-vm': 7}
+{'P4!=P5-dfa': 45, 'P5-dfa!=P5-vm': 50, 'P4!=P5-vm': 7}
 - `capability/currency-lookbehind-fixed`: P4 `one#0{\d}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{\d}@a=0,mb=0,ov=0`
 - `capability/float-literal-bound`: P4 `one#0{\d}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{\d}@a=0,mb=0,ov=0`
 - `capability/hex8-bounded`: P4 `decline` / P5-dfa `decline` / P5-vm `one#0{[16][16][16][16][16][16][16][16]}@a=0,mb=0,ov=0`
@@ -71,7 +67,6 @@
 - `syntax/rec-g-angle`: P4 `one#0{\d\d}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{\d\d}@a=0,mb=0,ov=0`
 - `syntax/rec-py`: P4 `one#0{\d\d}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{\d\d}@a=0,mb=0,ov=0`
 - `syntax/vrb-skip`: P4 `one#0{a}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{a}@a=0,mb=0,ov=0`
-- `corpus/c007`: P4 `one#0{[11]}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{[11]}@a=0,mb=0,ov=0`
 - `corpus/c014`: P4 `one#0{o}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{o}@a=0,mb=0,ov=0`
 - `corpus/c021`: P4 `one#0{[2]}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{[2]}@a=0,mb=0,ov=0`
 - `corpus/c023`: P4 `one#0{a}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{a}@a=0,mb=0,ov=0`
@@ -81,8 +76,9 @@
 - `corpus/c043`: P4 `one#0{[2]}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{[2]}@a=0,mb=0,ov=0`
 - `corpus/c056`: P4 `one#0{[32]}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{[32]}@a=0,mb=0,ov=0`
 - `corpus/c061`: P4 `one#0{a}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{a}@a=0,mb=0,ov=0`
-- `corpus/c063`: P4 `one#0{\W}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{\W}@a=0,mb=0,ov=0`
 - `corpus/c068`: P4 `one#0{a}@a=0,mb=4,ov=4` / P5-dfa `decline` / P5-vm `one#0{a}@a=0,mb=4,ov=4`
+- `corpus/c070`: P4 `one#0{i}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{i}@a=0,mb=0,ov=0`
+- `corpus/c094`: P4 `one#0{[3]}@a=0,mb=0,ov=0` / P5-dfa `decline` / P5-vm `one#0{[3]}@a=0,mb=0,ov=0`
 
 ### C. Counted consequences on the throughput subjects (sum over the common population)
 
@@ -96,14 +92,14 @@
 | capability__t-256k | capability | 46 | P5-vm | 46 | 1868014 | 1631390 | 1776601 | 1734429 | 3.18e+07 | 1.41e+08 |
 | capability__t-256k | capability | 46 | P5-dfa-subjprior | 46 | 5050594 | 4993464 | 5003764 | 4993464 | 1.33e+07 | 3.08e+08 |
 | capability__t-256k | capability | 46 | SHIPPED | 46 | 2391704 | 2359644 | 2361667 | 2359644 | 4.88e+07 | 2.09e+08 |
-| capability__t-256k | corpus | 81 | P1-rare-pos | 81 | 3149537 | 3030466 | 3154878 | 3132015 | 1.07e+08 | 3.52e+08 |
-| capability__t-256k | corpus | 81 | P2-rare-span | 81 | 3149537 | 3030466 | 3154878 | 3132015 | 1.07e+08 | 3.52e+08 |
-| capability__t-256k | corpus | 81 | P3-pair | 81 | 3033841 | 3030466 | 3154878 | 3132015 | 1.09e+08 | 3.55e+08 |
-| capability__t-256k | corpus | 81 | P4-selfprice | 81 | 3854673 | 3735602 | 3860014 | 3837151 | 3.42e+07 | 2.67e+08 |
-| capability__t-256k | corpus | 81 | P5-dfa | 81 | 9819552 | 9737008 | 9794171 | 9780915 | 2.25e+07 | 6e+08 |
-| capability__t-256k | corpus | 81 | P5-vm | 81 | 3705689 | 3586618 | 3682209 | 3668953 | 3.77e+07 | 2.63e+08 |
-| capability__t-256k | corpus | 81 | P5-dfa-subjprior | 81 | 7035129 | 6957466 | 7081878 | 7059015 | 2.49e+07 | 4.44e+08 |
-| capability__t-256k | corpus | 81 | SHIPPED | 81 | 4356322 | 4280385 | 4289636 | 4286494 | 9.17e+07 | 3.93e+08 |
+| capability__t-256k | corpus | 77 | P1-rare-pos | 77 | 2719287 | 2600216 | 2724628 | 2701765 | 9.25e+07 | 3.04e+08 |
+| capability__t-256k | corpus | 77 | P2-rare-span | 77 | 2719287 | 2600216 | 2724628 | 2701765 | 9.25e+07 | 3.04e+08 |
+| capability__t-256k | corpus | 77 | P3-pair | 77 | 2603591 | 2600216 | 2724628 | 2701765 | 9.53e+07 | 3.07e+08 |
+| capability__t-256k | corpus | 77 | P4-selfprice | 77 | 3239261 | 3120190 | 3244602 | 3221739 | 2.95e+07 | 2.24e+08 |
+| capability__t-256k | corpus | 77 | P5-dfa | 77 | 8770976 | 8688432 | 8745595 | 8732339 | 2.14e+07 | 5.37e+08 |
+| capability__t-256k | corpus | 77 | P5-vm | 77 | 3090277 | 2971206 | 3066797 | 3053541 | 3.3e+07 | 2.2e+08 |
+| capability__t-256k | corpus | 77 | P5-dfa-subjprior | 77 | 5986553 | 5908890 | 6033302 | 6010439 | 2.39e+07 | 3.81e+08 |
+| capability__t-256k | corpus | 77 | SHIPPED | 77 | 4095635 | 4019698 | 4028949 | 4025807 | 8.15e+07 | 3.63e+08 |
 | loglines__t-256k-fail | loglines | 11 | P1-rare-pos | 11 | 340920 | 130685 | 143099 | 138931 | 8.81e+06 | 1.96e+07 |
 | loglines__t-256k-fail | loglines | 11 | P2-rare-span | 11 | 340920 | 130685 | 143099 | 138931 | 8.81e+06 | 1.96e+07 |
 | loglines__t-256k-fail | loglines | 11 | P3-pair | 11 | 232935 | 130685 | 143099 | 138931 | 1.13e+07 | 2.22e+07 |
@@ -139,7 +135,7 @@ pattern x subject cells with >=2 bounded spans: 22
 | scan-only vs vm-priced | 3 |
 | dfa vs vm | 3 |
 
-measured/predicted survivors (+1 smoothed), 333 forms: p10 0.136, p50 1.63, p90 240, max 469
+measured/predicted survivors (+1 smoothed), 329 forms: p10 0.136, p50 1.63, p90 240, max 469
 
 ### D2. Similar stop counts (<=2x), very different windows (width >=3x or overshoot gap >=4)
 

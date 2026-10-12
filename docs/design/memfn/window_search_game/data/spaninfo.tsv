@@ -261,7 +261,6 @@ corpus	c004	0	3	0	0	0	0.000997	1.82e-07	xbc@mb=0,ov=0
 corpus	c005	0	1	0	1	1	0.000997	0.000997	x@mb=1,ov=1
 corpus	c005	1	1	1	inf	inf	0.000997	0.000997	x@mb=inf,ov=inf
 corpus	c006	0	1	0	0	0	0.0042	0.0042	S@mb=0,ov=0
-corpus	c007	0	1	0	0	0	0.0748	0.0748	[11]@mb=0,ov=0
 corpus	c008	0	2	0	0	0	0.00989	0.000535	ab@mb=0,ov=0
 corpus	c010	0	1	0	inf	inf	0.064	0.064	[2]@mb=inf,ov=inf
 corpus	c011	0	4	0	0	0	0.000997	7.01e-09	xayb@mb=0,ov=0
@@ -312,7 +311,6 @@ corpus	c060	0	2	0	0	0	0.0542	0.00293	aa@mb=0,ov=0
 corpus	c060	1	1	2	inf	inf	0.0542	0.0542	a@mb=inf,ov=inf
 corpus	c061	0	1	0	0	0	0.0542	0.0542	a@mb=0,ov=0
 corpus	c062	0	1	0	0	0	0.0542	0.0542	a@mb=0,ov=0
-corpus	c063	0	1	0	0	0	0.193	0.193	\W@mb=0,ov=0
 corpus	c064	0	1	0	inf	inf	0.0184	0.0184	c@mb=inf,ov=inf
 corpus	c065	0	3	0	0	0	0.0542	0.000159	aaa@mb=0,ov=0
 corpus	c065	1	1	3	inf	inf	0.0184	0.0184	c@mb=inf,ov=inf
@@ -345,7 +343,6 @@ corpus	c099	0	2	0	0	0	0.00989	0.000535	ab@mb=0,ov=0
 corpus	c100	0	3	0	0	0	0.000997	1.3e-05	x.y@mb=0,ov=0
 corpus	c101	0	1	0	0	0	0.064	0.064	[2]@mb=0,ov=0
 corpus	c102	0	3	0	0	0	0.138	0.0153	\s\s\w@mb=0,ov=0
-corpus	c103	0	1	0	0	0	0.73	0.73	[52]@mb=0,ov=0
 corpus	c104	0	1	0	0	0	0.000997	0.000997	x@mb=0,ov=0
 corpus	c106	0	3	0	0	0	0.0542	0.000159	aaa@mb=0,ov=0
 corpus	c107	0	1	0	1	1	0.0542	0.0542	a@mb=1,ov=1
@@ -367,7 +364,6 @@ corpus	c125	0	1	0	0	0	0.0591	0.0591	[2]@mb=0,ov=0
 corpus	c125	1	1	1	2	1	0.00989	0.00989	b@mb=2,ov=1
 corpus	c126	0	1	0	inf	inf	0.0184	0.0184	c@mb=inf,ov=inf
 corpus	c127	0	2	0	0	0	0.000498	2.7e-05	za@mb=0,ov=0
-corpus	c128	0	1	0	0	0	0.73	0.73	[52]@mb=0,ov=0
 corpus	c129	0	1	0	0	0	0.0825	0.0825	[3]@mb=0,ov=0
 corpus	c130	0	1	0	0	0	0.334	0.334	[146]@mb=0,ov=0
 corpus	c132	0	1	0	0	0	2e-06	2e-06	\x80@mb=0,ov=0
