@@ -6333,6 +6333,11 @@ build. Consequences:
 Cross-notes: [DD-13b] §2.7, [V-E], [EMIT-SET], limits.md (the warning's
 unit).
 
+### D88 addendum 1 — the per-file rule is ONE EXPORTED CALL INTERFACE per file (Frank, 2026-10-12, session 109, with D163)
+
+- **Ruling (Frank):** "the file artifact rule should be 'one exported rx call interface per file' which would be the wrapper." A file may hold several compiled machines (D163's composite: a controller over private sub-artifacts; the VM hybrid's embedded prefilter engine already did this), but it exports exactly ONE call interface: one prefix's entries + one rx_info. The rest of D88 stands: composition of independently EXPORTED artifacts is linking; there is no multi-interface translation unit.
+- **[EMIT-ENTRIES] gains a category (Frank, same ruling):** "keep but leave static". Each entry is EXPORTED, KEPT STATIC (needed by an exported entry, or by the composite's controller), or OMITTED. Sub-artifact entries a controller calls are kept static; unused ones are omitted, and so are their rx_info structs.
+
 ## D89 — COMPOSITION NUMBERING: the definition's wrapper takes a group number INTERNALLY; a library's groups are NON-CAPTURING to the caller by default; delivery is BY NAME; PCRE2's grouplist arguments are TBD (2026-08-30, Frank, forty-sixth session — the Q-W1/Q-W2 rulings)
 
 1. **Q-W1, ADOPTED with a narrowing.** A bound definition is injected as
