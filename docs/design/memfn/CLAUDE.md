@@ -302,3 +302,15 @@ Maintenance: update this file when files are added/removed or change roles.
     ratified; W8 and W9 rejected; W10 moved to the analysis object.
   - **Also:** flexibility worked examples with an event table, the R-18
     outline, three questions for Frank and the panel's attack list.
+  - **REVISION 2 (lane `wcrev`, 2026-10-12) applies the light D6 panel r4
+    (`../../dev/reviews/2026-10-12-r4-window-contract.md`) and D161 addenda
+    7-8; read its §R2 table first.** The reply is a STREAM of exact span-0
+    starts (COMPLETE, ASCENDING without repeats), replacing `[L, U]`;
+    context checks are not spans and pcrec tries the edge (E1). The
+    producer is narrowed to hull spans, a member of the position-pin fact
+    family; `start_set`/k-set stay their own facts. Presence gets its own
+    table (T-PRES). S1 is a pcrec abi event (the stamp now means OFFERED).
+    Every enum has an UNSTATED zero. S3's full file list includes a blinded
+    lane for G2; the shadow lives to S4. R2 is REJECTED by D161 add. 8:
+    proven facts are KEPT, layer-invariant by contract (C-PROOF), with
+    Frank's `foobar` example. Q1 open; Q2 a leaning; Q3 deleted.
