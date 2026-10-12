@@ -191,6 +191,6 @@ CHECK-side, no `src/` change, no emitted byte moved (no abi event).
 
 Validated on this branch (lane/pathtri2, tip below): `make -j16`, `make
 strict` clean; `make test-registry` rc 0 (every section `checks failed: 0`);
-`make test-codegen` -- see the handback for the verdict line. The default-build
+`make test-codegen` rc 0 ("run_group: 16/16 scripts passed", no make error line). The default-build
 .text claim for `emit_dfa.o`/`compile.o` is not touched by this change (only
 `tests/` moved).
