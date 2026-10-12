@@ -43,5 +43,7 @@ or run by `make` and is read by no check. COUNTS ONLY: nothing here reads a cloc
   regenerates the subjects if absent, runs `run_game.py` over the full population
   (177 bench + 150 corpus) and writes `data/` + `data/summary.md`. Its log is
   `build/wg/chain.log`, and its completion line is `== wingame chain COMPLETE`.
-- `data/` — the chain's committed TSVs and `summary.md` (absent until the chain has
-  run; see `../../../dev/lanes/wingame_report.md`).
+- `data/` — the chain's committed output for 327 patterns (177 bench + 150 corpus):
+  `spans.tsv`, `spaninfo.tsv`, `choices.tsv`, `sim.tsv`, `spanforms.tsv` and
+  `summary.md` (the tables the note's §4.2 reads). Regenerate with `chain.sh`
+  (~30 s); the `--emit-facts` listings stay in `build/wg/full/facts/`.
