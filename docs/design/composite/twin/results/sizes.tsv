@@ -1,0 +1,7 @@
+# composite vs today: emitted C bytes (parts' self-contained text + controller, so the ABI block is counted twice)
+# and linked .text+.rodata+.data.rel.ro of a binary whose main calls only rx_search (gcc 15.2 -O2,
+# -ffunction-sections -fdata-sections, -Wl,--gc-sections = the omission EMIT-ENTRIES would do)
+cell	text_bytes_today	text_bytes_comp	linked_today	linked_comp	linked_ratio
+trim	18932	45861	1011	3037	3.00
+wrapper	19302	44157	1205	2813	2.33
+sqli	400502	586620	194489	223029	1.15

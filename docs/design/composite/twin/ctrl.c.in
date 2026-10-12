@@ -1,0 +1,22 @@
+/* [COMPOSITE] twin controller for the split policy (hand-written; the build
+ * emits this text). Parts: rxf = \G(?:P) searched at the floor (one attempt),
+ * rxq = Q (P with its floor anchors killed) searched from PAST the floor. */
+#include "floor.h"
+#include "q.h"
+#include "plain.h"
+int rx_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2])
+{
+    if (from > n) return 0;
+    size_t qf = from;
+    if (from == 0 || @HAS_G@) {                  /* the floor can be live */
+        int r = rxf_search(s, n, from, caps);
+        if (r != 0) return r;                    /* a match, a give-up or a refusal */
+#ifndef LITERAL
+        qf = rxf_next_pos(s, n, from);           /* Q only PAST the floor */
+#endif
+    }
+    int r = rxq_search(s, n, qf, caps);
+    if (r == 1 && caps)
+        for (int k = RXQ_NCAPS; k < RXP_NCAPS; k++) caps[k][0] = caps[k][1] = PCREC_UNSET;
+    return r;
+}
