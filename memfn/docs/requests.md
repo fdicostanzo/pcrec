@@ -388,3 +388,29 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** migration thread (the scalar forms), after R-16; any SIMD form is the SIMD thread's under the 2:1 split.
 
 **Sabotage ids:** S820-S824 (allocated 2026-10-11; next free S825).
+
+## R-18 (2026-10-12, pcrec manager) — THE WINDOW SEARCH (D161): one general search category, fed by spans and the analysis object
+
+**Customer:** D161 and addenda 1-9, D162 and addenda 1-4 (chunk 3, docs/dev/chunks_2026-10-11.md). The contract is docs/design/memfn/window_contract.md revision 2.1 (light D6 panel docs/dev/reviews/2026-10-12-r4-window-contract.md, dispositions applied). It SUPERSEDES the per-shape interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and the PF/OFS/PRE sites; their forms and measurements carry over.
+
+**Facts pcrec will state (contract §2-§3):**
+- A site is a bounded sub-problem whose ORIGIN pcrec chooses (segment 0's start, or an inner segment's start where pcrec recovers the head itself). Given the origin, pcrec sends EVERY span whose distance to it is bounded and never pre-selects among them (D161 add. 9).
+- Spans are `mf_pred`s with stated `move_back`/`overshoot` and `need`; every stated parameter is true and required (D161 add. 4). `spans_seq` states the sequence rule (tri-state; a tight hull, not exact distances). Context predicates (negative offsets, e.g. `(?m)^`'s preceding `\n`) are not spans; pcrec tries the edge itself (D161 add. 7).
+- Presence sites carry no window (their own table).
+- `mf_site.analysis`: the per-compile analysis object, kinds keyed by name with PROVENANCE, frequency always offered (D162 add. 2-3). Derived data you need (rankings, rarity) is yours to build once per compile as a memo of the object (D162 add. 3-4).
+
+**Obligations on the reply:** a STREAM of candidate origins (the stateful next-candidate form, D155 add. 4.1): COMPLETE (every position where the stated spans hold appears), ASCENDING with no repeats, each candidate the origin; an exhausted stream means no covered candidate; totality without the analysis object (D162). When [KIT-VERIFY] builds: a compile-time `proven` statement that is the same in every layer (D161 add. 8).
+
+**Facts pcrec will NOT state:** a consumer price (D161 add. 6), a span index, a scan position (`plan_hint` retires at S4), a ranking (`rank_*` retires at S3), per-site rates.
+
+**Deliverable:** your method is your own (D157). Serve every degenerate site (one span, length 1) at zero SIMD-off movers first; then multi-span sites behind their own denies; every SIMD-off byte move lands with pcrec's abi event in the same commit.
+
+**Capability pcrec provides:** storage as ratified (contract §7: `mf_locals`, one handle per site).
+
+**Trigger:** R-17's PF routing event merged (R17-b). First multi-span consumer: the K82/L1 handoff's fused gate re-expressed as a stream (contract §2.4), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's syslogbase-expanded and the refine witnesses. Twin first, build on a measured win (D77, D147).
+
+**Sequencing (main's):** the contract's S1-S3 (the frequency kind, your ranking under a shadow comparison, the MF_SITE_ABI retirement) may land before the R-18 build; S4 (prior-reading picks into the kit) rides it.
+
+**Capacity:** migration thread (scalar forms); SIMD forms are the SIMD thread's under the 2:1 split.
+
+**Sabotage ids:** S871-S880 (allocated 2026-10-12; next free S881).
