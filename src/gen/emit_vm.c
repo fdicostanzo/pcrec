@@ -14045,6 +14045,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     VmEntry en;
     VmReseed rs;
 
+    /* [COMPOUND] a one-attempt part needs the DFA attempt loop (compound.md
+     * §A.5); a VM part bounded that way is B6's, so here the part REFUSES. */
+    if (pcrec_part_one_attempt(cx))
+        pcrec_ctx_fail(cx, 0, "compound part: a one-attempt bound needs the DFA "
+                       "attempt route, and this pattern takes the VM");
     vm_init(&v, cx, root, &g);
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);

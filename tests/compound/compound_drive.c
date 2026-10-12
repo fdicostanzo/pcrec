@@ -7,6 +7,8 @@
  * `PcrecEmitIn` through `pcrec_compile_driver`.
  *
  *   compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS
+ *   compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES
+ *   compound_drive selfcheck
  *
  * PATTERNS is `id<TAB>hex-pattern` per line. For each pattern it writes the
  * plain artifact (`OUTDIR/<id>.plain.c/.h`, the default request) and one
@@ -18,8 +20,21 @@
  * compiler computed. A pattern the plain compile refuses prints one
  * `plain refused` line and is skipped.
  *
- * Exit 0 unless the driver itself breaks (a refusal is a row, not an error);
- * 2 on bad usage or I/O. */
+ * `parts` (B1, compound.md §A.5): WITNESSES is `id<TAB>P-hex<TAB>Q-hex|-`
+ * per line. For each it writes the plain artifact of P at prefix `pp`
+ * (`<id>.plain.c`, self-contained) and the split client's two parts at
+ * prefix PREFIX: F = P bounded to one attempt (`<id>.f.c`) and Q = the
+ * given text (`<id>.q.c`; B2 derives it instead), both compiled guards-off
+ * as compound.md §A.1's table states them. ARMs: `--enc utf8`,
+ * `--utf-check`, `--guard none|align` (the PARENT's options; the parts
+ * clear them). Each line of stdout is `id<TAB>part<TAB>ok|refused<TAB>msg`.
+ *
+ * `selfcheck` (B1): `pcrec_comp_part_check` over parts that state every
+ * field and parts that leave one unstated or inconsistent, each expected
+ * verdict asserted; and `pcrec_compile_part` refusing an unstated part.
+ *
+ * Exit 0 unless the driver itself breaks (a refusal is a row, not an error;
+ * `selfcheck` exits 1 on a wrong verdict); 2 on bad usage or I/O. */
 #include "core/internal.h"
 
 #include <stdio.h>
@@ -92,7 +107,7 @@ static int compile_one(const char *dir, const char *id, const char *tag,
     snprintf(cname, sizeof cname, "%s.%s.c", id, tag);
     pcrec_options o = *base;
     o.header_name = hname;
-    PcrecEmitIn in = { req };
+    PcrecEmitIn in = { req, NULL, PCREC_PB_UNSTATED };
     pcrec_output out;
     if (pcrec_compile_driver(pat, &o, &out, err, NULL, NULL, NULL, NULL, NULL,
                              req ? &in : NULL) != 0)
@@ -154,9 +169,140 @@ static int drive_entries(int argc, char **argv)
     return ioerr ? 2 : 0;
 }
 
+/* The split client's two parts (compound.md §A.1's table): F is the
+ * pattern bounded to one attempt, Q the derived pattern; both DFA, both
+ * guards-off, the controller's prologue owning the guard and the check. */
+#define SPLIT_GUARDS_OFF_SET   PCREC_NO_STARTPOS_GUARD
+#define SPLIT_GUARDS_OFF_CLEAR (PCREC_FORCE_UTF_CHECK | PCREC_FORCE_STARTPOS_ALIGN)
+static const CompPart split_f = {
+    "f", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
+    PCREC_PE_DFA, PCREC_PB_ONE_ATTEMPT,
+    PCREC_PART_NEED_SEARCH | PCREC_PART_NEED_NEXT_POS | PCREC_PART_NEED_VALID_UPTO,
+};
+static const CompPart split_q = {
+    "q", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
+    PCREC_PE_DFA, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+};
+
+/* Writes one part (or the plain artifact) of pattern `pat`. */
+static void drive_part(const char *dir, const char *id, const char *tag,
+                       const char *pat, const pcrec_options *o,
+                       const CompPart *part, int *ioerr)
+{
+    pcrec_output out;
+    pcrec_error err;
+    int rc = part ? pcrec_compile_part(pat, o, part, &out, &err)
+                  : pcrec_compile(pat, o, &out, &err);
+    printf("%s\t%s\t%s\t%s\n", id, tag, rc ? "refused" : "ok", rc ? err.msg : "-");
+    if (rc) return;
+    char name[512];
+    snprintf(name, sizeof name, "%s.%s.c", id, tag);
+    if (put_file(dir, name, out.c_src)) *ioerr = 1;
+    pcrec_output_free(&out);
+}
+
+/* The `parts` subcommand (B1). */
+static int drive_parts(int argc, char **argv)
+{
+    if (argc < 2) return 2;
+    const char *dir = argv[0];
+    pcrec_options parent;
+    pcrec_default_options(&parent);
+    parent.prefix = argv[1];
+    parent.features = "all";
+    for (int i = 2; i < argc; i++) {
+        if (!strcmp(argv[i], "--enc") && i + 1 < argc && !strcmp(argv[i + 1], "utf8")) {
+            parent.encoding = PCREC_ENC_UTF8; i++;
+        } else if (!strcmp(argv[i], "--utf-check")) {
+            parent.flags |= PCREC_FORCE_UTF_CHECK;
+        } else if (!strcmp(argv[i], "--guard") && i + 1 < argc) {
+            if (!strcmp(argv[i + 1], "none")) parent.flags |= PCREC_NO_STARTPOS_GUARD;
+            else if (!strcmp(argv[i + 1], "align")) parent.flags |= PCREC_FORCE_STARTPOS_ALIGN;
+            else return 2;
+            i++;
+        } else {
+            fprintf(stderr, "compound_drive: unknown option '%s'\n", argv[i]);
+            return 2;
+        }
+    }
+    pcrec_options plain = parent;
+    plain.prefix = "pp";
+    /* The controller reads F's subject validator only under the parent's
+     * `-futf-check` (compound.md §A.4's edge), so that is F's need. */
+    CompPart f = split_f;
+    if (!pcrec_opt_has(&parent, PCREC_FORCE_UTF_CHECK))
+        f.need &= ~PCREC_PART_NEED_VALID_UPTO;
+    char line[1 << 16];
+    int ioerr = 0;
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *f1 = strchr(line, '\t');
+        if (!f1) continue;
+        *f1++ = 0;
+        char *f2 = strchr(f1, '\t');
+        if (!f2) continue;
+        *f2++ = 0;
+        char *p = unhex(f1), *q = strcmp(f2, "-") ? unhex(f2) : NULL;
+        if (!p || (strcmp(f2, "-") && !q)) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
+        drive_part(dir, line, "plain", p, &plain, NULL, &ioerr);
+        drive_part(dir, line, "f", p, &parent, &f, &ioerr);
+        if (q) drive_part(dir, line, "q", q, &parent, &split_q, &ioerr);
+        free(p);
+        free(q);
+    }
+    return ioerr ? 2 : 0;
+}
+
+/* The `selfcheck` subcommand (B1): every unstated or inconsistent field is
+ * refused by the table-build self-check, the two split parts pass it, and
+ * the part compile refuses an unstated part rather than compiling it. */
+static int drive_selfcheck(void)
+{
+    CompPart bad[8];
+    const char *what[8];
+    int n = 0;
+#define BAD(field_edit, label) \
+    do { bad[n] = split_f; field_edit; what[n++] = (label); } while (0)
+    BAD(bad[n].engine = PCREC_PE_UNSTATED, "engine unstated");
+    BAD(bad[n].bound = PCREC_PB_UNSTATED, "bound unstated");
+    BAD(bad[n].derive = NULL, "derive unstated");
+    BAD(bad[n].flags_set |= PCREC_FORCE_UTF_CHECK, "a flag set and cleared");
+    BAD(bad[n].need = PCREC_PART_NEED_NEXT_POS, "need without search");
+    BAD(bad[n].role = "", "empty role");
+    BAD(bad[n].role = "abcd", "role over 3");
+    BAD(bad[n].role = "F", "role not [a-z0-9]");
+#undef BAD
+    int fails = 0;
+    for (int i = 0; i < n; i++) {
+        const char *why = pcrec_comp_part_check(&bad[i]);
+        printf("%s\t%s\t%s\n", why ? "refused" : "ACCEPTED", what[i], why ? why : "-");
+        if (!why) fails++;
+    }
+    const CompPart *good[2] = { &split_f, &split_q };
+    for (int i = 0; i < 2; i++) {
+        const char *why = pcrec_comp_part_check(good[i]);
+        printf("%s\tsplit part %s\t%s\n", why ? "REFUSED" : "accepted", good[i]->role,
+               why ? why : "-");
+        if (why) fails++;
+    }
+    pcrec_options o;
+    pcrec_default_options(&o);
+    pcrec_output out;
+    pcrec_error err;
+    int rc = pcrec_compile_part("abc", &o, &bad[0], &out, &err);
+    printf("%s\tcompile of an unstated part\t%s\n", rc ? "refused" : "COMPILED",
+           rc ? err.msg : "-");
+    if (!rc) { fails++; pcrec_output_free(&out); }
+    return fails ? 1 : 0;
+}
+
 int main(int argc, char **argv)
 {
     if (argc >= 2 && !strcmp(argv[1], "entries")) return drive_entries(argc - 2, argv + 2);
-    fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n");
+    if (argc >= 2 && !strcmp(argv[1], "parts")) return drive_parts(argc - 2, argv + 2);
+    if (argc == 2 && !strcmp(argv[1], "selfcheck")) return drive_selfcheck();
+    fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n"
+                    "       compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES\n"
+                    "       compound_drive selfcheck\n");
     return 2;
 }

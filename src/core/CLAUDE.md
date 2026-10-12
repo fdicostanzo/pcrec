@@ -94,6 +94,23 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the byte-rate is NONE, so the order is by cube size, then positional
   (U8-PICK).
 
+- **compound.c** — [COMPOUND] build step B1 (lane cpb02, 2026-10-12;
+  `docs/design/compound.md` §A.1, §A.5): the compound tool's PARTS, at the
+  driver tier. `CompPart` (internal.h's driver group) states every field —
+  role, derivation (`&pcrec_derive_none` is the explicit none), `flags_set`/
+  `flags_clear`, engine (`PcrecPartEngine`, zero UNSTATED), bound
+  (`PcrecPartBound`, zero UNSTATED), `need` — and `pcrec_comp_part_check` is
+  the table-build self-check that refuses an unstated or inconsistent one.
+  `pcrec_compile_part` turns a part into the parent's options plus the named
+  flags and a `PcrecEmitIn`: the entry request (nothing exported, `need`
+  kept) and PART MODE (the role and the bound). `compile_driver` renders a
+  part's prefix as the placeholder plus `__<role>` (K79 holds per part);
+  the emitters drop the shared blocks (`pcrec_is_part`) and the BOUND slot
+  reads the one-attempt bound (`pcrec_part_one_attempt`, emit_dfa.c). A
+  part a pattern cannot honour REFUSES (one attempt off the DFA attempt
+  route). Derivations arrive with B2's hook list. Check: `tests/compound/`
+  (B1).
+
 - **internal.h / compile.c ([COMPOUND] B0, lane cpb02, 2026-10-12)** —
   `PcrecEntry`, `PcrecEntryReq` and `PcrecEmitIn` are declared at the top of
   internal.h (before `Ctx`, which carries `emit_in`); `PcrecEntryShape`,

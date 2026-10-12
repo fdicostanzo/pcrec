@@ -1593,6 +1593,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * first `setjmp`, and never written again. */
     const char *const user_prefix = defo.prefix;
     defo.prefix = PCREC_PREFIX_PLACEHOLDER;
+    /* [COMPOUND] PART MODE (compound.md §A.5): the emitters see the
+     * placeholder plus `__<role>`, a fixed length, so K79's invariant holds
+     * per part; the render then writes `<prefix>__<role>`. The role was
+     * checked by `pcrec_compile_part` (`pcrec_comp_part_check`). */
+    char part_prefix[sizeof PCREC_PREFIX_PLACEHOLDER + 2 + PCREC_PART_ROLE_MAX];
+    if (emit_in && emit_in->part_role) {
+        snprintf(part_prefix, sizeof part_prefix, "%s__%s",
+                 PCREC_PREFIX_PLACEHOLDER, emit_in->part_role);
+        defo.prefix = part_prefix;
+    }
     /* [K100] the caller's `--unroll=K` (0: none), which the size term's
      * ladder and FINAL attempts overwrite in `defo.unroll_k` and a
      * restarting row's `sets` routine puts back. */

@@ -8841,6 +8841,7 @@ static bool cand_rs_dense_applies(const CandSel *s)
  * PCREC_NO_GSTART reference build's fold. */
 static bool cand_bound_bot_applies(const CandSel *s)
 {
+    if (pcrec_part_one_attempt(s->cx)) return false;   /* B2's, below */
     bool a_gst = dfa_interior_dead(s->d, s->d->s1g);
 #ifdef PCREC_NO_GSTART
     a_gst = dfa_interior_dead(s->d, s->d->s1u);
@@ -8848,9 +8849,13 @@ static bool cand_bound_bot_applies(const CandSel *s)
     return dfa_interior_dead(s->d, s->d->s1u) && a_gst;
 }
 
-/* B2: every start of `s->d` needs `\G` (`emit_attempt`'s `a_bot`, past B1). */
+/* B2: every start of `s->d` needs `\G` (`emit_attempt`'s `a_bot`, past B1);
+ * or the compile is a [COMPOUND] part bounded to ONE ATTEMPT at
+ * `search_from` (compound.md §A.5), which takes this row's payload whatever
+ * the pattern's own BOUND would be. Its attempt is the pattern's own: the
+ * start dispatch seeds `s0` at 0 and the `\G` family at `search_from`. */
 static bool cand_bound_gstart_attempt_applies(const CandSel *s)
-{ return dfa_interior_dead(s->d, s->d->s1u); }
+{ return pcrec_part_one_attempt(s->cx) || dfa_interior_dead(s->d, s->d->s1u); }
 
 /* B3, B4: the `start_anchor` fact's two anchored values (the VM entry's
  * `attempt_max`). */
@@ -12304,7 +12309,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * at the one site that holds both answers, rather than left to a check
      * with no witness. Verified silent over the whole shipped corpus and
      * every axis of `make test-axes` at the landing. */
-    if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored)
+    if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored &&
+        !pcrec_part_one_attempt(cx))
         pcrec_ctx_fail(cx, 0,
             "internal error: the pattern's AST proves every match begins at "
             "offset 0, but this machine has a live interior start state");
@@ -13001,7 +13007,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
 
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(cx, c);
-    emit_feature_macros(cx, c);
+    /* [COMPOUND] a part carries none of the SHARED blocks (the feature
+     * macros, the ABI block and its includes): the compound has them once,
+     * ahead of every part (compound.md §A.5). */
+    if (!pcrec_is_part(cx)) emit_feature_macros(cx, c);
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
     /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
      * FACT: unconditional, on every artifact of both engines, with an
@@ -13208,10 +13217,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_residual_decls(cx, c, ~pcrec_entry_enc_static(cx),
                             pcrec_entry_enc_static(cx));
     } else {
-        pcrec_sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
-        /* file-scope, shared by every engine here; per-engine below */
-        emit_rx_abi_types(c);
-        pcrec_sb_putc(c, '\n');
+        if (!pcrec_is_part(cx)) {
+            pcrec_sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
+            /* file-scope, shared by every engine here; per-engine below */
+            emit_rx_abi_types(c);
+            pcrec_sb_putc(c, '\n');
+        }
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_vars_macros(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
@@ -13627,6 +13638,12 @@ void pcrec_emit_dfa(Ctx *cx)
      * so its mask is the two unconditional entries alone ([UTF-VALID] added
      * the second, the subject validator). */
     cx->job->enc_mask = PCREC_ENCE_NEXT_POS | PCREC_ENCE_VALID_UPTO;
+    /* [COMPOUND] a part bounded to one attempt needs the attempt loop to
+     * bound (compound.md §A.5): on any other route the part REFUSES, which
+     * declines its row. */
+    if (pcrec_part_one_attempt(cx) && cand_route_of(cx) != CAND_ROUTE_ATTEMPT)
+        pcrec_ctx_fail(cx, 0, "compound part: a one-attempt bound needs the DFA "
+                       "attempt route, and this pattern takes another");
     /* [START-LANDING] the landing's guard calls the encoding's DECODE entry
      * (`pcrec_dfa_landing_guard`), a `static inline` entry defined ahead of
      * the search body below. */

@@ -74,12 +74,28 @@ typedef struct {
     unsigned kept;
 } PcrecEntryReq;
 
+/* [COMPOUND] A part's BOUND (compound.md §A.5): `PCREC_PB_ONE_ATTEMPT` makes
+ * the part's search one attempt at `search_from` (the BOUND slot's
+ * `attempt-gstart` row, whatever the pattern's own BOUND would be). The zero
+ * value is UNSTATED, which a part may not be. */
+typedef enum {
+    PCREC_PB_UNSTATED = 0,
+    PCREC_PB_NONE,
+    PCREC_PB_ONE_ATTEMPT
+} PcrecPartBound;
+
 /* What a compile's EMISSION is asked for beyond the caller's options: the
  * driver-tier input the compound tool sets (compound.md §A.3-§A.5) and no
  * `pcrec_options` field carries. NULL on every public compile, which is the
  * default request (the public default set exported) and no part mode. */
 typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
+    /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
+     * `<prefix>__<role>` of a compound -- no shared blocks (the ABI block,
+     * its includes, the feature macros), and `bound` read by the BOUND
+     * slot. NULL: an ordinary artifact, `bound` unread. */
+    const char *part_role;
+    PcrecPartBound part_bound;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
@@ -6962,6 +6978,17 @@ typedef enum {
  * request). Refuses, as an internal error, a request whose closure reaches
  * no matcher entry or keeps `info`/`main` static. */
 void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape);
+/* [COMPOUND] True iff this compile renders a PART of a compound
+ * (`PcrecEmitIn.part_role`), and iff that part's bound is one attempt. */
+static inline bool pcrec_is_part(const Ctx *cx)
+{
+    return cx->emit_in && cx->emit_in->part_role;
+}
+static inline bool pcrec_part_one_attempt(const Ctx *cx)
+{
+    return pcrec_is_part(cx) && cx->emit_in->part_bound == PCREC_PB_ONE_ATTEMPT;
+}
+
 /* `e`'s linkage under the closure `pcrec_entry_shape` computed. */
 PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
 /* `e`'s storage-class text for its definition: "" exported, "static "
@@ -7140,6 +7167,64 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g);
  * entry. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
+                       pcrec_error *err);
+
+/* ---- [COMPOUND] the compound tool's parts (src/core/compound.c) ----------
+ *
+ * docs/design/compound.md §A.1/§A.5. A PART is the unchanged pipeline run on
+ * a derived input, rendered as `<prefix>__<role>` inside a compound's one
+ * artifact. Its OPTIONS are the parent's with `flags_set` OR-ed in and
+ * `flags_clear` masked out, its engine and bound stated, and nothing else
+ * inherited by accident: every field below is stated by every part, and
+ * `pcrec_comp_part_check` refuses one that is not. */
+
+/* A derivation: an AST rewrite at the composer hook. `pcrec_derive_none` is
+ * the explicit "no derivation", so a NULL pointer can only mean unstated. */
+typedef struct {
+    const char *name;
+    PcrecComposeFn fn;      /* NULL only on `pcrec_derive_none` */
+} PcrecDerive;
+extern const PcrecDerive pcrec_derive_none;
+
+/* A part's engine, stated: the zero value is UNSTATED, never AUTO. */
+typedef enum {
+    PCREC_PE_UNSTATED = 0,
+    PCREC_PE_AUTO,
+    PCREC_PE_DFA,
+    PCREC_PE_VM
+} PcrecPartEngine;
+
+/* What the controller reads from a part: the closure's kept roots. */
+#define PCREC_PART_NEED_SEARCH      (1u << 0)
+#define PCREC_PART_NEED_MATCH_CAPS  (1u << 1)
+#define PCREC_PART_NEED_NEXT_POS    (1u << 2)
+#define PCREC_PART_NEED_VALID_UPTO  (1u << 3)
+#define PCREC_PART_NEED_ALL         ((1u << 4) - 1u)
+
+/* The longest role: a part prefix is the parent's plus `__` and the role. */
+#define PCREC_PART_ROLE_MAX 3
+
+typedef struct {
+    const char *role;            /* 1..3 of [a-z0-9]: the part's `__<role>` */
+    const PcrecDerive *derive;   /* &pcrec_derive_none, or a derivation */
+    uint64_t flags_set;          /* option flags forced ON for this part */
+    uint64_t flags_clear;        /* ... forced OFF */
+    PcrecPartEngine engine;      /* stated, never inherited */
+    PcrecPartBound bound;        /* PCREC_PB_NONE or PCREC_PB_ONE_ATTEMPT */
+    unsigned need;               /* PCREC_PART_NEED_*: what the controller reads */
+} CompPart;
+
+/* THE TABLE-BUILD SELF-CHECK for one part: NULL when every field is stated
+ * and consistent, else the first field that is not (a static string). */
+const char *pcrec_comp_part_check(const CompPart *part);
+
+/* Compiles `pattern` as part `part` of a compound whose parent options are
+ * `parent` (its `prefix` the compound's), into `out->c_src` (self-contained
+ * text, no header). Returns 0, or -1 with `err` filled: a part the pattern
+ * cannot compile under its options REFUSES, which declines its row. An
+ * unstated or inconsistent part is an internal-error refusal. */
+int pcrec_compile_part(const char *pattern, const pcrec_options *parent,
+                       const CompPart *part, pcrec_output *out,
                        pcrec_error *err);
 
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse
