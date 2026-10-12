@@ -13,12 +13,12 @@ outputs: `docs/dev/optloop/matchsplit/` (own CLAUDE.md; `summary.txt`, `qwork.tx
   members: `^\s+|\s+$` and 9 trim spellings, the wrapper strip `^\s*\{|\}\s*$` (plus its captured form, on the
   hybrid), quote/bracket/paren/slash/dot strip, comment strip `^#|//.*$`, `(?m)^\s+|\s+$`, `^|end$`, `^|$`.
 - **K106's trim shape is quadratic, confirmed by COUNT** (section 4): on `Q . \t*k . Q` the find-all loads
-  128,040,002 subject bytes at k = 16,000 (8,001 loads per byte), growth 15.99 per 4x of k, on all 9 trim-family
-  DFA-attempt shapes (`^\s+|\s+$`, `(?m)^\s+|\s+$`, `^[ \t]+|[ \t]+$`, `^\s*|\s*$`, `^\W+|\W+$`, `/+`, `.+`,
-  nbsp, and the 2016 outage's `^[\s\x{200c}]+|[\s\x{200c}]+$` under `-e utf8`). The wrapper strip is NOT
+  128,040,002 subject bytes at k = 16,000 (8,001 loads per byte), growth 15.99 per 4x of k, on all 11 trim-family
+  DFA-attempt shapes (`^\s+|\s+$`, `(?m)^\s+|\s+$`, its comment variant, `^[ \t]+|[ \t]+$`, `^\s*|\s*$`, `^\W+|\W+$`, `/+`, `.+`,
+  nbsp x2, and the 2016 outage's `^[\s\x{200c}]+|[\s\x{200c}]+$` under `-e utf8`). The wrapper strip is NOT
   quadratic (2 loads/byte) but makes one attempt entry per byte per call (16,001-16,003 attempts at k = 16k).
 - **A second quadratic population the note did not name: END-only on the VM-only route.** `(\s*)$`, `(a*)$`,
-  `(\w\d)*$`, `((a)|(b))*$` ... (13 of 16 measured) show the same 15.99 growth. These are single-class (E-only)
+  `(\w\d)*$`, `((a)|(b))*$` ... (10 of 16 measured) show the same 15.99 growth. These are single-class (E-only)
   and a capture or similar puts them on the VM, where `rev-end` does not apply. The controls (`\d+$`, `\s+$`,
   `.*\.txt$`, `\w+\z` on `rev-end`) are constant or linear.
 - **Trigger verdict (section 6.5, stated in the note before the count):** START+FREE MET already (witness
@@ -84,16 +84,15 @@ hand-built `tests/assertions` witness (`^a|b$` anchors.rxt:55, `(?m)^a|b$` multi
 (`start_max` 0 or `search_from`) 475. By mix: LS 54 (the MLINE route; not split material), G+F 21, S+F 21
 (bench 2, corpus 10, D27 3, idioms 6), S+E 21, no-live-path 12, LS+F 8, S 7, F-only 7 (see Findings), LS+LE 6,
 S+E+F 4, G 3, and singletons. This discharges [OPT-ATTEMPT-SPLIT]'s owed count: its member (S+F on attempt/n) is
-**21 patterns, of which 2 bench**. VM-only route: 838 patterns (no `start_max`; 3 pinned-and-mixed... see
-`summary.txt` section 4 for its mix table: 5 S+F, 2 E+F, 4 LE, 2 G+F, 2 G).
+**21 patterns, of which 2 bench**. VM-only route: 838 patterns (no `start_max` stamp); mixed members there are few (S+F 5, E+F 2, G+F 2), single-class S 261 and E 45; table in `summary.txt` section 4.
 
 **(d) quadratic risk.** 190 patterns have an end-pinned path led by an unbounded repeat; 29 of them sit on a
 route that tries every start (13 are mixed with another class). Work counts (`qwork.txt`; 30 patterns + 6
 controls; load count, no clock) at k = 1,000 / 4,000 / 16,000 on `Q . c*k . Q`:
-- 9 trim-family shapes on dfa-attempt: T = 502,502 / 8,010,002 / 128,040,002, growth 15.99, attempts 16,003;
+- 11 trim-family shapes on dfa-attempt: T = 502,502 / 8,010,002 / 128,040,002, growth 15.99, attempts 16,003;
   their trailing-run and whole-run subjects are linear (T = n, 2-3 attempts).
 - wrapper strip (`dfa` and `hybrid`): T = 2n, growth 4.00, but attempts = n+3 per call.
-- VM-only END shapes: 13 of 16 growth 15.99 (e.g. `(\s*)$` 256,064,005 loads at 16k); `(a*)(a*)$` hit the step
+- VM-only END shapes: 10 of 16 growth 15.99 (e.g. `(\s*)$` 256,064,005 loads at 16k); `(a*)(a*)$` hit the step
   budget (T flat at 1.0e9); two shapes failed to run at 16k (give-up/timeout, not counted); `(.*)$` and
   `(.*)\z` linear.
 - controls on `rev-end`: `\d+$`, `.*\.txt$`, `[a-z]+\.txt$`, `\s+$`, `\w+\z`, `a*\z`: constant or linear.
@@ -161,9 +160,8 @@ does with them, not how common they are.
    LS+E (planted P5). A true LS+E is `(?m)^\s+|\s+\z`.
 2. **Trim is quadratic on the DFA attempt route AND E-only captured patterns are quadratic on the VM** (section 4).
    The second is outside [MATCH-SPLIT]'s pin-only scope (single class) but has the same cause: nothing walks from n.
-   File candidates: K row for the trim shape (Q3), and a separate look at VM-only E-only (13 of 16 measured).
-3. **Dead and landmark anchors still force the attempt loop**: F-only patterns on attempt/n are 8 (7 in the table
-   above plus d27): `ab|a\Gb`, `a\Gb|c`, `x\G|y` (dead `\G`, equal to `ab`, `y` ...), `a(?m)^b`, and two
+   File candidates: K row for the trim shape (Q3), and a separate look at VM-only E-only (10 of 16 measured).
+3. **Dead and landmark anchors still force the attempt loop**: F-only patterns on the attempt route are 8 (all corpus): `ab|a\Gb`, `a\Gb|c`, `x\G|y` (dead `\G`, equal to `ab`, `y` ...), `a(?m)^b`, and two
    `(?(DEFINE)...\G/\A...)` wrappers. 75 patterns have dead anchored paths, all corpus; 0 in bench/idioms.
 4. **Redundant STARTs**: 11 patterns (`(\A)*`, `(^)*ab`, `a(?:$|.)*`), all corpus; none in the idioms. The
    fact-only move F2 predicts is real but its population is test witnesses only.
