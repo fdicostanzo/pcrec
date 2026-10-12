@@ -1241,7 +1241,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 2026-10-09), abi 71 -> 72 (71 is RQ-3's, landed first): the VM cursor
 # rung's lazy rmin prefix is spelled as a span scan capped at rmin plus the
 # reach test; only lazy-cursor-prefix artifacts move beyond the abi digits.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-337f9a6e}"   # [LOSS-REVIEW] candidate 1 SELF-PIN (lane seambuild, 2026-10-11), abi 76: the branch's last src commit (the seam entries span_match/span_match_caseless/back_step made static inline) (was 9dec5e6f, l1tri's [REQ-HANDOFF-L1] abi-75 self-pin)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a0a72b5c}"   # D164 B3 SELF-PIN (lane b3build, 2026-10-12), abi 77: the branch's last src commit (the match-end mark on rev-end: forms F0-F4, the distance-set accept, prio-const) (was 337f9a6e, seambuild's abi-76 self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -5187,3 +5187,18 @@ their in-suite check. 135 checks, ~17 s. `oracle_sweep.py` had no site
 left and is deleted. The registry's two source legs retired in the same
 change (tests/registry/CLAUDE.md "[decfbB5]"; `run_registry_tests.sh`'s
 `axes_registry_check` pin 214 -> 210).
+
+## `make test-endmark` (D164 B3, lane b3build, 2026-10-12)
+
+`tests/endmark/run_b3_checks.sh`: the match-end mark on `rev-end`
+(`docs/design/endmark.md` §R). The answer net (`b3_rows.rxt`, every cell from
+libpcre2 10.46) under the default, `-fno-anchored-dfa` and
+`-fno-rev-end-onewalk` arms; the per-form witnesses; the probe census
+(`b3_census.tsv`, 266 rows) with LITERAL population floors per form and per
+`mark_prio` value; gates G1-G4 per artifact with a named exemption list
+(`[^c]{0,4}?$`, `[^c]{0,4}$`; G3: `[^\n]*\n?$`, whose tagged machine carries
+three identical 256-byte scan-edge tables the G3 model does not count); and the
+two declines under reference builds. Mech arm `endmark` (rows S881-S890 and the
+re-aimed L2 rows). Lane instruments, not sections: `b3diff.py` (the built
+compiler against libpcre2, every arm, every subject to length 5) and
+`mover_census.py` (movers must be exactly the rev-end population, by id).

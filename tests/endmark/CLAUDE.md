@@ -32,3 +32,19 @@ the build (§R.6.2 item 1, the `rev2corp` precedent); the forms are the build's.
   the 266 rev-end `$`/`\Z` artifacts of the b3rev census at `e8ca1252`
   (`docs/design/endmark/b3rev/results/census.json`), one row per distinct
   (pattern, encoding) with the census's form row and first id.
+- **run_b3_checks.sh** — `make test-endmark` (mech arm `endmark`): §1 the
+  answer net under three arms (default, `-fno-anchored-dfa`,
+  `-fno-rev-end-onewalk`); §2 the per-form witnesses (`--emit-facts`
+  `end_mark`'s `form=`/`prio=`); §3 the probe census against
+  `b3_census.tsv` with literal population floors per form and `mark_prio`
+  value; §4 gates G1-G4 per artifact (§R.6.2, D164 add. 4) with the NAMED
+  exemption list and its own floor; §5 the declines under reference builds
+  (`-DPCREC_MARK_PRIO_MAX_STATES=2`: state-dependent; `-DPCREC_ANCHORED_MAX_STATES=3`:
+  form overflow), each answering.
+- **gen_b3_census.py** / **b3_census.tsv** — the 266-row probe census
+  (`docs/design/endmark/b3rev/results/census.json`) as the form and
+  `mark_prio` each artifact must take; §3 reads it.
+- **mover_census.py** — which corpus artifacts move between a reference pcrec
+  and this build (byte + utf8, auto + vm), and whether that is EXACTLY the
+  rev-end population by form (§R.7.3). Build the reference with the SAME abi
+  digit. A lane and review instrument, not a section.
