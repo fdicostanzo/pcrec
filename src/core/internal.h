@@ -7030,6 +7030,9 @@ void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
 /* [M5-SEAM] the per-encoding residual DEFINITIONS (src/enc/); the
  * matching declarations ride pcrec_emit_prologue. */
 void pcrec_emit_residual(Ctx *cx);
+/* The encoding's `static inline` entries (enc.h's `inline_def`) the
+ * artifact's mask carries, for an engine emitter to place ahead of its body. */
+void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb);
 
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long budget, long long work, long long frames,

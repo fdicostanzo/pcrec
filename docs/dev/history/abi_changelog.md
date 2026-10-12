@@ -23,7 +23,20 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `75` on every artifact today (lane rlhbuild bumped it
+- **`rx_info.abi` is `76` on every artifact today (lane seambuild bumped it
+  from 75, 2026-10-11: [LOSS-REVIEW] candidate 1, ruled by Frank: "those
+  helpers shouldn't be exported").** The encoding seam's
+  `<prefix>_span_match`, `<prefix>_span_match_caseless` and
+  `<prefix>_back_step` became `inline_def` entries: each is a `static inline`
+  definition emitted ahead of the VM body (beside `<prefix>_decode`), its
+  contract doc-comment beside it, and none is declared, so a split artifact's
+  `.h` lost their declarations (and `<PREFIX>_BACK_STEP_NONE`, now defined in
+  the `.c` above `<prefix>_back_step`) and the object no longer exports them.
+  The VM's calls are direct (no PLT under `-fPIC`) and gcc may inline them.
+  Under `utf8` the decode entry is emitted before the caseless compare that
+  calls it. No struct offset moves and no answer moves.
+
+- **`rx_info.abi` was `75` (lane rlhbuild bumped it
   from 74, 2026-10-11: [REQ-HANDOFF-L1], the K82 handoff generalized).** The
   handoff's needle is the pre-check's LANDMARK, the run window where a run
   ships or else the one necessary byte, with K its maximum byte offset from

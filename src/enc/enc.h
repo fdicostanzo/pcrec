@@ -135,7 +135,13 @@ typedef struct {
      * entry cannot be inlined into a `-fPIC` build (interposable), which is
      * the whole reason a per-character helper is not exported. The emitter
      * places these with `pcrec_enc_emit_inline_defs`; `pcrec_enc_emit_defs`
-     * skips them. */
+     * skips them. Such a row's `decls` is "" and its `decls_doc`, if any,
+     * is the entry's CONTRACT doc, emitted beside the definition rather
+     * than into the `.h`. Inline entries are emitted in table order, so one
+     * that another inline entry calls (`requires`) comes first in the table.
+     * [LOSS-REVIEW] candidate 1 (Frank, 2026-10-11) made the span compares
+     * and the back-step inline: they are called per reference/lookbehind
+     * attempt, and the exported form paid a PLT call each time. */
     unsigned    requires;
     bool        inline_def;
 } PcrecEncEntry;
@@ -543,9 +549,12 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          size_t nsites);
 /* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
  * ahead of the engine bodies; `pcrec_enc_emit_defs` emits the rest. Both,
- * and `pcrec_enc_emit_decls`, close `mask` over `requires` first. */
+ * and `pcrec_enc_emit_decls`, close `mask` over `requires` first; `sites` is
+ * as `pcrec_enc_emit_defs`' ([LOSS-REVIEW] candidate 1: the span compares
+ * are inline and carry the N7 site). */
 void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                                const char *prefix);
+                                const char *prefix,
+                                const PcrecEncSiteText *sites, size_t nsites);
 /* `mask` closed over every entry's `requires`, to a fixpoint. */
 unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask);
 /* Is this entry callable from an engine body? Answered from the BACKEND's own
