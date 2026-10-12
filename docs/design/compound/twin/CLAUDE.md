@@ -1,7 +1,7 @@
-# docs/design/composite/twin/ — the split twin ([COMPOSITE] design lane mscomp, 2026-10-12)
+# docs/design/compound/twin/ — the split twin ([COMPOUND] design lane mscomp, as [COMPOSITE], 2026-10-12)
 
 Hand-composed composites built from UNCHANGED `build/pcrec` compiles plus a
-hand-written controller: the evidence behind `../../composite.md` §B. Light
+hand-written controller: the evidence behind `../../compound.md` §B. Light
 measurement only (counted loads, an every-startpos differential); no clock.
 Scratch output goes under the worktree's `build/` (never committed).
 
@@ -26,5 +26,5 @@ Scratch output goes under the worktree's `build/` (never committed).
   `cases.tsv` (the case list: mssurvey's floor-mixed rows + hand cases).
 
 Reproduce from the worktree root (TMPDIR inside the worktree):
-`python3 docs/design/composite/twin/twin.py build/pcrec docs/design/composite/twin/results/cases.tsv build/sc/tw`
-and `python3 docs/design/composite/twin/cost.py build/pcrec build/sc/cost`.
+`python3 docs/design/compound/twin/twin.py build/pcrec docs/design/compound/twin/results/cases.tsv build/sc/tw`
+and `python3 docs/design/compound/twin/cost.py build/pcrec build/sc/cost`.
