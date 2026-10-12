@@ -35,6 +35,8 @@
  * `selfcheck` (B1): `pcrec_comp_part_check` over parts that state every
  * field and parts that leave one unstated or inconsistent, each expected
  * verdict asserted; and `pcrec_compile_part` refusing an unstated part.
+ * (B4) the row table's self-check on the shipped `compound_rows[]` and on
+ * planted faults, and `compound_place[]`'s rows for split's parts.
  * (B2) the registry's attempt-scope column: every row stating it, by name,
  * and `pcrec_ast_crosses_attempts` over a node carrying such a row and one
  * that does not.
@@ -396,6 +398,52 @@ static int drive_selfcheck(void)
     printf("%s\tcompile of an unstated part\t%s\n", rc ? "refused" : "COMPILED",
            rc ? err.msg : "-");
     if (!rc) { fails++; pcrec_output_free(&out); }
+
+    /* B4: the row table's self-check holds on the shipped table, and refuses
+     * each planted fault: an empty admission, a CC_PRE conjunct after a
+     * CC_POST one, a repeated id, a part that is an in-Job row
+     * (compound_place row 3), a combinator operand of the wrong entry type,
+     * an unstated group map. */
+    {
+        const char *t = pcrec_compound_tables_check();
+        printf("%s\tthe shipped compound_rows[]\t%s\n", t ? "REFUSED" : "accepted", t ? t : "-");
+        if (t) fails++;
+        const CompRow *row0 = pcrec_compound_row(0);
+        if (!row0 || pcrec_compound_row(1)) {
+            printf("FAIL\tthe table is not exactly one row\n");
+            fails++;
+        } else {
+            CompConj cj[8];
+            CompPart pt[2];
+            CompRow r;
+            int nc = row0->nconj < 8 ? row0->nconj : 8;
+#define PLANT(edit, label)                                                   \
+            do {                                                             \
+                memcpy(cj, row0->conj, (size_t)nc * sizeof *cj);             \
+                memcpy(pt, row0->parts, 2 * sizeof *pt);                     \
+                r = *row0; r.conj = cj; r.parts = pt;                        \
+                edit;                                                        \
+                const char *w = pcrec_compound_rows_check(&r, 1);            \
+                printf("%s\t%s\t%s\n", w ? "refused" : "ACCEPTED", label,   \
+                       w ? w : "-");                                         \
+                if (!w) fails++;                                             \
+            } while (0)
+            PLANT(r.nconj = 0, "an empty admission");
+            PLANT((cj[0].phase = CC_POST), "a CC_PRE conjunct after a CC_POST one");
+            PLANT((cj[1].id = cj[0].id), "two conjuncts sharing an id");
+            PLANT((pt[0].derive = &pcrec_derive_none, pt[0].flags_set = 0,
+                   pt[0].flags_clear = 0, pt[0].engine = PCREC_PE_AUTO,
+                   pt[0].bound = PCREC_PB_NONE),
+                  "a part placed on compound_place row 3 (an in-Job row)");
+            PLANT((pt[0].bound = PCREC_PB_NONE), "a first-nonzero operand of the wrong entry type");
+            PLANT((pt[1].groups.kind = CG_UNSTATED), "an unstated group map");
+#undef PLANT
+            int p0 = pcrec_compound_place(&row0->parts[0]), p1 = pcrec_compound_place(&row0->parts[1]);
+            printf("%s\tsplit's parts place on rows %d (f) and %d (q)\n",
+                   p0 == 2 && p1 == 1 ? "ok" : "FAIL", p0, p1);
+            if (p0 != 2 || p1 != 1) fails++;
+        }
+    }
 
     /* B2: the attempt-scope column, read off the registry, and the predicate
      * that reads it off a node's row. */

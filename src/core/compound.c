@@ -307,10 +307,10 @@ static const struct {
     { COMB_FIRST_NONZERO, 2, { CT_VERIFY_AT, CT_SEARCH_FROM } },
 };
 
-const char *pcrec_compound_tables_check(void)
+const char *pcrec_compound_rows_check(const CompRow *rows, int nrows)
 {
-    for (int r = 0; r < NROWS; r++) {
-        const CompRow *row = &compound_rows[r];
+    for (int r = 0; r < nrows; r++) {
+        const CompRow *row = &rows[r];
         if (!row->name || !row->nconj || !row->conj) return "a row's admission is empty";
         if (row->nparts < 1 || row->nparts > PCREC_COMP_MAXPARTS)
             return "a row's part count is out of range";
@@ -350,6 +350,11 @@ const char *pcrec_compound_tables_check(void)
         if (!typed) return "a row's combinator has no type row";
     }
     return NULL;
+}
+
+const char *pcrec_compound_tables_check(void)
+{
+    return pcrec_compound_rows_check(compound_rows, NROWS);
 }
 
 /* Runs `row`'s conjuncts of `phase` in table order; the first that fails, or

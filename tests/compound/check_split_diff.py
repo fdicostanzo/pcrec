@@ -152,7 +152,9 @@ def run_case(job):
     exe = os.path.join(d, "t")
     b = subprocess.run([CC, "-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-DUTF=%d" % utf,
                         "-I", d, "-o", exe, os.path.join(HERE, "split_diff.c"),
-                        os.path.join(d, "ca.c"), os.path.join(d, "pl.c"), "-lpcre2-8"],
+                        os.path.join(d, "ca.c"), os.path.join(d, "pl.c")] +
+                       os.environ.get("PCRE2_CFLAGS", "").split() +
+                       (os.environ.get("PCRE2_LIBS") or "-lpcre2-8").split(),
                        capture_output=True, timeout=600)
     if b.returncode:
         return cid, arm, "FAIL", "build: " + b.stderr.decode()[:400]

@@ -7398,6 +7398,8 @@ typedef struct {
  * type-checked against its parts' entry types, and every group map one the
  * build has. NULL when the tables hold, else what fails (static text). */
 const char *pcrec_compound_tables_check(void);
+/* The same check over any row list: the unit drive's planted tables. */
+const char *pcrec_compound_rows_check(const CompRow *rows, int nrows);
 /* The `i`th row of `compound_rows[]`, NULL past the last (the unit drive's
  * view of the table). */
 const CompRow *pcrec_compound_row(int i);
