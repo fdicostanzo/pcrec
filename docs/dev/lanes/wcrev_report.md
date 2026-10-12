@@ -32,8 +32,7 @@ run. Kit tips read: `lane/memfn-r17` `f1cf102c5`, `lane/r17b` `174f3e320`.
    carries it (§5.6).
 2. With the stream, the K82 handoff's `c - K` does NOT retire. K is the
    bounded head before span 0, so it is pcrec's. Revision 1 said it retired.
-3. After S1, every regeneration of the prior moves every artifact's
-   `<PREFIX>_FINDINGS` digest (§10.3).
+3. After S1, every prior regeneration moves every artifact's stamp (§10.3).
 4. `mf_need`'s `MF_REQUIRED = 0` is a silent binding default once REQUIRED
    binds the stream, so the enum is re-numbered (an `MF_SITE_ABI` event).
 
