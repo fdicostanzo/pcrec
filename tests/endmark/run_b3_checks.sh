@@ -75,9 +75,10 @@ done
 # ---- §2 named witnesses: FORM PRIO ENC FLAGS PATTERN --------------------------
 witness() {
     local want="$1 $2" enc="$3" flags="$4" pat="$5" got
+    local bin="$PCREC"   # form_of bounds its own call ("$TIMEOUT_BIN" 60)
     local fl=(); [ "$flags" != "-" ] && read -r -a fl <<< "$flags"
     [ "$enc" = utf8 ] && fl+=(-e utf8)
-    got="$(form_of "$PCREC" "${fl[@]}" --pattern "$pat")"
+    got="$(form_of "$bin" "${fl[@]}" --pattern "$pat")"
     [ -n "$got" ] || got="(no end_mark row)"
     if [ "$got" = "$want" ]; then ok "[witness] '$pat' ($enc $flags): $want"
     else bad "[witness] '$pat' ($enc $flags): $got, expected $want"; fi

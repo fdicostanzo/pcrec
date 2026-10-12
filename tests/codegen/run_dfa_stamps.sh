@@ -236,6 +236,8 @@ read_artifact() {
                                                { mtnothing = 1 }                # emit_dfa.c: the empty engine
         /^    const size_t start_max = /       { attempt = 1 }                  # emit_attempt: the per-start loop
         /^    for \(int revend_seed = 0; /    { revend = 1 }                   # emit_rev_end: the reverse walk from the end ([OPT-REVEND] L2)
+        /^    if \(subject_length > 0 && subject\[subject_length - 1\] == / { revend = 1 } # D164 B3: the walk in form one-seed (emit_rev_end_one_seed)
+        /^    unsigned revend_dist = 0;/       { revend = 1 }                   # D164 B3: the walk in form tagged (emit_rev_end_tagged)
         # [CC-DIFF] STEP 1(b): was rx_forward_next_state[ (the forward table
         # declaration itself) until the uniform-table fold made that
         # declaration OPTIONAL -- a folded machine emits no table at all, so

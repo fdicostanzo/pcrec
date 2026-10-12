@@ -685,14 +685,17 @@ axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
 # 226 -> 229 at [REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11): the
 # `prefilter` axis gains `handoff` (the re-entered handoff, NEXT's row),
 # which carries a deny bit (PCREC_NO_REQ_HANDOFF 46), 3 checks.
-if [ "$axesn" -ne 229 ]; then
+# 229 -> 238 at D164 B3 (lane b3build, 2026-10-12): the new `rev-end-form`
+# axis's three rows that walk once or twice (one-seed, tagged, two-seed)
+# each carry the deny bit (PCREC_NO_REV_END_ONEWALK 56), 3 checks each.
+if [ "$axesn" -ne 238 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 229." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 238." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (229 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (238 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
         echo "registry:   number must return to 229 — if it does not, coverage was removed too" >&2
     fi

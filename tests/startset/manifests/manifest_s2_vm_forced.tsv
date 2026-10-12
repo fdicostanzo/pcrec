@@ -3630,3 +3630,20 @@ tests/utf8/wclass_illformed.rxt:913	--features all --encoding=utf8	78285b615c787
 tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
 tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
 tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6b5c787b65397d5d79
+# b3build (D164 B3, 2026-10-12): +15 rows, every one a tests/endmark/b3_rows.rxt block (the end-mark answer net joined the corpus;
+# these blocks' VM-forced artifacts are VM-hat movers, which the hat's own vmhat_checks.py measured); no existing row moved.
+tests/endmark/b3_rows.rxt:123		615c6e7b302c327d24
+tests/endmark/b3_rows.rxt:178		615c6e7b302c327d3f24
+tests/endmark/b3_rows.rxt:186	--features classes	283f3a5c732b7c785c732a3f2924
+tests/endmark/b3_rows.rxt:199	--features assertions	283f3a5c42785c6e7c782924
+tests/endmark/b3_rows.rxt:211		5c6e7b312c347d24
+tests/endmark/b3_rows.rxt:223		5c6e5c6e3f24
+tests/endmark/b3_rows.rxt:261		283f3a617c625c6e292b24
+tests/endmark/b3_rows.rxt:270		615c6e24
+tests/endmark/b3_rows.rxt:331	--features classes	285c732b2924
+tests/endmark/b3_rows.rxt:356	--features classes	283f3a285c732b297c78285c732a3f292924
+tests/endmark/b3_rows.rxt:394	--features assertions,classes	5c735c7a
+tests/endmark/b3_rows.rxt:404	--features assertions,classes,modifiers	283f6d295c7324
+tests/endmark/b3_rows.rxt:413	--features classes --encoding=utf8	5c732b24
+tests/endmark/b3_rows.rxt:423	--features classes --encoding=utf8	285b5e2f5d2b2924
+tests/endmark/b3_rows.rxt:63	--features assertions,classes	5b612d7a5d2b5c2e7478745c5a

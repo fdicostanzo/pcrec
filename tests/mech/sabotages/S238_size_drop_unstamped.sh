@@ -21,12 +21,17 @@
 # elimination, breaking that bucket's ceiling of 0. The census was written
 # that way for this reason: a bucket reached by elimination is one that will
 # one day hold something else.
+#
+# RE-AIMED 2026-10-12 (lane b3build, D164 B3): SAB_COUNT 2 -> 3. The new
+# `drop-end-mark` fit rung stamps size-cap-retry with the same cell line as
+# the optional-contributor drop; the plant reaches all three retry-stamping
+# rows, and the witness (`\p{L}` -e utf8) is unchanged.
 SAB_ID="S238-size-drop-unstamped"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="an artifact rescued by the optional-contributor drop rung stamps ENGINE_SEL \"selected\", so a caller cannot tell it from an unremarkable compile and the census's size-drop bucket empties into the state-cap overflow one"
 SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop'"
-SAB_COUNT=2
+SAB_COUNT=3
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking
 # the rung, both rows are certifying nothing.

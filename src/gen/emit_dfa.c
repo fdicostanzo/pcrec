@@ -9363,7 +9363,10 @@ static const CandRow cand_rows[] = {
     { .c = { "prio-const", 0, finish_prio_const }, .slot = CAND_SLOT_FINISH,
       .routes = CR_DFA | CR_VM, .tok = "prio-const", .map = CM_NONE,
       .hands = CT_START,
-      .desc = "a tagged rev-end walk whose mark_prio is a constant c: a tie between mark distances at the walk's start ends at n - c, the distance leftmost-first priority picks in every reachable situation",
+      /* Unlisted (no axis row, so no .desc): a tagged rev-end walk whose
+       * mark_prio is a constant c, where a tie between mark distances at the
+       * walk's start ends at n - c, the distance leftmost-first priority
+       * picks in every reachable situation (endmark.md §R.4). */
       .take = { [CAND_ROUTE_DFA] = { CAND_HAND_ENDSET }, [CAND_ROUTE_VM] = { CAND_HAND_ENDSET } },
       .u.finish = { CAND_FIN_PRIO } },
     { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
