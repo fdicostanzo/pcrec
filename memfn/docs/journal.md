@@ -1454,3 +1454,54 @@ pointer when a kit change merges to main.
   nested-check residue, and (Frank's addition) pcrec passing the kit more
   workload knowledge: density, subject length, byte profile, call pattern,
   from pcrec-analyze bundles. r14p_report gains the correction.
+
+## 2026-10-11 — R-16 taken, built (lane r16b), merged into lane/memfn-r16
+
+- R-15 and lane/memfn-ideas3 merged by main. R-16 acked (afc74283). The
+  slot21 D-F triage the request asks to fold in was already done read-only
+  (dftri_report, committed). It is not R-16's rows: 7 losses track the hot
+  loop's layout, 3 are noise, and v05 shows a small 64k-only per-call cost.
+  One-pass rule: no build.
+- Lane r16b (opus): ops_of[] gains `npos` (1 at w16, 2 at w32), so
+  vrun_kb() reads KB at w32 only (D147 add. 16). The w16 helper reads KA
+  alone, standalone and as w32's rung. The deny is unchanged.
+  - Re-pins: VRUN_W16_GUARDED_MAX 2700 -> 2400 (limits.md §8.3 hunk), G2
+    VSHAPE_FLOOR none 19 -> 8, and simd_accept loses vrun-kb's w16 lines.
+  - Check: G2 SIMD family 1b, KB_LEVELS={'w32'}, now also on the final
+    block; three K35 populations.
+  - S815-S819 all DETECTED; S753 still detected.
+  - Light evidence: SIMD-off 0 movers; -fmemfn-simd movers are only w16
+    helpers + the guarded stamp (classifier, every 8th pattern, bad 0);
+    no-vrun-kb 0 movers; G2 quick 52,987,686/0. No abi event.
+- Reviewed and merged (a8edd0f3); strict rc 0. The slot23 chain is staged at
+  worktrees/memfn-slot/slot23/run.sh: identity sweeps on every arm plus
+  simd and simd+no-vrun-kb, the classifier over EVERY pattern, G2 quick +
+  full, make test, mech S815-S819 + S753.
+- My calls (answer-free, same measured cost):
+  - no test-axes: SIMD-off is identical and it sweeps no --memfn row;
+  - no N2: applicability is unchanged;
+  - no re-timing: the w16 text now IS the no-vrun-kb text, already timed in
+    slot21, and the w32 helper did not move.
+- Waiting on main's GO, which comes after the rlhbuild chain + L1 merge.
+
+## 2026-10-11 — slot23 green, R-16 delivered; R-17 scoped
+
+- Main gave the GO after L1 (00c97769, abi 75). Main merged into
+  lane/memfn-r16: three doc conflicts resolved, strict green. slot23 ran
+  21:35-22:43, all green (responses `done: R-16`). The variants rc 1 is the
+  pre-existing thin-tag manifest, identical on the ref side. The emitted
+  VARIANT_PINS go to main.
+- R-17 acked on lane/memfn-r17. Lane r17s (opus, read-only) delivered:
+  - SIMD-off is pure kit row work; the PF/hat FINDs already carry the set.
+  - pcrec needs: N1 (the promised density facts) and N2 (a file-scope sink
+    at the PF/MLINE door, SIMD layer only).
+  - OFS/PRE have population 0. ci-strasse is no longer a set walk after L1
+    (a bench re-measure is owed via main).
+  - Leaning: one general term-list row family in pffind.c (memchr |
+    SWAR term-OR | walk).
+  - 65 twins checked exhaustively, 0 mismatches. The timing harness is
+    ready (~8 min, a slot).
+  - Merged into lane/memfn-r17 @ 79b3524f.
+- Next: ask main for R-17's short timing slot. A D6 panel on the
+  general-row design before any build. N2 is filed as a pcrec-side request
+  only if the SIMD half is pursued.

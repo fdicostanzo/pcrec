@@ -28,7 +28,10 @@ rq3-witness	1700000
 # the bound, the larger arm, did not move. The padded main-path verify
 # (lane r14p, `--memfn=no-vrun-pad` its deny) applies to runs of 3 or 5-7
 # bytes only, so the 32-byte worst case is unchanged (G2 measures the alone
-# arm as the largest over trim x pad). Rounded up to the next 100. The kit states the same
+# arm as the largest over trim x pad). R-16 (lane r16b, D147 addendum 16):
+# the w16 helper reads no second filter position at any arm, so w16's alone
+# worst is 2,383 again (w32 2,721 unchanged; both rendered 4,975 over G2's
+# space <= 2,400 + 2,800). Rounded up to the next 100. The kit states the same
 # (memfn/src/vrun.c VRUN_W*_GUARDED_MAX).
 vrun-w32	2800
-vrun-w16	2700
+vrun-w16	2400

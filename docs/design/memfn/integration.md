@@ -1869,7 +1869,7 @@ it is measured as G1. Batch 1 then adds only guarded text.
 > (was `plan_pos2`), was then unbuilt), so the filter was KA alone until the follow-up lane rankuse read `rank_*` (KA AND KB, §R4.9.5 item 10's KB row; deny `no-vrun-kb`); walk tests 3-4 are the
 > PREFIX rows' predicate conjuncts; a `header` column in levels.def; runs
 > capped at 32 bytes so `guarded_max` is a constant (2,400 / 2,500
-> measured; 2,700 / 2,800 re-measured by lane rankuse with KB); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
+> measured; 2,700 / 2,800 re-measured by lane rankuse with KB; w16 back to 2,400 when R-16, lane r16b, kept KB at w32 only); C18 is `make test-memfn-simdfloor`, not an `emit_sweep` arm.
 
 **Batch 1: the FUNC part whose predicate is one RUN term and is its
 site's only predicate; rows `vrun-w32` and `vrun-w16` in `fn_rows[]`.**

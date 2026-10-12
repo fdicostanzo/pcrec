@@ -81,11 +81,15 @@ bytes the generator chose) and the compiler, not on the author.
 - **run_g2_simd.py** — the runner (run_g2.sh section 4a; alone:
   `python3 memfn/tests/run_g2_simd.py [--quick]`): each class's MEMFN_FORMS
   against a hand table; THE RANKING CHECK (rankuse): every rendered
-  helper's whole-block loads, in order, equal the filter the kit's rule
-  gives from the GENERATED entries (KA, then the first stated entry other
-  than KA; KA alone under the deny), every malformed copy refused, floors
-  per ranking mode and per filter shape (a KB, none, KB not the first
-  entry, KB at the run's ends, a rate tie); THE VERIFY CHECK (r14b):
+  helper's whole-block loads, and since r16b (R-16) its final-block loads,
+  in order, equal the filter the kit's rule gives from the GENERATED
+  entries (KA, then at a `KB_LEVELS` level, w32 only since D147 addendum
+  16, the first stated entry other than KA; KA alone under the deny), every
+  malformed copy refused, floors per ranking mode and per filter shape (a
+  KB, none, KB not the first entry, KB at the run's ends, a rate tie) and,
+  since r16b, per level (`KBLVL_FLOOR`: w32 helpers reading KB, w16
+  helpers of a KB-ranked site reading KA alone, and those that are a w32
+  helper's rung); THE VERIFY CHECK (r14b):
   every rendered helper's verify, parsed from its text, compares exactly
   the positions the rule gives from the GENERATED masks and filter (every
   position whose mask is not 0x00, less the filter's; all of them under

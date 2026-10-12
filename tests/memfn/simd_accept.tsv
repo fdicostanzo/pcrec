@@ -20,13 +20,13 @@
 # R-14) and vrun-pad (lane r14p, 2026-10-11, R-14 follow-up) are not level
 # rows but options of both: the vrun rows' second filter position, their
 # trimmed verify and their padded main-path verify. Their lines are the
-# levels they move.
+# levels they move: vrun-kb's w32 only since R-16 (D147 addendum 16: the
+# w16 helper reads no second filter position, so the deny moves nothing
+# there; its w16 lines were removed with the rendering).
 vrun-w16	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-w16	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-w32	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
 vrun-w32	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
-vrun-kb	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
-vrun-kb	w16	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
 vrun-kb	w32	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
 vrun-kb	w32	zen4	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64-v3 -mtune=generic	-	-
 vrun-trim	w16	zen1	CANDIDATE	-	-	-	-	-	-	-	-	-	-	-	-O2 -march=x86-64 -mtune=generic	-	-
