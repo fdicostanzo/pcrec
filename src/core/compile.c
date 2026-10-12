@@ -358,10 +358,16 @@ static void revend_build_marked(Ctx *cx, Ast *root, const EndMark *em)
         memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
         job->xprio.prio_probe = true;
         pcrec_build_dfa(cx, &job->xnfa, &job->xprio, false, false,
-                        PCREC_MAX_DFA_STATES_TABLE, job->xnfa.anch_start, true);
+                        PCREC_MARK_PRIO_MAX_STATES, job->xnfa.anch_start, true);
         cx->dfa_overflowed = saved_overflowed;
         memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
         unsigned seen = job->xprio.prio_seen;
+        /* The tie fact says two distances accept at some start: a complete
+         * probe that saw no END closure holding two is two constructions
+         * disagreeing about one language, never a fact to act on. */
+        if (!job->xprio.overflowed && seen == 0)
+            pcrec_ctx_fail(cx, 0, "internal error: mark_prio found no tie on a "
+                           "machine the tie fact says ties (endmark.md R.1.4)");
         if (job->xprio.overflowed || (seen & (seen - 1))) job->mark_prio = MP_STATE;
         else if (seen == 0) job->mark_prio = MP_NONE;
         else {

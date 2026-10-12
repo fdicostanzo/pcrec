@@ -335,7 +335,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank \
-      test-spec-history test-compound
+      test-spec-history test-compound test-endmark
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1387,6 +1387,12 @@ test-compound: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-compound.ran"; fi
 	EVERY=$${EVERY:-8} bash tests/compound/run_compound_unit.sh
 
+# D164 B3 (docs/design/endmark.md §R.6): the `rev-end` walk's form table, its
+# answers under three arms, the probe census, the gates and the declines.
+test-endmark: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-endmark.ran"; fi
+	bash tests/endmark/run_b3_checks.sh
+
 test-startset: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startset.ran"; fi
 	@rc=0; bash tests/startset/run_startset_checks.sh || rc=1; \
@@ -1924,7 +1930,7 @@ clean:
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-revend-twin test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
-        test-spec test-premul-table test-cand-oracle test-fallback-table test-anchored-match \
+        test-spec test-premul-table test-cand-oracle test-fallback-table test-anchored-match test-endmark \
         test-search-pinned test-start-landing test-vm-frameless test-dfa-uniform-fold \
         test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
