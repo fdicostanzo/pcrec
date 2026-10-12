@@ -11724,19 +11724,20 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
         cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
         pcrec_ctx_fail(cx, 0, "internal error: the composite's SPAN is finished by "
                        "a row that is not `report` (locate_finish.md §2.3)");
+    /* [MEMFN] R17-a the set FIND's storage point (setfind.md §7.1): here, in
+     * the forward scan's one caller, above the scan's comment and `scan_position` (so
+     * sabotage S07's anchor keeps its text), before the scan loop and its
+     * `seedhead` jump, dominating every use in this body. */
+    if (fwd->pf_find.handle) {
+        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back, NULL);
+        find_locals(c, "    ", &fd, &fwd->pf_find);
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
                "    // One byte per iteration. The loop keeps the LAST accepting\n"
                "    // position rather than stopping at the first, so the longest\n"
                "    // match wins.\n");
     pcrec_sb_cmt_close(c);
-    /* [MEMFN] R17-a the set FIND's storage point (setfind.md §7.1): here, in
-     * the forward scan's one caller, before the scan loop and so before its
-     * `seedhead` jump, dominating every use in this body. */
-    if (fwd->pf_find.handle) {
-        PcrecFind fd = pf_find_of(fwd, fwd->pf_find.site->end_back, NULL);
-        find_locals(c, "    ", &fd, &fwd->pf_find);
-    }
     pcrec_sb_printf(c, "    size_t scan_position = %s;\n"
                "    size_t last_accept_position = (size_t)-1;\n", fwd->from);
     /* D164 B3 a LOWERED forward machine's accept carries the distance back to
