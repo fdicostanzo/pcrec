@@ -55,3 +55,14 @@ D163 + add. 1-4. Zero movers and no abi event at each step; no spec hunk (all in
 ## Owed
 Full `make test` via `scripts/perfrun` after the box hold lifts — not run by this lane
 (hold active at hand-back). No sabotage rows added (none named for B0-B2).
+
+## Triage of the full `make test` (tree fb5395a0): four reds, all bookkeeping (lane cpb02 triage, sonnet)
+
+No red was a behaviour change; B0-B2's zero-mover claim stands. Each section re-run solo green on the fixed tree, then again after merging main (rc lines in `build/tri/m_*.log`).
+
+1. **test-registry** (`limits_check.sh` [code]): `internal.h`'s `PCREC_PART_NEED_*` (4 bit positions) and `PCREC_PART_ROLE_MAX` (the role grammar's width, "1 to 3 characters") are on neither allowlist. Added to the NON-LIMIT list with an "eighth kind" reason (interface shape, not a resource bound).
+2. **test-codegen** ([K37]): `tests/compound/run_compound_unit.sh:37` passes `"$PCREC"` as argv to `check_entries.py`. That script bounds its own compiles (`timeout=GEN_TIMEOUT`) and the drive call (`timeout=3600`). Added a reasoned allowlist entry beside the longprefix one; it matches a real line, so the non-vacuity rule holds.
+3. **test-cpset-structure**: [2b] flagged `src/opt/derive.c` `is_never_leaf` reading `u.cls.n`. It is a cardinality question above the lowering, so a bitmap render would be wrong. The one-liner became a headed multi-line function (HDR-1) with a function-scoped `ALLOW_FN` entry, so the rest of derive.c stays policed. Fixing [2b] exposed [5b], which the earlier abort had hidden: `A_WCLASS` shared an arm with `A_CLASS` at two derive.c switches (`qf_walk`, `qp_walk`). Each now has its own leaf arm. Section 28/1 -> 59/0.
+4. **test-spec-history**: `spec_cites.py` `line_re` used `\d+(?![A-Za-z])`, which backtracks, so `registry:12fail` (k110fix_report.md:38) matched as `registry:1` followed by a digit. The lookahead is now `(?![A-Za-z0-9])`. This red exists on main too. 144/1 -> 145/0.
+
+Not touched: `docs/dev/artifact_size_log.tsv` (a test side effect, restored).
