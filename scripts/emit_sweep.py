@@ -1989,7 +1989,10 @@ def run_variants(args, variants, bases, patterns, full_population, flag_args, tr
 #    357->356, lowboth/utf8 no-size-cap 267->266 and stderr-default 416->415 (the four
 #    cells slot24 read as "one count low", a/b alike, 0 artifact diffs). Cause: seambuild
 #    (abi 76, 337f9a6ed) makes the seam helpers `static inline`, so a lowered-cap compile
-#    emits slightly less code and one `no-size-cap` pattern per cell fits.
+#    emits slightly less code and one pattern leaves `no-size-cap`. BISECTED: `--ref
+#    337f9a6ed^ --tree-rev 337f9a6ed --variant lowsize --bases utf8` reads no-size-cap
+#    290/289, refused 3348/3347, yes 1238/1239, no-backreference 461/462 (a/b), so the
+#    parent holds the old pins and the commit is the sole cause.
 #  - MANIFESTS (thin tags, shortest pattern carrying the tag on both sides): `((a)+)+` ->
 #    `((ab)+c)+` (lowsize/lowboth byte no-size-cap, lowsize stderr-default) and
 #    `(\p{Xwd})` -> `(\p{Xwd})x` (plain/lowthr utf8 no-size-cap): the tag moved to the
