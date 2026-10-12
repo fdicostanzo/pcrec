@@ -1,4 +1,13 @@
-# [COMPOUND] — the compound artifact as a general tool; first client [MATCH-SPLIT] (DESIGN NOTE, REVISION 2.1)
+# [COMPOUND] — the compound artifact as a general tool; first client [MATCH-SPLIT] (DESIGN NOTE, REVISION 2.2)
+
+**Revision 2.2** (lane `cprev22`, 2026-10-12, from main `e1b73605e`): ready for the B4 (driver)
+brief. Text only; no `src/`, the design of revision 2 is unchanged. It applies, in order: the
+alignment note's MUST-before-B4 items (`compound_callout_alignment.md` §14.1) and its soft
+items (§14.3); D163 addenda 4-6; the as-built B0-B2 (`../dev/lanes/cpb02_report.md`, merged
+`2a54c3e71`); and the manager's lean on the lever's fence (§A.11). §R2.2 maps each item to the
+place it is addressed. Where this revision and an older revision's text disagree, this
+revision wins; §F is the build state.
+
 
 **Revision 2**: lane `mscomp2`, 2026-10-12, from main `21641979` (abi 76). It applies the D6
 panel r1 on revision 1 (`../dev/reviews/2026-10-12-r2-composite.md`; read its dispositions
@@ -21,7 +30,7 @@ code identifiers. **One exception, stated once:** `cand_rows[]`'s existing LOCAT
 a row inside one machine's start table and has nothing to do with this artifact kind. The
 historical review files keep the old word.
 
-Rulings read: D163 with addenda 1 and 2, D88 addendum 1, D156 (and `locate_finish.md` rev 2.1,
+Rulings read: D163 with addenda 1-6, D164 with addenda 1-5, D88 addendum 1, D156 (and `locate_finish.md` rev 2.1,
 its typed vocabulary), D158, D135, D76/D94, D80, D104, D144 addendum 4, D155 addenda 4/4.1.
 Plan rows: [COMPOUND], [MATCH-SPLIT], [EMIT-ENTRIES], [FINDALL-NEXT], [OPT-ATTEMPT-SPLIT],
 [OPT-REVEND] (B3 = the match-end mark, D164), [ADAPTIVE-ARM], [V-E], [IFACE-PUSH].
@@ -29,6 +38,31 @@ Plan rows: [COMPOUND], [MATCH-SPLIT], [EMIT-ENTRIES], [FINDALL-NEXT], [OPT-ATTEM
 Read §0 first. §A is the tool, §B the first client, §C the cross-call hook, §D the clients
 (captures on demand first), §E the checks, §F the build plan, §G the open questions, §H the
 unlocks, §I the standing questions, §J the findings.
+
+## §R2.2. Revision 2.2 (lane `cprev22`, 2026-10-12): for the B4 brief, item → section
+
+| item | source | where | what changed |
+|---|---|---|---|
+| **MUST-1** call-site codes | alignment §14.1 item 1, §5.2; D163 add. 6 Q3 | NEW §A.14; §A.2 table; §B.2 sketch; §B.3; §E.4 CMP-12, CMP-18; §F B4 | ONE call-site code table shared by parts and callouts, rows only for codes the callee can return. B4 emits rows 1, 2 and 8 (a dead trap under each part call). `first-nonzero`'s "final" is restated as the table's propagate rows. `PCREC_ERR_INTERNAL` PROPAGATES. The `match_api.md` §4¶10 spec hunk lands in B4's commit. |
+| **MUST-2** `groups` | alignment §14.1 item 2, §6.3-§6.4; D163 add. 3 | §A.1 (`CompPart`, `CompGroups`, split table, the self-check, the coverage check); §B.2 (the pad rule is read off the map); §D.1 | `CompPart` gains `groups`. Identity for split's F and Q. The pad rule and a slot-coverage table check are read off it. |
+| **MUST-3** namespace table | alignment §14.1 item 3, §8.3 | §A.5; §G Q2; §E.4 CMP-16; §F B4 | The `__` refusal is row 1 of the namespace reservation table, not a standalone check; the lever's reserved prefix is row 3. |
+| text-only | alignment §14.1 end | §A.2 (a `verify-at`-typed external callee type-checks), §A.9 (INTERIM, now ruled), §B.8 (A3's callout clause conservative pending Q2), §C (the owned region), §A.7 (the link-level kind) | no mechanism changes |
+| soft | alignment §14.3 | §A.5 and §F B4 (`PB_ONE_ATTEMPT` as a general emission option: as built it still reads `pcrec_is_part`); §B.8 and §F B4 (`RF_CROSSES_ATTEMPTS` wording) | B4 / B1-follow-up work, each with its check |
+| add. 4 (a) | D163 add. 4 | §A.2: the in-Job-vs-part rule as a first-match table `compound_place[]` with listed conjuncts | the two bullets become rows |
+| add. 4 (b) | D163 add. 4 | §A.1 (`CompRow` carries a LIST of conjuncts, not two opaque function pointers), §A.3, §B.4 (A1-A6 are the rows' data), §E.4 (decline controls assert the first failing conjunct by NAME) | each row's admission is listed conjuncts the listing can show |
+| add. 4 (run-time) | D163 add. 4 | §A.2 | `select-by-arg` and `dispatch` become emitted run-time first-match row lists when their first client is built |
+| add. 4 (order) | D163 add. 4; D164 add. 5 | §0 items 7-8 and 11, §B.5, §E.3 G3, §F, §J-4 | B4 no longer waits for B3. G3's two final-newline cells are gated at TODAY's rev-end cost and tighten in B3's own commit (a named obligation of that commit); B3 is now being built (D164 add. 5). |
+| add. 5/6 Q1 | D163 add. 6 | §A.9, §G Q3 | one meter per EXPORTED call (agreed): the "fresh budget per part" asymmetry is gone |
+| add. 5/6 Q2 | D163 add. 6 | §B.8, §D | callout purity "for now"; A3's callout clause stays conservative until module `callouts` builds (population 0) |
+| add. 5/6 Q3 | D163 add. 6 | §A.14 row 4 | `PCREC_ERR_INTERNAL` from a callee propagates instead of trapping |
+| cpb02 f.1 | cpb02 report finding 1 | §A.4 | a `rev-end` tie finished `verify-at` makes `<p>_search` call `<p>_match`: Q, whose route is `rev-end` by A5, needs `<p>__q_match` KEPT STATIC |
+| cpb02 f.2 | finding 2 | §E.4 (the decline list), §E.2 | the A2 decline controls are re-derived from the as-built derivation; `^x\|\n(?m)^b$` is withdrawn as a decline |
+| cpb02 f.3 | finding 3 | §B.1 | F's emitted bound text is cosmetic; a B4 abi event could reword it |
+| cpb02 f.4 | finding 4 | §B.8, §E.4 | the attempt-scope column is on the callout row only; the verbs are refused at parse |
+| cpb02 f.5 | finding 5 (B0's limits) | §A.4 | a request must reach `_search`; `info` and `main` cannot be kept static; `need`'s `VALID_UPTO` is the controller's edge |
+| lever fence | §A.11's manager note (2026-10-12, at merge) | §A.11, §E.3 G7, §E.4 CMP-17, §F B4 | the B4 brief's choice: a reserved unique prefix plus one global check plus the widened grep, in place of the ~560-row symbol allowlist |
+| §F | cpb02 report; D163 add. 4 | §F | B0-B2 DONE (merged `2a54c3e71`); B3 is D164's own build, not a compound step |
+| bit 55 | D164 add. 5 | §0 item 2, §A.11 | the "bit 55 stays free" sentence is stale (bit 55 went to the kit, bit 56 to B3); the compound still takes no bit |
 
 ## §R2.1. Revision 2.1 (lane `cpfix`, 2026-10-12): the light re-check's five findings
 
@@ -90,8 +124,9 @@ Text only; no `src/`. Revision 2's design is unchanged.
    per-part OPTIONS. A CONTROLLER, a combinator expression over typed part results (§A.2),
    implements the default entry set. A client is one row of the first-match table
    `compound_rows[]`.
-2. **Always on, no deny axis** (D163 add. 2 item 2). There is no flags bit, no `-f` spelling,
-   no `--list-axes` row and no `tuning.md` section. The plain artifact is compiled anyway (it
+2. **Always on, no deny axis** (D163 add. 2 item 2). There is no flags bit (none is reserved:
+   revision 2's "bit 55 stays free" is stale, bit 55 went to the kit and bit 56 to B3, D164
+   add. 5), no `-f` spelling, no `--list-axes` row and no `tuning.md` section. The plain artifact is compiled anyway (it
    is the fallback and the admission's input), so ONE harness-only lever can force-decline the
    whole family. It lives in an internal options struct reached only by a harness build of the
    CLI (`build/pcrec-harness`), outside `pcrec_options` and outside the caller contract
@@ -106,7 +141,8 @@ Text only; no `src/`. Revision 2's design is unchanged.
 5. **[MATCH-SPLIT]'s parts.** F is a BOUND on P's own attempt (`start_max = search_from`): one
    attempt, no tree wrap, so `(?R)` keeps P's root (§B.1). Q is P with every `\G` killed (required)
    and `^`/`\A` killed (route only), then never-pruned; called and referenced groups are kept
-   (§B.1). The controller is `first-nonzero(F at f, Q from next_pos(f))` (§B.2).
+   (§B.1). The controller is `first-nonzero(F at f, Q from next_pos(f))` (§B.2), and each part call's
+   result is handled by the ONE call-site code table (§A.14).
 6. **Why F is a bound and not `_match`.** On an attempt route `_match` is `"search-filter"`: it
    runs the whole attempt loop and then filters. As F it is answer-right and cost-wrong:
    measured, K106's internal run stays at 128,040,004 loads and a trailing-run match costs
@@ -118,7 +154,10 @@ Text only; no `src/`. Revision 2's design is unchanged.
 8. **Cost by counted loads** (§B.5): K106 128,040,002 → 3; wrapper 16,003 → 6 with both
    matches; floor-only `a{0,4}\A` 63,994 → 4; trailing matches 1.0001×. Two shapes read
    3.00×, both the final-newline two-seed walk (`\s+$`, `\s*?$`), which is rev-end's own cost
-   and B3's (the match-end mark, D164). G3 is RED on them until B3 lands, by design.
+   and B3's (the match-end mark, D164). **B4 does not wait for B3** (D163 add. 4): G3 gates
+   those two cells at TODAY's rev-end cost (the compound no worse than the plain artifact's
+   rev-end on the same subject) and tightens them to B3's bound in B3's own commit, a named
+   obligation of that commit. B3 is being built now (D164 add. 5).
 9. **Stamps.** `<PREFIX>_COMPOUND` on every artifact (`"none"`, a row name, or
    `"forced-off"`). Every stamp is classified pattern-level (P's) or machine-level (the
    compound's defined value: `"compound"` for the route family; per-stamp sentinels for the
@@ -126,10 +165,18 @@ Text only; no `src/`. Revision 2's design is unchanged.
 10. **Captures on demand is a named client** (§D.1): `select-by-arg(caps == NULL →
     a `--no-captures` part; otherwise P's VM part)`, triggered by the persisting caps/nocaps
     class gap (D119 ledgers: `auto-nocaps` carried 65 of cycle 1's 91 win/tie rows).
-11. **Build (§F):** B0 EMIT-ENTRIES internal → B1 part mode and options → B2 derivation →
-    B3 the match-end mark (D164, its own abi event) → B4 the compound driver, split pin-only,
-    the stamp (THE abi event) → B5 S+F on its trigger → B6 VM parts → B7 captures on demand
-    on its trigger → B8 the cross-call hook with [FINDALL-NEXT].
+11. **Build (§F):** B0 EMIT-ENTRIES internal, B1 part mode and options and B2 derivation
+    are DONE (lane `cpb02`, merged `2a54c3e71`, zero movers). B3 (the match-end mark) is
+    D164's own build, not a compound step. Next: B4 the compound driver, split pin-only, the
+    stamp (THE abi event) → B5 S+F on its trigger → B6 VM parts → B7 captures on demand on
+    its trigger → B8 the cross-call hook with [FINDALL-NEXT].
+12. **The compound and callouts are cousins** (D163 add. 5/6, `compound_callout_alignment.md`):
+    ONE call-site code table for parts and callouts (§A.14), `CompPart.groups` (§A.1), the
+    namespace reservation table (§A.5), one meter per exported call (§A.9), the owner-tagged
+    cache region (§C), the link-level stamp kind (§A.7).
+13. **Admission and placement are tables with listed conjuncts** (D163 add. 4): `compound_place[]`
+    (§A.2) says where a second machine lives (an in-Job row or a compound part), and each
+    row's admission is a LIST of named conjuncts (§A.1, §B.4) the listing shows.
 
 ## A. The tool
 
@@ -138,37 +185,81 @@ Text only; no `src/`. Revision 2's design is unchanged.
 ```c
 typedef struct {
     const char *role;          /* 1-3 chars: part prefix <prefix>__<role>             */
-    PcrecDeriveFn derive;      /* AST -> AST at the composer hook, or NULL (none)     */
+    const PcrecDerive *derive; /* &pcrec_derive_none, or a derivation (NULL = unstated) */
     uint64_t flags_set;        /* pcrec_options flags forced ON for this part          */
     uint64_t flags_clear;      /* ... forced OFF (e.g. the guards, the utf check)     */
     PcrecEngine engine;        /* AUTO, DFA or VM: stated, never inherited silently   */
     PcrecPartBound bound;      /* PB_NONE, or PB_ONE_ATTEMPT (start_max = search_from) */
     unsigned need;             /* PART_NEED_*: what the part must deliver (see below) */
+    CompGroups groups;         /* the group map into the compound's ONE captures array */
 } CompPart;
+
+typedef struct {               /* D163 add. 3; alignment note §6.3 point 1               */
+    CompGroupsKind kind;       /* CG_UNSTATED = 0 (never a default), CG_IDENTITY,        */
+                               /* CG_OFFSET, CG_TABLE                                    */
+    unsigned offset;           /* CG_OFFSET: caller slot = callee group + offset         */
+    const CompSlotMap *writes; /* CG_TABLE: callee group -> caller slot                  */
+    const CompSlotMap *reads;  /* CG_TABLE: caller slot -> callee group; NULL = reads none */
+} CompGroups;
+
+typedef struct {               /* one LISTED conjunct of a row's admission (D163 add. 4) */
+    const char *id;            /* "A1".."A6": stable; printed by the listing, asserted   */
+                               /* by the decline controls (§E.4)                         */
+    const char *name;          /* the words the listing shows                            */
+    CompPhase phase;           /* CC_PRE: plain selections + derivation only             */
+                               /* CC_POST: after the parts' own compiles                 */
+    bool (*holds)(const CompIn *in);
+    const CandRead *reads; int nreads;      /* declared projection reads (§A.3)      */
+} CompConj;
 
 typedef struct {
     const char *name;          /* stamped <PREFIX>_COMPOUND "<name>"                    */
-    bool (*pre_admits)(const CompIn *in);   /* plain selections + derivation only    */
-    bool (*admits)(const CompIn *in);       /* ... plus the parts' own compiles      */
+    const CompConj *conj; int nconj;        /* ADMISSION: all must hold, in table order */
     const CompPart *parts; int nparts;
     const CompExpr *controller;             /* a combinator expression (§A.2)        */
-    const CandRead *reads; int nreads;      /* declared projection reads (§A.3)      */
     unsigned state_words;                   /* §C; 0 until [FINDALL-NEXT]            */
 } CompRow;
 
 static const CompRow compound_rows[] = {
-    { "split", split_pre_admits, split_admits, split_parts, 2, &split_ctrl,
-      split_reads, 2, 0 },
+    { "split", split_conj, 5, split_parts, 2, &split_ctrl, 0 },
     /* later clients, each behind its own trigger (§D) */
 };
 ```
 
+**Admission is a LIST, not two function pointers** (D163 add. 4 (b); revision 2's
+`pre_admits`/`admits` were opaque). A row admits iff every conjunct holds. The walk runs the
+`CC_PRE` conjuncts, then compiles the parts, then runs the `CC_POST` ones, each in table
+order; the FIRST conjunct that fails ends the row and is recorded by `id` (the trace record,
+and the compound's listing in `--emit-ir`/`--emit-facts` shows the row, each conjunct's
+`id`, `name`, phase and verdict, and the first failure). The conjuncts' `reads` are the
+declared projection reads of §A.3, one set per conjunct, so a reader of the listing can say
+which fact a decline turned on. §B.4's table IS split's `split_conj[]`: its rows A1-A5 are
+the data (A1-A3 are `CC_PRE`, A4-A5 `CC_POST`). A6, "the assembled text fits the caps", is
+not a conjunct of the list: it is `drop-compound`, a row of T1 (`fit_rungs[]`, §A.8) that is
+evaluated after assembly, and it is listed in §B.4 for completeness.
+
 **No silent default (arch M3, memory `pcrec-no-silent-defaults`).** Every `CompPart` states all
-seven fields; a table-build self-check refuses a part whose `engine` is the zero value or whose
-`flags_set & flags_clear` is non-zero. A part's options are P's options with `flags_set` OR-ed
+eight fields; a table-build self-check refuses a part whose `engine` is the zero value, whose
+`groups.kind` is `CG_UNSTATED`, or whose `flags_set & flags_clear` is non-zero, and a row whose
+`conj` is empty, whose conjunct ids repeat, or that lists a `CC_PRE` conjunct after a
+`CC_POST` one (the walk runs them in that order, so the table must state it). A part's options are P's options with `flags_set` OR-ed
 in and `flags_clear` masked out. Nothing else is inherited by accident: `tune`, `analysis`,
 `features`, `encoding` and every cap are P's by the stated rule "parts compile under P's
 options except the named flags", which is a rule written once, not a default per field.
+
+**`groups`: one captures array, a column not prose** (D163 add. 3; alignment §14.1 item 2).
+Every part works on the compound's single captures array in the PARENT pattern's numbering.
+`groups` is the part's map into it: `CG_IDENTITY` for a part derived from the parent (callee
+group `g` is caller slot `g`), an offset or a table for a standalone sub-pattern part (client
+7, at its trigger). Two things are read off it instead of being written beside it:
+(1) **the pad rule**: the slots the map names and the part does not write. For split, Q's
+pruned tree writes fewer groups than P when `<P>__Q_NCAPS < <P>_NCAPS`, and the controller
+pads exactly those slots (§B.2); the rule is a function of the map and the part's own
+`NCAPS`, never a hand-written condition; (2) **the slot-coverage check**, a table-build
+check: every caller slot `1..ncaps-1` is written by some part on every success path the
+combinator can take. For split, F covers all of them (it is P) and Q plus the padding covers
+all of them. On a DFA-only build `ncaps == 1` and the check is trivial, but the field is
+there so B6's VM parts and client 7 do not re-touch every row.
 
 **`need`** is what the controller reads from the part, so the closure (§A.4) can be computed:
 `PART_NEED_SEARCH` (the search entry), `PART_NEED_MATCH_CAPS`, `PART_NEED_NEXT_POS`,
@@ -177,10 +268,14 @@ is P under a bound). It replaces revision 1's undefined `need`.
 
 **For split**:
 
-| part | role | derive | flags_set | flags_clear | engine | bound | need |
-|---|---|---|---|---|---|---|---|
-| F | `f` | none | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_ONE_ATTEMPT` | SEARCH, NEXT_POS, VALID_UPTO |
-| Q | `q` | `derive_split_q` | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_NONE` | SEARCH |
+| part | role | derive | flags_set | flags_clear | engine | bound | need | groups |
+|---|---|---|---|---|---|---|---|---|
+| F | `f` | none | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_ONE_ATTEMPT` | SEARCH, NEXT_POS, VALID_UPTO | `CG_IDENTITY` |
+| Q | `q` | `derive_split_q` | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_NONE` | SEARCH | `CG_IDENTITY` |
+
+As built (B1, lane `cpb02`) `CompPart` has the first seven fields, every one stated and
+checked by `pcrec_comp_part_check`; `groups`, `CompConj` and the `conj` list are B4's, its
+first commit (they touch no emitted byte).
 
 `engine = DFA` on both is the first build's A4 (§B.4) stated as an option: a part that cannot
 compile on the DFA refuses, and a refusing part declines the row.
@@ -197,7 +292,7 @@ a generic emitter parameterized by part names; a row never writes C itself.
 
 | combinator | meaning, in the vocabulary | first client |
 |---|---|---|
-| `first-nonzero(A@x, B@LOWER(g(x)))` | ask A at `x`; a `SPAN` or give-up is final; on `NOMATCH` relocate to `LOWER = g(x)` and ask B there (FINISH `search-from`) | split: `F@f`, then `Q@next_pos(f)` |
+| `first-nonzero(A@x, B@LOWER(g(x)))` | ask A at `x` and handle its return by the call-site code table (§A.14): a `SPAN` (row 1) is final; on `NOMATCH` (row 2) relocate to `LOWER = g(x)` and ask B there (FINISH `search-from`); a give-up, `INTERNAL`, `UTF` or `UNSET_VAR` (rows 3, 4, 5, 7) PROPAGATES unchanged; `STARTPOS` and any other negative (rows 6, 8) trap | split: `F@f`, then `Q@next_pos(f)` |
 | `min-start-then-finish(L1..Lk; V)` | each locator hands `SPAN`/`LOWER`; take the minimum start; FINISH `verify-at` with V there; the losers' results are §C's cache | 4c, per-branch locators (§D.3) |
 | `locate-then-finish(L; V)` | L hands an exact `SPAN`; V `verify-at` the start with a ceiling (the hybrid's shape, across parts) | DFA locate + VM finish (§D.2) |
 | `select-by-arg(p; A, B)` | a predicate on the CALL's arguments picks the whole sub-expression | captures on demand (§D.1) |
@@ -206,18 +301,43 @@ a generic emitter parameterized by part names; a row never writes C itself.
 **Type check at table build.** Each combinator states the result types it accepts and hands;
 each part's entry states what it hands (from its `need` and `bound`). A row whose expression
 does not type-check is a table-build error, the same check `locate_finish.md` §2.3 makes for
-FINISH totality.
+FINISH totality. The check accepts a callee that is NOT a part of this artifact when it is
+typed: an external callee of type `verify-at` (a pcrec-compiled or caller-bound matcher with
+the `rx_matchfn` shape) type-checks as the finisher of `locate-then-finish(Q; external
+verifier)`, because a callout and a part are one thing at two binding times (alignment §4,
+unlock U6). No client uses it yet; the clause costs the check one more admitted callee kind,
+so a later client does not re-open the combinator type system.
 
-**In-Job LOCATE row or compound part? (arch M2's question).** A part is the unchanged pipeline
-on a derived input; an in-Job row is a selection inside one machine. The rule:
+**Run-time selectors are emitted first-match row lists** (D163 add. 4). `select-by-arg` and
+`dispatch` are the two combinators whose choice is made when the call is made, not when the
+compound is built. Each, when its FIRST client is built (§D.1, §D.5), emits its choice as a
+run-time first-match list of (predicate, part) rows, in the table kit's shape (rows as data,
+a last row, a reach witness per row), not as an `if`-chain written by the emitter. Nothing is
+built for them in B4 (no client uses them); the rule is stated now so the first client does
+not write a second style.
 
-- If the second machine is P under ERASURE only (same tree, same options, D31), it is an
-  in-Job row: the hybrid's prefilter, `rev-end`, a FINISH `verify-at`. K108's case (a nullable
-  pattern whose hybrid prefilter is declined though a full exact search would be linear) is
-  therefore better as an in-Job change, lifting the nullable decline when the locator is exact
-  (`locate_finish.md` §4), than as client §D.2.
-- If the second machine needs a DIFFERENT TREE (split's Q, 4c's per-class searches) or
-  DIFFERENT OPTIONS (captures on demand, [ADAPTIVE-ARM], arch levels), it is a compound part.
+**In-Job LOCATE row or compound part? (arch M2's question; a first-match table by D163
+add. 4 (a)).** A part is the unchanged pipeline on a derived input; an in-Job row is a
+selection inside one machine. The rule is the table `compound_place[]`, a house table (C1
+trace site key `compound-place`, a `TABLE_ROOTS` root, a reach witness per row). The
+table-build self-check asks it of every part of every `compound_rows[]` row: a part must
+land on row 1 or 2, and a part that lands on row 3 is an in-Job row mis-placed as a part
+(a table-build error). Review asks it of every in-Job candidate. It sits beside the start
+table in the kit sense (same checks, the same trace); its source file is B4's brief's to
+place. The first passing row decides; the last row has no conjunct beyond "none of the
+above".
+
+| # | row | conjuncts (all must hold) | placement |
+|---|---|---|---|
+| 1 | `different-tree` | the second machine's tree is not P's tree under erasure (a derivation other than `pcrec_derive_none`: split's Q, 4c's per-class searches) | compound PART |
+| 2 | `different-options` | the second machine's options differ from P's beyond what erasure itself sets (`flags_set`/`flags_clear` non-zero, or `engine` other than P's selection: captures on demand, [ADAPTIVE-ARM], arch levels) | compound PART |
+| 3 | `erasure-only` | (no conjunct beyond rows 1-2 failing) P's tree under ERASURE only, P's options (D31): the hybrid's prefilter, `rev-end`, a FINISH `verify-at` | in-Job row (a `cand_rows[]` LOCATE or FINISH row) |
+
+K108's case (a nullable pattern whose hybrid prefilter is declined though a full exact search
+would be linear) lands on row 3, so it is better as an in-Job change, lifting the nullable
+decline when the locator is exact (`locate_finish.md` §4), than as client §D.2. Row 3's
+placement is the same conclusion revision 2's second bullet reached, now a row a reviewer can
+point at; the rows are the two bullets, nothing new is ruled.
 
 ### A.3 The driver: `compound_rows[]` at the driver tier
 
@@ -225,19 +345,22 @@ The table lives in a new `src/core/compound.c`, the driver tier beside `compile_
 
 1. **The plain compile runs first, exactly as today.** It is the fallback (the refusal set
    cannot grow, except under §G Q1's `--fast-or-fail` question) and the admission's input.
-2. **The walk.** For each row: `pre_admits` reads the plain compile's selections through the
-   row's declared reads (arch S5): `CandRead { slot, route }` pairs answered by a projection
-   function `cand_plain_selection(job, slot, route)`. In the trace build every read the
-   predicate makes is held to the declared set, the check `CandNode.reads` already has
-   (`[cand-no-name-strcmp]`'s machinery). `pre_admits` also runs the row's derivations (cheap
-   tree passes). If it passes, the parts compile (each through `compile_driver` with part
-   mode, §A.5), then `admits` reads the parts' own selections (A3/A4 for split).
+2. **The walk.** For each row, the `CC_PRE` conjuncts run first. Each reads the plain
+   compile's selections through its own declared reads (arch S5): `CandRead { slot, route }`
+   pairs answered by a projection function `cand_plain_selection(job, slot, route)`. In the
+   trace build every read a conjunct makes is held to ITS declared set, the check
+   `CandNode.reads` already has (`[cand-no-name-strcmp]`'s machinery). The row's derivations
+   (cheap tree passes) run with them, because A2 reads the derivation's report. If they all
+   pass, the parts compile (each through `compile_driver` with part mode, §A.5), then the
+   `CC_POST` conjuncts read the parts' own selections (A4 and A5 for split). The first
+   conjunct that fails is the decline reason, by `id`.
 3. **A part's own failure declines the row** (refusal, cap overflow, a degraded ladder rung:
    chk S12). The walk continues; if no row succeeds, the plain output ships.
 4. **The choice is attempt-level state** (arch M4). The current `compound_rows[]` selection is
    a field of the attempt loop's state in `compile_driver`, and T1 (`fit_rungs[]`) can retry
    with it cleared (§A.8). There is no second ladder.
-5. **Assemble** (§A.5), then check the caps on the assembled text.
+5. **Assemble** (§A.5), then check the caps on the assembled text (`drop-compound`, §A.8,
+   which is split's A6).
 
 **Why the driver tier, not `cand_rows[]`.** A compound selects among whole compiled machines
 under different trees or options. `cand_rows[]` selects a strategy inside one machine.
@@ -265,12 +388,36 @@ default set (`match_api.md` §3¶1). The controller's combinator expression cont
 closure is computed over the union graph (plain artifact's edges + parts' edges + controller
 edges), so a part entry is KEPT exactly when a path from an exported entry reaches it.
 
+**As built (B0, lane `cpb02`, `src/gen/entries.c`).** The entry table has public rows plus
+the internal ones (the VM's three `_run` bodies, the hybrid's embedded search), a per-shape
+edge table, the closure, and `pcrec_entry_linkage`/`_storage`/`_emitted` at every definition
+and declaration site (the `.h`, the self-contained `.c`, the header-form `.c`'s static forward
+declarations, the `src/enc/` residuals through new drop/static masks). The request is the
+driver-tier `PcrecEmitIn`, the new last parameter of `compile_driver`; NULL is the default
+request, today's linkage. Two things B0 found that B4 inherits:
+
+- **A `search -> match` edge on a `rev-end` tie** (cpb02 finding 1). A `rev-end` locator whose
+  tie arm is finished `verify-at` makes `<p>_search` call `<p>_match` (the edge shape
+  `search_match`). The check found it as a missing edge (a hand list had omitted it). It
+  matters here because §B.4's A5 makes Q's route `rev-end`: Q's `<p>__q_search` reaches
+  `<p>__q_match`, so **`<p>__q_match` is KEPT STATIC by the closure whenever Q's tie finish is
+  built, and OMITTED when it is not**; it is never exported (G4 still holds: no `<p>__*`
+  global). The controller's edge list below is therefore only the CONTROLLER's edges; a part's
+  own shape edges come from the entry table, never from a split-specific list. Both failing
+  directions were seen live in B0: a missing edge and an over-wide one (vars on byte).
+- **B0's limits** (cpb02 finding 5; internal errors by D77, not refusals): a request must
+  reach `_search`; `info` and `main` cannot be kept static; and `need`'s `VALID_UPTO` is the
+  controller's edge, because the part-mode unit drive drops `_valid_upto` without
+  `-futf-check`. The prologue's reach check (§A.6) is what keeps it, so the edge
+  `<p>_search → <p>__f_valid_upto` is emitted under `-futf-check` only.
+
 **The hybrid is the first customer.** `emit_vm.c:12761`'s
 `pcrec_emit_dfa_engine(cx, prefn, "static ")` hard-codes "this embedded engine's search is
 static". At B0 it becomes a request through `pcrec_entry_linkage`: the hybrid's VM search
 entry has an edge to the embedded DFA search, which is therefore KEPT STATIC by the closure.
 Its text is byte-identical (zero movers), which is B0's positive control that the closure
-reproduces a shipped linkage decision.
+reproduces a shipped linkage decision. DONE in B0 (merged `2a54c3e71`): the hybrid's `"static "`
+is now its closure answer.
 
 ### A.5 Part mode
 
@@ -285,12 +432,39 @@ changes emission only (revision 1 §A.3, kept), plus:
   (`grep -E -- '-p [A-Za-z0-9_]*__'` over `tests/`, `scripts/`, `examples/`). This is a
   refusal-set move, so it is §G Q2. Under K79 the part's emitters see the placeholder plus
   `__<role>` (a fixed length), so no selection depends on the caller's prefix length.
+  **The refusal is ROW 1 of the namespace reservation table, not a standalone check**
+  (alignment §8.3, §14.1 item 3): one first-match row list, owned by `valid_prefix`'s module
+  (`src/core/compile.c`) and listed in `cli.md` beside `-p`'s grammar, with a row per reserved
+  name family so the next reservation adds a row rather than a second refusal:
+
+  | row | reserved form | refused user prefix | first enforced |
+  |---|---|---|---|
+  | 1 `parts` | `<prefix>__<role>_*` | any prefix containing `__` | **B4** (§G Q2) |
+  | 2 `callout-bindings` | `rx_callout_<name>` | a prefix equal to `rx_callout`, or starting with `rx_callout_` | [M4-CALLOUTS] step 2 (added by that step as a data row; population 0 in the tree) |
+  | 3 `harness-lever` | the lever's reserved prefix (§A.11) | a prefix starting with it | **B4** (the narrower fence is the B4 brief's choice, §A.11) |
+
+  B4 lands the table with rows 1 and 3. Each enforced row has its sabotage row (CMP-16 for row
+  1, §E.4) and a reach witness (a refused `-p`).
 - **The shared blocks** (ABI block, includes, `PCREC_FEATURE_SET`/`_MODULES`) are omitted
   from a part; the compound header has them once.
 - **No `rx_info`, no `main`** in a part. The part keeps its stamp family under its prefix.
 - **The bound.** `PB_ONE_ATTEMPT` makes the part's BOUND slot select `attempt-gstart`'s
   payload (`start_max = search_from`) whatever P's own BOUND would be. It is a part option
   read by the start table as a fact deny on the other BOUND rows, not a tree edit (§B.1).
+  As built (B1): the BOUND row `attempt-gstart` takes it and the `bot` row is denied; a
+  part whose route is not the DFA attempt route refuses (so the row declines).
+  **Soft item, B4's lane, before the controller (alignment §14.3, §10.3, unlock U1):** the
+  option is built as a general EMISSION option, and as built it is not yet: the start table
+  reads it through `pcrec_part_one_attempt(cx)`, which is `pcrec_is_part(cx) &&
+  part_bound == PCREC_PB_ONE_ATTEMPT`, a part-mode-only coupling. Any artifact's `_match` on
+  a DFA attempt route is `"search-filter"` (the whole attempt loop, then a filter; J-2), and
+  the cure for every such artifact, including a plain artifact bound as a callout, is the
+  same bounded attempt. So B4 moves the option's carrier from the part-mode test to the
+  emission request (`PcrecEmitIn`, B0's request), with part mode as its FIRST reader. Check:
+  after the move `pcrec_part_one_attempt` (or its successor) reads the request's bound field
+  and nothing about part mode, and a non-part drive that sets the request's bound compiles
+  and passes the bounded-attempt answer cases. Selecting it for a plain artifact's `_match` is U1, a selection row filed
+  for its own trigger, not B4.
 - **`noclone` (arch S4).** Parts' search entries come from `emit_search_head`, which already
   emits `__attribute__((noclone))` (K24's fix), so a part cannot be split into a `.part.0`
   clone. Whether a part entry should also be `noinline` (so the controller stays small) is
@@ -354,6 +528,14 @@ Every stamp is one of two kinds, and the kind decides its value on a compound:
 | pattern-level | true of the pattern and the caller contract, whichever machine runs | P's (computed once, by the plain compile) | `_ENCODING`, `_NCAPS`, `rx_info.flags`, `_TUNE`, `_FINDINGS`, `_NAME`, pattern text, `_VARS`, the budgets (per part call), `_ENGINE` ("vm" if any part is VM: "can a call give up") |
 | machine-level | describes one machine's route or strategy | a DEFINED compound value; the parts' own values stay under their part prefixes in the `.c` | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_START`, `_DFA_MATCH` (and `rx_info.scan`/`prefilter`/`search_form`/`match_form`): `"compound"`; `_REQ_BYTE`, `_REQ_RUN`, `_REQ_WHY`, `_VM_*`, `_START_SCAN`, `_RESEED`, ...: each its declared compound sentinel |
 
+**A third kind: link-level** (alignment §10.1, D163 add. 5). What the artifact NEEDS from its
+link: the `rx_callout_<name>` symbols it references, which a loader ([ART-MGR]) or a composing
+build wants as a list without parsing C. Parts never appear in it (parts are inside the
+file, D88 add. 1). A compound's link-level set is the union over its parts. Today it is
+always empty, because callouts are unbuilt and A3 declines them (§B.8). **No B4 change**:
+`<PREFIX>_COMPOUND` and the sentinels stand as designed; when callouts build, `rx_info` gains
+the callout-name list and this table gains the link-level row.
+
 **The sentinel table.** D156 addendum 2's generated-stamp rule (`locate_finish.md` L2.1)
 already gives every machine-level stamp an off-path value. A compound is one more cell in that
 generator: each machine-level stamp's catalogue row gains a `compound` value (`"compound"`
@@ -364,7 +546,7 @@ macro NAME (§E.5).
 
 **The policy stamp.** `<PREFIX>_COMPOUND` on every artifact: `"none"` (no row admitted),
 the row name (`"split"`), or `"forced-off"` (the harness lever was set and the default build would have shipped a row
-name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
+name, §A.11; never merely because the `CC_PRE` conjuncts passed). It is pattern-level.
 
 ### A.8 Size: the caps, and `drop-compound` as a T1 row (arch M4)
 
@@ -391,21 +573,36 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
   plus Q's small end-pinned machine plus the controller: about 2 KB in absolute terms on the
   idioms. Revision 1's `sizes.tsv` agrees within 3%.
 
-### A.9 Budgets under D158 (sem notes)
+### A.9 Budgets under D158 (sem notes; D163 add. 6 Q1)
 
-- **Each part entry initializes its own budget.** A compound search makes at most one call
-  per part.
-- **DFA parts have no budget** (the first build). Nothing to show.
-- **VM parts (B6): the give-up surface is NOT a subset in either direction.** A compound can
-  ANSWER where the plain artifact gives up (Q is P minus dead arms; a fresh budget per part),
-  and in principle the reverse (engine choices are not monotone in the tree; the bounded F
-  may cost a step more at the floor). So revision 1's "drop-in, answer for answer" is
-  dropped. What the compound guarantees: on every subject and call, a non-give-up answer of
-  the compound equals P's answer; a give-up of a part is returned at once (`first-nonzero`
-  treats it as final). B6's gate is the give-up differential: 0 cells where the plain
-  artifact answers and the compound gives up (§E.3). The other direction is §G Q3.
-- **Caller buffers (VM parts).** One region sized by the max over parts; the controller builds
-  each part's descriptor per call.
+**One meter per EXPORTED call** (D163 add. 6 Q1, agreed; alignment §7.3). Every part of a
+compound, and every pcrec-matcher callee, charges the caller's one meter. Parts are static,
+so the meter pointer is internal text; with no session (an un-suffixed entry, today's
+callers) the exported entry allocates the meter on its own frame, which is a plain artifact's
+behaviour today. Revision 2's "each part entry initializes its own budget" was marked INTERIM
+by the alignment note and is replaced; the decision was due before B6 and is made.
+
+- **DFA parts have no budget** (the first build, B4). Nothing to show; the sentence is the
+  rule for B6.
+- **VM parts (B6): D158 gets one comparison unit.** A compound's charge and the plain
+  artifact's are in the same unit (one meter, one call), so the give-up differential compares
+  like with like. The give-up surface is still NOT a subset in either direction (engine
+  choices are not monotone in the tree; Q is P minus dead arms; the bounded F may cost a step
+  more at the floor). What the compound guarantees: on every subject and call, a non-give-up
+  answer of the compound equals P's answer; a part's give-up is returned at once
+  (`first-nonzero` treats it as final: §A.14 row 3). B6's gate is the give-up differential: 0
+  cells where the plain artifact answers and the compound gives up (§E.3). One meter makes
+  that gate stricter than "fresh per part" would have: a compound can now give up where the
+  fresh-per-part form would have answered, which is exactly the question the differential
+  asks, so B6's gate decides it, never a multiplier. §G Q3 is restated against the one meter.
+- **The tiered default (§4¶4, x2) is unaffected.** It re-runs the whole exported call, so it
+  is a second exported-call meter, as today.
+- **Caller buffers (VM parts).** Sequential parts share one region sized by the max over parts
+  (the parts run one after another); the controller builds each part's descriptor per call. A
+  spec gap belongs to B6: a compound's public `<p>_buffers` counts frames of ONE frame type,
+  and parts can have different frame sizes (24 versus 40 bytes), so the compound's frame unit
+  is defined as the largest part frame with the controller converting counts per part. That
+  is a B6 spec hunk.
 
 ### A.10 Where it lives; the table kit (arch S3)
 
@@ -413,8 +610,8 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
   combinator emitters), `src/opt/derive.c` (derivations), part mode and
   `pcrec_entry_linkage` in `src/gen/`.
 - **The table kit**, as every house table has it:
-  - the C1 trace site key `compound` (records the row walked, `pre_admits`/`admits`
-    verdicts, the declared reads);
+  - the C1 trace site key `compound` (records the row walked, each conjunct's
+    verdict by id, the first failing id, the declared reads);
   - a `TABLE_ROOTS` root for `call_graph.py --family compound`;
   - a row-reach witness per row in `tests/compound/`, asserted by stamp;
   - the trace build's declared-read check (§A.3).
@@ -425,7 +622,7 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
 
 ### A.11 Always on: the one harness-only lever (D163 add. 2 item 2)
 
-**There is no public deny.** No flags bit (bit 55 stays free), no `-fno-...`, no
+**There is no public deny.** No flags bit (none is reserved; D164 add. 5 records bit 55 gone to the kit and bit 56 to B3), no `-fno-...`, no
 `strategy_denials` entry, no `--list-axes` row, no `tuning.md` section, no `.rxt` config word.
 
 **The lever.**
@@ -442,41 +639,47 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
   prototype can call it. The fences that hold are the three below, none of them the
   attribute:
   1. **The obscure name**: unadvertised, in no public header, in no spec or guide sentence.
-  2. **The symbol-allowlist check** (NEW; `tests/compound/run_symbol_allowlist.sh`, a
-     `make test` section, built at B4). Verified by grep that no such check exists:
-     `tests/memfn/run_link_checks.sh` C15 asserts only that every global of `build/libpcrec.a`
-     begins `pcrec_` (`pcrec_compile_harness` passes it), and
-     `tests/spec_mod0/check01_isolation.sh` is the enabled-set isolation `nm` check, whose
-     named-exception count is pinned at exactly 1 (a lever row there would break that pin and
-     is the wrong host). The new check: read `nm -g --defined-only build/libpcrec.a`; the
-     PUBLIC SET is the names `lib/pcrec.h` declares (derived from the header by the same
-     extraction the registry tests use, never hand-listed); every other global must be a row
-     of `tests/compound/symbol_allowlist.tsv` (`symbol<TAB>reason`, a non-empty reason per
-     entry). It fails on a global with no row (a new export), on a row naming no global
-     (stale), and on an empty reason. Population: today's archive has 566 globals of which 6
-     are public, so the list is born with about 560 rows, generated once from `nm` with the
-     declaring internal header as each row's reason; the lever's row is one of them and its
-     reason is hand-written ("harness lever, `build/pcrec-harness` only"). Controls: a planted
-     undeclared global is flagged; a planted stale row is flagged; floors on both
-     populations (K35). Its sabotage row is CMP-17 (§E.4).
-     *Manager note (2026-10-12, at merge):* a ~560-row per-symbol list churns with every
-     internal refactor. Before B4, prefer a narrower fence of equal strength: give the lever a
-     reserved, unique name prefix and check (a) exactly one global carries that prefix, (b) no
-     header under `lib/` declares it, and (c) `run_lever_fence.sh`'s widened grep. The full
-     export-surface allowlist stays a separate, optional row ([EMIT-ENTRIES] will want it
-     anyway); decide at B4's brief.
+  2. **A reserved unique prefix and ONE global check** (the B4 brief's choice, the manager's
+     lean at merge 2026-10-12; it replaces revision 2.1's per-symbol export allowlist).
+     The lever's entry carries a RESERVED name prefix (`pcrec_harness_`; free at this
+     commit, `grep -rn 'pcrec_harness' src lib cli tests scripts Makefile` is empty; the
+     spelling is B4's, the properties below are the contract), which passes
+     `tests/memfn/run_link_checks.sh` C15 (every global begins `pcrec_`). The checks, all in
+     `tests/compound/run_lever_fence.sh` (item 3), a `make test` section:
+     (a) `nm -g --defined-only build/libpcrec.a` lists EXACTLY ONE global beginning with the
+     prefix, the lever's;
+     (b) no header under `lib/` declares a name beginning with it;
+     (c) the widened grep of item 3.
+     Also a refused user prefix: namespace row 3 (§A.5). Controls: a planted SECOND global
+     with the prefix is flagged; a planted declaration of the prefix in a `lib/` header is
+     flagged; the lever's entry removed (zero globals with the prefix) is flagged, so the
+     lever demonstrably exists; floors on the one-global count (K35). Sabotage row CMP-17
+     (§E.4).
+     *Why this and not the allowlist.* Revision 2.1's `run_symbol_allowlist.sh` named every
+     global of the archive (566, 6 of them public: about 560 hand-reasoned rows). That list
+     churns with every internal refactor, because each new helper, and each `static` dropped
+     for a cross-TU call, needs a row and a reason, so the population is a by-product of the
+     toolchain and says nothing about the lever. The one property the lever needs is that no
+     caller can reach it through the shipped contract except by a name nobody advertises, and
+     that the archive carries exactly one thing under that name; (a)-(c) check exactly
+     that, and a second symbol, a declaration or a prose mention each fails a check, which
+     is the same strength for this purpose at the cost of one prefix. What it does NOT do is
+     police the rest of the export surface. That is a separate, optional check
+     ([EMIT-ENTRIES] will want one when its public request lands, §H U3); no row of this note
+     depends on it, and it is not part of B4.
   3. **`run_lever_fence.sh`** (described next), with its grep scope widened to `tests/`, `scripts/`
      and `cli/` as well as the prose directories, allowlisting the harness's own legitimate
      uses (the `-DPCREC_HARNESS` object of `cli/main.c`, `build/pcrec-harness`'s callers, the
      lever arm of `tests/axes/run_axes.sh`, the emit_sweep lever arm, `tests/compound/`).
+     The grep takes BOTH the option spelling and the prefix.
 - **CLI.** `cli/main.c` compiled a second time with `-DPCREC_HARNESS` into
   `build/pcrec-harness`, which accepts one extra option `--harness=no-compound` and calls the
   harness entry. The shipped `build/pcrec` has no such option: in a normal build the word is
   an unknown option. `make` builds both (the second is one more object of `main.c`).
-- **The artifact marks itself, exactly when the lever changed it.** `pre_admits` passing is
-  NOT "the default build admitted a row": admission continues through Q's derivation, Q's own
+- **The artifact marks itself, exactly when the lever changed it.** The `CC_PRE` conjuncts
+  passing is NOT "the default build admitted a row": admission continues through Q's derivation, Q's own
   ladder check (A4/S12) and the assembled text's caps, and `drop-compound` (§A.8) can still
-  reject the row after `pre_admits` passed. Stamping `"forced-off"` on a `pre_admits` pass
+  reject the row after the `CC_PRE` conjuncts passed. Stamping `"forced-off"` on a `CC_PRE` pass
   alone would mark an artifact whose default build ships plain with `"none"`, so the lever
   would move a stamp line on an artifact it changed nothing about. So under the lever the
   walk runs the COMPLETE admission, the same code as the default build, including the part
@@ -504,11 +707,10 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
 
 **Kept from becoming a de-facto public flag:** it is not in the shipped binary, not in the
 public header, not in any `--help` or listing; the artifact self-marks; and a check
-(`tests/compound/run_lever_fence.sh`) fails if `--harness=` or `pcrec_compile_harness` appears
+(`tests/compound/run_lever_fence.sh`) fails if `--harness=` or the reserved prefix appears
 in `docs/spec/`, `docs/guide/`, `README.md`, `examples/`, `lib/`, `tests/`, `scripts/` or
-`cli/`, outside an explicit allowlist of the harness's own uses (listed in fence 3 above);
-and `run_symbol_allowlist.sh` holds the library's export surface to the public header plus a
-reasoned allowlist. The only spec sentence is
+`cli/`, outside an explicit allowlist of the harness's own uses (listed in fence 3 above), and
+holds the archive to exactly one global under the prefix (fence 2). The only spec sentence is
 the `"forced-off"` value in `match_api.md` §6.3's `_COMPOUND` value set ("an artifact built by
 the harness with the compound family declined"), because a stamp value is caller-observable
 (D80).
@@ -537,6 +739,60 @@ read DFA internals). **Trigger to re-express it as a compound:** a client needs 
 interface wider than entries (a window, a reseed protocol). Until then B0's linkage
 re-expression is its only change.
 
+### A.14 The call-site code table (D163 add. 5/6; alignment §5, MUST before B4)
+
+`match_api.md` §4¶10 binds "a generated call site that invokes another `rx_matchfn` (a
+callout, a composed submatcher)" to trap on a code below the floor, and says pcrec emits no
+such site today, so the obligation binds the first that does. **B4's controller is that
+first site.** A compound part is a composed submatcher, and revision 2's `if (r != 0) return
+r;` would have returned `PCREC_ERR_STARTPOS` and `PCREC_ERR_INTERNAL` where §4¶10 traps. The
+two sides must agree, and they agree on ONE design for parts and callouts alike (a
+compound part and a callout are one thing, a pcrec-compiled callee, at two binding times;
+alignment §3).
+
+**A call site's handling of a return is a first-match table over code classes, with rows
+emitted only for the codes the CALLEE CAN RETURN**, read from the callee's own facts: its
+engine (a DFA never gives up), its guards (a guards-off part never refuses), its
+`-futf-check` arm. Every other code reaches the last row.
+
+| # | code class | action | a compile-time part knows | a link-time callout knows |
+|---|---|---|---|---|
+| 1 | `>= 0` (SPAN) / `1` | the combinator's success edge | yes | yes |
+| 2 | NOMATCH (`-1` / `0`) | the combinator's failure edge (relocate, or the outer path fails) | yes | yes |
+| 3 | give-up `[PCREC_ERR_FLOOR, -2]` | **propagate** unchanged (D49; D158: final) | only if the part is VM | always (unknown callee) |
+| 4 | `PCREC_ERR_INTERNAL` | **propagate** (D163 add. 6 Q3; today §4¶10 traps) | only if the part has a producer (`vm_look_behind`'s negative arm) | always |
+| 5 | `PCREC_ERR_UTF` | **propagate** (D133 Q11) | never: parts are `-futf-check`-clear (§A.6) | if the callee checks |
+| 6 | `PCREC_ERR_STARTPOS` | **trap**: the caller generated the position, so it is a boundary (§9.5) | never: parts are guards-off | always (a callee's guard is on) |
+| 7 | `PCREC_ERR_UNSET_VAR` | **propagate** (the caller's data, as UTF is) | only on a var-bearing part (VM) | always |
+| 8 | anything else below the floor | **trap** (the reserved abort space, D38 item 4) | always | always |
+
+- **B4 emits rows 1, 2 and 8.** Its parts are DFA-only (no give-up), guards-off (no
+  `STARTPOS`) and check-clear (no `UTF`), so rows 3-7 have no member. Rows 1-2 are the
+  combinator's own edges (§A.2), so row 8 is the only new line: `if (r < 0)
+  __builtin_trap();` under each part call (§B.2, §B.3). It is dead code by construction.
+  G2 cannot reach it; a trace-build assertion records that it is unreached on every
+  admitted artifact. **No admitted pattern's answer changes**, since no admitted part can
+  return a negative code.
+- **Why emit a dead trap at all.** It turns a broken guards-off invariant into a crash
+  instead of a silently returned refusal, and it is the line §4¶10 already demands.
+  CMP-12's detector gains the trap as its second witness (§E.4).
+- **`PCREC_ERR_INTERNAL` propagates** (D163 add. 6 Q3, agreed): row 4 reads propagate, not
+  trap. That is a change to §4¶10 from "trap" to "propagate", and the row has no producer on
+  a B4 part either way.
+- **The table is data, in the table kit** (C1 trace site key `compound-callsite`, a
+  `TABLE_ROOTS` root, a reach witness per row, each row's applicability a function of the
+  callee's declared facts). B6's VM parts light rows 3, 4 and 7 through the same table
+  without a new emitter; the callout module lights all of them with "always" in the last
+  column.
+- **The spec hunk lands in B4's commit** (D80; B4 is the first producer): `match_api.md`
+  §4¶10 becomes this table, the sentence "pcrec emits no such call site today" goes, and the
+  compound controller is named as the first producer. Row 7 is also a change: today's line
+  traps on `PCREC_ERR_UNSET_VAR`, but variables ride `rx_ctx` from the caller, so an unset
+  one is the caller's data, as UTF is. No producer exists either way.
+- **Cost.** For compounds, no movers beyond B4's own abi event (the controller text is new
+  anyway). For callouts, none (no call site exists). One sabotage row gains a witness
+  (CMP-12) and one optional row is new (CMP-18, §E.4).
+
 ## B. First client: [MATCH-SPLIT], pin-only
 
 ### B.1 The parts
@@ -548,7 +804,13 @@ re-expression is its only change.
   prologue has already refused or aligned `from` (§A.6).
 
   In the twin the bound is the emitted line `const size_t start_max = subject_length;`
-  rewritten to `= search_from;`, which is what the BOUND row `attempt-gstart` emits. On a P
+  rewritten to `= search_from;`, which is what the BOUND row `attempt-gstart` emits. **As
+  built** (cpb02 finding 3) the emitted bound reads `start_max = search_from /* fully
+  \G-anchored */`: the trailing comment is the row's own payload text, and it is cosmetic
+  on a part that is not a `\G` pattern. Rewording it would be an abi event, and the payload
+  is shared with every artifact that selects `attempt-gstart`, so it would move those
+  artifacts too (a mover set by ID). B4 is the one abi event, so the cost is only the extra
+  manifest; the lean is to leave it and file it, and the B4 brief decides. On a P
   with no DFA attempt loop (VM P, the twin's VM cases) the twin uses P's `_match_caps`, which
   on the VM is the anchored body. **Not `_match` on a DFA attempt route** (finding J-2).
 
@@ -596,15 +858,30 @@ int <p>_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[
     size_t qf = from;
     if (from == 0 || <HAS_G>) {                  /* the floor can be live */
         int r = <p>__f_search(s, n, from, caps);  /* one bounded attempt at f */
-        if (r != 0) return r;                    /* match, give-up or refusal: final */
-        qf = <p>__f_next_pos(s, n, from);        /* Q only PAST the floor */
+        if (r > 0) return r;                     /* §A.14 row 1: a match is final */
+        if (r < 0) __builtin_trap();             /* §A.14 row 8: dead by construction */
+        qf = <p>__f_next_pos(s, n, from);        /* row 2, NOMATCH: Q only PAST the floor */
     }
     <Q never: return 0;>
     int r = <p>__q_search(s, n, qf, caps);
-    <pad slots Q lacks, only when <P>__Q_NCAPS < <P>_NCAPS>
+    if (r < 0) __builtin_trap();                 /* §A.14 row 8 */
+    <on r > 0 only: pad the slots Q's map names and Q does not write, §A.1's `groups`,
+     present only when <P>__Q_NCAPS < <P>_NCAPS>
     return r;
 }
 ```
+
+**Each part call is handled by the ONE call-site code table (§A.14).** F and Q are DFA-only,
+guards-off and `-futf-check`-clear in the first build, so rows 3-7 have no member and B4 emits
+exactly rows 1, 2 and 8. Revision 2's `if (r != 0) return r;` is withdrawn: it would have
+returned `PCREC_ERR_STARTPOS` and `PCREC_ERR_INTERNAL` where `match_api.md` §4¶10 requires a
+trap (alignment §5.1). The row-8 line is a one-line cold path that turns a broken guards-off
+invariant (a part compiled with its guard on by mistake, CMP-12's plant) into a crash
+instead of a silently returned refusal. **The pad is read off `groups`** (§A.1) and runs only
+on a success (delivery on success: a failing call writes nothing, alignment §6.3 point 3,
+which is also what `match_api.md` §3.1¶4's caps-untouched-on-failure rule says). In the
+DFA-only build `ncaps == 1`, so the pad has no slot and B4 emits none; the rule is stated for
+B6.
 
 The soundness argument is revision 1's §B.2 items 1-4, unchanged by revision 2 except that
 `f` is now the aligned position: (1) a match at the floor is P's priority answer at the
@@ -623,7 +900,7 @@ arm.
 | compound entry | body |
 |---|---|
 | `<p>_search` | the controller (§B.2) |
-| `<p>_match`, `<p>_match_caps` | the prologue, then F's bounded search at `pos` (a `SPAN` at `pos` or `NOMATCH`), converted to the match-here return | 
+| `<p>_match`, `<p>_match_caps` | the prologue, then F's bounded search at `pos` (a `SPAN` at `pos` or `NOMATCH`), converted to the match-here return; F's result goes through the same call-site code table (§A.14: rows 1, 2, 8) | 
 | `*_in` | the un-suffixed entry with `(void)buffers` (DFA-only compounds) |
 | `<p>_next_pos`, `<p>_valid_upto` | the compound's own (the encoding residual, P's reach) |
 | `<p>_info` | one (§A.7) |
@@ -636,17 +913,19 @@ probe (revision 1's finding I-5), and it is now stated against the right entry.
 
 ### B.4 Admission: the `split` row, pin-only
 
-`split_pre_admits` (cheap) and `split_admits` (after the parts compile) are a conjunction of
-facts read off compiles. No constant is hand-set.
+`split_conj[]` is the row's admission: LISTED conjuncts (§A.1's `CompConj`), a conjunction of
+facts read off compiles, each with an id, a name the listing shows, a phase and its declared
+reads. No constant is hand-set. A decline is reported by the first failing conjunct's id
+(§E.4's decline controls assert it).
 
-| # | conjunct | where read | why |
-|---|---|---|---|
-| A1 | P's plain compile is on an attempt route with BOUND `all` (DFA `attempt[subject_length]`) | the plain compile's BOUND and LOCATE selections (declared reads) | today attempts every start; a fully anchored P is already one attempt and stays byte-identical |
-| A2 | the derivation killed ≥ 1 floor anchor and left no `\G`; no called/referenced group was in a pruned arm (first build) | the derivation's own counts, an independent walk of Q's tree (chk M5) | §B.1 |
-| A3 | no verb or callout in P (registry-keyed, §B.8) | the registry's attempt-scope column on P's nodes | §B.8 |
-| A4 | every part compiled on the DFA without a degraded rung (no `size-cap-retry`, no `sel1-*`, no `prefilter-collapse`) | the parts' `ENGINE` and `ENGINE_SEL` | D158 (§A.9), and Q's cap (chk S12) |
-| A5 | **PIN-ONLY:** Q is never, or Q's LOCATE selects `rev-end` | Q's own compile | chk B1: an end-pinned Q has at most the end matches per subject; an unanchored Q's many-match cost waits for B5 |
-| A6 | the assembled text fits the caps | `drop-compound` (§A.8) | D84 |
+| id | phase | conjunct | where read | why |
+|---|---|---|---|---|
+| A1 | `CC_PRE` | P's plain compile is on an attempt route with BOUND `all` (DFA `attempt[subject_length]`) | the plain compile's BOUND and LOCATE selections (declared reads) | today attempts every start; a fully anchored P is already one attempt and stays byte-identical |
+| A2 | `CC_PRE` | the derivation killed ≥ 1 floor anchor and left no `\G`; no called/referenced group was in a pruned arm (first build) | `PcrecDeriveReport` (B2's counts) and an independent walk of Q's tree (chk M5; G5's walk) | §B.1 |
+| A3 | `CC_PRE` | no verb or callout in P (registry-keyed, §B.8) | `pcrec_ast_crosses_attempts` (the registry's attempt-scope column on P's nodes) | §B.8 |
+| A4 | `CC_POST` | every part compiled on the DFA without a degraded rung (no `size-cap-retry`, no `sel1-*`, no `prefilter-collapse`) | the parts' `ENGINE` and `ENGINE_SEL` | D158 (§A.9), and Q's cap (chk S12) |
+| A5 | `CC_POST` | **PIN-ONLY:** Q is never, or Q's LOCATE selects `rev-end` | Q's own compile | chk B1: an end-pinned Q has at most the end matches per subject; an unanchored Q's many-match cost waits for B5 |
+| (A6) | after assembly | the assembled text fits the caps | `drop-compound` (§A.8), a row of T1, not a conjunct | D84 |
 
 **Counted.** On mssurvey's population, A1-A5 admit: S+E on `attempt[n]` 20 (its Q stamps
 `rev-end`), G+E 1 (A5 decides on Q's own compile), and the 9 floor-only single-class patterns
@@ -684,8 +963,10 @@ bounded. Calls and matches are equal on every row (asserted). k = 16,000 unless 
   D164) removes the second walk, and the $-ends become ordinary ends under the DFA's
   existing priority handling. **The post-B3 factor is the match-end mark design's measurement,
   not this one's**: expected about 1.0× where no forward finish is needed (no captures asked),
-  higher where captures need a forward run. G3's bound for this shape
-  is whatever B3's gate states (§E.3).
+  higher where captures need a forward run. **B4 does not wait for B3** (D163 add. 4): G3
+  gates this shape at TODAY's rev-end cost (the compound no worse than Q's own plain rev-end
+  artifact on the same subject, §E.3), and B3's commit tightens it to B3's bound, a named
+  obligation of that commit.
 - **With `_match` as F** (the wrong form, finding J-2) the same harness read K106 at
   128,040,004 and the end-match cell at 32,004 (2.00×): the search-filter `_match` runs the
   whole attempt loop.
@@ -717,17 +998,53 @@ constant: the conjunct is a comparison of two priced expressions, and a NONE pri
 ### B.8 Declines: verbs, callouts, `\K`
 
 - **Verbs and callouts** decline the row through a REGISTRY-KEYED predicate (sem notes): the
-  registry gains an attempt-scope column (`RF_CROSSES_ATTEMPTS`) on the rows whose effect spans
-  attempts or observes their order: `(*COMMIT)`, `(*SKIP)`, `(*PRUNE)`, `(*THEN)` and every
-  callout spelling. A1-A3 read it off P's nodes through the SR-8 node stamping. The witness:
-  `^a(*COMMIT)b|c` on `"ac"`: libpcre2 no match, a compound `(1,2)`. A new verb row states
-  the column and the predicate follows; no list in `derive.c`.
+  registry's attempt-scope column (`RF_CROSSES_ATTEMPTS`), read off P's nodes through the SR-8
+  node stamping by A3 (`pcrec_ast_crosses_attempts`). **As built (B2, cpb02 finding 4)** the
+  column is on the CALLOUT row only (`GROUP_XA`). The four attempt-crossing backtracking
+  verbs, `(*COMMIT)`, `(*SKIP)`, `(*PRUNE)`, `(*THEN)`, are `ROADMAP_NEVER` and refused at
+  parse, and a verb node has no per-name row today, so no node carries them. Therefore:
+  - The witness `^a(*COMMIT)b|c` on `"ac"` (libpcre2: no match; a compound `(1,2)`) cannot
+    reach A3 by an artifact: the compile refuses at parse. Its control is the refusal, and A3's
+    verb half is **UNREACHED** in the first build, declared (§E.4). The callout half is
+    UNREACHED too (module `callouts` is planned; `(?C` refuses "requires module 'callouts'"),
+    exercised by B2's unit drive (`tests/compound/compound_drive.c`), which runs
+    `pcrec_ast_crosses_attempts` over a node carrying a row with the column and one without.
+  - A verb producer, when one lands, stamps its node with a row that states the column per
+    name; no list in `derive.c`. A new row states the column and the predicate follows.
+- **Wording (alignment §14.3, a soft item for B4's lane).** The column's comment in
+  `internal.h` reads "the construct's effect spans attempts or observes their order". The
+  alignment note asks for "observes or changes the attempt sequence", with the callout rows
+  and the verb rows kept DISTINGUISHABLE (two groups) so a ruling on callouts can relabel
+  them without renaming the column. B4 rewords the comment and keeps the callout row's
+  `GROUP_XA` apart from the verb group's (comment and flag name only; no byte of any
+  artifact moves).
+- **The callout clause of A3 is conservative pending Q2** (D163 add. 6 Q2, agreed "for now"):
+  with the callout PURITY contract (a callout's return depends only on what `rx_ctx` carries
+  for that call; side effects see an unspecified fire sequence, PCRE2's own latitude under
+  start optimizations, D36) a callout is as safe for split as for every shipped start
+  optimization, and the decline can be lifted for callouts (alignment §10.5, unlock U4).
+  **The decline stays until module `callouts` builds** (population 0 either way, so nothing
+  moves at B4), at which point the contract is written into the callouts spec. Verbs genuinely
+  cross attempts and stay declined.
 - **`\K`** forces the VM, so the DFA-only build declines it (A4). The cache (§C) declines with
   `\K` or keys on the attempt start.
 
 ## C. The cross-call state hook (D163 item 1; built with [FINDALL-NEXT])
 
-Revision 1's §C stands, with three changes:
+Revision 1's §C stands, with four changes:
+
+- **The cache lives in an OWNED region** (D163 add. 5; alignment §9). With the one `rx_ctx`
+  session pointer of [FINDALL-NEXT]/[IFACE-PUSH] threaded through every call, a COMPOUND USED
+  AS A CALLOUT would receive the OUTER artifact's session, and its controller would read and
+  write its `state_words` cache inside a struct sized and owned by a different artifact: two
+  artifacts' caches in one struct, and a "Q result still valid" entry written for another
+  machine. That is an answer bug, not only a cost one. So the session has two halves: a
+  SHARED half (the meter of §A.9, caller counters) every callee in a chain reads and charges,
+  and an OWNED cache region tagged with its owner's identity (`&<p>_info`, the one
+  per-artifact address that already exists). A controller uses the cache only when the tag is
+  its own; a callee seeing a foreign tag runs stateless. Answers are history-independent
+  either way, so ignoring a cache is always sound. `state_words` live in the owned region.
+  Cost now: none (part of [IFACE-PUSH]'s `rx_ctx` event and of B8).
 
 - **`state_words` is a `CompRow` field now** (arch S7), 0 for split, so the struct exists before
   its first user.
@@ -752,10 +1069,10 @@ shipped captures default.
 
 **The row.**
 
-| part | role | derive | flags_set | flags_clear | engine | bound | need |
-|---|---|---|---|---|---|---|---|
-| N | `n` | none | `PCREC_NO_CAPTURES` | — | AUTO | `PB_NONE` | SEARCH, MATCH |
-| C | `c` | none | — | — | VM (as P) | `PB_NONE` | SEARCH, MATCH_CAPS |
+| part | role | derive | flags_set | flags_clear | engine | bound | need | groups |
+|---|---|---|---|---|---|---|---|---|
+| N | `n` | none | `PCREC_NO_CAPTURES` | — | AUTO | `PB_NONE` | SEARCH, MATCH | `CG_IDENTITY` (writes no slot: its path has `caps == NULL`) |
+| C | `c` | none | — | — | VM (as P) | `PB_NONE` | SEARCH, MATCH_CAPS | `CG_IDENTITY` |
 
 ```
 captures-on-demand = select-by-arg( caps == NULL ; N , C )
@@ -854,6 +1171,16 @@ the clean controller reads 0 differences on the same case-arms):
 Plant 2 fires on a DFA witness, so the "Q's reach" sabotage row is reachable in the first
 build; plant 1's witnesses are all VM, so its row is UNREACHED there (§E.4).
 
+**As built (B2, cpb02).** `pcrec_derive_split_q` is compared with `twin2.derive` by LANGUAGE
+on the twin's case list (cases2 plus the owed row): 103 compared, 1,149,584 cells, 0
+differences; two plants fire (killing `(?m)^` fails 2 cases, a kill that skips `\G` fails 29,
+G5's property). The two implementations DISAGREE on which patterns decline, and the
+disagreement is the as-built one being right (finding 2): the twin declined `^x|\n(?m)^b$`,
+`(?:(?m:^a)|^b)` and a `(?m)` pattern's `\A` as "nothing killed", while the AST derivation
+scopes `(?m)` per node, kills the `^x` (sound: the `(?m)` applies to the node it scopes) and
+derives. Revision 2's "6 declined with their reason" is therefore the TWIN's count, not the
+derivation's. §E.4's decline controls are re-aimed accordingly.
+
 Reproduction: `twin/CLAUDE.md` (one command per result file, including revision 1's
 `sizes.tsv` and `one_tu_probe.txt`, chk S11).
 
@@ -869,9 +1196,18 @@ Reproduction: `twin/CLAUDE.md` (one command per result file, including revision 
   `T_compound ≤ T_lever + calls` on the named shapes (internal run, trailing run, floor + end,
   floor-only, wrapper), and `T(4k) ≤ 4·T(k) + calls` (linearity by the ratio test; any k, 4k
   pair separates 4× from 16×; k = 1,000 and 4,000 keep the run under a minute). Both bounds
-  are derived from the measured excess (one seed byte per Q call), not chosen (chk S8). The
-  final-newline shapes use the bound B3's gate states (§B.5); they are RED until B3. G3's
-  attempt-count clause is dropped (chk M7): loads already show the wrapper's attempts.
+  are derived from the measured excess (one seed byte per Q call), not chosen (chk S8).
+  **The two final-newline cells** (`\s+$`, `\s*?$`; Q's rev-end double walk, 3.00× against the
+  lever in §B.5) **are gated at TODAY's rev-end cost** (D163 add. 4), not left RED: the bound is
+  `T_compound ≤ T_Qalone + calls`, where `T_Qalone` is the counted loads of Q's tree compiled
+  ALONE as a plain artifact (a rev-end artifact today) on the same subject, i.e. the compound
+  is no worse than the plain artifact's rev-end on it. G3 (promoting `cost2.py`) gains that
+  one arm. **B3's commit tightens these two cells** to its own bound (D164 add. 1 Q2: `\s+$`
+  and the lazy `\s*?$` read 1.00× against the lever through the static `mark_prio` fact; a
+  state-dependent shape 2.00×; the number is endmark.md's gate's, not this note's) and
+  re-pins them; that tightening is a NAMED OBLIGATION of B3's commit, and B3 is being built
+  now (D164 add. 5). G3's attempt-count clause is dropped (chk M7): loads already show the
+  wrapper's attempts.
 - **G4 export.** A compound's `nm -g` set equals the plain artifact's `nm -g` set for the same
   prefix (the expected set comes from the plain artifact, not from B0's closure, §H of the
   panel); no `<p>__*` symbol is global; no part `rx_info`; the `.h` equals the plain `.h` apart
@@ -887,12 +1223,10 @@ Reproduction: `twin/CLAUDE.md` (one command per result file, including revision 
   `wild-validator-email-owasp`, `winpath` near-miss; syntax `anc-a-uc`, `anc-caret`,
   `anc-g-uc`; utf8 `asr-a-z`, `cls-dot-rep`, `lit-anchored-run`: BOUND `bot`, A1 false) and the
   2 concat-sqli rows (S+F, A5 false).
-- **G7 export surface** (`tests/compound/run_symbol_allowlist.sh`, §A.11, new at B4): every
-  global of `build/libpcrec.a` outside `lib/pcrec.h`'s declarations is a row of
-  `symbol_allowlist.tsv` with a reason; stale rows and empty reasons fail; floors on both
-  populations; the planted-global control (CMP-17).
-- **The lever fence** (`tests/compound/run_lever_fence.sh`): the grep above, scope widened to
-  `tests/`, `scripts/`, `cli/`.
+- **G7 lever fence** (`tests/compound/run_lever_fence.sh`, §A.11, new at B4): exactly one
+  global of `build/libpcrec.a` begins with the lever's reserved prefix; no header under `lib/`
+  declares it; the widened grep; the three controls (a planted second global, a planted
+  `lib/` declaration, the lever removed); the floor on the one-global count (CMP-17).
 - **The lever arm** (§A.11): answer identity default vs lever over the whole corpus, the
   population floor, the "lever moves nothing else" byte check, made exact: `"forced-off"` iff
   the default build admitted a row (the stamp pair compared artifact by artifact, both
@@ -916,7 +1250,7 @@ allocation). Each row names its witness and its reach.
 | CMP-1 | Q from `from` (D163's literal text) | answer | `(?>^a\|ab)c` on `"abc"`. **UNREACHED in the first build**: atomic floor arms route the VM (A4). Declared, with the twin's plant 1 as its evidence |
 | CMP-2 | `<HAS_G>` emitted 0 on a `\G` pattern | answer | `\Ga$\|b$` at startpos > 0 (DFA, rev-end Q) |
 | CMP-3 | the kill skips `A_GSTART` | answer + G5 | `\Gab\|cd`: G+F, **UNREACHED until B5**; in the first build `\G\n\|b$` (G+E) |
-| CMP-4 | `split_admits` returns false | efficiency | G3 and the per-ID `"split"` population floor |
+| CMP-4 | a `CC_POST` conjunct of `split_conj[]` (A5) returns false | efficiency | G3 and the per-ID `"split"` population floor |
 | CMP-5 | padding loop dropped | answer | a pruned capture: VM, **UNREACHED until B6**, declared |
 | CMP-6 | a part entry left EXPORTED | linkage | G4 |
 | CMP-7 | `drop-compound` deleted | refusal set | a lowered-cap variant where the compound overflows and the plain fits |
@@ -924,17 +1258,38 @@ allocation). Each row names its witness and its reach.
 | CMP-9 | the prune drops a live `ALT` arm | answer | G2 on S+E rows |
 | CMP-10 | the kill also kills `(?m)^` | answer | `^x\|(?m:^y$)`, find-all |
 | CMP-11 | the prologue checks Q's reach | answer | `\A\s+\|\s+\z`, `-e utf8 -futf-check` (DFA P, rev-end Q): the twin's plant 2 fires on it (`\A` raises P's reach, Q has none); `^(?<=é)a\|b` is the VM witness for B6 |
-| CMP-12 | parts compiled with the guards on, prologue removed | answer | `a{0,4}\A`, utf8, `-futf-check`, from 1/2 (floor-only, DFA): the `-7`/`-9` refusals vanish |
+| CMP-12 | parts compiled with the guards on, prologue removed | answer + trap | `a{0,4}\A`, utf8, `-futf-check`, from 1/2 (floor-only, DFA): the `-7`/`-9` refusals vanish. **Second witness (§A.14 row 8):** with a part compiled guards-ON (the plant's first half) the part returns `-7`, and the controller's dead trap under the part call fires, a crash where `if (r != 0) return r` would have silently returned the refusal; the detector must show the trap is hit, not only that the answer moved |
 | CMP-13 | the align arm passes the raw `from` to F | answer | `(?>\Ga\|ab)c`: VM, **UNREACHED**; DFA witness `\Ga$\|b$` under `-fstartpos-guard=align` |
 | CMP-14 | the prune deletes a called group | answer / decline | `(?:^(a)\|b)(?1)`: VM; in the first build the decline reason (A2) is asserted instead |
-| CMP-15 | the lever stamps `"none"`, or stamps `"forced-off"` on a `pre_admits` pass that `drop-compound` or the caps would have rejected | lever fence | the lever arm's byte check, both directions; witness for the second plant: a lowered-cap variant where the compound overflows and the plain fits (CMP-7's) |
-| CMP-17 | a new unlisted global in the library (an undeclared export, e.g. the lever entry without its allowlist row) | export fence | `run_symbol_allowlist.sh` (§A.11); control: a planted undeclared global |
-| CMP-16 | `__` prefix refusal removed | refusal set | `-p a__f` on a compound |
+| CMP-15 | the lever stamps `"none"`, or stamps `"forced-off"` on a `CC_PRE` pass that `drop-compound` or the caps would have rejected | lever fence | the lever arm's byte check, both directions; witness for the second plant: a lowered-cap variant where the compound overflows and the plain fits (CMP-7's) |
+| CMP-17 | a second global under the lever's reserved prefix, or a `lib/` header declaring it (the lever reachable through a second name or the public header) | lever fence | `run_lever_fence.sh` checks (a) and (b) (§A.11); controls: a planted second global, a planted declaration, the lever removed |
+| CMP-16 | the namespace table's row 1 (`parts`) removed or its pattern weakened | refusal set | `-p a__f` on a compound; the table's row 3 (`harness-lever`) has its own witness, a refused `-p` starting with the reserved prefix |
+| CMP-18 (optional) | the call-site table emits a row the callee cannot return (row 3 for a DFA part) | overreach | a population-0 row: the emitted controller text has no give-up line on a DFA part (a text check, not an answer check) |
 
-Every decline control records and asserts its reason (chk M5): `^a(*COMMIT)b|c` (A3),
-`(?<=^a)b|c$` (A2, nothing killed), `^x|\n(?m)^b$` (A2), `(?<=\G)a|b$` (A2, unkillable `\G`),
-`^(\s*)\{|\}(\s*)$` (A4, VM), `^a$` (A1), concat-sqli (A5). A2's "nothing killed" is read by an
-independent walk of Q's tree, not by the derivation's own counter.
+Every decline control records and asserts its reason (chk M5), by the FIRST FAILING CONJUNCT'S
+ID (§A.1, §B.4: `A1`..`A5`). The list below is **re-aimed on the as-built derivation** (cpb02
+finding 2; §E.2): revision 2's list was the twin's, and the twin and `pcrec_derive_split_q`
+disagree about which patterns decline, the derivation being right. So **B4 derives its decline
+list by RUNNING the as-built derivation and admission over a candidate set and recording each
+candidate's first failing conjunct, never by importing the twin's list**; each control below is
+then a pattern whose recorded id it asserts.
+
+- `^a(*COMMIT)b|c` (A3): refused at parse, so the control is the refusal, and A3 is
+  UNREACHED by an artifact (§B.8); declared.
+- `(?<=^a)b|c$` (A2, nothing killed): to be RE-RUN on the derivation; expected to hold (a
+  lookbehind-held `^` is not killed).
+- `(?<=\G)a|b$` (A2, unkillable `\G`): to be re-run.
+- **WITHDRAWN: `^x|\n(?m)^b$` (A2).** The as-built derivation scopes `(?m)` per node, kills
+  `^x` and derives it; it does not decline at A2. The same holds for `(?:(?m:^a)|^b)` and for a
+  `(?m)` pattern's `\A`, which the twin declined and the derivation derives. They become
+  POSITIVE controls for the derivation (they derive, and a later conjunct decides), with the
+  language agreement of §E.2 as their answer check.
+- `^(\s*)\{|\}(\s*)$` (A4, VM).
+- `^a$` (A1).
+- concat-sqli (A5).
+
+A2's "nothing killed" is read by an independent walk of Q's tree (G5), not by the derivation's
+own counter.
 
 ### E.5 The re-pin and re-aim list: a grep by NAME (chk M6)
 
@@ -957,29 +1312,62 @@ grep -rln 'EMITTED_BYTES\|VARIANT_PINS\|762[0-9][0-9][0-9]' tests scripts
 grep -rln 'CENSUS_FILES\|C3_PASS' tests; ls tests/startset/manifests
 # fit_rungs[] readers (drop-compound)
 grep -rln 'fit_rungs\|run_fallback_table\|listing_declared' tests scripts docs/design/dec_fallback
+# readers of the prefix grammar (the namespace table's rows, §A.5) and the call-site rule (§A.14)
+grep -rn 'valid_prefix' src cli tests docs/spec
+grep -rn '__builtin_trap\|rx_matchfn' docs/spec src/gen tests
+# the bound's part-mode coupling (§A.5) and the attempt-scope column's wording (§B.8)
+grep -rn 'pcrec_part_one_attempt\|pcrec_is_part\|RF_CROSSES_ATTEMPTS' src
+# the lever's reserved prefix (§A.11): the fence's own population
+grep -rn 'pcrec_harness' src lib cli tests scripts Makefile
 # re-aims
 python3 scripts/sabotage_anchors.py --step <B4 commit>
 ```
 
 ## F. Build plan
 
+State at revision 2.2 (main `e1b73605e`): **B0-B2 are DONE** (lane `cpb02`, merged
+`2a54c3e71`, zero movers and no abi event at each step, no spec hunk; the report is
+`../dev/lanes/cpb02_report.md`). **B3 is D164's own build, not a compound step** (it is
+the match-end mark; it has its own design note, `endmark.md` rev 2, its own panel and gate,
+sabotage S881-S890, and D164 add. 5 rules its questions; it is being built now). **B4 no longer
+waits for B3** (D163 add. 4): G3's two final-newline cells are gated at today's rev-end cost
+and B3's commit tightens them (§E.3).
+
 | step | what | validation (positive control first) | movers / abi |
 |---|---|---|---|
-| **B0** | [EMIT-ENTRIES] internal: entry table, dependency edges, `pcrec_entry_linkage` at every definition/declaration site; the hybrid's `"static "` re-expressed through it | a unit check: an internal `{keep: search}` request compiles `-Werror` and leaves exactly the closure, the expected set from the plain artifact's `nm -g`; the hybrid's text byte-identical; emit_sweep 0 movers | zero movers; not abi |
-| **B1** | part mode and `CompPart` options (names, `__`, omitted blocks, `PB_ONE_ATTEMPT`, guards-off) | a unit drive: F and Q of 6 witnesses plus a hand controller compile in one TU `-Werror`, long-prefix 60 bytes, K79 invariance; emit_sweep 0 movers | zero movers; not abi |
-| **B2** | the derivation hook list and `src/opt/derive.c` (kill, prune, the group-keep rule, the registry attempt-scope column) | `derive` against `twin2.derive` on the twin's case list: two independent implementations, compared by language (the differential), not by text; G5's tree property | zero movers; not abi |
-| **B3** | the match-end mark (D164): END_MARK lowering of path-final lookaheads; rev-end walks once | its own panel and gate | its own abi event; movers = every `$`-pinned rev-end artifact |
-| **B4** | `src/core/compound.c`: `compound_rows[]` (split, pin-only), the combinators, the prologue, the assembly, `drop-compound`, the harness lever and `build/pcrec-harness` (with `tests/compound/run_symbol_allowlist.sh` + `symbol_allowlist.tsv`, born with the lever's entry, and `run_lever_fence.sh` at its widened scope), `<PREFIX>_COMPOUND` on every artifact, the stamp classification and sentinels, the `__` refusal; G1-G6, the lever arm, CMP rows. Spec: `match_api.md` §1¶2 (`__` reserved), §3¶1, §3.2 (`_match` on a compound), §6 route values `"compound"`, §6.3 the stamp, its three values and the sentinel table; `limits.md` (caps on the assembled text, `drop-compound`); `ir_listing.md`/`facts_listing.md` (the compound listing); `cli.md` (the `__` refusal) | **the abi event**: every artifact by one stamp line; the ~30 admitted by ID; bench 0 (G6) |
+| **B0** DONE | [EMIT-ENTRIES] internal (`src/gen/entries.c`): entry table, per-shape edges, closure, `pcrec_entry_linkage` at every definition/declaration site; the hybrid's `"static "` is its closure answer; the request is the driver-tier `PcrecEmitIn` | `check_entries.py`: every 8th distinct corpus pattern x 3 arms x 3 requests, `-Werror` + `nm` against the plain artifact's `nm -g`: 4,854 cells, 0 failures (full corpus once, 37,596, 0); both failing directions seen live; emit_sweep 0 movers | zero movers; not abi |
+| **B1** DONE | part mode and `CompPart` (`src/core/compound.c`: names `__<role>`, omitted shared blocks, `PB_ONE_ATTEMPT` on BOUND's `attempt-gstart`, guards-off, K79 per part, the table-build self-check) | a unit drive: 6 witnesses x 5 arms x 2 prefixes (one of 60 bytes) in one TU `-Werror` with a hand controller, run against the plain artifact: 438,462 cells, 0 diffs; the no-prologue plant fails 12 answer cases + 12 builds; emit_sweep 0 movers | zero movers; not abi |
+| **B2** DONE | the tree-hook list in `compile_driver` and `src/opt/derive.c` (`pcrec_derive_split_q`: kill, prune, group-keep, G5's independent walk, `PcrecDeriveReport`); `RF_CROSSES_ATTEMPTS` on the callout row + `pcrec_ast_crosses_attempts` | against `twin2.derive` by language: 103 compared, 1,149,584 cells, 0 diffs; plants (kill `(?m)^`: 2 fail; kill skips `\G`: 29 fail); emit_sweep 0 movers | zero movers; not abi |
+| B3 (D164's) | the match-end mark: END_MARK lowering of path-final lookaheads; rev-end walks once (`endmark.md` rev 2; `-fno-rev-end-onewalk` is bit 56) | its own panel and gate; **tightens G3's two final-newline cells and re-pins them** | its own abi event; movers = every `$`-pinned rev-end artifact |
+| **B4** | `src/core/compound.c`: `compound_rows[]` (split, pin-only) with `CompPart.groups` and the LISTED conjuncts `split_conj[]` (§A.1, §B.4), `compound_place[]` (§A.2), the combinators, the prologue, the call-site code table (§A.14) with the dead trap under each part call, the assembly, `drop-compound`, the namespace reservation table with rows 1 and 3 (§A.5), the harness lever and `build/pcrec-harness` with the reserved-prefix fence (`run_lever_fence.sh`, §A.11), `<PREFIX>_COMPOUND` on every artifact, the stamp classification and sentinels; `PB_ONE_ATTEMPT` as a general emission option and the `RF_CROSSES_ATTEMPTS` wording (soft items); G1-G7, the lever arm, CMP rows. Spec: **`match_api.md` §4¶10 becomes the call-site code table (first producer)**, §1¶2 (`__` reserved), §3¶1, §3.2 (`_match` on a compound), §6 route values `"compound"`, §6.3 the stamp, its three values and the sentinel table; `limits.md` (caps on the assembled text, `drop-compound`); `ir_listing.md`/`facts_listing.md` (the compound listing, each conjunct's verdict); `cli.md` (the namespace table beside `-p`'s grammar) | **the abi event**: every artifact by one stamp line; the ~30 admitted by ID; bench 0 (G6) |
 | **B5** | S+F/G+F: A5 widened to an unanchored Q under the cost conjunct (§B.7) | its trigger first; then G2/G3 on the new population with matching cells (chk B1's) | the admitted by ID; not abi |
-| **B6** | VM parts: budgets, caller buffers, the DEFINE-style group keep | the give-up differential | the admitted by ID |
+| **B6** | VM parts: the one meter (§A.9), caller buffers with the frame-unit spec hunk, the DEFINE-style group keep, call-site rows 3, 4, 7 | the give-up differential | the admitted by ID |
 | **B7** | captures on demand (§D.1) | its trigger; the N-vs-C span gate | the admitted by ID |
-| **B8** | §C's hook with [FINDALL-NEXT] at [IFACE-PUSH] | that push's | that push's |
+| **B8** | §C's hook (owner-tagged region) with [FINDALL-NEXT] at [IFACE-PUSH] | that push's | that push's |
 
-B0-B2 are one lane's no-mover train. B4 waits for B3 so G3 lands green.
+### F.1 What the B4 brief states (decided here, so the brief does not re-open them)
+
+- **The lever's fence is a reserved unique prefix plus ONE global check plus the widened grep**
+  (§A.11), not the per-symbol allowlist. The manager's lean, with its reason: the
+  allowlist's ~560 rows churn with every internal refactor and say nothing about the lever.
+  The full export-surface check stays a separate optional row for [EMIT-ENTRIES]' public
+  request (U3).
+- **ONE call-site code table**, B4 emitting rows 1, 2 and 8 (§A.14); the `match_api.md` §4¶10
+  hunk is in B4's commit; `PCREC_ERR_INTERNAL` propagates.
+- **`CompPart.groups`** and the slot-coverage check land in B4's first commit, ahead of any
+  controller row.
+- **Admission and placement are tables with listed conjuncts** (§A.1, §A.2, §B.4); the
+  decline controls are DERIVED by running the as-built derivation (§E.4).
+- **Two soft items land in B4's lane**: `PB_ONE_ATTEMPT` as a general emission option (§A.5)
+  and the `RF_CROSSES_ATTEMPTS` wording (§B.8).
+- **Cosmetic, B4 decides**: F's emitted bound comment (§B.1).
+- **Gates**: G3's two final-newline cells at today's rev-end cost (§E.3), tightened by B3.
 
 ## G. Open questions (discussion: problem, forces, leaning)
 
-Only what D163 addendum 2 left open.
+Only what D163 addendum 2 left open. The alignment note's three questions are RULED (D163
+add. 6: one meter per exported call, callout purity "for now", `INTERNAL` propagates) and are
+folded into §A.9, §B.8 and §A.14; they are not repeated here.
 
 **Q1. `--fast-or-fail` when a compound overflows a cap.**
 *Problem:* `drop-compound` ships the plain artifact, which is slower than the compound the
@@ -996,17 +1384,21 @@ which rung it is; record the population (expected 0) at B4.
 one translation unit. *Forces:* the collision needs two artifacts in one TU with prefixes `a`
 and `a__f` (it is a compile error, not a silent one); the refusal is a caller-observable change
 with population 0 in the tree. Any other naming scheme collides with some legal prefix.
-*Leaning:* refuse `__` in a user prefix at B4, with the spec hunk.
+*Leaning:* refuse `__` in a user prefix at B4, with the spec hunk, as ROW 1 of the namespace
+reservation table (§A.5), not a standalone check.
 
-**Q3. VM parts: the compound may answer where today gives up.**
-*Problem:* with VM parts (B6) a compound can return an answer where the plain artifact gives
-up (a fresh budget per part; Q has fewer arms), so the lever arm of test-axes would see cells
-where the default answers and the lever gives up. *Forces:* D158 forbids an optimization that
-turns an answer into a give-up; this is the other direction, which no ruling forbids, but
-test-axes' GIVEUP1 allowances exist for exactly that shape and would need rows derived from
-stamps. *Leaning:* accept it; require 0 cells in the forbidden direction (the give-up
-differential); derive the lever arm's GIVEUP1 allowance rows from the compound stamp, never by
-hand. Not needed before B6.
+**Q3. VM parts: the compound may answer where today gives up, and under ONE meter the reverse
+is possible.**
+*Problem:* with VM parts (B6) and the ruled one meter per exported call (§A.9), a compound
+charges the same meter as the plain artifact, so "fresh budget per part" no longer makes it
+answer more often; but Q has fewer arms (it can answer where P gives up) and the bounded F
+may cost a step more at the floor (P can answer where the compound gives up). The lever arm of
+test-axes will see both directions. *Forces:* D158 forbids an optimization that turns an
+answer into a give-up, and that is exactly the second direction; the first direction no
+ruling forbids, but test-axes' GIVEUP1 allowances exist for that shape and would need rows
+derived from stamps. *Leaning:* accept the first direction; require 0 cells in the
+forbidden direction (the give-up differential, §E.3); derive the lever arm's GIVEUP1 allowance
+rows from the compound stamp, never by hand. Not needed before B6.
 
 ## H. Unlocks (each with its trigger)
 
@@ -1023,6 +1415,12 @@ hand. Not needed before B6.
   whose linked size pushes it to `drop-compound` (D77).
 - **U7: nested compounds** (split whose parts are captures-on-demand compounds). Trigger: a
   capture-bearing pin-only pattern in a bench cell.
+- **The alignment note's unlocks** (`compound_callout_alignment.md` §13, named A-U1..A-U6 here
+  so they do not collide with this list's numbers) are the same family and keep their own
+  triggers: A-U1 one-attempt `_match` on EVERY attempt route (the general form of §A.5's soft
+  item), A-U2 validate-once across a call chain, A-U3 callout bindings resolved at compile
+  time as parts, A-U4 lifting A3 for callouts (§B.8), A-U5 slot seeding from `ctx->caps`, A-U6
+  the combinator type check admitting external callees (§A.2).
 
 ## I. The three standing questions (`docs/design/CLAUDE.md`)
 
@@ -1055,7 +1453,32 @@ hand. Not needed before B6.
    pruned arms are dead past the floor in P as well, so the targets agree there. Twin:
    `^x|a(?R)?b`, 0 differences.
 4. **J-4. Pin-only matching subjects cost today + one load per Q call**, except the
-   final-newline two-seed walk (3.00×, two shapes, B3's).
+   final-newline two-seed walk (3.00× against the lever, two shapes), which is Q's own rev-end
+   cost: gated at today's rev-end cost by G3 and tightened by B3's commit (§E.3).
 5. **J-5. The first build's bench reach is 0**, so G6 is a whole-bench byte check, with 16
    single-class floor rows and 2 concat-sqli rows as the named at-risk subset.
 6. **J-6. A user prefix containing `__` can collide with a part name inside one TU** (§G Q2).
+7. **J-7. Revision 2's controller contradicted `match_api.md` §4¶10** (found by the alignment
+   note, §5.1): `if (r != 0) return r;` returns `STARTPOS` and `INTERNAL` where §4¶10 traps. B4's
+   controller is the first generated call site of a composed submatcher, so the obligation binds
+   it now. Fixed by §A.14's one table (B4 emits rows 1, 2, 8) and the §4¶10 hunk in B4's commit.
+8. **J-8. A `rev-end` tie makes `<p>_search` call `<p>_match`** (cpb02 finding 1), and Q is
+   `rev-end` by A5. `<p>__q_match` is therefore KEPT STATIC, not omitted, when Q's tie finish is
+   built (§A.4). The closure must read each part's shape edges from the entry table; a hand
+   list for split would have missed it, as the B0 check did on its first run.
+9. **J-9. The twin's decline list is not the derivation's** (cpb02 finding 2): the as-built
+   per-node `(?m)` scoping derives three shapes the twin declined, and revision 2's `^x|\n(?m)^b$`
+   decline control is wrong. B4 derives its decline list by running the derivation (§E.4).
+10. **J-10. The attempt-scope column has one member today** (cpb02 finding 4): the callout row.
+    The verbs are refused at parse, so A3's verb half and the `^a(*COMMIT)b|c` witness are
+    UNREACHED by an artifact (§B.8).
+11. **J-11. `PB_ONE_ATTEMPT` is part-mode-coupled as built** (`pcrec_part_one_attempt` tests
+    `pcrec_is_part`), which the alignment note's soft item asks to be a general emission
+    option. B4's lane moves it to the emission request, with part mode its first reader (§A.5).
+12. **J-12. "Bit 55 stays free" is stale** (D164 add. 5): bit 55 went to the kit's
+    `-fno-kit-size-drop` and bit 56 to B3. The compound takes no bit and reserves none, so the
+    design is unchanged; the sentence is corrected in §0 and §A.11.
+13. **J-13. The controller's pad runs on success only** (§B.2). Revision 2's sketch padded
+    unconditionally; delivery on success (alignment §6.3 point 3, `match_api.md` §3.1¶4: a
+    failing call leaves caps untouched) makes the on-success form the rule. A clarification of
+    the sketch, with no effect in the DFA-only build (`ncaps == 1`), stated for B6.
