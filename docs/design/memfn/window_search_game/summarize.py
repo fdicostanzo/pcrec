@@ -9,7 +9,7 @@ D = sys.argv[1]
 
 
 def rows(f):
-    return list(csv.DictReader(open("%s/%s" % (D, f)), delimiter="\t"))
+    return list(csv.DictReader(open("%s/%s" % (D, f)), delimiter="\t", quoting=csv.QUOTE_NONE))
 
 
 SPANS, INFO, CH, SIM, SF = (rows(f) for f in

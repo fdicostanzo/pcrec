@@ -120,10 +120,9 @@ def pcre_to_py(pat):
     s = re.sub(r"\\o\{([0-7]+)\}",
                lambda mo: _hexesc(int(mo.group(1), 8)) or "\x00BAD", s)
     s = re.sub(r"\\c(.)", lambda mo: "\\x%02x" % (ord(mo.group(1).upper()) ^ 0x40), s)
-    s = s.replace("\\h", "[\\t \\xa0]").replace("\\H", "[^\\t \\xa0]")
-    s = s.replace("\\N", "[^\\n]").replace("\\C", "[\\x00-\\xff]")
-    s = s.replace("\\R", "(?:\\r\\n|[\\n\\x0b\\x0c\\r\\x85])")
-    s = s.replace("\\e", "\\x1b")
+    if re.search(r"\(\*(UCP|UTF|UTF8)\)", s):
+        raise ValueError("ucp/utf verb (not modelled)")
+    s = class_aware_escapes(s)
     if "\\K" in s:
         notes.add("kreset")
         s = s.replace("\\K", "")
@@ -134,6 +133,67 @@ def pcre_to_py(pat):
     if "\x00BAD" in s or re.search(r"\\[pPX]", s):
         raise ValueError("unicode-escape")
     return s, notes
+
+
+# PCRE escapes Python spells differently, by context (inside a [...] class
+# the replacement must not open a nested class).
+_ESC_OUT = {"h": r"[\t \xa0]", "H": r"[^\t \xa0]", "v": r"[\n\x0b\x0c\r\x85]",
+            "V": r"[^\n\x0b\x0c\r\x85]", "N": r"[^\n]", "C": r"[\x00-\xff]",
+            "R": r"(?:\r\n|[\n\x0b\x0c\r\x85])", "e": r"\x1b"}
+_ESC_IN = {"h": r"\t \xa0", "v": r"\n\x0b\x0c\r\x85", "e": r"\x1b"}
+_POSIX = {"alpha": "a-zA-Z", "digit": "0-9", "alnum": "a-zA-Z0-9", "upper": "A-Z",
+          "lower": "a-z", "space": r"\t\n\x0b\x0c\r ", "blank": r" \t",
+          "xdigit": "0-9A-Fa-f", "word": r"\w", "cntrl": r"\x00-\x1f\x7f",
+          "print": r"\x20-\x7e", "graph": r"\x21-\x7e",
+          "punct": r"!-/:-@\[-`{-~", "ascii": r"\x00-\x7f"}
+
+
+def class_aware_escapes(s):
+    out = []
+    i, n = 0, len(s)
+    in_cls = False
+    while i < n:
+        c = s[i]
+        if c == "\\" and i + 1 < n:
+            d = s[i + 1]
+            tab = _ESC_IN if in_cls else _ESC_OUT
+            if d in tab:
+                out.append(tab[d])
+            elif in_cls and d in "HVNCR":
+                raise ValueError("negated/structural escape in class")
+            else:
+                out.append(s[i:i + 2])
+            i += 2
+            continue
+        if in_cls:
+            if c == "[" and s.startswith("[:", i):
+                j = s.find(":]", i + 2)
+                name = s[i + 2:j] if j > 0 else ""
+                if name not in _POSIX:
+                    raise ValueError("posix class %r" % name)
+                out.append(_POSIX[name])
+                i = j + 2
+                continue
+            if c == "]" and not (out and out[-1] in ("[", "[^")):
+                in_cls = False
+            out.append(c)
+            i += 1
+            continue
+        if c == "[":
+            in_cls = True
+            if s.startswith("[^", i):
+                out.append("[^")
+                i += 2
+            else:
+                out.append("[")
+                i += 1
+            if i < n and s[i] == "]":
+                out.append("\\]")
+                i += 1
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
 
 
 # ---- flattening -----------------------------------------------------------

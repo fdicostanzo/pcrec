@@ -4,9 +4,9 @@
 | set | patterns | unparsed | anchored ^ | no span | no bounded span | bounded inner span | inner ov>0 | >=2 bounded spans | has unbounded span | rarest POSITION is in an unbounded span | rarest SPAN (joint) is unbounded |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | capability | 71 | 1 | 19 | 2 | 2 | 5 | 5 | 2 | 19 | 11 | 12 |
-| loglines | 11 | 0 | 0 | 3 | 0 | 2 | 2 | 2 | 1 | 0 | 0 |
-| syntax | 95 | 12 | 3 | 79 | 1 | 0 | 0 | 0 | 1 | 1 | 1 |
-| corpus | 150 | 19 | 21 | 110 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| loglines | 11 | 0 | 0 | 0 | 0 | 4 | 4 | 4 | 3 | 2 | 1 |
+| syntax | 95 | 12 | 3 | 0 | 2 | 6 | 6 | 4 | 20 | 12 | 13 |
+| corpus | 150 | 19 | 21 | 19 | 9 | 16 | 16 | 8 | 25 | 15 | 14 |
 
 ### A2. Loss notes (patterns carrying each)
 
