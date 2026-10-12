@@ -4,8 +4,8 @@ Lane `wingame`, 2026-10-11, from main `aa2ddb1d` (abi 75). This is a design stud
 Nothing under `src/`, `memfn/` or `tests/` changes. Every number here is a COUNT
 over subject bytes, and nothing reads a clock. The instruments are in
 `window_search_game/` (see its CLAUDE.md). The population tables live in
-`window_search_game/data/summary.md`, written by `chain.sh` (§4.2 says which
-numbers were taken before the box hold lifted and which come after).
+`window_search_game/data/summary.md`, written by `chain.sh` and committed with
+its TSVs.
 
 Frank asked (D161, 2026-10-11):
 
@@ -29,7 +29,8 @@ Frank asked (D161, 2026-10-11):
   byte of doing no window search at all. The last one is what any "is this span
   worth using" decline needs. It also needs (b) a MINIMUM offset beside each
   maximum, because pcrec's req facts carry maxima only, so an overshoot cannot be
-  derived from them today.
+  derived from them today. On the population, the consumer decides WHETHER to search
+  far more often than WHICH span (18 decline flips against 1-3 span flips, §5.4).
 - **The survivor rate is where the frequency table fails.** Under independence it
   under-predicts the survivors of a multi-position span by 21x to about 1,700x on
   the bench subjects (§5.3), and survivors are exactly what the window cost
@@ -153,41 +154,43 @@ choices depend on them.
 
 ## 4. Results
 
-### 4.1 Hand-picked cells (taken during the box hold: 8 single compiles)
+### 4.1 Hand-picked cells
 
 These are the bench patterns where a span choice exists, simulated on the bench's
-own 256 KiB throughput subjects (sha256-checked against the bench manifests).
-The columns are stops, survivors, window bytes (`move_back + len` per survivor)
-and possible starts (`overshoot + 1` per survivor). `work` applies §3's illustrative
-consumer coefficients to the MEASURED counts.
+own 256 KiB throughput subjects (sha256-checked against the bench manifests). They
+were first run during the box hold (8 single compiles); the numbers below are the
+population run's (`data/spanforms.tsv`, same counts). The columns are stops,
+survivors, window bytes (`move_back + len` per survivor) and possible starts
+(`overshoot + 1` per survivor). `work` applies §3's illustrative prices, in units of
+one DFA step, to the MEASURED counts. "No window search" is the consumer meeting
+every byte: 0.26 M (dfa) and 15.7 M (vm) on every 256 KiB subject.
 
 | pattern (subject) | span | mb / ov | stops | survivors | window bytes | starts | work dfa | work vm |
 |---|---|---|---|---|---|---|---|---|
-| `wild-logparse-syslogbase-expanded` (capability) | `[16]` prefix | 0 / 0 | 58,874 | 58,874 | 58,874 | 58,874 | 2.40 M | **7.05 M** |
-| | `\x20` inner | 9 / 7 | 30,634 | 30,634 | 306,336 | 245,072 | 1.24 M | 16.25 M |
+| `wild-logparse-syslogbase-expanded` (capability) | `[16]` prefix | 0 / 0 | 58,874 | 58,874 | 58,874 | 58,874 | 2.01 M | **6.66 M** |
+| | `\x20` inner | 9 / 7 | 30,634 | 30,634 | 306,336 | 245,072 | 1.23 M | 16.24 M |
 | | no window search | | | | | | **0.26 M** | 15.7 M |
-| `level-context` (loglines hit) | `[EFC][RAR][RTI][OAT]` prefix | 0 / 0 | 1,209 | 96 | 384 | 96 | 0.40 M | 0.41 M |
-| | `timeout…` hull, inner | 205 / 201 | 23,385 | 48 | 10,128 | 9,696 | 1.11 M | 1.68 M |
-| `ipv4` (loglines hit) | `\d\.` #0 | 2 / 2 | 5,863 | 4,050 | 16,200 | 12,150 | 0.37 M | 1.16 M |
-| | `\d\.` #1 | 6 / 4 | 5,863 | 4,050 | 32,400 | 20,250 | 0.39 M | 1.65 M |
-| | `\d\.` #2 | 10 / 6 | 5,863 | 4,050 | 48,597 | 28,350 | 0.40 M | 2.14 M |
-| `http-5xx` (loglines hit) | `"[GPD..][EOUA..][TSA..]` prefix | 0 / 0 | 2,168 | 144 | 576 | 144 | 0.27 M | 0.28 M |
-| | `\x20[^ "]` inner | 7 / 3 | 25,455 | 23,203 | 208,827 | 92,812 | 0.99 M | 6.81 M |
-| `kv-quoted` (loglines hit) | `[a-z_]` prefix | 0 / 0 | 122,979 | 122,979 | 122,979 | 122,979 | 3.88 M | 13.6 M |
-| | `="` inner | 32 / 31 | 2,279 | 96 | 3,264 | 3,072 | 0.27 M | 0.45 M |
-| `qnt-quest` (syntax) | `colo` prefix | 0 / 0 | 8,221 | 565 | 2,260 | 565 | 0.29 M | 0.34 M |
-| | `r` inner | 5 / 1 | 14,150 | 14,150 | 84,900 | 28,300 | 0.66 M | 2.55 M |
+| `level-context` (loglines hit) | `[EFC][RAR][RTI][OAT]` prefix | 0 / 0 | 1,209 | 96 | 384 | 96 | 0.03 M | 0.04 M |
+| | `timeout…` hull, inner | 205 / 201 | 23,385 | 48 | 10,128 | 9,696 | 0.43 M | 1.00 M |
+| `ipv4` (loglines hit) | `\d\.` #0 | 2 / 2 | 5,863 | 4,050 | 16,200 | 12,150 | 0.16 M | 0.96 M |
+| | `\d\.` #1 | 6 / 4 | 5,863 | 4,050 | 32,400 | 20,250 | 0.18 M | 1.44 M |
+| | `\d\.` #2 | 10 / 6 | 5,863 | 4,050 | 48,597 | 28,350 | 0.20 M | 1.93 M |
+| `http-5xx` (loglines hit) | `"[GPD..][EOUA..][TSA..]` prefix | 0 / 0 | 2,168 | 144 | 576 | 144 | 0.03 M | 0.04 M |
+| | `\x20[^ "]` inner | 7 / 3 | 25,455 | 23,203 | 208,827 | 92,812 | 0.94 M | 6.76 M |
+| `kv-quoted` (loglines hit) | `[a-z_]` prefix | 0 / 0 | 122,979 | 122,979 | 122,979 | 122,979 | 4.00 M | 13.7 M |
+| | `="` inner | 32 / 31 | 2,279 | 96 | 3,264 | 3,072 | 0.04 M | 0.22 M |
+| `qnt-quest` (syntax) | `colo` prefix | 0 / 0 | 8,221 | 565 | 2,260 | 565 | 0.10 M | 0.15 M |
+| | `r` inner | 5 / 1 | 14,150 | 14,150 | 84,900 | 28,300 | 0.52 M | 2.41 M |
 
-What the policies chose (`build/wg/mini/out/choices.tsv`, reproduced by the
-chain into `data/choices.tsv`):
+What the policies chose (`data/choices.tsv`):
 - **syslogbase**: P1-P4 pick the inner `\x20` (rarer by the table: 0.125 against
-  0.276). P5-dfa DECLINES (neither span beats stepping every byte). P5-vm picks the
-  prefix, which is also pcrec's shipped choice (`first-class-bounded`, a VM hybrid).
-  Under the VM consumer, the consumer-blind pick costs 2.3x the shipped one.
+  0.276). P5-dfa DECLINES (stepping every byte, 0.26 M, beats both spans). P5-vm picks
+  the prefix, which is also pcrec's shipped choice (`first-class-bounded`, a VM
+  hybrid). Under the VM consumer, the consumer-blind pick costs 2.4x the shipped one.
 - **kv-quoted**: every policy picks the inner `="`, and so does pcrec's shipped
-  handoff (K = 32). The default table anchors on `=` (2,279 stops), while the
-  subject's own rates anchor on `"` (346 stops in the fail subject, 2,168 in the hit
-  subject). The handoff anchors on `"` as well, through its req pick.
+  handoff (K = 32). D161's span is exactly what pcrec already searches here. The
+  default table anchors a one-position scan on `=` (2,279 stops), while the subject's
+  own rates anchor on `"` (346 stops in the fail subject, 2,168 in the hit subject).
 - **ipv4**: the three `\d\.` spans have IDENTICAL stops and survivors, because a stop
   is the same `.` whichever octet the kit says it is. Only move-back and overshoot
   separate them. The tie-break on move-back is right, but only because it happens
@@ -195,23 +198,34 @@ chain into `data/choices.tsv`):
 - **http-5xx**: the inner span's verify is weak (91 % of stops survive), so its window
   cost dominates: 209 K window bytes against 576.
 
-### 4.2 Population (after the hold)
+### 4.2 Population
 
-`chain.sh` builds this worktree's `pcrec` and runs `run_game.py` over 327 patterns.
-That is 177 bench (capability, loglines, syntax) plus 150 corpus, the corpus sample
-simulated on capability's `t-256k`. Its output, `data/summary.md`, carries:
-- §A, the census above recomputed with the k-set control;
-- §B, how often each policy picks the same span as P1, the declines, and inner-span picks;
-- §B2, P4 against P5-dfa against P5-vm span flips, with every flipping pattern listed;
-- §C, the summed counts per set and subject for every policy and for SHIPPED;
-- §D, span-vs-span argmin flips: prior against measured stops, scan-only against
-  dfa-priced against vm-priced, and the measured-to-predicted survivor
-  distribution;
-- §D2, every pair of spans whose stops are within 2x but whose windows differ by
-  >= 3x or by >= 4 in overshoot.
+`chain.sh` built this worktree's `pcrec` and ran `run_game.py` over 327 patterns:
+177 bench (capability, loglines, syntax) plus 150 corpus, the corpus sample simulated
+on capability's `t-256k`. The whole run took about 30 s. `data/summary.md` is its
+output.
 
-**Status: see `../../dev/lanes/wingame_report.md`** for whether the chain had run
-when this lane ended. If it is OWED, the report names the log and the completion line.
+- **§A**: the census reproduces §2.1's parse-only table. The k-set control reads
+  **582 of 582** fixed-prefix positions agreeing over 166 patterns. Its first run
+  found three extractor defects (POSIX classes, `\v`, and `(*UCP)`'s wider byte
+  classes), all fixed before these numbers; `(*UCP)` patterns are now declined as
+  unparsed.
+- **§B**: P1, P2 and P3 pick the same span on every one of the 249 unanchored
+  patterns with a bounded span. Only the priced policies differ, and they differ
+  mostly on WHETHER to search. P5-dfa declines 41 times and P5-vm 23. P4 declines 25
+  times on its own kit-only threshold.
+- **§B2**: 19 patterns differ between P5-dfa and P5-vm. In 18 of them the difference
+  is the decline. In one, `corpus/c134`, it is the span (below).
+- **§D**: there are 22 pattern x subject cells with two or more bounded spans. On 3
+  of them the span argmin flips between the DFA price and the VM price:
+  `wild-logparse-syslogbase-expanded`, and the corpus test patterns
+  `((a)|b){1,3}?c` and `[a-]{1,3}?(?:\B|)a`. Ranking by the table's predicted stops
+  and ranking by measured stops disagree on 1 cell.
+- **The survivor-ratio line**: measured/predicted survivors over 329 forms are p10
+  0.14, p50 1.6, p90 240, max 469 (+1-smoothed, so the large ratios read low).
+- **§C**: summed counts per set and subject, with SHIPPED beside every policy. The
+  work columns depend on §3's unmeasured prices, so §C is evidence of which COUNTS
+  move and not of a winner.
 
 ## 5. Frank's concern: weighing one span against another
 
@@ -234,11 +248,11 @@ The consumer's shape decides the ranking:
   costs it 8x the attempts.
 
 On `wild-logparse-syslogbase-expanded`, scan-only ranks `\x20` (inner, 9/7) first:
-30,634 stops against 58,874. The DFA price agrees (1.24 M against 2.40 M). The
-VM price reverses it (16.25 M against 7.05 M). pcrec's shipped artifact is a VM
-hybrid, and it chose the prefix. A kit that knew only overshoot could not have
-told these two consumers apart: it would need to know that the consumer is a
-backtracker and what an attempt costs relative to a scanned byte.
+30,634 stops against 58,874. The DFA price agrees (1.23 M against 2.01 M). The VM
+price reverses it (16.24 M against 6.66 M). pcrec's shipped artifact is a VM hybrid,
+and it chose the prefix. A kit that knew only overshoot could not have told these
+two consumers apart: it would need to know that the consumer is a backtracker and
+what an attempt costs relative to a scanned byte.
 
 ### 5.2 Similar stops, very different windows
 
@@ -247,11 +261,12 @@ backtracker and what an attempt costs relative to a scanned byte.
   move-back and overshoot separate them completely.
 - **`level-context`**: the inner `timeout|refused|…` hull SURVIVES LESS often than the
   prefix (48 against 96 on the hit subject). A survival-only ranking would prefer it,
-  and its window is 211 bytes with 202 possible starts. Priced, it costs 2.8x (dfa)
-  or 4.1x (vm) the prefix.
+  and its window is 211 bytes with 202 possible starts. It loses here on stops anyway.
 - **`qnt-quest`**: `colo` (8,221 stops) against `r` at 5/1 (14,150 stops). These are
-  close on scan cost (0.279 M against 0.290 M). Priced, the gap is 2.3x (dfa), because
-  every `r` survives and opens a 5-byte window.
+  close on scan cost (0.09 M against 0.15 M). Priced, the gap is 5x (dfa) and 16x
+  (vm), because every `r` survives and opens a 5-byte window.
+- **`[a-]{1,3}?(?:\B|)a`** (corpus): 10,323 against 9,607 stops. The DFA price ties
+  them (0.336 M against 0.335 M), and the VM price separates them 1.9x.
 
 So two spans with similar stop rates do differ hugely in window width, and also in
 how often a stop survives (`http-5xx` 91 % against 7 %; `ipv4`'s last span 100 %).
@@ -275,23 +290,32 @@ under independence is off by:
 Real text is made of words and real partial matches, and the hit subjects' survivors
 are mostly true matches (`qnt-quest`'s 565 survivors are its 565 matches). This is
 `reqpos_2b.md`'s finding again (run density is joint, the table is marginal, 5x to
-3,257x), now on the term that decides span-vs-span. The population figure is
-`data/summary.md` §D's survivor-ratio line.
+3,257x), now on the term that decides span-vs-span. Over the population's 329
+simulated forms the measured/predicted survivor ratio is p50 1.6 and p90 240
+(`data/summary.md` §D). The median form is a one-position or broad-class span the
+table prices well; the tail is every literal-ish multi-position span.
 
 ### 5.4 Does the choice flip once the beginning-search cost is included?
 
-Yes, on these cells, and in both directions:
-- **scan-only to priced**: `level-context`'s and `http-5xx`'s inner spans lose
-  outright once priced. They were already worse on stops, but the gap grows 3-25x.
-  `qnt-quest`'s near-tie becomes 2.3x.
-- **DFA-priced to VM-priced**: syslogbase, as above.
-- **Decline**: whether to search at all also flips with the consumer. On
-  syslogbase the DFA consumer is better off with no window search (0.26 M), while the
-  VM consumer must search (15.7 M without one). D161 makes "when a span is worth
+Yes, and the population says where:
+- **Which span**: 3 of the 22 multi-span cells flip between the DFA price and the VM
+  price (syslogbase and two corpus test patterns). On the others the stop counts
+  already separate the spans by more than the window prices do. Span-vs-span is a
+  real but RARE decision, mostly because two bounded spans are rare (18 of 327
+  patterns).
+- **Whether to search at all**: this is the consumer-dependent decision that
+  happens most often. P5-dfa and P5-vm disagree on 19 patterns, 18 of them on the
+  decline. syslogbase is the clean case: the DFA consumer is better off with no
+  window search (0.26 M against 1.23 M for the best span), while the VM consumer must
+  search (15.7 M without one, against 6.66 M). D161 makes "when a span is worth
   using" the kit's call, but that call is a comparison against the consumer's
   no-search cost, which the kit is not given.
+- **The size of a loss when the kit guesses wrong**: 2.4x on syslogbase (VM), and 5x
+  (dfa) to 16x (vm) on `qnt-quest`'s near-tie, on the illustrative prices.
 
-The population frequency of each flip is `data/summary.md` §B2/§D.
+The decline counts depend on §3's unmeasured prices. What does not depend on them
+is the shape: the same pattern declines under one consumer and searches under the
+other.
 
 ### 5.5 What the contract needs, as facts
 

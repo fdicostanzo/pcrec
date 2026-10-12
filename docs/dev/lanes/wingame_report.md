@@ -15,45 +15,35 @@ written. Design study: nothing under `src/`, `memfn/` or `tests/` is touched. CO
   with their own CLAUDE.md).
 - `docs/design/memfn/CLAUDE.md`: an entry for the note.
 
-## What was run, and under which constraint
+## What was run
 
-The box was under HOLD (twintime's timing slot) for the whole lane. Within the
-hold's "a handful of single compiles":
-- a parse-only census of 327 patterns (177 bench + 150 corpus; no compile);
-- the four bench subjects regenerated from a `git archive` copy of pcrec-bench
-  `d359564f`, all four sha256-matching the bench manifests;
-- 8 hand-picked bench patterns run through the whole game (8 `--emit-facts`
-  compiles using the main tree's `build/pcrec`). These give the note's §4.1 table and
-  every §5 number.
+The box was under HOLD (twintime's timing slot) when the lane started. During the
+hold the lane ran only light work: a parse-only census, the four bench subjects
+regenerated from a `git archive` copy of pcrec-bench `d359564f` (all four
+sha256-matching the bench manifests), and 8 hand-picked patterns through the whole
+game (8 `--emit-facts` compiles).
 
-## OWED: the population run (§4.2 of the note)
+`.lift` appeared at 23:18. The armed waiter (`wait_lift.sh`) ran `chain.sh`, which
+built this worktree's pcrec (`make -j16`, rc 0), compiled the 327-pattern population
+(177 bench + 150 corpus) once each with `--emit-facts`, simulated every policy, and
+committed `window_search_game/data/`. The run takes about 30 s and reads no clock.
+Log: `build/wg/chain.log`, completion line `== wingame chain COMPLETE`.
 
-The full run (it builds this worktree's pcrec, compiles 327 patterns, and simulates
-every policy over the subjects) is ARMED DETACHED behind the hold:
+The chain was re-run three times after fixes its own controls forced:
+1. The k-set control first read 6 differing prefix positions. The causes were the
+   extractor's handling of POSIX classes, `\v` (Python's VT byte, PCRE2's
+   vertical-space class) and `(*UCP)` (wider byte classes, which the extractor does
+   not model). The first two were fixed with a class-aware escape pass and the third
+   is now declined as unparsed. Final control: **582 of 582 positions agree**, over
+   166 patterns.
+2. `summarize.py` read the TSVs with Python's default csv quoting, so a span
+   containing `"` merged rows (`QUOTE_NONE` now).
+3. The kit's form prices were rescaled to units of one DFA step (a memchr pass is
+   far cheaper than a DFA step; the first constants priced them equal, which inflated
+   P5-dfa's declines). The prices remain UNMEASURED (D149) and are parameters.
 
-    nohup setsid bash docs/design/memfn/window_search_game/wait_lift.sh <worktree> &
-
-The waiter polls `worktrees/wingame/.lift` every 60 s for up to 8 h, then runs
-`chain.sh` once. Log: `worktrees/wingame/build/wg/chain.log`. Completion line:
-`== wingame chain COMPLETE`. The chain COMMITS `window_search_game/data/`
-(5 TSVs + `summary.md`) on `lane/wingame` itself.
-
-**For the fresh agent that completes delivery**, after the completion line:
-1. Read `data/summary.md`. Check §A3 (the k-set control) first: any `differ` row
-   means the extractor and pcrec disagree on a prefix class, so look at those patterns
-   before citing anything else.
-2. Check that §A's census matches the note's §2.1 table (the parse-only numbers).
-   If it differs, the facts compile changed `anch_start`/`status` nowhere, so a
-   difference means a bug.
-3. Fill the note's §4.2 status line and §5.4's "population frequency" sentence from
-   §B2/§D/§D2. If the scan-only-vs-vm-priced flip count is large, add one or two
-   §D2 rows to §5.2.
-4. Keep every claim in §0 unless §D contradicts it: the survivor-ratio
-   distribution should look like §5.3's (p50 >> 1).
-
-Expected runtime: a few minutes (327 compiles at <= 30 s cap each, numpy sims on
-256 KiB subjects). Smoke runs of every stage passed, including `summarize.py` on
-the 8-pattern run.
+Final commit of the data: see the branch tip. No `make test` is relevant: nothing
+under `src/`, `tests/` or `memfn/` changed, and nothing the compiler reads moved.
 
 ## Findings (all in the note)
 
@@ -72,7 +62,9 @@ the 8-pattern run.
    from them today. The handoff is used with `ov = K`.
 5. The unbounded move-back is the contract's biggest miss: 15-22 % of unanchored
    patterns with a span have their rarest position behind one. Span-vs-span among
-   bounded spans is rare (18 of 327 patterns have >= 2).
+   bounded spans is rare (18 of 327 patterns have >= 2), and the span argmin flips
+   between the DFA and VM prices on 3 of the 22 multi-span cells. The consumer flips
+   WHETHER to search far more often (18 patterns).
 6. Minor, not filed: `syntax/msc-r-uc` (`item\Rdone`) is refused by pcrec's
    `--features all` compile (`\R`). That is expected D26 behaviour, noted only
    because SHIPPED reads `compile-refused` there.
