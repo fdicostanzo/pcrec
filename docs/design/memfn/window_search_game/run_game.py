@@ -288,10 +288,11 @@ def refine_rows(fr, s, name, sid, sp, prior, S, chosen):
     n = len(S)
 
     def row(cons, variant, gap, reg, f, c, w):
-        fr.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%.0f\n" % (
+        fr.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%.0f\t%s\n" % (
             s, name, sid, cons, variant, gap, reg, f.desc() if f is not None else "-",
             c.get("stops", n), c.get("bsurv", "-"), c.get("local_pos", "-"), c.get("surv", n),
-            c.get("win_bytes", n), c.get("starts", n), w))
+            c.get("win_bytes", n), c.get("starts", n), w,
+            "%.3g" % ((f.width + 1) * f.fA.est_surv) if isinstance(f, G.Plan) else "-"))
 
     gap = "-"
     if pair is not None:
@@ -342,6 +343,15 @@ def refine_rows(fr, s, name, sid, sp, prior, S, chosen):
         cb = G.baseline_cost(cons)
         row(cons, "nosearch-gate", gap, "gate:%s@%d" % (SP.fmt_class(gm), goff), None,
             {"stops": cg["last"] + 1}, gp * n + cb * max(0, cg["last"] + 1 - goff))
+        # TAIL form of the gate: ONE reverse scan from the end for the last B
+        # (cost = the tail beyond it), and the forward search ends there. It
+        # pays the gate only for the bytes it can save.
+        tail = n - cg["last"] - 1 if cg["last"] >= 0 else n
+        ct = dict(cg, gate_n=tail)
+        row(cons, "fwd-tail", gap, "tail:%s@%d,bytes=%d" % (SP.fmt_class(gm), goff, tail), f, ct,
+            G.work_gate(ct, f, cons, gp))
+        row(cons, "nosearch-tail", gap, "tail:%s@%d" % (SP.fmt_class(gm), goff), None,
+            {"stops": cg["last"] + 1}, gp * tail + cb * max(0, cg["last"] + 1 - goff))
 
 
 def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
@@ -372,7 +382,7 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
              "stops\tsurv\twin_bytes\tstarts\twork_scan\twork_dfa\twork_vm\n")
     fr = open(os.path.join(out, "refine.tsv"), "w")
     fr.write("set\tname\tsubject\tconsumer\tvariant\tgap\tregion\tform\tstops\tbsurv\tlocal_pos\t"
-             "surv\twin_bytes\tstarts\twork\n")
+             "surv\twin_bytes\tstarts\twork\test_hits\n")
     fk = open(os.path.join(out, "relcontrol.tsv"), "w")
     fk.write("set\tname\ti\tj\titems_lo\titems_hi\tderived_lo\tderived_hi\tagree\n")
     fm.write("set\tname\tsubject\tpolicy\tform\tstops\tsurv\twin_bytes\twin_union\tstarts\t"

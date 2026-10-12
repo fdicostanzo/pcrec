@@ -326,3 +326,14 @@ corpus	c146	ok	-	False	1	1	1/0	dfa	memchr	none	none	none	O@mb=0,ov=0
 corpus	c147	ok	lookaround,recursion	False	2	1	1/0	vm	memchr	none	none	none	a@mb=0,ov=0 b@mb=inf,ov=inf
 corpus	c148	ok	-	False	1	1	1/0	vm	byte-class	none	none	none	[2]@mb=0,ov=0
 corpus	c149	ok	assertion	False	1	1	1/0	dfa	none	none	none	none	a@mb=0,ov=0
+wit2	w01-bounded-4	ok	-	False	2	2	3/0	dfa	handoff	none	none	7	\d\d\d@mb=0,ov=0 #@mb=7,ov=4
+wit2	w02-bounded-0	ok	-	False	1	1	4/0	dfa	offset-set	0,3*	none	none	\d\d\d#@mb=0,ov=0
+wit2	w03-bounded-12	ok	rep-right	False	2	2	2/0	dfa	handoff	none	none	16	\d\d@mb=0,ov=0 #@mb=16,ov=14
+wit2	w04-bounded-x	ok	rep-right	False	2	2	1/0	dfa	handoff	none	none	5	\d@mb=0,ov=0 \x20xx@mb=4,ov=3
+wit2	w05-bounded-at	ok	-	False	2	2	3/0	dfa	handoff	none	none	11	\d\d\d@mb=0,ov=0 @@mb=11,ov=8
+wit2	w06-loose-gap	ok	-	False	2	2	-	dfa	handoff	none	none	10	\d@mb=6,ov=6 #@mb=10,ov=9
+wit2	w07-unbounded-hash	ok	-	False	2	1	1/0	dfa	byte-class	none	none	none	\d@mb=0,ov=0 #@mb=inf,ov=inf
+wit2	w08-unbounded-x	ok	-	False	2	1	1/0	dfa	byte-class	none	none	none	\d@mb=0,ov=0 \x20xx@mb=inf,ov=inf
+wit2	w09-unbounded-at	ok	-	False	2	1	1/0	dfa	byte-class	none	none	none	\d@mb=0,ov=0 @@mb=inf,ov=inf
+wit2	w10-unbounded-lit	ok	-	False	2	1	1/0	dfa	byte-class	none	74696d656f7574@2	none	\d@mb=0,ov=0 timeout@mb=inf,ov=inf
+wit2	w11-A-semirare	ok	-	False	2	2	4/0	dfa	offset-set	0,3*	none	8	\d\d\d-@mb=0,ov=0 #@mb=8,ov=4
