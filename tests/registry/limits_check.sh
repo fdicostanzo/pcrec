@@ -410,6 +410,16 @@ done <<< "$anchored"
 #     The shipped compiler never contains it, nothing a caller compiles is
 #     measured against it, and its size is chosen to make every length reader
 #     reachable by the check, not as a policy.
+#   AN EIGHTH KIND — A PART'S INTERFACE SHAPE ([COMPOUND] B1, src/core/
+#     internal.h, `CompPart`): PCREC_PART_NEED_SEARCH / _MATCH_CAPS / _NEXT_POS
+#     / _VALID_UPTO are which bit of a part's `need` word names which kept
+#     root (a file-private bit set, the SIXTH kind's shape: nothing is
+#     measured against a bit position), and PCREC_PART_ROLE_MAX is the width
+#     of the role grammar itself ("1 to 3 characters" of [a-z0-9], the
+#     `__<role>` suffix a part prefix is built from). It is a syntax width
+#     like the newline convention's, not a resource bound: no pattern or
+#     subject is measured against it and a caller cannot be offered a knob
+#     for it without changing the spelling of every part's symbols.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -564,7 +574,12 @@ PCREC_FIND_NBUNDLES
 SCAN_TEST_CALLS
 EM_ANY
 CAND_FIN_REPORT
-CRA_SEARCH_FROM"
+CRA_SEARCH_FROM
+PCREC_PART_NEED_SEARCH
+PCREC_PART_NEED_MATCH_CAPS
+PCREC_PART_NEED_NEXT_POS
+PCREC_PART_NEED_VALID_UPTO
+PCREC_PART_ROLE_MAX"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

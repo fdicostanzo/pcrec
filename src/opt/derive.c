@@ -63,7 +63,9 @@ static void qf_walk(QFacts *f, const Ast *a, bool lb)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_CTX: case A_GSTART: case A_KRESET: case A_VAR: case A_WCLASS:
+        case A_CTX: case A_GSTART: case A_KRESET: case A_VAR:
+            return;
+        case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
             return;
         case A_BREF:
             for (int i = 0; i < a->u.bref.nrefs; i++)
@@ -135,7 +137,16 @@ typedef struct { Ast *a; bool never; bool keeps; } QRes;
 
 static Ast *never_node(Ctx *cx) { return pcrec_ast_node(cx, A_CLASS); }
 
-static bool is_never_leaf(const Ast *a) { return a->k == A_CLASS && a->u.cls.n == 0; }
+/* True for the empty class `never_node` builds: an A_CLASS holding no
+ * interval, which no input can match. Reads the interval count itself rather
+ * than rendering a bitmap, because the pass runs above the encoding lowering
+ * and a rendered 32 bytes would say nothing about a class past the byte range;
+ * the one `u.cls` read in this file, allowed by function in
+ * tests/codegen/run_cpset_structure.sh. */
+static bool is_never_leaf(const Ast *a)
+{
+    return a->k == A_CLASS && a->u.cls.n == 0;
+}
 
 /* A copy of `a` with child `l` (single-child kinds; `a` is never written). */
 static Ast *with_child(Ctx *cx, const Ast *a, Ast *l)
@@ -279,7 +290,9 @@ static void qp_walk(QProps *p, const Ast *a, bool lb)
         case A_GSTART: p->g++; return;
         case A_BOL: if (!lb && !a->u.anch.multiline) p->bol_out++; return;
         case A_CLASS: case A_EMPTY: case A_EOL: case A_END: case A_CTX:
-        case A_KRESET: case A_BREF: case A_VAR: case A_WCLASS: case A_CALL:
+        case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+            return;
+        case A_WCLASS:      /* its own arm: a set leaf, never a group holder */
             return;
         case A_CAP:
             if (a->u.cap.no >= 0 && a->u.cap.no <= p->f->ncap) {

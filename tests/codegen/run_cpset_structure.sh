@@ -387,6 +387,16 @@ fi
 #                    code to read `u.cls` directly, which the check reached on
 #                    its first run over the tree)
 #
+#   opt/derive.c     [COMPOUND] B2's `is_never_leaf` — is this node the empty
+#                    class `never_node` built (an interval count of zero)? A
+#                    cardinality question about the list, asked ABOVE the
+#                    lowering where a bitmap render would be wrong for a class
+#                    past the byte range. FUNCTION-scoped (ALLOW_FN below), so
+#                    the rest of derive.c stays policed. Added by lane cpb02
+#                    triage (the pass's own population: the first derive.c
+#                    code to read `u.cls`, which the check reached on its
+#                    first run over the lane's tree)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -403,7 +413,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {
