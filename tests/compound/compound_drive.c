@@ -123,7 +123,7 @@ static int compile_one(const char *dir, const char *id, const char *tag,
     snprintf(cname, sizeof cname, "%s.%s.c", id, tag);
     pcrec_options o = *base;
     o.header_name = hname;
-    PcrecEmitIn in = { req, NULL, PCREC_PB_UNSTATED, NULL, NULL };
+    PcrecEmitIn in = { .req = req, .bound = PCREC_PB_UNSTATED };
     pcrec_output out;
     if (pcrec_compile_driver(pat, &o, &out, err, NULL, NULL, NULL, NULL, NULL,
                              req ? &in : NULL) != 0)
@@ -228,7 +228,7 @@ static void drive_bounded(const char *dir, const char *id, const char *pat,
     pcrec_options o = *parent;
     o.prefix = "nb";
     o.header_name = NULL;
-    const PcrecEmitIn in = { NULL, NULL, PCREC_PB_ONE_ATTEMPT, NULL, NULL };
+    const PcrecEmitIn in = { .bound = PCREC_PB_ONE_ATTEMPT };
     pcrec_output out;
     pcrec_error err;
     int rc = pcrec_compile_driver(pat, &o, &out, &err, NULL, NULL, NULL, NULL,
