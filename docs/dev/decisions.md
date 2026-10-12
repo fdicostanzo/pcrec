@@ -9582,3 +9582,11 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Ruling (Frank):** "we didn't include the match end tag everywhere because of extra states. but if a pattern uses it twice, include it in both places. i don't think its slower."
 - **Reading (manager):** the B3 panel's blocker (docs/dev/reviews/2026-10-12-r3-b3-endmark-revend.md S1) is a MIXED artifact: addendum 3 kept forward `$`'s view while B3 lowers the reverse machine, so the tie arm's relocate seeds the lowered reverse machine at the view-based forward machine's end. The rule is per ARTIFACT consistency: an artifact whose rev-end walk uses the mark lowers `$` in its forward (and anchored) machines too, so every machine answering "where does the match end" reads one lowering and endmark.md §2.2's argument holds as written. Addendum 3 stands for artifacts that never use the mark. Cost: the forward growth emcensus measured (+27% states corpus-wide) applies only to the rev-end population; on rev-end artifacts the forward machine runs only on the tie/relocate and composite paths, and per-byte DFA step cost does not depend on state count, so "not slower" is the expectation — to be confirmed by measurement on those artifacts (forward size and the relocate path's time), not assumed. S2-S4 (class-dependent distances, scan-edge merging on distance sets, overflow behaviour) are unaffected by this and still apply.
 
+### D164 addendum 5 — B3 revision 2's questions ruled (Frank, 2026-10-12, session 110; docs/design/endmark.md §R.9)
+
+- **Q1:** "give it the bit" — `-fno-rev-end-onewalk` takes PCREC_BIT(56) (bit 55 went to the kit's `-fno-kit-size-drop`, R17-b); 7 bits remain, above [IFACE-PUSH]'s <= 4 trigger.
+- **Q2:** agreed — selective tagging deletes nothing; the two-seed walk stays as the F0/F3/F4 rows.
+- **Q3:** agreed — the VM keeps `$` as an assertion. Addendum 4 is PER ARTIFACT over the machines that answer the end from an automaton (forward, reverse, anchored DFA); the VM computes the end by running and lowering would add a choice point (frames, steps, the give-up surface, D158) for no answer. Frank: "We are not going to be consistent for its own sake."
+- **Q4:** [REVBLOCK-VIEW] filed (plan.md).
+- B3 is BUILD-READY on endmark.md revision 2; sabotage S881-S890.
+
