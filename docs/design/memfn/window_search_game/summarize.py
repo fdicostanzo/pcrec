@@ -246,3 +246,124 @@ for k, a, b in exd[:30]:
                  "%s s=%s v=%s wb=%s" % (b["form"], b["stops"], b["surv"], b["win_bytes"]),
                  "%s / %s" % (a["work_dfa"], b["work_dfa"]), "%s / %s" % (a["work_vm"], b["work_vm"])])
 table(["cell", "form A (stops, survivors, window bytes)", "form B", "work dfa A/B", "work vm A/B"], body)
+
+# ---- E. [wingame2] P6 `refine` -----------------------------------------------
+def rows_opt(f):
+    try:
+        return rows(f)
+    except FileNotFoundError:
+        return []
+
+
+REF = rows_opt("refine.tsv")
+REL = rows_opt("relcontrol.tsv")
+if REF:
+    def num(x):
+        return float(x) if x not in ("-", "") else 0.0
+
+    def fmtw(w):
+        return "%.3g" % w
+
+    h("E0. Control: relative distance from (move-back, overshoot, length) vs a direct walk of the items")
+    ag = sum(r["agree"] == "1" for r in REL)
+    print("%d span pairs (earlier span bounded): %d agree, %d differ." % (len(REL), ag, len(REL) - ag))
+
+    P6POL = ["P5-dfa", "P5-vm", "P6-dfa", "P6-vm", "SHIPPED"]
+    sim6 = collections.defaultdict(dict)
+    for r in SIM:
+        sim6[(r["set"], r["name"], r["subject"])][r["policy"]] = r
+    h("E1. What P6 picks (original 327 patterns | witnesses)")
+    chp = collections.defaultdict(lambda: collections.Counter())
+    for r in CH:
+        if not r["policy"].startswith("P6"):
+            continue
+        f = r["form"]
+        k = "plan" if f.startswith("local") else "decline" if f == "decline" else \
+            "form" if f.startswith(("one#", "pair#")) else "none"
+        chp[(r["set"] == "wit2", r["policy"])][k] += 1
+    table(["population", "policy", "plan (A via B)", "single-span form", "decline", "no bounded span"],
+          [["witnesses" if w else "327 patterns", p, c["plan"], c["form"], c["decline"], c["none"]]
+           for (w, p), c in sorted(chp.items())])
+
+    h("E2. Cells where P6 chose a plan: P6 against P5 and the consumer meeting every byte (work, one DFA step = 1)")
+    body = []
+    tot = collections.Counter()
+    for k, d in sorted(sim6.items()):
+        for cons in ("dfa", "vm"):
+            p6 = d.get("P6-" + cons)
+            p5 = d.get("P5-" + cons)
+            if p6 is None or not p6["form"].startswith("local") or p5 is None:
+                continue
+            n = int(float(p6["stops"] if False else 0)) or None
+            w6, w5 = num(p6["work_" + cons]), num(p5["work_" + cons])
+            sh = d.get("SHIPPED")
+            body.append([("wit" if k[0] == "wit2" else k[0]) + "/" + k[1], k[2].split("__")[1], cons,
+                         p6["form"].split(":")[1].split("<-")[0] + " via " + p6["form"].split("<-")[1][:24],
+                         p6["stops"], p6["surv"], fmtw(w6), p5["form"][:24], fmtw(w5),
+                         "%.2f" % (w5 / w6) if w6 else "-",
+                         fmtw(num(sh["work_" + cons])) if sh and sh["stops"] != "-" else "-"])
+            if k[0] != "wit2":
+                tot[cons + "_p6"] += w6
+                tot[cons + "_p5"] += w5
+                tot[cons + "_n"] += 1
+    table(["pattern", "subject", "cons", "P6 plan", "B stops", "A windows", "work P6", "P5 pick", "work P5",
+           "P5/P6", "work SHIPPED"], body)
+    print("\nOriginal-population plan cells only: " + "; ".join(
+        "%s: %d cells, sum P5 %s vs P6 %s" % (c, tot[c + "_n"], fmtw(tot[c + "_p5"]), fmtw(tot[c + "_p6"]))
+        for c in ("dfa", "vm")))
+
+    h("E3. Frank's setting (refine_pair exists: a tightest span A plus a rarer span B) -- every variant, work per consumer")
+    pat = collections.defaultdict(lambda: collections.defaultdict(dict))
+    for r in REF:
+        pat[(r["set"], r["name"])][r["subject"]][(r["consumer"], r["variant"])] = r
+    VAR = ["nosearch", "P5", "P6", "local", "local-loose", "fwd", "fwd-gate", "nosearch-gate"]
+    for cons in ("dfa", "vm"):
+        body = []
+        for k, subs in sorted(pat.items()):
+            gaps = {next(iter(v.values()))["gap"] for v in subs.values()}
+            if gaps == {"-"} or k[0] != "wit2":
+                continue
+            for sid, d in sorted(subs.items()):
+                if (cons, "fwd") not in d:
+                    continue
+                row = [k[1], d[(cons, "fwd")]["gap"], d[(cons, "local")]["region"] if (cons, "local") in d else "-",
+                       sid.split("__")[1].replace("loglines_", "log")]
+                for v in VAR:
+                    row.append(fmtw(num(d[(cons, v)]["work"])) if (cons, v) in d else "-")
+                body.append(row)
+        print("\nConsumer **%s** (work; one DFA step = 1):\n" % cons)
+        table(["witness", "gap", "region", "subject"] + VAR, body)
+
+    h("E4. Local-search detail (witnesses with a bounded gap, exact region): counts per B stop")
+    body = []
+    for k, subs in sorted(pat.items()):
+        if k[0] != "wit2":
+            continue
+        for sid, d in sorted(subs.items()):
+            r = d.get(("dfa", "local"))
+            if r is None:
+                continue
+            rl = d.get(("dfa", "local-loose"))
+            st = int(r["stops"])
+            body.append([k[1], sid.split("__")[1].replace("loglines_", "log"), r["region"],
+                         rl["region"] if rl else "-", st, r["bsurv"],
+                         "%.2f" % (num(r["local_pos"]) / st) if st else "-", r["surv"],
+                         "%.1f" % (num(r["win_bytes"]) / num(r["surv"])) if num(r["surv"]) else "-",
+                         "%.1f" % (num(r["starts"]) / num(r["surv"])) if num(r["surv"]) else "-"])
+    table(["witness", "subject", "region (exact)", "region (loose)", "B stops", "B survivors",
+           "local positions per B stop", "A windows", "window bytes each", "starts each"], body)
+
+    h("E5. Presence gate in front of the forward search: fwd, fwd-gate, nosearch, nosearch-gate (all refine cells with a B)")
+    gt = collections.Counter()
+    body = []
+    for k, subs in sorted(pat.items()):
+        for sid, d in sorted(subs.items()):
+            for cons in ("dfa", "vm"):
+                if (cons, "fwd-gate") not in d:
+                    continue
+                w = {v: num(d[(cons, v)]["work"]) for v in ("nosearch", "fwd", "fwd-gate", "nosearch-gate")}
+                gt[("wit" if k[0] == "wit2" else "pop", cons, "gate pays vs fwd" if w["fwd-gate"] < w["fwd"] else "gate loses vs fwd")] += 1
+                best = min(w, key=lambda v: w[v])
+                gt[("wit" if k[0] == "wit2" else "pop", cons, "best: " + best)] += 1
+    table(["population", "consumer", "outcome", "cells"],
+          [[a, b, c, n] for (a, b, c), n in sorted(gt.items())])

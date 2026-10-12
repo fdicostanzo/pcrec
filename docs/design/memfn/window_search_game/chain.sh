@@ -23,7 +23,7 @@ rm -rf "$B/full"
 ( cd "$I" && gnutimeout 3600 nice python3 -B run_game.py "$W/build/pcrec" "$B/benchcopy/bench" \
     "$B/subj" "$W/tests/findings/default_ppm.tsv" "$W/tests" "$B/full" 150 ) > "$B/run.log" 2>&1
 log "run_game rc=$?"
-for f in spans spaninfo choices sim spanforms; do cp "$B/full/$f.tsv" "$I/data/$f.tsv"; done
+for f in spans spaninfo choices sim spanforms refine relcontrol; do cp "$B/full/$f.tsv" "$I/data/$f.tsv"; done
 ( cd "$I" && python3 -B summarize.py data ) > "$I/data/summary.md" 2> "$B/summ.err"
 log "summarize rc=$?"
 
