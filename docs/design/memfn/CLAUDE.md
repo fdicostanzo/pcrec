@@ -257,6 +257,21 @@ its DESIGN record.**
   (L-2, L-4, the x86 survey); both read in `linux_results.md`.
 
 Maintenance: update this file when files are added/removed or change roles.
+- `window_search_game.md` — D161's "search for the window" GAMED OUT before any
+  request (lane wingame, 2026-10-11, design study, counts only). It derives the span
+  list from real patterns with an independent extractor checked against pcrec's
+  k-set walk, and maps which existing facts supply which piece (prefix: kset;
+  inner literal: req_run + maxoff; no MINIMUM offsets anywhere). It censuses what
+  the contract cannot express: the unbounded move-back is the biggest miss, at 15-22 %
+  of unanchored patterns with a span. Five kit policies are written as code, with
+  their missing inputs as parameters, and simulated over the bench's throughput
+  subjects. The answer to Frank's concern: the kit ranks STOPS from D161's inputs,
+  but spans differ in window cost, whose ranking depends on the CONSUMER's shape
+  (DFA per window byte against VM per possible start, opposite orders on
+  syslogbase), and the independence survivor estimate is off 21x-1,750x. The
+  contract needs omin beside omax, a per-route CONSUMER PRICE (three coefficients +
+  the no-search cost), and optionally a joint survival rate. The kit does NOT need
+  to own the look-forward. Instruments: `window_search_game/` (own CLAUDE.md).
 - `row_contracts.md` — [MEMFN-ROWCON] light design (rev 1, 2026-10-07,
   Frank after K96): one first-match table mechanism, exported by the kit.
   It has a field vocabulary (`fields.def`), per-row `honours` allowlists
