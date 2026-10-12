@@ -9312,6 +9312,7 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **What stands:** NO `#if`/`#ifdef` in the code the kit emits into a function BODY. Architecture choice lives inside lower-level helper DEFINITIONS (an arch-versioned helper in the header is one way; others allowed).
 - **What relaxes:** item 6 / Q-R9-10's single-call shape (one selector whose whole body is the `#if` chain) was written for the fixed-choice era; it is now a GUIDELINE. The kit may emit composable lower-level pieces into the body, and may emit and own LOCAL STORAGE the body needs (e.g. the stateful forms' start-position queue / carried mask, D161 addendum 2) — including deciding whether it is emitted at all.
 - **Q-R17-2 RULED: (A)** — one routing event, where the code fits neatly in a function; composable body pieces are allowed where it does not. Timing per the manager's advice: after the kit's follow-up measurement and the D161 window-search design, so the PF sites move once.
+
 ### D155 addendum 4 — kit search code = readable BODY TEXT over a small per-WIDTH set of PRIMITIVES (Frank, 2026-10-12, given to the kit directly; filed by main from the kit's relay, lane/memfn-r17 cbf0d27e)
 
 - **Direction (Frank):** "i like your idea of a set of primitives to be used in the body. it provides a lot of flexibility to customize the solution."
