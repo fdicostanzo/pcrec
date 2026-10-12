@@ -1,8 +1,7 @@
 # cpb4 — [COMPOUND] build step B4, the driver (lane report)
 
 Lane cpb4 (opus), 2026-10-12, `lane/cpb4` from main `690dc4e03`. Design `docs/design/compound.md` rev 2.2
-(§R2.2, §A.14, §F.1); rulings D163 + add. 1-6, D88 add. 1, compound_callout_alignment.md §14.
-**abi 76 -> 77** (B3 had not merged, so no re-pin to 78).
+(§R2.2, §A.14, §F.1); rulings D163 + add. 1-6, D88 add. 1, callout alignment §14. **abi 76 -> 77.**
 
 ## What landed
 - **Row table** (`src/core/compound.c`): `compound_rows[]` = `split`, pin-only, admission as listed
