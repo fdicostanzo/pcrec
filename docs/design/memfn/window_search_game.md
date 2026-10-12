@@ -46,6 +46,10 @@ Frank asked (D161, 2026-10-11):
   rarest position sits behind an unbounded repeat (`\w+@`, `key\h*=`).
   Today pcrec serves those through the reverse pass or a set-lead. D161 cannot
   express them (§2).
+- **[wingame2] Frank's `refine` policy (§8)** needs no new contract fact for a bounded
+  gap (the relative distance is `(move_back, overshoot, len)` arithmetic), wins 3x-6x
+  over P5 for a per-START consumer when span 1's overshoot is ~0 and span 2's is large,
+  ties or loses for a per-BYTE consumer, and falls back to P5 for unbounded gaps.
 
 ## 1. The span list, derived
 
