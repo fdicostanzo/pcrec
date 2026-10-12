@@ -1,0 +1,12 @@
+# reach_probe.py summary: corpus tests/**/*.rxt, -p rx --features all, -e byte, default analysis, built at main e7a69b78 (2026-10-11)
+#count	value	stamp predicate
+compiled artifacts	5194	corpus pattern lines that compile
+#4 handoff re-entry (A1 UP, A2, A4)	181	RX_DFA_PREFILTER handoff
+A1 on #4: run landmark	86	handoff with RX_REQ_RUN != none
+A2: displaced row is offset-set/run-pinned	0	-fno-req-handoff twin stamps offset-set*/run-pinned*
+#7 prefix_k selected a k-set	667	RX_DFA_PREFILTER_OFFSETS != none
+#3 R4 asked: adaptive rows	476	RX_VM_RESEED adaptive*
+#3 R4 answered dense	35	RX_VM_RESEED adaptive-dense
+A3: R4 on an offset/run-pinned prefilter	105	adaptive* with RX_DFA_PREFILTER offset-set*/run-pinned*
+A5: R4 dense with no forward prefilter scan	16	adaptive-dense with RX_DFA_PREFILTER none (pcrec_dfa_cand_ppm's 10^6 branches)
+prior NONE (byte-rate=none)	0	RX_FINDINGS byte-rate=none

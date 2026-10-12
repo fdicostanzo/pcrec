@@ -158,3 +158,15 @@ Maintenance: update this file when files are added or removed.
 - `2026-10-06-artrev-pilot.md` — the [ARTREV] pilot (D150): 15/22 confirmed wins on three losing cells, the possessify-analysis gap (-58% with no new codegen), suggestions for Frank, the full-run terms. Cites `docs/dev/optloop/artrev/report_pilot.md`.
 - `2026-10-11-o97-start-landing-state3-exec-summary.md` — pcrec's reading of pcrec-bench outbox O-97 ([START-LANDING] state 3, pin `b8337c33`, abi 74; lane o97read): 298/298 movers reproduced, 76% (`end-minus-width`) and 78% (`landing`) of mover cells faster beyond trial overlap against a 2.6%/1.8% null, whole-subject form and tail family flat, grok +19% not repeated, Vectorscan SOM reading. Per-mover-set verdict table, a PROPOSED disposition for the [START-LANDING] plan row (close; carry the utf8 residue), a triage of the bench's three asks (utf8 search-short +1.3-6% on 12 patterns; datefinder emit-c x2.53; K103 and the litrun whole rows), and the [ENG-TACTICS] §6 table of loglines/* and altwide sfx-* medians read against the HELD rev-inner and rev-end-width triggers. Cites the bench ledger `docs/dev/ledgers/2026-10-11-start-landing-state3-b8337c33.md` and outbox O-97.
 - `2026-10-11-three-state-revend-start-landing.md` — the bench's three-state comparison ([B135], I-142; a15fb77b abi 72 -> 7388f1c0 [OPT-REVEND] abi 73 -> b8337c33 [START-LANDING] abi 74; lane threestate) as one before -> after view: per-suite and per-regime step medians, a per-mover-family table with both step ratios and the cross-window control, top cells by total gain with the delivering step, regressions with the step that introduced each, caveats and relay questions. Cites the two bench ledgers `2026-10-10-opt-revend-states12-7388f1c0.md` and `2026-10-11-start-landing-state3-b8337c33.md`.
+- `2026-10-11-prior-cost-inputs.html` — [PRIOR-COST-UNIFY]'s INPUT FORMULAS
+  as shipped at main `e7a69b78` (lane pcureport, Frank's ask: "summarize the
+  input formulas. Add charts."). One self-contained HTML page: the ten
+  derived members each with question, formula (math + the C at file:line),
+  inputs, constants with unit/box/date, NONE answer; a side-by-side table;
+  rev 2's adapters A1-A5 judged DELIBERATE or INCIDENTAL with corpus reach
+  from stamps; an assessment of which members truly share a question; three
+  charts (every hand-set constant by unit and provenance, each VERDICT's
+  flip point against the byte rate, the member × input map), each with a
+  table view, light/dark. Cites `docs/design/prior_cost_unify.md` rev 2.
+  Generator: `prior_cost_inputs/` (own CLAUDE.md).
+- `prior_cost_inputs/` — that page's generator, content data and reach probe.
