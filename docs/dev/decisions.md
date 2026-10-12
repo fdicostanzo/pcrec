@@ -9462,4 +9462,13 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
   4. [ADAPTIVE-ARM] run-time choice between compiled forms (it shares the cross-call state);
   5. ARCH-SPECIFIC VERSIONS (Frank): one interface over SIMD-width/ISA variants with a run-time selector (a cpuid / ifunc-style dispatch), meeting the kit's per-width primitives (D155 add. 4) and D144 add. 4's targeted-hardware verdicts.
   The VM hybrid's embedded prefilter engine is the informal precedent. Design the tool (sub-artifact set + controller policy + linkage via [EMIT-ENTRIES]' three categories + one rx_info per D88 add. 1) with split as its first client.
+- **Addendum 2 (Frank, 2026-10-12, after the tool's D6 panel r1, docs/dev/reviews/2026-10-12-r2-composite.md):**
+  1. **NAME: "compound", everywhere.** Frank: "call it that everywhere so I'm not translating all the time." The artifact kind, the plan row ([COMPOUND]), the design note, the stamp (`<PREFIX>_COMPOUND`), the route value, the table (`compound_rows[]`), the code identifiers and the docs all use it. "Composite" stays only as the existing cand_rows[] LOCATE row's name (arch M1) and in historical text.
+  2. **ALWAYS ON, no public deny axis** (Frank: "we may have to break the rule and have this always on: it's complicated to have two paths"). This is a deliberate exception to the per-optimization deny-axis rule: no flags bit (bit 55 stays free), no `-fno-...`, no `--list-axes` or spec row. Manager's condition, kept because the plain artifact is compiled anyway as the fallback: ONE internal, harness-only force-decline lever for the whole compound family. It is outside the caller contract and outside the flags word, and test-axes' answer-identity sweep and bisects use it.
+  3. **Accepted with the panel (Frank: "I like this thinking"):**
+     - the first build is PIN-ONLY (Q end-pinned); START+FREE waits for a bench reading of concat-sqli on its own subjects plus a derived match-density cost conjunct (chk B1);
+     - B3 (rev-end's one-pass two-seed walk + a finish skip when the end is decided and no captures are asked) is designed first, with its own panel;
+     - DFA-only parts first;
+     - the controller searches Q from next_pos(aligned floor), and at the floor P's answer is final (the atomic/possessive correction);
+     - CAPTURES ON DEMAND (caps==NULL goes to a no-captures part, otherwise to the VM, in one artifact) is a named client.
 - **Supersedes** match_split_pinonly.md as the 4a design. The panel's accepted findings that still apply (sabotage/witness repairs, grep-derived re-pin list, \G floor from the machine, Q's state cap, Q exactness, K109) carry over to the rewrite.
