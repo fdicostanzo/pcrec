@@ -1,0 +1,398 @@
+# b3cost at df2eaea74
+== population: rows (byte+utf8), parsed, neol>0 (path-final $/\Z), rev-end among those
+  bench  rows   367 parsed   351 neol>0   38 rev-end    9  (end_pin: {'eol': 9})
+  corpus rows  5645 parsed  5236 neol>0  883 rev-end  257  (end_pin: {'eol': 257})
+  text scanner could not rewrite: 0 ()
+
+== excluded from the measured set (reason, count):
+   bench   probe status not ok: {}
+   corpus  probe status not ok: {}
+
+== CONTROL 1: model today (probe d->n) vs emitted reverse states
+   bench   compared    9  equal    9  MISMATCH 0
+   corpus  compared  257  equal  257  MISMATCH 0
+   all     compared  266  equal  266  MISMATCH 0
+== CONTROL 2: model untagged vs emitted proxy reverse states
+   compared 266 equal 266 MISMATCH 0
+== CONTROL 3: tag product with OR output vs untagged machine
+   compared 266 equal 244 MISMATCH 22
+      MISMATCH tests/assertions/end_window.rxt:195  \bfoo$  or 9 untagged(raw) 6
+      MISMATCH tests/assertions/rev_end.rxt:292  \bab$  or 7 untagged(raw) 5
+      MISMATCH tests/assertions/rev_end.rxt:303  \Bb$  or 5 untagged(raw) 4
+      MISMATCH tests/assertions/wordb_empty_compose.rxt:791  \bfoo$  or 9 untagged(raw) 6
+      MISMATCH tests/assertions/wordb_empty_compose.rxt:942  \bfoo\Z  or 9 untagged(raw) 6
+      MISMATCH tests/assertions/wordb_empty_compose.rxt:1017  \w+\b$  or 4 untagged(raw) 6
+      MISMATCH tests/assertions/wordb_empty_compose.rxt:1168  \Bo\Z  or 5 untagged(raw) 4
+      MISMATCH tests/assertions/wordb_empty_compose.rxt:1243  \b\w+\b$  or 5 untagged(raw) 6
+      MISMATCH tests/assertions/wordb_vm.rxt:864  (\bfoo)$  or 9 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:233  [ab]{0,}?(?:(?=\w)|(?<=\w))$  or 5 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:488  -+?(?:(?=\w)|(?<=\w))$  or 3 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:788  \w{0,}?(?:\b|a)$  or 5 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:1043  \W{0,2}?(?:\b|a)$  or 8 untagged(raw) 9
+      MISMATCH tests/possessify/composition_d27.rxt:10822  a*\b$  or 5 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:10837  \w*\B$  or 5 untagged(raw) 6
+      MISMATCH tests/possessify/composition_d27.rxt:10867  \b$  or 4 untagged(raw) 5
+      MISMATCH tests/possessify/composition_d27.rxt:10913  \B$  or 4 untagged(raw) 5
+      MISMATCH tests/revend/stage2_captures.rxt:1084  (\b\w+)$  or 5 untagged(raw) 4
+      MISMATCH tests/revend/stage2_captures.rxt:1264  \b(\w+)$  or 5 untagged(raw) 4
+      MISMATCH tests/revend/stage2_captures.rxt:1281  (?<=,)(\d+)$  or 5 untagged(raw) 4
+      MISMATCH tests/revend/stage2_captures.rxt:1296  (?<!x)(a+)$  or 5 untagged(raw) 4
+      MISMATCH tests/revend/stage2_captures.rxt:1339  (\w)\b$  or 4 untagged(raw) 6
+== scan-edge (post-pass) vs raw: today 35 artifacts shrink (the emitted count is post), untagged proxy 19
+== (tagged trimmed of dead-language states differs from untrimmed on 0)
+
+== STATES (minimized reachable; model today == emitted by control 1)
+   bench          n=   9  states today    46  untagged    54 (1.17x)  tagged    83 (1.80x)  ratio tagged/today median 1.80 p90 1.86 max 1.86 | untagged/today median 1.17 p90 1.33 max 1.33  >2x: 0 (tagged) 0 (untagged)
+   corpus         n= 257  states today  1459  untagged  1727 (1.18x)  tagged  2770 (1.90x)  ratio tagged/today median 1.75 p90 2.25 max 3.25 | untagged/today median 1.25 p90 1.50 max 2.00  >2x: 35 (tagged) 0 (untagged)
+   all            n= 266  states today  1505  untagged  1781 (1.18x)  tagged  2853 (1.90x)  ratio tagged/today median 1.75 p90 2.25 max 3.25 | untagged/today median 1.25 p90 1.50 max 2.00  >2x: 35 (tagged) 0 (untagged)
+   verified (ctl3) n= 244  states today  1413  untagged  1661 (1.18x)  tagged  2720 (1.92x)  ratio tagged/today median 1.75 p90 2.25 max 3.25 | untagged/today median 1.25 p90 1.50 max 2.00  >2x: 35 (tagged) 0 (untagged)
+   ctx-unverified n=  22  states today    92  untagged   120 (1.30x)  tagged   133 (1.45x)  ratio tagged/today median 1.62 p90 1.80 max 1.80 | untagged/today median 1.31 p90 1.50 max 1.50  >2x: 0 (tagged) 0 (untagged)
+   scan-edge today n=  35  states today   160  untagged   226 (1.41x)  tagged   407 (2.54x)  ratio tagged/today median 2.25 p90 3.25 max 3.25 | untagged/today median 1.25 p90 1.75 max 2.00  >2x: 35 (tagged) 0 (untagged)
+   no scan-edge   n= 231  states today  1345  untagged  1555 (1.16x)  tagged  2446 (1.82x)  ratio tagged/today median 1.75 p90 2.00 max 2.00 | untagged/today median 1.25 p90 1.50 max 1.50  >2x: 0 (tagged) 0 (untagged)
+   with tie code  n=  43  states today   151  untagged   178 (1.18x)  tagged   281 (1.86x)  ratio tagged/today median 1.75 p90 2.25 max 2.75 | untagged/today median 1.00 p90 1.50 max 1.75  >2x: 7 (tagged) 0 (untagged)
+   no tie code    n= 223  states today  1354  untagged  1603 (1.18x)  tagged  2572 (1.90x)  ratio tagged/today median 1.75 p90 2.20 max 3.25 | untagged/today median 1.33 p90 1.50 max 2.00  >2x: 28 (tagged) 0 (untagged)
+   utf8           n=  16  states today   532  untagged   545 (1.02x)  tagged  1048 (1.97x)  ratio tagged/today median 1.75 p90 1.91 max 2.00 | untagged/today median 1.16 p90 1.33 max 1.50  >2x: 0 (tagged) 0 (untagged)
+   (sensitivity, tagged / today BEFORE the scan-edge pass: median 1.75 p90 1.95 max 2.00)
+   scan-edge artifacts (today shrinks after the pass; the lowered forms do not): n=35  today 160  tagged 407 (2.54x)
+
+== TABLE BYTES (emitted reverse-role static arrays; tagged = untagged proxy rescaled, see report)
+   bench   n=   9  today     3499 B  untagged     3502 B (+0.1%)  tagged     3669 B (+4.9%)
+   corpus  n= 257  today   227416 B  untagged   230695 B (+1.4%)  tagged   271190 B (+19.2%)
+   all     n= 266  today   230915 B  untagged   234197 B (+1.4%)  tagged   274859 B (+19.0%)
+
+== tagged/today ratio histogram: 1.0-1.25:11, 1.25-1.5:13, 1.5-2.0:206, 2.0-2.5:20, <1.0:1, >2.5:15
+
+== tagged/untagged ratio (the price of the tags alone): median 1.40 p90 1.79 max 2.60
+== tagged / untagged(raw, pre-scan-edge): median 1.40 p90 1.67 max 2.00 (tests/possessify/composition_d27.rxt:11318 \W*?(?:)$); >2x: 0
+
+== TOP 10 GROWERS BY tagged/today ratio (id, pattern, today, untagged, tagged)
+   corpus  tests/assertions/gate.rxt:110      a{0,4}c$                                      4    5   13  3.25x
+   corpus  tests/assertions/gate.rxt:329      a{0,4}c\Z                                     4    5   13  3.25x
+   corpus  tests/assertions/view_edge.rxt:1311 (?:[a-z]{0,5})\Z                              4    8   13  3.25x
+   corpus  tests/assertions/view_edge.rxt:1473 [a-z]{0,5}$                                   4    8   13  3.25x
+   corpus  tests/possessify/possessify.rxt:1177 a{0,4}c$                                      4    5   13  3.25x
+   corpus  tests/possessify/possessify.rxt:2852 (a{0,4}c$)                                    4    5   13  3.25x
+   corpus  tests/mrl/08_nomatch.rxt:31        a{5,10}b{5,10}$                              15   19   43  2.87x
+   corpus  tests/assertions/end_window.rxt:139 a{0,4}$                                       4    7   11  2.75x
+   corpus  tests/assertions/gate.rxt:44       a{0,4}$                                       4    7   11  2.75x
+   corpus  tests/assertions/gate.rxt:283      a{0,4}\Z                                      4    7   11  2.75x
+
+== TOP 10 BY ABSOLUTE tagged growth
+   corpus  tests/revend/stage2_captures.rxt:1453 (\p{L}+)$                                   454  455  907  +453
+   corpus  tests/mrl/08_nomatch.rxt:31        a{5,10}b{5,10}$                              15   19   43  +28
+   corpus  tests/mrl/03_zerowidth.rxt:52      a{0,5}b{0,5}c$                               13   14   25  +12
+   corpus  tests/mrl/03_zerowidth.rxt:44      a{0,5}b{0,5}$                                12   13   23  +11
+   corpus  tests/revend/stage2_captures.rxt:1441 (.*)\.txt$                                   11   12   21  +10
+   corpus  tests/assertions/end_window.rxt:156 (?:foo|barbaz)$                              10   11   19  +9
+   corpus  tests/assertions/gate.rxt:110      a{0,4}c$                                      4    5   13  +9
+   corpus  tests/assertions/gate.rxt:329      a{0,4}c\Z                                     4    5   13  +9
+   corpus  tests/assertions/view_edge.rxt:1311 (?:[a-z]{0,5})\Z                              4    8   13  +9
+   corpus  tests/assertions/view_edge.rxt:1473 [a-z]{0,5}$                                   4    8   13  +9
+
+== EVERY artifact over 2x today (tagged), n=35
+   corpus  tests/assertions/gate.rxt:110      a{0,4}c$                                              4    5   13  3.25x  (today before scan-edge 7; tagged/untagged 2.60)
+   corpus  tests/assertions/gate.rxt:329      a{0,4}c\Z                                             4    5   13  3.25x  (today before scan-edge 7; tagged/untagged 2.60)
+   corpus  tests/assertions/view_edge.rxt:1311 (?:[a-z]{0,5})\Z                                      4    8   13  3.25x  (today before scan-edge 7; tagged/untagged 1.62)
+   corpus  tests/assertions/view_edge.rxt:1473 [a-z]{0,5}$                                           4    8   13  3.25x  (today before scan-edge 7; tagged/untagged 1.62)
+   corpus  tests/possessify/possessify.rxt:1177 a{0,4}c$                                              4    5   13  3.25x  (today before scan-edge 7; tagged/untagged 2.60)
+   corpus  tests/possessify/possessify.rxt:2852 (a{0,4}c$)                                            4    5   13  3.25x  (today before scan-edge 7; tagged/untagged 2.60)
+   corpus  tests/mrl/08_nomatch.rxt:31        a{5,10}b{5,10}$                                      15   19   43  2.87x  (today before scan-edge 22; tagged/untagged 2.26)
+   corpus  tests/assertions/end_window.rxt:139 a{0,4}$                                               4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/assertions/gate.rxt:44       a{0,4}$                                               4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/assertions/gate.rxt:283      a{0,4}\Z                                              4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/assertions/view_edge.rxt:1635 a{0,4}$                                               4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/base/possess_lazy_guard.rxt:166 [^c]{0,4}?$                                           4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/base/possess_lazy_guard.rxt:178 [^c]{0,4}$                                            4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/possessify/possessify.rxt:1074 a{0,4}$                                               4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/possessify/possessify.rxt:1110 [ab]{0,4}$                                            4    7   11  2.75x  (today before scan-edge 6; tagged/untagged 1.57)
+   corpus  tests/assertions/absolute.rxt:652  [^c]{1,3}\Z                                           4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/assertions/gate.rxt:66       [^c]{1,3}$                                            4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/assertions/gate.rxt:88       a{1,3}?$                                              4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/assertions/gate.rxt:306      [^c]{1,3}\Z                                           4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/assertions/multiline.rxt:1681 ([^c]{1,3})$                                          4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/assertions/rev_end.rxt:392   ([^c]{1,3})$                                          4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/possessify/composition_d27.rxt:1343 [a-c]{1,3}?(?:\B|)$                                   4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/possessify/composition_d27.rxt:11018 a{1,3}?(?:|\b)$                                       4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/possessify/composition_d27.rxt:11033 a{1,3}?(?:(?=a)|)$                                    4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/possessify/possessify.rxt:1144 a{1,3}?$                                              4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/possessify/possessify.rxt:2808 (a{1,3}?$)                                            4    5    9  2.25x  (today before scan-edge 5; tagged/untagged 1.80)
+   corpus  tests/revend/stage2_captures.rxt:1781 (a{3})$                                               4    6    9  2.25x  (today before scan-edge 5; tagged/untagged 1.50)
+   corpus  tests/assertions/rev_end.rxt:466   [a-z]{2,4}$                                           5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/mrl/01_trailing.rxt:26       a{2,4}$                                               5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/mrl/01_trailing.rxt:33       a{2,4}$                                               5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/mrl/01_trailing.rxt:37       a{2,4}$                                               5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/mrl/01_trailing.rxt:41       a{2,4}$                                               5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/mrl/01_trailing.rxt:45       a{2,4}$                                               5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/revend/stage2_captures.rxt:1767 (\d{2,4})$                                            5    6   11  2.20x  (today before scan-edge 6; tagged/untagged 1.83)
+   corpus  tests/assertions/multiline.rxt:236 ERROR$                                                6    7   13  2.17x  (today before scan-edge 7; tagged/untagged 1.86)
+   over 2x counting today BEFORE the scan-edge pass: 0;  tagged/untagged > 2x: 5
+
+== shrinkers / equal (tagged <= today): 5
+
+== PER-ARTIFACT TSV: pop id today untagged tagged today_b untag_b tag_b tie pattern
+T	bench	capability/tail-digits-eol	3	4	5	280	300	301	0	\d+$
+T	bench	capability/tail-dotstar-txt	6	7	11	614	631	655	0	.*\.txt$
+T	bench	capability/tail-ext-lower-txt	7	8	13	375	416	451	0	[a-z]+\.txt$
+T	bench	capability/tail-space-eol	3	3	5	536	289	301	1	\s+$
+T	bench	capability/wild-semdiv-dollar-trailing-newline-pcre2	5	6	9	326	358	373	0	abc$
+T	bench	litrun/ctrl-abc-dollar	5	6	9	326	358	373	0	abc$
+T	bench	sentinel/wild-semdiv-dollar-trailing-newline-pcre2	5	6	9	326	358	373	0	abc$
+T	bench	syntax/anc-dollar	6	7	11	358	396	421	0	done$
+T	bench	syntax/anc-z-uc	6	7	11	358	396	421	0	done\Z
+T	corpus	tests/assertions/absolute.rxt:52	3	4	5	280	300	301	0	b\Z
+T	corpus	tests/assertions/absolute.rxt:102	3	4	5	280	300	301	0	b$
+T	corpus	tests/assertions/absolute.rxt:196	2	3	3	262	280	277	0	\Z
+T	corpus	tests/assertions/absolute.rxt:331	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/absolute.rxt:494	2	3	4	272	289	292	0	a*\Z
+T	corpus	tests/assertions/absolute.rxt:521	2	3	4	272	289	292	0	a*$
+T	corpus	tests/assertions/absolute.rxt:601	2	3	4	528	536	540	0	.*\Z
+T	corpus	tests/assertions/absolute.rxt:652	4	6	9	544	322	337	1	[^c]{1,3}\Z
+T	corpus	tests/assertions/absolute.rxt:735	5	5	6	321	326	322	0	ab\z|b\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:86	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:98	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:104	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:114	3	4	5	280	300	301	0	a$
+T	corpus	tests/assertions/d27/anchors_abs.rxt:118	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:128	3	4	5	280	300	301	0	a$
+T	corpus	tests/assertions/d27/anchors_abs.rxt:132	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/d27/anchors_abs.rxt:142	3	4	5	280	300	301	0	a$
+T	corpus	tests/assertions/d27/anchors_abs.rxt:161	2	3	3	262	280	277	0	\Z
+T	corpus	tests/assertions/d27/gating.rxt:115	3	4	5	280	300	301	0	x\Z
+T	corpus	tests/assertions/d27/multiline.rxt:112	3	4	5	280	300	301	0	(?m)a\Z
+T	corpus	tests/assertions/end_window.rxt:47	5	6	9	326	358	373	0	abc$
+T	corpus	tests/assertions/end_window.rxt:64	5	6	9	326	358	373	0	abc$
+T	corpus	tests/assertions/end_window.rxt:96	5	6	9	326	358	373	0	abc\Z
+T	corpus	tests/assertions/end_window.rxt:125	3	4	5	280	300	301	0	a+$
+T	corpus	tests/assertions/end_window.rxt:139	4	7	11	288	333	355	0	a{0,4}$
+T	corpus	tests/assertions/end_window.rxt:156	10	11	19	486	542	617	0	(?:foo|barbaz)$
+T	corpus	tests/assertions/end_window.rxt:178	2	3	3	262	280	277	0	$
+T	corpus	tests/assertions/end_window.rxt:195	5	6	9	346	388	385	0	\bfoo$
+T	corpus	tests/assertions/end_window.rxt:227	5	6	9	326	358	373	0	(ab)(c)$
+T	corpus	tests/assertions/gate.rxt:44	4	7	11	288	333	355	0	a{0,4}$
+T	corpus	tests/assertions/gate.rxt:66	4	6	9	544	322	337	1	[^c]{1,3}$
+T	corpus	tests/assertions/gate.rxt:88	4	5	9	288	311	337	0	a{1,3}?$
+T	corpus	tests/assertions/gate.rxt:110	4	5	13	300	326	399	0	a{0,4}c$
+T	corpus	tests/assertions/gate.rxt:132	7	8	13	333	368	399	0	za{0,4}$
+T	corpus	tests/assertions/gate.rxt:283	4	7	11	288	333	355	0	a{0,4}\Z
+T	corpus	tests/assertions/gate.rxt:306	4	6	9	544	322	337	1	[^c]{1,3}\Z
+T	corpus	tests/assertions/gate.rxt:329	4	5	13	300	326	399	0	a{0,4}c\Z
+T	corpus	tests/assertions/kreset.rxt:720	4	5	7	300	326	333	0	a\Kb\Z
+T	corpus	tests/assertions/kreset.rxt:735	4	5	7	300	326	333	0	a\Kb$
+T	corpus	tests/assertions/multiline.rxt:97	2	3	3	262	280	277	0	$
+T	corpus	tests/assertions/multiline.rxt:236	6	7	13	340	375	425	0	ERROR$
+T	corpus	tests/assertions/multiline.rxt:775	2	3	3	262	280	277	0	$
+T	corpus	tests/assertions/multiline.rxt:1681	4	6	9	544	322	337	1	([^c]{1,3})$
+T	corpus	tests/assertions/multiline.rxt:2353	3	4	5	280	300	301	0	a$(?m)
+T	corpus	tests/assertions/multiline.rxt:2996	3	4	5	280	300	301	0	(?m)a\Z
+T	corpus	tests/assertions/multiline.rxt:3141	2	3	3	262	280	277	0	(?m)\Z
+T	corpus	tests/assertions/multiline.rxt:3238	3	4	5	280	300	301	0	(?m:a\Z)
+T	corpus	tests/assertions/multiline.rxt:3710	3	4	5	280	300	301	0	(?-m)a$
+T	corpus	tests/assertions/multiline.rxt:3758	3	4	5	280	300	301	0	(?-m:a$)
+T	corpus	tests/assertions/rev_end.rxt:21	3	4	5	280	300	301	0	\d+$
+T	corpus	tests/assertions/rev_end.rxt:33	3	3	5	536	289	301	1	\s+$
+T	corpus	tests/assertions/rev_end.rxt:46	3	3	5	536	289	301	1	\s+?$
+T	corpus	tests/assertions/rev_end.rxt:57	2	2	4	272	278	292	1	\s*$
+T	corpus	tests/assertions/rev_end.rxt:67	2	2	4	272	278	292	1	\s*?$
+T	corpus	tests/assertions/rev_end.rxt:77	7	8	13	375	416	451	0	[a-z]+\.txt$
+T	corpus	tests/assertions/rev_end.rxt:98	3	4	5	280	300	301	0	a\Z
+T	corpus	tests/assertions/rev_end.rxt:108	3	3	5	536	289	301	1	[a\n]+$
+T	corpus	tests/assertions/rev_end.rxt:118	4	5	7	300	311	319	1	(?:a|a\n)$
+T	corpus	tests/assertions/rev_end.rxt:125	4	5	7	300	311	319	1	(?:a\n|a)$
+T	corpus	tests/assertions/rev_end.rxt:132	3	4	5	536	556	557	0	\w+$
+T	corpus	tests/assertions/rev_end.rxt:145	2	2	4	272	278	292	1	\s*$
+T	corpus	tests/assertions/rev_end.rxt:165	3	4	6	536	544	554	1	[^\n]*\n?$
+T	corpus	tests/assertions/rev_end.rxt:176	2	3	4	272	289	292	0	a*$
+T	corpus	tests/assertions/rev_end.rxt:186	2	3	3	262	280	277	0	$
+T	corpus	tests/assertions/rev_end.rxt:202	4	5	7	300	326	333	0	(?:ab)?$
+T	corpus	tests/assertions/rev_end.rxt:246	5	5	5	321	326	311	0	\d+$|\w+\z
+T	corpus	tests/assertions/rev_end.rxt:256	4	4	5	308	312	311	1	\s*$|x\z
+T	corpus	tests/assertions/rev_end.rxt:265	4	5	7	300	326	333	0	Ã©+$
+T	corpus	tests/assertions/rev_end.rxt:274	3	3	5	536	289	301	1	\s+?$
+T	corpus	tests/assertions/rev_end.rxt:283	8	9	15	608	679	691	0	.$
+T	corpus	tests/assertions/rev_end.rxt:292	4	5	7	328	366	358	0	\bab$
+T	corpus	tests/assertions/rev_end.rxt:303	3	4	5	289	312	312	0	\Bb$
+T	corpus	tests/assertions/rev_end.rxt:348	4	5	7	288	311	319	0	\w{1,2}(?:(?=)|)$
+T	corpus	tests/assertions/rev_end.rxt:358	3	4	5	280	300	301	0	(\d+)$
+T	corpus	tests/assertions/rev_end.rxt:373	3	4	5	280	300	301	0	(a+)$
+T	corpus	tests/assertions/rev_end.rxt:383	4	5	7	300	326	333	0	a\Kb$
+T	corpus	tests/assertions/rev_end.rxt:392	4	6	9	544	322	337	1	([^c]{1,3})$
+T	corpus	tests/assertions/rev_end.rxt:406	4	4	7	544	300	319	1	(\s+){2}$
+T	corpus	tests/assertions/rev_end.rxt:433	4	4	7	544	300	319	1	(\s+?){2}$
+T	corpus	tests/assertions/rev_end.rxt:446	4	5	7	288	311	319	0	(\w{1,2})(?:(?=)|)$
+T	corpus	tests/assertions/rev_end.rxt:458	5	6	9	326	358	373	0	abc$
+T	corpus	tests/assertions/rev_end.rxt:466	5	6	11	296	322	355	0	[a-z]{2,4}$
+T	corpus	tests/assertions/view_edge.rxt:1311	4	8	13	288	344	373	0	(?:[a-z]{0,5})\Z
+T	corpus	tests/assertions/view_edge.rxt:1473	4	8	13	288	344	373	0	[a-z]{0,5}$
+T	corpus	tests/assertions/view_edge.rxt:1635	4	7	11	288	333	355	0	a{0,4}$
+T	corpus	tests/assertions/wordb_empty_compose.rxt:791	5	6	9	346	388	385	0	\bfoo$
+T	corpus	tests/assertions/wordb_empty_compose.rxt:942	5	6	9	346	388	385	0	\bfoo\Z
+T	corpus	tests/assertions/wordb_empty_compose.rxt:1017	4	6	5	548	584	563	0	\w+\b$
+T	corpus	tests/assertions/wordb_empty_compose.rxt:1168	3	4	5	289	312	312	0	\Bo\Z
+T	corpus	tests/assertions/wordb_empty_compose.rxt:1243	4	6	5	300	346	325	0	\b\w+\b$
+T	corpus	tests/assertions/wordb_vm.rxt:864	5	6	9	346	388	385	0	(\bfoo)$
+T	corpus	tests/base/alternation_trie.rxt:105	9	10	17	490	546	613	0	(log|login|logout)$
+T	corpus	tests/base/anchors.rxt:8	3	4	5	280	300	301	0	a$
+T	corpus	tests/base/anchors.rxt:13	3	4	5	280	300	301	0	a$
+T	corpus	tests/base/anchors.rxt:36	5	6	9	326	358	373	0	abc$
+T	corpus	tests/base/anchors.rxt:44	2	3	3	262	280	277	0	$
+T	corpus	tests/base/anchors.rxt:48	2	3	3	262	280	277	0	$
+T	corpus	tests/base/caseless.rxt:111	5	6	9	326	358	373	0	log$
+T	corpus	tests/base/clskit_range_top.rxt:18	5	6	9	311	340	355	0	[a-z]+@[a-z]+$
+T	corpus	tests/base/clskit_range_top.rxt:28	4	5	7	300	326	333	0	[0-9]+z$
+T	corpus	tests/base/eol_engine.rxt:6	3	4	5	280	300	301	0	a$
+T	corpus	tests/base/eol_engine.rxt:12	3	4	5	289	312	311	0	a*b$
+T	corpus	tests/base/eol_engine.rxt:20	3	4	5	289	312	311	0	a*b$
+T	corpus	tests/base/eol_engine.rxt:37	2	3	4	528	536	540	0	.*$
+T	corpus	tests/base/eol_engine.rxt:42	3	4	5	280	300	301	0	a+?$
+T	corpus	tests/base/eol_engine.rxt:52	2	3	4	272	289	292	0	x*$
+T	corpus	tests/base/eol_engine.rxt:58	2	3	3	262	280	277	0	$
+T	corpus	tests/base/eol_engine.rxt:64	4	5	7	300	326	333	0	[0-9]+z$
+T	corpus	tests/base/eol_scan_avoidance.rxt:15	3	4	6	801	812	822	0	.*=.*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:22	3	4	6	289	312	322	0	a*b*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:31	2	3	4	272	289	292	0	[a-z]*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:37	2	3	4	528	536	540	0	[^\n]*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:42	3	4	5	289	312	311	0	a*b$
+T	corpus	tests/base/eol_scan_avoidance.rxt:52	2	3	4	272	289	292	0	b*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:58	2	3	3	262	280	277	0	$
+T	corpus	tests/base/eol_scan_avoidance.rxt:65	3	4	6	545	556	566	0	a.*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:70	2	3	4	528	536	540	0	.*$
+T	corpus	tests/base/eol_scan_avoidance.rxt:77	5	6	9	311	340	355	0	[a-z]+@[a-z]+$
+T	corpus	tests/base/eol_scan_avoidance.rxt:83	3	4	5	280	300	301	0	a$
+T	corpus	tests/base/eol_scan_avoidance.rxt:89	3	4	5	280	288	291	0	.$
+T	corpus	tests/base/eol_scan_avoidance.rxt:95	2	3	4	272	289	292	0	a*$
+T	corpus	tests/base/possess_lazy_guard.rxt:166	4	7	11	544	333	355	1	[^c]{0,4}?$
+T	corpus	tests/base/possess_lazy_guard.rxt:178	4	7	11	544	333	355	1	[^c]{0,4}$
+T	corpus	tests/base/review_r1.rxt:22	2	3	4	528	536	540	0	.*$
+T	corpus	tests/base/review_r1.rxt:27	3	4	5	280	300	301	0	a+?$
+T	corpus	tests/base/startpos.rxt:65	3	4	5	280	300	301	0	a$
+T	corpus	tests/captures/structure_anchors_misc.rxt:7	3	4	5	280	300	301	0	(a+)$
+T	corpus	tests/mrl/01_trailing.rxt:26	5	6	11	296	322	355	0	a{2,4}$
+T	corpus	tests/mrl/01_trailing.rxt:33	5	6	11	296	322	355	0	a{2,4}$
+T	corpus	tests/mrl/01_trailing.rxt:37	5	6	11	296	322	355	0	a{2,4}$
+T	corpus	tests/mrl/01_trailing.rxt:41	5	6	11	296	322	355	0	a{2,4}$
+T	corpus	tests/mrl/01_trailing.rxt:45	5	6	11	296	322	355	0	a{2,4}$
+T	corpus	tests/mrl/03_zerowidth.rxt:44	12	13	23	388	438	509	0	a{0,5}b{0,5}$
+T	corpus	tests/mrl/03_zerowidth.rxt:52	13	14	25	438	494	581	0	a{0,5}b{0,5}c$
+T	corpus	tests/mrl/08_nomatch.rxt:31	15	19	43	421	522	729	0	a{5,10}b{5,10}$
+T	corpus	tests/offsetskip/run_pinned.rxt:39	7	8	13	396	440	477	0	/user$
+T	corpus	tests/possessify/composition_d27.rxt:158	4	5	7	300	326	319	0	a{1,2}(?:\B)*$
+T	corpus	tests/possessify/composition_d27.rxt:233	4	6	6	318	372	342	0	[ab]{0,}?(?:(?=\w)|(?<=\w))$
+T	corpus	tests/possessify/composition_d27.rxt:413	3	4	5	289	312	301	0	\d?(?:|\b)$
+T	corpus	tests/possessify/composition_d27.rxt:488	4	6	3	306	348	291	0	-+?(?:(?=\w)|(?<=\w))$
+T	corpus	tests/possessify/composition_d27.rxt:563	4	5	7	300	326	319	0	\d{1,2}(?:\b|)$
+T	corpus	tests/possessify/composition_d27.rxt:623	4	5	7	288	311	319	0	\w{1,2}(?:\b)??$
+T	corpus	tests/possessify/composition_d27.rxt:773	2	3	4	278	298	292	0	[ab]*(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:788	5	6	6	332	372	354	0	\w{0,}?(?:\b|a)$
+T	corpus	tests/possessify/composition_d27.rxt:1043	7	9	11	360	426	421	0	\W{0,2}?(?:\b|a)$
+T	corpus	tests/possessify/composition_d27.rxt:1103	3	4	5	289	312	301	0	[ab]?(?:(?<=a)|)$
+T	corpus	tests/possessify/composition_d27.rxt:1178	4	5	7	288	311	319	0	\w{1,2}(?:(?=)|)$
+T	corpus	tests/possessify/composition_d27.rxt:1193	2	3	4	284	307	292	0	[a-]*?(?:\B)*$
+T	corpus	tests/possessify/composition_d27.rxt:1208	4	5	7	288	311	319	1	\W{0,2}?(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:1313	4	4	7	556	568	575	1	\W{2,}(?:(?=a)|)$
+T	corpus	tests/possessify/composition_d27.rxt:1343	4	5	9	300	326	337	0	[a-c]{1,3}?(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:1403	3	4	5	289	312	301	0	[ab]+(?:\b|)$
+T	corpus	tests/possessify/composition_d27.rxt:1493	4	5	7	300	326	319	0	-{2,}(?:\b){0,2}$
+T	corpus	tests/possessify/composition_d27.rxt:1508	3	4	5	289	312	301	0	\d+(?:\b){0,2}$
+T	corpus	tests/possessify/composition_d27.rxt:1628	4	5	7	300	326	319	0	[a-c]{1,2}(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:10807	2	3	4	272	289	292	0	a*$
+T	corpus	tests/possessify/composition_d27.rxt:10822	5	6	6	332	372	342	0	a*\b$
+T	corpus	tests/possessify/composition_d27.rxt:10837	5	6	5	566	602	581	0	\w*\B$
+T	corpus	tests/possessify/composition_d27.rxt:10852	2	2	4	528	534	548	1	\W*$
+T	corpus	tests/possessify/composition_d27.rxt:10867	4	5	4	284	332	305	0	\b$
+T	corpus	tests/possessify/composition_d27.rxt:10913	4	5	4	284	332	305	0	\B$
+T	corpus	tests/possessify/composition_d27.rxt:11018	4	5	9	300	326	337	0	a{1,3}?(?:|\b)$
+T	corpus	tests/possessify/composition_d27.rxt:11033	4	5	9	288	311	337	0	a{1,3}?(?:(?=a)|)$
+T	corpus	tests/possessify/composition_d27.rxt:11093	4	5	7	300	326	319	0	a{2,}?(?:|\b)$
+T	corpus	tests/possessify/composition_d27.rxt:11318	2	2	4	528	534	548	1	\W*?(?:)$
+T	corpus	tests/possessify/composition_d27.rxt:11333	4	5	7	288	311	319	1	\W{0,2}?(?:\b|)$
+T	corpus	tests/possessify/composition_d27.rxt:11348	4	4	7	544	556	575	1	\W{2,}?(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:11363	3	4	5	280	300	301	1	\W??(?:\B|)$
+T	corpus	tests/possessify/composition_d27.rxt:11408	4	5	7	300	311	305	0	.{0,2}?(?:(?=a)|)$
+T	corpus	tests/possessify/composition_d27.rxt:11453	5	6	9	311	322	319	0	.{1,3}?(?:|\b)$
+T	corpus	tests/possessify/composition_d27.rxt:11468	5	6	9	311	322	319	0	.{1,3}?(?:\B|)$
+T	corpus	tests/possessify/possessify.rxt:1074	4	7	11	288	333	355	0	a{0,4}$
+T	corpus	tests/possessify/possessify.rxt:1110	4	7	11	288	333	355	0	[ab]{0,4}$
+T	corpus	tests/possessify/possessify.rxt:1144	4	5	9	288	311	337	0	a{1,3}?$
+T	corpus	tests/possessify/possessify.rxt:1177	4	5	13	300	326	399	0	a{0,4}c$
+T	corpus	tests/possessify/possessify.rxt:2808	4	5	9	288	311	337	0	(a{1,3}?$)
+T	corpus	tests/possessify/possessify.rxt:2852	4	5	13	300	326	399	0	(a{0,4}c$)
+T	corpus	tests/revend/stage2_captures.rxt:27	3	4	5	280	300	301	0	(a+)$
+T	corpus	tests/revend/stage2_captures.rxt:137	4	5	7	300	311	319	1	(a|a\n)$
+T	corpus	tests/revend/stage2_captures.rxt:149	4	5	7	300	311	319	1	(a\n|a)$
+T	corpus	tests/revend/stage2_captures.rxt:161	4	5	7	300	311	319	1	(a\n?)$
+T	corpus	tests/revend/stage2_captures.rxt:171	4	5	7	300	311	319	1	(a\n??)$
+T	corpus	tests/revend/stage2_captures.rxt:192	4	5	7	300	311	319	1	(a)\n?\Z
+T	corpus	tests/revend/stage2_captures.rxt:220	3	3	5	536	289	301	1	(\s+)$
+T	corpus	tests/revend/stage2_captures.rxt:252	4	5	7	300	326	333	0	(a*)ab$
+T	corpus	tests/revend/stage2_captures.rxt:267	4	5	7	300	326	333	0	(a*?)ab$
+T	corpus	tests/revend/stage2_captures.rxt:279	3	4	5	280	300	301	0	(a+)(a?)$
+T	corpus	tests/revend/stage2_captures.rxt:312	7	8	13	375	416	451	0	(a|ab)(c|bcd)$
+T	corpus	tests/revend/stage2_captures.rxt:329	7	8	13	375	416	451	0	(a|ab)(c|bcd)(d*)$
+T	corpus	tests/revend/stage2_captures.rxt:349	4	5	7	288	311	319	0	(\d+)(\d)$
+T	corpus	tests/revend/stage2_captures.rxt:364	4	5	7	556	567	575	0	(.+?)(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:384	3	4	5	545	556	557	0	(.*)(\d)$
+T	corpus	tests/revend/stage2_captures.rxt:398	3	4	6	289	312	322	0	([a-z]+)([0-9]*)$
+T	corpus	tests/revend/stage2_captures.rxt:415	3	4	5	289	312	301	0	(?:(a)|(b))+$
+T	corpus	tests/revend/stage2_captures.rxt:436	3	4	5	280	300	301	0	(a|b)+$
+T	corpus	tests/revend/stage2_captures.rxt:463	3	4	5	289	312	301	0	((\d)|x)+$
+T	corpus	tests/revend/stage2_captures.rxt:506	3	4	5	298	324	311	0	(a+|b)*c$
+T	corpus	tests/revend/stage2_captures.rxt:543	3	4	5	280	300	301	0	(\d{1,2})+$
+T	corpus	tests/revend/stage2_captures.rxt:556	4	5	7	300	326	333	0	(ab|a)*b$
+T	corpus	tests/revend/stage2_captures.rxt:586	3	4	5	298	324	301	0	(?:(a)|(b)|(c))$
+T	corpus	tests/revend/stage2_captures.rxt:703	4	5	7	312	341	347	0	(?:x(a)|y)$
+T	corpus	tests/revend/stage2_captures.rxt:717	4	5	7	300	326	333	0	(a|ab)$
+T	corpus	tests/revend/stage2_captures.rxt:731	4	5	7	300	326	333	0	(ab|a)$
+T	corpus	tests/revend/stage2_captures.rxt:743	8	9	15	416	463	511	0	(foo|foobar)$
+T	corpus	tests/revend/stage2_captures.rxt:756	8	9	15	416	463	511	0	(foo|foobar|bar)$
+T	corpus	tests/revend/stage2_captures.rxt:767	4	5	7	556	582	589	0	(\w+|\w+\.)$
+T	corpus	tests/revend/stage2_captures.rxt:781	7	8	13	375	416	451	0	(?:a|ab)(c|bcd)?$
+T	corpus	tests/revend/stage2_captures.rxt:795	4	5	7	300	326	333	0	((a)(b))$
+T	corpus	tests/revend/stage2_captures.rxt:816	4	5	7	300	326	333	0	((a+)(b+))+$
+T	corpus	tests/revend/stage2_captures.rxt:840	5	6	9	326	358	373	0	(a(b(c)?)?)$
+T	corpus	tests/revend/stage2_captures.rxt:865	5	6	9	311	340	355	0	((\d+)-(\d+))$
+T	corpus	tests/revend/stage2_captures.rxt:886	3	4	5	280	300	301	0	(((a)))$
+T	corpus	tests/revend/stage2_captures.rxt:1025	3	4	5	280	300	301	0	(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:1084	3	4	5	286	312	313	0	(\b\w+)$
+T	corpus	tests/revend/stage2_captures.rxt:1099	4	5	7	300	326	333	0	(a)b?$
+T	corpus	tests/revend/stage2_captures.rxt:1113	3	3	5	536	289	301	1	(\s+)$
+T	corpus	tests/revend/stage2_captures.rxt:1148	4	5	7	288	311	319	0	(\d)(\d)?$
+T	corpus	tests/revend/stage2_captures.rxt:1168	3	4	5	280	300	301	0	(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:1203	3	3	5	536	545	557	1	([^/]+)$
+T	corpus	tests/revend/stage2_captures.rxt:1220	6	7	11	614	631	655	0	(.*)\.txt$
+T	corpus	tests/revend/stage2_captures.rxt:1238	6	7	11	596	631	655	0	([^.]*)\.txt$
+T	corpus	tests/revend/stage2_captures.rxt:1251	3	3	5	536	289	301	1	(\s+)$
+T	corpus	tests/revend/stage2_captures.rxt:1264	3	4	5	286	312	313	0	\b(\w+)$
+T	corpus	tests/revend/stage2_captures.rxt:1281	3	4	5	289	312	312	0	(?<=,)(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:1296	3	4	5	298	328	317	0	(?<!x)(a+)$
+T	corpus	tests/revend/stage2_captures.rxt:1325	3	4	5	536	556	557	0	(?<=^|,)(\w+)$
+T	corpus	tests/revend/stage2_captures.rxt:1339	4	6	5	292	328	307	0	(\w)\b$
+T	corpus	tests/revend/stage2_captures.rxt:1352	8	9	15	608	679	691	0	(.)$
+T	corpus	tests/revend/stage2_captures.rxt:1382	8	8	15	608	632	691	1	([^/]+)$
+T	corpus	tests/revend/stage2_captures.rxt:1397	4	5	7	300	326	333	0	(\x{e9}+)$
+T	corpus	tests/revend/stage2_captures.rxt:1410	3	3	5	536	289	301	1	(\s+)$
+T	corpus	tests/revend/stage2_captures.rxt:1426	3	4	5	280	300	301	0	(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:1441	11	12	21	839	928	991	0	(.*)\.txt$
+T	corpus	tests/revend/stage2_captures.rxt:1453	454	455	907	137364	139031	177121	0	(\p{L}+)$
+T	corpus	tests/revend/stage2_captures.rxt:1466	3	4	5	536	556	557	0	(\w+)$
+T	corpus	tests/revend/stage2_captures.rxt:1480	8	9	15	608	679	691	0	(.)\Z
+T	corpus	tests/revend/stage2_captures.rxt:1494	4	5	7	312	341	347	0	(a|\x{e9})+$
+T	corpus	tests/revend/stage2_captures.rxt:1507	5	6	9	326	358	373	0	(abc)$
+T	corpus	tests/revend/stage2_captures.rxt:1533	3	4	5	536	556	557	0	([a-c]+)$
+T	corpus	tests/revend/stage2_captures.rxt:1546	3	3	5	536	545	557	1	([^a]+)$
+T	corpus	tests/revend/stage2_captures.rxt:1559	6	7	11	614	631	655	0	(.*)\.TXT$
+T	corpus	tests/revend/stage2_captures.rxt:1571	5	6	9	356	394	391	0	(k)$
+T	corpus	tests/revend/stage2_captures.rxt:1586	4	5	7	312	341	333	0	(\x{e9}+)$
+T	corpus	tests/revend/stage2_captures.rxt:1612	3	4	5	280	300	301	0	(a$)
+T	corpus	tests/revend/stage2_captures.rxt:1623	3	4	5	280	300	301	0	(a)(?:$)
+T	corpus	tests/revend/stage2_captures.rxt:1632	3	3	5	527	536	547	1	(?s)(.+)$
+T	corpus	tests/revend/stage2_captures.rxt:1644	3	4	5	280	300	301	0	(a++)$
+T	corpus	tests/revend/stage2_captures.rxt:1656	4	5	7	300	326	333	0	(?>a+)(b)$
+T	corpus	tests/revend/stage2_captures.rxt:1700	4	4	7	544	300	319	1	(\s+?){2}$
+T	corpus	tests/revend/stage2_captures.rxt:1719	3	3	5	536	289	301	1	(\s+?)\s*$
+T	corpus	tests/revend/stage2_captures.rxt:1732	3	4	5	280	300	301	0	(a+?)$
+T	corpus	tests/revend/stage2_captures.rxt:1756	3	4	5	280	300	301	0	(a+)$
+T	corpus	tests/revend/stage2_captures.rxt:1767	5	6	11	296	322	355	0	(\d{2,4})$
+T	corpus	tests/revend/stage2_captures.rxt:1781	4	6	9	288	322	337	0	(a{3})$
+T	corpus	tests/revend/stage2_captures.rxt:1809	4	5	7	300	326	333	0	(x)\K(\d+)$
+T	corpus	tests/revend/stage2_captures.rxt:1827	4	5	7	312	341	333	0	(?:a|(b))\K(c)?$
+T	corpus	tests/utf8/k73_startskip.rxt:92	2	3	3	266	280	277	0	$
