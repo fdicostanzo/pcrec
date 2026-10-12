@@ -1,92 +1,125 @@
 # window_contract — what pcrec tells the kit about a search site and a compile (D161, chunk 2)
 
-Lane `d161note`, 2026-10-12, from main `f3569b161` (pcrec abi 76). The kit
-branch `lane/memfn-r17` (`5ffbb7d28`) carries R17-a (`MF_SITE_ABI` 11: the
-window fields, `decl_point`, `mf_locals`, `mf_defined`), and `lane/r17b`
-carries R17-b (`MF_SITE_ABI` 12, N6, pcrec abi 77). Both were read with
-`git show`; neither is merged to main. DESIGN ONLY: nothing under `src/`,
-`cli/`, `lib/`, `memfn/` or `tests/` changes, and nothing was run.
+Revision 1: lane `d161note`, 2026-10-12, from main `f3569b161` (pcrec abi 76).
+**Revision 2: lane `wcrev`, 2026-10-12, from main `76067df80`.** It applies
+the light D6 panel r4 (`../../dev/reviews/2026-10-12-r4-window-contract.md`,
+1 blocker, 10 majors) and Frank's rulings D161 addenda 7-8 (the finder STREAMS
+exact span-0 starts; proven facts are KEPT as a layer-invariant compile-time
+statement). Kit branches read with `git show`: `lane/memfn-r17` (now
+`f1cf102c5`; R17-a, `MF_SITE_ABI` 11) and `lane/r17b` (now `174f3e320`;
+R17-b, `MF_SITE_ABI` 12, N6). Neither is merged to main. DESIGN ONLY: nothing
+under `src/`, `cli/`, `lib/`, `memfn/` or `tests/` changes, and nothing was
+run.
 
-**Status: PROPOSED.** A light panel reviews it next (§13). The R-18 outline
-(§11) is the manager's to file.
+**Status: PROPOSED, revision 2.** Q1 (§12) is open for Frank. The R-18
+outline (§11) is the manager's to file.
 
 The contract carries FACTS only, never the kit's method (D157). Every
 selection below is an ordered first-match table (memory
-`pcrec-decisions-as-first-match-tables`).
+`pcrec-decisions-as-first-match-tables`). Revision-2 changes are tagged
+`[r4 ID]` or `[D161.7]`/`[D161.8]` where they land.
+
+## §R2. What revision 2 changed (finding → section, disposition)
+
+| id | sev | where | disposition |
+|---|---|---|---|
+| E1 | BLOCKER | §2.3 (context terms), §2.4 (coverage, the edge), §2.5 | RESOLVED by D161 add. 7. A context check (`(?m)^`'s preceding `\n`) is not a span. pcrec tries the edge itself (today's shape, `emit_dfa.c:12376` at the review's commit) and opens the stream after it. "Miss = NOMATCH" is restated as "no match begins at any COVERED candidate"; the edge is outside the coverage |
+| E2 | MAJOR | §0.6, §5.1, §5.2, §5.6, §8.1(iii), §13 | ACCEPTED. The producer's claim is narrowed to per-path-common (hull) spans. `start_set` and the k-set stay their own facts. `span_facts` is specified as a MEMBER of the position-pin fact family. The offset-pinned union span is a filed unlock with a trigger. C-SP1/C-SP2 get non-vacuity floors |
+| E3 | MAJOR | §5.4 (T-CUT), §5.4a (T-PRES), §13 unlock (c) | ACCEPTED. Presence is its own table beside the cut, so `a.*zxq` sends segment 0 AND the `zxq` presence site |
+| E4 | MAJOR | §4.3 (T-PROOF) | KEPT as pcrec-side consumption conditions of a proof (D161 add. 8): no proof-skip on seeded or context-viewed machines; the VM row skips no assertion and moves no meter |
+| E5 | MAJOR | §2.3 (Range) | ACCEPTED. Candidates are span-0 STARTS, not occurrences. Reads below `lo` are bounded by `floor` under Q-R7-1's reads-below rule. Character alignment under `-e utf8` is pcrec's consumer obligation; the kit stays encoding-blind |
+| E6 | minor | §2.3 (sequence rule), §5.2, §5.3 C-SP4 | ACCEPTED. The rule is a TIGHT HULL, not exact. Its soundness obligation is that `omin`/`omax` are PREFIX SUMS over the one flattened sequence. C-SP4 gains an under-estimate plant |
+| E7 | minor | §2.4 | DISSOLVED by D161 add. 7. There is no `[L, U]` and no resume-at-`U + 1`; the stream is ascending and complete, so "where to resume" has one answer |
+| E8 | minor | §5.3 C-SP3 | ACCEPTED. C-SP3 compares `req_set_maxoff` against the MIN of `omax` over that byte's spans |
+| R1 | MAJOR | §6 S1, §8.2 | ACCEPTED. S1 is a pcrec abi event: building the object sets `byte_rate_asked` (`findings.c` `pcrec_find_stamp`), so `<PREFIX>_FINDINGS` and `rx_info.findings` move from `""` on every artifact with no prior asker. The stamp now means OFFERED, with one entry per kind. A mover census and a D80 hunk are owed |
+| R2 | MAJOR | §4.3 (the R2 record) | **REJECTED by D161 add. 8.** Proven facts are KEPT, as a compile-time statement for the SITE that is identical in every layer. Frank's reasoning is quoted in §4.3 |
+| R3 | MAJOR | §4 | ACCEPTED. §4 keeps only facts (pairwise distances under `spans_seq`, the stream's obligations, totality) and quotes D161 add. 5. The resume semantics, the G2 family and the 3+-link mechanics are removed as kit method. §11 no longer lists a kit output as a pcrec capability |
+| R4 | MAJOR | §2.3, §3.1 | ACCEPTED. Explicit UNSTATED sentinels: `mf_prov.source`, `mf_need`, `mf_akind.present`, and a tri-state `spans_seq`. Payload invariant: non-NULL iff PRESENT and the source carries a table, checked at define |
+| R5 | MAJOR | §6 S2-S4 | ACCEPTED. The shadow comparator is KEPT until S4: S3 retires the fields but keeps `pcrec_find_run_rank` as the shadow's oracle; S4 retires it with the picks |
+| R6 | MAJOR | §6 S3 (file list) | ACCEPTED. The full grep-derived list, including the D27-blinded G2 generators (a BLINDED LANE edits them), `arm_fixtures.c`, `memfn_sites.c`, `run_rank.sh`/`rank_check.py` and the six `consumer` setters. `plan_hint` is read by kit arms and retires only at S4 |
+| R7 | minor-major | §2.3 (Bounded only), §7 W1/W2 | ACCEPTED. "Permanently refused" is a KIT CODE CHANGE (`compose.c`'s back<0 check exempts `MF_MOVE_UNBOUNDED` on `lane/memfn-r17`) plus a refusal test. `span_hi` = `MF_SPAN_UNBOUNDED` stays legal, and §2.3 says why |
+| R8 | minor | §2.2 (naming) | ACCEPTED. The rejected span-index proposal is called the SPAN-INDEX FIELD (setfind's "W8"), never "W8", which is also the built width-8 sub-block `pcrec_mfk_w8_*`. `mf_site.span_lo/hi` are called the PROVEN RANGE, never "span" |
+| R9 | minor | §8.2 | ACCEPTED. New event rows: `need`/`preds` re-read on FIND (W7) is an `MF_SITE_ABI` event; the `mf_prov`/`mf_akind` layout; a per-site analysis slot; mixed NULL/non-NULL analysis in one art is refused |
+| R10 | gaps | §3.6, §5.4, §9, §13 | ACCEPTED. The per-site ACTIVATION fact and the EVIDENCE-STRENGTH fact are filed with triggers. T-MEMO is relabelled a filed placement with a trigger, not a table. T-CUT and T-PRES gain a deny column (D46) |
+| family | — | §5.6 | ACCEPTED, with one correction: the unification proposal is `match_split_pinonly.md` §4.3 / §9 U3. `compound.md`, which supersedes that note, does not re-file it (its own U3 is [EMIT-ENTRIES]), so this note carries it |
+| unlocks | — | §13 | (a) end-origin spans, (b) offset-pinned union spans with per-group `spans_seq`, (c) presence as a chain link: all filed with the panel's triggers |
+| kit verdicts | — | §7 | The panel's verdicts stand. The span-index rejection is re-grounded on the stream (one origin, one candidate type) instead of on `U` |
+
+Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
 
 ## 0. Answers first
 
 1. **The SITE is a bounded sub-problem pcrec chooses** (D161 add. 4). It is a
-   list of SPANS measured from one ORIGIN, the sub-problem's match start. Each
-   span has a class per position, an offset interval `[omin, omax]` from the
-   origin, and a `need`. The offset interval is sent as `(move_back,
-   overshoot)` = `(omax, omax - omin)`, the kit's existing W1/W2 fields. One
-   new site fact, `spans_seq` (the SEQUENCE RULE, §2.3), states that two
-   spans' starts differ only by the items between them. That makes every
-   pairwise distance exact and derivable, so "bounded gaps" and "minimum
-   offset" need no fields of their own (§2.2's mapping table). Every value is
-   true, required and bounded; an unbounded offset is refused by contract,
-   not reserved (D161 add. 5).
-2. **The reply is a WINDOW `[L, U]` or a VERDICT.** `L` is today's W3 (no
-   sub-problem match begins in `[lo, L)`). `U` is an optional out-hook: the
-   largest start a match carrying the located occurrence can have. The
-   resume point is `U + 1`. A FIND miss over the whole range is NOMATCH, so a
-   bounded span's presence test is part of FIND. Only unbounded-offset
-   necessary bytes keep a separate PRESENCE (VERDICT) site. Because every
-   span is measured from one origin, the reply needs no span index; the
-   kit's planned W8 is rejected (§7).
+   list of SPANS measured from one ORIGIN, **the start of span 0**
+   `[D161.7]`. Each span has a class per position, an offset interval
+   `[omin, omax]` from the origin, and a `need`. The offset interval is sent
+   as `(move_back, overshoot)` = `(omax, omax - omin)`, the kit's existing
+   W1/W2 fields; span 0 states `(0, 0)` by definition. One new site fact,
+   `spans_seq` (the SEQUENCE RULE, §2.3), states that two spans' starts differ
+   only by the items between them. That makes every pairwise distance a tight
+   hull, so "bounded gaps" and "minimum offset" need no fields of their own
+   (§2.2's mapping table). Every value is true, required and bounded; an
+   unbounded offset is refused by contract, not reserved (D161 add. 5).
+2. **The reply is a STREAM of exact candidates** `[D161.7]`: each candidate
+   is a position where span 0 starts. It has three obligations: COMPLETE
+   (every covered position where all spans hold appears), ASCENDING with no
+   repeats, and each candidate IS span 0's start. pcrec matches from each
+   candidate. A context check is not a span: pcrec tries the edge itself and
+   the stream covers the positions after it `[r4 E1]`. Presence sites keep the
+   VERDICT reply. Because every candidate has one meaning, the reply needs no
+   span index (§7).
 3. **The ANALYSIS object** (D162) is a versioned list of kinds keyed by the
    [FINDINGS] query name (`byte-rate`, later `run-rarity`). Each kind is
    PRESENT or explicitly ABSENT and carries a PROVENANCE: `prior-authored`,
    `prior-none` or `measured`, plus the bundle identity and the same digest
-   the `<PREFIX>_FINDINGS` stamp reports. `byte-rate` is always present. Under
-   `-e utf8` today it is `prior-none` with no table, because pcrec has no
-   utf8 prior until D160 lands, and a fabricated uniform table would be a
-   density claim (§3.2). The kit is encoding-blind (D147 add. 14), so
-   `cpfreq` is never sent.
+   the `<PREFIX>_FINDINGS` stamp reports. Every enum has an UNSTATED zero
+   `[r4 R4]`. `byte-rate` is always present. Under `-e utf8` today it is
+   `prior-none` with no table (§3.2). The kit is encoding-blind (D147 add. 14),
+   so `cpfreq` is never sent.
 4. **The kit's job is a CHAIN of 1-2 simple searches inside one site** (D161
-   add. 5), with a total no-search arm (`L = lo`, D162 ruling 2). A 3+-link
-   chain needs one more fact, each span's distance to the PREVIOUS span. The
-   sequence rule already delivers it, so the extension is kit-internal:
-   specified here, not built (§4.2).
-5. **[KIT-VERIFY] fits without a new interface** (§4.3). Direction (1),
-   "verify span k", is `need = REQUIRED` on span k, which already exists in
-   the vocabulary. Direction (2) is a STATIC return: `mf_result.proven`,
-   per span, the positions the chosen form verifies at every returned
-   window. It is defined only for spans whose offset from `L` is fixed
-   (`overshoot` 0). pcrec may advance its consumer past those positions, or
-   ignore them; either way the code is correct.
-6. **ONE pcrec-side producer**: a new core fact `span_facts` (E2, proposed
-   owner `src/facts/spans.c`). It is one AST walk that generalizes `rb_walk`'s
-   offset bookkeeping to `(classes, omin, omax)` per span and adds the
-   MINIMUM offset nothing carries today. It cuts segments at unbounded items.
-   The facts it absorbs (`req_set`/`req_whole_run`/`*_maxoff`, the k-set
-   prefix, `start_set`) first become its CONTROLS (§5). The DECISIONS that
-   read the prior to choose among spans move into the kit: the req pick, the
-   run window start, set-leads, the offset-k selection, the landmark K
-   admission, G1 and `plan_hint`. Unbounded cuts stay pcrec's: the reverse
-   pass, landing, rev-end, rev-inner, the attempt loop and the VM retry
-   policy.
+   add. 5, quoted in §4.1). The contract states the facts a chain reads and
+   the obligations its stream meets; the chain itself is the kit's `[r4 R3]`.
+5. **[KIT-VERIFY]** (§4.3). Direction (1), "verify span k", is `need =
+   REQUIRED` on span k. Direction (2), PROVEN FACTS, is KEPT `[D161.8]`: a
+   static `mf_result.proven`, per span, the positions every candidate of the
+   site has proven. It is a function of the SITE REQUEST, identical in every
+   layer (SIMD off or on, any `--memfn=` deny), and pcrec emits code for it:
+   with "fo" of `foobar` proven, pcrec asks a span test for the rest or starts
+   its engine past the proof; with "foobar" proven and nothing else to check,
+   pcrec reports the match.
+6. **ONE pcrec-side producer of HULL spans**: a new core fact `span_facts`
+   (E2, proposed owner `src/facts/spans.c`), a MEMBER of the position-pin fact
+   family (`start_set`, the k-set, `run_pin`, `end_pin`, compound's split
+   facts, landmark K; §5.6) `[r4 E2]`. It is one AST walk that generalizes
+   `rb_walk`'s offset bookkeeping to `(classes, omin, omax)` per span and adds
+   the MINIMUM offset nothing carries today. It produces only spans common to
+   every path. `start_set` and the k-set (unions over paths at a fixed offset)
+   stay their own facts; carrying them in a sequenced multi-span site is a
+   filed unlock (§13 (b)). The DECISIONS that read the prior to choose among
+   spans move into the kit: the req pick, the run window start, set-leads,
+   the offset-k selection, the landmark K admission, G1 and `plan_hint`.
+   Unbounded cuts stay pcrec's.
 7. **Retirement sequence** (D161 add. 6, D162 add. 3): the frequency kind
-   lands first (S1), then the kit's own ranking, implement-then-replace (S2),
-   then the retirement of `mf_pred.rank_*`, `pcrec_find_run_rank`, the never-
-   filled `ppm_*`/`cand_ppm_*` and the unread `mf_site.consumer`, in one
-   `MF_SITE_ABI` bump with zero pcrec movers (S3). Consumer price was never
-   built; it retires as text. The kit's memo stays in `mf_art` (per attempt)
-   until a measured compile cost says otherwise (§3.5).
+   lands first (S1, a pcrec abi event `[r4 R1]`), then the kit's own ranking,
+   implement-then-replace (S2), then the retirement of `mf_pred.rank_*`, the
+   never-filled `ppm_*`/`cand_ppm_*` and the unread `mf_site.consumer` in one
+   `MF_SITE_ABI` bump with zero pcrec movers (S3). `pcrec_find_run_rank`
+   survives S3 as the shadow's oracle and retires at S4 with the picks
+   `[r4 R5]`. Consumer price was never built; it retires as text.
 8. **Ratified** (§7): the storage capability, the window fields W0-W3 (with
-   the unbounded sentinels made PERMANENTLY refused), N5 in its per-width
-   rev-2.3 form, and N6. **Rejected**: W8 (span index), W9 (consumer price).
-   **Moved**: W10 (joint survival) becomes the analysis kind `run-rarity`.
+   the unbounded sentinels PERMANENTLY refused, a kit code change `[r4 R7]`),
+   N5 in its per-width rev-2.3 form, and N6. **Rejected**: the span-index
+   field (setfind's W8) and W9 (consumer price). **Moved**: W10 (joint
+   survival) becomes the analysis kind `run-rarity`.
 
 ## 1. Inputs, and what is already built
 
 **Binding rulings** (read in full; not re-opened):
 - D146 (delegation) and D147 (layers);
-- D155 add. 3/4/4.1 (composable body pieces; per-width primitives; a stateful
-  body is `next_candidate`);
+- D155 add. 3/4/4.1 (composable body pieces; per-width primitives; a STATEFUL
+  FIND's body contract is `next_candidate(&state, lo)`);
 - D157 (facts, never method);
-- D161 + add. 1-6;
+- D161 + add. 1-8 (add. 7: the stream; add. 8: proven facts kept);
 - D162 + add. 1-4.
 
 Memory rules that also bind: no silent defaults (a value a row USES must be
@@ -99,13 +132,14 @@ decisions as first-match tables.
 | item | state | where |
 |---|---|---|
 | one span = an `mf_pred` of terms at fixed offsets | BUILT | `MF_SITE_ABI` ≤ 10, main |
+| READS-BELOW FIND: a term wholly below its candidate bounds the range by its reads (Q-R7-1); `floor` bounds every read (Q-G2-6) | BUILT | main |
 | `mf_pred.window_stated`/`move_back`/`overshoot` (W0-W2), FIND's result is the window's beginning (W3) | BUILT | `MF_SITE_ABI` 11, `lane/memfn-r17` |
 | `mf_site.decl_point`, `mf_locals`, `mf_defined`, `fn_ref` as the STMT stem (W4/W5) | BUILT | same |
-| `mf_result.keeps_storage`, N6 in `valid_prefix`, the W8 sub-block `pcrec_mfk_w8_*` | BUILT | `MF_SITE_ABI` 12, `lane/r17b` |
+| `mf_result.keeps_storage`, N6 in `valid_prefix`, the width-8 sub-block `pcrec_mfk_w8_*` | BUILT | `MF_SITE_ABI` 12, `lane/r17b` |
 | `mf_pred.rank_n/rank_pos/rank_ppm` (RQ-2, D157) | BUILT, read by `vrun` KB | main |
 | `mf_term.ppm_*`, `mf_site.cand_ppm_*` | stated "unknown" everywhere, read by nobody | main |
-| `mf_site.consumer` | stated `MF_C_ENGINE` everywhere, only range-checked (`compose.c:383`) | main |
-| `mf_pred.plan_hint`/`plan_pos` | pcrec's model's scan pick, "permanent until M5" | main |
+| `mf_site.consumer` | stated `MF_C_ENGINE` everywhere, only range-checked (`compose.c`) | main |
+| `mf_pred.plan_hint`/`plan_pos` | pcrec's model's scan pick; READ by kit arms (`vrun.c`, `precheck.c`, `ofsskip.c`, `compose.c`'s rank check) | main |
 
 ## 2. Object A: the SITE description
 
@@ -113,111 +147,181 @@ decisions as first-match tables.
 
 A site is one search pcrec delegates. Its description states a SUB-PROBLEM: a
 regular language pcrec has cut out of the pattern. The kit must locate where
-a match of that language can begin. The sub-problem need not be the whole
+the sub-problem's span 0 can begin. The sub-problem need not be the whole
 pattern. For `a.*aaa.{2,5}zxq`, pcrec may send only `aaa.{2,5}zxq` and recover
 `a.*` itself with a reverse walk (D161 add. 4). Every fact in the description
 is TRUE of every match of the sub-problem, and the kit must honour every one
 (K96: a row that does not honour a stated parameter does not apply).
 
-**The ORIGIN** is the sub-problem's match start `m`. Every offset in the site
-is measured from it. That one shared origin keeps the reply span-free (§2.4).
+**The ORIGIN** is the start of span 0 `[D161.7]`. Every offset in the site is
+measured from it. A bounded HEAD of the sub-problem before span 0 (`[a-z]{0,8}`
+in `[a-z]{0,8}ing`) is not sent; its width `[h_min, h_max]` is pcrec's private
+fact, and pcrec maps each candidate `c` to its own start (an anchored attempt
+at `c` when `h = 0`, else a scan from `max(search_from, c - h_max)`). That one
+shared origin keeps the reply span-free (§2.4).
 
 ### 2.2 The span list
 
-A site carries `1 + npred` spans: `pred` (span 0) and `preds[0..npred)`
-(spans 1..npred, the kit's planned W7 reading, generalized). Each span is one
+A site carries `1 + npred` predicates: `pred` (span 0) and `preds[0..npred)`
+(spans 1..npred, the kit's planned W7 reading, generalized). Each is one
 `mf_pred`:
 
 | field | meaning | today's field | new? |
 |---|---|---|---|
 | terms (SET / RUN) | the class of each position, at fixed offsets inside the span. Positions no term covers are "any byte" | `term[]`, `nterm` | no |
-| `move_back` | `omax`: the span's largest start offset from the origin. The window begins `move_back` bytes before the span. Signed; MLINE states -1 | W1 | no (R17-a) |
-| `overshoot` | `omax - omin`: how far the window's beginning may lie before the match start | W2 | no (R17-a) |
+| `move_back` | `omax`: the span's largest start offset from the origin. Signed; span 0 states 0; a CONTEXT predicate states a negative value (below) | W1 | no (R17-a) |
+| `overshoot` | `omax - omin` | W2 | no (R17-a) |
 | `window_stated` | 1 = the two above are STATED; 0 (the zero fill) = unstated, refused on a window site | W0 | no (R17-a) |
-| `need` | REQUIRED: every returned window is consistent with this span (§2.4); OPTIONAL: the kit may use or ignore it | `mf_pred.need` | no (meaning widened from "the set-leads lead") |
-| `spans_seq` (site-level) | 1 = the SEQUENCE RULE holds for this site's spans (§2.3); 0 = it is not stated, and no row may read a pairwise distance | — | **yes** (R-18) |
+| `need` | UNSTATED (the zero fill, refused at define), REQUIRED (every candidate satisfies this span), OPTIONAL (the kit may use or ignore it) `[r4 R4]` | `mf_pred.need` | values re-numbered (§2.3) |
+| `spans_seq` (site-level) | UNSTATED (zero fill), SEQ (the sequence rule holds, §2.3), NOT-SEQ (it does not; no row may read a pairwise distance) `[r4 R4]` | — | **yes** (R-18) |
 
-D161 and the brief name five span parameters. The table below says where each
-one lives. None of them gets a field of its own, because each one is derivable
-from the fields above:
+**Context predicates** `[r4 E1]`. A predicate whose every term lies below the
+origin (Q-R7-1's reads-below FIND) is a CONTEXT check, not a span (D161 add. 7).
+`(?m)^`'s preceding `\n` is the one built today: R-17 spells it as the `{\n}`
+predicate with `move_back -1`, read here as "the context term lies one byte
+before the origin". The candidate is unchanged (the hit + 1), so no field and
+no byte moves. A context predicate is true at every candidate the stream
+covers, but it is NOT a fact of every sub-problem match: `(?m)^abc` matches at
+the edge with no `\n` before it. That is why the edge is pcrec's (§2.4).
+
+D161 and the brief name five span parameters. None gets a field of its own:
 
 | D161 / brief item | carried as |
 |---|---|
 | classes per position | the span's terms |
 | move-back | `move_back` (= `omax`) |
 | overshoot | `overshoot` |
-| MINIMUM offset | `omin = move_back - overshoot` (signed). It is a fact pcrec must newly COMPUTE (wingame §1.2: no req fact carries a minimum today), but it travels inside `overshoot`. A separate field would be a second spelling of one fact (D122) |
-| bounded gaps | the distance between consecutive spans. Under `spans_seq` it is `[omin_j - omin_i, omax_j - omax_i]`, exact (§2.3) |
+| MINIMUM offset | `omin = move_back - overshoot` (signed). pcrec must newly COMPUTE it (wingame §1.2), but it travels inside `overshoot`. A separate field would be a second spelling of one fact (D122) |
+| bounded gaps | under `spans_seq` = SEQ, the distance between spans `i < j` lies in `[omin_j - omin_i, omax_j - omax_i]` (§2.3) |
+
+**Naming** `[r4 R8]`. In this note a SPAN is a sub-problem span (an
+`mf_pred`). `mf_site.span_lo`/`span_hi` are the PROVEN RANGE (the bytes known
+to exist), never "span". The rejected reply-names-its-span proposal is the
+SPAN-INDEX FIELD (setfind's W8), never "W8": `W8` is also the built width-8
+sub-block `pcrec_mfk_w8_*`.
 
 ### 2.3 The rules
 
 - **True and required.** Every span is NECESSARY: every match of the
-  sub-problem carries, at some start offset `d ∈ [omin, omax]`, a byte of each
-  position's class at `m + d + j`. Each REQUIRED span binds the reply.
+  sub-problem carries, at some start offset `d ∈ [omin, omax]` from its span-0
+  start, a byte of each position's class at `origin + d + j`. Each REQUIRED
+  span binds the reply.
 - **Bounded only.** `move_back` and `overshoot` are finite. The reserved
-  `MF_MOVE_UNBOUNDED`/`MF_OVER_UNBOUNDED` (R17-a) become PERMANENTLY refused.
-  D161 add. 5: unbounded is automata and pcrec's, so no future row will
-  define them (§7, item W1/W2).
-- **No silent defaults.** `window_stated` and `spans_seq` are stated bits.
-  The zero fill reads "unstated", never "0 / not sequential": a FIND builder
-  that forgets W0 is refused at define (R17-a's rule), and a multi-span site
-  whose builder forgets `spans_seq` simply has no row that reads a pairwise
-  distance. That is the K96 shape: the field is a wildcard for every row
-  that does not use it, and stated for every row that does.
-- **THE SEQUENCE RULE** (`spans_seq` = 1). The spans are listed in order of
+  `MF_MOVE_UNBOUNDED`/`MF_OVER_UNBOUNDED` (R17-a) become PERMANENTLY refused
+  (D161 add. 5). **This is a kit code change** `[r4 R7]`: `lane/memfn-r17`'s
+  window check in `compose.c` currently exempts `MF_MOVE_UNBOUNDED` from its
+  back<0 test. It becomes a named refusal at define, with a G2 refusal case
+  for each sentinel. `mf_site.span_hi = MF_SPAN_UNBOUNDED` stays LEGAL: it
+  states that nothing is proven about the subject's length (an absent bound on
+  the PROVEN RANGE), which is a fact about the call, while an unbounded
+  `move_back` would be an offset inside the sub-problem, which D161 add. 5
+  rules is automata and pcrec's.
+- **No silent defaults** `[r4 R4]`. Every stated enum has an UNSTATED zero:
+  - `window_stated`: 0 = unstated, refused on a window site (R17-a's rule).
+  - `mf_need`: re-numbered `{MF_NEED_UNSTATED = 0, MF_REQUIRED,
+    MF_OPTIONAL}`. Today `MF_REQUIRED` is 0, so a builder that forgets `need`
+    gets REQUIRED silently, and REQUIRED now binds the reply. Refused at
+    define. An `MF_SITE_ABI` event (values and meaning) with zero movers when
+    every builder states it.
+  - `spans_seq`: tri-state `{UNSTATED = 0, SEQ, NOT_SEQ}`. UNSTATED on a
+    multi-span window site is refused; a single-span site may leave it
+    UNSTATED (no pairwise distance exists). NOT_SEQ is how a future BRANCH
+    producer says "not sequential" (§8.1 ii), which a 0/1 bit could not say.
+  That is the K96 shape: a field is a wildcard for every row that does not use
+  it, and stated for every row that does.
+- **THE SEQUENCE RULE** (`spans_seq` = SEQ). The spans are listed in order of
   position, and they are a subsequence of ONE flattened sequence of positions
-  and bounded gaps that every match of the sub-problem follows. So for
-  `i < j`:
+  and bounded gaps that every match of the sub-problem follows, starting at
+  span 0. So for `i < j`:
 
       start_j - start_i  ∈  [omin_j - omin_i,  omax_j - omax_i]
 
-  Without the rule, only the LOOSE interval `[omin_j - omax_i,
-  omax_j - omin_i]` is sound. wingame §8.1 measured the difference on its
-  witness `.{0,6}\d.{0,3}#`: a region of 3 starts (tight) against 15 (loose),
-  costing the refine policy 1.4x-2x. The producer emits only sequential spans
-  by construction (§5.2) and states 1. A future producer of BRANCH spans
-  (`(?:GET|POST)...`, wingame §2.2) states 0 (§8, example ii).
-- **Range.** Unchanged from the shipped vocabulary: `[lo, n - end_back)`,
-  with `empty` declared, no wrap, and `lo > n` empty.
+  This is a TIGHT HULL, not an exact set `[r4 E6]`: every real distance lies
+  inside it, and its ends are reached, but not every value between them need
+  be. **Its soundness obligation**: `omin_k` and `omax_k` are PREFIX SUMS of
+  the minimum and maximum widths of the items before span k along that one
+  sequence. An `omin` under-estimate on one span (and not on the other) can
+  push a real distance outside the interval: `pcrec_minw` under-estimates on
+  some shapes, and `req.c`'s `rn_tail_off` takes a SUBTREE `maxw`, so neither
+  may be used per span; the producer computes both sums along the sequence
+  (§5.2) and C-SP4 checks them with an under-estimate plant (§5.3). Without
+  the rule only the LOOSE interval `[omin_j - omax_i, omax_j - omin_i]` is
+  sound. wingame §8.1 measured the difference on `.{0,6}\d.{0,3}#`: a region
+  of 3 starts (tight) against 15 (loose).
+- **Range** `[r4 E5]`. Three definitions:
+  - **Starts, not occurrences.** A candidate is a span-0 START. Under
+    `move_back > 0` on a later span the kit may locate that span's occurrence
+    first, but what it yields is the span-0 start(s) the occurrence implies.
+  - **The range** is the shipped one: `[lo, n - end_back)`, with `empty`
+    declared, no wrap, and `lo > n` empty. A site with a context predicate
+    takes Q-R7-1's reads-below range (a candidate is in range iff `lo ≤ c`
+    and every read lies below `n - end_back`).
+  - **Reads.** Every read the kit makes lies in `[floor, n)`. A context
+    predicate reads below `lo`; `floor ≤ lo` is the caller's precondition
+    (Q-G2-6). pcrec states `floor` on every site that carries one.
+  - **Alignment under `-e utf8`.** Candidates are byte positions. The kit is
+    encoding-blind (D147 add. 14) and never rounds. When span 0's first class
+    can contain a non-start byte, pcrec's consumer rounds the candidate up to
+    a character start, or rejects it (`litscan_k82h.md` Claim 3 is that
+    consumer obligation, kept pcrec-side). A span 0 derived from a lowered
+    character class contains no continuation byte at position 0, and the
+    build asserts that where it relies on it.
 
 ### 2.4 The reply
 
-A site's reply is one of two TYPES, keyed on its op. These are
-`locate_finish.md`'s result types, restricted to what a kit site can prove:
+A site's reply is one of two TYPES, keyed on its op:
 
 | op | reply | meaning |
 |---|---|---|
-| FIND (a window site) | WINDOW: `L` (the `result` hook, today's W3) and optionally `U` (a new out-hook `start_hi`; when unstated, nothing is written) | No sub-problem match begins in `[lo, L)`. Every match carrying the occurrence `s` the kit located begins in `[L, U]`, where `U = s - omin` of the span that located it (so `U - L ≤ overshoot`, with equality unless W3 clamped `L` to `lo`). A miss means NO sub-problem match begins in `[lo, n)`: NOMATCH for the range |
+| FIND (a window site) | STREAM of candidates `[D161.7]`. Stateless: each FIND call returns the next candidate `≥ lo` (W3's `result`). Stateful: `next_candidate(&state, lo)` (D155 add. 4.1, R-17's forms). Both deliver the same sequence | see the obligations below |
 | ALL_PRESENT (a presence site) | VERDICT (and, under ASSIGN, the leftmost hit of `preds[ret_pred]`, unchanged) | Every REQUIRED predicate occurs somewhere in `[lo, hi)`. No window fields: such spans state `window_stated` 0, which R17-a already requires on non-FIND sites |
 
-- **Why no span index (W8).** Every span's offsets share the origin, so `L`
-  and `U` mean the same thing whichever span located them. pcrec needs `U`
-  (or nothing) and never the span.
-- **Resume point.** A consumer that rejects every start in `[L, U]` calls
-  the site again with `lo = U + 1`. This is sound: a match beginning after
-  `U` carries a later occurrence of the located span, because `d ≥ omin`.
-- **REQUIRED, for more than one span.** A returned window is CONSISTENT with
-  every REQUIRED span: there is some start `m' ∈ [L, U]` at which each
-  REQUIRED span occurs within its offset interval. A REQUIRED span the kit
-  did not locate with must still be checked by the kit, which is direction
-  (1) of [KIT-VERIFY] (§4.3).
-- **A bounded span's presence is part of FIND.** A FIND that misses has
-  proved the span absent from the range. So the pre-check that the K82/L1
-  handoff fuses today (presence plus location in one pass) is simply a FIND
-  with the landmark as a span: `move_back = K`, and an `overshoot` the
-  producer can now compute. The kit's reply replaces pcrec's `c - K` text,
-  which is the R-18 re-routing of the handoff that setfind §2.1 already
-  foresaw.
+**The stream's obligations** (D161 add. 7):
+
+1. **COMPLETE.** Every COVERED position in range where all spans (and all
+   context predicates) hold appears.
+2. **ASCENDING, no repeats.** A back-search from a later span can imply
+   several, or overlapping, span-0 positions; each is yielded once, in order.
+   A `lo` passed to the next call raises the floor of the sequence and never
+   lowers it.
+3. **Each candidate is span 0's start**, the origin.
+4. **REQUIRED spans bind** (this note's existing rule): every candidate
+   satisfies every REQUIRED span at an offset inside its interval. A
+   candidate may fail an OPTIONAL span (a superset is legal). So a stream
+   that yields every position in range is legal iff no span is REQUIRED.
+
+**Coverage and the edge** `[r4 E1]`. A position is COVERED unless deciding a
+context predicate there would need a byte the site does not offer as context,
+which is the EDGE: `search_from` (equal to `lo` at the first call), and `0`.
+pcrec tries the edge itself, as it does today (the FIND is skipped at the
+edge, `emit_dfa.c:12376` at the review's commit; `\G` makes `search_from` the
+edge), and opens the stream at edge + 1. So a stream that ends means: no
+sub-problem match begins at any COVERED position in range. Together with
+pcrec's edge attempt that is NOMATCH for the range. With no context predicate
+there is no edge, and an exhausted stream is NOMATCH outright.
+
+- **Why no span index.** Every candidate is span 0's start, so it means the
+  same thing whichever span the kit located first.
+- **No resume rule** `[r4 E7]`. Revision 1's `U` and resume-at-`U + 1` are
+  gone: the next candidate after one pcrec rejected is the stream's next
+  element. The 2-chain ambiguity in `U` dissolves with it.
+- **A bounded span's presence is part of FIND.** An exhausted stream has
+  proved that no covered position carries all spans. So the pre-check the
+  K82/L1 handoff fuses today (presence plus location in one pass) is a FIND
+  whose span 0 is the landmark. **Correction to revision 1**: pcrec's `c - K`
+  text does NOT retire. `K` is the bounded head before span 0 (`h_max`, §2.1),
+  and recovering the head is pcrec's. What moves at R-18 is the fused gate,
+  which becomes this FIND.
 
 ### 2.5 The degenerate cases, in these fields
 
-| site today | spans | `move_back` / `overshoot` | reply |
+| site today | spans / context | `move_back` / `overshoot` | reply |
 |---|---|---|---|
-| PF FIND, DFA hat, VM hat (R-17) | one span, one position, class `S` | 0 / 0 | WINDOW, `L` = the candidate (`U = L`) |
-| MLINE `(?m)^` | one span at offset -1, class `{\n}` | -1 / 0 | WINDOW, `L` = the hit + 1 |
-| offset-skip FUNC | one span: the k-set positions 0..k | 0 / 0 | WINDOW, `L` = the candidate |
-| run pre-check (unbounded offset) | the run, as a presence span | none (window_stated 0) | VERDICT |
-| K82/L1 handoff | the landmark span | K / K - omin | today: a VERDICT plus pcrec's `c - K`. At R-18: a WINDOW |
+| PF FIND, DFA hat, VM hat (R-17) | one span, one position, class `S` (an offset-pinned union, §5.6) | 0 / 0 | stream; candidate = the hit |
+| MLINE `(?m)^` | no span; one context predicate `{\n}` one byte before the origin | -1 / 0 (R-17's spelling) | stream from edge + 1; candidate = the hit + 1; the edge is pcrec's |
+| offset-skip FUNC | one span: the k-set positions 0..k (an offset-pinned union, from the k-set, not from `span_facts`) | 0 / 0 | stream; candidate = the hit |
+| run pre-check (unbounded offset) | the run, as a presence predicate | none (`window_stated` 0) | VERDICT |
+| K82/L1 handoff | span 0 = the landmark; head `[0, K]` is pcrec's | 0 / 0 | today: a VERDICT plus pcrec's `c - K`. At R-18: a stream; pcrec keeps `c - K` |
 
 ## 3. Object B: the ANALYSIS object
 
@@ -225,8 +329,11 @@ A site's reply is one of two TYPES, keyed on its op. These are
 
 ```c
 #define MF_ANALYSIS_LIST_V 1        /* the LIST's own shape, not any kind's */
-typedef enum { MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
+typedef enum { MF_PROV_UNSTATED = 0,      /* refused at define              */
+               MF_PROV_PRIOR_AUTHORED, MF_PROV_PRIOR_NONE,
                MF_PROV_MEASURED } mf_prov_source;
+typedef enum { MF_KIND_UNSTATED = 0,      /* refused at define              */
+               MF_KIND_PRESENT, MF_KIND_ABSENT } mf_kind_state;
 typedef struct {
     uint8_t     source;     /* mf_prov_source                                  */
     const char *bundle;     /* MEASURED: the answering bundle; PRIOR: "default" */
@@ -237,9 +344,9 @@ typedef struct {
 typedef struct {
     const char *tag;        /* the [FINDINGS] query name: "byte-rate", ...     */
     uint32_t    version;    /* this kind's payload shape                        */
-    uint8_t     present;    /* 1 PRESENT, 0 explicitly ABSENT                   */
+    uint8_t     present;    /* mf_kind_state                                    */
     mf_prov     prov;
-    const void *payload;    /* per tag; NULL when absent or PRIOR_NONE          */
+    const void *payload;    /* per tag; see the invariant below                 */
 } mf_akind;
 typedef struct mf_analysis {
     uint32_t        list_v;     /* MF_ANALYSIS_LIST_V                          */
@@ -248,8 +355,14 @@ typedef struct mf_analysis {
 } mf_analysis;
 ```
 
-The site reaches it as `mf_site.analysis`, appended last (D162 ruling 1);
-NULL is "none stated" and is legal only for a stand-alone K3 caller.
+**The payload invariant** `[r4 R4]`, checked at define: `payload` is non-NULL
+iff `present == MF_KIND_PRESENT` and `prov.source` is `PRIOR_AUTHORED` or
+`MEASURED`. So `byte-rate` under `-e utf8` today reads `PRESENT`,
+`PRIOR_NONE`, `payload == NULL`, and that combination is stated, not
+accidental. An `ABSENT` kind has `source == MF_PROV_UNSTATED` and no payload.
+
+The site reaches the object as `mf_site.analysis`, appended last (D162 ruling
+1). NULL is "none stated" and is legal only for a stand-alone K3 caller.
 
 ### 3.2 The kinds today, and their provenance
 
@@ -261,18 +374,17 @@ NULL is "none stated" and is legal only for a stand-alone K3 caller.
 - **Why `prior-none` carries no table.** pcrec's own answer with no data is
   per question kind (D126 Q4): MASS is cardinality, PICK ties to its
   reader's rightmost, and COMPARE is false. A uniform table would answer
-  COMPARE "true" for every pair, which is a density claim no data supports.
-  It is also the "false confidence" Frank warned against (D162 add. 2). So
-  the kind ARRIVES, which honours D162 add. 2, and its provenance states that
-  pcrec's prior here is the no-information answer. The kit spells those
-  per-question answers for its own questions. When D160's authored utf8 prior
-  lands, the utf8 kind becomes `prior-authored` with a table. That is an abi
-  event only where a kit row reads the kind (§8 example i).
+  COMPARE "true" for every pair, which is a density claim no data supports
+  (the "false confidence" of D162 add. 2). So the kind ARRIVES, honouring
+  D162 add. 2, and its provenance states that pcrec's prior here is the
+  no-information answer. When D160's authored utf8 prior lands, the utf8 kind
+  becomes `prior-authored` with a table.
 - **Evidence.** A row that needs EVIDENCE (D162 add. 1's decline on positive
-  density) reads only `measured` (D162 add. 3).
+  density) reads only `measured` (D162 add. 3). How MUCH evidence is a filed
+  fact (§3.6).
 - **`cpfreq` is never a kind.** The kit is encoding-blind (D147 add. 14), so
-  pcrec derives the byte-domain kind (`encode-utf8` is already the
-  derivation, `findings.c:188`) and sends that.
+  pcrec derives the byte-domain kind (`encode-utf8`, `findings.c`) and sends
+  that.
 
 ### 3.3 Rules
 
@@ -281,179 +393,224 @@ NULL is "none stated" and is legal only for a stand-alone K3 caller.
    reads as ABSENT.
 2. **Every kind this pcrec knows is LISTED, present or absent.** An absent
    entry is the explicit absence D162 asks for. A tag missing from the list
-   can only mean an older pcrec, and the kit treats it as absent too. The
-   two cases never differ in behaviour; listing makes the absence visible in
-   a trace.
+   can only mean an older pcrec, and the kit treats it as absent too.
 3. **One object per compile attempt.** pcrec builds it from `Job.find`, which
    is per attempt, at the first site ask. Every site of one `mf_art` states
    the SAME pointer. The kit refuses a site whose pointer differs from the
-   art's first ("one analysis object per compile"), which turns D162's "one
-   per compile" from a convention into a check.
+   art's first, and NULL counts as a pointer value: an art whose sites mix
+   NULL and non-NULL is refused `[r4 R9]`.
 4. **The per-site slot stays RESERVED** (D162 ruling 1). No field is added
-   until a measured case needs a fact the kit cannot derive.
-5. **Totality.** Every kit selection is TOTAL when the object, or any kind
-   in it, is absent or `prior-none`. The no-data path is a stated decision
-   (D162 ruling 2; R-17's ADMIT, D162 add. 1).
+   until a measured case needs a fact the kit cannot derive. Filling it is an
+   `MF_SITE_ABI` event (§8.2).
+5. **Totality.** Every kit selection is TOTAL when the object, or any kind in
+   it, is absent or `prior-none` (D162 ruling 2).
 6. **Lifetime.** The object lives in pcrec's arena until the attempt ends,
    which outlives `mf_art_end`.
 
 ### 3.4 What the object is not
 
 It holds no per-site answers: not a set's mass, not a ranking, not a
-survivor estimate. Those are derived by the kit (D162 add. 3's rule: a
-derived fact pcrec computes only to hand over is the kit's to derive). It
-also holds no consumer price (D161 add. 6).
+survivor estimate. Those are derived by the kit (D162 add. 3's rule). It also
+holds no consumer price (D161 add. 6).
 
 ### 3.5 The kit's per-compile memo (D162 add. 4)
 
 - **What.** Anything the kit derives from the object: cube masses, a byte
   order, a site's run ranking (§6 S2).
 - **The rule.** The memo is a PURE function of `(analysis object, the art's
-  kit options)`. A site's text therefore never depends on which sites were
-  rendered before it.
+  kit options)`. A site's text never depends on which sites were rendered
+  before it.
   - **The check** shares no source with the memo: a test build renders every
-    corpus artifact's sites twice, in forward and in reverse site order, into
+    corpus artifact's sites twice, in forward and reverse site order, into
     two fresh arts, and compares each site's text.
-  - **Its sabotage row:** a memo that is filled lazily from the first site's
-    term (order-dependent).
-- **Where: keep it in `mf_art` (per ATTEMPT).** The `mf_art` comment says
-  "one per Job ATTEMPT (the size ladder re-emits)". The object itself is per
-  attempt (`Job.find`), so a per-attempt memo is trivially keyed right, and
-  it costs one rebuild per ladder attempt over 256-entry tables.
-- **Trigger to move it per compile:** a measured compile-time cost of the
-  memo build above the noise of a minimal compile. At that point it would be
-  keyed by the `byte-rate` digest, in kit state passed to `mf_art_begin`
+  - **Its sabotage row:** a memo filled lazily from the first site's term.
+- **Placement** `[r4 R10]` (a filed decision with a trigger, not a table):
+  the memo lives in `mf_art` (per ATTEMPT), which the object's own lifetime
+  keys correctly. **Trigger to move it per compile**: a measured compile-time
+  cost of the memo build above the noise of a minimal compile; it would then
+  be keyed by the `byte-rate` digest in kit state passed to `mf_art_begin`
   (D77; no such cost has been measured).
 
-## 4. The kit's job: a chain of simple searches
+### 3.6 Filed analysis facts `[r4 R10]`
 
-### 4.1 One or two links (D161 add. 5)
+- **Evidence strength** (`mf_prov`): how much data a `measured` kind rests on
+  (the exemplar's byte count, or its sample count). Today `measured` from a
+  64-byte exemplar and from a 1 GiB one read the same. **Trigger:** the first
+  kit row that reads `measured` provenance as EVIDENCE (D162 add. 1's decline
+  on positive density). It would be a new `mf_prov` field, an `MF_SITE_ABI`
+  layout event.
 
-The kit's plan for a site is a CHAIN.
-- **Length 1:** scan one span (the best tool for it), then verify.
-- **Length 2:** scan a rarer span B, then search the bounded region where an
-  earlier span A must lie (§2.3's tight interval), then verify.
+## 4. The kit's job: a chain of simple searches `[r4 R3]`
 
-Which spans, which positions, which tool, whether to verify an OPTIONAL span,
-and whether to search at all are all the kit's (D161, D161 add. 6).
+### 4.1 The ruling (D161 add. 5), quoted
 
-**The no-search arm** is `L = lo`, `U = lo + overshoot(span 0)`: the
-consumer meets every byte. It is total, so every site renders even when no
-link pays (D162 ruling 2). It is the kit's DECLINE. pcrec never asks for it.
+> "essentially we are asking memfn to come up with a chain of 1-2 simple
+> searches. 1 for a good header span, 2 for a good second span which then
+> searches for the poorer first span. we could do 3+ chains if we provided
+> 'fallback/overshoot to previous span' not just start of function. its not
+> doing automata. its picking the best tools for various components.
+> unbounded is automata and outside its pervue"
 
-Storage belongs to the SITE, not to a link (§7, storage).
+How a chain is built, which spans, which positions, which tool, whether to
+verify an OPTIONAL span, and whether to search at all are the kit's (D161,
+D161 add. 6). The contract states only what the chain reads and owes:
 
-### 4.2 The 3+-link extension (specified, not built)
+- **What it reads.** The spans, their intervals, and (under `spans_seq` =
+  SEQ) every pairwise distance's tight hull (§2.3). The analysis object
+  (§3).
+- **What it owes.** The stream's four obligations (§2.4) and totality: every
+  site renders (D162 ruling 2), including when no link pays.
+- **Storage** belongs to the SITE, not to a link (§7, storage).
 
-- **The one extra fact Frank named** (D161 add. 5): "fallback/overshoot to
-  previous span, not just start of function". That is each span's distance
-  to the PREVIOUS span, rather than only to the origin. The sequence rule
-  supplies it exactly, for every pair (§2.3). So the extension adds NO site
-  field. What it adds is kit-internal:
-  - **Resume semantics.** When link `k` fails at a candidate of link `k-1`,
-    the chain resumes link `k-1` at its next candidate inside link `k-2`'s
-    region, not link 1. Soundness: a match whose link-`(k-1)` occurrence is
-    the failed one cannot exist, and every other occurrence inside the
-    region is still enumerated in order.
-  - **Its G2 family:** generated 3-span sites with planted region
-    off-by-ones, against the byte-loop oracle.
-- **Trigger (D77):** a real pattern whose best 2-chain still loses to a
-  measured 3-chain twin. No such cell is known; wingame §2.1 found 18 of 327
-  patterns with two or more bounded spans.
+### 4.2 The 3+-link extension
+
+The one extra fact Frank named, each span's distance to the PREVIOUS span
+rather than only to the origin, is already delivered for every pair by the
+sequence rule (§2.3). So a 3+-link chain needs NO new site field. How such a
+chain is built and checked is the kit's. **Trigger (D77):** a real pattern
+whose best 2-chain loses to a measured 3-chain twin. wingame §2.1 found 18 of
+327 patterns with two or more bounded spans.
 
 ### 4.3 [KIT-VERIFY]'s two directions
 
 **(1) pcrec → kit, "verify span k".** This is `need = REQUIRED` on span k
-(§2.4), which already exists in the vocabulary. It is a requirement on the
-REPLY: every returned window is consistent with span k. It never names a
-method; the kit chooses memcmp, a class compare or a fused form. pcrec marks
-a span REQUIRED where its consumer would otherwise re-test it. Everything
-else stays OPTIONAL, so the kit keeps the freedom to skip a dense span.
+(§2.4 obligation 4). It names no method. pcrec marks a span REQUIRED where its
+consumer would otherwise re-test it. Everything else stays OPTIONAL, so the
+kit keeps the freedom to skip a dense span.
 
-**(2) kit → pcrec, PROVEN FACTS** (a new channel):
+**(2) kit → pcrec, PROVEN FACTS** `[D161.8]`.
 
 - **What it carries.** `mf_result.proven`: for each span `k`, a bitmask of
-  that span's positions which the CHOSEN FORM verifies at every window the
-  site returns. It is reported through `mf_defined` (STATIC, known at define
-  time).
-  - It is defined only for spans whose offset from `L` is FIXED: `overshoot`
-    0, so the occurrence lies at `L + omin`. For any other span the mask is 0
-    in v1. A span with a runtime position needs a runtime `occurrence`
-    out-hook, which is specified here, not built, and waits for a consumer.
-  - A REQUIRED span's positions are proven by definition, so the mask
-    reports the OPTIONAL positions that the form happens to verify (a fused
-    pair, a whole-run compare).
+  that span's positions that hold at EVERY candidate the site yields. It is
+  reported through `mf_defined` (STATIC, known at define time).
+  - It is defined only for spans whose offset from the candidate is FIXED
+    (`overshoot` 0; span 0 always is). For any other span the mask is 0 in v1
+    (Q2, §12). A span with a runtime position would need a runtime
+    `occurrence` out-hook: specified as a possibility here, not built.
+  - REQUIRED spans' positions hold by obligation 4, so they are always in the
+    mask; the mask's information is which OPTIONAL positions also hold.
   - The positions per span are bounded by a shape bound `MF_MAX_SPAN_POS`,
     derived from `PCREC_MAX_REQ_RUN_SCAN` (32) and asserted where pcrec
     builds a span, on `MF_RANK_MAX`'s precedent.
-- **Exactness.** The kit must never over-claim. A form whose verification
-  differs from candidate to candidate (an adaptive or stateful form that
-  sometimes skips the verify) reports 0 for that position. Under-claiming is
-  always correct.
-- **How pcrec consumes it.** A first-match table decides, per span and
-  consumer route (T-PROOF in §9):
-  - DFA route, a prefix span at offset 0 whose proven positions `0..j-1` all
-    hold exact bytes: pcrec starts the forward scan at state
-    `δ*(s0, those bytes)` at `L + j`. That state is a compile-time constant.
-  - DFA route, a proven position holding a class whose members lead to
-    different states: pcrec does not use the proof.
-  - VM route: pcrec enters the attempt past the leading instructions only
-    where those instructions ARE the proven literal tests and open no
-    capture group.
-  - Anything else: the proof is ignored. A site whose consumer cannot use a
-    proof still gets correct code (the [KIT-VERIFY] force).
+- **Layer invariance** (the floor rule's condition). The proof is the kit's
+  statement for the SITE REQUEST (the site fields and its analysis object). It
+  is the SAME under `-fno-memfn-simd`, `-fmemfn-simd` at every level, and every
+  `--memfn=` deny: a form that does not test a proven position as part of its
+  scan tests it anyway (the kit can test a span in any form). So pcrec's bytes,
+  which depend on the proof, do not depend on the layer, and SIMD-on stays
+  SIMD-off plus guarded text (D155 Q-R9-6, C18, RQ-3).
+- **Exactness.** The kit must never over-claim. Under-claiming is always
+  correct, and the claim it makes is the same in every layer.
+- **How pcrec consumes it** (T-PROOF, §9). Frank's `foobar` example, with the
+  sub-problem `foobar`:
+  - the kit proves `fo`: pcrec either asks a span test from the kit for the
+    rest (a VERIFY site over the unproven positions at the candidate) or
+    starts its own engine past the proof (the DFA at `δ*(s0, "fo")` at
+    `c + 2`), under the conditions below;
+  - the kit proves `foobar`: when nothing else remains to check (no head
+    before span 0, no tail after the site, no context predicate unproven, no
+    capture asked beyond the whole match, the sub-problem is exactly the
+    proven fixed string), pcrec knows the pattern matched at `(c, c + 6)` and
+    stops. The stream is ascending and complete, so the first candidate is
+    the leftmost match.
+- **Consumption conditions** `[r4 E4]` (kept by D161 add. 8, pcrec-side):
+  - **DFA rows**: only on a machine whose state after the proven bytes is a
+    compile-time constant: the unseeded PLAIN view. A seeded or context-viewed
+    machine (`\b`, `(?m)^`, `\G`, a lookbehind reading before the candidate)
+    has a start state that depends on bytes before `c` (`emit_dfa.c:12398-12410`
+    at the review's commit), so the row declines.
+  - **VM row**: enters past leading instructions only where those
+    instructions ARE the proven literal tests, open no capture group, skip no
+    interleaved assertion, and change no meter (no step or WORK charge the
+    unskipped path would make, D158).
+  - **Report row**: only under the "nothing else remains" conjunction above.
+  - Anything else: the proof is ignored, and the code is still correct.
 - **Checks.**
-  - **G2:** for every generated site and subject, at every returned window,
-    every proven position holds (the byte-loop oracle).
+  - **C-PROOF (layer invariance):** a test build renders every corpus site
+    under SIMD off, every live SIMD level and every `--memfn=` deny, and
+    compares `proven`; any difference fails. Its sabotage row: a proof bit set
+    only by a SIMD row.
+  - **G2:** for every generated site and subject, at every candidate, every
+    proven position holds (the byte-loop oracle). This is a check on the
+    kit's claim, not a statement of its method.
   - **pcrec's trace build** re-tests every proven position it consumes, at
     run time.
   - **A sabotage row:** a form that sets a proof bit it does not test.
 - **Events.** `mf_result.proven` is a layout change (an `MF_SITE_ABI` bump)
-  with no byte moved. pcrec's first CONSUMER of it moves bytes, which is a
-  pcrec abi event plus a deny of its own (`-fno-kit-proof`, PROPOSED). That
-  is not built: [KIT-VERIFY]'s trigger, a measured consumer re-read cost on
-  real cells, comes first.
+  with no byte moved. pcrec's first CONSUMER of it moves bytes: a pcrec abi
+  event plus a deny of its own (`-fno-kit-proof`, PROPOSED). Not built until
+  [KIT-VERIFY]'s trigger, a measured consumer re-read cost on real cells.
 
-## 5. The ONE pcrec-side producer
+**The R2 record** (review r4 R2, REJECTED by D161 add. 8). The panel argued
+that `proven` makes pcrec's bytes depend on the kit's method (varying with
+`-fmemfn-simd` and `--memfn=` denies, which would break C18/RQ-3 neutrality)
+and that it is redundant because a REQUIRED span is proven by definition. It
+proposed deleting direction (2). Frank's ruling:
+
+> "the simd on/off difference isn't true. memfn can still test spans. also,
+> even if it returned different responses, its still at compile time- the
+> pcrec side would then emit the code to handle it. for foobar memfn could
+> return only "fo" proven or "foobar" proven. if the first one, then pcrec
+> would ask for a span test from memfn for the whole span or simply launch
+> into a dfa or whatever. if memfn returns "foobar" as proven, pcrec can know
+> the pattern is matched and stop".
+
+The design follows from it: the proof is layer-invariant BY CONTRACT (the
+kit tests a proven span in any form), checked by C-PROOF; it is not redundant
+with REQUIRED, because it reports OPTIONAL positions the kit chose to prove
+and lets pcrec skip work (or the whole engine) without asking for every span.
+Q12.2's leaning (fixed offsets only) stands.
+
+## 5. The pcrec-side producer
 
 ### 5.1 Today's derivations, read from `src/` (main `f3569b161`)
 
 | derivation | function (file:line) | computes | becomes |
 |---|---|---|---|
-| necessary set + per-member max offset | `pcrec_req_walk` → `RbSet` (`src/facts/req.c:638`); facts `req_set`, `req_set_maxoff` | bytes every match contains; each member's max offset (`RbSet.off`) | one-position spans `{b}` with `omax`; the producer adds `omin` |
-| the necessary run + its max offset | `pcrec_req_walk` → `RbRun` (`req.c:638`, `rn_better` ranking by information); `req_whole_run`, `whole_maxoff` | the most informative contiguous run, positions as cubes `(T, K)` | a multi-position span; `omin` added |
-| run window | `pcrec_req_window` (`req.c:667`) via `pcrec_find_run_scan_index` / `pcrec_find_run_window_start` (`src/core/findings.c:522/:586`) | the scanned member and a truncation to ≤ 8 bytes, priced by the prior | a DECISION; moves to the kit (which positions to scan) |
-| required byte | `pcrec_req_pick` (`req.c:709`) via `pcrec_find_set_pick` (`findings.c:476`) | which set member the `memchr` tests | DECISION → the kit |
-| landmark K | `pcrec_fact_req_landmark_maxoff` (`req.c`, [REQ-HANDOFF-L1]) | the run window's K, else the req byte member's | the landmark span's `move_back`; `overshoot` added |
-| set-leads | `req_set_leads_applies` (`src/gen/emit_dfa.c:7608`), a PICK over [run scan cube, set pick] | whether the set's pick leads the run | DECISION → the kit (lead order is the composite's form, integration.md rev 4.5) |
-| landmark admission | `req_landmark_admits` (`emit_dfa.c:7810`) | re-entered handoff vs the start-byte row, priced by the prior | DECISION → the kit (two windows of one segment) |
+| necessary set + per-member max offset | `pcrec_req_walk` → `RbSet` (`src/facts/req.c:638`); facts `req_set`, `req_set_maxoff` | bytes every match contains; each member's max offset | one-position hull spans `{b}`; the producer adds `omin` |
+| the necessary run + its max offset | `pcrec_req_walk` → `RbRun` (`req.c:638`); `req_whole_run`, `whole_maxoff` | the most informative contiguous run | a multi-position hull span; `omin` added |
+| run window | `pcrec_req_window` (`req.c:667`) via `pcrec_find_run_scan_index` / `pcrec_find_run_window_start` (`src/core/findings.c`) | the scanned member and a truncation to ≤ 8 bytes, priced by the prior | a DECISION; moves to the kit |
+| required byte | `pcrec_req_pick` (`req.c:709`) via `pcrec_find_set_pick` | which set member the `memchr` tests | DECISION → the kit |
+| landmark K | `pcrec_fact_req_landmark_maxoff` (`req.c`, [REQ-HANDOFF-L1]) | the run window's K, else the req byte member's | `h_max`, the bounded head before span 0 (pcrec's, §2.1); a family member (§5.6) |
+| set-leads | `req_set_leads_applies` (`src/gen/emit_dfa.c:7608`) | whether the set's pick leads the run | DECISION → the kit |
+| landmark admission | `req_landmark_admits` (`emit_dfa.c:7810`) | re-entered handoff vs the start-byte row, priced by the prior | DECISION → the kit |
 | G1 | `req_byte_dominated_by` (`emit_dfa.c:7554`) | whether the DFA prefilter makes the pre-check redundant | DECISION → the kit, once the PF and PRE sites are one site |
-| k-set walk | `pcrec_kset_walk` (`src/facts/kset.c:226`, E3, NFA from `anch_start`, assertions passed) | per fixed offset, the byte set every match carries | the prefix segment's classes; it stays as the producer's CONTROL (§5.3) |
-| offset-k selection | `pcrec_prefix_ksets` / `model_cost` (`src/opt/prefix_k.c:179/:114`) | which offsets to scan/verify, under four measured cost constants | DECISION → the kit (D147 add. 4's M5 planner move) |
-| run pin | `pcrec_run_pin` (`kset.c:298`) | the fixed offset at which the k-set spells the run window | a span with `overshoot` 0; its PICK goes to the kit |
-| start set | `pcrec_start_set` (`src/facts/startset.c:141`, E2) | a superset of the first consumed byte | span 0's offset-0 class; it stays as a control and as pcrec's own fact (DFA hat, route) |
-| widths | `pcrec_width_walk` (`kset.c:335`); `pcrec_minw`/`pcrec_cwmax` (`src/opt/mrl.c`) | byte width intervals | the arithmetic for `omin`/`omax` |
-| run rank | `pcrec_find_run_rank` (`findings.c:553`) → `ofs_pred_rank` (`emit_dfa.c:1181`) | RQ-2's ranking | RETIRES (§6) |
-| scan plan sent | `mf_pred.plan_hint`/`plan_pos` (`emit_dfa.c:1210-1228`) | pcrec's model's scan pick | RETIRES into the kit at M5 / R-18 (§6 S4) |
+| k-set walk | `pcrec_kset_walk` (`src/facts/kset.c:226`, E3) | per fixed offset, the UNION over paths of the byte set every match carries | **stays its own fact** `[r4 E2]` (a family member); it feeds the offset-pinned union span the offset-skip site sends today, and C-SP1 |
+| offset-k selection | `pcrec_prefix_ksets` / `model_cost` (`src/opt/prefix_k.c`) | which offsets to scan/verify | DECISION → the kit (D147 add. 4's M5 planner move) |
+| run pin | `pcrec_run_pin` (`kset.c:298`) | the fixed offset at which the k-set spells the run window | a family member; a hull span with `overshoot` 0 where the run is on every path; its PICK goes to the kit |
+| start set | `pcrec_start_set` (`src/facts/startset.c:141`, E2) | a superset of the first consumed byte, a UNION over paths | **stays its own fact** `[r4 E2]` (DFA hat, route); sent as its own one-position site (PF FIND), not inside a sequenced multi-span site (§8.1 iii) |
+| widths | `pcrec_width_walk` (`kset.c:335`); `pcrec_minw`/`pcrec_cwmax` (`src/opt/mrl.c`) | byte width intervals | the per-item widths the prefix sums add (§5.2) |
+| run rank | `pcrec_find_run_rank` (`findings.c`) → `ofs_pred_rank` (`emit_dfa.c:1181`) | RQ-2's ranking | `ofs_pred_rank` RETIRES at S3; `pcrec_find_run_rank` stays as the shadow's oracle until S4 (§6) |
+| scan plan sent | `mf_pred.plan_hint`/`plan_pos` (`emit_dfa.c:1210-1228`) | pcrec's model's scan pick | RETIRES at S4 (kit arms read it) |
 
 ### 5.2 The producer
 
 - **What.** One new CORE fact, `span_facts` (E2, on the lowered tree, so it
   reads the encoding, `-i` and `--ucp` by construction). Proposed owner
-  `src/facts/spans.c`; no prior and no option read.
+  `src/facts/spans.c`; no prior and no option read. It is a MEMBER of the
+  position-pin fact family (§5.6), not a parallel producer `[r4 E2]`.
+- **Scope (narrowed).** It produces HULL spans only: spans every path of the
+  sub-problem carries. A union over paths at a fixed offset (`a?bcd`'s k-set
+  `{a,b},{b,c},{c,d}`; `a*bc`'s start set) is NOT a hull span, and the
+  producer does not claim it; those stay `start_set` and the k-set.
 - **The walk** generalizes `rb_walk`'s per-subtree accumulators (head and
-  tail runs to JOIN, `RbRun.off` from `maxw`) in two ways:
-  - each subtree carries its spans as `(classes, omin, omax)`, with `omin`
-    from `pcrec_minw` beside `omax` from the `maxw` arithmetic `req.c`
-    already does;
+  tail runs to JOIN, `RbRun.off`) in two ways:
+  - each subtree carries its spans as `(classes, omin, omax)`;
   - an alternation contributes its branches' common HULL span (the
     `rn_common_head/tail` rule, cubes at most `pos_set`).
+- **The prefix-sum obligation** `[r4 E6]`. `omin_k`/`omax_k` are the sums of
+  the minimum/maximum byte widths of the items before span k along the one
+  flattened sequence the segment follows. They are NOT taken from a subtree's
+  `maxw` (`rn_tail_off`'s shape) or from `pcrec_minw` applied to a prefix
+  subtree, both of which can under- or over-estimate per span and break the
+  tight hull (§2.3).
 - **Output.** A list of SEGMENTS. A segment is the maximal stretch between
   unbounded items (an unbounded repeat or gap, a backreference, a call, a
   variable). Each segment holds:
-  - its spans, sequential by construction (one flattened sequence, so
-    `spans_seq` = 1);
-  - its origin: the match start for segment 0, else the segment's start.
+  - its spans, sequential by construction (`spans_seq` = SEQ), with offsets
+    from its first span (the origin);
+  - its head: the width `[h_min, h_max]` of the bounded part before its first
+    span (0 for a fixed prefix), pcrec's own.
 
   The output also holds the PRESENCE spans: necessary sets and runs whose
   offset is unbounded, as `req_set`/`req_whole_run` have today.
@@ -465,83 +622,155 @@ else stays OPTIONAL, so the kit keeps the freedom to skip a dense span.
 
 | control | expectation from | checks |
 |---|---|---|
-| C-SP1 prefix classes | `pcrec_kset_walk` (an NFA walk, E3) | segment 0's fixed-offset positions equal the k-set's sets wherever both are fixed (wingame's control: 582/582 positions on 166 patterns) |
-| C-SP2 first byte | `pcrec_start_set` | segment 0's offset-0 class ⊆ start_set, with equality where no assertion precedes it |
-| C-SP3 run / set | `req_whole_run`, `req_set`, `*_maxoff` | the most informative span equals the whole run; each set member's `omax` equals `req_set_maxoff` (until those facts retire into the producer, one reader per commit) |
-| C-SP4 pairwise distance | a direct walk of the items between two spans (wingame `spans.rel_from_items`, 152/152) | the sequence rule's interval is exact |
+| C-SP1 prefix classes | `pcrec_kset_walk` (an NFA walk, E3) | where segment 0 has a hull span at a fixed offset from the match start (head 0) and the k-set's position is fixed, the hull class ⊆ the k-set's class, with equality where the k-set position is on one path. **Non-vacuity** `[r4 E2]`: a literal floor on the number of compared positions (measured at build, K35), and a reported (not failed) count of k-set positions the producer has no span for: the union population, unlock (b)'s |
+| C-SP2 first byte | `pcrec_start_set` | a head-0 segment's offset-0 class ⊆ start_set, with equality where no assertion precedes it and the start set is single-path. **Non-vacuity**: a floor on the number of artifacts with a head-0 span |
+| C-SP3 run / set | `req_whole_run`, `req_set`, `*_maxoff` | the most informative span equals the whole run; for each set member `b`, `req_set_maxoff[b]` equals the MIN of `omax` over the spans that carry `b` `[r4 E8]` (`req_set_maxoff` is a min across factors). Until those facts retire into the producer, one reader per commit |
+| C-SP4 pairwise distance | a direct walk of the items between two spans (wingame `spans.rel_from_items`, 152/152) | every real distance lies inside the sequence rule's tight hull, with ends reached. **Plants**: an `omin` under-estimate on one span (a per-span `pcrec_minw`), and a subtree-`maxw` `omax`; both must fire |
 | C-SP5 soundness | libpcre2 10.46 answers | every match's bytes lie in each span's class at an offset inside `[omin, omax]`, over the corpus's `m` cells, with a planted off-by-one control |
 
 **K35 (who counts).** A floor on the number of artifacts carrying a multi-span
 segment, read off a stamp-free census. The trigger population is wingame §2.1's
 18 of 327; the floor stays a measured literal.
 
-### 5.4 Which sub-problem pcrec sends: the CUT table (first match)
+### 5.4 Which window sub-problem pcrec sends: T-CUT (first match)
 
-| row | predicate | sends | FINISH |
+| row | predicate | sends | FINISH | deny (D46) `[r4 R10]` |
+|---|---|---|---|---|
+| `anchored` | `start_anchor` is BOT/GSTART | no window site | the attempt at the anchor | none (structural: nothing to choose) |
+| `rev-inner` | [ENG-TACTICS]'s own gates G1-G4 admit an inner segment | that segment, origin = its first span | RECOVER reverse walk, then forward. pcrec's | its own, filed with [ENG-TACTICS] (`-fno-rev-inner`, PROPOSED) |
+| `segment-0` | segment 0 has a span | segment 0's spans, origin = its first span | from `c` (head 0) or from `max(search_from, c - h_max)` | the span SOURCES' existing denies (`-fno-start-set`, `-fno-offset-skip`, `-fno-run-prefilter`, `-fno-req-handoff`) remove their spans; the row is denied when every source is |
+| `none` | always | nothing | the attempt loop / every byte | none (total) |
+
+- **The table holds no prior.** `rev-inner` sits above `segment-0` only where
+  its own admission passes. Frank's `a.*aaa.{2,5}zxq` is that row's case. Q1
+  (§12) asks whether that is enough.
+- **One site per segment.** Today segment 0's facts reach the kit as several
+  sites chosen by several rows (the PF FIND, the run-pinned offset-skip, the
+  K82/L1 handoff gate, set-leads). Under this contract the HULL spans are ONE
+  window site. The offset-pinned union span (start set, k-set) stays its own
+  single-span site until unlock (b).
+
+### 5.4a Whether a PRESENCE site rides beside it: T-PRES (first match) `[r4 E3]`
+
+Presence is no longer a T-CUT row, so it is not exclusive with a window site.
+
+| row | predicate | sends | deny |
 |---|---|---|---|
-| `anchored` | `start_anchor` is BOT/GSTART | no window site | the attempt at the anchor |
-| `rev-inner` | [ENG-TACTICS]'s own gates G1-G4 admit an inner segment (where_to_start.md, rincensus) | that segment, origin = its start | RECOVER reverse walk, then forward. pcrec's |
-| `segment-0` | segment 0 has a span | segment 0's spans, origin = the match start | forward from `L` |
-| `presence` | a presence span exists | a PRESENCE site (VERDICT) | the body as today |
-| `none` | always | nothing | the attempt loop / every byte |
+| `dominated` | the window site's spans include the presence span's bytes at a bounded offset (G1's question) | nothing | `-fno-req-byte`/`-fno-req-run` (the sources' own) |
+| `presence` | a presence span exists | a PRESENCE site (VERDICT), run before the window site | `-fno-req-byte`/`-fno-req-run` |
+| `none` | always | nothing | none |
 
-- **The table holds no prior.** `rev-inner` sits above `segment-0` only
-  where its own admission passes. Frank's `a.*aaa.{2,5}zxq` is that row's
-  case: segment 0 is `a`, and the inner segment is chosen by rev-inner's
-  gates, not by a new price here. Q1 (§12) asks whether that is enough.
-- **One site per segment.** Today, segment 0's facts reach the kit as
-  several sites chosen by several rows: the PF FIND, the run-pinned
-  offset-skip, the K82/L1 handoff gate and set-leads. Under this contract
-  they are ONE window site carrying every span of segment 0. That is the
-  "cross-site" opportunity Q42 named.
+`a.*zxq` now sends segment 0 (`a`) AND the `zxq` presence site, which keeps
+reqpos_2b's measured win (1.46 of 10.284). Whether presence becomes the
+chain's zero-cost first link is unlock (c).
 
 ### 5.5 What stays pcrec's: the unbounded cuts
 
 | cut | row |
 |---|---|
 | an unbounded head before the sent segment (`a.*` in Frank's example) | RECOVER `reverse-pass` / `landing` / `end-minus-width` |
-| an end-pinned pattern | LOCATE `rev-end` (the reverse walk from `n`) |
+| a BOUNDED head before span 0 (`h_max`, the K82 handoff's `c - K`) | FINISH's scan start (§2.1) |
+| an end-pinned pattern | LOCATE `rev-end` |
 | a landmark behind an unbounded gap | `rev-inner` ([ENG-TACTICS], filed) |
 | no span at all | the attempt loop; the DFA stepping every byte |
+| the context edge (`(?m)^` at `search_from`/0) | pcrec's edge attempt (§2.4) |
 | a backreference's relaxed language | `locate_finish.md` §4.5 (filed) |
-| the VM hybrid's retry policy (step vs re-seed; R4 `cand_rs_dense_applies`, `emit_dfa.c:8789`) | RETRY, the [ADAPTIVE-ARM] family (chunk 5): a FINISH-side policy, not a window choice |
-| unbounded-offset presence | the PRESENCE site's existence is pcrec's; its FORM is the kit's (wingame §8.4's tail gate) |
+| the VM hybrid's retry policy (R4 `cand_rs_dense_applies`) | RETRY, the [ADAPTIVE-ARM] family (chunk 5) |
+| unbounded-offset presence | the PRESENCE site's existence is pcrec's (T-PRES); its FORM is the kit's |
+
+### 5.6 The position-pin fact family `[r4 E2]`
+
+`span_facts` joins a family that answers one question, "which bytes or
+anchors are pinned at which positions of every match", today in six members:
+
+| member | owner | states |
+|---|---|---|
+| `start_set` | `src/facts/startset.c` | the union over paths at offset 0 |
+| k-set | `src/facts/kset.c` (`pcrec_kset_walk`) | the union over paths at each fixed offset of the prefix |
+| `run_pin` | `kset.c` (`pcrec_run_pin`) | the fixed offset of the run window inside the k-set |
+| `end_pin` / `end_window` | `src/facts/endwin.c` | the whole-pattern end pins |
+| compound's split facts (`pin_split`'s per-path has/must) | `compound.md` §B | the per-path anchor classes |
+| landmark K | `req.c` | the max offset of the landmark from the attempt start |
+| `span_facts` (new) | `src/facts/spans.c` | the hull spans with `[omin, omax]` from their segment's first span |
+
+- **The unification is already proposed** in `match_split_pinonly.md` §4.3 /
+  §9 U3 (the four pin members as projections of `pin_split`). `compound.md`
+  superseded that note and does not re-file it; its own U3 is the public
+  [EMIT-ENTRIES] request. This note carries the proposal forward and widens it
+  to the six members above: ONE position-pin record per pattern, with each
+  member a projection. **Trigger:** U3's own (4a landed, plus a reader that
+  gains from the stronger facts) or S4's offset-k move, whichever first.
+- **Until then** `span_facts` is specified AS a member: same tree level
+  (lowered), same epoch, its CONTROLS are its siblings (§5.3), and no member
+  re-derives another's question.
 
 ## 6. The retirement sequence
 
 The rule (D162 add. 3 refinement): the frequency kind lands first, the kit's
-own ranking second, the retirement third. The same three steps also carry the
-other density fields that pcrec only forwards.
+own ranking second, the retirement third.
 
 | step | what | movers | events |
 |---|---|---|---|
-| **S1** frequency kind | `mf_analysis` in `memfn.h`; `mf_site.analysis` appended last; pcrec builds the object per attempt from `Job.find` (`pcrec_find_byte_rate`, its digest, its bundle) and states it on every site; the kit's one-object check (§3.3 rule 3) | 0 (no row reads it) | `MF_SITE_ABI` bump; no pcrec abi event; no spec hunk (not caller-observable) |
-| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a shadow comparator: the kit's order equals `rank_pos` for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order | 0 (same order, proven by the shadow) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
-| **S3** retirement | delete `mf_pred.rank_n/pos/ppm`, `MF_RANK_MAX` and its `_Static_assert`, `ofs_pred_rank`, `pcrec_find_run_rank`, `rank_probe`; delete `mf_term.ppm_*`, `mf_site.cand_ppm_*`, `MF_PPM_FULL`, and the unread `mf_site.consumer`. Re-aim `make test-memfn-rank` to check the kit's order against its independent brute force. RQ-2's sabotage rows S731-S737 are re-aimed or retired, derived by `scripts/sabotage_anchors.py --step` | 0 | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
-| **S4** the picks | `plan_hint`/`plan_pos` and the prior-reading decisions of §5.1 move into the kit with R-18's multi-span site: the req pick, the run window start, set-leads, the offset-k selection, the landmark admission, G1. Each is implement-then-replace at zero movers, then its own form event | per form event | each a pcrec abi event when bytes move, with its own `--memfn=` deny. Stamps that report a pick (`REQ_BYTE`, `REQ_RUN`, `DFA_PREFILTER`'s offset form) become kit-attributed; their readers are found by grep, including the byte-count reader class (D94 addendum) |
+| **S1** frequency kind | `mf_analysis` in `memfn.h`; `mf_site.analysis` appended last; pcrec builds the object per attempt from `Job.find` and states it on every site; the kit's one-object check (§3.3 rule 3) | **every artifact whose `<PREFIX>_FINDINGS` is `""` today** `[r4 R1]`: building the object sets `byte_rate_asked`, so `pcrec_find_stamp` stops returning `""` and the stamp and `rx_info.findings` move to `byte-rate=default:<digest>` (`-e byte`) or `byte-rate=none` (`-e utf8`). Census owed: an `emit_sweep` compare over the corpus and bench, both encodings | `MF_SITE_ABI` bump (layout); a **pcrec abi event** (readers found by grep, the byte-count class included); **D80 hunk**: `docs/spec/findings.md` §5 and the stamp sentences in `docs/spec/match_api.md` — the stamp now means the kinds OFFERED to the kit, one entry per kind this pcrec knows, provenance-coded (today's `byte-rate=` spelling is the single-kind case). Consequence: after S1 every regeneration of the default prior moves every artifact's stamp digest, an abi event each time (§10.3) |
+| **S2** kit ranking | the kit derives each RUN term's position order from `byte-rate` in its memo (§3.5), applying the D126 Q4 per-question NONE answers under `prior-none`. IMPLEMENT beside `rank_*` with a SHADOW comparator: the kit's order equals `pcrec_find_run_rank`'s for every site of every corpus compile, at `-e byte` and `-e utf8`. Then REPLACE: `vrun`'s KB reads the kit's order | 0 (same order, proven by the shadow) | kit-only; no `MF_SITE_ABI` move; no pcrec abi event |
+| **S3** retirement | see the file list below | 0 | ONE `MF_SITE_ABI` bump (layout); no pcrec abi event; D80: none (internal) |
+| **S4** the picks | `plan_hint`/`plan_pos` and the prior-reading decisions of §5.1 move into the kit with R-18's multi-span site. Each is implement-then-replace at zero movers, then its own form event. **The shadow retires here** `[r4 R5]`: with the picks moved, both NONE-rule spellings live in the kit, and `pcrec_find_run_rank` (plus its debug dump) is deleted | per form event | each a pcrec abi event when bytes move, with its own `--memfn=` deny. Stamps that report a pick (`REQ_BYTE`, `REQ_RUN`, `DFA_PREFILTER`'s offset form) become kit-attributed; their readers found by grep |
+
+**Why the shadow lives to S4** `[r4 R5]`. Until S4, pcrec's own picks still
+read the prior with D126 Q4's NONE rules, and from S2 the kit spells the same
+rules for its ranking. Two spellings with nothing comparing them is R13's
+shape. So S3 deletes the FIELDS and their filler but keeps
+`pcrec_find_run_rank` reached only by the shadow comparator, which keeps
+comparing the kit's order against it on every corpus compile until S4 moves
+the picks.
+
+**S3's file list** `[r4 R6]`, derived by grep at `76067df80` for `rank_n`,
+`rank_pos`, `rank_ppm`, `MF_RANK_MAX`, `ppm_`, `cand_ppm`, `MF_PPM_FULL` and
+the `consumer` setters; re-derived by the same grep at S3:
+
+- `memfn/include/memfn.h` (the fields, `MF_RANK_MAX` and its
+  `_Static_assert`, `MF_PPM_FULL`, `mf_site.consumer`);
+- `memfn/src/compose.c` (the rank checks and the `consumer` range check),
+  `memfn/src/vrun.c` (KB re-pointed at S2), `memfn/src/CLAUDE.md`;
+- `memfn/tests/g2/g2_gen.c` and `memfn/tests/g2/g2_simd_gen.c` (the
+  `consumer` mutator and out-of-enum case, the `ppm_*` and rank fields):
+  **D27-BLINDED generators, so a BLINDED LANE (a cell, `scripts/mk_d27_cell.sh`)
+  edits them**, from a goal statement of the retirement, never from this
+  note's sources; `memfn/tests/run_g2_simd.py`;
+- `tests/memfn/arm_fixtures.c` (`consumer`, `ppm_*`);
+- `src/gen/memfn_sites.c` (two `consumer` setters, the `ppm_*` fills; its rank
+  debug dump stays with the shadow until S4), `src/gen/emit_dfa.c`
+  (`ofs_pred_rank`, three `consumer` setters, the `ppm_*` fills),
+  `src/gen/emit_vm.c` (one `consumer` setter) — six `consumer` setters in
+  `src/` in all; `src/core/internal.h` (one `ppm` declaration);
+  `src/gen/CLAUDE.md`;
+- `tests/memfn/run_rank.sh`, `tests/memfn/rank_check.py` and the Makefile's
+  `test-memfn-rank` (re-aimed: the kit's order against its independent brute
+  force, plus the shadow);
+- sabotage rows S732-S737 (RQ-2), S750-S752, S754, S794 (vrun KB) — re-aimed or
+  retired by `scripts/sabotage_anchors.py --step` over the edit set;
+- `plan_hint`/`plan_pos` are NOT in S3: kit arms READ them (`vrun.c`,
+  `precheck.c`, `ofsskip.c`, `compose.c`). They retire at S4.
 
 - **Consumer price.** It was never built, so nothing is deleted. The text
-  retires:
-  - setfind.md §2.2's W9 row is struck (§7);
-  - wingame §5.5 item 2 and §7's first question are annotated SUPERSEDED by
-    D161 add. 6;
-  - [PRIOR-COST-UNIFY]'s operation-kind table keeps only its METERING plane,
-    for [EFFORT-BUDGET]: the CONTRACT plane, not a price handed to the kit.
+  retires: setfind.md §2.2's W9 row is struck (§7); wingame §5.5 item 2 and
+  §7's first question are annotated SUPERSEDED by D161 add. 6;
+  [PRIOR-COST-UNIFY]'s operation-kind table keeps only its METERING plane.
 - **The memo** stays in `mf_art` (§3.5).
 
 ## 7. The kit's proposed facts: ratified or rejected
 
 | item | verdict | reason |
 |---|---|---|
-| STORAGE capability (`decl_point` + `mf_locals`, one handle per site, automatic per-call storage, G-S1/G-S2 invariance, stem `<fn>_pf` with `<stem>__*` reserved) | **RATIFIED** as built at `MF_SITE_ABI` 11 | It is a host CAPABILITY, stated as a fact (D157), the mirror of `count_by_caller`. Dominance and invariance are checked (`-Wjump-misses-init`, const heads, the trace trap). One handle per site is what lets the VM hat's entry and retry share one cache. Under this contract storage belongs to the SITE, so a 2-link chain shares it. Cross-call state stays out (chunk 5) |
-| window fields W0-W2 (`window_stated`, `move_back` signed from the span's beginning, `overshoot`; `omin` derived) | **RATIFIED**, extended to every span of a multi-span site, with one amendment: `MF_MOVE_UNBOUNDED` / `MF_OVER_UNBOUNDED` change from "reserved for R-18" to PERMANENTLY refused | D161 add. 5 rules unbounded out of memfn, so no row will ever define them. The macros stay as the refusal's name; the comment change moves no byte and no layout. "`move_back` = `overshoot` = 0 today" holds on every R-17 site (MLINE -1 / 0) |
-| W3 (FIND's result is the window's beginning, never below `lo`, non-wrapping) | **RATIFIED** as `L` (§2.4) | `U` is added as an optional out-hook, and the miss is defined as NOMATCH for the range |
-| W7 (FIND reads `preds` as further spans) | **RATIFIED**, with `spans_seq` (§2.3) | It is the multi-span shape. Without the sequence rule a 2-chain's region is loose |
-| W8 (the reply names its span) | **REJECTED** | One origin for every span makes `[L, U]` span-independent (§2.4). An index would be a second spelling of `U` |
+| STORAGE capability (`decl_point` + `mf_locals`, one handle per site, automatic per-call storage, G-S1/G-S2 invariance, stem `<fn>_pf` with `<stem>__*` reserved) | **RATIFIED** as built at `MF_SITE_ABI` 11 | A host CAPABILITY stated as a fact (D157). Dominance and invariance are checked. One handle per site is what lets a stateful stream (D155 add. 4.1) keep its state across candidates. Cross-call state stays out (chunk 5) |
+| window fields W0-W2 (`window_stated`, `move_back`, `overshoot`; `omin` derived) | **RATIFIED**, extended to every span of a multi-span site, measured from span 0's start; span 0 states (0, 0). **Amendment**: `MF_MOVE_UNBOUNDED`/`MF_OVER_UNBOUNDED` change from "reserved for R-18" to PERMANENTLY refused | D161 add. 5. **A kit code change** `[r4 R7]`: `compose.c`'s window check exempts `MF_MOVE_UNBOUNDED` today; it becomes a named refusal at define with a G2 refusal case per sentinel. No layout or byte moves. `MF_SPAN_UNBOUNDED` (the proven range) stays legal (§2.3) |
+| W3 (FIND's result is the window's beginning, never below `lo`, non-wrapping) | **RATIFIED** as the stream's next candidate (§2.4) | The stateless FIND is the stream one element at a time |
+| W7 (FIND reads `preds` as further spans) | **RATIFIED**, with `spans_seq` (§2.3) | An `MF_SITE_ABI` meaning event (§8.2) |
+| the SPAN-INDEX FIELD (setfind's W8: the reply names its span) | **REJECTED** | Every candidate is span 0's start (§2.4), so a span index carries nothing pcrec reads |
 | W9 (consumer price) | **REJECTED** | D161 add. 6 |
 | W10 (joint survival rate per span) | **MOVED** to the analysis kind `run-rarity` | A joint rate is a distribution fact (D162), present only when measured |
-| N5 (shared per-width sub-blocks, stem `pcrec_mfk_`, guards `PCREC_MFK_W8_H` / `_V16_H` / `_V32_H`, no version, keyed by K80) | **RATIFIED** in the rev-2.3 form, plus one corollary | First-wins is correct per width because a sub-block's bytes are a function of its width within one abi. A mixed-abi translation unit already fails at K80's valued `PCREC_RX_ABI_H` `#error`, so a version or value in the kit's guards would be a second copy of K80's check. The block is emitted scaffolding: its first appearance (R17-b) and every later byte move are pcrec abi events. **The corollary:** pcrec also reserves the stem on the SUFFIX side. No emitted `<PREFIX>_<suffix>` may have a suffix beginning `mfk_`/`MFK_`, or `-p pcrec` would collide. Today none does (`grep -i mfk_ src/`: 0). A C-check over emitter strings holds it |
-| N6 (refuse a prefix that, case-folded, is `pcrec_mfk` or begins `pcrec_mfk_`) | **RATIFIED** as built on `lane/r17b` | Every name is `<PREFIX>_<suffix>` and every macro is uppercase, so the bare stem and any case collide. One check serves `-p`, a `.rxt` target's prefix and `pcrec_options.prefix`. It refuses inputs only, so it is not an abi event. It is caller-observable, so it carries its spec hunks (cli.md §1.6¶1, match_api.md §8.0¶4) and a sabotage row. Its message is not a contract beyond naming the prefix (D26) |
+| N5 (shared per-width sub-blocks, stem `pcrec_mfk_`, guards `PCREC_MFK_W8_H` / `_V16_H` / `_V32_H`, no version, keyed by K80) | **RATIFIED** in the rev-2.3 form, plus one corollary | First-wins is correct per width because a sub-block's bytes are a function of its width within one abi; K80's valued guard already rejects a mixed-abi TU. The block is emitted scaffolding: its first appearance (R17-b) and every later byte move are pcrec abi events. **Corollary:** no emitted `<PREFIX>_<suffix>` may have a suffix beginning `mfk_`/`MFK_`, or `-p pcrec` would collide. None does today; a C-check over emitter strings holds it |
+| N6 (refuse a prefix that, case-folded, is `pcrec_mfk` or begins `pcrec_mfk_`) | **RATIFIED** as built on `lane/r17b` | One check serves `-p`, a `.rxt` target's prefix and `pcrec_options.prefix`. It refuses inputs only (not an abi event), and is caller-observable, so it carries its spec hunks and a sabotage row |
 
 ## 8. Flexibility: what changes, and what is an event
 
@@ -549,56 +778,58 @@ other density fields that pcrec only forwards.
 
 **(i) A new analysis kind: `run-rarity`, when [FINDINGS] B4 lands.**
 - **pcrec:** a `bigram` block that answers becomes one more `mf_akind`
-  (`tag "run-rarity"`, `version 1`, `prov measured`). The query vocabulary
-  already lists it (`findings.c:190`); the kind's payload type is added to
-  `memfn.h` beside the list.
-- **No other change.** No existing struct changes, so there is no
-  `MF_SITE_ABI` move, no `MF_VOCAB` move and no site builder edited. A
-  kit row that ignores the tag renders the same bytes, so pcrec's abi does
-  not move.
+  (`tag "run-rarity"`, `version 1`, `PRESENT`, `prov MEASURED`). Its payload
+  type is added to `memfn.h` beside the list.
+- **The stamp gains one entry** (S1's per-kind rule): a pcrec abi event on
+  every artifact the bundle answers, with its D80 sentence.
+- **No site change.** No existing struct changes. A kit row that ignores the
+  tag renders the same bytes.
 - **Later.** The day a kit row reads the kind and moves a byte, that is the
-  kit's FORM event: its own `--memfn=` deny, a pcrec abi event in the same
-  commit, and G1 timing at both layers. A regeneration of the bundle's data
-  that moves a byte is likewise an abi event (memfn/CLAUDE.md "What moves
-  when data is regenerated").
+  kit's FORM event: its own `--memfn=` deny and a pcrec abi event in the same
+  commit.
 
 **(ii) A new site parameter: BRANCH spans.**
-- **The case.** `(?:GET|POST) /x`: a span exists only on some paths, a
-  disjunction of windows (wingame §2.2, `alt-dropped` on 27/71 capability
-  patterns).
-- **pcrec:** the producer emits one span per branch and states `spans_seq`
-  = 0 for them, plus a new fact. One candidate is `mf_pred.alt_group`: spans
-  in one group are ALTERNATIVES, so a match carries one of them, not all.
+- **The case.** `(?:GET|POST) /x`: a span exists only on some paths (wingame
+  §2.2, `alt-dropped` on 27/71 capability patterns).
+- **pcrec:** the producer emits one span per branch and states `spans_seq` =
+  NOT_SEQ, plus a new fact. One candidate is `mf_pred.alt_group`: spans in one
+  group are ALTERNATIVES.
 - **The kit:** every row's honours allowlist is re-read. A row that does not
-  honour `alt_group` declines on a site that states it (K96). G2's generator
-  gains the field.
-- **Events.** One `MF_SITE_ABI` bump (new meaning plus layout), landed in
-  ONE commit on both sides (the kit is in-tree, Q36). A pcrec abi event
-  follows only if a byte moves, which is when a kit row starts serving
-  branch spans.
+  honour `alt_group` declines on a site that states it (K96).
+- **Events.** One `MF_SITE_ABI` bump, landed in ONE commit on both sides. A
+  pcrec abi event follows only if a byte moves.
 
-**(iii) A derived fact pcrec also uses, against one it only forwards.**
-- **Sent always: the START SET.** pcrec uses it for its own route and DFA
-  hat (`T = S ∩ E*`). So it rides every window site, as span 0's offset-0
-  class whenever segment 0 has a fixed first position, and it is never
-  sometimes-sent (D162 add. 3).
+**(iii) A derived fact pcrec also uses, against one it only forwards**
+`[r4 E2]`.
+- **The START SET.** pcrec uses it for its own route and DFA hat
+  (`T = S ∩ E*`). It is a union over paths, so it is NOT a hull span and does
+  not ride as span 0 of a sequenced multi-span site. It rides as its OWN
+  single-span site (today's PF FIND), on every artifact the start table
+  selects that row for. D162 add. 3's "send always" binds once a carrier
+  exists for every site; for a multi-span site that carrier is unlock (b).
 - **Kit-derived: the RUN RANKING.** pcrec computes it only to hand it over
-  (`emit_dfa.c:1185` and a debug dump are its only uses), so the kit derives
-  it (§6 S2-S3). The same holds for a set's mass (`cand_ppm`), a survivor
-  estimate, and the choice of positions.
-- **The test.** Does any pcrec DECISION read it? If yes, send it always. If
-  no, it is the kit's.
+  (and as S2-S4's shadow oracle), so the kit derives it. The same holds for a
+  set's mass, a survivor estimate, and the choice of positions.
+- **The test.** Does any pcrec DECISION read it? If yes, send it whenever a
+  carrier exists. If no, it is the kit's.
 
 ### 8.2 Which change is which event
 
 | change | `MF_VOCAB` | `MF_SITE_ABI` | pcrec abi | spec (D80) |
 |---|---|---|---|---|
-| a new analysis kind no row reads | no | no | no | no |
+| a new analysis kind no row reads | no | no | YES on every artifact it is offered on (the per-kind stamp entry) | YES (the stamp's grammar gains the kind) |
 | a kind's payload shape changes | no | no (its own `version`) | only if a row's bytes move | no |
+| the `mf_analysis`/`mf_akind`/`mf_prov` layout changes `[r4 R9]` | no | YES (layout; the list's `list_v` moves only if the list's own shape does) | only if a byte moves | no |
+| the per-site analysis slot is filled `[r4 R9]` | no | YES | yes iff a byte moves | no |
+| S1: the object first built | no | YES | YES (the stamp moves from `""`) | YES |
 | a kit row starts reading a kind or a field | no | no | yes iff a byte moves, same commit, own deny | only if a stamp's meaning moves |
-| bundle or prior data regenerated | no | no | yes iff a byte moves | no |
+| bundle or prior data regenerated | no | no | YES after S1 (every artifact's stamp digest); also wherever a row reads it | no |
 | a new site field (fact) | no | YES (layout + meaning) | yes iff a byte moves | no |
-| a new reading of an existing field (W7's `preds` on FIND) | no | YES (meaning) | yes iff a byte moves | no |
+| a new reading of an existing field: W7's `preds` on FIND, `need` binding the stream `[r4 R9]` | no | YES (meaning) | yes iff a byte moves | no |
+| an enum re-numbered for an UNSTATED zero (`mf_need`) | no | YES (values) | no if every builder states it | no |
+| a reserved value made refused (W1/W2 UNBOUNDED) `[r4 R7]` | no | no (no builder states it) | no | no |
+| `mf_result.proven` added | no | YES (layout) | no (no consumer) | no |
+| pcrec's first proof consumer | no | no | YES, own deny | YES (the deny) |
 | a new op, handoff or term kind | YES | YES | yes iff a byte moves | no |
 | a field retired (S3) | no | YES (layout) | no (zero movers) | no |
 | a refused input (N6) | no | no | no | YES |
@@ -606,177 +837,173 @@ other density fields that pcrec only forwards.
 
 ## 9. First-match tables, and the sibling-of-a-family lens
 
-Every selection this note introduces is an ordered first-match table:
-
 | table | owner | rows (in order) |
 |---|---|---|
-| T-CUT: which sub-problem (§5.4) | pcrec | `anchored` → `rev-inner` → `segment-0` → `presence` → `none` |
-| T-REPLY: reply type by op (§2.4) | contract | FIND → WINDOW; ALL_PRESENT → VERDICT; others unchanged |
-| T-NEED: a span's `need` (§4.3) | pcrec | `the FIND definition requires it` (today's single-span terms) → REQUIRED; `pcrec's consumer cannot re-test it cheaply and wants it verified` → REQUIRED; `else` → OPTIONAL |
-| T-PROOF: consuming a proven position (§4.3) | pcrec | `dfa-exact-prefix` → `vm-literal-prefix` → `ignore` |
-| T-KIND: one kind's state (§3.2) | pcrec | `a --analysis block answers` → measured; `a shipped block serves this encoding` → prior-authored; `the kind is byte-rate` → prior-none; `else` → ABSENT |
-| T-MEMO: where the memo lives (§3.5) | kit | `measured compile cost` → per compile, keyed by digest; `else` → `mf_art` |
+| T-CUT: which window sub-problem (§5.4) | pcrec | `anchored` → `rev-inner` → `segment-0` → `none`; deny column per row |
+| T-PRES: whether a presence site rides beside it (§5.4a) | pcrec | `dominated` → `presence` → `none`; deny column per row |
+| T-REPLY: reply type by op (§2.4) | contract | FIND → STREAM; ALL_PRESENT → VERDICT; others unchanged |
+| T-NEED: a span's `need` (§4.3) | pcrec | `the FIND definition requires it` (today's single-span terms) → REQUIRED; `pcrec's consumer would re-test it and wants it verified` → REQUIRED; `else` → OPTIONAL. Never left UNSTATED |
+| T-PROOF: consuming a proof (§4.3) | pcrec | `report` (the proof covers the whole sub-problem and nothing else remains) → `dfa-exact-prefix` (unseeded PLAIN machine, exact proven bytes) → `vm-literal-prefix` (no capture, no assertion skipped, no meter change) → `verify-rest` (a kit VERIFY site for the unproven positions) → `ignore`; one deny for the family, `-fno-kit-proof` (PROPOSED) |
+| T-KIND: one kind's state (§3.2) | pcrec | `a --analysis block answers` → PRESENT/measured; `a shipped block serves this encoding` → PRESENT/prior-authored; `the kind is byte-rate` → PRESENT/prior-none; `else` → ABSENT |
+
+T-MEMO is no longer a table `[r4 R10]`: its one row was a trigger. §3.5 holds
+it as a placement with that trigger.
 
 **Families this touches (the sibling-of-a-family lens):**
 
-1. **The prior-cost family** ([PRIOR-COST-UNIFY], 10 members derived by
-   call graph; rev 2's census). This note splits it three ways:
-   - the window choices go to the kit (§5.1, §6 S4);
-   - the RETRY arm (R4, `vm_reseed_cal`) goes to [ADAPTIVE-ARM] (chunk 5);
-   - the metering kinds go to [EFFORT-BUDGET] (chunk 6).
-
-   No member is left as a lone pcrec-side reader of the prior that chooses
-   among spans. That leftover is exactly the shape the forest-for-trees
-   memory warns about.
-2. **The start table's site-building rows.** Today PF FIND, `offset-set`,
+1. **The prior-cost family** ([PRIOR-COST-UNIFY], 10 members derived by call
+   graph). This note splits it three ways: the window choices go to the kit
+   (§5.1, §6 S4); the RETRY arm goes to [ADAPTIVE-ARM] (chunk 5); the metering
+   kinds go to [EFFORT-BUDGET] (chunk 6). No member is left as a lone
+   pcrec-side reader of the prior that chooses among spans.
+2. **The start table's site-building rows.** PF FIND, `offset-set`,
    `run-pinned`, the handoff gate, `set-leads` and the req pre-check each
-   build a kit site from one row of `cand_rows[]`. Under T-CUT they become
-   ONE window site per segment, plus at most one PRESENCE site. The slots
-   still decide WHERE a site sits; the kit decides what it searches.
+   build a kit site from one row of `cand_rows[]`. Under T-CUT and T-PRES they
+   become one window site of hull spans per segment, the union-span site
+   (until unlock (b)), and at most one PRESENCE site.
 3. **"A pick sent as a fact"**: `plan_hint`/`plan_pos`, `rank_*`,
-   `cand_ppm`, `ppm_*`. These are one family by D162 add. 3's rule, retired
-   by one sequence (§6), not one at a time.
-4. **The reverse walks** (RECOVER `reverse-pass`/`landing`, `rev-end`,
-   `rev-inner`). They are pcrec's unbounded cuts (§5.5), already one family
-   under `locate_finish.md`'s parameterized reverse block. This contract
-   leaves it intact.
+   `cand_ppm`, `ppm_*`, retired by one sequence (§6).
+4. **The reverse walks** (RECOVER, `rev-end`, `rev-inner`): pcrec's unbounded
+   cuts (§5.5), untouched.
 5. **The kit's own row tables** (`pffind`, `precheck`, `fn_rows[]`, `arms`
    under `kit_walk`). A chain is a form of those tables, never a parallel
    planner beside them.
+6. **The position-pin fact family** (§5.6), with `span_facts` as its newest
+   member and one proposed unification.
 
 ## 10. The three standing questions
 
 1. **Measurement regime: RELEVANT, and no number decides this note.** The
-   evidence it leans on is counts:
-   - wingame's survivors, regions and policy flips, on the bench's 256 KiB
-     throughput subjects (§2.3, §4.2);
-   - the R-17 timings already read in setfind §13.
-
-   No consumer price exists any more, so no regime-dependent price enters
-   the contract. Every kit choice remains under its own regime rule (K-1;
-   two-tier verdicts, D144 add. 4).
+   evidence it leans on is counts: wingame's survivors, regions and policy
+   flips on the bench's 256 KiB throughput subjects; the R-17 timings in
+   setfind §13; reqpos_2b's presence win (§5.4a). No consumer price exists any
+   more. Every kit choice remains under its own regime rule (two-tier
+   verdicts, D144 add. 4).
 2. **Independent control: RELEVANT.**
-   - The producer's five controls share no source with it (§5.3).
-   - The proof channel is held to G2's byte-loop oracle and pcrec's
-     trace-build re-test (§4.3).
-   - The memo's order-independence is checked by rendering in two orders
-     (§3.5).
-   - S2's ranking is held to a shadow of today's `pcrec_find_run_rank` and
-     then to an independent brute force.
+   - The producer's five controls share no source with it, with non-vacuity
+     floors and planted defects (§5.3).
+   - The proof is held to C-PROOF's layer-invariance comparison, G2's
+     byte-loop oracle and pcrec's trace-build re-test (§4.3).
+   - The stream's obligations (COMPLETE, ASCENDING, span-0 starts, REQUIRED)
+     are checked by G2 against the byte-loop oracle at every position of every
+     generated subject; the edge is checked by pcrec's own differential with
+     a `(?m)^` cell at `search_from` 0 and > 0.
+   - The memo's order-independence is checked by rendering in two orders.
+   - S2's ranking is held to the shadow until S4, then to an independent
+     brute force.
    - K35: a multi-span floor (§5.3). [MECH-REACH]: every sabotage row named
-     here (memo order, proof over-claim, region off-by-one, sequence-rule
-     plant) gets a witness that reaches its site, derived at build time.
-3. **What moves when data is regenerated: RELEVANT.** The `byte-rate` kind
-   is `Job.find`'s answer.
-   - A bundle or prior regeneration moves bytes only through a kit row that
-     reads the kind, and then it is a pcrec abi event (§8.2).
-   - The digest in each kind's provenance is the same value the
-     `<PREFIX>_FINDINGS` stamp reports, so "which data built this artifact"
-     has one answer.
+     here (memo order, proof over-claim, proof layer-dependence, sequence-rule
+     under-estimate, C-SP1 vacuity) gets a witness that reaches its site.
+3. **What moves when data is regenerated: RELEVANT.**
+   - **After S1 every regeneration of the prior or a bundle moves every
+     artifact's `<PREFIX>_FINDINGS` digest** `[r4 R1]`: an abi event each
+     time, beyond any kit row that reads the kind.
+   - The digest in each kind's provenance is the stamp's value, so "which data
+     built this artifact" has one answer.
    - D160's authored utf8 prior turns `-e utf8`'s kind from `prior-none` to
-     `prior-authored`. That is a byte move only where a row reads it, and
-     the S2 shadow covers `-e utf8` explicitly.
+     `prior-authored`, moving every utf8 artifact's stamp. S2's shadow covers
+     `-e utf8` explicitly.
+   - A proof is a function of the site request, which includes the analysis
+     object; a regeneration that changes a proof moves pcrec's bytes, an abi
+     event in the same commit.
 
 ## 11. The R-18 outline (facts only; main files it)
 
 **R-18: THE WINDOW SEARCH (D161), the general category**
 
-- **Customer.** D161 and add. 1-6; chunk 3. It supersedes the per-shape
+- **Customer.** D161 and add. 1-8; chunk 3. It supersedes the per-shape
   interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and the PF/OFS/
   PRE sites. Their forms and measurements carry over.
-- **Facts pcrec will state** (docs/design/memfn/window_contract.md §2-§3):
-  - a site is a bounded sub-problem with one origin;
+- **Facts pcrec will state** (this note §2-§3):
+  - a site is a bounded sub-problem whose origin is span 0's start;
   - spans are `mf_pred`s with stated `move_back`/`overshoot` and `need`;
-  - `spans_seq` states the sequence rule;
-  - the reply is `L` with an optional `start_hi` (`U`); a FIND miss is
-    NOMATCH for the range;
+  - context predicates (negative offsets) are not spans;
+  - `spans_seq` states the sequence rule (tri-state);
   - presence sites carry no window;
-  - `mf_site.analysis` (S1 above, possibly landed first): a `byte-rate` kind
-    that is always present, with provenance.
+  - `mf_site.analysis` (S1, possibly landed first).
+- **Obligations on the reply:** the stream (COMPLETE, ASCENDING without
+  repeats, span-0 starts, REQUIRED spans satisfied); totality; an exhausted
+  stream means no covered candidate; and, when [KIT-VERIFY] builds, a
+  layer-invariant `proven`.
 - **Facts pcrec will NOT state:** a consumer price, a span index, a scan
   position (`plan_hint` retires), a ranking (`rank_*` retires), per-site
   rates.
-- **Deliverable.** The kit's method is its own. It must:
-  - serve every degenerate site at zero SIMD-off movers first (R-17's routing
-    carried over);
-  - then serve multi-span sites behind their own denies;
-  - land each SIMD-off byte move together with pcrec's abi event in the same
-    commit.
-- **Capabilities pcrec provides:** storage as ratified (§7); proven facts
-  consumed per T-PROOF only after [KIT-VERIFY]'s trigger.
-- **Trigger.** This note, ratified. R-17's PF routing event merged.
-  - The first multi-span consumer: the K82/L1 handoff re-routed as a
-    window (§2.4), cells loglines/ipv6, ipv4, bounded/dotted4.
-  - Then wingame's syslogbase-expanded and the refine witnesses.
+- **Deliverable.** The kit's method is its own. It must serve every degenerate
+  site at zero SIMD-off movers first, then multi-span sites behind their own
+  denies, and land each SIMD-off byte move together with pcrec's abi event.
+- **Capability pcrec provides:** storage as ratified (§7).
+- **Trigger.** This note, ratified. R-17's PF routing event merged. The first
+  multi-span consumer: the K82/L1 handoff's fused gate re-routed as a stream
+  (§2.4), cells loglines/ipv6, ipv4, bounded/dotted4; then wingame's
+  syslogbase-expanded and the refine witnesses.
 - **Sequencing (main's).** S1-S3 (§6) may land before the R-18 build. S4
   rides it.
-- **Capacity.** The migration thread.
 - **Sabotage ids.** Main allocates at filing (consult `requests.md`'s
   reserved ranges).
 
 ## 12. Questions for Frank (discussion, each with a leaning)
 
 1. **How pcrec picks the sub-problem when an inner segment beats segment 0.**
-  - **The problem.** Your `a.*aaa.{2,5}zxq` example is a choice pcrec makes
-    BEFORE the kit sees anything.
-  - **The forces.** If pcrec prices the segments with the prior, the
-    consumer-price problem comes back one level up. If it uses no price, it
-    may send `a` and miss `zxq`.
-  - **My leaning.** Let rev-inner's own gates (G1-G4, where G3 is
-    structural; rincensus) decide when an inner segment is worth the reverse
-    walk, and otherwise always send segment 0. A third path is to send both
-    and let the kit say which it can search. I lean against it: that is a
-    capability query, the K0 shape D146 retired.
-2. **Proven facts only at fixed offsets (v1).**
-  - **The leaning.** Report proofs only for spans whose offset from `L` is
-    fixed. Leave the runtime `occurrence` out-hook (which would cover
-    `overshoot` > 0) until a VM per-start consumer is measured to re-read
-    proven bytes.
-  - **The alternative.** Specify the occurrence now. That costs a runtime
-    write per window on every site that states it, for a consumer nobody has
-    timed.
-3. **`U` (the start upper bound) now or later.**
-  - **What it is for.** `U` matters only for a consumer that pays per start:
-    the VM, or anchored attempts.
-  - **The leaning.** Define it in the contract now, so `L`'s meaning is
-    stated with its partner. Build it with the first per-start consumer,
-    which is the handoff re-routed for VM hybrids.
+   OPEN.
+   - **The problem.** Your `a.*aaa.{2,5}zxq` example is a choice pcrec makes
+     BEFORE the kit sees anything.
+   - **The forces.** If pcrec prices the segments with the prior, the
+     consumer-price problem comes back one level up. If it uses no price, it
+     may send `a` and miss `zxq`. T-PRES (§5.4a) now recovers part of that
+     case: `zxq` still rides as a presence reject beside segment 0, so sending
+     `a` no longer loses the rare span's NOMATCH power, only its locating
+     power.
+   - **My leaning.** Let rev-inner's own gates (G1-G4, where G3 is
+     structural; rincensus) decide when an inner segment is worth the reverse
+     walk, and otherwise send segment 0 (plus T-PRES's presence site). A third
+     path is to send both and let the kit say which it can search. I lean
+     against it: that is a capability query, the K0 shape D146 retired.
+2. **Proven facts only at fixed offsets (v1).** A leaning, not a question.
+   - **The leaning.** Report proofs only for spans whose offset from the
+     candidate is fixed (`overshoot` 0). Leave the runtime `occurrence`
+     out-hook (which would cover `overshoot` > 0) until a VM per-start
+     consumer is measured to re-read proven bytes.
+   - **The alternative.** Specify the occurrence now: a runtime write per
+     candidate on every site that states it, for a consumer nobody has timed.
 
-## 13. What a light panel should attack
+(Revision 1's Q3, "`U` now or later", is deleted: D161 add. 7 removed `U`.)
 
-1. **The sequence rule's soundness.** Is every span the producer emits on
-   ONE flattened sequence for EVERY path? Look in particular at:
-   - hull spans from an alternation whose branches have different widths
-     before the hull;
-   - a min-0 repeat between two spans.
+## 13. Filed facts and unlocks (each with its trigger)
 
-   Try to build a pattern where `[omin_j - omin_i, omax_j - omax_i]` excludes
-   a real match.
-2. **The NOMATCH-on-miss claim (§2.4).** A FIND that misses claims "no
-   sub-problem match begins in `[lo, n)`". Check:
-   - the range's end (`end_back`);
-   - negative offsets (MLINE);
-   - a REQUIRED span whose occurrence for a match starting near `n - 1`
-     would lie past `n`.
-3. **The resume point `U + 1`.** Is it sound when the located span is not
-   span 0, and when two spans' occurrences interleave?
-4. **`prior-none` with no table.** Does any shipped kit row read the
-   frequency kind in a way that needs a table under `-e utf8`? Does S2's
-   shadow really reproduce `pcrec_find_run_rank`'s NONE order (cube size,
-   then rightmost) from the provenance alone?
-5. **Proof exactness under stateful forms (R-17's mask).** Can a carried
-   mask return a window at which an OPTIONAL position was NOT re-tested,
-   while the form still reports it proven?
-6. **The one-object-per-art check versus the size ladder.** Each attempt
-   has its own `Job.find` and `mf_art`. Confirm that no site of one art can
-   carry a previous attempt's pointer.
-7. **The cut table versus today's rows.** Is T-CUT a re-expression of
-   `cand_rows[]`'s FIRST/NEXT/PRESENCE rows, or a parallel mechanism (D82)?
-   Name the row each T-CUT row becomes in `cand_rows[]`.
-8. **The family split** (§9 item 1). Is any member of the prior-cost family
-   left with no owner, or with two?
-9. **An unlock lens** (memory `pcrec-critics-propose-unlocks`). Propose
-   what the general form opens beyond today's sites, each with its trigger:
-   - span-relative proofs feeding the DFA's start state;
-   - presence absorbed into a chain link;
-   - per-segment sites for `rev-inner`.
+- **The per-site ACTIVATION fact** `[r4 R10]`. setfind §9.2's decline arm
+  (D162 add. 1: decline on positive evidence of density WITH a state-losing
+  call pattern) needs to know the site's call pattern: whether one search call
+  sees many candidates (state carries) or each candidate is a new call
+  (find-all under today's API). No slot exists. It would fill D162's reserved
+  per-site slot. **Trigger:** the decline arm is built (a measured dense cell
+  with a state-losing call pattern, D162 add. 1).
+- **The EVIDENCE-STRENGTH fact** (§3.6). **Trigger:** the first kit row that
+  reads `measured` provenance as evidence.
+- **(a) End-origin spans**: spans measured back from a match END, for a
+  kit-delegated reverse walk. **Trigger:** the first kit-delegated reverse
+  walk, or [OPT-ENDWIN-ENC].
+- **(b) Offset-pinned union spans with per-group `spans_seq`**: the start set
+  and the k-set carried in the SAME site as hull spans, each group sequenced
+  within itself. **Trigger:** S4's offset-k move into the kit.
+- **(c) Presence as a chain link**: T-PRES's presence site becomes a
+  zero-cost first link of the window chain. **Trigger:** the first
+  `a.*zxq`-shaped bench cell with both a window site and a presence site.
+- **The position-pin family unification** (§5.6). **Trigger:** U3's own, or
+  S4's offset-k move.
+
+## 14. What a re-check should attack
+
+1. **The edge rule (§2.4).** Is the edge set exactly `{search_from, 0}`? Look
+   at `\G`, a context predicate at an offset other than -1 (none is built;
+   say so if one could be), and `lo > search_from` on the stream's later
+   calls.
+2. **Span 0 as the origin (§2.1).** Does moving the origin from the match
+   start to span 0's start lose anything a kit form could use, for a site whose
+   head is bounded and narrow (`.?abc`)?
+3. **Layer invariance of the proof (§4.3).** Can a form under a `--memfn=`
+   deny be unable to test a position another form proves, so that the
+   invariance forces a weaker proof everywhere? Is that the right trade?
+4. **T-PRES's `dominated` row.** Is it G1's predicate exactly, and does it
+   read the window site's spans or the prefilter's language?
+5. **S1's mover population.** Is "every artifact with `""` today" the whole
+   population, or do some artifacts already ask?
