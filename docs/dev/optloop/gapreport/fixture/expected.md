@@ -101,6 +101,32 @@ Compared with `fixture-baseline`: 1 pattern(s) differ in a selection stamp or re
 
 - UNASSIGNED capability `p-unassigned` (large-subject-throughput): vs jit x3.00
 
+## 7. Census against the best comparator, not only jit
+
+A cell trails if any comparator of the view's roles is behind past its band, leads if every one is ahead, else level (like-for-like cells with a jit peer; tier C cells keep their delta verdicts).
+
+| view | set | lead | level | trail |
+|---|---|---|---|---|
+| jit | capability | 1 | 1 | 6 |
+| jit | loglines | 1 | 0 | 1 |
+| **jit** | **all** | **2** | **1** | **7** |
+| best non-SIMD (jit + scalar engines) | capability | 1 | 1 | 6 |
+| best non-SIMD (jit + scalar engines) | loglines | 1 | 0 | 1 |
+| **best non-SIMD (jit + scalar engines)** | **all** | **2** | **1** | **7** |
+| best incl. rust (SIMD prefilters) | capability | 1 | 1 | 6 |
+| best incl. rust (SIMD prefilters) | loglines | 0 | 0 | 2 |
+| **best incl. rust (SIMD prefilters)** | **all** | **1** | **1** | **8** |
+
+## 8. SIMD-attributable gaps (kept apart; pcrec ships `-fmemfn-simd` OFF)
+
+1 trailing cell(s) (tier A/B) where ONLY a SIMD-role comparator (rust:default-caps) is behind: no jit, no scalar engine beats auto there.
+
+- loglines `l-inner` large-subject-throughput: x20.00 behind rust; auto 2000000 ns
+
+Groups the cause table dispositions as SIMD-phase: SCAN-SIMD, WIDE-ALT.
+
+- SCAN-SIMD: breadth 2; worst vs jit **x8.00**; worst vs ceiling **x16.0** rust:default-caps
+
 ## MANAGER JUDGEMENT
 
 <!-- MANAGER JUDGEMENT: begin (copied from judgement.md; edit that file, never this section) -->

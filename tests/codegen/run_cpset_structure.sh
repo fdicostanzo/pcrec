@@ -925,6 +925,12 @@ fi
 # -2,546 to -5,160 with the comment. VERIFIED BY DIFFING `a(b|c)+d` against the SL1 compiler (83b4c232,
 # 0 emitted movers against main 06d19c67) at the same `-o`: the abi digits
 # and that comment, nothing else.
+# RE-RECORDED 2026-10-11 at [REQ-HANDOFF-L1] (lane rlhbuild, abi 74 -> 75):
+# the abi digits keep their width, so only `(?i)HeLLo` moves, and it is a
+# ruling: its caseless run's handoff (K = 0) is RE-ENTERED by the forward
+# scan (`RX_DFA_PREFILTER "handoff"`, NEXT's row above the start-byte rows,
+# admitted against `byte-class`), which drops the `can_begin_match` table:
+# 26,586 -> 25,324.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

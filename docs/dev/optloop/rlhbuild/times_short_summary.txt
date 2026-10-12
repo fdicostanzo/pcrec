@@ -1,0 +1,5 @@
+cell	regime	n	sum_base	sum_new	sum_deny	sum_newm	new/base	deny/base	newm/base	new/newm	worst_new/base	best_new/base	slower>3%
+dotted4	search_short	49	1323	2422	1323	1113	1.830	1.000	0.841	2.177	12.894 (d-01024.bin)	0.789 (l-04.bin)	33
+ipv4	search_short	112	77065	85099	76912	24266	1.104	0.998	0.315	3.507	2.341 (s-008.bin)	0.633 (s-024.bin)	83
+ipv6	search_short	112	120653	69496	120703	39208	0.576	1.000	0.325	1.772	0.801 (s-019.bin)	0.495 (s-066.bin)	0
+count check: 273 subject lines, 0 with differing match counts across variants

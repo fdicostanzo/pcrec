@@ -13,6 +13,17 @@
 #id	options	pattern_hex
 # k93tri (2026-10-07): +1 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
 # k94tri (2026-10-07): +112 rows: 8 tests/backrefs/caseless_ucp.rxt blocks (lane k94fix's new file) and 104 tests/possessify/composition_d27.rxt blocks (main's D27 composition corpus, landed without this pin); census_s1.py on the merged tree, no existing row moved.
+# possbuild/posstri (2026-10-07, [ART-POSS-ARMS]): +70 rows, every one a new block: 69 tests/possessify/possessify.rxt (lines 3032-4007, the arms' witness pairs) and 1 tests/recursion/k93.rxt (A-F1 cells); census_s1.py on the possbuild tip (abi 66, under -fno-start-set); no existing row moved (0 gone, 0 hex changed).
+# possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
+# m7fix (2026-10-08): +8 rows, every one an s670cell block (ae7cf901: tests/backrefs/caseless.rxt:71,86; caseless_ucp.rxt:262,274,288,298,310,322), correct VM-hat movers never pinned; census_s1.py on lane/m7fix (c9e90c77 + kit fixes), no existing row moved. Bench rows NOT refreshed: against pcrec-bench bb87dfa5 the census adds bench rows (counted, not checked), left for a bench-pin re-sync.
+# vmlfix (R-12, 2026-10-09): +10 rows, every one a tests/base/vm_lazy_rmin_prefix.rxt block (VMLAZY 08bda492, never pinned); census_s1.py on lane/vmlfix, no existing row moved. Bench rows NOT refreshed.
+# sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
+# revbuild (2026-10-10, [OPT-REVEND] L2): -1 row: tests/revend/stage2_captures.rxt:1453 `(\p{L}+)$` under utf8, whose hybrid prefilter now fits the size cap (the rev-end walk replaces the composite), so its VM entry carries no start-set hat; census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
+# slbuild (2026-10-10, [START-LANDING] SL2): -1/+1: size_ladder_prefilter_drop.rxt's `(\p{Xwd})` (now :24) takes the landing start and keeps its hybrid prefilter (a FIT mover), so its VM entry carries no hat; the file's new rung witness `(\p{Xwd})x` (:50) drops its prefilter and takes the hat. No other row moved (the startset suite's [vm-movers] diff).
+# RE-PINNED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1], abi 75): tests/litscan/handoff.rxt grew the byte-landmark
+# blocks, so its rows below the insertion moved and the new blocks joined; census_s1.py now compiles every arm with
+# -fno-req-handoff as well (the hat suites deny the re-entered handoff on both arms). Corpus rows regenerated on
+# the lane's build, every change a handoff.rxt row; the bench rows are the pinned ones, untouched (counted, never checked).
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -30,6 +41,8 @@ bench/syntax/mod-j-uc	--features all	283f4a29283f3a283f3c773e746865297c283f3c773
 bench/syntax/rec-1	--features all	285c28283f3a5b5e28295d7c283f3129292a5c2929
 bench/syntax/rec-name	--features all	283f3c703e5c28283f3a5b5e28295d7c283f267029292a5c2929
 bench/syntax/rec-r-uc	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
+tests/backrefs/caseless.rxt:71	--features backrefs,modifiers	283f692928612b295c31
+tests/backrefs/caseless.rxt:86	--features backrefs,modifiers	283f6929286162295c31
 tests/backrefs/caseless_ucp.rxt:112	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	285c786539295c31
 tests/backrefs/caseless_ucp.rxt:122	--features backrefs,modifiers --encoding=byte	283f6929282e295c31
 tests/backrefs/caseless_ucp.rxt:168	-i --features backrefs,modifiers --encoding=byte	282e295c31
@@ -37,6 +50,12 @@ tests/backrefs/caseless_ucp.rxt:19	--features backrefs,modifiers,ucp --encoding=
 tests/backrefs/caseless_ucp.rxt:215	--features backrefs,modifiers,ucp --encoding=byte	282a55435029282e295c31
 tests/backrefs/caseless_ucp.rxt:242	--ucp --features backrefs,modifiers,named-groups,ucp --encoding=byte	283f6929283f3c6e3e5c786539295c677b6e7d
 tests/backrefs/caseless_ucp.rxt:250	--ucp --features backrefs,modifiers,ucp --encoding=byte	283f6929285c78653929283f3a787c5c312924
+tests/backrefs/caseless_ucp.rxt:262	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:274	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865395c786530295c31
+tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
 tests/backrefs/caseless_ucp.rxt:65	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	282e295c31
 tests/backrefs/d27/gating.rxt:44	--features backrefs	2861295c31
 tests/backrefs/d27/gating.rxt:82	--features backrefs,named-groups	283f3c6e3e61295c6b3c6e3e
@@ -63,39 +82,60 @@ tests/base/k65_precheck_whole_set.rxt:44	--features backrefs --encoding=utf8	287
 tests/base/k65_precheck_whole_set.rxt:57	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b5a2e40235c31
 tests/base/k66_precheck_whole_run.rxt:34	--features backrefs --encoding=byte	28783f29285b612d7a5d2b292b65656565656565657e237e237e237e235c31
 tests/base/k66_precheck_whole_run.rxt:47	--features backrefs --encoding=utf8	28783f29285b612d7a5d2b292b65656565656565657e237e237e237e235c31
+tests/base/vm_lazy_rmin_prefix.rxt:103	--engine=vm	287829285c647b342c7d3f295c64
+tests/base/vm_lazy_rmin_prefix.rxt:126	--engine=vm	28612b3f2928612b29
+tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
+tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
+tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
+tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
+tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
+tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
 tests/harness/giveup.rxt:48	--engine=vm	28612a292a5b62635d
 tests/harness/giveup.rxt:54	--engine=vm	282861297c62292a5b63645d
-tests/litscan/handoff.rxt:1052	--features all --encoding=utf8 --engine=vm	283f692973747261c39f65
-tests/litscan/handoff.rxt:1126	--features all --encoding=utf8 --engine=vm	283f69297374726128c39f6529
-tests/litscan/handoff.rxt:1196	--features all --encoding=utf8 --engine=vm	2e7b337d636174
-tests/litscan/handoff.rxt:1265	--features all --encoding=utf8 --engine=vm	282e7b337d29636174
-tests/litscan/handoff.rxt:1318	--features all --encoding=utf8 --engine=vm	c3a97b327d636174
-tests/litscan/handoff.rxt:1365	--features all --encoding=utf8 --engine=vm	283f3ac3a9787ccaa97829
-tests/litscan/handoff.rxt:1569	--features all --encoding=byte --engine=vm	5c626361745c62
-tests/litscan/handoff.rxt:1641	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d29636174
-tests/litscan/handoff.rxt:1699	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d7b327d29636174
-tests/litscan/handoff.rxt:1765	--features all --encoding=byte --engine=vm	283f6d295e6974656d
-tests/litscan/handoff.rxt:1836	--features all --encoding=byte --engine=vm	283f3a5c477c7829636174
-tests/litscan/handoff.rxt:1890	--features all --encoding=byte --engine=vm	5c47787c7978
-tests/litscan/handoff.rxt:192	--features all --encoding=utf8 --engine=vm	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:1963	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429283f3d646f6729
-tests/litscan/handoff.rxt:2070	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429646f67
-tests/litscan/handoff.rxt:2155	--features all --encoding=byte --engine=vm	787b322c357d5c4b283f693a63617429
-tests/litscan/handoff.rxt:2281	--features all --encoding=byte --engine=vm	6161283f693a6129
-tests/litscan/handoff.rxt:2432	--features all --encoding=byte --engine=vm	612e2a3f283f693a73656c65637429
-tests/litscan/handoff.rxt:2512	--features all --encoding=byte --engine=vm	61622e2a78797a77
-tests/litscan/handoff.rxt:2627	--features all --encoding=byte --engine=vm	28616229633f7573657270617373
-tests/litscan/handoff.rxt:2738	--features all --encoding=byte --engine=vm	2878293f757365727a
-tests/litscan/handoff.rxt:2817	--features all --encoding=byte --engine=vm	283f69292863617429733f646f67
-tests/litscan/handoff.rxt:297	--features all --encoding=byte --engine=vm	283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:414	--features all --encoding=byte --engine=vm	283f6d295e787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:520	--features all --encoding=byte --engine=vm	283f6d295e283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:604	--features all --encoding=byte --engine=vm	787b322c357d28283f693a6361742929
-tests/litscan/handoff.rxt:676	--features all --encoding=byte --engine=vm	283f3a617c6262293f2863617429646f67
-tests/litscan/handoff.rxt:753	--features all --encoding=byte --engine=vm	283f6929636174
-tests/litscan/handoff.rxt:81	--features all --encoding=byte --engine=vm	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:913	--features all --encoding=utf8 --engine=vm	283f6929636174
-tests/litscan/handoff.rxt:971	--features all --encoding=byte --engine=vm	617b337d283f693a63617429
+tests/litscan/handoff.rxt:1056	--features all --encoding=utf8 --engine=vm	283f692973747261c39f65
+tests/litscan/handoff.rxt:1130	--features all --encoding=utf8 --engine=vm	283f69297374726128c39f6529
+tests/litscan/handoff.rxt:1200	--features all --encoding=utf8 --engine=vm	2e7b337d636174
+tests/litscan/handoff.rxt:1269	--features all --encoding=utf8 --engine=vm	282e7b337d29636174
+tests/litscan/handoff.rxt:1322	--features all --encoding=utf8 --engine=vm	c3a97b327d636174
+tests/litscan/handoff.rxt:1369	--features all --encoding=utf8 --engine=vm	283f3ac3a9787ccaa97829
+tests/litscan/handoff.rxt:1573	--features all --encoding=byte --engine=vm	5c626361745c62
+tests/litscan/handoff.rxt:1645	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d29636174
+tests/litscan/handoff.rxt:1703	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d7b327d29636174
+tests/litscan/handoff.rxt:1769	--features all --encoding=byte --engine=vm	283f6d295e6974656d
+tests/litscan/handoff.rxt:1840	--features all --encoding=byte --engine=vm	283f3a5c477c7829636174
+tests/litscan/handoff.rxt:1894	--features all --encoding=byte --engine=vm	5c47787c7978
+tests/litscan/handoff.rxt:196	--features all --encoding=utf8 --engine=vm	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:1967	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429283f3d646f6729
+tests/litscan/handoff.rxt:2074	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429646f67
+tests/litscan/handoff.rxt:2159	--features all --encoding=byte --engine=vm	787b322c357d5c4b283f693a63617429
+tests/litscan/handoff.rxt:2285	--features all --encoding=byte --engine=vm	6161283f693a6129
+tests/litscan/handoff.rxt:2436	--features all --encoding=byte --engine=vm	612e2a3f283f693a73656c65637429
+tests/litscan/handoff.rxt:2516	--features all --encoding=byte --engine=vm	61622e2a78797a77
+tests/litscan/handoff.rxt:2631	--features all --encoding=byte --engine=vm	28616229633f7573657270617373
+tests/litscan/handoff.rxt:2742	--features all --encoding=byte --engine=vm	2878293f757365727a
+tests/litscan/handoff.rxt:2821	--features all --encoding=byte --engine=vm	283f69292863617429733f646f67
+tests/litscan/handoff.rxt:301	--features all --encoding=byte --engine=vm	283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:3021	--features all --encoding=byte --engine=vm	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d
+tests/litscan/handoff.rxt:3244	--features all --encoding=byte --engine=vm	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d7c283f3a5b302d39612d665d7b312c347d3a297b312c377d3a5b302d39612d665d7b302c347d
+tests/litscan/handoff.rxt:3423	--features all --encoding=byte --engine=vm	283f3a283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d295c2e297b337d283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d29
+tests/litscan/handoff.rxt:3624	--features all --encoding=byte --engine=vm	283f3a5c647b312c337d5c2e297b337d5c647b312c337d
+tests/litscan/handoff.rxt:3749	--features all --encoding=byte --engine=vm	612e3f62
+tests/litscan/handoff.rxt:3821	--features all --encoding=byte --engine=vm	283f3a61627c63293a
+tests/litscan/handoff.rxt:3942	--features all --encoding=byte --engine=vm	5c625c647b312c337d5c2e5c64
+tests/litscan/handoff.rxt:4065	--features all --encoding=utf8 --engine=vm	2e7b312c337d3a
+tests/litscan/handoff.rxt:418	--features all --encoding=byte --engine=vm	283f6d295e787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:4366	--features all --encoding=byte --engine=vm	5b612d795d5c647b302c3130307d3a
+tests/litscan/handoff.rxt:4933	--features all --encoding=byte --engine=vm	5b612d795d5c647b302c3135307d3a
+tests/litscan/handoff.rxt:524	--features all --encoding=byte --engine=vm	283f6d295e283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:5381	--features all --encoding=byte --engine=vm	612e7b312c35303030307d7a
+tests/litscan/handoff.rxt:608	--features all --encoding=byte --engine=vm	787b322c357d28283f693a6361742929
+tests/litscan/handoff.rxt:680	--features all --encoding=byte --engine=vm	283f3a617c6262293f2863617429646f67
+tests/litscan/handoff.rxt:757	--features all --encoding=byte --engine=vm	283f6929636174
+tests/litscan/handoff.rxt:85	--features all --encoding=byte --engine=vm	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:917	--features all --encoding=utf8 --engine=vm	283f6929636174
+tests/litscan/handoff.rxt:975	--features all --encoding=byte --engine=vm	617b337d283f693a63617429
 tests/litscan/litrun.rxt:1015	--engine=vm	4142434445464748494a4b4c4d4e4f505152
 tests/litscan/litrun.rxt:1094	--engine=vm	4142434445464748494a4b4c4d4e4f50515253
 tests/litscan/litrun.rxt:1176	--engine=vm	4142434445464748494a4b4c4d4e4f5051525354
@@ -275,54 +315,6 @@ tests/possessify/composition_d27.rxt:8624	--features all	286129283f31293f5c31
 tests/possessify/composition_d27.rxt:9239	--features all	283f3a28612a3f2962292b3f5c31
 tests/possessify/composition_d27.rxt:9262	--features all	283f3a285c77295c573f292b5c31
 tests/possessify/composition_d27.rxt:9285	--features all	283f3a285c57295c772a292b5c315c62
-tests/recursion/d27/sr_interactions.rxt:361	--features recursion	2861283f31293f6229
-tests/recursion/d27/sr_root.rxt:253	--features recursion	2861283f52293f6229
-tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
-tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
-tests/recursion/d27/sr_root.rxt:308	--features recursion	2861283f52292a6229
-tests/recursion/d27/sr_spellings.rxt:33	--features recursion,backrefs	28617c62295c31
-tests/recursion/framebuffer.rxt:94	--engine=vm	28617c6161292b62
-tests/recursion/k93.rxt:195	--features recursion	283f3a62283f5229617c612b29
-tests/size/size_term.rxt:32	--engine=vm	283f3a283f3a283f3a283f3a283f3a283f3a617c62297b34317d297b34317d297b34317d297b34317d297b34317d297b34317d
-tests/startset/giveup.rxt:16	--features all --engine=vm	283f3d283f3a617c627c78292a632978
-tests/startset/vmhat.rxt:15	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
-tests/startset/vmhat.rxt:153	--features all --engine=vm	283f3d61622961286229
-tests/startset/vmhat.rxt:243	--features all	283f3a787c2861295c31293f62
-tests/startset/vmhat.rxt:269	--features all	283f692928636129745c31
-tests/startset/vmhat.rxt:314	-i --features all --encoding=utf8	286b295c31
-tests/startset/vmhat.rxt:350	--features all	285c77295c3178
-tests/startset/vmhat.rxt:381	--features all	5c62285c772b295c732b5c315c62
-tests/startset/vmhat.rxt:452	--features all --engine=vm	5c426361745c42
-tests/startset/vmhat.rxt:486	--features all --engine=vm	283f3a5c47617c622963
-tests/startset/vmhat.rxt:507	--features all --engine=vm	615c4b62
-tests/startset/vmhat.rxt:54	--features all	286162295c31
-tests/ucp/ctxnode.rxt:410	--features all	78283f216129283f216229283f216329283f216429283f216529283f216629283f216729283f216829283f216929283f216a29283f216b29283f216c29283f216d29283f216e29283f216f29283f217029283f217129
-tests/uprops/size_ladder_prefilter_drop.rxt:50	--encoding=utf8	285c707b5877647d2978
-tests/utf8/wclass_illformed.rxt:1025	--features all --encoding=utf8 --engine=vm	78283f69295b6b5c787b65397d5d79
-tests/utf8/wclass_illformed.rxt:1048	--features all --encoding=utf8 --engine=vm	7828283f69295b6b5c787b65397d5d2979
-tests/utf8/wclass_illformed.rxt:153	--features all --encoding=utf8 --engine=vm	785c507b4c7d79
-tests/utf8/wclass_illformed.rxt:176	--features all --encoding=utf8 --engine=vm	78285c507b4c7d2979
-tests/utf8/wclass_illformed.rxt:223	--features all --encoding=utf8 --engine=vm	785c707b5877647d79
-tests/utf8/wclass_illformed.rxt:246	--features all --encoding=utf8 --engine=vm	78285c707b5877647d2979
-tests/utf8/wclass_illformed.rxt:311	--features all --encoding=utf8 --engine=vm	785c507b556e6b6e6f776e7d79
-tests/utf8/wclass_illformed.rxt:333	--features all --encoding=utf8 --engine=vm	78285c507b556e6b6e6f776e7d2979
-tests/utf8/wclass_illformed.rxt:399	--features all --encoding=utf8 --engine=vm	785b5e615d79
-tests/utf8/wclass_illformed.rxt:422	--features all --encoding=utf8 --engine=vm	78285b5e615d2979
-tests/utf8/wclass_illformed.rxt:487	--features all --encoding=utf8 --engine=vm	782e79
-tests/utf8/wclass_illformed.rxt:509	--features all --encoding=utf8 --engine=vm	78282e2979
-tests/utf8/wclass_illformed.rxt:575	--features all --encoding=utf8 --engine=vm	785b5c787b38307d2d5c787b3766667d5d79
-tests/utf8/wclass_illformed.rxt:598	--features all --encoding=utf8 --engine=vm	78285b5c787b38307d2d5c787b3766667d5d2979
-tests/utf8/wclass_illformed.rxt:63	--features all --encoding=utf8 --engine=vm	785c707b4c7d79
-tests/utf8/wclass_illformed.rxt:665	--features all --encoding=utf8 --engine=vm	785b5c787b3830307d2d5c787b666666667d5d79
-tests/utf8/wclass_illformed.rxt:688	--features all --encoding=utf8 --engine=vm	78285b5c787b3830307d2d5c787b666666667d5d2979
-tests/utf8/wclass_illformed.rxt:755	--features all --encoding=utf8 --engine=vm	785b5c787b31303030307d2d5c787b3130666666667d5d79
-tests/utf8/wclass_illformed.rxt:778	--features all --encoding=utf8 --engine=vm	78285b5c787b31303030307d2d5c787b3130666666667d5d2979
-tests/utf8/wclass_illformed.rxt:845	--features all --encoding=utf8 --engine=vm	785b5c787b65307d2d5c787b66667d5d79
-tests/utf8/wclass_illformed.rxt:86	--features all --encoding=utf8 --engine=vm	78285c707b4c7d2979
-tests/utf8/wclass_illformed.rxt:868	--features all --encoding=utf8 --engine=vm	78285b5c787b65307d2d5c787b66667d5d2979
-tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
-tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
-# possbuild/posstri (2026-10-07, [ART-POSS-ARMS]): +70 rows, every one a new block: 69 tests/possessify/possessify.rxt (lines 3032-4007, the arms' witness pairs) and 1 tests/recursion/k93.rxt (A-F1 cells); census_s1.py on the possbuild tip (abi 66, under -fno-start-set); no existing row moved (0 gone, 0 hex changed).
 tests/possessify/possessify.rxt:3032	--features all --engine=vm	205c773f5c62
 tests/possessify/possessify.rxt:3046	--features all --engine=vm	205c773f2b5c62
 tests/possessify/possessify.rxt:3060	--features all --engine=vm	283f3a615c2e292b5c62
@@ -392,9 +384,6 @@ tests/possessify/possessify.rxt:3954	--features all --engine=vm	5c62285c772b295c
 tests/possessify/possessify.rxt:3972	--features all --engine=vm	5c62285c772b2b295c625c732b2b5c315c62
 tests/possessify/possessify.rxt:3990	-i --features all --encoding=utf8 --engine=vm	6b2b5c62
 tests/possessify/possessify.rxt:4007	-i --features all --encoding=utf8 --engine=vm	6b2b2b5c62
-tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
-# possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
-# m7fix (2026-10-08): +8 rows, every one an s670cell block (ae7cf901: tests/backrefs/caseless.rxt:71,86; caseless_ucp.rxt:262,274,288,298,310,322), correct VM-hat movers never pinned; census_s1.py on lane/m7fix (c9e90c77 + kit fixes), no existing row moved. Bench rows NOT refreshed: against pcrec-bench bb87dfa5 the census adds bench rows (counted, not checked), left for a bench-pin re-sync.
 tests/possessify/possessify.rxt:4033	--features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
 tests/possessify/possessify.rxt:4057	--features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
 tests/possessify/possessify.rxt:4081	--features all --encoding=utf8 --engine=vm	782b5c625b5c787b65397d615d
@@ -419,25 +408,51 @@ tests/possessify/possessify.rxt:4586	-i --features all --encoding=utf8 --engine=
 tests/possessify/possessify.rxt:4618	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
 tests/possessify/possessify.rxt:4650	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
 tests/possessify/possessify.rxt:4681	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31
-tests/backrefs/caseless.rxt:71	--features backrefs,modifiers	283f692928612b295c31
-tests/backrefs/caseless.rxt:86	--features backrefs,modifiers	283f6929286162295c31
-tests/backrefs/caseless_ucp.rxt:262	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f692928612b295c31
-tests/backrefs/caseless_ucp.rxt:274	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865392b295c31
-tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865395c786530295c31
-tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
-tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
-tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
-# vmlfix (R-12, 2026-10-09): +10 rows, every one a tests/base/vm_lazy_rmin_prefix.rxt block (VMLAZY 08bda492, never pinned); census_s1.py on lane/vmlfix, no existing row moved. Bench rows NOT refreshed.
-tests/base/vm_lazy_rmin_prefix.rxt:103	--engine=vm	287829285c647b342c7d3f295c64
-tests/base/vm_lazy_rmin_prefix.rxt:126	--engine=vm	28612b3f2928612b29
-tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
-tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
-tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
-tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
-tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
-tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
-# sstri (2026-10-10): +1 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
-# revbuild (2026-10-10, [OPT-REVEND] L2): -1 row: tests/revend/stage2_captures.rxt:1453 `(\p{L}+)$` under utf8, whose hybrid prefilter now fits the size cap (the rev-end walk replaces the composite), so its VM entry carries no start-set hat; census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
-# slbuild (2026-10-10, [START-LANDING] SL2): -1/+1: size_ladder_prefilter_drop.rxt's `(\p{Xwd})` (now :24) takes the landing start and keeps its hybrid prefilter (a FIT mover), so its VM entry carries no hat; the file's new rung witness `(\p{Xwd})x` (:50) drops its prefilter and takes the hat. No other row moved (the startset suite's [vm-movers] diff).
+tests/recursion/d27/sr_interactions.rxt:361	--features recursion	2861283f31293f6229
+tests/recursion/d27/sr_root.rxt:253	--features recursion	2861283f52293f6229
+tests/recursion/d27/sr_root.rxt:265	--features recursion	28615c673c303e3f6229
+tests/recursion/d27/sr_root.rxt:273	--features recursion	28615c67273030273f6229
+tests/recursion/d27/sr_root.rxt:308	--features recursion	2861283f52292a6229
+tests/recursion/d27/sr_spellings.rxt:33	--features recursion,backrefs	28617c62295c31
+tests/recursion/framebuffer.rxt:94	--engine=vm	28617c6161292b62
+tests/recursion/k93.rxt:195	--features recursion	283f3a62283f5229617c612b29
+tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
+tests/size/size_term.rxt:32	--engine=vm	283f3a283f3a283f3a283f3a283f3a283f3a617c62297b34317d297b34317d297b34317d297b34317d297b34317d297b34317d
+tests/startset/giveup.rxt:16	--features all --engine=vm	283f3d283f3a617c627c78292a632978
+tests/startset/vmhat.rxt:15	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
+tests/startset/vmhat.rxt:153	--features all --engine=vm	283f3d61622961286229
+tests/startset/vmhat.rxt:243	--features all	283f3a787c2861295c31293f62
+tests/startset/vmhat.rxt:269	--features all	283f692928636129745c31
+tests/startset/vmhat.rxt:314	-i --features all --encoding=utf8	286b295c31
+tests/startset/vmhat.rxt:350	--features all	285c77295c3178
+tests/startset/vmhat.rxt:381	--features all	5c62285c772b295c732b5c315c62
+tests/startset/vmhat.rxt:452	--features all --engine=vm	5c426361745c42
+tests/startset/vmhat.rxt:486	--features all --engine=vm	283f3a5c47617c622963
+tests/startset/vmhat.rxt:507	--features all --engine=vm	615c4b62
+tests/startset/vmhat.rxt:54	--features all	286162295c31
+tests/ucp/ctxnode.rxt:410	--features all	78283f216129283f216229283f216329283f216429283f216529283f216629283f216729283f216829283f216929283f216a29283f216b29283f216c29283f216d29283f216e29283f216f29283f217029283f217129
+tests/uprops/size_ladder_prefilter_drop.rxt:50	--encoding=utf8	285c707b5877647d2978
+tests/utf8/wclass_illformed.rxt:1025	--features all --encoding=utf8 --engine=vm	78283f69295b6b5c787b65397d5d79
+tests/utf8/wclass_illformed.rxt:1048	--features all --encoding=utf8 --engine=vm	7828283f69295b6b5c787b65397d5d2979
+tests/utf8/wclass_illformed.rxt:153	--features all --encoding=utf8 --engine=vm	785c507b4c7d79
+tests/utf8/wclass_illformed.rxt:176	--features all --encoding=utf8 --engine=vm	78285c507b4c7d2979
+tests/utf8/wclass_illformed.rxt:223	--features all --encoding=utf8 --engine=vm	785c707b5877647d79
+tests/utf8/wclass_illformed.rxt:246	--features all --encoding=utf8 --engine=vm	78285c707b5877647d2979
+tests/utf8/wclass_illformed.rxt:311	--features all --encoding=utf8 --engine=vm	785c507b556e6b6e6f776e7d79
+tests/utf8/wclass_illformed.rxt:333	--features all --encoding=utf8 --engine=vm	78285c507b556e6b6e6f776e7d2979
+tests/utf8/wclass_illformed.rxt:399	--features all --encoding=utf8 --engine=vm	785b5e615d79
+tests/utf8/wclass_illformed.rxt:422	--features all --encoding=utf8 --engine=vm	78285b5e615d2979
+tests/utf8/wclass_illformed.rxt:487	--features all --encoding=utf8 --engine=vm	782e79
+tests/utf8/wclass_illformed.rxt:509	--features all --encoding=utf8 --engine=vm	78282e2979
+tests/utf8/wclass_illformed.rxt:575	--features all --encoding=utf8 --engine=vm	785b5c787b38307d2d5c787b3766667d5d79
+tests/utf8/wclass_illformed.rxt:598	--features all --encoding=utf8 --engine=vm	78285b5c787b38307d2d5c787b3766667d5d2979
+tests/utf8/wclass_illformed.rxt:63	--features all --encoding=utf8 --engine=vm	785c707b4c7d79
+tests/utf8/wclass_illformed.rxt:665	--features all --encoding=utf8 --engine=vm	785b5c787b3830307d2d5c787b666666667d5d79
+tests/utf8/wclass_illformed.rxt:688	--features all --encoding=utf8 --engine=vm	78285b5c787b3830307d2d5c787b666666667d5d2979
+tests/utf8/wclass_illformed.rxt:755	--features all --encoding=utf8 --engine=vm	785b5c787b31303030307d2d5c787b3130666666667d5d79
+tests/utf8/wclass_illformed.rxt:778	--features all --encoding=utf8 --engine=vm	78285b5c787b31303030307d2d5c787b3130666666667d5d2979
+tests/utf8/wclass_illformed.rxt:845	--features all --encoding=utf8 --engine=vm	785b5c787b65307d2d5c787b66667d5d79
+tests/utf8/wclass_illformed.rxt:86	--features all --encoding=utf8 --engine=vm	78285c707b4c7d2979
+tests/utf8/wclass_illformed.rxt:868	--features all --encoding=utf8 --engine=vm	78285b5c787b65307d2d5c787b66667d5d2979
+tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
+tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979

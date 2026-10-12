@@ -218,11 +218,22 @@ srcs=$(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ')
 # taken) the shape is this cell's again, with ~390 B of headroom for the next
 # every-artifact stamp and ~490 B under K=3: 6 and 3 do not fit, 4 does and
 # is the largest that does, and 2 fits too.
+#
+# RE-CALIBRATED 32,300 -> 33,200, 2026-10-11 ([REQ-HANDOFF-L1], lane
+# rlhbuild; the abi 74 -> 75 event). The witness's `b` is now a BYTE landmark
+# the hybrid's first prefilter call is handed off from (`RX_REQ_HANDOFF "24"`),
+# and its one-byte gate keeps its position through the kit's generic ASSIGN
+# loop in place of the discard `memchr`: +571 B of code at every K. Read
+# through `--unroll=K --warn-emit-bytes=1` on the default build (base / now):
+# K=6 37,311 / 37,882, K=4 32,230 / 32,801, K=3 33,115 / 33,686, K=2 31,000 /
+# 31,571 (K=4 already sat 70 B under 32,300 on main 48343196). At 33,200 the
+# shape is this cell's again: 6 and 3 do not fit, 4 does (~400 B headroom)
+# and is the largest that does, and 2 fits too.
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
-       -DPCREC_MAX_VM_EMIT_CODE_BYTES=32300 \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=33200 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the threshold at 20000 and the code cap at 32300"
+    ok "reference compiler built with the threshold at 20000 and the code cap at 33200"
     RESCUE='(?:aa|a){8,12}+b'
     if "$REF" -p rx --features all -o "$WORK/r.c" --pattern "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
@@ -246,7 +257,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         if [ "$rk" = "4" ]; then
             ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (~36,988 B against the 32,300 cap) and rung 4 does (31,907 B, re-measured 2026-10-06 at [MEMFN] R4a′), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (~37,882 B against the 33,200 cap) and rung 4 does (~32,801 B, re-measured 2026-10-11 at [REQ-HANDOFF-L1]), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
         # [PF-DROP] (D135) THE RESCUE IS A DEGRADING ROW of the size-cap
         # ladder (a smaller K measured ~1.03-1.06x slower, pfdrop_report.md

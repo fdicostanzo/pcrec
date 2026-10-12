@@ -794,6 +794,24 @@ that cycle's analysis lands.
 - `judgement_gapreport_2026-10-05.md` — that instance's hand-kept judgement.
   The script copies it verbatim into the report; a re-run never overwrites
   it.
+- `gapreport_2026-10-11.md` — **the THIRD instance** (lane `gaprep3`, 2026-10-11),
+  "where pcrec is really behind its competitors" at pcrec b8337c33 (abi 74, [B135] state 3).
+  - **CROSS-WINDOW**: no window holds both pcrec b8337c33 and peers, so peers come from the
+    latest report per set (`gapreport.sh --peer-group`). Capability uses the 10-08 window,
+    the other sets the 10-05 September peers; altwide is absent. Drift bounds are in the
+    judgement file.
+  - **Census**: pcrec leads 476, level 18, trails 80 of 574 cells vs jit; 87 trailing vs the
+    best non-SIMD peer, 113 incl. rust.
+  - **New sections**: 7 (best-peer census), 8 (SIMD-attributable gaps, kept apart), 9
+    (movement vs the 10-05 run and vs the 255bcdd8 window; capability 0.1 -> 0.2 changed the
+    throughput subject set, so those cells are SUBJECTS-CHANGED, not movement).
+  - **New groups**: ANCH-ATTEMPT (moment-iso8601, email-owasp; only on capability@0.2's hazard
+    subjects) and REVEND-TAIL (closed at b8337c33).
+- `lossreview/` — [LOSS-REVIEW] phase-1 outputs, one file per route lane (`dfa.md` lrdfa, `vm.md` lrvm, `misc.md` lrmisc). Own CLAUDE.md.
+- `lossreview_charter.md` — **[LOSS-REVIEW]'s charter** (Frank, 2026-10-11): attribute every losing cell of the 10-11 gap report plus the internal loss items, rank causes by total loss, then general fixes (fix-existing first), D6 panel, ranked list. Lane outputs land under `lossreview/`.
+- `lossreview/` — [LOSS-REVIEW] phase 1's per-route attributions (`vm.md` lane lrvm, `dfa.md` lrdfa, `misc.md` lrmisc) and their instruments. Own CLAUDE.md.
+- `judgement_gapreport_2026-10-11.md` — that instance's LANE DRAFT judgement (owner rows,
+  caveats, relay questions, the manager's call list); the manager replaces or extends it.
 - `sellit_read.md` — **SEL-LIT desk read** (lane `sellit`, 2026-10-05,
   read-only, no build). Every cell of the round-1 pin (`c4c70f2c`) where
   `pcrec-vm` clearly beats `pcrec-auto` on a literal-led DFA artifact, across
@@ -885,6 +903,13 @@ that cycle's analysis lands.
   ipv4, plus the re-entered run handoff on sfx-64/kv-quoted: build, identity, plant,
   census and timing scripts with raw outputs. Own `CLAUDE.md`; reading in
   `../lanes/rlhtwin_report.md`.
+
+## [REQ-HANDOFF-L1] as built (lane `rlhbuild`, 2026-10-11)
+
+- `rlhbuild/` — identity and timing of the built row family (base / new /
+  `-fno-req-handoff` / the memchr-gate R-15 twin / libpcre2) on ipv6, ipv4,
+  dotted4, sfx-64, kv-quoted and the K-admission cells. Own `CLAUDE.md`; reading
+  in `../lanes/rlhbuild_report.md`.
 
 ## [OPT-REVEND] `rev-end-width` twin (lane `rewtwin`, 2026-10-11)
 

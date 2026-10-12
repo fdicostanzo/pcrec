@@ -244,6 +244,16 @@ defect traced to that edge (design §4.2.1, §10).
   [START-TABLE] C4 — `tuning.md` §2.41). Sabotage S465 (a wide
   class counted as one byte) and S466 (an alternation's left width) and S474
   (the choice preferring a bounded run) are anchored here.
+  **[REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 75)** the SET carries
+  the same offset rules per member (`RbSet.off[256]`, 32-bit saturating at
+  `RB_OFF_UNBOUNDED`: `rb_union` shifts a right factor's member by the left
+  factor's maximum width and keeps the nearer of two occurrences, `rb_intersect`
+  the farther branch, every width-only arm a pure shift), published as the
+  core row `req_set_maxoff` (`ReqSet.maxoff`; `req_set`'s own text unchanged)
+  and the derived row `req_landmark_maxoff` (`pcrec_fact_req_landmark_maxoff`:
+  the run window's K where a run shipped, else the `req_byte` member's), the
+  handoff's K for a landmark of any length. Sabotage S805-S807 are anchored
+  here.
   **[OPT-LITSCAN] S4 C3 (lane c3build, 2026-10-03, abi 59): A RUN OF
   POSITIONS.** `RbRun`/`ReqRun` carry a per-position mask K beside the bytes
   T; a position is a byte or a cube of at most `pos_set` members

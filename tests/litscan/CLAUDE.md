@@ -68,7 +68,15 @@ candidate, so the S4 L-sweep carries a forced-VM copy of each run.)
   `(x)?userz` (`"1"`) and `(?i)(cat)s?dog` (`"0"`, through the offset-skip
   PAIR arm), each on both routes; the reach floor
   `tests/memfn/run_handoff_reach.sh` requires their artifacts to carry the
-  route.
+  route. [REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 75) added the
+  BYTE-LANDMARK blocks whose forward scan re-enters the handoff at each
+  restart (NEXT's `handoff` row): the movers' shapes (ipv6-shaped, the
+  loglines ipv6 and ipv4 patterns, dotted4), `a.?b`, the wider-branch
+  `(?:ab|c):`, a seeded `\b\d{1,3}\.\d` (with `1.x 1234.5 1.2`, where a
+  dropped reseed answers NOMATCH), utf8 `.{1,3}:` on well- and ill-formed
+  text, the K admission's admitted/declined witnesses `[a-y]\d{0,100}:` /
+  `[a-y]\d{0,150}:`, and Frank's hostile cell `a.{1,50000}z` over z-dense
+  text. Detector of S805, S808, S809, S813, S814.
 - **gen_handoff.py** — writes `handoff.rxt`: a byte block's cells from
   python3 `re` AND libpcre2 (the borrowed ctypes binding; the two must agree),
   a utf8 block's (and a byte block python cannot compile) from libpcre2 under

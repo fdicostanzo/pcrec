@@ -40,6 +40,11 @@ offset-set-bounded	-	a\Kb\b
 offset-set-bounded	-fno-rev-end	a\Kb\z
 offset-set	-	\d\dxyz
 offset-set	-fno-run-prefilter	ABCDE
+# [REQ-HANDOFF-L1] the re-entered handoff: a byte landmark (dotted4's '.',
+# K = 3) and a run landmark (sfx-shaped `ing`), and the deny's landing row.
+handoff-reentry	-	(?:\d{1,3}\.){3}\d{1,3}
+handoff-reentry	-	[a-z]{2,6}ing
+byte-class	-fno-req-handoff	(?:\d{1,3}\.){3}\d{1,3}
 first-memchr-bounded	-	\B(?<!a)d
 first-class-bounded	-	\b(ab|cd)\b.{0,2}\b(ab|c)\b
 first-class	--engine=vm	I

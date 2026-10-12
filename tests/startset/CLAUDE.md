@@ -58,6 +58,13 @@ scripts, any failing fails the section.
   bench rows (+6 forced, +1 `s3_dfa`), which are counted, never checked, and
   are left for a bench-pin re-sync. **A corpus-adding lane runs
   `make test-startset`** (k94tri's lesson, again).
+  **Re-pinned at rlhbuild** (2026-10-11, [REQ-HANDOFF-L1]): handoff.rxt grew
+  24 blocks, so its rows below the insertion moved and the new blocks joined
+  (every changed row a handoff.rxt row); `census_s1.py` and
+  `dfahat_checks.py` now compile every arm with `-fno-req-handoff` too (the
+  re-entered handoff ranks above the hat rows and displaces them where its
+  admission passes; the hat suites measure the hat against today's plain row,
+  the interplay is run_prechecks.sh §5.12l-q's). Bench rows untouched.
 
 ## Stage 2 — the VM hat (lane ssbuild2, abi 62)
 

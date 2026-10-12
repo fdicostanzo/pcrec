@@ -19,6 +19,9 @@ SAB_EXPECT=DETECTED
 SAB_COUNT=1
 SAB_BEFORE='                             CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
-                                                            CAND_ON(CAND_ROUTE_VM) } },'
+                                                            CAND_ON(CAND_ROUTE_VM),'
 SAB_AFTER='                             CN(CAND_NODE_VERIFIER),
-                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) } },   /* SABOTAGE S606 */'
+                             .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT),   /* SABOTAGE S606 */'
+# RE-AIMED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1]): NEXT's `reads` gained
+# its FIRST edge (the `handoff` row) after BOUND's; the anchor stops at
+# BOUND's VM bit. Intent unchanged: BOUND's VM-route edge undeclared.

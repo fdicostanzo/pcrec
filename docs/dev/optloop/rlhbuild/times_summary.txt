@@ -1,0 +1,10 @@
+cell	regime	n	sum_base	sum_new	sum_deny	sum_newm	new/base	deny/base	newm/base	new/newm	worst_new/base	best_new/base	slower>3%
+dotted4	throughput	5	647	30047	647	649	46.448	1.000	1.003	46.319	52.819 (t-letters-016k.bin)	35.358 (t-digits-004k.bin)	5
+hcolon	throughput	6	3878278	4720653	3887025	4399499	1.217	1.002	1.134	1.073	45.555 (z-0064k.bin)	1.074 (colon-0004k.bin)	6
+hcolon_in	throughput	6	3870924	5949001	3871196	5809042	1.537	1.000	1.501	1.024	45.526 (z-0064k.bin)	1.260 (colon-0004k.bin)	6
+hostile	throughput	6	58831938	58829065	58897138	58899996	1.000	1.001	1.001	0.999	1.002 (z-0064k.bin)	0.996 (colon-1024k.bin)	0
+ipv4	throughput	12	3069184	2690291	3057583	600557	0.877	0.996	0.196	4.480	1.429 (t-016k-syslog.bin)	0.685 (t-256k-fail.bin)	5
+ipv6	throughput	12	3903312	2228899	3902261	1190396	0.571	1.000	0.305	1.872	0.730 (t-064k-syslog.bin)	0.551 (t-1024k-hit.bin)	0
+kvq	throughput	12	95202	96312	1312195	95837	1.012	13.783	1.007	1.005	1.015 (t-1024k-hit.bin)	0.998 (t-256k-fail.bin)	0
+sfx64	throughput	4	1623518	110507	1892881	110604	0.068	1.166	0.068	0.999	0.120 (t-128k-sparse.bin)	0.059 (t-512k-sparse.bin)	0
+count check: 63 subject lines, 0 with differing match counts across variants

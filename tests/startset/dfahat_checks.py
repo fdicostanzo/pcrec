@@ -115,11 +115,20 @@ def stamps(text):
     return {m.group(1): m.group(2).strip().strip('"') for m in STAMP.finditer(text)}
 
 
+# [REQ-HANDOFF-L1] (abi 75) EVERY ARM ALSO CARRIES `-fno-req-handoff`: the
+# re-entered handoff (NEXT's `handoff` row) ranks ABOVE the two hat rows and
+# displaces them where its admission passes against them, a cross-row choice
+# this suite does not measure (run_prechecks.sh §5.12l-q and the axes sweep
+# do). Denied on both arms, the hat is compared with today's plain row exactly
+# as before, and the census that writes manifest_s3_dfa.tsv denies it too.
+NO_HANDOFF = ["-fno-req-handoff"]
+
+
 def compile_c(pat, args, d):
     os.makedirs(d, exist_ok=True)
     o = os.path.join(d, "rx.c")
     try:
-        r = subprocess.run([PCREC, *args, "-p", "rx", "-o", o, "--pattern", pat],
+        r = subprocess.run([PCREC, *args, *NO_HANDOFF, "-p", "rx", "-o", o, "--pattern", pat],
                            capture_output=True, timeout=TMO)
     except subprocess.TimeoutExpired:
         return None

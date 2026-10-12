@@ -1,0 +1,15 @@
+=== hex8-bounded
+bytes=4681573 calls=932 matches=921 entries=682437 (0.146/B) skipped=0.255/B mean_skip=1.75 seeds=453062 steps=0.746/B
+T size 16  prev-nonboundary bytes 63  seed [0, 3, 3]
+bytes 4681573  T-stops 1569554 (0.3353/B)  boundary-pair stops 267010 (0.0570/B)  pair/T 0.170
+PAIRSTOPS=267010 BYTES=4681573
+=== wild-waf-crs-942140-dbnames
+bytes=4681573 calls=11 matches=0 entries=445565 (0.095/B) skipped=0.452/B mean_skip=4.75 seeds=302719 steps=0.548/B
+T size 14  prev-nonboundary bytes 63  seed [0, 0, 0, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29]
+bytes 4681573  T-stops 1019525 (0.2178/B)  boundary-pair stops 258878 (0.0553/B)  pair/T 0.254
+PAIRSTOPS=258878 BYTES=4681573
+=== wild-codegrammar-json-constant
+bytes=4681573 calls=11 matches=0 entries=311524 (0.067/B) skipped=0.689/B mean_skip=10.36 seeds=283946 steps=0.311/B
+T size 3  prev-nonboundary bytes 63  seed [0, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11]
+bytes 4681573  T-stops 434608 (0.0928/B)  boundary-pair stops 60655 (0.0130/B)  pair/T 0.140
+PAIRSTOPS=60655 BYTES=4681573

@@ -26951,3 +26951,14 @@ Frank: "finish up open work/bench results/errors", Linux box free (bench manager
 - **Filed:** [PRIOR-COST-UNIFY] (four prior-reading admission predicates), QUEUED by Frank after [REQ-HANDOFF-L1]. The two-landmark unlock refined (Frank): the rarest byte at a known offset, i.e. the offset-set row bounded by the window.
 - **Slip:** a plan-row edit cited a tuning.md paragraph that exists only on the R-15 branch (7f4f765e, pushed unchecked); later the manager chained a push with `;` after a red test-spec-history (2a295992). Main was red for minutes; fixed 113fcef0. Rule: gate every push with `&&` on the check's verdict.
 - **Manager cwd slip:** one `cd` into worktrees/rlhbuild for a read (corrected at once).
+
+## 2026-10-11 — session 107 — CLOSE (Frank: "next session, context is high", ~evening EDT)
+
+- **R-15 merged** (d3754775; zero movers, no abi) + kit ideas3 (a7715af4, docs). Gate: strict, spec-history, cli green.
+- **[REQ-HANDOFF-L1] integration** (lane rlhland, lane/rlhbuild 43e1575b) done; chain lifted 13:26. make test one red: test-encoding-checks, a stale `excise_handoff` that did not know R-15's one-line miss test (lane rlhtri, fix 52564f83 on lane/rlhtri, held until the chain ends). test-axes 60 axes logged clean by close; mech follows. L1 MERGE IS NEXT SESSION'S FIRST ITEM.
+- **Bench O-97** ([START-LANDING] state 3): 298/298 movers, 76/78% faster beyond overlap; controls clean. [START-LANDING] CLOSED (archived). Asks: (1) utf8 search-short ACCEPTED (u8short: per-subject total, no per-call code); (2) emit-c x2.53 measured (deny pair 222 -> 125 ms) -> [SL-COMPILE-TIME] BOONIES; (3) K103 accepted. Three-state REVEND/START-LANDING summary (threestate) and the O-97 exec summary merged.
+- **Gap report 3** (gaprep3, cross-window): trails 80/574 vs jit (was 96/631). Manager calls in its judgement file.
+- **[LOSS-REVIEW]** chartered by Frank and run through phases 1-2 (lrdfa, lrvm, lrmisc, lrfix; perf now usable at paranoid=2 until reboot, valgrind installed). Headline: backref seam helpers called via PLT under the bench's -fPIC (27 ms), ATTEMPT-SPLIT (29 ms, one cell), the start-skip/scan-form family (~27 ms), prior-reading picks. Frank: fast path for #1/#2 next session.
+- **Rulings/filings:** D160 (utf8 prior authored, script-neutral) + addendum 1 (length-ordered shape; equal-share regresses x24); K105 (handoff admission reads the prior only); [VM-CLSMASK], [POS-PARALLEL] (four-engine umbrella, design study after phase 1), [SPELLING-INV], [PIC-ARM], [SL-COMPILE-TIME].
+- **Kit:** R-16 built (lane/memfn-r16 aabdd824), slot23 staged; its GO waits for the L1 merge (told).
+- **Slips:** a build log redirected to /tmp (outside mandate; removed at once); one `cd` into worktrees/rlhbuild (corrected at once); first ack to the kit went to its stale same-named session.

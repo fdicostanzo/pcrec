@@ -3758,3 +3758,21 @@ w16, S816 KB dropped at w32, S817 the w16 rung under a w32 helper keeps KB
 KB while the verify still trims it, S819 the trim takes KB as proven at
 w16. S753 (rankuse's deny-ignored row) is the deny-at-w32 fault and was
 re-run. Solo verdicts: docs/dev/lanes/r16b_report.md.
+**[REQ-HANDOFF-L1] (lane rlhbuild, 2026-10-11, abi 75), S805-S814.** The
+landmark-K facts and the re-entered handoff (docs/dev/lanes/rlhbuild_report.md
+§5): S805 (the set offsets lose the left factor's width: K = 0 on dotted4),
+S806 (an alternation's member takes the nearer branch), S807 (a min-0 repeat
+moves no member), S808 (the re-entry re-asks from one byte past the restart: a
+LATER occurrence), S809 (the re-entry jumps to the landmark itself: K = 0),
+S810 (`cand_read` drops its reader's `under` bits: the selection re-enters
+itself), S811 (the K admission always admits), S812 (the self-check ignores a
+read's deny bits: `table-read-cycle`), S813 (the re-entry does not re-seed),
+S814 (the re-entry does not round up under utf8). K - 1 .. 1 are equivalent
+mutants on the reverse-pass bodies (rlhtwin_report.md §2.2), so the K plants
+are K = 0 or a later occurrence, and S806/S807's are structural (the hand K
+table). Re-aimed: S446 (the min-0 repeat arm's width is `rw`), S460 (the gate
+block gained the byte landmark's `ret_pred` line), S463 (K is the landmark's),
+S606 (NEXT's `reads` gained FIRST), S693 (abi 75); re-pointed reach probes:
+S265 (`a.*?b`: an unbounded byte keeps the discard form), S280 (the C0 witness
+re-enters), S282/S283 (`-fno-req-handoff` beside the run-row denies), S610
+(`memchr` lists at 10).

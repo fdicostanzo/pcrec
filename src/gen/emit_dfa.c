@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 74
+#define PCREC_ARTIFACT_ABI 75
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -409,6 +409,9 @@ typedef enum {
 } ReqUse;
 static ReqUse req_use(Ctx *cx);
 static const char *req_handoff_stamp(Ctx *cx);
+/* [REQ-HANDOFF-L1] does the forward scan RE-ENTER the handoff (NEXT's
+ * `handoff` row)? Defined beside that row; the entry's text reads it. */
+static bool req_reentered(Ctx *cx);
 
 /* This file's arena-owned fragment formatter, defined below with its reason;
  * declared here because the run pre-check's emitter precedes it. */
@@ -1277,18 +1280,23 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
                                   const char *posvar, const char *subjvar,
                                   const char *lenvar)
 {
-    long long k = pcrec_fact_req_run_maxoff(cx);
+    long long k = pcrec_fact_req_landmark_maxoff(cx);
     StrBuf round = { 0 };
     round.cx = cx;
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                           "handoff_position", subjvar, lenvar,
                           PCREC_START0_ROUNDUP);
+    /* [REQ-HANDOFF-L1] the hit itself, kept for the forward scan's re-entry
+     * (`pf_emit_handoff`), which reuses it while it is still ahead. */
+    if (req_reentered(cx))
+        pcrec_sb_printf(c, "%ssize_t landmark_position = handoff_position;\n", indent);
     if (k > 0 || round.len > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_printf(c,
-            "%s/* [K82] every match begins at most %lld bytes before its run\n"
-            "%s * window, so no match begins before this. */\n",
-            indent, k, indent);
+            "%s/* [K82] every match begins at most %lld bytes before its %s\n"
+            "%s * %s, so no match begins before this. */\n",
+            indent, k, pcrec_fact_req_run(cx)->len >= 2 ? "run" : "landmark",
+            indent, pcrec_fact_req_run(cx)->len >= 2 ? "window" : "byte");
         pcrec_sb_cmt_close(c);
         pcrec_sb_printf(c, "%sif (handoff_position - %s > %lld) {\n",
                         indent, posvar, k);
@@ -1542,8 +1550,10 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
             gate_need = pcrec_artifact_has_dfa_scan(cx) ? MF_OPTIONAL : MF_REQUIRED;
         }
         nrun = req_run_tests(cx, t);
-        handoff = req_use(cx) == REQ_USE_HANDOFF;
     } else gate = b;
+    /* [REQ-HANDOFF-L1] the landmark is the run window where a run shipped,
+     * else the one byte: either is kept where the body reads it. */
+    handoff = req_use(cx) == REQ_USE_HANDOFF;
     PCREC_CAND_TRACE_REC("PRESENCE", "-", nrun ? "run" : "byte", "req-site");
     PCREC_CAND_TRACE_REC("PRESENCE", "-", gate < 0 ? "none" : !nrun ? "byte"
                          : gate_need == MF_OPTIONAL ? "lead-optional" : "lead-required",
@@ -1554,15 +1564,16 @@ static const struct MemfnPre *req_site_define(Ctx *cx, StrBuf *c)
     req_set_rest_members(cx, rest, &nrest);
     PCREC_CAND_TRACE_REC("PRESENCE", pcrec_artifact_has_dfa_scan(cx) ? "dfa-scan" : "no-dfa-scan",
                          nrest ? "set-rest" : "none", "set-rest");
-    if (handoff && (nrun != 1 || nrest != 0))
+    if (handoff && (nrun > 1 || nrest != 0))
         pcrec_ctx_fail(cx, 0, "internal error: a handoff pre-check with a part "
-                       "after its window (the handoff is a DFA-scan route's, "
+                       "after its landmark (the handoff is a DFA-scan route's, "
                        "the whole run and the set rest a no-DFA route's)");
 
     struct MemfnPre *pre = pcrec_arena_alloc(&cx->arena, sizeof *pre);
     mf_site *s = pcrec_memfn_site(cx, DELEG_PRE);
     mf_pred *p = pcrec_memfn_preds(cx, (gate >= 0) + nrun + nrest);
     if (gate >= 0) {
+        if (handoff && !nrun) s->ret_pred = (uint8_t)np;   /* the byte IS the landmark */
         p[np].need = gate_need;
         pcrec_memfn_term_byte(&p[np].term[0], 0, gate, gate_need);
         p[np++].nterm = 1;
@@ -1660,13 +1671,37 @@ const char *pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     pcrec_memfn_use(cx, pre->handle, &h, c);
     if (s->handoff == MF_H_ASSIGN)
         emit_req_handoff_rest(cx, c, indent, posvar, subjvar, lenvar);
-    if (pcrec_fact_req_run(cx)->len >= 2)
-        /* [K82] the body's start site reads what the gate kept. */
-        from = req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
+    /* [K82] the body's start site reads what the gate kept. */
+    from = req_use(cx) == REQ_USE_HANDOFF ? "handoff_position" : posvar;
     PCREC_CAND_TRACE_REC("FIRST", "-", from != posvar ? "handoff" : "scan-from-startpos",
                          "req-from");
     pcrec_memfn_check_use(cx, s, from != posvar);
     return from;
+}
+
+/* [REQ-HANDOFF-L1] THE PRE-CHECK SITE's SECOND USE, the handoff RE-ENTERED
+ * (`pf_emit_handoff`): the same gate re-asked from `posvar` inside the
+ * forward scan, its hit ASSIGNED to `landmark_position` (the entry's kept
+ * hit, `emit_req_handoff_rest`), a miss answering NOMATCH. One fact and one
+ * site: the kit writes the text it writes at the entry, from another lower
+ * bound. The miss is sound where the block runs, at the start state with no
+ * accept pending: nothing begun earlier is pending, and every later match
+ * holds the landmark at or after `posvar`. */
+static void emit_req_reentry_use(Ctx *cx, StrBuf *c, const char *indent,
+                                 const char *posvar)
+{
+    const struct MemfnPre *pre = cx->job->mf_pre;
+    if (!pre || pre->site->handoff != MF_H_ASSIGN)
+        pcrec_ctx_fail(cx, 0, "internal error: the forward scan re-enters a "
+                       "handoff whose pre-check site keeps no position");
+    PcrecMfU u = { cx, pre->site, pre, indent };
+    mf_hooks h = {
+        .s = "subject", .n = "subject_length", .lo = posvar, .indent = indent,
+        .on_miss = REQ_ON_MISS, .result = "landmark_position",
+        .miss = MF_MISS_N, .comment_tier = PCREC_CMT_NONESSENTIAL, .u = &u,
+    };
+    pcrec_memfn_use(cx, pre->handle, &h, c);
+    pcrec_memfn_check_use(cx, pre->site, true);
 }
 
 /* Writes the dead groups' PCREC_UNSET fill into a DFA search entry's SUCCESS
@@ -5102,7 +5137,11 @@ typedef enum {
     PF_SCAN_NONE = 0,   /* no skip: every position is a candidate */
     PF_SCAN_OFS,        /* `<p>_ofsskip`: the scan byte is its `OfsTest`'s */
     PF_SCAN_BYTE,       /* one candidate byte, `memchr`'d */
-    PF_SCAN_SET         /* a `can_begin_match` membership table */
+    PF_SCAN_SET,        /* a `can_begin_match` membership table */
+    /* [REQ-HANDOFF-L1] the pre-check's LANDMARK, re-found by the gate's own
+     * site: a lower bound K bytes before a hit, never a candidate start, so
+     * no reader may price it as a candidate byte or set */
+    PF_SCAN_LANDMARK
 } PfScan;
 
 /* [START-TABLE] C3 THE NEXT SLOT's PAYLOAD, `CandRow.u.pf` (start_table.md
@@ -6838,6 +6877,56 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     pf_close(c, f, true);
 }
 
+/* AXIS B, `handoff` ([REQ-HANDOFF-L1]): THE HANDOFF RE-ENTERED. Where the
+ * forward scan is back at its start state with no accept pending, it is a
+ * fresh search from `scan_position` (the start state's future is a fresh
+ * start's; the seeded case is the reseed's argument below), so the entry's
+ * proof applies again with `f = scan_position` (litscan_k82h.md §1.2,
+ * Claims 1-3): find the landmark's least hit `c >= scan_position` — the
+ * kept one while it is still ahead, else the gate re-asked
+ * (`emit_req_reentry_use`; a miss is NOMATCH) — and move to `c - K` where
+ * that is ahead. The scan only ever moves FORWARD, so the work stays linear
+ * whatever K is; the admission (`req_landmark_admits`) is about cost.
+ *
+ * The move is rounded up to a character start (the entry's own round-up)
+ * and RESEEDED where the machine seeds, as the offset-set rows reseed: the
+ * jumped bytes begin no match (Claim 1), so the landing state is the fresh
+ * one at the landing. The reseed runs only where the scan MOVED, which the
+ * `> K` test makes true by construction (the conditional-reseed rule and
+ * its `(?:\b|xy)a` witness, in the DFA hat's section below). An in-flight thread the start state carries
+ * there completes only with a landmark at or after `scan_position`, so a
+ * move happens only past every such thread's own reach. */
+static void pf_emit_handoff(StrBuf *c, const DfaForm *f)
+{
+    Ctx *cx = f->cx;
+    const char *ind = f->dir->bind, *pos = f->dir->posv;
+    long long k = pcrec_fact_req_landmark_maxoff(cx);
+    StrBuf round = { 0 };
+    round.cx = cx;
+    pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s        ", ind), pos,
+                          "subject", "subject_length", PCREC_START0_ROUNDUP);
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
+                 "%s// this is a fresh search from here: the pre-check's landmark\n"
+                 "%s// again, and no match begins more than %lld bytes before it.\n",
+                 ind, ind, ind, k);
+    pcrec_sb_cmt_close(c);
+    pf_open(c, f);
+    pcrec_sb_printf(c, "%s    if (landmark_position < %s) {\n", ind, pos);
+    emit_req_reentry_use(cx, c, dfa_fragf(cx, "%s        ", ind), pos);
+    pcrec_sb_printf(c, "%s    }\n", ind);
+    pcrec_sb_printf(c, "%s    if (landmark_position - %s > %lld) {\n", ind, pos, k);
+    if (k > 0)
+        pcrec_sb_printf(c, "%s        %s = landmark_position - %lld;\n", ind, pos, k);
+    else
+        pcrec_sb_printf(c, "%s        %s = landmark_position;\n", ind, pos);
+    if (round.len > 0) pcrec_sb_splice(c, &round);
+    pf_emit_ofs_reseed(c, f, dfa_fragf(cx, "%s        ", ind));
+    pcrec_sb_printf(c, "%s    }\n", ind);
+    pf_close(c, f, false);
+    pcrec_sb_free(&round);
+}
+
 /* ---- [START-SET] STAGE 3: THE DFA HAT (D148 + addenda 1-2; startset.md §2 F, §4.1, §6.4) ----
  *
  * The DFA's plain prefilter skips bytes outside `E`, the start state's escape
@@ -7575,12 +7664,14 @@ static const char *req_why_name(ReqAdmit a)
 
 /* [K82] (B) THE HANDOFF ROW's predicate (docs/design/litscan_k82h.md §1.4):
  * the pre-check's candidate `c` can become the body's scan start
- * `max(search_from, c - K)`, with K the window's maximum byte offset from the
- * attempt start (the `req_run_maxoff` fact). Each conjunct with its reason:
+ * `max(search_from, c - K)`, with K the LANDMARK's maximum byte offset from
+ * the attempt start (the `req_landmark_maxoff` fact: the run window where a
+ * run shipped, else the one byte, [REQ-HANDOFF-L1]; the proof never read
+ * the needle's length). Each conjunct with its reason:
  *
  *   - THE ADMISSION'S OWN VERDICT, CALLED rather than restated, so a change
  *     to the PRESENCE rows reaches this slot with no edit here (§2.1, [r1
- *     C-C10]): a run pre-check is emitted (`emitted` or `set-leads`).
+ *     C-C10]): a pre-check is emitted (`emitted` or `set-leads`).
  *   - (a) A SCAN TO MOVE: `pcrec_artifact_has_dfa_scan`, G1's own premise,
  *     and a machine that is not the empty one (whose body returns before any
  *     start site exists). A VM with no DFA scan is [OPT-VMSEED]'s.
@@ -7609,12 +7700,11 @@ static bool req_handoff_applies(const CandSel *s)
 {
     Ctx *cx = s->cx;
     long long k;
-    if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)) ||
-        pcrec_fact_req_run(cx)->len < 2)
+    if (!req_admit_emits(req_admit_read(cx, CAND_SLOT_FIRST)))
         return false;
     if (!(cand_path_members(cx) & (CAND_MF | CAND_MATT)))
         return false;
-    k = pcrec_fact_req_run_maxoff(cx);
+    k = pcrec_fact_req_landmark_maxoff(cx);
     if (k < 0 || k >= PCREC_W_UNBOUNDED) return false;
     if (cx->job->fit.prefilter_collapsed) return false;
     if (cx->job->fit.chosen == ENGM_VM && dfa_needs_gseed(&cx->job->dfa) &&
@@ -7645,6 +7735,100 @@ static ReqUse req_use(Ctx *cx)
     return r->u.use.use;
 }
 
+/* [START-TABLE] C6 `req_use`'s selection READ by another slot's predicate,
+ * `reader` (NEXT's `handoff`, [REQ-HANDOFF-L1]): asked through `cand_read`
+ * with `req_use`'s site, as `req_admit_read` reads PRESENCE. */
+static ReqUse req_use_read(Ctx *cx, CandSlot reader)
+{
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA };
+    const CandRow *r = CAND_READ(reader, CAND_SLOT_FIRST, &s, "req-use");
+    CAND_EVERY_ROUTE(CAND_SLOT_FIRST, &s, r, "req-use");
+    return r->u.use.use;
+}
+
+/* [REQ-HANDOFF-L1] The prior's mass, in ppm, on the LANDMARK's hit: a
+ * byte's own, or for a run window the product of its positions' masses (the
+ * independent-byte model, rounded UP at each step, the declining direction). */
+static unsigned long long req_landmark_hit_ppm(Ctx *cx, const uint32_t *rate)
+{
+    const ReqRun *r = pcrec_fact_req_run(cx);
+    unsigned long long hit = 1000000u;
+    uint8_t set[256];
+    if (r->len < 2) {
+        memset(set, 0, sizeof set);
+        set[pcrec_fact_req_byte(cx)] = 1;
+        return pcrec_find_set_mass(rate, set);
+    }
+    for (int i = 0; i < r->len; i++) {
+        for (int b = 0; b < 256; b++) set[b] = (b & r->mask[i]) == r->bytes[i];
+        hit = (hit * pcrec_find_set_mass(rate, set) + 999999u) / 1000000u;
+    }
+    return hit;
+}
+
+/* [REQ-HANDOFF-L1] THE K ADMISSION: does the re-entered handoff's expected
+ * jump beat the expected skip of the start-byte row it displaces, under the
+ * compile's byte-rate prior (`pcrec_find_byte_rate`; cardinality where there
+ * is none, inside `pcrec_find_set_mass`)? At a restart the re-entry moves the
+ * scan to the landmark's next hit less K: about `1/h - K` bytes, `h` the
+ * hit rate (`req_landmark_hit_ppm`). The row below it, `below` (the slot's
+ * own walk without this row: a start-byte scan, or `none`), moves to the
+ * next byte of the set it scans: about `1/m` bytes, `m` that set's mass, and
+ * one byte (`m` everything) where it scans nothing. Admitted iff
+ * `1/h - K > 1/m`; with no start-byte row that is `K * h < 1`, the mean gap
+ * clearing K (`a.{1,50000}z` over z-dense text never does). Derived from the
+ * prior the other rows read, with no constant of its own; that the mean-gap
+ * comparison is also where the jump stops PAYING in time is UNMEASURED (the
+ * bench's per-cell timings are its test). A member of the prior-cost family
+ * G1 (`req_byte_dominated_by`), `set-leads` (`pcrec_find_pick`) and R4
+ * (`cand_rs_dense_applies`) already belong to. */
+static bool req_landmark_admits(const CandSel *s, long long k)
+{
+    Ctx *cx = s->cx;
+    const uint32_t *rate = pcrec_find_byte_rate(cx);
+    unsigned long long h = req_landmark_hit_ppm(cx, rate), m = 1000000u;
+    const CandRow *below = cand_select(CAND_SLOT_NEXT, s, cx->opt->flags | PCREC_NO_REQ_HANDOFF);
+    if (below->u.pf.scan == PF_SCAN_BYTE || below->u.pf.scan == PF_SCAN_SET) {
+        CandSet cs;
+        pf_scan_set_of(cx, s->d, s->us, below, &cs);
+        m = pcrec_find_set_mass(rate, cs.set);
+    }
+    if (h == 0) return true;                        /* the prior never sees it */
+    if ((unsigned long long)k * h >= 1000000u) return false;
+    return (1000000u - (unsigned long long)k * h) * m > 1000000u * h;
+}
+
+/* [REQ-HANDOFF-L1] NEXT's `handoff` row: the forward search machine of the
+ * caller-facing body (never the VM hybrid's inlined prefilter, whose
+ * retries are RETRY's), FIRST chose the handoff (so the pre-check is
+ * emitted, its site keeps the landmark's position and K is finite: FIRST's
+ * own conjunct, not restated), and the K admission passes against the row
+ * it displaces. FIRST is READ, never restated: one fact, one proof, one deny
+ * (`-fno-req-handoff` removes both rows). */
+static bool pf_handoff_applies(const CandSel *s)
+{
+    Ctx *cx = s->cx;
+    if (!s->forward || cand_finish_of(cx) == CAND_ROUTE_VM) return false;
+    if (req_use_read(cx, CAND_SLOT_NEXT) != REQ_USE_HANDOFF) return false;
+    return req_landmark_admits(s, pcrec_fact_req_landmark_maxoff(cx));
+}
+
+/* `req_reentered` (declared at the top): NEXT's selection for the forward
+ * machine is the re-entry, read off its scan kind, with no record (the
+ * entry's text asks it before the form exists). */
+static bool req_reentered(Ctx *cx)
+{
+    UnanchStart us;
+    if (cand_route_of(cx) != CAND_ROUTE_DFA || !pcrec_artifact_has_dfa_scan(cx))
+        return false;
+    unanch_start(cx, &us);
+    if (us.empty) return false;
+    CandSel s = { .cx = cx, .d = &cx->job->dfa, .us = &us, .forward = true, .st = -1,
+                  .route = CAND_ROUTE_DFA, .ss = pcrec_fact_start_set(cx) };
+    return cand_select(CAND_SLOT_NEXT, &s, cx->opt->flags)->u.pf.scan == PF_SCAN_LANDMARK;
+}
+
 /* [K82] `<PREFIX>_REQ_HANDOFF`'s value: the decimal K the emitted
  * subtraction carries, or "none" where the scan starts at the startpos. */
 static const char *req_handoff_stamp(Ctx *cx)
@@ -7652,7 +7836,7 @@ static const char *req_handoff_stamp(Ctx *cx)
     const char *a = cand_stamp_absent(cx, CAND_SLOT_FIRST, CAND_ROUTE_DFA);
     if (a) return a;                    /* [OPT-REVEND] L2.1: FIRST is off the path */
     if (req_use(cx) != REQ_USE_HANDOFF) return "none";
-    return dfa_fragf(cx, "%lld", pcrec_fact_req_run_maxoff(cx));
+    return dfa_fragf(cx, "%lld", pcrec_fact_req_landmark_maxoff(cx));
 }
 
 /* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
@@ -8395,6 +8579,17 @@ typedef struct CandNode {
      * one traversal per call. The self-check holds the graph minus its
      * `raise` edges acyclic, and every `rank` edge's inequality. */
     unsigned    raise, rank, entry;
+    /* [REQ-HANDOFF-L1] A READ MADE UNDER DENY BITS. `under[t]`: the deny bits
+     * this slot's read of slot `t` adds to the compile's own, so the rows of
+     * `t` carrying any of them are TRANSPARENT to it (`cand_read`). `by[t]`:
+     * the deny bits every row of this slot whose predicate reads `t` carries
+     * (0: an undeniable row reads it). Together they let one cycle in the
+     * slot graph be acyclic in the rows: G1 asks NEXT for the scan the
+     * artifact would carry WITHOUT the handoff (a row that re-uses the
+     * pre-check cannot dominate it), and NEXT's `handoff` row, the one
+     * reader of FIRST, carries that deny. The self-check follows an edge
+     * only where the bits gathered on the way do not deny its readers. */
+    uint64_t    under[CAND_NSLOTS], by[CAND_NSLOTS];
 } CandNode;
 
 /* FIRST accepts LOWER as well as §1.2's HIT, because edge E2 hands it the
@@ -8415,7 +8610,8 @@ typedef struct CandNode {
  * C4 route); RETRY's `adaptive-dense` (R4) reads NEXT's scanned set on the
  * hybrid prefilter's route, CAND_ROUTE_DFA or CAND_ROUTE_ATTEMPT
  * (`pcrec_dfa_cand_ppm`). */
-__attribute__((unused))   /* read by the trace build's self-check and hit counter */
+/* Read by `cand_read` (a read's `under` bits) and by the trace build's
+ * self-check and hit counter. */
 static const CandNode cand_nodes[CAND_NNODES] = {
     /* [OPT-REVEND] L0 LOCATE (locate_finish.md §2.2, §2.5): asked once per
      * body on its route, and once on CAND_ROUTE_VM by an artifact with no
@@ -8439,7 +8635,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                                          * disjunct: the BODY's locator
                                          * answers presence itself */
                                         [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) |
-                                                             CAND_ON(CAND_ROUTE_ATTEMPT) } },
+                                                             CAND_ON(CAND_ROUTE_ATTEMPT) },
+                             /* [REQ-HANDOFF-L1] G1 reads the scan below the
+                              * handoff's re-entry, which presupposes the
+                              * pre-check G1 is deciding */
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
     [CAND_SLOT_FIRST]    = { "FIRST",    CT_HIT | CT_LOWER, CAND_ALL_ROUTES,
@@ -8448,7 +8648,11 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     [CAND_SLOT_NEXT]     = { "NEXT",     CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
-                                                            CAND_ON(CAND_ROUTE_VM) } },
+                                                            CAND_ON(CAND_ROUTE_VM),
+                                        /* [REQ-HANDOFF-L1] `handoff` re-enters
+                                         * FIRST's row where it was chosen */
+                                        [CAND_SLOT_FIRST] = CAND_ON(CAND_ROUTE_DFA) },
+                             .by = { [CAND_SLOT_FIRST] = PCREC_NO_REQ_HANDOFF } },
     [CAND_SLOT_RETRY]    = { "RETRY",    CT_CAND, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),
@@ -8470,7 +8674,8 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * machine on the same route. */
     [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER | CT_UPPER | CT_START,
                              CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
-                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) } },
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
      * relocate to LOCATE (E-FL, `rank`; E-FC, the match-here entry's search,
@@ -8490,7 +8695,10 @@ static const CandNode cand_nodes[CAND_NNODES] = {
      * after the verifier consumed a byte; E8 on the VM hat, after K49's
      * advance), a failed VM attempt goes to RETRY, and the CALLER re-enters
      * LOCATE with the match end for find-all (E10). */
-    [CAND_NODE_VERIFIER] = { "VERIFIER", CT_CAND, 0,
+    /* [REQ-HANDOFF-L1] the forward machine also takes a LOWER: it is an
+     * unanchored scan, and NEXT's `handoff` row hands it the re-entered
+     * bound `c - K`, below which no match starts. */
+    [CAND_NODE_VERIFIER] = { "VERIFIER", CT_CAND | CT_LOWER, 0,
                              CN(CAND_SLOT_NEXT) | CN(CAND_SLOT_RETRY) | CN(CAND_NODE_CALLER),
                              .raise = CN(CAND_SLOT_NEXT) },
     [CAND_NODE_LOOP]     = { "LOOP",     CT_UPPER, 0, 0 },
@@ -8701,7 +8909,7 @@ static const CandRow cand_rows[] = {
       .routes = CAND_ALL_ROUTES, .tok = "handoff", .map = CM_LOWERBOUND,
       .contract = CG_FIXED, .hands = CT_LOWER,
       .list = { [CAND_ROUTE_DFA] = { "req-use", 1, "handoff" } },
-      .desc = "a run pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), the window's maximum byte offset K from the attempt start is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first window hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding",
+      .desc = "a pre-check is emitted (req-admit `emitted` or `set-leads`), the artifact has a DFA scan to move (a DFA body or the VM hybrid's prefilter, not the empty machine), its landmark's maximum byte offset K from the attempt start (the run window where a run shipped, else the one necessary byte) is finite, the prefilter is not count-collapsed, and no VM hybrid with a \\G start family reads its prefilter-window ceiling: the gate's first landmark hit c becomes the scan start max(startpos, c - K), rounded up to a character start under a multibyte encoding; the forward scan's `handoff` prefilter row re-enters it",
       .u.use = { REQ_USE_HANDOFF } },
     { .c = { "scan-from-startpos", 0, cand_always }, .slot = CAND_SLOT_FIRST,
       .routes = CAND_ALL_ROUTES, .tok = "scan-from-startpos", .map = CM_NONE,
@@ -8757,18 +8965,26 @@ static const CandRow cand_rows[] = {
       .u.pf = { .emit_tables = pf_tables_ofs, .emit_block = pf_block_ofs,
                 .emit = pf_emit_ofs,
                 .reseeds = true,  .run_term = false, .scan = PF_SCAN_OFS  } },
+    /* [REQ-HANDOFF-L1] THE HANDOFF RE-ENTERED: below the exact-start rows
+     * (an exact candidate test beats a lower bound) and above the start-byte
+     * rows it replaces where the admission passes. FIRST's map, its deny. */
+    { .c = { "handoff-reentry", PCREC_NO_REQ_HANDOFF, pf_handoff_applies },
+      .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "handoff", .map = CM_LOWERBOUND,
+      .hands = CT_LOWER, .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "handoff" } },
+      .desc = "forward scan of the caller-facing body where the req-use table chose `handoff` and, under the byte-rate prior, the landmark's mean gap less K exceeds the mean gap of the start-byte set the row below scans (1/h - K > 1/m; K times h below one where no start-byte row applies): at each restart (start state, no accept pending) the pre-check's landmark is re-found from the scan position (the kept hit while still ahead; none is NOMATCH) and the scan moves to c - K where that is ahead, rounded up to a character start and re-seeded where the machine seeds ([REQ-HANDOFF-L1])",
+      .u.pf = { .emit = pf_emit_handoff, .reseeds = true, .scan = PF_SCAN_LANDMARK } },
     /* [START-SET] stage 3: the DFA hat, `-bounded` only (see its section). */
     { .c = { "first-memchr-bounded", PCREC_NO_START_SET, pf_first_memchr_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-memchr-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_DFA] = { "prefilter", 5, "first-memchr-bounded" } },
+      .list = { [CAND_ROUTE_DFA] = { "prefilter", 6, "first-memchr-bounded" } },
       .desc = "[START-SET] the DFA hat: the unanchored forward scan of a SEEDED machine with a plain skip, a start set S (the start_set fact) not nullable with fewer than 256 members, scanned as T = S, a non-empty proper subset of the start state's escape set E, one byte: memchr for it, stopped at n-1, re-seeding the state from the byte before the landing where the skip moved",
       .u.pf = { .emit = pf_emit_first_memchr_bounded, .reseeds = true,
                 .scan = PF_SCAN_BYTE, .scan_set = pf_dfa_start_set } },
     { .c = { "first-class-bounded", PCREC_NO_START_SET, pf_first_class_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "first-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_DFA] = { "prefilter", 6, "first-class-bounded" } },
+      .list = { [CAND_ROUTE_DFA] = { "prefilter", 7, "first-class-bounded" } },
       .desc = "[START-SET] the DFA hat, as first-memchr-bounded with T of several bytes: a 256-entry start_bytes table walk stopped at n-1, re-seeding where the skip moved",
       .u.pf = { .emit_tables = pf_tables_first, .emit = pf_emit_first_class_bounded,
                 .reseeds = true, .scan = PF_SCAN_SET, .scan_set = pf_dfa_start_set } },
@@ -8777,29 +8993,29 @@ static const CandRow cand_rows[] = {
     { .c = { "first-class", PCREC_NO_START_SET, pf_vm_start_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_VM, .tok = "first-class", .map = CM_EXACT0,
       .hands = CT_CAND,
-      .list = { [CAND_ROUTE_VM] = { "prefilter", 7, "first-class" } },
+      .list = { [CAND_ROUTE_VM] = { "prefilter", 8, "first-class" } },
       .desc = "vm: [START-SET] a VM artifact with no DFA prefilter, an unanchored pattern, and a start set S (the start_set fact) that is not nullable and has fewer than 256 members: the attempt loop seeks the next byte of S, as a 256-entry table, before its first attempt and after each failed one; dfa: never (the DFA hat is -bounded only: a seeded machine always carries the D11 bound)",
       .u.pf = { .scan = PF_SCAN_SET, .emit_vm = pf_vm_emit_first_class } },
     { .c = { "memchr-bounded", 0, pf_memchr_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr-bounded", .map = CM_EXACT0,
-      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 8, "memchr-bounded" } },
+      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 9, "memchr-bounded" } },
       .desc = "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept",
       .u.pf = { .emit = pf_emit_memchr_bounded, .scan = PF_SCAN_BYTE } },
     { .c = { "memchr", 0, pf_memchr_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "memchr", .map = CM_EXACT0,
-      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 9, "memchr" } },
+      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 10, "memchr" } },
       .desc = "forward scan, one candidate byte",
       .u.pf = { .emit = pf_emit_memchr, .scan = PF_SCAN_BYTE } },
     { .c = { "byte-class-bounded", 0, pf_bcls_bounded_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class-bounded",
       .map = CM_EXACT0, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_DFA] = { "prefilter", 10, "byte-class-bounded" } },
+      .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class-bounded" } },
       .desc = "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept",
       .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls_bounded,
                 .scan = PF_SCAN_SET } },
     { .c = { "byte-class", 0, pf_bcls_applies },
       .slot = CAND_SLOT_NEXT, .routes = CR_DFA, .tok = "byte-class", .map = CM_EXACT0,
-      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 11, "byte-class" } },
+      .hands = CT_CAND, .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "byte-class" } },
       .desc = "forward scan, several candidate bytes",
       .u.pf = { .emit_tables = pf_tables_bcls, .emit = pf_emit_bcls, .scan = PF_SCAN_SET } },
     /* N12: the ATTEMPT route's predecessor-byte skip; it STAMPS `"memchr"`
@@ -8812,7 +9028,7 @@ static const CandRow cand_rows[] = {
       .map = CM_EXACTPRED, .hands = CT_CAND, .u.pf = { .scan = PF_SCAN_BYTE } },
     { .c = { "next-none", 0, cand_always }, .slot = CAND_SLOT_NEXT,
       .routes = CAND_ALL_ROUTES, .tok = "none", .map = CM_NONE, .hands = CT_CAND,
-      .list = { [CAND_ROUTE_DFA] = { "prefilter", 12, "none" } },
+      .list = { [CAND_ROUTE_DFA] = { "prefilter", 13, "none" } },
       .desc = "always (fallback) — also the reverse machine, and every case where the start state itself accepts (no skip is sound there)",
       .u.pf = { .scan = PF_SCAN_NONE } },
 
@@ -9207,27 +9423,44 @@ static void cand_oracle_fail(const char *what, const char *a, const char *b,
  * need nothing); and a `needs` entry on a route the row is not routed on, or
  * naming a cell its route never asks. */
 static void cand_path_selfcheck(void);
+/* Is there a CYCLE in the selection reads from slot `sl`, asked under the
+ * deny bits `mask` ([REQ-HANDOFF-L1])? A walk re-entering a slot under MORE
+ * deny bits walks fewer rows and ends (G1 reads NEXT without the handoff's
+ * row, the one reader of FIRST); only a repeated (slot, bits) STATE is a
+ * walk re-entering itself. An edge `sl -> t` is followed only where the bits
+ * do not deny the rows that make it (`CandNode.by`), and adds its own
+ * `under` bits. `ps`/`pm` hold the path; a path longer than 64 states
+ * cannot avoid a repeat (12 slots x the subsets of the few `under` bits). */
+static bool cand_read_cycle(int sl, uint64_t mask, int *ps, uint64_t *pm, int depth)
+{
+    for (int k = 0; k < depth; k++)
+        if (ps[k] == sl && pm[k] == mask) return true;
+    if (depth >= 64) return true;
+    ps[depth] = sl;
+    pm[depth] = mask;
+    for (int t = 0; t < CAND_NSLOTS; t++) {
+        if (!cand_nodes[sl].reads[t] || (cand_nodes[sl].by[t] & mask)) continue;
+        if (cand_read_cycle(t, mask | cand_nodes[sl].under[t], ps, pm, depth + 1))
+            return true;
+    }
+    return false;
+}
 static void cand_rows_selfcheck(void)
 {
-    unsigned reach[CAND_NSLOTS];
-    for (int sl = 0; sl < CAND_NSLOTS; sl++) {
-        reach[sl] = 0;
+    for (int sl = 0; sl < CAND_NSLOTS; sl++)
         for (int t = 0; t < CAND_NSLOTS; t++) {
             unsigned rd = cand_nodes[sl].reads[t];
             if (!rd) continue;
             if (rd & ~cand_nodes[t].asks)
                 cand_oracle_fail("table-read-unasked", cand_nodes[sl].name,
                                  cand_nodes[t].name, "selfcheck");
-            reach[sl] |= CN(t);
         }
-    }
-    for (int k = 0; k < CAND_NSLOTS; k++)
-        for (int sl = 0; sl < CAND_NSLOTS; sl++)
-            for (int t = 0; t < CAND_NSLOTS; t++)
-                if (reach[sl] & CN(t)) reach[sl] |= reach[t];
-    for (int sl = 0; sl < CAND_NSLOTS; sl++)
-        if (reach[sl] & CN(sl))
+    for (int sl = 0; sl < CAND_NSLOTS; sl++) {
+        int ps[64];
+        uint64_t pm[64];
+        if (cand_read_cycle(sl, 0, ps, pm, 0))
             cand_oracle_fail("table-read-cycle", cand_nodes[sl].name, "-", "selfcheck");
+    }
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         const CandNode *n = &cand_nodes[r->slot];
@@ -9541,7 +9774,8 @@ static void cand_read_hit(CandSlot reader, CandSlot slot, const CandSel *s,
 static const CandRow *cand_read(CandSlot reader, CandSlot slot, const CandSel *s,
                                 const char *site)
 {
-    const CandRow *r = cand_select(slot, s, s->cx->opt->flags);
+    const CandRow *r = cand_select(slot, s, s->cx->opt->flags |
+                                            cand_nodes[reader].under[slot]);
     CAND_READ_HIT(reader, slot, s, r, site);
     return r;
 }

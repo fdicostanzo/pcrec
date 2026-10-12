@@ -15,6 +15,16 @@
 # k93tri (2026-10-07): +18 rows, every one a tests/recursion/k93.rxt block (lane k93fix's new file; census_s1.py on the k93fix build, ubuntubudu); no existing row moved.
 # k94tri (2026-10-07): +424 rows: 8 tests/backrefs/caseless_ucp.rxt blocks (lane k94fix's new file) and 416 tests/possessify/composition_d27.rxt blocks (main's D27 composition corpus, landed without this pin); census_s1.py on the merged tree, no existing row moved.
 # slbuild (2026-10-10, [START-LANDING] SL2): size_ladder_prefilter_drop.rxt's block moved :15 -> :24 (a header comment) and gained `(\p{Xwd})x` at :50; tests/utf8/landing_illformed.rxt (new) adds three blocks. Every added row a block the [vm-movers] diff named; no existing row's answer moved.
+# possbuild/posstri (2026-10-07, [ART-POSS-ARMS]): +71 rows, every one a new block: 69 tests/possessify/possessify.rxt (lines 3032-4007, the arms' witness pairs) and 2 tests/recursion/k93.rxt (A-F1 cells); census_s1.py on the possbuild tip (abi 66, under -fno-start-set); no existing row moved (0 gone, 0 hex changed).
+# possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
+# m7fix (2026-10-08): +8 rows, every one an s670cell block (ae7cf901: tests/backrefs/caseless.rxt:71,86; caseless_ucp.rxt:262,274,288,298,310,322), correct VM-hat movers never pinned; census_s1.py on lane/m7fix (c9e90c77 + kit fixes), no existing row moved. Bench rows NOT refreshed: against pcrec-bench bb87dfa5 the census adds bench rows (counted, not checked), left for a bench-pin re-sync.
+# vmlfix (R-12, 2026-10-09): +17 rows, every one a tests/base/vm_lazy_rmin_prefix.rxt block (VMLAZY 08bda492, never pinned); census_s1.py on lane/vmlfix, no existing row moved. Bench rows NOT refreshed.
+# sstri (2026-10-10): +84 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
+# revbuild (2026-10-10, [OPT-REVEND] L2): +30 rows, every one a new tests/assertions/rev_end.rxt block (the rev-end answer net, 23 capture-free and 7 of its stage-2 captures family), correct forced-VM movers; -2 rows whose (text, options) dedup twin in rev_end.rxt now takes the id (ssbuild3's precedent): tests/base/anchors.rxt:36 `abc$` (rev_end.rxt:458) and tests/captures/structure_anchors_misc.rxt:7 `(a+)$` (rev_end.rxt:373); census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
+# RE-PINNED 2026-10-11 (lane rlhbuild, [REQ-HANDOFF-L1], abi 75): tests/litscan/handoff.rxt grew the byte-landmark
+# blocks, so its rows below the insertion moved and the new blocks joined; census_s1.py now compiles every arm with
+# -fno-req-handoff as well (the hat suites deny the re-entered handoff on both arms). Corpus rows regenerated on
+# the lane's build, every change a handoff.rxt row; the bench rows are the pinned ones, untouched (counted, never checked).
 bench/altwide/ci-256	--features all	283f6929283f3a796f736c77737369797962777c647962667c6f6f646f7c6f6d796b6973707c69646f787c6f656d7262707c787a786a7c716e686c7c6477767469687c68796b6369766a677c7170637779757c6870637c74766b6e63727564627971717c7762687975726f6473796a7c6476637c6a77627c65706a617a7c7076697c6c62636b77697c696d7a7c6a707a627c646c6e6c74717a717c6b73737061776e68676a70757c6a706c717264677c7666787272707a7275647c73736864657c7566746865767c646867737c6b6d6566797175646a757c6d6e666c7a7c6d6e7266677c74706e79707372617a6975637c716977647261656c69767a6c7c6f75667a6b7668647a667c6e6e636c727868676a63637c6a6f657c696579666a6376677c77706f796374676f75786a7a7c756f62776d6a6c666669747c6162726f667c6a7a7264767c786a627c617872676679706574627c6964767c66777869647c6e746b6d65667c7578686c6d667c7a676d6b767c70686f6f6f7672666e6b6e7c656467756f736b7c6a657764647a627c676c6c696a73656a737c6b6d656e67787a707c6b6f64637a796c71677c727573726c6b636e797163647c71777275676272636b69617c6c66756a7168616f6c676d657c7a7568657172736c647462797c79706869777664697a66666f7c686a6a767c6f6e75676a687c77796e7068707c6565616f706e6d63666273707c77626b717c7470656163756473666a7c6c777471797c7762727c696a6863756e7c6979716d7a786d626c7c6c79716f636f63736a7c6b7a696b7c6f696f726e617c7a6e746172756a7266747c61746668646a6661627276647c62716b676e656c7c6a67666d69716a6670727c62776d6967686b6e7177686b7c666b786677776b67667c6f796a706d657c6d6e7a6e7c75766b7c61627a6365647177787a7c6475676178636a69627a7c706f6a647c73686a6b6c7361787c697169787a6161676c76646e7c6d6f737c6b78756e73646d74796a7c616e70676d7477757c71676a65746c68666c767c716b776e736375646178637c7a64656e657a777c6a746c78667c7372787568736f7c796d6b63696f6c6a686c7c766375757a707c6e7872626a7c76627272686d7a756d79726e7c7864637c6274786c7c706b6d7264717c696861686e77706563786b7c6462696b7a706e7c6878747361727c7571726767617c75676a646f73687c6b7665737a7c7a6d797c6a6e66787a627c7270737a6c627c736b6d7769736b6d7c6565797c68656d79696261626f7c6878657c6c70696a667c686b6d7678647a7773746a737c6c636d6f6b637470687c696a6b6f767962696c617c7a666d626b6e716b6d71617c6463676c64666d786e7c62726874686d696f78626b627c6d6a61626b6b6175617c7070787c6b6b6a6d6d6d726a7c75627873666b70627c6e6c696b7c6f646a746f697c746a70687c6571716b797c696c76747c766b7a65667c6c6665697567736363737c6f7679626963677c7a68706a647c65756e6567707c747676707c6e6770637c7075687c726a72767c756e7370787c6d75636d636c766f637c716267666d7c616276726a737c7a6271747269636d67777c626374727a756b6c6b7c746f6d6d6471726e7067637c6c6c7a727778786c78717c706d7166777c756a617a72647977736266657c6264706f656e7976627c696b777371787c7066736d7c70717369706d697a646a6c7c7766616965627c6161737675647070777c7165736c6b7c68726c63736d68706e6b73737c75707a627c74736373637c6465727369646e7675697c70616b7c72686173667c786d7279616b6b7861677c6769686e6a6d65617c7775737566787c666e656c6f6b7a777c7768756768697075697c73747071786768646364727c6e62747069626f706a6e6f7c6a6367656f6671627c78746b65676e6661776179767c6872716d7c686a7773747c7a667466716b7c6e64706d786d63637c7178727a6d617c7a6a78617869646f77797c6664626c686e627c727a647c6a7a7364796e6a6a7471657c6a797a7569667673667c74736972787c6a67797473687c6b696c61726978656b7c787578747a6f70676e7c68776e686774676862756d7c786c64637c6c7a687c7772667c697a6d6e7673746a69657c626a6f696c77696b7c76657466637c786f7078797766736263757c6d6b6a667a717669617c6f776c7c75716179797a7a7c7364696364706a6a73787c766d63647c616273786664706d6c7c77766d78737c64706c756167787c707763727c797569747577677a7c7863747a6873646e7a6d727c67617766756e7c6562706561746d7c686e626a76786d767c6f746d6c737c7a71616d776164707c6874766a6479766c797c796a6e6b6578636e69676a687c6d6f6970746b7565746d7c716469746677657675666f6a7c687076616e7c666b737c71757870676967736c7c6f64627c6d6d6671776b757c796c7374797c67746b747c7764746e6b65797c76797876727961666662657c7361797562686470697c756b776b7a707275726f7c756b717765756a626f7c6c67797c70616662627c72616b656e7c666f757c71706565766e7c7a6f616f7962776b66697c74626878797c676673776d656d687c6d6f6c646a737c7a78706878797a7c7472626d7c697667786a746367766e7c6b6e646a68637c6d766c6b7971766a637c6a616c626b63746f697c6268656e6f756c6e6f65767c647761786a73796970796c737c68637379647a6f6365717c617579677c7a68726c6b7a7a6c74667c736b767172796c757c786c6271706773797c63707168677167696c637c7865777c666d6f6b7c676d706d7464687a65667c64676c7c67696a626f7564657c666a636c6665636e65757c63636a7c6c69796b78756829
 bench/altwide/clsa-256	--features all	283f3a796f736c77737369797962775b612d7a5d7c647962665b612d7a5d7c6f6f646f5b612d7a5d7c6f6d796b6973705b612d7a5d7c69646f785b612d7a5d7c6f656d7262705b612d7a5d7c787a786a5b612d7a5d7c716e686c5b612d7a5d7c6477767469685b612d7a5d7c68796b6369766a675b612d7a5d7c7170637779755b612d7a5d7c6870635b612d7a5d7c74766b6e63727564627971715b612d7a5d7c7762687975726f6473796a5b612d7a5d7c6476635b612d7a5d7c6a77625b612d7a5d7c65706a617a5b612d7a5d7c7076695b612d7a5d7c6c62636b77695b612d7a5d7c696d7a5b612d7a5d7c6a707a625b612d7a5d7c646c6e6c74717a715b612d7a5d7c6b73737061776e68676a70755b612d7a5d7c6a706c717264675b612d7a5d7c7666787272707a7275645b612d7a5d7c73736864655b612d7a5d7c7566746865765b612d7a5d7c646867735b612d7a5d7c6b6d6566797175646a755b612d7a5d7c6d6e666c7a5b612d7a5d7c6d6e7266675b612d7a5d7c74706e79707372617a6975635b612d7a5d7c716977647261656c69767a6c5b612d7a5d7c6f75667a6b7668647a665b612d7a5d7c6e6e636c727868676a63635b612d7a5d7c6a6f655b612d7a5d7c696579666a6376675b612d7a5d7c77706f796374676f75786a7a5b612d7a5d7c756f62776d6a6c666669745b612d7a5d7c6162726f665b612d7a5d7c6a7a7264765b612d7a5d7c786a625b612d7a5d7c617872676679706574625b612d7a5d7c6964765b612d7a5d7c66777869645b612d7a5d7c6e746b6d65665b612d7a5d7c7578686c6d665b612d7a5d7c7a676d6b765b612d7a5d7c70686f6f6f7672666e6b6e5b612d7a5d7c656467756f736b5b612d7a5d7c6a657764647a625b612d7a5d7c676c6c696a73656a735b612d7a5d7c6b6d656e67787a705b612d7a5d7c6b6f64637a796c71675b612d7a5d7c727573726c6b636e797163645b612d7a5d7c71777275676272636b69615b612d7a5d7c6c66756a7168616f6c676d655b612d7a5d7c7a7568657172736c647462795b612d7a5d7c79706869777664697a66666f5b612d7a5d7c686a6a765b612d7a5d7c6f6e75676a685b612d7a5d7c77796e7068705b612d7a5d7c6565616f706e6d63666273705b612d7a5d7c77626b715b612d7a5d7c7470656163756473666a5b612d7a5d7c6c777471795b612d7a5d7c7762725b612d7a5d7c696a6863756e5b612d7a5d7c6979716d7a786d626c5b612d7a5d7c6c79716f636f63736a5b612d7a5d7c6b7a696b5b612d7a5d7c6f696f726e615b612d7a5d7c7a6e746172756a7266745b612d7a5d7c61746668646a6661627276645b612d7a5d7c62716b676e656c5b612d7a5d7c6a67666d69716a6670725b612d7a5d7c62776d6967686b6e7177686b5b612d7a5d7c666b786677776b67665b612d7a5d7c6f796a706d655b612d7a5d7c6d6e7a6e5b612d7a5d7c75766b5b612d7a5d7c61627a6365647177787a5b612d7a5d7c6475676178636a69627a5b612d7a5d7c706f6a645b612d7a5d7c73686a6b6c7361785b612d7a5d7c697169787a6161676c76646e5b612d7a5d7c6d6f735b612d7a5d7c6b78756e73646d74796a5b612d7a5d7c616e70676d7477755b612d7a5d7c71676a65746c68666c765b612d7a5d7c716b776e736375646178635b612d7a5d7c7a64656e657a775b612d7a5d7c6a746c78665b612d7a5d7c7372787568736f5b612d7a5d7c796d6b63696f6c6a686c5b612d7a5d7c766375757a705b612d7a5d7c6e7872626a5b612d7a5d7c76627272686d7a756d79726e5b612d7a5d7c7864635b612d7a5d7c6274786c5b612d7a5d7c706b6d7264715b612d7a5d7c696861686e77706563786b5b612d7a5d7c6462696b7a706e5b612d7a5d7c6878747361725b612d7a5d7c7571726767615b612d7a5d7c75676a646f73685b612d7a5d7c6b7665737a5b612d7a5d7c7a6d795b612d7a5d7c6a6e66787a625b612d7a5d7c7270737a6c625b612d7a5d7c736b6d7769736b6d5b612d7a5d7c6565795b612d7a5d7c68656d79696261626f5b612d7a5d7c6878655b612d7a5d7c6c70696a665b612d7a5d7c686b6d7678647a7773746a735b612d7a5d7c6c636d6f6b637470685b612d7a5d7c696a6b6f767962696c615b612d7a5d7c7a666d626b6e716b6d71615b612d7a5d7c6463676c64666d786e5b612d7a5d7c62726874686d696f78626b625b612d7a5d7c6d6a61626b6b6175615b612d7a5d7c7070785b612d7a5d7c6b6b6a6d6d6d726a5b612d7a5d7c75627873666b70625b612d7a5d7c6e6c696b5b612d7a5d7c6f646a746f695b612d7a5d7c746a70685b612d7a5d7c6571716b795b612d7a5d7c696c76745b612d7a5d7c766b7a65665b612d7a5d7c6c6665697567736363735b612d7a5d7c6f7679626963675b612d7a5d7c7a68706a645b612d7a5d7c65756e6567705b612d7a5d7c747676705b612d7a5d7c6e6770635b612d7a5d7c7075685b612d7a5d7c726a72765b612d7a5d7c756e7370785b612d7a5d7c6d75636d636c766f635b612d7a5d7c716267666d5b612d7a5d7c616276726a735b612d7a5d7c7a6271747269636d67775b612d7a5d7c626374727a756b6c6b5b612d7a5d7c746f6d6d6471726e7067635b612d7a5d7c6c6c7a727778786c78715b612d7a5d7c706d7166775b612d7a5d7c756a617a72647977736266655b612d7a5d7c6264706f656e7976625b612d7a5d7c696b777371785b612d7a5d7c7066736d5b612d7a5d7c70717369706d697a646a6c5b612d7a5d7c7766616965625b612d7a5d7c6161737675647070775b612d7a5d7c7165736c6b5b612d7a5d7c68726c63736d68706e6b73735b612d7a5d7c75707a625b612d7a5d7c74736373635b612d7a5d7c6465727369646e7675695b612d7a5d7c70616b5b612d7a5d7c72686173665b612d7a5d7c786d7279616b6b7861675b612d7a5d7c6769686e6a6d65615b612d7a5d7c7775737566785b612d7a5d7c666e656c6f6b7a775b612d7a5d7c7768756768697075695b612d7a5d7c73747071786768646364725b612d7a5d7c6e62747069626f706a6e6f5b612d7a5d7c6a6367656f6671625b612d7a5d7c78746b65676e6661776179765b612d7a5d7c6872716d5b612d7a5d7c686a7773745b612d7a5d7c7a667466716b5b612d7a5d7c6e64706d786d63635b612d7a5d7c7178727a6d615b612d7a5d7c7a6a78617869646f77795b612d7a5d7c6664626c686e625b612d7a5d7c727a645b612d7a5d7c6a7a7364796e6a6a7471655b612d7a5d7c6a797a7569667673665b612d7a5d7c74736972785b612d7a5d7c6a67797473685b612d7a5d7c6b696c61726978656b5b612d7a5d7c787578747a6f70676e5b612d7a5d7c68776e686774676862756d5b612d7a5d7c786c64635b612d7a5d7c6c7a685b612d7a5d7c7772665b612d7a5d7c697a6d6e7673746a69655b612d7a5d7c626a6f696c77696b5b612d7a5d7c76657466635b612d7a5d7c786f7078797766736263755b612d7a5d7c6d6b6a667a717669615b612d7a5d7c6f776c5b612d7a5d7c75716179797a7a5b612d7a5d7c7364696364706a6a73785b612d7a5d7c766d63645b612d7a5d7c616273786664706d6c5b612d7a5d7c77766d78735b612d7a5d7c64706c756167785b612d7a5d7c707763725b612d7a5d7c797569747577677a5b612d7a5d7c7863747a6873646e7a6d725b612d7a5d7c67617766756e5b612d7a5d7c6562706561746d5b612d7a5d7c686e626a76786d765b612d7a5d7c6f746d6c735b612d7a5d7c7a71616d776164705b612d7a5d7c6874766a6479766c795b612d7a5d7c796a6e6b6578636e69676a685b612d7a5d7c6d6f6970746b7565746d5b612d7a5d7c716469746677657675666f6a5b612d7a5d7c687076616e5b612d7a5d7c666b735b612d7a5d7c71757870676967736c5b612d7a5d7c6f64625b612d7a5d7c6d6d6671776b755b612d7a5d7c796c7374795b612d7a5d7c67746b745b612d7a5d7c7764746e6b65795b612d7a5d7c76797876727961666662655b612d7a5d7c7361797562686470695b612d7a5d7c756b776b7a707275726f5b612d7a5d7c756b717765756a626f5b612d7a5d7c6c67795b612d7a5d7c70616662625b612d7a5d7c72616b656e5b612d7a5d7c666f755b612d7a5d7c71706565766e5b612d7a5d7c7a6f616f7962776b66695b612d7a5d7c74626878795b612d7a5d7c676673776d656d685b612d7a5d7c6d6f6c646a735b612d7a5d7c7a78706878797a5b612d7a5d7c7472626d5b612d7a5d7c697667786a746367766e5b612d7a5d7c6b6e646a68635b612d7a5d7c6d766c6b7971766a635b612d7a5d7c6a616c626b63746f695b612d7a5d7c6268656e6f756c6e6f65765b612d7a5d7c647761786a73796970796c735b612d7a5d7c68637379647a6f6365715b612d7a5d7c617579675b612d7a5d7c7a68726c6b7a7a6c74665b612d7a5d7c736b767172796c755b612d7a5d7c786c6271706773795b612d7a5d7c63707168677167696c635b612d7a5d7c7865775b612d7a5d7c666d6f6b5b612d7a5d7c676d706d7464687a65665b612d7a5d7c64676c5b612d7a5d7c67696a626f7564655b612d7a5d7c666a636c6665636e65755b612d7a5d7c63636a5b612d7a5d7c6c69796b7875685b612d7a5d29
 bench/altwide/clsa-64	--features all	283f3a796f736c77737369797962775b612d7a5d7c647962665b612d7a5d7c6f6f646f5b612d7a5d7c6f6d796b6973705b612d7a5d7c69646f785b612d7a5d7c6f656d7262705b612d7a5d7c787a786a5b612d7a5d7c716e686c5b612d7a5d7c6477767469685b612d7a5d7c68796b6369766a675b612d7a5d7c7170637779755b612d7a5d7c6870635b612d7a5d7c74766b6e63727564627971715b612d7a5d7c7762687975726f6473796a5b612d7a5d7c6476635b612d7a5d7c6a77625b612d7a5d7c65706a617a5b612d7a5d7c7076695b612d7a5d7c6c62636b77695b612d7a5d7c696d7a5b612d7a5d7c6a707a625b612d7a5d7c646c6e6c74717a715b612d7a5d7c6b73737061776e68676a70755b612d7a5d7c6a706c717264675b612d7a5d7c7666787272707a7275645b612d7a5d7c73736864655b612d7a5d7c7566746865765b612d7a5d7c646867735b612d7a5d7c6b6d6566797175646a755b612d7a5d7c6d6e666c7a5b612d7a5d7c6d6e7266675b612d7a5d7c74706e79707372617a6975635b612d7a5d7c716977647261656c69767a6c5b612d7a5d7c6f75667a6b7668647a665b612d7a5d7c6e6e636c727868676a63635b612d7a5d7c6a6f655b612d7a5d7c696579666a6376675b612d7a5d7c77706f796374676f75786a7a5b612d7a5d7c756f62776d6a6c666669745b612d7a5d7c6162726f665b612d7a5d7c6a7a7264765b612d7a5d7c786a625b612d7a5d7c617872676679706574625b612d7a5d7c6964765b612d7a5d7c66777869645b612d7a5d7c6e746b6d65665b612d7a5d7c7578686c6d665b612d7a5d7c7a676d6b765b612d7a5d7c70686f6f6f7672666e6b6e5b612d7a5d7c656467756f736b5b612d7a5d7c6a657764647a625b612d7a5d7c676c6c696a73656a735b612d7a5d7c6b6d656e67787a705b612d7a5d7c6b6f64637a796c71675b612d7a5d7c727573726c6b636e797163645b612d7a5d7c71777275676272636b69615b612d7a5d7c6c66756a7168616f6c676d655b612d7a5d7c7a7568657172736c647462795b612d7a5d7c79706869777664697a66666f5b612d7a5d7c686a6a765b612d7a5d7c6f6e75676a685b612d7a5d7c77796e7068705b612d7a5d7c6565616f706e6d63666273705b612d7a5d7c77626b715b612d7a5d29
@@ -472,6 +482,36 @@ tests/assertions/multiline.rxt:350	--features assertions,modifiers	283f6d292e24
 tests/assertions/multiline.rxt:3710	--features assertions,modifiers	283f2d6d296124
 tests/assertions/multiline.rxt:3758	--features assertions,modifiers	283f2d6d3a612429
 tests/assertions/multiline.rxt:871	--features assertions,modifiers	283f6d295b5e635d2b24
+tests/assertions/rev_end.rxt:108	--features classes	5b615c6e5d2b24
+tests/assertions/rev_end.rxt:118		283f3a617c615c6e2924
+tests/assertions/rev_end.rxt:125		283f3a615c6e7c612924
+tests/assertions/rev_end.rxt:132	--features classes	5c772b24
+tests/assertions/rev_end.rxt:21	--features classes	5c642b24
+tests/assertions/rev_end.rxt:210	--features classes,lookaround	5c642b24283f3d5c6e29
+tests/assertions/rev_end.rxt:219	--features classes,lookaround	5c6424283f215c6e29
+tests/assertions/rev_end.rxt:228	--features assertions,lookaround	615c5a283f3d5c6e29
+tests/assertions/rev_end.rxt:236	--features assertions	61245c62
+tests/assertions/rev_end.rxt:246	--features assertions,classes	5c642b247c5c772b5c7a
+tests/assertions/rev_end.rxt:265	--encoding=utf8	c3a92b24
+tests/assertions/rev_end.rxt:274	--features classes --encoding=utf8	5c732b3f24
+tests/assertions/rev_end.rxt:283	--encoding=utf8	2e24
+tests/assertions/rev_end.rxt:292	--features assertions	5c62616224
+tests/assertions/rev_end.rxt:303	--features assertions	5c426224
+tests/assertions/rev_end.rxt:33	--features classes	5c732b24
+tests/assertions/rev_end.rxt:338	--features assertions	5c4761247c6224
+tests/assertions/rev_end.rxt:348	--features classes,lookaround	5c777b312c327d283f3a283f3d297c2924
+tests/assertions/rev_end.rxt:358	--features classes	285c642b2924
+tests/assertions/rev_end.rxt:373		28612b2924
+tests/assertions/rev_end.rxt:392	--features classes	285b5e635d7b312c337d2924
+tests/assertions/rev_end.rxt:406	--features classes	285c732b297b327d24
+tests/assertions/rev_end.rxt:420	--features classes	285c7324297b312c337d
+tests/assertions/rev_end.rxt:433	--features classes	285c732b3f297b327d24
+tests/assertions/rev_end.rxt:446	--features classes,lookaround	285c777b312c327d29283f3a283f3d297c2924
+tests/assertions/rev_end.rxt:458		61626324
+tests/assertions/rev_end.rxt:46	--features classes	5c732b3f24
+tests/assertions/rev_end.rxt:466	--features classes	5b612d7a5d7b322c347d24
+tests/assertions/rev_end.rxt:475	--features assertions,classes	785b61625d3f5c7a
+tests/assertions/rev_end.rxt:77	--features classes	5b612d7a5d2b5c2e74787424
 tests/assertions/view_edge.rxt:1797	--features assertions	5b612d7a5d7b312c347d283f3a5c7a7c2d29
 tests/assertions/view_edge.rxt:1959	--features assertions	5b612d7a5d7b322c347d283f3a5c7a7c5b612d7a5d29
 tests/assertions/view_edge.rxt:2121	--features assertions	283f3a5c7a7c2d295b612d7a5d7b322c347d
@@ -672,6 +712,8 @@ tests/atomic_groups/possessive.rxt:584	--features atomic-groups	283f3e283f3a6161
 tests/atomic_groups/possessive.rxt:588	--features atomic-groups	283f3e283f3a61617c61292b612962
 tests/atomic_groups/possessive.rxt:599		283f3a61617c61292b6162
 tests/atomic_groups/possessive.rxt:93	--features atomic-groups	612b2b63
+tests/backrefs/caseless.rxt:71	--features backrefs,modifiers	283f692928612b295c31
+tests/backrefs/caseless.rxt:86	--features backrefs,modifiers	283f6929286162295c31
 tests/backrefs/caseless_ucp.rxt:112	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	285c786539295c31
 tests/backrefs/caseless_ucp.rxt:122	--features backrefs,modifiers --encoding=byte	283f6929282e295c31
 tests/backrefs/caseless_ucp.rxt:168	-i --features backrefs,modifiers --encoding=byte	282e295c31
@@ -679,6 +721,12 @@ tests/backrefs/caseless_ucp.rxt:19	--features backrefs,modifiers,ucp --encoding=
 tests/backrefs/caseless_ucp.rxt:215	--features backrefs,modifiers,ucp --encoding=byte	282a55435029282e295c31
 tests/backrefs/caseless_ucp.rxt:242	--ucp --features backrefs,modifiers,named-groups,ucp --encoding=byte	283f6929283f3c6e3e5c786539295c677b6e7d
 tests/backrefs/caseless_ucp.rxt:250	--ucp --features backrefs,modifiers,ucp --encoding=byte	283f6929285c78653929283f3a787c5c312924
+tests/backrefs/caseless_ucp.rxt:262	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:274	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865395c786530295c31
+tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
+tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
+tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
 tests/backrefs/caseless_ucp.rxt:65	-i --ucp --features backrefs,modifiers,ucp --encoding=byte	282e295c31
 tests/backrefs/d27/dupnames.rxt:175	--features backrefs,named-groups,modifiers	283f3c613e7829283f4a29283f3c613e7929
 tests/backrefs/d27/gating.rxt:44	--features backrefs	2861295c31
@@ -1135,6 +1183,23 @@ tests/base/syntax_errors.rxt:257		617b2031787d
 tests/base/syntax_errors.rxt:260		617b2031
 tests/base/syntax_errors.rxt:271		7b2c7d
 tests/base/syntax_errors.rxt:63		617b322c332c347d
+tests/base/vm_lazy_rmin_prefix.rxt:103	--engine=vm	287829285c647b342c7d3f295c64
+tests/base/vm_lazy_rmin_prefix.rxt:126	--engine=vm	28612b3f2928612b29
+tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
+tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
+tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
+tests/base/vm_lazy_rmin_prefix.rxt:177		2862292861297b3230302c7d3f62
+tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
+tests/base/vm_lazy_rmin_prefix.rxt:27		286129283f3a6162297b322c7d3f63
+tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
+tests/base/vm_lazy_rmin_prefix.rxt:44		286129283f3a6162297b322c7d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:63		286129283f3a6162297b322c347d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
+tests/base/vm_lazy_rmin_prefix.rxt:8		286129283f3a6162297b322c7d3f6163
+tests/base/vm_lazy_rmin_prefix.rxt:80		286129283f3a6162297b337d3f78
+tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
+tests/base/vm_lazy_rmin_prefix.rxt:93		287829285c647b342c7d3f295c64
 tests/captures/basic.rxt:31		28666f6f293f626172
 tests/captures/basic.rxt:49		282861292862292963
 tests/captures/basic.rxt:55		2861297c286229
@@ -1297,68 +1362,90 @@ tests/island/island.rxt:22		6361747c646f677c636f77
 tests/island/island.rxt:33		617c627c637c647c657c667c677c68
 tests/island/island.rxt:68		2861627c6162632964
 tests/island/island_caseless.rxt:15	-i	6361747c646f67
-tests/litscan/handoff.rxt:1008	--features all --encoding=utf8	283f692973747261c39f65
-tests/litscan/handoff.rxt:1052	--features all --encoding=utf8 --engine=vm	283f692973747261c39f65
-tests/litscan/handoff.rxt:1097	--features all --encoding=utf8	283f69297374726128c39f6529
-tests/litscan/handoff.rxt:1126	--features all --encoding=utf8 --engine=vm	283f69297374726128c39f6529
-tests/litscan/handoff.rxt:1156	--features all --encoding=utf8	2e7b337d636174
-tests/litscan/handoff.rxt:1196	--features all --encoding=utf8 --engine=vm	2e7b337d636174
-tests/litscan/handoff.rxt:1237	--features all --encoding=utf8	282e7b337d29636174
-tests/litscan/handoff.rxt:1265	--features all --encoding=utf8 --engine=vm	282e7b337d29636174
-tests/litscan/handoff.rxt:1294	--features all --encoding=utf8	c3a97b327d636174
-tests/litscan/handoff.rxt:1318	--features all --encoding=utf8 --engine=vm	c3a97b327d636174
-tests/litscan/handoff.rxt:1343	--features all --encoding=utf8	283f3ac3a9787ccaa97829
-tests/litscan/handoff.rxt:1365	--features all --encoding=utf8 --engine=vm	283f3ac3a9787ccaa97829
-tests/litscan/handoff.rxt:142	--features all --encoding=utf8	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:1525	--features all --encoding=byte	5c626361745c62
-tests/litscan/handoff.rxt:1569	--features all --encoding=byte --engine=vm	5c626361745c62
-tests/litscan/handoff.rxt:1614	--features all --encoding=byte	283f3c215b612d7a5d29636174
-tests/litscan/handoff.rxt:1641	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d29636174
-tests/litscan/handoff.rxt:1669	--features all --encoding=byte	283f3c215b612d7a5d7b327d29636174
-tests/litscan/handoff.rxt:1699	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d7b327d29636174
-tests/litscan/handoff.rxt:1730	--features all --encoding=byte	283f6d295e6974656d
-tests/litscan/handoff.rxt:1765	--features all --encoding=byte --engine=vm	283f6d295e6974656d
-tests/litscan/handoff.rxt:1802	--features all --encoding=byte	283f3a5c477c7829636174
-tests/litscan/handoff.rxt:1836	--features all --encoding=byte --engine=vm	283f3a5c477c7829636174
-tests/litscan/handoff.rxt:1871	--features all --encoding=byte	5c47787c7978
-tests/litscan/handoff.rxt:1890	--features all --encoding=byte --engine=vm	5c47787c7978
-tests/litscan/handoff.rxt:1910	--features all --encoding=byte	283f3a5c4761627c78292863617429283f3d646f6729
-tests/litscan/handoff.rxt:192	--features all --encoding=utf8 --engine=vm	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:1963	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429283f3d646f6729
-tests/litscan/handoff.rxt:2017	--features all --encoding=byte	283f3a5c4761627c78292863617429646f67
-tests/litscan/handoff.rxt:2070	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429646f67
-tests/litscan/handoff.rxt:2124	--features all --encoding=byte	787b322c357d5c4b283f693a63617429
-tests/litscan/handoff.rxt:2155	--features all --encoding=byte --engine=vm	787b322c357d5c4b283f693a63617429
-tests/litscan/handoff.rxt:22	--features all --encoding=byte	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:2253	--features all --encoding=byte	6161283f693a6129
-tests/litscan/handoff.rxt:2281	--features all --encoding=byte --engine=vm	6161283f693a6129
-tests/litscan/handoff.rxt:2391	--features all --encoding=byte	612e2a3f283f693a73656c65637429
-tests/litscan/handoff.rxt:242	--features all --encoding=byte	283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:2432	--features all --encoding=byte --engine=vm	612e2a3f283f693a73656c65637429
-tests/litscan/handoff.rxt:2474	--features all --encoding=byte	61622e2a78797a77
-tests/litscan/handoff.rxt:2512	--features all --encoding=byte --engine=vm	61622e2a78797a77
-tests/litscan/handoff.rxt:2551	--features all --encoding=byte	28616229633f7573657270617373
-tests/litscan/handoff.rxt:2627	--features all --encoding=byte --engine=vm	28616229633f7573657270617373
-tests/litscan/handoff.rxt:2704	--features all --encoding=byte	2878293f757365727a
-tests/litscan/handoff.rxt:2738	--features all --encoding=byte --engine=vm	2878293f757365727a
-tests/litscan/handoff.rxt:2773	--features all --encoding=byte	283f69292863617429733f646f67
-tests/litscan/handoff.rxt:2817	--features all --encoding=byte --engine=vm	283f69292863617429733f646f67
-tests/litscan/handoff.rxt:297	--features all --encoding=byte --engine=vm	283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:353	--features all --encoding=byte	283f6d295e787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:414	--features all --encoding=byte --engine=vm	283f6d295e787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:476	--features all --encoding=byte	283f6d295e283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:520	--features all --encoding=byte --engine=vm	283f6d295e283f3a617c6262293f636174646f67
-tests/litscan/handoff.rxt:565	--features all --encoding=byte	787b322c357d28283f693a6361742929
-tests/litscan/handoff.rxt:604	--features all --encoding=byte --engine=vm	787b322c357d28283f693a6361742929
-tests/litscan/handoff.rxt:644	--features all --encoding=byte	283f3a617c6262293f2863617429646f67
-tests/litscan/handoff.rxt:676	--features all --encoding=byte --engine=vm	283f3a617c6262293f2863617429646f67
-tests/litscan/handoff.rxt:709	--features all --encoding=byte	283f6929636174
-tests/litscan/handoff.rxt:753	--features all --encoding=byte --engine=vm	283f6929636174
-tests/litscan/handoff.rxt:81	--features all --encoding=byte --engine=vm	787b322c357d283f693a63617429
-tests/litscan/handoff.rxt:890	--features all --encoding=utf8	283f6929636174
-tests/litscan/handoff.rxt:913	--features all --encoding=utf8 --engine=vm	283f6929636174
-tests/litscan/handoff.rxt:936	--features all --encoding=byte	617b337d283f693a63617429
-tests/litscan/handoff.rxt:971	--features all --encoding=byte --engine=vm	617b337d283f693a63617429
+tests/litscan/handoff.rxt:1012	--features all --encoding=utf8	283f692973747261c39f65
+tests/litscan/handoff.rxt:1056	--features all --encoding=utf8 --engine=vm	283f692973747261c39f65
+tests/litscan/handoff.rxt:1101	--features all --encoding=utf8	283f69297374726128c39f6529
+tests/litscan/handoff.rxt:1130	--features all --encoding=utf8 --engine=vm	283f69297374726128c39f6529
+tests/litscan/handoff.rxt:1160	--features all --encoding=utf8	2e7b337d636174
+tests/litscan/handoff.rxt:1200	--features all --encoding=utf8 --engine=vm	2e7b337d636174
+tests/litscan/handoff.rxt:1241	--features all --encoding=utf8	282e7b337d29636174
+tests/litscan/handoff.rxt:1269	--features all --encoding=utf8 --engine=vm	282e7b337d29636174
+tests/litscan/handoff.rxt:1298	--features all --encoding=utf8	c3a97b327d636174
+tests/litscan/handoff.rxt:1322	--features all --encoding=utf8 --engine=vm	c3a97b327d636174
+tests/litscan/handoff.rxt:1347	--features all --encoding=utf8	283f3ac3a9787ccaa97829
+tests/litscan/handoff.rxt:1369	--features all --encoding=utf8 --engine=vm	283f3ac3a9787ccaa97829
+tests/litscan/handoff.rxt:146	--features all --encoding=utf8	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:1529	--features all --encoding=byte	5c626361745c62
+tests/litscan/handoff.rxt:1573	--features all --encoding=byte --engine=vm	5c626361745c62
+tests/litscan/handoff.rxt:1618	--features all --encoding=byte	283f3c215b612d7a5d29636174
+tests/litscan/handoff.rxt:1645	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d29636174
+tests/litscan/handoff.rxt:1673	--features all --encoding=byte	283f3c215b612d7a5d7b327d29636174
+tests/litscan/handoff.rxt:1703	--features all --encoding=byte --engine=vm	283f3c215b612d7a5d7b327d29636174
+tests/litscan/handoff.rxt:1734	--features all --encoding=byte	283f6d295e6974656d
+tests/litscan/handoff.rxt:1769	--features all --encoding=byte --engine=vm	283f6d295e6974656d
+tests/litscan/handoff.rxt:1806	--features all --encoding=byte	283f3a5c477c7829636174
+tests/litscan/handoff.rxt:1840	--features all --encoding=byte --engine=vm	283f3a5c477c7829636174
+tests/litscan/handoff.rxt:1875	--features all --encoding=byte	5c47787c7978
+tests/litscan/handoff.rxt:1894	--features all --encoding=byte --engine=vm	5c47787c7978
+tests/litscan/handoff.rxt:1914	--features all --encoding=byte	283f3a5c4761627c78292863617429283f3d646f6729
+tests/litscan/handoff.rxt:196	--features all --encoding=utf8 --engine=vm	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:1967	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429283f3d646f6729
+tests/litscan/handoff.rxt:2021	--features all --encoding=byte	283f3a5c4761627c78292863617429646f67
+tests/litscan/handoff.rxt:2074	--features all --encoding=byte --engine=vm	283f3a5c4761627c78292863617429646f67
+tests/litscan/handoff.rxt:2128	--features all --encoding=byte	787b322c357d5c4b283f693a63617429
+tests/litscan/handoff.rxt:2159	--features all --encoding=byte --engine=vm	787b322c357d5c4b283f693a63617429
+tests/litscan/handoff.rxt:2257	--features all --encoding=byte	6161283f693a6129
+tests/litscan/handoff.rxt:2285	--features all --encoding=byte --engine=vm	6161283f693a6129
+tests/litscan/handoff.rxt:2395	--features all --encoding=byte	612e2a3f283f693a73656c65637429
+tests/litscan/handoff.rxt:2436	--features all --encoding=byte --engine=vm	612e2a3f283f693a73656c65637429
+tests/litscan/handoff.rxt:246	--features all --encoding=byte	283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:2478	--features all --encoding=byte	61622e2a78797a77
+tests/litscan/handoff.rxt:2516	--features all --encoding=byte --engine=vm	61622e2a78797a77
+tests/litscan/handoff.rxt:2555	--features all --encoding=byte	28616229633f7573657270617373
+tests/litscan/handoff.rxt:26	--features all --encoding=byte	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:2631	--features all --encoding=byte --engine=vm	28616229633f7573657270617373
+tests/litscan/handoff.rxt:2708	--features all --encoding=byte	2878293f757365727a
+tests/litscan/handoff.rxt:2742	--features all --encoding=byte --engine=vm	2878293f757365727a
+tests/litscan/handoff.rxt:2777	--features all --encoding=byte	283f69292863617429733f646f67
+tests/litscan/handoff.rxt:2821	--features all --encoding=byte --engine=vm	283f69292863617429733f646f67
+tests/litscan/handoff.rxt:2866	--features all --encoding=byte	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d
+tests/litscan/handoff.rxt:301	--features all --encoding=byte --engine=vm	283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:3021	--features all --encoding=byte --engine=vm	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d
+tests/litscan/handoff.rxt:3177	--features all --encoding=byte	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d7c283f3a5b302d39612d665d7b312c347d3a297b312c377d3a5b302d39612d665d7b302c347d
+tests/litscan/handoff.rxt:3244	--features all --encoding=byte --engine=vm	283f3a5b302d39612d665d7b312c347d3a297b342c377d5b302d39612d665d7b312c347d7c283f3a5b302d39612d665d7b312c347d3a297b312c377d3a5b302d39612d665d7b302c347d
+tests/litscan/handoff.rxt:3312	--features all --encoding=byte	283f3a283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d295c2e297b337d283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d29
+tests/litscan/handoff.rxt:3423	--features all --encoding=byte --engine=vm	283f3a283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d295c2e297b337d283f3a32355b302d355d7c325b302d345d5b302d395d7c315b302d395d5b302d395d7c5b312d395d3f5b302d395d29
+tests/litscan/handoff.rxt:3535	--features all --encoding=byte	283f3a5c647b312c337d5c2e297b337d5c647b312c337d
+tests/litscan/handoff.rxt:357	--features all --encoding=byte	283f6d295e787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:3624	--features all --encoding=byte --engine=vm	283f3a5c647b312c337d5c2e297b337d5c647b312c337d
+tests/litscan/handoff.rxt:3714	--features all --encoding=byte	612e3f62
+tests/litscan/handoff.rxt:3749	--features all --encoding=byte --engine=vm	612e3f62
+tests/litscan/handoff.rxt:3785	--features all --encoding=byte	283f3a61627c63293a
+tests/litscan/handoff.rxt:3821	--features all --encoding=byte --engine=vm	283f3a61627c63293a
+tests/litscan/handoff.rxt:3858	--features all --encoding=byte	5c625c647b312c337d5c2e5c64
+tests/litscan/handoff.rxt:3942	--features all --encoding=byte --engine=vm	5c625c647b312c337d5c2e5c64
+tests/litscan/handoff.rxt:4028	--features all --encoding=utf8	2e7b312c337d3a
+tests/litscan/handoff.rxt:4065	--features all --encoding=utf8 --engine=vm	2e7b312c337d3a
+tests/litscan/handoff.rxt:4133	--features all --encoding=byte	5b612d795d5c647b302c3130307d3a
+tests/litscan/handoff.rxt:418	--features all --encoding=byte --engine=vm	283f6d295e787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:4366	--features all --encoding=byte --engine=vm	5b612d795d5c647b302c3130307d3a
+tests/litscan/handoff.rxt:4600	--features all --encoding=byte	5b612d795d5c647b302c3135307d3a
+tests/litscan/handoff.rxt:480	--features all --encoding=byte	283f6d295e283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:4933	--features all --encoding=byte --engine=vm	5b612d795d5c647b302c3135307d3a
+tests/litscan/handoff.rxt:524	--features all --encoding=byte --engine=vm	283f6d295e283f3a617c6262293f636174646f67
+tests/litscan/handoff.rxt:5267	--features all --encoding=byte	612e7b312c35303030307d7a
+tests/litscan/handoff.rxt:5381	--features all --encoding=byte --engine=vm	612e7b312c35303030307d7a
+tests/litscan/handoff.rxt:569	--features all --encoding=byte	787b322c357d28283f693a6361742929
+tests/litscan/handoff.rxt:608	--features all --encoding=byte --engine=vm	787b322c357d28283f693a6361742929
+tests/litscan/handoff.rxt:648	--features all --encoding=byte	283f3a617c6262293f2863617429646f67
+tests/litscan/handoff.rxt:680	--features all --encoding=byte --engine=vm	283f3a617c6262293f2863617429646f67
+tests/litscan/handoff.rxt:713	--features all --encoding=byte	283f6929636174
+tests/litscan/handoff.rxt:757	--features all --encoding=byte --engine=vm	283f6929636174
+tests/litscan/handoff.rxt:85	--features all --encoding=byte --engine=vm	787b322c357d283f693a63617429
+tests/litscan/handoff.rxt:894	--features all --encoding=utf8	283f6929636174
+tests/litscan/handoff.rxt:917	--features all --encoding=utf8 --engine=vm	283f6929636174
+tests/litscan/handoff.rxt:940	--features all --encoding=byte	617b337d283f693a63617429
+tests/litscan/handoff.rxt:975	--features all --encoding=byte --engine=vm	617b337d283f693a63617429
 tests/litscan/litrun.rxt:1015	--engine=vm	4142434445464748494a4b4c4d4e4f505152
 tests/litscan/litrun.rxt:1041		4142434445464748494a4b4c4d4e4f50515253
 tests/litscan/litrun.rxt:105		283f3a616263292b64
@@ -2584,11 +2671,104 @@ tests/possessify/possessify.rxt:2952		28283f3a5b61625d7b302c327d63292b6429
 tests/possessify/possessify.rxt:2971		28283f3a2861297b302c327d62292b6329
 tests/possessify/possessify.rxt:2997		28283f3a617b302c327d3f62292b6329
 tests/possessify/possessify.rxt:30		617b322c327d63
+tests/possessify/possessify.rxt:3032	--features all --engine=vm	205c773f5c62
+tests/possessify/possessify.rxt:3046	--features all --engine=vm	205c773f2b5c62
+tests/possessify/possessify.rxt:3060	--features all --engine=vm	283f3a615c2e292b5c62
+tests/possessify/possessify.rxt:3074	--features all --engine=vm	283f3a615c2e292b2b5c62
+tests/possessify/possessify.rxt:3088	--features all --engine=vm	283f3a615b612e5d292b5c62
+tests/possessify/possessify.rxt:3102	--features all --engine=vm	283f3a615b612e5d292b2b5c62
+tests/possessify/possessify.rxt:3116	--features all --engine=vm	5b61202e5d2b5c62
+tests/possessify/possessify.rxt:3130	--features all --engine=vm	5b61202e5d2b2b5c62
+tests/possessify/possessify.rxt:3144	--features all --engine=vm	5c772b5c42
+tests/possessify/possessify.rxt:3156	--features all --engine=vm	5c772b2b5c42
+tests/possessify/possessify.rxt:3168	--features all --engine=vm	283f3a615c2e292b5c42
+tests/possessify/possessify.rxt:3180	--features all --engine=vm	283f3a615c2e292b2b5c42
+tests/possessify/possessify.rxt:3192	--features all --engine=vm	28613f29782b5c315c62
+tests/possessify/possessify.rxt:3210	--features all --engine=vm	28613f29782b2b5c315c62
+tests/possessify/possessify.rxt:3228	--features all --engine=vm	5c642b283f215b5c642e5d29
+tests/possessify/possessify.rxt:3240	--features all --engine=vm	5c642b2b283f215b5c642e5d29
+tests/possessify/possessify.rxt:3252	--features all --engine=vm	5b612d7a5d2b283f3d4029
+tests/possessify/possessify.rxt:3264	--features all --engine=vm	5b612d7a5d2b2b283f3d4029
+tests/possessify/possessify.rxt:3276	--features all --engine=vm	5b61625d2b3f283f215b61625d29
+tests/possessify/possessify.rxt:3288	--features all --engine=vm	283f3e5b61625d2b29283f215b61625d29
+tests/possessify/possessify.rxt:3300	--features all --engine=vm	5b612d635d2b283f3a283f3d78297c29
 tests/possessify/possessify.rxt:331		617b312c337d3f63
+tests/possessify/possessify.rxt:3311	--features all --engine=vm	5b612d635d2b2b283f3a283f3d78297c29
+tests/possessify/possessify.rxt:3322	--features all --engine=vm	285c772b3f283f3a5c627c2929
+tests/possessify/possessify.rxt:3342	--features all --engine=vm	285c772b2b283f3a5c627c2929
+tests/possessify/possessify.rxt:3362	--features all --engine=vm	5c777b312c337d3f283f3a5c627c29
+tests/possessify/possessify.rxt:3376	--features all --engine=vm	5c777b312c337d2b283f3a5c627c29
+tests/possessify/possessify.rxt:3390	--features all --engine=vm	5b612d635d2b3f283f3a5c427c29
+tests/possessify/possessify.rxt:3404	--features all --engine=vm	5b612d635d2b2b283f3a5c427c29
+tests/possessify/possessify.rxt:3418	--features all --engine=vm	5c772b283f3a5c627c29
+tests/possessify/possessify.rxt:3429	--features all --engine=vm	5c772b2b283f3a5c627c29
+tests/possessify/possessify.rxt:3440	--features all --engine=vm	28612b283f3a5c627c29297c62283f312961
+tests/possessify/possessify.rxt:3460	--features all --engine=vm	28612b2b283f3a5c627c29297c62283f312961
+tests/possessify/possessify.rxt:3480	--features all --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
+tests/possessify/possessify.rxt:3494	--features all --engine=vm	283f3a62283f5229617c612b2b283f3a5c627c2929
+tests/possessify/possessify.rxt:3508	--features all --engine=vm	28613f2928782b5c312962283f322978
+tests/possessify/possessify.rxt:3528	--features all --engine=vm	28613f2928782b2b5c312962283f322978
+tests/possessify/possessify.rxt:3540	--features all --engine=vm	28612928782b5c312962283f322978
+tests/possessify/possessify.rxt:3549	--features all --engine=vm	28612928782b2b5c312962283f322978
+tests/possessify/possessify.rxt:3558	--features all --engine=vm	283f3a612b283f3a5c627c297c6162292b63
+tests/possessify/possessify.rxt:3572	--features all --engine=vm	283f3a612b2b283f3a5c627c297c6162292b63
+tests/possessify/possessify.rxt:3586	--features all --engine=vm	286129412b283f693a5c3129
+tests/possessify/possessify.rxt:3606	--features all --engine=vm	286129412b2b283f693a5c3129
 tests/possessify/possessify.rxt:362		612b3f63
+tests/possessify/possessify.rxt:3622	--features all --engine=vm	283f693a28612929412b5c31
+tests/possessify/possessify.rxt:3642	--features all --engine=vm	283f693a28612929412b2b5c31
+tests/possessify/possessify.rxt:3658	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b5c6b3c6e3e
+tests/possessify/possessify.rxt:3684	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b2b5c6b3c6e3e
+tests/possessify/possessify.rxt:3702	--features all --engine=vm	28613f29782b5c3178
+tests/possessify/possessify.rxt:3722	--features all --engine=vm	28613f29782b2b5c3178
+tests/possessify/possessify.rxt:3738	--features all --engine=vm	283f3a28283f3d61292961293f622b5c3162
+tests/possessify/possessify.rxt:3754	--features all --engine=vm	283f3a28283f3d61292961293f622b2b5c3162
+tests/possessify/possessify.rxt:3766	--features all --engine=vm	28283f3d6129633f2961622b5c3162
+tests/possessify/possessify.rxt:3782	--features all --engine=vm	28283f3d6129633f2961622b2b5c3162
+tests/possessify/possessify.rxt:3794	--features all --engine=vm	283f3a28283f3d612929617c29622b5c3162
+tests/possessify/possessify.rxt:3810	--features all --engine=vm	283f3a28283f3d612929617c29622b2b5c3162
+tests/possessify/possessify.rxt:3822	--features all --engine=vm	28283f3d612929782b5c3178
+tests/possessify/possessify.rxt:3831	--features all --engine=vm	28283f3d612929782b2b5c3178
+tests/possessify/possessify.rxt:3840	--features all --engine=vm	28283f3d7829623f29782b5c3178
+tests/possessify/possessify.rxt:3856	--features all --engine=vm	28283f3d7829623f29782b2b5c3178
+tests/possessify/possessify.rxt:3868	--features all --engine=vm	286129285c316229782b5c32
+tests/possessify/possessify.rxt:3879	--features all --engine=vm	286129285c316229782b2b5c32
+tests/possessify/possessify.rxt:3890	--features all --engine=vm	285c62295c772b5c31
+tests/possessify/possessify.rxt:3904	--features all --engine=vm	285c62295c772b2b5c31
+tests/possessify/possessify.rxt:3918	--features all --engine=vm	28615c322928625c3129782b5c31
+tests/possessify/possessify.rxt:3928	--features all --engine=vm	28615c322928625c3129782b2b5c31
+tests/possessify/possessify.rxt:3944	--features all --engine=vm	28615c325c332928625c312928635c3129782b5c31
+tests/possessify/possessify.rxt:3954	--features all --engine=vm	5c62285c772b295c625c732b5c315c62
 tests/possessify/possessify.rxt:396		7a286162292a79
+tests/possessify/possessify.rxt:3972	--features all --engine=vm	5c62285c772b2b295c625c732b2b5c315c62
+tests/possessify/possessify.rxt:3990	-i --features all --encoding=utf8 --engine=vm	6b2b5c62
+tests/possessify/possessify.rxt:4007	-i --features all --encoding=utf8 --engine=vm	6b2b2b5c62
+tests/possessify/possessify.rxt:4033	--features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
+tests/possessify/possessify.rxt:4057	--features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
+tests/possessify/possessify.rxt:4081	--features all --encoding=utf8 --engine=vm	782b5c625b5c787b65397d615d
+tests/possessify/possessify.rxt:4105	--features all --encoding=utf8 --engine=vm	782b2b5c625b5c787b65397d615d
 tests/possessify/possessify.rxt:412		617b322c327d627b302c347d63
+tests/possessify/possessify.rxt:4129	--features all --encoding=utf8 --engine=vm	5b612d635d2b5c625c787b3130307d
+tests/possessify/possessify.rxt:4153	--features all --encoding=utf8 --engine=vm	5b612d635d2b2b5c625c787b3130307d
+tests/possessify/possessify.rxt:4177	-i --features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
+tests/possessify/possessify.rxt:4204	-i --features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
+tests/possessify/possessify.rxt:4231	--features all --encoding=utf8 --engine=vm	5c787b65397d2b5c62
+tests/possessify/possessify.rxt:4257	--features all --encoding=utf8 --engine=vm	5c787b65397d2b2b5c62
+tests/possessify/possessify.rxt:4283	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4312	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
+tests/possessify/possessify.rxt:4341	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b5c31
+tests/possessify/possessify.rxt:4371	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b2b5c31
+tests/possessify/possessify.rxt:4401	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b5c31
+tests/possessify/possessify.rxt:4432	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b2b5c31
+tests/possessify/possessify.rxt:4463	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b5c3178
+tests/possessify/possessify.rxt:4496	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b2b5c3178
+tests/possessify/possessify.rxt:4526	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4556	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
 tests/possessify/possessify.rxt:457		28617c6162297b302c347d63
+tests/possessify/possessify.rxt:4586	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
+tests/possessify/possessify.rxt:4618	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
+tests/possessify/possessify.rxt:4650	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
+tests/possessify/possessify.rxt:4681	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31
 tests/possessify/possessify.rxt:510		283f3a61627c61297b302c347d62
 tests/possessify/possessify.rxt:548		283f3a61623f297b302c347d62
 tests/possessify/possessify.rxt:584		283f3a617c297b302c347d63
@@ -2675,6 +2855,8 @@ tests/recursion/k93.rxt:195	--features recursion	283f3a62283f5229617c612b29
 tests/recursion/k93.rxt:207	--features recursion	28612b2962283f312963
 tests/recursion/k93.rxt:217	--features recursion	285b61625d2b2963283f312961
 tests/recursion/k93.rxt:234	--features recursion	28617b312c337d2962283f3129283f312961
+tests/recursion/k93.rxt:260	--features recursion,assertions	28612b283f3a5c627c29297c62283f312961
+tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
 tests/recursion/k93.rxt:30	--features recursion	28612b2962283f312961
 tests/recursion/k93.rxt:42	--features recursion,named-groups	283f3c6e3e617b312c337d2962283f266e2961
 tests/recursion/k93.rxt:54	--features recursion	283f3a28612b29627c7829283f312961
@@ -2698,6 +2880,90 @@ tests/recursion/spellings.rxt:81	--features recursion,named-groups	283f3c673e617
 tests/recursion/spellings.rxt:87	--features recursion	28617c62295c673c313e
 tests/recursion/spellings.rxt:93	--features recursion	28617c62295c67273127
 tests/recursion/spellings.rxt:99	--features recursion,named-groups	283f3c673e617c62295c673c673e
+tests/revend/stage2_captures.rxt:1025		285c642b2924
+tests/revend/stage2_captures.rxt:1066	--features assertions,classes	285c772b295c7a
+tests/revend/stage2_captures.rxt:1084	--features assertions,classes	285c625c772b2924
+tests/revend/stage2_captures.rxt:1099		286129623f24
+tests/revend/stage2_captures.rxt:1148		285c6429285c64293f24
+tests/revend/stage2_captures.rxt:1203		285b5e2f5d2b2924
+tests/revend/stage2_captures.rxt:1220		282e2a295c2e74787424
+tests/revend/stage2_captures.rxt:1264	--features assertions,classes	5c62285c772b2924
+tests/revend/stage2_captures.rxt:1281	--features assertions,classes,lookaround	283f3c3d2c29285c642b2924
+tests/revend/stage2_captures.rxt:1296	--features assertions,lookaround	283f3c21782928612b2924
+tests/revend/stage2_captures.rxt:1311	--features assertions,classes,lookaround	283f3c3d5c7329285c532b295c7a
+tests/revend/stage2_captures.rxt:1325	--features assertions,classes,lookaround	283f3c3d5e7c2c29285c772b2924
+tests/revend/stage2_captures.rxt:1339	--features assertions,classes	285c77295c6224
+tests/revend/stage2_captures.rxt:1352	--encoding=utf8	282e2924
+tests/revend/stage2_captures.rxt:1369	--features assertions,classes --encoding=utf8	285c772b295c7a
+tests/revend/stage2_captures.rxt:137		28617c615c6e2924
+tests/revend/stage2_captures.rxt:1382	--encoding=utf8	285b5e2f5d2b2924
+tests/revend/stage2_captures.rxt:1397	--encoding=utf8	285c787b65397d2b2924
+tests/revend/stage2_captures.rxt:1410	--ucp --encoding=utf8	285c732b2924
+tests/revend/stage2_captures.rxt:1426	--ucp --encoding=utf8	285c642b2924
+tests/revend/stage2_captures.rxt:1441	--encoding=utf8	282e2a295c2e74787424
+tests/revend/stage2_captures.rxt:1453	--encoding=utf8	285c707b4c7d2b2924
+tests/revend/stage2_captures.rxt:1466	--encoding=utf8	285c772b2924
+tests/revend/stage2_captures.rxt:1480	--features assertions --encoding=utf8	282e295c5a
+tests/revend/stage2_captures.rxt:149		28615c6e7c612924
+tests/revend/stage2_captures.rxt:1494	--encoding=utf8	28617c5c787b65397d292b24
+tests/revend/stage2_captures.rxt:1507	-i	286162632924
+tests/revend/stage2_captures.rxt:1520	-i --features assertions	28612b295c7a
+tests/revend/stage2_captures.rxt:1533	-i	285b612d635d2b2924
+tests/revend/stage2_captures.rxt:1546	-i	285b5e615d2b2924
+tests/revend/stage2_captures.rxt:1559	-i	282e2a295c2e54585424
+tests/revend/stage2_captures.rxt:1571	-i --encoding=utf8	286b2924
+tests/revend/stage2_captures.rxt:1586	-i --encoding=utf8	285c787b65397d2b2924
+tests/revend/stage2_captures.rxt:1599	--features assertions	282861295c7a29
+tests/revend/stage2_captures.rxt:161		28615c6e3f2924
+tests/revend/stage2_captures.rxt:1612		28612429
+tests/revend/stage2_captures.rxt:1623		286129283f3a2429
+tests/revend/stage2_captures.rxt:1644	--features atomic-groups	28612b2b2924
+tests/revend/stage2_captures.rxt:1656	--features atomic-groups	283f3e612b2928622924
+tests/revend/stage2_captures.rxt:1669	--features classes,assertions,modifiers	283f6d29285c642b2924
+tests/revend/stage2_captures.rxt:1683		285c642b29247c287829
+tests/revend/stage2_captures.rxt:1700		285c732b3f297b327d24
+tests/revend/stage2_captures.rxt:171		28615c6e3f3f2924
+tests/revend/stage2_captures.rxt:1719		285c732b3f295c732a24
+tests/revend/stage2_captures.rxt:1732		28612b3f2924
+tests/revend/stage2_captures.rxt:1767		285c647b322c347d2924
+tests/revend/stage2_captures.rxt:1781		28617b337d2924
+tests/revend/stage2_captures.rxt:1795	--features assertions,classes	285c777b312c337d295c7a
+tests/revend/stage2_captures.rxt:1809	--features classes,assertions	2878295c4b285c642b2924
+tests/revend/stage2_captures.rxt:181	--features assertions	2861295c6e3f5c7a
+tests/revend/stage2_captures.rxt:1827	--features assertions	283f3a617c286229295c4b2863293f24
+tests/revend/stage2_captures.rxt:192	--features assertions	2861295c6e3f5c5a
+tests/revend/stage2_captures.rxt:220		285c732b2924
+tests/revend/stage2_captures.rxt:238	--features assertions,classes	285c732b295c7a
+tests/revend/stage2_captures.rxt:252		28612a29616224
+tests/revend/stage2_captures.rxt:267		28612a3f29616224
+tests/revend/stage2_captures.rxt:279		28612b2928613f2924
+tests/revend/stage2_captures.rxt:312		28617c61622928637c6263642924
+tests/revend/stage2_captures.rxt:329		28617c61622928637c6263642928642a2924
+tests/revend/stage2_captures.rxt:349		285c642b29285c642924
+tests/revend/stage2_captures.rxt:364		282e2b3f29285c642b2924
+tests/revend/stage2_captures.rxt:384		282e2a29285c642924
+tests/revend/stage2_captures.rxt:398		285b612d7a5d2b29285b302d395d2a2924
+tests/revend/stage2_captures.rxt:415		283f3a2861297c286229292b24
+tests/revend/stage2_captures.rxt:436		28617c62292b24
+tests/revend/stage2_captures.rxt:463		28285c64297c78292b24
+tests/revend/stage2_captures.rxt:506		28612b7c62292a6324
+tests/revend/stage2_captures.rxt:543		285c647b312c327d292b24
+tests/revend/stage2_captures.rxt:556		2861627c61292a6224
+tests/revend/stage2_captures.rxt:586		283f3a2861297c2862297c2863292924
+tests/revend/stage2_captures.rxt:663		2861297c6224
+tests/revend/stage2_captures.rxt:681		286124297c286229
+tests/revend/stage2_captures.rxt:703		283f3a782861297c792924
+tests/revend/stage2_captures.rxt:717		28617c61622924
+tests/revend/stage2_captures.rxt:731		2861627c612924
+tests/revend/stage2_captures.rxt:743		28666f6f7c666f6f6261722924
+tests/revend/stage2_captures.rxt:756		28666f6f7c666f6f6261727c6261722924
+tests/revend/stage2_captures.rxt:767		285c772b7c5c772b5c2e2924
+tests/revend/stage2_captures.rxt:781		283f3a617c61622928637c626364293f24
+tests/revend/stage2_captures.rxt:795		282861292862292924
+tests/revend/stage2_captures.rxt:816		2828612b2928622b29292b24
+tests/revend/stage2_captures.rxt:840		286128622863293f293f2924
+tests/revend/stage2_captures.rxt:865		28285c642b292d285c642b292924
+tests/revend/stage2_captures.rxt:886		2828286129292924
 tests/rungselect/revdet_highbytes.rxt:100		282849297c4a297b327d4b
 tests/rungselect/revdet_highbytes.rxt:119		28285c783830297c5c783831297b337d5c783832
 tests/rungselect/revdet_highbytes.rxt:134		28285c783830297c62297b302c347d63
@@ -3311,9 +3577,9 @@ tests/utf8/hv_space.rxt:459	--encoding=utf8	785c762b
 tests/utf8/hv_space.rxt:468	--encoding=utf8	615c6862
 tests/utf8/hv_space.rxt:477	--encoding=utf8	5c682b
 tests/utf8/hv_space.rxt:486	--encoding=utf8	5c76
+tests/utf8/landing_illformed.rxt:126	--encoding=utf8	2e783f
 tests/utf8/landing_illformed.rxt:48	--encoding=utf8	5c707b4c7d2b
 tests/utf8/landing_illformed.rxt:87	--encoding=utf8	5b612d7ac3a95d2b
-tests/utf8/landing_illformed.rxt:126	--encoding=utf8	2e783f
 tests/utf8/restrict.rxt:34	--encoding=byte	283f6929283f722961
 tests/utf8/restrict.rxt:42	--encoding=byte	283f6929283f72295c786539
 tests/utf8/restrict.rxt:85	--encoding=utf8	283f2d72296b
@@ -3364,243 +3630,3 @@ tests/utf8/wclass_illformed.rxt:913	--features all --encoding=utf8	78285b615c787
 tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
 tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
 tests/utf8/wclass_illformed.rxt:981	--features all --encoding=utf8	78283f69295b6b5c787b65397d5d79
-# possbuild/posstri (2026-10-07, [ART-POSS-ARMS]): +71 rows, every one a new block: 69 tests/possessify/possessify.rxt (lines 3032-4007, the arms' witness pairs) and 2 tests/recursion/k93.rxt (A-F1 cells); census_s1.py on the possbuild tip (abi 66, under -fno-start-set); no existing row moved (0 gone, 0 hex changed).
-tests/possessify/possessify.rxt:3032	--features all --engine=vm	205c773f5c62
-tests/possessify/possessify.rxt:3046	--features all --engine=vm	205c773f2b5c62
-tests/possessify/possessify.rxt:3060	--features all --engine=vm	283f3a615c2e292b5c62
-tests/possessify/possessify.rxt:3074	--features all --engine=vm	283f3a615c2e292b2b5c62
-tests/possessify/possessify.rxt:3088	--features all --engine=vm	283f3a615b612e5d292b5c62
-tests/possessify/possessify.rxt:3102	--features all --engine=vm	283f3a615b612e5d292b2b5c62
-tests/possessify/possessify.rxt:3116	--features all --engine=vm	5b61202e5d2b5c62
-tests/possessify/possessify.rxt:3130	--features all --engine=vm	5b61202e5d2b2b5c62
-tests/possessify/possessify.rxt:3144	--features all --engine=vm	5c772b5c42
-tests/possessify/possessify.rxt:3156	--features all --engine=vm	5c772b2b5c42
-tests/possessify/possessify.rxt:3168	--features all --engine=vm	283f3a615c2e292b5c42
-tests/possessify/possessify.rxt:3180	--features all --engine=vm	283f3a615c2e292b2b5c42
-tests/possessify/possessify.rxt:3192	--features all --engine=vm	28613f29782b5c315c62
-tests/possessify/possessify.rxt:3210	--features all --engine=vm	28613f29782b2b5c315c62
-tests/possessify/possessify.rxt:3228	--features all --engine=vm	5c642b283f215b5c642e5d29
-tests/possessify/possessify.rxt:3240	--features all --engine=vm	5c642b2b283f215b5c642e5d29
-tests/possessify/possessify.rxt:3252	--features all --engine=vm	5b612d7a5d2b283f3d4029
-tests/possessify/possessify.rxt:3264	--features all --engine=vm	5b612d7a5d2b2b283f3d4029
-tests/possessify/possessify.rxt:3276	--features all --engine=vm	5b61625d2b3f283f215b61625d29
-tests/possessify/possessify.rxt:3288	--features all --engine=vm	283f3e5b61625d2b29283f215b61625d29
-tests/possessify/possessify.rxt:3300	--features all --engine=vm	5b612d635d2b283f3a283f3d78297c29
-tests/possessify/possessify.rxt:3311	--features all --engine=vm	5b612d635d2b2b283f3a283f3d78297c29
-tests/possessify/possessify.rxt:3322	--features all --engine=vm	285c772b3f283f3a5c627c2929
-tests/possessify/possessify.rxt:3342	--features all --engine=vm	285c772b2b283f3a5c627c2929
-tests/possessify/possessify.rxt:3362	--features all --engine=vm	5c777b312c337d3f283f3a5c627c29
-tests/possessify/possessify.rxt:3376	--features all --engine=vm	5c777b312c337d2b283f3a5c627c29
-tests/possessify/possessify.rxt:3390	--features all --engine=vm	5b612d635d2b3f283f3a5c427c29
-tests/possessify/possessify.rxt:3404	--features all --engine=vm	5b612d635d2b2b283f3a5c427c29
-tests/possessify/possessify.rxt:3418	--features all --engine=vm	5c772b283f3a5c627c29
-tests/possessify/possessify.rxt:3429	--features all --engine=vm	5c772b2b283f3a5c627c29
-tests/possessify/possessify.rxt:3440	--features all --engine=vm	28612b283f3a5c627c29297c62283f312961
-tests/possessify/possessify.rxt:3460	--features all --engine=vm	28612b2b283f3a5c627c29297c62283f312961
-tests/possessify/possessify.rxt:3480	--features all --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
-tests/possessify/possessify.rxt:3494	--features all --engine=vm	283f3a62283f5229617c612b2b283f3a5c627c2929
-tests/possessify/possessify.rxt:3508	--features all --engine=vm	28613f2928782b5c312962283f322978
-tests/possessify/possessify.rxt:3528	--features all --engine=vm	28613f2928782b2b5c312962283f322978
-tests/possessify/possessify.rxt:3540	--features all --engine=vm	28612928782b5c312962283f322978
-tests/possessify/possessify.rxt:3549	--features all --engine=vm	28612928782b2b5c312962283f322978
-tests/possessify/possessify.rxt:3558	--features all --engine=vm	283f3a612b283f3a5c627c297c6162292b63
-tests/possessify/possessify.rxt:3572	--features all --engine=vm	283f3a612b2b283f3a5c627c297c6162292b63
-tests/possessify/possessify.rxt:3586	--features all --engine=vm	286129412b283f693a5c3129
-tests/possessify/possessify.rxt:3606	--features all --engine=vm	286129412b2b283f693a5c3129
-tests/possessify/possessify.rxt:3622	--features all --engine=vm	283f693a28612929412b5c31
-tests/possessify/possessify.rxt:3642	--features all --engine=vm	283f693a28612929412b2b5c31
-tests/possessify/possessify.rxt:3658	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b5c6b3c6e3e
-tests/possessify/possessify.rxt:3684	--features all --engine=vm	283f4a29283f3a283f3c6e3e61297c283f3c6e3e782929782b2b5c6b3c6e3e
-tests/possessify/possessify.rxt:3702	--features all --engine=vm	28613f29782b5c3178
-tests/possessify/possessify.rxt:3722	--features all --engine=vm	28613f29782b2b5c3178
-tests/possessify/possessify.rxt:3738	--features all --engine=vm	283f3a28283f3d61292961293f622b5c3162
-tests/possessify/possessify.rxt:3754	--features all --engine=vm	283f3a28283f3d61292961293f622b2b5c3162
-tests/possessify/possessify.rxt:3766	--features all --engine=vm	28283f3d6129633f2961622b5c3162
-tests/possessify/possessify.rxt:3782	--features all --engine=vm	28283f3d6129633f2961622b2b5c3162
-tests/possessify/possessify.rxt:3794	--features all --engine=vm	283f3a28283f3d612929617c29622b5c3162
-tests/possessify/possessify.rxt:3810	--features all --engine=vm	283f3a28283f3d612929617c29622b2b5c3162
-tests/possessify/possessify.rxt:3822	--features all --engine=vm	28283f3d612929782b5c3178
-tests/possessify/possessify.rxt:3831	--features all --engine=vm	28283f3d612929782b2b5c3178
-tests/possessify/possessify.rxt:3840	--features all --engine=vm	28283f3d7829623f29782b5c3178
-tests/possessify/possessify.rxt:3856	--features all --engine=vm	28283f3d7829623f29782b2b5c3178
-tests/possessify/possessify.rxt:3868	--features all --engine=vm	286129285c316229782b5c32
-tests/possessify/possessify.rxt:3879	--features all --engine=vm	286129285c316229782b2b5c32
-tests/possessify/possessify.rxt:3890	--features all --engine=vm	285c62295c772b5c31
-tests/possessify/possessify.rxt:3904	--features all --engine=vm	285c62295c772b2b5c31
-tests/possessify/possessify.rxt:3918	--features all --engine=vm	28615c322928625c3129782b5c31
-tests/possessify/possessify.rxt:3928	--features all --engine=vm	28615c322928625c3129782b2b5c31
-tests/possessify/possessify.rxt:3944	--features all --engine=vm	28615c325c332928625c312928635c3129782b5c31
-tests/possessify/possessify.rxt:3954	--features all --engine=vm	5c62285c772b295c625c732b5c315c62
-tests/possessify/possessify.rxt:3972	--features all --engine=vm	5c62285c772b2b295c625c732b2b5c315c62
-tests/possessify/possessify.rxt:3990	-i --features all --encoding=utf8 --engine=vm	6b2b5c62
-tests/possessify/possessify.rxt:4007	-i --features all --encoding=utf8 --engine=vm	6b2b2b5c62
-tests/recursion/k93.rxt:260	--features recursion,assertions	28612b283f3a5c627c29297c62283f312961
-tests/recursion/k93.rxt:279	--features recursion,assertions --engine=vm	283f3a62283f5229617c612b283f3a5c627c2929
-# possmani (2026-10-07, [ART-POSS-ARMS]): +24 rows, every one a new tests/possessify/possessify.rxt block (lane posswcls's wide-class cells, lines 4033-4681); census_s1.py on the posswcls tip 5afc7e51 (-fno-start-set arm); 0 existing rows gone, 0 changed.
-# m7fix (2026-10-08): +8 rows, every one an s670cell block (ae7cf901: tests/backrefs/caseless.rxt:71,86; caseless_ucp.rxt:262,274,288,298,310,322), correct VM-hat movers never pinned; census_s1.py on lane/m7fix (c9e90c77 + kit fixes), no existing row moved. Bench rows NOT refreshed: against pcrec-bench bb87dfa5 the census adds bench rows (counted, not checked), left for a bench-pin re-sync.
-tests/possessify/possessify.rxt:4033	--features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
-tests/possessify/possessify.rxt:4057	--features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
-tests/possessify/possessify.rxt:4081	--features all --encoding=utf8 --engine=vm	782b5c625b5c787b65397d615d
-tests/possessify/possessify.rxt:4105	--features all --encoding=utf8 --engine=vm	782b2b5c625b5c787b65397d615d
-tests/possessify/possessify.rxt:4129	--features all --encoding=utf8 --engine=vm	5b612d635d2b5c625c787b3130307d
-tests/possessify/possessify.rxt:4153	--features all --encoding=utf8 --engine=vm	5b612d635d2b2b5c625c787b3130307d
-tests/possessify/possessify.rxt:4177	-i --features all --encoding=utf8 --engine=vm	612b5c625c787b65397d
-tests/possessify/possessify.rxt:4204	-i --features all --encoding=utf8 --engine=vm	612b2b5c625c787b65397d
-tests/possessify/possessify.rxt:4231	--features all --encoding=utf8 --engine=vm	5c787b65397d2b5c62
-tests/possessify/possessify.rxt:4257	--features all --encoding=utf8 --engine=vm	5c787b65397d2b2b5c62
-tests/possessify/possessify.rxt:4283	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
-tests/possessify/possessify.rxt:4312	--features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
-tests/possessify/possessify.rxt:4341	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b5c31
-tests/possessify/possessify.rxt:4371	--features all --encoding=utf8 --engine=vm	285b5c787b65397d615d29782b2b5c31
-tests/possessify/possessify.rxt:4401	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b5c31
-tests/possessify/possessify.rxt:4432	--features all --encoding=utf8 --engine=vm	285b5c787b65307d2d5c787b66667d5d2b295c732b2b5c31
-tests/possessify/possessify.rxt:4463	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b5c3178
-tests/possessify/possessify.rxt:4496	--features all --encoding=utf8 --engine=vm	285c787b65397d3f29782b2b5c3178
-tests/possessify/possessify.rxt:4526	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
-tests/possessify/possessify.rxt:4556	--ucp --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
-tests/possessify/possessify.rxt:4586	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b5c31
-tests/possessify/possessify.rxt:4618	-i --features all --encoding=utf8 --engine=vm	285c787b65397d29782b2b5c31
-tests/possessify/possessify.rxt:4650	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b5c31
-tests/possessify/possessify.rxt:4681	-i --features all --encoding=utf8 --engine=vm	285c787b3130307d29782b2b5c31
-tests/backrefs/caseless.rxt:71	--features backrefs,modifiers	283f692928612b295c31
-tests/backrefs/caseless.rxt:86	--features backrefs,modifiers	283f6929286162295c31
-tests/backrefs/caseless_ucp.rxt:262	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f692928612b295c31
-tests/backrefs/caseless_ucp.rxt:274	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865392b295c31
-tests/backrefs/caseless_ucp.rxt:288	--features backrefs,modifiers,ucp --encoding=byte	282a55435029283f6929285c7865395c786530295c31
-tests/backrefs/caseless_ucp.rxt:298	--features backrefs,modifiers --encoding=utf8	283f692928612b295c31
-tests/backrefs/caseless_ucp.rxt:310	--features backrefs,modifiers --encoding=utf8	283f6929285c7865392b295c31
-tests/backrefs/caseless_ucp.rxt:322	--features backrefs,modifiers --encoding=utf8	283f6929285c7865395c786530295c31
-# vmlfix (R-12, 2026-10-09): +17 rows, every one a tests/base/vm_lazy_rmin_prefix.rxt block (VMLAZY 08bda492, never pinned); census_s1.py on lane/vmlfix, no existing row moved. Bench rows NOT refreshed.
-tests/base/vm_lazy_rmin_prefix.rxt:103	--engine=vm	287829285c647b342c7d3f295c64
-tests/base/vm_lazy_rmin_prefix.rxt:126	--engine=vm	28612b3f2928612b29
-tests/base/vm_lazy_rmin_prefix.rxt:148	--engine=vm	28617b322c337d3f297b322c337d
-tests/base/vm_lazy_rmin_prefix.rxt:167	--engine=vm	7a2861297b332c7d3f633f
-tests/base/vm_lazy_rmin_prefix.rxt:17	--engine=vm	286129283f3a6162297b322c7d3f6163
-tests/base/vm_lazy_rmin_prefix.rxt:177		2862292861297b3230302c7d3f62
-tests/base/vm_lazy_rmin_prefix.rxt:186	--engine=vm	2862292861297b3230302c7d3f62
-tests/base/vm_lazy_rmin_prefix.rxt:27		286129283f3a6162297b322c7d3f63
-tests/base/vm_lazy_rmin_prefix.rxt:35	--engine=vm	286129283f3a6162297b322c7d3f63
-tests/base/vm_lazy_rmin_prefix.rxt:44		286129283f3a6162297b322c7d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:53	--engine=vm	286129283f3a6162297b322c7d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:63		286129283f3a6162297b322c347d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:71	--engine=vm	286129283f3a6162297b322c347d3f6162
-tests/base/vm_lazy_rmin_prefix.rxt:8		286129283f3a6162297b322c7d3f6163
-tests/base/vm_lazy_rmin_prefix.rxt:80		286129283f3a6162297b337d3f78
-tests/base/vm_lazy_rmin_prefix.rxt:86	--engine=vm	286129283f3a6162297b337d3f78
-tests/base/vm_lazy_rmin_prefix.rxt:93		287829285c647b342c7d3f295c64
-# sstri (2026-10-10): +84 rows, every one a new tests/revend/stage2_captures.rxt block (rev2corp, 8d34a3c5), correct movers never pinned; census_s1.py on main 660973bf (-fno-start-set arm, no bench), 0 existing rows gone, 0 changed.
-tests/revend/stage2_captures.rxt:1025		285c642b2924
-tests/revend/stage2_captures.rxt:1066	--features assertions,classes	285c772b295c7a
-tests/revend/stage2_captures.rxt:1084	--features assertions,classes	285c625c772b2924
-tests/revend/stage2_captures.rxt:1099		286129623f24
-tests/revend/stage2_captures.rxt:1148		285c6429285c64293f24
-tests/revend/stage2_captures.rxt:1203		285b5e2f5d2b2924
-tests/revend/stage2_captures.rxt:1220		282e2a295c2e74787424
-tests/revend/stage2_captures.rxt:1264	--features assertions,classes	5c62285c772b2924
-tests/revend/stage2_captures.rxt:1281	--features assertions,classes,lookaround	283f3c3d2c29285c642b2924
-tests/revend/stage2_captures.rxt:1296	--features assertions,lookaround	283f3c21782928612b2924
-tests/revend/stage2_captures.rxt:1311	--features assertions,classes,lookaround	283f3c3d5c7329285c532b295c7a
-tests/revend/stage2_captures.rxt:1325	--features assertions,classes,lookaround	283f3c3d5e7c2c29285c772b2924
-tests/revend/stage2_captures.rxt:1339	--features assertions,classes	285c77295c6224
-tests/revend/stage2_captures.rxt:1352	--encoding=utf8	282e2924
-tests/revend/stage2_captures.rxt:1369	--features assertions,classes --encoding=utf8	285c772b295c7a
-tests/revend/stage2_captures.rxt:137		28617c615c6e2924
-tests/revend/stage2_captures.rxt:1382	--encoding=utf8	285b5e2f5d2b2924
-tests/revend/stage2_captures.rxt:1397	--encoding=utf8	285c787b65397d2b2924
-tests/revend/stage2_captures.rxt:1410	--ucp --encoding=utf8	285c732b2924
-tests/revend/stage2_captures.rxt:1426	--ucp --encoding=utf8	285c642b2924
-tests/revend/stage2_captures.rxt:1441	--encoding=utf8	282e2a295c2e74787424
-tests/revend/stage2_captures.rxt:1453	--encoding=utf8	285c707b4c7d2b2924
-tests/revend/stage2_captures.rxt:1466	--encoding=utf8	285c772b2924
-tests/revend/stage2_captures.rxt:1480	--features assertions --encoding=utf8	282e295c5a
-tests/revend/stage2_captures.rxt:149		28615c6e7c612924
-tests/revend/stage2_captures.rxt:1494	--encoding=utf8	28617c5c787b65397d292b24
-tests/revend/stage2_captures.rxt:1507	-i	286162632924
-tests/revend/stage2_captures.rxt:1520	-i --features assertions	28612b295c7a
-tests/revend/stage2_captures.rxt:1533	-i	285b612d635d2b2924
-tests/revend/stage2_captures.rxt:1546	-i	285b5e615d2b2924
-tests/revend/stage2_captures.rxt:1559	-i	282e2a295c2e54585424
-tests/revend/stage2_captures.rxt:1571	-i --encoding=utf8	286b2924
-tests/revend/stage2_captures.rxt:1586	-i --encoding=utf8	285c787b65397d2b2924
-tests/revend/stage2_captures.rxt:1599	--features assertions	282861295c7a29
-tests/revend/stage2_captures.rxt:161		28615c6e3f2924
-tests/revend/stage2_captures.rxt:1612		28612429
-tests/revend/stage2_captures.rxt:1623		286129283f3a2429
-tests/revend/stage2_captures.rxt:1644	--features atomic-groups	28612b2b2924
-tests/revend/stage2_captures.rxt:1656	--features atomic-groups	283f3e612b2928622924
-tests/revend/stage2_captures.rxt:1669	--features classes,assertions,modifiers	283f6d29285c642b2924
-tests/revend/stage2_captures.rxt:1683		285c642b29247c287829
-tests/revend/stage2_captures.rxt:1700		285c732b3f297b327d24
-tests/revend/stage2_captures.rxt:171		28615c6e3f3f2924
-tests/revend/stage2_captures.rxt:1719		285c732b3f295c732a24
-tests/revend/stage2_captures.rxt:1732		28612b3f2924
-tests/revend/stage2_captures.rxt:1767		285c647b322c347d2924
-tests/revend/stage2_captures.rxt:1781		28617b337d2924
-tests/revend/stage2_captures.rxt:1795	--features assertions,classes	285c777b312c337d295c7a
-tests/revend/stage2_captures.rxt:1809	--features classes,assertions	2878295c4b285c642b2924
-tests/revend/stage2_captures.rxt:181	--features assertions	2861295c6e3f5c7a
-tests/revend/stage2_captures.rxt:1827	--features assertions	283f3a617c286229295c4b2863293f24
-tests/revend/stage2_captures.rxt:192	--features assertions	2861295c6e3f5c5a
-tests/revend/stage2_captures.rxt:220		285c732b2924
-tests/revend/stage2_captures.rxt:238	--features assertions,classes	285c732b295c7a
-tests/revend/stage2_captures.rxt:252		28612a29616224
-tests/revend/stage2_captures.rxt:267		28612a3f29616224
-tests/revend/stage2_captures.rxt:279		28612b2928613f2924
-tests/revend/stage2_captures.rxt:312		28617c61622928637c6263642924
-tests/revend/stage2_captures.rxt:329		28617c61622928637c6263642928642a2924
-tests/revend/stage2_captures.rxt:349		285c642b29285c642924
-tests/revend/stage2_captures.rxt:364		282e2b3f29285c642b2924
-tests/revend/stage2_captures.rxt:384		282e2a29285c642924
-tests/revend/stage2_captures.rxt:398		285b612d7a5d2b29285b302d395d2a2924
-tests/revend/stage2_captures.rxt:415		283f3a2861297c286229292b24
-tests/revend/stage2_captures.rxt:436		28617c62292b24
-tests/revend/stage2_captures.rxt:463		28285c64297c78292b24
-tests/revend/stage2_captures.rxt:506		28612b7c62292a6324
-tests/revend/stage2_captures.rxt:543		285c647b312c327d292b24
-tests/revend/stage2_captures.rxt:556		2861627c61292a6224
-tests/revend/stage2_captures.rxt:586		283f3a2861297c2862297c2863292924
-tests/revend/stage2_captures.rxt:663		2861297c6224
-tests/revend/stage2_captures.rxt:681		286124297c286229
-tests/revend/stage2_captures.rxt:703		283f3a782861297c792924
-tests/revend/stage2_captures.rxt:717		28617c61622924
-tests/revend/stage2_captures.rxt:731		2861627c612924
-tests/revend/stage2_captures.rxt:743		28666f6f7c666f6f6261722924
-tests/revend/stage2_captures.rxt:756		28666f6f7c666f6f6261727c6261722924
-tests/revend/stage2_captures.rxt:767		285c772b7c5c772b5c2e2924
-tests/revend/stage2_captures.rxt:781		283f3a617c61622928637c626364293f24
-tests/revend/stage2_captures.rxt:795		282861292862292924
-tests/revend/stage2_captures.rxt:816		2828612b2928622b29292b24
-tests/revend/stage2_captures.rxt:840		286128622863293f293f2924
-tests/revend/stage2_captures.rxt:865		28285c642b292d285c642b292924
-tests/revend/stage2_captures.rxt:886		2828286129292924
-# revbuild (2026-10-10, [OPT-REVEND] L2): +30 rows, every one a new tests/assertions/rev_end.rxt block (the rev-end answer net, 23 capture-free and 7 of its stage-2 captures family), correct forced-VM movers; -2 rows whose (text, options) dedup twin in rev_end.rxt now takes the id (ssbuild3's precedent): tests/base/anchors.rxt:36 `abc$` (rev_end.rxt:458) and tests/captures/structure_anchors_misc.rxt:7 `(a+)$` (rev_end.rxt:373); census_s1.py on lane/revbuild (-fno-start-set arm, no bench), no other row moved.
-tests/assertions/rev_end.rxt:108	--features classes	5b615c6e5d2b24
-tests/assertions/rev_end.rxt:118		283f3a617c615c6e2924
-tests/assertions/rev_end.rxt:125		283f3a615c6e7c612924
-tests/assertions/rev_end.rxt:132	--features classes	5c772b24
-tests/assertions/rev_end.rxt:21	--features classes	5c642b24
-tests/assertions/rev_end.rxt:210	--features classes,lookaround	5c642b24283f3d5c6e29
-tests/assertions/rev_end.rxt:219	--features classes,lookaround	5c6424283f215c6e29
-tests/assertions/rev_end.rxt:228	--features assertions,lookaround	615c5a283f3d5c6e29
-tests/assertions/rev_end.rxt:236	--features assertions	61245c62
-tests/assertions/rev_end.rxt:246	--features assertions,classes	5c642b247c5c772b5c7a
-tests/assertions/rev_end.rxt:265	--encoding=utf8	c3a92b24
-tests/assertions/rev_end.rxt:274	--features classes --encoding=utf8	5c732b3f24
-tests/assertions/rev_end.rxt:283	--encoding=utf8	2e24
-tests/assertions/rev_end.rxt:292	--features assertions	5c62616224
-tests/assertions/rev_end.rxt:303	--features assertions	5c426224
-tests/assertions/rev_end.rxt:33	--features classes	5c732b24
-tests/assertions/rev_end.rxt:338	--features assertions	5c4761247c6224
-tests/assertions/rev_end.rxt:348	--features classes,lookaround	5c777b312c327d283f3a283f3d297c2924
-tests/assertions/rev_end.rxt:358	--features classes	285c642b2924
-tests/assertions/rev_end.rxt:373		28612b2924
-tests/assertions/rev_end.rxt:392	--features classes	285b5e635d7b312c337d2924
-tests/assertions/rev_end.rxt:406	--features classes	285c732b297b327d24
-tests/assertions/rev_end.rxt:420	--features classes	285c7324297b312c337d
-tests/assertions/rev_end.rxt:433	--features classes	285c732b3f297b327d24
-tests/assertions/rev_end.rxt:446	--features classes,lookaround	285c777b312c327d29283f3a283f3d297c2924
-tests/assertions/rev_end.rxt:458		61626324
-tests/assertions/rev_end.rxt:46	--features classes	5c732b3f24
-tests/assertions/rev_end.rxt:466	--features classes	5b612d7a5d7b322c347d24
-tests/assertions/rev_end.rxt:475	--features assertions,classes	785b61625d3f5c7a
-tests/assertions/rev_end.rxt:77	--features classes	5b612d7a5d2b5c2e74787424

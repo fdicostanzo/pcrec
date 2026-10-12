@@ -23,7 +23,24 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `74` on every artifact today (lane slbuild bumped it
+- **`rx_info.abi` is `75` on every artifact today (lane rlhbuild bumped it
+  from 74, 2026-10-11: [REQ-HANDOFF-L1], the K82 handoff generalized).** The
+  handoff's needle is the pre-check's LANDMARK, the run window where a run
+  ships or else the one necessary byte, with K its maximum byte offset from
+  the attempt start (the new facts `req_set_maxoff`, core, and
+  `req_landmark_maxoff`, derived). A byte-landmark artifact's pre-check now
+  keeps the gate's position (`size_t handoff_position = ...`, the kit's
+  ASSIGN form of the one-byte gate in place of the discard `memchr`) and its
+  scan starts at `c - K`; `<PREFIX>_REQ_HANDOFF` carries that K. The forward
+  scan gains the NEXT row `handoff` (`<PREFIX>_DFA_PREFILTER "handoff"`):
+  where it applies, the entry also declares `landmark_position` (the kept
+  hit) and the scan's restart block re-asks the same gate from
+  `scan_position` and moves to `c - K` where that is ahead (rounded up to a
+  character start, re-seeded where the machine seeds), in place of the
+  start-byte row it outranks. `-fno-req-handoff` removes both. No struct
+  offset moves and no answer moves.
+
+- **`rx_info.abi` was `74` (lane slbuild bumped it
   from 73, 2026-10-10: [START-LANDING] SL2, docs/design/start_landing.md rev 2,
   D156 addenda 3 and 4).** RECOVER gains two rows between `pinned` and the
   reverse pass: `end-minus-width` (every match has one byte width W, so the

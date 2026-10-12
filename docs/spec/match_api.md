@@ -160,11 +160,11 @@ is exactly what varies per artifact: `<PREFIX>_NCAPS`, the stamp macros
 refused.** The block opens
 
 ```c
-#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 74
-#error "pcrec: this artifact (abi 74) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
+#if defined(PCREC_RX_ABI_H) && (PCREC_RX_ABI_H + 0) != 75
+#error "pcrec: this artifact (abi 75) shares a translation unit with an artifact of a different abi; regenerate both with one pcrec"
 #endif
 #ifndef PCREC_RX_ABI_H
-#define PCREC_RX_ABI_H 74
+#define PCREC_RX_ABI_H 75
 ```
 
 so artifacts of one `abi` share the first block, and an artifact of another
@@ -1211,7 +1211,7 @@ compile time, where one exists.
 
 | # | field | type | meaning | mirror |
 |---|---|---|---|---|
-| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `74` | — |
+| 1 | `abi` | `unsigned` | the version of the artifact's emitted scaffolding ([below](#s6-p17)); `75` | — |
 | 2 | `flags` | `uint64_t` | the `PCREC_*` option bits as compiled, with the answer-preserving testing/tuning denials masked out ([below](#s6-p16)) | — |
 | 3 | `encoding` | `int` | `PCREC_ENC_*`: `0` byte, `1` utf8 (§9.1) | — |
 | 4 | `ncaps` | `int` | this artifact's caps slot count, all-in; always `== <PREFIX>_NCAPS` | `<PREFIX>_NCAPS` |
@@ -1348,7 +1348,7 @@ possessification costs a frame. To see what was asked for on a masked axis,
 
 <a id="s6-p17"></a>[6¶17] **`abi` is the version of the emitted SCAFFOLDING as a whole** (D76) — every
 declaration, comment and macro the artifact carries, not only
-`struct rx_info`'s layout. It is `74` on every artifact pcrec emits today; it
+`struct rx_info`'s layout. It is `75` on every artifact pcrec emits today; it
 is mirrored by the `PCREC_RX_ABI_H` guard value (§1) and by the provenance
 line (below), and by no macro.
 
@@ -1664,6 +1664,7 @@ are the whole set:
 | `"run-pinned-bounded"` | the run-pinned form under a view or word context, bounded at `n - 1` |
 | `"first-memchr-bounded"` | on a SEEDED machine (a `\b`, a lookbehind, a `(?m)` context) whose plain skip would test the start state's escape set `E`, the skip tests the pattern's start set `T` (the `start_set` fact) where `T` is a proper subset of `E` — here one byte, a `memchr()`; bounded at `n - 1`; a skip that moved re-seeds the scan state from the byte before its landing (`tuning.md` §2.42). Removed by `-fno-start-set` |
 | `"first-class-bounded"` | the same with several start-set bytes: a 256-entry `<prefix>_start_bytes` table walk, bounded at `n - 1`. There is no unbounded start-set form: a seeded machine always carries the D11 bound |
+| `"handoff"` | the pre-check's handoff RE-ENTERED (`tuning.md` §2.41): where `<PREFIX>_REQ_HANDOFF` is a number `K`, at each point the forward scan is back at its start state with nothing accepted, the pre-check's landmark (the run window, or the one byte `<PREFIX>_REQ_BYTE`) is found again from the scan position by the same gate (the hit the entry kept, while it is still ahead), no hit returns 0, and the scan moves to `hit - K` where that is ahead, rounded up to a character start and re-seeded where the machine seeds. Applies only where, under the byte-rate prior (`<PREFIX>_FINDINGS`), the landmark's mean gap less `K` exceeds the mean gap of the start-byte set the row would otherwise scan (`tuning.md` §2.41¶8a). Removed by `-fno-req-handoff`, with the handoff itself |
 
 <a id="s6-3-4-p4"></a>[6.3.4¶4] The `-bounded` forms are a real difference in what the mechanism buys: under
 a view, a skip may not pass a position whose accept has not been evaluated,
@@ -1980,27 +1981,31 @@ the value.
 <a id="s6-3-7-p10"></a>[6.3.7¶10] **`<PREFIX>_REQ_HANDOFF`** — where the search body's scan begins.
 
 ```c
-#define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the run
-                                  pre-check's first window hit */
+#define RX_REQ_HANDOFF "2"     /* the scan begins 2 bytes before the
+                                  pre-check's first landmark hit */
 #define RX_REQ_HANDOFF "none"  /* the scan begins at startpos */
 ```
 
 <a id="s6-3-7-p11"></a>[6.3.7¶11] A decimal `K` where the `req-use` table's `handoff` row applies
-(`tuning.md` §2.41): an emitted run pre-check (`_REQ_WHY "emitted"` with a
-`_REQ_RUN`), a DFA scan in front of the body (a DFA artifact, or a hybrid's
-prefilter), a finite `K`, a prefilter that is not count-collapsed, and not a
-hybrid with a `\G` start family whose prefilter window is its match ceiling.
-Then every match begins at most `K` bytes before an occurrence of the run's
-window; the pre-check's search block returns the LEAST position `>= startpos`
-at which the whole window occurs (or `n` when none does — the position itself
-is meaningful, not only its comparison with `n`); and the body begins its scan
+(`tuning.md` §2.41): an emitted pre-check (`_REQ_WHY "emitted"`), a DFA scan
+in front of the body (a DFA artifact, or a hybrid's prefilter), a finite `K`,
+a prefilter that is not count-collapsed, and not a hybrid with a `\G` start
+family whose prefilter window is its match ceiling. The pre-check's LANDMARK
+is the run's window where `_REQ_RUN` is not `"none"`, else the one byte
+`_REQ_BYTE`. Then every match begins at most `K` bytes before an occurrence of
+the landmark; the pre-check's search block returns the LEAST position
+`>= startpos` at which the landmark occurs (or `n` when none does — the
+position itself is meaningful, not only its comparison with `n`); and the body begins its scan
 at `max(startpos, that − K)`, rounded up to a character start under a
 multibyte encoding when it moved. The three bodies with a DFA scan read it at
 their one start site; `\G` keeps reading `startpos`. `"none"` everywhere else,
-including any build under `-fno-req-handoff`. `K` is the `req_run_maxoff` fact
-`--emit-facts` lists (`facts_listing.md` §4.1.2), in BYTES: `(?i)straße` under
-`-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before the
-window `TRA`. A non-`"none"` value never changes an answer or a give-up.
+including any build under `-fno-req-handoff`. `K` is the `req_landmark_maxoff`
+fact `--emit-facts` lists (`facts_listing.md` §4.1.2), in BYTES: `(?i)straße`
+under `-e utf8` reads `"2"`, because `(?i)s` matches U+017F, two bytes, before
+the window `TRA`; `(?:\d{1,3}\.){3}\d{1,3}` reads `"3"`, the most digits
+before the first `.`. Where `_DFA_PREFILTER` is `"handoff"` the forward scan
+also re-enters the handoff at each restart (§6.3.4). A non-`"none"` value never
+changes an answer or a give-up.
 
 <a id="s6-3-7-p12"></a>[6.3.7¶12] **`<PREFIX>_VM_START_SCAN`** — where a VM attempt can start.
 

@@ -22,6 +22,8 @@
 #group	ENDWIN-ENC	end-window encoding, ns-scale only
 #group	SEL-LIT	(2026-10-05) long exact literals: auto's DFA (run-pinned/offset-set prefilter) loses to pcrec's OWN forced-VM literal-run scan (x1.4-x4.7 on litrun's synthetic densities)
 #group	K82-AT-PIN	(2026-10-05) a K82 cause-(A) regression present at the measured pin and cured on main (abi 60, docs/dev/lanes/k82alpha_report.md)
+#group	REVEND-TAIL	(2026-10-11) end-pinned unbounded tail idioms (\d+$, \s+$, [a-z]+\.txt$, .*\.txt$, \w+\z): the forward scan plus reverse pass walks the whole subject; the [OPT-REVEND] class
+#group	ANCH-ATTEMPT	(2026-10-11) fully anchored one-attempt patterns (attempt scan, no prefilter) that trail only on capability@0.2's eight added hazard throughput subjects (set-grain 46-69 us vs jit 6.4 us); not a regression, the 0.1 subjects did not expose it
 set	pattern	group
 capability	wild-secrets-aws-access-key-id	FS-DFA
 capability	wild-codegrammar-json-constant	FS-DFA
@@ -161,3 +163,12 @@ litrun	lit-l31	SEL-LIT
 litrun	lit-l40	SEL-LIT
 litrun	alt-foo-tails	SCAN-SIMD
 litrun	wild-secrets-aws-access-key-id	FS-DFA
+capability	hex8-bounded	FS-DFA
+capability	utf8-lead-no-cont	LKA
+capability	wild-datetime-moment-iso8601	ANCH-ATTEMPT
+capability	wild-validator-email-owasp	ANCH-ATTEMPT
+capability	letters-bounded-tail-z	REVEND-TAIL
+capability	tail-dotstar-txt	REVEND-TAIL
+capability	tail-ext-lower-txt	REVEND-TAIL
+capability	tail-space-eol	REVEND-TAIL
+capability	tail-word-eoz	REVEND-TAIL
