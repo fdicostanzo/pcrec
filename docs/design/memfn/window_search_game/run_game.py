@@ -194,6 +194,9 @@ def span_reps(sp, prior):
     return out
 
 
+# shipped routes with no window search at all: the engine meets every byte
+SCAN_ALL = re.compile(r"ship:(dfa-none|dfa--|vm-none|vm--|dfa-prefilter-none)$")
+
 _ALARM = False
 
 
@@ -241,6 +244,8 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
     fs.write("set\tname\tstatus\tnotes\tanch_start\tnspans\tnbounded\tkset_agree\tengine\t"
              "prefilter\toffsets\treq_run\thandoff\tspans\n")
     fc.write("set\tname\tpolicy\tform\test_stop\test_surv\texp_cost_none\texp_cost_dfa\texp_cost_vm\n")
+    fi = open(os.path.join(out, "spaninfo.tsv"), "w")
+    fi.write("set\tname\tspan\tL\tomin\tmb\tov\tmin_pos_rate\tjoint_rate\tspan\n")
     fp = open(os.path.join(out, "spanforms.tsv"), "w")
     fp.write("set\tname\tsubject\tspan\tkind\tform\tL\tmb\tov\test_stop\test_surv\t"
              "stops\tsurv\twin_bytes\tstarts\twork_scan\twork_dfa\twork_vm\n")
@@ -267,6 +272,11 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
                             st.get("RX_DFA_PREFILTER_OFFSETS", "-"), st.get("RX_REQ_RUN", "-"),
                             st.get("RX_REQ_HANDOFF", "-"),
                             " ".join(SP.fmt_span(x) for x in sp)]) + "\n")
+        for i, x in enumerate(sp):
+            rates = [G.pc(prior, c) for c in x["classes"]]
+            fi.write("%s\t%s\t%d\t%d\t%d\t%s\t%s\t%.3g\t%.3g\t%s\n" % (
+                s, name, i, len(x["classes"]), x["omin"], fmt_none(x["move_back"]),
+                fmt_none(x["overshoot"]), min(rates), float(np.prod(rates)), SP.fmt_span(x)))
         chosen = []
         if ext["status"] == "ok" and not ext.get("anch_start"):
             for pname, pol in G.POLICIES:
@@ -295,6 +305,12 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
                         G.work(c, f, "none", len(S)), G.work(c, f, "dfa", len(S)),
                         G.work(c, f, "vm", len(S))))
             for pname, f in chosen + extra:
+                if f == "decline" or (isinstance(f, str) and SCAN_ALL.match(f)):
+                    n = len(S)
+                    fm.write("%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%.0f\t%.0f\t%s\n" % (
+                        s, name, sid, pname, f + "(consumer-meets-every-byte)", n, n, n, n, n,
+                        G.baseline_cost("dfa") * n, G.baseline_cost("vm") * n, pm))
+                    continue
                 if not isinstance(f, G.Form):
                     fm.write("%s\t%s\t%s\t%s\t%s\t-\t-\t-\t-\t-\t-\t-\t%s\n" % (
                         s, name, sid, pname, f or "no-bounded-span", pm))
