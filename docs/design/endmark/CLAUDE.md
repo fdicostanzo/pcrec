@@ -25,6 +25,10 @@ built or run by `make`. Run the Python with `python3 -I` and
   lookaheads.
 - `census.py` — the census driver (imports `docs/dev/optloop/revend/census.py`'s
   population builders; env in its header).
+- `census/cost.py` — lane emcensus (2026-10-12): the Q1 COST census. Rewrites each path-final
+  `$`/`\Z`/`(?m)$` to the lowered text with `()` as the mark, compiles baseline and proxy `--no-captures`,
+  reads machine states/table bytes from the emitted arrays; output `census/results/cost.txt`; report
+  `docs/dev/lanes/emcensus_report.md`.
 - `results/` — `diff_all_len5.txt` (3,527 patterns, 28,237,887 cells, 0
   differences), `diff_plants.txt`, `twin_k16000.txt`, `twin_plants.txt`,
   `census.txt` (at `885eccff`).

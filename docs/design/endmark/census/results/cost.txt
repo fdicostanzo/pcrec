@@ -1,0 +1,201 @@
+# emcensus cost at e8401f155
+== populations (rows): bench/byte=291, bench/utf8=76, corpus/byte=4956, corpus/utf8=689
+== parsed by probe: bench=351, corpus=5236
+== path-final $/\Z/(?m)$/\z patterns (probe neol|nmeol|nz>0): bench=44, corpus=1017
+== rewritten by the text scanner: 986 of 1061 (unrewritten: 75)
+   UNREWRITTEN capability/letters-bounded-tail-z  (?:[a-z]{0,1024})\z
+   UNREWRITTEN capability/tail-word-eoz  \w+\z
+   UNREWRITTEN syntax/anc-z-lc  done\z
+   UNREWRITTEN utf8/asr-a-z  \Aæ¥æ¬èª\z
+   UNREWRITTEN tests/assertions/absolute.rxt:77  b\z
+   UNREWRITTEN tests/assertions/absolute.rxt:170  \z
+   UNREWRITTEN tests/assertions/absolute.rxt:222  \A\z
+   UNREWRITTEN tests/assertions/absolute.rxt:305  a\z
+   UNREWRITTEN tests/assertions/absolute.rxt:356  \Aab\z
+   UNREWRITTEN tests/assertions/absolute.rxt:407  \A(?:ab|a)\z
+   UNREWRITTEN tests/assertions/absolute.rxt:434  a\Z\z
+   UNREWRITTEN tests/assertions/absolute.rxt:466  a*\z
+   UNREWRITTEN tests/assertions/absolute.rxt:548  \Aa*\z
+   UNREWRITTEN tests/assertions/absolute.rxt:575  .*\z
+   UNREWRITTEN tests/assertions/absolute.rxt:626  [^c]{1,3}\z
+   UNREWRITTEN tests/assertions/absolute.rxt:975  \Aa\z
+   UNREWRITTEN tests/assertions/absolute.rxt:1032  ^a\z
+   UNREWRITTEN tests/assertions/absolute.rxt:1089  ^[^c]{1,3}\z
+   UNREWRITTEN tests/assertions/absolute.rxt:1117  ^a*\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:68  abc\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:109  a\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:123  a\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:137  a\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:146  \Aabc\z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:157  \z
+   UNREWRITTEN tests/assertions/d27/anchors_abs.rxt:166  abc\z
+   UNREWRITTEN tests/assertions/d27/composition.rxt:7  \A\bfoo\b\z
+   UNREWRITTEN tests/assertions/d27/composition.rxt:30  \A(a\Kb)+\z
+   UNREWRITTEN tests/assertions/d27/gating.rxt:110  x\z
+   UNREWRITTEN tests/assertions/d27/kreset.rxt:52  \A(a\Kb)+\z
+   UNREWRITTEN tests/assertions/end_window.rxt:79  abc\z
+   UNREWRITTEN tests/assertions/end_window.rxt:171  \z
+   UNREWRITTEN tests/assertions/gate.rxt:164  a{0,4}\z
+   UNREWRITTEN tests/assertions/gate.rxt:186  [^c]{1,3}\z
+   UNREWRITTEN tests/assertions/gate.rxt:208  a{1,3}?\z
+   UNREWRITTEN tests/assertions/gate.rxt:230  a{0,4}c\z
+   UNREWRITTEN tests/assertions/gate.rxt:252  za{0,4}\z
+   UNREWRITTEN tests/assertions/gate.rxt:382  \Aa{0,4}\z
+   UNREWRITTEN tests/assertions/gpos.rxt:403  \G\z
+   UNREWRITTEN tests/assertions/kreset.rxt:705  a\Kb\z
+   UNREWRITTEN tests/assertions/multiline.rxt:3044  (?m)a\z
+   UNREWRITTEN tests/assertions/multiline.rxt:3189  (?m)\z
+   UNREWRITTEN tests/assertions/rev_end.rxt:88  a\z
+   UNREWRITTEN tests/assertions/rev_end.rxt:155  b\z
+   UNREWRITTEN tests/assertions/rev_end.rxt:194  \z
+   UNREWRITTEN tests/assertions/rev_end.rxt:475  x[ab]?\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:15  (?:[a-z]{0,4})\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:177  (?:[a-z]{0,6})\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:339  [a-z]{2,5}\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:501  [0-9]{3}\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:663  x[a-z]{0,5}\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:825  [a-z]*\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:987  [a-z]+\z
+   UNREWRITTEN tests/assertions/view_edge.rxt:1149  (?:[a-z]{0,3})\z|[0-9]{2,4}
+   UNREWRITTEN tests/assertions/view_edge.rxt:1797  [a-z]{1,4}(?:\z|-)
+   UNREWRITTEN tests/assertions/view_edge.rxt:1959  [a-z]{2,4}(?:\z|[a-z])
+   UNREWRITTEN tests/assertions/wordb_empty_compose.rxt:866  foo\b\z
+   UNREWRITTEN tests/assertions/wordb_empty_compose.rxt:1092  \b\w+\z
+   UNREWRITTEN tests/assertions/wordb_empty_compose.rxt:1393  \b\w+\b\z
+   UNREWRITTEN tests/atomic_groups/atomic_assert.rxt:166  (?>a\z|ab)
+   UNREWRITTEN tests/offsetskip/run_pinned.rxt:48  /user\z
+   UNREWRITTEN tests/possessify/composition_d27.rxt:3263  [^a]{1,3}?\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:62  (a*)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:181  (a)\n?\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:238  (\s+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:933  (a?)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1066  (\w+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1129  (.*)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1188  (\w+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1311  (?<=\s)(\S+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1369  (\w+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1520  (a+)\z
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1599  ((a)\z)
+   UNREWRITTEN tests/revend/stage2_captures.rxt:1795  (\w{1,3})\z
+   UNREWRITTEN tests/ucp/ctxnode.rxt:384  (?m)^ERROR(?:(?=\n)|\z)
+
+== rewritten patterns by SHIPPED-default engine today (captures on): bench compile-failed=1, bench dfa=23, bench vm=16, corpus compile-failed=10, corpus dfa=332, corpus vm=604
+   (the proxy `()` is a capture group, so it is compared only under --no-captures)
+
+==== --no-captures (baseline and proxy both; DFA for every shape that can) ====
+denominators (artifact engine before->after):
+   bench   compile-failed(base=False low=False)  1
+   bench   engine dfa->dfa  36
+   bench   engine vm->vm  3
+   corpus  compile-failed(base=False low=False)  10
+   corpus  engine dfa->dfa  577
+   corpus  engine vm->dfa  1
+   corpus  engine vm->vm  358
+table presence:
+   bench   both-have-tables             11
+   bench   tables False->False          28
+   corpus  both-have-tables             349
+   corpus  tables False->False          326
+
+STATE-COUNT delta, TOTAL over all tabulated machines of the artifact (lowered - today), n=360:
+     -6 states: 2
+     -5 states: 1
+     -3 states: 1
+     +0 states: 23
+     +1 states: 14
+     +2 states: 24
+     +3 states: 227
+     +4 states: 21
+     +5 states: 17
+     +6 states: 12
+     +7 states: 7
+     +8 states: 4
+     +9 states: 7
+   bench n=11  sum states 114 -> 155  sum table bytes 8298 -> 9405  emitted-C bytes 146788 -> 147800
+   corpus n=349  sum states 3887 -> 4954  sum table bytes 482698 -> 511904  emitted-C bytes 5581758 -> 5538936
+   kind plain n=302  states 3281 -> 4168 (+27.0%)  table B 437456 -> 455098 (+4.0%)  median total delta +3.0 states
+   kind ml    n=58  states 720 -> 941 (+30.7%)  table B 53540 -> 66211 (+23.7%)  median total delta +3.5 states
+   per-artifact state ratio: median 1.38x, p90 1.75x, max 4.50x
+
+SAME-ROLE state deltas (role present before and after), count by delta:
+   role anchored   -3:1, +0:26, +1:64, +2:242, +3:11, +4:2, +6:2
+   role can        +0:21
+   role class      +0:4
+   role forward    +0:5, +1:42, +2:6, +3:7
+   role reverse    +0:37, +1:256, +2:19, +3:16, +4:3
+   role start      +0:1
+
+route change (roles, DFA_SCAN) before -> after:
+    284  anchored+reverse rev-end -> anchored+reverse rev-end
+     12  anchored+forward unanchored -> anchored+forward+reverse unanchored
+     12  anchored+forward+reverse unanchored -> anchored+can+forward+reverse unanchored
+     11  anchored+can+forward+reverse unanchored -> anchored+can+forward+reverse unanchored
+      9  anchored+can+forward unanchored -> anchored+can+forward+reverse unanchored
+      9  anchored+forward+reverse unanchored -> anchored+forward+reverse unanchored
+      5  reverse rev-end -> reverse rev-end
+      4  class+reverse rev-end -> class+reverse rev-end
+      2  anchored+can+forward+reverse unanchored -> anchored+reverse rev-end
+      2  anchored+forward+reverse unanchored -> anchored+reverse rev-end
+      2  anchored+can+forward unanchored -> anchored+reverse rev-end
+      2  anchored+forward unanchored -> anchored+forward unanchored
+      2  forward+reverse unanchored -> forward+reverse unanchored
+      1  forward unanchored -> forward+reverse unanchored
+      1  anchored+forward unanchored -> anchored+reverse rev-end
+      1  anchored+can+forward unanchored -> anchored+can+forward unanchored
+      1  anchored+forward+start unanchored -> anchored+forward+reverse+start unanchored
+
+WORST BY TOTAL STATE GROWTH (top 15):
+   bench     +9 states (12->21)   +364 table B (824->1188)  syntax/anc-m-dollar  (?m)done$
+   corpus    +9 states (13->22)   +344 table B (798->1142)  tests/assertions/multiline.rxt:151  (?m)ERROR$
+   corpus    +9 states (10->19)   -127 table B (848->721)  tests/base/possess_lazy_guard.rxt:166  [^c]{0,4}?$
+   corpus    +9 states (10->19)   -127 table B (848->721)  tests/base/possess_lazy_guard.rxt:171  ([^c]{0,4}?)$
+   corpus    +9 states (6->15)   +400 table B (834->1234)  tests/base/precedence.rxt:17  a|b$
+   corpus    +9 states (6->15)   +400 table B (834->1234)  tests/revend/stage2_captures.rxt:663  (a)|b$
+   corpus    +9 states (6->15)   +400 table B (834->1234)  tests/revend/stage2_captures.rxt:681  (a$)|(b)
+   bench     +8 states (10->18)   +342 table B (732->1074)  utf8/asr-dollar-ml  (?m)èª$
+   corpus    +8 states (10->18)   +342 table B (732->1074)  tests/assertions/end_window.rxt:111  (?m)abc$
+   corpus    +8 states (10->18)   +356 table B (1028->1384)  tests/startset/dfahat.rxt:1300  (?m)(?:ab|cd)$
+   corpus    +8 states (12->20)   +398 table B (1156->1554)  tests/startset/dfahat.rxt:1383  (?m)\b(?:ab|cd)$
+   corpus    +7 states (2->9)   +296 table B (544->840)  tests/assertions/multiline.rxt:57  (?m)$
+   corpus    +7 states (2->9)   +296 table B (544->840)  tests/assertions/multiline.rxt:611  (?m)$
+   corpus    +7 states (12->19)    +98 table B (1960->2058)  tests/base/eol_scan_avoidance.rxt:147  a.*|b$
+   corpus    +7 states (12->19)    +98 table B (1960->2058)  tests/base/eol_scan_avoidance.rxt:162  =.*|x$
+
+WORST BY TABLE-BYTES GROWTH (top 10):
+   corpus   +3177 table B (228220->231397)   +3 states  tests/revend/stage2_captures.rxt:1453  (\p{L}+)$
+   corpus    +741 table B (1417->2158)   +0 states  tests/assertions/multiline.rxt:871  (?m)[^c]+$
+   corpus    +548 table B (828->1376)   +6 states  tests/assertions/multiline.rxt:350  (?m).$
+   corpus    +512 table B (933->1445)   +3 states  tests/assertions/multiline.rxt:1316  (?m)[^c]?$
+   corpus    +512 table B (933->1445)   +3 states  tests/assertions/multiline.rxt:1556  (?m)([^c]?)$
+   corpus    +497 table B (1014->1511)   +3 states  tests/assertions/multiline.rxt:1254  (?m)[^c]{0,2}$
+   corpus    +497 table B (1014->1511)   +3 states  tests/assertions/multiline.rxt:1494  (?m)([^c]{0,2})$
+   corpus    +491 table B (1122->1613)   +0 states  tests/assertions/multiline.rxt:693  (?m)[^c]*$
+   corpus    +491 table B (1122->1613)   +0 states  tests/assertions/multiline.rxt:823  (?m)[^c]*$
+   corpus    +467 table B (1176->1643)   +3 states  tests/assertions/multiline.rxt:1285  (?m)[^c]{0,4}$
+
+BEST (shrinks), top 8:
+   corpus    -6 states (21->15)   -632 table B  tests/assertions/multiline.rxt:1618  (?m:([^c]{1,3})$)
+   corpus    -6 states (21->15)   -632 table B  tests/assertions/multiline.rxt:1766  (?m:[^c]{1,3}$)
+   corpus    -5 states (18->13)   -359 table B  tests/assertions/multiline.rxt:1911  (?m:[^c]{0,2}$)
+   corpus    -3 states (6->3)    +12 table B  tests/revend/stage2_captures.rxt:1632  (?s)(.+)$
+   bench     +0 states (6->6)   -238 table B  capability/tail-space-eol  \s+$
+   corpus    +0 states (7->7)   +491 table B  tests/assertions/multiline.rxt:693  (?m)[^c]*$
+   corpus    +0 states (7->7)   +491 table B  tests/assertions/multiline.rxt:823  (?m)[^c]*$
+   corpus    +0 states (10->10)   +741 table B  tests/assertions/multiline.rxt:871  (?m)[^c]+$
+
+E3 GATE (a same-role machine grows by more than 1 state): 271 of 360 artifacts
+   capability/tail-digits-eol  \d+$  {'reverse': 3, 'anchored': 3} -> {'reverse': 4, 'anchored': 5}
+   capability/tail-dotstar-txt  .*\.txt$  {'reverse': 6, 'anchored': 6} -> {'reverse': 7, 'anchored': 8}
+   capability/tail-ext-lower-txt  [a-z]+\.txt$  {'reverse': 7, 'anchored': 7} -> {'reverse': 8, 'anchored': 9}
+   capability/wild-semdiv-dollar-trailing-newline-pcre2  abc$  {'reverse': 5, 'anchored': 5} -> {'reverse': 6, 'anchored': 7}
+   litrun/ctrl-abc-dollar  abc$  {'reverse': 5, 'anchored': 5} -> {'reverse': 6, 'anchored': 7}
+   sentinel/wild-semdiv-dollar-trailing-newline-pcre2  abc$  {'reverse': 5, 'anchored': 5} -> {'reverse': 6, 'anchored': 7}
+   syntax/anc-dollar  done$  {'reverse': 6, 'anchored': 6} -> {'reverse': 7, 'anchored': 8}
+   syntax/anc-z-uc  done\Z  {'reverse': 6, 'anchored': 6} -> {'reverse': 7, 'anchored': 8}
+   tests/assertions/absolute.rxt:52  b\Z  {'reverse': 3, 'anchored': 3} -> {'reverse': 4, 'anchored': 5}
+   tests/assertions/absolute.rxt:102  b$  {'reverse': 3, 'anchored': 3} -> {'reverse': 4, 'anchored': 5}
+   tests/assertions/absolute.rxt:196  \Z  {'reverse': 2, 'anchored': 2} -> {'reverse': 3, 'anchored': 4}
+   tests/assertions/absolute.rxt:331  a\Z  {'reverse': 3, 'anchored': 3} -> {'reverse': 4, 'anchored': 5}
+   tests/assertions/absolute.rxt:494  a*\Z  {'reverse': 2, 'anchored': 2} -> {'reverse': 3, 'anchored': 4}
+   tests/assertions/absolute.rxt:521  a*$  {'reverse': 2, 'anchored': 2} -> {'reverse': 3, 'anchored': 4}
+   tests/assertions/absolute.rxt:601  .*\Z  {'reverse': 2, 'anchored': 2} -> {'reverse': 3, 'anchored': 4}
