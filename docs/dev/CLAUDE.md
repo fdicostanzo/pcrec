@@ -126,6 +126,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling
   implicates another engine.
+- `chunks_2026-10-11.md` — the SEQUENCING VIEW after session 108 (Frank: vet and chunk the ideas so we do not rabbit-hole): chunks 0-6 with gates, rules (one design thread per chunk, new ideas parked), and the parked list. plan.md rows remain the per-item record.
 - `chain_profile.md` — [TT-5] stage-1 read-only profile of the per-merge
   validation chain (`make test`/`strict`/`ubsan`/`asan`/`lint`/mech):
   stage wall times across three logged runs (a growth trend, not one
