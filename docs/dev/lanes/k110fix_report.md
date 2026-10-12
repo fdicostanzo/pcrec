@@ -26,5 +26,5 @@ Offsets are taken from `cx->pos` at parse time (user text) and never recomputed,
 - Not a mover class that needed a census file: the stamp text of the 89 corpus patterns is the only delta.
 
 ## Validation
-- `make` and `make strict` clean. `tests/vm/run_vm_tests.sh` 58/0.
-- Full `make test`: see the handback line (log `build/k110/test.log`, verdict by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`).
+- `make` and `make strict` clean. `tests/vm/run_vm_tests.sh` 58/0 (pre-fix compiler: 7 of the 10 K110 rows red).
+- Full `make test` (perfrun, `-j4 PROCS=3`, detached; log `build/k110/test.log`, verdict `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`): at 13:39 the only red line was `test-codegen`'s `[SABANCHOR]`: three sabotage rows (S93, S96, S117) quoted `pcrec_ast_stamp(cx, ...`, a text this change edits. Re-aimed (commit after the code), `m6read_check_sab_anchors.py` reports 700 rows, all anchors resolve. The suite was still running when this report was written: OWED are (1) the remaining sections' verdict, (2) `make test-codegen` re-run after the anchor fix, (3) solo mech rows S93/S96/S117 (`bash tests/mech/run_sabotage_matrix.sh S93` etc.; AFTER texts are unchanged and only the BEFORE anchor moved).
