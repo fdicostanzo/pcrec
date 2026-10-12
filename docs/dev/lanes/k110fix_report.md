@@ -1,0 +1,30 @@
+# k110fix report -- K110 `RX_ENGINE_WHY` offset after rewrites (2026-10-12, lane k110fix, sonnet)
+
+Branch `lane/k110fix` from a8850e084. Closes K110 (`docs/dev/known_issues.md`).
+
+## The change
+- `Ast.reg_at` (common field beside `reg`, `internal.h`): the source offset of the stamp, written by `pcrec_ast_stamp` in the same statement as `reg`. `pcrec_ast_stamp` lost its unused `Ctx*` parameter (10 callers).
+- `Ctx.first_vmonly_pos` (first-wins parse-time counter, the stale source) is DELETED, with both resets in `compile.c`.
+- `forces_registry` reads `why`/`why_pos` off ONE node: `earliest_dfa_excluding` (was `first_dfa_excluding`) returns the DFA-excluding node with the least `reg_at`.
+- Selection is EARLIEST BY OFFSET, not first in walk order. The CAT/ALT spines are walked right child first, so "first in walk order" was the LAST construct of a concatenation (my first cut turned `a\Kb\Kc` from offset 1 into 4; the sweep caught it). The old offset was creation order and the old text walk order, so the two could name different constructs; now they cannot.
+
+## Survey: what can move offsets, and what the fix covers
+Offsets are taken from `cx->pos` at parse time (user text) and never recomputed, so only the CHOICE of node can go stale. Passes that delete or exempt a stamped node before selection:
+- free atomic/possessive discharge (`a++`, `(?>[^"]*)`, nested `(?>(?>a+)b)`): covered (witness + two rows).
+- call splice (`CALL_SPLICE` exempted by the walk; `(a)(?1)b(?<=ab)`, `(?<n>a)(?&n)...`): covered, was stale too (offset 3 vs 8, 7 vs 13).
+- ctxnode recognizer (`\b`/lookaround to `A_CTX`): never stamps; nothing to carry.
+- `pcrec_altcls`, `lower_enc`, vars/bref resolve, postresolve: keep their children; a kept node keeps `reg_at`. `reg` has one writer, so a rebuilt node would already have lost its forcing.
+- NOT touched: `first_cap_pos` (captures-first row; capture nodes are never deleted by a rewrite), `dfa overflowed ... offset 0` (convention), `emit_vm.c:10537`'s `first_cap_pos`.
+- Side effect, same cause: the `pcrec_ctx_fail(cx, why_pos, ...)` refusals (`-fprefilter` noun refusals, `--engine=dfa` override) use the engine reason's offset, so they move with it (2 of 337 probed corpus patterns, e.g. `^a(?=${v})bc$` 5 -> 2). I tried a noun-specific offset for the `-fprefilter` refusal; it moved 73 of 337 (most already named the capture group's offset 0/1) and was reverted as out of scope. Left as is: the refusal still reports the engine reason's offset.
+
+## Tests (oracle = the byte index of the construct in the pattern text)
+`tests/vm/run_vm_tests.sh` section 3a, ten rows (58 checks, was 51), the oracle computed by bash `${pat%%needle*}` from pattern and needle alone, sharing nothing with the compiler: a (witness `a++b(?<=ab)` 4), b (nested atomic), c/d (spliced call, plain and named), e (`a++\K`), f/h/i (controls: nothing rewritten, first of several survivors), g (surviving atomic after a discharged `a++`), j (earlier survivor wins over later `\K`). Against the pre-fix compiler (main build) rows a b c d e g j are RED, f h i green: 7 of 10, so the controls do not depend on the fix.
+
+## Spec / abi
+- Spec: `docs/spec/match_api.md` 6.3.3 para 2 states what `N` is (byte index in the caller's pattern of the surviving construct's own spelling). Facts only.
+- abi: NOT an event. Emitted scaffolding does not move: `emit_sweep.py --ref a8850e084` (self-check PASSED, full reach 5645 argv rows, 384 composition files) shows 89 movers on each `.c`/`--emit-ir` stream, 90 on `--emit-facts`, 0 on `stderr`, composition and dumps, and an instrumented run (build/sweep_why.py, scratch) classified every differing line: only `RX_ENGINE_WHY`/`.engine_why` text (WHY-ONLY 40 of 40 hunks seen) plus the 2 `-fprefilter` refusal offsets above. The value is the prose stamp (match_api table: "prose"), layout unchanged. If a pinned identity gate reads that line the suite below says so.
+- Not a mover class that needed a census file: the stamp text of the 89 corpus patterns is the only delta.
+
+## Validation
+- `make` and `make strict` clean. `tests/vm/run_vm_tests.sh` 58/0.
+- Full `make test`: see the handback line (log `build/k110/test.log`, verdict by `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`).

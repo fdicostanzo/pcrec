@@ -20,6 +20,6 @@ SAB_DOC_FIGURE="PREDICTED: the possessive corpus RED broadly, atomicdiff RED on 
 SAB_COUNT=1
 SAB_BEFORE='            Ast *at_ = node(cx, A_ATOMIC);
             at_->l = r;
-            pcrec_ast_stamp(cx, at_, rw, plus);'
+            pcrec_ast_stamp(at_, rw, plus);'
 SAB_AFTER='            Ast *at_ = r;   /* SABOTAGE S93: no A_ATOMIC wrapper */
             (void)plus; (void)rw;'
