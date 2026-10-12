@@ -72,6 +72,8 @@ def facts(pcrec, pat, path):
     fa, st = {}, {}
     for ln in open(path, "rb").read().decode("latin-1").splitlines():
         f = ln.split("\t")
+        if ln.startswith("#rc\t"):
+            st["_rc"] = f[1]
         if ln.startswith("#") or len(f) < 3:
             continue
         if len(f) >= 7 and f[0] == "byte":
@@ -129,6 +131,8 @@ def kset_agree(ext, fa):
 
 def shipped(fa, st, ext, prior):
     """Today's choice as a Form, or a string naming why it has none."""
+    if st.get("_rc", "0") != "0":
+        return "ship:compile-refused"
     eng = st.get("RX_ENGINE", "?")
     pf = st.get("RX_DFA_PREFILTER", "-")
     if eng == "vm":
@@ -171,12 +175,19 @@ def shipped(fa, st, ext, prior):
     if pf == "handoff":
         rr = st.get("RX_REQ_RUN", "none")
         k = st.get("RX_REQ_HANDOFF", "none")
+        rbs = st.get("RX_REQ_BYTE", "none")
+        if (rr == "none" or "@" not in rr) and k.isdigit() and rbs.isdigit():
+            # a one-byte landmark: the req byte, K back (no minimum offset is
+            # carried, so the overshoot is K)
+            return G.Form(-1, [0], [1 << int(rbs)], int(k), int(k), "ship:handoff-byte", prior)
         if rr == "none" or not k.isdigit() or "@" not in rr:
             return "ship:handoff(no-run)"
         win = bytes.fromhex(rr.split("@")[0])
+        msk = bytes.fromhex(rr.split("/")[1]) if "/" in rr else b"\xff" * len(win)
+        cl = [(1 << b) | (1 << (b ^ (~m & 0xFF))) for b, m in zip(win, msk)]
         rb = int(st.get("RX_REQ_BYTE", "-1")) if st.get("RX_REQ_BYTE", "none").isdigit() else win[0]
         a = win.index(rb) if rb in win else 0
-        return G.Form(-1, [a], [1 << b for b in win], int(k), int(k), "ship:handoff", prior)
+        return G.Form(-1, [a], cl, int(k), int(k), "ship:handoff", prior)
     return "ship:dfa-" + pf
 
 
