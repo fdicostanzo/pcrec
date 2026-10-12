@@ -91,7 +91,20 @@ a="$WORKDIR/a.$$.c"; b="$WORKDIR/b.$$.c"
 while IFS= read -r pat; do
     "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -o - --pattern "$pat" > "$a" 2>/dev/null || { echo REFUSED; continue; }
     "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -fno-rev-end -o - --pattern "$pat" > "$b" 2>/dev/null || { echo BREFUSED; echo "BAD: refused only under -fno-rev-end: $pat"; continue; }
-    if grep -q '^#define RX_DFA_SCAN "rev-end"$' "$a"; then
+    # [COMPOUND] a compound artifact stamps "compound" for its scan (match_api.md
+    # §6.3.12); its Q part walks when Q is end-pinned, and the split row
+    # admits only that Q or a never one (conjunct A5), so under -fno-rev-end
+    # a walking compound DECLINES to the plain artifact and a walk-free one
+    # is byte-identical. Counted as its own bucket.
+    if ! grep -q '^#define RX_COMPOUND "none"$' "$a"; then
+        echo COMPOUND
+        if grep -q 'for (int revend_seed = 0;' "$a"; then
+            grep -q '^#define RX_COMPOUND "none"$' "$b" || { echo WALKBAD; echo "BAD: a walking compound stays a compound under -fno-rev-end (A5): $pat"; }
+            grep -q 'revend_seed' "$b" && { echo WALKBAD; echo "BAD: the compound's walk survives -fno-rev-end: $pat"; }
+        else
+            cmp -s "$a" "$b" || { echo DECLBAD; echo "BAD: a walk-free compound moves under -fno-rev-end: $pat"; }
+        fi
+    elif grep -q '^#define RX_DFA_SCAN "rev-end"$' "$a"; then
         echo WALK
         grep -q 'for (int revend_seed = 0;' "$a" || { echo WALKBAD; echo "BAD: stamps rev-end, no walk in the text: $pat"; }
         grep -q 'revend_seed' "$b" && { echo WALKBAD; echo "BAD: the walk survives -fno-rev-end: $pat"; }
@@ -113,6 +126,7 @@ wait
 cat "$WORKDIR"/sh/p*.out > "$WORKDIR/verdicts"
 tok() { grep -cx "$1" "$WORKDIR/verdicts" || true; }
 nwalk=$(tok WALK); ndecl=$(tok DECLINE); nwb=$(tok WALKBAD); ndb=$(tok DECLBAD); nbr=$(tok BREFUSED)
+ncomp=$(tok COMPOUND)
 grep '^BAD: ' "$WORKDIR/verdicts" | head -10 >&2
 # FLOORS, ~90% of what this tree measures (2026-10-10: 4,632 distinct lines,
 # 232 walks -- DFA bodies and VM hybrids' inlined bodies -- and 3,988
@@ -124,6 +138,8 @@ grep '^BAD: ' "$WORKDIR/verdicts" | head -10 >&2
                      || bad "[corpus] only $nwalk artifacts walk (floor 205): the row stopped reaching its population"
 [ "$ndecl" -ge 3550 ] && ok "[corpus] $ndecl artifacts decline (floor 3550)" \
                       || bad "[corpus] only $ndecl declining artifacts compared (floor 3550)"
+[ "$ncomp" -gt 0 ] && ok "[corpus] $ncomp compound artifacts held to A5 under -fno-rev-end (a walking one declines, a walk-free one is identical)" \
+                   || bad "[corpus] no compound artifact in the corpus: tests/compound/split.rxt stopped landing as compounds"
 [ "$nwb" -eq 0 ] && ok "[corpus] the stamp, the walk's text and the deny agree on all $nwalk walks and $ndecl declines" \
                  || bad "[corpus] $nwb stamp/text/deny disagreement(s)"
 [ "$ndb" -eq 0 ] && ok "[corpus] every declining artifact is byte-identical under -fno-rev-end ($ndecl)" \

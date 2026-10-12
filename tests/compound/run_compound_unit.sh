@@ -18,8 +18,10 @@
 #       exported symbols against the plain artifact's (check_split_diff.py);
 #       G3, counted work (check_linear.py); the admitted population by ID
 #       (check_admitted.py, against admitted.tsv); G7, the lever's fence
-#       (run_lever_fence.sh). G2 and G1's re-check need libpcre2-8 and SKIP
-#       loudly without it.
+#       (run_lever_fence.sh); the lever's two-directional property
+#       (check_lever.py, also test-axes' internal arm); the call-site rows,
+#       the namespace table and drop-compound (run_shell_checks.sh). G2 and
+#       G1's re-check need libpcre2-8 and SKIP loudly without it.
 #
 # The internal driver (compound_drive.c) links build/libpcrec.a through
 # tests/lib/unit_cc.sh. Env: PCREC, CC, JOBS (default PROCS, else
@@ -57,6 +59,10 @@ echo "== B4 G3: counted work =="
 CC="$CC" python3 "$SCRIPT_DIR/check_linear.py" "$PCREC" "$HARNESS" "$WORKDIR/g3" || rc=1
 echo "== B4 G7: the harness lever's fence =="
 CC="$CC" bash "$SCRIPT_DIR/run_lever_fence.sh" || rc=1
+echo "== B4: the lever moves nothing else (both directions) =="
+python3 "$SCRIPT_DIR/check_lever.py" "$PCREC" "$HARNESS" "$ROOT_DIR" --jobs "$JOBS" || rc=1
+echo "== B4: the shell's structure (call-site rows, namespace table, drop-compound) =="
+CC="$CC" PCREC="$PCREC" PCREC_HARNESS="$HARNESS" bash "$SCRIPT_DIR/run_shell_checks.sh" || rc=1
 . "$ROOT_DIR/tests/lib/resolve_pcre2.sh"
 if [ "${PCRE2_AVAILABLE:-0}" = 1 ]; then
     echo "== B4 G2+G4: the split compound against the lever and libpcre2 =="
