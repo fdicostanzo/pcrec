@@ -167,8 +167,8 @@ is P under a bound). It replaces revision 1's undefined `need`.
 
 | part | role | derive | flags_set | flags_clear | engine | bound | need |
 |---|---|---|---|---|---|---|---|
-| F | `f` | none | `PCREC_NO_STARTPOS_GUARD` | `PCREC_UTF_CHECK` | DFA | `PB_ONE_ATTEMPT` | SEARCH, NEXT_POS, VALID_UPTO |
-| Q | `q` | `derive_split_q` | `PCREC_NO_STARTPOS_GUARD` | `PCREC_UTF_CHECK` | DFA | `PB_NONE` | SEARCH |
+| F | `f` | none | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_ONE_ATTEMPT` | SEARCH, NEXT_POS, VALID_UPTO |
+| Q | `q` | `derive_split_q` | `PCREC_NO_STARTPOS_GUARD` | `PCREC_FORCE_UTF_CHECK`, `PCREC_FORCE_STARTPOS_ALIGN` | DFA | `PB_NONE` | SEARCH |
 
 `engine = DFA` on both is the first build's A4 (§B.4) stated as an option: a part that cannot
 compile on the DFA refuses, and a refusing part declines the row.
@@ -287,7 +287,7 @@ changes emission only (revision 1 §A.3, kept), plus:
 ### A.6 The controller prologue (sem MF1/MF2/MF4, arch M5)
 
 The controller owns ONE prologue, computed from P, and every part is compiled guards-off
-(`flags_set |= PCREC_NO_STARTPOS_GUARD`, `flags_clear |= PCREC_UTF_CHECK`):
+(`flags_set |= PCREC_NO_STARTPOS_GUARD`, `flags_clear |= PCREC_FORCE_UTF_CHECK | PCREC_FORCE_STARTPOS_ALIGN`):
 
 ```c
 int <p>_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2])
@@ -317,7 +317,10 @@ int <p>_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[
 - **No double check.** Revision 1 checked validity in every part; now it is checked once.
 - **Measured** (sem MF1's witness): `\A\s+|\s+\z` under `-e utf8 -futf-check` has P's reach > 0
   (`\A` raises it) and Q = `\s+\z` none, so a check with Q's reach answers where P refuses;
-  the twin's plant 2 goes red on it, on a DFA P with a rev-end Q.
+  the twin's plant 2 goes red on it, on a DFA P with a rev-end Q. The emitted reach confirms
+  it and confirms that F can carry P's check: `<p>_VALID_LB` is 1 for P compiled default,
+  `-futf-check` or `-fno-startpos-guard` alike (a parse-time fact, not a flag's), and 0 for
+  Q = `\s+\z`.
 
 Measured by the twin (§E.2): 177 case-arms, every utf8 case under the six arms
 {refuse, none, align} × {`-futf-check` off, on}, 0 differences against today's artifact
