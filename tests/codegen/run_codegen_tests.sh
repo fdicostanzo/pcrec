@@ -1196,13 +1196,22 @@ fi
 # against a per-fixture literal, and a fixture whose artifact declares nothing
 # reads `[]` — which is what this check printed, 34 times, on the first run
 # after the default flipped, before this conversion.
+#
+# [LOSS-REVIEW] candidate 1 (abi 76) SPLIT THE POPULATION IN TWO. The span
+# compares and the back-step are `inline_def` entries now (src/enc/enc.h):
+# `static inline`, defined in the .c, declared NOWHERE. So this function reads
+# the EXPORTED residual entries only, and `inline_entries` below reads the
+# inline ones off their definition heads; the caller asserts each against its
+# own half of the fixture's declared set. INLINE_RESID names that half by
+# entry, stated here from the seam's rule rather than read off an artifact.
+INLINE_RESID="rx_span_match rx_span_match_caseless rx_back_step"
 residual_names() {
     awk '
-        # A residual entry is EXPORTED (the seam refuses `static`: an unused
-        # static fails the harness -Werror build, which is src/enc/enc.h`s
-        # own recorded reason next_pos is exported) and is a plain function
-        # declaration at file scope. Everything the artifact defines for its
-        # own use is `static`; `main` and the attribute line are named.
+        # An EXPORTED residual entry is a plain function declaration at file
+        # scope (src/enc/enc.h`s recorded reason next_pos is exported: an
+        # unused static fails the harness -Werror build). Everything the
+        # artifact defines for its own use is `static`, the inline residual
+        # entries included; `main` and the attribute line are named.
         /^typedef/ || /^static/ || /^__attribute__/ || /^int main/ { next }
         /^[A-Za-z_][A-Za-z0-9_ *]*[ *][a-z_][A-Za-z0-9_]*\(/ {
             line = $0
@@ -1219,6 +1228,20 @@ residual_names() {
                 line == "rx_search_in" || line == "rx_match_in" ||
                 line == "rx_match_caps_in" || line == "rx_info") next
             print line
+        }
+    ' "$1" | LC_ALL=C sort -u
+}
+
+# inline_entries <file> — the INLINE residual entries (INLINE_RESID) this
+# file DEFINES, read off their `static inline` definition heads at column 0.
+inline_entries() {
+    awk -v names="$INLINE_RESID" '
+        BEGIN { n = split(names, a, " "); for (i = 1; i <= n; i++) want[a[i]] = 1 }
+        /^static inline [A-Za-z_][A-Za-z0-9_ *]*[ *][a-z_][A-Za-z0-9_]*\(/ {
+            line = $0
+            sub(/\(.*/, "", line)
+            sub(/^.*[^A-Za-z0-9_]/, "", line)
+            if (line in want) print line
         }
     ' "$1" | LC_ALL=C sort -u
 }
@@ -1340,6 +1363,16 @@ while IFS=$'\t' read -r nm pat extra decl; do
         case "${pair%%:*}" in back_step) nback=$((nback + 1)) ;; esac
     done
     want_set="$(printf '%s\n' $want_set | LC_ALL=C sort -u | tr '\n' ' ')"
+    # [LOSS-REVIEW] candidate 1: the declared set's EXPORTED and INLINE halves.
+    want_exp=""; want_inl=""
+    for w in $want_set; do
+        case " $INLINE_RESID " in
+            *" $w "*) want_inl="$want_inl $w" ;;
+            *) want_exp="$want_exp $w" ;;
+        esac
+    done
+    want_exp="$(printf '%s\n' $want_exp | LC_ALL=C sort -u | tr '\n' ' ')"
+    want_inl="$(printf '%s\n' $want_inl | LC_ALL=C sort -u | tr '\n' ' ')"
     [ "$nbref" -gt 0 ] && resid_brefdecl=$((resid_brefdecl + 1))
     [ "$nback" -gt 0 ] && resid_backdecl=$((resid_backdecl + 1))
 
@@ -1351,9 +1384,19 @@ while IFS=$'\t' read -r nm pat extra decl; do
         # half that stops an emitter from inlining the compare AND dropping the
         # entry from the artifact's mask, which would otherwise leave the
         # count rule below with nothing to count.
-        if [ "$(printf '%s' "$got_set" | tr -s ' ')" != "$(printf '%s' "$want_set" | tr -s ' ')" ]; then
+        if [ "$(printf '%s' "$got_set" | tr -s ' ')" != "$(printf '%s' "$want_exp" | tr -s ' ')" ]; then
             resid_bad=$((resid_bad + 1))
-            bad "[M5-SEAM/D58] '$pat' ($extra): the artifact declares residual entries [$got_set] where this fixture declares [$want_set] — the encoding seam's per-artifact mask moved. An entry that vanishes from the mask takes its call-count check with it, which is why this is asserted from the TEST and not read off the artifact"
+            bad "[M5-SEAM/D58] '$pat' ($extra): $(basename "$f") declares exported residual entries [$got_set] where this fixture declares [$want_exp] — the encoding seam's per-artifact mask moved, or an INLINE entry ($INLINE_RESID) is declared/exported again ([LOSS-REVIEW] candidate 1, abi 76). An entry that vanishes from the mask takes its call-count check with it, which is why this is asserted from the TEST and not read off the artifact"
+        fi
+    done
+    # (1b) [LOSS-REVIEW] candidate 1: the INLINE half is DEFINED `static
+    # inline` in both .c forms (and the .h, checked above, declares none).
+    for f in "$WORKDIR/$nm.c" "$WORKDIR/${nm}_sc.c"; do
+        got_inl="$(inline_entries "$f" | tr '\n' ' ')"
+        # shellcheck disable=SC2086
+        if [ "$(echo $got_inl)" != "$(echo $want_inl)" ]; then
+            resid_bad=$((resid_bad + 1))
+            bad "[M5-SEAM/D58] '$pat' ($extra): $(basename "$f") defines static inline residual entries [$got_inl] where this fixture declares [$want_inl] — an inline seam entry lost its \`static inline\` (exported again: a PLT call per use under -fPIC, [LOSS-REVIEW] candidate 1) or the mask moved"
         fi
     done
     # (2) THE PER-SITE COUNT, over both artifact forms' definitions (.c).
@@ -1513,6 +1556,64 @@ if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
     bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
 elif [ "$resid_bad" -eq 0 ]; then
     ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a runtime span compare — backreference or \${name} variable, one entry pair since the [VAR] ruling — $resid_backdecl a lookbehind back-step, each population guarded by its own EXACT literal; comment stripping is token-level and runs before the body tracking)"
+fi
+
+# ---- [LOSS-REVIEW] candidate 1: NO INLINE SEAM ENTRY IS EXPORTED -----------
+# The span compares and the back-step are `static inline` (abi 76, Frank's
+# ruling 2026-10-11: "those helpers shouldn't be exported"): an exported entry
+# is interposable under -fPIC, so every reference or lookbehind attempt paid a
+# PLT call (docs/dev/optloop/lossreview/twintime/summary.md: the PLT is 80-87%
+# of the measured gain). The text arms above read the heads; this arm asks the
+# OBJECT, gcc's own answer: each fixture compiled -O2 -fPIC must define NONE
+# of INLINE_RESID as a global symbol. POSITIVE CONTROL in the same object:
+# `rx_next_pos` IS global, so an `nm` that lists nothing cannot pass. The
+# population (byte/ucp/utf8, exact/caseless/back-step, backreference and
+# variable) is EXACT. Sabotage row S825 plants the export back.
+nm_glob() { nm -g --defined-only "$1" 2>/dev/null | awk '{print $NF}' | sed 's/^_//'; }
+exp_bad=0; exp_n=0
+while IFS=$'\t' read -r nm pat extra; do
+    [ -n "$nm" ] || continue
+    # shellcheck disable=SC2086
+    if ! pcrec_run "$PCREC" -p rx $extra -o "$WORKDIR/$nm.c" --pattern "$pat" >/dev/null 2>&1; then
+        bad "[LOSS-REVIEW c1] '$pat' ($extra): pcrec refused the fixture"; exp_bad=$((exp_bad + 1)); continue
+    fi
+    if ! gen_cc "inline-seam export fixture $nm" "$CC" -c $GENCFLAGS -O2 -fPIC -I"$WORKDIR" \
+            -o "$WORKDIR/$nm.o" "$WORKDIR/$nm.c"; then
+        bad "[LOSS-REVIEW c1] '$pat' ($extra): the artifact failed to compile -O2 -fPIC: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+        exp_bad=$((exp_bad + 1)); continue
+    fi
+    syms="$(nm_glob "$WORKDIR/$nm.o")"
+    if ! printf '%s\n' "$syms" | grep -qx 'rx_next_pos'; then
+        bad "[LOSS-REVIEW c1] '$pat' ($extra): the object exports no rx_next_pos — the positive control failed, so nm's answer cannot certify an absence"
+        exp_bad=$((exp_bad + 1)); continue
+    fi
+    # The fixture must CARRY an inline entry (reach), else it certifies nothing.
+    if [ -z "$(inline_entries "$WORKDIR/$nm.c")" ]; then
+        bad "[LOSS-REVIEW c1] '$pat' ($extra): the artifact defines none of [$INLINE_RESID] — this fixture no longer reaches the property"
+        exp_bad=$((exp_bad + 1)); continue
+    fi
+    leak=""
+    for e in $INLINE_RESID; do
+        printf '%s\n' "$syms" | grep -qx "$e" && leak="$leak $e"
+    done
+    if [ -n "$leak" ]; then
+        bad "[LOSS-REVIEW c1] '$pat' ($extra): the -fPIC object EXPORTS [$leak ] — an inline seam entry is interposable again, so the VM calls it through the PLT ([LOSS-REVIEW] candidate 1, match_api.md §3¶2)"
+        exp_bad=$((exp_bad + 1))
+    fi
+    exp_n=$((exp_n + 1))
+done <<'EOF'
+expbref	(a|b)\1	--features backrefs
+expbrefci	(?i:(a))(?i:\1)	--features backrefs,modifiers
+expucpci	(?i:(.))(?i:\1)	--features all --ucp
+exputfci	(?i:(.))(?i:\1)	--features backrefs,modifiers -e utf8
+explb	(?<=ab)c	--features lookaround
+exputflb	(?<=ab)c	--features lookaround -e utf8
+expvar	^${v}$	--features vars
+EOF
+if [ "$exp_n" -ne 7 ]; then
+    bad "[LOSS-REVIEW c1]: $exp_n of 7 inline-seam export fixtures were checked — the population moved"
+elif [ "$exp_bad" -eq 0 ]; then
+    ok "[LOSS-REVIEW c1]: 7 artifacts (byte/ucp/utf8; exact, caseless, back-step; backreference and variable) compiled -O2 -fPIC export rx_next_pos and none of [$INLINE_RESID]"
 fi
 
 # ---- [M6.5-DUPNAMES] THE REFLECTION TABLE'S ORDER, READ OFF THE ARTIFACT ---
