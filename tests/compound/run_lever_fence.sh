@@ -31,8 +31,11 @@ fail() { echo "FAIL $*"; fails=$((fails + 1)); }
 globals() { nm -g --defined-only "$1" 2>/dev/null | awk -v p="$PFX" '$2 ~ /^[A-Z]$/ && index($3, p) == 1 { print $3 }' | LC_ALL=C sort -u; }
 # (b) the declarations of the prefix in the headers under DIR.
 decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
-# (c) the mentions under ROOT outside the allowlist: path:line text.
-ALLOW='^(cli/main\.c|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py)'
+# (c) the mentions under ROOT outside the allowlist: path:line text. The
+# allowlist: the harness's own build and CLI arm, this directory, the axes
+# arm, emit_sweep's harness pairing, and the two sabotage rows that plant the
+# fence's own faults (S907, S909).
+ALLOW='^(cli/main\.c|Makefile|tests/compound/|tests/axes/run_axes\.sh|scripts/emit_sweep\.py|tests/mech/sabotages/S90[79]_)'
 mentions() {
     (cd "$1" && grep -rnI -e '--harness=' -e "$PFX" docs/spec docs/guide README.md examples lib tests scripts cli 2>/dev/null) |
         grep -Ev "$ALLOW"

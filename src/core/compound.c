@@ -163,6 +163,7 @@ static int walk_part(CompWalk *w, int i)
     if (!w->tried[i]) {
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
+        w->facts[i].into = &w->cx->arena;
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
                                 &w->rep[i], &w->facts[i], true, &w->out[i],
                                 &w->err[i]);

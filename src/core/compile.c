@@ -3096,6 +3096,10 @@ facts_force:
             pf->utf_check = pcrec_utf_check_on(&cx);
             pf->simd_guarded = cx.job->csb.simd_guarded;
             pf->simd_size = cx.job->csb.simd_size;
+            if (!pf->into || !cx.job->memfn_forms)
+                pcrec_ctx_fail(&cx, 0, "internal error: a part's facts have no "
+                               "arena or its forms were never stamped");
+            pf->memfn_forms = pcrec_sb_fragf(pf->into, "%s", cx.job->memfn_forms);
         }
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;

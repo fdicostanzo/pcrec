@@ -10,6 +10,9 @@
  *            which the shell IS). Also the facts about the emitted TEXT as a
  *            whole (`MEMFN_LIBC`, `SIMD_GUARDED_BYTES`), which the shell
  *            measures over the assembled artifact, parts included.
+ *   UNION    a list of what the TEXT holds, written by each part's own
+ *            emission (`MEMFN_FORMS`, the kit forms): the sorted, distinct
+ *            union of the parts' values, `"none"` when every part's is.
  *   MACHINE  one machine's route or strategy: on a compound the controller
  *            is no such machine, so the stamp takes a DEFINED compound value
  *            -- `"compound"` for a string, -1 for a count -- and each part
@@ -26,7 +29,7 @@
 
 #include <string.h>
 
-typedef enum { SK_PATTERN, SK_MACHINE_STR, SK_MACHINE_NUM } StampKind;
+typedef enum { SK_PATTERN, SK_PARTS_UNION, SK_MACHINE_STR, SK_MACHINE_NUM } StampKind;
 
 typedef struct {
     const char *name;     /* the stamp's name after `<PREFIX>_` */
@@ -74,7 +77,7 @@ static const StampRow stamp_rows[] = {
     { "DFA_MATCH",          false, SK_MACHINE_STR },
     /* the kit's every-artifact stamps (src/gen/memfn_stamps.c) */
     { "RUN_WORDS",          false, SK_MACHINE_NUM },
-    { "MEMFN_FORMS",        false, SK_MACHINE_STR },
+    { "MEMFN_FORMS",        false, SK_PARTS_UNION },  /* the forms the parts emit */
     { "MEMFN_LIBC",         false, SK_PATTERN },      /* the assembled text's calls */
     { "SIMD_GUARDED_BYTES", false, SK_PATTERN },      /* the assembled text's bytes */
     /* the VM's stamp block (src/gen/emit_vm.c): a compound's parts are DFA
@@ -125,6 +128,37 @@ static const StampRow *stamp_row(const char *name)
     return fam;
 }
 
+/* The sorted, distinct union of the comma lists in the shell's parts'
+ * `MEMFN_FORMS`, quoted; `"none"` when no part names a form. */
+static const char *parts_forms_union(Ctx *cx)
+{
+    const PcrecCompShell *sh = cx->job->comp_shell;
+    size_t cap = 0, n = 0;
+    for (int i = 0; i < PCREC_COMP_MAXPARTS; i++)
+        for (const char *v = sh->text[i] ? sh->facts[i].memfn_forms : NULL; v && *v; v++)
+            cap += *v == ',' || v == sh->facts[i].memfn_forms;
+    const char **names = pcrec_arena_alloc(&cx->arena, (cap ? cap : 1) * sizeof *names);
+    for (int i = 0; i < PCREC_COMP_MAXPARTS; i++) {
+        if (!sh->text[i]) continue;
+        const char *v = sh->facts[i].memfn_forms;
+        while (v && *v) {
+            size_t len = strcspn(v, ",");
+            const char *w = pcrec_sb_fragf(&cx->arena, "%.*s", (int)len, v);
+            v += len + (v[len] == ',');
+            if (!strcmp(w, "none")) continue;
+            size_t k = 0;
+            while (k < n && strcmp(names[k], w) < 0) k++;
+            if (k < n && !strcmp(names[k], w)) continue;
+            memmove(&names[k + 1], &names[k], (n - k) * sizeof names[0]);
+            names[k] = w;
+            n++;
+        }
+    }
+    const char *u = n ? names[0] : "none";
+    for (size_t k = 1; k < n; k++) u = pcrec_sb_fragf(&cx->arena, "%s,%s", u, names[k]);
+    return pcrec_sb_fragf(&cx->arena, "\"%s\"", u);
+}
+
 /* The filter a compound shell sets (`Ctx.stamp_filter`): P's value for a
  * pattern-level stamp, the declared compound value for a machine-level
  * one, and an internal error for a stamp nobody classified. The VM slot
@@ -140,6 +174,7 @@ const char *pcrec_stamp_compound_filter(Ctx *cx, const char *name, const char *v
                        "compound is undefined", name);
     switch (r->kind) {
     case SK_PATTERN:     return NULL;
+    case SK_PARTS_UNION: return parts_forms_union(cx);
     case SK_MACHINE_STR: return "\"compound\"";
     case SK_MACHINE_NUM: return "-1";
     }

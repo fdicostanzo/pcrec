@@ -2996,6 +2996,10 @@ typedef struct {
      * artifact's engine and entries (compound.md §A.3, §A.5), or NULL: the
      * walk's record, owned here (`job_cleanup` frees it with its texts). */
     struct PcrecCompShell *comp_shell;
+    /* [COMPOUND] the kit's `MEMFN_FORMS` value as this attempt stamped it
+     * (arena; NULL before the stamps render): a part's, for its compound's
+     * union (src/gen/stamp_kinds.c's parts-union kind). */
+    const char *memfn_forms;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -7351,6 +7355,8 @@ struct PcrecPartFacts {
     bool utf_check;         /* its entries run the subject check */
     size_t simd_guarded;    /* the CPU-guarded bytes its text carries, and */
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
+    Arena *into;            /* in: where the strings below are copied */
+    const char *memfn_forms;/* its `MEMFN_FORMS` value (in `into`) */
 };
 
 /* ---- [COMPOUND] THE ROW TABLE (src/core/compound.c; compound.md §A.1-§A.3)

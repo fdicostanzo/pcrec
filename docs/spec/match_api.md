@@ -2465,12 +2465,15 @@ stamp's absence (§6.3.1¶5).
 | kind | stamps | value on a compound |
 |---|---|---|
 | pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_FINDINGS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
-| machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, `_MEMFN_FORMS`, the VM's string stamps | `"compound"` |
+| parts' union | `_MEMFN_FORMS` | the sorted, distinct union of the parts' own values; `"none"` when every part's is `"none"` |
+| machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, the VM's string stamps | `"compound"` |
 | machine (count) | `_DFA_UNIFORM_FOLDS`, `_RUN_WORDS`, the VM's counts and masks | `-1` |
 
 <a id="s6-3-12-p3"></a>[6.3.12¶3] `_MEMFN_LIBC` and `_SIMD_GUARDED_BYTES` are measured over the assembled
 artifact, parts included, so on a compound they name every libc function the
-text calls and every CPU-guarded byte it carries.
+text calls and every CPU-guarded byte it carries. `_MEMFN_FORMS` names every
+kit form the parts' texts carry, so it means on a compound what it means on a
+plain artifact: the forms an artifact built under `-fmemfn-simd` differs by.
 
 ---
 
