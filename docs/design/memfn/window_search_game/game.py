@@ -163,19 +163,38 @@ def pol_pair(sp, prior):
     return _argmin(fs, lambda f: (f.est_stop, f.est_surv, f.mb))
 
 
+SELF_DECLINE = 0.25   # UNMEASURED (D149): P4 declines a form stopping on >25% of bytes
+
+
 def pol_selfprice(sp, prior):
     """P4: the kit prices its own forms (scan + verify) and nothing
-    downstream -- the most a kit can do with D161's inputs alone."""
+    downstream -- the most a kit can do with D161's inputs alone. Its
+    decline is a kit-own constant, because "is the search worth it" needs
+    the cost of NOT searching, which is the consumer's."""
     fs = forms_of(sp, prior, True)
-    return _argmin(fs, lambda f: (expected_cost(f, "none"), f.mb))
+    f = _argmin(fs, lambda f: (expected_cost(f, "none"), f.mb))
+    if f is not None and f.est_stop > SELF_DECLINE:
+        return "decline"
+    return f
+
+
+def baseline_cost(consumer):
+    """Per-byte cost of NO window search: the consumer meets every byte
+    (a DFA steps it; a VM attempts a start there)."""
+    c_cand, c_byte, c_start = CONSUMERS[consumer]
+    return c_byte + c_start
 
 
 def pol_window(consumer):
     """P5(consumer): P4 plus the downstream price of each survivor, which
-    needs `consumer` -- a fact D161 does not carry."""
+    needs `consumer` -- a fact D161 does not carry -- and a decline against
+    the consumer's own no-search cost, which needs it too."""
     def p(sp, prior):
         fs = forms_of(sp, prior, True)
-        return _argmin(fs, lambda f: (expected_cost(f, consumer), f.mb))
+        f = _argmin(fs, lambda f: (expected_cost(f, consumer), f.mb))
+        if f is not None and expected_cost(f, consumer) >= baseline_cost(consumer) + 1.0:
+            return "decline"
+        return f
     p.__name__ = "pol_window_" + consumer
     return p
 

@@ -135,7 +135,9 @@ def shipped(fa, st, ext, prior):
         if st.get("RX_VM_START_SCAN") == "first-class" and "start_set" in fa:
             m = startset_mask(fa["start_set"])
             return G.Form(-1, [0], [m], 0, 0, "ship:vm-first-class", prior)
-        return "ship:vm-" + st.get("RX_VM_PREFILTER", "-")
+        if st.get("RX_VM_PREFILTER") != "hybrid":
+            return "ship:vm-" + st.get("RX_VM_PREFILTER", "-")
+        # the hybrid's inlined DFA prefilter carries the scan: map it below
     if pf in PF_START and "start_set" in fa:
         m = startset_mask(fa["start_set"])
         if m is not None and SP.popc(m) < 256:
@@ -178,6 +180,20 @@ def shipped(fa, st, ext, prior):
     return "ship:dfa-" + pf
 
 
+def span_reps(sp, prior):
+    """Per bounded span: its rarest single position and its best pair --
+    the span-vs-span comparison Frank asked about."""
+    out = []
+    by = {}
+    for f in G.forms_of(sp, prior, True):
+        k = (f.si, f.kind)
+        if k not in by or f.est_stop < by[k].est_stop:
+            by[k] = f
+    for k in sorted(by):
+        out.append(by[k])
+    return out
+
+
 _ALARM = False
 
 
@@ -217,12 +233,17 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
                 buf = open(os.path.join(subjdir, sid + ".bin"), "rb").read()
                 subj[sid] = (buf, np.frombuffer(buf, np.uint8), G.prior_from_subject(buf))
     pop = population(bench, corpus_root, ncorpus)
+    if os.environ.get("WINGAME_LIMIT"):          # smoke runs during a box hold
+        pop = pop[::max(1, len(pop) // int(os.environ["WINGAME_LIMIT"]))]
     fs = open(os.path.join(out, "spans.tsv"), "w")
     fc = open(os.path.join(out, "choices.tsv"), "w")
     fm = open(os.path.join(out, "sim.tsv"), "w")
     fs.write("set\tname\tstatus\tnotes\tanch_start\tnspans\tnbounded\tkset_agree\tengine\t"
              "prefilter\toffsets\treq_run\thandoff\tspans\n")
     fc.write("set\tname\tpolicy\tform\test_stop\test_surv\texp_cost_none\texp_cost_dfa\texp_cost_vm\n")
+    fp = open(os.path.join(out, "spanforms.tsv"), "w")
+    fp.write("set\tname\tsubject\tspan\tkind\tform\tL\tmb\tov\test_stop\test_surv\t"
+             "stops\tsurv\twin_bytes\tstarts\twork_scan\twork_dfa\twork_vm\n")
     fm.write("set\tname\tsubject\tpolicy\tform\tstops\tsurv\twin_bytes\twin_union\tstarts\t"
              "work_dfa\twork_vm\tpy_matches\n")
     for s, name, pat in pop:
@@ -265,6 +286,14 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
             if ext["status"] == "ok" and not ext.get("anch_start"):
                 extra.append(("P5-dfa-subjprior", G.pol_window("dfa")(sp, sprior)))
             pm = pymatches(ext_py, buf)
+            if ext["status"] == "ok" and not ext.get("anch_start"):
+                for f in span_reps(sp, prior):
+                    c = G.simulate(f, S)
+                    fp.write("%s\t%s\t%s\t%d\t%s\t%s\t%d\t%d\t%d\t%.3g\t%.3g\t%d\t%d\t%d\t%d\t%.0f\t%.0f\t%.0f\n" % (
+                        s, name, sid, f.si, f.kind, f.desc(), f.L, f.mb, f.ov, f.est_stop,
+                        f.est_surv, c["stops"], c["surv"], c["win_bytes"], c["starts"],
+                        G.work(c, f, "none", len(S)), G.work(c, f, "dfa", len(S)),
+                        G.work(c, f, "vm", len(S))))
             for pname, f in chosen + extra:
                 if not isinstance(f, G.Form):
                     fm.write("%s\t%s\t%s\t%s\t%s\t-\t-\t-\t-\t-\t-\t-\t%s\n" % (
