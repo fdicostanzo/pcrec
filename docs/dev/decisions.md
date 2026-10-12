@@ -9434,6 +9434,14 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
   - The span list describes the sub-problem pcrec HANDS the kit, not the whole pattern. pcrec is the organizer (D157, [POS-PARALLEL] framing): it may send only part of the pattern because it will handle the rest itself — for `a.*aaa.{2,5}zxq` it sends the spans `aaa.{2,5}zxq` and recovers the head `a.*` with a reverse DFA. The facts must be true of what is sent; they need not be complete about the pattern.
   - Consequence for the flexibility criterion (chunk 2): a NEW site parameter is a contract change both sides move together (the kit is in-tree, so this is one change, plus an abi event only if emitted bytes move); a NEW analysis kind appends without one.
 
+### D161 addendum 5 — the window search is a CHAIN of simple searches over bounded spans; unbounded is automata and outside memfn (Frank, 2026-10-12, session 110)
+
+- **Ruling (Frank):** "essentially we are asking memfn to come up with a chain of 1-2 simple searches. 1 for a good header span, 2 for a good second span which then searches for the poorer first span. we could do 3+ chains if we provided 'fallback/overshoot to previous span' not just start of function. its not doing automata. its picking the best tools for various components. unbounded is automata and outside its pervue"
+- **Reading (manager):**
+  - The kit's job is to pick a CHAIN of simple searches and the best tool for each link: length 1 = search the header span directly; length 2 = search a better (rarer) later span, then search back within the bounded gap for the poorer first span. Longer chains need one more contract fact: on a link's failure, fall back (overshoot) to the PREVIOUS link's resume point, not only to the start of the function. Filed as the chain's extension, not built until a pattern needs it.
+  - Every span and every gap the kit sees is BOUNDED. Anything unbounded (a `.*` head, an unbounded gap, an unbounded tight span) is automata work and pcrec's: pcrec cuts the pattern and hands the kit only bounded sub-problems (addendum 4). For `\d+.*#` (addendum 1) the kit gets the digit class as a one-span chain; the run and the `.*#` tail stay with pcrec.
+  - This answers window_search_game.md §7's "unbounded move-back in or out of the window category": OUT.
+
 ## D162 — workload data reaches the kit as ONE read-only, versioned ANALYSIS OBJECT per compile; every kit selection is TOTAL without it (Frank, 2026-10-12, ruled to the kit session; filed by main from the kit's relay, lane/memfn-r17 0132c5d2 + bb862bad, memfn/docs/responses.md)
 
 - **Ruling 1 (Frank):** "i agree option 1 with options to add more data. pcrec should send what it has."
