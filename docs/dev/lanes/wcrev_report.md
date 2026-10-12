@@ -1,11 +1,8 @@
 # wcrev — window_contract.md revision 2 (2026-10-12, docs only)
 
-Branch `lane/wcrev` from main `76067df80`. Deliverable:
-`docs/design/memfn/window_contract.md` REVISION 2 (PROPOSED), applying the
-light D6 panel r4 (`docs/dev/reviews/2026-10-12-r4-window-contract.md`) and
-D161 addenda 7-8. Nothing under `src/`, `cli/`, `lib/`, `memfn/` or `tests/`
-changed and nothing was run, so no `make`. Kit tips read with `git show`:
-`lane/memfn-r17` `f1cf102c5`, `lane/r17b` `174f3e320`.
+Branch `lane/wcrev` from main `76067df80`: `docs/design/memfn/window_contract.md`
+REVISION 2 (PROPOSED), applying review r4 and D161 add. 7-8. Docs only; nothing
+run. Kit tips read: `lane/memfn-r17` `f1cf102c5`, `lane/r17b` `174f3e320`.
 
 ## What changed (the note's §R2 table has every row)
 - **Reply** (D161 add. 7): a STREAM of exact span-0 starts. COMPLETE,
@@ -41,5 +38,4 @@ changed and nothing was run, so no `make`. Kit tips read with `git show`:
    binds the stream, so the enum is re-numbered (an `MF_SITE_ABI` event).
 
 ## Open / validation
-Q1 (inner-segment choice) open for Frank; Q2 stays a leaning. §14 lists the
-re-check's targets. Docs only; citations read at `76067df80`. Nothing owed.
+Q1 open for Frank; Q2 a leaning; §14 the re-check's targets. Nothing owed.
