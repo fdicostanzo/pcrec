@@ -99,6 +99,8 @@ def pcre_to_py(pat):
         return re.escape(mo.group(1))
     if "\\Q" in s:
         s = re.sub(r"\\Q(.*?)(?:\\E|$)", qrep, s, flags=re.S)
+    if re.search(r"\(\*(UCP|UTF|UTF8)\)", s):
+        raise ValueError("ucp/utf verb (not modelled)")
     s2 = re.sub(r"\(\*[A-Za-z_]+(?::[^)]*)?\)", "", s)
     if s2 != s:
         notes.add("verb")
@@ -120,8 +122,6 @@ def pcre_to_py(pat):
     s = re.sub(r"\\o\{([0-7]+)\}",
                lambda mo: _hexesc(int(mo.group(1), 8)) or "\x00BAD", s)
     s = re.sub(r"\\c(.)", lambda mo: "\\x%02x" % (ord(mo.group(1).upper()) ^ 0x40), s)
-    if re.search(r"\(\*(UCP|UTF|UTF8)\)", s):
-        raise ValueError("ucp/utf verb (not modelled)")
     s = class_aware_escapes(s)
     if "\\K" in s:
         notes.add("kreset")
