@@ -17,7 +17,9 @@ shared block's guard and `#error`, `.abi = N`) and the working side's one
   same      the working side stamps "none" and the texts are identical
   stamp-sized  ...identical but for a size-cap `_WHY` stamp's quoted size,
             which the one new stamp line lengthens (by ID, expected)
-  admitted  the working side stamps a row name (a compound): a MOVER by ID
+  admitted  the working side stamps a row name (a compound): a MOVER by ID;
+            with --harness, the lever's output there must be the reference's
+            plain artifact plus `"forced-off"` (§A.11's property (b))
   FINDING   the working side stamps "none" and the texts still differ, or
             the two sides disagree on compiling at all
 
@@ -46,11 +48,11 @@ STAMP = re.compile(rb'^#define RX_COMPOUND "([^"]*)"\n', re.M)
 SIZED = re.compile(rb'(_WHY "size cap retry, [a-z-]+ )\d+( > \d+")')
 
 
-def norm(text, drop_none):
+def norm(text, drop_none, drop=b'#define RX_COMPOUND "none"\n'):
     for r, s in ABI_RES:
         text = r.sub(s, text)
     if drop_none:
-        text = text.replace(b'#define RX_COMPOUND "none"\n', b"")
+        text = text.replace(drop, b"")
     return text
 
 
@@ -67,10 +69,13 @@ def compile_one(binp, pat, arm, d, tag):
 
 
 def classify(job):
-    ref, work, pid, pat, arm, tmp = job
+    ref, work, harness, pid, pat, arm, tmp = job
     d = tempfile.mkdtemp(dir=tmp)
     a = compile_one(ref, pat, arm, d, "a")
     b = compile_one(work, pat, arm, d, "b")
+    lev = None
+    if harness and b is not None and STAMP.search(b[0]) and STAMP.search(b[0]).group(1) != b"none":
+        lev = compile_one(harness, pat, arm + ["--harness=no-compound"], d, "l")
     shutil.rmtree(d)
     if a is None and b is None:
         return pid, arm, "-", "both-refuse"
@@ -81,6 +86,11 @@ def classify(job):
     if stamp == "MISSING":
         return pid, arm, stamp, "FINDING:no-stamp"
     if stamp != "none":
+        if lev is not None:
+            fo = b'#define RX_COMPOUND "forced-off"\n'
+            if not (norm(a[0], False) == norm(lev[0], True, fo) and a[1] == lev[1] or
+                    norm(a[0], False) == norm(lev[0], True, fo) and norm(a[1], False) == norm(lev[1], False)):
+                return pid, arm, stamp, "FINDING:lever-is-not-the-plain-artifact"
         return pid, arm, stamp, "admitted"
     same = norm(a[0], False) == norm(b[0], True) and norm(a[1], False) == norm(b[1], True)
     if same:
@@ -96,6 +106,8 @@ def main():
     ap.add_argument("--bin", required=True)
     ap.add_argument("--tree", required=True)
     ap.add_argument("--bench")
+    ap.add_argument("--harness", help="build/pcrec-harness: an admitted pattern's lever "
+                    "output must be the reference's plain artifact plus \"forced-off\"")
     ap.add_argument("--out", default=None)
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--write-manifest")
@@ -108,7 +120,7 @@ def main():
             continue
         seen.add(pat)
         for arm in ([], ["-e", "utf8"]):
-            jobs.append((a.ref_bin, a.bin, "corpus\t%s\t%s" % (rel, pat.hex()), pat, arm, tmp))
+            jobs.append((a.ref_bin, a.bin, a.harness, "corpus\t%s\t%s" % (rel, pat.hex()), pat, arm, tmp))
     ncorpus = len(seen)
     nbench = 0
     if a.bench:
@@ -122,7 +134,7 @@ def main():
                     continue
                 pat = open(os.path.join(d, fn), "rb").read()
                 arm = ["-e", "utf8"] if sb == "utf8" else []
-                jobs.append((a.ref_bin, a.bin, "bench\t%s/%s\t%s" % (sb, fn[:-3], pat.hex()),
+                jobs.append((a.ref_bin, a.bin, a.harness, "bench\t%s/%s\t%s" % (sb, fn[:-3], pat.hex()),
                              pat, arm, tmp))
                 nbench += 1
     rows = []
