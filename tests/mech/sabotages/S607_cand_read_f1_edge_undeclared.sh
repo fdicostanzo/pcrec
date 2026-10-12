@@ -17,6 +17,8 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\d\\dxy
 SAB_REACH_EXPECT='REACH-HANDOFF'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                             CN(CAND_SLOT_NEXT),
-                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA) } },'
-SAB_AFTER='                             CN(CAND_SLOT_NEXT) },   /* SABOTAGE S607 */'
+# Re-anchored at [CAND-PATH-READS] (lane pathreads): FIRST's `reads` gained
+# the path reads (CAND_PATH_READS), which the plant keeps; it drops PRESENCE.
+SAB_BEFORE='                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA),
+                                        CAND_PATH_READS } },'
+SAB_AFTER='                             .reads = { CAND_PATH_READS } },   /* SABOTAGE S607 */'

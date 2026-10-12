@@ -50,7 +50,16 @@
 # `test-codegen`: it builds the compiler again, and `make smoke` includes
 # `test-codegen` (run_premul_table.sh's measured argument). Mech arm
 # `candoracle` (S594-S600; the selection reads' edges S606-S609 and a listed
-# row without its desc, S610: [START-TABLE] C5b/C6).
+# row without its desc, S610: [START-TABLE] C5b/C6; RECOVER's read of NEXT
+# without the handoff deny, S844: [CAND-PATH-READS]).
+#
+# [CAND-PATH-READS] Every SELECTION a predicate makes is a checked read, not
+# only those through `cand_read`: the trace build keeps the slots whose
+# predicates are running and aborts (`CANDORACLE undeclared-read`) on a
+# nested selection the slot graph does not declare. That is what holds the
+# PATH reads (FIRST's `handoff` asks `cand_path_members`, which selects
+# LOCATE, RECOVER and FINISH) to the graph the `table-read-cycle` check
+# walks.
 #
 # Usage: bash tests/codegen/run_cand_oracle.sh [TREE]   (default: this repo)
 # Env:   CC (the compiler the trace build uses; tests/lib/cc_resolve.sh's),

@@ -3786,3 +3786,11 @@ arm), DETECTED solo `codegen:22fail/328pass`. Re-anchored: S394 (the utf8
 caseless row's `inline_def` column) and S673 (the byte exact compare's
 re-wrapped parameter line; its REACH_POP reads the N7 manifest row's new
 emitter `residual_sites`); S693 re-aimed (AFTER 75).
+
+**[CAND-PATH-READS] (lane pathreads, 2026-10-12, no abi event), S844.** The
+start table's read graph declares PATH reads (`CAND_PATH_READS`), and the trace
+build checks every nested selection against it (docs/dev/lanes/
+pathreads_report.md). S844 drops RECOVER's `.under[NEXT] = PCREC_NO_REQ_HANDOFF`
+(the 9dec5e6f fix): arm `candoracle`, every witness aborts `table-read-cycle`.
+Re-anchored: S607 (FIRST's `reads` gained `CAND_PATH_READS`; the plant keeps it
+and drops PRESENCE), hand-verified DETECTED (`undeclared-read FIRST PRESENCE`).

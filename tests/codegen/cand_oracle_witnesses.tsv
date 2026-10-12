@@ -73,6 +73,12 @@ reverse-pass	-	a(b|c)+d
 end-minus-width	-	abcd
 landing	-	\w+
 landing	-fno-start-width	[a-z]
+# [CAND-PATH-READS] the three rows of the cycle 9dec5e6f closed, on one compile:
+# FIRST `handoff` reads the path, which selects RECOVER `landing`, which reads
+# NEXT `handoff-reentry` under the handoff deny (axtri_report.md §2). Unplanted
+# it compiles clean; with RECOVER's deny dropped (S844) the default build
+# SIGSEGVs here and the trace build aborts `table-read-cycle`.
+landing	-e utf8 -fno-offset-skip	€+
 reverse-pass	-fno-start-width -fno-start-landing	abcd
 verify-at	-	a
 search-from	-	^a

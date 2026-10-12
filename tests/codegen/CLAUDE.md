@@ -42,6 +42,16 @@ or it has no regression net at all.
   NEXT), each dropped from `cand_nodes[].reads` and caught as
   `CANDORACLE undeclared-read`; S610 (a listed row without its `desc`, C6)
   is caught by the self-check's `table-desc-unlisted`.
+  **Since [CAND-PATH-READS]** (lane pathreads) EVERY selection a predicate
+  makes is a checked edge, `cand_read` or not: the trace build keeps a stack
+  of the slots whose predicates are running (`cand_applies`) and aborts
+  `undeclared-read` on a nested selection the graph does not declare
+  (`cand_nested_read`). The PATH reads are declared (`CAND_PATH_READS` on
+  FIRST; RECOVER reads LOCATE; NEXT's K admission reads its own slot under
+  its deny), so `table-read-cycle` walks them: S844 drops RECOVER's handoff
+  deny and every witness aborts `table-read-cycle` (on main the same plant
+  read green and SIGSEGVed only on `-e utf8 -fno-offset-skip '€+'`, now a
+  `landing` witness line).
   **Since [OPT-REVEND] L0** (lane lfl0, `docs/design/locate_finish.md` §5
   L0): witnesses for LOCATE's `empty`/`composite` and FINISH's
   `verify-at`/`search-from`; every FINISH TAKE CELL the table declares

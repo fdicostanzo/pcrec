@@ -1405,6 +1405,20 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   Sabotage S607-S609 (an edge dropped), S610 (a listed row's desc dropped).
   C7 corrects D-3 (the DFA hat's desc said `T = S & E*`; the code scans
   `T = S`) and lists every start axis as `kind=list`.
+- **emit_dfa.c — PATH READS are edges of the read graph** ([CAND-PATH-READS],
+  lane pathreads, 2026-10-12; no emitted byte, no abi event). A predicate
+  that asks the selected path (`cand_path_members`) reads every slot the path
+  derivation selects in, `CAND_PATH_READS` (LOCATE, RECOVER on the DFA route,
+  FINISH); FIRST declares it, RECOVER declares its read of LOCATE
+  (`cand_recover_asked`), and NEXT declares its K admission's read of its own
+  slot under `-fno-req-handoff` (`req_landmark_admits`, `under`/`by`). The
+  self-check's `table-read-cycle` walk therefore sees the NEXT -> FIRST ->
+  path -> RECOVER -> NEXT cycle 9dec5e6f closed (S844). In the trace build
+  `cand_select` keeps the stack of slots whose predicates are running
+  (`cand_applies`) and holds every nested selection to a declared edge
+  (`cand_nested_read`, `CANDORACLE undeclared-read`); a check walk
+  (`cand_select_quiet`) sets the stack aside, and the compile's recovery point
+  empties it (`pcrec_cand_eval_reset`).
 - **emit_dfa.c — LOCATE × FINISH L0: two slots, the PATH derivation, the
   `dfa_matches[]` fold** ([OPT-REVEND] L0, lane lfl0, 2026-10-09;
   `docs/design/locate_finish.md` rev 2.1 §2, §5 L0, D156; zero movers, no abi
