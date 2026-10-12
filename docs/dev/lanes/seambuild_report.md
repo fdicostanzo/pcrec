@@ -262,3 +262,35 @@ everything runs with `TMPDIR` and `MECH_SCRATCH` under the worktree's `build/`.
 - `<prefix>_var_valid` stays exported. It is called once per call from the
   entry wrapper, never per attempt, so the ruling's reason does not reach it.
   Making it inline is a separate decision.
+
+## seamtri (triage of `test-dfa-uniform-fold`, lane seamtri, 2026-10-12)
+
+**Diagnosis: a check broke from the seam move; no regression.** `make test` at
+454ccb2e failed `test-dfa-uniform-fold` with 475 disagreements, all of them
+lookbehind patterns (`((?<!abc)z)`, `((?<*a)z)`, ...), each reading "1
+accessor/table pair disagrees". The seam change made the encoding's step-back
+a `static inline size_t rx_back_step(const unsigned char *s, ...)` in the
+artifact header (it was an exported/non-inline function before). The
+check's text reader keys DFA step accessors on `^static inline .*_step\(`,
+so it took `rx_back_step` for a DFA accessor, derived the table name
+`rx_back_next_state` and, finding no such table, counted a ghost. The
+artifacts are right: 451 of 5,048 DFA cells fold, as before.
+
+**Fix** (check only, no `src/`, no emitted text, no abi): the declaration
+pattern is keyed on what a DFA step returns, `<p>_<dir>_state`
+(`^static inline [A-Za-z0-9_]+_state [A-Za-z0-9_]+_step\(`). The control is not
+weakened: the section-1 named witnesses still require the stamped fold count to
+equal the folded accessors found by this very reader, and the section-3
+non-vacuity floor (451 folding cells, unchanged) would fail if the narrowed
+pattern missed real DFA steps. `run_premul_table.sh`, `run_dfa_stamps.sh` and
+`startset_lib.py` already anchor on `<p>_forward_/reverse_/anchored_step`
+names and need no change.
+
+**Re-validation** (`gnutimeout`, worktree-scratch `TMPDIR`): `make -j8` clean;
+`make test-dfa-uniform-fold` 6 passed / 0 failed, 5,048 DFA cells, 451 folding,
+0 disagreements (was 475); `make strict` clean.
+
+**Remains for the main chain:** nothing beyond this section; the fix touches
+one test script only, so no codegen/registry/rxtsource re-pin is moved. The
+chain's own `test-dfa-uniform-fold` can be taken as green-by-diagnosis once
+the branch merges, or re-run solo.
