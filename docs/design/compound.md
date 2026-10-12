@@ -459,6 +459,12 @@ name, §A.11; never merely because a `pre_admits` passed). It is pattern-level.
      reason is hand-written ("harness lever, `build/pcrec-harness` only"). Controls: a planted
      undeclared global is flagged; a planted stale row is flagged; floors on both
      populations (K35). Its sabotage row is CMP-17 (§E.4).
+     *Manager note (2026-10-12, at merge):* a ~560-row per-symbol list churns with every
+     internal refactor. Before B4, prefer a narrower fence of equal strength: give the lever a
+     reserved, unique name prefix and check (a) exactly one global carries that prefix, (b) no
+     header under `lib/` declares it, and (c) `run_lever_fence.sh`'s widened grep. The full
+     export-surface allowlist stays a separate, optional row ([EMIT-ENTRIES] will want it
+     anyway); decide at B4's brief.
   3. **`run_lever_fence.sh`** (described next), with its grep scope widened to `tests/`, `scripts/`
      and `cli/` as well as the prose directories, allowlisting the harness's own legitimate
      uses (the `-DPCREC_HARNESS` object of `cli/main.c`, `build/pcrec-harness`'s callers, the
