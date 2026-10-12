@@ -46,10 +46,13 @@ sys.path.insert(0, os.path.join(TREE, 'scripts'))
 import emit_sweep as es  # noqa: E402
 
 GUARD = b'#if defined(PCREC_RQ3_WITNESS_GUARD)'
-STAMP = re.compile(rb'^#define (\w+)_SIMD_GUARDED_BYTES (0x[0-9a-f]{16})ULL$', re.M)
-FORMS = re.compile(rb'^#define \w+_MEMFN_FORMS "([^"\n]*)"$', re.M)
-PROG = re.compile(rb'^#define \w+_VM_PROGRAM_BYTES (\d+)ULL$', re.M)
-UNROLL_WHY = re.compile(rb'^#define \w+_UNROLL_K_WHY "([^"\n]*)"$', re.M)
+# [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
+# PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
+# and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
+STAMP = re.compile(rb'^#define ((?:(?!__)\w)+)_SIMD_GUARDED_BYTES (0x[0-9a-f]{16})ULL$', re.M)
+FORMS = re.compile(rb'^#define (?:(?!__)\w)+_MEMFN_FORMS "([^"\n]*)"$', re.M)
+PROG = re.compile(rb'^#define (?:(?!__)\w)+_VM_PROGRAM_BYTES (\d+)ULL$', re.M)
+UNROLL_WHY = re.compile(rb'^#define (?:(?!__)\w)+_UNROLL_K_WHY "([^"\n]*)"$', re.M)
 
 LONG_PREFIX = 'rq3_' + 'p' * 50
 ARMS = [

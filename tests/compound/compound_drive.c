@@ -10,6 +10,7 @@
  *   compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES
  *   compound_drive selfcheck
  *   compound_drive derive OUTDIR < CASES
+ *   compound_drive walk < CASES
  *
  * PATTERNS is `id<TAB>hex-pattern` per line. For each pattern it writes the
  * plain artifact (`OUTDIR/<id>.plain.c/.h`, the default request) and one
@@ -297,6 +298,43 @@ static int drive_parts(int argc, char **argv)
 }
 
 /* The `derive` subcommand (B2). */
+/* `walk` (B4, compound.md §E.4): CASES is `id<TAB>enc<TAB>P-hex` per line;
+ * each P is compiled as the default build compiles it (`--features all`,
+ * `-p rx`) with the walk's verdict asked for, and one line printed:
+ * `id<TAB>verdict`, the first failing conjunct's id, `admit`, `refused` (P
+ * does not compile) or `nowalk` (the attempt that shipped ran no walk). */
+static int drive_walk(int argc, char **argv)
+{
+    (void)argv;
+    if (argc != 0) return 2;
+    char line[1 << 16];
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *f[3] = { line, NULL, NULL };
+        for (int i = 1; i < 3; i++) {
+            f[i] = strchr(f[i - 1], '\t');
+            if (!f[i]) break;
+            *f[i]++ = 0;
+        }
+        if (!f[2]) continue;
+        char *p = unhex(f[2]);
+        if (!p) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
+        pcrec_options o;
+        pcrec_default_options(&o);
+        o.features = "all";
+        if (!strcmp(f[1], "utf8")) o.encoding = PCREC_ENC_UTF8;
+        const char *verdict = NULL;
+        const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .comp_verdict = &verdict };
+        pcrec_output out;
+        pcrec_error err;
+        int rc = pcrec_compile_driver(p, &o, &out, &err, NULL, NULL, NULL, NULL, NULL, &in);
+        printf("%s\t%s\n", f[0], rc ? "refused" : verdict ? verdict : "nowalk");
+        if (!rc) pcrec_output_free(&out);
+        free(p);
+    }
+    return 0;
+}
+
 static int drive_derive(int argc, char **argv)
 {
     if (argc != 1) return 2;
@@ -487,6 +525,7 @@ int main(int argc, char **argv)
     if (argc >= 2 && !strcmp(argv[1], "parts")) return drive_parts(argc - 2, argv + 2);
     if (argc == 2 && !strcmp(argv[1], "selfcheck")) return drive_selfcheck();
     if (argc >= 2 && !strcmp(argv[1], "derive")) return drive_derive(argc - 2, argv + 2);
+    if (argc == 2 && !strcmp(argv[1], "walk")) return drive_walk(argc - 2, argv + 2);
     fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n"
                     "       compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES\n"
                     "       compound_drive selfcheck\n"

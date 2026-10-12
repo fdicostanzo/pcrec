@@ -984,7 +984,7 @@ check):
 | 7 | `PCREC_ERR_UNSET_VAR` | propagate unchanged: the caller's data |
 | 8 | any other code below 0 | `__builtin_trap()`: the reserved space (D38 item 4) |
 
-The rule binds call sites that call INTO another matcher, not an exported
+<a id="s4-p10a"></a>[4¶10a] The rule binds call sites that call INTO another matcher, not an exported
 entry's own `return`. The compound's controller is the first producer: its
 parts are DFA parts compiled with no startpos guard and no subject check, so
 each part call carries rows 1, 2 and 8 and the trap is unreachable by

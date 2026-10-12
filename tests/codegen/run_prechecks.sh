@@ -1789,12 +1789,16 @@ a="$WORKDIR/s512_k.c"; emit "$a" 'x{2,5}((?i:cat))' -fprefilter-collapse
 # measured at the landing (2026-10-05, 154 distinct patterns): 52 movers (26
 # with K > 0), 27 unbounded-run artifacts with an emitted run pre-check.
 S512_MOV_FLOOR=41; S512_KPOS_FLOOR=20; S512_UNB_FLOOR=21
-s512_tot=0; s512_mov=0; s512_kpos=0; s512_unb=0
+s512_tot=0; s512_mov=0; s512_kpos=0; s512_unb=0; s512_comp=0
+. "$ROOT_DIR/tests/lib/compound_art.sh"
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     s512_tot=$((s512_tot + 1))
     a="$WORKDIR/s512_p.c"
     emit "$a" "$pat" || continue
+    # [COMPOUND] a compound's machine stamps read "compound"; held by
+    # run_dfa_stamps.sh's compound bucket, skipped and counted here.
+    if is_compound "$a"; then s512_comp=$((s512_comp + 1)); continue; fi
     st="$(stamp "$a" REQ_HANDOFF)"; k="$(fact req_landmark_maxoff "$pat")"
     s512_presence "$a" "$pat"
     if [ "$st" != "none" ]; then
@@ -1814,7 +1818,7 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/litscan/handoff.rxt" \
                                  "$ROOT_DIR/tests/base/alternation.rxt" \
                                  "$ROOT_DIR/tests/base/anchors.rxt" \
                                  "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null | LC_ALL=C sort -u)
-echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512_kpos), unbounded with an emitted pre-check $s512_unb"
+echo "INFO: [5.12] population $s512_tot patterns: movers $s512_mov (K > 0: $s512_kpos), unbounded with an emitted pre-check $s512_unb; $s512_comp compounds (tests/lib/compound_art.sh: held by run_dfa_stamps.sh)"
 [ "$s512_mov" -ge "$S512_MOV_FLOOR" ] && [ "$s512_kpos" -ge "$S512_KPOS_FLOOR" ] \
     && ok "[5.12b] $s512_mov movers ($s512_kpos with K > 0) hold the presence biconditional and the cross-table check (floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR)" \
     || bad "[5.12b] only $s512_mov movers ($s512_kpos with K > 0), floors $S512_MOV_FLOOR/$S512_KPOS_FLOOR — the presence and cross-table checks may be vacuous"

@@ -116,8 +116,13 @@ def sampled(pattern, modulus, salt):
 # R-13: SIMD-on movers in the sampled pattern streams (the batch-1 rows reach
 # only a FUNC whose predicate is one caseless-style run): a literal floor
 MOVERS_FLOOR = 1
-STAMP = re.compile(r'^#define (\w+)_(MEMFN_FORMS|MEMFN_LIBC) "([^"]*)"$', re.M)
-ENGINE = re.compile(r'^#define \w+_ENGINE "(\w+)"$', re.M)
+# [COMPOUND] a compound artifact's .c also holds its PARTS, each with its own
+# stamp lines under `<prefix>__<role>` (match_api.md §3.7¶1: not contract). An
+# artifact prefix never contains `__` (the namespace table's `parts` row,
+# cli.md §1.6¶2), so the artifact's own lines are the ones whose macro prefix
+# has no `__`.
+STAMP = re.compile(r'^#define ((?:(?!__)\w)+)_(MEMFN_FORMS|MEMFN_LIBC) "([^"]*)"$', re.M)
+ENGINE = re.compile(r'^#define (?:(?!__)\w)+_ENGINE "(\w+)"$', re.M)
 IDENT_LIST = re.compile(r'^[A-Za-z_]\w*(,[A-Za-z_]\w*)*$')
 
 
@@ -292,7 +297,7 @@ def main():
                 r2 = None
             same.append(r2 is not None and r2.returncode == 0 and r2.stdout == r.stdout)
             if flag == '-fmemfn-simd' and r2 is not None and r2.returncode == 0:
-                m = re.search(r'^#define \w+_MEMFN_FORMS "([^"]*)"$',
+                m = re.search(r'^#define (?:(?!__)\w)+_MEMFN_FORMS "([^"]*)"$',
                               r2.stdout.decode('utf-8', 'surrogateescape'), re.M)
                 onforms = m.group(1) if m else None
         ident.append((sname, p, same[0], same[1], onforms))

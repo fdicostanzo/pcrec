@@ -951,6 +951,11 @@ fi
 # `rx_back_step`, with `rx_BACK_STEP_NONE` moving from the declarations to
 # just above the definition. Diffed at the same `-o` against a build of main;
 # nothing else in either artifact moves but the same-width abi digits.
+#
+# RE-RECORDED 2026-10-12 at [COMPOUND] B4 (lane cpb4, abi 76 -> 77): all twelve
+# EMITTED_BYTES rows +27, exactly the one new line every artifact carries,
+# `#define RX_COMPOUND "none"` (26 bytes and its newline); no sample pattern is
+# a compound, and nothing else moved (the diff read row by row).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

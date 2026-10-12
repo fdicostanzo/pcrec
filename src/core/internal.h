@@ -142,6 +142,10 @@ typedef struct {
     PcrecPartFacts *facts;
     /* [COMPOUND] the harness lever (NULL on every shipped path). */
     const PcrecHarnessOptions *harness;
+    /* [COMPOUND] out (the unit drive's decline controls, compound.md §E.4):
+     * the last walk's verdict, the first failing conjunct's id or "admit";
+     * untouched where no walk ran (NULL: not wanted). */
+    const char **comp_verdict;
 } PcrecEmitIn;
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */

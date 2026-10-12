@@ -395,6 +395,8 @@ void pcrec_compound_walk(Ctx *cx, const Ast *root)
         if (!fail) fail = walk_phase(&w, CC_POST);
         PCREC_CAND_TRACE_RECF("compound", "-", "compound", "%s %s", w.row->name,
                               fail ? fail->id : "admit");
+        if (cx->emit_in && cx->emit_in->comp_verdict)
+            *cx->emit_in->comp_verdict = fail ? fail->id : "admit";
         if (fail) {
             walk_free(&w);
             continue;

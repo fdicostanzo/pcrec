@@ -2762,9 +2762,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [COMPOUND] THE WALK (compound.md §A.3): on P's plain compile, its
          * machines built and nothing emitted, `compound_rows[]` decides
          * whether this attempt emits a compound (the shell) or the plain
-         * artifact. B4's parts are DFA parts over a DFA P, so a VM artifact
-         * never walks. */
-        if (comp_state == COMP_WALK && cx.job->fit.chosen == ENGM_DFA) {
+         * artifact. Every engine walks: a row's own conjuncts decide (split's
+         * A1 declines a VM P), so the engine test is not a second gate. */
+        if (comp_state == COMP_WALK) {
             pcrec_compound_walk(&cx, root);
             if (cx.job->comp_shell) cx.comp_stamp = cx.job->comp_shell->row;
         }

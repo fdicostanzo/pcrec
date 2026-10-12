@@ -177,7 +177,7 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 | 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
 | 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
 
-A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
+<a id="s1-6-p2a"></a>[1.6¶2a] A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
 
 <a id="s1-7"></a>
 ### 1.7 `-e ENCODING`, `--encoding=ENCODING`

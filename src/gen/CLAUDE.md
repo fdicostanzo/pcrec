@@ -4177,3 +4177,32 @@ comparison. Five things to know:
 
 The ABI block's ESSENTIAL `search_form` comment names the two new values,
 which moves every artifact (the cpset manifest's re-record).
+
+## [COMPOUND] B4 — the shell, the call-site table, the stamp catalogue (lane cpb4, 2026-10-12, abi 76 -> 77)
+
+- **emit_compound.c** (new) — the compound artifact's BODY: the parts' texts
+  (each spliced with its CPU-guarded byte record, `pcrec_sb_splice`'s rule)
+  and the CONTROLLER, `<p>_search`/`_match`/`_match_caps`, written by the one
+  combinator built (`first-nonzero`, docs/design/compound.md §B.2/§B.3). Every
+  part call's return goes through `callsite_rows[]`, THE ONE CALL-SITE CODE
+  TABLE (§A.14, match_api.md §4¶10): a first-match row list over code classes,
+  a row emitted only where the callee can return it (read off the part's own
+  compile, `PcrecPartFacts`), so a DFA guards-off part gets rows 1, 2 and 8
+  (the dead trap). `PCREC_ERR_INTERNAL` propagates. A new combinator is a new
+  emitter here plus its `compound_rows[]` row; a new code class is a row.
+- **emit_dfa.c — the SHELL** — `pcrec_emit_dfa`'s shell branch (a Job with a
+  `comp_shell`): P's prologue, stamps, residuals, `rx_info` and `main`, with
+  `pcrec_emit_compound_body` in place of P's engine and entries; the
+  orientation block and DECODE are skipped, rx_info's scan/prefilter/
+  match_form/search_form read `"compound"`. `pcrec_emit_search_head` is the
+  search head for that caller (P's caller-position prologue included).
+  `<PREFIX>_COMPOUND` follows `_TUNE` on every artifact but a part.
+- **stamp_kinds.c** (new) — the STAMP CATALOGUE (match_api.md §6.3.12): every
+  stamp name classified pattern-level / machine string / machine count, and
+  `pcrec_stamp_compound_filter`, `Ctx.stamp_filter` in a shell (sb.c's
+  `sb_stampv` calls it): a pattern-level stamp keeps its value, a machine
+  string reads `"compound"`, a machine count `-1`; an unclassified stamp in a
+  shell is an internal error, so a new stamp cannot ship unclassified.
+- **The one-attempt bound is an EMISSION REQUEST** (`PcrecEmitIn.bound`,
+  `pcrec_emit_one_attempt`), read on any artifact; part mode is its first
+  reader, not its owner (check: tests/compound/check_parts.py step 6).

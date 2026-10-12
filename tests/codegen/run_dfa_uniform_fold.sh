@@ -267,6 +267,7 @@ cat > "$WORKDIR/worker.sh" <<'WORKER'
 set -u
 . "$ROOT_DIR/tests/lib/gen_timeout.sh" >/dev/null 2>&1
 command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"; exit 1; }
+. "$ROOT_DIR/tests/lib/compound_art.sh"
 art="$WORKDIR/a.$$.c"
 trap 'rm -f "$art"' EXIT
 one() { # one <axis-label> <extra pcrec args...>
@@ -274,6 +275,9 @@ one() { # one <axis-label> <extra pcrec args...>
     if ! pcrec_run "$PCREC" --features all -p rx "$@" -o - --pattern "$pat" > "$art" 2>/dev/null; then
         echo "REFUSED-$ax"; return
     fi
+    # [COMPOUND] a compound's machine stamps read "compound" (counts -1);
+    # held by run_dfa_stamps.sh's compound bucket, skipped and counted here.
+    if is_compound "$art"; then echo "COMPOUND-$ax"; return; fi
     set -- $(READ_ART "$art")
     local dfa="$1" nstamp="$2" stamp="$3" folded="$4" ghost="$5"
     if [ "$dfa" -eq 0 ]; then
@@ -330,7 +334,8 @@ ndfa=$(grep -c '^DFA-' "$WORKDIR/all.out" || true)
 nfold=$(grep -c '^FOLDING-' "$WORKDIR/all.out" || true)
 nbad=$(grep -c '^BAD:' "$WORKDIR/all.out" || true)
 
-echo "dfa-uniform-fold: sweep — $ndfa artifact/axis cells contain a DFA scan, $nfold of them fold at least one table, $nbad disagreements"
+ncomp=$(grep -c '^COMPOUND-' "$WORKDIR/all.out" || true)
+echo "dfa-uniform-fold: sweep — $ndfa artifact/axis cells contain a DFA scan, $nfold of them fold at least one table, $nbad disagreements; $ncomp compound cells (tests/lib/compound_art.sh: held by run_dfa_stamps.sh)"
 
 if [ "$nbad" -eq 0 ]; then
     ok "§3 the corpus sweep found no disagreement between RX_DFA_UNIFORM_FOLDS, the folded accessors and the tables actually present, on the default and -fprefilter axes"

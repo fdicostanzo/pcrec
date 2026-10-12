@@ -650,11 +650,15 @@ else
 set -u
 . "$ROOT_DIR/tests/lib/gen_timeout.sh" >/dev/null 2>&1
 command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"; exit 1; }
+. "$ROOT_DIR/tests/lib/compound_art.sh"
 art="$WORKDIR/w.$$.c"
 trap 'rm -f "$art"' EXIT
 while IFS= read -r pat; do
     pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" > "$art" 2>/dev/null \
         || { echo REFUSED; continue; }
+    # [COMPOUND] a compound's machine stamps read "compound"; held by
+    # run_dfa_stamps.sh's compound bucket, skipped and counted here.
+    if is_compound "$art"; then echo COMPOUND; continue; fi
     # THE ARTIFACT KIND FROM MATCHER TEXT, never from RX_ENGINE: `goto rx_L0;`
     # is the VM program's entry (run_dfa_stamps.sh's own discriminator).
     if grep -q '^    goto rx_L0;$' "$art"; then
@@ -712,10 +716,10 @@ WORKER
     n_empty="$(cnt 'DFA nomatch empty')"
     n_ovf="$(cnt 'DFA search-filter unanchored')"
     n_drop="$(cnt 'DFA search-filter unanchored sizedrop')"
-    n_vm="$(cnt 'VM')"; n_ref="$(cnt 'REFUSED')"
+    n_vm="$(cnt 'VM')"; n_ref="$(cnt 'REFUSED')"; n_comp="$(cnt 'COMPOUND')"
     n_mis="$(grep -c '^MISMATCH$' "$WORKDIR/all.out" || true)"
     n_iff="$(grep -c '^IFFBAD$' "$WORKDIR/all.out" || true)"
-    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, nomatch(empty) $n_empty, search-filter(overflow) $n_ovf, search-filter(size-drop) $n_drop"
+    echo "population: $npat corpus patterns — $n_vm vm, $n_ref refused, $n_comp compounds (tests/lib/compound_art.sh: held by run_dfa_stamps.sh), unwrapped $n_unwrapped, search-filter(attempt) $n_attempt, nomatch(empty) $n_empty, search-filter(overflow) $n_ovf, search-filter(size-drop) $n_drop"
     [ "$n_mis" -eq 0 ] && ok "§5 stamp and mechanism agree on all $((n_unwrapped + n_attempt + n_empty + n_ovf + n_drop)) DFA artifacts" \
         || { bad "§5 $n_mis DFA artifacts stamp a value their emitted body contradicts"; grep -m5 '^BAD: ' "$WORKDIR/all.out" >&2; }
     [ "$n_iff" -eq 0 ] && ok "§5 the iff holds over the corpus: RX_DFA_MATCH on exactly the DFA artifacts, .match_form NULL on every VM artifact (hybrids included)" \

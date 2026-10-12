@@ -114,6 +114,19 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `compile_driver` runs as the second entry of its TREE-HOOK LIST, after the
   composer, at the composer's position; its report goes to the caller's
   `PcrecDeriveReport`. Check: `tests/compound/` (B1, B2).
+  **B4 (lane cpb4, 2026-10-12): THE DRIVER.** `compound_rows[]` (one row,
+  `split`, pin-only) states each row's admission as listed conjuncts
+  (`CompConj`: id, phase `CC_PRE`/`CC_POST`, predicate, declared reads; A1-A5),
+  its parts, its combinator and its group map (`CompPart.groups`, identity
+  for split); `compound_place[]` is the first-match placement table;
+  `pcrec_compound_tables_check` (`pcrec_compound_rows_check` on any row list)
+  is the table self-check the trace build and the unit drive run.
+  `pcrec_compound_walk` runs in `compile_driver`'s attempt after the machines
+  are built: PRE conjuncts, then each part compiled (lazily; `PcrecPartFacts`
+  filled at the part's success), then POST conjuncts; the first failing id is
+  the trace record's and the drive's verdict. An admitted row builds the
+  SHELL (`PcrecCompShell`), slot coverage checked (F covers P's slots, Q no
+  more than P's). Check: `tests/compound/` (G1-G7, the admitted manifest).
 
 - **internal.h / compile.c ([COMPOUND] B0, lane cpb02, 2026-10-12)** —
   `PcrecEntry`, `PcrecEntryReq` and `PcrecEmitIn` are declared at the top of
@@ -124,6 +137,16 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   attempt's `Ctx`; every existing caller passes NULL (the default request).
   `Job` gained the closure's two masks (`entry_exported`, `entry_static`)
   and `entry_shaped`.
+  **B4 (lane cpb4):** the attempt-level COMPOUND STATE (`COMP_OFF`/`WALK`/
+  `FORCED`): a part, an entry request, a composition or an IR dump starts
+  OFF; `drop-compound` (fit_rungs[] row 5, `FitSets.comp` `FIT_COMP_OFF`,
+  every row states its cell) turns it off on an over-cap compound; the
+  harness lever (`--harness=no-compound`, `pcrec_harness_compile`, hidden,
+  build/pcrec-harness only) runs the complete admission and caps, then
+  re-emits the plain artifact stamped `"forced-off"` (one extra attempt,
+  `COMP_LEVER_ATTEMPTS`). The NAMESPACE RESERVATION TABLE (`ns_reserved[]`,
+  cli.md §1.6¶2): row `parts` refuses a `-p` containing `__`, row
+  `harness-lever` one beginning with `pcrec_harness_`.
 
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both

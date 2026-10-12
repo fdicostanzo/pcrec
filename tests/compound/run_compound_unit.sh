@@ -12,7 +12,9 @@
 #       twin's (docs/design/compound/twin/twin2.py) by LANGUAGE over the
 #       twin's case list; the registry's attempt-scope column (selfcheck).
 #   B4  the driver (compound.md §E.3): the row table's self-check
-#       (selfcheck); G1's corpus re-asked of libpcre2 (verify_split.py; the
+#       (selfcheck); the decline controls and the decline list, each
+#       candidate's first failing conjunct (check_declines.py, against
+#       declines.tsv); G1's corpus re-asked of libpcre2 (verify_split.py; the
 #       corpus itself, split.rxt, rides test-corpus); G2+G4, the compound
 #       against the lever and libpcre2 under every option arm, and its .h and
 #       exported symbols against the plain artifact's (check_split_diff.py);
@@ -52,6 +54,9 @@ CC="$CC" python3 "$SCRIPT_DIR/check_parts.py" "$DRIVE" "$WORKDIR/b1" || rc=1
 echo "== B2: the split derivation against the twin's, by language =="
 CC="$CC" python3 "$SCRIPT_DIR/check_derive.py" "$DRIVE" "$ROOT_DIR" "$WORKDIR/b2" || rc=1
 HARNESS="${PCREC_HARNESS:-$ROOT_DIR/build/pcrec-harness}"
+echo "== B4: the decline controls, by first failing conjunct =="
+python3 "$SCRIPT_DIR/check_declines.py" "$DRIVE" "$SCRIPT_DIR/split_cases.tsv" \
+    "$SCRIPT_DIR/declines.tsv" || rc=1
 echo "== B4: the admitted population, by ID =="
 python3 "$SCRIPT_DIR/check_admitted.py" "$PCREC" "$ROOT_DIR" "$SCRIPT_DIR/admitted.tsv" \
     --jobs "$JOBS" || rc=1
