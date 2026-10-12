@@ -499,7 +499,11 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * the size term for [OPT-4]'s own reason (the artifact it chose `K` for no
  * longer exists), and it can follow the collapse rung on one compile, so the
  * ladder-bearing half is now THREE runs. `SDR_MAX` grew to three with it. */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX };
+/* D164 B3 `+ 1` for `drop-end-mark` (docs/design/endmark.md §R.5), the first
+ * size rung: one retry with the `rev-end` walk pinned to today's form. It
+ * restarts nothing (the size term runs only for the VM, and a hybrid's walk
+ * is its prefilter's body, whose artifact the term never measured apart). */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -693,7 +697,7 @@ typedef struct {
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED, FIT_DROP_PREMUL,
-    FIT_DROP_PREFILTER, FIT_REFUSE
+    FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -904,6 +908,13 @@ static bool fit_collapse_applies(const FitSel *s)
  * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
  * measurement below), so an attempt eligible here has never
  * entered it and its record is still the untouched entry state. */
+/* D164 B3 `drop-end-mark` (docs/design/endmark.md §R.5): the attempt carried
+ * the `tagged` form's lowered machines and the mark was not already dropped. */
+static bool fit_end_mark_applies(const FitSel *s)
+{
+    return s->cx->job && s->cx->job->revend_form == RF_TAGGED && !s->cx->end_mark_dropped;
+}
+
 /* [K53-SELRETRY] the optional anchored machine: `anchored_ok` is exactly
  * "this DFA artifact carries it". */
 static bool fit_anchored_applies(const FitSel *s)
@@ -1099,7 +1110,19 @@ static const FitRung fit_rungs[] = {
       .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
       .cells = { { ESEL_ROLE, ESEL_ROLE }, PFLW_PASS, NULL },
       .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
-    /* 5-9 [PF-DROP] (D135) the size-cap rungs, cheapest first; 10 refuses */
+    /* 5 D164 B3 the FIRST size rung: the match-end mark's lowered machines
+     * cost no answer and no other optimization (endmark.md §R.5); the retry
+     * pins the `rev-end` walk to today's form (`Ctx.end_mark_dropped`). */
+    { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_end_mark_applies, .act = FIT_DROP_END_MARK, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the match-end mark's lowered machines",
+                "the rev-end walk keeps its two-seed form: a final-newline "
+                "tie is decided by one more walk and an anchored run "
+                "(docs/design/endmark.md §R.5)" } },
+    /* 6-10 [PF-DROP] (D135) the size-cap rungs, cheapest first; 11 refuses */
     { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
       .sets = FIT_SETS_NONE, .cells = FIT_CELLS_PASS, .ukw = "cap-rescue",
@@ -1418,6 +1441,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_DROP_PREMUL:    return "retry without the premultiplied DFA transition table";
     case FIT_DROP_PREFILTER: return "retry without the VM hybrid's prefilter";
     case FIT_REFUSE:         return "refuse the compile";
+    case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
     }
     return "?";
 }
@@ -1553,6 +1577,11 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_COLLAPSE,      FIT_SEL1_COLLAPSE },  /* the collapsed prefilter overflowed a cap */
     { FIT_COLLAPSE,      FIT_DROP_PREFILTER },
     { FIT_DROP_ANCHORED, FIT_DROP_PREMUL },
+    /* D164 B3 the end mark dropped, the artifact still over its cap */
+    { FIT_DROP_END_MARK, FIT_DROP_ANCHORED },
+    { FIT_DROP_END_MARK, FIT_DROP_PREMUL },
+    { FIT_DROP_END_MARK, FIT_COLLAPSE },
+    { FIT_DROP_END_MARK, FIT_DROP_PREFILTER },
 };
 #endif
 
@@ -1989,6 +2018,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.size_drop_rung = size_drop_rung;
         cx.anchored_dropped =
             (fit_fired >> (fit_rung_of(FIT_DROP_ANCHORED) - fit_rungs)) & 1u;
+        cx.end_mark_dropped =
+            (fit_fired >> (fit_rung_of(FIT_DROP_END_MARK) - fit_rungs)) & 1u;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
@@ -2196,6 +2227,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 return -1;
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
+            case FIT_DROP_END_MARK:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt

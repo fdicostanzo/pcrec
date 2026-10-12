@@ -280,17 +280,18 @@ char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
 
 | order | rung | engine | gives up | own deny |
 |---|---|---|---|---|
+| 0 | `drop-end-mark`: the match-end mark's lowered machines of a `tagged` `rev-end` walk (`tuning.md` §2.50) | DFA, VM hybrid | the one walk; a final-newline tie is decided by a second walk and an anchored run | `-fno-rev-end-onewalk` (the whole form) |
 | 1 | `unroll-rescue`: a smaller unroll factor `K` picked to fit | VM | the unrolled counter copies | `-fno-size-term` (the whole term) |
 | 2 | `prefilter-collapse`: the prefilter rebuilt from the count-collapsed language | VM hybrid | a filter that dismisses exactly the non-matching starts | `-fno-prefilter-collapse` |
 | 3 | `drop-anchored`: the optional anchored match-here machine | DFA | `<prefix>_match`'s one-pass form | none |
 | 4 | `drop-premul`: the premultiplied DFA transition table | DFA | one add per step | none |
 | 5 | `drop-prefilter`: the VM hybrid's prefilter | VM hybrid | candidate skipping; the VM tries every start | none |
 
-<a id="s8-4-p2"></a>[8.4¶2] The order is by measured cost, cheapest first, and the engine scope makes it bind only within one engine: rows 1, 2 and 5 are the VM's (row 1 runs inside every VM attempt, so before any retry), rows 3 and 4 the DFA's. Rungs 3 and 4 are tried in that order, either may fire, and both may fire on one artifact. Dropping the premultiplied table of a VM hybrid's embedded prefilter has no rung.
+<a id="s8-4-p2"></a>[8.4¶2] The order is by measured cost, cheapest first, and the engine scope makes it bind only within one engine: rows 1, 2 and 5 are the VM's (row 1 runs inside every VM attempt, so before any retry), rows 3 and 4 the DFA's. Rungs 3 and 4 are tried in that order, either may fire, and both may fire on one artifact. Dropping the premultiplied table of a VM hybrid's embedded prefilter has no rung. Row 0 is the first rung asked on any engine and costs no answer and no other optimization: the retry keeps the `rev-end` walk's two-seed form; a later rung may still fire.
 
 <a id="s8-4-p2a"></a>[8.4¶2a] Rung 3 applies only where dropping the anchored machine leaves a strict subset of the artifact's machines. A `rev-end` walk that can tie (`tuning.md` §2.46) relocates through the composite search without it and so gains the forward machine; there the rung is skipped, and rung 4, if it fires, keeps the anchored machine.
 
-<a id="s8-4-p3"></a>[8.4¶3] `--size-cap=refuse` (`PCREC_SIZE_CAP_REFUSE`; `--size-cap=degrade` is the default) denies every row of this table marked degrading, which is all five, so an artifact over either limit is refused rather than shipped slower, and the diagnostic quotes the caller's own unrescued artifact. It is one predicate on the table's rows, not a test inside each rung. The same table holds the DFA-overflow rows of §3.3.3, which are degrading and outside the switch's reach: an overflow is answered by `--engine=dfa` or `-fprefilter`. A pattern that fits is byte-identical with or without the switch. Each rung's own deny flag still applies.
+<a id="s8-4-p3"></a>[8.4¶3] `--size-cap=refuse` (`PCREC_SIZE_CAP_REFUSE`; `--size-cap=degrade` is the default) denies every row of this table marked degrading, which is all six, so an artifact over either limit is refused rather than shipped slower, and the diagnostic quotes the caller's own unrescued artifact. It is one predicate on the table's rows, not a test inside each rung. The same table holds the DFA-overflow rows of §3.3.3, which are degrading and outside the switch's reach: an overflow is answered by `--engine=dfa` or `-fprefilter`. A pattern that fits is byte-identical with or without the switch. Each rung's own deny flag still applies.
 
 <a id="s8-4-p4"></a>[8.4¶4] An over-cap artifact that carries no droppable contributor, or where dropping is not enough, is refused with the figures of the smallest artifact pcrec could make without changing an answer.
 

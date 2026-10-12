@@ -54,6 +54,8 @@
 | `pattern` | the pattern text, framed per §2¶5 |
 | `engine` | always `vm` (this listing exists only for VM artifacts) |
 | `prefilter` | one of the tokens of §3.1.1 |
+| `rev-end-form` | the prefilter body's `rev-end` walk form (`tuning.md` §2.50): `denied`, `one-seed`, `tagged`, `two-seed` or `overflow`; the row is present ONLY where the body is that walk over a `$`/`\Z` pin |
+| `mark-prio` | on a `tagged` walk that can tie, `mark_prio`: `const<c>`, `none` or `state-dependent`; present ONLY there |
 | `root-minw` | the root minimum width; the row is present ONLY when it reached the analysis ceiling |
 | `rungs` | comma-joined rung kinds anywhere in the program (`cursor`, `frames-bounded`, `frames-unbounded`, `revdet`, `counter`), or `none` |
 | `strategies` | comma-joined strategy kinds (`possessive`, `backtracking`), or `none` |

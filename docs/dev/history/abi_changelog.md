@@ -23,7 +23,27 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `76` on every artifact today (lane seambuild bumped it
+- **`rx_info.abi` is `77` on every artifact today (lane b3build bumped it
+  from 76, 2026-10-12: D164 B3, the match-end mark on `rev-end`,
+  docs/design/endmark.md §R; B3.1 and B3.2 land as one event).** Only the
+  `rev-end` walk of a `$`/`\Z` artifact moves beyond the abi digits, by its
+  form row (`rev-end-form`, internal; `--emit-ir`/`--emit-facts` list it).
+  `one-seed` (no match can end by consuming the final newline) emits ONE seed
+  chosen by the last byte, its state a compile-time constant with the
+  position views resolved (no view table, no seed table, no per-iteration
+  view probe: form W), plus a zero-length probe at n where the seed state
+  accepts there. `tagged` (a tie is possible) emits the end mark LOWERED in
+  every machine: one walk from n over the tagged reverse machine, whose
+  `u8` accept cells hold the set of mark distances (bit d), every accept
+  record keeping the cell (`revend_dist`), the end `n - d`, a tie finished by
+  the new FINISH row `prio-const` (`n - c`), the lowered anchored `_match`
+  (which subtracts its own accept's distance, `anchored_dist`) or the
+  relocate over the lowered forward machine (`forward_dist`). `two-seed`
+  keeps the two-seed walk without its tie code. `-fno-rev-end-onewalk`
+  (bit 56) restores the two-seed walk with its tie code on every such
+  artifact. No struct offset moves and no answer moves.
+
+- **`rx_info.abi` was `76` (lane seambuild bumped it
   from 75, 2026-10-11: [LOSS-REVIEW] candidate 1, ruled by Frank: "those
   helpers shouldn't be exported").** The encoding seam's
   `<prefix>_span_match`, `<prefix>_span_match_caseless` and

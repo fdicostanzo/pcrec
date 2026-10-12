@@ -53,6 +53,7 @@
   - [§2.46](#s2-46) `-fno-rev-end` — `PCREC_NO_REV_END` (bit 52)
   - [§2.47](#s2-47) `-fno-start-width` — `PCREC_NO_START_WIDTH` (bit 53)
   - [§2.48](#s2-48) `-fno-start-landing` — `PCREC_NO_START_LANDING` (bit 54)
+  - [§2.50](#s2-50) `-fno-rev-end-onewalk` — `PCREC_NO_REV_END_ONEWALK` (bit 56)
 - [§3](#s3) The DFA scan's stamps
   - [§3.1](#s3-1) A VM hybrid carries the scan's stamps
   - [§3.2](#s3-2) `rx_info` carries the same facts at run time
@@ -1007,6 +1008,17 @@ static inline size_t rx_reqrun(const unsigned char *subject, size_t n, size_t po
 <a id="s2-48-p3"></a>[2.48¶3] **An ill-formed sequence matches nothing** (`match_api.md` §9): where a first byte of the pattern lies above the encoding's one-byte repertoire, the character at the landing may not decode, and the search then steps forward to the first position at or after it whose character does, never re-entering the scan (one decode per reported match on well-formed text; one per ill-formed byte of the last excursion otherwise). Under `-futf-check` the searched range is already proven well-formed and the step is not emitted.
 
 <a id="s2-48-p4"></a>[2.48¶4] **The stamp** is `<PREFIX>_DFA_START "landing"` and `rx_info.search_form`; the denied build reads `"reverse-pass"`. Design: `docs/design/start_landing.md` §2.
+
+<a id="s2-50"></a>
+### 2.50 `-fno-rev-end-onewalk` — `PCREC_NO_REV_END_ONEWALK` (bit 56)
+
+<a id="s2-50-p1"></a>[2.50¶1] **Denies** the ONE-WALK forms of §2.46's reverse-from-end search on a `$`/`\Z` artifact (a `\z`-only artifact has one seed and no form). The form is a first-match table, the axis `rev-end-form` in `--list-axes`: `denied` (this flag), `one-seed`, `tagged`, `two-seed`, and `overflow` (the fallback). Default: on. ANSWER-IDENTICAL, masked out of `rx_info.flags`. Deny-only.
+
+<a id="s2-50-p2"></a>[2.50¶2] **`one-seed`** applies where no match can end by consuming a final newline (read off the reverse machine): every match then ends at `n - 1` when the subject ends in a newline and at `n` otherwise, except a zero-length match at `n` itself, so ONE seed, chosen by the last byte, is walked, and the end at `n` is probed only where that walk accepts nowhere (`\B$` on `"a\n"` is `(2,2)`). The newline is the first byte of the tail `\Z`'s definition consumes (`--list-definitions`); a tail of another width or first byte declines to the next row.
+
+<a id="s2-50-p3"></a>[2.50¶3] **`tagged`** applies where a tie is possible: the match-end mark is lowered in every machine of the artifact (forward, reverse and anchored: `$`/`\Z` in tail position becomes "mark, then the tail consumed"), and ONE walk from `n` over the tagged reverse machine reads, at the smallest accepting position, the set of distances from `n` back to where the match's end was marked. One distance `d` is the end `n - d`; two or more are a tie, which FINISH decides: `prio-const` where leftmost-first priority picks the same distance in every reachable situation (the `mark_prio` fact), else one anchored run from the start, else the forward-then-reverse search from the start. Every lowered machine is built optional: one that does not fit its cap declines to `overflow`, and an artifact over a size cap retries without them (the size-cap ladder's `drop-end-mark` rung, `limits.md` §8.4). **`two-seed`** applies where the lowered machines fit and carry no tie although a match can end by consuming the final newline: the two-seed walk without its tie code.
+
+<a id="s2-50-p4"></a>[2.50¶4] Denied, every `$`/`\Z` artifact keeps the two-seed walk of §2.46 with its tie code where a match can end by consuming the final newline. The form is internal bookkeeping with no stamp of its own: `--emit-ir`'s `rev-end-form`/`mark-prio` rows (`ir_listing.md` §3.1) and `--emit-facts`' `end_mark` fact (`facts_listing.md` §4.1.2) show it. Design: `docs/design/endmark.md` §R.
 
 <a id="s3"></a>
 ## 3. The DFA scan's stamps
