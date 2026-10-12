@@ -182,24 +182,26 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
  * WHY IT WALKS THE TREE rather than reading a parse-time counter — the same
  * reason `forces_kreset` did, generalised: the socket exists for REWRITES that
  * DISCHARGE a forcing, and a counter would keep saying VM after one deleted the
- * node. `why_pos` still comes from `Ctx.first_vmonly_pos`, because no AST node
- * carries a source position; it is read only where the walk already found a
- * node.
+ * node. `why_pos` is that node's own `Ast.reg_at` ([K110]): the offset rides
+ * the node from the parse, so a rewrite that deletes an earlier DFA-excluding
+ * node (the discharge above, a spliced call) cannot leave it naming that
+ * node's offset.
  *
  * WHAT DOES *NOT* RETIRE INTO IT: `forces_captures` (D67 contract note 1). That
  * row is REQUEST-derived — a property of the generation request, with no
  * registry row behind it — so two kinds of forcing remain, request-derived and
  * NODE-derived, and the `--engine=dfa` branch below has to tell them apart. */
 
-/* The first DFA-excluding node in walk order, or NULL. Returns the ROW because
- * that is what carries the `why` text (D67: "why_pos/why from the first
- * DFA-excluding node's row").
+/* The first DFA-excluding node in walk order, or NULL. Returns the NODE: its
+ * `reg` row carries the `why` text (D67: "why_pos/why from the first
+ * DFA-excluding node's row") and its `reg_at` the offset ([K110]), so the two
+ * are read off one node and cannot name different occurrences.
  *
  * Iterative on both spines, recursive only into a spine element's right child
  * and into a body — D10/DD-10's discipline, held the way possessify.c,
  * revdet.c and altcls.c hold it. A flat concatenation is allowed to be 20,000
  * elements long; the nesting depth is bounded by the parser's group cap. */
-static const RegRow *first_dfa_excluding(const Ast *a)
+static const Ast *first_dfa_excluding(const Ast *a)
 {
     for (;;) {
         /* [DD-14 wave G] THE ONE NODE WHOSE ROW IS CONSERVATIVE AND WHOSE
@@ -236,7 +238,7 @@ static const RegRow *first_dfa_excluding(const Ast *a)
          * graph gets a DFA artifact for a recursive pattern; the sabotage row
          * over this line is what says so. */
         if (a->k == A_CALL && a->u.call.link == CALL_SPLICE) return NULL;
-        if (a->reg && !(a->reg->engines & ENGM_DFA)) return a->reg;
+        if (a->reg && !(a->reg->engines & ENGM_DFA)) return a;
         switch (a->k) {
         /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
         case A_WCLASS:
@@ -298,14 +300,14 @@ static const RegRow *first_dfa_excluding(const Ast *a)
             return NULL;
         case A_CAT:
             while (a->k == A_CAT) {
-                const RegRow *r = first_dfa_excluding(a->r);
+                const Ast *r = first_dfa_excluding(a->r);
                 if (r) return r;
                 a = a->l;
             }
             continue;
         case A_ALT:
             while (a->k == A_ALT) {
-                const RegRow *r = first_dfa_excluding(a->r);
+                const Ast *r = first_dfa_excluding(a->r);
                 if (r) return r;
                 a = a->l;
             }
@@ -330,9 +332,11 @@ static const RegRow *first_dfa_excluding(const Ast *a)
 static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
                                 const char **why)
 {
-    const RegRow *r = first_dfa_excluding(a);
-    if (!r) return ENGM_DFA | ENGM_VM;
-    *why_pos = cx->first_vmonly_pos == (size_t)-1 ? 0 : cx->first_vmonly_pos;
+    (void)cx;
+    const Ast *n = first_dfa_excluding(a);
+    if (!n) return ENGM_DFA | ENGM_VM;
+    const RegRow *r = n->reg;
+    *why_pos = n->reg_at;
     /* THE TEXT IS THE ROW'S OWN `syntax`, which is what makes this generic
      * without inventing a per-construct sentence: it is the field whose whole
      * job is "how the construct is written", it is what `--list-syntax`

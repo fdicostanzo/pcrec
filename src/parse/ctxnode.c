@@ -16,8 +16,8 @@
  * asked HERE, by the lookaround port at construction, rather than by a
  * separate pass over the finished tree: the body is complete when the port
  * builds the node, and a node born as A_CTX is never stamped with the
- * lookaround rows' VM_ONLY mask, so `Ctx.first_vmonly_pos` never records an
- * offset for a construct the tree no longer carries.
+ * lookaround rows' VM_ONLY mask, so no `Ast.reg_at` is ever recorded for
+ * a construct the tree no longer carries.
  *
  * THE TABLE (§0.1's rule): an ordered first-match list of rows, each a name,
  * a deny flag, a one-line predicate and its test, walked by `pcrec_look_t3`;

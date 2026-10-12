@@ -410,8 +410,9 @@ construction (src/ir) and emission (src/gen).
 
   The DELETIONS are the point: `has_kreset`, `forces_kreset`,
   `Ctx.first_kreset_pos` and the tripwire's `\K` exception are all GONE, and
-  `Ctx.first_vmonly_pos` is the one generic offset field where two
-  per-construct ones would have been. `\K`'s shipped diagnostic is reproduced
+  `Ast.reg_at` ([K110]; it was `Ctx.first_vmonly_pos`, a first-wins
+  counter that went stale once the discharge deleted an earlier node) is the
+  one generic offset field where two per-construct ones would have been. `\K`'s shipped diagnostic is reproduced
   BYTE FOR BYTE by the generic path, which is D67's "same verdict, same
   position" made checkable.
 

@@ -1560,7 +1560,11 @@ drift. Mirrors `rx_info.engine`.
 the VM (`"capture group at pattern offset 1"`, `"--engine=vm"`), mirrored by
 `rx_info.engine_why`. VM artifacts only: a DFA artifact was not forced, and its
 `rx_info.engine_why` is `NULL` for the same reason. The first forcing reason
-wins. It can also name a BUILD OUTCOME: under `--engine=auto` a DFA build that
+wins. For a construct, `N` in `" at pattern offset N"` is the byte index, in the
+pattern text as the caller wrote it, of that construct's own spelling (the `(?<=`
+it opens, the second `+` of `a++`); the construct named is one the artifact still
+carries, so a construct a rewrite removed (the free atomic discharge, a spliced
+call) neither is named nor lends its offset. It can also name a BUILD OUTCOME: under `--engine=auto` a DFA build that
 overflows a cap (state count, table entries, the K7 element budget,
 `tuning.md` §2.11) is a selection outcome, not a refusal, and the fallback
 artifact stamps e.g. `"dfa overflowed: >32000 states at pattern offset 0"`;

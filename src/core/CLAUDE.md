@@ -1107,6 +1107,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   | `caseless` | A_BREF | 4 | `u.bref.caseless` |
   | `not_repeatable` | **CROSS-KIND** | 5 | stays COMMON |
   | `reg` | **CROSS-KIND** | 5 | stays COMMON |
+  | `reg_at` | **CROSS-KIND** (`reg`'s companion) | 5 | stays COMMON |
 
   - **`multiline` is a FAMILY, not one kind.** A_BOL and A_EOL share the
     meaning and the reads (`src/ir/nfa.c` `compile_ast`, `src/gen/emit_vm.c`
@@ -1121,6 +1122,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   - **`reg` is cross-kind by construction** (D67): `pcrec_ast_stamp` writes it
     for any producer's node and `pcrec_ast_engines()` reads it for any node,
     regardless of `k`. It was expected to be common and the survey confirms it.
+    `reg_at` ([K110]) is written by the same call and travels with it: the
+    source offset of the stamp, so `engine_why` reads the offset of the
+    DFA-excluding node that survives the rewrites.
 
 ### The THIRD disposition shape: a generic helper sanitising a per-kind field
 
@@ -1454,10 +1458,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
     A discharge's output must not inherit the discharged node's stamp
     (note 3) — the free discharge is deletion-shaped and satisfies that
     trivially.
-  - **`Ctx.first_atomic_pos`** is `first_kreset_pos`'s twin, field for field
-    including first-wins, and exists for the DIAGNOSTIC's offset only: the
-    engine verdict WALKS the post-discharge tree, because a parse-time counter
-    would keep counting nodes a rewrite deleted.
+  - **`Ctx.first_atomic_pos`** (retired; the offset is `Ast.reg_at`, [K110])
+    was `first_kreset_pos`'s twin, first-wins. A first-wins counter kept
+    naming a node a rewrite had deleted, so the offset now lives on the node
+    the engine verdict's walk finds.
   - **`RK_QUANTSUFFIX` is the first NON-DOORWAY row kind**, and its cost is
     the thing to read before adding a sixth: a fifth `RegKind` raises NO build
     alarm at all (MEASURED, 28 files / 0 `-Wswitch` diagnostics — every RegKind

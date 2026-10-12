@@ -45,11 +45,10 @@
  * default. Sabotage row S96 removes the stamp and that assertion goes red.
  *
  * THE OFFSET COMES WITH THE STAMP. `pcrec_ast_stamp` writes `Ast.reg` AND
- * records `Ctx.first_vmonly_pos` in one statement, so the row and the offset
- * the `engine_why` diagnostic pairs cannot be recorded at different moments and
- * drift. The offset is needed at all because no AST node carries a source
- * position; the VERDICT still walks the post-discharge tree, because a
- * parse-time counter would keep counting nodes a rewrite deleted.
+ * `Ast.reg_at` in one statement, so the row and the offset the `engine_why`
+ * diagnostic pairs cannot be recorded at different moments and drift, and the
+ * discharge that deletes this node takes its offset with it ([K110]). The
+ * VERDICT walks the post-discharge tree as well.
  *
  * NOT A SCOPE BOUNDARY FOR ANYTHING BUT ITS OWN BODY. `(?>` is a
  * body-carrying group, so it saves and restores the scoped inline-option state
@@ -121,7 +120,7 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
     /* SR-8/D67: the stamp, from the row this port was dispatched on. Not a
      * copy of the mask — the ROW, so the `engines` column keeps exactly one
      * home and `select_engine.c` can also name the construct. */
-    pcrec_ast_stamp(cx, a, rw, at);
+    pcrec_ast_stamp(a, rw, at);
 
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };

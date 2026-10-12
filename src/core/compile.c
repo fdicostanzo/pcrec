@@ -1829,11 +1829,6 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.compose = compose;
         cx.defer_file_refs = (defs != NULL && defs->n > 0);
         cx.first_cap_pos = (size_t)-1;
-        /* [M6.4.2 / SR-8, D67] ONE field where `first_kreset_pos` and a
-         * would-be `first_atomic_pos` used to be: with the engine consultation
-         * generic, a per-construct offset field is a per-construct home for a
-         * fact the one stamping call already has in hand. */
-        cx.first_vmonly_pos = (size_t)-1;
         cx.want_ir = ir_out != NULL;
         /* [SEL-1] Seeded from the OUTER retry state, not from anything this
          * attempt has discovered yet — `dfa_disabled` is only ever true when
@@ -3057,11 +3052,6 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
      * between the two would be one more way for them to drift apart. */
     cx.want_caps = false;
     cx.first_cap_pos = (size_t)-1;
-    /* [M6.4.2 / SR-8, D67] ONE field where `first_kreset_pos` and a
-     * would-be `first_atomic_pos` used to be: with the engine consultation
-     * generic, a per-construct offset field is a per-construct home for a
-     * fact the one stamping call already has in hand. */
-    cx.first_vmonly_pos = (size_t)-1;
     cx.arena.cx = &cx;   /* [M4.7b/K7] parse OOM diagnoses; see compile_driver */
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
