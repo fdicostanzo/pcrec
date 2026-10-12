@@ -1,0 +1,12 @@
+#3 R4 vs rational adv	cells=1332	disagree=0
+#3 R4 vs rev1 adv_milli	cells=1332	disagree=0
+#3 PLANT >= for >	cells=1332	disagree=4
+#4 landmark (ceil/step) vs primitive(round=UP)	cells=17475	disagree=0
+#4 landmark (ceil/step) PLANT: the other rounding	cells=17475	disagree=17471
+#4 landmark (ceil/step) PLANT: ceil off by one	cells=17475	disagree=178
+#7 prefix_k chain (floor/step) vs primitive(round=DOWN)	cells=17475	disagree=0
+#7 prefix_k chain (floor/step) PLANT: the other rounding	cells=17475	disagree=17471
+#4 K admission, formula kept (U1)	cells=749100	disagree=0
+#4 PLANT: K+1	cells=749100	disagree=67
+U2 illustration frameless: R4 vs reseed-cost band, ppm in (62500, 64000]	cells=0	disagree=0
+U2 illustration framed: R4 vs reseed-cost band, ppm in (250000, 344000]	cells=0	disagree=0

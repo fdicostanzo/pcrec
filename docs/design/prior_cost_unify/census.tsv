@@ -1,0 +1,26 @@
+#kind	name	file:line	class	member	reads	reason
+root	pcrec_find_byte_rate	src/core/findings.c:390				
+root	pcrec_find_no_commoner	src/core/findings.c:445				
+root	pcrec_find_pick	src/core/findings.c:433				
+root	pcrec_find_run_rank	src/core/findings.c:553				
+root	pcrec_find_run_scan_index	src/core/findings.c:522				
+root	pcrec_find_run_window_start	src/core/findings.c:586				
+root	pcrec_find_seq_mass	src/core/findings.c:460				
+root	pcrec_find_set_mass	src/core/findings.c:451				
+root	pcrec_find_set_pick	src/core/findings.c:476				
+root	pcrec_find_set_ppm	src/core/findings.c:617				
+reader	pf_derive	src/facts/facts.c:233	NOT	-	pcrec_find_byte_rate@304	the fact epoch's driver: asks the accessor to hand it to pcrec_run_pin (#14)
+reader	pcrec_run_pin	src/facts/kset.c:298	MEMBER	#14	pcrec_find_pick@309	run pin: PICK
+reader	pcrec_req_window	src/facts/req.c:667	MEMBER	#13+#15a	pcrec_find_byte_rate,pcrec_find_run_scan_index,pcrec_find_run_window_start@669,682,684	run window start + run scan index: PICK x2 in one function
+reader	pcrec_req_pick	src/facts/req.c:709	MEMBER	#15b	pcrec_find_byte_rate,pcrec_find_set_pick@712,716	req byte (the set's pick unless an exact run member ships): PICK
+reader	ofs_pred_rank	src/gen/emit_dfa.c:1181	MEMBER	#21	pcrec_find_byte_rate,pcrec_find_run_rank@1185	RQ-2 rank facts handed to the kit (D157): a RANKING, the PICK kind's full order
+reader	pcrec_dfa_cand_ppm	src/gen/emit_dfa.c:7427	CARRIER	-	pcrec_find_set_ppm@7450	returns the scanned set's MASS for R4
+reader	req_byte_dominated_by	src/gen/emit_dfa.c:7530	MEMBER	#1	pcrec_find_byte_rate,pcrec_find_no_commoner@7538	G1 density: COMPARE (pcrec_find_no_commoner)
+reader	req_set_pick	src/gen/emit_dfa.c:7544	CARRIER	-	pcrec_find_byte_rate,pcrec_find_set_pick@7547	returns the set's pick for #2 and req_lead_byte (a SECOND spelling of pcrec_req_pick's last line, F-7)
+reader	req_set_leads_applies	src/gen/emit_dfa.c:7584	MEMBER	#2	pcrec_find_byte_rate,pcrec_find_pick,req_set_pick@7590,7595	set-leads: PICK over [run scan cube, set pick]
+reader	req_lead_byte	src/gen/emit_dfa.c:7643	NOT	-	req_set_pick@7645	emits the lead byte #2 chose; decides nothing
+reader	req_landmark_hit_ppm	src/gen/emit_dfa.c:7753	CARRIER	-	pcrec_find_set_mass@7761,7765	returns the landmark's hit rate (ceil-per-step product) for #4
+reader	req_landmark_admits	src/gen/emit_dfa.c:7786	MEMBER	#4	pcrec_find_byte_rate,pcrec_find_set_mass,req_landmark_hit_ppm@7789,7790,7795	handoff K admission: VERDICT-shaped advance comparison
+reader	cand_rs_dense_applies	src/gen/emit_dfa.c:8739	MEMBER	#3	pcrec_dfa_cand_ppm@8740	R4 adaptive-dense: VERDICT (ppm x gap > 10^6), via carrier pcrec_dfa_cand_ppm
+reader	pcrec_prefix_ksets	src/opt/prefix_k.c:179	MEMBER	#7	pcrec_find_set_ppm@187,201	prefix_k offset planner: VERDICT argmin (model_cost)
+# roots=10 readers=14 members=9 carriers=3 not=2

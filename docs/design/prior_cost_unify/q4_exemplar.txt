@@ -1,0 +1,2 @@
+def.c	RX_DFA_PREFILTER "handoff"	RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+ex.c	RX_DFA_PREFILTER "byte-class"	RX_FINDINGS "byte-rate=colondense:2d231956e201be2f"
