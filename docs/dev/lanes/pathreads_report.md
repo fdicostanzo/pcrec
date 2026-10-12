@@ -122,3 +122,43 @@ Verdict lines: OWED (to be filled by the agent that reads the chain).
 - Plan row `[CAND-PATH-READS]` left `STATE:started`; flip at merge.
 - Mech id used: S844 (one row). The nested-check plant (§3) has no row.
 - No abi number, no spec, no pin moved.
+
+## 6. pathtri (triage of the `--engine=vm` trace arm, 2026-10-12)
+
+Lane `pathtri` (branch `lane/pathtri` from `lane/pathreads` d2650157).
+
+**Diagnosis: (d), a sweep-harness issue; the lane's change is not implicated.**
+`build/land/sweep___engine_vm_.log` shows 0 movers and 0 asymmetric on both
+streams, trace-build stdout identical to the default build on both sides, and
+the SET compare itself CLEAN. The two reds were floors calibrated for the
+default engine: `RECORDS FLOOR ... c-default: 159657 < 270131` (the forced-VM
+run carries the same 159,657 records on both streams) and "13/24 declared keys
+reached" (the eleven DFA-machine decisions are never asked when every pattern is
+forced to the VM). The same red reproduces with the BASE binaries on both sides
+(`emit_sweep.py --ref-bin base --bin base --extra=--engine=vm --trace`, same
+159,657 / 13-of-24), so it predates the lane; no `undeclared-read` abort fired
+and no emitted byte moved (not (a), (b) or (c)).
+
+**Fix** (`scripts/emit_sweep.py` only): `TRACE_EXTRA_PINS`, keyed by the exact
+`--extra` tuple, gives that run its own records floor (measured, main
+23fb7a52: 159,657 on each stream, binding both sides) and pins the UNREACHED
+key set (the eleven names above) as an EQUALITY, so a key that starts or stops
+printing is a re-pin and not a silent pass. Extras with no entry keep the
+plain floors and the all-24-keys rule (the other four arms take the same path as
+before). Failing directions: floor +1 -> `RECORDS FLOOR ... 159657 < 159658`
+rc=1; a pin key renamed -> `UNREACHED SET differs ... newly unreached
+['dfa-engine'], newly reached ['dfa-engine-X']` rc=1.
+
+**Verdicts** (lane binaries from this worktree's own build vs the base binaries
+under `worktrees/pathreads/scratch/reach/base`, read-only): `make -j16` rc=0,
+`make strict` rc=0, trace build rc=0, `make test-cand-oracle` 92 passed / 0
+failed, `emit_sweep` trace arms `-e utf8`, `-fno-offset-skip`,
+`-e utf8 -fno-offset-skip`, `--engine=vm`: all rc=0, `trace: CLEAN`. The
+`--engine=vm` run against the original `pathreads` binaries is also rc=0.
+
+**The main chain must re-run:** only the `--engine=vm` trace arm of
+`emit_sweep` with the new `scripts/emit_sweep.py` (merge `lane/pathtri`, or
+cherry-pick 4936c259, into `lane/pathreads` before the detached chain's
+remaining stages are read; the stages already run need no repeat, the
+`main+arms+trace` stage does not use the new table). The chain's recursion
+identity, `make test` and mech are untouched by this change.
