@@ -205,5 +205,7 @@ REACH (by hand, trace build via `tests/codegen/run_cand_oracle.sh`): unplanted
 tree 92 passed / 0 failed; the same tree planted (scratch `git archive` copy)
 69 passed / 23 failed, all 23 `CANDORACLE undeclared-read FIRST LOCATE`.
 Anchors: `scripts/m6read_check_sab_anchors.py` 700 rows / 721 sites, all resolve.
-Matrix verdicts: see the handback (logs `build/mech_s845.log`,
-`build/mech_s844.log` in the worktree).
+Matrix (`MECH_SCRATCH=build/mech_scratch PROCS=4`): S845 DETECTED
+`candoracle:23fail/69pass`; S844 re-run DETECTED; both `== mech run COMPLETE: 1
+rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0)`. No registry or
+codegen section pins a sabotage-row count (SABANCHOR has a floor of 150 only).
