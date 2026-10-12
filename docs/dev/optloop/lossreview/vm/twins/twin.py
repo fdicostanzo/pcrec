@@ -8,6 +8,14 @@ TRANSFORMS
                  rx_span_match (the exported symbol stays, unchanged); under
                  the bench's -O2 -fPIC the exported one is a PLT call gcc may
                  not inline (semantic interposition).
+  static_noinline  as static_seam but the private copy is `static
+                 __attribute__((noinline))`: a direct (non-PLT) call that gcc
+                 may not inline, so it buys the PLT removal and NOT the
+                 specialization (twintime, 2026-10-11: splits the two on bak-2).
+  static_noinline_noclone  as static_noinline plus `noclone`: gcc otherwise
+                 emits `rx__span_match_in.constprop.0` (the constant reflen
+                 folded into a private clone), which gives back part of the
+                 specialization; this arm is the strict PLT-only one.
   trail_free     FRAMELESS artifacts only: RX_SET stores without trailing and
                  a failed attempt resets exactly the slots RX_SET can write to
                  PCREC_UNSET (what the trail undo restores them to, since every
@@ -32,11 +40,11 @@ import re, sys
 def die(m):
     sys.exit('twin.py: ' + m)
 
-def static_seam(t):
+def static_seam(t, attr='static inline __attribute__((always_inline))'):
     m = re.search(r'\nptrdiff_t rx_span_match\((.*?)\n\}\n', t, re.S)
     if not m:
         die('no rx_span_match definition')
-    body = m.group(0).strip('\n').replace('ptrdiff_t rx_span_match(', 'static inline __attribute__((always_inline)) ptrdiff_t rx__span_match_in(', 1)
+    body = m.group(0).strip('\n').replace('ptrdiff_t rx_span_match(', attr + ' ptrdiff_t rx__span_match_in(', 1)
     n0 = t.count('took = rx_span_match(')
     if n0 == 0:
         die('no VM call site of rx_span_match')
@@ -176,6 +184,8 @@ t = open(sys.argv[1]).read()
 for tr in sys.argv[3].split(','):
     k, _, v = tr.partition('=')
     if k == 'static_seam': t = static_seam(t)
+    elif k == 'static_noinline': t = static_seam(t, 'static __attribute__((noinline))')
+    elif k == 'static_noinline_noclone': t = static_seam(t, 'static __attribute__((noinline, noclone))')
     elif k == 'trail_free': t = trail_free(t)
     elif k == 'seek_memchr': t = seek_memchr(t)
     elif k == 'stay': t = stay(t, int(v))
