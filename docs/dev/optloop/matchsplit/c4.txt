@@ -1,0 +1,11 @@
+== full survey run, planted rows (must be green)
+ok   planted/P36 expect S+F    got S+F    (^a|b)c
+ok   planted/P37 expect E+F    got E+F    a(?:b|$)
+c4: 35 planted, 0 wrong
+== plant ml_edge (must be RED)
+FAIL planted/P20 expect F      got LS     a(?m)^b no-ml-flag
+c4: 35 planted, 1 wrong
+== plant look_end (must be RED)
+FAIL planted/P18 expect F      got S      (?<=^)a
+FAIL planted/P19 expect F      got E      a(?=.*$)
+c4: 35 planted, 2 wrong

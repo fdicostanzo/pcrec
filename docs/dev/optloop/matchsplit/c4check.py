@@ -2,6 +2,7 @@
 """C4 planted classes: every planted pattern must land in its expected mix label and carry the
 expected flag (dead / look / ml / red:K).  Exit 1 on any miss.  Usage: c4check.py ms_rows.tsv.gz"""
 import csv, gzip, sys
+csv.field_size_limit(sys.maxsize)
 bad = 0; n = 0
 for r in csv.DictReader(gzip.open(sys.argv[1], "rt"), delimiter="\t"):
     if r["pop"] != "planted":

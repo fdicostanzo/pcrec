@@ -1,0 +1,441 @@
+
+====================================================================================================
+0. DENOMINATORS (K35).  Source: build/ms/out/ms_rows.tsv.gz; ok = parsed by msprobe AND compiled by pcrec
+====================================================================================================
+population      rows probe-ref  comp-ref        ok      byte      utf8
+bench            367        16         9       342       270        72
+corpus          3870       261         6      3603      2945       658
+corpus-d27      1775       148         5      1622      1622         0
+catalog           40         0         0        40        40         0
+idioms            97         1         0        96        94         2
+planted           35         0         0        35        35         0
+TOTAL(real)     6149       426        20      5703
+
+refusal reasons (pcrec's own diagnostics, first 60 bytes), all populations:
+     59  pcrec: variable-length lookbehind is not implemented: every alternativ
+     49  pcrec: quantifier does not follow a repeatable item (pattern offset 2)
+     23  pcrec: module 'unicode-props' is enabled but \p{...}: this Unicode pro
+     19  pcrec: \K is not allowed inside a lookaround (pattern offset 0)
+     19  pcrec: \p{...}: not a one-letter Unicode property code pcrec recognise
+     17  pcrec: character code point value in \x{...} is too large (max U+00FF 
+     13  pcrec: two named subpatterns have the same name (write (?J) before thi
+     12  pcrec: missing closing ) for group (pattern offset 0)
+     11  pcrec: quantifier does not follow a repeatable item (pattern offset 4)
+     10  pcrec: a relative reference of zero is not allowed (pattern offset 4)
+
+Every table below counts the `ok` patterns of its population (the `ok` column above).
+corpus-d27 = composition_d27.rxt and the d27/ and matrix.rxt adversarial files, reported separately.
+
+====================================================================================================
+1. (a) MIX LABEL per population  (classes among LIVE paths: S ^/\A, G \G, LS (?m)^ leading, E $ \Z \z, LE (?m)$ trailing, F free)
+====================================================================================================
+                bench       corpus   corpus-d27      catalog       idioms
+F                 290         2692         1274           39            1
+S                  33          432          214            1           22
+E                  12          303           66            0           18
+LS                  2           24           18            0           10
+LE                  2           43            1            0            2
+G                   1           19           20            0            3
+E+F                 0           29            3            0            2
+-                   0            6           21            0            0
+S+F                 2           12            3            0            9
+G+F                 0           20            2            0            1
+S+E                 0            1            0            0           20
+LS+F                0            8            0            0            0
+LS+LE               0            2            0            0            4
+LE+F                0            4            0            0            0
+S+E+F               0            0            0            0            4
+E+LE                0            3            0            0            0
+G+LS                0            2            0            0            0
+G+E                 0            1            0            0            0
+S+LE                0            1            0            0            0
+S+LS                0            1            0            0            0
+TOTAL             342         3603         1622           40           96
+
+planted (C4 witnesses, not a population): 35
+
+====================================================================================================
+2. (a) MIX LABEL x TODAY'S ROUTE (all populations; route = ENGINE + VM_PREFILTER + DFA_SCAN [+ emitted start_max])
+====================================================================================================
+         dfa-unanchored hybrid-unanchored      vm-only  dfa-rev-end hybrid-attempt[0] dfa-attempt[0] dfa-attempt[subject_length] hybrid-rev-end    dfa-empty
+F                2462         1238          517            0            0            0            7            0           53
+S                   0            0          261            0          222          212            7            0            0
+E                   9            0           45          234            0            0            0          111            0
+LS                  0            0            0            0            0            0           48            0            0
+LE                 39            5            4            0            0            0            0            0            0
+G                   0            0            2            0            0            0            2            0            0
+E+F                26            6            2            0            0            0            0            0            0
+-                  13            0            0            0            0            2           12            0            0
+S+F                 0            0            5            0            0            0           18            0            0
+G+F                 0            0            2            0            0            0           13            0            0
+S+E                 0            0            0            0            0            0           20            0            0
+LS+F                0            0            0            0            0            0            7            0            0
+LS+LE               0            0            0            0            0            0            6            0            0
+LE+F                3            1            0            0            0            0            0            0            0
+S+E+F               0            0            0            0            0            0            4            0            0
+E+LE                3            0            0            0            0            0            0            0            0
+G+LS                0            0            0            0            0            0            2            0            0
+G+E                 0            0            0            0            0            0            1            0            0
+S+LE                0            0            0            0            0            0            0            0            0
+S+LS                0            0            0            0            0            0            1            0            0
+
+(route columns beyond the 9 largest: dfa-attempt[search_from]=30, hybrid-attempt[subject_length]=21, hybrid-empty=18, hybrid-attempt[search_from]=9 )
+
+-- bench (n=342)
+         dfa-unanchored hybrid-unanchored      vm-only hybrid-attempt[0] dfa-attempt[0]  dfa-rev-end dfa-attempt[subject_length] dfa-attempt[search_from]
+F                 233           39           18            0            0            0            0            0
+S                   0            0            1           17           15            0            0            0
+E                   0            0            0            0            0           12            0            0
+LE                  2            0            0            0            0            0            0            0
+S+F                 0            0            0            0            0            0            2            0
+LS                  0            0            0            0            0            0            2            0
+G                   0            0            0            0            0            0            0            1
+
+-- corpus (n=3603)
+         dfa-unanchored hybrid-unanchored      vm-only  dfa-rev-end dfa-attempt[0] hybrid-attempt[0] hybrid-rev-end dfa-attempt[subject_length]
+F                1762          712          189            0            0            0            0            6
+S                   0            0          178            0          140          112            0            2
+E                   7            0           37          150            0            0          109            0
+LE                 34            5            4            0            0            0            0            0
+E+F                21            6            2            0            0            0            0            0
+LS                  0            0            0            0            0            0            0           23
+G+F                 0            0            2            0            0            0            0           12
+G                   0            0            2            0            0            0            0            1
+S+F                 0            0            2            0            0            0            0            8
+LS+F                0            0            0            0            0            0            0            7
+-                   2            0            0            0            2            0            0            2
+LE+F                3            1            0            0            0            0            0            0
+E+LE                3            0            0            0            0            0            0            0
+LS+LE               0            0            0            0            0            0            0            2
+
+-- corpus-d27 (n=1622)
+         hybrid-unanchored dfa-unanchored      vm-only hybrid-attempt[0]  dfa-rev-end dfa-attempt[0]    dfa-empty dfa-attempt[subject_length]
+F                 482          432          310            0            0            0           36            1
+S                   0            0           82           90            0           37            0            5
+E                   0            2            8            0           54            0            0            0
+-                   0           11            0            0            0            0            0           10
+G                   0            0            0            0            0            0            0            1
+LS                  0            0            0            0            0            0            0           15
+S+F                 0            0            0            0            0            0            0            2
+E+F                 0            3            0            0            0            0            0            0
+G+F                 0            0            0            0            0            0            0            0
+LE                  0            1            0            0            0            0            0            0
+
+-- catalog (n=40)
+         dfa-unanchored hybrid-unanchored hybrid-attempt[0]
+F                  34            5            0
+S                   0            0            1
+
+-- idioms (n=96)
+         dfa-attempt[subject_length] dfa-attempt[0]  dfa-rev-end dfa-unanchored hybrid-attempt[subject_length]      vm-only hybrid-attempt[search_from] hybrid-attempt[0]
+S                   0           20            0            0            0            0            0            2
+S+E                19            0            0            0            1            0            0            0
+E                   0            0           18            0            0            0            0            0
+LS                  8            0            0            0            2            0            0            0
+S+F                 6            0            0            0            0            3            0            0
+LS+LE               4            0            0            0            0            0            0            0
+S+E+F               4            0            0            0            0            0            0            0
+G                   0            0            0            0            0            0            2            0
+LE                  0            0            0            2            0            0            0            0
+E+F                 0            0            0            2            0            0            0            0
+G+F                 1            0            0            0            0            0            0            0
+F                   0            0            0            1            0            0            0            0
+
+====================================================================================================
+3. (b) THE PIN-ONLY POPULATION (no free arm; >= 2 classes): 4a is what opens next
+====================================================================================================
+pin-only patterns: 35 of 5703 ok
+
+                bench       corpus   corpus-d27      catalog       idioms
+S+E                 0            1            0            0           20
+LS+LE               0            2            0            0            4
+E+LE                0            3            0            0            0
+G+LS                0            2            0            0            0
+G+E                 0            1            0            0            0
+S+LS                0            1            0            0            0
+S+LE                0            1            0            0            0
+
+by today's route (all populations):
+         dfa-attempt[subject_length] dfa-unanchored hybrid-attempt[subject_length]
+S+E                20            0            1
+LS+LE               6            0            0
+E+LE                0            3            0
+G+LS                2            0            0
+G+E                 1            0            0
+S+LS                1            0            0
+S+LE                0            0            1
+
+the S+E/LS+E/S+LE/LS+LE sub-population on the ATTEMPT route with start_max = subject_length (the gratuitous forward scan):
+  32 of 35 pin-only
+
+EVERY pin-only pattern of bench, catalog, idioms (and corpus where <= 60):
+
+-- bench: 0 pin-only
+
+-- catalog: 0 pin-only
+
+-- idioms: 24 pin-only
+  LS+LE   dfa-attempt[subject_length] (?m)^\s*(?:#|//).*$|\s+$                             idioms/comment_m_mixed
+  LS+LE   dfa-attempt[subject_length] (?m)^#|;\s*$                                         idioms/comment_m_semi
+  LS+LE   dfa-attempt[subject_length] (?m)^\s+|\s+$                                        idioms/trim_m
+  LS+LE   dfa-attempt[subject_length] (?m)^|$                                              idioms/zero_width_m
+  S+E     dfa-attempt[subject_length] ^\[|\]$                                              idioms/bracket_strip
+  S+E     dfa-attempt[subject_length] ^#|//.*$                                             idioms/comment_strip
+  S+E     dfa-attempt[subject_length] ^(?:GET|POST)\s|HTTP/\d\.\d$                         idioms/crs_http_line
+  S+E     dfa-attempt[subject_length] (?i)^(?:select|union)\b|\bor\s+1=1\s*$               idioms/crs_sqli_lead
+  S+E     dfa-attempt[subject_length] ^\.+|\.+$                                            idioms/dot_strip
+  S+E     dfa-attempt[subject_length] ^\(|\)$                                              idioms/paren_strip
+  S+E     dfa-attempt[subject_length] ^"|"$                                                idioms/quote_strip
+  S+E     dfa-attempt[subject_length] ^['"]|['"]$                                          idioms/quote_strip2
+  S+E     dfa-attempt[subject_length] ^/+|/+$                                              idioms/slash_strip
+  S+E     dfa-attempt[subject_length] ^\s+|\s+$                                            idioms/trim
+  S+E     dfa-attempt[subject_length] ^[ \t]+|[ \t]+$                                      idioms/trim_blank
+  S+E     dfa-attempt[subject_length] ^[\s\x{a0}]+|[\s\x{a0}]+$                            idioms/trim_nbsp
+  S+E     dfa-attempt[subject_length] ^[\s\x{a0}]+|[\s\x{a0}]+$                            idioms/trim_nbsp_u8
+  S+E     dfa-attempt[subject_length] ^\W+|\W+$                                            idioms/trim_nonword
+  S+E     dfa-attempt[subject_length] ^\s*|\s*$                                            idioms/trim_star
+  S+E     dfa-attempt[subject_length] ^[\s\x{200c}]+|[\s\x{200c}]+$                        idioms/trim_zwsp_u8
+  S+E     dfa-attempt[subject_length] ^\s*\{|\}\s*$                                        idioms/wrapper_strip
+  S+E     hybrid-attempt[subject_length] ^(\s*)\{|\}(\s*)$                                    idioms/wrapper_strip_cap
+  S+E     dfa-attempt[subject_length] ^|end$                                               idioms/zero_width_end
+  S+E     dfa-attempt[subject_length] ^|$                                                  idioms/zero_width_or
+
+-- corpus: 11 pin-only
+  E+LE    dfa-unanchored           (?:(?m:a$)|b$)                                       tests/assertions/multiline.rxt:2456
+  E+LE    dfa-unanchored           (?m:a$)|c$                                           tests/assertions/multiline.rxt:2553
+  E+LE    dfa-unanchored           (?m)a$|(?-m:b$)                                      tests/assertions/multiline.rxt:2601
+  G+E     dfa-attempt[subject_length] \Ga$|b$                                              tests/assertions/rev_end.rxt:338
+  G+LS    dfa-attempt[subject_length] (?m)^a|\Gb                                           tests/assertions/gpos.rxt:453
+  G+LS    dfa-attempt[subject_length] \Ga|(?m)^b                                           tests/assertions/gpos.rxt:470
+  LS+LE   dfa-attempt[subject_length] (?m)^a|b$                                            tests/assertions/multiline.rxt:2402
+  LS+LE   dfa-attempt[subject_length] (?m)^a|b$                                            tests/assertions/multiline.rxt:2710
+  S+E     dfa-attempt[subject_length] ^a|b$                                                tests/base/anchors.rxt:55
+  S+LE    hybrid-attempt[subject_length] (?m)(?:\A|(?<=\n)(?!\z))ERROR$                       tests/ucp/ctxnode.rxt:392
+  S+LS    dfa-attempt[subject_length] (?:(?m:^a)|^b)                                       tests/assertions/multiline.rxt:2505
+
+-- corpus-d27: 0 pin-only
+
+K106's trim shape  ^\s+|\s+$  and the family around it (idioms + catalog + bench + corpus rows whose pattern text contains both a leading ^/(?m)^ arm and a trailing $ arm and no free arm):
+  (see the per-population lists above; the idioms list carries the named shapes)
+
+====================================================================================================
+4. (c) ATTEMPT with start_max = subject_length, split by mix  (OPT-ATTEMPT-SPLIT's own precondition)
+====================================================================================================
+DFA or hybrid artifacts on the attempt route with start_max = subject_length: 169 of 5703 ok
+  of which engine=dfa: 148, hybrid: 21
+  other attempt routes (start_max = 0 / search_from): 475
+                bench       corpus   corpus-d27      catalog       idioms
+LS                  2           24           18            0           10
+G+F                 0           18            2            0            1
+S+F                 2           10            3            0            6
+S+E                 0            1            0            0           20
+-                   0            2           10            0            0
+LS+F                0            8            0            0            0
+S                   0            2            5            0            0
+F                   0            6            1            0            0
+LS+LE               0            2            0            0            4
+S+E+F               0            0            0            0            4
+G                   0            2            1            0            0
+G+LS                0            2            0            0            0
+G+E                 0            1            0            0            0
+S+LS                0            1            0            0            0
+S+LE                0            1            0            0            0
+
+TOTAL                   4           80           40            0           45
+
+VM-only route (own attempt loop; start_max not stamped): 838 patterns, by mix:
+                bench       corpus   corpus-d27      catalog       idioms
+F                  18          189          310            0            0
+S                   1          178           82            0            0
+E                   0           37            8            0            0
+S+F                 0            2            0            0            3
+LE                  0            4            0            0            0
+G+F                 0            2            0            0            0
+E+F                 0            2            0            0            0
+G                   0            2            0            0            0
+
+====================================================================================================
+5. (d) QUADRATIC-RISK population: an END path whose first consuming atom sits in an unbounded repeat (lu_E), by route
+====================================================================================================
+patterns with an E/LE path led by an unbounded repeat: 190 of 5703 ok
+          dfa-rev-end hybrid-rev-end dfa-unanchored      vm-only dfa-attempt[subject_length] hybrid-unanchored hybrid-attempt[subject_length]
+E                  79           62            3           16            0            0            0
+LE                  0            0           10            0            0            1            0
+S+E                 0            0            0            0           10            0            1
+E+F                 0            0            6            0            0            0            0
+LS+LE               0            0            0            0            2            0            0
+
+of those, on a route that tries each start (dfa/hybrid attempt, or VM-only): 29
+  and mixed with another class (not E-only, so NOT served by rev-end alone): 13
+
+the mixed ones, listed (bench, catalog, idioms, corpus non-D27):
+  idioms     LS+LE   dfa-attempt[subject_length] (?m)^\s+|\s+$
+  idioms     LS+LE   dfa-attempt[subject_length] (?m)^\s*(?:#|//).*$|\s+$
+  idioms     S+E     dfa-attempt[subject_length] ^\s+|\s+$
+  idioms     S+E     dfa-attempt[subject_length] ^[ \t]+|[ \t]+$
+  idioms     S+E     dfa-attempt[subject_length] ^\s*|\s*$
+  idioms     S+E     dfa-attempt[subject_length] ^[\s\x{a0}]+|[\s\x{a0}]+$
+  idioms     S+E     dfa-attempt[subject_length] ^[\s\x{200c}]+|[\s\x{200c}]+$
+  idioms     S+E     dfa-attempt[subject_length] ^[\s\x{a0}]+|[\s\x{a0}]+$
+  idioms     S+E     dfa-attempt[subject_length] ^\W+|\W+$
+  idioms     S+E     dfa-attempt[subject_length] ^\s*\{|\}\s*$
+  idioms     S+E     hybrid-attempt[subject_length] ^(\s*)\{|\}(\s*)$
+  idioms     S+E     dfa-attempt[subject_length] ^/+|/+$
+  idioms     S+E     dfa-attempt[subject_length] ^\.+|\.+$
+
+(work counts on constructed subjects: qwork.py -> qwork.txt)
+
+====================================================================================================
+6. (e) DENSITY GAIN: today's start-set (mass under the shipped byte prior) vs the FREE part's, byte encoding only
+====================================================================================================
+patterns with a pinned class AND a free part that compiled AND both start-sets known (byte): 72
+  (mixed patterns with a free class: 99; of those the free text compiled: 99; free text unsupported/refused: 0)
+                             E+F          G+F         LE+F         LS+F        S+E+F          S+F
+free set EMPTY mass            0            0            0            0            0            0
+>=10x narrower                 1            7            0            1            0            1
+>=2x narrower                  4            8            0            4            1            7
+within 2x                     17            4            4            0            3           10
+free is WIDER                  0            0            0            0            0            0
+
+route change when the free part is compiled alone (whole -> free):
+     42  dfa-attempt[subject_length] -> dfa/unanchored
+     29  dfa-unanchored             -> dfa/unanchored
+     11  hybrid-attempt[subject_length] -> vm/unanchored
+      6  hybrid-unanchored          -> vm/unanchored
+      5  vm-only                    -> dfa/unanchored
+      4  vm-only                    -> vm/unanchored
+      1  hybrid-unanchored          -> dfa/unanchored
+      1  hybrid-attempt[subject_length] -> dfa/unanchored
+
+free part on the attempt loop still (start_max): Counter()
+free part prefilter: [('memchr', 37), ('offset-set', 18), ('none', 14), ('run-pinned', 11), ('byte-class', 7), ('memchr-bounded', 4)]
+whole  part prefilter (same patterns): [('none', 57), ('byte-class-bounded', 19), ('memchr-bounded', 12), ('', 9), ('byte-class', 1), ('memchr', 1)]
+
+====================================================================================================
+7. (g) THE DECLINE POPULATION (3.2), by the predicates available WITHOUT the primitive
+====================================================================================================
+E/LE + F patterns: 42
+  N1 (route already the free class's own, no START class; the END arm adds only a per-call walk): 36
+  N2-candidates (E arm UNBOUNDED -> the END walk may not die near n; F class present => find-all re-walks): 20  [needs the primitive for stay_len]
+  END arm BOUNDED (the END part compiled alone has an end_window: walk <= a few bytes): 22
+  N3 (E arm whose START is a landmark, e.g. `//.*$`) [counted here by: END part's end_window none and no E path led by an unbounded repeat]: 14
+  N4 short-call, N5 size-cap ladder: need the regime / the size term -- not countable compile-side; STATED.
+  S+F patterns (START + FREE; no END): 26  -- OPT-ATTEMPT-SPLIT's member
+  S+F on attempt[subject_length]: 21
+
+====================================================================================================
+8. FLAGS (section 6.2)
+====================================================================================================
+dead anchored paths (dead>0):          75  {'corpus': 38, 'corpus-d27': 37}
+line anchor away from the edge (landmark, ml_landmark>0): 3
+anchors inside lookarounds (unclassified): 14  by kind Counter({'ahead-pos': 7, 'behind-pos': 7, 'ahead-neg': 2})
+\K present on a pinned pattern (reported start != attempt start): 27 of 1380 pinned
+backref/call/var present (unparse limited): 1003
+redundant pin (structural; a LOWER BOUND -- pin-erased atom sequence equals a free path's):
+    Counter({'E:none': 1041, 'S:none': 732, 'LE:none': 80, 'LS:none': 72, 'G:none': 63, 'E:all': 4, 'S:all': 3, 'G:all': 3, 'E:some': 1})
+   patterns whose path enumeration exceeded the cap (redundancy unknown): 12
+nullable by class (some live path of the class is the empty path):
+    Counter({'F': 557, 'S': 149, 'E': 134, 'LE': 23, 'G': 13, 'LS': 11})
+both pins on one path (e.g. ^...$): 637 of 1380 pinned
+no live path at all (mix '-'): 27 {'corpus': 6, 'corpus-d27': 21}
+captures present (VM hat): 696 of pinned
+
+====================================================================================================
+9. CONTROLS
+====================================================================================================
+C1 single-class agreement (plumbing; shares a source with the facts -- labelled so):
+  S-only  start_anchor=anchored        702 rows,    8 disagree   [shipped fact]
+  S-only  attempt => start_max=0       441 rows,    7 disagree   [emitted start_max]
+  G-only  start_anchor=gstart           43 rows,    5 disagree   [shipped fact]
+  G-only  attempt => start_max=search_from    41 rows,    3 disagree   [emitted start_max]
+  E-only  end_pin derived (eol|z)      399 rows,    9 disagree   [shipped fact]
+  E-only  shipped ew_walk copy view 1|2   399 rows,    9 disagree   [probe copy of ew_walk]
+  LE-only end_pin declined, ew view 3    48 rows,    0 disagree   [fact + probe copy]
+  LS-only start_anchor=unanchored       54 rows,    0 disagree   [shipped fact]
+  F-only  start_anchor=unanchored     4296 rows,    0 disagree   [shipped fact]
+  F-only  end_pin none                4296 rows,    0 disagree   [shipped fact]
+  any mix with E: ew view != 0 <=> end_pin derived  5703 rows,    3 disagree   [probe copy vs fact, ALL ok rows]
+
+C1 disagreements (listed, never hidden):
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] a{0,4}\A
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] \w*^\b
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] [a-c]?\Aa
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] [a-c]*^a*
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] \d*\Aa
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] [a-c]{0,}?^a
+  S-only  start_anchor=anchored            S       dfa-attempt[subject_length] a{0,4}^
+  S-only  start_anchor=anchored            S       vm-only                    (a{0,4}^)
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] a{0,4}\A
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] \w*^\b
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] [a-c]?\Aa
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] [a-c]*^a*
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] \d*\Aa
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] [a-c]{0,}?^a
+  S-only  attempt => start_max=0           S       dfa-attempt[subject_length] a{0,4}^
+  G-only  start_anchor=gstart              G       dfa-attempt[subject_length] a\Gb|\Gz
+  G-only  start_anchor=gstart              G       vm-only                    (x)?a{0,4}\G
+  G-only  start_anchor=gstart              G       vm-only                    (x)?[ab]{0,4}\G
+  G-only  start_anchor=gstart              G       hybrid-attempt[subject_length] (x)?a{0,4}\Gb
+  G-only  start_anchor=gstart              G       dfa-attempt[subject_length] \W*\Ga
+  G-only  attempt => start_max=search_from G       dfa-attempt[subject_length] a\Gb|\Gz
+  G-only  attempt => start_max=search_from G       hybrid-attempt[subject_length] (x)?a{0,4}\Gb
+  G-only  attempt => start_max=search_from G       dfa-attempt[subject_length] \W*\Ga
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             [a-z]{0,4}\z[a-z]*
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             a$\n
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             x$.*
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             a$.*
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             .*$.*
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             $[^\n]*
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             a$\n
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             [a-c]{0,}?\zb?
+  E-only  end_pin derived (eol|z)          E       dfa-unanchored             [^a]*\za*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             [a-z]{0,4}\z[a-z]*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             a$\n
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             x$.*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             a$.*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             .*$.*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             $[^\n]*
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             a$\n
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             [a-c]{0,}?\zb?
+  E-only  shipped ew_walk copy view 1|2    E       dfa-unanchored             [^a]*\za*
+  any mix with E: ew view != 0 <=> end_pin G       dfa-attempt[search_from]   \G\z
+  any mix with E: ew view != 0 <=> end_pin G       dfa-attempt[search_from]   \G$
+  any mix with E: ew view != 0 <=> end_pin G+E     dfa-attempt[subject_length] \Ga$|b$
+
+C-RT unparse of the whole tree compiles to the same route (stamps + start_anchor + end_pin):
+   [('same', 5620), ('unparse:var', 44), ('unparse:bref', 29), ('refused', 7), ('differs', 3)]
+   differs: (?<a>x)(?J)(?<a>y) DFA_PREFILTER:memchr>run-pinned
+   differs: x(?i)ab DFA_PREFILTER:memchr>handoff
+   differs: \p{sc=Greek} ENGINE:dfa>vm,DFA_SCAN:empty>,DFA_PREFILTER:none>,DFA_START:attempt-start>,VM_PREFILTER:>n
+
+C4 planted classes: run `c4check.py` (35 witnesses) and with --plant ml_edge / look_end (must be red); see report.
+
+C5 REACH: every mix label of the taxonomy and its population (ok rows; D27 separated):
+  S            702  (d27  214, bench+catalog+idioms   56)
+  G             43  (d27   20, bench+catalog+idioms    4)
+  LS            54  (d27   18, bench+catalog+idioms   12)
+  E            399  (d27   66, bench+catalog+idioms   30)
+  LE            48  (d27    1, bench+catalog+idioms    4)
+  F           4296  (d27 1274, bench+catalog+idioms  330)
+  S+G            0  (d27    0, bench+catalog+idioms    0)   <-- UNREACHED (empty)
+  S+LS           1  (d27    0, bench+catalog+idioms    0)
+  S+E           21  (d27    0, bench+catalog+idioms   20)
+  S+LE           1  (d27    0, bench+catalog+idioms    0)
+  S+F           26  (d27    3, bench+catalog+idioms   11)
+  G+LS           2  (d27    0, bench+catalog+idioms    0)
+  G+E            1  (d27    0, bench+catalog+idioms    0)
+  G+F           23  (d27    2, bench+catalog+idioms    1)
+  LS+E           0  (d27    0, bench+catalog+idioms    0)   <-- UNREACHED (empty)
+  LS+LE          6  (d27    0, bench+catalog+idioms    4)
+  LS+F           8  (d27    0, bench+catalog+idioms    0)
+  E+LE           3  (d27    0, bench+catalog+idioms    0)
+  E+F           34  (d27    3, bench+catalog+idioms    2)
+  LE+F           4  (d27    0, bench+catalog+idioms    0)
+  S+E+F          4  (d27    0, bench+catalog+idioms    4)
+  LS+LE+F        0  (d27    0, bench+catalog+idioms    0)   <-- UNREACHED (empty)
+  S+LS+E+F       0  (d27    0, bench+catalog+idioms    0)   <-- UNREACHED (empty)
+  -             27  (d27   21, bench+catalog+idioms    0)
+  labels present that the taxonomy list above did not name: []
+
+C6 the -o basename trap: not applicable -- no two artifacts are compared byte-wise; every comparison is on
+   stamp/fact VALUES from `--emit-facts`, and the one emitted-text read (`start_max`) is a single `-o -` compile.

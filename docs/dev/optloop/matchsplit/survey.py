@@ -104,8 +104,8 @@ def file_pop(pop, path, named):
         else:
             pat, rid = ln, f"L{i + 1}"
         if pat:
-            rows.append(dict(pop=pop, id=f"{pop}/{rid}", suite=pop, enc="byte", icase=False,
-                             adv=False, pat=pat))
+            rows.append(dict(pop=pop, id=f"{pop}/{rid}", suite=pop,
+                             enc="utf8" if rid.endswith("_u8") else "byte", icase=False, adv=False, pat=pat))
     return rows
 
 

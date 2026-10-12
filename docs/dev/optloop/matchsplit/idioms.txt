@@ -8,6 +8,8 @@ trim_blank	^[ \t]+|[ \t]+$
 trim_star	^\s*|\s*$
 trim_nbsp	^[\s\x{a0}]+|[\s\x{a0}]+$
 trim_zwsp	^[\s\x{200c}]+|[\s\x{200c}]+$
+trim_zwsp_u8	^[\s\x{200c}]+|[\s\x{200c}]+$
+trim_nbsp_u8	^[\s\x{a0}]+|[\s\x{a0}]+$
 trim_nonword	^\W+|\W+$
 wrapper_strip	^\s*\{|\}\s*$
 wrapper_strip_cap	^(\s*)\{|\}(\s*)$
@@ -97,3 +99,4 @@ zero_width_or	^|$
 zero_width_end	^|end$
 zero_width_m	(?m)^|$
 bol_or_lit	^|x
+# utf8 spellings (name ends _u8): the 2016 outage's pattern needs a code point above 255
