@@ -11,13 +11,19 @@ R17-b, `MF_SITE_ABI` 12, N6). Neither is merged to main. DESIGN ONLY: nothing
 under `src/`, `cli/`, `lib/`, `memfn/` or `tests/` changes, and nothing was
 run.
 
-**Status: PROPOSED, revision 2.** Q1 (§12) is open for Frank. The R-18
-outline (§11) is the manager's to file.
+**Revision 2.1: lane `wcrev2`, 2026-10-12.** It applies D161 add. 9 (see §R2.1).
+
+**Status: PROPOSED, revision 2.1.** Q1 (§12) is ANSWERED by D161 add. 9; Q2 is
+a leaning. The R-18 outline (§11) is the manager's to file.
 
 The contract carries FACTS only, never the kit's method (D157). Every
 selection below is an ordered first-match table (memory
 `pcrec-decisions-as-first-match-tables`). Revision-2 changes are tagged
 `[r4 ID]` or `[D161.7]`/`[D161.8]` where they land.
+
+## §R2.1. What revision 2.1 changed
+
+D161 add. 9: pcrec chooses only the ORIGIN of the handed sub-problem; given it, pcrec sends ALL spans bounded to that origin with the analysis object, and the kit chooses which spans to search and how (§0.1, §2.1, §5.2, §5.4, §9, §11, §12 Q1).
 
 ## §R2. What revision 2 changed (finding → section, disposition)
 
@@ -49,9 +55,13 @@ Revision 1's §12 Q3 (`U` now or later) is DELETED: D161 add. 7 removes `U`.
 
 ## 0. Answers first
 
-1. **The SITE is a bounded sub-problem pcrec chooses** (D161 add. 4). It is a
-   list of SPANS measured from one ORIGIN, **the start of span 0**
-   `[D161.7]`. Each span has a class per position, an offset interval
+1. **The SITE is a bounded sub-problem handed over at an origin pcrec chooses**
+   (D161 add. 4, 9). pcrec's ONLY choice is the ORIGIN: segment 0's start, or
+   an inner segment's start under the rev-inner gates, where pcrec recovers
+   the head itself. Given the origin, pcrec sends EVERY span whose distance to
+   it is bounded, never pre-selecting among them; the kit chooses which spans
+   to search and how (D161 add. 9). The site is a list of those SPANS measured
+   from the ORIGIN, **the start of span 0** `[D161.7]`. Each span has a class per position, an offset interval
    `[omin, omax]` from the origin, and a `need`. The offset interval is sent
    as `(move_back, overshoot)` = `(omax, omax - omin)`, the kit's existing
    W1/W2 fields; span 0 states `(0, 0)` by definition. One new site fact,
@@ -146,10 +156,12 @@ decisions as first-match tables.
 ### 2.1 What a site is
 
 A site is one search pcrec delegates. Its description states a SUB-PROBLEM: a
-regular language pcrec has cut out of the pattern. The kit must locate where
-the sub-problem's span 0 can begin. The sub-problem need not be the whole
-pattern. For `a.*aaa.{2,5}zxq`, pcrec may send only `aaa.{2,5}zxq` and recover
-`a.*` itself with a reverse walk (D161 add. 4). Every fact in the description
+regular language pcrec has cut out of the pattern at an origin it chose. The
+kit must locate where the sub-problem's span 0 can begin. The sub-problem need
+not be the whole pattern. For `a.*aaa.{2,5}zxq`, pcrec may take the origin at
+`aaa` and recover `a.*` itself with a reverse walk (D161 add. 4). Given the
+origin, pcrec sends all spans bounded to it (`aaa` and `zxq` here) and the
+kit picks among them (D161 add. 9); pcrec does not pick `zxq` for it. Every fact in the description
 is TRUE of every match of the sub-problem, and the kit must honour every one
 (K96: a row that does not honour a stated parameter does not apply).
 
@@ -606,9 +618,11 @@ Q12.2's leaning (fixed offsets only) stands.
   tight hull (§2.3).
 - **Output.** A list of SEGMENTS. A segment is the maximal stretch between
   unbounded items (an unbounded repeat or gap, a backreference, a call, a
-  variable). Each segment holds:
-  - its spans, sequential by construction (`spans_seq` = SEQ), with offsets
-    from its first span (the origin);
+  variable); it is the array of EVERY span whose distance to the segment's
+  origin is bounded (D161 add. 9). The producer selects none of them: which
+  to search is the kit's. Each segment holds:
+  - all of its spans, sequential by construction (`spans_seq` = SEQ), with
+    offsets from its first span (the origin);
   - its head: the width `[h_min, h_max]` of the bounded part before its first
     span (0 for a fixed prefix), pcrec's own.
 
@@ -632,22 +646,24 @@ Q12.2's leaning (fixed offsets only) stands.
 segment, read off a stamp-free census. The trigger population is wingame §2.1's
 18 of 327; the floor stays a measured literal.
 
-### 5.4 Which window sub-problem pcrec sends: T-CUT (first match)
+### 5.4 Which ORIGIN pcrec hands the kit: T-CUT (first match)
 
-| row | predicate | sends | FINISH | deny (D46) `[r4 R10]` |
+| row | predicate | origin; sends ALL spans bounded to it | FINISH | deny (D46) `[r4 R10]` |
 |---|---|---|---|---|
 | `anchored` | `start_anchor` is BOT/GSTART | no window site | the attempt at the anchor | none (structural: nothing to choose) |
-| `rev-inner` | [ENG-TACTICS]'s own gates G1-G4 admit an inner segment | that segment, origin = its first span | RECOVER reverse walk, then forward. pcrec's | its own, filed with [ENG-TACTICS] (`-fno-rev-inner`, PROPOSED) |
-| `segment-0` | segment 0 has a span | segment 0's spans, origin = its first span | from `c` (head 0) or from `max(search_from, c - h_max)` | the span SOURCES' existing denies (`-fno-start-set`, `-fno-offset-skip`, `-fno-run-prefilter`, `-fno-req-handoff`) remove their spans; the row is denied when every source is |
+| `rev-inner` | [ENG-TACTICS]'s own gates G1-G4 admit an inner segment | origin = that segment's first span; all its bounded spans | RECOVER reverse walk, then forward. pcrec's | its own, filed with [ENG-TACTICS] (`-fno-rev-inner`, PROPOSED) |
+| `segment-0` | segment 0 has a span | origin = segment 0's first span; all its bounded spans | from `c` (head 0) or from `max(search_from, c - h_max)` | the span SOURCES' existing denies (`-fno-start-set`, `-fno-offset-skip`, `-fno-run-prefilter`, `-fno-req-handoff`) remove their spans; the row is denied when every source is |
 | `none` | always | nothing | the attempt loop / every byte | none (total) |
 
-- **The table holds no prior.** `rev-inner` sits above `segment-0` only where
+- **The table chooses the origin and nothing else** (D161 add. 9): it never
+  selects among the spans bounded to that origin. **The table holds no prior.**
+  `rev-inner` sits above `segment-0` only where
   its own admission passes. Frank's `a.*aaa.{2,5}zxq` is that row's case. Q1
   (§12) asks whether that is enough.
 - **One site per segment.** Today segment 0's facts reach the kit as several
   sites chosen by several rows (the PF FIND, the run-pinned offset-skip, the
   K82/L1 handoff gate, set-leads). Under this contract the HULL spans are ONE
-  window site. The offset-pinned union span (start set, k-set) stays its own
+  window site carrying all of them. The offset-pinned union span (start set, k-set) stays its own
   single-span site until unlock (b).
 
 ### 5.4a Whether a PRESENCE site rides beside it: T-PRES (first match) `[r4 E3]`
@@ -839,7 +855,7 @@ the `consumer` setters; re-derived by the same grep at S3:
 
 | table | owner | rows (in order) |
 |---|---|---|
-| T-CUT: which window sub-problem (§5.4) | pcrec | `anchored` → `rev-inner` → `segment-0` → `none`; deny column per row |
+| T-CUT: which ORIGIN (§5.4); all bounded spans go with it | pcrec | `anchored` → `rev-inner` → `segment-0` → `none`; deny column per row |
 | T-PRES: whether a presence site rides beside it (§5.4a) | pcrec | `dominated` → `presence` → `none`; deny column per row |
 | T-REPLY: reply type by op (§2.4) | contract | FIND → STREAM; ALL_PRESENT → VERDICT; others unchanged |
 | T-NEED: a span's `need` (§4.3) | pcrec | `the FIND definition requires it` (today's single-span terms) → REQUIRED; `pcrec's consumer would re-test it and wants it verified` → REQUIRED; `else` → OPTIONAL. Never left UNSTATED |
@@ -915,7 +931,9 @@ it as a placement with that trigger.
   interfaces of R-15 (the ASSIGN gate), R-17 (the set FIND) and the PF/OFS/
   PRE sites. Their forms and measurements carry over.
 - **Facts pcrec will state** (this note §2-§3):
-  - a site is a bounded sub-problem whose origin is span 0's start;
+  - a site is a bounded sub-problem whose origin is span 0's start, the one
+    thing pcrec chooses; it sends every span bounded to that origin and the
+    kit chooses which to search (D161 add. 9);
   - spans are `mf_pred`s with stated `move_back`/`overshoot` and `need`;
   - context predicates (negative offsets) are not spans;
   - `spans_seq` states the sequence rule (tri-state);
@@ -944,20 +962,21 @@ it as a placement with that trigger.
 ## 12. Questions for Frank (discussion, each with a leaning)
 
 1. **How pcrec picks the sub-problem when an inner segment beats segment 0.**
-   OPEN.
-   - **The problem.** Your `a.*aaa.{2,5}zxq` example is a choice pcrec makes
-     BEFORE the kit sees anything.
-   - **The forces.** If pcrec prices the segments with the prior, the
-     consumer-price problem comes back one level up. If it uses no price, it
-     may send `a` and miss `zxq`. T-PRES (§5.4a) now recovers part of that
-     case: `zxq` still rides as a presence reject beside segment 0, so sending
-     `a` no longer loses the rare span's NOMATCH power, only its locating
-     power.
-   - **My leaning.** Let rev-inner's own gates (G1-G4, where G3 is
-     structural; rincensus) decide when an inner segment is worth the reverse
-     walk, and otherwise send segment 0 (plus T-PRES's presence site). A third
-     path is to send both and let the kit say which it can search. I lean
-     against it: that is a capability query, the K0 shape D146 retired.
+   ANSWERED by D161 add. 9: pcrec's only choice is the ORIGIN, and the kit
+   picks the spans.
+   - **The answer.** The origin is segment 0's start, or an inner segment's
+     start under the rev-inner gates (G1-G4, where G3 is structural;
+     rincensus), where pcrec recovers the head itself with its reverse walk
+     (Frank's `a.*aaa.{2,5}zxq`). Given the origin, pcrec sends ALL spans
+     whose distance to it is bounded, with the analysis object, and never
+     pre-selects among them. The kit chooses which spans to search and how, and
+     streams candidate origins (D161 add. 7). So pcrec prices no span, and the
+     consumer-price problem (D161 add. 6) does not return one level up.
+   - **What stays.** T-PRES (§5.4a) still sends the unbounded-offset presence
+     span (`zxq` beside segment 0 in `a.*zxq`) as its own site, because it has
+     no bounded distance to the origin. "Send both origins and let the kit say
+     which it can search" stays rejected: it is a capability query, the K0
+     shape D146 retired.
 2. **Proven facts only at fixed offsets (v1).** A leaning, not a question.
    - **The leaning.** Report proofs only for spans whose offset from the
      candidate is fixed (`overshoot` 0). Leave the runtime `occurrence`

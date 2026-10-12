@@ -314,3 +314,7 @@ Maintenance: update this file when files are added/removed or change roles.
     lane for G2; the shadow lives to S4. R2 is REJECTED by D161 add. 8:
     proven facts are KEPT, layer-invariant by contract (C-PROOF), with
     Frank's `foobar` example. Q1 open; Q2 a leaning; Q3 deleted.
+  - **REVISION 2.1 (lane `wcrev2`, 2026-10-12) applies D161 add. 9** (see its
+    §R2.1): pcrec chooses only the ORIGIN of the handed sub-problem and sends
+    ALL spans bounded to it with the analysis object; the kit chooses which
+    spans to search and how. T-CUT is now the origin table. Q1 is ANSWERED.
