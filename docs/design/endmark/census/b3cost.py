@@ -255,6 +255,9 @@ def main():
     print('\n== tagged/untagged ratio (the price of the tags alone): median %.2f p90 %.2f max %.2f' % (
         statistics.median(x['tag'] / x['untag_m'] for x in recs), pct([x['tag'] / x['untag_m'] for x in recs], .9),
         max(x['tag'] / x['untag_m'] for x in recs)))
+    ur = sorted((x['tag'] / x['untag_raw'], x['id'], x['pat']) for x in recs)
+    print('== tagged / untagged(raw, pre-scan-edge): median %.2f p90 %.2f max %.2f (%s %s); >2x: %d' % (
+        ur[len(ur) // 2][0], ur[int(len(ur) * .9)][0], ur[-1][0], ur[-1][1], ur[-1][2], sum(1 for q in ur if q[0] > 2.0)))
     print('\n== TOP 10 GROWERS BY tagged/today ratio (id, pattern, today, untagged, tagged)')
     for x in sorted(recs, key=lambda x: (-x['tag'] / x['today_m'], -x['tag']))[:10]:
         print('   %-7s %-34s %-42s %4d %4d %4d  %.2fx' % (x['pop'], x['id'], x['pat'][:42], x['today_m'],
