@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K110 — OPEN (filed 2026-10-12, manager, session 109, from lane endmark's finding F4, docs/dev/lanes/endmark_report.md; reproduced by the manager on main) — STAMP: `RX_ENGINE_WHY`'s pattern offset goes stale after the free atomic/possessive discharge
+
+**Witness:** `pcrec --features all -p rx --pattern 'a++b(?<=ab)'` stamps `RX_ENGINE_WHY "(\?<=...) at pattern offset 2"` (and `rx_info.engine_why` the same), but the lookbehind starts at offset 4. The discharge rewrites `a++` to `a+` before the forcing construct's offset is read, so the reported offset is in the rewritten text, not the user's pattern. Caller-observable (a diagnostic stamp the spec describes); answers unaffected. Fix: carry the source offset on the node from the parse, rather than recomputing it after a rewrite.
+
 ## K109 — OPEN (filed 2026-10-12, manager, session 109, from the [MATCH-SPLIT] 4a panel's semantics critic, docs/dev/reviews/2026-10-12-r1-match-split-pinonly.md sem S1; owned by [MATCH-SPLIT] 4b.2 beside K106's LS+LE shapes) — PERFORMANCE: S+LS / G+LS patterns whose line-start arm can cross a newline are QUADRATIC on the attempt route
 
 **Witness (wall clock, 7700X, one core, today's binaries, `--features all`):** `\Ax|(?m)^\s+y`, `\Gx|(?m)^\s+y`, `^x|(?m)^\s+y` on `"\n"*k + Q` take 1.3 / 18 / 283 ms at k = 2,000 / 8,000 / 32,000 (x15.6 per 4x of k). RX_DFA_SCAN "attempt", RX_DFA_PREFILTER "memchr": the MLINE skip enumerates line-start candidates, but each attempt's `\s+` reads across the following newlines. The census's three S+LS / G+LS witnesses are single-byte arms, so they are linear only by accident; the 4a note's "already linear today" claim is withdrawn. Answers are correct.
