@@ -352,14 +352,14 @@ def _or(it):
 
 
 def spans_of(items):
-    """[(classes, omin, omax)] -- omax None = unbounded."""
+    """[(classes, omin, omax, first item index)] -- omax None = unbounded."""
     res = []
     omin, omax = 0, 0
     cur = None
-    for it in items:
+    for ix, it in enumerate(items):
         if it[0] == "pos":
             if cur is None:
-                cur = ([], omin, omax)
+                cur = ([], omin, omax, ix)
                 res.append(cur)
             cur[0].append(it[1])
             omin += 1
@@ -384,8 +384,8 @@ def extract(pat_bytes):
     except (ValueError, re.error, KeyError, TypeError, RecursionError, OverflowError) as e:
         return {"status": "unparsed", "why": str(e)[:60], "spans": [], "notes": set()}
     sp = []
-    for cls, omin, omax in spans_of(items):
-        sp.append({"classes": cls, "omin": omin, "omax": omax,
+    for cls, omin, omax, ix in spans_of(items):
+        sp.append({"classes": cls, "omin": omin, "omax": omax, "item0": ix,
                    "move_back": omax,
                    "overshoot": None if omax is None else omax - omin})
     w = widths(items)
@@ -416,9 +416,27 @@ def fmt_span(sp):
     return "%s@mb=%s,ov=%s" % ("".join(fmt_class(c) for c in sp["classes"]), mb, ov)
 
 
+def rel_from_items(items, sp, i, j):
+    """[wingame2] The relative distance start(span j) - start(span i) for i
+    before j, by a DIRECT walk of the items between them (the control for
+    game.rel_interval, which derives it from move-back/overshoot alone).
+    -> (lo, hi) with hi None = unbounded."""
+    a, b = sp[i], sp[j]
+    lo, hi = 0, 0
+    for it in items[a["item0"]:b["item0"]]:
+        if it[0] == "pos":
+            lo += 1
+            hi = None if hi is None else hi + 1
+        else:
+            lo += it[1]
+            hi = None if (hi is None or it[2] is None) else hi + it[2]
+    return lo, hi
+
+
 if __name__ == "__main__":
     import sys
     for a in sys.argv[1:]:
         r = extract(a.encode("latin-1"))
         print(a, r["status"], sorted(r["notes"]), r.get("anch_start"),
               [fmt_span(s) for s in r["spans"]])
+

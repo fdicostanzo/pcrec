@@ -46,6 +46,10 @@ Frank asked (D161, 2026-10-11):
   rarest position sits behind an unbounded repeat (`\w+@`, `key\h*=`).
   Today pcrec serves those through the reverse pass or a set-lead. D161 cannot
   express them (§2).
+- **[wingame2] Frank's `refine` policy (§8)** needs no new contract fact for a bounded
+  gap (the relative distance is `(move_back, overshoot, len)` arithmetic), wins 3x-6x
+  over P5 for a per-START consumer when span 1's overshoot is ~0 and span 2's is large,
+  ties or loses for a per-BYTE consumer, and falls back to P5 for unbounded gaps.
 
 ## 1. The span list, derived
 
@@ -382,3 +386,161 @@ so the price may have to be per artifact, not per route kind.
   have stops within 2x. On this population that is a handful of patterns (`data/
   summary.md` §D2). My leaning: the kit ranks by stops + priced window with a
   conservative survival floor, and joint rates wait for a measured loss.
+
+## 8. [wingame2] P6 `refine`: scan the rare span, locate the tight one locally
+
+Lane `wingame2`, 2026-10-11, same population, subjects and prices as §3-§5 (the
+prices are still UNMEASURED, D149; counts only). Frank's policy, which the first
+lane did not include:
+
+> Span 1 is the best (smallest overshoot, tightest window) but has no rare target
+> (a digit class), so it cannot be scanned cheaply. Span 2 has a rare target. Scan
+> for span 2's target; on each hit, use the two spans' move-backs and overshoots
+> (their relative distance and its uncertainty) to bound where span 1 must lie, and
+> run a LOCAL search for span 1's class over that region. Span 1's hit fixes the
+> window with its small overshoot. Where the gap is unbounded (`\d+.*#`), span 2's
+> hit cannot bound span 1: just search forward for span 1's class.
+
+### 8.1 What P6 is, and the one derivation it needs
+
+Call span 1 `A` (the window span) and span 2 `B` (the scan span). P6 scans a form
+over `B` (§3's forms: one anchor or a pair, whole span verified), and at each B
+survivor tests every start of `A` in a bounded REGION; each A hit becomes a window
+`[s_A - move_back_A, s_A + len_A)` with `overshoot_A + 1` possible starts.
+
+The region needs the relative distance of the two spans, and **D161's inputs
+already carry it.** With `omin = move_back - overshoot` and A before B,
+
+    start(B) - start(A)  in  [omin_B - omin_A,  move_back_B - move_back_A]
+    uncertainty = overshoot_B - overshoot_A          (order from omin and len)
+
+Control: a direct walk of the items between the two spans (`spans.rel_from_items`)
+agrees with this on **152 of 152** span pairs (`data/relcontrol.tsv`). The LOOSE
+bound a reader gets by treating each span independently against the match start has
+uncertainty `overshoot_A + overshoot_B`. It is sound but wasteful when A itself sits
+behind a variable gap: witness `.{0,6}\d.{0,3}#` has a region of 3 starts exact and
+15 loose, and the loose region costs P6 1.4x-2x more on that witness (§8.3).
+Where the gap is unbounded (either span has `move_back = inf`) there is no region
+and P6 is exactly P5: its candidates are P5's forms plus the local plans, so the
+fallback "search forward for A's class" is P5's own form over A.
+
+`game.pol_refine(consumer)` picks the cheapest of P5's forms and every local plan
+over ordered pairs of bounded spans under the same independence estimate, with P5's
+decline rule. Two more things were measured beside it, and are not in the policy:
+`local-merge` (one window per B survivor: first hit to last hit) and a forced
+`fwd` / `fwd-gate` / `fwd-tail` for Frank's setting (`game.refine_pair`: A = the
+bounded span with the smallest overshoot, B = a rarer span).
+
+### 8.2 Population: P6 rarely finds a plan, and only one is a real pattern
+
+Of the 327 patterns P6 picks a plan on 9 (dfa) and 10 (vm); every other pattern
+gets P5's pick or its decline (E1). The plan patterns are `wild-logparse-syslogbase-
+expanded` and eight tiny test patterns (`(?>a|ab)c`, `a{1,2}+b`, `colou?r`,
+`((a)|b){1,3}?c`, `[a-]{1,2}(?<!a)b` ...). On those cells P6 is better than P5 in 7
+of 9 (dfa) and 8 of 10 (vm) and summed work falls 2.4x (dfa: 1.49 M -> 0.63 M) and
+2.3x (vm: 13.2 M -> 5.8 M). Those sums are driven by the toy patterns, where A and B
+are one frequent letter each and the local search turns a stop on a common byte into
+a 2-position look. The one real bench pattern with a plan, syslogbase-expanded, gains 1.40x under the VM
+consumer over P5 and SHIPPED (4.77 M against 6.66 M: scan the rare `\x20`, then look 8
+starts back for the 16-byte prefix class), and P5-dfa declines it anyway. The loss
+cell is `colou?r` (0.97x dfa, 0.71x vm: the prefix `colo` is already rare enough).
+P6 does not change a single choice among the bench's loglines patterns.
+
+### 8.3 Witnesses (the shapes Frank named; `data/refine.tsv`, §E3-E4 of `data/summary.md`)
+
+Eleven two-span witnesses run on all four subjects (`run_game.WIT2`). Work as in §4.1
+(one DFA step = 1), capability / log-fail subjects:
+
+| witness | gap | consumer | P5 | P6 | P6 merged | reference |
+|---|---|---|---|---|---|---|
+| `\d{3}.{0,4}#` | region 4 | vm | 269 K / 180 K | **86 K / 108 K** | 86 K / 90 K | no-search 15.7 M |
+| `\d{3}.{0,4}#` | region 4 | dfa | 36 K / 27 K | 34 K / 36 K | 34 K / 26 K | no-search 262 K |
+| `\d{2,4}.{0,12}#` | region 14 | vm | 717 K / 475 K | **165 K / 211 K** | 138 K / 154 K | |
+| `\d{2,4}.{0,12}#` | region 14 | dfa | 43 K / 31 K | 54 K / 61 K | 40 K / 35 K | |
+| `.{0,6}\d.{0,3}#` | A has overshoot 6 | vm | 493 K / 328 K | 702 K / 895 K (worse) | 673 K / 838 K | |
+| `\d{3}-.{0,4}#` | A has a semi-rare `-` | vm | 15 K / 79 K | 15 K / **13 K** | | |
+
+Reading it:
+- **P6 wins where A's own overshoot is ~0 and B's is large, and the consumer pays per
+  START.** Under the VM consumer P5's B-window opens `overshoot_B + 1` = 5 to 15 starts
+  per hit; P6 hands over 1 start per A hit. Gains: 3.1x (`\d{3}.{0,4}#`, cap), 4.3x
+  (`\d{2,4}.{0,12}#`, cap), 5.2x merged, 6.2x on the semi-rare `-` witness (log).
+- **Under the DFA consumer P6 is not better, and unmerged it is worse** (0.5x-0.76x on
+  the log subjects): the DFA pays per window BYTE and P5's single B window is only
+  8-17 bytes. P6 hands over 1.9 to 3.9 A windows per B stop (`E4`: digits cluster
+  next to a `#`), each paying the per-candidate cost. Merging them into one window
+  per B hit repairs it to P5's level (0.88x-1.07x) and no further. The honest summary
+  is that a DFA consumer sees no gain from P6 on a digit-shaped A; the exceptions
+  are cells where the A hit is rare (the semi-rare witness: 1.9x-2.4x).
+- **P6 loses when A is itself far from the match start** (`.{0,6}\d.{0,3}#`): each A
+  window carries 7 starts, there are 2-4 of them per B hit, and the region is only 3
+  wide. The gain condition is `overshoot_A << overshoot_B`, a pure function of D161's
+  fields, so the kit can test it without the subject.
+- **The table cannot price the local hits.** A windows per B stop were measured at 0.9
+  to 3.9; the independence model predicts 0.002 (`\d{3}`), 0.08 (`\d{2}`) and 0.3 (`\d`) (E4),
+  so it is 7x to 900x low. Same failure as §5.3, now on the local-search term. It is why
+  the policy's pick lost to P5 on 8 of 20 witness cells (dfa; 4 of 20 vm) and why merging,
+  which makes the hit count immaterial, lands within 0.88x-1.07x of P5 on every dfa cell.
+
+### 8.4 The unbounded fallback and the presence gate
+
+Witnesses `\d+.*#`, `[0-9]+ x{2}`, `\d+\w*@`, `\d+.*timeout` and the population's 29
+unbounded-gap refine cells. P6 = P5 there by construction. Findings:
+
+- **The forward search for A's class does not always pay.** For the DFA consumer,
+  the forward `\d` search costs 0.74 M-2.37 M against 0.26 M for stepping every byte
+  (digits are 7-27 % of these subjects' bytes): `fwd < nosearch` in **0 of 16** witness cells (dfa)
+  and 9 of 29 population cells. For the VM consumer it pays in 16 of 16 (0.74 M-7.9 M
+  against 15.7 M) and in 19 of 29 population cells. So Frank's fallback is right for a backtracker, and for a DFA the
+  right fallback is to decline unless A's class is rarer than a digit. P5-dfa already
+  declines `\d+.*#`.
+- **A presence gate for the rare span pays only when that span is ABSENT.** On the
+  syntax subject (no `#`) the gate turns the whole pattern into one scan: 7.9 K
+  against 0.74 M (dfa fwd) or 2.1 M (vm fwd) or 15.7 M (vm no-search). It pays by more
+  than 2% in exactly the cells where the subject holds no byte of B's class: 4 of 16
+  witness cells and 3 of 29 population cells; with B present it never lowers the work
+  (`gate < fwd` with B present: 0). A CONTINUOUS gate (a memchr between A candidates,
+  total <= n bytes) is a net loss in 13 of 29 population cells (dfa), because it adds
+  a fixed 0.03 n (7.9 K) to forward searches that cost 15 K-60 K. The TAIL form (one
+  reverse scan from the end for the last B, cost = the bytes after it, then the forward
+  search ends there) never loses (`tail > fwd`: 0 of 158 consumer x subject cells) and keeps the
+  whole saving. A gate in front of a forward search is therefore "is there a `#`
+  anywhere" and nothing finer; unbounded `.*` gives it no per-hit use.
+  pcrec's existing required-byte pre-check (`facts_listing` 4.1.2¶8b) is the same
+  existence test, so what remains for the kit is whether a kit-built forward search
+  needs its own copy of it.
+
+### 8.5 Does this change §5.5's list of facts the contract needs?
+
+- **No new fact is needed for the bounded region.** `(move_back, overshoot, len)` per
+  span already give the relative distance AND its exact uncertainty
+  (`overshoot_B - overshoot_A`), which is tighter than the independent bound
+  (`overshoot_A + overshoot_B`) a reader would use. §5.5 item 1 (`omin` beside
+  `omax`, i.e. overshoot) is now load-bearing for two reasons: the window cost and
+  this region.
+- **The scan span and the window span are different spans.** D161's text reads as
+  "the kit scans a span and hands that span's window". P6 scans B but hands A's window.
+  The contract must say the kit may do that: the list gives it everything, but the
+  kit's reply is "window of A, found by scanning B", so the REPLY needs to name which
+  span's `(move_back, overshoot)` the window has.
+- **The consumer price is needed more, not less.** P6 beats P5 only under a
+  per-start consumer, loses or ties under a per-byte one, and the merge/not-merge
+  choice moves the DFA verdict by 1.5x-2x. It is the §5.5 item 2 coefficients
+  (per candidate, per window byte, per start), unchanged.
+- **The survivor rate matters more.** Local hits per B stop are the term the table
+  misses by 450x. §5.5 item 3 (a joint rate per span) becomes a rate CONDITIONAL on a
+  hit of another span: "digits near a `#`" is far denser than digits at large. A
+  conservative floor (each B hit costs at least one A window, not the independence
+  product) is the cheap defence; it was not simulated as a policy here.
+- **Unbounded gaps need nothing new** (as before), and the presence gate is not a
+  contract fact.
+
+### 8.6 Limits
+
+Eleven witnesses and nine plan patterns (eight of them toys) are thin evidence; the
+claim is about the SHAPE (when does the region or the starts count win), not a
+population rate. The DFA/VM prices are still illustrative. The gate is modelled as a
+byte-class scan (`scan_price`) on the last occurrence of B's rarest position; B
+before A uses a looser sound offset. `.`'s newline exclusion is not modelled: on the
+log subjects an unbounded `.*` is in fact bounded by the line end, which a look-back
+to the previous newline could use; that is outside this study.

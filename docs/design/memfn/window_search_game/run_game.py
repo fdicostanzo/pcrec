@@ -33,7 +33,27 @@ SETS = {
     "loglines": ["loglines__t-256k-fail", "loglines__t-256k-hit"],
     "syntax": ["syntax__t-256k"],
     "corpus": ["capability__t-256k"],
+    "wit2": ["capability__t-256k", "loglines__t-256k-fail", "loglines__t-256k-hit",
+             "syntax__t-256k"],
 }
+
+# [wingame2] two-span witnesses for P6 `refine`, appended to the population as
+# their own set (summarize.py's census tables name the four original sets, so
+# they stay as published). A = the digit span (no rare target), B = the rare
+# one. `bounded` gaps give a region; `unbounded` ones are Frank's fallback.
+WIT2 = [
+    ("w01-bounded-4", rb"\d{3}.{0,4}#"),
+    ("w02-bounded-0", rb"\d{3}#"),
+    ("w03-bounded-12", rb"\d{2,4}.{0,12}#"),
+    ("w04-bounded-x", rb"[0-9]{1,4} x{2}"),
+    ("w05-bounded-at", rb"\d{3}.{0,8}@"),
+    ("w06-loose-gap", rb".{0,6}\d.{0,3}#"),
+    ("w07-unbounded-hash", rb"\d+.*#"),
+    ("w08-unbounded-x", rb"[0-9]+ x{2}"),
+    ("w09-unbounded-at", rb"\d+\w*@"),
+    ("w10-unbounded-lit", rb"\d+.*timeout"),
+    ("w11-A-semirare", rb"\d{3}-.{0,4}#"),
+]
 
 PF_START = {"memchr", "byte-class", "first-class", "first-memchr", "memchr-bounded",
             "byte-class-bounded", "first-class-bounded", "first-memchr-bounded"}
@@ -237,6 +257,103 @@ def fmt_none(v):
     return "inf" if v is None else str(v)
 
 
+def relcontrol(fk, s, name, ext):
+    """The control for G.region_of: the relative distance of two bounded
+    spans derived from (move-back, overshoot, length) alone against a DIRECT
+    walk of the items between them."""
+    sp = ext["spans"]
+    for i in range(len(sp)):
+        for j in range(i + 1, len(sp)):
+            if sp[i]["move_back"] is None:
+                continue
+            lo, hi = SP.rel_from_items(ext["items"], sp, i, j)
+            reg = G.region_of(sp[i], sp[j])      # start(A) - start(B), A = i
+            if sp[j]["move_back"] is None:
+                dl = dh = "-"
+                ag = hi is None
+            else:
+                dl, dh = (-reg[1], -reg[0]) if reg else ("-", "-")
+                ag = reg is not None and (dl, dh) == (lo, hi)
+            fk.write("%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%d\n" % (
+                s, name, i, j, lo, fmt_none(hi), dl, dh, ag))
+
+
+def refine_rows(fr, s, name, sid, sp, prior, S, chosen):
+    """[wingame2] One block of variant rows per (consumer) for the patterns
+    where Frank's setting exists (refine_pair) or a P6 policy picked a plan."""
+    pair = G.refine_pair(sp, prior)
+    picked = any(isinstance(chosen.get(p), G.Plan) for p in ("P6-dfa", "P6-vm"))
+    if pair is None and not picked:
+        return
+    n = len(S)
+
+    def row(cons, variant, gap, reg, f, c, w):
+        fr.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%.0f\t%s\n" % (
+            s, name, sid, cons, variant, gap, reg, f.desc() if f is not None else "-",
+            c.get("stops", n), c.get("bsurv", "-"), c.get("local_pos", "-"), c.get("surv", n),
+            c.get("win_bytes", n), c.get("starts", n), w,
+            "%.3g" % ((f.width + 1) * f.fA.est_surv) if isinstance(f, G.Plan) else "-"))
+
+    gap = "-"
+    if pair is not None:
+        ia, ib = pair
+        gap = "bounded" if G.region_of(sp[ia], sp[ib]) is not None else "unbounded"
+    for cons in ("dfa", "vm"):
+        base = G.baseline_cost(cons) * n
+        row(cons, "nosearch", gap, "-", None, {}, base)
+        for pn in ("P5", "P6"):
+            f = chosen["%s-%s" % (pn, cons)]
+            if isinstance(f, (G.Form, G.Plan)):
+                c = G.simulate_any(f, S)
+                row(cons, pn, gap, ("%d" % f.width) if isinstance(f, G.Plan) else "-", f, c,
+                    G.work_any(c, f, cons, n))
+            else:
+                row(cons, pn, gap, "-", None, {}, base)
+        if pair is None:
+            continue
+        ia, ib = pair
+        for loose in (False, True):
+            ps = [p for p in G.plans_of(sp, prior, loose) if p.ia == ia and p.ib == ib]
+            if not ps:
+                continue
+            p = ps[0]
+            c = G.simulate_plan(p, S)
+            row(cons, "local-loose" if loose else "local", gap, "%d" % p.width, p, c,
+                G.work_any(c, p, cons, n))
+            if not loose:
+                cm = dict(c, surv=c["mcand"], win_bytes=c["mbytes"], starts=c["mstarts"])
+                row(cons, "local-merge", gap, "%d" % p.width, p, cm, G.work_merge(c, p, cons, n))
+        f = G.best_form_of(sp, ia, prior, cons)
+        if f is None:
+            continue
+        c = G.simulate(f, S)
+        row(cons, "fwd", gap, "-", f, c, G.work(c, f, cons, n))
+        sa, sb = sp[ia], sp[ib]
+        gr, k = G.rare_pos(sb, prior)
+        gm = sb["classes"][k]
+        if sb["omin"] >= sa["omin"] + len(sa["classes"]):      # B after A
+            goff = sb["omin"] - sa["omin"] + k
+        else:                                  # sound for any order: B is at or after
+            goff = k + sb["omin"] - sa["move_back"]    # the window's beginning
+        cg = G.simulate_gate(f, S, gm, goff)
+        gp = G.scan_price(G.Form(0, [0], [gm], 0, 0, "one", prior))
+        row(cons, "fwd-gate", gap, "gate:%s@%d,rate=%.3g,last=%d" % (SP.fmt_class(gm), goff, gr, cg["last"]), f, cg,
+            G.work_gate(cg, f, cons, gp))
+        # the consumer meeting every byte up to the last B, behind the same gate
+        cb = G.baseline_cost(cons)
+        row(cons, "nosearch-gate", gap, "gate:%s@%d" % (SP.fmt_class(gm), goff), None,
+            {"stops": cg["last"] + 1}, gp * n + cb * max(0, cg["last"] + 1 - goff))
+        # TAIL form of the gate: ONE reverse scan from the end for the last B
+        # (cost = the tail beyond it), and the forward search ends there. It
+        # pays the gate only for the bytes it can save.
+        tail = n - cg["last"] - 1 if cg["last"] >= 0 else n
+        ct = dict(cg, gate_n=tail)
+        row(cons, "fwd-tail", gap, "tail:%s@%d,bytes=%d" % (SP.fmt_class(gm), goff, tail), f, ct,
+            G.work_gate(ct, f, cons, gp))
+        row(cons, "nosearch-tail", gap, "tail:%s@%d" % (SP.fmt_class(gm), goff), None,
+            {"stops": cg["last"] + 1}, gp * tail + cb * max(0, cg["last"] + 1 - goff))
+
+
 def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
     os.makedirs(os.path.join(out, "facts"), exist_ok=True)
     prior = G.load_prior(prior_path)
@@ -247,6 +364,9 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
                 buf = open(os.path.join(subjdir, sid + ".bin"), "rb").read()
                 subj[sid] = (buf, np.frombuffer(buf, np.uint8), G.prior_from_subject(buf))
     pop = population(bench, corpus_root, ncorpus)
+    pop += [("wit2", n, p) for n, p in WIT2]
+    if os.environ.get("WINGAME_ONLY"):
+        pop = [x for x in pop if x[0] == os.environ["WINGAME_ONLY"]]
     if os.environ.get("WINGAME_LIMIT"):          # smoke runs during a box hold
         pop = pop[::max(1, len(pop) // int(os.environ["WINGAME_LIMIT"]))]
     fs = open(os.path.join(out, "spans.tsv"), "w")
@@ -260,6 +380,11 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
     fp = open(os.path.join(out, "spanforms.tsv"), "w")
     fp.write("set\tname\tsubject\tspan\tkind\tform\tL\tmb\tov\test_stop\test_surv\t"
              "stops\tsurv\twin_bytes\tstarts\twork_scan\twork_dfa\twork_vm\n")
+    fr = open(os.path.join(out, "refine.tsv"), "w")
+    fr.write("set\tname\tsubject\tconsumer\tvariant\tgap\tregion\tform\tstops\tbsurv\tlocal_pos\t"
+             "surv\twin_bytes\tstarts\twork\test_hits\n")
+    fk = open(os.path.join(out, "relcontrol.tsv"), "w")
+    fk.write("set\tname\ti\tj\titems_lo\titems_hi\tderived_lo\tderived_hi\tagree\n")
     fm.write("set\tname\tsubject\tpolicy\tform\tstops\tsurv\twin_bytes\twin_union\tstarts\t"
              "work_dfa\twork_vm\tpy_matches\n")
     for s, name, pat in pop:
@@ -292,10 +417,12 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
         if ext["status"] == "ok" and not ext.get("anch_start"):
             for pname, pol in G.POLICIES:
                 chosen.append((pname, pol(sp, prior)))
+        if ext["status"] == "ok":
+            relcontrol(fk, s, name, ext)
         sh = shipped(fa, st, ext, prior)
         chosen.append(("SHIPPED", sh))
         for pname, f in chosen:
-            if isinstance(f, G.Form):
+            if isinstance(f, (G.Form, G.Plan)):
                 fc.write("%s\t%s\t%s\t%s\t%.3g\t%.3g\t%.4g\t%.4g\t%.4g\n" % (
                     s, name, pname, f.desc(), f.est_stop, f.est_surv,
                     G.expected_cost(f, "none"), G.expected_cost(f, "dfa"), G.expected_cost(f, "vm")))
@@ -322,15 +449,17 @@ def main(pcrec, bench, subjdir, prior_path, corpus_root, out, ncorpus=150):
                         s, name, sid, pname, f + "(consumer-meets-every-byte)", n, n, n, n, n,
                         G.baseline_cost("dfa") * n, G.baseline_cost("vm") * n, pm))
                     continue
-                if not isinstance(f, G.Form):
+                if not isinstance(f, (G.Form, G.Plan)):
                     fm.write("%s\t%s\t%s\t%s\t%s\t-\t-\t-\t-\t-\t-\t-\t%s\n" % (
                         s, name, sid, pname, f or "no-bounded-span", pm))
                     continue
-                c = G.simulate(f, S)
+                c = G.simulate_any(f, S)
                 fm.write("%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%.0f\t%.0f\t%s\n" % (
                     s, name, sid, pname, f.desc(), c["stops"], c["surv"], c["win_bytes"],
-                    c["win_union"], c["starts"], G.work(c, f, "dfa", len(S)),
-                    G.work(c, f, "vm", len(S)), pm))
+                    c["win_union"], c["starts"], G.work_any(c, f, "dfa", len(S)),
+                    G.work_any(c, f, "vm", len(S)), pm))
+            if ext["status"] == "ok" and not ext.get("anch_start"):
+                refine_rows(fr, s, name, sid, sp, prior, S, dict(chosen))
         print(fid, ext["status"], len(sp), file=sys.stderr)
     return 0
 

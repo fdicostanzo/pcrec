@@ -15,6 +15,10 @@ def rows(f):
 SPANS, INFO, CH, SIM, SF = (rows(f) for f in
                             ("spans.tsv", "spaninfo.tsv", "choices.tsv", "sim.tsv", "spanforms.tsv"))
 SETS = ["capability", "loglines", "syntax", "corpus"]
+# [wingame2] sections A-D are the original 327-pattern population; the lane's
+# two-span witnesses (set wit2) are read by section E only.
+SPANS_ALL, CH_ALL, SIM_ALL = SPANS, CH, SIM
+SPANS, INFO, CH, SIM, SF = ([r for r in t if r["set"] in SETS] for t in (SPANS, INFO, CH, SIM, SF))
 POL = ["P1-rare-pos", "P2-rare-span", "P3-pair", "P4-selfprice", "P5-dfa", "P5-vm"]
 
 
@@ -246,3 +250,152 @@ for k, a, b in exd[:30]:
                  "%s s=%s v=%s wb=%s" % (b["form"], b["stops"], b["surv"], b["win_bytes"]),
                  "%s / %s" % (a["work_dfa"], b["work_dfa"]), "%s / %s" % (a["work_vm"], b["work_vm"])])
 table(["cell", "form A (stops, survivors, window bytes)", "form B", "work dfa A/B", "work vm A/B"], body)
+
+# ---- E. [wingame2] P6 `refine` -----------------------------------------------
+def rows_opt(f):
+    try:
+        return rows(f)
+    except FileNotFoundError:
+        return []
+
+
+REF = rows_opt("refine.tsv")
+REL = rows_opt("relcontrol.tsv")
+SHORT = {"capability__t-256k": "cap", "syntax__t-256k": "syn",
+         "loglines__t-256k-fail": "log-fail", "loglines__t-256k-hit": "log-hit"}
+
+
+def num(x):
+    return float(x) if x not in ("-", "") else 0.0
+
+
+def fw(w):
+    return "%.3g" % w
+
+
+if REF:
+    h("E0. Control: relative distance from (move-back, overshoot, length) vs a direct walk of the items")
+    ag = sum(r["agree"] == "1" for r in REL)
+    print("%d span pairs (earlier span bounded): %d agree, %d differ." % (len(REL), ag, len(REL) - ag))
+
+    sim6 = collections.defaultdict(dict)
+    for r in SIM_ALL:
+        sim6[(r["set"], r["name"], r["subject"])][r["policy"]] = r
+    spanstr = {(r["set"], r["name"]): r["spans"] for r in SPANS_ALL}
+    ref = collections.defaultdict(lambda: collections.defaultdict(dict))
+    for r in REF:
+        ref[(r["set"], r["name"])][r["subject"]][(r["consumer"], r["variant"])] = r
+
+    h("E1. What P6 picks")
+    chp = collections.defaultdict(collections.Counter)
+    for r in CH_ALL:
+        if not r["policy"].startswith("P6"):
+            continue
+        f = r["form"]
+        k = "plan (A via B)" if f.startswith("local") else "decline" if f == "decline" else \
+            "single-span form" if f.startswith(("one#", "pair#")) else "no bounded span"
+        chp[("witnesses" if r["set"] == "wit2" else "327 patterns", r["policy"])][k] += 1
+    kinds = ["plan (A via B)", "single-span form", "decline", "no bounded span"]
+    table(["population", "policy"] + kinds,
+          [[p, q] + [c[k] for k in kinds] for (p, q), c in sorted(chp.items())])
+
+    h("E2. Cells where P6 chose a plan: P6 against P5 (same consumer) and SHIPPED (work; one DFA step = 1)")
+    body = []
+    agg = collections.defaultdict(list)
+    for k, d in sorted(sim6.items()):
+        for cons in ("dfa", "vm"):
+            p6, p5 = d.get("P6-" + cons), d.get("P5-" + cons)
+            if p6 is None or not p6["form"].startswith("local") or p5 is None:
+                continue
+            w6, w5 = num(p6["work_" + cons]), num(p5["work_" + cons])
+            sh = d.get("SHIPPED")
+            ws = num(sh["work_" + cons]) if sh and sh["stops"] != "-" else None
+            pop = "wit" if k[0] == "wit2" else "pop"
+            agg[(pop, cons)].append((w5, w6, ws))
+            body.append([k[0] + "/" + k[1] + " `" + spanstr.get((k[0], k[1]), "")[:44] + "`",
+                         SHORT.get(k[2], k[2]), cons, p6["stops"], p6["surv"], fw(w6), fw(w5),
+                         "%.2f" % (w5 / w6) if w6 else "-", fw(ws) if ws is not None else "-"])
+    table(["pattern (spans)", "subject", "cons", "B stops", "A windows", "work P6", "work P5",
+           "P5/P6", "work SHIPPED"], body)
+    print()
+    body = []
+    for (pop, cons), v in sorted(agg.items()):
+        win = sum(1 for a, b, _ in v if b < a * 0.98)
+        los = sum(1 for a, b, _ in v if b > a * 1.02)
+        sh = [x for x in v if x[2] is not None]
+        body.append([pop, cons, len(v), win, len(v) - win - los, los, fw(sum(a for a, _, _ in v)),
+                     fw(sum(b for _, b, _ in v)),
+                     fw(sum(x[0] for x in sh)) + " / " + fw(sum(x[1] for x in sh)) + " / " + fw(sum(x[2] for x in sh))])
+    table(["population", "consumer", "plan cells", "P6 better (>2%)", "tie", "P6 worse (>2%)",
+           "sum work P5", "sum work P6", "SHIPPED-comparable cells: P5 / P6 / SHIPPED"], body)
+
+    h("E3. Frank's setting, witnesses: every variant (work; one DFA step = 1)")
+    VAR = ["nosearch", "P5", "P6", "local", "local-merge", "local-loose", "fwd", "fwd-gate", "fwd-tail", "nosearch-gate", "nosearch-tail"]
+    for cons in ("dfa", "vm"):
+        body = []
+        for k, subs in sorted(ref.items()):
+            if k[0] != "wit2":
+                continue
+            for sid, d in sorted(subs.items()):
+                if (cons, "fwd") not in d:
+                    continue
+                row = [k[1], k[1].split("-")[1] if False else d[(cons, "fwd")]["gap"],
+                       d[(cons, "local")]["region"] if (cons, "local") in d else "-", SHORT[sid]]
+                for v in VAR:
+                    row.append(fw(num(d[(cons, v)]["work"])) if (cons, v) in d else "-")
+                body.append(row)
+        print("\nConsumer **%s**:\n" % cons)
+        table(["witness", "gap", "region", "subject"] + VAR, body)
+
+    h("E4. Local-search counts per B stop (witnesses with a bounded gap)")
+    body = []
+    for k, subs in sorted(ref.items()):
+        if k[0] != "wit2":
+            continue
+        for sid, d in sorted(subs.items()):
+            r = d.get(("dfa", "local"))
+            if r is None or int(r["stops"]) == 0:
+                continue
+            rl = d.get(("dfa", "local-loose"))
+            st = int(r["stops"])
+            sv = num(r["surv"])
+            body.append([k[1], SHORT[sid], r["region"], rl["region"] if rl else "-", st,
+                         "%.2f" % (num(r["local_pos"]) / st), "%.2f" % (sv / st), r["est_hits"],
+                         "%.1f" % (num(r["win_bytes"]) / sv) if sv else "-",
+                         "%.1f" % (num(r["starts"]) / sv) if sv else "-"])
+    table(["witness", "subject", "region (exact)", "region (loose)", "B stops",
+           "local positions per B stop", "A windows per B stop", "predicted by the table (independence)", "window bytes each", "starts each"], body)
+    print("\n(Cells where the subject holds no B are omitted: there the plan does no local work.)")
+
+    h("E5. Presence gate in front of the forward search")
+    gt = collections.defaultdict(collections.Counter)
+    ex = []
+    for k, subs in sorted(ref.items()):
+        for sid, d in sorted(subs.items()):
+            for cons in ("dfa", "vm"):
+                if (cons, "fwd-gate") not in d:
+                    continue
+                gd = d[(cons, "fwd-gate")]
+                last = int(gd["region"].split("last=")[1])
+                kk = (("wit" if k[0] == "wit2" else "pop"), d[(cons, "fwd")]["gap"], cons)
+                w = {v: num(d[(cons, v)]["work"]) for v in ("nosearch", "fwd", "fwd-gate", "nosearch-gate")}
+                gt[kk]["cells"] += 1
+                gt[kk]["B absent"] += last < 0
+                gt[kk]["gate < fwd"] += w["fwd-gate"] < w["fwd"] * 0.98
+                gt[kk]["gate > fwd"] += w["fwd-gate"] > w["fwd"] * 1.02
+                gt[kk]["gate < fwd, B present"] += (w["fwd-gate"] < w["fwd"] * 0.98) and last >= 0
+                gt[kk]["fwd < nosearch"] += w["fwd"] < w["nosearch"]
+                gt[kk]["nosearch-gate < nosearch"] += w["nosearch-gate"] < w["nosearch"] * 0.98
+                gt[kk]["sum fwd"] += w["fwd"]
+                gt[kk]["sum fwd-gate"] += w["fwd-gate"]
+                wt = num(d[(cons, "fwd-tail")]["work"])
+                gt[kk]["tail < fwd"] += wt < w["fwd"] * 0.98
+                gt[kk]["tail > fwd"] += wt > w["fwd"] * 1.02
+                gt[kk]["sum fwd-tail"] += wt
+    cols = ["cells", "B absent", "gate < fwd", "gate > fwd", "tail < fwd", "tail > fwd", "fwd < nosearch",
+            "nosearch-gate < nosearch"]
+    table(["population", "gap", "consumer"] + cols + ["sum fwd", "sum fwd-gate", "sum fwd-tail"],
+          [list(k) + [c[x] for x in cols] + [fw(c["sum fwd"]), fw(c["sum fwd-gate"]), fw(c["sum fwd-tail"])]
+           for k, c in sorted(gt.items())])
+    print("\n`B absent` = the subject holds no byte of the gate class. `gate < fwd` means the gate lowers the "
+          "forward search's work by more than 2%.")
