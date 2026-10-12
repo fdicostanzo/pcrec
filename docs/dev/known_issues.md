@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K108 — OPEN (filed 2026-10-12, manager, session 109, from lane mssurvey's work counts, docs/dev/lanes/mssurvey_report.md §(d), `docs/dev/optloop/matchsplit/qwork.txt`; owner UNASSIGNED, PARKED — not [MATCH-SPLIT]'s: single-class) — PERFORMANCE: QUADRATIC END-ONLY patterns on the VM-only route
+
+**Witness (subject loads, no clock; main abi 75):** `(\s*)$`, `(a*)$`, `(\w\d)*$`, `((a)|(b))*$` (10 of 16 VM-only END-pinned shapes measured) grow 15.99x per 4x of the internal run on `Q . c*k . Q` (`(\s*)$`: 256,064,005 loads at k = 16,000); `(a*)(a*)$` reaches the step budget. A capture (or similar) puts them on the VM, where `rev-end` does not apply; the same shapes without the VM hat (`\s+$`, `a*\z`, `\d+$` on `rev-end`) are constant or linear, and `(.*)$` is linear. Answers are correct; the cost is the per-start retry of an end-pinned arm. Upper-case probe (run byte chosen to maximise loads), not a typical subject. TRIGGER to schedule: a bench or wild cell with this shape (bench reach not counted yet).
+
 ## K107 — OPEN (filed 2026-10-11, manager, session 108, from lane pcurev's finding F-8, docs/design/prior_cost_unify.md rev 2; reproduced by the manager on main 4a9748bb+; owned by [EFFORT-BUDGET]) — BUDGET COMPLETION: the alternation island makes a `PCREC_ERR_WORK` give-up APPEAR where the island-denied build answers (D158's second violator, K102's class)
 
 **Witness:** `(foo|bar|baz)q` on `fooq`, `--work-budget=2`, auto (VM) and `--engine=vm`: the default build returns the `work` give-up; `-fno-alt-island` answers (0,4). Reproduce: `bash docs/design/prior_cost_unify/island_work.sh build/pcrec OUTDIR`.
