@@ -229,7 +229,10 @@ in the chain.
 | mover census (§2) | 0 outside the rule, 4 arms |
 | sabotage anchors | 698 rows resolve |
 | mech S825 solo | DETECTED, `codegen:22fail/328pass` |
-| PRE-CHAIN: test-resource, test-registry, test-rxtsource, test-recursion-identity, test-memfn-manifest/-stamps/-forms | `build/land/pre_summary.log`, see the addendum |
+| `make test-resource` (pre-chain) | rc 0, 0 failed: the rung pins do not move |
+| `make test-registry` (pre-chain) | rc 0 |
+| `make test-rxtsource` (pre-chain) | rc 0 |
+| `make test-recursion-identity`, `test-memfn-manifest/-stamps/-forms` (pre-chain) | running at hand-off; `build/land/pre_summary.log`, copied into `chain.log` |
 
 **The chain** is `build/land/chain.sh`, launched detached as the lane's last
 act. It writes one verdict line per stage in `build/land/chain.log`:
@@ -238,7 +241,9 @@ act. It writes one verdict line per stage in `build/land/chain.log`:
 - `make test` through `scripts/perfrun` (`build/land/test.log`; verdict
   `grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'`);
 - `make test-axes` (`axes.log`);
-- `make test-recursion-identity` (`recid.log`);
+- the pre-chain's `make test-recursion-identity` and `test-memfn-*` verdicts
+  (`pre_test-<target>.log`), copied into `chain.log` (the chain waits for the
+  pre-chain to finish, one heavy suite at a time);
 - solo mech rows S825 S693 S394 S673 plus the re-run list S106 S109 S116 S133
   S134 S271 S273 S669 S-U5 S-U9 S10 S390 S391 S442 S591 S229 S-U6 S233 S340
   S409 S410 S412 S513 S517 (`mech_<row>.log`).
