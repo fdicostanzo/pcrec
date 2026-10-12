@@ -280,3 +280,25 @@ Maintenance: update this file when files are added/removed or change roles.
   pcrec's tables may adopt it after their remodel. Evidence is in
   `probes/rowcon/` (`audit_kit_rows.md`, `audit_pcrec_tables.md`).
 
+- `window_contract.md` — the D161 CONTRACT NOTE, chunk 2 (lane d161note,
+  2026-10-12, PROPOSED, design only; a light panel next). It covers what
+  pcrec tells the kit about a search site and a compile, as facts only
+  (D157).
+  - **The SITE** is a bounded sub-problem with one origin. Its spans are
+    `mf_pred`s with `move_back`/`overshoot`, from which `omin` is derived.
+    A new `spans_seq` fact makes pairwise gaps exact. The reply is a WINDOW
+    `[L, U]` or a VERDICT; a FIND miss means NOMATCH.
+  - **The ANALYSIS object** (D162) is keyed by [FINDINGS] query names.
+    `byte-rate` is always present, with provenance `prior-authored`,
+    `prior-none` or `measured`.
+  - **The kit's chain** has 1-2 links; the 3+-link extension is specified.
+    [KIT-VERIFY] fits as `need = REQUIRED` plus a static `proven` return.
+  - **The ONE producer** is `span_facts`. The note maps today's derivations
+    onto it, with five controls and a first-match CUT table. Unbounded cuts
+    stay pcrec's.
+  - **The retirement sequence** S1-S4 retires `rank_*`, `ppm_*` and
+    `consumer`.
+  - **Rulings on the kit's proposals:** storage, W0-W3, N5 and N6
+    ratified; W8 and W9 rejected; W10 moved to the analysis object.
+  - **Also:** flexibility worked examples with an event table, the R-18
+    outline, three questions for Frank and the panel's attack list.
