@@ -58,7 +58,7 @@ host capability W4 (`mf_site.decl_point`), W5 (`fn_ref` on a STMT site is
 the storage stem), `mf_locals` (the storage point, binding `s`/`n`, with its
 refusals) and `mf_defined` (`reads_table`, `includes`). pcrec's set FIND
 sites are DEFINED at a file-scope point (the DFA set rows'
-`pf_block_find`; the VM hat once above `_run`), then storage point, table
+`pf_define_find`, after the run pre-check's site; the VM hat once above `_run`), then storage point, table
 iff `reads_table`, use(s). No row keeps storage yet; no byte moved.
 §R4.7 holds the kit's contract after G2, the kit session's rulings on
 G2's F1-F3 and Q-G2-1..17. This file is the working agreement for the

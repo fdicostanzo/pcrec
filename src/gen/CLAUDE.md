@@ -137,8 +137,10 @@ commit, D148 Q2). What stages 0-1 put in place, none of it moving a byte:
   `struct MemfnFind` is the defined site's record: `find_define` (define,
   then `mf_defined`'s `reads_table`), `find_locals` (mf_locals), `find_use`
   (mf_use, the D11 bound checked against the define). The DFA's three set
-  rows define at their new `u.pf.emit_block` (`pf_block_find`,
-  `pf_block_find_bounded`, with the body's stem `<fn>_pf` that
+  rows define at their new `u.pf.emit_define` (`pf_define_find`,
+  `pf_define_find_bounded`: file scope like `emit_block`, but AFTER the run
+  pre-check's site, so the kit's handle numbering, which R-15's local names
+  carry, is unchanged), with the body's stem `<fn>_pf` that
   `emit_unanchored`/`emit_rev_end` set on the form, `DfaForm.pf_find`/
   `pf_stem`), place storage in `unanch_scan` before `scan_position`, emit
   `can_begin_match`/`start_bytes` iff `reads_table`, and use in
