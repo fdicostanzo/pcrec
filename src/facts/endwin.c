@@ -335,9 +335,9 @@ PfWhyCode pcrec_end_mark(Ctx *cx, const Ast *root, EndMark *out)
     if (call) return PF_WHY_CALL;
     em_tails(root, &w);
     out->complete = out->ntails > 0 && ew_walk_marked(root, out) == EW_Z;
-    if (out->ntails == 0) return PF_WHY_NONE;
     /* The tail, its width and its one first byte (§R.2.4: every reader of
-     * the tail derives from the definition). */
+     * the tail derives from the definition), on every `eol` pin: the
+     * one-seed walk reads its first byte whether or not a tail lowers. */
     out->body = pcrec_eol_tail(cx);
     if (!out->body) return PF_WHY_NONE;
     long long wmax = pcrec_cwmax(out->body);

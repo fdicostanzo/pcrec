@@ -42,44 +42,65 @@ comp() {   # comp OUT FLAGS... -- PATTERN
     local out="$1"; shift
     "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -o - "$@" > "$out" 2>/dev/null
 }
+# D164 B3 (endmark.md §R.1) the walk has three TEXTS, one per form family:
+# the two-seed loop (`denied`, `two-seed`, `overflow`, and a `\z` pin), the
+# one-seed seed choice (`one-seed`) and the tagged walk's distance record
+# (`tagged`). WALK_RE matches any of them; `form_of` names which.
+WALK_RE='for \(int revend_seed = 0;|^    if \(subject_length > 0 && subject\[subject_length - 1\] == |unsigned revend_dist = 0;'
+form_of() {   # form_of ARTIFACT -> two-seed | one-seed | tagged | -
+    if grep -q 'for (int revend_seed = 0;' "$1"; then echo two-seed
+    elif grep -q 'unsigned revend_dist = 0;' "$1"; then echo tagged
+    elif grep -qE '^    if \(subject_length > 0 && subject\[subject_length - 1\] == ' "$1"; then echo one-seed
+    else echo -; fi
+}
 
-# ---- §1 named witnesses: EXPECT-SCAN EXPECT-TIE FLAGS PATTERN -------------
-# tie: none | anchored | relocate | - (not a walk)
+# ---- §1 named witnesses: EXPECT-SCAN EXPECT-FORM EXPECT-TIE FLAGS PATTERN --
+# form: the walk text family (`form_of`); tie: none | anchored | relocate |
+# prio (D164 B3's `prio-const`) | - (not a walk)
 witness() {
-    local scan="$1" tie="$2" flags="$3" pat="$4" art="$WORKDIR/w.c" got_scan got_tie
+    local scan="$1" form="$2" tie="$3" flags="$4" pat="$5" art="$WORKDIR/w.c" got_scan got_tie got_form
     local fl=(); [ "$flags" != "-" ] && read -r -a fl <<< "$flags"
     if ! comp "$art" "${fl[@]}" --pattern "$pat"; then
         bad "[witness] '$pat' ($flags) does not compile"; return
     fi
     got_scan="$(sed -n 's/^#define RX_DFA_SCAN "\(.*\)"$/\1/p' "$art")"
-    if grep -q 'for (int revend_seed = 0;' "$art"; then
+    got_form="$(form_of "$art")"
+    if [ "$got_form" != - ]; then
         if grep -q 'ptrdiff_t revend_len = rx_match(&revend_ctx);' "$art"; then got_tie=anchored
         elif grep -q '^    search_from = revend_start;$' "$art"; then got_tie=relocate
+        elif grep -q 'if (revend_dist & (revend_dist - 1)) revend_end = subject_length - ' "$art"; then got_tie=prio
         elif grep -q 'revend_tie' "$art"; then got_tie=other
         else got_tie=none; fi
     else got_tie=-; fi
-    if [ "$got_scan" = "$scan" ] && [ "$got_tie" = "$tie" ]; then
-        ok "[witness] '$pat' ($flags): RX_DFA_SCAN \"$scan\", tie arm $tie"
+    if [ "$got_scan" = "$scan" ] && [ "$got_form" = "$form" ] && [ "$got_tie" = "$tie" ]; then
+        ok "[witness] '$pat' ($flags): RX_DFA_SCAN \"$scan\", $form walk, tie arm $tie"
     else
-        bad "[witness] '$pat' ($flags): RX_DFA_SCAN \"$got_scan\", tie arm $got_tie; expected \"$scan\", $tie"
+        bad "[witness] '$pat' ($flags): RX_DFA_SCAN \"$got_scan\", $got_form walk, tie arm $got_tie; expected \"$scan\", $form, $tie"
     fi
 }
-witness rev-end    none     -                 '\d+$'
-witness rev-end    none     -                 '[a-z]+\.txt$'
-witness rev-end    none     -                 '.*\.txt$'
-witness rev-end    none     -                 '\w+\z'
-witness rev-end    none     -                 '\d+$(?=\n)'
-witness rev-end    anchored -                 '\s+$'
-witness rev-end    anchored -                 '\s*?$'
-witness rev-end    relocate -fno-anchored-dfa '\s+$'
-witness rev-end    relocate -                 '(\s+){2}$'
-witness rev-end    relocate -                 '(\s+?){2}$'
-witness rev-end    none     -                 '(\d+)$'
-witness unanchored -        -fno-rev-end      '\d+$'
-witness unanchored -        -                 '(?m)\d+$'
-witness unanchored -        -                 'a(b|c)+d'
-witness attempt    -        -                 '^\w+$'
-witness empty      -        -                 '[^\x00-\xff]$'
+witness rev-end    one-seed none     -                 '\d+$'
+witness rev-end    one-seed none     -                 '[a-z]+\.txt$'
+witness rev-end    one-seed none     -                 '.*\.txt$'
+witness rev-end    two-seed none     -                 '\w+\z'
+witness rev-end    one-seed none     -                 '\d+$(?=\n)'
+witness rev-end    tagged   prio     -                 '\s+$'
+witness rev-end    tagged   prio     -                 '\s*?$'
+witness rev-end    tagged   anchored -                 '(?:\s+|x\s*?)$'
+witness rev-end    tagged   relocate -fno-anchored-dfa '(?:\s+|x\s*?)$'
+witness rev-end    two-seed anchored -fno-rev-end-onewalk '\s+$'
+witness rev-end    two-seed relocate '-fno-rev-end-onewalk -fno-anchored-dfa' '\s+$'
+witness rev-end    tagged   prio     -                 '(\s+){2}$'
+witness rev-end    tagged   prio     -                 '(\s+?){2}$'
+witness rev-end    tagged   relocate -                 '(?:(\s+)|x(\s*?))$'
+witness rev-end    two-seed relocate -fno-rev-end-onewalk '(\s+){2}$'
+witness rev-end    two-seed none     -                 'a\n$'
+witness rev-end    one-seed none     -                 '(\d+)$'
+witness rev-end    tagged   prio     -                 '(\s+)$'
+witness unanchored -        -        -fno-rev-end      '\d+$'
+witness unanchored -        -        -                 '(?m)\d+$'
+witness unanchored -        -        -                 'a(b|c)+d'
+witness attempt    -        -        -                 '^\w+$'
+witness empty      -        -        -                 '[^\x00-\xff]$'
 
 # ---- §2 the corpus, default against -fno-rev-end -------------------------
 grep -rhE '^pattern ' "$ROOT_DIR/tests" 2>/dev/null | sed 's/^pattern //' \
@@ -93,12 +114,12 @@ while IFS= read -r pat; do
     "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -fno-rev-end -o - --pattern "$pat" > "$b" 2>/dev/null || { echo BREFUSED; echo "BAD: refused only under -fno-rev-end: $pat"; continue; }
     if grep -q '^#define RX_DFA_SCAN "rev-end"$' "$a"; then
         echo WALK
-        grep -q 'for (int revend_seed = 0;' "$a" || { echo WALKBAD; echo "BAD: stamps rev-end, no walk in the text: $pat"; }
-        grep -q 'revend_seed' "$b" && { echo WALKBAD; echo "BAD: the walk survives -fno-rev-end: $pat"; }
+        grep -qE "$WALK_RE" "$a" || { echo WALKBAD; echo "BAD: stamps rev-end, no walk in the text: $pat"; }
+        grep -qE "$WALK_RE" "$b" && { echo WALKBAD; echo "BAD: the walk survives -fno-rev-end: $pat"; }
         grep -q '^#define RX_DFA_SCAN "rev-end"$' "$b" && { echo WALKBAD; echo "BAD: -fno-rev-end still stamps rev-end: $pat"; }
     else
         echo DECLINE
-        grep -q 'revend_seed' "$a" && { echo WALKBAD; echo "BAD: the walk without the stamp: $pat"; }
+        grep -qE "$WALK_RE" "$a" && { echo WALKBAD; echo "BAD: the walk without the stamp: $pat"; }
         cmp -s "$a" "$b" || { echo DECLBAD; echo "BAD: a declining pattern moves under -fno-rev-end: $pat"; }
     fi
 done
@@ -107,7 +128,7 @@ WORKER
 NSHARD="${PROCS:-$(bash "$ROOT_DIR/tests/lib/procs_default.sh")}"
 mkdir -p "$WORKDIR/sh"
 shard_split "$NSHARD" "$WORKDIR/pats" "$WORKDIR/sh/p" || exit 1
-export WORKDIR PCREC TIMEOUT_BIN
+export WORKDIR PCREC TIMEOUT_BIN WALK_RE
 for f in "$WORKDIR"/sh/p*; do bash "$WORKDIR/worker.sh" < "$f" > "$f.out" & done
 wait
 cat "$WORKDIR"/sh/p*.out > "$WORKDIR/verdicts"
@@ -145,9 +166,12 @@ grep '^BAD: ' "$WORKDIR/verdicts" | head -10 >&2
 # its own failure rather than as a pass. A reference compiler is built with
 # that cap (`PCREC_MAX_EMIT_BYTES`, FLAG_D), run_size_term.sh's shape.
 . "$ROOT_DIR/tests/lib/lib_srcs.sh"
+# D164 B3: the tie walk this clause guards is the TWO-SEED one (a `tagged`
+# walk's tie is `prio-const` on `\s+$`, and runs no anchored machine), so
+# every compile here is under `-fno-rev-end-onewalk`.
 LADDER='\s+$'
 size_of() {
-    "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx "$@" --warn-emit-bytes=1 -o "$WORKDIR/sz.c" \
+    "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx -fno-rev-end-onewalk "$@" --warn-emit-bytes=1 -o "$WORKDIR/sz.c" \
         --pattern "$LADDER" 2>&1 | sed -n 's/.*artifact: \([0-9]*\) bytes of emitted C source.*/\1/p' | head -1
 }
 s_def=$(size_of); s_np=$(size_of -fno-premul-table)
@@ -162,7 +186,7 @@ else
     if ${CC:-gcc} -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
            -DPCREC_MAX_EMIT_BYTES=$cap -o "$REF" "$ROOT_DIR/cli/main.c" \
            $(pcrec_lib_srcs "$ROOT_DIR" | tr '\n' ' ') 2>"$WORKDIR/ref.err"; then
-        if "$TIMEOUT_BIN" 60 "$REF" --features all -p rx -o "$WORKDIR/lad.c" --pattern "$LADDER" 2>/dev/null &&
+        if "$TIMEOUT_BIN" 60 "$REF" --features all -p rx -fno-rev-end-onewalk -o "$WORKDIR/lad.c" --pattern "$LADDER" 2>/dev/null &&
            grep -qF '#define RX_DFA_MATCH "unwrapped"' "$WORKDIR/lad.c" &&
            grep -qF '#define RX_ENGINE_SEL "size-cap-retry"' "$WORKDIR/lad.c" &&
            ! grep -q 'rx_forward_' "$WORKDIR/lad.c"; then
@@ -195,7 +219,7 @@ else
         "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx --emit-main -o "$WORKDIR/ds.c" --pattern "$pat" 2>/dev/null &&
         "$TIMEOUT_BIN" 60 "$PCREC" --features all -p rx --emit-main -fno-rev-end -o "$WORKDIR/dr.c" --pattern "$pat" 2>/dev/null ||
             { bad "[dead-seed] '$pat' did not compile"; continue; }
-        grep -q 'for (int revend_seed = 0;' "$WORKDIR/ds.c" ||
+        grep -qE "$WALK_RE" "$WORKDIR/ds.c" ||
             { bad "[dead-seed] '$pat' carries no rev-end walk: the witness no longer reaches the site"; continue; }
         if ! ${CC:-gcc} -O1 -fsanitize=address,undefined -fno-sanitize-recover=all -o "$WORKDIR/ds" "$WORKDIR/ds.c" 2>"$WORKDIR/ds.err" ||
            ! ${CC:-gcc} -O1 -o "$WORKDIR/dr" "$WORKDIR/dr.c" 2>>"$WORKDIR/ds.err"; then
