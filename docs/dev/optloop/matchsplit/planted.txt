@@ -1,0 +1,38 @@
+# C4 planted classes (section 6.7): expected mix label, pattern, note.
+# Mix label = the classes present among LIVE paths, order S G LS E LE F ("-" = no live path).
+# Optional trailing columns: flags that must hold (dead, look, red:S, ml).
+S+E	^\s*\{|\}\s*$	Frank's wrapper strip
+S+E	^\s+|\s+$	trim
+LS+LE	(?m)^\s+|\s+$	trim under (?m): the $ is a LINE end too (the requirements note's table calls it LS+E)
+LS+E	(?m)^\s+|\s+\z	trim, line start + absolute end
+S+E	^#|//.*$	comment strip, non-m
+LS+LE	(?m)^#|;\s*$	line start + line end
+E+F	foo|\s+$	free + end
+E+F	ab\z|cd	free + end, fixed width
+S+F	^GET |POST	start + free
+S+F	(?:^|,)x	csv field
+S+E+F	(?:^|\s)foo(?:\s|$)	crossing
+G+F	\Gab|cd	search-start + free
+S+F	(?:^a)*b	quantified start, the zero-iteration path is free
+S+F	(?:^)?ab	redundant start	red:S
+F	x(?:^|y)z	dead start path	dead
+F	(?<=^)a	anchor in a lookbehind: unclassified	look
+F	a(?=.*$)	anchor in a lookahead: unclassified	look
+F	a(?m)^b	line anchor away from the edge is a landmark	ml
+LS	(?m)^a$	both pins on one path: the start class
+S	^a$	both pins on one path: the start class
+E	a$	end only
+E	a\z	end only
+LE	(?m)a$	line-end only
+F	a	free only
+G	\Gab	search-start only
+S+E	^|end$	zero-width start arm (Frank's question)
+S+E	^|$	zero-width arms
+-	a\Gb	dead \G: no live path	dead
+S+F	^a|b	start + free
+LS+F	(?m)^a|b	line start + free
+LE+F	(?m)a$|b	free + line end
+-	a$b	dead end path	dead
+S+F	(^a)*	only the first iteration can be live
+S+F	(^a|b)c	distributed
+E+F	a(?:b|$)	end arm inside a group: the b arm is free
