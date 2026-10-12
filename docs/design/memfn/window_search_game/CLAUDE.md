@@ -1,4 +1,4 @@
-# docs/design/memfn/window_search_game/ — lane wingame's instruments
+# docs/design/memfn/window_search_game/ — lane wingame's and wingame2's instruments
 
 The evidence behind `../window_search_game.md` (D161's "search for the window",
 gamed out before any request). This is design-study tooling. It is never built
@@ -38,6 +38,17 @@ or run by `make` and is read by no check. COUNTS ONLY: nothing here reads a cloc
   rows, `offset-set`/`run-pinned` offsets (kset classes), `handoff` (req run or
   req byte, K back), the VM's first-class scan, and the hybrid's inlined DFA
   prefilter. A route with no window search counts as "the consumer meets every byte".
+- `[wingame2]` additions. `spans.py` keeps each span's first item index (`item0`) and
+  has `rel_from_items` (a direct walk between two spans: the control for the derived
+  relative distance). `game.py` has P6 `refine` (`region_of`, `Plan`, `plans_of`,
+  `pol_refine`, `refine_pair`), `simulate_plan` (counts: B stops, B survivors, local
+  positions, distinct A windows, plus a merged hand-over), and `simulate_gate`
+  (a presence gate on the rare span, continuous or tail form). `run_game.py` adds the
+  eleven `WIT2` two-span witnesses as set `wit2` (summarize.py's A-D tables ignore
+  that set), `refine.tsv` (per pattern x subject x consumer: nosearch, P5, P6, local,
+  local-merge, local-loose, fwd, fwd-gate, fwd-tail, nosearch-gate, nosearch-tail) and
+  `relcontrol.tsv`. `WINGAME_ONLY=set` restricts the run to one set. `chain.sh` takes
+  `PCREC=/path/to/pcrec` to reuse a build. `summarize.py` section E reads them.
 - `summarize.py OUTDIR` — the markdown tables `window_search_game.md` §4.2 cites.
 - `chain.sh WORKTREE` — the post-hold run: it builds the worktree's pcrec,
   regenerates the subjects if absent, runs `run_game.py` over the full population
