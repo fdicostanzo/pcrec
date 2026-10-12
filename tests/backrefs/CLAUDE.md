@@ -196,6 +196,11 @@ comment and the row's header.
   `rx_span_match_caseless` — compiled out of an artifact pcrec actually
   emitted — against `pcrec_ascii_fold`, which `cls_casefold` derives from.
   Neither side can be edited into agreement with the other.
+  **[LOSS-REVIEW] candidate 1 (abi 76, 2026-10-11)**: the entry is `static
+  inline` and exported by nothing, so this file and its two siblings below
+  `#include "gen.c"` (the artifact's own translation unit) and
+  `run_backref_diff.sh` §9/§9b/§9c compile them without linking gen.c; the
+  population guards read the `static inline` definition in gen.c.
   **[OPT-LITSCAN] S4 C0 (2026-10-03) adds its (b) arm, the fold's THIRD
   consumer**: `pcrec_cls_cube` (src/core/cpset.c) of every fold set
   {c, pcrec_ascii_fold[c]} must be K = 0xDF on the 52 letters and K = 0xFF on
