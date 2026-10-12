@@ -82,7 +82,7 @@ or it has no regression net at all.
   checks-F6): every `DfaSel`/`CandSel NAME = {...}` initializer names
   `.route` (population counted; a designated initializer that omits it would
   zero-fill silently). **[cand-route-walk]**: `cand_select` tests the row's
-  route mask (`CAND_ON(s->route)`) before `.applies(` (until C3 `dfa_select`
+  route mask (`CAND_ON(s->route)`) before `cand_applies(` (the call of `.applies(`; until C3 `dfa_select`
   and `cand_routed(`). Both validated red by a plant on a scratch copy at
   landing (docs/dev/lanes/ssbuild01_report.md), and the three re-aimed checks
   again at C3 (docs/dev/lanes/stc3_report.md). **Since [START-TABLE] C5**

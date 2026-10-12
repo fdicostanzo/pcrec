@@ -61,7 +61,10 @@ re-aimed at C3, start_table.md §3.5)
 
 [cand-route-walk] (stage 1, checks-F6; re-aimed at C3)
     `cand_select`'s body tests the row's route mask (`CAND_ON(s->route)`)
-    BEFORE it calls `.applies(`: the route mask is data the walk tests, so a
+    BEFORE it calls `cand_applies(` (the predicate call since
+    [CAND-PATH-READS]; its two spellings -- the trace build's function and
+    the default build's macro -- must each reach `.applies(`, and the check
+    reads both definitions): the route mask is data the walk tests, so a
     VM-route selection never reaches a predicate that reads a machine. (Until
     C3 the walk was `dfa_select` and the test `cand_routed(`.)
 
@@ -244,9 +247,19 @@ def route_checks():
     src = strip_comments(open(EMIT).read())
     m = re.search(r"static const CandRow \*cand_select\(CandSlot slot,[^)]*\)\s*\{", src)
     body = src[m.end():src.find("\n}", m.end())] if m else ""
-    r, a = body.find("CAND_ON(s->route)"), body.find(".applies(")
+    # The walk asks a row's predicate through `cand_applies` ([CAND-PATH-READS]:
+    # the trace build keeps the asking slot on a stack around the call). That
+    # indirection is only the walk's applies call if BOTH spellings of it still
+    # reach `.applies(` -- the trace build's function and the default build's
+    # macro -- so each definition is read, not assumed.
+    r, a = body.find("CAND_ON(s->route)"), body.find("cand_applies(")
+    defs = re.findall(r"bool cand_applies\(CandSlot slot,[^)]*\)\s*\{[^}]*\}", src) \
+        + re.findall(r"#\s*define\s+cand_applies\([^)]*\)[^\n]*", src)
     if not body or a < 0:
         bad("[cand-route-walk] cand_select's body or its applies call not found in %s" % EMIT)
+    elif len(defs) != 2 or not all(".applies(" in d for d in defs):
+        bad("[cand-route-walk] cand_applies is not defined in both build spellings (%d found) "
+            "or one of them does not call the row's .applies( predicate" % len(defs))
     elif r < 0 or r > a:
         bad("[cand-route-walk] cand_select does not test the route mask (CAND_ON(s->route)) before applies")
     else:

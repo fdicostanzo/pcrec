@@ -307,6 +307,14 @@ done <<< "$anchored"
 #     memo hash multiplied by, left with that hash at [OPT-CLOSURE-CTX].)
 #   LEGEND_MAX_STATES, LEGEND_MAX_EXAMPLE (emit_dfa.c) — a DEBUG LISTING's
 #     own truncation width, not a promise about what pcrec accepts/rejects
+#   CAND_EVAL_MAX (emit_dfa.c, [CAND-PATH-READS]) — the depth of the trace
+#     build's stack of running selection predicates (`PCREC_CAND_TRACE`
+#     only; the shipped compiler has no such stack). It is an instrument's
+#     own overflow guard, a DEBUG-LISTING-shaped bound like LEGEND_MAX_*: the
+#     real depth is bounded by the acyclic read graph over the slots, the
+#     guard fails the trace build LOUDLY (`table-read-recursion`) rather than
+#     overrunning, and nothing a pattern or caller does can be measured
+#     against it
 #   VM_MAX_STRIDE, VM_FAST_TIER_BYTES, VM_FAST_TIER_MIN (emit_vm.c) —
 #     emitter-internal rung-selection knobs with their own proofs beside
 #     them (src/gen/CLAUDE.md's [OPT-1] section for the FAST_TIER pair)
@@ -509,6 +517,7 @@ MAX_GROUPS
 ABLOCK_MIN
 LEGEND_MAX_STATES
 LEGEND_MAX_EXAMPLE
+CAND_EVAL_MAX
 VM_MAX_STRIDE
 VM_FAST_TIER_BYTES
 VM_FAST_TIER_MIN
