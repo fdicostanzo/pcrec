@@ -68,6 +68,11 @@ typedef struct {
      * obligations (rejection sound, span START a lower bound, span END NOT an
      * upper bound) this flag joins rather than restates. */
     bool collapse;
+    /* D164 B3 the end mark's lowering (`pcrec_build_nfa_marked`): the tail
+     * `$`/`\Z` nodes and the tail they build; `in_tail` is the depth of the
+     * tail build in progress, under which every new state is marked `tail`. */
+    const EolLower *lower;
+    int  in_tail;
 } NB;
 
 /* [M4.5b] A_CAP IS INVISIBLE HERE, and that is load-bearing in two places at
@@ -162,6 +167,7 @@ static int nst(NB *b, NKind k)
     memset(s, 0, sizeof(*s));
     s->k = k;
     s->t1 = s->t2 = -1;
+    s->tail = b->in_tail > 0;   /* D164 B3: read only on an N_CLASS */
     return nfa->n++;
 }
 
@@ -612,7 +618,22 @@ static Frag compile_ast(NB *b, const Ast *a)
      * the compile-time alarm D62's control 3 accepts the loss of on the AST,
      * bought back on the IR where node kinds are the vocabulary. */
     case A_BOL:   return frag_single(b, a->u.anch.multiline ? N_BOT_M : N_BOT);
-    case A_EOL:   return frag_single(b, a->u.anch.multiline ? N_EOL_M : N_EOL);
+    case A_EOL:
+        /* D164 B3 a TAIL `$`/`\Z` under the end mark's lowering builds the
+         * tail `T` (`\n?\z` today, read off `\Z`'s definitions row) with
+         * every byte it consumes marked: `(?=T)` in tail position IS the mark
+         * followed by `T` consumed (endmark.md §1.2), and the mark is implicit
+         * at the tail's first state, where the distance starts counting. */
+        if (b->lower && !a->u.anch.multiline) {
+            for (int i = 0; i < b->lower->ntails; i++) {
+                if (b->lower->tails[i] != a) continue;
+                b->in_tail++;
+                Frag t = compile_ast(b, b->lower->body);
+                b->in_tail--;
+                return t;
+            }
+        }
+        return frag_single(b, a->u.anch.multiline ? N_EOL_M : N_EOL);
     /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
      * an assertion about an absolute subject position is the same assertion
      * whichever direction the machine walks — the reverse machine simply
@@ -1022,13 +1043,80 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
      * `nst` reuses it, so the second build costs no allocation. */
     nfa->n = 0;
     nfa->erased = 0;   /* [OPT-REVEND] L0: the record is this build's own */
-    NB b = { cx, nfa, reverse, 0, collapse };
+    NB b = { cx, nfa, reverse, 0, collapse, NULL, 0 };
     Frag f = compile_ast(&b, root);
     int acc = nst(&b, N_ACCEPT);
     patch_to(&b, &f.out, acc);
     nfa->start = f.start;
     /* [OPT-K] The anchored start IS the start until a wrap moves the latter. */
     nfa->anch_start = f.start;
+}
+
+/* `pcrec_build_nfa_marked` (internal.h): `pcrec_build_nfa` with the end
+ * mark's tails lowered, then the pair construction. Never collapsed: its
+ * machines answer the end, so they are exact. */
+void pcrec_build_nfa_marked(Ctx *cx, Ast *root, Nfa *nfa, bool reverse,
+                            const EolLower *lower)
+{
+    nfa->n = 0;
+    nfa->erased = 0;
+    NB b = { cx, nfa, reverse, 0, false, lower, 0 };
+    Frag f = compile_ast(&b, root);
+    int acc = nst(&b, N_ACCEPT);
+    patch_to(&b, &f.out, acc);
+    nfa->start = f.start;
+    nfa->anch_start = f.start;
+}
+
+/* `pcrec_nfa_mark_distances` (internal.h). The pairs are interned in the
+ * order a worklist from (start, 0) and (anch_start, 0) reaches them, each a
+ * copy of its state with its out-edges re-aimed at the successor pairs; only
+ * reachable pairs exist, so an unmarked arm never gains a d > 0 copy (a tail
+ * byte leads only into the mark's own continuation). A tail byte past `maxd`
+ * (an unbounded tail) answers -1 and the caller declines. */
+int pcrec_nfa_mark_distances(Ctx *cx, Nfa *nfa, int maxd)
+{
+    int n = nfa->n, w = maxd + 1, top = 0;
+    NState *old = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *old);
+    int *map = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * (size_t)w * sizeof *map);
+    int *work = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * (size_t)w * sizeof *work);
+    int nwork = 0, head = 0;
+    NB b = { cx, nfa, false, 0, false, NULL, 0 };
+
+    if (n) memcpy(old, nfa->st, (size_t)n * sizeof *old);
+    for (int i = 0; i < n * w; i++) map[i] = -1;
+    nfa->n = 0;
+#define PAIR(s, d)                                                             \
+    (map[(s) * w + (d)] >= 0 ? map[(s) * w + (d)]                              \
+     : (map[(s) * w + (d)] = nst(&b, old[s].k), work[nwork++] = (s) * w + (d), \
+        map[(s) * w + (d)]))
+    int start = PAIR(nfa->start, 0);
+    int anch = PAIR(nfa->anch_start, 0);
+    while (head < nwork) {
+        int key = work[head++], s = key / w, d = key % w, ns = map[key];
+        const NState *o = &old[s];
+        int d1 = d;
+        if (o->k == N_CLASS && o->tail) {
+            if (d + 1 > maxd) return -1;
+            d1 = d + 1;
+        }
+        if (d > top) top = d;
+        int t1 = o->t1 >= 0 ? PAIR(o->t1, d1) : -1;
+        int t2 = o->t2 >= 0 ? PAIR(o->t2, d) : -1;
+        NState *q = &nfa->st[ns];
+        memcpy(q->cls, o->cls, sizeof q->cls);
+        q->loop = o->loop;
+        q->exit_is_t2 = o->exit_is_t2;
+        q->ctxfn = o->ctxfn;
+        q->tail = o->tail;
+        q->dist = o->k == N_ACCEPT ? (uint8_t)d : 0;
+        q->t1 = t1;
+        q->t2 = t2;
+    }
+#undef PAIR
+    nfa->start = start;
+    nfa->anch_start = anch;
+    return top;
 }
 
 /* Lowest-priority start self-loop: new_start = SPLIT(pattern [preferred],
@@ -1164,7 +1252,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
 void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
-    NB b = { cx, nfa, false, 0, false };
+    NB b = { cx, nfa, false, 0, false, NULL, 0 };
     int sp = nst(&b, N_SPLIT);
     int any = nst(&b, N_CLASS);
     memset(nfa->st[any].cls, 0xff, 32);   /* every byte, including \n */

@@ -71,7 +71,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         break;
     case PF_END_PIN:      pf->end_pin = PCREC_EPIN_NONE; break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
-    case PF_END_MARK:     pf->end_mark = (EndMark){ 0, false, NULL }; break;
+    case PF_END_MARK:     pf->end_mark = (EndMark){ 0, false, NULL, NULL, 0, -1 }; break;
     case PF_REQ_SET:
         memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
         pf->req_set.rightmost = -1;
@@ -271,12 +271,12 @@ static void pf_derive(Ctx *cx, PfFactId f)
         if (pf->end_pin != PCREC_EPIN_EOL) {
             /* A `\z` pin has no `$` to mark (a plain empty answer); no pin
              * at all declines with the pin's own reason. */
-            pf->end_mark = (EndMark){ 0, false, NULL };
+            pf->end_mark = (EndMark){ 0, false, NULL, NULL, 0, -1 };
             if (pf->end_pin == PCREC_EPIN_NONE)
                 why = (PfWhyCode)pf->why[PF_END_PIN].code;
             break;
         }
-        why = pcrec_end_mark(&cx->arena, pf->root, &pf->end_mark);
+        why = pcrec_end_mark(cx, pf->root, &pf->end_mark);
         break;
     case PF_REQ_SET:
     case PF_REQ_SET_MAXOFF:

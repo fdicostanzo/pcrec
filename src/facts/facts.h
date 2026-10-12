@@ -217,7 +217,7 @@ typedef struct {
 /* D164 B3 THE END MARK's TAILS (fact `end_mark`, E2 derived,
  * docs/design/endmark.md §1.1, §R.2): the path-final non-multiline `$`/`\Z`
  * nodes of the lowered tree (`tail[0..ntails)`, arena), which the NFA builder
- * lowers to `\n?\z` under the mark when asked (`pcrec_build_nfa_marked`); and
+ * lowers to the tail `T` under the mark when asked (`pcrec_build_nfa_marked`); and
  * `complete`, true where lowering them leaves every match ending at `\z`
  * (every `eol` pin is a tail), the precondition of the one-walk `tagged`
  * form. Declined (empty: no tails) where the pin is not `eol`, or where the
@@ -227,6 +227,13 @@ typedef struct {
     int                ntails;
     bool               complete;
     const struct Ast **tail;
+    /* The tail `T` itself (`pcrec_eol_tail`: `\Z`'s definitions row, §R.2.4),
+     * NULL where the row gives no usable tail; its width `L` in bytes (the
+     * distance domain 0..L); and its first byte where its first-byte set is
+     * exactly one byte, else -1. */
+    const struct Ast  *body;
+    int                width;
+    int                byte;
 } EndMark;
 
 /* [START-LANDING] THE BYTE WIDTH INTERVAL (fact `width`, E3 core, §3.1):

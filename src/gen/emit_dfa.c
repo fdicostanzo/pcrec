@@ -3795,12 +3795,14 @@ static int tr_cell(const Dfa *d, const DfaRepr *r, int i, int cl)
     return t < 0 ? r->dead_cell : r->cell_of(t, d);
 }
 
-/* One cell of the SCALAR accept table: does state `i` accept in the plain
- * class context? One of the three cell derivations the uniform fold and the
- * table emitter share, so that neither reads `d->st[]` a second way. */
+/* One cell of the SCALAR accept table: state `i`'s accept VALUE in the plain
+ * class context, 0/1 on every untagged machine and the distance set on a
+ * tagged one (D164 B3, endmark.md §R.3: the set rides the existing u8 table).
+ * One of the three cell derivations the uniform fold and the table emitter
+ * share, so that neither reads `d->st[]` a second way. */
 static int acc_cell(const Dfa *d, int i)
 {
-    return d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
+    return d->st[i].up[UPC_PLAIN].accept;
 }
 
 
@@ -3809,7 +3811,7 @@ static int acc_cell(const Dfa *d, int i)
  * `upc_of_class`, the class's context atom. */
 static int accw_cell(const Dfa *d, int i, int cl)
 {
-    return d->st[i].up[upc_of_class(d, cl)].accept ? 1 : 0;
+    return d->st[i].up[upc_of_class(d, cl)].accept;
 }
 
 /* "Every cell of this table is `value`", or `folded == false`. A table with a
@@ -5327,7 +5329,8 @@ typedef struct CandLocate {
  * limits are data: `verify-at` takes no `AT` on CAND_ROUTE_ATTEMPT (the F-11
  * cell, locate_finish.md §8 Q7). The walk keeps a FINISH row on a route only
  * where the ask's hand is one of its take cells there. */
-enum { CAND_FIN_REPORT = 1, CAND_FIN_NOMATCH, CAND_FIN_VERIFY, CAND_FIN_SEARCH };
+enum { CAND_FIN_REPORT = 1, CAND_FIN_NOMATCH, CAND_FIN_VERIFY, CAND_FIN_SEARCH,
+       CAND_FIN_PRIO };
 typedef struct CandFinish {
     unsigned char act;          /* CAND_FIN_* */
 } CandFinish;
@@ -5625,6 +5628,20 @@ struct DfaForm {
      * `dfa_form_derive`; `emit_unanchored`, which holds the RECOVER row,
      * sets it on its forward form. */
     bool           landing;
+    /* D164 B3 FORM W (docs/design/endmark.md §R.4.6): the walk's caller
+     * resolved the seed's position views before the loop and declared the
+     * state variable itself (`entry_set`), so the loop emits no seed
+     * initializer, reads no view, and may be entered at ANY state: its entry
+     * dispatches on the stop test where `entry_head` (some entry state is a
+     * scan-edge head) and tests a dead entry where `entry_dead`. False on
+     * every other walk. */
+    bool           entry_set, entry_head, entry_dead;
+    /* D164 B3 THE ACCEPT VALUE's RECORD (endmark.md §R.3): on a TAGGED
+     * machine the accept cell is a distance set, and every site that records
+     * an accepting position also stores the cell's value into the emitted
+     * `unsigned` named here, so the walk's caller reads the set at the
+     * recorded position. NULL on every other walk, whose text is unchanged. */
+    const char    *accv;
 };
 
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
@@ -6189,15 +6206,40 @@ static bool acc_by_class_applies(const CandSel *s) { return dfa_has_clsacc(s->d)
 static bool acc_viewed_applies(const CandSel *s)
 { const UnanchStart *u = s->us; return u->views; }
 
+/* D164 B3 an accept probe whose expression `expr` yields the cell VALUE:
+ * `if (expr) rec = pos;`, or with the form's `accv` the value kept with the
+ * position (`DfaForm.accv`). `pre`/`post` frame the condition text the
+ * caller already split (the reverse boundary's two-armed probe). */
+static void acc_record(StrBuf *c, const DfaForm *f, const char *ind,
+                       const char *expr, const char *pos)
+{
+    if (!f->accv)
+        pcrec_sb_printf(c, "%sif (%s) %s = %s;\n", ind, expr, f->dir->recv, pos);
+    else
+        pcrec_sb_printf(c, "%s{ unsigned accept_cell = %s;\n"
+                     "%s  if (accept_cell) { %s = %s; %s = accept_cell; } }\n",
+                  ind, expr, ind, f->dir->recv, pos, f->accv);
+}
+
+/* D164 B3 a record whose accept value is a compile-time constant `v` (a stay
+ * skip's state, a scan edge's chain): `rec = pos;`, plus `accv = v;` under
+ * the form's `accv`. */
+static void acc_record_const(StrBuf *c, const DfaForm *f, const char *ind,
+                             const char *pos, int v, const char *tail)
+{
+    pcrec_sb_printf(c, "%s%s = %s;%s\n", ind, f->dir->recv, pos, tail);
+    if (f->accv) pcrec_sb_printf(c, "%s%s = %du;\n", ind, f->accv, v);
+}
+
 /* Records an accept at the current position — `if (<M>_accepts(...)) rec =
  * pos;`. Axis E places this same line either at the top of the loop or after
  * the view selector, and WHICH of the two is the whole of the axis. */
 static void acc_emit_probe(StrBuf *c, const DfaForm *f)
 {
-    pcrec_sb_printf(c, "%sif (%s_%s_accepts(%s%s)) %s = %s;\n",
-              f->dir->bind, f->p, f->dir->c.name,
-              fold_arg(f, &f->acc_fold, "is_accepting"),
-              f->src, f->dir->recv, f->dir->posv);
+    acc_record(c, f, f->dir->bind,
+               dfa_fragf(f->cx, "%s_%s_accepts(%s%s)", f->p, f->dir->c.name,
+                         fold_arg(f, &f->acc_fold, "is_accepting"), f->src),
+               f->dir->posv);
 }
 
 /* The loop tail under a scalar accept: break at the bound, otherwise step the
@@ -6253,9 +6295,10 @@ static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s{\n", ind);
     pcrec_sb_printf(c, "%s    unsigned %s_class = %s_%s_byte_class[%s];\n",
               ind, m, p, m, f->dir->peek);
-    pcrec_sb_printf(c, "%s    if (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s, %s_class))"
-                 " %s = %s;\n",
-              ind, p, m, p, m, f->src, m, f->dir->recv, f->dir->posv);
+    acc_record(c, f, dfa_fragf(f->cx, "%s    ", ind),
+               dfa_fragf(f->cx, "%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s, %s_class)",
+                         p, m, p, m, f->src, m),
+               f->dir->posv);
     pcrec_sb_printf(c, "%s    %s = %s_%s_step(%s%s, %s_class);\n",
               ind, f->dir->statev, p, m,
               fold_arg(f, &f->tr_fold, "next_state"), f->src, m);
@@ -8012,7 +8055,8 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
      * run's final position would otherwise go unrecorded; under a view the
      * check runs after the skip and already covers it. */
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
-        pcrec_sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
+        acc_record_const(c, f, dfa_fragf(f->cx, "%s    ", ind), f->dir->posv,
+                         f->d->st[K].up[UPC_PLAIN].accept, "");
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
@@ -8037,7 +8081,8 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     mf_site *s = pcrec_memfn_advance_site(f->cx, DELEG_STAY, &sa, &h);
     pcrec_memfn_emit(f->cx, DELEG_STAY, s, &h, c);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
-        pcrec_sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
+        acc_record_const(c, f, dfa_fragf(f->cx, "%s    ", ind), f->dir->posv,
+                         f->d->st[K].up[UPC_PLAIN].accept, "");
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
@@ -8054,10 +8099,10 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
      * MATCH-HERE scan, so a hardcoded name here referred to the wrong
      * machine's accept table from inside `<prefix>_match`. Byte-for-byte
      * unchanged on the forward machine, whose `c.name` IS "forward". */
-    pcrec_sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
-              f->dir->bind, f->p, f->dir->c.name,
-              fold_arg(f, &f->acc_fold, "is_accepting"),
-              f->src, f->dir->recv, f->dir->posv);
+    acc_record(c, f, dfa_fragf(f->cx, "%s    ", f->dir->bind),
+               dfa_fragf(f->cx, "%s_%s_accepts(%s%s)", f->p, f->dir->c.name,
+                         fold_arg(f, &f->acc_fold, "is_accepting"), f->src),
+               f->dir->posv);
 }
 
 /* The reverse scan's accept probe at `search_from` — the site whose absence
@@ -8086,6 +8131,17 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * Nothing but the reverse machine reaches this emitter today, so the text
      * is unchanged. */
     const char *m = f->dir->c.name;
+    if (f->accv) {
+        acc_record(c, f, dfa_fragf(f->cx, "%s    ", f->dir->bind),
+                   dfa_fragf(f->cx, "search_from"
+                             " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,"
+                             " %s_%s_byte_class[subject[search_from - 1]])"
+                             " : %s_%s_accepts(%s%s)",
+                             f->p, m, f->p, m, f->src, f->p, m, f->p, m,
+                             fold_arg(f, &f->acc_fold, "is_accepting"), f->src),
+                   f->dir->posv);
+        return;
+    }
     pcrec_sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
@@ -8226,6 +8282,14 @@ static const DfaDir dfa_dir_anchored = {
 static bool finish_available(const CandSel *s)
 {
     return s->route == CAND_ROUTE_VM || s->cx->job->anchored_ok;
+}
+
+/* D164 B3 `prio-const`'s predicate (endmark.md §R.1.3, §R.8): the walk is the
+ * `tagged` form and `mark_prio` is a constant, so wherever two mark distances
+ * accept at the walk's start, leftmost-first priority picks that one. */
+static bool finish_prio_const(const CandSel *s)
+{
+    return s->cx->job->revend_form == RF_TAGGED && s->cx->job->mark_prio == MP_CONST;
 }
 
 /* ---- AXIS J: WHICH FORM THE SEARCH ENTRY'S START RECOVERY TAKES ---------
@@ -9291,6 +9355,17 @@ static const CandRow cand_rows[] = {
      * whose needs the path derivation reads. `nomatch` is FIN1 and `report`
      * FIN2, the two finishers with nothing left to compute. The first two
      * descs moved verbatim from src/dump/axes_dump.c. */
+    /* D164 B3 `prio-const` (endmark.md §R.1.3, §R.8 S10): the tie of a
+     * `tagged` walk where `mark_prio` is constant: the end is n - c, read
+     * with no forward run, ahead of `verify-at` and `search-from`, so the tie
+     * decision lives in this one first-match table. No list (no stamp: the
+     * mark is internal bookkeeping, D164 add. 2 Q4). */
+    { .c = { "prio-const", 0, finish_prio_const }, .slot = CAND_SLOT_FINISH,
+      .routes = CR_DFA | CR_VM, .tok = "prio-const", .map = CM_NONE,
+      .hands = CT_START,
+      .desc = "a tagged rev-end walk whose mark_prio is a constant c: a tie between mark distances at the walk's start ends at n - c, the distance leftmost-first priority picks in every reachable situation",
+      .take = { [CAND_ROUTE_DFA] = { CAND_HAND_ENDSET }, [CAND_ROUTE_VM] = { CAND_HAND_ENDSET } },
+      .u.finish = { CAND_FIN_PRIO } },
     { .c = { "verify-at", 0, finish_available }, .slot = CAND_SLOT_FINISH,
       .routes = CR_DFA | CR_VM, .tok = "unwrapped", .map = CM_NONE,
       .hands = CT_START | CT_VERDICT,
@@ -10751,6 +10826,9 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
     int span = st->scan_span, nx = st->scan_next;
     int acc  = st->up[UPC_PLAIN].accept != 0;
     int facc = (nx < 0) ? 0 : (f->d->st[nx].up[UPC_PLAIN].accept != 0);
+    /* D164 B3 the two cells' VALUES, for a tagged form's `accv`. */
+    int accval  = st->up[UPC_PLAIN].accept;
+    int faccval = (nx < 0) ? 0 : f->d->st[nx].up[UPC_PLAIN].accept;
 
     /* THE COMMENT IS FOUR LINES AND WAS SEVEN. It is emitted once per edge
      * per machine, i.e. up to twelve times per artifact, and MEASURED at ~900
@@ -10798,8 +10876,8 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
         pcrec_sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
         pcrec_memfn_emit(f->cx, DELEG_EDGE, s, &h, c);
         if (acc)
-            pcrec_sb_printf(c, "%s    %s = %s;   // every position the run passed accepts\n",
-                      ind, f->dir->recv, f->dir->posv);
+            acc_record_const(c, f, dfa_fragf(f->cx, "%s    ", ind), f->dir->posv, accval,
+                             "   // every position the run passed accepts");
         pcrec_sb_printf(c, "%s}\n", ind);
         return;
     }
@@ -10815,16 +10893,18 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
      * not already cover it keeps the common `{0,n}` shape (both bits 1) at
      * one line. */
     if (acc && !facc)
-        pcrec_sb_printf(c, "%s        %s = %s;\n", ind, f->dir->recv, f->dir->scan_back);
+        acc_record_const(c, f, dfa_fragf(f->cx, "%s        ", ind), f->dir->scan_back,
+                         accval, "");
     pcrec_sb_printf(c, "%s        %s = %d;\n", ind, f->dir->statev,
               nx < 0 ? f->repr->dead_cell : f->repr->cell_of(nx, f->d));
     if (facc)
-        pcrec_sb_printf(c, "%s        %s = %s;\n", ind, f->dir->recv, f->dir->posv);
+        acc_record_const(c, f, dfa_fragf(f->cx, "%s        ", ind), f->dir->posv,
+                         faccval, "");
     pcrec_sb_printf(c, "%s    }", ind);
     if (acc) {
         pcrec_sb_printf(c, " else {\n");
-        pcrec_sb_printf(c, "%s        %s = %s;   // the run stopped inside the edge\n",
-                  ind, f->dir->recv, f->dir->posv);
+        acc_record_const(c, f, dfa_fragf(f->cx, "%s        ", ind), f->dir->posv, accval,
+                         "   // the run stopped inside the edge");
         pcrec_sb_printf(c, "%s    }\n", ind);
     } else {
         pcrec_sb_puts(c, "\n");
@@ -11131,16 +11211,16 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
     const char *ind = f->dir->ind;
     bool edges = f->nscan > 0;
     bool s0head = edges && dfa_start_is_scan_head(f->d);
-    bool seedhead = edges && dfa_seed_can_be_scan_head(f->d);
+    bool seedhead = edges && (f->entry_set ? f->entry_head : dfa_seed_can_be_scan_head(f->d));
     const char *lv = scan_label(f, "views");
     const char *le = scan_label(f, "edge");
 
-    f->seed->emit_init(c, f);
+    if (!f->entry_set) f->seed->emit_init(c, f);
     /* A MACHINE ENTERED DEAD HAS NO MATCH, and this is the only place that
      * can say so: the loop's first statement is the accept probe, and the
      * dead state has no row in the accept table. `dead_entry` is the
      * direction's own "no match" (see `DfaDir`). */
-    if (f->dead && dfa_entry_can_be_dead(f->d))
+    if (f->dead && (f->entry_set ? f->entry_dead : dfa_entry_can_be_dead(f->d)))
         pcrec_sb_printf(c, "%sif (%s_%s_is_dead(%s)) %s\n", ind, f->p,
                   f->dir->c.name, f->dir->statev, f->dead);
     /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
@@ -11162,7 +11242,7 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * folds away and the jump is unconditional — the same text this emitted
      * before, byte for byte, on that half of the population. */
     if (seedhead) {
-        if (f->seed->table)
+        if (f->seed->table || f->entry_set)
             pcrec_sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"
                          " goto %s;   // seeded straight onto a scan-edge head\n",
                       ind, f->p, f->dir->c.name, f->dir->statev,
@@ -11397,6 +11477,9 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c, "    size_t scan_position = %s;\n"
                "    size_t last_accept_position = (size_t)-1;\n", fwd->from);
+    /* D164 B3 a LOWERED forward machine's accept carries the distance back to
+     * the marked end (`DfaForm.accv`, §R.3). */
+    if (fwd->accv) pcrec_sb_printf(c, "    unsigned %s = 0;\n", fwd->accv);
     /* [START-LANDING] the landing's record, initialised to where the forward
      * walk starts: an unseeded machine (Λ ⇒ L3) is at its start state there,
      * so the NEXT block runs before any accept and overwrites it. */
@@ -11497,6 +11580,10 @@ static void unanch_scan(Ctx *cx, StrBuf *c, DfaForm *fwd, DfaForm *rev,
                "        size_t rewind_position = match_end_position;\n");
     emit_reverse_block(c, rev, dfa_dir_reverse.c.name, NULL);
     pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n");
+    /* D164 B3 the reverse pass started at the CONSUMED end; the match's end is
+     * the marked one, the forward accept's distance back. */
+    if (fwd->accv)
+        pcrec_sb_printf(c, "        match_end_position -= (size_t)__builtin_ctz(%s);\n", fwd->accv);
     emit_search_success(cx, c, "match_start_position", "match_end_position", "        ");
     pcrec_sb_puts(c, "    }\n"
                "}\n");
@@ -11613,10 +11700,10 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
  * dies on `'\n'`'s class, no tie can happen and no tie code is emitted. The
  * views are followed transitively and any live step answers yes, the
  * conservative direction. Read off the BUILT reverse machine. */
-static bool revend_nl_last(const Dfa *d)
+static bool revend_nl_last(const Dfa *d, int byte)
 {
     int stack[8], n = 0, seen[8], ns = 0;
-    int cls = d->clsmap['\n'];
+    int cls = d->clsmap[byte];
     if (d->s0 < 0 || d->s0 >= d->n) return false;
     stack[n++] = d->s0;
     while (n > 0) {
@@ -11625,6 +11712,9 @@ static bool revend_nl_last(const Dfa *d)
         if (dup || ns == 8) continue;
         seen[ns++] = st;
         if (d->st[st].tr[cls] >= 0) return true;
+        /* D164 B3 a scan-edge head's own class cell reads dead (scanedge.c);
+         * a head on the tail byte's class steps over it. */
+        if (d->st[st].scan_span != 0 && d->st[st].scan_cls == cls) return true;
         if (d->st[st].eolvar >= 0 && n < 8) stack[n++] = d->st[st].eolvar;
         if (d->st[st].endvar >= 0 && n < 8) stack[n++] = d->st[st].endvar;
     }
@@ -11642,7 +11732,7 @@ static bool revend_ties(Ctx *cx)
     const Job *job = cx->job;
     if (pcrec_fact_end_pin(cx) != PCREC_EPIN_EOL) return false;
     switch (job->revend_form) {
-    case RF_UNASKED:  return revend_nl_last(&job->rdfa);
+    case RF_UNASKED:  return revend_nl_last(&job->rdfa, '\n');
     case RF_DENIED:
     case RF_OVERFLOW: return job->revend_nl_last;
     case RF_ONE_SEED:
@@ -11673,12 +11763,30 @@ typedef struct {
 /* F0's predicate: the deny flag itself, so the listing names the row. */
 static bool rf_denied(const Ctx *cx)
 { return pcrec_opt_has(cx->opt, PCREC_NO_REV_END_ONEWALK); }
+/* F1's predicate: no match can end by consuming the tail's first byte, and
+ * the tail is one byte wide with one first byte (the seed test reads it). */
+static bool rf_one_seed(const Ctx *cx)
+{ return !cx->job->revend_nl_last && cx->job->revend_tail_byte >= 0; }
+/* F2's: the lowered machines were built, all fit, and the tagged reverse
+ * machine carries a tie (two distances under one state and context atom). */
+static bool rf_tagged(const Ctx *cx)
+{ return cx->job->revend_built && cx->job->revend_fit && cx->job->revend_tie; }
+/* F3's: built and fit, and no tie: the walk cannot tie even though a match
+ * can end by consuming a final newline. */
+static bool rf_two_seed(const Ctx *cx)
+{ return cx->job->revend_built && cx->job->revend_fit && !cx->job->revend_tie; }
 /* The total fallback. */
 static bool rf_always(const Ctx *cx) { (void)cx; return true; }
 
 static const RevendFormRow revend_forms[] = {
     { "denied", 0, rf_denied, RF_DENIED,
       "-fno-rev-end-onewalk: the two-seed walk (n, and n-1 before a final newline) with the tie code where a match can end by consuming the final newline (nl_last)" },
+    { "one-seed", PCREC_NO_REV_END_ONEWALK, rf_one_seed, RF_ONE_SEED,
+      "nl_last is false (no match can end by consuming a final newline): ONE seed, n-1 when the subject ends in a newline, else n, the seed's views resolved at compile time (form W); a zero-length match at n is probed where the n-1 walk finds none" },
+    { "tagged", PCREC_NO_REV_END_ONEWALK, rf_tagged, RF_TAGGED,
+      "the tie fact holds (a state of the tagged reverse machine accepts two mark distances under one context atom) and every lowered machine fit: the end mark lowered in the forward, reverse and anchored machines (one lowering per artifact), ONE walk from n whose accept value is the distance set; a tie is FINISH's (prio-const where mark_prio is constant, else verify-at, else search-from)" },
+    { "two-seed", PCREC_NO_REV_END_ONEWALK, rf_two_seed, RF_TWO_SEED,
+      "the tagged machine was built and fit and carries no tie although a match can end by consuming a final newline: the two-seed walk WITHOUT tie code (a tie is proven impossible)" },
     { "overflow", 0, rf_always, RF_OVERFLOW,
       "always (fallback): the two-seed walk with the tie code where nl_last; reached when a lowered or tagged build overflowed its cap" },
 };
@@ -11693,10 +11801,13 @@ bool pcrec_revend_form_asked(Ctx *cx)
 }
 
 /* `pcrec_revend_nl_last` (internal.h): `nl_last` off the reverse machine the
- * Job holds now (today's, before the driver replaces anything). */
+ * Job holds now (today's, before the driver replaces anything), over the
+ * tail's first byte where the tail has one (§R.2.4), else the newline today's
+ * two-seed walk tests. */
 bool pcrec_revend_nl_last(Ctx *cx)
 {
-    return revend_nl_last(&cx->job->rdfa);
+    int b = cx->job->revend_tail_byte;
+    return revend_nl_last(&cx->job->rdfa, b >= 0 ? b : '\n');
 }
 
 /* `pcrec_revend_form` (internal.h): the first row of `revend_forms[]` whose
@@ -11811,6 +11922,188 @@ static unsigned cand_project(Ctx *cx, unsigned hand)
     return hand == CAND_HAND_NOMATCH ? hand : CAND_HAND_LOWER;
 }
 
+/* D164 B3 FORM W's SEED STATE (endmark.md §R.4.6): the reverse machine's
+ * state at a seed with its position views taken at compile time, or -1 for
+ * dead. `nl` false: the seed n, no byte to its right (`s0`), then the
+ * END-then-EOL chain the per-iteration probe takes at `pos == n`; `nl` the
+ * tail's first byte (the newline today): the seed n-1 before a final one, the
+ * seed family's state for that byte to the right, then the EOL view the
+ * probe takes there. These are the only
+ * two positions a view applies at, and a one-seed walk starts at one of them
+ * and never returns to the other, which is why the loop needs no probe. */
+static int revend_seed_state(const Dfa *d, int nl)
+{
+    int s;
+    if (nl < 0) {
+        s = d->s0;
+        if (s < 0) return -1;
+        if (d->st[s].endvar >= 0) return d->st[s].endvar;
+        return d->st[s].eolvar >= 0 ? d->st[s].eolvar : s;
+    }
+    s = dfa_needs_seed(d) ? d->s1u[upc_of_class(d, d->clsmap[nl])] : d->s0;
+    if (s < 0) return -1;
+    return d->st[s].eolvar >= 0 ? d->st[s].eolvar : s;
+}
+
+/* The C literal of the tail byte `b` the seed test compares: `'\n'` for the
+ * newline (today's every tail), a hex escape otherwise. */
+static const char *revend_byte_literal(Ctx *cx, int b)
+{
+    if (b == '\n') return "'\\n'";
+    return pcrec_sb_fragf(&cx->arena, "0x%02x", (unsigned)b);
+}
+
+/* D164 B3 F1 `one-seed` (endmark.md §R.1, form W §R.4.6): the walk where no
+ * match can end by consuming a final newline (`nl_last` false). Every match
+ * then ends at n-1 when the subject ends in a newline, else at n, except a
+ * zero-length match at n itself; so ONE seed, chosen by the last byte, walks
+ * the reverse machine from its compile-time view state with no per-iteration
+ * view probe, and where the n-1 walk accepts nowhere the seed n's accept AT n
+ * is the answer (`\B$` on "a\n" is (2,2)). Writes the walk and its reports;
+ * `rev` is the reverse form derived with its views off, `entry` whether the
+ * body is the caller-facing entry (the FINISH asks are the two-seed walk's). */
+static void emit_rev_end_one_seed(Ctx *cx, DfaForm *rev, bool entry)
+{
+    StrBuf *c = &cx->job->csb;
+    const Dfa *d = rev->d;
+    int nl = cx->job->revend_tail_byte;
+    int sn = revend_seed_state(d, -1), snl = revend_seed_state(d, nl);
+    bool zero_at_n = sn >= 0 && d->st[sn].up[upc_of_class(d, d->clsmap[nl])].accept != 0;
+    int celln = sn < 0 ? rev->repr->dead_cell : rev->repr->cell_of(sn, d);
+    int cellnl = snl < 0 ? rev->repr->dead_cell : rev->repr->cell_of(snl, d);
+
+    rev->entry_set = true;
+    rev->entry_dead = sn < 0 || snl < 0;
+    rev->entry_head = (sn >= 0 && d->st[sn].scan_span != 0) ||
+                      (snl >= 0 && d->st[snl].scan_span != 0);
+    rev->lbl = "revend";
+    rev->dead = "break;";
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- REVERSE FROM THE END, ONE SEED: no match can end by\n"
+               "    // consuming a final newline, so every match ends at n-1 when\n"
+               "    // the subject ends in one (else at n); the walk starts in the\n"
+               "    // state the end views select there and reads no view again.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "    size_t match_end_position = subject_length;\n"
+               "    %s_reverse_state reverse_state = %d;\n"
+               "    if (subject_length > 0 && subject[subject_length - 1] == %s) {\n"
+               "        match_end_position = subject_length - 1;\n"
+               "        reverse_state = %d;\n"
+               "    }\n"
+               "    size_t match_start_position = (size_t)-1;\n"
+               "    if (match_end_position >= search_from) do {\n"
+               "        size_t rewind_position = match_end_position;\n",
+               rev->p, celln, revend_byte_literal(cx, nl), cellnl);
+    emit_scan_loop(c, rev);
+    pcrec_sb_puts(c, "    } while (0);\n");
+    if (zero_at_n)
+        pcrec_sb_puts(c, "    if (match_start_position == (size_t)-1 && match_end_position < subject_length)\n"
+                   "        match_start_position = match_end_position = subject_length;\n");
+    if (entry && cand_finish_ask(cx, CAND_HAND_NOMATCH)->u.finish.act != CAND_FIN_NOMATCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's NOMATCH is "
+                       "finished by a row that is not `nomatch`");
+    pcrec_sb_puts(c, "    if (match_start_position == (size_t)-1) return 0;\n");
+    if (entry && cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
+        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's SPAN is finished "
+                       "by a row that is not `report`");
+    emit_search_success(cx, c, "match_start_position", "match_end_position", "    ");
+    pcrec_sb_puts(c, "}\n");
+}
+
+/* D164 B3 F2 `tagged` (endmark.md §R.1, §R.1.3, §R.3): ONE walk from n over
+ * the tagged reverse machine, whose accept value is the set D of mark
+ * distances; every accept records D with its position (`DfaForm.accv`), so
+ * at the smallest accepting position `s*` the walk holds D(q, a) for the
+ * state it accepted in and the context atom it was read under. |D| = 1 (bit
+ * d): the end is n - d, a SPAN. |D| >= 2: ENDSET, which `tie` (FINISH's row
+ * for ENDSET, NULL where no tie is possible) finishes: `prio-const` (n - c),
+ * `verify-at` (one run of the lowered anchored machine from `s*`, whose
+ * `_match` reports the marked end) or a RELOCATE to the composite from `s*`
+ * over the lowered forward machine. `formw`: the seed's views resolved at
+ * compile time (form W); otherwise the derived form probes them. */
+static void emit_rev_end_tagged(Ctx *cx, DfaForm *rev, DfaForm *fwd, bool entry,
+                                const CandRow *tie, bool formw)
+{
+    StrBuf *c = &cx->job->csb;
+    const Dfa *d = rev->d;
+    int act = tie ? tie->u.finish.act : 0;
+    bool relocate = act == CAND_FIN_SEARCH;
+    DfaForm rel = *rev;   /* the composite's reverse pass reads truth only */
+
+    rev->accv = "revend_dist";
+    rev->lbl = "revend";
+    rev->dead = "break;";
+    if (formw) {
+        int sn = revend_seed_state(d, -1);
+        rev->entry_set = true;
+        rev->entry_dead = sn < 0;
+        rev->entry_head = sn >= 0 && d->st[sn].scan_span != 0;
+    }
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c, "    // ---- REVERSE FROM THE END, ONE WALK: the end mark is lowered,\n"
+               "    // so every match ends at n and each accept carries the set of\n"
+               "    // distances back to where the match's end was marked.\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t revend_start = (size_t)-1, revend_end = 0;\n"
+               "    unsigned revend_dist = 0;\n"
+               "    {\n"
+               "        size_t match_end_position = subject_length;\n"
+               "        size_t match_start_position = (size_t)-1;\n");
+    if (formw) {
+        int sn = revend_seed_state(d, -1);
+        pcrec_sb_printf(c, "        %s_reverse_state reverse_state = %d;\n", rev->p,
+                        sn < 0 ? rev->repr->dead_cell : rev->repr->cell_of(sn, d));
+    }
+    pcrec_sb_puts(c, "        if (match_end_position >= search_from) do {\n"
+               "        size_t rewind_position = match_end_position;\n");
+    emit_scan_loop(c, rev);
+    pcrec_sb_puts(c, "        } while (0);\n"
+               "        revend_start = match_start_position;\n"
+               "    }\n");
+    if (entry && cand_finish_ask(cx, CAND_HAND_NOMATCH)->u.finish.act != CAND_FIN_NOMATCH)
+        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's NOMATCH is "
+                       "finished by a row that is not `nomatch`");
+    pcrec_sb_puts(c, "    if (revend_start == (size_t)-1) return 0;\n"
+               "    revend_end = subject_length - (size_t)__builtin_ctz(revend_dist);\n");
+    /* THE TIE ARM: FINISH's row for ENDSET, by its action. */
+    if (act == CAND_FIN_PRIO) {
+        pcrec_sb_printf(c, "    if (revend_dist & (revend_dist - 1)) revend_end = subject_length - %d;\n",
+                        cx->job->mark_prio_c);
+    } else if (act == CAND_FIN_VERIFY && cand_finish_of(cx) != CAND_ROUTE_VM) {
+        GenNames g;
+        pcrec_gen_names(cx, &g);
+        pcrec_sb_printf(c, "    if (revend_dist & (revend_dist - 1)) {\n"
+                   "        rx_ctx revend_ctx = { .subject = subject, .len = subject_length,"
+                   " .pos = revend_start };\n"
+                   "        ptrdiff_t revend_len = %s(&revend_ctx);\n"
+                   "        if (revend_len < 0) return (int)revend_len;\n"
+                   "        revend_end = revend_start + (size_t)revend_len;\n"
+                   "    }\n", g.matchfn);
+    } else if (act == CAND_FIN_VERIFY) {
+        /* The VM hat's verify-at over an ENDSET: never selected (its take
+         * cell on CAND_ROUTE_VM omits ENDSET, LR-S3); the ceiling max(D). */
+        pcrec_sb_puts(c, "    if (revend_dist & (revend_dist - 1)) revend_end = subject_length;\n");
+    } else if (relocate) {
+        pcrec_sb_puts(c, "    if (!(revend_dist & (revend_dist - 1))) {\n");
+    }
+    if (entry && cand_finish_ask(cx, CAND_HAND_SPAN)->u.finish.act != CAND_FIN_REPORT)
+        pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's SPAN is finished "
+                       "by a row that is not `report`");
+    emit_search_success(cx, c, "revend_start", "revend_end", relocate ? "        " : "    ");
+    if (!relocate) {
+        pcrec_sb_puts(c, "}\n");
+        return;
+    }
+    /* T3: relocate to the composite from the walk's start (E-FL), over the
+     * LOWERED forward machine, whose END accept value gives the distance
+     * back to the marked end, and the tagged reverse machine read for its
+     * accept truth (§R.2.1). */
+    fwd->accv = "forward_dist";
+    pcrec_sb_puts(c, "    }\n"
+               "    search_from = revend_start;\n");
+    unanch_scan(cx, c, fwd, &rel, dfa_search_start_at(cx, CAND_HAND_WINDOW));
+}
+
 /* THE `rev-end` WALK, the LOCATE row's emitter on CAND_ROUTE_DFA: the search
  * body `fn` (the caller-facing entry, or a VM hybrid's inlined prefilter).
  *
@@ -11851,8 +12144,22 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     if (relocate && dfa_search_start_at(cx, CAND_HAND_EXISTS)->u.recover.act == CRA_SEARCH_FROM)
         pcrec_ctx_fail(cx, 0, "internal error: the rev-end walk's relocate reached a "
                        "start-pinned composite (revend.md X3)");
+    bool tagged = job->revend_form == RF_TAGGED;
     if (relocate) dfa_form_derive(cx, &job->dfa, &us, &dfa_dir_forward, &fwd);
-    dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
+    /* D164 B3 FORM W (endmark.md §R.4.6): a one-walk form resolves the seed's
+     * position views at compile time, so its reverse form carries none — no
+     * view table, no view accessor, no per-iteration probe. `tagged` takes it
+     * where its machine has no EOL view (a view only the seed's position
+     * reaches) and no relocate shares the reverse form (the composite's own
+     * reverse pass reads the views). */
+    bool formw = job->revend_form == RF_ONE_SEED ||
+                 (tagged && !relocate && !dfa_has_eolvar(&job->rdfa));
+    UnanchStart rus = us;
+    if (formw) rus.eol = rus.endv = rus.viewsel = rus.views = false;
+    dfa_form_derive(cx, &job->rdfa, &rus, &dfa_dir_reverse, &rev);
+    /* ... and no seed table: its seed states are compile-time constants
+     * (`revend_seed_state`), so the axis's `constant` object is the form. */
+    if (formw) rev.seed = &dfa_seeds[1];
     /* The walk's front where its body is the entry: PRESENCE, which its own
      * `whole` dominates, so no pre-check is emitted ahead of it (X7). */
     if (entry && req_admit_emits(req_admit(cx)))
@@ -11872,6 +12179,14 @@ static void emit_rev_end(Ctx *cx, const char *fn, const char *storage)
     pcrec_sb_puts(c, "    if (search_from > subject_length) return 0;\n");
     if (relocate) emit_machine_tables(c, &fwd);
     emit_machine_tables(c, &rev);
+    if (cx->job->revend_form == RF_ONE_SEED) {
+        emit_rev_end_one_seed(cx, &rev, entry);
+        return;
+    }
+    if (tagged) {
+        emit_rev_end_tagged(cx, &rev, &fwd, entry, tie, formw);
+        return;
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c, "    // ---- REVERSE FROM THE END: every match ends at n (or at n-1\n"
                "    // before a final newline), so the reverse machine walked back\n"
@@ -12052,9 +12367,23 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
     pcrec_sb_cmt_close(c);
     pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
-    emit_scan_loop(c, f);
+    if (!f->d->tagged) {
+        emit_scan_loop(c, f);
+        pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
+                   "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+                   "}\n");
+        return;
+    }
+    /* D164 B3 the LOWERED anchored machine (one lowering per artifact,
+     * endmark.md §R.2.1): its accept carries the distance back to the marked
+     * end (`DfaForm.accv`), and the length is to that end. */
+    DfaForm tf = *f;
+    tf.accv = "anchored_dist";
+    pcrec_sb_puts(c, "    unsigned anchored_dist = 0;\n");
+    emit_scan_loop(c, &tf);
     pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
-               "    return (ptrdiff_t)(last_accept_position - search_from);\n"
+               "    return (ptrdiff_t)(last_accept_position - search_from)"
+               " - (ptrdiff_t)__builtin_ctz(anchored_dist);\n"
                "}\n");
 }
 

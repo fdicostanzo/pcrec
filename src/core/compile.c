@@ -168,6 +168,17 @@ static void job_cleanup(Ctx *cx)
          * it stopped. */
         free(cx->job->adfa.st);
         free(cx->job->adfa.tab);
+        /* D164 B3 the set of machines that is not live (see Job.xnfa). */
+        free(cx->job->xnfa.st);
+        free(cx->job->xrnfa.st);
+        free(cx->job->xdfa.st);
+        free(cx->job->xdfa.tab);
+        free(cx->job->xrdfa.st);
+        free(cx->job->xrdfa.tab);
+        free(cx->job->xadfa.st);
+        free(cx->job->xadfa.tab);
+        free(cx->job->xprio.st);
+        free(cx->job->xprio.tab);
         pcrec_sb_free(&cx->job->csb);
         pcrec_sb_free(&cx->job->hsb);
         pcrec_sb_free(&cx->job->vmsb);
@@ -279,15 +290,120 @@ static void build_anchored_dfa(Ctx *cx)
     cx->job->anchored_ok = true;
 }
 
-/* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1, §R.2.1),
- * decided once the forward, reverse and anchored machines exist: `nl_last` is
- * read off TODAY's reverse machine and the first-match table
- * (`pcrec_revend_form`, src/gen/emit_dfa.c) is walked. */
-static void revend_choose_form(Ctx *cx)
+/* D164 B3 ONE OPTIONAL MACHINE of the `tagged` form, built from `nfa` and
+ * passed through the scan-edge pass, exactly as the driver builds today's
+ * (`forward` says which walk it is). Returns false where it overflowed: the
+ * caller then keeps today's machines (§R.5, a decline, never a refusal). The
+ * overflow RECORD is saved and restored, `build_anchored_dfa`'s rule: only
+ * this optional machine overflowed, not the DFA engine. */
+static bool revend_build_one(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
+                             int cap, int root, bool forward)
+{
+    bool saved_overflowed = cx->dfa_overflowed;
+    char saved_why[sizeof cx->dfa_overflow_why];
+    memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
+    pcrec_build_min_dfa(cx, nfa, d, prune, reverse, cap, root, true);
+    cx->dfa_overflowed = saved_overflowed;
+    memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
+    if (d->overflowed) return false;
+    pcrec_scanedge_dfa(cx, d, pcrec_dfa_scan_state_written(cx, d), forward);
+    return true;
+}
+
+/* D164 B3 THE LOWERED MACHINES (docs/design/endmark.md §R.2): the forward,
+ * reverse and (where today's was built) anchored machines over the NFA with
+ * the end mark's tails lowered to `T` and each thread's mark distance as
+ * state (`pcrec_build_nfa_marked`, `pcrec_nfa_mark_distances`), all OPTIONAL
+ * (§R.5), into the Job's `x*` set; then the tie fact off the tagged reverse
+ * machine (§R.1.2: some state and context atom with two or more distances)
+ * and, where it holds, `mark_prio` off the unpruned anchored machine
+ * (§R.1.4). Writes `revend_built`/`revend_fit`/`revend_tie` and `mark_prio`.
+ * The subset budget is restored afterwards: optional builds are charged to
+ * their own caps, never to the engine-selection budget. */
+static void revend_build_marked(Ctx *cx, Ast *root, const EndMark *em)
 {
     Job *job = cx->job;
+    long long subset_before = cx->subset_elems;
+    EolLower lo = { em->tail, em->ntails, em->body };
+    int ld;
+
+    job->revend_built = true;
+    job->revend_fit = false;
+    pcrec_build_nfa_marked(cx, root, &job->xnfa, false, &lo);
+    ld = pcrec_nfa_mark_distances(cx, &job->xnfa, 7);
+    if (ld < 0) goto out;
+    pcrec_nfa_wrap_unanchored(cx, &job->xnfa);
+    pcrec_build_nfa_marked(cx, root, &job->xrnfa, true, &lo);
+    if (pcrec_nfa_mark_distances(cx, &job->xrnfa, 7) < 0) goto out;
+    if (!revend_build_one(cx, &job->xnfa, &job->xdfa, true, false,
+                          PCREC_MAX_DFA_STATES_TABLE, job->xnfa.start, true)) goto out;
+    if (!revend_build_one(cx, &job->xrnfa, &job->xrdfa, false, true,
+                          PCREC_MAX_DFA_STATES_TABLE, job->xrnfa.start, false)) goto out;
+    if (job->anchored_ok &&
+        !revend_build_one(cx, &job->xnfa, &job->xadfa, true, false,
+                          PCREC_ANCHORED_MAX_STATES, job->xnfa.anch_start, true)) goto out;
+    job->revend_fit = true;
+    job->revend_tie = false;
+    for (int s = 0; s < job->xrdfa.n && !job->revend_tie; s++)
+        for (int u = 0; u < job->xrdfa.natoms; u++) {
+            unsigned a = job->xrdfa.st[s].up[u].accept;
+            if (a & (a - 1)) { job->revend_tie = true; break; }
+        }
+    if (job->revend_tie) {
+        /* `mark_prio`: the probe's build is unpruned and never minimized, so
+         * every pre-set's END closure is seen; an overflow answers
+         * state-dependent, the side on which FINISH runs. */
+        bool saved_overflowed = cx->dfa_overflowed;
+        char saved_why[sizeof cx->dfa_overflow_why];
+        memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
+        job->xprio.prio_probe = true;
+        pcrec_build_dfa(cx, &job->xnfa, &job->xprio, false, false,
+                        PCREC_MAX_DFA_STATES_TABLE, job->xnfa.anch_start, true);
+        cx->dfa_overflowed = saved_overflowed;
+        memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
+        unsigned seen = job->xprio.prio_seen;
+        if (job->xprio.overflowed || (seen & (seen - 1))) job->mark_prio = MP_STATE;
+        else if (seen == 0) job->mark_prio = MP_NONE;
+        else {
+            job->mark_prio = MP_CONST;
+            job->mark_prio_c = __builtin_ctz(seen);
+        }
+    }
+out:
+    (void)ld;
+    cx->subset_elems = subset_before;
+}
+
+/* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1, §R.2.1),
+ * decided once the forward, reverse and anchored machines exist. `nl_last` is
+ * read off TODAY's reverse machine and the first-match table
+ * (`pcrec_revend_form`, src/gen/emit_dfa.c) is walked; where it reaches the
+ * rows that need the lowered machines (the fallback), they are built and the
+ * table walked again. On `tagged` the lowered set replaces today's in the Job
+ * (one lowering per artifact, D164 add. 4); on any decline today's stay. */
+static void revend_choose_form(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    const EndMark *em = pcrec_fact_end_mark(cx);
+    job->revend_tail = em->body;
+    job->revend_tail_byte = em->body && em->width == 1 && em->byte >= 0 && em->byte < 0x80
+                          ? em->byte : -1;
+    job->revend_maxd = em->body ? em->width : 0;
     job->revend_nl_last = pcrec_revend_nl_last(cx);
     job->revend_form = pcrec_revend_form(cx);
+    if (job->revend_form != RF_OVERFLOW) return;
+    if (em->body && em->complete && em->width > 0 && em->width <= 7 &&
+        !cx->end_mark_dropped && !job->fit.prefilter_collapsed)
+        revend_build_marked(cx, root, em);
+    job->revend_form = pcrec_revend_form(cx);
+    if (job->revend_form != RF_TAGGED) return;
+    Nfa tn;
+    Dfa td;
+    tn = job->nfa;  job->nfa  = job->xnfa;  job->xnfa  = tn;
+    tn = job->rnfa; job->rnfa = job->xrnfa; job->xrnfa = tn;
+    td = job->dfa;  job->dfa  = job->xdfa;  job->xdfa  = td;
+    td = job->rdfa; job->rdfa = job->xrdfa; job->xrdfa = td;
+    if (job->anchored_ok) { td = job->adfa; job->adfa = job->xadfa; job->xadfa = td; }
 }
 
 /* [M4.5c] ONE driver, two callers. `pcrec_compile` and DD-8's `pcrec_emit_ir`
@@ -2602,7 +2718,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 build_anchored_dfa(&cx);
                 /* D164 B3 the `rev-end` walk's form, once the three machines
                  * exist (endmark.md §R.2.1's order). */
-                if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx);
+                if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the

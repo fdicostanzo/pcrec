@@ -781,7 +781,11 @@ typedef struct {
     uint32_t  gen;     /* one generation for both arrays; see closure() */
     int      *out;
     int       nout;
-    bool      accept;
+    /* D164 B3 the ACCEPT VALUE: bit `dist` of every N_ACCEPT reached (bit 0
+     * on every machine built without the mark, so 0/1 there), and `first`,
+     * the distance of the first one reached in priority order, -1 for none. */
+    uint8_t   accept;
+    int       first;
     bool      eol_ok;
     /* [M6.2 wave A] may a `\z` (N_END) assertion pass here — the THIRD
      * position view, on top of `bot_ok`/`eol_ok`. The invariant the caller
@@ -975,7 +979,8 @@ static void clo_walk(Clo *cl, int s)
                 }
                 break;
             case N_ACCEPT:
-                cl->accept = true;
+                cl->accept |= (uint8_t)(1u << st->dist);
+                if (cl->first < 0) cl->first = st->dist;
                 /* With prune on, lower-priority threads are cut: nothing
                  * deferred can matter any more. This is the ONLY place accept
                  * becomes true, and closure() will not start another walk, so
@@ -1119,7 +1124,7 @@ typedef struct {
  * the top of every call. */
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
                     bool end_ok, bool gst_ok, Sides sd, bool prune,
-                    CloScratch *sc, int *out, int *nout, bool *accept)
+                    CloScratch *sc, int *out, int *nout, uint8_t *accept, int *first)
 {
     marks_next(&sc->seen);
     /* The two stamp arrays advance in LOCKSTEP, which is what lets one `gen`
@@ -1138,7 +1143,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
     Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
-               out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
+               out, 0, 0, -1, eol_ok, end_ok, bot_ok, gst_ok,
                sd.left, sd.right, sc->cbit, sc->nl_bit, sc->ns_bit, prune,
                sc->lcyc };
     for (int i = 0; i < npre; i++) {
@@ -1147,6 +1152,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
     }
     *nout = cl.nout;
     *accept = cl.accept;
+    *first = cl.first;
 }
 
 /* ---- state interning ---- */
@@ -1485,18 +1491,23 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
                 vw[v][u] = vw[V_EOL][u];
                 continue;
             }
-            bool acc;
-            int nout;
+            uint8_t acc;
+            int nout, first;
             int *buf = scratch + (size_t)(v * m->natoms + u) * nfa->n;
             /* end_ok implies eol_ok — the Clo.end_ok invariant. `gst_ok` is
              * orthogonal to the position views and rides through unchanged:
              * `\G` and `\z` can both hold at once (an empty subject searched
              * from 0), so it is a caller's parameter and not a fourth view. */
             closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
-                    sides_of(m, cons_atom, u), m->prune, sc, buf, &nout, &acc);
+                    sides_of(m, cons_atom, u), m->prune, sc, buf, &nout, &acc, &first);
             vw[v][u].list   = buf;
             vw[v][u].nlist  = nout;
             vw[v][u].accept = acc;
+            /* D164 B3 `mark_prio`'s probe (endmark.md §R.1.4): at a pre-set's
+             * END closure (`pos == n`, no byte to the right) holding two or
+             * more distances, the one priority reaches first. */
+            if (d->prio_probe && v == V_END && u == UPC_PLAIN && (acc & (acc - 1)))
+                d->prio_seen |= (uint8_t)(1u << first);
         }
     }
 
@@ -1554,6 +1565,12 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * from the very first `make_state` below. */
     d->optional = optional;
     d->overflowed = false;
+    d->prio_seen = 0;
+    /* D164 B3 a machine is TAGGED when an accept reports a mark distance
+     * (`NState.dist`): only the end mark's pair construction writes one. */
+    d->tagged = false;
+    for (int i = 0; i < nfa->n; i++)
+        if (nfa->st[i].k == N_ACCEPT && nfa->st[i].dist) d->tagged = true;
     /* Hoisted once per machine, like `has_end` below and for the same reason:
      * the closure needs to know which position views are live before the
      * first state is built. */
@@ -1740,4 +1757,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
             d->st[si].tr[c] = tgt;
         }
     }
+    /* D164 B3 (endmark.md §R.3): an untagged machine's accept values are the
+     * set {0} or nothing, which is what lets the value compares stand for the
+     * truth compares on every artifact without the mark. */
+    if (!d->tagged)
+        for (int si = 0; si < d->n; si++)
+            for (int u = 0; u < d->natoms; u++)
+                DFA_INVARIANT(cx, d->st[si].up[u].accept <= 1,
+                              "an untagged DFA state carries an accept value "
+                              "above 1 (endmark.md R.3)");
 }

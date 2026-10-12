@@ -1958,6 +1958,13 @@ typedef struct {
     uint8_t loop;        /* star/plus loop-entry split */
     uint8_t exit_is_t2;  /* which edge leaves the loop (greedy: t2) */
     uint8_t ctxfn;       /* N_CTX only: its CTXFN_* truth function */
+    /* D164 B3 the match-end mark (docs/design/endmark.md §R.1.2, §R.2): `tail`
+     * on an N_CLASS consumed by a LOWERED `$`/`\Z` tail, where each byte adds
+     * one to the thread's mark distance; `dist` on an N_ACCEPT, the distance
+     * the accept reports (the closure records bit `dist`). Both 0 on every
+     * machine built without the mark (`pcrec_build_nfa_marked`). */
+    uint8_t tail;
+    uint8_t dist;
 } NState;
 
 typedef struct {
@@ -2283,6 +2290,12 @@ typedef struct {
      * the build checks (an untagged machine with a value above 1 is an
      * internal error). */
     bool     tagged;
+    /* D164 B3 `mark_prio`'s PROBE (endmark.md §R.1.4): set by the caller
+     * before an unpruned build of the lowered anchored machine; the build then
+     * records in `prio_seen` bit c for every pre-set END closure holding two or
+     * more distances whose priority-first distance is c. Read nowhere else. */
+    bool     prio_probe;
+    uint8_t  prio_seen;
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
 } Dfa;
@@ -2876,6 +2889,18 @@ typedef struct {
     bool   revend_nl_last, revend_built, revend_fit, revend_tie;
     MarkPrio mark_prio;
     int    mark_prio_c;
+    /* D164 B3 the tail `T` the mark's lowering consumes (`pcrec_eol_tail`,
+     * lowered), its one first byte (-1 where its first-byte set is not one
+     * byte, or `T` is unusable), and its width `L`, the distance domain 0..L.
+     * Read by the form rows and the walk; written once by the driver. */
+    const struct Ast *revend_tail;
+    int    revend_tail_byte, revend_maxd;
+    /* D164 B3 the machines NOT live: the lowered set while it is being
+     * built and on any decline, today's set once F2 swapped the lowered set
+     * in (one lowering per artifact, D164 add. 4). Heap-held like the live
+     * set, so `job_cleanup` frees both; `xprio` is `mark_prio`'s probe. */
+    Nfa    xnfa, xrnfa;
+    Dfa    xdfa, xrdfa, xadfa, xprio;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
@@ -3370,6 +3395,10 @@ struct Ctx {
      * the drop would GROW the member set (a `rev-end` tie), and a later rung
      * must not drop the machine the skipped one kept. */
     bool                 anchored_dropped;
+    /* D164 B3 did the ladder's `drop-end-mark` row FIRE on this compile? The
+     * driver's form decision reads it in place of building the lowered
+     * machines: the `rev-end` walk keeps today's form (endmark.md §R.5). */
+    bool                 end_mark_dropped;
 
     /* [OPT-4] ON THE ATTEMPT THAT OVERFLOWED, was the DFA to be the ENGINE?
      * Seeded by `compile_driver` alongside `dfa_disabled` and meaningful only
@@ -4608,6 +4637,10 @@ typedef struct RegDef {
 /* src/parse/definitions.c */
 bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx);
 const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw);
+/* D164 B3 the end mark's tail `T`: `plain(Y)` of `\Z`'s definitions row
+ * `(?=Y)`, sub-parsed (src/parse/definitions.c), or NULL where the row is not
+ * such a lookahead. The tree is the parser's; the caller lowers it. */
+const struct Ast *pcrec_eol_tail(Ctx *cx);
 const char *pcrec_def_tag_name(DefTag tag);
 bool pcrec_ast_is_core(AKind k);
 bool pcrec_ast_all_core(const Ast *a);
@@ -6539,6 +6572,27 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
  * `Nfa` can be measured exact and then rebuilt collapsed in place. */
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
+
+/* D164 B3 THE END MARK's LOWERING, an NFA-build parameter (docs/design/
+ * endmark.md §R.2): the tail `$`/`\Z` nodes (`tails[0..ntails)`, the
+ * `end_mark` fact's) build `body`, the tail `T` read off `\Z`'s definitions
+ * row (`pcrec_eol_tail`), with every byte it consumes marked `NState.tail`;
+ * every other node builds as `pcrec_build_nfa` builds it. Then the PAIR
+ * construction (`pcrec_nfa_mark_distances`) gives each thread its distance. */
+typedef struct {
+    const struct Ast *const *tails;
+    int                      ntails;
+    const struct Ast        *body;
+} EolLower;
+void pcrec_build_nfa_marked(Ctx *cx, Ast *root, Nfa *nfa, bool reverse,
+                            const EolLower *lower);
+/* D164 B3 the thread distance as NFA state (endmark.md §R.1.2): rebuilds
+ * `nfa` in place as its reachable pairs (state, d), d in 0..maxd, where a
+ * `tail` byte steps d by one and each N_ACCEPT reports its pair's d
+ * (`NState.dist`). `start` and `anch_start` map to their d = 0 pairs.
+ * Returns the largest d reached, or -1 (the machine unusable) where a tail
+ * byte would pass `maxd`. */
+int pcrec_nfa_mark_distances(Ctx *cx, Nfa *nfa, int maxd);
 
 void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 

@@ -318,21 +318,35 @@ static void em_see_call(void *ud, const Ast *a)
     if (a->k == A_CALL) *(bool *)ud = true;
 }
 
-/* D164 B3 the `end_mark` fact (facts_derive.h): the tail set of `root`, and
+/* D164 B3 the `end_mark` fact (facts_derive.h): the tail set of `root`,
  * whether lowering it completes the pin, i.e. the tail-lowered view of the
- * tree pins every match at `\z` (`ew_walk_marked`). Asked only on an `eol`
+ * tree pins every match at `\z` (`ew_walk_marked`), and the tail `T` with its
+ * width and first byte where the tree has tails. Asked only on an `eol`
  * pin. Declines (`PF_WHY_CALL`, `out` empty) where the pattern calls a
  * subroutine: a call site re-enters a body with another continuation, so no
  * node in it is path-final for every caller (endmark.md §1.3 L3). */
-PfWhyCode pcrec_end_mark(Arena *ar, const Ast *root, EndMark *out)
+PfWhyCode pcrec_end_mark(Ctx *cx, const Ast *root, EndMark *out)
 {
     bool call = false;
-    EmWalk w = { ar, out, 0 };
+    EmWalk w = { &cx->arena, out, 0 };
 
-    *out = (EndMark){ 0, false, NULL };
+    *out = (EndMark){ 0, false, NULL, NULL, 0, -1 };
     pcrec_ast_visit(root, em_see_call, &call);
     if (call) return PF_WHY_CALL;
     em_tails(root, &w);
     out->complete = out->ntails > 0 && ew_walk_marked(root, out) == EW_Z;
+    if (out->ntails == 0) return PF_WHY_NONE;
+    /* The tail, its width and its one first byte (§R.2.4: every reader of
+     * the tail derives from the definition). */
+    out->body = pcrec_eol_tail(cx);
+    if (!out->body) return PF_WHY_NONE;
+    long long wmax = pcrec_cwmax(out->body);
+    out->width = wmax >= PCREC_W_UNBOUNDED ? -1 : (int)wmax;
+    StartSet ss;
+    int n = 0, b = -1;
+    pcrec_start_set(cx, out->body, &ss);
+    for (int i = 0; i < 256; i++)
+        if ((ss.bits[i >> 3] >> (i & 7)) & 1) { n++; b = i; }
+    out->byte = n == 1 ? b : -1;
     return PF_WHY_NONE;
 }
