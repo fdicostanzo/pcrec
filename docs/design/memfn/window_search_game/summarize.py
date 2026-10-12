@@ -226,7 +226,7 @@ for k, fs in sf.items():
             if max(sa, sb) == 0 or min(sa, sb) == 0 or max(sa, sb) > 2 * min(sa, sb):
                 continue
             wa, wb = int(a["mb"]) + int(a["L"]), int(b["mb"]) + int(b["L"])
-            if max(wa, wb) >= 4 * min(wa, wb) or abs(int(a["ov"]) - int(b["ov"])) >= 8:
+            if max(wa, wb) >= 3 * min(wa, wb) or abs(int(a["ov"]) - int(b["ov"])) >= 4:
                 exd.append((k, a, b))
 print("pattern x subject cells with >=2 bounded spans: %d" % flip["n"])
 table(["ranking compared", "argmin span differs"],
@@ -237,7 +237,7 @@ if pred_err:
     q = lambda f: pred_err[min(len(pred_err) - 1, int(f * len(pred_err)))]
     print("\nmeasured/predicted survivors (+1 smoothed), %d forms: p10 %.3g, p50 %.3g, p90 %.3g, max %.3g"
           % (len(pred_err), q(.1), q(.5), q(.9), pred_err[-1]))
-h("D2. Similar stop counts (<=2x), very different windows (width >=4x or overshoot gap >=8)")
+h("D2. Similar stop counts (<=2x), very different windows (width >=3x or overshoot gap >=4)")
 print("%d form pairs" % len(exd))
 body = []
 for k, a, b in exd[:30]:

@@ -208,7 +208,7 @@ simulated on capability's `t-256k`. Its output, `data/summary.md`, carries:
   dfa-priced against vm-priced, and the measured-to-predicted survivor
   distribution;
 - §D2, every pair of spans whose stops are within 2x but whose windows differ by
-  >= 4x or by >= 8 in overshoot.
+  >= 3x or by >= 4 in overshoot.
 
 **Status: see `../../dev/lanes/wingame_report.md`** for whether the chain had run
 when this lane ended. If it is OWED, the report names the log and the completion line.

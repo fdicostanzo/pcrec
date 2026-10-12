@@ -26,4 +26,7 @@ log "run_game rc=$?"
 for f in spans spaninfo choices sim spanforms; do cp "$B/full/$f.tsv" "$I/data/$f.tsv"; done
 ( cd "$I" && python3 -B summarize.py data ) > "$I/data/summary.md" 2> "$B/summ.err"
 log "summarize rc=$?"
+
+git -C "$W" add docs/design/memfn/window_search_game/data && \
+  git -C "$W" commit -qm "wingame chain: population data + summary.md (counts only)" && log "committed $(git -C "$W" log -1 --format=%h)"
 log "== wingame chain COMPLETE"
