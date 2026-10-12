@@ -9306,7 +9306,7 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Revisit when** strong counter-evidence shows a character-domain compare the kit could render better than the encoding without becoming encoding-aware.
 
 
-### D155 addendum 2 — the emission shape is a GUIDELINE, not a hard rule; composable body pieces allowed (Frank, 2026-10-11, session 108, on R-17's Q-R17-2)
+### D155 addendum 3 — the emission shape is a GUIDELINE, not a hard rule; composable body pieces allowed (Frank, 2026-10-11, session 108, on R-17's Q-R17-2)
 
 - **Ruling (Frank):** "those kit emit restrictions were for when kit simply was choosing one fn or another. I'm not sure they apply. They were more guidelines or goals than hard rules. Also, it might be that kit emits lower level instructions into the body that compose to the result rather than a function that handles the whole effort. Each lower level function definition might have ifdef inside it to guide its implementation. That said, if the code can be neatly put into a function then that works too and I agree with A. Consider that the start position queue idea might need local storage and therefore might need the kit function to access it or even decide if it should be emitted or not. So the kit can emit code into the body but should avoid ifdef code there. One method is to encapsulate a arch-versioned function in the header but there may be others."
 - **What stands:** NO `#if`/`#ifdef` in the code the kit emits into a function BODY. Architecture choice lives inside lower-level helper DEFINITIONS (an arch-versioned helper in the header is one way; others allowed).
