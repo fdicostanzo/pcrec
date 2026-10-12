@@ -29,6 +29,13 @@ built or run by `make`. Run the Python with `python3 -I` and
   `$`/`\Z`/`(?m)$` to the lowered text with `()` as the mark, compiles baseline and proxy `--no-captures`,
   reads machine states/table bytes from the emitted arrays; output `census/results/cost.txt`; report
   `docs/dev/lanes/emcensus_report.md`.
+- `b3cost_probe.c` + `census/b3cost.py` — lane b3cost (2026-10-12): B3's reverse machine at the TAGGED
+  size (D164 add. 3). The probe links `libpcrec.a`, builds the real reverse DFA (select_engine, lower_enc,
+  `pcrec_build_min_dfa`, optional `pcrec_scanedge_dfa`) for `X$`, `X\n?\z`, `X\z`, `X\n\z`, and takes the
+  tagged machine as the Moore-minimized PRODUCT of the last two (accept pair = the mark distance set).
+  Three controls print in the output: model == emitted states for today and for the untagged proxy, and the
+  product with an OR output == the untagged machine. Output `results/b3cost.txt`; report
+  `docs/dev/lanes/b3cost_report.md`. Run line in `census/b3cost.py`'s header.
 - `results/` — `diff_all_len5.txt` (3,527 patterns, 28,237,887 cells, 0
   differences), `diff_plants.txt`, `twin_k16000.txt`, `twin_plants.txt`,
-  `census.txt` (at `885eccff`).
+  `census.txt` (at `885eccff`), `b3cost.txt` (at `0e8849125`).
