@@ -1,0 +1,7 @@
+# compound vs today, linked .text+.rodata+.data.rel.ro of a binary whose main calls only rx_search
+# (gcc -O2 -ffunction-sections -fdata-sections -Wl,--gc-sections); Q derived, F = P under the bound
+cell	Q	linked_today	linked_compound	ratio
+trim	\s+$	981	2975	3.03
+wrapper	\}\s*$	1175	2767	2.35
+floor-only	never	967	1031	1.07
+sqli	(derived)	194443	224503	1.15

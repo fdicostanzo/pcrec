@@ -1,9 +1,9 @@
 # [MATCH-SPLIT] 4a — the pin-only split (DESIGN NOTE)
 
-> **SUPERSEDED (2026-10-12, D163) by `composite.md`**, the composite artifact as a general
+> **SUPERSEDED (2026-10-12, D163) by `compound.md`** (renamed from `composite.md`, D163 addendum 2), the compound artifact as a general
 > tool with [MATCH-SPLIT] as its first client (lane `mscomp`). Kept for history and as a
 > quarry: its soundness section (§2), class table (§1) and checks (§7) were mined there, and
-> the r1 panel's still-applicable dispositions are carried in `composite.md` §E.1. Do not
+> the r1 panel's still-applicable dispositions are carried in `compound.md` §E.1. Do not
 > build from this note.
 
 Lane `msdesign` (2026-10-12, opus), from main `33c2eb7a` (abi 76). **Design only.** Nothing

@@ -1,0 +1,73 @@
+/* [COMPOUND] revision-2 twin controller for the split policy (hand-written;
+ * the build emits this text). Differences from ctrl.c.in (revision 1):
+ *  - ONE prologue computed from P (panel sem MF1/MF2/MF4, arch M5): the range
+ *    test, the boundary guard (refuse / align / none, P's own option), and
+ *    -futf-check with P's lookbehind reach (rxp_valid_upto: P's VALID_LB).
+ *    Both parts are compiled guards-off (-fno-startpos-guard, no -futf-check).
+ *  - F is P's OWN attempt at the floor (panel sem MF3): rxf is P compiled
+ *    guards-off, and no \G(?:P) tree wrap exists, so (?R)/(?0) keep P's root
+ *    as their target. FMODE=1: P's DFA attempt loop with its bound patched to
+ *    start_max = search_from (the build's part option: a BOUND, not a tree
+ *    edit). FMODE=0 (no attempt loop to bound, e.g. a VM P): P's anchored
+ *    <p>_match_caps at f, which on the VM is the anchored body itself. A DFA
+ *    attempt-route _match is "search-filter" (the whole loop, then a filter),
+ *    so it is answer-right and cost-wrong as F: measured, cost2.py.
+ *  - The floor is the ALIGNED from, and Q is searched from next_pos(f).
+ *  - Q may be never (the floor-only compound): QNEVER=1 compiles no Q.
+ * Macros: GUARD (0 none, 1 refuse, 2 align), UCHECK (0/1), UTF, HAS_G, QNEVER, FMODE.
+ * PLANT (failing-direction controls, twin2.py --plant N): 1 = Q from `from`
+ * (D163's literal text), 2 = -futf-check with Q's lookbehind reach, 3 = no
+ * controller prologue (parts are guards-off, so the guard is simply lost). */
+#include "floor.h"
+#if !QNEVER
+#include "q.h"
+#endif
+#include "plain.h"
+int rx_search(const unsigned char *s, size_t n, size_t from, ptrdiff_t (*caps)[2])
+{
+#ifndef PLANT
+#define PLANT 0
+#endif
+#if UTF && GUARD == 1 && PLANT != 3
+    if (!(from == 0 || from >= n || (s[from] & 0xC0) != 0x80)) return PCREC_ERR_STARTPOS;
+#elif UTF && GUARD == 2 && PLANT != 3
+    if (!(from == 0 || from >= n || (s[from] & 0xC0) != 0x80))
+        do from++; while (!(from >= n || (s[from] & 0xC0) != 0x80));
+#endif
+#if UTF && UCHECK && PLANT == 2 && !QNEVER
+    if (rxq_valid_upto(s, n, from) != n) return PCREC_ERR_UTF;   /* plant: Q's reach */
+#elif UTF && UCHECK && PLANT != 3
+    if (rxp_valid_upto(s, n, from) != n) return PCREC_ERR_UTF;
+#endif
+    if (from > n) return 0;
+    size_t qf = from;
+    if (from == 0 || HAS_G) {                         /* the floor can be live */
+#if FMODE                                             /* P's attempt loop bounded to one start */
+        int fr = rxf_search(s, n, from, caps);        /* (start_max = search_from, patched) */
+        if (fr != 0) return fr;                       /* P's answer at the floor is final */
+#else                                                 /* P's own anchored entry (VM body) */
+        rx_ctx ctx = { s, n, from, 0, NULL, NULL, NULL, 0 };
+        ptrdiff_t fc[RXF_NCAPS][2];
+        ptrdiff_t len = rxf_match_caps(&ctx, fc);
+        if (len >= 0) {                               /* P's answer at the floor is final */
+            if (caps) for (int k = 0; k < RXF_NCAPS; k++) { caps[k][0] = fc[k][0]; caps[k][1] = fc[k][1]; }
+            return 1;
+        }
+        if (len != -1) return (int)len;               /* a give-up: returned at once */
+#endif
+#if PLANT == 1
+        qf = from;                                    /* plant: D163's literal text */
+#else
+        qf = rxf_next_pos(s, n, from);                /* Q only PAST the floor */
+#endif
+    }
+#if QNEVER
+    (void)qf;
+    return 0;
+#else
+    int r = rxq_search(s, n, qf, caps);
+    if (r == 1 && caps)
+        for (int k = RXQ_NCAPS; k < RXP_NCAPS; k++) caps[k][0] = caps[k][1] = PCREC_UNSET;
+    return r;
+#endif
+}

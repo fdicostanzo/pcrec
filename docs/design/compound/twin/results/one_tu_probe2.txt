@@ -1,0 +1,32 @@
+# one-TU probe: F (P = ^\s+|\s+$ under the bound) + Q (derived: \s+$) + ctrl2.c.in,
+# gcc -O1 -std=gnu11 -Wall -Wextra -Werror
+## parts exported: rc=0, no diagnostic
+## parts' entries and rx_info made static (no omission): rc=1, 28 diagnostics
+      1 cc1: all warnings being treated as errors
+      1 error: static declaration of ‘rxf_info’ follows non-static declaration
+      1 error: static declaration of ‘rxf_match_caps_in’ follows non-static declaration
+      1 error: static declaration of ‘rxf_match_caps’ follows non-static declaration
+      1 error: static declaration of ‘rxf_match_in’ follows non-static declaration
+      1 error: static declaration of ‘rxf_match’ follows non-static declaration
+      1 error: static declaration of ‘rxf_next_pos’ follows non-static declaration
+      1 error: static declaration of ‘rxf_search_in’ follows non-static declaration
+      1 error: static declaration of ‘rxf_search’ follows non-static declaration
+      1 error: static declaration of ‘rxf_valid_upto’ follows non-static declaration
+      1 error: static declaration of ‘rxq_info’ follows non-static declaration
+      1 error: static declaration of ‘rxq_match_caps_in’ follows non-static declaration
+      1 error: static declaration of ‘rxq_match_caps’ follows non-static declaration
+      1 error: static declaration of ‘rxq_match_in’ follows non-static declaration
+      1 error: static declaration of ‘rxq_match’ follows non-static declaration
+      1 error: static declaration of ‘rxq_next_pos’ follows non-static declaration
+      1 error: static declaration of ‘rxq_search_in’ follows non-static declaration
+      1 error: static declaration of ‘rxq_search’ follows non-static declaration
+      1 error: static declaration of ‘rxq_valid_upto’ follows non-static declaration
+      1 error: ‘rxf_match_caps_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxf_match_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxf_search_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxf_valid_upto’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxq_match_caps_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxq_match_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxq_next_pos’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxq_search_in’ defined but not used [-Werror=unused-function]
+      1 error: ‘rxq_valid_upto’ defined but not used [-Werror=unused-function]

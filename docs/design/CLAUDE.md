@@ -3002,7 +3002,7 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     populations, the class-mix taxonomy, the counts, the D77 triggers, the bench
     wishlist family `anc-wrap`, and controls C1-C6 with libpcre2 as the
     independent oracle.
-- `match_split_pinonly.md` — **SUPERSEDED 2026-10-12 (D163) by `composite.md`; kept for history.** **[MATCH-SPLIT] 4a, the PIN-ONLY SPLIT, PROPOSED,
+- `match_split_pinonly.md` — **SUPERSEDED 2026-10-12 (D163) by `compound.md` (renamed from `composite.md`); kept for history.** **[MATCH-SPLIT] 4a, the PIN-ONLY SPLIT, PROPOSED,
   design only** (lane `msdesign`, 2026-10-12, main `33c2eb7a`, abi 76; chunk 4a,
   owns K106).
   - **§1 the scope rule.** Classes are FLOOR (`^`/`\A`, `\G`: one candidate,
@@ -3032,17 +3032,13 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     (MS-1..MS-11, the counted-work gate G3).
   - **§9.** Q1-Q3 for Frank, and unlocks U1-U8 with their triggers.
 
-- `composite.md` — **[COMPOSITE] THE COMPOSITE ARTIFACT AS A GENERAL TOOL; first client [MATCH-SPLIT]. PROPOSED, design + hand-twin** (lane `mscomp`, 2026-10-12, main `a080c69a`, abi 76; D163 + addendum 1, D88 addendum 1; supersedes `match_split_pinonly.md`).
-  - **§A the tool.** A composite is ONE artifact whose `.c` holds PARTS, each the unchanged pipeline run on a derived input (an AST rewrite at the composer hook plus internal part mode), and a per-policy CONTROLLER implementing the default entry set. Clients are rows of a driver-tier first-match table `comp_rows[]`. The plain compile runs first, as the fallback and the admission's reader, so the refusal set cannot grow.
-  - **Linkage is [EMIT-ENTRIES]' three categories**, landed first as an internal, zero-mover, non-abi step. The one-TU probe shows why all three are needed: static without omission fails `-Werror` 13 ways.
-  - **Stamps:** `<PREFIX>_COMPOSITE` on every artifact, the route family reads `"composite"`, and the parts keep their own stamps. Sizes, the `comp_fit` drop, D158 per part call, and the VM hybrid as a later re-expression are covered too.
-  - **§B split.** F = `\G(?:P)` (one attempt at the floor); Q = P with `\G`/`\A`/`^` killed, then never-pruned. Controller: the floor, else **Q from `next_pos(floor)`**, because D163's literal "Q from `from`" is wrong on atomic/possessive floor arms (twin: 3 of 94 cases).
-    - **Kill rules.** Killing `\G` is required; killing `^` is a route optimization only. Pruning is needed because the facts are not dead-path aware.
-    - **Twin evidence:** 0 differences over 1,416,556 cells against today and libpcre2 10.46. Loads: K106 128,040,002 → 3; the wrapper's n+3 attempts → 1; concat-sqli 0.25-0.33×.
-    - **One shape regresses** (the final-newline trailing run, 3.00×). It is Q's own rev-end two-seed cost, so the one-pass walk is step B3, ahead of the split.
-    - **Admission:** derived, with no constant. 56 floor-mixed patterns + 9 floor-only in the first (DFA-only) build. START+FREE and START+END+FREE fall out.
-  - **§C** the cross-call hook (built with [FINDALL-NEXT]). **§D** feasibility sketches for DFA-locate+VM-finish (K108's population), 4c, [ADAPTIVE-ARM] and arch dispatch. **§E** checks, **§F** build B0-B6, **§G** Q1-Q5, **§I** eight findings.
-- `composite/` — that note's twin: the differential, the counted-load cells, the one-TU probe and the sizes (own CLAUDE.md).
+- `compound.md` — **[COMPOUND] THE COMPOUND ARTIFACT AS A GENERAL TOOL; first client [MATCH-SPLIT]. REVISION 2, PROPOSED, design + hand-twin** (rev 1 lane `mscomp` as `composite.md`, rev 2 lane `mscomp2`, 2026-10-12, main `21641979`, abi 76; D163 + addenda 1-2, D88 addendum 1; supersedes `match_split_pinonly.md`). Renamed by D163 addendum 2 ("compound" everywhere; `cand_rows[]`'s LOCATE row "composite" keeps its name). Revision 2 applies the D6 panel r1 (`../dev/reviews/2026-10-12-r2-composite.md`); read its §R2 (finding → section) first.
+  - **The tool (§A).** One artifact, one exported interface, parts = the unchanged pipeline on a derived tree and/or per-part OPTIONS (`CompPart`: flags_set/clear, engine, bound, need; no field defaulted). Controllers are COMBINATORS over `locate_finish.md`'s typed results (`first-nonzero`, `min-start-then-finish`, `locate-then-finish`, `select-by-arg`, `dispatch`), with the rule for in-Job LOCATE row vs compound part. `compound_rows[]` at the driver tier; the choice is attempt-level state and `fit_rungs[]` gains `drop-compound` (no second ladder). Linkage = [EMIT-ENTRIES]' closure with controller EDGES (the hybrid's `"static "` its first zero-mover customer). ONE controller prologue from P (guard, `-futf-check` with P's reach); parts guards-off. Stamps classified pattern- vs machine-level, each machine-level one with a defined compound value.
+  - **Always on (§A.11).** No deny axis (bit 55 stays free). One harness-only force-decline lever: an internal hidden-visibility entry reached only by `build/pcrec-harness --harness=no-compound`; the artifact self-marks `"forced-off"`; test-axes runs it as a declared internal arm.
+  - **Split (§B), PIN-ONLY first build.** F = a BOUND on P's own attempt (not a tree wrap; `(?R)` keeps P's root; not `_match`, which on an attempt route is search-filter and cost-wrong, measured). Q = P with `\G` (required) and `^`/`\A` killed, pruned, called/referenced groups kept. Admission: Q `rev-end` or never; ~30 patterns, bench 0. Loads: K106 128,040,002 → 3, matching pin-only subjects today + 1 per Q call; the final-newline two-seed walk 3.00× (B3, lane `revb3`, `revend_onepass.md`). S+F waits for a bench reading of concat-sqli with a derived match-density conjunct.
+  - **Twin (§E.2):** derived DFA Q, bounded F, every option arm: 177 case-arms, 2,170,123 cells, 0 differences vs today and libpcre2 10.46; three plants fire.
+  - **§D** captures on demand (`select-by-arg`, trigger the caps/nocaps class gap) and the other clients; **§F** B0-B8 with validation and abi events; **§G** three open questions; **§J** six findings.
+- `compound/` — that note's twin (revision 1 and 2 instruments and results: differential, plants, counted loads, sizes, one-TU probe; own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
