@@ -708,7 +708,7 @@ independent floor (`[r3 F11]`: reach from stamps).
 | A2 | #4 | the displaced row is priced only when BYTE/SET (`emit_dfa.c:7792-7796`); OFS/LANDMARK displaced rows get m = 10^6 | an OFS/LANDMARK displaced row maps to `SET(Σ)` (stop_ppm 10^6), NOT to NONE | handoff artifacts whose `-fno-req-handoff` twin stamps `offset-set`/`run-pinned*` (a deny-pair census) |
 | A3 | #3 | `pcrec_dfa_cand_ppm` prices only the SCAN BYTE of an offset/run-pinned row (`dfa_cand_scan`'s `cs.byte ≥ 0`) | an OFS/run-pinned scan maps to `SINGLETON(scan byte)`, verify chain dropped | `RX_VM_RESEED` ∈ {`adaptive-dense`, `adaptive`} with the hybrid's prefilter ∈ {`offset-set`, `run-pinned*`} |
 | A4 | #4 | rev 1 §4.1 said "reads adv", §5.1 said cross-multiplied; a truncated advance flips at the boundary | **a rule, not an adapter:** U1 members read `stop_ppm`, never an advance (§2.2) | all #4 asks |
-| A5 | #3 | no usable scan, or the ATTEMPT route, returns 10^6 (`emit_dfa.c:7439`, `:7443`) | maps to `SET(Σ)`, NOT to §2.2's NONE (zero stops), which would flip R4 | R4 asks on hybrids with no DFA scan or on the ATTEMPT route |
+| A5 | #3 | no usable scan, or the ATTEMPT route, returns 10^6 (`emit_dfa.c:7439`, `:7443`) | maps to `SET(Σ)`, NOT to §2.2's NONE (zero stops), which would flip R4 | R4 asks on hybrids with no DFA scan or on the ATTEMPT route (2026-10-12, a5inv_report.md: DELIBERATE — a scan testing nothing stops everywhere; reach is 12 artifacts on the 10^6 branch, 6 with a live retry loop, bench 0; the summary's 16/46% over-counts) |
 
 ### 4.3 #11, the stay skip, by break-even `[r3 S6]`
 

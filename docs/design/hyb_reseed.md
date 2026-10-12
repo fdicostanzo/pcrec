@@ -165,7 +165,11 @@ prior it reads is the compile's own (r1 panel chk F2):
   a wrong start is bounded: the block's probe re-seed ends the first block.
 - The rate comes from `pcrec_dfa_cand_ppm` (`src/gen/emit_dfa.c`): the MASS
   of the set the emitted scan tests, read off the same derivations the scan
-  is emitted from. It is 1,000,000 when the scan tests nothing.
+  is emitted from. It is 1,000,000 when the scan tests nothing: a scan that
+  tests nothing stops at every position (on the ATTEMPT route every start is
+  attempted), so 'every byte a stop' is the definition, not a default
+  (lane a5inv, docs/dev/lanes/a5inv_report.md: deliberate; 6 of 35 corpus
+  `adaptive-dense` artifacts depend on it at run time, bench 0).
 
 **ADAPTIVE** is two per-CALL locals in `<p>_search_run`. There are no
 globals and no `rx_ctx` fields, so the matcher stays stateless and
