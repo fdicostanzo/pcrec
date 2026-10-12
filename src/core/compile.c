@@ -1956,6 +1956,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
 
         if (setjmp(cx.jb)) {
+#ifdef PCREC_CAND_TRACE
+            pcrec_cand_eval_reset();   /* [CAND-PATH-READS] a predicate may have longjmped */
+#endif
             /* [DEC-FALLBACK] B3 THE ONE DISPATCH (docs/design/dec_fallback.md
              * §1.3, §4.2 B3): an arrival takes the first row of `fit_rungs[]`
              * that is asked on its label set (`fit_labels`, §1.1), applies, and

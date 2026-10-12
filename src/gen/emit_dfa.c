@@ -8634,6 +8634,21 @@ typedef struct CandNode {
  * C4 route); RETRY's `adaptive-dense` (R4) reads NEXT's scanned set on the
  * hybrid prefilter's route, CAND_ROUTE_DFA or CAND_ROUTE_ATTEMPT
  * (`pcrec_dfa_cand_ppm`). */
+/* [CAND-PATH-READS] A PATH READ: a predicate that asks the selected path
+ * (`cand_path_members`, `cand_path_of`) reads every slot the path derivation
+ * SELECTS in (`cand_path_row`, `cand_path_finish`): LOCATE on the body's
+ * route, RECOVER on CAND_ROUTE_DFA, FINISH on the finisher's route. Declared
+ * on every route those can be, because which one a compile takes is the
+ * compile's. A reader of the path names these entries in its `reads`, so the
+ * self-check's cycle walk follows them like any other read (FIRST's
+ * `handoff` -> RECOVER `landing` -> NEXT `handoff` -> FIRST was the cycle it
+ * could not see). The trace build checks every selection a predicate makes
+ * against `reads` (`cand_nested_read`), so a path read left undeclared aborts
+ * there. */
+#define CAND_PATH_READS                                                       \
+    [CAND_SLOT_LOCATE] = CAND_ALL_ROUTES,                                     \
+    [CAND_SLOT_RECOVER] = CAND_ON(CAND_ROUTE_DFA),                            \
+    [CAND_SLOT_FINISH] = CAND_ALL_ROUTES
 /* Read by `cand_read` (a read's `under` bits) and by the trace build's
  * self-check and hit counter. */
 static const CandNode cand_nodes[CAND_NNODES] = {
@@ -8666,17 +8681,26 @@ static const CandNode cand_nodes[CAND_NNODES] = {
                              .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     [CAND_SLOT_WIDTH]    = { "WIDTH",    CT_LOWER, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_NODE_CALLER) },
+    /* [CAND-PATH-READS] `handoff` (F1) also reads the PATH (its members) */
     [CAND_SLOT_FIRST]    = { "FIRST",    CT_HIT | CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_SLOT_NEXT),
-                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA) } },
+                             .reads = { [CAND_SLOT_PRESENCE] = CAND_ON(CAND_ROUTE_DFA),
+                                        CAND_PATH_READS } },
     [CAND_SLOT_NEXT]     = { "NEXT",     CT_LOWER, CAND_ALL_ROUTES,
                              CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_ATTEMPT) |
                                                             CAND_ON(CAND_ROUTE_VM),
                                         /* [REQ-HANDOFF-L1] `handoff` re-enters
                                          * FIRST's row where it was chosen */
-                                        [CAND_SLOT_FIRST] = CAND_ON(CAND_ROUTE_DFA) },
-                             .by = { [CAND_SLOT_FIRST] = PCREC_NO_REQ_HANDOFF } },
+                                        [CAND_SLOT_FIRST] = CAND_ON(CAND_ROUTE_DFA),
+                                        /* [CAND-PATH-READS] and its K admission
+                                         * prices the row below it
+                                         * (`req_landmark_admits`), its own
+                                         * slot under its own deny */
+                                        [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF },
+                             .by = { [CAND_SLOT_FIRST] = PCREC_NO_REQ_HANDOFF,
+                                     [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     [CAND_SLOT_RETRY]    = { "RETRY",    CT_CAND, CAND_ON(CAND_ROUTE_VM),
                              CN(CAND_SLOT_NEXT) | CN(CAND_NODE_VERIFIER),
                              .reads = { [CAND_SLOT_BOUND] = CAND_ON(CAND_ROUTE_VM),
@@ -8695,10 +8719,12 @@ static const CandNode cand_nodes[CAND_NNODES] = {
     /* [OPT-REVEND] L2 its result crosses to FINISH (E-LF: the composite's
      * SPAN), and it is asked with a hand ([r2-landing]). */
     /* [START-LANDING] `landing` (L4) READS NEXT's selection for the forward
-     * machine on the same route. */
+     * machine on the same route, and both rows read the body's LOCATE row
+     * (`cand_recover_asked`, [CAND-PATH-READS]). */
     [CAND_SLOT_RECOVER]  = { "RECOVER",  CT_LOWER | CT_UPPER | CT_START,
                              CAND_ON(CAND_ROUTE_DFA), CN(CAND_SLOT_FINISH),
-                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA) },
+                             .reads = { [CAND_SLOT_NEXT] = CAND_ON(CAND_ROUTE_DFA),
+                                        [CAND_SLOT_LOCATE] = CAND_ON(CAND_ROUTE_DFA) },
                              .under = { [CAND_SLOT_NEXT] = PCREC_NO_REQ_HANDOFF } },
     /* [OPT-REVEND] L0 FINISH (locate_finish.md §2.2-§2.5): asked by each
      * caller-facing entry; its rows report or answer NOMATCH to the CALLER,
@@ -9268,15 +9294,73 @@ static bool cand_takes(const CandRow *r, const CandSel *s)
     return false;
 }
 
+#ifdef PCREC_CAND_TRACE
+/* [CAND-PATH-READS] THE SLOTS WHOSE PREDICATES ARE RUNNING, innermost last
+ * (trace build only). A selection made while a predicate of slot `P` runs is
+ * a read of that selection by `P`, whether the predicate asked through
+ * `cand_read` or through a reader that selects on its own behalf: the path
+ * derivation (`cand_path_members`, which selects LOCATE, RECOVER and FINISH)
+ * and `cand_locate_of` are the two that hid edges from the slot graph, so the
+ * `table-read-cycle` check missed [REQ-HANDOFF-L1]'s NEXT -> FIRST -> path ->
+ * RECOVER -> NEXT recursion (docs/dev/lanes/axtri_report.md §2). Each such
+ * selection is held to a declared `cand_nodes[P].reads` edge on its route
+ * (`CANDORACLE undeclared-read`), so the check reads the calls the
+ * predicates make, not the declarations it holds them to. A check walk
+ * (`cand_select_quiet`) is not a read and runs with the stack set aside. A
+ * longjmp out of a predicate leaves the depth raised, so the compile's
+ * recovery point clears it (src/core/compile.c). */
+#define CAND_EVAL_MAX 64   /* deeper than any acyclic read chain over the slots */
+static _Thread_local int cand_eval_depth;
+static _Thread_local int cand_eval_base;   /* the stack's bottom for the current walk */
+static _Thread_local CandSlot cand_eval_slot[CAND_EVAL_MAX];
+
+/* `pcrec_cand_eval_reset` (internal.h): empties the stack. */
+void pcrec_cand_eval_reset(void)
+{
+    cand_eval_depth = 0;
+    cand_eval_base = 0;
+}
+static void cand_oracle_fail(const char *what, const char *a, const char *b,
+                             const char *site);
+
+/* Holds the selection of `slot` on `s->route` to a declared read by the slot
+ * whose predicate is running, if any. */
+static void cand_nested_read(CandSlot slot, const CandSel *s)
+{
+    CandSlot p;
+    if (cand_eval_depth <= cand_eval_base) return;
+    p = cand_eval_slot[cand_eval_depth - 1];
+    if (!(cand_nodes[p].reads[slot] & CAND_ON(s->route)))
+        cand_oracle_fail("undeclared-read", cand_nodes[p].name, cand_nodes[slot].name,
+                         CAND_ROUTE_NAME(s->route));
+}
+
+/* Row `r`'s predicate, with its slot on the stack while it runs. */
+static bool cand_applies(CandSlot slot, const CandRow *r, const CandSel *s)
+{
+    bool a;
+    if (cand_eval_depth >= CAND_EVAL_MAX)
+        cand_oracle_fail("table-read-recursion", cand_nodes[slot].name, "-", r->c.name);
+    cand_eval_slot[cand_eval_depth++] = slot;
+    a = r->c.applies(s);
+    cand_eval_depth--;
+    return a;
+}
+#else
+#define cand_nested_read(slot, s) ((void)0)
+#define cand_applies(slot, r, s) ((r)->c.applies(s))
+#endif
+
 static const CandRow *cand_select(CandSlot slot, const CandSel *s, uint64_t flags)
 {
+    cand_nested_read(slot, s);
     for (size_t i = 0; i < CAND_NROWS; i++) {
         const CandRow *r = &cand_rows[i];
         if (r->slot != slot) continue;
         if (pcrec_flags_has(flags, r->c.deny)) continue;
         if (!(r->routes & CAND_ON(s->route))) continue;
         if ((CN(slot) & CAND_HANDED_SLOTS) && !cand_takes(r, s)) continue;
-        if (r->c.applies(s)) return r;
+        if (cand_applies(slot, r, s)) return r;
     }
     return NULL;
 }
@@ -9393,8 +9477,11 @@ _Thread_local int pcrec_cand_trace_quiet;
 /* `cand_select` with records suppressed and the compile's own deny mask. */
 static const CandRow *cand_select_quiet(CandSlot slot, const CandSel *s)
 {
+    int base = cand_eval_base;
     pcrec_cand_trace_quiet++;
+    cand_eval_base = cand_eval_depth;   /* a check walk, not a read ([CAND-PATH-READS]) */
     const CandRow *r = cand_select(slot, s, s->cx ? s->cx->opt->flags : 0);
+    cand_eval_base = base;
     pcrec_cand_trace_quiet--;
     return r;
 }

@@ -7362,6 +7362,12 @@ void pcrec_cand_hit_vm(Ctx *cx, CandSlot slot, const CandVmFacts *vm,
  * have (coding_guide §1.5), thread-local so concurrent compiles in a trace
  * build stay independent. Defined in src/gen/emit_dfa.c. */
 extern _Thread_local int pcrec_cand_trace_quiet;
+/* [CAND-PATH-READS] empties the trace build's PREDICATE STACK (emit_dfa.c's
+ * `cand_applies`: the start-table slots whose predicates are running, so a
+ * selection made inside one is checked as that slot's read). A longjmp out of
+ * a predicate leaves the stack raised, so the compile's recovery point calls
+ * this. Defined in src/gen/emit_dfa.c. */
+void pcrec_cand_eval_reset(void);
 #define PCREC_CAND_TRACE_REC(slot, route, row, site)                           \
     (pcrec_cand_trace_quiet ? (void)0                                          \
      : (void)fprintf(stderr, "CANDTRACE\t%s\t%s\t%s\t%s\n", (slot), (route),  \
