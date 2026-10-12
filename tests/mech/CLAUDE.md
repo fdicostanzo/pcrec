@@ -3757,6 +3757,17 @@ dropped (UBSan's nonnull check on the NULL subject), S802 miss stores lo
 and falls through, S803 the deny unwired (`opt` NULL), S804 `single_byte`
 widened to any non-empty set. Solo verdicts: docs/dev/lanes/r15b_report.md §5.
 
+## [MEMFN] R17-a — S846-S849 (lane r17a, 2026-10-12)
+
+R-17's zero-mover seam (setfind.md rev 2.3 §11.1, §12.5): four refusal rows,
+each in `memfn/src/compose.c` (S849 also `memfn/src/gate.c`), each seen only
+by C5's gate cases (`memfnarms`, tests/memfn/arm_fixtures.c `seq_cases`), no
+artifact moving. S846 mf_locals' `s`/`n` comparison always passes, S847 the
+"placed twice" refusal guarded off, S848 the "placed, never read" refusal
+disabled (the generic never-used text names no field), S849 W0 0 accepted on
+a forward FIND (BOTH lines: site_check's refusal and the gate's reading of 0
+as a stated NO). Solo verdicts: docs/dev/lanes/r17a_report.md.
+
 ## [MEMFN] R-16 — S815-S819 (lane r16b, 2026-10-11)
 
 KB (vrun.c's second filter position) at w32 only, D147 addendum 16: a

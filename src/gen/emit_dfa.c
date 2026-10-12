@@ -6551,12 +6551,12 @@ static struct MemfnFind find_define(StrBuf *file, const PcrecFind *f)
 {
     mf_hooks h;
     PcrecMfU u;
-    mf_result r;
+    mf_result *r = pcrec_arena_alloc(&f->cx->arena, sizeof *r);
     struct MemfnFind d = { find_site(f), 0, false };
     find_hooks(f, d.site, NULL, &h, &u);
     d.handle = pcrec_memfn_define(f->cx, f->site, d.site, &h, file);
-    pcrec_memfn_defined(f->cx, d.handle, &r);
-    d.reads_table = r.reads_table;
+    pcrec_memfn_defined(f->cx, d.handle, r);
+    d.reads_table = r->reads_table;
     return d;
 }
 
