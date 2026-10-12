@@ -1483,3 +1483,25 @@ pointer when a kit change merges to main.
   - no re-timing: the w16 text now IS the no-vrun-kb text, already timed in
     slot21, and the w32 helper did not move.
 - Waiting on main's GO, which comes after the rlhbuild chain + L1 merge.
+
+## 2026-10-11 — slot23 green, R-16 delivered; R-17 scoped
+
+- Main gave the GO after L1 (00c97769, abi 75). Main merged into
+  lane/memfn-r16: three doc conflicts resolved, strict green. slot23 ran
+  21:35-22:43, all green (responses `done: R-16`). The variants rc 1 is the
+  pre-existing thin-tag manifest, identical on the ref side. The emitted
+  VARIANT_PINS go to main.
+- R-17 acked on lane/memfn-r17. Lane r17s (opus, read-only) delivered:
+  - SIMD-off is pure kit row work; the PF/hat FINDs already carry the set.
+  - pcrec needs: N1 (the promised density facts) and N2 (a file-scope sink
+    at the PF/MLINE door, SIMD layer only).
+  - OFS/PRE have population 0. ci-strasse is no longer a set walk after L1
+    (a bench re-measure is owed via main).
+  - Leaning: one general term-list row family in pffind.c (memchr |
+    SWAR term-OR | walk).
+  - 65 twins checked exhaustively, 0 mismatches. The timing harness is
+    ready (~8 min, a slot).
+  - Merged into lane/memfn-r17 @ 79b3524f.
+- Next: ask main for R-17's short timing slot. A D6 panel on the
+  general-row design before any build. N2 is filed as a pcrec-side request
+  only if the SIMD half is pursued.

@@ -1,0 +1,1 @@
+patterns 4542 {'pairs': 8329, 'movers': 39, 'kb16_base': 39, 'bad': 0, 'w16_lines': 230, 'stamp_lines': 39}

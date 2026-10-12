@@ -79,3 +79,8 @@ Maintenance: update this file when files are added/removed or change roles.
 - `r15/` — R-15's slot22 evidence (2026-10-11): `slot22_verdict.txt` and the two
   triage reports (G2 quick's phase-shifted population floors; test-axes'
   two load-window axes and the variants sweep's pre-existing tag floors).
+- `r16/` — R-16's slot23 evidence (2026-10-11): `slot23_verdict.txt`, the
+  chain (`slot23_run.sh`), the SIMD-on movers classifier over every pattern
+  (`slot23_classify.txt`), the variants sweep's two PRE-EXISTING thin-tag
+  manifest lines (identical on the main ref side) and the measured
+  `VARIANT_PINS` it emitted for main (`slot23_variant_pins.py`).

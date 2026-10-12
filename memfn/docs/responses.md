@@ -2130,3 +2130,21 @@ the compiler, and is never adopted silently. Proposed for main to file
   - For main: the variants sweep writes --emit-pins
     slot23/variant_pins.py, which carries the thin-tag pins `(\p{Xwd})` and
     `((a)+)+`. They are valid for main as-is (R-16 is SIMD-off identical).
+- done: 2026-10-11 — **R-16 (KB at w32 only, D147 add. 16; the w16 vrun helper filters on KA alone; SIMD-off byte-identical, no abi): branch lane/memfn-r16 @ this commit. Report: docs/dev/lanes/r16b_report.md; slot23 evidence docs/design/memfn/probes/r16/.**
+  - slot23 (21:35-22:43, tip 7a59db14 = main fdc2f2af merged), all green:
+    - identity sweeps plain / start / variants: 0 movers on every stream;
+    - -fmemfn-simd: c-default 44 / c-vm 43 movers. The classifier over
+      every one of the 4,542 patterns finds 39 movers, all w16-with-KB
+      artifacts, bad 0;
+    - -fmemfn-simd --memfn=no-vrun-kb: 0 movers;
+    - G2 quick 52,987,686/0; G2 full 199,850,927/0;
+    - make test (perfrun) rc 0, section-errors 0, no red lines;
+    - mech S815-S819 + S753: COMPLETE 0/0/0/0/0.
+  - The variants sweep's rc 1 is ONLY the two pre-existing thin-tag
+    manifest lines `(\p{Xwd})` and `((a)+)+`, identical on the main ref side.
+  - **For main:** probes/r16/slot23_variant_pins.py holds the measured
+    VARIANT_PINS. It carries those two cells and is valid for main as-is.
+  - Spec hunks: limits.md §8.3¶3 (w16 guarded bound 2,400), registry
+    §6¶8a, tuning §2.43¶3b.
+  - Not run, by my call (answer-free, same measured cost): test-axes, N2,
+    re-timing (journal 2026-10-11).

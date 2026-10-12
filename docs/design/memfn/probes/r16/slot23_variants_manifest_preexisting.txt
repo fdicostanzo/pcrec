@@ -1,0 +1,6 @@
+      3   MANIFEST side a: b'((a)+)+' does not carry no-size-cap
+      1   MANIFEST side a: b'((a)+)+' does not carry stderr-default
+      4   MANIFEST side a: b'(\\p{Xwd})' does not carry no-size-cap
+      3   MANIFEST side b: b'((a)+)+' does not carry no-size-cap
+      1   MANIFEST side b: b'((a)+)+' does not carry stderr-default
+      4   MANIFEST side b: b'(\\p{Xwd})' does not carry no-size-cap
