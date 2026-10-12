@@ -1,0 +1,160 @@
+# population: 206 distinct artifacts (+idioms); twin built and checked on 139; skipped {'ctx': 44, 'not-revend-dfa': 7, 'utf8': 16}
+# answers vs libpcre2 10.46: 90950619 exhaustive cells (every startpos) + 11635 regime subjects; artifacts with any wrong answer: today 0, twin 0
+# tie-code agreement (today emits tie code, tagged machine has an acc=3 state): {(False, False): 107, (True, True): 30, (False, True): 2}
+
+== classes (distinct artifacts; rows = corpus+bench rows they stand for)
+class	artifacts	rows	nocap	patterns (first 8)
+no-tie	109	161	48	\d+$  .*\.txt$  [a-z]+\.txt$  abc$  done$  done\Z  b\Z  b$
+tie/const/bounded	12	14	6	[^c]{1,3}\Z  [^c]{1,3}$  ([^c]{1,3})$  (?:a|a\n)$  (?:a\n|a)$  [^c]{0,4}?$  [^c]{0,4}$  (a|a\n)$
+tie/const/unbounded	17	21	7	\s+$  \s+?$  \s*$  \s*?$  [a\n]+$  [^\n]*\n?$  \s*$|x\z  (\s+){2}$
+tie/state-dependent/unbounded	1	0	0	(?:\s+|x\s*?)$
+
+== loads per call (subject byte reads, mean over the regime's subjects; today / B3 = ratio), and tie events (both distances reach s*: today runs the forward finish)
+class	regime	artifacts	subjects	today	R	B3	today/B3	R/B3	ties
+no-tie	L-nl-m	88	1338	22.4	21.4	20.6	1.09	1.04	0
+no-tie	L-nl-n	89	2119	5.3	4.3	3.3	1.60	1.30	0
+no-tie	L-nonl-m	88	1343	20.3	21.0	19.4	1.05	1.09	24
+no-tie	L-nonl-n	89	2119	3.3	3.3	2.3	1.43	1.45	0
+no-tie	K4-nl-m	86	278	15.0	14.0	13.1	1.14	1.07	0
+no-tie	K4-nl-n	89	529	4.9	3.9	2.9	1.69	1.34	0
+no-tie	K4-nonl-m	86	281	12.9	13.5	11.9	1.08	1.13	6
+no-tie	K4-nonl-n	89	529	2.9	2.9	1.9	1.53	1.54	0
+no-tie	M1-nl-m	86	142	14.5	13.5	12.6	1.15	1.07	0
+no-tie	M1-nl-n	89	178	5.4	4.4	3.4	1.58	1.29	0
+no-tie	M1-nonl-m	86	142	12.5	13.3	11.5	1.09	1.15	2
+no-tie	M1-nonl-n	89	178	3.4	3.4	2.4	1.41	1.43	0
+tie/const/bounded	L-nl-m	12	162	10.2	10.1	4.3	2.36	2.32	54
+tie/const/bounded	L-nl-n	7	168	5.0	5.0	2.0	2.50	2.50	0
+tie/const/bounded	L-nonl-m	12	162	4.6	5.5	3.6	1.29	1.55	0
+tie/const/bounded	L-nonl-n	10	240	2.0	2.0	1.0	2.00	2.00	0
+tie/const/bounded	K4-nl-m	12	38	10.9	10.8	4.8	2.28	2.26	11
+tie/const/bounded	K4-nl-n	7	42	5.0	5.0	2.0	2.50	2.50	0
+tie/const/bounded	K4-nonl-m	12	38	4.8	5.8	3.8	1.29	1.53	0
+tie/const/bounded	K4-nonl-n	10	54	2.0	2.0	1.0	2.00	2.00	0
+tie/const/bounded	M1-nl-m	12	17	10.5	10.5	4.4	2.37	2.37	7
+tie/const/bounded	M1-nl-n	7	14	5.0	5.0	2.0	2.50	2.50	0
+tie/const/bounded	M1-nonl-m	12	17	4.4	5.4	3.4	1.29	1.59	0
+tie/const/bounded	M1-nonl-n	10	20	2.0	2.0	1.0	2.00	2.00	0
+tie/const/unbounded	L-nl-m	17	402	68.7	68.5	23.0	2.99	2.98	281
+tie/const/unbounded	L-nl-n	3	72	5.2	5.4	2.4	2.14	2.19	0
+tie/const/unbounded	L-nonl-m	17	373	25.0	25.7	24.1	1.04	1.07	0
+tie/const/unbounded	L-nonl-n	10	205	2.1	2.1	1.1	1.90	1.95	0
+tie/const/unbounded	K4-nl-m	17	97	784.4	784.4	261.6	3.00	3.00	79
+tie/const/unbounded	K4-nl-n	3	18	5.8	6.2	2.7	2.12	2.29	0
+tie/const/unbounded	K4-nonl-m	17	84	301.6	302.4	300.7	1.00	1.01	0
+tie/const/unbounded	K4-nonl-n	10	50	2.2	2.4	1.3	1.71	1.86	0
+tie/const/unbounded	M1-nl-m	17	34	185046.0	185046.0	61682.1	3.00	3.00	26
+tie/const/unbounded	M1-nl-n	3	6	5.3	5.7	2.5	2.13	2.27	0
+tie/const/unbounded	M1-nonl-m	17	33	63551.6	63552.3	63550.8	1.00	1.00	0
+tie/const/unbounded	M1-nonl-n	10	18	2.2	2.3	1.2	1.77	1.91	0
+tie/state-dependent/unbounded	L-nl-m	1	24	6.5	7.0	3.4	1.93	2.06	5
+tie/state-dependent/unbounded	L-nonl-m	1	24	3.8	5.4	3.8	1.00	1.42	0
+tie/state-dependent/unbounded	L-nonl-n	1	24	2.0	2.0	1.0	2.00	2.00	0
+tie/state-dependent/unbounded	K4-nl-m	1	6	9.8	11.2	6.3	1.55	1.76	4
+tie/state-dependent/unbounded	K4-nonl-m	1	5	3.8	5.4	3.8	1.00	1.42	0
+tie/state-dependent/unbounded	K4-nonl-n	1	6	2.0	2.0	1.0	2.00	2.00	0
+tie/state-dependent/unbounded	M1-nl-m	1	2	7.5	8.5	4.5	1.67	1.89	1
+tie/state-dependent/unbounded	M1-nonl-m	1	2	4.0	5.5	4.0	1.00	1.38	0
+tie/state-dependent/unbounded	M1-nonl-n	1	2	2.0	2.0	1.0	2.00	2.00	0
+
+== cost side: table bytes in the search body (static arrays) and -O2 search text, per class (sums)
+class	artifacts	today_rev_bytes	B3_bytes	ratio	today_text	R_text	B3_text	B3_states	B3_cls	runs
+no-tie	109	38040	52219	1.37	47809	85257	30249	803	418	110
+tie/const/bounded	12	4820	3846	0.80	8174	9046	2820	86	36	0
+tie/const/unbounded	17	8100	9334	1.15	11701	13652	5128	70	51	35
+tie/state-dependent/unbounded	1	300	584	1.95	607	801	418	6	4	2
+
+== machine size: today = pcrec's minimized reverse X$ DFA (before its scan-edge pass), B3 = the tagged product; machine bytes = next (2 B) + accept (1 B) per state x class, + the 256 B class map
+class	artifacts	today_states	B3_states	ratio	med	max	today_mbytes	B3_mbytes	ratio
+no-tie	109	508	803	1.58	1.50	1.91	32998	38395	1.16
+tie/const/bounded	12	55	86	1.56	1.50	1.67	3486	3846	1.10
+tie/const/unbounded	17	50	70	1.40	1.33	1.67	4664	4982	1.07
+tie/state-dependent/unbounded	1	4	6	1.50	1.50	1.50	292	328	1.12
+
+== ns/call (median of rounds); per class x regime, geomean [min..max] over artifacts of: today/B3 (what shipping B3 buys), R/B3 (B3's own effect, code style held), today/R (code style alone), and the A/A ratio today/today-copy (the noise floor)
+class	regime	artifacts	today_ns	R_ns	B3_ns	today/B3	[min..max]	R/B3	[min..max]	today/R	AA	AA [min..max]
+no-tie	L-nl-m	8	6.8	5.0	5.5	1.24	[0.95..1.39]	0.95	[0.89..1.04]	1.31	1.010	[0.96..1.08]
+no-tie	L-nl-n	8	4.5	3.2	2.9	1.55	[1.37..1.83]	1.11	[1.00..1.23]	1.40	0.982	[0.90..1.09]
+no-tie	L-nonl-m	8	6.2	5.6	4.7	1.22	[1.03..1.37]	1.16	[0.98..1.39]	1.04	0.983	[0.91..1.06]
+no-tie	L-nonl-n	8	3.3	2.7	2.4	1.30	[1.07..1.53]	1.10	[1.00..1.32]	1.19	0.947	[0.85..1.13]
+no-tie	K4-nl-m	8	7.0	5.1	5.6	1.25	[1.07..1.33]	0.94	[0.89..0.98]	1.33	1.016	[0.98..1.04]
+no-tie	K4-nl-n	8	4.7	3.3	3.0	1.60	[1.42..1.93]	1.15	[1.00..1.29]	1.40	1.008	[0.91..1.11]
+no-tie	K4-nonl-m	8	6.0	5.3	4.7	1.25	[1.09..1.37]	1.18	[1.02..1.35]	1.06	0.982	[0.93..1.05]
+no-tie	K4-nonl-n	8	3.3	2.5	2.4	1.33	[1.09..1.53]	1.07	[0.89..1.25]	1.24	0.932	[0.84..1.04]
+no-tie	M1-nl-m	8	7.0	5.1	5.7	1.24	[1.07..1.35]	0.94	[0.90..0.99]	1.32	1.017	[0.99..1.04]
+no-tie	M1-nl-n	8	4.8	3.4	2.9	1.62	[1.44..1.83]	1.16	[0.96..1.33]	1.40	0.991	[0.92..1.08]
+no-tie	M1-nonl-m	8	6.0	5.3	4.8	1.24	[1.10..1.36]	1.16	[1.02..1.32]	1.06	1.006	[0.98..1.05]
+no-tie	M1-nonl-n	8	3.3	2.7	2.5	1.31	[1.12..1.55]	1.07	[0.93..1.23]	1.22	0.979	[0.86..1.13]
+tie/const/bounded	L-nl-m	12	10.2	9.6	3.8	2.53	[1.73..3.70]	2.37	[1.49..3.50]	1.07	0.960	[0.64..1.01]
+tie/const/bounded	L-nl-n	7	5.4	5.3	2.7	2.00	[1.92..2.14]	1.95	[1.79..2.11]	1.03	0.929	[0.90..0.94]
+tie/const/bounded	L-nonl-m	12	4.6	4.1	3.1	1.45	[1.27..1.73]	1.31	[1.18..1.52]	1.10	1.002	[0.96..1.08]
+tie/const/bounded	L-nonl-n	10	3.3	2.8	2.4	1.34	[1.21..1.44]	1.13	[1.00..1.19]	1.19	0.982	[0.94..1.00]
+tie/const/bounded	K4-nl-m	12	10.4	9.7	3.3	2.57	[1.61..3.72]	2.36	[1.39..3.51]	1.08	0.995	[0.95..1.03]
+tie/const/bounded	K4-nl-n	7	5.4	5.2	2.8	1.94	[1.82..2.04]	1.88	[1.81..2.04]	1.03	0.916	[0.88..0.96]
+tie/const/bounded	K4-nonl-m	12	4.8	4.2	2.9	1.49	[1.18..1.80]	1.36	[1.15..1.61]	1.10	0.997	[0.94..1.09]
+tie/const/bounded	K4-nonl-n	10	3.3	2.7	2.3	1.41	[1.24..1.45]	1.14	[1.00..1.18]	1.23	0.988	[0.97..1.01]
+tie/const/bounded	M1-nl-m	12	10.3	9.6	3.4	2.48	[1.62..3.61]	2.29	[1.42..3.46]	1.08	1.000	[0.96..1.03]
+tie/const/bounded	M1-nl-n	7	5.5	5.3	2.7	2.02	[1.92..2.07]	1.94	[1.86..2.05]	1.04	0.898	[0.84..0.93]
+tie/const/bounded	M1-nonl-m	12	4.6	4.1	2.9	1.50	[1.24..1.77]	1.34	[1.07..1.60]	1.11	0.994	[0.94..1.10]
+tie/const/bounded	M1-nonl-n	10	3.4	2.7	2.4	1.41	[1.25..1.62]	1.14	[1.00..1.37]	1.23	0.984	[0.97..1.00]
+tie/const/unbounded	L-nl-m	17	9.9	8.8	3.8	2.41	[1.94..3.56]	2.25	[1.80..3.14]	1.07	1.001	[0.98..1.02]
+tie/const/unbounded	L-nl-n	3	5.4	4.7	3.0	1.85	[1.80..1.93]	1.64	[1.53..1.80]	1.13	1.003	[0.99..1.02]
+tie/const/unbounded	L-nonl-m	17	4.9	4.8	3.7	1.29	[0.93..1.66]	1.18	[0.90..1.58]	1.10	1.007	[0.93..1.18]
+tie/const/unbounded	L-nonl-n	10	3.4	2.5	2.5	1.39	[1.27..1.79]	1.01	[0.90..1.29]	1.37	0.994	[0.96..1.01]
+tie/const/unbounded	K4-nl-m	17	10.5	9.6	4.5	2.52	[1.99..3.53]	2.39	[1.74..3.13]	1.06	1.009	[0.98..1.09]
+tie/const/unbounded	K4-nl-n	3	5.5	4.7	3.1	1.91	[1.73..2.22]	1.69	[1.48..2.13]	1.13	1.010	[1.01..1.02]
+tie/const/unbounded	K4-nonl-m	17	5.1	4.7	3.7	1.27	[0.93..1.71]	1.15	[0.92..1.62]	1.10	1.001	[0.89..1.06]
+tie/const/unbounded	K4-nonl-n	10	3.6	2.7	2.6	1.40	[1.25..1.85]	1.03	[0.95..1.29]	1.36	0.996	[0.97..1.03]
+tie/const/unbounded	M1-nl-m	17	10.0	9.9	4.2	2.40	[1.90..3.61]	2.30	[1.72..3.15]	1.04	1.004	[0.97..1.08]
+tie/const/unbounded	M1-nl-n	3	5.4	4.8	3.0	1.84	[1.72..2.01]	1.69	[1.55..1.99]	1.09	1.006	[0.99..1.02]
+tie/const/unbounded	M1-nonl-m	17	5.1	5.1	3.8	1.24	[0.94..1.62]	1.14	[0.90..1.58]	1.09	0.991	[0.91..1.05]
+tie/const/unbounded	M1-nonl-n	10	3.6	3.0	2.7	1.36	[1.26..1.65]	1.07	[0.93..1.34]	1.28	0.998	[0.93..1.04]
+tie/state-dependent/unbounded	L-nl-m	1	7.1	7.2	4.1	1.74	[1.74..1.74]	1.76	[1.76..1.76]	0.99	0.988	[0.99..0.99]
+tie/state-dependent/unbounded	L-nonl-m	1	4.8	5.1	3.6	1.33	[1.33..1.33]	1.41	[1.41..1.41]	0.94	0.978	[0.98..0.98]
+tie/state-dependent/unbounded	L-nonl-n	1	3.3	2.3	2.2	1.53	[1.53..1.53]	1.09	[1.09..1.09]	1.40	1.003	[1.00..1.00]
+tie/state-dependent/unbounded	K4-nl-m	1	10.2	10.0	6.9	1.47	[1.47..1.47]	1.45	[1.45..1.45]	1.01	0.987	[0.99..0.99]
+tie/state-dependent/unbounded	K4-nonl-m	1	4.8	5.0	3.7	1.32	[1.32..1.32]	1.36	[1.36..1.36]	0.97	0.977	[0.98..0.98]
+tie/state-dependent/unbounded	K4-nonl-n	1	3.4	2.4	2.2	1.55	[1.55..1.55]	1.09	[1.09..1.09]	1.43	0.999	[1.00..1.00]
+tie/state-dependent/unbounded	M1-nl-m	1	8.3	8.7	5.8	1.43	[1.43..1.43]	1.50	[1.50..1.50]	0.95	0.984	[0.98..0.98]
+tie/state-dependent/unbounded	M1-nonl-m	1	5.0	5.0	3.8	1.33	[1.33..1.33]	1.34	[1.34..1.34]	0.99	1.004	[1.00..1.00]
+tie/state-dependent/unbounded	M1-nonl-n	1	3.4	2.4	2.2	1.54	[1.54..1.54]	1.09	[1.09..1.09]	1.41	0.999	[1.00..1.00]
+
+== ns/call per timed artifact: regime today/R/B3 (R/B3)
+0	no-tie	\d+$	L-nl-m 6.7/5.1/5.0(1.04)  L-nl-n 4.6/3.1/2.9(1.04)  L-nonl-m 5.1/5.7/4.1(1.39)  L-nonl-n 3.3/2.3/2.3(1.00)  K4-nl-m 6.8/5.2/5.4(0.97)  K4-nl-n 4.8/3.2/3.2(1.00)  K4-nonl-m 5.3/6.0/4.4(1.35)  K4-nonl-n 3.3/2.4/2.3(1.00)  M1-nl-m 7.1/5.5/5.7(0.96)  M1-nl-n 4.8/3.4/3.2(1.06)  M1-nonl-m 5.5/6.3/4.8(1.32)  M1-nonl-n 3.4/2.6/2.6(1.00)
+1	no-tie	.*\.txt$	L-nl-m 36.4/34.4/38.1(0.90)  L-nl-n 4.9/3.1/2.9(1.05)  L-nonl-m 36.2/34.5/35.3(0.98)  L-nonl-n 3.3/2.3/2.3(1.00)  K4-nl-m 21.3/19.4/19.8(0.98)  K4-nl-n 5.2/3.2/3.2(1.00)  K4-nonl-m 20.7/19.4/19.0(1.02)  K4-nonl-n 3.4/2.4/2.7(0.89)  M1-nl-m 21.3/19.4/20.0(0.97)  M1-nl-n 5.3/3.2/3.3(0.96)  M1-nonl-m 20.9/19.5/19.1(1.02)  M1-nonl-n 3.7/2.5/2.7(0.93)
+2	no-tie	[a-z]+\.txt$	L-nl-m 9.5/6.8/7.1(0.96)  L-nl-n 4.7/3.1/2.5(1.23)  L-nonl-m 8.6/7.6/6.3(1.21)  L-nonl-n 3.3/2.5/2.2(1.18)  K4-nl-m 9.6/6.9/7.2(0.96)  K4-nl-n 4.9/3.2/2.7(1.21)  K4-nonl-m 8.7/7.7/6.3(1.21)  K4-nonl-n 3.3/2.4/2.2(1.09)  M1-nl-m 9.6/6.9/7.2(0.96)  M1-nl-n 4.8/3.5/2.7(1.28)  M1-nonl-m 8.7/7.6/6.4(1.19)  M1-nonl-n 3.4/2.5/2.3(1.08)
+3	tie/const/unbounded	\s+$	L-nl-m 6.9/6.2/3.3(1.89)  L-nonl-m 4.9/4.8/3.7(1.29)  L-nonl-n 3.4/2.6/2.4(1.08)  K4-nl-m 9.4/9.5/4.1(2.34)  K4-nonl-m 5.0/4.7/3.7(1.28)  K4-nonl-n 3.4/2.6/2.6(1.00)  M1-nl-m 8.2/8.1/3.8(2.14)  M1-nonl-m 5.1/4.8/3.8(1.28)  M1-nonl-n 3.5/2.7/2.5(1.07)
+4	no-tie	abc$	L-nl-m 6.5/4.7/4.7(0.99)  L-nl-n 4.1/3.4/3.0(1.13)  L-nonl-m 6.9/7.1/6.0(1.18)  L-nonl-n 3.3/3.0/2.8(1.08)  K4-nl-m 6.5/4.7/4.9(0.95)  K4-nl-n 4.5/3.6/3.0(1.19)  K4-nonl-m 5.3/4.8/4.0(1.22)  K4-nonl-n 3.3/2.9/2.5(1.15)  M1-nl-m 6.4/4.7/4.7(0.99)  M1-nl-n 4.7/3.5/2.9(1.20)  M1-nonl-m 5.0/4.8/3.9(1.22)  M1-nonl-n 3.2/2.9/2.7(1.07)
+5	no-tie	done$	L-nl-m 6.7/5.0/5.5(0.89)  L-nl-n 4.3/3.3/2.9(1.13)  L-nonl-m 5.9/5.1/4.7(1.08)  L-nonl-n 2.9/3.1/2.7(1.15)  K4-nl-m 7.0/5.0/5.6(0.89)  K4-nl-n 4.6/3.6/3.0(1.20)  K4-nonl-m 5.9/5.2/4.7(1.10)  K4-nonl-n 2.9/2.9/2.7(1.07)  M1-nl-m 7.0/5.1/5.6(0.91)  M1-nl-n 4.8/3.5/2.9(1.20)  M1-nonl-m 5.9/5.3/5.0(1.06)  M1-nonl-n 3.0/3.1/2.7(1.14)
+6	no-tie	done\Z	L-nl-m 6.9/5.0/5.5(0.90)  L-nl-n 4.4/3.3/2.9(1.13)  L-nonl-m 6.0/5.1/4.7(1.08)  L-nonl-n 2.9/3.1/2.4(1.32)  K4-nl-m 7.1/5.0/5.6(0.90)  K4-nl-n 4.4/3.6/2.8(1.27)  K4-nonl-m 6.1/5.3/4.8(1.11)  K4-nonl-n 3.0/2.7/2.3(1.16)  M1-nl-m 7.0/5.1/5.6(0.91)  M1-nl-n 4.4/3.4/2.8(1.22)  M1-nonl-m 6.1/5.3/4.8(1.10)  M1-nonl-n 3.0/2.9/2.4(1.23)
+14	tie/const/bounded	[^c]{1,3}\Z	L-nl-m 7.5/6.6/4.2(1.55)  L-nonl-m 4.9/4.6/3.9(1.20)  L-nonl-n 3.3/2.7/2.7(1.00)  K4-nl-m 8.2/7.5/4.6(1.65)  K4-nonl-m 4.9/4.6/3.8(1.22)  K4-nonl-n 3.3/2.7/2.7(1.00)  M1-nl-m 7.6/6.7/4.7(1.42)  M1-nonl-m 5.0/4.8/3.9(1.21)  M1-nonl-n 3.4/2.7/2.7(1.00)
+26	tie/const/bounded	[^c]{1,3}$	L-nl-m 7.4/6.4/4.3(1.49)  L-nonl-m 5.3/4.7/3.9(1.21)  L-nonl-n 3.3/2.9/2.4(1.19)  K4-nl-m 7.7/6.7/4.8(1.39)  K4-nonl-m 5.2/4.8/4.0(1.19)  K4-nonl-n 3.4/2.7/2.3(1.17)  M1-nl-m 7.7/6.7/4.7(1.42)  M1-nonl-m 5.4/4.8/3.9(1.23)  M1-nonl-n 3.4/2.7/2.4(1.16)
+35	tie/const/bounded	([^c]{1,3})$	L-nl-m 7.5/6.5/4.2(1.54)  L-nonl-m 5.0/4.6/3.9(1.20)  L-nonl-n 3.3/2.7/2.4(1.14)  K4-nl-m 7.6/6.6/4.7(1.41)  K4-nonl-m 4.9/5.1/4.2(1.20)  K4-nonl-n 3.3/2.7/2.3(1.17)  M1-nl-m 7.6/6.8/4.7(1.43)  M1-nonl-m 5.3/4.8/4.0(1.22)  M1-nonl-n 3.4/2.7/2.4(1.15)
+41	tie/const/unbounded	\s+?$	L-nl-m 6.8/6.3/3.5(1.80)  L-nonl-m 4.8/4.7/3.9(1.18)  L-nonl-n 3.4/2.4/2.5(0.93)  K4-nl-m 8.9/9.3/4.5(2.07)  K4-nonl-m 4.9/4.7/4.1(1.15)  K4-nonl-n 3.4/2.4/2.4(1.00)  M1-nl-m 8.0/7.9/4.2(1.88)  M1-nonl-m 5.0/4.8/4.1(1.16)  M1-nonl-n 3.5/2.4/2.6(0.93)
+42	tie/const/unbounded	\s*$	L-nl-m 9.1/8.3/3.6(2.26)  L-nonl-m 3.9/3.2/2.6(1.22)  K4-nl-m 10.7/9.5/3.9(2.47)  K4-nonl-m 4.4/3.5/3.1(1.15)  M1-nl-m 9.3/8.6/3.9(2.17)  M1-nonl-m 4.1/3.3/2.9(1.13)
+43	tie/const/unbounded	\s*?$	L-nl-m 8.3/7.5/4.1(1.82)  L-nonl-m 3.8/3.1/2.8(1.10)  K4-nl-m 10.1/9.0/4.6(1.93)  K4-nonl-m 4.4/3.6/3.4(1.05)  M1-nl-m 8.8/8.3/4.5(1.85)  M1-nonl-m 4.1/3.4/3.2(1.06)
+44	tie/const/unbounded	[a\n]+$	L-nl-m 6.4/5.5/3.0(1.83)  L-nonl-m 4.7/3.7/3.5(1.07)  L-nonl-n 3.4/2.5/2.5(1.00)  K4-nl-m 6.0/5.3/3.0(1.74)  K4-nonl-m 4.9/3.9/3.7(1.05)  K4-nonl-n 3.4/2.5/2.6(0.96)  M1-nl-m 6.2/5.3/3.1(1.72)  M1-nonl-m 4.9/4.0/3.7(1.09)  M1-nonl-n 3.5/2.5/2.5(0.99)
+45	tie/const/bounded	(?:a|a\n)$	L-nl-m 10.2/9.4/3.2(2.94)  L-nl-n 5.3/5.3/2.5(2.08)  L-nonl-m 4.4/4.0/3.0(1.34)  L-nonl-n 3.3/2.8/2.4(1.16)  K4-nl-m 10.8/9.8/3.3(2.94)  K4-nl-n 5.4/5.1/2.6(1.92)  K4-nonl-m 4.6/4.1/2.7(1.50)  K4-nonl-n 3.4/2.7/2.3(1.18)  M1-nl-m 10.3/9.7/3.4(2.83)  M1-nl-n 5.5/5.3/2.7(2.00)  M1-nonl-m 4.5/4.0/2.7(1.49)  M1-nonl-n 3.4/2.7/2.3(1.16)
+46	tie/const/bounded	(?:a\n|a)$	L-nl-m 11.4/10.9/3.1(3.50)  L-nl-n 5.5/5.0/2.8(1.79)  L-nonl-m 4.4/4.0/2.6(1.52)  L-nonl-n 3.3/2.9/2.7(1.07)  K4-nl-m 11.5/10.2/3.2(3.15)  K4-nl-n 5.5/5.2/2.8(1.87)  K4-nonl-m 4.5/4.1/2.5(1.61)  K4-nonl-n 3.5/2.7/2.5(1.10)  M1-nl-m 11.4/10.2/3.2(3.14)  M1-nl-n 5.6/5.1/2.7(1.90)  M1-nonl-m 4.5/4.1/2.6(1.60)  M1-nonl-n 3.4/2.7/2.4(1.16)
+48	tie/const/unbounded	[^\n]*\n?$	L-nl-m 81.0/79.9/27.2(2.94)  L-nonl-m 27.7/27.5/29.7(0.93)  K4-nl-m 48.6/50.8/17.1(2.97)  K4-nonl-m 18.4/17.5/18.5(0.94)  M1-nl-m 47.4/46.8/17.1(2.74)  M1-nonl-m 17.8/17.0/18.9(0.90)
+51	tie/const/unbounded	\s*$|x\z	L-nl-m 10.3/8.8/3.8(2.28)  L-nonl-m 3.9/3.4/2.6(1.32)  K4-nl-m 12.1/10.9/4.0(2.69)  K4-nonl-m 4.6/4.0/3.1(1.30)  M1-nl-m 10.8/9.9/3.9(2.54)  M1-nonl-m 4.2/3.3/2.9(1.13)
+60	tie/const/unbounded	(\s+){2}$	L-nl-m 10.4/10.3/4.6(2.24)  L-nl-n 5.4/4.5/3.0(1.53)  L-nonl-m 5.4/5.4/4.3(1.24)  L-nonl-n 3.5/2.5/2.7(0.94)  K4-nl-m 10.5/10.5/4.8(2.19)  K4-nl-n 5.5/4.5/3.1(1.48)  K4-nonl-m 5.5/5.4/4.4(1.23)  K4-nonl-n 3.6/2.7/2.8(0.98)  M1-nl-m 10.4/10.4/4.7(2.20)  M1-nl-n 5.4/4.8/3.1(1.55)  M1-nonl-m 5.7/5.5/4.5(1.22)  M1-nonl-n 3.8/3.0/3.0(1.00)
+61	tie/const/unbounded	(\s+?){2}$	L-nl-m 10.0/10.3/5.0(2.05)  L-nl-n 5.3/4.7/2.9(1.60)  L-nonl-m 5.5/5.5/4.7(1.16)  L-nonl-n 3.5/2.5/2.5(0.99)  K4-nl-m 10.2/10.5/5.1(2.05)  K4-nl-n 5.4/4.7/3.1(1.52)  K4-nonl-m 5.6/5.4/4.8(1.13)  K4-nonl-n 3.6/2.7/2.7(0.98)  M1-nl-m 10.0/10.3/5.0(2.06)  M1-nl-n 5.4/4.7/3.0(1.55)  M1-nonl-m 5.6/5.6/4.9(1.14)  M1-nonl-n 3.7/3.1/3.0(1.03)
+86	tie/const/bounded	[^c]{0,4}?$	L-nl-m 8.6/8.2/4.7(1.76)  L-nonl-m 5.2/4.7/4.0(1.18)  K4-nl-m 8.5/8.1/5.1(1.61)  K4-nonl-m 5.5/5.0/4.4(1.15)  M1-nl-m 8.7/8.2/5.2(1.58)  M1-nonl-m 6.0/5.1/4.8(1.07)
+87	tie/const/bounded	[^c]{0,4}$	L-nl-m 8.8/8.5/4.8(1.80)  L-nonl-m 5.3/4.8/4.1(1.20)  K4-nl-m 9.4/9.4/4.7(2.00)  K4-nonl-m 5.3/4.7/4.0(1.18)  M1-nl-m 8.6/8.2/5.2(1.57)  M1-nonl-m 6.2/5.1/4.5(1.14)
+113	tie/const/unbounded	\W*$	L-nl-m 9.9/8.8/3.8(2.29)  L-nonl-m 4.3/3.1/2.9(1.09)  K4-nl-m 10.9/9.1/3.8(2.42)  K4-nonl-m 4.8/3.5/3.1(1.11)  M1-nl-m 11.6/10.7/3.9(2.76)  M1-nonl-m 4.4/3.5/3.5(1.01)
+119	tie/const/unbounded	\W*?(?:)$	L-nl-m 9.4/8.0/4.3(1.86)  L-nonl-m 4.3/3.2/3.2(1.00)  K4-nl-m 10.5/8.9/4.5(2.00)  K4-nonl-m 4.6/3.5/3.4(1.01)  M1-nl-m 9.8/8.1/4.3(1.86)  M1-nonl-m 4.1/3.1/3.2(0.97)
+129	tie/const/bounded	(a|a\n)$	L-nl-m 10.3/9.7/3.3(2.98)  L-nl-n 5.3/5.2/2.7(1.93)  L-nonl-m 4.3/3.9/3.0(1.32)  L-nonl-n 3.3/2.7/2.4(1.17)  K4-nl-m 10.2/9.5/3.3(2.86)  K4-nl-n 5.4/5.7/2.8(2.04)  K4-nonl-m 4.5/4.1/2.9(1.41)  K4-nonl-n 3.4/2.7/2.3(1.16)  M1-nl-m 10.3/9.6/3.3(2.87)  M1-nl-n 5.4/5.3/2.7(1.96)  M1-nonl-m 4.5/4.1/2.9(1.40)  M1-nonl-n 3.4/2.9/2.1(1.37)
+130	tie/const/bounded	(a\n|a)$	L-nl-m 11.2/10.1/3.1(3.23)  L-nl-n 5.4/5.2/2.7(1.92)  L-nonl-m 4.3/4.0/2.7(1.49)  L-nonl-n 3.3/2.7/2.3(1.16)  K4-nl-m 11.3/10.2/3.2(3.15)  K4-nl-n 5.5/5.2/2.8(1.84)  K4-nonl-m 4.6/4.1/2.7(1.51)  K4-nonl-n 3.3/2.7/2.3(1.16)  M1-nl-m 11.7/10.2/3.2(3.15)  M1-nl-n 5.4/5.1/2.7(1.89)  M1-nonl-m 4.7/4.1/2.7(1.50)  M1-nonl-n 3.4/3.0/2.6(1.15)
+131	tie/const/bounded	(a\n?)$	L-nl-m 11.1/10.8/4.4(2.45)  L-nl-n 5.3/5.3/2.7(1.94)  L-nonl-m 4.4/3.9/2.7(1.46)  L-nonl-n 3.3/2.7/2.4(1.16)  K4-nl-m 11.3/10.1/3.2(3.19)  K4-nl-n 5.4/5.1/2.8(1.81)  K4-nonl-m 4.4/4.1/2.7(1.49)  K4-nonl-n 3.3/2.7/2.3(1.17)  M1-nl-m 11.3/10.7/3.2(3.31)  M1-nl-n 5.5/5.3/2.7(1.96)  M1-nonl-m 4.5/4.1/2.7(1.49)  M1-nonl-n 3.4/2.7/2.5(1.08)
+132	tie/const/bounded	(a\n??)$	L-nl-m 10.2/11.4/3.4(3.37)  L-nl-n 5.5/5.4/2.5(2.11)  L-nonl-m 4.3/3.9/3.2(1.24)  L-nonl-n 3.3/2.9/2.7(1.07)  K4-nl-m 10.6/11.7/3.3(3.51)  K4-nl-n 5.4/5.5/3.0(1.85)  K4-nonl-m 5.0/4.2/2.9(1.44)  K4-nonl-n 3.3/2.7/2.4(1.12)  M1-nl-m 10.3/11.5/3.3(3.46)  M1-nl-n 5.6/5.4/2.9(1.86)  M1-nonl-m 4.5/4.1/2.9(1.40)  M1-nonl-n 3.4/2.7/2.5(1.08)
+133	tie/const/bounded	(a)\n?\Z	L-nl-m 11.6/10.9/3.1(3.45)  L-nl-n 5.6/5.5/2.9(1.87)  L-nonl-m 4.7/4.1/2.7(1.50)  L-nonl-n 3.6/2.9/2.5(1.16)  K4-nl-m 12.0/10.2/3.2(3.15)  K4-nl-n 5.4/5.1/2.8(1.82)  K4-nonl-m 4.5/4.1/2.7(1.52)  K4-nonl-n 3.4/2.7/2.3(1.17)  M1-nl-m 11.3/10.2/3.2(3.14)  M1-nl-n 5.6/5.6/2.7(2.05)  M1-nonl-m 4.5/4.1/2.7(1.50)  M1-nonl-n 3.4/2.7/2.3(1.17)
+134	tie/const/unbounded	(\s+)$	L-nl-m 7.2/6.5/3.3(1.96)  L-nonl-m 4.9/4.7/3.7(1.26)  L-nonl-n 3.4/2.4/2.4(1.00)  K4-nl-m 10.0/9.4/4.1(2.30)  K4-nonl-m 5.1/4.7/3.6(1.33)  K4-nonl-n 3.5/2.4/2.4(0.99)  M1-nl-m 8.2/8.9/3.8(2.37)  M1-nonl-m 5.0/5.3/3.7(1.44)  M1-nonl-n 3.5/3.4/2.5(1.34)
+166	tie/const/unbounded	([^/]+)$	L-nl-m 59.3/59.5/21.5(2.77)  L-nonl-m 21.3/21.9/23.0(0.95)  L-nonl-n 3.3/2.4/2.6(0.90)  K4-nl-m 58.9/57.7/20.2(2.86)  K4-nonl-m 20.4/20.2/21.9(0.92)  K4-nonl-n 3.5/2.6/2.8(0.95)  M1-nl-m 42.9/42.2/15.8(2.66)  M1-nonl-m 16.0/15.8/16.9(0.94)  M1-nonl-n 3.5/2.7/2.7(1.01)
+186	tie/const/unbounded	([^a]+)$	L-nl-m 22.6/24.4/8.4(2.90)  L-nonl-m 12.3/12.3/8.1(1.52)  L-nonl-n 3.3/2.4/2.6(0.91)  K4-nl-m 20.2/19.9/7.2(2.78)  K4-nonl-m 7.4/8.4/7.2(1.16)  K4-nonl-n 3.7/2.7/2.7(1.04)  M1-nl-m 15.2/14.8/6.6(2.25)  M1-nonl-m 6.8/6.1/5.6(1.08)  M1-nonl-n 3.7/3.0/2.9(1.05)
+192	tie/const/unbounded	(?s)(.+)$	L-nl-m 86.3/83.4/30.7(2.72)  L-nonl-m 30.1/28.9/32.1(0.90)  K4-nl-m 2410.0/2419.4/830.1(2.91)  K4-nonl-m 809.0/807.2/830.9(0.97)  M1-nl-m 622219.2/633165.0/212841.5(2.97)  M1-nonl-m 207692.8/213055.3/214535.7(0.99)
+195	tie/const/unbounded	(\s+?)\s*$	L-nl-m 7.7/7.4/3.4(2.17)  L-nonl-m 5.4/5.5/3.8(1.44)  L-nonl-n 4.2/3.0/2.4(1.29)  K4-nl-m 9.8/9.6/4.1(2.37)  K4-nonl-m 5.4/5.4/3.8(1.43)  K4-nonl-n 4.4/3.0/2.4(1.29)  M1-nl-m 8.7/8.7/3.8(2.31)  M1-nonl-m 5.5/5.9/4.0(1.47)  M1-nonl-n 4.3/2.9/2.6(1.12)
+202	no-tie	[ \t]+$	L-nl-m 5.7/4.7/4.7(1.00)  L-nl-n 4.3/3.1/3.1(1.00)  L-nonl-m 4.2/4.8/3.7(1.28)  L-nonl-n 2.9/2.4/2.4(1.00)  K4-nl-m 6.0/4.5/4.7(0.96)  K4-nl-n 4.3/3.2/3.1(1.06)  K4-nonl-m 4.2/4.8/3.6(1.34)  K4-nonl-n 3.0/2.4/2.4(1.00)  M1-nl-m 5.9/4.7/4.9(0.95)  M1-nl-n 4.5/3.3/3.1(1.06)  M1-nonl-m 4.5/4.8/3.7(1.30)  M1-nonl-n 3.1/2.4/2.5(1.00)
+203	no-tie	\.(?:txt|log)$	L-nl-m 7.1/5.1/5.7(0.89)  L-nl-n 4.8/3.4/3.0(1.15)  L-nonl-m 6.4/5.4/4.7(1.16)  L-nonl-n 3.6/2.8/2.6(1.09)  K4-nl-m 7.2/5.1/5.6(0.91)  K4-nl-n 5.1/3.4/2.6(1.29)  K4-nonl-m 6.4/5.4/4.8(1.14)  K4-nonl-n 3.5/2.9/2.3(1.25)  M1-nl-m 7.3/5.1/5.7(0.90)  M1-nl-n 4.8/3.5/2.6(1.33)  M1-nonl-m 6.5/5.4/4.8(1.14)  M1-nonl-n 3.6/2.7/2.3(1.17)
+204	tie/const/unbounded	;\s*$	L-nl-m 13.0/11.4/3.6(3.14)  L-nl-n 5.9/5.4/3.0(1.80)  L-nonl-m 5.0/4.8/3.0(1.58)  L-nonl-n 3.5/2.9/2.5(1.17)  K4-nl-m 13.0/11.6/3.7(3.13)  K4-nl-n 6.9/6.6/3.1(2.13)  K4-nonl-m 5.1/4.8/3.0(1.62)  K4-nonl-n 4.1/3.4/2.8(1.21)  M1-nl-m 13.8/12.0/3.8(3.15)  M1-nl-n 6.1/6.0/3.0(1.99)  M1-nonl-m 5.2/5.1/3.2(1.58)  M1-nonl-n 3.9/3.1/2.7(1.15)
+205	tie/state-dependent/unbounded	(?:\s+|x\s*?)$	L-nl-m 7.1/7.2/4.1(1.76)  L-nonl-m 4.8/5.1/3.6(1.41)  L-nonl-n 3.3/2.3/2.2(1.09)  K4-nl-m 10.2/10.0/6.9(1.45)  K4-nonl-m 4.8/5.0/3.7(1.36)  K4-nonl-n 3.4/2.4/2.2(1.09)  M1-nl-m 8.3/8.7/5.8(1.50)  M1-nonl-m 5.0/5.0/3.8(1.34)  M1-nonl-n 3.4/2.4/2.2(1.09)
