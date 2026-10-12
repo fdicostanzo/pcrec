@@ -52,10 +52,10 @@ NAMED = [
     'x[0-9]+Qz',
 ]
 # N4's door floors (R17-a): set from lane r17a's landing measurement
-# (r17a_report.md), ~10% below it.
-DOOR_CBM_FLOOR = 1
-DOOR_SB_FLOOR = 1
-DOOR_SS_FLOOR = 1
+# (r17a_report.md, the figure beside each), ~10% below it.
+DOOR_CBM_FLOOR = 1400   # 1,574
+DOOR_SB_FLOOR = 70      # 78
+DOOR_SS_FLOOR = 3100    # 3,441
 # Floors, measured at the landing (rq2_report.md, the figure in each comment)
 # and set ~10% below it: a FLOOR, never an equality pin.
 FLOORS = {
