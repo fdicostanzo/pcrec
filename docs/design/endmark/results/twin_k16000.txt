@@ -1,0 +1,37 @@
+# libpcre2 10.46 2025-08-27
+A forward, lowered NFA + accept-distance, vs libpcre2: 120304 cells, 0 differences
+B reverse from the end, X$ (k = 16000 for the cost cells)
+  X              mark_prio              nl_last answers vs libpcre2 (T / M1 / M0)
+  ws-greedy      ('const', 0)           True   0 / 0 / 0 wrong of 4005
+  ws-lazy        ('const', 1)           True   0 / 0 / 0 wrong of 4005
+  digits         ('none',)              False  0 / 0 / 0 wrong of 4005
+  txt            ('none',)              False  0 / 0 / 0 wrong of 4005
+  alt-a-anl      ('const', 1)           True   0 / 0 / 0 wrong of 4005
+  alt-anl-a      ('const', 0)           True   0 / 0 / 0 wrong of 4005
+  mixed-prio     ('state-dependent',)   True   0 / 0 / 0 wrong of 4005
+  any-greedy     ('const', 0)           True   0 / 0 / 0 wrong of 4005
+  nl-only-lazy   ('const', 1)           True   0 / 0 / 0 wrong of 4005
+  nl-only-greedy ('const', 0)           True   0 / 0 / 0 wrong of 4005
+  cost cells (subject-byte loads, search from 0; ratio = strategy / one pass of k):
+   ws-greedy   n=16002  T=48004  (3.00x)  M1=16002  (1.00x)  M0=32003  (2.00x)  prio=const           answers=ok
+   ws-lazy     n=16002  T=48004  (3.00x)  M1=16002  (1.00x)  M0=32003  (2.00x)  prio=const           answers=ok
+   ws-greedy   n=16001  T=16001  (1.00x)  M1=16001  (1.00x)  M0=16001  (1.00x)  prio=const           answers=ok
+   digits      n=16011  T=16002  (1.00x)  M1=16002  (1.00x)  M0=16002  (1.00x)  prio=none            answers=ok
+   mixed-prio  n=16003  T=48005  (3.00x)  M1=32004  (2.00x)  M0=32004  (2.00x)  prio=state-dependent answers=ok
+   txt         n=16007  T=16006  (1.00x)  M1=16006  (1.00x)  M0=16006  (1.00x)  prio=none            answers=ok
+C reverse machine size (reachable subset states; tags = mark distance carried)
+  X                rev(X)  mark untagged  mark tagged
+  ws-greedy             2              3            4
+  ws-lazy               1              2            3
+  digits                2              3            4
+  txt                   6              7           12
+  alt-a-anl             3              4            6
+  alt-anl-a             3              4            6
+  mixed-prio            3              4            6
+  any-greedy            1              2            3
+  nl-only-lazy          4              5            7
+  nl-only-greedy        4              5            7
+  word                  2              3            4
+  num-dot               6              7           12
+  kv                    3              4            7
+# TOTAL A-diffs=0 B-diff-samples=0

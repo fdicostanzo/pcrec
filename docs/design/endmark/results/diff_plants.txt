@@ -1,0 +1,38 @@
+== PLANT=consumed-end
+cur fa-aa	a(?=aa)	diff=324
+cur fa-empty	(?=ab)	diff=3336
+cur fa-empty2	(?=a{1,2})	diff=23090
+cur kreset-mark	a\Kb(?=c)	diff=356
+cur nested-tail	a(?=b(?=c))	diff=356
+cur nested-mid	a(?=(?=bc)b)	diff=356
+cur cap-in-look-alt	a(?=(b)|(bc))	diff=3336
+cur cap-enclose-alt	(a(?=bc)|ab(?=c))	diff=356
+cur cap-nest2	(a(b*(?=c)))	diff=3722
+cur greedy-var	a+(?=a?b)	diff=3336
+cur lazy-var	a+?(?=a?b)	diff=3336
+cur poss-q	(?:a(?=b))?+	diff=1951
+cur lazy-ws	\s*?$	diff=9020
+cur tie	q|a$|a\n$	diff=1179
+# TOTAL patterns=21 cells=1136541 differences=54054
+== PLANT=no-close-at-mark
+cur cap-enclose-alt	(a(?=bc)|ab(?=c))	diff=235
+cur cap-nest2	(a(b*(?=c)))	diff=2623
+# TOTAL patterns=21 cells=1136541 differences=2858
+== PLANT=lower-negative
+cur neg-tail	a(?!b)	diff=23090
+# TOTAL patterns=21 cells=1136541 differences=23090
+== PLANT=lower-nontail
+cur nested-mid	a(?=(?=bc)b)	diff=324
+cur nontail-b	a(?=b)b	diff=3336
+cur dollar-mid	a$\n?	diff=1244
+# TOTAL patterns=21 cells=1136541 differences=4904
+== PLANT=through-rep
+cur loop-plus	(?:a(?=a))+	diff=296
+# TOTAL patterns=21 cells=1136541 differences=296
+== PLANT=findall-consumed
+cur fa-aa	a(?=aa)	diff=12
+cur fa-empty2	(?=a{1,2})	diff=859
+cur lazy-var	a+?(?=a?b)	diff=121
+cur poss-q	(?:a(?=b))?+	diff=966
+cur lazy-ws	\s*?$	diff=518
+# TOTAL patterns=21 cells=1136541 differences=2476

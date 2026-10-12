@@ -1,0 +1,31 @@
+== TWIN_PLANT=fwd-consumed-end
+A forward, lowered NFA + accept-distance, vs libpcre2: 120304 cells, 3811 differences
+# TOTAL A-diffs=3811 B-diff-samples=0
+== TWIN_PLANT=m1-no-tags
+A forward, lowered NFA + accept-distance, vs libpcre2: 120304 cells, 0 differences
+  ws-lazy        ('const', 1)           True   0 / 383 / 0 wrong of 4005
+  digits         ('none',)              False  0 / 36 / 0 wrong of 4005
+  alt-a-anl      ('const', 1)           True   0 / 46 / 0 wrong of 4005
+  alt-anl-a      ('const', 0)           True   0 / 4 / 0 wrong of 4005
+  mixed-prio     ('state-dependent',)   True   0 / 53 / 0 wrong of 4005
+  nl-only-lazy   ('const', 1)           True   0 / 47 / 0 wrong of 4005
+  nl-only-greedy ('const', 0)           True   0 / 1 / 0 wrong of 4005
+# TOTAL A-diffs=0 B-diff-samples=6
+== TWIN_PLANT=m1-prio-flipped
+A forward, lowered NFA + accept-distance, vs libpcre2: 120304 cells, 0 differences
+  ws-greedy      ('const', 0)           True   0 / 110 / 0 wrong of 4005
+  ws-lazy        ('const', 1)           True   0 / 383 / 0 wrong of 4005
+  alt-a-anl      ('const', 1)           True   0 / 42 / 0 wrong of 4005
+  alt-anl-a      ('const', 0)           True   0 / 42 / 0 wrong of 4005
+  any-greedy     ('const', 0)           True   0 / 383 / 0 wrong of 4005
+  nl-only-lazy   ('const', 1)           True   0 / 46 / 0 wrong of 4005
+  nl-only-greedy ('const', 0)           True   0 / 46 / 0 wrong of 4005
+# TOTAL A-diffs=0 B-diff-samples=6
+== TWIN_PLANT=m0-skip-finish
+A forward, lowered NFA + accept-distance, vs libpcre2: 120304 cells, 0 differences
+  ws-greedy      ('const', 0)           True   0 / 0 / 383 wrong of 4005
+  alt-anl-a      ('const', 0)           True   0 / 0 / 42 wrong of 4005
+  mixed-prio     ('state-dependent',)   True   0 / 0 / 330 wrong of 4005
+  any-greedy     ('const', 0)           True   0 / 0 / 383 wrong of 4005
+  nl-only-greedy ('const', 0)           True   0 / 0 / 46 wrong of 4005
+# TOTAL A-diffs=0 B-diff-samples=6

@@ -1,0 +1,89 @@
+# D164 census at 885eccff7
+== populations: rows / parsed
+  bench   byte  rows   291 parsed   278
+  bench   utf8  rows    76 parsed    73
+  corpus  byte  rows  4956 parsed  4577
+  corpus  utf8  rows   689 parsed   659
+
+== path-final constructs (a pattern counts once per kind it carries)
+  nlook  bench    2  corpus    33
+  nneg   bench    1  corpus    11
+  neol   bench   38  corpus   883
+  nmeol  bench    2  corpus    66
+  nz     bench    4  corpus    74
+  nctx   bench   30  corpus   350
+
+== patterns with a PATH-FINAL POSITIVE LOOKAHEAD (multi-character; one-character ones are A_CTX today)
+  bench       2  VM -> DFA (only a bounded tail lookahead forced the VM)
+  corpus     22  VM -> DFA (only a bounded tail lookahead forced the VM)
+  corpus      1  vm: call-bearing (decline)
+  corpus      4  vm: captures (DFA under --no-captures; exact hybrid prefilter)
+  corpus      4  vm: other VM-only construct ((?<=...))
+  corpus      2  vm: other VM-only construct (\1)
+   e.g. (bench):
+      syntax/lka-pos  item(?= done)
+      syntax/lka-verb  item(*pla: done)
+   e.g. (corpus):
+      tests/litscan/litrun.rxt:162  abc(?=def)
+      tests/lookaround/d27/expansions.rxt:33  a(?=\n?\z)
+      tests/lookaround/d27/matrix.rxt:20  z(?=)
+      tests/lookaround/d27/matrix.rxt:170  z(?=abc)
+      tests/lookaround/d27/matrix.rxt:219  z(?=ab|cd)
+      tests/lookaround/d27/matrix.rxt:268  z(?=a|bc)
+      tests/lookaround/d27/matrix.rxt:375  z(?=a(?!b))
+      tests/lookaround/d27/matrix.rxt:1988  z(?*)
+      tests/lookaround/d27/matrix.rxt:2159  z(?*abc)
+      tests/lookaround/d27/matrix.rxt:2215  z(?*ab|cd)
+      tests/lookaround/d27/matrix.rxt:2271  z(?*a|bc)
+      tests/lookaround/d27/matrix.rxt:2392  z(?*a(?!b))
+  Y width (characters), patterns:
+    bench   fixed L=5      2
+    corpus  bounded L<=1   6
+    corpus  bounded L<=2   2
+    corpus  fixed L=0      10
+    corpus  fixed L=1      5
+    corpus  fixed L=2      2
+    corpus  fixed L=3      5
+    corpus  unbounded      3
+  structure: corpus look_cap=2, corpus look_vmonly=3
+  probe/facts disagreements on the VM -> DFA set: 0
+
+== rev-end artifacts pinned at $ / \Z (end_pin = eol): the B3 movers
+  bench   9 artifacts
+  corpus  257 artifacts
+    bench   no tie code                    8
+    bench   tie code emitted (nl_last)     1
+    corpus  no tie code                    215
+    corpus  tie code emitted (nl_last)     42
+      tie: capability/tail-space-eol  \s+$
+      tie: tests/assertions/absolute.rxt:652  [^c]{1,3}\Z
+      tie: tests/assertions/gate.rxt:66  [^c]{1,3}$
+      tie: tests/assertions/gate.rxt:306  [^c]{1,3}\Z
+      tie: tests/assertions/multiline.rxt:1681  ([^c]{1,3})$
+      tie: tests/assertions/rev_end.rxt:33  \s+$
+      tie: tests/assertions/rev_end.rxt:46  \s+?$
+      tie: tests/assertions/rev_end.rxt:57  \s*$
+      tie: tests/assertions/rev_end.rxt:67  \s*?$
+      tie: tests/assertions/rev_end.rxt:108  [a\n]+$
+      tie: tests/assertions/rev_end.rxt:118  (?:a|a\n)$
+      tie: tests/assertions/rev_end.rxt:125  (?:a\n|a)$
+      tie: tests/assertions/rev_end.rxt:145  \s*$
+      tie: tests/assertions/rev_end.rxt:165  [^\n]*\n?$
+      tie: tests/assertions/rev_end.rxt:256  \s*$|x\z
+      tie: tests/assertions/rev_end.rxt:274  \s+?$
+      tie: tests/assertions/rev_end.rxt:392  ([^c]{1,3})$
+      tie: tests/assertions/rev_end.rxt:406  (\s+){2}$
+      tie: tests/assertions/rev_end.rxt:433  (\s+?){2}$
+      tie: tests/base/possess_lazy_guard.rxt:166  [^c]{0,4}?$
+  every path-final-$ pattern by (end_pin fact, RX_DFA_SCAN):
+    bench   eol    ?                      1
+    bench   eol    attempt                27
+    bench   eol    rev-end                9
+    corpus  eol    ?                      296
+    corpus  eol    attempt                298
+    corpus  eol    rev-end                257
+    corpus  none   ?                      1
+    corpus  none   attempt                5
+    corpus  none   unanchored             16
+  path-final (?m)$ patterns by engine: bench dfa=2, corpus dfa=52, corpus vm=14
+  path-final NEGATIVE lookahead (never lowers) by engine: bench vm=1, corpus vm=11

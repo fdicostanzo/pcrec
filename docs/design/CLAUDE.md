@@ -3039,6 +3039,13 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
   - **Twin (§E.2):** derived DFA Q, bounded F, every option arm: 177 case-arms, 2,170,123 cells, 0 differences vs today and libpcre2 10.46; three plants fire.
   - **§D** captures on demand (`select-by-arg`, trigger the caps/nocaps class gap) and the other clients; **§F** B0-B8 with validation and abi events; **§G** three open questions; **§J** six findings.
 - `compound/` — that note's twin (revision 1 and 2 instruments and results: differential, plants, counted loads, sizes, one-TU probe; own CLAUDE.md).
+- `endmark.md` — **D164, THE MATCH-END MARK (`END_MARK`), PROPOSED, design + hand-twin** (lane `endmark`, 2026-10-12, from main `885eccff`, abi 76; nothing under `src/`). A path-final POSITIVE lookahead (with `$`/`\Z`/`(?m)$` as the lookaheads they are) lowers to `X END_MARK Y`. The rule is a first-match table L1-L7 (negative, behind, call target, unbounded Y and the A_CTX one-character case stay as they are; zero-width Y drops the mark).
+  - **§1, exactness.** Checked against libpcre2 10.46 with an empty capture standing in for the mark: 3,527 patterns, 28.2M cells, 0 differences, and six plants red. It needs one rule D164 did not state: a capture ENCLOSING the mark closes at the mark (report time).
+  - **§2, engines.** The VM writes slot 1 (`\K`'s mirror). The forward DFA gives each lowered path an `ACC(back)` and lets D3's accept-pruning choose; the twin agrees with libpcre2 on 120,304 cells. The reverse walk (B3) has ONE seed. D164's "no tags, no tie special case" over-claims: priority is forward, so a tie is still decided. It is decided by the reverse machine's mark distances plus a static fact `mark_prio`, else by FINISH. Counted: `\s+$`/`\s*?$` 3.00× → 1.00×, a state-dependent shape 2.00×.
+  - **§3, census.** VM → DFA on 2 bench (`syntax/lka-pos`/`lka-verb`) and 22 corpus patterns; rev-end `$` movers 9 / 257 (1 / 42 with tie code).
+  - **§4.** One pass after `pcrec_discharge_atomic`; the "consumption inside, mark at the report" invariant. Finding F4: `RX_ENGINE_WHY`'s offset is already stale on main after the free atomic discharge.
+  - **§5-§7.** Interface, readers, 12 sabotage rows, build E0-E4, and Q1-Q4 for Frank (Q1: does `$` lower on every consumer).
+- `endmark/` — that note's differential, twin, census probe and transcripts (own CLAUDE.md).
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
