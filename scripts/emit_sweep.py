@@ -1544,6 +1544,27 @@ TRACE_SITES = ("pf-of", "vm-start", "scan-state", "form-fwd",
                "req-from", "ofs-need")
 
 
+# [CAND-PATH-READS] triage (lane pathtri): a trace run at an `--extra` that
+# changes WHICH decisions are asked has its own floors. `--engine=vm` forces
+# the VM on every pattern, so both streams carry the same records (the
+# c-default stream is forced too) and the DFA machine's decisions are never
+# asked; the plain floors above (270,131 / 120,691) and the all-24-keys rule
+# then fail a run whose two sides are identical (base vs base reads the same
+# red). Pinned per extra tuple, BOTH directions: the records floor is the
+# measured count at main 23fb7a52 (159,657 on each stream), and the unreached
+# key set must EQUAL the pinned one, so a key that starts printing (or stops)
+# is a re-pin, not a silent pass. An extra with no entry here keeps the plain
+# floors and the all-keys rule.
+TRACE_EXTRA_PINS = {
+    ("--engine=vm",): {
+        "floor": {"c-default": 159657, "c-vm": 159657},
+        "unreached": ("pf-of", "scan-state", "form-fwd", "search-start",
+                      "reseed", "attempt-cand", "attempt-bound", "dfa-engine",
+                      "entry-gate", "engine-empty", "prefix-k"),
+    },
+}
+
+
 # [DEC-FALLBACK] B1: the fallback trace's site keys (src/core/compile.c's
 # FIT_TRACE sites, the gate/stwhy records, src/opt/select_engine.c's
 # admit/attrib), held reached by --variant --trace on a full population.
@@ -2813,7 +2834,9 @@ def main():
             print("  trace build vs default build: NOT CHECKED (streams 1-2 not run, or --every)")
         declared = trace_diff.read_declared(args.trace_declared) if args.trace_declared else set()
         ta, tb = trace_diff.load(paths[0]), trace_diff.load(paths[1])
-        floor = TRACE_RECORDS_FLOOR if full_population else 1
+        extra_pin = TRACE_EXTRA_PINS.get(tuple(run_extra)) if full_population else None
+        floor = (extra_pin["floor"] if extra_pin else
+                 TRACE_RECORDS_FLOOR if full_population else 1)
         ok_t, text_t = trace_diff.compare(ta, tb, declared=declared, min_records=floor,
                                           unordered=not args.trace_ordered, order=trace_order)
         print(f"  GATE ({'ordered' if args.trace_ordered else 'SET'} compare):")
@@ -2830,7 +2853,16 @@ def main():
             missing = [k for k in TRACE_SITES if k not in seen]
             print(f"  declared site keys reached (working): {len(TRACE_SITES) - len(missing)}"
                   f"/{len(TRACE_SITES)}" + (f"; NOT REACHED: {', '.join(missing)}" if missing else ""))
-            if missing:
+            if extra_pin:
+                pinned = set(extra_pin["unreached"])
+                if set(missing) != pinned:
+                    run_ok = False
+                    print(f"  UNREACHED SET differs from TRACE_EXTRA_PINS for {' '.join(run_extra)!r}: "
+                          f"newly unreached {sorted(set(missing) - pinned)}, "
+                          f"newly reached {sorted(pinned - set(missing))}")
+                else:
+                    print(f"  unreached set equals the pin for {' '.join(run_extra)!r}")
+            elif missing:
                 run_ok = False
         print(f"  trace streams: {paths[0]} {paths[1]}")
         run_ok = run_ok and ok_t
