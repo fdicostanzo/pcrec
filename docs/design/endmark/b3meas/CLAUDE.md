@@ -14,13 +14,15 @@ Python with `python3 -I` and `PYTHONDONTWRITEBYTECODE=1`. Report:
   today's shipped artifact (`-p T`), its A/A copy (`-p A`) and the B3 twin (today's
   file with `T_search`'s body replaced by one tagged reverse walk: the
   Moore-minimized product of the two dumps, run-skip on self-loop states, the
-  `mark_prio` fact classified empirically, verify-at otherwise); answer-checks both
-  against libpcre2 10.46 and counts subject loads (`harness.c -DCHECK`). `time`
-  times today / A/A / twin per regime, pinned (`taskset`, env `CPU`).
+  `mark_prio` fact classified empirically, verify-at otherwise) and the control R
+  (today's algorithm over today's machine in the twin's code style, `-p R`);
+  answer-checks all three against libpcre2 10.46 and counts subject loads
+  (`harness.c -DCHECK`). `time` times today / A/A / twin / R per regime, pinned
+  (`taskset`, env `CPU`). `states` records today's reverse machine size.
 - `harness.c` — the per-artifact check (`-DCHECK`, links libpcre2-8) and timing
   (`-DTIME`) driver.
 - `report.py` — aggregates `check.json` and `time.tsv` into the tables in
   `results/report.txt`.
 - `results/` — `population.tsv`, `check.json` (per artifact: answers, loads per
   regime, tie observations, table bytes, search text size), `time.tsv` + `time2.tsv` (two independent runs; raw ns/call
-  rows: k regime n iters today A B min_today min_A min_B), `report.txt`.
+  rows: k regime n iters today A B R, then the four minima), `states.json`, `report.txt`.
