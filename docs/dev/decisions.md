@@ -9387,3 +9387,10 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Not in this request:** whether the same operation also does the subsequent LOOK FORWARD (verifying the rest from the window). Frank is still deciding; if it happens, it is a separate request.
 - **Consequences (manager):** D146/D157's facts-only line, generalized from one ranked array (RQ-2) to the whole window search. pcrec's side of [PRIOR-COST-UNIFY] becomes ONE producer of span facts (today's offset-set walk, the run window, the handoff landmark's K, set-leads and the req pick each derive a piece of this); the decisions that choose among spans move to the kit. [PRIOR-COST-UNIFY] rev 2 is PAUSED pending the re-scope.
 - **Revisit when** the look-forward decision is made, or a window search needs a fact a span list cannot express (joint rates across spans; an unbounded move-back).
+
+### D161 addendum 1 — R-17 Q-R17-1: dense sets keep the forward class search; the new row needs POSITIVE sparse evidence (Frank, 2026-10-11, session 108)
+
+- **Ruling (Frank):** "If it gets the above pattern [the dense `[a-z]`/`[0-9]` find-all controls, where every candidate form lost up to 24% at 300k ppm], the right choice is just a forward search for the class." Manager reading, relayed to the kit and recorded in its journal (lane/memfn-r17 @ 4100be02): the general set-FIND row admits a site only on POSITIVE evidence that the set is sparse; dense or UNKNOWN density keeps today's forward class walk; the cut-over threshold is labelled UNMEASURED until the kit's grid fixes it.
+- **Consequence:** the row is inert until pcrec fills `mf_site.cand_ppm_lo/hi` and `mf_term.ppm_lo/hi` (N1, the frequency-table half of D161's contract) — a pcrec no-mover change, and the row's build trigger.
+- **Same rule in the window search (D161):** with no rare target in any span, the window search has nothing to anchor on, and the right choice is the forward search for the tightest span's class.
+- **Q-R17-2 (one PF routing abi event vs two) is NOT ruled;** the kit's revision 2 lays out both sequencings against D161 / lane wingame and its follow-up measurement.
