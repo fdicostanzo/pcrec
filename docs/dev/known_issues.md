@@ -11,6 +11,10 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K109 — OPEN (filed 2026-10-12, manager, session 109, from the [MATCH-SPLIT] 4a panel's semantics critic, docs/dev/reviews/2026-10-12-r1-match-split-pinonly.md sem S1; owned by [MATCH-SPLIT] 4b.2 beside K106's LS+LE shapes) — PERFORMANCE: S+LS / G+LS patterns whose line-start arm can cross a newline are QUADRATIC on the attempt route
+
+**Witness (wall clock, 7700X, one core, today's binaries, `--features all`):** `\Ax|(?m)^\s+y`, `\Gx|(?m)^\s+y`, `^x|(?m)^\s+y` on `"\n"*k + Q` take 1.3 / 18 / 283 ms at k = 2,000 / 8,000 / 32,000 (x15.6 per 4x of k). RX_DFA_SCAN "attempt", RX_DFA_PREFILTER "memchr": the MLINE skip enumerates line-start candidates, but each attempt's `\s+` reads across the following newlines. The census's three S+LS / G+LS witnesses are single-byte arms, so they are linear only by accident; the 4a note's "already linear today" claim is withdrawn. Answers are correct.
+
 ## K108 — OPEN (filed 2026-10-12, manager, session 109, from lane mssurvey's work counts, docs/dev/lanes/mssurvey_report.md §(d), `docs/dev/optloop/matchsplit/qwork.txt`; owner UNASSIGNED, PARKED — not [MATCH-SPLIT]'s: single-class) — PERFORMANCE: QUADRATIC END-ONLY patterns on the VM-only route
 
 **Witness (subject loads, no clock; main abi 75):** `(\s*)$`, `(a*)$`, `(\w\d)*$`, `((a)|(b))*$` (10 of 16 VM-only END-pinned shapes measured) grow 15.99x per 4x of the internal run on `Q . c*k . Q` (`(\s*)$`: 256,064,005 loads at k = 16,000); `(a*)(a*)$` reaches the step budget. A capture (or similar) puts them on the VM, where `rev-end` does not apply; the same shapes without the VM hat (`\s+$`, `a*\z`, `\d+$` on `rev-end`) are constant or linear, and `(.*)$` is linear. Answers are correct; the cost is the per-start retry of an end-pinned arm. Upper-case probe (run byte chosen to maximise loads), not a typical subject. TRIGGER to schedule: a bench or wild cell with this shape (bench reach not counted yet).
