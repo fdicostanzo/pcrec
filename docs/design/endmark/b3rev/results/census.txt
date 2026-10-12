@@ -1,0 +1,351 @@
+# b3rev census at e8ca12523 (gcc 15.2.0)
+== population: rev-end with a path-final $/\Z: bench 9, corpus 257
+   rewriter declined: 0 []
+   with an unmarked path-final \z arm (S5): 3
+   probed 266, probe failed 0
+
+== CONTROLS (each: compared / equal / MISMATCH)
+   C1 reverse today, probe post-scan-edge == emitted               266  266    0
+   C2 forward today, probe post == emitted (-fno-rev-end)          265  265    0
+   C3 anchored today, probe post == emitted (-fno-rev-end)         169  169    0
+   C4 forward lowered (patched \G NFA) post == emitted X\n?\z      265  264    1
+       MISMATCH tests/revend/stage2_captures.rxt:1632    (?s)(.+)$                    model 3 emitted 0
+   C5 anchored lowered post == emitted X\n?\z                      169  169    0
+   C6 reverse untagged == product with OR output (minimized)       266  254   12
+       MISMATCH tests/assertions/end_window.rxt:195      \bfoo$                       model 9 emitted 6
+       MISMATCH tests/assertions/rev_end.rxt:292         \bab$                        model 7 emitted 5
+       MISMATCH tests/assertions/rev_end.rxt:303         \Bb$                         model 5 emitted 4
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \bfoo$                       model 9 emitted 6
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \bfoo\Z                      model 9 emitted 6
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \Bo\Z                        model 5 emitted 4
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \b\w+\b$                     model 7 emitted 6
+       MISMATCH tests/assertions/wordb_vm.rxt:864        (\bfoo)$                     model 9 emitted 6
+   C7 reverse untagged post == OR product rebuilt, shipped pass    266  254   12
+       MISMATCH tests/assertions/end_window.rxt:195      \bfoo$                       model 8 emitted 6
+       MISMATCH tests/assertions/rev_end.rxt:292         \bab$                        model 7 emitted 5
+       MISMATCH tests/assertions/rev_end.rxt:303         \Bb$                         model 5 emitted 4
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \bfoo$                       model 8 emitted 6
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \bfoo\Z                      model 8 emitted 6
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \Bo\Z                        model 5 emitted 4
+       MISMATCH tests/assertions/wordb_empty_compose.rxt \b\w+\b$                     model 7 emitted 6
+       MISMATCH tests/assertions/wordb_vm.rxt:864        (\bfoo)$                     model 8 emitted 6
+   C8 forward tagged model, b ignored == pcrec minimized           220  220    0
+   C9 anchored tagged model, b ignored == pcrec minimized          220  220    0
+   C10 forward: closure accept == pcrec END accept (mismatch count 0)  220  220    0
+   C11 anchored: closure accept == pcrec END accept                220  220    0
+   C12 forward model post (b ignored, rebuilt) == pcrec post       220  220    0
+   C13 today tie code (emitted revend_tie) == probe nl_last        266  266    0
+   b-conflicts (pre-sets into one END state disagree on b; tagged would need a split): 1 [('tests/assertions/absolute.rxt:735', 2, 1)]
+
+== THE SELECTION (first-match rows, §R3.1)
+   deny          0  (bench 0, corpus 0; utf8 0)
+   one-seed    223  (bench 8, corpus 215; utf8 13)
+   tagged       43  (bench 1, corpus 42; utf8 3)
+   two-seed      0  (bench 0, corpus 0; utf8 0)
+   overflow      0  (bench 0, corpus 0; utf8 0)
+   probe-failed    0  (bench 0, corpus 0; utf8 0)
+   tagged: \s+$ , [^c]{1,3}\Z , [^c]{1,3}$ , [^c]{1,3}\Z , ([^c]{1,3})$ , \s+$ , \s+?$ , \s*$ , \s*?$ , [a\n]+$ , (?:a|a\n)$ , (?:a\n|a)$ , \s*$ , [^\n]*\n?$ , \s*$|x\z , \s+?$ utf8, ([^c]{1,3})$ , (\s+){2}$ , (\s+?){2}$ , [^c]{0,4}?$ , [^c]{0,4}$ , \W{0,2}?(?:\B|)$ , \W{2,}(?:(?=a)|)$ , \W*$ , \W*?(?:)$ , \W{0,2}?(?:\b|)$ , \W{2,}?(?:\B|)$ , \W??(?:\B|)$ , (a|a\n)$ , (a\n|a)$ , (a\n?)$ , (a\n??)$ , (a)\n?\Z , (\s+)$ , (\s+)$ , ([^/]+)$ , (\s+)$ , ([^/]+)$ utf8, (\s+)$ utf8, ([^a]+)$ , (?s)(.+)$ , (\s+?){2}$ , (\s+?)\s*$ 
+   two-seed: 
+   overflow: 
+
+== THE TIE FACT on the tagged set (43)
+   class-dependent ties (S2: a tie under some context atoms only): 0
+   ties at the absent atom (startpos/subject-start boundary): 43
+   mark_prio: {'const0': 28, 'const1': 10, 'unmodelled-ctx': 5}
+   mark_prio none although the machine ties (should be 0): 0 []
+   mark_prio cost (unpruned anchored states): total 230, median 4, max 39 (cap 32000)
+
+== MACHINE SIZES (states; "post" = after the scan-edge pass = emitted)
+  -- ALL rev-end
+   reverse: today -> tagged (minimized)           n 266    1566 ->   2869 (1.83x)  per-artifact med 1.75 p90 1.95 max 2.00  +max 453
+   reverse: today post -> tagged post (S3-fixed pass) n 266    1505 ->   2741 (1.82x)  per-artifact med 1.75 p90 2.00 max 2.75  +max 453
+   reverse: tagged -> tagged post (what the pass buys) n 266    2869 ->   2741 (0.96x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+   reverse: untagged post -> tagged post          n 266    1781 ->   2741 (1.54x)  per-artifact med 1.37 p90 1.67 max 2.00  +max 452
+   forward: today -> lowered untagged (min)       n 266    2015 ->   2754 (1.37x)  per-artifact med 1.75 p90 2.00 max 2.67  +max 5
+   forward: today post -> lowered untagged post   n 266    2015 ->   2751 (1.37x)  per-artifact med 1.75 p90 2.00 max 2.67  +max 5
+   forward: today post -> lowered TAGGED post     n 220    1817 ->   2425 (1.33x)  per-artifact med 1.75 p90 2.00 max 2.67  +max 5
+   forward: lowered untagged -> tagged (min)      n 220    2426 ->   2426 (1.00x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+   anchored: today post -> lowered TAGGED post    n 220    1347 ->   1749 (1.30x)  per-artifact med 1.50 p90 2.00 max 2.50  +max 6
+   anchored: lowered untagged -> tagged (min)     n 220    1767 ->   1767 (1.00x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+  -- TAGGED set
+   reverse: today -> tagged (minimized)           n  43     160 ->    281 (1.76x)  per-artifact med 1.75 p90 2.00 max 2.00  +max 7
+   reverse: today post -> tagged post (S3-fixed pass) n  43     151 ->    281 (1.86x)  per-artifact med 1.75 p90 2.25 max 2.75  +max 7
+   reverse: tagged -> tagged post (what the pass buys) n  43     281 ->    281 (1.00x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+   reverse: untagged post -> tagged post          n  43     178 ->    281 (1.58x)  per-artifact med 1.67 p90 2.00 max 2.00  +max 7
+   forward: today -> lowered untagged (min)       n  43     216 ->    291 (1.35x)  per-artifact med 1.33 p90 2.50 max 2.50  +max 3
+   forward: today post -> lowered untagged post   n  43     216 ->    290 (1.34x)  per-artifact med 1.33 p90 2.50 max 2.50  +max 3
+   forward: today post -> lowered TAGGED post     n  38     201 ->    263 (1.31x)  per-artifact med 1.33 p90 2.00 max 2.50  +max 3
+   forward: lowered untagged -> tagged (min)      n  38     264 ->    264 (1.00x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+   anchored: today post -> lowered TAGGED post    n  38     163 ->    215 (1.32x)  per-artifact med 1.29 p90 2.00 max 2.50  +max 6
+   anchored: lowered untagged -> tagged (min)     n  38     215 ->    215 (1.00x)  per-artifact med 1.00 p90 1.00 max 1.00  +max 0
+
+== S3: artifacts where the SHIPPED pass (accept truth) merges what the fixed pass (accept value) keeps: reverse 0 []; forward 0 []
+   forward/anchored tagged model unmodelled (context axis): 46
+
+== PER-ARTIFACT TSV: row id enc pat | rev today_post untag_post tag tag_post | fwd today_post upost tag_post | anch today_post upost tag_post | mark_prio
+one-seed	capability/tail-digits-eol	byte	\d+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	capability/tail-dotstar-txt	byte	.*\.txt$	6	7	11	11	11	14	14	6	8	8	none
+one-seed	capability/tail-ext-lower-txt	byte	[a-z]+\.txt$	7	8	13	13	7	10	10	7	9	9	none
+one-seed	capability/wild-semdiv-dollar-trailing-newline-pcre2	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	litrun/ctrl-abc-dollar	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	sentinel/wild-semdiv-dollar-trailing-newline-pcre2	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	syntax/anc-dollar	byte	done$	6	7	11	11	6	9	9	6	8	8	none
+one-seed	syntax/anc-z-uc	byte	done\Z	6	7	11	11	6	9	9	6	8	8	none
+one-seed	tests/assertions/absolute.rxt:102	byte	b$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/absolute.rxt:196	byte	\Z	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/absolute.rxt:331	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/absolute.rxt:494	byte	a*\Z	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/assertions/absolute.rxt:52	byte	b\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/absolute.rxt:521	byte	a*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/assertions/absolute.rxt:601	byte	.*\Z	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/assertions/absolute.rxt:735	byte	ab\z|b\Z	5	5	6	6	3	8	8	5	6	6	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:104	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:114	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:118	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:128	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:132	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:142	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:161	byte	\Z	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:86	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/anchors_abs.rxt:98	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/gating.rxt:115	byte	x\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/d27/multiline.rxt:112	byte	(?m)a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/end_window.rxt:125	byte	a+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/assertions/end_window.rxt:139	byte	a{0,4}$	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/assertions/end_window.rxt:156	byte	(?:foo|barbaz)$	10	11	19	19	10	13	13	10	11	11	none
+one-seed	tests/assertions/end_window.rxt:178	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/end_window.rxt:195	byte	\bfoo$	5	6	9	8	6	9	9	6	7	7	-2
+one-seed	tests/assertions/end_window.rxt:227	byte	(ab)(c)$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/assertions/end_window.rxt:47	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/assertions/end_window.rxt:64	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/assertions/end_window.rxt:96	byte	abc\Z	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/assertions/gate.rxt:110	byte	a{0,4}c$	4	5	13	7	3	6	6	7	9	9	none
+one-seed	tests/assertions/gate.rxt:132	byte	za{0,4}$	7	8	13	13	15	18	18	11	13	13	none
+one-seed	tests/assertions/gate.rxt:283	byte	a{0,4}\Z	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/assertions/gate.rxt:329	byte	a{0,4}c\Z	4	5	13	7	3	6	6	7	9	9	none
+one-seed	tests/assertions/gate.rxt:44	byte	a{0,4}$	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/assertions/gate.rxt:88	byte	a{1,3}?$	4	5	9	7	3	6	6	5	7	7	none
+one-seed	tests/assertions/kreset.rxt:720	byte	a\Kb\Z	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/assertions/kreset.rxt:735	byte	a\Kb$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/assertions/multiline.rxt:2353	byte	a$(?m)	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/multiline.rxt:236	byte	ERROR$	6	7	13	11	7	10	10	6	8	8	none
+one-seed	tests/assertions/multiline.rxt:2996	byte	(?m)a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/multiline.rxt:3141	byte	(?m)\Z	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/multiline.rxt:3238	byte	(?m:a\Z)	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/multiline.rxt:3710	byte	(?-m)a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/multiline.rxt:3758	byte	(?-m:a$)	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/multiline.rxt:775	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/multiline.rxt:97	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/rev_end.rxt:132	byte	\w+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/assertions/rev_end.rxt:176	byte	a*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/assertions/rev_end.rxt:186	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/assertions/rev_end.rxt:202	byte	(?:ab)?$	4	5	7	7	8	11	11	5	7	7	none
+one-seed	tests/assertions/rev_end.rxt:21	byte	\d+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/assertions/rev_end.rxt:246	byte	\d+$|\w+\z	5	5	5	5	10	11	11	6	8	8	none
+one-seed	tests/assertions/rev_end.rxt:265	utf8	Ã©+$	4	5	7	7	6	9	9	4	6	6	none
+one-seed	tests/assertions/rev_end.rxt:283	utf8	.$	8	9	15	15	10	13	13	10	12	12	none
+one-seed	tests/assertions/rev_end.rxt:292	byte	\bab$	4	5	7	7	5	8	8	5	7	7	-2
+one-seed	tests/assertions/rev_end.rxt:303	byte	\Bb$	3	4	5	5	4	7	7	4	6	6	-2
+one-seed	tests/assertions/rev_end.rxt:348	byte	\w{1,2}(?:(?=)|)$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/assertions/rev_end.rxt:358	byte	(\d+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/assertions/rev_end.rxt:373	byte	(a+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/assertions/rev_end.rxt:383	byte	a\Kb$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/assertions/rev_end.rxt:446	byte	(\w{1,2})(?:(?=)|)$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/assertions/rev_end.rxt:458	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/assertions/rev_end.rxt:466	byte	[a-z]{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/assertions/rev_end.rxt:77	byte	[a-z]+\.txt$	7	8	13	13	7	10	10	7	9	9	none
+one-seed	tests/assertions/rev_end.rxt:98	byte	a\Z	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/assertions/view_edge.rxt:1311	byte	(?:[a-z]{0,5})\Z	4	8	13	6	17	20	20	12	14	14	none
+one-seed	tests/assertions/view_edge.rxt:1473	byte	[a-z]{0,5}$	4	8	13	6	17	20	20	12	14	14	none
+one-seed	tests/assertions/view_edge.rxt:1635	byte	a{0,4}$	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/assertions/wordb_empty_compose.rxt:1017	byte	\w+\b$	4	6	7	7	3	6	6	3	5	5	-2
+one-seed	tests/assertions/wordb_empty_compose.rxt:1168	byte	\Bo\Z	3	4	5	5	4	7	7	4	6	6	-2
+one-seed	tests/assertions/wordb_empty_compose.rxt:1243	byte	\b\w+\b$	4	6	7	7	4	7	7	4	6	6	-2
+one-seed	tests/assertions/wordb_empty_compose.rxt:791	byte	\bfoo$	5	6	9	8	6	9	9	6	7	7	-2
+one-seed	tests/assertions/wordb_empty_compose.rxt:942	byte	\bfoo\Z	5	6	9	8	6	9	9	6	7	7	-2
+one-seed	tests/assertions/wordb_vm.rxt:864	byte	(\bfoo)$	5	6	9	8	6	9	9	6	7	7	-2
+one-seed	tests/base/alternation_trie.rxt:105	byte	(log|login|logout)$	9	10	17	17	9	12	12	9	11	11	none
+one-seed	tests/base/anchors.rxt:13	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/anchors.rxt:36	byte	abc$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/base/anchors.rxt:44	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/base/anchors.rxt:48	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/base/anchors.rxt:8	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/caseless.rxt:111	byte	log$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/base/clskit_range_top.rxt:18	byte	[a-z]+@[a-z]+$	5	6	9	9	6	9	9	5	7	7	none
+one-seed	tests/base/clskit_range_top.rxt:28	byte	[0-9]+z$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/base/eol_engine.rxt:12	byte	a*b$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_engine.rxt:20	byte	a*b$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_engine.rxt:37	byte	.*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_engine.rxt:42	byte	a+?$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_engine.rxt:52	byte	x*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_engine.rxt:58	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/base/eol_engine.rxt:6	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_engine.rxt:64	byte	[0-9]+z$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/base/eol_scan_avoidance.rxt:15	byte	.*=.*$	3	4	6	6	4	7	7	3	5	5	none
+one-seed	tests/base/eol_scan_avoidance.rxt:22	byte	a*b*$	3	4	6	6	6	9	9	4	6	6	none
+one-seed	tests/base/eol_scan_avoidance.rxt:31	byte	[a-z]*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_scan_avoidance.rxt:37	byte	[^\n]*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_scan_avoidance.rxt:42	byte	a*b$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_scan_avoidance.rxt:52	byte	b*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_scan_avoidance.rxt:58	byte	$	2	3	3	3	2	5	5	2	4	4	none
+one-seed	tests/base/eol_scan_avoidance.rxt:65	byte	a.*$	3	4	6	6	4	7	7	3	5	5	none
+one-seed	tests/base/eol_scan_avoidance.rxt:70	byte	.*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/eol_scan_avoidance.rxt:77	byte	[a-z]+@[a-z]+$	5	6	9	9	6	9	9	5	7	7	none
+one-seed	tests/base/eol_scan_avoidance.rxt:83	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_scan_avoidance.rxt:89	byte	.$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/eol_scan_avoidance.rxt:95	byte	a*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/review_r1.rxt:22	byte	.*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/base/review_r1.rxt:27	byte	a+?$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/base/startpos.rxt:65	byte	a$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/captures/structure_anchors_misc.rxt:7	byte	(a+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/mrl/01_trailing.rxt:26	byte	a{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/mrl/01_trailing.rxt:33	byte	a{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/mrl/01_trailing.rxt:37	byte	a{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/mrl/01_trailing.rxt:41	byte	a{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/mrl/01_trailing.rxt:45	byte	a{2,4}$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/mrl/03_zerowidth.rxt:44	byte	a{0,5}b{0,5}$	12	13	23	23	32	35	35	22	24	24	none
+one-seed	tests/mrl/03_zerowidth.rxt:52	byte	a{0,5}b{0,5}c$	13	14	25	25	3	6	6	13	15	15	none
+one-seed	tests/mrl/08_nomatch.rxt:31	byte	a{5,10}b{5,10}$	15	19	43	28	27	30	30	23	25	25	none
+one-seed	tests/offsetskip/run_pinned.rxt:39	byte	/user$	7	8	13	13	7	10	10	7	9	9	none
+one-seed	tests/possessify/composition_d27.rxt:1043	byte	\W{0,2}?(?:\b|a)$	7	9	12	12	6	9	9	10	13	13	-2
+one-seed	tests/possessify/composition_d27.rxt:10807	byte	a*$	2	3	4	4	3	6	6	2	4	4	none
+one-seed	tests/possessify/composition_d27.rxt:10822	byte	a*\b$	5	6	7	7	6	9	9	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:10837	byte	\w*\B$	5	6	6	6	6	9	9	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:10867	byte	\b$	4	5	5	5	4	7	7	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:10913	byte	\B$	4	5	5	5	4	7	7	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:11018	byte	a{1,3}?(?:|\b)$	4	5	9	7	3	6	6	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:1103	byte	[ab]?(?:(?<=a)|)$	3	4	5	5	5	8	8	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:11033	byte	a{1,3}?(?:(?=a)|)$	4	5	9	7	3	6	6	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:11093	byte	a{2,}?(?:|\b)$	4	5	7	6	4	7	7	4	5	5	-2
+one-seed	tests/possessify/composition_d27.rxt:11408	byte	.{0,2}?(?:(?=a)|)$	4	5	7	7	2	5	5	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:11453	byte	.{1,3}?(?:|\b)$	5	6	9	9	3	5	6	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:11468	byte	.{1,3}?(?:\B|)$	5	6	9	9	3	5	6	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:1178	byte	\w{1,2}(?:(?=)|)$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/possessify/composition_d27.rxt:1193	byte	[a-]*?(?:\B)*$	2	3	4	4	2	5	5	2	4	4	-2
+one-seed	tests/possessify/composition_d27.rxt:1343	byte	[a-c]{1,3}?(?:\B|)$	4	5	9	7	3	6	6	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:1403	byte	[ab]+(?:\b|)$	3	4	5	5	4	7	7	3	5	5	-2
+one-seed	tests/possessify/composition_d27.rxt:1493	byte	-{2,}(?:\b){0,2}$	4	5	7	6	5	8	8	4	5	5	-2
+one-seed	tests/possessify/composition_d27.rxt:1508	byte	\d+(?:\b){0,2}$	3	4	5	5	4	7	7	3	5	5	-2
+one-seed	tests/possessify/composition_d27.rxt:158	byte	a{1,2}(?:\B)*$	4	5	7	7	6	9	9	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:1628	byte	[a-c]{1,2}(?:\B|)$	4	5	7	7	6	9	9	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:233	byte	[ab]{0,}?(?:(?=\w)|(?<=\w))$	4	6	7	7	4	7	7	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:413	byte	\d?(?:|\b)$	3	4	5	5	5	8	8	4	6	6	-2
+one-seed	tests/possessify/composition_d27.rxt:488	byte	-+?(?:(?=\w)|(?<=\w))$	4	6	6	6	3	3	3	3	3	3	-2
+one-seed	tests/possessify/composition_d27.rxt:563	byte	\d{1,2}(?:\b|)$	4	5	7	7	6	9	9	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:623	byte	\w{1,2}(?:\b)??$	4	5	7	7	6	9	9	5	7	7	-2
+one-seed	tests/possessify/composition_d27.rxt:773	byte	[ab]*(?:\B|)$	2	3	4	4	3	6	6	2	4	4	-2
+one-seed	tests/possessify/composition_d27.rxt:788	byte	\w{0,}?(?:\b|a)$	5	6	7	7	6	9	9	6	8	8	-2
+one-seed	tests/possessify/possessify.rxt:1074	byte	a{0,4}$	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/possessify/possessify.rxt:1110	byte	[ab]{0,4}$	4	7	11	6	14	17	17	10	12	12	none
+one-seed	tests/possessify/possessify.rxt:1144	byte	a{1,3}?$	4	5	9	7	3	6	6	5	7	7	none
+one-seed	tests/possessify/possessify.rxt:1177	byte	a{0,4}c$	4	5	13	7	3	6	6	7	9	9	none
+one-seed	tests/possessify/possessify.rxt:2808	byte	(a{1,3}?$)	4	5	9	7	3	6	6	5	7	7	none
+one-seed	tests/possessify/possessify.rxt:2852	byte	(a{0,4}c$)	4	5	13	7	3	6	6	7	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:1025	byte	(\d+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1084	byte	(\b\w+)$	3	4	5	5	5	8	8	4	6	6	-2
+one-seed	tests/revend/stage2_captures.rxt:1099	byte	(a)b?$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:1148	byte	(\d)(\d)?$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:1168	byte	(\d+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1220	byte	(.*)\.txt$	6	7	11	11	11	14	14	6	8	8	none
+one-seed	tests/revend/stage2_captures.rxt:1238	byte	([^.]*)\.txt$	6	7	11	11	6	9	9	6	8	8	none
+one-seed	tests/revend/stage2_captures.rxt:1264	byte	\b(\w+)$	3	4	5	5	5	8	8	4	6	6	-2
+one-seed	tests/revend/stage2_captures.rxt:1281	byte	(?<=,)(\d+)$	3	4	5	5	5	8	8	3	5	5	-2
+one-seed	tests/revend/stage2_captures.rxt:1296	byte	(?<!x)(a+)$	3	4	5	5	5	8	8	3	5	5	-2
+one-seed	tests/revend/stage2_captures.rxt:1325	byte	(?<=^|,)(\w+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1339	byte	(\w)\b$	4	6	7	7	3	6	6	3	5	5	-2
+one-seed	tests/revend/stage2_captures.rxt:1352	utf8	(.)$	8	9	15	15	10	13	13	10	12	12	none
+one-seed	tests/revend/stage2_captures.rxt:1397	utf8	(\x{e9}+)$	4	5	7	7	6	9	9	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:1426	utf8	(\d+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1441	utf8	(.*)\.txt$	11	12	21	21	18	21	21	13	15	15	none
+one-seed	tests/revend/stage2_captures.rxt:1453	utf8	(\p{L}+)$	454	455	907	907	598	601	601	300	302	302	none
+one-seed	tests/revend/stage2_captures.rxt:1466	utf8	(\w+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1480	utf8	(.)\Z	8	9	15	15	10	13	13	10	12	12	none
+one-seed	tests/revend/stage2_captures.rxt:1494	utf8	(a|\x{e9})+$	4	5	7	7	6	9	9	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:1507	byte	(abc)$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:1533	byte	([a-c]+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1559	byte	(.*)\.TXT$	6	7	11	11	11	14	14	6	8	8	none
+one-seed	tests/revend/stage2_captures.rxt:1571	utf8	(k)$	5	6	9	9	5	8	8	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:1586	utf8	(\x{e9}+)$	4	5	7	7	6	9	9	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:1612	byte	(a$)	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1623	byte	(a)(?:$)	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1644	byte	(a++)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1656	byte	(?>a+)(b)$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:1732	byte	(a+?)$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1756	byte	(a+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1767	byte	(\d{2,4})$	5	6	11	8	10	13	13	8	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:1781	byte	(a{3})$	4	6	9	6	5	8	8	5	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:1809	byte	(x)\K(\d+)$	4	5	7	7	5	8	8	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:1827	byte	(?:a|(b))\K(c)?$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:252	byte	(a*)ab$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:267	byte	(a*?)ab$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:27	byte	(a+)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:279	byte	(a+)(a?)$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:312	byte	(a|ab)(c|bcd)$	7	8	13	13	10	13	13	9	11	11	none
+one-seed	tests/revend/stage2_captures.rxt:329	byte	(a|ab)(c|bcd)(d*)$	7	8	13	13	8	11	11	7	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:349	byte	(\d+)(\d)$	4	5	7	6	5	8	8	4	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:364	byte	(.+?)(\d+)$	4	5	7	7	5	8	8	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:384	byte	(.*)(\d)$	3	4	5	5	5	8	8	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:398	byte	([a-z]+)([0-9]*)$	3	4	6	6	7	10	10	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:415	byte	(?:(a)|(b))+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:436	byte	(a|b)+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:463	byte	((\d)|x)+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:506	byte	(a+|b)*c$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:543	byte	(\d{1,2})+$	3	4	5	5	4	7	7	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:556	byte	(ab|a)*b$	4	5	7	7	9	12	12	6	8	8	none
+one-seed	tests/revend/stage2_captures.rxt:586	byte	(?:(a)|(b)|(c))$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/revend/stage2_captures.rxt:703	byte	(?:x(a)|y)$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:717	byte	(a|ab)$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:731	byte	(ab|a)$	4	5	7	7	6	9	9	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:743	byte	(foo|foobar)$	8	9	15	15	8	11	11	8	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:756	byte	(foo|foobar|bar)$	8	9	15	15	7	10	10	8	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:767	byte	(\w+|\w+\.)$	4	5	7	7	6	9	9	6	8	8	none
+one-seed	tests/revend/stage2_captures.rxt:781	byte	(?:a|ab)(c|bcd)?$	7	8	13	13	15	18	18	11	13	13	none
+one-seed	tests/revend/stage2_captures.rxt:795	byte	((a)(b))$	4	5	7	7	4	7	7	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:816	byte	((a+)(b+))+$	4	5	7	7	6	9	9	4	6	6	none
+one-seed	tests/revend/stage2_captures.rxt:840	byte	(a(b(c)?)?)$	5	6	9	9	9	12	12	7	9	9	none
+one-seed	tests/revend/stage2_captures.rxt:865	byte	((\d+)-(\d+))$	5	6	9	9	6	9	9	5	7	7	none
+one-seed	tests/revend/stage2_captures.rxt:886	byte	(((a)))$	3	4	5	5	3	6	6	3	5	5	none
+one-seed	tests/utf8/k73_startskip.rxt:92	utf8	$	2	3	3	3	4	5	5	2	4	4	none
+tagged	capability/tail-space-eol	byte	\s+$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/assertions/absolute.rxt:652	byte	[^c]{1,3}\Z	4	6	9	9	9	12	12	7	9	9	const0
+tagged	tests/assertions/gate.rxt:306	byte	[^c]{1,3}\Z	4	6	9	9	9	12	12	7	9	9	const0
+tagged	tests/assertions/gate.rxt:66	byte	[^c]{1,3}$	4	6	9	9	9	12	12	7	9	9	const0
+tagged	tests/assertions/multiline.rxt:1681	byte	([^c]{1,3})$	4	6	9	9	9	12	12	7	9	9	const0
+tagged	tests/assertions/rev_end.rxt:108	byte	[a\n]+$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/assertions/rev_end.rxt:118	byte	(?:a|a\n)$	4	5	7	7	4	7	7	4	5	6	const1
+tagged	tests/assertions/rev_end.rxt:125	byte	(?:a\n|a)$	4	5	7	7	6	9	9	5	7	7	const0
+tagged	tests/assertions/rev_end.rxt:145	byte	\s*$	2	2	4	4	3	3	3	2	2	2	const0
+tagged	tests/assertions/rev_end.rxt:165	byte	[^\n]*\n?$	3	4	6	6	6	8	8	4	6	6	const0
+tagged	tests/assertions/rev_end.rxt:256	byte	\s*$|x\z	4	4	5	5	5	5	5	5	5	5	const0
+tagged	tests/assertions/rev_end.rxt:274	utf8	\s+?$	3	3	5	5	3	6	6	3	6	6	const1
+tagged	tests/assertions/rev_end.rxt:33	byte	\s+$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/assertions/rev_end.rxt:392	byte	([^c]{1,3})$	4	6	9	9	9	12	12	7	9	9	const0
+tagged	tests/assertions/rev_end.rxt:406	byte	(\s+){2}$	4	4	7	7	5	5	5	4	4	4	const0
+tagged	tests/assertions/rev_end.rxt:433	byte	(\s+?){2}$	4	4	7	7	4	7	7	4	7	7	const1
+tagged	tests/assertions/rev_end.rxt:46	byte	\s+?$	3	3	5	5	3	6	6	3	6	6	const1
+tagged	tests/assertions/rev_end.rxt:57	byte	\s*$	2	2	4	4	3	3	3	2	2	2	const0
+tagged	tests/assertions/rev_end.rxt:67	byte	\s*?$	2	2	4	4	2	5	5	2	5	5	const1
+tagged	tests/base/possess_lazy_guard.rxt:166	byte	[^c]{0,4}?$	4	7	11	11	2	5	5	6	12	12	const1
+tagged	tests/base/possess_lazy_guard.rxt:178	byte	[^c]{0,4}$	4	7	11	11	14	17	17	10	12	12	const0
+tagged	tests/possessify/composition_d27.rxt:10852	byte	\W*$	2	2	4	4	3	3	3	2	2	2	const0
+tagged	tests/possessify/composition_d27.rxt:11318	byte	\W*?(?:)$	2	2	4	4	2	5	5	2	5	5	const1
+tagged	tests/possessify/composition_d27.rxt:11333	byte	\W{0,2}?(?:\b|)$	4	5	7	7	2	5	5	4	8	8	-2
+tagged	tests/possessify/composition_d27.rxt:11348	byte	\W{2,}?(?:\B|)$	4	4	7	7	4	7	7	4	7	7	-2
+tagged	tests/possessify/composition_d27.rxt:11363	byte	\W??(?:\B|)$	3	4	5	5	2	5	5	3	6	6	-2
+tagged	tests/possessify/composition_d27.rxt:1208	byte	\W{0,2}?(?:\B|)$	4	5	7	7	2	5	5	4	8	8	-2
+tagged	tests/possessify/composition_d27.rxt:1313	byte	\W{2,}(?:(?=a)|)$	4	4	7	7	5	5	5	4	4	4	-2
+tagged	tests/revend/stage2_captures.rxt:1113	byte	(\s+)$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:1203	byte	([^/]+)$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:1251	byte	(\s+)$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:137	byte	(a|a\n)$	4	5	7	7	4	7	7	4	5	6	const1
+tagged	tests/revend/stage2_captures.rxt:1382	utf8	([^/]+)$	8	8	15	15	18	18	18	10	10	10	const0
+tagged	tests/revend/stage2_captures.rxt:1410	utf8	(\s+)$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:149	byte	(a\n|a)$	4	5	7	7	6	9	9	5	7	7	const0
+tagged	tests/revend/stage2_captures.rxt:1546	byte	([^a]+)$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:161	byte	(a\n?)$	4	5	7	7	6	9	9	5	7	7	const0
+tagged	tests/revend/stage2_captures.rxt:1632	byte	(?s)(.+)$	3	3	5	5	3	3	3	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:1700	byte	(\s+?){2}$	4	4	7	7	4	7	7	4	7	7	const1
+tagged	tests/revend/stage2_captures.rxt:171	byte	(a\n??)$	4	5	7	7	4	7	7	4	5	6	const1
+tagged	tests/revend/stage2_captures.rxt:1719	byte	(\s+?)\s*$	3	3	5	5	4	4	4	3	3	3	const0
+tagged	tests/revend/stage2_captures.rxt:192	byte	(a)\n?\Z	4	5	7	7	6	9	9	5	7	7	const0
+tagged	tests/revend/stage2_captures.rxt:220	byte	(\s+)$	3	3	5	5	4	4	4	3	3	3	const0

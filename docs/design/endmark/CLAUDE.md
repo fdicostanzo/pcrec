@@ -39,6 +39,10 @@ built or run by `make`. Run the Python with `python3 -I` and
 - `b3meas/` — lane b3meas (2026-10-12): B3 MEASURED, today's shipped rev-end vs a B3 hand twin and a
   restyled control, answers against libpcre2, loads and ns/call per regime (own CLAUDE.md); report
   `docs/dev/lanes/b3meas_report.md`.
+- `b3rev/` — lane b3rev (2026-10-12): B3 REVISION 2 (endmark.md §R), selective tagging: the machine probe
+  (`b3rev_probe.c`: every machine a B3 artifact carries, tagged and lowered, before and after scan-edge, the tie
+  fact per context atom, `mark_prio`), its driver (`b3rev.py census|sweep|refusal`), raw results, and `timing/`
+  (the walk-form and lowered-finisher clock). Own CLAUDE.md; report `docs/dev/lanes/b3rev_report.md`.
 - `results/` — `diff_all_len5.txt` (3,527 patterns, 28,237,887 cells, 0
   differences), `diff_plants.txt`, `twin_k16000.txt`, `twin_plants.txt`,
   `census.txt` (at `885eccff`), `b3cost.txt` (at `0e8849125`).

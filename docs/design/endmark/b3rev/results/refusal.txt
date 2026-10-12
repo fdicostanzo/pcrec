@@ -1,0 +1,27 @@
+# b3rev refusal-set compare (C3): keys = (population, pattern, variant) -> ok | refusal class
+# B3 never refuses by design: a tagged build over the state cap or an artifact over a byte cap DECLINES to
+# today's machines (rows `overflow` / fit_rungs `drop-end-mark`), so the shipped refusal set is unchanged by
+# construction. What is counted here is the set the declines must catch: keys that WOULD join the refusal set
+# if B3 had no decline (predicted from the probe's tagged/lowered states and today's bytes per state).
+
+== variant plain    (byte cap 1000000): population 360, today refused 0, tagged-row artifacts that compile 84
+   refusal set if B3 had NO decline: +10 keys (state-cap 0, size-cap 10); with the declines: +0
+      size-cap decline:  s0N_6144                                 today 528179 -> predicted 1486757
+      size-cap decline:  az0N_s0N_3072                            today 920608 -> predicted 1037483
+      size-cap decline:  az0N_s0N_4096                            today 934806 -> predicted 1091105
+      size-cap decline:  w1N_s0N_3328                             today 878690 -> predicted 1007046
+      size-cap decline:  w1N_s0N_3584                             today 949222 -> predicted 1091274
+      size-cap decline:  ((a)|bc){0,4000}d\s*$                    today 614589 -> predicted 1200447
+      size-cap decline:  \p{L}+\s*$ utf8                          today 828664 -> predicted 1328519
+      size-cap decline:  (?:\p{L}?)+\s*$ utf8                     today 831854 -> predicted 1335182
+      size-cap decline:  \p{L}\s*$ utf8                           today 826588 -> predicted 1326518
+      size-cap decline:  (\p{L})\s*$ utf8                         today 804445 -> predicted 1304375
+
+== variant lowsize  (byte cap 60000): population 360, today refused 51, tagged-row artifacts that compile 33
+   refusal set if B3 had NO decline: +0 keys (state-cap 0, size-cap 0); with the declines: +0
+   today refused:   38  refuse:pcrec: pattern too large: N bytes of emitted C source (limit N, ~N KB .o). Lower a repeat 
+   today refused:   13  refuse:pcrec: pattern too large: N bytes of emitted code (limit N), which gcc cannot compile in r
+
+== variant lowboth  (byte cap 60000): population 360, today refused 21, tagged-row artifacts that compile 33
+   refusal set if B3 had NO decline: +0 keys (state-cap 0, size-cap 0); with the declines: +0
+   today refused:   21  refuse:pcrec: pattern too large: N bytes of emitted code (limit N), which gcc cannot compile in r
