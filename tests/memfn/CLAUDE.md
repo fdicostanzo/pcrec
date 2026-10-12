@@ -529,7 +529,7 @@ pcrec-side kit checks and pins (`pins/`, C5/C10, §17.4) land here too.
   their floors PLACEHOLDER until the slot census and a G2 count pin them.
 ### The position ranking (lane rq2, [MEMFN] RQ-2, D157)
 
-- **run_rank.sh**, **rank_check.py** — `make test-memfn-rank` (in
+- **run_rank.sh**, **rank_check.py** — (R17-a, lane r17a: the same probe build also carries N4's door assertion, `find_door` in src/gen/emit_dfa.c: where a defined FIND's table is emitted, its bytes equal the set the kit was handed; rank_check counts the `FINDDOOR` passes per table against literal floors (1400 / 70 / 3100, measured 1,574 / 78 / 3,441) and fails on any `N4 door` error; a planted set mismatch fired it on all three tables, r17a_report.md.) `make test-memfn-rank` (in
   TEST_SECTIONS; mech arm `rank`; about 7 s plus the probe build). Builds
   the PROBE compiler (`-DPCREC_RANK_PROBE`: `pcrec_memfn_define` prints one
   `RANK` line per predicate of every PRE/OFS site, with the
