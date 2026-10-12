@@ -28,7 +28,7 @@ pass() { echo "ok   $*"; }
 fail() { echo "FAIL $*"; fails=$((fails + 1)); }
 
 # (a) the globals of ARCHIVE under the prefix, one per line.
-globals() { nm -g --defined-only "$1" 2>/dev/null | awk -v p="$PFX" '$2 ~ /^[A-Z]$/ && index($3, p) == 1 { print $3 }' | sort -u; }
+globals() { nm -g --defined-only "$1" 2>/dev/null | awk -v p="$PFX" '$2 ~ /^[A-Z]$/ && index($3, p) == 1 { print $3 }' | LC_ALL=C sort -u; }
 # (b) the declarations of the prefix in the headers under DIR.
 decls() { grep -rn "$PFX" "$1" --include='*.h' 2>/dev/null; }
 # (c) the mentions under ROOT outside the allowlist: path:line text.

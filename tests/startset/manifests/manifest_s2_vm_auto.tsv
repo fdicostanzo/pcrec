@@ -24,6 +24,7 @@
 # blocks, so its rows below the insertion moved and the new blocks joined; census_s1.py now compiles every arm with
 # -fno-req-handoff as well (the hat suites deny the re-entered handoff on both arms). Corpus rows regenerated on
 # the lane's build, every change a handoff.rxt row; the bench rows are the pinned ones, untouched (counted, never checked).
+# cpb4 (2026-10-12, [COMPOUND] B4): +1 row, a tests/compound/split.rxt block (a VM-hat mover the new corpus file brings); census_s1.py on lane/cpb4 (-fno-start-set arm), corpus rows only -- bench rows NOT refreshed (m7fix's note); 0 other rows moved.
 bench/capability/balanced-parens-rec	--features all	5c28283f3a5b5e28295d7c283f5229292a5c29
 bench/capability/doubled-word	--features all	5c62285c772b295c625c732b5c315c62
 bench/capability/dup-param-detect	--features all	5c62285c772b293d5b5e265d2a26283f3a5b5e265d2a26292a5c313d
@@ -456,3 +457,4 @@ tests/utf8/wclass_illformed.rxt:86	--features all --encoding=utf8 --engine=vm	78
 tests/utf8/wclass_illformed.rxt:868	--features all --encoding=utf8 --engine=vm	78285b5c787b65307d2d5c787b66667d5d2979
 tests/utf8/wclass_illformed.rxt:935	--features all --encoding=utf8 --engine=vm	785b615c787b65397d5c787b346532647d5d79
 tests/utf8/wclass_illformed.rxt:958	--features all --encoding=utf8 --engine=vm	78285b615c787b65397d5c787b346532647d5d2979
+tests/compound/split.rxt:12059	--features all	5e787c61283f52293f62

@@ -12,7 +12,9 @@ basename in two directories so the `#include` line cannot differ.
 [vm-iff] THE STAMP NAMES THE SEEK THAT WAS EMITTED: `RX_VM_START_SCAN
     "first-class"` iff the artifact declares the `rx_start_set` table once and
     seeks through it twice (the entry and the retry); `"none"` iff neither.
-    Read off the emitted TEXT, not off the selection.
+    Read off the emitted TEXT, not off the selection. `"compound"` iff the
+    artifact stamps a `RX_COMPOUND` row ([COMPOUND], a DFA artifact with
+    neither; counted, never a mover).
 [vm-route] a mover is a VM artifact with no DFA prefilter (`RX_ENGINE "vm"`,
     `RX_VM_PREFILTER "none"`): every DFA artifact and every hybrid reads
     `"none"` (sabotage S493's detector; the hybrid's start test is its
@@ -130,7 +132,9 @@ def one(job):
     rec = {"status": "ok", "st": stamps(t1), "st0": stamps(t0 or ""), "deny_ok": t0 is not None,
            "ntable": t1.count(TABLE), "nseek": t1.count(SEEK),
            "ntable0": (t0 or "").count(TABLE), "nseek0": (t0 or "").count(SEEK)}
-    mover = rec["st"].get("VM_START_SCAN") not in (None, "none")
+    # [COMPOUND] a compound artifact's machine stamps read "compound" (match_api.md
+    # §6.3.12): it has no VM, so it is no mover; [vm-iff] holds the bucket.
+    mover = rec["st"].get("VM_START_SCAN") not in (None, "none", "compound")
     rec["mover"] = mover
     rec["deny_same"] = t0 is not None and ((strip_hat(t1) == t0) if mover else (t1 == t0))
     if mover:
@@ -185,7 +189,7 @@ def corpus_checks():
         bad("[vm-reach] %d blocks compile on both arms, below the floor %d" % (compiled, FLOOR_BLOCKS))
     viol = {"iff": [], "route": [], "anchor": [], "handoff": [], "deny": [], "table": []}
     movers = {"auto": set(), "vm": set()}
-    nmov_tbl = 0
+    nmov_tbl = ncomp = 0
     for (bid, opts, arm), r in by.items():
         if r["status"] != "ok":
             continue
@@ -194,6 +198,13 @@ def corpus_checks():
         if scan is None:
             viol["iff"].append(key + ": no RX_VM_START_SCAN stamp")
             continue
+        comp = st.get("COMPOUND") not in (None, "none")
+        if comp or scan == "compound":
+            ncomp += 1
+            if not (comp and scan == "compound" and st.get("ENGINE") == "dfa"
+                    and not r["ntable"] and not r["nseek"]):
+                viol["iff"].append("%s: COMPOUND %s, VM_START_SCAN %s, ENGINE %s, %d table(s), %d seek(s)"
+                                   % (key, st.get("COMPOUND"), scan, st.get("ENGINE"), r["ntable"], r["nseek"]))
         if r["mover"]:
             movers[arm].add((bid, opts))
             if not (scan == "first-class" and r["ntable"] == 1 and r["nseek"] == 2):
@@ -212,7 +223,8 @@ def corpus_checks():
         elif r["ntable"] or r["nseek"]:
             viol["iff"].append("%s: stamp none, %d table(s), %d seek(s)" % (key, r["ntable"], r["nseek"]))
         dfahat = st.get("DFA_PREFILTER") in ("first-memchr-bounded", "first-class-bounded")
-        if not r["deny_ok"] or r["st0"].get("VM_START_SCAN") != "none" or r["ntable0"] or r["nseek0"] \
+        if not r["deny_ok"] or r["st0"].get("VM_START_SCAN") != ("compound" if comp else "none") \
+                or r["ntable0"] or r["nseek0"] \
                 or (not r["deny_same"] and not dfahat):
             viol["deny"].append("%s: deny compiled=%s stamp=%s table=%d seek=%d identical-after-strip=%s"
                                 % (key, r["deny_ok"], r["st0"].get("VM_START_SCAN"), r["ntable0"],
@@ -231,8 +243,9 @@ def corpus_checks():
         else:
             ok("%s (%s)" % (label, "%d movers" % (len(movers["auto"]) + len(movers["vm"]))
                             if k != "deny" else "%d artifact pairs" % sum(1 for r in res if r["status"] == "ok")))
-    print("REACH: movers auto %d (floor %d), --engine=vm %d (floor %d); tables read %d"
-          % (len(movers["auto"]), FLOOR_MOVERS_AUTO, len(movers["vm"]), FLOOR_MOVERS_VM, nmov_tbl))
+    print("REACH: movers auto %d (floor %d), --engine=vm %d (floor %d); tables read %d; "
+          "compound artifacts (no VM, no mover) %d"
+          % (len(movers["auto"]), FLOOR_MOVERS_AUTO, len(movers["vm"]), FLOOR_MOVERS_VM, nmov_tbl, ncomp))
     for arm, mf, floor in (("auto", "manifest_s2_vm_auto.tsv", FLOOR_MOVERS_AUTO),
                            ("vm", "manifest_s2_vm_forced.tsv", FLOOR_MOVERS_VM)):
         want, nbench = manifest(mf)

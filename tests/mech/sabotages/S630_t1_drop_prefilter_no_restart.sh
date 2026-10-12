@@ -12,5 +12,5 @@ SAB_DESC="drop-prefilter's sets cell no longer restarts the size term, so the re
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S630. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                FIT_CARRY_SIZECAP, false, true },'
-SAB_AFTER='                FIT_CARRY_SIZECAP, false, false },   /* SABOTAGE S630 */'
+SAB_BEFORE='                FIT_CARRY_SIZECAP, false, true, FIT_COMP_KEEP },'
+SAB_AFTER='                FIT_CARRY_SIZECAP, false, false, FIT_COMP_KEEP },   /* SABOTAGE S630 */'

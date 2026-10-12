@@ -1174,6 +1174,8 @@ run_one_axis() {
     # output, which defeats the whole point of printing it. One `slug` per
     # label, reused everywhere a per-axis file is named (dump/rowsfile
     # already used this shape; outlog/errlog/diffe are new).
+    # [COMPOUND] an INTERNAL arm's job compiles with its own binary (job_bin).
+    local PCREC="${axis_pcrec:-${PCREC}}"
     local slug
     slug="$(echo "$label" | tr -c 'A-Za-z0-9' '_')"
     local dump="$WORKDIR/axis_$slug.tsv"
@@ -1184,7 +1186,7 @@ run_one_axis() {
     local t0 t1
     t0=$(date +%s)
     "$ROOT_DIR/scripts/watchdog" -l "axes-$label" -S axes -s 3600 -- \
-        env RXTFLAGS="$flags" RXTDUMP="$dump" PCREC="${axis_pcrec:-$PCREC}" CC="$CC" \
+        env RXTFLAGS="$flags" RXTDUMP="$dump" PCREC="$PCREC" CC="$CC" \
             GENCFLAGS="$GENCFLAGS" PROCS="$PROCS" TMPDIR="${TMPDIR:-/var/tmp}" \
             HARNESS_BATCH="$HARNESS_BATCH" \
             bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$outlog" 2>"$errlog"
@@ -1453,7 +1455,7 @@ done
 # axis's do, and tests/compound/check_lever.py holds its two-directional
 # property after the job loop. Selected by the empty AXES= or by its spelling.
 INTERNAL_ARMS=("--harness=no-compound")
-HARNESS_BIN="${PCREC_HARNESS:-$(dirname "$PCREC")/pcrec-harness}"
+HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
 lever_ran=0
 for arm in "${INTERNAL_ARMS[@]}"; do
     if [ -n "$AXES" ]; then
