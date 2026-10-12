@@ -2,72 +2,51 @@
 
 Branch `lane/d161note` from main `f3569b161`. Deliverable:
 `docs/design/memfn/window_contract.md` (PROPOSED). Nothing under `src/`,
-`cli/`, `lib/`, `memfn/` or `tests/` changed, and nothing was run (docs only,
-so no `make`). The kit branch (`lane/memfn-r17`, `lane/r17b`) was read only,
+`cli/`, `lib/`, `memfn/` or `tests/` changed and nothing was run, so no
+`make`. Kit branches `lane/memfn-r17` (`5ffbb7d28`) and `lane/r17b` were read
 with `git show`.
 
-## What the note decides (proposed)
-- **SITE.** A bounded sub-problem with one ORIGIN. Its spans are `mf_pred`s
-  whose offset interval is sent as the kit's W1/W2; `omin` is derived. One new
-  site fact, `spans_seq` (the sequence rule), makes every pairwise distance
-  exact. So "gaps" and "minimum offset" need no fields: each is a derived
-  view of one fact.
-- **Reply.** A WINDOW `[L, U]`: `L` is W3, and `U` is an optional
-  `start_hi`. The resume point is `U + 1`, and a FIND miss means NOMATCH.
-  Presence sites reply with a VERDICT. Because every span is measured from
-  one origin, no span index is needed.
-- **ANALYSIS.** Kinds keyed by the [FINDINGS] query name, PRESENT or ABSENT,
-  each with a provenance (`prior-authored` / `prior-none` / `measured` plus
-  the stamp's digest).
-  - `byte-rate` is always present. Under `-e utf8` today it is `prior-none`
-    with NO table, because a uniform table would be a density claim
-    (D126 Q4).
-  - One object per art, checked by the kit.
-  - The memo stays in `mf_art` until a measured compile cost says otherwise.
-- **Chain and KIT-VERIFY.** A 1-2 link chain with a total no-search arm.
-  The 3+-link extension's extra fact is supplied by `spans_seq`. KIT-VERIFY
-  (1) is `need = REQUIRED`; (2) is a static `mf_result.proven`, defined only
-  for spans at a fixed offset from `L`.
-- **Producer.** `span_facts` (E2), a generalization of `rb_walk` that adds
-  `omin`. §5.1 maps 15 derivations (file:line) to it. Five controls
-  (k-set, start_set, req facts, pairwise walk, libpcre2). A first-match CUT
-  table. Unbounded cuts stay pcrec's (§5.5).
-- **Retirement, S1-S4.** The frequency kind first, then the kit's ranking
-  (shadow-compared to `pcrec_find_run_rank`), then one `MF_SITE_ABI` bump
-  retiring `rank_*`, `ppm_*`, `cand_ppm_*` and the unread `consumer`, all at
-  zero pcrec movers. S4 moves the prior-reading picks into the kit with
-  R-18.
+## What the note proposes
+- **SITE.** A bounded sub-problem with one ORIGIN. Spans are `mf_pred`s with
+  W1/W2 = `(omax, omax - omin)`. One new fact, `spans_seq` (the sequence
+  rule), makes pairwise distances exact, so gaps and the minimum offset need
+  no fields of their own (§2.2 maps the brief's five items).
+- **Reply.** WINDOW `[L, U]` (`L` = W3, `U` an optional out-hook, resume at
+  `U + 1`, a FIND miss = NOMATCH), or VERDICT for presence sites.
+- **ANALYSIS.** Kinds keyed by [FINDINGS] query name, with provenance
+  `prior-authored` / `prior-none` / `measured`. `byte-rate` is always
+  present; under `-e utf8` today it is `prior-none` with no table. The
+  pointer is checked to be one per art. The memo stays in `mf_art`.
+- **Chain + KIT-VERIFY.** A 1-2 link chain with a total no-search arm. The
+  3+-link extra fact comes from `spans_seq`. KIT-VERIFY (1) = `need =
+  REQUIRED`; (2) = a static `mf_result.proven`, at fixed offsets only in v1.
+- **Producer.** `span_facts` (E2) generalizes `rb_walk` and adds `omin`.
+  §5.1 maps 15 derivations by file:line, with five independent controls, a
+  first-match CUT table, and the unbounded cuts that stay pcrec's (§5.5).
+- **Retirement.** S1 frequency kind, then S2 the kit's ranking (shadow vs
+  `pcrec_find_run_rank`), then S3 one `MF_SITE_ABI` bump retiring `rank_*`,
+  `ppm_*`, `cand_ppm_*` and `consumer` (zero movers). S4 moves the
+  prior-reading picks into the kit at R-18.
 - **Ratified:** storage, W0-W3 with the unbounded sentinels PERMANENTLY
-  refused (D161 add. 5), W7 with `spans_seq`, N5 (rev 2.3 per-width form),
-  N6. **Rejected:** W8 and W9. **Moved:** W10 becomes the `run-rarity` kind.
+  refused, W7 + `spans_seq`, N5 (rev 2.3), N6. **Rejected:** W8, W9.
+  **Moved:** W10 to the `run-rarity` kind.
 
-## Findings worth a reader's time
-1. **The reply needs no span index.** wingame §8.5's "the reply must name
-   which span" dissolves once every span is measured from one origin.
-2. **A bounded span's presence test is part of FIND** (a miss means
-   NOMATCH). The K82/L1 handoff's fused gate is therefore a FIND with the
-   landmark as a span, and its `c - K` text retires at R-18.
-3. **`mf_site.consumer` is read by nobody**: only `compose.c:383`
-   range-checks it. `ppm_*`/`cand_ppm_*` are stated "unknown" everywhere.
-   Both retire in S3's one bump.
-4. **N5 needs a SUFFIX-side corollary.** With `-p pcrec`, an emitted suffix
-   beginning `mfk_` would collide with the kit's stem. None exists today
-   (grep: 0), and a C-check is proposed.
-5. **The cut is still a pcrec decision.** Frank's `a.*aaa.{2,5}zxq` is
-   handled by rev-inner's own gates. Q1 asks whether a structural rule
-   suffices.
+## Findings
+1. The reply needs no span index once every span is measured from one
+   origin (answers wingame §8.5).
+2. A bounded span's presence test is part of FIND, so the K82/L1 handoff's
+   fused gate is a FIND, and its `c - K` text retires at R-18.
+3. `mf_site.consumer` is read by nobody (only range-checked at
+   `compose.c:383`), and `ppm_*`/`cand_ppm_*` are "unknown" everywhere. All
+   of them retire in S3.
+4. N5 needs a suffix-side corollary: no emitted suffix may begin `mfk_`, or
+   `-p pcrec` collides. There are 0 today, and a C-check is proposed.
+5. Choosing the sub-problem (the cut) is still pcrec's, and needs Q1.
 
-## Open (in the note)
-- Q1-Q3 for Frank (§12): the cut rule, proofs at fixed offsets only, and
-  `U` now or later.
-- The panel attack list (§13).
-- The R-18 outline (§11) is the manager's to file. Sabotage ids are
-  allocated at filing.
+## Open
+Q1-Q3 for Frank (§12); the panel attack list (§13); the R-18 outline
+(§11, the manager files it; sabotage ids allocated at filing).
 
 ## Validation
-- Docs only. No build or suite applies.
-- Citations were read on main `f3569b161` (`src/facts/req.c`,
-  `src/facts/kset.c`, `src/core/findings.c`, `src/gen/emit_dfa.c`,
-  `src/gen/memfn_sites.c`).
-- Kit facts were read on `lane/memfn-r17` `5ffbb7d28` and `lane/r17b`.
-- Nothing owed.
+Docs only. The `src/` citations were read on `f3569b161`, and the kit facts
+on the two branches above. Nothing is owed.
