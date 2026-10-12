@@ -370,3 +370,21 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Capacity:** the SIMD thread; after R-15.
 
 **Sabotage ids:** S815-S819 (allocated 2026-10-11; next free S820).
+
+## R-17 (2026-10-11, pcrec manager) — FIND sites scanning a SMALL or ONE-CUBE byte set lose to the peers; the VM hat scans a one-byte set through a table
+
+**Customer:** `[LOSS-REVIEW]` (docs/dev/optloop/lossreview/fixes.md candidate 5(b), revision 2; the r2 D6 panel `docs/dev/reviews/2026-10-11-r2-lossreview-fixes.md` F4).
+
+**Facts:**
+- FIND sites (the DFA prefilter, the DFA hat, the VM hat seek; reached today through `PcrecFind`) whose scanned set S has |S| = 2, or is ONE CUBE (members differ only in free bit positions, e.g. `{s,S}`, `{a,c}`, `{A,B,a,b}`), or is ONE RANGE, render the byte-table walk. Measured losses on the bench (phase 1, per-cell tables in `docs/dev/optloop/lossreview/dfa.md` / `vm.md`): set-skip 3.85 ms, PAIR-SKIP 1.36 ms, RANGE-SKIP 0.44 ms. The set-skip and range peers that win are SIMD-capable (rust); the pair cells also trail scalar peers.
+- The VM hat seek renders the TABLE walk even at |S| = 1 (C2, 2.58 ms; `src/gen/emit_dfa.c:7111`'s caller passes the set, not a byte).
+- The OFS BODY and PRE sites that test the same kinds of sets present them through the same FIND description.
+- Density: pcrec will fill `mf_site.cand_ppm_lo/hi` and `mf_term.ppm_lo/hi` (memfn.h:272, :337) from its prior at every one of these sites in a separate no-mover change after this request (they read "unknown" today). The kit may read them once filled; nothing in this request presumes it does.
+
+**Deliverable:** rows serving these site shapes — the kit's method and form choice. D122's rule binds: one implementation per search, reachable from every site that presents the shape, not a copy per site. SIMD-off bytes may move only where the rows serve; a SIMD-off mover is a pcrec abi event sequenced by main.
+
+**Trigger:** the phase-1 cells above (loss measured; GAIN unknown). Twin the forms on the named cells first; the build follows only a measured win (D77, D147: each form must beat the scalar it replaces or show a named benefit).
+
+**Capacity:** migration thread (the scalar forms), after R-16; any SIMD form is the SIMD thread's under the 2:1 split.
+
+**Sabotage ids:** S820-S824 (allocated 2026-10-11; next free S825).
