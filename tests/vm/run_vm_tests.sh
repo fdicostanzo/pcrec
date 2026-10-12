@@ -607,9 +607,9 @@ fi
 # puts a construct a rewrite DELETES before the one that forces the VM: the
 # free atomic discharge (`a++`, `(?>[^"]*)`) and the linkage's call splice
 # (`(?1)`, `(?&n)`) all leave a VM-only row's offset behind them, so a
-# first-recorded-wins offset names the deleted one. The last two rows are the
-# controls: nothing is rewritten away, and an earlier forcing construct that
-# SURVIVES still wins.
+# first-recorded-wins offset names the deleted one. The f-j rows are the
+# controls: nothing is rewritten away, and the earliest forcing construct that
+# SURVIVES wins (h-j: the FIRST of several survivors in pattern order).
 #   fields: pattern <TAB> needle <TAB> token the stamp must name <TAB> flags
 k110_row() {
     local n="$1" pat="$2" needle="$3" tok="$4"; shift 4
@@ -629,12 +629,15 @@ k110_row() {
 }
 K110_LOOK='(\?<=...)'
 k110_row k110a 'a++b(?<=ab)'            '(?<='  "$K110_LOOK"
-k110_row k110b 'x(?>(?>a+)b)c(?<=bc)'   '(?<='  "$K110_LOOK"
+k110_row k110b 'x(?>a+)b(?<=ab)'         '(?<='  "$K110_LOOK"
 k110_row k110c '(a)(?1)b(?<=ab)'        '(?<='  "$K110_LOOK" --no-captures
 k110_row k110d '(?<n>a)(?&n)b(?<=ab)'   '(?<='  "$K110_LOOK" --no-captures
 k110_row k110e 'a++\Kb'                 '\K'    '\\K'
 k110_row k110f 'ab(?<=ab)'              '(?<='  "$K110_LOOK"
-k110_row k110g 'a++(?>a|ab)c'           '(?>'   '(\?>...)'
+k110_row k110g 'a++b(?>a|ab)c'          '(?>'   '(\?>...)'
+k110_row k110h 'a\Kb\Kc'                '\K'    '\\K'
+k110_row k110i 'a\Kb(?<=b)'             '\K'    '\\K'
+k110_row k110j 'x(?<=ab)a++\K'          '(?<='  "$K110_LOOK"
 
 # ---- 3b. [SEL-1] `auto`'s DFA-cap-overflow fallback (plan row [SEL-1], -----
 #          Frank 2026-08-28, bench O-7 item 6) --------------------------------

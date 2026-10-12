@@ -192,16 +192,22 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
  * registry row behind it — so two kinds of forcing remain, request-derived and
  * NODE-derived, and the `--engine=dfa` branch below has to tell them apart. */
 
-/* The first DFA-excluding node in walk order, or NULL. Returns the NODE: its
- * `reg` row carries the `why` text (D67: "why_pos/why from the first
+/* Sets *best to the EARLIEST DFA-excluding node in the user's pattern (least
+ * `reg_at`), if any is earlier than the one it holds. The node, not its row:
+ * its `reg` row carries the `why` text (D67: "why_pos/why from the first
  * DFA-excluding node's row") and its `reg_at` the offset ([K110]), so the two
- * are read off one node and cannot name different occurrences.
+ * are read off one node and cannot name different occurrences. EARLIEST BY
+ * OFFSET, not first in walk order: the spines below are walked right child
+ * first, so walk order is the LAST construct of a concatenation, while
+ * `RX_ENGINE_WHY` names the first one the user wrote. The whole tree is
+ * visited (a DFA-excluding node does not end the walk); the verdict is
+ * whether *best is non-NULL.
  *
  * Iterative on both spines, recursive only into a spine element's right child
  * and into a body — D10/DD-10's discipline, held the way possessify.c,
  * revdet.c and altcls.c hold it. A flat concatenation is allowed to be 20,000
  * elements long; the nesting depth is bounded by the parser's group cap. */
-static const Ast *first_dfa_excluding(const Ast *a)
+static void earliest_dfa_excluding(const Ast *a, const Ast **best)
 {
     for (;;) {
         /* [DD-14 wave G] THE ONE NODE WHOSE ROW IS CONSERVATIVE AND WHOSE
@@ -237,12 +243,14 @@ static const Ast *first_dfa_excluding(const Ast *a)
          * compile.c). A future reader who moves selection back ahead of the
          * graph gets a DFA artifact for a recursive pattern; the sabotage row
          * over this line is what says so. */
-        if (a->k == A_CALL && a->u.call.link == CALL_SPLICE) return NULL;
-        if (a->reg && !(a->reg->engines & ENGM_DFA)) return a;
+        if (a->k == A_CALL && a->u.call.link == CALL_SPLICE) return;
+        if (a->reg && !(a->reg->engines & ENGM_DFA)
+            && (!*best || a->reg_at < (*best)->reg_at))
+            *best = a;
         switch (a->k) {
         /* [CLS-TREE] S3: made by the encoding lowering, below this pass. */
         case A_WCLASS:
-            return NULL;
+            return;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_CTX: case A_GSTART: case A_KRESET:
         /* [M6.5.2] A LEAF, and its OWN stamp is what excludes the DFA — the
@@ -260,7 +268,7 @@ static const Ast *first_dfa_excluding(const Ast *a)
          * PREFILTER decline is a different mechanism and is NOT free — see
          * `has_var` in `prefilter_decision` below. */
         case A_VAR:
-            return NULL;
+            return;
         /* [M6.6.2] DESCENDS, and there is NO new predicate anywhere for this
          * module (design §5.1). SR-8 does the whole job through `Ast.reg`: the
          * six registry rows are VM_ONLY, their producer stamps every A_LOOK it
@@ -297,18 +305,16 @@ static const Ast *first_dfa_excluding(const Ast *a)
          * is `pcrec_has_call`'s consumer, and it is wave E's one line — not
          * this arm's. */
         case A_CALL:
-            return NULL;
+            return;
         case A_CAT:
             while (a->k == A_CAT) {
-                const Ast *r = first_dfa_excluding(a->r);
-                if (r) return r;
+                earliest_dfa_excluding(a->r, best);
                 a = a->l;
             }
             continue;
         case A_ALT:
             while (a->k == A_ALT) {
-                const Ast *r = first_dfa_excluding(a->r);
-                if (r) return r;
+                earliest_dfa_excluding(a->r, best);
                 a = a->l;
             }
             continue;
@@ -319,12 +325,12 @@ static const Ast *first_dfa_excluding(const Ast *a)
          * question only the author of the new kind can answer, and inheriting
          * "no" is the silent wrong answer: it would let a VM-only construct
          * nested inside the new kind reach the DFA. */
-        return NULL;
+        return;
     }
 }
 
 /* Engine mask contributed by the first VM-only registry row reached in the
- * tree (first_dfa_excluding): ENGM_DFA|ENGM_VM (no constraint) if none, else
+ * tree (earliest_dfa_excluding): ENGM_DFA|ENGM_VM (no constraint) if none, else
  * ENGM_VM with `*why`/`*why_pos` set to the row's own `syntax` text (or
  * "possessive quantifier" for an RK_QUANTSUFFIX row, whose `syntax` is an
  * EXAMPLE atom rather than the construct itself) -- the generic mechanism that
@@ -333,7 +339,8 @@ static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
                                 const char **why)
 {
     (void)cx;
-    const Ast *n = first_dfa_excluding(a);
+    const Ast *n = NULL;
+    earliest_dfa_excluding(a, &n);
     if (!n) return ENGM_DFA | ENGM_VM;
     const RegRow *r = n->reg;
     *why_pos = n->reg_at;
