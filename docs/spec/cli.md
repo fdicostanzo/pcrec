@@ -169,6 +169,16 @@ pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 
 <a id="s1-6-p1"></a>[1.6¶1] Every generated identifier is `<PREFIX>_search`, `<PREFIX>_match`, and so on (the entry points are `match_api.md` §3 and §10). `PREFIX` is a C identifier: non-empty, at most `PCREC_MAX_PREFIX_LEN` (60) characters, the first a letter or `_`, the rest alphanumeric or `_`. Anything else is refused with a diagnostic naming the prefix, never truncated or mangled. Default `rx`.
 
+<a id="s1-6-p2"></a>[1.6¶2] **The namespace reservation table.** pcrec reserves some symbol families inside an artifact's translation unit and refuses a `PREFIX` that could spell one. One row per family, first match; a later reservation is a new row:
+
+| row | reserved family | refused `PREFIX` |
+|---|---|---|
+| 1 `parts` | `<prefix>__<role>_*`, a compound's parts (`match_api.md` §3.7) | any prefix containing `__` |
+| 2 `callout-bindings` | `rx_callout_<name>` | reserved for module `callouts`; not yet enforced |
+| 3 `harness-lever` | pcrec's own internal symbols | a prefix beginning with pcrec's reserved internal prefix |
+
+A refused prefix is refused before anything is compiled, and the diagnostic says which family it falls under.
+
 <a id="s1-7"></a>
 ### 1.7 `-e ENCODING`, `--encoding=ENCODING`
 

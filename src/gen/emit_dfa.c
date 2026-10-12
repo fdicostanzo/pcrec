@@ -13078,12 +13078,15 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (cx->opt->header_name)
         emit_header(cx, g, ncaps, bs);
 
-    emit_pattern_comment(c, cx->pat);
-    emit_feature_comment(cx, c);
-    /* [COMPOUND] a part carries none of the SHARED blocks (the feature
-     * macros, the ABI block and its includes): the compound has them once,
-     * ahead of every part (compound.md §A.5). */
-    if (!pcrec_is_part(cx)) emit_feature_macros(cx, c);
+    /* [COMPOUND] a part carries none of the SHARED blocks (the provenance
+     * line, the feature comment and macros, the ABI block and its
+     * includes): the compound has them once, ahead of every part
+     * (compound.md §A.5). */
+    if (!pcrec_is_part(cx)) {
+        emit_pattern_comment(c, cx->pat);
+        emit_feature_comment(cx, c);
+        emit_feature_macros(cx, c);
+    }
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
     /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
      * FACT: unconditional, on every artifact of both engines, with an

@@ -15,6 +15,7 @@
   - [§3.4](#s3-4) `<prefix>_info` — the reflection structure
   - [§3.5](#s3-5) Give-ups across the entries
   - [§3.6](#s3-6) Whole-subject and end-anchored matching: the `(?:P)\z` idiom
+  - [§3.7](#s3-7) Compounds
 - [§4](#s4) Give-up and refusal codes
 - [§5](#s5) Captures and groups
   - [§5.1](#s5-1) What a written slot holds
@@ -36,6 +37,7 @@
     - [§6.3.9](#s6-3-9) The size term and the size caps
     - [§6.3.10](#s6-3-10) Artifact-wide counts and the search-code kit
     - [§6.3.11](#s6-3-11) Feature set, tuning position, alternation normalization
+    - [§6.3.12](#s6-3-12) Compounds
 - [§7](#s7) The compile entry takes a NUL-terminated pattern
 - [§8](#s8) The library entry: `pcrec_options`, `pcrec_output`, `pcrec_error`
   - [§8.0](#s8-0) A complete compile
@@ -115,7 +117,10 @@ emitted identifier (helpers, tables, the named-group array), and the
 stamp macros of §6.3). A pattern compiled with `-p foo` gets `foo_search`,
 `FOO_NCAPS`, and so on. The CLI spells the option `-p` only; there is no
 `--prefix` long form (`pcrec --prefix foo …` is an unknown-option error).
-`docs/spec/cli.md` gives `-p`'s identifier grammar. Every other emitted
+`docs/spec/cli.md` gives `-p`'s identifier grammar and its namespace
+reservation table: a prefix containing `__` is refused, because
+`<prefix>__<role>` names the parts of a compound (§3.7), and so is a prefix
+beginning with one pcrec reserves for its own internal symbols. Every other emitted
 identifier — helper functions, tables, the DFA state types and their
 accessors, labels — is prefix-scoped and INTERNAL: its name, shape and
 linkage are not part of this contract and may change at any `abi` bump.
@@ -852,6 +857,36 @@ every other `\z`-bearing pattern.
   `(?:foo)\z` stamps `"memchr-bounded"`. `RX_DFA_SCAN "attempt"` comes from a
   leading `^`/`\A`, which the idiom does not add.
 
+<a id="s3-7"></a>
+### 3.7 Compounds
+
+<a id="s3-7-p1"></a>[3.7¶1] Some patterns compile to a COMPOUND: ONE artifact (one `.c`, one `.h`,
+one `<prefix>_info`) whose `.c` holds several compiled PARTS and a
+CONTROLLER over them (`docs/design/compound.md`). Its caller surface is
+exactly the plain artifact's: the exported symbols of §3¶1, a `.h` identical
+to the plain artifact's, the same answers at every subject and position, the
+same refusals and the same codes. Its `rx_info` is the plain artifact's apart
+from the four route mirrors (§6¶6a). `<PREFIX>_COMPOUND` (§6.3.12) names the
+row it was built by, `"none"` on every other artifact. A part is the pattern
+compiled once more under `<prefix>__<role>` with every entry `static`; none of
+its symbols or macros is part of this contract.
+
+<a id="s3-7-p2"></a>[3.7¶2] **The `split` row**, the one row today, takes a pattern the DFA compiles
+to an attempt loop over every start position because some branch is
+anchored at the start (`^`, `\A`, `\G`) while the others are pinned to the
+END (`$`, `\Z`, `\z`), or match nothing past the start. Its parts are `f`,
+the pattern bounded to ONE attempt at the position it is asked at, and `q`,
+the pattern with its start anchors removed, which the DFA searches from the
+end. `<prefix>_search` asks `f` at the floor (offset 0, or every position
+when the pattern carries `\G`); on no match there it searches `q` from the
+next character. `<prefix>_match` and `<prefix>_match_caps` are `f`'s one
+attempt at `ctx->pos` (§3.2), so a failing probe reads no further than that
+attempt. The admission is `docs/design/compound.md` §B.4.
+
+<a id="s3-7-p3"></a>[3.7¶3] **Always on.** No option denies a compound (D163 addendum 2). A compound
+whose assembled text exceeds an emitted-size cap ships the plain artifact
+(`limits.md` §8.4's `drop-compound` row).
+
 ---
 
 <a id="s4"></a>
@@ -930,22 +965,30 @@ under a different encoding or engine. None renumbers the give-up partition.
   Only a `-futf-check` artifact under an encoding with ill-formed byte strings
   can return it.
 
-<a id="s4-p10"></a>[4¶10] **Composed call sites trap below the floor, except on `PCREC_ERR_UTF`.** A
-generated call site that invokes another `rx_matchfn` (a callout, a composed
-submatcher) must enforce
+<a id="s4-p10"></a>[4¶10] **Composed call sites handle a callee's code through ONE table** (D133
+Q11; D163 addenda 5 and 6). A generated call site that invokes another
+matcher (a compound's controller calling a part, §3.7; when module `callouts`
+builds, a callout site) handles the callee's return through a first-match
+table over code classes, emitting a row only for the classes the CALLEE CAN
+RETURN, read off the callee (its engine, its startpos guard, its subject
+check):
 
-```c
-if (ret < PCREC_ERR_FLOOR && ret != PCREC_ERR_UTF) __builtin_trap();
-```
+| # | the callee's code | action |
+|---|---|---|
+| 1 | a match (`1` from a search entry, a length `>= 0` from an `rx_matchfn`) | the composition's success edge |
+| 2 | no match (`0` / `-1`) | its failure edge |
+| 3 | a give-up, `[PCREC_ERR_FLOOR, -2]` | propagate unchanged (D49) |
+| 4 | `PCREC_ERR_INTERNAL` | propagate unchanged |
+| 5 | `PCREC_ERR_UTF` | propagate unchanged: the caller's data |
+| 6 | `PCREC_ERR_STARTPOS` | `__builtin_trap()`: the caller generated the position (§9.5) |
+| 7 | `PCREC_ERR_UNSET_VAR` | propagate unchanged: the caller's data |
+| 8 | any other code below 0 | `__builtin_trap()`: the reserved space (D38 item 4) |
 
-and return a `PCREC_ERR_UTF` outward unchanged (D133 Q11). The rule binds
-call sites that call INTO another matcher, not an exported entry's own
-`return`. `PCREC_ERR_INTERNAL` and `PCREC_ERR_STARTPOS` at a composed callee
-mean the engine broke its own rule (every position an engine generates is a
-boundary, §9.5), so trapping is the design; `PCREC_ERR_UTF` is caused by the
-caller's data — a checking callee whose LB reaches before the outer call's
-range can legitimately refuse it. pcrec emits no such call site today; the
-obligation binds the first that does.
+The rule binds call sites that call INTO another matcher, not an exported
+entry's own `return`. The compound's controller is the first producer: its
+parts are DFA parts compiled with no startpos guard and no subject check, so
+each part call carries rows 1, 2 and 8 and the trap is unreachable by
+construction.
 
 <a id="s4-p11"></a>[4¶11] **Where the numbers live.** This section states what each value means. The
 numeric defaults and overrides of the step and work budgets and the frame and
@@ -1233,12 +1276,12 @@ compile time, where one exists.
 | 17 | `pattern_len` | `size_t` | the byte count `pcrec_compile()` saw and compiled (§7) | — |
 | 18 | `groups` | `const rx_group_entry *` | the named-group index, sorted; `NULL` when there is none (§5.4) | — |
 | 19 | `engine_why` | `const char *` | prose: the construct or build outcome that forced the VM, or `NULL`; on a hybrid-eligible artifact it can also carry a prefilter note | `<PREFIX>_ENGINE_WHY` |
-| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"attempt"` / `"empty"`; `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
+| 20 | `scan` | `const char *` | the DFA scan the artifact CONTAINS: `"unanchored"` / `"rev-end"` / `"attempt"` / `"empty"`; `"compound"` on a compound (§3.7); `NULL` when it contains none | `<PREFIX>_DFA_SCAN` |
 | 21 | `prefilter` | `const char *` | the artifact's candidate-start mechanism; never `NULL` ([scan and prefilter](#s6-p6)) | `<PREFIX>_DFA_PREFILTER` / `<PREFIX>_VM_PREFILTER` |
-| 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"` / `"nomatch"`; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
+| 22 | `match_form` | `const char *` | how `<prefix>_match` answers: `"unwrapped"` / `"search-filter"` / `"nomatch"`, `"compound"` on a compound; `NULL` on every artifact whose `_match` the DFA emitter did not write — every VM artifact, hybrids included | `<PREFIX>_DFA_MATCH` |
 | 23 | `name` | `const char *` | the artifact's own name; never `NULL` ([name](#s6-p12)) | — |
 | 24 | `nentries` | `int` | rows in `groups[]`, all of them (§5.4, §5.5) | — |
-| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"end-minus-width"` / `"landing"` / `"reverse-pass"` / `"attempt-start"`; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
+| 25 | `search_form` | `const char *` | how `<prefix>_search` recovers the match start: `"pinned"` / `"end-minus-width"` / `"landing"` / `"reverse-pass"` / `"attempt-start"`, `"compound"` on a compound; non-`NULL` on every artifact that contains a DFA scan, a hybrid included; `NULL` only on a plain VM artifact | `<PREFIX>_DFA_START` |
 | 26 | `vars` | `const char *const *` | the variable NAMES the pattern mentions, in first-mention order; `NULL` when none (`docs/spec/vars.md`) | — |
 | 27 | `nvars` | `int` | entries in `vars[]` | `<PREFIX>_NVARS` (var-bearing artifacts) |
 | 28 | `findings` | `const char *` | which findings each query the compile asked was answered from; `""` when none was asked; never `NULL` | `<PREFIX>_FINDINGS` (byte-identical) |
@@ -1282,6 +1325,10 @@ The rule, asserted over the whole corpus on both engines by
 | VM hybrid | the same, describing the DFA scan the artifact inlines | the same, describing that scan's own filter |
 | VM, not a hybrid | `NULL` — no DFA scan | `"none"` (`<PREFIX>_VM_PREFILTER`'s value there) |
 
+- <a id="s6-p6a"></a>[6¶6a] **On a compound** (§3.7) `scan`, `prefilter`, `match_form` and
+  `search_form` all read `"compound"`, as their stamps do (§6.3.12): the
+  controller is no one machine. Each part's own values are stamped under its
+  part prefix in the `.c`.
 - <a id="s6-p7"></a>[6¶7] **`prefilter` is never `NULL`**: every artifact answers "what candidate-start
   mechanism do you carry", including "none".
 - <a id="s6-p8"></a>[6¶8] **`scan != NULL` on a VM artifact means "this is a hybrid"** — the run-time
@@ -1491,6 +1538,7 @@ DFA scan (DFA artifacts and VM hybrids); **dfa** = DFA artifacts only;
 | `<PREFIX>_ENGINE_SEL` | all | token | — | [§6.3.3¶3](#s6-3-3-p3) |
 | `<PREFIX>_ENGINE_WHY` | vm | prose | `engine_why` | [§6.3.3¶2](#s6-3-3-p2) |
 | `<PREFIX>_TUNE` | all | token | — | [§6.3.11¶2](#s6-3-11-p2) |
+| `<PREFIX>_COMPOUND` | all | token | — | [§6.3.12¶1](#s6-3-12-p1) |
 | `<PREFIX>_ALTCLS_MERGES`, `_ALTCLS_FACTORED` | all | count | — | [§6.3.11¶3](#s6-3-11-p3) |
 | `<PREFIX>_STARTPOS_GUARD` | all | token | — | [§6.3.6¶2](#s6-3-6-p2) |
 | `<PREFIX>_UTF_CHECK` | all | token | — | [§6.3.6¶3](#s6-3-6-p3) |
@@ -2391,6 +2439,38 @@ on every artifact, a DFA-only one included.
 #define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */
 #define RX_ALTCLS_FACTORED 0   /* alternation runs prefix-factored */
 ```
+
+<a id="s6-3-12"></a>
+#### 6.3.12 Compounds
+
+<a id="s6-3-12-p1"></a>[6.3.12¶1] **`<PREFIX>_COMPOUND`** — which compound row built the artifact (§3.7), on
+every artifact of both engines: `"none"` (the plain artifact), a row's name
+(`"split"`), or `"forced-off"` (an artifact built by pcrec's own test harness
+with the compound family declined; the default build of the same pattern
+ships a row). It is pattern-level and emitted beside `<PREFIX>_TUNE`.
+
+```c
+#define RX_COMPOUND "split"
+```
+
+<a id="s6-3-12-p2"></a>[6.3.12¶2] **Every stamp is PATTERN-level or MACHINE-level**, and the kind decides
+its value on a compound. A pattern-level stamp is a fact about the pattern
+and the caller contract whichever machine runs, or about the artifact's text
+as a whole: a compound carries the plain artifact's value. A machine-level
+stamp describes one machine's route or strategy: a compound carries its
+COMPOUND VALUE, a string stamp `"compound"` and a count `-1`, and each part
+states its own under its part prefix. The values are never inferred from a
+stamp's absence (§6.3.1¶5).
+
+| kind | stamps | value on a compound |
+|---|---|---|
+| pattern | `_ENGINE`, `_ENGINE_SEL`, `_TUNE`, `_COMPOUND`, `_STARTPOS_GUARD`, `_UTF_CHECK`, `_REQ_BYTE`, `_REQ_RUN`, `_ALTCLS_MERGES`, `_ALTCLS_FACTORED`, `_MAX_EMIT_BYTES`, `_MAX_EMIT_CODE_BYTES`, `_STEP_BUDGET`, `_WORK_BUDGET`, `_FINDINGS`, `_MEMFN_LIBC`, `_SIMD_GUARDED_BYTES`, `_NCAPS`, `_NVARS`, `_VAR_*`, the sizing macros of §10.4, `PCREC_FEATURE_SET`/`_MODULES` | the plain artifact's |
+| machine (string) | `_DFA_SCAN`, `_DFA_PREFILTER`, `_DFA_PREFILTER_OFFSETS`, `_DFA_TABLE`, `_DFA_SCAN_EDGE`, `_DFA_START`, `_DFA_MATCH`, `_END_WINDOW`, `_REQ_WHY`, `_REQ_HANDOFF`, `_VM_START_SCAN`, `_MEMFN_FORMS`, the VM's string stamps | `"compound"` |
+| machine (count) | `_DFA_UNIFORM_FOLDS`, `_RUN_WORDS`, the VM's counts and masks | `-1` |
+
+<a id="s6-3-12-p3"></a>[6.3.12¶3] `_MEMFN_LIBC` and `_SIMD_GUARDED_BYTES` are measured over the assembled
+artifact, parts included, so on a compound they name every libc function the
+text calls and every CPU-guarded byte it carries.
 
 ---
 
