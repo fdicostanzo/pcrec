@@ -63,6 +63,7 @@ const char *pcrec_comp_part_check(const CompPart *part)
     if (part->bound == PCREC_PB_UNSTATED) return "bound: unstated";
     if (!(part->need & PCREC_PART_NEED_SEARCH)) return "need: no search entry";
     if (part->need & ~PCREC_PART_NEED_ALL) return "need: an unknown bit";
+    if (part->groups.kind == CG_UNSTATED) return "groups: unstated";
     return NULL;
 }
 

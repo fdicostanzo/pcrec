@@ -38,7 +38,12 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   global, no part carries a shared block, F's loop is bounded at
   `search_from` (an unbounded F answers the same, so only its text shows
   it), K79 (the 60-byte text is the short one respelled), and the
-  self-check (`compound_drive selfcheck`) refusing every unstated field.
+  self-check (`compound_drive selfcheck`) refusing every unstated field
+  (since B4, `groups` too). B4 (soft item, compound.md §A.5): the bound is
+  a general EMISSION option — P compiled as an ORDINARY artifact (prefix
+  `nb`, no part mode) under a one-attempt request answers the plain
+  artifact's match-here at every character start; MEASURED: re-coupling the
+  bound to part mode fails it (25 failures).
   MEASURED: a controller with no prologue goes red on every utf8 arm (the
   answers lose the startpos refusal, and under `-futf-check` F's kept
   validator becomes an unused static).

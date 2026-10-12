@@ -25,7 +25,12 @@ options) and each PREFIX (`kz`, and a legal 60-byte one):
       every subject at every startpos 0..n+1 (verdict and caps[0]): the
       positive control that F really is P's one attempt and the parts work;
   (5) K79: each part's text at the 60-byte prefix is its text at `kz` with
-      only the prefix's spelling changed.
+      only the prefix's spelling changed;
+  (6) the BOUND is a general emission option (B4's soft item, §A.5): P
+      compiled as an ORDINARY artifact (prefix `nb`, no part mode) under a
+      one-attempt request answers, at every character start 0..n, exactly
+      the plain artifact's match-here (`pp_match_caps` at that position):
+      one attempt at `from` is P's own priority answer there.
 
 Also runs `compound_drive selfcheck` (the table-build self-check refuses
 every unstated or inconsistent field). Exit 1 on any failure.
@@ -114,6 +119,40 @@ int main(void)
 """
 
 
+BOUNDED = r"""
+#include <stdio.h>
+/* (6): the one-attempt request on an ordinary artifact against the plain
+ * artifact's match-here, at every character start 0..n */
+int main(void)
+{
+    static char line[4096];
+    unsigned char subj[2048];
+    long cells = 0, diffs = 0;
+    while (fgets(line, sizeof line, stdin)) {
+        size_t n = 0;
+        for (char *h = line; h[0] && h[1] && h[0] != '\n'; h += 2) {
+            unsigned v; sscanf(h, "%2x", &v); subj[n++] = (unsigned char)v;
+        }
+        for (size_t from = 0; from <= n; from++) {
+            if (UTF && from < n && (subj[from] & 0xC0) == 0x80) continue;
+            ptrdiff_t a[NB_NCAPS][2] = {{0}}, b[PP_NCAPS][2] = {{0}};
+            int ra = nb_search(subj, n, from, a);
+            rx_ctx c = { .subject = subj, .len = n, .pos = from };
+            ptrdiff_t rb = pp_match_caps(&c, b);
+            cells++;
+            int same = ra == 1 ? rb >= 0 && a[0][0] == (ptrdiff_t)from && a[0][1] == b[0][1]
+                     : ra == 0 ? rb == -1 : (ptrdiff_t)ra == rb;
+            if (!same && diffs++ < 5)
+                printf("DIFF from=%zu n=%zu bounded=%d(%td,%td) match_caps=%td\n",
+                       from, n, ra, a[0][0], a[0][1], rb);
+        }
+    }
+    printf("cells=%ld diffs=%ld\n", cells, diffs);
+    return diffs ? 1 : 0;
+}
+"""
+
+
 def subjects(utf):
     alpha = [b" ", b"\t", b"\n", b"a", b"b", b"q", b"{", b"}", b"x"]
     alpha += [b"\xc3\xa9", b"\x80", b"\xc3", b"\xff"] if utf else [b"\xe9", b"\xff"]
@@ -138,7 +177,7 @@ def main():
         fails.append("selfcheck: a part with an unstated field was accepted")
     listing = "".join("%s\t%s\t%s\n" % (w, p.hex(), q.hex() if q else "-")
                       for w, p, q, _g in WITNESSES).encode()
-    cells = matches = 0
+    cells = matches = bcells = 0
     for arm, args, utf, guard, ucheck in ARMS:
         texts = {}
         for pfx in ("kz", L60):
@@ -167,6 +206,27 @@ def main():
                     if bounded != x.endswith(".f.c"):
                         fails.append("[%s] %s part %s: one-attempt bound %s" % (
                             arm, w, x, "present on Q" if bounded else "missing on F"))
+                nb = os.path.join(d, w + ".nb.c")
+                if pfx == "kz" and os.path.exists(nb):
+                    ntu = os.path.join(d, w + ".nbtu.c")
+                    with open(ntu, "w") as f:
+                        f.write("#define UTF %d\n" % utf)
+                        f.write(open(os.path.join(d, w + ".plain.c")).read())
+                        f.write(open(nb).read())
+                        f.write(BOUNDED)
+                    nexe = os.path.join(d, w + ".nbexe")
+                    b = run([CC] + GENCFLAGS + ["-o", nexe, ntu])
+                    if b.returncode:
+                        fails.append("[%s] %s: the bounded ordinary artifact did not build: %s"
+                                     % (arm, w, b.stderr.decode()[:400]))
+                    else:
+                        o = run([nexe], input=subjects(utf))
+                        out = o.stdout.decode().strip().splitlines()
+                        if o.returncode:
+                            fails.append("[%s] %s: the one-attempt request differs from "
+                                         "match-here: %s" % (arm, w, " | ".join(out[-6:])))
+                        else:
+                            bcells += int(out[-1].split()[0].split("=")[1])
                 tu = os.path.join(d, w + ".tu.c")
                 with open(tu, "w") as f:
                     f.write("#define UTF %d\n#define GUARD %d\n#define UCHECK %d\n#define HAS_G %d\n"
@@ -204,13 +264,14 @@ def main():
                              % (arm, w, name))
     for f in fails[:40]:
         print("FAIL: " + f)
-    floor_ok = cells >= 100000 and matches >= 5000
+    floor_ok = cells >= 100000 and matches >= 5000 and bcells >= 20000
     print("%s: B1 parts: %d witnesses x %d arms x 2 prefixes; %d cells, %d matches "
-          "against the plain artifact; %d failures"
+          "against the plain artifact; %d bounded-request cells; %d failures"
           % ("PASS" if not fails and floor_ok else "FAIL", len(WITNESSES), len(ARMS),
-             cells, matches, len(fails)))
+             cells, matches, bcells, len(fails)))
     if not floor_ok:
-        print("FAIL: below the population floor (100000 cells, 5000 matches)")
+        print("FAIL: below the population floor (100000 cells, 5000 matches, "
+              "20000 bounded-request cells)")
     return 1 if fails or not floor_ok else 0
 
 

@@ -106,7 +106,9 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   kept) and PART MODE (the role and the bound). `compile_driver` renders a
   part's prefix as the placeholder plus `__<role>` (K79 holds per part);
   the emitters drop the shared blocks (`pcrec_is_part`) and the BOUND slot
-  reads the one-attempt bound (`pcrec_part_one_attempt`, emit_dfa.c). A
+  reads the one-attempt bound (`pcrec_emit_one_attempt`, emit_dfa.c; since
+  B4 a field of the EMISSION REQUEST, `PcrecEmitIn.bound`, read on any
+  artifact, part mode its first reader). A
   part a pattern cannot honour REFUSES (one attempt off the DFA attempt
   route). A part's DERIVATION (B2) is `PcrecEmitIn.derive`, which
   `compile_driver` runs as the second entry of its TREE-HOOK LIST, after the

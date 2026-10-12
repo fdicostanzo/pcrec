@@ -74,15 +74,17 @@ typedef struct {
     unsigned kept;
 } PcrecEntryReq;
 
-/* [COMPOUND] A part's BOUND (compound.md §A.5): `PCREC_PB_ONE_ATTEMPT` makes
- * the part's search one attempt at `search_from` (the BOUND slot's
- * `attempt-gstart` row, whatever the pattern's own BOUND would be). The zero
- * value is UNSTATED, which a part may not be. */
+/* [COMPOUND] The emission's BOUND (compound.md §A.5; alignment note §10.3,
+ * unlock U1): `PCREC_PB_ONE_ATTEMPT` makes the artifact's search ONE attempt
+ * at `search_from` (the BOUND slot's `attempt-gstart` row, whatever the
+ * pattern's own BOUND would be). A general emission option carried by the
+ * request (`PcrecEmitIn.bound`); a compound part is its first reader. The
+ * zero value is UNSTATED, which a part may not be. */
 typedef enum {
     PCREC_PB_UNSTATED = 0,
     PCREC_PB_NONE,
     PCREC_PB_ONE_ATTEMPT
-} PcrecPartBound;
+} PcrecEmitBound;
 
 /* What a compile's EMISSION is asked for beyond the caller's options: the
  * driver-tier input the compound tool sets (compound.md §A.3-§A.5) and no
@@ -104,10 +106,12 @@ typedef struct {
     const PcrecEntryReq *req;     /* NULL: the default request */
     /* PART MODE (compound.md §A.5): non-NULL renders the artifact as the part
      * `<prefix>__<role>` of a compound -- no shared blocks (the ABI block,
-     * its includes, the feature macros), and `bound` read by the BOUND
-     * slot. NULL: an ordinary artifact, `bound` unread. */
+     * its includes, the feature macros). NULL: an ordinary artifact. */
     const char *part_role;
-    PcrecPartBound part_bound;
+    /* THE BOUND (PCREC_PB_*), read by the BOUND slot on ANY artifact, part
+     * or not (`pcrec_emit_one_attempt`); UNSTATED and NONE leave the
+     * pattern's own BOUND. */
+    PcrecEmitBound bound;
     /* THE DERIVATION (compound.md §B.1): a tree rewrite the driver runs after
      * the composer, the hook list's second entry; NULL none. Its report, if
      * the caller wants one, goes to `derive_report`. */
@@ -3912,14 +3916,18 @@ enum {
      * a `family`, and no (kind, sel, text) arbitration anywhere returns one. */
     RF_INDEX = 1u << 6,
 
-    /* [COMPOUND] THE ATTEMPT-SCOPE COLUMN (docs/design/compound.md §B.8): the
-     * construct's effect spans attempts or observes their order, so a
-     * compound, whose controller runs the pattern's attempts as separate
-     * calls, must decline it (`pcrec_ast_crosses_attempts`, admission A3).
-     * Set on the callout row. The four attempt-crossing backtracking verbs,
-     * (*COMMIT) (*SKIP) (*PRUNE) (*THEN), are ROADMAP_NEVER and refused at
-     * parse, so no node carries them; a verb producer would stamp its node
-     * with a row stating this column per name. A new row states it here. */
+    /* [COMPOUND] THE ATTEMPT-SCOPE COLUMN (docs/design/compound.md §B.8;
+     * compound_callout_alignment.md §10.5): the construct OBSERVES OR CHANGES
+     * THE ATTEMPT SEQUENCE, so a compound, whose controller runs the
+     * pattern's attempts as separate calls, must decline it
+     * (`pcrec_ast_crosses_attempts`, admission A3). TWO GROUPS state it and
+     * stay distinguishable, so a ruling on one relabels it without renaming
+     * the column: the CALLOUT rows (`GROUP_XA_CALLOUT`, registry.c), declined
+     * for now under D163 add. 6 Q2's purity contract, and the attempt-
+     * crossing backtracking VERBS, (*COMMIT) (*SKIP) (*PRUNE) (*THEN), which
+     * are ROADMAP_NEVER and refused at parse, so no node carries them yet; a
+     * verb producer stamps its node with a row of its own group stating this
+     * column per name. A new row states it here. */
     RF_CROSSES_ATTEMPTS = 1u << 7
 };
 
@@ -7006,14 +7014,17 @@ typedef enum {
  * no matcher entry or keeps `info`/`main` static. */
 void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape);
 /* [COMPOUND] True iff this compile renders a PART of a compound
- * (`PcrecEmitIn.part_role`), and iff that part's bound is one attempt. */
+ * (`PcrecEmitIn.part_role`). */
 static inline bool pcrec_is_part(const Ctx *cx)
 {
     return cx->emit_in && cx->emit_in->part_role;
 }
-static inline bool pcrec_part_one_attempt(const Ctx *cx)
+/* True iff the emission request bounds the search to ONE attempt at
+ * `search_from` (compound.md §A.5): a request field, read whatever the
+ * artifact is; part mode is its first reader, not its condition. */
+static inline bool pcrec_emit_one_attempt(const Ctx *cx)
 {
-    return pcrec_is_part(cx) && cx->emit_in->part_bound == PCREC_PB_ONE_ATTEMPT;
+    return cx->emit_in && cx->emit_in->bound == PCREC_PB_ONE_ATTEMPT;
 }
 
 /* `e`'s linkage under the closure `pcrec_entry_shape` computed. */
@@ -7241,14 +7252,30 @@ typedef enum {
 /* The longest role: a part prefix is the parent's plus `__` and the role. */
 #define PCREC_PART_ROLE_MAX 3
 
+/* A part's GROUP MAP into the compound's ONE captures array, in the parent's
+ * numbering (D163 add. 3; compound.md §A.1): the pad rule and the
+ * slot-coverage check are read off it. The zero value is UNSTATED, never a
+ * default. Only IDENTITY is built (a part derived from the parent: callee
+ * group g is caller slot g); the offset and table maps arrive with their
+ * first client (client 7, a standalone sub-pattern part, on its trigger). */
+typedef enum {
+    CG_UNSTATED = 0,
+    CG_IDENTITY
+} CompGroupsKind;
+
+typedef struct {
+    CompGroupsKind kind;
+} CompGroups;
+
 typedef struct {
     const char *role;            /* 1..3 of [a-z0-9]: the part's `__<role>` */
     const PcrecDerive *derive;   /* &pcrec_derive_none, or a derivation */
     uint64_t flags_set;          /* option flags forced ON for this part */
     uint64_t flags_clear;        /* ... forced OFF */
     PcrecPartEngine engine;      /* stated, never inherited */
-    PcrecPartBound bound;        /* PCREC_PB_NONE or PCREC_PB_ONE_ATTEMPT */
+    PcrecEmitBound bound;        /* PCREC_PB_NONE or PCREC_PB_ONE_ATTEMPT */
     unsigned need;               /* PCREC_PART_NEED_*: what the controller reads */
+    CompGroups groups;           /* the map into the one captures array */
 } CompPart;
 
 /* THE TABLE-BUILD SELF-CHECK for one part: NULL when every field is stated

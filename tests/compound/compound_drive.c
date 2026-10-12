@@ -23,7 +23,9 @@
  *
  * `parts` (B1, compound.md §A.5): WITNESSES is `id<TAB>P-hex<TAB>Q-hex|-`
  * per line. For each it writes the plain artifact of P at prefix `pp`
- * (`<id>.plain.c`, self-contained) and the split client's two parts at
+ * (`<id>.plain.c`, self-contained), P as an ordinary artifact at prefix
+ * `nb` whose emission request bounds it to one attempt (`<id>.nb.c`, B4's
+ * general bound) and the split client's two parts at
  * prefix PREFIX: F = P bounded to one attempt (`<id>.f.c`) and Q = the
  * given text (`<id>.q.c`; B2 derives it instead), both compiled guards-off
  * as compound.md §A.1's table states them. ARMs: `--enc utf8`,
@@ -192,10 +194,11 @@ static const CompPart split_f = {
     "f", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
     PCREC_PE_DFA, PCREC_PB_ONE_ATTEMPT,
     PCREC_PART_NEED_SEARCH | PCREC_PART_NEED_NEXT_POS | PCREC_PART_NEED_VALID_UPTO,
+    { CG_IDENTITY },
 };
 static const CompPart split_q = {
     "q", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
-    PCREC_PE_DFA, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+    PCREC_PE_DFA, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH, { CG_IDENTITY },
 };
 
 /* Writes one part (or the plain artifact) of pattern `pat`. */
@@ -211,6 +214,29 @@ static void drive_part(const char *dir, const char *id, const char *tag,
     if (rc) return;
     char name[512];
     snprintf(name, sizeof name, "%s.%s.c", id, tag);
+    if (put_file(dir, name, out.c_src)) *ioerr = 1;
+    pcrec_output_free(&out);
+}
+
+/* Writes pattern `pat` as an ORDINARY artifact (prefix `nb`, no part mode)
+ * whose emission request bounds its search to one attempt (B4's soft item,
+ * compound.md §A.5: the bound is a request field, part mode only its first
+ * reader), into OUTDIR/<id>.nb.c. */
+static void drive_bounded(const char *dir, const char *id, const char *pat,
+                          const pcrec_options *parent, int *ioerr)
+{
+    pcrec_options o = *parent;
+    o.prefix = "nb";
+    o.header_name = NULL;
+    const PcrecEmitIn in = { NULL, NULL, PCREC_PB_ONE_ATTEMPT, NULL, NULL };
+    pcrec_output out;
+    pcrec_error err;
+    int rc = pcrec_compile_driver(pat, &o, &out, &err, NULL, NULL, NULL, NULL,
+                                  NULL, &in);
+    printf("%s\tnb\t%s\t%s\n", id, rc ? "refused" : "ok", rc ? err.msg : "-");
+    if (rc) return;
+    char name[512];
+    snprintf(name, sizeof name, "%.200s.nb.c", id);
     if (put_file(dir, name, out.c_src)) *ioerr = 1;
     pcrec_output_free(&out);
 }
@@ -259,6 +285,7 @@ static int drive_parts(int argc, char **argv)
         char *p = unhex(f1), *q = strcmp(f2, "-") ? unhex(f2) : NULL;
         if (!p || (strcmp(f2, "-") && !q)) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
         drive_part(dir, line, "plain", p, &plain, NULL, &ioerr);
+        drive_bounded(dir, line, p, &parent, &ioerr);
         drive_part(dir, line, "f", p, &parent, &f, &ioerr);
         if (q) drive_part(dir, line, "q", q, &parent, &split_q, &ioerr);
         free(p);
@@ -274,7 +301,7 @@ static int drive_derive(int argc, char **argv)
     const char *dir = argv[0];
     const CompPart cmp_q = {
         "q", &pcrec_derive_split_q_row, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
-        PCREC_PE_AUTO, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+        PCREC_PE_AUTO, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH, { CG_IDENTITY },
     };
     char line[1 << 16];
     int ioerr = 0;
@@ -333,8 +360,8 @@ static int drive_derive(int argc, char **argv)
  * the part compile refuses an unstated part rather than compiling it. */
 static int drive_selfcheck(void)
 {
-    CompPart bad[8];
-    const char *what[8];
+    CompPart bad[9];
+    const char *what[9];
     int n = 0;
 #define BAD(field_edit, label) \
     do { bad[n] = split_f; field_edit; what[n++] = (label); } while (0)
@@ -346,6 +373,7 @@ static int drive_selfcheck(void)
     BAD(bad[n].role = "", "empty role");
     BAD(bad[n].role = "abcd", "role over 3");
     BAD(bad[n].role = "F", "role not [a-z0-9]");
+    BAD(bad[n].groups.kind = CG_UNSTATED, "groups unstated");
 #undef BAD
     int fails = 0;
     for (int i = 0; i < n; i++) {
