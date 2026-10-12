@@ -22,5 +22,5 @@ Python with `python3 -I` and `PYTHONDONTWRITEBYTECODE=1`. Report:
 - `report.py` — aggregates `check.json` and `time.tsv` into the tables in
   `results/report.txt`.
 - `results/` — `population.tsv`, `check.json` (per artifact: answers, loads per
-  regime, tie observations, table bytes, search text size), `time.tsv` (raw ns/call
+  regime, tie observations, table bytes, search text size), `time.tsv` + `time2.tsv` (two independent runs; raw ns/call
   rows: k regime n iters today A B min_today min_A min_B), `report.txt`.

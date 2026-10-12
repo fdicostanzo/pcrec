@@ -36,6 +36,9 @@ built or run by `make`. Run the Python with `python3 -I` and
   Three controls print in the output: model == emitted states for today and for the untagged proxy, and the
   product with an OR output == the untagged machine. Output `results/b3cost.txt`; report
   `docs/dev/lanes/b3cost_report.md`. Run line in `census/b3cost.py`'s header.
+- `b3meas/` — lane b3meas (2026-10-12): B3 MEASURED, today's shipped rev-end vs a B3 hand twin and a
+  restyled control, answers against libpcre2, loads and ns/call per regime (own CLAUDE.md); report
+  `docs/dev/lanes/b3meas_report.md`.
 - `results/` — `diff_all_len5.txt` (3,527 patterns, 28,237,887 cells, 0
   differences), `diff_plants.txt`, `twin_k16000.txt`, `twin_plants.txt`,
   `census.txt` (at `885eccff`), `b3cost.txt` (at `0e8849125`).
