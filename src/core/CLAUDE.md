@@ -94,6 +94,16 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the byte-rate is NONE, so the order is by cube size, then positional
   (U8-PICK).
 
+- **internal.h / compile.c ([COMPOUND] B0, lane cpb02, 2026-10-12)** —
+  `PcrecEntry`, `PcrecEntryReq` and `PcrecEmitIn` are declared at the top of
+  internal.h (before `Ctx`, which carries `emit_in`); `PcrecEntryShape`,
+  `PcrecLinkage` and the linkage API sit in the gen group (src/gen/
+  entries.c). `compile_driver` and its exported face `pcrec_compile_driver`
+  gained a last parameter, `const PcrecEmitIn *emit_in`, copied onto every
+  attempt's `Ctx`; every existing caller passes NULL (the default request).
+  `Job` gained the closure's two masks (`entry_exported`, `entry_static`)
+  and `entry_shaped`.
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,

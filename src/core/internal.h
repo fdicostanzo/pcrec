@@ -41,6 +41,47 @@ typedef struct Ast *(*PcrecComposeFn)(Ctx *cx, struct Ast *root);
 typedef void (*PcrecFactsHook)(Ctx *cx, const char *artifact, size_t len,
                                void *ud);
 
+/* ---- [EMIT-ENTRIES] the artifact's entry table (src/gen/entries.c) -------
+ *
+ * Every function or object an artifact defines that another definition, or
+ * a caller, can name. The PUBLIC rows are the caller-facing set
+ * (docs/spec/match_api.md §3¶1 plus `--emit-main`'s `main`); the INTERNAL
+ * rows are definitions an entry calls that a request can never export
+ * (the VM's per-entry `_run` bodies, the hybrid's embedded DFA search).
+ * Declared this early because `Ctx` carries the request. Design:
+ * docs/design/compound.md §A.4 (B0). */
+typedef enum {
+    PCREC_ENTRY_SEARCH, PCREC_ENTRY_SEARCH_IN,
+    PCREC_ENTRY_MATCH, PCREC_ENTRY_MATCH_IN,
+    PCREC_ENTRY_MATCH_CAPS, PCREC_ENTRY_MATCH_CAPS_IN,
+    PCREC_ENTRY_NEXT_POS, PCREC_ENTRY_VALID_UPTO, PCREC_ENTRY_VAR_VALID,
+    PCREC_ENTRY_INFO, PCREC_ENTRY_MAIN,
+    PCREC_ENTRY_PUBLIC_N,                  /* rows below are internal */
+    PCREC_ENTRY_SEARCH_RUN = PCREC_ENTRY_PUBLIC_N,
+    PCREC_ENTRY_MATCH_RUN, PCREC_ENTRY_MATCH_CAPS_RUN,
+    PCREC_ENTRY_PREFILTER,
+    PCREC_ENTRY_N
+} PcrecEntry;
+
+#define PCREC_ENTRY_BIT(e) (1u << (e))
+
+/* A linkage request: the entries to EXPORT and the entries to KEEP static
+ * whether or not an exported one reaches them. Everything else an exported
+ * or kept entry reaches through the dependency edges is kept static too;
+ * the rest is OMITTED. Masks of PCREC_ENTRY_BIT. */
+typedef struct {
+    unsigned exported;
+    unsigned kept;
+} PcrecEntryReq;
+
+/* What a compile's EMISSION is asked for beyond the caller's options: the
+ * driver-tier input the compound tool sets (compound.md §A.3-§A.5) and no
+ * `pcrec_options` field carries. NULL on every public compile, which is the
+ * default request (the public default set exported) and no part mode. */
+typedef struct {
+    const PcrecEntryReq *req;     /* NULL: the default request */
+} PcrecEmitIn;
+
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
 typedef struct ABlock {
@@ -2879,6 +2920,12 @@ typedef struct {
     /* Whether the prologue declared `<string.h>` (`pcrec_emit_prologue`):
      * every header the kit's text needs must be one it declared (§14.8). */
     bool string_h;
+    /* [EMIT-ENTRIES] the linkage closure (src/gen/entries.c): PcrecEntry
+     * bits EXPORTED and kept STATIC; every other entry is OMITTED. Written
+     * once per attempt by `pcrec_entry_shape`, before the first entry;
+     * `entry_shaped` says it has been. */
+    unsigned entry_exported, entry_static;
+    bool entry_shaped;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -3426,6 +3473,9 @@ struct Ctx {
      * `pcrec_sb_render_prefix` and `pcrec_ctx_fail`'s message render put
      * back. NULL on a compile that emits nothing (`pcrec_count_groups`). */
     const char          *user_prefix;
+    /* [EMIT-ENTRIES] the driver-tier emission input (PcrecEmitIn above), or
+     * NULL: the default request. Read only through `pcrec_entry_linkage`. */
+    const PcrecEmitIn   *emit_in;
     Job                 *job;
 };
 
@@ -6882,6 +6932,48 @@ typedef struct {
 
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 
+/* ---- [EMIT-ENTRIES] src/gen/entries.c: linkage through the closure ------
+ *
+ * The facts about THIS artifact's emitted shape that decide which entry calls
+ * which (compound.md §A.4's per-engine dependency edges). The emitter states
+ * them once, through `pcrec_entry_shape`, before it writes any entry or
+ * declaration; every later linkage answer is the closure over them. */
+typedef struct {
+    bool vm;            /* the VM emitter writes the entries */
+    bool fwd;           /* VM: the un-suffixed entries forward to `_in` */
+    bool hybrid;        /* VM: the embedded DFA search is emitted */
+    bool match_own;     /* DFA: `_match` has its own body (anchored or
+                         * nomatch form) and `_match_caps` calls it; else
+                         * both wrap `_search` */
+    bool search_match;  /* DFA: `_search` calls `_match` (a `rev-end` tie
+                         * verified at its start) */
+    bool utf_check;     /* the entries' prologue calls `<p>_valid_upto` */
+    bool vars;          /* VM: the `_run` bodies call `<p>_var_valid` */
+} PcrecEntryShape;
+
+typedef enum {
+    PCREC_LINK_OMITTED,     /* not emitted: nothing requested reaches it */
+    PCREC_LINK_STATIC,      /* defined `static`, declared in no header */
+    PCREC_LINK_EXPORTED     /* defined and declared as today */
+} PcrecLinkage;
+
+/* States this artifact's shape and computes the closure of the compile's
+ * request over the edges it enables (`Ctx.emit_in`; NULL is the default
+ * request). Refuses, as an internal error, a request whose closure reaches
+ * no matcher entry or keeps `info`/`main` static. */
+void pcrec_entry_shape(Ctx *cx, const PcrecEntryShape *shape);
+/* `e`'s linkage under the closure `pcrec_entry_shape` computed. */
+PcrecLinkage pcrec_entry_linkage(const Ctx *cx, PcrecEntry e);
+/* `e`'s storage-class text for its definition: "" exported, "static "
+ * kept. Only asked of an entry that is not OMITTED. */
+const char *pcrec_entry_storage(const Ctx *cx, PcrecEntry e);
+/* True iff `e` is emitted at all (not OMITTED). */
+bool pcrec_entry_emitted(const Ctx *cx, PcrecEntry e);
+/* The residual (src/enc/) entries' masks: `pcrec_enc` ids whose entry is
+ * OMITTED (to drop from the artifact's mask) and kept STATIC. */
+unsigned pcrec_entry_enc_omit(const Ctx *cx);
+unsigned pcrec_entry_enc_static(const Ctx *cx);
+
 /* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
@@ -7072,7 +7164,8 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err);
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
                          const RxtDefs *defs, PcrecComposeFn compose,
-                         PcrecFactsHook facts_hook, void *facts_ud);
+                         PcrecFactsHook facts_hook, void *facts_ud,
+                         const PcrecEmitIn *emit_in);
 
 /* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
  * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with

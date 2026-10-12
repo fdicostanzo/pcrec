@@ -536,9 +536,14 @@ static inline int pcrec_enc_ready(const PcrecEnc *e)
 /* Emit the declarations / definitions of every entry the artifact needs.
  * `mask` is an OR of PCREC_ENCE_*; an entry not in it contributes nothing, so
  * an artifact with no backreference is byte-identical to what it was before
- * the second and third entries existed. */
+ * the second and third entries existed.
+ *
+ * [EMIT-ENTRIES] `drop` and `stat` are the artifact's linkage for the
+ * out-of-line entries (src/gen/entries.c): after `mask` is closed over
+ * `requires`, an entry in `drop` is not written and one in `stat` is
+ * written `static`. Both 0 is every entry as it always was. */
 void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                          const char *prefix);
+                          const char *prefix, unsigned drop, unsigned stat);
 /* [MEMFN] M7 (D58 addendum 2): `sites[0..nsites)` are the kit's rendered
  * loops for the entries whose definitions carry PCREC_ENC_SITE; each is
  * substituted for its entry's token. A token with no text, a text whose
@@ -546,7 +551,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
  * buffer's Ctx (`pcrec_ctx_fail`). */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix, const PcrecEncSiteText *sites,
-                         size_t nsites);
+                         size_t nsites, unsigned drop, unsigned stat);
 /* [CLS-TREE] S4 the `inline_def` entries' definitions, for a caller to place
  * ahead of the engine bodies; `pcrec_enc_emit_defs` emits the rest. Both,
  * and `pcrec_enc_emit_decls`, close `mask` over `requires` first; `sites` is

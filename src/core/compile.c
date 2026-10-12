@@ -1551,7 +1551,8 @@ static const char *fit_trace_labels(const Ctx *cx)
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
                           const RxtDefs *defs, PcrecComposeFn compose,
-                          PcrecFactsHook facts_hook, void *facts_ud)
+                          PcrecFactsHook facts_hook, void *facts_ud,
+                          const PcrecEmitIn *emit_in)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -1789,6 +1790,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.err = err;
         cx.opt = &defo;
         cx.user_prefix = user_prefix;
+        /* [EMIT-ENTRIES] the driver-tier emission input (NULL: the default
+         * request), the same on every attempt of this compile. */
+        cx.emit_in = emit_in;
         /* [REL-1.11] copied from the ONE resolution above — every retry
          * attempt of this same compile gets the identical resolved values,
          * never a re-resolve, and nothing here touches src/parse/enabled.c's
@@ -2968,7 +2972,8 @@ facts_force:
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
-    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL);
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
+                          NULL);
 }
 
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
@@ -2986,10 +2991,11 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
                          const RxtDefs *defs, PcrecComposeFn compose,
-                         PcrecFactsHook facts_hook, void *facts_ud)
+                         PcrecFactsHook facts_hook, void *facts_ud,
+                         const PcrecEmitIn *emit_in)
 {
     return compile_driver(pattern, opt, out, err, ir_out, defs, compose,
-                          facts_hook, facts_ud);
+                          facts_hook, facts_ud, emit_in);
 }
 
 /* DD-8's listing entry. It runs a REAL compile and throws the C away, because
@@ -3010,7 +3016,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     defo.header_name = NULL;
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-                             NULL, NULL, NULL) != 0) {
+                             NULL, NULL, NULL, NULL) != 0) {
         free(text);
         return NULL;
     }

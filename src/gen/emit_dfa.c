@@ -2678,8 +2678,8 @@ static BufSurface pcrec_bufsurface_inert(void)
  * identical reason -- the `-Werror` build merely stopped at the first one.
  * Full history, the six corpus spellings it cost, and the repro:
  * docs/dev/known_issues.md K28. */
-static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
-                            const char *upper)
+static void emit_match_def(StrBuf *c, const char *storage, const char *matchfn,
+                           const char *searchfn, const char *upper)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -2691,8 +2691,8 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         " * later engine shares this emitter. */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx)\n"
-        "{\n", matchfn);
+        "%sptrdiff_t %s(const rx_ctx *ctx)\n"
+        "{\n", storage, matchfn);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
@@ -2716,12 +2716,12 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
  * [M4.4] RX_NCAPS is always 1, so capture_spans_out[0] is the only slot ever
  * written; the loop is written against the macro rather than hardcoded so
  * nothing here needs revisiting when [M4.5] grows it. */
-static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
-                                 const char *upper)
+static void emit_match_caps_def(StrBuf *c, const char *storage, const char *fn,
+                                const char *searchfn, const char *upper)
 {
     pcrec_sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
-        "{\n", fn);
+        "%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
+        "{\n", storage, fn);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
@@ -2777,8 +2777,9 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
  * THE DELEGATION RUNS `_in` -> UN-SUFFIXED here exactly as it does on a VM
  * artifact (design §5.2), so the direction is one rule across both engines
  * rather than a coincidence that holds twice. */
-static void emit_in_entry_defs(StrBuf *c, const char *searchfn, const char *matchfn,
-                               const char *matchcapsfn, const char *prefix)
+static void emit_in_entry_defs(Ctx *cx, StrBuf *c, const char *searchfn,
+                               const char *matchfn, const char *matchcapsfn,
+                               const char *prefix)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -2790,29 +2791,44 @@ static void emit_in_entry_defs(StrBuf *c, const char *searchfn, const char *matc
         " * site compiles and behaves the same whichever engine the pattern\n"
         " * happened to select (spec S10.4). */\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
-        "{\n"
-        "    (void)buffers;\n"
-        "    return %s(subject, subject_length, search_from, capture_spans);\n"
-        "}\n"
-        "\n"
-        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
-        "{\n"
-        "    (void)buffers;\n"
-        "    return %s(ctx);\n"
-        "}\n"
-        "\n"
-        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
-        "                const %s_buffers *buffers)\n"
-        "{\n"
-        "    (void)buffers;\n"
-        "    return %s(ctx, capture_spans_out);\n"
-        "}\n",
-        searchfn, prefix, searchfn,
-        matchfn, prefix, matchfn,
-        matchcapsfn, prefix, matchcapsfn);
+    /* [EMIT-ENTRIES] each entry is written where the closure keeps it, a
+     * blank line between two that are. */
+    const char *sep = "";
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_SEARCH_IN)) {
+        pcrec_sb_printf(c,
+            "%sint %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+            "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
+            "{\n"
+            "    (void)buffers;\n"
+            "    return %s(subject, subject_length, search_from, capture_spans);\n"
+            "}\n",
+            pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN), searchfn, prefix,
+            searchfn);
+        sep = "\n";
+    }
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_IN)) {
+        pcrec_sb_printf(c,
+            "%s"
+            "%sptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
+            "{\n"
+            "    (void)buffers;\n"
+            "    return %s(ctx);\n"
+            "}\n",
+            sep, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_IN), matchfn, prefix,
+            matchfn);
+        sep = "\n";
+    }
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS_IN))
+        pcrec_sb_printf(c,
+            "%s"
+            "%sptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+            "                const %s_buffers *buffers)\n"
+            "{\n"
+            "    (void)buffers;\n"
+            "    return %s(ctx, capture_spans_out);\n"
+            "}\n",
+            sep, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS_IN), matchcapsfn,
+            prefix, matchcapsfn);
 }
 
 /* [M4.4] (match_api_m4.md §5, D43.1/D44.5): the static reflection structure,
@@ -3339,11 +3355,42 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
  * fields. `Job.enc_mask` is set by whichever emitter is running BEFORE the
  * prologue, so an entry reaches the artifact iff something in it is emitted
  * that calls the entry. */
-static void emit_residual_decls(Ctx *cx, StrBuf *sb)
+static void emit_residual_decls(Ctx *cx, StrBuf *sb, unsigned drop,
+                                unsigned stat)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    pcrec_enc_emit_decls(sb, enc, cx->job->enc_mask, cx->opt->prefix);
+    pcrec_enc_emit_decls(sb, enc, cx->job->enc_mask, cx->opt->prefix, drop,
+                         stat);
+}
+
+/* [EMIT-ENTRIES] Writes the entry declarations with linkage EXPORTED (as
+ * they always were) and, where `kept`, the STATIC ones as `static` forward
+ * declarations; OMITTED entries are declared nowhere. The `.h` asks for the
+ * exported half only, the self-contained `.c` for both, and a `.c` beside
+ * its `.h` for the static half (nothing, under the default request). The
+ * order is the one every artifact has always declared its entries in. */
+static void emit_entry_decls(Ctx *cx, StrBuf *sb, const GenNames *g,
+                             bool exported, bool kept)
+{
+    const char *p = cx->opt->prefix;
+#define ENTRY_DECL(E, CALL)                                                  \
+    do {                                                                     \
+        PcrecLinkage l_ = pcrec_entry_linkage(cx, (E));                      \
+        if (l_ == PCREC_LINK_EXPORTED ? exported                             \
+            : l_ == PCREC_LINK_STATIC && kept) {                             \
+            if (l_ == PCREC_LINK_STATIC) pcrec_sb_puts(sb, "static ");       \
+            CALL;                                                            \
+        }                                                                    \
+    } while (0)
+    ENTRY_DECL(PCREC_ENTRY_SEARCH,        emit_search_decl(sb, cx, g->searchfn));
+    ENTRY_DECL(PCREC_ENTRY_MATCH,         emit_match_decl(sb, g->matchfn));
+    ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS,    emit_match_caps_decl(sb, g->matchcapsfn));
+    ENTRY_DECL(PCREC_ENTRY_INFO,          emit_info_decl(sb, g->infoname));
+    ENTRY_DECL(PCREC_ENTRY_SEARCH_IN,     emit_search_in_decl(sb, cx, g->searchfn, p));
+    ENTRY_DECL(PCREC_ENTRY_MATCH_IN,      emit_match_in_decl(sb, g->matchfn, p));
+    ENTRY_DECL(PCREC_ENTRY_MATCH_CAPS_IN, emit_match_caps_in_decl(sb, g->matchcapsfn, p));
+#undef ENTRY_DECL
 }
 
 /* [MEMFN] M7 (D58 addendum 2) THE DELEGATED COMPARE LOOPS of the entries in
@@ -3396,7 +3443,10 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
                     cx->lb_max);
     size_t ns;
     const PcrecEncSiteText *st = residual_sites(cx, enc, false, &ns);
-    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns);
+    /* [EMIT-ENTRIES] each out-of-line entry at its linkage: omitted ones are
+     * not written, kept ones are `static`. */
+    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix, st, ns,
+                        pcrec_entry_enc_omit(cx), pcrec_entry_enc_static(cx));
 }
 
 /* The encoding's `static inline` entries this artifact's mask carries,
@@ -3415,18 +3465,19 @@ void pcrec_emit_residual_inline(Ctx *cx, StrBuf *sb)
 
 /* Writes the artifact's whole `.h` into `cx->job->hsb`: the provenance and
  * feature comments, the include guard derived from `--prefix`, the shared ABI
- * types, the capture and buffer macros, declarations for all six entries and
- * `<prefix>_info`, and the encoding residuals.
+ * types, the capture and buffer macros, declarations for the EXPORTED
+ * entries (all six and `<prefix>_info` under the default request) and the
+ * exported encoding residuals.
  *
  * Reads the prefix, the pattern and the feature set off `cx` rather than
  * through parameters. The include guard is `PCREC_GEN_<PREFIX>_H`, the
  * prefix uppercased. The feature MACROS are deliberately left out of the header: a
  * `.c` that includes its own `.h` must not meet that pair twice. */
-static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
-                         const char *matchcapsfn, const char *infoname,
-                         const char *upper, int ncaps, const BufSurface *bs)
+static void emit_header(Ctx *cx, const GenNames *g, int ncaps,
+                        const BufSurface *bs)
 {
     StrBuf *h = &cx->job->hsb;
+    const char *upper = g->upper;
     /* [K79] the guard is the prefix UPPERCASED — `upper`, the one
      * derivation. It was a per-byte `isalnum ? toupper : '_'` loop, which is
      * `toupper` on every byte a validated prefix (a C identifier) can hold,
@@ -3444,20 +3495,16 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_vars_macros(h, cx, upper);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
     pcrec_sb_putc(h, '\n');
-    emit_search_decl(h, cx, fn);
-    emit_match_decl(h, matchfn);
-    emit_match_caps_decl(h, matchcapsfn);
-    emit_info_decl(h, infoname);
     /* [DD-14.FB] The three `_in` entries join the header UNCONDITIONALLY,
      * beside the siblings they mirror -- spec §10.4's "the three `_in`
      * entries, the `<prefix>_buffers` type and all five macros are emitted on
      * EVERY artifact", so a consumer's code does not stop compiling when the
-     * same pattern selects the other engine. */
-    emit_search_in_decl(h, cx, fn, cx->opt->prefix);
-    emit_match_in_decl(h, matchfn, cx->opt->prefix);
-    emit_match_caps_in_decl(h, matchcapsfn, cx->opt->prefix);
+     * same pattern selects the other engine. [EMIT-ENTRIES] the header
+     * declares the EXPORTED entries: every one, under the default request. */
+    emit_entry_decls(cx, h, g, true, false);
     pcrec_sb_putc(h, '\n');
-    emit_residual_decls(cx, h);
+    emit_residual_decls(cx, h,
+                        pcrec_entry_enc_omit(cx) | pcrec_entry_enc_static(cx), 0);
     pcrec_sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
 
@@ -11587,6 +11634,26 @@ static bool revend_tie_asked(Ctx *cx)
     return false;
 }
 
+/* [EMIT-ENTRIES] Does this artifact's own search entry call `<prefix>_match`:
+ * the `rev-end` walk's tie, finished `verify-at` on the DFA entry
+ * (`emit_rev_end`'s tie arm asks the same row). Asked quietly, so the trace
+ * stream stays the walk's own. */
+static bool dfa_search_calls_match(Ctx *cx)
+{
+    if (cand_finish_of(cx) == CAND_ROUTE_VM || !revend_tie_asked(cx)) return false;
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = false, .st = -1,
+                  .route = cand_finish_of(cx), .point = false,
+                  .hand = cand_project(cx, CAND_HAND_ENDSET) };
+#ifdef PCREC_CAND_TRACE
+    pcrec_cand_trace_quiet++;
+#endif
+    const CandRow *r = cand_select(CAND_SLOT_FINISH, &s, cx->opt->flags);
+#ifdef PCREC_CAND_TRACE
+    pcrec_cand_trace_quiet--;
+#endif
+    return r->u.finish.act == CAND_FIN_VERIFY;
+}
+
 /* The VM search entry's hand (E-LF across the boundary projection): its
  * inlined body's SPAN where one exists, else the VM-route composite's LOWER,
  * projected (`cand_project`). */
@@ -11842,12 +11909,12 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
         " * (unlike the search-and-filter form) it has no code to forward. */\n");
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "%sptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    const unsigned char *subject = ctx->subject;\n"
         "    size_t subject_length = ctx->len;\n"
         "    size_t search_from = ctx->pos;\n",
-        matchfn);
+        pcrec_entry_storage(cx, PCREC_ENTRY_MATCH), matchfn);
     /* [K50] The caller-startpos guard, which this body did not carry until
      * [K73] went looking for its sites: the search-and-filter form reaches
      * the guard through `<prefix>_search`, and this form calls no search, so
@@ -11891,11 +11958,12 @@ static void emit_anchored_match_def(Ctx *cx, StrBuf *c, const DfaForm *f,
  * true here BY CONSTRUCTION rather than by a filter that proved it. On every
  * negative return `caps_out` is UNTOUCHED (A-8's rule) -- every write is
  * below the early return. */
-static void emit_anchored_match_caps_def(StrBuf *c, const char *fn,
-                                         const char *matchfn, const char *upper)
+static void emit_anchored_match_caps_def(StrBuf *c, const char *storage,
+                                         const char *fn, const char *matchfn,
+                                         const char *upper)
 {
     pcrec_sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
+        "%sptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
         "{\n"
         "    ptrdiff_t rx_len = %s(ctx);\n"
         "    if (rx_len < 0) return rx_len;\n"
@@ -11903,7 +11971,7 @@ static void emit_anchored_match_caps_def(StrBuf *c, const char *fn,
         "        capture_spans_out[0][0] = (ptrdiff_t)ctx->pos;\n"
         "        capture_spans_out[0][1] = (ptrdiff_t)ctx->pos + rx_len;\n"
         "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n",
-        fn, matchfn, upper);
+        storage, fn, matchfn, upper);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "            /* every group this artifact promises is reached only\n"
@@ -11937,7 +12005,9 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
     emit_scan_defs(c, &anch);
     emit_anchored_match_def(cx, c, &anch, g->matchfn);
     pcrec_sb_puts(c, "\n");
-    emit_anchored_match_caps_def(c, g->matchcapsfn, g->matchfn, g->upper);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS))
+        emit_anchored_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
+                                     g->matchcapsfn, g->matchfn, g->upper);
 }
 
 /* [OPT-REVEND] L2 THE MATCH-HERE ENTRY OF A BODY THAT MATCHES NOTHING
@@ -11948,12 +12018,12 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
 static void emit_nomatch_match_def(Ctx *cx, StrBuf *c, const char *matchfn)
 {
     pcrec_sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "%sptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    const unsigned char *subject = ctx->subject;\n"
         "    size_t subject_length = ctx->len;\n"
         "    size_t search_from = ctx->pos;\n",
-        matchfn);
+        pcrec_entry_storage(cx, PCREC_ENTRY_MATCH), matchfn);
     pcrec_emit_startpos_guard(cx, c, "    ", "search_from", "subject",
                               "subject_length", true);
     pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from;\n"
@@ -12927,8 +12997,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (body_memcmp) need_string_h = true;
 
     if (cx->opt->header_name)
-        emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
-                    g->upper, ncaps, bs);
+        emit_header(cx, g, ncaps, bs);
 
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(cx, c);
@@ -13132,6 +13201,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
+        /* [EMIT-ENTRIES] the header declares the exported entries; a kept
+         * STATIC one is forward-declared here, in the `.c` only (nothing
+         * under the default request). */
+        emit_entry_decls(cx, c, g, false, true);
+        emit_residual_decls(cx, c, ~pcrec_entry_enc_static(cx),
+                            pcrec_entry_enc_static(cx));
     } else {
         pcrec_sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
         /* file-scope, shared by every engine here; per-engine below */
@@ -13141,15 +13216,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_vars_macros(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
         pcrec_sb_putc(c, '\n');
-        emit_search_decl(c, cx, g->searchfn);
-        emit_match_decl(c, g->matchfn);
-        emit_match_caps_decl(c, g->matchcapsfn);
-        emit_info_decl(c, g->infoname);
-        emit_search_in_decl(c, cx, g->searchfn, cx->opt->prefix);
-        emit_match_in_decl(c, g->matchfn, cx->opt->prefix);
-        emit_match_caps_in_decl(c, g->matchcapsfn, cx->opt->prefix);
+        emit_entry_decls(cx, c, g, true, true);
         pcrec_sb_putc(c, '\n');
-        emit_residual_decls(cx, c);
+        emit_residual_decls(cx, c, pcrec_entry_enc_omit(cx),
+                            pcrec_entry_enc_static(cx));
     }
     if (need_string_h)
         pcrec_sb_puts(c, "#include <string.h>\n");
@@ -13562,6 +13632,19 @@ void pcrec_emit_dfa(Ctx *cx)
      * the search body below. */
     if (pcrec_dfa_landing_guard(cx)) cx->job->enc_mask |= PCREC_ENCE_DECODE;
     {
+        /* [EMIT-ENTRIES] the shape that decides which entry calls which,
+         * stated before the first declaration: `_match` has its own body on
+         * the nomatch and anchored forms (axis G's dispatch below). */
+        PcrecEntryShape sh = {
+            .vm = false,
+            .match_own = dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH ||
+                         dfa_match_is_unwrapped(cx),
+            .search_match = dfa_search_calls_match(cx),
+            .utf_check = pcrec_utf_check_on(cx),
+        };
+        pcrec_entry_shape(cx, &sh);
+    }
+    {
         /* [DD-14.FB] spec §10.4: the surface is emitted on a DFA artifact
          * too, INERT. This engine has no resume stack and no trail, so the
          * four sizing facts are 0 and the three `_in` entries below accept a
@@ -13578,30 +13661,45 @@ void pcrec_emit_dfa(Ctx *cx)
      * guard's DECODE), ahead of the search body that calls them; nothing on
      * an artifact whose mask holds none. */
     pcrec_emit_residual_inline(cx, c);
-    pcrec_emit_dfa_engine(cx, g.searchfn, "");
+    pcrec_emit_dfa_engine(cx, g.searchfn,
+                          pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH));
 
     pcrec_sb_puts(c, "\n");
     /* [ENG-ABS] AXIS G, and this is its ONE dispatch. `dfa_match_of` is the
      * same call `<PREFIX>_DFA_MATCH` and `rx_info.match_form` are written
      * from, so the stamp names the body that was actually emitted rather than
      * a second reading of the predicate that chose it. */
-    if (dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH) {
+    /* [EMIT-ENTRIES] `_match_caps` reaches `_match` on the first two forms,
+     * so an omitted `_match` is an omitted pair there. */
+    const bool em_match = pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH);
+    const bool em_caps = pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS);
+    if (!em_match && !em_caps) {
+        /* neither: an entry request that asked for neither */
+    } else if (dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH) {
         emit_nomatch_match_def(cx, c, g.matchfn);
         pcrec_sb_puts(c, "\n");
-        emit_anchored_match_caps_def(c, g.matchcapsfn, g.matchfn, g.upper);
+        if (em_caps)
+            emit_anchored_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
+                                         g.matchcapsfn, g.matchfn, g.upper);
     } else if (dfa_match_is_unwrapped(cx)) {
         emit_anchored_entries(cx, c, &g);
     } else {
-        emit_match_def(c, g.matchfn, g.searchfn, g.upper);
-        pcrec_sb_puts(c, "\n");
-        emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
+        if (em_match) {
+            emit_match_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH),
+                           g.matchfn, g.searchfn, g.upper);
+            pcrec_sb_puts(c, "\n");
+        }
+        if (em_caps)
+            emit_match_caps_def(c, pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
+                                g.matchcapsfn, g.searchfn, g.upper);
     }
     pcrec_sb_puts(c, "\n");
-    emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
+    emit_in_entry_defs(cx, c, g.searchfn, g.matchfn, g.matchcapsfn,
+                       cx->opt->prefix);
     pcrec_sb_puts(c, "\n");
     pcrec_emit_memfn_mark(c);
     pcrec_emit_residual(cx);
-    {
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_INFO)) {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan
          * frameless, so NONE of the three bounds applies to it and all read
          * as absent rather than as some notional large number. `work_budget`
@@ -13612,7 +13710,7 @@ void pcrec_emit_dfa(Ctx *cx)
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
 
-    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
         pcrec_emit_main(cx, &g);
 #ifdef PCREC_CAND_TRACE
     pcrec_cand_path_trace(cx);   /* [OPT-REVEND] L0's `CANDPATH` record */

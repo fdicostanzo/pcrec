@@ -10032,6 +10032,7 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
  * layers). Numerically equal today; the layer seam is the reason each is
  * spelled where it belongs. */
 static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
+                                  const char *storage, const char *in_storage,
                                   const char *ret, const char *name,
                                   const char *params, const char *storage_tail,
                                   const char *runargs, const char *deepargs,
@@ -10071,13 +10072,13 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
          * parameter list that changed at the definition and not here would be
          * a conflicting declaration rather than a silent mismatch. */
         pcrec_sb_printf(c,
-            "%s %s_in(%s, const %s_buffers *buffers);\n"
-            "%s %s(%s)\n"
+            "%s%s %s_in(%s, const %s_buffers *buffers);\n"
+            "%s%s %s(%s)\n"
             "{\n"
             "    return %s_in(%s, &%s_no_buffers);\n"
             "}\n\n",
-            ret, name, params, v->p,
-            ret, name, params, name, fwdargs, v->p);
+            in_storage, ret, name, params, v->p,
+            storage, ret, name, params, name, fwdargs, v->p);
     } else if (tiered) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
@@ -10098,7 +10099,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "}\n\n",
             ret, name, params, v->p, v->p, v->p, v->up, v->up, name, runargs);
         pcrec_sb_printf(c,
-            "%s %s(%s)\n"
+            "%s%s %s(%s)\n"
             "{\n"
             "    %s_run_state run;\n"
             "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
@@ -10106,7 +10107,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
             "                            fast.trail,  %s_FAST_TRAIL);\n"
             "    result = %s_run(%s);\n",
-            ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
+            storage, ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
             name, runargs);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
@@ -10127,7 +10128,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             frames_code, v->up, name, deepargs);
     } else {
         pcrec_sb_printf(c,
-            "%s %s(%s)\n"
+            "%s%s %s(%s)\n"
             "{\n"
             "    %s_run_state run;\n"
             "    %s_run_buffers storage;%s\n"
@@ -10135,8 +10136,8 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "                            storage.trail,  %s_TRAIL_FRAMES);\n"
             "    return %s_run(%s);\n"
             "}\n\n",
-            ret, name, params, v->p, v->p, storage_tail, v->p, v->up, v->up,
-            name, runargs);
+            storage, ret, name, params, v->p, v->p, storage_tail, v->p, v->up,
+            v->up, name, runargs);
     }
 }
 
@@ -12758,7 +12759,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             " * not a tuning knob: a pattern whose prefilter can answer must\n"
             " * never reach the step budget. */\n");
         pcrec_sb_cmt_close(c);
-        pcrec_emit_dfa_engine(cx, prefn, "static ");
+        pcrec_emit_dfa_engine(cx, prefn,
+                              pcrec_entry_storage(cx, PCREC_ENTRY_PREFILTER));
         pcrec_sb_puts(c, "\n");
     }
     /* The one fact about the prefilter that outlives this section: the
@@ -13575,6 +13577,175 @@ static void vm_emit_match_guard(Vm *v, StrBuf *c)
                               "ctx->len", true);
 }
 
+/* `<prefix>_search_in`: the search with the caller's storage, or exactly
+ * `<prefix>_search` on a NULL descriptor. */
+static void vm_emit_search_in(Vm *v, const GenNames *g)
+{
+    Ctx *cx = v->cx;
+    StrBuf *c = &cx->job->csb;
+    pcrec_sb_puts(c, pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN));
+    pcrec_sb_printf(c,
+        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "          ptrdiff_t (*capture_spans)[2]%s, const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
+        "}\n\n",
+        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
+        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));
+}
+
+/* `<prefix>_match`'s one implementation, `<prefix>_match_run`: the guard,
+ * the offset-0 rule, the variables, one anchored attempt at `ctx->pos`. */
+static void vm_emit_match_run(Vm *v, const GenNames *g, const VmEntry *en)
+{
+    StrBuf *c = &v->cx->job->csb;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* F1's unconditional export, typed rx_matchfn.\n"
+        " *\n"
+        " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
+        " * return space is >= 0 matched length, -1 no match, and a distinct\n"
+        " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
+        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK, PCREC_ERR_RECURSE\n"
+        " * -- [DD-14]: reserved, no producer yet, D71 item 1). Anything BELOW the floor\n"
+        " * stays reserved for the future abort semantic and is what a callout\n"
+        " * call site traps on.\n"
+        " *\n"
+        " * This SUPERSEDES D42.3, which collapsed every give-up to -1 because\n"
+        " * D38.4 had reserved the whole < -1 space. Three things moved: pcrec is\n"
+        " * pre-release, so a 'final' label reads as 'stable absent a reason';\n"
+        " * the typedef is BIDIRECTIONAL, so under the collapse an\n"
+        " * embedder-WRITTEN callout had no legal spelling for 'I gave up' at\n"
+        " * all (anything below -1 traps the process); and the collapse let an\n"
+        " * inner give-up read as a plain path failure, so an outer match could\n"
+        " * report an ANSWER where a bound had actually blown. A caller that\n"
+        " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "static %sptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
+        "{\n"
+        "    ptrdiff_t result;\n"
+        "    if (ctx->pos > ctx->len) return -1;\n",
+        en->ai, g->matchfn, v->p);
+    vm_emit_match_guard(v, c);
+    /* [K73] The offset-0 start rule, NOMATCH form: a match-here entry cannot
+     * report a match beginning anywhere but `ctx->pos`, and none begins at a
+     * position that is not a character start. */
+    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    pcrec_sb_printf(c,
+        "    %s_run_state_init(run);\n"
+        /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
+         * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
+         * `ctx->vars` with no new parameter and stays an `rx_matchfn` byte
+         * for byte. That is the whole reason the pair rides the ctx. */
+        "%s"
+        "    result = %s_match_anchored(ctx, run%s%s);\n",
+        v->p,
+        vm_vars_resolve_insert(v, "ctx"), v->p,
+        v->nclamp > 0 ? ", ctx->len" : "",
+        /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
+         * `ctx->pos` — it is threaded, not absent — so `\G` here is
+         * `pos == ctx->pos`, trivially true at entry. That makes the two
+         * entries AGREE EXACTLY for a fully-`\G` pattern, and legitimately
+         * DISAGREE for a partial one (`\Gfoo|bar`): `<prefix>_search` may
+         * find `bar` at a later offset where this entry's caller asked about
+         * one position only. tests/assertions/run_gstart_diff.sh pins both
+         * halves, scoped, because an unscoped "the entries agree" test would
+         * be red on correct behaviour. */
+        v->ngst > 0 ? ", ctx->pos" : "");
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "    /* No translation and no clamp: the impl's return space IS this\n"
+        "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
+        "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
+        "     * below-the-floor PCREC_ERR_INTERNAL -- this entry propagates\n"
+        "     * it exactly like a give-up, for the same top-level-entry\n"
+        "     * reason <prefix>_search does). A defensive floor test here\n"
+        "     * would be dead code pretending to be a safeguard. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c,
+        "    return result;\n"
+        "}\n\n");
+}
+
+/* `<prefix>_match_caps`' one implementation, `<prefix>_match_caps_run`:
+ * `<prefix>_match_run` plus the capture report on a match. */
+static void vm_emit_match_caps_run(Vm *v, const GenNames *g, const VmEntry *en)
+{
+    StrBuf *c = &v->cx->job->csb;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* The capture-delivering sibling. Same D49 return space as\n"
+        " * <prefix>_match above -- it always had room for the codes (it is not\n"
+        " * an rx_matchfn), and now the two agree instead of differing over a\n"
+        " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
+        " * every negative return, give-up included: a caller that gave up has\n"
+        " * no captures, and A-8's untouched-wins rule does not bend for it. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "static %sptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "                        %s_run_state *run)\n"
+        "{\n"
+        "    ptrdiff_t result;\n"
+        "    if (ctx->pos > ctx->len) return -1;\n",
+        en->ai, g->matchcapsfn, v->p);
+    vm_emit_match_guard(v, c);
+    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
+                          "ctx->len", PCREC_START0_NOMATCH);
+    pcrec_sb_printf(c,
+        "    %s_run_state_init(run);\n"
+        "%s"
+        "    result = %s_match_anchored(ctx, run%s%s);\n"
+        "    if (result < 0) return result;\n"
+        "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
+        "    return result;\n"
+        "}\n\n",
+        v->p,
+        vm_vars_resolve_insert(v, "ctx"), v->p,
+        v->nclamp > 0 ? ", ctx->len" : "",
+        v->ngst > 0 ? ", ctx->pos" : "", v->p);
+}
+
+/* `<prefix>_match_in`: `<prefix>_match` with the caller's storage. */
+static void vm_emit_match_in(Vm *v, const GenNames *g)
+{
+    StrBuf *c = &v->cx->job->csb;
+    pcrec_sb_puts(c, pcrec_entry_storage(v->cx, PCREC_ENTRY_MATCH_IN));
+    pcrec_sb_printf(c,
+        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(ctx);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(ctx, &run);\n"
+        "}\n\n",
+        g->matchfn, v->p, v->p, g->matchfn, v->p, g->matchfn);
+}
+
+/* `<prefix>_match_caps_in`: `<prefix>_match_caps` with the caller's storage. */
+static void vm_emit_match_caps_in(Vm *v, const GenNames *g)
+{
+    StrBuf *c = &v->cx->job->csb;
+    pcrec_sb_puts(c, pcrec_entry_storage(v->cx, PCREC_ENTRY_MATCH_CAPS_IN));
+    pcrec_sb_printf(c,
+        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "                const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(ctx, capture_spans_out);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(ctx, capture_spans_out, &run);\n"
+        "}\n\n",
+        g->matchcapsfn, v->p, v->p, g->matchcapsfn, v->p, g->matchcapsfn);
+}
+
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
  * `<prefix>_match` / `<prefix>_match_caps` and the `_in` sibling of each,
  * the caller-buffer variant that binds the caller's own storage.
@@ -13645,7 +13816,9 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
             v->p, v->p);
     }
 
-    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "int", g->searchfn,
+    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
+        pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH),
+        pcrec_entry_storage(cx, PCREC_ENTRY_SEARCH_IN), "int", g->searchfn,
         pcrec_sb_fragf(&cx->arena,
             "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
             "       ptrdiff_t (*capture_spans)[2]%s", pcrec_vars_param_text(cx)),
@@ -13669,18 +13842,8 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         " * than bytes. A give-up still reports PCREC_ERR_FRAMES and does not\n"
         " * say whose buffer ran out; retrying with a larger one is defined. */\n");
     pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "          ptrdiff_t (*capture_spans)[2]%s, const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
-        "}\n\n",
-        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
-        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_SEARCH_IN))
+        vm_emit_search_in(v, g);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -13729,106 +13892,11 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
      * prologue (guard or alignment, then the subject check) is now several
      * statements written straight into the artifact. */
 
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "/* F1's unconditional export, typed rx_matchfn.\n"
-        " *\n"
-        " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
-        " * return space is >= 0 matched length, -1 no match, and a distinct\n"
-        " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
-        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK, PCREC_ERR_RECURSE\n"
-        " * -- [DD-14]: reserved, no producer yet, D71 item 1). Anything BELOW the floor\n"
-        " * stays reserved for the future abort semantic and is what a callout\n"
-        " * call site traps on.\n"
-        " *\n"
-        " * This SUPERSEDES D42.3, which collapsed every give-up to -1 because\n"
-        " * D38.4 had reserved the whole < -1 space. Three things moved: pcrec is\n"
-        " * pre-release, so a 'final' label reads as 'stable absent a reason';\n"
-        " * the typedef is BIDIRECTIONAL, so under the collapse an\n"
-        " * embedder-WRITTEN callout had no legal spelling for 'I gave up' at\n"
-        " * all (anything below -1 traps the process); and the collapse let an\n"
-        " * inner give-up read as a plain path failure, so an outer match could\n"
-        " * report an ANSWER where a bound had actually blown. A caller that\n"
-        " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "static %sptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
-        "{\n"
-        "    ptrdiff_t result;\n"
-        "    if (ctx->pos > ctx->len) return -1;\n",
-        en->ai, g->matchfn, v->p);
-    vm_emit_match_guard(v, c);
-    /* [K73] The offset-0 start rule, NOMATCH form: a match-here entry cannot
-     * report a match beginning anywhere but `ctx->pos`, and none begins at a
-     * position that is not a character start. */
-    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
-                          "ctx->len", PCREC_START0_NOMATCH);
-    pcrec_sb_printf(c,
-        "    %s_run_state_init(run);\n"
-        /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
-         * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
-         * `ctx->vars` with no new parameter and stays an `rx_matchfn` byte
-         * for byte. That is the whole reason the pair rides the ctx. */
-        "%s"
-        "    result = %s_match_anchored(ctx, run%s%s);\n",
-        v->p,
-        vm_vars_resolve_insert(v, "ctx"), v->p,
-        v->nclamp > 0 ? ", ctx->len" : "",
-        /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
-         * `ctx->pos` — it is threaded, not absent — so `\G` here is
-         * `pos == ctx->pos`, trivially true at entry. That makes the two
-         * entries AGREE EXACTLY for a fully-`\G` pattern, and legitimately
-         * DISAGREE for a partial one (`\Gfoo|bar`): `<prefix>_search` may
-         * find `bar` at a later offset where this entry's caller asked about
-         * one position only. tests/assertions/run_gstart_diff.sh pins both
-         * halves, scoped, because an unscoped "the entries agree" test would
-         * be red on correct behaviour. */
-        v->ngst > 0 ? ", ctx->pos" : "");
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "    /* No translation and no clamp: the impl's return space IS this\n"
-        "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
-        "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
-        "     * below-the-floor PCREC_ERR_INTERNAL -- this entry propagates\n"
-        "     * it exactly like a give-up, for the same top-level-entry\n"
-        "     * reason <prefix>_search does). A defensive floor test here\n"
-        "     * would be dead code pretending to be a safeguard. */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_puts(c,
-        "    return result;\n"
-        "}\n\n");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_RUN))
+        vm_emit_match_run(v, g, en);
 
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_puts(c,
-        "/* The capture-delivering sibling. Same D49 return space as\n"
-        " * <prefix>_match above -- it always had room for the codes (it is not\n"
-        " * an rx_matchfn), and now the two agree instead of differing over a\n"
-        " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
-        " * every negative return, give-up included: a caller that gave up has\n"
-        " * no captures, and A-8's untouched-wins rule does not bend for it. */\n");
-    pcrec_sb_cmt_close(c);
-    pcrec_sb_printf(c,
-        "static %sptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
-        "                        %s_run_state *run)\n"
-        "{\n"
-        "    ptrdiff_t result;\n"
-        "    if (ctx->pos > ctx->len) return -1;\n",
-        en->ai, g->matchcapsfn, v->p);
-    vm_emit_match_guard(v, c);
-    pcrec_emit_start_zero(v->cx, c, "    ", "ctx->pos", "ctx->subject",
-                          "ctx->len", PCREC_START0_NOMATCH);
-    pcrec_sb_printf(c,
-        "    %s_run_state_init(run);\n"
-        "%s"
-        "    result = %s_match_anchored(ctx, run%s%s);\n"
-        "    if (result < 0) return result;\n"
-        "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
-        "    return result;\n"
-        "}\n\n",
-        v->p,
-        vm_vars_resolve_insert(v, "ctx"), v->p,
-        v->nclamp > 0 ? ", ctx->len" : "",
-        v->ngst > 0 ? ", ctx->pos" : "", v->p);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS_RUN))
+        vm_emit_match_caps_run(v, g, en);
 
     /* [DD-14.FB] The four wrappers for the two anchored entries -- the same
      * shape, the same delegation direction and the same one-implementation
@@ -13843,36 +13911,25 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
      * directly on `<prefix>_match_anchored` and still see the private
      * sentinel (§4.4's three layers). */
-    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "ptrdiff_t", g->matchfn,
-        "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl->frames_sentinel, "ctx");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH))
+        vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
+            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH),
+            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_IN), "ptrdiff_t", g->matchfn,
+            "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl->frames_sentinel, "ctx");
 
-    pcrec_sb_printf(c,
-        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(ctx);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(ctx, &run);\n"
-        "}\n\n",
-        g->matchfn, v->p, v->p, g->matchfn, v->p, g->matchfn);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_IN))
+        vm_emit_match_in(v, g);
 
-    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "ptrdiff_t", g->matchcapsfn,
-        "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
-        "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
-        pl->frames_sentinel, "ctx, capture_spans_out");
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS))
+        vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries,
+            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS),
+            pcrec_entry_storage(cx, PCREC_ENTRY_MATCH_CAPS_IN), "ptrdiff_t", g->matchcapsfn,
+            "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
+            "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
+            pl->frames_sentinel, "ctx, capture_spans_out");
 
-    pcrec_sb_printf(c,
-        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
-        "                const %s_buffers *buffers)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    if (!buffers) return %s(ctx, capture_spans_out);\n"
-        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
-        "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(ctx, capture_spans_out, &run);\n"
-        "}\n\n",
-        g->matchcapsfn, v->p, v->p, g->matchcapsfn, v->p, g->matchcapsfn);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MATCH_CAPS_IN))
+        vm_emit_match_caps_in(v, g);
 }
 
 /* Closes the artifact: the residual encoding helpers, `rx_info`, an optional
@@ -13904,11 +13961,12 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
     pcrec_emit_memfn_mark(&job->csb);
     pcrec_emit_residual(cx);
 
-    pcrec_emit_info(cx, g, 2, job->fit.why,
-                    has_budget ? budget : -1, work_budget, bt_frames, ceiling,
-                    &pl->bufs);
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_INFO))
+        pcrec_emit_info(cx, g, 2, job->fit.why,
+                        has_budget ? budget : -1, work_budget, bt_frames, ceiling,
+                        &pl->bufs);
 
-    if (pcrec_opt_has(cx->opt, PCREC_EMIT_MAIN))
+    if (pcrec_entry_emitted(cx, PCREC_ENTRY_MAIN))
         pcrec_emit_main(cx, g);
 
     /* [M4.5c] The listing, rendered LAST — the event stream is complete by
@@ -13996,6 +14054,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * form moves the table and its reads and nothing the size term decides. */
     vm_cls_tables(&v);
     vm_plan_reseed(&v, &rs);
+    {
+        /* [EMIT-ENTRIES] the entry chain's shape, stated before the
+         * prologue's declarations: the entry rung (`en.fwd_entries`), the
+         * hybrid's embedded search, the subject check, and the variables'
+         * validity entry where the backend carries one (`vm_plan`'s mask). */
+        PcrecEntryShape sh = {
+            .vm = true,
+            .fwd = en.fwd_entries,
+            .hybrid = cx->job->fit.prefilter,
+            .utf_check = pcrec_utf_check_on(cx),
+            .vars = (cx->job->enc_mask & PCREC_ENCE_VAR_VALID) != 0,
+        };
+        pcrec_entry_shape(cx, &sh);
+    }
 
     pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en, &rs);

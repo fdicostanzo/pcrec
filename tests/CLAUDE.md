@@ -751,6 +751,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   than promoted to their recorded oracle, a known stage-4 gap, not a
   finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
+- **compound/** — [COMPOUND] (`docs/design/compound.md`, D163): `make
+  test-compound`, the compound tool's build-step unit checks, through an
+  internal driver that links `libpcrec.a` (B0: an [EMIT-ENTRIES] request
+  leaves exactly its closure, every sampled corpus artifact compiled
+  `-Werror` and held to the plain artifact's `nm -g`). See its own CLAUDE.md.
+
 - **findings/** — `[FINDINGS]`: since step B1 (lane `findb1`) a `make test`
   section (`make test-findings`, in `TEST_SECTIONS`). B1's
   `run_findings_tests.sh` holds the findings seam's data, store, stamp and

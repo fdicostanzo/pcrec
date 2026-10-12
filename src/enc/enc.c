@@ -95,10 +95,10 @@ unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask)
  * text pointer reaching this far would otherwise emit a TRUNCATED artifact
  * instead of failing. */
 void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
-                          const char *prefix)
+                          const char *prefix, unsigned drop, unsigned stat)
 {
     if (!e || !e->entries) return;
-    mask = pcrec_enc_mask_close(e, mask);
+    mask = pcrec_enc_mask_close(e, mask) & ~drop;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && !t->inline_def) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
@@ -107,6 +107,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix, NULL);
                 pcrec_sb_cmt_close(sb);
             }
+            if (stat & t->id) pcrec_sb_puts(sb, "static ");
             pcrec_enc_emit_text(sb, t->decls, prefix, NULL);
         }
 }
@@ -143,10 +144,11 @@ static void enc_emit_latin1_fold_table(StrBuf *sb, const char *prefix)
  * text from `sites` ([MEMFN] M7). A backend with no table emits nothing. */
 static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix, bool inline_half,
-                          const PcrecEncSiteText *sites, size_t nsites)
+                          const PcrecEncSiteText *sites, size_t nsites,
+                          unsigned drop, unsigned stat)
 {
     if (!e || !e->entries) return;
-    mask = pcrec_enc_mask_close(e, mask);
+    mask = pcrec_enc_mask_close(e, mask) & ~drop;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if ((mask & t->id) && t->inline_def == inline_half) {
             if (t->id == PCREC_ENCE_SPAN_CASELESS_UCP)
@@ -170,6 +172,7 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                 pcrec_ctx_fail(sb->cx, 0, "internal error: residual entry %u "
                                "states site data and no loop was rendered for it",
                                t->id);
+            if (stat & t->id) pcrec_sb_puts(sb, "static ");
             pcrec_enc_emit_text(sb, t->defs, prefix, site);
         }
 }
@@ -177,9 +180,9 @@ static void enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 /* The out-of-line entries' definitions (the artifact's epilogue). */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix, const PcrecEncSiteText *sites,
-                         size_t nsites)
+                         size_t nsites, unsigned drop, unsigned stat)
 {
-    enc_emit_defs(sb, e, mask, prefix, false, sites, nsites);
+    enc_emit_defs(sb, e, mask, prefix, false, sites, nsites, drop, stat);
 }
 
 /* The `static inline` entries' definitions, placed by the caller ahead of
@@ -189,7 +192,7 @@ void pcrec_enc_emit_inline_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                                 const char *prefix,
                                 const PcrecEncSiteText *sites, size_t nsites)
 {
-    enc_emit_defs(sb, e, mask, prefix, true, sites, nsites);
+    enc_emit_defs(sb, e, mask, prefix, true, sites, nsites, 0, 0);
 }
 
 /* True iff entry `id` in `e`'s table is marked engine_callable; false for an
