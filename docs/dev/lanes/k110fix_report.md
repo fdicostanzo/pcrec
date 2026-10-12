@@ -35,7 +35,7 @@ Offsets are taken from `cx->pos` at parse time (user text) and never recomputed,
 - Mech rows solo (`TMPDIR=build/k110/tmp`, logs `build/k110/mech_S{93,96,117}.log`, each `== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0 ...)`, rc 0), all DETECTED as expected:
   - S93 `codegen:2fail/329pass,corpus:29fail/234pass,atomicdiff:16fail/5pass,registry:6fail/229pass+compliance-FAIL`
   - S96 `registry:1fail/230pass,codegen:5fail/326pass,corpus:12fail/114pass,atomicdiff:5fail/5pass`
-  - S117 `registry:12fail/230pass,brefdiff:35fail/11pass,corpus:0fail/88pass`
+  - S117 registry 12 fail / 230 pass, brefdiff 35 fail / 11 pass, corpus 0 fail / 88 pass
 - Intent re-verified: the re-aim only drops the `cx,` argument; the plants still skip/neutralize exactly the stamp (S93 no A_ATOMIC wrapper, S96/S117 node left unstamped), and the detectors are the ones the rows name (registry `check_engine_capability`, atomicdiff, brefdiff). None of the three declares `SAB_REACH`, so there was no reach line to re-aim. S96's `SAB_DOC_FIGURE` predicted a green default-engine corpus; measured `corpus:12fail` (the harness target's `--engine=dfa` refusal cells). The figure text is still marked PREDICTED and was left alone.
 - `git merge main` (alone): clean, docs-only (13 files, no src/tests). `make strict`: rc 0, "whole tree compiles clean".
 - Not rerun: the other full `make test` sections (they ran green on d38db367, which has the identical src; the re-aim touched only three sabotage rows, and the merge brought docs only).

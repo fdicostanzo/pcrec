@@ -1,0 +1,347 @@
+== E1 form elements: today's emitted rev-end walk (T) against b3meas's plain-style R (same algorithm)
+element                         T (today, emit_rev_end + emit_reverse_block)            R (plain)
+seed loop                       for seed<2; seed 1 re-reads s[n-1]; same seed state       same loop; seed states PRE-VIEWED (seed n = END/EOL view
+                                for both seeds, views resolved in the walk                of s0, seed n-1 = EOL view); one eol probe after seed n's 1st step
+view resolution                 PER ITERATION at the loop top: __builtin_expect(          none in the loop
+                                rewind+1 >= n) + view-state copy; at n-1 re-reads s[n-1]
+table layout                    premultiplied u16 next, u8 accept per cell, 256 B class,  identical (R uses the probe's pre-scan-edge machine;
+                                u16 view row table, inline accessors (fold away)          T the scan-edge pass's renumbered one)
+stop/dead dispatch              st < stop: continue; then st == 65535: break               identical
+run skip, accepting self-loop   scan-edge block behind the stop compare (range compare     bitmap table behind the stop compare, then `continue`
+                                or u8 bitmap), sets the start, `goto` the loop top          (accept recorded at the top)
+run skip, other self-loop       STAY loop at the loop TOP, tested every iteration           same after-compare form as above
+                                (`reverse_state == K && rewind+1 < n`), u8 bitmap
+run-skip coverage               the scan-edge pass's choice                                every self-loop state of the machine
+tie arm                         verify-at via <p>_match (or relocate)                      verify-at via <p>_match
+dead-seed skip                  not emitted on this population (no dead seed)              n/a
+
+# E1 census (gen.py e1): notie R run skip=48; notie T run skip (stay or edge)=54; notie artifacts=109; notie end view too=2; notie scan-edge bitmap=5; notie scan-edge none=66; notie scan-edge range=38; notie stay at top=11; notie view probe in loop=109; tie R run skip=18; tie T run skip (stay or edge)=18; tie artifacts=30; tie end view too=1; tie scan-edge bitmap=15; tie scan-edge none=15; tie stay at top=3; tie view probe in loop=30
+
+# timing run: run2 (cross-run agreement against the other run at the end of section E)
+# E population: 206 distinct artifacts; built and checked 139; skipped {'b3meas': 67}
+# E answers vs libpcre2 10.46 (exhaustive every-startpos cells to length 5 + regime subjects), per arm: B 0/19632089 wrong, P 0/71330165 wrong, Q 0/19632089 wrong, R 0/90962254 wrong, S 0/71330165 wrong, T 0/90962254 wrong, U 0/71330165 wrong, V 0/71330165 wrong, W 0/71330165 wrong
+# classes: {'notie': 109, 'tie': 30}
+# no-tie artifacts with stay loops at the top (S arm differs from R): 7 of 109
+# tie artifacts whose tagged machine has a non-accepting self-loop (Q arm differs from B): 1 of 30
+
+== E2/E3 no-tie (nl_last false): class geomean of ns ratios per regime, per-cell p5-p95; A/A = A/T
+ratio	regime	cells	geomean	p5-p95	A/A	A/A p5-p95
+T/R	L-nl-m	88	1.299	1.004-1.694	1.059	0.956-1.197
+T/R	L-nl-n	89	1.548	1.340-1.716	1.041	0.931-1.187
+T/R	L-nonl-m	88	1.217	0.972-1.480	1.026	0.932-1.240
+T/R	L-nonl-n	89	1.452	1.259-1.757	1.081	0.901-1.274
+T/R	K4-nl-m	86	1.321	1.031-1.737	1.048	0.942-1.182
+T/R	K4-nl-n	89	1.491	1.278-1.693	1.059	0.954-1.225
+T/R	K4-nonl-m	86	1.233	0.970-1.494	1.024	0.914-1.239
+T/R	K4-nonl-n	89	1.487	1.211-1.805	1.084	0.896-1.246
+T/R	M1-nl-m	86	1.314	1.020-1.707	1.053	0.959-1.201
+T/R	M1-nl-n	89	1.600	1.364-1.837	1.081	0.951-1.261
+T/R	M1-nonl-m	86	1.227	0.957-1.489	1.016	0.924-1.112
+T/R	M1-nonl-n	89	1.508	1.315-1.758	1.057	0.920-1.201
+
+V/R	L-nl-m	88	1.400	1.036-1.680	1.059	0.956-1.197
+V/R	L-nl-n	89	1.678	1.517-1.892	1.041	0.931-1.187
+V/R	L-nonl-m	88	1.299	1.022-1.510	1.026	0.932-1.240
+V/R	L-nonl-n	89	1.550	1.348-1.813	1.081	0.901-1.274
+V/R	K4-nl-m	86	1.405	1.067-1.739	1.048	0.942-1.182
+V/R	K4-nl-n	89	1.618	1.443-1.861	1.059	0.954-1.225
+V/R	K4-nonl-m	86	1.315	1.039-1.537	1.024	0.914-1.239
+V/R	K4-nonl-n	89	1.585	1.380-1.847	1.084	0.896-1.246
+V/R	M1-nl-m	86	1.402	1.010-1.731	1.053	0.959-1.201
+V/R	M1-nl-n	89	1.706	1.508-1.913	1.081	0.951-1.261
+V/R	M1-nonl-m	86	1.302	1.031-1.601	1.016	0.924-1.112
+V/R	M1-nonl-n	89	1.573	1.343-1.776	1.057	0.920-1.201
+
+S/R	L-nl-m	88	0.987	0.910-1.058	1.059	0.956-1.197
+S/R	L-nl-n	89	0.993	0.929-1.070	1.041	0.931-1.187
+S/R	L-nonl-m	88	1.000	0.923-1.146	1.026	0.932-1.240
+S/R	L-nonl-n	89	0.985	0.897-1.094	1.081	0.901-1.274
+S/R	K4-nl-m	86	0.987	0.914-1.058	1.048	0.942-1.182
+S/R	K4-nl-n	89	0.985	0.891-1.071	1.059	0.954-1.225
+S/R	K4-nonl-m	86	1.001	0.906-1.178	1.024	0.914-1.239
+S/R	K4-nonl-n	89	0.980	0.859-1.071	1.084	0.896-1.246
+S/R	M1-nl-m	86	0.990	0.912-1.055	1.053	0.959-1.201
+S/R	M1-nl-n	89	0.986	0.890-1.072	1.081	0.951-1.261
+S/R	M1-nonl-m	86	0.993	0.931-1.089	1.016	0.924-1.112
+S/R	M1-nonl-n	89	0.983	0.887-1.112	1.057	0.920-1.201
+
+T/V	L-nl-m	88	0.928	0.842-1.075	1.059	0.956-1.197
+T/V	L-nl-n	89	0.922	0.797-1.075	1.041	0.931-1.187
+T/V	L-nonl-m	88	0.937	0.826-1.100	1.026	0.932-1.240
+T/V	L-nonl-n	89	0.937	0.777-1.105	1.081	0.901-1.274
+T/V	K4-nl-m	86	0.940	0.822-1.119	1.048	0.942-1.182
+T/V	K4-nl-n	89	0.921	0.797-1.043	1.059	0.954-1.225
+T/V	K4-nonl-m	86	0.938	0.836-1.101	1.024	0.914-1.239
+T/V	K4-nonl-n	89	0.938	0.775-1.082	1.084	0.896-1.246
+T/V	M1-nl-m	86	0.937	0.777-1.086	1.053	0.959-1.201
+T/V	M1-nl-n	89	0.938	0.821-1.088	1.081	0.951-1.261
+T/V	M1-nonl-m	86	0.943	0.857-1.082	1.016	0.924-1.112
+T/V	M1-nonl-n	89	0.958	0.809-1.094	1.057	0.920-1.201
+
+U/T	L-nl-m	88	0.728	0.615-1.002	1.059	0.956-1.197
+U/T	L-nl-n	89	0.695	0.610-0.868	1.041	0.931-1.187
+U/T	L-nonl-m	88	0.924	0.856-1.015	1.026	0.932-1.240
+U/T	L-nonl-n	89	0.994	0.906-1.271	1.081	0.901-1.274
+U/T	K4-nl-m	86	0.716	0.585-0.967	1.048	0.942-1.182
+U/T	K4-nl-n	89	0.705	0.637-0.853	1.059	0.954-1.225
+U/T	K4-nonl-m	86	0.922	0.853-1.027	1.024	0.914-1.239
+U/T	K4-nonl-n	89	0.998	0.895-1.272	1.084	0.896-1.246
+U/T	M1-nl-m	86	0.720	0.586-0.971	1.053	0.959-1.201
+U/T	M1-nl-n	89	0.670	0.591-0.796	1.081	0.951-1.261
+U/T	M1-nonl-m	86	0.918	0.832-1.045	1.016	0.924-1.112
+U/T	M1-nonl-n	89	0.984	0.907-1.196	1.057	0.920-1.201
+
+P/R	L-nl-m	88	0.869	0.690-1.082	1.059	0.956-1.197
+P/R	L-nl-n	89	0.901	0.820-1.032	1.041	0.931-1.187
+P/R	L-nonl-m	88	1.011	0.851-1.168	1.026	0.932-1.240
+P/R	L-nonl-n	89	1.203	1.106-1.331	1.081	0.901-1.274
+P/R	K4-nl-m	86	0.853	0.666-1.106	1.048	0.942-1.182
+P/R	K4-nl-n	89	0.878	0.801-1.043	1.059	0.954-1.225
+P/R	K4-nonl-m	86	1.002	0.857-1.179	1.024	0.914-1.239
+P/R	K4-nonl-n	89	1.233	1.125-1.353	1.084	0.896-1.246
+P/R	M1-nl-m	86	0.849	0.643-1.086	1.053	0.959-1.201
+P/R	M1-nl-n	89	0.858	0.767-0.988	1.081	0.951-1.261
+P/R	M1-nonl-m	86	0.991	0.823-1.182	1.016	0.924-1.112
+P/R	M1-nonl-n	89	1.189	1.072-1.332	1.057	0.920-1.201
+
+W/R	L-nl-m	88	0.788	0.627-0.952	1.059	0.956-1.197
+W/R	L-nl-n	89	0.816	0.745-0.898	1.041	0.931-1.187
+W/R	L-nonl-m	88	0.828	0.706-0.979	1.026	0.932-1.240
+W/R	L-nonl-n	89	0.961	0.893-1.023	1.081	0.901-1.274
+W/R	K4-nl-m	86	0.763	0.628-0.950	1.048	0.942-1.182
+W/R	K4-nl-n	89	0.779	0.703-0.896	1.059	0.954-1.225
+W/R	K4-nonl-m	86	0.835	0.725-0.958	1.024	0.914-1.239
+W/R	K4-nonl-n	89	0.965	0.890-1.077	1.084	0.896-1.246
+W/R	M1-nl-m	86	0.766	0.627-0.924	1.053	0.959-1.201
+W/R	M1-nl-n	89	0.783	0.707-0.876	1.081	0.951-1.261
+W/R	M1-nonl-m	86	0.827	0.698-0.961	1.016	0.924-1.112
+W/R	M1-nonl-n	89	0.962	0.868-1.097	1.057	0.920-1.201
+
+U/P	L-nl-m	88	1.089	0.842-1.365	1.059	0.956-1.197
+U/P	L-nl-n	89	1.193	1.044-1.536	1.041	0.931-1.187
+U/P	L-nonl-m	88	1.112	0.895-1.374	1.026	0.932-1.240
+U/P	L-nonl-n	89	1.199	1.069-1.538	1.081	0.901-1.274
+U/P	K4-nl-m	86	1.108	0.856-1.417	1.048	0.942-1.182
+U/P	K4-nl-n	89	1.198	1.037-1.473	1.059	0.954-1.225
+U/P	K4-nonl-m	86	1.135	0.841-1.425	1.024	0.914-1.239
+U/P	K4-nonl-n	89	1.203	1.062-1.525	1.084	0.896-1.246
+U/P	M1-nl-m	86	1.115	0.844-1.447	1.053	0.959-1.201
+U/P	M1-nl-n	89	1.248	1.110-1.475	1.081	0.951-1.261
+U/P	M1-nonl-m	86	1.137	0.853-1.460	1.016	0.924-1.112
+U/P	M1-nonl-n	89	1.248	1.125-1.542	1.057	0.920-1.201
+
+U/W	L-nl-m	88	1.200	1.015-1.390	1.059	0.956-1.197
+U/W	L-nl-n	89	1.318	1.156-1.665	1.041	0.931-1.187
+U/W	L-nonl-m	88	1.357	1.024-1.616	1.026	0.932-1.240
+U/W	L-nonl-n	89	1.502	1.273-1.995	1.081	0.901-1.274
+U/W	K4-nl-m	86	1.240	1.026-1.453	1.048	0.942-1.182
+U/W	K4-nl-n	89	1.350	1.141-1.633	1.059	0.954-1.225
+U/W	K4-nonl-m	86	1.362	1.023-1.637	1.024	0.914-1.239
+U/W	K4-nonl-n	89	1.537	1.269-2.036	1.084	0.896-1.246
+U/W	M1-nl-m	86	1.235	1.034-1.442	1.053	0.959-1.201
+U/W	M1-nl-n	89	1.368	1.211-1.637	1.081	0.951-1.261
+U/W	M1-nonl-m	86	1.362	1.037-1.673	1.016	0.924-1.112
+U/W	M1-nonl-n	89	1.542	1.323-2.007	1.057	0.920-1.201
+
+W/P	L-nl-m	88	0.908	0.781-1.071	1.059	0.956-1.197
+W/P	L-nl-n	89	0.905	0.831-0.932	1.041	0.931-1.187
+W/P	L-nonl-m	88	0.819	0.720-0.951	1.026	0.932-1.240
+W/P	L-nonl-n	89	0.799	0.696-0.892	1.081	0.901-1.274
+W/P	K4-nl-m	86	0.894	0.764-1.072	1.048	0.942-1.182
+W/P	K4-nl-n	89	0.887	0.814-0.939	1.059	0.954-1.225
+W/P	K4-nonl-m	86	0.833	0.734-0.969	1.024	0.914-1.239
+W/P	K4-nonl-n	89	0.783	0.702-0.878	1.084	0.896-1.246
+W/P	M1-nl-m	86	0.902	0.781-1.085	1.053	0.959-1.201
+W/P	M1-nl-n	89	0.913	0.839-0.992	1.081	0.951-1.261
+W/P	M1-nonl-m	86	0.835	0.739-0.983	1.016	0.924-1.112
+W/P	M1-nonl-n	89	0.809	0.722-0.917	1.057	0.920-1.201
+
+T/W	L-nl-m	88	1.648	1.062-2.108	1.059	0.956-1.197
+T/W	L-nl-n	89	1.897	1.663-2.214	1.041	0.931-1.187
+T/W	L-nonl-m	88	1.469	1.030-1.855	1.026	0.932-1.240
+T/W	L-nonl-n	89	1.511	1.301-2.011	1.081	0.901-1.274
+T/W	K4-nl-m	86	1.731	1.137-2.230	1.048	0.942-1.182
+T/W	K4-nl-n	89	1.914	1.630-2.237	1.059	0.954-1.225
+T/W	K4-nonl-m	86	1.477	1.093-1.861	1.024	0.914-1.239
+T/W	K4-nonl-n	89	1.541	1.239-1.984	1.084	0.896-1.246
+T/W	M1-nl-m	86	1.716	1.139-2.237	1.053	0.959-1.201
+T/W	M1-nl-n	89	2.043	1.805-2.350	1.081	0.951-1.261
+T/W	M1-nonl-m	86	1.484	1.033-1.895	1.016	0.924-1.112
+T/W	M1-nonl-n	89	1.568	1.334-1.952	1.057	0.920-1.201
+
+== E2 fit ns = a + b*loads per artifact over its 12 regimes (no-tie); median a (ns/call), b (ns/load) over artifacts
+arm	artifacts	median a	median b	median R^2
+T	109	1.71	0.6304	0.959
+A	109	2.08	0.6150	0.911
+R	108	0.92	0.5737	0.956
+V	109	1.87	0.6517	0.934
+S	108	0.93	0.5596	0.958
+U	109	2.53	0.2113	0.654
+P	86	1.55	0.3980	0.961
+W	86	1.38	0.3893	0.796
+
+== E2 per-artifact fit deltas (T - R and T - V): median and p5-p95 of a and b deltas
+T-R	n=108	da median 0.93 ns (p5 0.40, p95 2.20)	b ratio median 1.006 (p5 0.631, p95 1.418)
+T-V	n=109	da median -0.02 ns (p5 -1.06, p95 0.78)	b ratio median 0.983 (p5 0.635, p95 1.318)
+V-R	n=108	da median 1.05 ns (p5 0.33, p95 2.05)	b ratio median 1.032 (p5 0.724, p95 1.430)
+S-R	n=108	da median 0.00 ns (p5 -0.27, p95 0.76)	b ratio median 0.993 (p5 0.808, p95 1.098)
+U-P	n=86	da median 0.72 ns (p5 -0.13, p95 6.13)	b ratio median 0.768 (p5 -0.002, p95 1.129)
+U-W	n=86	da median 0.92 ns (p5 0.21, p95 3.91)	b ratio median 0.913 (p5 -0.010, p95 1.333)
+W-R	n=86	da median 0.17 ns (p5 -2.43, p95 1.22)	b ratio median 0.853 (p5 0.397, p95 1.570)
+
+== E loads per call, no-tie, class mean (instrumented subject reads)
+regime	T	R	V	S	U	P	W
+L-nl-m	20.85	19.86	20.86	19.86	19.85	18.86	18.86
+L-nl-n	5.92	4.93	5.93	4.93	4.92	3.93	3.93
+L-nonl-m	18.85	19.57	19.57	19.57	18.85	18.85	18.85
+L-nonl-n	3.92	3.97	3.97	3.97	3.92	3.93	3.93
+K4-nl-m	13.68	12.68	13.68	12.68	12.68	11.68	11.68
+K4-nl-n	5.49	4.50	5.50	4.50	4.49	3.50	3.50
+K4-nonl-m	11.69	12.39	12.39	12.39	11.69	11.69	11.69
+K4-nonl-n	3.49	3.52	3.52	3.52	3.49	3.50	3.50
+M1-nl-m	14.11	13.09	14.09	13.09	13.11	12.09	12.09
+M1-nl-n	5.41	4.41	5.41	4.41	4.41	3.41	3.41
+M1-nonl-m	12.10	12.83	12.83	12.83	12.10	12.09	12.09
+M1-nonl-n	3.41	3.44	3.44	3.44	3.41	3.41	3.41
+
+== cross-run agreement (no-tie): class geomean per regime, this run | other run
+T/R	L-nl-m 1.30|1.38  L-nl-n 1.55|1.68  L-nonl-m 1.22|1.27  L-nonl-n 1.45|1.72  K4-nl-m 1.32|1.39  K4-nl-n 1.49|1.67  K4-nonl-m 1.23|1.27  K4-nonl-n 1.49|1.70  M1-nl-m 1.31|1.35  M1-nl-n 1.60|1.68  M1-nonl-m 1.23|1.25  M1-nonl-n 1.51|1.69
+V/R	L-nl-m 1.40|1.41  L-nl-n 1.68|1.65  L-nonl-m 1.30|1.34  L-nonl-n 1.55|1.62  K4-nl-m 1.41|1.40  K4-nl-n 1.62|1.63  K4-nonl-m 1.31|1.34  K4-nonl-n 1.58|1.63  M1-nl-m 1.40|1.40  M1-nl-n 1.71|1.65  M1-nonl-m 1.30|1.34  M1-nonl-n 1.57|1.61
+U/T	L-nl-m 0.73|0.71  L-nl-n 0.69|0.67  L-nonl-m 0.92|0.91  L-nonl-n 0.99|0.92  K4-nl-m 0.72|0.70  K4-nl-n 0.71|0.68  K4-nonl-m 0.92|0.90  K4-nonl-n 1.00|0.95  M1-nl-m 0.72|0.72  M1-nl-n 0.67|0.67  M1-nonl-m 0.92|0.91  M1-nonl-n 0.98|0.94
+P/R	L-nl-m 0.87|0.87  L-nl-n 0.90|0.91  L-nonl-m 1.01|1.02  L-nonl-n 1.20|1.28  K4-nl-m 0.85|0.86  K4-nl-n 0.88|0.90  K4-nonl-m 1.00|1.00  K4-nonl-n 1.23|1.31  M1-nl-m 0.85|0.86  M1-nl-n 0.86|0.88  M1-nonl-m 0.99|1.00  M1-nonl-n 1.19|1.27
+U/P	L-nl-m 1.09|1.12  L-nl-n 1.19|1.25  L-nonl-m 1.11|1.13  L-nonl-n 1.20|1.23  K4-nl-m 1.11|1.13  K4-nl-n 1.20|1.26  K4-nonl-m 1.13|1.15  K4-nonl-n 1.20|1.24  M1-nl-m 1.11|1.13  M1-nl-n 1.25|1.28  M1-nonl-m 1.14|1.14  M1-nonl-n 1.25|1.25
+A/T	L-nl-m 1.06|1.02  L-nl-n 1.04|1.00  L-nonl-m 1.03|1.02  L-nonl-n 1.08|1.01  K4-nl-m 1.05|1.03  K4-nl-n 1.06|1.01  K4-nonl-m 1.02|1.01  K4-nonl-n 1.08|1.03  M1-nl-m 1.05|1.04  M1-nl-n 1.08|1.03  M1-nonl-m 1.02|1.03  M1-nonl-n 1.06|1.01
+
+== E4 tie artifacts: Q (tagged, today step shape) vs B (tagged, plain); T/R style on the two-seed walk
+T/R tie/const/bounded	L-nl-m	12	1.123	1.025-1.240	1.030	0.982-1.109
+T/R tie/const/bounded	L-nonl-m	12	1.089	1.041-1.220	1.004	0.942-1.053
+T/R tie/const/bounded	K4-nl-m	12	1.098	0.991-1.191	1.004	0.935-1.090
+T/R tie/const/bounded	K4-nonl-m	12	1.061	0.935-1.211	1.002	0.901-1.120
+T/R tie/const/bounded	M1-nl-m	12	1.093	0.990-1.193	0.995	0.868-1.129
+T/R tie/const/bounded	M1-nonl-m	12	1.083	1.034-1.137	1.001	0.926-1.082
+T/R tie/const/unbounded	L-nl-m	17	1.086	0.958-1.180	0.967	0.869-1.028
+T/R tie/const/unbounded	L-nonl-m	17	1.132	0.956-1.491	1.012	0.936-1.087
+T/R tie/const/unbounded	K4-nl-m	17	1.041	0.956-1.206	1.004	0.953-1.066
+T/R tie/const/unbounded	K4-nonl-m	17	1.098	0.989-1.381	0.984	0.881-1.069
+T/R tie/const/unbounded	M1-nl-m	17	1.050	0.972-1.269	1.001	0.946-1.039
+T/R tie/const/unbounded	M1-nonl-m	17	1.091	0.935-1.263	1.000	0.946-1.089
+T/R tie/state-dep/unbounded	L-nl-m	1	1.037	1.037-1.037	0.980	0.980-0.980
+T/R tie/state-dep/unbounded	L-nonl-m	1	0.860	0.860-0.860	1.062	1.062-1.062
+T/R tie/state-dep/unbounded	K4-nl-m	1	0.973	0.973-0.973	1.031	1.031-1.031
+T/R tie/state-dep/unbounded	K4-nonl-m	1	0.951	0.951-0.951	1.026	1.026-1.026
+T/R tie/state-dep/unbounded	M1-nl-m	1	1.004	1.004-1.004	0.957	0.957-0.957
+T/R tie/state-dep/unbounded	M1-nonl-m	1	0.966	0.966-0.966	1.030	1.030-1.030
+
+R/B tie/const/bounded	L-nl-m	12	2.354	1.539-3.150	1.030	0.982-1.109
+R/B tie/const/bounded	L-nonl-m	12	1.370	1.219-1.595	1.004	0.942-1.053
+R/B tie/const/bounded	K4-nl-m	12	2.424	1.443-3.583	1.004	0.935-1.090
+R/B tie/const/bounded	K4-nonl-m	12	1.442	1.205-1.668	1.002	0.901-1.120
+R/B tie/const/bounded	M1-nl-m	12	2.343	1.380-3.735	0.995	0.868-1.129
+R/B tie/const/bounded	M1-nonl-m	12	1.396	1.136-1.655	1.001	0.926-1.082
+R/B tie/const/unbounded	L-nl-m	17	2.458	1.992-3.050	0.967	0.869-1.028
+R/B tie/const/unbounded	L-nonl-m	17	1.261	0.918-1.675	1.012	0.936-1.087
+R/B tie/const/unbounded	K4-nl-m	17	2.664	2.002-3.194	1.004	0.953-1.066
+R/B tie/const/unbounded	K4-nonl-m	17	1.288	1.018-1.607	0.984	0.881-1.069
+R/B tie/const/unbounded	M1-nl-m	17	2.570	1.943-3.070	1.001	0.946-1.039
+R/B tie/const/unbounded	M1-nonl-m	17	1.211	1.024-1.420	1.000	0.946-1.089
+R/B tie/state-dep/unbounded	L-nl-m	1	1.776	1.776-1.776	0.980	0.980-0.980
+R/B tie/state-dep/unbounded	L-nonl-m	1	1.530	1.530-1.530	1.062	1.062-1.062
+R/B tie/state-dep/unbounded	K4-nl-m	1	1.517	1.517-1.517	1.031	1.031-1.031
+R/B tie/state-dep/unbounded	K4-nonl-m	1	1.457	1.457-1.457	1.026	1.026-1.026
+R/B tie/state-dep/unbounded	M1-nl-m	1	1.526	1.526-1.526	0.957	0.957-0.957
+R/B tie/state-dep/unbounded	M1-nonl-m	1	1.352	1.352-1.352	1.030	1.030-1.030
+
+T/B tie/const/bounded	L-nl-m	12	2.644	1.761-3.830	1.030	0.982-1.109
+T/B tie/const/bounded	L-nonl-m	12	1.492	1.284-1.738	1.004	0.942-1.053
+T/B tie/const/bounded	K4-nl-m	12	2.663	1.663-3.945	1.004	0.935-1.090
+T/B tie/const/bounded	K4-nonl-m	12	1.530	1.312-1.873	1.002	0.901-1.120
+T/B tie/const/bounded	M1-nl-m	12	2.560	1.517-3.962	0.995	0.868-1.129
+T/B tie/const/bounded	M1-nonl-m	12	1.513	1.255-1.773	1.001	0.926-1.082
+T/B tie/const/unbounded	L-nl-m	17	2.670	2.182-3.192	0.967	0.869-1.028
+T/B tie/const/unbounded	L-nonl-m	17	1.427	0.986-1.918	1.012	0.936-1.087
+T/B tie/const/unbounded	K4-nl-m	17	2.773	2.195-3.237	1.004	0.953-1.066
+T/B tie/const/unbounded	K4-nonl-m	17	1.414	1.024-1.685	0.984	0.881-1.069
+T/B tie/const/unbounded	M1-nl-m	17	2.698	2.121-3.236	1.001	0.946-1.039
+T/B tie/const/unbounded	M1-nonl-m	17	1.322	1.069-1.546	1.000	0.946-1.089
+T/B tie/state-dep/unbounded	L-nl-m	1	1.841	1.841-1.841	0.980	0.980-0.980
+T/B tie/state-dep/unbounded	L-nonl-m	1	1.316	1.316-1.316	1.062	1.062-1.062
+T/B tie/state-dep/unbounded	K4-nl-m	1	1.476	1.476-1.476	1.031	1.031-1.031
+T/B tie/state-dep/unbounded	K4-nonl-m	1	1.386	1.386-1.386	1.026	1.026-1.026
+T/B tie/state-dep/unbounded	M1-nl-m	1	1.533	1.533-1.533	0.957	0.957-0.957
+T/B tie/state-dep/unbounded	M1-nonl-m	1	1.307	1.307-1.307	1.030	1.030-1.030
+
+Q/B tie/const/bounded	L-nl-m	12	0.996	0.947-1.046	1.030	0.982-1.109
+Q/B tie/const/bounded	L-nonl-m	12	0.975	0.864-1.089	1.004	0.942-1.053
+Q/B tie/const/bounded	K4-nl-m	12	1.008	0.909-1.121	1.004	0.935-1.090
+Q/B tie/const/bounded	K4-nonl-m	12	0.982	0.914-1.037	1.002	0.901-1.120
+Q/B tie/const/bounded	M1-nl-m	12	0.981	0.912-1.080	0.995	0.868-1.129
+Q/B tie/const/bounded	M1-nonl-m	12	0.994	0.915-1.087	1.001	0.926-1.082
+Q/B tie/const/unbounded	L-nl-m	17	0.961	0.875-1.062	0.967	0.869-1.028
+Q/B tie/const/unbounded	L-nonl-m	17	0.992	0.898-1.096	1.012	0.936-1.087
+Q/B tie/const/unbounded	K4-nl-m	17	0.954	0.811-1.031	1.004	0.953-1.066
+Q/B tie/const/unbounded	K4-nonl-m	17	0.994	0.893-1.084	0.984	0.881-1.069
+Q/B tie/const/unbounded	M1-nl-m	17	0.984	0.851-1.129	1.001	0.946-1.039
+Q/B tie/const/unbounded	M1-nonl-m	17	0.992	0.885-1.148	1.000	0.946-1.089
+Q/B tie/state-dep/unbounded	L-nl-m	1	1.120	1.120-1.120	0.980	0.980-0.980
+Q/B tie/state-dep/unbounded	L-nonl-m	1	1.036	1.036-1.036	1.062	1.062-1.062
+Q/B tie/state-dep/unbounded	K4-nl-m	1	0.977	0.977-0.977	1.031	1.031-1.031
+Q/B tie/state-dep/unbounded	K4-nonl-m	1	1.107	1.107-1.107	1.026	1.026-1.026
+Q/B tie/state-dep/unbounded	M1-nl-m	1	0.975	0.975-0.975	0.957	0.957-0.957
+Q/B tie/state-dep/unbounded	M1-nonl-m	1	0.985	0.985-0.985	1.030	1.030-1.030
+
+# A population: 35 tie artifacts; built 30; skipped {'b3meas:ctx': 5}
+# A answer check (nl-m subjects; starts == libpcre2 and today; today end == libpcre2 end in {n, n-1}; lowered end == n): 782 subjects x 6 arms, 0 wrong; subjects where libpcre2 ends at n-1: 254
+
+== A1 verify-at (_match from s*) and A2 relocate (-fno-rev-end _search from s*): today/lowered, with A/A
+finisher	class	regime	cells	today/lowered gm	p5-p95	A/A gm	A/A p5-p95
+A1	tie/const/bounded	L-nl-m	12	1.168	1.006-1.343	1.008	0.960-1.091
+A1	tie/const/bounded	K4-nl-m	12	1.156	0.968-1.348	1.013	0.993-1.070
+A1	tie/const/bounded	M1-nl-m	12	1.122	0.980-1.332	1.016	0.951-1.196
+A1	tie/const/unbounded	L-nl-m	17	1.125	0.912-1.539	0.999	0.881-1.117
+A1	tie/const/unbounded	K4-nl-m	17	1.093	0.936-1.285	1.003	0.973-1.048
+A1	tie/const/unbounded	M1-nl-m	17	1.128	0.955-1.334	0.998	0.943-1.044
+A1	tie/state-dep/unbounded	L-nl-m	1	1.232	1.232-1.232	1.034	1.034-1.034
+A1	tie/state-dep/unbounded	K4-nl-m	1	1.298	1.298-1.298	1.009	1.009-1.009
+A1	tie/state-dep/unbounded	M1-nl-m	1	1.306	1.306-1.306	1.049	1.049-1.049
+A2	tie/const/bounded	L-nl-m	12	0.973	0.829-1.212	0.992	0.946-1.057
+A2	tie/const/bounded	K4-nl-m	12	0.978	0.803-1.168	1.006	0.944-1.073
+A2	tie/const/bounded	M1-nl-m	12	0.982	0.819-1.251	1.010	0.880-1.143
+A2	tie/const/unbounded	L-nl-m	17	1.072	0.760-1.376	0.987	0.870-1.089
+A2	tie/const/unbounded	K4-nl-m	17	1.051	0.809-1.309	0.996	0.947-1.043
+A2	tie/const/unbounded	M1-nl-m	17	1.036	0.726-1.257	1.022	0.940-1.099
+A2	tie/state-dep/unbounded	L-nl-m	1	1.191	1.191-1.191	1.003	1.003-1.003
+A2	tie/state-dep/unbounded	K4-nl-m	1	1.440	1.440-1.440	0.903	0.903-0.903
+A2	tie/state-dep/unbounded	M1-nl-m	1	1.265	1.265-1.265	0.972	0.972-0.972
+
+== A per-artifact: today/lowered ns (L-nl-m | M1-nl-m) and machine states (forward via -fno-rev-end, anchored)
+k	pattern	A1 L	A1 M1	A2 L	A2 M1	fwd today->lowered	anch today->lowered	rev today->lowered
+3	\s+$	1.09	1.29	1.18	1.08	4->4	3->3	3->3
+14	[^c]{1,3}\Z	1.00	1.00	0.88	0.81	9->12	7->9	4->6
+26	[^c]{1,3}$	1.01	1.04	0.80	0.87	9->12	7->9	4->6
+35	([^c]{1,3})$	1.02	1.02	0.89	0.82	9->12	7->9	4->6
+41	\s+?$	1.06	1.06	1.05	0.95	3->6	3->6	3->3
+42	\s*$	1.16	1.12	1.09	1.17	3->3	2->2	2->2
+43	\s*?$	0.99	1.11	0.68	0.73	2->5	2->5	2->2
+44	[a\n]+$	1.13	1.18	1.14	1.17	4->4	3->3	3->3
+45	(?:a|a\n)$	1.21	1.16	0.88	0.84	4->7	4->5	4->5
+46	(?:a\n|a)$	1.31	0.98	1.18	1.28	6->9	5->7	4->5
+48	[^\n]*\n?$	1.04	0.97	1.09	1.10	6->8	4->6	3->4
+51	\s*$|x\z	1.77	1.43	1.72	1.43	5->5	5->5	4->4
+60	(\s+){2}$	1.21	1.15	1.14	1.10	5->5	4->4	4->4
+61	(\s+?){2}$	1.09	1.08	1.01	1.01	4->7	4->7	4->4
+86	[^c]{0,4}?$	1.03	1.00	0.95	1.00	2->5	6->12	4->7
+87	[^c]{0,4}$	1.06	0.98	0.85	0.88	14->17	10->12	4->7
+113	\W*$	1.22	1.26	1.06	1.09	3->3	2->2	2->2
+119	\W*?(?:)$	0.92	0.89	0.78	0.70	2->5	2->5	2->2
+129	(a|a\n)$	1.21	1.22	0.91	0.91	4->7	4->5	4->5
+130	(a\n|a)$	1.36	1.36	1.19	1.19	6->9	5->7	4->5
+131	(a\n?)$	1.33	1.31	1.21	1.19	6->9	5->7	4->5
+132	(a\n??)$	1.24	1.20	0.85	0.92	4->7	4->5	4->5
+133	(a)\n?\Z	1.33	1.29	1.21	1.23	6->9	5->7	4->5
+134	(\s+)$	1.02	1.06	1.10	1.15	4->4	3->3	3->3
+166	([^/]+)$	1.03	1.05	1.00	1.00	4->4	3->3	3->3
+186	([^a]+)$	1.28	1.15	1.00	0.95	4->4	3->3	3->3
+192	(?s)(.+)$	0.88	1.00	1.20	0.91	None->None	None->None	3->3
+195	(\s+?)\s*$	1.04	1.18	1.00	1.12	4->4	3->3	3->3
+204	;\s*$	1.48	1.31	1.29	1.21	4->4	3->3	3->3
+205	(?:\s+|x\s*?)$	1.23	1.31	1.19	1.27	6->9	5->8	4->4
