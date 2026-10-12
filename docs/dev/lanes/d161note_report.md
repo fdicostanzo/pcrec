@@ -43,10 +43,6 @@ with `git show`.
    `-p pcrec` collides. There are 0 today, and a C-check is proposed.
 5. Choosing the sub-problem (the cut) is still pcrec's, and needs Q1.
 
-## Open
-Q1-Q3 for Frank (§12); the panel attack list (§13); the R-18 outline
-(§11, the manager files it; sabotage ids allocated at filing).
-
-## Validation
-Docs only. The `src/` citations were read on `f3569b161`, and the kit facts
-on the two branches above. Nothing is owed.
+## Open / validation
+Q1-Q3 for Frank (§12); panel attack list (§13); R-18 outline (§11, the
+manager files it). Docs only; citations read on `f3569b161`. Nothing owed.
