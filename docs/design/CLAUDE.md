@@ -3002,6 +3002,35 @@ Four light panels in two days (the K82 handoff, [OPT-SETS], [MEMFN] K0 r1/r2) fo
     populations, the class-mix taxonomy, the counts, the D77 triggers, the bench
     wishlist family `anc-wrap`, and controls C1-C6 with libpcre2 as the
     independent oracle.
+- `match_split_pinonly.md` — **[MATCH-SPLIT] 4a, the PIN-ONLY SPLIT, PROPOSED,
+  design only** (lane `msdesign`, 2026-10-12, main `33c2eb7a`, abi 76; chunk 4a,
+  owns K106).
+  - **§1 the scope rule.** Classes are FLOOR (`^`/`\A`, `\G`: one candidate,
+    the smallest possible start) or RACING (`$`, `(?m)^`, `(?m)$`, free). With
+    floor classes plus at most one racing class, the floor is tried first and
+    the racing class's leftmost candidate is the answer. Nothing is discarded,
+    and no cross-call state is needed. Two racing classes are 4c's problem.
+  - **Population.** 4a admits S+E/G+E: 22 of mssurvey's 35 pin-only patterns,
+    including 9 of K106's 11 trim shapes, the utf8 outage form and the wrapper
+    strip. S+LS/G+LS (MLINE) and E+LE (the composite) are already linear and
+    unchanged. S+LE goes to 4b and LS+LE to 4b.2 (Q2).
+  - **§2 soundness** in full: the zero-width `^|end$`, `^|$` seeds, `\G`,
+    utf8, captures, and D158 (the hybrid's VM gets an identical window).
+  - **§3 the locator.** The floor is one iteration of today's attempt loop
+    (two new BOUND rows). The END class is the factored `rev-end` walk over
+    Q, the reverse machine with the BOT-family NFA nodes killed. A tie is
+    resolved inside the locator by one attempt, so FINISH is unchanged. One
+    new fact, `pin_split`, comes with a one-way NFA agreement assertion.
+  - **§4 the tables.** A new LOCATE row `split` on CAND_ROUTE_ATTEMPT, a
+    BOUND→LOCATE read, RECOVER's ATTEMPT cell, and a `drop-split` size rung.
+    It proposes unifying the four-member position-pin fact family (U3).
+  - **§5 cost by counted loads.** K106 goes from 128,040,002 to 2 at k = 16k,
+    and the wrapper strip from n+3 attempt entries to ≤ 1. The admission is
+    derived by dominance (split ≤ today + 2 loads per call), with no constant.
+  - **§6-§7.** `RX_DFA_SCAN "split"`, the deny `-fno-match-split` (bit 55;
+    Q1), the abi event, and no kit request; then the checks and landing bar
+    (MS-1..MS-11, the counted-work gate G3).
+  - **§9.** Q1-Q3 for Frank, and unlocks U1-U8 with their triggers.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
