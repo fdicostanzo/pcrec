@@ -73,6 +73,9 @@ print("%-12s %7d %9d %9d %9d" % ("TOTAL(real)", len(real), sum(r["status"] != "o
 print("\nrefusal reasons (pcrec's own diagnostics, first 60 bytes), all populations:")
 for k, v in C(r["refused"][:70] for r in real if r["refused"]).most_common(10):
     print("  %5d  %s" % (v, k))
+print("\nrecipe control: rows msprobe REFUSED to parse that pcrec's own compile ACCEPTED: %d (0 = the probe's parse recipe never rejects what the compiler takes)" % sum(
+    1 for r in real if r["status"] != "ok" and not r["refused"]))
+print("rows msprobe parsed that pcrec's compile then refused (size caps, module gates): %d" % sum(1 for r in real if r["status"] == "ok" and r["refused"]))
 print("\nEvery table below counts the `ok` patterns of its population (the `ok` column above).")
 print("corpus-d27 = composition_d27.rxt and the d27/ and matrix.rxt adversarial files, reported separately.")
 

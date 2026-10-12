@@ -13,6 +13,10 @@ the implementation's own record goes to `docs/dev/lanes/`.
 
 ## Files
 
+- `matchsplit/` — **[MATCH-SPLIT] STEP 0** (2026-10-12, lane mssurvey): the compile-only class-mix survey of
+  `docs/design/match_split_requirements.md` section 6 (path-class probe, populations, libpcre2 controls, one
+  counted-work arm). Own CLAUDE.md; reading in `../lanes/mssurvey_report.md`.
+
 - `nullanch/` — **[NULLABLE-ANCH] STEP 0** (2026-10-08, lane nullanch0,
   measurement only): the compile-side census of anchored nullable VM
   patterns the [OPT-4.2] decline keeps off the hybrid, the corrected-predicate
