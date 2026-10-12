@@ -9442,6 +9442,11 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
   - Every span and every gap the kit sees is BOUNDED. Anything unbounded (a `.*` head, an unbounded gap, an unbounded tight span) is automata work and pcrec's: pcrec cuts the pattern and hands the kit only bounded sub-problems (addendum 4). For `\d+.*#` (addendum 1) the kit gets the digit class as a one-span chain; the run and the `.*#` tail stay with pcrec.
   - This answers window_search_game.md §7's "unbounded move-back in or out of the window category": OUT.
 
+### D161 addendum 6 — CONSUMER PRICE is DROPPED from the contract; memfn owns choosing the best windows (Frank, 2026-10-12, session 110)
+
+- **Ruling (Frank, to the manager's recommendation):** "agree, lets drop it. it removes levers. lets empower memfn to provide the best windows"
+- **Reading (manager):** chunk 2's "consumer price per route as DATA" (per candidate / per window byte / per start / no-search per byte) is withdrawn: hard to gauge, fuzzy to use, box-specific, and stale after every engine change. The chain choice (addendum 5) rests on the kit's own tool costs and the candidate rates it derives from the frequency facts (D162 add. 2); the residual per-false-candidate cost is removed by verification at the chain's last link ([KIT-VERIFY]) rather than priced. pcrec sends true facts about the sub-problem (addendum 4); the kit picks the windows. A price returns only as a new filed row if a real cell shows the kit's choice wrong for want of it.
+
 ## D162 — workload data reaches the kit as ONE read-only, versioned ANALYSIS OBJECT per compile; every kit selection is TOTAL without it (Frank, 2026-10-12, ruled to the kit session; filed by main from the kit's relay, lane/memfn-r17 0132c5d2 + bb862bad, memfn/docs/responses.md)
 
 - **Ruling 1 (Frank):** "i agree option 1 with options to add more data. pcrec should send what it has."
