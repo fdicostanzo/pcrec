@@ -914,6 +914,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: decisions D77
   `pcrec_enabled_set_spec`'s process-global enabled set survives only for the CLI query modes that never call `pcrec_compile()` (`--probe-ask`, `--count-groups`, `--list-source`, `--list-syntax`'s built-status probe). A parallel path (memory `pcrec-general-mechanisms-not-special-cases`): route those through the pure resolver + an explicit set and delete the global. TRIGGER (D77): the next change that touches those modes' feature path, or [LANG-1]'s C study if it wants the library thread-safe end to end.
 
+- [CI-RUNNER-PIN] STATE:not-started — pin CI to ubuntu-26.04 so its gcc matches the dev boxes
+  filed: 2026-10-13 Frank (session 111)
+  status (2026-10-13): not started; CI ran `make strict` under ubuntu-latest's older gcc and failed on a maybe-uninitialized false positive gcc 15.2 does not report (code fix: lane citri)
+  trigger: GitHub's ubuntu-latest migration to Ubuntu 26 (begins 2026-10-19); then replace `ubuntu-latest` with `ubuntu-26.04` in .github/workflows/ci.yml
+  refs: .github/workflows/ci.yml; docs/testing.md "CI"; decisions D2
+  Frank, 2026-10-13: "we can wait" — no apt-installed gcc in the meantime. Pinning makes the CI compiler a deliberate choice instead of drift, so a red CI `make strict` means what a red local one does.
+
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank
