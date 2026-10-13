@@ -610,6 +610,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   holds the numbered-spec checks: paragraph numbering, the generated
   contents, and every `match_api.md §N` citation in the tree. See its
   CLAUDE.md.
+- **plan_lint/** — `make test-plan-lint` (in `make test`): [PLAN-LINT] step 3.
+  `scripts/plan_lint.sh` over docs/dev/plan.md (the one row format its Policy
+  section defines; strict, no baseline, no warning tier), the tree-wide
+  `plan.md:<line>` citation scan and docs/design/plan_row_bodies/'s two-way
+  link check, plus a planted-violation self-test (one plant per rule, each of
+  which must be reported). See its CLAUDE.md for the rule table.
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
   and a black-box `build/pcrec` were the only inputs). NOT part of `make

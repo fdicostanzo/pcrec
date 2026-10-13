@@ -335,7 +335,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank \
-      test-spec-history test-compound
+      test-spec-history test-plan-lint test-compound
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1522,6 +1522,14 @@ test-spec-history:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-spec-history.ran"; fi
 	bash tests/spec_history/run_spec_history.sh
 
+# [PLAN-LINT] step 3: docs/dev/plan.md against the one row format its Policy
+# section defines (scripts/plan_lint.sh, strict: no baseline, no warning tier),
+# plus the planted-violation self-test. Reads text only, so it does not depend
+# on `all`. The commit-time gate is `make hooks HOOKS=pre-commit`.
+test-plan-lint:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-plan-lint.ran"; fi
+	bash tests/plan_lint/run_plan_lint.sh
+
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
 # analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
 # ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
@@ -1900,17 +1908,25 @@ bench: all
 fuzz: all
 	python3 tests/fuzz/fuzz.py
 
-# [TT-1] OPT-IN local push gate. Copies scripts/hooks/pre-push into the
-# resolved hooks directory — `git rev-parse --git-path hooks`, NOT a
-# hardcoded .git/hooks, because in a worktree .git is a file pointing at the
-# shared gitdir (see `git worktree`'s docs and docs/testing.md). Never run
-# automatically by any other target and never by CI (D2, TT-1 principle 4):
-# a stranger's plain `make`/`make test` must not install anything into their
-# git config.
+# [TT-1] OPT-IN local git hooks. Copies scripts/hooks/<name> for each name in
+# HOOKS (default: pre-push, the full-`make test` push gate) into the resolved
+# hooks directory — `git rev-parse --git-path hooks`, NOT a hardcoded
+# .git/hooks, because in a worktree .git is a file pointing at the shared
+# gitdir (see `git worktree`'s docs and docs/testing.md). `make hooks
+# HOOKS=pre-commit` installs only the [PLAN-LINT] commit gate (it lints
+# docs/dev/plan.md and friends, and only when they are staged; it never runs
+# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both. Never
+# run automatically by any other target and never by CI (D2, TT-1 principle
+# 4): a stranger's plain `make`/`make test` must not install anything into
+# their git config.
+HOOKS ?= pre-push
 hooks:
 	@hookdir="$$(git rev-parse --git-path hooks)"; \
-	install -m 0755 scripts/hooks/pre-push "$$hookdir/pre-push"; \
-	echo "hooks: installed scripts/hooks/pre-push -> $$hookdir/pre-push"
+	for h in $(HOOKS); do \
+	  if [ ! -f scripts/hooks/$$h ]; then echo "hooks: no such hook scripts/hooks/$$h" >&2; exit 1; fi; \
+	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$h"; \
+	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$h"; \
+	done
 
 clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
@@ -1933,6 +1949,6 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-compound \
+        test-startset test-spec-history test-plan-lint test-compound \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
