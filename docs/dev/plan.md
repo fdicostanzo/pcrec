@@ -921,6 +921,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: .github/workflows/ci.yml; docs/testing.md "CI"; decisions D2
   Frank, 2026-10-13: "we can wait" — no apt-installed gcc in the meantime. Pinning makes the CI compiler a deliberate choice instead of drift, so a red CI `make strict` means what a red local one does.
 
+- [REPEAT-RUN] STATE:not-started — required-run and span analysis should see through exact repeats (`A{4}` reads like `AAAA`)
+  filed: 2026-10-13 Frank (session 111), "file it for later review"
+  status (2026-10-13): not started; probe only (abi 76): `AAAA` and `A{4}` give identical DFA tables, but only `AAAA` gets REQ_RUN "41414141@3" (memchr+memcmp start, DFA handoff) and the VM literal compare; `A{4}` gets REQ_RUN "none", a plain memchr start and a counter-rung span loop (VM program 257 -> 662 bytes)
+  next: Frank's review; no measurement lane until then
+  refs: memfn/docs/ideas.md (2026-10-13 entry); [SPAN-ISEL]
+  The general form: an exact repeat `X{n}` of a fixed-width atom IS a width-n*w member, so the run extractor (and the VM's literal-run selection) should read it as such (`ab{3}c` has required run `abbbc`; `[0-9]{4}` is a width-4 span member). Fix the reading in the analysis, never a parser rewrite to a sequence. Likely cost: the VM half (counter loop vs one memcmp) more than the search-start half. Population unmeasured.
+
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank

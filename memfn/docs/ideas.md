@@ -551,3 +551,17 @@ instead of re-testing the byte every time it visits it.
 - Ruling context: the span thread is UNSCHEDULED under [SPAN-ISEL] (Frank,
   2026-10-11). This entry joins it. The designed spike could add one cell:
   ipv4 through the VM with and without cached digit/dot masks.
+
+## 2026-10-13 — exact repeats hide literal runs and spans from the analysis (`A{4}` vs `AAAA`)
+
+- Observation (manager probe, abi 76): `AAAA` and `A{4}` compile to the same
+  DFA table, but only `AAAA` gets the required-run fact (memchr+memcmp
+  search start) and the VM's single literal compare; `A{4}` gets a plain
+  memchr start and a counter-rung span loop.
+- Why it matters to the kit: any span or run delegated to the kit is only
+  as long as pcrec's analysis reads it. An exact repeat of a fixed-width
+  atom (`b{3}`, `[0-9]{4}`) is a fixed-width span member today's analysis
+  does not see, so the mixed-span entry (2026-10-11) would miss
+  `abcd[0-9]{4}` written as a counted repeat unless the reading is fixed.
+- pcrec row: [REPEAT-RUN] (filed for Frank's later review). Span thread
+  stays UNSCHEDULED under [SPAN-ISEL].
