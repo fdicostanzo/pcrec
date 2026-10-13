@@ -956,7 +956,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   status (2026-10-13): not started; idea stage; PCRE2 keeps only the last iteration (a pcrec extension, D26)
   next: discussion with Frank (opt-in syntax per group, API shape, oracle)
   refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry)
-  Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. API addition = an [IFACE-PUSH] item and an abi event. Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
+  Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. An API addition and abi event; build it BEFORE [IFACE-PUSH] (Frank 2026-10-13: features first, so the push knows what the new API must hold). Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
 
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
