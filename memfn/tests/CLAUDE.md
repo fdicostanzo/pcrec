@@ -79,7 +79,10 @@ bytes the generator chose) and the compiler, not on the author.
   (`s + n` at a PROT_NONE page), a START-guard layout and every alignment
   0..31 (POISONED under ASan); a fault is a failure.
 - **run_g2_simd.py** — the runner (run_g2.sh section 4a; alone:
-  `python3 memfn/tests/run_g2_simd.py [--quick]`): each class's MEMFN_FORMS
+  `python3 memfn/tests/run_g2_simd.py [--quick]`; the drivers run under
+  `taskset` on `G2V_CPUS`, honoured as given and a hard error if it names a CPU
+  outside the affinity set; unset, 12-15 when all four are available, else the
+  highest up-to-4 CPUs of the affinity set, one line saying which): each class's MEMFN_FORMS
   against a hand table; THE RANKING CHECK (rankuse): every rendered
   helper's whole-block loads, and since r16b (R-16) its final-block loads,
   in order, equal the filter the kit's rule gives from the GENERATED

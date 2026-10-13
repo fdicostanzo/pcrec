@@ -350,8 +350,55 @@ def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
     env = dict(os.environ)
     if asan:
         env['ASAN_OPTIONS'] = 'detect_leaks=0:allow_user_segv_handler=1'
-    r = sh(['taskset', '-c', os.environ.get('G2V_CPUS', '12-15'), exe], timeout=1800, env=env)
+    r = sh(['taskset', '-c', pin_cpus(), exe], timeout=1800, env=env)
     return r, None
+
+
+_PIN = None
+
+
+def _cpu_list(spec):
+    """The CPUs of a taskset list such as '0-3,8' as a set; ValueError if malformed."""
+    out = set()
+    for part in spec.split(','):
+        lo, _, hi = part.strip().partition('-')
+        out.update(range(int(lo), int(hi or lo) + 1))
+    return out
+
+
+def _cpu_str(cpus):
+    return ','.join(map(str, sorted(cpus)))
+
+
+def pin_cpus():
+    """The taskset list the correctness drivers run on (not timing: it only keeps
+    them off the busy cores).  G2V_CPUS is honoured as given, and an explicit
+    setting naming a CPU outside this process's affinity set is a hard error,
+    never a silent fallback.  Unset: 12-15 where all four are available (the
+    dev box), else the highest up-to-4 CPUs of the affinity set (a 4-vCPU CI
+    runner has no CPU 12-15), with one line saying which and why."""
+    global _PIN
+    if _PIN is not None:
+        return _PIN
+    avail = os.sched_getaffinity(0)
+    spec = os.environ.get('G2V_CPUS')
+    if spec:
+        try:
+            want = _cpu_list(spec)
+        except ValueError:
+            sys.exit('run_g2_simd: G2V_CPUS=%r is not a taskset CPU list' % spec)
+        if not want <= avail:
+            sys.exit("run_g2_simd: G2V_CPUS=%s names CPUs %s outside this process's affinity set %s"
+                     % (spec, sorted(want - avail), _cpu_str(avail)))
+        _PIN = spec
+    elif {12, 13, 14, 15} <= avail:
+        _PIN = '12-15'
+    else:
+        pick = sorted(avail)[-4:]
+        _PIN = _cpu_str(pick)
+        print('run_g2_simd: CPUs 12-15 are not all in the affinity set %s; pinning the drivers to %s '
+              '(the highest %d available)' % (_cpu_str(avail), _PIN, len(pick)), flush=True)
+    return _PIN
 
 
 LOAD = re.compile(r'_loadu_si(?:128|256)\(\(const __m\d+i \*\)\(subject \+ [if](?: \+ (\d+))?\)\)')
