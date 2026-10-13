@@ -83,12 +83,25 @@ reverse-pass	-fno-start-width -fno-start-landing	abcd
 verify-at	-	a
 search-from	-	^a
 search-from	-fno-anchored-dfa	a
-search-from	-fno-anchored-dfa	\s+$
+# D164 B3: `\s+$` now finishes at prio-const; the DFA ENDSET relocate is the
+# state-dependent tie, and the two-seed walk under the deny.
+search-from	-fno-anchored-dfa	(?:\s+|x\s*?)$
+search-from	-fno-anchored-dfa -fno-rev-end-onewalk	\s+$
 # FIN4's VM ENDSET take cell (stage 2): a tie inside the inlined body (lane revtri).
-search-from	-	(\s+)$
+# D164 B3: a constant mark_prio finishes at prio-const, so the witness is the
+# state-dependent hybrid, and the two-seed walk under the deny.
+search-from	-	(?:(\s+)|x(\s*?))$
+search-from	-fno-rev-end-onewalk	(\s+)$
+# D164 B3 prio-const: a tagged walk whose mark_prio is a constant (DFA route
+# `\s+$` const0, `\s*?$` const1; VM hybrid `(\s+)$`).
+prio-const	-	\s+$
+prio-const	-	\s*?$
+prio-const	-	(\s+)$
 nomatch	-	[^\x00-\xff]
 nomatch	-	^\B\b
 nomatch	-	abc$
 report	-	a
 report	-	^ab
-verify-at	-	\s+$
+# D164 B3: the ENDSET verify needs a tie prio-const cannot decide.
+verify-at	-	(?:\s+|x\s*?)$
+verify-at	-fno-rev-end-onewalk	\s+$

@@ -86,4 +86,5 @@ test-memfn-rank	3	27.1	ci-measured sections.tsv
 test-spec-history	3	5.1	ci-measured sections.tsv
 test-plan-lint	2	3.6	ci-measured sections.tsv
 test-compound	2	286.3	ci-measured sections.tsv
+test-endmark	2	60	ESTIMATED: lane b3land, unmeasured on the runner (re-measure with shard_rebalance.py)
 test-ci-shards	3	5.9	ci-measured sections.tsv

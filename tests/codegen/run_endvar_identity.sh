@@ -261,7 +261,7 @@ else
 fi
 
 # ---- the identity sweep --------------------------------------------------
-same=0; diff=0; rej=0
+same=0; diff=0; rej=0; tagged_diff=0
 : > "$WORKDIR/diffs.txt"
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
@@ -269,6 +269,15 @@ while IFS= read -r pat; do
     if [ -z "$a" ] && [ -z "$b" ]; then rej=$((rej + 1)); continue; fi
     if [ "$a" = "$b" ]; then
         same=$((same + 1))
+    elif printf '%s' "$a" | grep -q '^    unsigned revend_dist = 0;'; then
+        # D164 B3 (endmark.md section R.3): the F2 tagged rev-end walk's
+        # reverse machine carries the match-end DISTANCE as its accept value,
+        # so its END view differs from its EOL view for a reason that is not
+        # `\z`: the distinct end view IS the tag. The class is read off the
+        # SUBJECT artifact's walk text (emit_rev_end_tagged), which the
+        # reference knob cannot move into or out of; the identity claim holds
+        # for every other pattern, below.
+        tagged_diff=$((tagged_diff + 1))
     else
         diff=$((diff + 1))
         printf '%s\n' "$pat" >> "$WORKDIR/diffs.txt"
@@ -281,6 +290,12 @@ else
     ok "coverage: $((same + diff)) of $nn \\z-free corpus patterns compiled in both builds and were compared ($rej rejected by both)"
 fi
 
+if [ "$tagged_diff" -lt 1 ]; then
+    bad "endvar identity: the tagged-walk exemption (D164 B3) matched no pattern -- the class is read off emitted text, so a zero means the marker moved and the exemption is dead or the walk is gone"
+else
+    ok "endvar identity: $tagged_diff \\z-free patterns differ ONLY as tagged rev-end walks (the end view is the distance tag, D164 B3), named and counted, not folded into the identity claim"
+fi
+
 if [ "$diff" -eq 0 ]; then
     ok "endvar identity: $same \\z-free patterns emit BYTE-IDENTICAL C with and without the third closure view"
 else
@@ -290,7 +305,7 @@ fi
 
 echo
 echo "== Summary =="
-echo "  identity population   compared $((same + diff))  identical $same  differing $diff  rejected-by-both $rej"
+echo "  identity population   compared $((same + diff))  identical $same  differing $diff  tagged-walk-exempt $tagged_diff  rejected-by-both $rej"
 echo "  positive control      differ $ctl_diff  agree-on-DFA $ctl_same_dfa  agree-on-VM $ctl_same_vm  rejected-by-both $ctl_rej"
 echo "checks passed: $pass"
 echo "checks failed: $fail"

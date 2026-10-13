@@ -281,12 +281,15 @@ static bool shaped(const Dfa *d, int s, int cls, int *exit)
     return true;
 }
 
-/* True iff state `s` is accepting under the plain (no-view) class; false for s
- * < 0. */
+/* State `s`'s accept VALUE under the plain (no-view) class, 0 for s < 0. A
+ * value and not a truth (D164 B3, endmark.md §R.3): on a tagged machine it is
+ * the distance set, and a chain whose members differ in it would merge
+ * different ends (S3's `\n{1,4}$`). On an untagged machine it is 0/1, so
+ * every chain this pass builds there is unchanged. */
 static int acc_of(const Dfa *d, int s)
-{ return s < 0 ? 0 : d->st[s].up[UPC_PLAIN].accept != 0; }
+{ return s < 0 ? 0 : d->st[s].up[UPC_PLAIN].accept; }
 
-/* The accept bit state `s` answers at `pos == n`: its END view's, or its own
+/* The accept value state `s` answers at `pos == n`: its END view's, or its own
  * where it has none. Equal to `acc_of` on every member of a view-free
  * machine, which is what keeps the pre-[OPT-VEDGE] chains unchanged. */
 static int end_acc_of(const Dfa *d, int s)

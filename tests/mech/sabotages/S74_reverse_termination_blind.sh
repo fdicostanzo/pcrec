@@ -35,6 +35,11 @@
 # below a loop whose other exit is a dead state) has nothing to locate and
 # says so. That is this row's second job: it is the measured failing
 # direction for rule 2b, which otherwise would be a check with none.
+#
+# RE-AIMED 2026-10-12 (lane b3build, D164 B3): the site gained a tagged
+# (accept-value) arm ahead of the plain one; the anchor now starts at that
+# arm's end and plants the plain arm, which every untagged reverse walk
+# (the \B witnesses included) still takes.
 SAB_ID="S74-reverse-termination-blind"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness assertions"
@@ -77,7 +82,8 @@ SAB_COUNT=1
 # columns: the context-indexed `?`-arm is dropped and the scalar `:`-arm is
 # kept, unconditional -- still the LOST MATCH for a leading \B at
 # search_from > 0 this row exists for.
-SAB_BEFORE='    const char *m = f->dir->c.name;
+SAB_BEFORE='        return;
+    }
     pcrec_sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
@@ -91,7 +97,8 @@ SAB_BEFORE='    const char *m = f->dir->c.name;
               f->src, f->dir->recv, f->dir->posv);'
 SAB_AFTER='    /* SABOTAGE S74: the context read is dropped and the boundary takes
      * the blind scalar accept. */
-    const char *m = f->dir->c.name;
+        return;
+    }
     pcrec_sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
               f->dir->bind, f->p, m,
               fold_arg(f, &f->acc_fold, "is_accepting"),

@@ -394,3 +394,92 @@ Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx)
     }
     return pcrec_ast_char(cx, v);
 }
+
+/* ---- D164 B3: THE END MARK's TAIL, read off `\Z`'s definition ----------
+ *
+ * `pcrec_eol_tail` (internal.h; docs/design/endmark.md §R.2.4, S9): the tail
+ * `T` a lowered `$`/`\Z` consumes after the match-end mark is `plain(Y)` of
+ * `\Z`'s definitions row, `(?=Y)` — never a hard-coded newline — so a newline
+ * convention ([DD-11]) is a different definition row and not new code. The
+ * row is parsed here, once per asking compile, by the ordinary parser (a
+ * SUB-PARSE: `src/parse/rxt_compose.c`'s shape, every touched parse field
+ * saved and restored), under every module, since the text is the registry's
+ * and not the caller's. The result is `Y` itself when it is a positive
+ * lookahead whose body holds no lookaround and no `$`/`\Z` (then `plain(Y)`
+ * is `Y`) and whose classes are ASCII (so `Y` is its own encoding lowering);
+ * anything else answers NULL and the caller keeps today's walk.
+ *
+ * NOT [DD-11.5]'s wiring, whose hazard is a lookaround ERASED by the DFA: `Y`
+ * here is never an assertion in any machine. It is consumed, under the mark,
+ * in exactly the machines the `tagged` form builds (§1.2: in tail position
+ * `(?=Y)` and "mark, then Y" match the same strings at the same starts). */
+static bool eol_tail_plain(const Ast *a)
+{
+    switch (a->k) {
+    case A_CAT: case A_ALT:
+        return eol_tail_plain(a->l) && eol_tail_plain(a->r);
+    case A_CAP: case A_ATOMIC: case A_REP: case A_WCLASS:
+        return eol_tail_plain(a->l);
+    case A_CLASS:
+        /* ASCII only: one byte per character under every encoding, so the
+         * tail is its own lowering and its character width is its byte width. */
+        for (int i = 0; i < a->u.cls.n; i++)
+            if (a->u.cls.iv[i].hi > 0x7F) return false;
+        return true;
+    case A_EMPTY: case A_END:
+        return true;
+    case A_EOL: case A_LOOK: case A_BOL: case A_CTX: case A_GSTART:
+    case A_KRESET: case A_BREF: case A_VAR: case A_CALL:
+        return false;
+    }
+    return false;
+}
+
+const Ast *pcrec_eol_tail(Ctx *cx)
+{
+    const RegRow *row = pcrec_registry_row_by_syntax("\\Z");
+    const RegDef *d = row ? pcrec_def_resolve(cx, row) : NULL;
+    if (!d || d->kind != DEFK_STR || !d->str) return NULL;
+
+    const char *pat = cx->pat;
+    size_t patlen = cx->patlen, pos = cx->pos, optrun_end = cx->optrun_end;
+    int depth = cx->depth;
+    bool in_quote = cx->in_quote;
+    unsigned ncap = cx->ncap, feats = cx->enabled_features;
+    ParseMods *mods = cx->mods;
+    NamedGroup *named = cx->named_groups;
+    unsigned nnamed = cx->n_named_groups;
+    PendingRef *pend = cx->pending_refs;
+    unsigned npend = cx->n_pending_refs;
+    const pcrec_options *opt = cx->opt;
+    pcrec_options defopt = *cx->opt;
+
+    defopt.flags = pcrec_flags_without(defopt.flags, PCREC_CASELESS);
+    cx->pat = d->str;
+    cx->patlen = strlen(d->str);
+    cx->pos = 0;
+    cx->depth = 0;
+    cx->in_quote = false;
+    cx->opt = &defopt;
+    cx->enabled_features = ~0u;
+    pcrec_parse_mods_init(cx);
+    Ast *y = pcrec_parse_info(cx, NULL);
+    cx->pat = pat;
+    cx->patlen = patlen;
+    cx->pos = pos;
+    cx->optrun_end = optrun_end;
+    cx->depth = depth;
+    cx->in_quote = in_quote;
+    cx->ncap = ncap;
+    cx->enabled_features = feats;
+    cx->mods = mods;
+    cx->opt = opt;
+    cx->named_groups = named;
+    cx->n_named_groups = nnamed;
+    cx->pending_refs = pend;
+    cx->n_pending_refs = npend;
+
+    if (!y || y->k != A_LOOK || y->u.look.behind || y->u.look.neg) return NULL;
+    if (!eol_tail_plain(y->l)) return NULL;
+    return y->l;
+}

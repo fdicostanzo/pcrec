@@ -214,6 +214,28 @@ typedef struct {
     bool wide;
 } LandChar;
 
+/* D164 B3 THE END MARK's TAILS (fact `end_mark`, E2 derived,
+ * docs/design/endmark.md §1.1, §R.2): the path-final non-multiline `$`/`\Z`
+ * nodes of the lowered tree (`tail[0..ntails)`, arena), which the NFA builder
+ * lowers to the tail `T` under the mark when asked (`pcrec_build_nfa_marked`); and
+ * `complete`, true where lowering them leaves every match ending at `\z`
+ * (every `eol` pin is a tail), the precondition of the one-walk `tagged`
+ * form. Declined (empty: no tails) where the pin is not `eol`, or where the
+ * pattern calls a subroutine (L3: a call site re-enters a body with another
+ * continuation). */
+typedef struct {
+    int                ntails;
+    bool               complete;
+    const struct Ast **tail;
+    /* The tail `T` itself (`pcrec_eol_tail`: `\Z`'s definitions row, §R.2.4),
+     * NULL where the row gives no usable tail; its width `L` in bytes (the
+     * distance domain 0..L); and its first byte where its first-byte set is
+     * exactly one byte, else -1. */
+    const struct Ast  *body;
+    int                width;
+    int                byte;
+} EndMark;
+
 /* [START-LANDING] THE BYTE WIDTH INTERVAL (fact `width`, E3 core, §3.1):
  * every match is between `bmin` and `bmax` bytes long; `bmax` is
  * `PCREC_W_UNBOUNDED` where no bound exists, and `bmin` is -1 (the empty
@@ -300,7 +322,10 @@ typedef enum {
     PF_WHY_ASSERT_AT_START,
     PF_WHY_DEAD_START,
     PF_WHY_ALIVE_NOT_ACCEPT,
-    PF_WHY_ASSERT_AFTER
+    PF_WHY_ASSERT_AFTER,
+    /* D164 B3 `end_mark`'s L3 decline: a subroutine call re-enters a body with
+     * another continuation, so no node is path-final for every caller. */
+    PF_WHY_CALL
 } PfWhyCode;
 
 typedef struct {
@@ -338,6 +363,10 @@ typedef struct {
      * [OPT-REVEND] L1 a READER of `end_pin` (the width and the encoding over
      * the pin), so the two cannot drift. */
     long long end_window;
+    /* D164 B3 E2 derived: the end mark's tails and whether lowering them
+     * completes the pin (`EndMark`). No deny of its own: the reader row's
+     * deny (`-fno-rev-end-onewalk`) never empties the fact. */
+    EndMark   end_mark;
     /* [K65] E2 core: the whole necessary set; empty under `-fno-req-byte`. */
     ReqSet    req_set;
     /* [OPT-REQPOS] E2 core `whole` + derived window (`bytes`/`len`/`idx`/
@@ -413,6 +442,7 @@ int            pcrec_fact_start_anchor(Ctx *cx);
 const StartSet *pcrec_fact_start_set(Ctx *cx);   /* E2 */
 int            pcrec_fact_end_pin(Ctx *cx);        /* E2: PCREC_EPIN_* */
 long long      pcrec_fact_end_window(Ctx *cx);
+const EndMark *pcrec_fact_end_mark(Ctx *cx);      /* E2 */
 const ReqSet  *pcrec_fact_req_set(Ctx *cx);
 /* Both return `PatFacts.req_run`: the whole run is its core half, the
  * window its derived half, and each accessor answers for its own. */

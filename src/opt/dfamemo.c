@@ -64,7 +64,8 @@ static bool nstate_same(const NState *a, const NState *b)
 {
     return a->k == b->k && a->t1 == b->t1 && a->t2 == b->t2 &&
            a->loop == b->loop && a->exit_is_t2 == b->exit_is_t2 &&
-           a->ctxfn == b->ctxfn && memcmp(a->cls, b->cls, sizeof a->cls) == 0;
+           a->ctxfn == b->ctxfn && a->tail == b->tail && a->dist == b->dist &&
+           memcmp(a->cls, b->cls, sizeof a->cls) == 0;
 }
 
 /* True iff entry `e` was built from exactly these inputs (see THE KEY). */

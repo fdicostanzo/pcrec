@@ -1198,15 +1198,14 @@ Reproduction: `twin/CLAUDE.md` (one command per result file, including revision 
   pair separates 4× from 16×; k = 1,000 and 4,000 keep the run under a minute). Both bounds
   are derived from the measured excess (one seed byte per Q call), not chosen (chk S8).
   **The two final-newline cells** (`\s+$`, `\s*?$`; Q's rev-end double walk, 3.00× against the
-  lever in §B.5) **are gated at TODAY's rev-end cost** (D163 add. 4), not left RED: the bound is
-  `T_compound ≤ T_Qalone + calls`, where `T_Qalone` is the counted loads of Q's tree compiled
-  ALONE as a plain artifact (a rev-end artifact today) on the same subject, i.e. the compound
-  is no worse than the plain artifact's rev-end on it. G3 (promoting `cost2.py`) gains that
-  one arm. **B3's commit tightens these two cells** to its own bound (D164 add. 1 Q2: `\s+$`
-  and the lazy `\s*?$` read 1.00× against the lever through the static `mark_prio` fact; a
-  state-dependent shape 2.00×; the number is endmark.md's gate's, not this note's) and
-  re-pins them; that tightening is a NAMED OBLIGATION of B3's commit, and B3 is being built
-  now (D164 add. 5). G3's attempt-count clause is dropped (chk M7): loads already show the
+  lever in §B.5) were gated at TODAY's rev-end cost while B3 was unbuilt (D163 add. 4):
+  `T_compound ≤ T_Qalone + calls`. **B3 landed (abi 78) and discharged the obligation (lane
+  b3land, 2026-10-13):** both cells read 1.00× through the static `mark_prio` fact, so the
+  `T_Qalone` arm is DELETED and the two cells carry the ordinary `T_compound ≤ T_lever + calls`
+  plus B3's absolute bound `T_compound ≤ |prefix| + k + |suffix| + calls` (one pass over the
+  subject; measured 1,002 against a bound of 1,004 at k = 1,000, where the old arm allowed
+  about 3,000). A state-dependent shape would read 2.00× (D164 add. 1 Q2); neither cell is
+  one. G3's attempt-count clause is dropped (chk M7): loads already show the
   wrapper's attempts.
 - **G4 export.** A compound's `nm -g` set equals the plain artifact's `nm -g` set for the same
   prefix (the expected set comes from the plain artifact, not from B0's closure, §H of the

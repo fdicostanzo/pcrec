@@ -372,6 +372,12 @@
 #     artifact byte-identical, a walking one carrying its walk iff stamped).
 #     Its own arm because the row is answer-identical by construction.
 #     Registered before S758.
+#   endmark — added 2026-10-12 (D164 B3, lane b3build); runs
+#     tests/endmark/run_b3_checks.sh: the `rev-end` walk's form table — the
+#     answers under three arms, the named witnesses, the probe census (an
+#     independent construction), the gates and the declines under reference
+#     builds. Its own arm because every form is answer-identical by
+#     construction. Registered before S881.
 #   revtwin — added 2026-10-10 ([OPT-REVEND] L2, lane revbuild); runs
 #     tests/revend/run_window_twin.sh: the inlined walk's window against the
 #     composite's, the answers against `-fno-rev-end` and libpcre2, and E-VR
@@ -2987,6 +2993,15 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/revend.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/revend.log" | grep -oE '[0-9]+')"
                 score_arm "$work/revend.log" "$f" "revend:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            endmark)
+                # D164 B3 tests/endmark/run_b3_checks.sh — see the vocabulary
+                # entry above.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" TMPDIR="$work" \
+                    bash "$tree/tests/endmark/run_b3_checks.sh" > "$work/endmark.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/endmark.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/endmark.log" | grep -oE '[0-9]+')"
+                score_arm "$work/endmark.log" "$f" "endmark:${f:-ERR}fail/${p:-?}pass"
                 ;;
             revtwin)
                 # [OPT-REVEND] L2 tests/revend/run_window_twin.sh — see the

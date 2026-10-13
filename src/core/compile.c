@@ -205,6 +205,17 @@ static void job_cleanup(Ctx *cx)
          * it stopped. */
         free(cx->job->adfa.st);
         free(cx->job->adfa.tab);
+        /* D164 B3 the set of machines that is not live (see Job.xnfa). */
+        free(cx->job->xnfa.st);
+        free(cx->job->xrnfa.st);
+        free(cx->job->xdfa.st);
+        free(cx->job->xdfa.tab);
+        free(cx->job->xrdfa.st);
+        free(cx->job->xrdfa.tab);
+        free(cx->job->xadfa.st);
+        free(cx->job->xadfa.tab);
+        free(cx->job->xprio.st);
+        free(cx->job->xprio.tab);
         pcrec_sb_free(&cx->job->csb);
         pcrec_sb_free(&cx->job->hsb);
         pcrec_sb_free(&cx->job->vmsb);
@@ -321,6 +332,128 @@ static void build_anchored_dfa(Ctx *cx)
     cx->job->anchored_ok = true;
 }
 
+/* D164 B3 ONE OPTIONAL MACHINE of the `tagged` form, built from `nfa` and
+ * passed through the scan-edge pass, exactly as the driver builds today's
+ * (`forward` says which walk it is). Returns false where it overflowed: the
+ * caller then keeps today's machines (§R.5, a decline, never a refusal). The
+ * overflow RECORD is saved and restored, `build_anchored_dfa`'s rule: only
+ * this optional machine overflowed, not the DFA engine. */
+static bool revend_build_one(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
+                             int cap, int root, bool forward)
+{
+    bool saved_overflowed = cx->dfa_overflowed;
+    char saved_why[sizeof cx->dfa_overflow_why];
+    memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
+    pcrec_build_min_dfa(cx, nfa, d, prune, reverse, cap, root, true);
+    cx->dfa_overflowed = saved_overflowed;
+    memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
+    if (d->overflowed) return false;
+    pcrec_scanedge_dfa(cx, d, pcrec_dfa_scan_state_written(cx, d), forward);
+    return true;
+}
+
+/* D164 B3 THE LOWERED MACHINES (docs/design/endmark.md §R.2): the forward,
+ * reverse and (where today's was built) anchored machines over the NFA with
+ * the end mark's tails lowered to `T` and each thread's mark distance as
+ * state (`pcrec_build_nfa_marked`, `pcrec_nfa_mark_distances`), all OPTIONAL
+ * (§R.5), into the Job's `x*` set; then the tie fact off the tagged reverse
+ * machine (§R.1.2: some state and context atom with two or more distances)
+ * and, where it holds, `mark_prio` off the unpruned anchored machine
+ * (§R.1.4). Writes `revend_built`/`revend_fit`/`revend_tie` and `mark_prio`.
+ * The subset budget is restored afterwards: optional builds are charged to
+ * their own caps, never to the engine-selection budget. */
+static void revend_build_marked(Ctx *cx, Ast *root, const EndMark *em)
+{
+    Job *job = cx->job;
+    long long subset_before = cx->subset_elems;
+    EolLower lo = { em->tail, em->ntails, em->body };
+    int ld;
+
+    job->revend_built = true;
+    job->revend_fit = false;
+    pcrec_build_nfa_marked(cx, root, &job->xnfa, false, &lo);
+    ld = pcrec_nfa_mark_distances(cx, &job->xnfa, 7);
+    if (ld < 0) goto out;
+    pcrec_nfa_wrap_unanchored(cx, &job->xnfa);
+    pcrec_build_nfa_marked(cx, root, &job->xrnfa, true, &lo);
+    if (pcrec_nfa_mark_distances(cx, &job->xrnfa, 7) < 0) goto out;
+    if (!revend_build_one(cx, &job->xnfa, &job->xdfa, true, false,
+                          PCREC_MAX_DFA_STATES_TABLE, job->xnfa.start, true)) goto out;
+    if (!revend_build_one(cx, &job->xrnfa, &job->xrdfa, false, true,
+                          PCREC_MAX_DFA_STATES_TABLE, job->xrnfa.start, false)) goto out;
+    if (job->anchored_ok &&
+        !revend_build_one(cx, &job->xnfa, &job->xadfa, true, false,
+                          PCREC_ANCHORED_MAX_STATES, job->xnfa.anch_start, true)) goto out;
+    job->revend_fit = true;
+    job->revend_tie = false;
+    for (int s = 0; s < job->xrdfa.n && !job->revend_tie; s++)
+        for (int u = 0; u < job->xrdfa.natoms; u++) {
+            unsigned a = job->xrdfa.st[s].up[u].accept;
+            if (a & (a - 1)) { job->revend_tie = true; break; }
+        }
+    if (job->revend_tie) {
+        /* `mark_prio`: the probe's build is unpruned and never minimized, so
+         * every pre-set's END closure is seen; an overflow answers
+         * state-dependent, the side on which FINISH runs. */
+        bool saved_overflowed = cx->dfa_overflowed;
+        char saved_why[sizeof cx->dfa_overflow_why];
+        memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
+        job->xprio.prio_probe = true;
+        pcrec_build_dfa(cx, &job->xnfa, &job->xprio, false, false,
+                        PCREC_MARK_PRIO_MAX_STATES, job->xnfa.anch_start, true);
+        cx->dfa_overflowed = saved_overflowed;
+        memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
+        unsigned seen = job->xprio.prio_seen;
+        /* The tie fact says two distances accept at some start: a complete
+         * probe that saw no END closure holding two is two constructions
+         * disagreeing about one language, never a fact to act on. */
+        if (!job->xprio.overflowed && seen == 0)
+            pcrec_ctx_fail(cx, 0, "internal error: mark_prio found no tie on a "
+                           "machine the tie fact says ties (endmark.md R.1.4)");
+        if (job->xprio.overflowed || (seen & (seen - 1))) job->mark_prio = MP_STATE;
+        else if (seen == 0) job->mark_prio = MP_NONE;
+        else {
+            job->mark_prio = MP_CONST;
+            job->mark_prio_c = __builtin_ctz(seen);
+        }
+    }
+out:
+    (void)ld;
+    cx->subset_elems = subset_before;
+}
+
+/* D164 B3 THE `rev-end` WALK's FORM (docs/design/endmark.md §R.1, §R.2.1),
+ * decided once the forward, reverse and anchored machines exist. `nl_last` is
+ * read off TODAY's reverse machine and the first-match table
+ * (`pcrec_revend_form`, src/gen/emit_dfa.c) is walked; where it reaches the
+ * rows that need the lowered machines (the fallback), they are built and the
+ * table walked again. On `tagged` the lowered set replaces today's in the Job
+ * (one lowering per artifact, D164 add. 4); on any decline today's stay. */
+static void revend_choose_form(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    const EndMark *em = pcrec_fact_end_mark(cx);
+    job->revend_tail = em->body;
+    job->revend_tail_byte = em->body && em->width == 1 && em->byte >= 0 && em->byte < 0x80
+                          ? em->byte : -1;
+    job->revend_maxd = em->body ? em->width : 0;
+    job->revend_nl_last = pcrec_revend_nl_last(cx);
+    job->revend_form = pcrec_revend_form(cx);
+    if (job->revend_form != RF_OVERFLOW) return;
+    if (em->body && em->complete && em->width > 0 && em->width <= 7 &&
+        !cx->end_mark_dropped && !job->fit.prefilter_collapsed)
+        revend_build_marked(cx, root, em);
+    job->revend_form = pcrec_revend_form(cx);
+    if (job->revend_form != RF_TAGGED) return;
+    Nfa tn;
+    Dfa td;
+    tn = job->nfa;  job->nfa  = job->xnfa;  job->xnfa  = tn;
+    tn = job->rnfa; job->rnfa = job->xrnfa; job->xrnfa = tn;
+    td = job->dfa;  job->dfa  = job->xdfa;  job->xdfa  = td;
+    td = job->rdfa; job->rdfa = job->xrdfa; job->xrdfa = td;
+    if (job->anchored_ok) { td = job->adfa; job->adfa = job->xadfa; job->xadfa = td; }
+}
+
 /* [M4.5c] ONE driver, two callers. `pcrec_compile` and DD-8's `pcrec_emit_ir`
  * differ only in whether the VM emitter also renders its program listing, and
  * that difference is a single bool — so they share this function rather than
@@ -420,7 +553,11 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * compound's P is a DFA artifact, so neither can meet the size-term ladder. */
 enum { COMP_OFF, COMP_WALK, COMP_FORCED };
 enum { COMP_LEVER_ATTEMPTS = 1 };
-enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 +
+/* D164 B3 a further `+ 1` for `drop-end-mark` (docs/design/endmark.md §R.5), the first
+ * size rung: one retry with the `rev-end` walk pinned to today's form. It
+ * restarts nothing (the size term runs only for the VM, and a hybrid's walk
+ * is its prefilter's body, whose artifact the term never measured apart). */
+enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 +
                               COMP_LEVER_ATTEMPTS };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
@@ -616,7 +753,7 @@ typedef struct {
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
     FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
-    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE
+    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -830,6 +967,13 @@ static bool fit_collapse_applies(const FitSel *s)
  * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
  * measurement below), so an attempt eligible here has never
  * entered it and its record is still the untouched entry state. */
+/* D164 B3 `drop-end-mark` (docs/design/endmark.md §R.5): the attempt carried
+ * the `tagged` form's lowered machines and the mark was not already dropped. */
+static bool fit_end_mark_applies(const FitSel *s)
+{
+    return s->cx->job && s->cx->job->revend_form == RF_TAGGED && !s->cx->end_mark_dropped;
+}
+
 /* [K53-SELRETRY] the optional anchored machine: `anchored_ok` is exactly
  * "this DFA artifact carries it". */
 static bool fit_anchored_applies(const FitSel *s)
@@ -1040,6 +1184,19 @@ static const FitRung fit_rungs[] = {
       .note = { "the compound (its controller and parts)",
                 "the plain artifact's attempt loop ships instead, the form the "
                 "compound exists to avoid (docs/design/compound.md)" } },
+    /* 5 D164 B3 the FIRST size rung: the match-end mark's lowered machines
+     * cost no answer and no other optimization (endmark.md §R.5); the retry
+     * pins the `rev-end` walk to today's form (`Ctx.end_mark_dropped`). */
+    { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_end_mark_applies, .act = FIT_DROP_END_MARK, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false,
+                FIT_COMP_KEEP },
+      .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
+      .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the match-end mark's lowered machines",
+                "the rev-end walk keeps its two-seed form: a final-newline "
+                "tie is decided by one more walk and an anchored run "
+                "(docs/design/endmark.md §R.5)" } },
     /* 6-10 [PF-DROP] (D135) the size-cap rungs, cheapest first; 11 refuses */
     { .name = "unroll-rescue",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = NULL, .act = FIT_UNROLL_RESCUE, .on = FIT_L_SIZE,
@@ -1363,6 +1520,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_DROP_PREMUL:    return "retry without the premultiplied DFA transition table";
     case FIT_DROP_PREFILTER: return "retry without the VM hybrid's prefilter";
     case FIT_REFUSE:         return "refuse the compile";
+    case FIT_DROP_END_MARK:  return "retry with the rev-end walk's two-seed form (no match-end mark)";
     }
     return "?";
 }
@@ -1499,6 +1657,11 @@ static const struct { FitAct prev, next; } fit_seq_legal[] = {
     { FIT_COLLAPSE,      FIT_SEL1_COLLAPSE },  /* the collapsed prefilter overflowed a cap */
     { FIT_COLLAPSE,      FIT_DROP_PREFILTER },
     { FIT_DROP_ANCHORED, FIT_DROP_PREMUL },
+    /* D164 B3 the end mark dropped, the artifact still over its cap */
+    { FIT_DROP_END_MARK, FIT_DROP_ANCHORED },
+    { FIT_DROP_END_MARK, FIT_DROP_PREMUL },
+    { FIT_DROP_END_MARK, FIT_COLLAPSE },
+    { FIT_DROP_END_MARK, FIT_DROP_PREFILTER },
 };
 #endif
 
@@ -1948,6 +2111,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.size_drop_rung = size_drop_rung;
         cx.anchored_dropped =
             (fit_fired >> (fit_rung_of(FIT_DROP_ANCHORED) - fit_rungs)) & 1u;
+        cx.end_mark_dropped =
+            (fit_fired >> (fit_rung_of(FIT_DROP_END_MARK) - fit_rungs)) & 1u;
         cx.size_cap_bytes = size_cap_bytes;
         cx.size_cap_limit = size_cap_limit;
         cx.dfa_was_engine = dfa_was_engine;
@@ -2157,6 +2322,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
             case FIT_DROP_COMPOUND:
+            case FIT_DROP_END_MARK:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
             /* THE `sets` ROUTINE (§1.3): the one writer of the cross-attempt
@@ -2686,6 +2852,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 pcrec_scanedge_dfa(&cx, &cx.job->rdfa,
                                    pcrec_dfa_scan_state_written(&cx, &cx.job->rdfa), false);
                 build_anchored_dfa(&cx);
+                /* D164 B3 the `rev-end` walk's form, once the three machines
+                 * exist (endmark.md §R.2.1's order). */
+                if (pcrec_revend_form_asked(&cx)) revend_choose_form(&cx, root);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 /* [LIM-2] N1: raise-only per-compile override (0 = the

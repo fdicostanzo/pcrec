@@ -109,6 +109,7 @@ static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
     case PF_WHY_DEAD_START:       return "decline:dead-start";
     case PF_WHY_ALIVE_NOT_ACCEPT: return "decline:alive-not-accept";
     case PF_WHY_ASSERT_AFTER:     return "decline:assert-after";
+    case PF_WHY_CALL:             return "decline:call";
     }
     return "";
 }

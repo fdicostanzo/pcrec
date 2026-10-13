@@ -757,6 +757,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   than promoted to their recorded oracle, a known stage-4 gap, not a
   finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
+- **endmark/** — D164 B3, the match-end mark on `rev-end`
+  (`docs/design/endmark.md` §R): `b3_rows.rxt` (libpcre2-generated, rides
+  `test-corpus`), `run_b3_checks.sh` (`make test-endmark`: answers under three
+  arms, per-form witnesses, the probe census with floors, gates G1-G4 per
+  artifact, the reference-build declines), and the lane instruments
+  `b3diff.py` and `mover_census.py`. See its own CLAUDE.md.
 - **ci/** — [CI-SHARD] (lane cishard, 2026-10-13): the DECLARED shard table CI
   runs `make test` by (`shards.tsv`: section, shard, weight, weight source),
   its control (`check_shards.sh`, `make test-ci-shards`, a `TEST_SECTIONS`

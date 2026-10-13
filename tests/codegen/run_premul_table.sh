@@ -205,6 +205,11 @@ read_artifact() {
         # predicate that makes the choice.
         /^    static const (unsigned )?short rx_[a-z]+_seed_state\[/ {
             t = $0; sub(/^.*short rx_/, "", t); sub(/_seed_state.*$/, "", t); inseed = t; next }
+        # D164 B3: the one-seed rev-end form seeds the dead state INLINE (a
+        # reverse_state = -1 / PREMUL_DEAD, as the declaration initializer
+        # or under the final-newline test) rather than through a seed table;
+        # same fact, read off its text.
+        $0 ~ ("^(    rx_reverse_state |        )reverse_state = (-1|" pdead ");$") { sdead["reverse"] = 1 }
         inseed != "" && /\};/ { inseed = ""; next }
         inseed != "" { n = split($0, a, ","); for (i = 1; i <= n; i++) {
                            gsub(/[ \t]/, "", a[i]); if (a[i] == "-1" || a[i] == pdead) sdead[inseed] = 1 } }
@@ -288,6 +293,8 @@ read_artifact() {
         # with run_dfa_stamps.sh; missing here, 143 rev-end artifacts read as
         # stamp-without-a-scan (lane revtri, 2026-10-10).
         /^    for \(int revend_seed = 0; /                           { scan = 1 }  # REV_END
+        /^    if \(subject_length > 0 && subject\[subject_length - 1\] == / { scan = 1 }  # REV_END one-seed form (D164 B3)
+        /^    unsigned revend_dist = 0;/                             { scan = 1 }  # REV_END tagged form (D164 B3)
         # ---- (ii) STAMPED: the `#define` line, and nothing else ------------
         /^#define RX_DFA_TABLE "/ { s = $0; sub(/^#define RX_DFA_TABLE "/, "", s);
                                     sub(/"$/, "", s); stamp = s }
