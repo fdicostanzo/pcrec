@@ -43,7 +43,7 @@ shard assignment is greedy longest-processing-time on `weight_s`.
 
 Weights (`weight_source` column says which per row):
 
-- 53 sections: median `wall_s` over the 4 ttune-ledger runs with `make -j<=4`
+- 60 sections: median `wall_s` over the 4 ttune-ledger runs with `make -j<=4`
   (`docs/dev/ttune_ledger.d/*.sections.tsv`, 2026-10-08, Ryzen 7 7700X). The
   low-concurrency runs only: at -j16 a section's wall is inflated by its
   neighbours. LOCAL-box seconds; to be replaced by the runner's measured times.
