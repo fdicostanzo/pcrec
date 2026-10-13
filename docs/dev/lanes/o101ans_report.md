@@ -92,7 +92,7 @@ box is not the bench's box.
   from 'c' to 'cat' by 2 verify bytes). A "same first set, K 0" row (displacement
   gains zero expected jump beyond the verify) is the structural gap.
 - The admission is also a member of the prior-cost family (`rlhbuild_report.md` section 7
-  item 2; plan `[PRIOR-COST-UNIFY]`, `plan.md:87`).
+  item 2; plan `[PRIOR-COST-UNIFY]` ).
 
 ### DRAFT answer to ask 1 (draft, for the manager)
 
@@ -143,10 +143,10 @@ valid control for that: use a hand twin or the BASE arm).
    reports).
 6. **No tiny-subject floor exists in design or plan.** grep of `plan.md` and `known_issues.md`
    for floor/tiny/short-call: the neighbours are K103 (rev-end entry floor, a different
-   path), K88 + `[K88-HANDOFF-DENSE]` (`plan.md:243`, not-started), K90/K91 and their
-   plan row `[START-DENSE]` (`plan.md:469`, not-started, gated to round 3, "no row-specific
-   trigger recorded"), and `[PRIOR-COST-UNIFY]` (`plan.md:87`, "FOR FRANK: schedule after
-   [REQ-HANDOFF-L1] merges?"). `plan.md:474` (the peel row) names "hit-at-0 short calls
+   path), K88 + `[K88-HANDOFF-DENSE]` ( not-started), K90/K91 and their
+   plan row `[START-DENSE]` ( not-started, gated to round 3, "no row-specific
+   trigger recorded"), and `[PRIOR-COST-UNIFY]` ( "FOR FRANK: schedule after
+   [REQ-HANDOFF-L1] merges?"). (the peel row) names "hit-at-0 short calls
    +14..+17 ns" as evidence for the shared seek-property row. None mentions a tiny-subject
    floor. The prior (default byte rate for `b` ~ x27.6 rarer than this subject's density)
    is what makes this the density-vs-prior case, not the tiny size as such.
@@ -266,9 +266,9 @@ class-tail is K104).
 
 1. **K105's D77 trigger is met** ("a bench cell with a landmark denser than its prior"):
    O-101 ask 2, kv-quoted's 12 dense subjects (every one slower, x1.033-1.29), `f-tag` x2.40.
-   Candidate: record the witnesses in K105 and route to `[PRIOR-COST-UNIFY]` (`plan.md:87`,
+   Candidate: record the witnesses in K105 and route to `[PRIOR-COST-UNIFY]` ( 
    which asks "FOR FRANK: schedule after [REQ-HANDOFF-L1] merges?"). `f-tag` is also the
-   K90 L3 / `[START-DENSE]` shape (`plan.md:469`): consider listing it in that row's refs.
+   K90 L3 / `[START-DENSE]` shape ( ): consider listing it in that row's refs.
 2. **A new K-entry candidate for the 7 cells over the +3% bound**
    (`mod-r` short x1.076 / thr x1.033, `mod-i` x1.069 / x1.031, `kv-quoted` short x1.035,
    `sfx-64/256` short x1.032/x1.031): two different causes, not one. (a) mod-i/mod-r
