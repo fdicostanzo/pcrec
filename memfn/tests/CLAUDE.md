@@ -82,7 +82,15 @@ bytes the generator chose) and the compiler, not on the author.
   `python3 memfn/tests/run_g2_simd.py [--quick]`; the drivers run under
   `taskset` on `G2V_CPUS`, honoured as given and a hard error if it names a CPU
   outside the affinity set; unset, 12-15 when all four are available, else the
-  highest up-to-4 CPUs of the affinity set, one line saying which): each class's MEMFN_FORMS
+  highest up-to-4 CPUs of the affinity set, one line saying which). **Host gate:**
+  the `-march=x86-64-v3`/`-v4` arms are always BUILT but RUN only when the host
+  has the level — a probe built at plain `-march=x86-64` asks
+  `__builtin_cpu_supports("x86-64-vN")` (the compiler's own definition). A
+  skipped arm prints `SKIPPED ARM <level>: <why>; N checks NOT run` and the
+  summary line `skipped arms: K (...)`; never a silent pass (the skipped unit's
+  floors are not judged). `G2V_SKIP_ARMS=x86-64-v4[,x86-64-v3]` forces a skip
+  (tests the gate). Other `G2V_*`: `G2V_CPUS` (pin, above), `G2V_JOBS`
+  (concurrent builds, default 4). Each class's MEMFN_FORMS
   against a hand table; THE RANKING CHECK (rankuse): every rendered
   helper's whole-block loads, and since r16b (R-16) its final-block loads,
   in order, equal the filter the kit's rule gives from the GENERATED
