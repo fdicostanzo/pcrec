@@ -1137,6 +1137,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: starts only on Frank's word; no row-specific trigger recorded
   BOONIES (Frank, 2026-10-09: "File it in boonies"). Fold a caseless backreference's/variable's capture ONCE (canonical case-set representatives, bounded buffer) and compare only the subject side, keyed on the capture span. Pays only when the capture holds still across many compares (`(?i)^(\w+).*\1`), and mostly under utf8. It loses when backtracking is inside the capture. NOT TRIGGERED; no measurement chartered.
 
+- [CLS-FOLD-WAF744] STATE:not-started — research why the caseless class fold loses on waf744 (x86)
+  filed: 2026-09-30 Frank (decisions D138 addendum)
+  status (2026-10-12): not started; re-filed as its own row after [FORM-CHAR2] was archived (it had been merged into that row by [PLAN-LINT] step 2)
+  next: starts only on Frank's word; unscheduled, low priority
+  refs: decisions D138; docs/dev/lanes/formchar2_report.md
+  BOONIES. The fold stays the default (D138 addendum 2026-09-30); its one real penalty is waf744 (+1.2% throughput, +28% match on a 21-byte subject), a forced-VM-only shape with a default-route population of 0. Research why.
+
 ## Deferred
 - [XARCH] STATE:deferred — CROSS-ARCH COMPILER + MATCHER RATES, macOS/M1/gcc-16 vs Linux/Ryzen/gcc-15.2 on identical emitted C
   filed: 2026-09-06 Frank
@@ -1150,13 +1157,6 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   trigger: a second flavour-varying row earns the axis (D18's earn-its-axis rule; exactly one, `\v`, is known today).
   refs: tests/registry/; decisions D18
   FLAVOURS (families as named masks: `pcre2-10.46`, `pcre2-dfa`, `python-re`, `ere`). Deferred by D18's earn-its-axis rule applied to the front end: exactly ONE flavour-varying row is known (`\v`), so the selection machinery has a set of size one and no customer. The column exists from SR-1; it turns on when a second flavour earns it. Note `pcre2-dfa` is the ENGINE-capability axis expressed as a family, so this step and DD-7/M4 are related. BLOCKER TO PLAN FOR (R4 critic finding): `pcrec_registry_find(kind, sel)` takes no flavour argument and returns the first row matching a byte, so SR-1's "short chain for the rare flavour-varying byte" is not expressible in the shipped shape — SR-7 must change that signature. Today a duplicate selector is caught loudly by tests/registry/ rather than silently shadowing, so this is a design debt, not a live bug
-- [SR-8] STATE:deferred — engine-capability check moves out of the parser (premise settled by D55, built by D67)
-  filed: 2026-08-17 manager
-  status (2026-10-12): D55 settled the premise; D67 (2026-08-22) built the consultation as `forces_registry`; the row is kept deferred pending a ruling on archiving it as completed.
-  trigger: the registry's engine-capability check (tests/registry/registry_check.c `check_engine_capability`) fails without a named exception. (The 2026-10-12 disposition named `check_engine_capability_tripwire`, which D67 retired into it.)
-  refs: decisions D55 D67; tests/registry/registry_check.c; src/opt/select_engine.c
-  ENGINE-capability check moves OUT of the parser. The original premise: `\1` was rejected by the PARSER as "requires module 'backrefs'", but backrefs parse fine and simply cannot LOWER to a DFA, so the honest diagnostic would be "requires the VM engine", a lowering-time check against the registry's `engines` column. DISPOSITION (2026-08-17, [M4.7a] + manager redirect): the row's premise did not hold in code — `\1` was refused for lack of an implementation (no producer), not for engine incapability; the parser's wording was already correct. D55 settled it: the lowering-time consultation LANDS WITH THE FIRST VM_ONLY PRODUCER, not ahead of one guessing at a contract from sample size zero.
-  D67 (2026-08-22, [M6.4.2]): that producer arrived and SR-8 was BUILT as `forces_registry` in src/opt/select_engine.c, the generic post-discharge consultation over producer-stamped `engines` masks; the tripwire this row named was retired into the live check `check_engine_capability`, which demands a witness per wired VM_ONLY row.
 - [DOC-BM] STATE:deferred — the bound-mode document (design section 18.5)
   filed: 2026-08-13 (first appearance in plan.md, git; author unrecorded)
   status (2026-10-12): deferred; format normalised 2026-10-12, content awaits the manager
