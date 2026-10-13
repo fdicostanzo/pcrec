@@ -18,8 +18,8 @@ SAB_SUITES="resource pfcollapse"
 SAB_DESC="the VM emitter never writes <PREFIX>_VM_PREFILTER_WHY, so an artifact whose prefilter the size-cap ladder dropped is indistinguishable, stamp for stamp, from a caller's own -fno-prefilter but for RX_ENGINE_SEL"
 SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource [PF-DROP] WHY cell red; pfcollapse K41 -fno-prefilter-collapse control red. docs/spec/match_api.md §6.3's <PREFIX>_VM_PREFILTER_WHY (§6.3.5¶3)"
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "(\p{Xwd})" 2>/dev/null | grep -o "VM_PREFILTER_WHY" | head -1'
-SAB_REACH_EXPECT='VM_PREFILTER_WHY'
+SAB_REACH='"$PCREC" -e utf8 --features assertions -p rx -o - --pattern "(\p{Xwd})\b" 2>/dev/null | grep -E "^#define RX_VM_PREFILTER_WHY \"size cap retry, hybrid "'
+SAB_REACH_EXPECT='#define RX_VM_PREFILTER_WHY "size cap retry, hybrid '
 # [DEC-FALLBACK] B5 (lane decfbB5, 2026-10-08) RE-AIMED, INTENT RE-VERIFIED.
 # The stamp's `size_drop_rung` test is gone: it is written where a fired T1
 # row carries a `pfwhy` cell, and that cell is its format. The plant keeps

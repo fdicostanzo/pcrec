@@ -30,8 +30,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-22 (solo mech run, tree fa1abf3b42c560d1c97deaf
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `abc$`
 # stamps a window of 4 and emits the clamp this row plants on, so the function
 # the plant edits really does run for this witness.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "abc\$" && grep -q "^#define RX_END_WINDOW \"4\"" "$REACH_TMP/o.c" && grep -q "search_from = subject_length - 4ULL;" "$REACH_TMP/o.c" && echo REACH-END-WINDOW-CLAMP-EMITTED'
-SAB_REACH_EXPECT="REACH-END-WINDOW-CLAMP-EMITTED"
+SAB_REACH='for p in "(ab)(c)\$" "([^c]{1,3})\$"; do "$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "$p" && grep -q "^#define RX_END_WINDOW \"4\"" "$REACH_TMP/o.c" && grep -q "search_from = subject_length - 4ULL;" "$REACH_TMP/o.c" && echo "REACH-CLAMP-EMITTED:$p"; done'
+SAB_REACH_EXPECT='REACH-CLAMP-EMITTED:(ab)(c)$
+REACH-CLAMP-EMITTED:([^c]{1,3})$'
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_printf(c,
         "%sif (%s > %lluULL && %s < %s - %lluULL)\n"

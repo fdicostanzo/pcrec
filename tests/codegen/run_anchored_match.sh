@@ -608,6 +608,56 @@ else
     [ -n "$c_plain" ] && [ "$c_plain" = "$c_deny" ] \
         && ok "§6c a pattern with NO optional contributor ('^foobarbazqux', RX_DFA_SCAN \"attempt\") refuses at $c_plain bytes with the axis live and at $c_deny with it denied — identical, so the rung is gated on a droppable machine being present and not on the refusal alone" \
         || bad "§6c the no-contributor control failed: the live build refused at '${c_plain:-<did not refuse>}' and the denied build at '${c_deny:-<did not refuse>}'. Equal figures are what says the rung did nothing here; a live build that compiles where the denied one refuses would mean the retry is dropping something it has not accounted for"
+
+    # ---- (d) THE SAME RUNG ON THE DEFAULT PATH --------------------------------
+    # [MECH-REACH] (lane mechwit, 2026-10-13): (a)-(c) calibrate a lowered cap
+    # and deny the [START-LANDING] rows (`K53_DENY`), because that is the only
+    # way the three small literal witnesses still reach the reverse-pass
+    # window their figures were measured on. The caller who hit K53 had none of
+    # that: a `-e utf8` pattern of three property classes at pcrec's own 1,000,000-
+    # byte cap and default flags. Since [START-LANDING] took `\p{L}` off the
+    # reverse pass (593 KB, fits WITH its anchored machine), no single-class
+    # property witness reaches this rung by default, and sabotage S237/S238
+    # (the rung never offered / never stamped) went UNREACHED. Three-class
+    # chains whose reverse-pass artifact is 1.30-1.38 MB and whose dropped one
+    # is 0.76-0.84 MB (measured 2026-10-13, 17%+ under the cap) do.
+    #
+    # Held per witness: it COMPILES (a refusal here is K53 restored), stamps
+    # search-filter + size-cap-retry with no anchored table, and is byte-equal
+    # to the caller's own `-fno-anchored-dfa` build modulo the output name and
+    # that stamp. The control: `\p{L}` alone still fits WITH its machine, so
+    # the rung narrows rather than firing on every property class.
+    dd_dropped=0; dd_wrongsel=0; dd_wrongbytes=0
+    for pat in '\p{L}\p{N}\p{Lu}' '\p{N}\p{L}\p{Lu}' '\p{L}\p{N}\p{Ll}'; do
+        if ! emit "$WORKDIR/kd.c" "$pat" -e utf8 2>/dev/null; then
+            bad "§6d '$pat' -e utf8 is REFUSED at pcrec's own cap and default flags — the optional anchored machine's bytes are deciding what pcrec accepts (K53 restored)"
+            continue
+        fi
+        dd_sel="$(sed -n 's/^#define RX_ENGINE_SEL "\(.*\)"$/\1/p' "$WORKDIR/kd.c" | head -1)"
+        if [ "$(stamp "$WORKDIR/kd.c")" = search-filter ] && ! has_anchored_tbl "$WORKDIR/kd.c"; then
+            dd_dropped=$((dd_dropped + 1))
+            [ "$dd_sel" = size-cap-retry ] || { bad "§6d '$pat' took the drop rung but stamps RX_ENGINE_SEL \"$dd_sel\" — a caller cannot tell it from an unremarkable compile"; dd_wrongsel=$((dd_wrongsel + 1)); }
+            if emit "$WORKDIR/kdd.c" "$pat" -e utf8 -fno-anchored-dfa 2>/dev/null; then
+                norm "$WORKDIR/kd.c" > "$WORKDIR/kd.norm"; norm "$WORKDIR/kdd.c" > "$WORKDIR/kdd.norm"
+                cmp -s "$WORKDIR/kd.norm" "$WORKDIR/kdd.norm" \
+                    || { bad "§6d '$pat' dropped to a THIRD artifact, not the -fno-anchored-dfa build's: $(diff "$WORKDIR/kdd.norm" "$WORKDIR/kd.norm" | head -4 | tr '\n' ' ')"; dd_wrongbytes=$((dd_wrongbytes + 1)); }
+            else
+                bad "§6d the denied build of '$pat' did not compile — the comparison has no control"
+            fi
+        else
+            bad "§6d '$pat' -e utf8 kept its anchored machine at the default cap — the witness no longer reaches the rung (measured 1.30-1.38 MB WITH the machine, 2026-10-13)"
+        fi
+    done
+    [ "$dd_dropped" -eq 3 ] && [ "$dd_wrongsel" -eq 0 ] && [ "$dd_wrongbytes" -eq 0 ] \
+        && ok "§6d three property chains at the DEFAULT cap and flags took the drop rung: an artifact rather than a refusal, search-filter + size-cap-retry, byte-equal to the -fno-anchored-dfa build" \
+        || bad "§6d the default-path drop rung's rows did not all hold: $dd_dropped of 3 took it, $dd_wrongsel stamped the wrong RX_ENGINE_SEL, $dd_wrongbytes produced an artifact that is not the denied build's"
+    if emit "$WORKDIR/kdc.c" '\p{L}' -e utf8 2>/dev/null \
+       && [ "$(stamp "$WORKDIR/kdc.c")" = unwrapped ] && has_anchored_tbl "$WORKDIR/kdc.c" \
+       && ! grep -q '^#define RX_ENGINE_SEL "size-cap-retry"$' "$WORKDIR/kdc.c"; then
+        ok "§6d the control held: \\p{L} -e utf8 fits under the default cap WITH its anchored machine, so the rung is not firing on every property class"
+    else
+        bad "§6d \\p{L} -e utf8 no longer keeps the unwrapped form at the default cap — the §6d witnesses are comparing a dead axis"
+    fi
 fi
 
 # =========================================================================

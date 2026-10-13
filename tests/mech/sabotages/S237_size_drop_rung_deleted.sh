@@ -31,8 +31,9 @@ SAB_COUNT=1
 # under utf8 ever stops taking the rung — because a class-emission change made
 # it fit unaided ([CLS-TREE]), or because the caps moved — this row is
 # certifying nothing and says so rather than scoring.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
-SAB_REACH_EXPECT='size-cap-retry'
+SAB_REACH='"$PCREC" --no-captures --features all -e utf8 -p rx -o - --pattern "\p{L}\p{N}\p{Lu}" 2>/dev/null | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_MATCH \"search-filter\")$"'
+SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
+#define RX_DFA_MATCH "search-filter"'
 # RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the drop rung gained the LR-S12 member-set clause; the plant still makes the rung never offered. Intent
 # unchanged.
 SAB_BEFORE='    return s->size_drop_rung == SDR_NONE &&
