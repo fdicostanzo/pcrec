@@ -927,6 +927,7 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   next: Frank's review; no measurement lane until then
   refs: memfn/docs/ideas.md (2026-10-13 entry); [SPAN-ISEL]
   The general form: an exact repeat `X{n}` of a fixed-width atom IS a width-n*w member, so the run extractor (and the VM's literal-run selection) should read it as such (`ab{3}c` has required run `abbbc`; `[0-9]{4}` is a width-4 span member). Fix the reading in the analysis, never a parser rewrite to a sequence. Likely cost: the VM half (counter loop vs one memcmp) more than the search-start half. Population unmeasured.
+  Frank, 2026-10-13: "pcrec could construct a span for memfn that isn't actually what the pattern says." GENERAL FORM: a span is a fact about the LANGUAGE, derived from IR/automaton, not the spelling (`A{4}`->`AAAA`, `abc|abd`->`ab[cd]`, `a(?=bc)`->`abc` as a search condition). Soundness bar by use: a SEARCH span need only be necessary (every match has it); a MATCH-STEP span must be exact. Facts only to the kit (D157); each derivation needs an identity proof + a planted-wrong-derivation sabotage.
 
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
