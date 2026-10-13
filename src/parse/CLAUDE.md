@@ -182,7 +182,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. [COMPOUND] B2 (lane
   cpb02, 2026-10-12): the attempt-scope column, `RF_CROSSES_ATTEMPTS`
-  (internal.h), stated on the callout row through `GROUP_XA`; no dump prints
+  (internal.h), stated on the callout row through `GROUP_XA_CALLOUT` (B4 renamed it: the callout group, kept apart from a future verb group); no dump prints
   it (`flag_names` lists only the bits a listing shows). Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by
   the CASE of the first name byte exactly as libpcre2 chooses between its own
@@ -2129,3 +2129,7 @@ width table is settled — at parse time for a call-free body, in
 one-character lookbehind that T3 turns into a context node. Nesting is a
 max, never a sum; dead DEFINE bodies count. `[[:<:]]`/`[[:>:]]` (1 in PCRE2)
 are refused by `ext.c` today; their producer raises LB when it lands.
+
+## Convention: module handlers (from the retired plan row [SR-6], 2026-10-12)
+
+A module's handlers live in their own translation unit in this directory, as-built FLAT (`mod_modifiers.c`, `mod_verbs.c`, `mod_classes.c`, ... — not a `src/parse/ext/` subdirectory), added when the module lands. The handler families the registry names are esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc, grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier, grp_callout, verbs and cls_posix. This is a rule to follow when a module is implemented, not a step to schedule.

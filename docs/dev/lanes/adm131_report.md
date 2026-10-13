@@ -27,10 +27,10 @@ tables read cleanly.
 ## Item 2 — plan.md rows
 
 All five, each citing D131:
-- `[CLS-TREE]` (docs/dev/plan.md:1532): appended S0 COMPLETE (calibration
+- `[CLS-TREE]` (docs/dev/plan_completed.md [CLS-TREE]): appended S0 COMPLETE (calibration
   in cls_tree_design.md §1.7, λ ruled), S1 CHARTERED (lane clss1), S2
   RE-SCOPED (byte forms are size-leaning only).
-- `[OPT-CLSPACK]` (plan.md:1411): appended PROMOTED TO BUILD — atom table
+- `[OPT-CLSPACK]` (plan_completed.md [OPT-CLSPACK]): appended PROMOTED TO BUILD — atom table
   default from N ≈ 11, ≤ 64 atoms. Left `STATE:not-started` (no build
   lane exists yet; "promoted" reads as a ruling, not a started build) —
   **flagging this as a judgment call** in case Frank wants
@@ -47,13 +47,13 @@ All five, each citing D131:
   on loglines / real on email, `--tune` moves only two positions). If
   Frank wants it left open pending the `--extended`/compile-time-axis
   follow-up, that's a one-line revert (move the row back, `STATE:started`).
-- New row **`[FIND-DOMAIN-CHECK]`** (plan.md:362, filed not scheduled):
+- New row **`[FIND-DOMAIN-CHECK]`** (plan.md [FIND-DOMAIN-CHECK], filed not scheduled):
   D131 item 7, citing O-74's weblog iso-ts ×1.47/×1.84 finding.
-- `[SEL-COST]` (plan.md:229): parenthetical changed from "NOT scheduled"
+- `[SEL-COST]` (plan.md [SEL-COST]): parenthetical changed from "NOT scheduled"
   to "PULLED FORWARD into the next optimization cycle's queue, D131 item
   8"; appended the email whole-subject ORACLE-BEST evidence (×0.648
   floor / ×0.856 orig).
-- `[LIST-TABLES]` (plan.md:1541, now ~1550 after the insert above):
+- `[LIST-TABLES]` (plan.md [LIST-TABLES], now ~1550 after the insert above):
   appended O-74's open question — PROFILED moved `iso-ts`'s program
   (`program_sha256` fb085cf3 → e094fe46, as given in the brief) with no
   read stamp moving.

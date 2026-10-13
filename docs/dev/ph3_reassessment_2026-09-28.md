@@ -16,7 +16,7 @@ it explicitly.
 
 ---
 
-## 1. `[TT-4M]` (plan.md:310) — STATE:started, dormant
+## 1. `[TT-4M]` (plan_completed.md [TT-4M]) — STATE:started, dormant
 
 **(a) Charter, one sentence:** re-open `[TT-4]`'s closed batched-compilation
 levers on darwin, where `[TT-14]`/`[XARCH]` show the Mac's cost is
@@ -58,7 +58,7 @@ lift.
 
 ---
 
-## 2. `[DD-8]` (plan.md:1015) — STATE:started, dormant
+## 2. `[DD-8]` (plan_completed.md [DD-8]) — STATE:started, dormant
 
 **(a) Charter:** adopt `docs/spec/table_contract.md` for `--emit-ir`'s
 output (D106) — a narrow "TABLE-MECHANISM ADOPTION" sub-task inside a
@@ -76,7 +76,7 @@ section (D106 addendum items 3-4), and the enriched `[V-H]` trace.
 
 **(c) Still valid:** The row's own text keeps it `STATE:started` "for its
 future sub-parts" — but none of those sub-parts have ever been separately
-chartered, and `[V-H]` (STATE:not-started, plan.md:563) is **already its
+chartered, and `[V-H]` (STATE:not-started, plan.md [V-H]) is **already its
 own row** covering the enriched-trace half. Nothing has shipped since that
 changes this; no lane report after `dd8_report.md` touches `--emit-dot` or
 a DFA/prefilter listing section.
@@ -92,7 +92,7 @@ stated dependency either (D106 called both "FUTURE").
 
 ---
 
-## 3. `[DD-11]` (plan.md:1072) — STATE:started, dormant
+## 3. `[DD-11]` (plan_completed.md [DD-11]) — STATE:started, dormant
 
 **(a) Charter:** replace the ad hoc option-conditional definitions
 (`$`, `\Z`, POSIX classes, …) with a predicate-scanned DATA table
@@ -136,7 +136,7 @@ answer-identical on the corpus" — sequential, not parallel.
 
 ---
 
-## 4. `[CC-CLANG]` (plan.md:1198) — STATE:started, dormant
+## 4. `[CC-CLANG]` (plan_completed.md [CC-CLANG]) — STATE:started, dormant
 
 **(a) Charter:** validate clang as a second compiler for pcrec's emitted
 C (Frank: "we should do some basic compatibility testing and consider a
@@ -172,7 +172,7 @@ side beyond drafting the ask.
 
 ---
 
-## 5. `[OPT-3]` (plan.md:1416) — STATE:started, dormant
+## 5. `[OPT-3]` (plan_completed.md [OPT-3]) — STATE:started, dormant
 
 **(a) Charter:** speed up the DFA scan edge/transition loop (originally
 framed as "SIMD the candidate-start skip loop"; STEP 1 measurement
@@ -209,7 +209,7 @@ channel.
 
 ---
 
-## 6. `[OPT-5]` (plan.md:1446) — STATE:started, dormant
+## 6. `[OPT-5]` (plan_completed.md [OPT-5]) — STATE:started, dormant
 
 **(a) Charter:** the `{0,n}` class-count DFA-vs-VM selection knee — why
 the counted DFA loses to pcrec's own VM on in-class letter runs, and what
@@ -250,7 +250,7 @@ channel (same shape as OPT-3's I-10 ask — worth bundling the two asks).
 
 ---
 
-## 7. `[ENG-ABS]` (plan.md:1455) — STATE:started, dormant
+## 7. `[ENG-ABS]` (plan_completed.md [ENG-ABS]) — STATE:started, dormant
 
 **(a) Charter:** two mechanisms under one row — (1) absorb `^` into
 `ENG_UNANCH`, (2) an unwrapped-forward-DFA anchored-match engine.
@@ -279,7 +279,7 @@ or a successor subbench) surfacing a `^`-on-some-branches losing cell.
 
 ---
 
-## 8. `[ENG-ISL]` (plan.md:831) — STATE:started, PARKED
+## 8. `[ENG-ISL]` (plan_completed.md [ENG-ISL]) — STATE:started, PARKED
 
 **(a) Charter:** DFA/VM "islands" — regions of one engine's shape spliced
 into the other; the first concrete instance chartered is the VM
@@ -321,7 +321,7 @@ uncapped always-inline gate.
 
 ---
 
-## 9. `[DD-13]` (plan.md:1016) — STATE:started, PARKED (parent row)
+## 9. `[DD-13]` (plan_completed.md [DD-13]) — STATE:started, PARKED (parent row)
 
 **(a) Charter:** the unified pattern-source/test-file format — one `.rxt`
 successor serving compilation source ([V-E]), test carrier, and
@@ -364,7 +364,7 @@ residual; `[LIB]` (not started) for W2/W3.
 
 ---
 
-## 10. `[DD-13b.W1.3]` (plan.md:1052) — STATE:started, PARKED (child of DD-13)
+## 10. `[DD-13b.W1.3]` (plan_completed.md [DD-13b.W1.3]) — STATE:started, PARKED (child of DD-13)
 
 **(a) Charter:** the composer proper — named-definition composition,
 `export`/site-qualified delivery, the name grammar, the altwide dogfood,
@@ -383,7 +383,7 @@ prefix through `flush_block`'s tail) the same day, but explicitly said
 **"build it AFTER `[PFX-1]` STEP 0 (D96) so the four prefix sites are the
 exported set only."**
 
-**(c) Still valid given what shipped since:** `[PFX-1]` (plan.md:1453,
+**(c) Still valid given what shipped since:** `[PFX-1]` (plan.md [PFX-1],
 "the only items getting the prefix should be the exported items", D96) is
 **still `STATE:not-started`** — never chartered, confirmed by grep against
 both `plan.md` and `plan_completed.md`. So the one concrete blocking
@@ -401,7 +401,7 @@ row's own residual: `[PFX-1]` STEP 0 has not landed. Re-open only after
 
 ---
 
-## 11. `[CLS-TREE]` (plan.md:1561) — STATE:started, PARKED
+## 11. `[CLS-TREE]` (plan_completed.md [CLS-TREE]) — STATE:started, PARKED
 
 **(a) Charter:** the general class-matcher KIT — a class matcher composed
 per-section from a small set of representations (mask compare / range

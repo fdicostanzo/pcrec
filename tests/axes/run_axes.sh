@@ -1174,6 +1174,8 @@ run_one_axis() {
     # output, which defeats the whole point of printing it. One `slug` per
     # label, reused everywhere a per-axis file is named (dump/rowsfile
     # already used this shape; outlog/errlog/diffe are new).
+    # [COMPOUND] an INTERNAL arm's job compiles with its own binary (job_bin).
+    local PCREC="${axis_pcrec:-${PCREC}}"
     local slug
     slug="$(echo "$label" | tr -c 'A-Za-z0-9' '_')"
     local dump="$WORKDIR/axis_$slug.tsv"
@@ -1408,6 +1410,9 @@ run_one_axis() {
 # ============================================================================
 
 declare -a job_label=() job_flags=() job_lost_ok=()
+# job_bin[idx], set ONLY for an INTERNAL arm (below): the binary that job
+# compiles with in place of $PCREC, read by run_one_axis as `axis_pcrec`.
+declare -a job_bin=()
 # job_savedump[idx], set ONLY for the dial's four jobs below (left unset —
 # read with `:-` — for every other axis): the path run_one_axis copies its
 # own RXTDUMP to before cleanup, so DIAL-S3 (after the job loop) can read
@@ -1441,6 +1446,28 @@ for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     lost_ok=0
     [ "$bit" = "$force_bit" ] && lost_ok=1
     job_label+=("$label"); job_flags+=("$flagtext"); job_lost_ok+=("$lost_ok")
+done
+# [COMPOUND] THE INTERNAL ARMS (docs/design/compound.md §A.11): levers that
+# are no axis -- no flags bit, no `--list-axes` row -- so the derivation above
+# cannot find them; each is DECLARED here, with the binary that carries it.
+# `--harness=no-compound` force-declines the compound family, through
+# build/pcrec-harness only; its answers must equal the default's exactly as an
+# axis's do, and tests/compound/check_lever.py holds its two-directional
+# property after the job loop. Selected by the empty AXES= or by its spelling.
+INTERNAL_ARMS=("--harness=no-compound")
+HARNESS_BIN="${PCREC_HARNESS:-$(dirname "${PCREC}")/pcrec-harness}"
+lever_ran=0
+for arm in "${INTERNAL_ARMS[@]}"; do
+    if [ -n "$AXES" ]; then
+        case " $AXES " in (*" $arm "*) ;; (*) continue ;; esac
+    fi
+    if [ ! -x "$HARNESS_BIN" ]; then
+        echo "run_axes.sh: FATAL: the internal arm $arm needs $HARNESS_BIN (make builds it)" >&2
+        exit 1
+    fi
+    job_label+=("$arm (internal arm, compound.md §A.11)"); job_flags+=("$arm"); job_lost_ok+=("0")
+    job_bin[$((${#job_label[@]} - 1))]="$HARNESS_BIN"
+    lever_ran=1
 done
 if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--engine'; then
     job_label+=("--engine=vm (§2.11)");  job_flags+=("--engine=vm");  job_lost_ok+=("1")
@@ -1660,7 +1687,7 @@ while [ "$i" -lt "$n_jobs" ]; do
         (
             trap - EXIT
             PROCS="$PAIR_PROCS"
-            run_one_axis "${job_label[$idx]}" "${job_flags[$idx]}" "${job_lost_ok[$idx]}" "${job_savedump[$idx]:-}" "$@"
+            axis_pcrec="${job_bin[$idx]:-}" run_one_axis "${job_label[$idx]}" "${job_flags[$idx]}" "${job_lost_ok[$idx]}" "${job_savedump[$idx]:-}" "$@"
             printf '%s\n' "${axis_results[-1]}" > "$res"
             echo "$fail" >> "$res"
         ) > "$out" 2>&1 &
@@ -1999,6 +2026,25 @@ if [ -z "$AXES" ] || case " $AXES " in (*" -fno-start-width "*|*" -fno-start-lan
     echo "  $landing_verdict"
 fi
 
+# [COMPOUND] the lever's exact property, both directions (CMP-15): "none"
+# where the default stamps "none", byte-identical there; "forced-off" exactly
+# where the default ships a row. Its population floor is the check's own.
+lever_verdict="not run (filtered out by AXES=)"
+if [ "$lever_ran" = 1 ]; then
+    echo
+    echo "axes: [COMPOUND] the lever's property (tests/compound/check_lever.py)..."
+    if python3 "$ROOT_DIR/tests/compound/check_lever.py" "$PCREC" "$HARNESS_BIN" "$ROOT_DIR" \
+            --jobs "$PROCS" > "$WORKDIR/lever.out" 2>&1; then
+        lever_verdict="OK — $(tail -1 "$WORKDIR/lever.out")"
+    else
+        lever_verdict="FAIL — $(tail -1 "$WORKDIR/lever.out")"
+        cat "$WORKDIR/lever.out" >&2
+        echo "AXIS FAIL: [COMPOUND] $lever_verdict" >&2
+        fail=1
+    fi
+    echo "  $lever_verdict"
+fi
+
 # ============================================================================
 # SUMMARY
 # ============================================================================
@@ -2016,6 +2062,7 @@ echo "-futf-check arm (contract, own oracle): $utfcheck_verdict"
 echo "[START-LANDING] product arm reach: $landing_verdict"
 echo "[START-SET] product arm (--engine=vm x -fno-start-set): $startset_verdict"
 echo "[START-SET] DFA hat population (-fno-start-set vs default): $dfahat_verdict"
+echo "[COMPOUND] the lever's property: $lever_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then

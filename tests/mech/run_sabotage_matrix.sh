@@ -508,6 +508,15 @@
 #     Its own arm because the fallback tables' stamps move no answer and no
 #     other suite reads them off a witness per value. Registered before its
 #     rows. Verdict: the script's `checks passed:`/`checks failed:` summary.
+#   compound — added 2026-10-12 (lane cpb4, [COMPOUND] B4); runs
+#     tests/compound/run_compound_unit.sh (`make test-compound`) from the
+#     SABOTAGED tree: the part/derive/entry unit checks, the split compound
+#     against the lever and libpcre2 (G2+G4), counted work (G3), the
+#     admitted population by ID, the lever's fence and property, and the
+#     shell's structure. Its own arm because the compound's controller, its
+#     admission and its lever are read by no other suite per witness.
+#     Registered before S891-S910. Verdict: `test-compound: PASS|FAIL`, the
+#     FAIL lines counted.
 #   spechistory — added 2026-10-09 (lane specclean, [SPEC-CLEAN]); runs
 #     tests/spec_history/run_spec_history.sh against the SABOTAGED tree's
 #     docs/spec/: the history-marker check (allowlist + known-debt baseline)
@@ -2723,6 +2732,22 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 score_arm "$work/startbnd.log" "$f" "startbnd:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            compound)
+                # [COMPOUND] tests/compound/run_compound_unit.sh -- `make
+                # test-compound`, from the SABOTAGED tree (vocabulary note):
+                # its unit drive links the tree's own libpcrec.a, every check
+                # reads the tree's build/pcrec and build/pcrec-harness.
+                PCREC="$tree/build/pcrec" PCREC_HARNESS="$tree/build/pcrec-harness" \
+                    CC="$CC" TMPDIR="$work" EVERY=8 \
+                    bash "$tree/tests/compound/run_compound_unit.sh" > "$work/compound.log" 2>&1
+                case "$(grep -m1 '^test-compound: ' "$work/compound.log")" in
+                    "test-compound: PASS") f=0 ;;
+                    "test-compound: FAIL") f="$(grep -cE '^FAIL' "$work/compound.log")"
+                                           [ "$f" -gt 0 ] || f=1 ;;
+                    *) f="" ;;
+                esac
+                score_arm "$work/compound.log" "$f" "compound:${f:-ERR}fail"
                 ;;
             spechistory)
                 # tests/spec_history/run_spec_history.sh -- reads docs/spec/*.md

@@ -465,6 +465,9 @@ state with a sibling script in its group.
 Maintenance: update this file when files are added/removed or their roles
 change.
 
+  [CI-SHARD]: optional env `TRAILER_TITLE`/`TRAILER_LIST_NAME` let `make
+  test-shard` word its heading and last line for the shard's list; unset, the
+  text is unchanged.
 - **spec_extract.sh** — [decfbB0b] sourced, never run: the registry check's
   hand-written-set extractors (`extract_md_table_values`,
   `extract_c_return_values`) over `docs/spec/match_api.md` §6.3's value-set
@@ -474,3 +477,10 @@ change.
   `return "..."` literals, moved here verbatim from `tests/registry/axes_registry_check.sh`
   so it and `tests/codegen/run_fallback_table.sh` read the spec's sets
   through ONE implementation. Defines functions only.
+- **compound_art.sh / compound_art.py** — [COMPOUND] B4 (lane cpb4,
+  2026-10-12), sourced/imported, never run: ONE answer to "is this artifact a
+  compound" (`compound_row`, `is_compound`), read off `<PREFIX>_COMPOUND`.
+  A corpus sweep that holds a MACHINE stamp to the emitted text skips a
+  compound and COUNTS the skip: a compound's machine stamps read
+  `"compound"` (match_api.md §6.3.12) and are held in one place,
+  `tests/codegen/run_dfa_stamps.sh`'s compound bucket.

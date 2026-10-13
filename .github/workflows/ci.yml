@@ -21,6 +21,16 @@ name: CI
 # anything older than 10.46, so a stranger's box with an older distro
 # package gets a clean skip rather than that -- but CI is exactly the box
 # that should never take the skip path, which is why it pins its own copy.
+#
+# [CI-SHARD] (lane cishard, 2026-10-13): `make test` outgrew one hosted runner
+# (run 38345462196 was killed at its 90-minute step timeout with 15 sections
+# still to run; docs/dev/lanes/citime_report.md), so the job is a MATRIX of
+# `make test-shard CISHARD=K/N`, each shard a serial run of its own section list.
+# The split is the DECLARED TABLE tests/ci/shards.tsv, held to TEST_SECTIONS
+# exactly by `test-ci-shards` (inside every shard, as a member of the list) --
+# nothing in this file knows a section name. The `shard:` line below is read by
+# that check too: it must list exactly 1/N..N/N for the table's N. `make test`
+# stays the one-box local standard and is not what CI runs any more.
 on:
   pull_request:
   push:
@@ -37,11 +47,21 @@ permissions:
 
 jobs:
   test:
+    name: test (${{ matrix.shard }})
     runs-on: ubuntu-latest
-    # Backstop for the whole job (checkout + deps + build + strict + test).
-    # The `make test` step below carries its own, tighter timeout-minutes;
-    # this is only a ceiling in case some earlier step itself hangs.
-    timeout-minutes: 120
+    strategy:
+      # Every shard reports its own verdict AND its own per-section timings:
+      # the timings are the measurement the first sharded runs exist for, so a
+      # red shard must not cancel the others mid-measurement.
+      fail-fast: false
+      matrix:
+        shard: ["1/3", "2/3", "3/3"]
+    # Backstop for the whole job (checkout + deps + build + strict + shard).
+    # The shard step below carries its own, tighter timeout-minutes (basis
+    # there); this is only a ceiling in case some earlier step itself hangs:
+    # ~1 min of setup/build/strict (measured, cached libpcre2; a cache miss
+    # adds the libpcre2 build, a few min) + the 55-minute shard step + upload.
+    timeout-minutes: 70
     steps:
       # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
       # default: run 2 (2026-09-21/22) measured tests/codegen/
@@ -151,46 +171,84 @@ jobs:
       # runner image, so a real new warning is caught before merge instead
       # of waiting for someone to run `make strict` by hand. Writes nothing;
       # safe to run before `make test` touches the same build/ tree.
+      #
+      # Once per run, not once per shard: it compiles the same tree whatever
+      # the shard, so shard 1 carries it (BEFORE its test sections, so a new
+      # warning fails that job fast; the other shards are unaffected, which
+      # fail-fast: false above makes visible rather than hiding).
       - name: make strict
+        if: startsWith(matrix.shard, '1/')
         run: make strict
 
-      # THE MEASUREMENT: does the full suite (40 sections, docs/dev/plan.md
-      # TEST_SECTIONS) fit inside a hosted runner. 90 minutes is generous
-      # against the two comparison points in docs/testing.md/dev_journal.md
-      # -- a Mac-box serial run measured 5124.29s (~85.4 min) at 38 sections
-      # (docs/dev/tt4m_time.md, 2026-09-12/13; the suite has since grown to
-      # 40) and an earlier Mac run of nominally the same section count read
-      # 42.6 min under different load -- so neither number is a confident
-      # prediction for THIS runner's hardware, but both sit under 90. See
-      # docs/dev/lanes/rel16_report.md for the fallback plan if the real
-      # run does not fit.
-      # `time` wraps the whole invocation for a free wall/user/sys number in
-      # the log -- not a harness change (nothing under tests/ instrumented),
-      # just the cheapest possible answer to "did it fit and how much
-      # slack was left". `make test` prints no PER-SECTION timing on its
-      # own (confirmed precedent: docs/dev/tt4m_time.md's own two timing
-      # runs found "no per-section timestamps survive in either log") --
-      # see rel16_report.md for what a per-section breakdown would cost.
-      - name: make test
-        timeout-minutes: 90
+      # THE SHARD: `make test-shard CISHARD=K/N` runs exactly shard K's sections
+      # from tests/ci/shards.tsv with `make test`'s own accounting (same -k
+      # launch, same marker files, same "sections ran: N/M" trailer over THIS
+      # shard's list; verdict = make's `*** [...test-X] Error` lines).
+      #
+      # PER-SECTION TIMESTAMPS: `make --debug=j` prints a `Putting child ...
+      # (test-X)` line when a section's recipe starts and `Removing child`
+      # when it ends; scripts/sectiontimes (the mechanism scripts/perfrun
+      # already uses for its sections.tsv, [TT-JTUNE]) stamps each such line
+      # with its arrival time into build/ci/sections.raw (epoch seconds,
+      # flushed per line, so a step the timeout kills leaves every started
+      # section on disk) and passes every OTHER line through unchanged to the
+      # log. Nothing in the Makefile or the tests carries the instrumentation.
+      #
+      # timeout-minutes BASIS (cishard2, 2026-10-13, from run 38354147463): the
+      # table now holds runner-measured seconds and projects 37.1 min for the
+      # longest shard (the run's own shards took 25.7 / 37.6 / 37.1 min, the
+      # first short only because its SIMD family died at once on taskset).
+      # Stated spread factor 1.4 (the serial suite's same-tree runner spread
+      # was 1.5x, 56..85 min; one sharded run is too little data to go
+      # lower): 37.1 x 1.4 = 52, rounded up to 55. NOT headroom for growth.
+      - name: make test-shard
+        timeout-minutes: 55
         run: |
           set -o pipefail
-          { time make test; } 2>&1 | tee build/ci_test.log
+          mkdir -p build/ci
+          { time make --debug=j test-shard CISHARD="${{ matrix.shard }}"; } 2>&1 \
+            | python3 scripts/sectiontimes stamp build/ci/sections.raw \
+            | tee build/ci/test.log
+
+      # Runs on success AND failure AND a step-timeout kill. `--open` adds the
+      # sections that STARTED and never finished (end = last stamp, marked
+      # `open`), which is exactly the row a killed run needs. sections.raw
+      # carries the absolute epoch stamp of every start/end.
+      - name: Per-section timings
+        if: always()
+        run: |
+          mkdir -p build/ci
+          if [ -s build/ci/sections.raw ]; then
+            python3 scripts/sectiontimes report build/ci/sections.raw --open | tee build/ci/sections.tsv
+          else
+            echo "no sections.raw: the shard step never started" | tee build/ci/sections.tsv
+          fi
+
+      - name: Upload per-section timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcrec-ci-sections-${{ strategy.job-index }}
+          path: |
+            build/ci/sections.tsv
+            build/ci/sections.raw
+          if-no-files-found: warn
+          retention-days: 30
 
       # build/watchdog.log accumulates one line per scripts/watchdog-wrapped
-      # call across the whole `make test` run (compiler invocations under a
-      # CPU/RSS/wall budget) -- the single most useful artifact for a hung
-      # or budget-killed case. build/ci_test.log is this job's own captured
-      # stdout+stderr of the `make test` step. Both are gitignored (build/)
-      # so they only exist on the runner; upload them on failure only, per
-      # the brief -- a green run has nothing here worth keeping.
+      # call across the shard (compiler invocations under a CPU/RSS/wall
+      # budget) -- the single most useful artifact for a hung or budget-killed
+      # case. build/ci/test.log is this job's own captured stdout+stderr of
+      # the shard step. Both are gitignored (build/) so they only exist on the
+      # runner; upload them on failure only -- a green run has nothing here
+      # worth keeping.
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: pcrec-test-logs
+          name: pcrec-test-logs-${{ strategy.job-index }}
           path: |
-            build/ci_test.log
+            build/ci/test.log
             build/watchdog.log
           if-no-files-found: warn
           retention-days: 14

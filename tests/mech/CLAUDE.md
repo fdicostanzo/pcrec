@@ -2257,6 +2257,16 @@ sabotaged, same tree, same flags):
 | `^(a?)(?1){2}a$` | `"a"` | (0,1) | **NOMATCH** |
 | `^(a?)(?1)*$` | `"aaa"` | match | match — `RX_VM_STRATS` 0x2 → 0x3, **no answer moves** |
 
+**[S157TRI, 2026-10-13] THE TABLE ABOVE NO LONGER DETECTS.** [k93fix]
+(121cdac9d) made a callee's possessify verdict join every call site's follow,
+so in those three cells (the `a?` group IS called, its site followed by the
+literal `a`) the sabotaged build answers like the clean one; the row read
+UNDETECTED 0fail/57pass until s157tri. The detecting cells are now the
+UNCALLED-group ones, whose only context is the lexical follow that S157's
+`first_of` arm empties: `^(a?)(?2)$(?(DEFINE)(a))` on "a" and
+`^(a?)(?2){2}$(?(DEFINE)(a))` on "aa" (NOMATCH sabotaged; row DETECTED
+4fail/64pass). See docs/dev/lanes/s157tri_report.md.
+
 The third row is the general lesson and is kept in `quantified.rxt` for it: the
 sabotage's most VISIBLE effect (a moved strategy stamp) is its least
 OBSERVABLE one, and a witness cell built around the visible effect would have
@@ -3802,3 +3812,33 @@ arm `candoracle`. REACH shown by hand: unplanted trace-build
 `CANDORACLE undeclared-read FIRST LOCATE` (dfa/attempt/vm witnesses). It is the
 sibling of S844: S844 plants the cycle the declared edges expose, S845 the
 undeclared edge itself.
+
+**[MECH-REACH] nine rows re-pointed at default-path witnesses (lane mechwit,
+2026-10-13, no `src/` change).** [START-LANDING] (b8337c33b) and [OPT-REVEND]
+(7388f1c0d) moved the witnesses of S237, S238, S252, S253, S421, S422, S423
+(utf8 `\p` forms onto `landing`, so the size-cap ladder never fires) and S264,
+S614 (`abc$`, `[^c]{1,3}$` onto `rev-end`, so no forward window or stay loop)
+off their sabotaged sites; all nine read UNREACHED on main's tip, and the sites
+stayed live behind `-fno-start-landing` / `-fno-rev-end`. Each reach probe now
+names a pattern that reaches its site under DEFAULT flags (report:
+docs/dev/lanes/mechwit_report.md has the per-row table): S237/S238 and
+S252/S253 compile a three-class `\p` chain / `[^\p{C}\p{M}\p{P}]xy`; S421-S423
+`(\p{Xwd})\b` (`--features assertions`); S264 `(ab)(c)$` and `([^c]{1,3})$`
+(the VM route's clamp); S614 `X(?:$|[^abc])+` and `(?:$|[^abc]){2,}` (the
+forward STAY loop), whose harness target moved from `gate.rxt` (0 failures now)
+to `tests/base/review_r2.rxt`. The detectors moved with them:
+`run_anchored_match.sh` §6d, `run_tune_dial.sh` §6 and `run_resource_tests.sh`
+[PF-DROP] now use the default-path witnesses (no deny flag).
+
+**S891-S910 (lane cpb4, 2026-10-12, [COMPOUND] B4, abi 77): compound.md
+§E.4's CMP-1..CMP-18, the namespace table's `harness-lever` row (S909) and the
+stamp catalogue (S910).** New arm `compound` (`tests/compound/run_compound_unit.sh`
+from the sabotaged tree; vocabulary note in run_sabotage_matrix.sh). Sixteen
+rows hand-measured DETECTED on the lane tip (each row's SAB_DOC_FIGURE); four
+declared UNREACHED with a REACH probe that reads NOW REACHED the day the
+witness ships a compound: S891 (CMP-1, `(?>^a|ab)c`), S895 (CMP-5, `^(a)|b$`),
+S901 (CMP-11, `^(?<=xy)a|b$`: as built every admitted P and Q stamp the same
+`_VALID_LB`, so the twin's plant 2 has no DFA population) and S904 (CMP-14,
+`(?:^(a)|b)(?1)`). S893 is detected by the compound arm only: the plant makes
+the part refuse, the row declines at A2 and every answer stays right. S627-S636
+were re-anchored for `FitSets.comp` (no behaviour change); S693 re-aimed 76/77.

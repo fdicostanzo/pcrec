@@ -23,8 +23,8 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `77` on every artifact today (lane b3build bumped it
-  from 76, 2026-10-12: D164 B3, the match-end mark on `rev-end`,
+- **`rx_info.abi` is `78` on every artifact today (lane b3build bumped it
+  from 77, 2026-10-13, after B4 took 77: D164 B3, the match-end mark on `rev-end`,
   docs/design/endmark.md §R; B3.1 and B3.2 land as one event).** Only the
   `rev-end` walk of a `$`/`\Z` artifact moves beyond the abi digits, by its
   form row (`rev-end-form`, internal; `--emit-ir`/`--emit-facts` list it).
@@ -42,6 +42,23 @@ the bump's own commit.**
   keeps the two-seed walk without its tie code. `-fno-rev-end-onewalk`
   (bit 56) restores the two-seed walk with its tie code on every such
   artifact. No struct offset moves and no answer moves.
+
+- **`rx_info.abi` was `77` (lane cpb4 bumped it from
+  76, 2026-10-12: [COMPOUND] B4, docs/design/compound.md rev 2.2, D163 and
+  addenda 1-6).** Every artifact of both engines gains one stamp line in the
+  shared prologue, `<PREFIX>_COMPOUND`, after `<PREFIX>_TUNE`: `"none"` (the
+  plain artifact), a compound row's name, or `"forced-off"` (the harness
+  lever's re-emission). A pattern the `split` row admits (pin-only: a floor
+  arm beside end-pinned arms, P a DFA attempt loop over every start) emits a
+  COMPOUND in place of its plain artifact: P's own prologue, stamps,
+  residuals, `rx_info` and `main`, then two static parts, `<prefix>__f`
+  (P bounded to one attempt) and `<prefix>__q` (P with its floor anchors
+  killed), and the controller's `<prefix>_search`/`_match`/`_match_caps`.
+  On a compound the route family's machine-level stamps and `rx_info`
+  mirrors read `"compound"` and the other machine-level stamps their
+  declared compound values (match_api.md §6.3); the `.h` and the exported
+  symbol set are the plain artifact's. No struct offset moves and no answer
+  moves.
 
 - **`rx_info.abi` was `76` (lane seambuild bumped it
   from 75, 2026-10-11: [LOSS-REVIEW] candidate 1, ruled by Frank: "those

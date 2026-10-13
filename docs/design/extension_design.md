@@ -832,7 +832,7 @@ Two consequences worth stating:
   correct today only because `\d` is refused before `parse.c:213`'s range code
   (`int hi = esc_class_value(cx)`, then `lo > hi`, then
   `for (i = lo; i <= hi; i++)`) can see it. **The guard is the
-  unimplemented-ness, and MOD-0.2 removes it** — the same shape `plan.md:577`
+  unimplemented-ness, and MOD-0.2 removes it** — the same shape `plan_completed.md [MOD-0]`
   already records for `(?xx)[a- ]`, one construct over.
 
 ---
@@ -1188,7 +1188,7 @@ for Frank.
    document offered — "pcrec never says 'reference to non-existent subpattern'
    because it refuses `\1..\9` with a module name first" — is the third
    instance of the guard-is-the-unimplemented-ness shape that this same document
-   diagnoses twice elsewhere (§6 on K12, and `plan.md:577` on `(?xx)[a- ]`).**
+   diagnoses twice elsewhere (§6 on K12, and `plan_completed.md [MOD-0]` on `(?xx)[a- ]`).**
    Being able to name a failure mode twice and then commit it in the same
    document is the most useful thing the panel found.
 7. **REOPENED — backrefs and octals.** The split is still right, but the

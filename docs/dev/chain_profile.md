@@ -78,7 +78,7 @@ harness — see §5.
 
 `build/mech_m65.log`: `== MECH START 2026-08-22T22:25:56` →
 `== MECH EXIT=0 2026-08-22T23:26:04` = **60m08s**, 118 rows, `0 anomalies, 2
-undetected`. Matches `docs/dev/plan.md:339`'s figure exactly.
+undetected`. Matches `docs/dev/plan_completed.md [TT-5]`'s figure exactly.
 
 `build/mech_m64.log` (per `docs/dev/dev_journal.md:11891`): 15:36→16:26 =
 **50m00s**, 99 rows (S88-S101 incl., journal:11888). No mech run is on
@@ -92,7 +92,7 @@ re-run for it — see the journal's part-12 entry).
 | m64 (2026-08-22 12:58) | 1h12m19s | 50m00s | **2h02m19s** | 99 |
 | m65 (2026-08-22 20:59 → 23:26) | 1h25m53s | 60m08s | **2h26m01s** | 118 |
 
-This cross-checks `docs/dev/plan.md:337`'s "~2.5 h" for m65 (2h26m rounds to
+This cross-checks `docs/dev/plan_completed.md [TT-5]`'s "~2.5 h" for m65 (2h26m rounds to
 that) and shows the chain grew ~24 minutes (+20%) in one day, tracking the
 module landing that added 19 rows and several new differential suites —
 the SAME cause visible in §1a's ubsan/asan growth. The chain is not merely
@@ -151,7 +151,7 @@ today's 22 sections did not exist when it was measured) — its own
 runtime doubles) has never fired because the table was never re-measured
 against the current section list to know whether it should. This is exactly
 what [TT-4.1]'s per-invocation-type census (already chartered, in progress —
-`docs/dev/plan.md:314-321`) will produce as a side effect; not duplicated
+`docs/dev/plan_completed.md [TT-4.1]`) will produce as a side effect; not duplicated
 here.
 
 **What `ubsan`/`asan` run, ordered, from the Makefile** (`Makefile:602-628`
@@ -225,7 +225,7 @@ sabotages/*.sh`'s `SAB_SUITES=` lines, 118 files):
 | targeted differential/structural arms only, no `harness`, no `reject` | 56 / 118 | `codegen` (7), `codegen harness` (9, already counted above), `possdiff` (5), `counterkdiff` (5), `vm` (4), `trie` (3), and 13 more small groups |
 
 **Finding, stated plainly because it cuts against the charter's assumption**
-(`docs/dev/plan.md:352` names "mech per-row scoping (which sections a row
+(`docs/dev/plan_completed.md [TT-5]` names "mech per-row scoping (which sections a row
 really needs)" as a candidate): **the obvious scoping win is already mostly
 banked.** 58 of 62 `harness`-touching rows are already scoped to one file;
 only 4 rows run the untargeted full corpus, and all four are recent
@@ -265,7 +265,7 @@ inferred from the tabulation above, not measured directly per row.
 
 2. **The four identity gates compile ~1,200 corpus patterns TWICE, ~2,400
    gcc calls** — already measured and cited verbatim in the TT-4 charter,
-   `docs/dev/plan.md:279-284` (the assertions+identity-gates section, 458s
+   `docs/dev/plan_completed.md [TT-4]` (the assertions+identity-gates section, 458s
    at the time of that census). Not re-measured here; cited because it is
    the same SHAPE of redundancy as item 1, one level down (within a single
    `test` run, not across axes), and TT-4.1's per-invocation census will
@@ -477,7 +477,7 @@ compile+link+run (that step legitimately differs), but would stop paying
 
 **How much of an axis's wall this actually is: NOT KNOWN from this pass,
 and NOT independently derivable** — this is precisely the split [TT-4.1]
-is already chartered to measure (`docs/dev/plan.md:314-321`: "Census over
+is already chartered to measure (`docs/dev/plan_completed.md [TT-4.1]`: "Census over
 one `make test` by section ... invocation counts (pcrec, gcc one-shot, gcc
 -c, link) and wall time split pcrec / gcc / link / run / harness-
 overhead"), and that lane is running concurrently with this one per the
@@ -485,7 +485,7 @@ brief's own instruction not to duplicate it. **This candidate should be
 evaluated using TT-4.1's numbers once they land, not re-measured here.**
 Note also that this is a DIFFERENT axis of sharing than [TT-4]'s own
 charter, which is explicitly scoped to "batching at the gcc/link step
-ONLY: per-pattern `.c` artifacts keep existing" (`docs/dev/plan.md:295-
+ONLY: per-pattern `.c` artifacts keep existing" (`docs/dev/plan_completed.md [TT-4]-
 296`) — TT-4 batches MANY patterns into one `gcc` call within a single
 axis; this candidate shares ONE pattern's `.c` file ACROSS axes. The two
 are complementary, not overlapping, and could in principle stack (share
@@ -528,7 +528,7 @@ would need explicit `PROCS` capping on each (e.g. `PROCS=6` apiece) to
 avoid the SAME oversubscription risk named in §4b, and the resulting wall
 -time win is not guaranteed positive without measuring it (this is the
 same "obvious idea measured as a slowdown" trap TT-3's own charter warns
-about, `docs/dev/plan.md:277-278`'s cited lesson). `strict` and `lint`
+about, `docs/dev/plan_completed.md [TT-4]`'s cited lesson). `strict` and `lint`
 (cheap, mostly-serial) are the only genuinely free overlap candidates —
 together they cost under a minute of the ~2.5h chain, so overlapping them
 with anything else saves well under 1% of the total.
@@ -589,7 +589,7 @@ mech — and §1's own trend data shows they need it MORE, not less: ubsan
 four more module landings compound the ~2.5h chain toward 4+ hours with
 no instrumented signal that it is happening beyond someone noticing the
 wall clock feels longer — which is exactly the complaint that chartered
-[TT-5] in the first place (`docs/dev/plan.md:332-336`, quoting Frank: "we
+[TT-5] in the first place (`docs/dev/plan_completed.md [TT-5]`, quoting Frank: "we
 are in the multiple hours for overall testing right now"). A cheap,
 low-risk row: extend the ad hoc battery driver (or, better, commit it —
 see §5) to log its own stage durations against a pinned reference (the

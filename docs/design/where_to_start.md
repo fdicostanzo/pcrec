@@ -11,7 +11,7 @@ Frank's three questions (2026-10-06):
 2. "If the DFA goes backwards from the middle, can it record the match start?"
 3. "Does all this work as a prefilter?"
 
-Rows read before writing (memory: grep the plan first): `[ENG-TACTICS]` (plan.md:393,
+Rows read before writing (memory: grep the plan first): `[ENG-TACTICS]` (plan.md [ENG-TACTICS],
 Frank's row, tactics (a)/(b)/(c) and its "no general planner, first-match tactic
 rows" principle), `[OPT-REVEND]` (:340) + `docs/dev/optloop/revend_census.md`,
 `[OPT-A]`, `[OPT-VMSEED]`/`[OPT-FIRSTSET]` = START-SET (`startset.md`, D148 +
@@ -110,9 +110,9 @@ Every start mechanism is a ROW: `(landmark, scanner, mapping, verifier)`.
 | [OPT-ENDWIN] | `end_window` | arithmetic | WINDOW (start ≥ n − maxw) | forward DFA / VM | `pcrec_emit_end_window_clamp` `:935`; VM `emit_vm.c:13170` |
 | reverse-pass start | the whole pattern's reverse DFA | — | EXACT, from a match END | reverse DFA | `dfa_search_starts[]` `:7659-7662` |
 | hybrid prefilter | the whole pattern's DFA (exact or count-collapsed) | the DFA scan | EXACT window (exact lang.) / SUPERSET (collapsed) | VM over the window | `emit_vm.c` (`pcrec_vm_prefilter_window` `:3634`); declined for backref/call `select_engine.c:613-862` |
-| [OPT-REVEND] (filed) | `\z`/`$` end pin | none | EXACT from the end, by reverse walk | reverse DFA then anchored | plan.md:340 |
-| [OPT-A] multi-literal (filed) | per-alternative literals | memchr2/3, pair scan | EXACT per alternative | forward DFA | plan.md:1165 |
-| [ENG-TACTICS] (a)/(b)/(c) (filed) | inner necessary literal `L` | memchr / run | (a) WINDOW, (b) EXACT by reverse walk, (c) EXACT + forward resume | VM / DFA | plan.md:393 |
+| [OPT-REVEND] (filed) | `\z`/`$` end pin | none | EXACT from the end, by reverse walk | reverse DFA then anchored | plan.md [OPT-REVEND] |
+| [OPT-A] multi-literal (filed) | per-alternative literals | memchr2/3, pair scan | EXACT per alternative | forward DFA | plan.md [OPT-A] |
+| [ENG-TACTICS] (a)/(b)/(c) (filed) | inner necessary literal `L` | memchr / run | (a) WINDOW, (b) EXACT by reverse walk, (c) EXACT + forward resume | VM / DFA | plan.md [ENG-TACTICS] |
 
 ### 1.3 Where these are parallel special cases of one form
 
@@ -125,7 +125,7 @@ places:
    `scan-from-startpos` (`:7132`) it is discarded. On the VM route with no DFA
    scan the handoff is declined by conjunct (a) (`:7103`,
    `pcrec_artifact_has_dfa_scan`) — the position is computed and thrown away,
-   which is [ENG-TACTICS]'s (a) observation (plan.md:393 cites it as
+   which is [ENG-TACTICS]'s (a) observation (plan.md [ENG-TACTICS] cites it as
    `emit_dfa.c:810-841`, `emit_vm.c:12731` at 2026-09-25; today the VM call site
    is `emit_vm.c:13189` and the decline is `emit_dfa.c:7103`).
    And K82 `set-leads` (`:7021`) memchr's a byte RARER than the run's scan

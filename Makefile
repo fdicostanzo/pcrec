@@ -128,7 +128,7 @@ KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
 KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
-all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze
+all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
 # hard way: a PC-4 bitmap sabotage produced ZERO disagreements because the
@@ -291,6 +291,15 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
+# [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
+# once more with -DPCREC_HARNESS, which adds one option,
+# `--harness=no-compound`, the compound family's force-decline lever. Only
+# the test harness and bisects run it; the shipped build/pcrec has no such
+# option.
+$(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(ALLFLAGS) -DPCREC_HARNESS -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
+
 # [FINDINGS] B6 (design.md §10.1's end-state row): pcrec-analyze, a
 # SEPARATE, ZERO-DEPENDENCY binary -- it links neither libpcrec nor
 # cli/main.c, so it has its own small flag set rather than $(ALLFLAGS)'s
@@ -335,7 +344,11 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank \
-      test-spec-history test-compound test-endmark
+      test-spec-history test-plan-lint test-compound test-endmark test-ci-shards
+
+# CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
+# and tests/ci/shards.tsv, which must name every member of this list exactly once
+# (adding a section here without a shard row turns `make test-ci-shards` red).
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -402,6 +415,51 @@ test:
 	[ $$? -eq 0 ] || rc=1; \
 	rm -rf "$$dir"; \
 	exit $$rc
+
+# [CI-SHARD] `test-shard`: CI's form of `test:` (lane cishard, 2026-10-13).
+# `make test` itself is unchanged and stays the local merge/close standard; CI
+# (.github/workflows/ci.yml) runs `make test-shard CISHARD=K/N` as a matrix of
+# N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
+# (docs/dev/lanes/citime_report.md). The split is the DECLARED TABLE
+# tests/ci/shards.tsv (section, shard, weight, weight source) -- never an
+# if-chain here or in YAML -- and `test-ci-shards` (a TEST_SECTIONS member)
+# holds that table to TEST_SECTIONS exactly. The recipe is `test:`'s own
+# accounting restated over the shard's list: the same `$(MAKE) -k` launch, the
+# same marker files, the same tests/lib/test_trailer.sh (so "sections ran: N/M"
+# counts THIS shard's list and a section make never launched is named), and
+# rc accumulates both halves. The verdict is still make's `*** [...test-X]
+# Error` lines; a shard is green only if every section in its list was
+# launched AND none failed.
+test-shard:
+	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
+	secs="$$(echo $$secs)"; \
+	dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
+	rc=0; \
+	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
+	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
+	start=$$(date +%s); \
+	echo "== make test-shard CISHARD=$(CISHARD): $$secs"; \
+	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $$secs; \
+	[ $$? -eq 0 ] || rc=1; \
+	end=$$(date +%s); \
+	RUN_STAMP_SHA="$$stamp_sha" \
+	RUN_STAMP_DIRTY="$$stamp_dirty" \
+	RUN_STAMP_DURATION="$$((end - start))s" \
+	TRAILER_TITLE="make test-shard CISHARD=$(CISHARD)" TRAILER_LIST_NAME="shard $(CISHARD)'s list" \
+	bash tests/lib/test_trailer.sh "$$dir" $$secs; \
+	[ $$? -eq 0 ] || rc=1; \
+	rm -rf "$$dir"; \
+	exit $$rc
+
+# [CI-SHARD] the CONTROL on the table above: every TEST_SECTIONS member in
+# exactly one shard, no unknown names, a non-empty shard each, ci.yml's matrix
+# listing exactly the table's shards, then the planted self-test (one plant per
+# check, each required red). $(TEST_SECTIONS) is passed on argv -- the list is
+# spelled once, here, and the table is what is checked against it.
+test-ci-shards:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-ci-shards.ran"; fi
+	@bash tests/ci/check_shards.sh $(TEST_SECTIONS)
+	@bash tests/ci/check_shards.sh --selftest $(TEST_SECTIONS)
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -1528,6 +1586,14 @@ test-spec-history:
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-spec-history.ran"; fi
 	bash tests/spec_history/run_spec_history.sh
 
+# [PLAN-LINT] step 3: docs/dev/plan.md against the one row format its Policy
+# section defines (scripts/plan_lint.sh, strict: no baseline, no warning tier),
+# plus the planted-violation self-test. Reads text only, so it does not depend
+# on `all`. The commit-time gate is `make hooks HOOKS=pre-commit`.
+test-plan-lint:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-plan-lint.ran"; fi
+	bash tests/plan_lint/run_plan_lint.sh
+
 # [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
 # analyzer prototype (scripts/pcrec_analyze.py); step B6 (lane `findb6`)
 # ported it to `analyze/` -> $(BUILD_DIR)/pcrec-analyze, the zero-dependency
@@ -1906,17 +1972,25 @@ bench: all
 fuzz: all
 	python3 tests/fuzz/fuzz.py
 
-# [TT-1] OPT-IN local push gate. Copies scripts/hooks/pre-push into the
-# resolved hooks directory — `git rev-parse --git-path hooks`, NOT a
-# hardcoded .git/hooks, because in a worktree .git is a file pointing at the
-# shared gitdir (see `git worktree`'s docs and docs/testing.md). Never run
-# automatically by any other target and never by CI (D2, TT-1 principle 4):
-# a stranger's plain `make`/`make test` must not install anything into their
-# git config.
+# [TT-1] OPT-IN local git hooks. Copies scripts/hooks/<name> for each name in
+# HOOKS (default: pre-push, the full-`make test` push gate) into the resolved
+# hooks directory — `git rev-parse --git-path hooks`, NOT a hardcoded
+# .git/hooks, because in a worktree .git is a file pointing at the shared
+# gitdir (see `git worktree`'s docs and docs/testing.md). `make hooks
+# HOOKS=pre-commit` installs only the [PLAN-LINT] commit gate (it lints
+# docs/dev/plan.md and friends, and only when they are staged; it never runs
+# `make test`); `make hooks HOOKS="pre-push pre-commit"` installs both. Never
+# run automatically by any other target and never by CI (D2, TT-1 principle
+# 4): a stranger's plain `make`/`make test` must not install anything into
+# their git config.
+HOOKS ?= pre-push
 hooks:
 	@hookdir="$$(git rev-parse --git-path hooks)"; \
-	install -m 0755 scripts/hooks/pre-push "$$hookdir/pre-push"; \
-	echo "hooks: installed scripts/hooks/pre-push -> $$hookdir/pre-push"
+	for h in $(HOOKS); do \
+	  if [ ! -f scripts/hooks/$$h ]; then echo "hooks: no such hook scripts/hooks/$$h" >&2; exit 1; fi; \
+	  install -m 0755 scripts/hooks/$$h "$$hookdir/$$h"; \
+	  echo "hooks: installed scripts/hooks/$$h -> $$hookdir/$$h"; \
+	done
 
 clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
@@ -1939,6 +2013,6 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-compound \
+        test-startset test-spec-history test-plan-lint test-compound test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

@@ -1450,7 +1450,7 @@ question.
   shipped compiler agrees on 0."
 - **C5.** The 1704 "full `.rxt` suite" figure is not a number invented for
   this note — it is the project's own independently-tracked, repeatedly-cited
-  corpus baseline (`docs/dev/plan.md:148`, `docs/dev/dev_journal.md:7958`
+  corpus baseline (`docs/dev/plan_completed.md [M4.5]`, `docs/dev/dev_journal.md:7958`
   and `:7999`, `docs/dev/wake.md:19,67`), most recently confirmed at the
   fuzzfix gate the same day ("corpus 1704/0"). Consistent.
 - **C6.** `docs/design/k18_measurements/CLAUDE.md`'s file inventory matches

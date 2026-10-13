@@ -30,13 +30,14 @@ SAB_ID="S238-size-drop-unstamped"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="an artifact rescued by the optional-contributor drop rung stamps ENGINE_SEL \"selected\", so a caller cannot tell it from an unremarkable compile and the census's size-drop bucket empties into the state-cap overflow one"
-SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop'"
+SAB_DOC_FIGURE="docs/spec/match_api.md 6.3's ENGINE_SEL table (§6.3.3¶3); docs/spec/limits.md 8's 'The optional-contributor drop' RE-POINTED 2026-10-13 (lane mechwit; same cause as S237): solo run DETECTED, reach:ok(2/2), anchoredmatch:10fail/18pass."
 SAB_COUNT=3
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking
 # the rung, both rows are certifying nothing.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
-SAB_REACH_EXPECT='size-cap-retry'
+SAB_REACH='"$PCREC" --no-captures --features all -e utf8 -p rx -o - --pattern "\p{L}\p{N}\p{Lu}" 2>/dev/null | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_MATCH \"search-filter\")$"'
+SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
+#define RX_DFA_MATCH "search-filter"'
 # [TOUR-5] (2026-09-20) RE-AIMED, SAME INTENT, SAME ONE LINE REMOVED. The
 # ladder moved out of `pcrec_select_engine` into `esel_of` (r61 F2), so `fit.`
 # became `fit->` and the arm gained its own `: ` continuation column. The plant

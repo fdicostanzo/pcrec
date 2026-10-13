@@ -6,7 +6,7 @@ elsewhere). Branch `lane/rel1pre` from `30099e67`.
 
 ## 1. [REL-META]'s row — obligations and where each is satisfied
 
-`docs/dev/plan.md:578` (the row itself, quoted for exact wording).
+`docs/dev/plan_completed.md [REL-META]` (the row itself, quoted for exact wording).
 
 | obligation | where satisfied | status |
 |---|---|---|
@@ -23,9 +23,9 @@ elsewhere). Branch `lane/rel1pre` from `30099e67`.
 | Versioning + changelog + release mechanics (item d) | no version constant, no CHANGELOG, no tag; `gh` CLI present (§4, §8) | GAP |
 | "whatever the survey finds" (item e) | this document | in progress |
 
-REL-META itself is still `STATE:not-started` (`docs/dev/plan.md:578`) — its
+REL-META itself is still `STATE:not-started` (`docs/dev/plan_completed.md [REL-META]`) — its
 own "propose the concrete rows" charter has not been executed; [REL-1]'s
-2026-09-21 note (`docs/dev/plan.md:574`) says this rel1pre survey substitutes
+2026-09-21 note (`docs/dev/plan_completed.md [REL-1]`) says this rel1pre survey substitutes
 for it directly rather than waiting for a separate REL-META lane.
 
 ## 2. README.md staleness
@@ -34,8 +34,8 @@ Full file read (`README.md`, 48 lines).
 
 | claim | current truth | citation |
 |---|---|---|
-| "Milestones M1 ... and M2 ... are complete" | true but a severe understatement — M4 (captures/VM hybrid), M5 (UTF-8), M6 (all five modules: named-groups, assertions, atomic-groups, backrefs, lookaround) are ALSO complete | `docs/dev/plan.md:110-251` (M4.x archived), `docs/dev/plan_completed.md:3907` (M5.0 completed 2026-09-12), `docs/dev/plan.md:233-240` (M6.0-M6.6 archived) |
-| "Roadmap: streaming input (M3), captures via a backtracking VM engine (DFA-prefilter hybrid, M4), UTF-8 (M5), then the wider PCRE feature set as drop-in modules" | M4 and M5 are DONE, not roadmap; M3 (streaming) is genuinely still `STATE:not-started`; "the wider PCRE feature set as drop-in modules" is also mostly done (M6 complete) | M3: `docs/dev/plan.md:254-255` (`STATE:not-started`); M4/M5/M6 completion citations above |
+| "Milestones M1 ... and M2 ... are complete" | true but a severe understatement — M4 (captures/VM hybrid), M5 (UTF-8), M6 (all five modules: named-groups, assertions, atomic-groups, backrefs, lookaround) are ALSO complete | `docs/dev/plan_completed.md [M4.1]..[M6-READ]` (M4.x archived), `docs/dev/plan_completed.md:3907` (M5.0 completed 2026-09-12), `docs/dev/plan_completed.md [M6.0]..[M6.6]` (M6.0-M6.6 archived) |
+| "Roadmap: streaming input (M3), captures via a backtracking VM engine (DFA-prefilter hybrid, M4), UTF-8 (M5), then the wider PCRE feature set as drop-in modules" | M4 and M5 are DONE, not roadmap; M3 (streaming) is genuinely still `STATE:not-started`; "the wider PCRE feature set as drop-in modules" is also mostly done (M6 complete) | M3: `docs/dev/plan.md [M3.0]..[M3.1]` (`STATE:not-started`); M4/M5/M6 completion citations above |
 | "read counts from a run, not from this file — two hand-copied counts have gone stale here already" | still true in spirit, but no counts appear in the current file at all (they were apparently removed already) | README.md:20-31 |
 | No mention of: abi versioning, `--tune`, `--engine=`, encodings (`-e byte|utf8`), `--features`, the registry dump surfaces (`--list-syntax` etc.), the recursion module, the whole [REVW.1]-[REVW.5] code-review/layering wave | — | not in README.md at all |
 | Requirements section says "gcc (or clang)" | clang cannot build the sanitizer/lint axes (Apple clang lacks `-fsanitize=leak`/`-fanalyzer`, `docs/dev/lanes/santriage_report.md`) but CAN build the default `make`/`make test` target; the claim is accurate for the base build, silent on the caveat | README.md:43; `docs/dev/lanes/santriage_report.md` |
@@ -52,7 +52,7 @@ link, no license badge/CI badge (none exist to link).
 ## 3. docs/guide/ and docs/spec/ pointers
 
 `docs/guide/` — **does not exist** (`ls docs/guide/` → No such file or
-directory). [GUIDE-1]'s full charter (`docs/dev/plan.md:561-571`): a
+directory). [GUIDE-1]'s full charter (`docs/dev/plan_completed.md [GUIDE-1]`): a
 simplified, human-facing, use-case-organized guide (compile→search/match/
 captures/named results; anchored/whole-subject idiom `(?:P)\z`; choosing
 engine/options; give-up behavior and the `_in` remedy — D73's obligation at
@@ -61,7 +61,7 @@ CLI vs library). Explicitly "LOWER PRIORITY, basically maintained, NO
 edge-case details." Its stated precondition ("starts after [SPEC-1] has the
 limits section it would point at") is **met** — `docs/spec/limits.md`
 already has that section (§1 above) — even though [SPEC-1] itself is still
-`STATE:started`, not completed (`docs/dev/plan.md:519`).
+`STATE:started`, not completed (`docs/dev/plan_completed.md [SPEC-1]`).
 
 `docs/spec/` — 8 content files + its own CLAUDE.md, each with a one-line
 purpose from its own header:
@@ -81,7 +81,7 @@ A guide chapter's likely spec pointers: "compile a pattern" → `cli.md` §1;
 "give-ups and the `_in` remedy" → `limits.md`; "choosing engine/options" →
 `tuning.md` + `cli.md`; "embedding the generated file / abi stamp" →
 `match_api.md`; "what's supported" → `docs/pcre2_compliance.md` (spec-tier
-by ruling, not physically in `docs/spec/` — `docs/dev/plan.md:519`).
+by ruling, not physically in `docs/spec/` — `docs/dev/plan_completed.md [SPEC-1]`).
 
 ## 4. Version plumbing
 

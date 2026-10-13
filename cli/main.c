@@ -454,6 +454,12 @@ typedef struct {
      * FILE` did. Zero or more -- `compile_sources` is the sole reader. */
     const char **files;
     size_t      nfiles, filecap;
+#ifdef PCREC_HARNESS
+    /* [COMPOUND] the harness lever (docs/design/compound.md §A.11): only
+     * `build/pcrec-harness` has the field or the option; in the tail, so a
+     * `config` block cannot set it. */
+    PcrecHarnessOptions harness;
+#endif
 } CliState;
 
 /* [REVW.4] wave 4 (L11-F4) — THE MODE RELATION, WRITTEN ONCE.
@@ -991,6 +997,10 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * the kit inside the compile (pcrec_compile), never parsed here. A
          * later flag wins (any value option's argv rule). */
         else if (!strncmp(a, "--memfn=", 8)) opt.memfn = a + 8;
+#ifdef PCREC_HARNESS
+        /* [COMPOUND] the harness build's one extra option (§A.11). */
+        else if (!strcmp(a, "--harness=no-compound")) st->harness.compound_off = 1;
+#endif
         else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             int want;
@@ -2447,7 +2457,11 @@ static int cli_dispatch(CliState st)
 
     pcrec_output out;
     pcrec_error err;
+#ifdef PCREC_HARNESS
+    if (pcrec_harness_compile(pattern, &opt, &st.harness, &out, &err) != 0) {
+#else
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
+#endif
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
         free(st.libdirs);

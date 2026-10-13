@@ -610,6 +610,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   holds the numbered-spec checks: paragraph numbering, the generated
   contents, and every `match_api.md §N` citation in the tree. See its
   CLAUDE.md.
+- **plan_lint/** — `make test-plan-lint` (in `make test`): [PLAN-LINT] step 3.
+  `scripts/plan_lint.sh` over docs/dev/plan.md (the one row format its Policy
+  section defines; strict, no baseline, no warning tier), the tree-wide
+  `plan.md:<line>` citation scan and docs/design/plan_row_bodies/'s two-way
+  link check, plus a planted-violation self-test (one plant per rule, each of
+  which must be reported). See its CLAUDE.md for the rule table.
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
   and a black-box `build/pcrec` were the only inputs). NOT part of `make
@@ -757,6 +763,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   arms, per-form witnesses, the probe census with floors, gates G1-G4 per
   artifact, the reference-build declines), and the lane instruments
   `b3diff.py` and `mover_census.py`. See its own CLAUDE.md.
+- **ci/** — [CI-SHARD] (lane cishard, 2026-10-13): the DECLARED shard table CI
+  runs `make test` by (`shards.tsv`: section, shard, weight, weight source),
+  its control (`check_shards.sh`, `make test-ci-shards`, a `TEST_SECTIONS`
+  member: set equality with `TEST_SECTIONS`, the workflow matrix, and a planted
+  self-test) and the re-balancer that replaces local weights with the runner's
+  measured times (`shard_rebalance.py`). See its CLAUDE.md.
 
 - **compound/** — [COMPOUND] (`docs/design/compound.md`, D163): `make
   test-compound`, the compound tool's build-step unit checks, through an

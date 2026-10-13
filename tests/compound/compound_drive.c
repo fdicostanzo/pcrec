@@ -10,6 +10,7 @@
  *   compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES
  *   compound_drive selfcheck
  *   compound_drive derive OUTDIR < CASES
+ *   compound_drive walk < CASES
  *
  * PATTERNS is `id<TAB>hex-pattern` per line. For each pattern it writes the
  * plain artifact (`OUTDIR/<id>.plain.c/.h`, the default request) and one
@@ -23,7 +24,9 @@
  *
  * `parts` (B1, compound.md §A.5): WITNESSES is `id<TAB>P-hex<TAB>Q-hex|-`
  * per line. For each it writes the plain artifact of P at prefix `pp`
- * (`<id>.plain.c`, self-contained) and the split client's two parts at
+ * (`<id>.plain.c`, self-contained), P as an ordinary artifact at prefix
+ * `nb` whose emission request bounds it to one attempt (`<id>.nb.c`, B4's
+ * general bound) and the split client's two parts at
  * prefix PREFIX: F = P bounded to one attempt (`<id>.f.c`) and Q = the
  * given text (`<id>.q.c`; B2 derives it instead), both compiled guards-off
  * as compound.md §A.1's table states them. ARMs: `--enc utf8`,
@@ -33,6 +36,8 @@
  * `selfcheck` (B1): `pcrec_comp_part_check` over parts that state every
  * field and parts that leave one unstated or inconsistent, each expected
  * verdict asserted; and `pcrec_compile_part` refusing an unstated part.
+ * (B4) the row table's self-check on the shipped `compound_rows[]` and on
+ * planted faults, and `compound_place[]`'s rows for split's parts.
  * (B2) the registry's attempt-scope column: every row stating it, by name,
  * and `pcrec_ast_crosses_attempts` over a node carrying such a row and one
  * that does not.
@@ -121,7 +126,7 @@ static int compile_one(const char *dir, const char *id, const char *tag,
     snprintf(cname, sizeof cname, "%s.%s.c", id, tag);
     pcrec_options o = *base;
     o.header_name = hname;
-    PcrecEmitIn in = { req, NULL, PCREC_PB_UNSTATED, NULL, NULL };
+    PcrecEmitIn in = { .req = req, .bound = PCREC_PB_UNSTATED };
     pcrec_output out;
     if (pcrec_compile_driver(pat, &o, &out, err, NULL, NULL, NULL, NULL, NULL,
                              req ? &in : NULL) != 0)
@@ -192,10 +197,11 @@ static const CompPart split_f = {
     "f", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
     PCREC_PE_DFA, PCREC_PB_ONE_ATTEMPT,
     PCREC_PART_NEED_SEARCH | PCREC_PART_NEED_NEXT_POS | PCREC_PART_NEED_VALID_UPTO,
+    { CG_IDENTITY },
 };
 static const CompPart split_q = {
     "q", &pcrec_derive_none, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
-    PCREC_PE_DFA, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+    PCREC_PE_DFA, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH, { CG_IDENTITY },
 };
 
 /* Writes one part (or the plain artifact) of pattern `pat`. */
@@ -211,6 +217,29 @@ static void drive_part(const char *dir, const char *id, const char *tag,
     if (rc) return;
     char name[512];
     snprintf(name, sizeof name, "%s.%s.c", id, tag);
+    if (put_file(dir, name, out.c_src)) *ioerr = 1;
+    pcrec_output_free(&out);
+}
+
+/* Writes pattern `pat` as an ORDINARY artifact (prefix `nb`, no part mode)
+ * whose emission request bounds its search to one attempt (B4's soft item,
+ * compound.md §A.5: the bound is a request field, part mode only its first
+ * reader), into OUTDIR/<id>.nb.c. */
+static void drive_bounded(const char *dir, const char *id, const char *pat,
+                          const pcrec_options *parent, int *ioerr)
+{
+    pcrec_options o = *parent;
+    o.prefix = "nb";
+    o.header_name = NULL;
+    const PcrecEmitIn in = { .bound = PCREC_PB_ONE_ATTEMPT };
+    pcrec_output out;
+    pcrec_error err;
+    int rc = pcrec_compile_driver(pat, &o, &out, &err, NULL, NULL, NULL, NULL,
+                                  NULL, &in);
+    printf("%s\tnb\t%s\t%s\n", id, rc ? "refused" : "ok", rc ? err.msg : "-");
+    if (rc) return;
+    char name[512];
+    snprintf(name, sizeof name, "%.200s.nb.c", id);
     if (put_file(dir, name, out.c_src)) *ioerr = 1;
     pcrec_output_free(&out);
 }
@@ -259,6 +288,7 @@ static int drive_parts(int argc, char **argv)
         char *p = unhex(f1), *q = strcmp(f2, "-") ? unhex(f2) : NULL;
         if (!p || (strcmp(f2, "-") && !q)) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
         drive_part(dir, line, "plain", p, &plain, NULL, &ioerr);
+        drive_bounded(dir, line, p, &parent, &ioerr);
         drive_part(dir, line, "f", p, &parent, &f, &ioerr);
         if (q) drive_part(dir, line, "q", q, &parent, &split_q, &ioerr);
         free(p);
@@ -268,13 +298,50 @@ static int drive_parts(int argc, char **argv)
 }
 
 /* The `derive` subcommand (B2). */
+/* `walk` (B4, compound.md §E.4): CASES is `id<TAB>enc<TAB>P-hex` per line;
+ * each P is compiled as the default build compiles it (`--features all`,
+ * `-p rx`) with the walk's verdict asked for, and one line printed:
+ * `id<TAB>verdict`, the first failing conjunct's id, `admit`, `refused` (P
+ * does not compile) or `nowalk` (the attempt that shipped ran no walk). */
+static int drive_walk(int argc, char **argv)
+{
+    (void)argv;
+    if (argc != 0) return 2;
+    char line[1 << 16];
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        char *f[3] = { line, NULL, NULL };
+        for (int i = 1; i < 3; i++) {
+            f[i] = strchr(f[i - 1], '\t');
+            if (!f[i]) break;
+            *f[i]++ = 0;
+        }
+        if (!f[2]) continue;
+        char *p = unhex(f[2]);
+        if (!p) { fprintf(stderr, "compound_drive: bad hex\n"); return 2; }
+        pcrec_options o;
+        pcrec_default_options(&o);
+        o.features = "all";
+        if (!strcmp(f[1], "utf8")) o.encoding = PCREC_ENC_UTF8;
+        const char *verdict = NULL;
+        const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .comp_verdict = &verdict };
+        pcrec_output out;
+        pcrec_error err;
+        int rc = pcrec_compile_driver(p, &o, &out, &err, NULL, NULL, NULL, NULL, NULL, &in);
+        printf("%s\t%s\n", f[0], rc ? "refused" : verdict ? verdict : "nowalk");
+        if (!rc) pcrec_output_free(&out);
+        free(p);
+    }
+    return 0;
+}
+
 static int drive_derive(int argc, char **argv)
 {
     if (argc != 1) return 2;
     const char *dir = argv[0];
     const CompPart cmp_q = {
         "q", &pcrec_derive_split_q_row, SPLIT_GUARDS_OFF_SET, SPLIT_GUARDS_OFF_CLEAR,
-        PCREC_PE_AUTO, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH,
+        PCREC_PE_AUTO, PCREC_PB_NONE, PCREC_PART_NEED_SEARCH, { CG_IDENTITY },
     };
     char line[1 << 16];
     int ioerr = 0;
@@ -333,8 +400,8 @@ static int drive_derive(int argc, char **argv)
  * the part compile refuses an unstated part rather than compiling it. */
 static int drive_selfcheck(void)
 {
-    CompPart bad[8];
-    const char *what[8];
+    CompPart bad[9];
+    const char *what[9];
     int n = 0;
 #define BAD(field_edit, label) \
     do { bad[n] = split_f; field_edit; what[n++] = (label); } while (0)
@@ -346,6 +413,7 @@ static int drive_selfcheck(void)
     BAD(bad[n].role = "", "empty role");
     BAD(bad[n].role = "abcd", "role over 3");
     BAD(bad[n].role = "F", "role not [a-z0-9]");
+    BAD(bad[n].groups.kind = CG_UNSTATED, "groups unstated");
 #undef BAD
     int fails = 0;
     for (int i = 0; i < n; i++) {
@@ -368,6 +436,52 @@ static int drive_selfcheck(void)
     printf("%s\tcompile of an unstated part\t%s\n", rc ? "refused" : "COMPILED",
            rc ? err.msg : "-");
     if (!rc) { fails++; pcrec_output_free(&out); }
+
+    /* B4: the row table's self-check holds on the shipped table, and refuses
+     * each planted fault: an empty admission, a CC_PRE conjunct after a
+     * CC_POST one, a repeated id, a part that is an in-Job row
+     * (compound_place row 3), a combinator operand of the wrong entry type,
+     * an unstated group map. */
+    {
+        const char *t = pcrec_compound_tables_check();
+        printf("%s\tthe shipped compound_rows[]\t%s\n", t ? "REFUSED" : "accepted", t ? t : "-");
+        if (t) fails++;
+        const CompRow *row0 = pcrec_compound_row(0);
+        if (!row0 || pcrec_compound_row(1)) {
+            printf("FAIL\tthe table is not exactly one row\n");
+            fails++;
+        } else {
+            CompConj cj[8];
+            CompPart pt[2];
+            CompRow r;
+            int nc = row0->nconj < 8 ? row0->nconj : 8;
+#define PLANT(edit, label)                                                   \
+            do {                                                             \
+                memcpy(cj, row0->conj, (size_t)nc * sizeof *cj);             \
+                memcpy(pt, row0->parts, 2 * sizeof *pt);                     \
+                r = *row0; r.conj = cj; r.parts = pt;                        \
+                edit;                                                        \
+                const char *w = pcrec_compound_rows_check(&r, 1);            \
+                printf("%s\t%s\t%s\n", w ? "refused" : "ACCEPTED", label,   \
+                       w ? w : "-");                                         \
+                if (!w) fails++;                                             \
+            } while (0)
+            PLANT(r.nconj = 0, "an empty admission");
+            PLANT((cj[0].phase = CC_POST), "a CC_PRE conjunct after a CC_POST one");
+            PLANT((cj[1].id = cj[0].id), "two conjuncts sharing an id");
+            PLANT((pt[0].derive = &pcrec_derive_none, pt[0].flags_set = 0,
+                   pt[0].flags_clear = 0, pt[0].engine = PCREC_PE_AUTO,
+                   pt[0].bound = PCREC_PB_NONE),
+                  "a part placed on compound_place row 3 (an in-Job row)");
+            PLANT((pt[0].bound = PCREC_PB_NONE), "a first-nonzero operand of the wrong entry type");
+            PLANT((pt[1].groups.kind = CG_UNSTATED), "an unstated group map");
+#undef PLANT
+            int p0 = pcrec_compound_place(&row0->parts[0]), p1 = pcrec_compound_place(&row0->parts[1]);
+            printf("%s\tsplit's parts place on rows %d (f) and %d (q)\n",
+                   p0 == 2 && p1 == 1 ? "ok" : "FAIL", p0, p1);
+            if (p0 != 2 || p1 != 1) fails++;
+        }
+    }
 
     /* B2: the attempt-scope column, read off the registry, and the predicate
      * that reads it off a node's row. */
@@ -411,6 +525,7 @@ int main(int argc, char **argv)
     if (argc >= 2 && !strcmp(argv[1], "parts")) return drive_parts(argc - 2, argv + 2);
     if (argc == 2 && !strcmp(argv[1], "selfcheck")) return drive_selfcheck();
     if (argc >= 2 && !strcmp(argv[1], "derive")) return drive_derive(argc - 2, argv + 2);
+    if (argc == 2 && !strcmp(argv[1], "walk")) return drive_walk(argc - 2, argv + 2);
     fprintf(stderr, "usage: compound_drive entries OUTDIR [--enc utf8] [--utf-check] < PATTERNS\n"
                     "       compound_drive parts OUTDIR PREFIX [ARM...] < WITNESSES\n"
                     "       compound_drive selfcheck\n"

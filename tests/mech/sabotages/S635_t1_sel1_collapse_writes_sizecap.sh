@@ -12,5 +12,5 @@ SAB_DESC="sel1-collapse's sets cell writes CR_SIZECAP instead of CR_SEL1, so the
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S635. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },'
-SAB_AFTER='      .sets = { FIT_DD_SET, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },   /* SABOTAGE S635 */'
+SAB_BEFORE='      .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,'
+SAB_AFTER='      .sets = { FIT_DD_SET, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,   /* SABOTAGE S635 */'

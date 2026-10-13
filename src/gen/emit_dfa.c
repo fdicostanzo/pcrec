@@ -51,7 +51,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 77
+#define PCREC_ARTIFACT_ABI 78
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -1830,6 +1830,14 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                                   "subject_length", false);
 }
 
+/* [COMPOUND] The search head for a caller outside this file: a compound's
+ * controller (src/gen/emit_compound.c) opens `<prefix>_search` exactly as
+ * the plain artifact's body does, P's caller-position prologue included. */
+void pcrec_emit_search_head(Ctx *cx, StrBuf *c, const char *fn, const char *storage)
+{
+    emit_search_head(cx, c, fn, storage);
+}
+
 /* The `<prefix>_match` declaration: the anchored match-here entry, taking a
  * context and answering a matched length. */
 static void emit_match_decl(StrBuf *sb, const char *fn)
@@ -3239,7 +3247,12 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * THE GUARD IS THE SHARED PREDICATE, not a local test: on a non-hybrid VM
      * artifact `job->engine` and `job->dfa` were never written, so calling
      * either function there would read uninitialised analysis. */
-    if (pcrec_artifact_has_dfa_scan(cx)) {
+    if (cx->job->comp_shell) {
+        /* [COMPOUND] the route family's machine-level mirrors read
+         * "compound" (compound.md §A.7): the stamps' value, written twice. */
+        pcrec_sb_puts(c, "    .scan = \"compound\",\n");
+        pcrec_sb_puts(c, "    .prefilter = \"compound\",\n");
+    } else if (pcrec_artifact_has_dfa_scan(cx)) {
         pcrec_sb_printf(c, "    .scan = \"%s\",\n", dfa_scan_name(cx));
         pcrec_sb_printf(c, "    .prefilter = \"%s\",\n", dfa_prefilter_name(cx));
     } else {
@@ -3266,7 +3279,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * i.e. `fit.chosen == ENGM_DFA`, and `emit_info_def` is shared with the VM
      * emitter, which is why the test is spelled rather than assumed.
      * [OPT-REVEND] L0: spelled as the path's finisher route. */
-    if (cand_finish_of(cx) != CAND_ROUTE_VM)
+    if (cx->job->comp_shell)
+        pcrec_sb_puts(c, "    .match_form = \"compound\",\n");
+    else if (cand_finish_of(cx) != CAND_ROUTE_VM)
         pcrec_sb_printf(c, "    .match_form = \"%s\",\n", dfa_match_name(cx));
     else
         pcrec_sb_puts(c, "    .match_form = NULL,\n");
@@ -3314,7 +3329,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * argument. On a non-hybrid VM artifact `job->engine` and `job->dfa` were
      * never written, so calling the selection there would read uninitialised
      * analysis — the same reason the two fields above ask HERE. */
-    if (pcrec_artifact_has_dfa_scan(cx))
+    if (cx->job->comp_shell)
+        pcrec_sb_puts(c, "    .search_form = \"compound\",\n");
+    else if (pcrec_artifact_has_dfa_scan(cx))
         pcrec_sb_printf(c, "    .search_form = \"%s\",\n", dfa_search_start_name(cx));
     else
         pcrec_sb_puts(c, "    .search_form = NULL,\n");
@@ -8908,7 +8925,7 @@ static bool cand_rs_dense_applies(const CandSel *s)
  * PCREC_NO_GSTART reference build's fold. */
 static bool cand_bound_bot_applies(const CandSel *s)
 {
-    if (pcrec_part_one_attempt(s->cx)) return false;   /* B2's, below */
+    if (pcrec_emit_one_attempt(s->cx)) return false;   /* B2's, below */
     bool a_gst = dfa_interior_dead(s->d, s->d->s1g);
 #ifdef PCREC_NO_GSTART
     a_gst = dfa_interior_dead(s->d, s->d->s1u);
@@ -8917,12 +8934,12 @@ static bool cand_bound_bot_applies(const CandSel *s)
 }
 
 /* B2: every start of `s->d` needs `\G` (`emit_attempt`'s `a_bot`, past B1);
- * or the compile is a [COMPOUND] part bounded to ONE ATTEMPT at
- * `search_from` (compound.md §A.5), which takes this row's payload whatever
- * the pattern's own BOUND would be. Its attempt is the pattern's own: the
+ * or the emission request bounds the search to ONE ATTEMPT at `search_from`
+ * (compound.md §A.5; a compound part is its first reader), which takes this
+ * row's payload whatever the pattern's own BOUND would be. Its attempt is the pattern's own: the
  * start dispatch seeds `s0` at 0 and the `\G` family at `search_from`. */
 static bool cand_bound_gstart_attempt_applies(const CandSel *s)
-{ return pcrec_part_one_attempt(s->cx) || dfa_interior_dead(s->d, s->d->s1u); }
+{ return pcrec_emit_one_attempt(s->cx) || dfa_interior_dead(s->d, s->d->s1u); }
 
 /* B3, B4: the `start_anchor` fact's two anchored values (the VM entry's
  * `attempt_max`). */
@@ -10085,6 +10102,62 @@ static const CandRow *cand_locate_of(Ctx *cx)
 {
     CandSel s;
     return cand_locate_sel(cx, &s);
+}
+
+/* ---- [COMPOUND] THE PLAIN COMPILE's SELECTION PROJECTION ----------------
+ *
+ * compound.md §A.3 (arch S5): a compound row's admission conjuncts read the
+ * plain compile's selections through these, never by restating a predicate.
+ * They select exactly as the body's readers do (BOUND as `emit_attempt` asks
+ * it, LOCATE as `cand_locate_of` does) and record nothing: the trace build
+ * walks them quietly, so the selection record stays the emitter's, and holds
+ * each read to the running conjunct's declared reads. */
+#ifdef PCREC_CAND_TRACE
+_Thread_local const CompConj *pcrec_comp_reading;
+#endif
+
+const char *pcrec_cand_plain_selection(Ctx *cx, int slot, int route)
+{
+#ifdef PCREC_CAND_TRACE
+    if (pcrec_comp_reading) {
+        bool ok = false;
+        for (int i = 0; i < pcrec_comp_reading->nreads; i++)
+            ok |= pcrec_comp_reading->reads[i].slot == slot &&
+                  pcrec_comp_reading->reads[i].route == route;
+        if (!ok)
+            pcrec_ctx_fail(cx, 0, "internal error: compound conjunct %s reads an "
+                           "undeclared selection (slot %d, route %d)",
+                           pcrec_comp_reading->id, slot, route);
+    }
+#endif
+    CandSel s = { .cx = cx, .d = NULL, .us = NULL, .forward = true, .st = -1,
+                  .route = (CandRoute)route };
+    if (slot == CAND_SLOT_BOUND && route == CAND_ROUTE_ATTEMPT)
+        s.d = &cx->job->dfa;
+    else if (slot != CAND_SLOT_LOCATE)
+        pcrec_ctx_fail(cx, 0, "internal error: the selection projection has no "
+                       "reader for slot %d on route %d", slot, route);
+#ifdef PCREC_CAND_TRACE
+    const CandRow *r = cand_select_quiet((CandSlot)slot, &s);
+#else
+    const CandRow *r = cand_select((CandSlot)slot, &s, cx->opt->flags);
+#endif
+    return r->c.name;
+}
+
+int pcrec_cand_body_route(Ctx *cx)
+{
+    return (int)cand_route_of(cx);
+}
+
+int pcrec_dfa_ncaps(Ctx *cx)
+{
+    return dfa_artifact_ncaps(cx);
+}
+
+const char *pcrec_cand_locate_name(Ctx *cx)
+{
+    return cand_locate_of(cx)->c.name;
 }
 
 /* LOCATE's row as the body's EMITTER asks it: the selection, its `LOCATE`
@@ -12754,7 +12827,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * with no witness. Verified silent over the whole shipped corpus and
      * every axis of `make test-axes` at the landing. */
     if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored &&
-        !pcrec_part_one_attempt(cx))
+        !pcrec_emit_one_attempt(cx))
         pcrec_ctx_fail(cx, 0,
             "internal error: the pattern's AST proves every match begins at "
             "offset 0, but this machine has a live interior start state");
@@ -13449,12 +13522,15 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (cx->opt->header_name)
         emit_header(cx, g, ncaps, bs);
 
-    emit_pattern_comment(c, cx->pat);
-    emit_feature_comment(cx, c);
-    /* [COMPOUND] a part carries none of the SHARED blocks (the feature
-     * macros, the ABI block and its includes): the compound has them once,
-     * ahead of every part (compound.md §A.5). */
-    if (!pcrec_is_part(cx)) emit_feature_macros(cx, c);
+    /* [COMPOUND] a part carries none of the SHARED blocks (the provenance
+     * line, the feature comment and macros, the ABI block and its
+     * includes): the compound has them once, ahead of every part
+     * (compound.md §A.5). */
+    if (!pcrec_is_part(cx)) {
+        emit_pattern_comment(c, cx->pat);
+        emit_feature_comment(cx, c);
+        emit_feature_macros(cx, c);
+    }
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
     /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
      * FACT: unconditional, on every artifact of both engines, with an
@@ -13652,6 +13728,15 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * hybrid always reads `"none"`; a hybrid's start test is its prefilter. */
     pcrec_sb_stamp_str(c, g->upper, "VM_START_SCAN", pcrec_vm_start_scan_name(cx));
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
+    /* [COMPOUND] `<PREFIX>_COMPOUND` (compound.md §A.7, match_api.md §6.3):
+     * which compound row this artifact IS, on every artifact of both engines
+     * -- "none" (no row admitted, the plain artifact), the row's name, or
+     * "forced-off" (the harness lever declined a row the default build
+     * ships). Pattern-level; a part does not carry it (the compound's one
+     * line is the whole artifact's). */
+    if (!pcrec_is_part(cx))
+        pcrec_sb_stamp_str(c, g->upper, "COMPOUND",
+                           cx->comp_stamp ? cx->comp_stamp : "none");
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
         /* [EMIT-ENTRIES] the header declares the exported entries; a kept
@@ -13690,7 +13775,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * definitions declare their own ([MEMFN] M1b: the helpers are the kit's,
      * memfn/src/runcmp.c). */
     pcrec_memfn_flush_helpers(cx, c);
-    emit_orientation_block(cx, c, g);
+    /* [COMPOUND] a shell carries no machine of its own to map; each part's
+     * text describes its own. */
+    if (!cx->job->comp_shell) emit_orientation_block(cx, c, g);
 }
 
 /* The `.rodata` reflection instance. The VM passes what it ACTUALLY enforces;
@@ -13975,7 +14062,10 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * more machinery than the line it replaces. Recorded here so a later
      * pass does not read it as a site somebody missed. */
     pcrec_sb_printf(c, "#define %s_DFA_PREFILTER_OFFSETS \"", upper);
-    dfa_prefilter_offsets(cx, c);
+    /* [COMPOUND] machine-level (src/gen/stamp_kinds.c): the shell names no
+     * machine's offsets, and this one stamp bypasses the filter. */
+    if (cx->job->comp_shell) pcrec_sb_puts(c, "compound");
+    else                     dfa_prefilter_offsets(cx, c);
     pcrec_sb_puts(c, "\"\n");
     pcrec_sb_stamp_str(c, upper, "DFA_TABLE", dfa_table_name(cx));
     /* [CC-DIFF] Beside `_DFA_TABLE` because it is about the same tables:
@@ -14082,25 +14172,35 @@ void pcrec_emit_dfa(Ctx *cx)
      * so its mask is the two unconditional entries alone ([UTF-VALID] added
      * the second, the subject validator). */
     cx->job->enc_mask = PCREC_ENCE_NEXT_POS | PCREC_ENCE_VALID_UPTO;
-    /* [COMPOUND] a part bounded to one attempt needs the attempt loop to
-     * bound (compound.md §A.5): on any other route the part REFUSES, which
-     * declines its row. */
-    if (pcrec_part_one_attempt(cx) && cand_route_of(cx) != CAND_ROUTE_ATTEMPT)
-        pcrec_ctx_fail(cx, 0, "compound part: a one-attempt bound needs the DFA "
-                       "attempt route, and this pattern takes another");
+    /* [COMPOUND] THE SHELL (compound.md §A.3, §A.5): when the walk admitted a
+     * row, this artifact is the compound -- P's own prologue, stamps (the
+     * machine-level ones through the stamp catalogue's compound values,
+     * `Ctx.stamp_filter`), residuals, `rx_info` and `main`, and in place of
+     * P's engine and its three matcher entries the parts and the controller
+     * (src/gen/emit_compound.c). The machine was built (the walk read its
+     * selections) and is not written. */
+    const PcrecCompShell *shell = cx->job->comp_shell;
+    if (shell) cx->stamp_filter = pcrec_stamp_compound_filter;
+    /* [COMPOUND] a search bounded to one attempt needs the attempt loop to
+     * bound (compound.md §A.5): on any other route the compile REFUSES, which
+     * declines a part's row. */
+    if (pcrec_emit_one_attempt(cx) && cand_route_of(cx) != CAND_ROUTE_ATTEMPT)
+        pcrec_ctx_fail(cx, 0, "a one-attempt bound needs the DFA attempt "
+                       "route, and this pattern takes another");
     /* [START-LANDING] the landing's guard calls the encoding's DECODE entry
      * (`pcrec_dfa_landing_guard`), a `static inline` entry defined ahead of
      * the search body below. */
-    if (pcrec_dfa_landing_guard(cx)) cx->job->enc_mask |= PCREC_ENCE_DECODE;
+    if (!shell && pcrec_dfa_landing_guard(cx)) cx->job->enc_mask |= PCREC_ENCE_DECODE;
     {
         /* [EMIT-ENTRIES] the shape that decides which entry calls which,
          * stated before the first declaration: `_match` has its own body on
-         * the nomatch and anchored forms (axis G's dispatch below). */
+         * the nomatch and anchored forms (axis G's dispatch below), and on a
+         * compound (the controller's one bounded attempt). */
         PcrecEntryShape sh = {
             .vm = false,
-            .match_own = dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH ||
+            .match_own = shell || dfa_match_of(cx)->u.finish.act == CAND_FIN_NOMATCH ||
                          dfa_match_is_unwrapped(cx),
-            .search_match = dfa_search_calls_match(cx),
+            .search_match = !shell && dfa_search_calls_match(cx),
             .utf_check = pcrec_utf_check_on(cx),
         };
         pcrec_entry_shape(cx, &sh);
@@ -14118,6 +14218,12 @@ void pcrec_emit_dfa(Ctx *cx)
      * the two artifact kinds put their engine line at the same point of the
      * file and a reader (or a grep) finds it in one place. */
     emit_dfa_stamps(cx, c, g.upper);
+    if (shell) {
+        pcrec_emit_compound_body(cx, shell, g.searchfn, g.matchfn, g.matchcapsfn,
+                                 g.upper);
+        pcrec_sb_puts(c, "\n");
+        goto in_entries;
+    }
     /* The encoding's `static inline` entries the mask carries (the landing
      * guard's DECODE), ahead of the search body that calls them; nothing on
      * an artifact whose mask holds none. */
@@ -14155,6 +14261,7 @@ void pcrec_emit_dfa(Ctx *cx)
                                 g.matchcapsfn, g.searchfn, g.upper);
     }
     pcrec_sb_puts(c, "\n");
+in_entries:
     emit_in_entry_defs(cx, c, g.searchfn, g.matchfn, g.matchcapsfn,
                        cx->opt->prefix);
     pcrec_sb_puts(c, "\n");

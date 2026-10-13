@@ -12,5 +12,5 @@ SAB_DESC="drop-prefilter's sets cell stops carrying the refused attempt's size-c
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S633. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='                FIT_CARRY_SIZECAP, false, true },'
-SAB_AFTER='                0, false, true },   /* SABOTAGE S633 */'
+SAB_BEFORE='                FIT_CARRY_SIZECAP, false, true, FIT_COMP_KEEP },'
+SAB_AFTER='                0, false, true, FIT_COMP_KEEP },   /* SABOTAGE S633 */'

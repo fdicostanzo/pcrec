@@ -619,6 +619,19 @@ while IFS= read -r pat; do
     d_eng="$1"; d_scan="$2"; d_pf="$3"
     s_eng="$4"; s_scan="$5"; s_pf="$6"; ne="$7"; ns="$8"; np="$9"; shift 9
     s_vmpf="$1"; f_scan="$2"; f_pf="$3"; nfscan="$4"; nfpf="$5"; d_start="$6"; s_start="$7"
+    # [COMPOUND] (match_api.md §6.3.12) A COMPOUND ARTIFACT's machine-level
+    # stamps read "compound": its text is the parts' bodies and a controller,
+    # so no single scan, prefilter or start recovery exists for them to name
+    # and the text comparisons below do not apply. Asserted, counted, and the
+    # mirror still runs (rx_info reads the same "compound").
+    s_comp=$(sed -n 's/^#define RX_COMPOUND "\(.*\)"$/\1/p' "$art")
+    if [ -n "$s_comp" ] && [ "$s_comp" != "none" ]; then
+        echo COMPOUND
+        mirror_check "$s_scan" "$s_pf" "$f_scan" "$f_pf" "$nfscan" "$nfpf" "$pat"
+        [ "$s_eng $s_scan $s_pf $s_start" = "dfa compound compound compound" ] \
+            || { echo COMPBAD; echo "BAD: COMPOUND '$s_comp' stamps engine/scan/prefilter/start '$s_eng $s_scan $s_pf $s_start', not 'dfa compound compound compound': $pat"; }
+        continue
+    fi
     # [OPT-REVEND] L2.1 THE GENERATED STAMP RULE's witness on RECOVER: a
     # DFA-scan artifact's `_DFA_START` names the start recovery its text
     # carries -- "attempt-start" where no reverse machine, no pinned start
@@ -733,6 +746,7 @@ nvmsilent=$(tok VM_SILENT); nvmpfbad=$(tok VMPFBAD); nvmhyempty=$(tok VMHYEMPTY)
 nscancmp=$(tok SCANCMP); npfcmp=$(tok PFCMP)
 nstartcmp=$(tok STARTCMP); nstartbad=$(tok STARTBAD)
 nmirror=$(tok MIRRORCMP); nmirrorbad=$(tok MIRRORBAD); nmirrormiss=$(tok MIRRORMISS)
+ncomp=$(tok COMPOUND); ncompbad=$(tok COMPBAD)
 # [DD-13c] THE TWO ARTIFACT KINDS ARE TALLIED SEPARATELY AND THEN TOGETHER.
 # The DFA-only distribution is the one [DD-13] recorded and the one
 # docs/spec/tuning.md §3 quotes, so folding the 1,200-odd hybrids into it would
@@ -976,12 +990,20 @@ else
 fi
 [ "$nmirrorbad" -eq 0 ] && ok "[mirror] rx_info.scan/.prefilter agree with <PREFIX>_DFA_SCAN/_DFA_PREFILTER on all $nmirror artifacts compared (NULL/\"none\" where the macros are absent) — one derivation, two spellings" \
                         || bad "[mirror] $nmirrorbad rx_info field(s) disagree with the macro they mirror"
-if [ "$nmirror" -eq $((ndfa + nvm)) ]; then
-    ok "[mirror] the mirror comparison ran on every compiled artifact: $nmirror = $ndfa DFA + $nvm VM"
+if [ "$nmirror" -eq $((ndfa + nvm + ncomp)) ]; then
+    ok "[mirror] the mirror comparison ran on every compiled artifact: $nmirror = $ndfa DFA + $nvm VM + $ncomp compound"
 else
-    bad "[mirror] the mirror comparison ran on $nmirror artifacts but $((ndfa + nvm)) compiled — $(( ndfa + nvm - nmirror )) were routed past it"
+    bad "[mirror] the mirror comparison ran on $nmirror artifacts but $((ndfa + nvm + ncomp)) compiled — $(( ndfa + nvm + ncomp - nmirror )) were routed past it"
 fi
 # [OPT-REVEND] L2.1 the start-recovery agreement, over every compiled artifact.
+# [COMPOUND] the compound bucket: every member stamps "compound" on the
+# machine axes, and the bucket is populated (tests/compound/split.rxt's
+# admitted patterns are in the corpus), so the exemption is never silent.
+if [ "$ncompbad" -eq 0 ] && [ "$ncomp" -gt 0 ]; then
+    ok "[compound] all $ncomp compound artifact(s) stamp RX_ENGINE \"dfa\" and \"compound\" for RX_DFA_SCAN/_PREFILTER/_START (match_api.md §6.3.12), the text comparisons exempt"
+else
+    bad "[compound] $ncompbad of $ncomp compound artifact(s) stamp a machine value, or the bucket is EMPTY (the corpus's admitted patterns stopped landing as compounds)"
+fi
 if [ "$nstartbad" -eq 0 ] && [ "$nstartcmp" -eq $((ndfa + nvm)) ]; then
     ok "[start] <PREFIX>_DFA_START names the start recovery the emitted text carries (reverse machine / pinned start write / width subtraction / landing start write / neither = attempt-start) on all $nstartcmp artifacts (the generated stamp rule: RECOVER off the path stamps its absence)"
 else

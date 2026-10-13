@@ -284,6 +284,29 @@ pcrec (the Makefile owns that).
   testing" for the opt-in rationale and `git push --no-verify` as the
   documented bypass.
 
+- **plan_lint.sh** / **plan_lint.py** — [PLAN-LINT] step 3: the linter for
+  docs/dev/plan.md (the wrapper execs `python3 -I plan_lint.py`; standard
+  library only). Seventeen rules (PL01-PL17, table in tests/plan_lint/
+  CLAUDE.md), every one of which FAILS: there is no warning severity and no
+  baseline file. Modes: no flag lints the working tree (plus the tree-wide
+  `plan.md:<line>` citation scan, a `git grep`); `--staged` lints the INDEX
+  content (`git show :path`) and skips that scan (the commit hook's mode,
+  ~60 ms); `--selftest` plants one violation per rule and the citation
+  scanner's own planted file and requires every one reported; `--stale` is
+  the informational report (started rows with a `status` older than 30 days,
+  open rows whose status says MERGED/BUILT/LANDED/DONE, unresolved `[ID]`
+  references) and always exits 0 -- run it by hand at wake, it is not in
+  `make test`; `--rules` lists the rules. `make test-plan-lint` runs the
+  first and the third (tests/plan_lint/run_plan_lint.sh).
+
+- **hooks/pre-commit** — [PLAN-LINT] step 3, opt-in like hooks/pre-push:
+  runs `scripts/plan_lint.sh --staged` ONLY when docs/dev/plan.md,
+  docs/dev/plan_completed.md or something under docs/design/plan_row_bodies/
+  is staged, and lints the staged content, not the working file. Never runs
+  `make test`. Installed only by `make hooks HOOKS=pre-commit` (`HOOKS`
+  defaults to `pre-push`; `HOOKS="pre-push pre-commit"` installs both),
+  never automatically. Bypass once with `git commit --no-verify`.
+
 - **battery.sh** — [TT-12] STEP 1 item 5: `battery_v5`, the manager's
   merge/close validation chain (test -> strict -> axes -> san -> alloc ->
   lint -> mech -> recidentity) as one detached, self-logging run — `axes` is new (STEP 2, Frank's
@@ -524,9 +547,11 @@ pcrec (the Makefile owns that).
   (least-sampled uncontaminated), runs it under `gnutimeout 2700`, log
   byte-identical, make's rc returned unchanged; `cpusample.sh` samples
   load/busy/scripts/other-trees every 15 s (and `--probe` for the pre-start
-  contamination read); `sectiontimes` (`stamp SIDE` / `report`) turns
+  contamination read); `sectiontimes` (`stamp SIDE` / `report [--open]`) turns
   `make --debug=j` lines into per-section start/end times without touching the
-  log. Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
+  log (`--open` also lists sections that started and never finished, state
+  `open`, for a killed run; [CI-SHARD]'s CI step is its second caller, with
+  no perfrun around it). Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
   `perfrun --fold` (in main) appends them to docs/dev/ttune_ledger.tsv. Triage
   rule and columns: docs/dev/ttune_measurement.md; BOILERPLATE.md.
 

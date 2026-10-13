@@ -205,7 +205,7 @@ against the live `subbench.toml`).
   the sentence reads.
 - **[DD-11]'s definition table** — §4.2 states what this format needs
   from it as an interface. D85 rules its shape; the design is [DD-11]'s.
-- **The struct-loading feature itself** — [V-I] (plan.md:737). §2.13
+- **The struct-loading feature itself** — [V-I] (plan.md [V-I]). §2.13
   states what this row hands it and what it still owns.
 - **The bench record's schema** — the bench owns it (D78). §4.5 states
   what the format must be able to say so the record can key on it.
@@ -3198,7 +3198,7 @@ chooses the linkage.**
 
 **The [DD-14.G] bar, restated** (r44-sem M3, RULED by D87's supersede
 clause). The first version said "elision may change the emitted code; it
-may not change `RX_NCAPS`", which contradicts plan.md:591's
+may not change `RX_NCAPS`", which contradicts plan.md [LIB]'s
 "byte-identical to the hand-inlined pattern". Under D61 the two are
 reconciled: **the bar is the emitted CODE byte-identical and slots
 `1..ngroups` identical; the composition's delivered slots live above
@@ -3721,7 +3721,7 @@ has no analogue in today's harness, and §3.2's H2 lists it as such.
 a generated struct — one field per named group — **a scope prefix is a
 path and a struct is a path**, so the two are one mechanism seen from two
 sides. This subsection states the format's half; the feature's own row is
-**[V-I]** (plan.md:737, NAMED-RESULTS COPY HELPER — "an emitted
+**[V-I]** (plan.md [V-I], NAMED-RESULTS COPY HELPER — "an emitted
 `struct <prefix>_groups` with one span member per named group, plus a
 copier from the caps array"), which already cites D61 and
 `rx_group_entry.slot` as its substrate.

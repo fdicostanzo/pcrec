@@ -21,29 +21,29 @@ logic). `git diff --stat main..lane/admin88`:
 
 All eleven rows dispositioned as Frank AGREED:
 
-- `[TT-4M]` (plan.md:310) — RE-PARK confirmation appended (trigger:
+- `[TT-4M]` (plan_completed.md [TT-4M]) — RE-PARK confirmation appended (trigger:
   Frank's own word, still unmet).
 - `[DD-8]` (plan.md ~926, now archived-adjacent) — CLOSED
   (`STATE:started` → `STATE:completed`); residual filed as new row
-  `[EMIT-DOT]` (plan.md:926, `STATE:not-started`).
-- `[DD-11]` — RE-CHARTERED: opened `[DD-11.5]` (plan.md:1126,
+  `[EMIT-DOT]` (plan.md [EMIT-DOT], `STATE:not-started`).
+- `[DD-11]` — RE-CHARTERED: opened `[DD-11.5]` (plan.md [DD-11.5],
   `STATE:not-started`) as its own child row per
   `docs/design/definitions_table.md`'s own "[DD-11.5]" section.
-- `[CC-CLANG]` (plan.md:1147) — STEP 3 CLOSED (not merely re-chartered:
+- `[CC-CLANG]` (plan_completed.md [CC-CLANG]) — STEP 3 CLOSED (not merely re-chartered:
   the ask is already answered by the bench's standing cc axis, O-70/
   `[B33]`/`[B24]`, PARITY at `a32bc86e`, byte mode only — utf8 gap
   recorded as an open note, not a blocker).
-- `[OPT-3]`, `[OPT-5]`, `[ENG-ABS]`, `[ENG-ISL]`, `[DD-13]` (plan.md:927),
-  `[DD-13b.W1.3]` (plan.md:972) — RE-PARK confirmations appended, each
+- `[OPT-3]`, `[OPT-5]`, `[ENG-ABS]`, `[ENG-ISL]`, `[DD-13]` (plan_completed.md [DD-13]),
+  `[DD-13b.W1.3]` (plan_completed.md [DD-13b.W1.3]) — RE-PARK confirmations appended, each
   restating its own unmet trigger from the reassessment doc.
-- `[CLS-TREE]` (plan.md:1532) — RE-CHARTERED with the re-baseline:
+- `[CLS-TREE]` (plan_completed.md [CLS-TREE]) — RE-CHARTERED with the re-baseline:
   `\p{Xwd}` on the DFA is 197,685 B at the current pin, not the study's
   own 294,153 B at an earlier pin (`docs/dev/ucp_study.md` §G item 4).
   The `[UCP]` row's own stale "294 KB today" citation (it already had
   the correct 197,685 B figure elsewhere in the SAME row — an internal
   inconsistency) was corrected too, drive-by.
 
-## (b) `[FINDINGS]` row (plan.md:360)
+## (b) `[FINDINGS]` row (plan_completed.md [FINDINGS])
 
 - B4: **HELD, option (c)** recorded verbatim (no reader has a trigger —
   C6 needs unbuilt S4, C3's cells are S1-dominated, C2 has only 16
@@ -51,12 +51,12 @@ All eleven rows dispositioned as Frank AGREED:
   lands with S4.
 - B5 (`lane/findb5`) and B6 (`lane/findb6`): re-pinned from "NOT merged"
   to their actual merge commits, `d604bee9` and `dcf25a49`.
-- `[FIND-TIE]` (plan.md:362): `STATE:started` → `STATE:completed`; its
+- `[FIND-TIE]` (plan_completed.md [FIND-TIE]): `STATE:started` → `STATE:completed`; its
   stale "OWED to the manager at merge" census/sabotage text replaced
   with the actual result (merged `72e3ae41`; 134/5,751 byte movers, 0
   utf8; S329 DETECTED).
 
-## (c) `[PATFACTS]` row (plan.md:495)
+## (c) `[PATFACTS]` row (plan_completed.md [PATFACTS])
 
 STEP 3.6 (lane pf36) re-pinned to its merge commit `f74bd589` and marked
 as closing the whole STEP 3 migration — every relocation chartered
@@ -68,20 +68,20 @@ action needed there.
 
 Filed both proposed rows from `docs/dev/optloop/cycle2_close.md` §2
 (neither had an existing row, confirmed by grep before filing):
-- `[CAPS-VIEW-RERENDER]` (plan.md:353) — re-render `cycle1_caps_view.md`'s
+- `[CAPS-VIEW-RERENDER]` (plan.md [CAPS-VIEW-RERENDER]) — re-render `cycle1_caps_view.md`'s
   CAPS table under the frozen I-99/I-100 classification at the current
   pin.
-- `[CAPTURES-DFA-MB]` (plan.md:354) — finish `captures_via_dfa_survey.md`
+- `[CAPTURES-DFA-MB]` (plan.md [CAPTURES-DFA-MB]) — finish `captures_via_dfa_survey.md`
   candidate (c)'s M-B measurement at larger subject sizes.
 
-Swept `[OPTLOOP.1.M6]` (plan.md:348): its own measurement (`cycle1_
+Swept `[OPTLOOP.1.M6]` (plan_completed.md [OPTLOOP.1.M6]): its own measurement (`cycle1_
 profile.md`, run via the I-85 profile pass) actually completed and the
 row's STATE tag was simply never flipped — now `STATE:completed` with
 the finding recorded (steps-per-attempt problem, not per-step/dispatch).
 
 ## (e) findb2 follow-up row
 
-Filed `[RUNSH-BUNDLE-DECL]` (plan.md:1539): the remaining half of
+Filed `[RUNSH-BUNDLE-DECL]` (plan.md [RUNSH-BUNDLE-DECL]): the remaining half of
 tri86's declaration-gate work — `run.sh` recognises a head-only analysis
 bundle by declaration only under `--dump` today; `adversarial/`/
 `witness/`/`golden/` still need a path-shaped `-not -path` exclusion for
@@ -155,7 +155,7 @@ filed).
 
 ## Two rows from lane/tri87's report
 
-Filed `[CORPUS-PCAP]` (plan.md:1540) from `docs/dev/lanes/tri87_report.
+Filed `[CORPUS-PCAP]` (plan_completed.md [CORPUS-PCAP]) from `docs/dev/lanes/tri87_report.
 md` on branch `lane/tri87` §6: `test-corpus`'s intermittent `TIMED OUT`
 reds are `PROCS=nproc` oversubscription noise on this Mac (8P+2E cores,
 `nproc`=10), not a regression — tri87 measured two entirely different

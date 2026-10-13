@@ -1373,16 +1373,23 @@ pfd_emit() {    # pfd_emit <out.c> <label> <pcrec args...> — rc, stderr in <ou
     "$ROOT_DIR/scripts/watchdog" -l "pfdrop $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" "$@" 2>"$out.err"
 }
 mkdir -p "$WORKDIR/pfd" "$WORKDIR/pfn"
-PFD_WIT='(\p{Xwd})'
-# [START-LANDING] (lane slbuild, 2026-10-10): the witness takes the `landing`
-# start by default; without its reverse machine the hybrid is 359,103 B and
-# keeps its prefilter, so the last rung never fires (a FIT mover). Every
-# compile of the witness below denies the landing row so it still reaches the
-# rung; `(\p{Xwd})x` and `(\p{Xwd})\b` (no landing) still drop by default.
-# The anchored-drop (`\p{L}`) and premul-drop (`[^\p{C}\p{M}\p{P}]`) /ff
-# witnesses below are one character and take `landing` too, so they deny it.
+PFD_WIT='(\p{Xwd})\b'
+# [START-LANDING] (lane slbuild, 2026-10-10): the bare `(\p{Xwd})` takes the
+# `landing` start by default; without its reverse machine the hybrid is 359,103 B
+# and keeps its prefilter, so the last rung never fires (a FIT mover). Lane sltri
+# kept it reaching the rung with `-fno-start-landing`; lane mechwit (2026-10-13)
+# re-pointed all four /ff witnesses at DEFAULT-PATH patterns instead, because a
+# sabotage of the ladder must be detectable by what a caller gets (the
+# bare-form reach probes of mech rows S421-S423 had gone UNREACHED). Measured
+# 2026-10-13 at the default cap, `-e utf8 --features assertions`:
+#   prefilter drop  `(\p{Xwd})\b`          hybrid 1,173,222 B (17% over the cap)
+#   anchored drop   `\p{L}\p{N}\p{Lu}`        1,367,780 B with the machine, 828,475 B after rung 1
+#   premul drop     `[^\p{C}\p{M}\p{P}]xy`    1,441,473 B / 1,046,700 B after rung 1 / 458,919 B after rung 2
+# The collapse witness `(a|b){1,30000}` still needs `-fno-scan-edge` AND the
+# landing deny: at the default it fits (680,965 B) and keeps its hybrid.
 PFD_NL=-fno-start-landing
-if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 $PFD_NL --pattern "$PFD_WIT"; then
+PFD_FT='--features assertions'
+if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 $PFD_FT --pattern "$PFD_WIT"; then
     pfd_sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/pfd/x.c" | sed 's/.*SEL //;s/"//g')
     pfd_pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/pfd/x.c" | sed 's/.*PREFILTER //;s/"//g')
     pfd_why=$(grep -oE '^#define RX_VM_PREFILTER_WHY .*' "$WORKDIR/pfd/x.c" | sed 's/.*WHY //;s/"//g')
@@ -1405,7 +1412,7 @@ if pfd_emit "$WORKDIR/pfd/x.c" "xwd default" -e utf8 $PFD_NL --pattern "$PFD_WIT
     # THE RUNG'S ARTIFACT IS THE CALLER'S OWN `-fno-prefilter` ONE, but for the
     # two stamps that say a cap chose it (same `-o` basename, so the
     # `#include` line cannot differ).
-    if pfd_emit "$WORKDIR/pfn/x.c" "xwd -fno-prefilter" -e utf8 $PFD_NL -fno-prefilter --pattern "$PFD_WIT"; then
+    if pfd_emit "$WORKDIR/pfn/x.c" "xwd -fno-prefilter" -e utf8 $PFD_FT -fno-prefilter --pattern "$PFD_WIT"; then
         if cmp -s <(grep -v -e '^#define RX_ENGINE_SEL ' -e '^#define RX_VM_PREFILTER_WHY ' "$WORKDIR/pfd/x.c") \
                   <(grep -v -e '^#define RX_ENGINE_SEL ' "$WORKDIR/pfn/x.c"); then
             ok "[PF-DROP] the rescued artifact is -fno-prefilter's, byte for byte, but for RX_ENGINE_SEL and RX_VM_PREFILTER_WHY"
@@ -1438,14 +1445,14 @@ pfd_ff() {
         bad "[PF-DROP/ff] $label: refused under --size-cap=refuse, but not by a size cap: $(head -1 "$WORKDIR/pfd/f.c.err")"
     fi
 }
-pfd_ff "prefilter drop, (\\p{Xwd}) -e utf8" '^#define RX_VM_PREFILTER_WHY "size cap retry' \
-    -e utf8 $PFD_NL --pattern "$PFD_WIT"
+pfd_ff "prefilter drop, (\\p{Xwd})\\b -e utf8" '^#define RX_VM_PREFILTER_WHY "size cap retry' \
+    -e utf8 $PFD_FT --pattern "$PFD_WIT"
 pfd_ff "prefilter collapse, (a|b){1,30000} -fno-scan-edge" '^#define RX_VM_PREFILTER_LANG_WHY "size cap retry' \
     -fno-scan-edge $PFD_NL --pattern '(a|b){1,30000}'
-pfd_ff "anchored drop, \\p{L} -e utf8" '^#define RX_DFA_MATCH "search-filter"' \
-    -e utf8 $PFD_NL --pattern '\p{L}'
-pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}] -e utf8" '^#define RX_DFA_TABLE "indexed"' \
-    -e utf8 $PFD_NL --pattern '[^\p{C}\p{M}\p{P}]'
+pfd_ff "anchored drop, \\p{L}\\p{N}\\p{Lu} -e utf8" '^#define RX_DFA_MATCH "search-filter"' \
+    -e utf8 --pattern '\p{L}\p{N}\p{Lu}'
+pfd_ff "premul drop, [^\\p{C}\\p{M}\\p{P}]xy -e utf8" '^#define RX_DFA_TABLE "indexed"' \
+    -e utf8 --pattern '[^\p{C}\p{M}\p{P}]xy'
 # A PATTERN THAT FITS IS THE SAME ARTIFACT UNDER THE SWITCH: it selects no
 # shape (masked out of `rx_info.flags`, lib/pcrec.h). `(\p{L})` is a VM
 # hybrid at 790 KB, close under the cap, so a switch that leaked into

@@ -364,8 +364,8 @@ Ast *pcrec_derive_split_q(Ctx *cx, Ast *root)
 const PcrecDerive pcrec_derive_split_q_row = { "split-q", pcrec_derive_split_q };
 
 /* The attempt-scope predicate: does any node of `root` carry a registry row
- * whose effect spans attempts or observes their order (RF_CROSSES_ATTEMPTS:
- * the callout rows; the attempt-crossing verbs are ROADMAP_NEVER and refused
+ * that observes or changes the attempt sequence (RF_CROSSES_ATTEMPTS: the
+ * callout group; the attempt-crossing verbs are ROADMAP_NEVER and refused
  * at parse). A compound's controller runs P's attempts as separate calls, so
  * such a pattern declines (compound.md §B.8, A3). */
 static void xa_visit(void *ud, const Ast *a)

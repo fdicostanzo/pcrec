@@ -112,8 +112,8 @@ C3-0111	MAPPED	756	(?:a|ab)\z over "ab" reports [0,2)
 C3-0112	MAPPED	756	\z forces the engine past the a branch into ab
 C3-0113	MAPPED	743	idiom is permanent (D77, [OS-4])
 C3-0114	MAPPED	744	no end-anchored generation axis is built; built only under a measurement (the two specific forms are not listed)
-C3-0115	UNMAPPED		new doc silent on the two-artifact cost and the final-byte DFA skip gap as a general-opt candidate; believed TRUE as ruled (docs/dev/plan.md:978 [OS-4]) but the bounded-width half is since built as [OPT-ENDWIN] (plan.md:344)
-C3-0116	UNMAPPED		new doc silent that a \z optimization benefits every \z-bearing pattern equally; believed TRUE (plan.md:978 'a fold on the idiom benefits every \z user')
+C3-0115	UNMAPPED		new doc silent on the two-artifact cost and the final-byte DFA skip gap as a general-opt candidate; believed TRUE as ruled (docs/dev/plan_completed.md [OS-4] [OS-4]) but the bounded-width half is since built as [OPT-ENDWIN] (plan_completed.md [OPT-ENDWIN])
+C3-0116	UNMAPPED		new doc silent that a \z optimization benefits every \z-bearing pattern equally; believed TRUE (plan_completed.md [OS-4] 'a fold on the idiom benefits every \z user')
 C3-0117	MAPPED	758	a \z pattern still selects the DFA and match runs the anchored machine (3.2 "unwrapped"); the 2026-08-29 date dropped
 C3-0118	MAPPED	761	matching split 1.031x the backtracking VM; the prior 2.074x is history and omitted
 C3-0119	MAPPED	762	short valid emails 0.482x; prior 1.223x omitted (history)

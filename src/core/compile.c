@@ -147,6 +147,43 @@ static bool valid_prefix(const char *p)
     return true;
 }
 
+/* [COMPOUND] THE NAMESPACE RESERVATION TABLE (compound.md §A.5; alignment
+ * note §8.3): the symbol families pcrec reserves, one first-match row each,
+ * and the user prefixes each refuses -- a prefix that could spell a reserved
+ * name inside one translation unit. A new reservation is a row, never a
+ * second refusal. `docs/spec/cli.md` lists the rows beside `-p`'s grammar.
+ * Row 2 (`callout-bindings`, `rx_callout_<name>`) is added by
+ * [M4-CALLOUTS] step 2 with its first producer. */
+typedef struct {
+    const char *name;
+    bool (*refuses)(const char *prefix);
+    const char *why;
+} NsReserve;
+
+/* row 1: a compound's parts are `<prefix>__<role>`, so a user prefix with
+ * `__` can collide with a part beside a compound in one TU. */
+static bool ns_parts(const char *p) { return strstr(p, "__") != NULL; }
+/* row 3: the harness lever's reserved prefix (compound.md §A.11). */
+static bool ns_harness(const char *p)
+{
+    return !strncmp(p, PCREC_HARNESS_PREFIX, sizeof PCREC_HARNESS_PREFIX - 1);
+}
+
+static const NsReserve ns_reserved[] = {
+    { "parts", ns_parts,
+      "contains `__`, which is reserved for a compound's parts (<prefix>__<role>)" },
+    { "harness-lever", ns_harness,
+      "begins with a prefix reserved for pcrec's own internal symbols" },
+};
+
+/* The reservation row `p` falls under, or NULL. */
+static const NsReserve *ns_reserved_by(const char *p)
+{
+    for (size_t i = 0; i < sizeof ns_reserved / sizeof ns_reserved[0]; i++)
+        if (ns_reserved[i].refuses(p)) return &ns_reserved[i];
+    return NULL;
+}
+
 /* Frees every heap array and StrBuf a Job may have allocated
  * (NFA/DFA/reverse-DFA/optional-anchored-DFA state+table arrays, the
  * text/header/vm/ir scratch buffers, the two [ART-SIZE] scratch buffers, the
@@ -193,6 +230,11 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->out_c);
         free(cx->job->out_h);
         free(cx->job->out_ir);
+        /* [COMPOUND] the shell's part texts (heap, the parts' own outputs);
+         * the shell itself is arena, freed below. */
+        if (cx->job->comp_shell)
+            for (int i = 0; i < PCREC_COMP_MAXPARTS; i++)
+                free(cx->job->comp_shell->text[i]);
         free(cx->job);
         cx->job = NULL;
     }
@@ -505,11 +547,18 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * the size term for [OPT-4]'s own reason (the artifact it chose `K` for no
  * longer exists), and it can follow the collapse rung on one compile, so the
  * ladder-bearing half is now THREE runs. `SDR_MAX` grew to three with it. */
-/* D164 B3 `+ 1` for `drop-end-mark` (docs/design/endmark.md §R.5), the first
+/* [COMPOUND] `+ 1 + COMP_LEVER_ATTEMPTS`: the `drop-compound` rung's one
+ * retry (a compound over a cap ships the plain artifact), and the harness
+ * lever's plain re-emission (§A.11), which is no row of the table. A
+ * compound's P is a DFA artifact, so neither can meet the size-term ladder. */
+enum { COMP_OFF, COMP_WALK, COMP_FORCED };
+enum { COMP_LEVER_ATTEMPTS = 1 };
+/* D164 B3 a further `+ 1` for `drop-end-mark` (docs/design/endmark.md §R.5), the first
  * size rung: one retry with the `rev-end` walk pinned to today's form. It
  * restarts nothing (the size term runs only for the VM, and a hybrid's walk
  * is its prefilter's body, whose artifact the term never measured apart). */
-enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 };
+enum { COMPILE_MAX_ATTEMPTS = 3 + 3 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX + 1 + 1 +
+                              COMP_LEVER_ATTEMPTS };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
  * compose with [SEL-1]'s retry in ONE stated direction: SEL-1's DFA-overflow
@@ -698,12 +747,13 @@ typedef struct {
     unsigned char size_drop_rung;
     bool          dfa_disabled;
     SizeTermPhase st_phase;         /* [DEC-FALLBACK] row 2's `applies` reads it */
+    bool          comp_assembled;   /* [COMPOUND] the refused text is a compound */
 } FitSel;
 
 typedef enum {
     FIT_FORCE_NEXT, FIT_PROPAGATE, FIT_TERM_NEXT, FIT_SEL1_COLLAPSE, FIT_SEL1_DROP,
-    FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED, FIT_DROP_PREMUL,
-    FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
+    FIT_DROP_COMPOUND, FIT_UNROLL_RESCUE, FIT_COLLAPSE, FIT_DROP_ANCHORED,
+    FIT_DROP_PREMUL, FIT_DROP_PREFILTER, FIT_REFUSE, FIT_DROP_END_MARK
 } FitAct;
 
 /* [DEC-FALLBACK] B2 THE TABLE BECOMES THE WHOLE LADDER (docs/design/
@@ -739,6 +789,8 @@ typedef enum {
     FIT_SDR_UNSTATED, FIT_SDR_KEEP, FIT_SDR_TO_ANCHORED, FIT_SDR_TO_PREMUL,
     FIT_SDR_TO_PREFILTER
 } FitSdrCell;
+/* [COMPOUND] the attempt-level compound state (§A.8): KEEP, or OFF. */
+typedef enum { FIT_COMP_UNSTATED, FIT_COMP_KEEP, FIT_COMP_OFF } FitCompCell;
 /* `carry`: the failed attempt's figures a row copies forward, because
  * `job_cleanup` frees the attempt that measured them. */
 enum { FIT_CARRY_OVW = 1u << 0, FIT_CARRY_SIZECAP = 1u << 1 };
@@ -755,6 +807,7 @@ typedef struct {
     unsigned   carry;       /* FIT_CARRY_* */
     bool       latch;
     bool       restart;     /* the term's phase, record AND the K it wrote (K100) */
+    FitCompCell comp;       /* [COMPOUND] the compound state the retry runs under */
 } FitSets;
 
 /* `fof`: inside `--size-cap=refuse`'s reach (§1.2). The switch denies a row only
@@ -1009,6 +1062,10 @@ static bool fit_prefilter_applies(const FitSel *s)
 /* The total fallback: nothing smaller is left, and the refusal stands. */
 static bool fit_always(const FitSel *s) { (void)s; return true; }
 
+/* [COMPOUND] `drop-compound` (compound.md §A.8): the refused text is an
+ * assembled compound, whose plain artifact already fit the caps. */
+static bool fit_compound_applies(const FitSel *s) { return s->comp_assembled; }
+
 /* [ART-SIZE] the size term's trial catch: a LADDER attempt's failure, for any
  * reason but an allocation failure, means "this K is out". */
 static bool fit_trial_applies(const FitSel *s) { return s->st_phase == ST_LADDER; }
@@ -1077,7 +1134,7 @@ static bool fit_sel1_drop_applies(const FitSel *s)
  * whose action is code (resume the force loop, propagate, next trial); rows
  * 3-9 retry with the state their `sets` cell names; row 10 refuses on every
  * label. KEEP is spelled on every row that writes nothing. */
-#define FIT_SETS_NONE { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false }
+#define FIT_SETS_NONE { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false, FIT_COMP_KEEP }
 #define FIT_CELLS_PASS { { ESEL_PASS, ESEL_PASS }, PFLW_PASS, NULL }
 static const FitRung fit_rungs[] = {
     /* 0 [PATFACTS] a forced ask failed after the artifact was complete */
@@ -1100,7 +1157,8 @@ static const FitRung fit_rungs[] = {
     { .name = "sel1-collapse", .deny = PCREC_NO_PREFILTER_COLLAPSE, .degrading = true,
       .applies = fit_sel1_collapse_applies, .act = FIT_SEL1_COLLAPSE,
       .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
-      .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
+      .sets = { FIT_DD_SET, FIT_CR_TO_SEL1, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,
+                FIT_COMP_KEEP },
       .cells = { { ESEL_COLLAPSED_PREFILTER, ESEL_ROLE }, PFLW_SEL1, NULL },
       .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
       .axlist = { { "engine-route", 4, "collapsed-prefilter", 0, 0, "",
@@ -1113,15 +1171,26 @@ static const FitRung fit_rungs[] = {
     { .name = "sel1-drop", .deny = 0, .degrading = true,
       .applies = fit_sel1_drop_applies, .act = FIT_SEL1_DROP,
       .on = FIT_L_OVERFLOW, .fof = FIT_FOF_OUT,
-      .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },
+      .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,
+                FIT_COMP_KEEP },
       .cells = { { ESEL_ROLE, ESEL_ROLE }, PFLW_PASS, NULL },
       .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE },
+    /* 5 [COMPOUND] drop the compound: the plain artifact already fit, so it
+     * is tried before any rung that degrades P's own machine (§A.8) */
+    { .name = "drop-compound",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
+      .applies = fit_compound_applies, .act = FIT_DROP_COMPOUND, .on = FIT_L_SIZE,
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false, FIT_COMP_OFF },
+      .cells = FIT_CELLS_PASS, .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
+      .note = { "the compound (its controller and parts)",
+                "the plain artifact's attempt loop ships instead, the form the "
+                "compound exists to avoid (docs/design/compound.md)" } },
     /* 5 D164 B3 the FIRST size rung: the match-end mark's lowered machines
      * cost no answer and no other optimization (endmark.md §R.5); the retry
      * pins the `rev-end` walk to today's form (`Ctx.end_mark_dropped`). */
     { .name = "drop-end-mark",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_end_mark_applies, .act = FIT_DROP_END_MARK, .on = FIT_L_SIZE,
-      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false },
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false,
+                FIT_COMP_KEEP },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
       .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
       .note = { "the match-end mark's lowered machines",
@@ -1135,7 +1204,8 @@ static const FitRung fit_rungs[] = {
       .note = { NULL, NULL }, .retries = 0, .repeat = FIT_REP_ONCE },
     { .name = "prefilter-collapse", .deny = PCREC_NO_PREFILTER_COLLAPSE, .degrading = true,
       .fof = FIT_FOF_IN, .applies = fit_collapse_applies, .act = FIT_COLLAPSE, .on = FIT_L_SIZE,
-      .sets = { FIT_DD_KEEP, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_SIZECAP, false, true },
+      .sets = { FIT_DD_KEEP, FIT_CR_TO_SIZECAP, FIT_SDR_KEEP, 0, FIT_CARRY_SIZECAP, false, true,
+                FIT_COMP_KEEP },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_PASS }, PFLW_SIZECAP, NULL },
       .ukw = NULL, .note = { NULL, NULL }, .retries = 1, .repeat = FIT_REP_ONCE,
       /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
@@ -1158,7 +1228,8 @@ static const FitRung fit_rungs[] = {
                     "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and the size-cap ladder (docs/spec/tuning.md §2.17) shipped a smaller one: [OPT-4]'s size rung rebuilt it with a prefilter from the count-collapsed language that SURVIVED, or a later [PF-DROP] rung dropped the optional anchored machine, the premultiplied table or the prefilter. Distinct from collapsed-prefilter, which is the [SEL-1] DFA-state-cap rung's own success" } } },
     { .name = "drop-anchored",      .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_anchored_applies, .act = FIT_DROP_ANCHORED, .on = FIT_L_SIZE,
-      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false },
+      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false,
+                FIT_COMP_KEEP },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
       .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
       .note = { "the optional anchored match-here machine",
@@ -1169,7 +1240,7 @@ static const FitRung fit_rungs[] = {
     { .name = "drop-premul",        .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_premul_applies, .act = FIT_DROP_PREMUL, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREMUL, PCREC_NO_PREMUL_TABLE, 0,
-                false, false },
+                false, false, FIT_COMP_KEEP },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS, NULL },
       .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
       .note = { "the premultiplied DFA transition table",
@@ -1179,7 +1250,7 @@ static const FitRung fit_rungs[] = {
     { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,
       .applies = fit_prefilter_applies, .act = FIT_DROP_PREFILTER, .on = FIT_L_SIZE,
       .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_PREFILTER, PCREC_NO_PREFILTER,
-                FIT_CARRY_SIZECAP, false, true },
+                FIT_CARRY_SIZECAP, false, true, FIT_COMP_KEEP },
       .cells = { { ESEL_SIZE_CAP_RETRY, ESEL_SIZE_CAP_RETRY }, PFLW_PASS,
                  "\"size cap retry, hybrid %llu > %llu\"" },
       .ukw = NULL, .retries = 1, .repeat = FIT_REP_ONCE,
@@ -1249,7 +1320,8 @@ static int fit_attempt_bound(void)
         retries += fit_rungs[i].retries;
         restarts += fit_rungs[i].sets.restart;
     }
-    return 1 + retries + (1 + restarts) * (SIZE_TERM_LADDER_N + 1);
+    return 1 + retries + (1 + restarts) * (SIZE_TERM_LADDER_N + 1) +
+           COMP_LEVER_ATTEMPTS;
 }
 
 /* [DEC-FALLBACK] T3's projection (§1.5): the one T1 row whose `sets` writes
@@ -1441,6 +1513,7 @@ static const char *fit_act_verb(FitAct a)
     case FIT_TERM_NEXT:      return "the size term's trial catch: try the next K";
     case FIT_SEL1_COLLAPSE:  return "retry with a prefilter from the count-collapsed language ([SEL-1])";
     case FIT_SEL1_DROP:      return "retry with the prefilter dropped ([SEL-1])";
+    case FIT_DROP_COMPOUND:  return "retry without the compound: ship the plain artifact";
     case FIT_UNROLL_RESCUE:  return "take the smaller unroll K the cap allows";
     case FIT_COLLAPSE:       return "retry with a prefilter from the count-collapsed language ([OPT-4] size rung)";
     case FIT_DROP_ANCHORED:  return "retry without the optional anchored match-here machine";
@@ -1542,7 +1615,8 @@ static void fit_tables_selfcheck(Ctx *cx)
         fit_check(cx, r->fof != FIT_FOF_UNSTATED, "a row's fof cell is unstated");
         fit_check(cx, r->repeat != FIT_REP_UNSTATED, "a row's repeat cell is unstated");
         fit_check(cx, r->sets.dd != FIT_DD_UNSTATED && r->sets.cr != FIT_CR_UNSTATED &&
-                      r->sets.sdr != FIT_SDR_UNSTATED, "a row's sets cell is unstated");
+                      r->sets.sdr != FIT_SDR_UNSTATED && r->sets.comp != FIT_COMP_UNSTATED,
+                  "a row's sets cell is unstated");
         fit_check(cx, r->cells.esel[FIT_KEPT] != ESEL_FORCED &&
                       r->cells.esel[FIT_OFF] != ESEL_FORCED, "a row's esel cell is unstated");
         fit_check(cx, r->cells.pflw != PFLW_EXACT, "a row's pflw cell is unstated");
@@ -1885,6 +1959,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     const FitCells *fit_seq_cells[sizeof fit_rungs / sizeof fit_rungs[0]];
     volatile int      fit_nseq = 0;
     volatile unsigned fit_fired = 0;
+    /* [COMPOUND] THE ATTEMPT-LEVEL COMPOUND STATE (compound.md §A.3 item 4,
+     * §A.8, §A.11): WALK runs `compound_rows[]` on this attempt; OFF does
+     * not (a part compile, a definition set, `--emit-ir`, or the row the
+     * `drop-compound` rung of `fit_rungs[]` dropped); FORCED is the harness
+     * lever's re-emission of the plain text, stamped "forced-off". The walk
+     * and its shell are per attempt, so a retry re-decides. `volatile` for
+     * `dfa_disabled`'s reason. */
+    volatile unsigned char comp_state =
+        (emit_in && (emit_in->part_role || emit_in->req)) || defs || compose ||
+        ir_out ? COMP_OFF : COMP_WALK;
     char overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [OPT-RETRY-REUSE] THE MACHINE MEMO, one per compile and lent to every
      * attempt (src/opt/dfamemo.c): a rung that changes nothing a machine is
@@ -1965,6 +2049,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [EMIT-ENTRIES] the driver-tier emission input (NULL: the default
          * request), the same on every attempt of this compile. */
         cx.emit_in = emit_in;
+        /* [COMPOUND] the stamp's value where no row is shipped on this
+         * attempt; the walk below names the row where one is. */
+        cx.comp_stamp = comp_state == COMP_FORCED ? "forced-off" : NULL;
         /* [REL-1.11] copied from the ONE resolution above — every retry
          * attempt of this same compile gets the identical resolved values,
          * never a re-resolve, and nothing here touches src/parse/enabled.c's
@@ -2147,7 +2234,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const FitSel fs = { .cx = &cx, .flags = defo.flags,
                                 .collapse_reason = collapse_reason,
                                 .size_drop_rung = size_drop_rung,
-                                .dfa_disabled = dfa_disabled, .st_phase = st_phase };
+                                .dfa_disabled = dfa_disabled, .st_phase = st_phase,
+                                .comp_assembled = cx.comp_assembled };
             const FitRung *rung = fit_walk(&fs, fit_labels(&cx));
             switch (rung->act) {
             case FIT_FORCE_NEXT:
@@ -2233,6 +2321,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 return -1;
             case FIT_SEL1_COLLAPSE: case FIT_SEL1_DROP: case FIT_COLLAPSE:
             case FIT_DROP_ANCHORED: case FIT_DROP_PREMUL: case FIT_DROP_PREFILTER:
+            case FIT_DROP_COMPOUND:
             case FIT_DROP_END_MARK:
                 break;   /* the retrying rows: their `sets` cell, below */
             }
@@ -2261,6 +2350,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             if (w->dd == FIT_DD_SET) dfa_disabled = true;
             collapse_reason = fit_cr_of(w->cr, collapse_reason);
             size_drop_rung = fit_sdr_of(w->sdr, size_drop_rung);
+            if (w->comp == FIT_COMP_OFF) comp_state = COMP_OFF;
             defo.flags |= w->flags_or;
             const bool restart_term = w->restart;
             fit_record(rung, fit_seq_rows, fit_seq_cells, &fit_nseq, &fit_fired);
@@ -2306,9 +2396,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             pcrec_fit_invariant_fail("fit-attempts", "bound", "exceeded", "compile_driver");
 #endif
 
-        if (!valid_prefix(user_prefix))
-            pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
-                     PCREC_MAX_PREFIX_LEN);
+        /* [COMPOUND] a part's text is spliced into its compound's, which
+         * validated the caller's prefix and renders the placeholder this
+         * compile keeps (`PcrecEmitIn.unrendered`). */
+        if (!(emit_in && emit_in->unrendered)) {
+            if (!valid_prefix(user_prefix))
+                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+                         PCREC_MAX_PREFIX_LEN);
+            const NsReserve *ns = ns_reserved_by(user_prefix);
+            if (ns)
+                pcrec_ctx_fail(&cx, 0, "invalid symbol prefix: it %s", ns->why);
+        }
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
          * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone
          * M5)" — and there is no module 'utf8'. `--features` is the only surface
@@ -2830,6 +2928,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [DEC-FALLBACK] B1: the `stwhy` record, T4's row (§1.6): the token. */
         PCREC_CAND_TRACE_REC("stwhy", "-", cx.size_term_why, "st-why");
 
+        /* [COMPOUND] THE WALK (compound.md §A.3): on P's plain compile, its
+         * machines built and nothing emitted, `compound_rows[]` decides
+         * whether this attempt emits a compound (the shell) or the plain
+         * artifact. Every engine walks: a row's own conjuncts decide (split's
+         * A1 declines a VM P), so the engine test is not a second gate. */
+        if (comp_state == COMP_WALK) {
+            pcrec_compound_walk(&cx, root);
+            if (cx.job->comp_shell) cx.comp_stamp = cx.job->comp_shell->row;
+        }
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
 
@@ -3012,6 +3119,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * the fields are read only when the longjmp actually arrives. */
         if (emit_code > cap_code || emit_tot > cap_tot) {
             cx.size_cap_refused = true;
+            /* [COMPOUND] the refused text is an ASSEMBLED compound: the
+             * `drop-compound` row's arrival label (§A.8). */
+            cx.comp_assembled = cx.job->comp_shell != NULL;
             cx.size_cap_bytes = emit_code > cap_code
                               ? (unsigned long long)emit_code
                               : (unsigned long long)emit_tot;
@@ -3038,6 +3148,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "--unroll=1, or raise --max-emit-bytes; see "
                      "limits.md \"Handling an oversized artifact\"",
                      emit_tot, cap_tot, emit_tot * 17 / 100 / 1024);
+
+        /* [COMPOUND] THE HARNESS LEVER (compound.md §A.11): the complete
+         * admission ran -- the walk, the parts, the caps on the assembled
+         * text -- and the compound fits, so the default build would ship
+         * this row. The lever replaces only that last step: the next attempt
+         * emits the plain text, stamped "forced-off". Never on a shipped
+         * path (`PcrecEmitIn.harness` is the harness entry's alone). */
+        if (cx.job->comp_shell && emit_in && emit_in->harness &&
+            emit_in->harness->compound_off) {
+            comp_state = COMP_FORCED;
+            job_cleanup(&cx);
+            continue;
+        }
 
         /* [OPT-4] THE ADVISORY SIZE WARNING (Frank, 2026-08-29;
          * docs/spec/limits.md, cli.md). Emitted HERE — past both caps, on the
@@ -3110,9 +3233,10 @@ facts_force:
          * outside the pipeline reads the text. A placeholder lead byte that
          * is not a placeholder means some other route put a raw \x01 in the
          * text; rendering around it would corrupt that byte silently. */
-        if (!pcrec_sb_render_prefix(&cx.job->csb, user_prefix) ||
-            !pcrec_sb_render_prefix(&cx.job->hsb, user_prefix) ||
-            !pcrec_sb_render_prefix(&cx.job->irsb, user_prefix))
+        if (!(emit_in && emit_in->unrendered) &&
+            (!pcrec_sb_render_prefix(&cx.job->csb, user_prefix) ||
+             !pcrec_sb_render_prefix(&cx.job->hsb, user_prefix) ||
+             !pcrec_sb_render_prefix(&cx.job->irsb, user_prefix)))
             pcrec_ctx_fail(&cx, 0, "internal error: a raw \\x01 byte reached "
                            "the emitted text (the prefix placeholder's lead)");
         if (facts_hook) {
@@ -3124,6 +3248,27 @@ facts_force:
             cx.opt = &hopt;
             facts_hook(&cx, cx.job->csb.p ? cx.job->csb.p : "",
                        cx.job->csb.len, facts_ud);
+        }
+        /* [COMPOUND] A PART's FACTS (compound.md §B.4's A4/A5, the
+         * controller's call-site rows and pad): a declared projection of this
+         * compile's own selections, read on the attempt that succeeded. */
+        if (emit_in && emit_in->facts) {
+            PcrecPartFacts *pf = emit_in->facts;
+            char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
+            pf->dfa = cx.job->fit.chosen == ENGM_DFA;
+            pf->degraded = fit_nseq != 0 || fit_fired != 0;
+            pf->locate = pf->dfa ? pcrec_cand_locate_name(&cx) : NULL;
+            pf->ncaps = pf->dfa ? pcrec_dfa_ncaps(&cx) : (int)cx.ncap + 1;
+            pf->guarded = *pcrec_startpos_guard_text(&cx, probe, sizeof probe, "",
+                                                     "p", "s", "n") != 0 ||
+                          pcrec_opt_has(cx.opt, PCREC_FORCE_STARTPOS_ALIGN);
+            pf->utf_check = pcrec_utf_check_on(&cx);
+            pf->simd_guarded = cx.job->csb.simd_guarded;
+            pf->simd_size = cx.job->csb.simd_size;
+            if (!pf->into || !cx.job->memfn_forms)
+                pcrec_ctx_fail(&cx, 0, "internal error: a part's facts have no "
+                               "arena or its forms were never stamped");
+            pf->memfn_forms = pcrec_sb_fragf(pf->into, "%s", cx.job->memfn_forms);
         }
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
@@ -3162,6 +3307,22 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
 {
     return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
                           NULL);
+}
+
+/* [COMPOUND] THE HARNESS LEVER's ENTRY (compound.md §A.11, D163 add. 2 item
+ * 2): `pcrec_compile` with the harness-only options, reached by
+ * `build/pcrec-harness --harness=no-compound` and by nothing a caller
+ * includes. Its name carries the reserved prefix the lever fence
+ * (`tests/compound/run_lever_fence.sh`) holds to exactly one global; hidden
+ * visibility is hygiene for a shared build, not the fence. */
+__attribute__((visibility("hidden")))
+int pcrec_harness_compile(const char *pattern, const pcrec_options *opt,
+                          const PcrecHarnessOptions *hopt, pcrec_output *out,
+                          pcrec_error *err)
+{
+    const PcrecEmitIn in = { .bound = PCREC_PB_UNSTATED, .harness = hopt };
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL,
+                          hopt ? &in : NULL);
 }
 
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is

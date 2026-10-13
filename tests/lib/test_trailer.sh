@@ -39,6 +39,10 @@
 # BOTH the argv this script reads and the `$(MAKE) -k` invocation that
 # produces the markers — two USES of one list, not two lists.
 #
+# TRAILER_TITLE / TRAILER_LIST_NAME (optional env, [CI-SHARD]): `make test-shard`
+# sets them so its trailer says "make test-shard" and "this shard's list"; unset
+# (every other caller) the text is byte-for-byte what it always was.
+#
 # Usage: test_trailer.sh <marker-dir> <section-name> [<section-name> ...]
 # Prints "sections ran: N/M"; on a shortfall, names every missing section
 # by name (never merely a count — K35's own "a floor answers 'did someone
@@ -74,7 +78,7 @@ for name in "$@"; do
 done
 
 echo
-echo "== make test: completion trailer =="
+echo "== ${TRAILER_TITLE:-make test}: completion trailer =="
 echo "sections ran: $ran/$total"
 # [REL-1.5] RUN-STAMP: three env vars the Makefile's `test:` recipe sets
 # (tree SHA, dirty flag, wall duration) around the SAME `$(MAKE) -k`
@@ -94,5 +98,5 @@ if [ "${#missing[@]}" -gt 0 ]; then
     done
     exit 1
 fi
-echo "trailer: every section in TEST_SECTIONS was launched"
+echo "trailer: every section in ${TRAILER_LIST_NAME:-TEST_SECTIONS} was launched"
 exit 0

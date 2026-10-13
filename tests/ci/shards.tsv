@@ -1,0 +1,90 @@
+# tests/ci/shards.tsv -- the DECLARED CI shard table ([CI-SHARD], lane cishard).
+# `make test-shard CISHARD=K/N` runs exactly the sections whose `shard` column is K
+# (N = the highest shard number here, which .github/workflows/ci.yml's matrix
+# must also list). tests/ci/check_shards.sh (make test-ci-shards, a TEST_SECTIONS
+# member) holds this table to TEST_SECTIONS EXACTLY: every section in exactly one
+# shard, no unknown names. Rows are kept in TEST_SECTIONS order; a section runs
+# in the order it has here.
+#
+# Columns (TAB-separated): section, shard (1..N), weight_s, weight_source.
+# weight_s is RUNNER seconds since run 38354147463 (cishard2, 2026-10-13: the
+# three `pcrec-ci-sections-*` artifacts through tests/ci/shard_rebalance.py),
+# except the rows whose weight_source says ESTIMATED or LOWER BOUND (test-memfn-g2:
+# its SIMD family never ran; test-startset: ran a third of its diff jobs). To
+# re-measure: download a run's artifacts, then
+#   python3 tests/ci/shard_rebalance.py --measured sections-1.tsv sections-2.tsv ...
+# (it overwrites weight_s/weight_source of the measured sections and re-balances;
+# re-apply the ESTIMATED labels by hand until those two are measured).
+# ci_scale=1.0
+# shards=3
+section	shard	weight_s	weight_source
+test-corpus	2	575.5	ci-measured sections.tsv
+test-cli	2	10.8	ci-measured sections.tsv
+test-reject	3	1.2	ci-measured sections.tsv
+test-registry	1	57.2	ci-measured sections.tsv
+test-parse	3	0.9	ci-measured sections.tsv
+test-gentimeout	1	7.2	ci-measured sections.tsv
+test-codegen	3	288.1	ci-measured sections.tsv
+test-vm	3	125.8	ci-measured sections.tsv
+test-possessify	1	92.4	ci-measured sections.tsv
+test-rungselect	1	112.8	ci-measured sections.tsv
+test-counterk	2	53.5	ci-measured sections.tsv
+test-mrl	1	69.5	ci-measured sections.tsv
+test-prefilter	3	12.4	ci-measured sections.tsv
+test-altcls	3	10.3	ci-measured sections.tsv
+test-island	2	23.4	ci-measured sections.tsv
+test-assertions	3	315.1	ci-measured sections.tsv
+test-atomic	2	73.5	ci-measured sections.tsv
+test-backrefs	2	97.5	ci-measured sections.tsv
+test-lookaround	3	99.3	ci-measured sections.tsv
+test-recursion	3	152	ci-measured sections.tsv
+test-encseam	2	6.9	ci-measured sections.tsv
+test-resource	3	255.6	ci-measured sections.tsv
+test-capturediff	1	8.2	ci-measured sections.tsv
+test-known-fail	1	0.5	ci-measured sections.tsv
+test-thread	2	34.9	ci-measured sections.tsv
+test-stackdepth	2	0.5	ci-measured sections.tsv
+test-premul-table	2	87.3	ci-measured sections.tsv
+test-anchored-match	2	288.9	ci-measured sections.tsv
+test-search-pinned	3	157.1	ci-measured sections.tsv
+test-start-landing	2	141.2	ci-measured sections.tsv
+test-vm-frameless	3	82.5	ci-measured sections.tsv
+test-dfa-uniform-fold	1	84.1	ci-measured sections.tsv
+test-tune-dial	2	2	ci-measured sections.tsv
+test-prechecks	2	13.7	ci-measured sections.tsv
+test-prefilter-collapse	2	117	ci-measured sections.tsv
+test-rxtsource	3	92.1	ci-measured sections.tsv
+test-definitions	2	3.1	ci-measured sections.tsv
+test-entry-shape-identity	2	10.6	ci-measured sections.tsv
+test-cpset-structure	1	12	ci-measured sections.tsv
+test-startbnd	2	8	ci-measured sections.tsv
+test-uprops	1	17.1	ci-measured sections.tsv
+test-core	1	2.2	ci-measured sections.tsv
+test-vars	3	7.6	ci-measured sections.tsv
+test-examples	3	0.5	ci-measured sections.tsv
+test-findings	2	154.3	ci-measured sections.tsv
+test-ucp	1	28.5	ci-measured sections.tsv
+test-clskit	3	416	ci-measured sections.tsv
+test-encoding-checks	3	56	ci-measured sections.tsv
+test-utfcheck	3	36.3	ci-measured sections.tsv
+test-startset	2	171.5	ci-measured run 38354147463 shard 1, LOWER BOUND: env SHARD=1/3 made vmhat_diff.py run only a third of its jobs
+test-memfn-link	1	0.5	ci-measured sections.tsv
+test-memfn-manifest	1	4.7	ci-measured sections.tsv
+test-memfn-g2	1	1535	ESTIMATED: run 38354147463 measured 885 s for the quick tier only (SIMD family died at once on taskset -c 12-15); + 650 s SIMD family = 450 local-s x 1.44, unmeasured
+test-memfn-stamps	2	58.8	ci-measured sections.tsv
+test-memfn-arms	3	2.5	ci-measured sections.tsv
+test-memfn-deleg	2	0.5	ci-measured sections.tsv
+test-memfn-arch	3	13.9	ci-measured sections.tsv
+test-memfn-forms	3	0.5	ci-measured sections.tsv
+test-memfn-reach	1	0.5	ci-measured sections.tsv
+test-memfn-rows	1	1.9	ci-measured sections.tsv
+test-cand-oracle	1	8.9	ci-measured sections.tsv
+test-fallback-table	1	40.5	ci-measured sections.tsv
+test-memfn-guarded	1	140.1	ci-measured sections.tsv
+test-memfn-simdfloor	3	59.8	ci-measured sections.tsv
+test-memfn-rank	3	27.1	ci-measured sections.tsv
+test-spec-history	3	5.1	ci-measured sections.tsv
+test-plan-lint	2	3.6	ci-measured sections.tsv
+test-compound	2	286.3	ci-measured sections.tsv
+test-endmark	2	60	ESTIMATED: lane b3land, unmeasured on the runner (re-measure with shard_rebalance.py)
+test-ci-shards	3	5.9	ci-measured sections.tsv

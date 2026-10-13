@@ -837,7 +837,33 @@ gitdir's `hooks/`, not a nonexistent `.git/hooks` under the worktree).
 Bypass with `git push --no-verify` when you deliberately need to push past
 a failing local gate.
 
+`make hooks` takes `HOOKS=` (default `pre-push`): `make hooks HOOKS=pre-commit`
+installs only the [PLAN-LINT] commit gate, `make hooks HOOKS="pre-push
+pre-commit"` installs both. `scripts/hooks/pre-commit` runs
+`scripts/plan_lint.sh --staged` only when docs/dev/plan.md,
+docs/dev/plan_completed.md or docs/design/plan_row_bodies/ is staged, lints
+the staged content (what the commit would record, not the working file),
+never runs `make test`, and costs about 60 ms (measured on the Linux dev
+box: 0.06 s on a clean staged plan, 0.08 s on a rejected one). It is
+installed by hand, never automatically, for the same D2 reason. Bypass with
+`git commit --no-verify`.
+
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
+
+### Plan lint (`make test-plan-lint`)
+
+[PLAN-LINT] step 3 (lane planlint, 2026-10-12). `scripts/plan_lint.sh` checks
+docs/dev/plan.md against the one row format its Policy section defines. It is
+a LIGHT section of `make test` (text only, no `all` dependency; about one
+second, nearly all of it the tree-wide `plan.md:<line>` `git grep`), next to
+`test-spec-history`, whose shape it follows: a runner that prints
+`checks passed:`/`checks failed:`, a rule table, and a planted-violation
+self-test. Strict from day one: every rule fails the section, there is no
+baseline file and no warning tier; the informational checks live in
+`scripts/plan_lint.sh --stale`, run by hand at wake. The rule table, the
+non-vacuity floor (a linter that parsed fewer than 150 rows fails) and the
+self-test are in tests/plan_lint/CLAUDE.md. The section's verdict is read from
+make's `*** [...test-plan-lint] Error` line like every other section's.
 
 ## Suite health log
 
@@ -941,6 +967,36 @@ it from plan.md; each is its own row there and not restated in full.
   sanitizer timeout can be sized responsibly.
 
 ## CI ([REL-1.6], 2026-09-21)
+
+**[CI-SHARD] (2026-10-13, lane `cishard`): CI NO LONGER RUNS ONE SERIAL
+`make test`.** Run 38345462196 was killed at its 90-minute step timeout with 15
+of 68 sections still to run (growth, not a hang: `docs/dev/lanes/
+citime_report.md`), so the workflow is now a matrix of three jobs, each
+`make test-shard CISHARD=K/3`: the Makefile launches exactly that shard's
+sections with `make test`'s own accounting (`-k`, the marker files, the
+`sections ran: N/M` trailer over the shard's list) and fails on any red
+section. The split is the declared table `tests/ci/shards.tsv` (section,
+shard, weight, weight source), held to `TEST_SECTIONS` exactly by
+`make test-ci-shards` (a `TEST_SECTIONS` member, so it runs in whichever shard
+carries it, and in a local `make test`; a new section with no shard row turns
+it red; its self-test plants a missing row, a duplicate, an unknown name, a bad
+shard, a bad weight, an empty shard and a matrix that lists too few shards).
+`make test` is unchanged and remains the local merge/close standard; only
+`make strict` moved (it runs once, in shard 1 before its sections).
+Every shard runs `make --debug=j` through `scripts/sectiontimes` (the
+mechanism `scripts/perfrun` uses for its `sections.tsv`), so each section's
+start, end and wall seconds are uploaded as `pcrec-ci-sections-<n>`
+(`sections.tsv` plus the epoch-stamped `sections.raw`) on success AND failure
+AND a step-timeout kill (`report --open` keeps a section the kill interrupted).
+The table's weights are RUNNER seconds from the first sharded run 38354147463
+(`python3 tests/ci/shard_rebalance.py --measured ...`), two rows excepted
+(test-memfn-g2 ESTIMATED, test-startset LOWER BOUND; see
+`docs/dev/lanes/cishard2_report.md`). The variable is `CISHARD`, not `SHARD`:
+`SHARD=i/n` is `tests/startset/vmhat_diff.py`'s own env, and make exports
+command-line variables, so shard 1 ran a third of that script's jobs. The shard
+step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml). The
+paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
+"one job" or "a 90-minute `make test` step", read the matrix.
 
 `.github/workflows/ci.yml` runs on every `pull_request` (including from
 forks — the repo is public, the workflow touches no secrets) and every push
