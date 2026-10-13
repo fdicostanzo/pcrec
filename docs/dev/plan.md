@@ -936,6 +936,20 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   refs: decisions D161; docs/design/memfn/window_contract.md; memfn/docs/ideas.md; [REPEAT-RUN]; [START-DENSE]
   The general form: a match is bounded by conditions on both sides; the find site should scan for the RAREST necessary condition, which can be the transition OUT of the run (the \b side, \W) rather than the run's own set. pcrec owns the choice of origin (D161 add. 9); the kit owns the method.
 
+- [BREF-SPAN] STATE:not-started — a fixed-offset backreference as a superset DFA plus one span-equality check
+  filed: 2026-10-13 Frank (session 111), "yes file it"
+  status (2026-10-13): not started; `([abc]{4})blah\1` today: ENGINE "vm" (capture group), REQ_RUN "626c6168@0"
+  next: Frank's review; no measurement lane until then
+  refs: [REPEAT-RUN]; [BREF-FOLD-ONCE]; [M4-CALLOUTS]; [POSTFACT]
+  Replace `\1` by its group's LANGUAGE (a necessary superset the DFA runs at full speed), then verify the two fixed-offset spans are equal (one memcmp; folded for caseless). A pure DFA is possible (finite capture set) but k^w states. Admission: group and `\1` at fixed offsets from the match start (or both from the end), the group captured once; variable widths or re-captures decline (a failed equality could hide another decomposition at the same start). The group span is known, so captures come free.
+
+- [POSTFACT] STATE:not-started — user-supplied predicates on captures ("post facts", e.g. `int($1)<=255`), compiled into the matcher
+  filed: 2026-10-13 Frank (session 111)
+  status (2026-10-13): not started; idea stage, discuss before any design lane
+  next: discussion with Frank: syntax/module (a non-PCRE extension, D26), placement semantics, the three tiers below
+  refs: [M4-CALLOUTS]; [VAR]; [BREF-SPAN]; decisions D26
+  Frank: callouts can express it (by design), but lean into compilation: place the check INLINE, and check each \d as it arrives for a quicker bail. Three tiers by what the predicate is: (1) REGULAR predicates (numeric range over a digit span, length, set membership) LOWER INTO THE AUTOMATON (pcrec generates the range regex), so the DFA keeps its speed and bails per digit for free; (2) non-regular predicates as compiled inline assertions at their placement point (VM; callout semantics: fail = backtrack); (3) DFA candidate + post-verify only where the decomposition is unique (fixed widths, as [BREF-SPAN]).
+
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank
