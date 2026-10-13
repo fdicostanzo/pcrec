@@ -263,7 +263,12 @@ note, and byte-identity with `-fno-prefilter` but for `RX_ENGINE_SEL` and
 `RX_VM_PREFILTER_WHY`); then ONE witness per rung (prefilter drop, collapse,
 anchored drop, premul drop) is shown to take its rung at the default and to
 REFUSE on the size cap under `--size-cap=refuse`, and a fitting `(\p{L})` is
-byte-identical under the switch. The unroll rescue's own `--size-cap=refuse`
+byte-identical under the switch. Since lane mechwit (2026-10-13) the witnesses
+are DEFAULT-PATH ones (`(\p{Xwd})\b` with `--features assertions`,
+`\p{L}\p{N}\p{Lu}`, `[^\p{C}\p{M}\p{P}]xy`, all `-e utf8`), not the bare
+one-class forms that [START-LANDING] moved onto `landing`; only the collapse
+witness keeps a deny (`-fno-scan-edge -fno-start-landing`), with its margins
+in the script's own comment. The unroll rescue's own `--size-cap=refuse`
 cell is in `tests/codegen/run_size_term.sh` §5, beside the reference
 compiler it needs. Mech S420/S421/S422/S423.
 

@@ -15,9 +15,9 @@ SAB_ID="S421-fast-or-fail-inert"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="resource pfcollapse"
 SAB_DESC="fit_rung_denied ignores PCREC_SIZE_CAP_REFUSE, so --size-cap=refuse denies no degrading rung and every over-cap witness still ships slower instead of refusing"
-SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource 4 [PF-DROP/ff] refusal cells red (prefilter drop, collapse, anchored, premul); pfcollapse's K41 --size-cap=refuse control red. docs/spec/limits.md §8; docs/spec/cli.md --size-cap=refuse"
+SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource 4 [PF-DROP/ff] refusal cells red (prefilter drop, collapse, anchored, premul); pfcollapse's K41 --size-cap=refuse control red. docs/spec/limits.md §8; docs/spec/cli.md --size-cap=refuse RE-POINTED 2026-10-13 (lane mechwit, UNREACHED on main since [START-LANDING] took the bare '(\\p{Xwd})' off the prefilter rung): reach probe and resource [PF-DROP] witnesses are '(\\p{Xwd})\\b' (--features assertions), '\\p{L}\\p{N}\\p{Lu}' and '[^\\p{C}\\p{M}\\p{P}]xy', all -e utf8 at the default; only the collapse witness keeps a deny. Solo run DETECTED, reach:ok(1/1), resource:4fail/38pass, pfcollapse:1fail/70pass."
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -e utf8 --size-cap=refuse -p rx -o - --pattern "(\p{Xwd})" 2>&1 | grep -o "pattern too large" | head -1'
+SAB_REACH='"$PCREC" -e utf8 --features assertions --size-cap=refuse -p rx -o - --pattern "(\p{Xwd})\b" 2>&1 | grep -o "pattern too large" | head -1'
 SAB_REACH_EXPECT='pattern too large'
 SAB_BEFORE='           (r->degrading && r->fof == FIT_FOF_IN && pcrec_flags_has(flags, PCREC_SIZE_CAP_REFUSE));'
 SAB_AFTER='           (r->degrading && r->fof == FIT_FOF_IN && pcrec_flags_has(flags, PCREC_SIZE_CAP_REFUSE) && false);   /* SABOTAGE S421 */'

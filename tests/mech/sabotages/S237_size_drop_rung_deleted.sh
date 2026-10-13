@@ -24,15 +24,16 @@ SAB_ID="S237-size-drop-rung-deleted"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="anchoredmatch"
 SAB_DESC="compile_driver's optional-contributor drop rung is never eligible, so an emitted-size cap refuses artifacts that fit once the OPTIONAL anchored machine is dropped — the K53 defect restored (an optional machine deciding what pcrec accepts)"
-SAB_DOC_FIGURE="docs/spec/limits.md 8's 'The optional-contributor drop'; docs/design/anchored_match_unwrapped.md 5.2a; docs/dev/known_issues.md K53"
+SAB_DOC_FIGURE="docs/spec/limits.md 8's 'The optional-contributor drop'; docs/design/anchored_match_unwrapped.md 5.2a; docs/dev/known_issues.md K53 RE-POINTED 2026-10-13 (lane mechwit, pre-fix UNREACHED on main 52c2c3917 since [START-LANDING] put the utf8 \\p{L} witness on 'landing'): reach probe = three-class property chains at the DEFAULT cap and flags; solo run DETECTED, reach:ok(2/2), anchoredmatch:10fail/18pass (planted tree: run_anchored_match.sh §6a x4, §6b, the new default-path §6d x4, §5 floor 1 of 6)."
 SAB_COUNT=1
 # REACH: does a pattern EXIST that this rung rescues? Read as the stamp the
 # rung is the only writer of, on the row's own headline witness. If `\p{L}`
 # under utf8 ever stops taking the rung — because a class-emission change made
 # it fit unaided ([CLS-TREE]), or because the caps moved — this row is
 # certifying nothing and says so rather than scoring.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
-SAB_REACH_EXPECT='size-cap-retry'
+SAB_REACH='"$PCREC" --no-captures --features all -e utf8 -p rx -o - --pattern "\p{L}\p{N}\p{Lu}" 2>/dev/null | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_MATCH \"search-filter\")$"'
+SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
+#define RX_DFA_MATCH "search-filter"'
 # RE-AIMED 2026-10-10 (lane revbuild, [OPT-REVEND] L2): the drop rung gained the LR-S12 member-set clause; the plant still makes the rung never offered. Intent
 # unchanged.
 SAB_BEFORE='    return s->size_drop_rung == SDR_NONE &&

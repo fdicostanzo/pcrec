@@ -23,11 +23,12 @@
 SAB_ID="S614-r4h-stay-view-bound-dropped"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness"
-SAB_HARNESS_TARGET="tests/assertions/gate.rxt"
+SAB_HARNESS_TARGET="tests/base/review_r2.rxt"
 SAB_DESC="the forward STAY skip's 'more' hook loses its view bound ('scan_position + 1 < subject_length' becomes '<'), so under a \$/\\Z view the kit's skip loop consumes the final newline and the EOL view's accept at n-1 is never evaluated: '[^c]{1,3}\$' on \"aaa\\n\" answers (1,4) against (0,3)"
-SAB_DOC_FIGURE="HAND-MEASURED by lane r4h (plant applied, tree rebuilt, PROCS=4 tests/harness/run.sh): tests/assertions/gate.rxt 4 failed (lines 77, 86, 317, 326); also tests/assertions/multiline.rxt 2, tests/base/review_r2.rxt 2, tests/base/eol_engine.rxt 1; tests/base/eol_scan_avoidance.rxt and anchors.rxt 0 (greedy shapes). The matrix's own figure is owed at the slot."
-SAB_REACH='"$PCREC" -p rx -o - --pattern "[^c]{1,3}\$"'
-SAB_REACH_EXPECT='while ((scan_position + 1 < subject_length) && (rx_forward_stay'
+SAB_DOC_FIGURE="HAND-MEASURED by lane r4h (plant applied, tree rebuilt, PROCS=4 tests/harness/run.sh): tests/assertions/gate.rxt 4 failed (lines 77, 86, 317, 326); also tests/assertions/multiline.rxt 2, tests/base/review_r2.rxt 2, tests/base/eol_engine.rxt 1; tests/base/eol_scan_avoidance.rxt and anchors.rxt 0 (greedy shapes). The matrix's own figure is owed at the slot. RE-POINTED 2026-10-13 (lane mechwit, UNREACHED on main since [OPT-REVEND] put '[^c]{1,3}\$' on 'rev-end'; gate.rxt now reads 0 failures under the plant): reach probes are 'X(?:\$|[^abc])+' and '(?:\$|[^abc]){2,}', whose default-path forward STAY loop carries the bound, and the harness target is tests/base/review_r2.rxt (both patterns, expected 'match 0 3' got 'match 0 4'). Solo run DETECTED, reach:ok(2/2), corpus:2fail/14pass."
+SAB_REACH='for p in "X(?:\$|[^abc])+" "(?:\$|[^abc]){2,}"; do "$PCREC" -p rx -o - --pattern "$p" | grep -qF "while ((scan_position + 1 < subject_length) && (rx_forward_stay" && echo "REACH-STAY-VIEW-BOUND:$p"; done'
+SAB_REACH_EXPECT='REACH-STAY-VIEW-BOUND:X(?:$|[^abc])+
+REACH-STAY-VIEW-BOUND:(?:$|[^abc]){2,}'
 SAB_COUNT=1
 SAB_BEFORE='                                                   f->views ? "+ 1 <" : "<"));'
 SAB_AFTER='                                                   "<"));  /* SABOTAGE S614 */'

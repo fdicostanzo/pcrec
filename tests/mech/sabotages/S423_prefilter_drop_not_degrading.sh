@@ -14,9 +14,9 @@ SAB_ID="S423-prefilter-drop-not-degrading"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="resource"
 SAB_DESC="the prefilter-drop row's degrading cell reads false, so --size-cap=refuse still ships (\\p{Xwd}) -e utf8 without its prefilter instead of refusing"
-SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource exactly one [PF-DROP/ff] cell red (the prefilter-drop witness). docs/spec/limits.md §8's classification table"
+SAB_DOC_FIGURE="PREDICTED (lane pfdrop, 2026-09-30): resource exactly one [PF-DROP/ff] cell red (the prefilter-drop witness). docs/spec/limits.md §8's classification table RE-POINTED 2026-10-13 (lane mechwit; same cause and witness as S421). MEASURED: resource TWO [PF-DROP/ff] cells red (the prefilter-drop witness and the collapse witness, which the plant also lets through), not the one predicted. Solo run DETECTED, reach:ok(1/1), resource:2fail/40pass."
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -e utf8 --size-cap=refuse -p rx -o - --pattern "(\p{Xwd})" 2>&1 | grep -o "pattern too large" | head -1'
+SAB_REACH='"$PCREC" -e utf8 --features assertions --size-cap=refuse -p rx -o - --pattern "(\p{Xwd})\b" 2>&1 | grep -o "pattern too large" | head -1'
 SAB_REACH_EXPECT='pattern too large'
 SAB_BEFORE='    { .name = "drop-prefilter",     .deny = 0, .degrading = true,  .fof = FIT_FOF_IN,'
 SAB_AFTER='    { .name = "drop-prefilter",     .deny = 0, .degrading = false, .fof = FIT_FOF_IN,   /* SABOTAGE S423 */'

@@ -27,12 +27,14 @@ SAB_ID="S253-premul-drop-note-unstamped"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="tunedial"
 SAB_DESC="the premul drop rung still fires (the artifact still shrinks, RX_DFA_TABLE still moves off 'premultiplied', RX_ENGINE_SEL still reads 'size-cap-retry') but the notes loop skips the premul row, so the verbose stderr note Frank's ruling requires never prints -- a silent rescue where the ladder's own contract demands a loud one"
-SAB_DOC_FIGURE="docs/dev/known_issues.md K59 (the closing rung); tests/codegen/run_tune_dial.sh section 6's note_premul assertion"
+SAB_DOC_FIGURE="docs/dev/known_issues.md K59 (the closing rung); tests/codegen/run_tune_dial.sh section 6's note_premul assertion RE-POINTED 2026-10-13 (lane mechwit; same witness and cause as S252): solo run DETECTED, reach:ok(3/3), tunedial:4fail/112pass."
 SAB_COUNT=1
 # REACH: does the K59 witness still take this rung at all (balanced)? If it
 # does not, the note has nothing to fire on and this row measures nothing.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
-SAB_REACH_EXPECT='size-cap-retry'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]xy" 2>&1 | grep -E "^#define RX_(ENGINE_SEL \"size-cap-retry\"|DFA_TABLE \"indexed\")$|dropped the premultiplied DFA transition table"'
+SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
+#define RX_DFA_TABLE "indexed"
+dropped the premultiplied DFA transition table'
 # RE-AIMED 2026-10-08 (lane decfbB3, [DEC-FALLBACK] B3): `dropped_premul` is
 # gone; the notes are a loop over the fired record (`fit_fired`), each fired
 # row printing its own `note` cell. The plant keeps the row firing and its

@@ -706,13 +706,20 @@ fi
 # ---------------------------------------------------------------------------
 echo "== §6 — K59: the refusal-set move, CLOSED, asserted as fixed =="
 
-K59_PATTERN='[^\p{C}\p{M}\p{P}]'
-# [START-LANDING] SL2 (abi 74) made this witness a FIT mover: by default it
-# takes RECOVER's `landing` row, drops the reverse machine, and fits at every
-# position with no rung (708,814 B at --tune=0). `-fno-start-landing` (masked,
-# answer-neutral) puts it back on the reverse pass, where it still reaches
-# both rungs exactly as before (lane sltri, 2026-10-10).
-K59_DENY='-fno-start-landing'
+K59_PATTERN='[^\p{C}\p{M}\p{P}]xy'
+# [START-LANDING] SL2 (abi 74) made the one-class witness `[^\p{C}\p{M}\p{P}]` a
+# FIT mover: by default it takes RECOVER's `landing` row, drops the reverse
+# machine, and fits at every position with no rung (708,814 B at --tune=0).
+# Lane sltri (2026-10-10) kept it reaching both rungs with `-fno-start-landing`;
+# lane mechwit (2026-10-13) re-pointed it at a DEFAULT-PATH witness instead,
+# because a sabotage of the ladder must be detectable by what a caller gets:
+# the same class followed by a two-byte literal is MEASURED to keep
+# `RX_DFA_START "reverse-pass"` at the default (no `landing` row). Measured
+# 2026-10-13 at --tune=0 (unicode-props, utf8): 1,441,473 B
+# with the anchored machine, 1,046,700 B after rung 1 (4.7% over the cap, so
+# rung 2 is needed), 458,919 B after rung 2 -- and the same five-position
+# stamp/note table as the one-class witness had before landing.
+K59_DENY=''
 k59_bad_compile=0; k59_bad_stamp=0; k59_bad_note=0
 
 for pos in $POSITIONS; do
