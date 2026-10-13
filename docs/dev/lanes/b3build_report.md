@@ -65,3 +65,69 @@ test-axes (`axes.log`; the -fno-rev-end-onewalk arm is auto-derived),
 test-recursion-identity (`recid.log`, FILEPIN self-pinned a3d9a02c), and mech on
 the 29 touched/new rows (`mech.log`). Completion line `ALL_DONE` in
 `build/land/chain.log`, with each stage's `*_RC=`.
+
+## Landing on main after B4 (lane b3land, sonnet, 2026-10-13)
+
+Main took abi 76 -> 77 for [COMPOUND] B4 (e842fe537) while this branch also bumped
+76 -> 77. B3 is now **77 -> 78**. Merge commit `cb4174451` (the lane's last src commit,
+the new FILEPIN); `git merge main` run alone, 11 conflicted files.
+
+### Conflicts and resolutions
+- `src/core/compile.c` (4 hunks): both fit-table rungs kept, `drop-compound` (main) then
+  `drop-end-mark` (B3); `FitAct` gets both enumerators; both `case` labels join the
+  retrying-rows case; `COMPILE_MAX_ATTEMPTS` takes both increments
+  (`... + SDR_MAX + 1 + 1 + COMP_LEVER_ATTEMPTS`); `drop-end-mark`'s `.sets` gains the
+  explicit `FIT_COMP_KEEP` (main's new `FitSets.comp` cell, no silent default).
+- `Makefile`: `TEST_SECTIONS` = main's list plus `test-endmark`. Main's new
+  `test-ci-shards` requires a shard row: `tests/ci/shards.tsv` gets `test-endmark`
+  (shard 2, weight 60, labelled ESTIMATED; re-measure on a CI run).
+- `docs/spec/limits.md` 8.4: table keeps main's rung 0 `drop-compound` and B3's rung
+  `drop-end-mark` as **0a** (no renumbering, so 8.5's "rung 3/4/5" refs stay true);
+  the order paragraph keeps both sets of text; "all six" -> "all seven" degrading rows.
+- `docs/dev/history/abi_changelog.md`: new current paragraph `78` (B3), B4's becomes
+  "was `77`".
+- `tests/rxtsource/run_rxtsource_tests.sh`: pins are SUMS over merge base `B`
+  (280/5645/56396; RUNSH 256): main = 281/5752/70246, B3 delta = +1/+38/+250.
+  Merged CENSUS 282/5790/70496, RUNSH 258/5790/70496, C3_SKIP 50566 (50316+250),
+  C3_SKIP_PCRE2ONLY 18089 (17839+250). The `mc` awk edits and census-word notes were made
+  independently on both sides; main's awk text kept, comments joined.
+- `tests/startset/manifests/manifest_s2_vm_forced.tsv`: both row blocks kept (B3's 15
+  endmark rows, B4's split.rxt rows); test-startset green with no extra mover.
+- `tests/mech/sabotages/S693`: BEFORE 78 / AFTER 77, both RE-AIMED notes kept.
+  `S238`: SAB_COUNT stays 3 (B3's third fit row) with mechwit's re-pointed DOC_FIGURE.
+- `tests/codegen/run_recursion_identity.sh`: FILEPIN `cb4174451`, both lanes' notes.
+- `tests/CLAUDE.md`, `docs/dev/lanes/CLAUDE.md`: both sides' entries kept.
+- **Not a textual conflict, found by test-codegen:** `tests/codegen/run_rev_end.sh`
+  classified a compound as "walking" by the two-seed loop text only; B3's one-seed and
+  tagged walks have no `revend_seed` loop, so 26 walking compounds read as walk-free
+  (`BAD: a walk-free compound moves under -fno-rev-end`). The compound branch now reads
+  `WALK_RE` (all three forms).
+
+### ABI readers, found by grep (77 -> 78)
+`src/gen/emit_dfa.c` (`PCREC_ARTIFACT_ABI`); `tests/codegen/run_codegen_tests.sh`
+(`ABI_EXPECT` and its ledger message, B3's 77->78 clause appended);
+`docs/spec/match_api.md` (the `PCREC_RX_ABI_H` guard, its `#error`, the define, the
+`rx_info.abi` table row, the "It is `78`" sentence: 5 sites); `S693` (BEFORE/AFTER);
+`tests/codegen/run_recursion_identity.sh` (FILEPIN);
+`docs/dev/history/abi_changelog.md` (paragraph). `.abi` is stamped from the constant.
+Grep for `ABI_EXPECT`, `PCREC_ARTIFACT_ABI`, `PCREC_RX_ABI_H`, "abi 77" and
+"`77`" near abi in spec/guide/lib/cli found no other reader; the identity gate's (B) pin is
+the FILEPIN. The emitted-bytes rows of `run_cpset_structure.sh` did not move (digit width
+unchanged; test-codegen green).
+
+### G3 tightening (D163 add. 4)
+`tests/compound/check_linear.py`, cells `\s+$` and `\s*?$` (final newline).
+Before: `T_compound <= T_Qalone + calls`, with `T_Qalone` Q's rev-end double walk,
+about 3.00x (3,000 loads per k = 1,000). After: the ordinary `T_compound <= T_lever +
+calls` PLUS B3's absolute one-pass bound `T_compound <= |prefix| + k + |suffix| + calls`.
+Measured: trim 1,002 / 4,002, lazytie 1,004 / 4,004 against bounds 1,004 / 4,004 and
+1,006 / 4,006. The Q-alone build arm is deleted (it is no longer a bound); compound.md
+§E.3 G3 updated.
+
+### Section verdicts (-j2, reading `*** [...test-X] Error`)
+Log `build/b3land/sections.log` (gitignored). Run: strict, test-codegen, test-registry,
+test-rxtsource, test-compound, test-plan-lint, test-ci-shards, test-startset,
+test-endmark. First pass: only `test-codegen` Error (the run_rev_end.sh item above).
+After the fix `make test-codegen` is green (`codegen2.log`, RC=0); every other section
+printed no Error line. Not run (per brief): make test, test-axes, mech,
+test-recursion-identity (owed to the waiter's chain; its FILEPIN is `cb4174451`).

@@ -1246,9 +1246,9 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # move whole. `cd1d2d8f9` was the lane's last src commit.
 # D164 B3 SELF-PIN (lane b3build, landed after B4 by lane b3land, 2026-10-13),
 # abi 77 -> 78: the match-end mark on rev-end (forms F0-F4, the distance-set
-# accept, prio-const); the merge with B4 is the lane's last src commit, and the
+# accept, prio-const); `cb4174451` (the merge with B4) is the lane's last src commit, and the
 # manager re-pins to the merge (the self-pin convention).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-PLACEHOLDER}"   # D164 B3 SELF-PIN (lane b3build/b3land, 2026-10-13), abi 78 (was cd1d2d8f9, cpb4's abi-77 self-pin)
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-cb4174451}"   # D164 B3 SELF-PIN (lane b3build/b3land, 2026-10-13), abi 78 (was cd1d2d8f9, cpb4's abi-77 self-pin)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -116,12 +116,14 @@ while IFS= read -r pat; do
     # §6.3.12); its Q part walks when Q is end-pinned, and the split row
     # admits only that Q or a never one (conjunct A5), so under -fno-rev-end
     # a walking compound DECLINES to the plain artifact and a walk-free one
-    # is byte-identical. Counted as its own bucket.
+    # is byte-identical. Counted as its own bucket. A walk is any of
+    # WALK_RE's three forms (D164 B3: the one-seed and tagged walks carry no
+    # `revend_seed` loop), so the compound's test reads WALK_RE too.
     if ! grep -q '^#define RX_COMPOUND "none"$' "$a"; then
         echo COMPOUND
-        if grep -q 'for (int revend_seed = 0;' "$a"; then
+        if grep -qE "$WALK_RE" "$a"; then
             grep -q '^#define RX_COMPOUND "none"$' "$b" || { echo WALKBAD; echo "BAD: a walking compound stays a compound under -fno-rev-end (A5): $pat"; }
-            grep -q 'revend_seed' "$b" && { echo WALKBAD; echo "BAD: the compound's walk survives -fno-rev-end: $pat"; }
+            grep -qE "$WALK_RE" "$b" && { echo WALKBAD; echo "BAD: the compound's walk survives -fno-rev-end: $pat"; }
         else
             cmp -s "$a" "$b" || { echo DECLBAD; echo "BAD: a walk-free compound moves under -fno-rev-end: $pat"; }
         fi
