@@ -5602,3 +5602,543 @@ Each entry is the row (or fragment) as it stood before the cleanup. The row itse
 ### [OPT-REVEND] — old head: a nest of parenthesised statuses; the row stays in plan.md as status + charter
 
 - [OPT-REVEND] STATE:started (2026-10-11: Frank approved a MEASUREMENT of the `rev-end-width` sibling (K103 fix (b); first evidence = bench O-96 (c)2 litrun cells): a twin on those cells at scratch tier, no build; lane queued after rlhtwin's timing) (L1 + L2 WITH STAGE 2 MERGED 7388f1c0 2026-10-10 session 105 (revbuild + revtri + revfloor; abi 73; make test green, mech 38 rows 0 unexpected, window twin 0 diffs vs libpcre2 over 2.77M cells, test-axes red only on a census floor re-derived by revfloor; manager CONFIRMED revbuild_report §4 item 1 (LR-S12 reads the fired bit, Ctx.anchored_dropped), bit 52 for -fno-rev-end, the listing spellings; L4/L5 remain FILED) (L0 MERGED c85a1aac 2026-10-10 session 105 (lfl0, no-mover; mech 146 rows 0 unexpected, S738-S747 DETECTED); L1+L2 WITH STAGE 2 BUILT on lane/revbuild 2026-10-10 (opus; abi 72 -> 73 (on R-12's 72), bit 52 `-fno-rev-end` tentative, sabotage S758-S781; report docs/dev/lanes/revbuild_report.md; awaiting merge) ; lane revbuild opened 2026-10-10 session 105 (STAGE-2 CORPUS MERGED 2026-10-10 session 105 (lane rev2corp: tests/revend/stage2_captures.rxt, 119 blocks, libpcre2 10.46; the L1/L2+stage-2 build is verified against it) (FILED SIBLING 2026-10-09 session 103, start_landing.md §3.3/§11 U3: `rev-end-width`. An end-pinned FIXED-WIDTH pattern needs no walk: hand AT(n−W) (plus the `nl_last` tie point) to FIN3 verify-at. Trigger: a bench end-pinned fixed-width cell where the walk exceeds 10% of the cell (a CHOSEN threshold, unmeasured); 6 bench patterns today. Not built with L2. DESIGN lane revdes opened 2026-10-09 session 102, Frank GO round 3 rank 1; TRIGGER MET by bench O-91 (c): 15 tail cells x824-x127,710 vs RE2/rust; light panel docs/dev/reviews/2026-10-09-r-revend-panel.md; REFRAMED by D156: search = LOCATE x FINISH, a full design + FULL D6 panel before build; rev 2 walk-only (revrev) merged; docs/design/locate_finish.md rev 2.1 (locfin21) merged after a FULL panel + re-check, L0 (no-mover) build-ready pending Frank's §8 Q1' Q2 Q3 Q4 Q6) (under [OPTLOOP] candidates per D137; filed 2026-10-05 at Frank's question; census docs/dev/optloop/revend_census.md, lane revend) — REVERSE-FROM-END SEARCH: for a pattern every match of which ends at `n` (`\z`) or at `n`/`n-1` (`$`, `\Z`), seed the existing reverse DFA at `n` (and at `n-1` when `s[n-1]=='\n'`), run it backward until it dies or reaches `search_from`, and take the smallest accepting position `s*` as the match START; then run the artifact's existing anchored entry once from `s*` for the end (leftmost-first can still choose `n` or `n-1`) and the captures (the VM over the found span). This REPLACES today's O(subject) forward pass (an end-pinned machine cannot stop before `n`; the skip loop helps only while parked in state 0) by O(match) work, on matching AND non-matching subjects. EXACTNESS: every match ends in {n, n-1}, so the starts of all matches are the starts of matches ending there and `s*` is the leftmost start (the same argument the shipped forward-then-reverse protocol uses at the forward end); the end is never read off the reverse walk. WHERE IT DOES NOT HELP: start-anchored `^...$` (class S: one attempt at 0, D77's `(?:P)\z` whole-subject idiom), bounded width on byte encodings ([OPT-ENDWIN] already clamps the start window, 24 ns on 1 MiB; the D77 "final-byte skip gap" is moot there), `(?m)$` (pins nothing to the end, D62 control 3), VM-only artifacts (no reverse machine), `\G`, a trailing lookaround, and a leading unbounded repeat whose run IS the subject (`.*x$` on one huge line: no worse, no better). Under utf8 [OPT-ENDWIN] declines (K49/K50); a reverse walk is the natural replacement and must discharge the same boundary obligation. D77 LINEAGE: D77 declined an end-anchored generation AXIS and named the gap "a FOLD ON THE IDIOM (the skip loop reasoning about `\z`)"; [OPT-ENDWIN] built that fold for the bounded half; this is the UNBOUNDED half, a different mechanism (a seeded walk, not a clamp), recorded under [OS-4]'s measure-the-split charter. CENSUS (4,857 patterns, 345 bench + 4,512 corpus blocks, instrument cross-checked 0/0 against the shipped end_window fact): 22 bench byte + 4 utf8 and 733 corpus rows are end-pinned; the bench's are 17 start-anchored + 5 bounded-width (all at the floor, 24-454 ns vs `jit` 51 us-1.2 ms) and **ZERO start-unanchored unbounded**; the corpus has 33 distinct (47+1 rows, 32 DFA-routable), all anchors/view correctness witnesses. Scratch-tier Linux: today's linear scan on the idiom costs `\d+$` 0.87, `\w+$` 3.15, `\s+$` 2.5-3.1, `[a-z]+\.txt$` 3.2 ns/B (0.9-3.4 ms per MiB) against 40-160 ns for the same shapes bounded and windowed. TRIGGER (D77, not met): a bench cell in this population — an `anc-tail` family (`\d+$`, `\s+$`, `\w+\z`, `[^/]+$`, `.*\.txt$`; matching and non-matching tails on a long subject) showing pcrec-vs-peer at rank — or a user/real-world pattern census naming the idiom (the bench's `wild-*` validators are all `^...$`). First owed step when it fires: the hand-twin (replace the emitted forward loop by the seeded reverse loop) with answer-identity over the `end_window.rxt` subjects. [REVEND-WALK-FORM] ANSWERED 2026-10-12 session 110 (lane b3rev, archived with this cleanup; docs/design/endmark.md section R + endmark/b3rev/timing/): form W — seed views resolved before the loop, first step peeled per seed; the per-iteration view probe is the whole gap (+0.93 ns/call), T/W 1.47-1.90x, 0 wrong over 90.96M cells; B3 adopts W for its walks.
+
+## Row history moved out of live plan.md rows, format A normalisation (2026-10-12, session 111, lane planlint: [PLAN-LINT] step 3 — each row's head parenthetical (status stack, filing provenance, rulings) verbatim; the live row keeps its current status as one dated line)
+
+Each entry is the text that stood between `STATE:<state>` and the title in the row before the 2026-10-12 format-A normalisation (hard-wrapped rows are joined onto one line). The live row in docs/dev/plan.md carries the title, `filed:`, one dated `status`, `next:`/`trigger:`, `refs:` and the charter (everything after the em dash, verbatim). A `(under [OPTLOOP] candidates per D137)` pointer, where it stood alone, is not copied: the Candidates section says it.
+
+### [TT-JTUNE] — head parenthetical, verbatim
+
+(FILED+STARTED 2026-10-08, lane ttune2, admin column; Frank: "our test suites sometimes go serial but we have 16 procs ... it's also possible that we oversaturate the procs ... can we just have it use the natural testing process? we run these all the time, just have it interject then")
+
+### [OPTLOOP] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-21, D119; cycle OPENED 2026-10-03 under D144; STATUS 2026-10-12: ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md, D153) and RUNS BEHIND THE REMODEL — refactors A ([START-TABLE]) and B ([DEC-FALLBACK]) are MERGED (archived 2026-10-12), memfn's zero-mover migration steps continue ([MEMFN]); a round-3 row on a site under remodel sequences after the refactor that owns it; the dated stack of earlier statuses is in plan_completed.md)
+
+### [LOSS-REVIEW] — head parenthetical, verbatim
+
+(**SESSION 108: phase 3 under way — r2 panel + fixes.md rev 2; twin timing done (twintime): candidate 1 CONFIRMED, BUILT and **MERGED 2026-10-12 session 109 (4cd82e8d, abi 75->76; chain green, fold-check fix seamtri)**; T5 blocked on ci-strasse -11.6%; sequencing now docs/dev/chunks_2026-10-11.md.** CHARTERED 2026-10-11 by Frank, session 107: "before deciding priorities after current items complete, review all the losing patterns (plus any items that need it), assess/measure why, the biggest slowdown, what else could be done; then general fixes, assessed; prioritize fixes to existing opts")
+
+### [OPT-REVEND] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137; filed 2026-10-05 at Frank's question; census docs/dev/optloop/revend_census.md, lane revend; STATUS 2026-10-12: L0 MERGED c85a1aac (2026-10-10, no-mover); L1 + L2 WITH STAGE 2 MERGED 7388f1c0 (2026-10-10; revbuild + revtri + revfloor; abi 73; bit 52 `-fno-rev-end`; window twin 0 diffs vs libpcre2 over 2.77M cells; stage-2 corpus tests/revend/stage2_captures.rxt, 119 blocks); the trigger was MET by bench O-91 (c) (15 tail cells x824-x127,710 vs RE2/rust); design under D156 (docs/design/locate_finish.md rev 2.1); the `rev-end-width` sibling (K103 fix (b)) was MEASURED 2026-10-11 (docs/dev/lanes/rewtwin_report.md: the general change is `end-minus-width` taking WINDOW and handing AT to FINISH `verify-at`; not built); L4/L5 remain FILED; the earlier status stack is in plan_completed.md)
+
+### [COMPOUND] — head parenthetical, verbatim
+
+(2026-10-12 session 110 close: B0-B2 MERGED 2a54c3e71 (zero movers); compound.md rev 2.2 (callout alignment, D163 add. 4-6); B4 (driver) BUILT on lane/cpb4 8fbc80081 (abi 76->77; 97 admitted by id, 0 bench; G1-G7 green; S891-S910: 16 DETECTED, 4 UNREACHED declared), heavy chain owed (build/sc/posthold.sh starts when worktrees/.mgr/box_hold is removed); builds AHEAD of B3, G3 final-newline cells at today's rev-end cost, tightened by whichever of B3/B4 merges second. B3 = D164's own build, BUILT on lane/b3build eb737d8ee (abi 77), heavy chain owed) (2026-10-12 session 109 close: compound.md rev 2.1 build-ready after B3; D164 match-end mark ruled; B3 owes the tagged-reverse costing) (RENAMED from [COMPOSITE] 2026-10-12 by Frank: "compound" everywhere) (FILED 2026-10-12 by Frank, session 109, D163 + addenda 1-2 + D88 addendum 1; design lanes mscomp (r1 note, panel docs/dev/reviews/2026-10-12-r2-composite.md) then mscomp2 (revision))
+
+### [MATCH-SPLIT] — head parenthetical, verbatim
+
+(2026-10-12 session 109: STEP-0 survey DONE (mssurvey_report.md); Frank ruled Q5 = build pin-only with zero bench reach, and the wrapper strip is in 4a; 4a design note lane msdesign; panel r1 2026-10-12; D163: rebuilt as a COMPOSITE ARTIFACT (controller + private sub-artifacts), rewrite lane mscomp; see [COMPOUND]) (RULED Frank 2026-10-11: pin classes only; find-all on pin-only patterns needs no state or predicate, the mixed free+END case reads the prior, match_split_requirements.md §5.1; build order pin-only (K106) -> START+FREE -> END+FREE.) (K106 owned here: quadratic trim `^\\s+|\\s+$` on the attempt route, confirmed by counts.) (FILED 2026-10-11, Frank, session 108: "this one should become its own item ... a general split match. Match begin/match end/others?")
+
+### [OPT-LITSCAN] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-25, seventy-ninth session, D122; STATUS 2026-10-12: S1 steps 1-5 MERGED 0bb87eda (lane/s1build, 2026-09-26), step 6 c9dec3e4 (abi 36 -> 37), S4 C0/C1 a588c668 (abi 58), S4 C3 8562ff3a (abi 59), K82 (A)+(C) c13a1a2c and the K82(B) handoff f116cff5; [WORD-FOLD] closed as delivered by S4; the long delivery history is in plan_completed.md. REMAINS: C2 (the VM masked run) HELD on its D77 WITNESS requirement — a forced-VM or default-route VM caseless cell losing beyond its noise floor (docs/design/litscan_s4.md §6.2 C2 table); the kit sites not yet joined; the witness rows named in the archived text)
+
+### [PRIOR-COST-UNIFY] — head parenthetical, verbatim
+
+(**PAUSED 2026-10-11 session 108 by D161: re-scope pending.** The input-formula report (docs/dev/summaries/2026-10-11-prior-cost-inputs.html) showed the family is not one formula; Frank defined memfn's "search for the window" category (spans of classes + move-back + overshoot, plus a frequency table). pcrec's side becomes ONE span-facts producer; the choosing moves to the kit. rev 2 of docs/design/prior_cost_unify.md stands as evidence, not as the design to build.) (SHARED VOCABULARY, Frank 2026-10-11 session 108: this row DEFINES the operation-kind table (step_byte, stop_reentry, verify, attempt, ... per route x program class) that [EFFORT-BUDGET] will also read; each weight is marked MEASURED (selection; expected cost under the prior) or CONTRACT (metering; deterministic, box-independent, worst-case). Same kinds and structure, not necessarily the same values. Payoff: with selection priced in the meter's units, D158 becomes checkable at compile time for most rows; K102 is the witness.) (QUEUED by Frank 2026-10-11: after [REQ-HANDOFF-L1] merges) (FILED 2026-10-11, manager, session 106, the forest-for-trees trigger: rlhbuild_report.md §7 counts FOUR dispersed members of one decision family that read the byte-rate PRIOR to admit a scan: G1 `req_byte_dominated_by`, set-leads `pcrec_find_pick`, R4 `cand_rs_dense_applies`, and the new `req_landmark_admits`)
+
+### [ARTREV] — head parenthetical, verbatim
+
+(D150, Frank 2026-10-05; charter docs/dev/optloop/artrev/charter.md; INDEPENDENT of the round workflow, feeds [OPTLOOP] candidates only)
+
+### [NULLABLE-ANCH] — head parenthetical, verbatim
+
+(FILED 2026-10-05 from the gap report, docs/dev/optloop/judgement_gapreport_2026-10-05.md row 4; STATUS 2026-10-12: BUILD LANDED — lane/nullanch2 merged 02db3811 (abi 67 -> 68; step 0 nullanch0 e6b6c25f): the E1 fact `empty_admits` (src/facts/widths.c) read by `lang_nullable_declinable`; movers EXACTLY the predicted five (ESEL declined-nullable-default 112 -> 107); answer differential 0 different over ~58M calls; S611-S613 DETECTED (nullanch0_report.md, nullanch1_report.md); the old status stack is in plan_completed.md. F1 (the vars rows' token) was closed by [DEC-VAR-ATTRIB] (archived). REMAINS: the original target (evil-alt-nested / trim-nested-star trailing vs jit/re2) is not re-measured, and K97 (the long-match tax, filed by nullanch1) is open)
+
+### [U8-PICK] — head parenthetical, verbatim
+
+(**RULED 2026-10-11 by Frank, D160: AUTHORED and script-neutral (UTF-8 structure, not a corpus; "Chinese is different than Egyptian"); deployments generate a named analysis.** WAS OPEN FOR FRANK (moved from [ENC-DATA] Q5 by D159): is the shipped utf8 prior AUTHORED (structural shares, citable, one writer of default.rxt) or GENERATED from evidence (needs a terminal-include change, findings.md §7, or region-generation in default.rxt)? Manager leaning: authored, plus an exemplar-generated NAMED analysis for deployments. Layout settled: a `cpfreq ... when utf8 via encode-utf8` block in the default analysis. **STEP 0 DONE 2026-10-09, lane u8pick0, merged; docs/dev/lanes/u8pick0_report.md: lit-sharp-s is a utf8-only PICK DEFECT (x6.3 vs -e byte; utf8 NONE picks `e`), lit-offset-at-head + lit-1ch-4b are pick defects in BOTH encodings (continuation-byte picks); a scratch structural UTF-8 prior via --analysis recovers them (sharp-s x1.00 of byte, head 7.3x, 4b 2.9x; mixed-ascii x1.34 worse); cyr-run/1ch-3b/nfc-pair/mixed-ascii NOT pick cells (gap unattributed, rust/RE2 not runnable here); remodel overlap explains NO cell; several bench gaps STALE at main (pre-check handoff). NEXT (unruled): a utf8 byte-rate prior (`cpfreq` serves byte-rate under utf8) in src/findings/default.rxt from an INDEPENDENT exemplar (D83), an abi event) (FILED 2026-10-05 from the gap report row 5; unscheduled)
+
+### [ENG-TACTICS] — head parenthetical, verbatim
+
+(STATUS 2026-10-12: window-needle generalization FILED 2026-10-12 (Frank, session 109) and PARKED with rev-inner — it would widen rev-inner from a required literal to a D161 window (a possible [COMPOUND] client) and inherits every open rev-inner problem; REV-INNER HELD (Frank 2026-10-11: 'a bit of a house of cards' — each review round found a new unsound case); Q1 RULED (D151 add. 5: the factor-free arm; model re-run rinmodel 0 wrong), Q2 REVISED (D151 add. 6: one common L, per-branch verify); rincensus merged: ~14 ms bench upper estimate across ipv6, sfx-* and 6 small patterns; ROUND 3 rank 3b-5 (D153): GATED on [START-TABLE] C7 (merged 2026-10-08) + a [MEMFN] request (FIND resuming at hit+1))
+
+### [UCP] — head parenthetical, verbatim
+
+(STATUS 2026-10-12: the design is merged and Q1-Q9 were RULED YES 2026-09-28 (D130); U0+U1 MERGED 2026-09-29 (abi 44 -> 45); U2 — the A_CTX context node + per-machine context-set table — MERGED 2026-09-30 (u2land, abi 45 -> 46, with the anchored-entry dead-state fix of lane ucpu3); U3 CHARTERED 2026-09-30 AS A CAPABILITY ROUTE (D134: only where no all-byte form exists; a measured selection row vs the VM hybrid), queued behind [UTF-VALID], which is now BUILT (uvbuild 2026-09-30); its island hand-twin measured 'not a speed win' (docs/design/ucp_measurements/u3_island_twin.md) so U3 stands on capability (UCP `\b`, non-byte contexts) and the charter is Frank's; NEXT: U3/U4, UCP `\b` under utf8)
+
+### [VAR] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-23, seventy-seventh session, the feature hold lifted for this design; STATUS 2026-10-12: the design set was DELIVERED + MERGED 2026-09-23 (four notes + roadmap; D6 panel r1; D121: variables passed BY NAME); the MVP PATTERN HALF is MERGED (809aab12, abi 31 -> 32, module `vars`, `${name}` in a pattern, docs/spec/vars.md; varmvp + vartriage); the REPLACEMENT half M9 is GATED on [M4-SUBST]'s core landing; phases are decided after the MVP's initial development (D121 addendum); `VE_VAR` stays NOT BUILT on its D77 trigger — the first `--emit-ir` consumer that must see which expansion a program point reads, most likely M9's template rendering; the [K50] startpos-manifest backlog DD12a(i)'s revival surfaced is [K50-DD12AI-MANIFEST])
+
+### [BENCH-UTF8] — head parenthetical, verbatim
+
+**2026-10-10 AUDIT (planaudit): the `utf8` subbench is BUILT and RUNNING (bench outbox: utf8 cells in the c4c70f2c sets and the 2026-10 round windows). REMAINS: the growth families (g)-(k) in the text; their status was not verifiable from this repo.** (RULED by Frank 2026-09-22 ~23:4x, seventy-seventh session: "Build the utf bench. But make it somewhat complete, not 'small' — or at least specify that it will grow. It should, at least eventually, exercise any functionality which might be affected by encoding. Classes come to mind."; the FIRST use of D119's addendum's open-a-new-subbench clause)
+
+### [MEMFN] — head parenthetical, verbatim
+
+(OPENED 2026-10-04 by Frank, ninetieth session, as a FILLER row; since then an in-tree subtree `memfn/` — pcrec-memory-functions, D146 delegation, D147 layers, Q36 — with its own CLAUDE.md, journal and request ledger (memfn/docs/requests.md, responses.md); STATUS 2026-10-12: the scalar-layer migrations M1-M7 (precheck/ofsskip, PF, STAY/EDGE/VMSPAN, MLINE, N7, VMSTRIDE) are MERGED at zero movers (N6 retired by D147 add. 12; VMLAZY and N7U settled by R-12); the opt-in SIMD layer (`-fmemfn-simd`, OFF by default, [OPT-SIMD]) is in progress: R-9 design merged, the R4e′.0/0b seam and routing merged, R-13 batch 1 and the R-14/R-15/R-16 follow-ups BUILT (their landing is the kit manager's: memfn/docs/journal.md). The previous dated status stack is preserved in plan_completed.md)
+
+### [MEMFN-ROWCON] — head parenthetical, verbatim
+
+(OPENED 2026-10-07 by Frank in the kit session, the general fix after K96; kit notice in memfn/docs/responses.md f3a0fbca on lane/memfn-g2x)
+
+### [PLAN-LINT] — head parenthetical, verbatim
+
+(STATUS 2026-10-12, session 111: step 1 DONE (docs/dev/reviews/plan_triage_2026-10-12.md); step 2 DONE on lane/plclean, pending merge (docs/dev/lanes/plclean_report.md: 262 rows -> 165, 478,969 -> 270,716 bytes, 1,353 -> 724 lines; 26 completed/closed rows archived to plan_completed.md, 60 stubs/index copies deleted, 13 duplicate/superseded rows merged, 4 wedged rows repaired, 9 rows over 5 KB split into docs/design/plan_row_bodies/, 109 plan.md:<line> citations converted to [ID]; the rows left for a ruling are listed in the report); step 3 (scripts/plan_lint.sh) NOT STARTED — its ratchet baseline is the report's lint-debt table) (FILED 2026-10-12 by Frank, session 110 — "(ironic)": "reading through plan.md. really need to clean that up. formatting inconsistent and too many junk items")
+
+### [OPT-SIMD] — head parenthetical, verbatim
+
+(STATUS 2026-10-12: RQ-3 MERGED 2026-10-09 631771b7 (abi 71) and RQ-2 MERGED 2026-10-09 7b98a046 (D157 ranked rarity array, MF_SITE_ABI 9, S731-S737); R-13 batch 1 (the vrun rows) and the R-14/R-15/R-16 follow-ups are BUILT (docs/dev/lanes/r13_report.md, r14b, r14p, r15b, r16b); OPENED 2026-10-08 for the memfn kit's opt-in `-fmemfn-simd` layer ONLY, D147 addendum 11 — 'I'm not left handed': a parallel path to the scalar one, no longer held to the end of D119's loop; per-form bar = beat the CURRENT scalar layer at its sites (Linux verdict, both layers) or show a named benefit; 2:1 migration:SIMD capacity until M5′; default-ON is its own ruled event; the default path stays algorithmic under D119)
+
+### [SEL-COST] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (**STATUS 2026-10-12: step 1 was DESIGNED 2026-10-03 and NOT built (docs/design/sel_cost.md, selcostdes_report.md): no bucket clears D119 as a compile-time selection term because the material losses flip sign by subject or regime; the live part is the ADMISSION RULE and its trigger; [SEL-SIZE] closed REFUTED 2026-10-03 (archived).** FILED 2026-09-27; PULLED FORWARD into the next optimization cycle's queue, D131 item 8, 2026-09-29 — D125 phase-4 stock-take material; Frank's viewer read of the 2026-09-27 syntax-subbench data)
+
+### [OPT-3-RUNEND] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [OPT-3]'s closed STEP 3, D137; priced, NOT chartered — D77)
+
+### [OPT-5-PERIODK] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [OPT-5]'s closed remainder, D137)
+
+### [ENG-ABS-CARET] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [ENG-ABS]'s closed first mechanism, D137)
+
+### [ENG-ISL-S2] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [ENG-ISL]'s closed remainder, D137)
+
+### [REVBLOCK-VIEW] — head parenthetical, verbatim
+
+(FILED 2026-10-12 session 110 from lane b3rev, endmark.md §R.9 Q4; filed, NOT scheduled)
+
+### [VM-LEN-HOIST] — head parenthetical, verbatim
+
+(FILED 2026-10-12 by Frank, session 110: "it tests scan_position < subject_length then looks at a byte. then repeats that 5 times. could it not verify minimum (and in this case absolute) length at the start and skip the compares?"; Frank: "lets do it" — a MEASUREMENT first)
+
+### [MATCH-KNOWN] — head parenthetical, verbatim
+
+(FILED 2026-10-12 by Frank, session 110: "the find window protocol can return known facts which might be more of the same. we might want a general way, if we don't have it, of tracking known facts about the match as the compile proceeds"; filed, NOT scheduled; DISCUSS before any design lane)
+
+### [CAPS-VIEW-RERENDER] — head parenthetical, verbatim
+
+(FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text)
+
+### [CAPTURES-DFA-MB] — head parenthetical, verbatim
+
+(FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #5, `docs/dev/optloop/cycle2_close.md` §2 item 5 — proposed, not ruled)
+
+### [K88-HANDOFF-DENSE] — head parenthetical, verbatim
+
+(FILED 2026-10-05, lane k82close, from docs/dev/lanes/k82halpha_report.md §2; known_issues K88)
+
+### [KIT-VERIFY] — head parenthetical, verbatim
+
+(FILED 2026-10-12 by Frank, session 110, "tangential" to chunk 2's D161 contract note; filed, NOT scheduled; D77)
+
+### [ADAPTIVE-ARM] — head parenthetical, verbatim
+
+(FILED 2026-10-11, [LOSS-REVIEW] r2 D6 panel F6, lane lrrev; filed, NOT scheduled; D77)
+
+### [SIZE-KNEE] — head parenthetical, verbatim
+
+(FILED 2026-10-11, [LOSS-REVIEW] r2 D6 panel F6, lane lrrev; filed, NOT scheduled; D77)
+
+### [OPT-VMSEED] — head parenthetical, verbatim
+
+(RESTATED 2026-10-12, plclean, Frank's ruling session 111: START-SET stage 2 (ssbuild2 57db5152, abi 62: `first-class` on the VM route, `-fno-start-set` bit 47) delivered the VM HAT for hybrids and DFA-fronted VM routes, so the row is closed AS DELIVERED EXCEPT the one unbuilt remainder stated below; the old status stack is in plan_completed.md. REMAINDER, per the 2026-10-10 planaudit: this row's own framing — a seed at q − run-offset from a necessary run, for VM runs with NO DFA in front — is NOT shown built; its D77 census/trigger stands)
+
+### [OPT-HYB-RESEED-XCALL] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-09-29 by lane reseed, per the charter: the cross-call hint is OUT of [OPT-HYB-RESEED]'s scope)
+
+### [OPT-ENDWIN-ENC] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED + HELD 2026-09-27 from lane utf8attrib, D77: noise-scale absolute)
+
+### [ENG-PGO] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137; D83 2026-08-28 RULES THE SHAPE: exemplar analysis runs OUTSIDE pcrec, once per file, delivering a FINDINGS FILE pcrec accepts — FILE-GENERAL findings (byte frequencies etc., pattern-independent, one exemplar serves many patterns) and PATTERN-SPECIFIC findings (a statistics-recording special compilation, built only for a specific question, later) are two result files and two builds; the findings file is an .rxt `freq <name>` DATA block a target's config references; the findings-file machinery itself shipped as [FINDINGS] (archived 2026-09-30))
+
+### [ENG-TDFA] — head parenthetical, verbatim
+
+(FILED 2026-10-09 by Frank, session 103; unscheduled, a BIG FISH)
+
+### [ENG-LOOK] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) **STEP 0 DELIVERED 2026-09-29 (lane lacens2, docs/dev/eng_look_census.md): 98 fixed-width k=2-4 occurrences (72 from one boundary-matrix file). Lookbehind grows 2-3 → 3-10 states; state count is NOT the blocker. Lookahead: the reverse-machine product reads zero growth because the reverse machine never walks a lookahead body past the match end, so the ATTACHMENT POINT is an open design question → the D6 panel this row names, not a build.** **STEP 0 FILED 2026-09-29 (Frank: "measurements as the first step"; scheduling decided later against everything else): a census of FIXED-LENGTH lookarounds of 2-4 characters (lookaround census 493 + bench VM-only patterns) with the per-pattern state growth each product would cost (lookbehind in the forward machine, lookahead in the reverse). It decides whether the bounded slice pays. U2's A_CTX + per-machine context-set table is the base (the one-character case is this row's minimal instance, as ruled 2026-08-23).**
+
+### [OPT-A] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137; BENCH O-8 2026-08-29, THE MEASURED NEED: after [OPT-K], stack-frame `\bat ` at 1 MB is still 3.0-6.5x BEHIND pcre2-jit — pcrec 0.38-0.56 ns/byte (scalar memchr-at-k*+verify) vs the JIT's 0.065-0.087 ns/byte SIMD PAIR scan; the search band is within 2x, so this is the 1 MB row's ask; ranked (i) by the bench for the D86 optimization column, after [OPT-4])
+
+### [OPT-ALTHASH] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-09-02 ~16:4x by Frank, fiftieth session — explicitly NOT folded into current work: "one strategy for large alternations might be a partial hash table. Grab say four chars and look up state for dfa or something for vm.")
+
+### [OPT-VMLIT] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137; RECONCILED 2026-10-12 (plclean): largely DELIVERED as [OPT-LITSCAN] S2a (exact run = one P4 compare, abi 41; L>=3 floor abi 43) and owned there; the row stays for history. litrun_report.md: gcc never fuses a scalar `&&` chain, only explicit memcmp; b108_reading.md: S2a's named faster population MISSED on x86 (ctx/level-context null). OPEN GATE: the still-owed bench run of ctx-lazy/greedy + level-context vs pcre2-jit at the current pin (rides the standing re-measure, A5); no separate lane. DISPOSITION: stays not-started; the mechanism cannot ride reqbyte.c's REQ_RUN fact (alternation branches) — emitter-level maximal-run recognition, a [PATFACTS] customer; caseless = [WORD-FOLD]'s mask, delivered under [OPT-LITSCAN] S4)
+
+### [XART-TABLES] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED by Frank 2026-09-28, eighty-fourth session, D125: filed, UNSCHEDULED; trigger: the first LARGE GENERAL table ships in emitted artifacts — e.g. a Unicode class via [CLS-TREE] or [UCP])
+
+### [ART-VMCTX-START] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-06, [ARTREV] pilot report_pilot.md §5 item 4 / I5; UNSCHEDULED; SEQUENCED AFTER START-SET stage 3, BATCH WITH [ART-POSS-ARMS])
+
+### [ART-TRAIL-ELIDE] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-06, [ARTREV] pilot report_pilot.md §5 item 5 / I7; UNSCHEDULED; ranks after [ART-POSS-ARMS])
+
+### [POSS-CALL-COPY] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-07 by Frank's ruling D154; UNSCHEDULED; D77: build when a measurement shows the cost)
+
+### [POSS-CTX-TABLE] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-07 by lane possarms2 from the [ART-POSS-ARMS] D6 panel's B-FAM disposition; UNSCHEDULED; decision_families_survey.md family 14 / §3.14)
+
+### [ART-CTX-TRIO] — head parenthetical, verbatim
+
+(HOLD, FILED 2026-10-06, [ARTREV] pilot report_pilot.md §5 item 7; STATE tag added 2026-10-12 by plclean: the first gate, START-SET stage 3, has LANDED (8148e034); the bench-weight gate is open)
+
+### [TIE-ALIGN] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-09-29, manager, on lane rpfloor's finding; UNSCHEDULED)
+
+### [CTX-PREFILTER] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) **STEP 0 DELIVERED 2026-09-29 (lane lacens2, docs/dev/ctx_prefilter_census.md): 143 still-VM patterns carry a positive multi-char lookaround (only 6 bench-derived); 111/115 with a sound necessary byte are NARROW; the tightening is an INDEPENDENCE MODEL, not measured. Verdict: do not build from this alone; a joint-position measurement is the D77 trigger.** **JOINT-POSITION MEASUREMENT DELIVERED 2026-09-29 (lane ctxjoint, docs/dev/ctx_prefilter_joint.md, studies/ctx_prefilter_joint/): over 99 applicable patterns x 6 subjects (bench capability + syntax throughput texts, sha-verified) the condition rejects 60-77% of live candidates (false candidates removed 96.5-100%; T ⊆ C1 ⊆ C0 in 594/594 cells; controls pass) and the independence model's per-pattern gap is 0.21-0.37 in both directions; NO D77 trigger met — the one real bench construct clearing the removal bar (lka-pos/lka-verb, 59% at 1.58/KB) has a per-byte loss (auto == forced-VM, 1.21 ns/B), so [OPT-HYB-RESEED] is upstream; re-open after it lands and a lookaround cell still loses.** (FILED 2026-09-29 by Frank, eighty-fifth session, UNSCHEDULED; follows [UCP] U2's merge)
+
+### [START-DENSE] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-06, D153; ROUND 3 rank 3b-6, round3_selection.md; was GATED on [START-TABLE] C7, MERGED 2026-10-08 cf3ffaac, so the gate is OPEN)
+
+### [OPT-ENDTERM] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-10-06, D153, from the citations in K81 (known_issues.md:188), the archived [OPT-VEDGE] entry and docs/dev/lanes/vedge_report.md §4; UNSCHEDULED, FILED-not-scheduled per D77; cross-ref K81, which shares the view-edge site)
+
+### [UTF-PAT] — head parenthetical, verbatim
+
+(**STATUS 2026-10-12: M5.0 closed 2026-09-12 (all stages landed), so the "stage 2/3-4" wording below names M5.0's stages and is history; the row is unblocked and unscheduled.** CHARTERED by Frank 2026-09-05, fifty-fifth session, UNSCHEDULED: "using utf as the Regex encoding. i'm guessing its close but needs validation and testing/support")
+
+### [UTF-RW] — head parenthetical, verbatim
+
+(**STATUS 2026-10-12: its sequencing condition (M5.0 stages 3-5 landed) is MET — M5.0 closed 2026-09-12; the row is unblocked and unscheduled.** CHARTERED by Frank 2026-09-05, fifty-fifth session, SEQUENCED after the utf build (M5.0 stages 3-5) lands: "go out and find some good real world utf regex for testing. This will be foreign (for me) language stuff and I don't want the English bias built into the system to cause us to miss solid use case")
+
+### [UTF-EXTENT] — head parenthetical, verbatim
+
+(FILED 2026-09-30 by lane uvbuild at [UTF-VALID]'s build, per D133 Q2: "`extent` recorded, NOT built")
+
+### [READ-BYTES] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-05, fifty-fifth session, UNSCHEDULED: "changing the code usage of ascii characters from numbers to char literals if that works or embedded comments if it doesn't. only for code reading for those of us that can't convert numbers to ascii in our heads")
+
+### [EMIT-ENTRIES] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-21: "emit control for the functions produced (search, match). if X depends on Y and only X is emitted, then Y can be emitted statically")
+
+### [LANG-1] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-21: "a series of investigations about how this tool might be used with specific programming languages. start: C, Rust, C++ ... result is write up doc per language with examples. should actually build and test cases in the language")
+
+### [LANG-2] — head parenthetical, verbatim
+
+(CHARTERED by Frank 2026-09-21, "next wave of languages would include higher level like JS, TS")
+
+### [TT-4M-ATTRIB] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [TT-4M]'s closed re-park; D137 item 3 commissions the measurement; Frank's 2026-09-16 ruling recorded verbatim in [TT-4M] — the default is NOT flipped — stands until this reads)
+
+### [SPEC-LANG] — head parenthetical, verbatim
+
+(FILED 2026-10-09 by Frank, session 102, from reading docs/spec/match_api.md; FOR EVALUATION, unscheduled)
+
+### [RXT-ONE-READER] — head parenthetical, verbatim
+
+(FILED 2026-10-10 by Frank, session 105: "it should be unified. but we have to focus" — UNSCHEDULED, admin column)
+
+### [ORACLE-OPTS] — head parenthetical, verbatim
+
+(FILED 2026-10-10 by the manager, session 105, from lane revtri's triage; admin column, unscheduled)
+
+### [IFACE-PUSH] — head parenthetical, verbatim
+
+(HARD TRIGGER added 2026-10-10 by Frank, session 105: the push opens when <= 4 flag bits remain in the 64-bit `flags` word (55 of 64 used after [START-LANDING]), whether or not the work has petered out; [FLAG-ACCESS] is its prerequisite) (RULED by Frank 2026-10-10, session 104: "we are still in pre-1.0 dev. i say we keep going for awhile and when the work starts petering out, we revisit the interface situation in a big push: rx_info, pcrec_options, cli options, stamps. then, when thats solid, we revisit our docs.")
+
+### [SPEC-ORG] — head parenthetical, verbatim
+
+(FILED 2026-10-10 by Frank, session 104, from reading the [SPEC-CLEAN] rewrite of docs/spec/match_api.md; DOCUMENT ONLY, unscheduled, "maybe not ever" — no fix lane without his word)
+
+### [CAP-EARLY-STOP] — head parenthetical, verbatim
+
+(FILED 2026-10-09 by Frank, session 102: "if the match is done, the capture walk can end at the close of the last [group]. this is a general statement"; FOR EVALUATION)
+
+### [EDGE-STAMP] — head parenthetical, verbatim
+
+(CHARTERED by the manager 2026-09-20 ~05:4x from bench outbox O-36 — the SECOND customer of a fact today readable only from an emitted COMMENT)
+
+### [FINDINGS.B4] — head parenthetical, verbatim
+
+(HELD, split out of [FINDINGS] 2026-09-30 by lane retag: Frank's ruling 2026-09-28, eighty-fourth session, OPTION (c) — no reader has a trigger yet (C6 needs unbuilt S4, C3's cells are S1-dominated, C2 has only 16 synthetic movers); `lane/findb4` (`e054d1ce`) stays parked and its data half lands WITH [OPT-LITSCAN] S4, not on its own.)
+
+### [FIND-DOMAIN-CHECK] — head parenthetical, verbatim
+
+(FILED 2026-09-29, D131 item 7, from bench O-74's finding 1, [FINDINGS-BENCH-TIERS]'s B115 ledger — filed, not scheduled)
+
+### [FIND-UTF8-DEFAULT] — head parenthetical, verbatim
+
+(FILED by Frank's ruling 2026-09-28, D125: filed, not scheduled; raise at the phase-4 stock-take)
+
+### [FIND-MIX] — head parenthetical, verbatim
+
+(FILED by Frank 2026-09-28, eighty-fourth session, D125: filed, UNSCHEDULED; pairs with [FIND-UTF8-DEFAULT])
+
+### [K50-DD12AI-MANIFEST] — head parenthetical, verbatim
+
+(FILED by lane varfollow 2026-09-25 on the [VAR] row's FINDINGS sentence; EXPLAINED MOSTLY 2026-09-30 by lane silentred (MERGED a527ebb4, docs/dev/lanes/silentred_report.md): reds (4)/(5) and the stale/ungoverned manifest rows were mostly ONE cause, the `<P>_FINDINGS` stamp + `rx_info.findings` ([FINDINGS] B1, abi 40) — an encoding-keyed stamp value with no excused region — after which DD12a(i) read 11 passed / 0 failed at slice 250, the K50 manifest itself UNTOUCHED (its rows are a judgement, not a count); read that report before re-deriving anything here. STATUS 2026-10-12: a whole re-harvest at FULL population is OWED — ABSORBED [K50-HARVEST] (filed 2026-10-10, session 105, from lane revtri's class-(c) finding): main's DD12a(i) at full population (ENC_MAX_BLOCKS=0) does not match the manifest (87 strict texts vs 11 UNDECLARED; GATEFORM 54 vs its ceiling 16), and `make test`'s 250-block slice never reaches the difference)
+
+### [CAP-STAMP-BYTES] — head parenthetical, verbatim
+
+(FILED 2026-10-09 from lane rq2land's re-pin evidence, docs/dev/lanes/rq2_report.md §7; FOR EVALUATION)
+
+### [FINDALL-NEXT] — head parenthetical, verbatim
+
+(2026-10-11 later, Frank, session 108, THE UNIFYING SHAPE: `_search_in` (the pro entry) takes a CALLER-FILLED, VERSIONED STRUCT instead of more arguments, so the interface grows without breaking callers, and it PRESERVES INFORMATION BETWEEN CALLS (e.g. find counts) — "it opens doors". Manager: this is the ONE caller-owned state the family needs; three dispersed members fold into it: this row's `rx_iter`, xcall.md §5's held `pcrec_search_state`, and today's const `<prefix>_buffers` descriptor (match_api.md §10.2). Shape to design: a fixed `rx_*` type with a leading size/version field, the per-artifact buffers by pointer, per-call inputs (NOTEMPTY retry, budgets) and caller-owned counters the entry updates. Doors: runtime correction of the compile-time prior ([ADAPTIVE-ARM]'s arm state, K105), [MATCH-SPLIT]'s END-walk cache, exemplar-free findings from observed counts (D83). Constraints: no statics (§5.3 holds because the caller owns the state), D158 (adaptation may never turn an answer into a give-up), answers history-independent. CALLOUTS TOO (Frank, same session: "callouts could take the same structure"): manager lean = rx_ctx (the per-position context callouts and match-here entries already receive, match_api.md §2) gains ONE pointer to this caller struct, rather than merging the two (rx_ctx is const and per-position; the struct is mutable and per-session). Then a callout, and a compiled matcher linked AS a callout (D38 composability), sees the same struct the outer search was given: composed matchers charge ONE shared budget ([EFFORT-BUDGET]) instead of each starting fresh, callouts can read/update counts and caller state, and `vars`/`void *user` have one home. An abi + rx_ctx layout event, in the same push. Decided at [IFACE-PUSH].) (2026-10-11, Frank, session 108: a find-all entry with a BUILT-IN loop + per-match CALLBACK would report both matches of `^|end$` on "end" — (0,0),(0,3), PCRE2 /g — by doing the NOTEMPTY_ATSTART retry internally. Manager: the iterator and the callback are two shapes of one capability; the real work in either is an engine-level "empty not permitted at start" mode (DFA: suppress the start-position accept; VM: reject at accept), and either can carry cross-call state ([MATCH-SPLIT]'s END-walk cache, xcall.md §5's hint). Lean: one primitive, the iterator, with a callback form as a static-inline wrapper over it if wanted. Decided at [IFACE-PUSH].) (FILED 2026-10-09 by Frank, session 102, from reading docs/spec/match_api.md; FOR EVALUATION, unscheduled)
+
+### [STAMP-REVIEW] — head parenthetical, verbatim
+
+(FILED 2026-10-09 by Frank, session 102; FOR EVALUATION; pairs with [RXINFO-REMODEL])
+
+### [EFFORT-BUDGET] — head parenthetical, verbatim
+
+(SHARED VOCABULARY, Frank 2026-10-11 session 108: the per-piece effort weights read [PRIOR-COST-UNIFY]'s operation-kind table — the CONTRACT-marked column — rather than a second inventory of what an operation is.) (FILED 2026-10-09 by Frank, session 103; FOR EVALUATION, unscheduled; owns K102)
+
+### [RXINFO-REMODEL] — head parenthetical, verbatim
+
+(FILED 2026-10-09 by Frank, session 102, from reading docs/spec/match_api.md; FOR EVALUATION, unscheduled)
+
+### [SIZE-CMT-CLASS] — head parenthetical, verbatim
+
+(FILED 2026-09-27 by the manager from lane findb1's report §3, D125: filed, not scheduled)
+
+### [OPT-SETS] — head parenthetical, verbatim
+
+(manager 2026-10-10: retagged, nothing active; Q-list awaits a consumer) **2026-10-10 AUDIT (planaudit): PLANNING STEP DONE: design note option_sets.md merged a2b9d831 (lane optsets), panel r1 (docs/dev/reviews/2026-10-05-r1-option-sets.md) applied as revision 2; Q1-Q12 + R1-R6 still OPEN. No build, per the row, until a consumer needs it (D77). The row is STATE:not-started (nothing active); it is a pointer to option_sets.md.** (OPENED 2026-10-05 by Frank, ninetieth session, PLANNING ONLY — "no code now but it should be part of planning")
+
+### [SIMD-SIZE-PARITY] — head parenthetical, verbatim
+
+(FILED 2026-10-12 by Frank, session 110: "give a bump to the size limits if simd is on" -> refined with the manager to a PROMISE, Frank: "i like your thinking simd on/off consistency"; filed, NOT scheduled; D77)
+
+### [MATCH-EVENTS] — head parenthetical, verbatim
+
+(FILED 2026-10-12 by Frank, session 110: "output pieces as they're matched like a rx pattern that matches json. A callout placed after a piece gets matched is effectively a callback for the pieces of the json"; filed, NOT scheduled; D163 add. 6)
+
+### [EMIT-DOT] — head parenthetical, verbatim
+
+(FILED 2026-09-28, admin88, `docs/dev/ph3_reassessment_2026-09-28.md` #2, on `[DD-8]`'s own closure: "File the residual as a new row: --emit-dot graph output + the DFA/prefilter listing sections (D106 addendum items 3-4). Do not re-file the trace half — [V-H] already owns it.")
+
+### [DD-13b.W1.3.1] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [DD-13b.W1.3]'s closed carve-out; Frank's ruling 2026-09-04 08:4x: OPTION 1 — the harness carries the target's prefix through flush_block's tail, the CLI allowance W1.2 refused stays refused; "build it AFTER [PFX-1] STEP 0 (D96) so the four prefix sites are the exported set only")
+
+### [DD-13b.W1.4] — head parenthetical, verbatim
+
+(REFILED 2026-09-30 by lane parkmeas out of [DD-13]'s closed remainder; format_design.md's wave table: 'W1.3.1/W1.4' are the named remainder, 'after W23 the format has no designed-but-unbuilt production a real consumer is waiting on')
+
+### [DD-11.5] — head parenthetical, verbatim
+
+(RE-CHARTERED 2026-09-28, admin88, on the `[M6.6]`-closed trigger above)
+
+### [SR-10] — head parenthetical, verbatim
+
+(CROSS-NOTE 2026-08-23, from the [DD-14] ASK 3 discussion: Frank's 'eat our dogfood' idea — the registry's `syntax` column as a PATTERN pcrec itself compiles, so the row table becomes machine-checkable (witnesses derived from the syntax, a differential over the column) — belongs here/[DD-13] as a CHECK on the table, explicitly NOT as its dispatch, which R6 ruled byte-keyed with measurements.)
+
+### [PFX-1] — head parenthetical, verbatim
+
+(FILED 2026-09-04 08:4x EDT by Frank, fifty-first session — D96: "the only items getting the prefix should be the exported items"; ADMIN/ABI column)
+
+### [UCD-RECORD] — head parenthetical, verbatim
+
+(FILED by Frank 2026-09-28, eighty-fourth session, D125: filed, UNSCHEDULED; decide by research + tests, like [UCP])
+
+### [PCRE2-UP] — head parenthetical, verbatim
+
+(Frank, 2026-08-30 forty-sixth session: the box is at the newest packaged PCRE2 for its Ubuntu (10.46, 2025-08-27); a newer PCRE2 comes only from GitHub — 'we could do a sub-repo in the pcrec repo'; NOT started, no measured need yet)
+
+### [TEST-DISPATCH-SIG] — head parenthetical, verbatim
+
+(FILED 2026-09-26; harness column; SIZE S)
+
+### [RUNSH-BUNDLE-DECL] — head parenthetical, verbatim
+
+(FILED 2026-09-28, admin88, harness column; SIZE S — the findb2 follow-up; findb2tri `8803ab8e`'s own commit message names the general fix this row finishes)
+
+### [LIST-CLASSES] — head parenthetical, verbatim
+
+(FILED 2026-09-28 by Frank, eighty-fifth session, UNSCHEDULED: "File an item to --list the class names/compositions. Remember that there may be more than the two encodes. Therefore encode is a column. Can be long and exhaustive- it's a debugging tool")
+
+### [LIST-TABLES] — head parenthetical, verbatim
+
+(FILED 2026-09-28 by Frank, eighty-fifth session, UNSCHEDULED: "I will eventually be asking that all tables be visible via --list mechanism")
+
+### [DEC-RUNG] — head parenthetical, verbatim
+
+(FILED 2026-10-06, decsurvey §3.5; UNSCHEDULED)
+
+### [DEC-KINDATTR] — head parenthetical, verbatim
+
+(FILED 2026-10-06, decsurvey §3.8; UNSCHEDULED)
+
+### [DEC-LIMITS] — head parenthetical, verbatim
+
+(FILED 2026-10-06, decsurvey §3.9; UNSCHEDULED)
+
+### [START-D1] — head parenthetical, verbatim
+
+(FILED 2026-10-06, start_table.md §2.4 D-1 / §6 Q4, D151 addendum 3; UNSCHEDULED)
+
+### [START-D2B] — head parenthetical, verbatim
+
+(FILED 2026-10-06, start_table.md §2.4 D-2b / §6 Q6, D151 addendum 3; UNSCHEDULED)
+
+### [DEC-POSDOM] — head parenthetical, verbatim
+
+(FILED 2026-10-06 by the start-table re-check, start_table.md §2.5/§5.4; UNSCHEDULED)
+
+### [EST-REGISTRY] — head parenthetical, verbatim
+
+(CHARTERED UNSCHEDULED by Frank 2026-09-30, D141; related [LIST-TABLES])
+
+### [MECH-SAN-ARM] — head parenthetical, verbatim
+
+(FILED 2026-09-26; checks column; SIZE S-M)
+
+### [TEST-METRICS] — head parenthetical, verbatim
+
+(FILED 2026-09-26; harness column; SIZE S)
+
+### [TEST-REENTRANT] — head parenthetical, verbatim
+
+(FILED 2026-09-26; Frank's idea, quoted verbatim in docs/testing.md's "Suite health log" §2026-09-25/26: *"having testing sections be re-entrant might help if a part breaks"*; harness column; SIZE M)
+
+### [FEAT-GLOBAL-RETIRE] — head parenthetical, verbatim
+
+(2026-09-21, from [REL-1.11])
+
+### [SPEC-1.11] — head parenthetical, verbatim
+
+(BOONIES TIER — LATE GAME; Frank, 2026-08-29 forty-fifth session, filed UNPLANNED "(ironic)": a doc plan item for a spec on UPGRADING pcrec)
+
+### [SL-COMPILE-TIME] — head parenthetical, verbatim
+
+(BOONIES; FILED 2026-10-11, session 107, from bench O-97 ask 2)
+
+### [FINDALL-REENTRY] — head parenthetical, verbatim
+
+(BOONIES; FILED 2026-10-09 from walk_survey.md §7 F4, its class "K5m")
+
+### [FINDINGS-S1-REVISIT] — head parenthetical, verbatim
+
+(BOONIES TIER — UNSCHEDULED; Frank 2026-09-25, D123 addendum 8 item 3)
+
+### [FINDINGS-SELINC] — head parenthetical, verbatim
+
+(BOONIES TIER — UNSCHEDULED; Frank 2026-09-25, D123 addendum 8 item 4 + D123 item 3)
+
+### [V-D] — head parenthetical, verbatim
+
+(CROSS-NOTE 2026-08-19: [DD-11]'s definitions architecture makes this row cheaper than its design note assumed — a flavour = front end + BINDING LIBRARY over the reduced core; but read DD-11 note (h)'s honest limit: POSIX leftmost-LONGEST is core preference semantics, not a binding)
+
+### [V-E] — head parenthetical, verbatim
+
+(2026-10-09: design pass paired with [RXINFO-REMODEL] — Frank wants rx_info sectioned into sub-structs AND the searchable array; D88 2026-08-29: ONE artifact per emitted file, always — an emission set is a DIRECTORY of per-artifact files + a manifest header, composition is LINKING; no multi-pattern TU; cross-artifact table sharing (R-VE-3) is link-level, deferred D77)
+
+### [ART-MGR] — head parenthetical, verbatim
+
+(CHARTERED as DESIGN-ONLY by Frank 2026-09-30, eighty-seventh session: aspirational new functionality, "nothing concrete yet, a direction document to refine over time"; placed in Beyond M7 beside its siblings because it is direction that would become a milestone, not a one-off research item)
+
+### [M4-CALLOUTS] — head parenthetical, verbatim
+
+(step 1 flip COMPLETED 2026-08-14, merge 84e5956 — all counts held at baseline, K14 check re-scoped to the RS_MODULE population; step 2 behavior: its M4 gate is met (M4 shipped 2026-08-18, the VM engine host exists), so it is unscheduled boonies, kept by Frank 2026-10-12 (session 111), starting on a user ask or together with [MATCH-EVENTS]/module `callouts`' binding surface; its ABI ruled by D38/D39)
+
+### [FREESTANDING] — head parenthetical, verbatim
+
+(BOONIES TIER — Frank, 2026-08-28: "I think memchr requires glibc. If so, there should be a switch for a no glibc build which in our world is a simple scalar replacement on one of the forms for prefilter. File for boonies")
+
+### [EMIT-ALIGN] — head parenthetical, verbatim
+
+(under [OPTLOOP] candidates per D137) (FILED 2026-09-28 by Frank, boonies: "add it as a boonies item. Test it when 'all' our optimizations are in") (**NOT TRIGGERED by O-68's bimodality — bench O-69 @ pcrec-bench e6dfbf6, answering I-116: the per-process split is the CPU FREQUENCY GOVERNOR at launch, not layout. ASLR off does not collapse it; subject-alignment offsets show no dose-response; per-launch clock ratio 1.33 vs 3.32 GHz equals the time ratio; taskset pinning 0/40 slow launches; idle gaps raise the slow fraction. The bench's pinned harness (taskset, ~50 ms loops) is unaffected. Mac scratch timing: warm up before timing, or fresh-launch medians.**)
+
+### [ENC-MODEL] — head parenthetical, verbatim
+
+(CHARTERED unscheduled by Frank 2026-09-06, fifty-sixth session, boonies — "formalize encoding ascii as an encoding ... byte encodings would be translation tables")
+
+### [FOLD-BASE] — head parenthetical, verbatim
+
+(CHARTERED unscheduled by Frank 2026-09-06, fifty-sixth session, boonies, from reading encoding tables: "a flag analogous to i that folds those characters together for matching")
+
+### [MULTI-PAT] — head parenthetical, verbatim
+
+(CHARTERED unscheduled by Frank 2026-09-06, fifty-sixth session, from the Hyperscan discussion: "note it as an unscheduled row and put it in the boonies")
+
+### [JSONL] — head parenthetical, verbatim
+
+(CHARTERED unscheduled by Frank 2026-09-08 late evening, boonies, from watching pcrecdev2's slow jsonl reader: "jsonl is something that this rx might parse very well... not only can it do it, but it would be about as fast as it could be done")
+
+### [SPAN-ISEL] — head parenthetical, verbatim
+
+(FILED 2026-10-10 by Frank, session 106; WIDENED the same day to the bitstream locator; SAVED FOR LATER, after the low-hanging fruit (Frank))
+
+### [BITSTREAM-GPU] — head parenthetical, verbatim
+
+(BOONIES; FILED 2026-10-10 by Frank, session 106: "wouldn't seamless gpu support be cool")
+
+### [PIC-ARM] — head parenthetical, verbatim
+
+(FILED 2026-10-11, manager, session 107, from [LOSS-REVIEW] lrvm C1)
+
+### [SPELLING-INV] — head parenthetical, verbatim
+
+(FILED 2026-10-11 by Frank, session 107; UNSCHEDULED)
+
+### [POS-PARALLEL] — head parenthetical, verbatim
+
+(FILED 2026-10-11 by Frank, session 107; NEEDS THOUGHT BEFORE PROCEEDING — a design study after [LOSS-REVIEW] phase 1, so reach is counted on real losing cells)
+
+### [VM-CLSMASK] — head parenthetical, verbatim
+
+(FILED 2026-10-11 by Frank, session 107; UNSCHEDULED, joins the [SPAN-ISEL] thread)
+
+### [XARCH] — head parenthetical, verbatim
+
+(TABLED by Frank 2026-09-06, fifty-sixth session: "all are good work efforts but lets table xarch for now. note that there will be a round in the future for architecture specific opt")
+
+### [SR-8] — row text before the 2026-10-12 rewrite (verbatim)
+
+- [SR-8] STATE:deferred — ENGINE-capability check moves OUT of the parser. Today `\1` is rejected by the PARSER as "requires module 'backrefs'", but backrefs parse fine and simply cannot LOWER to a DFA. When M4's VM exists the honest diagnostic becomes "requires the VM engine", which is a lowering-time check against the registry's `engines` column. Blocked on M4 having a second engine to choose between. **DISPOSITION (2026-08-17, [M4.7a] + manager redirect):** the VM exists now, and lane/m47a found this row's premise does not hold in code — `\1` is refused for lack of an implementation (no producer), not for engine incapability, so there was never a parser-side engine check to relocate; the parser's refusal wording is already correct and unchanged. The lowering-time CONSULTATION this row's charter describes is DISCHARGED-BY-ARCHITECTURE today rather than built: zero producers means zero customers (D18/OS-0/D53), so select_engine.c's socket stays unpopulated machinery on purpose, and it LANDS WITH THE FIRST VM_ONLY PRODUCER (whichever M6 module gets there first) rather than ahead of one guessing at a contract from sample size zero. Until then, tests/registry/registry_check.c's check_engine_capability_tripwire guards the gap: it asserts every VM_ONLY-masked RS_MODULE row has no wired producer, and its failure message on the day that stops being true names building this consultation as the required next step. This row's own STATE stays `deferred` on that basis — not blocked on anything further, but not something to build ahead of its first real customer either
+
+Rewritten 2026-10-12 (session 111, lane planlint) on the manager's disposition: D55 settled the premise. Finding recorded with the rewrite: D67 (2026-08-22, [M6.4.2]) BUILT the consultation this row describes (`forces_registry`, src/opt/select_engine.c) and retired the tripwire `check_engine_capability_tripwire` into `check_engine_capability` (tests/registry/registry_check.c), so the row is arguably completed; it stays `deferred` pending that ruling.
+
+### [FIND-TIE] — tail note found wedged under [FIND-DOMAIN-CHECK] (2026-10-12, lane planlint)
+
+The row [FIND-TIE] was archived above (STATE:completed, CLOSED 2026-09-28) with the words "see this row's own tail note"; the note itself had been left in docs/dev/plan.md as a second line of the [FIND-DOMAIN-CHECK] row. Moved here verbatim:
+
+**BUILT 2026-09-28 (lane findtie, opus): `pcrec_find_run_scan_index`'s candidate order reversed (`[n-1..0]`), so `pcrec_find_pick`'s own earliest-candidate tie rule lands on the run's positional rightmost — the SAME reader `pcrec_find_set_pick` already threads its own `[rightmost, ...]` order through, and the one PICK left inconsistent after [OPT-REQRUN-ENC] fixed the NONE arm alone. `pcrec_find_set_pick` (the SET reader) and `pcrec_find_run_window_start` (the run's window-MASS reader) were both already consistent (data tie = NONE tie in both) and are untouched — the run's own scan-member PICK was the one site.** `abi` 43 -> 44 (a stamp-VALUE-and-emitted-text move, `[OPT-REQRUN-ENC]`'s abi-38 precedent). Witnesses confirmed live: `кириллица+ -e utf8 --analysis weblog` now scans 0x86 (a continuation byte, was 0xD0); `[a-z]+@é -e utf8 --analysis weblog|log` now scans 0xA9 (was 0xC3) — both added as `tests/codegen/run_prechecks.sh` §4.10a/b/c. **MOVERS — the DEFAULT axis moves too, under BOTH encodings**: the built-in `default` analysis declares byte-rate data, and its own shipped `freq` table ties every zero-count byte at the 2 ppm floor, so a compile naming NO analysis can hit a data tie under `-e byte` as well as `-e utf8` — measured live: `é@` (no analysis, `-e byte`) moves `RX_REQ_BYTE` 195 -> 169 / `RX_REQ_RUN` "c3a940@0" -> "c3a940@1". `tests/codegen/run_prechecks.sh` §4.5 (the `github_pat_` truncation witness) and §5.9r (K66's witness) were re-derived to their new correct values in the same change (both hit real ties). Sabotage **S329** (structural-only detector, S294's own precedent one tie-rule over — no answer-level detector exists or can exist, every run member being necessary regardless of which is scanned). `docs/spec/match_api.md` §6, `docs/spec/findings.md` §4, `docs/spec/tuning.md` §2.28 and `docs/design/reqpos_2b.md` §2.3 carry the D80 spec hunks. **OWED to the manager at merge**: the corpus-wide mover census (base d604bee9 vs this lane's tip, `-e byte`/`-e utf8` × default/weblog/log, findb5's `ship_census.py` shape) and `bash tests/mech/run_sabotage_matrix.sh S329` — both deferred because `land84`'s `make test`+`mech` chain held the box for this lane's whole working period; exact commands in `docs/dev/lanes/findtie_report.md`. (B) FILEPIN re-pin is the manager's at merge (a lane branch commit is not yet reachable from main).** **DONE — MERGED `72e3ae41` (per `dev_journal.md`'s eighty-fourth session): default-path mover census = 134 of 5,751 corpus artifacts under `-e byte`, 0 under `-e utf8`; S329 DETECTED (confirmed green by lane tri86's own concurrent-chain reading); land85/tri86 carried the (B) FILEPIN, S311 and run_scan-guard re-pins this row's merge needed.**
+
+### [PC-2] — body found wedged under [PCRE2-UP] (2026-10-12, lane planlint)
+
+[PC-2]'s head ended "periodic re-survey: re-read pcre2syntax.html," and its two continuation lines ("re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the date. Do this whenever a module lands and at each checkpoint review") sat under [PCRE2-UP]'s head. Reunited in docs/dev/plan.md; nothing was lost.
+
+## Deleted rows, 2026-10-12 (session 111, lane planlint: [PLAN-LINT] step 3 — Frank agreed they are dead; verbatim)
+
+### [GUARD-MODULE-SWAP] — deleted
+
+- [GUARD-MODULE-SWAP] STATE:not-started (carried from the retired "Small-debt shelf" by [PLAN-LINT] step 2, 2026-10-12; undated, unruled, no owner; status unknown: it is not recorded whether this was ever built) — module-swap / row-deletion guard — owed, unruled.
+
+### [PC4-MISSING-SHAPES] — deleted
+
+- [PC4-MISSING-SHAPES] STATE:not-started (carried from the retired "Small-debt shelf" by [PLAN-LINT] step 2, 2026-10-12; undated; PC-4 itself is complete, 62,872 cells) — PC-4 missing shapes — caseless-negated, `\N{n,m}`, MODIFIER, zero-tail `(?P`.
+
+## Completed 2026-10-12 (session 111, lane planlint: [PLAN-LINT] step 3 — [FORM-CHAR2] archived on Frank's ruling)
+
+- [FORM-CHAR2] STATE:completed (**STATUS 2026-10-12 (plclean): the [CLS-TREE] kit was built and CLOSED 2026-10-03 (archived in plan_completed.md) with D138 Q1 "measure first — the fold default stays pending [FORM-CHAR2]", so the 2026-09-11 SUBSUMED ruling below was carried out by the kit and the fold-DEFAULT question (i)/(ii)/(iii) is still open HERE; merged with [CLS-FOLD-WAF744], the same cls-fold timing question.** CHARTERED 2026-09-06 at O-19 §1; measurement lane, sonnet-sized, next admin slot) — THE FOLD'S TIMING BILL ARRIVED: the bench's abi-23 AFTER measures [FORM-CHAR]'s cls-fold SLOWER on its one corpus witness (ci-256 forced-VM x1.027 search / x1.045 thr / x1.095 match vs a 1.34% noise floor) against -20% code / -32% .so / x0.40 compile. O-19 asks (i) per-site instruction counts on the fold-vs-bitmap pair (form_char_step0.md's asm method, one witness deeper), (ii) a repeated-fold-class customer shape (does any real pattern hit the same fold constant hot enough to flip the sign), (iii) THE DEFAULT — Frank rules after (i)/(ii); until then fold stays default-ON (the deny flag -fno-cls-fold is the caller's recourse; the size win is unconditional, the speed loss is at/near noise on the only witness). FRAME SET 2026-09-06 (Frank): the ruling is expected to be a DIAL PLACEMENT, not a boolean — under [OPT-DIAL]'s five-setting direction cls-fold at current numbers is the worked example of "one notch toward size" (penalty under x%, savings over y%), so (i)/(ii)'s numbers feed the tier classification; report them against that rule-shape. **RULED (Frank, 2026-09-11, sixtieth session): SUBSUMED INTO THE [CLS-TREE] DESIGN NOTE (option B)** — cls-fold's end-state is one kit member among several (the m=0x20 one-cube instance of the study's general cube form), selected by the sectioning DP and priced by lambda; NO standalone dial placement for a special case (general-mechanisms rule). (i)/(ii) still run, but as CALIBRATION INPUTS to the design note's op-pricing cost model, not as evidence for a standalone ruling. The timing half is ns/char-class and rides the ubuntubudu route (I-65 session) per the same-day darwin-gate ruling; the asm-counting half is box-independent. Shipped cls-fold stays default-ON with -fno-cls-fold as recourse until the kit replaces it (implement-then-replace). ABSORBED [CLS-FOLD-WAF744] (was STATE:not-started; merged 2026-10-12, plclean [PLAN-LINT] step 2): (BOONIES TIER — UNSCHEDULED, LOW PRIORITY; Frank 2026-09-30, eighty-seventh session, with the D138 Q1 ruling: "research [the] waf744 results") — RESEARCH why the caseless-fold VM class form loses on waf744 on x86: match +28% (3.4 vs 2.6 ns/char on a 21-byte subject, the fold won 0 of 11 rounds) and throughput +1.2%, against +6% match on arm64, while the other 9 formchar2 witnesses are tied or fold-faster (docs/dev/lanes/formchar2_report.md §4a/§5; studies/form_char2/results/timing_x86_*.tsv). waf744 is forced-VM only (default-route population 0), so no default artifact is affected. Questions on file: is it the per-site instruction count (atom 1 shorter on x86), a code-layout or alignment effect ([EMIT-ALIGN]), or the short-subject entry regime? FIRST STEP when opened: perf-counter and disassembly comparison of the waf744 fold vs table artifacts on x86. Trigger: a default-route pattern with the waf744 shape, or the [OPTLOOP] cycle reaching class forms. Starts only on Frank's word.
+
+Closure note (2026-10-12, session 111, lane planlint): ARCHIVED as COMPLETED on Frank's ruling. The row's merged status wrongly said the fold-DEFAULT question (i)/(ii)/(iii) is still open here. docs/dev/decisions.md D138's addendum of 2026-09-30 RULED it: Q1, the fold STAYS the default (docs/dev/lanes/formchar2_report.md §4a/§5, merged 59748d54; x86 fold/table ratio 0.984/0.975/0.977 over 10 witnesses, noise floor at most 0.32%; the bench's ci256 penalty did not reproduce). Per D138 Q3 `-fno-cls-fold`, bit 24 and `RX_VM_CLS_FOLDS` are PERMANENT as that ROWS row's deny. The absorbed [CLS-FOLD-WAF744] research item (why the caseless-fold VM class form loses on waf744 on x86; boonies, unscheduled, low priority, D138 addendum) is now carried only by this archived text: re-file it as a Boonies row if wanted.

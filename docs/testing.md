@@ -837,7 +837,33 @@ gitdir's `hooks/`, not a nonexistent `.git/hooks` under the worktree).
 Bypass with `git push --no-verify` when you deliberately need to push past
 a failing local gate.
 
+`make hooks` takes `HOOKS=` (default `pre-push`): `make hooks HOOKS=pre-commit`
+installs only the [PLAN-LINT] commit gate, `make hooks HOOKS="pre-push
+pre-commit"` installs both. `scripts/hooks/pre-commit` runs
+`scripts/plan_lint.sh --staged` only when docs/dev/plan.md,
+docs/dev/plan_completed.md or docs/design/plan_row_bodies/ is staged, lints
+the staged content (what the commit would record, not the working file),
+never runs `make test`, and costs about 60 ms (measured on the Linux dev
+box: 0.06 s on a clean staged plan, 0.08 s on a rejected one). It is
+installed by hand, never automatically, for the same D2 reason. Bypass with
+`git commit --no-verify`.
+
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
+
+### Plan lint (`make test-plan-lint`)
+
+[PLAN-LINT] step 3 (lane planlint, 2026-10-12). `scripts/plan_lint.sh` checks
+docs/dev/plan.md against the one row format its Policy section defines. It is
+a LIGHT section of `make test` (text only, no `all` dependency; about one
+second, nearly all of it the tree-wide `plan.md:<line>` `git grep`), next to
+`test-spec-history`, whose shape it follows: a runner that prints
+`checks passed:`/`checks failed:`, a rule table, and a planted-violation
+self-test. Strict from day one: every rule fails the section, there is no
+baseline file and no warning tier; the informational checks live in
+`scripts/plan_lint.sh --stale`, run by hand at wake. The rule table, the
+non-vacuity floor (a linter that parsed fewer than 150 rows fails) and the
+self-test are in tests/plan_lint/CLAUDE.md. The section's verdict is read from
+make's `*** [...test-plan-lint] Error` line like every other section's.
 
 ## Suite health log
 

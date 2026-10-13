@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# scripts/hooks/pre-commit — OPT-IN local gate: lints docs/dev/plan.md when a
+# commit touches the plan. [PLAN-LINT] step 3.
+#
+# NOT auto-installed. Installed only by `make hooks HOOKS=pre-commit` (a plain
+# copy into the resolved hooks directory), exactly like scripts/hooks/pre-push
+# and for the same reason: D2's "plain make for strangers" — cloning this repo
+# and running `make`/`make test` must never trip a hook the stranger didn't ask
+# for. Unlike pre-push it never runs `make test`.
+#
+# It runs the linter ONLY when docs/dev/plan.md, docs/dev/plan_completed.md or
+# something under docs/design/plan_row_bodies/ is staged, and it lints the
+# STAGED content (`git show :path`, via scripts/plan_lint.sh --staged), never
+# the working file: a commit is judged by what it records. --staged skips the
+# tree-wide plan.md:<line> citation scan (PL14), which stays in `make test`'s
+# test-plan-lint, so the gate costs a few tens of milliseconds, not a repo grep.
+# Bypass once with `git commit --no-verify`.
+set -u
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$repo_root" ]; then
+    echo "pre-commit: could not resolve repo root via 'git rev-parse --show-toplevel'" >&2
+    exit 1
+fi
+cd "$repo_root" || exit 1
+
+if ! git diff --cached --name-only | grep -qE '^(docs/dev/plan\.md|docs/dev/plan_completed\.md|docs/design/plan_row_bodies/)'; then
+    exit 0
+fi
+
+if [ ! -x scripts/plan_lint.sh ]; then
+    echo "pre-commit: scripts/plan_lint.sh is missing in this tree; plan lint skipped" >&2
+    exit 0
+fi
+
+if ! scripts/plan_lint.sh --staged; then
+    echo "pre-commit: the staged plan files violate the plan.md row format — commit blocked." >&2
+    echo "pre-commit: fix the lines above (the format is defined in docs/dev/plan.md's Policy)," >&2
+    echo "pre-commit:   or bypass once with 'git commit --no-verify' (a deliberate choice)." >&2
+    exit 1
+fi
+exit 0

@@ -11,15 +11,23 @@ Append-only where noted; the restart/status-recovery record for the project.
   (rewritten 2026-10-12 by [PLAN-LINT] step 2 into Policy / Active /
   Candidates / Backlog / Boonies / Deferred; see `lanes/plclean_report.md`;
   long row bodies live in `docs/design/plan_row_bodies/`);
-  STATE:completed rows do not live here. Machine-greppable step states
-  (`STATE:not-started|started|completed|blocked|deferred`); format and grep
-  recipes documented at the top of the file. Expand a milestone into
-  substeps only when work on it begins.
+  STATE:completed rows do not live here. Since 2026-10-12 ([PLAN-LINT]
+  step 3, `lanes/planlint_report.md`) every row has ONE format, defined in
+  the file's Policy section and enforced by `scripts/plan_lint.sh`
+  (`make test-plan-lint`, strict, no baseline): a head line
+  `- [ID] STATE:<not-started|started|blocked|deferred> — <title>`, then
+  `filed:`, one dated `status (ISO date):` line rewritten in place,
+  `next:`/`trigger:`, optional `refs:`, and a charter of at most 6 lines.
+  Greppable states (`STATE:not-started|started|blocked|deferred`); recipes
+  in the Policy section. `scripts/plan_lint.sh --stale` is the by-hand
+  report (stale `started` rows, open rows whose status says MERGED,
+  unresolved `[ID]` references). Expand a milestone into substeps only when
+  work on it begins.
 - `plan_completed.md` — archive of completed plan rows, grouped by
   completion date, text preserved verbatim (split from plan.md 2026-08-13).
   A row cited elsewhere as "docs/dev/plan.md [ID]" lives here once it is
   STATE:completed; `grep -c "STATE:completed" docs/dev/plan_completed.md`
-  counts them. Since 2026-10-12 it also holds the plan.md cleanup's verbatim archives: "Retired free text", "Completed 2026-10-12", "Superseded and merged rows" and "Row history moved out of live plan.md rows" (the long status stacks that were replaced by charter + dated status).
+  counts them. Since 2026-10-12 it also holds the plan.md cleanup's verbatim archives: "Retired free text", "Completed 2026-10-12", "Superseded and merged rows" and "Row history moved out of live plan.md rows" (the long status stacks that were replaced by charter + dated status). [PLAN-LINT] step 3 appended the format-A normalisation's history (every row's old head parenthetical, verbatim), the two deleted rows, the archived [FORM-CHAR2] and two wedged fragments found on the way; its `### [ID]` entries are headings, never `- [ID]` row heads, so no row of plan.md has a second home.
 - `dev_journal.md` — append-only dated journal, newest at bottom. Append an
   entry after every significant work session; this is the primary
   restart/status-recovery record.
