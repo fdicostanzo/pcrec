@@ -31,6 +31,10 @@ discuss design points, and run everything in between.
    waits on you. Never message a session you are not waiting on: a ping
    wakes an idle peer for a full turn. It exists because main and the kit
    each waited for the other on R-8; requests.md is yours to file.
+0b. **Check CI** (Frank, 2026-10-13): `timeout 60 gh run list --limit 10`.
+   Any `failure` on main → a triage lane before other work (rule 2 below).
+   A cancelled run is NOT green (a push cancels the running job). CI sat
+   red on every push for 24+ h unnoticed until Frank saw it (2026-10-13).
 1. **Read `docs/dev/wake.md`** — the hand-off brief from the previous session.
    It is deliberately gitignored; on any disagreement, the committed docs win.
 2. Read the tail of `docs/dev/dev_journal.md` (append-only, newest at bottom) —
