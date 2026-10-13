@@ -1675,7 +1675,11 @@ def mask_classes(pat):
     while i < n:
         c = pat[i]
         if c == "\\" and i + 1 < n:
-            out.append("XX" if in_class else c + pat[i+1]); i += 2; continue
+            # An escaped "(" is masked too: kept as "\\(", its "(?" in "\\(?"
+            # (an optional literal paren) reads as a group doorway, and that
+            # call-bucket misfile was the one pattern the positive control
+            # found the pre-module reference ACCEPTING (tests/compound/split.rxt).
+            out.append("XX" if in_class else c + ("X" if pat[i+1] == "(" else pat[i+1])); i += 2; continue
         if not in_class and c == "[":
             in_class = True; out.append(c); i += 1; continue
         if in_class and c == "]":
@@ -1783,6 +1787,9 @@ _SELFTEST = [
     (r"(?(DEFINE)(?<g>a))(?&g)", True, "[wave F] DEFINE plus a real call: call-bearing twice over, and it must not be rescued into the call-free bucket by the conditional arm"),
     (r"(?(DEFINE)(?<g>a))b", True, "[wave F] THE SHARP ONE: a DEFINE whose body holds a NAMED GROUP, and nothing outside it. This pattern scans TWO `(?` occurrences -- the DEFINE tail, which the negative lookahead sends to the call bucket, and `(?<g>`, which the named-group arm recognises as NOT a call -- so it is the row that pins the ANY-occurrence rule: one unrecognised tail is enough, and a classifier that took the LAST occurrence's verdict, or that let a recognised inner construct rescue the pattern, files it call-FREE and the gate then demands byte-identity from a pattern this module changed"),
     (r"^[(?(DEFINE)a)]$", False, "a `(?(DEFINE)` INSIDE a class is class members -- the class mask has to reach wave F's arm too, or the newest doorway reintroduces the census's oldest defect"),
+    (r"a\(?b",           False, "an ESCAPED paren before `?` is a literal optional paren, not a group doorway (the SQL-keyword pattern in tests/compound/split.rxt, the one pattern the positive control saw the reference ACCEPT)"),
+    (r"a\\(?:b)",        False, "an escaped BACKSLASH before a real `(?:` leaves the group open a doorway, and a non-call one"),
+    (r"a\\(?1)",         True,  "an escaped backslash before a real call: the escape pair consumed, the call still found"),
     (r"(?~x)",           True,  "FAIL SAFE: an unrecognised `(?` tail is classified call-bearing"),
 ]
 _bad = []
@@ -1853,7 +1860,11 @@ def mask_classes(pat):
     while i < n:
         c = pat[i]
         if c == "\\" and i + 1 < n:
-            out.append("XX" if in_class else c + pat[i+1]); i += 2; continue
+            # An escaped "(" is masked too: kept as "\\(", its "(?" in "\\(?"
+            # (an optional literal paren) reads as a group doorway, and that
+            # call-bucket misfile was the one pattern the positive control
+            # found the pre-module reference ACCEPTING (tests/compound/split.rxt).
+            out.append("XX" if in_class else c + ("X" if pat[i+1] == "(" else pat[i+1])); i += 2; continue
         if not in_class and c == "[":
             in_class = True; out.append(c); i += 1; continue
         if in_class and c == "]":
