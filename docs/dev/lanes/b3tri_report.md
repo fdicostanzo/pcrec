@@ -22,7 +22,7 @@ RECID_RC=2 (not named in the brief; found in `recid.log`).
 |---|---|---|---|---|
 | test-resource | `a{5,25000}` rescue 762911 vs pin 762884 | stale pin, restri's (B4's RX_COMPOUND stamp, +27) | none: arrived with `git merge main` | 42/0 PASS; B3's abi 77 -> 78 does not move the size (same digit count) |
 | test-premul-table | 124 `[iff]` + 3 `[bound]` | stale reader (below) | `tests/codegen/run_premul_table.sh` | 16/0 PASS |
-| test-assertions | only `run_endvar_identity.sh` (7/8 scripts) | stale premise (below) | `tests/codegen/run_endvar_identity.sh` | endvar 4/0 PASS; section result in section 7 |
+| test-assertions | only `run_endvar_identity.sh` (7/8 scripts) | stale premise (below) | `tests/codegen/run_endvar_identity.sh` | whole section 8/8 scripts PASS (PROCS=2) |
 | test-cpset-structure | `[2b]` `src/parse/definitions.c:426` reads `u.cls.iv` | new B3 reader of the class payload | function-scoped allowance in `run_cpset_structure.sh` | 29/0 (+17, +59) PASS |
 | test-encoding-checks | DD12a(i) K50 manifest | stale manifest (below) | `tests/codegen/manifests/k50_gate_refinement.txt` | 11/0 PASS |
 
@@ -114,7 +114,10 @@ pattern now call-free. The FULL section is not re-run here (owed, section 7).
 
 ## 7. Owed / verified
 Verified here: test-resource, test-premul-table, test-cpset-structure, test-encoding-checks
-(slice), run_endvar_identity.sh, the recid classifier self-test. See the final message for
-test-assertions (whole section) and `--engine=vm` axis results if they had finished at write time.
+(slice), run_endvar_identity.sh, the recid classifier self-test. test-assertions (whole section, 8/8 scripts) and the
+`--engine=vm` axis alone (`AXES="--engine=vm" PROCS=2 bash tests/axes/run_axes.sh`, 1165 s wall:
+"all axes answer-identical to default"). With the 50 axes in B3's log that closes the answer-identity
+sweep for every axis; the remaining owed item for test-axes is only a clean single `make test-axes` run
+under a larger chain budget.
 OWED (heavy, not run): `make test-recursion-identity` (RECID), the rest of the chain after
 B3's current stages (mech S74.. list) is B3's own, and a full `make test` on the merged tree.
