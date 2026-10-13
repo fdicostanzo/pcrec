@@ -1,6 +1,6 @@
 # plclean — [PLAN-LINT] step 2: the plan.md cleanup (2026-10-12, session 111, lane plclean, sonnet)
 
-Docs only: no C, no Makefile change. Branch `lane/plclean` from main `6112d16a6`, eleven commits (eight numbered cleanup commits, one wedge repair, the PLAN-LINT/report commit, and the CLAUDE.md updates). Input: `docs/dev/reviews/plan_triage_2026-10-12.md` (the triage), Frank's session-111 rulings (quoted in the brief). Item (8) of the triage's suggested order, the linter, is step 3 and is NOT done here.
+Docs only: no C, no Makefile change. Branch `lane/plclean` from main `6112d16a6`, ten commits (eight numbered cleanup commits, one wedge repair, and the PLAN-LINT/report/CLAUDE.md commit). Input: `docs/dev/reviews/plan_triage_2026-10-12.md` (the triage), Frank's session-111 rulings (quoted in the brief). Item (8) of the triage's suggested order, the linter, is step 3 and is NOT done here.
 
 ## 1. Before and after
 
