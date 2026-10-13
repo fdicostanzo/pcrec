@@ -3802,3 +3802,21 @@ arm `candoracle`. REACH shown by hand: unplanted trace-build
 `CANDORACLE undeclared-read FIRST LOCATE` (dfa/attempt/vm witnesses). It is the
 sibling of S844: S844 plants the cycle the declared edges expose, S845 the
 undeclared edge itself.
+
+**[MECH-REACH] nine rows re-pointed at default-path witnesses (lane mechwit,
+2026-10-13, no `src/` change).** [START-LANDING] (b8337c33b) and [OPT-REVEND]
+(7388f1c0d) moved the witnesses of S237, S238, S252, S253, S421, S422, S423
+(utf8 `\p` forms onto `landing`, so the size-cap ladder never fires) and S264,
+S614 (`abc$`, `[^c]{1,3}$` onto `rev-end`, so no forward window or stay loop)
+off their sabotaged sites; all nine read UNREACHED on main's tip, and the sites
+stayed live behind `-fno-start-landing` / `-fno-rev-end`. Each reach probe now
+names a pattern that reaches its site under DEFAULT flags (report:
+docs/dev/lanes/mechwit_report.md has the per-row table): S237/S238 and
+S252/S253 compile a three-class `\p` chain / `[^\p{C}\p{M}\p{P}]xy`; S421-S423
+`(\p{Xwd})\b` (`--features assertions`); S264 `(ab)(c)$` and `([^c]{1,3})$`
+(the VM route's clamp); S614 `X(?:$|[^abc])+` and `(?:$|[^abc]){2,}` (the
+forward STAY loop), whose harness target moved from `gate.rxt` (0 failures now)
+to `tests/base/review_r2.rxt`. The detectors moved with them:
+`run_anchored_match.sh` §6d, `run_tune_dial.sh` §6 and `run_resource_tests.sh`
+[PF-DROP] now use the default-path witnesses (no deny flag).
+

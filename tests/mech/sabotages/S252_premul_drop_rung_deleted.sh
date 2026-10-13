@@ -28,7 +28,7 @@ SAB_ID="S252-premul-drop-rung-deleted"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="tunedial"
 SAB_DESC="compile_driver's premultiplied-table drop rung (K59's own fix) is never eligible, so an emitted-size cap refuses a DFA-engine artifact that fits once the premultiplied transition table is dropped -- the K59 defect restored at every --tune position but the caller's own explicit -2/-fno-premul-table"
-SAB_DOC_FIGURE="docs/spec/limits.md 8's 'The optional-contributor drop'; docs/dev/known_issues.md K59; tests/codegen/run_tune_dial.sh section 6"
+SAB_DOC_FIGURE="docs/spec/limits.md 8's 'The optional-contributor drop'; docs/dev/known_issues.md K59; tests/codegen/run_tune_dial.sh section 6 RE-POINTED 2026-10-13 (lane mechwit, UNREACHED on main since [START-LANDING] put '[^\\p{C}\\p{M}\\p{P}]' on 'landing'): the K59 witness is now '[^\\p{C}\\p{M}\\p{P}]xy', which keeps the reverse pass at the default with no deny flag (1,441,473 B, 1,046,700 B after rung 1, 458,919 B after rung 2); run_tune_dial.sh section 6 drops its -fno-start-landing deny. Solo run DETECTED, reach:ok(3/3), tunedial:4fail/112pass."
 SAB_COUNT=1
 # REACH: does the K59 witness still compile at a position where ONLY this
 # rung rescues it (balanced -- the artifact that is refused at balanced
