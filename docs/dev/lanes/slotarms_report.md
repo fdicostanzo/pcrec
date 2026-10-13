@@ -1,6 +1,7 @@
 # slotarms -- pcrec engine arms for the joint timing slot (PREPARED, nothing timed)
 
 Lane `slotarms` (sonnet), 2026-10-13, branch lane/slotarms off c4e30f413. Files: `slotarms/`.
+Verification counts below are 56 (cell, arm, subject, mode) checks in the final layout (earlier layout: 77).
 
 ## Why these arms
 The cost model is time ~ calls*C_call + uses*C_use + matches*C_match + bytes*c_byte. The kit measures its
@@ -38,20 +39,17 @@ the `first` rows; C_match = (find-all-row - c_byte*bytes)/matches - C_call.
 - Answers: all 77 (cell, subject, mode) checks (first span; find-all count) equal python3 `re` on the same bytes: 0 mismatches.
   The check uses the same binaries as timing (`run SUBJECT MODE check`, no clock).
 
-## Interface assumption
-Targeted the kit's vecspike harness shape (read-only: `worktrees/vecspike/docs/dev/lanes/vecspike/{time.sh,build.sh,vdrv.c}`
-and `memfn-slot/spike1/slot.sh`): `bin/<cell>/V0/run SUBJECT_FILE first|all` printing `matches=N hash=H ns/pass=X` (7-round
-median, rounds calibrated >= 50 ms), subjects as files in `subj/`, V0/V0b A/A floor, CPU pin, load guard, completion line
-`time.sh: COMPLETE rows=N wall=Ss`. Differences: (1) kit time.sh reports variant-minus-V0 deltas and prints nothing for a
-V0-only cell, so `slotarms/time.sh` prints absolute ns with the A/A floor instead; to use the kit's own time.sh one would need
-a second variant per cell (unneeded here). (2) In `first` mode `matches=` is 0/1 (found), not the kit's constant 1.
-(3) Cells are named by pattern/engine, one variant `V0`. If the kit relays a different harness, only `build.sh`/`time.sh`
-change; `arms.tsv`, `gen_subj.py`, `drv.c` and `verify.sh` carry over.
+## Interface (kit harness contract, relayed by the manager; supersedes the spike1 shape I first targeted)
+`arms.tsv` = `cell arm role subjects modes`; cells are `<p>-first` (C_call/c_byte rows) and `<p>-all` (C_match rows) so each
+line is a clean subject x mode cross product; base = the default-engine (auto) build (p1/p3: dfa, p2: hybrid), arms =
+forced engines. `build.sh` ($OUT) makes `bin/<cell>/<arm>/run SUBJ first|all` (drv.c method: >=50 ms calibration,
+median of 7) plus a `cnt` twin (`cnt SUBJ list first|all`, stderr `calls= matches= bytes=`); subjects `$OUT/subj/pc_*`.
+Tested with a scratch OUT inside this worktree (`build/ext-test`), never the kit's. Not opted into streamed-distinct-buffers.
+`first`-mode `matches=` is 0/1 (found). The earlier own `time.sh` was removed (the kit times).
 
 ## Expected cost
-`bash time.sh --estimate`: 56 rows x (5 launches x V0,V0b) x ~0.65 s = ~6.1 min plus load-guard waits; at the kit's
-5-7 s per arm-cell that is 5-7 min wall. Build ~seconds (-j2, pinned to 12-13); verify well under a minute.
-Run: `make; bash build.sh; bash verify.sh; OUT=... CPU=14 LAUNCHES=5 bash time.sh > time.log`.
+Timed rows: 6 cells; arm lines x subjects: p1 2x(5+3), p2 3x(5+3), p3 2x(5+3) = 56 arm-rows, plus each cell's base twice (A/A).
+At the kit's ~5-7 s per arm-cell: ~5-7 min wall. Build seconds (-j2, pinned 12-13); verify under a minute.
 
 ## Caveats
 - A 64 KiB subject exceeds L1 (32 KiB data) on Zen 4: c_byte is an L2-resident figure; the 1Ki rows are L1. Not changed; the

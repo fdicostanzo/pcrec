@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""slotarms subject generator: gen_subj.py OUTDIR  (writes OUTDIR/<name>, bytes only).
+"""slotarms subject generator: gen_subj.py OUT  (writes OUT/subj/pc_<name>, bytes only).
 
 nm*  no-match subjects: all 'a' (no digit, so no pattern's start set is ever hit)
 e0   empty subject
@@ -11,10 +11,10 @@ Deterministic (no randomness): the same bytes on every box.
 import os, sys
 TOTAL = 65536
 FAM = {"w2": b"7a", "w5": b"7777a"}
-out = sys.argv[1]
+out = os.path.join(sys.argv[1], "subj")
 os.makedirs(out, exist_ok=True)
 def put(name, data):
-    with open(os.path.join(out, name), "wb") as f:
+    with open(os.path.join(out, "pc_" + name), "wb") as f:
         f.write(data)
 put("e0", b"")
 for n, name in ((8, "nm8"), (64, "nm64"), (1024, "nm1k"), (TOTAL, "nm64k")):
