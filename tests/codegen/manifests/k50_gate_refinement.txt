@@ -301,12 +301,9 @@ x*
 x*y*
 |a
 
-#UNDECLARED $
-#UNDECLARED (?m)\Z
 #UNDECLARED \B
 #UNDECLARED \B\B
 #UNDECLARED \Bx*
-#UNDECLARED \Z
 #UNDECLARED \b
 #UNDECLARED \b\b
 #UNDECLARED \b\w*
@@ -332,25 +329,42 @@ x*y*
 (?:a$)?
 (\w{1,2})(?:(?=)|)$
 \s*$|x\z
-#UNDECLARED (?:[a-z]{0,5})\Z
 #UNDECLARED (?:a$)?\b
-#UNDECLARED (?:ab)?$
-#UNDECLARED [a-]*?(?:\B)*$
-#UNDECLARED [a-z]*$
-#UNDECLARED [a-z]{0,5}$
-#UNDECLARED [ab]*(?:\B|)$
-#UNDECLARED [ab]?(?:(?<=a)|)$
-#UNDECLARED [ab]{0,4}$
-#UNDECLARED \B$
-#UNDECLARED \d?(?:|\b)$
-#UNDECLARED \s*$
-#UNDECLARED \s*?$
-#UNDECLARED \w*\B$
-#UNDECLARED a*$
-#UNDECLARED a*\Z
-#UNDECLARED a*b*$
-#UNDECLARED a{0,4}$
-#UNDECLARED a{0,4}\Z
-#UNDECLARED a{0,5}b{0,5}$
-#UNDECLARED b*$
-#UNDECLARED x*$
+
+# ---------------------------------------------------------------------
+# [COMPOUND-END / D164 B3] (lane b3tri, 2026-10-13). B3's match-end mark
+# removed the reverse walk's EOL-vs-END view selector on end-pinned
+# patterns (form F1 one-seed, F2 tagged: the `$` / `\Z` lowering is an
+# NFA-build parameter, endmark.md section R.2), and that selector WAS the
+# axis-E difference the [OPT-REVEND] L2 block above listed UNDECLARED. Their
+# whole remaining byte-vs-utf8 difference is the K50 alphabet refinement
+# (one more byte class), i.e. table DATA, so they return to the plain
+# gate-refinement class they left. Measured at full population
+# (ENC_MAX_BLOCKS=0) on lane/b3tri: 24 rows left the UNDECLARED list for
+# the GATE class (none in the FORM sub-class); the remaining UNDECLARED
+# rows still diverge. Main's own full-population mismatch (see the note
+# above) is unchanged and not re-derived here.
+$
+(?:[a-z]{0,5})\Z
+(?:ab)?$
+(?m)\Z
+[a-]*?(?:\B)*$
+[a-z]*$
+[a-z]{0,5}$
+[ab]*(?:\B|)$
+[ab]?(?:(?<=a)|)$
+[ab]{0,4}$
+\B$
+\Z
+\d?(?:|\b)$
+\s*$
+\s*?$
+\w*\B$
+a*$
+a*\Z
+a*b*$
+a{0,4}$
+a{0,4}\Z
+a{0,5}b{0,5}$
+b*$
+x*$
