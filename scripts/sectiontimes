@@ -13,6 +13,9 @@ each line with its arrival time.
   make --debug=j -k -j6 -Otarget test 2>&1 | scripts/sectiontimes stamp > run.log
   scripts/sectiontimes report run.log            # TSV: section start end wall
   scripts/sectiontimes report run.log --tail     # + low-concurrency stretches
+  scripts/sectiontimes report run.log --open     # + sections STARTED, never finished
+                                                 # (a killed run): end = last stamp,
+                                                 # a trailing `open` column
   ... | scripts/sectiontimes stamp SIDE.tsv > run.log   # debug lines -> SIDE.tsv,
                                                  # run.log stays byte-identical
 
@@ -53,7 +56,8 @@ def stamp(side=None):
 
 
 def parse(path):
-    """-> list of (name, start, end) in epoch seconds; first/last stamp."""
+    """-> (spans, first, last, open): spans are (name, start, end) in epoch
+    seconds; open is (name, start) for each section started and never removed."""
     names, start, spans = {}, {}, []
     first = last = None
     with open(path, errors="replace") as f:
@@ -73,18 +77,26 @@ def parse(path):
             m = REM.match(line)
             if m and m.group(1) in start:
                 spans.append((names[m.group(1)], start[m.group(1)], ts))
-    return spans, first, last
+                del start[m.group(1)]
+    return spans, first, last, [(names[k], t) for k, t in start.items()]
 
 
-def report(path, tail):
-    spans, first, last = parse(path)
-    if not spans:
+def report(path, tail, with_open=False):
+    spans, first, last, still = parse(path)
+    if not spans and not (with_open and still):
         sys.exit("sectiontimes: no `Putting child` lines in %s (was --debug=j on?)" % path)
+    # --open: a section that started and never finished is reported as a span
+    # ending at the last stamp, flagged in a trailing column (every closed row
+    # then carries `done`), so the section a timeout killed is not invisible.
+    allspans = [(n, s, e, "done") for n, s, e in spans]
+    if with_open:
+        allspans += [(n, s, last, "open") for n, s in still]
+        spans = [(n, s, e) for n, s, e, _ in allspans]
     t0 = min(s for _, s, _ in spans)
     t1 = max(e for _, _, e in spans)
-    print("section\tstart_s\tend_s\twall_s")
-    for name, s, e in sorted(spans, key=lambda x: x[1]):
-        print("%s\t%.1f\t%.1f\t%.1f" % (name, s - t0, e - t0, e - s))
+    print("section\tstart_s\tend_s\twall_s" + ("\tstate" if with_open else ""))
+    for name, s, e, st in sorted(allspans, key=lambda x: x[1]):
+        print("%s\t%.1f\t%.1f\t%.1f" % (name, s - t0, e - t0, e - s) + ("\t" + st if with_open else ""))
     print("# sections=%d  first_start->last_end=%.1fs  sum_of_walls=%.1fs"
           % (len(spans), t1 - t0, sum(e - s for _, s, e in spans)))
     # concurrency profile: seconds spent with k sections running.
@@ -113,7 +125,7 @@ def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "stamp":
         stamp(sys.argv[2] if len(sys.argv) > 2 else None)
     elif len(sys.argv) >= 3 and sys.argv[1] == "report":
-        report(sys.argv[2], "--tail" in sys.argv[3:])
+        report(sys.argv[2], "--tail" in sys.argv[3:], "--open" in sys.argv[3:])
     else:
         sys.exit(__doc__)
 

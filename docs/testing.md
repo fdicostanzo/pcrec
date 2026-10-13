@@ -968,6 +968,33 @@ it from plan.md; each is its own row there and not restated in full.
 
 ## CI ([REL-1.6], 2026-09-21)
 
+**[CI-SHARD] (2026-10-13, lane `cishard`): CI NO LONGER RUNS ONE SERIAL
+`make test`.** Run 38345462196 was killed at its 90-minute step timeout with 15
+of 68 sections still to run (growth, not a hang: `docs/dev/lanes/
+citime_report.md`), so the workflow is now a matrix of three jobs, each
+`make test-shard SHARD=K/3`: the Makefile launches exactly that shard's
+sections with `make test`'s own accounting (`-k`, the marker files, the
+`sections ran: N/M` trailer over the shard's list) and fails on any red
+section. The split is the declared table `tests/ci/shards.tsv` (section,
+shard, weight, weight source), held to `TEST_SECTIONS` exactly by
+`make test-ci-shards` (a `TEST_SECTIONS` member, so it runs in whichever shard
+carries it, and in a local `make test`; a new section with no shard row turns
+it red; its self-test plants a missing row, a duplicate, an unknown name, a bad
+shard, a bad weight, an empty shard and a matrix that lists too few shards).
+`make test` is unchanged and remains the local merge/close standard; only
+`make strict` moved (it runs once, in shard 1 before its sections).
+Every shard runs `make --debug=j` through `scripts/sectiontimes` (the
+mechanism `scripts/perfrun` uses for its `sections.tsv`), so each section's
+start, end and wall seconds are uploaded as `pcrec-ci-sections-<n>`
+(`sections.tsv` plus the epoch-stamped `sections.raw`) on success AND failure
+AND a step-timeout kill (`report --open` keeps a section the kill interrupted).
+The first-pass weights are LOCAL-box numbers; the runner's per-section times
+replace them (`python3 tests/ci/shard_rebalance.py --measured ...`). The shard
+step's `timeout-minutes` is 60 against a projected ~35 (basis in
+`docs/dev/lanes/cishard_report.md`) and should come DOWN once measured. The
+paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
+"one job" or "a 90-minute `make test` step", read the matrix.
+
 `.github/workflows/ci.yml` runs on every `pull_request` (including from
 forks — the repo is public, the workflow touches no secrets) and every push
 to `main`: full-history checkout, build the pinned libpcre2 10.46 from

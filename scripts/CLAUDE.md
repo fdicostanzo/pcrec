@@ -547,9 +547,11 @@ pcrec (the Makefile owns that).
   (least-sampled uncontaminated), runs it under `gnutimeout 2700`, log
   byte-identical, make's rc returned unchanged; `cpusample.sh` samples
   load/busy/scripts/other-trees every 15 s (and `--probe` for the pre-start
-  contamination read); `sectiontimes` (`stamp SIDE` / `report`) turns
+  contamination read); `sectiontimes` (`stamp SIDE` / `report [--open]`) turns
   `make --debug=j` lines into per-section start/end times without touching the
-  log. Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
+  log (`--open` also lists sections that started and never finished, state
+  `open`, for a killed run; [CI-SHARD]'s CI step is its second caller, with
+  no perfrun around it). Per-run files go to the MAIN tree's gitignored build/perf/ttune/;
   `perfrun --fold` (in main) appends them to docs/dev/ttune_ledger.tsv. Triage
   rule and columns: docs/dev/ttune_measurement.md; BOILERPLATE.md.
 

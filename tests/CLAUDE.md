@@ -757,6 +757,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   than promoted to their recorded oracle, a known stage-4 gap, not a
   finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
+- **ci/** — [CI-SHARD] (lane cishard, 2026-10-13): the DECLARED shard table CI
+  runs `make test` by (`shards.tsv`: section, shard, weight, weight source),
+  its control (`check_shards.sh`, `make test-ci-shards`, a `TEST_SECTIONS`
+  member: set equality with `TEST_SECTIONS`, the workflow matrix, and a planted
+  self-test) and the re-balancer that replaces local weights with the runner's
+  measured times (`shard_rebalance.py`). See its CLAUDE.md.
+
 - **compound/** — [COMPOUND] (`docs/design/compound.md`, D163): `make
   test-compound`, the compound tool's build-step unit checks, through an
   internal driver that links `libpcrec.a` (B0: an [EMIT-ENTRIES] request

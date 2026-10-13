@@ -465,6 +465,9 @@ state with a sibling script in its group.
 Maintenance: update this file when files are added/removed or their roles
 change.
 
+  [CI-SHARD]: optional env `TRAILER_TITLE`/`TRAILER_LIST_NAME` let `make
+  test-shard` word its heading and last line for the shard's list; unset, the
+  text is unchanged.
 - **spec_extract.sh** — [decfbB0b] sourced, never run: the registry check's
   hand-written-set extractors (`extract_md_table_values`,
   `extract_c_return_values`) over `docs/spec/match_api.md` §6.3's value-set
