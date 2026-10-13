@@ -72,10 +72,10 @@ is unigram, so it cannot see the bigram conditions at all.
 | cell | rows regress | loss ns | verdict | tactic that would use the better condition | pcrec has it? |
 |---|---|---|---|---|---|
 | dig | 2 `first`, 0 reached `all` (digits64k all is NULL/REGRESSION replicate) | +13 | ORIGIN-OK: the match is within 7-8 landings of the start; the kit's fixed per-use cost (+0.8 ns). mix64k `all` is WRONG-ORIGIN by landings (11.7x) but WINS (-30 030 ns) | end-landmark / reverse-inner from `x` | parked ([ENG-TACTICS], rev-inner HELD) |
-| email | 8 regress (all `uses`=0) | +34 | GATED: `.com` REQ_RUN rejects every subject before the site runs; the +0.2..+33 ns are a codegen side effect of the changed function, not the form | n/a | gate already ships |
-| word-eq | 2 reached (mix64k) + 6 unreached | +18 372 (reached) + 2 | reached: **WRONG-ORIGIN** (S lands 14 208 times, `=` 2 904, `[A-Za-z_]=` 939). 16 of 20 rows are GATED (no `=` in the subject): Frank's example is real on the one subject that contains `=` | end-landmark / reverse-inner from `=` | no (parked) |
-| hex-run | 17 regress | +49 400 | ORIGIN-OK / NO-COND: nothing but its own set; loss is the kit's per-use cost (+2.2..2.7 ns/use cold) | none exists | - |
-| bounded | 18 regress incl. 4 `all` | +657 770 (4 `all` rows; `first` rows +2..+5 each) | **BYTE-ONLY**: on prose the \W side is 5.5x rarer by bytes but 1.0x by landings (one word, one landing, either side). On digits64k only the BIGRAM `[a-z]\W` is rarer (11.6x landings) -> WRONG-ORIGIN (2 rows, +3 226) | boundary far side; digits64k needs a bigram/window scan | boundary side no; bigram: no kit-facing fact for it (pcrec facts `kset_walk` are offset-bytes, not run-exit) |
+| email | 6 regress (all `uses`=0) | +34 | GATED: `.com` REQ_RUN rejects every subject before the site runs; the +0.2..+33 ns are a codegen side effect of the changed function, not the form | n/a | gate already ships |
+| word-eq | 2 reached (mix64k) + 3 unreached | +18 372 (reached) + 2 | reached: **WRONG-ORIGIN** (S lands 14 208 times, `=` 2 904, `[A-Za-z_]=` 939). 16 of 20 rows are GATED (no `=` in the subject): Frank's example is real on the one subject that contains `=` | end-landmark / reverse-inner from `=` | no (parked) |
+| hex-run | 9 regress | +49 400 (incl. dfa-hat short, bounded `first`) | ORIGIN-OK / NO-COND: nothing but its own set; loss is the kit's per-use cost (+2.2..2.7 ns/use cold) | none exists | - |
+| bounded | 10 regress: 4 `all` byte-only, 2 digits64k WRONG, 4 `first` SHORT | +657 770 (4 `all` rows; `first` rows +2..+5 each) | **BYTE-ONLY**: on prose the \W side is 5.5x rarer by bytes but 1.0x by landings (one word, one landing, either side). On digits64k only the BIGRAM `[a-z]\W` is rarer (11.6x landings) -> WRONG-ORIGIN (2 rows, +3 226) | boundary far side; digits64k needs a bigram/window scan | boundary side no; bigram: no kit-facing fact for it (pcrec facts `kset_walk` are offset-bytes, not run-exit) |
 | dfa-hat | 4 regress (prose) | +478 961 | **WRONG-ORIGIN**: S lands 5 767 / 92 796, `tr\|fa\|nu` 194 / 3 162 (~30x) | multi-literal / per-alternative prefix set ([OPT-A] "multi-literal", FILED, not started); \b-preceded | **no** |
 | vm-hat | 1 regress (prose1m all) | +33 470 | WRONG-ORIGIN by landings (28x) on every reached subject, but 7 of 8 reached rows WIN: a VM-hat use costs ~0 (r17loss a_VM = -0.1), so origin density does not translate into loss here | end-landmark `c` (a presence gate today) / reverse-inner | parked |
 | vm-hat-1 | 0 regress | 0 (16 WIN) | WRONG-ORIGIN by landings (9-15x via `q[bc]`) but all reached rows WIN. Control: wrong origin without loss | pair scan on offsets 0-1 (`kset_walk` already holds `(0,{q}),(1,{b,c})`) | `offset-set` exists for fixed-offset bytes; the class pair at offset 1 is not rarer than q by single byte |
@@ -89,7 +89,7 @@ on direction except the bimodal 64K find-all rows r17loss §3.4 names).
 |---|---|---|---|
 | WRONG-ORIGIN | 9 | 534 028 | 43.0% |
 | BYTE-ONLY (byte density says wrong, landings say OK) | 4 | 657 770 | 53.0% |
-| ORIGIN-OK (hex-run NO-COND 17 rows incl. SHORT) | 17 | 49 400 | 4.0% |
+| ORIGIN-OK (hex-run 9, dig 2, dfa-hat short 2, bounded `first` 4) | 17 | 49 400 | 4.0% |
 | GATED (site not reached; side effect) | 12 | 36 | ~0% |
 
 By tactic (WRONG-ORIGIN only): multi-literal prefix set (dfa-hat prose, 4 rows) 478 961 ns = 38.6% of
