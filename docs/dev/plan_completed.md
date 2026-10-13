@@ -5094,3 +5094,279 @@ Closure note (2026-10-10, planaudit): lane/possland2 merged to main at c9672bd2 
 ## Completed 2026-10-11 (session 107)
 
 - [START-LANDING] STATE:completed (MERGED to main 2026-10-10 session 106 via lane/sltri (contains lane/slbuild; tip 14eda255, abi 74): sltri full make test green 66/66; slbuild chain make strict green, test-axes 0 FAIL, mech 50 rows 0 unexpected; S787/S791 and the codegen-arm rows S07/S572/S693/S745 re-run DETECTED on sltri's green baseline. CONFIRMED: bits 53/54; the five FIT movers' witnesses re-aimed with -fno-start-landing; slbuild's row 10 declared an equivalent mutant (no S-id). REMAINS: SL4 bench relay (I-145).) (BUILD lane slbuild (opus) opened 2026-10-10 session 105 at Frank's GO: SL1-SL3 + SL4 draft, re-deriving the edit set against post-L0/REVEND main first) (BUILT on lane/slbuild 2026-10-10, awaiting merge: SL1 83b4c232 the facts `land_char`/`width`; SL2 bfe30c75 the rows `end-minus-width`/`landing`, abi 73 -> 74, deny bits 53/54, `make test-start-landing`; SL3 b29b382d RECOVER's per-hand totality in the self-check; S782-S791; SL4's relay text is docs/dev/lanes/slbuild_report.md §4, the inbox note is the manager's) (Q1 RULED 2026-10-09 session 103, D156 addendum 3: build Λ; the exact condition is NOT built here; it is the start half of [ENG-TDFA]) (FILED 2026-10-09 from lane walksurvey, docs/dev/walk_survey.md §7 F1; its classes "K4"+"K3" — survey class labels, NOT known_issues ids) — THE LARGEST UNOWNED GRATUITOUS WALK: RECOVER's reverse pass walks back to a start the forward skip loop already LANDED on. Measured with a per-load counting instrument over every bench cell and corpus block. Reach: 176/343 bench patterns (51%), 1,362/4,171 corpus; 85.7% of reverse bytes on bench throughput cells are landing starts; est 50.9 ms bench-weighted (upper, older-pin medians). Answer-identical twins with start = landing (scratch, loaded box): `\w+` −20/−39%, utf8 `.` −34/−35%, `\p{L}+` −39/−42%. Sibling: a FIXED-WIDTH pattern's start = end − w (74 bench / 1,002 corpus; `abcd` −36/−37%; D156's point, locfin panel LF-G14(2)). Proposed: ONE RECOVER-slot row family — `landing` (needs a fact: every start-set byte takes the anchored machine to accepting) and `end-minus-width` (fixed width only). D156 frame: RECOVER is inside the forward+reverse locator, so these are locator-internal rows; route through locate_finish.md rev 2 (lane locfin2) before design. Candidate for [OPTLOOP] round 3 ranking (bench impact above [OPT-REVEND]'s est 30.9 ms). **CLOSED 2026-10-11 (session 107) on bench O-97 (state 3, ledger pcrec-bench docs/dev/ledgers/2026-10-11-start-landing-state3-b8337c33.md; exec summary docs/dev/summaries/2026-10-11-o97-start-landing-state3-exec-summary.md): 298/298 predicted movers reproduced (210 end-minus-width, 88 landing); beyond trial overlap 76% / 78% faster vs a program-identical null of 2.6% / 1.8%; whole-subject form and tail family flat. Residues carried as their own rows: utf8 search-short +1.3..6% on 12 patterns (one bounded lane, then accept); SL1 compile time [SL-COMPILE-TIME] (BOONIES).**
+
+## Retired free text, 2026-10-12 (session 111, lane plclean: [PLAN-LINT] step 2, docs/dev/plan.md cleanup — verbatim; not rows)
+
+Free-text blocks removed from docs/dev/plan.md because they are not rows (design prose, hand-offs, process policy, positioning, retrospectives). Each block is verbatim; the label names its former plan.md line range. Archive-stub rows (rows that only said "archived to plan_completed.md") were deleted without copying, since their full rows live in this file; the duplicate [OPTLOOP] index block was deleted after its newer content was merged into the full rows ([OPT-SIMD], [OPT-VMLIT]).
+
+### D125 close-out banner (plan.md lines 5-8)
+
+**CLOSE-OUT SEQUENCE IN FORCE (D125, Frank 2026-09-26): tails → active rows
+(next optimization cycle HELD) → older/parked rows reassessed against
+today's architecture → stop and take stock. New rows may be filed, not
+scheduled ahead of their phase.** See decisions.md D125.
+
+### Lane structure (Frank, 2026-08-29, D86; plan.md lines 45-53)
+
+Lanes are TYPED, within the 3-concurrent ceiling: one FEATURE lane
+([DD-13b]/[LIB], [DD-12]/[M5] UTF, modules), one OPTIMIZATION lane
+([OPT-*], [ENG-PGO]; from the bench's outliers, measured need first),
+and one ADMINISTRATIVE/STRUCTURAL lane AS NEEDED ([DD-11], [SPEC-1]
+lanes, checks, doc consolidation) when a row is available and nothing
+of higher priority wants the slot. A closed lane's successor comes
+from the same column. Rows still open on Frank's word.
+
+### Development order (ratified 2026-08-13; plan.md lines 55-85)
+
+## Development order (ratified 2026-08-13)
+
+The spine, in this order, one line of rationale each (full session rationale:
+dev_journal.md 2026-08-13, sixteenth session):
+- **[STD1]** — its suite re-baseline only widens with time; land it before
+  anything else queues behind it.
+- **M4 — captures + backtracking VM engine** — the biggest user-visible gap
+  (captures) and the owner of the most parked decisions ([DD-2], [DD-7],
+  [DD-9], [SR-8]).
+- **M5 — UTF-8** — before M6, so feature modules are born CharSet/UTF-aware
+  ([DD-12], [DD-1]) instead of being rebuilt once UTF lands.
+- **M6 — PCRE feature modules** — lookaround, backrefs, atomic groups,
+  named-groups, conditionals, recursion. The assertions module is the one
+  M6 piece that needs no VM — a flexible slot, schedulable whenever a lane
+  is free.
+- **M3 — streaming input** — moved to last-but-one because its API must be
+  designed once against the FINAL engine+feature set ([OS-3]'s evidence —
+  lookbehind/backref window retention); building it earlier would mean
+  rebuilding it.
+- **M7 — hardening** — differential fuzzing was already pulled forward (to
+  M2); the residue is testdata import and the freestanding/embedded
+  profile.
+Sequencing notes: the backrefs / atomic-groups / substitution-template
+design notes (under M4 below) should be WRITTEN BEFORE M4 starts — they are
+M4's design customers, and the substitution template compiler is
+matcher-independent (Frank, 2026-08-12), so its design note need not wait
+on M4 either. After M7, [BENCH-1] builds the feature-spanning benchmark +
+prioritizer; then the OPT waves open, [MECH-3] first, with the prioritizer
+setting the work order.
+
+### "Next: M4" hand-off (2026-08-14; plan.md lines 87-105)
+
+[STD1] completed 2026-08-13 (seventeenth session) — archived in
+plan_completed.md. Per the ratified order M4 is next, and all three
+pre-freeze design inputs are now LANDED AND RULED (D38, eighteenth
+session, 2026-08-14): the [PC-5] flag-disposition table landed (merge
+258fd79) and its dispositions are ruled wholesale, archived at
+plan_completed.md's 2026-08-14 group; the subst-template design note
+merged 3d5a9e8 with all fourteen of §9's questions fully ruled
+(docs/design/subst_template_design.md); the M4-CALLOUTS callout-ABI
+alignment proposal has its rulings applied
+(docs/design/design_callout_abi.md) with only the syntax spelling (§6 Q5)
+and the embedded-code restrictions (§6 Q6) left open. [M4.0] EXPANDED
+into substeps M4.1–M4.7 (2026-08-14, Frank's go). AS OF THE NINETEENTH
+SESSION'S CLOSE (2026-08-14): M4.1, M4.2 and M4.3 are ALL COMPLETED —
+both design docs written, paneled (R21), fix-rounded, and the freeze is
+DECLARED as the working baseline (D44 + addendum; D41–D44 rounded out
+the ruling surface, K17 found-and-fixed, K18 opened and scheduled).
+NEXT: [M4.4] — implementation is open.
+
+### M4 section intro (plan.md lines 109-115)
+
+Expanded 2026-08-14 (eighteenth session; Frank's go — design and panel
+first, implementation next session at the earliest). The milestone's two
+design docs do not exist yet and NOTHING M4-shaped has been panel-critiqued;
+the two ruled pre-freeze docs (design_callout_abi.md, subst_template_design.md)
+are themselves unpaneled and are swept into M4.3's panel by their own
+stated terms.
+
+### Design-notes lead-in (plan.md lines 181-182)
+
+Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
+2026-08-13 — M4's design customers, per the Development order above:
+
+### DESIGN NOTE for `backrefs` (Frank, 2026-08-12; now docs/design/backrefs_design.md; plan.md lines 184-200)
+
+**DESIGN NOTE FOR `backrefs` (Frank, 2026-08-12 tenth session): the
+engines column's blanket VM_ONLY on the digit rows is provisional and
+splits under an AOT compiler.** At match time a backreference is a string
+compare against the group's captured text — which is exactly what the
+backtracking VM will do, and what the DFA engine cannot (subset
+construction erases thread identity; no execution point knows a capture,
+and `(a*)b\1`'s state would need unbounded text — the pumping-lemma
+classic). But when the referenced group's language is FINITE, the backref
+is REGULAR and compiles away statically: `(abc)\1` is `abcabc`, `(a|b)\1`
+is `aa|bb` — expand each choice with the reference synchronized, pure
+DFA, zero runtime cost, and only an ahead-of-time compiler can afford the
+expansion (bounded by the existing NFA/DFA caps and gcc-compile-time
+budgets; infinite-language groups keep the VM). So the module's engine
+answer is per-PATTERN, not per-row: finite-group backrefs → ENGM_DFA via
+expansion, infinite-group → ENGM_VM. The `engines` column stays design
+intent until then (nothing consumes it before SR-8/M4); do not read the
+rows' VM_ONLY as a measured limit.
+
+### SAME-SESSION COMPANION NOTE for `atomic-groups`/possessives (Frank, 2026-08-12; now docs/design/atomic_groups_design.md; plan.md lines 202-219)
+
+**SAME-SESSION COMPANION NOTE for `atomic-groups`/possessives (Frank):
+the (?> row's VM_ONLY splits the same way, and the naive intuition is
+BACKWARDS twice over.** A DFA never backtracks in the first place —
+subset construction keeps every alternative alive, which is exactly the
+NON-possessive semantics — so `a*+` is not a free annotation: it CHANGES
+the language (`a*+ab` matches nothing, `a*ab` matches "aab"), and a
+naively-determinized atomic group silently implements the wrong one.
+But the language stays REGULAR (atomic/possessive are CUT operators;
+Berglund et al., "Cuts in Regular Expressions" — cuts preserve
+regularity with possibly-exponential conversion), so pure-DFA
+compilation is achievable, and the construction's one primitive —
+determine the sub-expression's OWN priority-first match endpoint online,
+ignoring the continuation — is precisely the priority accept-pruning
+pcrec's subset construction is already built around. Blowup bounded by
+the existing caps; the disjoint-follow special case (PCRE2's own
+auto-possessification direction, a*b ≡ a*+b when nothing that follows
+can start with an `a`) is free in both directions. Engine answer again
+per-PATTERN: cut-constructible → ENGM_DFA, else VM.
+
+### M6 section paragraph (plan.md lines 248-254)
+
+(2026-08-13: the classes+ and modifiers halves already landed as gated
+modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
+assertions (VM-independent), lookaround, backrefs, atomic groups,
+named-groups, conditionals, recursion producers. 2026-08-18 expansion
+note: conditionals and recursion are NOT in Frank's ruled M6 list and are
+not substeps above — their module refusals stand; they queue behind M6 as
+their own future rows if ruled in.)
+
+### M3 section note (plan.md lines 262-264)
+
+(2026-08-13: moved after M6 per the Development order above — the streaming
+API is designed once against the final engine+feature set; [DD-3] rides
+along, [OS-3] feeds the design gate.)
+
+### Beyond M7 intro (plan.md lines 283-286)
+
+Direction, not scheduled work. Recorded so the architecture is not painted into
+a corner that would make these expensive later. Each becomes a milestone only
+after the current ladder is complete and the result is something we are happy
+with.
+
+### POSITIONING NOTE (Frank + manager, 2026-08-13; plan.md lines 288-312)
+
+**POSITIONING NOTE (Frank + manager, 2026-08-13 sixteenth session).** The
+niche, in one sentence: *PCRE2 semantics, compiled to verified,
+dependency-free C — fastest where the pattern is known ahead of time, and
+the only one that does compiled substitution.* Its elements, each with an
+owner: (1) PERFORMANCE, honestly scoped — an AOT compiler wins where the
+compiler saw the exact pattern (specialized single-pattern scanning,
+startup, latency), and does not chase Hyperscan-scale SIMD multi-pattern;
+[BENCH-1]'s prioritizer maps both the worst cells (fix) and the best cells
+(advertise). (2) EMBEDDED / NO-LIBRARY — the defensible core. The incumbent
+to name is re2c; differentiation is PCRE2 syntax+semantics, leftmost-first,
+the future captures/backrefs tier, and the verification story. What the
+code already guarantees is the sales sheet: all-const tables (TS-1,
+enforced), no malloc/errno/locale in generated code, thread-safe by
+construction, deterministic — certifiable vendored source. M7's
+freestanding profile cashes this. (3) THE VERIFICATION STORY IS A PRODUCT
+FEATURE — "differentially verified against libpcre2; unsupported syntax
+fails loudly, never miscompiles" is a claim no neighbor in this niche
+makes. (4) LATENCY — time-to-first-match from process start (~zero for us:
+tables page in from .rodata; PCRE2 pays pcre2_compile + JIT warmup every
+process) and short-subject per-call overhead, the dimension real workloads
+(log lines, field validation) are dominated by and benchmarks skip —
+measured under [BENCH-1]. (5) COMPILED SUBSTITUTION as the headline
+differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
+experience directions that serve the niche are the [V-*] rows below,
+including V-G/V-H (added this session).
+
+### OPTLOOP sub-label (plan.md line 345)
+
+    - REFILED FROM THE CLOSED PARKED ROWS (real rows, STATE-tagged):
+
+### OPTLOOP index-block label (plan.md line 356)
+
+    - MOVED IN PLACE (index only; each row keeps its text and STATE; "STATE x" here is a pointer, not a row tag):
+
+### M4-hosted lead-in (plan.md lines 658-659)
+
+M4-hosted, boonies-queued (Frank's queue discipline places these after the
+spine, not before):
+
+### Code-review refactor section authority paragraph (plan.md lines 947-952; Frank 2026-09-18: guided tour AFTER all refactoring — DROPPED by Frank 2026-10-12, no row)
+
+Authority: `docs/dev/reviews/2026-09-17-code-review.md` (the synthesis — §1
+fix-now order, §3 wave plan, §4 rulings all made: D104-D108 + DD-8). Two
+method rules bind every wave brief (synthesis §3): anchor populations are
+FLOORS re-grepped on the wave's own tree; re-INDENTATION breaks anchors, not
+relocation — price "does the moved text keep its column". Checkpoint battery
+between waves (D102); box slots handshake with the bench.
+
+### Parser-structure intro "THE AGREED ORDER ... COMPLETE" (plan.md lines 1007-1017)
+
+**THE AGREED ORDER (R6, 2026-08-10) is COMPLETE — the FIX-1 / PC-3+Q1 / FIX-2 /
+Q2+SR-9 / MOD-0 / DOC-1 / PC-4 arc it sequenced is done and archived in
+docs/dev/plan_completed.md.** Work these in sequence. Each is a
+checkpoint: critic panel (D6), journal entry, plan STATE update, touched
+CLAUDE.md files, commit, push.
+
+### Parser-structure sequencing paragraph (plan.md lines 1013-1017)
+
+Sequenced so each step pays for itself before the next is justified. SR-1/SR-2
+collapse a duplication that has already produced one shipped bug; everything
+after waits for a forcing function. Frank's priority stands throughout: the
+95% path stays fast and simple, and exotic constructs earn only the right to be
+named, cleanly rejected and queried.
+
+### Optimization waves (D21) intro (plan.md lines 1155-1158)
+
+Not a milestone: a shape applied at appropriate points, in this ORDER. Profiling
+a bad algorithm optimizes the wrong loop, and optimizing compile time before
+execution speed trades the primary goal (D18) for the secondary one.
+
+### Optimization waves (D21) motto (Frank, 2026-08-12; plan.md lines 1159-1162)
+
+- (Frank, 2026-08-12, on this whole block: "this project's greatest benefit
+  will be its testing suite. builds confidence and lets us go crazy when we
+  get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
+  everything below; an optimization the suite cannot referee does not land)
+
+### Process mechanization retrospective (plan.md lines 1259-1264)
+
+Four consecutive checkpoints have found the same failure class: not compiler
+defects, but measurement claims about safeguards that were stale, contaminated,
+or never made. Writing the lesson down demonstrably does not install it (this
+session restated a load-contamination rule and violated it in the same
+document). Mechanize instead.
+
+### CLS-TREE re-charter orphan paragraph (plan.md lines 1298-1300)
+
+**RE-CHARTERED (Frank AGREED 2026-09-28, admin88, `docs/dev/ph3_reassessment_2026-09-28.md` #11): every stated trigger is met (`[REL-1]` tagged `v0.1.0-beta`; `[K53-SELRETRY]` closed 2026-09-10) and a fresh, specific, measured need exists — K67 (`\p{L}+` under `-e utf8`: 77s pcrec compile time, part already carved into `[OPT-RETRY-REUSE]`/`[OPT-CLOSURE-CTX]`, this row keeping the class's own share). RE-BASELINE (lane ucpthink, `docs/dev/ucp_study.md` §G item 4, 2026-09-28): `\p{Xwd}` on the DFA is 197,685 object bytes at the current pin (`13b7c202`), not the study's own 294,153 at `13b56a12` — the rodata shrank; `\p{Nd}`/`\p{Xps}` are unchanged. The study's 55x headline for Xwd is now ~37x; any further design work citing the study should use these live numbers. NEXT CONCRETE STEP (unchanged from the reassessment): the design note — candidate layouts scored against the three real populations (the 312 script sets, K53's six, the byte-class sample), the sectioning rule, `--tune` dial integration, and Frank's 2026-09-25 engine-external-kit-vs-DFA-automaton split — then a light panel before implementation. Opus tier, size L, per the row's own stated engine-tier choice.**
+
+### [BENCH-ASKS-PENDING] note row (FILED 2026-10-03; a relay list, not scheduled work; the manager re-issues any still-open ask through pcrec-bench inbox_from_pcrec.md; plan.md line 397)
+
+  - [BENCH-ASKS-PENDING] STATE:not-started (FILED 2026-10-03 by lane benchnote from bench O-81/O-82; a NOTE ROW — the relay list, nothing here is scheduled work) — the bench-facing items still open after O-79..O-82, so a manager waking reads one place: (1) a DENSITY-CONTROLLED `lka` subject pair (same pattern, same size, match-dense vs match-sparse; syntax@0.1's throughput subjects carry 3/6/27 matches on 64K/256K/1M, O-81 item 2) — a bench ask; it gates [CTX-PREFILTER]'s and [SEL-COST] bucket C's density framing; (2) `pcrec-vm-nocaps` has NO `measured` record at fc719ca4 on syntax@0.1 — cls-h (sub-microsecond class scan) and rec-define (recursion, 11.44-13.26 ms per-trial range) read `inconclusive-spread` TWICE (O-82 A5); needs more trials or a longer per-trial budget on rec-define-shaped recursion; (3) Q5: the `esc-octal-0 1.047x` citation could not be located by the bench (O-82 Q5) — pcrec owes the source (report/date/testee) OR retires the citation; (4) OPEN OFFERS awaiting Frank's word: a `pcrec-vm-noisland` control on altwide@0.3 class tails (O-82 A4 — turns the x25-x229 lower bound into the island's exact contribution) and a 1-64 KiB MATCH-REGIME subject for capability@0.1's 17 capture-forced hybrids (O-82 Q9/Q10; capability@0.1 declares no match regime — also the confound named in mbread_report.md). Relay via pcrecdev2 (memory `pcrec-ask-bench-dev`); durable asks go to pcrec-bench's inbox_from_pcrec.md only on a ruling. **RULED 2026-10-03 (Frank): (a) the pcrec-vm-noisland control on altwide@0.3 is DECLINED (auto never takes that route); (b) the 1-64 KiB match-regime subject and the density-controlled lka pair are ASKED LATER, together, in one inbox entry after the close-out.**
+
+### Small-debt shelf "Pointers" line (plan.md line 1340)
+
+Pointers, not queue positions — states live on the real rows cited.
+
+### Small-debt shelf bullet (K9 is OPEN in known_issues.md, not a plan item)
+
+- K9 — the public API takes no pattern length, so a pattern containing NUL
+  compiles as its prefix; fix before any V-tier consumer exists
+  (docs/dev/known_issues.md).
+
+### Small-debt shelf bullet (rows [TS-4], [DD-10])
+
+- TS-4 / DD-10 — stack budgets for `compile_ast` and `clo_visit`'s t1 edge.
+
+### Small-debt shelf bullet ([DD-8] closed 2026-09-28; --emit-dot is [EMIT-DOT])
+
+- DD-8 — `--emit-ir` / `--emit-dot`, useful during M4 bring-up.
+
+### Small-debt shelf bullet (row [SR-5])
+
+- SR-5 — guard the fast-path lookup-count claim with an instrumented build.
+
+### Small-debt shelf bullet (row [MECH-3])
+
+- MECH-3 — schedule before [OPT-A] opens.
+
+### Small-debt shelf bullet (row [PC-2])
+
+- PC-2 — re-survey.
