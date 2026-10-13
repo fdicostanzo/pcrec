@@ -2257,6 +2257,16 @@ sabotaged, same tree, same flags):
 | `^(a?)(?1){2}a$` | `"a"` | (0,1) | **NOMATCH** |
 | `^(a?)(?1)*$` | `"aaa"` | match | match — `RX_VM_STRATS` 0x2 → 0x3, **no answer moves** |
 
+**[S157TRI, 2026-10-13] THE TABLE ABOVE NO LONGER DETECTS.** [k93fix]
+(121cdac9d) made a callee's possessify verdict join every call site's follow,
+so in those three cells (the `a?` group IS called, its site followed by the
+literal `a`) the sabotaged build answers like the clean one; the row read
+UNDETECTED 0fail/57pass until s157tri. The detecting cells are now the
+UNCALLED-group ones, whose only context is the lexical follow that S157's
+`first_of` arm empties: `^(a?)(?2)$(?(DEFINE)(a))` on "a" and
+`^(a?)(?2){2}$(?(DEFINE)(a))` on "aa" (NOMATCH sabotaged; row DETECTED
+4fail/64pass). See docs/dev/lanes/s157tri_report.md.
+
 The third row is the general lesson and is kept in `quantified.rxt` for it: the
 sabotage's most VISIBLE effect (a moved strategy stamp) is its least
 OBSERVABLE one, and a witness cell built around the visible effect would have
