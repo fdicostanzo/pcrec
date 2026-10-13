@@ -66,8 +66,11 @@ NAMED = [
     ('no-DFA ON_MISS', '(?i)\\d+cat', ['--engine=vm']),
     ('VM hybrid', '(?i)(a|b)+cat', []),
 ]
-STAMP_MOVES = re.compile(r'^#define \w+_(MEMFN_FORMS|SIMD_GUARDED_BYTES) ')
-GUARDED = re.compile(r'^#define \w+_SIMD_GUARDED_BYTES (0x[0-9a-f]+)ULL$', re.M)
+# [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
+# PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
+# and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
+STAMP_MOVES = re.compile(r'^#define (?:(?!__)\w)+_(MEMFN_FORMS|SIMD_GUARDED_BYTES) ')
+GUARDED = re.compile(r'^#define (?:(?!__)\w)+_SIMD_GUARDED_BYTES (0x[0-9a-f]+)ULL$', re.M)
 C9_MARCH = ['-march=x86-64', '-march=x86-64-v2', '-march=sandybridge', '-march=x86-64-v3',
             '-march=x86-64-v4', '-mgeneral-regs-only']
 

@@ -12,5 +12,5 @@ SAB_DESC="sel1-drop's sets cell keeps dfa_disabled instead of setting it: on a f
 SAB_DOC_FIGURE='Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S628. docs/dev/lanes/decfbB2_report.md carries the B2 run.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },'
-SAB_AFTER='      .sets = { FIT_DD_KEEP, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false },   /* SABOTAGE S628 */'
+SAB_BEFORE='      .sets = { FIT_DD_SET, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,'
+SAB_AFTER='      .sets = { FIT_DD_KEEP, FIT_CR_TO_NONE, FIT_SDR_KEEP, 0, FIT_CARRY_OVW, true, false,   /* SABOTAGE S628 */'

@@ -484,13 +484,17 @@ else
     npat=$(grep -c . "$PATFILE" || true)
 
     swept=0; cmp_n=0; drift=0; boundviol=0; accviol=0; shapeviol=0; leakviol=0
-    anch_n=0; seeddead=0
+    anch_n=0; seeddead=0; ncomp=0
     prem=0; idx=0; mix=0; non=0
     : > "$WORKDIR/premul_artifacts"
+    . "$ROOT_DIR/tests/lib/compound_art.sh"
     while IFS= read -r pat; do
         f="$WORKDIR/c.c"
         pcrec_run "$PCREC" -p rx --features all -o "$f" --pattern "$pat" >/dev/null 2>&1 || continue
         swept=$((swept + 1))
+        # [COMPOUND] a compound's machine stamps read "compound"; held by
+        # run_dfa_stamps.sh's compound bucket, skipped and counted here.
+        if is_compound "$f"; then ncomp=$((ncomp + 1)); continue; fi
         eval "$(read_artifact < "$f")"
         [ "$scan" = "1" ] || { [ "$stamp" = "-" ] || {
             bad "[iff] '$pat' carries RX_DFA_TABLE \"$stamp\" with no DFA scan in the artifact to describe"; drift=$((drift+1)); }
@@ -598,7 +602,7 @@ else
         fi
     done < "$PATFILE"
 
-    echo "    corpus: $npat pattern(s), $swept compiled, $cmp_n contain a DFA scan"
+    echo "    corpus: $npat pattern(s), $swept compiled, $ncomp compounds (tests/lib/compound_art.sh: held by run_dfa_stamps.sh), $cmp_n contain a DFA scan"
     echo "    stamp distribution: premultiplied=$prem indexed=$idx mixed=$mix none=$non"
     echo "    anchored machines read: $anch_n; machines with a dead seed cell: $seeddead"
 

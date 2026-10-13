@@ -407,6 +407,7 @@ set -u
 command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"; exit 1; }
 command -v fold_repr >/dev/null || { echo "BAD: worker did not inherit fold_repr"; exit 1; }
 command -v fold_join >/dev/null || { echo "BAD: worker did not inherit fold_join"; exit 1; }
+. "$ROOT_DIR/tests/lib/compound_art.sh"
 art="$WORKDIR/a.$$.c"
 den="$WORKDIR/d.$$.c"
 trap 'rm -f "$art" "$den"' EXIT
@@ -424,6 +425,9 @@ one() {
     if ! pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures $axflags -o - --pattern "$pat" > "$art" 2>/dev/null; then
         echo "REFUSED-$ax"; return
     fi
+    # [COMPOUND] a compound's machine stamps read "compound"; held by
+    # run_dfa_stamps.sh's compound bucket, skipped and counted here.
+    if is_compound "$art"; then echo "COMPOUND-$ax"; return; fi
     set -- $(awk -f "$WORKDIR/read.awk" < "$art")
     eng="$1"; start="$2"; mir="$3"; nstart="$4"; nmir="$5"
     rw="$6"; rtok="$7"; rtbl="$8"; tbl="$9"; shift 9
@@ -533,7 +537,7 @@ cat "$WORKDIR"/out.* > "$WORKDIR/all.out" 2>/dev/null
 
 tok() { grep -c "^$1\$" "$WORKDIR/all.out" 2>/dev/null || true; }
 for ax in default force; do
-    echo "    [$ax] $npat patterns; $(tok "REFUSED-$ax") refused; with a DFA scan $(tok "HASSTAMP-$ax") (dfa $(tok "DFAART-$ax") / hybrid $(tok "HYBRID-$ax")); plain VM $(tok "NOSTAMP-$ax")"
+    echo "    [$ax] $npat patterns; $(tok "REFUSED-$ax") refused; $(tok "COMPOUND-$ax") compounds (tests/lib/compound_art.sh: held by run_dfa_stamps.sh); with a DFA scan $(tok "HASSTAMP-$ax") (dfa $(tok "DFAART-$ax") / hybrid $(tok "HYBRID-$ax")); plain VM $(tok "NOSTAMP-$ax")"
     echo "    [$ax] axis J: pinned $(tok "PINNED-$ax") (of which RX_DFA_MATCH \"search-filter\": $(tok "PINSF-$ax")), reverse-pass $(tok "REVPASS-$ax") (no reverse body at all — attempt/empty: $(tok "REVNOBODY-$ax"))"
 done
 n_pinned=$(tok PINNED-default); n_pinned_force=$(tok PINNED-force)

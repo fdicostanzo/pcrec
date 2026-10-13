@@ -128,7 +128,7 @@ KITOBJS  := $(patsubst memfn/src/%.c,$(BUILD_DIR)/obj/memfn/%.o,$(KITSRCS))
 KITHDRS  := memfn/include/memfn.h memfn/src/kit.h memfn/src/options.def memfn/src/fields.def
 KITFLAGS  = $(CFLAGS) $(WARN) -std=gnu11
 
-all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze
+all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a $(BUILD_DIR)/pcrec-analyze $(BUILD_DIR)/pcrec-harness
 
 # src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
 # hard way: a PC-4 bitmap sabotage produced ZERO disagreements because the
@@ -290,6 +290,15 @@ $(BUILD_DIR)/libpcrec.a: $(LIBOBJS) $(KITOBJS)
 $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
+
+# [COMPOUND] THE HARNESS BUILD (docs/design/compound.md §A.11): cli/main.c
+# once more with -DPCREC_HARNESS, which adds one option,
+# `--harness=no-compound`, the compound family's force-decline lever. Only
+# the test harness and bisects run it; the shipped build/pcrec has no such
+# option.
+$(BUILD_DIR)/pcrec-harness: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(ALLFLAGS) -DPCREC_HARNESS -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 # [FINDINGS] B6 (design.md §10.1's end-state row): pcrec-analyze, a
 # SEPARATE, ZERO-DEPENDENCY binary -- it links neither libpcrec nor

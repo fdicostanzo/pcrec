@@ -38,7 +38,12 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   global, no part carries a shared block, F's loop is bounded at
   `search_from` (an unbounded F answers the same, so only its text shows
   it), K79 (the 60-byte text is the short one respelled), and the
-  self-check (`compound_drive selfcheck`) refusing every unstated field.
+  self-check (`compound_drive selfcheck`) refusing every unstated field
+  (since B4, `groups` too). B4 (soft item, compound.md §A.5): the bound is
+  a general EMISSION option — P compiled as an ORDINARY artifact (prefix
+  `nb`, no part mode) under a one-attempt request answers the plain
+  artifact's match-here at every character start; MEASURED: re-coupling the
+  bound to part mode fails it (25 failures).
   MEASURED: a controller with no prologue goes red on every utf8 arm (the
   answers lose the startpos refusal, and under `-futf-check` F's kept
   validator becomes an unused static).
@@ -58,7 +63,50 @@ the split client's `.rxt` corpus (G1) arrives with B4.
   `(?m)^` fails two cases (never disagrees); a kill that skips `\G` fails 29
   (G5's walk). `compound_drive selfcheck` also asserts the registry's
   attempt-scope column and `pcrec_ast_crosses_attempts` reading it.
+- **B4, the driver (compound.md §E.3 G1-G7, §E.4):**
+  - **split.rxt** (G1) — the split compound's answer net: 105 blocks over
+    `split_cases.tsv`, every `m`/`n`/`ms`/`ns`/`g`/`mc` line libpcre2
+    10.46's answer, written by **gen_split.py** (`python3 -I gen_split.py
+    ORACLE PCREC SCRATCH split_cases.tsv`; a case pcrec refuses is a `perr`
+    block) and re-asked by **verify_split.py**, which shares no code with
+    the generator. Rides `test-corpus` (own-oracle in verify_rxt.py).
+  - **split_cases.tsv** — the twin's case list (cases2) plus the owed CMP-13
+    arm: `id<TAB>enc<TAB>P-hex<TAB>engine`.
+  - **check_split_diff.py** + **split_diff.c** (G2 + G4) — every case under
+    every option arm (byte; utf8 under each startpos guard, each with and
+    without `-futf-check`), the compound against the lever's plain artifact and
+    libpcre2 in ONE translation unit, every startpos, span and every group,
+    `_match`/`_match_caps` too; G4: the compound's `.h` and `nm -g` equal the
+    plain artifact's. Floor on admitted case-arms. MEASURED: the CMP-2 plant
+    (`floor_any` false) fails 15 cells.
+  - **check_linear.py** + **loads_drv.c** (G3) — counted subject loads of a
+    whole find-all (kernel-address hooks, no clock) on the pin-only shapes at
+    k and 4k: compound <= lever + calls (final-newline cells: <= Q compiled
+    alone + calls, today's rev-end cost) and linear in k.
+  - **check_admitted.py** + **admitted.tsv** — the corpus's admitted
+    population BY ID (file:line, arm, row), both directions; regenerate
+    with **landing_census.py** `--write-manifest` (G6: corpus and bench, the
+    reference compiler against this one: every mover is the stamp, the
+    stamp-sized `_WHY` figure, or an admitted compound whose lever output is
+    the reference's plain artifact; 0 bench admissions).
+  - **check_declines.py** + **declines.tsv** — the decline controls
+    (compound.md §E.4): `compound_drive walk` runs the as-built admission and
+    reports each candidate's first failing conjunct (A1..A5) or `admit`;
+    §E.4's named controls assert their RE-DERIVED ids, the candidate set
+    (split_cases.tsv) is held to the recorded list both ways (`--write`
+    regenerates), with floors on A1, A2, A5 and `admit`.
+  - **check_lever.py** — the lever's two-directional property (§A.11):
+    `"none"` byte-identical where the default ships plain, `"forced-off"`
+    exactly where it ships a row; a floor on the forced population. Also
+    test-axes' internal arm.
+  - **run_lever_fence.sh** (G7) — one global under `pcrec_harness_` in
+    `libpcrec.a`, no `lib/` declaration, the spelling only in the allowlisted
+    places; each check against a planted input that must fail it.
+  - **run_shell_checks.sh** — the call-site rows (a DFA part's calls get rows
+    1, 2, 8 only), the namespace table's two rows, and `drop-compound` under
+    a cap between the compiler's own plain and compound sizes.
 - **run_compound_unit.sh** — the section script. `EVERY` (default 1 here,
-  8 from the Makefile), `JOBS`, `KEEP=1`.
+  8 from the Makefile), `JOBS`, `KEEP=1`. The mech arm `compound` runs it
+  from a sabotaged tree (rows S891-S910).
 
 Maintenance: update this file when a build step adds its check.

@@ -195,6 +195,9 @@ static void sink_stamp(void *u, const char *name, const char *value)
 {
     StampSink *s = u;
     pcrec_sb_stamp_str(s->sb, s->upper, name, value);
+    /* [COMPOUND] kept for a compound's union of its parts' forms */
+    if (!strcmp(name, "MEMFN_FORMS"))
+        s->sb->cx->job->memfn_forms = pcrec_sb_fragf(&s->sb->cx->arena, "%s", value);
 }
 
 /* [MEMFN] M1b the UNQUOTED stamp (RULED Q-M1b-2): `RUN_WORDS` is an integer,

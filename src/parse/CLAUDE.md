@@ -182,7 +182,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup. [COMPOUND] B2 (lane
   cpb02, 2026-10-12): the attempt-scope column, `RF_CROSSES_ATTEMPTS`
-  (internal.h), stated on the callout row through `GROUP_XA`; no dump prints
+  (internal.h), stated on the callout row through `GROUP_XA_CALLOUT` (B4 renamed it: the callout group, kept apart from a future verb group); no dump prints
   it (`flag_names` lists only the bits a listing shows). Since Q1 (D25) it also
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by
   the CASE of the first name byte exactly as libpcre2 chooses between its own

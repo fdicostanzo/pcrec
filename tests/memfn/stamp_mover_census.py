@@ -56,11 +56,14 @@ import emit_sweep as es  # noqa: E402
 # line, `<UP>_SIMD_GUARDED_BYTES 0x0000000000000000ULL` (52 bytes at the
 # 2-byte placeholder).
 EVENTS = {
-    'r4a2': (re.compile(rb'^#define (\w+)_MEMFN_(FORMS|LIBC) "[^"\n]*"$'),
-             [b'FORMS', b'LIBC'], re.compile(rb'^#define \w+_RUN_WORDS '),
+# [COMPOUND] the artifact's own stamp lines: a compound's .c also carries its
+# PARTS' lines under `<prefix>__<role>` (match_api.md §3.7¶1, not contract),
+# and an artifact prefix never contains `__` (cli.md §1.6¶2's `parts` row).
+    'r4a2': (re.compile(rb'^#define ((?:(?!__)\w)+)_MEMFN_(FORMS|LIBC) "[^"\n]*"$'),
+             [b'FORMS', b'LIBC'], re.compile(rb'^#define (?:(?!__)\w)+_RUN_WORDS '),
              'FORMS, LIBC directly after RUN_WORDS', (59, 120)),
-    'rq3': (re.compile(rb'^#define (\w+)_SIMD_(GUARDED)_BYTES 0x0000000000000000ULL$'),
-            [b'GUARDED'], re.compile(rb'^#define \w+_MEMFN_LIBC '),
+    'rq3': (re.compile(rb'^#define ((?:(?!__)\w)+)_SIMD_(GUARDED)_BYTES 0x0000000000000000ULL$'),
+            [b'GUARDED'], re.compile(rb'^#define (?:(?!__)\w)+_MEMFN_LIBC '),
             'SIMD_GUARDED_BYTES directly after MEMFN_LIBC', (52, 52)),
 }
 STAMP, KINDS, ANCHOR, PLACE, GROWTH = EVENTS['r4a2']

@@ -1326,6 +1326,9 @@ def main():
     nhandoff_both = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
+    ncompound = 0
+    sys.path.insert(0, os.path.join(root, 'tests', 'lib'))
+    from compound_art import is_compound
     findings = []
     ngate = 0
     gate_pats = []
@@ -1352,6 +1355,13 @@ def main():
                 nbyteonly += 1
                 continue
             tb, tu = r
+            # [COMPOUND] a compound's parts carry their own encoding-owned
+            # regions under `<prefix>__<role>` and its machine stamps read
+            # "compound": skipped and counted (tests/lib/compound_art.py);
+            # its answers per encoding are tests/compound/'s G2.
+            if is_compound(tb) or is_compound(tu):
+                ncompound += 1
+                continue
             wbm, wum = REQWHY_STAMP_VAL_RE.search(tb), REQWHY_STAMP_VAL_RE.search(tu)
             drop_run = bool(wbm and wum and wbm.group(1) != wum.group(1))
             # [OPT-LITSCAN] S4 C3 (abi 59): the run pick's position may be a
@@ -1558,6 +1568,7 @@ def main():
     print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
           (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
     print("SELECT_BAD=%d" % nselect_bad)
+    print("COMPOUND=%d" % ncompound)
     print("PRIORFORM=%d" % nprior)
     for p in prior_pats:
         print("PRIORPAT %s" % p)

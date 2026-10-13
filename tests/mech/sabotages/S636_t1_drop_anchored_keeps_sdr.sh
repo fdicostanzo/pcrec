@@ -22,5 +22,5 @@ SAB_REACH_EXPECT='#define RX_ENGINE_SEL "size-cap-retry"
 #define RX_DFA_MATCH "search-filter"'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false },'
-SAB_AFTER='      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false },   /* SABOTAGE S636 */'
+SAB_BEFORE='      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_TO_ANCHORED, 0, 0, false, false,'
+SAB_AFTER='      .sets = { FIT_DD_KEEP, FIT_CR_KEEP, FIT_SDR_KEEP, 0, 0, false, false,   /* SABOTAGE S636 */'

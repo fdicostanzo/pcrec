@@ -420,6 +420,12 @@ done <<< "$anchored"
 #     like the newline convention's, not a resource bound: no pattern or
 #     subject is measured against it and a caller cannot be offered a knob
 #     for it without changing the spelling of every part's symbols.
+#     [COMPOUND] B4 adds two of the same kind: PCREC_COMP_MAXPARTS (internal.h)
+#     is the arity of the one combinator built (`first-nonzero` takes two
+#     parts; the shell carries that many texts), and COMP_LEVER_ATTEMPTS
+#     (compile.c) is the harness lever's one plain re-emission, a term of the
+#     attempt bound's own arithmetic. Neither is measured against a pattern
+#     or a subject.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -579,7 +585,9 @@ PCREC_PART_NEED_SEARCH
 PCREC_PART_NEED_MATCH_CAPS
 PCREC_PART_NEED_NEXT_POS
 PCREC_PART_NEED_VALID_UPTO
-PCREC_PART_ROLE_MAX"
+PCREC_PART_ROLE_MAX
+PCREC_COMP_MAXPARTS
+COMP_LEVER_ATTEMPTS"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"
