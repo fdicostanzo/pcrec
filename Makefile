@@ -409,7 +409,7 @@ test:
 
 # [CI-SHARD] `test-shard`: CI's form of `test:` (lane cishard, 2026-10-13).
 # `make test` itself is unchanged and stays the local merge/close standard; CI
-# (.github/workflows/ci.yml) runs `make test-shard SHARD=K/N` as a matrix of
+# (.github/workflows/ci.yml) runs `make test-shard CISHARD=K/N` as a matrix of
 # N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
 # (docs/dev/lanes/citime_report.md). The split is the DECLARED TABLE
 # tests/ci/shards.tsv (section, shard, weight, weight source) -- never an
@@ -422,21 +422,21 @@ test:
 # Error` lines; a shard is green only if every section in its list was
 # launched AND none failed.
 test-shard:
-	@secs="$$(bash tests/ci/check_shards.sh --list '$(SHARD)')" || { echo "test-shard: usage: make test-shard SHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
+	@secs="$$(bash tests/ci/check_shards.sh --list '$(CISHARD)')" || { echo "test-shard: usage: make test-shard CISHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
 	secs="$$(echo $$secs)"; \
 	dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
 	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
 	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
 	start=$$(date +%s); \
-	echo "== make test-shard SHARD=$(SHARD): $$secs"; \
+	echo "== make test-shard CISHARD=$(CISHARD): $$secs"; \
 	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $$secs; \
 	[ $$? -eq 0 ] || rc=1; \
 	end=$$(date +%s); \
 	RUN_STAMP_SHA="$$stamp_sha" \
 	RUN_STAMP_DIRTY="$$stamp_dirty" \
 	RUN_STAMP_DURATION="$$((end - start))s" \
-	TRAILER_TITLE="make test-shard SHARD=$(SHARD)" TRAILER_LIST_NAME="shard $(SHARD)'s list" \
+	TRAILER_TITLE="make test-shard CISHARD=$(CISHARD)" TRAILER_LIST_NAME="shard $(CISHARD)'s list" \
 	bash tests/lib/test_trailer.sh "$$dir" $$secs; \
 	[ $$? -eq 0 ] || rc=1; \
 	rm -rf "$$dir"; \

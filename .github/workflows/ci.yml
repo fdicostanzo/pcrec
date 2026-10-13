@@ -25,7 +25,7 @@ name: CI
 # [CI-SHARD] (lane cishard, 2026-10-13): `make test` outgrew one hosted runner
 # (run 38345462196 was killed at its 90-minute step timeout with 15 sections
 # still to run; docs/dev/lanes/citime_report.md), so the job is a MATRIX of
-# `make test-shard SHARD=K/N`, each shard a serial run of its own section list.
+# `make test-shard CISHARD=K/N`, each shard a serial run of its own section list.
 # The split is the DECLARED TABLE tests/ci/shards.tsv, held to TEST_SECTIONS
 # exactly by `test-ci-shards` (inside every shard, as a member of the list) --
 # nothing in this file knows a section name. The `shard:` line below is read by
@@ -59,8 +59,9 @@ jobs:
     # Backstop for the whole job (checkout + deps + build + strict + shard).
     # The shard step below carries its own, tighter timeout-minutes (basis
     # there); this is only a ceiling in case some earlier step itself hangs:
-    # ~10 min of setup/build + the 60-minute shard step + upload.
-    timeout-minutes: 80
+    # ~1 min of setup/build/strict (measured, cached libpcre2; a cache miss
+    # adds the libpcre2 build, a few min) + the 55-minute shard step + upload.
+    timeout-minutes: 70
     steps:
       # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
       # default: run 2 (2026-09-21/22) measured tests/codegen/
@@ -179,7 +180,7 @@ jobs:
         if: startsWith(matrix.shard, '1/')
         run: make strict
 
-      # THE SHARD: `make test-shard SHARD=K/N` runs exactly shard K's sections
+      # THE SHARD: `make test-shard CISHARD=K/N` runs exactly shard K's sections
       # from tests/ci/shards.tsv with `make test`'s own accounting (same -k
       # launch, same marker files, same "sections ran: N/M" trailer over THIS
       # shard's list; verdict = make's `*** [...test-X] Error` lines).
@@ -193,19 +194,19 @@ jobs:
       # section on disk) and passes every OTHER line through unchanged to the
       # log. Nothing in the Makefile or the tests carries the instrumentation.
       #
-      # timeout-minutes BASIS: the shard table projects ~35 min per shard
-      # (local-box weights x the one runner ratio the citime lane measured,
-      # 1.44; tests/ci/check_shards.sh prints the figure). Same-tree runner
-      # spread has been 56..85 min on the serial suite (a 1.5x range), so 35 x
-      # 1.5 = ~53, rounded up to 60. That is NOT headroom for growth: the
-      # first sharded run replaces the local weights with measured seconds
-      # (tests/ci/shard_rebalance.py) and this number should then come DOWN.
+      # timeout-minutes BASIS (cishard2, 2026-10-13, from run 38354147463): the
+      # table now holds runner-measured seconds and projects 37.1 min for the
+      # longest shard (the run's own shards took 25.7 / 37.6 / 37.1 min, the
+      # first short only because its SIMD family died at once on taskset).
+      # Stated spread factor 1.4 (the serial suite's same-tree runner spread
+      # was 1.5x, 56..85 min; one sharded run is too little data to go
+      # lower): 37.1 x 1.4 = 52, rounded up to 55. NOT headroom for growth.
       - name: make test-shard
-        timeout-minutes: 60
+        timeout-minutes: 55
         run: |
           set -o pipefail
           mkdir -p build/ci
-          { time make --debug=j test-shard SHARD="${{ matrix.shard }}"; } 2>&1 \
+          { time make --debug=j test-shard CISHARD="${{ matrix.shard }}"; } 2>&1 \
             | python3 scripts/sectiontimes stamp build/ci/sections.raw \
             | tee build/ci/test.log
 

@@ -972,7 +972,7 @@ it from plan.md; each is its own row there and not restated in full.
 `make test`.** Run 38345462196 was killed at its 90-minute step timeout with 15
 of 68 sections still to run (growth, not a hang: `docs/dev/lanes/
 citime_report.md`), so the workflow is now a matrix of three jobs, each
-`make test-shard SHARD=K/3`: the Makefile launches exactly that shard's
+`make test-shard CISHARD=K/3`: the Makefile launches exactly that shard's
 sections with `make test`'s own accounting (`-k`, the marker files, the
 `sections ran: N/M` trailer over the shard's list) and fails on any red
 section. The split is the declared table `tests/ci/shards.tsv` (section,
@@ -988,10 +988,13 @@ mechanism `scripts/perfrun` uses for its `sections.tsv`), so each section's
 start, end and wall seconds are uploaded as `pcrec-ci-sections-<n>`
 (`sections.tsv` plus the epoch-stamped `sections.raw`) on success AND failure
 AND a step-timeout kill (`report --open` keeps a section the kill interrupted).
-The first-pass weights are LOCAL-box numbers; the runner's per-section times
-replace them (`python3 tests/ci/shard_rebalance.py --measured ...`). The shard
-step's `timeout-minutes` is 60 against a projected ~35 (basis in
-`docs/dev/lanes/cishard_report.md`) and should come DOWN once measured. The
+The table's weights are RUNNER seconds from the first sharded run 38354147463
+(`python3 tests/ci/shard_rebalance.py --measured ...`), two rows excepted
+(test-memfn-g2 ESTIMATED, test-startset LOWER BOUND; see
+`docs/dev/lanes/cishard2_report.md`). The variable is `CISHARD`, not `SHARD`:
+`SHARD=i/n` is `tests/startset/vmhat_diff.py`'s own env, and make exports
+command-line variables, so shard 1 ran a third of that script's jobs. The shard
+step's `timeout-minutes` is 55 against a projected 37 (basis in ci.yml). The
 paragraphs below describe the workflow as `[REL-1.6]` built it; where they say
 "one job" or "a 90-minute `make test` step", read the matrix.
 

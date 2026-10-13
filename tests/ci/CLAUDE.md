@@ -2,7 +2,7 @@
 
 Lane `cishard`, 2026-10-13. CI's serial `make test` outgrew the hosted 4-vCPU
 runner's 90-minute step timeout (`docs/dev/lanes/citime_report.md`: growth,
-not a hang), so `.github/workflows/ci.yml` runs `make test-shard SHARD=K/N` as
+not a hang), so `.github/workflows/ci.yml` runs `make test-shard CISHARD=K/N` as
 a matrix of N jobs. `make test` itself is unchanged and stays the local
 merge/close standard.
 
