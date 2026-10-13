@@ -132,7 +132,7 @@ bench's five `(*UCP)`s. The corpus has none.
 ### A.3 The real-world question, answered as far as the tree allows
 
 **There is no real-world UTF-8 pattern harvest in either repository.**
-[UTF-RW] (plan.md:225) is chartered and not started, and pcrec's
+[UTF-RW] (plan.md [UTF-RW]) is chartered and not started, and pcrec's
 `tests/utf8/` is designed axis coverage (0 sensitive patterns with non-ASCII
 bytes). The bench's five `(*UCP)` patterns are DESIGNED twins (O-71; the
 utf8 set's `cls-w-ucp`, `cls-d-ucp`, `cls-s-ucp`, `ci-ucp-invariance`,
@@ -528,7 +528,7 @@ bench's 17/49 (35%) is the less biased number.
 
 ### D.4 Relation to the rows on file
 
-- **[ENG-ISL]** (plan.md:832, Frank 2026-09-02) already frames "islands of
+- **[ENG-ISL]** (plan_completed.md [ENG-ISL], Frank 2026-09-02) already frames "islands of
   VM in DFA". It names the scan edge as the first instance ("the VM's
   address-only counted loop embedded in the DFA scan loop at a head state,
   resuming at a fall-through state") and asks for ONE DEV SOURCE for loop
@@ -539,11 +539,11 @@ bench's 17/49 (35%) is the less biased number.
   consumed, nothing carried). It is simpler than the consuming islands on
   file, because its exit and resume states are both known at construction
   and it carries no counter.
-- **[ENG-TACTICS]** (plan.md:468) composes engines ACROSS a search
+- **[ENG-TACTICS]** (plan.md [ENG-TACTICS]) composes engines ACROSS a search
   (seed, reverse-start, reverse-then-skip). Insertion composes them WITHIN a
   state walk. They are complementary. The backref and capture populations
   above belong to [ENG-TACTICS], and the predicate population to insertion.
-- **[CLS-TREE]** item (2) (plan.md:1562): "a byte-wise DFA cannot search
+- **[CLS-TREE]** item (2) (plan_completed.md [CLS-TREE]): "a byte-wise DFA cannot search
   mid-state — tree-classes as a rung/edge in the hybrid". A kit matcher on
   the DFA route is a CONSUMING one-character island: decode, test, resume
   at F or dead. **So the DFA side of [CLS-TREE] and ideas 1-2 need the same

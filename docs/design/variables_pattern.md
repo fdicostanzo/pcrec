@@ -12,7 +12,7 @@ The feature: `^${prefix}-[0-9]+$` compiles **once**, and the caller supplies
 
 ## Inherited charter
 
-**[RATIFIED]** plan row `[FEAT-VAR]` (`docs/dev/plan.md:1413`, filed by Frank
+**[RATIFIED]** plan row `[FEAT-VAR]` (`docs/dev/plan_completed.md [FEAT-VAR]`, filed by Frank
 2026-09-02, `STATE:not-started`) is this note's charter and it records four
 design questions "to record now, not answer." Three are answered here and one
 is deliberately deferred by the 2026-09-23 charter:
@@ -314,7 +314,7 @@ records that there are actually five, `vm_isl_words` postdating the census —
 are all safe for `A_VAR` without a code change, per `[VAR]`'s D6 panel; this
 is a tree-audit fact recorded there, not a design decision this note makes.)
 **This is `[PATFACTS]`'s first outside customer**, and
-D120 (`docs/dev/decisions.md:8171-8200`, plan row `docs/dev/plan.md:560`,
+D120 (`docs/dev/decisions.md:8171-8200`, plan row `docs/dev/plan_completed.md [PATFACTS]`,
 `STATE:not-started`) — one per-pattern analysis record computed once after
 `pcrec_lower_enc` and read by every pass, on Frank's own observation that "we
 are doing a bunch of analysis in various places... it's ad hoc" — absorbs the

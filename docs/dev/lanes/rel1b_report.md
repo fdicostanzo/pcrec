@@ -152,8 +152,8 @@ CLAUDE.md ritual note), plus a second pass for `PCREC_ARTIFACT_ABI`/
 | `tests/registry/limits_check.sh:321-323,468` | names `PCREC_ARTIFACT_ABI` as a SCHEMA VERSION allowlist entry, no numeric value | not-a-reader |
 | `docs/spec/tuning.md` §2.24 "bit 26 ... bit 27" | axis bit numbers, same as above | not-a-reader |
 | `docs/dev/history/abi_changelog.md` | the abi change log | **RE-PINNED** (new top entry; "gap-free from 2 to 27" -> "to 28"; provenance-line description gains `PCREC_VERSION`) |
-| `docs/dev/plan.md:573` "Runs after abi 27 lands" | [PLAN-AUDIT] historical gating note | historical-untouched (manager-owned file, not edited by this lane) |
-| `docs/dev/plan.md:578` | this lane's own [REL-1.4] row | manager-owned, not edited |
+| `docs/dev/plan_completed.md [PLAN-AUDIT]` "Runs after abi 27 lands" | [PLAN-AUDIT] historical gating note | historical-untouched (manager-owned file, not edited by this lane) |
+| `docs/dev/plan_completed.md [REL-1.4]` | this lane's own [REL-1.4] row | manager-owned, not edited |
 | `docs/dev/decisions.md:7686,7727,7815` | D113/D104-addendum/D115 text, all append-only ADR entries | historical-untouched (decisions.md is append-only; D115's own text at :7815 already correctly anticipated this exact 27->28 bump) |
 | `docs/dev/plan_completed.md:3970` | [TOUR-EXEC] archival record, "abi 27 unchanged" | historical-untouched (archived, never edited post-close) |
 | `studies/scan_edge_ladder/README.md:67` | historical D112 note | historical-untouched (`studies/` never built/tested by `make`) |

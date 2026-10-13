@@ -577,7 +577,7 @@ the status quo, where a call-bearing artifact's only option is 128 KB of stack.
 
 ## 10. Versioning ([DD-3], D40) and the identity gate
 
-**[DD-3] has no policy yet** — plan.md:1238, `STATE:not-started`,
+**[DD-3] has no policy yet** — plan.md [DD-3], `STATE:not-started`,
 "generated-API versioning/compat policy for vendored consumers". So D40 governs
 alone: pre-v1, breaking changes are "unconstrained in substance and governed
 only in FORM — one announced break commit, populations conserved and

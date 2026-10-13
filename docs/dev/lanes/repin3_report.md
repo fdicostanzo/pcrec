@@ -78,7 +78,7 @@ tests/ src/ lib/ CHANGELOG*`, dispositioned:
 | `src/gen/CLAUDE.md:3080` | admitimpl's own new `[OPT-PRECHECK-ADMIT]` section header, correct as written; left |
 | `tests/codegen/CLAUDE.md` §5 entry | correct, current documentation of the abi 30->31 stamp split; left |
 | `docs/dev/dev_journal.md` (multiple) | append-only journal entries, historical by convention; left |
-| `docs/dev/plan.md:435` | the `[OPT-PRECHECK-ADMIT]` row itself, correctly narrating its own abi 30->31 delivery; left |
+| `docs/dev/plan_completed.md [OPT-PRECHECK-ADMIT]` | the `[OPT-PRECHECK-ADMIT]` row itself, correctly narrating its own abi 30->31 delivery; left |
 | `docs/dev/optloop/**` (cycle1/cycle2 readings, b2ledger, dated run snapshots under `runs/2026-09-23-o49-b1885a83/`) | dated measurement pins/snapshots naming a specific abi as part of a reproducible before/after record — `repin2_report.md`'s `linux_ask_i89.md` precedent: historical by construction, not touched |
 | `docs/design/variables_pattern.md:56` | design note citing `[OPT-REQPOS] tier 2b, abi 30` as the historical landing point of a *different* mechanism (the run-check, not this bump) — correct as written; left |
 | `docs/dev/reviews/2026-09-23-r1-var-design.md:149` | review doc citing the same historical landing point; left |

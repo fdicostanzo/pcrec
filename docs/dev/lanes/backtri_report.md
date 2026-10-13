@@ -22,7 +22,7 @@ census instead of a sabotage census). An anchored count
 reads **81**. Full anchored tally for the file: not-started 81, started
 19, completed 69, completed-in-place 2, closed-not-started 2, deferred 4
 (blocked 0) = 177 real rows; the observed 100/102 also swallowed the
-format-template line at `plan.md:9` and, in the brief's case, its own
+format-template line in plan.md's step-state header and, in the brief's case, its own
 citation of the grep recipe. The triage document's §0 records this and
 recommends re-pinning plan.md's own row text plus a `learnings.md` §3
 addition on the anchoring lesson.
@@ -43,7 +43,7 @@ dormant, or a false hit.
   shipped under the heading "[M5.0] STAGE 4, DD-1's FOLD CLOSURE." DD-1's
   plan.md text (line 1288) was never updated with a closure note.
 - **[DD-12]** is a one-line unfinished stub ("— the UTF ARCHITECTURE
-  sketch (Frank,", plan.md:1289) that predates the real UTF-8 design
+  sketch (Frank,", plan_completed.md [DD-12]) that predates the real UTF-8 design
   actually built across [M5.0]'s five stages. Flagged for close or
   rewrite-as-pointer.
 - **[DD-7]**'s own text already dispositions both of its halves (one

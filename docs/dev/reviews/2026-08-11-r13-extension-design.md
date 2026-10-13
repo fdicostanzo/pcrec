@@ -84,7 +84,7 @@ missed:** the shared generic wrapper would make `a\bb` compile to a matcher for
 ## The single most useful finding
 
 **C2/F3.** The design condemns "the guard is the unimplemented-ness" twice — at
-K12 (§6) and by citing `plan.md:577` on `(?xx)[a- ]` — and then commits the
+K12 (§6) and by citing `plan_completed.md [MOD-0]` on `(?xx)[a- ]` — and then commits the
 identical error in §10.6, defending its whole-pattern pre-scan with *"pcrec
 never says 'reference to non-existent subpattern' because it refuses `\1..\9`
 with a module name first."* That is true only while `backrefs` is disabled, and

@@ -19,9 +19,9 @@ changed.
    patterns under `auto` to check whether the shape reaches natural
    selection (it does, on ~35 % of that population).
 3. Read `docs/dev/lanes/vmfl0_rulings.md` (R1, from Frank via the
-   manager): `[OPT-VMFL]` is `[ENG-DIRECT]`'s territory (`plan.md:880`);
+   manager): `[OPT-VMFL]` is `[ENG-DIRECT]`'s territory (`plan.md [ENG-DIRECT]`);
    read that row and its 2026-08-18 third-engine-roster ruling
-   (`plan.md:920-925`) before writing the memo.
+   (`plan.md [ENG-DIRECT]`) before writing the memo.
 4. Measurement (b): picked `csv5`/`nest2-64`/`ctx-lazy-256` from
    `bench/bounded/patterns/`, confirmed each is call-free (`RX_PUSH` only,
    no `RX_CALL`), wrote `handtwin/make_twin.py` (the `const void

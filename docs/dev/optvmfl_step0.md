@@ -436,7 +436,7 @@ whole (b) family VM-only.
 
 ### 4.3 R1: a stamp on the VM route, or a preview of a third engine value — RECOMMENDATION, not a decision
 
-Frank's 2026-08-18 ruling (recorded on `[ENG-DIRECT]`, `plan.md:920-925`)
+Frank's 2026-08-18 ruling (recorded on `[ENG-DIRECT]`, `plan.md [ENG-DIRECT]`)
 is that a landed direct-coded engine is a THIRD roster member — `table-DFA`
 / `DIRECT-DFA` / `VM` — joining the ENGINE SELECTION axis itself
 (`select_engine` picks per pattern, `ENGM_*` gains a member, `RX_ENGINE`
