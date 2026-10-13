@@ -1,0 +1,29 @@
+(1) sparse scan dig/all: 2-pt (40 B, 1 MiB); F=intercept, c=slope, n*=F/c, check=pred-vs-meas at 64 KiB
+  V0: F=4.29 ns  c=0.19002 ns/B  n*=23 B  64K pred 12458 vs 12432 (+0.2%)
+  V1: F=3.09 ns  c=0.10876 ns/B  n*=28 B  64K pred 7130 vs 7229 (-1.4%)
+  S1: F=20.45 ns  c=0.02060 ns/B  n*=993 B  64K pred 1370 vs 1346 (+1.8%)
+  A1: F=10.54 ns  c=0.01081 ns/B  n*=975 B  64K pred 719 vs 668 (+7.7%)
+(2) find-all, one match per call, 1 MiB: ns per call, minus gap*c_walk
+  hex-run prose1m V0: calls=166490 uses=166490 ns/call=11.69  gap=6.3 B  minus gap*0.19=10.49
+  hex-run prose1m V1: calls=166490 uses=166490 ns/call=11.73  gap=6.3 B  minus gap*0.19=10.53
+  hex-run prose1m A1: calls=166490 uses=166490 ns/call=10.86  gap=6.3 B  minus gap*0.19=9.67
+  bounded prose1m V0: calls=161476 uses=161475 ns/call=18.25  gap=6.5 B  minus gap*0.19=17.01
+  bounded prose1m V1: calls=161476 uses=161475 ns/call=22.00  gap=6.5 B  minus gap*0.19=20.76
+  bounded prose1m A1: calls=161476 uses=161475 ns/call=22.56  gap=6.5 B  minus gap*0.19=21.33
+  hex-run docs1m V0: calls=189599 uses=189599 ns/call=11.84  gap=5.5 B  minus gap*0.19=10.79
+  hex-run docs1m V1: calls=189599 uses=189599 ns/call=11.46  gap=5.5 B  minus gap*0.19=10.41
+  hex-run docs1m A1: calls=189599 uses=189599 ns/call=11.14  gap=5.5 B  minus gap*0.19=10.09
+  bounded docs1m V0: calls=143033 uses=147185 ns/call=21.22  gap=7.3 B  minus gap*0.19=19.83
+  bounded docs1m V1: calls=143033 uses=147185 ns/call=22.31  gap=7.3 B  minus gap*0.19=20.91
+  bounded docs1m A1: calls=143033 uses=147185 ns/call=21.97  gap=7.3 B  minus gap*0.19=20.57
+  bounded code1m V0: calls=128491 uses=141122 ns/call=21.25  gap=8.2 B  minus gap*0.19=19.70
+  bounded code1m V1: calls=128491 uses=141122 ns/call=22.77  gap=8.2 B  minus gap*0.19=21.22
+  bounded code1m A1: calls=128491 uses=141122 ns/call=21.78  gap=8.2 B  minus gap*0.19=20.23
+  hex-run code1m V0: calls=160839 uses=160839 ns/call=11.73  gap=6.5 B  minus gap*0.19=10.49
+  hex-run code1m V1: calls=160839 uses=160839 ns/call=12.02  gap=6.5 B  minus gap*0.19=10.78
+  hex-run code1m A1: calls=160839 uses=160839 ns/call=10.94  gap=6.5 B  minus gap*0.19=9.70
+(3) OLS t = a*calls + u*uses + b*n (V0, all-mode, reached subjects); rel-error weighted
+  dig: rows=9 rank=3 calls=1.04 uses=5.69 ns/B=0.1840 medrel=0.10 maxrel=0.44
+  dfa-hat: rows=9 rank=3 calls=-3.02 uses=4.14 ns/B=0.1893 medrel=0.20 maxrel=0.64
+  vm-hat-1: rows=8 rank=3 calls=1.61 uses=2.65 ns/B=0.1897 medrel=0.01 maxrel=0.35
+  vm-hat: rows=7 rank=3 calls=-28.47 uses=1.19 ns/B=0.4270 medrel=0.25 maxrel=0.35

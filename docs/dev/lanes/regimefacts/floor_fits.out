@@ -1,0 +1,21 @@
+(1) floor-byte / floor: (len, ns) medians
+  len=    4096  ns=      60.2  ns/B=0.01471
+  len=   16385  ns=     225.2  ns/B=0.01374
+  len=   61440  ns=    1035.8  ns/B=0.01686
+  len=   65536  ns=    1107.4  ns/B=0.01690
+  len=  262144  ns=    4376.6  ns/B=0.01670
+  len= 1048522  ns=   17623.2  ns/B=0.01681
+  len= 1048527  ns=   17658.1  ns/B=0.01684
+  len= 1048576  ns=   17632.6  ns/B=0.01682
+  short-regime floor f-s0 len 4 ns 9.671074
+  short-regime floor l-w0-early len 230 ns 13.444613
+(2) litrun floor fbf-lK, 64 KiB: ns, ns*K, landings=65536/K, ns/landing
+  K= 2 ns=   465556 ns*K=   931112 landings=   32768 ns/landing= 14.21
+  K= 3 ns=   310793 ns*K=   932380 landings=   21845 ns/landing= 14.23
+  K= 4 ns=   233009 ns*K=   932035 landings=   16384 ns/landing= 14.22
+  K= 7 ns=   133202 ns*K=   932413 landings=    9362 ns/landing= 14.23
+  K= 8 ns=   116756 ns*K=   934045 landings=    8192 ns/landing= 14.25
+  K=10 ns=    93123 ns*K=   931230 landings=    6554 ns/landing= 14.21
+  K=16 ns=    58052 ns*K=   928824 landings=    4096 ns/landing= 14.17
+  K=31 ns=    30185 ns*K=   935736 landings=    2114 ns/landing= 14.28
+  K=40 ns=    30941 ns*K=  1237621 landings=    1638 ns/landing= 18.88

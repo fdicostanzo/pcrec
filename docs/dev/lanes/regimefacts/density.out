@@ -1,0 +1,11 @@
+subbench	throughput cells joined	0 matches	gap>=845	100..844	<100
+altwide	136	49	78	9	0
+bounded	210	84	31	11	84
+capability	757	658	37	32	30
+email	15	9	3	0	3
+litrun	378	278	1	0	99
+loglines	132	80	40	0	12
+syntax	240	39	45	138	18
+utf8	483	255	48	42	138
+TOTAL	2351	1452	283	232	384
+unjoined (no expectation row): {}
