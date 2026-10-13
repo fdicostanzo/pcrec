@@ -9609,3 +9609,10 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 6. **Kit boundary (D157, facts not methods):** pcrec provides S bytes at alignment A, fresh state per iterator, monotone `lo`, same unchanged subject, one thread. What the state holds is the kit's; its rows declare their state need as they declare `size`.
 
 **Consequences.** [FINDALL-NEXT] moves off "decided at [IFACE-PUSH]" and becomes R17-b's prerequisite (Frank: API-bearing features before [IFACE-PUSH]). It is emitted scaffolding: an abi event + spec hunk (D76/D94/D80). The bench's find-all cells see the gain only once its driver uses the iterator (a relay after the build is designed). Not designed yet: the build waits on the kit's state-size facts and a discussion of the design.
+
+### D165 addendum 1 — the kit's state facts (pcrecdev3, 2026-10-13; memfn/docs/responses.md on lane/memfn-r17 2ea4b1db5)
+
+- **Size/alignment:** 24 B at 8-byte alignment at EVERY width (w8 SWAR, SSE2, AVX2; an unrequested AVX-512 W=64 the same): `base`, `top` (size_t) + a u64 position mask. No vector register is kept, so no 16/32/64 B alignment need; only a block wider than 64 positions would grow it (+8 B per 64), none planned. The spike's 40 B carried an (s,n) misuse guard D165's terms make redundant.
+- **Simultaneous states:** one per stateful FIND site; every ALPHA artifact has exactly one per search entry. Whether pcrec ever emits two live FIND sites on one search path is an EMISSION fact owed by pcrec at design time (the sum rule of item 4 applies if so).
+- **Validity:** zero-init + the same unchanged (s, n); no previous match end and no reset on `lo` jumps (a `lo` outside the cached block falls to a fresh scan; monotone `lo` is where the cache pays). Position-independent: copying an iterator is safe.
+- **Reading (manager):** item 5's "init writes one validity word, never a memset of S" means NO memset of the whole buffer; zeroing a row's declared bytes (24 B here, three words) is within it. S's first measured row is therefore 24 B / align 8, so S need not be cache-line sized for the kit today.
