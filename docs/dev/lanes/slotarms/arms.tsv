@@ -1,0 +1,11 @@
+# slotarms arm spec (TAB-separated). One row per CELL = one compiled artifact + driver.
+# family: subject family (gen_subj.py): w2 = match is digit+letter (2 bytes), w5 = 4 digits+letter (5 bytes)
+# flags: pcrec options, "-" = none (read(1) collapses empty TSV fields). want_*: the stamps verify.sh asserts
+#cell	pattern	flags	family	want_engine	want_vm_prefilter	note
+p1-dfa	[0-9][a-z]	--engine=dfa	w2	dfa	-	DFA, byte-class prefilter, 1 capture slot
+p1-vm	[0-9][a-z]	--engine=vm	w2	vm	none	VM forced (no DFA prefilter), first-class start scan
+p2-dfa	([0-9])[a-z]	--engine=dfa --no-captures	w2	dfa	-	DFA, group not captured (same language as p2-hyb/p2-vm)
+p2-hyb	([0-9])[a-z]	-	w2	vm	hybrid	auto: capture forces the VM, DFA prefilter answers exactly (hybrid)
+p2-vm	([0-9])[a-z]	--engine=vm	w2	vm	none	VM forced, same pattern as p2-hyb
+p3-dfa	[0-9]+[a-z]	--engine=dfa	w5	dfa	-	DFA, in-match loop state (range scan edge)
+p3-vm	[0-9]+[a-z]	--engine=vm	w5	vm	none	VM forced, same pattern as p3-dfa
