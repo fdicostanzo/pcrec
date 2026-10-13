@@ -168,6 +168,7 @@ ASAN_BUILDS = [
 ]
 
 passed = failed = 0
+SKIPPED = {}   # -march level -> [reason, checks not run]: arms built but not run (host_skips)
 notes = []
 
 
@@ -333,6 +334,64 @@ def prefetch(work, root, jobs, nworkers):
             _CACHE[futs[f]] = f.result()
 
 
+class Skip(str):
+    """build_run's error slot when an arm compiled but was NOT run: the host lacks its level."""
+    level = why = None
+
+
+PROBE_C = '''#include <stdio.h>
+int main(void)
+{
+    __builtin_cpu_init();
+    printf("x86-64-v3 %d\\nx86-64-v4 %d\\n", __builtin_cpu_supports("x86-64-v3") != 0,
+           __builtin_cpu_supports("x86-64-v4") != 0);
+    return 0;
+}
+'''
+HOST_SKIP = {}   # -march level -> why the host cannot run code built at it (host_skips)
+NEEDS = {'x86-64-v3': 'AVX2', 'x86-64-v4': 'AVX-512'}
+
+
+def host_skips(work):
+    """Fills HOST_SKIP.  The gate is the compiler's own level definition
+    (__builtin_cpu_supports("x86-64-vN"), gcc >= 12) in a probe built at plain
+    -march=x86-64 so it cannot SIGILL itself; G2V_SKIP_ARMS=lvl[,lvl] forces a
+    skip (the gate's test).  A probe that fails to build or run is a hard error."""
+    src, exe = os.path.join(work, 'probe.c'), os.path.join(work, 'probe')
+    open(src, 'w').write(PROBE_C)
+    r = sh(['gcc', '-O0', '-march=x86-64', '-o', exe, src])
+    if r.returncode:
+        sys.exit('run_g2_simd: host-level probe failed to build: ' + r.stderr[-500:])
+    r = sh([exe])
+    host = dict(l.split() for l in r.stdout.splitlines())
+    if r.returncode or set(host) != set(NEEDS):
+        sys.exit('run_g2_simd: host-level probe failed to run: rc=%d %r' % (r.returncode, r.stdout))
+    for lv, need in NEEDS.items():
+        if host[lv] != '1':
+            HOST_SKIP[lv] = 'host lacks %s' % need
+    for lv in filter(None, os.environ.get('G2V_SKIP_ARMS', '').replace(' ', '').split(',')):
+        if lv not in NEEDS:
+            sys.exit('run_g2_simd: G2V_SKIP_ARMS=%s: only %s can be skipped' % (lv, sorted(NEEDS)))
+        HOST_SKIP[lv] = 'forced by G2V_SKIP_ARMS (%s)' % NEEDS[lv]
+
+
+def arm_skip(flags):
+    for f in flags:
+        if f.startswith('-march=') and f[7:] in HOST_SKIP:
+            return f[7:], HOST_SKIP[f[7:]]
+    return None
+
+
+def skipped_or_bad(label, err, n=1):
+    """True after counting n unrun checks for a Skip; else reports err as a failure."""
+    if isinstance(err, Skip):
+        ent = SKIPPED.setdefault(err.level, [err.why, 0])
+        ent[1] += n
+        return True
+    bad('%s: %s' % (label, err))
+    return False
+
+
 def build_run(work, root, name, sites_c, flags, asan=False):
     if name in _CACHE:
         return _CACHE[name]
@@ -347,6 +406,11 @@ def _build_run(work, root, name, sites_c, flags, asan=False, extra_cflags=()):
     r = sh(cc + ['-o', exe, os.path.join(g2, 'g2_simd_driver.c'), sites_c])
     if r.returncode:
         return None, 'compile failed: ' + r.stderr[-2000:]
+    sk = arm_skip(flags)
+    if sk:   # compiled (the build coverage stays), not run
+        e = Skip('not run: ' + sk[1])
+        e.level, e.why = sk
+        return None, e
     env = dict(os.environ)
     if asan:
         env['ASAN_OPTIONS'] = 'detect_leaks=0:allow_user_segv_handler=1'
@@ -594,6 +658,13 @@ def main():
             print('kept: ' + work)
         else:
             shutil.rmtree(work, ignore_errors=True)
+    for lv, (why, n) in sorted(SKIPPED.items()):
+        print('SKIPPED ARM %s: %s; %d checks NOT run (built, not run)' % (lv, why, n))
+    if SKIPPED:
+        print('skipped arms: %d (%s)' % (len(SKIPPED), '; '.join(
+            '%s: %s; %d checks not run' % (lv, w, n) for lv, (w, n) in sorted(SKIPPED.items()))))
+    else:
+        print('skipped arms: 0')
     print('checks passed: %d' % passed)
     print('checks failed: %d' % failed)
     return 1 if failed else 0
@@ -773,6 +844,7 @@ def run(a, root, work):
     except RuntimeError as e:   # a rendered shape the instrumentation does not know: red
         bad('instrumentation: %s' % e)
         inst = None
+    host_skips(work)
     jobs = [(n, sites_c, f, False) for n, f, _ in BUILDS]
     jobs += [(n, sites_c, f, True) for n, f in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS)]
     if inst:
@@ -796,7 +868,7 @@ def run(a, root, work):
     for name, flags, live in BUILDS:
         r, err = build_run(work, root, name, sites_c, flags)
         if err:
-            bad('%s: %s' % (name, err))
+            skipped_or_bad(name, err)
             continue
         res, _ = parse(r.stdout)
         print('build %-15s %s' % (name, r.stdout.splitlines()[0] if r.stdout else r.stderr[-300:]))
@@ -809,7 +881,7 @@ def run(a, root, work):
     for name, flags in (ASAN_BUILDS[1:] if a.quick else ASAN_BUILDS):
         r, err = build_run(work, root, name, sites_c, flags, asan=True)
         if err:
-            bad('%s: %s' % (name, err))
+            skipped_or_bad(name, err)
             continue
         res, _ = parse(r.stdout)
         print('build %-15s %s' % (name, r.stdout.splitlines()[0] if r.stdout else r.stderr[-300:]))
@@ -823,7 +895,7 @@ def run(a, root, work):
     for name, flags, live in (BUILDS[:2] + BUILDS[3:]) if inst else ():
         r, err = build_run(work, root, 'paths-' + name, inst, flags)
         if err:
-            bad('paths %s: %s' % (name, err))
+            skipped_or_bad('paths ' + name, err, 4)   # 2 levels x (path floor, edge floor)
             continue
         res, paths = parse(r.stdout)
         for lv in ('w16', 'w32'):
@@ -855,7 +927,7 @@ def run(a, root, work):
                     continue
                 r, err = build_run(work, root, 'plant-%s-%s-%s' % (plant[0], lv, name), pt, flags)
                 if err:
-                    bad('plant %s %s %s: %s' % (plant[0], lv, name, err))
+                    skipped_or_bad('plant %s %s %s' % (plant[0], lv, name), err)
                     continue
                 res, _ = parse(r.stdout)
                 # a w16 plant at x86-64-v3 is live through w32's fall-through
