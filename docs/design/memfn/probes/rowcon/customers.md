@@ -451,7 +451,7 @@ documented disjointness/outranks relations that are asserted only for one pair.
 ---------------------------------------------------------------------------
 ## 4. [POSS-CTX-TABLE]
 
-### 4.1 plan.md row (main, `docs/dev/plan.md:1206`)
+### 4.1 plan.md row (main, `docs/dev/plan.md [POSS-CTX-TABLE]`)
 
 STATE:not-started, under [OPTLOOP] candidates per D137, FILED 2026-10-07 by lane possarms2
 from the [ART-POSS-ARMS] D6 panel's B-FAM disposition; UNSCHEDULED. Text (condensed, all

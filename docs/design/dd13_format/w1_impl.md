@@ -67,7 +67,7 @@ breaking a shipped bsearch contract (§2.7).
 
 ### 0.3 What this note does not design
 
-- **The struct TYPE** — [V-I]'s (plan.md:737). W1 delivers slots, scope
+- **The struct TYPE** — [V-I]'s (plan.md [V-I]). W1 delivers slots, scope
   paths and refusals; it emits no struct.
 - **W2/W3 productions** — refused by name as "not in this build" (§1.3).
 - **Diagnostic wording** — D26.

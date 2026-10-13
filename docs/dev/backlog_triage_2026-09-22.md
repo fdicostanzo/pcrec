@@ -23,7 +23,7 @@ about for checks). An **anchored** count —
 — reads **81**. The full anchored tally for the file: not-started 81,
 started 19, completed 69, completed-in-place 2, closed-not-started 2,
 deferred 4 (blocked 0) = 177 real rows, plus one non-row hit (the format
-template line at plan.md:9, `[Mx.y] STATE:<state>`) and one hit from the
+template line in plan.md's step-state header, `[Mx.y] STATE:<state>`) and one hit from the
 brief's own citation of the grep recipe = the observed raw 100/102.
 **This report's inventory uses the anchored 81, not 100/102** — see
 "Open questions" for the recommended fix to plan.md's own row text.
@@ -266,9 +266,9 @@ lane `optrev`'s cause-ranked mechanisms.**
   the caseless backreference folding code points in the artifact." DD-1's
   own plan.md text was never updated to point at this landing (evidence:
   the row still reads "What remains here is genuinely Unicode..." with no
-  closure note, plan.md:1288).
+  closure note, plan_completed.md [DD-1]).
 - **DD-12 — CLOSE or fully rewrite.** The row is a one-line, unfinished
-  stub ("— the UTF ARCHITECTURE sketch (Frank,", plan.md:1289) that
+  stub ("— the UTF ARCHITECTURE sketch (Frank,", plan_completed.md [DD-12]) that
   predates the actual UTF-8 architecture built and merged across
   [M5.0]'s five stages (`docs/design/utf8_design.md` and its stage
   reports). Recommend closing as superseded-by-implementation, or if

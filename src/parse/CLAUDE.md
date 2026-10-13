@@ -2129,3 +2129,7 @@ width table is settled — at parse time for a call-free body, in
 one-character lookbehind that T3 turns into a context node. Nesting is a
 max, never a sum; dead DEFINE bodies count. `[[:<:]]`/`[[:>:]]` (1 in PCRE2)
 are refused by `ext.c` today; their producer raises LB when it lands.
+
+## Convention: module handlers (from the retired plan row [SR-6], 2026-10-12)
+
+A module's handlers live in their own translation unit in this directory, as-built FLAT (`mod_modifiers.c`, `mod_verbs.c`, `mod_classes.c`, ... — not a `src/parse/ext/` subdirectory), added when the module lands. The handler families the registry names are esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc, grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier, grp_callout, verbs and cls_posix. This is a rule to follow when a module is implemented, not a step to schedule.

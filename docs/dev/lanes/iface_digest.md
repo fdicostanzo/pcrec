@@ -269,10 +269,10 @@ else's refusal.
   (`cli.md (old line 988-994)`).
 - **`[V-E]` multi-pattern compilation units** (several named,
   cross-referencing patterns sharing one translation unit) —
-  `docs/dev/plan.md:581`, STATE:not-started. `--source` compiles several
+  `docs/dev/plan.md [V-E]`, STATE:not-started. `--source` compiles several
   patterns per invocation today but each target is still its own
   separate TU (D88).
-- **`[LIB]`, the reusable-subpattern library** — `docs/dev/plan.md:580`,
+- **`[LIB]`, the reusable-subpattern library** — `docs/dev/plan.md [LIB]`,
   STATE:not-started, and its own row records that its place on the
   roadmap has not been ruled ("planned but I don't know that I'd put
   them on the spine," Frank, 2026-08-24). `--lib-path` resolves only

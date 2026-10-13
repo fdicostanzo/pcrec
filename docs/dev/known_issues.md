@@ -2629,7 +2629,7 @@ matcher. Two things make it worth recording:
    `for (i = lo; i <= hi; i++)` behind it. **MOD-0.2 (`classes`) removes the
    guard**, and at that moment a set-shaped value arrives in an `int`.
 
-This is the exact shape `docs/dev/plan.md:577` already records for `(?xx)[a- ]`, one
+This is the exact shape `docs/dev/plan_completed.md [MOD-0]` already records for `(?xx)[a- ]`, one
 construct over: *"pcrec is safe today only because `(?x)` is rejected outright
 as 'requires module modifiers' — the guard IS the unimplemented-ness, and this
 step removes it."*

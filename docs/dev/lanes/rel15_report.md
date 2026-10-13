@@ -30,7 +30,7 @@ open a PR" checklist, a "Where things are" paragraph pointing at the root
 CLAUDE.md, the D26 compat standard in two sentences, and a closing note
 that the internal lane/manager process (CLAUDE.md, docs/dev/, worktrees)
 is not required reading for a contributor. Per Frank's 2026-09-21 ruling
-recorded at `docs/dev/plan.md:587` ("leave extra docs"), no
+recorded at `docs/dev/plan_completed.md [REL-1.5]` ("leave extra docs"), no
 SECURITY.md/CODE_OF_CONDUCT.md were added.
 
 README.md's "More" list gained a `CONTRIBUTING.md` link (one line);
@@ -52,7 +52,7 @@ written for rel16/the manager to place — nothing to coordinate.
 Did not exist anywhere in the tree before this lane (`git grep` for
 `RUN-STAMP`/`tree-SHA`/`dirty-flag` inside a runnable script found only
 the plan.md prose defining it). Definition used, verbatim from
-`docs/dev/plan.md:606`: *"`make test` emits tree-SHA/dirty-flag/counts/
+`docs/dev/plan_completed.md [REL-META]`: *"`make test` emits tree-SHA/dirty-flag/counts/
 duration; the template asks for the paste."*
 
 Implementation rides the EXISTING completion trailer

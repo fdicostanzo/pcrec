@@ -7,7 +7,10 @@ Append-only where noted; the restart/status-recovery record for the project.
 
 - `bench_wishlist.md` — pcrec-side list of bench cells we want but have not asked for (started 2026-10-08 at Frank's request); pull from it deliberately when a bench set opens or a decision stalls on a measurement.
 
-- `plan.md` — the ACTIVE milestone/step tracker mirroring APPROACH §9;
+- `plan.md` — the ACTIVE milestone/step tracker mirroring APPROACH §9
+  (rewritten 2026-10-12 by [PLAN-LINT] step 2 into Policy / Active /
+  Candidates / Backlog / Boonies / Deferred; see `lanes/plclean_report.md`;
+  long row bodies live in `docs/design/plan_row_bodies/`);
   STATE:completed rows do not live here. Machine-greppable step states
   (`STATE:not-started|started|completed|blocked|deferred`); format and grep
   recipes documented at the top of the file. Expand a milestone into
@@ -16,7 +19,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   completion date, text preserved verbatim (split from plan.md 2026-08-13).
   A row cited elsewhere as "docs/dev/plan.md [ID]" lives here once it is
   STATE:completed; `grep -c "STATE:completed" docs/dev/plan_completed.md`
-  counts them.
+  counts them. Since 2026-10-12 it also holds the plan.md cleanup's verbatim archives: "Retired free text", "Completed 2026-10-12", "Superseded and merged rows" and "Row history moved out of live plan.md rows" (the long status stacks that were replaced by charter + dated status).
 - `dev_journal.md` — append-only dated journal, newest at bottom. Append an
   entry after every significant work session; this is the primary
   restart/status-recovery record.

@@ -46,7 +46,7 @@ cli.md:
 19. `--list-definitions`' `definition` "or the literal `<builder>`": the live behaviour is registry.md §9 (specreg open question 1); cli.md just points at registry.md §9 for the columns.
 20. `--list-limits`' `override` values: the old doc listed `flag | -D | none`; live also prints `flag+-D`. Added.
 21. `--flavour`: re-verified the refusal text (`applies to --list-syntax, --list-definitions and --explain only`).
-22. The `§4` "plan.md:580/581" line cites, "STATE:not-started/started" tags, `[DD-8]`/`[LIB]`/`[V-E]` row status: planning state, dropped; the facts (no multi-pattern unit, no `--lib FILE`, no `--emit-dot`) remain.
+22. The `§4` "plan.md [LIB]/[V-E]/581" line cites, "STATE:not-started/started" tags, `[DD-8]`/`[LIB]`/`[V-E]` row status: planning state, dropped; the facts (no multi-pattern unit, no `--lib FILE`, no `--emit-dot`) remain.
 23. The `std1` source cite `enabled.c:80-85`, the `cli_parse` arm-name cites, the `compile.c:49-56` prefix cites: dropped; the behaviour is stated (60 / first char / alnum, `std1` = classes + modifiers).
 
 ## 4. Claims ledger

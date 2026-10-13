@@ -346,7 +346,7 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   lexical scope wins in both directions, injected definitions are
   name-qualified, and the harness's textual EXPAND is demoted to the
   **oracle control** on the population where it is valid. §2.13 the
-  struct view (D87 rules 5/6; consumer is **[V-I]**, plan.md:737). §3
+  struct view (D87 rules 5/6; consumer is **[V-I]**, plan.md [V-I]). §3
   migration (H1-H11, S1-S11). §4 the seams. §5 the attack list, six
   tensions, seven anti-requirements, OD-1..OD-6. §6 five worked files.
   §7 six questions, one of them new.

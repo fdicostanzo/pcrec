@@ -1283,14 +1283,14 @@ Stated plainly rather than left for a stranger to discover by trial:
   patterns in one invocation — several files, several targets each — but
   each target is its own separate compile writing its own translation
   unit — one artifact per TU, D88. A single unit holding several named,
-  CROSS-REFERENCING patterns is still `[V-E]`, `docs/dev/plan.md:581`,
+  CROSS-REFERENCING patterns is still `[V-E]`, `docs/dev/plan.md [V-E]`,
   **STATE:not-started**.
 - **No `--lib FILE`, and `--lib-path` is not it.** `--lib-path` supplies
   the search path a `lib "path"` reference in a `.rxt` source resolves
   against, and today that resolution goes exactly far enough to say
   whether the file exists: pcrec reads no library's CONTENTS and no
   pattern can call a definition that lives in one. The library of reusable
-  named subpatterns is `[LIB]`, `docs/dev/plan.md:580`,
+  named subpatterns is `[LIB]`, `docs/dev/plan.md [LIB]`,
   **STATE:not-started**, and its own plan row records that its place
   relative to the project's roadmap has not even been ruled yet ("planned
   but I don't know that I'd put them on the spine," Frank, 2026-08-24).

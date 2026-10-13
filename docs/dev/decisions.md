@@ -3110,7 +3110,7 @@ one doorway.
 PCRE2 says invalid range): SPEC-FA implemented the endpoint rule for the BRACKET
 shape only, and pcrec is correct today only because `\d` is refused before the
 range code can look at it — the guard IS the unimplemented-ness, exactly as
-`docs/dev/plan.md:577` warns for `(?xx)[a- ]`. Under a shape column, one rule covers
+`docs/dev/plan_completed.md [MOD-0]` warns for `(?xx)[a- ]`. Under a shape column, one rule covers
 both shapes.
 
 ### 7. The class structure is 8-BIT NOW, and MOD-0.6 owns widening

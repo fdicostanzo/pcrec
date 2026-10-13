@@ -5004,7 +5004,7 @@ invalid range — permanently. SPEC-FA implemented the endpoint rule for the
 BRACKET shape only. Not a miscompile (both engines reject), but pcrec is right
 today only because `\d` is refused before `parse.c:213`'s range code can see it:
 **the guard is the unimplemented-ness, and MOD-0.2 removes it.** Same shape
-`docs/plan.md:577` already records for `(?xx)[a- ]`, one construct over.
+`docs/dev/plan_completed.md [MOD-0]` already records for `(?xx)[a- ]`, one construct over.
 
 ### Next
 
@@ -5071,7 +5071,7 @@ The four independently-reached refutations:
    (the shared generic wrapper makes `a\bb` compile to `a\x08b`).
 
 **The single most useful finding (C2/F3):** my document condemns "the guard is
-the unimplemented-ness" twice — at K12, and by citing `plan.md:577` — and then
+the unimplemented-ness" twice — at K12, and by citing `plan_completed.md [MOD-0]` — and then
 commits the identical error defending the whole-pattern pre-scan. Measured:
 `\1(?n)(a)`, `\1(?#()`, `\1\Q(a)\E` are all err 115, so `\1`'s validity at
 offset 0 depends on constructs owned by four other features appearing later.

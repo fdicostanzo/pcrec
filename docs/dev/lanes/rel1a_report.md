@@ -21,7 +21,7 @@ replacing the old undifferentiated bullet list.
   plus `recursion` (shipped outside the ruled list, [DD-14]),
   `unicode-props` (M5.0 stages 3-5) and `verbs` are all named as shipped.
   **M3 (streaming) is stated as the one open milestone** — verified
-  `STATE:not-started` at `docs/dev/plan.md:254-255`, nothing else under
+  `STATE:not-started` at `docs/dev/plan.md [M3.0]..[M3.1]`, nothing else under
   `## M` headings in `plan.md` reads not-started.
   Wrote "0.1 beta, pre-release" in prose per the brief's version-wording
   instruction — no version string, badge, or tag invented (REL-1.4's own
@@ -71,7 +71,7 @@ Ran the `compliance-refresh` skill's procedure for real, per its own steps:
 3. **Component 2** (the independent PCRE2-side survey): NOT re-run. Per the
    skill's own step 3, component 2 only needs a re-run "when PC-2 fires or
    PCRE2 moves" — `[PC-2]` is still `STATE:not-started`
-   (`docs/dev/plan.md:1959`), no PCRE2 version change is in flight
+   (`docs/dev/plan.md [PC-2]`), no PCRE2 version change is in flight
    ([PCRE2-UP] is `STATE:not-started`, no measured need), and libpcre2 is
    still 10.46 per the live suite run below. Stated in the header rather
    than silently skipped.

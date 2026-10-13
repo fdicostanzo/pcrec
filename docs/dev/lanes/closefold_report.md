@@ -23,7 +23,7 @@ heading:
    `plan_completed.md`'s own "Completed 2026-08-14" section, whose
    `[M4.3]` entry reads "COMPLETED 2026-08-14 (R21; row archived in
    plan_completed.md) — the D6 panel ran (3 critics, 36 findings, 11
-   tier-1)..." at `docs/dev/plan.md:121` (pre-edit line number, in the M4
+   tier-1)..." at `docs/dev/plan_completed.md [M4.2]` (pre-edit line number, in the M4
    milestone's historical prose). This corroborates the manager's own
    verification named in the brief.
 4. **[BENCH-1]** — closed: FOLDED into D119's [OPTLOOP] (the bench repo
