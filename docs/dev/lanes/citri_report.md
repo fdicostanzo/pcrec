@@ -1,100 +1,103 @@
-# citri (2026-10-13) — CI red since 2026-10-10: `make strict` on gcc 13
+# Lane citri: CI red on `test-clskit` (report)
 
-Lane citri, sonnet. Triage of GitHub Actions CI failing on every push to main.
-Branch `lane/citri`, one source commit (`fa80ac9f0`) plus this report.
+**Lane:** citri, sonnet, triage + fix. **Branch:** `lane/citri` from main
+`58a2a417`. Not pushed (a push cancels CI; the manager pushes).
 
-## Verdict
+## 1. Cause
 
-CI has been red since 2026-10-10 because `make strict` (CI step 10, before
-`make test`) fails on ubuntu-latest's gcc 13.3 with
-`src/parse/rxt_source.c:783:21: error: 'one' may be used uninitialized
-[-Werror=maybe-uninitialized]` (declared at :758, in `row_check`). It is a
-false positive: `row_key` writes `*key` on every `return 0` path. The
-`"Process completed with exit code 2"` the brief quotes is `make strict`'s
-failure, not `make test`'s; that is why `build/ci_test.log` never exists (the
-`make test` step is skipped; the upload step warns "No files were found").
+CI's `make test` (serial, PROCS=4, nothing else running) failed only
+`test-clskit`, and the check DID say why: 23 `D45 CPU BUDGET ... exceeded 10s of
+CPU time` blocks (`gcc: internal compiler error: CPU time limit exceeded signal
+terminated program cc1`), then the derived FAILs (459 of 591 sets, 144 law runs)
+that read like a separate problem and are not. So the check was not silent; the
+run's own summary lines just hid the 23 causes above them.
 
-## First bad run / commit, last green run
+**It is the compiler version, not load, not a runner budget, not a regression.**
+CI is gcc 13.3 (Ubuntu 24.04); the Mac is gcc-16, ubuntubudu gcc-15, and the same
+commit is green on both.
 
-- Last green: run 38018323798, 2026-10-10T02:48Z, sha `1cb95b69b`, 72 min total,
-  so `make strict` and `make test` both ran.
-- First red: run 38029095714, 2026-10-10T05:54Z, sha `2b093cdf3`, failed in
-  `make strict` after 31 s. The ten runs between are all `cancelled`
-  (a push cancels the running job), so run history alone cannot narrow the
-  63-commit range further.
-- First bad COMMIT: `081480e16` ("[RXT-READERS] one oracle/var grammar across
-  the three legs", 2026-10-10 01:26 -0400), found by compiling
-  `src/parse/rxt_source.c` at `081480e16^` (clean) and `081480e16` (error)
-  with gcc 13.4. The commit only ADDS `var_line_ok` and a call to it; it does
-  not touch `row_check`/`row_key` (those date from 2026-09-26/28). It moved
-  gcc 13's inlining/analysis so that `row_key` is now seen through `row_check`
-  and the `n == 2 && j < 2` loop in the byte-key branch (writes `*key` only on
-  `j == 1`) is judged able to fall through with `*key` unset. A function-body
-  change elsewhere in the TU is enough; this is gcc's heuristic moving, not a
-  semantic change.
-- Not a runner change: all three runs I read (38018323798 green,
-  38029095714 and 38331362131 red) ran on image ubuntu-24.04 20261004.327.1,
-  gcc 13.3.0-6ubuntu2~24.04.1.
-- Since 05:54Z on 10-10: 87 failed, 10 cancelled, 0 green. Every failure that
-  I spot-checked (38029095714, 38036701099, 38057186988, 38331362131) fails in
-  the same step.
+Evidence (all from the CI artifact `pcrec-test-logs` and a local re-emit of the
+same 51 units, byte-for-byte the same chunking at 58a2a417):
+- The 28 units that BUILT on CI are in `watchdog.log` (their RUN records); the
+  23 that failed are exactly the other 23 of 51. Joining against each unit's
+  compile CPU on the Mac (gcc-16, `-O1 -Werror`, solo): every unit under ~0.9 s
+  passed, nearly every unit over ~1.0 s failed (the exceptions, 0.91 s failed and
+  1.23/1.34 s passed, are a noisy ~8-11x factor). So gcc-13 needs ~10x the Mac's
+  CPU to COMPILE this text.
+- The same units RUN only 1.7-2.1x slower on CI than on the Mac (chunk_003 0.86
+  vs 0.49 s, _007 2.68 vs 1.32, _005 2.12 vs 1.33, _012 0.31 vs 0.18), which is the
+  runner's CPU ratio. So ~5x of the 10x is gcc-13 on this text (class-matcher
+  units: hundreds of KB of `static const` tables and multi-thousand-line
+  `static inline` functions).
+- clstri measured gcc-15 on the Ryzen at ~2.4x the Mac on a 5.2 MB unit, i.e.
+  the same ratio as the CPU; gcc-15 and gcc-16 behave alike, gcc-13 does not.
+- It is not load: `make test` in CI is serial; on the Mac the run and compile
+  CPU are stable to a few percent. The 9-failed run at e3ce677f versus 23 at
+  58a2a417 is the same threshold moving across a noisy 8-11x factor, plus
+  clstri's re-chunking in between.
+- Not a pcrec compile-time regression: nothing else in the suite (thousands of
+  artifact compiles) came near the budget on the same runner, and the units are
+  the checker's own text (every kit form forced over every set), not shipped
+  artifacts.
 
-## Local reproduction
+What I could NOT do: run gcc-13 (no build-capable Linux in this lane), so the
+"~5x is gcc-13" split is inferred from the CI/Mac compile-vs-run ratios, not
+measured directly. The fix below is sized to the inference and prints the number
+that would refute it.
 
-The dev box's gcc is 15.2, which does not warn, so `make strict` is green here
-even on the broken tree. I fetched Ubuntu's gcc 13.4.0 `.deb`s (apt-get
-download, extracted with `dpkg -x` into `build/gcc13/`, gitignored, no install,
-no root) and ran it through a wrapper (`build/gcc13/gcc13`).
+## 2. Fix (`tests/clskit/` only; no `src/`, no abi, no spec)
 
-Before (main at the lane's base):
+D45's rule is that a compile over budget is a shape to fix, not a budget to
+raise, and the shape here is the unit size. clstri had already moved to packing by
+emitted bytes, but with a 1.5 MB budget calibrated on gcc-15/16 and with an
+ATOMIC unit per composition group (six sets x ~13 variants, 2-3.2 MB, seven such
+units: 2.1-2.7 s on the Mac, so 20-30 s on gcc-13, unfixable by any byte budget).
 
-    build/gcc13/gcc13 -O2 -g -Wall -Wextra -std=gnu11 -Ilib -Isrc -Wshadow -Werror \
-        -c -o /dev/null src/parse/rxt_source.c
-    -> the CI's exact error at :783:21 / :758:23, rc 1
+1. `clskit_driver.c` packs VARIANTS, not groups. The only indivisible part of a
+   group is its LAW bundle (the K4 and P3 variants of every set in a group that
+   has compositions, plus the group's COMPS rows, since the law compares a result's
+   variant against its operands' in one process, about 400 KB for the worst
+   group). Every other variant is checked against its own set's reference alone, so
+   it may sit in any unit that carries that set's reference arrays (copied into
+   each). `CHUNK_BYTES` 1,500,000 -> 250,000, sized for gcc-13 (Mac 0.2-0.4 s a
+   unit, ~2-4 s there). Largest unit 0.4 MB (a law bundle).
+2. The script counts sets by `idx=` (new field on `CHECKED`, since a set's
+   variants can now span units; names repeat, so counting by name read 491 of 591 on
+   my first attempt, which is how the guard was seen to fire) and checks the
+   variants SUM against the driver's own `VARIANTS n` line, so a variant or set
+   that lands in no unit still fails loudly.
+3. Every run prints its headroom: `clskit: compile CPU per unit (D45 budget 10s):
+   331 units, max 0.58 s, total 116.9 s` (the compile's user+sys via the
+   subshell's `times`, the RLIMIT_CPU clock). Next CI run states the gcc-13 max
+   directly, which either confirms the ~10x factor or corrects it.
 
-Bisect on that one file: `081480e16^` rc 0, `081480e16` rc 1.
+Docs: `tests/clskit/CLAUDE.md` (driver paragraph), `docs/testing.md` "CI" (new
+paragraph naming the run and the finding), header comments in the driver and
+`checker_main.inc`.
 
-After the fix: `make strict CC=$PWD/build/gcc13/gcc13` compiles the WHOLE tree
-(LIBSRCS, cli, analyze, scripts/findgen.c, the KITSRCS) clean under
-`-Werror -Wshadow`, i.e. no second gcc-13-only warning is hiding behind this
-one (the strict loop stops at the first error, so this was not known before).
-gcc 15.2: `make strict` clean, `make test-rxtsource` 298 passed / 0 failed.
-Reproduction here is gcc 13.4 against CI's 13.3 (the closest available);
-CI itself is the final check.
+## 3. Validation
 
-## Fix
+`make test-clskit CC=gcc-16` in the worktree (log
+`/tmp/citri_s/clskit3.log`, scratch, not committed): **5 passed / 0 failed**.
+331 units, 591 sets, 7,586 variants, 8,451,676,390 code-point checks, 0
+mismatches; 146 compositions x {K4, P3} law, 325,320,704 checks, 0 mismatches;
+crosscheck 20,685 selections, 0 disagreements (numbers identical to before the
+change, only the unit count moved 51 -> 331). Compile CPU per unit max 0.58 s
+(under 4-way parallel), total 116.9 s (was 58.7 s: the per-invocation and copied
+reference-array overhead; on CI at ~10x this is ~5 min of a 54 min run).
+Failing direction: the first draft's name-keyed count read `491 sets checked of
+591`, i.e. the coverage guard fires on a lost set. I did NOT plant a lost
+variant to see the new `variants` sum fire (its shape is the sets guard's).
 
-`src/parse/rxt_source.c`: `unsigned long one = 0;` in `row_check`, with a
-one-line comment. Zero behaviour change (every `r == 0` path writes it; `key`
-two lines up is already `= 0`). Chosen over restructuring `row_key` because the
-warning is a compiler limitation; a rewrite would be a larger diff for the same
-effect. No runner-side or ci.yml change was needed.
+## 4. Owed
 
-## What CI still cannot cover / not verified
-
-- `make test` has not run on CI since 2026-10-10 02:48Z (`strict` fails
-  first). Whether it still fits and is green on gcc 13.3 after ~3 days of
-  merges (hundreds of commits, many new suites) is UNKNOWN; expect a second
-  round of CI-only reds (gcc 13 vs 15/16 behaviour, D45 CPU budgets on the
-  hosted runner, as in `citri` 2026-09-30 / `nltriage`) once strict passes.
-  Do not assume the first green strict means a green run.
-- Dev boxes build with gcc 15.2 (Linux) / gcc-16 (Mac), neither of which
-  reproduces gcc 13 warnings. Only CI exercises gcc 13.3. A cheap local
-  guard is the extraction recipe above; the Makefile does not automate it.
-- CI runs only the per-push tier (no ubsan/asan/lint/mech/test-axes).
-
-## Why nobody saw it for 24+ h (facts only; no change made)
-
-- `ci.yml` has no notifier of its own (no issue/Slack/mail step); the README
-  has a status badge only. Failure email, if any, is GitHub's per-user
-  default to the pusher/actor (`fdicostanzo`, all runs); whether it is
-  enabled or read is not visible from `gh`.
-- A red that never recovers is not a state change, and a fast failure (31 s)
-  at a step the dev boxes cannot reproduce looks like noise. The history is
-  mostly `cancelled` (263 of the last 400 runs; each push cancels the previous
-  run), so green runs were already rare: 39 successes of 400.
-- Nothing in the repo's session/wake routine checked CI status before
-  `a70548bd6` (the `pcrec-manager` skill's step 0b, added 2026-10-13).
-- The job needs ~30 s to fail but ~40-70 min to pass, so the cancel-on-push
-  concurrency group means a green run requires 40+ quiet minutes after a push,
-  while a red one is delivered almost immediately.
+- **CI verification is owed**: push, and read the `clskit: compile CPU per unit`
+  line in the run. Expected on gcc-13: max ~4-6 s. If it reads over ~7 s, the
+  10x inference is low and `CHUNK_BYTES` should drop again (each halving is
+  ~free); if the line is missing, the script did not run.
+- Margin caveat: law bundles are the floor (cannot be split); the densest 0.39 MB
+  unit costs 0.6 s solo on the Mac, so the worst-case margin against the 10 s
+  budget is ~1.7x at a 10x factor. Not further reduced because the return is
+  small and the unit count (331) already doubled total CPU.
+- No mech row: S360-S364 plant defects in `src/gen/clskit.c`, unaffected; I did
+  not re-drive them (the check's pass/fail count is unchanged, 5/0).
