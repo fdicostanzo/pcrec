@@ -1,0 +1,23 @@
+subbench	regime	set_cells	D0(max len<47)	D1(47..526)	M(527..5269)	L(>=5270)
+altwide	large-subject-throughput	34	0	0	0	34
+altwide	match-compliance	39	0	39	0	0
+altwide	short-subject-search	34	0	34	0	0
+bounded	large-subject-throughput	42	0	0	0	42
+bounded	match-compliance	42	0	0	42	0
+bounded	short-subject-search	42	0	42	0	0
+capability	large-subject-throughput	69	0	0	0	69
+capability	short-subject-search	69	0	69	0	0
+email	large-subject-throughput	3	0	0	0	3
+email	match-compliance	3	0	0	0	3
+email	short-subject-search	3	3	0	0	0
+litrun	large-subject-throughput	14	0	0	0	14
+litrun	match-compliance	14	0	14	0	0
+litrun	short-subject-search	14	0	14	0	0
+loglines	large-subject-throughput	11	0	0	0	11
+loglines	short-subject-search	11	0	0	11	0
+syntax	large-subject-throughput	80	0	0	0	80
+syntax	match-compliance	82	0	82	0	0
+syntax	short-subject-search	83	0	83	0	0
+utf8	large-subject-throughput	69	0	0	0	69
+utf8	short-subject-search	69	69	0	0	0
+TOTAL		827	72	377	53	325
