@@ -81,6 +81,14 @@
 # libpcre2 10.46 agrees with the clean build on all three (the cells are
 # generator-written from the oracle, tests/recursion/quantified.rxt).
 #
+# [S157TRI, 2026-10-13] THE THREE CELLS ABOVE STOPPED DETECTING at [k93fix]
+# (121cdac9d): a callee's verdict now joins every call site's follow, and
+# in them the `a?` group is called with a literal `a` after the site, which
+# refuses possessification even with both arms removed. The DETECTING cells
+# are now the uncalled-group ones in quantified.rxt, `a?` seeing only the
+# lexical follow: ^(a?)(?2)$(?(DEFINE)(a)) on "a", ^(a?)(?2){2}$(?(DEFINE)(a))
+# on "aa" (NOMATCH sabotaged). docs/dev/lanes/s157tri_report.md.
+#
 # THE HANG PREDICTION IS RETIRED, not merely unmet: `vm_poss_star`'s
 # guard-free spin is reachable only through the rung this sabotage cannot
 # route to, and `vm_lifts`/S156 stands between the corpus and it. This row is
