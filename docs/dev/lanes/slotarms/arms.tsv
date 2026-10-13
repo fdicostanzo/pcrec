@@ -1,0 +1,18 @@
+# slotarms arms.tsv -- kit harness contract: cell arm role subjects modes (TAB-separated; lists are comma-separated).
+# Cell <p>-first = C_call/c_byte rows (first on no-match subjects); <p>-all = C_match rows (find-all, one match per 8/64/1k bytes).
+# base = the default-engine (auto) build of the cell's pattern; arms = forced-engine builds. Build details: arms.spec (sourced by build.sh).
+#cell	arm	role	subjects	modes
+p1-all	dfa	base	pc_mw2-L8,pc_mw2-L64,pc_mw2-L1k	all
+p1-all	vm	arm	pc_mw2-L8,pc_mw2-L64,pc_mw2-L1k	all
+p1-first	dfa	base	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p1-first	vm	arm	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p2-all	hyb	base	pc_mw2-L8,pc_mw2-L64,pc_mw2-L1k	all
+p2-all	dfa	arm	pc_mw2-L8,pc_mw2-L64,pc_mw2-L1k	all
+p2-all	vm	arm	pc_mw2-L8,pc_mw2-L64,pc_mw2-L1k	all
+p2-first	hyb	base	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p2-first	dfa	arm	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p2-first	vm	arm	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p3-all	dfa	base	pc_mw5-L8,pc_mw5-L64,pc_mw5-L1k	all
+p3-all	vm	arm	pc_mw5-L8,pc_mw5-L64,pc_mw5-L1k	all
+p3-first	dfa	base	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
+p3-first	vm	arm	pc_e0,pc_nm8,pc_nm64,pc_nm1k,pc_nm64k	first
