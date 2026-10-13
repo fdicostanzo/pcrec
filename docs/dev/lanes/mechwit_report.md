@@ -141,7 +141,8 @@ script comments (tune_dial §6, resource [PF-DROP], anchored_match §6d):
 | tune_dial | `bash tests/codegen/run_tune_dial.sh` | 113 passed / 0 failed |
 | resource | `bash tests/resource/run_resource_tests.sh` | rc 0, every `[PF-DROP]` cell PASS |
 | the nine rows | `bash tests/mech/run_sabotage_matrix.sh S237` ... one id at a time, `PROCS=1 JOBS=2` | each `unexpected: 0, undetected: 0, unreached: 0, anomalies: 0` |
-| neighbours | `S249 S420 S636 S697` (rows whose suites I edited) | see handback |
+| neighbours | `S249 S420 S697` (rows whose suites I edited) | all DETECTED, unexpected 0 (S249 `tunedial:11fail/105pass`, S420 `corpus:19fail/19pass, resource:2fail/37pass`, S697 `fallbacktable:2fail/141pass, prefilter:1fail/51pass`) |
+| neighbour S636 | same | UNDETECTED, ZERO CHECKS FAILED: PRE-EXISTING, identical on pristine main 52c2c3917 (`worktrees/mechwit-base`, same row, same verdict); its suite `fallbacktable` is not one I edited, and `run_anchored_match.sh` (22/0) does not see its plant either. Same family (its desc cites `\p{L}` -e utf8, which [START-LANDING] took off the rung) but NOT one of the nine and not fixed here; the manager should assign it. |
 | field validation | `VALIDATE_ONLY=1` on each of the nine | valid |
 
 ## Pins
