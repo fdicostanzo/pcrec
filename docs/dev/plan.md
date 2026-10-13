@@ -929,6 +929,13 @@ Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH 
   The general form: an exact repeat `X{n}` of a fixed-width atom IS a width-n*w member, so the run extractor (and the VM's literal-run selection) should read it as such (`ab{3}c` has required run `abbbc`; `[0-9]{4}` is a width-4 span member). Fix the reading in the analysis, never a parser rewrite to a sequence. Likely cost: the VM half (counter loop vs one memcmp) more than the search-start half. Population unmeasured.
   Frank, 2026-10-13: "pcrec could construct a span for memfn that isn't actually what the pattern says." GENERAL FORM: a span is a fact about the LANGUAGE, derived from IR/automaton, not the spelling (`A{4}`->`AAAA`, `abc|abd`->`ab[cd]`, `a(?=bc)`->`abc` as a search condition). Soundness bar by use: a SEARCH span need only be necessary (every match has it); a MATCH-STEP span must be exact. Facts only to the kit (D157); each derivation needs an identity proof + a planted-wrong-derivation sabotage.
 
+- [FIND-BOUNDARY-SIDE] STATE:not-started — a find site may scan for the boundary's other side (`[a-z]+\b`: scan for \W, not [a-z])
+  filed: 2026-10-13 Frank via the kit (session 111), on R17-b's ALPHA losses: "not your issue" (the kit's): pcrec's choice of what the FIND site scans for
+  status (2026-10-13): not started; witness: R17-b ALPHA `bounded [a-z]+\b` +20-37% on every subject: scanning the dense run set lands on nearly every byte
+  next: discuss with Frank (D161 window/landmark territory) before any design lane
+  refs: decisions D161; docs/design/memfn/window_contract.md; memfn/docs/ideas.md; [REPEAT-RUN]; [START-DENSE]
+  The general form: a match is bounded by conditions on both sides; the find site should scan for the RAREST necessary condition, which can be the transition OUT of the run (the \b side, \W) rather than the run's own set. pcrec owns the choice of origin (D161 add. 9); the kit owns the method.
+
 ## Boonies
 - [SPEC-1.11] STATE:not-started — THE EXTENDER'S SPEC, `docs/spec/extending.md` (name provisional)
   filed: 2026-08-29 Frank
