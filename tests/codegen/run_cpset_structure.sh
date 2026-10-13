@@ -397,6 +397,17 @@ fi
 #                    code to read `u.cls`, which the check reached on its
 #                    first run over the lane's tree)
 #
+#   parse/definitions.c  D164 B3's `eol_tail_plain` — is every interval of a
+#                    class inside ASCII (hi <= 0x7F), so a `\\Z` tail is its own
+#                    encoding lowering? A code-point-level question asked ABOVE
+#                    the lowering, where a byte-bitmap render would be wrong
+#                    for a class past the byte range. FUNCTION-scoped
+#                    (ALLOW_FN below), so the rest of definitions.c stays
+#                    policed. Added by lane b3tri (the function's own
+#                    population: the first definitions.c code to read
+#                    `u.cls`, which the check reached on its first run over
+#                    the B3 tree)
+#
 # Everything else — every emitter, the NFA builder, the two DECLINE analyses —
 # reaches a class ONLY through `pcrec_cls_bits`, `pcrec_cls_bits_widen` or
 # `pcrec_cls_single` (`pcrec_cls_has`, which had no caller, was deleted at
@@ -413,7 +424,7 @@ ALLOW='src/core/internal.h|src/core/cpset.c|src/parse/parse.c|src/opt/altcls.c|s
 # silently cover the next read to land in a same-named function). The first
 # entry is [ART-POSS-ARMS]'s (lane posstri): possessify.c's one reader is the
 # function `cls_polarity`, so that file is NOT on ALLOW.
-ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf'
+ALLOW_FN='src/opt/possessify.c:cls_polarity src/opt/derive.c:is_never_leaf src/parse/definitions.c:eol_tail_plain'
 
 # fn_span FILE FUNCTION -> "START END" (1-based, inclusive) or nothing.
 fn_span() {
