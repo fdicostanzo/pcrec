@@ -288,6 +288,19 @@ fseq seq-pfcbcat  trlowsize ok 'drop-prefilter@size'                          '(
 fseq seq-pfcd2    trlowsize ok 'prefilter-collapse@size > drop-prefilter@size' '(\bcat\b){2,}\w\w' -e utf8
 fstate seq-pfcd2 2 'restart=1'
 fseq seq-anch     trplain ok 'drop-anchored@size'                              '\p{L}' -e utf8 -fno-start-landing
+fstate seq-anch 1 'sdr=1'
+# [S636] DEFAULT-PATH witness for the drop-anchored row's `sets` cell (lane
+# s636tri). Since [OPT-REVEND] L2 the machine drop is driven by the row's
+# FIRED bit (`Ctx.anchored_dropped`), not by `size_drop_rung`, so that cell
+# survives only as the ladder's ordinal and as the trace tuple's `sdr=`
+# field: a plant keeping it moves no artifact byte and no answer (checked
+# on this chain, byte-identical modulo the output basename), and the tuple
+# is the one place it shows. `\p{L}` alone fits on `landing` (581,697 B), so
+# the row is reached by a chain of three property classes at the default
+# flags: 1,301,271 B with the machine (30% over the 1,000,000 B cap), 761,331
+# B after the drop (24% under).
+fseq seq-anchland trplain ok 'drop-anchored@size'                              '\p{N}\p{L}\p{Lu}' -e utf8
+fstate seq-anchland 1 'sdr=1'
 fseq seq-premul   trlowboth ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
 fseq seq-premuls  trlowsize ok 'drop-anchored@size > drop-premul@size'         '(*UCP)(?i)[\dk]' -e utf8 -fno-start-landing
 # T1 row 2 (the size term's trial catch), label `other`
