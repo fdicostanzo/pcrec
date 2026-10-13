@@ -755,7 +755,7 @@ static int row_check(RxtP *p, size_t line, RxtFrame *f, RxtFindBlock *fb,
     size_t n;
     unsigned long key = 0;
     for (int k = 0; k < nkeys; k++) {
-        unsigned long one;
+        unsigned long one = 0;  /* every r == 0 path of row_key writes it; gcc 13 can't see that */
         if (!next_word(&s, &w, &n))
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                             "'row' in a '%s' block wants %d %s key(s) then "
