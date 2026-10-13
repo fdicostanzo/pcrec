@@ -335,7 +335,11 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-memfn-rows test-cand-oracle test-fallback-table test-memfn-guarded \
       test-memfn-simdfloor \
       test-memfn-rank \
-      test-spec-history test-plan-lint test-compound
+      test-spec-history test-plan-lint test-compound test-ci-shards
+
+# CI does not run `test:` as one job: see `test-shard` / `test-ci-shards` below
+# and tests/ci/shards.tsv, which must name every member of this list exactly once
+# (adding a section here without a shard row turns `make test-ci-shards` red).
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -402,6 +406,51 @@ test:
 	[ $$? -eq 0 ] || rc=1; \
 	rm -rf "$$dir"; \
 	exit $$rc
+
+# [CI-SHARD] `test-shard`: CI's form of `test:` (lane cishard, 2026-10-13).
+# `make test` itself is unchanged and stays the local merge/close standard; CI
+# (.github/workflows/ci.yml) runs `make test-shard SHARD=K/N` as a matrix of
+# N jobs because the serial suite outgrew the hosted 4-vCPU runner's 90 minutes
+# (docs/dev/lanes/citime_report.md). The split is the DECLARED TABLE
+# tests/ci/shards.tsv (section, shard, weight, weight source) -- never an
+# if-chain here or in YAML -- and `test-ci-shards` (a TEST_SECTIONS member)
+# holds that table to TEST_SECTIONS exactly. The recipe is `test:`'s own
+# accounting restated over the shard's list: the same `$(MAKE) -k` launch, the
+# same marker files, the same tests/lib/test_trailer.sh (so "sections ran: N/M"
+# counts THIS shard's list and a section make never launched is named), and
+# rc accumulates both halves. The verdict is still make's `*** [...test-X]
+# Error` lines; a shard is green only if every section in its list was
+# launched AND none failed.
+test-shard:
+	@secs="$$(bash tests/ci/check_shards.sh --list '$(SHARD)')" || { echo "test-shard: usage: make test-shard SHARD=K/N (see tests/ci/shards.tsv)" >&2; exit 2; }; \
+	secs="$$(echo $$secs)"; \
+	dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
+	rc=0; \
+	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
+	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
+	start=$$(date +%s); \
+	echo "== make test-shard SHARD=$(SHARD): $$secs"; \
+	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $$secs; \
+	[ $$? -eq 0 ] || rc=1; \
+	end=$$(date +%s); \
+	RUN_STAMP_SHA="$$stamp_sha" \
+	RUN_STAMP_DIRTY="$$stamp_dirty" \
+	RUN_STAMP_DURATION="$$((end - start))s" \
+	TRAILER_TITLE="make test-shard SHARD=$(SHARD)" TRAILER_LIST_NAME="shard $(SHARD)'s list" \
+	bash tests/lib/test_trailer.sh "$$dir" $$secs; \
+	[ $$? -eq 0 ] || rc=1; \
+	rm -rf "$$dir"; \
+	exit $$rc
+
+# [CI-SHARD] the CONTROL on the table above: every TEST_SECTIONS member in
+# exactly one shard, no unknown names, a non-empty shard each, ci.yml's matrix
+# listing exactly the table's shards, then the planted self-test (one plant per
+# check, each required red). $(TEST_SECTIONS) is passed on argv -- the list is
+# spelled once, here, and the table is what is checked against it.
+test-ci-shards:
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-ci-shards.ran"; fi
+	@bash tests/ci/check_shards.sh $(TEST_SECTIONS)
+	@bash tests/ci/check_shards.sh --selftest $(TEST_SECTIONS)
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -1949,6 +1998,6 @@ clean:
         test-memfn-manifest test-memfn-g2 test-memfn-g2-full test-memfn-stamps test-memfn-guarded test-memfn-simdfloor test-memfn-rank \
         test-memfn-arms test-memfn-deleg \
         test-memfn-arch test-memfn-forms test-memfn-reach test-memfn-rows \
-        test-startset test-spec-history test-plan-lint test-compound \
+        test-startset test-spec-history test-plan-lint test-compound test-shard test-ci-shards \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
