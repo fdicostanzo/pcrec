@@ -1,5 +1,5 @@
 # tests/ci/shards.tsv -- the DECLARED CI shard table ([CI-SHARD], lane cishard).
-# `make test-shard SHARD=K/N` runs exactly the sections whose `shard` column is K
+# `make test-shard CISHARD=K/N` runs exactly the sections whose `shard` column is K
 # (N = the highest shard number here, which .github/workflows/ci.yml's matrix
 # must also list). tests/ci/check_shards.sh (make test-ci-shards, a TEST_SECTIONS
 # member) holds this table to TEST_SECTIONS EXACTLY: every section in exactly one
@@ -7,84 +7,83 @@
 # in the order it has here.
 #
 # Columns (TAB-separated): section, shard (1..N), weight_s, weight_source.
-# weight_s is LOCAL-BOX seconds (Ryzen 7 7700X, make -j<=4), a FIRST-PASS number
-# to be REPLACED by the runner's measured times: run CI, download the three
-# `pcrec-ci-sections-*` artifacts, then
+# weight_s is RUNNER seconds since run 38354147463 (cishard2, 2026-10-13: the
+# three `pcrec-ci-sections-*` artifacts through tests/ci/shard_rebalance.py),
+# except the rows whose weight_source says ESTIMATED or LOWER BOUND (test-memfn-g2:
+# its SIMD family never ran; test-startset: ran a third of its diff jobs). To
+# re-measure: download a run's artifacts, then
 #   python3 tests/ci/shard_rebalance.py --measured sections-1.tsv sections-2.tsv ...
-# which overwrites weight_s/weight_source for the measured sections (runner
-# seconds then, not local) and re-balances. Until then the projection uses
-# ci_scale (below): the ratio of the one runner datum there is (citime_report.md
-# s1: the 4-vCPU run reached test-memfn-g2 at minute 76 = 4560 s) to the local
-# weight sum of the sections before it (3157 s) = 1.44.
-# ci_scale=1.44
+# (it overwrites weight_s/weight_source of the measured sections and re-balances;
+# re-apply the ESTIMATED labels by hand until those two are measured).
+# ci_scale=1.0
 # shards=3
 section	shard	weight_s	weight_source
-test-corpus	2	382.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-cli	2	21.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-reject	1	0.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-registry	1	37.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-parse	3	0.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-gentimeout	1	7	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-codegen	2	171.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-vm	3	145.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-possessify	3	90.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-rungselect	2	130.8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-counterk	2	61.8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-mrl	1	78.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-prefilter	2	7.8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-altcls	2	10.1	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-island	1	10.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-assertions	3	182.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-atomic	1	58.8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-backrefs	1	73.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-lookaround	3	64.7	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-recursion	3	164.9	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-encseam	2	8.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-resource	3	186.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-capturediff	1	2.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-known-fail	2	0.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-thread	2	17.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-stackdepth	3	1.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-premul-table	2	77.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-anchored-match	2	186.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-search-pinned	3	121.3	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-start-landing	3	60	estimate: not in the 2026-10-08 ledger (section added later); a codegen-class script, guessed 60 s
-test-vm-frameless	3	62.9	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-dfa-uniform-fold	2	54.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-tune-dial	2	1.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-prechecks	3	8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-prefilter-collapse	2	124.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-rxtsource	2	56.3	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-definitions	3	2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-entry-shape-identity	3	7	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-cpset-structure	3	8.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-startbnd	1	8.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-uprops	1	18.9	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-core	2	0.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-vars	2	2.4	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-examples	1	0.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-findings	2	92.8	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-ucp	3	16.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-clskit	3	205.3	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-encoding-checks	3	45.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-utfcheck	1	24.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-startset	1	112.9	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-link	2	0.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-manifest	1	3	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-g2	1	900	ledger J<=4 median 91 s is PRE-SIMD-family; replaced by CI-observed quick leg 654 s / 1.44 = 454 s plus 450 s estimated SIMD family (citime_report.md s1, s4; unmeasured)
-test-memfn-stamps	3	18.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-arms	3	1	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-deleg	3	0.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-arch	2	8.6	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-forms	1	0.2	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-reach	2	0.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-rows	1	1.1	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-cand-oracle	2	4.1	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-fallback-table	1	62.5	ledger: median wall_s over the 4 runs with make -j<=4 (docs/dev/ttune_ledger.d, 2026-10-08)
-test-memfn-guarded	3	30	estimate: not in the ledger; small kit check, guessed 30 s
-test-memfn-simdfloor	3	28	citime_report.md: 26-31 s locally (midpoint)
-test-memfn-rank	1	40	estimate: not in the ledger; brute-force rank check over the corpus, guessed 40 s
-test-spec-history	1	10	estimate: not in the ledger; 145 text checks, guessed 10 s
-test-plan-lint	1	2	estimate: not in the ledger; scripts/plan_lint.sh runs in about 60 ms per pre-commit, 2 s with the self-test
-test-compound	2	30	estimate: not in the ledger; B0-B2 nm/one-TU checks, guessed 30 s
-test-ci-shards	2	1	estimate: this section (text checks only)
+test-corpus	2	575.5	ci-measured sections.tsv
+test-cli	2	10.8	ci-measured sections.tsv
+test-reject	3	1.2	ci-measured sections.tsv
+test-registry	1	57.2	ci-measured sections.tsv
+test-parse	3	0.9	ci-measured sections.tsv
+test-gentimeout	1	7.2	ci-measured sections.tsv
+test-codegen	3	288.1	ci-measured sections.tsv
+test-vm	3	125.8	ci-measured sections.tsv
+test-possessify	1	92.4	ci-measured sections.tsv
+test-rungselect	1	112.8	ci-measured sections.tsv
+test-counterk	2	53.5	ci-measured sections.tsv
+test-mrl	1	69.5	ci-measured sections.tsv
+test-prefilter	3	12.4	ci-measured sections.tsv
+test-altcls	3	10.3	ci-measured sections.tsv
+test-island	2	23.4	ci-measured sections.tsv
+test-assertions	3	315.1	ci-measured sections.tsv
+test-atomic	2	73.5	ci-measured sections.tsv
+test-backrefs	2	97.5	ci-measured sections.tsv
+test-lookaround	3	99.3	ci-measured sections.tsv
+test-recursion	3	152	ci-measured sections.tsv
+test-encseam	2	6.9	ci-measured sections.tsv
+test-resource	3	255.6	ci-measured sections.tsv
+test-capturediff	1	8.2	ci-measured sections.tsv
+test-known-fail	1	0.5	ci-measured sections.tsv
+test-thread	2	34.9	ci-measured sections.tsv
+test-stackdepth	2	0.5	ci-measured sections.tsv
+test-premul-table	2	87.3	ci-measured sections.tsv
+test-anchored-match	2	288.9	ci-measured sections.tsv
+test-search-pinned	3	157.1	ci-measured sections.tsv
+test-start-landing	2	141.2	ci-measured sections.tsv
+test-vm-frameless	3	82.5	ci-measured sections.tsv
+test-dfa-uniform-fold	1	84.1	ci-measured sections.tsv
+test-tune-dial	2	2	ci-measured sections.tsv
+test-prechecks	2	13.7	ci-measured sections.tsv
+test-prefilter-collapse	2	117	ci-measured sections.tsv
+test-rxtsource	3	92.1	ci-measured sections.tsv
+test-definitions	2	3.1	ci-measured sections.tsv
+test-entry-shape-identity	2	10.6	ci-measured sections.tsv
+test-cpset-structure	1	12	ci-measured sections.tsv
+test-startbnd	2	8	ci-measured sections.tsv
+test-uprops	1	17.1	ci-measured sections.tsv
+test-core	1	2.2	ci-measured sections.tsv
+test-vars	3	7.6	ci-measured sections.tsv
+test-examples	3	0.5	ci-measured sections.tsv
+test-findings	2	154.3	ci-measured sections.tsv
+test-ucp	1	28.5	ci-measured sections.tsv
+test-clskit	3	416	ci-measured sections.tsv
+test-encoding-checks	3	56	ci-measured sections.tsv
+test-utfcheck	3	36.3	ci-measured sections.tsv
+test-startset	2	171.5	ci-measured run 38354147463 shard 1, LOWER BOUND: env SHARD=1/3 made vmhat_diff.py run only a third of its jobs
+test-memfn-link	1	0.5	ci-measured sections.tsv
+test-memfn-manifest	1	4.7	ci-measured sections.tsv
+test-memfn-g2	1	1535	ESTIMATED: run 38354147463 measured 885 s for the quick tier only (SIMD family died at once on taskset -c 12-15); + 650 s SIMD family = 450 local-s x 1.44, unmeasured
+test-memfn-stamps	2	58.8	ci-measured sections.tsv
+test-memfn-arms	3	2.5	ci-measured sections.tsv
+test-memfn-deleg	2	0.5	ci-measured sections.tsv
+test-memfn-arch	3	13.9	ci-measured sections.tsv
+test-memfn-forms	3	0.5	ci-measured sections.tsv
+test-memfn-reach	1	0.5	ci-measured sections.tsv
+test-memfn-rows	1	1.9	ci-measured sections.tsv
+test-cand-oracle	1	8.9	ci-measured sections.tsv
+test-fallback-table	1	40.5	ci-measured sections.tsv
+test-memfn-guarded	1	140.1	ci-measured sections.tsv
+test-memfn-simdfloor	3	59.8	ci-measured sections.tsv
+test-memfn-rank	3	27.1	ci-measured sections.tsv
+test-spec-history	3	5.1	ci-measured sections.tsv
+test-plan-lint	2	3.6	ci-measured sections.tsv
+test-compound	2	286.3	ci-measured sections.tsv
+test-ci-shards	3	5.9	ci-measured sections.tsv
