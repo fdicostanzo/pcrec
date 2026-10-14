@@ -1,0 +1,44 @@
+a*	bbb
+x?y	yy
+a|	bab
+a|b*	cbbac
+a*	aaa
+a?	aba
+b*	abbbab
+(a|)	xax
+a(b|)c	acabc
+(ab)*	ababx
+a{0,2}	aaaa
+[a-c]*	xabcx
+|a	aaa
+a*?	aaa
+a??	aba
+[0-9]+	a12b345
+a{2,}	aaaa
+(?:ab|a)	aab
+(a*)*	aab
+.	abc
+ab$	xabab
+^a	aa
+c*	
+x	
+a	a
+b*?	abba
+x*|y	y
+x*|y	xyy
+ab\K	ababab
+a\Kb	ababab
+(?=a)	xax
+\G\w+	ab ab ab
+(?<=a)|b	abab
+a*?|b	ab
+(a|)*?b	ab
+\b	ab cd
+\B	abc
+(?:)	abc
+|	ab
+a??b?	ab
+(?:a|)*?	aa
+\Ga|	aab
+$|a	a
+(?=b)|b	ab

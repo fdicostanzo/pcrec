@@ -1,0 +1,11 @@
+# retry anchoring: semprobe (ANCHORED|NOTEMPTY_ATSTART retry) vs a sed variant (NOTEMPTY_ATSTART only)
+# corpus pairs differing: 0 of 29,502 (both runs over sem/harvest.py's pairs, libpcre2 10.46)
+# targeted \G cells:
+## anchored
+\G|b	xb	G=(0,0) (1,1) (1,2) (2,2)
+\G|b	bb	G=(0,0) (0,1) (1,1) (1,2) (2,2)
+(?:\Ga)?|b	ab	G=(0,1) (1,1) (1,2) (2,2)
+## unanchored
+\G|b	xb	G=(0,0) (1,2) (2,2)
+\G|b	bb	G=(0,0) (0,1) (1,1) (1,2) (2,2)
+(?:\Ga)?|b	ab	G=(0,1) (1,1) (1,2) (2,2)

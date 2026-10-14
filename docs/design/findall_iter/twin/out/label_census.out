@@ -1,0 +1,25 @@
+distinct corpus patterns: 4624
+byte	nosig			18
+byte	plain	dfa	compound	48
+byte	plain	dfa	empty	67
+byte	plain	dfa	rev-end	156
+byte	plain	dfa	unanchored	1702
+byte	plain	vm	-	660
+byte	plain	vm	attempt	191
+byte	plain	vm	empty	16
+byte	plain	vm	rev-end	93
+byte	plain	vm	unanchored	1059
+byte	refused			381
+byte	table	dfa	attempt	233
+utf8	nosig			18
+utf8	plain	dfa	compound	49
+utf8	plain	dfa	empty	43
+utf8	plain	dfa	rev-end	156
+utf8	plain	dfa	unanchored	1697
+utf8	plain	vm	-	668
+utf8	plain	vm	attempt	192
+utf8	plain	vm	empty	16
+utf8	plain	vm	rev-end	93
+utf8	plain	vm	unanchored	1091
+utf8	refused			369
+utf8	table	dfa	attempt	232

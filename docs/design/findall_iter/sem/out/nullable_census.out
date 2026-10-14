@@ -1,0 +1,8 @@
+patterns with a semprobe verdict: 3778
+  nullable=False has_K=False diverges=False : 3092
+  nullable=False has_K=True  diverges=False : 79
+  nullable=False has_K=True  diverges=True  : 2
+  nullable=True  has_K=False diverges=False : 443
+  nullable=True  has_K=False diverges=True  : 158
+  nullable=True  has_K=True  diverges=False : 4
+gate (nullable or \K) false yet diverging (must be 0): 0
