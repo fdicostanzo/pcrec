@@ -9628,3 +9628,16 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Simultaneous states:** one per stateful FIND site; every ALPHA artifact has exactly one per search entry. Whether pcrec ever emits two live FIND sites on one search path is an EMISSION fact owed by pcrec at design time (the sum rule of item 4 applies if so).
 - **Validity:** zero-init + the same unchanged (s, n); no previous match end and no reset on `lo` jumps (a `lo` outside the cached block falls to a fresh scan; monotone `lo` is where the cache pays). Position-independent: copying an iterator is safe.
 - **Reading (manager):** item 5's "init writes one validity word, never a memset of S" means NO memset of the whole buffer; zeroing a row's declared bytes (24 B here, three words) is within it. S's first measured row is therefore 24 B / align 8, so S need not be cache-line sized for the kit today.
+
+## D166 — decision-making MEASUREMENTS are versioned, internally consistent SETS, loaded at compile time with a default in the binary (Frank, 2026-10-13, session 112)
+
+**Context.** D161 addendum 12 made decision-making measurements a class distinct from limits and D149 constants (visible data with provenance, a formal method, remeasurement). Frank then ruled their organization.
+
+**Decision (Frank).**
+1. **Selections move automatically** when the measurements change, but the measurements come as a **SET**: one box, one run, one method version, never mixed across runs. Sets are versioned and committed; pcrec is compiled with the latest set by default and can be **rolled back** to an older one by name. A default-set change carries a mover census in the same commit.
+2. **Measures are RELATIVE within a set.** Different machines give different absolute values; each set must be internally consistent. Decisions read ratios (every crossover is cost over cost, in bytes); a set stores costs in units of the scalar walk's per-byte cost plus the derived crossovers, with absolute ns kept only as provenance.
+3. **Specified and loaded at COMPILE TIME, with a default in the binary** ("someone might set it up to do a measure on installing pcrec on their machine or for purposes of using pcrec on a particular machine"): a measurement set is the machine-side twin of the analysis object (D162: data-side knowledge, default bundle in the binary, user bundles loadable). The knowledge record's key A becomes "which measurement set"; ISA availability stays a separate fact.
+
+**Manager reading (shape, not yet designed).** `--measures=FILE|NAME` + a config line (the `--analysis=` precedent); the artifact stamped with the set's id + hash (one scaffolding abi event); [ART-MGR]'s cache key includes it; `--list-measurements` lists every row with provenance and its reader rows ([LIST-TABLES]); the generic class (D161 add. 12) is a DERIVED envelope set, labelled composite; an install-time measurement tool measures only the crossovers the rows read, reports its noise floor and refuses a noisy run. Invariant: answers never depend on the set (every form is answer-identical); an artifact is a function of (pattern, options, analysis, measurements).
+
+**Consequences.** Plan row [MEASURE-SET]. First customer: the kit's R17-b′ thresholds; build trigger: R17-b′'s build. Open for its design note: the relative unit, analysis-format vs sibling file, the install tool's home.
