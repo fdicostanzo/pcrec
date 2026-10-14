@@ -1,0 +1,10 @@
+i1:: 	movl	$14, %ecx
+i1:: 	movq	$0, 4(%rsp)
+i1:: 	movq	$0, 112(%rsp)
+i1:: 	rep stosq
+i1:: 	movl	$1230241792, (%rsp)
+i2:: 	movl	$1230241792, (%rsp)
+i3:: 	movl	$1230241792, (%rsp)
+i4:: 	movl	$1230241792, (%rdi)
+i5:: 	movq	%rdi, 16(%rsp)
+i5:: 	movl	$1230241793, (%rsp)
