@@ -9485,6 +9485,13 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 - **Until lockdown:** the kit (row owner) and main (mirror, comments) add, delete, split or re-threshold rows as the evidence supports, with no per-row proposal to Frank; each edit is logged (the row, the evidence, the commit) in the kit's table history and mirrored in regime_tables.md.
 - **Lockdown (manager reading, to confirm with Frank when reached):** the table that passes [REGIME-EVAL]'s judge (PASS or PROVISIONAL PASS) and ships with R17-b′'s routing commit. After it, a row edit is a FORMAL change: a ruled diff with its evidence, its replay delta and its mover census (the D103 pinned-contract shape for rows; D166 still moves VALUES automatically within a set).
 
+### D161 addendum 14 — single-byte search sites move into the KIT's purview; the kit decides whether to scan at all, and libc is one optional row (Frank, 2026-10-14, session 112)
+
+- **Ruling (Frank):** the single-byte find (today pcrec's direct `memchr` path, 92 of the 177 blinded questions) moves into the kit's general purview: "1. its a memory search function even if it simply calls memchr. 2. i'm not convinced its needed as often as we use it. 3. the kit can decide to include it or not as part of the 'find window' contract. 4. we may wish to suppress libc or other libraries entirely and this would directly provide the fallback by using some other memfn row."
+- **Reading (manager):** pcrec stops emitting a direct `memchr` scan; it states the site (one span of length 1, D161 add. 3) and the kit's candidate-finder table (add. 11) decides the form, including NOT pre-scanning at all (Frank's point 2: the pre-scan may be used more often than it pays). libc `memchr` is one row among the kit's forms, never a dependency: every site has a libc-free row, so suppressing libc (or any external library) is a deny the table already covers. The libc row's constants carry a `libc:<name>@<version>` dependency in their measurement-set provenance (D166).
+- **Extended by the manager (flagged, Frank to confirm):** the `(?m)^` line-start scan is the same case (a single `\n` stop plus a context check, 24 of the 177) and moves with it.
+- **Consequence:** the table's validation reaches ~80% of the blinded questions instead of 31%; the kit folds it into R17-b′'s revision.
+
 ## D162 — workload data reaches the kit as ONE read-only, versioned ANALYSIS OBJECT per compile; every kit selection is TOTAL without it (Frank, 2026-10-12, ruled to the kit session; filed by main from the kit's relay, lane/memfn-r17 0132c5d2 + bb862bad, memfn/docs/responses.md)
 
 - **Ruling 1 (Frank):** "i agree option 1 with options to add more data. pcrec should send what it has."
