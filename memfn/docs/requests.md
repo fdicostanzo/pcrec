@@ -430,3 +430,20 @@ The floor rule holds: SIMD-off artifacts are byte-identical to main's. Prove it 
 **Trigger:** R17-b′'s D6 panel outcome.
 
 **Sabotage ids:** within R17-b′'s S911-S922 (allocated 2026-10-14).
+
+## R-20 (2026-10-14, pcrec manager) — [MEASURE-SET] M0's kit seams: the set in, "consulted" out, form hashes, reader declarations, method cards
+
+**Customer:** [MEASURE-SET] and [KNOW-SRC] (docs/design/measure_sets.md revision 2.1, §4.4 and §10.1; D166 + addenda 1-2; panel docs/dev/reviews/2026-10-14-r1-measure-sets.md). Five items, with the landing bars as in the note (main-side numbering R-MS1..R-MS5):
+
+|---|---|---|---|
+| R-MS1 | `mf_measures` on `mf_art_begin` as §4.1 states (kit rows only, no `status`; NULL = no set) | the kit's tests run every finder row with NULL, with a synthetic set lacking each key in turn (the row skips to its `unpaid` pick or the next row), and with the full set; a kit row never reads a `pcrec.` key | M0 |
+| R-MS2 | `consulted` out of `mf_art_end` (§4.2) | a kit test with a compile whose sites read no set key → false; one row that reads an ABSENT key → true; one that reads a present key → true. pcrec's S945 (§8.5) reaches it | M0 |
+| R-MS3 | `mf_form_hash(form_id)` over the canonical instance (§2.4), and the form ids the kit's cards name in `deps` | the hash is unchanged under a zero-mover kit refactor (renamed helper, comment edit) and changed under a one-instruction body edit, both as kit fixtures; every form id a kit card names resolves | M0 (staleness listing) |
+| R-MS4 | the kit's READER DECLARATION: per finder-table row, the keys it reads and, per threshold key, its SAFE direction (`max`/`min`/`none`: the side of its conservative or `unpaid` pick), as data the kit's listing exposes in [LIST-TABLES]' census shape (§5.4); and, per artifact, which finder rows fired per site, as the `--emit-facts` section `memfn` (§4.5) | keys: every key a row reads is declared (the kit-side half of §8.6's ⊆ check); directions: each declared direction agrees with the row's comparison operator by a kit test | keys M0 (the listing's readers); directions M2 (the envelope) |
+| R-MS5 | the kit's METHOD CARDS for its quantities (§7.2), as a section TSV in the kit tree, versioned `kit-grid@N` | each quantity R17-b′ §3.2 lists has a card; grid1's and grid2's rows are on-card (`make test-measures` §8.2) | M0 (the first committed set must be on a card) |
+
+**Sequencing:** pcrec's [KNOW-SRC] stages K0-K3 build first at zero movers. M0 (the `measures` kind) triggers when R17-b′ lands WITH R-MS1, R-MS2, R-MS3 and R-MS5. R-MS4's keys are due at M0 and its safe directions at M2 (the envelope).
+
+**Facts only (D157):** pcrec hands over the kit's rows of the active set and never presumes how the kit uses them. The cards, hashes and reader declarations are the kit's own data. Until [KNOW-SRC]'s canonical view lands, the interim set TSV follows that shape.
+
+**Sabotage ids:** pcrec-side S943-S963 (allocated); kit-side ids on request.
