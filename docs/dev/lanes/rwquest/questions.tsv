@@ -1,0 +1,178 @@
+id	class	files	intent	pattern	flags	mode	guess_frequency	py_status	py_count_sample	py_count_full	sample_bytes	file_bytes	py_matches_per_MiB_sample	py_matches_per_MiB_full	observed_frequency	first_match_offset_sample	py_equiv_pattern	check_seconds
+L01	logs	logs/hadoop.log	which lines are ERROR level	\bERROR\b	-	line	some	ok	6	539	4194253	41942934	1.50	13.48	some			0.3
+L02	logs	logs/apache_access.log	every IPv4-looking address	\b(?:\d{1,3}\.){3}\d{1,3}\b	-	find-all	many	ok	10213	10213	2369603	2369603	4519.37	4519.37	many			0.0
+L03	logs	logs/apache_error.log	strictly valid IPv4 addresses (octets 0-255)	\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b	-	find-all	many	ok	23437	31116	4194264	5121846	5859.31	6370.26	many			0.2
+L04	logs	logs/zookeeper.log	log4j timestamps with milliseconds	\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}	-	find-all	everywhere	ok	29434	74380	4194282	10599180	7358.54	7358.41	many			0.1
+L05	logs	logs/linux_syslog.log	failed logins (grep -i style)	authentication failure	i	line	some	ok	3948	3948	2302067	2302067	1798.29	1798.29	many			0.0
+L06	logs	logs/apache_access.log	requests that got a 5xx response	"\s5\d\d\s	-	find-all	rare	ok	3	3	2369603	2369603	1.33	1.33	rare			0.0
+L07	logs	logs/apache_access.log	method and path of each request	"(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"	-	find-all	everywhere	ok	9999	9999	2369603	2369603	4424.67	4424.67	many			0.0
+L08	logs	logs/apache_access.log	404s on php endpoints (probing)	"GET [^"]*\.php[^"]* HTTP/1\.\d" 404	-	find-all	rare	ok	22	22	2369603	2369603	9.74	9.74	rare			0.0
+L09	logs	logs/hadoop.log	YARN container ids	container_\d+_\d+_\d+_\d+	-	find-all	many	ok	554	3662	4194253	41942934	138.50	91.55	some			0.0
+L10	logs	logs/hadoop.log	Java exception/error class names	\b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b	-	find-all	some	ok	99	18685	4194253	41942934	24.75	467.13	some			0.5
+L11	logs	logs/openstack.log	nova request ids	req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}	-	find-all	many	ok	13046	129544	4194135	41942978	3261.63	3238.60	many			0.1
+L12	logs	logs/openstack.log	well-formed UUIDs (version 1-5 variant bits)	\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b	i	count	many	ok	18613	184690	4194135	41942978	4653.44	4617.26	many			0.4
+L13	logs	logs/openstack.log	anything worse than INFO	\b(?:WARNING|ERROR|CRITICAL|TRACE)\b	-	line	some	ok	210	2408	4194135	41942978	52.50	60.20	some			0.3
+L14	logs	logs/openstack.log	status code, length and latency of API calls	status: (\d{3}) len: (\d+) time: (\d+\.\d+)	-	find-all	many	ok	7213	71608	4194135	41942978	1803.32	1790.20	many			0.0
+L15	logs	logs/bgl.log	fatal RAS events on BlueGene	RAS (?:KERNEL|APP) FATAL	-	line	some	ok	2422	95242	4194269	41942927	605.51	2381.06	many			0.1
+L16	logs	logs/bgl.log	lines carrying an alert tag (first token is not -)	^(?!- )\S+	-	line	some	ok	2245	89177	4194269	41942927	561.25	2229.43	many			0.1
+L17	logs	logs/bgl.log	node location ids	R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d	-	find-all	everywhere	ok	59486	618796	4194269	41942927	14871.62	15469.94	everywhere			0.1
+L18	logs	logs/linux_syslog.log	accidentally doubled words in messages	\b(\w+)\s+\1\b	i	find-all	rare	ok	382	382	2302067	2302067	174.00	174.00	some			0.1
+L19	logs	logs/apache_error.log	probes for well-known vulnerable paths	File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*	i	find-all	some	ok	2466	2803	4194264	5121846	616.51	573.85	many			0.0
+L20	logs	logs/zookeeper.log	hex session ids	0x[0-9a-f]{15,16}	i	find-all	some	ok	1905	7310	4194282	10599180	476.25	723.18	many			0.0
+L21	logs	logs/hadoop.log	first stack trace line mentioning an exception	Exception	-	first	some	ok	1	1	4194253	41942934			hit	180040		0.0
+L22	logs	logs/zookeeper.log	how many broken connections	Connection broken for id \d+	-	count	some	ok	3837	10388	4194282	10599180	959.26	1027.68	many			0.0
+L23	logs	logs/linux_syslog.log	daemon name with pid for a handful of services	\b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]	-	find-all	many	ok	10186	10186	2302067	2302067	4639.65	4639.65	many			0.0
+L24	logs	logs/zookeeper.log	lines that are NOT INFO	^(?!.*\bINFO\b).*$	m	find-all	some	ok	20291	49125	4194282	10599180	5072.78	4859.93	many			0.1
+L25	logs	logs/linux_syslog.log	kernel panics	kernel panic	i	first	rare	ok	0	0	2302067	2302067			no-hit	-1		0.0
+L26	logs	logs/apache_access.log	requests from a given day, any hour	\[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d	-	find-all	some	ok	3417	3417	2369603	2369603	1512.06	1512.06	many			0.0
+L27	logs	logs/openstack.log	very long lines (>= 400 chars)	^.{400,}$	m	find-all	rare	ok	20	207	4194135	41942978	5.00	5.18	rare			0.2
+L28	logs	logs/apache_error.log	error level word inside first brackets	\[(notice|error|warn|crit|alert|emerg)\]	-	find-all	everywhere	ok	43358	52004	4194264	5121846	10839.60	10646.58	everywhere			0.0
+C01	code	code/java.src	TODO-style markers in comments	\b(?:TODO|FIXME|XXX|HACK)\b.*	-	find-all	some	ok	182	1615	4194274	28100746	45.50	60.26	some			0.2
+C02	code	code/c.src	C function definitions, name captured	^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$	m	find-all	some	ok	3162	5115	4194283	7231205	790.50	741.71	many			0.1
+C03	code	code/c.src	#include targets	^\s*#\s*include\s*[<"]([^>"]+)[>"]	m	find-all	some	ok	913	1495	4194283	7231205	228.25	216.79	some			0.0
+C04	code	code/c.src	numeric #define constants	^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b	m	find-all	some	ok	430	987	4194283	7231205	107.50	143.12	some			0.0
+C05	code	code/c.src	double-quoted string literals with escapes	"(?:[^"\\\n]|\\.)*"	-	find-all	many	ok	23457	30879	4194283	7231205	5864.28	4477.67	many			0.0
+C06	code	code/python.src	python function names	^\s*def\s+(\w+)\s*\(	m	find-all	many	ok	6477	28292	4194293	17011821	1619.25	1743.86	many			0.1
+C07	code	code/python.src	classes and their bases	^class\s+(\w+)\((.*?)\):	m	find-all	some	ok	1196	6469	4194293	17011821	299.00	398.74	some			0.1
+C08	code	code/python.src	import statements	^(?:from\s+[\w.]+\s+)?import\s+.+$	m	find-all	many	ok	2972	10209	4194293	17011821	743.00	629.26	many			0.1
+C09	code	code/java.src	common annotations	@(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b	-	find-all	many	ok	3320	31229	4194274	28100746	830.01	1165.31	many			0.0
+C10	code	code/java.src	public static method names	public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(	-	find-all	many	ok	188	3224	4194274	28100746	47.00	120.30	some			0.0
+C11	code	code/javascript.src	named function declarations	\bfunction\s+(\w+)\s*\(	-	find-all	some	ok	1216	1216	2730048	2730048	467.05	467.05	some			0.0
+C12	code	code/javascript.src	jQuery selector calls with a literal selector	\$\(\s*["'][^"']+["']\s*\)	-	find-all	some	ok	31	31	2730048	2730048	11.91	11.91	some			0.0
+C13	code	code/go.src	Go funcs and methods	^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(	m	find-all	some	ok	558	558	467001	467001	1252.90	1252.90	many			0.0
+C14	code	code/rust.src	rust fn names, generics allowed	\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(	-	find-all	many	ok	2649	2649	1691876	1691876	1641.77	1641.77	many			0.0
+C15	code	code/rust.src	unsafe blocks	\bunsafe\s*\{	-	find-all	rare	ok	4	4	1691876	1691876	2.48	2.48	rare			0.0
+C16	code	code/java.src	trailing whitespace	[ \t]+$	m	count	some	ok	0	0	4194274	28100746	0.00	0.00	none			0.3
+C17	code	code/c.src	long hex constants (>= 8 digits)	\b0x[0-9a-fA-F]{8,}\b	-	find-all	some	ok	51	149	4194283	7231205	12.75	21.61	some			0.1
+C18	code	code/c.src	debugging prints	\b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(	-	find-all	some	ok	756	1678	4194283	7231205	189.00	243.32	some			0.1
+C19	code	code/java.src	doubled small words in comments	\b(the|a|an|of|to|is|in)\s+\1\b	i	find-all	rare	ok	0	30	4194274	28100746	0.00	1.12	rare			0.3
+C20	code	code/python.src	e-mail-like tokens	[\w.+-]+@[\w-]+\.[\w.-]+	-	find-all	rare	ok	5	882	4194293	17011821	1.25	54.36	some			0.5
+C21	code	code/python.src	dotted version numbers	\b\d+\.\d+\.\d+(?:-[\w.]+)?\b	-	find-all	some	ok	265	633	4194293	17011821	66.25	39.02	some			0.1
+C22	code	code/c.src	goto statements	\bgoto\s+\w+;	-	find-all	some	ok	374	847	4194283	7231205	93.50	122.82	some			0.1
+C23	code	code/go.src	URLs inside line comments	//.*https?://\S+	-	find-all	some	ok	54	54	467001	467001	121.25	121.25	some			0.0
+C24	code	code/java.src	any mention of deprecated, any case	\bdeprecated\b	i	count	some	ok	5	892	4194274	28100746	1.25	33.28	some			0.2
+C25	code	code/python.src	f-strings with a replacement field	\bf"[^"]*\{[^}]+\}[^"]*"	-	find-all	some	ok	348	750	4194293	17011821	87.00	46.23	some			0.1
+C26	code	code/c.src	longjmp / setjmp use	\b(?:long|set)jmp\b	-	find-all	rare	ok	5	5	4194283	7231205	1.25	0.73	rare			0.1
+C27	code	code/javascript.src	lines over 120 chars	^.{121,}$	m	count	some	ok	694	694	2730048	2730048	266.56	266.56	some			0.0
+P01	prose	prose/pg2701.txt	every mention of whale/whales	\bwhales?\b	i	count	many	ok	1499	1499	1276315	1276315	1231.53	1231.53	many			0.0
+P02	prose	prose/pg1342.txt	doubled words (even across a line wrap)	\b(\w+)\s+\1\b	i	find-all	rare	ok	3	3	772386	772386	4.07	4.07	rare			0.0
+P03	prose	prose/pg1661.txt	quoted speech in curly quotes	“[^”]{5,200}”	utf	find-all	many	ok	1929	1929	607606	607606	3328.97	3328.97	many			0.0
+P04	prose	prose/pg1342.txt	who said/replied/cried	\b([A-Z][a-z]+) (?:said|replied|cried|answered)\b	-	find-all	some	ok	30	30	772386	772386	40.73	40.73	some			0.0
+P05	prose	prose/pg1342.txt	titled people (Mr./Mrs./Miss/Dr.)	\b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+	-	find-all	many	ok	1137	1137	772386	772386	1543.57	1543.57	many			0.0
+P06	prose	prose/pg98.txt	whole questions (sentences ending in ?)	[A-Z][^.!?]*\?	s	find-all	some	ok	909	909	807197	807197	1180.82	1180.82	many			0.0
+P07	prose	prose/pg84.txt	words ending -ly	\b\w+ly\b	-	find-all	many	ok	1141	1141	448885	448885	2665.33	2665.33	many			0.0
+P08	prose	prose/pg2600.txt	4-digit years 1500-1999	\b1[5-9]\d\d\b	-	find-all	some	ok	166	166	3359610	3359610	51.81	51.81	some			0.0
+P09	prose	prose/pg2701.txt	chapter headings	^CHAPTER (?:\d+|[IVXLC]+)\.	m	find-all	rare	ok	270	270	1276315	1276315	221.82	221.82	some			0.0
+P10	prose	prose/pg1342.txt	roman-numeral chapter heading lines (nothing else on the line)	^CHAPTER [IVXLC]+\.\s*$	m	find-all	rare	ok	57	57	772386	772386	77.38	77.38	some			0.0
+P11	prose	prose/pg1342.txt	any of the main characters	\b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b	-	count	many	ok	2807	2807	772386	772386	3810.73	3810.73	many			0.0
+P12	prose	prose/pg1342.txt	surname after Mr. (lookbehind)	(?<=Mr\. )[A-Z]\w+	-	find-all	many	ok	725	725	772386	772386	984.25	984.25	many			0.0
+P13	prose	prose/pg345.txt	word before ", and" (lookahead)	\b\w+(?=,\s+and\b)	-	find-all	many	ok	2797	2797	890348	890348	3294.07	3294.07	many			0.0
+P14	prose	prose/pg1184.txt	hyphenated compounds	\b[A-Za-z]+(?:-[A-Za-z]+)+\b	-	find-all	many	ok	1970	1970	2787124	2787124	741.16	741.16	many			0.1
+P15	prose	prose/pg2600.txt	SHOUTED words (4+ capitals)	\b[A-Z]{4,}\b	-	find-all	some	ok	1101	1101	3359610	3359610	343.64	343.64	some			0.0
+P16	prose	prose/pg84.txt	Gutenberg start marker line	\*\*\* START OF .*? \*\*\*	-	first	rare	ok	1	1	448885	448885			hit	970		0.0
+P17	prose	prose/pg1661.txt	a rare name	\bMycroft\b	-	count	rare	ok	0	0	607606	607606	0.00	0.00	none			0.0
+P18	prose	prose/pg345.txt	typewriter em-dashes	--	-	count	many	ok	1461	1461	890348	890348	1720.64	1720.64	many			0.0
+P19	prose	prose/pg2701.txt	words broken with a trailing hyphen at line end	\w-$	m	count	some	ok	0	0	1276315	1276315	0.00	0.00	none			0.0
+P20	prose	prose/pg98.txt	the word the	\bthe\b	i	count	everywhere	ok	8241	8241	807197	807197	10705.34	10705.34	everywhere			0.0
+P21	prose	prose/pg98.txt	blank lines	^$	m	count	many	ok	1	1	807197	807197	1.30	1.30	rare			0.0
+P22	prose	prose/pg135.txt	numbers with thousands separators	\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b	-	find-all	some	ok	20	20	3369207	3369207	6.22	6.22	rare			0.0
+P23	prose	prose/pg84.txt	progressive past ("was walking")	\bwas\s+\w+ing\b	-	find-all	some	ok	34	34	448885	448885	79.42	79.42	some			0.0
+P24	prose	prose/pg996.txt	possessive names (straight or curly apostrophe)	\b[A-Z]\w+['’]s\b	utf	find-all	many	ok	740	740	2391678	2391678	324.44	324.44	some			0.0
+P25	prose	prose/pg1400.txt	the whole book body between the Gutenberg markers	\*\*\* START OF.*?\*\*\* END OF	s	first	everywhere	ok	1	1	1058204	1058204			hit	818		0.0
+S01	structured	structured/census_gazetteer_places.tsv	rows for places named ... city	^[A-Z]{2}\t\d{7}\t\d{8}\t[^\t]* city\t	m	find-all	many	ok	7423	10200	4194269	6498405	1855.77	1645.86	many			0.0
+S02	structured	structured/census_gazetteer_places.tsv	all Texas rows	^TX\t	m	count	some	ok	0	1863	4194269	6498405	0.00	300.61	some			0.0
+S03	structured	structured/census_gazetteer_places.tsv	trailing latitude/longitude pair	(-?\d+\.\d+)\t(-?\d+\.\d+)\s*$	m	find-all	everywhere	ok	20864	32327	4194269	6498405	5216.04	5216.25	many			0.1
+S04	structured	structured/census_gazetteer_places.tsv	places with zero water area	\t\d+\t0\t\d+\.\d+\t0\.\t	-	find-all	some	ok	8633	13587	4194269	6498405	2158.27	2192.38	many			0.0
+S05	structured	structured/usgs_2024q1.csv	magnitude 5 or higher (5th column)	^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),	m	find-all	rare	ok	246	246	2038655	2038655	126.53	126.53	some			0.0
+S06	structured	structured/usgs_2024q1.csv	ISO-8601 UTC timestamps	\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z	-	find-all	everywhere	ok	21092	21092	2038655	2038655	10848.61	10848.61	everywhere			0.0
+S07	structured	structured/usgs_2024q1.csv	quoted csv fields (place names)	"([^"]*)"	-	find-all	everywhere	ok	10546	10546	2038655	2038655	5424.30	5424.30	many			0.0
+S08	structured	structured/usgs_2024q1.csv	quakes in Alaska or Hawaii	"[^"]*,\s(?:Alaska|Hawaii)"	-	find-all	some	ok	4315	4315	2038655	2038655	2219.41	2219.41	many			0.0
+S09	structured	structured/usgs_2024q1.csv	event ids with a network prefix	,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),	-	find-all	everywhere	ok	10470	10470	2038655	2038655	5385.21	5385.21	many			0.0
+S10	structured	structured/usgs_2024q1.geojson	magnitude values	"mag":(\d+\.\d+)	-	find-all	everywhere	ok	5266	5266	4172801	4172801	1323.28	1323.28	many			0.0
+S11	structured	structured/usgs_2024q1.geojson	place strings	"place":"([^"]+)"	-	find-all	everywhere	ok	5826	5826	4172801	4172801	1464.01	1464.01	many			0.0
+S12	structured	structured/usgs_2024q1.geojson	every key with a scalar value	"(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")	-	find-all	everywhere	ok	168961	168961	4172801	4172801	42457.92	42457.92	everywhere			0.0
+S13	structured	structured/usgs_2024q1.geojson	events people felt (felt is not null)	"felt":[1-9]\d*	-	find-all	some	ok	722	722	4172801	4172801	181.43	181.43	some			0.0
+S14	structured	structured/ne_10m_admin_0_countries.geojson	country names on one giant line	"NAME":"([^"]+)"	-	find-all	some	ok	53	258	4194304	13287234	13.25	20.36	some			0.0
+S15	structured	structured/ne_10m_admin_0_countries.geojson	two-letter ISO codes	"ISO_A2":"([A-Z]{2})"	-	find-all	some	ok	49	235	4194304	13287234	12.25	18.55	some			0.0
+S16	structured	structured/ne_10m_admin_0_countries.geojson	all lon/lat coordinate pairs	\[-?\d+\.\d+,-?\d+\.\d+\]	-	count	everywhere	ok	178984	547672	4194304	13287234	44746.00	43220.11	everywhere			0.1
+S17	structured	structured/ne_10m_admin_0_countries.geojson	countries with population of 100M+	"POP_EST":(\d{9,})	-	find-all	rare	ok	6	14	4194304	13287234	1.50	1.10	rare			0.0
+S18	structured	structured/govinfo_bills.xml	opening tag names	<(\w[\w-]*)(?:\s[^>]*)?>	-	find-all	everywhere	ok	54416	525042	4193532	41943000	13606.50	13126.06	everywhere			0.1
+S19	structured	structured/govinfo_bills.xml	sponsors with their ids	<sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>	-	find-all	some	ok	244	1930	4193532	41943000	61.01	48.25	some			0.0
+S20	structured	structured/govinfo_bills.xml	section references	\bSection\s+\d+[a-z]?\b	-	find-all	many	ok	756	6689	4193532	41943000	189.03	167.23	some			0.2
+S21	structured	structured/govinfo_bills.xml	dollar amounts	\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?	-	find-all	some	ok	203	2865	4193532	41943000	50.76	71.63	some			0.0
+S22	structured	structured/govinfo_bills.xml	action dates	<action-date date="(\d{8})">	-	find-all	rare	ok	324	2217	4193532	41943000	81.01	55.43	some			0.0
+S23	structured	structured/govinfo_bills.xml	XML comments	<!--.*?-->	s	find-all	rare	ok	0	0	4193532	41943000	0.00	0.00	none			0.0
+S24	structured	structured/govinfo_bills.xml	entity references	&[a-z]+;|&#\d+;	-	find-all	some	ok	15	751	4193532	41943000	3.75	18.78	some			0.0
+M01	markup	markup/python_docs.html	link targets (non-fragment)	<a\s+[^>]*href="([^"#][^"]*)"	-	find-all	everywhere	ok	7327	81961	4194149	41942992	1831.82	2049.03	many			0.0
+M02	markup	markup/python_docs.html	tag names	</?([a-z][a-z0-9]*)\b	-	find-all	everywhere	ok	178774	1737214	4194149	41942992	44695.15	43430.40	everywhere			0.2
+M03	markup	markup/python_docs.html	element ids	\bid="([^"]+)"	-	find-all	many	ok	2715	24392	4194149	41942992	678.78	609.80	many			0.2
+M04	markup	markup/python_docs.html	matching headings h1-h6 with text	<h([1-6])[^>]*>(.*?)</h\1>	-	find-all	many	ok	811	7955	4194149	41942992	202.76	198.88	some			0.0
+M05	markup	markup/python_docs.html	HTML comments	<!--.*?-->	s	find-all	rare	ok	2	3	4194149	41942992	0.50	0.08	rare			0.0
+M06	markup	markup/python_docs.html	class attrs containing highlight	class="[^"]*\bhighlight\b[^"]*"	-	find-all	many	ok	240	9526	4194149	41942992	60.00	238.15	some			0.1
+M07	markup	markup/python_docs.html	character entities	&(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);	i	find-all	many	ok	1073	65317	4194149	41942992	268.26	1632.93	many			0.0
+M08	markup	markup/python_docs.html	image sources	<img\b[^>]*\bsrc="([^"]+)"	-	find-all	some	ok	194	1554	4194149	41942992	48.50	38.85	some			0.0
+M09	markup	markup/python_docs.html	external scripts	<script[^>]*\bsrc=	-	find-all	some	ok	585	4585	4194149	41942992	146.26	114.63	some			0.0
+M10	markup	markup/django_docs.rst	rst section underlines	^([=\-~^]{4,})$	m	count	many	ok	4867	6557	4194238	5827256	1216.77	1179.89	many			0.0
+M11	markup	markup/django_docs.rst	rst directives and arguments	^\.\. ([a-z]+)::\s*(.*)$	m	find-all	many	ok	2951	3619	4194238	5827256	737.76	651.22	many			0.0
+M12	markup	markup/django_docs.rst	cross-reference roles to classes/functions	:(?:class|func|meth|attr|mod):`~?([^`]+)`	-	find-all	many	ok	6371	8667	4194238	5827256	1592.78	1559.57	many			0.0
+M13	markup	markup/django_docs.rst	inline literals	``[^`]+``	-	find-all	many	ok	21754	28260	4194238	5827256	5438.59	5085.20	many			0.0
+M14	markup	markup/django_docs.rst	versionadded directives	^\.\. versionadded:: (\d+\.\d+)	m	find-all	some	ok	39	44	4194238	5827256	9.75	7.92	rare			0.0
+M15	markup	markup/jquery_md.md	markdown links	\[([^\]]+)\]\(([^)]+)\)	-	find-all	some	ok	59	59	25712	25712	2406.11	2406.11	many			0.0
+M16	markup	markup/jquery_md.md	markdown headings	^#{1,6}\s+.+$	m	find-all	some	ok	43	43	25712	25712	1753.61	1753.61	many			0.0
+M17	markup	markup/jquery_md.md	bare URLs	https?://[^\s)>\]]+	-	find-all	some	ok	65	65	25712	25712	2650.80	2650.80	many			0.0
+M18	markup	markup/python_docs.html	version-note sentences (Added/Changed/Deprecated in version)	(?:Added|Changed|Deprecated) in version \d+\.\d+	-	find-all	many	ok	470	4212	4194149	41942992	117.50	105.30	some			0.2
+M19	markup	markup/python_docs.html	inline code spans in the html	<code class="[^"]*"><span class="pre">(\w+)</span></code>	-	find-all	many	ok	3851	32794	4194149	41942992	962.79	819.85	many			0.0
+M20	markup	markup/django_docs.rst	any mention of deprecation, any case	\bdeprecat\w*	i	count	many	ok	565	710	4194238	5827256	141.25	127.76	some			0.1
+M21	markup	markup/python_docs.html	scrubbed e-mail placeholder	user@example\.invalid	-	count	rare	ok	0	40	4194149	41942992	0.00	1.00	rare			0.0
+M22	markup	markup/python_docs.html	strip tags: every tag	<[^>]+>	-	count	everywhere	ok	178841	1737725	4194149	41942992	44711.90	43443.17	everywhere			0.2
+M23	markup	markup/django_docs.rst	doubled words	\b(\w+)\s+\1\b	i	find-all	rare	ok	250	310	4194238	5827256	62.50	55.78	some			0.1
+M24	markup	markup/python_docs.html	blank lines	^\s*$	m	count	many	ok	4067	38211	4194149	41942992	1016.79	955.28	many			0.2
+N01	nonenglish	nonenglish/pg4580.txt	runs of Chinese characters	\p{Han}+	utf	find-all	everywhere	py-unsupported (bad escape \p at position 0) (equiv)	33856	33856	667880	667880	53154.14	53154.14	everywhere		[\u4e00-\u9fff\u3400-\u4dbf]+	0.0
+N02	nonenglish	nonenglish/pg31617.txt	runs of hiragana	\p{Hiragana}+	utf	find-all	everywhere	py-unsupported (bad escape \p at position 0) (equiv)	41900	41900	564929	564929	77771.43	77771.43	everywhere		[\u3041-\u309f]+	0.0
+N03	nonenglish	nonenglish/pg31617.txt	katakana words (2+)	\p{Katakana}{2,}	utf	find-all	some	py-unsupported (bad escape \p at position 0) (equiv)	101	101	564929	564929	187.47	187.47	some		[\u30a1-\u30fa\u30fc]{2,}	0.0
+N04	nonenglish	nonenglish/pg31617.txt	ruby readings in 《》	《[^》]+》	utf	find-all	many	ok	20113	20113	564929	564929	37332.14	37332.14	everywhere			0.0
+N05	nonenglish	nonenglish/pg31617.txt	kanji followed by its hiragana reading	(\p{Han}+)《(\p{Hiragana}+)》	utf	find-all	many	py-unsupported (bad escape \p at position 1) (equiv)	19954	19954	564929	564929	37037.02	37037.02	everywhere		([\u4e00-\u9fff]+)《([\u3041-\u309f]+)》	0.0
+N06	nonenglish	nonenglish/pg2790.txt	capitalised Cyrillic words	\b\p{Lu}\p{Ll}+\b	utf,ucp	find-all	many	py-unsupported (bad escape \p at position 2) (equiv)	332	332	67720	67720	5140.69	5140.69	many		\b[А-ЯЁ][а-яё]+\b	0.0
+N07	nonenglish	nonenglish/pg11291.txt	Cyrillic words	\p{Cyrillic}+	utf	find-all	everywhere	py-unsupported (bad escape \p at position 0) (equiv)	35840	35840	430037	430037	87390.07	87390.07	everywhere		[\u0400-\u04ff]+	0.0
+N08	nonenglish	nonenglish/pg17814.txt	Greek words with an acute accent	\p{Greek}*[άέήίόύώ]\p{Greek}*	utf	find-all	many	py-unsupported (bad escape \p at position 0) (equiv)	7978	7978	189012	189012	44259.30	44259.30	everywhere		[\u0370-\u03ff]*[άέήίόύώ][\u0370-\u03ff]*	0.0
+N09	nonenglish	nonenglish/pg43740.txt	Hebrew words	\p{Hebrew}+	utf	find-all	everywhere	py-unsupported (bad escape \p at position 0) (equiv)	23636	23636	249476	249476	99344.80	99344.80	everywhere		[\u0590-\u05ff]+	0.0
+N10	nonenglish	nonenglish/pg43740.txt	Hebrew vowel points (nikud)	[\x{0591}-\x{05C7}]	utf	count	rare	py-unsupported (incomplete escape \x at position 1) (equiv)	16	16	249476	249476	67.25	67.25	some		[\u0591-\u05c7]	0.0
+N11	nonenglish	nonenglish/pg8186.txt	French words with an accented e	\b\w*[éèêë]\w*\b	utf,ucp,i	count	many	ok	0	0	922226	922226	0.00	0.00	none			0.0
+N12	nonenglish	nonenglish/pg6696.txt	German words with umlauts or ss	\b\w*[äöüÄÖÜß]\w*\b	utf,ucp	find-all	many	ok	8796	8796	595842	595842	15479.40	15479.40	everywhere			0.0
+N13	nonenglish	nonenglish/pg6696.txt	article followed by a capitalised noun	\b(?:der|die|das|den|dem)\s+\p{Lu}\p{L}+	utf,ucp	find-all	many	py-unsupported (bad escape \p at position 28) (equiv)	3478	3478	595842	595842	6120.66	6120.66	many		\b(?:der|die|das|den|dem)\s+[A-ZÄÖÜ][^\W\d_]+	0.0
+N14	nonenglish	nonenglish/pg2790.txt	long Cyrillic words, boundary by property	(?<!\p{L})\p{Cyrillic}{7,}(?!\p{L})	utf	find-all	many	py-unsupported (bad escape \p at position 4) (equiv)	650	650	67720	67720	10064.60	10064.60	everywhere		(?<![^\W\d_])[\u0400-\u04ff]{7,}(?![^\W\d_])	0.0
+N15	nonenglish	nonenglish/pg4580.txt	fullwidth punctuation	[，。！？；：、]	utf	count	everywhere	ok	27307	27307	667880	667880	42872.17	42872.17	everywhere			0.0
+N16	nonenglish	nonenglish/pg31617.txt	「」 quoted dialogue	「[^」]*」	utf	find-all	many	ok	645	645	564929	564929	1197.20	1197.20	many			0.0
+N17	nonenglish	nonenglish/pg4580.txt	4-character phrases between commas	(?<=，)\p{Han}{4}(?=，)	utf	find-all	some	py-unsupported (bad escape \p at position 6) (equiv)	2381	2381	667880	667880	3738.19	3738.19	many		(?<=，)[\u4e00-\u9fff]{4}(?=，)	0.0
+N18	nonenglish	nonenglish/pg4573.txt	lines containing any non-ASCII	[^\x00-\x7f]	utf	line	everywhere	ok	1206	1206	100953	100953	12526.45	12526.45	everywhere			0.0
+P26	prose	prose/pg98.txt	blank lines, tolerant of stray whitespace	^\s*$	m	count	many	ok	3388	3388	807197	807197	4401.13	4401.13	many			0.0
+P27	prose	prose/pg2701.txt	hyphenated line-wraps, tolerant of a CR	\w-\r?$	m	count	some	ok	0	0	1276315	1276315	0.00	0.00	none			0.0
+N19	nonenglish	nonenglish/pg4573.txt	pure-ASCII lines (headers, blank)	^[\x00-\x7f]*$	utf,m	count	some	ok	192	192	100953	100953	1994.26	1994.26	many			0.0
+N20	nonenglish	nonenglish/pg20175.txt	runs of Latin-1 accented letters (garbled text)	[\x{00C0}-\x{00FF}]{4,}	utf	find-all	many	py-unsupported (incomplete escape \x at position 1) (equiv)	22968	22968	452084	452084	53272.61	53272.61	everywhere		[\u00c0-\u00ff]{4,}	0.0
+N21	nonenglish	nonenglish/pg2890.txt	ALL-CAPS Cyrillic headings	(?<!\p{L})\p{Lu}{3,}(?!\p{L})	utf	find-all	some	py-unsupported (bad escape \p at position 4) (equiv)	20	20	115195	115195	182.05	182.05	some		(?<![^\W\d_])[А-ЯЁ]{3,}(?![^\W\d_])	0.0
+N22	nonenglish	nonenglish/pg17839.txt	combining marks	\p{M}	utf	count	rare	py-unsupported (bad escape \p at position 0) (equiv)	0	0	186151	186151	0.00	0.00	none		[\u0300-\u036f]	0.0
+N23	nonenglish	nonenglish/pg14741.txt	Latin words inside Cyrillic text	\p{Latin}+	utf	find-all	some	py-unsupported (bad escape \p at position 0) (equiv)	3031	3031	220529	220529	14411.86	14411.86	everywhere		[A-Za-z\u00c0-\u024f]+	0.0
+N24	nonenglish	nonenglish/pg6698.txt	any Unicode decimal digits	\p{Nd}+	utf	count	some	py-unsupported (bad escape \p at position 0) (equiv)	110	110	1226130	1226130	94.07	94.07	some		\d+	0.0
+N25	nonenglish	nonenglish/pg11291.txt	the Russian word "и" (and), caseless	(?<!\w)и(?!\w)	utf,ucp,i	count	many	ok	1643	1643	430037	430037	4006.19	4006.19	many			0.0
+B01	binary	binary/django-5.0.tar	member paths of .py files in the tar	django-5\.0/[\w/.-]+\.py(?=\x00)	-	find-all	many	ok	128	2763	4194304	49960960	32.00	57.99	some			0.0
+B02	binary	binary/libpng-1.6.43.tar	PNG file signatures	\x89PNG\r\n\x1a\n	-	find-all	some	ok	198	201	4194304	6615040	49.50	31.86	some			0.0
+B03	binary	binary/libpng-1.6.43.tar.gz	gzip member header	\x1f\x8b\x08	-	find-all	rare	ok	2	2	1554715	1554715	1.35	1.35	rare			0.0
+B04	binary	binary/django-5.0.tar	long NUL runs (padding)	\x00{16,}	-	count	many	ok	2623	56410	4194304	49960960	655.75	1183.93	many			0.3
+B05	binary	binary/django-5.0.tar	tar magic of each entry	ustar\x0000	-	count	many	ok	462	10005	4194304	49960960	115.50	209.98	some			0.0
+B06	binary	binary/BILLS-118-1-hr.zip	zip local file headers	PK\x03\x04	-	count	many	ok	985	7540	4194304	47893641	246.25	165.08	some			0.0
+B07	binary	binary/BILLS-118-1-hr.zip	names of the xml members	PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)	s	find-all	many	ok	985	7540	4194304	47893641	246.25	165.08	some			0.0
+B08	binary	binary/python-3.12.7-docs-html.tar.bz2	bzip2 block magic	1AY&SY	-	count	rare	ok	6	14	4194304	8390435	1.50	1.75	rare			0.0
+B09	binary	binary/libpng-1.6.43.tar.gz	printable strings of 8+ chars	[\x20-\x7e]{8,}	-	count	many	ok	416	416	1554715	1554715	280.57	280.57	some			0.0
+B10	binary	binary/BILLS-118-1-hr.zip	runs of high bytes	[\x80-\xff]{4,}	-	count	everywhere	ok	130722	1496842	4194304	47893641	32680.50	32771.63	everywhere			0.5
+B11	binary	binary/django-5.0.tar	gettext .mo magic	\xde\x12\x04\x95	-	count	some	ok	70	1259	4194304	49960960	17.50	26.42	some			0.0
+B12	binary	binary/django-5.0.tar	tar mtime fields (11 octal digits then NUL)	[0-7]{11}\x00	-	count	many	ok	924	20026	4194304	49960960	231.00	420.30	some			0.4
+B13	binary	binary/libpng-1.6.43.tar	libpng API calls in embedded sources	\bpng_[a-z_0-9]+\(	-	count	many	ok	2716	5589	4194304	6615040	679.00	885.93	many			0.1
+B14	binary	binary/django-5.0.tar	python shebangs	^#!.*python.*$	m	count	some	ok	0	0	4194304	49960960	0.00	0.00	none			0.2
+B15	binary	binary/django-5.0.tar	UTF-8 byte order marks	\xef\xbb\xbf	-	count	rare	ok	0	1	4194304	49960960	0.00	0.02	rare			0.0
+B16	binary	binary/django-5.0.tar	CRLF line ends	\r\n	-	count	some	ok	0	139	4194304	49960960	0.00	2.92	rare			0.0
+B17	binary	binary/libpng-1.6.43.tar	URLs embedded in the archive	https?://[\x21-\x7e]+	-	find-all	some	ok	127	161	4194304	6615040	31.75	25.52	some			0.0
+B18	binary	binary/libpng-1.6.43.tar.gz	first byte of any gzip header with a filename flag	\x1f\x8b\x08\x08	-	first	rare	ok	0	0	1554715	1554715			no-hit	-1		0.0
+B19	binary	binary/BILLS-118-1-hr.zip	zip end-of-central-directory record	PK\x05\x06	-	count	rare	ok	0	1	4194304	47893641	0.00	0.02	rare			0.0
+B20	binary	binary/django-5.0.tar	license grant sentence	permission is hereby granted	i	count	some	ok	0	6	4194304	49960960	0.00	0.13	rare			0.2
+B21	binary	binary/django-5.0.tar	JPEG start-of-image	\xff\xd8\xff	-	count	rare	ok	0	0	4194304	49960960	0.00	0.00	none			0.0
+B22	binary	binary/python-3.12.7-docs-html.tar.bz2	ASCII run followed by NUL (c-string-ish)	[\x20-\x7e]{6,}\x00	-	count	some	ok	66	128	4194304	8390435	16.50	16.00	some			0.1

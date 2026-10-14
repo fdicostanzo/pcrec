@@ -1,0 +1,178 @@
+# id ||| class ||| files(;) ||| intent ||| flags(,) ||| mode ||| guess ||| pattern ||| [py_equiv]
+L01 ||| logs ||| logs/hadoop.log ||| which lines are ERROR level ||| - ||| line ||| some ||| \bERROR\b
+L02 ||| logs ||| logs/apache_access.log ||| every IPv4-looking address ||| - ||| find-all ||| many ||| \b(?:\d{1,3}\.){3}\d{1,3}\b
+L03 ||| logs ||| logs/apache_error.log ||| strictly valid IPv4 addresses (octets 0-255) ||| - ||| find-all ||| many ||| \b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b
+L04 ||| logs ||| logs/zookeeper.log ||| log4j timestamps with milliseconds ||| - ||| find-all ||| everywhere ||| \d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3}
+L05 ||| logs ||| logs/linux_syslog.log ||| failed logins (grep -i style) ||| i ||| line ||| some ||| authentication failure
+L06 ||| logs ||| logs/apache_access.log ||| requests that got a 5xx response ||| - ||| find-all ||| rare ||| "\s5\d\d\s
+L07 ||| logs ||| logs/apache_access.log ||| method and path of each request ||| - ||| find-all ||| everywhere ||| "(GET|POST|HEAD|PUT|DELETE) (\S+) HTTP/1\.[01]"
+L08 ||| logs ||| logs/apache_access.log ||| 404s on php endpoints (probing) ||| - ||| find-all ||| rare ||| "GET [^"]*\.php[^"]* HTTP/1\.\d" 404
+L09 ||| logs ||| logs/hadoop.log ||| YARN container ids ||| - ||| find-all ||| many ||| container_\d+_\d+_\d+_\d+
+L10 ||| logs ||| logs/hadoop.log ||| Java exception/error class names ||| - ||| find-all ||| some ||| \b(?:[a-z]+\.)+[A-Z]\w*(?:Exception|Error)\b
+L11 ||| logs ||| logs/openstack.log ||| nova request ids ||| - ||| find-all ||| many ||| req-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}
+L12 ||| logs ||| logs/openstack.log ||| well-formed UUIDs (version 1-5 variant bits) ||| i ||| count ||| many ||| \b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b
+L13 ||| logs ||| logs/openstack.log ||| anything worse than INFO ||| - ||| line ||| some ||| \b(?:WARNING|ERROR|CRITICAL|TRACE)\b
+L14 ||| logs ||| logs/openstack.log ||| status code, length and latency of API calls ||| - ||| find-all ||| many ||| status: (\d{3}) len: (\d+) time: (\d+\.\d+)
+L15 ||| logs ||| logs/bgl.log ||| fatal RAS events on BlueGene ||| - ||| line ||| some ||| RAS (?:KERNEL|APP) FATAL
+L16 ||| logs ||| logs/bgl.log ||| lines carrying an alert tag (first token is not -) ||| - ||| line ||| some ||| ^(?!- )\S+
+L17 ||| logs ||| logs/bgl.log ||| node location ids ||| - ||| find-all ||| everywhere ||| R\d\d-M[01]-N[0-9A-F]-[CI]:J\d\d-U\d\d
+L18 ||| logs ||| logs/linux_syslog.log ||| accidentally doubled words in messages ||| i ||| find-all ||| rare ||| \b(\w+)\s+\1\b
+L19 ||| logs ||| logs/apache_error.log ||| probes for well-known vulnerable paths ||| i ||| find-all ||| some ||| File does not exist: /var/www/html/(?:awstats|cgi-bin|phpmyadmin|admin|scripts|_vti_bin|MSOffice)\w*
+L20 ||| logs ||| logs/zookeeper.log ||| hex session ids ||| i ||| find-all ||| some ||| 0x[0-9a-f]{15,16}
+L21 ||| logs ||| logs/hadoop.log ||| first stack trace line mentioning an exception ||| - ||| first ||| some ||| Exception
+L22 ||| logs ||| logs/zookeeper.log ||| how many broken connections ||| - ||| count ||| some ||| Connection broken for id \d+
+L23 ||| logs ||| logs/linux_syslog.log ||| daemon name with pid for a handful of services ||| - ||| find-all ||| many ||| \b(?:ftpd|sshd|su|cups|kernel|named|udev)(?:\(pam_unix\))?\[\d+\]
+L24 ||| logs ||| logs/zookeeper.log ||| lines that are NOT INFO ||| m ||| find-all ||| some ||| ^(?!.*\bINFO\b).*$
+L25 ||| logs ||| logs/linux_syslog.log ||| kernel panics ||| i ||| first ||| rare ||| kernel panic
+L26 ||| logs ||| logs/apache_access.log ||| requests from a given day, any hour ||| - ||| find-all ||| some ||| \[1[0-9]/May/2015:(?:0\d|1[0-2]):\d\d:\d\d
+L27 ||| logs ||| logs/openstack.log ||| very long lines (>= 400 chars) ||| m ||| find-all ||| rare ||| ^.{400,}$
+L28 ||| logs ||| logs/apache_error.log ||| error level word inside first brackets ||| - ||| find-all ||| everywhere ||| \[(notice|error|warn|crit|alert|emerg)\]
+C01 ||| code ||| code/java.src ||| TODO-style markers in comments ||| - ||| find-all ||| some ||| \b(?:TODO|FIXME|XXX|HACK)\b.*
+C02 ||| code ||| code/c.src ||| C function definitions, name captured ||| m ||| find-all ||| some ||| ^(?:static\s+)?[A-Za-z_]\w*\s+\**\s*([A-Za-z_]\w*)\s*\([^;)]*\)\s*\{?\s*$
+C03 ||| code ||| code/c.src ||| #include targets ||| m ||| find-all ||| some ||| ^\s*#\s*include\s*[<"]([^>"]+)[>"]
+C04 ||| code ||| code/c.src ||| numeric #define constants ||| m ||| find-all ||| some ||| ^#define\s+([A-Z_][A-Z0-9_]*)\s+(\d+|0x[0-9a-fA-F]+)\b
+C05 ||| code ||| code/c.src ||| double-quoted string literals with escapes ||| - ||| find-all ||| many ||| "(?:[^"\\\n]|\\.)*"
+C06 ||| code ||| code/python.src ||| python function names ||| m ||| find-all ||| many ||| ^\s*def\s+(\w+)\s*\(
+C07 ||| code ||| code/python.src ||| classes and their bases ||| m ||| find-all ||| some ||| ^class\s+(\w+)\((.*?)\):
+C08 ||| code ||| code/python.src ||| import statements ||| m ||| find-all ||| many ||| ^(?:from\s+[\w.]+\s+)?import\s+.+$
+C09 ||| code ||| code/java.src ||| common annotations ||| - ||| find-all ||| many ||| @(?:Override|Deprecated|VisibleForTesting|GwtCompatible|Beta|Nullable|CanIgnoreReturnValue)\b
+C10 ||| code ||| code/java.src ||| public static method names ||| - ||| find-all ||| many ||| public\s+static\s+(?:final\s+)?[\w<>\[\],?\s]+?\s+(\w+)\s*\(
+C11 ||| code ||| code/javascript.src ||| named function declarations ||| - ||| find-all ||| some ||| \bfunction\s+(\w+)\s*\(
+C12 ||| code ||| code/javascript.src ||| jQuery selector calls with a literal selector ||| - ||| find-all ||| some ||| \$\(\s*["'][^"']+["']\s*\)
+C13 ||| code ||| code/go.src ||| Go funcs and methods ||| m ||| find-all ||| some ||| ^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)\(
+C14 ||| code ||| code/rust.src ||| rust fn names, generics allowed ||| - ||| find-all ||| many ||| \bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\(
+C15 ||| code ||| code/rust.src ||| unsafe blocks ||| - ||| find-all ||| rare ||| \bunsafe\s*\{
+C16 ||| code ||| code/java.src ||| trailing whitespace ||| m ||| count ||| some ||| [ \t]+$
+C17 ||| code ||| code/c.src ||| long hex constants (>= 8 digits) ||| - ||| find-all ||| some ||| \b0x[0-9a-fA-F]{8,}\b
+C18 ||| code ||| code/c.src ||| debugging prints ||| - ||| find-all ||| some ||| \b(?:printf|fprintf|serverLog|lua_pushfstring)\s*\(
+C19 ||| code ||| code/java.src ||| doubled small words in comments ||| i ||| find-all ||| rare ||| \b(the|a|an|of|to|is|in)\s+\1\b
+C20 ||| code ||| code/python.src ||| e-mail-like tokens ||| - ||| find-all ||| rare ||| [\w.+-]+@[\w-]+\.[\w.-]+
+C21 ||| code ||| code/python.src ||| dotted version numbers ||| - ||| find-all ||| some ||| \b\d+\.\d+\.\d+(?:-[\w.]+)?\b
+C22 ||| code ||| code/c.src ||| goto statements ||| - ||| find-all ||| some ||| \bgoto\s+\w+;
+C23 ||| code ||| code/go.src ||| URLs inside line comments ||| - ||| find-all ||| some ||| //.*https?://\S+
+C24 ||| code ||| code/java.src ||| any mention of deprecated, any case ||| i ||| count ||| some ||| \bdeprecated\b
+C25 ||| code ||| code/python.src ||| f-strings with a replacement field ||| - ||| find-all ||| some ||| \bf"[^"]*\{[^}]+\}[^"]*"
+C26 ||| code ||| code/c.src ||| longjmp / setjmp use ||| - ||| find-all ||| rare ||| \b(?:long|set)jmp\b
+C27 ||| code ||| code/javascript.src ||| lines over 120 chars ||| m ||| count ||| some ||| ^.{121,}$
+P01 ||| prose ||| prose/pg2701.txt ||| every mention of whale/whales ||| i ||| count ||| many ||| \bwhales?\b
+P02 ||| prose ||| prose/pg1342.txt ||| doubled words (even across a line wrap) ||| i ||| find-all ||| rare ||| \b(\w+)\s+\1\b
+P03 ||| prose ||| prose/pg1661.txt ||| quoted speech in curly quotes ||| utf ||| find-all ||| many ||| “[^”]{5,200}”
+P04 ||| prose ||| prose/pg1342.txt ||| who said/replied/cried ||| - ||| find-all ||| some ||| \b([A-Z][a-z]+) (?:said|replied|cried|answered)\b
+P05 ||| prose ||| prose/pg1342.txt ||| titled people (Mr./Mrs./Miss/Dr.) ||| - ||| find-all ||| many ||| \b(?:Mr|Mrs|Miss|Dr)\.\s+[A-Z][a-z]+
+P06 ||| prose ||| prose/pg98.txt ||| whole questions (sentences ending in ?) ||| s ||| find-all ||| some ||| [A-Z][^.!?]*\?
+P07 ||| prose ||| prose/pg84.txt ||| words ending -ly ||| - ||| find-all ||| many ||| \b\w+ly\b
+P08 ||| prose ||| prose/pg2600.txt ||| 4-digit years 1500-1999 ||| - ||| find-all ||| some ||| \b1[5-9]\d\d\b
+P09 ||| prose ||| prose/pg2701.txt ||| chapter headings ||| m ||| find-all ||| rare ||| ^CHAPTER (?:\d+|[IVXLC]+)\.
+P10 ||| prose ||| prose/pg1342.txt ||| roman-numeral chapter heading lines (nothing else on the line) ||| m ||| find-all ||| rare ||| ^CHAPTER [IVXLC]+\.\s*$
+P11 ||| prose ||| prose/pg1342.txt ||| any of the main characters ||| - ||| count ||| many ||| \b(?:Elizabeth|Darcy|Bingley|Wickham|Bennet|Jane|Lydia|Collins|Charlotte|Catherine)\b
+P12 ||| prose ||| prose/pg1342.txt ||| surname after Mr. (lookbehind) ||| - ||| find-all ||| many ||| (?<=Mr\. )[A-Z]\w+
+P13 ||| prose ||| prose/pg345.txt ||| word before ", and" (lookahead) ||| - ||| find-all ||| many ||| \b\w+(?=,\s+and\b)
+P14 ||| prose ||| prose/pg1184.txt ||| hyphenated compounds ||| - ||| find-all ||| many ||| \b[A-Za-z]+(?:-[A-Za-z]+)+\b
+P15 ||| prose ||| prose/pg2600.txt ||| SHOUTED words (4+ capitals) ||| - ||| find-all ||| some ||| \b[A-Z]{4,}\b
+P16 ||| prose ||| prose/pg84.txt ||| Gutenberg start marker line ||| - ||| first ||| rare ||| \*\*\* START OF .*? \*\*\*
+P17 ||| prose ||| prose/pg1661.txt ||| a rare name ||| - ||| count ||| rare ||| \bMycroft\b
+P18 ||| prose ||| prose/pg345.txt ||| typewriter em-dashes ||| - ||| count ||| many ||| --
+P19 ||| prose ||| prose/pg2701.txt ||| words broken with a trailing hyphen at line end ||| m ||| count ||| some ||| \w-$
+P20 ||| prose ||| prose/pg98.txt ||| the word the ||| i ||| count ||| everywhere ||| \bthe\b
+P21 ||| prose ||| prose/pg98.txt ||| blank lines ||| m ||| count ||| many ||| ^$
+P22 ||| prose ||| prose/pg135.txt ||| numbers with thousands separators ||| - ||| find-all ||| some ||| \b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b
+P23 ||| prose ||| prose/pg84.txt ||| progressive past ("was walking") ||| - ||| find-all ||| some ||| \bwas\s+\w+ing\b
+P24 ||| prose ||| prose/pg996.txt ||| possessive names (straight or curly apostrophe) ||| utf ||| find-all ||| many ||| \b[A-Z]\w+['’]s\b
+P25 ||| prose ||| prose/pg1400.txt ||| the whole book body between the Gutenberg markers ||| s ||| first ||| everywhere ||| \*\*\* START OF.*?\*\*\* END OF
+S01 ||| structured ||| structured/census_gazetteer_places.tsv ||| rows for places named ... city ||| m ||| find-all ||| many ||| ^[A-Z]{2}\t\d{7}\t\d{8}\t[^\t]* city\t
+S02 ||| structured ||| structured/census_gazetteer_places.tsv ||| all Texas rows ||| m ||| count ||| some ||| ^TX\t
+S03 ||| structured ||| structured/census_gazetteer_places.tsv ||| trailing latitude/longitude pair ||| m ||| find-all ||| everywhere ||| (-?\d+\.\d+)\t(-?\d+\.\d+)\s*$
+S04 ||| structured ||| structured/census_gazetteer_places.tsv ||| places with zero water area ||| - ||| find-all ||| some ||| \t\d+\t0\t\d+\.\d+\t0\.\t
+S05 ||| structured ||| structured/usgs_2024q1.csv ||| magnitude 5 or higher (5th column) ||| m ||| find-all ||| rare ||| ^[^,]*,[^,]*,[^,]*,[^,]*,([5-9]\.\d+),
+S06 ||| structured ||| structured/usgs_2024q1.csv ||| ISO-8601 UTC timestamps ||| - ||| find-all ||| everywhere ||| \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z
+S07 ||| structured ||| structured/usgs_2024q1.csv ||| quoted csv fields (place names) ||| - ||| find-all ||| everywhere ||| "([^"]*)"
+S08 ||| structured ||| structured/usgs_2024q1.csv ||| quakes in Alaska or Hawaii ||| - ||| find-all ||| some ||| "[^"]*,\s(?:Alaska|Hawaii)"
+S09 ||| structured ||| structured/usgs_2024q1.csv ||| event ids with a network prefix ||| - ||| find-all ||| everywhere ||| ,((?:us|ak|nc|ci|nn|uw|hv|pr|se|mb|ok|tx)[0-9a-z]{8,10}),
+S10 ||| structured ||| structured/usgs_2024q1.geojson ||| magnitude values ||| - ||| find-all ||| everywhere ||| "mag":(\d+\.\d+)
+S11 ||| structured ||| structured/usgs_2024q1.geojson ||| place strings ||| - ||| find-all ||| everywhere ||| "place":"([^"]+)"
+S12 ||| structured ||| structured/usgs_2024q1.geojson ||| every key with a scalar value ||| - ||| find-all ||| everywhere ||| "(\w+)":(null|-?\d+(?:\.\d+)?|"[^"]*")
+S13 ||| structured ||| structured/usgs_2024q1.geojson ||| events people felt (felt is not null) ||| - ||| find-all ||| some ||| "felt":[1-9]\d*
+S14 ||| structured ||| structured/ne_10m_admin_0_countries.geojson ||| country names on one giant line ||| - ||| find-all ||| some ||| "NAME":"([^"]+)"
+S15 ||| structured ||| structured/ne_10m_admin_0_countries.geojson ||| two-letter ISO codes ||| - ||| find-all ||| some ||| "ISO_A2":"([A-Z]{2})"
+S16 ||| structured ||| structured/ne_10m_admin_0_countries.geojson ||| all lon/lat coordinate pairs ||| - ||| count ||| everywhere ||| \[-?\d+\.\d+,-?\d+\.\d+\]
+S17 ||| structured ||| structured/ne_10m_admin_0_countries.geojson ||| countries with population of 100M+ ||| - ||| find-all ||| rare ||| "POP_EST":(\d{9,})
+S18 ||| structured ||| structured/govinfo_bills.xml ||| opening tag names ||| - ||| find-all ||| everywhere ||| <(\w[\w-]*)(?:\s[^>]*)?>
+S19 ||| structured ||| structured/govinfo_bills.xml ||| sponsors with their ids ||| - ||| find-all ||| some ||| <sponsor name-id="([A-Z]\d{6})">([^<]+)</sponsor>
+S20 ||| structured ||| structured/govinfo_bills.xml ||| section references ||| - ||| find-all ||| many ||| \bSection\s+\d+[a-z]?\b
+S21 ||| structured ||| structured/govinfo_bills.xml ||| dollar amounts ||| - ||| find-all ||| some ||| \$\d{1,3}(?:,\d{3})*(?:\.\d{2})?
+S22 ||| structured ||| structured/govinfo_bills.xml ||| action dates ||| - ||| find-all ||| rare ||| <action-date date="(\d{8})">
+S23 ||| structured ||| structured/govinfo_bills.xml ||| XML comments ||| s ||| find-all ||| rare ||| <!--.*?-->
+S24 ||| structured ||| structured/govinfo_bills.xml ||| entity references ||| - ||| find-all ||| some ||| &[a-z]+;|&#\d+;
+M01 ||| markup ||| markup/python_docs.html ||| link targets (non-fragment) ||| - ||| find-all ||| everywhere ||| <a\s+[^>]*href="([^"#][^"]*)"
+M02 ||| markup ||| markup/python_docs.html ||| tag names ||| - ||| find-all ||| everywhere ||| </?([a-z][a-z0-9]*)\b
+M03 ||| markup ||| markup/python_docs.html ||| element ids ||| - ||| find-all ||| many ||| \bid="([^"]+)"
+M04 ||| markup ||| markup/python_docs.html ||| matching headings h1-h6 with text ||| - ||| find-all ||| many ||| <h([1-6])[^>]*>(.*?)</h\1>
+M05 ||| markup ||| markup/python_docs.html ||| HTML comments ||| s ||| find-all ||| rare ||| <!--.*?-->
+M06 ||| markup ||| markup/python_docs.html ||| class attrs containing highlight ||| - ||| find-all ||| many ||| class="[^"]*\bhighlight\b[^"]*"
+M07 ||| markup ||| markup/python_docs.html ||| character entities ||| i ||| find-all ||| many ||| &(?:nbsp|amp|lt|gt|quot|#\d+|#x[0-9a-f]+);
+M08 ||| markup ||| markup/python_docs.html ||| image sources ||| - ||| find-all ||| some ||| <img\b[^>]*\bsrc="([^"]+)"
+M09 ||| markup ||| markup/python_docs.html ||| external scripts ||| - ||| find-all ||| some ||| <script[^>]*\bsrc=
+M10 ||| markup ||| markup/django_docs.rst ||| rst section underlines ||| m ||| count ||| many ||| ^([=\-~^]{4,})$
+M11 ||| markup ||| markup/django_docs.rst ||| rst directives and arguments ||| m ||| find-all ||| many ||| ^\.\. ([a-z]+)::\s*(.*)$
+M12 ||| markup ||| markup/django_docs.rst ||| cross-reference roles to classes/functions ||| - ||| find-all ||| many ||| :(?:class|func|meth|attr|mod):`~?([^`]+)`
+M13 ||| markup ||| markup/django_docs.rst ||| inline literals ||| - ||| find-all ||| many ||| ``[^`]+``
+M14 ||| markup ||| markup/django_docs.rst ||| versionadded directives ||| m ||| find-all ||| some ||| ^\.\. versionadded:: (\d+\.\d+)
+M15 ||| markup ||| markup/jquery_md.md ||| markdown links ||| - ||| find-all ||| some ||| \[([^\]]+)\]\(([^)]+)\)
+M16 ||| markup ||| markup/jquery_md.md ||| markdown headings ||| m ||| find-all ||| some ||| ^#{1,6}\s+.+$
+M17 ||| markup ||| markup/jquery_md.md ||| bare URLs ||| - ||| find-all ||| some ||| https?://[^\s)>\]]+
+M18 ||| markup ||| markup/python_docs.html ||| version-note sentences (Added/Changed/Deprecated in version) ||| - ||| find-all ||| many ||| (?:Added|Changed|Deprecated) in version \d+\.\d+
+M19 ||| markup ||| markup/python_docs.html ||| inline code spans in the html ||| - ||| find-all ||| many ||| <code class="[^"]*"><span class="pre">(\w+)</span></code>
+M20 ||| markup ||| markup/django_docs.rst ||| any mention of deprecation, any case ||| i ||| count ||| many ||| \bdeprecat\w*
+M21 ||| markup ||| markup/python_docs.html ||| scrubbed e-mail placeholder ||| - ||| count ||| rare ||| user@example\.invalid
+M22 ||| markup ||| markup/python_docs.html ||| strip tags: every tag ||| - ||| count ||| everywhere ||| <[^>]+>
+M23 ||| markup ||| markup/django_docs.rst ||| doubled words ||| i ||| find-all ||| rare ||| \b(\w+)\s+\1\b
+M24 ||| markup ||| markup/python_docs.html ||| blank lines ||| m ||| count ||| many ||| ^\s*$
+N01 ||| nonenglish ||| nonenglish/pg4580.txt ||| runs of Chinese characters ||| utf ||| find-all ||| everywhere ||| \p{Han}+ ||| [\u4e00-\u9fff\u3400-\u4dbf]+
+N02 ||| nonenglish ||| nonenglish/pg31617.txt ||| runs of hiragana ||| utf ||| find-all ||| everywhere ||| \p{Hiragana}+ ||| [\u3041-\u309f]+
+N03 ||| nonenglish ||| nonenglish/pg31617.txt ||| katakana words (2+) ||| utf ||| find-all ||| some ||| \p{Katakana}{2,} ||| [\u30a1-\u30fa\u30fc]{2,}
+N04 ||| nonenglish ||| nonenglish/pg31617.txt ||| ruby readings in 《》 ||| utf ||| find-all ||| many ||| 《[^》]+》
+N05 ||| nonenglish ||| nonenglish/pg31617.txt ||| kanji followed by its hiragana reading ||| utf ||| find-all ||| many ||| (\p{Han}+)《(\p{Hiragana}+)》 ||| ([\u4e00-\u9fff]+)《([\u3041-\u309f]+)》
+N06 ||| nonenglish ||| nonenglish/pg2790.txt ||| capitalised Cyrillic words ||| utf,ucp ||| find-all ||| many ||| \b\p{Lu}\p{Ll}+\b ||| \b[А-ЯЁ][а-яё]+\b
+N07 ||| nonenglish ||| nonenglish/pg11291.txt ||| Cyrillic words ||| utf ||| find-all ||| everywhere ||| \p{Cyrillic}+ ||| [\u0400-\u04ff]+
+N08 ||| nonenglish ||| nonenglish/pg17814.txt ||| Greek words with an acute accent ||| utf ||| find-all ||| many ||| \p{Greek}*[άέήίόύώ]\p{Greek}* ||| [\u0370-\u03ff]*[άέήίόύώ][\u0370-\u03ff]*
+N09 ||| nonenglish ||| nonenglish/pg43740.txt ||| Hebrew words ||| utf ||| find-all ||| everywhere ||| \p{Hebrew}+ ||| [\u0590-\u05ff]+
+N10 ||| nonenglish ||| nonenglish/pg43740.txt ||| Hebrew vowel points (nikud) ||| utf ||| count ||| rare ||| [\x{0591}-\x{05C7}] ||| [\u0591-\u05c7]
+N11 ||| nonenglish ||| nonenglish/pg8186.txt ||| French words with an accented e ||| utf,ucp,i ||| count ||| many ||| \b\w*[éèêë]\w*\b
+N12 ||| nonenglish ||| nonenglish/pg6696.txt ||| German words with umlauts or ss ||| utf,ucp ||| find-all ||| many ||| \b\w*[äöüÄÖÜß]\w*\b
+N13 ||| nonenglish ||| nonenglish/pg6696.txt ||| article followed by a capitalised noun ||| utf,ucp ||| find-all ||| many ||| \b(?:der|die|das|den|dem)\s+\p{Lu}\p{L}+ ||| \b(?:der|die|das|den|dem)\s+[A-ZÄÖÜ][^\W\d_]+
+N14 ||| nonenglish ||| nonenglish/pg2790.txt ||| long Cyrillic words, boundary by property ||| utf ||| find-all ||| many ||| (?<!\p{L})\p{Cyrillic}{7,}(?!\p{L}) ||| (?<![^\W\d_])[\u0400-\u04ff]{7,}(?![^\W\d_])
+N15 ||| nonenglish ||| nonenglish/pg4580.txt ||| fullwidth punctuation ||| utf ||| count ||| everywhere ||| [，。！？；：、]
+N16 ||| nonenglish ||| nonenglish/pg31617.txt ||| 「」 quoted dialogue ||| utf ||| find-all ||| many ||| 「[^」]*」
+N17 ||| nonenglish ||| nonenglish/pg4580.txt ||| 4-character phrases between commas ||| utf ||| find-all ||| some ||| (?<=，)\p{Han}{4}(?=，) ||| (?<=，)[\u4e00-\u9fff]{4}(?=，)
+N18 ||| nonenglish ||| nonenglish/pg4573.txt ||| lines containing any non-ASCII ||| utf ||| line ||| everywhere ||| [^\x00-\x7f]
+P26 ||| prose ||| prose/pg98.txt ||| blank lines, tolerant of stray whitespace ||| m ||| count ||| many ||| ^\s*$
+P27 ||| prose ||| prose/pg2701.txt ||| hyphenated line-wraps, tolerant of a CR ||| m ||| count ||| some ||| \w-\r?$
+N19 ||| nonenglish ||| nonenglish/pg4573.txt ||| pure-ASCII lines (headers, blank) ||| utf,m ||| count ||| some ||| ^[\x00-\x7f]*$
+N20 ||| nonenglish ||| nonenglish/pg20175.txt ||| runs of Latin-1 accented letters (garbled text) ||| utf ||| find-all ||| many ||| [\x{00C0}-\x{00FF}]{4,} ||| [\u00c0-\u00ff]{4,}
+N21 ||| nonenglish ||| nonenglish/pg2890.txt ||| ALL-CAPS Cyrillic headings ||| utf ||| find-all ||| some ||| (?<!\p{L})\p{Lu}{3,}(?!\p{L}) ||| (?<![^\W\d_])[А-ЯЁ]{3,}(?![^\W\d_])
+N22 ||| nonenglish ||| nonenglish/pg17839.txt ||| combining marks ||| utf ||| count ||| rare ||| \p{M} ||| [\u0300-\u036f]
+N23 ||| nonenglish ||| nonenglish/pg14741.txt ||| Latin words inside Cyrillic text ||| utf ||| find-all ||| some ||| \p{Latin}+ ||| [A-Za-z\u00c0-\u024f]+
+N24 ||| nonenglish ||| nonenglish/pg6698.txt ||| any Unicode decimal digits ||| utf ||| count ||| some ||| \p{Nd}+ ||| \d+
+N25 ||| nonenglish ||| nonenglish/pg11291.txt ||| the Russian word "и" (and), caseless ||| utf,ucp,i ||| count ||| many ||| (?<!\w)и(?!\w)
+B01 ||| binary ||| binary/django-5.0.tar ||| member paths of .py files in the tar ||| - ||| find-all ||| many ||| django-5\.0/[\w/.-]+\.py(?=\x00)
+B02 ||| binary ||| binary/libpng-1.6.43.tar ||| PNG file signatures ||| - ||| find-all ||| some ||| \x89PNG\r\n\x1a\n
+B03 ||| binary ||| binary/libpng-1.6.43.tar.gz ||| gzip member header ||| - ||| find-all ||| rare ||| \x1f\x8b\x08
+B04 ||| binary ||| binary/django-5.0.tar ||| long NUL runs (padding) ||| - ||| count ||| many ||| \x00{16,}
+B05 ||| binary ||| binary/django-5.0.tar ||| tar magic of each entry ||| - ||| count ||| many ||| ustar\x0000
+B06 ||| binary ||| binary/BILLS-118-1-hr.zip ||| zip local file headers ||| - ||| count ||| many ||| PK\x03\x04
+B07 ||| binary ||| binary/BILLS-118-1-hr.zip ||| names of the xml members ||| s ||| find-all ||| many ||| PK\x03\x04[\s\S]{26}(BILLS-[\w.-]+\.xml)
+B08 ||| binary ||| binary/python-3.12.7-docs-html.tar.bz2 ||| bzip2 block magic ||| - ||| count ||| rare ||| 1AY&SY
+B09 ||| binary ||| binary/libpng-1.6.43.tar.gz ||| printable strings of 8+ chars ||| - ||| count ||| many ||| [\x20-\x7e]{8,}
+B10 ||| binary ||| binary/BILLS-118-1-hr.zip ||| runs of high bytes ||| - ||| count ||| everywhere ||| [\x80-\xff]{4,}
+B11 ||| binary ||| binary/django-5.0.tar ||| gettext .mo magic ||| - ||| count ||| some ||| \xde\x12\x04\x95
+B12 ||| binary ||| binary/django-5.0.tar ||| tar mtime fields (11 octal digits then NUL) ||| - ||| count ||| many ||| [0-7]{11}\x00
+B13 ||| binary ||| binary/libpng-1.6.43.tar ||| libpng API calls in embedded sources ||| - ||| count ||| many ||| \bpng_[a-z_0-9]+\(
+B14 ||| binary ||| binary/django-5.0.tar ||| python shebangs ||| m ||| count ||| some ||| ^#!.*python.*$
+B15 ||| binary ||| binary/django-5.0.tar ||| UTF-8 byte order marks ||| - ||| count ||| rare ||| \xef\xbb\xbf
+B16 ||| binary ||| binary/django-5.0.tar ||| CRLF line ends ||| - ||| count ||| some ||| \r\n
+B17 ||| binary ||| binary/libpng-1.6.43.tar ||| URLs embedded in the archive ||| - ||| find-all ||| some ||| https?://[\x21-\x7e]+
+B18 ||| binary ||| binary/libpng-1.6.43.tar.gz ||| first byte of any gzip header with a filename flag ||| - ||| first ||| rare ||| \x1f\x8b\x08\x08
+B19 ||| binary ||| binary/BILLS-118-1-hr.zip ||| zip end-of-central-directory record ||| - ||| count ||| rare ||| PK\x05\x06
+B20 ||| binary ||| binary/django-5.0.tar ||| license grant sentence ||| i ||| count ||| some ||| permission is hereby granted
+B21 ||| binary ||| binary/django-5.0.tar ||| JPEG start-of-image ||| - ||| count ||| rare ||| \xff\xd8\xff
+B22 ||| binary ||| binary/python-3.12.7-docs-html.tar.bz2 ||| ASCII run followed by NUL (c-string-ish) ||| - ||| count ||| some ||| [\x20-\x7e]{6,}\x00
