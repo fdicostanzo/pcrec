@@ -1,6 +1,6 @@
 # Search-form selection by regime — ONE first-match table, filtered by knowledge (rev 0)
 
-Status: DRAFT rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
+Status: DRAFT rev 0.2 (rev 0.2: role, owner column and arch key A per D161 addendum 11). Was rev 0.1 (Frank + manager, 2026-10-13, session 112; rev 0.1 applies the kit's
 row check, memfn/docs/responses.md on lane/memfn-r17 7b54791db). Not built, not ruled
 beyond its shape. Evidence: docs/dev/lanes/regimefacts_report.md,
 docs/dev/lanes/armread_report.md, the kit's costmodel_report.md (lane/memfn-r17
@@ -8,6 +8,15 @@ abfece617) and gridread_report.md (lane/memfn-r17 137499324). All constants are
 Zen 4 (the Linux dev box); the official verdict on any row is a run on the targeted
 hardware (D144 add. 4). Form ids V1/A1/A3 are the kit's (D157: pcrec sends facts;
 the kit owns its forms and checks these rows).
+
+## 0. Role (D161 addendum 11)
+
+This document is the JOINT CONTRACT between pcrec and the kit, not a pcrec selection.
+The knowledge keys (§2) are the interface: pcrec PRODUCES them. The pick rows (§3) are
+the KIT's decision (D157: pcrec sends facts, never the method), the seed of the kit's one
+candidate-finder table over (stop, form); the kit's own copy is the source of truth and
+this one mirrors it. pcrec's own decisions over the same knowledge (the origin, engine and
+route, the iterator/batch API) live in pcrec's tables (`cand_rows[]`), not here.
 
 ## 1. Shape
 
@@ -24,16 +33,19 @@ on knowledge strategy").
 
 ## 2. Knowledge (the filter's vocabulary)
 
-| key | what | when known | cost |
-|---|---|---|---|
-| P | pattern/site facts: terms, range-term count, site kind, SIMD layer | compile | free |
-| N | the call's span `n - startpos` | call entry | free (one compare) |
-| M | mode: one-shot `_search` vs the D165 iterator `next`/`next_n` | call entry | free |
-| E | exemplar landing gap `g` (bigram landings in the analysis bundle) | compile, optional | bundle field |
-| H | iterator history: previous step's span; candidates per block (mask popcount) | run time, iterator only | one compare per call/block (F7 prices it) |
+| key | what | when known | cost | producer / channel |
+|---|---|---|---|---|
+| P | pattern/site facts: spans bounded to the origin, terms, range-term count, site kind, SIMD layer | compile | free | pcrec / the site description |
+| N | the call's span `n - startpos` | call entry | free (one compare) | pcrec entry / kit body argument |
+| M | mode: one-shot `_search` vs the D165 iterator `next`/`next_n` | call entry | free | pcrec API (D165) |
+| E | exemplar landing gap `g` (bigram landings in the analysis bundle) | compile, optional | bundle field | pcrec-analyze / the analysis object (D162) |
+| H | iterator history: previous step's span; candidates per block (mask popcount) | run time, iterator only | one compare per call/block (F7 prices it) | storage pcrec (rx_iter S, D165); content kit |
+| A | declared arch: ISA level + tuning class (gcc `-mtune`-like; ISA alone cannot tell Zen 1 from Zen 4) | compile | free | pcrec passes the target; constants per (form, site kind, A) are the KIT's, measured; an unmeasured A takes one declared fallback row (WALK) and the listing says "unmeasured" (no presumed values) |
 
 Note: without M = iterator, N in a find-all loop is the REMAINING subject, not the
 step span; dense find-all is then invisible at call time.
+
+Measured A today: Zen 4 (AVX2, SSE2). Zen 1: F5 (bench window). Mac NEON, Intel, AVX-512: none.
 
 Knowledge strategies (filters): S0 "idk" = {P, N, M}; S1 = S0 + E; S2 = S0 + H;
 S3 = S0 + E + H.
@@ -45,6 +57,9 @@ Regret = measured pick minus the fastest form, % of the walk, DINGHY / TUG / LIN
 across iterator calls). S1/S3 (W=64 SSE2) are DISTINCT arms, not A1's fallback spelling: SSE2
 regrets more (TUG 2.8% vs 1.2%; a larger sub-block tail) [kit 0.1]; where AVX2 is absent the
 rows read S1/S3 with their own thresholds, owed per box (F5).
+
+Every pick row below is KIT-OWNED (owner column omitted: all rows = kit). Thresholds are
+per (form, site kind, A); the numbers shown are A = Zen 4.
 
 | id | needs | condition | pick | evidence | refuted by |
 |---|---|---|---|---|---|
