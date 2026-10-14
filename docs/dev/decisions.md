@@ -9647,3 +9647,8 @@ Text: `memfn/docs/responses.md` (lane/memfn-m7 tip).
 **Manager reading (shape, not yet designed).** `--measures=FILE|NAME` + a config line (the `--analysis=` precedent); the artifact stamped with the set's id + hash (one scaffolding abi event); [ART-MGR]'s cache key includes it; `--list-measurements` lists every row with provenance and its reader rows ([LIST-TABLES]); the generic class (D161 add. 12) is a DERIVED envelope set, labelled composite; an install-time measurement tool measures only the crossovers the rows read, reports its noise floor and refuses a noisy run. Invariant: answers never depend on the set (every form is answer-identical); an artifact is a function of (pattern, options, analysis, measurements).
 
 **Consequences.** Plan row [MEASURE-SET]. First customer: the kit's R17-b′ thresholds; build trigger: R17-b′'s build. Open for its design note: the relative unit, analysis-format vs sibling file, the install tool's home.
+
+### D166 addendum 1 — perf counters are OPTIONAL diagnostics, never required (Frank, 2026-10-14, session 112)
+
+- **Ruling (Frank):** "don't make the branch-miss pass required as not everyone has the paranoia set to 2." Hardware-counter passes (`perf stat`, F2-style branch-miss counts) need `kernel.perf_event_paranoid <= 2`, which is a per-box system setting.
+- **Rule:** no measurement set, method, gate, acceptance bar or install-time tool may REQUIRE perf counters. A perf pass is an optional diagnostic: when counters are unavailable it skips loudly (stated in its output and in the set's provenance) and nothing downstream fails or changes a selection. Sets are producible from timing alone.
