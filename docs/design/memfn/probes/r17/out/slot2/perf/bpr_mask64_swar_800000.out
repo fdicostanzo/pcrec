@@ -1,0 +1,1 @@
+PERF	bpr	mask64_swar	findall	65536	800000	200	36136	2.114	ok

@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""grid1 ext_example/gen_subj -- an external set's own subjects: writes
+$OUT/subj/<prefix>_* (prefix = the ext set's name; here `ex`). A streamed
+subject is a DIRECTORY of distinct buffers (the driver cycles them)."""
+import os, random
+out = os.environ["OUT"]
+r = random.Random(42)
+alpha = b"abcdefghij 5x7"            # digits, x and filler: matches and near hits
+def buf(n):
+    return bytes(r.choice(alpha) for _ in range(n))
+open(os.path.join(out, "subj", "ex_mixed4k"), "wb").write(buf(4096))
+d = os.path.join(out, "subj", "ex_mixed4k-S")
+os.makedirs(d, exist_ok=True)
+for i in range(64):
+    open(os.path.join(d, f"b{i:03d}"), "wb").write(buf(4096))

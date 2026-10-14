@@ -1,0 +1,3 @@
+# grid1 ext_example: one cell of its own (base walk, arm r17b) on an own subject and its own subjects
+ex-dig	walk	base	g1-dig-n64k-g8-L1k-u,ex_mixed4k,ex_mixed4k-S	first,all
+ex-dig	r17b	arm	g1-dig-n64k-g8-L1k-u,ex_mixed4k,ex_mixed4k-S	first,all

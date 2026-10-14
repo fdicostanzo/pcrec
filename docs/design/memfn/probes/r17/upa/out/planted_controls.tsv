@@ -1,0 +1,12 @@
+cell	config	status	answers_identical	n_answers	oracle_checked	oracle_diff	checks	violations
+utf8/ci-kelvin	auto	ok	False	98	98	8	687	1	ANSWERS DIFFER
+utf8/ci-sigma	auto	ok	False	98	98	2	687	1	ANSWERS DIFFER
+utf8/ci-turkish-i	auto	ok	False	98	98	12	687	1	ANSWERS DIFFER
+utf8/alt-distinct-lead	auto	ok	False	98	98	25	687	1	ANSWERS DIFFER
+syntax/alt-two	auto	ok	False	45	45	8	316	1	ANSWERS DIFFER
+syntax/alt-nested	auto	ok	False	45	45	8	316	1	ANSWERS DIFFER
+syntax/bak-k-named	auto	ok	False	45	45	5	316	1	ANSWERS DIFFER
+capability/quoted-delim-match	auto	ok	False	86	86	8	603	1	ANSWERS DIFFER
+capability/balanced-parens-rec	auto	ok	False	86	86	6	603	1	ANSWERS DIFFER
+capability/high-byte-run	auto	ok	False	86	86	2	603	1	ANSWERS DIFFER
+capability/utf8-lead-no-cont	auto	ok	False	86	86	1	603	1	ANSWERS DIFFER

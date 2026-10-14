@@ -1,0 +1,979 @@
+
+==============================================================================
+1. NOISE: the A/A floor per group, per-launch spread, the NULL rule, the quiet gate
+==============================================================================
+F1   groups 141  A/A (|median#b - median|/base): median 0.195%  p90 3.365%  max 43.31%
+      per-launch A/A (|#b - base| in one round): median 0.475%  p90 6.955%  max 47.33%
+      base per-launch spread (max-min)/median:   median 1.893%  p90 12.245%  max 44.62%
+F3   groups   8  A/A (|median#b - median|/base): median 0.062%  p90 0.173%  max 0.27%
+      per-launch A/A (|#b - base| in one round): median 0.128%  p90 0.488%  max 0.65%
+      base per-launch spread (max-min)/median:   median 0.429%  p90 0.628%  max 0.63%
+EXT  groups  24  A/A (|median#b - median|/base): median 0.025%  p90 0.382%  max 1.91%
+      per-launch A/A (|#b - base| in one round): median 0.079%  p90 1.264%  max 13.80%
+      base per-launch spread (max-min)/median:   median 0.495%  p90 2.681%  max 20.87%
+
+FRG = p90 of the A/A over F1+F3 groups = 3.090% of the base (costmodel used 2.3% from the spike).
+
+Unstable groups (A/A > 1% of base, or base spread > 5%):
+cell     subject                              mode     base ns    A/A %  spread%
+dig      g1-dig-n64k-g8-L32-u                 all      38610.2     1.75     3.92
+dig      g1-dig-n64k-g8-L1k-u                 all      23484.3     8.29    13.88
+dig      g1-dig-n64k-g8-L64k-u                all      27620.7     1.49     6.69
+dig      g1-dig-n64k-g16-L32-u                all      33037.7     0.82    12.24
+dig      g1-dig-n64k-g16-L1k-u                all      18502.3     2.89    13.33
+dig      g1-dig-n64k-g16-L64k-u               all      19262.2    43.31    44.62
+dig      g1-dig-n64k-g32-L1k-u                all      16583.0     0.37    31.86
+dig      g1-dig-n64k-g32-L64k-u               all      19671.6     1.10     5.45
+dig      g1-dig-n64k-g64-L32-u                all      30748.7     1.20     1.74
+dig      g1-dig-n64k-g256-L32-u               all      30755.8     2.90     6.78
+dig      g1-dig-n64k-g32-L1k-u-S              all      29315.1     2.25     3.33
+dig      g1-dig-n64k-g32-L64k-u-S             all      28310.6     0.20     7.70
+dig      g1-dig-n64k-g4-L8-u                  all     110127.5     1.55     2.60
+dig      g1-dig-n64k-g64-L128-u               all      20296.4     0.76    16.27
+dig      g1-dig-n48-g8-L32-u                  all         20.4     2.69     4.21
+dig      g1-dig-n63-g8-L32-u                  all         20.4     2.74     6.12
+dig      g1-dig-n64-g8-L32-u                  all         37.2     1.24     5.06
+dig      g1-dig-n65-g8-L32-u                  all         38.6     3.37     5.98
+dig      g1-dig-n128-g8-L32-u                 all         74.8     0.52     8.85
+dig      g1-dig-n64k-g8-L1k-u@0               all      22875.7    16.16     1.83
+dig      g1-dig-n64k-g8-L1k-u@7               all      23847.7     2.06    21.18
+dig      g1-dig-n64k-g8-L1k-u@31              all      23169.1     4.35    12.05
+dig      g1-dig-n64k-g8-L1k-burst             all      29477.6     1.54    14.71
+dig      g1-dig-n64k-g32-L1k-reg-S            all      16972.3     0.03    11.43
+dig      g1-dig-n64k-g32-L1k-burst            all      17279.7     0.57    11.98
+dig      g1-dig-n64k-g8-L128-u                first       50.0     3.02     6.62
+dig      g1-dig-n128-ginf-Lnone               first       32.3     0.00    11.34
+dfa-hat  g1-dfa-hat-n64k-g2-L1k               all      61357.8     0.10     9.40
+dfa-hat  g1-dfa-hat-n64k-g2-L64k              all      54909.5    10.65    10.65
+dfa-hat  g1-dfa-hat-n64k-g4-L32-u             all      98747.4     2.21     5.26
+dfa-hat  g1-dfa-hat-n64k-g4-L1k-u             all      69216.8     1.03     4.30
+dfa-hat  g1-dfa-hat-n64k-g4-L64k-u            all      64324.4     8.46    24.77
+dfa-hat  g1-dfa-hat-n64k-g8-L32-u             all      47277.6     0.46     9.43
+dfa-hat  g1-dfa-hat-n64k-g8-L1k-u             all      34873.8     9.69    19.84
+dfa-hat  g1-dfa-hat-n64k-g8-L64k-u            all      28057.3     3.71    15.12
+dfa-hat  g1-dfa-hat-n64k-g16-L1k-u            all      25801.5     4.88    11.78
+dfa-hat  g1-dfa-hat-n64k-g16-L64k-u           all      26237.7    17.12    44.45
+dfa-hat  g1-dfa-hat-n64k-g32-L1k-u            all      19306.9     0.94     5.73
+dfa-hat  g1-dfa-hat-n64k-g32-L64k-u           all      19600.2     0.56     5.55
+dfa-hat  g1-dfa-hat-n64k-g64-L1k-u            all      17608.7     1.47     4.42
+dfa-hat  g1-dfa-hat-n64k-g256-L1k-u           all      15321.6     5.42     5.58
+dfa-hat  g1-dfa-hat-n64k-g256-L64k-u          all      14046.0     2.38     0.13
+dfa-hat  g1-dfa-hat-n64k-g2-L64k-S            all      60957.2     0.11     9.82
+dfa-hat  g1-dfa-hat-n64k-g256-L1k-u-S         all      16738.8     0.03     7.67
+dfa-hat  g1-dfa-hat-n64k-g256-L64k-u-S        all      14237.1     0.30     9.99
+dfa-hat  g1-dfa-hat-n64k-g4-L128-u            all      75831.0     2.91     6.13
+dfa-hat  g1-dfa-hat-n64k-g2-L128              first      113.1     0.39     9.29
+dfa-hat  g1-dfa-hat-n64k-g8-L128-u            first       57.4     4.42     7.97
+bounded  g1-bounded-n64k-g8-L8-u              all      72918.4     0.71     9.49
+bounded  g1-bounded-n64k-g8-L32-u             all      34811.3     0.11    21.40
+bounded  g1-bounded-n64k-g8-L1k-u             all      26154.3     9.00    28.35
+bounded  g1-bounded-n64k-g8-L64k-u            all      21369.1     1.78     9.29
+bounded  g1-bounded-n64k-g32-L1k-u            all      15850.1     5.64     4.84
+bounded  g1-bounded-n64k-ginf-L32             all      24440.2     0.28     7.04
+bounded  g1-bounded-n64k-g2-L8-S              all      90696.1     0.15    18.16
+
+Per-arm per-launch spread (max-min)/median over F1 groups, median / p90 / max, and the
+count of groups where that arm spreads > 5%:
+  walk  n 141    1.89%  12.24%  44.62%  >5%: 45
+  V1    n 132    0.37%   1.28%   7.68%  >5%: 3
+  S1    n 133    0.50%   4.08%  25.10%  >5%: 12
+  A1    n 141    0.45%   3.00%  12.82%  >5%: 11
+  V3    n 101    0.33%   2.01%  12.54%  >5%: 4
+  S3    n 101    0.69%   3.89%  24.71%  >5%: 9
+  A3    n 109    0.70%   2.99%  25.20%  >5%: 5
+  Sn    n 124    0.31%   3.10%  17.93%  >5%: 8
+  An    n 124    0.36%   2.19%  11.84%  >5%: 7
+
+Verdict counts, F1 non-A/A rows, three rules:
+  time.sh's (|d| <= A/A floor)                   W  536  R  420  N   27
+  costmodel's strict (max(A/A, 2.3%))            W  525  R  391  N   67
+  this reading (max(A/A, FRG) + 5/5 launch sign) W  515  R  376  N   92
+  rows whose verdict this reading changes from the log: 65 (all to NULL: True)
+    bounded  g1-bounded-n64k-g2-L8-S            all   S3   log R -> N  delta +12264.4 ns (13.52% of base)
+    dig      g1-dig-n64k-g8-L32-u-S             all   Sn   log W -> N  delta -6789.2 ns (-8.44% of base)
+    bounded  g1-bounded-n64k-g2-L8-S            all   A3   log R -> N  delta +5953.7 ns (6.56% of base)
+    dfa-hat  g1-dfa-hat-n64k-g4-L1k-u           all   V3   log W -> N  delta -4241.8 ns (-6.13% of base)
+    bounded  g1-bounded-n64k-g8-L1k-u           all   S3   log W -> N  delta -3549.6 ns (-13.57% of base)
+    dfa-hat  g1-dfa-hat-n64k-g2-L64k-S          all   S1   log R -> N  delta +3377.1 ns (5.54% of base)
+    dig      g1-dig-n64k-g4-L8-u                all   A3   log W -> N  delta -3031.1 ns (-2.75% of base)
+    dfa-hat  g1-dfa-hat-n64k-g4-L32-u           all   An   log W -> N  delta -2794.7 ns (-2.83% of base)
+
+Quiet gate (LOADMAX 1.5, load1 sampled at every launch; the timed process itself is one runnable task):
+  F1   launches  6325  load1 min 0.92 median 1.01 max 1.20  >1.5: 0   groups 141, waits>0: 0
+  F3   launches   400  load1 min 1.00 median 1.01 max 1.08  >1.5: 0   groups 8, waits>0: 0
+  EXT  launches   400  load1 min 1.00 median 1.00 max 1.16  >1.5: 0   groups 24, waits>0: 0
+  groups whose launches printed more than one answer line: 0
+
+==============================================================================
+2. RE-FIT on the controlled data (MEASURED unless labelled FITTED)
+==============================================================================
+2.1 beta per byte, F3 (one `first` call over a member-free 64 KiB and 1 MiB subject; slope between them)
+arm       1 term    2 terms    3 terms    4 terms   costmodel (1t / 2t / 3t)
+walk      0.1892     0.1877     0.1896     0.1891   0.1894 (beta_t)
+V1        0.1082     0.1851     0.2141     0.2667   0.1095 / 0.1386 / 0.1677 DERIVED
+V2        0.1091     0.1954     0.2151     0.2773   0.1098 / 0.1381 / 0.1664 DERIVED
+S1        0.0205     0.0334     0.0417     0.0540   0.0206 / 0.0208 / 0.0210 DERIVED
+S2        0.0205     0.0334     0.0415     0.0534   0.0206 / 0.0207 / 0.0208 DERIVED
+A1        0.0106     0.0150     0.0192     0.0270   0.0105 / 0.0102 / 0.0099 DERIVED
+A2        0.0106     0.0150     0.0192     0.0269   0.0104 / 0.0102 / 0.0100 DERIVED
+Sn        0.0206     0.0333     0.0415     0.0540   
+An        0.0106     0.0150     0.0192     0.0271   
+ns per byte at 1 MiB (incl. the call): walk 0.1892  V1 0.1083  V2 0.1091  S1 0.0205  S2 0.0205  A1 0.0106  A2 0.0106  Sn 0.0206  An 0.0106
+per-byte saving vs the walk (beta_t - beta_f), by terms:
+  V1   1t +0.0810  2t +0.0026  3t -0.0245  4t -0.0776
+  V2   1t +0.0801  2t -0.0077  3t -0.0255  4t -0.0883
+  S1   1t +0.1688  2t +0.1543  3t +0.1479  4t +0.1351
+  S2   1t +0.1687  2t +0.1543  3t +0.1480  4t +0.1357
+  A1   1t +0.1786  2t +0.1727  3t +0.1704  4t +0.1621
+  A2   1t +0.1786  2t +0.1727  3t +0.1704  4t +0.1622
+  Sn   1t +0.1687  2t +0.1544  3t +0.1481  4t +0.1351
+  An   1t +0.1786  2t +0.1727  3t +0.1704  4t +0.1620
+the walk itself by terms (it reads one 256-byte table, so terms should not move it): 1t 0.1892  2t 0.1877  3t 0.1896  4t 0.1891
+
+2.2 The per-call term: one `first` call over a member-free n-byte subject (D5-sparse, dig).
+    F(n) = ns - beta*n with the F3 1-term beta: the fixed part of a single call, by length.
+n           walk        V1        S1        A1        Sn        An   (ns per call, measured)
+48         13.92      9.36     25.52     15.24     14.63     14.44
+63         16.67     11.12     32.49     22.46     17.22     17.14
+64         16.85     11.10      6.01      5.66      5.47      5.12
+65         17.04     12.02      7.68      6.59      7.13      6.04
+128        32.27     18.11      7.31      6.05      6.60      5.69
+F(n)     (ns - beta*n; costmodel/regimefacts F: walk 4.29, V1 3.09, S1 20.45, A1 10.54 at n=40)
+48          4.84      4.17     24.54     14.73     13.64     13.93
+64          4.74      4.18      4.70      4.98      4.15      4.44
+128         8.05      4.26      4.69      4.69      3.97      4.33
+one 64 KiB call (ginf L64k all: 1 match at the end), ns - beta*n: walk 374  V1 503  S1 402  A1 379   (the consumer and the 2 calls are in it)
+
+2.3 Every arm decomposed, per cell (FITTED; relative LS over the F1 all-mode groups with n = 64 KiB):
+    T - beta*bytes = F*A + w*(U - A) + p*U*[streamed, u-shape] + q*U*[repeated, u-shape]
+    A = activations (the site's cold uses: calls that reach a use), U = uses (landings + matches),
+    bytes = ADV for the walk, blocks*W for a form (counters); beta MEASURED on the cell's own
+    ginf-L64k row (one 64 KiB call, one match at its end).  p, q: the per-use cost of a landing
+    whose position the predictor cannot have learned (streamed u-shape: every buffer differs;
+    repeated u-shape: one 64 KiB pattern repeated, partly learnable; reg/burst: fixed offsets).
+  cell dig (PF, 1 term): beta per byte from ginf-L64k: walk 0.1949  V1 0.1159  S1 0.0266  A1 0.0164  V3 0.1214  S3 0.0268  A3 0.0164  Sn 0.0266  An 0.0163
+  arm    rows    F/act   w/warm    p/u-S  q/u-rep  absExp med|rel|
+  walk     49     8.11     1.67     4.31    -0.15   0.933    0.046
+  V1       48    10.58     2.38     2.97     0.16   0.970    0.012
+  S1       45    11.01     2.22     0.80     0.02   0.975    0.019
+  A1       49    11.02     2.23     0.81     0.02   0.976    0.019
+  V3       44    10.52     2.42     3.13     0.17   0.964    0.022
+  S3       44    10.58     2.41     1.02     0.13   0.958    0.031
+  A3       48    10.46     2.33     0.86     0.06   0.970    0.024
+  Sn       44    10.71     4.01     0.56     0.03   0.986    0.014
+  An       44    10.53     3.93     0.58     0.02   0.981    0.017
+  cell bounded (PF, 1 term): beta per byte from ginf-L64k: walk 0.1883  V1 0.1123  S1 0.0207  A1 0.0104  V3 0.1291  S3 0.0207  A3 0.0104  Sn 0.0207  An 0.0104
+  arm    rows    F/act   w/warm    p/u-S  q/u-rep  absExp med|rel|
+  walk     20     6.33     1.88     2.04    -0.42   0.944    0.039
+  V1       20     8.58     2.51     3.18     0.40   0.958    0.012
+  S1       20     9.38     2.36     1.32     0.10   0.978    0.013
+  A1       20     9.20     2.30     1.39     0.16   0.971    0.021
+  V3       20     8.39     2.50     2.68     0.32   0.963    0.014
+  S3       20     7.52     2.46     1.43     0.20   0.981    0.023
+  A3       20     7.36     2.33     1.45     0.20   0.978    0.025
+  Sn       20     9.37     4.31     0.34     0.14   0.985    0.015
+  An       20     9.41     4.25     0.34     0.16   0.981    0.019
+  cell dfa-hat (HAT, 2 terms): beta per byte from ginf-L64k: walk 0.1889  V1 0.1384  S1 0.0212  A1 0.0107  V3 0.1289  S3 0.0213  A3 0.0107  Sn 0.0212  An 0.0106
+  arm    rows    F/act   w/warm    p/u-S  q/u-rep  absExp med|rel|
+  walk     36    12.78     1.44     5.28     1.46   0.926    0.049
+  V1       36    17.46     2.43     3.37     0.28   0.972    0.017
+  S1       32    16.13     1.93     1.16     0.34   0.950    0.054
+  A1       36    16.68     1.89     1.29     0.43   0.943    0.057
+  V3       32    18.10     3.01     3.53     0.29   0.968    0.029
+  S3       32    16.62     2.52     1.26     0.40   0.958    0.040
+  A3       36    16.61     2.54     1.27     0.41   0.961    0.044
+  Sn       32    16.98     4.04     0.38     0.00   0.987    0.021
+  An       32    17.16     4.19     0.45     0.08   0.983    0.016
+
+    Walk-internal crossovers (FITTED): g* = w_walk / beta_t (a pass is half per-use, half per-byte),
+    L*_walk = F_walk / beta_t:
+      dig      g* 8.6 B  (with the u-S landing cost w+p: 30.7 B)   L*_walk 41.6 B
+      bounded  g* 10.0 B  (with the u-S landing cost w+p: 20.8 B)   L*_walk 33.6 B
+      dfa-hat  g* 7.6 B  (with the u-S landing cost w+p: 35.6 B)   L*_walk 67.6 B
+    costmodel (PF, real text): u 3.42 ns, b 0.185 -> g* 18.5 B; F 2.54 -> L*_walk 13.8 B
+
+2.3b costmodel's per-use DELTA terms, recomputed as differences of the absolute fits (form - walk):
+     c_cold = F_form - F_walk + ... (per activation), c_warm = w_form - w_walk, m(u-S) = p_form - p_walk
+var cell       c_cold   c_warm   m(u-S) m(u-rep)   costmodel                verdict (cold / warm / fresh)
+V1  dig         +2.47    +0.71    -1.34    +0.32   +1.54/+0.96/-0.29        MOVED +0.93 / CONFIRMED / MOVED -1.05
+V1  bounded     +2.25    +0.62    +1.14    +0.82   +1.54/+0.96/-0.29        MOVED +0.71 / CONFIRMED / REFUTED +1.43
+V1  dfa-hat     +4.68    +0.99    -1.91    -1.18   +1.54/+0.96/-0.29        MOVED +3.14 / CONFIRMED / MOVED -1.62
+S1  dig         +2.90    +0.55    -3.51    +0.18   +5.36/+0.72/-1.61        MOVED -2.46 / CONFIRMED / MOVED -1.90
+S1  bounded     +3.05    +0.48    -0.72    +0.52   +5.36/+0.72/-1.61        MOVED -2.31 / CONFIRMED / MOVED +0.89
+S1  dfa-hat     +3.35    +0.48    -4.13    -1.12   +5.36/+0.72/-1.61        MOVED -2.01 / CONFIRMED / MOVED -2.52
+A1  dig         +2.91    +0.56    -3.49    +0.17   +4.45/+0.65/-1.41        MOVED -1.54 / CONFIRMED / MOVED -2.08
+A1  bounded     +2.87    +0.41    -0.65    +0.58   +4.45/+0.65/-1.41        MOVED -1.58 / CONFIRMED / MOVED +0.76
+A1  dfa-hat     +3.91    +0.44    -3.99    -1.03   +4.45/+0.65/-1.41        CONFIRMED / CONFIRMED / MOVED -2.58
+V3  dig         +2.41    +0.74    -1.17    +0.32   +2.52/+1.40/+0.05        CONFIRMED / MOVED -0.66 / REFUTED -1.22
+V3  bounded     +2.07    +0.61    +0.64    +0.74   +2.52/+1.40/+0.05        CONFIRMED / MOVED -0.79 / MOVED +0.59
+V3  dfa-hat     +5.32    +1.57    -1.75    -1.16   +2.52/+1.40/+0.05        MOVED +2.80 / CONFIRMED / REFUTED -1.80
+S3  dig         +2.47    +0.74    -3.28    +0.28   +9.76/+1.08/-1.17        MOVED -7.29 / CONFIRMED / MOVED -2.11
+S3  bounded     +1.20    +0.57    -0.61    +0.62   +9.76/+1.08/-1.17        MOVED -8.56 / MOVED -0.51 / MOVED +0.56
+S3  dfa-hat     +3.84    +1.08    -4.02    -1.06   +9.76/+1.08/-1.17        MOVED -5.92 / CONFIRMED / MOVED -2.85
+A3  dig         +2.35    +0.66    -3.44    +0.21   +5.96/+1.04/-1.06        MOVED -3.61 / CONFIRMED / MOVED -2.38
+A3  bounded     +1.04    +0.44    -0.59    +0.62   +5.96/+1.04/-1.06        MOVED -4.92 / MOVED -0.60 / CONFIRMED
+A3  dfa-hat     +3.83    +1.10    -4.01    -1.04   +5.96/+1.04/-1.06        MOVED -2.13 / CONFIRMED / MOVED -2.95
+Sn  dig         +2.60    +2.34    -3.74    +0.18   -                        
+Sn  bounded     +3.04    +2.43    -1.70    +0.56   -                        
+Sn  dfa-hat     +4.21    +2.59    -4.91    -1.45   -                        
+An  dig         +2.42    +2.25    -3.73    +0.17   -                        
+An  bounded     +3.08    +2.37    -1.70    +0.58   -                        
+An  dfa-hat     +4.39    +2.75    -4.83    -1.38   -                        
+verdict rule: CONFIRMED if |grid - costmodel| <= max(0.5 ns, 25%); MOVED if the sign holds; REFUTED if the sign flips (|diff| > 0.5 ns).
+NOTE: costmodel's "fresh" was its 1 MiB real-text subjects; the grid's analogue is the streamed u-shape term p.
+      Streamed reg/burst rows carry no such term (their landing offsets repeat in every buffer).
+
+2.4 Overscan (MEASURED from the counters): blocks*W - ADV regressed on (cold, warm) uses; kept forms kappa = blocks*W/ADV
+  V1  omega cold    1.0 B  warm -0.02 B per use (104 rows)   costmodel 4.7 / 2.62
+      bytes evaluated per byte advanced: median 1.00, max 1.71
+  S1  omega cold   52.0 B  warm -0.37 B per use (99 rows)   costmodel 59.2 / 3.63
+      bytes evaluated per byte advanced: median 1.00, max 8.00
+  A1  omega cold   54.2 B  warm -0.48 B per use (107 rows)   costmodel 59.2 / 3.63
+      bytes evaluated per byte advanced: median 1.00, max 13.71
+  Sn  omega cold   61.1 B  warm  0.00 B per use (96 rows)   costmodel -
+      bytes evaluated per byte advanced: median 4.04, max 32.00
+  An  omega cold   61.1 B  warm  0.00 B per use (96 rows)   costmodel -
+      bytes evaluated per byte advanced: median 4.04, max 32.00
+  V3  kappa median 1.000  (p10 0.985 p90 1.032, 96 rows)   costmodel 1.22
+  S3  kappa median 1.001  (p10 0.999 p90 1.032, 96 rows)   costmodel 1.32
+  A3  kappa median 1.001  (p10 0.999 p90 1.116, 104 rows)   costmodel 1.32
+
+2.5 Fit quality per regime: delta predicted as fit(form) - fit(walk), against the measured delta
+    (in sample; LOCO = both fits refitted without the row's (g) value, sign errors on non-NULL rows):
+var regime   rows  absExp   sign err   LOCO err
+V1  DINGHY     34    0.69      2/31           4
+V1  TUG        35    0.67      1/29          14
+V1  LINER      35    0.67      0/32           0
+S1  DINGHY     30    0.69      0/26           1
+S1  TUG        34    0.70      0/23           3
+S1  LINER      33    0.91      0/33           0
+A1  DINGHY     34    0.63      0/32           2
+A1  TUG        36    0.67      0/23           1
+A1  LINER      35    0.91      0/35           0
+V3  DINGHY     30    0.70      2/30           4
+V3  TUG        33    0.70      1/25          11
+V3  LINER      33    0.64      1/31           1
+S3  DINGHY     30    0.53      2/26           5
+S3  TUG        33    0.70      2/29           6
+S3  LINER      33    0.91      0/33           0
+A3  DINGHY     34    0.52      2/29           5
+A3  TUG        35    0.71      0/29           4
+A3  LINER      35    0.91      0/35           0
+Sn  DINGHY     30    0.87      1/28           1
+Sn  TUG        33    0.94      0/31           4
+Sn  LINER      33    0.87      0/33           0
+An  DINGHY     30    0.83      0/27           2
+An  TUG        33    0.92      0/32           4
+An  LINER      33    0.88      0/33           0
+
+==============================================================================
+3. costmodel's estimator OUT OF SAMPLE: its constants, the grid's workload facts (U, ADV, A, fresh)
+==============================================================================
+Measured class by this reading's NULL rule x predicted sign; absExp = 1 - sum|meas-pred| / sum|meas|.
+var regime   rows   W->W   W->R   R->W   R->R   N->W   N->R   agree   absExp     sum meas     sum pred
+V1  DINGHY     39      1      2      1     32      2      1     92%     0.48       376725       387465
+V1  TUG        35      0      9      0     20      2      4     69%    -0.02       156869       533114
+V1  LINER      35     32      0      0      0      3      0    100%     0.65      -140898      -108745
+V1  ALL       109     33     11      1     52      7      5     88%     0.31       392696       811834
+S1  DINGHY     35      3     10      2     16      0      4     61%    -0.04       101189       373755
+S1  TUG        36     17      2      2      4      7      4     84%    -0.38      -301599      -269830
+S1  LINER      33     33      0      0      0      0      0    100%     0.84      -405523      -352595
+S1  ALL       104     53     12      4     20      7      8     82%     0.16      -605934      -248671
+A1  DINGHY     39     10      5      3     18      0      3     78%     0.25       134079       336008
+A1  TUG        38     22      1      0      2      8      5     96%    -0.25      -361752      -312283
+A1  LINER      35     35      0      0      0      0      0    100%     0.85      -450564      -393989
+A1  ALL       112     67      6      3     20      8      8     91%     0.30      -678237      -370265
+V3  DINGHY     35      0      3      2     30      0      0     86%     0.44       313598       363575
+V3  TUG        33      0      5      0     20      0      8     80%    -0.03       295267       697820
+V3  LINER      33     28      2      0      1      1      1     94%     0.31      -131263       -38181
+V3  ALL       101     28     10      2     51      1      9     87%     0.21       477603      1023214
+S3  DINGHY     35     17      1      3      9      3      2     87%     0.20       -47553       -56994
+S3  TUG        33     12      2      7      8      4      0     69%    -0.06      -110705         2344
+S3  LINER      33     33      0      0      0      0      0    100%     0.82      -390003      -327383
+S3  ALL       101     62      3     10     17      7      2     86%     0.33      -548262      -382033
+A3  DINGHY     39     17      1      5     10      4      2     82%     0.14       -54167       -76566
+A3  TUG        35     15      3      4      7      4      2     76%    -0.06      -173275       -14764
+A3  LINER      35     35      0      0      0      0      0    100%     0.84      -439539      -375809
+A3  ALL       109     67      4      9     17      8      4     87%     0.34      -666981      -467139
+
+Pooled over the six forms, per regime (sign agreement on non-NULL rows):
+  DINGHY   163 /  201 = 81%   (costmodel in-sample C.2: DINGHY 86-91%, TUG 93-100%, LINER 96-100%)
+  TUG      127 /  162 = 78%   (costmodel in-sample C.2: DINGHY 86-91%, TUG 93-100%, LINER 96-100%)
+  LINER    197 /  199 = 99%   (costmodel in-sample C.2: DINGHY 86-91%, TUG 93-100%, LINER 96-100%)
+
+Largest absolute misses (V1, A1, A3):
+  A1  dfa-hat  g1-dfa-hat-n64k-g4-L32-u       DINGHY meas    -40388 pred     +8160  (L 29 g 4.1)
+  V1  dfa-hat  g1-dfa-hat-n64k-g4-L32-u       DINGHY meas    -22610 pred    +17549  (L 29 g 4.1)
+  A1  dfa-hat  g1-dfa-hat-n64k-g4-L128-u      TUG    meas    -36006 pred     +1712  (L 125 g 4.0)
+  A1  dfa-hat  g1-dfa-hat-n64k-g2-L64k-S      TUG    meas     +1376 pred    -35427  (L 65533 g 2.0)
+  A1  dfa-hat  g1-dfa-hat-n64k-g2-L1k-S       TUG    meas     +1354 pred    -34963  (L 1021 g 2.0)
+  A1  dig      g1-dig-n64k-g2-L64k-S          TUG    meas      +671 pred    -35374  (L 65535 g 2.0)
+  A1  bounded  g1-bounded-n64k-g2-L1k-S       TUG    meas      +972 pred    -35049  (L 1008 g 2.0)
+  A1  dig      g1-dig-n64k-g2-L1k-S           TUG    meas      +623 pred    -35041  (L 1023 g 2.0)
+  V1  dfa-hat  g1-dfa-hat-n64k-g4-L128-u      TUG    meas    -17051 pred    +18221  (L 125 g 4.0)
+  V1  dfa-hat  g1-dfa-hat-n64k-g4-L1k-u       TUG    meas    -15924 pred    +18317  (L 1021 g 4.0)
+  A1  dfa-hat  g1-dfa-hat-n64k-g4-L1k-u       TUG    meas    -34086 pred      -221  (L 1021 g 4.0)
+  A3  dfa-hat  g1-dfa-hat-n64k-g2-L64k-S      TUG    meas    +21015 pred    -12171  (L 65533 g 2.0)
+
+==============================================================================
+4. CROSSOVERS (MEASURED from the deltas; interpolation in log2 is labelled)
+==============================================================================
+4.1 g*: the landing gap at which a form starts to win, per cell, call span L and reuse.
+    Row string: the verdict at g = 2 4 8 16 32 64 256 inf (W win, R loss, N null, . not timed).
+    g* = interpolated zero crossing of the delta in log2 g (FITTED by interpolation).
+  dig      rep L=8     
+    V1  .R...R..   g*      - B  (loses at every point)
+    A1  .R...R..   g*      - B  (loses at every point)
+    A3  .N...R..   g*      - B  (no single crossing)
+  dig      rep L=32    
+    V1  RRRRRRNR   g*      - B  (loses at every point)
+    S1  RRRNNWWW   g*   20.5 B  (16..32)
+    A1  RRRNWWWW   g*   13.6 B  (8..16)
+    V3  RRRRRRRR   g*      - B  (loses at every point)
+    S3  RRRWWWWW   g*   13.8 B  (8..16)
+    A3  RRRWWWWW   g*   11.2 B  (8..16)
+    Sn  RRRRRNWW   g*   58.5 B  (32..64)
+    An  RRRRNWWW   g*   33.3 B  (32..64)
+  dig      rep L=1024  
+    V1  RRRNWWWW   g*   16.7 B  (16..32)
+    S1  NNWWWWWW   g*    4.7 B  (4..8)
+    A1  NNWWWWWW   g*    4.4 B  (4..8)
+    V3  RRRNWWWW   g*   18.5 B  (16..32)
+    S3  RRNWWWWW   g*    6.8 B  (4..8)
+    A3  RRWWWWWW   g*    5.3 B  (4..8)
+    Sn  RRRRWWWW   g*   24.8 B  (16..32)
+    An  RRRRWWWW   g*   20.7 B  (16..32)
+  dig      rep L=65536 
+    V1  RRNNWWWW   g*   10.8 B  (8..16)
+    S1  NNWNWWWW   g*    4.3 B  (4..8)
+    A1  NNWWWWWW   g*    4.2 B  (4..8)
+    V3  RRRNWWWW   g*   14.0 B  (8..16)
+    S3  RRWNWWWW   g*    5.5 B  (4..8)
+    A3  RRWNWWWW   g*    4.6 B  (4..8)
+    Sn  RRRNWWWW   g*   20.5 B  (16..32)
+    An  RRRNWWWW   g*   17.3 B  (16..32)
+  dig      S   L=32    
+    V1  R.W.R.W.   g*    4.3 B  (2..8)
+    S1  R.W.W.W.   g*    2.8 B  (2..8)
+    A1  R.W.W.W.   g*    2.6 B  (2..8)
+    V3  R.W.R.W.   g*    4.9 B  (2..8)
+    S3  R.W.W.W.   g*    2.7 B  (2..8)
+    A3  R.W.W.W.   g*    2.6 B  (2..8)
+    Sn  R.N.W.W.   g*    7.4 B  (2..8)
+    An  R.W.W.W.   g*    6.6 B  (2..8)
+  dig      S   L=1024  
+    V1  R.W.W.W.   g*    3.7 B  (2..8)
+    S1  N.W.W.W.   g*    2.1 B  (2..8)
+    A1  N.W.W.W.   g*    2.0 B  (2..8)
+    V3  R.W.W.W.   g*    4.0 B  (2..8)
+    S3  R.W.W.W.   g*    2.4 B  (2..8)
+    A3  R.W.W.W.   g*    2.3 B  (2..8)
+    Sn  R.W.W.W.   g*    6.8 B  (2..8)
+    An  R.W.W.W.   g*    6.1 B  (2..8)
+  dig      S   L=65536 
+    V1  R.W.W.W.   g*    3.7 B  (2..8)
+    S1  N.W.W.W.   g*    2.0 B  (2..8)
+    A1  N.W.W.W.   g*    2.0 B  (2..8)
+    V3  R.W.W.W.   g*    4.0 B  (2..8)
+    S3  R.W.W.W.   g*    2.3 B  (2..8)
+    A3  R.W.W.W.   g*    2.3 B  (2..8)
+    Sn  R.W.W.W.   g*    6.9 B  (2..8)
+    An  R.W.W.W.   g*    6.2 B  (2..8)
+  dfa-hat  rep L=8     
+    V1  .R...R..   g*      - B  (loses at every point)
+    A1  .R...R..   g*      - B  (loses at every point)
+    A3  .R...R..   g*      - B  (loses at every point)
+  dfa-hat  rep L=32    
+    V1  RWRRRRNR   g*    3.0 B  (2..4)
+    S1  RWNWWWWW   g*    2.3 B  (2..4)
+    A1  RWNWWWWW   g*    2.2 B  (2..4)
+    V3  RWRRRRRR   g*    3.5 B  (2..4)
+    S3  RWRNWWWW   g*    2.8 B  (2..4)
+    A3  RWRNWWWW   g*    2.8 B  (2..4)
+    Sn  RRRRRWWW   g*   42.6 B  (32..64)
+    An  RNRRNWWW   g*    3.9 B  (2..4)
+  dfa-hat  rep L=1024  
+    V1  RWNWWWWW   g*    3.1 B  (2..4)
+    S1  RWWWWWWW   g*    2.1 B  (2..4)
+    A1  NWWWWWWW   g*    2.1 B  (2..4)
+    V3  RNNWWWWW   g*    3.8 B  (2..4)
+    S3  RWWWWWWW   g*    3.0 B  (2..4)
+    A3  RWWWWWWW   g*    3.1 B  (2..4)
+    Sn  RRRWWWWW   g*   14.3 B  (8..16)
+    An  RRRWWWWW   g*   12.3 B  (8..16)
+  dfa-hat  rep L=65536 
+    V1  RWRWWWWW   g*    3.3 B  (2..4)
+    S1  RWWWWWWW   g*    2.4 B  (2..4)
+    A1  RWWWWWWW   g*    2.3 B  (2..4)
+    V3  RNRNWWWW   g*    3.9 B  (2..4)
+    S3  RWWWWWWW   g*    3.0 B  (2..4)
+    A3  RWWWWWWW   g*    3.0 B  (2..4)
+    Sn  RRRNWWWW   g*   13.9 B  (8..16)
+    An  RRRWWWWW   g*   12.8 B  (8..16)
+  dfa-hat  S   L=1024  
+    V1  R.W.N.W.   g*    4.9 B  (2..8)
+    S1  R.W.W.W.   g*    2.2 B  (2..8)
+    A1  N.W.W.W.   g*    2.1 B  (2..8)
+    V3  R.W.R.W.   g*    6.1 B  (2..8)
+    S3  R.W.W.W.   g*    3.3 B  (2..8)
+    A3  R.W.W.W.   g*    3.2 B  (2..8)
+    Sn  R.W.W.W.   g*    6.4 B  (2..8)
+    An  R.W.W.W.   g*    6.0 B  (2..8)
+  dfa-hat  S   L=65536 
+    V1  R.W.N.W.   g*    4.8 B  (2..8)
+    S1  N.W.W.W.   g*    2.2 B  (2..8)
+    A1  N.W.W.W.   g*    2.1 B  (2..8)
+    V3  R.W.N.W.   g*    6.1 B  (2..8)
+    S3  R.W.W.W.   g*    3.3 B  (2..8)
+    A3  R.W.W.W.   g*    3.2 B  (2..8)
+    Sn  R.W.W.W.   g*    6.4 B  (2..8)
+    An  R.W.W.W.   g*    6.0 B  (2..8)
+  bounded  rep L=8     
+    V1  R.R.R..R   g*      - B  (loses at every point)
+    S1  R.R.R..R   g*      - B  (loses at every point)
+    A1  R.R.R..R   g*      - B  (loses at every point)
+    V3  R.R.R..R   g*      - B  (loses at every point)
+    S3  R.N.W..W   g*   12.4 B  (8..32)
+    A3  R.N.W..W   g*    7.4 B  (2..8)
+    Sn  R.R.R..R   g*      - B  (loses at every point)
+    An  R.R.R..R   g*      - B  (loses at every point)
+  bounded  rep L=32    
+    V1  R.R.R..N   g*      - B  (loses at every point)
+    S1  R.R.N..W   g*   40.2 B  (32..4096)
+    A1  R.R.W..W   g*   23.7 B  (8..32)
+    V3  R.R.R..R   g*      - B  (loses at every point)
+    S3  R.N.W..W   g*   11.6 B  (8..32)
+    A3  R.N.W..W   g*    6.7 B  (2..8)
+    Sn  R.R.R..W   g*  734.5 B  (32..4096)
+    An  R.R.R..W   g*  229.1 B  (32..4096)
+  bounded  rep L=1024  
+    V1  R.R.W..W   g*   21.6 B  (8..32)
+    S1  R.W.W..W   g*    3.6 B  (2..8)
+    A1  N.W.W..W   g*    2.4 B  (2..8)
+    V3  R.R.W..W   g*   23.7 B  (8..32)
+    S3  R.N.W..W   g*    4.7 B  (2..8)
+    A3  N.W.W..W   g*    2.7 B  (2..8)
+    Sn  R.R.W..W   g*   26.9 B  (8..32)
+    An  R.R.W..W   g*   23.3 B  (8..32)
+  bounded  rep L=65536 
+    V1  R.R.W..W   g*   21.5 B  (8..32)
+    S1  R.W.W..W   g*    5.8 B  (2..8)
+    A1  N.W.W..W   g*    3.0 B  (2..8)
+    V3  R.R.W..W   g*   22.8 B  (8..32)
+    S3  R.N.W..W   g*    8.9 B  (8..32)
+    A3  N.W.W..W   g*    4.7 B  (2..8)
+    Sn  R.R.W..W   g*   25.2 B  (8..32)
+    An  R.R.W..W   g*   22.4 B  (8..32)
+  bounded  S   L=8     
+    V1  R...R...   g*      - B  (loses at every point)
+    S1  R...R...   g*      - B  (loses at every point)
+    A1  R...R...   g*      - B  (loses at every point)
+    V3  R...R...   g*      - B  (loses at every point)
+    S3  N...W...   g*   19.8 B  (2..32)
+    A3  N...W...   g*    9.7 B  (2..32)
+    Sn  R...R...   g*      - B  (loses at every point)
+    An  R...R...   g*      - B  (loses at every point)
+  bounded  S   L=1024  
+    V1  R...N...   g*      - B  (loses at every point)
+    S1  R...W...   g*    3.2 B  (2..32)
+    A1  N...W...   g*    2.3 B  (2..32)
+    V3  R...N...   g*   29.3 B  (2..32)
+    S3  R...W...   g*    4.2 B  (2..32)
+    A3  N...W...   g*    2.5 B  (2..32)
+    Sn  R...W...   g*   23.7 B  (2..32)
+    An  R...W...   g*   21.3 B  (2..32)
+
+4.1b g* FITTED from section 2.3b (per-use extra cost / per-byte saving, dig):
+    carried = c_warm/dbeta (state carried within a long call), lost = (c_cold)/dbeta (one use per
+    activation), u-S = (c_warm + m(u-S))/dbeta (unpredictable fresh landings); costmodel carried / lost.
+  dig      V1  dbeta 0.0791  carried    8.9  lost   31.3  u-S   -8.0   costmodel 15.6 / 25.7
+  dig      S1  dbeta 0.1683  carried    3.3  lost   17.3  u-S  -17.6   costmodel 4.7 / 39.0
+  dig      A1  dbeta 0.1785  carried    3.1  lost   16.3  u-S  -16.4   costmodel 3.8 / 28.4
+  dig      V3  dbeta 0.0736  carried   10.1  lost   32.8  u-S   -5.9   costmodel 29.3 / -
+  dig      S3  dbeta 0.1682  carried    4.4  lost   14.7  u-S  -15.1   costmodel 6.7 / -
+  dig      A3  dbeta 0.1785  carried    3.7  lost   13.2  u-S  -15.6   costmodel 5.9 / -
+  dig      Sn  dbeta 0.1683  carried   13.9  lost   15.5  u-S   -8.3   costmodel - / -
+  dig      An  dbeta 0.1786  carried   12.6  lost   13.6  u-S   -8.2   costmodel - / -
+  bounded  V1  dbeta 0.0760  carried    8.2  lost   29.6  u-S   23.3   costmodel 15.6 / 25.7
+  bounded  S1  dbeta 0.1677  carried    2.9  lost   18.2  u-S   -1.4   costmodel 4.7 / 39.0
+  bounded  A1  dbeta 0.1780  carried    2.3  lost   16.1  u-S   -1.3   costmodel 3.8 / 28.4
+  bounded  V3  dbeta 0.0592  carried   10.4  lost   34.9  u-S   21.2   costmodel 29.3 / -
+  bounded  S3  dbeta 0.1676  carried    3.4  lost    7.1  u-S   -0.2   costmodel 6.7 / -
+  bounded  A3  dbeta 0.1780  carried    2.5  lost    5.8  u-S   -0.8   costmodel 5.9 / -
+  bounded  Sn  dbeta 0.1676  carried   14.5  lost   18.2  u-S    4.4   costmodel - / -
+  bounded  An  dbeta 0.1780  carried   13.3  lost   17.3  u-S    3.7   costmodel - / -
+  dfa-hat  V1  dbeta 0.0505  carried   19.5  lost   92.7  u-S  -18.3   costmodel 15.6 / 25.7
+  dfa-hat  S1  dbeta 0.1677  carried    2.9  lost   20.0  u-S  -21.7   costmodel 4.7 / 39.0
+  dfa-hat  A1  dbeta 0.1783  carried    2.5  lost   21.9  u-S  -19.9   costmodel 3.8 / 28.4
+  dfa-hat  V3  dbeta 0.0600  carried   26.1  lost   88.7  u-S   -3.1   costmodel 29.3 / -
+  dfa-hat  S3  dbeta 0.1676  carried    6.4  lost   22.9  u-S  -17.6   costmodel 6.7 / -
+  dfa-hat  A3  dbeta 0.1782  carried    6.2  lost   21.5  u-S  -16.4   costmodel 5.9 / -
+  dfa-hat  Sn  dbeta 0.1677  carried   15.5  lost   25.1  u-S  -13.8   costmodel - / -
+  dfa-hat  An  dbeta 0.1783  carried   15.4  lost   24.6  u-S  -11.7   costmodel - / -
+
+4.2 L*: the call span at which a form starts to pay (find-all, n = 64 KiB, a match every L bytes).
+    Row: delta ns per pass at L = 8 32 128 1k 64k (blank = not timed) with its verdict letter.
+  dig      g=4
+    V1       11191R     16413R     12363R     10858R     10650R   L*      - B (loses at every point)
+    S1                  14663R                 1021N       923N   L*      - B (loses at every point)
+    A1       10398R     12048R      3124R       692N       558N   L*      - B (loses at every point)
+    V3                  16763R                11439R     11305R   L*      - B (loses at every point)
+    S3                  13699R                 4245R      4500R   L*      - B (loses at every point)
+    A3       -3031N     13443R      2405R      2235R      2118R   L*      - B (no single crossing)
+    Sn                  63141R                55839R     55653R   L*      - B (loses at every point)
+    An                  49211R                43435R     42926R   L*      - B (loses at every point)
+  dig      g=64
+    V1       24647R      1450R     -4326W     -6759W     -7287W   L*     45 B (32..128)
+    S1                  -2796W               -13017W    -13544W   L*      - B (wins at every point)
+    A1       26997R     -4349W    -11530W    -13590W    -14098W   L*     26 B (8..32)
+    V3                   2125R                -6742W     -7203W   L*     73 B (32..1024)
+    S3                  -3452W               -12542W    -12988W   L*      - B (wins at every point)
+    A3        9579R     -6037W    -10998W    -13344W    -13760W   L*     19 B (8..32)
+    Sn                   -503N               -10148W    -10720W   L*      - B (wins at every point)
+    An                  -3276W               -11248W    -11740W   L*      - B (wins at every point)
+  dig      g=inf
+    V1                   2047R                -4902W     -5181W   L*     89 B (32..1024)
+    S1                  -3476W               -10837W    -11032W   L*      - B (wins at every point)
+    A1                  -4055W               -11586W    -11701W   L*      - B (wins at every point)
+    V3                   2305R                -4653W     -4822W   L*    101 B (32..1024)
+    S3                  -5608W               -10787W    -11022W   L*      - B (wins at every point)
+    A3                  -6503W               -11572W    -11701W   L*      - B (wins at every point)
+    Sn                  -3858W               -10815W    -11031W   L*      - B (wins at every point)
+    An                  -4924W               -11603W    -11708W   L*      - B (wins at every point)
+  dfa-hat  g=4
+    V1       37054R    -22610W    -17051W    -15924W    -11611W   L*     19 B (8..32)
+    S1                 -40402W               -33768W    -29537W   L*      - B (wins at every point)
+    A1       32874R    -40388W    -36006W    -34086W    -29514W   L*     15 B (8..32)
+    V3                 -12854W                -4242N     -1982N   L*      - B (wins at every point)
+    S3                 -23183W               -18275W    -19491W   L*      - B (wins at every point)
+    A3       17396R    -24249W    -16711W    -16334W    -20932W   L*     14 B (8..32)
+    Sn                   3996R                21244R     27367R   L*      - B (loses at every point)
+    An                  -2795N                13804R     27215R   L*      - B (no single crossing)
+  dfa-hat  g=64
+    V1       35505R      3320R     -1756W     -4739W     -5894W   L*     79 B (32..128)
+    S1                  -5959W               -12405W    -13483W   L*      - B (wins at every point)
+    A1       32106R     -6492W    -10759W    -13025W    -14099W   L*     25 B (8..32)
+    V3                   4138R                -5130W     -6301W   L*    150 B (32..1024)
+    S3                  -6498W               -11958W    -13044W   L*      - B (wins at every point)
+    A3       17212R     -7031W     -9894W    -12526W    -13628W   L*     21 B (8..32)
+    Sn                  -2623W               -10430W    -11645W   L*      - B (wins at every point)
+    An                  -3654W               -11214W    -12430W   L*      - B (wins at every point)
+  dfa-hat  g=inf
+    V1                   1616R                -3274W     -3311W   L*    101 B (32..1024)
+    S1                  -6796W               -11017W    -10992W   L*      - B (wins at every point)
+    A1                  -7783W               -11734W    -11684W   L*      - B (wins at every point)
+    V3                   3822R                -3973W     -3933W   L*    175 B (32..1024)
+    S3                  -8508W               -10943W    -10987W   L*      - B (wins at every point)
+    A3                  -9663W               -11690W    -11680W   L*      - B (wins at every point)
+    Sn                  -6555W               -11049W    -10990W   L*      - B (wins at every point)
+    An                  -8051W               -11776W    -11685W   L*      - B (wins at every point)
+  bounded  g=2
+    V1       28529R     17232R                13477R     13402R   L*      - B (loses at every point)
+    S1       34992R     11573R                 3550R      3148R   L*      - B (loses at every point)
+    A1       27016R      6988R                  959N       752N   L*      - B (loses at every point)
+    V3       29524R     18344R                13867R     13647R   L*      - B (loses at every point)
+    S3       12410R      8488R                 5709R      5332R   L*      - B (loses at every point)
+    A3        5937R      3753R                 1424N      1191N   L*      - B (loses at every point)
+    Sn       88831R    107510R               110716R    110836R   L*      - B (loses at every point)
+    An       71546R     85731R                86523R     87165R   L*      - B (loses at every point)
+  bounded  g=32
+    V1       16396R      4243R                -2102W     -3766W   L*    325 B (32..1024)
+    S1       20515R       136N                -8576W    -10228W   L*     34 B (32..1024)
+    A1       14968R     -1726W                -9304W    -10908W   L*     28 B (8..32)
+    V3       13025R      5464R                -1628W     -3265W   L*    462 B (32..1024)
+    S3       -5591W     -3242W                -8138W     -9665W   L*      - B (wins at every point)
+    A3       -6573W     -4509W                -9155W    -10669W   L*      - B (wins at every point)
+    Sn       26022R      5621R                -3092W     -5190W   L*    299 B (32..1024)
+    An       17642R      2904R                -4592W     -6644W   L*    123 B (32..1024)
+  bounded  g=inf
+    V1       15561R      1034N                -5036W     -4981W   L*     58 B (32..1024)
+    S1       19368R     -2764W               -11071W    -10989W   L*     27 B (8..32)
+    A1       12365R     -4551W               -11799W    -11663W   L*     22 B (8..32)
+    V3       10917R      2646R                -3963W     -3881W   L*    128 B (32..1024)
+    S3       -5011W     -5988W               -11069W    -10984W   L*      - B (wins at every point)
+    A3       -6535W     -6733W               -11865W    -11663W   L*      - B (wins at every point)
+    Sn       18250R     -3083W               -11107W    -10986W   L*     26 B (8..32)
+    An       13579R     -4254W               -11805W    -11664W   L*     23 B (8..32)
+  FITTED L* = c_cold / dbeta (an activation with no landing pays for itself after L* bytes), dig:
+    V1 31  S1 17  A1 16  V3 33  S3 15  A3 13  Sn 15  An 14
+  costmodel: 19 B (V1), 25 B (A1), 32 B (S1) + overscan; L* = 64 B; regimefacts n* ~1 KB (SIMD, F/c one call)
+
+4.3 One `first` call of span ~L (D4 dig / H4 dfa-hat: landings every g inside it): delta ns per call
+  dig      g=2    walk ns at L=8/32/128: 11.6 / 38.8 / 146.6
+    V1       5.16R     8.58R    24.44R
+    S1       5.55R     5.05R     5.62R
+    A1       4.93R     4.46R     5.02R
+    Sn      11.18R    51.38R   216.44R
+    An       9.20R    40.72R   165.29R
+  dig      g=8    walk ns at L=8/32/128: 9.3 / 19.7 / 50.0
+    V1       2.32R     6.46R    18.13R
+    S1       2.91R     4.02R    -0.21N
+    A1       3.16R     3.60R    -1.30N
+    Sn       2.40R    19.58R    53.12R
+    An       1.98R    15.55R    39.66R
+  dig      g=inf  walk ns at L=8/32/128: 9.3 / 14.1 / 32.4
+    V1       2.33R     0.64R    -6.29W
+    S1       2.86R    -1.90W   -17.85W
+    A1       3.24R    -1.60W   -19.46W
+    Sn       2.40R    -2.41W   -17.87W
+    An       1.98R    -2.80W   -19.67W
+  dfa-hat  g=2    walk ns at L=8/32/128: 12.5 / 34.2 / 113.1
+    V1       4.06R    15.32R    65.73R
+    S1       4.48R     5.03R    18.56R
+    A1       4.63R     4.65R    15.71R
+    Sn       4.42R    44.55R   225.59R
+    An       3.96R    38.28R   194.07R
+  dfa-hat  g=8    walk ns at L=8/32/128: 14.9 / 23.3 / 57.4
+    V1       4.22R    10.59R    13.41R
+    S1       4.64R     2.74R   -12.85W
+    A1       3.96R     2.67R   -13.04W
+    Sn       4.53R    21.01R    30.32R
+    An       4.18R    17.54R    23.07R
+  dfa-hat  g=inf  walk ns at L=8/32/128: 12.5 / 19.3 / 38.0
+    V1       4.02R     1.27R    -3.82W
+    S1       4.45R    -2.29N   -19.77W
+    A1       4.26R    -2.55W   -20.81W
+    Sn       4.41R    -2.43W   -20.06W
+    An       3.93R    -2.87W   -21.20W
+  single member-free calls (D5-sparse, D6-first): delta ns per call
+    g1-dig-n48-ginf-Lnone        walk    13.92  V1    -4.56W  S1   +11.60R  A1    +1.32R  Sn    +0.71R  An    +0.52R
+    g1-dig-n63-ginf-Lnone        walk    16.67  V1    -5.55W  S1   +15.82R  A1    +5.79R  Sn    +0.55R  An    +0.47N
+    g1-dig-n64-ginf-Lnone        walk    16.85  V1    -5.75W  S1   -10.84W  A1   -11.19W  Sn   -11.38W  An   -11.73W
+    g1-dig-n65-ginf-Lnone        walk    17.04  V1    -5.02W  S1    -9.36W  A1   -10.45W  Sn    -9.91W  An   -11.00W
+    g1-dig-n128-ginf-Lnone       walk    32.27  V1   -14.16W  S1   -24.96W  A1   -26.22W  Sn   -25.67W  An   -26.58W
+    g1-dig-n64k-ginf-L64k@0      walk 12769.50  S1 -11032.20W  S2 -11028.01W  A1 -11703.63W  A2 -11702.97W
+
+4.4 The block-straddling lengths n = 48 63 64 65 128 (dig; ns per pass):
+  first (member-free, one call)
+    n         walk       V1       S1       A1       V3       S3       A3       Sn       An
+    48       13.92     9.36    25.52    15.24        -        -        -    14.63    14.44
+    63       16.67    11.12    32.49    22.46        -        -        -    17.22    17.14
+    64       16.85    11.10     6.01     5.66        -        -        -     5.47     5.12
+    65       17.04    12.02     7.68     6.59        -        -        -     7.13     6.04
+    128      32.27    18.11     7.31     6.05        -        -        -     6.60     5.69
+  all (g=8, a match every 32 B)
+    n         walk       V1       S1       A1       V3       S3       A3       Sn       An
+    48       20.41    24.56    41.80    32.67    26.23    42.64    33.26    20.71    20.77
+    63       20.43    24.57    48.40    38.30    26.21    48.48    38.79    20.80    20.63
+    64       37.18    48.55    43.29    42.15    50.83    42.35    40.96    49.77    45.25
+    65       38.63    48.97    43.35    42.06    51.22    42.46    41.05    49.84    45.75
+    128      74.84    90.38    79.02    76.26    93.20    76.09    73.70   108.15    96.43
+
+==============================================================================
+5. REGIME BOUNDARIES
+==============================================================================
+5.1 Placement of the F1 all-mode groups by costmodel's rule (L = ADV/A, g = ADV/U; L* 64, g* 18.5):
+  dig      DINGHY 19  TUG 20  LINER 17
+  dfa-hat  DINGHY 10  TUG 13  LINER 13
+  bounded  DINGHY 10  TUG 5  LINER 5
+
+5.2 W/R/N per form per regime (all-mode, this reading's NULL rule), with the summed delta (ns/pass):
+var DINGHY                        TUG                           LINER                         
+V1  3/33/3 +376725                9/20/6 +156869                32/0/3 -140898                
+S1  13/18/4 +101189               19/6/11 -301599               33/0/0 -405523                
+A1  15/21/3 +134079               23/2/13 -361752               35/0/0 -450564                
+V3  3/32/0 +313598                5/20/8 +295267                30/1/2 -131263                
+S3  18/12/5 -47553                14/15/4 -110705               33/0/0 -390003                
+A3  18/15/6 -54167                18/11/6 -173275               35/0/0 -439539                
+Sn  8/23/4 +843376                5/26/2 +1550934               33/0/0 -323785                
+An  10/20/5 +631522               6/26/1 +1190062               33/0/0 -360272                
+
+5.3 The measured boundary per form: the single threshold on L (calls) and on g (landings) that best
+    separates wins from losses (non-NULL rows; errors / rows), all cells, then per cell:
+var cell         win iff L >= t         win iff g >= t   win iff g >= t | L >= 64
+V1  ALL         124.7 (23/ 97)         27.9 (13/ 97)              4.0 ( 6/ 61)
+V1  dig         127.0 (12/ 47)         27.9 ( 4/ 47)              8.0 ( 1/ 29)
+V1  dfa-hat     124.7 ( 6/ 32)          4.0 ( 8/ 32)              4.0 ( 1/ 23)
+V1  bounded   32768.0 ( 4/ 18)         30.9 ( 0/ 18)             30.9 ( 0/  9)
+S1  ALL          28.7 (18/ 89)          7.9 ( 7/ 89)              4.0 ( 0/ 58)
+S1  dig        1023.0 ( 6/ 40)          7.9 ( 3/ 40)              7.9 ( 0/ 25)
+S1  dfa-hat      28.7 ( 4/ 30)          4.0 ( 0/ 30)              4.0 ( 0/ 23)
+S1  bounded    1008.2 ( 4/ 19)          7.9 ( 1/ 19)              7.9 ( 0/ 10)
+A1  ALL          28.7 (13/ 96)          7.9 ( 8/ 96)              4.0 ( 0/ 60)
+A1  dig         127.0 ( 8/ 47)          7.9 ( 3/ 47)              7.9 ( 0/ 30)
+A1  dfa-hat      28.7 ( 2/ 32)          4.0 ( 2/ 32)              4.0 ( 0/ 23)
+A1  bounded      32.0 ( 2/ 17)          7.9 ( 1/ 17)              7.9 ( 0/  7)
+V3  ALL        1020.7 (23/ 91)         30.8 (11/ 91)              8.0 ( 5/ 56)
+V3  dig        1023.0 (12/ 45)         27.9 ( 5/ 45)              8.0 ( 2/ 28)
+V3  dfa-hat    1020.7 ( 7/ 27)         30.8 ( 5/ 27)              8.0 ( 1/ 19)
+V3  bounded   32768.0 ( 4/ 19)         30.9 ( 1/ 19)             30.9 ( 0/  9)
+S3  ALL           8.0 (27/ 92)          4.0 ( 8/ 92)              4.0 ( 2/ 62)
+S3  dig          31.0 (16/ 46)          7.9 ( 5/ 46)              7.9 ( 2/ 30)
+S3  dfa-hat      28.7 ( 6/ 31)          4.0 ( 1/ 31)              4.0 ( 0/ 24)
+S3  bounded       8.0 ( 5/ 15)          7.1 ( 0/ 15)             30.9 ( 0/  8)
+A3  ALL           8.0 (23/ 97)          7.1 ( 8/ 97)              4.0 ( 0/ 64)
+A3  dig          31.0 (15/ 48)          7.9 ( 3/ 48)              7.9 ( 0/ 31)
+A3  dfa-hat      28.7 ( 6/ 35)          4.0 ( 3/ 35)              4.0 ( 0/ 26)
+A3  bounded       8.0 ( 2/ 14)          7.1 ( 0/ 14)              7.9 ( 0/  7)
+Sn  ALL        1008.2 (34/ 95)         20.8 ( 6/ 95)             15.9 ( 4/ 64)
+Sn  dig        1023.0 (17/ 44)         16.5 ( 2/ 44)             31.0 ( 2/ 31)
+Sn  dfa-hat    1020.7 (11/ 31)          8.0 ( 3/ 31)              8.0 ( 1/ 23)
+Sn  bounded    1008.2 ( 6/ 20)         30.9 ( 0/ 20)             30.9 ( 0/ 10)
+An  ALL        1008.2 (36/ 95)         15.9 ( 6/ 95)             15.9 ( 4/ 65)
+An  dig        1023.0 (19/ 45)         16.5 ( 3/ 45)             31.0 ( 2/ 31)
+An  dfa-hat      28.7 (11/ 30)          8.0 ( 2/ 30)              8.0 ( 1/ 24)
+An  bounded    1008.2 ( 6/ 20)         30.9 ( 0/ 20)             30.9 ( 0/ 10)
+
+5.4 The 2-D boundary: the (L*, g*) pair minimising errors for "win iff L >= L* and g >= g*":
+  V1  best L*   64 g*    4: 10 errors / 97    (costmodel 64 / 18.5: 12 errors)
+  S1  best L*    8 g*    3:  8 errors / 89    (costmodel 64 / 18.5: 32 errors)
+  A1  best L*    8 g*    4:  7 errors / 96    (costmodel 64 / 18.5: 38 errors)
+  V3  best L*   64 g*   10:  8 errors / 91    (costmodel 64 / 18.5: 9 errors)
+  S3  best L*    8 g*    4: 12 errors / 92    (costmodel 64 / 18.5: 32 errors)
+  A3  best L*    8 g*    4: 10 errors / 97    (costmodel 64 / 18.5: 36 errors)
+  Sn  best L*    8 g*   20:  6 errors / 95    (costmodel 64 / 18.5: 13 errors)
+  An  best L*    8 g*   12:  7 errors / 95    (costmodel 64 / 18.5: 16 errors)
+
+5.5 Absolute cost per regime (all-mode groups, n = 64 KiB; medians over the regime's groups):
+    walk ns per call, walk ns per MiB, and per form the median delta per call and per MiB of subject
+regime   grps  walk/call     walk/MiB                             V1                          A1                          A3                          An
+DINGHY     34       16.5       765311        +2.4 /call +155074 /MiB      +0.8 /call +25324 /MiB      -0.7 /call -60090 /MiB     +1.9 /call +122075 /MiB
+TUG        36     1100.7       766091       +112.6 /call +88974 /MiB     -64.5 /call -56330 /MiB     -51.1 /call -53102 /MiB   +668.2 /call +307984 /MiB
+LINER      35      297.0       270429        -72.9 /call -64912 /MiB   -209.1 /call -188791 /MiB   -205.3 /call -187219 /MiB   -230.2 /call -186629 /MiB
+    (a call's span differs by regime, so per call and per MiB rank the regimes differently)
+
+==============================================================================
+6. THE OTHER AXES
+==============================================================================
+6.1 Repeated vs streamed (fresh) at equal (g, L, shape): walk ns, and each form's delta (ns/pass).
+    per-landing = (walk_S - walk_rep) / landings per buffer: the walk's extra cost per landing on fresh data.
+  cell     subject (rep / S)           walk rep    walk S    S/rep /landing           V1 rep>S         A1 rep>S         A3 rep>S         An rep>S
+  dig      dig-n64k-g2-L32                79621     79795     1.00     0.01      +17420>+17215      +7798>+7850      +8335>+8061    +85181>+85077
+  dig      dig-n64k-g2-L1k                73876     73976     1.00     0.00      +11139>+11253        +800>+623      +4266>+4312    +87425>+87350
+  dig      dig-n64k-g2-L64k               73173     74103     1.01     0.03      +11023>+10880        +668>+671      +3930>+3773    +87621>+87636
+  dig      dig-n64k-g8-L32-u              38610     80473     2.08     5.84       +8826>-14123     +2665>-32084     +1793>-32677    +19887>-13698
+  dig      dig-n64k-g8-L1k-u              23484     62597     2.67     4.79       +5561>-14272     -3821>-39816     -3319>-38861    +17876>-20950
+  dig      dig-n64k-g8-L64k-u             27621     60887     2.20     4.06        +897>-13124     -8479>-38708     -7842>-38003    +12813>-19783
+  dig      dig-n64k-g32-L32-u             31581     44331     1.40     7.11        +2646>+1539     -3302>-12367     -5084>-13704       +200>-8339
+  dig      dig-n64k-g32-L1k-u             16583     29315     1.77     6.24        -3239>-4016    -10142>-20007     -9698>-19525     -5160>-17694
+  dig      dig-n64k-g32-L64k-u            19672     28311     1.44     4.22        -6910>-3710    -13763>-19778    -13246>-19415     -9109>-17293
+  dig      dig-n64k-g256-L32-u            30756     34432     1.12    16.40         +484>-1993      -4913>-8097     -7154>-10272      -5705>-8288
+  dig      dig-n64k-g256-L1k-u            15100     15814     1.05     2.80        -6050>-4298    -12977>-11605    -12895>-11491    -12281>-11337
+  dig      dig-n64k-g256-L64k-u           14441     15037     1.04     2.33        -6114>-4333    -12955>-11495    -12885>-11373    -12282>-11201
+  dig      dig-n64k-g8-L1k-reg            20962     21051     1.00     0.01        +7320>+7366        -890>-835         -141>-89    +20395>+20412
+  dig      dig-n64k-g8-L1k-burst          29478     28111     0.95    -0.17         -1645>-149      -9622>-8149      -9062>-7518    +12549>+14104
+  dig      dig-n64k-g32-L1k-reg           16902     16972     1.00     0.03        -3963>-3964    -10356>-10346      -9943>-9932      -5712>-5710
+  dig      dig-n64k-g32-L1k-burst         17280     17368     1.01     0.04        -4057>-4047    -11132>-11139    -11006>-11020      -5781>-5790
+  dfa-hat  dfa-hat-n64k-g2-L1k            61358     61645     1.00     0.01      +27773>+27436      +1527>+1354    +25834>+21003    +97894>+97703
+  dfa-hat  dfa-hat-n64k-g2-L64k           54910     60957     1.11     0.18      +33169>+27443      +7357>+1376    +30015>+21015   +104344>+98385
+  dfa-hat  dfa-hat-n64k-g8-L1k-u          34874     67338     1.93     3.99       -1687>-15286    -14877>-44035    -10117>-39083     +6743>-25628
+  dfa-hat  dfa-hat-n64k-g8-L64k-u         28057     66157     2.36     4.65       +4363>-15929     -7031>-43851     -4234>-39203    +12615>-25647
+  dfa-hat  dfa-hat-n64k-g32-L1k-u         19307     27714     1.44     4.14         -3622>+315    -11875>-17740    -11011>-16905     -7637>-16066
+  dfa-hat  dfa-hat-n64k-g32-L64k-u        19600     26368     1.35     3.30         -4948>+135    -13128>-17817    -12327>-17073     -9404>-16180
+  dfa-hat  dfa-hat-n64k-g256-L1k-u        15322     16739     1.09     5.58        -4492>-3430    -12991>-12638    -12858>-12281    -12562>-12325
+  dfa-hat  dfa-hat-n64k-g256-L64k-u       14046     14237     1.01     0.75        -4305>-2607    -12737>-11452    -12602>-11159    -12325>-11355
+  bounded  bounded-n64k-g2-L8             90381     90696     1.00     0.02      +28529>+28362    +27016>+26997      +5937>+5954    +71546>+71437
+  bounded  bounded-n64k-g2-L1k            75912     75960     1.00     0.00      +13477>+13551        +959>+972      +1424>+1407    +86523>+86568
+  bounded  bounded-n64k-g32-L8-u          70897     75001     1.06     4.00      +16396>+16517    +14968>+14753      -6573>-4480    +17642>+18090
+  bounded  bounded-n64k-g32-L1k-u         15850     26193     1.65     5.07          -2102>+70     -9304>-17011     -9155>-16749     -4592>-14960
+
+6.2 Gap shape at equal mean (dig, L = 1k): walk ns, A/A, and deltas; reg = exactly g, u = uniform,
+    burst = 8 landings 2 B apart per 8g; streamed reg/burst buffers repeat their landing offsets.
+  g    shape  reuse      walk    A/A%  spread%        V1       S1       A1       V3       S3       A3       Sn       An
+  8    reg    rep      20962    0.25     0.66     7320R    -278N    -890W    9460R    1900R    -141N   26558R   20395R
+  8    reg    S        21051    0.00     0.28     7366R    -211N    -835W    9543R    1784R     -89N   26646R   20412R
+  8    u      rep      23484    8.29    13.88     5561R   -3181W   -3821W    6911R   -1238N   -3319W   24006R   17876R
+  8    u      S        62597    0.17     1.35   -14272W  -38933W  -39816W  -12502W  -35857W  -38861W  -14779W  -20950W
+  8    burst  rep      29478    1.54    14.71    -1645N   -8983W   -9622W   -1397N   -6856W   -9062W   18465R   12549R
+  8    burst  S        28111    0.14     1.01     -149N   -7496W   -8149W     143N   -5605W   -7518W   20007R   14104R
+  32   reg    rep      16902    0.49     3.65    -3963W   -9736W  -10356W   -3629W   -8908W   -9943W   -4089W   -5712W
+  32   reg    S        16972    0.03    11.43    -3964W   -9723W  -10346W   -3590W   -8905W   -9932W   -4092W   -5710W
+  32   u      rep      16583    0.37    31.86    -3239W   -9533W  -10142W   -2911W   -8689W   -9698W   -3587W   -5160W
+  32   u      S        29315    2.25     3.33    -4016W  -19277W  -20007W   -3270W  -18267W  -19525W  -16124W  -17694W
+  32   burst  rep      17280    0.57    11.98    -4057W  -10444W  -11132W   -3959W   -9804W  -11006W   -3805W   -5781W
+  32   burst  S        17368    0.20     0.52    -4047W  -10474W  -11139W   -3963W   -9808W  -11020W   -3818W   -5790W
+
+6.2b The walk's per-launch values on the u-shape repeated groups (the bimodality the A/A shows), ns:
+  dig      g1-dig-n64k-g8-L1k-u         walk 23858 22807 26067 23484 23003   walk#b 25432 28077 26523 24723 23061
+  dig      g1-dig-n64k-g16-L32-u        walk 33038 33156 32291 32726 36336   walk#b 32965 34606 33307 36920 32374
+  dig      g1-dig-n64k-g16-L1k-u        walk 18100 20567 18485 18582 18502   walk#b 25795 19037 22203 18603 19012
+  dig      g1-dig-n64k-g16-L64k-u       walk 19262 19226 19177 27440 27771   walk#b 19181 27605 28079 27915 19209
+  dig      g1-dig-n64k-g32-L1k-u        walk 16760 16583 16480 21763 16536   walk#b 16485 18068 16522 16816 16447
+  dig      g1-dig-n64k-g64-L128-u       walk 20229 20598 20296 20139 23440   walk#b 20025 20944 19353 20294 20141
+  dfa-hat  g1-dfa-hat-n64k-g4-L64k-u    walk 74035 73257 62241 58102 64324   walk#b 58866 58885 74341 56414 65088
+  dfa-hat  g1-dfa-hat-n64k-g8-L1k-u     walk 35348 34874 33896 28428 35180   walk#b 28916 28844 34068 34816 31496
+  dfa-hat  g1-dfa-hat-n64k-g8-L64k-u    walk 31095 27602 28057 27706 31845   walk#b 31978 30383 28113 28071 29099
+  dfa-hat  g1-dfa-hat-n64k-g16-L1k-u    walk 27535 28023 25633 24983 25801   walk#b 24637 28381 27060 24357 28261
+  dfa-hat  g1-dfa-hat-n64k-g16-L64k-u   walk 21074 26238 31522 32737 22674   walk#b 32650 30729 22812 31038 30686
+  bounded  g1-bounded-n64k-g8-L32-u     walk 39894 32444 38116 34110 34811   walk#b 38977 33591 36070 34772 32452
+  bounded  g1-bounded-n64k-g8-L1k-u     walk 22593 21947 26154 29362 27765   walk#b 21840 24037 23799 21342 26475
+
+6.3 Start alignment (D6: subject placed 64-aligned + 0 / 7 / 31): ns per pass; S2/A2 = the prologue arms.
+  g1-dig-n64k-ginf-L64k (first)
+    off 0   walk   12769.50 (A/A  0.20%)  S1    1737.30 -11032.20W  S2    1741.49 -11028.01W  A1    1065.87 -11703.63W  A2    1066.53 -11702.97W
+    off 7   walk   12772.62 (A/A  0.11%)  S1    1751.86 -11020.76W  S2    1742.29 -11030.33W  A1    1073.05 -11699.57W  A2    1074.00 -11698.62W
+    off 31  walk   12768.59 (A/A  0.05%)  S1    1751.59 -11017.00W  S2    1739.73 -11028.86W  A1    1073.76 -11694.83W  A2    1066.03 -11702.56W
+  g1-dig-n65-ginf-Lnone (first)
+    off 0   walk      17.04 (A/A  0.06%)  S1       7.68    -9.36W  S2       7.69    -9.35W  A1       6.58   -10.46W  A2       6.58   -10.46W
+    off 7   walk      17.04 (A/A  0.00%)  S1       7.68    -9.36W  S2       9.01    -8.03W  A1       6.59   -10.45W  A2      13.95    -3.09W
+    off 31  walk      17.04 (A/A  0.06%)  S1       7.68    -9.36W  S2       6.41   -10.63W  A1       6.58   -10.46W  A2       5.85   -11.19W
+  g1-dig-n64k-g8-L1k-u (all)
+    off 0   walk   22875.67 (A/A 16.16%)  S1   20301.01 -2574.66N  S2   20812.06 -2063.61N  A1   19654.89 -3220.78N  A2   20528.31 -2347.36N
+    off 7   walk   23847.73 (A/A  2.06%)  S1   20395.76 -3451.97W  S2   20959.84 -2887.89W  A1   19716.95 -4130.78W  A2   21098.01 -2749.72W
+    off 31  walk   23169.10 (A/A  4.35%)  S1   20334.20 -2834.90W  S2   20899.70 -2269.40W  A1   19722.09 -3447.01W  A2   20666.71 -2502.39W
+  F3 (one member-free call, 64 KiB / 1 MiB): S2-S1 and A2-A1 ns per call:
+    f3-dig      64k  S2-S1     +0.1  A2-A1     -0.2  V2-V1    -22.6
+    f3-dig      1m   S2-S1    +53.9  A2-A1     -0.5  V2-V1   +908.5
+    f3-hex-run  64k  S2-S1     +0.8  A2-A1     +0.1  V2-V1   +600.7
+    f3-hex-run  1m   S2-S1    -47.4  A2-A1    -33.8  V2-V1 +10712.2
+    f3-word-eq  64k  S2-S1     +1.2  A2-A1     -0.4  V2-V1    +58.9
+    f3-word-eq  1m   S2-S1   -115.8  A2-A1     +7.2  V2-V1  +1026.5
+    f3-quad     64k  S2-S1     +2.0  A2-A1     +0.1  V2-V1   +716.5
+    f3-quad     1m   S2-S1   -608.1  A2-A1    -85.8  V2-V1 +11192.1
+
+6.4 Stateless (Sn/An: every use rescans from lo, no cache) vs stateful (S1/A1, S3/A3), all-mode,
+    by call span L (the dinghy spans are L <= 32): summed delta ns/pass and W/R/N over the groups at that L.
+  L=8      groups 10      S1  +165008 0/6/0     S3   +14075 3/1/2     Sn  +290148 0/6/0    A1  +228596 0/10/0     A3   +35124 3/4/3     An  +234728 0/6/0
+  L=32     groups 24     S1   -63883 13/7/4    S3   -61689 15/7/2    Sn  +553170 8/14/2    A1   -94556 15/7/2    A3   -89327 15/7/2   An  +396757 10/11/3
+  L=128    groups  4                      -                     -                     -     A1   -55170 3/1/0     A3   -35198 3/1/0                     -
+  L=1024   groups 39     S1  -390333 29/4/6    S3  -276392 27/9/2   Sn  +696125 22/16/0    A1  -420465 31/0/8    A3  -323887 29/5/4   An  +465221 22/16/0
+  L=65536  groups 28     S1  -310503 21/2/5    S3  -224317 20/6/2   Sn  +531024 16/10/2    A1  -329103 22/1/5    A3  -253729 21/5/2   An  +364568 17/10/1
+  by landing gap at L = 32 (dig, dfa-hat, bounded): An - A1 delta per pass
+    dig       g2  +77383  g4  +37163  g8  +17222  g16   +8091  g32   +3502  g64   +1074  g256    -792  ginf    -868
+    dfa-hat   g2  +72060  g4  +37593  g8  +19028  g16  +10218  g32   +5413  g64   +2839  g256    +815  ginf    -267
+    bounded   g2  +78743  g8  +17723  g32   +4630  ginf    +296
+  first mode (D4/H4), An - A1 and Sn - S1 ns per call: see 4.3 (same rows).
+
+6.5 dfa-hat (the DFA hat, 2 terms) vs the PF cells: the walk's own per-landing costs (2.3) and the deltas
+    at equal (g, L), rep, u-shape:
+  g=4   L=1024  walk dig   38139 hat   69217   V1  +10858/ -15924  A1    +692/ -34086  A3   +2235/ -16334
+  g=8   L=1024  walk dig   23484 hat   34874   V1   +5561/  -1687  A1   -3821/ -14877  A3   -3319/ -10117
+  g=16  L=1024  walk dig   18502 hat   25801   V1    +220/  -4321  A1   -7295/ -13852  A3   -6818/ -12167
+  g=32  L=1024  walk dig   16583 hat   19307   V1   -3239/  -3622  A1  -10142/ -11875  A3   -9698/ -11011
+  g=64  L=1024  walk dig   17576 hat   17609   V1   -6759/  -4739  A1  -13590/ -13025  A3  -13344/ -12526
+  g=2 (reg shape) L=1k  walk dig 73876 hat 61358   A1 +800 / +1527
+
+6.6 F3: beta per byte by cover terms and width (section 2.1), and the SWAR term limit:
+  cover terms:     1 = [0-9] (one range); 2 = [a-f0-9] (two ranges); 3 = [A-Za-z_]; 4 = [0-9A-Fa-f_]
+  V1  1t 0.1082 (saving +0.0810)  2t 0.1851 (saving +0.0026)  3t 0.2141 (saving -0.0245)  4t 0.2667 (saving -0.0776)
+  S1  1t 0.0205 (saving +0.1688)  2t 0.0334 (saving +0.1543)  3t 0.0417 (saving +0.1479)  4t 0.0540 (saving +0.1351)
+  A1  1t 0.0106 (saving +0.1786)  2t 0.0150 (saving +0.1727)  3t 0.0192 (saving +0.1704)  4t 0.0270 (saving +0.1621)
+  the dfa-hat cell's own 2-term cover (cube {f,n} + eq t) per byte from ginf-L64k: V1 0.1384  S1 0.0212  A1 0.0107  (walk 0.1889)
+
+6.7 EXT (main's pcrec engine arms, read only to place them): rows, verdicts per cell
+  p1-all    vm   N 1
+  p1-all    vm   W 2
+  p1-first  vm   N 2
+  p1-first  vm   R 2
+  p1-first  vm   W 1
+  p2-all    dfa  N 2
+  p2-all    dfa  W 1
+  p2-all    vm   W 3
+  p2-first  dfa  N 2
+  p2-first  dfa  W 3
+  p2-first  vm   N 2
+  p2-first  vm   W 3
+  p3-all    vm   W 3
+  p3-first  vm   N 2
+  p3-first  vm   R 1
+  p3-first  vm   W 2
+
+==============================================================================
+7. THE DECISION TABLE RE-PRICED (FORM_ROWS with the re-fitted constants), and the regret per information source
+==============================================================================
+7.1 The priced rows: per cell, the closed form of section 2.3 (FITTED F, w, p, q; MEASURED beta, omega/kappa):
+    price(arm) = F*A + w*(U-A) + p*U*[u-S] + q*U*[u-rep] + beta*bytes,  bytes = ADV + oc*A + ow*(U-A)  (kept: kappa*ADV)
+cell     arm   layer            F        w        p        q     beta   oc|kap       ow
+dig      walk  off           8.11     1.67     4.31    -0.15   0.1949        -        -
+dig      V1    off          10.58     2.38     2.97     0.16   0.1159      1.0    -0.02
+dig      V3    off+iter     10.52     2.42     3.13     0.17   0.1214    1.000        -
+dig      S1    on           11.01     2.22     0.80     0.02   0.0266     52.0    -0.37
+dig      A1    on           11.02     2.23     0.81     0.02   0.0164     54.2    -0.48
+dig      Sn    on           10.71     4.01     0.56     0.03   0.0266     54.8    61.47
+dig      An    on           10.53     3.93     0.58     0.02   0.0163     54.8    61.47
+dig      S3    on+iter      10.58     2.41     1.02     0.13   0.0268    1.001        -
+dig      A3    on+iter      10.46     2.33     0.86     0.06   0.0164    1.001        -
+bounded  walk  off           6.33     1.88     2.04    -0.42   0.1883        -        -
+bounded  V1    off           8.58     2.51     3.18     0.40   0.1123      1.0    -0.02
+bounded  V3    off+iter      8.39     2.50     2.68     0.32   0.1291    1.000        -
+bounded  S1    on            9.38     2.36     1.32     0.10   0.0207     52.0    -0.37
+bounded  A1    on            9.20     2.30     1.39     0.16   0.0104     54.2    -0.48
+bounded  Sn    on            9.37     4.31     0.34     0.14   0.0207     54.8    61.47
+bounded  An    on            9.41     4.25     0.34     0.16   0.0104     54.8    61.47
+bounded  S3    on+iter       7.52     2.46     1.43     0.20   0.0207    1.001        -
+bounded  A3    on+iter       7.36     2.33     1.45     0.20   0.0104    1.001        -
+dfa-hat  walk  off          12.78     1.44     5.28     1.46   0.1889        -        -
+dfa-hat  V1    off          17.46     2.43     3.37     0.28   0.1384      1.0    -0.02
+dfa-hat  V3    off+iter     18.10     3.01     3.53     0.29   0.1289    1.000        -
+dfa-hat  S1    on           16.13     1.93     1.16     0.34   0.0212     52.0    -0.37
+dfa-hat  A1    on           16.68     1.89     1.29     0.43   0.0107     54.2    -0.48
+dfa-hat  Sn    on           16.98     4.04     0.38     0.00   0.0212     54.8    61.47
+dfa-hat  An    on           17.16     4.19     0.45     0.08   0.0106     54.8    61.47
+dfa-hat  S3    on+iter      16.62     2.52     1.26     0.40   0.0213    1.001        -
+dfa-hat  A3    on+iter      16.61     2.54     1.27     0.41   0.0107    1.001        -
+
+7.2 Regret = measured ns of a policy's pick - measured ns of the fastest row the layer offers, summed over the
+    regime's groups (all-mode groups timing all nine forms: 101; regime by costmodel's rule).
+    Given as absolute us per pass summed (and % of the walk's summed ns).  The model rows are IN SAMPLE
+    (their constants are fitted on these groups) except LOGO: refitted without the row's landing gap g.  Sources:
+      prior    = compile time: the shipped unigram over S, landings p(1-p), one long call, predictable gaps
+      gap      = an exemplar: true landings and gap shape, no call span (A = 1)
+      span     = the call pattern / iterator: true calls, landings from the prior
+      gap+span = both (the model with oracle facts)
+      hint     = the regime is known: the one row best over that regime's groups (in sample; LOCO = learned on the other cells)
+
+  layer off (rows: walk, V1)
+  policy                                     DINGHY                       TUG                     LINER
+  always walk                      38.7 us (  2.4%)         100.9 us (  6.4%)         135.3 us ( 23.2%)
+  always V1                       307.1 us ( 18.8%)         262.5 us ( 16.6%)           0.5 us (  0.1%)
+  model, prior                     96.2 us (  5.9%)         157.7 us ( 10.0%)          56.5 us (  9.7%)
+  model, gap                       43.2 us (  2.7%)           6.4 us (  0.4%)           0.5 us (  0.1%)
+  model, span                      38.7 us (  2.4%)         157.7 us ( 10.0%)          56.5 us (  9.7%)
+  model, gap+span                  25.2 us (  1.5%)           6.4 us (  0.4%)           0.5 us (  0.1%)
+  model, gap+span, LOGO            83.2 us (  5.1%)         221.2 us ( 14.0%)           0.5 us (  0.1%)
+  hint walk/walk/V1                38.7 us (  2.4%)         100.9 us (  6.4%)           0.5 us (  0.1%)
+  hint, LOCO by cell               38.7 us (  2.4%)         100.9 us (  6.4%)           0.5 us (  0.1%)
+  model==measured best                        32/35                     29/33                     30/33
+
+  layer off+iter (rows: walk, V1, V3)
+  policy                                     DINGHY                       TUG                     LINER
+  always walk                      38.7 us (  2.4%)         100.9 us (  6.4%)         140.5 us ( 24.1%)
+  always V1                       307.1 us ( 18.8%)         262.5 us ( 16.6%)           5.6 us (  1.0%)
+  always V3                       352.3 us ( 21.6%)         396.2 us ( 25.1%)           9.2 us (  1.6%)
+  model, prior                     96.2 us (  5.9%)         157.7 us ( 10.0%)          61.6 us ( 10.6%)
+  model, gap                       43.2 us (  2.7%)           6.4 us (  0.4%)           1.4 us (  0.2%)
+  model, span                      38.7 us (  2.4%)         157.7 us ( 10.0%)          61.6 us ( 10.6%)
+  model, gap+span                  25.2 us (  1.5%)           6.4 us (  0.4%)           1.4 us (  0.2%)
+  model, gap+span, LOGO            85.5 us (  5.2%)         221.2 us ( 14.0%)           1.4 us (  0.2%)
+  hint walk/walk/V1                38.7 us (  2.4%)         100.9 us (  6.4%)           5.6 us (  1.0%)
+  hint, LOCO by cell               38.7 us (  2.4%)         100.9 us (  6.4%)           9.6 us (  1.6%)
+  model==measured best                        32/35                     29/33                     29/33
+
+  layer on (rows: walk, V1, S1, A1, Sn, An)
+  policy                                     DINGHY                       TUG                     LINER
+  always walk                     148.5 us (  9.1%)         337.6 us ( 21.4%)         428.4 us ( 73.5%)
+  always V1                       416.9 us ( 25.6%)         499.1 us ( 31.6%)         293.5 us ( 50.4%)
+  always S1                       249.7 us ( 15.3%)          44.8 us (  2.8%)          22.8 us (  3.9%)
+  always A1                       180.2 us ( 11.1%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  always Sn                       991.9 us ( 60.9%)        1888.5 us (119.6%)         104.6 us ( 17.9%)
+  always An                       780.0 us ( 47.9%)        1527.6 us ( 96.8%)          68.1 us ( 11.7%)
+  model, prior                    180.2 us ( 11.1%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model, gap                      107.6 us (  6.6%)           2.3 us (  0.1%)           0.1 us (  0.0%)
+  model, span                     109.0 us (  6.7%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model, gap+span                   0.8 us (  0.0%)           2.3 us (  0.1%)           0.0 us (  0.0%)
+  model, gap+span, LOGO            15.6 us (  1.0%)          17.9 us (  1.1%)           0.0 us (  0.0%)
+  hint walk/A1/A1                 148.5 us (  9.1%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  hint, LOCO by cell              281.7 us ( 17.3%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model==measured best                        31/35                     29/33                     31/33
+
+  layer on+iter (rows: walk, V1, S1, A1, Sn, An, V3, S3, A3)
+  policy                                     DINGHY                       TUG                     LINER
+  always walk                     186.7 us ( 11.5%)         337.6 us ( 21.4%)         428.4 us ( 73.5%)
+  always V1                       455.0 us ( 27.9%)         499.1 us ( 31.6%)         293.6 us ( 50.4%)
+  always S1                       287.9 us ( 17.7%)          44.8 us (  2.8%)          22.9 us (  3.9%)
+  always A1                       218.4 us ( 13.4%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  always Sn                      1030.1 us ( 63.2%)        1888.5 us (119.6%)         104.6 us ( 18.0%)
+  always An                       818.2 us ( 50.2%)        1527.6 us ( 96.8%)          68.1 us ( 11.7%)
+  always V3                       500.3 us ( 30.7%)         632.8 us ( 40.1%)         297.1 us ( 51.0%)
+  always S3                       139.1 us (  8.5%)         226.8 us ( 14.4%)          38.4 us (  6.6%)
+  always A3                        91.4 us (  5.6%)         178.6 us ( 11.3%)           9.8 us (  1.7%)
+  model, prior                    218.4 us ( 13.4%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model, gap                      145.8 us (  8.9%)           2.3 us (  0.1%)           0.1 us (  0.0%)
+  model, span                     120.9 us (  7.4%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model, gap+span                   7.6 us (  0.5%)           2.3 us (  0.1%)           0.3 us (  0.1%)
+  model, gap+span, LOGO            24.1 us (  1.5%)          17.9 us (  1.1%)           0.7 us (  0.1%)
+  hint A3/A1/A1                    91.4 us (  5.6%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  hint, LOCO by cell              238.6 us ( 14.6%)          19.5 us (  1.2%)           0.1 us (  0.0%)
+  model==measured best                        29/35                     29/33                     28/33
+
+  summed walk ns per regime over these groups: DINGHY 1629.5 us  TUG 1578.7 us  LINER 582.7 us

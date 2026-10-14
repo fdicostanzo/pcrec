@@ -2148,3 +2148,360 @@ the compiler, and is never adopted silently. Proposed for main to file
     §6¶8a, tuning §2.43¶3b.
   - Not run, by my call (answer-free, same measured cost): test-axes, N2,
     re-timing (journal 2026-10-11).
+
+## R-17 — small / one-cube / range FIND sets; the VM hat's one-byte table seek
+
+- ack: 2026-10-11 — **R-17 taken** (migration thread for the scalar forms;
+  any SIMD form goes to the SIMD thread under the 2:1 split). Kit branch
+  lane/memfn-r17, cut from lane/memfn-r16 @ 7a59db14 (contains main
+  fdc2f2af). It queues behind R-16's slot23, which is running now.
+  - Step 1 is READ-ONLY scoping + twin design (lane r17s, worktree
+    worktrees/r17s). It covers the FIND sites that present |S| = 1 (VM
+    hat), |S| = 2, one cube and one range; today's rendering; the existing
+    kit rows that could serve each shape (D122: one implementation per
+    search); and hand-written candidate twins per shape for both layers,
+    answer-checked against the byte loop. No timing in step 1.
+  - Step 2 times the twins on the named phase-1 cells in a heavy slot on
+    main's GO. A build follows only a measured win (D77/D147). S820-S824
+    are reserved for it.
+- notice: 2026-10-12 — **R-17 revision 2 delivered as design, NOT built: R-17 as the degenerate window search (D161 add. 3), with stateful forms plus adaptive (Q-R17-1) and one routing event (Q-R17-2 / D155 add. 3).** Design docs/design/memfn/setfind.md; report docs/dev/lanes/r17r_report.md; lane/memfn-r17. Every item below is PROPOSED for main's chunk-2 note / R-18 ratification and is stated as facts (D157).
+  - **STORAGE (main's question; setfind.md §7).** For each FIND site that is a
+    DFA prefilter, a DFA hat or the VM hat, pcrec:
+    1. calls `mf_locals(art, handle, hooks, body)` ONCE, in the function
+       holding every use, at a point that dominates every use (no goto across
+       it): before `emit_init` in `emit_scan_loop` (DFA), before the entry seek
+       in `_search_run` (VM). It states `locals_offered = 1`;
+    2. guarantees that storage is automatic, lives one call, and is touched
+       only by the kit's text;
+    3. guarantees `s`, `s[0..n)`, `n` and `end_back` invariant across the
+       site's uses. Nothing is promised about the cursor;
+    4. uses ONE handle per site, so the VM hat's entry and retry share it;
+    5. states `fn_ref` as a stem `<prefix>_<tag>` and reserves `<stem>__*`.
+
+    Cross-call state is not asked ([FINDALL-NEXT]/[IFACE-PUSH] later).
+  - **WINDOW FIELDS (degenerate case, §2.2).** Every FIND builder states
+    `mf_pred.move_back = 0`, `overshoot = 0`. FIND's result is the window's
+    beginning, `max(lo, c - move_back)`. Further spans, the reply's span, the
+    consumer price and joint rates are R-18's, appendable without moving bytes.
+  - **N1 (density), CONDITIONAL.** Asked only if the follow-up measurement
+    shows the stateful forms still losing dense. Then it is the per-site
+    byte-rate table (`mf_site.freq`, ppm; NULL = none).
+  - **N2 (remainder).** No new sink. The PF site is defined where its table is
+    written (`file_scope`, DFA) or at the VM hat's entry, with helpers via
+    `pcrec_memfn_flush_helpers`.
+  - **N3.**
+    - (a) pcrec asks `mf_plan(...)` where it decides includes and ORs
+      `out.includes` into `<string.h>`.
+    - (b) It emits a site's table iff `out.reads_table`.
+    - (c) The uniform FIND description is deferred to R-18.
+  - **N4.** In trace/test builds, `find_site` asserts `set` == the table it
+    names.
+  - **SPEC (D80, at the byte-moving step R17-b).** `RX_DFA_PREFILTER`
+    byte-class / byte-class-bounded / first-class-bounded,
+    `RX_VM_START_SCAN` first-class and tuning.md §2.42¶2/¶4 are reworded
+    method-blind, VALUES unchanged. The registry `memfn` floor is raised.
+  - **Sabotage ids:** please allocate 18 more, S825-S842 (setfind.md §12.5).
+  - **Next for the kit:**
+    - a light dry run + compile of the harness (no timing);
+    - a light re-check panel on setfind.md;
+    - then a follow-up timing slot of ~1 h 45 min ± 30% on one pinned core,
+      on main's GO;
+    - build only after a measured win in every admitted regime.
+- notice: 2026-10-12 — **Frank's ruling given directly to the kit: workload data reaches the kit as ONE ANALYSIS OBJECT per compile. Main, please file it as a decision entry.** Proposed text:
+  > Frank (2026-10-12, to the kit): "i agree option 1 with options to add
+  > more data. pcrec should send what it has."
+  >
+  > pcrec passes the kit ONE read-only analysis object per compile
+  > (`mf_analysis`, defined in memfn.h because the kit links nothing from
+  > src/), reached from each site as `mf_site.analysis` (NULL = none).
+  > - It carries EVERY compile-wide distribution pcrec has from the
+  >   resolved [FINDINGS] bundle: byte rates, cpfreq, bigram/run-rarity, and
+  >   later kinds.
+  > - It is a versioned list of tagged kinds, each present or explicitly
+  >   absent (no presumed values). The kit ignores unknown kinds, and a new
+  >   kind appends without a site-contract change.
+  > - It carries distributions only (option 1). The kit derives per-site
+  >   answers (a set's rate, a ranking) itself.
+  > - A per-site slot is reserved, filled only when a measured case needs a
+  >   fact the kit cannot derive (match density is the likely first).
+  > - Data regeneration that moves an emitted byte is an abi event.
+  > - The object becomes the one density carrier: `mf_term.ppm_*`,
+  >   `mf_site.cand_ppm_*` and `mf_pred.rank_ppm` are derivable from it.
+  >   Folding `rank_ppm` revisits D157's carried array (main's to rule).
+  - It replaces setfind.md's `mf_site.freq` (W6/N1; amended at this commit).
+    R-17 reads it only if the follow-up shows the stateful forms losing
+    dense. R-18 and other window requests read it as they need it.
+  - Building it (the struct, pcrec filling it from the resolved bundle) is
+    a request for main to file when a consumer needs it. The kit asks
+    nothing yet.
+  - Addendum, same day. Frank: "that said, be ready to make decisions
+    without data." Proposed text: every kit selection is TOTAL when the
+    analysis object, or any kind in it, is absent. The no-data path is a
+    stated decision (for R-17, the adaptive switch learning at run time);
+    data refines a choice and is never a precondition for one.
+- notice: 2026-10-12 — **Frank's direction, given to the kit directly: the kit's emitted search code is body text over a set of PRIMITIVES. Main, please file it beside D155 addendum 3.** Proposed text:
+  > Frank (2026-10-12, to the kit): "i like your idea of a set of
+  > primitives to be used in the body. it provides a lot of flexibility to
+  > customize the solution."
+  >
+  > The kit's emitted search code is readable body text over a small set of
+  > per-WIDTH primitives:
+  > - a vector type per width (32/16-byte, SWAR word);
+  > - `load_vector`, which owns byte order;
+  > - the term masks: eq / cube / range;
+  > - `first_lane`.
+  >
+  > They are defined above the body in ONE guarded shared helper block per
+  > file, keyed to the abi and the helper-set version (the K80 ABI-block
+  > precedent), because every artifact in a translation unit shares one
+  > architecture but uses several widths. A file may mix SIMD-on and
+  > SIMD-off artifacts. Forms are composed from the primitives in the body,
+  > and the architecture lives only in the primitive definitions. Helper
+  > names carry a reserved kit stem.
+  - Kit plan: setfind.md revision 2.2 restates its endianness and form
+    sections in this shape together with the R-17 follow-up timing reading.
+    The shared block lands in R17-a, the no-mover seam.
+- notice: 2026-10-12 — **Frank's direction, given to the kit directly: stateful search state hides behind ONE interface. Main, please file it beside D155 add. 4 (or as part of it).** Frank: "i like your hide behind primitives idea. ultimately its a performance issue and avx512 does handle them extremely cleanly." Proposed text:
+  > A stateful FIND's body contract is a queue-style
+  > `next_candidate(&state, lo)`. Behind it, each width implements the state
+  > (a carried mask, a position ring, or another form) in the per-width
+  > primitives of D155 add. 4. The choice is a performance decision, measured
+  > per width and per box, and it may differ by architecture without changing
+  > the body. AVX-512 (mask registers) fits as a later width row behind the
+  > same interface; it stays unfiled until a request, and the official verdict
+  > comes from the targeted hardware.
+- notice: 2026-10-12 — **R-17 setfind.md revision 2.2 delivered (design, the revision a build follows), with the BENCH RELAY DRAFT that gates R17-b (D162 add. 1).** lane/memfn-r17; design docs/design/memfn/setfind.md (read §R5 first); bench draft docs/design/memfn/setfind_bench_request.md (self-contained; main relays it under D78).
+  - **Decisions for main to see:**
+    1. One stateful row `pf_terms_mask` with body `next_candidate(&state, lo)`.
+       The state binds `s`/`n` at `mf_locals`, and a use whose `s`/`n` hook
+       text differs from the define's is refused. The fallback contract is
+       `next_candidate(&state, s, lo)` if the disassembly check shows a
+       register cost.
+    2. The shared helper block holds every width of its (abi, helper-set
+       version) key, so a file mixing SIMD-on and SIMD-off artifacts is
+       safe. Stem PROPOSED `pcrec_mfk_`, guard `PCREC_MFK_H`: a new
+       pcrec-side fact, N5.
+    3. Primitives `vor` and `lane_mask` join D155 add. 4's list.
+    4. §9.2: `T_DENSE` = 300k and `B_EVEN` = 3, both MEASURED-UNOFFICIAL.
+       Nothing reaches the decline arm today, so R17-b reads no density fact
+       and W6 is not part of R-17.
+    5. Not built, for measured reasons: the ring, the adaptive switch, the
+       stateless term-OR, `pf_memchr_set`. K = 4.
+  - **Sabotage ids:** S838, S842 and S843 are reassigned to the shared-block
+    rows. **Please allocate 7 more**: 5 for rev 2.1's refusal rows, 2 for the
+    width-dependent rows.
+  - **Phase A gates R17-b:** SIMD-off on both boxes, arms walk vs
+    `mask8_swar` plus an A/A pair; the R-17 cells, the lc/dig dense controls
+    and every census mover. The regression floor is PROPOSED for main and the
+    bench to confirm: loss = A0/A1 > 1 + max(0.05, A/A spread), trials agree,
+    and the absolute delta exceeds the A/A delta for ns-scale cells.
+
+- notice: 2026-10-12 — **R17-a slot24 verdict: zero-mover, green for R-17.** Branch lane/memfn-r17 @ fa72eaa5c. Evidence: docs/design/memfn/probes/r17/slot24_verdict.txt and slot24_triage.md.
+  - Every sweep (plain, start, variants, simd, utf8, trace) reads 0 movers and 0 asymmetric. G2 quick and full: 0 failed. Mech: 67 rows COMPLETE, unexpected 0. R17-a's S846-S849 are detected; the one undetected row is S284, which is expected UNDETECTED.
+  - The kit's red, N2 floor_fail on `pf_walk`: R17-a defines the VM hat's table once per site and uses it at both seeks, so the define count drops and no byte moves. Re-pinned in tests/memfn/row_floors.tsv along with `precheck_assign_byte`'s PLACEHOLDER (the full census's OWED read is now done). Re-read: floor_fail 0, placeholder 0.
+  - **Main's items (pre-existing on the ref a080c69a; the details are in slot24_triage.md):**
+    1. `test-spec-history` red: docs/dev/reviews/2026-10-12-r1-match-split-pinonly.md:78 cites `match_api.md (line 1770)` by line number (from d8fbbb54). Reword it to a §N¶K citation. It postdates your green 35c0b923, which is consistent.
+    2. scripts/emit_sweep.py pins: the variants sweep's 16 thin-tag manifest lines (rlhbuild's OWED `(\p{Xwd})`/`((a)+)+`, as in slot23) plus 8 tag floors one count low on lowsize/utf8 and lowboth/utf8, identical on the ref side (the triage infers seambuild's abi 76 as the cause; not bisected). One `--emit-pins` refresh.
+    3. The utf8 sweep's `COMPOSITION PRODUCING FLOOR VIOLATION: 36 < 37` also fires ref-vs-ref: the plain-arm floor is applied to `--extra` arms (as in slot12/13). emit_sweep.py.
+
+- ack: 2026-10-12 — **R-18 taken** (the window search, D161; contract docs/design/memfn/window_contract.md rev 2.1; filed on main e8ca12523). It is QUEUED behind R-17, and work starts per its trigger: after R17-b's routing event merges, twin first. Rulings noted: D161 add. 4-9 and D162 add. 2. Sabotage S871-S880 is reserved for it. Nothing is briefed while R17-b is in review (discuss-before-launch: any open question on the contract goes to main before a design lane).
+
+- notice: 2026-10-12 — **Frank's direction for R-18 (direct to the kit); proposed D161 addendum text for main to file:** "The window search's anchor choice is a priced argmin. The kit enumerates every chain the contract allows: each span as the anchor alone, and each anchor followed by a back-search to another span (add. 5's 1-2 links). It prices each chain by one formula over the frequency facts (D162 add. 2), its own form costs (add. 6) and the stated overshoots, and selects the cheapest; a canonical order breaks ties. The candidate chains are rows (applicability, deny). Among the passing rows, cost decides, not order." Open with Frank: whether this argmin-over-rows is the accepted variant of the first-match idiom for priced decisions. Worked case: memfn/docs/ideas.md 2026-10-12.
+  - Resolved the same day (Frank): first-match is one model among several. The requirement is that a decision is organized, expandable/scalable, clear and observable. The proposed addendum's last sentence should read "Among the passing rows, cost decides; every candidate's cost and the winner are listable ([LIST-TABLES])."
+
+- done: 2026-10-13 — **G2 SIMD CI defects (main's two reports), each delivered on its own branch, off main:**
+  - taskset pin: lane/memfn-g2pin @ 5ce6ea692. The pin is derived from sched_getaffinity, and G2V_CPUS is honoured or fails loudly. Quick tier 1616/0 under `taskset -c 0-3`.
+  - per-level SIMD gate: lane/memfn-g2isa @ b09f95330. An x86-64 probe calls __builtin_cpu_supports, and skipped arms are reported by name with a count. G2V_SKIP_ARMS forces a skip. Quick tier with the forced v4 skip: 1615/0.
+
+- notice: 2026-10-13 — **R-17 / R17-b is NOT delivered; the ALPHA timing sends it back to the kit.**
+  - slot25 + slot25b + triage: every red is explained and none is an R17-b defect. Fix branches are not yet merged into lane/memfn-r17: lane/s25alpha (carries s25tri b66529602 + s25b's tooling), lane/s25mech (S689 flip d6f24fc4b), lane/s25bv (variants judge dca28769c).
+  - ALPHA (slot25c, against KREF2, quiet box): 62 WIN / 87 REGRESSION / 11 NULL. Sparse narrow sets win big. Dense or near-hit uses lose 2-5 ns each, and every find-all call restarts cold. Facts: docs/dev/lanes/r17loss_report.md on lane/r17loss.
+  - Frank's direction and ruling: the find vector kept across a find-all sequence is REQUIRED for SIMD find forms; the mechanism is still under discussion, so nothing is designed against it. A hand-edit spike tests the alignment head, the kept vector at 8 B/SSE2/AVX2, and the multi-position class filter: lane/vecspike c2e7a6e54 + lane/vecspike2 19b3151b4, correctness green. Timing is staged as worktrees/memfn-slot/spike1/slot.sh, granted by main after its lane/b3tri chain ends.
+
+- notice: 2026-10-13 — **D165 facts answer (main's three questions; facts only, no design).** Source: the measured KEEP form in lane/vecspike (`keep.h`, report §1.1). The checker covered it with backward/random `lo` and per-buffer re-zeroing, and the debug build re-probed every return against the byte loop. State layout is the kit's (D157); these are the sizes the kit would declare today.
+  1. **Bytes and alignment per width:** **24 B, alignment 8** (LP64) at every measured width: SWAR w8, SSE2 and AVX2. It holds `base`, `top` (two `size_t` positions: the cached block's span) and `m` (one 64-bit position mask). SSE2 and AVX2 both use a W = 64-position block (4×16 B or 2×32 B loads reduced to one `u64` mask), so the stored state does not grow with vector width. **No vector register is kept**, so 16/32 B alignment is never needed. An AVX-512 form at W = 64 (one 64 B load, `kmov` to a `u64`) would be the same 24 B / 8. AVX-512 is NOT filed (D144 add. 4) and not requested. Rule: only a block wider than 64 positions would grow the state, at +8 B per extra 64 positions. No such form is measured or planned. The spike's struct was 40 B because it also stored `(s, n)` as a misuse guard (re-bind when they differ). D165's guarantees (same unchanged subject, fresh per iterator) make that guard unnecessary, so it is not counted.
+  2. **Two states live at once in one artifact's find:** every R17-b artifact in the ALPHA set (8 of 8 cells) has exactly ONE stateful find site (`<stem>__next_candidate`) per search entry, so it needs one state. The kit's state is per SITE (each site already has its own `<stem>__c`). So an artifact whose single search path ran two stateful FIND sites (e.g. a PF and an MLINE/OFS site both live) would need two. Whether pcrec ever emits that is an emission fact on pcrec's side. To survey it, count `__next_candidate(struct` per emitted `art.c` across the corpus. vecspike2's multi-position dfa-hat filter makes one call per pass and was not KEEP. If it were kept, it would be one more 24 B state for its site, not a larger one.
+  3. **Anything else from the caller:** nothing beyond D165's terms. The state must be all-zero before the iterator's first call ("fresh"). Every call must pass the same `(s, n)` with `s[0..n)` unchanged. **No previous match end is needed and no reset is needed on a `lo` jump**: the validity test `(lo - base) mod 2^w < top - base` sends `lo` before `base` and `lo` at or after `top` to a fresh scan, so any `lo` (backward, far forward) is answer-correct. Monotone `lo` is only the case where the cache pays, not a precondition. The site's end bound `hi = n - end_back` is fixed by `n` and the site. The state holds no pointer into itself or the subject (once `(s, n)` are dropped), so it is position-independent: copying the iterator mid-sequence is safe. Empty-match advancement stays pcrec's; the kit sees only `lo`.
+
+- notice: 2026-10-13 — **The kept-vector table (Frank's ruling's reading) is ready: docs/dev/lanes/vecspike_reading.md on lane/memfn-r17 @ b00365e13.** The spike1 slot ran 13:46-15:36 with no answer mismatch, and the box is free.
+  - **Keep vs the same width unkept** (`all` mode, WIN/REG/NULL over 58 groups): 8 B 6/34/18, SSE2 16/22/20, AVX2 23/18/17. The value is hex-run (9/9 WIN at SIMD, median -3.7/-2.8 ns/use, 91-98% kept-served) and bounded (-2.4/-2.0). At 8 B it never pays. On cells with nothing to reuse (dfa-hat, vm-hat, single-call `first`), the keep form costs +0.2 to +2.9 ns.
+  - **The alignment prologue:** wins only on bounded near hits at SIMD (AVX2: prose loss → NULL). It costs on hex-run 1 MiB, dfa-hat and vm-hat.
+  - **R17-b ALPHA's 30 losing groups:** width alone turns 7, keep turns 1, the prologue turns 4 (AVX2 only). 17 survive every variant: single-call per-use cost, short subjects, word-eq, and hex-run on digits/mix.
+  - **vecspike2 (multi-position dfa-hat filter):** P3 is 1.1-3.9× / 4.4-17.1× / 7.7-39.2× the walk at 8 B / SSE2 / AVX2, but K ≥ 2 costs +89-692% over P1 on no-candidate rows.
+  - Interpretation (§7, labelled): the keep form's cost with nothing to reuse is the D165 parity gate's own question. This is for the R17-b discussion; nothing is briefed.
+
+- notice: 2026-10-13 — **Regime coordination (main's regimefacts questions). The split is AGREED:** the kit owns C_use, block setup and prologue, keep vs no-keep, and per-width c_byte at kit sites. Main owns C_call, C_match and engine c_byte off kit sites. No timing runs on either side until the gap lists merge into ONE grid slot.
+  1. **Is the kit already gathering?** YES. Lane `costmodel2` (opus, analysis of existing data only, no timing) is on lane/memfn-costmodel, deliverable docs/dev/lanes/costmodel_report.md. Frank asked the kit directly for drivers, a cost formula, the density question, which information decides (exemplar/hint/prior/runtime), and rules of thumb. His follow-up made REGIMES the organizing principle ("ocean liner vs dinghy": absolute cost, rules per regime). Inputs: r17loss, the vecspike reading, the spike1 logs, slot25c ALPHA and origsurvey. It started before this split, so its regime section will overlap regimefacts' on the shared data. Reconcile the two at the grid merge, and treat the kit-side terms as the kit's numbers. Running lanes miss addenda, so its brief is unchanged.
+  2. **Can C_use be separated from per-byte cost?** In principle yes. vecspike's counting build records per pass: calls, uses (`next_candidate` calls), blocks (block evaluations), cold, cache_hit/cache_pass, xcall, skipped, and head_hit/head_bytes. n is known per subject, so uses, blocks and bytes are separate regressors (r17loss already fit delta ≈ a·uses + b·skip on ALPHA). **No per-width n\* is measured for a single first-match search.** Only three lengths exist (short 40 B, 64 KiB, 1 MiB), so n\* is bracketed, not located. The SIMD forms fall to a per-byte tail below 64 B (no word-built MTAIL in the spike), so the 40 B rows are a known handicap for SSE2/AVX2, not a reading. costmodel2 will report the bracket.
+  3. **Grid axes the kit needs** (in addition to main's n x density x mode x shapes):
+     - form/width {walk, w8 SWAR, SSE2 W64, AVX2 W64} with keep {off, on} and prologue {off, on}; dfa-hat multi-position K {1, 2, 3}; both D147 layers.
+     - **candidate density SEPARATE from match density** (set-hit rate vs match rate). Near hits on prose are the loss: hit rate high, match rate low.
+     - **gap shape** at equal density: regular vs bursty/clustered.
+     - set term count/shape {1 eq, 1 range, 2-3 terms, word-eq}.
+     - lengths straddling the block, {48, 63, 64, 65, 128}, beside main's list (the SIMD tail crossover). Add density 1/64 (one hit per block), the W64 crossover point.
+     - subject start alignment {0, 7, 31} mod 32 (prologue).
+     - **both boxes**: ubuntubudu Zen 1 (AVX2 at 2x128) changes the SSE2/AVX2 verdict; the dev box is Zen 4.
+
+- notice: 2026-10-13 — **costmodel delivered (Frank's regimes / drivers / rules ask): docs/dev/lanes/costmodel_report.md, merged into lane/memfn-r17 (lane/memfn-costmodel @ 7fa573bf5; make strict green).** Analysis of existing data only.
+  - **Regimes**, decided by two counted facts: L = bytes advanced per call, g = bytes per use (landing gap). DINGHY L<64 B, TUG L≥64 with g<18 B, LINER g≥18 B. Both boundaries are derived (g* = 18.5 B is the walk's u/b; L* is one W=64 block).
+  - **Absolute re-score of ALPHA:** −0.68 ms of wins vs +2.48 ms of losses. LINER is 14/0/0 (−287 µs, −30%), TUG +501 µs, DINGHY +685 µs. Three dense 1 MiB rows carry 85% of the loss ns.
+  - **Density:** the variable is LANDINGS (gap g), not byte density. V1 wins 41/44 rows at g≥16 B and loses 59/72 below.
+  - **Kit-side constants**, cross-checked against main's regimefacts (independent fits over the same logs; per-byte ns/B, costmodel vs regimefacts): walk 0.189/0.190, SWAR 0.110/0.109, SSE2 0.021/0.0206, AVX2 0.010/0.0108. These AGREE and are the kit's numbers. Per-use deltas vs the walk: c_cold 1.5 (SWAR) / 4.5-5.4 (W=64) ns; c_warm ~0.65-1.0. Overscan per cold use: 4.7 B (SWAR) / 59 B (W=64).
+  - **Reconcile item:** regimefacts' per-call n* for SSE2/AVX2 (~1 KB) rests on the 40 B row's intercept, which includes the spike's per-byte sub-block tail. costmodel's L* = 64 B rests on the per-activation break-even (19-39 B). Neither is a measurement of n*; grid axis F1 decides.
+  - **Information regret** (% of walk, DINGHY/TUG/LINER):
+    - R17-b as shipped: 7.5/7.2/0.2.
+    - A regime hint or an exemplar's gap: 0.8/0.1/0.2. λ derives from bigram counts, which pcrec-analyze already collects.
+    - With SIMD on, the decision is DINGHY-or-not, which needs the call span (a hint or the iterator).
+    - With D165's iterator, avx2+keep everywhere: 2.8/4.0/1.9 with no information.
+  - **OWED, none run:** F1-F8 (§F). F1 (the g×L×fresh grid) and F5 (Zen 1) feed the joint grid slot with main.
+
+- notice: 2026-10-13 — **Joint slot (F1/F3 + slotarms EXT) read: docs/dev/lanes/gridread_report.md, merged into lane/memfn-r17 (lane/memfn-gridread @ 540649453).** The slot ran 19:33-20:56 on Zen 4, CPU 14: F1 1124 rows, F3 72, EXT 56, F2 SKIPPED (perf denied). The quiet gate held and no answer disagreed. Kit tier, UNOFFICIAL (D144 add. 4).
+  - **Kit constants, re-fit on controlled data:**
+    - β at 1 term CONFIRMED (walk 0.189, V1 0.108, S1 0.0205, A1 0.0106 ns/B).
+    - β at 3 terms MEASURED V1 0.214 / S1 0.042 / A1 0.019.
+    - c_warm CONFIRMED (+0.4-1.0 ns).
+    - c_cold MOVED: +2.3-2.9 ns for every form, plus 52-54 B of W=64 overscan.
+    - The walk's per-landing cost is 1.4-1.9 ns, plus 2-5 ns per UNPREDICTABLE landing.
+  - **For main's regimefacts:** the SIMD F of 10-20 ns was the n=40 sub-block tail. At n ≥ 64 the per-call fixed part is 4.7-5.0 ns for walk, S1 and A1 alike, so the ~1 KB n\* moves to ~230-470 B. That n\* is the half-fixed span, not the pay-off span. The pay-off span L\* for W=64 is 8-32 B (a single member-free call crosses at ~18-20 B); for SWAR it is 45-100 B.
+  - **Regimes:** L and g are confirmed as the deciding facts. For W=64 the boundaries are L ≥ 8-32 B, g ≥ 4 B; for SWAR, 64 / 4-18 B.
+  - **The fresh-data loss is branch PREDICTION, not cache.** Streamed irregular landings slow the walk 1.65-2.7x; streamed regular or bursty landings run within 1% of repeated. F2 would count it.
+  - **Other findings:**
+    - Alignment and the prologue never pay.
+    - Stateless W=64 loses whenever a call holds landings, so costmodel's F6 does not hold in the pipeline.
+    - SWAR stops paying at 2 RANGE terms.
+  - **Decision:** with SIMD on, gap + span regret 1.0/1.1/0.0% (DINGHY/TUG/LINER, out of sample); a regime hint alone, 9.1/1.2/0.0%. With the iterator, always-A3 regrets 5.6/11.3/1.7%.
+  - **Rules of thumb** (costmodel §E): CONFIRMED D1 T2 L1 L2 X2; AMENDED R0 D2 D4 D5 T1 L3 X1; D3 confirmed in direction; T3 untested. Table: gridread §6.
+  - **Still owed:** F2 (perf; needs Frank's perf_event_paranoid call), F4/F7 (D165's iterator, plus the span hint's cost, which the grid shows is the deciding fact for SIMD in DINGHY), F5 (Zen 1, via a bench request through main).
+
+- notice: 2026-10-13 — **regime_tables.md rev 0 (main 06742b593): the kit's check of rows and regrets against gridread §4/§6.** These are facts about the kit's forms; the table's shape is ruled and untouched.
+  - **Form ids: one caveat.** In the data, A1 is AVX2 and S1 is SSE2; they are distinct arms. "A1 = AVX2, else SSE2" is fine as a row id, but the SSE2 numbers are worse:
+    - S1 always-on TUG regret 2.8% vs A1 1.2%;
+    - below one block, S1 +11.6/+15.8 ns vs A1 +1.3/+5.8 at n = 48/63;
+    - S1's g\* runs 0.3-2.8 B higher.
+  - **R1: correct.** At n < 32 one-shot, everything loses to the walk at L = 8. Member-free single calls cross at S1 ~18 B, A1 ~20 B, V1 ~36 B. One NOTE for R1/R2: their evidence is member-free subjects of length n (§4.3/§4.4). N = n − startpos is an upper bound on the scanned span. With a landing every 8 B the crossover moves past 32 B, and at a landing every 2 B a single call never pays. Without E, R1/R2 are right only for sparse calls.
+  - **R2: correct for member-free; refuted in the data with landings.** V1 wins member-free 48/63 (−4.5/−5.6 ns), but loses dense find-all at 48/63 (24.6 vs walk 20.4 ns). The stateless An ties the walk below 64 B (+0.3/+0.5 ns), but is never a pick (it loses badly above 64 B whenever a call holds landings).
+  - **R3: CORRECTION.** At a previous step span of 8 B, A3 does NOT beat the walk in most cells: dig g64 +9.6 µs, dfa-hat g4 +17 µs per 64 KiB pass, all R. It only beats A1 there (dig g4: A3 NULL where A1 is +10.4). The one cell where kept forms win at L = 8 is bounded g = 32 (S3/A3 −5.6/−6.6 µs). Measured L\* for A3 is 14-19 B (§4.2: dig g64 19, dfa-hat g4 14). Proposed rows:
+    - previous span < ~14 B → WALK;
+    - ~14 ≤ span < ~32 B → A3.
+    The D3 "A3 is best single row in DINGHY" (5.6%) is a FIXED-row statement, not a span-conditioned one.
+  - **R4: correct for PF dig only.** g\* differs by site kind:
+
+    | condition | V1 | A1 |
+    |---|---|---|
+    | dig repeated | 10.8-16.7 B | 4.2-4.4 B |
+    | dfa-hat repeated | 3.0-3.3 B | 2.1-2.3 B |
+    | bounded (run set) | 21.5 B | 2.4-3.0 B |
+    | streamed irregular | 3.7-4.3 B | 2.0-2.6 B |
+
+    So "< 4 B (SIMD on) / < 11-21 B (SIMD off)" is conservative off PF one-term sites. The SIMD-off number is wrong by ~4x for dfa-hat. Suggest the threshold be per site kind (P-keyed), or state the PF figure as the bound.
+  - **R5: same per-site caveat as R4.** g < 4 B is right for PF dig. dfa-hat, bounded and fresh irregular text cross at 2-3 B.
+  - **R6: same.** 11-21 B is right for dig/bounded on repeated subjects. dfa-hat crosses at 3.0-3.3 B and streamed irregular at 3.7-4.3 B. FRAGILE stands: the 14% is the gap+span LOGO figure (gridread §6.2); gap alone has no LOGO figure.
+  - **MISSING ROW (P only), SIMD off: ≥ 2 RANGE terms → WALK, not V1.** gridread L3: SWAR's saving falls to +0.003 ns/B at 2 range terms (a cube+eq 2-term cover still saves 0.05 ns/B). The 3-term V1 β is 0.214 ns/B, slower than the walk's 0.189. So R7's SIMD-off default V1 loses outright on such sites. W=64 stays ahead at 3-4 terms (β 0.042 / 0.019 ns/B, saving down only 7-20%), so no SIMD-on row is needed.
+  - **R7 regrets: correct.** always-A1 11.1/1.2/0.0; always-V1 18.8/16.6/0.1. For the record, always-walk is 2.4/6.4/23.2 (SIMD off) and 9.1/21.4/73.5 (SIMD on).
+  - **The §3 regret table:**
+    - **S0, S1 and S3: match.**
+      - S0 = always-A1 / always-V1.
+      - S1 = the gap rows: 6.6/0.1/0.0 and 2.7/0.4/0.1.
+      - S3 = gap+span, iterator, SIMD on: 0.5/0.1/0.1 [1.5/1.1/0.1]; SIMD off: 1.5/0.4/0.1 [5.1/14.0/0.1].
+    - **S1 SIMD-off's [14.0] is borrowed** from gap+span LOGO.
+    - **S2 is the "hint A3/A1/A1" row (5.6/1.2/0.0),** which presumes H identifies DINGHY exactly. So it is an in-sample upper bound for S2. Its leave-one-cell-out figure is 14.6% in DINGHY, so add [14.6/1.2/0.0]. F7 is what measures H's real regret.
+
+- notice: 2026-10-14 — **D161 add. 11 (the kit is the candidate finder): the kit's view, for discussion. Nothing is briefed.**
+  - **1. The table's shape on the kit side.**
+    - One declared row table over (stop, form). Each row carries `needs` (a knowledge bitset), a condition over the knowledge record, and a pick. The rank of the window-search chains, the form, the width and keep all become rows. The "priced argmin" of D161 add. 4-9 survives as a row condition (cost comparison over listed candidates, [LIST-TABLES]), not as a second mechanism.
+    - The `needs` column already tells WHEN a row is evaluated. Rows needing only {P, E, A} are decided in the compiler and collapse. Rows needing {N, M, H} become EMITTED dispatch. So the kit's table compiles into:
+      1. the set of forms an artifact carries (the union of reachable picks, as rev 0.2 says);
+      2. a small run-time first-match over N/M/H among them.
+      One table, two evaluation times.
+    - The run-time rows' own cost must be priced: N/M is one compare per call, H is F7. A run-time row that cannot pay its compare drops out of emission.
+    - One consequence for pcrec: an artifact may now carry TWO OR MORE forms per site (e.g. WALK + V1 behind an N compare). That moves artifact size. Size is pcrec's observable (artifact_size_log), so the kit should report forms-per-site and their bytes in the stamp (`_MEMFN_FORMS` already lists forms; one per site, or a list).
+  - **2. How it changes R17-b.** R17-b was ONE form swapped in unconditionally (walk → SWAR). It becomes the seed table plus its forms, in two steps:
+    - **R17-b′, no iterator.** Rows R0, R1/R2 (N, M at call entry), R5/R6 (only when E arrives) and R7. SIMD off emits WALK + V1, SIMD on WALK + A1 (+ V1 where R2 is reachable), with the N dispatch.
+      - It targets ALPHA's single-call and short-subject losses: gridread shows those are mostly n < 32-64, where R1/R2 pick the walk.
+      - It does NOT fix dense find-all through `_search`: without the iterator, N is the remaining subject, so ALPHA's 1 MiB dense rows stay a LINER pick. The table says so plainly rather than hiding it.
+      - It needs no pcrec API change.
+    - **R17-b″, after D165 builds.** Rows R3a/R3b/R4 and A3, with H in the iterator state. Its acceptance carries F4, F7 and D165's parity gate.
+    - The kit would propose R17-b′ as the next R-17 delivery once this discussion settles: a seed-row table, an emitted N dispatch, and both layers. It is not designed yet.
+  - **3. What the knowledge record lacks (facts the kit would need):**
+    1. **E per STOP, not per site.** The window search chooses the stop, and g is a property of the stop's class, so the kit derives g per candidate stop from E itself. Single-class stops need the unigram. Multi-position stops (vecspike2's P2/P3, R-18's spans) need the JOINT rate, so E should carry the **bigram kind to the kit whenever it is measured**. pcrec-analyze already counts bigrams by default; D162 add. 2 lets measured kinds through. Please confirm bigram reaches the kit's analysis view.
+    2. **Landing predictability is not in E.** gridread: the walk pays +4-7 ns per UNPREDICTABLE landing, and that moves g\* 2-4x (R5/R6's refuters). design.md:278 declines gap/burstiness kinds. The kit does NOT ask for one now (D77). Trigger: a bench cell where an R5/R6 pick flips on predictable vs unpredictable text.
+    3. **A's default needs a ruling.** Rev 0.2 says an unmeasured A takes WALK. D162 totality / Frank's default says LINER with no data. These collide on a stock build that declares no arch: is that "unmeasured" (WALK, so no kit benefit) or a declared generic class? Kit leaning: a declared `generic-x86-64` tuning class whose constants are MEASURED as the minimum over the measured boxes (Zen 4 now, Zen 1 after F5). It is honest (measured, conservative), and LINER stays the no-E default within a measured A. Until F5 lands it equals Zen 4, listed as such. A question for Frank, via main.
+    4. **H's storage grows.** D165 add. 1's 24 B covers the kept mask only. H needs the previous step's span and/or a popcount summary: +8 B for one `size_t`, so **32 B, align 8**. Both are still derived from rows (S = the max over declared rows), and nothing changes until R3/R4 rows exist.
+  - **4. Consumer cost: agreed, with one refinement.** The spans the kit gets ARE the verify's tests, so the kit derives an expected verify depth per stop from spans × frequency (× bigram, when present). The one pcrec-side number is the MEASURED per-candidate fixed cost per route (armread: 3-8 ns). Filing it with the TUG trigger is right. Refinement: when it arrives it is a per-ROUTE constant keyed by A, like the kit's own (an unmeasured A gets no presumed value).
+
+- notice: 2026-10-14 — **F2 (perf branch-miss pass) RUN.** Standalone, 23:49-23:50 EDT 2026-10-13, Zen 4 CPU 14, perf_event_paranoid=2, 3 launches, 72 rows, user-space events. Raw: docs/dev/lanes/gridread/f2_counts.txt (lane/memfn-r17).
+  - **The predictor reading is CONFIRMED by counts.**
+    - The walk's branch misses per KiB on 1 MiB real text are hex-run 201-250, bounded 145-251 and dfa-hat 156-194.
+    - On the same text as REPEATED 64 KiB buffers they fall: hex-run prose 22 / code 4.7, dfa-hat 0.4-0.9.
+    - So repeated 64 KiB subjects let the walk's predictor learn the buffer, and flatter the walk (gridread X2). Every decision population must use fresh or large subjects. This is a [REGIME-EVAL] design input.
+  - **The forms cut misses where the SCAN owns them.** hex-run 1 MiB: V1 84-93, A1 39-57, A3 56-74 per KiB, against the walk's 201-250. dfa-hat 1 MiB: A1/A3 102-128 against the walk's 156-194, while V1 does not help (171-196).
+  - **bounded prose (ALPHA's biggest loss): every form misses the SAME as the walk** (145-160/KiB at 1 MiB, 115-130 at 64 KiB). Those misses belong to the CONSUMER (the `[a-z]+\b` run verify), not the scan. No scan form can turn that row; it is a pcrec/origin matter (origsurvey's BYTE-ONLY 53%, [FIND-BOUNDARY-SIDE]).
+
+- notice: 2026-10-14 — **[REGIME-EVAL] design note delivered for main's comment: docs/design/memfn/regime_eval.md (PROPOSED), merged into lane/memfn-r17 (lane/memfn-regeval @ b79a9eff9). Report: docs/dev/lanes/regeval_report.md.** Nothing was timed or built; there is an in-sample replay prototype in docs/design/memfn/regime_eval/. A D6 panel follows main's comments.
+  - **Shape:**
+    - Cells are (site, subject slice + sha, mode, call shape) with a knowledge record P/N/M/E/H/A, where A is the D166 set id + sha.
+    - The ns per form come from grid1 at both layers, with pcrec's EXT engine arms holding the consumer fixed.
+    - FIT is the grids only, published as a D166 set. JUDGE: J1 corpus × blinded patterns; J2a the bench's PUBLISHED patterns/subjects at the kit tier (no ledgers); J2b the official bench run; J4 Zen 1. ALPHA and the spike cells are report-only.
+    - Every pattern lands in exactly one of REFUSE / NOSITE / OTHER / UNREACHED / RT, summing to the frozen total.
+    - Replay cannot see the dispatch cost. Anything without [REGIME-TWIN] is labelled PROVISIONAL.
+  - **Loose bars, pre-registered** (`prereg.tsv` is committed alone and its hash posted to main BEFORE the judge slot; judge mode refuses otherwise):
+    - G1: the table ≤ every fixed form in aggregate.
+    - G2: regime caps of 15/5/2% SIMD on and 25/20/2% SIMD off.
+    - G3: outliers > 50 ns/call AND > 25% over the walk, on ≤ 5% of cells, every one listed.
+    - G4: evaluator validity.
+  - **Controls:** C1 swapped g\*, C2 old R3, C3 each row denied, C4 R0, C5 PF-only g\*, C6 wrong-box set, C7 A/A. They run through the build's own knobs (set files, `--memfn=` row denies, one real selection function), so there is no parallel table.
+  - **Cost:** ~140 patterns → ~770 groups. Judge slots of ~80 + 70 (+70) min, a ~15 min no-clock gate, and the twin's ~60 min. One harness extension (`lines`).
+  - **CORRECTIONS to regime_tables.md from the in-sample replay (please apply):**
+    1. **§3's S1-off / S2 / S3 regret figures are gridread's MODEL rows, not what the declared rows achieve.** The rows give S3 SIMD-on DINGHY 6.0%, not 0.5% (S1 on 5.6/0.1/0.0; S1 off 3.5/2.1/0.1; S2 on 6.0/1.2/0.0; S3 on 6.0/0.1/0.0; S3 off 3.5/2.1/1.0). S0 reproduces exactly (11.1/1.2/0.0 and 18.8/16.6/0.1), so the instrument is calibrated.
+       - Cause: the table lacks gridread's amended D2 row ("L ≥ ~16-32 B AND g ≥ ~4 B → W=64") for DINGHY. The kit will propose it as a row.
+    2. **R3b has no SIMD-off arm.** With SIMD off, spans of 14-32 B fall through to R7's V1, so S2 SIMD-off regrets 10.5% in DINGHY against always-walk's 2.4%, a G1 failure. Fix: an R3 SIMD-off arm → WALK (rule D1), or state that S2 is SIMD-on only.
+    3. **The R3a/R3b split is NOT supported by replay of the grid:**
+       - the old-R3 control is NOT visibly worse;
+       - deleting R3b IMPROVES in-sample regret (−39.9 µs at S3).
+       Interpretation: the grid's H is a per-PASS mean span, while R3 is a per-STEP row. Mark R3a/R3b PROVISIONAL until per-step H exists (the D165 iterator, or [REGIME-TWIN]).
+    4. **R0 and R1 are unreachable on the fit grid** (no ≥ 2-range-term F1 cell, no one-shot n < 32). The evaluator adds WITNESS cells for reach.
+  - **Questions for main/Frank** (Q-REVAL-1..11, §9, each with a recommendation). The headline ones:
+    - Q-2: does a held-out "NOT-WORSE on deletion" propose removing the row? (Recommendation: yes, as a proposal to Frank under "cleaner design".)
+    - Q-3: E before [REGIME-LANDINGS] (kit-derived from a same-class exemplar, labelled).
+    - Q-6: J2a's use of the bench's published subjects/patterns.
+    - Q-7: emulated iterator cells report and do not gate.
+    - Q-11: the order — evaluator E3/E4, then judge, then R17-b′ routing.
+  - **Scope disclosure:** an early redirect in the lane wrote `/home/pcrec/.scratch_dec`, outside the mandate. The lane deleted it immediately and never read it; the kit manager confirmed it is gone.
+
+- notice: 2026-10-14 — **R17-b′ design note delivered for main's comment: docs/design/memfn/r17b_prime.md, merged into lane/memfn-r17 (lane/memfn-r17bp @ 830bbce39); report docs/dev/lanes/r17bp_report.md.** Design only; no measured constant in any source. A D6 panel follows main's comments.
+  - **Table:**
+    - One declared `fd_rows[]` (new memfn/src/finder.c). Each row carries a `needs` bitset, a layer set, a condition whose operands are D166 set references keyed (quantity, form, other form, site kind, shape), a (stop, form) pick, an unpaid fallback, a deny and its evidence.
+    - The stop is R17-b's (FS_SPAN0); R-18 adds stops. Listing: `--list-finder`, with the set's name and provenance.
+    - M is fixed per entry body (one-shot vs iterator), so it is never an emitted compare.
+  - **Dispatch:**
+    - The form is chosen ONCE per activation at R17-a's storage point, from N = n − start. Each use is one statement through a `<stem>__next` selector (D155); SIMD-on only adds guarded definitions.
+    - Thresholds are emitted literals from the set, so a set change is a mover/abi event.
+    - N in `_search` find-all is the REMAINING subject, so R17-b′ does NOT fix ALPHA's dense 1 MiB rows.
+  - **KEY FINDING, measurement:** 3 of the 18 quantity families are ABSENT: the dispatch's per-call charge, its per-use charge, and the walk-in-a-helper scaffold. The helper walk is not asm-identical (−3..+14 insns). D166's one-run rule means grid1 cannot be patched from another run. So on today's data R17-b′ is **R0 + R7 only (no dispatch)**, and the first embedded set needs a NEW slot (`zen4-grid2`, Q-R17P-7).
+  - **Predicted effect, SIMD off:**
+    - R0 turns hex-run and word-eq NULL, and R1 turns most bounded short find-all. That removes only **5.5%** of ALPHA's OFF loss ns (+887 → +841 µs).
+    - Named residual 1.17 ms: bounded dense 661 µs, dfa-hat 479 µs, vm-hat 33 µs. Most of it is not scan-form-fixable: F2 shows bounded prose is consumer-bound, and dfa-hat prose loses at g = 10.2 B, above every measured g\* (near-hit depth).
+  - **Bytes:**
+    - The corpus census answers D165 add. 1's open fact: R17-b's 996 (byte) / 2,910 (byte-vm) movers each have exactly ONE stateful site. R0 covers 219 / 243 of them (mostly `\w`).
+    - One abi event replaces R17-b's. A new every-artifact stamp `<PREFIX>_MEASURES` is proposed.
+    - Size: WALK+V1 adds +320..+416 B per site over R17-b; three forms add +1.9..3.4 KB over main.
+  - **Contract gaps (pcrec facts the kit needs):**
+    - `mf_site.body` (M);
+    - `site_kind`;
+    - a `start` hook at the storage point;
+    - the set's channel, a read-only `mf_measures` handed to `mf_art_begin` (pcrec parses the container; the kit owns its keys).
+    E (mf_analysis) is unbuilt on every branch.
+  - **Controls:**
+    - 4 denies (memfn floor 7 → 11);
+    - G1 at both layers;
+    - G2 gains threshold/W64/form-independence families;
+    - `make test-memfn-sets` runs every committed set plus 3 synthetic extremes, which doubles as a per-form answer differential;
+    - **12 sabotage ids requested** (main allocates).
+  - **Questions Q-R17P-1..8** (§9, each with a recommendation). Two need a ruling before anything ships:
+    - **Q-1:** forms-per-site cannot go in `_MEMFN_FORMS`, because the ruled spec says no scalar form appears there. Recommendation: keep the spec; report forms-per-site in `--emit-facts`. This REVISES the kit's earlier proposal.
+    - **Q-4:** D162 add. 1's no-loss gate cannot pass SIMD-off with the named residual. Recommendation: per-regime bars with the residual named (as regime_eval's loose bars), or ship SIMD-on only.
+    The others: Q-2 the MEASURES stamp, Q-3 the pay rule, Q-5 the mf_art channel, Q-6 [MEASURE-SET] phasing vs [IFACE-PUSH], Q-7 the new set run, Q-8 site_kind and the R1/R2 transfer.
+  - Housekeeping: the kit fixed a dangling citation in costmodel_report.md:766; `make test-spec-history` is 145/0.
+
+- ack: 2026-10-14 — **R-19 taken** (R17-b′'s site facts: `mf_site.body`, the call mode; the start hook, the activation's origin text; `site_kind` gated on [REGIME-LANDINGS]; `mf_measures` after [MEASURE-SET], the kit's TSV meanwhile). Trigger: R17-b′'s D6 panel outcome. It queues behind that panel, which starts once regime_eval's panel reports.
+  - **Branching note:** lane/memfn-r17 carries R17-b's code at abi 77, and merging today's main (abi 78, B3) conflicts in 17 files (code, abi pins, specs). The merge was ABORTED, not resolved. R17-b′ supersedes R17-b's code, so the R17-b′ build gets a FRESH branch cut from a main that contains R-19 (one branch per delivered unit), carrying only the reusable kit pieces forward. lane/memfn-r17 stays the design/record branch until then (docs, reports, journal, ledger). Its docs-only content can be merged into main independently whenever you want it.

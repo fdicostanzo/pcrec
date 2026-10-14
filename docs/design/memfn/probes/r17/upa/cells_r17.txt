@@ -1,0 +1,12 @@
+# R-17's named cells (setfind_bench_request.md §2 item 1): bench cell, kit cell
+utf8/alt-distinct-lead adl
+utf8/ci-sigma sig
+utf8/ci-kelvin kel
+utf8/ci-turkish-i tki
+syntax/alt-nested alt2
+syntax/alt-two alt2r
+capability/high-byte-run hbr
+capability/utf8-lead-no-cont u8l
+capability/quoted-delim-match qdm
+syntax/bak-k-named bkn
+capability/balanced-parens-rec bpr

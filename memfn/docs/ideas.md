@@ -565,3 +565,171 @@ instead of re-testing the byte every time it visits it.
   `abcd[0-9]{4}` written as a counted repeat unless the reading is fixed.
 - pcrec row: [REPEAT-RUN] (filed for Frank's later review). Span thread
   stays UNSCHEDULED under [SPAN-ISEL].
+## 2026-10-12 — R-18 anchor choice: a rarer far span against its overshoot (Frank)
+
+- Frank's case: three spans with overshoot 0, 20 and 100. The third span has
+  the rarer bytes, but anchoring on it costs more. How do we weigh that, given
+  the cost may depend on how expensive span 1's scan is?
+- Overshoot is the SLACK, `omax - omin` (window_contract.md §2), not the
+  distance. So a span-3 hit at p places the origin anywhere in a 100-byte
+  range, and finding it means a back-search for span 1 over about 100 bytes.
+- Per subject byte, roughly:
+  - direct on span 1: `c1(f1) + f1*V`;
+  - span 3, then back to span 1: `c3(f3) + f3*(W3*b1 + V')`, with W3 about
+    the overshoot (100).
+  Here `c(f)` is a scan form's cost at hit frequency f (it rises with f), `b1`
+  is span 1's per-byte cost over a short back window, and V/V' are the rest
+  of the verify (V' skips span 3, a proven fact, D161 add. 8).
+- Span 1's cost appears on BOTH sides: as the forward scan c1, and as b1
+  inside every back window. A costly span 1 (a wide set) therefore favours the
+  far anchor, since its cost is then paid only f3 of the time. A cheap span 1
+  (memchr of a rare byte) favours direct. Span 2 (window 20) is the middle
+  choice when f2 is close to f3.
+- The ascending, no-repeat stream (D161 add. 7) adds little in find-all: no
+  byte is scanned twice. It does mean bookkeeping, overlapping back windows to
+  merge, and up to W bytes scanned past the first answer when the caller stops
+  early. That is the only regime-sensitive term, bounded per call, and it
+  matters only for subjects near W in length.
+- All the inputs are known at compile time: frequencies always arrive (D162
+  add. 2), the kit has its own form costs (D161 add. 6), and the overshoots
+  are stated. So this is the kit's priced choice over 1-2 link chains, as rows
+  of one table, not a special rule.
+- Twin cell for R-18 (twin first): spans at overshoot 0/20/100; f3 swept;
+  span 1 as memchr vs a set FIND; the crossover read on both layers.
+
+## 2026-10-12 — the mixed span test without a subtract: XOR, AND, saturating compare to 0 (Frank)
+
+Follow-up to the 2026-10-11 mixed-span entry, from Frank's discussion of
+`(?i)abc\d\d\dxyz`. He proposed folding the letters with a mask and checking
+the `\d` lanes with no extra subtraction.
+- Masking a digit lane to its low nibble alone (`x & 0x0F <= 9`) is NOT
+  exact. It also accepts every byte whose low nibble is 0-9 (`@`, `A`..`I`,
+  `P`..`Y`, `` ` ``, `a`..`i`, `p`..`y`, controls). The high nibble must be
+  pinned too.
+- Frank's refinement pins it: the letters already compare against a constant,
+  so that compare also requires the digit lane's upper nibble to equal 0x3.
+  Per lane, with constant vectors C, M, W:
+  `t = (x ^ C) & M;  ok = (t <=u W)`.
+  - Letter lane: C = the letter, M = 0xDF, W = 0. `a ^ A` is 0x20, so it is
+    exact.
+  - Digit lane: C = 0x30, M = 0xFF, W = 9. XOR leaves 0-9 only for
+    0x30-0x39; every other byte keeps a nonzero high nibble.
+  - Exact byte: C = b, M = 0xFF, W = 0. Don't-care lane: W = 0xFF.
+- SSE2/AVX2 (no unsigned byte compare):
+  `u = subs_epu8(t, W); ok = cmpeq(u, 0)`, then movemask against the span
+  mask. The saturating subtract by W is the "mask out the digit's low
+  nibble" step; what remains is a compare to the constant 0. That is 4 ops
+  plus movemask, with no subtract by '0'.
+- AVX-512BW: `vpcmpub` LE against W straight into a k-mask (3 ops). The
+  no-subtract alternative is the chained range `k1 = x >= LO; k2{k1} = x <= HI`,
+  which costs the same at one position. Its real gain is unions of ranges
+  (`kor`).
+- XOR replaces SUB only when the range starts on a boundary with zero low
+  bits across its width (`0`..`9` at 0x30 qualifies). `[a-z]` (0x61) does
+  not, and keeps `t = (x & M) - LO`. Both forms then share the `<=u W` step.
+- Where it pays: SIMD is a wash (XOR and SUB cost the same). In SWAR, XOR
+  never carries across lanes, so only the final `<=u W` needs lane
+  isolation (the high-bit trick), not the subtract as well.
+- Status: a design note under the mixed-span entry, not a build. AVX-512 is
+  not filed (the bench box is Zen 1). The span form still waits for a
+  measured cell where verifying a fixed-width token is the cost.
+
+## 2026-10-13 — R17-b's losses: align the serial head, keep the find vector across calls (Frank)
+
+From the ALPHA reading (slot25c; facts in docs/dev/lanes/r17loss_report.md).
+The stateful set FIND loses 2-4 ns per use on near hits, and every find-all
+call restarts cold.
+- Serial head by alignment: test positions one at a time only until the load
+  pointer reaches the vector boundary, then take aligned loads. Alignment
+  decides the head's length, so there is no tuning constant.
+- Keep the find vector between searches. It saves rebuilding the mask, and it
+  also lets the next search skip every candidate test already known to miss.
+  Frank wants this tested by a hand-edit spike before any design.
+- Test the same at the wider SIMD widths (16/32 B), where both effects are
+  larger.
+- `[a-z]+\b` should scan for `\W` (the boundary's other side), not `[a-z]`.
+  Frank: "not your issue". It is pcrec's choice of what to scan for, passed
+  to main.
+- Caveat from Frank: the ALPHA subjects are contrived, so real-world reach is
+  unknown. The spike adds real-text subjects.
+- Spike: lane vecspike (variants V0-V4 plus SSE2/AVX2), timing in a quiet slot.
+
+## 2026-10-13 — one class-vector producer for the multi-position FIND and the VM (Frank)
+
+- The multi-position FIND without unaligned loads takes one aligned load per
+  block, runs every position's class test on that vector, and lines the
+  positions up by shifting the hit bitmasks: candidate i =
+  m0[i] & m1[i+1] & m2[i+2], carrying bits in from the next block (shift-or).
+  vecspike2's P variants use shifted loads instead; compare the two if P wins.
+- Frank: this is the same object as the VM class-truth-vector idea
+  (2026-10-11, [VM-CLSMASK]). Under backtracking, a class test becomes a bit
+  test at the position, and once a window is computed the NFA never loads the
+  subject bytes again. This does not extend to the DFA, which is a separate
+  question.
+- Leaning: ONE producer. pcrec states the class set (the atoms, already
+  de-duplicated by [OPT-CLSPACK]); the kit owns how vectors are made (term
+  compares, shufti, VBMI). Vectors are lazy per block and cached by block
+  index, in the same state the kept vector would carry. It pays under
+  re-testing; a linear single-test VM loses. Build the FIND's shift-or form
+  as this producer, not as a FIND-only helper.
+- Follow-up (Frank, same day): careful construction saves work. If pcrec asks
+  for every class at once ([agz] and [a] together, not separately), [a]'s
+  vector is built once and reused inside [agz]. Complements are free (NOT),
+  and a union of classes is ORs of vectors already built. The kit's problem
+  becomes a multi-output cover: minimize the distinct terms across the
+  batch, which can choose a different cover for a set than it would choose
+  alone. The building blocks are atoms (pcrec already has them for
+  [OPT-CLSPACK]) or shared cover terms; the kit picks. Contract consequence:
+  the request unit is the batch (the window's or the artifact's whole class
+  set, the FIND span's positions and the VM's classes together), stated as
+  facts.
+- Follow-up (Frank, same day): give each class in the batch its LIVE RANGE,
+  the [min, max] offsets from the attempt start where the pattern can test
+  it. Example: a{2,3}[bz]{4,8}[bc]{2,4}c needs [a] near the start and c only
+  near the end, so [a] and c can share one vector register. This does not
+  save time but avoids spills when registers run short. The kit treats it as
+  interval coloring. pcrec can derive the ranges by the k-set walk extended
+  to per-class intervals ([x, inf) after an unbounded repeat). Facts only:
+  pcrec states the ranges, the kit decides sharing. The ranges are relative
+  to one attempt; with several candidates in flight the live set is their
+  union. A side benefit: no vector needs building for blocks outside every
+  live range.
+
+## 2026-10-13 — Frank: BATCH MATCHES (find every match in a stretch, as a set, in one call)
+
+- Frank: "an option to switch to batch matches. For this stretch of subject,
+  find all the matches as a set. Then it's all internal." The block mask,
+  the kept vector, the re-seed hint and the retry bit all live in locals for
+  the whole stretch. No state crosses an exported call, and the per-call fixed
+  cost is paid once per stretch rather than once per match.
+- History: D41 ruling 5(c) (2026-08-14) REJECTED batch find-all as a
+  primitive: the match count is data-dependent; negotiating capacity
+  "reinvents the cursor with worse ergonomics"; (a) emitted loops plus (b) a
+  cursor leave it no customer. What changed since: (b) now exists as D165's
+  `rx_iter`. A BOUNDED batch ("fill up to K match records from the
+  iterator's position, return the count, the iterator holds the resume")
+  is the cursor with a batch size, so capacity is the caller's K, not a
+  negotiation. D41's objection does not reach that form. The open cost is the
+  captures: K x groups x 2 offsets of caller memory (cf. [CAPTURE-ARRAY],
+  filed 2026-10-13).
+- Why it matters for the kit (manager reading, pending costmodel2's regimes):
+  the losses that survive every spike variant are mostly PER-CALL and
+  PER-USE fixed costs on dense, short or tiny-match rows (the "dinghy"
+  regime). Batch amortizes exactly those costs. It also removes the D165
+  parity risk for dense tiny matches. Keep form's +0.2-2.9 ns
+  with-nothing-to-reuse becomes zero, because nothing is stored or reloaded.
+- Companion (manager): inside a batch, the SIMD block mask's popcount IS a
+  measured hit density per 64 B, for free. The runtime-adaptive switch that
+  setfind.md §9.1 did not build (it paid to OBSERVE density, at 0.63
+  mispredicts per call) gets its observation for nothing. A batch could
+  choose walk vs block per stretch from the data it already holds, with no
+  prior, exemplar or hint for within-regime choices.
+- Companion (manager): a batch is also the natural home for the two-pass
+  form. Pass 1 builds the stretch's candidate bitmap (the one class-vector
+  producer, multi-position shift-or). Pass 2 verifies set bits in order.
+  Scanning and verifying no longer interleave per candidate. This is
+  [SPAN-ISEL]/bitstream territory (filed, unscheduled). Note only.
+- pcrec side: an API surface ([FINDALL-NEXT] / D165 / [IFACE-PUSH]) that
+  main owns. The kit's interest is a fact: a batch entry lets the kit's
+  find state be function-local. Relayed to main; discussion before any
+  design.

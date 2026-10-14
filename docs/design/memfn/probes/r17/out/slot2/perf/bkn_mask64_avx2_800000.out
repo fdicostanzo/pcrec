@@ -1,0 +1,1 @@
+PERF	bkn	mask64_avx2	findall	65536	800000	200	36136	1.680	ok

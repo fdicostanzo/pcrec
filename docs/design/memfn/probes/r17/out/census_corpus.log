@@ -1,0 +1,30 @@
+patterns=4542 compiles=9084 failed=755
+stream	role	shape	sites
+default	body-total (K35: the generic-body census's population)	-	757
+default	dfa-hat	pair	18
+default	dfa-hat	pair-cube	13
+default	dfa-hat	range	2
+default	dfa-hat	small	3
+default	dfa-hat	wide	3
+default	dfa-pf	cube	4
+default	dfa-pf	pair	187
+default	dfa-pf	pair-cube	49
+default	dfa-pf	range	135
+default	dfa-pf	small	73
+default	dfa-pf	wide	324
+default	dfa-pf-memchr	byte	1009
+default	vm-hat	byte	97
+default	vm-hat	cube	2
+default	vm-hat	pair	44
+default	vm-hat	pair-cube	12
+default	vm-hat	range	5
+default	vm-hat	small	4
+default	vm-hat	wide	61
+vm	body-total (K35: the generic-body census's population)	-	511
+vm	vm-hat	byte	1571
+vm	vm-hat	cube	6
+vm	vm-hat	pair	422
+vm	vm-hat	pair-cube	157
+vm	vm-hat	range	217
+vm	vm-hat	small	134
+vm	vm-hat	wide	467

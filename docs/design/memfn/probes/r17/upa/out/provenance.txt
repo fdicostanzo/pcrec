@@ -1,0 +1,9 @@
+# upa run provenance
+pcrec tree: 31a5099d83280f6165065a16acf9cdc3d47ff8fb (lane/r17upa, cut from lane/memfn-r17 0409c204; compiler = build/pcrec of this tree, unchanged src/)
+bench clone: 1cb906f62dbf6b74318b1f280100e29c6d79ff27 (git archive into build/upa/benchsrc; every set's manifest.tsv and manifest_throughput.tsv reproduced byte for byte)
+gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python: Python 3.14.4
+box: frank-desktop, taskset -c 12-15, date 2026-10-12T13:47:13Z
+command: upa.py --pcrec build/pcrec --bench-src build/upa/benchsrc --out build/upa/all --jobs 4
+UPA COMPLETE jobs=704 violations=0 oracle_diff=18
+planted: upa.py ... --cells cells_r17.txt --configs auto --plant -> UPA COMPLETE jobs=11 violations=11 oracle_diff=85 (every cell fires)
