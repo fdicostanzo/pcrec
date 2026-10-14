@@ -125,9 +125,9 @@ object of ten witnesses, in two regimes, with its size and its call edges. Nine 
 | compound `^\s+|\s+$` (split) | 1,206 / 1,021 | `rx__f_search` (402 B, 5 callers); Q inlined into `_search` | `_*_in`→sibling; under `-fPIC` also `_search`→`_next_pos` |
 | compound, `-e utf8 -futf-check` | 1,737 / 1,672 | `rx__f_search`; gcc split `_valid_upto` into `.part.0` | under `-fPIC`: `_search`, `_match`, `_match_caps` → `_valid_upto`, `_next_pos` |
 | VM hybrid `(a)b` (frameless, `inline`) | 1,400 / 1,378 | `rx_prefilter` (2 callers) | `_*_in`→sibling |
-| VM hybrid `(a|ab)(c|bcd)(d*)` (framed, `plain`) | 3,033 / 2,859 | `match_anchored`, `search_run` | `_search`→`_search_in`, `_*_in`→sibling |
+| VM hybrid `(a|ab)(c|bcd)(d*)` (framed, `plain`) | 3,033 / 2,859 | `match_anchored`, `search_run` | `_*_in`→sibling (their NULL-descriptor arm) |
 | VM forced `(a)b` | 1,443 / 1,421 | none | `_*_in`→sibling |
-| VM vars `a${v}b` | 1,558 / 1,662 | none | `_search`→`_search_in` and the forwards |
+| VM vars `a${v}b` (`forward` rung) | 1,558 / 1,662 | none | `_search`→`_search_in`, `_match{,_caps}`→`_in` (the forwards); under `-fPIC` also `_*_in`→sibling |
 
 Two things the table shows that no document records:
 

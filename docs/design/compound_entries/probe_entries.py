@@ -49,36 +49,47 @@ def funcs(obj):
 def calls(obj):
     """Per function: instructions, and the functions it calls (call) or
     tail-jumps (jmp) to.  A call to a GLOBAL symbol shows in a .o as a
-    relocation on the next line (R_X86_64_PLT32 / PC32): it is marked `@g`
+    relocation on the line after the instruction (R_X86_64_PLT32 / PC32), and
+    objdump then prints a MEANINGLESS target (the placeholder's address, which
+    can fall in the next function): the relocation's symbol wins, marked `@g`
     (resolved by the linker, through the PLT in a shared object with default
-    visibility); a call to a static function is resolved in the object and
-    marked `@s`."""
+    visibility).  A call with no relocation was resolved in the object (a
+    static function, or a global gcc bound locally): marked `@s`."""
     r = run(["objdump", "-dr", "--no-show-raw-insn", obj])
     cur, out, pending = None, {}, None
+
+    def commit():
+        nonlocal pending
+        if pending and cur is not None:
+            kind, tgt = pending
+            if tgt.startswith("rx") and tgt != cur:
+                out[cur]["edges"].add(f"{kind}:{tgt}@s")
+        pending = None
+
     for line in r.stdout.splitlines():
         m = re.match(r"^[0-9a-f]+ <(.+)>:$", line)
         if m:
-            cur = m.group(1); out[cur] = {"insns": 0, "edges": set()}; pending = None
+            commit()
+            cur = m.group(1); out[cur] = {"insns": 0, "edges": set()}
             continue
         if cur is None or not line.strip():
             continue
-        rm = re.search(r"R_X86_64_(?:PLT32|PC32)\s+(\w+)", line)
-        if rm and pending:
-            tgt = rm.group(1)
-            if tgt.startswith("rx") and tgt != cur:
-                out[cur]["edges"].add(f"{pending}:{tgt}@g")
-            pending = None
+        rm = re.search(r"R_X86_64_(?:PLT32|PC32)\s+([\w.]+)", line)
+        if rm:
+            if pending:
+                kind, _ = pending
+                tgt = rm.group(1)
+                if tgt.startswith("rx") and tgt != cur:
+                    out[cur]["edges"].add(f"{kind}:{tgt}@g")
+                pending = None
             continue
         if re.match(r"^\s+[0-9a-f]+:\s", line):
+            commit()
             out[cur]["insns"] += 1
-            pending = None
             m2 = re.search(r"\b(call|jmp)\s+[0-9a-f]+ <([\w.]+?)(?:\+0x[0-9a-f]+)?>", line)
             if m2:
-                tgt = m2.group(2)
-                if tgt == cur:
-                    pending = m2.group(1)          # an unresolved global: see the reloc
-                elif tgt.startswith("rx"):
-                    out[cur]["edges"].add(f"{m2.group(1)}:{tgt}@s")
+                pending = (m2.group(1), m2.group(2))
+    commit()
     return out
 
 def main():
