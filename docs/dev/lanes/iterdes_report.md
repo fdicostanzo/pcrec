@@ -75,6 +75,9 @@ DESIGN ONLY: nothing under `src/`, `cli/`, `lib/` or `tests/` changed. No clock 
     artifacts. The other three differ by scheduling or size (563 vs 579 B on `[0-9]+x`).
   - `.text`: +997..+2,587 B (inline, `_next` + `_next_n`) or +832..+989 B (shared). On
     the twins, `_next` is 433-1,079 B inline and 321-666 B shared.
+- **Retry anchoring:** an unanchored NOTEMPTY_ATSTART retry answers like the anchored one
+  on all 29,502 corpus pairs, but not on `\G|b` over `"xb"` (4 vs 3 matches). The corpus has
+  no witness, so I1 adds that cell (`sem/out/retry_anchoring.out`); it is S926's detector.
 - **Static-label bodies:** 233 of 4,243 compiled byte artifacts and 232 of 4,254 utf8 —
   exactly the DFA `attempt` scan.
 - **Init codegen:** one 32-bit store for `RX_ITER_INIT` and for re-init, two for `_AT`.
